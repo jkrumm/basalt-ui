@@ -109,13 +109,15 @@ function QueueStrip({ shotState }: ScenarioProps) {
       loading,
       ...(!hidden && {
         visual: (
-          <Sparkline
-            ariaLabel="Items awaiting a decision, end of day, last 14 days"
-            data={NEEDS_YOU_TREND}
-            height={SPARK_HEIGHT}
-            reference="mean"
-            format={(v) => `${fmtInt(v)} items`}
-          />
+          <Box data-shot-hover>
+            <Sparkline
+              ariaLabel="Items awaiting a decision, end of day, last 14 days"
+              data={NEEDS_YOU_TREND}
+              height={SPARK_HEIGHT}
+              reference="mean"
+              format={(v) => `${fmtInt(v)} items`}
+            />
+          </Box>
         ),
       }),
     },
@@ -171,13 +173,15 @@ function QueueStrip({ shotState }: ScenarioProps) {
       value: none ? null : fmtEur(BUDGETS.day.spent),
       ...(!hidden && {
         visual: (
-          <Sparkline
-            ariaLabel={`Dispatch spend per day, last ${DISPATCH_COMPLETE_DAYS.length} complete days, EUR`}
-            data={DISPATCH_COMPLETE_DAYS}
-            height={SPARK_HEIGHT}
-            reference="mean"
-            format={fmtEur}
-          />
+          <Box data-shot-hover>
+            <Sparkline
+              ariaLabel={`Dispatch spend per day, last ${DISPATCH_COMPLETE_DAYS.length} complete days, EUR`}
+              data={DISPATCH_COMPLETE_DAYS}
+              height={SPARK_HEIGHT}
+              reference="mean"
+              format={fmtEur}
+            />
+          </Box>
         ),
       }),
       loading,

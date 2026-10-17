@@ -162,13 +162,15 @@ function SpendStats({ shotState }: ScenarioProps) {
       }),
       ...(!hidden && {
         visual: (
-          <Sparkline
-            ariaLabel={`Daily spend, ${WINDOW_LABEL}, EUR`}
-            data={MTD_TOTALS}
-            height={28}
-            reference="mean"
-            format={fmtEur}
-          />
+          <Box data-shot-hover>
+            <Sparkline
+              ariaLabel={`Daily spend, ${WINDOW_LABEL}, EUR`}
+              data={MTD_TOTALS}
+              height={28}
+              reference="mean"
+              format={fmtEur}
+            />
+          </Box>
         ),
       }),
     },
