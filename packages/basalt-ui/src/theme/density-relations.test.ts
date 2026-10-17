@@ -116,17 +116,18 @@ describe('Fix 2 — the 4px stack rhythm holds its 2:1 pairs at every level', ()
 })
 
 describe('Fix 3 — SegmentedControl concentricity holds at every RADIUS level', () => {
-  test('the indicator radius is the track radius minus the track inset (floored at 0), every RADIUS level (the full [-5, 5] range, not the narrower density range)', () => {
+  test('fine === ctrl - 2 at every RADIUS level where ctrl >= 2 (the full [-5, 5] range)', () => {
     for (const level of ALL_RADIUS_LEVELS) {
       const radius = deriveRadius(level)
-      expect(radius.fine).toBe(Math.max(0, radius.ctrl - SPACE_FIXED.segmentedTrackInset))
+      if (radius.ctrl < SPACE_FIXED.segmentedTrackInset) continue
+      expect(radius.fine).toBe(radius.ctrl - SPACE_FIXED.segmentedTrackInset)
     }
   })
 
-  test('at the radius floor (-5), fine is clamped to 0 while ctrl is not — the 1px track radius sits inside a 2px inset, so the indicator is square exactly as concentricity demands', () => {
+  test('at the radius floor (-5), ctrl is 1 and fine clamps to 0 — a 1px track radius inside a 2px inset leaves a square indicator, which is what concentricity demands', () => {
     const radius = deriveRadius(RADIUS_LEVEL_RANGE.min)
-    expect(radius.fine).toBe(0) // clampRadius(ctrl - 2) = clampRadius((6 - 5) - 2) = clampRadius(-1)
     expect(radius.ctrl).toBe(1)
+    expect(radius.fine).toBe(0)
   })
 
   test("segmentedTrackInset never moves with density — it's a SPACE_FIXED constant, not part of deriveSpacing's step output at ANY level", () => {

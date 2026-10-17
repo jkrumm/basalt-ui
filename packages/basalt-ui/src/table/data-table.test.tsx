@@ -283,11 +283,7 @@ describe('the toolbar has no fixed-width literals and resolves controls to the c
     expect(searchStyle).toContain('flex-shrink: 1')
     expect(searchStyle).toContain('flex-grow: 0')
     expect(searchStyle).toContain('max-width: 100%')
-    // `width` states the item's intrinsic contribution (an input's own max-content is ~196px, which
-    // sized the toolbar 24px short of its own items and wrapped the pills at 1440). It is NOT a floor:
-    // the explicit `min-width: 12ch` is, and `flex-shrink: 1` lets the field give up the rest.
-    expect(searchStyle).toContain('width: 220px')
-    expect(searchStyle).toContain('min-width: 12ch')
+    // The width itself is pinned by the layout suite (`data-table.layout.test.ts`), not by a string.
   })
 
   test('the toolbar renders inside a data-basalt-tier="ctl" slot', () => {
