@@ -3,6 +3,7 @@
  * the cases the mounted cursor tests (`engine.test.tsx`) cannot reach.
  */
 import { afterEach, describe, expect, test } from 'bun:test'
+import { tooltip } from '@tanstack/charts/tooltip'
 import type {
   ChartTooltipExtension,
   ChartTooltipOptions,
@@ -81,6 +82,7 @@ describe('quietWhileFollowing', () => {
 describe('withTooltipRole', () => {
   /** An engine host stand-in: every paint writes `role="status"` again, as the real one does. */
   const engine = (calls: string[]): ChartTooltipExtension => ({
+    ...tooltip,
     create: (context) => ({
       update: () => void calls.push('update'),
       paint: () => {
@@ -94,6 +96,7 @@ describe('withTooltipRole', () => {
         el.setAttribute('role', 'status')
       },
       hide: () => void calls.push('hide'),
+      contains: () => false,
       destroy: () => void calls.push('destroy'),
     }),
   })
