@@ -11,6 +11,8 @@ declare const classes: {
   readonly captionText: string
   readonly icon: string
   readonly qualifier: string
+  readonly verdict: string
+  readonly verdictDot: string
   readonly actions: string
   readonly valueRow: string
   readonly figure: string

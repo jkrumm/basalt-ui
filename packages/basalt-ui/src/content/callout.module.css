@@ -1,13 +1,12 @@
 /*
- * Callout — a soft tinted panel with a left rail, keyed to one of the four semantic tokens.
- * `--callout-ink` is set per kind below and consumed by both the rail/bg tint and the title/icon
+ * Callout — a soft tinted panel, keyed to one of the four semantic tokens.
+ * `--callout-ink` is set per kind below and consumed by both the bg tint and the title/icon
  * color — one custom property, no per-kind duplication.
  */
 
 .root {
   border-radius: var(--vx-radius-card);
   padding: var(--vx-space-callout-inset-y) var(--vx-space-callout-inset-x);
-  border-left: 2px solid var(--callout-ink);
   background: color-mix(in srgb, var(--callout-ink) 8%, transparent);
 }
 

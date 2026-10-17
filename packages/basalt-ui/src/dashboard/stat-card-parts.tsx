@@ -3,10 +3,12 @@
  * skeletons that hold their footprint while a reading is pending. Split out so `stat-card.tsx`
  * orchestrates (which branch, which placement) and these draw. Internal: not exported from any barrel.
  */
-import { Skeleton } from '@mantine/core'
+import { Box, Skeleton } from '@mantine/core'
 import type { CSSProperties, ReactNode } from 'react'
 import { IconSlot } from '../theme/icon-slot'
 import { CtlSlot } from '../theme'
+import { VX } from '../tokens'
+import type { Tone } from '../common/props'
 import { InfoGlyph } from './widget-header'
 import classes from './stat-card.module.css'
 
@@ -15,15 +17,21 @@ export type CaptionRowProps = {
   icon?: ReactNode
   info?: string
   qualifier?: string
+  tone?: Tone
   actions?: ReactNode
 }
+
+/** The verdict word beside the dot. Short on purpose: it shares the caption row with the title.
+ * `Over` is the threshold vocabulary (past the line), `Watch` the early warning, `OK` the earned
+ * positive — `bad` is not `Critical` because the card knows a threshold was crossed, not how badly. */
+const TONE_WORD: Record<Tone, string> = { good: 'OK', warn: 'Watch', bad: 'Over' }
 
 /**
  * Title, `info` glyph and `qualifier` in one wrapping group, `actions` pinned at the end. When
  * caption + info + qualifier do not fit, the qualifier wraps UNDER the caption instead of truncating
  * either: the container's width decides, never the viewport's.
  */
-export function CaptionRow({ title, icon, info, qualifier, actions }: CaptionRowProps) {
+export function CaptionRow({ title, icon, info, qualifier, tone, actions }: CaptionRowProps) {
   return (
     <div className={classes.captionRow}>
       <div className={classes.captionMain}>
@@ -34,6 +42,19 @@ export function CaptionRow({ title, icon, info, qualifier, actions }: CaptionRow
           </h3>
           {/* OUTSIDE the heading on purpose: `info` would otherwise become part of its name. */}
           {info !== undefined && <InfoGlyph text={info} />}
+          {/* The dot carries the colour (`VX.status[tone]`, per scheme, never a hex); the word is muted
+              ink and carries the meaning, so the verdict is never colour alone. */}
+          {tone !== undefined && (
+            <span className={classes.verdict}>
+              <Box
+                aria-hidden="true"
+                component="span"
+                className={classes.verdictDot}
+                bg={VX.status[tone]}
+              />
+              {TONE_WORD[tone]}
+            </span>
+          )}
         </div>
         {qualifier !== undefined && <span className={classes.qualifier}>{qualifier}</span>}
       </div>
