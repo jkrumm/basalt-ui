@@ -361,7 +361,7 @@ function ComponentsSurfaces() {
         />
       </ComponentGroup>
 
-      <Card py="sm" px="md">
+      <Card>
         <Text size="sm" c="dimmed">
           A <Code>Card</Code> surface — same shadow-card, background, and radius as every Paper
           above.

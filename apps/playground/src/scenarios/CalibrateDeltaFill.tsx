@@ -9,7 +9,7 @@ import { fmtEur, fmtSignedShare } from './fixture-utils'
 
 export function CalibrateDeltaFill() {
   return (
-    <Card py="sm" px="md" data-shot="probe-5">
+    <Card data-shot="probe-5">
       <Text size="xs" c="dimmed">
         Spend, {WINDOW_LABEL} (€)
       </Text>

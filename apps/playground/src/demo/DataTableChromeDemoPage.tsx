@@ -144,7 +144,7 @@ export function DataTableChromeDemoPage() {
             withTableBorder={false} because the Card already owns the frame. The title and the
             count are the TABLE's own (law C11) — `count` is always `table.getRowCount()`, so it
             cannot drift from the rows actually rendered the way a hand-written label could. */}
-        <Card padding={0}>
+        <Card variant="flush">
           <ThrowBoundary key={String(bad)}>
             <BasaltDataTable
               title="Session history"
