@@ -1,0 +1,67 @@
+import { MantineProvider } from '@mantine/core'
+import { cleanup, fireEvent, render } from '@testing-library/react'
+import { afterEach, describe, expect, test } from 'bun:test'
+import { StatGroup } from './stat-group'
+import type { StatStripCell } from './stat-strip'
+
+afterEach(cleanup)
+
+function mount(cell: Partial<StatStripCell>) {
+  const cells: StatStripCell[] = [
+    { key: 'a', caption: 'Resting HR', value: '52', ...cell },
+    { key: 'b', caption: 'Load', value: '410' },
+  ]
+  return render(
+    <MantineProvider>
+      <StatGroup variant="strip" label="Health" cells={cells} />
+    </MantineProvider>,
+  )
+}
+
+const cellOf = (c: HTMLElement) => c.querySelector('[data-strip-cell="a"]') as HTMLElement
+
+describe('strip cell state', () => {
+  test('empty: a dash in the value position and the reason, no dot, word or Retry', () => {
+    const { container } = mount({ state: { kind: 'empty', reason: 'No sleep logged' } })
+    const cell = cellOf(container)
+    expect(cell.querySelector('[data-strip-value]')?.textContent).toBe('—')
+    expect(cell.textContent).toContain('No sleep logged')
+    expect(cell.querySelector('[data-basalt-status-dot]')).toBeNull()
+    expect(cell.querySelector('button')).toBeNull()
+    expect(cell.textContent).not.toContain('Failed')
+  })
+
+  test('error: a dot, the word, the message and Retry; onRetry fires', () => {
+    let retried = 0
+    const { container } = mount({
+      state: { kind: 'error', error: new Error('boom'), onRetry: () => (retried += 1) },
+    })
+    const cell = cellOf(container)
+    expect(cell.querySelector('[data-basalt-status-dot]')).not.toBeNull()
+    expect(cell.textContent).toContain('Failed')
+    expect(cell.textContent).toContain('boom')
+    expect(cell.querySelector('[data-strip-value]')).toBeNull()
+    const retry = cell.querySelector('button') as HTMLButtonElement
+    expect(retry.textContent).toBe('Retry')
+    fireEvent.click(retry)
+    expect(retried).toBe(1)
+  })
+
+  test('error without onRetry renders no Retry; a ready sibling is untouched', () => {
+    const { container } = mount({ state: { kind: 'error', error: 'x' } })
+    expect(cellOf(container).querySelector('button')).toBeNull()
+    const other = container.querySelector('[data-strip-cell="b"]')
+    expect(other?.querySelector('[data-strip-value]')?.textContent).toBe('410')
+    expect(other?.querySelector('[data-basalt-status-dot]')).toBeNull()
+  })
+
+  test('the state replaces the visual and rows', () => {
+    const { container } = mount({
+      visual: <i data-v />,
+      rows: [{ key: 'r', label: 'R', value: '1' }],
+      state: { kind: 'error', error: 'x' },
+    })
+    expect(cellOf(container).querySelector('[data-v]')).toBeNull()
+    expect(cellOf(container).querySelector('[data-strip-row]')).toBeNull()
+  })
+})

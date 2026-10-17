@@ -1041,10 +1041,36 @@ The `basalt-ui/router-tanstack` subpath is **removed** in 2.x, not moved: an imp
 | `NavItemMeta`, `NavGroupMeta`, `AnyNavItem`, `AnyNavGroup`, `AnyNavLink`, `FlatNavItem`, `NavConfig`, `NavGroupId`, `NavTabId`, `NavIndex`, `UseNavOptions`, `NavBinding`, `NavAnchor`, `NavAnchorProps`, `NavMobilePlacement` | deleted                                                                                                                                                                                                                                                                                                                                                                                                                                                    | no consumer names them; derive with `ComponentProps` / `Parameters` |
 | `useNav`, and `BasaltShell`'s `sections` / `mobileNav` props                                                                                                                                                                   | deleted: pass `nav={NAV}` (plus `badges`, `isActive`, `getScrollElement` — the old `useNav` options) to `BasaltShell`; it resolves the sidebar, the mobile bar and the breadcrumb itself. `mobileNav` tuning moves to `defineNav`'s `mobile`. argo `apps/dashboard/src/routes/__root.tsx`: replace `const nav = useNav(NAV, { badges })` + `{...nav}` with `nav={NAV} badges={…}` (migrates in W12; 1.x consumers stay on their pinned version until then) |
 
-## Unreleased
+## Unreleased — strip cell state, one Retry, and the marker reading
 
-_Nothing yet. Author the next section under this heading as `## Unreleased — <title>`; the
-release renames it and opens a new one here._
+### One Retry in the shared error anatomy
+
+**Changed:** `ErrorState`'s Retry (and so `StatCard`'s) is now a plain button shared with `ChartCard`
+and the strip cell error, styled from the same tokens as the Mantine `size="xs" variant="default"`
+Button it replaces (panel fill, `shadow-raised`, control radius, 30px). A refetch in flight now
+disables it and sets `aria-busy` instead of showing Mantine's loader overlay. **Opt out:** render
+your own Mantine `Button` through `ErrorState`'s `action` and omit `onRetry`.
+
+New, additive: `ChartCard` takes `onRetry` and `retrying`. An errored `state` then shows that same
+Retry under the message, before `stateAction` (which stays for other actions). Without `onRetry`
+nothing changes, so a consumer passing its own Retry through `stateAction` keeps it — drop it for
+`onRetry` to match `StatCard`.
+
+### `StatGroup variant="strip"` cells take `state`
+
+New, additive: a cell's `state` is `{ kind: 'empty', reason? }` or `{ kind: 'error', error?, onRetry?,
+retrying? }`. Empty shows `—` in the value position plus the muted reason; error shows the compact
+error anatomy (status dot, `Failed`, the message, Retry). Either replaces the cell's hero, `visual`,
+`rows` and `footer`; the caption stays and `loading` wins while pending. Before, both read as `—`
+with a footer note.
+
+### A zoned `Meter` in a hero host no longer prints the reading at its marker
+
+**Changed default:** a `Meter` with `zones` inside a `StatCard` `sparkline` slot or a strip cell's
+`visual` drew the reading at the marker beside a hero showing the same number. Those hosts now
+suppress it; the track, marker and zone labels stay, and a standalone `Meter` is unchanged.
+**Opt out:** render the reading yourself where you want it (the value is in the Meter's `aria-valuetext`),
+or place the `Meter` outside those two slots.
 
 ## 2.20.0 — the sparkline reference and readout
 

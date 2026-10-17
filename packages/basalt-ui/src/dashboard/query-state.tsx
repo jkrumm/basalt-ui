@@ -14,10 +14,11 @@
  * the re-derivation this exists to delete. `LoadingState` / `ErrorState` ship alongside as the
  * escape hatch for a page that must place its branches in different DOM positions.
  */
-import { Button, Center, Group, Loader, Stack, Text } from '@mantine/core'
+import { Center, Group, Loader, Stack, Text } from '@mantine/core'
 import type { CSSProperties, ReactNode } from 'react'
 import { toErrorMessage } from '../common/errors'
 import { cx } from '../common/props'
+import { RetryButton } from '../common/retry-button'
 import type { BasaltProps, SlotStylesProps } from '../common/props'
 import { VX } from '../tokens'
 import { StatusDot } from '../theme/status-dot'
@@ -104,7 +105,7 @@ export type ErrorStateProps = BasaltProps & {
   /** Shown only when the server body carries no readable message. */
   fallback?: string
   onRetry?: () => void
-  /** Disables/spins the retry button while a refetch is in flight. */
+  /** Disables the retry button while a refetch is in flight. */
   retrying?: boolean
   /** How loud this state is. Default `'page'`. */
   tier?: QueryStateTier
@@ -148,11 +149,7 @@ export function ErrorState({
       </Text>
       {(onRetry ?? action) !== undefined && (
         <Group gap="xs">
-          {onRetry && (
-            <Button size="xs" variant="default" loading={retrying} onClick={onRetry}>
-              Retry
-            </Button>
-          )}
+          {onRetry && <RetryButton onClick={onRetry} retrying={retrying} />}
           {action}
         </Group>
       )}

@@ -4,6 +4,7 @@
  */
 import type { CSSProperties, ReactElement, ReactNode } from 'react'
 import { toErrorMessage } from '../common/errors'
+import { RetryButton } from '../common/retry-button'
 import { VX } from '../tokens'
 import { ChartBox, growClass, stateClass } from './box'
 import type { ChartBoxHeight } from './box'
@@ -74,6 +75,11 @@ const emptyLabel = (state: ChartState | undefined): string =>
 export function ChartPlaceholder(props: {
   state: ChartState | undefined
   height?: ChartBoxHeight
+  /** Error only: the shared Retry button, the same one `ErrorState` renders. */
+  onRetry?: () => void
+  /** A refetch is in flight: Retry is inert and marked busy. */
+  retrying?: boolean
+  /** Any other action (a "clear filters" link), after Retry. */
   action?: ReactNode
   /** For a box too small to hold a sentence (a sparkline): error and empty show a `—` and carry the
    * label as the accessible name and the hover title. */
@@ -108,6 +114,9 @@ export function ChartPlaceholder(props: {
         </span>
       )}
       <span style={errorMessageStyle}>{label}</span>
+      {kind === 'error' && props.onRetry !== undefined && (
+        <RetryButton onClick={props.onRetry} retrying={props.retrying ?? false} />
+      )}
       {props.action}
     </>
   )

@@ -8,6 +8,11 @@
  * `tone` inks the VALUE only, for a verdict; a null reading is `—`. A cell may carry BOTH: the hero
  * (e.g. VO2max) with `rows` under it; omit `value` to render the rows alone.
  *
+ * `state` replaces the readings (hero, visual, rows, footer) with the cell's empty or error body, at
+ * the cell's size. Empty: `—` in the value position and the reason, muted. Error: the shared error
+ * anatomy compact — status dot, the word `Failed`, the message, the shared Retry. The caption stays.
+ * A `visual` is a hero host: a zoned `Meter` in it does not repeat the value at its marker.
+ *
  * Anchors: each cell is `data-shot="strip-<key>"` and each footer cell
  * `data-shot="strip-footer-<key>"` (derived — a consumer cannot choose another name).
  *
@@ -18,11 +23,15 @@
 import { Card, Skeleton } from '@mantine/core'
 import { useId } from 'react'
 import type { CSSProperties, ReactNode } from 'react'
+import { toErrorMessage } from '../common/errors'
 import { cx } from '../common/props'
 import type { BasaltProps, Tone } from '../common/props'
+import { RetryButton } from '../common/retry-button'
+import { StatusDot } from '../theme/status-dot'
 import { VX } from '../tokens'
 import { InfoGlyph } from './widget-header'
 import classes from './stat-strip.module.css'
+import { VisualSlotContext } from './visual-slot'
 
 export type StatStripRow = {
   key: string
@@ -33,6 +42,23 @@ export type StatStripRow = {
   /** A `DeltaBadge`. */
   delta?: ReactNode
 }
+
+/** What a cell shows instead of its readings. Mirrors `StatCard`'s `query` branches. */
+type StatStripCellState =
+  | {
+      kind: 'empty'
+      /** Why there is no reading, one muted line (`'No sleep logged'`). */
+      reason?: string
+    }
+  | {
+      kind: 'error'
+      /** Whatever was thrown; decoded like `ErrorState`'s. */
+      error?: unknown
+      /** Renders the shared Retry button. */
+      onRetry?: () => void
+      /** A refetch is in flight: Retry is inert. */
+      retrying?: boolean
+    }
 
 export type StatStripCell = {
   key: string
@@ -58,6 +84,8 @@ export type StatStripCell = {
   loading?: boolean
   /** Dims the cell while placeholder data shows. */
   stale?: boolean
+  /** Empty or failed: replaces the readings; `loading` wins while pending. */
+  state?: StatStripCellState
 }
 
 export type StatStripProps = BasaltProps & {
@@ -72,9 +100,40 @@ export type StatStripProps = BasaltProps & {
 
 const EMPTY = '—'
 
+function CellState({ state }: { state: StatStripCellState }) {
+  if (state.kind === 'empty') {
+    return (
+      <>
+        <div className={classes.valueRow}>
+          <span className={classes.value} data-strip-value>
+            {EMPTY}
+          </span>
+        </div>
+        {state.reason !== undefined && <p className={classes.reason}>{state.reason}</p>}
+      </>
+    )
+  }
+  const message = toErrorMessage(state.error, 'The request failed.')
+  return (
+    <div className={classes.error} role="alert" data-strip-state="error">
+      <span className={classes.errorHead}>
+        <StatusDot color={VX.status.bad} />
+        Failed
+      </span>
+      <p className={classes.reason} title={message}>
+        {message}
+      </p>
+      {state.onRetry !== undefined && (
+        <RetryButton onClick={state.onRetry} retrying={state.retrying ?? false} />
+      )}
+    </div>
+  )
+}
+
 function StripCell({ cell }: { cell: StatStripCell }) {
   const captionId = useId()
   const { rows, loading } = cell
+  const state = loading ? undefined : cell.state
   const hasHero = cell.value !== undefined || rows === undefined
   return (
     <article
@@ -96,7 +155,9 @@ function StripCell({ cell }: { cell: StatStripCell }) {
           <span className={classes.qualifier}>{cell.qualifier}</span>
         )}
       </div>
-      {hasHero &&
+      {state !== undefined && <CellState state={state} />}
+      {state === undefined &&
+        hasHero &&
         (loading ? (
           <Skeleton className={classes.skeletonValue} radius="sm" />
         ) : (
@@ -114,8 +175,13 @@ function StripCell({ cell }: { cell: StatStripCell }) {
             {cell.delta}
           </div>
         ))}
-      {cell.visual !== undefined && <div className={classes.visual}>{cell.visual}</div>}
-      {rows !== undefined &&
+      {state === undefined && cell.visual !== undefined && (
+        <div className={classes.visual}>
+          <VisualSlotContext.Provider value>{cell.visual}</VisualSlotContext.Provider>
+        </div>
+      )}
+      {state === undefined &&
+        rows !== undefined &&
         (loading ? (
           <div className={classes.rows} aria-hidden="true">
             {rows.map((row) => (
@@ -134,7 +200,9 @@ function StripCell({ cell }: { cell: StatStripCell }) {
             ))}
           </ul>
         ))}
-      {cell.footer !== undefined && <div className={classes.footer}>{cell.footer}</div>}
+      {state === undefined && cell.footer !== undefined && (
+        <div className={classes.footer}>{cell.footer}</div>
+      )}
     </article>
   )
 }

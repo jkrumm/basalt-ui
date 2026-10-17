@@ -17,6 +17,9 @@ declare const classes: {
   readonly skeletonValue: string
   readonly skeletonRow: string
   readonly visual: string
+  readonly reason: string
+  readonly error: string
+  readonly errorHead: string
   readonly footer: string
   readonly rows: string
   readonly row: string

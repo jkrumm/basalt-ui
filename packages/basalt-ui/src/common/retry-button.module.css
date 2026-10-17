@@ -1,0 +1,53 @@
+/*
+ * The one Retry. ErrorState (Mantine, StatCard / pages), ChartCard's placeholder and a strip cell's
+ * error all render this, so the three read as one button. It is a plain element because `./charts`
+ * resolves with no Mantine, and it is styled to be a Mantine `size="xs" variant="default"` Button
+ * reading the same `--vx-*` tokens the theme binds that button to: panel fill (elevated on hover), no
+ * border, `shadow-raised`, the control radius, the xs type size, the theme's inline padding step and
+ * Mantine's 30px xs height. `--mantine-scale` carries the app's scale knob, 1 where Mantine is absent.
+ */
+.retry {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex: none;
+  box-sizing: border-box;
+  height: calc(1.875rem * var(--mantine-scale, 1));
+  padding-block: 0;
+  padding-inline: calc(var(--vx-space-stack-md, 0.75rem) * var(--mantine-scale, 1));
+  border: calc(0.0625rem * var(--mantine-scale, 1)) solid transparent;
+  border-radius: var(--vx-radius-ctrl);
+  background: var(--vx-surface-panel);
+  box-shadow: var(--vx-shadow-raised);
+  color: var(--vx-ink);
+  font: inherit;
+  font-size: var(--vx-text-xs);
+  font-weight: 500;
+  line-height: 1;
+  white-space: nowrap;
+  cursor: pointer;
+  user-select: none;
+  transition: box-shadow 120ms ease;
+}
+
+.retry:hover:not(:disabled) {
+  background: var(--vx-surface-elevated);
+}
+
+.retry:focus-visible {
+  outline: 2px solid var(--vx-accent);
+  outline-offset: 2px;
+}
+
+/* Busy is grounded and inert, like Mantine's disabled Button. */
+.retry:disabled {
+  box-shadow: none;
+  cursor: not-allowed;
+  opacity: 0.6;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .retry {
+    transition: none;
+  }
+}
