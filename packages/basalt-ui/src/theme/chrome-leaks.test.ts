@@ -86,6 +86,59 @@ describe('subtle Button / ActionIcon: only an unnamed colour takes ink', () => {
   }
 })
 
+describe('light / outline Button / ActionIcon: only an unnamed colour takes ink', () => {
+  const vars = (component: 'Button' | 'ActionIcon', props: object) => {
+    const resolve = baseTheme.components?.[component]?.vars as (
+      t: MantineTheme,
+      props: object,
+    ) => { root: Record<string, string | undefined> }
+    return resolve(theme, props).root
+  }
+  const KEYS = {
+    Button: {
+      color: '--button-color',
+      hover: '--button-hover',
+      bg: '--button-bg',
+      bd: '--button-bd',
+    },
+    ActionIcon: { color: '--ai-color', hover: '--ai-hover', bg: '--ai-bg', bd: '--ai-bd' },
+  } as const
+
+  for (const component of ['Button', 'ActionIcon'] as const) {
+    const k = KEYS[component]
+
+    test(`${component}: light, no colour -> neutral tint, ink label`, () => {
+      const root = vars(component, { variant: 'light' })
+      expect(root[k.color]).toBe('var(--vx-ink)')
+      expect(root[k.bg]).toBe('var(--mantine-color-gray-light)')
+      expect(root[k.hover]).toBe('var(--mantine-color-gray-light-hover)')
+      expect(root[k.bd]).toBeUndefined()
+    })
+
+    test(`${component}: outline, no colour -> surface border, ink label, subtle hover`, () => {
+      const root = vars(component, { variant: 'outline' })
+      expect(root[k.color]).toBe('var(--vx-ink)')
+      expect(root[k.bd]).toContain('var(--vx-surface-border)')
+      expect(root[k.hover]).toBe('var(--vx-surface-subtle)')
+      expect(root[k.bg]).toBeUndefined()
+    })
+
+    for (const variant of ['light', 'outline']) {
+      for (const color of ['blue', theme.primaryColor]) {
+        test(`${component}: ${variant} color="${color}" keeps Mantine's accent vars`, () => {
+          const root = vars(component, { variant, color })
+          for (const key of Object.values(k)) expect(root[key]).toBeUndefined()
+        })
+      }
+    }
+
+    test(`${component}: filled is untouched`, () => {
+      const root = vars(component, { variant: 'filled' })
+      for (const key of Object.values(k)) expect(root[key]).toBeUndefined()
+    })
+  }
+})
+
 describe('active Tabs underline is ink', () => {
   test('default variant, no colour (omitted and explicit "default")', () => {
     expect(tabsVars(theme, {}).root['--tabs-color']).toBe('var(--vx-ink)')
