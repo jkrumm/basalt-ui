@@ -7,8 +7,8 @@
 import { Box, Tabs, Text } from '@mantine/core'
 import { Section } from 'basalt-ui'
 import { VX } from 'basalt-ui/tokens'
-import { MODELS_MTD, MTD_DAYS, PROJECTS_MTD, WINDOW_LABEL, fmtEur, fmtShare } from './spend-data'
-import { fmtDay } from './fixture-utils'
+import { MODELS_MTD, MTD_DAYS, PROJECTS_MTD, WINDOW_LABEL } from './spend-data'
+import { fmtDay, fmtEur, fmtShare } from './fixture-utils'
 
 const [topProject, ...otherProjects] = PROJECTS_MTD
 const [topModel] = MODELS_MTD

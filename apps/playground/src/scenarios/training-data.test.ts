@@ -59,8 +59,8 @@ describe('training-data', () => {
     expect(SESSIONS_CHANGE_PCT).toBeCloseTo((SESSIONS_MTD / SESSIONS_PRIOR - 1) * 100, 9)
   })
 
-  it('the trends cover 30 days and end on a window that is non-negative', () => {
-    for (const trend of [SESSIONS_7D_TREND, DISTANCE_7D_TREND]) {
+  it('the trends cover 30 days and are non-negative', () => {
+    for (const trend of [SESSIONS_7D_TREND, VOLUME_7D_TREND, DISTANCE_7D_TREND]) {
       expect(trend).toHaveLength(30)
       expect(trend.every((v) => v >= 0)).toBe(true)
     }

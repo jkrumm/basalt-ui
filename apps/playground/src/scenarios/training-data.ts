@@ -10,7 +10,7 @@ import { fmtDay, itemAt, seeded, zoneFor } from './fixture-utils'
 const SESSION_TYPES = ['strength', 'walk', 'mobility'] as const
 export type SessionType = (typeof SESSION_TYPES)[number]
 
-export const TYPE_LABEL: Record<SessionType, string> = {
+const TYPE_LABEL: Record<SessionType, string> = {
   strength: 'Strength',
   walk: 'Walking pad',
   mobility: 'Mobility',
@@ -70,9 +70,7 @@ const LIFTS = [
 ] as const
 const LIFTS_PER_SESSION = 4
 /** Chance of each session type on a day: strength by weekday, walking pad and mobility daily. */
-const STRENGTH_CHANCE = { trainingDay: 0.6, saturday: 0.25, otherDay: 0.05 }
-const TRAINING_DAYS = [1, 3, 5]
-const SATURDAY = 6
+const STRENGTH_CHANCE_BY_WEEKDAY = [0.05, 0.6, 0.05, 0.6, 0.05, 0.6, 0.25] // Sun … Sat
 const WALK_CHANCE = 0.5
 const MOBILITY_CHANCE = 0.15
 
@@ -103,11 +101,7 @@ const SESSIONS: readonly Session[] = Array.from({ length: WINDOW_DAYS }, (_, i) 
   const date = new Date(windowStart + i * DAY_MS)
   const progress = i / WINDOW_DAYS
   const day = date.getUTCDay()
-  const strengthChance = TRAINING_DAYS.includes(day)
-    ? STRENGTH_CHANCE.trainingDay
-    : day === SATURDAY
-      ? STRENGTH_CHANCE.saturday
-      : STRENGTH_CHANCE.otherDay
+  const strengthChance = itemAt(STRENGTH_CHANCE_BY_WEEKDAY, day)
   const sessions: Session[] = []
   if (random() < strengthChance) sessions.push(strengthSession(date, progress))
   if (random() < WALK_CHANCE) {
@@ -196,14 +190,15 @@ export const LOAD_ZONES = [
   { from: 1.3, to: 1.5, label: 'High' },
   { from: 1.5, to: LOAD_MAX, label: 'Overreaching' },
 ] as const
-export const loadZoneName = (ratio: number): string => zoneFor(LOAD_ZONES, ratio).label
+export const loadZoneName = (ratio: number): string => zoneFor(LOAD_ZONES, ratio)?.label ?? '—'
 
 export const READINESS_ZONES = [
   { from: 0, to: 60, label: 'Low' },
   { from: 60, to: 80, label: 'Fair' },
   { from: 80, to: 100, label: 'Good' },
 ] as const
-export const readinessLevel = (score: number): string => zoneFor(READINESS_ZONES, score).label
+export const readinessLevel = (score: number): string =>
+  zoneFor(READINESS_ZONES, score)?.label ?? '—'
 
 /** The load contributor: 100 at a ratio of 1, falling 100 points per 1.0 of distance from it. */
 const loadScore = (ratio: number): number =>
@@ -246,8 +241,3 @@ export const MONTHLY_SESSIONS: readonly number[] = Array.from({ length: HIT_MONT
 })
 export const MONTHS_HIT = MONTHLY_SESSIONS.filter((n) => n >= GOAL_SESSIONS).length
 export const HIT_RATE_PCT = Math.round((MONTHS_HIT / HIT_MONTHS) * 100)
-
-const KG = new Intl.NumberFormat('en-GB', { maximumFractionDigits: 0 })
-export const fmtKg = (value: number): string => `${KG.format(Math.round(value))} kg`
-export const fmtKm = (value: number): string => value.toFixed(1)
-export const fmtRatio = (value: number): string => value.toFixed(2)

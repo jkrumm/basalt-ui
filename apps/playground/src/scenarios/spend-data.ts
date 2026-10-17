@@ -5,7 +5,7 @@
  * from `TODAY`, so moving the reading date moves the copy with it.
  */
 
-import { fmtShare, seeded } from './fixture-utils'
+import { seeded } from './fixture-utils'
 
 const PROJECT_KEYS = ['search', 'support', 'summaries', 'ingest', 'evals', 'sandbox'] as const
 export type ProjectKey = (typeof PROJECT_KEYS)[number]
@@ -13,7 +13,7 @@ export type ProjectKey = (typeof PROJECT_KEYS)[number]
 export const MODEL_KEYS = ['large', 'mid', 'small'] as const
 export type ModelKey = (typeof MODEL_KEYS)[number]
 
-export const PROJECT_LABEL: Record<ProjectKey, string> = {
+const PROJECT_LABEL: Record<ProjectKey, string> = {
   search: 'Search',
   support: 'Support bot',
   summaries: 'Summaries',
@@ -180,24 +180,6 @@ export const DISTRIBUTION: readonly DistributionBin[] = (() => {
   return bins
 })()
 
-const EUR = new Intl.NumberFormat('en-IE', {
-  style: 'currency',
-  currency: 'EUR',
-  maximumFractionDigits: 0,
-})
-
 /** A spend bin as the band it covers: "€40–50". */
 export const spendBand = (bin: DistributionBin): string =>
   `€${bin.from}–${bin.from + BIN_WIDTH_EUR}`
-
-export const fmtEur = (value: number): string => EUR.format(Math.round(value))
-export const fmtSignedEur = (value: number): string =>
-  `${value < 0 ? '\u2212' : '+'}${fmtEur(Math.abs(value))}`
-
-export const fmtSignedShare = (value: number): string => {
-  const percent = Math.round(value * 100)
-  return percent < 0 ? `\u2212${-percent}%` : `+${percent}%`
-}
-
-/** The share formatter lives in `fixture-utils`; the calibration boards import it from here. */
-export { fmtShare }
