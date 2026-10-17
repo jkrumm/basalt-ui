@@ -303,10 +303,12 @@ function QueueRow({ shotState }: ScenarioProps) {
         <ChartCard
           title="Items opened and closed per day"
           info="Items warden opened and items it closed each day, UTC. A queue that opens more than it closes grows."
-          facts={[
-            { value: fmtInt(FLOW_OPENED), unit: 'opened', period: FLOW_RANGE_LABEL },
-            { value: fmtInt(FLOW_CLOSED), unit: 'closed', period: FLOW_RANGE_LABEL },
-          ]}
+          {...(shotState === undefined && {
+            facts: [
+              { value: fmtInt(FLOW_OPENED), unit: 'opened', period: FLOW_RANGE_LABEL },
+              { value: fmtInt(FLOW_CLOSED), unit: 'closed', period: FLOW_RANGE_LABEL },
+            ],
+          })}
           state={chartStateFor(shotState, {
             empty: 'No items opened or closed in the window. Dispatch an item to start.',
             error: retry('Item flow'),
