@@ -7,6 +7,7 @@ import type { MantineTheme, MantineThemeOverride } from '@mantine/core'
 import { describe, expect, test } from 'bun:test'
 import { readFileSync } from 'node:fs'
 import { dirname } from 'node:path'
+import { fileURLToPath } from 'node:url'
 import { contrastRatio } from '../tokens/hct'
 import { INK, RADIUS_STEP, SURFACE } from '../tokens/palette'
 import { tabsVars } from './chrome-vars'
@@ -19,16 +20,14 @@ const theme = merge(baseTheme)
 const SCHEMES = ['light', 'dark'] as const
 const AA = 4.5
 
-type Props = { color?: string; variant?: string; size?: string }
+type Props = { color?: string | null; variant?: string; size?: string }
 type Root = Record<string, string | undefined>
 type Resolver = (t: MantineTheme, props: Props, ctx: unknown) => { root: Root }
 
-/** The theme's own `vars` resolver for a component, typed by what it is called with and returns. */
 const rootVars = (component: 'Button' | 'ActionIcon', t: MantineTheme, props: Props): Root => {
-  const resolve: unknown = baseTheme.components?.[component]?.vars
-  if (typeof resolve !== 'function') throw new Error(`${component} sets no vars resolver`)
-  const typed: Resolver = (...args) => resolve(...args)
-  return typed(t, props, undefined).root
+  const resolve = baseTheme.components?.[component]?.vars as Resolver | undefined
+  if (!resolve) throw new Error(`${component} sets no vars resolver`)
+  return resolve(t, props, undefined).root
 }
 
 describe('Badge is the status chip', () => {
@@ -94,16 +93,19 @@ describe('subtle Button / ActionIcon: only an unnamed colour takes ink', () => {
   }
 })
 
-test("Mantine's disabled rule sets colour, background and border directly, so the ink vars cannot leak into it", () => {
-  const dir = dirname(require.resolve('@mantine/core/package.json'))
-  for (const css of ['Button', 'ActionIcon']) {
+test.each(['Button', 'ActionIcon'])(
+  "Mantine's %s disabled rule sets colour, background and border directly, not through the ink vars",
+  (css) => {
+    const dir = dirname(fileURLToPath(import.meta.resolve('@mantine/core/package.json')))
     const source = readFileSync(`${dir}/styles/${css}.css`, 'utf8')
-    const rule = /:where\(:disabled:not\(\[data-loading\]\)[^{]*\{([^}]*)\}/.exec(source)?.[1] ?? ''
+    const match = /:where\(:disabled:not\(\[data-loading\]\)[^{]*\{([^}]*)\}/.exec(source)
+    expect(match).not.toBeNull()
+    const rule = match?.[1] ?? ''
     expect(rule).toContain('color: var(--mantine-color-disabled-color)')
     expect(rule).toContain('background: var(--mantine-color-disabled)')
     expect(rule).toContain('border:')
-  }
-})
+  },
+)
 
 describe('light / outline Button / ActionIcon: only an unnamed colour takes ink', () => {
   const vars = (component: 'Button' | 'ActionIcon', props: Props) =>
@@ -151,11 +153,24 @@ describe('light / outline Button / ActionIcon: only an unnamed colour takes ink'
       })
     }
 
-    for (const variant of ['light', 'outline']) {
-      test(`${component}: ${variant} color="" counts as unnamed -> ink`, () => {
-        expect(vars(component, { variant, color: '' })[k.color]).toBe('var(--vx-ink)')
-      })
-    }
+    test.each([
+      ['light', ''],
+      ['light', null],
+      ['outline', ''],
+      ['outline', null],
+      ['subtle', ''],
+      ['subtle', null],
+    ] as const)(`${component}: %s color=%p counts as unnamed -> ink`, (variant, color) => {
+      expect(vars(component, { variant, color })[k.color]).toBe('var(--vx-ink)')
+    })
+
+    test.each(['toString', '__proto__', 'constructor', 'unknown'])(
+      `${component}: unknown variant %p emits none of the four keys`,
+      (variant) => {
+        const root = vars(component, { variant })
+        for (const key of Object.values(k)) expect(root[key]).toBeUndefined()
+      },
+    )
 
     test(`${component}: light hover is one ink step off the light bg`, () => {
       const root = vars(component, { variant: 'light' })
@@ -166,6 +181,10 @@ describe('light / outline Button / ActionIcon: only an unnamed colour takes ink'
 })
 
 describe('active Tabs underline is ink', () => {
+  test.each(['', null])('color=%p counts as unnamed -> ink', (color) => {
+    expect(tabsVars(theme, { color }).root['--tabs-color']).toBe('var(--vx-ink)')
+  })
+
   test('default variant, no colour (omitted and explicit "default")', () => {
     expect(tabsVars(theme, {}).root['--tabs-color']).toBe('var(--vx-ink)')
     expect(tabsVars(theme, { variant: 'default' }).root['--tabs-color']).toBe('var(--vx-ink)')

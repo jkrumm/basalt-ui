@@ -1111,12 +1111,17 @@ words (`OK`, `Watch`, `Over`, and the phrases screen readers hear) are fixed Eng
 ### Light and outline Buttons are ink
 
 A `Button` or `ActionIcon` with `variant="light"` or `variant="outline"` and no `color` used to paint
-the primary (accent) colour. It is now ink: `light` takes the neutral gray tint (hover one step) with
+the primary (accent) colour. It is now ink: `light` takes the subtle surface (hover one ink step) with
 an ink label; `outline` takes the surface border with an ink label and the subtle-surface hover.
-Only `variant="filled"` and any explicit `color=` carry the accent. `default`, `filled`, `subtle`,
+Only `variant="filled"` and any explicit `color=` carry the accent. `default`, `filled`,
 `transparent` and `white` are unchanged, as are disabled, loading and focus-ring behaviour.
 
-Opt out: pass `color="<primary>"` (your theme's primary colour name) to restore the accent.
+An empty or `null` `color` now counts as unnamed everywhere, matching Mantine's own
+`color || primaryColor`: `subtle` Buttons and ActionIcons and the `Tabs` underline with `color=""` or
+`color={null}` take ink too, where they kept the accent before.
+
+Opt out: name the primary colour explicitly — `color="<primary>"`, your theme's `primaryColor` name.
+Omitting `color`, or passing `""` or `null`, does not restore the accent.
 
 ## 2.17.0 — the metric card and chrome
 
