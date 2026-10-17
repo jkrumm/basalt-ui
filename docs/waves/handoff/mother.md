@@ -26,6 +26,11 @@ the build, then rendered critique (`basalt-ui shot` rounds scored by an isolated
    linewatch, basalt-ui-obsidian, rollhook, then the 1.x → 2.x migrations of email-gateway (1.36) and image-gateway (1.41). Each app's friction becomes a ledger row, an upstream fix and a release.
 3. **weatherorb's UX/UI rewrite** is the final validation, handed to weatherorb's own orchestrator when phase 2 has
    settled. Its UI waves are held until then (its renumbered Waves 51+).
+   The brief's concept doc must cover (owner via weatherorb-f4, 2026-10-17): every point-forecast rendering
+   (the CartesianChart and Mantine surfaces) as a named quality target; #103 the probe bubble unreadable in dark;
+   #114 status strokes drawn as soft fills; #111 the chart hover scrubbing the map past the layer's horizon (clamp
+   to the horizon). The map engine (WebGL particles and fields, its Waves 63–64) stays weatherorb's and is out of
+   the brief.
 
 Queued behind all of it: Part 2's maturation Waves 20–28.
 
@@ -43,11 +48,11 @@ Queued behind all of it: Part 2's maturation Waves 20–28.
 
 ## In flight (next actions, in order)
 
-1. basalt Wave 35 close-out → release → argo bump and deletion of its workarounds (the wave's last step) → spawn
-   basalt Wave 36.
-2. argo Wave 22 close-out → add argo Wave 23 (adopt Wave 35, then the all-pages convergence re-score) → spawn it.
-3. After basalt Wave 36: the expression trial, then the exit-gate check above. Gaps become basalt Wave 37+ and
-   argo Wave 24+.
+1. basalt 2.20.0 is released (2026-10-18, Wave 35). argo Wave 23 (lead `argo-w23`) adopts it per
+   `argo/docs/design/basalt-2.20-adoption.md`, deletes the prototypes and re-scores every page live.
+2. basalt Wave 36 (the UX-first procedure plus Wave 35's leftovers and the mother's r3 read) is active.
+3. After both: the expression trial result and argo's re-score decide the exit gate. Gaps become basalt
+   Wave 37+ and argo Wave 24+.
 
 ## Consumers and how to reach them
 
