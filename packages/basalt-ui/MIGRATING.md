@@ -1076,10 +1076,9 @@ or place the `Meter` outside those two slots.
 
 **Changed default:** plain `value` bars only (no `segments`, no `zones`, no `color`, no `tone`);
 `segments` (incl. forecast) and `zones` keep today's fills. A bar `Meter` with no `color` used to
-draw the full
-ink fill (`--vx-line`), near-white in dark. With no `color` and no `tone` it now draws `tone="muted"`
-(`--vx-muted` at a strength that holds 3:1 against the track in both schemes). Verdict colours
-(`color`, status tones) are unchanged; the ring is unchanged. Opt out: `tone="ink"`.
+draw the full ink fill (`--vx-line`), near-white in dark. With no `color` and no `tone` it now draws
+`tone="muted"` (`--vx-muted` at a strength that holds 3:1 against the track in both schemes).
+Verdict colours (`color`, status tones) are unchanged; the ring is unchanged. Opt out: `tone="ink"`.
 
 ### `BarList`: the thin track is the default
 

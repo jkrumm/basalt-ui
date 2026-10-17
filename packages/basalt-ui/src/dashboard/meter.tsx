@@ -5,9 +5,9 @@
  * primitive, not a chart kind (no scale, axis or tooltip).
  *
  * Colour law: a plain `value` bar's fill is neutral (`--vx-muted` at a strength that holds 3:1 on
- * the track; `tone="ink"` for full ink); `segments` and `zones` keep their own fills. `color` is for
- * a VERDICT only (over budget, below target) and is a status colour the consumer passes; categorical `segments` take the consumer's
- * series colours. Committed vs forecast is the same neutral at two strengths — never colour alone: a
+ * the track; `tone="ink"` for full ink); `segments` and `zones` keep their own fills. `color` is
+ * for a VERDICT only (over budget, below target) and is a status colour the consumer passes;
+ * categorical `segments` take the consumer's series colours. Committed vs forecast is the same neutral at two strengths — never colour alone: a
  * tick marks the boundary and a caption names the forecast. A value past `max` clamps the fill at the
  * track end; the caption still states the real value.
  *
@@ -85,9 +85,10 @@ type BarCommon = Common & {
    */
   ticks?: readonly MeterTick[]
   /**
-   * `'muted'` (default for a plain `value` bar; `segments` and `zones` keep their fills): a non-verdict fill (a load, not a verdict) in `--vx-muted` at a strength that
-   * holds 3:1 against the track in both schemes — the ink fill is near-white in dark. `'ink'` restores
-   * the full-ink `--vx-line` fill. A `color` wins over both.
+   * `'muted'` (default for a plain `value` bar; `segments` and `zones` keep their fills): a
+   * non-verdict fill (a load, not a verdict) in `--vx-muted` at a strength that holds 3:1 against
+   * the track in both schemes — the ink fill is near-white in dark. `'ink'` restores the full-ink
+   * `--vx-line` fill. A `color` wins over both.
    */
   tone?: 'muted' | 'ink'
   /**
