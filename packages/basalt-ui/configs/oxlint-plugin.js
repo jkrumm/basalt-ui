@@ -588,8 +588,10 @@ const rawSizeLiteral = {
 
 const CARD_TAGS = new Set(['Card', 'Paper'])
 
-// The idiom is sm/md (12/16); the older xs/sm pair (now 8/12) stays accepted so an upgrade does not
-// turn every consumer's card lint red. A new card takes sm/md.
+// The idiom is the pair py="sm" px="md" (12/16), or leaving both to the theme. Uniform `p`/`padding`
+// is never the idiom, whatever its value.
+const CARD_INSET_PY = new Set(['sm'])
+const CARD_INSET_PX = new Set(['md'])
 const CARD_INSET_MESSAGE =
   'Card/Paper is off the card idiom — use the spacing sm/md inset (py="sm" px="md") and the ' +
   "theme's card radius, not an explicit p/padding or radius. (basalt/card-inset)"
@@ -622,26 +624,16 @@ const cardInset = {
           const attrName = attr.name?.name
           const value = attrValue(attr)
 
-          const isOffPadding =
+          const isUniformPadding =
             (attrName === 'p' || attrName === 'padding') &&
-            ((isStringLiteral(value) &&
-              value.value !== 'xs' &&
-              value.value !== 'sm' &&
-              value.value !== 'md') ||
-              isNumericLiteral(value))
+            (isStringLiteral(value) || isNumericLiteral(value))
           const isOffPy =
-            attrName === 'py' &&
-            isStringLiteral(value) &&
-            value.value !== 'xs' &&
-            value.value !== 'sm'
+            attrName === 'py' && isStringLiteral(value) && !CARD_INSET_PY.has(value.value)
           const isOffPx =
-            attrName === 'px' &&
-            isStringLiteral(value) &&
-            value.value !== 'sm' &&
-            value.value !== 'md'
+            attrName === 'px' && isStringLiteral(value) && !CARD_INSET_PX.has(value.value)
           const isRadius = attrName === 'radius'
 
-          if (!isOffPadding && !isOffPy && !isOffPx && !isRadius) continue
+          if (!isUniformPadding && !isOffPy && !isOffPx && !isRadius) continue
           if (hasThemeAllow(context, attr, 'card-inset')) continue
           context.report({ node: attr, message: CARD_INSET_MESSAGE })
         }
