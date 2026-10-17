@@ -57,7 +57,7 @@ describe('basalt-design references', () => {
   it('ships exactly the five reference files', () => {
     const dir = join(SKILL_DIR, 'references')
     expect(existsSync(dir)).toBe(true)
-    expect(readdirSync(dir).sort()).toEqual(REFERENCES.map((r) => `${r}.md`).sort())
+    expect(readdirSync(dir).toSorted()).toEqual(REFERENCES.map((r) => `${r}.md`).toSorted())
   })
 
   it('links every reference from SKILL.md and stays a router', () => {
