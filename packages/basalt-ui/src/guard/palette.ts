@@ -1,17 +1,28 @@
 /**
  * `series-palette` — the series file's palette is computed, never eyeballed.
  *
- * Pure: source text in, issues out. Reads every `defineSeries({ key: { light, dark } })` call as one
- * ordered categorical group and judges each scheme against its own surface (the derive engine's
- * default `surface.panel` — `check-theme` does not resolve a consumer's `derive` overrides, and a
- * chart sits on a panel). Colour math lives in `../tokens/oklab`; contrast is `hct.ts`'s WCAG ratio.
+ * Pure: source text and the two scheme surfaces in, issues out. Reads every
+ * `defineSeries({ key: { light, dark } })` call as one ordered categorical group and judges each
+ * scheme against its own surface. The surfaces are the CALLER's to supply: this module is on the
+ * guard's import graph, which never loads the `derive` engine (see `guard/index.ts`'s header) —
+ * `series-file.ts` computes them. Colour math lives in `../tokens/oklab`; contrast is `hct.ts`'s
+ * WCAG ratio.
  */
 import { contrastRatio } from '../tokens/hct'
-import { DEFAULT_DERIVE_CONFIG, deriveTokens } from '../tokens/derive'
-import { deltaEOk, hexToOklch, simulateCvd } from '../tokens/oklab'
+import { deltaEOk, deltaEOkCvd, hexToOklch } from '../tokens/oklab'
 
 export type SeriesScheme = 'light' | 'dark'
-export type SeriesCheck = 'lightness' | 'chroma' | 'cvd' | 'separation' | 'contrast' | 'order'
+/** The surface each scheme's series are judged against. */
+export type SeriesSurfaces = Record<SeriesScheme, string>
+
+export type SeriesCheck =
+  | 'format'
+  | 'lightness'
+  | 'chroma'
+  | 'cvd'
+  | 'separation'
+  | 'contrast'
+  | 'order'
 
 export type SeriesEntry = {
   readonly key: string
@@ -58,13 +69,11 @@ export const MAX_SERIES = 8
 /** The one escape: a series keyed `other` is deliberately neutral — exempt from the chroma floor only. */
 export const NEUTRAL_KEY = 'other'
 
-const defaultSurfaces = (): Record<SeriesScheme, string> => {
-  const { panel } = deriveTokens(DEFAULT_DERIVE_CONFIG).surface
-  return { light: panel.light, dark: panel.dark }
-}
+const HEX = /^#(?:[0-9a-f]{3}|[0-9a-f]{6})$/i
 
+/** The string literal after `light:` / `dark:`, in either order. */
 const ENTRY =
-  /([A-Za-z_$][\w$]*|'[^']+'|"[^"]+")\s*:\s*\{\s*(?:light\s*:\s*['"](#[0-9a-fA-F]{3,6})['"]\s*,\s*dark\s*:\s*['"](#[0-9a-fA-F]{3,6})['"]|dark\s*:\s*['"](#[0-9a-fA-F]{3,6})['"]\s*,\s*light\s*:\s*['"](#[0-9a-fA-F]{3,6})['"])/g
+  /([A-Za-z_$][\w$]*|'[^']+'|"[^"]+")\s*:\s*\{\s*(?:light\s*:\s*(['"])(.*?)\2\s*,\s*dark\s*:\s*(['"])(.*?)\4|dark\s*:\s*(['"])(.*?)\6\s*,\s*light\s*:\s*(['"])(.*?)\8)/g
 
 const lineOf = (text: string, at: number): number => text.slice(0, at).split('\n').length
 
@@ -85,12 +94,12 @@ export function parseSeriesGroups(source: string): SeriesGroup[] {
     }
     const body = source.slice(open, end)
     const entries = [...body.matchAll(ENTRY)].map((m): SeriesEntry => {
-      const light = m[2] ?? m[5] ?? ''
-      const dark = m[3] ?? m[4] ?? ''
+      const light = m[3] ?? m[9] ?? ''
+      const dark = m[5] ?? m[7] ?? ''
       return {
         key: (m[1] ?? '').replace(/^['"]|['"]$/g, ''),
-        light: light.toLowerCase(),
-        dark: dark.toLowerCase(),
+        light: light.trim(),
+        dark: dark.trim(),
         line: lineOf(source, open + (m.index ?? 0)),
       }
     })
@@ -104,14 +113,14 @@ const fix = (n: number, digits = 2): string => n.toFixed(digits)
 /** Judge every group against the six checks. */
 export function auditSeriesGroups(
   groups: readonly SeriesGroup[],
-  surfaces: Record<SeriesScheme, string> = defaultSurfaces(),
+  surfaces: SeriesSurfaces,
 ): SeriesIssue[] {
   const issues: SeriesIssue[] = []
   for (const group of groups) {
-    const { entries } = group
-    const lineOfKey = (key: string) => entries.find((e) => e.key === key)?.line ?? group.line
+    const { entries: allEntries } = group
+    const lineOfKey = (key: string) => allEntries.find((e) => e.key === key)?.line ?? group.line
 
-    const categorical = entries.filter((e) => e.key !== NEUTRAL_KEY)
+    const categorical = allEntries.filter((e) => e.key !== NEUTRAL_KEY)
     if (categorical.length > MAX_SERIES) {
       const extra = categorical.slice(MAX_SERIES).map((e) => e.key)
       issues.push({
@@ -128,6 +137,21 @@ export function auditSeriesGroups(
     for (const scheme of ['light', 'dark'] as const) {
       const [lo, hi] = LIGHTNESS_BAND[scheme]
       const value = (e: SeriesEntry) => e[scheme]
+      // A value that is not `#rgb` / `#rrggbb` (an alpha hex, a colour name, a typo) cannot be
+      // measured — it is reported, and left out of this scheme's other checks rather than guessed at.
+      const entries = allEntries.filter((e) => {
+        if (HEX.test(value(e))) return true
+        issues.push({
+          check: 'format',
+          scheme,
+          keys: [e.key],
+          measured: 0,
+          threshold: 0,
+          line: e.line,
+          message: `${e.key} (${scheme}) "${value(e)}" is not a #rgb or #rrggbb hex — it cannot be checked`,
+        })
+        return false
+      })
 
       for (const e of entries) {
         const { L, C } = hexToOklch(value(e))
@@ -171,8 +195,8 @@ export function auditSeriesGroups(
       const seen = new Map<string, string>()
       const duplicated = new Set<string>()
       for (const e of entries) {
-        const first = seen.get(value(e))
-        if (first === undefined) seen.set(value(e), e.key)
+        const first = seen.get(value(e).toLowerCase())
+        if (first === undefined) seen.set(value(e).toLowerCase(), e.key)
         else {
           duplicated.add(`${first}|${e.key}`)
           issues.push({
@@ -193,8 +217,7 @@ export function auditSeriesGroups(
         const b = entries[i] as SeriesEntry
         if (duplicated.has(`${a.key}|${b.key}`)) continue
         const sims = (['protan', 'deutan'] as const).map(
-          (kind) =>
-            [kind, deltaEOk(simulateCvd(value(a), kind), simulateCvd(value(b), kind))] as const,
+          (kind) => [kind, deltaEOkCvd(value(a), value(b), kind)] as const,
         )
         const [kind, worst] = sims.reduce((m, s) => (s[1] < m[1] ? s : m))
         if (worst < CVD_ADJACENT_MIN) {

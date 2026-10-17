@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'bun:test'
 
-import { deltaEOk, hexToOklab, hexToOklch, simulateCvd } from './oklab'
+import { deltaEOk, deltaEOkCvd, hexToOklab, hexToOklch, simulateCvd } from './oklab'
 
 const near = (actual: number, expected: number, eps = 1e-4) =>
   expect(Math.abs(actual - expected)).toBeLessThan(eps)
@@ -61,5 +61,12 @@ describe('simulateCvd', () => {
     const normal = deltaEOk('#cc3333', '#33aa33')
     const sim = deltaEOk(simulateCvd('#cc3333', 'deutan'), simulateCvd('#33aa33', 'deutan'))
     expect(sim).toBeLessThan(normal / 2)
+  })
+
+  it('deltaEOkCvd stays in linear RGB — it matches the hex path to within 8-bit rounding', () => {
+    for (const kind of ['protan', 'deutan'] as const) {
+      const viaHex = deltaEOk(simulateCvd('#cc3333', kind), simulateCvd('#33aa33', kind))
+      near(deltaEOkCvd('#cc3333', '#33aa33', kind), viaHex, 0.5)
+    }
   })
 })
