@@ -30,9 +30,9 @@ import {
   MONTH_DAYS,
   MONTH_LABEL,
   MONTH_NAME,
+  MTD_CHANGE_PCT,
   MTD_EUR,
   MTD_TOTALS,
-  PRIOR_MTD_EUR,
   PRIOR_WINDOW_LABEL,
   PROJECT_LABEL,
   PROJECTS_MTD,
@@ -40,10 +40,11 @@ import {
   YEAR,
   fmtEur,
   fmtShare,
+  spendBand,
   fmtSignedShare,
 } from './spend-data'
 import type { DayRow, DistributionBin, ModelKey, ProjectKey, ProjectRow } from './spend-data'
-import { chartStateFor, queryFor, retryCopy } from './shot-state'
+import { RETRY_ACTION, chartStateFor, queryFor, retryCopy } from './shot-state'
 import type { ScenarioProps } from './shot-state'
 
 const MODEL_COLOR: Record<ModelKey, string> = {
@@ -131,7 +132,7 @@ function SpendStats({ shotState }: ScenarioProps) {
           value={fmtEur(MTD_EUR)}
           info={`All projects and models, ${WINDOW_LABEL} ${YEAR}, in EUR.`}
           {...(isAtRest && {
-            delta: MTD_EUR / PRIOR_MTD_EUR - 1,
+            delta: MTD_CHANGE_PCT,
             deltaPeriod: `vs ${PRIOR_WINDOW_LABEL}`,
             deltaPolarity: 'up-bad' as const,
           })}
@@ -198,6 +199,7 @@ function SpendCharts({ shotState }: ScenarioProps) {
             empty: 'No spend in the last 90 days. Connect a project to the usage export.',
             error: retry('Daily spend'),
           })}
+          stateAction={RETRY_ACTION}
         >
           <Box data-shot-hover data-shot-tooltip>
             <Bars
@@ -219,6 +221,7 @@ function SpendCharts({ shotState }: ScenarioProps) {
             empty: `No project spent anything ${WINDOW_LABEL}. Connect one to the usage export.`,
             error: retry('Spend by project'),
           })}
+          stateAction={RETRY_ACTION}
         >
           <Box data-shot-hover data-shot-tooltip data-shot-at="0.23,0.12">
             <Donut
@@ -266,6 +269,7 @@ function SpendDrivers({ shotState }: ScenarioProps) {
             empty: 'No days to bin yet. The histogram needs at least one day of spend.',
             error: retry('The distribution'),
           })}
+          stateAction={RETRY_ACTION}
         >
           <Box data-shot-hover data-shot-tooltip>
             <Bars
@@ -273,6 +277,7 @@ function SpendDrivers({ shotState }: ScenarioProps) {
               ariaLabel="Days by total daily spend, €10 bands, last 90 days"
               x={(d) => d.label}
               bars={DISTRIBUTION_BARS}
+              tooltip={{ formatHeader: (_, d) => spendBand(d) }}
             />
           </Box>
         </ChartCard>

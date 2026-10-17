@@ -175,8 +175,14 @@ export const MEASURED_HOURS = HOURLY.filter((h) => h.latencyMs !== null).length
 /** Headroom above the contracted download so the ceiling line is not clipped by the plot edge. */
 export const CEILING_HEADROOM_MBIT = 10
 
-export const fmtMs = (value: number): string => `${Math.round(value)} ms`
-export const fmtMbit = (value: number): string => `${Math.round(value)} Mbit/s`
+/** A no-break space between a number and its unit, so a narrow card never splits them. */
+const NBSP = '\u00A0'
+export const fmtMs = (value: number): string => `${Math.round(value)}${NBSP}ms`
+export const fmtMbit = (value: number): string => `${Math.round(value)}${NBSP}Mbit/s`
+
+/** A latency bin as the band it covers: "30–40 ms". */
+export const latencyBand = (bin: LatencyBin): string =>
+  `${bin.from}–${bin.from + LATENCY_BIN_MS}${NBSP}ms`
 export const fmtLoss = (value: number): string => `${value.toFixed(2)}%`
 export const fmtUptime = (value: number): string => `${value.toFixed(2)}%`
 export const fmtDuration = (minutes: number): string => `${minutes} min`

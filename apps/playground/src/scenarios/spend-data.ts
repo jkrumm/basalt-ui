@@ -112,6 +112,10 @@ const PRIOR_MTD_ENTRIES = PRIOR_MTD_RAW.flatMap((d) => d.entries)
 export const MTD_EUR = eurOf(MTD_ENTRIES, () => true)
 export const PRIOR_MTD_EUR = eurOf(PRIOR_MTD_ENTRIES, () => true)
 
+/** The month-to-date change against the same days of the prior month, in percent: the spend-weighted
+ * combination of the per-project changes, so the total can never disagree with the drivers table. */
+export const MTD_CHANGE_PCT = (MTD_EUR / PRIOR_MTD_EUR - 1) * 100
+
 /** Naive end-of-month forecast: the month-to-date daily average held flat to the last day. */
 export const FORECAST_EUR = (MTD_EUR / DAYS_ELAPSED) * MONTH_DAYS
 
@@ -171,6 +175,10 @@ const EUR = new Intl.NumberFormat('en-IE', {
   currency: 'EUR',
   maximumFractionDigits: 0,
 })
+
+/** A spend bin as the band it covers: "€40–50". */
+export const spendBand = (bin: DistributionBin): string =>
+  `€${bin.from}–${bin.from + BIN_WIDTH_EUR}`
 
 export const fmtEur = (value: number): string => EUR.format(Math.round(value))
 export const fmtShare = (value: number): string => `${Math.round(value * 100)}%`
