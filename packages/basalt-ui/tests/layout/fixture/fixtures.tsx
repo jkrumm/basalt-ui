@@ -355,10 +355,58 @@ function CodeBlockFixture({ spec }: { spec: NonNullable<FixtureSpec['codeBlock']
   )
 }
 
+const spark = ({ width, height }: { width: number; height: number }): ReactElement => (
+  // A box of exactly the measured size: the slot geometry is under test, not a mark.
+  <svg aria-hidden width={width} height={height} />
+)
+
+/** The four footprints a metric row mixes: visual + footer, visual only, footer only, neither. */
+function FootprintFixture(): ReactElement {
+  const cards = [
+    { id: 'both', visual: true, footer: true },
+    { id: 'visual', visual: true, footer: false },
+    { id: 'footer', visual: false, footer: true },
+    { id: 'neither', visual: false, footer: false },
+  ]
+  const card = (c: (typeof cards)[number]): ReactElement => (
+    <StatCard
+      title="Latency"
+      qualifier="24 h"
+      value="42"
+      unit="ms"
+      delta={-3.1}
+      {...(c.footer && { subtitle: 'Source: probes' })}
+      {...(c.visual && { sparkline: spark })}
+    />
+  )
+  return (
+    <>
+      {/* theme-allow -- a non-stretching row: each card's NATURAL height is the payload */}
+      <div
+        data-testid="foot-natural"
+        style={{ display: 'flex', alignItems: 'flex-start', gap: 12 }}
+      >
+        {cards.map((c) => (
+          // theme-allow -- the wrapper width IS the fixture's payload
+          <div key={c.id} data-testid={`foot-${c.id}`} style={{ width: 240 }}>
+            {card(c)}
+          </div>
+        ))}
+      </div>
+      <div data-testid="foot-grid">
+        <StatGroup cols={3}>
+          {[cards[0], cards[3], cards[2]].map((c) => c !== undefined && card(c))}
+        </StatGroup>
+      </div>
+    </>
+  )
+}
+
 /** StatCards at exact container widths + a ChartCard stretched by a fixed-height grid row. */
 function CardsFixture({ spec }: { spec: CardsSpec }): ReactElement {
   return (
     <>
+      {spec.footprint === true && <FootprintFixture />}
       {spec.widths.map((w) => (
         // theme-allow -- the wrapper width IS the fixture's payload (a container-class probe)
         <div key={w} data-testid={`card-${w}`} style={{ width: w }}>

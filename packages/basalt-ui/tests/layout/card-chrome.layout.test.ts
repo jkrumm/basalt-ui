@@ -35,6 +35,7 @@ const SPEC: FixtureSpec = {
     gridProbes: [799, 800, 1199, 1200],
     shortHeader: { width: 600, bodyHeight: 140 },
     oscillationScan: { width: 600, bodyHeights: OSCILLATION_SCAN_HEIGHTS },
+    footprint: true,
   },
 }
 
@@ -66,17 +67,13 @@ layout('card chrome by container', () => {
     expect(scrollWidth).toBeLessThanOrEqual(clientWidth)
   })
 
-  test.each([
-    [200, false],
-    [320, false],
-    [900, true],
-  ])('in a %ipx card the visible subtitle shows: %s', async (width, shown) => {
+  // SPEC § 6.1: the subtitle is the FOOTER — one muted line under the visual, at every card width. It
+  // no longer folds into the info glyph below 480px.
+  test.each([200, 320, 900])('in a %ipx card the footer shows and nothing folds', async (width) => {
     const root = `[data-testid="card-${width}"]`
-    const subtitle = (await p.boxes(`${root} ${moduleClass('subtitle')}`))[0]
-    expect(subtitle !== undefined && subtitle.height > 0).toBe(shown)
-    // Below 480px the folded glyph carries the subtitle instead; from 480px it is not rendered.
-    const glyphs = await p.boxes(`${root} button[aria-label^="More information"]`)
-    expect(glyphs.some((g) => g.height > 0)).toBe(!shown)
+    const footer = (await p.boxes(`${root} ${moduleClass('footer')}`))[0]
+    expect(footer !== undefined && footer.height > 0).toBe(true)
+    expect(await p.boxes(`${root} button[aria-label^="More information"]`)).toHaveLength(0)
   })
 
   // The even-pixel grid (SPEC § 5, Wave 32): a card insets 12 vertical / 16 horizontal and rounds at
@@ -98,20 +95,49 @@ layout('card chrome by container', () => {
     expect(card.box.bottom - body.box.bottom).toBeLessThan(1)
   })
 
-  test('at 900px value + delta share the heading row and the actions sit right of them', async () => {
-    const root = '[data-testid="card-900"]'
-    const heading = await p.box('heading', `${root} h3`)
-    const value = await p.box('value', `${root} ${moduleClass('value')}`)
-    const actions = await p.box('actions', `${root} ${moduleClass('actions')}`)
-    // The numeral is taller than the heading's 28px row, so compare centres, not edges.
-    const centre = value.box.top + value.box.height / 2
-    expect(centre).toBeGreaterThanOrEqual(heading.box.top)
-    expect(centre).toBeLessThanOrEqual(heading.box.bottom)
-    expect(actions.box.left).toBeGreaterThanOrEqual(value.box.right)
-    // and below 480px the value is on its own row under the heading
-    const narrowValue = await p.box('nv', `[data-testid="card-320"] ${moduleClass('value')}`)
-    const narrowHeading = await p.box('nh', `[data-testid="card-320"] ${moduleClass('titleRow')}`)
-    expect(narrowValue.box.top).toBeGreaterThanOrEqual(narrowHeading.box.bottom)
+  // The caption row, then the value row, at every width: the actions pin to the card's right end of
+  // the caption row and the value row sits wholly under it.
+  test.each([200, 320, 900])(
+    'in a %ipx card the value row sits under the caption row',
+    async (width) => {
+      const root = `[data-testid="card-${width}"]`
+      const caption = await p.box('caption', `${root} ${moduleClass('captionRow')}`)
+      const value = await p.box('value', `${root} ${moduleClass('valueRow')}`)
+      const actions = await p.box('actions', `${root} ${moduleClass('actions')}`)
+      expect(value.box.top).toBeGreaterThanOrEqual(caption.box.bottom - 0.5)
+      expect(actions.box.top).toBeGreaterThanOrEqual(caption.box.top - 0.5)
+      expect(actions.box.bottom).toBeLessThanOrEqual(caption.box.bottom + 0.5)
+      const card = await p.box('card', `${root} > div`)
+      // 16px inset at the expanded size class, 12px below it: the actions end at the inset edge.
+      expect(card.box.right - actions.box.right).toBeLessThanOrEqual(16.5)
+    },
+  )
+
+  // SPEC § 6.1 footprint: the foot reserves a visual AND a footer line, so cards with and without
+  // either are the same height, and a grid row stretches the rest to it.
+  test('cards with a visual, a footer, both or neither (in the foot) hold the same height', async () => {
+    const heights: Record<string, number> = {}
+    for (const id of ['both', 'visual', 'footer']) {
+      heights[id] = (await p.box(id, `[data-testid="foot-${id}"] > div`)).box.height
+    }
+    expect(Math.round(heights['visual'] ?? 0)).toBe(Math.round(heights['both'] ?? -1))
+    expect(Math.round(heights['footer'] ?? 0)).toBe(Math.round(heights['both'] ?? -1))
+  })
+
+  test('a card with no foot stretches to its grid row siblings', async () => {
+    const cards = await p.boxes('[data-testid="foot-grid"] .mantine-Card-root')
+    expect(cards).toHaveLength(3)
+    const heights = new Set(cards.map((c) => Math.round(c.height)))
+    expect(heights.size).toBe(1)
+  })
+
+  test('the sparkline slot is 22px tall and bled to both side edges', async () => {
+    const root = '[data-testid="foot-both"]'
+    const slot = await p.box('slot', `${root} ${moduleClass('sparklineBleed')}`)
+    const card = await p.box('card', `${root} > div`)
+    expect(Math.round(slot.box.height)).toBe(22)
+    expect(Math.round(slot.box.left)).toBe(Math.round(card.box.left))
+    expect(Math.round(slot.box.right)).toBe(Math.round(card.box.right))
   })
 
   // Wave 8's header-economy law: a short-but-wide ChartCard (the `/charts` Primitives

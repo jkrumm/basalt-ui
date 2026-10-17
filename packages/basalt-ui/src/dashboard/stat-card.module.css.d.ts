@@ -4,6 +4,23 @@
  */
 declare const classes: {
   readonly body: string
+  readonly captionRow: string
+  readonly captionMain: string
+  readonly caption: string
+  readonly captionText: string
+  readonly icon: string
+  readonly qualifier: string
+  readonly actions: string
+  readonly valueRow: string
+  readonly figure: string
+  readonly value: string
+  readonly unit: string
+  readonly empty: string
+  readonly skeletonValue: string
+  readonly skeletonVisual: string
+  readonly skeletonFooter: string
+  readonly foot: string
+  readonly footer: string
   readonly header: string
   readonly metricsRow: string
   readonly breakdown: string

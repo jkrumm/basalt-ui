@@ -97,7 +97,7 @@ describe('omitting tone is not "good" — it is untinted, and says nothing', () 
   })
 })
 
-describe('the header composes WidgetHeader at the widget tier', () => {
+describe('the caption is an h3 carrying the title', () => {
   test('renders an h3 carrying the title', () => {
     const markup = renderToStaticMarkup(
       <MantineProvider>
@@ -109,8 +109,8 @@ describe('the header composes WidgetHeader at the widget tier', () => {
   })
 })
 
-describe('info and subtitle reach the composed WidgetHeader', () => {
-  function renderHeader(props: { info?: string; subtitle?: string }) {
+describe('info, qualifier and subtitle', () => {
+  function renderHeader(props: { info?: string; subtitle?: string; qualifier?: string }) {
     return renderToStaticMarkup(
       <MantineProvider>
         <StatCard title="Training load" value="412" {...props} />
@@ -118,8 +118,25 @@ describe('info and subtitle reach the composed WidgetHeader', () => {
     )
   }
 
-  test('the subtitle renders as its own line under the hero row', () => {
-    expect(renderHeader({ subtitle: 'TSS · 7-day rolling' })).toContain('TSS · 7-day rolling')
+  test('the subtitle is the FOOTER: after the value row, and not in the caption row', () => {
+    const markup = renderHeader({ subtitle: 'Source: Garmin' })
+    expect(markup).toContain('Source: Garmin')
+    expect(markup.indexOf('Source: Garmin')).toBeGreaterThan(markup.indexOf('412'))
+    const caption = /<h3[^>]*>(.*?)<\/h3>/.exec(markup)?.[1] ?? ''
+    expect(caption).not.toContain('Source: Garmin')
+  })
+
+  test('the qualifier sits on the caption row, after the caption and before the value', () => {
+    const markup = renderHeader({ qualifier: '7-day rolling' })
+    const q = markup.indexOf('7-day rolling')
+    expect(q).toBeGreaterThan(markup.indexOf('Training load'))
+    expect(q).toBeLessThan(markup.indexOf('412'))
+    // outside the heading: it is not part of the card's accessible name
+    expect(/<h3[^>]*>(.*?)<\/h3>/.exec(markup)?.[1] ?? '').not.toContain('7-day rolling')
+  })
+
+  test('the subtitle no longer folds into an info glyph at any width', () => {
+    expect(renderHeader({ subtitle: 'Source: Garmin' })).not.toContain('More information')
   })
 
   test('the info text ships with the glyph, and never inside the heading', () => {
@@ -599,5 +616,77 @@ describe('common props (`common/props.ts`)', () => {
       </MantineProvider>,
     )
     expect(html).toContain('my-stat-card')
+  })
+})
+
+/**
+ * The metric-card anatomy, pinned against the stylesheet text (SPEC § 6.1, § 6.2, § 7): a CSS-module
+ * import is `undefined` under `bun test`, so the rules themselves are read from the file.
+ */
+describe('stat-card.module.css — caption, value row, foot', () => {
+  const css = readFileSync(resolve(import.meta.dirname, 'stat-card.module.css'), 'utf8')
+  const decls = css.replace(/\/\*[\s\S]*?\*\//g, '')
+  const rule = (selector: string): string => {
+    const start = decls.indexOf(`${selector} {`)
+    expect(start).toBeGreaterThan(-1)
+    return decls.slice(start, decls.indexOf('}', start))
+  }
+
+  test('the caption is mono uppercase at the micro role, in the faint ink', () => {
+    const r = rule('.caption')
+    expect(r).toContain('font-family: var(--basalt-font-mono)')
+    expect(r).toContain('font-size: var(--vx-text-micro)')
+    expect(r).toContain('text-transform: uppercase')
+    expect(r).toContain('color: var(--vx-faint)')
+  })
+
+  test('the qualifier is micro and muted, pushed to the right of the caption row', () => {
+    const r = rule('.qualifier')
+    expect(r).toContain('font-size: var(--vx-text-micro)')
+    expect(r).toContain('color: var(--vx-muted)')
+    expect(r).toContain('margin-inline-start: auto')
+  })
+
+  test('the caption main wraps, so the qualifier drops under the caption instead of truncating', () => {
+    expect(rule('.captionMain')).toContain('flex-wrap: wrap')
+  })
+
+  test('exactly three sizes: hero (kpi), sm (unit, footer), micro (caption, qualifier)', () => {
+    const sizes = new Set(
+      [...decls.matchAll(/font-size:\s*([^;]+);/g)].map((m) => m[1]?.replace(/\s+/g, ' ').trim()),
+    )
+    // the cqi clamp shrinks the hero by container; its ends are the `lg` and `kpi` steps
+    expect([...sizes].toSorted()).toEqual(
+      [
+        'clamp(var(--vx-text-lg), 8cqi, var(--vx-text-kpi))',
+        'var(--vx-text-kpi)',
+        'var(--vx-text-micro)',
+        'var(--vx-text-sm)',
+      ].toSorted(),
+    )
+  })
+
+  test('the sparkline slot is 22px in both placements', () => {
+    expect(rule('.body')).toContain('--basalt-stat-visual-h: 1.375rem')
+    expect(rule('.sparklineBleed')).toContain('height: var(--basalt-stat-visual-h)')
+    expect(rule('.sparklineRight')).toContain('var(--basalt-stat-sparkline-h, 1.375rem)')
+  })
+
+  test('the bled sparkline no longer bleeds through the card bottom', () => {
+    expect(rule('.sparklineBleed')).not.toContain('margin-bottom')
+  })
+
+  test('the foot reserves visual + gap + footer and pins to the bottom', () => {
+    const r = rule('.foot')
+    expect(r).toContain('margin-top: auto')
+    expect(r).toMatch(/min-height:\s*calc\(\s*var\(--basalt-stat-visual-h\)/)
+    expect(r).toContain('var(--basalt-stat-footer-h)')
+  })
+
+  test('the footer is one muted sm line', () => {
+    const r = rule('.footer')
+    expect(r).toContain('font-size: var(--vx-text-sm)')
+    expect(r).toContain('color: var(--vx-muted)')
+    expect(r).toContain('white-space: nowrap')
   })
 })
