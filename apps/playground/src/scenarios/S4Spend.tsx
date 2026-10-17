@@ -121,6 +121,7 @@ function SpendStats({ shotState }: ScenarioProps) {
   }
   const value = (v: number): string => (isAtRest ? fmtEur(v) : '—')
   const left = BUDGET_EUR - MTD_EUR
+  const overBudget = isAtRest && FORECAST_EUR > BUDGET_EUR
 
   return (
     <StatGroup cols={3}>
@@ -137,7 +138,7 @@ function SpendStats({ shotState }: ScenarioProps) {
           })}
           {...shared}
           sparkline={(size) => (
-            <Box data-shot-hover data-shot-tooltip>
+            <Box data-shot-hover>
               <Sparkline
                 ariaLabel={`Daily spend, ${WINDOW_LABEL}, EUR`}
                 data={MTD_TOTALS}
@@ -152,13 +153,13 @@ function SpendStats({ shotState }: ScenarioProps) {
           title="Forecast"
           // The verdict in words beside the rail: the rail alone carries it in colour only.
           qualifier={
-            isAtRest && FORECAST_EUR > BUDGET_EUR
-              ? `over budget by ${fmtEur(FORECAST_EUR - BUDGET_EUR)}`
+            overBudget
+              ? `end of ${MONTH_NAME} · over budget by ${fmtEur(FORECAST_EUR - BUDGET_EUR)}`
               : `end of ${MONTH_NAME}`
           }
           value={value(FORECAST_EUR)}
           info={`Average per day so far (${fmtEur(MTD_EUR / DAYS_ELAPSED)}) held flat for all ${MONTH_DAYS} days. Ignores weekends and bursts.`}
-          {...(isAtRest && FORECAST_EUR > BUDGET_EUR && { tone: 'bad' as const })}
+          {...(overBudget && { tone: 'bad' as const })}
           {...shared}
         />
       </Box>

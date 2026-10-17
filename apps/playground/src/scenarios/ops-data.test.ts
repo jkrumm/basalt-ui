@@ -5,6 +5,7 @@ import { describe, expect, it } from 'bun:test'
 import {
   DEGRADED_LOSS_PCT,
   DOWN_24H_MBIT,
+  DOWN_24H_SERIES,
   DOWN_PEAK_MBIT,
   DOWNTIME_MINUTES,
   HOURLY,
@@ -13,6 +14,7 @@ import {
   LATENCY_MEDIAN_7D_MS,
   MEASURED_HOURS,
   LOSS_24H_PCT,
+  LOSS_24H_SERIES,
   LOSS_7D_PCT,
   MINUTE_LATENCY,
   NOW_DATE,
@@ -105,5 +107,25 @@ describe('ops-data', () => {
     expect(LOSS_24H_PCT).toBeCloseTo(mean(HOURLY.slice(-24)), 9)
     expect(LOSS_7D_PCT).toBeCloseTo(mean(HOURLY), 9)
     expect(LOSS_24H_PCT).toBeGreaterThan(0)
+  })
+})
+
+describe('the metric-card sparklines state the same numbers as their figures', () => {
+  it('has one point per hour, a missing reading kept as a gap (NaN)', () => {
+    expect(LOSS_24H_SERIES).toHaveLength(24)
+    expect(DOWN_24H_SERIES).toHaveLength(24)
+    expect(DOWN_24H_SERIES.filter(Number.isNaN).length).toBe(
+      HOURLY.slice(-24).filter((h) => h.downMbit === null).length,
+    )
+  })
+
+  it('packet loss: the series mean is the figure', () => {
+    const mean24 = LOSS_24H_SERIES.reduce((a, v) => a + v, 0) / LOSS_24H_SERIES.length
+    expect(mean24).toBeCloseTo(LOSS_24H_PCT, 10)
+  })
+
+  it('download: the mean of the measured hours is the figure', () => {
+    const measured = DOWN_24H_SERIES.filter((v) => !Number.isNaN(v))
+    expect(measured.reduce((a, v) => a + v, 0) / measured.length).toBeCloseTo(DOWN_24H_MBIT, 10)
   })
 })
