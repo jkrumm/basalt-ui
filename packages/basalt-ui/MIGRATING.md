@@ -1048,13 +1048,13 @@ added, removed or renamed; three theme defaults change, each with a one-prop way
 
 ### Badge, subtle Button, Tabs
 
-| What                            | Old                                    | New                                                    | Opt out                              |
-| ------------------------------- | -------------------------------------- | ------------------------------------------------------ | ------------------------------------ |
-| `Badge` default variant         | `filled` (accent fill, on-colour text) | `light` (13% status tint, ink-pulled text)             | `variant="filled"`                   |
-| `Badge` radius                  | `ctrl` (6 at level 0)                  | `tight` (5 at level 0; follows the `radius` knob)      | `radius="md"`                        |
-| `Badge` leading glyph           | Mantine's section, 4px gap, unsized    | `leftSection` svg is 12px, 4px gap, centred at 20 high | none needed                          |
-| `Button variant="subtle"` label | accent ink                             | neutral ink (`--vx-ink`)                               | `color="blue"` (any explicit colour) |
-| `Tabs` active underline         | accent (`--tabs-color`)                | ink (`--vx-ink`)                                       | `color="blue"` on `Tabs`             |
+| What                            | Old                                    | New                                                    | Opt out                                |
+| ------------------------------- | -------------------------------------- | ------------------------------------------------------ | -------------------------------------- |
+| `Badge` default variant         | `filled` (accent fill, on-colour text) | `light` (13% status tint, ink-pulled text)             | `variant="filled"`                     |
+| `Badge` radius                  | `ctrl` (6 at level 0)                  | `tight` (5 at level 0; follows the `radius` knob)      | `radius="md"`                          |
+| `Badge` leading glyph           | Mantine's section, 4px gap, unsized    | `leftSection` svg is 12px, 4px gap, centred at 20 high | `classNames={{ section: … }}` override |
+| `Button variant="subtle"` label | accent ink                             | neutral ink (`--vx-ink`)                               | `color="blue"` (any explicit colour)   |
+| `Tabs` active underline         | accent (`--tabs-color`)                | ink (`--vx-ink`)                                       | `color="blue"` on `Tabs`               |
 
 - `Badge` height stays 20 (Mantine `md`). `filled` remains right for a count on an accent surface.
 - The subtle opt-out is any explicit `color` prop, the primary colour included. An explicit colour
