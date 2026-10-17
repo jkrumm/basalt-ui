@@ -5,3 +5,5 @@ export { StatCard, type StatCardBreakdownRow, type StatCardSparklineSize } from 
 export { StatGroup } from './stat-group'
 export { EmptyState } from './empty-state'
 export { SettingsSection, SettingsRow, DangerZone } from './settings-section'
+export { Meter, type MeterProps } from './meter'
+export { BarList, type BarListProps } from './bar-list'
