@@ -360,7 +360,8 @@ const PROVIDER_ONLY_LABEL = 'provider-only first paint (gzip B, dist)'
 // 19607 → 19599 (2.18, review round 2, CI Linux measurement): −8 B, the solver moved to its own module.
 // 19599 → 19732 (2.18, light/outline Button+ActionIcon ink vars, CI Linux measurement): +133 B.
 // 19732 → 19782 (W35, the theme owns the card inset, CI Linux measurement): +50 B.
-const PROVIDER_ONLY_CEILING = 19782
+// 19782 → 19921 (W35, on-scale Button padding and the neutral error state, CI Linux measurement): +139 B.
+const PROVIDER_ONLY_CEILING = 19921
 // Embedded `<BasaltProvider spotlight={false}>`, no defines, peers bundled, every chunk counted: 54735 B landed, ~1% margin.
 // 55300 → 55391 (W32): +91 B for the Wave 32 scales — the dense control tier rule in the palette CSS, the row line-height and `lineHeights` ratios, the expanded gutter, and the card/radius/type retunes.
 // 55391 → 55404 (W32 CI): the gate is CI's Linux build, which gzips 13 B larger than the macOS build the lead measured.
@@ -374,7 +375,8 @@ const PROVIDER_ONLY_CEILING = 19782
 // 55878 → 55902 (2.18, review round 2, CI Linux measurement): +24 B, the level clamp and the solver extraction.
 // 55902 → 56033 (2.18, light/outline Button+ActionIcon ink vars, CI Linux measurement): +131 B.
 // 56033 → 56097 (W35, the theme owns the card inset, CI Linux measurement): +64 B.
-const EMBEDDED_CEILING = 56097
+// 56097 → 56238 (W35, on-scale Button padding and the neutral error state, CI Linux measurement): +141 B.
+const EMBEDDED_CEILING = 56238
 // `createBasaltTheme()` alone, peers bundled, every chunk counted: 14420 locally. The theme reaching
 // no component it configures is what keeps this near Mantine's core; ~1% over landed.
 // 14570 → 14571 (W32): +1 B, the `lineHeights` ratios.
@@ -389,7 +391,8 @@ const EMBEDDED_CEILING = 56097
 // 15047 → 15057 (2.18, review round 2, CI Linux measurement): +10 B, the same move.
 // 15057 → 15183 (2.18, light/outline Button+ActionIcon ink vars, CI Linux measurement): +126 B.
 // 15183 → 15235 (W35, the theme owns the card inset, CI Linux measurement): +52 B.
-const THEME_ONLY_CEILING = 15235
+// 15235 → 15374 (W35, on-scale Button padding and the neutral error state, CI Linux measurement): +139 B.
+const THEME_ONLY_CEILING = 15374
 const THEME_ONLY_LABEL = 'createBasaltTheme only, peers bundled, all chunks (gzip B, dist)'
 const EMBEDDED_LABEL = 'embedded provider, no defines, peers bundled, all chunks (gzip B, dist)'
 const FEATURE_CHUNKS_LABEL =
