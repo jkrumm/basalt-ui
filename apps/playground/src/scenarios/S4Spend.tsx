@@ -5,7 +5,7 @@
  *   Decision: Cut a project or raise the budget.
  *
  * Built with today's basalt exports and nothing else: this is the honest baseline the design track
- * improves, so a gap here (no Meter, no BarList, a spinner instead of a StatCard skeleton) is left
+ * improves, so a gap here (no Meter, no BarList) is left
  * visible and marked `W34:` rather than patched locally. Actions ("Raise budget") are inert in
  * fixtures.
  *
@@ -113,11 +113,10 @@ const columns = (() => {
 function SpendStats({ shotState }: ScenarioProps) {
   const isAtRest = shotState === undefined
   const query = queryFor(shotState, USAGE_ERROR)
-  // `StatCard` has no empty branch: `query` drives the sparkline and breakdown only, so the reason
-  // and the next step ride the subtitle. Error needs none (the `QueryState` alert already says it).
-  // Computed once for all three cards.
+  // The empty branch says why and what to do in one muted line; error needs none (the `QueryState`
+  // alert already says it). Computed once for all three cards.
   const shared = {
-    ...(shotState === 'empty' && { subtitle: USAGE_EMPTY }),
+    emptyText: USAGE_EMPTY,
     ...(query !== undefined && { query }),
   }
   const value = (v: number): string => (isAtRest ? fmtEur(v) : '—')
@@ -127,7 +126,8 @@ function SpendStats({ shotState }: ScenarioProps) {
     <StatGroup cols={3}>
       <Box data-shot="month-to-date" h="100%">
         <StatCard
-          title="Spend, month to date"
+          title="Spend"
+          qualifier="month to date"
           value={value(MTD_EUR)}
           info={`All projects and models, ${WINDOW_LABEL} ${YEAR}, in EUR.`}
           {...(isAtRest && {
@@ -149,7 +149,13 @@ function SpendStats({ shotState }: ScenarioProps) {
       </Box>
       <Box data-shot="forecast" h="100%">
         <StatCard
-          title={`Forecast, end of ${MONTH_NAME}`}
+          title="Forecast"
+          // The verdict in words beside the rail: the rail alone carries it in colour only.
+          qualifier={
+            isAtRest && FORECAST_EUR > BUDGET_EUR
+              ? `over budget by ${fmtEur(FORECAST_EUR - BUDGET_EUR)}`
+              : `end of ${MONTH_NAME}`
+          }
           value={value(FORECAST_EUR)}
           info={`Average per day so far (${fmtEur(MTD_EUR / DAYS_ELAPSED)}) held flat for all ${MONTH_DAYS} days. Ignores weekends and bursts.`}
           {...(isAtRest && FORECAST_EUR > BUDGET_EUR && { tone: 'bad' as const })}
@@ -158,7 +164,8 @@ function SpendStats({ shotState }: ScenarioProps) {
       </Box>
       <Box data-shot="budget" h="100%">
         <StatCard
-          title={`Budget, ${MONTH_LABEL}`}
+          title="Budget"
+          qualifier={MONTH_LABEL}
           value={value(BUDGET_EUR)}
           info={`Monthly cap in EUR. ${fmtEur(PACE_EUR_PER_DAY)} a day keeps spend on pace.`}
           // W34: meter — the spent share against the cap belongs in a Meter; two rows is the nearest.

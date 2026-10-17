@@ -24,6 +24,7 @@ import {
   CONTRACT_DOWN_MBIT,
   DEGRADED_LOSS_PCT,
   DOWN_24H_MBIT,
+  DOWN_24H_SERIES,
   DOWN_PEAK_MBIT,
   HOURLY,
   LAST_OUTAGE,
@@ -32,6 +33,7 @@ import {
   LATENCY_MEDIAN_7D_MS,
   LATENCY_NOW_MS,
   LOSS_24H_PCT,
+  LOSS_24H_SERIES,
   LOSS_7D_PCT,
   MEASURED_HOURS,
   MINUTE_LATENCY,
@@ -132,10 +134,9 @@ const columns = (() => {
 function OpsStats({ shotState }: ScenarioProps) {
   const isAtRest = shotState === undefined
   const query = queryFor(shotState, PROBE_ERROR)
-  // `StatCard` has no empty branch: `query` drives the sparkline and breakdown only, so the reason
-  // and the next step ride the subtitle. Computed once for all three cards.
+  // The empty branch says why and what to do in one muted line. Computed once for all three cards.
   const shared = {
-    ...(shotState === 'empty' && { subtitle: PROBE_EMPTY }),
+    emptyText: PROBE_EMPTY,
     ...(query !== undefined && { query }),
   }
   const value = (text: string): string => (isAtRest ? text : '—')
@@ -144,7 +145,8 @@ function OpsStats({ shotState }: ScenarioProps) {
     <StatGroup cols={3}>
       <Box data-shot="latency-now" h="100%">
         <StatCard
-          title="Latency, last minute"
+          title="Latency"
+          qualifier="last minute"
           value={value(fmtMs(LATENCY_NOW_MS))}
           info="Round-trip time in the last minute. The sparkline shows the last 60 minutes; the change compares with the 7-day median hour."
           {...(isAtRest && {
@@ -166,7 +168,8 @@ function OpsStats({ shotState }: ScenarioProps) {
       </Box>
       <Box data-shot="packet-loss" h="100%">
         <StatCard
-          title="Packet loss, last 24 hours"
+          title="Packet loss"
+          qualifier="24 hours"
           value={value(fmtLoss(LOSS_24H_PCT))}
           info="Share of probe packets with no reply, averaged over the hourly buckets."
           {...(isAtRest && {
@@ -176,11 +179,21 @@ function OpsStats({ shotState }: ScenarioProps) {
             ],
           })}
           {...shared}
+          sparkline={(size) => (
+            <Box data-shot-hover data-shot-tooltip>
+              <Sparkline
+                ariaLabel="Packet loss per hour, last 24 hours, percent"
+                data={LOSS_24H_SERIES}
+                {...size}
+              />
+            </Box>
+          )}
         />
       </Box>
       <Box data-shot="download" h="100%">
         <StatCard
-          title="Download, last 24 hours"
+          title="Download"
+          qualifier={`24 hours · contract ${fmtMbit(CONTRACT_DOWN_MBIT)}`}
           value={value(fmtMbit(DOWN_24H_MBIT))}
           info="Mean measured throughput over the hourly buckets, against the speed in the contract."
           // Wave 34: Meter — the measured share of the ceiling belongs in a Meter; rows are the nearest.
@@ -191,6 +204,15 @@ function OpsStats({ shotState }: ScenarioProps) {
             ],
           })}
           {...shared}
+          sparkline={(size) => (
+            <Box data-shot-hover data-shot-tooltip>
+              <Sparkline
+                ariaLabel="Download per hour, last 24 hours, Mbit/s"
+                data={DOWN_24H_SERIES}
+                {...size}
+              />
+            </Box>
+          )}
         />
       </Box>
     </StatGroup>
