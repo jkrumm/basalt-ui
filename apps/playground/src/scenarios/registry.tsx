@@ -16,16 +16,21 @@ import { OpsScenario } from './S1Ops'
 import { SpendScenario } from './S4Spend'
 import type { ScenarioProps } from './shot-state'
 
-const SCENARIOS = new Map<string, (props: ScenarioProps) => ReactElement>([
-  ['s1-ops', (p) => <OpsScenario {...p} />],
-  ['s4-spend', (p) => <SpendScenario {...p} />],
-  ['probe-3', () => <CalibrateGood />],
-  ['probe-5', () => <CalibrateDeltaFill />],
-  ['probe-6', () => <CalibrateEmptyHalf />],
-  ['probe-1', () => <CalibrateRepeatedAxis />],
-  ['probe-4', () => <CalibrateAccentTab />],
-  ['probe-2', () => <CalibrateBannedSubtitle />],
-])
+const RENDERERS = {
+  's1-ops': (p) => <OpsScenario {...p} />,
+  's4-spend': (p) => <SpendScenario {...p} />,
+  'probe-3': () => <CalibrateGood />,
+  'probe-5': () => <CalibrateDeltaFill />,
+  'probe-6': () => <CalibrateEmptyHalf />,
+  'probe-1': () => <CalibrateRepeatedAxis />,
+  'probe-4': () => <CalibrateAccentTab />,
+  'probe-2': () => <CalibrateBannedSubtitle />,
+} satisfies Record<string, (props: ScenarioProps) => ReactElement>
+
+/** Every registered id; `scenario-info.ts` types its human-facing subset against this. */
+export type ScenarioKey = keyof typeof RENDERERS
+
+const SCENARIOS = new Map<string, (props: ScenarioProps) => ReactElement>(Object.entries(RENDERERS))
 
 export const SCENARIO_NAMES: readonly string[] = [...SCENARIOS.keys()]
 

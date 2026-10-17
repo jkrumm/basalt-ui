@@ -3,6 +3,7 @@
  */
 import { describe, expect, it } from 'bun:test'
 import { SCENARIO_NAMES, findScenario } from './registry'
+import { SCENARIO_INFO } from './scenario-info'
 import { isShotState, validateShotSearch } from './shot-state'
 
 describe('validateShotSearch', () => {
@@ -18,6 +19,14 @@ describe('validateShotSearch', () => {
 
   it('isShotState rejects inherited Object members', () => {
     expect(isShotState('constructor')).toBe(false)
+  })
+})
+
+describe('SCENARIO_INFO', () => {
+  it('describes every registered scenario except the calibration probes, and nothing else', () => {
+    const human = SCENARIO_NAMES.filter((n) => !n.startsWith('probe-'))
+    expect(SCENARIO_INFO.map((s): string => s.id).toSorted()).toEqual(human.toSorted())
+    expect(SCENARIO_INFO.every((s) => s.title !== '' && s.blurb !== '')).toBe(true)
   })
 })
 

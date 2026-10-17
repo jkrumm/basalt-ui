@@ -19,6 +19,7 @@ import { Text } from '@mantine/core'
 import { linkOptions } from '@tanstack/react-router'
 import type { SidebarBlock } from 'basalt-ui'
 import { defineNav, navGroup } from 'basalt-ui'
+import { SCENARIO_INFO } from '../scenarios/scenario-info'
 import { cbbiFilters } from './cbbi/cbbi-store'
 import { chartViews } from './charts-store'
 import { dashboardFilters } from './dashboard-range-store'
@@ -69,6 +70,17 @@ export const NAV = defineNav({
         link: linkOptions({ to: '/cbbi', search: cbbiFilters.linkSearch }),
       },
     ]),
+
+    // One entry per human-facing scenario in the registry (calibration probes stay out).
+    navGroup(
+      { id: 'scenarios', label: 'Scenarios', icon: <IconDashboard />, collapsible: true },
+      SCENARIO_INFO.map(({ id, title }) => ({
+        id: `scenario-${id}`,
+        label: title,
+        icon: <IconDashboard />,
+        link: linkOptions({ to: '/scenarios/$name', params: { name: id } }),
+      })),
+    ),
 
     navGroup(
       { id: 'charts', label: 'Charts & components', icon: <IconChart />, collapsible: true },
