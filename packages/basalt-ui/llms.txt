@@ -218,8 +218,12 @@ Signature: StatGroup(props: StatGroupProps): JSX.Element
   cells: readonly StatStripCell[]  [with variant="strip"]
   footer?: readonly { key: string; content: ReactNode; }[]  [with variant="strip"]
 Signature: StatusDot(props: StatusDotProps): JSX.Element
+  className?: string
+  style?: CSSProperties
   color: string
 Signature: StatusVerdict(props: StatusVerdictProps): JSX.Element
+  className?: string
+  style?: CSSProperties
   color: string
   word: string
   phrase?: string

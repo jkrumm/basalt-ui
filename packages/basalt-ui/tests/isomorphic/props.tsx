@@ -338,8 +338,6 @@ export const NO_CLASSNAME: Record<string, 'provider' | 'svg' | 'portal' | 'gap'>
   // gap — renders a real box and drops the class.
   DateRangePicker: 'gap',
   DeltaBadge: 'gap',
-  StatusDot: 'gap',
-  StatusVerdict: 'gap',
 }
 
 /**
