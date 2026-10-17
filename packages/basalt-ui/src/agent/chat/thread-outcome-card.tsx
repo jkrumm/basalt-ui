@@ -149,7 +149,7 @@ export function ThreadOutcomeCard({
   const isPreviewing =
     thread.outcome === null && (thread.status === 'pending' || thread.status === 'streaming')
 
-  // Card idiom (docs/DESIGN-SPEC.md §5): panel + shadow-card, radius 7 (VX.radiusCard), xs/sm
+  // Card idiom (docs/DESIGN-SPEC.md §5): panel + shadow-card, radius 10 (VX.radiusCard), card
   // inset — each outcome row reads as its own card lifted off the feed pane, not a flat
   // highlighted list row.
   const background = selected
@@ -166,7 +166,7 @@ export function ThreadOutcomeCard({
       className={cx(className)}
       style={{
         display: 'block',
-        padding: 'var(--mantine-spacing-xs) var(--mantine-spacing-sm)',
+        padding: 'var(--vx-space-card-inset-y) var(--vx-space-card-inset-x)',
         borderRadius: VX.radiusCard,
         boxShadow: VX.shadowCard,
         backgroundColor: background,

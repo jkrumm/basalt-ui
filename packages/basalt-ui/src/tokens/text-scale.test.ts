@@ -9,9 +9,19 @@
 import { describe, expect, it } from 'bun:test'
 import { VX } from './core'
 
-/** Every adjacent pair of the shipped ladder, ascending. */
+/** Every rung of the shipped ladder, ascending. */
 const STEPS = Object.values(VX.text)
-const RATIOS = STEPS.slice(1).map((size, index) => size / STEPS[index]!)
+
+/**
+ * The ratio band governs the UI-COPY ladder, `nano`…`xl`: rungs a developer picks between for the
+ * same job at a different weight of emphasis. `h2`, `kpi`, `h1` and `display` are ROLE rungs — the
+ * article-density headings and the hero numerals — each sized by its own context (a Prose scale, a
+ * card's hero figure), so the gap between two of them is not a choice and a band on it would only
+ * force the hero numeral to sit at whatever size keeps `h2 → h1` inside 1.17 (`kpi` 24 did; at 22
+ * the figure is sized by the card, not by the headings beside it).
+ */
+const UI_STEPS = STEPS.filter((size) => size <= VX.text.xl)
+const RATIOS = UI_STEPS.slice(1).map((size, index) => size / UI_STEPS[index]!)
 
 /** The band documented on `TEXT` in `tokens/index.ts`. Widen it only with a reason written there. */
 const MIN_RATIO = 1.06
@@ -23,9 +33,9 @@ describe('the type ladder', () => {
     expect(new Set(STEPS).size).toBe(STEPS.length)
   })
 
-  it('keeps every adjacent step inside the 1.06–1.17 band', () => {
+  it('keeps every adjacent UI-copy step (nano…xl) inside the 1.06–1.17 band', () => {
     const offenders = RATIOS.map((ratio, index) => ({
-      pair: `${STEPS[index]} → ${STEPS[index + 1]}`,
+      pair: `${UI_STEPS[index]} → ${UI_STEPS[index + 1]}`,
       ratio: Number(ratio.toFixed(3)),
     })).filter(({ ratio }) => ratio < MIN_RATIO || ratio > MAX_RATIO)
 

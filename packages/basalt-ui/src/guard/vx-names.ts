@@ -111,6 +111,7 @@ export const BASALT_VX_NAMES: readonly string[] = [
   '--vx-space-control-gap',
   '--vx-space-control-height',
   '--vx-space-control-height-ctl',
+  '--vx-space-control-height-dense',
   '--vx-space-control-height-tag',
   '--vx-space-control-height-widget',
   '--vx-space-guide-body-gap-bottom',

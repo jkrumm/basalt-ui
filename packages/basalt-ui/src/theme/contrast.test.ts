@@ -24,7 +24,7 @@
 import { DEFAULT_THEME, getPrimaryShade, mergeMantineTheme } from '@mantine/core'
 import type { MantineTheme } from '@mantine/core'
 import { describe, expect, test } from 'bun:test'
-import { ACCENT, FILL, STATUS, SURFACE } from '../tokens/palette'
+import { ACCENT, FILL, NEUTRAL, STATUS, SURFACE } from '../tokens/palette'
 import { baseTheme, cssVariablesResolver } from './index'
 
 const theme: MantineTheme = mergeMantineTheme(DEFAULT_THEME, baseTheme)
@@ -64,6 +64,19 @@ function onColorHex(color: string, scheme: 'light' | 'dark'): string {
   if (color === theme.primaryColor) return ACCENT.onAccent[scheme]
   return declaration === 'var(--mantine-color-black)' ? theme.black : theme.white
 }
+
+describe('small chart ink (axis ticks, legend notes) clears AA on every text surface', () => {
+  // 10–11px labels sit on the chart panel but the same token reaches `bg`/`subtle` cards too.
+  for (const scheme of SCHEMES) {
+    test(scheme, () => {
+      const ink = NEUTRAL.axis[scheme]
+      expect(ink).toMatch(/^#/)
+      for (const surface of ['bg', 'panel', 'subtle', 'field'] as const) {
+        expect(contrastRatio(ink, SURFACE[surface][scheme])).toBeGreaterThanOrEqual(AA)
+      }
+    })
+  }
+})
 
 describe('--vx-on-* is emitted for every theme color, in both schemes', () => {
   for (const scheme of SCHEMES) {

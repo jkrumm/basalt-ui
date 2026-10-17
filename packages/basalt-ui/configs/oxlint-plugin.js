@@ -588,8 +588,10 @@ const rawSizeLiteral = {
 
 const CARD_TAGS = new Set(['Card', 'Paper'])
 
+// The idiom is sm/md (12/16); the older xs/sm pair (now 8/12) stays accepted so an upgrade does not
+// turn every consumer's card lint red. A new card takes sm/md.
 const CARD_INSET_MESSAGE =
-  'Card/Paper is off the card idiom — use the spacing xs/sm inset (py="xs" px="sm") and the ' +
+  'Card/Paper is off the card idiom — use the spacing sm/md inset (py="sm" px="md") and the ' +
   "theme's card radius, not an explicit p/padding or radius. (basalt/card-inset)"
 
 function isStringLiteral(node) {
@@ -622,10 +624,21 @@ const cardInset = {
 
           const isOffPadding =
             (attrName === 'p' || attrName === 'padding') &&
-            ((isStringLiteral(value) && value.value !== 'xs' && value.value !== 'sm') ||
+            ((isStringLiteral(value) &&
+              value.value !== 'xs' &&
+              value.value !== 'sm' &&
+              value.value !== 'md') ||
               isNumericLiteral(value))
-          const isOffPy = attrName === 'py' && isStringLiteral(value) && value.value !== 'xs'
-          const isOffPx = attrName === 'px' && isStringLiteral(value) && value.value !== 'sm'
+          const isOffPy =
+            attrName === 'py' &&
+            isStringLiteral(value) &&
+            value.value !== 'xs' &&
+            value.value !== 'sm'
+          const isOffPx =
+            attrName === 'px' &&
+            isStringLiteral(value) &&
+            value.value !== 'sm' &&
+            value.value !== 'md'
           const isRadius = attrName === 'radius'
 
           if (!isOffPadding && !isOffPy && !isOffPx && !isRadius) continue

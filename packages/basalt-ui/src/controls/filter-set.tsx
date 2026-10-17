@@ -94,6 +94,7 @@ export function FilterSet({
         className={cx(classes.pillRow, classNames?.root, className)}
         ref={rowRef}
         data-filter-row
+        data-basalt-dense
         {...(style !== undefined && { style })}
       >
         <FilterSetScope surface="pill" registry={registry}>

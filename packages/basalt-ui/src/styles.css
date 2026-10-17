@@ -246,6 +246,20 @@
      is the PADDING box, the gap is measured between border boxes.
      `position: relative` is the ::after's containing block; an adopter that must be
      absolute/sticky sets its own `position` in an unlayered rule, which outranks this layer. */
+  /* The DENSE control tier (SPEC D6): a table toolbar / filter row re-points the `ctl` size vars at
+     `--vx-space-control-height-dense` (28) at fine pointers only. The Mantine vars are substituted
+     where they are declared (`:root`), so overriding the token alone would not reach them — each is
+     restated here. A coarse pointer keeps the `ctl` height and the 44px hit overlay above. */
+  @media (pointer: fine) {
+    [data-basalt-dense] {
+      --vx-space-control-height-ctl: var(--vx-space-control-height-dense);
+      --button-height-ctl: calc(var(--vx-space-control-height-dense) * var(--mantine-scale));
+      --input-height-ctl: calc(var(--vx-space-control-height-dense) * var(--mantine-scale));
+      --ai-size-ctl: calc(var(--vx-space-control-height-dense) * var(--mantine-scale));
+      --badge-height-ctl: calc(var(--vx-space-control-height-dense) * var(--mantine-scale));
+    }
+  }
+
   :is([data-basalt-hit], [data-basalt-hit-scope] :is(button, a)) {
     position: relative;
   }

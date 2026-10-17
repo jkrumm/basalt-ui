@@ -9,7 +9,7 @@
  *  - the header row folds by MEASURED width (`planBarFold`: icon-only, then into `More`) against
  *    `.lead`'s 96px floor — a pair that is only correct TOGETHER (`shell/app-header.module.css`
  *    states the arithmetic), and was measured on a real page but never pinned;
- *  - the page gutter became RESPONSIVE (`{ base: appShellInsetMobile, sm: appShellInset }` on both
+ *  - the page gutter became RESPONSIVE (`{ base: appShellInsetMobile, sm: appShellInset, md: appShellInsetExpanded }` on both
  *    `AppShell` and `AppShell.Header`), so the header, the band and Main now all have to land on
  *    ONE number and step at ONE width;
  *  - the sidebar footer stopped stacking flush on the scroll region.
@@ -364,6 +364,15 @@ layout('shell chrome — the header row, the gutter, the sidebar footer', () => 
   for (const [viewport, expected] of [
     [{ name: 'one px under sm', width: SM_PX - 1, height: 720 }, SPACE_STEP.appShellInsetMobile],
     [{ name: 'sm exactly', width: SM_PX, height: 720 }, SPACE_STEP.appShellInset],
+    // The expanded class widens the gutter (SPEC D7 trial): `md` is the expanded floor.
+    [
+      { name: 'one px under expanded', width: SIZE_CLASSES.expanded - 1, height: 720 },
+      SPACE_STEP.appShellInset,
+    ],
+    [
+      { name: 'expanded exactly', width: SIZE_CLASSES.expanded, height: 720 },
+      SPACE_STEP.appShellInsetExpanded,
+    ],
   ] as const satisfies readonly (readonly [Viewport, number])[]) {
     test(`the gutter is ${expected}px at ${viewport.width}px (${viewport.name})`, async () => {
       const p = await openFixture(HEADER_PAGE, viewport)
@@ -437,7 +446,7 @@ layout('shell chrome — the header row, the gutter, the sidebar footer', () => 
 
       const main = await p.box('main', MAIN)
       const crumb = await p.box('breadcrumb', `${HEADER_LEAD} > *`)
-      const expectedCrumb = main.box.left + SPACE_STEP.appShellInset
+      const expectedCrumb = main.box.left + SPACE_STEP.appShellInsetExpanded
       if (Math.abs(crumb.box.left - expectedCrumb) > 0.5) {
         throw new Error(
           `LAYOUT: the breadcrumb starts at x=${crumb.box.left.toFixed(1)}, Main's content edge is ` +

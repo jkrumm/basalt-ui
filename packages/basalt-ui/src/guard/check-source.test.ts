@@ -299,8 +299,8 @@ describe('raw-spacing', () => {
     expect(kinds(find(`<Stack gap={${SPACE_SCALE.sm}} />`))).toContain('raw-spacing')
   })
 
-  it('does NOT flag p={8} (sub-scale micro-spacing, no token to prefer)', () => {
-    const f = find(`<Box p={8} />`)
+  it('does NOT flag p={6} (sub-scale micro-spacing, no token to prefer)', () => {
+    const f = find(`<Box p={6} />`)
     expect(kinds(f)).not.toContain('raw-spacing')
   })
 
@@ -1195,13 +1195,13 @@ describe('CSS applicability', () => {
     ).filter((k) => k === 'inline-spacing')
 
   it('does NOT flag sub-scale micro-spacing in CSS — there is no token to prefer below the floor', () => {
-    for (const decl of ['gap: 2px', 'padding: 4px', 'margin-bottom: 6px', 'padding: 8px']) {
+    for (const decl of ['gap: 2px', 'padding: 4px', 'margin-bottom: 6px', 'padding: 7px']) {
       expect(cssSpacing(decl)).toEqual([])
     }
   })
 
   it('judges a multi-value shorthand as a whole', () => {
-    expect(cssSpacing('padding: 4px 8px')).toEqual([])
+    expect(cssSpacing('padding: 4px 6px')).toEqual([])
     // 16px has a scale stop; one non-micro component makes the whole declaration a finding.
     expect(cssSpacing('padding: 4px 16px')).toEqual(['inline-spacing'])
   })
@@ -1241,8 +1241,8 @@ describe('CSS applicability', () => {
     // same silent skip the `0.` guard was fixed for, one spelling over.
     expect(cssSpacing('padding: .75rem')).toEqual(['inline-spacing'])
     expect(cssSpacing('padding: +12px')).toEqual(['inline-spacing'])
-    // …and the sub-scale escape resolves them the same way: .5rem is 8px, below the floor.
-    expect(cssSpacing('padding: .5rem')).toEqual([])
+    // …and the sub-scale escape resolves them the same way: .4rem is 6.4px, below the floor.
+    expect(cssSpacing('padding: .4rem')).toEqual([])
   })
 
   it('does NOT read a custom property whose NAME ends in a spacing word', () => {
@@ -1276,13 +1276,13 @@ describe('CSS applicability', () => {
     // The guard keeps its own copy of the 16px root to stay dependency-free. The spacing-steps copy
     // beside it drifted in production once; this pins the relationship rather than the number, so a
     // token layer that ever moved off a 16px root would fail here instead of silently disagreeing.
-    // 10px is the ceiling; 12px is the first value above it. Expressed through `pxRem` so the
+    // 7px is the ceiling; 8px (`xs`) is the first value above it. Expressed through `pxRem` so the
     // literals here follow the token layer's conversion rather than restating it.
-    expect(cssSpacing(`padding: ${pxRem(10)}`)).toEqual([])
-    expect(cssSpacing(`padding: ${pxRem(12)}`)).toEqual(['inline-spacing'])
+    expect(cssSpacing(`padding: ${pxRem(7)}`)).toEqual([])
+    expect(cssSpacing(`padding: ${pxRem(8)}`)).toEqual(['inline-spacing'])
     // The px spellings of the same two values must land identically.
-    expect(cssSpacing('padding: 10px')).toEqual([])
-    expect(cssSpacing('padding: 12px')).toEqual(['inline-spacing'])
+    expect(cssSpacing('padding: 7px')).toEqual([])
+    expect(cssSpacing('padding: 8px')).toEqual(['inline-spacing'])
   })
 
   it('keeps the ceiling below the smallest scale stop, so it can never strand a real token', () => {
@@ -1367,7 +1367,7 @@ describe('CSS applicability', () => {
 
   it('extends the sub-scale escape to the longhands too — same rule, both spellings', () => {
     expect(cssSpacing('padding-top: 4px')).toEqual([])
-    expect(cssSpacing('margin-inline: 8px')).toEqual([])
+    expect(cssSpacing('margin-inline: 6px')).toEqual([])
   })
 
   it('flags the camelCase logical properties in a TSX inline style', () => {
@@ -1396,9 +1396,9 @@ describe('CSS applicability', () => {
     // kebab gap produced.
     expect(cssSpacing('padding: 0.25rem')).toEqual([])
     expect(cssSpacing('padding: 4px')).toEqual([])
-    // The ceiling lands in the same place either way: 0.625rem = 10px, 0.75rem = 12px.
-    expect(cssSpacing('padding: 0.625rem')).toEqual([])
-    expect(cssSpacing('padding: 0.75rem')).toEqual(['inline-spacing'])
+    // The ceiling lands in the same place either way: 0.4375rem = 7px, 0.5rem = 8px.
+    expect(cssSpacing('padding: 0.4375rem')).toEqual([])
+    expect(cssSpacing('padding: 0.5rem')).toEqual(['inline-spacing'])
   })
 
   it('leaves units it cannot resolve without layout context alone', () => {

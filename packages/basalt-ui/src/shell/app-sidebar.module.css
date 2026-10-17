@@ -35,12 +35,12 @@
 }
 
 .link {
-  font-size: var(--vx-text-md);
+  font-size: var(--vx-text-sm);
   border-radius: var(--vx-radius-ctrl) !important;
 }
 
 .link :global(.mantine-NavLink-label) {
-  font-size: var(--vx-text-md);
+  font-size: var(--vx-text-sm);
 }
 
 .link :global(.mantine-NavLink-section[data-position='left']) {
@@ -241,7 +241,7 @@
   gap: var(--vx-space-nav-icon-gap);
   padding: var(--vx-space-row-inset-y) var(--vx-space-row-inset-x);
   border-radius: var(--vx-radius-ctrl);
-  font-size: var(--vx-text-md);
+  font-size: var(--vx-text-sm);
   /* The nav row's line-height, so a footer row is exactly as tall as a nav row (Mantine's `Text`
    * would otherwise bring its own 1.55 and add ~3px). */
   line-height: var(--vx-space-row-line-height);
@@ -689,7 +689,7 @@
 }
 
 .subnavDropdown :global(.mantine-NavLink-label) {
-  font-size: var(--vx-text-md);
+  font-size: var(--vx-text-sm);
 }
 
 /*

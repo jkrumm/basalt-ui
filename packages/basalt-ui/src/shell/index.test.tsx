@@ -503,7 +503,8 @@ describe('BasaltShell header height (law C14)', () => {
   /**
    * THE PAGE GUTTER, which was one `'sm'` spacing key — 13px on a 360px phone and 13px on a 2560px
    * monitor, with no token behind it and no `padding` prop on `BasaltShellProps`. It is now the
-   * `appShellInsetMobile` / `appShellInset` pair, and this is the case that proves the pair is
+   * `appShellInsetMobile` / `appShellInset` / `appShellInsetExpanded` triple (the expanded class widens the
+   * gutter, a trial — SPEC D7), and this is the case that proves the pair is
    * actually RESPONSIVE rather than merely written as an object.
    *
    * The two roads are asserted separately on purpose, because they are genuinely two mechanisms
@@ -531,6 +532,7 @@ describe('BasaltShell header height (law C14)', () => {
     expect(paddings).toEqual([
       mantineRem(SPACE_STEP.appShellInsetMobile),
       mantineRem(SPACE_STEP.appShellInset),
+      mantineRem(SPACE_STEP.appShellInsetExpanded),
     ])
     expect(shellCss).toContain('@media(min-width: 48em)')
 
@@ -545,6 +547,7 @@ describe('BasaltShell header height (law C14)', () => {
     expect(insets).toEqual([
       mantineRem(SPACE_STEP.appShellInsetMobile),
       mantineRem(SPACE_STEP.appShellInset),
+      mantineRem(SPACE_STEP.appShellInsetExpanded),
     ])
     expect(headerCss).toContain('@media(min-width: 48em)')
   })

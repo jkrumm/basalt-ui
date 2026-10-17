@@ -35,9 +35,9 @@ describe('a non-default radius level graduates onto the theme', () => {
     expect(theme.other?.['basaltRadius']).toEqual(expected)
   })
 
-  test('Tooltip/Modal defaultProps radius follows floating (card + 1 = 10)', () => {
-    expect(theme.components?.['Tooltip']?.defaultProps?.['radius']).toBe(10)
-    expect(theme.components?.['Modal']?.defaultProps?.['radius']).toBe(10)
+  test('Tooltip/Modal defaultProps radius follows floating (card + 1 = 13)', () => {
+    expect(theme.components?.['Tooltip']?.defaultProps?.['radius']).toBe(13)
+    expect(theme.components?.['Modal']?.defaultProps?.['radius']).toBe(13)
   })
 
   test('the radius size-scale md step reflects ctrl (8)', () => {
@@ -54,7 +54,7 @@ describe('a non-default radius level graduates onto the theme', () => {
 describe('the default theme is unchanged by the radius option existing', () => {
   test('createBasaltTheme() still matches the shipped level-0 numbers', () => {
     const theme = createBasaltTheme()
-    expect(theme.components?.['Tooltip']?.defaultProps?.['radius']).toBe(8)
+    expect(theme.components?.['Tooltip']?.defaultProps?.['radius']).toBe(11)
     expect(theme.components?.['Badge']?.defaultProps?.['radius']).toBe(6)
   })
 })

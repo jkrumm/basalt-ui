@@ -123,8 +123,8 @@
 
 .sparklineBleed {
   margin-top: auto;
-  margin-inline: calc(-1 * var(--mantine-spacing-sm));
-  margin-bottom: calc(-1 * var(--mantine-spacing-xs));
+  margin-inline: calc(-1 * var(--vx-space-card-inset-x, 1rem));
+  margin-bottom: calc(-1 * var(--vx-space-card-inset-y, 0.75rem));
 }
 
 /* Asks for `StatCard`'s `SPARKLINE_RIGHT_WIDTH`/`_HEIGHT` (handed down as custom properties, so this
@@ -159,7 +159,7 @@
     flex: none;
     align-self: stretch;
     margin-top: auto;
-    margin-inline: calc(-1 * var(--mantine-spacing-sm));
-    margin-bottom: calc(-1 * var(--mantine-spacing-xs));
+    margin-inline: calc(-1 * var(--vx-space-card-inset-x, 1rem));
+    margin-bottom: calc(-1 * var(--vx-space-card-inset-y, 0.75rem));
   }
 }

@@ -91,12 +91,12 @@ describe('SPACE anchors match the shipped identity', () => {
 })
 
 describe('SPACE_SCALE matches the shipped identity — independent of SPACE even where it coincides', () => {
-  test('xs/sm/md/lg/xl are 11/13/18/20/26', () => {
-    expect(SPACE_SCALE.xs).toBe(11)
-    expect(SPACE_SCALE.sm).toBe(13)
-    expect(SPACE_SCALE.md).toBe(18)
+  test('xs/sm/md/lg/xl are 8/12/16/20/24 (the even-pixel grid)', () => {
+    expect(SPACE_SCALE.xs).toBe(8)
+    expect(SPACE_SCALE.sm).toBe(12)
+    expect(SPACE_SCALE.md).toBe(16)
     expect(SPACE_SCALE.lg).toBe(20)
-    expect(SPACE_SCALE.xl).toBe(26)
+    expect(SPACE_SCALE.xl).toBe(24)
   })
 })
 
@@ -121,15 +121,15 @@ describe('SPACE_FIXED structurals match the shipped identity', () => {
 })
 
 describe('the Mantine spacing size-scale reaches theme.spacing as the expected rem strings', () => {
-  // The px->rem conversion and the retuned bases, end to end (`pxRem`'s 16px root: 11px = 0.6875rem).
+  // The px->rem conversion and the retuned bases, end to end (`pxRem`'s 16px root: 8px = 0.5rem).
   // These WERE the pre-tokenization literals until the component-roominess retune — see the file doc.
   test('xs/sm/md/lg/xl resolve to the exact expected rem strings', () => {
     expect(baseTheme.spacing).toEqual({
-      xs: '0.6875rem',
-      sm: '0.8125rem',
-      md: '1.125rem',
+      xs: '0.5rem',
+      sm: '0.75rem',
+      md: '1rem',
       lg: '1.25rem',
-      xl: '1.625rem',
+      xl: '1.5rem',
     })
   })
 })
@@ -268,7 +268,7 @@ describe('--vx-space-* is emitted from the SAME constants', () => {
   })
 
   test('emits the density pass additions: row line-height, input height, control height', () => {
-    expect(css).toContain('--vx-space-row-line-height: 1.35;')
+    expect(css).toContain('--vx-space-row-line-height: 1.54;')
     // REM, not px — Mantine's own `--input-height-md`/`--button-height-md` are both
     // `calc(2.625rem * var(--mantine-scale))` (identical in `styles.css` and the `styles.layer.css`
     // variant consumers load), so flattening this into a flat px value would desync those heights
@@ -285,6 +285,7 @@ describe('--vx-space-* is emitted from the SAME constants', () => {
     expect(css).toContain('--vx-space-control-height-tag: 1.25rem;')
     expect(css).toContain('--vx-space-control-height-widget: 1.5rem;')
     expect(css).toContain('--vx-space-control-height-ctl: 2rem;')
+    expect(css).toContain('--vx-space-control-height-dense: 1.75rem;')
     expect(css).toContain('--vx-space-page-bar-row-height: 2.25rem;')
     expect(css).toContain('--vx-space-section-header-height: 2.25rem;')
     expect(css).toContain('--vx-space-widget-header-height: 1.75rem;')
@@ -415,6 +416,8 @@ const SPACE_STEP_SWEEP: ReadonlyArray<
   // text. Both halves of the reason are in `spaceDecls`'s own comment (`tokens/index.ts`).
   ['appShellInset', 16, 'space-app-shell-inset'],
   ['appShellInsetMobile', 8, 'space-app-shell-inset-mobile'],
+  // The expanded-class gutter trial (SPEC D7) — a JS number read by the shell, no var.
+  ['appShellInsetExpanded', 24, null],
   // The header's breadcrumb floor — the third `appShell*` dimension with a `--vx-*` var, for the
   // ordinary reason (a CSS module reads it), not for the gutter's special one.
   ['appShellHeaderLeadMin', 96, 'space-app-shell-header-lead-min'],
@@ -447,8 +450,8 @@ const SPACE_STEP_SWEEP: ReadonlyArray<
   // `spaceMobileDecls` in `tokens/index.ts`), so there is nothing here to lock for it — the
   // `buildPaletteCss` assertion below still sees these three declarations at their base values,
   // because a `@media` block never changes what the `:root` block declares.
-  ['cardInsetY', 11, 'space-card-inset-y'],
-  ['cardInsetX', 13, 'space-card-inset-x'],
+  ['cardInsetY', 12, 'space-card-inset-y'],
+  ['cardInsetX', 16, 'space-card-inset-x'],
   ['sectionGap', 12, 'space-section-gap'],
   ['chartLegendGap', 22, null],
   ['chartMarginTop', 12, null],
@@ -502,6 +505,7 @@ describe('SPACE_STEP CSS-module spacing-sweep one-offs match the shipped identit
       'appShellNavbarRailWidth',
       'appShellAsideWidth',
       'appShellAsideRailWidth',
+      'appShellInsetExpanded',
       'mobileNavBarHeight',
       'mobileNavMenuWidth',
       'chartLegendGap',

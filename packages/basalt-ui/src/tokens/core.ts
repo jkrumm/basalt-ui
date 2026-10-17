@@ -94,6 +94,8 @@ export const alpha = (token: string, a: number): string =>
  * Type is a token axis like color / spacing / radius / motion: a single edit point, never a
  * hardcoded literal at a call site. Every font-size in the framework resolves to a step here.
  *
+ * `TEXT_LINE` (below) pins the two dense rungs to grid-aligned line boxes.
+ *
  * Two representations are DERIVED from this one object, so they cannot drift:
  *  • `VX.text.*` — plain numbers, for inline `style` objects and visx SVG props (React appends
  *    `px`; SVG presentation attributes can't resolve `var()`, so a ref string would break charts).
@@ -128,16 +130,20 @@ export const alpha = (token: string, a: number): string =>
 const TEXT = {
   nano: 10, // engraved/graphic label INSIDE a drawn object (a plate face, a dial, a chip) — never UI copy or prose
   micro: 11, // mono uppercase micro-label (table th, Menu.Label, sidebar/section headers, axis ticks)
-  xs: 12.5, // delta badges, tooltip meta, dense chrome, StatCard labels
-  sm: 13.5, // table/stat numerals, chart tooltip, legend
-  md: 15, // BODY — nav rows, menu items, timeline, labels, prose; chart/card titles
+  xs: 12, // delta badges, tooltip meta, dense chrome, StatCard labels — 16px line (`TEXT_LINE.xs`)
+  sm: 13, // DENSE ROWS — table cells, nav rows, list/event rows, menu items; numerals, tooltip, legend — 20px line (`TEXT_LINE.sm`)
+  md: 15, // BODY — prose and form labels; chart/card titles
   lg: 16, // breadcrumb current — ALSO the iOS input floor (do not lower)
   xl: 18, // section titles
   h2: 21, // article-density Prose h2 (docs/CONTENT-SPEC.md §5)
-  kpi: 24, // the StatCard hero numeral (density pass: 31 → 24, tighter/less shouty)
+  kpi: 22, // the StatCard hero numeral (mono 500; 31 → 24 → 22, tighter/less shouty)
   h1: 26, // article-density Prose h1 (docs/CONTENT-SPEC.md §5)
   display: 30, // a numeral read at arm's length (a keypad readout, a timer, a kiosk figure) — not a heading
 } as const
+
+/** Grid-aligned line boxes (px) for the two dense rungs — `theme/index.ts` re-expresses them as the
+ * Mantine `lineHeights` `xs`/`sm`, so a `<Text size="sm">` row is a 20px box and a meta line 16px. */
+export const TEXT_LINE = { xs: 16, sm: 20 } as const
 
 export const VX = {
   // Non-color sizing constants
@@ -489,6 +495,7 @@ function spaceDecls(space: SpaceValues): string[] {
     decl('space-control-height-tag', pxRem(space.anchors.controlHeightTag)),
     decl('space-control-height-widget', pxRem(space.anchors.controlHeightWidget)),
     decl('space-control-height-ctl', pxRem(space.anchors.controlHeightCtl)),
+    decl('space-control-height-dense', pxRem(space.anchors.controlHeightDense)),
     decl('space-stack-xs', `${space.anchors.stackXs}px`),
     decl('space-stack-sm', `${space.anchors.stackSm}px`),
     decl('space-stack-md', `${space.anchors.stackMd}px`),
@@ -911,7 +918,7 @@ const coarseHitBlock = `@media (pointer: coarse) {\n  :root {\n    --vx-hit: ${H
  * (`appShellInsetMobile`), and the card ladder INSIDE that gutter never moved — card insets stayed
  * `xs`/`sm` and a `Section`'s gaps stayed `stackMd` at every width — so a 390px phone still read
  * "content spacing too big" after the gutter fix. Two rungs close it: the card's horizontal inset
- * steps `sm` -> `xs`, and the Section's gap steps `stackMd` -> `stackSm`.
+ * steps `md` -> `sm`, and the Section's gap steps `stackMd` -> `stackSm`.
  *
  * Why it lives HERE and not in the three CSS files that consume it: two of those three sites are
  * INLINE styles in TSX (`dashboard/stat-card.tsx`, `charts/primitives/ChartCard.tsx`), and an
@@ -932,7 +939,7 @@ const coarseHitBlock = `@media (pointer: coarse) {\n  :root {\n    --vx-hit: ${H
  */
 function spaceMobileDecls(space: SpaceValues): string[] {
   return [
-    decl('space-card-inset-x', `${space.scale.xs}px`),
+    decl('space-card-inset-x', `${space.scale.sm}px`),
     decl('space-section-gap', `${space.anchors.stackSm}px`),
   ]
 }

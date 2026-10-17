@@ -511,6 +511,8 @@ export async function openFixture(
   viewport: Viewport = PHONE,
   documentPath = '/',
   reducedMotion: 'reduce' | 'no-preference' = 'reduce',
+  /** `fine` drops touch emulation, so `(pointer: fine)` matches — the dense control tier lives there. */
+  pointer: 'coarse' | 'fine' = 'coarse',
 ): Promise<LayoutPage> {
   // Named here, once, rather than as N identical ERR_CONNECTION_REFUSED stack traces further down.
   // `server` is checked as well as `browser`: a torn-down or abandoned boot leaves nothing
@@ -526,8 +528,8 @@ export async function openFixture(
   const context = await browser.newContext({
     viewport: { width: viewport.width, height: viewport.height },
     deviceScaleFactor: 2,
-    isMobile: true,
-    hasTouch: true,
+    isMobile: pointer === 'coarse',
+    hasTouch: pointer === 'coarse',
     // `reduce` by default, and load-bearing: MobileNav reads `useReducedMotion()` explicitly and drops
     // the Drawer/Menu transition to duration 0, so a box is FINAL the moment the surface exists. It
     // is also a media query happy-dom cannot express (matchMedia pinned to `matches: false`). A test

@@ -58,9 +58,9 @@ describe('a positive level scales anchors/scale/step by the multiplier, rounded'
 
   test('a scale stop moves independently of the anchor stack rhythm', () => {
     const result = deriveSpacing(3)
-    expect(result.scale.xs).toBe(14)
-    expect(result.scale.md).toBe(23)
-    // scale.md (23) diverges from anchors.stackLg (20, rebuilt from the shared stack unit) — the two
+    expect(result.scale.xs).toBe(10)
+    expect(result.scale.md).toBe(21)
+    // scale.md (21) diverges from anchors.stackLg (20, rebuilt from the shared stack unit) — the two
     // groups scale by different laws (independently-rounded stops vs one shared unit) and, since the
     // component-roominess retune moved the scale off the stack rhythm, no longer even coincide at
     // level 0. That the two can be read apart at all is the point this locks.
@@ -118,10 +118,10 @@ describe('the input-height anchor scales with density', () => {
 // trivially divides `stackXs`, so the weaker form added no independent coverage). Not re-duplicated.
 
 describe('rowLineHeight follows its own additive law, not the multiplier', () => {
-  test('level -3/0/+3: 1.25 / 1.35 / 1.45', () => {
-    expect(deriveSpacing(-3).rowLineHeight).toBe(1.25)
-    expect(deriveSpacing(0).rowLineHeight).toBe(1.35)
-    expect(deriveSpacing(3).rowLineHeight).toBe(1.45)
+  test('level -3/0/+3: 1.44 / 1.54 / 1.64 (a 20px line at 13px, `sm`, at level 0)', () => {
+    expect(deriveSpacing(-3).rowLineHeight).toBe(1.44)
+    expect(deriveSpacing(0).rowLineHeight).toBe(1.54)
+    expect(deriveSpacing(3).rowLineHeight).toBe(1.64)
   })
 })
 
@@ -185,7 +185,7 @@ describe('buildDensityCss', () => {
     expect(css).toContain(':root {')
     expect(css).toContain('--vx-space-row-inset-x: 13px;')
     expect(css).toContain('--vx-space-row-inset-y: 8px;')
-    expect(css).toContain('--vx-space-row-line-height: 1.45;')
+    expect(css).toContain('--vx-space-row-line-height: 1.64;')
     // REM, not px — see the input-height describe block below for why.
     expect(css).toContain('--vx-space-input-height: 3.4375rem;')
     expect(css).toContain('--vx-space-control-height: 3.4375rem;')
@@ -224,6 +224,7 @@ describe('buildDensityCss', () => {
       'space-app-shell-navbar-rail-width',
       'space-app-shell-aside-width', // AppShell aside.width prop
       'space-app-shell-aside-rail-width',
+      'space-app-shell-inset-expanded', // AppShell padding/px responsive object (gutter trial)
       'space-mobile-nav-bar-height', // AppShell footer.height prop
       'space-mobile-nav-menu-width', // Menu width prop
       'space-chart-legend-gap', // VX.legendGap / VX.margin / VX.dotR — visx SVG props

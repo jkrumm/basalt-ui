@@ -84,7 +84,7 @@ const bodyClipStyle: CSSProperties = {
   minHeight: 0,
   display: 'flex',
   flexDirection: 'column',
-  padding: '2px var(--vx-space-card-inset-x, 0.8125rem) var(--vx-space-card-inset-y, 0.6875rem)',
+  padding: '2px var(--vx-space-card-inset-x, 1rem) var(--vx-space-card-inset-y, 0.75rem)',
 }
 
 /** The three boxes a `ChartCard` paints. */
