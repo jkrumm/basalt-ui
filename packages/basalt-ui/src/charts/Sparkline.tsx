@@ -50,12 +50,10 @@ export type SparklineProps = BasaltProps & {
   /** A quiet dashed hairline at a value, or at the mean of the plotted values (`'mean'`). The y
    * domain widens to include it. Not a legend item, never a status colour. */
   reference?: number | 'mean' | undefined
-  /** Formats the readout's value. Default: the number as is. */
+  /** Formats the readout's value. Default: the compact number format. */
   format?: ((value: number) => string) | undefined
   /** The readout's x label per point, index-aligned with `data`. Omitted: the value alone. */
   labels?: readonly string[] | undefined
-  /** Purely decorative: hidden from assistive tech and no hover / focus readout. */
-  decorative?: boolean | undefined
 }
 
 type Point = { i: number; v: number | null }
@@ -324,12 +322,14 @@ export function Sparkline(props: SparklineProps): ReactElement {
     reference,
     format = defaultNumberFormat,
     labels,
-    decorative: isDecorative = false,
     className,
     style,
   } = props
   const id = useId()
-  const [active, setActive] = useState<number | null>(null)
+  // Two sources, so a pointer leaving a focused chart hands the readout back to the focused point.
+  const [hover, setHover] = useState<number | null>(null)
+  const [keyed, setKeyed] = useState<number | null>(null)
+  const active = hover ?? keyed
   const model = useMemo(() => {
     const rows: Point[] = data.map((v, i) => ({ i, v: finite(v) }))
     const range = extent(rows)
@@ -349,7 +349,7 @@ export function Sparkline(props: SparklineProps): ReactElement {
   }, [data, mark, color, emphasizeLast, emphasisColor, reference])
   const resolved = resolveChartState(state)
   const rows = model?.rows
-  const interactive = !isDecorative && resolved === null && model !== null
+  const interactive = resolved === null && model !== null
 
   const onPointerMove = (e: PointerEvent<HTMLDivElement>): void => {
     if (!interactive || rows === undefined || hidden(e.currentTarget)) return
@@ -361,11 +361,11 @@ export function Sparkline(props: SparklineProps): ReactElement {
       mark === 'bar'
         ? Math.min(Math.floor(frac * rows.length), rows.length - 1)
         : Math.min(Math.max(Math.round(x0 + frac * (x1 - x0)), 0), rows.length - 1)
-    setActive(rows[i]?.v === null ? null : i)
+    setHover(rows[i]?.v === null ? null : i)
   }
   const onKeyDown = (e: KeyboardEvent<HTMLDivElement>): void => {
     if (!interactive || rows === undefined || hidden(e.currentTarget)) return
-    const from = active ?? lastFinite(rows)
+    const from = keyed ?? lastFinite(rows)
     if (from === null) return
     const next =
       e.key === 'ArrowLeft'
@@ -381,11 +381,12 @@ export function Sparkline(props: SparklineProps): ReactElement {
                 : undefined
     if (next === undefined) return
     e.preventDefault()
-    setActive(next)
+    setHover(null)
+    setKeyed(next)
   }
   const onFocus = (e: FocusEvent<HTMLDivElement>): void => {
-    if (!interactive || rows === undefined || active !== null || hidden(e.currentTarget)) return
-    setActive(lastFinite(rows))
+    if (!interactive || rows === undefined || keyed !== null || hidden(e.currentTarget)) return
+    setKeyed(lastFinite(rows))
   }
 
   const value = active === null ? null : (rows?.[active]?.v ?? null)
@@ -407,12 +408,14 @@ export function Sparkline(props: SparklineProps): ReactElement {
       role="presentation"
       className={cx(classes.root, className)}
       style={{ width: width ?? '100%', height, minWidth: 0, ...style }}
-      {...(isDecorative && { 'aria-hidden': true })}
       onPointerMove={onPointerMove}
-      onPointerLeave={() => setActive(null)}
+      onPointerLeave={() => setHover(null)}
       onKeyDown={onKeyDown}
       onFocus={onFocus}
-      onBlur={() => setActive(null)}
+      onBlur={() => {
+        setHover(null)
+        setKeyed(null)
+      }}
     >
       {resolved !== null && <ChartPlaceholder state={state} height={height} compact />}
       {resolved === null && model !== null && (
@@ -433,6 +436,7 @@ export function Sparkline(props: SparklineProps): ReactElement {
           />
           <output
             data-basalt-sparkline-readout=""
+            aria-live={hover === null ? 'polite' : 'off'}
             className={cx(classes.readout, at.fx > 0.5 ? classes.start : classes.end)}
           >
             {at.label !== undefined && <span className={classes.label}>{at.label} </span>}

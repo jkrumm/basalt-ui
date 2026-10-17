@@ -14,7 +14,8 @@
   box-sizing: border-box;
   padding: 0 4px;
   overflow: hidden;
-  font-family: var(--basalt-font-mono);
+  font-family: var(--basalt-font-sans);
+  font-variant-numeric: lining-nums;
   font-size: var(--vx-text-xs);
   line-height: 1.25;
   color: var(--vx-ink);
@@ -34,6 +35,7 @@
 }
 
 .label {
+  font-family: var(--basalt-font-mono);
   color: var(--vx-muted);
 }
 

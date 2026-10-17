@@ -1047,8 +1047,8 @@ The `basalt-ui/router-tanstack` subpath is **removed** in 2.x, not moved: an imp
 Home / End on the focused chart, show the point's value in one quiet in-cell line (Escape or blur
 clears it) and mark the point with a dot. It was inert before. Value text comes from the new
 `format` prop (default: the compact number format), the x text from the new `labels` array
-(index-aligned with `data`). **Opt out** with `decorative`, which also sets `aria-hidden`; an
-`aria-hidden` ancestor disables it too.
+(index-aligned with `data`). **Opt out** by putting the sparkline under an `aria-hidden` ancestor,
+which disables the readout.
 
 New, additive: `reference={n | 'mean'}` draws a dashed `--vx-line` hairline and widens the y domain
 to include it (`'mean'` is over the plotted values).

@@ -463,7 +463,6 @@ Signature: Sparkline(props: SparklineProps): ReactElement<unknown, string | JSXE
   reference?: number | "mean"
   format?: ((value: number) => string)
   labels?: readonly string[]
-  decorative?: boolean
 Signature: StackedArea(props: StackedAreaProps<T, X>): ReactElement<unknown, string | JSXElementConstructor<any>>
   className?: string
   style?: CSSProperties

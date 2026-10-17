@@ -61,6 +61,20 @@ describe('Sparkline reference', () => {
     )
     expect(refs(html).length).toBeGreaterThan(0)
   })
+  test('NaN and an all-gap series draw no reference', () => {
+    expect(
+      refs(
+        renderToString(<Sparkline ariaLabel="S" data={data} height={30} reference={Number.NaN} />),
+      ),
+    ).toHaveLength(0)
+    expect(
+      refs(
+        renderToString(
+          <Sparkline ariaLabel="S" data={[Number.NaN, Number.NaN]} height={30} reference="mean" />,
+        ),
+      ),
+    ).toHaveLength(0)
+  })
   test('no reference prop: no reference mark', () => {
     expect(refs(renderToString(<Sparkline ariaLabel="S" data={data} height={30} />))).toHaveLength(
       0,
@@ -80,6 +94,11 @@ const focus = async (el: HTMLElement): Promise<void> => {
   await act(async () => {
     el.querySelector('svg')?.dispatchEvent(new FocusEvent('focusin', { bubbles: true }))
   })
+}
+
+const dotAt = (el: HTMLElement): { left: number; top: number } => {
+  const style = el.querySelector<HTMLElement>('[data-basalt-sparkline-dot]')?.style
+  return { left: Number.parseFloat(style?.left ?? ''), top: Number.parseFloat(style?.top ?? '') }
 }
 
 describe('Sparkline readout', () => {
@@ -150,9 +169,73 @@ describe('Sparkline readout', () => {
     await focus(el)
     expect(readout(el)).toBeNull()
   })
-  test('decorative (aria-hidden) sparkline: no readout', async () => {
-    const el = await mount(<Sparkline ariaLabel="S" data={data} height={30} decorative />)
+  test('under an aria-hidden ancestor: no readout', async () => {
+    const el = await mount(
+      <div aria-hidden="true">
+        <Sparkline ariaLabel="S" data={data} height={30} />
+      </div>,
+    )
     await focus(el)
     expect(readout(el)).toBeNull()
+  })
+  test('the dot lands on the point: line, and a bar with a negative value', async () => {
+    const line = await mount(<Sparkline ariaLabel="S" data={data} height={30} />)
+    await focus(line)
+    // x domain [-0.16, 4.16] (end-dot air), y domain [6, 54]; the last point is (4, 50).
+    expect(dotAt(line).left).toBeCloseTo((4.16 / 4.32) * 100, 1)
+    expect(dotAt(line).top).toBeCloseTo((4 / 48) * 100, 1)
+    act(() => root?.unmount())
+    document.body.innerHTML = ''
+    const bar = await mount(<Sparkline ariaLabel="S" data={[-10, 20, 30]} height={30} mark="bar" />)
+    await focus(bar)
+    await key(bar, 'Home')
+    // Band centre of bar 0 of 3; y domain [-10, 30], so -10 sits on the bottom edge.
+    expect(dotAt(bar).left).toBeCloseTo((0.5 / 3) * 100, 1)
+    expect(dotAt(bar).top).toBeCloseTo(100, 1)
+    expect(readout(bar)?.textContent).toContain('-10')
+  })
+  test('pointer hover on a bar sparkline reads the bar under the cursor', async () => {
+    const el = await mount(
+      <Sparkline ariaLabel="S" data={data} height={30} width={100} mark="bar" />,
+    )
+    const host = el.querySelector<HTMLElement>('[data-basalt-sparkline]')
+    if (host === null) throw new Error('no host')
+    host.getBoundingClientRect = () => new DOMRect(0, 0, 100, 30)
+    await act(async () => {
+      host.dispatchEvent(new MouseEvent('pointermove', { bubbles: true, clientX: 90 }))
+    })
+    expect(readout(el)?.textContent).toContain('50')
+    await act(async () => {
+      host.dispatchEvent(new MouseEvent('pointermove', { bubbles: true, clientX: 10 }))
+    })
+    expect(readout(el)?.textContent).toContain('10')
+  })
+  test('pointer leave hands the readout back to the focused point', async () => {
+    const el = await mount(<Sparkline ariaLabel="S" data={data} height={30} width={100} />)
+    const host = el.querySelector<HTMLElement>('[data-basalt-sparkline]')
+    if (host === null) throw new Error('no host')
+    host.getBoundingClientRect = () => new DOMRect(0, 0, 100, 30)
+    await focus(el)
+    await act(async () => {
+      host.dispatchEvent(new MouseEvent('pointermove', { bubbles: true, clientX: 0 }))
+    })
+    expect(readout(el)?.textContent).toContain('10')
+    expect(readout(el)?.getAttribute('aria-live')).toBe('off')
+    await act(async () => {
+      host.dispatchEvent(new MouseEvent('pointerout', { bubbles: true }))
+    })
+    expect(readout(el)?.textContent).toContain('50')
+    expect(readout(el)?.getAttribute('aria-live')).toBe('polite')
+  })
+  test('End and ArrowRight stop at the edges; ArrowLeft stops at the first point', async () => {
+    const el = await mount(<Sparkline ariaLabel="S" data={data} height={30} />)
+    await focus(el)
+    await key(el, 'ArrowRight')
+    expect(readout(el)?.textContent).toContain('50')
+    await key(el, 'End')
+    expect(readout(el)?.textContent).toContain('50')
+    await key(el, 'Home')
+    await key(el, 'ArrowLeft')
+    expect(readout(el)?.textContent).toContain('10')
   })
 })
