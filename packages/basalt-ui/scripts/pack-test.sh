@@ -207,7 +207,7 @@ echo "==> scratch-consumer oxlint preset contract (extends the shipped preset fo
 # basalt/card-inset, proving the chained extends still loads the plugin from inside the tarball.
 cat >lint-fixture.tsx <<'TSX'
 import { Card } from '@mantine/core'
-export const ScratchLintFixture = () => <Card padding="md" />
+export const ScratchLintFixture = () => <Card padding="lg" />
 TSX
 # Captured to a file, then grepped from the file — same reason as `require` above: a
 # `echo "$VAR" | grep -q` pipeline can report SIGPIPE (141) instead of grep's own verdict.
@@ -266,7 +266,7 @@ console.log('guard fixture: scale md =', md)
 cat >guard-fixture/ok.module.css <<'CSS'
 .cluster {
   gap: 2px;
-  padding: 4px 8px;
+  padding: 4px 6px;
 }
 CSS
 GUARD_LOG=$(mktemp)
