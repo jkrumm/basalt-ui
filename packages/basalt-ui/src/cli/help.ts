@@ -120,11 +120,12 @@ export const USAGE =
   '  output saved to a file. Writes <out>/detect.json and a findings table, content, then layout, then style:\n' +
   '  off-scale inset/gap/radius, nested radius step under 3 px, more than 3 font sizes, an empty region of\n' +
   '  40 % or more, contrast failures, error shots, a missing scale or no anchors.\n' +
-  '  Exit codes: 0 clean, 2 findings, 1 scan failure (missing or unreadable metrics.json or lint file).\n' +
-  '    P0  broken, unreadable or a contrast failure; an error shot; no anchors\n' +
-  '    P1  a rubric item fails (off-scale value, font sizes, empty region, nested radius, lint error)\n' +
-  '    P2  degraded: a lint warning, a contrast measured on an assumed white backdrop\n' +
-  '    P3  polish: an off-scale value within 1 px of a step\n' +
+  '  Exit codes: 0 clean (P2/P3 findings are listed, not failing), 2 a P0 or P1 finding, 1 scan failure (missing\n' +
+  '  or unreadable metrics.json or lint file, or detect.json/history.json cannot be written).\n' +
+  '    P0  fails: broken, unreadable or a contrast failure; an error shot; no anchors\n' +
+  '    P1  fails: a rubric item fails (off-scale value, font sizes, empty region, nested radius, lint error)\n' +
+  '    P2  noted, not failing: degraded: a lint warning, a contrast measured on an assumed white backdrop\n' +
+  '    P3  noted, not failing: polish: an off-scale value within 1 px of a step\n' +
   '  score = 100 - (25 per P0 + 10 per P1 + 3 per P2 + 1 per P3), floored at 0. Each run appends\n' +
   '  {at, out, commit, counts, score} to .basalt/shots/history.json and prints the last 5 scores as a trend.\n' +
   '  A component can declare a rest anchor absent in a URL state with data-shot-absent="empty error": that\n' +

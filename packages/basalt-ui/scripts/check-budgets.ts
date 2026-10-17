@@ -584,10 +584,11 @@ async function budgets(providerOnlyDist: string): Promise<Budget[]> {
     // 7132 -> 7478 (fix/shot-real-data): `shot` on a real, signed-in app (+346). Owner-requested (2026-10-17), consumer: argo. cli/shot/real-data.ts +165 (`@env`/`@file` resolution, header and `--api` validation, the read-only proxy with its depth-only log, status classes and timeout, the origin-guarded absent-only seed script), capture.ts +89 (one `visit` that loads, auto-anchors and checks the data; per-visit problem scoping with `collect`/`flagProblems`; `--wait`), index.ts +46 (six flags and their rules, proxy wiring), serve.ts +25 (Host/Origin/Fetch-Metadata guard), help.ts +20 (flags, `multiple` in the option type, the real-app example).
     // 7478 -> 7512 (W36): `managedFiles` walks `agent/skills/<name>/` so a skill's `references/**` are managed files too; injectable `pkgRoot` on init/sync/renderContext; upward empty-dir prune (+34).
     // 7478 -> 8006 (w36 reviewer-detector): `basalt-ui shot detect` (cli/shot/detect.ts: the LLM-free [measured] rules, oxlint JSON, severity and score, history trend), the `absent` anchor status (capture.ts), the help text and `--lint` flag (+528).
+    // 8006 -> 8050 (w36 review round 1): detect's atomic history/detect.json write with `.bak` recovery and clean I/O errors, `craft-1/scale-missing`, P0/P1-only exit (+44).
     {
       label: 'CLI non-test lines (src/cli/**)',
       value: cliNonTestLines(),
-      ceiling: 8006,
+      ceiling: 8050,
     },
     ...(await providerOnlyRows(providerOnlyDist)),
   ]
