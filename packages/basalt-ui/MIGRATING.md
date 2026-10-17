@@ -1163,11 +1163,11 @@ pass the figure as `info`/`subtitle` text if a loading card must still state it.
 **Changed default:** the lowercase `qualifier` of a `StatCard` and a `StatGroup` strip cell is the muted
 proportional sans (mono stays on the UPPERCASE caption), and a strip cell's `· ` separator is gone. The
 caption and its info glyph are one unit (the caption truncates with a `title`; the qualifier wraps
-whole below it). Chart axis ticks are the proportional sans with `tabular-nums`, not mono. **Opt out:**
-none for the ticks; a host wanting mono ticks sets `font-family` on `.ts-chart-host`.
+whole below it). Chart axis ticks (the chart host's font) are the proportional sans with `tabular-nums`, not mono.
+**Opt out:** set `--basalt-chart-font: var(--basalt-font-mono)` on the chart or an ancestor.
 
-`Meter` captions wrap with `text-wrap: pretty` and join a number and its unit (`24 h`, `7 d`) with a
-no-break space, so `textContent` carries U+00A0 there; its visually-hidden summary now reads the caption
+`Meter` captions wrap with `text-wrap: pretty` and join a number and a known unit (`24 h`, `7 d`, `5 min`, `40 %`)
+with a no-break space, so `textContent` carries U+00A0 there; its visually-hidden summary now reads the caption
 size instead of the inherited body size.
 
 ## 2.19.0 — the status dot, ink buttons and Meter refinements

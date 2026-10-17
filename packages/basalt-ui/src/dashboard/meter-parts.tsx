@@ -69,13 +69,13 @@ function RingSvg({ fraction, color }: { fraction?: number; color?: string | unde
 
 /**
  * A value and its unit stay on one line: a no-break space replaces the space between a digit and a
- * short unit ("24 h", "7 d", "5 min", "40 %"), so a caption never wraps to a lone "d". Any other
- * word keeps its ordinary space.
+ * known unit ("24 h", "7 d", "5 min", "40 %"), so a caption never wraps to a lone "d". Any other
+ * word ("3 of 7", "250 over") keeps its ordinary space.
  */
+const UNITS = 'h|d|w|mo|y|s|ms|min|m|km|mi|g|kg|%|€|pts|bpm|AU|kcal|KB|MB|GB|TB'
+const UNIT_AFTER_NUMBER = new RegExp(`(\\d) (?=(?:${UNITS})(?![\\p{L}\\d]))`, 'gu')
 const glue = (text: ReactNode): ReactNode =>
-  typeof text === 'string'
-    ? text.replace(/(\d) (?=[\p{L}%]{1,3}(?![\p{L}\d]))/gu, '$1\u00a0')
-    : text
+  typeof text === 'string' ? text.replace(UNIT_AFTER_NUMBER, '$1\u00a0') : text
 
 export function MeterLoading({
   label,

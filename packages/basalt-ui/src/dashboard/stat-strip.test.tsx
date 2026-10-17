@@ -53,7 +53,11 @@ describe('strip caption line', () => {
     const { getByText } = mount([
       { key: 'a', caption: 'Forecast', qualifier: 'end of October', value: '1' },
     ])
-    expect(getByText('end of October').textContent).toBe('end of October')
+    const q = getByText('end of October')
+    expect(q.textContent).toBe('end of October')
+    // A direct child of the caption line, next to the lead group, not inside it.
+    expect(q.parentElement?.children.length).toBe(2)
+    expect(q.previousElementSibling?.textContent).toBe('Forecast')
   })
   test('the caption group never wraps; the line does', () => {
     const lead = /\.lead\s*{([^}]*)}/.exec(CSS)?.[1] ?? ''
@@ -76,11 +80,12 @@ describe('StatGroup variant="strip"', () => {
     const { getByText, container } = mount(CELLS)
     expect(getByText('Resting HR')).toBeTruthy()
     expect(getByText('7d')).toBeTruthy()
-    // The caption and its info glyph are one group; the qualifier is a sibling that wraps whole.
-    const line = container.querySelector(
-      '[data-strip-cell="rhr"] [data-strip-caption]',
-    )?.parentElement
-    expect(line?.parentElement?.lastElementChild?.textContent).toBe('7d')
+    // The caption (inside its lead group) and the qualifier are the caption line's two direct children.
+    const caption = container.querySelector('[data-strip-cell="rhr"] [data-strip-caption]')
+    const lead = caption?.parentElement
+    const line = lead?.parentElement
+    expect([...(line?.children ?? [])].map((c) => c.textContent)).toEqual(['Resting HR', '7d'])
+    expect(caption?.textContent).not.toContain('·')
     expect(getByText('bpm')).toBeTruthy()
     expect(getByText('as of 06:10')).toBeTruthy()
     const cell = container.querySelector('[data-strip-cell="rhr"]') as HTMLElement

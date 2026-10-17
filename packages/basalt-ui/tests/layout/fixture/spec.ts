@@ -168,6 +168,9 @@ export type ChartsSpec = {
   kind: 'lines' | 'bars' | 'dual' | 'rail' | 'panel-rail' | 'spark' | 'strip' | 'mirrored'
   /** `spark`: the row count of the one `Sparkline` (default 3000), in a `width`-px cell. */
   sparkRows?: number
+  /** `spark`: mount the Sparkline in a 300px `StatCard` sparkline slot (`card`) or a strip cell
+   * `visual` (`strip`) instead of bare. */
+  sparkIn?: 'card' | 'strip'
   /** `strip`/`mirrored`: the bucket count of the `BandStrip`/`MirroredBars` (default 60)... */
   stripBuckets?: number
   /** ...and each bucket's width in ms (default one minute — a one-hour range). */

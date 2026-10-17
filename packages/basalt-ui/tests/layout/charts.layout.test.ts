@@ -651,4 +651,39 @@ layout('Charts — 2.0 layout', () => {
       })
     }
   }
+
+  describe('a Sparkline in a StatCard slot or a strip cell answers hover with a readout inside the cell', () => {
+    test.each(['card', 'strip'] as const)('%s', async (sparkIn) => {
+      const p = await openFixture(chartFixture({ kind: 'spark', sparkIn }), DESKTOP)
+      await p.settle()
+      const box = await p.raw.evaluate(() => {
+        const r = document.querySelector('[data-basalt-sparkline]')?.getBoundingClientRect()
+        if (!r) throw new Error('LAYOUT: no sparkline')
+        return { x: r.x, y: r.y, w: r.width, h: r.height }
+      })
+      await p.raw.mouse.move(box.x + box.w * 0.3, box.y + box.h / 2)
+      await p.raw.mouse.move(box.x + box.w * 0.7, box.y + box.h / 2)
+      const m = await p.raw.evaluate(() => {
+        const readout = document.querySelector('[data-basalt-sparkline-readout]')
+        const cell = document
+          .querySelector('[data-basalt-sparkline]')
+          ?.closest('.mantine-Card-root, [data-strip-cell]')
+        if (!readout || !cell) throw new Error('LAYOUT: no readout or cell')
+        const r = readout.getBoundingClientRect()
+        const c = cell.getBoundingClientRect()
+        return {
+          text: readout.textContent,
+          visible: r.width > 0 && r.height > 0,
+          inside:
+            r.left >= c.left - 0.5 &&
+            r.right <= c.right + 0.5 &&
+            r.top >= c.top - 0.5 &&
+            r.bottom <= c.bottom + 0.5,
+        }
+      })
+      expect(m.text).not.toBe('')
+      expect(m.visible).toBe(true)
+      expect(m.inside).toBe(true)
+    })
+  })
 })

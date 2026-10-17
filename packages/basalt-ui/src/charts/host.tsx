@@ -36,13 +36,14 @@ export type ChartEngineProps = {
 type EngineProps = ChartProps<unknown, ChartValue, number>
 
 /** `currentColor` is the axis ink. The font is the proportional sans with tabular figures (Wave 35
- * law: tabular in axis ticks, mono only for captions, times and code) and is inherited by the svg —
+ * law: tabular in axis ticks, mono only for captions, times and code); `--basalt-chart-font` retunes
+ * the face from outside. It is inherited by the svg —
  * TanStack measures guides with the host's computed font. */
 const HOST_STYLE: CSSProperties = {
   // Overrides the host's own fallback height: the box decides, the engine measures it.
   height: '100%',
   color: 'var(--vx-axis)',
-  fontFamily: 'var(--basalt-font-sans)',
+  fontFamily: 'var(--basalt-chart-font, var(--basalt-font-sans))',
   fontVariantNumeric: 'tabular-nums',
 }
 const COARSE_STYLE: CSSProperties = { ...HOST_STYLE, touchAction: 'pan-y' }
