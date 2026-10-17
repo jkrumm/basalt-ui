@@ -22,6 +22,7 @@
 import {
   Accordion,
   Badge,
+  Box,
   Button,
   Card,
   Checkbox,
@@ -53,9 +54,30 @@ import { PrimitivesPage } from './PrimitivesPage'
 
 /** A titled surface section — every component group sits inside one of these so its surface shows.
  * Named `ComponentGroup`, not `Section`: a local `Section` would shadow the shipped export of that
- * exact name, which `basalt/shadow-basalt-export` flags (law C8). */
-function ComponentGroup({ title, children }: { title: string; children: ReactNode }) {
-  return <SettingsSection title={title}>{children}</SettingsSection>
+ * exact name, which `basalt/shadow-basalt-export` flags (law C8). `shot` anchors the group for
+ * `basalt-ui shot`, so a change to a global chrome default (badge, subtle button, tabs) is re-shot. */
+type ShotAnchor = 'buttons' | 'tabs' | 'badges'
+
+// The anchor Box is the grid item now, so the card fills it to keep its row's stretched height.
+const FILL = { height: '100%' } as const
+
+function ComponentGroup({
+  title,
+  shot,
+  children,
+}: {
+  title: string
+  shot?: ShotAnchor
+  children: ReactNode
+}) {
+  if (shot === undefined) return <SettingsSection title={title}>{children}</SettingsSection>
+  return (
+    <Box data-shot={shot} h="100%">
+      <SettingsSection title={title} style={FILL}>
+        {children}
+      </SettingsSection>
+    </Box>
+  )
 }
 
 // The route's view switch, store-bound so a deep link and a back navigation land on the tab the
@@ -115,7 +137,7 @@ function ComponentsSurfaces() {
   return (
     <Stack gap="md" data-compare="surfaces">
       <SimpleGrid type="container" cols={{ base: 1, [CONTAINER_KEYS.regular]: 2 }}>
-        <ComponentGroup title="Buttons">
+        <ComponentGroup title="Buttons" shot="buttons">
           <Group gap="sm">
             <Button variant="filled">Filled</Button>
             <Button variant="default">Default</Button>
@@ -147,7 +169,7 @@ function ComponentsSurfaces() {
           </Stack>
         </ComponentGroup>
 
-        <ComponentGroup title="Tabs">
+        <ComponentGroup title="Tabs" shot="tabs">
           <Tabs defaultValue="overview">
             <Tabs.List>
               <Tabs.Tab value="overview">Overview</Tabs.Tab>
@@ -267,7 +289,7 @@ function ComponentsSurfaces() {
       </SimpleGrid>
 
       <SimpleGrid type="container" cols={{ base: 1, [CONTAINER_KEYS.regular]: 2 }}>
-        <ComponentGroup title="Badges & code">
+        <ComponentGroup title="Badges & code" shot="badges">
           <Stack gap="sm">
             <Group gap="sm">
               <Badge color="green">Active</Badge>
