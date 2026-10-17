@@ -159,7 +159,6 @@ export function ComponentsSurfaces() {
             </Group>
             <Group gap="sm">
               <Button disabled>Disabled</Button>
-              <Button loading>Loading</Button>
             </Group>
           </Stack>
         </ComponentGroup>

@@ -166,29 +166,6 @@ function QueueStrip({ shotState }: ScenarioProps) {
       }),
     },
     {
-      key: 'fleet',
-      caption: 'Fleet',
-      qualifier: 'by state',
-      info: 'Every item in the queue by its state.',
-      value: none ? null : fmtInt(FLEET_TOTAL),
-      unit: 'items',
-      loading,
-      ...(!hidden && {
-        visual: (
-          <Meter
-            label="Fleet by state"
-            max={FLEET_TOTAL}
-            segments={FLEET.map((s) => ({
-              value: s.count,
-              label: s.label,
-              color: STATE_COLOR[s.state],
-            }))}
-            format={(v) => `${fmtInt(v)} items`}
-          />
-        ),
-      }),
-    },
-    {
       key: 'failures',
       caption: 'Failures',
       qualifier: 'last 24 h',
@@ -221,6 +198,29 @@ function QueueStrip({ shotState }: ScenarioProps) {
         ),
       }),
       loading,
+    },
+    {
+      key: 'fleet',
+      caption: 'Fleet',
+      qualifier: 'by state',
+      info: 'Every item in the queue by its state.',
+      value: none ? null : fmtInt(FLEET_TOTAL),
+      unit: 'items',
+      loading,
+      ...(!hidden && {
+        visual: (
+          <Meter
+            label="Fleet by state"
+            max={FLEET_TOTAL}
+            segments={FLEET.map((s) => ({
+              value: s.count,
+              label: s.label,
+              color: STATE_COLOR[s.state],
+            }))}
+            format={(v) => `${fmtInt(v)} items`}
+          />
+        ),
+      }),
     },
   ]
 

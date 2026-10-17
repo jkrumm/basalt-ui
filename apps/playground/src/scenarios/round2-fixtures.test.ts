@@ -59,13 +59,9 @@ describe('S4 spend', () => {
 describe('S3 agents', () => {
   it('weekly budget error says why and what to do', () => {
     const c = mount(createElement(AgentsScenario, { shotState: 'error' }))
-    const week = [...c.querySelectorAll('[role="meter"], [data-basalt-meter]')].find(
-      (n) =>
-        n.textContent?.includes('Weekly') ||
-        n.getAttribute('aria-label') === 'Weekly dispatch budget',
-    )
-    expect(c.textContent).not.toContain('Weekly budget unavailable.')
-    expect(week?.closest('[data-basalt-meter]')?.textContent ?? c.textContent).toContain('Retry')
+    const text = anchor(c, 'strip-footer-week')?.textContent
+    expect(text).toContain('did not answer')
+    expect(text).toContain('Retry')
   })
 
   it('pairs cells of similar height in the two-column layout', () => {
@@ -73,14 +69,16 @@ describe('S3 agents', () => {
     const order = [...c.querySelectorAll('[data-strip-cell]')].map((n) =>
       n.getAttribute('data-strip-cell'),
     )
-    expect(order).toEqual(['needs-you', 'dispatch-spend', 'oldest-wait', 'fleet', 'failures'])
+    expect(order).toEqual(['needs-you', 'dispatch-spend', 'oldest-wait', 'failures', 'fleet'])
   })
 })
 
 describe('S2 training', () => {
-  it('names the pace tick on the goal meter', () => {
+  it('names the pace tick on the goal meter and not again in the end caption', () => {
     const c = mount(createElement(TrainingScenario, { shotState: undefined }))
-    expect(tickLabels(anchor(c, 'goal'))).toEqual(['Pace'])
+    const goal = anchor(c, 'goal')
+    expect(tickLabels(goal)).toEqual(['Pace'])
+    expect(goal?.querySelector('[data-meter-captions]')?.textContent).not.toContain('Pace')
   })
 })
 
@@ -92,5 +90,7 @@ describe('components page', () => {
     expect(titles).toContain('Tabs: default and pills')
     expect(titles).not.toContain('Buttons')
     expect(titles).not.toContain('Tabs')
+    expect(titles).toContain('Status badges and counts')
+    expect(titles).not.toContain('Badges')
   })
 })
