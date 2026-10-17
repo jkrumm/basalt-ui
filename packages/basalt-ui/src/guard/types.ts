@@ -1,7 +1,7 @@
 /**
  * Guard types — Mantine-free, dependency-free (zero imports beyond TS types).
  *
- * GuardKind is the closed set of 26 violation kinds the theme guard can emit. Retired kinds
+ * GuardKind is the closed set of 27 violation kinds the theme guard can emit. Retired kinds
  * (`unframed-chart`, `raw-visx-axis`, `chart-missing-aria-label`) stay recognized ids in
  * `PLUGIN_RULE_IDS`/`KNOWN_RULE_IDS` so an existing `theme-allow <id>` reads as a dead waiver, not
  * a typo.
@@ -9,7 +9,7 @@
  * GuardConfig is the per-run configuration that drives checkSource.
  */
 
-/** The 26 theme-guard violation kinds. */
+/** The 27 theme-guard violation kinds. */
 export type GuardKind =
   | 'raw-hex'
   | 'raw-color-fn'
@@ -37,6 +37,7 @@ export type GuardKind =
   | 'raw-selection-control'
   | 'raw-media-query'
   | 'unknown-vx-token'
+  | 'series-palette'
 
 /**
  * How hard a finding lands. `error` fails the build; `warn` reports and passes.

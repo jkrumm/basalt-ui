@@ -24,7 +24,7 @@ Every value is a `VX.*` reference or a theme prop; the palette is derived, never
 - Never read a raw ramp var (`--mantine-color-gray-N`); use `VX.surface.*`. [check-theme off-system-surface-var]
 - Fill a control with `VX.accentFill` labelled `VX.onAccent`, never `VX.accent` (that is ink). [type VX]
 - Name only `--vx-*` vars that basalt emits. [check-theme unknown-vx-token]
-- Series color is app data: `defineSeries` → `seriesTokens`/`groupTokens`, each entry a `{ light, dark }` pair, in one file that `check-theme` exempts. [type defineSeries]
+- Series color is app data: `defineSeries` → `seriesTokens`/`groupTokens`, each entry a `{ light, dark }` pair, in one file that `check-theme` exempts from the hex scan but judges for lightness, chroma, CVD separation and contrast. [type defineSeries] [check-theme series-palette]
 - `groupTokens` returns the group to pass to `buildPaletteCss` or `BasaltProvider` `paletteOptions`; never retype its key. [type groupTokens]
 
 ## Surfaces, radius, depth

@@ -7,6 +7,7 @@ import { existsSync, readFileSync } from 'node:fs'
 import { dirname, resolve } from 'node:path'
 
 import {
+  checkSeriesPalette,
   checkSource,
   guardKindRemedy,
   REMOVED_VX_NAMES,
@@ -34,6 +35,7 @@ import {
   resolveGuardConfig,
   resolveProjectDir,
   scannableFiles,
+  defaultExempt,
   SERIES_MODULE_HINT_RE,
   waiverHintFor,
 } from './index'
@@ -116,6 +118,10 @@ export function checkTheme(
     findings.push(...checkSource(readFileSync(resolve(cwd, rel), 'utf8'), rel, guardCfg))
   }
 
+  // The series module is exempt from the line scan; its palette is judged by computed checks.
+  const seriesRel = defaultExempt(cfg)[0] ?? ''
+  const seriesSrc = readIfExists(resolve(cwd, seriesRel)) ?? ''
+  findings.push(...checkSeriesPalette(seriesSrc, seriesRel, guardCfg))
   if (scanned.length === 0) {
     // A configured-but-wrong root is never intentional, and silently scanning 0 files under the
     // built-in defaults (argo's pre-migration layout) is the same failure mode for every other
