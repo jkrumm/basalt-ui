@@ -1098,14 +1098,15 @@ ordered categorical group; each scheme is measured against its own surface (the 
 default `surface.panel`; a consumer's `derive` overrides are not read). One finding per failed
 check, naming the key(s), scheme, measured number and threshold:
 
-| Check                                                                        | Threshold                                                 |
-| ---------------------------------------------------------------------------- | --------------------------------------------------------- |
-| OKLCH lightness                                                              | light 0.43–0.77, dark 0.58–0.88                           |
-| OKLCH chroma                                                                 | ≥ 0.10 per categorical series                             |
-| Adjacent series under protanopia / deuteranopia (Machado 2009, severity 1.0) | OKLab ΔE×100 ≥ 8                                          |
-| Worst pair in the group, normal vision                                       | OKLab ΔE×100 ≥ 15                                         |
-| Contrast against the surface                                                 | ≥ 3:1                                                     |
-| Group size / repeats                                                         | ≤ 8 series (a 9th folds into `other`), no repeated colour |
+| Check                                                                        | Threshold                                                                                  |
+| ---------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------ |
+| OKLCH lightness                                                              | light 0.43–0.77, dark 0.58–0.88                                                            |
+| OKLCH chroma                                                                 | ≥ 0.10 per categorical series                                                              |
+| Adjacent series under protanopia / deuteranopia (Machado 2009, severity 1.0) | OKLab ΔE×100 ≥ 8                                                                           |
+| Worst pair in the group, normal vision                                       | OKLab ΔE×100 ≥ 15                                                                          |
+| Contrast against the surface                                                 | ≥ 3:1                                                                                      |
+| Group size / repeats                                                         | ≤ 8 series (a 9th folds into `other`), no repeated colour                                  |
+| Value format                                                                 | #rgb or #rrggbb only; anything else is reported and left out of that scheme's other checks |
 
 Only literal `{ light: '#hex', dark: '#hex' }` entries are read. A deliberately neutral series is
 keyed `other`: it skips the chroma floor and nothing else. The kind is a grace kind — `warn` from
