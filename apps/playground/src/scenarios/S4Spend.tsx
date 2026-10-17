@@ -128,7 +128,7 @@ function SpendStats({ shotState }: ScenarioProps) {
           })}
           {...shared}
           sparkline={(size) => (
-            <Box data-shot-hover>
+            <Box>
               <Sparkline
                 ariaLabel={`Daily spend, ${WINDOW_LABEL}, EUR`}
                 data={MTD_TOTALS}

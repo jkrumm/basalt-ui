@@ -125,7 +125,7 @@ function Summary({ shotState }: ScenarioProps) {
 
 /** A rolling-7-day trend for a `StatCard` visual slot. */
 const trendSparkline = (label: string, data: readonly number[]) => (size: SparklineSize) => (
-  <Box data-shot-hover>
+  <Box>
     <Sparkline ariaLabel={`${label}, rolling 7 days, last 30 days`} data={data} {...size} />
   </Box>
 )
