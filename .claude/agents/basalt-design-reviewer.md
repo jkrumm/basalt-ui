@@ -12,7 +12,7 @@ You score a rendered UI. You did not build it. Do not read the app's source to e
 A shot out dir (default `.basalt/shots`, or the `out` in `.basalt/shots/last.json`):
 
 - `board.html` — every crop, labelled by component, scheme, viewport and state.
-- `metrics.json` — per anchor: `padding`, `gap`, `radius`, `nested`, `fontSizes`, `emptyRatio`, `contrast`, `sheet`; `scale` (the theme's resolved spacing, radius and font-size steps) and `scaleError`; `shots[]` with each file's `status`.
+- `metrics.json` — per anchor: `padding`, `gap`, `radius` (px, or `"full"` for a fully rounded box such as a `50%` circle or pill), `nested`, `fontSizes`, `emptyRatio`, `contrast`, `sheet`; `scale` (the theme's resolved spacing, radius and font-size steps) and `scaleError`; `shots[]` with each file's `status`.
 - `png/*.png` — the crops, images you can see. Each anchor has a contact sheet (`sheet`: one image holding that anchor's crop for every state × scheme × viewport, each labelled, with the status text where a crop does not exist) and each route a full-page shot (`_page`). Score every anchor in both schemes and both viewports.
 - A layout-suite result, only if the out dir has one.
 
