@@ -7,10 +7,10 @@
 import { expect, test } from 'bun:test'
 import { readdirSync, readFileSync, statSync } from 'node:fs'
 import { join } from 'node:path'
-import { CARD_INSET_PX, CARD_INSET_PY } from '../../configs/oxlint-plugin.js'
-import { SPACE_SCALE, SPACE_STEP } from './palette'
+import { SPACE_SCALE, SPACE_STEP } from '../src/tokens/palette'
+import { CARD_INSET_PX, CARD_INSET_PY } from './oxlint-plugin.js'
 
-const SRC = join(import.meta.dirname, '..')
+const SRC = join(import.meta.dirname, '..', 'src')
 
 function sources(dir: string): string[] {
   return readdirSync(dir).flatMap((name) => {
