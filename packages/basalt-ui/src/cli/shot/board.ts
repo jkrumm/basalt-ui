@@ -59,7 +59,7 @@ const metricsTable = (rows: AnchorMetrics[]): string => {
     .filter((a) => a.nested.length > 0)
     .map(
       (a) =>
-        `<li>${a.scheme}/${a.viewport}<ul>${a.nested.map((n) => `<li>${esc(n.path)} r${n.radius} p ${sides(n.padding)}</li>`).join('')}</ul></li>`,
+        `<li>${a.scheme}/${a.viewport}<ul>${a.nested.map((n) => `<li>${esc(n.path)} r${n.radius === 'full' ? ' full' : n.radius} p ${sides(n.padding)}</li>`).join('')}</ul></li>`,
     )
   return (
     `<table><tr><th></th><th>box</th><th>padding</th><th>gap r/c</th><th>radius</th><th>border</th>` +
