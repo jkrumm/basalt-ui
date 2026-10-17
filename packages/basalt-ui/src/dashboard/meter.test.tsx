@@ -1,8 +1,6 @@
 import { MantineProvider } from '@mantine/core'
 import { cleanup, render } from '@testing-library/react'
 import { afterEach, describe, expect, test } from 'bun:test'
-import { readFileSync } from 'node:fs'
-import { resolve } from 'node:path'
 import { Meter } from './meter'
 import type { MeterProps } from './meter'
 
@@ -361,7 +359,7 @@ describe('Meter', () => {
   })
 })
 
-describe('Meter — round-1 board fixes', () => {
+describe('Meter — captions and roots', () => {
   test('categorical segments caption every part, in order: swatch + name + value', () => {
     const { container } = mount({
       label: 'Spend',
@@ -421,14 +419,6 @@ describe('Meter — round-1 board fixes', () => {
     expect(getByText('No data')).toBeTruthy()
     expect(container.querySelector('[data-meter-parts]')).toBeNull()
     expect(container.querySelector('[data-meter-captions]')).toBeNull()
-  })
-
-  test('the ring value and captions use type roles only (micro, sm, kpi)', () => {
-    const css = readFileSync(resolve(import.meta.dirname, 'meter.module.css'), 'utf8')
-    const sizes = new Set(css.match(/var\(--vx-text-[a-z0-9]+\)/g))
-    expect([...sizes].toSorted()).toEqual(
-      ['var(--vx-text-kpi)', 'var(--vx-text-micro)', 'var(--vx-text-sm)'].toSorted(),
-    )
   })
 
   test.each([

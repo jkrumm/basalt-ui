@@ -49,6 +49,10 @@ export type BarListProps = BasaltProps & {
   emptyText?: string
 }
 
+/** `null`, `undefined`, `false` and `true` render nothing, so they are not a secondary value. */
+const hasContent = (node: ReactNode): boolean =>
+  node !== undefined && node !== null && typeof node !== 'boolean'
+
 export function BarList({
   label,
   items,
@@ -81,7 +85,7 @@ export function BarList({
 
   const scale =
     max ?? items.reduce((top, i) => (Number.isFinite(i.value) ? Math.max(top, i.value) : top), 0)
-  const hasSecondary = items.some((i) => i.secondary !== undefined)
+  const hasSecondary = items.some((i) => hasContent(i.secondary))
   return (
     // The explicit role is deliberate: `list-style: none` makes Safari/VoiceOver drop the implicit one.
     <ul
@@ -111,6 +115,7 @@ export function BarList({
             <span className={classes.value}>
               {Number.isFinite(item.value) ? format(item.value) : '—'}
             </span>
+            {/* Kept empty on a row without one: the secondary column is shared, so every row has the cell. */}
             {hasSecondary && <span className={classes.secondary}>{item.secondary}</span>}
           </li>
         )

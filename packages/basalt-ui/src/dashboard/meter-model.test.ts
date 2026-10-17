@@ -132,11 +132,21 @@ describe('caption mode', () => {
     expect(m.partCaptions).toEqual([])
     expect(startCaptionText(m, undefined)).toBe('30')
   })
+  test('zones win over segments at runtime: a zoned track is never captioned by parts', () => {
+    const m = modelBar({
+      ...base,
+      zones: [{ from: 0, to: 100, label: 'All' }],
+      segments: [{ value: 30, label: 'A' }],
+    })
+    expect(m.captionMode).toBe('reading')
+    expect(m.partCaptions).toEqual([])
+    expect(startCaptionText(m, undefined)).toBe('All · 30')
+  })
   test('no segments, and empty segments, are never categorical', () => {
     expect(modelBar(base).captionMode).toBe('reading')
     expect(modelBar({ ...base, segments: [] }).captionMode).toBe('reading')
   })
-  test('a repeated label gets a unique key', () => {
+  test('keys are positional, so repeated labels stay unique', () => {
     const m = modelBar({
       ...base,
       segments: [
@@ -144,6 +154,6 @@ describe('caption mode', () => {
         { value: 1, label: 'A' },
       ],
     })
-    expect(new Set(m.partCaptions.map((c) => c.key)).size).toBe(2)
+    expect(m.partCaptions.map((c) => c.key)).toEqual(['0', '1'])
   })
 })

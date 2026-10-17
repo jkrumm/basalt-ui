@@ -710,7 +710,7 @@ describe('stat-card.module.css — caption, value row, foot', () => {
 })
 
 describe('a Meter in the visual slot', () => {
-  // Geometry (inset, height, wrapping) is asserted in a real browser: tests/layout/meter.layout.test.ts.
+  // Geometry (inset, height, wrapping) is asserted in a real browser: tests/layout/dash.layout.test.ts.
   test('mounts inside the bleed slot', () => {
     const { container } = renderIntoDom(
       <MantineProvider>

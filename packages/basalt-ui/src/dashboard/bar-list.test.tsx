@@ -185,4 +185,16 @@ describe('BarList — the track is the label column', () => {
       expect(li.children.length).toBe(3)
     }
   })
+
+  test('a null or false secondary does not open the secondary column', () => {
+    const { container } = mount({
+      label: 'L',
+      items: [
+        { label: 'a', value: 5, secondary: null },
+        { label: 'b', value: 3, secondary: false },
+      ],
+    })
+    expect(container.querySelector('ul')?.hasAttribute('data-secondary')).toBe(false)
+    for (const li of container.querySelectorAll('li')) expect(li.children.length).toBe(2)
+  })
 })

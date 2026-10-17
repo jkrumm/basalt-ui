@@ -343,14 +343,14 @@
 
 /* A Meter in the visual slot is a block, not a chart: it sizes to its content and keeps the card's
  * inline inset instead of the sparkline's fixed 22px and side bleed. */
-.sparklineBleed:has([data-basalt-meter]) {
+.sparklineBleed:has(> [data-basalt-meter]) {
   height: auto;
   margin-inline: 0;
 }
 
 /* The `right` placement: the fixed basis, 22px height and clip are a sparkline's box. A Meter takes the
  * row's remaining width and its own height, unclipped. */
-.sparklineRight:has([data-basalt-meter]) {
+.sparklineRight:has(> [data-basalt-meter]) {
   flex: 1 1 auto;
   height: auto;
   overflow: visible;
@@ -392,7 +392,7 @@
     margin-inline: calc(-1 * var(--vx-space-card-inset-x, 1rem));
   }
 
-  .metricsRow .sparklineRight:has([data-basalt-meter]) {
+  .metricsRow .sparklineRight:has(> [data-basalt-meter]) {
     margin-inline: 0;
   }
 }
