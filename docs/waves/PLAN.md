@@ -1175,7 +1175,7 @@ upgrade (Waves 40–41); in-wave boards are the playground's.
 - **Next:** owner review of the Wave 32 boards (`.design-parity/w32/`, local). Stopped here as briefed: not
   released; Wave 33 is marked active in this plan but not spawned (the orchestrator spawns it).
 
-## Wave 33 — The metric card and chart-in-card <!-- status: active -->
+## Wave 33 — The metric card and chart-in-card <!-- status: done -->
 
 Spec: SPEC § 6.1, § 6.2, § 6.10, § 6.12. Scenarios S4 and S1. Consumer before/after: Waves 40–41.
 
@@ -1193,7 +1193,7 @@ Spec: SPEC § 6.1, § 6.2, § 6.10, § 6.12. Scenarios S4 and S1. Consumer befor
 - [x] Unit tests: no background on the delta in both schemes; the `Badge` default variant; the end dot's
       colour; `qualifier` on the caption row and `subtitle` in the footer.
 - [x] At least three rounds on S4 and S1 metric cards with the shipped reviewer.
-- [ ] **Owner review** of the first pattern family's boards.
+- [x] **Owner review** of the first pattern family's boards.
       **Left behind:**
 
 - **Landed** (PRs #331 chrome anchors, #332 date ticks, #333 chrome, #334 metric card, #335 round-1 board items).
@@ -1243,7 +1243,18 @@ Spec: SPEC § 6.1, § 6.2, § 6.10, § 6.12. Scenarios S4 and S1. Consumer befor
   `done` and Wave 34 to `active`. Not released; nothing spawned. The gzip ceilings were set from master CI's Linux
   run (39010834973), not a local build.
 
-## Wave 34 — Meter and BarList <!-- status: pending -->
+- **Owner and orchestrator decisions (2026-10-17, after the review):**
+  - **D22: status text is derived per surface** (owner). The status solids used as text get their own
+    per-surface derived stops, so 4.5:1 holds at every `lightLevel`/`darkLevel` value. This is a Wave 34 step.
+    Until it lands, AGENTS.md narrows "contrast guaranteed by derivation" for status text to the default
+    config.
+  - **Light and outline Buttons are ink by default** (owner). Only the filled primary and an explicit `color=`
+    carry the accent; this is a Wave 34 step and the SPEC § 6.12 record.
+  - **D19's grace is extended to the rollout** (orchestrator). `card-inset`, `raw-spacing` and `inline-spacing`
+    stay `warn` until the fleet is clean in Waves 40–41, then promote in their own commit. No consumer is on
+    2.16, so a 2.17 promotion would turn them into errors with no warn period.
+
+## Wave 34 — Meter and BarList <!-- status: active -->
 
 Spec: SPEC § 3, § 4, § 6.3, § 6.4, D1, D2. Scenarios S4 and S2 (build the S2 fixture). Validators: argo
 (reading, usage), rb (course, ingest), linewatch (link against ceiling).
@@ -1256,6 +1267,11 @@ Spec: SPEC § 3, § 4, § 6.3, § 6.4, D1, D2. Scenarios S4 and S2 (build the S2
 - [ ] Unit tests: `aria-valuenow/min/max`, segments in `aria-describedby`, target tick position, 0 / max /
       over-max / missing target, truncation with a `title`; empty and loading states for both. Budgets: non-chart symbols +2, barrel types +2,
       consumers named.
+- [ ] **Status text per surface (D22, owner):** derive the status solids used as text per surface, so they
+      clear 4.5:1 at every `lightLevel`/`darkLevel` value, both schemes. Add golden tests at the knob
+      extremes, restore the AGENTS.md "guaranteed by derivation" wording, and add a MIGRATING entry.
+- [ ] **Light and outline Buttons are ink by default (owner):** only the filled primary and an explicit `color=`
+      carry the accent. Record it in SPEC § 6.12 and add a MIGRATING entry.
 - [ ] At least three rounds on S4 and S2; owner sees the boards.
       **Left behind:**
 
