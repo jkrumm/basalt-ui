@@ -571,10 +571,11 @@ async function budgets(providerOnlyDist: string): Promise<Budget[]> {
     // 7098 -> 7100 (W32): `radiusReading`'s zero-size and percentage branches (+2).
     // 7100 -> 7124 (W33): `shot` hovers a declared `data-shot-at` point and probes for a rendered readout only (+24).
     // 7124 -> 7132 (W33 review): `data-shot-at` parsed by one anchored pattern within [0, 1] (+8).
+    // 7132 -> 7433 (fix/shot-real-data): `shot` on a real, signed-in app (+301): cli/shot/real-data.ts +156 (`@env`/`@file` resolution, header and `--api` validation, the read-only proxy with its log and timeout, the origin-guarded seed script), capture.ts +70 (one `visit` that loads, auto-anchors and checks the data; `flagProblems`; `--wait`), index.ts +41 (six flags and their rules, proxy wiring), serve.ts +13 (Host/Origin guard), help.ts +21 (flags, `multiple` in the option type, the real-app example).
     {
       label: 'CLI non-test lines (src/cli/**)',
       value: cliNonTestLines(),
-      ceiling: 7132,
+      ceiling: 7433,
     },
     ...(await providerOnlyRows(providerOnlyDist)),
   ]

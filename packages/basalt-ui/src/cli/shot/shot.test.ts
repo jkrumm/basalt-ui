@@ -21,9 +21,11 @@ import {
   hoverAtOf,
   hoverTrigger,
   markVisibleTooltips,
+  openContext,
   parseHoverAt,
   readScaleInPage,
   sheetName,
+  tagAutoAnchors,
   tooltipSelector,
   unionClip,
   visibleTooltip,
@@ -43,6 +45,7 @@ import { contrastRatio, contrastThreshold, finishMeasurement, radiusReading } fr
 import type { TextReading } from './measure'
 import { INSTALL_LINE, ShotError, isPlaywright, withBrowser } from './playwright'
 import type { Playwright } from './playwright'
+import { seedScript } from './real-data'
 import { serveDist } from './serve'
 import type { Measurement, ShotMetrics, ShotRecord } from './types'
 
@@ -1391,3 +1394,515 @@ describe('capture helpers', () => {
     })
   })
 })
+
+describe('real-app flags', () => {
+  const src = { env: { TOKEN: 's3cret-token', EMPTY: '' }, cwd: '/nowhere' }
+  const parse = (...extra: string[]) => parseShotArgs(['/', '--dist', 'd', ...extra], src)
+
+  test('defaults: no seeds, no proxy, no extra wait, no auto anchors, read-only', () => {
+    const a = parse()
+    expect([a.localStorage, a.api, a.headers, a.wait, a.autoAnchors, a.allowWrites]).toEqual([
+      [],
+      [],
+      [],
+      0,
+      false,
+      false,
+    ])
+  })
+  test('--local-storage takes @env and @file, repeatable', () => {
+    const cwd = tmp()
+    writeFileSync(join(cwd, 'tok'), 'from-file\n')
+    const a = parseShotArgs(
+      ['/', '--dist', 'd', '--local-storage', 'b=@env:TOKEN', '--local-storage', 'c=@file:tok'],
+      { env: src.env, cwd },
+    )
+    expect(a.localStorage).toEqual([
+      ['b', 's3cret-token'],
+      ['c', 'from-file'],
+    ])
+  })
+  test('--api, --header, --wait, --auto-anchors, --api-allow-writes', () => {
+    const a = parse(
+      '--api',
+      '/api/=https://x.example.com/ignored',
+      '--header',
+      'authorization=@env:TOKEN',
+      '--wait',
+      '1500',
+      '--auto-anchors',
+      '--api-allow-writes',
+    )
+    expect(a.api).toEqual([{ prefix: '/api', origin: 'https://x.example.com' }])
+    expect(a.headers).toEqual([['authorization', 's3cret-token']])
+    expect([a.wait, a.autoAnchors, a.allowWrites]).toEqual([1500, true, true])
+    expect(parse('--wait', 'networkidle').wait).toBe(0)
+  })
+  test('http is fine for loopback, and without --header', () => {
+    expect(parse('--api', '/a=http://localhost:3000', '--header', 'x=@env:TOKEN').api).toHaveLength(
+      1,
+    )
+    expect(parse('--api', '/a=http://remote.example.com').api).toHaveLength(1)
+  })
+  test.each([
+    [['--local-storage', 'novalue'], /expects <name>=<value>/],
+    [['--local-storage', 'a=lit=eral'], /never a literal/],
+    [['--local-storage', 'k=@env:MISSING'], /@env:MISSING is empty/],
+    [['--local-storage', 'k=@env:toString'], /@env:toString is empty/],
+    [['--local-storage', 'k=@env:EMPTY'], /@env:EMPTY is empty/],
+    [['--local-storage', 'k=@file:nope'], /cannot read @file:nope/],
+    [['--api', 'api=https://x'], /prefix must start/],
+    [['--api', '/=https://x'], /prefix must start/],
+    [['--api', '//=https://x'], /prefix must start/],
+    [['--api', '/api=ftp://x'], /http\(s\)/],
+    [['--header', 'a=@env:TOKEN'], /sent on --api requests only/],
+    [['--api', '/api=https://x', '--header', 'a=literal'], /never a literal/],
+    [['--api', '/api=http://remote.example.com', '--header', 'a=@env:TOKEN'], /must be https/],
+    [['--api', '/api=https://x', '--header', 'host=@env:TOKEN'], /--header host: not a header/],
+    [['--api', '/api=https://x', '--header', 'bad name=@env:TOKEN'], /not a header/],
+    [['--wait', 'soon'], /--wait takes/],
+  ])('rejects %j', (flags, message) => {
+    expect(() => parse(...flags)).toThrow(ShotError)
+    expect(() => parse(...flags)).toThrow(message)
+  })
+  test('a header value with a line break is refused by name, without the value', () => {
+    const bad = { env: { T: 'ok\r\nx-evil: 1' }, cwd: '/' }
+    const flags = ['/', '--dist', 'd', '--api', '/a=https://x', '--header', 'x-key=@env:T']
+    expect(() => parseShotArgs(flags, bad)).toThrow(/--header x-key: value has characters/)
+    expect(() => parseShotArgs(flags, bad)).not.toThrow(/evil/)
+  })
+  test('--api needs --dist', () => {
+    expect(() => parseShotArgs(['/', '--base', 'http://x', '--api', '/a=https://x'], src)).toThrow(
+      /--api needs --dist/,
+    )
+  })
+  test('an error never carries the secret value', () => {
+    for (const flags of [
+      ['--local-storage', 's3cret-token'],
+      ['--local-storage', 'k=s3cret-token'],
+      ['--api', '/api=https://x', '--header', 'a=s3cret-token'],
+      ['--api', '/api=http://remote.example.com', '--header', 'a=@env:TOKEN'],
+    ]) {
+      expect(() => parse(...flags)).toThrow(ShotError)
+      try {
+        parse(...flags)
+      } catch (error) {
+        expect((error as Error).message).not.toContain('s3cret-token')
+      }
+    }
+  })
+  test('the help.ts gate accepts the new flags', () => {
+    expect(
+      unknownFlag('shot', [
+        '/',
+        '--dist',
+        'd',
+        '--api',
+        '/a=https://x',
+        '--header',
+        'h=@env:X',
+        '--local-storage',
+        'k=@env:X',
+        '--wait',
+        '1',
+        '--auto-anchors',
+        '--api-allow-writes',
+      ]),
+    ).toBeNull()
+  })
+})
+
+describe('auto anchors', () => {
+  test('tagAutoAnchors numbers every match and tags only those over 120×60', () => {
+    const tagged: Record<string, string> = {}
+    const el = (name: string, width: number, height: number) => ({
+      getBoundingClientRect: () => ({ width, height }),
+      setAttribute: (_: string, value: string) => void (tagged[name] = value),
+    })
+    const els = [
+      el('small', 100, 200),
+      el('card', 300, 100),
+      el('flat', 300, 60),
+      el('table', 500, 400),
+    ]
+    const g = globalThis as { document?: unknown }
+    const saved = g.document
+    g.document = { querySelectorAll: () => els }
+    try {
+      tagAutoAnchors()
+    } finally {
+      g.document = saved
+    }
+    expect(tagged).toEqual({ card: 'auto-02', table: 'auto-04' })
+  })
+})
+
+/** A browser whose one page behaves as `page` says; enough of the surface for the real `capture`. */
+const scriptedBrowser = (page: Record<string, unknown>) =>
+  ({
+    newContext: () =>
+      Promise.resolve({
+        newPage: () => Promise.resolve(page),
+        addInitScript: () => Promise.resolve(),
+        close: () => Promise.resolve(),
+      }),
+  }) as never
+
+const quietPage = (over: Record<string, unknown> = {}) => {
+  const locator: Record<string, unknown> = {
+    first: () => locator,
+    count: () => Promise.resolve(0),
+    screenshot: () => Promise.resolve(),
+  }
+  return {
+    setDefaultTimeout: () => undefined,
+    goto: () => Promise.resolve(),
+    locator: () => locator,
+    screenshot: () => Promise.resolve(),
+    setContent: () => Promise.resolve(),
+    mouse: { move: () => Promise.resolve() },
+    keyboard: { press: () => Promise.resolve() },
+    evaluate: (expression: unknown) =>
+      Promise.resolve(
+        typeof expression === 'string' && expression.includes('data-shot-states')
+          ? { anchors: [], declared: [] }
+          : undefined,
+      ),
+    ...over,
+  }
+}
+
+describe('data trust in capture', () => {
+  const input = (browser: never, over: object = {}) => ({
+    browser,
+    base: 'http://x',
+    routes: ['/'],
+    states: ['rest' as const],
+    pngDir: '/unused',
+    log: () => undefined,
+    ...over,
+  })
+
+  test('a 401/403 or unanswered proxied call turns the page shot into an error', async () => {
+    const logs: string[] = []
+    const out = await capture(
+      input(scriptedBrowser(quietPage()), {
+        apiProblems: () => ['GET /api/kpi 401'],
+        log: (l: string) => void logs.push(l),
+      }),
+    )
+    const pages = out.shots.filter((s) => s.name === '_page')
+    expect(pages).toHaveLength(4)
+    expect(pages.every((s) => s.status === 'error' && s.note === 'GET /api/kpi 401')).toBe(true)
+    expect(logs.join('\n')).toContain('GET /api/kpi 401')
+  })
+
+  test('a failed localStorage seed is logged by key and fails the page', async () => {
+    const logs: string[] = []
+    const page = quietPage({
+      evaluate: (expression: unknown) =>
+        Promise.resolve(
+          String(expression).includes('__shotSeedFailed')
+            ? 'auth'
+            : String(expression).includes('data-shot-states')
+              ? { anchors: [], declared: [] }
+              : undefined,
+        ),
+    })
+    const out = await capture(
+      input(scriptedBrowser(page), {
+        localStorage: [['auth', 'tok-secret']],
+        log: (l: string) => void logs.push(l),
+      }),
+    )
+    expect(out.shots.every((s) => s.status === 'error')).toBe(true)
+    expect(logs.join('\n')).toContain('localStorage seed failed (auth)')
+    expect(logs.join('\n')).not.toContain('tok-secret')
+  })
+
+  test('auto anchors are tagged again on a state reload', async () => {
+    let tags = 0
+    const page = quietPage({
+      evaluate: (expression: unknown) => {
+        if (typeof expression === 'function') {
+          if (expression.name === 'tagAutoAnchors') tags++
+          return Promise.resolve(undefined)
+        }
+        return Promise.resolve(
+          String(expression).includes('data-shot-states')
+            ? { anchors: [], declared: ['empty'] }
+            : undefined,
+        )
+      },
+    })
+    await capture(input(scriptedBrowser(page), { autoAnchors: true, states: ['rest', 'empty'] }))
+    // Per scheme × viewport: one tag on the first load, one on the `empty` reload.
+    expect(tags).toBe(8)
+  })
+})
+
+describe('seedScript', () => {
+  const run = (origin: string, setItem: (k: string, v: string) => void) => {
+    const g: Record<string, unknown> = {}
+    new Function(
+      'location',
+      'localStorage',
+      'globalThis',
+      seedScript([['auth', 'a"b']], 'http://app'),
+    )({ origin }, { setItem }, g)
+    return g['__shotSeedFailed']
+  }
+  test('sets the keys on the app origin only', () => {
+    const set: string[][] = []
+    expect(run('http://app', (k, v) => void set.push([k, v]))).toBeUndefined()
+    expect(set).toEqual([['auth', 'a"b']])
+    const other: string[][] = []
+    expect(run('http://elsewhere', (k, v) => void other.push([k, v]))).toBe('origin')
+    expect(other).toEqual([])
+  })
+  test('reports the keys that could not be set', () => {
+    expect(
+      run('http://app', () => {
+        throw new Error('quota')
+      }),
+    ).toBe('auth')
+  })
+})
+
+describe('real-data run', () => {
+  const dist = (): string => {
+    const dir = tmp()
+    writeFileSync(join(dir, 'index.html'), '<h1>app</h1>')
+    return dir
+  }
+  /**
+   * Runs in its own bun process: the happy-dom preload swaps the global `Response`/`fetch` for ones
+   * `Bun.serve` rejects, so a real server only works outside it. `body` sees `up(...)` helpers.
+   */
+  const inBun = async (distDir: string, body: string): Promise<Record<string, unknown>> => {
+    const script = `
+      import { apiProxy } from ${JSON.stringify(join(import.meta.dir, 'real-data'))}
+      import { serveDist } from ${JSON.stringify(join(import.meta.dir, 'serve'))}
+      const DIST = ${JSON.stringify(distDir)}
+      const seen = []
+      const logs = []
+      const api = Bun.serve({ port: 0, hostname: '127.0.0.1', async fetch(req) {
+        const url = new URL(req.url)
+        seen.push({ path: url.pathname + url.search, auth: req.headers.get('authorization'), method: req.method, body: await req.text() })
+        return url.pathname === '/api/denied' ? new Response('no', { status: 401 }) : Response.json({ ok: true })
+      } })
+      const closed = Bun.serve({ port: 0, hostname: '127.0.0.1', fetch: () => new Response('') })
+      const closedPort = closed.port
+      closed.stop(true)
+      const hang = Bun.serve({ port: 0, hostname: '127.0.0.1', fetch: () => new Promise(() => {}) })
+      const up = (routes, headers, opts = {}) => {
+        const proxy = apiProxy(routes, headers, { log: (l) => logs.push(l), ...opts })
+        return { proxy, server: serveDist(DIST, proxy.handle) }
+      }
+      const result = {}
+      ${body}
+      console.log(JSON.stringify({ ...result, seen, logs }))
+      process.exit(0)`
+    const run = Bun.spawn(['bun', '-e', script], { stdout: 'pipe', stderr: 'pipe' })
+    const out = await new Response(run.stdout).text()
+    await run.exited
+    return JSON.parse(out) as Record<string, unknown>
+  }
+  const HEAD = "const base = 'http://127.0.0.1:' + api.port"
+
+  test('proxies GET with the header, but never on a navigation; other paths stay static', async () => {
+    const r = await inBun(
+      dist(),
+      `${HEAD}
+      const { server } = up([{ prefix: '/api', origin: base }], [['authorization', 'Bearer s3cret']])
+      result.page = await (await fetch(server.origin + '/dashboard')).text()
+      result.kpi = await (await fetch(server.origin + '/api/kpi?range=7d', { headers: { authorization: 'page-token' } })).json()
+      await fetch(server.origin + '/api/nav', { headers: { 'sec-fetch-mode': 'navigate' } })
+      await fetch(server.origin + '/api/doc', { headers: { 'sec-fetch-dest': 'document' } })
+      await fetch(server.origin + '/apiary')`,
+    )
+    expect(r['page']).toContain('<h1>app</h1>')
+    expect(r['kpi']).toEqual({ ok: true })
+    expect(r['seen']).toEqual([
+      { path: '/api/kpi?range=7d', auth: 'Bearer s3cret', method: 'GET', body: '' },
+      { path: '/api/nav', auth: null, method: 'GET', body: '' },
+      { path: '/api/doc', auth: null, method: 'GET', body: '' },
+    ])
+  })
+
+  test('writes get a logged 405 unless --api-allow-writes', async () => {
+    const r = await inBun(
+      dist(),
+      `${HEAD}
+      const ro = up([{ prefix: '/api', origin: base }], [])
+      result.blocked = (await fetch(ro.server.origin + '/api/save', { method: 'POST', body: 'x=1' })).status
+      const rw = up([{ prefix: '/api', origin: base }], [], { allowWrites: true })
+      result.allowed = (await fetch(rw.server.origin + '/api/save', { method: 'POST', body: 'x=1' })).status`,
+    )
+    expect([r['blocked'], r['allowed']]).toEqual([405, 200])
+    expect(r['seen']).toEqual([{ path: '/api/save', auth: null, method: 'POST', body: 'x=1' }])
+    expect(String(r['logs'])).toContain('POST /api/save blocked')
+  })
+
+  test('401 is logged and drained; a closed port and a hung origin are logged 502s', async () => {
+    const r = await inBun(
+      dist(),
+      `${HEAD}
+      const a = up([{ prefix: '/api', origin: base }], [['authorization', 'Bearer s3cret']])
+      result.denied = (await fetch(a.server.origin + '/api/denied?token=q1')).status
+      result.drained = a.proxy.drain()
+      result.again = a.proxy.drain()
+      const dead = up([{ prefix: '/api', origin: 'http://127.0.0.1:' + closedPort }], [])
+      result.dead = (await fetch(dead.server.origin + '/api/x')).status
+      const slow = up([{ prefix: '/api', origin: 'http://127.0.0.1:' + hang.port }], [], { timeoutMs: 100 })
+      result.slow = (await fetch(slow.server.origin + '/api/x')).status
+      result.slowDrained = slow.proxy.drain()`,
+    )
+    expect([r['denied'], r['dead'], r['slow']]).toEqual([401, 502, 502])
+    expect(r['drained']).toEqual(['GET /api/denied 401'])
+    expect(r['again']).toEqual([])
+    expect(r['slowDrained']).toEqual(['GET /api/x TimeoutError'])
+    const logs = (r['logs'] as string[]).join('\n')
+    expect(logs).toContain('api GET /api/denied → 401')
+    expect(logs).toContain('api GET /api/x failed:')
+    expect(logs).not.toMatch(/s3cret|q1/)
+  })
+
+  test('with a proxy live, a foreign Host or Origin is refused', async () => {
+    const r = await inBun(
+      dist(),
+      `${HEAD}
+      const { server } = up([{ prefix: '/api', origin: base }], [])
+      result.own = (await fetch(server.origin + '/')).status
+      result.origin = (await fetch(server.origin + '/api/x', { headers: { origin: 'http://evil.example' } })).status
+      result.sameOrigin = (await fetch(server.origin + '/', { headers: { origin: server.origin } })).status
+      result.host = (await fetch(server.origin + '/api/x', { headers: { host: 'evil.example' } })).status
+      const plain = serveDist(DIST)
+      result.noProxy = (await fetch(plain.origin + '/', { headers: { origin: 'http://evil.example' } })).status`,
+    )
+    expect([r['own'], r['origin'], r['sameOrigin'], r['host'], r['noProxy']]).toEqual([
+      200, 403, 200, 403, 200,
+    ])
+    expect(r['seen']).toEqual([])
+  })
+
+  test('shot() hands the seeds to capture and writes the secret to no file or log', async () => {
+    const cwd = tmp()
+    const logs: string[] = []
+    const seen: { localStorage?: unknown; wait?: unknown; autoAnchors?: unknown }[] = []
+    process.env['SHOT_TEST_TOKEN'] = 'tok-7f3a9c'
+    process.env['SHOT_TEST_BEARER'] = 'Bearer bearer-91bd'
+    try {
+      const { result, lines } = await errors(() =>
+        shot(
+          [
+            '/',
+            '--dist',
+            dist(),
+            '--out',
+            '.basalt/shots/r1',
+            '--api',
+            '/api=https://api.example.com',
+            '--local-storage',
+            'auth=@env:SHOT_TEST_TOKEN',
+            '--header',
+            'authorization=@env:SHOT_TEST_BEARER',
+            '--auto-anchors',
+          ],
+          cwd,
+          {
+            resolve: () => fakePw([]),
+            log: (l) => void logs.push(l),
+            capture: (input) => {
+              seen.push(input)
+              writeFileSync(join(input.pngDir, 'a.png'), '')
+              return Promise.resolve({
+                anchors: [],
+                shots: fakeMetrics().shots.filter((s) => s.status === 'ok'),
+                scale: [],
+              })
+            },
+          },
+        ),
+      )
+      expect(result).toBe(0)
+      expect(seen[0]).toMatchObject({
+        localStorage: [['auth', 'tok-7f3a9c']],
+        wait: 0,
+        autoAnchors: true,
+      })
+      expect(everythingWritten(cwd, logs, lines)).not.toMatch(/tok-7f3a9c|bearer-91bd/)
+    } finally {
+      delete process.env['SHOT_TEST_TOKEN']
+      delete process.env['SHOT_TEST_BEARER']
+    }
+  })
+
+  test('the real capture against a failing page leaves no secret in the log, board or metrics', async () => {
+    const cwd = tmp()
+    const logs: string[] = []
+    process.env['SHOT_TEST_TOKEN'] = 'tok-7f3a9c'
+    process.env['SHOT_TEST_BEARER'] = 'Bearer bearer-91bd'
+    const page = quietPage({
+      goto: () => Promise.reject(new Error('net::ERR_CONNECTION_REFUSED at tok-7f3a9c?')),
+    })
+    const pw: Playwright = {
+      chromium: {
+        launchServer: () =>
+          Promise.resolve({ wsEndpoint: () => 'ws://fake', kill: () => Promise.resolve() }),
+        connect: () => Promise.resolve(scriptedBrowser(page)),
+      },
+    }
+    try {
+      const { result, lines } = await errors(() =>
+        shot(
+          [
+            '/',
+            '--dist',
+            dist(),
+            '--out',
+            '.basalt/shots/r1',
+            '--api',
+            '/api=https://api.example.com',
+            '--local-storage',
+            'auth=@env:SHOT_TEST_TOKEN',
+            '--header',
+            'authorization=@env:SHOT_TEST_BEARER',
+          ],
+          cwd,
+          { resolve: () => pw, log: (l) => void logs.push(l) },
+        ),
+      )
+      expect(result).toBe(1)
+      const written = everythingWritten(cwd, logs, lines)
+      expect(written).toContain('load failed')
+      expect(existsSync(join(cwd, '.basalt/shots/r1/board.html'))).toBe(true)
+      expect(existsSync(join(cwd, '.basalt/shots/r1/metrics.json'))).toBe(true)
+      expect(written).not.toMatch(/bearer-91bd/)
+    } finally {
+      delete process.env['SHOT_TEST_TOKEN']
+      delete process.env['SHOT_TEST_BEARER']
+    }
+  })
+
+  test('openContext seeds localStorage through an origin-guarded init script', async () => {
+    const scripts: string[] = []
+    const browser = {
+      newContext: () => Promise.resolve({ addInitScript: (s: string) => void scripts.push(s) }),
+    }
+    await openContext(browser as never, 'light', 'desktop', [['auth', 'a"b']], 'http://app')
+    expect(scripts).toHaveLength(2)
+    expect(scripts[1]).toBe(seedScript([['auth', 'a"b']], 'http://app'))
+    expect(scripts[1]).toContain('location.origin!=="http://app"')
+  })
+})
+
+/** Every log line, error line and file under `cwd`, as one string. */
+const everythingWritten = (cwd: string, logs: string[], lines: string[]): string =>
+  [
+    ...logs,
+    ...lines,
+    ...[...new Bun.Glob('**/*').scanSync({ cwd, dot: true })].map((f) =>
+      readFileSync(join(cwd, f), 'utf8'),
+    ),
+  ].join('\n')

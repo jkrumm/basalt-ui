@@ -4,6 +4,8 @@ import { readFileSync } from 'node:fs'
 import { basename, join } from 'node:path'
 
 import { buildSheet } from './board'
+import { SEED_FLAG, seedScript } from './real-data'
+import type { Pair } from './real-data'
 
 import { finishMeasurement, measureAnchor } from './measure'
 import type { Box, PwBrowser, PwContext, PwLocator, PwPage, ShotOptions } from './playwright'
@@ -33,6 +35,14 @@ export type CaptureInput = {
   routes: readonly string[]
   states: readonly ShotState[]
   pngDir: string
+  /** Seeded before any page script runs (values may be secrets: never logged or written). */
+  localStorage?: readonly Pair[]
+  /** Extra settle in ms after `networkidle`; omitted: none. */
+  wait?: number
+  /** Drains the proxied calls that failed since the last read (401/403, no answer). */
+  apiProblems?: () => string[]
+  /** On a page with no `data-shot`, tag each large Card, Paper and table as an anchor. */
+  autoAnchors?: boolean
   /** Replaces the in-page measurer (tests). */
   measure?: (anchor: PwLocator) => Promise<Measurement>
   log: (line: string) => void
@@ -51,6 +61,8 @@ type Ctx = {
   anchors: AnchorMetrics[]
   shots: ShotRecord[]
   measured: Set<string>
+  /** What the last visit showed to be wrong about the data itself: a failed seed, a 401/403, no API answer. */
+  problems: string[]
   /** Read on the first page of a context that loads. */
   scale?: Steps | undefined
   scaleError?: string | undefined
@@ -124,9 +136,20 @@ function record(c: Ctx, { name, state, status, file, note }: Outcome): void {
     c.input.log(`[shot] ${route} ${name} ${scheme}/${viewport}/${state}: ${note}`)
 }
 
-async function load(page: PwPage, url: string): Promise<void> {
+async function load(page: PwPage, url: string, settle = 0): Promise<void> {
   await page.goto(url, { waitUntil: 'networkidle' })
   await page.evaluate('document.fonts.ready.then(() => undefined)')
+  if (settle > 0) await new Promise((done) => setTimeout(done, settle))
+}
+
+/** Runs in the page: numbers every Card, Paper and table in DOM order, tagging those over 120×60 px as anchors. */
+export function tagAutoAnchors(): void {
+  const found = document.querySelectorAll('.mantine-Card-root, .mantine-Paper-root, table')
+  Array.from(found).forEach((el, i) => {
+    const { width, height } = el.getBoundingClientRect()
+    if (width > 120 && height > 60)
+      el.setAttribute('data-shot', `auto-${String(i + 1).padStart(2, '0')}`)
+  })
 }
 
 const readFacts = (page: PwPage): Promise<PageFacts> =>
@@ -134,6 +157,39 @@ const readFacts = (page: PwPage): Promise<PageFacts> =>
     anchors: [...new Set([...document.querySelectorAll('[data-shot]')].map((e) => e.getAttribute('data-shot')).filter(Boolean))],
     declared: [...document.querySelectorAll('[data-shot-states]')].flatMap((e) => (e.getAttribute('data-shot-states') ?? '').split(/\\s+/)).filter(Boolean),
   }))()`)
+
+/**
+ * One load of `url`: settle, auto-anchor a page that declares none, read its facts, and collect
+ * what is wrong with the data (`c.problems`) so a board never looks fine over a failed login.
+ */
+async function visit(c: Ctx, url: string): Promise<PageFacts> {
+  const { input, page } = c
+  await load(page, url, input.wait)
+  let facts = await readFacts(page)
+  if (input.autoAnchors && facts.anchors.length === 0) {
+    await page.evaluate(tagAutoAnchors, undefined)
+    facts = await readFacts(page)
+  }
+  c.problems = input.apiProblems?.() ?? []
+  if (input.localStorage?.length) {
+    const failed = await page.evaluate<unknown>(`globalThis.${SEED_FLAG} ?? ''`)
+    if (typeof failed === 'string' && failed !== '') {
+      c.problems.push(`localStorage seed failed (${failed})`)
+      input.log(`[shot] ${c.route}: localStorage seed failed (${failed})`)
+    }
+  }
+  return facts
+}
+
+/** Turns the page shot into an error when its data is untrustworthy (or adds one when none was taken). */
+function flagProblems(c: Ctx): void {
+  if (c.problems.length === 0) return
+  const note = c.problems.join('; ')
+  const page = c.shots.find((s) => s.name === PAGE_ANCHOR && s.state === 'rest')
+  if (!page) return record(c, { name: PAGE_ANCHOR, state: 'rest', status: 'error', note })
+  Object.assign(page, { status: 'error', note })
+  c.input.log(`[shot] ${c.route} ${PAGE_ANCHOR} ${c.scheme}/${c.viewport}/rest: ${note}`)
+}
 
 /** Brings the anchor into view; throws when it is absent, hidden or off-screen at this viewport. */
 async function reveal(anchor: PwLocator): Promise<void> {
@@ -398,11 +454,15 @@ async function captureUrlState(c: Ctx, state: ShotState): Promise<void> {
   }
   let here: PageFacts
   try {
-    await load(c.page, c.input.base + withParam(c.route, state))
-    here = await readFacts(c.page)
+    here = await visit(c, c.input.base + withParam(c.route, state))
   } catch (error) {
     for (const name of restNames)
       record(c, { name, state, status: 'error', note: `load failed: ${firstLine(error)}` })
+    return
+  }
+  if (c.problems.length > 0) {
+    for (const name of restNames)
+      record(c, { name, state, status: 'error', note: c.problems.join('; ') })
     return
   }
   for (const name of new Set([...restNames, ...here.anchors])) {
@@ -501,7 +561,7 @@ export function groupScale({ mantine, vx }: ScaleRead): Steps {
 }
 
 async function capturePage(
-  args: Omit<Ctx, 'facts' | 'anchors' | 'shots' | 'measured'> & { wantScale: boolean },
+  args: Omit<Ctx, 'facts' | 'anchors' | 'shots' | 'measured' | 'problems'> & { wantScale: boolean },
 ) {
   const { wantScale, ...rest } = args
   const c: Ctx = {
@@ -510,11 +570,11 @@ async function capturePage(
     anchors: [],
     shots: [],
     measured: new Set(),
+    problems: [],
   }
   const { input, route } = c
   try {
-    await load(c.page, input.base + route)
-    c.facts = await readFacts(c.page)
+    c.facts = await visit(c, input.base + route)
   } catch (error) {
     record(c, {
       name: PAGE_ANCHOR,
@@ -544,6 +604,7 @@ async function capturePage(
       snap(c.page, path, { fullPage: true }).then(() => undefined),
     )
   }
+  flagProblems(c)
   for (const name of usable) {
     for (const [state, capture] of Object.entries(POINTER_STATES)) {
       if (input.states.includes(state as ShotState)) await capture(c, name)
@@ -558,6 +619,8 @@ export async function openContext<C extends PwContext>(
   browser: PwBrowser<C>,
   scheme: Scheme,
   viewport: Viewport,
+  seeded: readonly Pair[] = [],
+  origin = '',
 ): Promise<C> {
   const spec = VIEWPORT_SPECS[viewport]
   const context = await browser.newContext({
@@ -569,6 +632,7 @@ export async function openContext<C extends PwContext>(
     reducedMotion: 'reduce',
   })
   await context.addInitScript(`localStorage.setItem('mantine-color-scheme-value', '${scheme}')`)
+  if (seeded.length > 0) await context.addInitScript(seedScript(seeded, origin))
   return context
 }
 
@@ -644,7 +708,13 @@ export async function capture(input: CaptureInput): Promise<{
   }
   for (const scheme of SCHEMES) {
     for (const viewport of VIEWPORTS) {
-      const context = await openContext(input.browser, scheme, viewport)
+      const context = await openContext(
+        input.browser,
+        scheme,
+        viewport,
+        input.localStorage,
+        new URL(input.base).origin,
+      )
       try {
         const page = await context.newPage()
         page.setDefaultTimeout(NAV_TIMEOUT_MS)
