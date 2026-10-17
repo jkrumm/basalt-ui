@@ -10,6 +10,9 @@
  * @example
  * import { BarList } from 'basalt-ui'
  *
+ * // Recovery contributors on a fixed 0–100 scale, the qualitative level as the secondary value:
+ * <BarList label="Recovery contributors" max={100} items={[{ label: 'Sleep', value: 82, secondary: 'Good' }]} />
+ *
  * <BarList
  *   label="Top projects by tokens"
  *   items={[{ label: 'argo', value: 1840, secondary: '41%' }, { label: 'rb', value: 920 }]}

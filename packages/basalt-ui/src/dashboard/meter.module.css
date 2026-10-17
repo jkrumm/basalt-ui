@@ -36,6 +36,22 @@
   background: color-mix(in srgb, var(--vx-line) 45%, transparent);
 }
 
+.zone {
+  flex: none;
+  height: 100%;
+}
+
+/* The reading on a zone track: a notch standing proud of the bands, in ink. */
+.marker {
+  position: absolute;
+  top: -3px;
+  bottom: -3px;
+  width: 3px;
+  margin-inline-start: -1.5px;
+  border-radius: 1px;
+  background: var(--vx-ink);
+}
+
 .tick {
   position: absolute;
   top: -2px;

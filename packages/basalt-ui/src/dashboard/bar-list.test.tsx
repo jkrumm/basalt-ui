@@ -56,6 +56,20 @@ describe('BarList', () => {
     expect(leaders[0]).toBe(bars(on.container)[0] as HTMLElement)
   })
 
+  test('a fixed max=100 scales every contributor against 100 and keeps the level text', () => {
+    const { container, getByText } = mount({
+      label: 'Recovery contributors',
+      max: 100,
+      items: [
+        { label: 'Sleep', value: 82, secondary: 'Good' },
+        { label: 'HRV', value: 41, secondary: 'Low' },
+      ],
+    })
+    expect(bars(container).map((b) => b.style.width)).toEqual(['82%', '41%'])
+    expect(getByText('Good')).toBeTruthy()
+    expect(getByText('Low')).toBeTruthy()
+  })
+
   test('formats values', () => {
     const { getByText } = mount({ label: 'L', items: ITEMS, format: (v) => `${v} tok` })
     expect(getByText('80 tok')).toBeTruthy()
