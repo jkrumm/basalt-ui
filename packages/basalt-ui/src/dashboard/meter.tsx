@@ -4,8 +4,9 @@
  * along is this against a limit"; choose `BarList` for a ranking and a chart for a trend. An HTML/CSS
  * primitive, not a chart kind (no scale, axis or tooltip).
  *
- * Colour law: the fill is neutral (`--vx-muted` at a strength that holds 3:1 on the track; `tone="ink"` for full ink). `color` is for a VERDICT only (over budget, below
- * target) and is a status colour the consumer passes; categorical `segments` take the consumer's
+ * Colour law: a plain `value` bar's fill is neutral (`--vx-muted` at a strength that holds 3:1 on
+ * the track; `tone="ink"` for full ink); `segments` and `zones` keep their own fills. `color` is for
+ * a VERDICT only (over budget, below target) and is a status colour the consumer passes; categorical `segments` take the consumer's
  * series colours. Committed vs forecast is the same neutral at two strengths — never colour alone: a
  * tick marks the boundary and a caption names the forecast. A value past `max` clamps the fill at the
  * track end; the caption still states the real value.
@@ -84,7 +85,7 @@ type BarCommon = Common & {
    */
   ticks?: readonly MeterTick[]
   /**
-   * `'muted'` (default): a non-verdict fill (a load, not a verdict) in `--vx-muted` at a strength that
+   * `'muted'` (default for a plain `value` bar; `segments` and `zones` keep their fills): a non-verdict fill (a load, not a verdict) in `--vx-muted` at a strength that
    * holds 3:1 against the track in both schemes — the ink fill is near-white in dark. `'ink'` restores
    * the full-ink `--vx-line` fill. A `color` wins over both.
    */
@@ -161,6 +162,12 @@ function warnInvalidTrack(min: number, max: number) {
   )
 }
 
+/** Muted is the default for a plain `value` bar only; `segments`/`zones` keep their fills unless asked. */
+function barTone(tone: 'muted' | 'ink' | undefined, plain: boolean): 'muted' | undefined {
+  if (tone === 'ink') return undefined
+  return tone === 'muted' || plain ? 'muted' : undefined
+}
+
 export function Meter(props: MeterProps) {
   const { label, min = 0, max = 100, format = asText, className, style } = props
   const row = props.size === 'row'
@@ -189,7 +196,7 @@ export function Meter(props: MeterProps) {
       zones={props.zones}
       target={isReading(props.target) ? props.target : undefined}
       ticks={props.ticks}
-      tone={props.tone === 'ink' ? undefined : 'muted'}
+      tone={barTone(props.tone, props.segments === undefined && props.zones === undefined)}
       forecastCaption={props.segments === undefined ? undefined : props.forecastCaption}
       startCaption={props.startCaption}
       endCaption={props.endCaption}
