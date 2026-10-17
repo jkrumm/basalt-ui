@@ -2,9 +2,9 @@
  * Coverage for `format/date.ts` — weekday, relativeTime, date/time/dateTime and the duration
  * family. `now` is injected everywhere so no test reads the wall clock.
  */
-import { describe, expect, test } from 'bun:test'
+import { afterEach, describe, expect, test } from 'bun:test'
 import { date, dateTime, duration, durationClock, relativeTime, time, weekday } from './date'
-import { NON_FINITE } from './shared'
+import { NON_FINITE, defineFormat, resetFormatDefaults } from './shared'
 
 const en = { locale: 'en-US' } as const
 const now = Date.parse('2026-09-02T12:00:00Z')
@@ -235,5 +235,28 @@ describe('duration', () => {
     expect(duration(undefined, { style: 'long' })).toBe(NON_FINITE)
     expect(duration(NaN, { style: 'compact' })).toBe(NON_FINITE)
     expect(duration(-5, { style: 'compact' })).toBe('0s')
+  })
+})
+
+describe('defineFormat default locale', () => {
+  afterEach(resetFormatDefaults)
+
+  test('relativeTime falls back to the defined locale, a call locale still wins', () => {
+    defineFormat({ locale: 'de' })
+    expect(relativeTime(now - 3 * HOUR, { now })).toBe('vor 3 Stunden')
+    expect(relativeTime(now - 3 * HOUR, { now, locale: 'en-US' })).toBe('3 hours ago')
+  })
+
+  test('a changed default is never served a stale formatter', () => {
+    defineFormat({ locale: 'de' })
+    expect(relativeTime(now - 3 * HOUR, { now })).toBe('vor 3 Stunden')
+    defineFormat({ locale: 'en-US' })
+    expect(relativeTime(now - 3 * HOUR, { now })).toBe('3 hours ago')
+  })
+
+  test('duration and the date family already honour it', () => {
+    defineFormat({ locale: 'de', timeZone: 'UTC' })
+    expect(duration(3900, { style: 'long' })).toBe('1 Stunde 5 Minuten')
+    expect(date(Date.parse('2026-09-02T12:00:00Z'), { format: 'long' })).toBe('2. September 2026')
   })
 })

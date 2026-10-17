@@ -1053,6 +1053,16 @@ which disables the readout.
 New, additive: `reference={n | 'mean'}` draws a dashed `--vx-line` hairline and widens the y domain
 to include it (`'mean'` is over the plotted values).
 
+### `relativeTime` honours the format locale
+
+`relativeTime` (and `SyncButton`, which calls it with no locale) now falls back to the
+`defineFormat` / `BasaltProvider` `locale`, like `numberFormat` and `dateFormat` always did. Before,
+it fell back to the runtime's own locale, so an `en-GB` app on a German system read "vor 4 Tagen".
+`duration` and the date builders already resolved the default; only `relativeTime` skipped it.
+
+**Opt-out:** pass `locale` per call, or leave `defineFormat` / the provider `locale` unset to keep
+the runtime locale. argo can drop its `APP_LOCALE` wrapper around `relativeTime`.
+
 ## 2.19.0 — the status dot, ink buttons and Meter refinements
 
 ### Status is a dot and a word, not an edge stripe (`StatCard`, `Callout`, notification centre)
