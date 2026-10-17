@@ -23,8 +23,7 @@ the build, then rendered critique (`basalt-ui shot` rounds scored by an isolated
      passes the reviewer;
    - the owner signs off on the boards.
 2. **Rotate, then the fleet.** Rewrite this file and start a fresh mother. It runs the proven loop app by app: rb,
-   linewatch, basalt-ui-obsidian, rollhook, then the 1.x → 2.x migrations of shutterflow (1.13), email-gateway
-   (1.36) and image-gateway (1.41). Each app's friction becomes a ledger row, an upstream fix and a release.
+   linewatch, basalt-ui-obsidian, rollhook, then the 1.x → 2.x migrations of email-gateway (1.36) and image-gateway (1.41). Each app's friction becomes a ledger row, an upstream fix and a release.
 3. **weatherorb's UX/UI rewrite** is the final validation, handed to weatherorb's own orchestrator when phase 2 has
    settled. Its UI waves are held until then (its renumbered Waves 51+).
 
@@ -60,7 +59,7 @@ Queued behind all of it: Part 2's maturation Waves 20–28.
 | linewatch          | `make up` from master (no CD)                         | `make check`, health                                            | charts/page-frame validator                                                                                                                                                                                                                                                                                                                                                                       |
 | rollhook           | marketing auto-deploys                                | —                                                               | tokens-only (`--tailwind` later)                                                                                                                                                                                                                                                                                                                                                                  |
 | weatherorb         | its own                                               | its own                                                         | **never spawn agents there**; coordinate only with its orchestrator: SendMessage to `uds:/tmp/cc-socks/3255.sock` (name `weatherorb-f4`, herdr pane w22:p14). Friction arrives as "basalt friction" rows in its waves. On 2.14.0 live (its W47: rows 132/133 verified, `basaltRouterOptions` adopted). Its UI waves are held while basalt runs Part 3; its toolbelt wave waits for basalt Wave 22 |
-| **shutterflow**    | ?                                                     | ?                                                               | NEW: still on basalt-ui **1.13.0 / 1.40.3**. A session on the MacBook will queue improvements; treat it like weatherorb (its own orchestrator, friction → ledger rows). Wave 28's 1.x sunset gate must also wait for shutterflow on 2.x                                                                                                                                                           |
+| **shutterflow**    | —                                                     | —                                                               | **Out of this track (owner, 2026-10-17).** A larger UX re-establishment that the owner coordinates himself from the MacBook. It stays on basalt 1.x until then; never spawn agents or brief it from here. Part 2's Wave 28 1.x sunset still waits for it.                                                                                                                                         |
 
 ## Decisions already made (don't re-ask)
 
