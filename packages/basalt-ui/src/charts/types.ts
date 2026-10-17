@@ -155,6 +155,12 @@ export type RefLine = {
   dashed?: boolean | undefined
   axis?: 'left' | 'right' | undefined
   /**
+   * Names the line on the plot: a small muted caption at the plot's right end (left end for a
+   * right-axis line, clear of its tick labels), above the line, below it near the plot's top. It
+   * follows the legend toggle. The ink is `--vx-ink2`, never the line colour.
+   */
+  label?: string | undefined
+  /**
    * Names the line in the legend (its color, dashed as `dashed`; a toggle hides the line), so a
    * threshold needs no always-`null` series. `mark` is the swatch shape. Default `'line'`. The
    * toggle state is keyed by the line's index in `refLines`: reordering the array while a line is

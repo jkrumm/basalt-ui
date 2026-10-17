@@ -9,6 +9,7 @@ import { dateTickFormat, monthName, pad2, utcAxisDate } from './date-tick-format
 import { crosshair } from '@tanstack/charts/crosshair'
 import { decorative } from '@tanstack/charts/mark/decorative'
 import { rect } from '@tanstack/charts/rect'
+import { text } from '@tanstack/charts/text'
 import { ruleX, ruleY } from '@tanstack/charts/rule'
 import { scaleLinear } from '@tanstack/charts/scales/linear'
 import { scaleUtc } from 'd3-scale'
@@ -682,6 +683,34 @@ function underlayMarks<T, X extends ChartX>(
   return [...zones, ...xZones]
 }
 
+/** A ref label within this share of the plot height of the top flips below its line. */
+const REF_LABEL_TOP_SHARE = 0.12
+const REF_LABEL_DX = 6
+const REF_LABEL_DY_ABOVE = -5
+const REF_LABEL_DY_BELOW = 11
+
+/** The caption naming a reference line, at the plot end clear of its own axis' tick labels. */
+const refLabelMark = (r: RefLine, i: number, axes: Axes<unknown>): ChartMarks[number] => {
+  const [lo, hi] = axes.axisOf(r.axis).domain
+  const nearTop = hi !== lo && (r.value - lo) / (hi - lo) > 1 - REF_LABEL_TOP_SHARE
+  const atStart = r.axis === 'right' && axes.scaleId(r.axis) === 'y2'
+  return decorative(
+    text([{ f: atStart ? 0 : 1 }], {
+      id: `ref-${i}-label`,
+      x: (d: { f: number }) => d.f,
+      y: () => r.value,
+      xScale: 'zx',
+      yScale: axes.scaleId(r.axis),
+      text: () => r.label ?? '',
+      fill: VX.ink2,
+      fontSize: VX.text.micro,
+      anchor: atStart ? 'start' : 'end',
+      dx: atStart ? REF_LABEL_DX : -REF_LABEL_DX,
+      dy: nearTop ? REF_LABEL_DY_BELOW : REF_LABEL_DY_ABOVE,
+    }),
+  )
+}
+
 /** Reference lines, over the marks. */
 const refLineMarks = <T, X extends ChartX>(
   input: CartesianInput<T, X>,
@@ -700,6 +729,7 @@ const refLineMarks = <T, X extends ChartX>(
             yScale: axes.scaleId(r.axis),
             ...(r.dashed && { strokeDasharray: DASH }),
           }),
+          ...(r.label ? [refLabelMark(r, i, axes as Axes<unknown>)] : []),
         ],
   )
 
@@ -921,7 +951,7 @@ export function compileCartesian<T, X extends ChartX>(
           formatX,
           cls,
           height,
-          zoneScale: under.length > 0,
+          zoneScale: under.length > 0 || (input.refLines ?? []).some((r) => r.label),
         }),
         theme: CHART_THEME,
         ...(gradients.length > 0 && { gradients }),
