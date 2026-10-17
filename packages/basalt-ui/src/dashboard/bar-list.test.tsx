@@ -134,4 +134,26 @@ describe('BarList', () => {
     const status = empty.container.querySelector('output')
     expect(status?.getAttribute('aria-label')).toBe('Top')
   })
+
+  test('non-finite values render a dash and a 0% bar; they do not set the scale', () => {
+    const { container, getByText } = mount({
+      label: 'L',
+      items: [
+        { label: 'a', value: Number.NaN },
+        { label: 'b', value: Number.POSITIVE_INFINITY },
+        { label: 'c', value: 10 },
+      ],
+    })
+    expect(bars(container).map((x) => x.style.width)).toEqual(['0%', '0%', '100%'])
+    expect(container.querySelectorAll('li')[0]?.textContent).toContain('—')
+    expect(getByText('10')).toBeTruthy()
+  })
+
+  test('a scale of 0 or NaN draws every bar at 0%', () => {
+    const zero = mount({ label: 'L', max: 0, items: [{ label: 'a', value: 5 }] })
+    expect(bars(zero.container).map((x) => x.style.width)).toEqual(['0%'])
+    cleanup()
+    const nan = mount({ label: 'L', max: Number.NaN, items: [{ label: 'a', value: 5 }] })
+    expect(bars(nan.container).map((x) => x.style.width)).toEqual(['0%'])
+  })
 })

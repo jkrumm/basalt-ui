@@ -289,4 +289,72 @@ describe('Meter', () => {
     expect(mid.style.width).toBe('40%')
     expect(getByText('5')).toBeTruthy()
   })
+
+  test('negative segments draw nothing and never lower the reading below min', () => {
+    const { container } = mount({
+      label: 'S',
+      max: 100,
+      segments: [
+        { value: -20, label: 'a' },
+        { value: 30, label: 'b' },
+      ],
+    })
+    const widths = [...container.querySelectorAll<HTMLElement>('[data-meter-fill]')].map(
+      (f) => f.style.width,
+    )
+    expect(widths).toEqual(['0%', '30%'])
+    expect(meter(container).getAttribute('aria-valuenow')).toBe('30')
+  })
+
+  test('empty segments render the empty state', () => {
+    const { container, getByText } = mount({ label: 'S', segments: [] })
+    expect(meter(container)).toBeNull()
+    expect(getByText('No data')).toBeTruthy()
+  })
+
+  test('a non-finite target draws no tick and no caption', () => {
+    const { container, queryByText } = mount({ label: 'B', value: 5, target: Number.NaN })
+    expect(tick(container, 'target')).toBeNull()
+    expect(queryByText(/Target/)).toBeNull()
+  })
+
+  test('the empty state carries the label, ring too', () => {
+    const bar = mount({ label: 'Readiness', value: null })
+    expect(bar.container.querySelector('output')?.getAttribute('aria-label')).toBe('Readiness')
+    cleanup()
+    const ring = mount({ label: 'Hit rate', shape: 'ring', value: null })
+    expect(ring.container.querySelector('output')?.getAttribute('aria-label')).toBe('Hit rate')
+  })
+
+  test('a forecast segment ignores its colour', () => {
+    const { container } = mount({
+      label: 'S',
+      segments: [{ value: 10, label: 'f', forecast: true, color: 'red' }],
+    })
+    expect((container.querySelector('[data-meter-fill]') as HTMLElement).style.background).toBe('')
+  })
+
+  test('adjacent zone bands leave a 1px gap', () => {
+    const { container } = mount({
+      label: 'Z',
+      value: 10,
+      zones: [
+        { from: 0, to: 50, label: 'A' },
+        { from: 50, to: 100, label: 'B' },
+      ],
+    })
+    const b = container.querySelector('[data-meter-zone="B"]') as HTMLElement
+    expect(b.style.insetInlineStart).toBe('calc(50% + 1px)')
+    expect(b.style.width).toBe('calc(50% - 1px)')
+  })
+
+  test('mixing reading forms is a compile error', () => {
+    // @ts-expect-error a ring takes a value alone
+    const ringSegments: MeterProps = { label: 'R', shape: 'ring', segments: [] }
+    // @ts-expect-error segments and zones are different forms
+    const both: MeterProps = { label: 'B', segments: [], zones: [] }
+    // @ts-expect-error segments carry the reading; a value beside them is ambiguous
+    const valueSegments: MeterProps = { label: 'B', value: 1, segments: [] }
+    expect([ringSegments, both, valueSegments].length).toBe(3)
+  })
 })

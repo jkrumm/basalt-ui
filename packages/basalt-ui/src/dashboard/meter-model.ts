@@ -20,15 +20,9 @@ type Format = (value: number) => string
 export const isReading = (n: number | null | undefined): n is number =>
   typeof n === 'number' && Number.isFinite(n)
 
-/** The track's span. A track that ends at or before its start falls back to 1 (and warns in dev). */
-export function spanOf(min: number, max: number): number {
-  if (max > min) return max - min
-  if (process.env.NODE_ENV !== 'production') {
-    console.warn(
-      `[basalt] Meter: max (${max}) must be greater than min (${min}); drawing an empty track`,
-    )
-  }
-  return 1
+/** The track's span. A track that ends at or before its start falls back to 1 and is `valid: false`. */
+export function spanOf(min: number, max: number): { span: number; valid: boolean } {
+  return max > min ? { span: max - min, valid: true } : { span: 1, valid: false }
 }
 
 export function ariaValues(reading: number, min: number, max: number, format: Format) {
@@ -41,12 +35,22 @@ export function ariaValues(reading: number, min: number, max: number, format: Fo
   } as const
 }
 
-/** Segment amounts accumulate from `min`; a part never passes the track end. */
+/**
+ * The ONE place segment amounts are sanitised: a negative or non-finite amount is 0. The painted
+ * track, the captions and `aria-valuenow` all derive from what this returns.
+ */
+export function normalizeSegments(segments: readonly MeterSegment[]): MeterSegment[] {
+  return segments.map((s) => ({ ...s, value: Number.isFinite(s.value) ? Math.max(0, s.value) : 0 }))
+}
+
+/** Segment amounts (already normalised) accumulate from `min`; a part never passes the track end. */
 export function layoutSegments(segments: readonly MeterSegment[], span: number): Part[] {
   let cursor = 0
   return segments.map((s) => {
     const size = Math.max(0, Math.min(clamp01(s.value / span), 1 - cursor))
-    const part = { start: cursor, size, color: s.color, forecast: s.forecast === true }
+    const forecast = s.forecast === true
+    // A forecast stays the lighter neutral: a colour would turn the committed/forecast pair into hue.
+    const part = { start: cursor, size, color: forecast ? undefined : s.color, forecast }
     cursor += size
     return part
   })
@@ -113,7 +117,7 @@ export const segmentReading = (segments: readonly MeterSegment[], min: number): 
 
 export function modelBar(input: BarInput): BarModel {
   const { reading, min, max, format, segments, zones, target } = input
-  const span = spanOf(min, max)
+  const { span } = spanOf(min, max)
   const zoned = zones !== undefined && zones.length > 0
   const holding = zoned ? findHoldingZone(zones, reading) : undefined
 
@@ -154,4 +158,4 @@ export function modelBar(input: BarInput): BarModel {
 
 /** The ring's one arc, as a fraction of the circumference. */
 export const ringFraction = (reading: number, min: number, max: number): number =>
-  clamp01((reading - min) / spanOf(min, max))
+  clamp01((reading - min) / spanOf(min, max).span)
