@@ -104,8 +104,6 @@ const HIT_DATA = [...HIT_HISTORY]
 const HIT_TICKS = HIT_HISTORY.map((m) => m.label)
 /** The goal line sits inside the y domain: the tallest month and the goal both fit under it. */
 const HIT_Y_MAX = 40
-/** Frame height: the card then matches the two stacked meter cards beside it. */
-const HIT_CHART_HEIGHT = 190
 const TOP_LIFT_COUNT = 6
 const LIFT_ITEMS = TOP_LIFTS.slice(0, TOP_LIFT_COUNT).map((l) => ({
   label: l.name,
@@ -207,8 +205,8 @@ function TrainingStats({ shotState }: ScenarioProps) {
 
 /**
  * Column rule: both columns of a row end within one row-gap at 1440, by composition, never by
- * stretching a short card. Two short meter cards (≈ 135 each) stack against one chart card
- * (≈ 280). At 390 the order is goal, mix, history.
+ * stretching. Measured: goal 95 + mix 115 + load 151 + 2 gaps = 385 against the history chart 386.
+ * At 390 the order is goal, mix, load, history.
  */
 function GoalRow({ shotState }: ScenarioProps) {
   const empty = shotState === 'empty'
@@ -257,6 +255,7 @@ function GoalRow({ shotState }: ScenarioProps) {
             </Box>
           </ChartCard>
         </Box>
+        <LoadCard shotState={shotState} />
       </Stack>
       <Box data-shot="hit-rate" h="100%">
         <ChartCard
@@ -291,7 +290,6 @@ function GoalRow({ shotState }: ScenarioProps) {
                   label: `Goal ${GOAL_SESSIONS}`,
                 },
               ]}
-              height={HIT_CHART_HEIGHT}
             />
           </Box>
         </ChartCard>
@@ -329,8 +327,8 @@ function LoadCard({ shotState }: ScenarioProps) {
 }
 
 /**
- * Column rule: cards of like natural height share a row, so neither is stretched. Readiness
- * (meter + 4 rows ≈ 300) pairs with top lifts (header + 6 rows ≈ 280); both end within a row-gap.
+ * Column rule: cards of like natural height share a row, so neither is stretched. Measured at
+ * 1440: readiness 283 and top lifts 283. At 390 the order is readiness, then lifts.
  */
 function ReadinessRow({ shotState }: ScenarioProps) {
   const empty = shotState === 'empty'
@@ -402,7 +400,6 @@ export function TrainingScenario({ shotState }: ScenarioProps) {
       <Summary shotState={shotState} />
       <TrainingStats shotState={shotState} />
       <GoalRow shotState={shotState} />
-      <LoadCard shotState={shotState} />
       <ReadinessRow shotState={shotState} />
     </Stack>
   )

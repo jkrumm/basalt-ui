@@ -124,10 +124,8 @@ export const FAILURES_BY_HOUR: readonly number[] = Array.from({ length: 24 }, (_
   const from = FAILURES_WINDOW.start.getTime() + h * HOUR_MS
   return FAILURE_TIMES.filter((t) => t.getTime() >= from && t.getTime() < from + HOUR_MS).length
 })
-/** `19:00 · 08:00 · 13:00 UTC` — the hour of each failed run, so the marks read without colour. */
-export const FAILURES_TIMES_LABEL = `${FAILURE_TIMES.map(
-  (t) => `${String(t.getUTCHours()).padStart(2, '0')}:00`,
-).join(' · ')} UTC`
+/** `13:00 UTC` — when the latest failed run ended. */
+export const FAILURES_LATEST_LABEL = `${String(FAILURE_TIMES.at(-1)?.getUTCHours() ?? 0).padStart(2, '0')}:00 UTC`
 
 /** Dispatch spend per day in EUR, 14 days, oldest first; the last entry is today so far. */
 export const DISPATCH_DAILY: readonly number[] = [
