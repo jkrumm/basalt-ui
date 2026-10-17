@@ -1314,7 +1314,7 @@ function DashFixture(): ReactElement {
     <>
       {/* theme-allow -- the wrapper width IS the fixture's payload (a container probe) */}
       <div data-testid="dash-barlist" style={{ width: 320 }}>
-        <BarList label="Spend" items={items} format={(v) => `€${v}`} />
+        <BarList label="Spend" variant="inline" items={items} format={(v) => `€${v}`} />
       </div>
       {/* theme-allow -- the wrapper width IS the fixture's payload (a container probe) */}
       <div data-testid="dash-bar-thin" style={{ width: 342 }}>

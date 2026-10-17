@@ -1072,6 +1072,23 @@ suppress it; the track, marker and zone labels stay, and a standalone `Meter` is
 **Opt out:** render the reading yourself where you want it (the value is in the Meter's `aria-valuetext`),
 or place the `Meter` outside those two slots.
 
+### `Meter`: the non-verdict fill is now muted
+
+**Changed default:** A bar `Meter` with no `color` used to draw the full
+ink fill (`--vx-line`), near-white in dark. With no `color` and no `tone` it now draws `tone="muted"`
+(`--vx-muted` at a strength that holds 3:1 against the track in both schemes). Verdict colours
+(`color`, status tones) are unchanged; the ring is unchanged. Opt out: `tone="ink"`.
+
+### `BarList`: the thin track is the default
+
+**Changed default:** `variant` is now `'thin' | 'inline'`, default `'thin'`
+(label on its own line above a thin bar, value right-aligned). The old default look is
+`variant="inline"`. The `'default'` literal is gone, so `variant="default"` is a type error: replace
+it with `variant="inline"` to keep the heavy label-in-track slabs, or delete the prop to take thin.
+`variant="thin"` is now redundant and still valid. The root now always carries `data-variant`
+(`thin` or `inline`) — it was absent on the old default, so `[data-variant]`-absent selectors must
+become `[data-variant='inline']`.
+
 ## 2.20.0 — the sparkline reference and readout
 
 **`Sparkline` now answers hover and keyboard focus.** A pointer over the cell, or arrow keys /
