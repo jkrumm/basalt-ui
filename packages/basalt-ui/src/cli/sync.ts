@@ -57,6 +57,8 @@ export type SyncOptions = {
   check?: boolean
   /** The raw flag list, read for `--tokens-only` / `--framework` exactly as check-theme reads it. */
   flags?: readonly string[]
+  /** Shipped-source root; defaults to this package. Tests point it at a scratch package. */
+  pkgRoot?: string
 }
 
 /**
@@ -144,11 +146,11 @@ export function sync(opts: SyncOptions = {}, invocationCwd: string = process.cwd
 
   // Before renderContext, which reads `basalt.roots` for the roots-derived template variables.
   const rootsState = reconcileRoots(cwd, { write: opts.check !== true })
-  const ctx = renderContext(cwd, ruleRootsFor(rootsState))
+  const ctx = renderContext(cwd, ruleRootsFor(rootsState), opts.pkgRoot)
   const manifest = readManifest(cwd)
   const placement = resolvePlacement(cwd)
   const { skip: seedSkip, skipped } = routerSeedPlan(cwd, placement.appRel)
-  const files = managedFiles(placement).filter((f) => !skipped.has(f.dest))
+  const files = managedFiles(placement, ctx.pkgRoot).filter((f) => !skipped.has(f.dest))
 
   let updated = 0
   // `created` and `recreated` were one counter, and `0 updated, 20 recreated` is what a full

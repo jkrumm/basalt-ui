@@ -106,6 +106,7 @@ export function init(cwd: string = process.cwd(), scaffoldFlags: ScaffoldFlags =
     cwd,
     ruleRootsFor(rootsState) ??
       (rootsState.kind === 'undetectable' ? [`${appSrc ? `${appSrc}/` : ''}src`] : undefined),
+    scaffoldFlags.pkgRoot,
   )
 
   // `basalt-tokens.md` tells the consumer to wire `oxlint . && basalt-ui check-theme` into their
@@ -146,7 +147,7 @@ export function init(cwd: string = process.cwd(), scaffoldFlags: ScaffoldFlags =
     placement.appRel,
     tokensOnly,
   )
-  const files = managedFiles(placement).filter((f) => !skippedSeeds.has(f.dest))
+  const files = managedFiles(placement, ctx.pkgRoot).filter((f) => !skippedSeeds.has(f.dest))
 
   const writtenFiles: string[] = []
   const keptFiles: string[] = []

@@ -18,7 +18,7 @@
  * Usage: bun packages/basalt-ui/scripts/sync-self.ts
  */
 import { copyFileSync, existsSync, mkdirSync, readdirSync, rmSync } from 'node:fs'
-import { dirname, join, relative } from 'node:path'
+import { dirname, join, relative, sep } from 'node:path'
 
 const PKG_ROOT = join(import.meta.dir, '..')
 const REPO_ROOT = join(PKG_ROOT, '..', '..')
@@ -54,8 +54,9 @@ function syncNamespace(dir: string, unit: 'file' | 'dir'): { copied: number; pru
       // dropped upstream does not outlive the copy.
       rmSync(join(dest, name), { recursive: true, force: true })
       for (const e of readdirSync(join(src, name), { recursive: true, withFileTypes: true })) {
-        if (!e.isFile()) continue
+        if (!e.isFile() || !e.name.endsWith('.md')) continue
         const rel = relative(join(src, name), join(e.parentPath, e.name))
+        if (rel.split(sep).some((seg) => seg.startsWith('.'))) continue
         mkdirSync(dirname(join(dest, name, rel)), { recursive: true })
         copyFileSync(join(e.parentPath, e.name), join(dest, name, rel))
       }
