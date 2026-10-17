@@ -5,7 +5,7 @@ playground from `master`, `basalt-ui shot /scenarios/s2-training /scenarios/s3-a
 --dist apps/playground/dist --out .design-parity/w35/r<n>`, then a fresh `basalt-design-reviewer` scores it without
 reading source. S3 (agent work) did not exist before this wave; #362 built it, so r0 has no S3.
 
-## Round 0 — master before the wave (r0, `477592f7`, 404 shots)
+## Round 0 — master before the wave (r0, `477592f7`, 404 ok shots)
 
 | Item                                                                                                     | Where                | Owner        |
 | -------------------------------------------------------------------------------------------------------- | -------------------- | ------------ |
@@ -18,7 +18,7 @@ reading source. S3 (agent work) did not exist before this wave; #362 built it, s
 | A ring for a rate with a history                                                                         | hit-rate             | left behind  |
 | Tinted status pills, "12" without a noun                                                                 | badges               | out of scope |
 
-## Round 1 — batch A and the S3 fixture on master (r1, 600 shots, 16 failed)
+## Round 1 — batch A and the S3 fixture on master (r1, 600 ok shots, 16 failed)
 
 Landed before r1: #352 ref-line labels, #353 S4 re-encoding, #355 typography law, #356 Sparkline reference and
 readout, #357 locale, #358 strip, #359 ChartCard facts, #361 card inset, #362 S3 + strips on S2/S4, #363 status
@@ -36,7 +36,7 @@ exports, #364 DeltaBadge period, #365 BarList props, #366 Meter props.
 | Empty cell, stretched cards, truncated item names, unnamed budget line | S3, S4, components                                     | #368                                                        |
 | Tabs, sidebar, error panel                                             | chrome                                                 | #367 (landed after r1)                                      |
 
-## Round 2 — everything above on master (r2, 616 shots, 0 failed)
+## Round 2 — everything above on master (r2, 616 ok shots, 0 failed)
 
 Pass: the strip anatomy, the reference label, insets, the dark Tabs hover, the neutral sidebar row, the StatCard
 error. Remaining:
@@ -50,11 +50,11 @@ error. Remaining:
 | Thin BarList titles cut to six characters; mono status word                                                       | stuck-items                      | #371 (two-line label; `StatusVerdict` word in the sans) |
 | Duplicate overage line, weak error copy, top-drivers off the shared state idiom, stretched cells, unlabeled ticks | S2, S3, S4, components           | #370                                                    |
 
-## Round 3 — #370 and #371 on master (r3, `87e947fa`, 620 shots, 0 failed)
+## Round 3 — #370 and #371 on master (r3, `87e947fa`, 620 ok shots, 0 failed)
 
 Pass: every S2 card except hit-rate, every S3 strip cell except failures, every S4 component except spend-over-time's
-y-axis copy, all pages. Targets 3 (facts, ≤ 3 sizes), 4 (readout clear of marks and hero), 5 (on-plot labels), 7
-(thin rows) and 9 (insets) pass; the chrome items pass except the Retry styling. Remaining, all left behind:
+y-axis copy, all pages. Of the reviewer's Wave 35 checks, ChartCard facts (at rest only, ≤ 3 sizes), the Sparkline readout
+(clear of marks and hero), on-plot reference labels, thin BarList rows and card insets pass; the chrome items pass except the Retry styling. Remaining, all left behind:
 
 | Item                                                                                            | Where                       | Owner                                                     |
 | ----------------------------------------------------------------------------------------------- | --------------------------- | --------------------------------------------------------- |

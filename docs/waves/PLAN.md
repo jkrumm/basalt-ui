@@ -1364,8 +1364,7 @@ Validators: argo, which deletes its local workarounds in the same cycle (net-neg
   `visual`, `footer`, `rows`, `tone`, `loading`, `stale`), a strip `footer` row, derived anchors `strip-<key>` /
   `strip-footer-<key>`, two columns in a compact container with the odd cell spanning, 4 → 2 never 3 + 1. All four argo
   prototypes are replaceable (warden's under-value qualifier maps to `footer`; unequal column weights are not supported).
-- **Rounds** (`docs/waves/design-parity/w35/rounds.md`; boards `.design-parity/w35/r0`–`r3`): by r3 targets 3, 4, 5, 7
-  and 9 pass outright; the typography law and the strip layout pass everywhere except the out-of-scope Badges.
+- **Rounds** (`docs/waves/design-parity/w35/rounds.md`; boards `.design-parity/w35/r0`–`r3`): by r3 ChartCard facts, the Sparkline readout, on-plot labels, thin BarList rows and card insets pass outright; the typography law and the strip layout pass everywhere except the out-of-scope Badges.
 - **For Wave 36:** a strip `state` (empty and error read the same today: `—` plus a footer note, no dot, no Retry); one
   Retry inside the shared error anatomy (ChartCard renders the consumer's action, StatCard its own outlined button);
   whether `tone="muted"` becomes the non-verdict Meter default (the default fill is full ink in dark); shot cannot
