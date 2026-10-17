@@ -47,6 +47,8 @@
   "StackedArea": "argo:apps/dashboard/src/features/usage-tracking/charts/cost-over-time.tsx",
   "StatCard": "argo:apps/dashboard/src/features/warden/funnel-stats.tsx",
   "StatGroup": "argo:apps/dashboard/src/features/warden/stat-strip.tsx",
+  "StatusDot": "argo:apps/dashboard/src/features/agents/status-chip.tsx",
+  "StatusVerdict": "argo:apps/dashboard/src/features/warden/status-chip.tsx",
   "SyncButton": "argo:apps/dashboard/src/routes/__root.tsx",
   "TableOfContents": "rb:apps/web/src/features/knot-detail/page.tsx",
   "ThemeToggle": "argo:apps/dashboard/src/routes/__root.tsx",
