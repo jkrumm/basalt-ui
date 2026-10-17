@@ -276,7 +276,7 @@ html .accordionItem {
 /*
  * Tabs: the tab-list rule (and the inactive-tab hover underline) is a layout separator — the
  * divider token, not the heavy gray-3/dark-4 line. Mantine's scheme rules sit at (0,2,0); the
- * `html[...]` prefix lands (0,2,1). The active underline keeps `--tabs-color` untouched.
+ * `html[...]` prefix lands (0,2,1). The active underline's colour is set in the theme's Tabs `vars`.
  */
 html[data-mantine-color-scheme] .tabsRoot {
   --tab-border-color: var(--vx-divider);
@@ -303,4 +303,17 @@ html .tableRoot {
  */
 html .tableRoot tbody tr:last-of-type {
   border-bottom: none;
+}
+
+/*
+ * Badge leading glyph (`leftSection`): the state encoded by shape. 12px on a 20px chip, 4px gap
+ * (Mantine's own section margin is spacing.xs / 2 = 4), centred on the label.
+ */
+.badgeSection {
+  --badge-section-margin: calc(0.25rem * var(--mantine-scale));
+}
+
+.badgeSection svg {
+  width: calc(0.75rem * var(--mantine-scale));
+  height: calc(0.75rem * var(--mantine-scale));
 }

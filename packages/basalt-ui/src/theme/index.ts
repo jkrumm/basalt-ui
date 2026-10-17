@@ -380,8 +380,14 @@ const basaltVariantColorResolver: VariantColorsResolver = (input) => {
   // erase the one thing that marks it dangerous — those keep Mantine's own tinted hover.
   if (input.variant === 'subtle') {
     const isDefaultColor = input.color === undefined || input.color === input.theme.primaryColor
+    // The LABEL takes neutral ink too (SPEC § 6.12): the accent on a text button is a selection
+    // signal the chrome must not spend. `color="…"` is the opt-out.
     return isDefaultColor
-      ? { ...resolved, hover: `color-mix(in srgb, var(--vx-ink) 6%, transparent)` }
+      ? {
+          ...resolved,
+          color: 'var(--vx-ink)',
+          hover: `color-mix(in srgb, var(--vx-ink) 6%, transparent)`,
+        }
       : resolved
   }
 
@@ -566,10 +572,14 @@ function buildTheme(data: PaletteData, options: BuildThemeOptions = {}): Mantine
           },
         },
       }),
-      // Mantine's default Badge radius is a full 1000px pill; the spec's delta/status badges sit at
-      // radius 6 (docs/DESIGN-SPEC.md §4/§5). Count badges (radius 5) are a distinct, smaller-radius
-      // usage left to the call site (`radius={5}` prop) since Badge has no state to key off here.
-      Badge: ext<typeof Badge>({ defaultProps: { radius: radius.ctrl } }),
+      // Status chip (SPEC § 6.10): `light` (the status-tint idiom the variant resolver implements),
+      // 20 high (Mantine's `md` height), the `tight` radius. `variant="filled"` stays for a count on
+      // an accent surface. A `leftSection` glyph is sized and spaced by `badgeSection` so the state
+      // reads by shape as well as colour.
+      Badge: ext<typeof Badge>({
+        defaultProps: { variant: 'light', radius: radius.tight },
+        classNames: { section: controlsClasses.badgeSection },
+      }),
       // Alert renders its title in the body font by default; bring it onto the head-font idiom
       // (docs/DESIGN-SPEC.md §5) like every other titled surface. Radius/padding/color tint are
       // already on-system (defaultRadius 'md' control tier + the variant color resolver), so only
@@ -1125,7 +1135,8 @@ function buildTheme(data: PaletteData, options: BuildThemeOptions = {}): Mantine
       // The tab-list bottom rule (and the inactive-tab hover underline) is a layout separator, not
       // control chrome — it reads the divider token instead of the heavy gray-3/dark-4 line
       // (controls.module.css; custom properties are stripped from `styles` objects). The active tab
-      // underline keeps `--tabs-color` (accent) untouched.
+      // underline takes ink, not the accent (SPEC § 6.12; DESIGN-CORE § Accent discipline);
+      // `color=` opts back in. Only the underline `default` variant — `pills` fills with the colour.
       Tabs: ext<typeof Tabs>({
         classNames: { root: controlsClasses.tabsRoot },
         // The on-color re-point (see below). Cast: Mantine's `TabsCssVariables` type declares only
@@ -1133,7 +1144,15 @@ function buildTheme(data: PaletteData, options: BuildThemeOptions = {}): Mantine
         // an upstream type gap, so the var it actually paints the active tab with is otherwise
         // unreachable from the theme.
         vars: (theme, props) =>
-          ({ root: { '--tabs-text-color': onColorFor(theme, props) } }) as unknown as {
+          ({
+            root: {
+              '--tabs-text-color': onColorFor(theme, props),
+              '--tabs-color':
+                props.color === undefined && (props.variant ?? 'default') === 'default'
+                  ? 'var(--vx-ink)'
+                  : undefined,
+            },
+          }) as unknown as {
             root: Record<'--tabs-color' | '--tabs-radius', string | undefined>
           },
       }),

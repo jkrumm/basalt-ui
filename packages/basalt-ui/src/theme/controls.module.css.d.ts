@@ -13,5 +13,6 @@ declare const classes: {
   readonly accordionItem: string
   readonly tabsRoot: string
   readonly tableRoot: string
+  readonly badgeSection: string
 }
 export default classes

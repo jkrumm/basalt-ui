@@ -232,8 +232,12 @@ exports[`createBasaltTheme() shape and resolver output default 1`] = `
       },
     },
     "Badge": {
+      "classNames": {
+        "section": undefined,
+      },
       "defaultProps": {
-        "radius": 6,
+        "radius": 5,
+        "variant": "light",
       },
     },
     "Breadcrumbs": {
@@ -779,10 +783,21 @@ exports[`createBasaltTheme() shape and resolver output default 1`] = `
         "root": undefined,
       },
       "vars": {
-        "fn": "(theme, props) => ({ root: { "--tabs-text-color": onColorFor(theme, props) } })",
+        "fn": 
+"(theme, props) => ({
+          root: {
+            "--tabs-text-color": onColorFor(theme, props),
+            "--tabs-color": props.color === void 0 && (props.variant ?? "default") === "default" ? "var(--vx-ink)" : void 0
+          }
+        })"
+,
         "outputs": [
           {
-            "probes": 772,
+            "probes": 100,
+            "result": "{"root":{"--tabs-text-color":"var(--vx-on-blue)","--tabs-color":"var(--vx-ink)"}}",
+          },
+          {
+            "probes": 672,
             "result": "{"root":{"--tabs-text-color":"var(--vx-on-blue)"}}",
           },
           {
@@ -928,7 +943,11 @@ exports[`createBasaltTheme() shape and resolver output default 1`] = `
   if (input.variant === "filled")
     return input.autoContrast ?? input.theme.autoContrast ? { ...resolved, color: on } : resolved;
   if (input.variant === "subtle")
-    return input.color === void 0 || input.color === input.theme.primaryColor ? { ...resolved, hover: "color-mix(in srgb, var(--vx-ink) 6%, transparent)" } : resolved;
+    return input.color === void 0 || input.color === input.theme.primaryColor ? {
+      ...resolved,
+      color: "var(--vx-ink)",
+      hover: "color-mix(in srgb, var(--vx-ink) 6%, transparent)"
+    } : resolved;
   if (input.variant === "outline")
     return { ...resolved, color: \`color-mix(in srgb, \${resolved.color} 70%, var(--vx-ink))\` };
   if (input.variant !== "light")
@@ -1030,7 +1049,7 @@ exports[`createBasaltTheme() shape and resolver output default 1`] = `
       },
       {
         "probes": 2,
-        "result": "{"background":"transparent","hover":"color-mix(in srgb, var(--vx-ink) 6%, transparent)","color":"var(--mantine-color-blue-light-color)","border":"calc(0.0625rem * var(--mantine-scale)) solid transparent"}",
+        "result": "{"background":"transparent","hover":"color-mix(in srgb, var(--vx-ink) 6%, transparent)","color":"var(--vx-ink)","border":"calc(0.0625rem * var(--mantine-scale)) solid transparent"}",
       },
       {
         "probes": 2,
@@ -1330,8 +1349,12 @@ exports[`createBasaltTheme() shape and resolver output all knobs 1`] = `
       },
     },
     "Badge": {
+      "classNames": {
+        "section": undefined,
+      },
       "defaultProps": {
-        "radius": 9,
+        "radius": 8,
+        "variant": "light",
       },
     },
     "Breadcrumbs": {
@@ -1877,10 +1900,21 @@ exports[`createBasaltTheme() shape and resolver output all knobs 1`] = `
         "root": undefined,
       },
       "vars": {
-        "fn": "(theme, props) => ({ root: { "--tabs-text-color": onColorFor(theme, props) } })",
+        "fn": 
+"(theme, props) => ({
+          root: {
+            "--tabs-text-color": onColorFor(theme, props),
+            "--tabs-color": props.color === void 0 && (props.variant ?? "default") === "default" ? "var(--vx-ink)" : void 0
+          }
+        })"
+,
         "outputs": [
           {
-            "probes": 772,
+            "probes": 100,
+            "result": "{"root":{"--tabs-text-color":"var(--vx-on-blue)","--tabs-color":"var(--vx-ink)"}}",
+          },
+          {
+            "probes": 672,
             "result": "{"root":{"--tabs-text-color":"var(--vx-on-blue)"}}",
           },
           {
@@ -2197,7 +2231,11 @@ exports[`createBasaltTheme() shape and resolver output all knobs 1`] = `
   if (input.variant === "filled")
     return input.autoContrast ?? input.theme.autoContrast ? { ...resolved, color: on } : resolved;
   if (input.variant === "subtle")
-    return input.color === void 0 || input.color === input.theme.primaryColor ? { ...resolved, hover: "color-mix(in srgb, var(--vx-ink) 6%, transparent)" } : resolved;
+    return input.color === void 0 || input.color === input.theme.primaryColor ? {
+      ...resolved,
+      color: "var(--vx-ink)",
+      hover: "color-mix(in srgb, var(--vx-ink) 6%, transparent)"
+    } : resolved;
   if (input.variant === "outline")
     return { ...resolved, color: \`color-mix(in srgb, \${resolved.color} 70%, var(--vx-ink))\` };
   if (input.variant !== "light")
@@ -2299,7 +2337,7 @@ exports[`createBasaltTheme() shape and resolver output all knobs 1`] = `
       },
       {
         "probes": 2,
-        "result": "{"background":"transparent","hover":"color-mix(in srgb, var(--vx-ink) 6%, transparent)","color":"var(--mantine-color-blue-light-color)","border":"calc(0.0625rem * var(--mantine-scale)) solid transparent"}",
+        "result": "{"background":"transparent","hover":"color-mix(in srgb, var(--vx-ink) 6%, transparent)","color":"var(--vx-ink)","border":"calc(0.0625rem * var(--mantine-scale)) solid transparent"}",
       },
       {
         "probes": 2,

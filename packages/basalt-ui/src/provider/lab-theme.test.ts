@@ -72,7 +72,7 @@ describe('a radius override reaches the theme object', () => {
   })
 
   test("Badge's numeric defaultProps radius moves — the case a <style> tag can never reach", () => {
-    expect(pick(delta, 'components.Badge.defaultProps.radius')).toBe(radius.ctrl)
+    expect(pick(delta, 'components.Badge.defaultProps.radius')).toBe(radius.tight)
   })
 
   test('the floating tier moves with it (Tooltip/Popover/Modal/Notification)', () => {
@@ -134,7 +134,7 @@ describe('applyLabOverride', () => {
     // level-0 number. Merged last (which is `BasaltProvider`'s contract) it would clobber the lab
     // right back to level 0; the delta is what out-cascades it.
     const resolved = applyLabOverride(createBasaltTheme(), at(-2, -1))
-    expect(pick(resolved, 'components.Badge.defaultProps.radius')).toBe(deriveRadius(-2).ctrl)
+    expect(pick(resolved, 'components.Badge.defaultProps.radius')).toBe(deriveRadius(-2).tight)
     expect(pick(resolved, 'spacing.md')).toBe(pxRem(deriveSpacing(-1).scale.md))
   })
 
@@ -142,6 +142,6 @@ describe('applyLabOverride', () => {
     const resolved = applyLabOverride({ primaryColor: 'teal', other: { myFlag: true } }, at(-2, -1))
     expect(pick(resolved, 'primaryColor')).toBe('teal')
     expect(pick(resolved, 'other.myFlag')).toBe(true)
-    expect(pick(resolved, 'components.Badge.defaultProps.radius')).toBe(deriveRadius(-2).ctrl)
+    expect(pick(resolved, 'components.Badge.defaultProps.radius')).toBe(deriveRadius(-2).tight)
   })
 })

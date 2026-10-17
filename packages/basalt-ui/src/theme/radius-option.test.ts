@@ -55,7 +55,7 @@ describe('the default theme is unchanged by the radius option existing', () => {
   test('createBasaltTheme() still matches the shipped level-0 numbers', () => {
     const theme = createBasaltTheme()
     expect(theme.components?.['Tooltip']?.defaultProps?.['radius']).toBe(11)
-    expect(theme.components?.['Badge']?.defaultProps?.['radius']).toBe(6)
+    expect(theme.components?.['Badge']?.defaultProps?.['radius']).toBe(5)
   })
 })
 
