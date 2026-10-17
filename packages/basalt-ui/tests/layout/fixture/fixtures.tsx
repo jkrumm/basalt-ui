@@ -329,7 +329,7 @@ function StatsFixture({ count, wide }: { count: number; wide: boolean }): ReactE
             wide ? (WIDE_STAT_VALUES[i % WIDE_STAT_VALUES.length] as string) : `${(i + 1) * 1234}`
           }
           // A box of exactly the measured size: the slot geometry is under test, not a mark.
-          sparkline={({ width, height }) => <svg aria-hidden width={width} height={height} />}
+          sparkline={spark}
         />
       ))}
     </StatGroup>
@@ -410,6 +410,23 @@ function FootprintFixture(): ReactElement {
           {(['both', 'neither', 'footer'] as const).map((id) => footprintCard(byId(id)))}
         </StatGroup>
       </div>
+      {/* A `right` card with a footer and no sparkline reserves one footer line, not a visual band. */}
+      {([true, false] as const).map((withFooter) => (
+        // theme-allow -- the wrapper width IS the fixture's payload
+        <div
+          key={String(withFooter)}
+          data-testid={`foot-right-${withFooter ? 'footer' : 'bare'}`}
+          style={{ width: 360 }}
+        >
+          <StatCard
+            title="Latency"
+            value="42"
+            unit="ms"
+            sparklinePlacement="right"
+            {...(withFooter && { subtitle: 'Source: probes' })}
+          />
+        </div>
+      ))}
       {/* The `right` placement holds its 72x22 slot while pending, so the card does not jump. */}
       {(['pending', 'ready'] as const).map((state) => (
         // theme-allow -- the wrapper width IS the fixture's payload

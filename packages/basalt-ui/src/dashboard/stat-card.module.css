@@ -206,6 +206,10 @@
   );
 }
 
+.foot[data-band='false'] {
+  min-height: var(--basalt-stat-footer-h);
+}
+
 .footer {
   margin: 0;
   overflow: hidden;

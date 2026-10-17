@@ -197,9 +197,11 @@ export type QueryBranch<TData> =
 
 export function resolveQueryBranch<TData>(
   query: QueryStateLike<TData>,
+  /** Names the container in the throw on a malformed `query` (`'StatCard'`). */
+  caller: string,
   isEmpty: (data: TData) => boolean = defaultIsEmpty,
 ): QueryBranch<TData> {
-  assertQueryStateLike('QueryState', query)
+  assertQueryStateLike(caller, query)
   const { data, isError, error, fetchStatus } = query
   if (data === undefined) {
     if (isError) return { kind: 'error', query, error }

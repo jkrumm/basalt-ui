@@ -49,6 +49,9 @@ export function CaptionRow({ title, icon, info, qualifier, actions }: CaptionRow
 export type FootProps = {
   /** Reserve the foot's height (a visual AND a footer line) even when a branch shows neither. */
   reserve: boolean
+  /** The visual band is part of the reservation only for the `bleed` placement; `right` keeps its
+   * slot beside the breakdown, so a footer there reserves one line, not a band. */
+  visualBand: boolean
   visualNode: ReactNode
   footerNode: ReactNode
 }
@@ -58,10 +61,10 @@ export type FootProps = {
  * whenever `reserve` is set, so a card with a sparkline and no footer, one with both, and one in a
  * pending or failed branch are the same height (SPEC § 6.1 footprint).
  */
-export function Foot({ reserve, visualNode, footerNode }: FootProps) {
+export function Foot({ reserve, visualBand, visualNode, footerNode }: FootProps) {
   if (!reserve) return null
   return (
-    <div className={classes.foot}>
+    <div className={classes.foot} data-band={visualBand}>
       {visualNode}
       {footerNode}
     </div>
