@@ -330,6 +330,8 @@ export type FixtureSpec = {
   statsWide?: true
   /** Renders card-chrome probes: StatCards at fixed container widths, a stretched ChartCard. */
   cards?: CardsSpec
+  /** A `StatCard` with `info` + `tone` (`data-testid="info-ring-stat"`) — the info glyph's focus-ring probe. */
+  infoRing?: true
   /**
    * Renders a `CodeBlock` in a `Prose` between `data-testid="codeblock-before"` and
    * `"codeblock-after"` paragraphs, over a long first line. `language` defaults to `'ts'`; pass
