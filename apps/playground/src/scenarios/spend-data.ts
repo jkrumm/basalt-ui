@@ -5,7 +5,7 @@
  * from `TODAY`, so moving the reading date moves the copy with it.
  */
 
-import { seeded } from './fixture-utils'
+import { fmtShare, seeded } from './fixture-utils'
 
 const PROJECT_KEYS = ['search', 'support', 'summaries', 'ingest', 'evals', 'sandbox'] as const
 export type ProjectKey = (typeof PROJECT_KEYS)[number]
@@ -193,8 +193,11 @@ export const spendBand = (bin: DistributionBin): string =>
 export const fmtEur = (value: number): string => EUR.format(Math.round(value))
 export const fmtSignedEur = (value: number): string =>
   `${value < 0 ? '\u2212' : '+'}${fmtEur(Math.abs(value))}`
-export const fmtShare = (value: number): string => `${Math.round(value * 100)}%`
+
 export const fmtSignedShare = (value: number): string => {
   const percent = Math.round(value * 100)
   return percent < 0 ? `\u2212${-percent}%` : `+${percent}%`
 }
+
+/** The share formatter lives in `fixture-utils`; the calibration boards import it from here. */
+export { fmtShare }

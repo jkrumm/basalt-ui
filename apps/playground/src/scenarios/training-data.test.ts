@@ -6,10 +6,12 @@ import {
   CONTRIBUTORS,
   DAYS_ELAPSED,
   DISTANCE_7D_TREND,
+  DISTANCE_CHANGE_PCT,
   GOAL_SESSIONS,
   HIT_MONTHS,
   HIT_RATE_PCT,
   HIT_RANGE_LABEL,
+  LOAD_MAX,
   LOAD_RATIO,
   MONTHLY_SESSIONS,
   MONTHS_HIT,
@@ -22,6 +24,8 @@ import {
   SESSIONS_CHANGE_PCT,
   SESSIONS_MTD,
   SESSIONS_PRIOR,
+  VOLUME_7D_TREND,
+  VOLUME_CHANGE_PCT,
   TOP_LIFTS,
   TYPE_MIX,
   VOLUME_MTD_KG,
@@ -96,5 +100,20 @@ describe('training-data', () => {
     expect(MONTHS_HIT).toBe(4)
     expect(HIT_RATE_PCT).toBe(67)
     expect(READINESS_SCORE).toBe(76)
+  })
+
+  it('pins the change percentages and the last trend points', () => {
+    expect(SESSIONS_CHANGE_PCT).toBeCloseTo(13.33, 2)
+    expect(VOLUME_CHANGE_PCT).toBeCloseTo(33.02, 2)
+    expect(DISTANCE_CHANGE_PCT).toBeCloseTo(5.62, 2)
+    expect(SESSIONS_7D_TREND.at(-1)).toBe(8)
+    expect(VOLUME_7D_TREND.at(-1)).toBe(31_345)
+    expect(DISTANCE_7D_TREND.at(-1)).toBeCloseTo(7.29, 2)
+  })
+
+  it('the load ratio is a finite reading inside the scale', () => {
+    expect(Number.isFinite(LOAD_RATIO)).toBe(true)
+    expect(LOAD_RATIO).toBeGreaterThan(0)
+    expect(LOAD_RATIO).toBeLessThan(LOAD_MAX)
   })
 })

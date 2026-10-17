@@ -5,9 +5,9 @@
  * derived from `TODAY`, so moving the reading date moves the copy with it.
  */
 
-import { fmtDay, seeded } from './fixture-utils'
+import { fmtDay, itemAt, seeded, zoneFor } from './fixture-utils'
 
-export const SESSION_TYPES = ['strength', 'walk', 'mobility'] as const
+const SESSION_TYPES = ['strength', 'walk', 'mobility'] as const
 export type SessionType = (typeof SESSION_TYPES)[number]
 
 export const TYPE_LABEL: Record<SessionType, string> = {
@@ -23,7 +23,7 @@ const WINDOW_DAYS = 200
 /** Months a goal hit rate is read over: the six complete months before the current one. */
 export const HIT_MONTHS = 6
 
-export const YEAR = TODAY.getUTCFullYear()
+const YEAR = TODAY.getUTCFullYear()
 const month = TODAY.getUTCMonth()
 const priorMonthStart = new Date(Date.UTC(YEAR, month - 1, 1))
 
@@ -37,7 +37,6 @@ export const MONTH_DAYS = new Date(Date.UTC(YEAR, month + 1, 0)).getUTCDate()
 /** `31 Oct` — the last day of the month, where the goal is due. */
 export const MONTH_END_LABEL = fmtDay(new Date(Date.UTC(YEAR, month + 1, 0)))
 export const MONTH_NAME = monthName(TODAY, 'long')
-export const MONTH_LABEL = `${MONTH_NAME} ${YEAR}`
 /** `1–16 Oct` — the month-to-date window, and `1–16 Sep` the same days a month earlier. */
 export const WINDOW_LABEL = `1–${DAYS_ELAPSED} ${monthName(TODAY, 'short')}`
 export const PRIOR_WINDOW_LABEL = `1–${DAYS_ELAPSED} ${monthName(priorMonthStart, 'short')}`
@@ -48,7 +47,7 @@ export const HIT_RANGE_LABEL = `${monthName(new Date(Date.UTC(YEAR, month - HIT_
 export const GOAL_SESSIONS = 28
 
 type Lift = { name: string; volumeKg: number }
-export type Session = {
+type Session = {
   date: Date
   type: SessionType
   /** Training load in arbitrary units: minutes × session intensity (1–10). */
@@ -70,6 +69,12 @@ const LIFTS = [
   { name: 'Leg press', kg: 180, sets: 3, reps: 10 },
 ] as const
 const LIFTS_PER_SESSION = 4
+/** Chance of each session type on a day: strength by weekday, walking pad and mobility daily. */
+const STRENGTH_CHANCE = { trainingDay: 0.6, saturday: 0.25, otherDay: 0.05 }
+const TRAINING_DAYS = [1, 3, 5]
+const SATURDAY = 6
+const WALK_CHANCE = 0.5
+const MOBILITY_CHANCE = 0.15
 
 const random = seeded(2026_10_12)
 const windowStart = TODAY.getTime() - (WINDOW_DAYS - 1) * DAY_MS
@@ -80,7 +85,7 @@ const strengthSession = (date: Date, progress: number): Session => {
   const minutes = between(50, 75)
   const first = Math.floor(random() * LIFTS.length)
   const lifts = Array.from({ length: LIFTS_PER_SESSION }, (_, k) => {
-    const lift = LIFTS[(first + k) % LIFTS.length] as (typeof LIFTS)[number]
+    const lift = itemAt(LIFTS, (first + k) % LIFTS.length)
     const kg = Math.round((lift.kg * (0.92 + progress * 0.12) * between(0.97, 1.03)) / 2.5) * 2.5
     return { name: lift.name, volumeKg: kg * lift.sets * lift.reps }
   })
@@ -98,12 +103,16 @@ const SESSIONS: readonly Session[] = Array.from({ length: WINDOW_DAYS }, (_, i) 
   const date = new Date(windowStart + i * DAY_MS)
   const progress = i / WINDOW_DAYS
   const day = date.getUTCDay()
-  const lifts = [1, 3, 5].includes(day) ? 0.6 : day === 6 ? 0.25 : 0.05
-  const day$: Session[] = []
-  if (random() < lifts) day$.push(strengthSession(date, progress))
-  if (random() < 0.5) {
+  const strengthChance = TRAINING_DAYS.includes(day)
+    ? STRENGTH_CHANCE.trainingDay
+    : day === SATURDAY
+      ? STRENGTH_CHANCE.saturday
+      : STRENGTH_CHANCE.otherDay
+  const sessions: Session[] = []
+  if (random() < strengthChance) sessions.push(strengthSession(date, progress))
+  if (random() < WALK_CHANCE) {
     const minutes = between(20, 50)
-    day$.push({
+    sessions.push({
       date,
       type: 'walk',
       load: minutes * between(2, 3),
@@ -112,8 +121,8 @@ const SESSIONS: readonly Session[] = Array.from({ length: WINDOW_DAYS }, (_, i) 
       lifts: [],
     })
   }
-  if (random() < 0.15) {
-    day$.push({
+  if (random() < MOBILITY_CHANCE) {
+    sessions.push({
       date,
       type: 'mobility',
       load: between(15, 30) * between(1.5, 2),
@@ -122,7 +131,7 @@ const SESSIONS: readonly Session[] = Array.from({ length: WINDOW_DAYS }, (_, i) 
       lifts: [],
     })
   }
-  return day$
+  return sessions
 }).flat()
 
 const sum = (values: readonly number[]): number => values.reduce((a, b) => a + b, 0)
@@ -141,10 +150,10 @@ export const SESSIONS_MTD = MTD.length
 export const SESSIONS_PRIOR = PRIOR_MTD.length
 export const SESSIONS_CHANGE_PCT = changePct(SESSIONS_MTD, SESSIONS_PRIOR)
 export const VOLUME_MTD_KG = sum(MTD.map((s) => s.volumeKg))
-export const VOLUME_PRIOR_KG = sum(PRIOR_MTD.map((s) => s.volumeKg))
+const VOLUME_PRIOR_KG = sum(PRIOR_MTD.map((s) => s.volumeKg))
 export const VOLUME_CHANGE_PCT = changePct(VOLUME_MTD_KG, VOLUME_PRIOR_KG)
 export const DISTANCE_MTD_KM = sum(MTD.map((s) => s.km))
-export const DISTANCE_PRIOR_KM = sum(PRIOR_MTD.map((s) => s.km))
+const DISTANCE_PRIOR_KM = sum(PRIOR_MTD.map((s) => s.km))
 export const DISTANCE_CHANGE_PCT = changePct(DISTANCE_MTD_KM, DISTANCE_PRIOR_KM)
 
 /** Sessions the plan expects by today if they were spread evenly over the month. */
@@ -187,23 +196,20 @@ export const LOAD_ZONES = [
   { from: 1.3, to: 1.5, label: 'High' },
   { from: 1.5, to: LOAD_MAX, label: 'Overreaching' },
 ] as const
-export const loadZoneName = (ratio: number): string =>
-  (LOAD_ZONES.find((z) => ratio >= z.from && ratio < z.to) ?? LOAD_ZONES[LOAD_ZONES.length - 1]!)
-    .label
+export const loadZoneName = (ratio: number): string => zoneFor(LOAD_ZONES, ratio).label
 
 export const READINESS_ZONES = [
   { from: 0, to: 60, label: 'Low' },
   { from: 60, to: 80, label: 'Fair' },
   { from: 80, to: 100, label: 'Good' },
 ] as const
-export const readinessLevel = (score: number): string =>
-  (READINESS_ZONES.find((z) => score >= z.from && score < z.to) ?? READINESS_ZONES[2]).label
+export const readinessLevel = (score: number): string => zoneFor(READINESS_ZONES, score).label
 
 /** The load contributor: 100 at a ratio of 1, falling 100 points per 1.0 of distance from it. */
 const loadScore = (ratio: number): number =>
   Math.max(0, Math.round(100 - Math.abs(ratio - 1) * 100))
 
-export type Contributor = { key: string; label: string; value: number }
+type Contributor = { key: string; label: string; value: number }
 export const CONTRIBUTORS: readonly Contributor[] = [
   { key: 'sleep', label: 'Sleep', value: Math.round(between(70, 92)) },
   { key: 'hrv', label: 'HRV balance', value: Math.round(between(55, 85)) },
@@ -241,9 +247,7 @@ export const MONTHLY_SESSIONS: readonly number[] = Array.from({ length: HIT_MONT
 export const MONTHS_HIT = MONTHLY_SESSIONS.filter((n) => n >= GOAL_SESSIONS).length
 export const HIT_RATE_PCT = Math.round((MONTHS_HIT / HIT_MONTHS) * 100)
 
-const INT = new Intl.NumberFormat('en-GB', { maximumFractionDigits: 0 })
-export const fmtInt = (value: number): string => INT.format(value)
-export const fmtKg = (value: number): string => `${INT.format(Math.round(value))} kg`
+const KG = new Intl.NumberFormat('en-GB', { maximumFractionDigits: 0 })
+export const fmtKg = (value: number): string => `${KG.format(Math.round(value))} kg`
 export const fmtKm = (value: number): string => value.toFixed(1)
 export const fmtRatio = (value: number): string => value.toFixed(2)
-export const fmtShare = (value: number): string => `${Math.round(value * 100)}%`
