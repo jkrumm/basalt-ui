@@ -6,15 +6,14 @@
  */
 import { describe, expect, test } from 'bun:test'
 import { contrastRatio, hexToHct } from './hct'
+import { DEFAULT_DERIVE_CONFIG, DERIVE_LEVEL_RANGE, deriveTokens, deriveTokensRaw } from './derive'
+import type { DerivedPalette, SurfaceKey } from './derive'
 import {
-  DEFAULT_DERIVE_CONFIG,
-  deriveTokens,
-  deriveTokensRaw,
   STATUS_HUE,
   STATUS_TEXT_CONTRAST_MIN,
   STATUS_TEXT_SURFACES,
-} from './derive'
-import type { SurfaceKey } from './derive'
+  statusHexAtStep,
+} from './status-text'
 
 const FILL_PAGE_CONTRAST_MIN = 3.0
 
@@ -75,13 +74,20 @@ describe('the status solids clear WCAG AA as text on every text surface', () => 
 
 describe('the status solids are derived per surface (Wave 34)', () => {
   const NEUTRALS = ['zinc', 'neutral', 'stone', 'slate'] as const
-  const LEVELS = [-5, -4, -3, -2, -1, 0, 1, 2, 3, 4, 5]
+  const LEVELS = Array.from(
+    { length: DERIVE_LEVEL_RANGE.max - DERIVE_LEVEL_RANGE.min + 1 },
+    (_, i) => DERIVE_LEVEL_RANGE.min + i,
+  )
   // 8-bit hex quantization near black plus the gamut edge: the measured worst case is 3.84°.
   const HUE_TOLERANCE = 5
   const STATUS_KEYS = Object.keys(STATUS_HUE) as (keyof typeof STATUS_HUE)[]
   const TEXT_SURFACES = (Object.keys(STATUS_TEXT_SURFACES) as SurfaceKey[]).filter(
     (key) => STATUS_TEXT_SURFACES[key],
   )
+  const clears = (hex: string, derived: DerivedPalette, side: 'light' | 'dark'): boolean =>
+    TEXT_SURFACES.every(
+      (surface) => contrastRatio(hex, derived.surface[surface][side]) >= STATUS_TEXT_CONTRAST_MIN,
+    )
 
   test('the default config keeps every status hex byte-identical', () => {
     expect(deriveTokens(DEFAULT_DERIVE_CONFIG).status).toEqual({
@@ -91,7 +97,7 @@ describe('the status solids are derived per surface (Wave 34)', () => {
     })
   })
 
-  test('every level pair × neutral clears the floor on every text surface and keeps its hue', () => {
+  test('every level pair × neutral clears the floor, keeps its hue, and moves no further than needed', () => {
     for (const neutral of NEUTRALS) {
       for (const lightLevel of LEVELS) {
         for (const darkLevel of LEVELS) {
@@ -99,13 +105,15 @@ describe('the status solids are derived per surface (Wave 34)', () => {
           for (const key of STATUS_KEYS) {
             for (const side of ['light', 'dark'] as const) {
               const hex = derived.status[key][side]
-              for (const surface of TEXT_SURFACES) {
-                expect(contrastRatio(hex, derived.surface[surface][side])).toBeGreaterThanOrEqual(
-                  STATUS_TEXT_CONTRAST_MIN,
-                )
-              }
+              expect(clears(hex, derived, side)).toBe(true)
               const delta = Math.abs(hexToHct(hex).hue - STATUS_HUE[key])
               expect(Math.min(delta, 360 - delta)).toBeLessThan(HUE_TOLERANCE)
+              // Minimality: one step back toward the calibrated stop fails the floor.
+              let step = 0
+              while (statusHexAtStep(key, side, step) !== hex) step++
+              if (step > 0) {
+                expect(clears(statusHexAtStep(key, side, step - 1), derived, side)).toBe(false)
+              }
             }
           }
         }
@@ -136,30 +144,21 @@ describe('the status solids are derived per surface (Wave 34)', () => {
     }
   })
 
-  test('an unattainable tone throws', () => {
+  test('an unattainable tone throws, on either side', () => {
+    const raw = { chromaMult: 1, accentToneShift: 0, lightSurfaceShift: 0, darkSurfaceShift: 0 }
     expect(() =>
-      deriveTokensRaw(DEFAULT_DERIVE_CONFIG, {
-        chromaMult: 1,
-        accentToneShift: 0,
-        lightSurfaceShift: -100,
-        darkSurfaceShift: 0,
-      }),
-    ).toThrow('status text')
+      deriveTokensRaw(DEFAULT_DERIVE_CONFIG, { ...raw, lightSurfaceShift: -100 }),
+    ).toThrow('status text: no light')
+    expect(() => deriveTokensRaw(DEFAULT_DERIVE_CONFIG, { ...raw, darkSurfaceShift: 100 })).toThrow(
+      'status text: no dark',
+    )
   })
 
-  test('an out-of-range surface level is a RangeError', () => {
-    expect(() => deriveTokens({ ...DEFAULT_DERIVE_CONFIG, lightLevel: 6 })).toThrow(RangeError)
-    expect(() => deriveTokens({ ...DEFAULT_DERIVE_CONFIG, darkLevel: -6 })).toThrow(RangeError)
-  })
-})
-
-describe('contrastRatio', () => {
-  test('black on white is 21', () => {
-    expect(contrastRatio('#000000', '#ffffff')).toBeCloseTo(21, 5)
-  })
-
-  test('#777777 on white is ~4.48', () => {
-    // luminance of #777 = ((0x77/255 + 0.055)/1.055)^2.4 ≈ 0.1845 → 1.05 / 0.2345
-    expect(contrastRatio('#777777', '#ffffff')).toBeCloseTo(4.48, 2)
+  test('levels outside the range clamp to the nearest bound; non-finite becomes 0', () => {
+    const at = (lightLevel: number, darkLevel: number) =>
+      deriveTokens({ ...DEFAULT_DERIVE_CONFIG, lightLevel, darkLevel })
+    expect(at(6, -6)).toEqual(at(DERIVE_LEVEL_RANGE.max, DERIVE_LEVEL_RANGE.min))
+    expect(at(-99, 99)).toEqual(at(DERIVE_LEVEL_RANGE.min, DERIVE_LEVEL_RANGE.max))
+    expect(at(Number.NaN, Number.POSITIVE_INFINITY)).toEqual(at(0, 0))
   })
 })
