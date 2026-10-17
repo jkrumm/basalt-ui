@@ -101,13 +101,23 @@ describe('period composes "vs <period>"', () => {
 
   test('the full phrase is readable as one badge text (a11y)', () => {
     const { container } = render(<DeltaBadge value={4.2} withGlyph={false} period="last week" />)
-    expect(container.firstElementChild?.textContent).toBe('4.2%vs last week')
+    expect(container.firstElementChild?.textContent).toBe('4.2% vs last week')
   })
 
   test('a period already starting with the prefix is not doubled', () => {
     render(<DeltaBadge value={4.2} period="vs last week" />)
     expect(screen.getByText('vs last week')).toBeDefined()
     expect(screen.queryByText('vs vs last week')).toBeNull()
+  })
+
+  test.each(['vs. last week', 'VS last week', 'vs'])('"%s" is not doubled', (period) => {
+    render(<DeltaBadge value={4.2} period={period} />)
+    expect(screen.getByText(period)).toBeDefined()
+  })
+
+  test('a word merely starting with the prefix still gets it', () => {
+    render(<DeltaBadge value={4.2} period="vsync" />)
+    expect(screen.getByText('vs vsync')).toBeDefined()
   })
 
   test('periodPrefix overrides the word; an empty prefix renders the period raw', () => {
