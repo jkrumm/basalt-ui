@@ -1170,25 +1170,39 @@ whole below it). Chart axis ticks (the chart host's font) are the proportional s
 with a no-break space, so `textContent` carries U+00A0 there; its visually-hidden summary now reads the caption
 size instead of the inherited body size.
 
-### Round-2 board fixes: sparkline readout, chart error, tick size, captions, thin rows
+### Round-2 board fixes: sparkline readout, chart error, tick size, captions, thin rows, verdict word
 
-**Changed default:** the `Sparkline` hover readout is an opaque chip on the line just ABOVE the plot box
-(it used to sit inside it and covered the line's last segment, a bar or the end dot). A sparkline in a
-slot that clips its overflow (`StatCard` `sparklinePlacement="right"`) therefore clips the chip too.
-**Opt out:** none; give the slot `overflow: visible`.
+**Changed default — `Sparkline` readout.** The hover/focus chip is opaque and sits on a line ABOVE the plot
+box (it sat inside it and covered the line's last segment, a bar or the end dot). The `StatCard` `right`
+slot and a strip cell's `visual` now reserve that line (`--basalt-spark-readout-h`, 18px) as padding above
+a sparkline, so the card/cell grows by up to 18px and the chip never covers the hero value; `bleed` already
+had the room. **No opt-out for the position:** a chip inside the plot has to cover some mark. Resize the
+line with `--basalt-spark-readout-h` (chip and reserve move together); the readout itself is off under an
+`aria-hidden` ancestor.
 
-**Changed default:** a `ChartCard` (or any chart) error body is StatCard's anatomy: a left-aligned stack
-of dot, "Could not load this chart", the message and `stateAction`. It was a centred "Error" word. The
-body now GROWS past the chart's height instead of clipping the action. **Opt out:** none.
+**Changed default — chart error body.** A `ChartCard` (or any chart) error is StatCard's anatomy: a
+left-aligned stack of dot, "Could not load this chart", the message and `stateAction`; it was a centred
+"Error" word. The body now grows past the chart's height rather than clip its action. **No opt-out:** the
+old body clipped Retry at 390px, so there is no layout worth restoring; pass your own `state` copy via the
+error's message.
 
-**Changed default:** chart tick labels are one size (`--vx-text-micro`) at every container width; they were
-the 10 px nano rung below 480 px. **Opt out:** none.
+**Changed default — tick size.** Chart tick labels are `--vx-text-micro` at every container width (they were
+the 10px nano rung below 480px). **No opt-out:** one size is the law; a host that wants smaller ticks sets a
+smaller `font-size` on the chart host.
 
-**Changed default:** `Meter` captions wrap with `text-wrap: balance`, and the last two words of a caption
-`Meter` composes are joined by a no-break space when the last is 6 characters or fewer (`textContent`
-carries U+00A0 there). `BarList variant="thin"`: the label wraps to two lines before truncating (its
-`title` has the whole text), the secondary column takes at most 40% of the list, and any `secondary`
-node (a `StatusVerdict` is mono) renders in the proportional sans. **Opt out:** none.
+**Changed default — `Meter` captions.** They wrap with `text-wrap: balance`, and the last two words of a
+caption `Meter` composes are joined by a no-break space when the last is 6 characters or fewer
+(`textContent` carries U+00A0 there). **Opt out:** pass a node to `startCaption`/`endCaption` (a node is never
+glued).
+
+**Changed default — `BarList variant="thin"`.** The label wraps to two lines before truncating (its `title`
+has the whole text) and the secondary column takes at most 40% of the list. **No opt-out:** the old width
+cut titles to a few characters at 390px.
+
+**Changed default — `StatusVerdict` word.** It is the proportional sans (`--basalt-font-sans`) at the micro
+size in muted ink, not the mono: it is a sentence fragment, not an UPPERCASE caption. This reaches the
+`StatCard` tone word, `BarList` secondaries that use it, and the notification centre. **Opt out:** pass
+`className` with `font-family: var(--basalt-font-mono)`.
 
 ## 2.19.0 — the status dot, ink buttons and Meter refinements
 

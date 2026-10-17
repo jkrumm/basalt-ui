@@ -12,6 +12,9 @@
   --basalt-stat-visual-h: 1.375rem;
   --basalt-stat-footer-h: 1.25rem;
   --basalt-stat-foot-gap: 0.25rem;
+  /* The line a Sparkline's hover readout takes above its plot (`charts/sparkline.module.css` reads
+   * it too). A slot that cannot spare it reserves it as padding, so the chip never covers the hero. */
+  --basalt-spark-readout-h: 1.125rem;
   /* The figure's size and line box, in one place: `.value`, the empty line and the pending skeleton
    * all read them, so nothing moves when a reading lands. */
   --basalt-stat-figure-size: var(--vx-text-kpi);
@@ -355,6 +358,7 @@
 .sparklineRight:has(> [data-basalt-meter]) {
   flex: 1 1 auto;
   height: auto;
+  padding-top: 0;
   overflow: visible;
   align-items: stretch;
 }
@@ -369,7 +373,9 @@
   display: flex;
   flex: 0 1 var(--basalt-stat-sparkline-w, 4.5rem);
   min-width: 0;
-  height: var(--basalt-stat-sparkline-h, 1.375rem);
+  /* The slot clips, so it holds the Sparkline's readout line inside its own box (padding-top). */
+  height: calc(var(--basalt-stat-sparkline-h, 1.375rem) + var(--basalt-spark-readout-h));
+  padding-top: var(--basalt-spark-readout-h);
   align-items: flex-end;
   align-self: flex-end;
   overflow: hidden;

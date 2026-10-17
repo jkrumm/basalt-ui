@@ -693,7 +693,7 @@ layout('Charts — 2.0 layout', () => {
   })
 
   describe('a Sparkline in a StatCard slot or a strip cell answers hover with a readout inside the cell', () => {
-    test.each(['card', 'strip'] as const)('%s', async (sparkIn) => {
+    test.each(['card', 'right', 'strip'] as const)('%s', async (sparkIn) => {
       const p = await openFixture(chartFixture({ kind: 'spark', sparkIn }), DESKTOP)
       await p.settle()
       const box = await p.raw.evaluate(() => {
@@ -711,9 +711,35 @@ layout('Charts — 2.0 layout', () => {
         if (!readout || !cell) throw new Error('LAYOUT: no readout or cell')
         const r = readout.getBoundingClientRect()
         const c = cell.getBoundingClientRect()
+        // The hero value's row (value, unit, delta): what a chip above the plot could land on.
+        const hero = cell
+          .querySelector(':is([class^="valueRow_"],[class*=" valueRow_"])')
+          ?.getBoundingClientRect()
+        if (!hero) throw new Error('LAYOUT: no hero value row')
+        // Fully visible: no ancestor that clips its overflow cuts any side of the readout
+        // (`pointer-events: none` rules out `elementFromPoint`).
+        let painted = true
+        for (let el = readout.parentElement; el; el = el.parentElement) {
+          const o = getComputedStyle(el)
+          if ([o.overflowX, o.overflowY].every((v) => v === 'visible')) continue
+          const a = el.getBoundingClientRect()
+          if (
+            r.left < a.left - 0.5 ||
+            r.right > a.right + 0.5 ||
+            r.top < a.top - 0.5 ||
+            r.bottom > a.bottom + 0.5
+          )
+            painted = false
+        }
         return {
           text: readout.textContent,
           visible: r.width > 0 && r.height > 0,
+          painted,
+          overHero:
+            r.left < hero.right &&
+            r.right > hero.left &&
+            r.top < hero.bottom &&
+            r.bottom > hero.top,
           inside:
             r.left >= c.left - 0.5 &&
             r.right <= c.right + 0.5 &&
@@ -722,8 +748,7 @@ layout('Charts — 2.0 layout', () => {
         }
       })
       expect(m.text).not.toBe('')
-      expect(m.visible).toBe(true)
-      expect(m.inside).toBe(true)
+      expect(m).toMatchObject({ visible: true, inside: true, painted: true, overHero: false })
     })
   })
 })

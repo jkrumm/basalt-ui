@@ -5,13 +5,13 @@
  * kind; `--basalt-chart-font` retunes the face from outside.
  */
 import { describe, expect, test } from 'bun:test'
-import type { StoredChartSpec } from '@tanstack/charts/types/core'
-import { compileCartesian } from './compile'
-import { VX } from '../tokens'
+import type { ChartTheme, StoredChartSpec } from '@tanstack/charts/types/core'
 import type { ReactElement } from 'react'
 import { renderToString } from 'react-dom/server'
+import { VX } from '../tokens'
 import { BandStrip } from './BandStrip'
 import { Bars } from './Bars'
+import { compileCartesian } from './compile'
 import { Donut } from './Donut'
 import { Heatmap } from './Heatmap'
 import { Lines } from './Lines'
@@ -82,6 +82,14 @@ describe('chart tick font', () => {
   })
 })
 
+const DEFAULT_THEME: ChartTheme = {
+  foreground: 'black',
+  muted: 'gray',
+  grid: 'gray',
+  background: 'transparent',
+  palette: ['black'],
+}
+
 describe('chart tick size', () => {
   const def = compileCartesian({
     chartId: 'tick-size',
@@ -91,7 +99,7 @@ describe('chart tick size', () => {
     marks: () => [],
   })
   const fonts = (width: number, height: number): unknown[] => {
-    const spec: StoredChartSpec = def.chart({ width, height, defaultTheme: {} as never })
+    const spec: StoredChartSpec = def.chart({ width, height, defaultTheme: DEFAULT_THEME })
     return ['x', 'y'].flatMap((k) => {
       const axis = spec.scales[k]?.axis
       return axis && typeof axis === 'object' && typeof axis.tickLabels === 'object'

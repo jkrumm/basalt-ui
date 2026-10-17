@@ -81,13 +81,6 @@
   white-space: nowrap;
 }
 
-/* Whatever a consumer puts here (a `StatusVerdict` is mono) reads in the proportional sans: mono is
- * for UPPERCASE micro-captions, times and code. */
-.root .secondary * {
-  font-family: inherit;
-  font-size: inherit;
-}
-
 .empty {
   grid-column: 1 / -1;
   font-size: var(--vx-text-sm);
@@ -154,7 +147,6 @@
   overflow: hidden;
   white-space: normal;
   overflow-wrap: anywhere;
-  text-overflow: clip;
   -webkit-box-orient: vertical;
   -webkit-line-clamp: 2;
   line-clamp: 2;

@@ -170,9 +170,9 @@ export type ChartsSpec = {
   sparkRows?: number
   /** `spark`: draw bars (a short fixed series with zeros) instead of the sine line. */
   sparkBars?: true
-  /** `spark`: mount the Sparkline in a 300px `StatCard` sparkline slot (`card`) or a strip cell
+  /** `spark`: mount the Sparkline in a 300px `StatCard` sparkline slot (`card`), the same card with `sparklinePlacement="right"` in a 520px box (`right`) or a strip cell
    * `visual` (`strip`) instead of bare. */
-  sparkIn?: 'card' | 'strip'
+  sparkIn?: 'card' | 'right' | 'strip'
   /** `strip`/`mirrored`: the bucket count of the `BandStrip`/`MirroredBars` (default 60)... */
   stripBuckets?: number
   /** ...and each bucket's width in ms (default one minute — a one-hour range). */
