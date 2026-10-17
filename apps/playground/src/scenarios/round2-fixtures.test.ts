@@ -39,6 +39,22 @@ describe('S4 spend', () => {
     expect(tickLabels(cell)).toEqual(['Budget'])
   })
 
+  it('states the euro unit on the ticks and facts, not in the titles', () => {
+    const c = mount(createElement(SpendScenario, { shotState: undefined }))
+    for (const name of ['spend-over-time', 'spend-by-project']) {
+      expect(anchor(c, name)?.textContent).not.toContain('(€)')
+    }
+  })
+
+  it('keeps the forecast footer short enough not to orphan a word at 390', () => {
+    const cell = anchor(
+      mount(createElement(SpendScenario, { shotState: undefined })),
+      'strip-forecast',
+    )
+    expect(cell?.textContent).toContain('€1,152 over the cap')
+    expect(cell?.textContent).not.toContain('€1,500 budget')
+  })
+
   it.each<ShotState>(['empty', 'error'])(
     'top drivers in %s uses the ChartCard anatomy',
     (s: ShotState) => {
@@ -64,6 +80,13 @@ describe('S3 agents', () => {
     expect(text).toContain('Retry')
   })
 
+  it('prints the failure times beside the hourly marks, not colour alone', () => {
+    const c = mount(createElement(AgentsScenario, { shotState: undefined }))
+    const text = anchor(c, 'strip-failures')?.textContent
+    expect(text).toContain('last 24 h')
+    expect(text).toContain('19:00 · 08:00 · 13:00 UTC')
+  })
+
   it('pairs cells of similar height in the two-column layout', () => {
     const c = mount(createElement(AgentsScenario, { shotState: undefined }))
     const order = [...c.querySelectorAll('[data-strip-cell]')].map((n) =>
@@ -74,6 +97,15 @@ describe('S3 agents', () => {
 })
 
 describe('S2 training', () => {
+  it('draws the hit rate as its monthly history with every month labelled', () => {
+    const c = mount(createElement(TrainingScenario, { shotState: undefined }))
+    const card = anchor(c, 'hit-rate')
+    expect(card?.querySelector('[data-meter-ring]')).toBeNull()
+    for (const m of ['Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep']) {
+      expect(card?.textContent).toContain(m)
+    }
+  })
+
   it('names the pace tick on the goal meter and not again in the end caption', () => {
     const c = mount(createElement(TrainingScenario, { shotState: undefined }))
     const goal = anchor(c, 'goal')
