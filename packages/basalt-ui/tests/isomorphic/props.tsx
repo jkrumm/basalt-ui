@@ -94,6 +94,8 @@ defineCommands({
 /* ------------------------------------------------------------- the prop map */
 
 export const MINIMAL_PROPS: Record<string, Record<string, unknown>> = {
+  StatusDot: { color: 'red' },
+  StatusVerdict: { color: 'red', word: 'Over' },
   /* --- charts (docs/V2-SPEC.md § 9) --------------------------------------- */
   CartesianChart: {
     ariaLabel: 'Cartesian',
@@ -336,6 +338,8 @@ export const NO_CLASSNAME: Record<string, 'provider' | 'svg' | 'portal' | 'gap'>
   // gap — renders a real box and drops the class.
   DateRangePicker: 'gap',
   DeltaBadge: 'gap',
+  StatusDot: 'gap',
+  StatusVerdict: 'gap',
 }
 
 /**

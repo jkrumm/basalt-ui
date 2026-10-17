@@ -185,6 +185,13 @@ const stateMod = await import('basalt-ui/state')
 if (typeof stateMod.createSearchStore !== 'function') throw new Error('state.createSearchStore missing')
 console.log('smoke: basalt-ui/state OK')
 
+// the status mark is a root export (argo status chips): both components resolve from `basalt-ui`
+const rootMod = await import('basalt-ui')
+for (const name of ['StatusDot', 'StatusVerdict']) {
+  if (typeof rootMod[name] !== 'function') throw new Error(`basalt-ui.${name} missing`)
+}
+console.log('smoke: basalt-ui status exports OK')
+
 console.log(`scratch resolution OK (${subpaths.length} subpaths)`)
 JS
 # `./agent` ships the Mantine chat UI, whose CSS-module imports plain Node cannot load.

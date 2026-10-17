@@ -1,7 +1,10 @@
 /**
  * `StatusVerdict` — a `StatusDot` plus its word in muted ink. With `phrase`, the visible word is
  * hidden from assistive tech and the full phrase is read instead, so a screen reader never hears a
- * bare "Over". INTERNAL: not on any barrel; `StatCard` and the notification centre compose it.
+ * bare "Over". Exported from the root; `StatCard` and the notification centre compose it.
+ *
+ * @example
+ * <StatusVerdict color={VX.status.error} word="Over" phrase="Over budget" />
  */
 import { StatusDot } from './status-dot'
 import classes from './status-verdict.module.css'

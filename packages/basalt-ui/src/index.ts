@@ -26,6 +26,8 @@ export {
 export { scrollParentOf, useCoarsePointer, type Tone } from './common'
 export { createBasaltTheme } from './theme'
 export { ThemeToggle } from './theme/theme-toggle'
+export { StatusDot, type StatusDotProps } from './theme/status-dot'
+export { StatusVerdict, type StatusVerdictProps } from './theme/status-verdict'
 export {
   BasaltShell,
   PageBar,

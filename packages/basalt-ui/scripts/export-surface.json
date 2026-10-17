@@ -15,6 +15,8 @@
     "SettingsSection",
     "StatCard",
     "StatGroup",
+    "StatusDot",
+    "StatusVerdict",
     "ThemeToggle",
     "WidgetHeader",
     "basaltRouterOptions",
