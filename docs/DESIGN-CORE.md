@@ -125,8 +125,8 @@ Worked rule: a multi-toggle bar chart colours bars `isMulti ? series.x : VX.line
 ## Layout, elevation, shapes
 
 - **Density is the point.** This is a terminal, not a marketing page — sections separate by surface
-  change and shadow-carried depth, not by large air. Card interior padding is `xs`/`sm` (11px/13px),
-  not the Mantine-default `md`.
+  change and shadow-carried depth, not by large air. Card interior padding is `sm`/`md` (12px/16px) on
+  the even-pixel grid, not the roomier Mantine default.
 - **Depth = a whisper shadow + ring, never a bare hairline border.** Elevation tiers:
 
   | Level        | Treatment                                           | Use                                |
@@ -142,7 +142,7 @@ Worked rule: a multi-toggle bar chart colours bars `isMulti ? series.x : VX.line
   `shadow` prop only for a genuinely one-off floating surface outside the standard card system.
 
 - **Tight radii.** Small radii read precise/technical (Linear), not soft/consumer: `defaultRadius`
-  is `md` (6px) for controls; cards read a separate 7px `--vx-radius-card`, not `md` itself.
+  is `md` (6px) for controls; cards read a separate 10px `--vx-radius-card`, still tighter than 12.
   Owned in the theme, not inherited.
 - **Type carried by size + weight.** A three-font system, not a single system-sans: body
   (`'Nunito Sans Variable'`), head (`'Hubot Sans Variable'`, headings/brand/card titles at
