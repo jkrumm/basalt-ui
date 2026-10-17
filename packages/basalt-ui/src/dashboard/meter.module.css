@@ -220,7 +220,8 @@
   min-width: 5rem;
   width: max-content;
   aspect-ratio: 1;
-  padding: 0.75rem;
+  /* 12px at the default step: keeps the value inside the ring's stroke. */
+  padding: calc(1.5 * var(--vx-space-stack-sm, 0.5rem));
 }
 
 .ring {
