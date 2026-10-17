@@ -63,8 +63,8 @@ describe('the Mantine radius size-scale is byte-identical to the pre-tokenizatio
 })
 
 describe('every re-pointed component defaultProps/styles radius matches its shipped number', () => {
-  test('Badge = 6', () => {
-    expect(baseTheme.components?.['Badge']?.defaultProps?.['radius']).toBe(6)
+  test('Badge = 5 (tight)', () => {
+    expect(baseTheme.components?.['Badge']?.defaultProps?.['radius']).toBe(5)
   })
 
   test('SegmentedControl root = 6 (the control radius), indicator = 4 (fine)', () => {

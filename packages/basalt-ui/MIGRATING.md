@@ -1041,10 +1041,25 @@ The `basalt-ui/router-tanstack` subpath is **removed** in 2.x, not moved: an imp
 | `NavItemMeta`, `NavGroupMeta`, `AnyNavItem`, `AnyNavGroup`, `AnyNavLink`, `FlatNavItem`, `NavConfig`, `NavGroupId`, `NavTabId`, `NavIndex`, `UseNavOptions`, `NavBinding`, `NavAnchor`, `NavAnchorProps`, `NavMobilePlacement` | deleted                                                                                                                                                                                                                                                                                                                                                                                                                                                    | no consumer names them; derive with `ComponentProps` / `Parameters` |
 | `useNav`, and `BasaltShell`'s `sections` / `mobileNav` props                                                                                                                                                                   | deleted: pass `nav={NAV}` (plus `badges`, `isActive`, `getScrollElement` — the old `useNav` options) to `BasaltShell`; it resolves the sidebar, the mobile bar and the breadcrumb itself. `mobileNav` tuning moves to `defineNav`'s `mobile`. argo `apps/dashboard/src/routes/__root.tsx`: replace `const nav = useNav(NAV, { badges })` + `{...nav}` with `nav={NAV} badges={…}` (migrates in W12; 1.x consumers stay on their pinned version until then) |
 
-## Unreleased
+## Unreleased — the chrome leaks
 
-_Nothing yet. Author the next section under this heading as `## Unreleased — <title>`; the
-release renames it and opens a new one here._
+Wave 33 of the design-parity track (`docs/waves/design-parity/SPEC.md` § 6.10, § 6.12). No export is
+added, removed or renamed; three theme defaults change, each with a one-prop way back.
+
+### Badge, subtle Button, Tabs
+
+| What                            | Old                                    | New                                                    | Opt out                              |
+| ------------------------------- | -------------------------------------- | ------------------------------------------------------ | ------------------------------------ |
+| `Badge` default variant         | `filled` (accent fill, on-colour text) | `light` (13% status tint, ink-pulled text)             | `variant="filled"`                   |
+| `Badge` radius                  | `ctrl` (6 at level 0)                  | `tight` (5 at level 0; follows the `radius` knob)      | `radius="md"`                        |
+| `Badge` leading glyph           | Mantine's section, 4px gap, unsized    | `leftSection` svg is 12px, 4px gap, centred at 20 high | none needed                          |
+| `Button variant="subtle"` label | accent ink                             | neutral ink (`--vx-ink`); hover unchanged              | `color="blue"` (any explicit colour) |
+| `Tabs` active underline         | accent (`--tabs-color`)                | ink (`--vx-ink`)                                       | `color="blue"` on `Tabs`             |
+
+- `Badge` height stays 20 (Mantine `md`). `filled` remains right for a count on an accent surface.
+- A `Button`/`ActionIcon` with an explicit `color` keeps its own hue on the label, as before.
+- `Tabs variant="pills"` is untouched: it fills with the colour, so it keeps the accent.
+- The active nav icon keeps the accent (DESIGN-CORE § Accent discipline lists it).
 
 ### Date ticks
 
