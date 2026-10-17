@@ -80,7 +80,10 @@
   font-family: var(--basalt-font-mono);
   font-size: var(--vx-text-micro);
   color: var(--vx-muted);
-  white-space: nowrap;
+  text-align: end;
+  /* Wraps before it is ever cut: a qualifier too long for the row on its own line breaks its words. */
+  overflow-wrap: anywhere;
+  min-width: 0;
 }
 
 /* Law C15: the shared hit overlay; `--vx-hit-gap` caps the expansion at the control gap. */
