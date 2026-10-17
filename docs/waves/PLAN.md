@@ -1175,7 +1175,7 @@ upgrade (Waves 40–41); in-wave boards are the playground's.
 - **Next:** owner review of the Wave 32 boards (`.design-parity/w32/`, local). Stopped here as briefed: not
   released; Wave 33 is marked active in this plan but not spawned (the orchestrator spawns it).
 
-## Wave 33 — The metric card and chart-in-card <!-- status: done -->
+## Wave 33 — The metric card and chart-in-card <!-- status: active -->
 
 Spec: SPEC § 6.1, § 6.2, § 6.10, § 6.12. Scenarios S4 and S1. Consumer before/after: Waves 40–41.
 
@@ -1192,8 +1192,8 @@ Spec: SPEC § 6.1, § 6.2, § 6.10, § 6.12. Scenarios S4 and S1. Consumer befor
       branches, shot with the rest.
 - [x] Unit tests: no background on the delta in both schemes; the `Badge` default variant; the end dot's
       colour; `qualifier` on the caption row and `subtitle` in the footer.
-- [x] At least three rounds on S4 and S1 metric cards with the shipped reviewer. **Owner review** of the first
-      pattern family's boards.
+- [x] At least three rounds on S4 and S1 metric cards with the shipped reviewer.
+- [ ] **Owner review** of the first pattern family's boards.
       **Left behind:**
 
 - **Landed** (PRs #331 chrome anchors, #332 date ticks, #333 chrome, #334 metric card, #335 round-1 board items).
@@ -1229,13 +1229,17 @@ Spec: SPEC § 6.1, § 6.2, § 6.10, § 6.12. Scenarios S4 and S1. Consumer befor
 - **Owner decisions:** `light`/`outline` Buttons still carry the accent (r1–r3 Craft 4; not in SPEC § 6.12).
   Before releasing 2.17, D19's grace entries (`card-inset`, `raw-spacing`, `inline-spacing` → `error`) have to
   be deleted in their own commit, or 2.17 ships them at `warn` again.
-- **Budgets** raised by exactly what landed, itemised in `scripts/check-budgets.ts`: CLI lines 7100 → 7124 (the
-  shot hover point); gzip from CI: provider-only 19200 → 19308, embedded 55404 → 55601, theme-only 14580 → 14771.
-- **Next:** owner review of the first pattern family's boards (`.design-parity/w33/`, local; copied to the
-  MacBook's `Downloads/basalt-design-review/`). Stopped here as briefed: not released; Wave 34 is marked active
-  but not spawned.
+- **Budgets** raised by exactly what landed, itemised in `scripts/check-budgets.ts`: CLI lines 7100 → 7132 (the
+  shot hover point +24, the anchored `data-shot-at` parse +8); gzip from CI: provider-only 19200 → 19308, embedded 55404 → 55601, theme-only 14580 → 14771.
+- **Next — stopped: awaiting owner review** of the first pattern family's boards, the one unticked step. Every
+  other step is done and merged. The boards are local under `.design-parity/w33/` (r0, r0-chrome, r1–r3); the
+  MacBook was unreachable at close-out (`ssh iumac` timed out), so they are not copied yet: `rsync -a --relative
+  .design-parity/w33 iumac:Downloads/basalt-design-review/`. The round figures in `w33/rounds.md` come from those
+  local `metrics.json` files and reviewer runs. Once the owner has seen them, tick the step, flip Wave 33 to
+  `done` and Wave 34 to `active`. Not released; nothing spawned. The gzip ceilings were set from master CI's Linux
+  run (39010834973), not a local build.
 
-## Wave 34 — Meter and BarList <!-- status: active -->
+## Wave 34 — Meter and BarList <!-- status: pending -->
 
 Spec: SPEC § 3, § 4, § 6.3, § 6.4, D1, D2. Scenarios S4 and S2 (build the S2 fixture). Validators: argo
 (reading, usage), rb (course, ingest), linewatch (link against ceiling).
