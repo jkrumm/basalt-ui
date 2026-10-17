@@ -1110,7 +1110,7 @@ every `Card` and `Paper`. Before, a bare `<Card>` got Mantine's 16 px all round 
 - A `Paper` you relied on being padding-free (a bare wrapper, a custom overlay) now has 12/16:
   add `variant="flush"`. Mantine's own `Modal`, `Drawer`, `Dialog`, `ActionBar` and `FloatingWindow`
   are excluded and gain nothing.
-- `basalt/card-inset` stays at `warn` (grace → 2.24.0); the redundant pair is a new finding, so a
+- `basalt/card-inset` stays at `warn` (grace → 2.26.0); the redundant pair is a new finding, so a
   codebase that was clean last release will report until the pairs are deleted.
 
 ## 2.19.0 — the status dot, ink buttons and Meter refinements

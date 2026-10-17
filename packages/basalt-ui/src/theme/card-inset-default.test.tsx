@@ -4,9 +4,9 @@
  * `--vx-space-card-inset-y` / `-x`, which `density` scales — so a consumer states nothing. Flush is
  * `variant="flush"` (whole card) or `Card.Section` (a full-bleed region inside a padded card).
  *
- * The happy-dom preload computes no stylesheet, so the geometry itself is pinned in
- * `tests/layout/card-chrome.layout.test.ts`; here the contract is the class the theme attaches and
- * the declarations that class carries.
+ * Bun resolves `.module.css` to `{}` and happy-dom computes no stylesheet, so the geometry itself is
+ * pinned in `tests/layout/card-inset.layout.test.ts` (real Chrome); here the contract is the wiring
+ * the theme attaches and the declarations the CSS carries.
  */
 import { describe, expect, test } from 'bun:test'
 import { readFileSync } from 'node:fs'
@@ -52,7 +52,7 @@ describe('the inset declarations', () => {
     expect(css).toContain('calc(var(--card-inset-y, 12px) * -1)')
   })
 
-  test('Mantine components that render a Paper of their own do not gain the inset', () => {
+  test('the Paper-rendering exclusions are named (their padding is measured in the layout suite)', () => {
     for (const part of ['Modal', 'Drawer', 'Dialog', 'ActionBar', 'FloatingWindow']) {
       expect(css).toContain(`mantine-${part}-`)
     }
