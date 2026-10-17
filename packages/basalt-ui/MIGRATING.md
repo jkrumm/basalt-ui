@@ -1046,7 +1046,7 @@ The `basalt-ui/router-tanstack` subpath is **removed** in 2.x, not moved: an imp
 Wave 32 of the design-parity track moves the spacing, inset, radius and type scales onto an
 even-pixel grid (`docs/waves/design-parity/SPEC.md` § 5). No export is removed or renamed; **every
 number below changes at level 0**, so a layout that was tuned against the old scale moves. Plain
-`feat:` — the opt-outs are in the last table.
+`feat:` — the way back is **partial**: `density` and `radius` bring back some numbers (last table), the page gutter, the type sizes and the faint ink have no knob.
 
 | What                                             | Old                          | New                                    |
 | ------------------------------------------------ | ---------------------------- | -------------------------------------- |
@@ -1069,13 +1069,26 @@ number below changes at level 0**, so a layout that was tuned against the old sc
 
 - **Behaviour: spacing props and `--mantine-spacing-*` reads shrink.** `p="xs"` is 8 (was 11), `"sm"` 12 (was 13), `"md"` 16 (was 18), `"xl"` 24 (was 26); `"lg"` is unchanged. Hand-written `px={18}` / `gap={26}` no longer equal a step, and `raw-spacing` reports them.
 - **Behaviour: the CSS sub-scale ceiling of `inline-spacing` drops from 10px to 7px** (it sits one below the smallest stop, now 8). A CSS `padding: 8px` or `10px` is now a finding; 2 / 4 / 6px clusters stay legal.
-- **Behaviour: `basalt/card-inset` accepts both pairs.** The idiom is `py="sm" px="md"` (12/16). The old `py="xs" px="sm"` is still accepted (it is now 8/12 and reads tighter than every basalt card); a new card takes `sm`/`md`.
+- **Behaviour: `basalt/card-inset` is strict.** The only accepted inset is the pair `py="sm" px="md"` (12/16) or leaving both to the theme. Uniform `p`/`padding` (any value) and every other pair, including the old `py="xs" px="sm"` (now 8/12), are findings at the shipped `error` level; move each `<Card py="xs" px="sm">` to `py="sm" px="md"`.
 - **Behaviour: the compact card inset reads `--vx-space-card-inset-x` below `sm`**, and `StatCard`'s full-bleed sparkline now bleeds by the card inset tokens rather than the `sm`/`xs` scale stops, so the bleed matches the inset at every width.
 - **Behaviour: the `SegmentedControl` concentricity law restated.** `RADIUS.card === RADIUS_STEP.tight + segmentedTrackInset` could not hold at card 10, so the track now takes the control radius and the indicator the `fine` tier: `RADIUS.ctrl === RADIUS_STEP.fine + 2`, exact down to `radius: -4` (at `-5`, `fine` clamps to 0 against a 1px track).
 - **Behaviour: `deriveSpacing(0).rowLineHeight` is 1.54** (was 1.35); the additive range across `density` −3..+3 is 1.44..1.64.
-- **Behaviour: the dense control tier is internal.** `FilterSet` rows and the `BasaltDataTable` toolbar carry `data-basalt-dense`; at a fine pointer their `ctl` controls resolve to 28. A coarse pointer keeps 32 and the 44px hit overlay. `--vx-space-control-height-dense` is the only new name.
+- **Behaviour: the dense control tier is internal.** `PageBar`'s filter row (the `pills` line) and the `BasaltDataTable` toolbar carry `data-basalt-dense`; at a fine pointer their `ctl` controls resolve to 28. A coarse pointer keeps 32 and the 44px hit overlay. `--vx-space-control-height-dense` is the only new name.
 - **Added: `--vx-space-control-height-dense`.** An emitted token (28, floored at 24 by `density`); not exported from `basalt-ui/tokens`.
 - **Behaviour: the page gutter is a trial at the expanded class** (SPEC D7). `appShellInsetExpanded` is one constant in `tokens/palette.ts`; setting it equal to `appShellInset` reverts it.
+
+### Migrating the guards
+
+`raw-spacing` and `inline-spacing` ship at `error`, and their steps follow the new scale, so after the upgrade `p={16}` and `gap={24}` are findings (use `"md"` / `"xl"`) and `p={18}` / `gap={26}` are no longer flagged. To migrate on your own schedule, in the consumer's `package.json`:
+
+```json
+"basalt": {
+  "spacingSteps": [11, 13, 18, 20, 26],
+  "severity": { "raw-spacing": "warn", "inline-spacing": "warn" }
+}
+```
+
+`spacingSteps` keeps the guard on the old numbers (matching a scale you have not moved off yet); `severity` turns both into reports that do not fail the build. Drop both once the call sites read tokens. The CSS sub-scale ceiling (7px) has no switch.
 
 ### Restoring the old feel
 
