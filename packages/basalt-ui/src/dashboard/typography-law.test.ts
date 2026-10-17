@@ -67,10 +67,54 @@ describe('numerals are proportional sans with lining figures', () => {
 describe('mono stays for captions and times', () => {
   test('the StatCard uppercase caption and qualifier', () => {
     expect(rule(statCard, '.caption')).toContain('--basalt-font-mono')
-    expect(rule(statCard, '.qualifier')).toContain('--basalt-font-mono')
   })
   test('the group-tier heading micro-label', () => {
     expect(rule(widgetHeader, ".root[data-tier='group'] .heading")).toContain('--basalt-font-mono')
+  })
+})
+
+describe('the lowercase qualifier is muted sans, never mono', () => {
+  for (const [name, css] of [
+    ['StatCard', statCard],
+    ['StatStrip', statStrip],
+  ] as const) {
+    test(name, () => {
+      const r = rule(css, '.qualifier')
+      expect(r).not.toContain('--basalt-font-mono')
+      expect(r).toContain('color: var(--vx-muted)')
+    })
+  }
+})
+
+/** The distinct `font-size` values a stylesheet declares, caption variable resolved to its role. */
+const sizesOf = (css: string, selectors?: readonly string[]): string[] => {
+  const blocks = selectors ? selectors.map((s) => rule(css, s)) : [css]
+  const out = blocks.flatMap((b) =>
+    [...b.matchAll(/font-size:\s*([^;]+);/g)].map((m) => m[1] ?? ''),
+  )
+  return out.map((v) => v.replace('var(--basalt-meter-caption)', 'var(--vx-text-micro)').trim())
+}
+
+describe('max three font sizes per component', () => {
+  const ROLES = ['var(--vx-text-kpi)', 'var(--vx-text-micro)', 'var(--vx-text-sm)']
+  test('a ChartCard facts header over a Meter body: kpi, sm, micro', () => {
+    const used = new Set([
+      ...sizesOf(chartCard),
+      ...sizesOf(widgetHeader, [
+        ".root[data-tier='widget'] .heading",
+        '.deltaBadge',
+        '.deltaPeriod',
+      ]),
+      ...sizesOf(meter),
+    ])
+    expect([...used].toSorted()).toEqual(ROLES)
+  })
+  test('a StatStrip cell over a Meter body: kpi, sm, micro', () => {
+    const used = new Set([...sizesOf(statStrip), ...sizesOf(meter)])
+    expect([...used].toSorted()).toEqual(ROLES)
+  })
+  test('the Meter visually-hidden summary reads the caption size, not the inherited body 15', () => {
+    expect(rule(meter, '.summary')).toContain('font-size: var(--basalt-meter-caption)')
   })
 })
 

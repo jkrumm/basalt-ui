@@ -86,7 +86,6 @@
 }
 
 .qualifier {
-  font-family: var(--basalt-font-mono);
   font-size: var(--vx-text-micro);
   color: var(--vx-muted);
   /* Wraps before it is ever cut: a qualifier too long for the row on its own line breaks its words. */

@@ -141,6 +141,13 @@ describe('info, qualifier and subtitle', () => {
     expect(caption).not.toContain('Source: Garmin')
   })
 
+  test('the caption truncates with a title carrying the full text', () => {
+    const markup = renderHeader({ info: 'More' })
+    expect(markup).toMatch(
+      /data-widget-title="" title="Training load"|title="Training load"[^>]*data-widget-title/,
+    )
+  })
+
   test('the qualifier sits on the caption row, after the caption and before the value', () => {
     const markup = renderHeader({ qualifier: '7-day rolling' })
     const q = markup.indexOf('7-day rolling')
@@ -660,6 +667,10 @@ describe('stat-card.module.css — caption, value row, foot', () => {
     expect(r).toContain('font-size: var(--vx-text-micro)')
     expect(r).toContain('color: var(--vx-muted)')
     expect(rule('.captionMain')).toContain('justify-content: space-between')
+  })
+
+  test('the qualifier is the sans, not the mono of the caption', () => {
+    expect(rule('.qualifier')).not.toContain('--basalt-font-mono')
   })
 
   test('the qualifier never cuts: it breaks its own words and does not hold nowrap', () => {

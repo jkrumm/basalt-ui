@@ -32,6 +32,38 @@ const CELLS: StatStripCell[] = [
   { key: 'none', caption: 'Sleep', value: null },
 ]
 
+describe('strip caption line', () => {
+  test('the caption truncates with a title, and the info glyph stays in its group', () => {
+    const { container } = mount([
+      {
+        key: 'a',
+        caption: 'Dispatch spend',
+        qualifier: 'today',
+        info: 'Spend so far',
+        value: '€4',
+      },
+    ])
+    const caption = container.querySelector('[data-strip-caption]') as HTMLElement
+    expect(caption.getAttribute('title')).toBe('Dispatch spend')
+    const lead = caption.parentElement as HTMLElement
+    expect(lead.querySelector('button')).not.toBeNull()
+    expect(lead.textContent).not.toContain('today')
+  })
+  test('the qualifier is its own wrapping item, with no orphan separator', () => {
+    const { getByText } = mount([
+      { key: 'a', caption: 'Forecast', qualifier: 'end of October', value: '1' },
+    ])
+    expect(getByText('end of October').textContent).toBe('end of October')
+  })
+  test('the caption group never wraps; the line does', () => {
+    const lead = /\.lead\s*{([^}]*)}/.exec(CSS)?.[1] ?? ''
+    expect(lead).toContain('min-width: 0')
+    expect(lead).not.toContain('flex-wrap: wrap')
+    expect(/\.captionLine\s*{([^}]*)}/.exec(CSS)?.[1]).toContain('flex-wrap: wrap')
+    expect(/\.caption\s*{([^}]*)}/.exec(CSS)?.[1]).toContain('text-overflow: ellipsis')
+  })
+})
+
 describe('StatGroup variant="strip"', () => {
   test('is a labelled section with one cell per entry', () => {
     const { container } = mount(CELLS)
@@ -43,7 +75,12 @@ describe('StatGroup variant="strip"', () => {
   test('caption line carries the muted qualifier; value carries the unit', () => {
     const { getByText, container } = mount(CELLS)
     expect(getByText('Resting HR')).toBeTruthy()
-    expect(getByText('· 7d')).toBeTruthy()
+    expect(getByText('7d')).toBeTruthy()
+    // The caption and its info glyph are one group; the qualifier is a sibling that wraps whole.
+    const line = container.querySelector(
+      '[data-strip-cell="rhr"] [data-strip-caption]',
+    )?.parentElement
+    expect(line?.parentElement?.lastElementChild?.textContent).toBe('7d')
     expect(getByText('bpm')).toBeTruthy()
     expect(getByText('as of 06:10')).toBeTruthy()
     const cell = container.querySelector('[data-strip-cell="rhr"]') as HTMLElement

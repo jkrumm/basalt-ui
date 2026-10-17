@@ -131,8 +131,8 @@ type ChartCardBaseProps = BasaltProps &
 
 /**
  * `facts` replaces the legacy `value`/`delta` hero: the two are mutually exclusive in the type. The
- * facts stay visible while `state` is pending (the header is kept; the figure is the card's identity)
- * and are hidden for error and empty, where the figure would be stale or absent.
+ * facts show only at rest: while `state` is pending, errored or empty the figure would sit above a
+ * skeleton or a placeholder that contradicts it, so the header keeps its title row alone.
  */
 export type ChartCardProps = ChartCardBaseProps &
   (
@@ -200,7 +200,7 @@ export function ChartCard({
 }: ChartCardProps): ReactElement {
   const { ref, short } = useShortCard()
   const resolved = resolveChartState(state)
-  const showFacts = facts !== undefined && (resolved === null || resolved === 'pending')
+  const showFacts = facts !== undefined && resolved === null
   const hasHeader =
     actions !== undefined || showFacts || HEADER_TRIGGERS.some((k) => header[k] !== undefined)
   // With facts the subtitle is the basis line after them, not WidgetHeader's foldable row.

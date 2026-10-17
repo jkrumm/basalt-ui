@@ -288,6 +288,40 @@ describe('one caption size', () => {
   })
 })
 
+describe('caption wrapping', () => {
+  const captionText = (c: HTMLElement) =>
+    [...c.querySelectorAll('[data-meter-captions] > span')].map((e) => e.textContent)
+
+  test('a value and its unit never split across a line: a no-break space joins them', () => {
+    const { container } = mount({
+      label: 'Wait',
+      value: 3,
+      max: 7,
+      startCaption: null,
+      endCaption: 'Warns at 24 h · abandoned at 7 d',
+    })
+    expect(captionText(container)).toEqual(['Warns at 24\u00a0h · abandoned at 7\u00a0d'])
+  })
+
+  test('words that are not a unit keep their ordinary space', () => {
+    const { container } = mount({
+      label: 'B',
+      value: 1,
+      max: 2,
+      endCaption: 'Target 2400 over budget',
+    })
+    expect(captionText(container).join()).toContain('2400 over')
+  })
+
+  test('the caption rows balance their wrap instead of orphaning a last word', () => {
+    for (const selector of ['.captions', '.partCaptions', '.caption']) {
+      const body =
+        new RegExp(`${selector.replace('.', '\\.')}\\s*\\{([^}]*)\\}`).exec(css)?.[1] ?? ''
+      expect(body, selector).toContain('text-wrap: pretty')
+    }
+  })
+})
+
 describe('target at max', () => {
   test('sits inside the track end instead of straddling it', () => {
     const { container } = mount({ label: 'Day', value: 8, max: 8, target: 8 })

@@ -82,11 +82,14 @@ describe('ChartCard facts', () => {
     expect(root?.lastElementChild).toBe(basis)
   })
 
-  test('facts stay visible while pending, hidden for error and empty', () => {
+  test('facts show only at rest: hidden while pending, in error and when empty', () => {
     const f = { value: '7.4' }
     const pending = render(<ChartCard title="T" facts={f} state={{ pending: true }} />)
-    expect(facts(pending.container)).not.toBeNull()
+    expect(facts(pending.container)).toBeNull()
     pending.unmount()
+    const rest = render(<ChartCard title="T" facts={f} />)
+    expect(facts(rest.container)).not.toBeNull()
+    rest.unmount()
     const error = render(<ChartCard title="T" facts={f} state={{ error: new Error('x') }} />)
     expect(facts(error.container)).toBeNull()
     error.unmount()

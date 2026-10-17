@@ -8,6 +8,7 @@ declare const classes: {
   readonly cells: string
   readonly cell: string
   readonly captionLine: string
+  readonly lead: string
   readonly caption: string
   readonly qualifier: string
   readonly valueRow: string

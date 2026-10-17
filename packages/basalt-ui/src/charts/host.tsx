@@ -35,13 +35,15 @@ export type ChartEngineProps = {
 /** The engine props of a basalt definition (`CartesianDefinition`'s datum and value types). */
 type EngineProps = ChartProps<unknown, ChartValue, number>
 
-/** `currentColor` is the axis ink. The font is pinned to mono (the 1.x tick look) and inherited by
- * the svg — TanStack measures guides with the host's computed font. */
+/** `currentColor` is the axis ink. The font is the proportional sans with tabular figures (Wave 35
+ * law: tabular in axis ticks, mono only for captions, times and code) and is inherited by the svg —
+ * TanStack measures guides with the host's computed font. */
 const HOST_STYLE: CSSProperties = {
   // Overrides the host's own fallback height: the box decides, the engine measures it.
   height: '100%',
   color: 'var(--vx-axis)',
-  fontFamily: 'var(--basalt-font-mono)',
+  fontFamily: 'var(--basalt-font-sans)',
+  fontVariantNumeric: 'tabular-nums',
 }
 const COARSE_STYLE: CSSProperties = { ...HOST_STYLE, touchAction: 'pan-y' }
 

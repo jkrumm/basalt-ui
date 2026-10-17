@@ -41,7 +41,7 @@ export function CaptionRow({ title, icon, info, qualifier, tone, actions }: Capt
         <div className={classes.lead}>
           <h3 className={classes.caption}>
             {icon !== undefined && <IconSlot className={classes.icon}>{icon}</IconSlot>}
-            <span className={classes.captionText} data-widget-title>
+            <span className={classes.captionText} title={title} data-widget-title>
               {title}
             </span>
           </h3>

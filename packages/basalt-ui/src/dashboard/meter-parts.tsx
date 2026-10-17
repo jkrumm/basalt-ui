@@ -67,6 +67,16 @@ function RingSvg({ fraction, color }: { fraction?: number; color?: string | unde
   )
 }
 
+/**
+ * A value and its unit stay on one line: a no-break space replaces the space between a digit and a
+ * short unit ("24 h", "7 d", "5 min", "40 %"), so a caption never wraps to a lone "d". Any other
+ * word keeps its ordinary space.
+ */
+const glue = (text: ReactNode): ReactNode =>
+  typeof text === 'string'
+    ? text.replace(/(\d) (?=[\p{L}%]{1,3}(?![\p{L}\d]))/gu, '$1\u00a0')
+    : text
+
 export function MeterLoading({
   label,
   ring,
@@ -78,7 +88,7 @@ export function MeterLoading({
 }) {
   return (
     <div {...rootProps(shell)} aria-busy="true">
-      <VisuallyHidden>{`Loading ${label}`}</VisuallyHidden>
+      <VisuallyHidden className={classes.summary}>{`Loading ${label}`}</VisuallyHidden>
       {ring ? (
         <Skeleton className={classes.skeletonRing} circle />
       ) : (
@@ -422,7 +432,9 @@ export function MeterBar(props: {
       {!compact && model.zoneLabels.length > 0 && <ZoneLabels labels={model.zoneLabels} />}
       {anchored && <ZoneReading pct={model.markerPct ?? 0}>{start}</ZoneReading>}
       {model.describedByText !== null && (
-        <VisuallyHidden id={describedId}>{model.describedByText}</VisuallyHidden>
+        <VisuallyHidden id={describedId} className={classes.summary}>
+          {model.describedByText}
+        </VisuallyHidden>
       )}
       {hasParts && (
         // The explicit role is deliberate: `list-style: none` makes Safari/VoiceOver drop the implicit one.
@@ -436,18 +448,18 @@ export function MeterBar(props: {
                 style={{ background: c.color ?? 'var(--vx-line)' }}
                 aria-hidden
               />
-              {c.label} {c.text}
+              {glue(`${c.label} ${c.text}`)}
             </li>
           ))}
         </ul>
       )}
       {hasCaptions && (
         <div className={classes.captions} data-meter-captions>
-          {start !== null && !anchored && <span className={classes.caption}>{start}</span>}
+          {start !== null && !anchored && <span className={classes.caption}>{glue(start)}</span>}
           {!compact && model.forecastText !== null && (
-            <span className={classes.caption}>{model.forecastText}</span>
+            <span className={classes.caption}>{glue(model.forecastText)}</span>
           )}
-          {end !== null && <span className={classes.captionEnd}>{end}</span>}
+          {end !== null && <span className={classes.captionEnd}>{glue(end)}</span>}
         </div>
       )}
     </div>
