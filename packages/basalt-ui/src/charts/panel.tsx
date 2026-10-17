@@ -20,7 +20,7 @@ import { useCallback } from 'react'
 import type { ReactElement } from 'react'
 import { ChartShell } from './CartesianChart'
 import type { ChartShellProps, ShellContext } from './CartesianChart'
-import { defaultFormatX, engineRow, utcHeaderDate, visibleSeries, xGuide, yGuide } from './compile'
+import { engineRow, utcHeaderDate, visibleSeries, xGuide, xTickFormat, yGuide } from './compile'
 import type { CartesianDefinition } from './compile'
 import { cursorBinding, followerOptions, quietWhileFollowing } from './cursor'
 import { plotAccess } from './plot-context'
@@ -110,7 +110,8 @@ type ChartScale = NonNullable<StoredChartSpec['scales'][string]>['scale']
 export const paneX = <X extends ChartX>(opts: {
   scale: ChartScale
   model: XScaleModel<X>
-  format: (v: ChartValue) => string
+  /** A consumer's x format; absent, the span-aware default ({@link xTickFormat}). */
+  format?: ((v: ChartValue) => string) | undefined
   cls: ContainerClass
   /** The whole chart's height ({@link chartHeightOf}). */
   height: number
@@ -204,10 +205,11 @@ function panelDefinition<T, X extends ChartX>(
   const owned = new Set(series.map((s) => s.key))
   const visible = visibleSeries(series, hidden)
   const hiddenSeries = series.filter((s) => !visible.includes(s))
+  const headerFormat = xTickFormat(formatX ? (v: ChartValue) => formatX(v as X) : undefined, [])
   const header = (v: ChartValue, d: T): string => {
     if (tooltip?.formatHeader) return tooltip.formatHeader(v as X, d)
     if (v instanceof Date && !formatX) return utcHeaderDate(v)
-    return formatX ? formatX(v as X) : defaultFormatX(v)
+    return headerFormat(v)
   }
   const definition: CartesianDefinition = {
     chart: () => composed,

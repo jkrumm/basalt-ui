@@ -893,3 +893,21 @@ describe('MirroredBars', () => {
     expect(upBars(one).length).toBe(1)
   })
 })
+
+describe('DualPanel x ticks', () => {
+  test('a 48 h hourly series reads hours with the day on midnight, no back-to-back repeats', () => {
+    const hourly = Array.from({ length: 49 }, (_, i) => ({
+      ...data[0]!,
+      t: new Date(Date.UTC(2026, 9, 17) + i * 3_600_000),
+      a: i,
+      b: 50 - i,
+    }))
+    const el = ssr(<DualPanel {...dualProps} data={hourly} height={400} />)
+    const ticks = [...el.querySelectorAll('text[data-ts-key^="x-tick-label"]')].map(
+      (n) => n.textContent ?? '',
+    )
+    expect(ticks.length).toBeGreaterThan(1)
+    expect(ticks.every((l, i) => l !== ticks[i - 1])).toBe(true)
+    expect(ticks).toContain('18.10')
+  })
+})

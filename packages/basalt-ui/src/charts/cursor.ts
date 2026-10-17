@@ -299,12 +299,15 @@ const READOUT = '.ts-chart-tooltip'
 /**
  * The engine host stamps `role="status"` on its readout on every paint; a hover readout is a
  * tooltip. `aria-live="polite"` stays, so a keyboard user still hears the reading. The host hands
- * out no element and its portal fallback parks the readout on `<body>`, so there is no handle to
- * this chart's own: every `.ts-chart-tooltip` in the document is stamped. Idempotent, and a pinned
- * custom body's `role="dialog"` is left alone.
+ * out no element: the readout is in the chart's container, except in the portal's fallback, which
+ * parks it on `<body>` — only then is the owner document searched (and every chart's readout
+ * stamped, which is right for each). Idempotent; a pinned custom body's `role="dialog"` is left
+ * alone.
  */
-function stampTooltipRole(doc: Document): void {
-  for (const el of doc.querySelectorAll(READOUT))
+function stampTooltipRole(container: Element): void {
+  const own = container.querySelectorAll(READOUT)
+  const readouts = own.length > 0 ? own : container.ownerDocument.querySelectorAll(READOUT)
+  for (const el of readouts)
     if (el.getAttribute('role') === 'status') el.setAttribute('role', 'tooltip')
 }
 
@@ -326,7 +329,6 @@ export const quietWhileFollowing: ChartTooltipExtension = {
   ...tooltip,
   create: (context) => {
     const host = tooltip.create(context)
-    const doc = context.container.ownerDocument
     let configured = false
     let follower: TooltipFollowerOptions['follower']
     return {
@@ -340,7 +342,7 @@ export const quietWhileFollowing: ChartTooltipExtension = {
         if (!configured || (follower && isForeign(follower.group, follower.chartId))) host.hide()
         else {
           host.paint(paint)
-          stampTooltipRole(doc)
+          stampTooltipRole(context.container)
         }
       },
     }
