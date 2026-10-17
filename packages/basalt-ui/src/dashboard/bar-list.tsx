@@ -1,7 +1,7 @@
 /**
  * BarList — a ranked list: label, an inline bar on ONE shared scale, a mono right-aligned value and
  * an optional muted secondary value. Choose it for "top N" (the bar ranks by length before anything
- * is read). Intended for 5–10 rows; past 10 use a table with an inline `Meter` cell. An HTML/CSS
+ * is read). The bar spans the label column only — values sit outside it. Intended for 5–10 rows; past 10 use a table with an inline `Meter` cell. An HTML/CSS
  * primitive, not a chart kind.
  *
  * Colour law: bars are neutral. `accentLeader` (opt-in) lets the top row take the accent — the
@@ -80,30 +80,37 @@ export function BarList({
 
   const scale =
     max ?? items.reduce((top, i) => (Number.isFinite(i.value) ? Math.max(top, i.value) : top), 0)
+  const hasSecondary = items.some((i) => i.secondary !== undefined)
   return (
     // The explicit role is deliberate: `list-style: none` makes Safari/VoiceOver drop the implicit one.
-    // oxlint-disable-next-line jsx-a11y/no-redundant-roles
-    <ul className={cx(classes.root, className)} style={style} role="list" aria-label={label}>
+    <ul
+      className={cx(classes.root, className)}
+      style={style}
+      // oxlint-disable-next-line jsx-a11y/no-redundant-roles
+      role="list"
+      aria-label={label}
+      data-secondary={hasSecondary ? '' : undefined}
+    >
       {items.map((item, i) => {
         const isLeader = accentLeader && i === 0
         return (
           <li key={item.key ?? `${item.label}-${i}`} className={classes.row}>
-            {/* theme-allow hidden-inline-style — the width is the row's data (a % of the shared scale), not styling */}
-            <span
-              className={cx(classes.bar, isLeader && classes.leader)}
-              style={{ width: `${barPercent(item.value, scale)}%` }}
-              data-bar-leader={isLeader ? '' : undefined}
-              aria-hidden
-            />
-            <span className={classes.label} title={item.label}>
-              {item.label}
+            <span className={classes.track} data-bar-track>
+              {/* theme-allow hidden-inline-style — the width is the row's data (a % of the shared scale), not styling */}
+              <span
+                className={cx(classes.bar, isLeader && classes.leader)}
+                style={{ width: `${barPercent(item.value, scale)}%` }}
+                data-bar-leader={isLeader ? '' : undefined}
+                aria-hidden
+              />
+              <span className={classes.label} title={item.label}>
+                {item.label}
+              </span>
             </span>
             <span className={classes.value}>
               {Number.isFinite(item.value) ? format(item.value) : '—'}
             </span>
-            {item.secondary !== undefined && (
-              <span className={classes.secondary}>{item.secondary}</span>
-            )}
+            {hasSecondary && <span className={classes.secondary}>{item.secondary}</span>}
           </li>
         )
       })}

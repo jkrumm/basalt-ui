@@ -5,6 +5,7 @@
 declare const classes: {
   readonly root: string
   readonly row: string
+  readonly track: string
   readonly bar: string
   readonly leader: string
   readonly label: string
