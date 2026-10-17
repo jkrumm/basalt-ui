@@ -195,18 +195,28 @@ exports[`createBasaltTheme() shape and resolver output default 1`] = `
         "fn": 
 "(_theme, props) => ({
           root: {
-            "--ai-size": props.size === "md" ? "calc(var(--vx-space-control-height) * var(--mantine-scale))" : void 0
+            "--ai-size": props.size === "md" ? "calc(var(--vx-space-control-height) * var(--mantine-scale))" : void 0,
+            "--ai-color": subtleInkVars(props).color,
+            "--ai-hover": subtleInkVars(props).hover
           }
         })"
 ,
         "outputs": [
           {
-            "probes": 2018,
+            "probes": 1976,
             "result": "{"root":{}}",
           },
           {
-            "probes": 290,
+            "probes": 42,
+            "result": "{"root":{"--ai-color":"var(--vx-ink)","--ai-hover":"color-mix(in srgb, var(--vx-ink) 6%, transparent)"}}",
+          },
+          {
+            "probes": 284,
             "result": "{"root":{"--ai-size":"calc(var(--vx-space-control-height) * var(--mantine-scale))"}}",
+          },
+          {
+            "probes": 6,
+            "result": "{"root":{"--ai-size":"calc(var(--vx-space-control-height) * var(--mantine-scale))","--ai-color":"var(--vx-ink)","--ai-hover":"color-mix(in srgb, var(--vx-ink) 6%, transparent)"}}",
           },
         ],
       },
@@ -258,18 +268,28 @@ exports[`createBasaltTheme() shape and resolver output default 1`] = `
         "fn": 
 "(_theme, props) => ({
           root: {
-            "--button-height": props.size === "md" ? "calc(var(--vx-space-control-height) * var(--mantine-scale))" : void 0
+            "--button-height": props.size === "md" ? "calc(var(--vx-space-control-height) * var(--mantine-scale))" : void 0,
+            "--button-color": subtleInkVars(props).color,
+            "--button-hover": subtleInkVars(props).hover
           }
         })"
 ,
         "outputs": [
           {
-            "probes": 2018,
+            "probes": 1976,
             "result": "{"root":{}}",
           },
           {
-            "probes": 290,
+            "probes": 42,
+            "result": "{"root":{"--button-color":"var(--vx-ink)","--button-hover":"color-mix(in srgb, var(--vx-ink) 6%, transparent)"}}",
+          },
+          {
+            "probes": 284,
             "result": "{"root":{"--button-height":"calc(var(--vx-space-control-height) * var(--mantine-scale))"}}",
+          },
+          {
+            "probes": 6,
+            "result": "{"root":{"--button-height":"calc(var(--vx-space-control-height) * var(--mantine-scale))","--button-color":"var(--vx-ink)","--button-hover":"color-mix(in srgb, var(--vx-ink) 6%, transparent)"}}",
           },
         ],
       },
@@ -784,12 +804,15 @@ exports[`createBasaltTheme() shape and resolver output default 1`] = `
       },
       "vars": {
         "fn": 
-"(theme, props) => ({
-          root: {
-            "--tabs-text-color": onColorFor(theme, props),
-            "--tabs-color": props.color === void 0 && (props.variant ?? "default") === "default" ? "var(--vx-ink)" : void 0
-          }
-        })"
+"function tabsVars(theme, props) {
+  const underline = !hasExplicitColor(props.color) && (props.variant ?? "default") === "default";
+  return {
+    root: {
+      "--tabs-text-color": onColorFor(theme, props),
+      "--tabs-color": underline ? "var(--vx-ink)" : void 0
+    }
+  };
+}"
 ,
         "outputs": [
           {
@@ -942,12 +965,6 @@ exports[`createBasaltTheme() shape and resolver output default 1`] = `
     return resolved;
   if (input.variant === "filled")
     return input.autoContrast ?? input.theme.autoContrast ? { ...resolved, color: on } : resolved;
-  if (input.variant === "subtle")
-    return input.color === void 0 || input.color === input.theme.primaryColor ? {
-      ...resolved,
-      color: "var(--vx-ink)",
-      hover: "color-mix(in srgb, var(--vx-ink) 6%, transparent)"
-    } : resolved;
   if (input.variant === "outline")
     return { ...resolved, color: \`color-mix(in srgb, \${resolved.color} 70%, var(--vx-ink))\` };
   if (input.variant !== "light")
@@ -1049,7 +1066,7 @@ exports[`createBasaltTheme() shape and resolver output default 1`] = `
       },
       {
         "probes": 2,
-        "result": "{"background":"transparent","hover":"color-mix(in srgb, var(--vx-ink) 6%, transparent)","color":"var(--vx-ink)","border":"calc(0.0625rem * var(--mantine-scale)) solid transparent"}",
+        "result": "{"background":"transparent","hover":"var(--mantine-color-blue-light-hover)","color":"var(--mantine-color-blue-light-color)","border":"calc(0.0625rem * var(--mantine-scale)) solid transparent"}",
       },
       {
         "probes": 2,
@@ -1312,18 +1329,28 @@ exports[`createBasaltTheme() shape and resolver output all knobs 1`] = `
         "fn": 
 "(_theme, props) => ({
           root: {
-            "--ai-size": props.size === "md" ? "calc(var(--vx-space-control-height) * var(--mantine-scale))" : void 0
+            "--ai-size": props.size === "md" ? "calc(var(--vx-space-control-height) * var(--mantine-scale))" : void 0,
+            "--ai-color": subtleInkVars(props).color,
+            "--ai-hover": subtleInkVars(props).hover
           }
         })"
 ,
         "outputs": [
           {
-            "probes": 2018,
+            "probes": 1976,
             "result": "{"root":{}}",
           },
           {
-            "probes": 290,
+            "probes": 42,
+            "result": "{"root":{"--ai-color":"var(--vx-ink)","--ai-hover":"color-mix(in srgb, var(--vx-ink) 6%, transparent)"}}",
+          },
+          {
+            "probes": 284,
             "result": "{"root":{"--ai-size":"calc(var(--vx-space-control-height) * var(--mantine-scale))"}}",
+          },
+          {
+            "probes": 6,
+            "result": "{"root":{"--ai-size":"calc(var(--vx-space-control-height) * var(--mantine-scale))","--ai-color":"var(--vx-ink)","--ai-hover":"color-mix(in srgb, var(--vx-ink) 6%, transparent)"}}",
           },
         ],
       },
@@ -1375,18 +1402,28 @@ exports[`createBasaltTheme() shape and resolver output all knobs 1`] = `
         "fn": 
 "(_theme, props) => ({
           root: {
-            "--button-height": props.size === "md" ? "calc(var(--vx-space-control-height) * var(--mantine-scale))" : void 0
+            "--button-height": props.size === "md" ? "calc(var(--vx-space-control-height) * var(--mantine-scale))" : void 0,
+            "--button-color": subtleInkVars(props).color,
+            "--button-hover": subtleInkVars(props).hover
           }
         })"
 ,
         "outputs": [
           {
-            "probes": 2018,
+            "probes": 1976,
             "result": "{"root":{}}",
           },
           {
-            "probes": 290,
+            "probes": 42,
+            "result": "{"root":{"--button-color":"var(--vx-ink)","--button-hover":"color-mix(in srgb, var(--vx-ink) 6%, transparent)"}}",
+          },
+          {
+            "probes": 284,
             "result": "{"root":{"--button-height":"calc(var(--vx-space-control-height) * var(--mantine-scale))"}}",
+          },
+          {
+            "probes": 6,
+            "result": "{"root":{"--button-height":"calc(var(--vx-space-control-height) * var(--mantine-scale))","--button-color":"var(--vx-ink)","--button-hover":"color-mix(in srgb, var(--vx-ink) 6%, transparent)"}}",
           },
         ],
       },
@@ -1901,12 +1938,15 @@ exports[`createBasaltTheme() shape and resolver output all knobs 1`] = `
       },
       "vars": {
         "fn": 
-"(theme, props) => ({
-          root: {
-            "--tabs-text-color": onColorFor(theme, props),
-            "--tabs-color": props.color === void 0 && (props.variant ?? "default") === "default" ? "var(--vx-ink)" : void 0
-          }
-        })"
+"function tabsVars(theme, props) {
+  const underline = !hasExplicitColor(props.color) && (props.variant ?? "default") === "default";
+  return {
+    root: {
+      "--tabs-text-color": onColorFor(theme, props),
+      "--tabs-color": underline ? "var(--vx-ink)" : void 0
+    }
+  };
+}"
 ,
         "outputs": [
           {
@@ -2230,12 +2270,6 @@ exports[`createBasaltTheme() shape and resolver output all knobs 1`] = `
     return resolved;
   if (input.variant === "filled")
     return input.autoContrast ?? input.theme.autoContrast ? { ...resolved, color: on } : resolved;
-  if (input.variant === "subtle")
-    return input.color === void 0 || input.color === input.theme.primaryColor ? {
-      ...resolved,
-      color: "var(--vx-ink)",
-      hover: "color-mix(in srgb, var(--vx-ink) 6%, transparent)"
-    } : resolved;
   if (input.variant === "outline")
     return { ...resolved, color: \`color-mix(in srgb, \${resolved.color} 70%, var(--vx-ink))\` };
   if (input.variant !== "light")
@@ -2337,7 +2371,7 @@ exports[`createBasaltTheme() shape and resolver output all knobs 1`] = `
       },
       {
         "probes": 2,
-        "result": "{"background":"transparent","hover":"color-mix(in srgb, var(--vx-ink) 6%, transparent)","color":"var(--vx-ink)","border":"calc(0.0625rem * var(--mantine-scale)) solid transparent"}",
+        "result": "{"background":"transparent","hover":"var(--mantine-color-blue-light-hover)","color":"var(--mantine-color-blue-light-color)","border":"calc(0.0625rem * var(--mantine-scale)) solid transparent"}",
       },
       {
         "probes": 2,
