@@ -317,15 +317,47 @@ const INK_TONE: Record<Side, Record<InkKey, number>> = {
 export type StatusKey = 'good' | 'warn' | 'bad'
 
 const STATUS_HUE: Record<StatusKey, number> = { good: 151.975, warn: 76.64, bad: 29.905 }
-// Every stop is read as TEXT somewhere (`DeltaBadge`, a toned breakdown row), so each clears WCAG AA
-// (4.5:1) on every text surface (bg / panel / panelHover / elevated / subtle / field) at the default
-// derive config only (default seed, every level knob 0) — pinned in `derive.test.ts`; a retuned
-// `lightLevel` / `darkLevel` / `neutral` is not covered. `warn` light sat at tone 54.64 (3.64:1 on the panel) and `bad`
-// dark at 58.58 (4.22:1); both moved along their lightness axis only, hue and chroma untouched.
+// Every stop is painted as TEXT somewhere (`DeltaBadge`, a toned breakdown row), so it must clear
+// WCAG AA (4.5:1) on every text surface of the palette it ships in. These are the calibrated
+// starting stops; `deriveStatusHex` keeps one unchanged when it already clears every surface (the
+// default config) and otherwise walks it along its lightness axis only — light darkens, dark
+// lightens, hue and chroma untouched bar what the HCT gamut forces — to the first tone that does.
 const STATUS_STOP: Record<StatusKey, Record<Side, { tone: number; chroma: number }>> = {
   good: { light: { tone: 45.75, chroma: 37.75 }, dark: { tone: 70.23, chroma: 53.23 } },
   warn: { light: { tone: 46, chroma: 61.12 }, dark: { tone: 72.34, chroma: 62.55 } },
   bad: { light: { tone: 43.86, chroma: 54.46 }, dark: { tone: 66.5, chroma: 53.79 } },
+}
+
+const STATUS_TEXT_SURFACES = ['bg', 'panel', 'panelHover', 'elevated', 'subtle', 'field'] as const
+const STATUS_TEXT_CONTRAST_MIN = 4.5
+const STATUS_TONE_STEP = 0.25
+
+/**
+ * The status hex for one side: the calibrated stop, moved along its lightness axis just far enough
+ * to clear 4.5:1 on every text surface of the derived palette. Bounded search (at most 0..100 in
+ * 0.25 steps); throws when no tone is attainable.
+ */
+function deriveStatusHex(
+  stop: { tone: number; chroma: number },
+  hue: number,
+  side: Side,
+  surfaces: Record<SurfaceKey, ColorPair>,
+): string {
+  const direction = side === 'light' ? -1 : 1
+  const clears = (hex: string): boolean =>
+    STATUS_TEXT_SURFACES.every(
+      (key) => contrastRatio(hex, surfaces[key][side]) >= STATUS_TEXT_CONTRAST_MIN,
+    )
+  const maxSteps = Math.ceil(100 / STATUS_TONE_STEP)
+  for (let i = 0; i <= maxSteps; i++) {
+    const tone = stop.tone + direction * i * STATUS_TONE_STEP
+    if (tone < 0 || tone > 100) break
+    const hex = hctToHex({ hue, chroma: stop.chroma, tone })
+    if (clears(hex)) return hex
+  }
+  throw new Error(
+    `status text: no ${side} tone reaches ${STATUS_TEXT_CONTRAST_MIN}:1 on every surface`,
+  )
 }
 
 /**
@@ -461,16 +493,8 @@ export function deriveTokensRaw(
   for (const key of Object.keys(STATUS_HUE) as StatusKey[]) {
     const hue = STATUS_HUE[key]
     status[key] = {
-      light: hctToHex({
-        hue,
-        chroma: STATUS_STOP[key].light.chroma,
-        tone: STATUS_STOP[key].light.tone,
-      }),
-      dark: hctToHex({
-        hue,
-        chroma: STATUS_STOP[key].dark.chroma,
-        tone: STATUS_STOP[key].dark.tone,
-      }),
+      light: deriveStatusHex(STATUS_STOP[key].light, hue, 'light', surface),
+      dark: deriveStatusHex(STATUS_STOP[key].dark, hue, 'dark', surface),
     }
   }
 

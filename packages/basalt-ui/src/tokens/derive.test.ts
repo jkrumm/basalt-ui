@@ -5,7 +5,7 @@
  * `derive.ts`.
  */
 import { describe, expect, test } from 'bun:test'
-import { contrastRatio } from './hct'
+import { contrastRatio, hexToHct } from './hct'
 import { DEFAULT_DERIVE_CONFIG, deriveTokens } from './derive'
 
 const FILL_PAGE_CONTRAST_MIN = 3.0
@@ -63,4 +63,61 @@ describe('the status solids clear WCAG AA as text on every text surface', () => 
       })
     }
   }
+})
+
+describe('the status solids are derived per surface (Wave 34)', () => {
+  const TEXT_SURFACES = ['bg', 'panel', 'panelHover', 'elevated', 'subtle', 'field'] as const
+  const LEVELS = [-5, 0, 5]
+  const NEUTRALS = ['zinc', 'neutral', 'stone', 'slate'] as const
+  const HUE: Record<'good' | 'warn' | 'bad', number> = { good: 151.975, warn: 76.64, bad: 29.905 }
+
+  test('the default config keeps every status hex byte-identical', () => {
+    expect(deriveTokens(DEFAULT_DERIVE_CONFIG).status).toEqual({
+      good: { light: '#327a4d', dark: '#52c07c' },
+      warn: { light: '#966200', dark: '#e6a53d' },
+      bad: { light: '#b5403d', dark: '#f97d74' },
+    })
+  })
+
+  test('≥ 4.5:1 on every text surface across the level × neutral × vibrancy/brightness extremes', () => {
+    for (const neutral of NEUTRALS) {
+      for (const lightLevel of LEVELS) {
+        for (const darkLevel of LEVELS) {
+          for (const { vibrancy, accentBrightness } of [
+            { vibrancy: 0, accentBrightness: 0 },
+            { vibrancy: 5, accentBrightness: 5 },
+            { vibrancy: -5, accentBrightness: -5 },
+          ]) {
+            const data = deriveTokens({
+              ...DEFAULT_DERIVE_CONFIG,
+              neutral,
+              lightLevel,
+              darkLevel,
+              vibrancy,
+              accentBrightness,
+            })
+            for (const key of ['good', 'warn', 'bad'] as const) {
+              for (const side of ['light', 'dark'] as const) {
+                for (const surface of TEXT_SURFACES) {
+                  expect(
+                    contrastRatio(data.status[key][side], data.surface[surface][side]),
+                  ).toBeGreaterThanOrEqual(4.5)
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  })
+
+  test('hue is unchanged at the extremes', () => {
+    const data = deriveTokens({ ...DEFAULT_DERIVE_CONFIG, lightLevel: 5, darkLevel: -5 })
+    for (const key of ['good', 'warn', 'bad'] as const) {
+      for (const side of ['light', 'dark'] as const) {
+        const delta = Math.abs(hexToHct(data.status[key][side]).hue - HUE[key])
+        expect(Math.min(delta, 360 - delta)).toBeLessThan(2)
+      }
+    }
+  })
 })
