@@ -5,6 +5,12 @@
  * before its value. Intended for 5–10 rows; past 10 use a table with an inline `Meter` cell. An
  * HTML/CSS primitive, not a chart kind.
  *
+ * A row may carry its own `max` (points of 40 / 35 / 25): its bar fills value / row.max and the value
+ * column reads "32 / 40". The shared scale — `max` prop, else the largest value — is computed over the
+ * rows WITHOUT their own `max` only. A row's `tick` (on that row's scale) draws a hairline across the
+ * bar, named for assistive tech. `variant="thin"` puts the label on its own line above a thin bar with
+ * the value right-aligned on the label line.
+ *
  * Colour law: bars are neutral. `accentLeader` (opt-in) lets the top row take the accent — the
  * leader bar, and nothing else. Each value is rendered as text, never only a bar length.
  *
@@ -28,7 +34,18 @@ import type { BasaltProps } from '../common/props'
 import classes from './bar-list.module.css'
 import { asText, barPercent } from './scale'
 
-type BarListItem = { label: string; value: number; secondary?: ReactNode; key?: string }
+type BarListItem = {
+  label: string
+  value: number
+  secondary?: ReactNode
+  key?: string
+  /** This row's own scale end: the bar fills value / max and the value reads "value / max". */
+  max?: number
+  /** A hairline mark at this position on the row's scale (a threshold). */
+  tick?: number
+  /** Names the tick for assistive tech and the hover title. Default "Threshold". */
+  tickLabel?: string
+}
 
 export type BarListProps = BasaltProps & {
   /** Accessible name of the list. Required. */
@@ -37,8 +54,10 @@ export type BarListProps = BasaltProps & {
   items: readonly BarListItem[]
   /** Formats each value. Default: the number as written. */
   format?: (value: number) => string
-  /** Scale end shared by every bar. Default: the largest value. */
+  /** Scale end shared by rows without their own `max`. Default: the largest of those rows' values. */
   max?: number
+  /** `thin`: label on its own line above a thin bar, value right-aligned on that line. */
+  variant?: 'default' | 'thin'
   /** The first row's bar takes the accent. Off by default. */
   accentLeader?: boolean
   /** Renders row-shaped skeletons. */
@@ -58,6 +77,7 @@ export function BarList({
   items,
   format = asText,
   max,
+  variant = 'default',
   accentLeader = false,
   loading = false,
   loadingRows = 5,
@@ -84,7 +104,12 @@ export function BarList({
   }
 
   const scale =
-    max ?? items.reduce((top, i) => (Number.isFinite(i.value) ? Math.max(top, i.value) : top), 0)
+    max ??
+    items.reduce(
+      (top, i) => (i.max === undefined && Number.isFinite(i.value) ? Math.max(top, i.value) : top),
+      0,
+    )
+  const thin = variant === 'thin'
   const hasSecondary = items.some((i) => hasContent(i.secondary))
   return (
     // The explicit role is deliberate: `list-style: none` makes Safari/VoiceOver drop the implicit one.
@@ -95,28 +120,56 @@ export function BarList({
       role="list"
       aria-label={label}
       data-secondary={hasSecondary ? '' : undefined}
+      data-variant={thin ? 'thin' : undefined}
     >
       {items.map((item, i) => {
         const isLeader = accentLeader && i === 0
-        return (
-          <li key={item.key ?? `${item.label}-${i}`} className={classes.row}>
-            <span className={classes.track} data-bar-track>
-              {/* theme-allow hidden-inline-style — the width is the row's data (a % of the shared scale), not styling */}
+        const rowScale = item.max ?? scale
+        const labelNode = (
+          <span className={classes.label} title={item.label}>
+            {item.label}
+          </span>
+        )
+        const tickName =
+          item.tick === undefined ? '' : `${item.tickLabel ?? 'Threshold'} ${format(item.tick)}`
+        const track = (
+          <span className={classes.track} data-bar-track>
+            {/* theme-allow hidden-inline-style — the width is the row's data (a % of its scale), not styling */}
+            <span
+              className={cx(classes.bar, isLeader && classes.leader)}
+              style={{ width: `${barPercent(item.value, rowScale)}%` }}
+              data-bar-fill=""
+              data-bar-leader={isLeader ? '' : undefined}
+              aria-hidden
+            />
+            {item.tick !== undefined && (
+              // theme-allow hidden-inline-style — the position is the row's data (a % of its scale)
               <span
-                className={cx(classes.bar, isLeader && classes.leader)}
-                style={{ width: `${barPercent(item.value, scale)}%` }}
-                data-bar-leader={isLeader ? '' : undefined}
+                className={classes.tick}
+                style={{ insetInlineStart: `${barPercent(item.tick, rowScale)}%` }}
+                title={tickName}
+                data-bar-tick=""
                 aria-hidden
               />
-              <span className={classes.label} title={item.label}>
-                {item.label}
-              </span>
-            </span>
+            )}
+            {!thin && labelNode}
+          </span>
+        )
+        return (
+          <li key={item.key ?? `${item.label}-${i}`} className={classes.row}>
+            {thin && labelNode}
+            {!thin && track}
             <span className={classes.value}>
-              {Number.isFinite(item.value) ? format(item.value) : '—'}
+              {Number.isFinite(item.value)
+                ? item.max === undefined
+                  ? format(item.value)
+                  : `${format(item.value)} / ${format(item.max)}`
+                : '—'}
             </span>
             {/* Kept empty on a row without one: the secondary column is shared, so every row has the cell. */}
             {hasSecondary && <span className={classes.secondary}>{item.secondary}</span>}
+            {thin && track}
+            {item.tick !== undefined && <VisuallyHidden>{tickName}</VisuallyHidden>}
           </li>
         )
       })}

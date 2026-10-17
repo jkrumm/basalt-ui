@@ -27,6 +27,7 @@ Signature: BarList(props: BarListProps): JSX.Element
   items: readonly BarListItem[]
   format?: (value: number) => string
   max?: number
+  variant?: "default" | "thin"
   accentLeader?: boolean
   loading?: boolean
   loadingRows?: number
