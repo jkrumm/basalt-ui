@@ -15,6 +15,9 @@ export type Part = {
   readonly forecast: boolean
 }
 
+/** One categorical part's caption: its name, formatted amount and fill colour (`undefined` = neutral). */
+export type PartCaption = { label: string; text: string; color: string | undefined }
+
 type Format = (value: number) => string
 
 export const isReading = (n: number | null | undefined): n is number =>
@@ -91,9 +94,12 @@ export type BarModel = {
   /** Percent where the first forecast part starts; absent when the forecast opens the track. */
   boundaryPct: number | undefined
   forecastText: string | null
+  /** Categorical segments (no forecast): one caption per part, in order. Empty otherwise. */
+  partCaptions: readonly PartCaption[]
   markerPct: number | undefined
   targetPct: number | undefined
-  startText: string
+  /** `null` when the part captions name the reading instead. */
+  startText: string | null
   endText: string | null
   describedByText: string | null
 }
@@ -126,6 +132,11 @@ export function modelBar(input: BarInput): BarModel {
   const forecastLabels =
     segments?.filter((s) => s.forecast === true).map((s) => `${s.label} ${format(s.value)}`) ?? []
 
+  const categorical = segments !== undefined && firstForecast < 0
+  const partCaptions = categorical
+    ? segments.map((s, i) => ({ label: s.label, text: format(s.value), color: parts[i]?.color }))
+    : []
+
   const zoneText = !zoned
     ? []
     : [
@@ -148,9 +159,14 @@ export function modelBar(input: BarInput): BarModel {
       forecastLabels.length === 0
         ? null
         : (input.forecastCaption ?? `Forecast: ${forecastLabels.join(', ')}`),
+    partCaptions,
     markerPct: zoned ? toPct((reading - min) / span) : undefined,
     targetPct: target === undefined ? undefined : toPct((target - min) / span),
-    startText: holding === undefined ? format(reading) : `${holding.label} · ${format(reading)}`,
+    startText: categorical
+      ? null
+      : holding === undefined
+        ? format(reading)
+        : `${holding.label} · ${format(reading)}`,
     endText: endCaptionText(reading, target, format),
     describedByText: describedBy.length > 0 ? describedBy.join('; ') : null,
   }

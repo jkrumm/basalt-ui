@@ -52,7 +52,12 @@ export function MeterLoading({
   shell: Shell
 }) {
   return (
-    <div className={cx(classes.root, shell.className)} style={shell.style} aria-busy="true">
+    <div
+      className={cx(classes.root, shell.className)}
+      style={shell.style}
+      aria-busy="true"
+      data-basalt-meter
+    >
       <VisuallyHidden>{`Loading ${label}`}</VisuallyHidden>
       {ring ? (
         <Skeleton className={classes.skeletonRing} circle />
@@ -69,7 +74,12 @@ export function MeterLoading({
 export function MeterEmpty(props: { label: string; text: string; ring: boolean; shell: Shell }) {
   const { label, text, ring, shell } = props
   return (
-    <output className={cx(classes.root, shell.className)} style={shell.style} aria-label={label}>
+    <output
+      className={cx(classes.root, shell.className)}
+      style={shell.style}
+      aria-label={label}
+      data-basalt-meter
+    >
       {ring ? (
         <span className={classes.ringBox}>
           <RingSvg />
@@ -95,7 +105,7 @@ export function MeterRing(props: {
 }) {
   const { label, reading, min, max, color, format, shell } = props
   return (
-    <div className={cx(classes.root, shell.className)} style={shell.style}>
+    <div className={cx(classes.root, shell.className)} style={shell.style} data-basalt-meter>
       <span
         className={classes.ringBox}
         aria-label={label}
@@ -152,11 +162,12 @@ export function MeterBar(props: {
   const start = props.startCaption === undefined ? model.startText : props.startCaption
   const end = props.endCaption === undefined ? model.endText : props.endCaption
   const hasCaptions = start !== null || end !== null || model.forecastText !== null
+  const hasParts = model.partCaptions.length > 0
   const describedBy =
     model.describedByText === null ? {} : ({ 'aria-describedby': describedId } as const)
 
   return (
-    <div className={cx(classes.root, shell.className)} style={shell.style}>
+    <div className={cx(classes.root, shell.className)} style={shell.style} data-basalt-meter>
       <div
         className={classes.trackBox}
         aria-label={label}
@@ -188,6 +199,21 @@ export function MeterBar(props: {
       </div>
       {model.describedByText !== null && (
         <VisuallyHidden id={describedId}>{model.describedByText}</VisuallyHidden>
+      )}
+      {hasParts && (
+        <ul className={classes.partCaptions} data-meter-parts>
+          {model.partCaptions.map((c, i) => (
+            <li key={i} className={classes.partCaption}>
+              <span
+                className={classes.swatch}
+                // theme-allow hidden-inline-style — the swatch repeats the part's fill colour (data)
+                style={{ background: c.color ?? 'var(--vx-line)' }}
+                aria-hidden
+              />
+              {c.label} {c.text}
+            </li>
+          ))}
+        </ul>
       )}
       {hasCaptions && (
         <div className={classes.captions} data-meter-captions>

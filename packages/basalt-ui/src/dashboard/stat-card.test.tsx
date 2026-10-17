@@ -24,6 +24,7 @@ import { describe, expect, test } from 'bun:test'
 import { readFileSync } from 'node:fs'
 import { resolve } from 'node:path'
 import { renderToStaticMarkup } from 'react-dom/server'
+import { Meter } from './meter'
 import { StatCard } from './stat-card'
 import type { Tone } from '../common/props'
 
@@ -705,5 +706,28 @@ describe('stat-card.module.css — caption, value row, foot', () => {
     expect(r).toContain('font-size: var(--vx-text-sm)')
     expect(r).toContain('color: var(--vx-muted)')
     expect(r).toContain('white-space: nowrap')
+  })
+})
+
+describe('a Meter in the visual slot', () => {
+  const css = readFileSync(resolve(import.meta.dirname, 'stat-card.module.css'), 'utf8')
+
+  test('sizes to content and keeps the card inset; the sparkline rule is untouched', () => {
+    expect(css).toMatch(
+      /\.sparklineBleed:has\(\[data-basalt-meter\]\) \{\s*height: auto;\s*margin-inline: 0;\s*\}/,
+    )
+    expect(css).toMatch(
+      /\.sparklineBleed \{\s*height: var\(--basalt-stat-visual-h\);\s*margin-inline: calc\(-1 \* var\(--vx-space-card-inset-x, 1rem\)\);\s*\}/,
+    )
+  })
+
+  test('a Meter placed in the slot reaches the DOM inside the bleed slot', () => {
+    const { container } = renderIntoDom(
+      <MantineProvider>
+        <StatCard title="Spend" value="€1" sparkline={<Meter label="Budget" value={40} />} />
+      </MantineProvider>,
+    )
+    const slot = container.querySelector('[data-placement="bleed"] [data-basalt-meter]')
+    expect(slot ?? container.querySelector('[data-basalt-meter]')).toBeTruthy()
   })
 })
