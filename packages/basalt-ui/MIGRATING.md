@@ -1051,7 +1051,7 @@ added, removed or renamed.
 `--vx-status-good|warn|bad` are painted as text (`DeltaBadge`, a toned row), but their tones were
 fixed while the surfaces move with `lightLevel`, `darkLevel` and `neutral`; off the defaults they
 read 3.2–3.9:1. Each solid is now derived from the surfaces the palette produced: it moves along its
-lightness axis only (light darkens, dark lightens, hue and chroma untouched) to the first tone that
+lightness axis only (light darkens, dark lightens; hue preserved, chroma may clip at the gamut edge) to the first tone that
 clears 4.5:1 on every text surface (`bg`, `panel`, `panelHover`, `elevated`, `subtle`, `field`).
 
 - **Defaults are unchanged**: at the default config every status hex is byte-identical.
