@@ -352,11 +352,13 @@ const PROVIDER_ONLY_LABEL = 'provider-only first paint (gzip B, dist)'
 const PROVIDER_ONLY_CEILING = 19200
 // Embedded `<BasaltProvider spotlight={false}>`, no defines, peers bundled, every chunk counted: 54735 B landed, ~1% margin.
 // 55300 → 55391 (W32): +91 B for the Wave 32 scales — the dense control tier rule in the palette CSS, the row line-height and `lineHeights` ratios, the expanded gutter, and the card/radius/type retunes.
-const EMBEDDED_CEILING = 55391
+// 55391 → 55404 (W32 CI): the gate is CI's Linux build, which gzips 13 B larger than the macOS build the lead measured.
+const EMBEDDED_CEILING = 55404
 // `createBasaltTheme()` alone, peers bundled, every chunk counted: 14420 locally. The theme reaching
 // no component it configures is what keeps this near Mantine's core; ~1% over landed.
 // 14570 → 14571 (W32): +1 B, the `lineHeights` ratios.
-const THEME_ONLY_CEILING = 14571
+// 14571 → 14580 (W32 CI): the same Linux-vs-macOS gzip difference, 9 B. Raise gzip ceilings from CI's numbers.
+const THEME_ONLY_CEILING = 14580
 const THEME_ONLY_LABEL = 'createBasaltTheme only, peers bundled, all chunks (gzip B, dist)'
 const EMBEDDED_LABEL = 'embedded provider, no defines, peers bundled, all chunks (gzip B, dist)'
 const FEATURE_CHUNKS_LABEL =
