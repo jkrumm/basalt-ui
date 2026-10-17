@@ -28,12 +28,37 @@ export function itemAt<T>(items: readonly T[], index: number): T {
 /** A contiguous band of a scale; `from` is inclusive. */
 type Zone = { from: number; to: number; label: string }
 
-/** The zone holding `value`: a value below the scale falls in the first zone, one past it in the last. */
-export function zoneFor<const Z extends readonly Zone[]>(zones: Z, value: number): Z[number] {
-  return zones.find((z) => value >= z.from && value < z.to) ?? itemAt(zones, value < 0 ? 0 : -1)
+/**
+ * The zone holding `value`: below the first zone falls in the first, at or past the end in the last.
+ * A non-finite value has no zone (`undefined`); the caller decides the copy, never a NaN.
+ */
+export function zoneFor<const Z extends readonly Zone[]>(
+  zones: Z,
+  value: number,
+): Z[number] | undefined {
+  if (!Number.isFinite(value)) return undefined
+  const first = itemAt(zones, 0)
+  if (value < first.from) return first
+  return zones.find((z) => value >= z.from && value < z.to) ?? itemAt(zones, -1)
 }
 
-export const fmtShare = (value: number): string => `${Math.round(value * 100)}%`
+/** `+` or the true minus sign in front of `body`, by the sign of `value`. */
+export const withSign = (value: number, body: string): string =>
+  `${value < 0 ? '\u2212' : '+'}${body}`
 
 const INT = new Intl.NumberFormat('en-GB', { maximumFractionDigits: 0 })
+const EUR = new Intl.NumberFormat('en-IE', {
+  style: 'currency',
+  currency: 'EUR',
+  maximumFractionDigits: 0,
+})
+
 export const fmtInt = (value: number): string => INT.format(value)
+export const fmtShare = (value: number): string => `${Math.round(value * 100)}%`
+export const fmtSignedShare = (value: number): string =>
+  withSign(value, `${Math.abs(Math.round(value * 100))}%`)
+export const fmtEur = (value: number): string => EUR.format(Math.round(value))
+export const fmtSignedEur = (value: number): string => withSign(value, fmtEur(Math.abs(value)))
+export const fmtKg = (value: number): string => `${fmtInt(Math.round(value))} kg`
+export const fmtKm = (value: number): string => value.toFixed(1)
+export const fmtRatio = (value: number): string => value.toFixed(2)

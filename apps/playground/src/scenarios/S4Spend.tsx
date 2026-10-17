@@ -35,13 +35,11 @@ import {
   PROJECTS_MTD,
   WINDOW_LABEL,
   YEAR,
-  fmtEur,
   spendBand,
-  fmtSignedEur,
 } from './spend-data'
 import type { DayRow, DistributionBin, ModelKey } from './spend-data'
 import { RETRY_ACTION } from './retry-action'
-import { fmtShare } from './fixture-utils'
+import { fmtEur, fmtShare, fmtSignedEur } from './fixture-utils'
 import { cardStateProps, chartStateFor, queryFor, retryCopy } from './shot-state'
 import type { ScenarioProps } from './shot-state'
 
@@ -87,7 +85,10 @@ const DRIVER_ITEMS = DRIVERS.map((p) => ({
   ),
 }))
 /** The forecast track runs past both the budget and the forecast so an overage stays on the track. */
-const TRACK_END_EUR = Math.ceil((Math.max(BUDGET_EUR, FORECAST_EUR) * 1.1) / 100) * 100
+const TRACK_HEADROOM = 1.1
+const TRACK_STEP_EUR = 100
+const TRACK_END_EUR =
+  Math.ceil((Math.max(BUDGET_EUR, FORECAST_EUR) * TRACK_HEADROOM) / TRACK_STEP_EUR) * TRACK_STEP_EUR
 const PACE_LINES = [
   { value: PACE_EUR_PER_DAY, color: VX.faint, dashed: true, legend: { label: 'Budget pace' } },
 ]
@@ -158,10 +159,16 @@ function SpendStats({ shotState }: ScenarioProps) {
               max={TRACK_END_EUR}
               target={BUDGET_EUR}
               format={fmtEur}
-              segments={[
-                { value: MTD_EUR, label: 'Spent' },
-                { value: FORECAST_EUR - MTD_EUR, label: 'Forecast', forecast: true },
-              ]}
+              segments={
+                shotState === 'empty'
+                  ? []
+                  : [
+                      { value: MTD_EUR, label: 'Spent' },
+                      { value: FORECAST_EUR - MTD_EUR, label: 'Forecast', forecast: true },
+                    ]
+              }
+              loading={shotState === 'loading'}
+              emptyText={USAGE_EMPTY}
               forecastCaption={`Forecast ${fmtEur(FORECAST_EUR)}`}
               startCaption={`Spent ${fmtEur(MTD_EUR)}`}
             />
@@ -180,8 +187,10 @@ function SpendStats({ shotState }: ScenarioProps) {
             <Meter
               label={`Spent against the ${fmtEur(BUDGET_EUR)} budget`}
               max={BUDGET_EUR}
-              value={MTD_EUR}
+              value={shotState === 'empty' ? null : MTD_EUR}
               format={fmtEur}
+              loading={shotState === 'loading'}
+              emptyText={USAGE_EMPTY}
               // A verdict colour only once the cap is passed.
               {...(left < 0 && { color: VX.status.bad })}
               startCaption={`Spent ${fmtEur(MTD_EUR)}`}

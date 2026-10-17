@@ -5,7 +5,8 @@
  */
 import { Box } from '@mantine/core'
 import { StatCard } from 'basalt-ui'
-import { MTD_EUR, WINDOW_LABEL, fmtEur } from './spend-data'
+import { MTD_EUR, WINDOW_LABEL } from './spend-data'
+import { fmtEur } from './fixture-utils'
 
 export function CalibrateBannedSubtitle() {
   return (

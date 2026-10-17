@@ -15,7 +15,7 @@ import { BarList, Meter, PageBar, StatCard, StatGroup } from 'basalt-ui'
 import { ChartCard, Sparkline } from 'basalt-ui/charts'
 import { CONTAINER_KEYS } from 'basalt-ui/tokens'
 import { demoColors } from '../demo/series'
-import { fmtInt, fmtShare } from './fixture-utils'
+import { fmtInt, fmtKg, fmtKm, fmtRatio, fmtShare } from './fixture-utils'
 import { cardStateProps, queryFor, retryCopy } from './shot-state'
 import type { ScenarioProps } from './shot-state'
 import {
@@ -51,13 +51,12 @@ import {
   VOLUME_CHANGE_PCT,
   VOLUME_MTD_KG,
   WINDOW_LABEL,
-  fmtKg,
-  fmtKm,
-  fmtRatio,
   loadZoneName,
   readinessLevel,
 } from './training-data'
 import type { SessionType } from './training-data'
+
+type SparklineSize = { width: number; height: number }
 
 const TYPE_COLOR: Record<SessionType, string> = {
   strength: demoColors.sessions,
@@ -71,6 +70,12 @@ const retry = (what: string): string => retryCopy(what, 'training log')
 
 /** Body heights for the error placeholder, so a failed card stays near its resting size. */
 const PLACEHOLDER = { meter: 72, ring: 104, readiness: 168, lifts: 184 }
+
+/** `Low under 60, Fair 60–79, Good 80+` — the legend, built from the zones the Meter draws. */
+const READINESS_INFO = `Mean of the four contributors below, each scored 0–100: ${READINESS_ZONES.map(
+  (z, i, all) =>
+    `${z.label} ${i === 0 ? `under ${z.to}` : i === all.length - 1 ? `${z.from}+` : `${z.from}–${z.to - 1}`}`,
+).join(', ')}.`
 
 const percent = (value: number): string => `${Math.round(value)}%`
 const aheadOrBehind = (gap: number): string =>
@@ -90,7 +95,8 @@ const READINESS_ITEMS = CONTRIBUTORS.toSorted((a, b) => b.value - a.value).map((
   value: c.value,
   secondary: readinessLevel(c.value),
 }))
-const LIFT_ITEMS = TOP_LIFTS.slice(0, 6).map((l) => ({
+const TOP_LIFT_COUNT = 6
+const LIFT_ITEMS = TOP_LIFTS.slice(0, TOP_LIFT_COUNT).map((l) => ({
   label: l.name,
   value: l.volumeKg,
   secondary: fmtShare(l.share),
@@ -98,18 +104,31 @@ const LIFT_ITEMS = TOP_LIFTS.slice(0, 6).map((l) => ({
 
 /** The page's state in one sentence; the live numbers only exist at rest. */
 function Summary({ shotState }: ScenarioProps) {
-  if (shotState === 'loading') return <Skeleton height={20} width={420} maw="100%" />
   const text = {
     empty: TRAINING_EMPTY,
     error: retry('The month summary'),
+    loading: '',
     rest: SUMMARY,
   }[shotState ?? 'rest']
   return (
-    <Text size="sm" c="dimmed" data-shot="summary">
-      {text}
-    </Text>
+    <Box data-shot="summary">
+      {shotState === 'loading' ? (
+        <Skeleton height={20} width={420} maw="100%" />
+      ) : (
+        <Text size="sm" c="dimmed">
+          {text}
+        </Text>
+      )}
+    </Box>
   )
 }
+
+/** A rolling-7-day trend for a `StatCard` visual slot. */
+const trendSparkline = (label: string, data: readonly number[]) => (size: SparklineSize) => (
+  <Box data-shot-hover>
+    <Sparkline ariaLabel={`${label}, rolling 7 days, last 30 days`} data={data} {...size} />
+  </Box>
+)
 
 function TrainingStats({ shotState }: ScenarioProps) {
   const isAtRest = shotState === undefined
@@ -129,15 +148,7 @@ function TrainingStats({ shotState }: ScenarioProps) {
           subtitle="7-day rolling"
           {...deltaProps(SESSIONS_CHANGE_PCT)}
           {...shared}
-          sparkline={(size) => (
-            <Box data-shot-hover>
-              <Sparkline
-                ariaLabel="Sessions, rolling 7 days, last 30 days"
-                data={SESSIONS_7D_TREND}
-                {...size}
-              />
-            </Box>
-          )}
+          sparkline={trendSparkline('Sessions', SESSIONS_7D_TREND)}
         />
       </Box>
       <Box data-shot="volume" h="100%">
@@ -150,15 +161,7 @@ function TrainingStats({ shotState }: ScenarioProps) {
           subtitle="7-day rolling"
           {...deltaProps(VOLUME_CHANGE_PCT)}
           {...shared}
-          sparkline={(size) => (
-            <Box data-shot-hover>
-              <Sparkline
-                ariaLabel="Training volume, rolling 7 days, last 30 days, kilograms"
-                data={VOLUME_7D_TREND}
-                {...size}
-              />
-            </Box>
-          )}
+          sparkline={trendSparkline('Training volume, kilograms', VOLUME_7D_TREND)}
         />
       </Box>
       <Box data-shot="distance" h="100%">
@@ -170,15 +173,7 @@ function TrainingStats({ shotState }: ScenarioProps) {
           subtitle="7-day rolling"
           {...deltaProps(DISTANCE_CHANGE_PCT)}
           {...shared}
-          sparkline={(size) => (
-            <Box data-shot-hover>
-              <Sparkline
-                ariaLabel="Walking distance, rolling 7 days, last 30 days, kilometres"
-                data={DISTANCE_7D_TREND}
-                {...size}
-              />
-            </Box>
-          )}
+          sparkline={trendSparkline('Walking distance, kilometres', DISTANCE_7D_TREND)}
         />
       </Box>
     </StatGroup>
@@ -295,7 +290,7 @@ function ReadinessRow({ shotState }: ScenarioProps) {
       <Box data-shot="readiness" h="100%">
         <ChartCard
           title={`Readiness, ${TODAY_LABEL}`}
-          info="Mean of the four contributors below, each scored 0–100: 80+ is Good, 60–79 Fair, under 60 Low."
+          info={READINESS_INFO}
           {...cardStateProps(shotState, retry('Readiness'), PLACEHOLDER.readiness)}
         >
           <Stack gap="md">

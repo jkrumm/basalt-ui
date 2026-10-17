@@ -9,7 +9,8 @@
 import { Box } from '@mantine/core'
 import { StatCard } from 'basalt-ui'
 import { Sparkline } from 'basalt-ui/charts'
-import { MTD_EUR, MTD_TOTALS, WINDOW_LABEL, fmtEur } from './spend-data'
+import { MTD_EUR, MTD_TOTALS, WINDOW_LABEL } from './spend-data'
+import { fmtEur } from './fixture-utils'
 
 export function CalibrateGood() {
   return (

@@ -4,14 +4,8 @@
  * trend glyph. Everything else on the card is clean.
  */
 import { Badge, Card, Group, Text } from '@mantine/core'
-import {
-  MTD_EUR,
-  PRIOR_MTD_EUR,
-  PRIOR_WINDOW_LABEL,
-  WINDOW_LABEL,
-  fmtEur,
-  fmtSignedShare,
-} from './spend-data'
+import { MTD_EUR, PRIOR_MTD_EUR, PRIOR_WINDOW_LABEL, WINDOW_LABEL } from './spend-data'
+import { fmtEur, fmtSignedShare } from './fixture-utils'
 
 export function CalibrateDeltaFill() {
   return (
