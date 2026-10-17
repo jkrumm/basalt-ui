@@ -1327,25 +1327,60 @@ the pages is right, but the craft is not yet, and most of what is missing is bas
 `argo/docs/design/UPSTREAM.md` § basalt friction (2.18.0) and the Wave 20 tables, each row naming the exact prop.
 Validators: argo, which deletes its local workarounds in the same cycle (net-negative in argo), and S2/S3/S4.
 
-- [ ] **Typography law change (owner + landscape research #5):** hero values, row labels and body text are
+- [x] **Typography law change (owner + landscape research #5):** hero values, row labels and body text are
       proportional sans with lining figures. `tabular-nums` only in table columns and axis ticks; mono only for
       captions, times and code. Change DESIGN-CORE, the DESIGN.md seed, `StatCard`, `Meter`, `BarList`,
       `WidgetHeader` and the strip, and record it in SPEC § 12. Add a MIGRATING entry with the opt-out.
-- [ ] **Primitive props argo needed** (one PR per export, each with a failing-first test): - `Meter`: `ticks: {at, label?}[]`, `tone="muted"` (a non-verdict fill that is not near-white in dark),
+- [x] **Primitive props argo needed** (one PR per export, each with a failing-first test): - `Meter`: `ticks: {at, label?}[]`, `tone="muted"` (a non-verdict fill that is not near-white in dark),
       `size="row"`, a caption size that follows the host, a `target` tick visible at `max`, and
       `MeterSegment`/`MeterZone` exported from the root. - `BarList`: a per-row `max` with a denominator, a thin label-outside row, and a per-row tick. - `Sparkline`: `reference: number | 'mean'` plus a hover readout. - `DeltaBadge`: a `period` that composes "vs <period>". - `ChartCard`: a `facts` slot (value, unit, comparison, period; replaces the filler subtitle). - `Bars`/`Lines`: `refLines[].label`. - `relativeTime` and `SyncButton` honour the provider/`defineFormat` locale. - `Button`: paddings on the spacing scale.
-- [ ] **`StatGroup variant="strip"`**, converged from argo's three prototypes
+- [x] **`StatGroup variant="strip"`**, converged from argo's three prototypes
       (`features/{garmin-health,agents,warden}/stat-strip.tsx`): joined cells with 1 px dividers; cell
       `{caption, qualifier, info, value, unit, delta, visual, footer}`; a multi-row cell (Garmin's
       RHR/HRV/VO2max `rows`); a strip `footer` row; two columns in a compact container (rows 147, 156).
-- [ ] **Card inset owned by the theme** (rows 163, 165): the theme sets 12/16, `basalt/card-inset` flags an
+- [x] **Card inset owned by the theme** (rows 163, 165): the theme sets 12/16, `basalt/card-inset` flags an
       explicit pair as redundant, there is a sanctioned flush idiom (`Card.Section` or a variant), and the message
       names it. Wave 34's leftovers: the S4 histogram and stacked value-over-time, the invisible Tabs hover in
       dark, and the active sidebar row's accent fill.
-- [ ] Rounds: at least three on S2/S3/S4, plus an argo validation run. argo bumps, deletes `FactsLine`, its three
+- [ ] Rounds (r0–r3 done; the argo validation run is open): at least three on S2/S3/S4, plus an argo validation run. argo bumps, deletes `FactsLine`, its three
       strip prototypes, the `relativeTime` wrapper and the `alpha(VX.muted, …)` meter hacks, then live-shots
       Garmin, Agents, Warden and Home. Report the argo line delta.
       **Left behind:**
+
+- **Landed** (all through `rd merge`, `make check` green at every merge; 18 PRs: #352–#371 less the mother's docs PRs #354 and #360): #355
+  typography law, #358 strip, #352 ref-line labels, #356 Sparkline reference and readout, #359 ChartCard facts, #357
+  `relativeTime`/`SyncButton` locale, #361 card inset owned by the theme, #363 `StatusDot`/`StatusVerdict` root
+  export (the orchestrator's mid-wave row), #364 DeltaBadge `period`, #365 BarList per-row `max`/thin/tick, #366
+  Meter ticks/muted/row/root part types, #367 chrome (Button padding, dark Tabs hover, neutral active row, one error
+  anatomy), #353 S4 re-encoding, #362 the S3 fixture and strips, #368–#371 round fixes. Every PR had two independent
+  review rounds by a fresh subagent with no shared context (agent-gateway was down all wave), then scope was frozen
+  and the lead read the last fix diff. Nothing released; `CHANGELOG.md` untouched; every break is a plain `feat:` with
+  a MIGRATING entry under one `## Unreleased` heading.
+- **Typography law (D33, SPEC § 12):** hero values, row labels, qualifiers, status words and body text are the
+  proportional sans with lining figures through `--basalt-font-numeral` (the opt-out variable); mono only for UPPERCASE
+  micro-captions, times and code; chart ticks are the sans with tabular figures at one size through
+  `--basalt-chart-font`. Tables keep their mono numeral cells until Wave 37 decides the table face.
+- **Strip:** `StatGroup variant="strip"` with `cells` (`caption`, `qualifier`, `info`, `value`, `unit`, `delta`,
+  `visual`, `footer`, `rows`, `tone`, `loading`, `stale`), a strip `footer` row, derived anchors `strip-<key>` /
+  `strip-footer-<key>`, two columns in a compact container with the odd cell spanning, 4 → 2 never 3 + 1. All four argo
+  prototypes are replaceable (warden's under-value qualifier maps to `footer`; unequal column weights are not supported).
+- **Rounds** (`docs/waves/design-parity/w35/rounds.md`; boards `.design-parity/w35/r0`–`r3`): by r3 targets 3, 4, 5, 7
+  and 9 pass outright; the typography law and the strip layout pass everywhere except the out-of-scope Badges.
+- **For Wave 36:** a strip `state` (empty and error read the same today: `—` plus a footer note, no dot, no Retry); one
+  Retry inside the shared error anatomy (ChartCard renders the consumer's action, StatCard its own outlined button);
+  whether `tone="muted"` becomes the non-verdict Meter default (the default fill is full ink in dark); shot cannot
+  declare a rest anchor absent in a state (S3 works around it by keeping both footer cells); fixture items (failures
+  time scale, hit-rate months, "(€)" plus "€" ticks, a fixture-composed orphan at 390). Out of Wave 35 scope (W33
+  chrome): the selected Tabs pill takes the accent, Disabled button contrast 2.27 in light, tinted status Badges.
+  Ledger rows 147, 163, 165 closed, 156 half (linewatch in Wave 41).
+- **Budgets:** non-chart symbols 105 → 107 (`StatusDot`, `StatusVerdict`), barrel types 62 → 69 (`StatStripCell`,
+  `StatStripRow`, `StatusDotProps`, `StatusVerdictProps`, `MeterSegment`, `MeterZone`, `MeterTick`); `ChartFact` ships on
+  `./charts`. Gzip ceilings from CI's Linux runs: provider-only 19732 → 19921, embedded 56033 → 56238, theme-only 15183 →
+  15374 (card inset ~+50, Button padding and the error state ~+140).
+- **argo validation:** not run — argo can only bump after a release, and this wave released nothing. The brief is
+  `docs/waves/design-parity/w35/argo-validation-brief.md`, handed to the orchestrator.
+- **Next — stopped: awaiting owner review** of the boards (`.design-parity/w35/r0`–`r3`) and the release decision that
+  unblocks the argo validation run. Not released; nothing spawned.
 
 ## Wave 36 — The UX-first procedure, shipped <!-- status: pending -->
 
