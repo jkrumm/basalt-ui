@@ -297,6 +297,18 @@ export function followerOptions(
 const READOUT = '.ts-chart-tooltip'
 
 /**
+ * The engine host stamps `role="status"` on its readout on every paint; a hover readout is a
+ * tooltip. `aria-live="polite"` stays, so a keyboard user still hears the reading. The host hands
+ * out no element and its portal fallback parks the readout on `<body>`, so there is no handle to
+ * this chart's own: every `.ts-chart-tooltip` in the document is stamped. Idempotent, and a pinned
+ * custom body's `role="dialog"` is left alone.
+ */
+function stampTooltipRole(doc: Document): void {
+  for (const el of doc.querySelectorAll(READOUT))
+    if (el.getAttribute('role') === 'status') el.setAttribute('role', 'tooltip')
+}
+
+/**
  * The engine's DOM tooltip host, silent while this chart FOLLOWS another's cursor. A follower
  * resolves the leader's focus group (so the engine draws the same dots at the shared x); the host
  * would then paint a tooltip and fill its live region. Whenever `isForeign` holds,
@@ -315,7 +327,6 @@ export const quietWhileFollowing: ChartTooltipExtension = {
   create: (context) => {
     const host = tooltip.create(context)
     const doc = context.container.ownerDocument
-    let readout: Element | undefined
     let configured = false
     let follower: TooltipFollowerOptions['follower']
     return {
@@ -328,12 +339,8 @@ export const quietWhileFollowing: ChartTooltipExtension = {
       paint: (paint) => {
         if (!configured || (follower && isForeign(follower.group, follower.chartId))) host.hide()
         else {
-          const before = readout ? undefined : new Set(doc.querySelectorAll(READOUT))
           host.paint(paint)
-          readout ??= [...doc.querySelectorAll(READOUT)].find((el) => !before?.has(el))
-          // The host stamps `role="status"` on every paint; a hover readout is a tooltip. The
-          // live region stays (`aria-live`), so the reading is still announced.
-          if (readout?.getAttribute('role') === 'status') readout.setAttribute('role', 'tooltip')
+          stampTooltipRole(doc)
         }
       },
     }
