@@ -81,6 +81,17 @@ describe('RefLine.label', () => {
     expect(offset(el, 0)).toBeGreaterThan(0)
   })
 
+  // Domain [0, 400], band = top 12% = values above 352.
+  test('just inside the top band flips below', () => {
+    const el = ssr(lines([ref({ value: 360 })], { y: { domain: [0, 400] } }))
+    expect(offset(el, 0)).toBeGreaterThan(0)
+  })
+
+  test('just outside the top band stays above', () => {
+    const el = ssr(lines([ref({ value: 345 })], { y: { domain: [0, 400] } }))
+    expect(offset(el, 0)).toBeLessThan(0)
+  })
+
   test('works on Bars', () => {
     const el = ssr(<Bars ariaLabel="B" data={data} x={x} bars={[a]} refLines={[ref()]} />)
     expect(labelOf(el, 0)?.textContent).toBe('250 target')
