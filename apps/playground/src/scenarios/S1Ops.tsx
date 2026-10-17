@@ -199,7 +199,7 @@ function OpsStats({ shotState }: ScenarioProps) {
           {...(isAtRest && {
             breakdown: [
               { label: 'Contracted', value: fmtMbit(CONTRACT_DOWN_MBIT) },
-              { label: 'Peak, 7 days', value: fmtMbit(DOWN_PEAK_MBIT) },
+              { label: '7-day peak', value: fmtMbit(DOWN_PEAK_MBIT) },
             ],
           })}
           {...shared}
