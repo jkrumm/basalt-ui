@@ -101,6 +101,7 @@ Signature: Meter(props: MeterProps): JSX.Element
   shape?: "bar" | "ring"
   color?: string
   segments?: readonly { value: number; label: string; color?: string; fo…
+  zones?: readonly { from: number; to: number; label: string; color?:…
   target?: number
   format?: (value: number) => string
   startCaption?: ReactNode

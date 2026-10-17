@@ -8,6 +8,8 @@ declare const classes: {
   readonly trackBox: string
   readonly fill: string
   readonly forecastFill: string
+  readonly zone: string
+  readonly marker: string
   readonly tick: string
   readonly boundaryTick: string
   readonly captions: string

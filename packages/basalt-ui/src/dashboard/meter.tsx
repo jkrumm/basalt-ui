@@ -10,10 +10,28 @@
  * tick marks the boundary and a caption names the forecast. A value past `max` clamps the fill at the
  * track end; the caption still states the real value.
  *
+ * `zones` (bar only) draws the track as contiguous bands (neutral at stepped strengths unless a zone
+ * passes a status colour) and the reading becomes a MARKER on the track, not a fill; the caption names
+ * the zone that holds the value (`from` inclusive). Use it for a reading judged against ranges.
+ *
  * @example
  * import { Meter } from 'basalt-ui'
  *
- * <Meter label="Monthly budget" value={412} max={500} target={450} format={usd} />
+ * // Spend against a budget: past the target the end caption states the overage.
+ * <Meter label="Monthly spend" value={512} max={600} target={450} color="var(--vx-status-bad)" format={usd} />
+ * // Training load as a zone band with a marker: caption reads "Optimal · 612".
+ * <Meter
+ *   label="Training load"
+ *   max={1000}
+ *   value={612}
+ *   zones={[
+ *     { from: 0, to: 300, label: 'Low' },
+ *     { from: 300, to: 750, label: 'Optimal' },
+ *     { from: 750, to: 1000, label: 'High' },
+ *   ]}
+ * />
+ * // Garmin recovery on its 0–100 scale (contributors: <BarList max={100} … secondary="Good" />).
+ * <Meter label="Recovery" value={72} max={100} />
  * <Meter
  *   label="Course progress"
  *   max={120}
@@ -43,6 +61,11 @@ export type MeterProps = BasaltProps & {
   color?: string
   /** Ordered parts. Their sum is the reading; `value` is ignored. `forecast` parts render lighter. */
   segments?: readonly { value: number; label: string; color?: string; forecast?: boolean }[]
+  /**
+   * Bar only. Contiguous bands drawn as the track; the reading is then a marker, not a fill, and
+   * `segments`/`color` are ignored. `from` is inclusive; a value on the last band's `to` belongs to it.
+   */
+  zones?: readonly { from: number; to: number; label: string; color?: string }[]
   /** Target position; draws a tick (bar) and states it in the end caption. */
   target?: number
   /** Formats values in captions and the accessible text. Default: the number as written. */
@@ -65,6 +88,8 @@ const RING_RADIUS = (RING_VIEWBOX - RING_STROKE) / 2
 const RING_LENGTH = 2 * Math.PI * RING_RADIUS
 
 const clamp01 = (n: number): number => Math.min(1, Math.max(0, n))
+/** A 0–1 fraction as a percent, rounded so float noise never reaches the DOM. */
+const toPct = (n: number): number => Math.round(clamp01(n) * 10000) / 100
 const asText = (n: number): string => String(n)
 
 type Part = {
@@ -103,6 +128,7 @@ export function Meter({
   shape = 'bar',
   color,
   segments,
+  zones,
   target,
   format = asText,
   startCaption,
@@ -177,14 +203,31 @@ export function Meter({
   const forecastLabels = hasSegments
     ? segments.filter((s) => s.forecast === true).map((s) => `${s.label} ${format(s.value)}`)
     : []
-  const targetPct = target === undefined ? undefined : clamp01((target - min) / span) * 100
+  const targetPct = target === undefined ? undefined : toPct((target - min) / span)
 
-  const start = startCaption === undefined ? format(reading) : startCaption
+  const zoned = !isRing && zones !== undefined && zones.length > 0 && !hasSegments
+  const lastTo = zoned ? Math.max(...zones.map((z) => z.to)) : 0
+  const holding = zoned
+    ? zones.find(
+        (z) => reading >= z.from && (reading < z.to || (reading === z.to && z.to === lastTo)),
+      )
+    : undefined
+  const markerPct = toPct((reading - min) / span)
+
+  const start =
+    startCaption === undefined
+      ? zoned && holding !== undefined
+        ? `${holding.label} · ${format(reading)}`
+        : format(reading)
+      : startCaption
+  const overBy = target !== undefined && reading > target ? reading - target : undefined
   const end =
     endCaption === undefined
       ? target === undefined
         ? null
-        : `Target ${format(target)}`
+        : overBy === undefined
+          ? `Target ${format(target)}`
+          : `Target ${format(target)} · ${format(overBy)} over`
       : endCaption
   const forecastText =
     boundary === undefined ? null : (forecastCaption ?? `Forecast: ${forecastLabels.join(', ')}`)
@@ -192,6 +235,14 @@ export function Meter({
   const describedBy = [
     ...(hasSegments
       ? segments.map((s) => `${s.label} ${format(s.value)}${s.forecast ? ' (forecast)' : ''}`)
+      : []),
+    ...(zoned
+      ? [
+          ...zones.map((z) => `${z.label} ${format(z.from)} to ${format(z.to)}`),
+          holding === undefined
+            ? `${format(reading)} is outside every zone`
+            : `${format(reading)} is in ${holding.label}`,
+        ]
       : []),
     ...(target === undefined ? [] : [`Target ${format(target)}`]),
   ]
@@ -246,15 +297,33 @@ export function Meter({
     <div className={cx(classes.root, className)} style={style}>
       <div className={classes.trackBox} {...ariaProps}>
         <div className={classes.track} data-meter-track>
-          {parts.map((p, i) => (
-            <div
-              key={i}
-              className={cx(classes.fill, p.forecast && classes.forecastFill)}
-              data-meter-fill={p.forecast ? 'forecast' : 'committed'}
-              style={fillStyle(p)}
-            />
-          ))}
+          {zoned &&
+            zones.map((z, i) => (
+              <div
+                key={i}
+                className={classes.zone}
+                data-meter-zone={z.label}
+                style={zoneStyle(z, i, zones.length, min, span)}
+              />
+            ))}
+          {!zoned &&
+            parts.map((p, i) => (
+              <div
+                key={i}
+                className={cx(classes.fill, p.forecast && classes.forecastFill)}
+                data-meter-fill={p.forecast ? 'forecast' : 'committed'}
+                style={fillStyle(p)}
+              />
+            ))}
         </div>
+        {zoned && (
+          <div
+            className={classes.marker}
+            data-meter-tick="marker"
+            style={{ insetInlineStart: `${markerPct}%` }}
+            aria-hidden
+          />
+        )}
         {boundary !== undefined && (
           <div
             className={classes.boundaryTick}
@@ -288,5 +357,22 @@ function fillStyle(p: Part): CSSProperties {
   return {
     width: `${p.size * 100}%`,
     ...(p.color !== undefined && { background: p.color }),
+  }
+}
+
+/** Bands tile the track by value; with no colour they step up in strength so order reads without hue. */
+function zoneStyle(
+  z: { from: number; to: number; color?: string },
+  index: number,
+  count: number,
+  min: number,
+  span: number,
+): CSSProperties {
+  const lo = clamp01((z.from - min) / span)
+  const hi = clamp01((z.to - min) / span)
+  const strength = count > 1 ? 15 + (index / (count - 1)) * 45 : 40
+  return {
+    width: `${(hi - lo) * 100}%`,
+    background: z.color ?? `color-mix(in srgb, var(--vx-line) ${strength}%, transparent)`,
   }
 }
