@@ -1322,7 +1322,7 @@ const CTL_NUMBER_CHEVRON_SIZE = 10
 const CTL_NUMBER_RIGHT_SECTION_WIDTH = 17
 /**
  * The `ctl` tier's Radio/Checkbox indicator box, in px — 16, the SAME square
- * `theme/icon-slot.module.css` gives every icon in the tier, and for the same reason: a 13.5px
+ * `theme/icon-slot.module.css` gives every icon in the tier, and for the same reason: a 13px
  * option label needs a mark it reads as part of the row rather than as a control beside it. Mantine's
  * default is `sm` (20px) and its `md` is 24px, both of which made the popover a column of controls
  * (the sheet/panel forms found the same thing and went further — `docs/CONTROLS-SPEC.md` §3's
@@ -1423,7 +1423,7 @@ function ctlSizeVars(): Record<string, string> & Record<CtlHeightVar, string> {
     '--mantine-font-size-ctl': `calc(${pxRem(VX.text.sm)} * var(--mantine-scale))`,
     '--mantine-line-height-ctl': 'var(--mantine-line-height-sm)',
     // Radio / Checkbox / Switch — the three components whose DEFAULT (`sm`, a 20px indicator) sat
-    // beside a 13.5px option label in every popover and sheet basalt draws. Every prefix here was
+    // beside a 13px option label in every popover and sheet basalt draws. Every prefix here was
     // read out of the installed `@mantine/core` source, and `ctl-tier-coverage.test.ts` now scans
     // those three components too, so a future minor that adds a `getSize` call fails the build
     // instead of resolving the new var to its initial value. Note there is NO

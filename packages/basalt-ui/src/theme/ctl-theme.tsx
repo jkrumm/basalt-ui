@@ -16,7 +16,7 @@
  * applicable" (the spec's own hedge) resolves to "not applicable" here.
  *
  * **Radio / Checkbox / Switch and their `.Group`s, and the one consequence worth stating.** These
- * three default to Mantine's `sm` — a 20px indicator beside the tier's 13.5px option label — which
+ * three default to Mantine's `sm` — a 20px indicator beside the tier's 13px option label — which
  * is what every filter popover and the mobile sheet rendered. They are here rather than fixed in a
  * CSS module because their geometry is a Mantine SIZE (five vars for a Switch alone), so the tier
  * reaches them the same way it reaches Button and Input: through `-ctl` vars in

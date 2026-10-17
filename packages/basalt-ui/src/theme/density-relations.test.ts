@@ -150,12 +150,19 @@ describe('Fix 4 — every interactive target clears the WCAG 2.5.8 24px floor at
     }
   })
 
-  test('a NavLink/Menu row (2 * rowInsetY padding + rowLineHeight * the fixed md text step)', () => {
+  test('a NavLink/Menu row (2 * rowInsetY padding + rowLineHeight * the fixed sm text step)', () => {
     for (const level of ALL_LEVELS) {
       const { anchors, rowLineHeight } = deriveSpacing(level)
-      const rowHeight = 2 * anchors.rowInsetY + rowLineHeight * VX.text.md
+      const rowHeight = 2 * anchors.rowInsetY + rowLineHeight * VX.text.sm
       expect(rowHeight).toBeGreaterThanOrEqual(24)
     }
+  })
+
+  test('at level 0 that row lands on the pinned 32 — the ctl tier and the nav row stay one number', () => {
+    const { anchors, rowLineHeight } = deriveSpacing(0)
+    const rowHeight = 2 * anchors.rowInsetY + rowLineHeight * VX.text.sm
+    expect(Math.abs(rowHeight - anchors.controlHeightCtl)).toBeLessThan(0.1)
+    expect(anchors.controlHeightCtl).toBe(32)
   })
 
   test('the page bar row (pageBarRowHeight — the mobile header actions row it replaced is gone)', () => {
