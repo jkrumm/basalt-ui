@@ -13,11 +13,13 @@ import { CalibrateEmptyHalf } from './CalibrateEmptyHalf'
 import { CalibrateGood } from './CalibrateGood'
 import { CalibrateRepeatedAxis } from './CalibrateRepeatedAxis'
 import { OpsScenario } from './S1Ops'
+import { TrainingScenario } from './S2Training'
 import { SpendScenario } from './S4Spend'
 import type { ScenarioProps } from './shot-state'
 
 const RENDERERS = {
   's1-ops': (p) => <OpsScenario {...p} />,
+  's2-training': (p) => <TrainingScenario {...p} />,
   's4-spend': (p) => <SpendScenario {...p} />,
   'probe-3': () => <CalibrateGood />,
   'probe-5': () => <CalibrateDeltaFill />,
