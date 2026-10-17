@@ -48,4 +48,48 @@ describe('the marker reading in a host that already shows the value', () => {
     expect(reading(container)).toBeNull()
     expect(container.querySelector('[role="meter"]')).not.toBeNull()
   })
+
+  test('an explicit startCaption still renders in a host', () => {
+    const { container, getByText } = render(
+      <MantineProvider>
+        <StatCard
+          title="Load"
+          value="612"
+          sparkline={
+            <Meter
+              label="Training load"
+              value={612}
+              max={1000}
+              zones={zones}
+              startCaption="Since Monday"
+            />
+          }
+        />
+      </MantineProvider>,
+    )
+    // The consumer's caption is not the reading: it renders where the reading would have.
+    expect(getByText('Since Monday')).toBeTruthy()
+    expect(reading(container)?.textContent).toBe('Since Monday')
+  })
+
+  test('a rows-only strip cell (no hero value) keeps the reading', () => {
+    const { container } = render(
+      <MantineProvider>
+        <StatGroup
+          variant="strip"
+          label="Health"
+          cells={[
+            {
+              key: 'a',
+              caption: 'Load',
+              rows: [{ key: 'r', label: 'Acute', value: '612' }],
+              visual: meter,
+            },
+            { key: 'b', caption: 'Other', value: '1' },
+          ]}
+        />
+      </MantineProvider>,
+    )
+    expect(reading(container)).not.toBeNull()
+  })
 })

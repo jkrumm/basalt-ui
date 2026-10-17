@@ -19,7 +19,7 @@
   border-radius: var(--vx-radius-ctrl);
   background: var(--vx-surface-panel);
   box-shadow: var(--vx-shadow-raised);
-  color: var(--vx-ink);
+  color: var(--mantine-color-default-color, var(--vx-ink));
   font: inherit;
   font-size: var(--vx-text-xs);
   font-weight: 500;
@@ -30,20 +30,25 @@
   transition: box-shadow 120ms ease;
 }
 
-.retry:hover:not(:disabled) {
-  background: var(--vx-surface-elevated);
-}
-
 .retry:focus-visible {
-  outline: 2px solid var(--vx-accent);
-  outline-offset: 2px;
+  outline: calc(0.125rem * var(--mantine-scale, 1)) solid
+    var(--mantine-primary-color-filled, var(--vx-accent-fill));
+  outline-offset: calc(0.125rem * var(--mantine-scale, 1));
 }
 
-/* Busy is grounded and inert, like Mantine's disabled Button. */
+/* Hover is a pointer affordance: a touch tap would leave it stuck on. */
+@media (hover: hover) {
+  .retry:hover:not(:disabled) {
+    background: var(--vx-surface-elevated);
+  }
+}
+
+/* Busy is Mantine's disabled paint: its own disabled colour and background, flat, no border. */
 .retry:disabled {
+  background: var(--mantine-color-disabled, var(--vx-surface-subtle));
+  color: var(--mantine-color-disabled-color, var(--vx-muted));
   box-shadow: none;
   cursor: not-allowed;
-  opacity: 0.6;
 }
 
 @media (prefers-reduced-motion: reduce) {
