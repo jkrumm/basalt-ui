@@ -11,13 +11,12 @@
  * takes the error.
  */
 import { Box, Group, SimpleGrid, Skeleton, Stack, Text } from '@mantine/core'
-import { BarList, DeltaBadge, Meter, PageBar, StatGroup } from 'basalt-ui'
-import type { StatStripCell } from 'basalt-ui'
+import { BarList, Meter, PageBar, StatCard, StatGroup } from 'basalt-ui'
 import { ChartCard, Sparkline } from 'basalt-ui/charts'
 import { CONTAINER_KEYS } from 'basalt-ui/tokens'
 import { demoColors } from '../demo/series'
 import { fmtInt, fmtKg, fmtKm, fmtRatio, fmtShare } from './fixture-utils'
-import { cardStateProps, retryCopy } from './shot-state'
+import { cardStateProps, queryFor, retryCopy } from './shot-state'
 import type { ScenarioProps } from './shot-state'
 import {
   ACUTE_LOAD,
@@ -56,6 +55,8 @@ import {
   readinessLevel,
 } from './training-data'
 import type { SessionType } from './training-data'
+
+type SparklineSize = { width: number; height: number }
 
 const TYPE_COLOR: Record<SessionType, string> = {
   strength: demoColors.sessions,
@@ -122,86 +123,72 @@ function Summary({ shotState }: ScenarioProps) {
   )
 }
 
-/** A rolling-7-day trend for a strip cell; the dashed line is the mean of the 30 plotted days. */
-const trendSparkline = (label: string, data: readonly number[], format: (v: number) => string) => (
-  <Sparkline
-    ariaLabel={`${label}, rolling 7 days, last 30 days`}
-    data={data}
-    height={28}
-    reference="mean"
-    format={format}
-  />
-)
+/** A rolling-7-day trend for a `StatCard` visual slot. */
+const trendSparkline =
+  (label: string, data: readonly number[], format: (v: number) => string) =>
+  (size: SparklineSize) => (
+    <Sparkline
+      ariaLabel={`${label}, rolling 7 days, last 30 days`}
+      data={data}
+      reference="mean"
+      format={format}
+      {...size}
+    />
+  )
 
 function TrainingStats({ shotState }: ScenarioProps) {
-  const loading = shotState === 'loading'
-  const none = shotState === 'empty' || shotState === 'error'
-  const hidden = none || loading
-  const note =
-    shotState === 'error' ? TRAINING_ERROR : shotState === 'empty' ? TRAINING_EMPTY : undefined
-  // One month read three ways: how often, how much, how far. Shared window, shared comparison.
-  const cell = (
-    c: Pick<StatStripCell, 'key' | 'caption' | 'unit' | 'info'> & {
-      value: string
-      pct: number
-      label: string
-      trend: readonly number[]
-      format: (v: number) => string
-    },
-  ): StatStripCell => ({
-    key: c.key,
-    caption: c.caption,
-    qualifier: 'month to date',
-    ...(c.info !== undefined && { info: c.info }),
-    ...(c.unit !== undefined && { unit: c.unit }),
-    value: none ? null : c.value,
-    loading,
-    ...(note !== undefined && { footer: note }),
-    ...(!hidden && {
-      delta: <DeltaBadge value={c.pct} period={`vs ${PRIOR_WINDOW_LABEL}`} />,
-      visual: trendSparkline(c.label, c.trend, c.format),
-    }),
-  })
+  const isAtRest = shotState === undefined
+  const query = queryFor(shotState, TRAINING_ERROR)
+  const shared = { emptyText: TRAINING_EMPTY, ...(query !== undefined && { query }) }
+  const deltaProps = (pct: number) =>
+    isAtRest ? { delta: pct, deltaPeriod: `vs ${PRIOR_WINDOW_LABEL}` } : {}
 
   return (
-    <StatGroup
-      variant="strip"
-      label="Training this month"
-      cols={3}
-      cells={[
-        cell({
-          key: 'sessions',
-          caption: 'Sessions',
-          value: fmtInt(SESSIONS_MTD),
-          unit: 'sessions',
-          pct: SESSIONS_CHANGE_PCT,
-          label: 'Sessions',
-          trend: SESSIONS_7D_TREND,
-          format: (v) => `${fmtInt(v)} sessions`,
-        }),
-        cell({
-          key: 'volume',
-          caption: 'Training volume',
-          value: fmtInt(VOLUME_MTD_KG),
-          unit: 'kg',
-          info: `Sets × reps × weight over the strength sessions of ${WINDOW_LABEL}. Pull-ups count at body weight.`,
-          pct: VOLUME_CHANGE_PCT,
-          label: 'Training volume, kilograms',
-          trend: VOLUME_7D_TREND,
-          format: fmtKg,
-        }),
-        cell({
-          key: 'distance',
-          caption: 'Walking distance',
-          value: fmtKm(DISTANCE_MTD_KM),
-          unit: 'km',
-          pct: DISTANCE_CHANGE_PCT,
-          label: 'Walking distance, kilometres',
-          trend: DISTANCE_7D_TREND,
-          format: (v) => `${fmtKm(v)} km`,
-        }),
-      ]}
-    />
+    <StatGroup cols={3}>
+      <Box data-shot="sessions" h="100%">
+        <StatCard
+          title="Sessions"
+          qualifier="month to date"
+          value={fmtInt(SESSIONS_MTD)}
+          unit="sessions"
+          info={`Strength, walking-pad and mobility sessions, 7-day rolling. The dashed line is the 30-day mean.`}
+          subtitle="7-day rolling"
+          {...deltaProps(SESSIONS_CHANGE_PCT)}
+          {...shared}
+          sparkline={trendSparkline('Sessions', SESSIONS_7D_TREND, (v) => `${fmtInt(v)} sessions`)}
+        />
+      </Box>
+      <Box data-shot="volume" h="100%">
+        <StatCard
+          title="Training volume"
+          qualifier="month to date"
+          value={fmtInt(VOLUME_MTD_KG)}
+          unit="kg"
+          info={`Sets × reps × weight over the strength sessions of ${WINDOW_LABEL}. Pull-ups count at body weight. The dashed line is the 30-day mean.`}
+          subtitle="7-day rolling"
+          {...deltaProps(VOLUME_CHANGE_PCT)}
+          {...shared}
+          sparkline={trendSparkline('Training volume, kilograms', VOLUME_7D_TREND, fmtKg)}
+        />
+      </Box>
+      <Box data-shot="distance" h="100%">
+        <StatCard
+          title="Walking distance"
+          qualifier="month to date"
+          value={fmtKm(DISTANCE_MTD_KM)}
+          unit="km"
+          info="Distance on the walking pad, 7-day rolling. The dashed line is the 30-day mean."
+          subtitle="7-day rolling"
+          {...deltaProps(DISTANCE_CHANGE_PCT)}
+          {...shared}
+          sparkline={trendSparkline(
+            'Walking distance, kilometres',
+            DISTANCE_7D_TREND,
+            (v) => `${fmtKm(v)} km`,
+          )}
+        />
+      </Box>
+    </StatGroup>
   )
 }
 
@@ -239,7 +226,9 @@ function GoalRow({ shotState }: ScenarioProps) {
         <Box data-shot="session-mix">
           <ChartCard
             title="Sessions by type"
-            facts={{ value: fmtInt(SESSIONS_MTD), unit: 'sessions', period: WINDOW_LABEL }}
+            {...(shotState === undefined && {
+              facts: { value: fmtInt(SESSIONS_MTD), unit: 'sessions', period: WINDOW_LABEL },
+            })}
             {...cardStateProps(shotState, retry('Sessions by type'), PLACEHOLDER.meter)}
           >
             <Box data-shot-hover>
@@ -287,7 +276,9 @@ function LoadCard({ shotState }: ScenarioProps) {
     <Box data-shot="training-load">
       <ChartCard
         title="Training load"
-        facts={{ value: fmtRatio(LOAD_RATIO), period: '7 days against the 4-week norm' }}
+        {...(shotState === undefined && {
+          facts: { value: fmtRatio(LOAD_RATIO), period: '7 days against the 4-week norm' },
+        })}
         info="Load of the last 7 days divided by the weekly average of the last 28 days. Load is minutes × session intensity (1–10), in arbitrary units (AU)."
         {...cardStateProps(shotState, retry('Training load'), PLACEHOLDER.meter)}
       >
@@ -317,7 +308,9 @@ function ReadinessRow({ shotState }: ScenarioProps) {
       <Box data-shot="readiness" h="100%">
         <ChartCard
           title="Readiness"
-          facts={{ value: fmtInt(READINESS_SCORE), unit: 'of 100', period: TODAY_LABEL }}
+          {...(shotState === undefined && {
+            facts: { value: fmtInt(READINESS_SCORE), unit: 'of 100', period: TODAY_LABEL },
+          })}
           info={READINESS_INFO}
           {...cardStateProps(shotState, retry('Readiness'), PLACEHOLDER.readiness)}
         >
@@ -345,10 +338,12 @@ function ReadinessRow({ shotState }: ScenarioProps) {
       <Box data-shot="top-lifts" h="100%">
         <ChartCard
           title="Top lifts by volume"
-          facts={{
-            value: fmtKg(TOP_LIFTS.reduce((a, l) => a + l.volumeKg, 0)),
-            period: `all lifts, ${WINDOW_LABEL}`,
-          }}
+          {...(shotState === undefined && {
+            facts: {
+              value: fmtKg(TOP_LIFTS.reduce((a, l) => a + l.volumeKg, 0)),
+              period: `all lifts, ${WINDOW_LABEL}`,
+            },
+          })}
           info="Sets × reps × weight per lift over the strength sessions of the window; the share is of total training volume."
           {...cardStateProps(shotState, retry('Top lifts'), PLACEHOLDER.lifts)}
         >

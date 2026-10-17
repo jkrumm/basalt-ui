@@ -5,6 +5,7 @@ import { describe, expect, it } from 'bun:test'
 import {
   ABANDON_HOURS,
   BUDGETS,
+  DISPATCH_COMPLETE_DAYS,
   DISPATCH_DAILY,
   FAILURES_24H,
   FLEET,
@@ -28,17 +29,20 @@ describe('agents-data', () => {
     expect(NEEDS_YOU_TREND.at(-1)).toBe(NEEDS_YOU)
   })
 
-  it('stuck lists exactly the awaiting items, oldest first', () => {
-    expect(STUCK).toHaveLength(NEEDS_YOU)
+  it('stuck lists the awaiting and blocked items, oldest first, each blocked one with a reason', () => {
+    const held = ITEMS.filter((i) => i.state === 'awaiting' || i.state === 'blocked')
+    expect(STUCK).toHaveLength(held.length)
+    expect(STUCK.filter((i) => i.state === 'blocked')).toHaveLength(3)
     for (const [i, item] of STUCK.entries()) {
-      expect(item.state).toBe('awaiting')
       const prev = STUCK[i - 1]
       if (prev) expect(prev.waitHours).toBeGreaterThanOrEqual(item.waitHours)
+      if (item.state === 'blocked') expect(item.reason).toBeTruthy()
     }
   })
 
-  it('the oldest wait is the first stuck item and sits between the warn and abandon limits', () => {
-    expect(STUCK[0]?.waitHours).toBe(OLDEST_WAIT_HOURS)
+  it('the oldest wait is the longest awaiting item, between the warn and abandon limits', () => {
+    const waits = ITEMS.filter((i) => i.state === 'awaiting').map((i) => i.waitHours)
+    expect(OLDEST_WAIT_HOURS).toBe(Math.max(...waits))
     expect(OLDEST_WAIT_HOURS).toBeGreaterThan(WARN_HOURS)
     expect(OLDEST_WAIT_HOURS).toBeLessThan(ABANDON_HOURS)
   })
@@ -61,6 +65,7 @@ describe('agents-data', () => {
   it('failures are a count and the budgets stay inside their caps', () => {
     expect(Number.isInteger(FAILURES_24H.count)).toBe(true)
     expect(DISPATCH_DAILY.at(-1)).toBe(BUDGETS.day.spent)
+    expect(DISPATCH_COMPLETE_DAYS).toHaveLength(DISPATCH_DAILY.length - 1)
     for (const b of [BUDGETS.day, BUDGETS.week]) {
       expect(b.spent).toBeGreaterThan(0)
       expect(b.spent).toBeLessThanOrEqual(b.cap)

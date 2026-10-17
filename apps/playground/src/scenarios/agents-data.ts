@@ -30,6 +30,8 @@ export type Item = {
   state: ItemState
   /** Hours the item has waited in its current state. */
   waitHours: number
+  /** Why a blocked item cannot move. */
+  reason?: string
 }
 
 /** A wait past this raises a warning; past `ABANDON_HOURS` warden closes the item as abandoned. */
@@ -42,12 +44,14 @@ const item = (
   state: ItemState,
   waitHours: number,
   title: string,
+  reason?: string,
 ): Item => ({
   id,
   title,
   repo,
   state,
   waitHours,
+  ...(reason !== undefined && { reason }),
 })
 
 export const ITEMS: readonly Item[] = [
@@ -67,17 +71,27 @@ export const ITEMS: readonly Item[] = [
   item('w-437', 'infra', 'queued', 2, 'Prune stale preview environments'),
   item('w-438', 'api', 'queued', 2, 'Cache the project lookup'),
   item('w-439', 'worker', 'queued', 1, 'Log the job id on every retry'),
-  item('w-422', 'dashboard', 'blocked', 52, 'Upgrade the router major'),
-  item('w-424', 'api', 'blocked', 28, 'Migrate the audit log to the new store'),
-  item('w-428', 'infra', 'blocked', 14, 'Enable the staging cluster autoscaler'),
+  item('w-422', 'dashboard', 'blocked', 52, 'Upgrade the router major', 'Waits on the API change'),
+  item('w-424', 'api', 'blocked', 28, 'Migrate the audit log to the new store', 'Failing check'),
+  item(
+    'w-428',
+    'infra',
+    'blocked',
+    14,
+    'Enable the staging cluster autoscaler',
+    'Waits on the infra quota',
+  ),
 ]
 
 const awaiting = ITEMS.filter((i) => i.state === 'awaiting')
 export const NEEDS_YOU = awaiting.length
 
-/** Items awaiting a decision, oldest first: the queue the owner works through. */
-export const STUCK: readonly Item[] = awaiting.toSorted((a, b) => b.waitHours - a.waitHours)
-export const OLDEST_WAIT_HOURS = STUCK[0]?.waitHours ?? 0
+/** Items awaiting a decision or blocked, oldest first: what is stuck. */
+export const STUCK: readonly Item[] = ITEMS.filter(
+  (i) => i.state === 'awaiting' || i.state === 'blocked',
+).toSorted((a, b) => b.waitHours - a.waitHours)
+/** The longest an item has waited on a decision; blocked items wait on something else. */
+export const OLDEST_WAIT_HOURS = Math.max(0, ...awaiting.map((i) => i.waitHours))
 
 /** The needs-you count at each day end, 14 days, ending on today's count. */
 export const NEEDS_YOU_TREND: readonly number[] = [2, 3, 3, 4, 3, 2, 3, 4, 5, 4, 5, 4, 5, NEEDS_YOU]
@@ -102,8 +116,8 @@ export const BUDGETS = {
   day: { spent: 5.4, cap: 10 },
   week: { spent: DISPATCH_DAILY.slice(-7).reduce((a, b) => a + b, 0), cap: 50 },
 }
-/** Dispatch spend in the 24 h before today, for the delta. */
-export const DISPATCH_PRIOR_EUR = DISPATCH_DAILY.at(-2) ?? 0
+/** The days that are over: today is partial, so a mean or a comparison leaves it out. */
+export const DISPATCH_COMPLETE_DAYS: readonly number[] = DISPATCH_DAILY.slice(0, -1)
 
 export type FlowRow = { date: Date; opened: number; closed: number }
 

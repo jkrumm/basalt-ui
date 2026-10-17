@@ -8,8 +8,9 @@
  * warden's budget meters as its footer; a ranked list of the stuck items and the open/close flow
  * sit below. Actions are inert in fixtures.
  *
- * Anchors for `basalt-ui shot`: strip cells carry their own `data-shot` (`strip-<key>`,
- * `strip-footer-<key>`); `ChartCard` does not forward `data-*`, so those anchors are wrapping `Box`es.
+ * Anchors for `basalt-ui shot`: strip cells carry their own `data-shot` (`strip-needs-you`,
+ * `strip-oldest-wait`, `strip-fleet`, `strip-dispatch-spend`, `strip-failures`; footer meters
+ * `strip-footer-day` / `strip-footer-week`; the empty / error note `strip-footer-note`); `ChartCard` does not forward `data-*`, so those anchors are wrapping `Box`es.
  */
 import { Box, SimpleGrid, Stack, Text } from '@mantine/core'
 import { BarList, DeltaBadge, Meter, PageBar, StatGroup } from 'basalt-ui'
@@ -21,8 +22,7 @@ import { demoColors } from '../demo/series'
 import {
   ABANDON_HOURS,
   BUDGETS,
-  DISPATCH_DAILY,
-  DISPATCH_PRIOR_EUR,
+  DISPATCH_COMPLETE_DAYS,
   FAILURES_24H,
   FLEET,
   FLEET_TOTAL,
@@ -65,36 +65,47 @@ const FLOW_BARS: BarsBar<FlowRow>[] = [
 ]
 const FLOW_DATA = [...FLOW]
 
+const DOT_SIZE = '0.4rem'
+
 /** Status as a dot and a word: the colour never carries the verdict alone. */
-function Status({ tone, word }: { tone: string; word: string }) {
+function Status({ tone, word, note }: { tone: string; word: string; note?: string }) {
   return (
     <Text component="span" size="xs" c="dimmed" style={{ whiteSpace: 'nowrap' }}>
       <span
         aria-hidden
         style={{
           display: 'inline-block',
-          width: 6,
-          height: 6,
+          width: DOT_SIZE,
+          height: DOT_SIZE,
           borderRadius: '50%',
           background: tone,
-          marginRight: 6,
+          marginInlineEnd: '0.4rem',
         }}
       />
       {word}
+      {note !== undefined && ` · ${note}`}
     </Text>
   )
 }
+
+const stuckStatus = (i: (typeof STUCK)[number]) =>
+  i.state === 'blocked' ? (
+    <Status
+      tone={VX.status.bad}
+      word="Blocked"
+      {...(i.reason !== undefined && { note: i.reason })}
+    />
+  ) : i.waitHours > WARN_HOURS ? (
+    <Status tone={VX.status.warn} word="Needs you" note="over 24 h" />
+  ) : (
+    <Status tone={VX.faint} word="Needs you" />
+  )
 
 const STUCK_ITEMS = STUCK.map((i) => ({
   key: i.id,
   label: `${i.title} · ${i.repo}`,
   value: i.waitHours,
-  secondary:
-    i.waitHours > WARN_HOURS ? (
-      <Status tone={VX.status.warn} word="Over 24 h" />
-    ) : (
-      <Status tone={VX.faint} word="Within 24 h" />
-    ),
+  secondary: stuckStatus(i),
 }))
 
 const WARN_LABEL = `${WARN_HOURS} h`
@@ -118,7 +129,6 @@ function QueueStrip({ shotState }: ScenarioProps) {
       value: none ? null : fmtInt(NEEDS_YOU),
       unit: 'items',
       loading,
-      ...(note !== undefined && { footer: note }),
       ...(!hidden && {
         visual: (
           <Sparkline
@@ -179,20 +189,13 @@ function QueueStrip({ shotState }: ScenarioProps) {
       key: 'dispatch-spend',
       caption: 'Dispatch spend',
       qualifier: 'today',
-      info: `Agent dispatch cost today, in EUR. The dashed line is the 14-day daily mean; the daily cap is ${fmtEur(BUDGETS.day.cap)}.`,
+      info: `Agent dispatch cost so far today, in EUR; the daily cap is ${fmtEur(BUDGETS.day.cap)}. The sparkline and its dashed mean cover the ${DISPATCH_COMPLETE_DAYS.length} complete days before today.`,
       value: none ? null : fmtEur(BUDGETS.day.spent),
       ...(!hidden && {
-        delta: (
-          <DeltaBadge
-            value={(BUDGETS.day.spent / DISPATCH_PRIOR_EUR - 1) * 100}
-            polarity="up-bad"
-            period="vs yesterday"
-          />
-        ),
         visual: (
           <Sparkline
-            ariaLabel="Dispatch spend per day, last 14 days, EUR"
-            data={DISPATCH_DAILY}
+            ariaLabel={`Dispatch spend per day, last ${DISPATCH_COMPLETE_DAYS.length} complete days, EUR`}
+            data={DISPATCH_COMPLETE_DAYS}
             height={SPARK_HEIGHT}
             reference="mean"
             format={fmtEur}
@@ -236,29 +239,37 @@ function QueueStrip({ shotState }: ScenarioProps) {
     />
   )
 
-  return (
-    <StatGroup
-      variant="strip"
-      label="Agent queue"
-      cols={5}
-      cells={cells}
-      footer={[
-        {
-          key: 'day',
-          content: budget('Daily dispatch budget', BUDGETS.day.spent, BUDGETS.day.cap, 'Today'),
-        },
-        {
-          key: 'week',
-          content: budget(
-            'Weekly dispatch budget',
-            BUDGETS.week.spent,
-            BUDGETS.week.cap,
-            'Last 7 days',
-          ),
-        },
-      ]}
-    />
-  )
+  const budgetFooter = [
+    {
+      key: 'day',
+      content: budget('Daily dispatch budget', BUDGETS.day.spent, BUDGETS.day.cap, 'Today'),
+    },
+    {
+      key: 'week',
+      content: budget(
+        'Weekly dispatch budget',
+        BUDGETS.week.spent,
+        BUDGETS.week.cap,
+        'Last 7 days',
+      ),
+    },
+  ]
+  // The empty / error note is one line in the footer row, not repeated in every cell.
+  const footer =
+    note === undefined
+      ? budgetFooter
+      : [
+          {
+            key: 'note',
+            content: (
+              <Text size="sm" c="dimmed">
+                {note}
+              </Text>
+            ),
+          },
+        ]
+
+  return <StatGroup variant="strip" label="Agent queue" cols={5} cells={cells} footer={footer} />
 }
 
 function QueueRow({ shotState }: ScenarioProps) {
@@ -267,15 +278,17 @@ function QueueRow({ shotState }: ScenarioProps) {
     <SimpleGrid type="container" cols={{ base: 1, [CONTAINER_KEYS.regular]: 2 }}>
       <Box data-shot="stuck-items" h="100%">
         <ChartCard
-          title="Stuck items by wait"
-          info={`Items waiting on your decision, longest first. The status marks a wait past the ${WARN_LABEL} warning.`}
+          title="Waiting or blocked, by age"
+          info={`Items waiting on your decision and items blocked on something else, oldest first. The status marks a wait past the ${WARN_LABEL} warning.`}
           subtitle={`Warden abandons an item at ${ABANDON_LABEL}`}
-          facts={{ value: fmtInt(NEEDS_YOU), unit: 'items', period: 'waiting for a decision' }}
-          {...cardStateProps(shotState, retry('Stuck items'), STUCK_PLACEHOLDER)}
+          {...(shotState === undefined && {
+            facts: { value: fmtInt(STUCK.length), unit: 'items', period: `${NEEDS_YOU} need you` },
+          })}
+          {...cardStateProps(shotState, retry('Waiting and blocked items'), STUCK_PLACEHOLDER)}
         >
           <Box data-shot-hover>
             <BarList
-              label="Items awaiting a decision, by wait"
+              label="Items waiting or blocked, by age"
               items={empty ? [] : STUCK_ITEMS}
               max={ABANDON_HOURS}
               format={fmtAge}
@@ -291,7 +304,7 @@ function QueueRow({ shotState }: ScenarioProps) {
           title="Items opened and closed per day"
           info="Items warden opened and items it closed each day, UTC. A queue that opens more than it closes grows."
           facts={[
-            { value: fmtInt(FLOW_OPENED), unit: 'opened' },
+            { value: fmtInt(FLOW_OPENED), unit: 'opened', period: FLOW_RANGE_LABEL },
             { value: fmtInt(FLOW_CLOSED), unit: 'closed', period: FLOW_RANGE_LABEL },
           ]}
           state={chartStateFor(shotState, {
