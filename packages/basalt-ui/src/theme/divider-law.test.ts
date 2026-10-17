@@ -124,6 +124,18 @@ const LEDGER: readonly { file: string; selector: string; kind: Kind; why: string
     why: "The shell-form aside header's bottom rule closes the top belt's seam across the panel (docs/DESIGN-SPEC.md §5, §8 #12) instead of dead-ending at the aside column — a continuation of the header|main AppShell seam, not a heading echoing its own type scale.",
   },
   {
+    file: 'dashboard/stat-strip.module.css',
+    selector: '.cell + .cell',
+    kind: 'between-rows',
+    why: "The strip's cells, wrapped onto several rows: adjacent-sibling, so the first cell draws no top line and the strip has no trailing rule; the leading row's line is clipped by the section.",
+  },
+  {
+    file: 'dashboard/stat-strip.module.css',
+    selector: '.footerCell',
+    kind: 'region-boundary',
+    why: "The seam between the strip's cells and its footer row of wider cells: a region boundary inside one surface, the same --vx-divider line the cells use, not a heading echoing its type scale.",
+  },
+  {
     file: 'dashboard/settings-section.module.css',
     selector: '.rows > *:not(:last-child)',
     kind: 'between-rows',
