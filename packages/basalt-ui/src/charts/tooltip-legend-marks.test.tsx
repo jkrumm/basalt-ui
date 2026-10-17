@@ -18,7 +18,10 @@ import { contrastRatio } from '../tokens/hct'
 import { STATUS, SURFACE } from '../tokens/palette'
 import { chartCursor } from './cursor'
 import { hoverPlot } from '../../tests/support/hover-plot'
+import { Bars } from './Bars'
+import type { BarsBar } from './Bars'
 import { Lines } from './Lines'
+import { StackedArea } from './StackedArea'
 import type { ChartSeries, RefLine } from './types'
 
 type Row = { t: Date; a: number | null; track: number | null; n: number }
@@ -583,11 +586,23 @@ describe('legend swatch follows the series mark in every mode', () => {
 })
 
 describe('hover readout semantics', () => {
-  test('the floating readout carries role="tooltip" and stays a live region', async () => {
-    const el = await mount(<Lines ariaLabel="L" data={data} x={x} series={[a]} />)
-    await hoverPlot(el.querySelector('svg'))
-    const tip = document.querySelector('.ts-chart-tooltip')
-    expect(tip?.getAttribute('role')).toBe('tooltip')
-    expect(tip?.getAttribute('aria-live')).toBe('polite')
-  })
+  const bar: BarsBar<Row> = {
+    key: 'a',
+    label: 'Alpha',
+    color: 'var(--vx-line)',
+    getValue: (d) => d.a,
+  }
+  const kinds: [string, () => React.ReactNode][] = [
+    ['Lines', () => <Lines ariaLabel="L" data={data} x={x} series={[a]} />],
+    ['Bars', () => <Bars ariaLabel="B" data={data} x={x} bars={[bar]} />],
+    ['StackedArea', () => <StackedArea ariaLabel="S" data={data} x={x} series={[a]} />],
+  ]
+  for (const [name, node] of kinds)
+    test(`${name}: the floating readout carries role="tooltip" and stays a live region`, async () => {
+      const el = await mount(node())
+      await hoverPlot(el.querySelector('svg'))
+      const tip = document.querySelector('.ts-chart-tooltip')
+      expect(tip?.getAttribute('role')).toBe('tooltip')
+      expect(tip?.getAttribute('aria-live')).toBe('polite')
+    })
 })

@@ -5,6 +5,7 @@
  * binding, the tooltip content, and the container-class guide ladder.
  * TanStack owns margins (measured), layout, focus and keyboard, the tooltip surface and SSR.
  */
+import { MONTHS, dateTickFormat, pad2, utcAxisDate } from './date-tick-format'
 import { crosshair } from '@tanstack/charts/crosshair'
 import { decorative } from '@tanstack/charts/mark/decorative'
 import { rect } from '@tanstack/charts/rect'
@@ -122,14 +123,7 @@ export function defaultNumberFormat(v: number): string {
   return compact(v, { digits: Math.abs(v) >= 1000 ? 1 : 2 })
 }
 
-const MONTHS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec']
 const DAYS = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat']
-const pad2 = (n: number): string => String(n).padStart(2, '0')
-
-/** `DD.MM`, read in UTC like the time scale that placed it (a local read shifts a day west of UTC). */
-export function utcAxisDate(d: Date): string {
-  return `${pad2(d.getUTCDate())}.${pad2(d.getUTCMonth() + 1)}`
-}
 
 /** `Mon Sep 1 2026`, in UTC; a non-midnight instant adds `HH:MM`. */
 export function utcHeaderDate(d: Date): string {
@@ -151,84 +145,7 @@ export function dateTicks(domain: readonly [Date, Date], count: number, stepMs: 
   return days.length >= 2 ? days : ticks.filter((_, i, all) => i === 0 || i === all.length - 1)
 }
 
-const utcClock = (d: Date): string => `${pad2(d.getUTCHours())}:${pad2(d.getUTCMinutes())}`
-const MONTH_STEP_MS = 27 * DAY_MS
-const isUtcMidnight = (d: Date): boolean => d.getTime() % DAY_MS === 0
-
-type TickLabel = { text: string; marker: boolean }
-
-/**
- * The default Date tick labels, chosen from the TICK step (not the data step) and UTC like the
- * scale. Sub-day steps: `HH:MM`, a midnight tick carries the day (`DD.MM`). Day steps: `DD.MM`.
- * Month steps: the month, a January tick carries the year. A label may recur only with a marker
- * (day / year) tick between its occurrences, so `17.10, 17.10, 18.10` cannot happen. When a level
- * fails that (no midnight tick in a span crossing a day, a 2-year axis with no January), the
- * first tick of each day carries its date, then every tick does.
- */
-export function dateTickFormat(ticks: readonly Date[]): (v: ChartValue) => string {
-  const times = [...new Set(ticks.map((t) => t.getTime()))].toSorted((a, b) => a - b)
-  const step = times.reduce(
-    (min, t, i) => (i === 0 ? min : Math.min(min, t - times[i - 1]!)),
-    Infinity,
-  )
-  const clock = (d: Date): TickLabel => ({ text: utcClock(d), marker: false })
-  const dated = (text: string): TickLabel => ({ text, marker: true })
-  const sameDay = (t: number, prev: number | undefined): boolean =>
-    prev !== undefined && Math.floor(t / DAY_MS) === Math.floor(prev / DAY_MS)
-  type Level = (at: number, prev: number | undefined) => TickLabel
-  const levels: Level[] =
-    step < DAY_MS || (step === Infinity && !ticks.every(isUtcMidnight))
-      ? [
-          (t) =>
-            isUtcMidnight(new Date(t)) ? dated(utcAxisDate(new Date(t))) : clock(new Date(t)),
-          (t, prev) =>
-            isUtcMidnight(new Date(t))
-              ? dated(utcAxisDate(new Date(t)))
-              : sameDay(t, prev)
-                ? clock(new Date(t))
-                : dated(`${utcAxisDate(new Date(t))} ${utcClock(new Date(t))}`),
-          (t) => dated(`${utcAxisDate(new Date(t))} ${utcClock(new Date(t))}`),
-        ]
-      : step < MONTH_STEP_MS
-        ? [
-            (t) => dated(utcAxisDate(new Date(t))),
-            (t) =>
-              dated(`${utcAxisDate(new Date(t))}.${String(new Date(t).getUTCFullYear()).slice(2)}`),
-          ]
-        : [
-            (t) => {
-              const d = new Date(t)
-              return d.getUTCMonth() === 0
-                ? dated(String(d.getUTCFullYear()))
-                : { text: MONTHS[d.getUTCMonth()]!, marker: false }
-            },
-            (t) => {
-              const d = new Date(t)
-              return dated(`${MONTHS[d.getUTCMonth()]} ${d.getUTCFullYear()}`)
-            },
-          ]
-  const labelled = (level: Level): TickLabel[] => times.map((t, i) => level(t, times[i - 1]))
-  // Valid: a marker label is unique on the axis; any other label repeats only after a marker.
-  const valid = (labels: TickLabel[]): boolean => {
-    const markers = new Set<string>()
-    const since = new Set<string>()
-    for (const { text, marker } of labels) {
-      if (marker ? markers.has(text) : since.has(text)) return false
-      if (marker) {
-        markers.add(text)
-        since.clear()
-      } else since.add(text)
-    }
-    return true
-  }
-  const chosen = levels.map(labelled).find(valid) ?? labelled(levels[levels.length - 1]!)
-  const byTime = new Map(times.map((t, i) => [t, chosen[i]!.text]))
-  const fallback = levels[0]!
-  return (v) =>
-    v instanceof Date
-      ? (byTime.get(v.getTime()) ?? fallback(v.getTime(), undefined).text)
-      : defaultFormatX(v)
-}
+export { utcAxisDate }
 
 export function defaultFormatX(v: ChartValue): string {
   if (v instanceof Date) return utcAxisDate(v)
@@ -411,11 +328,16 @@ export function xGuide<X extends ChartX>(opts: {
   const ladder = LADDER[cls]
   const inside = labelsInside(cls, height)
   const ticks = xTickPolicy(model, xTicks ?? ladder.xTicks)
-  const tickDates = 'values' in ticks ? ticks.values : []
-  const dates = tickDates.filter((v): v is Date => v instanceof Date)
+  // A Date axis always resolves to `values` (the time scale has an extent; a band axis lists its
+  // buckets), so `{ count }` is only ever a number axis and never needs the date formatter.
+  const tickValues = 'values' in ticks ? ticks.values : []
+  const dates = tickValues.every((v): v is Date => v instanceof Date) ? tickValues : []
+  const dateFormat = dates.length > 0 ? dateTickFormat(dates) : undefined
   const format =
     opts.format ??
-    (dates.length > 0 && dates.length === tickDates.length ? dateTickFormat(dates) : defaultFormatX)
+    (dateFormat
+      ? (v: ChartValue) => (v instanceof Date ? dateFormat(v) : defaultFormatX(v))
+      : defaultFormatX)
   // A continuous scale's domain start and span; a band scale pads its first slot, so none applies.
   const [leftEdgeX, spanX] =
     !model.band && model.extent

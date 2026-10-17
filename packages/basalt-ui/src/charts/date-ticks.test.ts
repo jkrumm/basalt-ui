@@ -1,6 +1,7 @@
 /** The default Date x labels follow the tick step and never repeat on one axis (ledger row 137). */
 import { describe, expect, test } from 'bun:test'
-import { compileCartesian, dateTickFormat, dateTicks } from './compile'
+import { compileCartesian, dateTicks } from './compile'
+import { dateTickFormat } from './date-tick-format'
 import type { ChartSeries } from './types'
 
 type Row = { t: Date; v: number }
@@ -13,7 +14,7 @@ function labels(
   starts: number,
   step: number,
   n: number,
-  opts: { formatX?: (d: Date) => string; width?: number } = {},
+  opts: { formatX?: (d: Date) => string; width?: number; band?: boolean } = {},
 ): string[] {
   const data: Row[] = Array.from({ length: n }, (_, i) => ({
     t: new Date(starts + i * step),
@@ -25,6 +26,7 @@ function labels(
     x: (d) => d.t,
     series: [v],
     marks: () => [],
+    ...(opts.band && { band: true }),
     ...(opts.formatX && { formatX: opts.formatX }),
   }).chart({ width: opts.width ?? 800, height: 240, defaultTheme: {} as never })
   const { values, format } = (spec.scales['x'] as unknown as Axis).axis.ticks
@@ -86,12 +88,44 @@ describe('dateTickFormat', () => {
     expect(read([q(2025, 3), q(2025, 9), q(2026, 3)])).toEqual(['Apr 2025', 'Oct 2025', 'Apr 2026'])
   })
 
-  test('d3 ticks for a 48 h domain read as the lead specifies', () => {
+  test("the time scale's own ticks for a 48 h domain read hours with the day on midnight", () => {
     const ticks = dateTicks([at(17, 12), at(19, 12)], 6, 3_600_000)
-    const out = read(ticks)
-    expect(out).toContain('18.10')
-    expect(out).toContain('19.10')
-    expect(out.some((l) => /^\d\d:\d\d$/.test(l))).toBe(true)
+    expect(read(ticks)).toEqual([
+      '12:00',
+      '18:00',
+      '18.10',
+      '06:00',
+      '12:00',
+      '18:00',
+      '19.10',
+      '06:00',
+      '12:00',
+    ])
+  })
+
+  test('one tick takes the span its instant implies', () => {
+    expect(read([at(17)])).toEqual(['17.10'])
+    expect(read([at(17, 6)])).toEqual(['06:00'])
+    expect(read([new Date(Date.UTC(2026, 0, 1))])).toEqual(['01.01'])
+  })
+
+  test('month-scale ticks that share a month fall to day labels, never repeating', () => {
+    const jan = [new Date(Date.UTC(2026, 0, 1)), new Date(Date.UTC(2026, 0, 31))]
+    expect(read(jan)).toEqual(['01.01', '31.01'])
+  })
+
+  test('sub-minute ticks widen to the second', () => {
+    const t = (s: number): Date => new Date(Date.UTC(2026, 9, 17, 6, 0, s))
+    expect(read([t(0), t(15), t(30)])).toEqual([
+      '17.10 06:00:00',
+      '17.10 06:00:15',
+      '17.10 06:00:30',
+    ])
+  })
+
+  test('a Date outside the tick set reads as plain DD.MM', () => {
+    const ticks = [at(17), at(18)]
+    expect(dateTickFormat(ticks)(at(20, 5))).toBe('20.10')
   })
 })
 
@@ -111,21 +145,8 @@ describe('default date tick labels', () => {
     expect(out.length).toBeLessThanOrEqual(6)
   })
 
-  test('a BandStrip with hourly buckets takes the same default', () => {
-    const labelsOfStrip = (): string[] => {
-      const data = Array.from({ length: 48 }, (_, i) => ({ t: new Date(oct17 + i * HOUR), v: 1 }))
-      const spec = compileCartesian({
-        chartId: 'strip-ticks',
-        data,
-        x: (d) => d.t,
-        series: [v],
-        marks: () => [],
-        band: true,
-      }).chart({ width: 800, height: 120, defaultTheme: {} as never })
-      const { values, format } = (spec.scales['x'] as unknown as Axis).axis.ticks
-      return values.map((t) => format(t))
-    }
-    const out = labelsOfStrip()
+  test('a band (BandStrip) axis takes the same default', () => {
+    const out = labels(oct17, HOUR, 48, { band: true })
     expect(noAdjacentRepeat(out)).toBe(true)
     expect(out).toContain('18.10')
   })
@@ -144,9 +165,16 @@ describe('default date tick labels', () => {
   })
 
   test('a 2-year monthly series carries the year on each January', () => {
-    const out = labels(Date.UTC(2025, 0, 1), 30 * DAY, 24)
-    expect(out.some((l) => /^20\d\d$/.test(l))).toBe(true)
-    expect(noAdjacentRepeat(out)).toBe(true)
+    expect(labels(Date.UTC(2025, 0, 1), 30 * DAY, 24)).toEqual([
+      '2025',
+      'Apr',
+      'Jul',
+      'Oct',
+      '2026',
+      'Apr',
+      'Jul',
+      'Oct',
+    ])
   })
 
   test('a consumer formatX still wins', () => {
