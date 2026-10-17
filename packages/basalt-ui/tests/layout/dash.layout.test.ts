@@ -9,6 +9,7 @@ import type { LayoutPage } from './harness'
 import {
   CLOSE_BUDGET_MS,
   DESKTOP_1440,
+  PHONE,
   closeLayoutSuite,
   initLayoutSuite,
   openFixture,
@@ -290,8 +291,12 @@ layout('Meter / BarList geometry', () => {
       const root = document.querySelector('[data-testid="dash-bar-thin"]')
       const label = root?.querySelector<HTMLElement>('li [title]')
       const word = root?.querySelector<HTMLElement>('[data-verdict-word]')
-      const value = root?.querySelector<HTMLElement>('li > span:nth-child(2)')
-      if (!root || !label || !word || !value) throw new Error('LAYOUT: no thin BarList probe')
+      if (!root || !label || !word) throw new Error('LAYOUT: no thin BarList probe')
+      const probe = document.createElement('span')
+      probe.style.fontFamily = 'var(--basalt-font-mono)'
+      root.append(probe)
+      const monoFont = getComputedStyle(probe).fontFamily
+      probe.remove()
       const style = getComputedStyle(label)
       return {
         labelWidth: label.getBoundingClientRect().width,
@@ -301,14 +306,14 @@ layout('Meter / BarList geometry', () => {
         truncated: label.scrollHeight > label.clientHeight + 1,
         title: label.getAttribute('title'),
         secondaryFont: getComputedStyle(word).fontFamily,
-        valueFont: getComputedStyle(value).fontFamily,
+        monoFont,
       }
     })
     expect(m.labelWidth).toBeGreaterThanOrEqual(110)
     expect(m.clamp).toBe('2')
     expect(m.labelHeight).toBeLessThanOrEqual(2 * m.lineHeight + 1)
     expect(m.title).not.toBeNull()
-    expect(m.secondaryFont).toBe(m.valueFont)
+    expect(m.secondaryFont).not.toBe(m.monoFont)
   })
 
   test("a ChartCard error is StatCard's anatomy and the card grows to hold its action", async () => {
@@ -331,6 +336,26 @@ layout('Meter / BarList geometry', () => {
     expect(m.textAlign).not.toBe('center')
     expect(m.align).toBe('flex-start')
     expect(m.actionInside).toBe(true)
+  })
+
+  test('at 390 on a coarse pointer the ChartCard error still holds its action inside the card', async () => {
+    const phone = await openFixture(SPEC, PHONE)
+    await phone.settle()
+    const m = await phone.raw.evaluate(() => {
+      const root = document.querySelector('[data-testid="dash-chart-error"]')
+      const action = root?.querySelector<HTMLElement>('button')
+      const body = action?.closest<HTMLElement>('[role="alert"]')?.parentElement?.parentElement
+      if (!root || !action || !body) throw new Error('LAYOUT: no phone chart error probe')
+      const a = action.getBoundingClientRect()
+      const c = root.getBoundingClientRect()
+      return {
+        coarse: matchMedia('(pointer: coarse)').matches,
+        inside: a.top >= c.top && a.bottom <= c.bottom && a.left >= c.left && a.right <= c.right,
+        // Not clipped by the body either: the body is at least as tall as its content.
+        bodyHolds: body.scrollHeight <= body.clientHeight + 1,
+      }
+    })
+    expect(m).toEqual({ coarse: true, inside: true, bodyHolds: true })
   })
 
   test('a Meter caption row wraps at a narrow width without truncating', async () => {

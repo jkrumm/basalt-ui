@@ -13,7 +13,7 @@
 
 .readout {
   position: absolute;
-  bottom: calc(100% + 2px);
+  bottom: 100%;
   z-index: 1;
   max-width: 100%;
   box-sizing: border-box;
@@ -22,7 +22,10 @@
   font-family: var(--basalt-font-numeral, var(--basalt-font-sans));
   font-variant-numeric: lining-nums;
   font-size: var(--vx-text-xs);
-  line-height: 1.25;
+  /* The line a host slot reserves above the plot: it sets `--basalt-spark-readout-h` to the same
+   * value (`stat-card.module.css`, `stat-strip.module.css`), so the chip lands in reserved space. */
+  block-size: var(--basalt-spark-readout-h, 1.125rem);
+  line-height: calc(var(--basalt-spark-readout-h, 1.125rem) - 2px);
   color: var(--vx-tooltip-text);
   text-overflow: ellipsis;
   white-space: nowrap;

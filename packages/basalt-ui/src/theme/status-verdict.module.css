@@ -1,11 +1,13 @@
 /* A status dot plus its word: the dot carries the colour, the word is muted ink. `flex: none` keeps
- * it whole when a neighbouring caption or title truncates. */
+ * it whole when a neighbouring caption or title truncates. The word is the proportional sans, at the
+ * micro size: it is a sentence fragment ("Blocked · Waits on the API change"), not an UPPERCASE
+ * caption, so it never takes the mono. */
 .verdict {
   display: inline-flex;
   flex: none;
   align-items: center;
   gap: 5px;
-  font-family: var(--basalt-font-mono);
+  font-family: var(--basalt-font-sans);
   font-size: var(--vx-text-micro);
   color: var(--vx-muted);
 }

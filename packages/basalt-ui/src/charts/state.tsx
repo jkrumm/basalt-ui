@@ -54,12 +54,12 @@ const errorStyle: CSSProperties = {
   alignItems: 'flex-start',
   textAlign: 'start',
   fontSize: VX.text.sm,
-  gap: 8,
+  gap: VX.space.controlGap,
 }
 const errorHeadStyle: CSSProperties = {
   display: 'inline-flex',
   alignItems: 'center',
-  gap: 6,
+  gap: VX.space.controlGap,
   color: VX.ink,
   fontWeight: 500,
 }

@@ -987,11 +987,12 @@ function ChartsFixture({ spec }: { spec: ChartsSpec }): ReactElement {
         {...height}
       />
     ) : spec.kind === 'spark' && spec.sparkIn !== undefined ? (
-      <div style={{ width: 300 }}>
-        {spec.sparkIn === 'card' ? (
+      <div style={{ width: spec.sparkIn === 'right' ? 520 : 300 }}>
+        {spec.sparkIn === 'card' || spec.sparkIn === 'right' ? (
           <StatCard
             title="Slot"
             value="12"
+            {...(spec.sparkIn === 'right' && { sparklinePlacement: 'right' as const })}
             sparkline={(size) => <Sparkline ariaLabel="Slot spark" data={SLOT_SPARK} {...size} />}
           />
         ) : (
