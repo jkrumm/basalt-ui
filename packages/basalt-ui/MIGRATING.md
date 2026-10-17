@@ -1051,12 +1051,16 @@ release renames it and opens a new one here._
 The default x tick labels of a Date axis (`CartesianChart`, so `Lines`, `Bars`, `StackedArea`) follow
 the tick step instead of printing `DD.MM` everywhere, and never repeat on one axis. Reads stay UTC.
 
-| Tick step            | Old                   | New                                                                           |
-| -------------------- | --------------------- | ----------------------------------------------------------------------------- |
-| under a day          | `17.10`, `17.10`, ... | `HH:MM`, with `DD.MM` on the midnight tick                                    |
-| days                 | `DD.MM`               | `DD.MM` (unchanged)                                                           |
-| a month or more      | `DD.MM`               | `Oct`, the year on January (`2027`)                                           |
-| would repeat a label | -                     | widens: `17.10 06:00` for sub-day, `DD.MM.YY` for days, `Oct 2026` for months |
+| Tick step | Old                   | New                                                                        |
+| --------- | --------------------- | -------------------------------------------------------------------------- |
+| sub-day   | `17.10`, `17.10`, ... | `HH:MM`, `DD.MM` on each midnight tick (`12:00, 18:00, 18.10, 06:00, ...`) |
+| days      | `DD.MM`               | `DD.MM` (unchanged)                                                        |
+| months+   | `DD.MM`               | `Oct`, the year on each January (`2027`)                                   |
+
+A clock or month may recur on one axis, always behind a day or year label. With no such marker in
+reach (36 h with no midnight tick; two Aprils with no January) the first tick of each day carries
+its date (`17.10 06:00`), or the month its year (`Apr 2026`). `BandStrip` takes the same default;
+`DualPanel` and `MirroredBars` format their own x axis and keep `DD.MM`.
 
 Opt out: pass `formatX` (it always wins), e.g. the old one-liner:
 
