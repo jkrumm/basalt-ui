@@ -1113,6 +1113,10 @@ every `Card` and `Paper`. Before, a bare `<Card>` got Mantine's 16 px all round 
 - `basalt/card-inset` stays at `warn` (grace → 2.26.0); the redundant pair is a new finding, so a
   codebase that was clean last release will report until the pairs are deleted.
 
+### `DeltaBadge` `period` composes "vs <period>"
+
+`period` (and `deltaPeriod` on `StatCard`, `WidgetHeader`, `Section`) now renders `vs <period>`: `period="MoM"` reads "vs MoM" where it read "MoM". A period that already starts with the prefix is left alone, so a caller passing `"vs last week"` still renders "vs last week", not "vs vs last week". **Opt out** with `periodPrefix=""` on `DeltaBadge` (renders the period raw), or pass your locale's word (`periodPrefix="gegenüber"`). Drop the hand-written "vs " at your leisure.
+
 ## 2.19.0 — the status dot, ink buttons and Meter refinements
 
 ### Status is a dot and a word, not an edge stripe (`StatCard`, `Callout`, notification centre)

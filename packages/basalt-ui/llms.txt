@@ -82,6 +82,7 @@ Signature: DeltaBadge(props: DeltaBadgeProps): JSX.Element
   format?: (value: number) => string
   withGlyph?: boolean
   period?: string
+  periodPrefix?: string
 Signature: EmptyState(props: EmptyStateProps): JSX.Element
   className?: string
   style?: CSSProperties

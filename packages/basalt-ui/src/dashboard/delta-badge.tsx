@@ -23,6 +23,7 @@
  * <DeltaBadge value={0} />                              // 0.0%, faint, no glyph
  * <DeltaBadge value={182} format={(v) => `${Math.abs(v)}ms`} withGlyph={false} />
  * <DeltaBadge value={35.9} polarity="up-bad" />         // ▲ 35.9%, danger — a rise is bad here
+ * <DeltaBadge value={4.2} period="last week" />         // ▲ 4.2% vs last week
  */
 import { VX } from '../tokens'
 import classes from './widget-header.module.css'
@@ -41,12 +42,22 @@ export type DeltaBadgeProps = {
   format?: (value: number) => string
   /** Render the ▲/▼ direction glyph. Defaults to `true`; a zero value never shows a glyph. */
   withGlyph?: boolean
-  /** Optional comparison timeframe rendered directly after the value, muted (e.g. `MoM`, `WoW`,
-   * `YTD`) — states what the delta is measured against without a hover. */
+  /** Optional comparison period rendered after the value, muted, as `<periodPrefix> <period>`
+   * (`period="last week"` → "vs last week"). One rule: the prefix is prepended unless the period
+   * already starts with it, so a caller still writing "vs last week" renders it once. */
   period?: string | undefined
+  /** The word composed before `period`. Defaults to `'vs'`; pass your locale's word, or `''` to
+   * render `period` raw. */
+  periodPrefix?: string
 }
 
 const defaultFormat = (value: number): string => `${Math.abs(value).toFixed(1)}%`
+
+function composePeriod(period: string, prefix: string): string {
+  if (prefix === '') return period
+  const lead = `${prefix} `.toLowerCase()
+  return period.toLowerCase().startsWith(lead) ? period : `${prefix} ${period}`
+}
 
 function resolveTone(value: number, polarity: DeltaPolarity): string {
   if (value === 0 || polarity === 'neutral') return VX.faint
@@ -68,6 +79,7 @@ export function DeltaBadge({
   format = defaultFormat,
   withGlyph = true,
   period,
+  periodPrefix = 'vs',
 }: DeltaBadgeProps) {
   const tone = resolveTone(value, polarity)
   const glyph = directionGlyph(value)
@@ -77,7 +89,9 @@ export function DeltaBadge({
     <span className={classes.deltaBadge} style={{ color: tone }}>
       {showGlyph && <span className={classes.deltaGlyph}>{glyph}</span>}
       {format(value)}
-      {period !== undefined && <span className={classes.deltaPeriod}>{period}</span>}
+      {period !== undefined && (
+        <span className={classes.deltaPeriod}>{composePeriod(period, periodPrefix)}</span>
+      )}
     </span>
   )
 }
