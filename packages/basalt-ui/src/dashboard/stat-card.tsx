@@ -1,31 +1,35 @@
 /**
- * StatCard — the KPI atom (docs/DESIGN-SPEC.md §5, docs/CONTROLS-SPEC.md §2.2): a panel +
- * shadow-card + card-radius card (spacing sm/md inset, no min-height — the content states the
- * height, ~88-96px for the title/hero/trend shape). The header composes
- * `WidgetHeader tier="widget"` — title/icon/value/delta/deltaPeriod all render through it, on the
- * shared hero-metric row under the title. `actions` (e.g. a ghost "..." menu trigger) is wrapped in
- * `CtlSlot tier="widget"` — the 24px ActionIcon step the 28px widget header row can hold, not the
- * 30px `ctl` tier, which used to grow the row and knock a card with a kebab 2px out of line with the
- * card beside it. `StatCard` is Mantine-coupled (`src/dashboard/`), unlike `ChartCard`, so it can
- * mount the slot at all; `ChartCard` writes the same `data-basalt-tier="widget"` marker by hand.
+ * StatCard — the metric card (docs/waves/design-parity/SPEC.md § 6.1): a panel + shadow-card +
+ * card-radius card (inset `cardInsetY`/`cardInsetX`, no min-height) holding, top to bottom,
  *
- * `sparklinePlacement` decides where the trend visual sits: `'bleed'` (default) keeps the historic
- * full-width row beneath the hero value, bled past the card's own inset padding; `'right'` sits it
- * beside the hero row, the reference-design look. In a card narrower than 480px, `'right'` collapses back to the
- * `'bleed'` layout — CSS only, no JS branch (`stat-card.module.css`).
+ *  1. the CAPTION row — `title` as a mono uppercase `micro` faint label, the optional `info` glyph,
+ *     `qualifier` right-aligned (period, target or source; it wraps UNDER the caption when the card
+ *     is too narrow for both), and the `actions` slot;
+ *  2. the VALUE row — the hero figure (`kpi`, mono 500), `unit` inline at `sm` muted on the same
+ *     baseline, then the delta (text only — see `DeltaBadge`) and its muted `deltaPeriod`;
+ *  3. the FOOT — the `sparkline` visual (22 px, bled to the card's side edges) and one muted `sm`
+ *     `subtitle` line under it (a source or "as of", never a restatement of the caption).
  *
- * `info` and `subtitle` are forwarded to that same `WidgetHeader`, and a hero KPI usually wants
- * both: `value` is typed `string`, so the unit and the basis have nowhere else to go — `subtitle`
- * carries them as a muted line, and `info` puts "how this number is computed" behind the glyph
- * beside the title instead of inside the heading's accessible name.
+ * Exactly three type sizes: `micro` (caption, qualifier, delta period), `sm` (unit, delta, footer)
+ * and the hero. The foot reserves the height of a visual plus a footer line whenever either is
+ * present, so cards in one grid row share a footprint with or without a visual.
  *
- * `src/dashboard` stays chart-free — `sparkline` is a plain `ReactNode` slot, never a chart import
- * here. Pass your own sparkline at the call site (basalt ships no `Sparkline` kind in 2.0.0).
+ * `StatCard` renders this anatomy itself (it no longer goes through `WidgetHeader`, whose head-font
+ * title is `ChartCard`'s and the section headers'). `InfoGlyph` and `DeltaBadge` are the shared parts.
  *
- * `query` hands the card's pending/error/empty branch to `QueryState` at the `'section'` tier,
- * rendered under the header rather than over it — the title row is chrome and must not flicker. The
- * same query also reaches a render-prop `sparkline` as `size.state`, so `<Sparkline {...size} />`
- * shows its sized pending / error placeholder with no hand-rolled `'—'`.
+ * `sparklinePlacement` decides where the trend visual sits: `'bleed'` (default) puts it in the foot,
+ * full card width; `'right'` sits it beside the `breakdown` rows below the value row, a fixed 72×22
+ * slot. In a card narrower than 480px, `'right'` collapses back to the `'bleed'` layout — CSS only.
+ *
+ * `src/dashboard` stays chart-free — `sparkline` is a plain `ReactNode` slot (or a render prop over
+ * the slot's measured box), never a chart import here. Pass `<Sparkline>` from `basalt-ui/charts` at
+ * the call site: its defaults (end dot in the line neutral, 1.5 stroke, no axes) are made for this slot.
+ *
+ * `query` drives the card's branches at the card's own footprint: pending shows a skeleton (caption,
+ * value bar, visual slot — never a spinner), failed-with-no-data replaces the value row with the
+ * `QueryState` error (one sentence + Retry), and an empty result replaces it with one muted line
+ * (`emptyText`). `loading` shows the same skeleton with no query at all. The caption row stays put
+ * in every branch.
  *
  * `tone` marks the card as past a threshold with an accent rail down its leading edge. It exists
  * because `value` is typed `string`: without it, a card whose number has crossed a threshold reads
@@ -41,45 +45,37 @@
  *
  * @example
  * import { StatCard } from 'basalt-ui'
+ * import { Sparkline } from 'basalt-ui/charts'
  *
  * // `sparkline` is a RENDER PROP over the slot's measured box, so full-bleed is genuinely the
  * // card's width — no measuring wrapper component, no hardcoded pixel value.
  * <StatCard
- *   title="Active Users"
+ *   title="Active users"
+ *   qualifier="30 days"
  *   value="12,483"
  *   delta={4.2}
- *   sparkline={({ width, height }) => <MySparkline data={history} width={width} height={height} />}
+ *   deltaPeriod="MoM"
+ *   subtitle="Source: events table"
+ *   sparkline={(size) => <Sparkline ariaLabel="Active users" data={history} {...size} />}
  * />
  *
  * @example
- * // The reference-design look — sparkline beside the hero value row instead of bled below it. The
- * // slot is a fixed 72×26 there, so the render prop still receives the box it should draw into.
- * <StatCard
- *   title="Active Users"
- *   value="12,483"
- *   delta={4.2}
- *   sparklinePlacement="right"
- *   sparkline={({ width, height }) => (
- *     <MySparkline data={history} width={width} height={height} ariaLabel="Active users trend" />
- *   )}
- * />
- *
- * @example
- * // A hero card: the unit on its own muted line, the method behind the info glyph.
+ * // The unit inline, the method behind the info glyph.
  * <StatCard
  *   title="Training load"
+ *   qualifier="7-day rolling"
  *   value="412"
- *   subtitle="TSS · 7-day rolling"
+ *   unit="TSS"
  *   info="Sum of per-session TSS over the last 7 days, Garmin-reported."
  * />
  *
  * @example
- * // Past a threshold — an accent rail down the leading edge, value untouched.
- * <StatCard title="Downtime" value="29 min" tone="bad" />
+ * // A pending card with no query: the skeleton at the card's own footprint.
+ * <StatCard title="Active users" value="—" loading sparkline={() => null} />
  *
  * @example
- * // The earned zero — a measured value worth asserting, not a card that merely has no reading.
- * <StatCard title="Downtime · last 24h" value="0 min" tone="good" />
+ * // Past a threshold — an accent rail down the leading edge, value untouched.
+ * <StatCard title="Downtime" value="29 min" tone="bad" />
  *
  * @example
  * // The honest gate. A zero can be synthesized as well as measured — a downtime figure derived
@@ -88,21 +84,24 @@
  * // about a reading, so the gate belongs on whether a reading exists, not on whether the number
  * // happens to be defined — those are separate facts. Gate on measured coverage instead:
  * <StatCard
- *   title="Downtime · last 24h"
+ *   title="Downtime"
+ *   qualifier="24 h"
  *   value={`${downtimeMinutes} min`}
  *   tone={hasCoverage ? (downtimeMinutes === 0 ? 'good' : 'bad') : undefined}
  * />
  */
-import { Box, Card, VisuallyHidden } from '@mantine/core'
-import { useEffect, useRef, useState } from 'react'
+import { Box, Card, Skeleton, VisuallyHidden } from '@mantine/core'
+import { useEffect, useState } from 'react'
 import type { CSSProperties, ReactNode } from 'react'
-import { WidgetHeader } from './widget-header'
+import { InfoGlyph } from './widget-header'
 import type {
   WidgetHeaderDeltaProps,
   WidgetHeaderMetricProps,
   WidgetHeaderTitleProps,
 } from './widget-header'
+import { DeltaBadge } from './delta-badge'
 import { CtlSlot } from '../theme'
+import { IconSlot } from '../theme/icon-slot'
 import { VX } from '../tokens'
 import { cx } from '../common/props'
 import type { BasaltProps, SlotStylesProps, Tone } from '../common/props'
@@ -112,9 +111,8 @@ import { assertQueryStateLike } from '../common/query-state-like'
 import classes from './stat-card.module.css'
 
 /**
- * The four boxes `StatCard` paints, and the whole styling seam it offers (`common/props.ts`).
- * `value` is not its own slot: the hero number is painted by `WidgetHeader`'s internal metrics row,
- * which does not yet accept a slot class of its own.
+ * The boxes `StatCard` paints, and the whole styling seam it offers (`common/props.ts`).
+ * `value` is not its own slot: the hero number is painted inside the `header` box.
  */
 export type StatCardSlot = 'root' | 'header' | 'body' | 'sparkline'
 
@@ -134,15 +132,14 @@ export type StatCardBreakdownRow = {
 
 /**
  * The `'right'` placement's slot width, in px — a flex BASIS, not a fixed size. 72 is the reference
- * KPI card's trend width and the slot asks for exactly that; when the hero row needs the space (a
- * long formatted value plus a delta badge in a 4-up grid) the slot is the side that yields, because
- * the number is the card's content and the trend qualifies it. The render prop is handed the
- * MEASURED width either way, so the bars are drawn at the width they actually got — the previous
- * fixed 72 painted over the value instead.
+ * KPI card's trend width and the slot asks for exactly that; when the value row needs the space (a
+ * long formatted value plus a delta in a 4-up grid) the slot is the side that yields, because the
+ * number is the card's content and the trend qualifies it. The render prop is handed the MEASURED
+ * width either way, so the bars are drawn at the width they actually got.
  */
 const SPARKLINE_RIGHT_WIDTH = 72
-/** The `'right'` placement's slot height — sized to the hero row it sits beside, not to the card. */
-const SPARKLINE_RIGHT_HEIGHT = 26
+/** The sparkline slot's height in both placements (SPEC § 6.2: 26 → 22). */
+const SPARKLINE_HEIGHT = 22
 
 /**
  * The measured box a `sparkline` render prop receives.
@@ -156,13 +153,6 @@ const SPARKLINE_RIGHT_HEIGHT = 26
 export type StatCardSparklineSize = {
   width: number
   height: number
-  /**
-   * The card's `query` as a chart state — present only while the sparkline has nothing to draw
-   * (pending, or failed with no data), so `<Sparkline {...size} />` forwards it and the tile shows a
-   * sized placeholder instead of a hand-rolled `'—'`. Structurally a `ChartState`: this module
-   * stays chart-free. Absent without a `query`, and once data has arrived.
-   */
-  state?: { pending?: boolean; error?: unknown; empty?: boolean }
 }
 
 /**
@@ -177,10 +167,11 @@ function useSlotWidth(active: boolean): {
   width: number
 } {
   const [width, setWidth] = useState(0)
-  const nodeRef = useRef<HTMLDivElement | null>(null)
+  // State, not a ref: the slot mounts and unmounts with the card's branch (skeleton → figure), so
+  // the effect must re-run when the node itself changes, not only when `active` does.
+  const [node, setNode] = useState<HTMLDivElement | null>(null)
 
   useEffect(() => {
-    const node = nodeRef.current
     if (!active || node === null) return
     const measure = () => {
       setWidth(node.getBoundingClientRect().width)
@@ -192,26 +183,30 @@ function useSlotWidth(active: boolean): {
     return () => {
       observer.disconnect()
     }
-  }, [active])
+  }, [active, node])
 
-  return {
-    ref: (node) => {
-      nodeRef.current = node
-    },
-    width,
-  }
+  return { ref: setNode, width }
 }
 
-/** The `query` as a sparkline state, by the same precedence as {@link QueryState}: an error with no
- * data is an error, no data and not idle is pending, anything else draws. */
-function sparklineState(
-  query: QueryStateLike<unknown> | undefined,
-): StatCardSparklineSize['state'] {
-  if (query === undefined) return undefined
+/** Which of the card's four bodies the `query` asks for, by `QueryState`'s precedence. */
+type QueryBranch = 'ready' | 'pending' | 'error' | 'empty'
+
+/** `[]` and `{ data: [] }` (the pagination envelope) are empty; any other defined value is data. */
+function isEmptyData(data: unknown): boolean {
+  if (Array.isArray(data)) return data.length === 0
+  if (typeof data === 'object' && data !== null && Array.isArray((data as { data?: unknown }).data))
+    return (data as { data: unknown[] }).data.length === 0
+  return false
+}
+
+function queryBranch(query: QueryStateLike<unknown> | undefined): QueryBranch {
+  if (query === undefined) return 'ready'
   assertQueryStateLike('StatCard', query)
-  if (query.data !== undefined) return undefined
-  if (query.isError) return { error: query.error ?? true }
-  return query.fetchStatus === 'idle' ? undefined : { pending: true }
+  if (query.data === undefined) {
+    if (query.isError) return 'error'
+    return query.fetchStatus === 'idle' ? 'empty' : 'pending'
+  }
+  return isEmptyData(query.data) ? 'empty' : 'ready'
 }
 
 /** The rail's width, in px. Wide enough to read as a deliberate mark at a glance, narrow enough
@@ -241,12 +236,34 @@ const TONE_LABEL: Record<Tone, string> = {
  */
 export type StatCardProps = BasaltProps &
   SlotStylesProps<StatCardSlot> &
-  WidgetHeaderTitleProps &
+  Omit<WidgetHeaderTitleProps, 'subtitle'> &
   Omit<WidgetHeaderMetricProps, 'value'> &
   WidgetHeaderDeltaProps & {
-    /** Pre-formatted KPI value string (mono ~24px, weight 600, ink) — the hero-row value. Required
-     * here, unlike on `WidgetHeader`: see the type's own doc. */
+    /** Pre-formatted hero figure (mono `kpi`, weight 500, ink). Required here, unlike on
+     * `WidgetHeader`: see the type's own doc. */
     value: string
+    /**
+     * Right-aligned on the caption row, `micro` muted: the period, target or source the figure is
+     * measured over (`30 days`, `target 99.9%`). Wraps under the caption when the card is too narrow
+     * for both. Not a restatement of the caption.
+     */
+    qualifier?: string
+    /**
+     * One muted `sm` line in the foot, under the visual: a source or "as of"
+     * (`Source: events table`, `as of 14:02`), never a restatement of the caption. It was a line
+     * under the title before; the old placement has no replacement — put the text in `qualifier`
+     * (period/target) or `info` (method).
+     */
+    subtitle?: string
+    /**
+     * Shows the skeleton at the card's own footprint (caption stays, value bar, visual slot) without
+     * a query — for a streamed or suspended value. With a `query` the pending branch shows it by
+     * itself. No spinner ever renders inside a card.
+     */
+    loading?: boolean
+    /** The one muted line the empty branch shows in place of the figure. Say why it is empty.
+     * Default `No data for this period`. */
+    emptyText?: string
     /**
      * The parts the hero number is made of — compact rows under it, one line each, no hairlines.
      *
@@ -262,15 +279,16 @@ export type StatCardProps = BasaltProps &
      */
     breakdown?: readonly StatCardBreakdownRow[]
     /**
-     * The async result behind the number. Supplied, the card renders its pending / error / empty
-     * branch through {@link QueryState} at the `'section'` tier, INSIDE the card body and directly
-     * under the header — so the title, the icon and the info glyph stay put while the reading below
-     * them resolves. Omitted, the card renders exactly as it always has (audit B #3).
+     * The async result behind the number. Supplied, the card picks its body from it, at the card's
+     * own footprint and with the caption row untouched:
      *
-     * It exists because the alternative every consumer wrote is the four-way switch `QueryState`
-     * exists to delete, and got it wrong in the direction that renders "no data" over a 500. The
-     * BRANCH is basalt's; the number is not — `value` is still whatever you formatted, so pass a
-     * placeholder (`'—'`) while the query is pending rather than a stale one.
+     *  - pending → the skeleton (caption, value bar, visual slot), never a spinner;
+     *  - error with no data → `QueryState`'s error at the `'section'` tier: one sentence and Retry;
+     *  - empty (`[]`, `{ data: [] }`, or idle with no data) → one muted line, {@link emptyText};
+     *  - data → the figure, with `breakdown` behind `QueryState` (so a failed background refetch
+     *    shows its "cached data" banner).
+     *
+     * The BRANCH is basalt's; the number is not — `value` is still whatever you formatted.
      *
      * @example
      * <StatCard title="Active users" value={q.data ? fmt(q.data.count) : '—'} query={q} />
@@ -282,22 +300,23 @@ export type StatCardProps = BasaltProps &
      * Prefer the render prop for any SVG sparkline: those take numeric `width`/`height`
      * (SVG attributes), so a plain node has to hardcode a width, and a hardcoded width is not
      * full-bleed on any viewport but the one it was typed on. With `sparklinePlacement="bleed"` the
-     * measured width is the card's own inner width including the bled inset; with `'right'` it is the
-     * fixed 72×26 slot (see {@link SPARKLINE_RIGHT_WIDTH} for why that one is not measured).
+     * measured width is the card's own inner width including the bled inset, 22 px tall; with
+     * `'right'` it is the 72×22 slot (see {@link SPARKLINE_RIGHT_WIDTH} for why the width is a basis).
      *
      * A render prop is a sanctioned pattern here, so `react/no-unstable-nested-components` is
-     * configured with `allowAsProps` in the shipped preset. Spread the size (`{...size}`) to forward
-     * `state` along with the box.
+     * configured with `allowAsProps` in the shipped preset. Spread the size (`{...size}`) into the
+     * chart.
      *
      * @example
      * sparkline={(size) => <Sparkline ariaLabel="Active users" data={history} {...size} />}
      */
     sparkline?: ReactNode | ((size: StatCardSparklineSize) => ReactNode)
-    /** Where `sparkline` sits. `'bleed'` (default) is today's full-width row bled to the card edges;
-     * `'right'` sits it beside the hero value row. Collapses to `'bleed'` in a card narrower than 480px. */
+    /** Where `sparkline` sits. `'bleed'` (default) is the foot, full card width, bled to the side
+     * edges; `'right'` sits it beside the `breakdown` rows. Collapses to `'bleed'` in a card narrower
+     * than 480px. */
     sparklinePlacement?: 'bleed' | 'right'
-    /** Header-right slot (e.g. a ghost "..." menu trigger) — wrapped in `CtlSlot tier="widget"`, so a
-     * raw `ActionIcon` with no `size` lands on the 24px step the 28px header row holds (C1/C5). */
+    /** Caption-row right slot (e.g. a ghost "..." menu trigger) — wrapped in `CtlSlot tier="widget"`,
+     * so a raw `ActionIcon` with no `size` lands on the 24px step the caption row holds (C1/C5). */
     actions?: ReactNode
     /** Threshold verdict — draws an accent rail down the card's leading edge and announces itself to
      * assistive tech. Omitting it is NOT `'good'`: omitted covers a reading that is fine AND one that
@@ -309,12 +328,15 @@ export type StatCardProps = BasaltProps &
 export function StatCard({
   title,
   icon,
-  subtitle,
   info,
+  qualifier,
+  subtitle,
   value,
   unit,
   breakdown,
   query,
+  loading = false,
+  emptyText = 'No data for this period',
   delta,
   deltaPeriod,
   deltaPolarity,
@@ -332,12 +354,9 @@ export function StatCard({
   const bleeds = sparklinePlacement === 'bleed'
   // Only a render prop needs a measurement; a plain node sizes itself.
   const { ref: slotRef, width: slotWidth } = useSlotWidth(isRender)
-  const state = sparklineState(query)
-  const measured: StatCardSparklineSize = {
-    width: slotWidth,
-    height: SPARKLINE_RIGHT_HEIGHT,
-    ...(state !== undefined && { state }),
-  }
+  const branch = queryBranch(query)
+  const pending = loading || branch === 'pending'
+  const measured: StatCardSparklineSize = { width: slotWidth, height: SPARKLINE_HEIGHT }
 
   // A `<dl>`, not a table and not a stack of divs: each row IS a term and its value, which is the
   // one semantic that survives a reader meeting the card out of context.
@@ -357,9 +376,8 @@ export function StatCard({
       </dl>
     )
 
-  // Wraps `breakdownRows` in `QueryState` when a query is supplied — computed once, consumed by
-  // whichever placement branch below actually renders it (`bleed` inside `.header`, `right` inside
-  // `.metricsRow`), never both.
+  // Behind `QueryState` when a query is supplied, so an error WITH data shows its "cached data"
+  // banner. Computed once, consumed by whichever placement branch below renders it, never both.
   const breakdownContent: ReactNode =
     query === undefined ? (
       breakdownRows
@@ -381,12 +399,11 @@ export function StatCard({
           // CUSTOM PROPERTIES, not `flexBasis`/`height` directly. A React inline style beats every
           // stylesheet rule, so an inline `flexBasis: 72` also applied in a narrow card — where `'right'`
           // collapses `.metricsRow` to a COLUMN and flex-basis is therefore the main-axis HEIGHT.
-          // The mobile sparkline rendered in a 72px-tall box holding 26px of bars, which is the dead
-          // band under every KPI value on a phone. Handed to CSS as values instead, the media query
-          // can reset the box and the numbers still live in one place.
+          // Handed to CSS as values instead, the container query can reset the box and the numbers
+          // still live in one place.
           style: {
             '--basalt-stat-sparkline-w': `${SPARKLINE_RIGHT_WIDTH}px`,
-            '--basalt-stat-sparkline-h': `${SPARKLINE_RIGHT_HEIGHT}px`,
+            '--basalt-stat-sparkline-h': `${SPARKLINE_HEIGHT}px`,
           } as CSSProperties,
         })}
       >
@@ -395,6 +412,59 @@ export function StatCard({
         {isRender ? measured.width > 0 && sparkline(measured) : sparkline}
       </div>
     )
+
+  const figure = (
+    <div className={classes.valueRow}>
+      <span className={classes.figure}>
+        <span className={classes.value}>{value}</span>
+        {unit !== undefined && <span className={classes.unit}>{unit}</span>}
+      </span>
+      {delta !== undefined && (
+        <DeltaBadge
+          value={delta}
+          period={deltaPeriod}
+          {...(deltaPolarity !== undefined && { polarity: deltaPolarity })}
+          {...(deltaFormat !== undefined && { format: deltaFormat })}
+          {...(deltaGlyph !== undefined && { withGlyph: deltaGlyph })}
+        />
+      )}
+    </div>
+  )
+
+  // The value row's body per branch. The caption row above it is identical in all of them.
+  let valueBody: ReactNode
+  if (pending) {
+    valueBody = <Skeleton className={classes.skeletonValue} radius="sm" />
+  } else if (branch === 'error' && query !== undefined) {
+    valueBody = (
+      <QueryState query={query} tier="section" errorTitle="Could not load this figure">
+        {null}
+      </QueryState>
+    )
+  } else if (branch === 'empty') {
+    valueBody = <p className={classes.empty}>{emptyText}</p>
+  } else {
+    valueBody = figure
+  }
+  const ready = !pending && branch === 'ready'
+
+  // The foot holds a visual and a footer line whenever either exists, at a fixed height, so a card
+  // with a sparkline and no footer and one with both are the same height (SPEC § 6.1 footprint).
+  const hasVisual = sparkline !== undefined && bleeds
+  const hasFoot = hasVisual || subtitle !== undefined
+  const foot = hasFoot && (
+    <div className={classes.foot}>
+      {pending
+        ? hasVisual && <Skeleton className={classes.skeletonVisual} />
+        : ready && bleeds && sparklineNode}
+      {subtitle !== undefined &&
+        (pending ? (
+          <Skeleton className={classes.skeletonFooter} radius="sm" />
+        ) : (
+          <p className={classes.footer}>{subtitle}</p>
+        ))}
+    </div>
+  )
 
   return (
     <Card
@@ -408,21 +478,16 @@ export function StatCard({
         //
         // `overflow: hidden` clips the full-bleed sparkline to the card's rounded corners. An
         // element's own `box-shadow` renders outside its border box and is NOT clipped by its own
-        // `overflow`, so the shadow-card ring is unaffected (verified — only an ANCESTOR's overflow
-        // clips a descendant's shadow). Mantine's Card root already sets `overflow: hidden`; this
-        // is explicit for intent.
+        // `overflow`, so the shadow-card ring is unaffected.
         //
-        // NO `minHeight`. It was 118px, which is ~25px of dead space under a card holding a title
-        // row, a hero row and a 26px trend — and it was dead space the card could not use, since the
-        // body is `height: 100%` and the sparkline is `margin-top: auto`. The content is what states
-        // the height now (~88-96px), and four cards in a `SimpleGrid` still match because a grid row
-        // stretches its items.
+        // NO `minHeight`: the content states the height (the foot reserves its own), and cards in a
+        // grid row stretch to the tallest.
         padding: 'var(--vx-space-card-inset-y, 0.75rem) var(--vx-space-card-inset-x, 1rem)',
         overflow: 'hidden',
         // Anchors the tone rail. Set unconditionally so a card's stacking context does not change
         // depending on whether it happens to have crossed a threshold this render.
         position: 'relative',
-        // The card's own width drives its chrome (`widget-header.module.css`, `.metricsRow`).
+        // The card's own width drives its chrome (`stat-card.module.css`).
         containerType: 'inline-size',
         containerName: 'basalt-card',
         ...style,
@@ -452,48 +517,46 @@ export function StatCard({
         </>
       )}
 
-      <div className={cx(classes.body, classNames?.body)} data-placement={sparklinePlacement}>
+      <div
+        className={cx(classes.body, classNames?.body)}
+        data-placement={sparklinePlacement}
+        {...(pending && { 'aria-busy': true })}
+      >
         <div className={cx(classes.header, classNames?.header)}>
-          <WidgetHeader
-            tier="widget"
-            title={title}
-            {...(icon !== undefined && { icon })}
-            {...(subtitle !== undefined && { subtitle })}
-            {...(info !== undefined && { info })}
-            value={value}
-            {...(unit !== undefined && { unit })}
-            {...(delta !== undefined && { delta })}
-            {...(deltaPeriod !== undefined && { deltaPeriod })}
-            {...(deltaPolarity !== undefined && { deltaPolarity })}
-            {...(deltaFormat !== undefined && { deltaFormat })}
-            {...(deltaGlyph !== undefined && { deltaGlyph })}
-            // `tier="widget"`, not the default `ctl`: the header row this slot sits in is 28px
-            // (`--vx-space-widget-header-height`) and a 30px `ctl` control grew it to 30, so a card
-            // with a kebab sat 2px below a card without one in the same grid row. See
-            // `theme/ctl-theme.tsx`'s `WIDGET_THEME`.
-            {...(actions !== undefined && {
-              actions: <CtlSlot tier="widget">{actions}</CtlSlot>,
-            })}
-          />
+          <div className={classes.captionRow}>
+            <div className={classes.captionMain}>
+              <h3 className={classes.caption}>
+                {icon !== undefined && <IconSlot className={classes.icon}>{icon}</IconSlot>}
+                <span className={classes.captionText}>{title}</span>
+              </h3>
+              {/* OUTSIDE the heading on purpose: `info` would otherwise become part of its name. */}
+              {info !== undefined && <InfoGlyph text={info} />}
+              {qualifier !== undefined && <span className={classes.qualifier}>{qualifier}</span>}
+            </div>
+            {/* `tier="widget"`: the caption row is 24px (`--vx-space-control-height-widget`), so a
+                card with a kebab is the same height as one without (`theme/ctl-theme.tsx`). */}
+            {actions !== undefined && (
+              <span className={classes.actions} data-basalt-hit-scope>
+                <CtlSlot tier="widget">{actions}</CtlSlot>
+              </span>
+            )}
+          </div>
 
-          {/* INSIDE `.header` for `bleed` ONLY (measured defect: `right` used to put the WHOLE
-              header — actions included — beside the sparkline, so `.actions`' own
-              `margin-inline-start: auto` resolved against wherever the sparkline began instead of
-              the card's true right edge). For `right`, breakdown moves to `.metricsRow` below,
-              beside the sparkline instead — `.header` now stays the FULL card width in both
-              placements, so the actions slot always reaches the same edge the phone form already
-              got right. */}
-          {bleeds && breakdownContent}
+          {valueBody}
+
+          {/* INSIDE `.header` for `bleed` ONLY (`right` puts it beside the sparkline in
+              `.metricsRow`, so the header stays the full card width in both placements). */}
+          {ready && bleeds && breakdownContent}
         </div>
 
-        {bleeds
-          ? sparklineNode
-          : (breakdownContent !== null || sparklineNode !== null) && (
-              <div className={classes.metricsRow}>
-                {breakdownContent}
-                {sparklineNode}
-              </div>
-            )}
+        {ready && !bleeds && (breakdownContent !== null || sparklineNode !== null) && (
+          <div className={classes.metricsRow}>
+            {breakdownContent}
+            {sparklineNode}
+          </div>
+        )}
+
+        {foot}
       </div>
     </Card>
   )

@@ -34,9 +34,11 @@ export type SparklineProps = BasaltProps & {
   mark?: 'line' | 'bar' | undefined
   /** A `VX.*` ref or a series token. Default `VX.faint`. */
   color?: string | undefined
-  /** Paints the last point in `emphasisColor` — the one reading a trend beside a KPI is for. */
+  /** Paints the last point in `emphasisColor` — the one reading a trend beside a KPI is for.
+   * Default `true`; pass `false` for a bare line. */
   emphasizeLast?: boolean | undefined
-  /** Default `VX.accent`. */
+  /** Default `VX.line`, the line's own neutral, so a single metric stays neutral. Pass a status or
+   * trend colour to make the end dot carry a verdict. */
   emphasisColor?: string | undefined
   /** Pending / error / empty, the same contract as every other kind. The placeholder fills the
    * sparkline's own `width` × `height`, so a loading tile does not shift when the trend lands. */
@@ -45,7 +47,7 @@ export type SparklineProps = BasaltProps & {
 
 type Point = { i: number; v: number | null }
 
-const LINE_WIDTH = 1.6
+const LINE_WIDTH = 1.5
 const DOT_R = 2.5
 const BAR_GAP = 0.15
 // Pixel policy of the self-pooling (`poolSparkline`): the densest a series may draw.
@@ -249,8 +251,8 @@ export function Sparkline(props: SparklineProps): ReactElement {
     width,
     mark = 'line',
     color = VX.faint,
-    emphasizeLast = false,
-    emphasisColor = VX.accent,
+    emphasizeLast = true,
+    emphasisColor = VX.line,
     state,
     className,
     style,

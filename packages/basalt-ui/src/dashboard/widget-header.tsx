@@ -29,8 +29,9 @@
  *   actions={<ActionIcon variant="subtle"><IconDots /></ActionIcon>}
  * />
  */
-import { useEffect, useId, useRef, useState } from 'react'
-import type { ReactNode } from 'react'
+import { useEffect, useId, useLayoutEffect, useRef, useState } from 'react'
+import type { ReactNode, RefObject } from 'react'
+import { createPortal } from 'react-dom'
 import { cx } from '../common/props'
 import type { BasaltProps, SlotStylesProps } from '../common/props'
 import { IconSlot } from '../theme/icon-slot'
@@ -162,6 +163,54 @@ export type WidgetHeaderDeltaProps = Pick<
   'delta' | 'deltaPeriod' | 'deltaPolarity' | 'deltaFormat' | 'deltaGlyph'
 >
 
+/** Gap between the glyph and its bubble, and the least air the bubble keeps from a viewport edge. */
+const BUBBLE_GAP = 7
+const BUBBLE_EDGE = 8
+
+/**
+ * Places the bubble in the VIEWPORT: below the glyph, flipped above when it would overflow the
+ * bottom edge, shifted sideways to stay inside the left and right edges. Re-places on scroll and
+ * resize while open. The bubble is portalled to `document.body` and `position: fixed`, so a card's
+ * `overflow: hidden` (every basalt card has one) can never clip it — the W32 round 0-3 defect at 390.
+ */
+function useBubblePosition(
+  open: boolean,
+  triggerRef: RefObject<HTMLButtonElement | null>,
+  bubbleRef: RefObject<HTMLSpanElement | null>,
+): { top: number; left: number } | null {
+  const [pos, setPos] = useState<{ top: number; left: number } | null>(null)
+
+  useLayoutEffect(() => {
+    // Closed: nothing to place. The last position is kept; the bubble is unmounted meanwhile and the
+    // first layout effect after reopening replaces it before paint.
+    if (!open) return
+    const place = () => {
+      const trigger = triggerRef.current
+      const bubble = bubbleRef.current
+      if (trigger === null || bubble === null) return
+      const t = trigger.getBoundingClientRect()
+      const b = bubble.getBoundingClientRect()
+      // The documentElement's client box is the viewport minus classic scrollbars.
+      const viewW = document.documentElement.clientWidth
+      const viewH = document.documentElement.clientHeight
+      const below = t.bottom + BUBBLE_GAP
+      const above = t.top - BUBBLE_GAP - b.height
+      const top = below + b.height > viewH - BUBBLE_EDGE && above >= BUBBLE_EDGE ? above : below
+      const left = Math.max(BUBBLE_EDGE, Math.min(t.left, viewW - BUBBLE_EDGE - b.width))
+      setPos((prev) => (prev?.top === top && prev.left === left ? prev : { top, left }))
+    }
+    place()
+    window.addEventListener('scroll', place, true)
+    window.addEventListener('resize', place)
+    return () => {
+      window.removeEventListener('scroll', place, true)
+      window.removeEventListener('resize', place)
+    }
+  }, [open, triggerRef, bubbleRef])
+
+  return pos
+}
+
 /**
  * The info affordance. A `title` attribute alone was never enough — it renders on hover only, so a
  * keyboard user focusing the glyph saw nothing at all. This is the bubble `ChartCard` used to own
@@ -193,6 +242,8 @@ export function InfoGlyph({
   const [open, setOpen] = useState(false)
   const tipId = useId()
   const triggerRef = useRef<HTMLButtonElement>(null)
+  const bubbleRef = useRef<HTMLSpanElement>(null)
+  const pos = useBubblePosition(open, triggerRef, bubbleRef)
 
   useEffect(() => {
     if (!open) return
@@ -229,12 +280,26 @@ export function InfoGlyph({
           <path d="M12 0C5.373 0 0 5.373 0 12s5.373 12 12 12 12-5.373 12-12S18.627 0 12 0zm0 4a1.5 1.5 0 1 1 0 3 1.5 1.5 0 0 1 0-3zm0 5a1 1 0 0 1 1 1v7a1 1 0 1 1-2 0v-7a1 1 0 0 1 1-1z" />
         </svg>
       </button>
-      {open && (
-        <span id={tipId} role="tooltip" className={classes.infoBubble}>
-          {text}
-          {note !== undefined && <span className={classes.foldNote}>{note}</span>}
-        </span>
-      )}
+      {open &&
+        createPortal(
+          // `open` only ever flips true from a client event, so `document` exists here. Hidden until
+          // the first measure lands — a bubble painted at 0,0 for one frame is a flash in the corner.
+          <span
+            ref={bubbleRef}
+            id={tipId}
+            role="tooltip"
+            className={classes.infoBubble}
+            style={
+              pos === null
+                ? { top: 0, left: 0, visibility: 'hidden' }
+                : { top: pos.top, left: pos.left }
+            }
+          >
+            {text}
+            {note !== undefined && <span className={classes.foldNote}>{note}</span>}
+          </span>,
+          document.body,
+        )}
     </span>
   )
 }

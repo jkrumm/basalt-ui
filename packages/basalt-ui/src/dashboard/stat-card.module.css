@@ -5,7 +5,13 @@
  * than 480px (`container: basalt-card`, set on the Card root in `stat-card.tsx`).
  */
 
+/* Foot geometry, single-sourced: the visual slot (SPEC § 6.2: 22), one `sm` footer line (20) and the
+ * 4px between them. The foot reserves all three whenever it exists (`.foot`), which is what keeps a
+ * card with a sparkline and one without a footer the same height. */
 .body {
+  --basalt-stat-visual-h: 1.375rem;
+  --basalt-stat-footer-h: 1.25rem;
+  --basalt-stat-foot-gap: 0.25rem;
   display: flex;
   flex-direction: column;
   gap: var(--vx-space-stat-card-gap);
@@ -14,6 +20,176 @@
 
 .header {
   min-width: 0;
+}
+
+/* ── caption row ─────────────────────────────────────────────────────────────────────────────── */
+
+/* `captionMain` takes the row; the actions slot sits at its end. The row is 24px (the widget control
+ * step) so a card with a kebab is the same height as one without. */
+.captionRow {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--vx-space-control-gap, 0.375rem);
+  min-height: calc(var(--vx-space-control-height-widget, 1.5rem) * var(--mantine-scale, 1));
+}
+
+/* Wraps on purpose: when caption + info + qualifier do not fit, the qualifier drops UNDER the caption
+ * instead of truncating either — the container's width decides, never the viewport's. */
+.captionMain {
+  display: flex;
+  flex: 1 1 0;
+  flex-wrap: wrap;
+  align-items: center;
+  column-gap: var(--vx-space-control-gap, 0.375rem);
+  min-width: 0;
+  min-height: calc(var(--vx-space-control-height-widget, 1.5rem) * var(--mantine-scale, 1));
+}
+
+.caption {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  margin: 0;
+  min-width: 0;
+  font-family: var(--basalt-font-mono);
+  font-size: var(--vx-text-micro);
+  font-weight: 500;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--vx-faint);
+}
+
+.captionText {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.icon {
+  color: var(--vx-faint);
+  --vx-space-icon-size: 0.875rem;
+}
+
+.qualifier {
+  margin-inline-start: auto;
+  font-family: var(--basalt-font-mono);
+  font-size: var(--vx-text-micro);
+  color: var(--vx-muted);
+  white-space: nowrap;
+}
+
+/* Law C15: the shared hit overlay; `--vx-hit-gap` caps the expansion at the control gap. */
+.actions {
+  --vx-hit-gap: var(--vx-space-control-gap);
+  display: inline-flex;
+  flex: none;
+  align-items: center;
+  gap: var(--vx-space-control-gap, 0.375rem);
+}
+
+/* ── value row ───────────────────────────────────────────────────────────────────────────────── */
+
+/* The figure and its unit share a baseline; the delta follows them, on the same baseline, and wraps
+ * under when the card is too narrow for all three. Three sizes only: micro, sm, hero. */
+.valueRow {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  column-gap: var(--vx-space-stack-sm);
+  row-gap: 2px;
+  min-width: 0;
+}
+
+.figure {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 4px;
+  min-width: 0;
+}
+
+/* NEVER truncated: the numeral IS the content. It shrinks with the card's own width instead (the
+ * `cqi` clamp below), and `overflow-wrap` breaks a pathological string rather than clipping it. */
+.value {
+  min-width: 0;
+  overflow-wrap: anywhere;
+  font-family: var(--basalt-font-mono);
+  font-size: var(--vx-text-kpi);
+  font-weight: 500;
+  letter-spacing: -0.02em;
+  color: var(--vx-ink);
+}
+
+/* Mono like the number it qualifies, `sm` and muted: the SMALL half of the pair. Never shrinks — a
+ * unit clipped to `TS…` would state nothing. */
+.unit {
+  flex-shrink: 0;
+  font-family: var(--basalt-font-mono);
+  font-size: var(--vx-text-sm);
+  font-weight: 500;
+  color: var(--vx-muted);
+}
+
+@container basalt-card (width >= 0px) {
+  .value {
+    font-size: clamp(var(--vx-text-lg), 8cqi, var(--vx-text-kpi));
+  }
+}
+
+/* ── states ──────────────────────────────────────────────────────────────────────────────────── */
+
+/* The empty branch: one muted line in the figure's place, at the figure row's height. */
+.empty {
+  display: flex;
+  align-items: center;
+  margin: 0;
+  min-height: calc(var(--vx-text-kpi) * 1.3);
+  font-size: var(--vx-text-sm);
+  color: var(--vx-muted);
+}
+
+/* The pending skeleton holds the card's own footprint: a value bar at the figure's height, the
+ * visual slot at 22, the footer at one `sm` line. */
+.skeletonValue {
+  width: 45%;
+  height: calc(var(--vx-text-kpi) * 1.3);
+}
+
+.skeletonVisual {
+  --skeleton-radius: 0;
+  height: var(--basalt-stat-visual-h);
+  margin-inline: calc(-1 * var(--vx-space-card-inset-x, 1rem));
+}
+
+.skeletonFooter {
+  width: 55%;
+  height: 0.75rem;
+  margin-block: 0.25rem;
+}
+
+/* ── foot: the visual and its footer line ────────────────────────────────────────────────────── */
+
+/* Pinned to the card's bottom (`margin-top: auto`) and reserving visual + gap + footer whenever it
+ * exists, bottom-aligned, so the visual and the footer never move when one of them is absent. */
+.foot {
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-end;
+  gap: var(--basalt-stat-foot-gap);
+  margin-top: auto;
+  min-width: 0;
+  min-height: calc(
+    var(--basalt-stat-visual-h) + var(--basalt-stat-foot-gap) + var(--basalt-stat-footer-h)
+  );
+}
+
+.footer {
+  margin: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: var(--vx-text-sm);
+  line-height: var(--basalt-stat-footer-h);
+  color: var(--vx-muted);
 }
 
 /*
@@ -122,9 +298,8 @@
 }
 
 .sparklineBleed {
-  margin-top: auto;
+  height: var(--basalt-stat-visual-h);
   margin-inline: calc(-1 * var(--vx-space-card-inset-x, 1rem));
-  margin-bottom: calc(-1 * var(--vx-space-card-inset-y, 0.75rem));
 }
 
 /* Asks for `StatCard`'s `SPARKLINE_RIGHT_WIDTH`/`_HEIGHT` (handed down as custom properties, so this
@@ -132,12 +307,12 @@
  * this restructure keeps at the SPARKLINE's own level rather than the row's: `.metricsRow` does not
  * set `align-items: flex-end` itself, because a card with no breakdown would then need nothing to
  * anchor against — only the sparkline opts into sitting at the row's bottom edge, which matters once
- * a breakdown taller than the trend's own 26px is the row's other child. */
+ * a breakdown taller than the trend's own 22px is the row's other child. */
 .sparklineRight {
   display: flex;
   flex: 0 1 var(--basalt-stat-sparkline-w, 4.5rem);
   min-width: 0;
-  height: var(--basalt-stat-sparkline-h, 1.625rem);
+  height: var(--basalt-stat-sparkline-h, 1.375rem);
   align-items: flex-end;
   align-self: flex-end;
   overflow: hidden;
@@ -151,8 +326,8 @@
   }
 
   /* The row became a COLUMN, so `flex-basis` is now the main-axis HEIGHT — the 72px width would
-   * become a 72px-tall box around 26px of bars. `flex: none` + the height keeps the bled trend the
-   * same 26px it is beside a hero row. `align-self: stretch` resets the row-only `flex-end` above:
+   * become a 72px-tall box around 22px of bars. `flex: none` + the height keeps the bled trend the
+   * same 22px it is beside a hero row. `align-self: stretch` resets the row-only `flex-end` above:
    * the cross axis is horizontal now, and this slot must fill the card's width like `.sparklineBleed`
    * does, not shrink to its content and sit flush right. */
   .metricsRow .sparklineRight {
@@ -160,6 +335,5 @@
     align-self: stretch;
     margin-top: auto;
     margin-inline: calc(-1 * var(--vx-space-card-inset-x, 1rem));
-    margin-bottom: calc(-1 * var(--vx-space-card-inset-y, 0.75rem));
   }
 }

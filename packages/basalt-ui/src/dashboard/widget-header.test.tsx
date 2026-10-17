@@ -7,7 +7,7 @@
  * nothing here selects on `classes.*`; every query goes through role/accessible-name/text content.
  */
 import { fireEvent, render, screen } from '@testing-library/react'
-import { describe, expect, test } from 'bun:test'
+import { afterEach, beforeEach, describe, expect, test } from 'bun:test'
 import { readFileSync } from 'node:fs'
 import { join } from 'node:path'
 import { WidgetHeader } from './widget-header'
@@ -343,5 +343,94 @@ describe('className, style and the classNames slots', () => {
     const { container } = render(<WidgetHeader tier="widget" title="Active Users" value="1" />)
     expect(container.querySelector('.slot-root')).toBeNull()
     expect(container.querySelector('h3')?.textContent).toContain('Active Users')
+  })
+})
+
+// W32 rounds 0-3 (Craft 6): at 390 the bubble was clipped by the card's `overflow: hidden` and sat
+// under the card edge on keyboard focus. It is now portalled to <body>, `position: fixed`, and placed
+// inside the viewport from the trigger's rect: below by default, flipped above at the bottom edge,
+// shifted off the left/right edges.
+describe('the info bubble is placed inside the viewport', () => {
+  const rect =
+    (r: Partial<DOMRect>): (() => DOMRect) =>
+    () =>
+      ({ top: 0, left: 0, right: 0, bottom: 0, width: 0, height: 0, x: 0, y: 0, ...r }) as DOMRect
+
+  // happy-dom reports a 0x0 client box; the viewport is stubbed so the placement has edges to hit.
+  const VIEW = { width: 390, height: 800 }
+  beforeEach(() => {
+    Object.defineProperty(document.documentElement, 'clientWidth', {
+      configurable: true,
+      value: VIEW.width,
+    })
+    Object.defineProperty(document.documentElement, 'clientHeight', {
+      configurable: true,
+      value: VIEW.height,
+    })
+  })
+  afterEach(() => {
+    Reflect.deleteProperty(document.documentElement, 'clientWidth')
+    Reflect.deleteProperty(document.documentElement, 'clientHeight')
+  })
+
+  function openAt(trigger: Partial<DOMRect>, bubble: { width: number; height: number }) {
+    const originalRect = Element.prototype.getBoundingClientRect
+    Element.prototype.getBoundingClientRect = function (this: Element) {
+      return this.getAttribute('role') === 'tooltip'
+        ? rect(bubble)()
+        : this.getAttribute('aria-label') === 'More information'
+          ? rect(trigger)()
+          : originalRect.call(this)
+    }
+    try {
+      render(<WidgetHeader tier="widget" title="Revenue" info="How it is computed." />)
+      fireEvent.focus(screen.getByRole('button', { name: 'More information' }))
+      return screen.getByRole('tooltip')
+    } finally {
+      Element.prototype.getBoundingClientRect = originalRect
+    }
+  }
+
+  test('is portalled out of the card, so no ancestor overflow can clip it', () => {
+    const { container } = render(
+      <WidgetHeader tier="widget" title="Revenue" info="How it is computed." />,
+    )
+    fireEvent.focus(screen.getByRole('button', { name: 'More information' }))
+    const bubble = screen.getByRole('tooltip')
+    expect(container.contains(bubble)).toBe(false)
+    expect(bubble.parentElement).toBe(document.body)
+  })
+
+  test('opens below the glyph, left-aligned to it', () => {
+    const bubble = openAt(
+      { top: 100, bottom: 124, left: 40, right: 64, width: 24, height: 24 },
+      { width: 200, height: 40 },
+    )
+    expect(bubble.style.top).toBe('131px')
+    expect(bubble.style.left).toBe('40px')
+  })
+
+  test('shifts left to stay inside the right edge', () => {
+    const view = VIEW.width
+    const bubble = openAt(
+      { top: 100, bottom: 124, left: view - 20, right: view + 4, width: 24, height: 24 },
+      { width: 200, height: 40 },
+    )
+    expect(Number.parseFloat(bubble.style.left)).toBe(view - 8 - 200)
+  })
+
+  test('flips above the glyph when below would leave the viewport', () => {
+    const bottom = VIEW.height - 4
+    const bubble = openAt(
+      { top: bottom - 24, bottom, left: 40, right: 64, width: 24, height: 24 },
+      { width: 200, height: 40 },
+    )
+    expect(Number.parseFloat(bubble.style.top)).toBe(bottom - 24 - 7 - 40)
+  })
+
+  test('the stylesheet makes it fixed and viewport-capped', () => {
+    const rule = block('.infoBubble')
+    expect(rule).toContain('position: fixed')
+    expect(rule).toContain('max-width: min(260px, calc(100vw - 16px))')
   })
 })

@@ -159,7 +159,6 @@ Signature: StatCard(props: StatCardProps): JSX.Element
   classNames?: Partial<Record<StatCardSlot, string>>
   icon?: ReactNode
   title: string
-  subtitle?: string
   info?: string
   unit?: string
   delta?: number
@@ -168,6 +167,10 @@ Signature: StatCard(props: StatCardProps): JSX.Element
   deltaFormat?: (delta: number) => string
   deltaGlyph?: boolean
   value: string
+  qualifier?: string
+  subtitle?: string
+  loading?: boolean
+  emptyText?: string
   breakdown?: readonly StatCardBreakdownRow[]
   query?: QueryStateLike<unknown>
   sparkline?: ReactNode | ((size: StatCardSparklineSize) => ReactNode)

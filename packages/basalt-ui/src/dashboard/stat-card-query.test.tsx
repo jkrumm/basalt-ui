@@ -2,16 +2,17 @@
  * `StatCard.query` — the four-way branch handed to `QueryState` (audit B #3), and the two things
  * that must hold in every one of them.
  *
- * 1. **The HEADER survives every branch.** The title, the icon and the info glyph are chrome; a
- *    card that blanks them while a refetch is in flight is a card that flickers its own identity.
- *    Only the region UNDER the header resolves.
+ * 1. **The CAPTION ROW survives every branch.** The title, the icon, the info glyph and the
+ *    qualifier are chrome; a card that blanks them while a refetch is in flight is a card that
+ *    flickers its own identity. Only the region UNDER the caption resolves.
  * 2. **The branch precedence is `QueryState`'s, not a second copy of it.** These assertions are
  *    deliberately about which of `QueryState`'s own outputs appears — a spinner, an alert carrying
  *    the REAL server message, nothing, or the breakdown — because the bug this prop exists to
  *    prevent is a hand-rolled switch that renders "no data" over a 500.
  *
  * SSR markup, the `stat-card.test.tsx` idiom: every branch here is a static render, and none of the
- * four needs live DOM behaviour.
+ * four needs live DOM behaviour. Pending is a skeleton at the card's footprint (SPEC § 6.11) — no
+ * spinner inside a card.
  */
 import { MantineProvider } from '@mantine/core'
 import { describe, expect, test } from 'bun:test'
@@ -43,8 +44,10 @@ function render(q: QueryStateLike<Row[]>): string {
       <StatCard
         title="Active users"
         info="How this is computed."
+        qualifier="30 days"
         value="—"
         breakdown={BREAKDOWN}
+        subtitle="Source: events"
         query={q}
       />
     </MantineProvider>,
@@ -55,30 +58,53 @@ function render(q: QueryStateLike<Row[]>): string {
 function expectHeaderIntact(markup: string): void {
   expect(markup).toContain('Active users')
   expect(markup).toContain('More information')
+  expect(markup).toContain('30 days')
 }
 
 describe('StatCard.query renders each branch through QueryState at the section tier', () => {
-  test('pending — a bare section spinner, not the 64px page block', () => {
+  test('pending — a skeleton at the card footprint, no spinner, no figure, no breakdown', () => {
     const markup = render(query({ fetchStatus: 'fetching' }))
     expectHeaderIntact(markup)
-    expect(markup).toContain('aria-label="Loading"')
+    expect(markup).toContain('mantine-Skeleton-root')
+    expect(markup).toContain('aria-busy="true"')
+    expect(markup).not.toContain('aria-label="Loading"')
+    expect(markup).not.toContain('mantine-Loader')
     expect(markup).not.toContain('Web')
+    expect(markup).not.toContain('Source: events')
   })
 
-  test('error with no cached data — the real server message, never an empty state', () => {
+  test('error with no cached data — the real server message and a retry, never an empty state', () => {
     const markup = render(
       query({ isError: true, error: new Error('upstream exploded'), fetchStatus: 'idle' }),
     )
     expectHeaderIntact(markup)
     expect(markup).toContain('upstream exploded')
+    expect(markup).toContain('Retry')
+    expect(markup).not.toContain('No data for this period')
     expect(markup).not.toContain('Web')
   })
 
-  test('empty — the breakdown is withheld, and nothing is invented in its place', () => {
+  test('empty — one muted line replaces the figure; no breakdown, no spinner, no bare dash', () => {
     const markup = render(query({ data: [] }))
     expectHeaderIntact(markup)
+    expect(markup).toContain('No data for this period')
     expect(markup).not.toContain('Web')
-    expect(markup).not.toContain('aria-label="Loading"')
+    expect(markup).not.toContain('>—<')
+    expect(markup).not.toContain('mantine-Skeleton-root')
+  })
+
+  test('empty — emptyText says why', () => {
+    const markup = renderToStaticMarkup(
+      <MantineProvider>
+        <StatCard
+          title="Active users"
+          value="—"
+          emptyText="No probes ran in this window"
+          query={query({ data: [] })}
+        />
+      </MantineProvider>,
+    )
+    expect(markup).toContain('No probes ran in this window')
   })
 
   test('data — the breakdown renders exactly as it does with no query at all', () => {
@@ -98,5 +124,38 @@ describe('an omitted query changes nothing', () => {
     )
     expect(markup).toContain('Web')
     expect(markup).toContain('Email')
+  })
+})
+
+describe('loading — the same skeleton, no query', () => {
+  test('replaces the figure and the footer, keeps the caption, sets aria-busy', () => {
+    const markup = renderToStaticMarkup(
+      <MantineProvider>
+        <StatCard
+          title="Active users"
+          qualifier="30 days"
+          value="12,483"
+          subtitle="Source: events"
+          sparkline={() => null}
+          loading
+        />
+      </MantineProvider>,
+    )
+    expect(markup).toContain('Active users')
+    expect(markup).toContain('30 days')
+    expect(markup).toContain('aria-busy="true"')
+    expect(markup).toContain('mantine-Skeleton-root')
+    expect(markup).not.toContain('12,483')
+    expect(markup).not.toContain('Source: events')
+  })
+
+  test('absent, nothing is busy and no skeleton renders', () => {
+    const markup = renderToStaticMarkup(
+      <MantineProvider>
+        <StatCard title="Active users" value="12,483" />
+      </MantineProvider>,
+    )
+    expect(markup).not.toContain('aria-busy')
+    expect(markup).not.toContain('mantine-Skeleton-root')
   })
 })

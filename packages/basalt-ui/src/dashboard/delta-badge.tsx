@@ -1,10 +1,11 @@
 /**
- * DeltaBadge — the KPI trend chip (docs/DESIGN-SPEC.md §5): mono 11.5px weight 600, status-color
- * text on a status-13% tint, control radius, 2px/7px padding, optional ▲/▼ glyph at 9px.
- * `polarity` decides the TONE the sign maps to — `'up-good'` (default) reads a rise as success and
+ * DeltaBadge — the KPI trend readout (docs/DESIGN-CORE.md: "up/down deltas are text colour only,
+ * never a fill"): a glyph and a signed figure in the trend colour, mono `sm`, with NO fill, border
+ * or padding in either scheme. The optional ▲/▼ glyph sits on the `micro` rung and `period` is
+ * `micro` muted. `polarity` decides the TONE the sign maps to — `'up-good'` (default) reads a rise as success and
  * a fall as danger; `'up-bad'` inverts that for a metric where a rise is the worse reading (a
  * cycle-top index, latency, error rate); `'neutral'` renders every sign in a faint, non-verdict
- * tint. Zero is always faint with no glyph, under every polarity. The label never carries a
+ * colour. Zero is always faint with no glyph, under every polarity. The label never carries a
  * leading "+"; pass `format` to control the magnitude string (defaults to a one-decimal percentage
  * of the absolute value). The ▲/▼ glyph is DIRECTION, not verdict, and stays polarity-independent —
  * governed only by `withGlyph` and the sign.
@@ -16,13 +17,14 @@
  * @example
  * import { DeltaBadge } from 'basalt-ui'
  *
- * <DeltaBadge value={12.4} />                          // ▲ 12.4%, success tint
- * <DeltaBadge value={-3.1} />                           // ▼ 3.1%, danger tint
- * <DeltaBadge value={0} />                              // 0.0%, neutral faint tint, no glyph
+ * <DeltaBadge value={12.4} />                          // ▲ 12.4%, success colour
+ * <DeltaBadge value={-3.1} />                           // ▼ 3.1%, danger colour
+ * <DeltaBadge value={0} />                              // 0.0%, faint, no glyph
  * <DeltaBadge value={182} format={(v) => `${Math.abs(v)}ms`} withGlyph={false} />
- * <DeltaBadge value={35.9} polarity="up-bad" />         // ▲ 35.9%, danger tint — a rise is bad here
+ * <DeltaBadge value={35.9} polarity="up-bad" />         // ▲ 35.9%, danger colour — a rise is bad here
  */
-import { alpha, VX } from '../tokens'
+import type { CSSProperties } from 'react'
+import { VX } from '../tokens'
 import classes from './widget-header.module.css'
 
 export type DeltaPolarity = 'up-good' | 'up-bad' | 'neutral'
@@ -39,8 +41,8 @@ export type DeltaBadgeProps = {
   format?: (value: number) => string
   /** Render the ▲/▼ direction glyph. Defaults to `true`; a zero value never shows a glyph. */
   withGlyph?: boolean
-  /** Optional comparison timeframe rendered directly after the value in a dimmer shade of the same
-   * tone (e.g. `MoM`, `WoW`, `YTD`) — states what the delta is measured against without a hover. */
+  /** Optional comparison timeframe rendered directly after the value, muted (e.g. `MoM`, `WoW`,
+   * `YTD`) — states what the delta is measured against without a hover. */
   period?: string | undefined
 }
 
@@ -65,10 +67,9 @@ export function DeltaBadge({
   const showGlyph = withGlyph && glyph !== undefined
 
   return (
-    <span
-      className={classes.deltaBadge}
-      style={{ backgroundColor: alpha(tone, 0.13), color: tone }}
-    >
+    // The tone rides a custom property; `.deltaBadge` mixes 12% ink into it (the dark-scheme `bad`
+    // solid is 4.22:1 on the card, under the 4.5 text floor a fill-less delta needs).
+    <span className={classes.deltaBadge} style={{ '--basalt-delta-tone': tone } as CSSProperties}>
       {showGlyph && <span className={classes.deltaGlyph}>{glyph}</span>}
       {format(value)}
       {period !== undefined && <span className={classes.deltaPeriod}>{period}</span>}

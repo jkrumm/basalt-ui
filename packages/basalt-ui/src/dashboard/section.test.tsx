@@ -350,7 +350,9 @@ describe('forwards every WidgetHeader prop (unit, deltaPolarity, deltaFormat, de
         <div>body</div>
       </Section>,
     )
-    expect(screen.getByText('12.4%').style.color).toBe('var(--vx-status-bad)')
+    expect(screen.getByText('12.4%').style.getPropertyValue('--basalt-delta-tone')).toBe(
+      'var(--vx-status-bad)',
+    )
   })
 
   test('deltaFormat overrides the default percentage label', () => {

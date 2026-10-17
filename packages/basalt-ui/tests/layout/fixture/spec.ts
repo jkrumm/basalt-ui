@@ -251,6 +251,13 @@ export type CardsSpec = {
    * header, which changes the card's own measured height, which can flip the flag back).
    */
   oscillationScan?: { width: number; bodyHeights: number[] }
+  /**
+   * StatCard footprint probes (SPEC § 6.1): `data-testid="foot-natural"` holds four 240px cards in a
+   * NON-stretching flex row — a visual + footer, a visual only, a footer only, neither — so each
+   * card's own height is measurable; `data-testid="foot-grid"` holds three of them in a `StatGroup`
+   * grid row, where the row must stretch them to one height.
+   */
+  footprint?: boolean
 }
 
 /**

@@ -133,7 +133,6 @@ describe('Sparkline', () => {
         data={values}
         height={28}
         mark="bar"
-        emphasizeLast
         emphasisColor="var(--vx-bad)"
       />,
     )
@@ -159,12 +158,14 @@ describe('Sparkline', () => {
     expect(tallest).toBe(0)
   })
 
-  test('line emphasis: the last-point dot sits inside the box, and only when asked', () => {
-    const plain = render(<Sparkline ariaLabel="T" data={values} height={28} />)
+  test('line emphasis: the end dot is on by default, in the line neutral, inside the box', () => {
+    const plain = render(
+      <Sparkline ariaLabel="T" data={values} height={28} emphasizeLast={false} />,
+    )
     expect(plain.querySelector('circle')).toBeNull()
-    const el = render(<Sparkline ariaLabel="T" data={values} height={28} emphasizeLast />)
+    const el = render(<Sparkline ariaLabel="T" data={values} height={28} />)
     const dotEl = el.querySelector('circle[data-ts-key^="last"]')
-    expect(dotEl?.getAttribute('fill')).toBe('var(--vx-accent)')
+    expect(dotEl?.getAttribute('fill')).toBe('var(--vx-line)')
     const viewBoxW = Number(el.querySelector('svg')?.getAttribute('viewBox')?.split(' ')[2])
     expect(attr(dotEl, 'cx') + attr(dotEl, 'r')).toBeLessThanOrEqual(viewBoxW)
   })
@@ -189,7 +190,7 @@ describe('Sparkline', () => {
   })
 
   test('a single point renders finite geometry', () => {
-    const one = render(<Sparkline ariaLabel="T" data={[5]} height={28} emphasizeLast />)
+    const one = render(<Sparkline ariaLabel="T" data={[5]} height={28} />)
     expect(Number.isFinite(attr(one.querySelector('circle'), 'cy'))).toBe(true)
   })
 
