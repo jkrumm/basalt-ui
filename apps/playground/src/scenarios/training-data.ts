@@ -5,7 +5,7 @@
  * derived from `TODAY`, so moving the reading date moves the copy with it.
  */
 
-import { fmtDay, itemAt, seeded, zoneFor } from './fixture-utils'
+import { fmtDay, itemAt, monthName, seeded, zoneFor } from './fixture-utils'
 
 const SESSION_TYPES = ['strength', 'walk', 'mobility'] as const
 export type SessionType = (typeof SESSION_TYPES)[number]
@@ -26,9 +26,6 @@ export const HIT_MONTHS = 6
 const YEAR = TODAY.getUTCFullYear()
 const month = TODAY.getUTCMonth()
 const priorMonthStart = new Date(Date.UTC(YEAR, month - 1, 1))
-
-const monthName = (date: Date, style: 'long' | 'short'): string =>
-  date.toLocaleDateString('en-GB', { month: style, timeZone: 'UTC' })
 
 /** `16 Oct` — the reading date as a label. */
 export const TODAY_LABEL = fmtDay(TODAY)
