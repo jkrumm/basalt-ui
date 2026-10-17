@@ -498,9 +498,10 @@ function buildTheme(data: PaletteData, options: BuildThemeOptions = {}): Mantine
           },
         },
       }),
-      // Status chip (SPEC § 6.10): `light` + `tight`; a `leftSection` glyph is sized in `badgeSection`.
+      // Status chip (SPEC § 6.10): `light` + `tight`, neutral until `color=` opts in (the accent is
+      // never a status chip's default); a `leftSection` glyph is sized in `badgeSection`.
       Badge: ext<typeof Badge>({
-        defaultProps: { variant: 'light', radius: radius.tight },
+        defaultProps: { variant: 'light', color: 'gray', radius: radius.tight },
         classNames: { section: controlsClasses.badgeSection },
       }),
       // Alert renders its title in the body font by default; bring it onto the head-font idiom

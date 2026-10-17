@@ -249,6 +249,7 @@ exports[`createBasaltTheme() shape and resolver output default 1`] = `
         "section": undefined,
       },
       "defaultProps": {
+        "color": "gray",
         "radius": 5,
         "variant": "light",
       },
@@ -1390,6 +1391,7 @@ exports[`createBasaltTheme() shape and resolver output all knobs 1`] = `
         "section": undefined,
       },
       "defaultProps": {
+        "color": "gray",
         "radius": 8,
         "variant": "light",
       },
