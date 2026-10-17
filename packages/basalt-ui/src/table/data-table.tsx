@@ -1008,10 +1008,13 @@ const TABLE_TOOLBAR_STYLE: CSSProperties = { flex: '0 1 auto', minWidth: 0 }
  * narrow one, for the same one-word query. A stated width also makes the toolbar's own minimum width
  * knowable, which is what lets it wrap under the title below `sm` with no media query.
  *
- * It is a BASIS, not a `width`: `flex: 0 1 <SEARCH_WIDTH>px` holds the field at 220px wherever 220
- * is available and lets it shrink where it is not, floored at `12ch` (a legible query plus the
- * search glyph) and capped at `100%` so it can never be the box that outgrows its column. A literal
- * `w={220}` in a 302px column was half of the overflow above.
+ * The field states a BASIS and a `width`, both `SEARCH_WIDTH`: `flex: 0 1 <SEARCH_WIDTH>px` holds it
+ * at 220px wherever 220 is available and lets it shrink where it is not, floored at `12ch` (a legible
+ * query plus the search glyph) and capped at `100%` so it can never be the box that outgrows its
+ * column. The `width` is the field's intrinsic contribution: the toolbar is sized by its items'
+ * max-content, and an input's own (~196px) came out short of the basis, which wrapped the facet pills
+ * under the search at 1440. It is no floor — `min-width: 12ch` is. A literal `w={220}` in a 302px
+ * column was half of the overflow above.
  */
 const SEARCH_WIDTH = 220
 /** How long the global search waits after the last keystroke before filtering. */

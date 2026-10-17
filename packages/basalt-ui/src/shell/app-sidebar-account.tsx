@@ -113,7 +113,7 @@ export function SidebarAccount(props: BasaltAccountProps & BasaltProps) {
         <span className={classes.footerIconSlot}>
           <IconUser />
         </span>
-        <Text className={classes.accountText} fz={VX.text.md}>
+        <Text className={classes.accountText} fz={VX.text.sm}>
           Sign in
         </Text>
       </UnstyledButton>

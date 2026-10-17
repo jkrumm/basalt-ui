@@ -401,12 +401,12 @@ export function StatCard({
       className={cx(classNames?.root, className)}
       style={{
         // Card inset = the `cardInsetY`/`cardInsetX` role tokens (12/16 at level 0, the `sm`/`md`
-        // rungs of the spacing grid), matching every other basalt
-        // card because `ChartCard` reads the SAME two vars. Below `sm` the horizontal one steps a
-        // rung down (to 12) on its own: the responsive half of the ladder lives in `spaceMobileDecls`
-        // (`tokens/index.ts`), which is the only home that can reach an inline style like this one.
-        // `overflow: hidden` clips
-        // the full-bleed sparkline to the card's rounded corners; an element's own `box-shadow`
+        // rungs of the spacing grid), matching every other basalt card because `ChartCard` reads
+        // the SAME two vars. Below `sm` the horizontal one steps a rung down (to 12) on its own:
+        // the responsive half of the ladder lives in `spaceMobileDecls` (`tokens/index.ts`), which
+        // is the only home that can reach an inline style like this one.
+        //
+        // `overflow: hidden` clips the full-bleed sparkline to the card's rounded corners; an element's own `box-shadow`
         // renders outside its border box and is NOT clipped by its own `overflow`, so the
         // shadow-card ring is unaffected (verified — only an ANCESTOR's overflow clips a
         // descendant's shadow). Mantine's Card root already sets `overflow: hidden`; this is
@@ -417,7 +417,7 @@ export function StatCard({
         // body is `height: 100%` and the sparkline is `margin-top: auto`. The content is what states
         // the height now (~88-96px), and four cards in a `SimpleGrid` still match because a grid row
         // stretches its items.
-        padding: 'var(--vx-space-card-inset-y, 0.75rem) var(--vx-space-card-inset-x, 1rem)',
+        padding: 'var(--vx-space-card-inset-y) var(--vx-space-card-inset-x)',
         overflow: 'hidden',
         // Anchors the tone rail. Set unconditionally so a card's stacking context does not change
         // depending on whether it happens to have crossed a threshold this render.

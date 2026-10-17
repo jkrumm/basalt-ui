@@ -390,9 +390,9 @@ function ShellBody({
   // `appShellInset` / `appShellInsetMobile` pair (see their entries in `tokens/palette.ts`).
   //
   // On a 390px phone that is 8 a side instead of 13 — 10px more line width, and 10px less vertical
-  // chrome, since `padding` is Main's vertical inset too. From `sm` up it is 16 (24 at the expanded class, a trial — `appShellInsetExpanded`), which was the x the
-  // sidebar's nav icon column already sits at, so the brand mark, the nav icons and the page's
-  // first column all start on one vertical line.
+  // chrome, since `padding` is Main's vertical inset too. From `sm` up it is 16, and 24 from the
+  // expanded class (`appShellInsetExpanded`, a trial: SPEC D7). The gutter is not aligned to the
+  // sidebar's nav-icon column (x=20); the header's brand zone aligns to that column on its own.
   //
   // VERIFIED against the installed Mantine 9.3 source, because both props take the object by a
   // DIFFERENT road and both had to be checked:
@@ -406,6 +406,7 @@ function ShellBody({
   // `calc(0.5rem * var(--mantine-scale))` — rather than looked up, which is exactly why these are
   // numbers: a spacing KEY resolves to `var(--mantine-spacing-sm)` and hands the gutter back to
   // Mantine's own scale, which is where the 13px came from.
+  //
   // `md` is the expanded class's boundary (`SIZE_CLASS_BREAKPOINTS`): the gutter widens there only.
   const inset = {
     base: step.appShellInsetMobile,
