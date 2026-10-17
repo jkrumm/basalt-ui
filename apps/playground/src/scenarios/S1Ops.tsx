@@ -41,7 +41,6 @@ import {
   UPTIME_PCT,
   WINDOW_LABEL,
   fmtDuration,
-  fmtHour,
   fmtLoss,
   fmtMbit,
   fmtMs,
@@ -235,7 +234,6 @@ function OpsCharts({ shotState }: ScenarioProps) {
               data={HOURLY_DATA}
               ariaLabel={`Line state per hour, ${WINDOW_LABEL}`}
               x={(d) => d.start}
-              formatX={fmtHour}
               states={LINE_STATES}
               getBand={bandOf}
               height={90}
