@@ -127,13 +127,15 @@ function Summary({ shotState }: ScenarioProps) {
 const trendSparkline =
   (label: string, data: readonly number[], format: (v: number) => string) =>
   (size: SparklineSize) => (
-    <Sparkline
-      ariaLabel={`${label}, rolling 7 days, last 30 days`}
-      data={data}
-      reference="mean"
-      format={format}
-      {...size}
-    />
+    <Box data-shot-hover>
+      <Sparkline
+        ariaLabel={`${label}, rolling 7 days, last 30 days`}
+        data={data}
+        reference="mean"
+        format={format}
+        {...size}
+      />
+    </Box>
   )
 
 function TrainingStats({ shotState }: ScenarioProps) {
