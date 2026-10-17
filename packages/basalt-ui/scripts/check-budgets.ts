@@ -585,10 +585,11 @@ async function budgets(providerOnlyDist: string): Promise<Budget[]> {
     // 7478 -> 7512 (W36): `managedFiles` walks `agent/skills/<name>/` so a skill's `references/**` are managed files too; injectable `pkgRoot` on init/sync/renderContext; upward empty-dir prune (+34).
     // 7478 -> 8006 (w36 reviewer-detector): `basalt-ui shot detect` (cli/shot/detect.ts: the LLM-free [measured] rules, oxlint JSON, severity and score, history trend), the `absent` anchor status (capture.ts), the help text and `--lint` flag (+528).
     // 8006 -> 8050 (w36 review round 1): detect's atomic history/detect.json write with `.bak` recovery and clean I/O errors, `craft-1/scale-missing`, P0/P1-only exit (+44).
+    // 8084 -> 8090 (W36 palette-guard): `check-theme` routes the series module to `series-palette` (+6).
     {
       label: 'CLI non-test lines (src/cli/**)',
       value: cliNonTestLines(),
-      ceiling: 8084,
+      ceiling: 8090,
     },
     ...(await providerOnlyRows(providerOnlyDist)),
   ]
