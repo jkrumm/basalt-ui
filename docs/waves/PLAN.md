@@ -1226,6 +1226,10 @@ Spec: SPEC § 6.1, § 6.2, § 6.10, § 6.12. Scenarios S4 and S1. Consumer befor
   spend-by-project donut (+ near-identical blues, a bare "Value" readout row) fail Expression 1 / Craft 3 / Craft 5
   until `Meter` lands. **For Wave 35:** the full-axis histograms; S4's value-over-time as stacked bars. **For
   Wave 36:** outages/top-drivers at 390; table delta cells without a glyph.
+- **Owner decision before 2.17 (D22):** deltas now paint the status solids as TEXT, and those clear 4.5:1 only
+  at the default derive config (~2.5–3.9:1 at the `lightLevel`/`darkLevel` extremes). Either clamp the level knobs
+  in `derive.ts`, narrow the "guaranteed by derivation" wording to cover status text at the default only, or
+  derive status-text stops per surface (Wave 24's token pipeline).
 - **Owner decisions:** `light`/`outline` Buttons still carry the accent (r1–r3 Craft 4; not in SPEC § 6.12).
   Before releasing 2.17, D19's grace entries (`card-inset`, `raw-spacing`, `inline-spacing` → `error`) have to
   be deleted in their own commit, or 2.17 ships them at `warn` again.
