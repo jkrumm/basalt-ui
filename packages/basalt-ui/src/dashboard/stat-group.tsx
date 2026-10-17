@@ -33,12 +33,15 @@
 import type { CSSProperties, ReactNode } from 'react'
 import { cx } from '../common/props'
 import type { BasaltProps } from '../common/props'
+import { StatStrip } from './stat-strip'
+import type { StatStripProps } from './stat-strip'
 import classes from './stat-group.module.css'
 
 /** The desktop KPI column count. */
 export type StatGroupCols = 2 | 3 | 4 | 5
 
-export type StatGroupProps = BasaltProps & {
+export type StatGridProps = BasaltProps & {
+  variant?: 'grid'
   /** The DESKTOP column count (`lg` and up). Default `4`. `sm` gets `min(cols, 3)` — except `4`, which gets 2 rather than an orphan row. A phone gets 2.
    * Never a responsive object — the law is basalt's, see the module docblock. */
   cols?: StatGroupCols
@@ -48,13 +51,19 @@ export type StatGroupProps = BasaltProps & {
   children: ReactNode
 }
 
-export function StatGroup({
-  cols = 4,
-  divided = false,
-  children,
-  className,
-  style,
-}: StatGroupProps) {
+/** `variant="strip"`: one joined surface of typed `cells` split by hairlines, plus an optional
+ * `footer` row — see `StatStripProps`. `cols` here may be 6 (the strip's desktop count). */
+export type StatGroupProps = StatGridProps | ({ variant: 'strip' } & StatStripProps)
+
+export function StatGroup(props: StatGroupProps) {
+  if (props.variant === 'strip') {
+    const { variant: _variant, ...strip } = props
+    return <StatStrip {...strip} />
+  }
+  return <StatGrid {...props} />
+}
+
+function StatGrid({ cols = 4, divided = false, children, className, style }: StatGridProps) {
   // `4 -> 2`, not `4 -> 3`. `min(cols, 3)` is the general rule and it is right for 2, 3 and 5, but
   // FOUR is the default and the overwhelmingly common count, and three columns leave a four-KPI row
   // as 3 + 1 — one orphan cell against two thirds of empty track. MEASURED on the playground

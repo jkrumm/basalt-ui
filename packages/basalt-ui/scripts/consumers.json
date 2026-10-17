@@ -46,7 +46,7 @@
   "Sparkline": "argo:apps/dashboard/src/features/walking-pad/charts/sparkline-grid-chart.tsx",
   "StackedArea": "argo:apps/dashboard/src/features/usage-tracking/charts/cost-over-time.tsx",
   "StatCard": "argo:apps/dashboard/src/features/warden/funnel-stats.tsx",
-  "StatGroup": "argo:apps/dashboard/src/features/warden/funnel-stats.tsx",
+  "StatGroup": "argo:apps/dashboard/src/features/warden/stat-strip.tsx",
   "SyncButton": "argo:apps/dashboard/src/routes/__root.tsx",
   "TableOfContents": "rb:apps/web/src/features/knot-detail/page.tsx",
   "ThemeToggle": "argo:apps/dashboard/src/routes/__root.tsx",
