@@ -1,3 +1,53 @@
+# [2.20.0](https://github.com/jkrumm/basalt-ui/compare/v2.19.0...v2.20.0) (2026-10-17)
+
+
+### Bug Fixes
+
+* address review on chart font, Meter glue and slot hover test ([8027c08](https://github.com/jkrumm/basalt-ui/commit/8027c087f8c88f3f1188d69de316079489fb6adf))
+* address review on round-2 fixtures ([ec9d619](https://github.com/jkrumm/basalt-ui/commit/ec9d619d1f7c1428815bf1709e2aeafe573e447c))
+* drop the last redundant card inset pair and its stale guard hint ([8bc0500](https://github.com/jkrumm/basalt-ui/commit/8bc05005e41e31c672b205620500a55bc488b940))
+* gate card facts by state and settle review round 1 ([22b4a49](https://github.com/jkrumm/basalt-ui/commit/22b4a49e6476eb5d3d78283ad923a539fb0f04f8))
+* gate the item-flow facts by state ([34abefb](https://github.com/jkrumm/basalt-ui/commit/34abefb29507659b6dcef0a6677659bf63bd216e))
+* keep the meter marker centred and pin the muted fill below line ([9da586d](https://github.com/jkrumm/basalt-ui/commit/9da586d789ae0d9049b6a92897f68e76888b3cab))
+* match the vs prefix loosely and space the period ([1723364](https://github.com/jkrumm/basalt-ui/commit/172336484ba1acfa8dd26db8df0d070f6e225993))
+* render the S3 day note as a meter and drop the budget legend ([3aec049](https://github.com/jkrumm/basalt-ui/commit/3aec0496568639faa8dd50c6dc48aa6df3680957))
+* round-1 board fixes for facts, strip, meter and chart faces ([88d9e76](https://github.com/jkrumm/basalt-ui/commit/88d9e765d0894263c8e2fceb99ab5f3d5f4a68d0))
+* round-1 fixture fixes on S3, S4 and the components page ([f48da52](https://github.com/jkrumm/basalt-ui/commit/f48da5298546140959e56e0dc641fd7ea1c262e0))
+* round-2 fixture fixes on S2, S3, S4 and components ([e7d4076](https://github.com/jkrumm/basalt-ui/commit/e7d40765ed6646f928867c7d80ed51fbb5aac1ec))
+* sparkline readout review round 1 ([ebef74f](https://github.com/jkrumm/basalt-ui/commit/ebef74f63a03a6199ab0f57239301e7cc0e5ebe0))
+* split the bar list format part and keep tick text in the track ([c6efab8](https://github.com/jkrumm/basalt-ui/commit/c6efab8a4d93720c6df236e23dbde5f248190f84))
+* stub Intl.RelativeTimeFormat through defineProperty in tests ([eac88ab](https://github.com/jkrumm/basalt-ui/commit/eac88ab70bbf605e22e7dd251015479282f6991e))
+* tint the budget line by verdict and dedupe the forecast row ([fe964b8](https://github.com/jkrumm/basalt-ui/commit/fe964b8883253662a1e5440a0b7649aacfd4db4a))
+* type the ref label mark generically and cover the flip band ([d0b1198](https://github.com/jkrumm/basalt-ui/commit/d0b1198de82efeed00ded4357bbfb663ce275e07))
+
+
+### Features
+
+* add a facts slot to the chart card for the headline figure ([f93c793](https://github.com/jkrumm/basalt-ui/commit/f93c7936e9d14bd9bda2c4d08759a96be41bbfd5))
+* add a strip variant with typed cells and a footer row to StatGroup ([1dfcab8](https://github.com/jkrumm/basalt-ui/commit/1dfcab8f01a18c72761a69fe3fe6fc00e265cbe1))
+* add BarList per-row max, thin rows and per-row ticks ([e79e503](https://github.com/jkrumm/basalt-ui/commit/e79e5034da1aa59a7ef72bf828583662d5edef03))
+* add meter ticks, muted tone, row size and root part types ([a58c48d](https://github.com/jkrumm/basalt-ui/commit/a58c48d0c3767d7569a54f08f3c5b6f015d93971))
+* add the agent-work scenario and a strip on training and spend ([f4ef65b](https://github.com/jkrumm/basalt-ui/commit/f4ef65bb6156e90e84f714b6e70a9d7934d2d5b8))
+* chart error body uses the dot idiom, pin tab hover and padding ([41d7296](https://github.com/jkrumm/basalt-ui/commit/41d72962a239634a40faf6635cfda86611ce911d))
+* compose the comparison period in DeltaBadge ([c903195](https://github.com/jkrumm/basalt-ui/commit/c90319555408abfa6e88ffa7646cc81687253abd))
+* export StatusDot and StatusVerdict from the root ([eb835c6](https://github.com/jkrumm/basalt-ui/commit/eb835c6a6219d984765b20885840d5bc3e27fdd7))
+* heatmap ticks keep the caption size at every width ([87e947f](https://github.com/jkrumm/basalt-ui/commit/87e947faad6dd00bd338f1c6ef01d2d6a9b32eda))
+* keep the subtitle and gate chart card facts by state ([9c87401](https://github.com/jkrumm/basalt-ui/commit/9c87401e8cff18140fdb0b387cafcc618cd2c744))
+* ledger the strip hairlines and draw its row rule between cells ([2d65e2e](https://github.com/jkrumm/basalt-ui/commit/2d65e2e6b59e7413b377eae5529cf56f4852b176))
+* let strip cells carry hero and rows, stale state and derived anchors ([781e57e](https://github.com/jkrumm/basalt-ui/commit/781e57e97de0b7d3fd0f2bbba7099974fe62a2c1))
+* let the status mark take className and style ([054d466](https://github.com/jkrumm/basalt-ui/commit/054d466b774066da757e965d1dcb49b476b36f37))
+* measure the card inset in Chrome and let consumer classes win ([9a93f4c](https://github.com/jkrumm/basalt-ui/commit/9a93f4cdc84dfed95ad76d2e0f55d452e91044a1))
+* on-plot labels for chart reference lines ([220663b](https://github.com/jkrumm/basalt-ui/commit/220663b869b5406f07609e81982a44fc617f9979))
+* on-scale button padding, dark tab hover, neutral active row ([60b9abe](https://github.com/jkrumm/basalt-ui/commit/60b9abed5aa9a295df3e80bff4f4560154fcaeff))
+* proportional hero numerals, mono only for captions and times ([9da4c3f](https://github.com/jkrumm/basalt-ui/commit/9da4c3fa1fbcf4141285e64eccd6acda43bb93fd))
+* re-encode spend distribution and spend over time on s4 ([6048d83](https://github.com/jkrumm/basalt-ui/commit/6048d833f8d13a1b2fdc5718f85ff57cc2bf173f))
+* relativeTime and SyncButton honour the format locale ([dea7750](https://github.com/jkrumm/basalt-ui/commit/dea7750960b4787acec078de4c624411636ebccb))
+* reserve the sparkline readout line and set verdicts in the sans ([311c216](https://github.com/jkrumm/basalt-ui/commit/311c216261a487a65d4612b3d0c9545850e64e9a))
+* round-2 board fixes for readout, chart error, ticks and rows ([ab632fb](https://github.com/jkrumm/basalt-ui/commit/ab632fbddb8dbc8be86f9b86c65740c01e70fc26))
+* share one locale resolver across the format builders ([7431ae4](https://github.com/jkrumm/basalt-ui/commit/7431ae455f10ea6a26c20e007686ac8b36229428))
+* sparkline reference line and a hover/focus readout ([aff4fb7](https://github.com/jkrumm/basalt-ui/commit/aff4fb7b76008164effee7c4db27918165491705))
+* the theme owns the card inset; card-inset flags the pair ([a936467](https://github.com/jkrumm/basalt-ui/commit/a9364676a09ef9bd6048fa2fe3acb9c3ef5aee34))
+
 # [2.19.0](https://github.com/jkrumm/basalt-ui/compare/v2.18.0...v2.19.0) (2026-10-17)
 
 
