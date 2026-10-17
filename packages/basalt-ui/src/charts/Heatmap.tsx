@@ -24,6 +24,7 @@ import type { CartesianDefinition } from './compile'
 import { resolveNamedState } from './band-fold'
 import type { NamedChartState } from './band-fold'
 import { ABSENT_OPACITY, RAMP_LEVELS, RAMP_OPACITIES } from './heatmap-fill'
+import { withTooltipRole } from './cursor'
 import { ChartEngine, idPrefixOf } from './host'
 import { ChartLegend } from './legend'
 import { useCoarsePointer } from '../common/use-media-query'
@@ -239,7 +240,7 @@ export function Heatmap<T, K extends string = string>(props: HeatmapProps<T, K>)
       cell(group, { id, x: 'col', y: 'row', inset: CELL_INSET, key: 'id', ...paint })
     const tooltipOptions = showTooltip
       ? {
-          use: tooltipHost,
+          use: withTooltipRole(tooltipHost),
           portal,
           content: (points: readonly ChartPoint[]) => {
             const point = points[0]

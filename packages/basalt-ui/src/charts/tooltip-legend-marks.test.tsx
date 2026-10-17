@@ -16,7 +16,7 @@ import type { CartesianDefinition } from './compile'
 import { VX } from '../tokens'
 import { contrastRatio } from '../tokens/hct'
 import { STATUS, SURFACE } from '../tokens/palette'
-import { chartCursor } from './cursor'
+import { TOOLTIP_READOUT, chartCursor } from './cursor'
 import { hoverPlot } from '../../tests/support/hover-plot'
 import { Bars } from './Bars'
 import type { BarsBar } from './Bars'
@@ -601,7 +601,7 @@ describe('hover readout semantics', () => {
     test(`${name}: the floating readout carries role="tooltip" and stays a live region`, async () => {
       const el = await mount(node())
       await hoverPlot(el.querySelector('svg'))
-      const tip = document.querySelector('.ts-chart-tooltip')
+      const tip = document.querySelector(TOOLTIP_READOUT)
       expect(tip?.getAttribute('role')).toBe('tooltip')
       expect(tip?.getAttribute('aria-live')).toBe('polite')
     })

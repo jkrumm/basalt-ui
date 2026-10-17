@@ -294,7 +294,8 @@ export function followerOptions(
   return onFollow ? {} : ({ follower: { group, chartId } } satisfies TooltipFollowerOptions)
 }
 
-const READOUT = '.ts-chart-tooltip'
+/** The engine host's hover readout element. */
+export const TOOLTIP_READOUT = '.ts-chart-tooltip'
 
 /**
  * The engine host stamps `role="status"` on its readout on every paint; a hover readout is a
@@ -305,15 +306,16 @@ const READOUT = '.ts-chart-tooltip'
  * alone.
  */
 function stampTooltipRole(container: Element): void {
-  const own = container.querySelectorAll(READOUT)
-  const readouts = own.length > 0 ? own : container.ownerDocument.querySelectorAll(READOUT)
+  const own = container.querySelectorAll(TOOLTIP_READOUT)
+  const readouts = own.length > 0 ? own : container.ownerDocument.querySelectorAll(TOOLTIP_READOUT)
   for (const el of readouts)
     if (el.getAttribute('role') === 'status') el.setAttribute('role', 'tooltip')
 }
 
 /**
  * Decorates a tooltip host so every `paint` is followed by {@link stampTooltipRole}. The one
- * stamping seam: `quietWhileFollowing` and any chart that wires the engine host directly (Donut).
+ * stamping seam: `quietWhileFollowing` is built on it, and so is any chart that wires the engine host
+ * directly (Donut, Heatmap).
  */
 export function withTooltipRole(extension: ChartTooltipExtension): ChartTooltipExtension {
   return {
@@ -331,6 +333,8 @@ export function withTooltipRole(extension: ChartTooltipExtension): ChartTooltipE
   }
 }
 
+const stampedTooltip = withTooltipRole(tooltip)
+
 /**
  * The engine's DOM tooltip host, silent while this chart FOLLOWS another's cursor. A follower
  * resolves the leader's focus group (so the engine draws the same dots at the shared x); the host
@@ -346,9 +350,9 @@ export function withTooltipRole(extension: ChartTooltipExtension): ChartTooltipE
  * re-check this wrapper, the live region included, on every `@tanstack/charts` upgrade.
  */
 export const quietWhileFollowing: ChartTooltipExtension = {
-  ...tooltip,
+  ...stampedTooltip,
   create: (context) => {
-    const host = tooltip.create(context)
+    const host = stampedTooltip.create(context)
     let configured = false
     let follower: TooltipFollowerOptions['follower']
     return {
@@ -360,10 +364,7 @@ export const quietWhileFollowing: ChartTooltipExtension = {
       },
       paint: (paint) => {
         if (!configured || (follower && isForeign(follower.group, follower.chartId))) host.hide()
-        else {
-          host.paint(paint)
-          stampTooltipRole(context.container)
-        }
+        else host.paint(paint)
       },
     }
   },
