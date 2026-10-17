@@ -28,7 +28,7 @@ via a whisper shadow + 1px ring baked into the shadow (never a bare hairline), o
 sky-blue accent (no hex here — the derive engine at `DEFAULT_DERIVE_CONFIG` is ground truth, never
 a prose table), and a three-font typographic system: body (`'Nunito Sans Variable'`), head
 (`'Hubot Sans Variable'`, `font-stretch: 88%`, headings/brand/card titles), mono
-(`'JetBrains Mono Variable'`, every numeral and micro-label). Chrome stays quiet; data and headings
+(`'JetBrains Mono Variable'`, captions, times and code only). Chrome stays quiet; data and headings
 carry the character.
 
 ## Accent discipline
@@ -67,7 +67,7 @@ These are settled doctrine, drawn from studied systems and stated to be promotab
 
 Three studied systems, the best of each: **IBM Carbon** for discipline (one scarce accent, "every
 colour has a reason"), **Linear** for dark-first craft (a deep surface ramp, tight precise radii),
-**Coinbase** for signal-only colour (up/down as text colour, numbers in mono).
+**Coinbase** for signal-only colour (up/down as text colour only).
 
 ## Token architecture (three tiers)
 
@@ -146,8 +146,11 @@ Worked rule: a multi-toggle bar chart colours bars `isMulti ? series.x : VX.line
   Owned in the theme, not inherited.
 - **Type carried by size + weight.** A three-font system, not a single system-sans: body
   (`'Nunito Sans Variable'`), head (`'Hubot Sans Variable'`, headings/brand/card titles at
-  `font-stretch: 88%`), and mono (`'JetBrains Mono Variable'`) for numbers — a tabular stack that
-  keeps metric columns aligned (a Coinbase pattern). The type ladder itself is defined once in
+  `font-stretch: 88%`), and mono (`'JetBrains Mono Variable'`) for captions, times and code only. **Numerals are
+  proportional sans with lining figures**: hero values, row labels, deltas, bar-list and meter
+  figures and body text all use `--basalt-font-numeral` (default `var(--basalt-font-sans)`) with
+  `font-variant-numeric: lining-nums`; `tabular-nums` stays in table columns and axis ticks, where
+  alignment is the job. The heading face keeps lining figures and no slashed zero. The type ladder itself is defined once in
   `src/tokens/index.ts` (`VX.text.*` / `--vx-text-*`) — no font-size literals at call sites.
 - **Responsive is three independent axes, not one breakpoint.** (1) **Size class** — the viewport,
   `compact` < 840 / `medium` < 1200 / `expanded` (`SIZE_CLASSES`); **shell chrome only** (bottom bar,
@@ -177,8 +180,9 @@ config-first props. When to extract one, stay bespoke or add a colour: `docs/V2-
   global strength knobs (`--vx-area-top` / `--vx-area-bottom`). Default the fill **on** for plain
   metric lines and **off** when the chart already carries zone/threshold fills (avoid double-fill
   haze). Keep stacked-area bands **opaque** — fading them leaks lower bands and hurts readability.
-- **Signal-only colour, mono numbers** (Coinbase): up/down deltas are text colour only, never a fill;
-  metric values render in the mono/tabular number style.
+- **Signal-only colour, sans numbers** (Coinbase): up/down deltas are text colour only, never a fill;
+  metric values render in the proportional sans with lining figures (tabular only in table columns
+  and axis ticks).
 
 ### The consumer-series boundary
 
