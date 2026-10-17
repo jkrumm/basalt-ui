@@ -1136,17 +1136,19 @@ every `Card` and `Paper`. Before, a bare `<Card>` got Mantine's 16 px all round 
 (density-scaled) instead of Mantine's 14/18/22/26/32 px and compact 7/8/10/12/14 px: `xs` 12, `sm` 16,
 `md` 20, `lg` 24, `xl` 32; `compact-xs`/`-sm` 8, `compact-md`/`-lg` 12, `compact-xl` 16 (at density 0).
 Heights are unchanged, and `size="ctl"` keeps its own 10 px inset. **Opt out** per component with
-`<Button styles={{ root: { '--button-padding-x': 'var(--button-padding-x-sm)' } }}>` (the size var
-Mantine still declares), or globally by overriding `Button.vars` in your theme.
+`<Button styles={{ root: { '--button-padding-x': 'var(--button-padding-x-<size>)' } }}>`, using the
+matching Mantine size var (`--button-padding-x-xs`, `-compact-xs`, …), or globally by overriding
+`Button.vars` in your theme.
 
 **The selected nav row is a neutral ink fill, not an accent tint.** `NavLink[data-active]` paints
 ink 10 % (14 % on hover) with the existing weight 600; the accent stays on the active icon, focus and
 the filled primary. **Opt out** with a consumer class on the row that sets `background-color`
 (consumer classes win over the theme module).
 
-**Errors render as a dot, a word, the message and a retry.** `ErrorState` (and so `QueryState`,
-`StatCard` and `ChartCard` error bodies) no longer renders a red-tinted Mantine `Alert`; it is a
-neutral `role="alert"` stack led by a `StatusDot` and the title. **Opt out** by rendering your own
+**Errors render as a dot, a word, the message and a retry.** `ErrorState` (and so `QueryState`
+and `StatCard` error bodies) no longer renders a red-tinted Mantine `Alert`; it is a neutral
+`role="alert"` stack led by a `StatusDot` and the title. `ChartCard`'s error body gets the same idiom
+(dot, "Error", the message, Retry); the compact sparkline `—` is unchanged. **Opt out** by rendering your own
 `<Alert color="red" variant="light">` in the `error` slot of the surface (or a custom `ErrorState`
 wrapper).
 

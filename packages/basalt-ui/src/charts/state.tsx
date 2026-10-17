@@ -36,6 +36,26 @@ const pendingStyle: CSSProperties = {
   background: `linear-gradient(90deg, transparent, ${VX.surface.subtle}, transparent)`,
 }
 
+// The error idiom (D28, SPEC § 6.12): a status dot + a word + the message + the action, on the
+// neutral surface. The dot is drawn from `--vx-*` tokens here — `src/charts/**` stays Mantine-free and `theme/status-dot` sits in the
+// Mantine-coupled theme layer.
+const dotStyle: CSSProperties = {
+  display: 'inline-block',
+  flex: 'none',
+  width: 6,
+  height: 6,
+  // theme-allow raw-surface — a 6px status dot, not a surface
+  borderRadius: '50%',
+  background: VX.status.bad,
+}
+const errorHeadStyle: CSSProperties = {
+  display: 'inline-flex',
+  alignItems: 'center',
+  gap: 6,
+  color: VX.ink,
+  fontWeight: 500,
+}
+
 const emptyLabel = (state: ChartState | undefined): string =>
   typeof state?.empty === 'string' ? state.empty : 'No data'
 
@@ -67,6 +87,12 @@ export function ChartPlaceholder(props: {
     <span aria-hidden="true">—</span>
   ) : (
     <>
+      {kind === 'error' && (
+        <span style={errorHeadStyle}>
+          <span aria-hidden="true" data-basalt-status-dot="" style={dotStyle} />
+          Error
+        </span>
+      )}
       <span>{label}</span>
       {props.action}
     </>
