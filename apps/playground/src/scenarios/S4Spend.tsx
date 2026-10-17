@@ -11,7 +11,8 @@
  * and `Section` do not forward `data-*`, so the anchor is the wrapping `Box`.
  */
 import { Box, SimpleGrid, Stack } from '@mantine/core'
-import { BarList, DeltaBadge, Meter, PageBar, Section, StatCard, StatGroup } from 'basalt-ui'
+import { BarList, DeltaBadge, Meter, PageBar, Section, StatGroup } from 'basalt-ui'
+import type { StatStripCell } from 'basalt-ui'
 import { Bars, ChartCard, Lines, Sparkline } from 'basalt-ui/charts'
 import type { BarsBar, ChartSeries, ChartTooltipRow } from 'basalt-ui/charts'
 import { CONTAINER_KEYS, VX } from 'basalt-ui/tokens'
@@ -23,6 +24,7 @@ import {
   DISTRIBUTION,
   DRIVERS,
   FORECAST_EUR,
+  MEDIAN_DAY_EUR,
   MONTH_DAYS,
   MONTH_LABEL,
   MONTH_NAME,
@@ -128,103 +130,103 @@ const retry = (what: string): string => retryCopy(what, 'usage export')
 
 function SpendStats({ shotState }: ScenarioProps) {
   const isAtRest = shotState === undefined
-  const query = queryFor(shotState, USAGE_ERROR)
-  // The empty branch says why and what to do in one muted line; error needs none (the `QueryState`
-  // alert already says it). Computed once for all three cards.
-  const shared = {
-    emptyText: USAGE_EMPTY,
-    ...(query !== undefined && { query }),
-  }
   const left = BUDGET_EUR - MTD_EUR
   const overBudget = isAtRest && FORECAST_EUR > BUDGET_EUR
 
-  return (
-    <StatGroup cols={3}>
-      <Box data-shot="month-to-date" h="100%">
-        <StatCard
-          title="Spend"
-          qualifier="month to date"
-          subtitle={`Daily, ${WINDOW_LABEL}`}
-          value={fmtEur(MTD_EUR)}
-          info={`All projects and models, ${WINDOW_LABEL} ${YEAR}, in EUR.`}
-          {...(isAtRest && {
-            delta: MTD_CHANGE_PCT,
-            deltaPeriod: `vs ${PRIOR_WINDOW_LABEL}`,
-            deltaPolarity: 'up-bad' as const,
-          })}
-          {...shared}
-          sparkline={(size) => (
-            <Sparkline
-              ariaLabel={`Daily spend, ${WINDOW_LABEL}, EUR`}
-              data={MTD_TOTALS}
-              {...size}
-            />
-          )}
-        />
-      </Box>
-      <Box data-shot="forecast" h="100%">
-        <StatCard
-          title="Forecast"
-          // `tone` states the verdict as a dot and a word; the qualifier carries the amount.
-          qualifier={
-            overBudget
-              ? `end of ${MONTH_NAME} · over budget by ${fmtEur(FORECAST_EUR - BUDGET_EUR)}`
-              : `end of ${MONTH_NAME}`
-          }
-          value={fmtEur(FORECAST_EUR)}
-          info={`Average per day so far (${fmtEur(MTD_EUR / DAYS_ELAPSED)}) held flat for all ${MONTH_DAYS} days. Ignores weekends and bursts.`}
-          {...(overBudget && { tone: 'bad' as const })}
-          {...shared}
-          // The Meter rides in the `sparkline` slot: it is the card's one visual. A package change
-          // makes that slot content-sized for a Meter; until then the foot grows to fit.
-          sparkline={() => (
-            <Meter
-              label={`Forecast against the ${fmtEur(BUDGET_EUR)} budget`}
-              max={TRACK_END_EUR}
-              target={BUDGET_EUR}
-              format={fmtEur}
-              segments={
-                shotState === 'empty'
-                  ? []
-                  : [
-                      { value: MTD_EUR, label: 'Spent' },
-                      { value: FORECAST_EUR - MTD_EUR, label: 'Forecast', forecast: true },
-                    ]
-              }
-              loading={shotState === 'loading'}
-              emptyText={USAGE_EMPTY}
-              forecastCaption={`Forecast ${fmtEur(FORECAST_EUR)}`}
-              startCaption={`Spent ${fmtEur(MTD_EUR)}`}
-            />
-          )}
-        />
-      </Box>
-      <Box data-shot="budget" h="100%">
-        <StatCard
-          title="Budget"
-          qualifier={MONTH_LABEL}
-          value={fmtEur(BUDGET_EUR)}
-          info={`Monthly cap in EUR. ${fmtEur(PACE_EUR_PER_DAY)} a day keeps spend on pace.`}
-          {...shared}
-          // Same slot as the forecast card's Meter.
-          sparkline={() => (
-            <Meter
-              label={`Spent against the ${fmtEur(BUDGET_EUR)} budget`}
-              max={BUDGET_EUR}
-              value={shotState === 'empty' ? null : MTD_EUR}
-              format={fmtEur}
-              loading={shotState === 'loading'}
-              emptyText={USAGE_EMPTY}
-              // A verdict colour only once the cap is passed.
-              {...(left < 0 && { color: VX.status.bad })}
-              startCaption={`Spent ${fmtEur(MTD_EUR)}`}
-              endCaption={left < 0 ? `${fmtEur(-left)} over` : `${fmtEur(left)} left`}
-            />
-          )}
-        />
-      </Box>
-    </StatGroup>
-  )
+  const none = shotState === 'empty' || shotState === 'error'
+  const loading = shotState === 'loading'
+  const note = shotState === 'error' ? USAGE_ERROR : shotState === 'empty' ? USAGE_EMPTY : undefined
+  // Loading shows the hero skeleton alone: a visual over placeholder data would contradict it.
+  const hidden = none || loading
+
+  // One reading split three ways — spent, where it lands, the cap — so one strip, not three cards.
+  const cells: StatStripCell[] = [
+    {
+      key: 'month-to-date',
+      caption: 'Spend',
+      qualifier: 'month to date',
+      info: `All projects and models, ${WINDOW_LABEL} ${YEAR}, in EUR. The dashed line is the daily mean.`,
+      value: none ? null : fmtEur(MTD_EUR),
+      loading,
+      ...(note !== undefined && { footer: note }),
+      ...(isAtRest && {
+        delta: (
+          <DeltaBadge
+            value={MTD_CHANGE_PCT}
+            polarity="up-bad"
+            period={`vs ${PRIOR_WINDOW_LABEL}`}
+          />
+        ),
+        footer: `Daily, ${WINDOW_LABEL}`,
+      }),
+      ...(!hidden && {
+        visual: (
+          <Sparkline
+            ariaLabel={`Daily spend, ${WINDOW_LABEL}, EUR`}
+            data={MTD_TOTALS}
+            height={28}
+            reference="mean"
+            format={fmtEur}
+          />
+        ),
+      }),
+    },
+    {
+      key: 'forecast',
+      caption: 'Forecast',
+      // `tone` states the verdict as a word beside the amount; the qualifier names the date.
+      qualifier: overBudget ? `end of ${MONTH_NAME} · over budget` : `end of ${MONTH_NAME}`,
+      info: `Average per day so far (${fmtEur(MTD_EUR / DAYS_ELAPSED)}) held flat for all ${MONTH_DAYS} days. Ignores weekends and bursts.`,
+      value: none ? null : fmtEur(FORECAST_EUR),
+      ...(overBudget && { tone: 'bad' as const }),
+      loading,
+      ...(note !== undefined && { footer: note }),
+      ...(overBudget && {
+        footer: `${fmtEur(FORECAST_EUR - BUDGET_EUR)} over the ${fmtEur(BUDGET_EUR)} budget`,
+      }),
+      ...(!hidden && {
+        visual: (
+          <Meter
+            label={`Forecast against the ${fmtEur(BUDGET_EUR)} budget`}
+            max={TRACK_END_EUR}
+            target={BUDGET_EUR}
+            format={fmtEur}
+            segments={[
+              { value: MTD_EUR, label: 'Spent' },
+              { value: FORECAST_EUR - MTD_EUR, label: 'Forecast', forecast: true },
+            ]}
+            forecastCaption={`Forecast ${fmtEur(FORECAST_EUR)}`}
+            startCaption={`Spent ${fmtEur(MTD_EUR)}`}
+          />
+        ),
+      }),
+    },
+    {
+      key: 'budget',
+      caption: 'Budget',
+      qualifier: MONTH_LABEL,
+      info: `Monthly cap in EUR. ${fmtEur(PACE_EUR_PER_DAY)} a day keeps spend on pace.`,
+      value: none ? null : fmtEur(BUDGET_EUR),
+      loading,
+      ...(note !== undefined && { footer: note }),
+      ...(!hidden && {
+        visual: (
+          <Meter
+            label={`Spent against the ${fmtEur(BUDGET_EUR)} budget`}
+            max={BUDGET_EUR}
+            value={MTD_EUR}
+            format={fmtEur}
+            // A verdict colour only once the cap is passed.
+            {...(left < 0 && { color: VX.status.bad })}
+            startCaption={`Spent ${fmtEur(MTD_EUR)}`}
+            endCaption={left < 0 ? `${fmtEur(-left)} over` : `${fmtEur(left)} left`}
+          />
+        ),
+      }),
+    },
+  ]
+
+  return <StatGroup variant="strip" label="Spend against budget" cols={3} cells={cells} />
 }
 
 function SpendCharts({ shotState }: ScenarioProps) {
@@ -232,7 +234,11 @@ function SpendCharts({ shotState }: ScenarioProps) {
     <SimpleGrid type="container" cols={{ base: 1, [CONTAINER_KEYS.regular]: 2 }}>
       <Box data-shot="spend-over-time" h="100%">
         <ChartCard
-          title={`Cumulative spend, ${MONTH_LABEL} (€)`}
+          title="Cumulative spend (€)"
+          facts={{
+            value: fmtEur(MTD_EUR),
+            period: `spent ${WINDOW_LABEL}, of ${fmtEur(BUDGET_EUR)} budget`,
+          }}
           info={`Month-to-date spend per day against the ${fmtEur(BUDGET_EUR)} budget. The dashed line holds the ${fmtEur(MTD_EUR / DAYS_ELAPSED)} daily average flat to the last day.`}
           state={chartStateFor(shotState, {
             empty: 'No spend this month. Connect a project to the usage export.',
@@ -258,7 +264,8 @@ function SpendCharts({ shotState }: ScenarioProps) {
             and six near-identical hues with captions under 5 % segments do not survive 390 px; the
             question is also "which project", a ranking, which length on a shared scale answers. */}
         <ChartCard
-          title={`Spend by project, ${WINDOW_LABEL} (€)`}
+          title="Spend by project (€)"
+          facts={{ value: fmtEur(MTD_EUR), period: `all projects, ${WINDOW_LABEL}` }}
           info="Each project's share of month-to-date spend across all models."
           {...cardStateProps(shotState, retry('Spend by project'), PROJECT_PLACEHOLDER)}
         >
@@ -304,7 +311,8 @@ function SpendDrivers({ shotState }: ScenarioProps) {
       </Box>
       <Box data-shot="spend-distribution" h="100%">
         <ChartCard
-          title="Days by total spend per day, last 90 days"
+          title="Days by total spend per day"
+          facts={{ value: fmtEur(MEDIAN_DAY_EUR), unit: 'a day', period: 'median, last 90 days' }}
           info="Each bar counts the days whose total spend across all projects landed in that €10 band (€ a day)."
           state={chartStateFor(shotState, {
             empty: 'No days to bin yet. The histogram needs at least one day of spend.',

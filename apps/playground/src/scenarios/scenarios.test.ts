@@ -35,9 +35,10 @@ describe('findScenario', () => {
     for (const name of SCENARIO_NAMES) expect(findScenario(name)).toBeDefined()
   })
 
-  it('registers S1, S2, S4 and the six calibration seeds', () => {
+  it('registers S1–S4 and the six calibration seeds', () => {
     expect(SCENARIO_NAMES).toContain('s1-ops')
     expect(SCENARIO_NAMES).toContain('s2-training')
+    expect(SCENARIO_NAMES).toContain('s3-agents')
     expect(SCENARIO_NAMES).toContain('s4-spend')
     expect(SCENARIO_NAMES.filter((n) => n.startsWith('probe-')).toSorted()).toEqual([
       'probe-1',

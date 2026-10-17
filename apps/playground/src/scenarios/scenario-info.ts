@@ -25,6 +25,11 @@ export const SCENARIO_INFO: readonly ScenarioInfo[] = [
     blurb: "Am I on track for this month's goal? Session pace, training load and readiness.",
   },
   {
+    id: 's3-agents',
+    title: 'Agent work',
+    blurb: 'What needs me, and what is stuck? Decision queue, wait times and dispatch budget.',
+  },
+  {
     id: 's4-spend',
     title: 'Spend and usage',
     blurb: 'Am I within budget, and what drives it? Budget burn and spend breakdown by project.',
