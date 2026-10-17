@@ -86,6 +86,7 @@ import { CTL_HEIGHT_VARS } from '../tokens/ctl-vars'
 import type { CtlHeightVar } from '../tokens/ctl-vars'
 import { SIZE_CLASS_BREAKPOINTS } from '../tokens/size-classes'
 import type { BasaltFontsConfig } from '../tokens/core'
+import { onColor, onColorFor, subtleInkVars, tabsVars } from './chrome-vars'
 import controlsClasses from './controls.module.css'
 import floatingClasses from './floating.module.css'
 import navLinkClasses from './nav-link.module.css'
@@ -229,83 +230,6 @@ function buildDarkTuple(data: PaletteData): MantineColorsTuple {
   ] as unknown as MantineColorsTuple
 }
 
-/**
- * ON-COLOR: the foreground for a filled surface, decided in CSS. THE fix for Mantine's
- * scheme-blind, contrast-blind `autoContrast`.
- *
- * Mantine picks the filled-variant text color ONCE, in JS, via `parseThemeColor({ color, theme })`
- * — with NO `colorScheme` argument, so it resolves against the LIGHT `primaryShade` and bakes a
- * static `color: var(--mantine-color-white)` into the element, while the BACKGROUND it pairs that
- * with (`--mantine-color-{c}-filled`) stays a scheme-reactive CSS var. It gets away with it
- * upstream only because Mantine's default `primaryShade` is `{ light: 6, dark: 8 }` — DARKER on
- * dark, so white happens to stay right. It is luck, not logic: point `primaryShade.dark` at a
- * lighter shade (as Basalt originally did) and every filled control in dark mode turns white-on-
- * light. And even in one scheme the pick is wrong, because `isLightColor` is a BT.601 BRIGHTNESS
- * test that does not track WCAG contrast — it handed white to lime `#97ba2e` at 2.24:1.
- *
- * Basalt removes the JS decision entirely. A fill is now scheme-INDEPENDENT and sits in a
- * luminance band chosen so a WHITE label always clears AA (see `FILL` / `ACCENT` in
- * tokens/palette.ts), so the on-color is a token, not a computation. `--vx-on-{color}` is emitted
- * per color and resolves in pure CSS at paint time — the same discipline the rest of the `--vx-*`
- * system follows. It is still MEASURED here (`legibleOn`) rather than hardcoded to white, so a
- * consumer that retunes a family outside the band still gets the legible foreground.
- *
- * The palette already KNEW the answer: `ACCENT.onAccent` ("text on an accent fill") existed, and
- * `Composer`'s send button hand-wired `color: var(--vx-on-accent)` — which was the ONLY reason that
- * one control stayed legible while every generic Mantine control did not. The token was right;
- * nothing bound the chrome to it. It is bound now (see `accentBridge` / `familyBridge`), and the
- * Composer no longer needs the override.
- *
- * Fix: never let a foreground be decided in JS. `--vx-on-{color}` is emitted per color under BOTH
- * scheme blocks of `cssVariablesResolver` (each resolved against the shade that scheme actually
- * paints), so the foreground resolves in pure CSS at paint time — the same discipline the rest of
- * the `--vx-*` system already follows. `basaltVariantColorResolver` re-points every filled variant
- * at it, and the components that bypass the variant resolver (Checkbox / Radio / Tabs / Pagination /
- * Stepper / Indicator / Timeline all call Mantine's `getContrastColor` directly) are re-pointed at
- * it too, in `components` below. Regression-locked by `contrast.test.ts`.
- */
-function onColor(theme: MantineTheme, color: string | undefined): string | undefined {
-  const name = color ?? theme.primaryColor
-  if (!Object.prototype.hasOwnProperty.call(theme.colors, name)) return undefined // hex / `blue.5`
-  return `var(--vx-on-${name})`
-}
-
-/**
- * The on-color for a component that bypasses the variant resolver and calls Mantine's
- * `getContrastColor` directly. `undefined` (autoContrast off, or a hex / indexed color) leaves
- * Mantine's own value in place — `mergeVars` strips undefined before merging.
- */
-function onColorFor(
-  theme: MantineTheme,
-  props: { color?: string | undefined; autoContrast?: boolean | undefined },
-): string | undefined {
-  const autoContrast = props.autoContrast ?? theme.autoContrast
-  return autoContrast ? onColor(theme, props.color) : undefined
-}
-
-/**
- * Tabs vars: the on-color re-point, plus the active underline in ink (SPEC § 6.12). Cast: Mantine's
- * `TabsCssVariables` type declares only `--tabs-color` / `--tabs-radius`, yet Tabs' OWN
- * varsResolver writes `--tabs-text-color` — an upstream type gap, cast at the `Tabs` entry. Only the underline `default`
- * variant takes ink (`pills` fills with the colour); an explicit `color=` opts out.
- */
-export function tabsVars(
-  theme: MantineTheme,
-  props: {
-    color?: string | undefined
-    variant?: string | undefined
-    autoContrast?: boolean | undefined
-  },
-): { root: Record<'--tabs-color' | '--tabs-text-color', string | undefined> } {
-  const underline = !hasExplicitColor(props.color) && (props.variant ?? 'default') === 'default'
-  return {
-    root: {
-      '--tabs-text-color': onColorFor(theme, props),
-      '--tabs-color': underline ? 'var(--vx-ink)' : undefined,
-    },
-  }
-}
-
 /** WCAG 2.x relative luminance. */
 function relativeLuminance(hex: string): number {
   const channels = hexToRgb(hex).map((c) => {
@@ -378,32 +302,6 @@ function onColorVars(
  * "status tint bg (delta badges): color-mix(in srgb, <status> 13%, transparent)"), which this
  * resolver is the single implementation of (Badge's `light` variant IS the status-tint idiom).
  */
-/** The chrome opt-out: a call site that names a colour (even the primary one) keeps its hue. */
-function hasExplicitColor(color: string | undefined): boolean {
-  return color !== undefined
-}
-
-/**
- * A `subtle` Button / ActionIcon that names no colour takes neutral ink for its label and an
- * ink-6% hover (`docs/DESIGN-SPEC.md` §5 ghost idiom; SPEC § 6.12). An explicit `color=` — the
- * primary one included — keeps Mantine's tinted label and hover: `color="red"` on a destructive
- * text action carries its hue as the whole signal. Declared on the component's own vars (`label`
- * / `hover`: `--button-color`/`--button-hover`, `--ai-color`/`--ai-hover`).
- */
-export function subtleInkVars(props: {
-  color?: string | undefined
-  variant?: string | undefined
-}): {
-  color: string | undefined
-  hover: string | undefined
-} {
-  const ink = props.variant === 'subtle' && !hasExplicitColor(props.color)
-  return {
-    color: ink ? 'var(--vx-ink)' : undefined,
-    hover: ink ? 'color-mix(in srgb, var(--vx-ink) 6%, transparent)' : undefined,
-  }
-}
-
 const basaltVariantColorResolver: VariantColorsResolver = (input) => {
   const resolved = defaultVariantColorsResolver(input)
   const colorName = input.color ?? input.theme.primaryColor
@@ -776,29 +674,35 @@ function buildTheme(data: PaletteData, options: BuildThemeOptions = {}): Mantine
       // `size="xs"`) on Mantine's own static height.
       Button: ext<typeof Button>({
         classNames: { root: controlsClasses.buttonRoot },
-        vars: (_theme, props) => ({
-          root: {
-            '--button-height':
-              props.size === 'md'
-                ? 'calc(var(--vx-space-control-height) * var(--mantine-scale))'
-                : undefined,
-            '--button-color': subtleInkVars(props).color,
-            '--button-hover': subtleInkVars(props).hover,
-          },
-        }),
+        vars: (_theme, props) => {
+          const ink = subtleInkVars(props)
+          return {
+            root: {
+              '--button-height':
+                props.size === 'md'
+                  ? 'calc(var(--vx-space-control-height) * var(--mantine-scale))'
+                  : undefined,
+              '--button-color': ink.color,
+              '--button-hover': ink.hover,
+            },
+          }
+        },
       }),
       ActionIcon: ext<typeof ActionIcon>({
         classNames: { root: controlsClasses.actionIconRoot },
-        vars: (_theme, props) => ({
-          root: {
-            '--ai-size':
-              props.size === 'md'
-                ? 'calc(var(--vx-space-control-height) * var(--mantine-scale))'
-                : undefined,
-            '--ai-color': subtleInkVars(props).color,
-            '--ai-hover': subtleInkVars(props).hover,
-          },
-        }),
+        vars: (_theme, props) => {
+          const ink = subtleInkVars(props)
+          return {
+            root: {
+              '--ai-size':
+                props.size === 'md'
+                  ? 'calc(var(--vx-space-control-height) * var(--mantine-scale))'
+                  : undefined,
+              '--ai-color': ink.color,
+              '--ai-hover': ink.hover,
+            },
+          }
+        },
       }),
       // CheckboxCard / RadioCard (`withBorder`, true by default): same live regression as Button/
       // ActionIcon before this pass — Mantine ships `border: 1px solid transparent` as the BASE
@@ -1168,10 +1072,7 @@ function buildTheme(data: PaletteData, options: BuildThemeOptions = {}): Mantine
       // `color=` opts back in. Only the underline `default` variant — `pills` fills with the colour.
       Tabs: ext<typeof Tabs>({
         classNames: { root: controlsClasses.tabsRoot },
-        vars: (theme, props) =>
-          tabsVars(theme, props) as unknown as {
-            root: Record<'--tabs-color' | '--tabs-radius', string | undefined>
-          },
+        vars: tabsVars,
       }),
 
       // ── ON-COLOR re-points (see the ON-COLOR doctrine above) ────────────────────────────────

@@ -7,7 +7,8 @@ import type { MantineTheme, MantineThemeOverride } from '@mantine/core'
 import { describe, expect, test } from 'bun:test'
 import { contrastRatio } from '../tokens/hct'
 import { INK, RADIUS_STEP, SURFACE } from '../tokens/palette'
-import { baseTheme, tabsVars } from './index'
+import { tabsVars } from './chrome-vars'
+import { baseTheme } from './index'
 import controlsClasses from './controls.module.css'
 
 const merge = (override: MantineThemeOverride): MantineTheme =>

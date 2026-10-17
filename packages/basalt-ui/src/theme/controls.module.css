@@ -317,4 +317,9 @@ html .tableRoot tbody tr:last-of-type {
 .badgeSection img {
   width: calc(0.75rem * var(--mantine-scale));
   height: calc(0.75rem * var(--mantine-scale));
+  flex-shrink: 0;
+}
+
+.badgeSection img {
+  object-fit: contain;
 }

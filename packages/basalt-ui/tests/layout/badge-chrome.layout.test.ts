@@ -35,7 +35,7 @@ layout('status chip geometry', () => {
     await p.settle()
   }, CLOSE_BUDGET_MS)
 
-  test('a default Badge is 20 px high with the tight radius and a tinted (not accent-filled) ground', async () => {
+  test('a default Badge is 20 px high with the tight radius and a translucent fill (not an opaque accent fill)', async () => {
     const badge = await p.raw.evaluate(() => {
       const el = document.querySelector<HTMLElement>('table .mantine-Badge-root')
       if (!el) throw new Error('no Badge in the table fixture')
