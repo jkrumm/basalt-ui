@@ -454,6 +454,15 @@ function CardsFixture({ spec }: { spec: CardsSpec }): ReactElement {
   return (
     <>
       {spec.footprint === true && <FootprintFixture />}
+      {spec.foldNote?.map((w) => (
+        // theme-allow -- the wrapper width IS the fixture's payload (a container-class probe)
+        <div key={w} data-testid={`fold-${w}`} style={{ width: w }}>
+          <ChartCard title="Availability" subtitle="Last 24 hours" info="How it is measured.">
+            {/* theme-allow -- a body taller than the 280px short-card fold, so only width folds */}
+            <div style={{ height: 320 }} />
+          </ChartCard>
+        </div>
+      ))}
       {spec.widths.map((w) => (
         // theme-allow -- the wrapper width IS the fixture's payload (a container-class probe)
         <div key={w} data-testid={`card-${w}`} style={{ width: w }}>

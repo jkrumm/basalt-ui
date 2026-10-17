@@ -36,6 +36,7 @@ const SPEC: FixtureSpec = {
     shortHeader: { width: 600, bodyHeight: 140 },
     oscillationScan: { width: 600, bodyHeights: OSCILLATION_SCAN_HEIGHTS },
     footprint: true,
+    foldNote: [320, 700],
   },
 }
 
@@ -122,6 +123,21 @@ layout('card chrome by container', () => {
     }
     expect(heights.visual).toBe(heights.both)
     expect(heights.footer).toBe(heights.both)
+  })
+
+  // The info bubble is a top-layer popover, but it stays in the card's DOM subtree: the card's own
+  // container query still reveals the folded subtitle inside it (below 480px) and hides it above.
+  test.each([
+    [320, true],
+    [700, false],
+  ])('in a %ipx card the open bubble shows the folded note: %s', async (width, shown) => {
+    const root = `[data-testid="fold-${width}"]`
+    await p.raw.focus(`${root} button[aria-label^="More information"]`)
+    const note = (await p.boxes(`${root} ${moduleClass('foldNote')}`))[0]
+    expect(note !== undefined && note.height > 0).toBe(shown)
+    const bubble = await p.box('bubble', `${root} [role="tooltip"]`)
+    expect(bubble.box.left).toBeGreaterThanOrEqual(0)
+    expect(bubble.box.right).toBeLessThanOrEqual(1440)
   })
 
   test('a `right` card with a footer and no sparkline adds one footer line, not a visual band', async () => {

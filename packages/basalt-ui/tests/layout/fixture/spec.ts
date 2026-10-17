@@ -259,6 +259,11 @@ export type CardsSpec = {
    * `"foot-right-ready"` hold the same `sparklinePlacement="right"` card pending and ready.
    */
   footprint?: true
+  /**
+   * A `ChartCard` with `info` AND `subtitle` per width (`data-testid="fold-<w>"`): the folded note must
+   * show inside the open top-layer bubble below 480px and stay hidden from 480px.
+   */
+  foldNote?: number[]
 }
 
 /**

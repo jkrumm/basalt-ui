@@ -248,13 +248,12 @@ describe('the subtitle folds into the info glyph in a card under 480px (CSS-only
   })
 
   test('the container rules hide the visible subtitle and show the fold pieces, and only there', () => {
-    expect(block('.foldGlyph,\n.foldProbe,\n.foldNote')).toContain('display: none')
+    expect(block('.foldGlyph,\n.foldNote')).toContain('display: none')
     const narrow = CSS.slice(CSS.indexOf('@container basalt-card (max-width: 479.9px)'))
     expect(narrow).toContain('.subtitle {\n    display: none')
     expect(narrow).toContain('.foldGlyph {\n    display: inline-flex')
-    // the portalled bubble reveals its note from `data-folded`; the probe rides the card's rule
-    expect(narrow).toContain('.foldProbe {\n    display: block')
-    expect(CSS).toContain(".infoBubble[data-folded='true'] .foldNote {\n  display: block")
+    // the bubble is a top-layer popover still inside the card's subtree: the same rule reveals it
+    expect(narrow).toContain('.foldNote {\n    display: block')
   })
 })
 
@@ -349,7 +348,7 @@ describe('className, style and the classNames slots', () => {
 })
 
 // W32 rounds 0-3 (Craft 6): at 390 the bubble was clipped by the card's `overflow: hidden` and sat
-// under the card edge on keyboard focus. It is now portalled to <body>, `position: fixed`, and placed
+// under the card edge on keyboard focus. It is now a top-layer popover, `position: fixed`, and placed
 // inside the viewport from the trigger's rect: below by default, flipped above at the bottom edge,
 // shifted off the left/right edges.
 describe('the info bubble is placed inside the viewport', () => {
@@ -393,14 +392,34 @@ describe('the info bubble is placed inside the viewport', () => {
     }
   }
 
-  test('is portalled out of the card, so no ancestor overflow can clip it', () => {
-    const { container } = render(
-      <WidgetHeader tier="widget" title="Revenue" info="How it is computed." />,
-    )
+  // The top layer escapes a card's `overflow: hidden`; a portal would pull `react-dom` into the
+  // `./charts` graph (`scripts/check-dist-layering.mjs`).
+  test('is a manual popover shown into the top layer, rendered in place', () => {
+    const shown: string[] = []
+    const proto = HTMLElement.prototype as unknown as { showPopover?: () => void }
+    const had = Object.getOwnPropertyDescriptor(proto, 'showPopover')
+    proto.showPopover = function (this: HTMLElement) {
+      shown.push(this.getAttribute('role') ?? '')
+    }
+    try {
+      const { container } = render(
+        <WidgetHeader tier="widget" title="Revenue" info="How it is computed." />,
+      )
+      fireEvent.focus(screen.getByRole('button', { name: 'More information' }))
+      const bubble = screen.getByRole('tooltip')
+      expect(bubble.getAttribute('popover')).toBe('manual')
+      expect(container.contains(bubble)).toBe(true)
+      expect(shown).toEqual(['tooltip'])
+    } finally {
+      if (had) Object.defineProperty(proto, 'showPopover', had)
+      else Reflect.deleteProperty(proto, 'showPopover')
+    }
+  })
+
+  test('without the Popover API the bubble still renders, visible in place', () => {
+    render(<WidgetHeader tier="widget" title="Revenue" info="How it is computed." />)
     fireEvent.focus(screen.getByRole('button', { name: 'More information' }))
-    const bubble = screen.getByRole('tooltip')
-    expect(container.contains(bubble)).toBe(false)
-    expect(bubble.parentElement).toBe(document.body)
+    expect(screen.getByRole('tooltip').textContent).toBe('How it is computed.')
   })
 
   test('opens below the glyph, left-aligned to it', () => {
@@ -430,43 +449,12 @@ describe('the info bubble is placed inside the viewport', () => {
     expect(Number.parseFloat(bubble.style.top)).toBe(bottom - 24 - 7 - 40)
   })
 
-  test('the stylesheet makes it fixed and viewport-capped', () => {
+  test('the stylesheet makes it fixed, resets the UA popover styles and caps it to the viewport', () => {
     const rule = block('.infoBubble')
     expect(rule).toContain('position: fixed')
+    for (const reset of ['inset: auto', 'margin: 0', 'border: 0', 'overflow: visible']) {
+      expect(rule).toContain(reset)
+    }
     expect(rule).toContain('max-width: min(260px, calc(100% - 16px))')
-  })
-})
-
-// The note (folded subtitle) is revealed from the card's fold signal, which the portalled bubble no
-// longer sits under: the glyph reads a probe inside the card and writes `data-folded` on the bubble.
-describe('the folded note follows the card’s fold signal', () => {
-  const original = window.getComputedStyle
-  afterEach(() => {
-    window.getComputedStyle = original
-  })
-
-  function folded(display: string): string | undefined {
-    render(
-      <WidgetHeader tier="widget" title="Revenue" info="Method." subtitle="Trailing 30 days" />,
-    )
-    const trigger = screen.getByRole('button', { name: 'More information' })
-    // Only the probe (the lone aria-hidden span) is faked, after the role query has run.
-    window.getComputedStyle = ((el: Element, pseudo?: string | null) =>
-      el.tagName === 'SPAN' && el.getAttribute('aria-hidden') === 'true'
-        ? ({
-            display,
-            getPropertyValue: (n: string) => (n === 'display' ? display : ''),
-          } as CSSStyleDeclaration)
-        : original.call(window, el, pseudo)) as typeof window.getComputedStyle
-    fireEvent.focus(trigger)
-    return screen.getByRole('tooltip').dataset['folded']
-  }
-
-  test('probe shown (card narrow or short) → data-folded true', () => {
-    expect(folded('block')).toBe('true')
-  })
-
-  test('probe hidden (card wide) → data-folded false', () => {
-    expect(folded('none')).toBe('false')
   })
 })

@@ -31,7 +31,6 @@
  */
 import { useEffect, useId, useRef, useState } from 'react'
 import type { ReactNode, RefObject } from 'react'
-import { createPortal } from 'react-dom'
 import { useIsomorphicLayoutEffect } from '../common/isomorphic-layout-effect'
 import { cx } from '../common/props'
 import type { BasaltProps, SlotStylesProps } from '../common/props'
@@ -174,7 +173,7 @@ type BubblePos = { top: number; left: number }
 /**
  * Places the bubble in the VIEWPORT: below the glyph, flipped above when it would overflow the
  * bottom edge, shifted sideways to stay inside the left and right edges. Re-places on scroll, resize
- * and when the bubble's own box changes while open. The bubble is portalled to `document.body` and
+ * and when the bubble's own box changes while open. The bubble is a top-layer popover and
  * `position: fixed`, so a card's `overflow: hidden` (every basalt card has one) can never clip it —
  * the W32 round 0-3 defect at 390. `clear` forgets the position on close, so a reopen starts hidden.
  */
@@ -182,21 +181,20 @@ function useBubblePosition(
   open: boolean,
   triggerRef: RefObject<HTMLButtonElement | null>,
   bubbleRef: RefObject<HTMLSpanElement | null>,
-  probeRef: RefObject<HTMLSpanElement | null>,
 ): { pos: BubblePos | null; setPos: (pos: BubblePos | null) => void } {
   const [pos, setPos] = useState<BubblePos | null>(null)
 
   useIsomorphicLayoutEffect(() => {
     if (!open) return
+    // Into the top layer before the first measure. A DOM without the Popover API (happy-dom, an old
+    // engine) ignores the attribute and the element stays visible in place, `position: fixed`, which
+    // is the same box the placement maths below positions.
+    const bubbleEl = bubbleRef.current
+    if (bubbleEl !== null && typeof bubbleEl.showPopover === 'function') bubbleEl.showPopover()
     const place = () => {
       const trigger = triggerRef.current
       const bubble = bubbleRef.current
       if (trigger === null || bubble === null) return
-      // The fold signal is the CARD's (container query / short-card flag), so it is re-read on every
-      // placement: a resize while open can fold or unfold the note, which changes the bubble's box.
-      const probe = probeRef.current
-      if (probe !== null)
-        bubble.dataset['folded'] = String(getComputedStyle(probe).display !== 'none')
       const t = trigger.getBoundingClientRect()
       const b = bubble.getBoundingClientRect()
       // The documentElement's client box is the viewport minus classic scrollbars.
@@ -221,8 +219,15 @@ function useBubblePosition(
       window.removeEventListener('scroll', place, true)
       window.removeEventListener('resize', place)
       observer?.disconnect()
+      if (
+        bubbleEl !== null &&
+        typeof bubbleEl.hidePopover === 'function' &&
+        bubbleEl.matches(':popover-open')
+      ) {
+        bubbleEl.hidePopover()
+      }
     }
-  }, [open, triggerRef, bubbleRef, probeRef])
+  }, [open, triggerRef, bubbleRef])
 
   return { pos, setPos }
 }
@@ -259,10 +264,7 @@ export function InfoGlyph({
   const tipId = useId()
   const triggerRef = useRef<HTMLButtonElement>(null)
   const bubbleRef = useRef<HTMLSpanElement>(null)
-  const probeRef = useRef<HTMLSpanElement>(null)
-  // The probe is a hidden sibling of the trigger, inside the card, that the card's fold rules reveal;
-  // `useBubblePosition` reads its display onto the portalled bubble as `data-folded`.
-  const { pos, setPos } = useBubblePosition(open, triggerRef, bubbleRef, probeRef)
+  const { pos, setPos } = useBubblePosition(open, triggerRef, bubbleRef)
   const close = () => {
     setOpen(false)
     setPos(null)
@@ -273,7 +275,7 @@ export function InfoGlyph({
     const handlePointerDown = (event: PointerEvent) => {
       const target = event.target
       if (!(target instanceof Node)) return
-      // The bubble is portalled out of the trigger's subtree, so it needs its own exemption.
+      // The bubble is the trigger's sibling, not inside it, so it needs its own exemption.
       if (triggerRef.current?.contains(target) || bubbleRef.current?.contains(target)) return
       setOpen(false)
       setPos(null)
@@ -307,29 +309,28 @@ export function InfoGlyph({
           <path d="M12 0C5.373 0 0 5.373 0 12s5.373 12 12 12 12-5.373 12-12S18.627 0 12 0zm0 4a1.5 1.5 0 1 1 0 3 1.5 1.5 0 0 1 0-3zm0 5a1 1 0 0 1 1 1v7a1 1 0 1 1-2 0v-7a1 1 0 0 1 1-1z" />
         </svg>
       </button>
-      {note !== undefined && (
-        <span ref={probeRef} className={classes.foldProbe} aria-hidden="true" />
+      {open && (
+        // Rendered IN PLACE as a manual popover, shown into the top layer by `useShowPopover`: the top
+        // layer escapes every ancestor's `overflow: hidden` and `container-type` (a card's), so the
+        // bubble needs no portal — `react-dom` is outside `./charts`' allowed import set
+        // (`scripts/check-dist-layering.mjs`, V2-SPEC § 9.8). Hidden until the first measure lands: a
+        // bubble painted at 0,0 for one frame is a flash in the corner.
+        <span
+          ref={bubbleRef}
+          id={tipId}
+          role="tooltip"
+          popover="manual"
+          className={classes.infoBubble}
+          style={
+            pos === null
+              ? { top: 0, left: 0, visibility: 'hidden' }
+              : { top: pos.top, left: pos.left }
+          }
+        >
+          {text}
+          {note !== undefined && <span className={classes.foldNote}>{note}</span>}
+        </span>
       )}
-      {open &&
-        createPortal(
-          // `open` only ever flips true from a client event, so `document` exists here. Hidden until
-          // the first measure lands — a bubble painted at 0,0 for one frame is a flash in the corner.
-          <span
-            ref={bubbleRef}
-            id={tipId}
-            role="tooltip"
-            className={classes.infoBubble}
-            style={
-              pos === null
-                ? { top: 0, left: 0, visibility: 'hidden' }
-                : { top: pos.top, left: pos.left }
-            }
-          >
-            {text}
-            {note !== undefined && <span className={classes.foldNote}>{note}</span>}
-          </span>,
-          document.body,
-        )}
     </span>
   )
 }

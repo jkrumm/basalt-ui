@@ -267,18 +267,12 @@
   color: var(--vx-muted);
 }
 
-/* Folded-subtitle pieces: hidden until a `basalt-card` narrower than 480px shows them (below).
- * The `.foldProbe` rides the same rules as the glyph: the bubble is portalled out of the card, so
- * it cannot be revealed by a card selector. `InfoGlyph` reads the probe's display onto the bubble
- * as `data-folded` and `.infoBubble[data-folded='true'] .foldNote` reveals from that. */
+/* Folded-subtitle pieces: hidden until a `basalt-card` narrower than 480px shows them (below). The
+ * bubble is a top-layer popover but stays in the card's DOM subtree, so these ancestor-based rules
+ * (container query, short-card flag) still reach `.foldNote` inside it. */
 .foldGlyph,
-.foldProbe,
 .foldNote {
   display: none;
-}
-
-.infoBubble[data-folded='true'] .foldNote {
-  display: block;
 }
 
 /*
@@ -290,9 +284,14 @@
  * inside the `charts/` boundary.
  */
 .infoBubble {
-  /* Portalled to <body> and placed from the trigger's rect (`useBubblePosition`): fixed, so no
-   * card's `overflow: hidden` clips it; `top`/`left` arrive inline. */
+  /* A `popover="manual"` element in the top layer, so no card's `overflow: hidden` or
+   * `container-type` clips it; placed from the trigger's rect (`useBubblePosition`), `top`/`left`
+   * arrive inline. The UA popover styles (centred, bordered, padded, Canvas background) are reset. */
   position: fixed;
+  inset: auto;
+  margin: 0;
+  border: 0;
+  overflow: visible;
   z-index: var(--mantine-z-index-popover, 300);
   width: max-content;
   /* 100% of the viewport (fixed): 2 × BUBBLE_EDGE in widget-header.tsx. */
@@ -346,7 +345,7 @@
     display: inline-flex;
   }
 
-  .foldProbe {
+  .foldNote {
     display: block;
   }
 }
@@ -368,7 +367,7 @@
   display: inline-flex;
 }
 
-:is([data-basalt-card-short], [data-basalt-chart-card]:has([data-basalt-chart-short])) .foldProbe {
+:is([data-basalt-card-short], [data-basalt-chart-card]:has([data-basalt-chart-short])) .foldNote {
   display: block;
 }
 
