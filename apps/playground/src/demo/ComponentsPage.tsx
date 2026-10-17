@@ -52,15 +52,15 @@ import { ActivityPage } from './ActivityPage'
 import { IconSearch } from './icons'
 import { PrimitivesPage } from './PrimitivesPage'
 
-/** A titled surface section — every component group sits inside one of these so its surface shows.
- * Named `ComponentGroup`, not `Section`: a local `Section` would shadow the shipped export of that
- * exact name, which `basalt/shadow-basalt-export` flags (law C8). `shot` anchors the group for
- * `basalt-ui shot`, so a change to a global chrome default (badge, subtle button, tabs) is re-shot. */
 type ShotAnchor = 'buttons' | 'tabs' | 'badges'
 
 // The anchor Box is the grid item now, so the card fills it to keep its row's stretched height.
 const FILL = { height: '100%' } as const
 
+/** A titled surface section — every component group sits inside one of these so its surface shows.
+ * Named `ComponentGroup`, not `Section`: a local `Section` would shadow the shipped export of that
+ * exact name, which `basalt/shadow-basalt-export` flags (law C8). `shot` anchors the group for
+ * `basalt-ui shot`, so a change to a global chrome default (badge, subtle button, tabs) is re-shot. */
 function ComponentGroup({
   title,
   shot,
