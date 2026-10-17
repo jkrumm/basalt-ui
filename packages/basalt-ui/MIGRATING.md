@@ -1130,6 +1130,28 @@ every `Card` and `Paper`. Before, a bare `<Card>` got Mantine's 16 px all round 
 
 `period` (and `deltaPeriod` on `StatCard`, `WidgetHeader`, `Section`) now renders `vs <period>`: `period="MoM"` reads "vs MoM" where it read "MoM". A period that already starts with the prefix is left alone, so a caller passing `"vs last week"` still renders "vs last week", not "vs vs last week". **Opt out** with `periodPrefix=""` on `DeltaBadge` (renders the period raw), or pass your locale's word (`periodPrefix="gegenüber"`). A period that is not a comparison (`"30d"`, a change over a window) now reads wrongly ("vs 30d"): pass `periodPrefix=""` on `DeltaBadge` itself, or reword it through the card props (`"30 days ago"`). Drop the hand-written "vs " at your leisure.
 
+### Chrome: on-scale Button padding, neutral selected nav row, neutral error state
+
+**Button inline padding is on the spacing scale.** Every size reads `--vx-space-stack-*` steps
+(density-scaled) instead of Mantine's 14/18/22/26/32 px and compact 7/8/10/12/14 px: `xs` 12, `sm` 16,
+`md` 20, `lg` 24, `xl` 32; `compact-xs`/`-sm` 8, `compact-md`/`-lg` 12, `compact-xl` 16 (at density 0).
+Heights are unchanged, and `size="ctl"` keeps its own 10 px inset. **Opt out** per component with
+`<Button styles={{ root: { '--button-padding-x': 'var(--button-padding-x-sm)' } }}>` (the size var
+Mantine still declares), or globally by overriding `Button.vars` in your theme.
+
+**The selected nav row is a neutral ink fill, not an accent tint.** `NavLink[data-active]` paints
+ink 10 % (14 % on hover) with the existing weight 600; the accent stays on the active icon, focus and
+the filled primary. **Opt out** with a consumer class on the row that sets `background-color`
+(consumer classes win over the theme module).
+
+**Errors render as a dot, a word, the message and a retry.** `ErrorState` (and so `QueryState`,
+`StatCard` and `ChartCard` error bodies) no longer renders a red-tinted Mantine `Alert`; it is a
+neutral `role="alert"` stack led by a `StatusDot` and the title. **Opt out** by rendering your own
+`<Alert color="red" variant="light">` in the `error` slot of the surface (or a custom `ErrorState`
+wrapper).
+
+Also fixed (no action): a hovered `Tab` now shows an ink-5 % fill in dark as in light.
+
 ## 2.19.0 — the status dot, ink buttons and Meter refinements
 
 ### Status is a dot and a word, not an edge stripe (`StatCard`, `Callout`, notification centre)

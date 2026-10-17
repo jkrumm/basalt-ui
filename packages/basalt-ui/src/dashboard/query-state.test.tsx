@@ -314,3 +314,24 @@ describe('resolveQueryBranch — error > pending > empty > ready', () => {
     expect(() => resolveQueryBranch({} as QueryStateLike<unknown>, 'StatCard')).toThrow(/StatCard/)
   })
 })
+
+describe('the error placeholder is a dot, a word, the message and a retry', () => {
+  test('no Mantine Alert (red-tinted panel); a status dot leads the title', () => {
+    const { container } = render(
+      <MantineProvider>
+        <QueryState
+          query={result({ isError: true, error: new Error('down') })}
+          errorTitle="Could not load images"
+        >
+          {() => null}
+        </QueryState>
+      </MantineProvider>,
+    )
+    expect(container.querySelector('.mantine-Alert-root')).toBeNull()
+    expect(container.querySelector('[data-basalt-status-dot]')).not.toBeNull()
+    expect(screen.getByText('Could not load images')).toBeTruthy()
+    expect(screen.getByText('down')).toBeTruthy()
+    expect(screen.getByRole('button', { name: 'Retry' })).toBeTruthy()
+    expect(container.querySelector('[role="alert"]')).not.toBeNull()
+  })
+})

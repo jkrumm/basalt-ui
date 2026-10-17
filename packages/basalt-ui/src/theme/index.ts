@@ -689,6 +689,7 @@ function buildTheme(data: PaletteData, options: BuildThemeOptions = {}): Mantine
                 props.size === 'md'
                   ? 'calc(var(--vx-space-control-height) * var(--mantine-scale))'
                   : undefined,
+              '--button-padding-x': buttonPaddingX(props.size),
               '--button-color': ink.color,
               '--button-hover': ink.hover,
               '--button-bg': ink.bg,
@@ -1229,6 +1230,29 @@ function familyBridge(data: PaletteData): Record<string, string> {
       `var(--vx-fill-hover-${name}, color-mix(in srgb, ${hex} 88%, #000))`
   }
   return vars
+}
+
+/**
+ * Button inline padding per Mantine size, on the density-scaled `--vx-space-stack-*` steps (4/8/12/16/24
+ * at level 0) instead of Mantine's 14/18/22/26/32 and 7/8/10/12/14 — the off-scale values argo's
+ * decision cards showed (SPEC § 6.12). Heights are untouched. `ctl` (and any custom size) stays
+ * undefined so its own `--button-padding-x-ctl` applies; an unsized Button is Mantine's `sm`.
+ */
+const BUTTON_PADDING_X: Record<string, string> = {
+  xs: 'var(--vx-space-stack-md)',
+  sm: 'var(--vx-space-stack-lg)',
+  md: 'var(--vx-space-stack-lg) + var(--vx-space-stack-xs)',
+  lg: 'var(--vx-space-stack-xl)',
+  xl: 'var(--vx-space-stack-xl) + var(--vx-space-stack-sm)',
+  'compact-xs': 'var(--vx-space-stack-sm)',
+  'compact-sm': 'var(--vx-space-stack-sm)',
+  'compact-md': 'var(--vx-space-stack-md)',
+  'compact-lg': 'var(--vx-space-stack-md)',
+  'compact-xl': 'var(--vx-space-stack-lg)',
+}
+function buttonPaddingX(size: unknown): string | undefined {
+  const steps = BUTTON_PADDING_X[typeof size === 'string' ? size : 'sm']
+  return steps === undefined ? undefined : `calc((${steps}) * var(--mantine-scale))`
 }
 
 /**

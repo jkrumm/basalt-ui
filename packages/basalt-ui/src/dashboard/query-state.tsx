@@ -14,11 +14,13 @@
  * the re-derivation this exists to delete. `LoadingState` / `ErrorState` ship alongside as the
  * escape hatch for a page that must place its branches in different DOM positions.
  */
-import { Alert, Button, Center, Group, Loader, Stack, Text } from '@mantine/core'
+import { Button, Center, Group, Loader, Stack, Text } from '@mantine/core'
 import type { CSSProperties, ReactNode } from 'react'
 import { toErrorMessage } from '../common/errors'
 import { cx } from '../common/props'
 import type { BasaltProps, SlotStylesProps } from '../common/props'
+import { VX } from '../tokens'
+import { StatusDot } from '../theme/status-dot'
 import { EmptyState } from './empty-state'
 import { assertQueryStateLike } from '../common/query-state-like'
 import type { QueryStateLike } from '../common/query-state-like'
@@ -126,28 +128,35 @@ export function ErrorState({
   style,
 }: ErrorStateProps): ReactNode {
   const resolved = tier ?? 'page'
+  // D28: a status dot + a word + the message + the retry, on the neutral surface — never a
+  // red-tinted filled panel (SPEC § 6.12).
   const alert = (
-    <Alert
-      color="red"
-      variant="light"
-      title={title}
+    <Stack
+      gap="xs"
+      role="alert"
       {...(resolved === 'section' && className !== undefined && { className })}
       {...(resolved === 'section' && style !== undefined && { style })}
     >
-      <Stack gap="sm">
-        <Text size="sm">{toErrorMessage(error, fallback)}</Text>
-        {(onRetry ?? action) !== undefined && (
-          <Group gap="xs">
-            {onRetry && (
-              <Button size="xs" variant="default" loading={retrying} onClick={onRetry}>
-                Retry
-              </Button>
-            )}
-            {action}
-          </Group>
-        )}
-      </Stack>
-    </Alert>
+      <Group gap="xs" wrap="nowrap">
+        <StatusDot color={VX.status.bad} />
+        <Text size="sm" fw={500}>
+          {title}
+        </Text>
+      </Group>
+      <Text size="sm" c="dimmed">
+        {toErrorMessage(error, fallback)}
+      </Text>
+      {(onRetry ?? action) !== undefined && (
+        <Group gap="xs">
+          {onRetry && (
+            <Button size="xs" variant="default" loading={retrying} onClick={onRetry}>
+              Retry
+            </Button>
+          )}
+          {action}
+        </Group>
+      )}
+    </Stack>
   )
   if (resolved === 'section') return alert
   return (
