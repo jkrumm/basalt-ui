@@ -55,8 +55,8 @@ export const parseHeaders = (list: readonly string[], src: Source): Pair[] =>
 
 const LOOPBACK = new Set(['127.0.0.1', 'localhost', '[::1]'])
 
-/** `--api <prefix>=<origin>`; with `--header` set, a remote origin must be https. */
-export function parseApi(list: readonly string[], headersSet: boolean): ApiRoute[] {
+/** `--api <prefix>=<origin>`; with any secret configured (`--header`, `--local-storage`), a remote origin must be https. */
+export function parseApi(list: readonly string[], secrets: boolean): ApiRoute[] {
   return list.map((raw) => {
     const [given, target] = splitPair('api', raw)
     const prefix = given.replace(/\/+$/, '')
@@ -69,9 +69,9 @@ export function parseApi(list: readonly string[], headersSet: boolean): ApiRoute
     } catch {
       throw new ShotError('--api <prefix>=<origin>: origin must be an http(s) URL')
     }
-    if (headersSet && url.protocol !== 'https:' && !LOOPBACK.has(url.hostname))
+    if (secrets && url.protocol !== 'https:' && !LOOPBACK.has(url.hostname))
       throw new ShotError(
-        `--api ${prefix}: with --header the origin must be https (loopback excepted)`,
+        `--api ${prefix}: with a secret configured (--header, --local-storage) the origin must be https (loopback excepted)`,
       )
     return { prefix, origin: url.origin }
   })
@@ -79,11 +79,18 @@ export function parseApi(list: readonly string[], headersSet: boolean): ApiRoute
 
 const NOT_RETURNED = ['content-encoding', 'content-length', 'transfer-encoding']
 const READ_ONLY = new Set(['GET', 'HEAD'])
+/** A status that means the page shows something other than the app's data: a redirect, a missing resource, a failure, a refusal. */
+const UNTRUSTED = (status: number): boolean =>
+  status >= 500 ||
+  (status >= 300 && status < 400) ||
+  status === 401 ||
+  status === 403 ||
+  status === 404
 const TIMEOUT_MS = 20_000
 
 export type ApiProxy = {
   handle: (req: Request) => Promise<Response | null>
-  /** The calls since the last drain that make a board untrustworthy: a 401/403 or no answer. */
+  /** The calls since the last drain that make a board untrustworthy: a 3xx, 401, 403, 404, 5xx or no answer. */
   drain: () => string[]
 }
 
@@ -105,7 +112,9 @@ export function apiProxy(
       (r) => url.pathname === r.prefix || url.pathname.startsWith(r.prefix + '/'),
     )
     if (!route) return null
-    const label = `${req.method} ${url.pathname}`
+    // Method, prefix and depth only: path segments can hold identifiers, so they never reach a log.
+    const depth = url.pathname.slice(route.prefix.length).split('/').filter(Boolean).length
+    const label = `${req.method} ${route.prefix} +${depth}`
     if (!opts.allowWrites && !READ_ONLY.has(req.method)) {
       opts.log(`[shot] api ${label} blocked: read-only run (--api-allow-writes lifts it)`)
       return new Response('read-only', { status: 405 })
@@ -125,7 +134,7 @@ export function apiProxy(
         ...(READ_ONLY.has(req.method) ? {} : { body: await req.arrayBuffer() }),
       })
       if (!res.ok) opts.log(`[shot] api ${label} → ${res.status}`)
-      if (res.status === 401 || res.status === 403) problems.push(`${label} ${res.status}`)
+      if (UNTRUSTED(res.status)) problems.push(`${label} ${res.status}`)
       const back = new Headers(res.headers)
       for (const name of NOT_RETURNED) back.delete(name)
       return new Response(res.body, { status: res.status, headers: back })
@@ -149,8 +158,8 @@ export function apiProxy(
 /** The page global the seed script reports through: `origin`, or the keys it could not set. */
 export const SEED_FLAG = '__shotSeedFailed'
 
-/** The init script that seeds localStorage, only on `origin`, before any page script runs. */
+/** The init script that seeds localStorage, only on `origin` and only for an absent key (a token the app rotates survives), before any page script runs. */
 export const seedScript = (entries: readonly Pair[], origin: string): string =>
   `(()=>{if(location.origin!==${JSON.stringify(origin)}){globalThis.${SEED_FLAG}='origin';return}` +
-  `const f=[];for(const [k,v] of ${JSON.stringify(entries)}){try{localStorage.setItem(k,v)}catch{f.push(k)}}` +
+  `const f=[];for(const [k,v] of ${JSON.stringify(entries)}){try{if(localStorage.getItem(k)===null)localStorage.setItem(k,v)}catch{f.push(k)}}` +
   `if(f.length)globalThis.${SEED_FLAG}=f.join(',')})()`

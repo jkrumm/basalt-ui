@@ -99,9 +99,14 @@ export function parseShotArgs(
     : [...STATES]
   const unknown = states.find((s) => !(STATES as readonly string[]).includes(s))
   if (unknown) throw new ShotError(`unknown state '${unknown}'. Known: ${STATES.join(', ')}`)
-  const api = parseApi(values.api ?? [], (values.header?.length ?? 0) > 0)
+  const secrets = (values.header?.length ?? 0) + (values['local-storage']?.length ?? 0) > 0
+  const api = parseApi(values.api ?? [], secrets)
   if (api.length > 0 && !values.dist)
     throw new ShotError(`--api needs --dist (it proxies the static server).\n${USAGE_LINE}`)
+  if ((values.header?.length ?? 0) > 0 && new Set(api.map((r) => r.origin)).size > 1)
+    throw new ShotError(
+      `--header goes to every --api origin; it is refused when --api names more than one.\n${USAGE_LINE}`,
+    )
   if ((values.header?.length ?? 0) > 0 && api.length === 0)
     throw new ShotError(`--header is sent on --api requests only; pass --api.\n${USAGE_LINE}`)
   const wait = values.wait ?? 'networkidle'
