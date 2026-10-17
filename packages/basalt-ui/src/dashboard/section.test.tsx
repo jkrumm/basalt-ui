@@ -409,7 +409,7 @@ describe('forwards every WidgetHeader prop (unit, deltaPolarity, deltaFormat, de
       </Section>,
     )
     expect(screen.getByText('4.2%')).toBeDefined()
-    expect(screen.getByText('MoM')).toBeDefined()
+    expect(screen.getByText('vs MoM')).toBeDefined()
   })
 
   test('sparkline renders below the metric row', () => {

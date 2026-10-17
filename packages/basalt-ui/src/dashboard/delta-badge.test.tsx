@@ -92,10 +92,33 @@ describe('polarity', () => {
   })
 })
 
-test('period renders after the value, in the same badge', () => {
-  render(<DeltaBadge value={4.2} period="MoM" />)
-  expect(screen.getByText('4.2%')).toBeDefined()
-  expect(screen.getByText('MoM')).toBeDefined()
+describe('period composes "vs <period>"', () => {
+  test('period="last week" renders "vs last week" in the same badge', () => {
+    render(<DeltaBadge value={4.2} period="last week" />)
+    expect(screen.getByText('4.2%')).toBeDefined()
+    expect(screen.getByText('vs last week')).toBeDefined()
+  })
+
+  test('the full phrase is readable as one badge text (a11y)', () => {
+    const { container } = render(<DeltaBadge value={4.2} withGlyph={false} period="last week" />)
+    expect(container.firstElementChild?.textContent).toBe('4.2%vs last week')
+  })
+
+  test('a period already starting with the prefix is not doubled', () => {
+    render(<DeltaBadge value={4.2} period="vs last week" />)
+    expect(screen.getByText('vs last week')).toBeDefined()
+    expect(screen.queryByText('vs vs last week')).toBeNull()
+  })
+
+  test('periodPrefix overrides the word; an empty prefix renders the period raw', () => {
+    const { unmount } = render(
+      <DeltaBadge value={4.2} period="Vorwoche" periodPrefix="gegenüber" />,
+    )
+    expect(screen.getByText('gegenüber Vorwoche')).toBeDefined()
+    unmount()
+    render(<DeltaBadge value={4.2} period="MoM" periodPrefix="" />)
+    expect(screen.getByText('MoM')).toBeDefined()
+  })
 })
 
 test('omitting period renders no extra text', () => {
