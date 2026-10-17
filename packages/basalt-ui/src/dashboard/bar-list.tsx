@@ -25,6 +25,7 @@ import type { ReactNode } from 'react'
 import { cx } from '../common/props'
 import type { BasaltProps } from '../common/props'
 import classes from './bar-list.module.css'
+import { asText, barPercent } from './scale'
 
 export type BarListProps = BasaltProps & {
   /** Accessible name of the list. Required. */
@@ -44,8 +45,6 @@ export type BarListProps = BasaltProps & {
   /** Muted line shown when `items` is empty. */
   emptyText?: string
 }
-
-const asText = (n: number): string => String(n)
 
 export function BarList({
   label,
@@ -71,25 +70,26 @@ export function BarList({
   }
   if (items.length === 0) {
     return (
-      <div className={cx(classes.root, className)} style={style}>
+      <output className={cx(classes.root, className)} style={style} aria-label={label}>
         <span className={classes.empty}>{emptyText}</span>
-      </div>
+      </output>
     )
   }
 
   const scale = max ?? Math.max(...items.map((i) => i.value))
   return (
-    <ul className={cx(classes.root, className)} style={style} aria-label={label}>
+    // The explicit role is deliberate: `list-style: none` makes Safari/VoiceOver drop the implicit one.
+    // oxlint-disable-next-line jsx-a11y/no-redundant-roles
+    <ul className={cx(classes.root, className)} style={style} role="list" aria-label={label}>
       {items.map((item, i) => {
-        const pct = scale > 0 ? Math.min(1, Math.max(0, item.value / scale)) * 100 : 0
+        const isLeader = accentLeader && i === 0
         return (
-          <li key={item.key ?? item.label} className={classes.row}>
+          <li key={item.key ?? `${item.label}-${i}`} className={classes.row}>
             {/* theme-allow hidden-inline-style — the width is the row's data (a % of the shared scale), not styling */}
             <span
-              className={cx(classes.bar, accentLeader && i === 0 && classes.leader)}
-              style={{ width: `${pct}%` }}
-              data-bar-pct={pct}
-              {...(accentLeader && i === 0 && { 'data-bar-leader': '' })}
+              className={cx(classes.bar, isLeader && classes.leader)}
+              style={{ width: `${barPercent(item.value, scale)}%` }}
+              {...(isLeader && { 'data-bar-leader': '' })}
               aria-hidden
             />
             <span className={classes.label} title={item.label}>

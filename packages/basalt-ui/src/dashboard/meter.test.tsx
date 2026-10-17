@@ -181,4 +181,112 @@ describe('Meter', () => {
     const { getByText } = mount({ label: 'Spend', value: 512, max: 600, target: 450 })
     expect(getByText('Target 450 · 62 over')).toBeTruthy()
   })
+
+  test('non-zero min: fill, target and marker are normalised against min', () => {
+    const bar = mount({ label: 'B', value: 30, min: 10, max: 50, target: 20 })
+    expect((bar.container.querySelector('[data-meter-fill]') as HTMLElement).style.width).toBe(
+      '50%',
+    )
+    expect(tick(bar.container, 'target')?.style.insetInlineStart).toBe('25%')
+    cleanup()
+    const zoned = mount({
+      label: 'B',
+      value: 30,
+      min: 10,
+      max: 50,
+      zones: [{ from: 10, to: 50, label: 'All' }],
+    })
+    expect(tick(zoned.container, 'marker')?.style.insetInlineStart).toBe('50%')
+  })
+
+  test('segments honour min and stop at the track end', () => {
+    const { container } = mount({
+      label: 'S',
+      min: 10,
+      max: 50,
+      segments: [
+        { value: 30, label: 'a' },
+        { value: 30, label: 'b' },
+      ],
+    })
+    const widths = [...container.querySelectorAll<HTMLElement>('[data-meter-fill]')].map(
+      (f) => f.style.width,
+    )
+    expect(widths).toEqual(['75%', '25%'])
+    expect(meter(container).getAttribute('aria-valuenow')).toBe('50')
+  })
+
+  test('a value below min clamps to an empty fill and aria-valuenow = min', () => {
+    const { container } = mount({ label: 'B', value: -5, min: 0, max: 10 })
+    expect((container.querySelector('[data-meter-fill]') as HTMLElement).style.width).toBe('0%')
+    expect(meter(container).getAttribute('aria-valuenow')).toBe('0')
+  })
+
+  test('a forecast in first position names the forecast without a boundary tick', () => {
+    const { container, getByText } = mount({
+      label: 'S',
+      segments: [{ value: 30, label: 'Plan', forecast: true }],
+    })
+    expect(getByText('Forecast: Plan 30')).toBeTruthy()
+    expect(tick(container, 'boundary')).toBeNull()
+  })
+
+  test('two forecasts share one caption', () => {
+    const { getByText } = mount({
+      label: 'S',
+      segments: [
+        { value: 10, label: 'Done' },
+        { value: 10, label: 'A', forecast: true },
+        { value: 10, label: 'B', forecast: true },
+      ],
+    })
+    expect(getByText('Forecast: A 10, B 10')).toBeTruthy()
+  })
+
+  test('captions: null drops, a node overrides', () => {
+    const none = mount({ label: 'B', value: 5, target: 8, startCaption: null, endCaption: null })
+    expect(none.container.querySelector('[data-meter-captions]')).toBeNull()
+    expect(none.queryByText('5')).toBeNull()
+    cleanup()
+    const custom = mount({ label: 'B', value: 5, startCaption: 'five', endCaption: 'ten' })
+    expect(custom.getByText('five')).toBeTruthy()
+    expect(custom.getByText('ten')).toBeTruthy()
+  })
+
+  test('a non-finite reading is the empty state', () => {
+    const { container, getByText } = mount({ label: 'B', value: Number.NaN })
+    expect(meter(container)).toBeNull()
+    expect(getByText('No data')).toBeTruthy()
+  })
+
+  test('ring: empty, loading and verdict colour', () => {
+    const empty = mount({ label: 'R', shape: 'ring', value: null })
+    expect(meter(empty.container)).toBeNull()
+    expect(empty.container.querySelector('svg')).not.toBeNull()
+    cleanup()
+    const loading = mount({ label: 'R', shape: 'ring', loading: true })
+    expect(loading.container.querySelector('[aria-busy]')).not.toBeNull()
+    expect(loading.container.querySelector('svg')).toBeNull()
+    cleanup()
+    const coloured = mount({ label: 'R', shape: 'ring', value: 50, color: 'var(--vx-status-bad)' })
+    const arc = coloured.container.querySelectorAll('circle')[1] as unknown as SVGElement
+    expect(arc.style.stroke).toBe('var(--vx-status-bad)')
+  })
+
+  test('zones: a zone colour overrides the neutral strength; a value below the first zone is bare', () => {
+    const { container, getByText } = mount({
+      label: 'Z',
+      max: 100,
+      value: 5,
+      zones: [
+        { from: 20, to: 60, label: 'Mid', color: 'var(--vx-status-good)' },
+        { from: 60, to: 100, label: 'Top' },
+      ],
+    })
+    const mid = container.querySelector('[data-meter-zone="Mid"]') as HTMLElement
+    expect(mid.style.background).toBe('var(--vx-status-good)')
+    expect(mid.style.insetInlineStart).toBe('20%')
+    expect(mid.style.width).toBe('40%')
+    expect(getByText('5')).toBeTruthy()
+  })
 })

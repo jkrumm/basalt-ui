@@ -37,8 +37,8 @@
 }
 
 .zone {
-  flex: none;
-  height: 100%;
+  position: absolute;
+  inset-block: 0;
 }
 
 /* The reading on a zone track: a notch standing proud of the bands, in ink. */

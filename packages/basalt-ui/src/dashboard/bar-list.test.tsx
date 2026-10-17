@@ -19,7 +19,7 @@ const ITEMS = [
   { label: 'a-very-long-project-name-that-must-truncate-in-a-narrow-card', value: 40 },
   { label: 'rb', value: 20 },
 ]
-const bars = (c: HTMLElement) => [...c.querySelectorAll<HTMLElement>('[data-bar-pct]')]
+const bars = (c: HTMLElement) => [...c.querySelectorAll<HTMLElement>('li > span[aria-hidden]')]
 
 describe('BarList', () => {
   test('is a list with an accessible name and text values', () => {
@@ -85,5 +85,53 @@ describe('BarList', () => {
     const { container } = mount({ label: 'L', items: ITEMS, loading: true, loadingRows: 4 })
     expect(container.querySelector('ul')).toBeNull()
     expect(container.querySelectorAll('[data-bar-skeleton]').length).toBe(4)
+  })
+
+  test('all-zero values draw empty bars', () => {
+    const { container } = mount({
+      label: 'L',
+      items: [
+        { label: 'a', value: 0 },
+        { label: 'b', value: 0 },
+      ],
+    })
+    expect(bars(container).map((x) => x.style.width)).toEqual(['0%', '0%'])
+  })
+
+  test('negative values clamp to 0, values above max clamp to 100', () => {
+    const { container } = mount({
+      label: 'L',
+      max: 50,
+      items: [
+        { label: 'a', value: -10 },
+        { label: 'b', value: 80 },
+      ],
+    })
+    expect(bars(container).map((x) => x.style.width)).toEqual(['0%', '100%'])
+  })
+
+  test('a single item fills its own scale', () => {
+    const { container } = mount({ label: 'L', items: [{ label: 'a', value: 7 }] })
+    expect(bars(container).map((x) => x.style.width)).toEqual(['100%'])
+  })
+
+  test('duplicate labels render as distinct rows', () => {
+    const { container } = mount({
+      label: 'L',
+      items: [
+        { label: 'dup', value: 1 },
+        { label: 'dup', value: 2 },
+      ],
+    })
+    expect(container.querySelectorAll('li').length).toBe(2)
+  })
+
+  test('the list has role=list; the empty branch is a named status', () => {
+    const full = mount({ label: 'L', items: ITEMS })
+    expect(full.container.querySelector('ul')?.getAttribute('role')).toBe('list')
+    cleanup()
+    const empty = mount({ label: 'Top', items: [] })
+    const status = empty.container.querySelector('output')
+    expect(status?.getAttribute('aria-label')).toBe('Top')
   })
 })

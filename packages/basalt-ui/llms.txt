@@ -95,20 +95,20 @@ Signature: Meter(props: MeterProps): JSX.Element
   className?: string
   style?: CSSProperties
   label: string
-  value?: number | null
   min?: number
   max?: number
-  shape?: "bar" | "ring"
-  color?: string
-  segments?: readonly { value: number; label: string; color?: string; fo…
-  zones?: readonly { from: number; to: number; label: string; color?:…
-  target?: number
   format?: (value: number) => string
-  startCaption?: ReactNode
-  endCaption?: ReactNode
-  forecastCaption?: string
   loading?: boolean
   emptyText?: string
+  shape?: "bar" | "ring"
+  target?: number  [with segments | zones]
+  startCaption?: ReactNode  [with segments | zones]
+  endCaption?: ReactNode  [with segments | zones]
+  value?: number | null  [with zones]
+  color?: string
+  segments: readonly MeterSegment[]
+  zones: readonly MeterZone[]
+  forecastCaption?: string  [with segments]
 Signature: PageAside(props: PageAsideProps): ReactNode
   className?: string
   style?: CSSProperties
