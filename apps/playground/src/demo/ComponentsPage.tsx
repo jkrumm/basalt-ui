@@ -135,7 +135,11 @@ export function ComponentsPage() {
 function ComponentsSurfaces() {
   return (
     <Stack gap="md" data-compare="surfaces">
-      <SimpleGrid type="container" cols={{ base: 1, [CONTAINER_KEYS.regular]: 2 }}>
+      <SimpleGrid
+        type="container"
+        cols={{ base: 1, [CONTAINER_KEYS.regular]: 2 }}
+        style={{ alignItems: 'start' }}
+      >
         <ComponentGroup title="Buttons" shot="buttons">
           <Group gap="sm">
             <Button variant="filled">Filled</Button>

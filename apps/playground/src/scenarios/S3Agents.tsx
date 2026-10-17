@@ -10,10 +10,11 @@
  *
  * Anchors for `basalt-ui shot`: strip cells carry their own `data-shot` (`strip-needs-you`,
  * `strip-oldest-wait`, `strip-fleet`, `strip-dispatch-spend`, `strip-failures`; footer meters
- * `strip-footer-day` / `strip-footer-week`; the empty / error note `strip-footer-note`); `ChartCard` does not forward `data-*`, so those anchors are wrapping `Box`es.
+ * `strip-footer-day` / `strip-footer-week`, present in every state; the empty / error note
+ * `strip-footer-note` sits inside the day cell); `ChartCard` does not forward `data-*`, so those anchors are wrapping `Box`es.
  */
 import { Box, SimpleGrid, Stack, Text } from '@mantine/core'
-import { BarList, DeltaBadge, Meter, PageBar, StatGroup } from 'basalt-ui'
+import { BarList, DeltaBadge, Meter, PageBar, StatGroup, StatusVerdict } from 'basalt-ui'
 import type { StatStripCell } from 'basalt-ui'
 import { Bars, ChartCard, Sparkline } from 'basalt-ui/charts'
 import type { BarsBar } from 'basalt-ui/charts'
@@ -24,6 +25,7 @@ import {
   BUDGETS,
   DISPATCH_COMPLETE_DAYS,
   FAILURES_24H,
+  FAILURES_BY_HOUR,
   FLEET,
   FLEET_TOTAL,
   FLOW,
@@ -65,40 +67,16 @@ const FLOW_BARS: BarsBar<FlowRow>[] = [
 ]
 const FLOW_DATA = [...FLOW]
 
-const DOT_SIZE = '0.4rem'
-
-/** Status as a dot and a word: the colour never carries the verdict alone. */
-function Status({ tone, word, note }: { tone: string; word: string; note?: string }) {
-  return (
-    <Text component="span" size="xs" c="dimmed" style={{ whiteSpace: 'nowrap' }}>
-      <span
-        aria-hidden
-        style={{
-          display: 'inline-block',
-          width: DOT_SIZE,
-          height: DOT_SIZE,
-          borderRadius: '50%',
-          background: tone,
-          marginInlineEnd: '0.4rem',
-        }}
-      />
-      {word}
-      {note !== undefined && ` · ${note}`}
-    </Text>
-  )
-}
-
 const stuckStatus = (i: (typeof STUCK)[number]) =>
   i.state === 'blocked' ? (
-    <Status
-      tone={VX.status.bad}
-      word="Blocked"
-      {...(i.reason !== undefined && { note: i.reason })}
+    <StatusVerdict
+      color={VX.status.bad}
+      word={i.reason === undefined ? 'Blocked' : `Blocked · ${i.reason}`}
     />
   ) : i.waitHours > WARN_HOURS ? (
-    <Status tone={VX.status.warn} word="Needs you" note="over 24 h" />
+    <StatusVerdict color={VX.status.warn} word="Needs you · over 24 h" />
   ) : (
-    <Status tone={VX.faint} word="Needs you" />
+    <StatusVerdict color={VX.faint} word="Needs you" />
   )
 
 const STUCK_ITEMS = STUCK.map((i) => ({
@@ -211,6 +189,20 @@ function QueueStrip({ shotState }: ScenarioProps) {
       info: 'Agent runs that ended in an error in the last 24 hours.',
       value: none ? null : fmtInt(FAILURES_24H.count),
       unit: 'runs',
+      // Hourly bars answer "is it still happening?": three runs, but a burst or a trickle.
+      ...(!hidden && {
+        visual: (
+          <Sparkline
+            ariaLabel="Failed runs per hour, last 24 hours"
+            data={FAILURES_BY_HOUR}
+            height={SPARK_HEIGHT}
+            mark="bar"
+            color={VX.status.bad}
+            emphasizeLast={false}
+            format={(v) => `${fmtInt(v)} ${v === 1 ? 'run' : 'runs'}`}
+          />
+        ),
+      }),
       ...(!hidden && FAILURES_24H.count > FAILURES_24H.prior && { tone: 'bad' as const }),
       ...(!hidden && {
         delta: (
@@ -226,47 +218,60 @@ function QueueStrip({ shotState }: ScenarioProps) {
     },
   ]
 
-  const budget = (label: string, spent: number, cap: number, caption: string) => (
+  const budget = (
+    label: string,
+    spent: number,
+    cap: number,
+    caption: string,
+    emptyText: string,
+  ) => (
     <Meter
       label={label}
       value={none ? null : spent}
       max={cap}
       format={fmtEur}
       loading={loading}
-      emptyText={note ?? WARDEN_EMPTY}
+      emptyText={emptyText}
       startCaption={`${caption} ${fmtEur(spent)}`}
       endCaption={`${fmtEur(cap - spent)} left of ${fmtEur(cap)}`}
     />
   )
 
-  const budgetFooter = [
-    {
-      key: 'day',
-      content: budget('Daily dispatch budget', BUDGETS.day.spent, BUDGETS.day.cap, 'Today'),
-    },
-    {
-      key: 'week',
-      content: budget(
-        'Weekly dispatch budget',
-        BUDGETS.week.spent,
-        BUDGETS.week.cap,
-        'Last 7 days',
-      ),
-    },
-  ]
-  // The empty / error note is one line in the footer row, not repeated in every cell.
+  const dayMeter = {
+    key: 'day',
+    content: budget(
+      'Daily dispatch budget',
+      BUDGETS.day.spent,
+      BUDGETS.day.cap,
+      'Today',
+      WARDEN_EMPTY,
+    ),
+  }
+  const weekMeter = {
+    key: 'week',
+    content: budget(
+      'Weekly dispatch budget',
+      BUDGETS.week.spent,
+      BUDGETS.week.cap,
+      'Last 7 days',
+      error ? 'Weekly budget unavailable.' : 'No dispatch spend this week.',
+    ),
+  }
+  // Empty / error: the day cell carries the one-line note, the week cell stays a (null) meter, so
+  // both footer anchors exist in every state (`shot` errors on an anchor that vanishes).
   const footer =
     note === undefined
-      ? budgetFooter
+      ? [dayMeter, weekMeter]
       : [
           {
-            key: 'note',
+            key: 'day',
             content: (
-              <Text size="sm" c="dimmed">
+              <Text data-shot="strip-footer-note" size="sm" c="dimmed">
                 {note}
               </Text>
             ),
           },
+          weekMeter,
         ]
 
   return <StatGroup variant="strip" label="Agent queue" cols={5} cells={cells} footer={footer} />
@@ -280,7 +285,9 @@ function QueueRow({ shotState }: ScenarioProps) {
         <ChartCard
           title="Waiting or blocked, by age"
           info={`Items waiting on your decision and items blocked on something else, oldest first. The status marks a wait past the ${WARN_LABEL} warning.`}
-          subtitle={`Warden abandons an item at ${ABANDON_LABEL}`}
+          {...(shotState === undefined && {
+            subtitle: `Warden abandons an item at ${ABANDON_LABEL}`,
+          })}
           {...(shotState === undefined && {
             facts: { value: fmtInt(STUCK.length), unit: 'items', period: `${NEEDS_YOU} need you` },
           })}
@@ -293,6 +300,7 @@ function QueueRow({ shotState }: ScenarioProps) {
               max={ABANDON_HOURS}
               format={fmtAge}
               accentLeader
+              variant="thin"
               loading={shotState === 'loading'}
               emptyText="Nothing is waiting on you. New items appear here when an agent needs a decision."
             />
