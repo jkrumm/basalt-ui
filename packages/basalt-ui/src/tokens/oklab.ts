@@ -76,10 +76,22 @@ export function deltaEOk(hexA: string, hexB: string): number {
   return 100 * Math.hypot(x.L - y.L, x.a - y.a, x.b - y.b)
 }
 
-/** The hex a dichromat sees for `hex` (Machado 2009, severity 1.0, linear RGB, clamped). */
-export function simulateCvd(hex: string, kind: CvdKind): string {
+/** What a dichromat sees for `hex`, still in clamped linear RGB (Machado 2009, severity 1.0). */
+function simulateCvdLinear(hex: string, kind: CvdKind): Rgb {
   const [r, g, b] = hexToLinear(hex)
   const [row0, row1, row2] = MACHADO[kind]
-  const mix = (row: Rgb) => row[0] * r + row[1] * g + row[2] * b
-  return linearToHex([mix(row0), mix(row1), mix(row2)])
+  const mix = (row: Rgb) => Math.min(1, Math.max(0, row[0] * r + row[1] * g + row[2] * b))
+  return [mix(row0), mix(row1), mix(row2)]
+}
+
+/** The hex a dichromat sees for `hex` — for display and tests; the checks stay in linear RGB. */
+export function simulateCvd(hex: string, kind: CvdKind): string {
+  return linearToHex(simulateCvdLinear(hex, kind))
+}
+
+/** OKLab ΔE×100 between two colours as a dichromat sees them — no 8-bit round trip. */
+export function deltaEOkCvd(hexA: string, hexB: string, kind: CvdKind): number {
+  const x = linearToOklab(simulateCvdLinear(hexA, kind))
+  const y = linearToOklab(simulateCvdLinear(hexB, kind))
+  return 100 * Math.hypot(x.L - y.L, x.a - y.a, x.b - y.b)
 }

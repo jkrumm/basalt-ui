@@ -10,7 +10,6 @@ import type { Finding, GuardConfig, GuardKind, GuardSeverity } from './types'
 import { vxFamilyOf } from '../common/vx-family'
 import { BASALT_VX_FAMILIES } from '../common/vx-families'
 import { FONTS_CSS_HINT } from './fonts-hint'
-import { auditSeriesGroups, parseSeriesGroups } from './palette'
 import { BASALT_VX_NAMES } from './vx-names'
 import { SPACE_SCALE_LEVEL0 } from '../tokens/space-scale'
 
@@ -920,7 +919,7 @@ export const GRACE_PERIOD_KINDS: Partial<Record<GuardKind, GraceEntry>> = {
 }
 
 /** A kind's effective severity: consumer override first, then the grace table, then `error`. */
-function severityOf(kind: GuardKind, cfg: GuardConfig): GuardSeverity {
+export function severityOf(kind: GuardKind, cfg: GuardConfig): GuardSeverity {
   return cfg.severity?.[kind] ?? (Object.hasOwn(GRACE_PERIOD_KINDS, kind) ? 'warn' : 'error')
 }
 
@@ -991,7 +990,7 @@ function exemptPatternMatches(pattern: string, relPath: string): boolean {
  * Whether `kind` is exempted at `relPath` via `cfg.exemptRules` — the config-driven, per-rule
  * counterpart to `isChartFile`'s hardcoded path scoping.
  */
-function isRuleExempt(
+export function isRuleExempt(
   kind: GuardKind,
   relPath: string,
   exemptRules: GuardConfig['exemptRules'],
@@ -2216,7 +2215,7 @@ export const GUARD_RULES = {
   },
   'series-palette': {
     kind: 'series-palette',
-    pattern: /(?!)/, // never matches: judged over the whole series FILE by `checkSeriesPalette`, not per line
+    pattern: /(?!)/, // never matches: judged over the whole series FILE by `series-file.ts`, not per line
     appliesTo: () => false,
     message:
       "The series file's palette fails a computed check (OKLCH lightness band, chroma floor, colour-blind separation of neighbours, worst-pair separation, 3:1 contrast against the surface, ≤ 8 series without a repeat) — retune the hex in the series file; it is judged per scheme, light against the light panel and dark against the dark one. A deliberately neutral series is keyed `other`.",
@@ -2747,23 +2746,6 @@ export function checkSource(text: string, relPath: string, cfg: GuardConfig): Fi
       text: textForFinding(lines[f.line - 1], f.token),
       severity: severityOf(f.kind, cfg),
     }))
-}
-
-/**
- * Judge ONE series file's palette (`series-palette`): one finding per failed check, naming the key(s),
- * scheme, measured number and threshold. The series module is exempt from every line-scan kind, so
- * `check-theme` hands it here separately. Honors `severity` and `exemptRules` like any other kind.
- */
-export function checkSeriesPalette(source: string, relPath: string, cfg: GuardConfig): Finding[] {
-  if (isRuleExempt('series-palette', relPath, cfg.exemptRules)) return []
-  return auditSeriesGroups(parseSeriesGroups(source)).map((issue) => ({
-    relPath,
-    line: issue.line,
-    token: issue.keys.join(', '),
-    text: issue.message,
-    kind: 'series-palette' as const,
-    severity: severityOf('series-palette', cfg),
-  }))
 }
 
 // ── Allow-annotation enumeration (check-theme --audit-allows) ─────────────────────────────────────
