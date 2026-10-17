@@ -4,9 +4,10 @@
  * hand where a component already has the prop.
  */
 import { Button } from '@mantine/core'
+import type { ButtonProps } from '@mantine/core'
 import type { ChartState } from 'basalt-ui/charts'
 import { createElement } from 'react'
-import type { ReactNode } from 'react'
+import type { ComponentType, ReactNode } from 'react'
 import type { QueryStateLike } from '../demo/query-state-like'
 
 const SHOT_STATES = ['empty', 'loading', 'error'] as const
@@ -30,8 +31,10 @@ export const retryCopy = (what: string, source: string): string =>
 const noop = (): void => {}
 
 /** The retry control an error `ChartCard` offers (`stateAction`); the handler is a no-op in a fixture. */
+// Mantine's polymorphic `Button` does not infer through `createElement`; the plain props are all this needs.
+const RetryButton = Button as ComponentType<ButtonProps & { onClick: () => void }>
 export const RETRY_ACTION: ReactNode = createElement(
-  Button,
+  RetryButton,
   { variant: 'subtle', onClick: noop },
   'Retry',
 )
