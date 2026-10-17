@@ -1,9 +1,11 @@
 import { expect, test } from 'bun:test'
-import { readFileSync } from 'node:fs'
-import { CTL_HEIGHT_VARS, denseCtlCss } from './ctl-vars'
+import { buildPaletteCss } from './core'
+import { denseCtlBlock } from './ctl-vars'
 
-test('styles.css carries the dense tier generated from CTL_HEIGHT_VARS (scripts/gen-dense-css.ts)', () => {
-  const css = readFileSync(new URL('../styles.css', import.meta.url), 'utf8')
-  expect(css).toContain(denseCtlCss())
-  for (const name of CTL_HEIGHT_VARS) expect(denseCtlCss()).toContain(name)
+test('the palette CSS carries the dense block, fine pointers only, beside the coarse hit block', () => {
+  for (const only of ['all', 'core'] as const) {
+    const css = buildPaletteCss({ only })
+    expect(css).toContain(denseCtlBlock())
+    expect(css.indexOf('(pointer: coarse)')).toBeLessThan(css.indexOf('(pointer: fine)'))
+  }
 })

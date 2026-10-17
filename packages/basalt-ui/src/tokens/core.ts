@@ -9,6 +9,7 @@
  * Grounded in argo `packages/charts/src/{tokens,palette,theme-vars,utils/color}.ts`.
  */
 
+import { denseCtlBlock } from './ctl-vars'
 import {
   buildPaletteData,
   RADIUS,
@@ -1004,8 +1005,8 @@ export function buildPaletteCss(
   // consumer never receives the base pair the block exists to override.
   const rootBlock =
     only === 'core'
-      ? `:root {\n${derived}\n}\n${coarseHitBlock}`
-      : `:root {\n${derived}\n}\n${mobileLadderBlock(DEFAULT_SPACE_VALUES)}\n${coarseHitBlock}`
+      ? `:root {\n${derived}\n}\n${coarseHitBlock}\n${denseCtlBlock()}`
+      : `:root {\n${derived}\n}\n${mobileLadderBlock(DEFAULT_SPACE_VALUES)}\n${coarseHitBlock}\n${denseCtlBlock()}`
 
   // The legacy shape — kept verbatim, and only reachable when the caller asked for nothing.
   if (opts.scheme === undefined && opts.defaultScheme === undefined && !opts.mediaFallback) {
