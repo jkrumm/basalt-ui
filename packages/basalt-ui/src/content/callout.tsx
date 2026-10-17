@@ -77,6 +77,14 @@ function BadGlyph() {
   )
 }
 
+// The kind as a word for assistive tech, so a title-less callout is never tint-only.
+const KIND_WORD: Record<CalloutKind, string> = {
+  info: 'Info',
+  good: 'Success',
+  warn: 'Warning',
+  bad: 'Error',
+}
+
 const DEFAULT_ICON: Record<CalloutKind, ReactNode> = {
   info: <InfoGlyph />,
   good: <GoodGlyph />,
@@ -96,7 +104,12 @@ export function Callout({ kind = 'info', title, icon, children, className, style
           <span className={classes.title}>{title}</span>
         </div>
       )}
-      <div className={classes.body}>{children}</div>
+      <div className={classes.body}>
+        <span className={classes.kindWord} data-callout-kind-word="">
+          {KIND_WORD[kind]}
+        </span>
+        {children}
+      </div>
     </div>
   )
 }

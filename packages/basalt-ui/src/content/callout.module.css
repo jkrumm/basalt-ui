@@ -55,6 +55,7 @@
 }
 
 .body {
+  position: relative;
   font-size: var(--vx-text-md);
   color: var(--vx-ink2);
 }
@@ -73,4 +74,16 @@
 
 .body p {
   margin: 0 0 var(--vx-space-stack-sm);
+}
+
+/* The kind as a word for assistive tech; visually hidden. */
+.kindWord {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  margin: -1px;
+  padding: 0;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
 }

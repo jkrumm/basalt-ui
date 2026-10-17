@@ -26,42 +26,24 @@ import {
   SegmentedControl,
   Stack,
   Text,
-  VisuallyHidden,
 } from '@mantine/core'
 import type { BasaltProps } from '../../common/props'
 import { cx } from '../../common/props'
 import { relativeTime } from '../../format'
-import { StatusDot } from '../../theme/status-dot'
+import { StatusVerdict } from '../../theme/status-verdict'
 import { VX } from '../../tokens'
 import { resolveAction } from './define-notifications'
 import { useNotificationHistory } from './store'
 import type { NotificationHistoryItem, NotificationIntent } from './store'
 
-// ── Intent → Mantine color (drives the action Button's own `light`-variant tint) ──────────────
-
-const INTENT_COLOR: Record<NotificationIntent, string> = {
-  success: 'green',
-  error: 'red',
-  warning: 'yellow',
-  info: 'blue',
-}
-
-// ── Intent → status token (docs/DESIGN-SPEC.md §5: "severity accents via status tokens") — the
-// exact spec success/warning/danger hex, used for the item's status dot (never an edge stripe). `info` has no
-// status tone, so it reads the neutral accent instead.
-const INTENT_STATUS: Record<NotificationIntent, string> = {
-  success: VX.status.good,
-  error: VX.status.bad,
-  warning: VX.status.warn,
-  info: VX.accent,
-}
-
-// The intent as a word beside the dot, so it is never colour alone.
-const INTENT_WORD: Record<NotificationIntent, string> = {
-  success: 'Success',
-  error: 'Error',
-  warning: 'Warning',
-  info: 'Info',
+// ── Intent → the action Button's Mantine tint, the status dot colour and the visible word beside
+// it (docs/DESIGN-SPEC.md §5: severity via status tokens). `info` has no status tone, so its dot is
+// the neutral muted ink, not the accent.
+const INTENT_META: Record<NotificationIntent, { color: string; dot: string; word: string }> = {
+  success: { color: 'green', dot: VX.status.good, word: 'Success' },
+  error: { color: 'red', dot: VX.status.bad, word: 'Error' },
+  warning: { color: 'yellow', dot: VX.status.warn, word: 'Warning' },
+  info: { color: 'blue', dot: VX.muted, word: 'Info' },
 }
 
 type CenterView = 'inbox' | 'all'
@@ -88,8 +70,7 @@ function NotificationItem({
 }) {
   const isUnread = item.readAt === undefined
   const isDismissed = item.dismissedAt !== undefined
-  const color = INTENT_COLOR[item.intent]
-  const statusAccent = INTENT_STATUS[item.intent]
+  const { color, dot, word } = INTENT_META[item.intent]
   const resolved = item.action !== undefined ? resolveAction(item.action) : undefined
 
   function handleAction(e: MouseEvent): void {
@@ -118,23 +99,26 @@ function NotificationItem({
     >
       <Group gap="xs" align="flex-start" wrap="nowrap">
         <Stack gap={2} style={{ minWidth: 0, flex: 1 }}>
-          <Group gap="xs" align="center" wrap="nowrap">
-            <StatusDot color={statusAccent} />
-            <VisuallyHidden>{INTENT_WORD[item.intent]}</VisuallyHidden>
-            {item.title !== undefined && (
-              <Text size="sm" fw={isUnread ? 600 : 500} lh={1.2} truncate="end">
-                {item.title}
+          {item.title !== undefined ? (
+            <>
+              <Group gap="xs" align="center" wrap="nowrap">
+                <StatusVerdict color={dot} word={word} />
+                <Text size="sm" fw={isUnread ? 600 : 500} lh={1.2} miw={0} truncate="end">
+                  {item.title}
+                </Text>
+              </Group>
+              <Text size="sm" lh={1.3} c="dimmed" style={{ wordBreak: 'break-word' }}>
+                {item.message}
               </Text>
-            )}
-          </Group>
-          <Text
-            size="sm"
-            lh={1.3}
-            {...(item.title !== undefined && { c: 'dimmed' })}
-            style={{ wordBreak: 'break-word' }}
-          >
-            {item.message}
-          </Text>
+            </>
+          ) : (
+            <Group gap="xs" align="flex-start" wrap="nowrap">
+              <StatusVerdict color={dot} word={word} />
+              <Text size="sm" lh={1.3} miw={0} style={{ wordBreak: 'break-word' }}>
+                {item.message}
+              </Text>
+            </Group>
+          )}
           <Group gap="xs" align="center" mt={2} wrap="nowrap">
             <Text ff="monospace" c="var(--vx-faint)" style={{ fontSize: VX.text.micro }}>
               {relativeTime(item.createdAt, { style: 'short' })}

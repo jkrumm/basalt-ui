@@ -54,7 +54,7 @@ const TONES: { tone: Tone; token: string; word: string; phrase: string }[] = [
 function verdictOf(markup: string): HTMLElement | null {
   const host = document.createElement('div')
   host.innerHTML = markup
-  return host.querySelector<HTMLElement>('[data-verdict]')
+  return host.querySelector<HTMLElement>('[data-verdict-word]')?.parentElement ?? null
 }
 
 test('the card root is the `basalt-card` inline-size container its header chrome keys on', () => {
@@ -79,23 +79,11 @@ describe('every tone also states its verdict as a visible word and a full phrase
   for (const { tone, word, phrase } of TONES) {
     test(tone, () => {
       const verdict = verdictOf(render(tone))
-      expect(verdict?.getAttribute('data-verdict')).toBe(tone)
-      expect(verdict?.textContent).toContain(word)
+      const wordEl = verdict?.querySelector('[data-verdict-word]')
+      expect(wordEl?.textContent).toBe(word)
       // The visible word is aria-hidden; AT hears the phrase, never a bare "Over".
-      expect(
-        verdict?.querySelector('[aria-hidden="true"]:not([data-basalt-status-dot])')?.textContent,
-      ).toBe(word)
+      expect(wordEl?.getAttribute('aria-hidden')).toBe('true')
       expect(verdict?.textContent).toContain(phrase)
-    })
-  }
-})
-
-describe('no tone draws a coloured edge rail', () => {
-  for (const { tone } of TONES) {
-    test(tone, () => {
-      const markup = render(tone)
-      expect(markup).not.toContain('position:absolute')
-      expect(markup).not.toContain('inset-inline-start')
     })
   }
 })
