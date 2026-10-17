@@ -4,19 +4,16 @@
  *   Question: Am I within budget, and what is driving it?
  *   Decision: Cut a project or raise the budget.
  *
- * Built with today's basalt exports and nothing else: this is the honest baseline the design track
- * improves, so a gap here (no Meter, no BarList) is left
- * visible and marked `W34:` rather than patched locally. Actions ("Raise budget") are inert in
- * fixtures.
+ * Forecast and budget are `Meter`s, spend by project and top drivers are `BarList`s (Wave 34).
+ * Actions ("Raise budget") are inert in fixtures.
  *
  * Anchors for `basalt-ui shot`: every scored component carries `data-shot`; `StatCard`, `ChartCard`
  * and `Section` do not forward `data-*`, so the anchor is the wrapping `Box`.
  */
 import { Box, SimpleGrid, Stack } from '@mantine/core'
-import { PageBar, Section, StatCard, StatGroup } from 'basalt-ui'
-import { Bars, ChartCard, Donut, Sparkline } from 'basalt-ui/charts'
-import type { BarsBar } from 'basalt-ui/charts'
-import { BasaltDataTable, createColumnHelper } from 'basalt-ui/table'
+import { BarList, Meter, PageBar, Section, StatCard, StatGroup } from 'basalt-ui'
+import { Bars, ChartCard, Sparkline } from 'basalt-ui/charts'
+import type { BarsBar, ChartState } from 'basalt-ui/charts'
 import { CONTAINER_KEYS, VX } from 'basalt-ui/tokens'
 import { demoColors } from '../demo/series'
 import {
@@ -24,6 +21,7 @@ import {
   DAILY,
   DAYS_ELAPSED,
   DISTRIBUTION,
+  DRIVERS,
   FORECAST_EUR,
   MODEL_KEYS,
   MODEL_LABEL,
@@ -34,16 +32,16 @@ import {
   MTD_EUR,
   MTD_TOTALS,
   PRIOR_WINDOW_LABEL,
-  PROJECT_LABEL,
   PROJECTS_MTD,
   WINDOW_LABEL,
   YEAR,
   fmtEur,
   fmtShare,
   spendBand,
+  fmtSignedEur,
   fmtSignedShare,
 } from './spend-data'
-import type { DayRow, DistributionBin, ModelKey, ProjectKey, ProjectRow } from './spend-data'
+import type { DayRow, DistributionBin, ModelKey } from './spend-data'
 import { RETRY_ACTION } from './retry-action'
 import { chartStateFor, queryFor, retryCopy } from './shot-state'
 import type { ScenarioProps } from './shot-state'
@@ -52,15 +50,6 @@ const MODEL_COLOR: Record<ModelKey, string> = {
   large: demoColors.sessions,
   mid: demoColors.signups,
   small: demoColors.revenue,
-}
-
-const PROJECT_COLOR: Record<ProjectKey, string> = {
-  search: demoColors.sessions,
-  support: demoColors.signups,
-  summaries: demoColors.revenue,
-  ingest: demoColors.churn,
-  evals: VX.accent,
-  sandbox: VX.line2,
 }
 
 const MODEL_BARS: BarsBar<DayRow>[] = MODEL_KEYS.map((key) => ({
@@ -78,9 +67,22 @@ const DISTRIBUTION_BARS: BarsBar<DistributionBin>[] = [
 const PACE_EUR_PER_DAY = BUDGET_EUR / MONTH_DAYS
 const DAILY_DATA = [...DAILY]
 const DISTRIBUTION_DATA = [...DISTRIBUTION]
-const DONUT_DATA = PROJECTS_MTD.map((p) => ({ key: p.key, value: p.spend }))
-const PROJECT_ROWS = [...PROJECTS_MTD]
-const NO_ROWS: ProjectRow[] = []
+/** Spend by project: label, month-to-date EUR, share as the muted secondary. */
+const PROJECT_ITEMS = PROJECTS_MTD.map((p) => ({
+  key: p.key,
+  label: p.label,
+  value: p.spend,
+  secondary: fmtShare(p.share),
+}))
+/** Top drivers: the € added against the prior window, the relative change as the secondary. */
+const DRIVER_ITEMS = DRIVERS.map((p) => ({
+  key: p.key,
+  label: p.label,
+  value: p.delta,
+  secondary: fmtSignedShare(p.change),
+}))
+/** The forecast track runs past both the budget and the forecast so an overage stays on the track. */
+const TRACK_END_EUR = Math.ceil((Math.max(BUDGET_EUR, FORECAST_EUR) * 1.1) / 100) * 100
 const PACE_LINES = [
   { value: PACE_EUR_PER_DAY, color: VX.faint, dashed: true, legend: { label: 'Budget pace' } },
 ]
@@ -90,27 +92,9 @@ const USAGE_EMPTY = 'No spend recorded in the window. Check that the usage expor
 
 const retry = (what: string): string => retryCopy(what, 'usage export')
 
-const columns = (() => {
-  const col = createColumnHelper<ProjectRow>()
-  return [
-    col.accessor('label', { header: 'Project' }),
-    col.accessor('spend', {
-      header: `Spend, ${WINDOW_LABEL} (€)`,
-      cell: (c) => fmtEur(c.getValue()),
-      meta: { align: 'right', numeral: true },
-    }),
-    col.accessor('share', {
-      header: 'Share of total',
-      cell: (c) => fmtShare(c.getValue()),
-      meta: { align: 'right', numeral: true },
-    }),
-    col.accessor('change', {
-      header: `vs ${PRIOR_WINDOW_LABEL}`,
-      cell: (c) => fmtSignedShare(c.getValue()),
-      meta: { align: 'right', numeral: true },
-    }),
-  ]
-})()
+/** A Meter or BarList draws its own loading and empty states; the card only takes the error. */
+const errorOnly = (state: ScenarioProps['shotState'], copy: string): ChartState | undefined =>
+  state === 'error' ? { error: new Error(copy) } : undefined
 
 function SpendStats({ shotState }: ScenarioProps) {
   const isAtRest = shotState === undefined
@@ -150,7 +134,6 @@ function SpendStats({ shotState }: ScenarioProps) {
         />
       </Box>
       <Box data-shot="forecast" h="100%">
-        {/* W34: a meter with the budget as its target replaces the bare figure. */}
         <StatCard
           title="Forecast"
           // The verdict in words beside the rail: the rail alone carries it in colour only.
@@ -161,8 +144,21 @@ function SpendStats({ shotState }: ScenarioProps) {
           }
           value={fmtEur(FORECAST_EUR)}
           info={`Average per day so far (${fmtEur(MTD_EUR / DAYS_ELAPSED)}) held flat for all ${MONTH_DAYS} days. Ignores weekends and bursts.`}
-          {...(overBudget && { tone: 'bad' as const })}
           {...shared}
+          sparkline={() => (
+            <Meter
+              label={`Forecast against the ${fmtEur(BUDGET_EUR)} budget`}
+              max={TRACK_END_EUR}
+              target={BUDGET_EUR}
+              format={fmtEur}
+              segments={[
+                { value: MTD_EUR, label: 'Spent' },
+                { value: FORECAST_EUR - MTD_EUR, label: 'Forecast', forecast: true },
+              ]}
+              forecastCaption={`Forecast ${fmtEur(FORECAST_EUR)}`}
+              startCaption={`Spent ${fmtEur(MTD_EUR)}`}
+            />
+          )}
         />
       </Box>
       <Box data-shot="budget" h="100%">
@@ -171,18 +167,19 @@ function SpendStats({ shotState }: ScenarioProps) {
           qualifier={MONTH_LABEL}
           value={fmtEur(BUDGET_EUR)}
           info={`Monthly cap in EUR. ${fmtEur(PACE_EUR_PER_DAY)} a day keeps spend on pace.`}
-          // W34: meter — the spent share against the cap belongs in a Meter; two rows is the nearest.
-          {...(isAtRest && {
-            breakdown: [
-              { label: `Spent, ${WINDOW_LABEL}`, value: fmtEur(MTD_EUR) },
-              {
-                label: `Left, ${MONTH_DAYS - DAYS_ELAPSED} days`,
-                value: fmtEur(left),
-                ...(left < 0 && { tone: 'bad' as const }),
-              },
-            ],
-          })}
           {...shared}
+          sparkline={() => (
+            <Meter
+              label={`Spent against the ${fmtEur(BUDGET_EUR)} budget`}
+              max={BUDGET_EUR}
+              value={MTD_EUR}
+              format={fmtEur}
+              // A verdict colour only once the cap is passed.
+              {...(left < 0 && { color: VX.status.bad })}
+              startCaption={`Spent ${fmtEur(MTD_EUR)}`}
+              endCaption={left < 0 ? `${fmtEur(-left)} over` : `${fmtEur(left)} left`}
+            />
+          )}
         />
       </Box>
     </StatGroup>
@@ -215,24 +212,24 @@ function SpendCharts({ shotState }: ScenarioProps) {
         </ChartCard>
       </Box>
       <Box data-shot="spend-by-project" h="100%">
+        {/* A BarList, not a segmented Meter (SPEC § 3): six parts is the top of the "2–6 parts" row,
+            and six near-identical hues with captions under 5 % segments do not survive 390 px; the
+            question is also "which project", a ranking, which length on a shared scale answers. */}
         <ChartCard
           title={`Spend by project, ${WINDOW_LABEL} (€)`}
           info="Each project's share of month-to-date spend across all models."
-          state={chartStateFor(shotState, {
-            empty: `No project spent anything ${WINDOW_LABEL}. Connect one to the usage export.`,
-            error: retry('Spend by project'),
-          })}
+          state={errorOnly(shotState, retry('Spend by project'))}
           {...(shotState === 'error' && { stateAction: RETRY_ACTION })}
         >
-          <Box data-shot-hover data-shot-tooltip data-shot-at="0.23,0.12">
-            <Donut
-              ariaLabel={`Spend by project, ${WINDOW_LABEL}, EUR`}
-              data={DONUT_DATA}
-              colorForKey={(key) => PROJECT_COLOR[key]}
-              seriesLabel={(key) => PROJECT_LABEL[key]}
-              formatValue={fmtEur}
-              centerLabel={fmtEur(MTD_EUR)}
-              centerSubLabel="Month to date"
+          <Box data-shot-hover>
+            <BarList
+              label={`Spend by project, ${WINDOW_LABEL}, EUR`}
+              items={shotState === 'empty' ? [] : PROJECT_ITEMS}
+              format={fmtEur}
+              accentLeader
+              loading={shotState === 'loading'}
+              loadingRows={PROJECT_ITEMS.length}
+              emptyText={`No project spent anything ${WINDOW_LABEL}. Connect one to the usage export.`}
             />
           </Box>
         </ChartCard>
@@ -246,20 +243,20 @@ function SpendDrivers({ shotState }: ScenarioProps) {
   return (
     <SimpleGrid type="container" cols={{ base: 1, [CONTAINER_KEYS.regular]: 2 }}>
       <Box data-shot="top-drivers" h="100%">
-        <Section title={`Top drivers, ${WINDOW_LABEL} vs ${PRIOR_WINDOW_LABEL}`}>
-          {/* W34: bar-list — a ranked list with an inline bar per row; the table is the nearest. */}
-          <BasaltDataTable
-            // Rows only at rest: the empty branch needs `data` empty, the others have no rows yet.
-            data={shotState === undefined ? PROJECT_ROWS : NO_ROWS}
-            columns={columns}
-            enableSorting={false}
-            {...(query !== undefined && { query })}
-            emptyState={
-              <span>
-                No project spent anything {WINDOW_LABEL}. Connect one to the usage export.
-              </span>
-            }
-          />
+        <Section
+          title={`Top drivers, ${WINDOW_LABEL} vs ${PRIOR_WINDOW_LABEL}`}
+          {...(query !== undefined && shotState === 'error' && { query })}
+        >
+          <Box data-shot-hover>
+            <BarList
+              label={`Spend added against ${PRIOR_WINDOW_LABEL} by project, EUR`}
+              items={shotState === 'empty' ? [] : DRIVER_ITEMS}
+              format={fmtSignedEur}
+              loading={shotState === 'loading'}
+              loadingRows={DRIVER_ITEMS.length}
+              emptyText={`No project spent more than ${PRIOR_WINDOW_LABEL}. Spend is flat or falling.`}
+            />
+          </Box>
         </Section>
       </Box>
       <Box data-shot="spend-distribution" h="100%">

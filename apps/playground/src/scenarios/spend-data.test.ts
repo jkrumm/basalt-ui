@@ -6,6 +6,7 @@ import {
   DAILY,
   DAYS_ELAPSED,
   DISTRIBUTION,
+  DRIVERS,
   FORECAST_EUR,
   MODELS_MTD,
   MONTH_DAYS,
@@ -58,6 +59,14 @@ describe('spend-data', () => {
     const changes = PROJECTS_MTD.map((p) => p.change * 100)
     expect(MTD_CHANGE_PCT).toBeGreaterThanOrEqual(Math.min(...changes))
     expect(MTD_CHANGE_PCT).toBeLessThanOrEqual(Math.max(...changes))
+  })
+
+  it('a project delta is its spend minus the prior window, and drivers are the risers, largest first', () => {
+    for (const p of PROJECTS_MTD) expect(p.delta).toBeCloseTo(p.spend - p.spend / (1 + p.change), 6)
+    expect(DRIVERS.every((p) => p.delta > 0)).toBe(true)
+    const deltas = DRIVERS.map((p) => p.delta)
+    expect(deltas).toEqual(deltas.toSorted((a, b) => b - a))
+    expect(DRIVERS.length).toBe(PROJECTS_MTD.filter((p) => p.change > 0).length)
   })
 
   it('a bin reads as the band it covers', () => {
