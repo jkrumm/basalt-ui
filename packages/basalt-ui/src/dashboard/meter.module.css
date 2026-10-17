@@ -38,7 +38,6 @@
   background: var(--vx-line);
 }
 
-/* The committed/forecast pair: the same neutral at two strengths. Flat, never hatched. */
 /*
  * A non-verdict reading: --vx-muted at 65%. 35% (argo's alpha) measures 1.7:1 (light) / 2.4:1 (dark)
  * against the track; 65% clears 3:1 in both, and is not the near-white of --vx-line in dark.
@@ -47,6 +46,7 @@
   background: color-mix(in srgb, var(--vx-muted) 65%, transparent);
 }
 
+/* The committed/forecast pair: the same neutral at two strengths. Flat, never hatched. */
 .forecastFill {
   background: color-mix(in srgb, var(--vx-line) 45%, transparent);
 }

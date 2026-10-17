@@ -458,23 +458,28 @@ export function MeterBar(props: {
 const TICK_WIDTH = '2px'
 
 /**
- * Centred on its percent, except at the track end: centred there it is half outside the track (and
- * clipped or hidden by a full fill), so its end edge sits ON the track end and it reads inside.
+ * Centred on its percent. A target or tick AT the track end is the exception: centred there it is
+ * half outside the track (and hidden by a full fill), so its end edge sits ON the track end and it
+ * reads inside. The marker is the reading itself and stays centred.
  */
-function tickPosition(pct: number): CSSProperties {
-  if (pct < 100) return { insetInlineStart: `${pct}%` }
+function tickPosition(kind: TickKind, pct: number): CSSProperties {
+  if (pct < 100 || kind === 'marker' || kind === 'boundary') return { insetInlineStart: `${pct}%` }
   return { insetInlineStart: `calc(100% - ${TICK_WIDTH})`, marginInlineStart: 0 }
 }
+
+type TickKind = 'marker' | 'boundary' | 'target' | 'tick'
 
 function Tick({
   kind,
   className,
   pct,
 }: {
-  kind: 'marker' | 'boundary' | 'target' | 'tick'
+  kind: TickKind
   className: string
   pct: number | undefined
 }) {
   if (pct === undefined) return null
-  return <div className={className} data-meter-tick={kind} style={tickPosition(pct)} aria-hidden />
+  return (
+    <div className={className} data-meter-tick={kind} style={tickPosition(kind, pct)} aria-hidden />
+  )
 }

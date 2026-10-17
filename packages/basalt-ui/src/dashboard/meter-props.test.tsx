@@ -9,7 +9,7 @@ import { afterEach, beforeEach, describe, expect, test } from 'bun:test'
 import { readFileSync } from 'node:fs'
 import { resolve } from 'node:path'
 import { contrastRatio } from '../tokens/hct'
-import { INK, SURFACE } from '../tokens/palette'
+import { INK, NEUTRAL, SURFACE } from '../tokens/palette'
 import type { MeterSegment, MeterTick, MeterZone } from '../index'
 import { Meter } from './meter'
 import type { MeterProps } from './meter'
@@ -200,6 +200,22 @@ describe('tone="muted"', () => {
       expect(contrastRatio(blend(INK.muted[scheme], track), track)).toBeGreaterThanOrEqual(3)
     }
   })
+
+  test('in dark the muted fill is darker than the --vx-line fill it replaces', () => {
+    const rule = /\[data-tone='muted'\][^{]*\{[^}]*var\(--vx-muted\) (\d+)%/.exec(css)
+    const alpha = Number(rule?.[1]) / 100
+    const luminance = (hex: string, over?: string) => {
+      const ch = (h: string, i: number) => Number.parseInt(h.slice(1 + i * 2, 3 + i * 2), 16)
+      const lin = (v: number) =>
+        v / 255 <= 0.03928 ? v / 255 / 12.92 : ((v / 255 + 0.055) / 1.055) ** 2.4
+      const [r, g, b] = [0, 1, 2].map((i) =>
+        lin(over ? alpha * ch(hex, i) + (1 - alpha) * ch(over, i) : ch(hex, i)),
+      ) as [number, number, number]
+      return 0.2126 * r + 0.7152 * g + 0.0722 * b
+    }
+    const muted = luminance(INK.muted.dark, SURFACE.subtle.dark)
+    expect(muted).toBeLessThan(luminance(NEUTRAL.line.dark))
+  })
 })
 
 describe('size="row"', () => {
@@ -279,6 +295,17 @@ describe('target at max', () => {
     expect(t).toBeDefined()
     expect(t?.style.insetInlineStart).toBe('calc(100% - 2px)')
     expect(t?.style.marginInlineStart).toBe('0')
+  })
+
+  test('the reading marker stays centred even at the track end', () => {
+    const { container } = mount({
+      label: 'L',
+      value: 100,
+      zones: [{ from: 0, to: 100, label: 'All' }],
+    })
+    const m = marks(container, 'marker')[0]
+    expect(m?.style.insetInlineStart).toBe('100%')
+    expect(m?.style.marginInlineStart).toBe('')
   })
 
   test('a target below max keeps its centred percent position', () => {
