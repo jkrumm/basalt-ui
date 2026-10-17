@@ -155,11 +155,15 @@ const utcClock = (d: Date): string => `${pad2(d.getUTCHours())}:${pad2(d.getUTCM
 const MONTH_STEP_MS = 27 * DAY_MS
 const isUtcMidnight = (d: Date): boolean => d.getTime() % DAY_MS === 0
 
+type TickLabel = { text: string; marker: boolean }
+
 /**
  * The default Date tick labels, chosen from the TICK step (not the data step) and UTC like the
- * scale: sub-day steps read `HH:MM` with `DD.MM` on a midnight tick (the day marker), day steps
- * `DD.MM`, month steps the month with the year on January. A level that would label two ticks
- * alike widens to carry the date or year, so one axis never repeats a label.
+ * scale. Sub-day steps: `HH:MM`, a midnight tick carries the day (`DD.MM`). Day steps: `DD.MM`.
+ * Month steps: the month, a January tick carries the year. A label may recur only with a marker
+ * (day / year) tick between its occurrences, so `17.10, 17.10, 18.10` cannot happen. When a level
+ * fails that (no midnight tick in a span crossing a day, a 2-year axis with no January), the
+ * first tick of each day carries its date, then every tick does.
  */
 export function dateTickFormat(ticks: readonly Date[]): (v: ChartValue) => string {
   const times = [...new Set(ticks.map((t) => t.getTime()))].toSorted((a, b) => a - b)
@@ -167,22 +171,63 @@ export function dateTickFormat(ticks: readonly Date[]): (v: ChartValue) => strin
     (min, t, i) => (i === 0 ? min : Math.min(min, t - times[i - 1]!)),
     Infinity,
   )
-  const levels: ((d: Date) => string)[] =
+  const clock = (d: Date): TickLabel => ({ text: utcClock(d), marker: false })
+  const dated = (text: string): TickLabel => ({ text, marker: true })
+  const sameDay = (t: number, prev: number | undefined): boolean =>
+    prev !== undefined && Math.floor(t / DAY_MS) === Math.floor(prev / DAY_MS)
+  type Level = (at: number, prev: number | undefined) => TickLabel
+  const levels: Level[] =
     step < DAY_MS || (step === Infinity && !ticks.every(isUtcMidnight))
       ? [
-          (d) => (isUtcMidnight(d) ? utcAxisDate(d) : utcClock(d)),
-          (d) => `${utcAxisDate(d)} ${utcClock(d)}`,
+          (t) =>
+            isUtcMidnight(new Date(t)) ? dated(utcAxisDate(new Date(t))) : clock(new Date(t)),
+          (t, prev) =>
+            isUtcMidnight(new Date(t))
+              ? dated(utcAxisDate(new Date(t)))
+              : sameDay(t, prev)
+                ? clock(new Date(t))
+                : dated(`${utcAxisDate(new Date(t))} ${utcClock(new Date(t))}`),
+          (t) => dated(`${utcAxisDate(new Date(t))} ${utcClock(new Date(t))}`),
         ]
       : step < MONTH_STEP_MS
-        ? [utcAxisDate, (d) => `${utcAxisDate(d)}.${String(d.getUTCFullYear()).slice(2)}`]
-        : [
-            (d) => (d.getUTCMonth() === 0 ? String(d.getUTCFullYear()) : MONTHS[d.getUTCMonth()]!),
-            (d) => `${MONTHS[d.getUTCMonth()]} ${d.getUTCFullYear()}`,
+        ? [
+            (t) => dated(utcAxisDate(new Date(t))),
+            (t) =>
+              dated(`${utcAxisDate(new Date(t))}.${String(new Date(t).getUTCFullYear()).slice(2)}`),
           ]
-  const level =
-    levels.find((fmt) => new Set(times.map((t) => fmt(new Date(t)))).size === times.length) ??
-    levels[levels.length - 1]!
-  return (v) => (v instanceof Date ? level(v) : defaultFormatX(v))
+        : [
+            (t) => {
+              const d = new Date(t)
+              return d.getUTCMonth() === 0
+                ? dated(String(d.getUTCFullYear()))
+                : { text: MONTHS[d.getUTCMonth()]!, marker: false }
+            },
+            (t) => {
+              const d = new Date(t)
+              return dated(`${MONTHS[d.getUTCMonth()]} ${d.getUTCFullYear()}`)
+            },
+          ]
+  const labelled = (level: Level): TickLabel[] => times.map((t, i) => level(t, times[i - 1]))
+  // Valid: a marker label is unique on the axis; any other label repeats only after a marker.
+  const valid = (labels: TickLabel[]): boolean => {
+    const markers = new Set<string>()
+    const since = new Set<string>()
+    for (const { text, marker } of labels) {
+      if (marker ? markers.has(text) : since.has(text)) return false
+      if (marker) {
+        markers.add(text)
+        since.clear()
+      } else since.add(text)
+    }
+    return true
+  }
+  const chosen = levels.map(labelled).find(valid) ?? labelled(levels[levels.length - 1]!)
+  const byTime = new Map(times.map((t, i) => [t, chosen[i]!.text]))
+  const fallback = levels[0]!
+  return (v) =>
+    v instanceof Date
+      ? (byTime.get(v.getTime()) ?? fallback(v.getTime(), undefined).text)
+      : defaultFormatX(v)
 }
 
 export function defaultFormatX(v: ChartValue): string {
