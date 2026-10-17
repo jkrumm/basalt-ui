@@ -45,7 +45,7 @@ const INTENT_COLOR: Record<NotificationIntent, string> = {
 }
 
 // ── Intent → status token (docs/DESIGN-SPEC.md §5: "severity accents via status tokens") — the
-// exact spec success/warning/danger hex, used for the item's left-border accent. `info` has no
+// exact spec success/warning/danger hex, used for the item's status dot (never an edge stripe). `info` has no
 // status tone, so it reads the neutral accent instead.
 const INTENT_STATUS: Record<NotificationIntent, string> = {
   success: VX.status.good,
@@ -101,13 +101,21 @@ function NotificationItem({
       onClick={isUnread ? () => onMarkRead(item.id) : undefined}
       style={{
         cursor: isUnread ? 'pointer' : 'default',
-        borderInlineStart: `3px solid ${statusAccent}`,
         borderRadius: 'var(--mantine-radius-sm)',
         background: isUnread ? 'var(--mantine-color-default-hover)' : 'transparent',
         opacity: isDismissed ? 0.55 : 1,
       }}
     >
       <Group gap="xs" align="flex-start" wrap="nowrap">
+        <Box
+          aria-hidden="true"
+          w={6}
+          h={6}
+          mt={6}
+          bdrs="xl"
+          bg={statusAccent}
+          style={{ flex: 'none' }}
+        />
         <Stack gap={2} style={{ minWidth: 0, flex: 1 }}>
           {item.title !== undefined && (
             <Text size="sm" fw={isUnread ? 600 : 500} lh={1.2} truncate="end">

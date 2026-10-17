@@ -1078,6 +1078,23 @@ darkens, dark lightens; hue is preserved and chroma may clip at the gamut edge.
   subagent's model provider: point `--api` at staging or synthetic data for an app holding third parties' data. No
   action needed; every flag is opt-in.
 
+### Status is a dot and a word, not an edge stripe
+
+Wave 34. `StatCard`'s `tone` no longer draws a 3 px coloured rail down the card's leading edge. It
+now puts a 6 px status dot and a short word on the caption row, after the title and `info` glyph:
+`good` → `OK`, `warn` → `Watch`, `bad` → `Over`. The dot carries the colour (`VX.status[tone]`);
+the word is muted ink and carries the meaning, so the verdict no longer rides on colour alone. The
+`VisuallyHidden` sentence ("Past the severe threshold") is gone — the visible word replaces it.
+
+Two other status edges went the same way: `Callout` loses its left border (the tint, icon and title
+keep the kind's colour), and a notification-centre row shows a status dot instead of a 3 px
+leading border.
+
+`tone?: 'good' | 'warn' | 'bad'` keeps its API, and omitting it still renders neither dot nor word.
+There is no opt-out: a coloured edge for status is retired (owner decision). A consumer's own
+`[data-tone]` CSS that targeted the rail element should target the card (`[data-tone]` stays on the
+root) or drop the rule. The shipped reviewer now fails a status drawn as a coloured edge stripe.
+
 ## 2.17.0 — the metric card and chrome
 
 Wave 33 of the design-parity track (`docs/waves/design-parity/SPEC.md` § 6.10, § 6.12). No export is

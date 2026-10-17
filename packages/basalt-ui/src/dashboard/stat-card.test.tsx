@@ -1,26 +1,24 @@
 /**
- * `StatCard`'s threshold rail — the one behavior in this component that carries information rather
- * than layout, and the one where a regression is silent: a wrong rail colour still renders a
+ * `StatCard`'s threshold verdict — the one behavior in this component that carries information
+ * rather than layout, and the one where a regression is silent: a wrong dot colour still renders a
  * perfectly good-looking card.
  *
  * Two invariants, both asserted against real rendered markup:
  *
- *  1. EVERY tone states its verdict in TEXT. The rail is `aria-hidden` decoration; colour alone must
- *     never be the only carrier of a threshold (WCAG 1.4.1), so a `VisuallyHidden` string ships with
- *     it — for `good` no less than for `bad`.
+ *  1. EVERY tone states its verdict as a visible WORD beside the dot. The dot is `aria-hidden`
+ *     colour; colour alone must never be the only carrier of a threshold (WCAG 1.4.1), for `good`
+ *     no less than for `bad`. There is no coloured edge stripe (Wave 34) — the dot and the word are
+ *     the whole form.
  *  2. OMISSION IS NOT `good`. `tone` undefined means "fine, OR nothing measured", and those two are
  *     the same untinted card on purpose. A card with no reading must not be able to render green by
- *     leaving the prop off, so the absence case asserts no rail and no verdict text at all — which a
+ *     leaving the prop off, so the absence case asserts no dot and no verdict word at all — which a
  *     future `tone = tone ?? 'good'` style default would immediately fail.
  *
- * A DOM harness now exists (`tests/setup/dom.ts`, preloaded via the root `bunfig.toml`; see
- * `theme/use-basalt-spacing.test.tsx`'s doc) — `renderToStaticMarkup` inside a real `MantineProvider`
- * is used deliberately here instead, since the rail is an inline style on server-rendered markup.
- * Converting to the DOM harness would only be worth it if a future assertion here needed live DOM
- * behavior (e.g. computed styles, focus/hover interaction) rather than the static markup string.
+ * `renderToStaticMarkup` inside a real `MantineProvider` is used deliberately: the dot is an inline
+ * style on server-rendered markup.
  */
 import { MantineProvider } from '@mantine/core'
-// Aliased: the file already has a local `render(tone?)` helper (below) for the tone-rail tests.
+// Aliased: the file already has a local `render(tone?)` helper (below) for the tone tests.
 import { render as renderIntoDom } from '@testing-library/react'
 import { describe, expect, test } from 'bun:test'
 import { readFileSync } from 'node:fs'
@@ -42,10 +40,10 @@ function render(tone?: Tone) {
   )
 }
 
-const TONES: { tone: Tone; token: string; verdict: string }[] = [
-  { tone: 'good', token: 'var(--vx-status-good)', verdict: 'Within the good threshold' },
-  { tone: 'warn', token: 'var(--vx-status-warn)', verdict: 'Past the warning threshold' },
-  { tone: 'bad', token: 'var(--vx-status-bad)', verdict: 'Past the severe threshold' },
+const TONES: { tone: Tone; token: string; word: string }[] = [
+  { tone: 'good', token: 'var(--vx-status-good)', word: 'OK' },
+  { tone: 'warn', token: 'var(--vx-status-warn)', word: 'Watch' },
+  { tone: 'bad', token: 'var(--vx-status-bad)', word: 'Over' },
 ]
 
 test('the card root is the `basalt-card` inline-size container its header chrome keys on', () => {
@@ -54,11 +52,11 @@ test('the card root is the `basalt-card` inline-size container its header chrome
   expect(markup).toContain('container-name:basalt-card')
 })
 
-describe('every tone draws its rail from the per-scheme status token', () => {
+describe('every tone draws its dot from the per-scheme status token', () => {
   for (const { tone, token } of TONES) {
     test(tone, () => {
       const markup = render(tone)
-      // A hex here would be one scheme's colour frozen into both — the rail has to re-resolve with
+      // A hex here would be one scheme's colour frozen into both — the dot has to re-resolve with
       // the palette, including under a consumer's `derive` retune.
       expect(markup).toContain(`background:${token}`)
       expect(markup).toContain(`data-tone="${tone}"`)
@@ -66,10 +64,21 @@ describe('every tone draws its rail from the per-scheme status token', () => {
   }
 })
 
-describe('every tone also states its verdict in text', () => {
-  for (const { tone, verdict } of TONES) {
+describe('every tone also states its verdict as a visible word', () => {
+  for (const { tone, word } of TONES) {
     test(tone, () => {
-      expect(render(tone)).toContain(verdict)
+      expect(render(tone)).toMatch(new RegExp(`</span>${word}</span>`))
+    })
+  }
+})
+
+describe('no tone draws a coloured edge rail', () => {
+  for (const { tone } of TONES) {
+    test(tone, () => {
+      const markup = render(tone)
+      expect(markup).not.toContain('position:absolute')
+      expect(markup).not.toContain('inset-inline-start')
+      expect(markup).not.toContain('position:relative')
     })
   }
 })
@@ -77,19 +86,19 @@ describe('every tone also states its verdict in text', () => {
 describe('omitting tone is not "good" — it is untinted, and says nothing', () => {
   const markup = render()
 
-  test('no rail is drawn', () => {
+  test('no dot is drawn', () => {
     expect(markup).not.toContain('var(--vx-status-')
   })
 
   test('the card carries no data-tone at all', () => {
     // Part of the same contract, and the half a consumer can style against: `[data-tone]` must not
     // match an unmarked card. A default of any kind — including a placeholder like `tone ?? 'none'`
-    // that draws no rail — would put the attribute back and break that selector silently.
+    // that draws no dot — would put the attribute back and break that selector silently.
     expect(markup).not.toContain('data-tone')
   })
 
-  test('no verdict is announced', () => {
-    for (const { verdict } of TONES) expect(markup).not.toContain(verdict)
+  test('no verdict word is shown', () => {
+    for (const { word } of TONES) expect(markup).not.toContain(`>${word}<`)
   })
 
   test('the value still renders — the card is normal, just unmarked', () => {
@@ -214,7 +223,7 @@ describe('sparklinePlacement', () => {
 
 /**
  * `unit` and `breakdown` — the two props that existed as hand-rolled cards in three consumers
- * before they existed here. Both are asserted through the same static markup as the rail above; the
+ * before they existed here. Both are asserted through the same static markup as the dot above; the
  * CSS half (which cannot resolve under `bun test`, where a `.module.css` import is `undefined`) is
  * pinned against the shipped stylesheet TEXT at the bottom of this file, the pattern
  * `page-bar.test.tsx` uses.
@@ -322,7 +331,7 @@ describe('deltaFormat — a delta that is not a percentage', () => {
 
 describe('deltaPolarity — an up-is-bad metric never paints the good tone on a rise', () => {
   test('deltaPolarity="up-bad" never carries the good status token', () => {
-    // No `tone` — StatCard paints `VX.status[tone]` on its rail regardless of the delta chip, so a
+    // No `tone` — StatCard paints `VX.status[tone]` on its dot regardless of the delta chip, so a
     // `tone="bad"` render would pass this assertion even if the chip's own polarity were dropped.
     const markup = renderToStaticMarkup(
       <MantineProvider>

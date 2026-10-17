@@ -21,7 +21,7 @@ import classes from './callout.module.css'
 export type CalloutKind = 'info' | 'good' | 'warn' | 'bad'
 
 export type CalloutProps = BasaltProps & {
-  /** Semantic kind — drives the rail/tint color and the default icon. Default `'info'`. */
+  /** Semantic kind — drives the tint color and the default icon. Default `'info'`. */
   readonly kind?: CalloutKind
   readonly title?: string
   /** Overrides the default per-kind icon. Only rendered alongside a `title`. */

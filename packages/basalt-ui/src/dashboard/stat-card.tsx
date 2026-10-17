@@ -31,15 +31,14 @@
  * (`emptyText`). `loading` shows the same skeleton with no query at all. The caption row stays put
  * in every branch.
  *
- * `tone` marks the card as past a threshold with an accent rail down its leading edge. It exists
- * because `value` is typed `string`: without it, a card whose number has crossed a threshold reads
- * exactly as calm as one that hasn't, and the only way out from the consumer side is to wrap the
- * card in a hand-rolled positioned `<Box>` — which is a second card idiom in the app, drawn by code
- * the guard has no way to recognize as one. The rail is the largest signal available without
- * touching the value's own type: full card height, overlaying the card's edge rather than adding to
- * it, so layout is unchanged. `undefined` renders nothing at all — absence of a reading is neither a
- * good one nor a bad one, and must never be tinted. `'good'` is a deliberate positive verdict, never
- * the meaning of omission: it exists for the threshold where the calm number IS the finding (zero
+ * `tone` states a threshold verdict as a status dot plus a short word on the caption row (`OK`,
+ * `Watch`, `Over`): the dot carries the colour, the word carries the meaning, so the verdict never
+ * rides on colour alone. It exists because `value` is typed `string`: without it, a card whose number
+ * has crossed a threshold reads exactly as calm as one that hasn't. A coloured edge stripe is not the
+ * form — it reads as generic dashboard decoration (Wave 34). `undefined` renders nothing at all —
+ * absence of a reading is neither a good one nor a bad one, and must never be tinted. `'good'` is a
+ * deliberate positive verdict, never the meaning of omission: it exists for the threshold where the
+ * calm number IS the finding (zero
  * downtime over the window), and a card that has measured nothing must not be able to reach green by
  * leaving the prop off.
  *
@@ -74,7 +73,7 @@
  * <StatCard title="Active users" value="—" loading sparkline={() => null} />
  *
  * @example
- * // Past a threshold — an accent rail down the leading edge, value untouched.
+ * // Past a threshold — a status dot and the word "Over" on the caption row, value untouched.
  * <StatCard title="Downtime" value="29 min" tone="bad" />
  *
  * @example
@@ -90,7 +89,7 @@
  *   tone={hasCoverage ? (downtimeMinutes === 0 ? 'good' : 'bad') : undefined}
  * />
  */
-import { Box, Card, VisuallyHidden } from '@mantine/core'
+import { Card, VisuallyHidden } from '@mantine/core'
 import { useEffect, useState } from 'react'
 import type { ReactNode } from 'react'
 import {
@@ -108,7 +107,6 @@ import type {
   WidgetHeaderTitleProps,
 } from './widget-header'
 import { DeltaBadge } from './delta-badge'
-import { VX } from '../tokens'
 import { cx } from '../common/props'
 import type { BasaltProps, SlotStylesProps, Tone } from '../common/props'
 import { ErrorState, QueryState, resolveQueryBranch } from './query-state'
@@ -126,7 +124,7 @@ export type StatCardSlot = 'root' | 'header' | 'body' | 'sparkline'
  *
  * `value` is a pre-formatted `string` for the same reason the hero's is: the card cannot know the
  * locale, the currency or the precision the number was measured at. `tone` marks ONE row as past a
- * threshold and is the same vocabulary as the card's own `tone`, so a row saying `bad` and a rail
+ * threshold and is the same vocabulary as the card's own `tone`, so a row saying `bad` and a dot
  * saying `bad` are the same claim at two scales; omitting it is untinted, never `'good'`.
  */
 export type StatCardBreakdownRow = {
@@ -191,16 +189,6 @@ function useSlotWidth(active: boolean): {
   }, [active, node])
 
   return { ref: setNode, width }
-}
-
-/** The rail's width, in px. Wide enough to read as a deliberate mark at a glance, narrow enough
- * that it cannot be mistaken for the card's own edge. */
-const TONE_RAIL_WIDTH = 3
-
-const TONE_LABEL: Record<Tone, string> = {
-  good: 'Within the good threshold',
-  warn: 'Past the warning threshold',
-  bad: 'Past the severe threshold',
 }
 
 /**
@@ -302,8 +290,7 @@ export type StatCardProps = BasaltProps &
     /** Caption-row right slot (e.g. a ghost "..." menu trigger) — wrapped in `CtlSlot tier="widget"`,
      * so a raw `ActionIcon` with no `size` lands on the 24px step the caption row holds (C1/C5). */
     actions?: ReactNode
-    /** Threshold verdict — draws an accent rail down the card's leading edge and announces itself to
-     * assistive tech. Omitting it is NOT `'good'`: omitted covers a reading that is fine AND one that
+    /** Threshold verdict — a status dot plus a short word (`OK` / `Watch` / `Over`) on the caption row. Omitting it is NOT `'good'`: omitted covers a reading that is fine AND one that
      * is absent, and stays untinted so a card with nothing measured can never render green. Pass
      * `'good'` only to assert a measured value that has earned the verdict. */
     tone?: Tone
@@ -515,9 +502,6 @@ export function StatCard({
         // grid row stretch to the tallest.
         padding: 'var(--vx-space-card-inset-y, 0.75rem) var(--vx-space-card-inset-x, 1rem)',
         overflow: 'hidden',
-        // Anchors the tone rail. Set unconditionally so a card's stacking context does not change
-        // depending on whether it happens to have crossed a threshold this render.
-        position: 'relative',
         // The card's own width drives its chrome (`stat-card.module.css`).
         containerType: 'inline-size',
         containerName: 'basalt-card',
@@ -525,29 +509,6 @@ export function StatCard({
       }}
       data-tone={tone}
     >
-      {tone !== undefined && (
-        <>
-          {/* The rail is decoration; the verdict it encodes is real information, so it is also
-              stated in text for anyone who cannot see a 3px colour bar. Colour alone is never the
-              only carrier of a threshold. */}
-          <VisuallyHidden>{TONE_LABEL[tone]}</VisuallyHidden>
-          <Box
-            aria-hidden="true"
-            style={{
-              position: 'absolute',
-              insetBlock: 0,
-              insetInlineStart: 0,
-              width: TONE_RAIL_WIDTH,
-              // `Tone`'s members are `VX.status` keys by construction, so the rail reads the
-              // per-scheme `--vx-status-*` solid directly — never a hex, so it re-resolves in both
-              // schemes and under a consumer's `derive` retune. Contrast against
-              // `--vx-surface-panel` is measured in `theme/contrast.test.ts`.
-              background: VX.status[tone],
-            }}
-          />
-        </>
-      )}
-
       <div
         className={cx(classes.body, classNames?.body)}
         data-placement={sparklinePlacement}
@@ -560,6 +521,7 @@ export function StatCard({
             {...(icon !== undefined && { icon })}
             {...(info !== undefined && { info })}
             {...(qualifier !== undefined && { qualifier })}
+            {...(tone !== undefined && { tone })}
             {...(actions !== undefined && { actions })}
           />
 
