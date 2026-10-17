@@ -14,6 +14,7 @@ import {
   unmatchedExemptPatterns,
 } from '../guard'
 import type { Finding } from '../guard'
+import { checkSeriesModule } from '../guard/series-file'
 import { auditAllows } from './audit-allows'
 import { DEFAULT_ROOTS, resolveRoots } from './config'
 import {
@@ -34,6 +35,7 @@ import {
   resolveGuardConfig,
   resolveProjectDir,
   scannableFiles,
+  defaultExempt,
   SERIES_MODULE_HINT_RE,
   waiverHintFor,
 } from './index'
@@ -116,6 +118,7 @@ export function checkTheme(
     findings.push(...checkSource(readFileSync(resolve(cwd, rel), 'utf8'), rel, guardCfg))
   }
 
+  findings.push(...checkSeriesModule(cwd, defaultExempt(cfg)[0] ?? '', guardCfg)) // the exempt series file: palette checks
   if (scanned.length === 0) {
     // A configured-but-wrong root is never intentional, and silently scanning 0 files under the
     // built-in defaults (argo's pre-migration layout) is the same failure mode for every other
