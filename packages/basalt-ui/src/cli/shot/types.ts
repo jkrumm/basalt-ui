@@ -4,6 +4,9 @@ export const STATES = ['rest', 'hover', 'focus', 'tooltip', 'empty', 'loading', 
 /** The states a page opts into with `data-shot-states`; reached through the `shot-state` URL param. */
 export const URL_STATES = ['empty', 'loading', 'error'] as const
 
+/** Where shot keeps `last.json`, `history.json` and the default out dir. */
+export const SHOT_HOME = '.basalt/shots'
+
 /** The `name` of a route's full-page shot: not a valid `data-shot` value. */
 export const PAGE_ANCHOR = '_page'
 
@@ -63,7 +66,8 @@ export type ShotRecord = {
   viewport: Viewport
   state: ShotState
   file: string | null
-  status: 'ok' | 'not-declared' | 'skipped' | 'error'
+  /** `absent`: the anchor declared itself missing in this state (`data-shot-absent`): not a defect. */
+  status: 'ok' | 'not-declared' | 'absent' | 'skipped' | 'error'
   note?: string
 }
 

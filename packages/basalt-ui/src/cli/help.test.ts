@@ -16,6 +16,7 @@ import {
 import { tmpdir } from 'node:os'
 import { resolve } from 'node:path'
 
+import { unknownFlag } from './help'
 import { MANIFEST_PATH, run } from './index'
 
 let dir: string
@@ -166,5 +167,21 @@ describe('run() --version and the unknown-flag gate', () => {
     const { code, log } = capture(() => run(['doctor', '--json', '--help'], dir))
     expect(code).toBe(0)
     expect(log).toContain('Usage: basalt')
+  })
+})
+
+describe('shot detect help', () => {
+  it('documents the sub-mode, the exit codes, the severity table and the score', () => {
+    const { code, log } = capture(() => run(['--help'], dir))
+    expect(code).toBe(0)
+    expect(log).toContain('shot detect [--out <dir>] [--lint <oxlint-json-file>]')
+    expect(log).toContain('0 clean (P2/P3 findings are listed, not failing), 2 a P0 or P1 finding')
+    for (const sev of ['P0', 'P1', 'P2', 'P3']) expect(log).toContain(`${sev} `)
+    expect(log).toContain('score = 100')
+  })
+
+  it('accepts --lint on shot and still rejects an unknown flag', () => {
+    expect(unknownFlag('shot', ['detect', '--lint', 'oxlint.json'])).toBeNull()
+    expect(unknownFlag('shot', ['detect', '--nope'])).toBe('--nope')
   })
 })

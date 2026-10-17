@@ -66,4 +66,41 @@ describe('basalt-design-reviewer', () => {
       '<axis> <n> — <png file> (<scheme>, <viewport>, <state>) — <defect in one sentence>',
     )
   })
+
+  it('orders the report content → layout → style and ranks every failure P0–P3', () => {
+    const order = ['content', 'layout', 'style'].map((w) => text.indexOf(`**${w}**`))
+    expect(order.every((i) => i >= 0)).toBe(true)
+    expect([...order].sort((a, b) => a - b)).toEqual(order)
+    for (const sev of ['P0', 'P1', 'P2', 'P3']) expect(text).toContain(`**${sev}**`)
+    expect(text).toContain(
+      '<P0-P3> <axis> <n> — <png file> (<scheme>, <viewport>, <state>) — <defect in one sentence>',
+    )
+  })
+
+  it('fails the component on P0 and P1 only, and maps detect.json rules to rubric items', () => {
+    expect(text).toContain('P0 and P1 fail the component; P2 and P3 are noted')
+    expect(text).toContain('`craft-N/*` → Craft N')
+    expect(text).toContain('Craft 4 by default')
+  })
+
+  it('ends with a score line and points at `basalt-ui shot detect`', () => {
+    expect(text).toContain('Score: <0-100>')
+    expect(text).toContain('basalt-ui shot detect')
+  })
+
+  it('refuses to pass an inline review by the builder', () => {
+    expect(text).toContain('isolated subagent')
+    expect(text).toContain('DEGRADED: inline review by the builder')
+    expect(text).toMatch(/FIRST line/)
+    expect(text).toMatch(/cannot pass/)
+  })
+
+  it('cites the catalogue file, not the skill table', () => {
+    expect(text).toContain('.claude/skills/basalt-design/references/catalogue.md')
+    expect(text).not.toContain('encoding table (the catalogue) in the `/basalt-design` skill')
+  })
+
+  it('stays within ~100 lines', () => {
+    expect(text.trimEnd().split('\n').length).toBeLessThanOrEqual(100)
+  })
 })
