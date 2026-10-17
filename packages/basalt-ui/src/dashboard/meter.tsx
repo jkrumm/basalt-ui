@@ -19,7 +19,8 @@
  * and keep the card's inline inset (both placements) instead of the sparkline's fixed height and bleed.
  *
  * Categorical `segments` (no `forecast` part) are captioned one per part — swatch, name, value — under
- * the track; committed/forecast keeps the reading plus the forecast caption.
+ * the track and the default start caption is dropped (an explicit `startCaption` still shows);
+ * committed/forecast keeps the reading plus the forecast caption.
  *
  * @example
  * import { Meter } from 'basalt-ui'

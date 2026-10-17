@@ -1282,7 +1282,27 @@ function DashFixture(): ReactElement {
             { value: 1800, label: 'Spent' },
             { value: 850, label: 'Planned', forecast: true },
           ]}
-          endCaption="Target €2,400 · €250 over"
+        />
+      </div>
+      {/* theme-allow -- the wrapper width IS the fixture's payload (a container probe) */}
+      <div data-testid="dash-meter-long" style={{ width: 160 }}>
+        <Meter
+          label="Long names"
+          max={3000}
+          segments={[
+            { value: 1200, label: 'Infrastructure-and-observability-platform-costs' },
+            { value: 400, label: 'Tooling' },
+          ]}
+        />
+      </div>
+      {/* theme-allow -- the wrapper width IS the fixture's payload (a container probe) */}
+      <div data-testid="dash-meter-ring" style={{ width: 160 }}>
+        <Meter
+          shape="ring"
+          label="Users"
+          value={12483}
+          max={20000}
+          format={(v) => `€${v.toLocaleString('en-US')}`}
         />
       </div>
       {[360, 560].map((w) => (
@@ -1306,15 +1326,17 @@ function DashFixture(): ReactElement {
           }
         />
       </div>
-      {/* theme-allow -- the wrapper width IS the fixture's payload (a container probe) */}
-      <div data-testid="dash-card-right" style={{ width: 560 }}>
-        <StatCard
-          title="Spend"
-          value="€2,650"
-          sparklinePlacement="right"
-          sparkline={<Meter label="Budget" value={1800} max={3000} target={2400} />}
-        />
-      </div>
+      {[360, 560].map((w) => (
+        // theme-allow -- the wrapper width IS the fixture's payload (a container probe)
+        <div key={w} data-testid={`dash-card-right-${w}`} style={{ width: w }}>
+          <StatCard
+            title="Spend"
+            value="€2,650"
+            sparklinePlacement="right"
+            sparkline={<Meter label="Budget" value={1800} max={3000} target={2400} />}
+          />
+        </div>
+      ))}
     </>
   )
 }

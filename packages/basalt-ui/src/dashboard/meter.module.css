@@ -143,8 +143,12 @@
   align-items: center;
   justify-content: center;
   align-self: flex-start;
-  width: 5rem;
-  height: 5rem;
+  box-sizing: border-box;
+  /* 80px, growing (still square) when the value is wider than the ring's inner circle. */
+  min-width: 5rem;
+  width: max-content;
+  aspect-ratio: 1;
+  padding: 0.75rem;
 }
 
 .ring {

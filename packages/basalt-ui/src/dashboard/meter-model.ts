@@ -1,7 +1,8 @@
 /**
- * Meter's pure model: everything the component shows, computed from numbers (no DOM, no React).
+ * Meter's pure model: everything the component shows, computed from numbers (no DOM, no React runtime).
  * Internal — `meter.tsx` and `meter-parts.tsx` render what this returns.
  */
+import type { ReactNode } from 'react'
 import { clamp01, toPct } from './scale'
 
 export type MeterSegment = { value: number; label: string; color?: string; forecast?: boolean }
@@ -18,7 +19,7 @@ export type Part = {
   readonly amount: number
 }
 
-/** One categorical part's caption: its name, formatted amount and fill colour (`undefined` = neutral). */
+/** One categorical part's caption: its position key, name, formatted amount and fill colour (`undefined` = neutral). */
 export type PartCaption = { key: string; label: string; text: string; color: string | undefined }
 
 /**
@@ -139,23 +140,32 @@ function fillParts(input: BarInput, span: number, zoned: boolean): Part[] {
 export const segmentReading = (segments: readonly MeterSegment[], min: number): number =>
   segments.reduce((sum, s) => sum + s.value, min)
 
-/** Keys are the label; a repeated label gets its occurrence appended so the key stays unique. */
+/** Keyed by index: segments are an ordered list, and labels are the consumer's, so they may repeat. */
 function partCaptionsOf(parts: readonly Part[], format: Format): PartCaption[] {
-  const seen = new Map<string, number>()
-  return parts.map((p) => {
-    const n = seen.get(p.label) ?? 0
-    seen.set(p.label, n + 1)
-    return {
-      key: n === 0 ? p.label : `${p.label}#${n}`,
-      label: p.label,
-      text: format(p.amount),
-      color: p.color,
-    }
-  })
+  return parts.map((p, i) => ({
+    key: String(i),
+    label: p.label,
+    text: format(p.amount),
+    color: p.color,
+  }))
+}
+
+/**
+ * Zones win over segments (the union forbids both, a JS caller can still pass them): a zoned track
+ * has no fills to caption. Empty segments are the empty state, never categorical.
+ */
+function captionModeOf(
+  segments: readonly MeterSegment[] | undefined,
+  zoned: boolean,
+  firstForecast: number,
+): CaptionMode {
+  if (zoned) return 'reading'
+  if (segments === undefined || segments.length === 0) return 'reading'
+  return firstForecast < 0 ? 'parts' : 'forecast'
 }
 
 /** The start caption: the consumer's override, else the model's default — absent in `parts` mode. */
-export function startCaptionText<T>(model: BarModel, override: T | undefined): string | T | null {
+export function startCaptionText(model: BarModel, override: ReactNode | undefined): ReactNode {
   if (override !== undefined) return override
   return model.captionMode === 'parts' ? null : model.startText
 }
@@ -171,12 +181,7 @@ export function modelBar(input: BarInput): BarModel {
   const forecastLabels =
     segments?.filter((s) => s.forecast === true).map((s) => `${s.label} ${format(s.value)}`) ?? []
 
-  const captionMode: CaptionMode =
-    segments === undefined || segments.length === 0
-      ? 'reading'
-      : firstForecast < 0
-        ? 'parts'
-        : 'forecast'
+  const captionMode = captionModeOf(segments, zoned, firstForecast)
   const partCaptions = captionMode === 'parts' ? partCaptionsOf(parts, format) : []
 
   const zoneText = !zoned

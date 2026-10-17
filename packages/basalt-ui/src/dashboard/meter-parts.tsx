@@ -203,7 +203,9 @@ export function MeterBar(props: {
         <VisuallyHidden id={describedId}>{model.describedByText}</VisuallyHidden>
       )}
       {hasParts && (
-        <ul className={classes.partCaptions} data-meter-parts>
+        // The explicit role is deliberate: `list-style: none` makes Safari/VoiceOver drop the implicit one.
+        // oxlint-disable-next-line jsx-a11y/no-redundant-roles
+        <ul className={classes.partCaptions} role="list" data-meter-parts>
           {model.partCaptions.map((c) => (
             <li key={c.key} className={classes.partCaption}>
               <span
