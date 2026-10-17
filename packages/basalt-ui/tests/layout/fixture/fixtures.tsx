@@ -27,6 +27,7 @@ import type { BandStripSeries, BarsBar, ChartSeries } from '../../../src/charts'
 import { overlays } from '../../../src/commands'
 import { FilterSet, FormRow, SelectFilter, ViewTabs } from '../../../src/controls'
 import { BasaltDataTable } from '../../../src/table'
+import { InfoRingFixture } from './info-ring-fixture'
 import type { DataTableFacet } from '../../../src/table/data-table'
 import type { BasaltColumnDef } from '../../../src/table/table-features'
 import { Prose } from '../../../src/content'
@@ -1372,6 +1373,7 @@ export function ShellFixture({ spec }: { spec: FixtureSpec }): ReactElement {
       )}
       {spec.cards && <CardsFixture spec={spec.cards} />}
       {spec.dash && <DashFixture />}
+      {spec.infoRing && <InfoRingFixture />}
       {spec.codeBlock && <CodeBlockFixture spec={spec.codeBlock} />}
       {spec.forms && <FormsFixture spec={spec.forms} />}
       {spec.table && <TableFixture spec={spec.table} />}
