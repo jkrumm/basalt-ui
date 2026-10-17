@@ -20,17 +20,20 @@ import type { BandSpan, BandStripSeries, BarsBar, ChartSeries } from 'basalt-ui/
 import { BasaltDataTable, createColumnHelper } from 'basalt-ui/table'
 import { CONTAINER_KEYS, VX } from 'basalt-ui/tokens'
 import {
+  CEILING_HEADROOM_MBIT,
   CONTRACT_DOWN_MBIT,
   DEGRADED_LOSS_PCT,
   DOWN_24H_MBIT,
   DOWN_PEAK_MBIT,
   HOURLY,
   LAST_OUTAGE,
+  LATENCY_BIN_MS,
   LATENCY_DISTRIBUTION,
   LATENCY_MEDIAN_7D_MS,
   LATENCY_NOW_MS,
   LOSS_24H_PCT,
   LOSS_7D_PCT,
+  MEASURED_HOURS,
   MINUTE_LATENCY,
   OUTAGES,
   UPTIME_PCT,
@@ -226,7 +229,7 @@ function OpsCharts({ shotState }: ScenarioProps) {
                 x={(d) => d.start}
                 y={{
                   format: (v: number) => `${Math.round(v)}`,
-                  domain: [0, CONTRACT_DOWN_MBIT + 10],
+                  domain: [0, CONTRACT_DOWN_MBIT + CEILING_HEADROOM_MBIT],
                 }}
                 series={THROUGHPUT_SERIES}
                 refLines={CEILING_LINES}
@@ -237,7 +240,7 @@ function OpsCharts({ shotState }: ScenarioProps) {
         <Box data-shot="latency-distribution" h="100%">
           <ChartCard
             title="Hours by median latency"
-            info={`How many of the 168 hours landed in each 4 ms band of median round-trip time.`}
+            info={`How many of the ${MEASURED_HOURS} hours with a reading landed in each ${LATENCY_BIN_MS} ms band of median round-trip time. Outage hours have no reading.`}
             state={chartStateFor(shotState, {
               empty: 'No latency readings to bin yet. The histogram needs at least one hour.',
               error: retry('The latency distribution'),
@@ -246,7 +249,7 @@ function OpsCharts({ shotState }: ScenarioProps) {
             <Box data-shot-hover data-shot-tooltip>
               <Bars
                 data={LATENCY_DATA}
-                ariaLabel="Hours by median latency, 4 ms bands, last 7 days"
+                ariaLabel={`Hours by median latency, ${LATENCY_BIN_MS} ms bands, last 7 days`}
                 x={(d) => d.label}
                 bars={LATENCY_BARS}
               />

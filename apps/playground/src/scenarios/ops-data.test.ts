@@ -4,10 +4,14 @@
 import { describe, expect, it } from 'bun:test'
 import {
   DEGRADED_LOSS_PCT,
+  DOWN_24H_MBIT,
+  DOWN_PEAK_MBIT,
   DOWNTIME_MINUTES,
   HOURLY,
   LAST_OUTAGE,
   LATENCY_DISTRIBUTION,
+  LATENCY_MEDIAN_7D_MS,
+  MEASURED_HOURS,
   LOSS_24H_PCT,
   LOSS_7D_PCT,
   MINUTE_LATENCY,
@@ -83,8 +87,14 @@ describe('ops-data', () => {
   })
 
   it('the distribution counts every measured hour exactly once', () => {
-    const measured = HOURLY.filter((h) => h.latencyMs !== null).length
-    expect(LATENCY_DISTRIBUTION.reduce((acc, b) => acc + b.hours, 0)).toBe(measured)
+    expect(LATENCY_DISTRIBUTION.reduce((acc, b) => acc + b.hours, 0)).toBe(MEASURED_HOURS)
+    expect(MEASURED_HOURS).toBeLessThan(HOURLY.length)
+  })
+
+  it('the headline aggregates are finite numbers', () => {
+    for (const v of [DOWN_24H_MBIT, LATENCY_MEDIAN_7D_MS, DOWN_PEAK_MBIT]) {
+      expect(Number.isFinite(v)).toBe(true)
+    }
   })
 
   it('has 60 minute readings', () => {
