@@ -1,6 +1,8 @@
 import { MantineProvider } from '@mantine/core'
 import { cleanup, render } from '@testing-library/react'
 import { afterEach, describe, expect, test } from 'bun:test'
+import { readFileSync } from 'node:fs'
+import { resolve } from 'node:path'
 import { Meter } from './meter'
 import type { MeterProps } from './meter'
 
@@ -356,5 +358,73 @@ describe('Meter', () => {
     // @ts-expect-error segments carry the reading; a value beside them is ambiguous
     const valueSegments: MeterProps = { label: 'B', value: 1, segments: [] }
     expect([ringSegments, both, valueSegments].length).toBe(3)
+  })
+})
+
+describe('Meter — round-1 board fixes', () => {
+  const css = readFileSync(resolve(import.meta.dirname, 'meter.module.css'), 'utf8')
+  const rule = (selector: string) =>
+    css.match(new RegExp(`${selector.replace('.', '\\.')} \\{([^}]*)\\}`))?.[1] ?? ''
+
+  test('categorical segments caption every part, in order: swatch + name + value', () => {
+    const { container } = mount({
+      label: 'Spend',
+      max: 100,
+      format: (v) => `€${v}`,
+      segments: [
+        { value: 40, label: 'Support', color: 'red' },
+        { value: 20, label: 'Infra' },
+      ],
+    })
+    const items = [...container.querySelectorAll('[data-meter-parts] li')]
+    expect(items.map((li) => li.textContent)).toEqual(['Support €40', 'Infra €20'])
+    for (const li of items) expect(li.querySelector('[aria-hidden]')).toBeTruthy()
+    const swatch = items[0]?.querySelector('[aria-hidden]') as HTMLElement
+    expect(swatch.style.background).toBe('red')
+    // The default start caption is replaced, not duplicated.
+    expect(container.querySelector('[data-meter-captions]')).toBeNull()
+  })
+
+  test('committed/forecast keeps its caption form and gets no part list', () => {
+    const { container, getByText } = mount({
+      label: 'C',
+      segments: [
+        { value: 60, label: 'Done' },
+        { value: 20, label: 'Planned', forecast: true },
+      ],
+    })
+    expect(container.querySelector('[data-meter-parts]')).toBeNull()
+    expect(getByText('Forecast: Planned 20')).toBeTruthy()
+    expect(getByText('80')).toBeTruthy()
+  })
+
+  test('marker and ticks take a § 5 radius step, not a literal', () => {
+    for (const sel of ['.marker', '.tick'])
+      expect(rule(sel)).toContain('border-radius: var(--vx-radius-fine)')
+    expect(css).not.toMatch(/border-radius: \d+px/)
+  })
+
+  test('captions wrap and never truncate; the end caption stays end-aligned', () => {
+    expect(rule('.captions')).toContain('flex-wrap: wrap')
+    expect(rule('.caption')).not.toContain('nowrap')
+    expect(rule('.caption')).not.toContain('ellipsis')
+    expect(rule('.captionEnd')).toContain('margin-inline-start: auto')
+  })
+
+  test('the ring value and captions use type roles only (micro, sm, kpi)', () => {
+    const sizes = new Set(css.match(/var\(--vx-text-[a-z]+\)/g))
+    expect([...sizes].toSorted()).toEqual(
+      ['var(--vx-text-kpi)', 'var(--vx-text-micro)', 'var(--vx-text-sm)'].toSorted(),
+    )
+  })
+
+  test.each([
+    ['bar', { label: 'L', value: 5 } as const],
+    ['ring', { label: 'L', value: 5, shape: 'ring' } as const],
+    ['empty', { label: 'L' } as const],
+    ['loading', { label: 'L', loading: true } as const],
+  ])('the %s root carries data-basalt-meter', (_, props) => {
+    const { container } = mount(props)
+    expect(container.querySelector('[data-basalt-meter]')).toBeTruthy()
   })
 })

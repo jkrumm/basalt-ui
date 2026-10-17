@@ -341,6 +341,13 @@
   margin-inline: calc(-1 * var(--vx-space-card-inset-x, 1rem));
 }
 
+/* A Meter in the visual slot is a block, not a chart: it sizes to its content and keeps the card's
+ * inline inset instead of the sparkline's fixed 22px and side bleed. */
+.sparklineBleed:has([data-basalt-meter]) {
+  height: auto;
+  margin-inline: 0;
+}
+
 /* Asks for `StatCard`'s `SPARKLINE_RIGHT_WIDTH`/`_HEIGHT` (handed down as custom properties, so this
  * rule and the narrow-card reset below can both reach them). `align-self: flex-end` is the one alignment
  * this restructure keeps at the SPARKLINE's own level rather than the row's: `.metricsRow` does not
