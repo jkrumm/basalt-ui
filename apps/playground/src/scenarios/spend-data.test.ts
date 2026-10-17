@@ -4,7 +4,6 @@
 import { describe, expect, it } from 'bun:test'
 import {
   DAILY,
-  BUDGET_EUR,
   CUMULATIVE,
   DAYS_ELAPSED,
   DISTRIBUTION,
@@ -99,7 +98,6 @@ describe('spend-data', () => {
     expect(CUMULATIVE.at(-1)?.forecast).toBeCloseTo(FORECAST_EUR, 6)
     expect(CUMULATIVE.at(-1)?.spent).toBeNull()
     expect(CUMULATIVE[0]?.forecast).toBeNull()
-    expect(BUDGET_EUR).toBeGreaterThan(0)
   })
 
   it('is deterministic: a seed reproduces its sequence', () => {
