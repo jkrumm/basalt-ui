@@ -128,13 +128,11 @@ function SpendStats({ shotState }: ScenarioProps) {
           })}
           {...shared}
           sparkline={(size) => (
-            <Box>
-              <Sparkline
-                ariaLabel={`Daily spend, ${WINDOW_LABEL}, EUR`}
-                data={MTD_TOTALS}
-                {...size}
-              />
-            </Box>
+            <Sparkline
+              ariaLabel={`Daily spend, ${WINDOW_LABEL}, EUR`}
+              data={MTD_TOTALS}
+              {...size}
+            />
           )}
         />
       </Box>
