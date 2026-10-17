@@ -1,3 +1,21 @@
+# [2.18.0](https://github.com/jkrumm/basalt-ui/compare/v2.17.0...v2.18.0) (2026-10-17)
+
+
+### Bug Fixes
+
+* clamp surface levels and extract the status text solver ([94c2dea](https://github.com/jkrumm/basalt-ui/commit/94c2dea643c4a8d332bdf227d5b4e94f1fb311f4))
+* harden Meter and BarList against negative and non-finite input ([ecbd177](https://github.com/jkrumm/basalt-ui/commit/ecbd177ba0272f7147d89587841e9be27cf2a7f7))
+* scope shot's data checks to one page visit ([918129c](https://github.com/jkrumm/basalt-ui/commit/918129cf0a5f062e897eb8d4cf601e27ab49a003))
+* validate surface levels and tighten the status text walk ([865e4a2](https://github.com/jkrumm/basalt-ui/commit/865e4a2c7c410810124576b4b4b48233395ddb5b))
+
+
+### Features
+
+* add Meter and BarList to the dashboard layer ([499ffd6](https://github.com/jkrumm/basalt-ui/commit/499ffd6a269c0de0e29a1352eeebeccf551b88ef))
+* add Meter zones and state the overage past a target ([d429496](https://github.com/jkrumm/basalt-ui/commit/d429496e0572743bc24ae2e91aeffcae9d1eb149))
+* derive the status text stops per surface ([aceea2a](https://github.com/jkrumm/basalt-ui/commit/aceea2a62cbbdfb1f0fe408334b4f1368675648f))
+* shot captures a real, authenticated app ([027a905](https://github.com/jkrumm/basalt-ui/commit/027a9050a315cc72882ff5ef2571c73e25000fa4))
+
 # [2.17.0](https://github.com/jkrumm/basalt-ui/compare/v2.16.0...v2.17.0) (2026-10-17)
 
 
