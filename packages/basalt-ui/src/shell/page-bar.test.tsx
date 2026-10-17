@@ -360,6 +360,18 @@ describe('row 2 folds into two declared lines, not a wrap', () => {
   const row2Line = (name: 'tabs' | 'pills') =>
     shellRow()?.querySelector<HTMLElement>(`[data-basalt-page-bar-line="${name}"]`) ?? null
 
+  test('the pills line hosts the dense control tier, the tabs line does not', () => {
+    render(
+      <MantineProvider>
+        <ShellFrame activeCrumb={undefined} brand={BRAND} sections={ONE_SECTION}>
+          <PageBar tabs={<span />} filters={<span />} />
+        </ShellFrame>
+      </MantineProvider>,
+    )
+    expect(row2Line('pills')?.hasAttribute('data-basalt-dense')).toBe(true)
+    expect(row2Line('tabs')?.hasAttribute('data-basalt-dense')).toBe(false)
+  })
+
   test('tabs + filters: the tabs line precedes the pills line, both direct children of row 2', () => {
     render(
       <MantineProvider>

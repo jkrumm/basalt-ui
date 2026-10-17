@@ -486,7 +486,7 @@ export function PageBar({
         </div>
       )}
       {hasPills && (
-        <div className={classes.pills} data-basalt-page-bar-line="pills">
+        <div className={classes.pills} data-basalt-page-bar-line="pills" data-basalt-dense>
           {filters !== undefined && (
             <div className={classes.filters}>
               <CtlSlot>{filters}</CtlSlot>
