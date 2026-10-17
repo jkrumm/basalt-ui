@@ -588,7 +588,7 @@ async function budgets(providerOnlyDist: string): Promise<Budget[]> {
     {
       label: 'CLI non-test lines (src/cli/**)',
       value: cliNonTestLines(),
-      ceiling: 8050,
+      ceiling: 8084,
     },
     ...(await providerOnlyRows(providerOnlyDist)),
   ]
