@@ -349,16 +349,19 @@ const PROVIDER_ONLY_LABEL = 'provider-only first paint (gzip B, dist)'
 // 19940 → 19000: Spotlight and modals leave the entry (provider slots): 18810 locally, was 19755.
 // 19000 → 19200: the provider owns the `route.error` emit now (it was in `createBasaltRouter`, outside
 // this entry) plus the mutation-key hash: 19034 locally, was 18923.
-const PROVIDER_ONLY_CEILING = 19200
+// 19200 → 19202 (W33 CI): the light Badge default, ink Tabs underline and the badge glyph rule in the theme + palette CSS.
+const PROVIDER_ONLY_CEILING = 19202
 // Embedded `<BasaltProvider spotlight={false}>`, no defines, peers bundled, every chunk counted: 54735 B landed, ~1% margin.
 // 55300 → 55391 (W32): +91 B for the Wave 32 scales — the dense control tier rule in the palette CSS, the row line-height and `lineHeights` ratios, the expanded gutter, and the card/radius/type retunes.
 // 55391 → 55404 (W32 CI): the gate is CI's Linux build, which gzips 13 B larger than the macOS build the lead measured.
-const EMBEDDED_CEILING = 55404
+// 55404 → 55482 (W33 CI): +78 B, the same Badge/Tabs/subtle-Button chrome changes.
+const EMBEDDED_CEILING = 55482
 // `createBasaltTheme()` alone, peers bundled, every chunk counted: 14420 locally. The theme reaching
 // no component it configures is what keeps this near Mantine's core; ~1% over landed.
 // 14570 → 14571 (W32): +1 B, the `lineHeights` ratios.
 // 14571 → 14580 (W32 CI): the same Linux-vs-macOS gzip difference, 9 B. Raise gzip ceilings from CI's numbers.
-const THEME_ONLY_CEILING = 14580
+// 14580 → 14653 (W33 CI): +73 B, the same chrome changes.
+const THEME_ONLY_CEILING = 14653
 const THEME_ONLY_LABEL = 'createBasaltTheme only, peers bundled, all chunks (gzip B, dist)'
 const EMBEDDED_LABEL = 'embedded provider, no defines, peers bundled, all chunks (gzip B, dist)'
 const FEATURE_CHUNKS_LABEL =
