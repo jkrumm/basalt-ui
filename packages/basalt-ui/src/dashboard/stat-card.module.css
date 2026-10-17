@@ -12,6 +12,11 @@
   --basalt-stat-visual-h: 1.375rem;
   --basalt-stat-footer-h: 1.25rem;
   --basalt-stat-foot-gap: 0.25rem;
+  /* The figure's size and line box, in one place: `.value`, the empty line and the pending skeleton
+   * all read them, so nothing moves when a reading lands. */
+  --basalt-stat-figure-size: var(--vx-text-kpi);
+  --basalt-stat-figure-line: 1.25;
+  --basalt-stat-figure-h: calc(var(--basalt-stat-figure-size) * var(--basalt-stat-figure-line));
   display: flex;
   flex-direction: column;
   gap: var(--vx-space-stat-card-gap);
@@ -113,7 +118,8 @@
   min-width: 0;
   overflow-wrap: anywhere;
   font-family: var(--basalt-font-mono);
-  font-size: var(--vx-text-kpi);
+  font-size: var(--basalt-stat-figure-size);
+  line-height: var(--basalt-stat-figure-line);
   font-weight: 500;
   letter-spacing: -0.02em;
   color: var(--vx-ink);
@@ -129,9 +135,11 @@
   color: var(--vx-muted);
 }
 
+/* The numeral shrinks with its card (`cqi` resolves against the card's container wherever the var is
+ * read). `(width >= 0px)` is always true but only inside a `basalt-card` container. */
 @container basalt-card (width >= 0px) {
-  .value {
-    font-size: clamp(var(--vx-text-lg), 8cqi, var(--vx-text-kpi));
+  .body {
+    --basalt-stat-figure-size: clamp(var(--vx-text-lg), 8cqi, var(--vx-text-kpi));
   }
 }
 
@@ -142,7 +150,7 @@
   display: flex;
   align-items: center;
   margin: 0;
-  min-height: calc(var(--vx-text-kpi) * 1.3);
+  min-height: var(--basalt-stat-figure-h);
   font-size: var(--vx-text-sm);
   color: var(--vx-muted);
 }
@@ -151,13 +159,29 @@
  * visual slot at 22, the footer at one `sm` line. */
 .skeletonValue {
   width: 45%;
-  height: calc(var(--vx-text-kpi) * 1.3);
+  height: var(--basalt-stat-figure-h);
 }
 
 .skeletonVisual {
   --skeleton-radius: 0;
   height: var(--basalt-stat-visual-h);
   margin-inline: calc(-1 * var(--vx-space-card-inset-x, 1rem));
+}
+
+.sparklineRight .skeletonVisual {
+  flex: 1 1 auto;
+  margin-inline: 0;
+}
+
+.skeletonRowBox {
+  display: flex;
+  align-items: center;
+  min-height: var(--vx-space-control-height-tag);
+}
+
+.skeletonRow {
+  width: 60%;
+  height: 0.625rem;
 }
 
 .skeletonFooter {

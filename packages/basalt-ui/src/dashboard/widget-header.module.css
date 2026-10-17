@@ -267,10 +267,18 @@
   color: var(--vx-muted);
 }
 
-/* Folded-subtitle pieces: hidden until a `basalt-card` narrower than 480px shows them (below). */
+/* Folded-subtitle pieces: hidden until a `basalt-card` narrower than 480px shows them (below). The
+ * `.foldProbe` rides the same rules as the glyph: the bubble is portalled out of the card, so it
+ * cannot be revealed by a card selector — `InfoGlyph` reads the probe's display onto the bubble as
+ * `data-folded` and `.infoBubble[data-folded='true'] .foldNote` reveals from that. */
 .foldGlyph,
+.foldProbe,
 .foldNote {
   display: none;
+}
+
+.infoBubble[data-folded='true'] .foldNote {
+  display: block;
 }
 
 /*
@@ -286,7 +294,8 @@
   position: fixed;
   z-index: var(--mantine-z-index-popover, 300);
   width: max-content;
-  max-width: min(260px, calc(100vw - 16px));
+  /* 100% of the viewport (fixed): 2 × BUBBLE_EDGE in widget-header.tsx. */
+  max-width: min(260px, calc(100% - 16px));
   padding: var(--vx-space-stack-sm) var(--vx-space-row-inset-x);
   border-radius: var(--vx-radius-card);
   background-color: var(--vx-surface-panel);
@@ -311,9 +320,6 @@
   font-size: var(--vx-text-sm);
   font-weight: 500;
   line-height: 1;
-  /* 12% ink toward the trend colour: lifts the dark-scheme `bad` solid (4.22:1 on the card) over the
-   * 4.5 text floor a fill-less delta needs, without retuning the derived status palette. */
-  color: color-mix(in srgb, var(--basalt-delta-tone), var(--vx-ink) 12%);
 }
 
 /* The glyph is direction, not a figure: the `micro` rung, so it never lands between two sizes. */
@@ -339,7 +345,7 @@
     display: inline-flex;
   }
 
-  .foldNote {
+  .foldProbe {
     display: block;
   }
 }
@@ -361,7 +367,7 @@
   display: inline-flex;
 }
 
-:is([data-basalt-card-short], [data-basalt-chart-card]:has([data-basalt-chart-short])) .foldNote {
+:is([data-basalt-card-short], [data-basalt-chart-card]:has([data-basalt-chart-short])) .foldProbe {
   display: block;
 }
 

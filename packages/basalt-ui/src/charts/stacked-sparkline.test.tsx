@@ -191,7 +191,10 @@ describe('Sparkline', () => {
 
   test('a single point renders finite geometry', () => {
     const one = render(<Sparkline ariaLabel="T" data={[5]} height={28} />)
+    expect(one.querySelectorAll('circle')).toHaveLength(1)
     expect(Number.isFinite(attr(one.querySelector('circle'), 'cy'))).toBe(true)
+    const bare = render(<Sparkline ariaLabel="T" data={[5]} height={28} emphasizeLast={false} />)
+    expect(bare.querySelectorAll('circle')).toHaveLength(0)
   })
 
   describe('state', () => {

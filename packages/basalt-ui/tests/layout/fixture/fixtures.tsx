@@ -360,16 +360,20 @@ const spark = ({ width, height }: { width: number; height: number }): ReactEleme
   <svg aria-hidden width={width} height={height} />
 )
 
-/** The four footprints a metric row mixes: visual + footer, visual only, footer only, neither. */
-function FootprintFixture(): ReactElement {
-  const cards = [
-    { id: 'both', visual: true, footer: true },
-    { id: 'visual', visual: true, footer: false },
-    { id: 'footer', visual: false, footer: true },
-    { id: 'neither', visual: false, footer: false },
-  ]
-  const card = (c: (typeof cards)[number]): ReactElement => (
+/** The four footprints a metric row mixes, keyed by id so a test selects one by name. */
+const FOOTPRINTS = [
+  { id: 'both', visual: true, footer: true },
+  { id: 'visual', visual: true, footer: false },
+  { id: 'footer', visual: false, footer: true },
+  { id: 'neither', visual: false, footer: false },
+] as const
+
+type Footprint = (typeof FOOTPRINTS)[number]
+
+function footprintCard(c: Footprint): ReactElement {
+  return (
     <StatCard
+      key={c.id}
       title="Latency"
       qualifier="24 h"
       value="42"
@@ -379,6 +383,14 @@ function FootprintFixture(): ReactElement {
       {...(c.visual && { sparkline: spark })}
     />
   )
+}
+
+function FootprintFixture(): ReactElement {
+  const byId = (id: Footprint['id']): Footprint => {
+    const found = FOOTPRINTS.find((c) => c.id === id)
+    if (found === undefined) throw new Error(`no footprint ${id}`)
+    return found
+  }
   return (
     <>
       {/* theme-allow -- a non-stretching row: each card's NATURAL height is the payload */}
@@ -386,18 +398,36 @@ function FootprintFixture(): ReactElement {
         data-testid="foot-natural"
         style={{ display: 'flex', alignItems: 'flex-start', gap: 12 }}
       >
-        {cards.map((c) => (
+        {FOOTPRINTS.map((c) => (
           // theme-allow -- the wrapper width IS the fixture's payload
           <div key={c.id} data-testid={`foot-${c.id}`} style={{ width: 240 }}>
-            {card(c)}
+            {footprintCard(c)}
           </div>
         ))}
       </div>
       <div data-testid="foot-grid">
         <StatGroup cols={3}>
-          {[cards[0], cards[3], cards[2]].map((c) => c !== undefined && card(c))}
+          {(['both', 'neither', 'footer'] as const).map((id) => footprintCard(byId(id)))}
         </StatGroup>
       </div>
+      {/* The `right` placement holds its 72x22 slot while pending, so the card does not jump. */}
+      {(['pending', 'ready'] as const).map((state) => (
+        // theme-allow -- the wrapper width IS the fixture's payload
+        <div key={state} data-testid={`foot-right-${state}`} style={{ width: 360 }}>
+          <StatCard
+            title="Latency"
+            value="42"
+            unit="ms"
+            sparklinePlacement="right"
+            sparkline={spark}
+            breakdown={[
+              { label: 'Peak', value: '88 ms' },
+              { label: 'Median', value: '31 ms' },
+            ]}
+            loading={state === 'pending'}
+          />
+        </div>
+      ))}
     </>
   )
 }
