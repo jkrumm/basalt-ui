@@ -194,6 +194,7 @@ export const MINIMAL_PROPS: Record<string, Record<string, unknown>> = {
   DeltaBadge: { value: 0.12 },
   StatCard: { label: 'Revenue', value: '1.2k' },
   EmptyState: { title: 'Nothing here' },
+  BarList: { label: 'Top', items: [] },
   ErrorState: { title: 'Broke' },
   SettingsSection: { title: 'Settings', children: TEXT },
   SettingsRow: { label: 'Row', control: TEXT },
