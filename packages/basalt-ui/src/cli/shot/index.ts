@@ -1,6 +1,7 @@
 /**
  * `basalt-ui shot <route…> (--base <url> | --dist <dir>) [--out <dir>] [--states <list>]` — render
  * routes in a real browser and write `board.html`, `metrics.json` and `png/*` for a design round.
+ * `basalt-ui shot detect` reads that out dir back without a browser (`./detect`).
  */
 import {
   lstatSync,
@@ -19,15 +20,16 @@ import { parseArgs } from 'node:util'
 
 import { buildBoard } from './board'
 import { capture } from './capture'
+import { detect } from './detect'
 import { INSTALL_LINE, ShotError, resolvePlaywright, withBrowser } from './playwright'
 import type { Playwright, PlaywrightResolver } from './playwright'
 import { apiProxy, parseApi, parseHeaders, parseStorage } from './real-data'
 import type { ApiRoute, Pair, Source } from './real-data'
 import { serveDist } from './serve'
-import { SCHEMES, STATES, VIEWPORTS } from './types'
+import { SCHEMES, SHOT_HOME, STATES, VIEWPORTS } from './types'
 import type { ShotMetrics, ShotState } from './types'
 
-const HOME = '.basalt/shots'
+const HOME = SHOT_HOME
 /** A run dir under the home, so `last.json` and a named run's dir never share the default out. */
 const DEFAULT_OUT = `${HOME}/latest`
 const USAGE_LINE =
@@ -129,7 +131,7 @@ export function parseShotArgs(
 
 const PROTECTED_SEGMENTS = new Set(['.git', 'node_modules'])
 /** What a shot writes into its out dir: only a dir made of these is ever emptied. */
-const SHOT_OWNED = new Set(['png', 'board.html', 'metrics.json', '.gitignore'])
+const SHOT_OWNED = new Set(['png', 'board.html', 'metrics.json', 'detect.json', '.gitignore'])
 
 const outside = (rel: string): boolean =>
   rel === '..' || rel.startsWith('..' + sep) || isAbsolute(rel)
@@ -318,6 +320,7 @@ export async function shot(
   cwd: string,
   deps: ShotDeps = {},
 ): Promise<number> {
+  if (flags[0] === 'detect') return detect(flags.slice(1), cwd, deps)
   const log = deps.log ?? ((line: string) => console.log(line))
   const stops: (() => unknown)[] = []
   const uninstall = exitOnSignal(stops)
@@ -381,8 +384,9 @@ export async function shot(
       writeFileSync(join(tmp, 'board.html'), buildBoard(metrics))
       commitOut(cwd, args.out, tmp, args.routes, now)
       const count = (status: string): number => shots.filter((s) => s.status === status).length
+      const absent = count('absent') ? `${count('absent')} absent, ` : ''
       log(
-        `[shot] ${count('ok')} shots, ${count('not-declared')} not declared, ${count('skipped')} skipped, ${count('error')} failed → ${relative(cwd, outDir)}/board.html`,
+        `[shot] ${count('ok')} shots, ${count('not-declared')} not declared, ${absent}${count('skipped')} skipped, ${count('error')} failed → ${relative(cwd, outDir)}/board.html`,
       )
       if (count('error') > 0) {
         console.error(`basalt-ui shot: ${count('error')} shot(s) failed; see board.html`)
