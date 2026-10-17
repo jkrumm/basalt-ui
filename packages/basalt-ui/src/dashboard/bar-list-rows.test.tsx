@@ -30,8 +30,12 @@ describe('BarList per-row max', () => {
   })
 
   test('the value column shows the denominator through format', () => {
-    const { getByText } = mount({ label: 'C', items, format: (n) => `${n} pts` })
-    expect(getByText('32 pts / 40 pts')).toBeTruthy()
+    const { getByText } = mount({
+      label: 'C',
+      items,
+      format: (n, part) => (part === 'max' ? `${n} pts` : String(n)),
+    })
+    expect(getByText('32 / 40 pts')).toBeTruthy()
   })
 
   test('mixed list: the shared scale covers only rows without their own max', () => {
@@ -95,7 +99,7 @@ describe('BarList tick', () => {
     })
     const tick = container.querySelector<HTMLElement>('[data-bar-tick]') as HTMLElement
     expect(tick.style.insetInlineStart).toBe('60%')
-    expect(tick.getAttribute('title')).toBe('Stale after 60')
+    expect(tick.hasAttribute('title')).toBe(false)
     expect(getByText('Stale after 60')).toBeTruthy()
   })
 
@@ -112,6 +116,28 @@ describe('BarList tick', () => {
       '50%',
     )
     expect(getByText('Threshold 40')).toBeTruthy()
+  })
+
+  test('the tick label goes through format as a value', () => {
+    const { getByText } = mount({
+      label: 'L',
+      format: (n, part) => `${n}${part === 'max' ? 'M' : 's'}`,
+      items: [{ label: 'a', value: 1, max: 10, tick: 5 }],
+    })
+    expect(getByText('Threshold 5s')).toBeTruthy()
+  })
+
+  test('the hidden tick text sits in the track, so value/secondary stay the last children', () => {
+    const { container } = mount({
+      label: 'L',
+      items: [
+        { label: 'a', value: 1, secondary: 'x', tick: 1 },
+        { label: 'b', value: 2, secondary: 'y' },
+      ],
+    })
+    const lis = [...container.querySelectorAll('li')]
+    expect(lis.map((li) => li.lastElementChild?.textContent)).toEqual(['x', 'y'])
+    expect(lis[0]?.querySelector('[data-bar-track]')?.textContent).toContain('Threshold 1')
   })
 
   test('rows without a tick render none', () => {

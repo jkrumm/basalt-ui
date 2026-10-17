@@ -11,6 +11,8 @@
  * bar, named for assistive tech. `variant="thin"` puts the label on its own line above a thin bar with
  * the value right-aligned on the label line.
  *
+ * Thin rows sit flush: no inline inset on the label or the rail.
+ *
  * Colour law: bars are neutral. `accentLeader` (opt-in) lets the top row take the accent — the
  * leader bar, and nothing else. Each value is rendered as text, never only a bar length.
  *
@@ -19,6 +21,14 @@
  *
  * // Recovery contributors on a fixed 0–100 scale, the qualitative level as the secondary value:
  * <BarList label="Recovery contributors" max={100} items={[{ label: 'Sleep', value: 82, secondary: 'Good' }]} />
+ *
+ * // Points of different maxima, thin rows, a threshold tick ("32 / 40 pts"; the tick is named for AT):
+ * <BarList
+ *   label="Recovery contributors"
+ *   variant="thin"
+ *   format={(n, part) => (part === 'max' ? `${n} pts` : String(n))}
+ *   items={[{ label: 'Sleep', value: 32, max: 40, tick: 30, tickLabel: 'Target' }, { label: 'HRV', value: 14, max: 35 }]}
+ * />
  *
  * <BarList
  *   label="Top projects by tokens"
@@ -52,8 +62,11 @@ export type BarListProps = BasaltProps & {
   label: string
   /** Rows in display order (sort them yourself; the list does not reorder). */
   items: readonly BarListItem[]
-  /** Formats each value. Default: the number as written. */
-  format?: (value: number) => string
+  /**
+   * Formats each number. `part` is `'max'` for a row's denominator, `'value'` otherwise (the value and
+   * the tick), so a unit can sit on one side only: `'32 / 40 pts'`. Default: the number as written.
+   */
+  format?: (value: number, part: 'value' | 'max') => string
   /** Scale end shared by rows without their own `max`. Default: the largest of those rows' values. */
   max?: number
   /** `thin`: label on its own line above a thin bar, value right-aligned on that line. */
@@ -131,7 +144,9 @@ export function BarList({
           </span>
         )
         const tickName =
-          item.tick === undefined ? '' : `${item.tickLabel ?? 'Threshold'} ${format(item.tick)}`
+          item.tick === undefined
+            ? ''
+            : `${item.tickLabel ?? 'Threshold'} ${format(item.tick, 'value')}`
         const track = (
           <span className={classes.track} data-bar-track>
             {/* theme-allow hidden-inline-style — the width is the row's data (a % of its scale), not styling */}
@@ -147,12 +162,13 @@ export function BarList({
               <span
                 className={classes.tick}
                 style={{ insetInlineStart: `${barPercent(item.tick, rowScale)}%` }}
-                title={tickName}
                 data-bar-tick=""
                 aria-hidden
               />
             )}
             {!thin && labelNode}
+            {/* Inside the track so it is never the row's last child (the value/secondary inset). */}
+            {item.tick !== undefined && <VisuallyHidden>{tickName}</VisuallyHidden>}
           </span>
         )
         return (
@@ -162,14 +178,13 @@ export function BarList({
             <span className={classes.value}>
               {Number.isFinite(item.value)
                 ? item.max === undefined
-                  ? format(item.value)
-                  : `${format(item.value)} / ${format(item.max)}`
+                  ? format(item.value, 'value')
+                  : `${format(item.value, 'value')} / ${format(item.max, 'max')}`
                 : '—'}
             </span>
             {/* Kept empty on a row without one: the secondary column is shared, so every row has the cell. */}
             {hasSecondary && <span className={classes.secondary}>{item.secondary}</span>}
             {thin && track}
-            {item.tick !== undefined && <VisuallyHidden>{tickName}</VisuallyHidden>}
           </li>
         )
       })}
