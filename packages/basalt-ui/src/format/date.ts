@@ -92,10 +92,14 @@ function relativeTimeFormat(
   style: 'long' | 'short' | 'narrow',
   numeric: 'auto' | 'always',
 ): Intl.RelativeTimeFormat {
-  const key = `${locale ?? ''}|${style}|${numeric}`
+  // Same resolution as `numberFormat`/`dateFormat`: call locale, else the `defineFormat` default,
+  // else the runtime's own. Reading it through `numberFormat` keeps one copy of the default; the
+  // RESOLVED tag keys the cache, so a changed default never serves a stale instance.
+  const resolved = locale ?? numberFormat(undefined, {}).resolvedOptions().locale
+  const key = `${resolved}|${style}|${numeric}`
   const cached = relativeTimeFormatterCache.get(key)
   if (cached !== undefined) return cached
-  const created = new Intl.RelativeTimeFormat(locale, { style, numeric })
+  const created = new Intl.RelativeTimeFormat(resolved, { style, numeric })
   relativeTimeFormatterCache.set(key, created)
   return created
 }

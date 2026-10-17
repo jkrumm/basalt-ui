@@ -7,7 +7,8 @@
 import { MantineProvider } from '@mantine/core'
 import { fireEvent, render, screen } from '@testing-library/react'
 import { renderToStaticMarkup } from 'react-dom/server'
-import { describe, expect, test } from 'bun:test'
+import { afterEach, describe, expect, test } from 'bun:test'
+import { defineFormat, resetFormatDefaults } from '../format/shared'
 import { AGE_REFRESH_MS, SyncButton } from './sync-button'
 
 function renderSync(props: Partial<Parameters<typeof SyncButton>[0]> = {}) {
@@ -170,5 +171,15 @@ describe('the shape follows the scope', () => {
     expect(button.hasAttribute('disabled')).toBe(false)
     fireEvent.click(button)
     expect(presses).toBe(0)
+  })
+})
+
+describe('format locale', () => {
+  afterEach(resetFormatDefaults)
+
+  test('the age reads in the defineFormat locale', () => {
+    defineFormat({ locale: 'de' })
+    renderSync({ lastCompletedAt: Date.now() - 2 * 60_000 })
+    expect(screen.getByRole('button').textContent).toContain('vor 2 Min.')
   })
 })
