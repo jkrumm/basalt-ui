@@ -41,7 +41,7 @@ export function ContentOverviewPage() {
                 title="P95 Latency"
                 value="312ms"
                 delta={-4.2}
-                deltaPeriod="WoW"
+                deltaPeriod="last week"
                 actions={
                   <GuideLink
                     title="How p95 latency is measured"

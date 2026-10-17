@@ -374,7 +374,7 @@ function CbbiOverview({
             // a 0.32 → 0.44 move as `▲35.9%` instead of the `▲12.0 pp` it actually is.
             deltaFormat: (d: number) => `${Math.abs(d).toFixed(1)} pp`,
           })}
-          deltaPeriod="30d"
+          deltaPeriod="30 days ago"
           // The index climbs toward a cycle top — a rising reading is the dangerous one, the same
           // verdict the tone rail already states.
           deltaPolarity="up-bad"
@@ -403,7 +403,7 @@ function CbbiOverview({
           title="BTC price"
           value={money(summary.price)}
           {...(summary.priceDelta !== undefined && { delta: summary.priceDelta })}
-          deltaPeriod="30d"
+          deltaPeriod="30 days ago"
         />
         <StatCard
           icon={<IconChart />}
@@ -429,7 +429,7 @@ function CbbiOverview({
             info="Closing price per bucket. The scale filter switches the axis between log and linear."
             value={money(summary.price)}
             {...(summary.priceDelta !== undefined && { delta: summary.priceDelta })}
-            deltaPeriod="30d"
+            deltaPeriod="30 days ago"
           >
             <Lines
               data={points}
