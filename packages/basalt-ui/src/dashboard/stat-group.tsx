@@ -21,6 +21,8 @@
  * rule on the GROUP, so the cells stay whatever they are; on `StatCard`s (which carry their own
  * panel and shadow ring) the rail reads as a second frame, so pair it with unadorned children.
  *
+ * `variant="strip"` is the joined-surface form with typed cells and a footer row (`stat-strip.tsx`).
+ *
  * @example
  * import { StatCard, StatGroup } from 'basalt-ui'
  *
