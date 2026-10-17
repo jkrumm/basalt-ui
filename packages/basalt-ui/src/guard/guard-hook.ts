@@ -1,6 +1,8 @@
 /**
  * guard-hook — pure helpers for the Claude Code PreToolUse hook adapter.
- * Mantine-free, dependency-free (zero non-type imports beyond guard internals).
+ * Mantine-free and light: no non-type imports beyond guard internals and dependency-free leaves
+ * (`tokens/space-scale`), never `tokens/palette` or `derive` (their colour math would load on every
+ * Write/Edit).
  */
 import { checkSource } from './index'
 import type { GuardConfig } from './types'

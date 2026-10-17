@@ -1269,6 +1269,14 @@ describe('CSS applicability', () => {
     expect(cssSpacing('PADDING: 18px')).toEqual([])
   })
 
+  it('keeps the default steps ascending, with the micro ceiling below the first', () => {
+    const steps = DEFAULT_GUARD_CONFIG.spacingSteps
+    expect(steps).toEqual(steps.toSorted((a, b) => a - b))
+    // The sub-scale CSS escape tops out one below the first step: 7 passes, 8 (`xs`) does not.
+    expect(cssSpacing(`gap: ${(steps[0] ?? 0) - 1}px`)).toEqual([])
+    expect(cssSpacing(`gap: ${steps[0]}px`)).toEqual(['inline-spacing'])
+  })
+
   it('keeps the default spacing steps in lockstep with the real scale', () => {
     // The guard's copy of the xs..xl ladder drifted once already (it still read 10/12/16/20/32
     // after the level-0 retune, so `p={16}` was flagged in favour of a `p="md"` worth 18, and the
