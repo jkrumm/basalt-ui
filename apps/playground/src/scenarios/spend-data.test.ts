@@ -11,6 +11,7 @@ import {
   FORECAST_EUR,
   MODELS_MTD,
   MONTH_DAYS,
+  MEDIAN_DAY_EUR,
   MTD_DAYS,
   MTD_EUR,
   MTD_CHANGE_PCT,
@@ -105,5 +106,12 @@ describe('spend-data', () => {
     const b = seeded(7)
     expect(Array.from({ length: 5 }, a)).toEqual(Array.from({ length: 5 }, b))
     expect(seeded(8)()).not.toBe(seeded(7)())
+  })
+
+  it('the median day sits between the cheapest and the dearest of the 90 days', () => {
+    const totals = DAILY.map((d) => d.total)
+    expect(MEDIAN_DAY_EUR).toBeGreaterThanOrEqual(Math.min(...totals))
+    expect(MEDIAN_DAY_EUR).toBeLessThanOrEqual(Math.max(...totals))
+    expect(totals.filter((t) => t <= MEDIAN_DAY_EUR).length).toBeGreaterThanOrEqual(45)
   })
 })

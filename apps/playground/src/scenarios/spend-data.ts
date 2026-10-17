@@ -93,6 +93,15 @@ export const DAILY: readonly DayRow[] = RAW.map(({ date, entries }) => ({
   total: eurOf(entries, () => true),
 }))
 
+/** The middle day of the 90 by total spend (mean of the two middle days when the count is even). */
+export const MEDIAN_DAY_EUR: number = (() => {
+  const totals = DAILY.map((d) => d.total).toSorted((a, b) => a - b)
+  const mid = totals.length >> 1
+  return totals.length % 2 === 0
+    ? ((totals[mid - 1] ?? 0) + (totals[mid] ?? 0)) / 2
+    : (totals[mid] ?? 0)
+})()
+
 const monthToDate = (monthStart: Date): RawDay[] =>
   RAW.filter(
     ({ date }) =>
