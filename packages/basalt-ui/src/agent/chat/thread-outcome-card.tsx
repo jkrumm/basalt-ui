@@ -166,7 +166,7 @@ export function ThreadOutcomeCard({
       className={cx(className)}
       style={{
         display: 'block',
-        padding: 'var(--vx-space-card-inset-y) var(--vx-space-card-inset-x)',
+        padding: 'var(--vx-space-card-inset-y, 0.75rem) var(--vx-space-card-inset-x, 1rem)',
         borderRadius: VX.radiusCard,
         boxShadow: VX.shadowCard,
         backgroundColor: background,
