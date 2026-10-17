@@ -32,13 +32,13 @@
  * in every branch.
  *
  * `tone` states a threshold verdict as a status dot plus a short word on the caption row (`OK`,
- * `Watch`, `Over`): the dot carries the colour, the word carries the meaning, so the verdict never
- * rides on colour alone. It exists because `value` is typed `string`: without it, a card whose number
- * has crossed a threshold reads exactly as calm as one that hasn't. A coloured edge stripe is not the
- * form — it reads as generic dashboard decoration (Wave 34). `undefined` renders nothing at all —
- * absence of a reading is neither a good one nor a bad one, and must never be tinted. `'good'` is a
- * deliberate positive verdict, never the meaning of omission: it exists for the threshold where the
- * calm number IS the finding (zero
+ * `Watch`, `Over`), with the full phrase for assistive tech. The dot carries the colour and the word
+ * the meaning, so the verdict never rides on colour alone. It exists because `value` is typed
+ * `string`: without it, a card whose number has crossed a threshold reads exactly as calm as one
+ * that hasn't. A coloured edge stripe is not the form — it reads as generic dashboard decoration
+ * (Wave 34). `undefined` renders nothing at all — absence of a reading is neither a good one nor a
+ * bad one, and must never be tinted. `'good'` is a deliberate positive verdict, never the meaning
+ * of omission: it exists for the threshold where the calm number IS the finding (zero
  * downtime over the window), and a card that has measured nothing must not be able to reach green by
  * leaving the prop off.
  *
@@ -290,9 +290,11 @@ export type StatCardProps = BasaltProps &
     /** Caption-row right slot (e.g. a ghost "..." menu trigger) — wrapped in `CtlSlot tier="widget"`,
      * so a raw `ActionIcon` with no `size` lands on the 24px step the caption row holds (C1/C5). */
     actions?: ReactNode
-    /** Threshold verdict — a status dot plus a short word (`OK` / `Watch` / `Over`) on the caption row. Omitting it is NOT `'good'`: omitted covers a reading that is fine AND one that
-     * is absent, and stays untinted so a card with nothing measured can never render green. Pass
-     * `'good'` only to assert a measured value that has earned the verdict. */
+    /** Threshold verdict — a status dot plus a short word (`OK` / `Watch` / `Over`) on the caption
+     * row, with the full phrase for assistive tech. Omitting it is NOT `'good'`: omitted covers a
+     * reading that is fine AND one that is absent, and stays untinted so a card with nothing
+     * measured can never render green. Pass `'good'` only to assert a measured value that has
+     * earned the verdict. */
     tone?: Tone
   }
 
@@ -502,6 +504,8 @@ export function StatCard({
         // grid row stretch to the tallest.
         padding: 'var(--vx-space-card-inset-y, 0.75rem) var(--vx-space-card-inset-x, 1rem)',
         overflow: 'hidden',
+        // Consumers may anchor overlays (badges, menus) to the card, so it stays a positioned box.
+        position: 'relative',
         // The card's own width drives its chrome (`stat-card.module.css`).
         containerType: 'inline-size',
         containerName: 'basalt-card',

@@ -1,0 +1,9 @@
+/* The one status mark: a 6px round dot (a § 5 step). The colour arrives as `--basalt-status-dot`. */
+.dot {
+  display: inline-block;
+  flex: none;
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--basalt-status-dot);
+}
