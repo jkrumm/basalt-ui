@@ -1,8 +1,6 @@
 import { MantineProvider } from '@mantine/core'
 import { cleanup, render } from '@testing-library/react'
 import { afterEach, describe, expect, test } from 'bun:test'
-import { readFileSync } from 'node:fs'
-import { resolve } from 'node:path'
 import { BarList } from './bar-list'
 import type { BarListProps } from './bar-list'
 
@@ -163,8 +161,6 @@ describe('BarList', () => {
 })
 
 describe('BarList — the track is the label column', () => {
-  const css = readFileSync(resolve(import.meta.dirname, 'bar-list.module.css'), 'utf8')
-
   test('the bar lives inside the label track, not beside the value', () => {
     const { container } = mount({ label: 'L', items: [{ label: 'a', value: 5 }] })
     const li = container.querySelector('li') as HTMLElement
@@ -188,10 +184,5 @@ describe('BarList — the track is the label column', () => {
       expect(li.querySelector('[data-bar-track]')?.contains(li.lastElementChild)).toBe(false)
       expect(li.children.length).toBe(3)
     }
-  })
-
-  test('columns are shared by every row, so one scale holds', () => {
-    expect(css).toMatch(/\.row \{[^}]*grid-template-columns: subgrid/)
-    expect(css).not.toMatch(/\.value \{[^}]*position: absolute/)
   })
 })

@@ -3,12 +3,24 @@ import { Skeleton, VisuallyHidden } from '@mantine/core'
 import { useId } from 'react'
 import type { CSSProperties, ReactNode } from 'react'
 import { cx } from '../common/props'
-import { ariaValues, modelBar, ringFraction, zoneBand } from './meter-model'
+import { ariaValues, modelBar, ringFraction, startCaptionText, zoneBand } from './meter-model'
 import type { MeterSegment, MeterZone, Part } from './meter-model'
 import classes from './meter.module.css'
 import { toPct } from './scale'
 
 export type Shell = { className: string | undefined; style: CSSProperties | undefined }
+
+/**
+ * The one root contract of every Meter state. `data-basalt-meter` is the handle `StatCard` keys its
+ * visual slot on (`:has([data-basalt-meter])`), so every state must carry it.
+ */
+function rootProps(shell: Shell) {
+  return {
+    className: cx(classes.root, shell.className),
+    style: shell.style,
+    'data-basalt-meter': '',
+  } as const
+}
 
 const RING_VIEWBOX = 36
 const RING_STROKE = 4
@@ -52,12 +64,7 @@ export function MeterLoading({
   shell: Shell
 }) {
   return (
-    <div
-      className={cx(classes.root, shell.className)}
-      style={shell.style}
-      aria-busy="true"
-      data-basalt-meter
-    >
+    <div {...rootProps(shell)} aria-busy="true">
       <VisuallyHidden>{`Loading ${label}`}</VisuallyHidden>
       {ring ? (
         <Skeleton className={classes.skeletonRing} circle />
@@ -74,12 +81,7 @@ export function MeterLoading({
 export function MeterEmpty(props: { label: string; text: string; ring: boolean; shell: Shell }) {
   const { label, text, ring, shell } = props
   return (
-    <output
-      className={cx(classes.root, shell.className)}
-      style={shell.style}
-      aria-label={label}
-      data-basalt-meter
-    >
+    <output {...rootProps(shell)} aria-label={label}>
       {ring ? (
         <span className={classes.ringBox}>
           <RingSvg />
@@ -105,7 +107,7 @@ export function MeterRing(props: {
 }) {
   const { label, reading, min, max, color, format, shell } = props
   return (
-    <div className={cx(classes.root, shell.className)} style={shell.style} data-basalt-meter>
+    <div {...rootProps(shell)}>
       <span
         className={classes.ringBox}
         aria-label={label}
@@ -159,7 +161,7 @@ export function MeterBar(props: {
   const { label, reading, min, max, format, zones, shell } = props
   const describedId = useId()
   const model = modelBar(props)
-  const start = props.startCaption === undefined ? model.startText : props.startCaption
+  const start = startCaptionText(model, props.startCaption)
   const end = props.endCaption === undefined ? model.endText : props.endCaption
   const hasCaptions = start !== null || end !== null || model.forecastText !== null
   const hasParts = model.partCaptions.length > 0
@@ -167,7 +169,7 @@ export function MeterBar(props: {
     model.describedByText === null ? {} : ({ 'aria-describedby': describedId } as const)
 
   return (
-    <div className={cx(classes.root, shell.className)} style={shell.style} data-basalt-meter>
+    <div {...rootProps(shell)}>
       <div
         className={classes.trackBox}
         aria-label={label}
@@ -202,8 +204,8 @@ export function MeterBar(props: {
       )}
       {hasParts && (
         <ul className={classes.partCaptions} data-meter-parts>
-          {model.partCaptions.map((c, i) => (
-            <li key={i} className={classes.partCaption}>
+          {model.partCaptions.map((c) => (
+            <li key={c.key} className={classes.partCaption}>
               <span
                 className={classes.swatch}
                 // theme-allow hidden-inline-style — the swatch repeats the part's fill colour (data)

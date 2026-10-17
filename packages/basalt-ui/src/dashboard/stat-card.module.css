@@ -348,6 +348,15 @@
   margin-inline: 0;
 }
 
+/* The `right` placement: the fixed basis, 22px height and clip are a sparkline's box. A Meter takes the
+ * row's remaining width and its own height, unclipped. */
+.sparklineRight:has([data-basalt-meter]) {
+  flex: 1 1 auto;
+  height: auto;
+  overflow: visible;
+  align-items: stretch;
+}
+
 /* Asks for `StatCard`'s `SPARKLINE_RIGHT_WIDTH`/`_HEIGHT` (handed down as custom properties, so this
  * rule and the narrow-card reset below can both reach them). `align-self: flex-end` is the one alignment
  * this restructure keeps at the SPARKLINE's own level rather than the row's: `.metricsRow` does not
@@ -381,5 +390,9 @@
     align-self: stretch;
     margin-top: auto;
     margin-inline: calc(-1 * var(--vx-space-card-inset-x, 1rem));
+  }
+
+  .metricsRow .sparklineRight:has([data-basalt-meter]) {
+    margin-inline: 0;
   }
 }

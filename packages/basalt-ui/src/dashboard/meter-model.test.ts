@@ -6,6 +6,7 @@ import {
   normalizeSegments,
   segmentReading,
   spanOf,
+  startCaptionText,
 } from './meter-model'
 
 const fmt = (n: number) => String(n)
@@ -104,5 +105,45 @@ describe('modelBar', () => {
     const m = modelBar({ ...base, min: 100, max: 200, reading: 150, target: 125, zones: ZONES })
     expect(m.markerPct).toBe(50)
     expect(m.targetPct).toBe(25)
+  })
+})
+
+describe('caption mode', () => {
+  const base = { reading: 30, min: 0, max: 100, format: String }
+  test('categorical segments caption their parts, in order, with the colour carried on the part', () => {
+    const m = modelBar({
+      ...base,
+      segments: [
+        { value: 20, label: 'A', color: 'red' },
+        { value: 10, label: 'B' },
+      ],
+    })
+    expect(m.captionMode).toBe('parts')
+    expect(m.partCaptions.map((c) => [c.label, c.text, c.color])).toEqual([
+      ['A', '20', 'red'],
+      ['B', '10', undefined],
+    ])
+    expect(startCaptionText(m, undefined)).toBeNull()
+    expect(startCaptionText(m, 'Total')).toBe('Total')
+  })
+  test('a forecast part keeps the reading + forecast form', () => {
+    const m = modelBar({ ...base, segments: [{ value: 30, label: 'P', forecast: true }] })
+    expect(m.captionMode).toBe('forecast')
+    expect(m.partCaptions).toEqual([])
+    expect(startCaptionText(m, undefined)).toBe('30')
+  })
+  test('no segments, and empty segments, are never categorical', () => {
+    expect(modelBar(base).captionMode).toBe('reading')
+    expect(modelBar({ ...base, segments: [] }).captionMode).toBe('reading')
+  })
+  test('a repeated label gets a unique key', () => {
+    const m = modelBar({
+      ...base,
+      segments: [
+        { value: 1, label: 'A' },
+        { value: 1, label: 'A' },
+      ],
+    })
+    expect(new Set(m.partCaptions.map((c) => c.key)).size).toBe(2)
   })
 })

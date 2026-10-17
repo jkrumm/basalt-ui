@@ -710,24 +710,27 @@ describe('stat-card.module.css — caption, value row, foot', () => {
 })
 
 describe('a Meter in the visual slot', () => {
-  const css = readFileSync(resolve(import.meta.dirname, 'stat-card.module.css'), 'utf8')
-
-  test('sizes to content and keeps the card inset; the sparkline rule is untouched', () => {
-    expect(css).toMatch(
-      /\.sparklineBleed:has\(\[data-basalt-meter\]\) \{\s*height: auto;\s*margin-inline: 0;\s*\}/,
-    )
-    expect(css).toMatch(
-      /\.sparklineBleed \{\s*height: var\(--basalt-stat-visual-h\);\s*margin-inline: calc\(-1 \* var\(--vx-space-card-inset-x, 1rem\)\);\s*\}/,
-    )
-  })
-
-  test('a Meter placed in the slot reaches the DOM inside the bleed slot', () => {
+  // Geometry (inset, height, wrapping) is asserted in a real browser: tests/layout/meter.layout.test.ts.
+  test('mounts inside the bleed slot', () => {
     const { container } = renderIntoDom(
       <MantineProvider>
         <StatCard title="Spend" value="€1" sparkline={<Meter label="Budget" value={40} />} />
       </MantineProvider>,
     )
-    const slot = container.querySelector('[data-placement="bleed"] [data-basalt-meter]')
-    expect(slot ?? container.querySelector('[data-basalt-meter]')).toBeTruthy()
+    expect(container.querySelector('[data-placement="bleed"] [data-basalt-meter]')).toBeTruthy()
+  })
+
+  test('mounts inside the right slot', () => {
+    const { container } = renderIntoDom(
+      <MantineProvider>
+        <StatCard
+          title="Spend"
+          value="€1"
+          sparklinePlacement="right"
+          sparkline={<Meter label="Budget" value={40} />}
+        />
+      </MantineProvider>,
+    )
+    expect(container.querySelector('[data-placement="right"] [data-basalt-meter]')).toBeTruthy()
   })
 })

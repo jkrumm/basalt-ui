@@ -109,6 +109,7 @@
   align-items: baseline;
   gap: var(--vx-space-control-gap, 0.375rem);
   min-width: 0;
+  overflow-wrap: anywhere;
 }
 
 /* A shape cue beside the name, so the part never reads by colour alone. */
