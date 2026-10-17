@@ -88,7 +88,7 @@ const bodyClipStyle: CSSProperties = {
 }
 
 /** One headline figure: the value is the hero, then its unit, a comparison node and the period. */
-type ChartFact = {
+export type ChartFact = {
   value: ReactNode
   unit?: string | undefined
   /** Usually a `DeltaBadge`. */
@@ -100,15 +100,13 @@ type ChartFact = {
 /** The three boxes a `ChartCard` paints. */
 export type ChartCardSlot = 'root' | 'header' | 'body'
 
-export type ChartCardProps = BasaltProps &
+type ChartCardBaseProps = BasaltProps &
   SlotStylesProps<ChartCardSlot> & {
     title?: string | undefined
     icon?: ReactNode
-    /** A muted line below the title row; does not by itself render the header. */
+    /** A muted line below the title row; does not by itself render the header. With `facts` it is the
+     * basis/as-of line after the facts row (always visible, never folded into the info glyph). */
     subtitle?: string | undefined
-    /** The headline figure(s) under the title: value, unit, comparison, period. Takes the subtitle
-     * row's place, so `subtitle` is not rendered beside it. Wraps at half width, never clips. */
-    facts?: ChartFact | readonly ChartFact[] | undefined
     /** `WidgetHeader`'s info glyph beside the title. */
     info?: string | undefined
     /** A pre-formatted metric value, with `delta` on the hero row. */
@@ -131,6 +129,23 @@ export type ChartCardProps = BasaltProps &
     children?: ReactNode
   }
 
+/**
+ * `facts` replaces the legacy `value`/`delta` hero: the two are mutually exclusive in the type. The
+ * facts stay visible while `state` is pending (the header is kept; the figure is the card's identity)
+ * and are hidden for error and empty, where the figure would be stale or absent.
+ */
+export type ChartCardProps = ChartCardBaseProps &
+  (
+    | {
+        /** The headline figure(s) under the title: value, unit, comparison, period. Wraps at half
+         * width, never clips. Replaces `value`/`delta`. */
+        facts: ChartFact | readonly ChartFact[]
+        value?: undefined
+        delta?: undefined
+      }
+    | { facts?: undefined }
+  )
+
 /** Drops explicit `undefined`s: `WidgetHeader` is exact-optional, this props type is not. */
 const definedOnly = <T extends object>(o: T): { [K in keyof T]?: Exclude<T[K], undefined> } =>
   Object.fromEntries(Object.entries(o).filter(([, v]) => v !== undefined)) as {
@@ -138,20 +153,35 @@ const definedOnly = <T extends object>(o: T): { [K in keyof T]?: Exclude<T[K], u
   }
 
 /** A header renders when one of these is set (a subtitle or delta alone does not). */
-const HEADER_TRIGGERS = ['title', 'info', 'value', 'icon', 'count', 'facts'] as const
+const HEADER_TRIGGERS = ['title', 'info', 'value', 'icon', 'count'] as const
 
-function Facts({ facts }: { facts: ChartFact | readonly ChartFact[] }): ReactElement {
+function Facts({
+  facts,
+  basis,
+}: {
+  facts: ChartFact | readonly ChartFact[]
+  basis?: string | undefined
+}): ReactElement {
   const list: readonly ChartFact[] = Array.isArray(facts) ? facts : [facts as ChartFact]
   return (
     <div data-basalt-facts="" className={classes.facts}>
-      {list.map((f, i) => (
-        <span key={i} data-basalt-fact="" className={classes.fact}>
-          <span className={classes.factValue}>{f.value}</span>
-          {f.unit !== undefined && <span className={classes.factUnit}>{f.unit}</span>}
-          {f.comparison}
-          {f.period !== undefined && <span className={classes.factPeriod}>{f.period}</span>}
-        </span>
-      ))}
+      <div className={classes.factsRow}>
+        {list.map((f, i) => (
+          <span key={i} data-basalt-fact="" className={classes.fact}>
+            <span data-basalt-fact-value="" className={classes.factValue}>
+              {f.value}
+            </span>
+            {f.unit !== undefined && <span className={classes.factUnit}>{f.unit}</span>}
+            {f.comparison}
+            {f.period !== undefined && <span className={classes.factPeriod}>{f.period}</span>}
+          </span>
+        ))}
+      </div>
+      {basis !== undefined && (
+        <p data-basalt-facts-basis="" className={classes.factsBasis}>
+          {basis}
+        </p>
+      )}
     </div>
   )
 }
@@ -170,13 +200,12 @@ export function ChartCard({
 }: ChartCardProps): ReactElement {
   const { ref, short } = useShortCard()
   const resolved = resolveChartState(state)
+  const showFacts = facts !== undefined && (resolved === null || resolved === 'pending')
   const hasHeader =
-    actions !== undefined ||
-    facts !== undefined ||
-    HEADER_TRIGGERS.some((k) => k !== 'facts' && header[k] !== undefined)
-  // Facts replace the subtitle row: a filler line beside a figure is the banned subtitle (SPEC § 8.4).
-  const { subtitle: _subtitle, ...headerNoSubtitle } = header
-  const headerProps = facts === undefined ? header : headerNoSubtitle
+    actions !== undefined || showFacts || HEADER_TRIGGERS.some((k) => header[k] !== undefined)
+  // With facts the subtitle is the basis line after them, not WidgetHeader's foldable row.
+  const { subtitle, ...rest } = header
+  const headerProps = facts === undefined ? header : rest
 
   return (
     <ChartCardContext.Provider value>
@@ -198,7 +227,7 @@ export function ChartCard({
                 actions: <span data-basalt-tier="widget">{actions}</span>,
               })}
             />
-            {facts !== undefined && <Facts facts={facts} />}
+            {showFacts && <Facts facts={facts} basis={subtitle} />}
           </div>
         )}
         <div
