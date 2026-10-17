@@ -225,6 +225,30 @@ export const tooltipSelector = (describedBy: string): string =>
     ? `[role="tooltip"][id=${JSON.stringify(describedBy)}]`
     : '[role="tooltip"]:not([data-shot-seen])'
 
+/** `tooltipSelector`, narrowed to a rendered readout: a hidden 0×0 one of another chart never wins `.first()`. */
+export const visibleTooltip = (describedBy: string): string =>
+  `${tooltipSelector(describedBy)}:visible`
+
+/**
+ * Where a trigger is hovered: its centre, or the `data-shot-at="x,y"` fractions of its box when the
+ * centre paints no readout (a donut's hole).
+ */
+export function hoverAtOf(el: Element | null): string {
+  return el?.getAttribute('data-shot-at') ?? ''
+}
+
+export function parseHoverAt(raw: string): { x: number; y: number } | null {
+  const [x, y] = raw.split(',').map(Number)
+  return Number.isFinite(x) && Number.isFinite(y) ? { x: x!, y: y! } : null
+}
+
+async function hoverTrigger(target: PwLocator): Promise<void> {
+  const at = parseHoverAt(String(await target.evaluate(hoverAtOf)))
+  const box = at ? await target.boundingBox() : null
+  const position = at && box ? { x: at.x * box.width, y: at.y * box.height } : undefined
+  await target.hover({ timeout: HOVER_TIMEOUT_MS, ...(position && { position }) })
+}
+
 /**
  * The box of the tooltip an action opened, or null when none shows up. Call `markVisibleTooltips`
  * before the action; `describedBy` is the trigger's own tooltip id, when it has one.
@@ -234,7 +258,7 @@ async function openTooltipBox(
   describedBy: string,
   timeout = TIP_PROBE_MS,
 ): Promise<Box | null> {
-  const tip = c.page.locator(tooltipSelector(describedBy)).first()
+  const tip = c.page.locator(visibleTooltip(describedBy)).first()
   try {
     await tip.waitFor({ state: 'visible', timeout })
   } catch {
@@ -262,7 +286,7 @@ async function captureHover(c: Ctx, name: string): Promise<void> {
     const inner = c.page.locator(`${sel(name)} [data-shot-hover]`).first()
     const target = (await inner.count()) > 0 ? inner : anchor
     await c.page.evaluate(markVisibleTooltips, undefined)
-    await target.hover({ timeout: HOVER_TIMEOUT_MS })
+    await hoverTrigger(target)
     const describedBy = idOf(await target.evaluate(describedByOf))
     const [box, tip] = [await anchor.boundingBox(), await openTooltipBox(c, describedBy)]
     if (!box || !tip) return void (await snap(anchor, path))
@@ -337,7 +361,7 @@ async function captureTooltip(c: Ctx, name: string): Promise<void> {
     const anchor = anchorOf(c, name)
     await reveal(anchor)
     await c.page.evaluate(markVisibleTooltips, undefined)
-    await trigger.hover({ timeout: HOVER_TIMEOUT_MS })
+    await hoverTrigger(trigger)
     const describedBy = idOf(await trigger.evaluate(describedByOf))
     const t = await openTooltipBox(c, describedBy, TOOLTIP_TIMEOUT_MS)
     if (!t) throw new Error('no visible [role="tooltip"] after hover')
