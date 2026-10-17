@@ -139,7 +139,6 @@ function OpsStats({ shotState }: ScenarioProps) {
     emptyText: PROBE_EMPTY,
     ...(query !== undefined && { query }),
   }
-  const value = (text: string): string => (isAtRest ? text : '—')
 
   return (
     <StatGroup cols={3}>
@@ -147,7 +146,7 @@ function OpsStats({ shotState }: ScenarioProps) {
         <StatCard
           title="Latency"
           qualifier="last minute"
-          value={value(fmtMs(LATENCY_NOW_MS))}
+          value={fmtMs(LATENCY_NOW_MS)}
           info="Round-trip time in the last minute. The sparkline shows the last 60 minutes; the change compares with the 7-day median hour."
           {...(isAtRest && {
             delta: LATENCY_NOW_MS / LATENCY_MEDIAN_7D_MS - 1,
@@ -170,7 +169,7 @@ function OpsStats({ shotState }: ScenarioProps) {
         <StatCard
           title="Packet loss"
           qualifier="24 hours"
-          value={value(fmtLoss(LOSS_24H_PCT))}
+          value={fmtLoss(LOSS_24H_PCT)}
           info="Share of probe packets with no reply, averaged over the hourly buckets."
           {...(isAtRest && {
             breakdown: [
@@ -194,7 +193,7 @@ function OpsStats({ shotState }: ScenarioProps) {
         <StatCard
           title="Download"
           qualifier={`24 hours · contract ${fmtMbit(CONTRACT_DOWN_MBIT)}`}
-          value={value(fmtMbit(DOWN_24H_MBIT))}
+          value={fmtMbit(DOWN_24H_MBIT)}
           info="Mean measured throughput over the hourly buckets, against the speed in the contract."
           // Wave 34: Meter — the measured share of the ceiling belongs in a Meter; rows are the nearest.
           {...(isAtRest && {
