@@ -158,6 +158,15 @@ const readFacts = (page: PwPage): Promise<PageFacts> =>
     declared: [...document.querySelectorAll('[data-shot-states]')].flatMap((e) => (e.getAttribute('data-shot-states') ?? '').split(/\\s+/)).filter(Boolean),
   }))()`)
 
+const addProblem = (c: Ctx, problem: string): void => {
+  if (!c.problems.includes(problem)) c.problems.push(problem)
+}
+
+/** Moves the proxied calls that failed since the last read into this page visit's problems. */
+const collect = (c: Ctx): void => {
+  for (const problem of c.input.apiProblems?.() ?? []) addProblem(c, problem)
+}
+
 /**
  * One load of `url`: settle, auto-anchor a page that declares none, read its facts, and collect
  * what is wrong with the data (`c.problems`) so a board never looks fine over a failed login.
@@ -170,25 +179,31 @@ async function visit(c: Ctx, url: string): Promise<PageFacts> {
     await page.evaluate(tagAutoAnchors, undefined)
     facts = await readFacts(page)
   }
-  c.problems = input.apiProblems?.() ?? []
+  collect(c)
   if (input.localStorage?.length) {
     const failed = await page.evaluate<unknown>(`globalThis.${SEED_FLAG} ?? ''`)
-    if (typeof failed === 'string' && failed !== '') {
-      c.problems.push(`localStorage seed failed (${failed})`)
+    if (failed === 'origin') {
+      input.log(`[shot] ${c.route}: page left the app origin; not seeded`)
+    } else if (typeof failed === 'string' && failed !== '') {
+      addProblem(c, `localStorage seed failed (${failed})`)
       input.log(`[shot] ${c.route}: localStorage seed failed (${failed})`)
     }
   }
   return facts
 }
 
-/** Turns the page shot into an error when its data is untrustworthy (or adds one when none was taken). */
+/**
+ * When this page visit's data is untrustworthy, every shot of it (page and anchors, every state)
+ * becomes an error carrying the problem; a page shot is added when `rest` was not requested.
+ */
 function flagProblems(c: Ctx): void {
   if (c.problems.length === 0) return
   const note = c.problems.join('; ')
-  const page = c.shots.find((s) => s.name === PAGE_ANCHOR && s.state === 'rest')
-  if (!page) return record(c, { name: PAGE_ANCHOR, state: 'rest', status: 'error', note })
-  Object.assign(page, { status: 'error', note })
-  c.input.log(`[shot] ${c.route} ${PAGE_ANCHOR} ${c.scheme}/${c.viewport}/rest: ${note}`)
+  for (const shot of c.shots)
+    if (shot.status === 'ok') Object.assign(shot, { status: 'error', note })
+  if (!c.shots.some((s) => s.name === PAGE_ANCHOR && s.state === 'rest'))
+    record(c, { name: PAGE_ANCHOR, state: 'rest', status: 'error', note })
+  c.input.log(`[shot] ${c.route} ${c.scheme}/${c.viewport}: ${note}`)
 }
 
 /** Brings the anchor into view; throws when it is absent, hidden or off-screen at this viewport. */
@@ -460,11 +475,6 @@ async function captureUrlState(c: Ctx, state: ShotState): Promise<void> {
       record(c, { name, state, status: 'error', note: `load failed: ${firstLine(error)}` })
     return
   }
-  if (c.problems.length > 0) {
-    for (const name of restNames)
-      record(c, { name, state, status: 'error', note: c.problems.join('; ') })
-    return
-  }
   for (const name of new Set([...restNames, ...here.anchors])) {
     if (!here.anchors.includes(name)) {
       record(c, { name, state, status: 'error', note: 'anchor absent in this state' })
@@ -573,6 +583,7 @@ async function capturePage(
     problems: [],
   }
   const { input, route } = c
+  input.apiProblems?.() // calls still in flight from an earlier route are not this page's
   try {
     c.facts = await visit(c, input.base + route)
   } catch (error) {
@@ -607,10 +618,17 @@ async function capturePage(
   flagProblems(c)
   for (const name of usable) {
     for (const [state, capture] of Object.entries(POINTER_STATES)) {
-      if (input.states.includes(state as ShotState)) await capture(c, name)
+      if (!input.states.includes(state as ShotState)) continue
+      await capture(c, name)
+      collect(c)
     }
   }
-  for (const state of URL_STATES) if (input.states.includes(state)) await captureUrlState(c, state)
+  for (const state of URL_STATES) {
+    if (!input.states.includes(state)) continue
+    await captureUrlState(c, state)
+    collect(c)
+  }
+  flagProblems(c)
   return c
 }
 
@@ -708,6 +726,7 @@ export async function capture(input: CaptureInput): Promise<{
   }
   for (const scheme of SCHEMES) {
     for (const viewport of VIEWPORTS) {
+      input.apiProblems?.() // a new context starts with a clean queue
       const context = await openContext(
         input.browser,
         scheme,

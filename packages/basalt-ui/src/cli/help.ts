@@ -108,7 +108,7 @@ export const USAGE =
   '  added to every proxied request, to EVERY --api origin (never on a navigation; https required);\n' +
   '  [--wait <ms|networkidle>] adds ms of settle AFTER networkidle (default none); [--auto-anchors] crops\n' +
   '  each Card, Paper and table over 120×60 px on a page with no data-shot. Values are never printed or\n' +
-  '  written; a 401/403 or unreachable API marks the page shot failed. Shots of real data go to the\n' +
+  '  written; a redirect, 401/403/404, 5xx or dead API fails every shot of that page. Shots of real data go to the\n' +
   '  reviewer subagent and so to its model provider: point --api at staging or synthetic data when the\n' +
   "  app holds other people's data. Example:\n" +
   '    basalt-ui shot /overview --dist dist --api /api=https://app.example.com \\\n' +

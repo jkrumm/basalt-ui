@@ -1068,7 +1068,7 @@ darkens, dark lightens; hue is preserved and chroma may clip at the gamut edge.
   makes the `--dist` server proxy GET/HEAD under that prefix (other methods get 405 unless `--api-allow-writes`);
   `--header authorization=@env:NAME` is added to every proxied request, to every `--api` origin (https required), never
   to a page navigation; `--wait <ms>` adds a settle after `networkidle` (default none); `--auto-anchors` crops every
-  Card, Paper and table over 120×60 px on a page with no `data-shot`. A 401/403 or unreachable API fails the page shot.
+  Card, Paper and table over 120×60 px on a page with no `data-shot`. A redirect, 401/403/404, 5xx or unreachable API fails every shot of that page; a localStorage key the app already holds is not overwritten; `--header` is refused when `--api` names more than one origin; any secret (`--header` or `--local-storage`) requires an https `--api` origin.
   Secret values are never printed or written to `board.html` or `metrics.json`. Shots of real data reach the reviewer
   subagent's model provider: point `--api` at staging or synthetic data for an app holding third parties' data. No
   action needed; every flag is opt-in.

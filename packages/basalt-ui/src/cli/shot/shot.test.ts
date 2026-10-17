@@ -1443,6 +1443,13 @@ describe('real-app flags', () => {
       1,
     )
     expect(parse('--api', '/a=http://remote.example.com').api).toHaveLength(1)
+    expect(
+      parse('--api', '/a=http://127.0.0.1:3000', '--local-storage', 'k=@env:TOKEN').api,
+    ).toHaveLength(1)
+    // Several origins are fine while no --header would be sent to all of them.
+    expect(
+      parse('--api', '/a=https://x.example.com', '--api', '/b=https://y.example.com').api,
+    ).toHaveLength(2)
   })
   test.each([
     [['--local-storage', 'novalue'], /expects <name>=<value>/],
@@ -1458,6 +1465,21 @@ describe('real-app flags', () => {
     [['--header', 'a=@env:TOKEN'], /sent on --api requests only/],
     [['--api', '/api=https://x', '--header', 'a=literal'], /never a literal/],
     [['--api', '/api=http://remote.example.com', '--header', 'a=@env:TOKEN'], /must be https/],
+    [
+      ['--api', '/api=http://remote.example.com', '--local-storage', 'k=@env:TOKEN'],
+      /must be https/,
+    ],
+    [
+      [
+        '--api',
+        '/a=https://x.example.com',
+        '--api',
+        '/b=https://y.example.com',
+        '--header',
+        'a=@env:TOKEN',
+      ],
+      /more than one/,
+    ],
     [['--api', '/api=https://x', '--header', 'host=@env:TOKEN'], /--header host: not a header/],
     [['--api', '/api=https://x', '--header', 'bad name=@env:TOKEN'], /not a header/],
     [['--wait', 'soon'], /--wait takes/],
@@ -1620,6 +1642,113 @@ describe('data trust in capture', () => {
     expect(logs.join('\n')).not.toContain('tok-secret')
   })
 
+  /** A page with one `card` anchor whose hover, goto and screenshots can queue proxy problems. */
+  const cardPage = (hooks: {
+    goto?: (url: string) => void
+    hover?: () => void
+    shot?: (url: string) => void
+  }) => {
+    let url = ''
+    const locator: Record<string, unknown> = {
+      first: () => locator,
+      count: () => Promise.resolve(1),
+      scrollIntoViewIfNeeded: () => Promise.resolve(),
+      isVisible: () => Promise.resolve(true),
+      screenshot: () => Promise.resolve(),
+      hover: () => Promise.resolve(hooks.hover?.()),
+      evaluate: () => Promise.resolve(''),
+      boundingBox: () => Promise.resolve(null),
+      waitFor: () => Promise.reject(new Error('no tooltip')),
+    }
+    return quietPage({
+      goto: (to: string) => {
+        url = to
+        return Promise.resolve(hooks.goto?.(to))
+      },
+      locator: () => locator,
+      screenshot: () => Promise.resolve(hooks.shot?.(url)),
+      evaluate: (expression: unknown) =>
+        Promise.resolve(
+          typeof expression === 'string' && expression.includes('data-shot-states')
+            ? { anchors: ['card'], declared: [] }
+            : undefined,
+        ),
+    })
+  }
+  /** The proxy's drain, as a queue the page hooks append to. */
+  const queue = () => {
+    let pending: string[] = []
+    return {
+      push: (p: string) => void pending.push(p),
+      drain: () => ((p) => ((pending = []), p))(pending),
+    }
+  }
+
+  test('a 401 during hover fails the page: the rest crop, the hover crop and _page', async () => {
+    const q = queue()
+    const out = await capture(
+      input(scriptedBrowser(cardPage({ hover: () => q.push('GET /api +1 401') })), {
+        states: ['rest', 'hover'],
+        apiProblems: q.drain,
+      }),
+    )
+    const desktop = out.shots.filter((s) => s.viewport === 'desktop' && s.scheme === 'light')
+    expect(desktop.map((s) => [s.name, s.state, s.status]).toSorted()).toEqual([
+      ['_page', 'rest', 'error'],
+      ['card', 'hover', 'error'],
+      ['card', 'rest', 'error'],
+    ])
+    expect(desktop.every((s) => s.note === 'GET /api +1 401')).toBe(true)
+    // Mobile skips hover, so its page visit never sees the 401: scoped per visit, it stays ok.
+    expect(
+      out.shots.filter((s) => s.viewport === 'mobile' && s.state === 'rest').map((s) => s.status),
+    ).toEqual(Array(4).fill('ok'))
+  })
+
+  test('a 401 queued during route A fails A only; route B is clean', async () => {
+    const q = queue()
+    const out = await capture(
+      input(
+        scriptedBrowser(
+          cardPage({ shot: (url) => url.endsWith('/a') && q.push('GET /api +1 401') }),
+        ),
+        { routes: ['/a', '/b'], apiProblems: q.drain },
+      ),
+    )
+    expect(out.shots.filter((s) => s.route === '/a').every((s) => s.status === 'error')).toBe(true)
+    expect(out.shots.filter((s) => s.route === '/b').every((s) => s.status === 'ok')).toBe(true)
+  })
+
+  test("a problem left in the queue before a route starts is not that route's", async () => {
+    const q = queue()
+    q.push('GET /api +1 401')
+    const out = await capture(input(scriptedBrowser(cardPage({})), { apiProblems: q.drain }))
+    expect(out.shots.every((s) => s.status === 'ok')).toBe(true)
+  })
+
+  test('leaving the app origin is reported as not seeded, not as a failed seed', async () => {
+    const logs: string[] = []
+    const page = quietPage({
+      evaluate: (expression: unknown) =>
+        Promise.resolve(
+          String(expression).includes('__shotSeedFailed')
+            ? 'origin'
+            : String(expression).includes('data-shot-states')
+              ? { anchors: [], declared: [] }
+              : undefined,
+        ),
+    })
+    const out = await capture(
+      input(scriptedBrowser(page), {
+        localStorage: [['auth', 'x']],
+        log: (l: string) => void logs.push(l),
+      }),
+    )
+    expect(logs.join('\n')).toContain('page left the app origin; not seeded')
+    expect(logs.join('\n')).not.toContain('seed failed')
+    expect(out.shots.every((s) => s.status === 'ok')).toBe(true)
+  })
+
   test('auto anchors are tagged again on a state reload', async () => {
     let tags = 0
     const page = quietPage({
@@ -1642,30 +1771,41 @@ describe('data trust in capture', () => {
 })
 
 describe('seedScript', () => {
-  const run = (origin: string, setItem: (k: string, v: string) => void) => {
+  const run = (origin: string, store: Map<string, string>, throwing = false) => {
     const g: Record<string, unknown> = {}
     new Function(
       'location',
       'localStorage',
       'globalThis',
       seedScript([['auth', 'a"b']], 'http://app'),
-    )({ origin }, { setItem }, g)
+    )(
+      { origin },
+      {
+        getItem: (k: string) => store.get(k) ?? null,
+        setItem: (k: string, v: string) => {
+          if (throwing) throw new Error('quota')
+          store.set(k, v)
+        },
+      },
+      g,
+    )
     return g['__shotSeedFailed']
   }
   test('sets the keys on the app origin only', () => {
-    const set: string[][] = []
-    expect(run('http://app', (k, v) => void set.push([k, v]))).toBeUndefined()
-    expect(set).toEqual([['auth', 'a"b']])
-    const other: string[][] = []
-    expect(run('http://elsewhere', (k, v) => void other.push([k, v]))).toBe('origin')
-    expect(other).toEqual([])
+    const here = new Map<string, string>()
+    expect(run('http://app', here)).toBeUndefined()
+    expect([...here]).toEqual([['auth', 'a"b']])
+    const there = new Map<string, string>()
+    expect(run('http://elsewhere', there)).toBe('origin')
+    expect(there.size).toBe(0)
+  })
+  test('a key the app already holds (a rotated token) is not overwritten', () => {
+    const store = new Map([['auth', 'rotated']])
+    expect(run('http://app', store)).toBeUndefined()
+    expect(store.get('auth')).toBe('rotated')
   })
   test('reports the keys that could not be set', () => {
-    expect(
-      run('http://app', () => {
-        throw new Error('quota')
-      }),
-    ).toBe('auth')
+    expect(run('http://app', new Map(), true)).toBe('auth')
   })
 })
 
@@ -1689,7 +1829,9 @@ describe('real-data run', () => {
       const api = Bun.serve({ port: 0, hostname: '127.0.0.1', async fetch(req) {
         const url = new URL(req.url)
         seen.push({ path: url.pathname + url.search, auth: req.headers.get('authorization'), method: req.method, body: await req.text() })
-        return url.pathname === '/api/denied' ? new Response('no', { status: 401 }) : Response.json({ ok: true })
+        const status = { '/api/denied': 401, '/api/missing': 404, '/api/missing/9f8e7d': 404, '/api/boom': 500 }[url.pathname]
+        if (url.pathname === '/api/moved') return new Response(null, { status: 302, headers: { location: '/login' } })
+        return status ? new Response('no', { status }) : Response.json({ ok: true })
       } })
       const closed = Bun.serve({ port: 0, hostname: '127.0.0.1', fetch: () => new Response('') })
       const closedPort = closed.port
@@ -1741,7 +1883,7 @@ describe('real-data run', () => {
     )
     expect([r['blocked'], r['allowed']]).toEqual([405, 200])
     expect(r['seen']).toEqual([{ path: '/api/save', auth: null, method: 'POST', body: 'x=1' }])
-    expect(String(r['logs'])).toContain('POST /api/save blocked')
+    expect(String(r['logs'])).toContain('POST /api +1 blocked')
   })
 
   test('401 is logged and drained; a closed port and a hung origin are logged 502s', async () => {
@@ -1759,13 +1901,25 @@ describe('real-data run', () => {
       result.slowDrained = slow.proxy.drain()`,
     )
     expect([r['denied'], r['dead'], r['slow']]).toEqual([401, 502, 502])
-    expect(r['drained']).toEqual(['GET /api/denied 401'])
+    expect(r['drained']).toEqual(['GET /api +1 401'])
     expect(r['again']).toEqual([])
-    expect(r['slowDrained']).toEqual(['GET /api/x TimeoutError'])
+    expect(r['slowDrained']).toEqual(['GET /api +1 TimeoutError'])
     const logs = (r['logs'] as string[]).join('\n')
-    expect(logs).toContain('api GET /api/denied → 401')
-    expect(logs).toContain('api GET /api/x failed:')
-    expect(logs).not.toMatch(/s3cret|q1/)
+    expect(logs).toContain('api GET /api +1 → 401')
+    expect(logs).toContain('api GET /api +1 failed:')
+    expect(logs).not.toMatch(/s3cret|q1|denied|\/api\/x/)
+  })
+
+  test('a 302, 404 or 500 from upstream is a problem, a 200 is not; no path reaches the log', async () => {
+    const r = await inBun(
+      dist(),
+      `${HEAD}
+      const a = up([{ prefix: '/api', origin: base }], [])
+      for (const p of ['/api/ok', '/api/moved', '/api/missing/9f8e7d', '/api/boom']) await fetch(a.server.origin + p)
+      result.problems = a.proxy.drain()`,
+    )
+    expect(r['problems']).toEqual(['GET /api +1 302', 'GET /api +2 404', 'GET /api +1 500'])
+    expect(String(r['logs'])).not.toMatch(/9f8e7d|missing|boom/)
   })
 
   test('with a proxy live, a foreign Host or Origin is refused', async () => {
@@ -1777,12 +1931,20 @@ describe('real-data run', () => {
       result.origin = (await fetch(server.origin + '/api/x', { headers: { origin: 'http://evil.example' } })).status
       result.sameOrigin = (await fetch(server.origin + '/', { headers: { origin: server.origin } })).status
       result.host = (await fetch(server.origin + '/api/x', { headers: { host: 'evil.example' } })).status
+      const h = (extra) => fetch(server.origin + '/', { headers: extra }).then((x) => x.status)
+      result.noCorsSameSite = await h({ 'sec-fetch-mode': 'no-cors', 'sec-fetch-site': 'same-site' })
+      result.noCorsNoSite = await h({ 'sec-fetch-mode': 'no-cors' })
+      result.crossSite = await h({ 'sec-fetch-mode': 'navigate', 'sec-fetch-site': 'cross-site' })
+      result.stylesheet = await h({ 'sec-fetch-mode': 'no-cors', 'sec-fetch-site': 'same-origin' })
+      result.navigate = await h({ 'sec-fetch-mode': 'navigate', 'sec-fetch-site': 'none' })
       const plain = serveDist(DIST)
       result.noProxy = (await fetch(plain.origin + '/', { headers: { origin: 'http://evil.example' } })).status`,
     )
     expect([r['own'], r['origin'], r['sameOrigin'], r['host'], r['noProxy']]).toEqual([
       200, 403, 200, 403, 200,
     ])
+    expect([r['noCorsSameSite'], r['noCorsNoSite'], r['crossSite']]).toEqual([403, 403, 403])
+    expect([r['stylesheet'], r['navigate']]).toEqual([200, 200])
     expect(r['seen']).toEqual([])
   })
 
