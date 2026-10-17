@@ -452,9 +452,9 @@ describe('stat-card.module.css — the breakdown block', () => {
     expect(decls).not.toContain('--vx-surface-hairline')
   })
 
-  test('the label is muted prose and the value is mono ink — the separation is weight, not a line', () => {
+  test('the label is muted prose and the value is sans ink — the separation is weight, not a line', () => {
     expect(rule('.breakdownLabel')).toContain('color: var(--vx-muted)')
-    expect(rule('.breakdownValue')).toContain('font-family: var(--basalt-font-mono)')
+    expect(rule('.breakdownValue')).toContain('font-family: var(--basalt-font-numeral')
     expect(rule('.breakdownValue')).toContain('color: var(--vx-ink)')
   })
 
@@ -466,7 +466,7 @@ describe('stat-card.module.css — the breakdown block', () => {
     }
   })
 
-  test('the unit beside the hero value is mono, muted and small — in widget-header, its owner', () => {
+  test('the unit beside the hero value is sans, muted and small — in widget-header, its owner', () => {
     const headerCss = readFileSync(
       resolve(import.meta.dirname, 'widget-header.module.css'),
       'utf8',
@@ -474,7 +474,7 @@ describe('stat-card.module.css — the breakdown block', () => {
     const start = headerCss.indexOf('.unit {')
     expect(start).toBeGreaterThan(-1)
     const unit = headerCss.slice(start, headerCss.indexOf('}', start))
-    expect(unit).toContain('font-family: var(--basalt-font-mono)')
+    expect(unit).toContain('font-family: var(--basalt-font-numeral')
     expect(unit).toContain('font-size: var(--vx-text-sm)')
     expect(unit).toContain('color: var(--vx-muted)')
   })

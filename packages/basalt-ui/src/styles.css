@@ -46,6 +46,9 @@
       'Hubot Sans Variable', ui-sans-serif, system-ui, -apple-system, 'Segoe UI', Roboto, Helvetica,
       Arial, sans-serif;
     --basalt-font-mono: 'JetBrains Mono Variable', ui-monospace, 'SF Mono', Menlo, monospace;
+    /* Hero values, unit/count/delta text, bar-list and meter figures: proportional sans, lining
+       figures. Set to `var(--basalt-font-mono)` to restore the pre-Wave-35 mono numerals. */
+    --basalt-font-numeral: var(--basalt-font-sans);
   }
 }
 
@@ -153,6 +156,9 @@
   h6,
   .mantine-Title-root {
     font-stretch: var(--basalt-font-head-stretch, 88%);
+    /* Hubot Sans draws a slashed zero by default; a heading numeral is a figure, not code. */
+    font-feature-settings: 'zero' 0;
+    font-variant-numeric: lining-nums;
   }
 
   /* Scrollbars (docs/DESIGN-SPEC.md §5): 9px, ink-mix thumb (stronger on hover), radius 6,

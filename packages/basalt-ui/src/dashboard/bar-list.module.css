@@ -62,7 +62,8 @@
 }
 
 .value {
-  font-family: var(--basalt-font-mono);
+  font-family: var(--basalt-font-numeral, var(--basalt-font-sans));
+  font-variant-numeric: lining-nums;
   text-align: end;
   white-space: nowrap;
 }
@@ -73,7 +74,8 @@
 }
 
 .secondary {
-  font-family: var(--basalt-font-mono);
+  font-family: var(--basalt-font-numeral, var(--basalt-font-sans));
+  font-variant-numeric: lining-nums;
   font-size: var(--vx-text-sm);
   color: var(--vx-muted);
   white-space: nowrap;

@@ -80,7 +80,7 @@ describe('tier picks the heading level', () => {
   })
 })
 
-test('count renders a mono tag after the title', () => {
+test('count renders a tag after the title', () => {
   render(<WidgetHeader tier="section" title="Recent orders" count={42} />)
   expect(screen.getByText('42')).toBeDefined()
 })

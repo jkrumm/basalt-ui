@@ -128,7 +128,8 @@
 .value {
   min-width: 0;
   overflow-wrap: anywhere;
-  font-family: var(--basalt-font-mono);
+  font-family: var(--basalt-font-numeral, var(--basalt-font-sans));
+  font-variant-numeric: lining-nums;
   font-size: var(--basalt-stat-figure-size);
   line-height: var(--basalt-stat-figure-line);
   font-weight: 500;
@@ -136,11 +137,12 @@
   color: var(--vx-ink);
 }
 
-/* Mono like the number it qualifies, `sm` and muted: the SMALL half of the pair. Never shrinks — a
+/* Sans like the number it qualifies, `sm` and muted: the SMALL half of the pair. Never shrinks — a
  * unit clipped to `TS…` would state nothing. */
 .unit {
   flex-shrink: 0;
-  font-family: var(--basalt-font-mono);
+  font-family: var(--basalt-font-numeral, var(--basalt-font-sans));
+  font-variant-numeric: lining-nums;
   font-size: var(--vx-text-sm);
   font-weight: 500;
   color: var(--vx-muted);
@@ -306,12 +308,13 @@
   color: var(--vx-muted);
 }
 
-/* Mono and ink — a breakdown value is a number, and it is the half of the row worth reading. Never
+/* Sans and ink — a breakdown value is a number, and it is the half of the row worth reading. Never
  * shrinks: the LABEL is the prose half and the one that may ellipsize. */
 .breakdownValue {
   flex-shrink: 0;
   margin: 0;
-  font-family: var(--basalt-font-mono);
+  font-family: var(--basalt-font-numeral, var(--basalt-font-sans));
+  font-variant-numeric: lining-nums;
   font-size: var(--vx-text-sm);
   font-weight: 500;
   color: var(--vx-ink);
