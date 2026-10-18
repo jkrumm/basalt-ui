@@ -37,7 +37,9 @@ describe('S4 spend', () => {
       mount(createElement(SpendScenario, { shotState: undefined })),
       'strip-forecast',
     )
+    // W38: the Budget tick also captions its figure; the Spent and Forecast marks are captioned at their marks.
     expect(tickLabels(cell)).toEqual(['€0', 'Budget'])
+    expect(cell?.textContent).toContain('€1,500')
   })
 
   it('keeps the € out of the card titles and in the facts value', () => {
@@ -46,8 +48,9 @@ describe('S4 spend', () => {
       const card = anchor(c, name)
       expect(card?.textContent).not.toContain('(€)')
       // W37 r2: spend by project leads with the top two's share of the whole, in percent.
-      expect(card?.querySelector('[data-basalt-fact-value]')?.textContent).toContain(
-        name === 'spend-by-project' ? '%' : '€',
+      // W38: cumulative spend leads with the day the forecast reaches the budget.
+      expect(card?.querySelector('[data-basalt-fact-value]')?.textContent).toMatch(
+        name === 'spend-by-project' ? /%/ : name === 'spend-over-time' ? /^\d+ \w+$/ : /€/,
       )
     }
   })
@@ -120,8 +123,8 @@ describe('S2 training', () => {
   it('names the pace tick on the goal meter and not again in the end caption', () => {
     const c = mount(createElement(TrainingScenario, { shotState: undefined }))
     const goal = anchor(c, 'goal')
-    expect(tickLabels(goal)).toEqual(['0 sessions', 'Pace'])
-    expect(goal?.querySelector('[data-meter-captions]')?.textContent).not.toContain('Pace')
+    // W38: one Pace caption at the mark; the start figure and the tick label are dropped.
+    expect(goal?.textContent?.match(/Pace/g)).toHaveLength(1)
   })
 })
 

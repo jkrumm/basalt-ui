@@ -114,7 +114,8 @@ describe('S2 / S3 / S4 encodings', () => {
     expect(source('./S4Spend.tsx')).toContain('format: fmtEurCompact')
     const c = mount(createElement(SpendScenario, { shotState: undefined }))
     const card = anchor(c, 'spend-over-time')
-    expect(card?.querySelector('[data-basalt-fact-value]')?.textContent).toContain('€')
+    // W38: the headline is the day the forecast reaches the budget, a date, not a figure.
+    expect(card?.querySelector('[data-basalt-fact-value]')?.textContent).toMatch(/^\d+ \w+$/)
     const ticks = [...(card?.querySelectorAll('svg text') ?? [])].map((t) => t.textContent ?? '')
     expect(ticks.filter((t) => /^€\d/.test(t)).length).toBeGreaterThanOrEqual(3)
   })

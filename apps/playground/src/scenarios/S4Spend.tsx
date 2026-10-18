@@ -45,7 +45,7 @@ import {
   spendBand,
 } from './spend-data'
 import type { CumulativeRow } from './spend-data'
-import { fmtEur, fmtEurCompact, fmtShare, fmtSignedEur } from './fixture-utils'
+import { fmtDay, fmtEur, fmtEurCompact, fmtShare, fmtSignedEur } from './fixture-utils'
 import { cardStateProps, chartStateFor, noop, retryCopy } from './shot-state'
 import type { ScenarioProps } from './shot-state'
 
@@ -60,7 +60,8 @@ const CUMULATIVE_SERIES: ChartSeries<CumulativeRow>[] = [
   },
   {
     key: 'forecast',
-    label: 'Forecast',
+    // The end label names the month-end figure: the series name and where the dashed line lands.
+    label: `Forecast ${fmtEurCompact(FORECAST_EUR)}`,
     color: demoColors.sessions,
     dash: 'dashed',
     getValue: (d) => d.forecast,
@@ -81,6 +82,8 @@ const forecastRow = (d: CumulativeRow): ChartTooltipRow[] =>
         },
       ]
     : []
+/** The first day the forecast line reaches the cap; the headline states it (no vertical marker exists). */
+const BUDGET_CROSSING = CUMULATIVE.find((d) => d.forecast !== null && d.forecast >= BUDGET_EUR)
 const BUDGET_LINES = [
   {
     value: BUDGET_EUR,
@@ -91,15 +94,16 @@ const BUDGET_LINES = [
   },
 ]
 
+/** The window the histogram bins, stated on the surface (the info tooltip says it too). */
+const DISTRIBUTION_WINDOW = 'last 90 days'
+
 /** The band holding the median day: the last band that starts at or below it. */
 const MEDIAN_BIN = DISTRIBUTION.findLast((b) => b.from <= MEDIAN_DAY_EUR)
 const MEDIAN_FACT =
   MEDIAN_BIN === undefined
-    ? 'median'
-    : `median · ${MEDIAN_BIN.days} days in ${spendBand(MEDIAN_BIN)}`
+    ? DISTRIBUTION_WINDOW
+    : `${MEDIAN_BIN.days} of the ${DISTRIBUTION_WINDOW} landed in ${spendBand(MEDIAN_BIN)}`
 
-/** The window the histogram bins, stated on the surface (the info tooltip says it too). */
-const DISTRIBUTION_WINDOW = 'last 90 days'
 const CUMULATIVE_DATA = [...CUMULATIVE]
 const DISTRIBUTION_DATA = [...DISTRIBUTION]
 /** Every other band is named on the axis: a range label is wide, and the bars still carry the rest. */
@@ -214,14 +218,14 @@ function SpendStats({ shotState }: ScenarioProps) {
           <Meter
             label={`Forecast against the ${fmtEur(BUDGET_EUR)} budget`}
             max={TRACK_END_EUR}
-            ticks={[{ at: BUDGET_EUR, label: 'Budget' }]}
+            ticks={[{ at: BUDGET_EUR, label: 'Budget', caption: fmtEur(BUDGET_EUR) }]}
             format={fmtEur}
             segments={[
               { value: MTD_EUR, label: 'Spent' },
               { value: FORECAST_EUR - MTD_EUR, label: 'Forecast', forecast: true },
             ]}
-            forecastCaption="Forecast"
             startCaption="Spent"
+            forecastCaption="Forecast"
           />
         ),
       }),
@@ -268,11 +272,12 @@ function SpendCharts({ shotState }: ScenarioProps) {
       <Box data-shot="spend-over-time" h="100%">
         <ChartCard
           title="Cumulative spend"
-          facts={{
-            value: fmtEur(MTD_EUR / DAYS_ELAPSED),
-            unit: 'a day',
-            period: `average, ${WINDOW_LABEL}`,
-          }}
+          {...(shotState === undefined && {
+            facts:
+              BUDGET_CROSSING === undefined
+                ? { value: fmtEur(FORECAST_EUR), period: 'forecast, end of month' }
+                : { value: fmtDay(BUDGET_CROSSING.date), period: 'forecast reaches the budget' },
+          })}
           info={`Month-to-date spend per day against the ${fmtEur(BUDGET_EUR)} budget. The dashed line holds the ${fmtEur(MTD_EUR / DAYS_ELAPSED)} daily average flat to the last day.`}
           state={chartStateFor(shotState, {
             empty: `No spend recorded ${WINDOW_LABEL}. Connect a project to the usage export.`,
@@ -299,8 +304,8 @@ function SpendCharts({ shotState }: ScenarioProps) {
           title="Daily spend, distribution"
           facts={{
             value: fmtEur(MEDIAN_DAY_EUR),
-            unit: 'a day',
-            period: [DISTRIBUTION_WINDOW, MEDIAN_FACT],
+            unit: 'a day, median',
+            period: MEDIAN_FACT,
           }}
           info="Each bar counts the days, of the last 90, whose total spend across all projects landed in that €10 band (€ a day). The headline is the median day and the band it falls in."
           state={chartStateFor(shotState, {

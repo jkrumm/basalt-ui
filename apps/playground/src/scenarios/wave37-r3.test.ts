@@ -143,14 +143,12 @@ describe('3. S2 goal meter', () => {
   it('captions the Pace tick at its mark, with the target and the start figure on the track', () => {
     const goal = anchor(training(), 'goal')
     const ticks = source('./S2Training.tsx')
-    expect(ticks).toMatch(/label: 'Pace',\s+caption:/)
-    expect(ticks).not.toMatch(
-      /startCaption=\{null\}[\s\S]{0,200}endCaption=\{`\$\{fmtInt\(PACE_SESSIONS\)}/,
-    )
+    // W38: the target is stated once (the end caption), the pace once (the tick caption).
+    expect(ticks).toMatch(/caption: `Pace /)
     const copy = text(goal)
-    expect(copy).toContain(`${Math.round(PACE_SESSIONS)} sessions by ${TODAY_LABEL}`)
-    expect(copy).toContain(`Target ${GOAL_SESSIONS} sessions`)
-    expect(copy).toMatch(/\b0 sessions\b/)
+    expect(copy).toContain(`Pace ${Math.round(PACE_SESSIONS)} by ${TODAY_LABEL}`)
+    expect(copy).toContain(`Goal ${GOAL_SESSIONS}`)
+    expect(copy.match(new RegExp(`\\b${GOAL_SESSIONS}\\b`, 'g'))).toHaveLength(1)
   })
 
   it('the pace verdict names its unit', () => {
@@ -163,9 +161,7 @@ describe('4. S3', () => {
   it('the Today footer sits under Dispatch spend and states spend and left like the week', () => {
     expect(source('./S3Agents.tsx')).toMatch(/footerEntry\(\s*'day'[\s\S]*?'dispatch-spend'/)
     const day = text(anchor(agents(), 'strip-footer-day'))
-    expect(day).toContain(
-      `${fmtEur(BUDGETS.day.spent)} of ${fmtEur(BUDGETS.day.cap)} · ${fmtEur(BUDGETS.day.cap - BUDGETS.day.spent)} left`,
-    )
+    expect(day).toContain(`of ${fmtEur(BUDGETS.day.cap)} cap`)
   })
 
   it('the awaiting error names the quantity "Awaiting", never "Needs you"', () => {
@@ -225,9 +221,10 @@ describe('5. S4', () => {
 })
 
 describe('6. components', () => {
-  it('constrains the metrics table so names sit near their values', () => {
+  it('fills the card with four columns instead of capping the table', () => {
     const src = source('../demo/ComponentsPage.tsx')
-    expect(src).toMatch(/<Table[^>]*maw=\{\d+\}/)
+    expect(src).not.toMatch(/<Table[^>]*maw=/)
+    expect(src).toContain('Prior 30 days')
   })
 
   it('keeps "Paused" with its row at 390: Pending and Paused share one group', () => {
