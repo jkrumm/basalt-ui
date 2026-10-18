@@ -351,9 +351,7 @@ describe('capture() with a fake browser', () => {
     const locator: Record<string, unknown> = {
       first: () => locator,
       count: () => Promise.resolve(1),
-      scrollIntoViewIfNeeded: () => Promise.resolve(),
       evaluate: () => Promise.resolve(''),
-      isVisible: () => Promise.resolve(true),
       screenshot: () => Promise.resolve(),
     }
     const page = {
@@ -365,7 +363,10 @@ describe('capture() with a fake browser', () => {
       keyboard: { press: () => Promise.resolve() },
       setContent: () => Promise.resolve(),
       evaluate: (expression: unknown) => {
-        if (typeof expression === 'function') return Promise.resolve().then(scale)
+        if (typeof expression === 'function')
+          return Promise.resolve().then(() =>
+            expression.name === 'readScaleInPage' ? scale() : undefined,
+          )
         if (String(expression).includes('data-shot-states'))
           return Promise.resolve({ anchors: ['card'], declared: [] })
         return Promise.resolve(undefined)
@@ -428,8 +429,6 @@ describe('focus state', () => {
     const locator: Record<string, unknown> = {
       first: () => locator,
       count: () => (countFails ? Promise.reject(new Error('locator died')) : Promise.resolve(1)),
-      scrollIntoViewIfNeeded: () => Promise.resolve(),
-      isVisible: () => Promise.resolve(true),
       screenshot: () => Promise.resolve(),
       boundingBox: () => Promise.resolve({ x: 0, y: 0, width: 10, height: 10 }),
       evaluate: () =>
@@ -553,8 +552,6 @@ describe('scaleError', () => {
     const locator: Record<string, unknown> = {
       first: () => locator,
       count: () => Promise.resolve(1),
-      scrollIntoViewIfNeeded: () => Promise.resolve(),
-      isVisible: () => Promise.resolve(true),
       screenshot: () => Promise.resolve(),
     }
     const page = {
@@ -701,8 +698,6 @@ describe('tooltip lookup', () => {
     const element: Record<string, unknown> = {
       first: () => element,
       count: () => Promise.resolve(1),
-      scrollIntoViewIfNeeded: () => Promise.resolve(),
-      isVisible: () => Promise.resolve(true),
       hover: () => Promise.resolve(),
       screenshot: () => Promise.resolve(),
       boundingBox: () => Promise.resolve(ANCHOR),
@@ -776,9 +771,7 @@ describe('contact sheets', () => {
     const locator: Record<string, unknown> = {
       first: () => locator,
       count: () => Promise.resolve(1),
-      scrollIntoViewIfNeeded: () => Promise.resolve(),
       evaluate: () => Promise.resolve(''),
-      isVisible: () => Promise.resolve(true),
       screenshot: (o: { path: string }) => {
         writeFileSync(o.path, png)
         shots.push(o.path)
@@ -846,9 +839,7 @@ describe('contact sheets', () => {
                     return this
                   },
                   count: () => Promise.resolve(1),
-                  scrollIntoViewIfNeeded: () => Promise.resolve(),
                   evaluate: () => Promise.resolve(''),
-                  isVisible: () => Promise.resolve(true),
                   screenshot: () => Promise.resolve(),
                 }),
                 screenshot: () => Promise.resolve(),
@@ -922,8 +913,6 @@ describe('hover and focus crops include an opened tooltip', () => {
     const element: Record<string, unknown> = {
       first: () => element,
       count: () => Promise.resolve(1),
-      scrollIntoViewIfNeeded: () => Promise.resolve(),
-      isVisible: () => Promise.resolve(true),
       hover: () => Promise.resolve(),
       screenshot: () => {
         clips.push('element')
@@ -1663,8 +1652,6 @@ describe('data trust in capture', () => {
     const locator: Record<string, unknown> = {
       first: () => locator,
       count: () => Promise.resolve(1),
-      scrollIntoViewIfNeeded: () => Promise.resolve(),
-      isVisible: () => Promise.resolve(true),
       screenshot: () => Promise.resolve(),
       hover: () => Promise.resolve(hooks.hover?.()),
       evaluate: () => Promise.resolve(''),

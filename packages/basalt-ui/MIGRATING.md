@@ -1144,9 +1144,10 @@ thin layout in a wide card, constrain the list's width below 480px.
 
 ### `basalt-ui shot` captures tall anchors and keeps chrome off crops; `init` wires a stock Vite app
 
-**Changed:** an anchor that is not rendered at a viewport (a hidden mobile pane, `display: none`) is
-now recorded `absent` with the reason in under 5 s, where it used to be an `error` after a 30 s
-Playwright wait; a hung step costs 5 s, never 30. Crops of an anchor hide the shell's fixed and
+**Changed:** an anchor that is not rendered at a viewport (a hidden mobile pane, `display: none`) now
+fails in under 5 s with the reason, where it used to wait out a 30 s Playwright timeout: a hover,
+focus or tooltip shot is recorded `absent`, a `rest` shot stays an `error` unless the anchor
+declares `data-shot-absent="rest"`. A hung step costs 5 s, never 30. Crops of an anchor hide the shell's fixed and
 sticky chrome (PageBar, mobile bottom nav) for the shot, and an anchor taller than the viewport is
 captured whole (the viewport grows for that shot). The `_page` shot grows the viewport by what an
 inner scrollport hides, so it reaches the end of the page at 390 with the chrome kept. Focus, hover

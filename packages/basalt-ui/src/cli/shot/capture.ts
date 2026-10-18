@@ -280,15 +280,22 @@ export function revealInPage(el: Element): string {
 }
 
 /**
- * Brings the anchor into view; throws `Absent` (with the reason) when it is hidden, `Error` when it
- * does not exist. No Playwright wait is involved, so neither costs more than a step.
+ * Brings the anchor into view. A hidden anchor is `absent` (with the reason) only where hiding is
+ * expected: a pointer/focus state, or a state it declared itself absent in. A hidden `rest` anchor
+ * (or URL state) is a defect, so it stays an `Error`, as does a missing one. No Playwright wait is
+ * involved, so none of them costs more than a step.
  */
-async function reveal(anchor: PwLocator): Promise<void> {
+async function reveal(c: Ctx, name: string, state: ShotState): Promise<void> {
+  const anchor = anchorOf(c, name)
   if ((await within('locating the anchor', anchor.count())) === 0)
     throw new Error('anchor not found')
   const verdict = await within('revealing the anchor', anchor.evaluate(revealInPage))
-  if (typeof verdict === 'string' && verdict !== '')
-    throw new Absent(`not visible at this viewport (${verdict})`)
+  if (typeof verdict === 'string' && verdict !== '') {
+    const note = `not visible at this viewport: ${verdict}`
+    const expected = state === 'hover' || state === 'focus' || state === 'tooltip'
+    const declared = c.facts.absent?.[name]?.includes(state) === true
+    throw expected || declared ? new Absent(note) : new Error(note)
+  }
   await sleep(REVEAL_SETTLE_MS)
 }
 
@@ -315,7 +322,8 @@ async function resize(c: Ctx, height: number): Promise<void> {
 
 /**
  * Runs in the page: hides (`visibility`, kept in layout) every fixed or sticky element that is not
- * the anchor, inside it, or around it, and not a popup, so the shell's PageBar and bottom nav are
+ * the anchor, inside it, or around it, and not an open popup (a nav that merely owns a closed
+ * `role=menu` is chrome), so the shell's PageBar and bottom nav are
  * never drawn over a crop. A popup that opens later is not hidden: it did not exist yet.
  */
 export function hideChrome(name: string): void {
@@ -323,11 +331,17 @@ export function hideChrome(name: string): void {
     (el) => el.getAttribute('data-shot') === name,
   )
   const popup = '[role="tooltip"], [role="dialog"], [role="listbox"], [role="menu"]'
+  const shown = (e: Element): boolean => {
+    const { width, height } = e.getBoundingClientRect()
+    return width > 0 && height > 0
+  }
+  const isOpenPopup = (e: Element, sel: string): boolean =>
+    (e.matches(sel) && shown(e)) || Array.from(e.querySelectorAll(sel)).some(shown)
   for (const el of Array.from(document.body.querySelectorAll('*'))) {
     const { position } = getComputedStyle(el)
     if (position !== 'fixed' && position !== 'sticky') continue
     if (anchor && (el.contains(anchor) || anchor.contains(el))) continue
-    if (el.matches(popup) || el.querySelector(popup)) continue
+    if (isOpenPopup(el, popup)) continue
     const style = (el as HTMLElement).style
     el.setAttribute('data-shot-chrome', style.getPropertyValue('visibility'))
     style.setProperty('visibility', 'hidden', 'important')
@@ -348,30 +362,22 @@ export function showChrome(): void {
 /**
  * Prepares the page for one anchor's crops: shell chrome hidden, and the viewport grown to hold an
  * anchor taller than it (the anchor's own scrollport would otherwise paint it blank below the first
- * screen). Returns the undo. Best effort: a page that cannot be framed is still shot as it stands.
+ * screen). Returns the undo.
  */
 async function frame(c: Ctx, name: string): Promise<() => Promise<void>> {
   const spec = VIEWPORT_SPECS[c.viewport]
-  try {
-    await c.page.evaluate(hideChrome, name)
-    const height = Number(
-      await within(
-        'measuring the anchor',
-        anchorOf(c, name).evaluate((el) => el.getBoundingClientRect().height),
-      ),
-    )
-    if (height > spec.height)
-      await resize(c, Math.min(MAX_VIEWPORT_PX, Math.ceil(height) + spec.height))
-  } catch {
-    // Not framed: the crop is taken against the page as it is.
-  }
+  await c.page.evaluate(hideChrome, name)
+  const height = Number(
+    await within(
+      'measuring the anchor',
+      anchorOf(c, name).evaluate((el) => el.getBoundingClientRect().height),
+    ),
+  )
+  if (height > spec.height)
+    await resize(c, Math.min(MAX_VIEWPORT_PX, Math.ceil(height) + spec.height))
   return async () => {
-    try {
-      await c.page.evaluate(showChrome, undefined)
-      if (c.height !== spec.height) await resize(c, spec.height)
-    } catch {
-      // The next route reloads the page.
-    }
+    await c.page.evaluate(showChrome, undefined)
+    if (c.height !== spec.height) await resize(c, spec.height)
   }
 }
 
@@ -390,18 +396,13 @@ export function hiddenScrollPx(): number {
 /** The whole page: the viewport grows by what an inner scrollport hides, with the chrome kept. */
 async function fullPage(c: Ctx, path: string): Promise<void> {
   const spec = VIEWPORT_SPECS[c.viewport]
-  let extra = 0
-  try {
-    extra = Number(await c.page.evaluate(hiddenScrollPx, undefined))
-  } catch {
-    // Unmeasurable: plain fullPage.
-  }
-  const grown = Number.isFinite(extra) && extra > 0
+  const extra = Number(await c.page.evaluate(hiddenScrollPx, undefined))
+  const grown = extra > 0
   if (grown) await resize(c, Math.min(MAX_VIEWPORT_PX, spec.height + Math.ceil(extra)))
   try {
     await snap(c.page, path, { fullPage: true })
   } finally {
-    if (grown) await resize(c, spec.height).catch(() => undefined)
+    if (grown) await resize(c, spec.height)
   }
 }
 
@@ -417,8 +418,9 @@ async function attempt(
   note?: string,
 ): Promise<void> {
   const file = fileName(c.route, name, c.scheme, c.viewport, state)
-  const unframe = name === PAGE_ANCHOR ? undefined : await frame(c, name)
+  let unframe: (() => Promise<void>) | undefined
   try {
+    if (name !== PAGE_ANCHOR) unframe = await frame(c, name)
     await run(join(c.input.pngDir, file))
   } catch (error) {
     const status =
@@ -456,14 +458,13 @@ const skipOnMobile = (c: Ctx, name: string, state: ShotState): boolean => {
   return true
 }
 
-const restCrop = async (c: Ctx, name: string, path: string): Promise<void> => {
-  const anchor = anchorOf(c, name)
-  await reveal(anchor)
-  await snap(anchor, path)
+const restCrop = async (c: Ctx, name: string, state: ShotState, path: string): Promise<void> => {
+  await reveal(c, name, state)
+  await snap(anchorOf(c, name), path)
 }
 
 async function captureRest(c: Ctx, name: string): Promise<void> {
-  await attempt(c, name, 'rest', (path) => restCrop(c, name, path))
+  await attempt(c, name, 'rest', (path) => restCrop(c, name, 'rest', path))
 }
 
 /**
@@ -557,7 +558,7 @@ async function captureHover(c: Ctx, name: string): Promise<void> {
   if (skipOnMobile(c, name, 'hover')) return
   await attempt(c, name, 'hover', async (path) => {
     const anchor = anchorOf(c, name)
-    await reveal(anchor)
+    await reveal(c, name, 'hover')
     const inner = c.page.locator(`${sel(name)} [data-shot-hover]`).first()
     const target = (await inner.count()) > 0 ? inner : anchor
     await c.page.evaluate(markVisibleTooltips, undefined)
@@ -609,7 +610,7 @@ async function captureFocus(c: Ctx, name: string): Promise<void> {
     const anchor = anchorOf(c, name)
     if (!(await anchor.evaluate(hasFocusTarget)))
       throw new NotDeclared('no focus target in the anchor')
-    await reveal(anchor)
+    await reveal(c, name, 'focus')
     await c.page.evaluate(markVisibleTooltips, undefined)
     await tabInto(c.page, name)
     // Focus scrolls the nearest scrollport on its own terms (under a sticky bar, mid-animation): put
@@ -637,7 +638,7 @@ async function captureTooltip(c: Ctx, name: string): Promise<void> {
   await attempt(c, name, 'tooltip', async (path) => {
     if ((await trigger.count()) === 0) throw new NotDeclared('no [data-shot-tooltip] in the anchor')
     const anchor = anchorOf(c, name)
-    await reveal(anchor)
+    await reveal(c, name, 'tooltip')
     await c.page.evaluate(markVisibleTooltips, undefined)
     await hoverTrigger(trigger)
     const describedBy = idOf(await trigger.evaluate(describedByOf))
@@ -692,7 +693,7 @@ async function captureUrlState(c: Ctx, state: ShotState): Promise<void> {
       continue
     }
     const note = restNames.includes(name) ? undefined : 'anchor only present in this state'
-    await attempt(c, name, state, (path) => restCrop(c, name, path), note)
+    await attempt(c, name, state, (path) => restCrop(c, name, state, path), note)
   }
 }
 
