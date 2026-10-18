@@ -1192,6 +1192,18 @@ A strip cell's error body now says `Could not load` instead of `Failed`, matchin
 Opt-out: `Code` has no `radius` prop — set `--basalt-code-radius` on an ancestor or `styles={{ root: {
 borderRadius } }}` on the `Code`; for the indicator, `styles={{ indicator: { borderRadius } }}` on the
 `SegmentedControl`.
+### One error wording, bar Sparkline hover chrome (round r2)
+
+No export is removed and none is added. Two defaults move.
+
+| Surface                      | Before                                     | Now                                                                   |
+| ---------------------------- | ------------------------------------------ | --------------------------------------------------------------------- |
+| `ErrorState` with no `title` | `Something went wrong`                     | `Could not load`, the wording every other error default uses          |
+| `Sparkline mark="bar"` hover | a point marker and a leader dot on the bar | none: the bar and the readout chip are the marker (a line keeps both) |
+
+Opt-out: pass `title="Something went wrong"` to `ErrorState`. The `BasaltDataTable` error
+already renders the shared anatomy (status dot, title, message, Retry); an app that rebuilds it with
+`EmptyState` and a search glyph should drop that and pass `query`.
 
 ## 2.22.0 — Wave 37, argo's friction II
 

@@ -582,4 +582,24 @@ layout('BasaltDataTable sticky header — real layout', () => {
       throw new Error(`LAYOUT INVARIANT VIOLATED — ${empty} header cell(s) carry no label at all`)
     }
   })
+
+  test('a table error renders the error anatomy and never the empty glyph', async () => {
+    const p = await openFixture(
+      { ...tableSpec(), table: { rows: 8, columns: 3, stickyHeader: false, error: true } },
+      DESKTOP,
+    )
+    const m = await p.raw.evaluate(() => {
+      const alert = document.querySelector('table [role="alert"]')
+      return {
+        glyph: document.querySelectorAll('[data-testid="empty-glyph"]').length,
+        dot: alert?.querySelectorAll('[data-basalt-status-dot]').length ?? 0,
+        title: alert?.textContent ?? '',
+        retry: alert?.querySelectorAll('button').length ?? 0,
+      }
+    })
+    expect(m.glyph).toBe(0)
+    expect(m.dot).toBe(1)
+    expect(m.title).toContain('Could not load')
+    expect(m.retry).toBe(1)
+  })
 })

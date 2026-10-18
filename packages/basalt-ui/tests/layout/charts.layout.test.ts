@@ -712,6 +712,30 @@ layout('Charts — 2.0 layout', () => {
     expect(await markers(bars)).toBe(0)
   })
 
+  test('a bar Sparkline hover draws no point marker and no leader dot; a line one does', async () => {
+    const hoverSpark = async (spec: ChartsSpec): Promise<{ dot: number; marker: number }> => {
+      const p = await openFixture(chartFixture(spec), DESKTOP)
+      await p.settle()
+      const box = await p.raw.evaluate(() => {
+        const r = document.querySelector('[data-basalt-sparkline]')?.getBoundingClientRect()
+        if (!r) throw new Error('LAYOUT: no sparkline')
+        return { x: r.x, y: r.y, w: r.width, h: r.height }
+      })
+      await p.raw.mouse.move(box.x + box.w * 0.5, box.y + box.h / 2)
+      await p.raw.mouse.move(box.x + box.w * 0.3, box.y + box.h / 2)
+      await p.settle()
+      return p.raw.evaluate(() => ({
+        dot: document.querySelectorAll('[data-basalt-sparkline-dot]').length,
+        marker: document.querySelectorAll('[data-basalt-sparkline] .ts-chart__focus-layer circle')
+          .length,
+      }))
+    }
+    const bar = await hoverSpark({ kind: 'spark', sparkBars: true, height: 22, width: 240 })
+    expect(bar).toEqual({ dot: 0, marker: 0 })
+    const line = await hoverSpark({ kind: 'spark', sparkRows: 12, height: 22, width: 240 })
+    expect(line.dot).toBeGreaterThan(0)
+  })
+
   test('a Bars reference caption never lands on a bar', async () => {
     const p = await openFixture(
       chartFixture({ kind: 'ref-bars', width: 640, height: 300 }),

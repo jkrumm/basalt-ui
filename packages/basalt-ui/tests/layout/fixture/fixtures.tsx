@@ -30,6 +30,7 @@ import { FilterSet, FormRow, SelectFilter, SyncButton, ViewTabs } from '../../..
 import { BasaltDataTable } from '../../../src/table'
 import type { DataTableFacet } from '../../../src/table/data-table'
 import type { BasaltColumnDef } from '../../../src/table/table-features'
+import { EmptyState } from '../../../src/dashboard/empty-state'
 import { Callout, Prose } from '../../../src/content'
 import { CodeBlock } from '../../../src/content/code-block'
 import {
@@ -237,6 +238,16 @@ function TableFixture({ spec }: { spec: TableSpec }): ReactElement {
       })}
       {...(spec.search === true && { enableGlobalFilter: true, title: 'Projects' })}
       {...(facets.length > 0 && { facets })}
+      {...(spec.error === true && {
+        query: {
+          data: undefined,
+          isError: true,
+          error: new Error('The rows failed to load.'),
+          fetchStatus: 'idle' as const,
+          refetch: () => Promise.resolve(),
+        },
+        emptyState: <EmptyState icon={<span data-testid="empty-glyph">⌕</span>} title="No rows" />,
+      })}
     />
   )
 }

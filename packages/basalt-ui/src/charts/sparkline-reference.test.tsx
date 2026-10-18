@@ -180,7 +180,7 @@ describe('Sparkline readout', () => {
     await focus(el)
     expect(readout(el)).toBeNull()
   })
-  test('the dot lands on the point: line, and a bar with a negative value', async () => {
+  test('the dot lands on a line point; a bar draws none but still reads its value', async () => {
     const line = await mount(<Sparkline ariaLabel="S" data={data} height={30} />)
     await focus(line)
     // x domain [-0.16, 4.16] (end-dot air), y domain [6, 54]; the last point is (4, 50).
@@ -191,9 +191,8 @@ describe('Sparkline readout', () => {
     const bar = await mount(<Sparkline ariaLabel="S" data={[-10, 20, 30]} height={30} mark="bar" />)
     await focus(bar)
     await key(bar, 'Home')
-    // Band centre of bar 0 of 3; y domain [-10, 30], so -10 sits on the bottom edge.
-    expect(dotAt(bar).left).toBeCloseTo((0.5 / 3) * 100, 1)
-    expect(dotAt(bar).top).toBeCloseTo(100, 1)
+    // The bar is its own marker: no leader dot.
+    expect(bar.querySelector('[data-basalt-sparkline-dot]')).toBeNull()
     expect(readout(bar)?.textContent).toContain('-10')
   })
   test('pointer hover on a bar sparkline reads the bar under the cursor', async () => {
