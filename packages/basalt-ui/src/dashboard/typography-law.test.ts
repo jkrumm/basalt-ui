@@ -119,9 +119,8 @@ describe('max three font sizes per component', () => {
 
 describe('the heading face', () => {
   test('does not enable the slashed zero and keeps lining figures', () => {
-    // The head-face rule is one selector list (h1–h6, Title, Alert/Modal/Drawer titles, inline use); its last entry closes it.
-    const r = rule(styles, "[style*='basalt-font-head']")
-    expect(r).toContain("font-feature-settings: 'zero' 0")
-    expect(r).toContain('font-variant-numeric: lining-nums')
+    // The zero reset is one `:root` rule (every head-face surface inherits it); the heading rule keeps lining figures.
+    expect(styles).toMatch(/:root\s*\{\s*font-feature-settings:\s*'zero'\s*0;\s*\}/)
+    expect(rule(styles, '.mantine-Title-root')).toContain('font-variant-numeric: lining-nums')
   })
 })

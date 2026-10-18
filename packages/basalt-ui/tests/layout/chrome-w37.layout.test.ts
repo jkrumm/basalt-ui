@@ -67,6 +67,22 @@ layout('Wave 37 chrome', () => {
       expect((await probe(p, 'w37-badge-hex')).dotBg).toBe('rgb(224, 49, 49)')
     })
 
+    test(`${scheme}: a module-styled head-face title (Callout) resolves the zero feature off`, async () => {
+      const p = await openFixture(specFor(scheme), DESKTOP_1440)
+      await p.settle()
+      const title = await p.raw.evaluate(() => {
+        const root = document.querySelector('[data-testid="w37-callout"]')!
+        const el = [...root.querySelectorAll<HTMLElement>('*')].find(
+          (e) => e.textContent === 'Over 2026, 90 days' && e.children.length === 0,
+        )!
+        const style = getComputedStyle(el)
+        return { family: style.fontFamily, features: style.fontFeatureSettings, tag: el.tagName }
+      })
+      expect(title.family).toContain('Hubot Sans')
+      expect(title.tag).not.toMatch(/^H[1-6]$/)
+      expect(title.features).toBe('"zero" 0')
+    })
+
     test(`${scheme}: variant="dot" keeps its own dot`, async () => {
       const p = await openFixture(specFor(scheme), DESKTOP_1440)
       await p.settle()
