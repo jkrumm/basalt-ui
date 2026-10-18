@@ -92,3 +92,32 @@ choice); the playground has not adopted the new props (dated Sparkline points, `
 page format locale, so three date formats remain); the strip error says "Failed" where cards say "Could not load"; a
 table error shows the empty-state glyph; a Sparkline bar mark still draws a point marker; the Filled Button hover
 still reads as rest on the board.
+
+## Round 3 — batch 3 on master (r3, `863f5b5e`, 728 ok shots, 16 absent, 0 failed)
+
+Landed since r2: #409 (daily tooltip headers keep weekday and year, Sparkline reference label off its line, one-item
+`period` separator, whole-step ticks without decimals, BandStrip narrow-cell notch, end labels clamped, no bare "No
+data" default), #410 (strip cells declare `shotAbsent`, inherited from `StatGroup`; a null Meter prints no filler; Alert ×
+Code and the SegmentedControl indicator step 3 px under their track), #411 (playground adopts dated Sparkline points,
+`MeterTick.caption`, footer `under`, the en-GB page format locale), #412 (one error title, "Could not load"; no point
+marker on a bar Sparkline). `make check` green on `863f5b5e`; master CI green. Detector B: no findings, score 100.
+
+| Route                 | r2 → r3 score | fixed | carried | new | unscored | Keel                                        |
+| --------------------- | ------------- | ----- | ------- | --- | -------- | ------------------------------------------- |
+| S2 training           | 87 → 71       | 3     | 8       | 3   | 1        | close (goal meter annotation)               |
+| S3 agents             | 83 → 80       | 9     | 5       | 3   | 4        | close (ragged strip under the day meter)    |
+| S4 spend + components | 74 → 74       | 9     | 10      | 2   | 6        | close / close (forecast ends; Filled hover) |
+
+The S2 drop is one card: the goal Meter now carries five captions (0, the reading, Pace, the target), and "Target 28
+sessions" wraps and clips at the card edge in both schemes at 1440 and 390 (P1) while the headline also states 28. The
+reading caption sits at the track start, ~270 px from the fill end. That is #402's start/target defaults meeting
+#411's adoption on a narrow card; the next wave owns it.
+
+Still open (basalt): errored and empty chart bodies keep the loaded height (P2 on every chart card; SPEC D37: the
+SSR-first contract and the rubric conflict — owner decision); Sparkline readout chips cover 55–110 px of the line, and
+the failures chip truncates at 1440; the zone-name fit at 390 (readiness "Good" dropped, "Over" short form); a footer
+meter `under` one cell makes the strip ragged and does not follow at 390; the Filled Button hover still reads as rest on
+the sizes anchors (the `buttons-variants` hover now changes); the delta glyph drifts from its figure in a wide column; a
+y-axis unit dropped at 390. Still open (playground): the Budget tick figure and the Forecast caption position (the
+playground does not pass `caption`), fragment headlines on the distribution card, a table error title off the house
+wording, a status badge without a dot.
