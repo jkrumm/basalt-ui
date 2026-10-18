@@ -156,7 +156,6 @@ function MetricsTable({ shotState }: { shotState?: ShotState | undefined }) {
   if (shotState === 'error') {
     return (
       <EmptyState
-        icon={<IconSearch />}
         title="Could not load metrics"
         description="Retry, or check the analytics connection."
         action={
@@ -236,13 +235,17 @@ export function ComponentsSurfaces({ shotState }: { shotState?: ShotState | unde
               </Box>
               <Box data-shot="buttons-sizes-small">
                 <Group gap="sm" align="center">
-                  <Button size="xs">Extra small</Button>
+                  <Button size="xs" variant="filled" data-shot-hover>
+                    Extra small
+                  </Button>
                   <Button size="sm">Small</Button>
                 </Group>
               </Box>
               <Box data-shot="buttons-sizes-large">
                 <Group gap="sm" align="center">
-                  <Button size="md">Medium</Button>
+                  <Button size="md" variant="filled" data-shot-hover>
+                    Medium
+                  </Button>
                   <Button size="lg">Large</Button>
                 </Group>
               </Box>
