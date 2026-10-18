@@ -690,6 +690,7 @@ function buildTheme(data: PaletteData, options: BuildThemeOptions = {}): Mantine
                   ? 'calc(var(--vx-space-control-height) * var(--mantine-scale))'
                   : undefined,
               '--button-padding-x': buttonPaddingX(props.size),
+              '--vx-button-section-x': buttonSectionX(props.size),
               '--button-color': ink.color,
               '--button-hover': ink.hover,
               '--button-bg': ink.bg,
@@ -1253,6 +1254,31 @@ const BUTTON_PADDING_X: Record<string, string> = {
 function buttonPaddingX(size: unknown): string | undefined {
   const steps = BUTTON_PADDING_X[typeof size === 'string' ? size : 'sm']
   return steps === undefined ? undefined : `calc((${steps}) * var(--mantine-scale))`
+}
+
+/**
+ * The inset on a Button's section side, a step of the same stack scale. Mantine derives it as
+ * `--button-padding-x / 1.5` (`Button.css`, `[data-with-left-section]` / `[data-with-right-section]`),
+ * which lands at 10.67 / 13.33 / 21.33 / 5.33 px — off the scale. Each size takes the nearest step to
+ * that quotient at level 0 (xs 8, sm 12, md 12, lg 16, xl 24; compact-xs/sm 4, compact-md/lg 8,
+ * compact-xl 12; `ctl` 6.67 → 8). Undefined sizes keep Mantine's own value.
+ */
+const BUTTON_SECTION_X: Record<string, string> = {
+  xs: 'var(--vx-space-stack-sm)',
+  sm: 'var(--vx-space-stack-md)',
+  md: 'var(--vx-space-stack-md)',
+  lg: 'var(--vx-space-stack-lg)',
+  xl: 'var(--vx-space-stack-xl)',
+  ctl: 'var(--vx-space-stack-sm)',
+  'compact-xs': 'var(--vx-space-stack-xs)',
+  'compact-sm': 'var(--vx-space-stack-xs)',
+  'compact-md': 'var(--vx-space-stack-sm)',
+  'compact-lg': 'var(--vx-space-stack-sm)',
+  'compact-xl': 'var(--vx-space-stack-md)',
+}
+function buttonSectionX(size: unknown): string | undefined {
+  const step = BUTTON_SECTION_X[typeof size === 'string' ? size : 'sm']
+  return step === undefined ? undefined : `calc(${step} * var(--mantine-scale))`
 }
 
 /**

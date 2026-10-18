@@ -135,6 +135,16 @@ html[data-mantine-color-scheme] .inputWrapper[data-variant='default']:not([data-
   transition: box-shadow 120ms ease;
 }
 
+/* Section-side inset on the stack scale (`buttonSectionX`, theme/index.ts) — beats Mantine's
+ * zero-specificity `:where([data-with-*-section])` `padding-x / 1.5`. */
+.buttonRoot[data-with-left-section] {
+  padding-inline-start: var(--vx-button-section-x, calc(var(--button-padding-x) / 1.5));
+}
+
+.buttonRoot[data-with-right-section] {
+  padding-inline-end: var(--vx-button-section-x, calc(var(--button-padding-x) / 1.5));
+}
+
 .buttonRoot[data-variant='default'],
 .buttonRoot[data-variant='filled'],
 .buttonRoot[data-variant='light'] {
