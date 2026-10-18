@@ -719,6 +719,32 @@ function AsideBar(): ReactElement {
   )
 }
 
+const BUTTON_SECTION_SIZES = ['xs', 'sm', 'md', 'lg', 'xl', 'ctl', 'compact-sm'] as const
+
+/** Every size x variant, each bare / with a `leftSection` / with a `rightSection`. */
+function ButtonSectionsFixture(): ReactElement {
+  const dot = <span style={{ width: 8, height: 8 }} />
+  return (
+    <div>
+      {BUTTON_SECTION_SIZES.flatMap((size) =>
+        (['default', 'filled'] as const).map((variant) => (
+          <div key={`${size}-${variant}`} data-testid={`btn-${size}-${variant}`}>
+            <Button size={size} variant={variant}>
+              Label
+            </Button>
+            <Button size={size} variant={variant} leftSection={dot}>
+              Label
+            </Button>
+            <Button size={size} variant={variant} rightSection={dot}>
+              Label
+            </Button>
+          </div>
+        )),
+      )}
+    </div>
+  )
+}
+
 /** Section ids are `s1…sN`; the rail's labels are `Section 1…N`. */
 function TocFixture({ spec }: { spec: TocSpec }): ReactElement {
   const articleRef = useRef<HTMLDivElement>(null)
@@ -1623,6 +1649,7 @@ export function ShellFixture({ spec }: { spec: FixtureSpec }): ReactElement {
       {spec.anchor && <AnchorFixture />}
       {spec.aside && !spec.aside.noBar && <AsideBar />}
       {spec.bar && <BarFixture spec={spec.bar} />}
+      {spec.buttonSections && <ButtonSectionsFixture />}
       {spec.stats !== undefined && (
         <StatsFixture count={spec.stats} wide={spec.statsWide === true} />
       )}

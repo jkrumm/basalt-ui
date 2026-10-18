@@ -321,6 +321,8 @@ export type FixtureSpec = {
   bodyHeight?: number
   /** Renders a `BasaltDataTable` above the filler. Omitted ⇒ no table in the tree. */
   table?: TableSpec
+  /** Renders every Button size x variant with no / a left / a right section (`button-section`). */
+  buttonSections?: true
   /** Renders a `PageBar` carrying real controls. Omitted ⇒ no bar of its own (see `aside`). */
   bar?: BarSpec
   /** Renders a `StatGroup` of this many `StatCard`s, each with a bled `BarSparkline`. */
