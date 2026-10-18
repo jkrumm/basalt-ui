@@ -3,7 +3,7 @@
  * the managed-file manifest engine back from `./index`, this package's shared CLI helpers, and the
  * oxlint-preset plugin reader from `./sync` (also called there).
  */
-import { existsSync } from 'node:fs'
+import { existsSync, readFileSync } from 'node:fs'
 import { resolve } from 'node:path'
 
 import { deriveSpacing } from '../tokens/core'
@@ -34,7 +34,8 @@ import {
   writeFileEnsuringDir,
   writeUnit,
 } from './index'
-import { seedTsconfigExtends } from './doctor-upgrade'
+import { ROUTER_PLUGIN_FIX, seedTsconfigExtends } from './doctor-upgrade'
+import { routerSeedDest } from './router-wiring'
 import { readOxlintPresetPlugins } from './sync'
 
 /**
@@ -56,6 +57,60 @@ const KEPT_FILE_COST: Record<string, string> = {
   '.oxfmtrc.json': 'your existing formatter config stands; basalt formats nothing on its own.',
   'DESIGN.md': 'the design brief Claude reads is yours, not the seeded one.',
 }
+
+/** Strips what a formatter changes: whitespace, semicolons, quote style and trailing commas. */
+const squash = (code: string): string =>
+  code.replace(/\s+/g, '').replace(/;/g, '').replace(/"/g, "'").replace(/,\)/g, ')')
+
+const STOCK_MAIN = [true, false].flatMap((css) =>
+  ['.tsx', ''].map((ext) =>
+    squash(
+      [
+        "import { StrictMode } from 'react'",
+        "import { createRoot } from 'react-dom/client'",
+        css ? "import './index.css'" : '',
+        `import App from ${JSON.stringify(`./App${ext}`)}`,
+        "createRoot(document.getElementById('root')!).render(<StrictMode><App /></StrictMode>)",
+      ].join('\n'),
+    ),
+  ),
+)
+
+/** Whether `text` is create-vite's react-ts `main.tsx`, untouched (formatting aside): never an edited file. */
+export const isStockViteMain = (text: string): boolean => STOCK_MAIN.includes(squash(text))
+
+const ALSO_REQUIRED_PEERS = ['motion']
+
+/** The required peers of `.` (plus the ones `styles.css` imports) the app does not declare yet, with their ranges. */
+function missingPeers(cwd: string, pkgRoot: string): Record<string, string> {
+  const shipped = JSON.parse(readFileSync(resolve(pkgRoot, 'package.json'), 'utf8')) as {
+    peerDependencies?: Record<string, string>
+    peerDependenciesMeta?: Record<string, { optional?: boolean }>
+  }
+  const app = JSON.parse(readFileSync(resolve(cwd, 'package.json'), 'utf8')) as Record<
+    string,
+    Record<string, string> | undefined
+  >
+  const declared = new Set(
+    ['dependencies', 'devDependencies', 'peerDependencies'].flatMap((k) =>
+      Object.keys(app[k] ?? {}),
+    ),
+  )
+  return Object.fromEntries(
+    Object.entries(shipped.peerDependencies ?? {}).filter(
+      ([name]) =>
+        !declared.has(name) &&
+        (shipped.peerDependenciesMeta?.[name]?.optional !== true ||
+          ALSO_REQUIRED_PEERS.includes(name)),
+    ),
+  )
+}
+
+const hasRouterPlugin = (cwd: string): boolean =>
+  ['vite.config.ts', 'vite.config.mts', 'vite.config.js', 'vite.config.mjs'].some((f) => {
+    const abs = resolve(cwd, f)
+    return existsSync(abs) && readFileSync(abs, 'utf8').includes('@tanstack/router-plugin')
+  })
 
 /** What happened to a kept `.oxlintrc.json`, by the merge result (null: `--no-merge-lint`). */
 function oxlintrcCost(merge: MergeLintResult | null): string {
@@ -149,6 +204,12 @@ export function init(cwd: string = process.cwd(), scaffoldFlags: ScaffoldFlags =
   )
   const files = managedFiles(placement, ctx.pkgRoot).filter((f) => !skippedSeeds.has(f.dest))
 
+  const mainDest = routerSeedDest(placement.appRel, 'main')
+  const mainPath = resolve(cwd, mainDest)
+  const stockMain =
+    !skippedSeeds.has(mainDest) &&
+    existsSync(mainPath) &&
+    isStockViteMain(readFileSync(mainPath, 'utf8'))
   const writtenFiles: string[] = []
   const keptFiles: string[] = []
   const missingSources: string[] = []
@@ -163,7 +224,7 @@ export function init(cwd: string = process.cwd(), scaffoldFlags: ScaffoldFlags =
     // Whole files (managed + seed) are skip-if-exists on init; a marker-spliced region always
     // inserts/updates itself inside its host file.
     const destExists = existsSync(resolve(cwd, file.dest))
-    if (!file.markers && destExists) {
+    if (!file.markers && destExists && !(stockMain && file.dest === mainDest)) {
       // Already present — keep the consumer's copy untouched. Record the SHIPPED hash (normalized,
       // same ledger form `writeUnit` uses) so a later sync treats a pre-existing-but-different file
       // as locally drifted (skip unless --force), never silently clobbering a file the consumer
@@ -186,6 +247,30 @@ export function init(cwd: string = process.cwd(), scaffoldFlags: ScaffoldFlags =
   const mergeLint: MergeLintResult | null =
     scaffoldFlags.noMergeLint === true ? null : mergeOxlintExtends(cwd, ctx.vars.OXLINT_PRESET_PATH)
 
+  // A stock Vite app: the entry was seeded above; add the peers it imports (the install is yours to run).
+  const keptMain = !stockMain && keptFiles.includes(mainDest)
+  let peerLines: string[] = []
+  if (stockMain || keptMain) {
+    const missing = missingPeers(cwd, ctx.pkgRoot)
+    const names = Object.entries(missing).map(([name, range]) => `${name}@${range}`)
+    if (names.length > 0 && stockMain) {
+      patchPackageJson(cwd, (pkg) => {
+        pkg['dependencies'] = {
+          ...((pkg['dependencies'] ?? {}) as Record<string, string>),
+          ...missing,
+        }
+        return true
+      })
+      peerLines = [
+        `added ${names.length} missing peer(s) to package.json "dependencies"; run \`bun install\` (init does not install).`,
+      ]
+    } else if (names.length > 0) {
+      peerLines = [`peers basalt-ui imports are not declared: \`bun add ${names.join(' ')}\`.`]
+    }
+    if (!hasRouterPlugin(cwd))
+      peerLines.push(ROUTER_PLUGIN_FIX.replace(/^Fix: /, 'router plugin: '))
+  }
+
   manifest.basaltVersion = ctx.vars.BASALT_VERSION
   manifest.spacingScale = { ...deriveSpacing(0).scale }
   writeFileEnsuringDir(resolve(cwd, MANIFEST_PATH), `${JSON.stringify(manifest, null, 2)}\n`)
@@ -194,6 +279,10 @@ export function init(cwd: string = process.cwd(), scaffoldFlags: ScaffoldFlags =
     `basalt-ui init: ${writtenFiles.length} written, ${keptFiles.length} kept, manifest at ${MANIFEST_PATH}`,
   )
   reportPrune(pruned)
+  if (stockMain) {
+    console.log(`basalt-ui init: seeded ${mainDest} (it was the unmodified Vite template).`)
+  }
+  for (const line of peerLines) console.log(`basalt-ui init: ${line}`)
   if (missingSources.length > 0) {
     console.log(
       `basalt-ui init: ${missingSources.length} shipped asset(s) not present, skipped: ${missingSources.join(', ')}`,

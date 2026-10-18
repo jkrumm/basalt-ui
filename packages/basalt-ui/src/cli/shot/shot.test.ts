@@ -352,6 +352,7 @@ describe('capture() with a fake browser', () => {
       first: () => locator,
       count: () => Promise.resolve(1),
       scrollIntoViewIfNeeded: () => Promise.resolve(),
+      evaluate: () => Promise.resolve(''),
       isVisible: () => Promise.resolve(true),
       screenshot: () => Promise.resolve(),
     }
@@ -776,6 +777,7 @@ describe('contact sheets', () => {
       first: () => locator,
       count: () => Promise.resolve(1),
       scrollIntoViewIfNeeded: () => Promise.resolve(),
+      evaluate: () => Promise.resolve(''),
       isVisible: () => Promise.resolve(true),
       screenshot: (o: { path: string }) => {
         writeFileSync(o.path, png)
@@ -845,6 +847,7 @@ describe('contact sheets', () => {
                   },
                   count: () => Promise.resolve(1),
                   scrollIntoViewIfNeeded: () => Promise.resolve(),
+                  evaluate: () => Promise.resolve(''),
                   isVisible: () => Promise.resolve(true),
                   screenshot: () => Promise.resolve(),
                 }),

@@ -9,6 +9,7 @@
  * |-|-|-|
  * | scan/shot-error              | content | P0                                                |
  * | scan/no-anchors              | content | P0                                                |
+ * | craft-7/no-declared-states   | content | P1                                                |
  * | craft-5/contrast             | content | P0                                                |
  * | craft-5/assumed-backdrop     | content | P2                                                |
  * | craft-1/scale-error, -missing| layout  | P1                                                |
@@ -28,7 +29,7 @@ import { existsSync, mkdirSync, readFileSync, renameSync, writeFileSync } from '
 import { isAbsolute, join, relative, resolve } from 'node:path'
 import { parseArgs } from 'node:util'
 
-import { PAGE_ANCHOR, SHOT_HOME } from './types'
+import { NO_STATES_NOTE, PAGE_ANCHOR, SHOT_HOME } from './types'
 import type { AnchorMetrics, Scale, ShotMetrics, Sides } from './types'
 
 export type Severity = 'P0' | 'P1' | 'P2' | 'P3'
@@ -288,6 +289,22 @@ export function detectFindings(m: ShotMetrics, lint?: LintReport): Finding[] {
       where: `${s.scheme}/${s.viewport}/${s.state}`,
       cite: `metrics.json shots[${s.name} ${s.scheme}/${s.viewport}/${s.state}]`,
       defect: `The shot failed${s.note ? `: ${s.note}` : ''}.`,
+    })
+  }
+  for (const route of new Set(
+    m.shots
+      .filter((s) => s.status === 'not-declared' && s.note === NO_STATES_NOTE)
+      .map((s) => s.route),
+  )) {
+    drafts.push({
+      ...scan,
+      rule: 'craft-7/no-declared-states',
+      severity: 'P1',
+      anchor: '—',
+      route,
+      cite: `metrics.json shots[${route} not-declared]`,
+      defect:
+        'No anchor declares data-shot-states, so empty, loading and error were never rendered or scored: declare them with data-shot-states.',
     })
   }
   if (m.scaleError || m.scale.length === 0) {

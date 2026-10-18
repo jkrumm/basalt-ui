@@ -1140,6 +1140,27 @@ named `basalt-card` (the only names the theme guard permits) with `inline-size: 
 enclosing card's container for the list's descendants only, and the 480px threshold measures the list's
 own width. Opt-out: `variant="inline"` is unchanged; to keep the stacked
 thin layout in a wide card, constrain the list's width below 480px.
+## Unreleased — the shot harness
+
+### `basalt-ui shot` captures tall anchors and keeps chrome off crops; `init` wires a stock Vite app
+
+**Changed:** an anchor that is not rendered at a viewport (a hidden mobile pane, `display: none`) is
+now recorded `absent` with the reason in under 5 s, where it used to be an `error` after a 30 s
+Playwright wait; a hung step costs 5 s, never 30. Crops of an anchor hide the shell's fixed and
+sticky chrome (PageBar, mobile bottom nav) for the shot, and an anchor taller than the viewport is
+captured whole (the viewport grows for that shot). The `_page` shot grows the viewport by what an
+inner scrollport hides, so it reaches the end of the page at 390 with the chrome kept. Focus, hover
+and tooltip crops read the anchor's box once it stops moving. A route whose anchors declare no
+`data-shot-states` logs a warning, its URL-state shots carry the note `page declares no
+data-shot-states`, and `shot detect` reports it as `craft-7/no-declared-states` (P1, exit 2).
+**Opt out:** none for the capture; declare `data-shot-states` on an anchor (`empty loading error`)
+to clear the finding.
+
+`basalt-ui init` over an unmodified create-vite `src/main.tsx` now replaces it with the seeded entry
+and adds the peers `basalt-ui` imports (Mantine, TanStack Router and Query, the three fonts,
+`motion`) to `package.json` `dependencies`; it prints `bun install` and never installs. An edited
+`main.tsx` is still left alone, with the wiring steps and the missing peers printed. **Opt out:**
+edit `main.tsx` before running `init`.
 
 ## 2.21.0 — strip cell state, one Retry, and the marker reading
 

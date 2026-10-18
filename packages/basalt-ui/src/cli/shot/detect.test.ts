@@ -80,6 +80,45 @@ describe('detectFindings', () => {
     expect(detectFindings(metrics())).toEqual([])
   })
 
+  test('craft-7/no-declared-states: a route whose states were all skipped for lack of a declaration (P1)', () => {
+    const skipped = (state: 'empty' | 'loading' | 'error', route = '/') =>
+      okShot({
+        route,
+        state,
+        file: null,
+        status: 'not-declared',
+        note: 'page declares no data-shot-states',
+      })
+    const m = metrics({
+      states: ['rest', 'empty', 'loading', 'error'],
+      shots: [
+        okShot(),
+        skipped('empty'),
+        skipped('loading'),
+        skipped('error'),
+        skipped('empty', '/b'),
+      ],
+    })
+    const found = detectFindings(m).filter((f) => f.rule === 'craft-7/no-declared-states')
+    expect(found.map((f) => f.route)).toEqual(['/', '/b'])
+    expect(found[0]).toMatchObject({ severity: 'P1', anchor: '—' })
+    expect(found[0]?.defect).toContain('data-shot-states')
+  })
+  test('a route that declares some state, or skipped one by choice, is not flagged', () => {
+    const m = metrics({
+      shots: [
+        okShot({ state: 'empty' }),
+        okShot({
+          state: 'loading',
+          file: null,
+          status: 'not-declared',
+          note: 'page does not declare this state',
+        }),
+      ],
+    })
+    expect(rules(m)).toEqual([])
+  })
+
   test('craft-1/off-scale-inset names the off-scale side (P1)', () => {
     const f = detectFindings(
       metrics({ anchors: [anchor({ padding: { ...SIDES, left: 10 } })] }),

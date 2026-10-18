@@ -9,7 +9,14 @@ import type { Pair } from './real-data'
 
 import { finishMeasurement, measureAnchor } from './measure'
 import type { Box, PwBrowser, PwContext, PwLocator, PwPage, ShotOptions } from './playwright'
-import { PAGE_ANCHOR, SCHEMES, URL_STATES, VIEWPORTS, VIEWPORT_SPECS } from './types'
+import {
+  NO_STATES_NOTE,
+  PAGE_ANCHOR,
+  SCHEMES,
+  URL_STATES,
+  VIEWPORTS,
+  VIEWPORT_SPECS,
+} from './types'
 import type {
   AnchorMetrics,
   Measurement,
@@ -22,6 +29,12 @@ import type {
 
 const NAV_TIMEOUT_MS = 30_000
 const HOVER_TIMEOUT_MS = 5_000
+/** Every Playwright wait a capture makes on one anchor: a hidden or tall target costs this, not 30 s. */
+const STEP_TIMEOUT_MS = 5_000
+const SHOT_TIMEOUT_MS = 15_000
+const REVEAL_SETTLE_MS = 60
+/** Chromium refuses screenshots past ~16k px; a taller anchor is captured as far as this. */
+const MAX_VIEWPORT_PX = 16_000
 const TOOLTIP_TIMEOUT_MS = 3_000
 const TAB_PRESSES = 80
 const FOCUS_MARGIN_PX = 8
@@ -62,6 +75,8 @@ type Ctx = {
   route: string
   scheme: Scheme
   viewport: Viewport
+  /** The viewport's current height: a tall anchor grows it for one shot. */
+  height: number
   facts: PageFacts
   anchors: AnchorMetrics[]
   shots: ShotRecord[]
@@ -83,6 +98,20 @@ type Outcome = {
 
 /** Thrown inside a capture when the anchor simply has no such target: recorded `not-declared`, not `error`. */
 class NotDeclared extends Error {}
+
+/** Thrown when the anchor is genuinely not rendered at this viewport: recorded `absent` with the reason. */
+class Absent extends Error {}
+
+const sleep = (ms: number): Promise<void> => new Promise((done) => setTimeout(done, ms))
+
+/** `work`, rejected after `ms`: one hung Playwright call never spends the 30 s default. */
+function within<T>(what: string, work: Promise<T>, ms = STEP_TIMEOUT_MS): Promise<T> {
+  let timer: ReturnType<typeof setTimeout> | undefined
+  const late = new Promise<never>((_, reject) => {
+    timer = setTimeout(() => reject(new Error(`${what} timed out after ${ms / 1000} s`)), ms)
+  })
+  return Promise.race([work, late]).finally(() => clearTimeout(timer))
+}
 
 const hash = (text: string): string => createHash('sha1').update(text).digest('hex').slice(0, 6)
 const slug = (text: string): string => text.replace(/[^\w-]+/g, '-').replace(/^-+|-+$/g, '')
@@ -108,9 +137,15 @@ export function withParam(route: string, state: ShotState): string {
   return `${path}${path.includes('?') ? '&' : '?'}shot-state=${state}${fragment}`
 }
 
-/** The rect union of `boxes`, grown by `margin` and clamped to the viewport. */
-export function unionClip(boxes: readonly Box[], margin: number, viewport: Viewport): Box {
-  const { width, height } = VIEWPORT_SPECS[viewport]
+/** The rect union of `boxes`, grown by `margin` and clamped to the viewport (`tall`: its current height). */
+export function unionClip(
+  boxes: readonly Box[],
+  margin: number,
+  viewport: Viewport,
+  tall?: number,
+): Box {
+  const { width, height: base } = VIEWPORT_SPECS[viewport]
+  const height = tall ?? base
   const left = Math.max(0, Math.min(...boxes.map((b) => b.x)) - margin)
   const top = Math.max(0, Math.min(...boxes.map((b) => b.y)) - margin)
   const right = Math.min(width, Math.max(...boxes.map((b) => b.x + b.width)) + margin)
@@ -123,7 +158,14 @@ const snap = (
   target: { screenshot(options: ShotOptions): Promise<unknown> },
   path: string,
   extra: { fullPage?: boolean; clip?: Box } = {},
-): Promise<unknown> => target.screenshot({ path, animations: 'disabled', caret: 'hide', ...extra })
+): Promise<unknown> =>
+  target.screenshot({
+    path,
+    animations: 'disabled',
+    caret: 'hide',
+    timeout: SHOT_TIMEOUT_MS,
+    ...extra,
+  })
 
 function record(c: Ctx, { name, state, status, file, note }: Outcome): void {
   const { route, scheme, viewport } = c
@@ -212,11 +254,155 @@ function flagProblems(c: Ctx): void {
   c.input.log(`[shot] ${c.route} ${c.scheme}/${c.viewport}: ${note}`)
 }
 
-/** Brings the anchor into view; throws when it is absent, hidden or off-screen at this viewport. */
+/**
+ * Runs in the page: why the anchor paints nothing (`display: none` on it or an ancestor, hidden,
+ * zero size), or '' after scrolling it into view itself. An anchor taller than the viewport is
+ * aligned to its top, a shorter one is centred so a tooltip has room around it. Playwright's own
+ * `scrollIntoViewIfNeeded` waits out its actionability checks, which is what cost 30 s on a Sparkline
+ * target, a hidden mobile pane and an anchor taller than the viewport.
+ */
+export function revealInPage(el: Element): string {
+  for (let node: Element | null = el; node; node = node.parentElement) {
+    const where = node === el ? '' : ' on an ancestor'
+    const style = getComputedStyle(node)
+    if (style.display === 'none') return `display: none${where}`
+    if (node.hasAttribute('hidden')) return `hidden attribute${where}`
+    if (style.visibility === 'hidden' && node === el) return 'visibility: hidden'
+  }
+  const rect = el.getBoundingClientRect()
+  if (rect.width === 0 || rect.height === 0) return 'zero size'
+  el.scrollIntoView({
+    block: rect.height > window.innerHeight ? 'start' : 'center',
+    inline: 'nearest',
+    behavior: 'instant',
+  })
+  return ''
+}
+
+/**
+ * Brings the anchor into view; throws `Absent` (with the reason) when it is hidden, `Error` when it
+ * does not exist. No Playwright wait is involved, so neither costs more than a step.
+ */
 async function reveal(anchor: PwLocator): Promise<void> {
-  if ((await anchor.count()) === 0) throw new Error('anchor not found')
-  await anchor.scrollIntoViewIfNeeded()
-  if (!(await anchor.isVisible())) throw new Error('anchor is not visible at this viewport')
+  if ((await within('locating the anchor', anchor.count())) === 0)
+    throw new Error('anchor not found')
+  const verdict = await within('revealing the anchor', anchor.evaluate(revealInPage))
+  if (typeof verdict === 'string' && verdict !== '')
+    throw new Absent(`not visible at this viewport (${verdict})`)
+  await sleep(REVEAL_SETTLE_MS)
+}
+
+/** The anchor's box once two reads agree: a smooth scroll or an animating card never shifts the clip. */
+async function settledBox(target: PwLocator): Promise<Box | null> {
+  let box = await within('measuring the anchor', target.boundingBox())
+  for (let i = 0; i < TIP_SETTLE_READS; i++) {
+    await sleep(TIP_SETTLE_MS)
+    const next = await within('measuring the anchor', target.boundingBox())
+    const settled = JSON.stringify(next) === JSON.stringify(box)
+    box = next
+    if (settled) break
+  }
+  return box
+}
+
+const FRAMES = 'new Promise((done) => requestAnimationFrame(() => requestAnimationFrame(done)))'
+
+async function resize(c: Ctx, height: number): Promise<void> {
+  await c.page.setViewportSize({ width: VIEWPORT_SPECS[c.viewport].width, height })
+  c.height = height
+  await c.page.evaluate(FRAMES)
+}
+
+/**
+ * Runs in the page: hides (`visibility`, kept in layout) every fixed or sticky element that is not
+ * the anchor, inside it, or around it, and not a popup, so the shell's PageBar and bottom nav are
+ * never drawn over a crop. A popup that opens later is not hidden: it did not exist yet.
+ */
+export function hideChrome(name: string): void {
+  const anchor = Array.from(document.querySelectorAll('[data-shot]')).find(
+    (el) => el.getAttribute('data-shot') === name,
+  )
+  const popup = '[role="tooltip"], [role="dialog"], [role="listbox"], [role="menu"]'
+  for (const el of Array.from(document.body.querySelectorAll('*'))) {
+    const { position } = getComputedStyle(el)
+    if (position !== 'fixed' && position !== 'sticky') continue
+    if (anchor && (el.contains(anchor) || anchor.contains(el))) continue
+    if (el.matches(popup) || el.querySelector(popup)) continue
+    const style = (el as HTMLElement).style
+    el.setAttribute('data-shot-chrome', style.getPropertyValue('visibility'))
+    style.setProperty('visibility', 'hidden', 'important')
+  }
+}
+
+/** Runs in the page: undoes `hideChrome`. */
+export function showChrome(): void {
+  for (const el of Array.from(document.querySelectorAll('[data-shot-chrome]'))) {
+    const style = (el as HTMLElement).style
+    const before = el.getAttribute('data-shot-chrome') ?? ''
+    if (before) style.setProperty('visibility', before)
+    else style.removeProperty('visibility')
+    el.removeAttribute('data-shot-chrome')
+  }
+}
+
+/**
+ * Prepares the page for one anchor's crops: shell chrome hidden, and the viewport grown to hold an
+ * anchor taller than it (the anchor's own scrollport would otherwise paint it blank below the first
+ * screen). Returns the undo. Best effort: a page that cannot be framed is still shot as it stands.
+ */
+async function frame(c: Ctx, name: string): Promise<() => Promise<void>> {
+  const spec = VIEWPORT_SPECS[c.viewport]
+  try {
+    await c.page.evaluate(hideChrome, name)
+    const height = Number(
+      await within(
+        'measuring the anchor',
+        anchorOf(c, name).evaluate((el) => el.getBoundingClientRect().height),
+      ),
+    )
+    if (height > spec.height)
+      await resize(c, Math.min(MAX_VIEWPORT_PX, Math.ceil(height) + spec.height))
+  } catch {
+    // Not framed: the crop is taken against the page as it is.
+  }
+  return async () => {
+    try {
+      await c.page.evaluate(showChrome, undefined)
+      if (c.height !== spec.height) await resize(c, spec.height)
+    } catch {
+      // The next route reloads the page.
+    }
+  }
+}
+
+/** Runs in the page: px of content that scroll inside a large inner scrollport, which `fullPage` cannot see. */
+export function hiddenScrollPx(): number {
+  let extra = 0
+  for (const el of Array.from(document.querySelectorAll('*'))) {
+    if (el.clientHeight < window.innerHeight / 2) continue
+    const { overflowY } = getComputedStyle(el)
+    if (overflowY === 'auto' || overflowY === 'scroll')
+      extra = Math.max(extra, el.scrollHeight - el.clientHeight)
+  }
+  return extra
+}
+
+/** The whole page: the viewport grows by what an inner scrollport hides, with the chrome kept. */
+async function fullPage(c: Ctx, path: string): Promise<void> {
+  const spec = VIEWPORT_SPECS[c.viewport]
+  let extra = 0
+  try {
+    extra = Number(await c.page.evaluate(hiddenScrollPx, undefined))
+  } catch {
+    // Unmeasurable: plain fullPage.
+  }
+  const grown = Number.isFinite(extra) && extra > 0
+  if (grown) await resize(c, Math.min(MAX_VIEWPORT_PX, spec.height + Math.ceil(extra)))
+  try {
+    await snap(c.page, path, { fullPage: true })
+  } finally {
+    if (grown) await resize(c, spec.height).catch(() => undefined)
+  }
 }
 
 /**
@@ -231,12 +417,16 @@ async function attempt(
   note?: string,
 ): Promise<void> {
   const file = fileName(c.route, name, c.scheme, c.viewport, state)
+  const unframe = name === PAGE_ANCHOR ? undefined : await frame(c, name)
   try {
     await run(join(c.input.pngDir, file))
   } catch (error) {
-    const status = error instanceof NotDeclared ? 'not-declared' : 'error'
+    const status =
+      error instanceof NotDeclared ? 'not-declared' : error instanceof Absent ? 'absent' : 'error'
     record(c, { name, state, status, note: firstLine(error) })
     return
+  } finally {
+    await unframe?.()
   }
   // The PNG is good: a measurement failure is recorded beside it, never instead of it.
   let notes = note ? [note] : []
@@ -329,7 +519,7 @@ export function parseHoverAt(raw: string): { x: number; y: number } | null {
 
 export async function hoverTrigger(target: PwLocator): Promise<void> {
   const at = parseHoverAt(String(await target.evaluate(hoverAtOf)))
-  const box = at ? await target.boundingBox() : null
+  const box = at ? await within('measuring the trigger', target.boundingBox()) : null
   const position = at && box ? { x: at.x * box.width, y: at.y * box.height } : undefined
   await target.hover({ timeout: HOVER_TIMEOUT_MS, ...(position && { position }) })
 }
@@ -373,9 +563,9 @@ async function captureHover(c: Ctx, name: string): Promise<void> {
     await c.page.evaluate(markVisibleTooltips, undefined)
     await hoverTrigger(target)
     const describedBy = idOf(await target.evaluate(describedByOf))
-    const [box, tip] = [await anchor.boundingBox(), await openTooltipBox(c, describedBy)]
+    const [box, tip] = [await settledBox(anchor), await openTooltipBox(c, describedBy)]
     if (!box || !tip) return void (await snap(anchor, path))
-    await snap(c.page, path, { clip: unionClip([box, tip], FOCUS_MARGIN_PX, c.viewport) })
+    await snap(c.page, path, { clip: unionClip([box, tip], FOCUS_MARGIN_PX, c.viewport, c.height) })
   })
   await c.page.mouse.move(0, 0)
 }
@@ -422,7 +612,10 @@ async function captureFocus(c: Ctx, name: string): Promise<void> {
     await reveal(anchor)
     await c.page.evaluate(markVisibleTooltips, undefined)
     await tabInto(c.page, name)
-    const box = await anchor.boundingBox()
+    // Focus scrolls the nearest scrollport on its own terms (under a sticky bar, mid-animation): put
+    // the anchor back where the clip is taken, then read its box once it stops moving.
+    await within('re-centring the anchor', anchor.evaluate(revealInPage))
+    const box = await settledBox(anchor)
     if (!box) throw new Error('anchor has no box')
     const focused = idOf(
       await c.page.evaluate(
@@ -432,7 +625,7 @@ async function captureFocus(c: Ctx, name: string): Promise<void> {
     )
     const tip = await openTooltipBox(c, focused)
     await snap(c.page, path, {
-      clip: unionClip(tip ? [box, tip] : [box], FOCUS_MARGIN_PX, c.viewport),
+      clip: unionClip(tip ? [box, tip] : [box], FOCUS_MARGIN_PX, c.viewport, c.height),
     })
   })
   await c.page.evaluate('document.activeElement?.blur()')
@@ -450,9 +643,9 @@ async function captureTooltip(c: Ctx, name: string): Promise<void> {
     const describedBy = idOf(await trigger.evaluate(describedByOf))
     const t = await openTooltipBox(c, describedBy, TOOLTIP_TIMEOUT_MS)
     if (!t) throw new Error('no visible [role="tooltip"] after hover')
-    const a = await anchor.boundingBox()
+    const a = await settledBox(anchor)
     if (!a) throw new Error('tooltip or anchor has no box')
-    await snap(c.page, path, { clip: unionClip([a, t], FOCUS_MARGIN_PX, c.viewport) })
+    await snap(c.page, path, { clip: unionClip([a, t], FOCUS_MARGIN_PX, c.viewport, c.height) })
   })
   await c.page.mouse.move(0, 0)
 }
@@ -469,7 +662,12 @@ async function captureUrlState(c: Ctx, state: ShotState): Promise<void> {
   const restNames = c.facts.anchors
   if (!c.facts.declared.includes(state)) {
     for (const name of restNames) {
-      record(c, { name, state, status: 'not-declared', note: 'page does not declare this state' })
+      record(c, {
+        name,
+        state,
+        status: 'not-declared',
+        note: c.facts.declared.length === 0 ? NO_STATES_NOTE : 'page does not declare this state',
+      })
     }
     return
   }
@@ -584,11 +782,14 @@ export function groupScale({ mantine, vx }: ScaleRead): Steps {
 }
 
 async function capturePage(
-  args: Omit<Ctx, 'facts' | 'anchors' | 'shots' | 'measured' | 'problems'> & { wantScale: boolean },
+  args: Omit<Ctx, 'facts' | 'anchors' | 'shots' | 'measured' | 'problems' | 'height'> & {
+    wantScale: boolean
+  },
 ) {
   const { wantScale, ...rest } = args
   const c: Ctx = {
     ...rest,
+    height: VIEWPORT_SPECS[rest.viewport].height,
     facts: { anchors: [], declared: [] },
     anchors: [],
     shots: [],
@@ -623,10 +824,16 @@ async function capturePage(
   if (usable.length === 0 && c.scheme === 'light' && c.viewport === 'desktop') {
     input.log(`[shot] no data-shot anchors on ${route}`)
   }
+  const asked = URL_STATES.filter((state) => input.states.includes(state))
+  if (c.facts.declared.length === 0 && usable.length > 0 && asked.length > 0) {
+    if (c.scheme === 'light' && c.viewport === 'desktop') {
+      input.log(
+        `[shot] ${route}: no data-shot-states declared, so ${asked.join('/')} will not render; add data-shot-states to an anchor`,
+      )
+    }
+  }
   if (input.states.includes('rest')) {
-    await attempt(c, PAGE_ANCHOR, 'rest', (path) =>
-      snap(c.page, path, { fullPage: true }).then(() => undefined),
-    )
+    await attempt(c, PAGE_ANCHOR, 'rest', (path) => fullPage(c, path))
   }
   flagProblems(c)
   for (const name of usable) {
