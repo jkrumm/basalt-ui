@@ -1224,6 +1224,7 @@ summary 12, chart ticks and legend 11.
 **Now:** that text renders at 11 (the chart text step) whatever its `size`, so the shell is 15, 13, 11. Only a direct `Text` child of the summary slot is capped; a bare `Text` nested inside a `Group` keeps the size it asks for.
 
 **Opt out:** wrap the text in a `<span>` or a `Group`.
+
 ### Empty cells and Meters (Wave 38)
 
 A gap is stated once. Moved defaults:
