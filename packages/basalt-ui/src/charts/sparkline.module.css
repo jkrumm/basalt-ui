@@ -14,7 +14,9 @@
 
 .readout {
   position: absolute;
-  bottom: 100%;
+  /* The layer is inset from the root by the line's plot margin; lifting by it puts the chip back
+   * on the root's top edge, the line a host slot reserves. */
+  bottom: calc(100% + var(--basalt-spark-lift, 0px));
   z-index: 1;
   max-width: 100%;
   box-sizing: border-box;

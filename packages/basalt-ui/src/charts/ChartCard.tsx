@@ -130,11 +130,11 @@ type ChartCardBaseProps = BasaltProps &
      * unsized chart takes — pass the chart's own `height` when it states one, so a `<Suspense
      * fallback={<ChartCard state={{ pending: true }} …/>}>` reserves the final size. */
     placeholderHeight?: number | ResponsiveChartHeight | undefined
-    /** An errored `state` shows the shared Retry button (the one `ErrorState` renders). */
-    /** Placeholder data is showing: the facts dim with the plot (a strip cell's `stale`). */
+    /** Placeholder data is showing: the facts row dims with the plot (a strip cell's `stale`). */
     stale?: boolean | undefined
     /** What an errored `state` names: "Could not load {stateNoun}". Default: no noun. */
     stateNoun?: string | undefined
+    /** An errored `state` shows the shared Retry button (the one `ErrorState` renders). */
     onRetry?: (() => void) | undefined
     /** A refetch is in flight: Retry is inert and marked busy. */
     retrying?: boolean | undefined
@@ -180,8 +180,12 @@ function Facts({
 }): ReactElement {
   const list: readonly ChartFact[] = Array.isArray(facts) ? facts : [facts as ChartFact]
   return (
-    <div data-basalt-facts="" {...(stale && { 'data-stale': 'true' })} className={classes.facts}>
-      <div className={classes.factsRow}>
+    <div data-basalt-facts="" className={classes.facts}>
+      <div
+        data-basalt-facts-row=""
+        {...(stale && { 'data-stale': 'true' })}
+        className={classes.factsRow}
+      >
         {list.map((f, i) => (
           <span
             key={i}

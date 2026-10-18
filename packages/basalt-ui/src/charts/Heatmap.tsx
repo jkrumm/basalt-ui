@@ -22,7 +22,7 @@ import { alpha, VX } from '../tokens'
 import { resolveContainerClass } from '../tokens/size-classes'
 import { engineRow, strideTicks } from './compile'
 import type { CartesianDefinition } from './compile'
-import { GLYPH_MIN_PX, resolveNamedState } from './band-fold'
+import { GLYPH_MIN_PX, glyphOf, resolveNamedState } from './band-fold'
 import type { NamedChartState } from './band-fold'
 import { ABSENT_OPACITY, RAMP_LEVELS, RAMP_OPACITIES } from './heatmap-fill'
 import { engineTooltip } from './cursor'
@@ -33,12 +33,6 @@ import { HEIGHT_MAX, HEIGHT_MIN } from './box'
 import { ChartPlaceholder, resolveChartState } from './state'
 import { AXIS_LINE, CHART_THEME } from './theme'
 import type { ChartSeries, ChartState, ChartTooltipRow, ResponsiveChartHeight } from './types'
-
-/** The status inks a cell state can name: `VX.status.*`, so a consumer never reads `dist` for a hex. */
-export type HeatmapTone = 'good' | 'warn' | 'bad' | 'neutral'
-
-/** `warn` and `bad` carry a glyph by default: a status grid is not told apart by hue alone. */
-const TONE_GLYPH: Partial<Record<HeatmapTone, string>> = { warn: '!', bad: '×' }
 
 /**
  * A named cell state, the same base `BandStrip`'s `states` use (`NamedChartState`): `color` and
@@ -62,15 +56,11 @@ export type HeatmapState<K extends string = string> = Omit<
   key: K
   /** The flat fill, a `VX.*` ref. Needed unless `tone` is set; `color` wins over `tone`. */
   color?: string | undefined
-  /** The fill from a status token (`VX.status.*`). */
-  tone?: HeatmapTone | undefined
 }
 
 /** The fill a state resolves to: its `color`, else its tone's status colour, else neutral. */
 const fillOf = (s: HeatmapState | undefined): string =>
   s?.color ?? (s?.tone === undefined ? VX.neutral : VX.status[s.tone])
-const glyphOf = (s: HeatmapState | undefined): string | undefined =>
-  s?.glyph ?? (s?.tone === undefined ? undefined : TONE_GLYPH[s.tone])
 
 export type HeatmapProps<T, K extends string = string> = BasaltProps & {
   /** The accessible name. Required. */
@@ -301,7 +291,8 @@ export function Heatmap<T, K extends string = string>(props: HeatmapProps<T, K>)
         // A stated cell's glyph, centred in the cell; skipped when the cell is too narrow to hold it.
         const glyphMarks = (plotWidth: number) => {
           const drawn = [...stated].flatMap(([key, group]) => {
-            const glyph = glyphOf(stateByKey.get(key))
+            const named = stateByKey.get(key)
+            const glyph = named && glyphOf({ ...named, color: fillOf(named) })
             return glyph ? group.map((c) => ({ ...c, glyph })) : []
           })
           return drawn.length > 0 && plotWidth / Math.max(cols.length, 1) >= GLYPH_MIN_PX
@@ -313,7 +304,7 @@ export function Heatmap<T, K extends string = string>(props: HeatmapProps<T, K>)
                     y: 'row',
                     key: 'id',
                     text: 'glyph',
-                    fill: VX.ink,
+                    fill: VX.surface.panel,
                     fontSize: VX.text.xs,
                     fontWeight: 600,
                     anchor: 'middle',

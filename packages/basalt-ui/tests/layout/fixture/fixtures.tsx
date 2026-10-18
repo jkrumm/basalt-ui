@@ -14,6 +14,7 @@ import {
   CartesianChart,
   ChartCard,
   DualPanel,
+  Heatmap,
   Lines,
   Sparkline,
 } from '../../../src/charts'
@@ -973,6 +974,20 @@ function PanelRailChart({
   )
 }
 
+type HeatmapCell = { row: string; col: string; state: 'up' | 'degraded' | 'down' }
+const HEATMAP_STATES = [
+  { key: 'up', label: 'Up', tone: 'good' },
+  { key: 'degraded', label: 'Degraded', tone: 'warn' },
+  { key: 'down', label: 'Down', tone: 'bad' },
+] as const
+const HEATMAP_CELLS: readonly HeatmapCell[] = ['Mon', 'Tue', 'Wed'].flatMap((row) =>
+  Array.from({ length: 12 }, (_, i) => ({
+    row,
+    col: String(i),
+    state: i % 5 === 3 ? ('down' as const) : i % 4 === 1 ? ('degraded' as const) : ('up' as const),
+  })),
+)
+
 /** One real `basalt-ui/charts` kind, picked by `spec.kind`, in a `data-testid` box so a test has one
  * stable selector for "the chart's own container" — fixed-width when `width` pins its class. */
 function ChartsFixture({ spec }: { spec: ChartsSpec }): ReactElement {
@@ -1067,6 +1082,21 @@ function ChartsFixture({ spec }: { spec: ChartsSpec }): ReactElement {
         height={spec.height ?? 40}
         emphasizeLast
       />
+    ) : spec.kind === 'heatmap' ? (
+      <>
+        <p data-testid="heatmap-caption">Status by hour</p>
+        <Heatmap
+          ariaLabel="Fixture heatmap"
+          data={HEATMAP_CELLS}
+          getRow={(d) => d.row}
+          getCol={(d) => d.col}
+          getValue={() => null}
+          getState={(d) => d.state}
+          states={HEATMAP_STATES}
+          legend={false}
+          {...height}
+        />
+      </>
     ) : spec.kind === 'mirrored' ? (
       <MirroredBars
         ariaLabel="Fixture mirrored"

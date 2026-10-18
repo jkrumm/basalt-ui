@@ -736,10 +736,37 @@ layout('Charts — 2.0 layout', () => {
         ),
       }
     })
-    // The last point is the one the readout names on focus (12 rows: the fixture's final value).
-    expect(m.readout).not.toBe('')
+    // Focus lands on the LAST point: the readout is the fixture's final value (row 11).
+    const last = 20 + 12 * Math.sin(11 / 9) + (11 % 13)
+    expect(Number.parseFloat(m.readout.replace(',', '.'))).toBeCloseTo(last, 1)
     expect(m.outline).toBeGreaterThan(0)
     expect(m.slack).toBeGreaterThanOrEqual(0)
+  })
+
+  test('a Heatmap tooltip never covers the caption row above the grid', async () => {
+    const p = await openFixture(chartFixture({ kind: 'heatmap', width: 640 }), DESKTOP)
+    await p.settle()
+    // The top row, mid-grid: the placement that used to put the tooltip over the caption.
+    await hover(p, FRAME, 0.4, 0.1)
+    const m = await p.raw.evaluate((tip) => {
+      const caption = document
+        .querySelector('[data-testid="heatmap-caption"]')
+        ?.getBoundingClientRect()
+      const tooltip = document
+        .querySelector<HTMLElement>(`${tip}:not([hidden])`)
+        ?.getBoundingClientRect()
+      if (!caption || !tooltip) throw new Error('LAYOUT: no caption or open tooltip')
+      return {
+        covers:
+          tooltip.left < caption.right &&
+          tooltip.right > caption.left &&
+          tooltip.top < caption.bottom &&
+          tooltip.bottom > caption.top,
+        below: tooltip.top >= caption.bottom,
+      }
+    }, TOOLTIP)
+    expect(m.covers).toBe(false)
+    expect(m.below).toBe(true)
   })
 
   describe('a Sparkline in a StatCard slot or a strip cell answers hover with a readout inside the cell', () => {
