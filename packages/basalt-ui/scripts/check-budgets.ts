@@ -365,7 +365,8 @@ const PROVIDER_ONLY_LABEL = 'provider-only first paint (gzip B, dist)'
 // 20012 → 20345 (W37, tab/badge/row-surface/disabled vars, CI Linux measurement): +333 B.
 // 20345 → 20398 (W37 review round 1, CI Linux measurement): +53 B.
 // 20398 → 20435 (W37 states r3, CI Linux measurement): +37 B.
-const PROVIDER_ONLY_CEILING = 20435
+// 20435 → 20442 (W37 states r3 round 2, CI Linux measurement): +7 B, the per-instance indicator radius.
+const PROVIDER_ONLY_CEILING = 20442
 // Embedded `<BasaltProvider spotlight={false}>`, no defines, peers bundled, every chunk counted: 54735 B landed, ~1% margin.
 // 55300 → 55391 (W32): +91 B for the Wave 32 scales — the dense control tier rule in the palette CSS, the row line-height and `lineHeights` ratios, the expanded gutter, and the card/radius/type retunes.
 // 55391 → 55404 (W32 CI): the gate is CI's Linux build, which gzips 13 B larger than the macOS build the lead measured.
@@ -384,7 +385,8 @@ const PROVIDER_ONLY_CEILING = 20435
 // 56319 → 56641 (W37, tab/badge/row-surface/disabled vars, CI Linux measurement): +322 B.
 // 56641 → 56699 (W37 review round 1, CI Linux measurement): +58 B.
 // 56699 → 56735 (W37 states r3, CI Linux measurement): +36 B.
-const EMBEDDED_CEILING = 56735
+// 56735 → 56742 (W37 states r3 round 2, CI Linux measurement): +7 B.
+const EMBEDDED_CEILING = 56742
 // `createBasaltTheme()` alone, peers bundled, every chunk counted: 14420 locally. The theme reaching
 // no component it configures is what keeps this near Mantine's core; ~1% over landed.
 // 14570 → 14571 (W32): +1 B, the `lineHeights` ratios.
@@ -404,7 +406,8 @@ const EMBEDDED_CEILING = 56735
 // 15451 → 15767 (W37, tab/badge/row-surface/disabled vars, CI Linux measurement): +316 B.
 // 15767 → 15819 (W37 review round 1, CI Linux measurement): +52 B.
 // 15819 → 15853 (W37 states r3, CI Linux measurement): +34 B.
-const THEME_ONLY_CEILING = 15853
+// 15853 → 15859 (W37 states r3 round 2, CI Linux measurement): +6 B.
+const THEME_ONLY_CEILING = 15859
 const THEME_ONLY_LABEL = 'createBasaltTheme only, peers bundled, all chunks (gzip B, dist)'
 const EMBEDDED_LABEL = 'embedded provider, no defines, peers bundled, all chunks (gzip B, dist)'
 const FEATURE_CHUNKS_LABEL =
