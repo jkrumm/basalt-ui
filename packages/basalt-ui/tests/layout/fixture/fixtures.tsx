@@ -1519,7 +1519,9 @@ function Wave37Fixture({ spec }: { spec: NonNullable<FixtureSpec['w37']> }): Rea
 /**
  * argo's Strength-page Section shells (`routes/strength-tracker.tsx`): a plain titled Section over a
  * two-up grid of `ChartCard`s (title + info, a multi-series `Lines`), and the collapsible
- * diagnostics shell with an `xs` summary. One test id per shell, measured separately.
+ * diagnostics shell with an `xs` summary. One test id per shell, measured separately. The
+ * diagnostics shell is rendered OPEN, the stricter case: argo ships it `defaultOpen={false}`, where
+ * the chart is not drawn at all.
  */
 function Wave38StrengthFixture(): ReactElement {
   const data = useMemo(() => buildChartData(3, 60), [])

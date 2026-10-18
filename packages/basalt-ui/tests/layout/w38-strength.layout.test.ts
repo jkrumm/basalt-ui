@@ -53,8 +53,9 @@ layout('argo Strength Section shell: three type sizes', () => {
   for (const id of ['w38-strength-plain', 'w38-strength-diagnostics']) {
     for (const viewport of [DESKTOP_1440, PHONE]) {
       test(`${id} at ${viewport.width}px`, async () => {
-        const { sizes } = await measure(viewport, id)
-        expect(sizes.length).toBeLessThanOrEqual(3)
+        const { sizes, byText } = await measure(viewport, id)
+        expect(sizes).toEqual([11, 13, 15])
+        if (id.endsWith('diagnostics')) expect(byText['11']).toContain('90 days')
       })
     }
   }
