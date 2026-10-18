@@ -76,7 +76,16 @@ const EUR = new Intl.NumberFormat('en-IE', {
   maximumFractionDigits: 0,
 })
 
+const EUR_COMPACT = new Intl.NumberFormat('en-IE', {
+  style: 'currency',
+  currency: 'EUR',
+  notation: 'compact',
+  maximumFractionDigits: 1,
+})
+
 export const fmtInt = (value: number): string => INT.format(value)
+/** `€400`, `€1.2K`: an axis tick that keeps its unit. */
+export const fmtEurCompact = (value: number): string => EUR_COMPACT.format(value)
 export const fmtShare = (value: number): string => `${Math.round(value * 100)}%`
 export const fmtSignedShare = (value: number): string =>
   withSign(value, `${Math.abs(Math.round(value * 100))}%`)

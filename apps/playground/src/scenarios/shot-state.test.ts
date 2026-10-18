@@ -17,6 +17,7 @@ describe('cardStateProps', () => {
     expect(props.placeholderHeight).toBe(184)
     expect(props.state?.error).toBeInstanceOf(Error)
     expect(String(props.state?.error)).toBe('Error: Top lifts failed to load.')
-    expect(props.stateAction).toBeDefined()
+    expect(typeof props.onRetry).toBe('function')
+    expect('stateAction' in props).toBe(false)
   })
 })

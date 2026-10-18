@@ -10,14 +10,15 @@
  *
  * Anchors for `basalt-ui shot`: strip cells carry their own `data-shot` (`strip-needs-you`,
  * `strip-oldest-wait`, `strip-fleet`, `strip-dispatch-spend`, `strip-failures`; footer meters
- * `strip-footer-day` / `strip-footer-week`, present in every state; the empty / error note
- * `strip-footer-note` sits inside the day cell); `ChartCard` does not forward `data-*`, so those anchors are wrapping `Box`es.
+ * `strip-footer-day` / `strip-footer-week`, declared absent in empty and error, where each cell says
+ * why through its own `state`); `ChartCard` does not forward `data-*`, so those anchors are wrapping `Box`es.
  */
 import { Box, Stack } from '@mantine/core'
+import type { ReactNode } from 'react'
 import { BarList, DeltaBadge, Meter, PageBar, StatGroup, StatusVerdict } from 'basalt-ui'
 import type { StatStripCell } from 'basalt-ui'
-import { Bars, ChartCard, Sparkline } from 'basalt-ui/charts'
-import type { BarsBar } from 'basalt-ui/charts'
+import { ChartCard, Lines, Sparkline } from 'basalt-ui/charts'
+import type { ChartSeries } from 'basalt-ui/charts'
 import { VX } from 'basalt-ui/tokens'
 import { demoColors } from '../demo/series'
 import {
@@ -42,13 +43,9 @@ import {
 } from './agents-data'
 import type { FlowRow, ItemState } from './agents-data'
 import { fmtEur, fmtInt } from './fixture-utils'
-import { RETRY_ACTION } from './retry-action'
-import { cardStateProps, chartStateFor, retryCopy } from './shot-state'
+import { cardStateProps, chartStateFor, noop, retryCopy } from './shot-state'
 import type { ScenarioProps } from './shot-state'
 
-const WARDEN_ERROR = 'The queue did not answer. Retry, or check the warden connection.'
-const WEEK_ERROR =
-  'The queue did not answer for the weekly budget. Retry, or check the warden connection.'
 const WARDEN_EMPTY = 'No agent work in the queue. Dispatch an item to start.'
 const retry = (what: string): string => retryCopy(what, 'warden')
 
@@ -64,27 +61,37 @@ const STATE_COLOR: Record<ItemState, string> = {
   blocked: VX.status.bad,
 }
 
-const FLOW_BARS: BarsBar<FlowRow>[] = [
-  { key: 'opened', label: 'Opened', color: VX.neutral, getValue: (d) => d.opened },
-  { key: 'closed', label: 'Closed', color: demoColors.signups, getValue: (d) => d.closed },
+const FLOW_SERIES: ChartSeries<FlowRow>[] = [
+  {
+    key: 'opened',
+    label: 'Opened',
+    color: demoColors.sessions,
+    getValue: (d) => d.opened,
+    formatValue: (v) => `${fmtInt(v)} opened`,
+  },
+  {
+    key: 'closed',
+    label: 'Closed',
+    color: demoColors.signups,
+    getValue: (d) => d.closed,
+    formatValue: (v) => `${fmtInt(v)} closed`,
+  },
 ]
 const FLOW_DATA = [...FLOW]
 
+/** One or two words: at 390 px the title is the row label and nothing may crowd it. */
 const stuckStatus = (i: (typeof STUCK)[number]) =>
   i.state === 'blocked' ? (
-    <StatusVerdict
-      color={VX.status.bad}
-      word={i.reason === undefined ? 'Blocked' : `Blocked · ${i.reason}`}
-    />
+    <StatusVerdict color={VX.status.bad} word="Blocked" />
   ) : i.waitHours > WARN_HOURS ? (
-    <StatusVerdict color={VX.status.warn} word="Needs you · over 24 h" />
+    <StatusVerdict color={VX.status.warn} word="Overdue" />
   ) : (
-    <StatusVerdict color={VX.faint} word="Needs you" />
+    <StatusVerdict color={VX.faint} word="Waiting" />
   )
 
 const STUCK_ITEMS = STUCK.map((i) => ({
   key: i.id,
-  label: `${i.title} · ${i.repo}`,
+  label: i.title,
   value: i.waitHours,
   secondary: stuckStatus(i),
 }))
@@ -94,12 +101,16 @@ const ABANDON_LABEL = `${ABANDON_HOURS / 24} d`
 
 function QueueStrip({ shotState }: ScenarioProps) {
   const loading = shotState === 'loading'
-  const empty = shotState === 'empty'
-  const error = shotState === 'error'
-  const none = empty || error
+  const none = shotState === 'empty' || shotState === 'error'
   // Loading shows the hero skeleton alone: a visual over placeholder data would contradict it.
   const hidden = none || loading
-  const note = error ? WARDEN_ERROR : empty ? WARDEN_EMPTY : undefined
+  // Empty and error say why in the cell itself, with the Retry on a failure.
+  const cellState = (what: string, reason: string): Pick<StatStripCell, 'state'> =>
+    shotState === 'error'
+      ? { state: { kind: 'error', error: new Error(retry(what)), onRetry: noop } }
+      : shotState === 'empty'
+        ? { state: { kind: 'empty', reason } }
+        : {}
 
   const cells: StatStripCell[] = [
     {
@@ -107,9 +118,10 @@ function QueueStrip({ shotState }: ScenarioProps) {
       caption: 'Needs you',
       qualifier: 'now',
       info: 'Items waiting on your decision. The dashed line is the 14-day mean.',
-      value: none ? null : fmtInt(NEEDS_YOU),
+      value: fmtInt(NEEDS_YOU),
       unit: 'items',
       loading,
+      ...cellState('Needs-you items', WARDEN_EMPTY),
       ...(!hidden && {
         visual: (
           <Box data-shot-hover>
@@ -129,7 +141,8 @@ function QueueStrip({ shotState }: ScenarioProps) {
       caption: 'Dispatch spend',
       qualifier: 'today',
       info: `Agent dispatch cost so far today, in EUR; the daily cap is ${fmtEur(BUDGETS.day.cap)}. The sparkline and its dashed mean cover the ${DISPATCH_COMPLETE_DAYS.length} complete days before today.`,
-      value: none ? null : fmtEur(BUDGETS.day.spent),
+      value: fmtEur(BUDGETS.day.spent),
+      ...cellState('Dispatch spend', 'No dispatch spend today. It appears with the first run.'),
       ...(!hidden && {
         visual: (
           <Box data-shot-hover>
@@ -149,8 +162,9 @@ function QueueStrip({ shotState }: ScenarioProps) {
       key: 'oldest-wait',
       caption: 'Oldest wait',
       info: `The longest an item has waited on you. Warden warns past ${WARN_LABEL} and closes an item as abandoned at ${ABANDON_LABEL}.`,
-      value: none ? null : fmtAge(OLDEST_WAIT_HOURS),
+      value: fmtAge(OLDEST_WAIT_HOURS),
       ...(OLDEST_WAIT_HOURS > WARN_HOURS && !none && { tone: 'warn' as const }),
+      ...cellState('The oldest wait', 'Nothing is waiting on you, so there is no wait to measure.'),
       loading,
       ...(!hidden && {
         visual: (
@@ -171,8 +185,9 @@ function QueueStrip({ shotState }: ScenarioProps) {
       caption: 'Failures',
       qualifier: 'last 24 h',
       info: 'Agent runs that ended in an error in the last 24 hours.',
-      value: none ? null : fmtInt(FAILURES_24H.count),
+      value: fmtInt(FAILURES_24H.count),
       unit: 'runs',
+      ...cellState('Failures', 'No agent runs in the last 24 h to count.'),
       // Hourly bars answer "is it still happening?": three runs, but a burst or a trickle. The
       // footer prints when each ran, so the marks read without colour and against a clock.
       ...(!hidden && { footer: `Latest ${FAILURES_LATEST_LABEL}` }),
@@ -207,9 +222,10 @@ function QueueStrip({ shotState }: ScenarioProps) {
       caption: 'Fleet',
       qualifier: 'by state',
       info: 'Every item in the queue by its state.',
-      value: none ? null : fmtInt(FLEET_TOTAL),
+      value: fmtInt(FLEET_TOTAL),
       unit: 'items',
       loading,
+      ...cellState('The fleet', WARDEN_EMPTY),
       ...(!hidden && {
         visual: (
           <Meter
@@ -227,56 +243,50 @@ function QueueStrip({ shotState }: ScenarioProps) {
     },
   ]
 
-  const budget = (
-    label: string,
-    spent: number,
-    cap: number,
-    caption: string,
-    emptyText: string,
-  ) => (
+  const budget = (label: string, spent: number, cap: number, caption: string) => (
     <Meter
       label={label}
-      value={none ? null : spent}
+      value={spent}
       max={cap}
       format={fmtEur}
       loading={loading}
-      emptyText={emptyText}
       startCaption={`${caption} ${fmtEur(spent)}`}
       endCaption={`${fmtEur(cap - spent)} left of ${fmtEur(cap)}`}
     />
   )
 
-  const dayMeter = {
-    key: 'day',
-    content: budget(
-      'Daily dispatch budget',
-      BUDGETS.day.spent,
-      BUDGETS.day.cap,
-      'Today',
-      note ?? WARDEN_EMPTY,
+  // The strip derives each footer cell's anchor, which cannot carry `data-shot-absent`: the content
+  // repeats the name with the declaration, so `shot` reads the footer as absent in empty and error.
+  const footerEntry = (key: string, content: ReactNode) => ({
+    key,
+    content: (
+      <Box data-shot={`strip-footer-${key}`} data-shot-absent="empty error">
+        {content}
+      </Box>
     ),
-  }
-  const weekMeter = {
-    key: 'week',
-    content: budget(
-      'Weekly dispatch budget',
-      BUDGETS.week.spent,
-      BUDGETS.week.cap,
-      'Last 7 days',
-      error ? WEEK_ERROR : 'No dispatch spend this week.',
-    ),
-  }
-  // TODO(w36): data-shot-absent — drop this workaround once `shot` can declare an absent anchor.
-  // Both footer anchors exist in every state (`shot` errors on an anchor that vanishes); the
-  // empty / error note is the day meter's emptyText, wrapped so it keeps its own anchor.
-  const footer = [
-    note === undefined
-      ? dayMeter
-      : { ...dayMeter, content: <Box data-shot="strip-footer-note">{dayMeter.content}</Box> },
-    weekMeter,
-  ]
+  })
+  const footer = none
+    ? undefined
+    : [
+        footerEntry(
+          'day',
+          budget('Daily dispatch budget', BUDGETS.day.spent, BUDGETS.day.cap, 'Today'),
+        ),
+        footerEntry(
+          'week',
+          budget('Weekly dispatch budget', BUDGETS.week.spent, BUDGETS.week.cap, 'Last 7 days'),
+        ),
+      ]
 
-  return <StatGroup variant="strip" label="Agent queue" cols={5} cells={cells} footer={footer} />
+  return (
+    <StatGroup
+      variant="strip"
+      label="Agent queue"
+      cols={5}
+      cells={cells}
+      {...(footer !== undefined && { footer })}
+    />
+  )
 }
 
 /**
@@ -332,15 +342,14 @@ function QueueRow({ shotState }: ScenarioProps) {
             empty: 'No items opened or closed in the window. Dispatch an item to start.',
             error: retry('Item flow'),
           })}
-          {...(shotState === 'error' && { stateAction: RETRY_ACTION })}
+          {...(shotState === 'error' && { onRetry: noop })}
         >
           <Box data-shot-hover data-shot-tooltip>
-            <Bars
+            <Lines<FlowRow, Date>
               data={FLOW_DATA}
               ariaLabel={`Items opened and closed per day, ${FLOW_RANGE_LABEL}`}
               x={(d) => d.date}
-              bars={FLOW_BARS}
-              layout="grouped"
+              series={FLOW_SERIES}
             />
           </Box>
         </ChartCard>

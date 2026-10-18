@@ -3,10 +3,8 @@
  * into each container's own empty / loading / error props — a scenario never fakes a state by
  * hand where a component already has the prop.
  */
-import type { ReactNode } from 'react'
 import type { ChartState } from 'basalt-ui/charts'
 import type { QueryStateLike } from '../demo/query-state-like'
-import { RETRY_ACTION } from './retry-action'
 
 const SHOT_STATES = ['empty', 'loading', 'error'] as const
 export type ShotState = (typeof SHOT_STATES)[number]
@@ -26,7 +24,8 @@ export function validateShotSearch(raw: Record<string, unknown>): { 'shot-state'
 export const retryCopy = (what: string, source: string): string =>
   `${what} failed to load. Retry, or check the ${source} connection.`
 
-const noop = (): void => {}
+/** The inert handler of a fixture's Retry. */
+export const noop = (): void => {}
 
 /** For `StatCard` / `Section` / `BasaltDataTable` `query`: undefined at rest. */
 export function queryFor(
@@ -61,7 +60,7 @@ export function chartStateFor(
 
 /**
  * `ChartCard` props for a card that hosts a Meter or BarList. Those draw their own loading and empty
- * states, so the card only takes the error: its placeholder (with a retry),
+ * states, so the card only takes the error: its placeholder (with the shared Retry),
  * sized to the card's own body. Without `placeholderHeight` the error branch reserves the height of
  * a chart, which is ~4x what a meter needs.
  */
@@ -69,8 +68,8 @@ export function cardStateProps(
   state: ShotState | undefined,
   errorCopy: string,
   placeholderHeight: number,
-): { state?: ChartState | undefined; stateAction?: ReactNode; placeholderHeight: number } {
+): { state?: ChartState | undefined; onRetry?: () => void; placeholderHeight: number } {
   return state === 'error'
-    ? { state: { error: new Error(errorCopy) }, stateAction: RETRY_ACTION, placeholderHeight }
+    ? { state: { error: new Error(errorCopy) }, onRetry: noop, placeholderHeight }
     : { placeholderHeight }
 }

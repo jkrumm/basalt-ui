@@ -12,13 +12,12 @@
  */
 import { Box, SimpleGrid, Skeleton, Stack, Text } from '@mantine/core'
 import { BarList, Meter, PageBar, StatCard, StatGroup } from 'basalt-ui'
-import { Bars, ChartCard, Sparkline } from 'basalt-ui/charts'
-import type { BarsBar } from 'basalt-ui/charts'
+import { ChartCard, Lines, Sparkline } from 'basalt-ui/charts'
+import type { ChartSeries } from 'basalt-ui/charts'
 import { CONTAINER_KEYS, VX } from 'basalt-ui/tokens'
 import { demoColors } from '../demo/series'
 import { fmtInt, fmtKg, fmtKm, fmtRatio, fmtShare } from './fixture-utils'
-import { RETRY_ACTION } from './retry-action'
-import { cardStateProps, chartStateFor, queryFor, retryCopy } from './shot-state'
+import { cardStateProps, chartStateFor, noop, queryFor, retryCopy } from './shot-state'
 import type { ScenarioProps } from './shot-state'
 import {
   ACUTE_LOAD,
@@ -97,8 +96,14 @@ const READINESS_ITEMS = CONTRIBUTORS.toSorted((a, b) => b.value - a.value).map((
   value: c.value,
   secondary: readinessLevel(c.value),
 }))
-const HIT_BARS: BarsBar<(typeof HIT_HISTORY)[number]>[] = [
-  { key: 'sessions', label: 'Sessions', color: demoColors.sessions, getValue: (d) => d.sessions },
+const HIT_SERIES: ChartSeries<(typeof HIT_HISTORY)[number]>[] = [
+  {
+    key: 'sessions',
+    label: 'Sessions',
+    color: demoColors.sessions,
+    getValue: (d) => d.sessions,
+    formatValue: (v) => `${fmtInt(v)} sessions`,
+  },
 ]
 const HIT_DATA = [...HIT_HISTORY]
 const HIT_TICKS = HIT_HISTORY.map((m) => m.label)
@@ -272,16 +277,16 @@ function GoalRow({ shotState }: ScenarioProps) {
             empty: 'No complete month logged yet. The history appears after the first full month.',
             error: retry('The goal hit rate'),
           })}
-          {...(shotState === 'error' && { stateAction: RETRY_ACTION })}
+          {...(shotState === 'error' && { onRetry: noop })}
         >
           <Box data-shot-hover data-shot-tooltip>
-            <Bars
+            <Lines
               data={HIT_DATA}
               ariaLabel={`Sessions per month against the goal of ${GOAL_SESSIONS}, ${HIT_RANGE_LABEL}`}
               x={(d) => d.label}
               xTicks={HIT_TICKS}
               y={{ domain: [0, HIT_Y_MAX] }}
-              bars={HIT_BARS}
+              series={HIT_SERIES}
               refLines={[
                 {
                   value: GOAL_SESSIONS,
