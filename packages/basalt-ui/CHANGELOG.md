@@ -1,3 +1,36 @@
+# [2.22.0](https://github.com/jkrumm/basalt-ui/compare/v2.21.0...v2.22.0) (2026-10-18)
+
+
+### Bug Fixes
+
+* address review round 1 on PageSummary and Section ([13f92e8](https://github.com/jkrumm/basalt-ui/commit/13f92e8fda655720f1a25718c42a3346853593ec))
+* apply the Meter gap step only between a tick and a label ([4503cfe](https://github.com/jkrumm/basalt-ui/commit/4503cfeec62d8a738ada9c7b1a3476eba9c0ecd8))
+* cap the BarList label column and frame every state ([43f7dc6](https://github.com/jkrumm/basalt-ui/commit/43f7dc66bfd9826a7ed9d9084f045c725c5114ef))
+* chart chrome review round 1 ([3b3b869](https://github.com/jkrumm/basalt-ui/commit/3b3b869fa121185d654f41c43bbb28b04fc061e1))
+* frame restores the chrome when it throws after hiding it ([c825c35](https://github.com/jkrumm/basalt-ui/commit/c825c3596c55e57eed17719e2fec9d6502575267))
+* hidden rest anchors fail, chrome hiding spares only open popups ([b497af1](https://github.com/jkrumm/basalt-ui/commit/b497af1331e90516b9a093fe15382879afdf9511))
+* let a Meter end tick yield to a zone name and re-measure captions ([8c40451](https://github.com/jkrumm/basalt-ui/commit/8c4045130eef1bf78f423f1e6e5692493fcf0d52))
+* pin tooltip header tests to the runtime's own Intl output ([6b44e7e](https://github.com/jkrumm/basalt-ui/commit/6b44e7ec17582f9e56145027a53b5854d4bb955a))
+* reset the zero feature at the root instead of per head-face selector ([e0ef952](https://github.com/jkrumm/basalt-ui/commit/e0ef952080d0996008e4fa90a796b1ef688887a9))
+* restore MIGRATING's tail and follow the head-face rule list ([f3fe9c0](https://github.com/jkrumm/basalt-ui/commit/f3fe9c0e35fe0fbb9a810fed3f0b888acbb69c4a))
+* reviewer note limits absent to pointer states and declared absence ([c923661](https://github.com/jkrumm/basalt-ui/commit/c923661fa743985008b9c060e2bba5bc96332117))
+* scope the badge dot, solve row-surface contrast, narrow the zero reset ([6a1843a](https://github.com/jkrumm/basalt-ui/commit/6a1843a2fa089640c4290c67a443f63996808009))
+
+
+### Features
+
+* a strip cell's tone colours the Meter in its visual ([fa1ff95](https://github.com/jkrumm/basalt-ui/commit/fa1ff95645dae2633aa3d6e88d1c66981fa12ecf))
+* add Meter reading switch, muted zones, stops and ring ticks ([a1cd367](https://github.com/jkrumm/basalt-ui/commit/a1cd367e3d51383dc5052b65c1d7f40b7b94ffa2))
+* chart facts, sparklines and strips gain tone, glyph and focus ([9b41136](https://github.com/jkrumm/basalt-ui/commit/9b41136c9d5e4ea72943647be56888bc351d5dec))
+* chart tooltips, ticks and reference labels read cleanly ([d7c6b49](https://github.com/jkrumm/basalt-ui/commit/d7c6b4904900aef679daab3dc9b89f28fd4f876e))
+* export PageSummary, untitled Section and page-bar fixes ([1cf8719](https://github.com/jkrumm/basalt-ui/commit/1cf8719fa180d4e1254e6a1a41c99ec89e1f53ef))
+* glyph defaults, panel ink and one readout layer on chart cards ([3b49967](https://github.com/jkrumm/basalt-ui/commit/3b499677a47282dc154a694f10851e2810afea81))
+* keep a BarList name beside its value in a wide card ([d25833b](https://github.com/jkrumm/basalt-ui/commit/d25833b9838fabfaa1ca6569ea15dfcbd4db9d2c))
+* neutral tab pill, row surfaces and data-text numerals ([67e2994](https://github.com/jkrumm/basalt-ui/commit/67e299437801399618c921e9747c2cd874e09085))
+* pin strip footer kinds and the qualifier guarantee ([97462b2](https://github.com/jkrumm/basalt-ui/commit/97462b2c2b147efe93728e1f98336119a2a832d6))
+* shot captures tall anchors and init wires a stock Vite app ([e2d8d23](https://github.com/jkrumm/basalt-ui/commit/e2d8d2382a453f7a69b8a53c1b915ba09cb0f733))
+* strip cells stay compact; stat cards keep their states tidy ([f7d78e3](https://github.com/jkrumm/basalt-ui/commit/f7d78e3f9c6ea877ad39e47c431d2956cd76dcdd))
+
 # [2.21.0](https://github.com/jkrumm/basalt-ui/compare/v2.20.0...v2.21.0) (2026-10-18)
 
 
