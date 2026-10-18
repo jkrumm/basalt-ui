@@ -1125,6 +1125,7 @@ No export is removed or renamed; four defaults move.
 - **The `under` footer** is a sibling after the cell's `article`, outside its `aria-labelledby` region.
 - **`BarList` delta column: glyph and figure are one unit**, end-aligned together. The fixed glyph slot and the
   four-character figure slot are gone, so `▲ 9%` and `▲ 13%` share a right edge but no longer share a glyph x.
+
 ### Meter captions (Wave 38)
 
 No export is removed. `Meter` gains one optional prop, `readingAt`; six caption defaults move.
