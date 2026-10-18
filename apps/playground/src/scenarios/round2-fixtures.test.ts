@@ -77,8 +77,7 @@ describe('S4 spend', () => {
 })
 
 describe('S3 agents', () => {
-  it('weekly budget error says why and what to do', () => {
-    // Wave 36 r1: the cells carry the reason and Retry (strip `state`); the budget footer is absent.
+  it('error drops the budget footer and puts a Retry in every strip cell', () => {
     const c = mount(createElement(AgentsScenario, { shotState: 'error' }))
     expect(anchor(c, 'strip-footer-week')).toBeNull()
     for (const cell of c.querySelectorAll('[data-strip-cell]')) {

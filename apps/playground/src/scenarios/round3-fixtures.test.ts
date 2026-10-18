@@ -96,6 +96,8 @@ describe('S2 / S3 / S4 encodings', () => {
     expect(src).toContain('<Lines')
     expect(src).not.toContain('<Bars')
     expect(src).not.toContain('HIT_BARS')
+    expect(src).toContain('label: `Goal ${GOAL_SESSIONS}`')
+    expect(src).toContain('xTicks={HIT_TICKS}')
   })
 
   it('S3 item flow is two lines, not grouped bars', () => {
@@ -112,6 +114,8 @@ describe('S2 / S3 / S4 encodings', () => {
     const c = mount(createElement(SpendScenario, { shotState: undefined }))
     const card = anchor(c, 'spend-over-time')
     expect(card?.querySelector('[data-basalt-fact-value]')?.textContent).toContain('€')
+    const ticks = [...(card?.querySelectorAll('svg text') ?? [])].map((t) => t.textContent ?? '')
+    expect(ticks.filter((t) => /^€\d/.test(t)).length).toBeGreaterThanOrEqual(3)
   })
 })
 
@@ -125,13 +129,24 @@ describe('S3 stuck items at a phone width', () => {
     )
   })
 
-  it('states each status in at most two words', () => {
+  it('exposes the reason on every blocked row, as a short phrase', () => {
     const c = mount(createElement(AgentsScenario, { shotState: undefined }))
-    const words = [...(anchor(c, 'stuck-items')?.querySelectorAll('[data-verdict-word]') ?? [])]
-    expect(words).toHaveLength(9)
-    for (const w of words) {
-      expect((w.textContent ?? '').trim().split(/\s+/).length).toBeLessThanOrEqual(2)
+    const rows = [...(anchor(c, 'stuck-items')?.querySelectorAll('li') ?? [])]
+    const blocked = STUCK.filter((i) => i.state === 'blocked')
+    expect(blocked).toHaveLength(3)
+    for (const item of blocked) {
+      const row = rows[STUCK.indexOf(item)]
+      expect(row?.querySelector('[data-verdict-word]')?.textContent).toBe(
+        `Blocked · ${item.reason}`,
+      )
+      expect((item.reason ?? '').split(/\s+/).length).toBeLessThanOrEqual(2)
     }
+  })
+
+  it('keeps titles short enough for one line at 390 px', () => {
+    // Measured at 390 px beside the widest status (`Blocked · Failing check`): 25 characters hold one line.
+    const TITLE_MAX = 25
+    for (const item of STUCK) expect(item.title.length).toBeLessThanOrEqual(TITLE_MAX)
   })
 })
 
