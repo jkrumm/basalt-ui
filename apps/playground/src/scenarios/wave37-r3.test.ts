@@ -1,0 +1,209 @@
+/**
+ * Wave 37 playground round 3: the round-2 defects the playground owns, and the round-2 props it
+ * adopts (#401–#408). Each assertion is one a later edit could silently undo.
+ */
+import { MantineProvider } from '@mantine/core'
+import { cleanup, render } from '@testing-library/react'
+import { createElement } from 'react'
+import type { ReactElement } from 'react'
+import { readFileSync } from 'node:fs'
+import { afterEach, describe, expect, it } from 'bun:test'
+import { ComponentsSurfaces } from '../demo/ComponentsPage'
+import {
+  BUDGETS,
+  DISPATCH_COMPLETE_DAYS,
+  DISPATCH_POINTS,
+  FAILURES_BY_HOUR,
+  FAILURES_POINTS,
+  FLOW_CLOSED,
+  FLOW_RANGE_LABEL,
+  NEEDS_YOU_POINTS,
+  NEEDS_YOU_TREND,
+  OLDEST_WAIT_HOURS,
+  STUCK,
+  fmtAge,
+} from './agents-data'
+import { fmtEur } from './fixture-utils'
+import { AgentsScenario } from './S3Agents'
+import { SpendScenario } from './S4Spend'
+import { TrainingScenario } from './S2Training'
+import { MTD_POINTS, MTD_TOTALS, PROJECTS_MTD, WINDOW_LABEL } from './spend-data'
+import {
+  DISTANCE_7D_POINTS,
+  DISTANCE_7D_TREND,
+  GOAL_SESSIONS,
+  MONTH_END_LABEL,
+  PACE_GAP,
+  PACE_SESSIONS,
+  SESSIONS_7D_POINTS,
+  SESSIONS_7D_TREND,
+  TODAY_LABEL,
+  VOLUME_7D_POINTS,
+  VOLUME_7D_TREND,
+} from './training-data'
+import type { ShotState } from './shot-state'
+
+afterEach(cleanup)
+
+const mount = (ui: ReactElement) => render(createElement(MantineProvider, null, ui)).container
+const anchor = (c: HTMLElement, name: string): HTMLElement => {
+  const el = c.querySelector<HTMLElement>(`[data-shot="${name}"]`)
+  if (el === null) throw new Error(`no [data-shot="${name}"]`)
+  return el
+}
+const text = (el: Element): string => {
+  const copy = el.cloneNode(true) as Element
+  for (const hidden of copy.querySelectorAll('.mantine-VisuallyHidden-root')) hidden.remove()
+  const out: string[] = []
+  const walker = document.createTreeWalker(copy, NodeFilter.SHOW_TEXT)
+  for (let n = walker.nextNode(); n !== null; n = walker.nextNode()) out.push(n.textContent ?? '')
+  return out
+    .map((w) => w.trim())
+    .filter((w) => w !== '')
+    .join(' ')
+    .replaceAll(String.fromCharCode(160), ' ')
+}
+const source = (file: string): string => readFileSync(new URL(file, import.meta.url), 'utf8')
+const training = (shotState?: ShotState) => mount(createElement(TrainingScenario, { shotState }))
+const agents = (shotState?: ShotState) => mount(createElement(AgentsScenario, { shotState }))
+const spend = (shotState?: ShotState) => mount(createElement(SpendScenario, { shotState }))
+const DAY_MS = 86_400_000
+const values = (points: readonly { value: number }[]) => points.map((p) => p.value)
+
+describe('1. one date format per card', () => {
+  it('the provider sets the page format locale to en-GB once', () => {
+    expect(source('../main.tsx')).toMatch(/<BasaltProvider[^>]*\n?[^>]*locale="en-GB"/)
+  })
+})
+
+describe('2. sparklines name their point', () => {
+  it.each([
+    ['sessions', SESSIONS_7D_POINTS, SESSIONS_7D_TREND],
+    ['volume', VOLUME_7D_POINTS, VOLUME_7D_TREND],
+    ['distance', DISTANCE_7D_POINTS, DISTANCE_7D_TREND],
+    ['needs-you', NEEDS_YOU_POINTS, NEEDS_YOU_TREND],
+    ['dispatch spend', DISPATCH_POINTS, DISPATCH_COMPLETE_DAYS],
+    ['failures by hour', FAILURES_POINTS, FAILURES_BY_HOUR],
+    ['month to date', MTD_POINTS, MTD_TOTALS],
+  ])('%s carries { at, value } points over the same values', (_, points, plain) => {
+    expect(values(points)).toEqual([...plain])
+    for (const p of points) expect(Number.isFinite(p.at)).toBe(true)
+  })
+
+  it('the points step one day (the failures one hour) and end where the window ends', () => {
+    const steps = (pts: readonly { at: number }[]) => pts.slice(1).map((p, i) => p.at - pts[i]!.at)
+    for (const pts of [SESSIONS_7D_POINTS, NEEDS_YOU_POINTS, DISPATCH_POINTS, MTD_POINTS]) {
+      expect(new Set(steps(pts))).toEqual(new Set([DAY_MS]))
+    }
+    expect(new Set(steps(FAILURES_POINTS))).toEqual(new Set([3_600_000]))
+    expect(new Date(SESSIONS_7D_POINTS.at(-1)!.at).getUTCDate()).toBe(16)
+    expect(new Date(NEEDS_YOU_POINTS.at(-1)!.at).getUTCDate()).toBe(16)
+    // Dispatch spend leaves today out: the last complete day is the 15th.
+    expect(new Date(DISPATCH_POINTS.at(-1)!.at).getUTCDate()).toBe(15)
+    expect(new Date(MTD_POINTS.at(-1)!.at).getUTCDate()).toBe(16)
+  })
+
+  it('every scenario sparkline is handed points, never a bare number[]', () => {
+    for (const file of ['./S2Training.tsx', './S3Agents.tsx', './S4Spend.tsx']) {
+      expect(source(file)).not.toMatch(
+        /data=\{(?:[A-Z_]+_TREND|DISPATCH_COMPLETE_DAYS|FAILURES_BY_HOUR|MTD_TOTALS)\}/,
+      )
+    }
+    expect(source('./S2Training.tsx')).toContain('SESSIONS_7D_POINTS')
+    expect(source('./S3Agents.tsx')).toContain('FAILURES_POINTS')
+    expect(source('./S4Spend.tsx')).toContain('MTD_POINTS')
+  })
+})
+
+describe('3. S2 goal meter', () => {
+  it('captions the Pace tick at its mark, with the target and the start figure on the track', () => {
+    const goal = anchor(training(), 'goal')
+    const ticks = source('./S2Training.tsx')
+    expect(ticks).toMatch(/label: 'Pace',\s+caption:/)
+    expect(ticks).not.toMatch(
+      /startCaption=\{null\}[\s\S]{0,200}endCaption=\{`\$\{fmtInt\(PACE_SESSIONS\)}/,
+    )
+    const copy = text(goal)
+    expect(copy).toContain(`${Math.round(PACE_SESSIONS)} sessions by ${TODAY_LABEL}`)
+    expect(copy).toContain(`Target ${GOAL_SESSIONS} sessions`)
+    expect(copy).toMatch(/\b0 sessions\b/)
+  })
+
+  it('the pace verdict names its unit', () => {
+    expect(text(anchor(training(), 'goal'))).toContain(`${PACE_GAP} sessions ahead of pace`)
+    expect(MONTH_END_LABEL.length).toBeGreaterThan(0)
+  })
+})
+
+describe('4. S3', () => {
+  it('the Today footer sits under Dispatch spend and states spend and left like the week', () => {
+    expect(source('./S3Agents.tsx')).toMatch(/footerEntry\(\s*'day'[\s\S]*?'dispatch-spend'/)
+    const day = text(anchor(agents(), 'strip-footer-day'))
+    expect(day).toContain(
+      `${fmtEur(BUDGETS.day.spent)} of ${fmtEur(BUDGETS.day.cap)} · ${fmtEur(BUDGETS.day.cap - BUDGETS.day.spent)} left`,
+    )
+  })
+
+  it('the awaiting error names the quantity "Awaiting", never "Needs you"', () => {
+    const cell = text(anchor(agents('error'), 'strip-needs-you'))
+    expect(cell).not.toMatch(/needs/i)
+    expect(cell).toMatch(/awaiting/i)
+    expect(source('./S3Agents.tsx')).not.toMatch(/Needs-you items/)
+  })
+
+  it('the item-flow headline separates its unit from its period', () => {
+    const flow = text(anchor(agents(), 'item-flow'))
+    expect(flow).toContain(`${FLOW_CLOSED} closed · ${FLOW_RANGE_LABEL}`)
+  })
+
+  it('the stuck list keeps hours, so its oldest row matches the strip', () => {
+    const oldest = STUCK[0]!.waitHours
+    expect(oldest).toBe(OLDEST_WAIT_HOURS)
+    expect(fmtAge(oldest)).toMatch(/d \d+ h/)
+    expect(text(anchor(agents(), 'stuck-items'))).toContain(fmtAge(oldest))
+  })
+})
+
+describe('5. S4', () => {
+  it('the distribution states its window and its y unit on the surface', () => {
+    const card = text(anchor(spend(), 'spend-distribution'))
+    expect(card).toContain('last 90 days')
+    expect(source('./S4Spend.tsx')).toMatch(/y=\{\{[^}]*format:/)
+    expect(source('./S4Spend.tsx')).toMatch(/days`/)
+  })
+
+  it('the distribution card ends level with its row neighbour', () => {
+    expect(source('./S4Spend.tsx')).toMatch(
+      /data-shot="spend-distribution" h="100%"[\s\S]*?<ChartCard[\s\S]*?style=\{FILL\}/,
+    )
+  })
+
+  it('spend by project reads "49% of spend in 2 of 6 projects · 1–16 Oct"', () => {
+    const top = PROJECTS_MTD.slice(0, 2).reduce((a, p) => a + p.pct, 0)
+    expect(text(anchor(spend(), 'spend-by-project'))).toContain(
+      `${top}% of spend in 2 of ${PROJECTS_MTD.length} projects · ${WINDOW_LABEL}`,
+    )
+  })
+
+  it('the top-drivers error uses the card name', () => {
+    const card = text(anchor(spend('error'), 'top-drivers'))
+    expect(card).toContain('Spend change by project failed to load')
+    expect(card).not.toContain('Top drivers')
+  })
+})
+
+describe('6. components', () => {
+  it('constrains the metrics table so names sit near their values', () => {
+    const src = source('../demo/ComponentsPage.tsx')
+    expect(src).toMatch(/<Table[^>]*maw=\{\d+\}/)
+  })
+
+  it('keeps "Paused" with its row at 390: Pending and Paused share one group', () => {
+    const c = mount(createElement(ComponentsSurfaces, null))
+    const badges = [...anchor(c, 'badges').querySelectorAll('.mantine-Badge-root')]
+    const paused = badges.find((b) => (b.textContent ?? '').includes('Paused'))
+    const pending = badges.find((b) => (b.textContent ?? '').includes('Pending'))
+    expect(paused?.parentElement).toBe(pending?.parentElement)
+    expect(paused?.parentElement?.children.length).toBe(2)
+  })
+})

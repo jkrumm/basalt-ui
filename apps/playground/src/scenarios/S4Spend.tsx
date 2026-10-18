@@ -13,6 +13,7 @@
  * `forecast` → `strip-forecast`, `budget` → `strip-budget`.
  */
 import { Box, SimpleGrid, Stack } from '@mantine/core'
+import type { CSSProperties } from 'react'
 import { BarList, DeltaBadge, Meter, PageBar, StatGroup } from 'basalt-ui'
 import type { StatStripCell } from 'basalt-ui'
 import { Bars, ChartCard, Lines, Sparkline } from 'basalt-ui/charts'
@@ -33,7 +34,7 @@ import {
   MONTH_NAME,
   MTD_CHANGE_PCT,
   MTD_EUR,
-  MTD_TOTALS,
+  MTD_POINTS,
   PRIOR_WINDOW_LABEL,
   PROJECTS_MTD,
   REMAINING_PER_DAY_EUR,
@@ -95,6 +96,12 @@ const MEDIAN_FACT =
     ? 'median'
     : `median · ${MEDIAN_BIN.days} days in ${spendBand(MEDIAN_BIN)}`
 
+/** The window the histogram bins, stated on the surface (the info tooltip says it too). */
+const DISTRIBUTION_WINDOW = 'last 90 days'
+/** The y axis states its unit once, on the top tick (`25 days`), like S2's hit-rate axis. */
+const DISTRIBUTION_Y_MAX = Math.ceil(Math.max(...DISTRIBUTION.map((b) => b.days)) / 5) * 5
+const daysTick = (v: number): string => (v === DISTRIBUTION_Y_MAX ? `${v} days` : String(v))
+
 const CUMULATIVE_DATA = [...CUMULATIVE]
 const DISTRIBUTION_DATA = [...DISTRIBUTION]
 /** Every other band is named on the axis: a range label is wide, and the bars still carry the rest. */
@@ -132,6 +139,9 @@ const TRACK_END_EUR =
 const PROJECT_PLACEHOLDER = 190
 
 const USAGE_EMPTY = `No spend recorded ${WINDOW_LABEL}. Check that the usage export is connected.`
+
+/** One card height for a row pair: the grid cell sets it, the card fills it. */
+const FILL: CSSProperties = { height: '100%' }
 
 const retry = (what: string): string => retryCopy(what, 'usage export')
 
@@ -176,7 +186,7 @@ function SpendStats({ shotState }: ScenarioProps) {
           <Box data-shot-hover>
             <Sparkline
               ariaLabel={`Daily spend, ${WINDOW_LABEL}, EUR`}
-              data={MTD_TOTALS}
+              data={MTD_POINTS}
               height={28}
               reference="mean"
               format={fmtEur}
@@ -287,8 +297,13 @@ function SpendCharts({ shotState }: ScenarioProps) {
       </Box>
       <Box data-shot="spend-distribution" h="100%">
         <ChartCard
+          style={FILL}
           title="Daily spend, distribution"
-          facts={{ value: fmtEur(MEDIAN_DAY_EUR), unit: 'a day', period: MEDIAN_FACT }}
+          facts={{
+            value: fmtEur(MEDIAN_DAY_EUR),
+            unit: 'a day',
+            period: [DISTRIBUTION_WINDOW, MEDIAN_FACT],
+          }}
           info="Each bar counts the days, of the last 90, whose total spend across all projects landed in that €10 band (€ a day). The headline is the median day and the band it falls in."
           state={chartStateFor(shotState, {
             empty:
@@ -303,6 +318,7 @@ function SpendCharts({ shotState }: ScenarioProps) {
               ariaLabel="Days by total daily spend, €10 bands, last 90 days"
               x={(d) => d.label}
               xTicks={DISTRIBUTION_TICKS}
+              y={{ domain: [0, DISTRIBUTION_Y_MAX], format: daysTick }}
               bars={DISTRIBUTION_BARS}
               tooltip={{ formatHeader: (_, d) => spendBand(d) }}
             />
@@ -325,8 +341,8 @@ function SpendBreakdown({ shotState }: ScenarioProps) {
           {...(shotState === undefined && {
             facts: {
               value: `${TOP_PCT}%`,
-              unit: `in ${TOP_PROJECTS} of ${PROJECTS_MTD.length} projects`,
-              period: `of spend, ${WINDOW_LABEL}`,
+              unit: `of spend in ${TOP_PROJECTS} of ${PROJECTS_MTD.length} projects`,
+              period: `· ${WINDOW_LABEL}`,
             },
           })}
           info={`Each project's share of the ${fmtEur(MTD_EUR)} month-to-date spend across all models, in whole percent that sum to 100.`}
@@ -353,7 +369,7 @@ function SpendBreakdown({ shotState }: ScenarioProps) {
             },
           })}
           info={`The € each project added against ${PRIOR_WINDOW_LABEL}, with the relative change.`}
-          {...cardStateProps(shotState, retry('Top drivers'), PROJECT_PLACEHOLDER)}
+          {...cardStateProps(shotState, retry('Spend change by project'), PROJECT_PLACEHOLDER)}
         >
           <Box data-shot-hover>
             <BarList

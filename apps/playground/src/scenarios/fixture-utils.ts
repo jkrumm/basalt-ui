@@ -39,6 +39,14 @@ export const monthName = (date: Date, style: 'long' | 'short'): string => {
 
 export const fmtDay = (date: Date): string => `${date.getUTCDate()} ${monthName(date, 'short')}`
 
+/** `values` as `{ at, value }` points `stepMs` apart, the last at `lastAt` (epoch ms): a sparkline readout names the point it hovers. */
+export const timedPoints = (
+  values: readonly number[],
+  lastAt: number,
+  stepMs: number,
+): { at: number; value: number }[] =>
+  values.map((value, i) => ({ at: lastAt - (values.length - 1 - i) * stepMs, value }))
+
 /** The value at `index`, or a throw naming the fixture — a fixture list is never sparse. */
 export function itemAt<T>(items: readonly T[], index: number): T {
   const resolved = index < 0 ? items.length + index : index

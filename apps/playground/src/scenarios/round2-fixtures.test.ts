@@ -116,10 +116,11 @@ describe('S2 training', () => {
     }
   })
 
+  // W37 r3 (#402): the bar with ticks labels `format(min)` at its start, so the start figure joins the tick labels.
   it('names the pace tick on the goal meter and not again in the end caption', () => {
     const c = mount(createElement(TrainingScenario, { shotState: undefined }))
     const goal = anchor(c, 'goal')
-    expect(tickLabels(goal)).toEqual(['Pace'])
+    expect(tickLabels(goal)).toEqual(['0 sessions', 'Pace'])
     expect(goal?.querySelector('[data-meter-captions]')?.textContent).not.toContain('Pace')
   })
 })

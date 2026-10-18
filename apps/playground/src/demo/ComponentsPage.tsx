@@ -168,8 +168,9 @@ function MetricsTable({ shotState }: { shotState?: ShotState | undefined }) {
       />
     )
   }
+  // Capped so a metric name sits near its value at 1440 instead of ~650 px away.
   return (
-    <Table withTableBorder striped highlightOnHover>
+    <Table withTableBorder striped highlightOnHover maw={560}>
       <Table.Thead>
         <Table.Tr>
           <Table.Th>Metric</Table.Th>
@@ -421,6 +422,9 @@ export function ComponentsSurfaces({ shotState }: { shotState?: ShotState | unde
               <Badge color="green">Healthy</Badge>
               <Badge color="yellow">Degraded</Badge>
               <Badge color="red">Down</Badge>
+            </Group>
+            {/* Two rows by design: five in one wrap left "Paused" alone on a second line at 390. */}
+            <Group gap="sm">
               <Badge color="orange">Pending</Badge>
               <Badge color="gray">Paused</Badge>
             </Group>
