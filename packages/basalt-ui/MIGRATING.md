@@ -1130,7 +1130,8 @@ No export is removed or renamed; four defaults move.
 The `ViewTabs` / `SegmentedControl` indicator and an inline `Code` inside an `Alert` sat 3 px under
 their container (`craft-1/nested-radius-step`), which put them at 3 px: off the radius scale. Both
 now snap DOWN onto the scale, so every radius is a § 5 step. Under the default 6 px container the
-only step that keeps the 3 px step is 2 (`RADIUS_STEP.scaleXs`); under a container below 5 px it is 0. Where the two rules cannot both hold, "every radius is a scale step" wins over the 3 px step.
+only step that keeps the 3 px step is 2 (`RADIUS_STEP.scaleXs`); under a container below 5 px it
+is 0. Where the two rules cannot both hold, "every radius is a scale step" wins over the 3 px step.
 
 |                                               | Before (2.23) | Now       |
 | --------------------------------------------- | ------------- | --------- |
@@ -1138,9 +1139,29 @@ only step that keeps the 3 px step is 2 (`RADIUS_STEP.scaleXs`); under a contain
 | inline `Code` in an `Alert`, default `radius` | 3             | 2         |
 | either, `radius` knob −5 / 0 / +5             | 0 / 3 / 8     | 0 / 2 / 2 |
 
-Opt-out: restore the 3 px nested radius in your theme —
-`createBasaltTheme({ components: { SegmentedControl: { styles: { indicator: { borderRadius: 'max(0px, var(--sc-radius) - 3px)' } } } } })`;
-for `Code`, set `--basalt-code-radius` on the Alert root (`.mantine-Alert-root { --basalt-code-radius: 3px }`).
+Opt-out: restore the 3 px nested radius. The theme's `SegmentedControl` `styles` is a function, and
+an object `styles` replaces it (dropping the track background, padding and label rules), so re-spread
+its output:
+
+```ts
+const base = createBasaltTheme().components?.SegmentedControl?.styles as StylesFn
+createBasaltTheme({
+  components: {
+    SegmentedControl: {
+      styles: (theme, props, ctx) => {
+        const b = base(theme, props, ctx)
+        return {
+          ...b,
+          indicator: { ...b.indicator, borderRadius: 'max(0px, var(--sc-radius) - 3px)' },
+        }
+      },
+    },
+  },
+})
+```
+
+For `Code`, set `--basalt-code-radius` on the Alert root
+(`.mantine-Alert-root { --basalt-code-radius: 3px }`).
 
 ### Meter captions (Wave 38)
 
