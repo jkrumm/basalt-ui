@@ -266,6 +266,34 @@ function suite(vp: Viewport) {
     }
     for (const k of [r.cardShort, r.stripShort]) expect(k.under).toBe(false)
   })
+  test('a ~300px strip cell wraps a long qualifier whole and only its own value moves (Wave 38)', async () => {
+    const r = await p.raw.evaluate(() => {
+      const cells = [
+        ...document.querySelectorAll<HTMLElement>(
+          '[data-testid="dash-qual-strip-300"] [data-strip-cell]',
+        ),
+      ]
+      const q = cells[0]!.querySelector<HTMLElement>('[class*="qualifier_"]')!
+      const cap = cells[0]!.querySelector<HTMLElement>('[data-strip-caption]')!
+      const top = (c: HTMLElement) =>
+        c.querySelector<HTMLElement>('[data-strip-value]')!.getBoundingClientRect().top
+      return {
+        width: cells[0]!.getBoundingClientRect().width,
+        clipped: q.scrollWidth > q.clientWidth + 1,
+        ellipsis: getComputedStyle(q).textOverflow === 'ellipsis',
+        lines: q.getBoundingClientRect().height / parseFloat(getComputedStyle(q).lineHeight),
+        under: q.getBoundingClientRect().top >= cap.getBoundingClientRect().bottom - 1,
+        dy: top(cells[0]!) - top(cells[1]!),
+      }
+    })
+    expect(r.width).toBeGreaterThan(240)
+    expect(r.clipped).toBe(false)
+    expect(r.ellipsis).toBe(false)
+    expect(r.under).toBe(true)
+    expect(r.lines).toBeGreaterThan(1.5)
+    // The wrapped cell's value sits lower by the extra lines; the short qualifier's cell does not move.
+    expect(r.dy).toBeGreaterThan(SNAP)
+  })
 }
 
 layout('Wave 37 r2 stat card and strip', () => {

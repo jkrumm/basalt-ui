@@ -1102,7 +1102,7 @@ No export is removed or added. Six chart defaults move.
 | `ChartCard` / chart error, no message | `The chart failed to load.` | `The request failed.` (the same fallback `ErrorState` shows)                                           | an `Error` with a message, or `state.error` as a string                                                                           |
 ### Strip and card (Wave 38)
 
-No export is removed or renamed; three defaults move.
+No export is removed or renamed; four defaults move.
 
 - **A strip footer entry `under` a cell is part of that cell.** It now renders inside the cell's slot, under its
   content, at every width, instead of in a footer-row grid column from 800px (and full width below). The cell
@@ -1118,8 +1118,9 @@ No export is removed or renamed; three defaults move.
   caption and wraps whole to its own line under it otherwise, and wraps again there instead of ending in an
   ellipsis (the strip's qualifier also loses its `title`). A short qualifier in a narrow cell (`all time`) is no
   longer stranded alone on its own line. The cost: a qualifier that needs a second line pushes its own value down
-  by that line, so a row-mate's value no longer shares its baseline in that one case. Opt-out: shorten the
-  qualifier, or state the band in `info`.
+  by that line, so a row-mate's value no longer shares its baseline. This holds at EVERY width (a ~300px cell
+  wraps a long qualifier too), not only in narrow cells; only the wrapped cell's own value moves. Opt-out: shorten
+  the qualifier, or state the band in `info`.
 - **The `under` footer** is a sibling after the cell's `article`, outside its `aria-labelledby` region.
 - **`BarList` delta column: glyph and figure are one unit**, end-aligned together. The fixed glyph slot and the
   four-character figure slot are gone, so `▲ 9%` and `▲ 13%` share a right edge but no longer share a glyph x.
