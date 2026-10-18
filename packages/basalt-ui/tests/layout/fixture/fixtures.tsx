@@ -2355,6 +2355,22 @@ function DashFixture(): ReactElement {
           ]}
         />
       </div>
+      <div data-testid="dash-qual-strip-300" style={{ width: 600 }}>
+        <StatGroup
+          variant="strip"
+          label="Wide qualifiers"
+          cols={2}
+          cells={[
+            {
+              key: 'w-rate',
+              caption: 'Rate',
+              qualifier: 'maintain within ±0.5 kg per week of the target band set in the plan',
+              value: '0.3',
+            },
+            { key: 'w-all', caption: 'Verdicts', qualifier: 'all time', value: '12' },
+          ]}
+        />
+      </div>
       <div data-testid="dash-odd-strip">
         <StatGroup
           variant="strip"
