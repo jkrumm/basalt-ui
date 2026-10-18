@@ -539,7 +539,12 @@ export function placeMarkCaptions(
   if (rowWidth <= 0 || !items.some((i) => i.pct !== undefined)) return null
   if (items.some((i) => i.width > rowWidth)) return null
   const lefts = items.map((i) => idealLeft(i, rowWidth))
-  const order = lefts.map((_, i) => i).toSorted((a, b) => (lefts[a] ?? 0) - (lefts[b] ?? 0))
+  // Captions keep their order along the track: by their mark (an edge caption by its edge), not by
+  // where clamping left them, so a reading near the end never ends up right of the target.
+  const markAt = (i: MarkItem) => i.pct ?? (i.edge === 'end' ? 100 : 0)
+  const order = lefts
+    .map((_, i) => i)
+    .toSorted((a, b) => markAt(items[a] as MarkItem) - markAt(items[b] as MarkItem) || a - b)
   const widthOf = (i: number) => items[i]?.width ?? 0
   for (const [n, i] of order.entries()) {
     const prev = order[n - 1]
@@ -561,16 +566,30 @@ export const MAX_CAPTION_SHIFT = 24
 /**
  * `placeMarkCaptions` with dropping: when the captions cannot all clear each other on one line, the
  * droppable ones go one at a time in `drop` rank order (a caption without a rank never goes) until
- * the rest fit. While any droppable caption remains, a kept one that would have to sit more than
- * `MAX_CAPTION_SHIFT` off its mark, or an undroppable one (the reading) that would move at all, counts
- * as not fitting: the reading stays at its fill end, so the others yield. Index-aligned with `items`: `starts[i]` is a dropped caption's `undefined` and
- * `dropped[i]` marks it. `null` when even the undroppable ones do not fit, so the row flows instead.
+ * the rest fit. A droppable caption stays while it sits within `MAX_CAPTION_SHIFT` of its mark and
+ * moves no undroppable caption (the reading, the target) further than those move with every droppable
+ * one dropped: two undroppables that collide on their own are not a reason to drop anything.
+ * `starts[i]` is the start of caption `i`, `undefined` when it dropped; `dropped[i]` marks the drop.
+ * `null` when even the undroppable ones do not fit, so the row flows instead.
  */
 export function placeCaptionRow(
   items: readonly MarkItem[],
   rowWidth: number,
   gap: number,
 ): { starts: (number | undefined)[]; dropped: boolean[] } | null {
+  const fixed = items.map((_, i) => i).filter((i) => items[i]?.drop === undefined)
+  const baseline = placeMarkCaptions(
+    fixed.map((i) => items[i] as MarkItem),
+    rowWidth,
+    gap,
+  )
+  if (baseline === null) return null
+  const allowed = new Map(
+    fixed.map((i, n) => [
+      i,
+      Math.abs((baseline[n] ?? 0) - idealLeft(items[i] as MarkItem, rowWidth)) + LABEL_SUBPIXEL,
+    ]),
+  )
   const dropped = items.map(() => false)
   const order = items
     .map((item, i) => ({ rank: item.drop, i }))
@@ -588,9 +607,9 @@ export function placeCaptionRow(
       (step === order.length ||
         kept.every((i, n) => {
           const item = items[i] as MarkItem
-          if (item.pct === undefined) return true
           const moved = Math.abs((lefts[n] ?? 0) - idealLeft(item, rowWidth))
-          return moved <= (item.drop === undefined ? LABEL_SUBPIXEL : MAX_CAPTION_SHIFT)
+          if (item.drop === undefined) return moved <= (allowed.get(i) ?? 0)
+          return item.pct === undefined || moved <= MAX_CAPTION_SHIFT
         }))
     if (lefts !== null && settled) {
       const starts = items.map((): number | undefined => undefined)

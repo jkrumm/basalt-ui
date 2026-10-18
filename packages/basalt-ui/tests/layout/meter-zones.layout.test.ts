@@ -36,19 +36,19 @@ type Shown = { zones: string[]; ticks: string[] }
 const ENDS = ['0', '2.0']
 
 const CASES: ReadonlyArray<readonly [string, Shown]> = [
-  // Wave 37 r2: both end figures stay, and a zone name that would touch one yields to it. At 120/170/
-  // 220 "Danger" hides under the "2.0" end figure (it fits clear of it at 342); "Under" clears "0" from 170.
-  ['dash-zl-120', { zones: ['Optimal'], ticks: ENDS }],
-  ['dash-zl-170', { zones: ['Under', 'Optimal'], ticks: ENDS }],
-  ['dash-zl-220', { zones: ['Under', 'Optimal'], ticks: ENDS }],
+  // Wave 38: the end figures sit ABOVE the track, so zone names own the row below and show whenever
+  // they fit their own span ("Danger" no longer yields to the "2.0" end figure).
+  ['dash-zl-120', { zones: ['Under', 'Optimal'], ticks: ENDS }],
+  ['dash-zl-170', { zones: ['Under', 'Optimal', 'Danger'], ticks: ENDS }],
+  ['dash-zl-220', { zones: ['Under', 'Optimal', 'Danger'], ticks: ENDS }],
   ['dash-zl-342', { zones: ['Under', 'Optimal', 'Danger'], ticks: ENDS }],
   ['dash-zl-card', { zones: ['Under', 'Optimal', 'Danger'], ticks: ENDS }],
   // The "Rest" tick sits on "Under"'s centre: the interior tick wins, the name hides.
-  ['dash-zl-clash', { zones: ['Optimal'], ticks: ['Rest', ...ENDS] }],
+  ['dash-zl-clash', { zones: ['Optimal', 'Danger'], ticks: [...ENDS, 'Rest'] }],
 ]
 const STRIP: Record<string, Shown> = {
-  expanded: { zones: ['Under', 'Optimal'], ticks: ENDS },
-  'iPhone 14': { zones: ['Under', 'Optimal'], ticks: ENDS },
+  expanded: { zones: ['Under', 'Optimal', 'Danger'], ticks: ENDS },
+  'iPhone 14': { zones: ['Under', 'Optimal', 'Danger'], ticks: ENDS },
 }
 
 type Measured = {
@@ -56,6 +56,7 @@ type Measured = {
   zones: { name: string | null; left: number; right: number }[]
   labels: { name: string | null; left: number; right: number; top: number; holding: boolean }[]
   ticks: { name: string | null; left: number; right: number; top: number }[]
+  trackTop: number
   trackLeft: number
   trackRight: number
   described: string
@@ -105,6 +106,7 @@ const measure = (p: LayoutPage, root: string): Promise<Measured> =>
           right: box(l).right,
           top: box(l).top,
         })),
+      trackTop: box(track).top,
       trackLeft: box(track).left,
       trackRight: box(track).right,
       described: describedId ? (document.getElementById(describedId)?.textContent ?? '') : '',
@@ -143,7 +145,12 @@ function assertRow(m: Measured, expected: Shown) {
     expect(centre).toBeGreaterThanOrEqual(z.left - SUBPIXEL)
     expect(centre).toBeLessThanOrEqual(z.right + SUBPIXEL)
   }
-  const all = [...m.labels, ...m.ticks]
+  // The end figures own the row above the track; the zone names and any interior tick share the row below.
+  const above = m.ticks.filter((t) => t.top < m.trackTop)
+  expect(above.map((t) => t.name)).toEqual(ENDS)
+  for (const t of above) expect(Math.abs(t.top - above[0]!.top)).toBeLessThanOrEqual(SNAP)
+  const below = m.ticks.filter((t) => t.top >= m.trackTop)
+  const all = [...m.labels, ...below]
   for (const [i, a] of all.entries()) {
     for (const [j, b] of all.entries()) {
       if (j <= i) continue
@@ -152,7 +159,7 @@ function assertRow(m: Measured, expected: Shown) {
       expect(a.right + gap <= b.left + SUBPIXEL || b.right + gap <= a.left + SUBPIXEL).toBe(true)
     }
   }
-  // One row: every label and tick shares one top.
+  // One row below: every name and interior tick shares one top.
   for (const x of all) expect(Math.abs(x.top - all[0]!.top)).toBeLessThanOrEqual(SNAP)
   expect(m.captionTops.length).toBeLessThanOrEqual(1)
 }
@@ -201,13 +208,13 @@ function rowSuite(vp: Viewport) {
     }
   })
 
-  test('the S2 training-load zones: both end figures stay, "Overreaching" yields to its short label or hides', async () => {
+  test('the S2 training-load zones: both end figures sit above the track, the names share one register', async () => {
     const m = await measure(p, 'dash-zl-s2')
     expect(m.ticks.map((t) => t.name)).toEqual(ENDS)
     expect(m.labels.filter((l) => l.holding).map((l) => l.name)).toEqual(['Optimal'])
     for (const name of ['Low', 'Optimal', 'High', 'Overreaching'])
       expect(m.described).toContain(name)
-    const all = [...m.labels, ...m.shorts, ...m.ticks]
+    const all = [...m.labels, ...m.shorts, ...m.ticks.filter((t) => t.top >= m.trackTop)]
     const names = m.labels.length + m.shorts.length
     for (const [i, a] of all.entries()) {
       for (const [j, b] of all.entries()) {
@@ -218,9 +225,12 @@ function rowSuite(vp: Viewport) {
     }
   })
 
-  test('at 120px a zone that cannot fit its name shows its short label inside its span; one under an end figure hides', async () => {
+  test('at 120px a zone that cannot fit its name shows its short label inside its span', async () => {
     const m = await measure(p, 'dash-zl-short-120')
-    expect(m.shorts.map((s) => [s.name, s.text])).toEqual([['Under', 'Und']])
+    expect(m.shorts.map((s) => [s.name, s.text])).toEqual([
+      ['Under', 'Und'],
+      ['Danger', 'Dan'],
+    ])
     expect(m.labels.map((l) => l.name)).toEqual(['Optimal'])
     expect(m.ticks.map((t) => t.name)).toEqual(ENDS)
     for (const name of ZONES) expect(m.described).toContain(name)

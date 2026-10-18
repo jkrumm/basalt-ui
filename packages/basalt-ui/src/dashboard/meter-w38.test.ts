@@ -67,6 +67,21 @@ describe('captions drop before anything wraps (D38 c)', () => {
     expect(out?.dropped).toEqual([false, true, false])
     expect(out?.starts[0]).toBe(160)
   })
+  test('two undroppables that collide on their own do not cascade the drops', () => {
+    const out = placeCaptionRow(
+      [
+        { width: 60, pct: 96, align: 'end' as const },
+        { width: 130, pct: 20, drop: 1 },
+        { width: 100, pct: 100 },
+      ],
+      560,
+      6,
+    )
+    expect(out?.dropped).toEqual([false, false, false])
+    const [reading, tick, target] = out?.starts ?? []
+    expect((reading ?? 0) + 60).toBeLessThanOrEqual((target ?? 0) - 6 + 0.5)
+    expect((tick ?? 0) + 130).toBeLessThanOrEqual((reading ?? 0) - 6 + 0.5)
+  })
   test('the reading and the target never drop: a row that cannot hold them flows', () => {
     expect(placeCaptionRow([reading, pace, target], 150, 6)).toBeNull()
   })

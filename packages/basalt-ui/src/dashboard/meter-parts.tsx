@@ -715,6 +715,11 @@ export function MeterBar(props: {
         ...labelled,
       ]
   const zoneLabels = compact ? [] : model.zoneLabels
+  // On a zoned track the zone names own the row below; the figures at its two ends sit above the
+  // track, where nothing else competes for them. Every other tick label stays with the names.
+  const isEnd = (t: TickMark) => t.pct <= 0 || t.pct >= 100
+  const aboveTicks = zoneLabels.length > 0 ? tickLabels.filter(isEnd) : tickLabels
+  const belowTicks = zoneLabels.length > 0 ? tickLabels.filter((t) => !isEnd(t)) : []
   const describedBy =
     model.describedByText === null ? {} : ({ 'aria-describedby': describedId } as const)
 
@@ -784,9 +789,7 @@ export function MeterBar(props: {
   const root = rootProps(shell)
   return (
     <div {...root} className={root.className}>
-      {tickLabels.length > 0 && zoneLabels.length === 0 && (
-        <LabelRow zones={zoneLabels} ticks={tickLabels} />
-      )}
+      {aboveTicks.length > 0 && <LabelRow zones={[]} ticks={aboveTicks} />}
       <div
         className={cx(classes.trackBox, trackHidden && classes.trackHidden)}
         data-meter-track-hidden={trackHidden ? '' : undefined}
@@ -837,7 +840,7 @@ export function MeterBar(props: {
         ))}
         <Tick kind="target" className={classes.tick} pct={model.targetPct} />
       </div>
-      {zoneLabels.length > 0 && <LabelRow zones={zoneLabels} ticks={tickLabels} />}
+      {zoneLabels.length > 0 && <LabelRow zones={zoneLabels} ticks={belowTicks} />}
       {anchored && <ZoneReading pct={model.markerPct ?? 0}>{start}</ZoneReading>}
       {model.describedByText !== null && (
         <VisuallyHidden id={describedId} className={classes.summary}>
