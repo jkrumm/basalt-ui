@@ -144,10 +144,10 @@ describe('3. S2 goal meter', () => {
     const goal = anchor(training(), 'goal')
     const ticks = source('./S2Training.tsx')
     // W38: the target is stated once (the end caption), the pace once (the tick caption).
-    expect(ticks).toMatch(/caption: `Pace /)
+    expect(ticks).toMatch(/label: `Pace /)
     const copy = text(goal)
-    expect(copy).toContain(`Pace ${Math.round(PACE_SESSIONS)} by ${TODAY_LABEL}`)
-    expect(copy).toContain(`Goal ${GOAL_SESSIONS}`)
+    expect(copy).toContain(`Pace ${Math.round(PACE_SESSIONS)} sessions by ${TODAY_LABEL}`)
+    expect(copy).toContain(`Target ${GOAL_SESSIONS}`)
     expect(copy.match(new RegExp(`\\b${GOAL_SESSIONS}\\b`, 'g'))).toHaveLength(1)
   })
 
@@ -158,10 +158,12 @@ describe('3. S2 goal meter', () => {
 })
 
 describe('4. S3', () => {
-  it('the Today footer sits under Dispatch spend and states the cap', () => {
-    expect(source('./S3Agents.tsx')).toMatch(/footerEntry\(\s*'day'[\s\S]*?'dispatch-spend'/)
+  it('the Today footer shares the footer row and states the cap', () => {
+    // W38 r1: no `under`; the day and week budgets share the strip's footer row.
+    expect(source('./S3Agents.tsx')).not.toMatch(/under\??:/)
     const day = text(anchor(agents(), 'strip-footer-day'))
-    expect(day).toContain(`of ${fmtEur(BUDGETS.day.cap)} cap`)
+    expect(day).toContain(`Target ${fmtEur(BUDGETS.day.cap)}`)
+    expect(day).not.toMatch(/\bof €/)
   })
 
   it('the awaiting error names the quantity "Awaiting", never "Needs you"', () => {
@@ -221,10 +223,12 @@ describe('5. S4', () => {
 })
 
 describe('6. components', () => {
-  it('fills the card with four columns instead of capping the table', () => {
+  // W38 r1: the card is capped to fit the table (the card, not the table, so no half-empty card).
+  it('caps the table card at its content width', () => {
     const src = source('../demo/ComponentsPage.tsx')
     expect(src).not.toMatch(/<Table[^>]*maw=/)
-    expect(src).toContain('Prior 30 days')
+    expect(src).toMatch(/<Box maw=\{TABLE_MAX_WIDTH\}>\s*<ComponentGroup/)
+    expect(src).toContain('Prior 30 d')
   })
 
   it('keeps "Paused" with its row at 390: Pending and Paused share one group', () => {

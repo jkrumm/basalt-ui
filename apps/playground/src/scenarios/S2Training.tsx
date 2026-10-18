@@ -10,7 +10,7 @@
  * draw their own loading and empty states (`shot-state` → `loading` / no reading); the card only
  * takes the error.
  */
-import { Box, SimpleGrid, Skeleton, Stack, Text } from '@mantine/core'
+import { Box, Button, Group, SimpleGrid, Skeleton, Stack, Text } from '@mantine/core'
 import { BarList, Meter, PageBar, StatCard, StatGroup } from 'basalt-ui'
 import { Bars, ChartCard, Sparkline } from 'basalt-ui/charts'
 import type { BarsBar } from 'basalt-ui/charts'
@@ -87,8 +87,8 @@ const aheadOrBehind = (gap: number): string =>
 /** One card height for a row pair: the grid cell sets it, the card fills it. */
 const FILL: CSSProperties = { height: '100%' }
 
-/** Words only, the status word bound to its verb with no-break spaces so it never wraps alone at 390. Every figure lives on the surface that owns it, so the sentence never restates one. */
-const SUMMARY = `${PACE_GAP === 0 ? 'On' : PACE_GAP > 0 ? 'Ahead of' : 'Behind'} the ${MONTH_NAME} goal pace. Load is ${loadZoneName(LOAD_RATIO).toLowerCase()}; readiness\u00A0is\u00A0${readinessLevel(READINESS_SCORE).toLowerCase()}.`
+/** One sentence per fact, each with its figure (SPEC § 6.9); the status word is bound to its figure with no-break spaces so neither wraps alone at 390. */
+const SUMMARY = `${fmtInt(SESSIONS_MTD)} sessions, against a pace of ${fmtInt(PACE_SESSIONS)} on the ${MONTH_NAME} goal. Load ratio ${fmtRatio(LOAD_RATIO)} is ${loadZoneName(LOAD_RATIO).toLowerCase()}; readiness ${READINESS_SCORE}\u00A0is\u00A0${readinessLevel(READINESS_SCORE).toLowerCase()}.`
 
 const SESSION_SEGMENTS = TYPE_MIX.filter((t) => t.count > 0).map((t) => ({
   value: t.count,
@@ -148,9 +148,16 @@ function Summary({ shotState }: ScenarioProps) {
       {shotState === 'loading' ? (
         <Skeleton height={20} width={420} maw="100%" />
       ) : (
-        <Text size="sm" c="dimmed">
-          {text}
-        </Text>
+        <Group gap="sm" wrap="wrap">
+          <Text size="sm" c="dimmed">
+            {text}
+          </Text>
+          {shotState === 'error' && (
+            <Button variant="default" size="xs" onClick={noop}>
+              Retry
+            </Button>
+          )}
+        </Group>
       )}
     </Box>
   )
@@ -255,10 +262,11 @@ function GoalRow({ shotState }: ScenarioProps) {
                 max={GOAL_SESSIONS}
                 target={GOAL_SESSIONS}
                 ticks={[
-                  { at: PACE_SESSIONS, caption: `Pace ${fmtInt(PACE_SESSIONS)} by ${TODAY_LABEL}` },
+                  {
+                    at: PACE_SESSIONS,
+                    label: `Pace ${fmtInt(PACE_SESSIONS)} sessions by ${TODAY_LABEL}`,
+                  },
                 ]}
-                startCaption={null}
-                endCaption={`Goal ${GOAL_SESSIONS}`}
                 format={(v) => `${fmtInt(v)} sessions`}
                 loading={loading}
                 emptyText={TRAINING_EMPTY}

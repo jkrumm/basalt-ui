@@ -60,8 +60,7 @@ const CUMULATIVE_SERIES: ChartSeries<CumulativeRow>[] = [
   },
   {
     key: 'forecast',
-    // The end label names the month-end figure: the series name and where the dashed line lands.
-    label: `Forecast ${fmtEurCompact(FORECAST_EUR)}`,
+    label: 'Forecast',
     color: demoColors.sessions,
     dash: 'dashed',
     getValue: (d) => d.forecast,
@@ -102,7 +101,7 @@ const MEDIAN_BIN = DISTRIBUTION.findLast((b) => b.from <= MEDIAN_DAY_EUR)
 const MEDIAN_FACT =
   MEDIAN_BIN === undefined
     ? DISTRIBUTION_WINDOW
-    : `${MEDIAN_BIN.days} of the ${DISTRIBUTION_WINDOW} landed in ${spendBand(MEDIAN_BIN)}`
+    : `median day; ${MEDIAN_BIN.days} of the ${DISTRIBUTION_WINDOW} landed in ${spendBand(MEDIAN_BIN)}`
 
 const CUMULATIVE_DATA = [...CUMULATIVE]
 const DISTRIBUTION_DATA = [...DISTRIBUTION]
@@ -218,7 +217,7 @@ function SpendStats({ shotState }: ScenarioProps) {
           <Meter
             label={`Forecast against the ${fmtEur(BUDGET_EUR)} budget`}
             max={TRACK_END_EUR}
-            ticks={[{ at: BUDGET_EUR, label: 'Budget', caption: fmtEur(BUDGET_EUR) }]}
+            ticks={[{ at: BUDGET_EUR, label: `Budget ${fmtEur(BUDGET_EUR)}` }]}
             format={fmtEur}
             segments={[
               { value: MTD_EUR, label: 'Spent' },
@@ -240,7 +239,9 @@ function SpendStats({ shotState }: ScenarioProps) {
       // The cap is a figure with or without spend, so an empty cell keeps it as the hero and says why
       // there is no meter in its footer; only a failure replaces the reading.
       ...(shotState === 'error' && cellState('The budget', '')),
-      ...(shotState === 'empty' && { footer: `No spend ${WINDOW_LABEL} to set against it.` }),
+      ...(shotState === 'empty' && {
+        footer: `No spend ${WINDOW_LABEL} to set against it. Spend appears once a project runs.`,
+      }),
       ...(!hidden && {
         visual: (
           <Meter
@@ -278,7 +279,7 @@ function SpendCharts({ shotState }: ScenarioProps) {
                 ? { value: fmtEur(FORECAST_EUR), period: 'forecast, end of month' }
                 : { value: fmtDay(BUDGET_CROSSING.date), period: 'forecast reaches the budget' },
           })}
-          info={`Month-to-date spend per day against the ${fmtEur(BUDGET_EUR)} budget. The dashed line holds the ${fmtEur(MTD_EUR / DAYS_ELAPSED)} daily average flat to the last day.`}
+          info={`Cumulative spend since the 1st, summed day by day, against the ${fmtEur(BUDGET_EUR)} budget. The dashed line holds the ${fmtEur(MTD_EUR / DAYS_ELAPSED)} daily average flat to the last day.`}
           state={chartStateFor(shotState, {
             empty: `No spend recorded ${WINDOW_LABEL}. Connect a project to the usage export.`,
             error: retry('Cumulative spend'),
@@ -304,7 +305,7 @@ function SpendCharts({ shotState }: ScenarioProps) {
           title="Daily spend, distribution"
           facts={{
             value: fmtEur(MEDIAN_DAY_EUR),
-            unit: 'a day, median',
+            unit: 'a day',
             period: MEDIAN_FACT,
           }}
           info="Each bar counts the days, of the last 90, whose total spend across all projects landed in that €10 band (€ a day). The headline is the median day and the band it falls in."
