@@ -260,8 +260,8 @@ export type RowPlacement = {
  * the row); the other ticks go next; every other zone name then shows only
  * when it lies inside the row and its own span and clears every label already kept, trying its full
  * name and then its `short` box; the end ticks (at the track's start or end) go last, so they yield
- * to any name they would touch. Two shown labels keep at least `gap` px between them (one gap step
- * of the host's spacing). A hidden name is still named in the described-by text.
+ * to any name they would touch. A tick keeps at least `gap` px (one gap step of the host's
+ * spacing) from every other label; zone names among themselves only must not touch. A hidden name is still named in the described-by text.
  */
 export function placeRowLabels(
   labels: readonly RowLabel[],
@@ -271,27 +271,30 @@ export function placeRowLabels(
   const shown = labels.map(() => false)
   const short = labels.map(() => false)
   const shift = labels.map(() => 0)
-  const kept: LabelBox[] = []
+  const kept: { box: LabelBox; tick: boolean }[] = []
   const rank = (l: RowLabel) => (l.holding ? 0 : l.end ? 3 : l.span ? 2 : 1)
   const order = labels
     .map((_, i) => i)
     .toSorted((a, b) => rank(labels[a] as RowLabel) - rank(labels[b] as RowLabel))
-  const clears = (b: LabelBox) =>
-    !kept.some(
-      (k) => b.left < k.right + gap - LABEL_SUBPIXEL && k.left < b.right + gap - LABEL_SUBPIXEL,
-    )
+  // The gap step applies when either label of a pair is a tick; zone names keep to "not touching".
+  const clears = (b: LabelBox, tick: boolean) =>
+    !kept.some(({ box: k, tick: kTick }) => {
+      const pad = tick || kTick ? gap : 0
+      return b.left < k.right + pad - LABEL_SUBPIXEL && k.left < b.right + pad - LABEL_SUBPIXEL
+    })
   for (const i of order) {
     const label = labels[i] as RowLabel
     const { span } = label
+    const tick = span === undefined && !label.holding
     let box = label.box
     if (label.holding) {
       const width = box.right - box.left
       const left = Math.max(0, Math.min(box.left, rowWidth - width))
       shift[i] = left - box.left
       box = { left, right: left + width }
-      if (!clears(box)) continue
+      if (!clears(box, false)) continue
       shown[i] = true
-      kept.push(box)
+      kept.push({ box, tick: false })
       continue
     }
     const fits = (b: LabelBox) =>
@@ -299,13 +302,13 @@ export function placeRowLabels(
       b.right <= rowWidth + LABEL_SUBPIXEL &&
       (span === undefined ||
         (b.left >= span.left - LABEL_SUBPIXEL && b.right <= span.right + LABEL_SUBPIXEL)) &&
-      clears(b)
+      clears(b, tick)
     const useShort = !fits(box) && label.short !== undefined && fits(label.short)
     if (useShort) box = label.short as LabelBox
     else if (!fits(box)) continue
     shown[i] = true
     short[i] = useShort
-    kept.push(box)
+    kept.push({ box, tick })
   }
   return { shown, short, shift }
 }

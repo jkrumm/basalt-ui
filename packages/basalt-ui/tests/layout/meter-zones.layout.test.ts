@@ -36,16 +36,15 @@ type Shown = { zones: string[]; ticks: string[] }
 const ENDS = ['0', '2.0']
 
 const CASES: ReadonlyArray<readonly [string, Shown]> = [
-  // 120: only the holding name fits; "Under" would sit closer than a gap step to it, and Caution and
-  // Danger are wider than their spans. Both end ticks stay: no name they could touch is shown.
-  ['dash-zl-120', { zones: ['Optimal'], ticks: ENDS }],
+  // 120: Caution and Danger are wider than their spans; "Under" sits within a gap step of the "0" end
+  // tick, which yields to it, so only the "2.0" end tick remains.
+  ['dash-zl-120', { zones: ['Under', 'Optimal'], ticks: ['2.0'] }],
   // 170/220: "Danger" fits its span and the end tick "2.0" yields to it; the "0" tick stays.
   ['dash-zl-170', { zones: ['Under', 'Optimal', 'Danger'], ticks: ['0'] }],
-  // 220: "Danger" fits its span but the "2.0" end tick takes the place.
   ['dash-zl-220', { zones: ['Under', 'Optimal', 'Danger'], ticks: ['0'] }],
   ['dash-zl-342', { zones: ['Under', 'Optimal', 'Danger'], ticks: ENDS }],
   ['dash-zl-card', { zones: ['Under', 'Optimal', 'Danger'], ticks: ENDS }],
-  // The "Rest" tick sits on "Under"'s centre: the tick wins, the name hides.
+  // The "Rest" tick sits on "Under"'s centre: the interior tick wins, the name hides.
   ['dash-zl-clash', { zones: ['Optimal', 'Danger'], ticks: ['Rest', '0'] }],
 ]
 const STRIP: Record<string, Shown> = {
@@ -147,11 +146,11 @@ function assertRow(m: Measured, expected: Shown) {
   }
   const all = [...m.labels, ...m.ticks]
   for (const [i, a] of all.entries()) {
-    for (const b of all.slice(i + 1)) {
-      // At least one gap step (0.375rem) apart, never merely not touching.
-      expect(
-        a.right + GAP_STEP <= b.left + SUBPIXEL || b.right + GAP_STEP <= a.left + SUBPIXEL,
-      ).toBe(true)
+    for (const [j, b] of all.entries()) {
+      if (j <= i) continue
+      // A tick keeps a gap step (0.375rem) from every label; zone names only must not touch.
+      const gap = i >= m.labels.length || j >= m.labels.length ? GAP_STEP : 0
+      expect(a.right + gap <= b.left + SUBPIXEL || b.right + gap <= a.left + SUBPIXEL).toBe(true)
     }
   }
   // One row: every label and tick shares one top.
@@ -205,22 +204,20 @@ function rowSuite(vp: Viewport) {
     for (const name of ['Low', 'Optimal', 'High', 'Overreaching'])
       expect(m.described).toContain(name)
     const all = [...m.labels, ...m.shorts, ...m.ticks]
+    const names = m.labels.length + m.shorts.length
     for (const [i, a] of all.entries()) {
-      for (const b of all.slice(i + 1)) {
-        expect(
-          a.right + GAP_STEP <= b.left + SUBPIXEL || b.right + GAP_STEP <= a.left + SUBPIXEL,
-        ).toBe(true)
+      for (const [j, b] of all.entries()) {
+        if (j <= i) continue
+        const gap = i >= names || j >= names ? GAP_STEP : 0
+        expect(a.right + gap <= b.left + SUBPIXEL || b.right + gap <= a.left + SUBPIXEL).toBe(true)
       }
     }
   })
 
   test('at 120px a zone that cannot fit its name shows its short label inside its span', async () => {
     const m = await measure(p, 'dash-zl-short-120')
-    expect(m.shorts.map((s) => [s.name, s.text])).toEqual([
-      ['Under', 'Und'],
-      ['Danger', 'Dan'],
-    ])
-    expect(m.labels.map((l) => l.name)).toEqual(['Optimal'])
+    expect(m.shorts.map((s) => [s.name, s.text])).toEqual([['Danger', 'Dan']])
+    expect(m.labels.map((l) => l.name)).toEqual(['Under', 'Optimal'])
     for (const name of ZONES) expect(m.described).toContain(name)
     for (const short of m.shorts) {
       const z = m.zones.find((zone) => zone.name === short.name)
