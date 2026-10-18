@@ -1127,6 +1127,15 @@ included. Stretch: the digit face has no `wdth` axis, and neither does the shipp
 so `--basalt-font-head-stretch` (88%) condenses neither letters nor digits today and they cannot
 mismatch. A consumer who swaps in a `wdth` cut of the head face gets condensed letters over
 full-width digits. The face costs no extra download beyond the Nunito latin file `styles.css` already loads.
+### `shot` desktop hover reports a hovering fine pointer
+
+A headless Chromium with no pointing device reports `(hover: none)` / `(pointer: coarse)`, so no
+`@media (hover: hover)` rule (Mantine's filled `Button` hover, any consumer hover) applied in a
+desktop hover shot and the crop looked identical to rest. The launcher now starts Chrome with
+`--blink-settings=primaryHoverType=2,availableHoverTypes=2,primaryPointerType=4,availablePointerTypes=4`;
+the mobile viewport (`hasTouch`) keeps `hover: none` / `pointer: coarse`. Desktop hover crops of
+filled controls now differ from rest, so a committed baseline of them will diff once. No opt-out:
+the previous crop was the defect.
 
 ## 2.22.0 — Wave 37, argo's friction II
 
