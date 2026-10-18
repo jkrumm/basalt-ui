@@ -33,8 +33,6 @@ type Box = { top: number; bottom: number }
 type MeasuredCell = {
   key: string
   top: number
-  /** The measured height of the hero-footer track (the grid's third row) of this cell's band. */
-  track3: number
   parts: Partial<Record<Part, Box>>
 }
 type Measured = { gap: number; cells: MeasuredCell[] }
@@ -55,17 +53,8 @@ const measure = (p: LayoutPage): Promise<Measured> =>
       rows: '[data-strip-rows]',
       footer: '[data-strip-footer]',
     }
-    const slots = [...host.querySelectorAll<HTMLElement>('[data-strip-slot]')]
-    const grid = slots[0]!.parentElement!
-    const tracks = getComputedStyle(grid).gridTemplateRows.split(' ').map(parseFloat)
-    const tops = [...new Set(slots.map((e) => Math.round(e.getBoundingClientRect().top)))].toSorted(
-      (a, b) => a - b,
-    )
     const cells = [...host.querySelectorAll<HTMLElement>('[data-strip-cell]')].map((c) => {
       const parts: Record<string, { top: number; bottom: number }> = {}
-      const bandIndex = tops.indexOf(
-        Math.round(c.closest('[data-strip-slot]')!.getBoundingClientRect().top),
-      )
       for (const [name, q] of Object.entries(sel)) {
         const el = c.querySelector<HTMLElement>(q)
         if (!el) continue
@@ -75,7 +64,6 @@ const measure = (p: LayoutPage): Promise<Measured> =>
       return {
         key: c.getAttribute('data-strip-cell') ?? '',
         top: c.getBoundingClientRect().top,
-        track3: tracks[bandIndex * 6 + 2] ?? 0,
         parts,
       }
     })
@@ -84,8 +72,6 @@ const measure = (p: LayoutPage): Promise<Measured> =>
 
 const band = (m: Measured, cell: MeasuredCell) =>
   m.cells.filter((c) => Math.abs(c.top - cell.top) <= SNAP)
-
-const height = (b: Box | undefined) => (b ? b.bottom - b.top : 0)
 
 type States = {
   strip: Box & { left: number; right: number }
@@ -154,8 +140,6 @@ type Compact = {
     contentBottom: number
     below: string
     slot: { top: number; bottom: number; left: number }
-    footerRow: string | null
-    footerTop: number | null
     valueBottom: number
   }[]
 }
@@ -181,7 +165,6 @@ const measureCompact = (p: LayoutPage): Promise<Compact> =>
       )
       const slot = c.closest<HTMLElement>('[data-strip-slot]') ?? c
       const sb = slot.getBoundingClientRect()
-      const footer = c.querySelector<HTMLElement>('[data-strip-footer]')
       return {
         key: c.getAttribute('data-strip-cell') ?? '',
         top: b.top,
@@ -192,12 +175,6 @@ const measureCompact = (p: LayoutPage): Promise<Compact> =>
         contentBottom: Math.max(...leaves.map((e) => e.getBoundingClientRect().bottom)),
         below: paintBehind(c.parentElement),
         slot: { top: sb.top, bottom: sb.bottom, left: sb.left },
-        footerRow: footer
-          ? footer.parentElement === c
-            ? getComputedStyle(footer).gridRowStart
-            : 'stack'
-          : null,
-        footerTop: footer ? footer.getBoundingClientRect().top : null,
         valueBottom: c.querySelector<HTMLElement>('[data-strip-value]')!.getBoundingClientRect()
           .bottom,
       }
@@ -220,21 +197,15 @@ function suite(vp: Viewport) {
     return c
   }
 
-  test('no cell has a void beyond one row-gap, except under a taller sibling part', () => {
+  test('no cell has a void beyond one row-gap between its parts', () => {
     for (const c of m.cells) {
       const present = PARTS.filter((n) => c.parts[n])
       for (const [i, name] of present.entries()) {
         const next = present[i + 1]
         if (!next) continue
         const gapBelow = c.parts[next]!.top - c.parts[name]!.bottom
-        // Under a value, the hero-footer track (measured) opens as soon as ANY sibling has a hero
-        // footer; the cell's own hero footer sits IN it, so only the parts after it pay the track.
-        const track = name === 'value' && next !== 'footer' ? c.track3 : 0
-        const slack =
-          track +
-          Math.max(0, ...band(m, c).map((s) => height(s.parts[name]) - height(c.parts[name])))
-        if (gapBelow > m.gap + slack + SNAP)
-          throw new Error(`LAYOUT: ${c.key} ${name}→${next} gap ${gapBelow} slack ${slack}`)
+        if (gapBelow > m.gap + SNAP)
+          throw new Error(`LAYOUT: ${c.key} ${name}→${next} gap ${gapBelow}`)
       }
     }
   })
@@ -325,7 +296,7 @@ function suite(vp: Viewport) {
     }
   })
 
-  test('compact: captions share one top, values one baseline, per-footer-track tops are equal', async () => {
+  test('compact: captions share one top and values one baseline', async () => {
     const c = await measureCompact(p)
     for (const x of c.cells) {
       for (const y of c.cells.filter((o) => Math.abs(o.top - x.top) <= SNAP)) {
@@ -333,9 +304,6 @@ function suite(vp: Viewport) {
         const cy = cell(y.key)
         expect(Math.abs(cx.parts.caption!.top - cy.parts.caption!.top)).toBeLessThanOrEqual(1)
         expect(Math.abs(cx.parts.value!.bottom - cy.parts.value!.bottom)).toBeLessThanOrEqual(1)
-        if (x.footerTop !== null && y.footerTop !== null && x.footerRow === y.footerRow) {
-          expect(Math.abs(x.footerTop - y.footerTop)).toBeLessThanOrEqual(1)
-        }
       }
     }
   })
@@ -350,24 +318,12 @@ function suite(vp: Viewport) {
     }
   })
 
-  test('a mixed row keeps one top per footer kind: hero footers together, rows footers together', () => {
-    const hero = ['short', 'again'].map(cell)
-    const rowsCells = ['rows', 'rows2'].map(cell)
-    if (vp.width >= 800) {
-      expect(Math.abs(hero[0]!.parts.footer!.top - hero[1]!.parts.footer!.top)).toBeLessThanOrEqual(
-        1,
-      )
-      expect(
-        Math.abs(rowsCells[0]!.parts.footer!.top - rowsCells[1]!.parts.footer!.top),
-      ).toBeLessThanOrEqual(1)
-      // The relaxation: a rows footer rides the shared footer track, below every hero footer.
-      expect(rowsCells[0]!.parts.footer!.top).toBeGreaterThan(hero[0]!.parts.footer!.bottom)
-    }
-    // Always: a hero footer hugs its value; a rows footer follows its rows (shared footer track).
-    for (const c of hero)
+  test('a footer rides with what it captions: a hero footer hugs its value, a rows footer its rows', () => {
+    // Footer tops are NOT shared across cells (Wave 37 r2): a short cell never holds a sibling's void.
+    for (const c of ['short', 'again'].map(cell))
       expect(c.parts.footer!.top - c.parts.value!.bottom).toBeLessThanOrEqual(m.gap + SNAP)
-    for (const c of rowsCells)
-      expect(c.parts.footer!.top).toBeGreaterThanOrEqual(c.parts.rows!.bottom)
+    for (const c of ['rows', 'rows2'].map(cell))
+      expect(c.parts.footer!.top - c.parts.rows!.bottom).toBeLessThanOrEqual(m.gap + SNAP)
   })
 
   test('a value-only cell’s footer sits directly under its value', () => {
