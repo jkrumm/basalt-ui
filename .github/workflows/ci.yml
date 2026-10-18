@@ -68,6 +68,10 @@ jobs:
         working-directory: packages/basalt-ui
         run: bun ./bin/basalt-ui.mjs check-theme
 
+      - name: Theme guard (playground)
+        working-directory: apps/playground
+        run: bun ../../packages/basalt-ui/bin/basalt-ui.mjs check-theme
+
       - name: Coverage check (SURFACES projection gate)
         run: bun packages/basalt-ui/scripts/check-coverage.ts --check
 
