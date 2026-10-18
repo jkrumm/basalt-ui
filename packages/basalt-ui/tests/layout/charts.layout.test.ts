@@ -897,8 +897,18 @@ layout('Charts — 2.0 layout', () => {
         }
       })
       expect(m.text).not.toBe('')
-      // `{ at, value }` data: the readout names its day.
-      expect(m.text).toMatch(/·\s*\S*\d{1,2}\S* ?\S*/)
+      // `{ at, value }` data: the readout ends with one of the fixture's days, spelled by this
+      // browser's own Intl (the order of day and month is the locale's, not a contract).
+      const days = await p.raw.evaluate(() =>
+        [10, 11, 12, 13, 14, 15, 16].map((d) =>
+          new Intl.DateTimeFormat(undefined, {
+            day: 'numeric',
+            month: 'short',
+            timeZone: 'UTC',
+          }).format(Date.UTC(2026, 9, d)),
+        ),
+      )
+      expect(days.some((day) => m.text?.trim().endsWith(` · ${day}`))).toBe(true)
       expect(m).toMatchObject({
         visible: true,
         inside: true,
