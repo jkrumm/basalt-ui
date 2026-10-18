@@ -362,7 +362,8 @@ const PROVIDER_ONLY_LABEL = 'provider-only first paint (gzip B, dist)'
 // 19732 → 19782 (W35, the theme owns the card inset, CI Linux measurement): +50 B.
 // 19782 → 19921 (W35, on-scale Button padding and the neutral error state, CI Linux measurement): +139 B.
 // 19921 → 20012 (W36, Button section inset vars, CI Linux measurement): +91 B.
-const PROVIDER_ONLY_CEILING = 20012
+// 20012 → 20345 (W37, tab/badge/row-surface/disabled vars, CI Linux measurement): +333 B.
+const PROVIDER_ONLY_CEILING = 20345
 // Embedded `<BasaltProvider spotlight={false}>`, no defines, peers bundled, every chunk counted: 54735 B landed, ~1% margin.
 // 55300 → 55391 (W32): +91 B for the Wave 32 scales — the dense control tier rule in the palette CSS, the row line-height and `lineHeights` ratios, the expanded gutter, and the card/radius/type retunes.
 // 55391 → 55404 (W32 CI): the gate is CI's Linux build, which gzips 13 B larger than the macOS build the lead measured.
@@ -378,7 +379,8 @@ const PROVIDER_ONLY_CEILING = 20012
 // 56033 → 56097 (W35, the theme owns the card inset, CI Linux measurement): +64 B.
 // 56097 → 56238 (W35, on-scale Button padding and the neutral error state, CI Linux measurement): +141 B.
 // 56238 → 56319 (W36, Button section inset vars, CI Linux measurement): +81 B.
-const EMBEDDED_CEILING = 56319
+// 56319 → 56641 (W37, tab/badge/row-surface/disabled vars, CI Linux measurement): +322 B.
+const EMBEDDED_CEILING = 56641
 // `createBasaltTheme()` alone, peers bundled, every chunk counted: 14420 locally. The theme reaching
 // no component it configures is what keeps this near Mantine's core; ~1% over landed.
 // 14570 → 14571 (W32): +1 B, the `lineHeights` ratios.
@@ -395,7 +397,8 @@ const EMBEDDED_CEILING = 56319
 // 15183 → 15235 (W35, the theme owns the card inset, CI Linux measurement): +52 B.
 // 15235 → 15374 (W35, on-scale Button padding and the neutral error state, CI Linux measurement): +139 B.
 // 15374 → 15451 (W36, Button section inset vars, CI Linux measurement): +77 B.
-const THEME_ONLY_CEILING = 15451
+// 15451 → 15767 (W37, tab/badge/row-surface/disabled vars, CI Linux measurement): +316 B.
+const THEME_ONLY_CEILING = 15767
 const THEME_ONLY_LABEL = 'createBasaltTheme only, peers bundled, all chunks (gzip B, dist)'
 const EMBEDDED_LABEL = 'embedded provider, no defines, peers bundled, all chunks (gzip B, dist)'
 const FEATURE_CHUNKS_LABEL =
