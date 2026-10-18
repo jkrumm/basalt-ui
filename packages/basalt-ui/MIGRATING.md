@@ -1180,13 +1180,14 @@ No export is removed. `Meter` gains one optional prop, `readingAt`; six caption 
 | A zone name fell back to its `short` alone, so one zone read "Over" beside "Low", "Optimal", "High"                                                                                       | Once one name falls back to its `short`, every other name that has one follows; the holding zone keeps its full name                                                             | give the zones no `short`, or none will fall back                                                                    |
 | On a zoned Meter, the figures at the track's two ends (ticks at `min` / `max`) shared the row below with the zone names and won every clash, so a name could vanish ("Good" beside "100") | They sit in a row above the track; the zone names own the row below and show whenever they fit their span. The zoned Meter is one caption row taller when it has end ticks       | none: drop the end ticks to drop the row                                                                             |
 | Categorical part captions that did not fit under their segments wrapped, which could leave one entry alone on a second row                                                                | One row when they fit, else a grid with the most columns that fit and no lone entry on the last row                                                                              | none                                                                                                                 |
+
 ### Section summary line (Wave 38)
 
 **Before:** a bare `<Text size="xs">` passed as `Section summary` rendered at the size it asked for
 (12). argo's strength diagnostics shell then counted four sizes: title 15, chart-card title 13,
 summary 12, chart ticks and legend 11.
 
-**Now:** that text renders at 11 (the chart text step) whatever its `size`, so the shell is 15, 13, 11. Only a direct `Text` child of the summary slot is capped; a `Group` of stats keeps its own sizes.
+**Now:** that text renders at 11 (the chart text step) whatever its `size`, so the shell is 15, 13, 11. Only a direct `Text` child of the summary slot is capped; a bare `Text` nested inside a `Group` keeps the size it asks for.
 
 **Opt out:** wrap the text in a `<span>` or a `Group`.
 
