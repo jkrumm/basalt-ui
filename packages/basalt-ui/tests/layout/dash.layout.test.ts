@@ -68,12 +68,13 @@ layout('Meter / BarList geometry', () => {
   })
 
   // Similar-length names hold the 120px law. Varied names (a short one beside a ~75 character one)
-  // are bounded by the label column cap, 14rem (224px) + the 12px gap, so 240px.
+  // are bounded by the label column, which the 14rem cap limits; measured worst gaps are 191px (528)
+  // and 216px (1400), asserted with a few px of headroom. The truncated row measures ~12px, the gap.
   test.each([
     ['dash-bar-wide-528', 120],
     ['dash-bar-wide-1400', 120],
-    ['dash-bar-varied-528', 240],
-    ['dash-bar-varied-1400', 240],
+    ['dash-bar-varied-528', 195],
+    ['dash-bar-varied-1400', 220],
   ] as const)(
     'a wide BarList keeps each name beside its value and aligns the columns (%s, gap <= %ipx)',
     async (id, maxGap) => {
@@ -99,7 +100,13 @@ layout('Meter / BarList geometry', () => {
             const spans = [...li.children]
             const [, value, secondary] = spans
             return {
-              label: textRect(need(li, 'span')),
+              // The visible edge: a truncated name's text range runs past its box.
+              label: {
+                right: Math.min(
+                  textRect(need(li, 'span')).right,
+                  need(li, 'span').getBoundingClientRect().right,
+                ),
+              },
               value: textRect(value ?? li),
               secondary: secondary?.textContent ? textRect(secondary) : null,
               trackRight: need(li, '[data-bar-track]').getBoundingClientRect().right,
