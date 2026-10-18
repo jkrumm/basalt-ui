@@ -60,6 +60,8 @@ export type TableSpec = {
    * both are exercised, here and in the overflow guard.
    */
   stickyHeader?: boolean
+  /** A failed `query` (no data): the table's error body, with the empty state's search glyph supplied. */
+  error?: true
   /**
    * `enableGlobalFilter` — the toolbar's search field. It states a width, which is what made the
    * toolbar the widest box on a phone `/data` page (MEASURED at 390x844: `main.scrollWidth` 505

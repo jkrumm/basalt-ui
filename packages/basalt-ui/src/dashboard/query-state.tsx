@@ -119,7 +119,7 @@ export type ErrorStateProps = BasaltProps & {
  */
 export function ErrorState({
   error,
-  title = 'Something went wrong',
+  title = 'Could not load',
   fallback = 'The request failed.',
   onRetry,
   retrying = false,

@@ -291,6 +291,9 @@ function compileSparkline(
               ]),
         ]
   return {
+    // A bar's hover is the bar and the readout chip: no engine point marker (bar chrome only, as
+    // `Bars`).
+    ...(mark === 'bar' && { focusRing: false as const }),
     chart: ({ width, height }) => {
       const rows = poolSparkline(source, width, mark)
       const last = rows.at(-1)
@@ -530,13 +533,16 @@ export function Sparkline(props: SparklineProps): ReactElement {
       )}
       {at !== null && (
         // One layer on the plot rect (inside a line's margin): the dot and the readout take their
-        // fractions of the same box, so both land where the mark did.
+        // fractions of the same box, so both land where the mark did. A bar has no dot: the bar
+        // is the marker.
         <span aria-hidden="true" className={classes.layer} style={layerStyle}>
-          <span
-            data-basalt-sparkline-dot=""
-            className={classes.dot}
-            style={{ left: `${at.fx * 100}%`, top: `${at.fy * 100}%` }}
-          />
+          {mark === 'line' && (
+            <span
+              data-basalt-sparkline-dot=""
+              className={classes.dot}
+              style={{ left: `${at.fx * 100}%`, top: `${at.fy * 100}%` }}
+            />
+          )}
           <output
             data-basalt-sparkline-readout=""
             aria-live={hover === null ? 'polite' : 'off'}
