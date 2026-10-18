@@ -692,7 +692,8 @@ describe('Meter — caption orphans', () => {
 describe('Meter without a reading', () => {
   test('prints no filler: no dash, no caption by default, the muted track stays', () => {
     const { container } = mount({ label: 'B', value: null })
-    expect(container.querySelector('output')?.textContent).toBe('')
+    // Announced, not drawn: the state is read as text, never as a glyph.
+    expect(container.querySelector('output')?.textContent).toBe('No reading')
     expect(container.querySelector('[data-meter-track]')).not.toBeNull()
   })
 
