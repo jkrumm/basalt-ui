@@ -210,6 +210,14 @@ const HOVER_FIXTURE = `<!doctype html><style>
 const STATEFUL_FIXTURE = `<!doctype html><div data-shot=chart><section data-basalt-chart-card style="height:80px"></section></div>
 <div data-shot=plain style="height:80px"></div>`
 
+const SKELETON_FIXTURE = `<!doctype html><style>
+  body{margin:0}
+  .card{height:200px;position:relative}
+  .bar{position:relative;height:30px;margin-bottom:20px}
+  .bar::after{content:'';position:absolute;inset:0;background:#ccc}
+</style><div data-shot=loading class=card>${'<div class=bar></div>'.repeat(4)}</div>
+<div data-shot=blank class=card></div>`
+
 const pw = resolvePlaywright(process.cwd())
 const out = mkdtempSync(join(tmpdir(), 'basalt-harness-'))
 afterAll(() => rmSync(out, { recursive: true, force: true }))
@@ -233,6 +241,7 @@ const rowsOf = async (page: PwPage, file: string): Promise<string[]> => {
 
 type Run = {
   shots: Awaited<ReturnType<typeof capture>>['shots']
+  anchors: Awaited<ReturnType<typeof capture>>['anchors']
   rows: (file: string | null) => Promise<string[]>
 }
 
@@ -257,7 +266,9 @@ async function shoot(
           ? HOVER_FIXTURE
           : req.url === '/stateful'
             ? STATEFUL_FIXTURE
-            : FIXTURE,
+            : req.url === '/skeleton'
+              ? SKELETON_FIXTURE
+              : FIXTURE,
     )
   })
   await new Promise<void>((done) => server.listen(0, '127.0.0.1', done))
@@ -285,6 +296,7 @@ async function shoot(
       const page = await context.newPage()
       await check({
         shots: done.shots,
+        anchors: done.anchors,
         rows: (file) => rowsOf(page, join(dir, (file ?? '').replace(/^png\//, ''))),
       })
     })
@@ -297,6 +309,18 @@ async function shoot(
 }
 
 describe('real Chrome', () => {
+  test('a pseudo-painted placeholder bar counts as content, a bare card stays empty', async () => {
+    await shoot(
+      ['rest'],
+      async ({ anchors }) => {
+        const ratio = (name: string) => anchors.find((a) => a.name === name)?.emptyRatio
+        expect(ratio('loading')).toBeLessThan(0.3)
+        expect(ratio('blank')).toBe(1)
+      },
+      '/skeleton',
+    )
+  }, 120_000)
+
   test('an undeclared state is marked stateful only on an anchor holding a state surface', async () => {
     await shoot(
       ['empty'],
