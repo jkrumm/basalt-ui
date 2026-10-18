@@ -136,7 +136,7 @@ describe('a Bars hover is bar chrome only (item 2)', () => {
   type R = { t: Date; v: number }
   const s: ChartSeries<R> = { key: 'v', label: 'V', color: 'red', getValue: (d) => d.v }
   const data: R[] = [1, 2, 3].map((d) => ({ t: new Date(utc(d)), v: d }))
-  test('the compiled definition can drop the engine focus ring', () => {
+  test('the compiled definition can drop the engine focus ring (definition only; the rendered hover is pinned in the layout suite)', () => {
     const def = compileCartesian({
       chartId: 'f',
       data,
