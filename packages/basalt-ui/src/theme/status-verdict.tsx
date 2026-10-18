@@ -23,7 +23,11 @@ export function StatusVerdict({ color, word, phrase, className, style }: StatusV
   return (
     <span className={cx(classes.verdict, className)} {...(style !== undefined && { style })}>
       <StatusDot color={color} />
-      <span data-verdict-word="" {...(phrase !== undefined && { 'aria-hidden': true })}>
+      <span
+        data-verdict-word=""
+        title={phrase ?? word}
+        {...(phrase !== undefined && { 'aria-hidden': true })}
+      >
         {word}
       </span>
       {phrase !== undefined && <span className={classes.hidden}>{phrase}</span>}

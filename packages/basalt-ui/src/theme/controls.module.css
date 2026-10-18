@@ -323,6 +323,12 @@ html .tableRoot tbody tr:last-of-type {
   border-bottom: none;
 }
 
+/* A status word is the text as written ("Healthy"), not Mantine's UPPERCASE default; a caller who wants
+ * a micro-caption passes `tt="uppercase"`, which is inline and wins. `html` outranks Mantine's class. */
+html .badgeRoot {
+  text-transform: none;
+}
+
 /*
  * Badge status dot: a coloured `light` Badge is the neutral surface + ink word with a leading dot in the
  * status colour (`badgeVars` writes the `--badge-dot*` vars; nothing here without them). The dot is a

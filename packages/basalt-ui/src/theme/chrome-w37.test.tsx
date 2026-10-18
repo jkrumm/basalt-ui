@@ -41,8 +41,17 @@ describe('Button section inset', () => {
 
 describe('the Badge dot rule', () => {
   test('is scoped to the light variant, so variant="dot" keeps its own ::before', () => {
-    const rules = [...controlsCss.matchAll(/([^{}]*\.badgeRoot[^{}]*)\{/g)].map((m) => m[1] ?? '')
+    // The case reset (`html .badgeRoot`) is the one rule meant for every variant, the dot one included.
+    const rules = [...controlsCss.matchAll(/([^{}]*\.badgeRoot[^{}]*)\{/g)]
+      .map((m) => (m[1] ?? '').replace(/\/\*[\s\S]*?\*\//g, '').trim())
+      .filter((selector) => selector !== 'html .badgeRoot')
     expect(rules.length).toBeGreaterThan(0)
     for (const selector of rules) expect(selector).toContain("[data-variant='light']")
+  })
+})
+
+describe('Wave 37 r2 chrome rules', () => {
+  test('the Badge root resets text-transform so a status word keeps its case', () => {
+    expect(controlsCss).toMatch(/html \.badgeRoot\s*\{\s*text-transform:\s*none/)
   })
 })

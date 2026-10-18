@@ -1058,6 +1058,19 @@ No export is removed. `MeterTick` gains an optional `caption`; five Meter defaul
 `target` already captioned its value (`Target 28 sessions`, with `format`); `endCaption={null}` drops it.
 An end figure that hides still reads in the accessible description.
 
+### `BarList` and `Badge` defaults (lists and chrome II)
+
+Two defaults move; `BarList` gains `secondaryAlign`.
+
+| Surface               | Before                                                                                                                                                                                 | Now                                                                                                                                                                                                                                                                                                                                                      | Opt-out                                          |
+| --------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------ |
+| `BarList` `secondary` | one end-aligned column, so a status (dot plus word) had ragged dots; a long status ran past the track end at a phone width; a `DeltaBadge` column lined up on neither glyph nor figure | aligned by content: a string that is not a figure and a `StatusVerdict`/`StatusDot` start, a number, a numeric string and any other element end; a `DeltaBadge` gets a fixed-width glyph slot and a 4-character tabular figure slot inside the list, so glyphs and right edges line up; a status is clipped inside its cell and its word carries `title` | `secondaryAlign="start"` or `"end"` on `BarList` |
+| `Badge`               | Mantine's `text-transform: uppercase`                                                                                                                                                  | the word as written (`Healthy`), for the status chip (SPEC § 6.10); a deliberate micro-caption passes `tt="uppercase"`, which is inline and wins                                                                                                                                                                                                         | `tt="uppercase"` per Badge                       |
+
+`StatusVerdict`'s word now carries `title` (the `phrase`, else the word). `DeltaBadge` carries `data-delta` and its glyph
+`data-delta-glyph`; outside a `BarList` it looks as before. A literal `"▲ 9%"`
+string keeps the spacing its author typed — use `DeltaBadge` for a column of deltas.
+
 No export is removed. Four behaviours move and one optional field is new.
 
 | Surface                                   | Before                                                                                                                                                         | Now                                                                                                                                                                                                                                                                                                          |

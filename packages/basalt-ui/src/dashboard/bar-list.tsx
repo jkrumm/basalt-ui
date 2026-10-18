@@ -17,6 +17,11 @@
  * label, the value and secondary columns are right-aligned and shared, and the track takes the rest on
  * the one scale, so a name stays beside its value and a full-scale bar ends at the track end.
  *
+ * The secondary column aligns by content (override: `secondaryAlign`): a text secondary (a status word,
+ * `StatusVerdict`/`StatusDot`) starts on one x so the dots line up; figures ("41%", "+€7"), numbers and a
+ * `DeltaBadge` end. A delta column also gets a fixed-width glyph slot and a tabular figure slot, so the
+ * glyphs AND the figures' right edges line up (a column of deltas is table-like, D33 allows tabular there).
+ *
  * Colour law: bars are neutral. `accentLeader` (opt-in) lets the top row take the accent — the
  * leader bar, and nothing else. Each value is rendered as text, never only a bar length.
  *
@@ -41,10 +46,13 @@
  * />
  */
 import { Skeleton, VisuallyHidden } from '@mantine/core'
+import { isValidElement } from 'react'
 import type { ReactNode } from 'react'
 import { cx } from '../common/props'
 import type { BasaltProps } from '../common/props'
 import classes from './bar-list.module.css'
+import { StatusDot } from '../theme/status-dot'
+import { StatusVerdict } from '../theme/status-verdict'
 import { asText, barPercent } from './scale'
 
 type BarListItem = {
@@ -79,6 +87,11 @@ export type BarListProps = BasaltProps & {
   variant?: 'thin' | 'inline'
   /** The first row's bar takes the accent. Off by default. */
   accentLeader?: boolean
+  /**
+   * Which edge the secondary column aligns to. Default: by content — text (a status word, a status
+   * mark) starts, figures and other elements end.
+   */
+  secondaryAlign?: 'start' | 'end'
   /** Renders row-shaped skeletons. */
   loading?: boolean
   /** Skeleton rows while loading. Default 5. */
@@ -91,6 +104,19 @@ export type BarListProps = BasaltProps & {
 const hasContent = (node: ReactNode): boolean =>
   node !== undefined && node !== null && typeof node !== 'boolean'
 
+const isFigure = (node: ReactNode): boolean =>
+  typeof node === 'number' || (typeof node === 'string' && /^[\s+\-−±▲▼]*[€$£¥]?\d/.test(node))
+
+/**
+ * The column's edge by content. A string that is not a figure and a status mark (`StatusVerdict`,
+ * `StatusDot`) are text and start on one x so the dots line up; a number, a numeric string and any other
+ * element (a `DeltaBadge`) are figures and keep the end edge.
+ */
+const isText = (node: ReactNode): boolean =>
+  typeof node === 'string'
+    ? !isFigure(node)
+    : isValidElement(node) && (node.type === StatusVerdict || node.type === StatusDot)
+
 export function BarList({
   label,
   items,
@@ -98,6 +124,7 @@ export function BarList({
   max,
   variant = 'thin',
   accentLeader = false,
+  secondaryAlign,
   loading = false,
   loadingRows = 5,
   emptyText = 'No data',
@@ -134,6 +161,7 @@ export function BarList({
     )
   const thin = variant === 'thin'
   const hasSecondary = items.some((i) => hasContent(i.secondary))
+  const align = secondaryAlign ?? (items.some((i) => isText(i.secondary)) ? 'start' : 'end')
   return (
     // The frame is the width container the wide layout keys on (a container cannot restyle its own grid).
     <div className={cx(classes.frame, className)} style={style}>
@@ -144,6 +172,7 @@ export function BarList({
         role="list"
         aria-label={label}
         data-secondary={hasSecondary ? '' : undefined}
+        data-secondary-align={hasSecondary ? align : undefined}
         data-variant={variant}
       >
         {items.map((item, i) => {

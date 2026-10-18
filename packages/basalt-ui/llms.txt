@@ -29,6 +29,7 @@ Signature: BarList(props: BarListProps): JSX.Element
   max?: number
   variant?: "thin" | "inline"
   accentLeader?: boolean
+  secondaryAlign?: "start" | "end"
   loading?: boolean
   loadingRows?: number
   emptyText?: string
