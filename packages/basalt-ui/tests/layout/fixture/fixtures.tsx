@@ -1492,6 +1492,45 @@ function DashFixture(): ReactElement {
           ticks={[{ at: 0.3, label: 'Rest' }, ...LOAD_TICKS]}
         />
       </div>
+      <div data-testid="dash-strip-align">
+        <StatGroup
+          variant="strip"
+          label="Alignment"
+          cols={4}
+          cells={[
+            {
+              key: 'tall',
+              caption: 'Load',
+              value: '1.1',
+              visual: (
+                <Meter
+                  label="Training load"
+                  min={0}
+                  max={2}
+                  value={1.1}
+                  zones={LOAD_ZONES}
+                  ticks={LOAD_TICKS}
+                  endCaption="rest < 40 · push ≥ 70"
+                />
+              ),
+              footer: 'vs 4-week mean',
+            },
+            {
+              key: 'rows',
+              caption: 'Zones',
+              value: '78 %',
+              rows: [
+                { key: 'a', label: 'Easy', value: '48 ms' },
+                { key: 'b', label: 'Hard', value: '12 ms' },
+                { key: 'c', label: 'Rest', value: '3 ms' },
+              ],
+              footer: 'last 7 days',
+            },
+            { key: 'short', caption: 'Verdicts', value: '78 %', footer: 'of 120 reviewed' },
+            { key: 'bare', caption: 'Open', value: '4' },
+          ]}
+        />
+      </div>
       <div data-testid="dash-zl-strip">
         <StatGroup
           variant="strip"
