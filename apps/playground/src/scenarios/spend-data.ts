@@ -5,7 +5,7 @@
  * from `TODAY`, so moving the reading date moves the copy with it.
  */
 
-import { monthName, seeded } from './fixture-utils'
+import { monthName, roundShares, seeded } from './fixture-utils'
 
 const PROJECT_KEYS = ['search', 'support', 'summaries', 'ingest', 'evals', 'sandbox'] as const
 export type ProjectKey = (typeof PROJECT_KEYS)[number]
@@ -143,9 +143,11 @@ export type ProjectRow = Part & {
   change: number
   /** The same change in EUR: this window's spend minus the prior window's. */
   delta: number
+  /** `share` in whole percent; the rows sum to 100 (largest-remainder rounding). */
+  pct: number
 }
 
-export const PROJECTS_MTD: readonly ProjectRow[] = PROJECT_KEYS.map((key) => {
+const PROJECTS_UNRANKED = PROJECT_KEYS.map((key) => {
   const spend = eurOf(MTD_ENTRIES, (e) => e.project === key)
   const prior = eurOf(PRIOR_MTD_ENTRIES, (e) => e.project === key)
   return {
@@ -157,6 +159,11 @@ export const PROJECTS_MTD: readonly ProjectRow[] = PROJECT_KEYS.map((key) => {
     delta: spend - prior,
   }
 }).toSorted((a, b) => b.spend - a.spend)
+const PROJECT_PCT = roundShares(PROJECTS_UNRANKED.map((p) => p.share))
+export const PROJECTS_MTD: readonly ProjectRow[] = PROJECTS_UNRANKED.map((p, i) => ({
+  ...p,
+  pct: PROJECT_PCT[i] ?? 0,
+}))
 
 /** The projects that spent more than in the prior window, largest increase first — what is driving
  * the month. A project that fell is not a driver, so it is not ranked. */

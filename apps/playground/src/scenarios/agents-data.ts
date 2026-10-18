@@ -5,7 +5,9 @@
  * from the list it summarises.
  */
 
-import { fmtDay } from './fixture-utils'
+import type { ChartSeries } from 'basalt-ui/charts'
+import { demoColors } from '../demo/series'
+import { fmtDay, fmtInt } from './fixture-utils'
 
 /** The reading date. Fixed, so the 14-day windows never move under a screenshot. */
 const TODAY = new Date(Date.UTC(2026, 9, 16))
@@ -17,7 +19,7 @@ export type ItemState = (typeof ITEM_STATES)[number]
 
 /** Status word per state; the page pairs it with a dot, never colour alone. */
 export const STATE_LABEL: Record<ItemState, string> = {
-  awaiting: 'Needs you',
+  awaiting: 'Awaiting',
   running: 'Running',
   queued: 'Queued',
   blocked: 'Blocked',
@@ -114,8 +116,6 @@ export const FAILURES_BY_HOUR: readonly number[] = Array.from({ length: 24 }, (_
   const from = FAILURES_WINDOW.start.getTime() + h * HOUR_MS
   return FAILURE_TIMES.filter((t) => t.getTime() >= from && t.getTime() < from + HOUR_MS).length
 })
-/** `13:00 UTC` — when the latest failed run ended. */
-export const FAILURES_LATEST_LABEL = `${String(FAILURE_TIMES.at(-1)?.getUTCHours() ?? 0).padStart(2, '0')}:00 UTC`
 
 /** Dispatch spend per day in EUR, 14 days, oldest first; the last entry is today so far. */
 export const DISPATCH_DAILY: readonly number[] = [
@@ -142,6 +142,13 @@ export const FLOW_OPENED = FLOW.reduce((a, r) => a + r.opened, 0)
 export const FLOW_CLOSED = FLOW.reduce((a, r) => a + r.closed, 0)
 export const FLOW_RANGE_LABEL = `${fmtDay(FLOW[0]?.date ?? TODAY)}–${TODAY_LABEL}`
 
+/** A list row's age: whole days once past a day. The exact `fmtAge` is the Oldest wait cell's, so the
+ * longest wait is not printed twice on the page. */
+export function fmtAgeCoarse(hours: number): string {
+  const whole = Math.round(hours)
+  return whole < 24 ? `${whole} h` : `${Math.floor(whole / 24)} d`
+}
+
 /** `5 h`, `1 d 2 h`, `2 d`: days once past a day, hours only while they still change the call. */
 export function fmtAge(hours: number): string {
   const whole = Math.round(hours)
@@ -150,3 +157,24 @@ export function fmtAge(hours: number): string {
   const rest = whole % 24
   return rest === 0 ? `${days} d` : `${days} d ${rest} h`
 }
+
+/** The item-flow series: the tooltip row carries the unit, not the series name again (`Opened 2 items`). */
+export const FLOW_SERIES: ChartSeries<FlowRow>[] = [
+  {
+    key: 'opened',
+    label: 'Opened',
+    color: demoColors.sessions,
+    getValue: (d) => d.opened,
+    formatValue: (v) => `${fmtInt(v)} items`,
+    // Daily integer counts: a smoothed curve would draw days that never happened.
+    curve: 'linear',
+  },
+  {
+    key: 'closed',
+    label: 'Closed',
+    color: demoColors.signups,
+    getValue: (d) => d.closed,
+    formatValue: (v) => `${fmtInt(v)} items`,
+    curve: 'linear',
+  },
+]

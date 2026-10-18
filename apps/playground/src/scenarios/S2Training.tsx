@@ -85,8 +85,8 @@ const aheadOrBehind = (gap: number): string =>
 /** One card height for a row pair: the grid cell sets it, the card fills it. */
 const FILL: CSSProperties = { height: '100%' }
 
-/** Words only: every figure lives on the surface that owns it, so the sentence never restates one. */
-const SUMMARY = `${PACE_GAP === 0 ? 'On' : PACE_GAP > 0 ? 'Ahead of' : 'Behind'} the ${MONTH_NAME} goal pace. Load is ${loadZoneName(LOAD_RATIO).toLowerCase()}; readiness is ${readinessLevel(READINESS_SCORE).toLowerCase()}.`
+/** Words only, the status word bound to its verb with no-break spaces so it never wraps alone at 390. Every figure lives on the surface that owns it, so the sentence never restates one. */
+const SUMMARY = `${PACE_GAP === 0 ? 'On' : PACE_GAP > 0 ? 'Ahead of' : 'Behind'} the ${MONTH_NAME} goal pace. Load is ${loadZoneName(LOAD_RATIO).toLowerCase()}; readiness\u00A0is\u00A0${readinessLevel(READINESS_SCORE).toLowerCase()}.`
 
 const SESSION_SEGMENTS = TYPE_MIX.filter((t) => t.count > 0).map((t) => ({
   value: t.count,
@@ -235,15 +235,15 @@ function GoalRow({ shotState }: ScenarioProps) {
   const loading = shotState === 'loading'
   return (
     <SimpleGrid type="container" cols={{ base: 1, [CONTAINER_KEYS.regular]: 2 }}>
-      <Stack gap="sm">
+      <Stack gap="sm" h="100%">
         <Box data-shot="goal">
           <ChartCard
             title={`Sessions against the ${MONTH_NAME} goal`}
             {...(shotState === undefined && {
+              // The count lives on the Sessions KPI; this card leads with what is new on it.
               facts: {
-                value: `${fmtInt(SESSIONS_MTD)} of ${GOAL_SESSIONS}`,
-                unit: 'sessions',
-                period: aheadOrBehind(PACE_GAP),
+                value: aheadOrBehind(PACE_GAP),
+                period: `goal ${GOAL_SESSIONS} by ${MONTH_END_LABEL}`,
               },
             })}
             info={`Strength, walking-pad and mobility sessions all count. The tick is the pace that reaches ${GOAL_SESSIONS} on ${MONTH_END_LABEL}.`}
@@ -251,7 +251,7 @@ function GoalRow({ shotState }: ScenarioProps) {
           >
             <Box data-shot-hover>
               <Meter
-                label={`Sessions this month against the goal of ${GOAL_SESSIONS}`}
+                label={`${fmtInt(SESSIONS_MTD)} of ${GOAL_SESSIONS} sessions this month against the goal`}
                 value={empty ? null : SESSIONS_MTD}
                 max={GOAL_SESSIONS}
                 ticks={[{ at: PACE_SESSIONS, label: 'Pace' }]}
@@ -327,8 +327,9 @@ function GoalRow({ shotState }: ScenarioProps) {
 
 function LoadCard({ shotState }: ScenarioProps) {
   return (
-    <Box data-shot="training-load">
+    <Box data-shot="training-load" flex={1}>
       <ChartCard
+        style={FILL}
         title="Training load"
         {...(shotState === undefined && {
           facts: { value: fmtRatio(LOAD_RATIO), period: '7 days against the 4-week norm' },
