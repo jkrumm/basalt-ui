@@ -165,7 +165,8 @@ describe('Sparkline (items 3 and 7)', () => {
       el.querySelector('svg')?.dispatchEvent(new FocusEvent('focusin', { bubbles: true }))
     })
     const style = el.querySelector<HTMLElement>('[data-basalt-sparkline-readout]')?.style
-    expect(style?.left).toMatch(/%$/)
+    // The last point is at the right edge: the chip hangs off its left, a fraction of the box.
+    expect(style?.right).toMatch(/%/)
     expect(block(sparkCss, '\\.readout')).not.toContain('right: 0')
   })
 })

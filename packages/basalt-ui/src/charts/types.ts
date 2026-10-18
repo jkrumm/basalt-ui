@@ -320,7 +320,7 @@ export type CartesianChartProps<T, X extends ChartX = ChartX> = BasaltProps & {
   xDomain?: readonly [X, X] | undefined
   /**
    * Tick label for an x value. Default: compact numbers, strings verbatim, and dates by tick step
-   * (`HH:MM` with the day on midnight, `DD.MM`, a month with the year on January; a label recurs
+   * (`HH:MM` with the day on midnight, the day (`4 Oct`, in the page locale), a month with the year on January; a label recurs
    * only behind a day or year label).
    */
   formatX?: ((x: X) => string) | undefined

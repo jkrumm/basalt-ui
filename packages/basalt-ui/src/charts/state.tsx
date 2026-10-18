@@ -53,6 +53,8 @@ const dotStyle: CSSProperties = {
 const errorStyle: CSSProperties = {
   ...boxStyle,
   alignItems: 'flex-start',
+  justifyContent: 'flex-start',
+  paddingBottom: VX.space.controlGap,
   textAlign: 'start',
   fontSize: VX.text.sm,
   gap: VX.space.controlGap,
@@ -90,8 +92,9 @@ export function ChartPlaceholder(props: {
   const kind = resolveChartState(props.state)
   if (kind === null) return null
   const style = kind === 'pending' ? pendingStyle : kind === 'error' ? errorStyle : boxStyle
-  // An error GROWS past the final chart's height rather than clip its action: the box's height is
-  // the floor, not the size.
+  // An error keeps the chart's height as a floor (the frame does not jump, `ssr-contract`) and may
+  // grow past it rather than clip its action; its anatomy is top-aligned, so the room is plain
+  // card below the content, not a block of text floating mid-card.
   const fit = (node: ReactElement): ReactElement => (
     <ChartBox height={props.height} {...(kind === 'error' && { className: growClass })}>
       {node}

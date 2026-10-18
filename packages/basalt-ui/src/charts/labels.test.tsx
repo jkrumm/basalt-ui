@@ -186,3 +186,24 @@ describe('endLabelPlan', () => {
     expect(html.length).toBeGreaterThan(100)
   })
 })
+
+describe('an end label never crosses its own line (w37 r2)', () => {
+  const ending = (prev: number, last: number): Row[] => [
+    { t: day(1), a: prev, b: null },
+    { t: day(2), a: last, b: null },
+  ]
+  test('a line falling into its last point: the flipped label sits below it', () => {
+    const [label] = endLabelPlan(plotOf(ending(80, 40), [A]), [A])
+    expect(label?.anchor).toBe('end')
+    expect(label?.side).toBe('below')
+    expect(endLabelOffset('end', 'below').dy).toBeGreaterThan(0)
+  })
+  test('a line rising into its last point: the flipped label sits above it', () => {
+    const [label] = endLabelPlan(plotOf(ending(40, 80), [A]), [A])
+    expect(label?.side).toBe('above')
+    expect(endLabelOffset('end', 'above').dy).toBeLessThan(0)
+  })
+  test('a label right of its point has no line to cross: level', () => {
+    expect(endLabelOffset('start', 'below').dy).toBe(0)
+  })
+})

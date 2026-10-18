@@ -20,7 +20,9 @@ import { VX, alpha } from '../tokens'
 import type { CartesianDefinition } from './compile'
 import { chartCurve } from './curves'
 import { barMark } from './marks'
-import { defaultNumberFormat } from './compile'
+import { bucketDay, dayGranular, defaultNumberFormat } from './compile'
+import { readoutClock, readoutDay } from './chart-dates'
+import { toDate } from '../format/shared'
 import { ChartEngine, idPrefixOf } from './host'
 import classes from './sparkline.module.css'
 import { ChartPlaceholder, resolveChartState } from './state'
@@ -30,7 +32,9 @@ import type { ChartMarks, ChartState } from './types'
 export type SparklineProps = BasaltProps & {
   /** The accessible name. Required: a chart without one is an unlabeled image. */
   ariaLabel: string
-  data: readonly number[]
+  /** The values, or `{ at, value }` points: `at` (a Date, epoch ms or ISO string) names the point in
+   * the readout, as a day or, within one day, an hour, in the page's format locale. */
+  data: readonly number[] | readonly { at: Date | number | string; value: number }[]
   /** Height in px. */
   height: number
   /** Width in px. Default: the container's, measured by the host. */
@@ -59,7 +63,8 @@ export type SparklineProps = BasaltProps & {
   /** Formats the readout's value. Default: the compact number format. */
   format?: ((value: number) => string) | undefined
   /** The readout's x label per point, index-aligned with `data`: pass the point's day ("12 Oct"),
-   * and the readout reads `3 items · 12 Oct` beside the point. Omitted: the value alone. */
+   * and the readout reads `3 items · 12 Oct` beside the point. Omitted: the moment of an `{ at }`
+   * point, else the value alone. */
   labels?: readonly string[] | undefined
 }
 
@@ -68,6 +73,8 @@ type Point = { i: number; v: number | null }
 const LINE_WIDTH = 1.5
 const DOT_R = 2.5
 const BAR_GAP = 0.15
+/** Air between the hovered point and the readout chip beside it, px. */
+const READOUT_GAP = 8
 /** Air round a line's plot, px (the engine's plot margin): the end marker stays inside the svg box,
  * so it clears the 2px focus outline round it. A bar plot is flush. */
 const LINE_INSET = 3
@@ -80,7 +87,36 @@ const BAR_PX_PER_BAR = 2
 /** First, last and one min/max pair: the fewest points a pooled line can hold. */
 const LINE_POOL_MIN = 4
 
+const DAY_MS = 86_400_000
+
 const finite = (v: number): number | null => (Number.isFinite(v) ? v : null)
+
+/** The readout's moment per point of `{ at }` data: the day when the points are a day or more apart,
+ * else the hour (with the day once they span several). `undefined` for plain values. */
+function momentsOf(data: SparklineProps['data']): readonly (string | undefined)[] | undefined {
+  const dates: (Date | null)[] = []
+  for (const d of data) {
+    if (typeof d !== 'object' || d === null) return undefined
+    dates.push(toDate(d.at))
+  }
+  const known = dates.filter((d): d is Date => d !== null)
+  if (known.length === 0) return undefined
+  // By loop: a spread overflows the stack on a long series.
+  let lo = Number.POSITIVE_INFINITY
+  let hi = Number.NEGATIVE_INFINITY
+  for (const d of known) {
+    const day = Math.floor(d.getTime() / DAY_MS)
+    if (day < lo) lo = day
+    if (day > hi) hi = day
+  }
+  const oneDay = lo === hi
+  const byDay = dayGranular(known)
+  return dates.map((d) => {
+    if (d === null) return undefined
+    if (byDay) return readoutDay(bucketDay(d))
+    return oneDay ? readoutClock(d) : `${readoutDay(d)} ${readoutClock(d)}`
+  })
+}
 
 /** Min and max of the finite values, by loop (a spread overflows the stack on long series). */
 function extent(rows: readonly Point[]): readonly [number, number] | null {
@@ -363,7 +399,10 @@ export function Sparkline(props: SparklineProps): ReactElement {
   const [keyed, setKeyed] = useState<number | null>(null)
   const active = hover ?? keyed
   const model = useMemo(() => {
-    const rows: Point[] = data.map((v, i) => ({ i, v: finite(v) }))
+    const rows: Point[] = data.map((d, i) => ({
+      i,
+      v: finite(typeof d === 'object' && d !== null ? d.value : d),
+    }))
     const range = extent(rows)
     // No finite value means nothing to scale: the empty render, never an Infinity domain.
     if (range === null) return null
@@ -375,6 +414,7 @@ export function Sparkline(props: SparklineProps): ReactElement {
     const end = emphasizeLast ? emphasisColor : null
     return {
       rows,
+      moments: momentsOf(data),
       frame: frameOf(full, mark, rows.length, end !== null),
       definition: compileSparkline(rows, full, mark, color, end, ref, referenceLabel),
     }
@@ -422,7 +462,7 @@ export function Sparkline(props: SparklineProps): ReactElement {
   }
 
   const inset = mark === 'line' ? LINE_INSET : 0
-  const layerStyle = { inset, '--basalt-spark-lift': `${inset}px` } as CSSProperties
+  const layerStyle: CSSProperties = { inset }
   const value = active === null ? null : (rows?.[active]?.v ?? null)
   const at =
     interactive && active !== null && value !== null
@@ -433,9 +473,27 @@ export function Sparkline(props: SparklineProps): ReactElement {
               ? (active + 0.5) / model.rows.length
               : (active - model.frame.x[0]) / (model.frame.x[1] - model.frame.x[0]),
           fy: (model.frame.y[1] - value) / (model.frame.y[1] - model.frame.y[0]),
-          label: labels?.[active],
+          label: labels?.[active] ?? model.moments?.[active],
         }
       : null
+  // Beside the point, on the roomier side, and on the half of the box away from it: the chip never
+  // covers the dot or the host's text, and stays inside the box whatever clips above it.
+  const beside = at === null ? null : at.fx > 0.5 ? 'left' : 'right'
+  const readoutStyle: CSSProperties | undefined =
+    at === null
+      ? undefined
+      : {
+          ...(beside === 'right'
+            ? {
+                left: `calc(${at.fx * 100}% + ${READOUT_GAP}px)`,
+                maxWidth: `calc(${(1 - at.fx) * 100}% - ${READOUT_GAP}px)`,
+              }
+            : {
+                right: `calc(${(1 - at.fx) * 100}% + ${READOUT_GAP}px)`,
+                maxWidth: `calc(${at.fx * 100}% - ${READOUT_GAP}px)`,
+              }),
+          ...(at.fy > 0.5 ? { top: 0 } : { bottom: 0 }),
+        }
   return (
     <div
       data-basalt-sparkline=""
@@ -474,7 +532,7 @@ export function Sparkline(props: SparklineProps): ReactElement {
             data-basalt-sparkline-readout=""
             aria-live={hover === null ? 'polite' : 'off'}
             className={classes.readout}
-            style={{ left: `${at.fx * 100}%`, transform: `translateX(-${at.fx * 100}%)` }}
+            style={readoutStyle}
           >
             {format(at.value)}
             {at.label !== undefined && <span className={classes.label}> · {at.label}</span>}

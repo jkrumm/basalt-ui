@@ -19,10 +19,13 @@ const END_LABEL_DX = 6
  * that did not need to flip sits above its point, one that needed to and did not is cut.
  */
 const END_LABEL_GLYPH_EM = 0.85
-/** A label flipped inside the plot sits this far above its point. */
+/** A label flipped inside the plot sits this far above (or, below its point, `BELOW`) its point. */
 const END_LABEL_FLIP_DY = -9
+const END_LABEL_FLIP_DY_BELOW = 13
 
 export type EndLabelAnchor = 'start' | 'end'
+/** Which side of its line a flipped label sits: away from the line's last segment. */
+export type EndLabelSide = 'above' | 'below'
 
 /**
  * The side of its point an end label takes: `start` (right of the point) unless the point leaves
@@ -49,6 +52,8 @@ export type EndLabel<T, X extends ChartX> = {
   series: ChartSeries<T>
   row: PlotRow<T, X>
   anchor: EndLabelAnchor
+  /** Only a flipped label (left of its point) can meet its own line; it takes the clear side. */
+  side: EndLabelSide
   /** A vertical shift in px (negative is up) that keeps this label clear of its neighbours. */
   nudge: number
 }
@@ -58,6 +63,8 @@ type LastPoint<T, X extends ChartX> = {
   row: PlotRow<T, X>
   y: number
   fraction: number
+  /** The value one finite point earlier: where the line's last segment comes from. */
+  prev: number | null
 }
 
 /**
@@ -101,11 +108,12 @@ export function endLabelPlan<T, X extends ChartX>(
   if (naming === 'auto' && (plot.containerClass !== 'wide' || lines.length > MAX_END_LABELS))
     return []
   const last = lines.flatMap((series): LastPoint<T, X>[] => {
-    const row = plot.rows(series.key).findLast((r) => r.y !== null)
+    const finite = plot.rows(series.key).filter((r) => r.y !== null)
+    const row = finite.at(-1)
     if (row === undefined || row.y === null) return []
     const fraction = plot.xFraction(row.x)
     if (fraction === null || fraction < 0 || fraction > 1) return []
-    return [{ series, row, y: row.y, fraction }]
+    return [{ series, row, y: row.y, fraction, prev: finite.at(-2)?.y ?? null }]
   })
   // No `y2` here (returned above), so every label reads the left domain.
   const [lo, hi] = plot.yDomain
@@ -113,7 +121,7 @@ export function endLabelPlan<T, X extends ChartX>(
     last.map(({ y }) => ((y - lo) / (hi - lo || 1)) * plot.plotHeight),
     plot.plotHeight,
   )
-  return last.map(({ series, row, fraction }, i) => ({
+  return last.map(({ series, row, fraction, y, prev }, i) => ({
     series,
     row,
     anchor: endLabelAnchor({
@@ -122,19 +130,23 @@ export function endLabelPlan<T, X extends ChartX>(
       label: series.label,
       fontSize: VX.text.micro,
     }),
+    // A line falling into its end point comes from above: the label drops below it.
+    side: prev !== null && prev > y ? ('below' as const) : ('above' as const),
     nudge: 0 - (shifts[i] as number),
   }))
 }
 
-/** The offset of a label from its point: right of it, level; or left of it and above. */
-export function endLabelOffset(anchor: EndLabelAnchor): { dx: number; dy: number } {
-  return anchor === 'end'
-    ? { dx: -END_LABEL_DX, dy: END_LABEL_FLIP_DY }
-    : { dx: END_LABEL_DX, dy: 0 }
+/** The offset of a label from its point: right of it, level; or left of it, above or below. */
+export function endLabelOffset(
+  anchor: EndLabelAnchor,
+  side: EndLabelSide = 'above',
+): { dx: number; dy: number } {
+  if (anchor === 'start') return { dx: END_LABEL_DX, dy: 0 }
+  return { dx: -END_LABEL_DX, dy: side === 'above' ? END_LABEL_FLIP_DY : END_LABEL_FLIP_DY_BELOW }
 }
 
 export function endLabelMarks<T, X extends ChartX>(plan: readonly EndLabel<T, X>[]): ChartMarks {
-  return plan.map(({ series, row, anchor, nudge }) =>
+  return plan.map(({ series, row, anchor, side, nudge }) =>
     decorative(
       text([row], {
         id: `${series.key}-end-label`,
@@ -144,8 +156,8 @@ export function endLabelMarks<T, X extends ChartX>(plan: readonly EndLabel<T, X>
         fill: series.color,
         fontSize: VX.text.micro,
         anchor,
-        dx: endLabelOffset(anchor).dx,
-        dy: endLabelOffset(anchor).dy + nudge,
+        dx: endLabelOffset(anchor, side).dx,
+        dy: endLabelOffset(anchor, side).dy + nudge,
       }),
     ),
   )

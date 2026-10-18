@@ -490,7 +490,7 @@ Signature: Sparkline(props: SparklineProps): ReactElement<unknown, string | JSXE
   className?: string
   style?: CSSProperties
   ariaLabel: string
-  data: readonly number[]
+  data: readonly number[] | readonly { at: Date | number | string; …
   height: number
   width?: number
   mark?: "bar" | "line"

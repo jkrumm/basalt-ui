@@ -5,6 +5,7 @@
  * binding, the tooltip content, and the container-class guide ladder.
  * TanStack owns margins (measured), layout, focus and keyboard, the tooltip surface and SSR.
  */
+import { headerDay, readoutClock } from './chart-dates'
 import { dateTickFormat, utcAxisDate } from './date-tick-format'
 import { crosshair } from '@tanstack/charts/crosshair'
 import { decorative } from '@tanstack/charts/mark/decorative'
@@ -26,7 +27,7 @@ import type {
   StoredChartSpec,
 } from '@tanstack/charts/types/core'
 import { compact } from '../format/number'
-import { NON_FINITE, dateFormat } from '../format/shared'
+import { NON_FINITE } from '../format/shared'
 import { VX } from '../tokens'
 import type { ContainerClass } from '../tokens/size-classes'
 import { cursorBinding, followerOptions, quietWhileFollowing } from './cursor'
@@ -98,6 +99,8 @@ export type CartesianInput<T, X extends ChartX> = Pick<
   tooltipBelow?: boolean
   /** The vertical rule under the cursor. Default `true`; a bar kind has none (its hover is the bar). */
   crosshair?: boolean
+  /** The engine's point marker on the focused datum. Default `true`; a bar kind has none (its hover is the bar). */
+  focusRing?: boolean
 }
 
 /** The one tick-label size, at every container width: the caption size, so a card never mixes sizes. */
@@ -113,7 +116,7 @@ const LADDER = {
 
 /**
  * A tick within this share of the x domain from its start counts as on the left edge: half a
- * `DD.MM` label is ~15 px, 4–5% of a compact plot. Round ticks rarely land on the domain start
+ * day label is ~15 px, 4–5% of a compact plot. Round ticks rarely land on the domain start
  * exactly, so an equality test would miss the common case.
  */
 const LEFT_EDGE_SHARE = 0.05
@@ -127,7 +130,7 @@ export function defaultNumberFormat(v: number): string {
  * calendar date (east of UTC it is `22:00` UTC of the day before); any other key is its UTC date, so
  * a key at 12:00 UTC or later never rolls to the next day.
  */
-function bucketDay(d: Date): Date {
+export function bucketDay(d: Date): Date {
   const local = d.getHours() === 0 && d.getMinutes() === 0 && d.getSeconds() === 0
   return new Date(
     local
@@ -144,22 +147,9 @@ function bucketDay(d: Date): Date {
  */
 export function utcHeaderDate(d: Date, dayOnly = false): string {
   if (!Number.isFinite(d.getTime())) return NON_FINITE
-  const at = dayOnly ? bucketDay(d) : d
-  const date = dateFormat(undefined, {
-    weekday: 'short',
-    day: 'numeric',
-    month: 'short',
-    year: 'numeric',
-    timeZone: 'UTC',
-  }).format(at)
+  const date = headerDay(dayOnly ? bucketDay(d) : d)
   if (dayOnly || d.getTime() % DAY_MS === 0) return date
-  const clock = dateFormat(undefined, {
-    hour: '2-digit',
-    minute: '2-digit',
-    hourCycle: 'h23',
-    timeZone: 'UTC',
-  }).format(d)
-  return `${date} ${clock}`
+  return `${date} ${readoutClock(d)}`
 }
 
 const DAY_MS = 86_400_000
@@ -708,6 +698,8 @@ function underlayMarks<T, X extends ChartX>(
   return [...zones, ...xZones]
 }
 
+/** A band's bar spans this share of its half step (`paddingInner` 0.2 leaves 0.8 of the step). */
+const BAR_BODY = 0.8
 const REF_LABEL_DX = 6
 const REF_LABEL_DY_ABOVE = -5
 const REF_LABEL_DY_BELOW = 11
@@ -1019,14 +1011,23 @@ export function compileCartesian<T, X extends ChartX>(
   )
   const dayOnly = dayGranular(model.values)
   const names = (input.refLines ?? []).some((r) => r.label !== undefined && r.label !== '')
-  // What an unpinned reference caption avoids: each visible series as (x share, y) points.
+  // What an unpinned reference caption avoids: each visible series as (x share, y) points. A bar is
+  // a filled column from zero, so it walks round its body instead of through its top centre.
+  const barHalf = model.halfStep * BAR_BODY
   const linesOn = (side: 'left' | 'right' | undefined): RefLabelPoint[][] =>
     visible
       .filter((s) => shared.onRight(s) === (side === 'right' && shared.right !== null))
       .map((s) =>
         rows(s.key).flatMap((r) => {
           const fx = model.fraction(r.x)
-          return fx === null || r.y === null ? [] : [{ fx, y: r.y }]
+          if (fx === null || r.y === null) return []
+          if (!(model.band && s.mark === 'bar')) return [{ fx, y: r.y }]
+          return [
+            { fx: fx - barHalf, y: 0 },
+            { fx: fx - barHalf, y: r.y },
+            { fx: fx + barHalf, y: r.y },
+            { fx: fx + barHalf, y: 0 },
+          ]
         }),
       )
 
@@ -1090,6 +1091,7 @@ export function compileCartesian<T, X extends ChartX>(
     // Followers resolve the leader's group, so they draw its dots; `quietWhileFollowing` mutes the
     // tooltip unless the chart opts into following tooltips.
     focus: 'group-x',
+    ...(input.focusRing === false && { focusRing: false as const }),
     maxFocusDistance: Number.POSITIVE_INFINITY,
     cursor: cursorBinding({
       group: input.cursorGroup,

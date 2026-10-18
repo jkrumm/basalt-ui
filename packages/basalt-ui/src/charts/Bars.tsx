@@ -126,7 +126,7 @@ export function Bars<T, X extends ChartX = ChartX>(props: BarsProps<T, X>): Reac
             z: 'series',
             fill,
             // The hovered x is its own highlight: the bar reads at full strength (no dimming, no
-            // point marker, no crosshair rule: that is line-chart chrome).
+            // point marker, no crosshair rule: that is line-chart chrome; `focusRing={false}` on the rung).
             states: [{ when: { focus: 'x' }, style: { fill: solid } }],
             layout:
               layout === 'grouped'
@@ -150,6 +150,7 @@ export function Bars<T, X extends ChartX = ChartX>(props: BarsProps<T, X>): Reac
       marks={marks}
       band
       crosshair={false}
+      focusRing={false}
       reverseRows={layout !== 'grouped'}
       {...(layout !== 'grouped' && { stack: layout })}
     />
