@@ -251,8 +251,14 @@
   gap: var(--basalt-stat-foot-gap);
   margin-top: auto;
   min-width: 0;
+  /* The sparkline slot's readout reserve (`.sparklineBleed`): the readout line less the card gap above. */
+  --basalt-spark-readout-reserve: max(
+    0px,
+    calc(var(--basalt-spark-readout-h) - var(--vx-space-stat-card-gap))
+  );
   min-height: calc(
-    var(--basalt-stat-visual-h) + var(--basalt-stat-foot-gap) + var(--basalt-stat-footer-h)
+    var(--basalt-stat-visual-h) + var(--basalt-spark-readout-reserve) +
+      var(--basalt-stat-foot-gap) + var(--basalt-stat-footer-h)
   );
 }
 
@@ -379,6 +385,14 @@
 .sparklineBleed {
   height: var(--basalt-stat-visual-h);
   margin-inline: calc(-1 * var(--vx-space-card-inset-x, 1rem));
+}
+
+/* A Sparkline's readout line (`--basalt-spark-readout-h`) above its plot: the card gap already sits
+ * above the slot, the slot reserves the rest, so the chip never covers the delta or qualifier row.
+ * `.foot` reserves the same, so a card with a sparkline and one without keep the same height. */
+.sparklineBleed:has([data-basalt-sparkline]) {
+  box-sizing: content-box;
+  padding-top: var(--basalt-spark-readout-reserve);
 }
 
 /* A Meter in the visual slot is a block, not a chart: it sizes to its content and keeps the card's

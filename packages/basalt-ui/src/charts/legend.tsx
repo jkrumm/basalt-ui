@@ -223,9 +223,11 @@ export function ChartLegend<T>(props: ChartLegendProps<T>): ReactElement | null 
   const auto = props.mode === 'auto'
   // Re-fold when the entries change; a resize re-folds through the observer.
   const signature = props.series.map((s) => s.key).join('|')
+  // `signature` is intentionally an extra dep: the fold must re-run when the entries change.
   useLayoutEffect(() => {
     if (auto && rowRef.current !== null) foldLegend(rowRef.current)
   }, [auto, signature])
+  // Same: `signature` re-subscribes the observer to the re-rendered row.
   useEffect(() => {
     const row = rowRef.current
     if (!auto || row === null || typeof ResizeObserver === 'undefined') return

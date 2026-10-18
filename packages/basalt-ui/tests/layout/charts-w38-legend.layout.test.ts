@@ -97,9 +97,7 @@ layout('Wave 38 legends and readouts at 390', () => {
     expect(m.ellipsis).toBe(false)
   })
 
-  // A hosted readout never covers the figure's delta or qualifier above its plot. The StatCard
-  // bleed slot reserves no readout line (see the PR body: `.sparklineBleed` needs the reserve), so
-  // that host is `test.failing` until the lead lands it; the strip's slot reserves its line.
+  // A hosted readout never covers the figure's delta or qualifier above its plot.
   const overlap = async (
     id: string,
     delta: string,
@@ -141,10 +139,8 @@ layout('Wave 38 legends and readouts at 390', () => {
   test('a StatCard bleed readout, stacked (inside the plot band), clears the delta', async () => {
     expect((await overlap('w38-card-stacked', DELTA)).hit).toBe(false)
   })
-  // The one-line chip lifts into the reserved line `--basalt-spark-readout-h`, but the bleed slot
-  // (`.sparklineBleed`, stat-card.module.css, not ours) reserves none: the chip lands on the delta.
-  // `test.failing` flips to a failure the day the lead lands the reserve (or `lift: 0` there).
-  test.failing('a StatCard bleed readout, one line, clears the delta', async () => {
+  // The one-line chip lifts into the reserved line; `.sparklineBleed` reserves it (stat-card.module.css).
+  test('a StatCard bleed readout, one line, clears the delta', async () => {
     expect((await overlap('w38-card-one', DELTA)).hit).toBe(false)
   })
 })
