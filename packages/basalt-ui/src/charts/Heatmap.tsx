@@ -8,7 +8,9 @@
  * There is no cursor and no crosshair — the tooltip is per cell, its rows are `tooltip.rows(d)` data.
  */
 import { colorGradientLegend } from '@tanstack/charts/legend'
+import { decorative } from '@tanstack/charts/mark/decorative'
 import { cell } from '@tanstack/charts/rect'
+import { text } from '@tanstack/charts/text'
 import { scaleBand } from '@tanstack/charts/scales/band'
 import { portal } from '@tanstack/charts/tooltip/portal'
 import type { ChartBuildContext, ChartPoint, StoredChartSpec } from '@tanstack/charts/types/core'
@@ -20,7 +22,7 @@ import { alpha, VX } from '../tokens'
 import { resolveContainerClass } from '../tokens/size-classes'
 import { engineRow, strideTicks } from './compile'
 import type { CartesianDefinition } from './compile'
-import { resolveNamedState } from './band-fold'
+import { GLYPH_MIN_PX, resolveNamedState } from './band-fold'
 import type { NamedChartState } from './band-fold'
 import { ABSENT_OPACITY, RAMP_LEVELS, RAMP_OPACITIES } from './heatmap-fill'
 import { engineTooltip } from './cursor'
@@ -32,15 +34,43 @@ import { ChartPlaceholder, resolveChartState } from './state'
 import { AXIS_LINE, CHART_THEME } from './theme'
 import type { ChartSeries, ChartState, ChartTooltipRow, ResponsiveChartHeight } from './types'
 
+/** The status inks a cell state can name: `VX.status.*`, so a consumer never reads `dist` for a hex. */
+export type HeatmapTone = 'good' | 'warn' | 'bad' | 'neutral'
+
+/** `warn` and `bad` carry a glyph by default: a status grid is not told apart by hue alone. */
+const TONE_GLYPH: Partial<Record<HeatmapTone, string>> = { warn: '!', bad: '×' }
+
 /**
  * A named cell state, the same base `BandStrip`'s `states` use (`NamedChartState`): `color` and
  * `fillOpacity` (default 1) are its flat fill, `label` its legend entry and tooltip reading, `note`
  * a muted qualifier after the label in the legend, `legend: false` keeps it out of the legend.
  * `tooltip` is omitted: a cell's tooltip always names its state, so there is no row to hide.
+ *
+ * A categorical STATUS grid (up / degraded / down) names a `tone` instead of a `color`:
+ *
+ * ```tsx
+ * <Heatmap getState={(d) => d.status} getValue={() => null} …
+ *   states={[{ key: 'up', label: 'Up', tone: 'good' }, { key: 'down', label: 'Down', tone: 'bad' }]} />
+ * ```
+ *
+ * `warn` and `bad` draw `!` and `×` in the cell; `glyph` overrides them, `glyph: ''` opts out.
  */
-export type HeatmapState<K extends string = string> = Omit<NamedChartState, 'key' | 'tooltip'> & {
+export type HeatmapState<K extends string = string> = Omit<
+  NamedChartState,
+  'key' | 'tooltip' | 'color'
+> & {
   key: K
+  /** The flat fill, a `VX.*` ref. Needed unless `tone` is set; `color` wins over `tone`. */
+  color?: string | undefined
+  /** The fill from a status token (`VX.status.*`). */
+  tone?: HeatmapTone | undefined
 }
+
+/** The fill a state resolves to: its `color`, else its tone's status colour, else neutral. */
+const fillOf = (s: HeatmapState | undefined): string =>
+  s?.color ?? (s?.tone === undefined ? VX.neutral : VX.status[s.tone])
+const glyphOf = (s: HeatmapState | undefined): string | undefined =>
+  s?.glyph ?? (s?.tone === undefined ? undefined : TONE_GLYPH[s.tone])
 
 export type HeatmapProps<T, K extends string = string> = BasaltProps & {
   /** The accessible name. Required. */
@@ -137,7 +167,7 @@ function valueRows<K extends string>(
   formatValue: (v: number) => string,
   pointColor: string | undefined,
 ): ChartTooltipRow[] {
-  if (named) return [{ label, value: named.label, color: named.color }]
+  if (named) return [{ label, value: named.label, color: fillOf(named) }]
   if (c.value === null) return [{ label, value: 'No data' }]
   return [{ label, value: formatValue(c.value), ...(pointColor && { color: pointColor }) }]
 }
@@ -241,6 +271,9 @@ export function Heatmap<T, K extends string = string>(props: HeatmapProps<T, K>)
       ? {
           use: engineTooltip,
           portal,
+          // Below the hovered cell (flipping above only when there is no room): the default sits
+          // above it and covers the caption row over the grid.
+          placement: ['bottom', 'top'] as const,
           content: (points: readonly ChartPoint[]) => {
             const point = points[0]
             const c = point?.datum as Cell<T, K> | undefined
@@ -265,6 +298,30 @@ export function Heatmap<T, K extends string = string>(props: HeatmapProps<T, K>)
           opacity: 1,
           thin: true,
         }
+        // A stated cell's glyph, centred in the cell; skipped when the cell is too narrow to hold it.
+        const glyphMarks = (plotWidth: number) => {
+          const drawn = [...stated].flatMap(([key, group]) => {
+            const glyph = glyphOf(stateByKey.get(key))
+            return glyph ? group.map((c) => ({ ...c, glyph })) : []
+          })
+          return drawn.length > 0 && plotWidth / Math.max(cols.length, 1) >= GLYPH_MIN_PX
+            ? [
+                decorative(
+                  text(drawn, {
+                    id: 'state-glyphs',
+                    x: 'col',
+                    y: 'row',
+                    key: 'id',
+                    text: 'glyph',
+                    fill: VX.ink,
+                    fontSize: VX.text.xs,
+                    fontWeight: 600,
+                    anchor: 'middle',
+                  }),
+                ),
+              ]
+            : []
+        }
         const marks = [
           // Inert, not decorative: it must still win the hit test, so a pointer over an empty
           // position lands on THIS cell (whose tooltip is empty) instead of snapping to a neighbour.
@@ -273,11 +330,12 @@ export function Heatmap<T, K extends string = string>(props: HeatmapProps<T, K>)
           ...[...stated].map(([key, group]) => {
             const named = stateByKey.get(key)
             return cellMark(`state:${key}`, group, {
-              fill: named?.color ?? VX.neutral,
+              fill: fillOf(named),
               ...(named?.fillOpacity !== undefined && { fillOpacity: named.fillOpacity }),
             })
           }),
           cellMark('cells', present, { color: 'value' }),
+          ...glyphMarks(width),
         ]
         return {
           marks,
@@ -351,7 +409,7 @@ export function Heatmap<T, K extends string = string>(props: HeatmapProps<T, K>)
         : states.map((s) => ({
             key: s.key,
             label: s.label,
-            color: s.color,
+            color: fillOf(s),
             mark: 'bar' as const,
             ...(s.fillOpacity !== undefined && { fillOpacity: s.fillOpacity }),
             ...(s.legend !== undefined && { legend: s.legend }),

@@ -70,3 +70,28 @@
 .factsBasis {
   margin: var(--vx-space-stack-xs) 0 0;
 }
+
+/*
+ * A fact's tone is INK only (the value and its trailing text), never a fill. The status solids are
+ * the text-safe ones (`status-text.ts`). `stale` is the strip cell's dimmed value, verbatim
+ * (`stat-strip.module.css` `.cell[data-stale]`).
+ */
+.fact[data-tone='good'] :is(.factValue, .factUnit, .factPeriod) {
+  color: var(--vx-status-good);
+}
+
+.fact[data-tone='warn'] :is(.factValue, .factUnit, .factPeriod) {
+  color: var(--vx-status-warn);
+}
+
+.fact[data-tone='bad'] :is(.factValue, .factUnit, .factPeriod) {
+  color: var(--vx-status-bad);
+}
+
+.fact[data-tone='muted'] :is(.factValue, .factUnit, .factPeriod) {
+  color: var(--vx-muted);
+}
+
+.facts[data-stale] {
+  opacity: 0.55;
+}

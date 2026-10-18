@@ -23,8 +23,10 @@ const refY = (html: string): number => {
   if (y1 !== null && y1 !== undefined) return Number(y1)
   return Number(/[ML][\d.]+[ ,]([\d.]+)/.exec(el?.getAttribute('d') ?? '')?.[1])
 }
-/** The y a value lands on for a domain [lo, hi] over the server frame. */
-const yOf = (v: number, [lo, hi]: [number, number]): number => VIEW_H * (1 - (v - lo) / (hi - lo))
+/** The y a value lands on for a domain [lo, hi] over the server frame, inside the line's 3px plot margin. */
+const LINE_INSET = 3
+const yOf = (v: number, [lo, hi]: [number, number]): number =>
+  LINE_INSET + (VIEW_H - 2 * LINE_INSET) * (1 - (v - lo) / (hi - lo))
 
 describe('Sparkline reference', () => {
   test('a number reference draws one rule at y(42), inside the widened domain', () => {

@@ -5,9 +5,8 @@
 declare const classes: {
   readonly root: string
   readonly readout: string
-  readonly start: string
-  readonly end: string
   readonly label: string
+  readonly layer: string
   readonly dot: string
 }
 export default classes

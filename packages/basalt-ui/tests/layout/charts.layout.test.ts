@@ -692,6 +692,56 @@ layout('Charts — 2.0 layout', () => {
     })
   })
 
+  test('a keyboard-focused Sparkline starts on the last point and its end marker sits inside the focus outline', async () => {
+    const p = await openFixture(
+      chartFixture({ kind: 'spark', sparkRows: 12, height: 22, width: 240 }),
+      DESKTOP,
+    )
+    await p.settle()
+    let focused = false
+    for (let i = 0; i < 60 && !focused; i++) {
+      await p.raw.keyboard.press('Tab')
+      focused = await p.raw.evaluate(
+        () =>
+          document.querySelector('[data-basalt-sparkline]')?.contains(document.activeElement) ===
+          true,
+      )
+    }
+    expect(focused).toBe(true)
+    await p.settle()
+    const m = await p.raw.evaluate(() => {
+      const active = document.activeElement
+      const dot = document.querySelector('[data-basalt-sparkline] svg circle')
+      if (!active || !dot) throw new Error('LAYOUT: no focused element or end marker')
+      const style = getComputedStyle(active)
+      const outline = Number.parseFloat(style.outlineWidth) || 0
+      const offset = Number.parseFloat(style.outlineOffset) || 0
+      const box = active.getBoundingClientRect()
+      const d = dot.getBoundingClientRect()
+      // The outline's INNER edge: the border box grown by its offset (negative offsets shrink it).
+      const inner = {
+        left: box.left - offset,
+        right: box.right + offset,
+        top: box.top - offset,
+        bottom: box.bottom + offset,
+      }
+      return {
+        outline,
+        readout: document.querySelector('[data-basalt-sparkline-readout]')?.textContent ?? '',
+        slack: Math.min(
+          d.left - inner.left,
+          inner.right - d.right,
+          d.top - inner.top,
+          inner.bottom - d.bottom,
+        ),
+      }
+    })
+    // The last point is the one the readout names on focus (12 rows: the fixture's final value).
+    expect(m.readout).not.toBe('')
+    expect(m.outline).toBeGreaterThan(0)
+    expect(m.slack).toBeGreaterThanOrEqual(0)
+  })
+
   describe('a Sparkline in a StatCard slot or a strip cell answers hover with a readout inside the cell', () => {
     test.each(['card', 'right', 'strip'] as const)('%s', async (sparkIn) => {
       const p = await openFixture(chartFixture({ kind: 'spark', sparkIn }), DESKTOP)

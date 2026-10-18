@@ -93,9 +93,15 @@ export type ChartFact = {
   unit?: string | undefined
   /** Usually a `DeltaBadge`. */
   comparison?: ReactNode
-  /** Plain text the figure covers, e.g. `last 30 d`. */
-  period?: string | undefined
+  /** Plain text the figure covers, e.g. `last 30 d`. A list is joined by ` · ` (`['last entry 3 d
+   * ago', '12 entries']`). */
+  period?: string | readonly string[] | undefined
+  /** Ink for the whole fact (text only, never a fill): a stale or off-target figure reads `warn`. */
+  tone?: ChartFactTone | undefined
 }
+
+/** The status inks a fact can take, plus the muted one. */
+export type ChartFactTone = 'good' | 'warn' | 'bad' | 'muted'
 
 /** The three boxes a `ChartCard` paints. */
 export type ChartCardSlot = 'root' | 'header' | 'body'
@@ -125,6 +131,10 @@ type ChartCardBaseProps = BasaltProps &
      * fallback={<ChartCard state={{ pending: true }} …/>}>` reserves the final size. */
     placeholderHeight?: number | ResponsiveChartHeight | undefined
     /** An errored `state` shows the shared Retry button (the one `ErrorState` renders). */
+    /** Placeholder data is showing: the facts dim with the plot (a strip cell's `stale`). */
+    stale?: boolean | undefined
+    /** What an errored `state` names: "Could not load {stateNoun}". Default: no noun. */
+    stateNoun?: string | undefined
     onRetry?: (() => void) | undefined
     /** A refetch is in flight: Retry is inert and marked busy. */
     retrying?: boolean | undefined
@@ -162,22 +172,33 @@ const HEADER_TRIGGERS = ['title', 'info', 'value', 'icon', 'count'] as const
 function Facts({
   facts,
   basis,
+  stale,
 }: {
   facts: ChartFact | readonly ChartFact[]
   basis?: string | undefined
+  stale?: boolean | undefined
 }): ReactElement {
   const list: readonly ChartFact[] = Array.isArray(facts) ? facts : [facts as ChartFact]
   return (
-    <div data-basalt-facts="" className={classes.facts}>
+    <div data-basalt-facts="" {...(stale && { 'data-stale': 'true' })} className={classes.facts}>
       <div className={classes.factsRow}>
         {list.map((f, i) => (
-          <span key={i} data-basalt-fact="" className={classes.fact}>
+          <span
+            key={i}
+            data-basalt-fact=""
+            {...(f.tone !== undefined && { 'data-tone': f.tone })}
+            className={classes.fact}
+          >
             <span data-basalt-fact-value="" className={classes.factValue}>
               {f.value}
             </span>
             {f.unit !== undefined && <span className={classes.factUnit}>{f.unit}</span>}
             {f.comparison}
-            {f.period !== undefined && <span className={classes.factPeriod}>{f.period}</span>}
+            {f.period !== undefined && (
+              <span className={classes.factPeriod}>
+                {typeof f.period === 'string' ? f.period : f.period.join(' · ')}
+              </span>
+            )}
           </span>
         ))}
       </div>
@@ -195,6 +216,8 @@ export function ChartCard({
   state,
   placeholderHeight,
   stateAction,
+  stale,
+  stateNoun,
   onRetry,
   retrying,
   className,
@@ -233,7 +256,7 @@ export function ChartCard({
                 actions: <span data-basalt-tier="widget">{actions}</span>,
               })}
             />
-            {showFacts && <Facts facts={facts} basis={subtitle} />}
+            {showFacts && <Facts facts={facts} basis={subtitle} stale={stale} />}
           </div>
         )}
         <div
@@ -246,6 +269,7 @@ export function ChartCard({
             <ChartPlaceholder
               state={state}
               {...(placeholderHeight !== undefined && { height: placeholderHeight })}
+              {...(stateNoun !== undefined && { noun: stateNoun })}
               {...(onRetry !== undefined && { onRetry })}
               {...(retrying !== undefined && { retrying })}
               action={stateAction}
