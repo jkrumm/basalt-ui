@@ -51,7 +51,7 @@ import { ActivityPage } from './ActivityPage'
 import { IconSearch } from './icons'
 import { PrimitivesPage } from './PrimitivesPage'
 
-type ShotAnchor = 'buttons' | 'tabs' | 'badges'
+type ShotAnchor = 'tabs' | 'badges'
 
 // The anchor Box is the grid item now, so the card fills it to keep its row's stretched height.
 const FILL = { height: '100%' } as const
@@ -140,26 +140,38 @@ export function ComponentsSurfaces() {
         cols={{ base: 1, [CONTAINER_KEYS.regular]: 2 }}
         style={{ alignItems: 'start' }}
       >
-        <ComponentGroup title="Button variants and sizes" shot="buttons">
+        {/* One anchor per row: a scored component holds at most three font sizes, and the four
+            sizes together are four. */}
+        <ComponentGroup title="Button variants and sizes">
           <Stack gap="sm">
-            <Group gap="sm">
-              <Button variant="filled">Filled</Button>
-              <Button variant="default">Default</Button>
-              <Button variant="light" data-shot-hover>
-                Light
-              </Button>
-              <Button variant="outline">Outline</Button>
-              <Button variant="subtle">Subtle</Button>
-            </Group>
-            <Group gap="sm" align="center">
-              <Button size="xs">Extra small</Button>
-              <Button size="sm">Small</Button>
-              <Button size="md">Medium</Button>
-              <Button size="lg">Large</Button>
-            </Group>
-            <Group gap="sm">
-              <Button disabled>Disabled</Button>
-            </Group>
+            <Box data-shot="buttons-variants">
+              <Group gap="sm">
+                <Button variant="filled">Filled</Button>
+                <Button variant="default">Default</Button>
+                <Button variant="light" data-shot-hover>
+                  Light
+                </Button>
+                <Button variant="outline">Outline</Button>
+                <Button variant="subtle">Subtle</Button>
+              </Group>
+            </Box>
+            <Box data-shot="buttons-sizes-small">
+              <Group gap="sm" align="center">
+                <Button size="xs">Extra small</Button>
+                <Button size="sm">Small</Button>
+              </Group>
+            </Box>
+            <Box data-shot="buttons-sizes-large">
+              <Group gap="sm" align="center">
+                <Button size="md">Medium</Button>
+                <Button size="lg">Large</Button>
+              </Group>
+            </Box>
+            <Box data-shot="buttons-disabled">
+              <Group gap="sm">
+                <Button disabled>Disabled</Button>
+              </Group>
+            </Box>
           </Stack>
         </ComponentGroup>
 
