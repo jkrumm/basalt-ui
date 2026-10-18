@@ -26,6 +26,7 @@ import {
   DAYS_ELAPSED,
   DISTRIBUTION,
   DISTRIBUTION_BARS,
+  DISTRIBUTION_Y_MAX,
   DRIVERS,
   FORECAST_EUR,
   MEDIAN_DAY_EUR,
@@ -40,6 +41,7 @@ import {
   REMAINING_PER_DAY_EUR,
   WINDOW_LABEL,
   YEAR,
+  daysTick,
   spendBand,
 } from './spend-data'
 import type { CumulativeRow } from './spend-data'
@@ -98,10 +100,6 @@ const MEDIAN_FACT =
 
 /** The window the histogram bins, stated on the surface (the info tooltip says it too). */
 const DISTRIBUTION_WINDOW = 'last 90 days'
-/** The y axis states its unit once, on the top tick (`25 days`), like S2's hit-rate axis. */
-const DISTRIBUTION_Y_MAX = Math.ceil(Math.max(...DISTRIBUTION.map((b) => b.days)) / 5) * 5
-const daysTick = (v: number): string => (v === DISTRIBUTION_Y_MAX ? `${v} days` : String(v))
-
 const CUMULATIVE_DATA = [...CUMULATIVE]
 const DISTRIBUTION_DATA = [...DISTRIBUTION]
 /** Every other band is named on the axis: a range label is wide, and the bars still carry the rest. */
