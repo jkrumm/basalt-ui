@@ -87,6 +87,20 @@ const bodyClipStyle: CSSProperties = {
   padding: '2px var(--vx-space-card-inset-x, 1rem) var(--vx-space-card-inset-y, 0.75rem)',
 }
 
+const PERIOD_SEPARATOR = '· '
+
+/**
+ * A period list joins with `·`; behind a unit it leads with one too, so a one-item list is
+ * separated from the unit as the items are from each other (an item that already leads with it
+ * is not doubled). A plain string is written as is.
+ */
+function periodText(period: string | readonly string[], afterUnit: boolean): string {
+  if (typeof period === 'string') return period
+  if (period.length === 0) return ''
+  const text = period.join(' · ')
+  return afterUnit && !text.startsWith(PERIOD_SEPARATOR.trim()) ? PERIOD_SEPARATOR + text : text
+}
+
 /** One headline figure: the value is the hero, then its unit, a comparison node and the period. */
 export type ChartFact = {
   value: ReactNode
@@ -94,7 +108,7 @@ export type ChartFact = {
   /** Usually a `DeltaBadge`. */
   comparison?: ReactNode
   /** Plain text the figure covers, e.g. `last 30 d`. A list is joined by ` · ` (`['last entry 3 d
-   * ago', '12 entries']`). */
+   * ago', '12 entries']`) and, behind a `unit`, led by one. */
   period?: string | readonly string[] | undefined
   /** Ink for the whole fact (text only, never a fill): a stale or off-target figure reads `warn`. */
   tone?: ChartFactTone | undefined
@@ -186,25 +200,24 @@ function Facts({
         {...(stale && { 'data-stale': 'true' })}
         className={classes.factsRow}
       >
-        {list.map((f, i) => (
-          <span
-            key={i}
-            data-basalt-fact=""
-            {...(f.tone !== undefined && { 'data-tone': f.tone })}
-            className={classes.fact}
-          >
-            <span data-basalt-fact-value="" className={classes.factValue}>
-              {f.value}
-            </span>
-            {f.unit !== undefined && <span className={classes.factUnit}>{f.unit}</span>}
-            {f.comparison}
-            {f.period !== undefined && (
-              <span className={classes.factPeriod}>
-                {typeof f.period === 'string' ? f.period : f.period.join(' · ')}
+        {list.map((f, i) => {
+          const period = f.period === undefined ? '' : periodText(f.period, f.unit !== undefined)
+          return (
+            <span
+              key={i}
+              data-basalt-fact=""
+              {...(f.tone !== undefined && { 'data-tone': f.tone })}
+              className={classes.fact}
+            >
+              <span data-basalt-fact-value="" className={classes.factValue}>
+                {f.value}
               </span>
-            )}
-          </span>
-        ))}
+              {f.unit !== undefined && <span className={classes.factUnit}>{f.unit}</span>}
+              {f.comparison}
+              {period !== '' && <span className={classes.factPeriod}>{period}</span>}
+            </span>
+          )
+        })}
       </div>
       {basis !== undefined && (
         <p data-basalt-facts-basis="" className={classes.factsBasis}>

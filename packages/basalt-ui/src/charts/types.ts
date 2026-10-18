@@ -199,8 +199,9 @@ export type ChartTooltipRow = {
 }
 
 export type ChartTooltipConfig<T, X extends ChartX = ChartX> = {
-  /** The tooltip title. Default: the x value through `formatX`'s long form (a date reads
-   * `Mon Sep 1 2026`). */
+  /** The tooltip title. Default: a Date x reads weekday, day, month and year in the page locale
+   * (`Tue 1 Sep 2026`; a non-day instant adds its time) whatever `formatX` shortens the ticks to;
+   * any other x goes through `formatX`. */
   formatHeader?: ((x: X, d: T) => string) | undefined
   /** Rows after the per-series rows (a total, a zone badge, a context line). `visible`/`hidden` are
    * the legend's split, so a row never names a series the plot no longer draws. */

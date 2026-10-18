@@ -525,8 +525,7 @@ describe('shared cursor', () => {
               ariaLabel="W"
               legend={false}
               cursorResolution="leading"
-              formatX={(d) => d.toISOString().slice(0, 10)}
-              tooltip={{ onFollow: true }}
+              tooltip={{ onFollow: true, formatHeader: (d) => d.toISOString().slice(0, 10) }}
             />
           </div>
         </>,

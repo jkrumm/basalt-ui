@@ -70,7 +70,7 @@ const errorHeadStyle: CSSProperties = {
 const errorMessageStyle: CSSProperties = { color: VX.muted }
 
 const emptyLabel = (state: ChartState | undefined): string =>
-  typeof state?.empty === 'string' ? state.empty : 'No data'
+  typeof state?.empty === 'string' ? state.empty : 'Nothing recorded in this range.'
 
 /** Fills the same {@link ChartBox} the chart will, so a pending, failed or empty chart (and a
  * `<Suspense>` fallback built from one) occupies the final chart's height. */

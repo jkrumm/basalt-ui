@@ -21,7 +21,14 @@ import { oneOf, requiredProp } from '../common/errors'
 import { NON_FINITE } from '../format/shared'
 import { VX, alpha } from '../tokens'
 import { CartesianRung } from './CartesianChart'
-import { GLYPH_MIN_PX, glyphOf, groupsOf, resolveNamedState } from './band-fold'
+import {
+  BAND_GLYPH_MIN_PX,
+  NOTCH_PX,
+  glyphOf,
+  groupsOf,
+  resolveNamedState,
+  toneOf,
+} from './band-fold'
 import type { Group, NamedChartState } from './band-fold'
 import { emphasis } from './marks'
 import { rowX } from './types'
@@ -262,6 +269,7 @@ function layoutBands<T>(input: LayoutInput<T>): {
   markers: Layer[]
   hits: Hit<T>[]
   glyphs: Glyph[]
+  notches: Layer[]
 } {
   const { data, getBand, fold, absentState: absentKey } = input
   const cap = Math.floor(input.width / (fold?.minBandPx ?? DEFAULT_MIN_BAND_PX))
@@ -280,6 +288,7 @@ function layoutBands<T>(input: LayoutInput<T>): {
   }
   const hits: Hit<T>[] = []
   const glyphs: Glyph[] = []
+  const notches = new Map<string, Layer>()
 
   for (const g of groups) {
     const datum = fold && g.items.length > 1 ? fold.merge(g.items) : g.items[0]
@@ -290,9 +299,29 @@ function layoutBands<T>(input: LayoutInput<T>): {
     const named = input.states.get(span.state)
     const glyph = named && glyphOf(named)
     // The primary part's centre: an absent share is taken from the right edge.
-    if (answers.primary && glyph && (cell.f1 - cell.f0) * input.width >= GLYPH_MIN_PX) {
+    if (answers.primary && glyph) {
       const share = absentShareOf(span, absentKey)
-      glyphs.push({ f: cell.f0 + ((cell.f1 - cell.f0) * (1 - share)) / 2, glyph })
+      const width = cell.f1 - cell.f0
+      // The fractions are float differences: a 16 px cell may measure 15.999… px.
+      if (width * input.width >= BAND_GLYPH_MIN_PX - 1e-6)
+        glyphs.push({ f: cell.f0 + (width * (1 - share)) / 2, glyph })
+      else {
+        // Too narrow for the glyph: a notch along the bottom keeps the state off hue alone.
+        const px = NOTCH_PX[toneOf(named) === 'bad' ? 'bad' : 'warn']
+        // The state's own fill pulled towards the ink: it reads on any surface, as a cut-out would not.
+        const fill = span.fill ?? named.color
+        paintInto(
+          notches,
+          `color-mix(in srgb, ${fill} 50%, ${VX.ink})`,
+          input.emphasis(span.state),
+          {
+            f0: cell.f0,
+            f1: cell.f0 + width * (1 - share),
+            y0: 0,
+            y1: Math.min(px / Math.max(input.height, 1), 0.5),
+          },
+        )
+      }
     }
     g.items.forEach((source, i) => {
       const slot = g.start + i
@@ -301,7 +330,13 @@ function layoutBands<T>(input: LayoutInput<T>): {
         hits.push({ slot, source, state: absentKey, datum })
     })
   }
-  return { base: [...ctx.base.values()], markers: [...ctx.markers.values()], hits, glyphs }
+  return {
+    base: [...ctx.base.values()],
+    markers: [...ctx.markers.values()],
+    hits,
+    glyphs,
+    notches: [...notches.values()],
+  }
 }
 
 export function BandStrip<T, X extends ChartX = ChartX, K extends string = string>(
@@ -349,7 +384,7 @@ export function BandStrip<T, X extends ChartX = ChartX, K extends string = strin
 
   const marks = useCallback(
     (plot: PlotContext<T, X>): ChartMarks => {
-      const { base, markers, hits, glyphs } = layoutBands({
+      const { base, markers, hits, glyphs, notches } = layoutBands({
         data,
         getBand,
         fold,
@@ -371,6 +406,21 @@ export function BandStrip<T, X extends ChartX = ChartX, K extends string = strin
           decorative(
             rect(cells, {
               id: `band-${i}`,
+              x1: 'f0',
+              x2: 'f1',
+              y1: 'y0',
+              y2: 'y1',
+              xScale: 'zx',
+              fill,
+              inset: 0,
+              ...(opacity < 1 && { fillOpacity: opacity }),
+            }),
+          ),
+        ),
+        ...notches.map(({ fill, opacity, cells }, i) =>
+          decorative(
+            rect(cells, {
+              id: `band-notches-${i}`,
               x1: 'f0',
               x2: 'f1',
               y1: 'y0',

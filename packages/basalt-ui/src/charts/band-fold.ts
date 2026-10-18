@@ -29,17 +29,36 @@ export type StatusTone = 'good' | 'warn' | 'bad' | 'neutral'
 /** `warn` and `bad` carry a glyph by default: a status state is not told apart by hue alone. */
 const TONE_GLYPH: Partial<Record<StatusTone, string>> = { warn: '!', bad: '×' }
 
-/** The glyph a state draws: its own, else its status tone's default, else none. */
-export function glyphOf(
-  s: Pick<NamedChartState, 'glyph' | 'tone'> & { color?: string | undefined },
-): string | undefined {
-  const tone =
+type ToneSource = Pick<NamedChartState, 'glyph' | 'tone'> & { color?: string | undefined }
+
+/** A state's status tone: its own, else the one its status colour names. */
+export function toneOf(s: ToneSource): StatusTone | undefined {
+  return (
     s.tone ?? (s.color === VX.status.warn ? 'warn' : s.color === VX.status.bad ? 'bad' : undefined)
+  )
+}
+
+/** The glyph a state draws: its own, else its status tone's default, else none. */
+export function glyphOf(s: ToneSource): string | undefined {
+  const tone = toneOf(s)
   return s.glyph ?? (tone === undefined ? undefined : TONE_GLYPH[tone])
 }
 
-/** A cell narrower than this (px) draws no glyph: it would not fit inside the fill. */
+/** A heat cell narrower than this (px) draws no glyph: it would not fit inside the fill. */
 export const GLYPH_MIN_PX = 12
+
+/**
+ * A `BandStrip` cell narrower than this (px) draws no glyph: its fill is full-height, so the glyph
+ * is set at the xs size (a 16 px line), and a `!` or `×` is unreadable in less. Such a cell draws a
+ * notch instead, see {@link NOTCH_PX}. A `Heatmap` keeps {@link GLYPH_MIN_PX}.
+ */
+export const BAND_GLYPH_MIN_PX = 16
+
+/**
+ * The height (px) of the bottom notch a glyph state draws where the glyph does not fit: a warn
+ * notch is shorter than a bad one, so the state is never told by hue alone.
+ */
+export const NOTCH_PX = { warn: 3, bad: 6 } as const
 
 /** A run of adjacent slots drawn as one band; `items` are the source data it stands for. */
 export type Group<T> = { start: number; items: T[] }
