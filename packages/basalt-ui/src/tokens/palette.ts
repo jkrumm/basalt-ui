@@ -241,8 +241,8 @@ export const RADIUS_STEP = {
   /** SegmentedControl's active indicator, Kbd, Code — one step below the control radius. */
   tight: DEFAULT_RADIUS_VALUES.tight, // 5
   /** Progress bar, and the Mantine scale's `sm` step — two steps below the control radius. (No
-   * longer the SegmentedControl indicator: that is the track radius − 3 px, the nested-radius lint
-   * step, set in `theme/index.ts`.) */
+   * longer the SegmentedControl indicator: that is the track radius − 3 px snapped down onto the
+   * scale, set in `theme/index.ts`.) */
   fine: DEFAULT_RADIUS_VALUES.fine, // 4
   /** The Mantine `radius` scale's `xs` step — independent of both anchors. */
   scaleXs: 2,
