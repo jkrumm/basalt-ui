@@ -514,12 +514,12 @@ describe('zone name layout', () => {
     })
   }
 
-  test('shows every name on a wide row, hides those wider than their span when narrowed, and returns', () => {
+  test('shows every name on a wide row, hides those wider than their span (never the holding one) when narrowed, and returns', () => {
     const { container } = mount(props)
     expect(hiddenNames(container)).toEqual([])
-    // 120px row: each span is 40px, a 50px name does not fit.
+    // 120px row: each span is 40px, a 50px name does not fit. The holding name (Optimal) never hides.
     resize(120)
-    expect(hiddenNames(container)).toEqual(['Low', 'Optimal', 'High'])
+    expect(hiddenNames(container)).toEqual(['Low', 'High'])
     resize(300)
     expect(hiddenNames(container)).toEqual([])
   })
@@ -570,14 +570,14 @@ describe('zone name layout', () => {
   })
 
   test('a reading that moves the bold label re-measures with no resize', () => {
-    // 300px row, spans 0-100 / 200-240 / 240-300 wide: B (40px span) holds 30 + 20 = 50 when bold.
+    // 300px row, spans 0-200 / 200-240 / 240-300: B holding is 40 + 40 = 80px wide, over C's name.
     const zones = [
       { from: 0, to: 500, label: 'A' },
       { from: 500, to: 600, label: 'B' },
       { from: 600, to: 750, label: 'C' },
     ]
-    labelWidth = 30
-    holdingExtra = 20
+    labelWidth = 40
+    holdingExtra = 40
     const tree = (value: number) => (
       <MantineProvider>
         <Meter label="Load" max={750} value={value} zones={zones} />
@@ -585,9 +585,9 @@ describe('zone name layout', () => {
     )
     const { container, rerender } = render(tree(100))
     expect(hiddenNames(container)).toEqual([])
-    // B holding is bolder: 50px in a 40px span. No observer callback fires.
+    // B holding is bolder and claims its place first, so C's name yields. No observer callback fires.
     rerender(tree(550))
-    expect(hiddenNames(container)).toEqual(['B'])
+    expect(hiddenNames(container)).toEqual(['C'])
     rerender(tree(100))
     expect(hiddenNames(container)).toEqual([])
   })
@@ -622,7 +622,7 @@ describe('zone name layout', () => {
       expect(hiddenNames(container)).toEqual([])
       labelWidth = 120
       act(() => loadingDone?.())
-      expect(hiddenNames(container)).toEqual(['Low', 'Optimal', 'High'])
+      expect(hiddenNames(container)).toEqual(['Low', 'High'])
     })
 
     test('the listener is removed on unmount', () => {
