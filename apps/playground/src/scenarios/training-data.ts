@@ -191,7 +191,7 @@ export const loadZoneName = (ratio: number): string => zoneFor(LOAD_ZONES, ratio
 
 export const READINESS_ZONES = [
   { from: 0, to: 60, label: 'Low', short: 'Lo' },
-  { from: 60, to: 80, label: 'Fair', short: 'Fr' },
+  { from: 60, to: 80, label: 'Fair' },
   { from: 80, to: 100, label: 'Good' },
 ] as const
 export const readinessLevel = (score: number): string =>
