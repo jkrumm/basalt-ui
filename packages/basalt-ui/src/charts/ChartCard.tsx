@@ -144,8 +144,9 @@ type ChartCardBaseProps = BasaltProps &
      * unsized chart takes — pass the chart's own `height` when it states one, so a `<Suspense
      * fallback={<ChartCard state={{ pending: true }} …/>}>` reserves the final size.
      * `'content'` is for a body that is not a chart (a list, a `Meter`): an error or empty state
-     * ends at its content, and a pending state leaves `children` in place — the body draws its own
-     * loading at its loaded height (`BarList loading`). */
+     * ends at its content. A pending state renders `children` as they are, so the body must draw
+     * its own loading (`BarList loading`, a loading `Meter`); a children-less `<Suspense
+     * fallback>` should pass a numeric height instead. */
     placeholderHeight?: number | ResponsiveChartHeight | 'content' | undefined
     /** Placeholder data is showing: the facts row dims with the plot (a strip cell's `stale`). */
     stale?: boolean | undefined
