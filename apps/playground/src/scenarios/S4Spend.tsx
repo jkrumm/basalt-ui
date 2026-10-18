@@ -136,9 +136,6 @@ const TRACK_STEP_EUR = 100
 const TRACK_END_EUR =
   Math.ceil((Math.max(BUDGET_EUR, FORECAST_EUR) * TRACK_HEADROOM) / TRACK_STEP_EUR) * TRACK_STEP_EUR
 
-/** Body height of the error placeholder for the BarList cards, so a failed card stays near its resting size. */
-const PROJECT_PLACEHOLDER = 190
-
 const USAGE_EMPTY = `No spend recorded ${WINDOW_LABEL}. Check that the usage export is connected.`
 
 /** One card height for a row pair: the grid cell sets it, the card fills it. */
@@ -350,7 +347,7 @@ function SpendBreakdown({ shotState }: ScenarioProps) {
             },
           })}
           info={`Each project's share of the ${fmtEur(MTD_EUR)} month-to-date spend across all models, in whole percent that sum to 100.`}
-          {...cardStateProps(shotState, retry('Spend by project'), PROJECT_PLACEHOLDER)}
+          {...cardStateProps(shotState, retry('Spend by project'), 'content')}
         >
           <Box data-shot-hover>
             <BarList
@@ -373,7 +370,7 @@ function SpendBreakdown({ shotState }: ScenarioProps) {
             },
           })}
           info={`The € each project added against ${PRIOR_WINDOW_LABEL}, with the relative change.`}
-          {...cardStateProps(shotState, retry('Spend change by project'), PROJECT_PLACEHOLDER)}
+          {...cardStateProps(shotState, retry('Spend change by project'), 'content')}
         >
           <Box data-shot-hover>
             <BarList

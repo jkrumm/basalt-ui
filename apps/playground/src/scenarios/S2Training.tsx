@@ -70,8 +70,8 @@ const TRAINING_ERROR = 'The training log did not answer. Retry, or reconnect it 
 const TRAINING_EMPTY = 'No sessions logged this month. Log a workout to start the month.'
 const retry = (what: string): string => retryCopy(what, 'training log')
 
-/** Body heights for the error placeholder, so a failed card stays near its resting size. */
-const PLACEHOLDER = { meter: 72, readiness: 168, lifts: 184 }
+/** Body height of the error placeholder for the single-bar Meter cards. */
+const PLACEHOLDER = { meter: 72 }
 
 /** `Low under 60, Fair 60–79, Good 80+` — the legend, built from the zones the Meter draws. */
 const READINESS_INFO = `Mean of the four contributors below, each scored 0–100: ${READINESS_ZONES.map(
@@ -336,16 +336,18 @@ function GoalRow({ shotState }: ScenarioProps) {
 }
 
 function LoadCard({ shotState }: ScenarioProps) {
+  // Fill the row beside the taller sibling only while the body is drawn; an empty or failed card ends at its content.
+  const fills = shotState === undefined || shotState === 'loading'
   return (
     <Box data-shot="training-load" flex={1}>
       <ChartCard
-        style={FILL}
+        {...(fills && { style: FILL })}
         title="Training load"
         {...(shotState === undefined && {
           facts: { value: fmtRatio(LOAD_RATIO), period: '7 days against the 4-week norm' },
         })}
         info="Load of the last 7 days divided by the weekly average of the last 28 days. Load is minutes × session intensity (1–10), in arbitrary units (AU)."
-        {...cardStateProps(shotState, retry('Training load'), PLACEHOLDER.meter)}
+        {...cardStateProps(shotState, retry('Training load'), 'content')}
       >
         <Box data-shot-hover>
           <Meter
@@ -387,7 +389,7 @@ function ReadinessRow({ shotState }: ScenarioProps) {
             subtitle: `As of ${TODAY_LABEL}`,
           })}
           info={READINESS_INFO}
-          {...cardStateProps(shotState, retry('Readiness'), PLACEHOLDER.readiness)}
+          {...cardStateProps(shotState, retry('Readiness'), 'content')}
         >
           <Stack gap="md">
             <Meter
@@ -429,7 +431,7 @@ function ReadinessRow({ shotState }: ScenarioProps) {
             },
           })}
           info="Sets × reps × weight per lift over the strength sessions of the window; the share is of total training volume."
-          {...cardStateProps(shotState, retry('Top lifts'), PLACEHOLDER.lifts)}
+          {...cardStateProps(shotState, retry('Top lifts'), 'content')}
         >
           <Box data-shot-hover>
             <BarList

@@ -12,6 +12,11 @@ describe('cardStateProps', () => {
     },
   )
 
+  it("passes 'content' through so the card ends at its content", () => {
+    expect(cardStateProps(undefined, 'boom', 'content')).toEqual({ placeholderHeight: 'content' })
+    expect(cardStateProps('error', 'boom', 'content').placeholderHeight).toBe('content')
+  })
+
   it('on error it carries the message, a retry and the body height', () => {
     const props = cardStateProps('error', 'Top lifts failed to load.', 184)
     expect(props.placeholderHeight).toBe(184)

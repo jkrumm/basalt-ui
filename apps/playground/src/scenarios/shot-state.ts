@@ -60,15 +60,19 @@ export function chartStateFor(
 
 /**
  * `ChartCard` props for a card that hosts a Meter or BarList. Those draw their own loading and empty
- * states, so the card only takes the error: its placeholder (with the shared Retry),
- * sized to the card's own body. Without `placeholderHeight` the error branch reserves the height of
- * a chart, which is ~4x what a meter needs.
+ * states, so the card only takes the error: its placeholder (with the shared Retry).
+ * `'content'` ends the card at its content (error and empty) and renders the body while pending, so
+ * the body's own `loading` keeps the loaded footprint; a number reserves that body height instead.
  */
 export function cardStateProps(
   state: ShotState | undefined,
   errorCopy: string,
-  placeholderHeight: number,
-): { state?: ChartState | undefined; onRetry?: () => void; placeholderHeight: number } {
+  placeholderHeight: number | 'content',
+): {
+  state?: ChartState | undefined
+  onRetry?: () => void
+  placeholderHeight: number | 'content'
+} {
   return state === 'error'
     ? { state: { error: new Error(errorCopy) }, onRetry: noop, placeholderHeight }
     : { placeholderHeight }
