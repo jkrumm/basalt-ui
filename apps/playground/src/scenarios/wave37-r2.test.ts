@@ -202,7 +202,7 @@ describe('S4', () => {
     const bin = DISTRIBUTION.findLast((b) => b.from <= MEDIAN_DAY_EUR)
     expect(bin).toBeDefined()
     expect(card).toContain(fmtEur(MEDIAN_DAY_EUR))
-    expect(card).toContain(`${bin?.days} landed in ${spendBand({ from: bin?.from ?? 0 })}`)
+    expect(card).toContain(`${bin?.days} days in ${spendBand({ from: bin?.from ?? 0 })}`)
     expect(card).not.toContain('Median day')
     expect(source('./S4Spend.tsx')).not.toContain("key: 'median'")
   })

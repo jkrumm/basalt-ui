@@ -188,7 +188,7 @@ describe('4. S3', () => {
 
 describe('5. S4', () => {
   it('the distribution states its window on the surface', () => {
-    expect(text(anchor(spend(), 'spend-distribution'))).toContain('last 90 days')
+    expect(text(anchor(spend(), 'spend-distribution'))).toContain('median of 90 days')
   })
 
   it('the distribution axis names its unit on the top tick only', () => {
