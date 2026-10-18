@@ -48,12 +48,16 @@ Queued behind all of it: Part 2's maturation Waves 20–28.
 
 ## In flight (next actions, in order)
 
-1. basalt 2.21.0 released 2026-10-18 (mid-Wave 36; strip alignment, Meter zone labels, Button insets). Wave 36 closed
-   (the UX-first procedure shipped; expression trial v0 scored 97). Wave 37 (argo's friction II) is active.
-2. argo runs the live re-score loop (argo Waves 23–28+): WalkingPad passes, twelve pages fail; each round fixes ~55 and
-   surfaces ~30 new defects. argo Wave 28 bumps to 2.21.0.
-3. Owner decision queued: warden + agent-gateway emit an authored `question` on items/asks (argo reads it when present).
-4. After basalt Wave 37: release, argo bumps and re-scores. The exit gate is unchanged.
+1. basalt 2.22.0 (`a646a081`) and 2.23.0 (`fe021b8a`, incl. #414 `series-palette` → error) released 2026-10-18 mid-Wave 37.
+   Wave 37 closed (S2/S3/S4 50/64/55 → 71/80/74 under argo's bar, no route passes; trial v1 38). Wave 38 (argo's
+   friction III) is active; the old Waves 38–43 are now 39–44.
+2. argo runs the live re-score loop (argo Waves 23–35+): WalkingPad and Garmin pass; Warden/Reading/Strength failed only
+   on the strip-cell P0 that 2.23.0 closes; the rest is argo state copy plus basalt P2/P3 rows. argo Wave 35 bumps 2.23.0.
+3. Decided 2026-10-18: warden + agent-gateway get an authored `question` field, recorded as a backlog item in each repo's
+   `docs/BACKLOG.md` for a later structure-and-maturity pass by the owner; argo adds nothing until it ships.
+4. Owner decision queued: SPEC D37 (an errored/empty chart body keeps the loaded height per the SSR contract; the rubric
+   scores it as a void). Default until ruled: SPEC wins, the rubric is told about D37.
+5. After basalt Wave 38: release, argo bumps and re-scores. The exit gate is unchanged.
 
 ## Consumers and how to reach them
 
