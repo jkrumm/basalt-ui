@@ -79,10 +79,13 @@ const FLOW_SERIES: ChartSeries<FlowRow>[] = [
 ]
 const FLOW_DATA = [...FLOW]
 
-/** One or two words: at 390 px the title is the row label and nothing may crowd it. */
+/** A short word, plus the reason on a blocked row: at 390 px the title is the row label and nothing may crowd it. */
 const stuckStatus = (i: (typeof STUCK)[number]) =>
   i.state === 'blocked' ? (
-    <StatusVerdict color={VX.status.bad} word="Blocked" />
+    <StatusVerdict
+      color={VX.status.bad}
+      word={i.reason === undefined ? 'Blocked' : `Blocked · ${i.reason}`}
+    />
   ) : i.waitHours > WARN_HOURS ? (
     <StatusVerdict color={VX.status.warn} word="Overdue" />
   ) : (
@@ -99,8 +102,11 @@ const STUCK_ITEMS = STUCK.map((i) => ({
 const WARN_LABEL = `${WARN_HOURS} h`
 const ABANDON_LABEL = `${ABANDON_HOURS / 24} d`
 
-// The strip derives each footer cell's anchor, which cannot carry `data-shot-absent`: the content
-// repeats the name with the declaration, so `shot` reads the footer as absent in empty and error.
+// Intentional duplicate `data-shot`: the strip derives each footer cell's anchor
+// (`strip-footer-<key>`) and offers no `absent` on a footer entry, so the content repeats the name
+// carrying the declaration. `shot` resolves the anchor with `.first()` (the derived cell) and reads
+// the declaration from the repeat, so the footer counts as absent in empty and error. A package
+// follow-up would let the entry declare it, and this wrapper would go.
 const footerEntry = (key: string, content: ReactNode) => ({
   key,
   content: (

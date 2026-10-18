@@ -26,7 +26,6 @@ export const STATE_LABEL: Record<ItemState, string> = {
 export type Item = {
   id: string
   title: string
-  repo: string
   state: ItemState
   /** Hours the item has waited in its current state. */
   waitHours: number
@@ -40,7 +39,6 @@ export const ABANDON_HOURS = 168
 
 const item = (
   id: string,
-  repo: string,
   state: ItemState,
   waitHours: number,
   title: string,
@@ -48,39 +46,31 @@ const item = (
 ): Item => ({
   id,
   title,
-  repo,
   state,
   waitHours,
   ...(reason !== undefined && { reason }),
 })
 
 export const ITEMS: readonly Item[] = [
-  item('w-412', 'api', 'awaiting', 71, 'Drop the legacy session table'),
-  item('w-418', 'dashboard', 'awaiting', 49, 'Replace the polling hook with a stream'),
-  item('w-421', 'worker', 'awaiting', 30, 'Raise the queue concurrency to 8'),
-  item('w-427', 'infra', 'awaiting', 19, 'Rotate the deploy token'),
-  item('w-431', 'api', 'awaiting', 7, 'Add rate limiting to the export route'),
-  item('w-433', 'dashboard', 'awaiting', 3, 'Move the settings page to the new shell'),
-  item('w-425', 'worker', 'running', 2, 'Backfill the usage ledger'),
-  item('w-429', 'api', 'running', 5, 'Split the billing module'),
-  item('w-430', 'dashboard', 'running', 1, 'Fix the chart legend overflow'),
-  item('w-432', 'infra', 'running', 4, 'Pin the base image digest'),
-  item('w-434', 'worker', 'queued', 6, 'Retry failed webhooks with backoff'),
-  item('w-435', 'api', 'queued', 4, 'Document the pagination cursor'),
-  item('w-436', 'dashboard', 'queued', 3, 'Add an empty state to the run list'),
-  item('w-437', 'infra', 'queued', 2, 'Prune stale preview environments'),
-  item('w-438', 'api', 'queued', 2, 'Cache the project lookup'),
-  item('w-439', 'worker', 'queued', 1, 'Log the job id on every retry'),
-  item('w-422', 'dashboard', 'blocked', 52, 'Upgrade the router major', 'Waits on the API change'),
-  item('w-424', 'api', 'blocked', 28, 'Migrate the audit log to the new store', 'Failing check'),
-  item(
-    'w-428',
-    'infra',
-    'blocked',
-    14,
-    'Enable the staging cluster autoscaler',
-    'Waits on the infra quota',
-  ),
+  item('w-412', 'awaiting', 71, 'Drop the session table'),
+  item('w-418', 'awaiting', 49, 'Replace polling hook'),
+  item('w-421', 'awaiting', 30, 'Raise queue concurrency'),
+  item('w-427', 'awaiting', 19, 'Rotate the deploy token'),
+  item('w-431', 'awaiting', 7, 'Rate-limit the export'),
+  item('w-433', 'awaiting', 3, 'Move settings page'),
+  item('w-425', 'running', 2, 'Backfill the usage ledger'),
+  item('w-429', 'running', 5, 'Split the billing module'),
+  item('w-430', 'running', 1, 'Fix the chart legend overflow'),
+  item('w-432', 'running', 4, 'Pin the base image digest'),
+  item('w-434', 'queued', 6, 'Retry failed webhooks with backoff'),
+  item('w-435', 'queued', 4, 'Document the pagination cursor'),
+  item('w-436', 'queued', 3, 'Add an empty state to the run list'),
+  item('w-437', 'queued', 2, 'Prune stale preview environments'),
+  item('w-438', 'queued', 2, 'Cache the project lookup'),
+  item('w-439', 'queued', 1, 'Log the job id on every retry'),
+  item('w-422', 'blocked', 52, 'Upgrade the router major', 'API change'),
+  item('w-424', 'blocked', 28, 'Migrate the audit log', 'Failing check'),
+  item('w-428', 'blocked', 14, 'Staging autoscaler', 'Infra quota'),
 ]
 
 const awaiting = ITEMS.filter((i) => i.state === 'awaiting')
