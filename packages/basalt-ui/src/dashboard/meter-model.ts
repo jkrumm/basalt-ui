@@ -27,8 +27,14 @@ export type Part = {
 /** One categorical part's caption: its position key, name, formatted amount and fill colour (`undefined` = neutral). */
 export type PartCaption = { key: string; label: string; text: string; color: string | undefined }
 
-/** One zone's name on the band: where its band starts (percent) and whether it holds the reading. */
-export type ZoneLabel = { key: string; label: string; startPct: number; holding: boolean }
+/** One zone's name on the label row: its span's centre and width (percent) and whether it holds the reading. */
+export type ZoneLabel = {
+  key: string
+  label: string
+  centrePct: number
+  widthPct: number
+  holding: boolean
+}
 
 /**
  * What the caption row says. `reading`: the formatted reading; `parts`: categorical segments name
@@ -121,19 +127,34 @@ export const LABEL_SUBPIXEL = 0.5
 /** A measured label box on one axis (any shared origin), in CSS pixels. */
 export type LabelBox = { left: number; right: number }
 
+/** A label on the shared row: its measured box and, for a zone name, the span it must stay inside. */
+export type RowLabel = { box: LabelBox; span?: LabelBox }
+
 /**
- * Whether every zone name fits on the band: inside `[0, rowWidth]` and clear of every other name
- * (pairwise, so a long name cannot hide behind a short one between it and a distant neighbour).
- * Boxes are relative to the row's own start edge.
+ * Which labels of the row show, in input order. Labels without a span (the end ticks) claim their
+ * place first; a zone name then shows only when it lies inside the row and its own span and clears
+ * every label already kept. A hidden name is still named in the described-by text.
  */
-export function zoneLabelsFit(boxes: readonly LabelBox[], rowWidth: number): boolean {
-  const sorted = boxes.toSorted((a, b) => a.left - b.left)
-  return sorted.every(
-    (a, i) =>
-      a.left >= -LABEL_SUBPIXEL &&
-      a.right <= rowWidth + LABEL_SUBPIXEL &&
-      sorted.slice(i + 1).every((b) => a.right <= b.left + LABEL_SUBPIXEL),
-  )
+export function placeRowLabels(labels: readonly RowLabel[], rowWidth: number): boolean[] {
+  const shown = labels.map(() => false)
+  const kept: LabelBox[] = []
+  const order = labels.map((_, i) => i).sort((a, b) => +!!labels[a]?.span - +!!labels[b]?.span)
+  for (const i of order) {
+    const { box, span } = labels[i] as RowLabel
+    const inside =
+      box.left >= -LABEL_SUBPIXEL &&
+      box.right <= rowWidth + LABEL_SUBPIXEL &&
+      (span === undefined ||
+        (box.left >= span.left - LABEL_SUBPIXEL && box.right <= span.right + LABEL_SUBPIXEL))
+    if (
+      !inside ||
+      kept.some((k) => box.left < k.right - LABEL_SUBPIXEL && k.left < box.right - LABEL_SUBPIXEL)
+    )
+      continue
+    shown[i] = true
+    kept.push(box)
+  }
+  return shown
 }
 
 /** A zone band as left edge + width in percent, clipped to the track. */
@@ -269,12 +290,16 @@ export function modelBar(input: BarInput): BarModel {
     partCaptions,
     zoneLabels: !zoned
       ? []
-      : zones.map((z, i) => ({
-          key: String(i),
-          label: z.label,
-          startPct: zoneBand(z, min, span).start,
-          holding: z === holding,
-        })),
+      : zones.map((z, i) => {
+          const band = zoneBand(z, min, span)
+          return {
+            key: String(i),
+            label: z.label,
+            centrePct: band.start + band.width / 2,
+            widthPct: band.width,
+            holding: z === holding,
+          }
+        }),
     ticks,
     markerPct: zoned ? toPct((reading - min) / span) : undefined,
     targetPct: target === undefined ? undefined : toPct((target - min) / span),

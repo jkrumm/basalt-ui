@@ -1064,6 +1064,17 @@ error anatomy (status dot, `Failed`, the message, Retry). Either replaces the ce
 `rows` and `footer`; the caption stays and `loading` wins while pending. Before, both read as `—`
 with a footer note.
 
+### A zoned `Meter` names each zone under its own span
+
+**Changed default:** zone names were left-aligned at their band start and wrapped into a list when two
+touched. They now sit centred on their zone's span in one label row; a name wider than its span (or
+clashing with a tick) hides instead of wrapping, and every zone stays named in the accessible
+description. Labelled `ticks` on a zoned `Meter` join that row at the track's ends instead of floating
+above the track, so the Meter has at most one caption line below. A plain tick `Meter` is unchanged
+except that two colliding tick captions now hide the later one instead of wrapping to a list.
+**Opt out:** none for the placement; render a legend yourself from the same zones if you need every
+name visible at any width.
+
 ### A zoned `Meter` in a hero host no longer prints the reading at its marker
 
 **Changed default:** a `Meter` with `zones` inside a `StatCard` `sparkline` slot or a strip cell's

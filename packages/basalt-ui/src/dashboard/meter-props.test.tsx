@@ -140,16 +140,18 @@ describe('tick caption collision', () => {
     ],
   } as const
 
-  test('sits as a band while the captions are clear and wraps to a list when they touch', () => {
+  test('shows every caption while they are clear and hides the later one when they touch', () => {
     const { container } = mount(props)
-    expect(container.querySelector('[data-meter-tick-list]')).toBeNull()
+    const hidden = () =>
+      [...container.querySelectorAll('[data-meter-tick-label]')].map((l) =>
+        l.hasAttribute('data-hidden'),
+      )
+    expect(hidden()).toEqual([false, false])
     rowWidth = 100
     act(() => {
       for (const o of observers) o.callback()
     })
-    const list = container.querySelector('[data-meter-tick-list]')
-    expect(list).not.toBeNull()
-    expect([...(list?.children ?? [])].map((c) => c.textContent)).toEqual(['Low', 'Good'])
+    expect(hidden()).toEqual([false, true])
   })
 
   test('a caption that would leave the row at the end is right-aligned to its tick, so it fits', () => {

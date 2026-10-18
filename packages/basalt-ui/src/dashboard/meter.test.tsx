@@ -129,13 +129,13 @@ describe('Meter', () => {
     const holdingLabel = (container: HTMLElement) =>
       container.querySelector('[data-meter-zone-band] [data-holding]')?.textContent
 
-    test('names every zone under the band and the holding one is marked', () => {
+    test('names every zone under its span and the holding one is marked', () => {
       const { container, getByText } = mount({ ...base, value: 612 })
       const labels = [
         ...container.querySelectorAll('[data-meter-zone-band] [data-meter-zone-label]'),
       ]
       expect(labels.map((l) => l.textContent)).toEqual(['Low', 'Optimal', 'High'])
-      expect((labels[1] as HTMLElement).style.insetInlineStart).toBe('30%')
+      expect((labels[1] as HTMLElement).style.insetInlineStart).toBe('52.5%')
       expect(holdingLabel(container)).toBe('Optimal')
       // The zone is named on the band, so the caption is the bare reading.
       expect(getByText('612')).toBeTruthy()
@@ -484,15 +484,14 @@ describe('zone name layout', () => {
     holdingExtra = 0
     observers = []
     globalThis.ResizeObserver = FakeResizeObserver as unknown as typeof ResizeObserver
-    // happy-dom has no layout: the row is `rowWidth` wide, each name `LABEL_WIDTH` from its start.
+    // happy-dom has no layout: the row is `rowWidth` wide, each name `labelWidth` centred on its span.
     HTMLElement.prototype.getBoundingClientRect = function (this: HTMLElement) {
       const box = (left: number, width: number) =>
         ({ left, right: left + width, width, top: 0, bottom: 10, height: 10 }) as DOMRect
       if (this.hasAttribute('data-meter-zone-label')) {
-        return box(
-          (Number.parseFloat(this.style.insetInlineStart) / 100) * rowWidth,
-          labelWidth + (this.hasAttribute('data-holding') ? holdingExtra : 0),
-        )
+        const width = labelWidth + (this.hasAttribute('data-holding') ? holdingExtra : 0)
+        const centre = (Number.parseFloat(this.style.insetInlineStart) / 100) * rowWidth
+        return box(centre - width / 2, width)
       }
       return this.hasAttribute('data-meter-zone-band') ? box(0, rowWidth) : box(0, 0)
     }
@@ -506,38 +505,42 @@ describe('zone name layout', () => {
   })
 
   const props = { label: 'Load', max: 750, value: 300, zones: ZONES } as const
-  const mode = (c: HTMLElement) => (c.querySelector('[data-meter-zone-list]') ? 'list' : 'band')
+  const hiddenNames = (c: HTMLElement) =>
+    [...c.querySelectorAll('[data-meter-zone-label][data-hidden]')].map((l) => l.textContent)
   const resize = (width: number) => {
     rowWidth = width
     act(() => {
       for (const o of observers) o.callback()
     })
   }
-  const names = (c: HTMLElement, which: 'band' | 'list') =>
-    [...c.querySelectorAll(`[data-meter-zone-${which}] [data-meter-zone-label]`)].map(
-      (l) => l.textContent,
-    )
 
-  test('fits on a wide row, drops to the list when narrowed, and returns to the band when widened', () => {
+  test('shows every name on a wide row, hides those wider than their span when narrowed, and returns', () => {
     const { container } = mount(props)
-    expect(mode(container)).toBe('band')
+    expect(hiddenNames(container)).toEqual([])
+    // 120px row: each span is 40px, a 50px name does not fit.
     resize(120)
-    expect(mode(container)).toBe('list')
-    expect(names(container, 'list')).toEqual(['Low', 'Optimal', 'High'])
+    expect(hiddenNames(container)).toEqual(['Low', 'Optimal', 'High'])
     resize(300)
-    expect(mode(container)).toBe('band')
+    expect(hiddenNames(container)).toEqual([])
   })
 
-  test('the holding zone is flagged in both modes', () => {
+  test('there is no list fallback: a hidden name stays in the row', () => {
+    const { container } = mount(props)
+    resize(120)
+    expect(container.querySelector('[data-meter-zone-list]')).toBeNull()
+    expect(container.querySelectorAll('[data-meter-zone-label]')).toHaveLength(3)
+  })
+
+  test('the holding zone stays flagged when names hide', () => {
     const { container } = mount(props)
     const holding = () =>
       [...container.querySelectorAll('[data-holding]')].map((l) => l.textContent)
     expect(holding()).toEqual(['Optimal'])
     resize(120)
-    expect(holding()).toEqual(['Optimal', 'Optimal'])
+    expect(holding()).toEqual(['Optimal'])
   })
 
-  test('the described-by text names every zone and the holding one in both modes', () => {
+  test('the described-by text names every zone and the holding one, shown or hidden', () => {
     const { container } = mount(props)
     const text = () => {
       const id = meter(container).getAttribute('aria-describedby') as string
@@ -560,14 +563,14 @@ describe('zone name layout', () => {
     expect(observers.every((o) => o.disconnected)).toBe(true)
   })
 
-  test('without a ResizeObserver it renders the band and does not throw', () => {
+  test('without a ResizeObserver it renders every name and does not throw', () => {
     // @ts-expect-error simulating an environment without the API
     delete globalThis.ResizeObserver
-    expect(mode(mount(props).container)).toBe('band')
+    expect(hiddenNames(mount(props).container)).toEqual([])
   })
 
   test('a reading that moves the bold label re-measures with no resize', () => {
-    // A 0-500, B 500-600, C 600-750 on a 300px row: names start at 0, 200 and 240.
+    // 300px row, spans 0-100 / 200-240 / 240-300 wide: B (40px span) holds 30 + 20 = 50 when bold.
     const zones = [
       { from: 0, to: 500, label: 'A' },
       { from: 500, to: 600, label: 'B' },
@@ -581,12 +584,12 @@ describe('zone name layout', () => {
       </MantineProvider>
     )
     const { container, rerender } = render(tree(100))
-    expect(mode(container)).toBe('band')
-    // B holding is bolder: 200 + 50 runs into C at 240. No observer callback fires.
+    expect(hiddenNames(container)).toEqual([])
+    // B holding is bolder: 50px in a 40px span. No observer callback fires.
     rerender(tree(550))
-    expect(mode(container)).toBe('list')
+    expect(hiddenNames(container)).toEqual(['B'])
     rerender(tree(100))
-    expect(mode(container)).toBe('band')
+    expect(hiddenNames(container)).toEqual([])
   })
 
   describe('web fonts', () => {
@@ -614,12 +617,12 @@ describe('zone name layout', () => {
       else Reflect.deleteProperty(document, 'fonts')
     })
 
-    test('loadingdone re-measures: widths that changed with no resize flip the mode', () => {
+    test('loadingdone re-measures: widths that changed with no resize hide names', () => {
       const { container } = mount(props)
-      expect(mode(container)).toBe('band')
+      expect(hiddenNames(container)).toEqual([])
       labelWidth = 120
       act(() => loadingDone?.())
-      expect(mode(container)).toBe('list')
+      expect(hiddenNames(container)).toEqual(['Low', 'Optimal', 'High'])
     })
 
     test('the listener is removed on unmount', () => {

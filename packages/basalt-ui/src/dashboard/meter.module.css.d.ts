@@ -5,17 +5,15 @@
 declare const classes: {
   readonly root: string
   readonly summary: string
-  readonly zoned: string
   readonly track: string
   readonly trackBox: string
   readonly fill: string
   readonly forecastFill: string
   readonly zone: string
-  readonly zoneBand: string
+  readonly labelRow: string
+  readonly rowLabel: string
   readonly zoneLabel: string
   readonly zoneLabelHolding: string
-  readonly zoneList: string
-  readonly zoneListItem: string
   readonly zoneReadingRow: string
   readonly zoneReading: string
   readonly marker: string
@@ -36,9 +34,6 @@ declare const classes: {
   readonly ringArc: string
   readonly ringValue: string
   readonly skeletonRing: string
-  readonly tickLabels: string
-  readonly tickBand: string
-  readonly tickLabel: string
   readonly row: string
 }
 export default classes

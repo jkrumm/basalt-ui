@@ -1,7 +1,7 @@
 /** Meter's internal pieces: bar, ring, empty and loading. `meter.tsx` dispatches between them. */
 import { Skeleton, VisuallyHidden } from '@mantine/core'
 import { useContext, useId, useRef, useState } from 'react'
-import type { CSSProperties, HTMLAttributes, ReactNode, RefObject } from 'react'
+import type { CSSProperties, ReactNode, RefObject } from 'react'
 import { useIsomorphicLayoutEffect } from '../common/isomorphic-layout-effect'
 import { cx } from '../common/props'
 import {
@@ -9,8 +9,8 @@ import {
   modelBar,
   ringFraction,
   startCaptionText,
+  placeRowLabels,
   zoneBand,
-  zoneLabelsFit,
 } from './meter-model'
 import type { MeterSegment, MeterTick, MeterZone, Part, TickMark, ZoneLabel } from './meter-model'
 import classes from './meter.module.css'
@@ -173,33 +173,50 @@ function zoneStyle(zone: MeterZone, index: number, count: number, min: number, s
   } satisfies CSSProperties
 }
 
-/**
- * Joins the names with a character no label carries, so the effect re-runs only when they change.
- * The holding zone is part of the key: its label is bolder, so a reading that crosses a boundary
- * changes widths with no row resize.
- */
-const labelsKey = (labels: readonly ZoneLabel[]) =>
-  labels.map((l) => l.label + (l.holding ? '*' : '')).join('\u0000')
+/** One label on the row: its span in percent of the row (a zone name) or none (an end tick). */
+type RowSlot = { spanPct?: readonly [number, number] }
+
+const sameFlags = (a: readonly boolean[], b: readonly boolean[]) =>
+  a.length === b.length && a.every((v, i) => v === b[i])
 
 /**
- * Whether the zone names fit on the band, re-measured when the row resizes, when web fonts finish
- * loading (a mono swap changes label widths without resizing the row) and when the names change.
- * Server markup shows the band; the list may appear after mount, when the measurement fails.
+ * Which row labels show, re-measured when the row resizes, when web fonts finish loading (a swap
+ * changes label widths without resizing the row) and when the labels change. Server markup shows
+ * every label; a name that does not fit its span (or clashes with a tick) hides after measuring.
+ * `slots` is index-aligned with the row's children.
  */
-function useZoneLabelLayout(rowRef: RefObject<HTMLDivElement | null>, key: string): boolean {
-  const [fits, setFits] = useState(true)
+function useRowLabelLayout(
+  rowRef: RefObject<HTMLDivElement | null>,
+  slots: readonly RowSlot[],
+  key: string,
+): boolean[] {
+  const [shown, setShown] = useState<boolean[]>([])
+  const slotsRef = useRef(slots)
+  // Declared before the measuring effect so it reads this render's slots.
+  useIsomorphicLayoutEffect(() => {
+    slotsRef.current = slots
+  })
 
-  // Keyed on a string of the names, not the `labels` array: the model rebuilds that every render.
+  // Keyed on a string of the labels, not the `slots` array: the model rebuilds that every render.
   useIsomorphicLayoutEffect(() => {
     const row = rowRef.current
     if (!row) return
     const measure = () => {
       const origin = row.getBoundingClientRect()
-      const boxes = [...row.children].map((c) => {
+      const rtl = getComputedStyle(row).direction === 'rtl'
+      const edge = (pct: number) => (origin.width * (rtl ? 100 - pct : pct)) / 100
+      const labels = [...row.children].map((c, i) => {
         const r = c.getBoundingClientRect()
-        return { left: r.left - origin.left, right: r.right - origin.left }
+        const pct = slotsRef.current[i]?.spanPct
+        const [a, b] = pct ? [edge(pct[0]), edge(pct[1])] : []
+        return {
+          box: { left: r.left - origin.left, right: r.right - origin.left },
+          ...(a !== undefined &&
+            b !== undefined && { span: { left: Math.min(a, b), right: Math.max(a, b) } }),
+        }
       })
-      setFits(zoneLabelsFit(boxes, origin.width))
+      const next = placeRowLabels(labels, origin.width)
+      setShown((prev) => (sameFlags(prev, next) ? prev : next))
     }
     measure()
     const observer = typeof ResizeObserver === 'undefined' ? undefined : new ResizeObserver(measure)
@@ -217,7 +234,7 @@ function useZoneLabelLayout(rowRef: RefObject<HTMLDivElement | null>, key: strin
     }
   }, [rowRef, key])
 
-  return fits
+  return shown
 }
 
 /**
@@ -262,103 +279,71 @@ function ZoneReading({ pct, children }: { pct: number; children: ReactNode }) {
   )
 }
 
-function ZoneName({ label, ...rest }: { label: ZoneLabel } & HTMLAttributes<HTMLSpanElement>) {
-  return (
-    <span
-      {...rest}
-      className={cx(rest.className, label.holding && classes.zoneLabelHolding)}
-      data-meter-zone-label={label.label}
-      data-holding={label.holding || undefined}
-    >
-      {label.label}
-    </span>
-  )
-}
-
-/**
- * Names each zone under its band, the holding one in ink and a heavier weight. Labels sit
- * left-aligned at their band start; when two would overlap (or one would leave the row) the band
- * hides and the same names wrap as a list in zone order instead. The band stays laid out (hidden,
- * not removed) so a resize can measure it again. Decorative: the zone names and the holding zone
- * are in the described-by text.
- */
-function ZoneLabels({ labels }: { labels: readonly ZoneLabel[] }) {
-  const rowRef = useRef<HTMLDivElement>(null)
-  const fits = useZoneLabelLayout(rowRef, labelsKey(labels))
-
-  return (
-    <>
-      <div
-        ref={rowRef}
-        className={classes.zoneBand}
-        data-meter-zone-band
-        data-collapsed={fits ? undefined : ''}
-        aria-hidden
-      >
-        {labels.map((l) => (
-          <ZoneName
-            key={l.key}
-            label={l}
-            className={classes.zoneLabel}
-            style={{ insetInlineStart: `${l.startPct}%` }}
-          />
-        ))}
-      </div>
-      {!fits && (
-        <div className={classes.zoneList} data-meter-zone-list aria-hidden>
-          {labels.map((l) => (
-            <ZoneName key={l.key} label={l} className={classes.zoneListItem} />
-          ))}
-        </div>
-      )}
-    </>
-  )
-}
-
 /** Ticks past the middle caption to the left of their mark, so a caption near the end stays on the row. */
 const TICK_LABEL_FLIP_PCT = 50
 
 /**
- * Captions the labelled ticks above the track, each hugging its mark. Same fit rule as the zone names:
- * when two would overlap (or one would leave the row) the band hides and the labels wrap as a list in
- * tick order. Decorative: the ticks are in the described-by text.
+ * The one label row: each zone name centred under its own span and the labelled ticks hugging their
+ * marks (the end ticks sit at the row's ends), all on one baseline. A name wider than its span, or
+ * clashing with a tick or a neighbour, hides (still laid out, so a resize can measure it again) and is
+ * still named in the described-by text; the holding zone is ink and heavier. Decorative.
  */
-function TickLabels({ ticks }: { ticks: readonly TickMark[] }) {
+function LabelRow({
+  zones,
+  ticks,
+  band,
+}: {
+  zones: readonly ZoneLabel[]
+  ticks: readonly TickMark[]
+  band: 'zone' | 'tick'
+}) {
   const rowRef = useRef<HTMLDivElement>(null)
-  const fits = useZoneLabelLayout(rowRef, ticks.map((t) => `${t.label}@${t.pct}`).join('\u0000'))
+  const slots: RowSlot[] = [
+    ...ticks.map((): RowSlot => ({})),
+    ...zones.map((z): RowSlot => ({
+      spanPct: [z.centrePct - z.widthPct / 2, z.centrePct + z.widthPct / 2],
+    })),
+  ]
+  const key = [
+    ...ticks.map((t) => `${t.label}@${t.pct}`),
+    ...zones.map((z) => `${z.label}${z.holding ? '*' : ''}@${z.centrePct}`),
+  ].join('\u0000')
+  const shown = useRowLabelLayout(rowRef, slots, key)
+  const hidden = (i: number) => (shown[i] === false ? '' : undefined)
   return (
-    <div className={classes.tickLabels}>
-      <div
-        ref={rowRef}
-        className={classes.tickBand}
-        data-meter-tick-band
-        data-collapsed={fits ? undefined : ''}
-        aria-hidden
-      >
-        {ticks.map((t) => (
-          <span
-            key={t.key}
-            className={classes.tickLabel}
-            data-meter-tick-label=""
-            style={
-              t.pct > TICK_LABEL_FLIP_PCT
-                ? { insetInlineEnd: `${100 - t.pct}%` }
-                : { insetInlineStart: `${t.pct}%` }
-            }
-          >
-            {t.label}
-          </span>
-        ))}
-      </div>
-      {!fits && (
-        <div className={classes.zoneList} data-meter-tick-list aria-hidden>
-          {ticks.map((t) => (
-            <span key={t.key} className={classes.zoneListItem}>
-              {t.label}
-            </span>
-          ))}
-        </div>
-      )}
+    <div
+      ref={rowRef}
+      className={classes.labelRow}
+      {...(band === 'zone' ? { 'data-meter-zone-band': '' } : { 'data-meter-tick-band': '' })}
+      aria-hidden
+    >
+      {ticks.map((t, i) => (
+        <span
+          key={`t${t.key}`}
+          className={classes.rowLabel}
+          data-meter-tick-label=""
+          data-hidden={hidden(i)}
+          style={
+            t.pct > TICK_LABEL_FLIP_PCT
+              ? { insetInlineEnd: `${100 - t.pct}%` }
+              : { insetInlineStart: `${t.pct}%` }
+          }
+        >
+          {t.label}
+        </span>
+      ))}
+      {zones.map((z, i) => (
+        <span
+          key={`z${z.key}`}
+          className={cx(classes.rowLabel, classes.zoneLabel, z.holding && classes.zoneLabelHolding)}
+          data-meter-zone-label={z.label}
+          data-holding={z.holding || undefined}
+          data-hidden={hidden(ticks.length + i)}
+          style={{ insetInlineStart: `${z.centrePct}%` }}
+        >
+          {z.label}
+        </span>
+      ))}
     </div>
   )
 }
@@ -398,16 +383,16 @@ export function MeterBar(props: {
     (start !== null && !anchored) || end !== null || (!compact && model.forecastText !== null)
   const hasParts = !compact && model.partCaptions.length > 0
   const tickLabels = compact ? [] : model.ticks.filter((t) => t.label !== undefined)
+  const zoneLabels = compact ? [] : model.zoneLabels
   const describedBy =
     model.describedByText === null ? {} : ({ 'aria-describedby': describedId } as const)
 
   const root = rootProps(shell)
   return (
-    <div
-      {...root}
-      className={cx(root.className, !compact && model.zoneLabels.length > 0 && classes.zoned)}
-    >
-      {tickLabels.length > 0 && <TickLabels ticks={tickLabels} />}
+    <div {...root} className={root.className}>
+      {tickLabels.length > 0 && zoneLabels.length === 0 && (
+        <LabelRow zones={zoneLabels} ticks={tickLabels} band="tick" />
+      )}
       <div
         className={classes.trackBox}
         aria-label={label}
@@ -443,7 +428,7 @@ export function MeterBar(props: {
         ))}
         <Tick kind="target" className={classes.tick} pct={model.targetPct} />
       </div>
-      {!compact && model.zoneLabels.length > 0 && <ZoneLabels labels={model.zoneLabels} />}
+      {zoneLabels.length > 0 && <LabelRow zones={zoneLabels} ticks={tickLabels} band="zone" />}
       {anchored && <ZoneReading pct={model.markerPct ?? 0}>{start}</ZoneReading>}
       {model.describedByText !== null && (
         <VisuallyHidden id={describedId} className={classes.summary}>

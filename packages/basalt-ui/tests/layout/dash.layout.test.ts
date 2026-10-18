@@ -107,15 +107,13 @@ layout('Meter / BarList geometry', () => {
   })
 
   test.each([160, 360])(
-    'Meter zone names never overlap or leave the row, at %ipx',
+    'Meter zone names that show never overlap or leave the row, at %ipx',
     async (width) => {
       const m = await p.raw.evaluate((root) => {
         const host = document.querySelector<HTMLElement>(`[data-testid="${root}"]`)
         if (!host) throw new Error(`LAYOUT: no ${root}`)
         const visible = [
-          ...host.querySelectorAll<HTMLElement>(
-            '[data-meter-zone-band]:not([data-collapsed]) [data-meter-zone-label], [data-meter-zone-list] [data-meter-zone-label]',
-          ),
+          ...host.querySelectorAll<HTMLElement>('[data-meter-zone-label]:not([data-hidden])'),
         ]
         const boxes = visible.map((el) => {
           const r = el.getBoundingClientRect()
@@ -133,7 +131,7 @@ layout('Meter / BarList geometry', () => {
           boxes,
           rootLeft: box.left,
           rootRight: box.right,
-          mode: host.querySelector('[data-meter-zone-list]') ? 'list' : 'band',
+          hidden: host.querySelectorAll('[data-meter-zone-label][data-hidden]').length,
           holdingName: holding?.textContent,
           holdingColor: holding ? getComputedStyle(holding).color : '',
           otherColor: getComputedStyle(
@@ -141,7 +139,9 @@ layout('Meter / BarList geometry', () => {
           ).color,
         }
       }, `dash-meter-zones-${width}`)
-      expect(m.boxes).toHaveLength(4)
+      // 'Overreaching' is wider than its 40px span at 160px and hides.
+      expect(m.boxes).toHaveLength(4 - m.hidden)
+      expect(m.hidden).toBe(width === 160 ? 1 : 0)
       for (const [i, a] of m.boxes.entries()) {
         expect(a.left).toBeGreaterThanOrEqual(m.rootLeft - SUBPIXEL)
         expect(a.right).toBeLessThanOrEqual(m.rootRight + SUBPIXEL)
@@ -153,10 +153,6 @@ layout('Meter / BarList geometry', () => {
             b.bottom <= a.top + SUBPIXEL
           expect(apart).toBe(true)
         }
-      }
-      expect(m.mode).toBe(width === 160 ? 'list' : 'band')
-      if (m.mode === 'list') {
-        expect(m.boxes.map((b) => b.name)).toEqual(['Low', 'Optimal', 'High', 'Overreaching'])
       }
       expect(m.holdingName).toBe('Optimal')
       expect(m.holdingColor).not.toBe(m.otherColor)
@@ -179,11 +175,9 @@ layout('Meter / BarList geometry', () => {
         const r = reading.getBoundingClientRect()
         const k = marker.getBoundingClientRect()
         const t = track.getBoundingClientRect()
-        const names = [
-          ...host.querySelectorAll<HTMLElement>(
-            '[data-meter-zone-band]:not([data-collapsed]) [data-meter-zone-label], [data-meter-zone-list] [data-meter-zone-label]',
-          ),
-        ].map((el) => el.getBoundingClientRect())
+        const names = [...host.querySelectorAll<HTMLElement>('[data-meter-zone-label]')].map((el) =>
+          el.getBoundingClientRect(),
+        )
         return {
           readingLeft: r.left,
           readingRight: r.right,
@@ -243,18 +237,18 @@ layout('Meter / BarList geometry', () => {
     },
   )
 
-  test('Meter zone names collapse to a list when the row narrows and return when it widens', async () => {
-    const modeAt = (width: number) =>
+  test('Meter zone names hide when the row narrows and return when it widens', async () => {
+    const hiddenAt = (width: number) =>
       p.raw.evaluate(async (w) => {
         const host = document.querySelector<HTMLElement>('[data-testid="dash-meter-zones-360"]')
         if (!host) throw new Error('LAYOUT: no dash-meter-zones-360')
         host.style.width = `${w}px`
         // A ResizeObserver callback lands before the next paint; two frames is enough to see it.
         await new Promise((r) => requestAnimationFrame(() => requestAnimationFrame(r)))
-        return host.querySelector('[data-meter-zone-list]') ? 'list' : 'band'
+        return host.querySelectorAll('[data-meter-zone-label][data-hidden]').length
       }, width)
-    expect(await modeAt(120)).toBe('list')
-    expect(await modeAt(360)).toBe('band')
+    expect(await hiddenAt(120)).toBeGreaterThan(0)
+    expect(await hiddenAt(360)).toBe(0)
   })
 
   test('no Meter caption leaves a lone short word on its last line (strip width, 96px)', async () => {

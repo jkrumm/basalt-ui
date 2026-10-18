@@ -1300,6 +1300,18 @@ const TRAINING_ZONES = [
   { from: 750, to: 1000, label: 'Overreaching' },
 ]
 
+/** The S2 training-load shape: four zones, end ticks and one caption. */
+const LOAD_ZONES = [
+  { from: 0, to: 0.8, label: 'Under' },
+  { from: 0.8, to: 1.3, label: 'Optimal' },
+  { from: 1.3, to: 1.5, label: 'Caution' },
+  { from: 1.5, to: 2, label: 'Danger' },
+]
+const LOAD_TICKS = [
+  { at: 0, label: '0' },
+  { at: 2, label: '2.0' },
+]
+
 function DashFixture(): ReactElement {
   const items = [
     {
@@ -1415,6 +1427,38 @@ function DashFixture(): ReactElement {
       {/* theme-allow -- the wrapper width IS the fixture's payload (a container probe) */}
       <div data-testid="dash-meter-zones-360" style={{ width: 360 }}>
         <Meter label="Training load" max={1000} value={400} zones={TRAINING_ZONES} />
+      </div>
+      {[170, 220, 342].map((w) => (
+        // theme-allow -- the wrapper width IS the fixture's payload (a container probe)
+        <div key={w} data-testid={`dash-zl-${w}`} style={{ width: w }}>
+          <Meter
+            label="Training load"
+            min={0}
+            max={2}
+            value={1.1}
+            zones={LOAD_ZONES}
+            ticks={LOAD_TICKS}
+            endCaption="rest < 40 · push ≥ 70"
+          />
+        </div>
+      ))}
+      {/* theme-allow -- the wrapper width IS the fixture's payload (a container probe) */}
+      <div data-testid="dash-zl-card" style={{ width: 360 }}>
+        <StatCard
+          title="Load"
+          value="1.1"
+          sparkline={
+            <Meter
+              label="Training load"
+              min={0}
+              max={2}
+              value={1.1}
+              zones={LOAD_ZONES}
+              ticks={LOAD_TICKS}
+              endCaption="rest < 40 · push ≥ 70"
+            />
+          }
+        />
       </div>
       {(['ltr', 'rtl'] as const).flatMap((dir) =>
         [160, 360].flatMap((w) =>
