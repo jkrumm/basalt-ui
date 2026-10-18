@@ -539,7 +539,7 @@ Signature: CONTAINER_CLASSES: { micro: 0, compact: 240, regular: 480, wide: 800 
 Signature: CONTAINER_GRID_BREAKPOINTS: { xs: "240px", sm: "480px", md: "800px", lg: "800px", xl: "800px" }
 Signature: CONTAINER_KEYS: { compact: "240px", regular: "480px", wide: "800px" }
 Signature: VX: { full key list below }
-  lineWidth, line2Width, axisFont, dotR, dashArray, legendGap, legendFontSize, radiusCard, radiusCtrl, radiusPill, hit, good, goodSoft, bad, warn, goodSolid, badSolid, warnSolid, goodRef, badRef, warnRef, line, line2, axis, axisStroke, grid, crosshair, dotStroke, legendText, tooltipMuted, neutral, ink, ink2, muted, faint, accent, accentHover, accentFill, accentFillHover, onAccent, divider, shadowCard, shadowCtrl, shadowRaised, shadowOverlay, minPxPerTick, minPlotHeight, zIndexFloating
+  lineWidth, line2Width, axisFont, dotR, dashArray, legendGap, radiusCard, radiusCtrl, radiusPill, hit, good, goodSoft, bad, warn, goodSolid, badSolid, warnSolid, goodRef, badRef, warnRef, line, line2, axis, axisStroke, grid, crosshair, dotStroke, legendText, tooltipMuted, neutral, ink, ink2, muted, faint, accent, accentHover, accentFill, accentFillHover, onAccent, divider, shadowCard, shadowCtrl, shadowRaised, shadowOverlay, minPxPerTick, minPlotHeight, zIndexFloating
   text: { nano, micro, xs, sm, md, lg, xl, h2, kpi, h1, display }
   space: { controlHeightTag, controlHeightWidget, controlHeightCtl, pageBarRowHeight, sectionHeaderHeight, widgetHeaderHeight, sidebarBlockRowHeight, controlGap, sheetRowHeight }
   surface: { bg, panel, panelHover, rowHover, rowSelected, elevated, subtle, overlay, field, border, hairline }

@@ -1,7 +1,8 @@
 /**
  * Layout invariants for the 2.0 chart layer (docs/V2-SPEC.md § 9.4–§ 9.6) — everything here is
  * measured or computed by a real browser, which happy-dom cannot do: the container class the host
- * resolves from its MEASURED width and the guide ladder it drives, y labels in a gutter beside the plot, the crosshair the engine paints on every chart of a cursor group and clears on
+ * resolves from its MEASURED width and the guide ladder it drives, y labels in a gutter beside the
+ * plot, the crosshair the engine paints on every chart of a cursor group and clears on
  * `mouseleave`, `:root`'s `--ts-chart-*` reaching the portalled tooltip, and `touch-action` on a
  * coarse pointer (the harness context is `isMobile` + `hasTouch`, i.e. `(pointer: coarse)`).
  *

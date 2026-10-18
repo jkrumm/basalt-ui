@@ -123,12 +123,26 @@ export function defaultNumberFormat(v: number): string {
 /**
  * The tooltip's date: weekday, day, month and year in the page's locale (`defineFormat` /
  * `BasaltProvider`), read in UTC like the time scale; a non-midnight instant adds `HH:MM`. With
- * `dayOnly` (a day-granular series) the instant is its bucket's DAY, never a clock time: a local
- * midnight east of UTC is `22:00` of the day before in UTC, so the nearest UTC day is the bucket.
+ * `dayOnly` (a day-granular series) the instant is its bucket's DAY, never a clock time: see
+ * {@link bucketDay}.
  */
+/**
+ * The UTC midnight of the day a day-keyed instant stands for. A key at LOCAL midnight is that local
+ * calendar date (east of UTC it is `22:00` UTC of the day before); any other key is its UTC date, so
+ * a key at 12:00 UTC or later never rolls to the next day.
+ */
+function bucketDay(d: Date): Date {
+  const local = d.getHours() === 0 && d.getMinutes() === 0 && d.getSeconds() === 0
+  return new Date(
+    local
+      ? Date.UTC(d.getFullYear(), d.getMonth(), d.getDate())
+      : Math.floor(d.getTime() / DAY_MS) * DAY_MS,
+  )
+}
+
 export function utcHeaderDate(d: Date, dayOnly = false): string {
   if (!Number.isFinite(d.getTime())) return NON_FINITE
-  const at = dayOnly ? new Date(Math.round(d.getTime() / DAY_MS) * DAY_MS) : d
+  const at = dayOnly ? bucketDay(d) : d
   const date = dateFormat(undefined, {
     weekday: 'short',
     day: 'numeric',
@@ -838,6 +852,7 @@ export function dayGranular(values: readonly ChartX[]): boolean {
   if (times.length === 0 || times.length !== values.length) return false
   const sorted = times.toSorted((a, b) => a - b)
   if (sorted.length === 1) return (sorted[0] as number) % DAY_MS === 0
+  // 23 h, not 24: a local-midnight key is only 23 h after the previous one across a spring-forward DST.
   return sorted.every((t, i) => i === 0 || t - (sorted[i - 1] as number) >= DAY_MS - HOUR_MS)
 }
 
@@ -899,7 +914,9 @@ function cursorDotMarks<T, X extends ChartX>(
 /**
  * A band chart with no y ticks is a strip (`BandStrip`): a short bar of cells under a hero value and
  * beside its neighbours. Its tooltip opens below the strip, above only when there is no room, so it
- * never covers the cell's own value, and a gap clear of the cell edge.
+ * never covers the cell's own value, and a gap clear of the cell edge. Detected by shape because
+ * `BandStrip.tsx` belongs to the chart-cards change; once that lands it passes an explicit
+ * tooltip-placement flag in its place.
  */
 const stripLike = <T, X extends ChartX>(input: CartesianInput<T, X>): boolean =>
   input.band === true && Array.isArray(input.y?.ticks) && input.y.ticks.length === 0
@@ -953,7 +970,7 @@ function tooltipSpec<T, X extends ChartX>(opts: {
           ? s.formatValue(v, d)
           : axes.axisOf(axes.onRight(s) ? 'right' : 'left').format(v)
         // A lone series whose value already ends in its own name (`27 sessions`) prints the name once.
-        const bare = rowSeries.length === 1 ? unitIsName(s.label, text) : null
+        const bare = input.series.length === 1 ? unitIsName(s.label, text) : null
         rows.push(seriesRow(s, bare ?? text, input.highlighted === s.key))
       }
       const extra: readonly ChartTooltipRow[] =

@@ -67,12 +67,19 @@ const fmt = (locale: string, at: Date, time = false): string =>
   }).format(at)
 
 describe('tooltip header', () => {
-  test('a daily bucket at 22:00 UTC (a local midnight east of UTC) reads as its date only', () => {
+  test('a daily bucket keyed by LOCAL midnight reads as that local date, whatever the zone', () => {
     defineFormat({ locale: 'en-GB' })
-    // Oct 16 00:00 in UTC+2 is Oct 15 22:00 UTC: the bucket is Oct 16.
-    const title = titleOf(daily(22), 0)
-    expect(title).not.toContain('22:00')
-    expect(title).toBe(fmt('en-GB', dayAt(2)))
+    // East of UTC this instant is `22:00` UTC of the day before; the bucket is still Oct 16.
+    const local: Row[] = [16, 17, 18].map((d) => ({ t: new Date(2026, 9, d), a: d, b: d }))
+    const title = titleOf(local, 0)
+    expect(title).not.toMatch(/\d\d:\d\d/)
+    expect(title).toBe(fmt('en-GB', dayAt(16)))
+  })
+
+  test('a day key at 12:00 UTC or later keeps its UTC date (never the next day)', () => {
+    defineFormat({ locale: 'en-GB' })
+    expect(titleOf(daily(12), 1)).toBe(fmt('en-GB', dayAt(2)))
+    expect(titleOf(daily(18), 1)).toBe(fmt('en-GB', dayAt(2)))
   })
 
   test('a UTC-midnight daily bucket is its date only', () => {
@@ -331,6 +338,12 @@ describe('Lines naming', () => {
         series={[A, B]}
         refLines={[{ value: 100, color: 'var(--vx-good-ref)', legend: { label: 'Goal' } }]}
       />,
+    )
+    expect(legendOf(el)?.hasAttribute('data-hide-wide')).toBe(false)
+  })
+  test('auto: a line whose last point a narrower xDomain clips keeps the legend', () => {
+    const el = ssr(
+      <Lines ariaLabel="L" data={daily()} x={x} series={[A, B]} xDomain={[dayAt(1), dayAt(3)]} />,
     )
     expect(legendOf(el)?.hasAttribute('data-hide-wide')).toBe(false)
   })

@@ -165,7 +165,6 @@ export const VX = {
   // "dev slider/production JS defaultProps" gap as Timeline's `bulletSize` — see `deriveSpacing`'s
   // doc in tokens/palette.ts).
   legendGap: SPACE_STEP.chartLegendGap,
-  legendFontSize: TEXT.sm,
 
   // The type scale (px numbers — see TEXT above). Use in inline styles and visx SVG props;
   // use `var(--vx-text-*)` in CSS modules.

@@ -1108,8 +1108,9 @@ Wave 37, the cartesian half. Every change below is a default; the opt-out is nam
   a chart of up to three lines and no `y2` names them with end labels and its legend is hidden; below
   wide the legend names them and no end label draws. A chart whose legend names more than its lines (a
   `y2`, a legend-named `refLines` entry, a `role: 'reference'` series) keeps the legend at every width
-  and draws no end labels. Two end labels that collide are now spread apart instead of both dropped.
-  **Opt out:** `naming="legend"` for the old always-legend chart; `naming="endLabels"` for end labels
+  and draws no end labels, as does one whose last point a narrower `xDomain` clips. From the wide class
+  the legend's series toggle is gone with the legend. Two end labels that collide are now spread apart
+  instead of both dropped. **Opt out:** `naming="legend"` for the old always-legend chart (toggle kept); `naming="endLabels"` for end labels
   at every width and no legend.
 - **The tooltip header reads the page locale and drops a clock time a daily bucket never had.** It
   was `Mon Sep 1 2026` (a fixed US order) and printed `22:00` for a bucket keyed by a local midnight
@@ -1130,7 +1131,7 @@ Wave 37, the cartesian half. Every change below is a default; the opt-out is nam
   `5`); the domain now rises to the next tick. **Opt out:** `y.domain` as a tuple or function, or
   `y.nice`.
 - **Ticks and the legend share one size step** (the 11 px tick step, `VX.text.micro`); the legend was
-  12 px. `VX.legendFontSize` is no longer read by the chart layer. A bar legend swatch is one rounded
+  12 px. `VX.legendFontSize` is deleted (nothing else read it): use `VX.text.micro`. A bar legend swatch is one rounded
   square at every width (it was a circle below 480 px).
 - **`Bars` hover highlights the bar** (the hovered x paints at full series strength) and paints no
   crosshair rule; the rule is line-chart chrome. **Opt out:** none.

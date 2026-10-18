@@ -28,6 +28,7 @@ import { rowX } from './types'
 import type {
   CartesianChartProps,
   ChartMarks,
+  ChartSeries,
   ChartX,
   PlotContext,
   PlotRow,
@@ -47,6 +48,19 @@ export type LinesProps<T, X extends ChartX = ChartX> = Omit<CartesianChartProps<
 
 const hasValue = <T, X extends ChartX>(r: PlotRow<T, X>): boolean => r.y !== null
 
+/** Whether a series' last non-null point exists and sits inside the chart's x domain. */
+function lastIsPlaceable<T, X extends ChartX>(
+  props: Pick<LinesProps<T, X>, 'data' | 'x' | 'xDomain'>,
+  s: ChartSeries<T>,
+): boolean {
+  const last = props.data.findLast((d) => s.getValue(d) !== null)
+  if (last === undefined) return false
+  const { xDomain } = props
+  if (xDomain === undefined) return true
+  const at = +props.x(last) // a Date's timestamp, or the number itself
+  return Number.isNaN(at) || (at >= +xDomain[0] && at <= +xDomain[1])
+}
+
 /** The most lines `auto` names with end labels (and so the most a legend gives way for). */
 const AUTO_END_LABELS = 3
 
@@ -62,9 +76,12 @@ export function Lines<T, X extends ChartX = ChartX>(props: LinesProps<T, X>): Re
   // When the legend must name something the labels cannot (a right axis, a named reference line),
   // it stays and the labels are not drawn: one naming, never two.
   const effective: LinesNaming = namedByLabels ? naming : 'legend'
+  // The legend gives way only to labels that WILL draw for every line: each labelled series needs a
+  // last value the plot can place (a narrower `xDomain` can clip it away).
+  const placeable = labelled.every((s) => lastIsPlaceable(props, s))
   const labelsOnly = effective === 'endLabels'
   const hideAtWide =
-    effective === 'auto' && labelled.length > 0 && labelled.length <= AUTO_END_LABELS
+    effective === 'auto' && placeable && labelled.length > 0 && labelled.length <= AUTO_END_LABELS
   const marks = useCallback(
     (plot: PlotContext<T, X>): ChartMarks => {
       const indexOf = new Map(series.map((s, i) => [s.key, i]))
