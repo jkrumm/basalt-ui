@@ -127,11 +127,10 @@ describe('Lines', () => {
     const none = await mount(<Lines ariaLabel="L" data={data} x={x} series={[a]} legend={false} />)
     expect(none.querySelector('[data-basalt-chart-legend]')).toBeNull()
     act(() => root?.unmount())
-    // Wave 38: two entries keep a key below the 480px container (`w38-legend.test.tsx`).
-    const kept = await mount(
+    const two = await mount(
       <Lines ariaLabel="L" data={data} x={x} series={[a, b]} legend={false} />,
     )
-    expect(kept.querySelector('[data-basalt-chart-legend][data-compact-only]')).not.toBeNull()
+    expect(two.querySelector('[data-basalt-chart-legend]')).toBeNull()
   })
 
   test('a companion (legend: false + parent) hides with its parent', async () => {

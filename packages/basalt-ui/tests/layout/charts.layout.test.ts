@@ -447,12 +447,29 @@ layout('Charts — 2.0 layout', () => {
   })
 
   // ── legend ──────────────────────────────────────────────────────────────────────────────────
-  test('an 8-entry legend wraps inside the chart box on a phone', async () => {
+  // Wave 38: the compact legend is ONE row; what does not fit folds into `+N` (was: wrapped rows).
+  test('an 8-entry legend folds to one row inside the chart box on a phone', async () => {
     const p = await openFixture(chartFixture({ kind: 'bars', legendEntries: 8 }), PHONE)
     await p.settle()
     const frame = await p.box('frame', FRAME)
-    const entries = await p.boxes(`${FRAME} [data-legend-key]`)
-    expect(entries).toHaveLength(8)
+    const legend = await p.box('legend', `${FRAME} [data-basalt-chart-legend]`)
+    expect(legend.box.height).toBeLessThanOrEqual(24)
+    const state = await p.raw.evaluate((sel) => {
+      const row = document.querySelector(`${sel} [data-basalt-chart-legend]`)
+      if (!row) throw new Error('LAYOUT: no legend')
+      const items = [...row.querySelectorAll<HTMLElement>('[data-legend-key]')]
+      const more = row.querySelector<HTMLElement>('[data-legend-more]')
+      return {
+        total: items.length,
+        folded: items.filter((i) => i.hasAttribute('data-legend-folded')).length,
+        count: more && !more.hidden ? Number(more.dataset['count']) : 0,
+      }
+    }, FRAME)
+    expect(state.total).toBe(8)
+    expect(state.folded).toBeGreaterThan(0)
+    expect(state.count).toBe(state.folded)
+    const entries = (await p.boxes(`${FRAME} [data-legend-key]`)).filter((e) => e.width > 0)
+    expect(entries).toHaveLength(8 - state.folded)
     for (const e of entries) {
       expect(e.left).toBeGreaterThanOrEqual(frame.box.left - 0.5)
       expect(e.right).toBeLessThanOrEqual(frame.box.right + 0.5)

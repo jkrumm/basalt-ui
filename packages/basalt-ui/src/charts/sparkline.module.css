@@ -65,8 +65,8 @@
 }
 
 /* A readout that still overflows stacks (set in `Sparkline.tsx`): the date on its own line, wrapped
- * not clipped. Bare, it grows toward the box's middle; hosted, it keeps its bottom on the plot's top
- * edge and grows UP, since the host's clipping box ends at the plot and a chip grown down is cut. */
+ * not clipped. It sits INSIDE the plot's top band (the lift-0 placement), hosted or bare: a hosted
+ * chip grown past the host's one reserved line would cover the figure's delta or qualifier above. */
 .readout[data-stacked] {
   block-size: auto;
   max-height: none;
@@ -81,8 +81,7 @@
 }
 
 [data-basalt-hosted] .readout[data-stacked] {
-  top: auto;
-  bottom: calc(100% + var(--basalt-spark-readout-lift, 1) * var(--basalt-spark-inset, 0px));
+  top: 0;
 }
 
 .readout[data-stacked] .label {

@@ -12,7 +12,7 @@ import { ruleY } from '@tanstack/charts/rule'
 import { scaleBand } from '@tanstack/charts/scales/band'
 import { scaleLinear } from '@tanstack/charts/scales/linear'
 import { text } from '@tanstack/charts/text'
-import { useContext, useId, useLayoutEffect, useMemo, useRef, useState } from 'react'
+import { useContext, useEffect, useId, useLayoutEffect, useMemo, useRef, useState } from 'react'
 import type { CSSProperties, FocusEvent, KeyboardEvent, PointerEvent, ReactElement } from 'react'
 import { cx } from '../common/props'
 import type { BasaltProps } from '../common/props'
@@ -389,6 +389,20 @@ function meanOf(rows: readonly Point[]): number {
   return sum / n
 }
 
+/**
+ * A readout never loses its date to an ellipsis: when the one-line chip overflows its box it first
+ * tightens (`data-tight`: no air round the dot), then stacks (`data-stacked`: the date on its own
+ * line). Set on the node, so a measure never re-renders.
+ */
+function fitReadout(node: HTMLElement): void {
+  const overflows = (): boolean => node.scrollWidth > node.clientWidth
+  node.removeAttribute('data-tight')
+  node.removeAttribute('data-stacked')
+  if (!overflows()) return
+  node.setAttribute('data-tight', '')
+  if (overflows()) node.setAttribute('data-stacked', '')
+}
+
 export function Sparkline(props: SparklineProps): ReactElement {
   const {
     ariaLabel,
@@ -497,20 +511,22 @@ export function Sparkline(props: SparklineProps): ReactElement {
   // `translate` take one fraction), inside the box at either edge whatever its width, and the
   // stylesheet lifts it above the plot. Bare: beside the point, on the roomier side and on the half of
   // the box away from it, so the chip covers neither the dot nor anything the host draws round it.
-  // A readout never loses its date to an ellipsis: when the one-line chip overflows the box it first
-  // tightens (`data-tight`: no air round the dot), then stacks (`data-stacked`: the date on its own
-  // line). Set on the node, so a measure never re-renders.
-  useLayoutEffect(() => {
-    const node = readoutRef.current
-    if (node === null) return
-    const overflows = (): boolean => node.scrollWidth > node.clientWidth
-    node.removeAttribute('data-tight')
-    node.removeAttribute('data-stacked')
-    if (!overflows()) return
-    node.setAttribute('data-tight', '')
-    if (overflows()) node.setAttribute('data-stacked', '')
-  })
   const beside = at === null ? null : at.fx > 0.5 ? 'left' : 'right'
+  // The chip's fit depends on its text and (bare) its side, not on the pointer's every tick.
+  const shown = at !== null
+  useLayoutEffect(() => {
+    if (readoutRef.current !== null) fitReadout(readoutRef.current)
+  }, [active, at?.label, at?.value, beside])
+  // ...and on the box, which a container resize changes without a hover.
+  useEffect(() => {
+    const layer = readoutRef.current?.parentElement
+    if (!shown || !layer || typeof ResizeObserver === 'undefined') return
+    const observer = new ResizeObserver(() => {
+      if (readoutRef.current !== null) fitReadout(readoutRef.current)
+    })
+    observer.observe(layer)
+    return () => observer.disconnect()
+  }, [shown])
   const readoutStyle: CSSProperties | undefined =
     at === null
       ? undefined
