@@ -230,6 +230,7 @@
   --basalt-spark-readout-h: 1.125rem;
 }
 
+/* A slotted chart's readout line above its plot: the cell reserves it so the chip never covers the value. */
 .visual:has([data-basalt-sparkline], [data-basalt-chart]) {
   padding-top: max(0px, calc(var(--basalt-spark-readout-h) - var(--vx-space-stack-sm)));
 }
