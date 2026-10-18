@@ -1140,7 +1140,6 @@ named `basalt-card` (the only names the theme guard permits) with `inline-size: 
 enclosing card's container for the list's descendants only, and the 480px threshold measures the list's
 own width. Opt-out: `variant="inline"` is unchanged; to keep the stacked
 thin layout in a wide card, constrain the list's width below 480px.
-## Unreleased — the shot harness
 
 ### `basalt-ui shot` captures tall anchors and keeps chrome off crops; `init` wires a stock Vite app
 
