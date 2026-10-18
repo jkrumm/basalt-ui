@@ -1161,7 +1161,6 @@ and adds the peers `basalt-ui` imports (Mantine, TanStack Router and Query, the 
 `motion`) to `package.json` `dependencies`; it prints `bun install` and never installs. An edited
 `main.tsx` is still left alone, with the wiring steps and the missing peers printed. **Opt out:**
 edit `main.tsx` before running `init`.
-## Unreleased — neutral tab pill, row surfaces and data-text numerals
 
 ### Selected Tabs are ink in every variant
 
