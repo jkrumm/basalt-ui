@@ -1240,6 +1240,7 @@ A gap is stated once. Moved defaults:
 `size="row"` keeps no caption lines, empty or loading. Ring Meters are unchanged (the centre reading stays `—`).
 
 Opt out: none for the caption and qualifier rows (they are layout fixes; shorten the text instead); pass `emptyText="—"` on a `Meter` to keep the dash caption; for a strip cell, drop `reason` (and say it in the caption or qualifier) to keep the bare `—`.
+
 ### Guards
 
 `raw-spacing` and `inline-spacing` promote from `warn` to `error`: their grace entries (since
