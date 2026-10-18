@@ -368,8 +368,12 @@ html .badgeRoot {
 
 /*
  * Alert: an inline Code inside it sits one nested step (3px) under the Alert's own radius
- * (craft-1/nested-radius-step). The Code theme reads `--basalt-code-radius`; the Alert supplies it.
+ * (craft-1/nested-radius-step), snapped down onto the radius scale (2, or 0 under a 5px Alert). The Code theme reads `--basalt-code-radius`; the Alert supplies it.
  */
 .alertRoot {
-  --basalt-code-radius: max(0px, calc(var(--alert-radius, var(--vx-radius-ctrl)) - 3px));
+  --basalt-code-radius: round(
+    down,
+    min(2px, max(0px, var(--alert-radius, var(--vx-radius-ctrl)) - 3px)),
+    2px
+  );
 }

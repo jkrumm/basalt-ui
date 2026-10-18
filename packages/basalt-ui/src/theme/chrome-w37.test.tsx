@@ -4,6 +4,7 @@ import { render } from '@testing-library/react'
 import { describe, expect, test } from 'bun:test'
 import { readFileSync } from 'node:fs'
 import { resolve } from 'node:path'
+import { RADIUS_STEP, deriveRadius } from '../tokens/palette'
 import { baseTheme } from './index'
 
 const controlsCss = readFileSync(resolve(import.meta.dirname, 'controls.module.css'), 'utf8')
@@ -57,10 +58,48 @@ describe('Wave 37 r2 chrome rules', () => {
 })
 
 describe('nested radius step (craft-1/nested-radius-step)', () => {
-  test('an Alert re-points the Code radius var to 3 px under its own radius', () => {
-    expect(controlsCss).toMatch(
-      /\.alertRoot\s*\{[^}]*--basalt-code-radius:\s*max\(0px,\s*calc\(var\(--alert-radius,\s*var\(--vx-radius-ctrl\)\)\s*-\s*3px\)\)/,
-    )
+  /** Evaluate a nested-radius CSS expression for a parent radius, in px (calc/min/max/round only). */
+  const evalRadius = (expr: string, parent: number): number => {
+    const js = expr
+      .replace(/var\(--sc-radius\)|var\(--alert-radius, var\(--vx-radius-ctrl\)\)/g, String(parent))
+      .replace(/(\d+)px/g, '$1')
+      .replace(/\bdown\b/g, "'down'")
+      .replace(/\bcalc\b/g, '')
+    const fn = new Function('min', 'max', 'round', `return ${js}`) as (
+      a: typeof Math.min,
+      b: typeof Math.max,
+      c: (m: string, x: number, s: number) => number,
+    ) => number
+    return fn(Math.min, Math.max, (_m, x, step) => Math.floor(x / step) * step)
+  }
+
+  const alertExpr = /--basalt-code-radius:\s*(round\([^;]+\));/
+    .exec(controlsCss)?.[1]
+    ?.replace(/\s+/g, ' ')
+  const stylesFn = baseTheme.components?.['SegmentedControl']?.styles as (
+    t: unknown,
+    p: object,
+    c: unknown,
+  ) => { indicator: { borderRadius: string } }
+  const tabsExpr = stylesFn({}, {}, {}).indicator.borderRadius
+  const ctrlAt = (level: number) => deriveRadius(level).ctrl
+  const scale = (level: number) => {
+    const r = deriveRadius(level)
+    return new Set([0, RADIUS_STEP.scaleXs, r.fine, r.tight, r.ctrl, r.card])
+  }
+
+  test.each([-5, 0, 5])('indicator and inline-code radii are scale steps at radius %i', (level) => {
+    expect(alertExpr).toBeDefined()
+    for (const expr of [tabsExpr, alertExpr as string]) {
+      const inner = evalRadius(expr, ctrlAt(level))
+      expect(scale(level).has(inner)).toBe(true)
+      expect(ctrlAt(level) - inner >= 3 || inner === 0).toBe(true)
+    }
+  })
+
+  test('at the default radius both nest at 2 under a 6 px container', () => {
+    expect(evalRadius(tabsExpr, 6)).toBe(2)
+    expect(evalRadius(alertExpr as string, 6)).toBe(2)
   })
 
   test('the Code theme reads that var, falling back to the tight radius', () => {

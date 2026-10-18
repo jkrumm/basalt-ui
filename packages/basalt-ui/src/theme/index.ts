@@ -778,9 +778,10 @@ function buildTheme(data: PaletteData, options: BuildThemeOptions = {}): Mantine
       // The track's padding is `SPACE_FIXED.segmentedTrackInset`, a plain literal — NOT a
       // `--vx-space-*` var — because it is density-EXEMPT (see that constant's doc in
       // `tokens/palette.ts`). The INDICATOR radius is the track's per-instance radius (`--sc-radius`,
-      // which Mantine sets on the root from the `radius` prop) minus 3 px: exact concentricity would
-      // be track − inset (2 px), but `craft-1/nested-radius-step` wants nested surfaces ≥ 3 px apart
-      // and that lint step wins. A custom `radius` therefore nests too.
+      // which Mantine sets on the root from the `radius` prop) minus 3 px, snapped DOWN onto the radius
+      // scale: `craft-1/nested-radius-step` wants nested surfaces ≥ 3 px apart, SPEC § 8.1 rule 1 wants
+      // every radius on a § 5 step, and the only step that satisfies both under a 6 px track is 2
+      // (`RADIUS_STEP.scaleXs`; 0 when the track is under 5 px). A custom `radius` therefore nests too.
       SegmentedControl: ext<typeof SegmentedControl>({
         defaultProps: { radius: radius.ctrl },
         classNames: {
@@ -819,8 +820,8 @@ function buildTheme(data: PaletteData, options: BuildThemeOptions = {}): Mantine
             // ink-12% fill sat one shade from the track and read as a hover state.
             boxShadow: 'var(--vx-shadow-raised)',
             outline: '1px solid color-mix(in srgb, var(--vx-ink) 14%, transparent)',
-            // Track radius − 3 px: craft-1/nested-radius-step beats exact concentricity.
-            borderRadius: 'max(0px, calc(var(--sc-radius, var(--vx-radius-ctrl)) - 3px))',
+            // Nested radius snapped to the scale (SPEC § 8.1 rule 1): 2 when the track leaves a 3 px step, else 0.
+            borderRadius: 'round(down, min(2px, max(0px, var(--sc-radius) - 3px)), 2px)',
           },
           // Conditionally spread the WHOLE key (never a present `label: undefined`) — the package
           // builds under `exactOptionalPropertyTypes`, which treats a key present-but-`undefined` as

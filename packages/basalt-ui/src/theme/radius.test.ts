@@ -67,7 +67,7 @@ describe('every re-pointed component defaultProps/styles radius matches its ship
     expect(baseTheme.components?.['Badge']?.defaultProps?.['radius']).toBe(5)
   })
 
-  test('SegmentedControl root = 6 (the control radius), indicator = 3 (ctrl − 3, the nested step)', () => {
+  test('SegmentedControl root = 6 (the control radius), indicator = 2 (ctrl − 3 snapped onto the scale)', () => {
     const sc = baseTheme.components?.['SegmentedControl']
     expect(sc?.defaultProps?.['radius']).toBe(6)
     // `styles` is function-form (size='ctl' gates a label override — see `theme/index.ts`), not a
@@ -81,7 +81,7 @@ describe('every re-pointed component defaultProps/styles radius matches its ship
       | undefined
     const resolved = stylesFn?.({}, {}, {})
     expect(resolved?.['indicator']?.['borderRadius']).toBe(
-      'max(0px, calc(var(--sc-radius, var(--vx-radius-ctrl)) - 3px))',
+      'round(down, min(2px, max(0px, var(--sc-radius) - 3px)), 2px)',
     )
   })
 
