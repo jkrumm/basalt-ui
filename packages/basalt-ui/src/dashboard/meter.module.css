@@ -206,6 +206,14 @@
   white-space: nowrap;
 }
 
+/* `text-wrap` sets the same longhand as `white-space: nowrap`: `.caption`'s `balance`, declared below,
+ * would win on source order and let a caption placed at its measured width wrap on a sub-pixel
+ * difference. One class more outranks it. */
+.captionsAnchored > :is(.caption) {
+  white-space: nowrap;
+  text-wrap: nowrap;
+}
+
 /* Captions never truncate: the row wraps, and a caption wider than the row wraps inside itself. */
 .caption {
   min-width: 0;

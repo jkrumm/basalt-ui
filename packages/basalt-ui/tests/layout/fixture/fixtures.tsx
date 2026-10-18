@@ -2798,6 +2798,56 @@ function DashFixture(): ReactElement {
           />
         </div>
       ))}
+      {/* Wave 38: S3's Agent work strip — a day budget under its cell, a week budget as the shared footer. */}
+      <div data-testid="dash-w38-strip-footers">
+        <StatGroup
+          variant="strip"
+          label="Agent queue"
+          cols={5}
+          cells={[
+            {
+              key: 'f1',
+              caption: 'Awaiting',
+              qualifier: 'your decision',
+              value: '6',
+              unit: 'items',
+            },
+            { key: 'f2', caption: 'Dispatch spend', qualifier: 'today', value: '€5' },
+            { key: 'f3', caption: 'Oldest wait', value: '2 d 23 h' },
+            { key: 'f4', caption: 'Failures', qualifier: 'last 24 h', value: '3', unit: 'runs' },
+            { key: 'f5', caption: 'Fleet', qualifier: 'by state', value: '19', unit: 'items' },
+          ]}
+          footer={[
+            {
+              key: 'day',
+              under: 'f2',
+              content: (
+                <Meter
+                  label="Daily budget"
+                  value={5}
+                  max={10}
+                  format={(v) => `€${v}`}
+                  startCaption="Today"
+                  endCaption="of €10 cap"
+                />
+              ),
+            },
+            {
+              key: 'week',
+              content: (
+                <Meter
+                  label="Weekly budget"
+                  value={43}
+                  max={50}
+                  format={(v) => `€${v}`}
+                  startCaption="Last 7 days"
+                  endCaption="€43 of €50 cap"
+                />
+              ),
+            },
+          ]}
+        />
+      </div>
       <div data-testid="dash-w38-strip-empty">
         <StatGroup
           variant="strip"
