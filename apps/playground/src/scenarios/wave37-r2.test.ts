@@ -76,7 +76,8 @@ describe('S2', () => {
   it('the training-load card stretches to the hit-rate card, so the two columns end together', () => {
     const src = source('./S2Training.tsx')
     expect(src).toMatch(/<Stack gap="sm" h="100%">/)
-    expect(src).toMatch(/data-shot="training-load"[^>]*flex=\{1\}/)
+    // Only while the body is drawn (rest, loading): an empty or failed card ends at its content.
+    expect(src).toMatch(/data-shot="training-load"[^>]*fills && \{ flex: 1 \}/)
   })
 
   it('the summary binds its last words, so a status word never wraps alone', () => {
