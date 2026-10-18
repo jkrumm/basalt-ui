@@ -233,7 +233,7 @@ Signature: StatGroup(props: StatGroupProps): JSX.Element
   children: ReactNode  [with variant="grid"]
   label: string  [with variant="strip"]
   cells: readonly StatStripCell[]  [with variant="strip"]
-  footer?: readonly { key: string; content: ReactNode; }[]  [with variant="strip"]
+  footer?: readonly StatStripFooterEntry[]  [with variant="strip"]
 Signature: StatusDot(props: StatusDotProps): JSX.Element
   className?: string
   style?: CSSProperties

@@ -12,7 +12,10 @@ afterEach(cleanup)
 
 const CSS = readFileSync(join(import.meta.dir, 'stat-strip.module.css'), 'utf8')
 
-function mount(cells: StatStripCell[], footer?: { key: string; content: ReactNode }[]) {
+function mount(
+  cells: StatStripCell[],
+  footer?: { key: string; content: ReactNode; under?: string }[],
+) {
   return render(
     <MantineProvider>
       <StatGroup variant="strip" label="Health" cells={cells} {...(footer && { footer })} />
@@ -60,12 +63,13 @@ describe('strip caption line', () => {
     expect(q.parentElement?.children.length).toBe(2)
     expect(q.previousElementSibling?.textContent).toBe('Forecast')
   })
-  test('the caption group never wraps; the line does', () => {
+  test('the caption group never wraps; a narrow cell wraps the qualifier under it', () => {
     const lead = /\.lead\s*{([^}]*)}/.exec(CSS)?.[1] ?? ''
     expect(lead).toContain('min-width: 0')
     expect(lead).not.toContain('flex-wrap: wrap')
-    // The wrap lives on `.captionMain` (caption + qualifier); `.captionLine` keeps the action beside it.
-    expect(/\.captionMain\s*{([^}]*)}/.exec(CSS)?.[1]).toContain('flex-wrap: wrap')
+    // One line by default; only a narrow cell (container query) wraps the qualifier onto its own line.
+    expect(/\.captionMain\s*{([^}]*)}/.exec(CSS)?.[1]).toContain('flex-wrap: nowrap')
+    expect(CSS).toMatch(/@container basalt-card \(max-width: 239\.9px\)[^]*flex-wrap: wrap/)
     expect(/\.caption\s*{([^}]*)}/.exec(CSS)?.[1]).toContain('text-overflow: ellipsis')
   })
 })
@@ -342,5 +346,29 @@ describe('strip cell tone reaches a hosted Meter', () => {
       { key: 'a', caption: 'Load', value: '90', visual: <Meter label="Load" value={90} /> },
     ])
     expect(fill(plain.container)).not.toBe('var(--vx-status-bad)')
+  })
+})
+
+describe('footer entry under a cell', () => {
+  test('`under` places the entry in that cell’s column; an unknown key stays full width', () => {
+    const { container } = mount(CELLS, [
+      { key: 'a', content: 'one', under: 'load' },
+      { key: 'b', content: 'two', under: 'missing' },
+      { key: 'c', content: 'three' },
+    ])
+    const row = container.querySelector<HTMLElement>('[data-placed]')
+    expect(row).toBeTruthy()
+    const placed = container.querySelector<HTMLElement>('[data-strip-footer-cell="a"]')!
+    expect(placed.getAttribute('data-under')).toBe('load')
+    expect(placed.style.getPropertyValue('--basalt-strip-footer-col')).toBe('2')
+    for (const key of ['b', 'c'])
+      expect(
+        container.querySelector(`[data-strip-footer-cell="${key}"]`)!.hasAttribute('data-under'),
+      ).toBe(false)
+  })
+
+  test('no resolvable `under` leaves the row in its flex layout', () => {
+    const { container } = mount(CELLS, [{ key: 'a', content: 'one', under: 'missing' }])
+    expect(container.querySelector('[data-placed]')).toBeNull()
   })
 })

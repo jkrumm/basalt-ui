@@ -43,6 +43,13 @@
   gap: var(--vx-space-stack-md);
 }
 
+/* A card with a qualifier tells its row-mates to reserve the qualifier line in a narrow card, so the
+ * values of one group share a baseline (`stat-card.module.css`). Group-wide, not per row: the row a
+ * card lands in depends on the container, which a selector cannot read. */
+.root:has([data-stat-qualifier]) {
+  --basalt-stat-qualifier-reserve: 1;
+}
+
 /* 260px is StatGroup's own literal (docs/DESIGN-CORE.md § Layout, elevation, shapes), not a container class: one column below it,
  * so every cell leads a row and the rail draws no leading hairline at all. */
 @container basalt-grid (max-width: 259.9px) {

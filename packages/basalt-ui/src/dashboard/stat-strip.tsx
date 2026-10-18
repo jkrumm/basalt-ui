@@ -13,15 +13,19 @@
  * anatomy compact — status dot, the word `Failed`, the message, the shared Retry. The caption stays.
  * A `visual` is a hero host: a zoned `Meter` in it does not repeat the value at its marker.
  *
- * Alignment: cells of one row align by PART (caption, value, hero footer, visual, rows, footer share
- * tracks via subgrid), and each cell spans only down to its last part, so its own box ends at its
- * content. A footer rides with what it captions (under the hero: its own track right below it).
- * The dividers belong to a row-high slot around the cell, so they run the whole row and the area
- * under a short cell is the strip's own surface. `action` sits at the end of the caption line (the
- * caption truncates first); a row with `hideValue` prints its label alone.
+ * Alignment: a cell is a plain column that ends at its content (the slot around it runs the whole
+ * row, so the dividers do too). Cells of one row share a caption top and a value baseline BY
+ * CONSTRUCTION: the caption line is one line (it truncates with a `title`), and when any cell has a
+ * qualifier a narrow cell reserves the qualifier's own line, so the parts above the value have equal
+ * height. Below the value nothing is shared: a visual starts right under it, rows follow, and a
+ * footer rides with the last part it captions, so a short cell never holds a taller sibling's void.
+ * `action` sits at the end of the caption line (the caption truncates first); a row with `hideValue`
+ * prints its label alone.
  *
  * Anchors: each cell is `data-shot="strip-<key>"` and each footer cell
- * `data-shot="strip-footer-<key>"` (derived — a consumer cannot choose another name).
+ * `data-shot="strip-footer-<key>"` (derived — a consumer cannot choose another name). A footer entry
+ * with `under: '<cell key>'` qualifies that one cell: from 800px it sits in the cell's column (an
+ * entry without `under` then takes the full row); below, every entry is full width under the grid.
  *
  * Mapping from a prototype: warden's JSX `qualifier` line UNDER the value is `footer`; the cell
  * `qualifier` is the short `· text` on the caption line. Cells are equal-weight: unequal column
@@ -101,12 +105,20 @@ export type StatStripCell = {
   state?: StatStripCellState
 }
 
+export type StatStripFooterEntry = {
+  key: string
+  content: ReactNode
+  /** The `key` of the cell this entry qualifies. From the full desktop width (800px) it sits in that
+   * cell's column; below it, and for a key that names no cell, it takes the full width under the grid. */
+  under?: string
+}
+
 export type StatStripProps = BasaltProps & {
   /** The strip's accessible name. */
   label: string
   cells: readonly StatStripCell[]
   /** Wider cells under the cells. */
-  footer?: readonly { key: string; content: ReactNode }[]
+  footer?: readonly StatStripFooterEntry[]
   /** The DESKTOP column count. Default: the cell count, capped at 6. */
   cols?: 2 | 3 | 4 | 5 | 6
 }
@@ -141,32 +153,16 @@ function CellState({ state }: { state: StatStripCellState }) {
   )
 }
 
-/** The last of the six shared tracks (caption, hero, hero footer, visual, rows, footer) a cell paints into. */
-function lastTrackOf(cell: StatStripCell, state: StatStripCellState | undefined) {
-  if (state !== undefined) return state.kind === 'empty' && state.reason !== undefined ? 4 : 2
-  if (cell.rows !== undefined)
-    return cell.footer !== undefined ? 6 : cell.visual !== undefined ? 5 : 4
-  if (cell.visual !== undefined) return 4
-  return cell.footer !== undefined ? 3 : 2
-}
-
 function StripCell({ cell }: { cell: StatStripCell }) {
   const captionId = useId()
   const { rows, loading } = cell
   const state = loading ? undefined : cell.state
   const hasHero = cell.value !== undefined || rows === undefined
-  // A footer under a visual (and no rows) rides with it, so it hugs that visual instead of dropping
-  // to a taller sibling's; under a hero alone it rides with the value; only under rows does it take
-  // the row's shared footer track.
-  const ownFooter = cell.visual !== undefined && rows === undefined
-  const heroFooter = hasHero && cell.visual === undefined && rows === undefined
-  // The cell spans the tracks down to its last part, so its box ends at its content (the slot
-  // around it still runs the whole row for the dividers).
   // The cell's verdict colours a plain Meter in its visual too (a hero host only).
   const hostSlot = !hasHero ? null : cell.tone === undefined ? HOSTED : { tone: cell.tone }
-  const lastTrack = lastTrackOf(cell, state)
+  // A footer rides with what it captions: it follows the cell's last part, whatever a sibling holds.
   const footerEl = cell.footer !== undefined && (
-    <div className={cx(classes.footer, heroFooter && classes.heroFooter)} data-strip-footer>
+    <div className={classes.footer} data-strip-footer>
       {cell.footer}
     </div>
   )
@@ -188,14 +184,14 @@ function StripCell({ cell }: { cell: StatStripCell }) {
     </div>
   )
   return (
-    // The slot owns the dividers and stretches to the row; the article inside ends at its content.
+    // The slot owns the dividers and runs the row; the article inside ends at its content.
     <div className={classes.cell} data-strip-slot>
       <article
         className={classes.content}
-        style={{ '--basalt-strip-span': lastTrack } as CSSProperties}
         data-strip-cell={cell.key}
         data-shot={`strip-${cell.key}`}
         aria-labelledby={captionId}
+        {...(state !== undefined && { 'data-strip-has-state': '' })}
         {...(state === undefined && cell.visual !== undefined && { 'data-strip-has-visual': '' })}
         {...(state === undefined && rows !== undefined && { 'data-strip-has-rows': '' })}
         {...(cell.stale && { 'data-stale': 'true' })}
@@ -215,7 +211,9 @@ function StripCell({ cell }: { cell: StatStripCell }) {
               {cell.info !== undefined && <InfoGlyph text={cell.info} />}
             </span>
             {cell.qualifier !== undefined && (
-              <span className={classes.qualifier}>{cell.qualifier}</span>
+              <span className={classes.qualifier} title={cell.qualifier}>
+                {cell.qualifier}
+              </span>
             )}
           </div>
           {cell.action !== undefined && (
@@ -226,15 +224,9 @@ function StripCell({ cell }: { cell: StatStripCell }) {
         </div>
         {state !== undefined && <CellState state={state} />}
         {state === undefined && hasHero && heroEl}
-        {state === undefined && heroFooter && footerEl}
         {state === undefined && cell.visual !== undefined && (
-          <div className={classes.visualStack}>
-            <div className={classes.visual} data-strip-visual>
-              <VisualSlotContext.Provider value={hostSlot}>
-                {cell.visual}
-              </VisualSlotContext.Provider>
-            </div>
-            {ownFooter && footerEl}
+          <div className={classes.visual} data-strip-visual>
+            <VisualSlotContext.Provider value={hostSlot}>{cell.visual}</VisualSlotContext.Provider>
           </div>
         )}
         {state === undefined &&
@@ -259,7 +251,7 @@ function StripCell({ cell }: { cell: StatStripCell }) {
               ))}
             </ul>
           ))}
-        {state === undefined && !ownFooter && !heroFooter && footerEl}
+        {state === undefined && footerEl}
       </article>
     </div>
   )
@@ -269,6 +261,14 @@ export function StatStrip({ label, cells, footer, cols, className, style }: Stat
   const desktop = cols ?? Math.min(Math.max(cells.length, 2), 6)
   // `StatGroup`'s rule: four is 2 + 2 below the full count, never 3 + 1.
   const mid = desktop === 4 ? 2 : Math.min(desktop, 3)
+  // A cell's column at the full count; `undefined` for a key that names no cell.
+  const columnOf = (key: string | undefined) => {
+    const at = cells.findIndex((cell) => cell.key === key)
+    return at < 0 ? undefined : (at % desktop) + 1
+  }
+  const hasQualifier = cells.some((cell) => cell.qualifier !== undefined)
+  const hasAction = cells.some((cell) => cell.action !== undefined)
+  const placed = footer?.some((entry) => columnOf(entry.under) !== undefined) ?? false
   return (
     <div className={cx(classes.container, className)} style={style}>
       <Card>
@@ -276,6 +276,8 @@ export function StatStrip({ label, cells, footer, cols, className, style }: Stat
           component="section"
           aria-label={label}
           className={classes.clip}
+          {...(hasQualifier && { 'data-strip-qualifier': '' })}
+          {...(hasAction && { 'data-strip-action-row': '' })}
           style={
             {
               '--basalt-strip-cols': desktop,
@@ -289,17 +291,24 @@ export function StatStrip({ label, cells, footer, cols, className, style }: Stat
             ))}
           </div>
           {footer !== undefined && footer.length > 0 && (
-            <div className={classes.footerRow}>
-              {footer.map((entry) => (
-                <div
-                  key={entry.key}
-                  className={classes.footerCell}
-                  data-strip-footer-cell={entry.key}
-                  data-shot={`strip-footer-${entry.key}`}
-                >
-                  {entry.content}
-                </div>
-              ))}
+            <div className={classes.footerRow} {...(placed && { 'data-placed': '' })}>
+              {footer.map((entry) => {
+                const column = columnOf(entry.under)
+                return (
+                  <div
+                    key={entry.key}
+                    className={classes.footerCell}
+                    data-strip-footer-cell={entry.key}
+                    data-shot={`strip-footer-${entry.key}`}
+                    {...(column !== undefined && {
+                      'data-under': entry.under,
+                      style: { '--basalt-strip-footer-col': column } as CSSProperties,
+                    })}
+                  >
+                    {entry.content}
+                  </div>
+                )
+              })}
             </div>
           )}
         </Card.Section>

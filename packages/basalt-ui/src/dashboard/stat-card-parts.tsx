@@ -56,7 +56,7 @@ export function CaptionRow({ title, icon, info, qualifier, tone, actions }: Capt
           )}
         </div>
         {qualifier !== undefined && (
-          <span className={classes.qualifier} title={qualifier}>
+          <span className={classes.qualifier} title={qualifier} data-stat-qualifier>
             {qualifier}
           </span>
         )}
