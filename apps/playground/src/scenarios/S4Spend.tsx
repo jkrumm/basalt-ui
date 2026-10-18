@@ -102,7 +102,7 @@ const DISTRIBUTION_BARS: BarsBar<DistributionBin>[] = [
     key: 'median',
     label: 'Median day',
     note: fmtEur(MEDIAN_DAY_EUR),
-    color: demoColors.sessions,
+    color: VX.line,
     getValue: (d) => (d.from === MEDIAN_BIN_FROM ? d.days : null),
   },
 ]

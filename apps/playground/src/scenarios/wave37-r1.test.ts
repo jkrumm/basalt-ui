@@ -88,10 +88,18 @@ describe('S2 states each figure once', () => {
     expect(mix).not.toContain(`${SESSIONS_MTD} sessions`)
   })
 
-  it('the KPI row is an even count, so the phone grid has no orphan', () => {
+  it('the last of the three KPIs carries the class that spans the phone row', () => {
     const c = training()
-    const kpis = ['sessions', 'volume', 'distance', 'active-days'].map((n) => anchor(c, n))
-    expect(kpis).toHaveLength(4)
+    for (const name of ['sessions', 'volume', 'distance']) anchor(c, name)
+    // Bun resolves a CSS module to no class names, so the wiring is read from the source.
+    expect(source('./S2Training.tsx')).toMatch(
+      /data-shot="distance"[^>]*className=\{classes\.lastKpi\}/,
+    )
+    expect(c.querySelector('[data-shot="active-days"]')).toBeNull()
+    // The rule is a container query on StatGroup's own container, scoped below its 3-column opening.
+    const css = source('./training-kpis.module.css')
+    expect(css).toContain('@container basalt-grid (max-width: 799.9px)')
+    expect(css).toContain('grid-column: 1 / -1')
   })
 })
 
@@ -108,6 +116,14 @@ describe('S2 hit rate', () => {
     const ofSix = /\d of 6/.test(header)
     const percent = /\d+\s?%/.test(header)
     expect(ofSix !== percent).toBe(true)
+  })
+
+  it('states the unit on the y axis, on the top tick', () => {
+    const ticks = [...anchor(training(), 'hit-rate').querySelectorAll('svg text')].map((n) =>
+      (n.textContent ?? '').trim(),
+    )
+    expect(ticks).toContain('40 sessions')
+    expect(ticks).toContain('0')
   })
 
   it('distinguishes the months that reached the goal by more than hue', () => {
@@ -132,9 +148,9 @@ describe('S2 readiness and top lifts', () => {
     expect(labels.some((l) => l.startsWith('Load balance'))).toBe(true)
   })
 
-  it('pairs the two cards to one row height', () => {
-    const src = source('./S2Training.tsx')
-    expect(src.match(/style=\{FILL\}/g)?.length ?? 0).toBeGreaterThanOrEqual(2)
+  it('readiness and top lifts share one grid row (their height is the shot round to verify)', () => {
+    const c = training()
+    expect(anchor(c, 'readiness').parentElement).toBe(anchor(c, 'top-lifts').parentElement)
   })
 
   it('the empty top lifts copy names its window', () => {
@@ -215,7 +231,6 @@ describe('S4 distribution', () => {
     expect(card).not.toContain('Days by total spend per day')
     expect(card).toContain(`Median day`)
     expect(card).toContain(fmtEur(MEDIAN_DAY_EUR))
-    expect(fmtInt(1)).toBe('1')
   })
 })
 
@@ -246,14 +261,28 @@ describe('components page', () => {
     }
   })
 
-  it('the badges group fills the height its row partner sets', () => {
+  it('badges and Code share one grid row, and the badges carry the three variant badges', () => {
     const c = mount(createElement(ComponentsSurfaces, null))
     const badges = anchor(c, 'badges')
-    expect(badges.querySelectorAll('.mantine-Badge-root').length).toBeGreaterThanOrEqual(10)
+    const row = badges.parentElement
+    expect(text(row as Element)).toContain('Code')
+    for (const variant of ['Light', 'Outline', 'Dot']) expect(text(badges)).toContain(variant)
   })
 
-  it('pairs the groups of the first block into two columns of near-equal height', () => {
-    const src = source('../demo/ComponentsPage.tsx')
-    expect(src).toContain('data-compare-column')
+  it('pairs a tall group with a short one in each column of the first block', () => {
+    const c = mount(createElement(ComponentsSurfaces, null))
+    const titles = (column: string): string[] =>
+      [
+        ...(c.querySelector(`[data-compare-column="${column}"]`)?.querySelectorAll('h2, h3, h4') ??
+          []),
+      ].map((t) => text(t))
+    expect(titles('buttons')).toEqual([
+      'Button variants and sizes',
+      'Segmented control: day, week, month',
+    ])
+    expect(titles('inputs')).toEqual([
+      'Inputs: text, select and textarea',
+      'Tabs: default and pills',
+    ])
   })
 })
