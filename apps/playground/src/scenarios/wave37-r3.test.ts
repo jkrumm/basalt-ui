@@ -140,7 +140,7 @@ describe('2. sparklines name their point', () => {
 })
 
 describe('3. S2 goal meter', () => {
-  it('captions the Pace tick at its mark, with the target and the start figure on the track', () => {
+  it('captions the Pace tick at its mark, with the target once on the track', () => {
     const goal = anchor(training(), 'goal')
     const ticks = source('./S2Training.tsx')
     // W38: the target is stated once (the end caption), the pace once (the tick caption).
@@ -158,7 +158,7 @@ describe('3. S2 goal meter', () => {
 })
 
 describe('4. S3', () => {
-  it('the Today footer sits under Dispatch spend and states spend and left like the week', () => {
+  it('the Today footer sits under Dispatch spend and states the cap', () => {
     expect(source('./S3Agents.tsx')).toMatch(/footerEntry\(\s*'day'[\s\S]*?'dispatch-spend'/)
     const day = text(anchor(agents(), 'strip-footer-day'))
     expect(day).toContain(`of ${fmtEur(BUDGETS.day.cap)} cap`)
