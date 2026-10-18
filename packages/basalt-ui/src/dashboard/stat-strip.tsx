@@ -27,6 +27,10 @@
  * with `under: '<cell key>'` qualifies that one cell: from 800px it sits in the cell's column (an
  * entry without `under` then takes the full row); below, every entry is full width under the grid.
  *
+ * Absence: a page that hides the strip in a declared shot state sets `shotAbsent` on the group
+ * (`['empty']`): every derived anchor, cells and footer cells, then carries `data-shot-absent`. A
+ * cell's own `shotAbsent` replaces the group's for that cell (the exception).
+ *
  * Mapping from a prototype: warden's JSX `qualifier` line UNDER the value is `footer`; the cell
  * `qualifier` is the short `· text` on the caption line. Cells are equal-weight: unequal column
  * weights are not supported. `stale` dims a cell while placeholder data shows.
@@ -43,6 +47,12 @@ import { VX } from '../tokens'
 import { InfoGlyph } from './widget-header'
 import classes from './stat-strip.module.css'
 import { HOSTED, VisualSlotContext } from './visual-slot'
+
+/** The URL shot states an anchor can declare itself absent in (`data-shot-absent`). */
+export type StatStripShotState = 'empty' | 'loading' | 'error'
+
+const absentAttr = (states: readonly StatStripShotState[] | undefined) =>
+  states === undefined || states.length === 0 ? {} : { 'data-shot-absent': states.join(' ') }
 
 export type StatStripRow = {
   key: string
@@ -103,6 +113,8 @@ export type StatStripCell = {
   stale?: boolean
   /** Empty or failed: replaces the readings; `loading` wins while pending. */
   state?: StatStripCellState
+  /** The shot states this cell's anchor is absent in; replaces the group's `shotAbsent`. */
+  shotAbsent?: readonly StatStripShotState[]
 }
 
 export type StatStripFooterEntry = {
@@ -121,6 +133,8 @@ export type StatStripProps = BasaltProps & {
   footer?: readonly StatStripFooterEntry[]
   /** The DESKTOP column count. Default: the cell count, capped at 6. */
   cols?: 2 | 3 | 4 | 5 | 6
+  /** The shot states the page hides the whole strip in (`data-shot-absent` on every derived anchor). */
+  shotAbsent?: readonly StatStripShotState[]
 }
 
 const EMPTY = '—'
@@ -153,7 +167,13 @@ function CellState({ state }: { state: StatStripCellState }) {
   )
 }
 
-function StripCell({ cell }: { cell: StatStripCell }) {
+function StripCell({
+  cell,
+  shotAbsent,
+}: {
+  cell: StatStripCell
+  shotAbsent: readonly StatStripShotState[] | undefined
+}) {
   const captionId = useId()
   const { rows, loading } = cell
   const state = loading ? undefined : cell.state
@@ -191,6 +211,7 @@ function StripCell({ cell }: { cell: StatStripCell }) {
         data-strip-cell={cell.key}
         data-shot={`strip-${cell.key}`}
         aria-labelledby={captionId}
+        {...absentAttr(cell.shotAbsent ?? shotAbsent)}
         {...(state !== undefined && { 'data-strip-has-state': '' })}
         {...(state === undefined && cell.visual !== undefined && { 'data-strip-has-visual': '' })}
         {...(state === undefined && rows !== undefined && { 'data-strip-has-rows': '' })}
@@ -257,7 +278,15 @@ function StripCell({ cell }: { cell: StatStripCell }) {
   )
 }
 
-export function StatStrip({ label, cells, footer, cols, className, style }: StatStripProps) {
+export function StatStrip({
+  label,
+  cells,
+  footer,
+  cols,
+  shotAbsent,
+  className,
+  style,
+}: StatStripProps) {
   const desktop = cols ?? Math.min(Math.max(cells.length, 2), 6)
   // `StatGroup`'s rule: four is 2 + 2 below the full count, never 3 + 1.
   const mid = desktop === 4 ? 2 : Math.min(desktop, 3)
@@ -287,7 +316,7 @@ export function StatStrip({ label, cells, footer, cols, className, style }: Stat
         >
           <div className={classes.cells}>
             {cells.map((cell) => (
-              <StripCell key={cell.key} cell={cell} />
+              <StripCell key={cell.key} cell={cell} shotAbsent={shotAbsent} />
             ))}
           </div>
           {footer !== undefined && footer.length > 0 && (
@@ -300,6 +329,7 @@ export function StatStrip({ label, cells, footer, cols, className, style }: Stat
                     className={classes.footerCell}
                     data-strip-footer-cell={entry.key}
                     data-shot={`strip-footer-${entry.key}`}
+                    {...absentAttr(shotAbsent)}
                     {...(column !== undefined && {
                       'data-under': entry.under,
                       style: { '--basalt-strip-footer-col': column } as CSSProperties,

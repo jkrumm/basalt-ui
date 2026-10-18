@@ -55,3 +55,16 @@ describe('Wave 37 r2 chrome rules', () => {
     expect(controlsCss).toMatch(/html \.badgeRoot\s*\{\s*text-transform:\s*none/)
   })
 })
+
+describe('nested radius step (craft-1/nested-radius-step)', () => {
+  test('an Alert re-points the Code radius var to 3 px under its own radius', () => {
+    expect(controlsCss).toMatch(
+      /\.alertRoot\s*\{[^}]*--basalt-code-radius:\s*max\(0px,\s*calc\(var\(--alert-radius,\s*var\(--vx-radius-ctrl\)\)\s*-\s*3px\)\)/,
+    )
+  })
+
+  test('the Code theme reads that var, falling back to the tight radius', () => {
+    const code = baseTheme.components?.['Code']?.styles as { root: { borderRadius: string } }
+    expect(code.root.borderRadius).toBe('var(--basalt-code-radius, var(--vx-radius-tight))')
+  })
+})

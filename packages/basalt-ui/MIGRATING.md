@@ -1171,6 +1171,19 @@ can see change on a page that was fine before.
 
 Opt-out for the header: `tooltip={{ formatHeader: (x) => yourFormat(x) }}` restores any title. The
 `period` string form is unchanged (write it with its own `· ` as before).
+### Strip `shotAbsent`; `Meter` prints no filler; nested radius steps
+
+`StatGroup variant="strip"` takes `shotAbsent?: ('empty' | 'loading' | 'error')[]` on the group (every
+derived cell and footer anchor then carries `data-shot-absent`) and on a cell (replaces the group's for
+that cell). Additive.
+
+A `Meter` with no reading no longer prints `No data` under the track: the reading is `—` and there is no
+caption. Opt-out: pass `emptyText` for the caption you want.
+
+Two nested radii step down so `craft-1/nested-radius-step` passes: an inline `Code` inside an `Alert`
+is 3 px under the Alert's radius (was the tight 5 px), and the `SegmentedControl` (`ViewTabs`) indicator
+is 3 px under its track (`--vx-radius-ctrl` − 3, was 4 px). Opt-out: set a `Code` `radius`/
+`--basalt-code-radius` or the indicator's `styles` yourself.
 
 ## 2.22.0 — Wave 37, argo's friction II
 

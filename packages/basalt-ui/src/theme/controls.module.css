@@ -365,3 +365,11 @@ html .badgeRoot {
 .badgeSection img {
   object-fit: contain;
 }
+
+/*
+ * Alert: an inline Code inside it sits one nested step (3px) under the Alert's own radius
+ * (craft-1/nested-radius-step). The Code theme reads `--basalt-code-radius`; the Alert supplies it.
+ */
+.alertRoot {
+  --basalt-code-radius: max(0px, calc(var(--alert-radius, var(--vx-radius-ctrl)) - 3px));
+}

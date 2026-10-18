@@ -273,7 +273,7 @@ describe('Meter', () => {
   test('a non-finite reading is the empty state', () => {
     const { container, getByText } = mount({ label: 'B', value: Number.NaN })
     expect(meter(container)).toBeNull()
-    expect(getByText('No data')).toBeTruthy()
+    expect(getByText('—')).toBeTruthy()
   })
 
   test('ring: empty, loading and verdict colour', () => {
@@ -326,7 +326,7 @@ describe('Meter', () => {
   test('empty segments render the empty state', () => {
     const { container, getByText } = mount({ label: 'S', segments: [] })
     expect(meter(container)).toBeNull()
-    expect(getByText('No data')).toBeTruthy()
+    expect(getByText('—')).toBeTruthy()
   })
 
   test('a non-finite target draws no tick and no caption', () => {
@@ -433,7 +433,7 @@ describe('Meter — captions and roots', () => {
 
   test('empty segments are the empty state: no part list, no captions', () => {
     const { container, getByText } = mount({ label: 'S', segments: [] })
-    expect(getByText('No data')).toBeTruthy()
+    expect(getByText('—')).toBeTruthy()
     expect(container.querySelector('[data-meter-parts]')).toBeNull()
     expect(container.querySelector('[data-meter-captions]')).toBeNull()
   })
@@ -685,5 +685,24 @@ describe('Meter — caption orphans', () => {
     expect(container.querySelector('[data-meter-captions]')?.textContent).not.toContain(
       'the\u00a0threshold',
     )
+  })
+})
+
+describe('Meter without a reading', () => {
+  test('prints no filler: an em dash reading and no caption by default', () => {
+    const { container } = mount({ label: 'B', value: null })
+    expect(container.querySelector('output')?.textContent).toBe('—')
+    expect(container.querySelector('output')?.textContent).not.toContain('No data')
+    expect(container.querySelector('[data-meter-track]')).not.toBeNull()
+  })
+
+  test('ring: the same em dash', () => {
+    const { container } = mount({ label: 'R', shape: 'ring', value: null })
+    expect(container.querySelector('output')?.textContent).toBe('—')
+  })
+
+  test('a consumer emptyText still replaces it', () => {
+    const { container } = mount({ label: 'B', value: null, emptyText: 'Not worn' })
+    expect(container.querySelector('output')?.textContent).toBe('Not worn')
   })
 })

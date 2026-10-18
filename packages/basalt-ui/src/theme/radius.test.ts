@@ -67,7 +67,7 @@ describe('every re-pointed component defaultProps/styles radius matches its ship
     expect(baseTheme.components?.['Badge']?.defaultProps?.['radius']).toBe(5)
   })
 
-  test('SegmentedControl root = 6 (the control radius), indicator = 4 (fine)', () => {
+  test('SegmentedControl root = 6 (the control radius), indicator = 3 (ctrl − 3, the nested step)', () => {
     const sc = baseTheme.components?.['SegmentedControl']
     expect(sc?.defaultProps?.['radius']).toBe(6)
     // `styles` is function-form (size='ctl' gates a label override — see `theme/index.ts`), not a
@@ -80,7 +80,9 @@ describe('every re-pointed component defaultProps/styles radius matches its ship
         ) => Record<string, Record<string, unknown>>)
       | undefined
     const resolved = stylesFn?.({}, {}, {})
-    expect(resolved?.['indicator']?.['borderRadius']).toBe('var(--vx-radius-fine)')
+    expect(resolved?.['indicator']?.['borderRadius']).toBe(
+      'max(0px, calc(var(--vx-radius-ctrl) - 3px))',
+    )
   })
 
   test('Progress = 4', () => {
@@ -121,9 +123,9 @@ describe('every re-pointed component defaultProps/styles radius matches its ship
     )
   })
 
-  test('Code = 5', () => {
+  test('Code = 5 (tight), unless an Alert re-points --basalt-code-radius', () => {
     expect(baseTheme.components?.['Code']?.styles?.['root']?.['borderRadius']).toBe(
-      'var(--vx-radius-tight)',
+      'var(--basalt-code-radius, var(--vx-radius-tight))',
     )
   })
 })

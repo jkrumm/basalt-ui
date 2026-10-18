@@ -517,6 +517,7 @@ function buildTheme(data: PaletteData, options: BuildThemeOptions = {}): Mantine
       // already on-system (defaultRadius 'md' control tier + the variant color resolver), so only
       // the title font is overridden.
       Alert: ext<typeof Alert>({
+        classNames: { root: controlsClasses.alertRoot },
         styles: {
           title: {
             fontFamily: 'var(--basalt-font-head)',
@@ -818,7 +819,8 @@ function buildTheme(data: PaletteData, options: BuildThemeOptions = {}): Mantine
             // ink-12% fill sat one shade from the track and read as a hover state.
             boxShadow: 'var(--vx-shadow-raised)',
             outline: '1px solid color-mix(in srgb, var(--vx-ink) 14%, transparent)',
-            borderRadius: 'var(--vx-radius-fine)',
+            // One nested step under the track (`--vx-radius-ctrl`): craft-1/nested-radius-step.
+            borderRadius: 'max(0px, calc(var(--vx-radius-ctrl) - 3px))',
           },
           // Conditionally spread the WHOLE key (never a present `label: undefined`) — the package
           // builds under `exactOptionalPropertyTypes`, which treats a key present-but-`undefined` as
@@ -1040,7 +1042,8 @@ function buildTheme(data: PaletteData, options: BuildThemeOptions = {}): Mantine
         styles: {
           root: {
             backgroundColor: 'color-mix(in srgb, var(--vx-ink) 7%, transparent)',
-            borderRadius: 'var(--vx-radius-tight)',
+            // An Alert re-points the var (`controls.module.css`) so a nested Code steps down.
+            borderRadius: 'var(--basalt-code-radius, var(--vx-radius-tight))',
           },
         },
       }),
