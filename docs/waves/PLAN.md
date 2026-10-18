@@ -1462,7 +1462,7 @@ catalogue). This wave takes over old Wave 39's catalogue-shipping step.
 - **Next — stopped: Wave 36 closed; orchestrated, nothing spawned; this wave released nothing itself.** Owner review of the boards
   (`.design-parity/w36/r0`–`r6`, `trial-v0`) is the mother's.
 
-## Wave 37 — argo's friction II: compact strip, the reading once, chart chrome, the harness <!-- status: active -->
+## Wave 37 — argo's friction II: compact strip, the reading once, chart chrome, the harness <!-- status: done -->
 
 Source: Wave 36's **Left behind** (its seed list, verbatim scope) and argo `docs/design/UPSTREAM.md` § "Wave 23"–"Wave 27".
 argo ran five live re-score rounds on 2.20/2.21 (argo Waves 23–27): WalkingPad passes, twelve pages fail, and each round
@@ -1475,33 +1475,89 @@ the S3 strip cells still keep a void under short content; the S3 failures cell i
 the S3 waiting list spreads a name and its age 1,000 px apart at 1440; the S2 hit-rate chart draws six monthly values as a
 smoothed line where bars against the goal answer the question.
 
-- [ ] **Calibrate the bar first.** Re-score S2/S3/S4 with argo's reviewer setup (fresh `basalt-design-reviewer`s given
+- [x] **Calibrate the bar first.** Re-score S2/S3/S4 with argo's reviewer setup (fresh `basalt-design-reviewer`s given
       the previous round's shots, classifying new / carried / unscored, plus a Keel side-by-side from `.design-parity/keel`).
       Record where the playground passes what argo fails; that list is part of this wave's scope.
-- [ ] **Strip and Meter, the recurring pair:** strip cells compact by default (`align-self: start` or a per-cell
+- [x] **Strip and Meter, the recurring pair:** strip cells compact by default (`align-self: start` or a per-cell
       `align`), the footer row still aligned across cells; the zoned Meter's reading printed once (D30: the marker is
       unlabelled when the host states the value); Meter hides its track with no target or ticks; per-zone/segment
       `tone="muted"`; ring `target`/`ticks`; `stops`; part captions at `size="row"`; `StatStripCell` `action` and `tone`
       driving the visual; `StatStripRow` `hideValue`.
-- [ ] **Chart chrome:** the tooltip's series/name column, a y-tick gutter outside the plot, ticks and legend one size step,
+- [x] **Chart chrome:** the tooltip's series/name column, a y-tick gutter outside the plot, ticks and legend one size step,
       `refLines[].label` position (S2 "Goal 28" sits on the line), `ChartFact` `tone` and `stale`, `Sparkline`
       `tone="muted"`, `StackedArea` band opacity, `BandStrip` tooltip placement and a per-state glyph, the dark-390 focus ring.
-- [ ] **Shell and type:** sticky clearance equal to the `PageBar` height; `Section` without a title; the agenda/`Section`
+- [x] **Shell and type:** sticky clearance equal to the `PageBar` height; `Section` without a title; the agenda/`Section`
       four-size default down to three; slashed zero on non-heading titles; `SyncButton` age below `sm`; `PageBar` filter
       `Select` width; phone `Select` inset; `VX.surface.rowHover`/`rowSelected`; the Tabs accent pill and tinted status
       Badges (W33 chrome); `PageSummary` (argo's `components/upstream/page-summary.tsx`: sentence, facts, aside) as an
       export with argo as the named consumer.
-- [ ] **The harness:** `shot` focus/hover timeouts on tall anchors, tall anchors painted blank below one screen, fixed chrome
+- [x] **The harness:** `shot` focus/hover timeouts on tall anchors, tall anchors painted blank below one screen, fixed chrome
       over crops; the trial's friction rows (`init` leaves a stock `main.tsx` and peers unwired, zero declared shot states
       pass silently, 72 `dist` reads to colour a categorical status grid, hue-only heat cells, focus tooltips over captions).
-- [ ] **Expression trial v1:** a fresh agent in a scratch `init` app, no component names, argo-shaped data (a decision
+- [x] **Expression trial v1:** a fresh agent in a scratch `init` app, no component names, argo-shaped data (a decision
       queue with ages and states, a health score with zones, a cost ledger against a budget). Score it with the
       calibrated setup. A fallback to a default is a ledger row.
-- [ ] Rounds: at least three on S2/S3/S4 with before/after boards; then the mother releases and argo bumps and deletes its
+- [x] Rounds: at least three on S2/S3/S4 with before/after boards; then the mother releases and argo bumps and deletes its
       workarounds (argo's next wave), reporting the line delta and the new/carried/unscored trend.
       **Left behind:**
 
-## Wave 38 — Data tables, responsive <!-- status: pending -->
+- **Landed** (21 PRs, #391–#412, all through `rd merge` after two independent review rounds by fresh subagents and CI
+  green on the PR head; scope frozen after round 2 and the lead read every last fix diff; `make check` green on
+  `863f5b5e`, master CI green): calibration #391; batch 1 #392 playground, #393 shell (`PageSummary` export, argo the
+  named consumer; untitled `Section`, `SyncButton` age below `sm`, filter pill width, phone `Select` inset), #394 theme
+  (neutral tab pill, dot-and-word status Badges, `VX.surface.rowHover`/`rowSelected` with status text solved against
+  them, chart focus ring, disabled surface), #395 Meter (`reading={false}`, host tone, `track={false}`, muted
+  zones/segments, ring `target`/`ticks`, `stops`, row-size part captions), #396 BarList columns, #397 chart cards
+  (`ChartFact` tone/period list, `stale` facts, Sparkline muted/focus/reference label, BandStrip/Heatmap glyphs and state
+  tones), #398 harness (tall anchors whole, fixed chrome hidden from crops, fast `absent`, `init` seeds a stock Vite app),
+  #399 strip (`action`, tone to the visual, `hideValue`, StatCard states), #400 chart chrome (tooltip name column, y
+  gutter, ticks/legend one step, `refLines[].labelPosition`, linear `Lines`, `naming`, StackedArea opacity); batch 2
+  #401 playground, #402 Meter end figures and captions at marks, #403 BarList status/delta columns + sentence-case
+  status, #404 chart readouts (`{ at, value }` Sparkline points, one locale source), #405 strip cells compact by
+  construction (D35) + StatCard caption at 390 + footer `under`, #406 head-face digits from the sans face (D36),
+  #407 shot hover/pointer emulation + `no-declared-states` as an actionable P2, #408 one flat muted zone fill; batch 3
+  (argo Waves 31–32 rows, folded in by the mother) #409 daily header weekday/year, reference label, whole ticks, narrow
+  BandStrip notch, no bare "No data", #410 strip `shotAbsent` + Meter null + nested radius steps, #411 playground
+  adoption, #412 one error title. Every break is a plain `feat:` with a MIGRATING subsection under the one `## Unreleased`
+  heading; `CHANGELOG.md` untouched (one worker reformatted it; the lead restored it before merge).
+- **Released mid-wave by the mother:** 2.22.0 from `a646a081` (#393–#400); 2.23.0 requested from `863f5b5e` (#401–#412,
+  argo blocked on the strip-cell `shotAbsent` P0).
+- **Calibration** (`docs/waves/design-parity/w37/setup.md`, `rounds.md` § Round 0; SPEC D34): under argo's bar every
+  S2–S4 component that Wave 36 passed failed (scores 50 / 64 / 55); the gap was repetition, name-to-value distance,
+  smoothed discrete values, chart chrome and state anatomy, now the standing bar.
+- **Rounds** (boards `.design-parity/w37/r0`–`r3`, copied to the MacBook): S2 50 → 74 → 87 → 71, S3 64 → 75 → 83 → 80, S4 +
+  components 55 → 59 → 74 → 74; fixed 48 / 47 / 21 per round; detector B 100 → 90 → 100 → 100. No route passes the argo bar
+  yet: every remaining item is P2/P3 except one P1 (S2 goal Meter, below).
+- **Expression trial v1** (`w37/expression-trial-v1.md`, board `.design-parity/w37/trial-v1`): a fresh agent in a scratch
+  `init` app with argo-shaped data wrote the concept first and picked catalogue encodings for health and cost; two
+  fallbacks (a bar per day for a value over time; the decision queue folding to a card per row at 390). Calibrated score
+  38 (basalt 7, app 13); `dist` look-ups 72 → ~17.
+- **Budgets:** public value symbols 106 → 108 (`PageSummary`), barrel types 69 → 70, CLI lines 8091 → 8455 (ceiling 8457),
+  gzip (CI Linux) provider-only 20442, embedded 56742, theme-only 15859. Net +12245 / −1438 (package src +7296 / −949):
+  a feature wave.
+- **For the next basalt wave (seed; the mother writes it up):** **first**, the S2 goal Meter P1 — five captions on a
+  narrow card, "Target 28 sessions" wraps and clips at 1440 and 390, the reading caption ~270 px from its fill (#402's
+  start/target defaults meeting #411's adoption; decide whether the reading caption sits at the fill end and the target
+  figure stays one line); **owner decision** SPEC D37 — the rubric fails an errored/empty chart body that keeps the loaded
+  height (P2 on every chart card), V2-SPEC's SSR-first contract requires it; then the readout chips (cover 55–110 px of a
+  sparkline, the failures chip truncates at 1440), the zone-name fit at 390 (readiness "Good" dropped), the footer meter
+  `under` one cell makes the strip ragged and does not follow at 390, the Filled Button hover still reads as rest on the
+  sizes anchors after #407, the delta glyph drifts in a wide column, a y-axis unit dropped at 390; argo Wave 31–32 rows
+  not taken: `Sparkline × Meter` readout over a detached end figure, `Bars` shade-only series, four type sizes in the
+  `Section` shells, `StackedArea` zero rows, info tooltips over the card above at 390, the 390 2 + 1 strip; trial v1 rows:
+  the catalogue's zoned-bar row should name `short`, a loading skeleton instead of an accent spinner in sections, sibling
+  section titles at two sizes, a cumulative-with-pace recipe for budgets; a state-copy recipe (argo now renders every
+  empty/loading/error: the reference needs the "why + what to do" pattern per state); the table card-per-row fold at 390
+  (Wave 38's scope); the S4/components playground items (Budget tick figure via `caption`, fragment headlines, a table
+  error title, a badge without a dot).
+- **Process notes:** a local `merge=union` attribute for `packages/basalt-ui/MIGRATING.md` (in `.git/info/attributes`,
+  not committed) plus a one-heading normaliser made parallel package PRs rebase without conflicts; force-pushes to an
+  amended head sometimes start no CI run — rebasing (a new head) triggers one; the shot harness reported `hover: none`
+  on desktop until #407, so earlier hover verdicts on `(hover: hover)` rules were harness artefacts.
+- **Next — stopped: Wave 37 closed; orchestrated, nothing spawned; this wave released nothing itself.** Owner review of the
+  boards (`.design-parity/w37/r0`–`r3`, `trial-v1`) is the mother's.
+
+## Wave 38 — Data tables, responsive <!-- status: active -->
 
 Spec: SPEC § 6.6, § 9.1. Scenarios S1 (outages) and S2 (sessions). Validators: argo, linewatch.
 
