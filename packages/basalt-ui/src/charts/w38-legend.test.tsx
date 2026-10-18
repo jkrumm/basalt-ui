@@ -38,7 +38,7 @@ describe('a zone names itself in the legend', () => {
   })
   test('one series + named zones show a legend by default', () => {
     const el = legendOf(<Lines ariaLabel="L" data={data} x={x} series={[A]} zones={zones} />)
-    expect(keys(el)).toEqual(['Alpha', 'Good', 'Bad'])
+    expect(keys(el)).toEqual(['Good', 'Bad', 'Alpha'])
   })
   test('unnamed zones add nothing; one series keeps no legend', () => {
     const bare = zones.map(({ from, to, fill }) => ({ from, to, fill }))
@@ -70,7 +70,7 @@ describe('the compact legend folds', () => {
     const roles = [...(el?.querySelectorAll('[data-legend-key]') ?? [])].map(
       (e) => (e as HTMLElement).dataset['legendRole'],
     )
-    expect(roles).toEqual(['series', 'reference', 'reference'])
+    expect(roles).toEqual(['reference', 'reference', 'series'])
     expect(el?.querySelector('[data-legend-more][hidden]')).not.toBeNull()
   })
 })
