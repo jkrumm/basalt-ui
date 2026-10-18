@@ -37,10 +37,10 @@ layout('heading numerals use the sans digits', () => {
       const fonts = ['Nunito Sans Variable', 'Hubot Sans Variable']
       await Promise.all(fonts.map((f) => document.fonts.load(`400 40px "${f}"`, '0A')))
       await document.fonts.load('400 40px var(--basalt-font-head)', '0').catch(() => [])
-      const measure = (family: string, text: string): number => {
+      const measure = (family: string, text: string, stretch = 'normal'): number => {
         const el = document.createElement('span')
         el.textContent = text
-        el.style.cssText = `position:absolute;white-space:pre;font:400 40px ${family};font-stretch:normal;font-variant-numeric:lining-nums`
+        el.style.cssText = `position:absolute;white-space:pre;font:400 40px ${family};font-stretch:${stretch};font-variant-numeric:lining-nums`
         document.body.append(el)
         const width = el.getBoundingClientRect().width
         el.remove()
@@ -48,16 +48,23 @@ layout('heading numerals use the sans digits', () => {
       }
       const head = 'var(--basalt-font-head)'
       return {
-        head0: measure(head, '2026 · 90 days'),
         sans0: measure(`"Nunito Sans Variable"`, '0'),
         hubot0: measure(`"Hubot Sans Variable"`, '0'),
         headZero: measure(head, '0'),
         headA: measure(head, 'A'),
         hubotA: measure(`"Hubot Sans Variable"`, 'A'),
+        headZero88: measure(head, '0', '88%'),
+        headA88: measure(head, 'A', '88%'),
       }
     })
     expect(w.sans0).not.toBeCloseTo(w.hubot0, 1)
     expect(w.headZero).toBeCloseTo(w.sans0, 1)
     expect(w.headA).toBeCloseTo(w.hubotA, 1)
+
+    // The shipped Hubot file is the wght-only cut (no `wdth` axis), so the head surfaces'
+    // `font-stretch: 88%` condenses neither letters nor digits: digits cannot mismatch the letters.
+    // If the head face ever moves to the wdth cut, the digit face must follow or this fails.
+    expect(w.headA88).toBeCloseTo(w.headA, 1)
+    expect(w.headZero88).toBeCloseTo(w.headZero, 1)
   })
 })

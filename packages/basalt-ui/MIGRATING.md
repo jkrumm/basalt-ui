@@ -1111,7 +1111,10 @@ reset is removed. `basalt-ui fonts:css` emits the same face.
 
 **Opt out:** set your own `--basalt-font-head` (or `createBasaltTheme(_, { fonts: { head } })`); a
 head stack that does not lead with `'Basalt Head Digits'` draws Hubot's own digits, slashed zero
-included. The face costs no extra download beyond the Nunito latin file `styles.css` already loads.
+included. Stretch: the digit face has no `wdth` axis, and neither does the shipped wght-only Hubot Sans file,
+so `--basalt-font-head-stretch` (88%) condenses neither letters nor digits today and they cannot
+mismatch. A consumer who swaps in a `wdth` cut of the head face gets condensed letters over
+full-width digits. The face costs no extra download beyond the Nunito latin file `styles.css` already loads.
 
 ## 2.22.0 — Wave 37, argo's friction II
 
