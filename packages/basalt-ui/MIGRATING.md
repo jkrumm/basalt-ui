@@ -1060,6 +1060,14 @@ Opt out: restyle the slot with `classNames.header` (Section / SettingsSection / 
 An info bubble inside a `basalt-card` no longer flips above the glyph into the card above (it
 covered that card's hero at 390): it opens below, slides up to fit, or flips only into room the card
 owns, and never covers its own glyph. Outside a card the viewport flip is unchanged.
+### State defaults (Wave 38)
+
+| Surface                               | Before                      | After                                                          | Opt-out                                                            |
+| ------------------------------------- | --------------------------- | -------------------------------------------------------------- | ------------------------------------------------------------------ |
+| `LoadingState tier="section"`         | an accent `Loader` spinner  | three neutral `Skeleton` lines (`role="status"`, same `label`) | pass `loading` to `QueryState` with a skeleton in the loaded shape |
+| `LoadingState` (page tier)            | a `Loader` in the accent    | the same spinner in `VX.muted`                                 | none; place your own node with `QueryState` `loading`              |
+| `BasaltDataTable` `query` error title | `Could not load`            | `Could not load rows`                                          | none; the title is not a prop                                      |
+| `ChartCard` / chart error, no message | `The chart failed to load.` | `The request failed.` (the same fallback `ErrorState` shows)   | an `Error` with a message, or `state.error` as a string            |
 
 ## 2.23.0 — Wave 37, argo's friction II
 

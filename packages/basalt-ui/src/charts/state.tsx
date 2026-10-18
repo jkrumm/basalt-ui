@@ -106,7 +106,7 @@ export function ChartPlaceholder(props: {
     )
   const label =
     kind === 'error'
-      ? toErrorMessage(props.state?.error, 'The chart failed to load.')
+      ? toErrorMessage(props.state?.error, 'The request failed.')
       : emptyLabel(props.state)
   const body = props.compact ? (
     <span aria-hidden="true">—</span>
