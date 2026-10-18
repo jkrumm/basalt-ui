@@ -1,3 +1,42 @@
+# [2.21.0](https://github.com/jkrumm/basalt-ui/compare/v2.20.0...v2.21.0) (2026-10-18)
+
+
+### Bug Fixes
+
+* clip the Meter label row so a hidden name cannot overflow ([48c1174](https://github.com/jkrumm/basalt-ui/commit/48c117452412d4e5f870e5d964512ab65ff062e7))
+* correct basalt-design import paths and resolve only public entries ([4901a14](https://github.com/jkrumm/basalt-ui/commit/4901a148cb5ecaa15704fcd7f9856278d6ac225d))
+* cover strip states and footer, align the first cell, drop the opt-out ([eaa6dbe](https://github.com/jkrumm/basalt-ui/commit/eaa6dbe2f17af0a3d876d5935125dc0c1e330b89))
+* derive the tracked skill files from the shipped skills tree ([ea4b3db](https://github.com/jkrumm/basalt-ui/commit/ea4b3dbdaaa813e19e52bbb12c0e3ed85ecd3cf8))
+* draw strip dividers as borders in forced colors ([5842e63](https://github.com/jkrumm/basalt-ui/commit/5842e6347226037659ff2ca299cb786926d1ffc4))
+* harden shot detect history, I/O errors and severity exit ([f85a10e](https://github.com/jkrumm/basalt-ui/commit/f85a10e35165907e13ec41c2b9220bf82c882b83))
+* keep series-palette off the guard hook path and test its routing ([c2d10aa](https://github.com/jkrumm/basalt-ui/commit/c2d10aa1ed130f8693c1f3f28bdbb13846d73310))
+* keep the blocked reason and one-line titles on the S3 stuck list ([fd5da9f](https://github.com/jkrumm/basalt-ui/commit/fd5da9ffd30253631dafc8d3fd9efac69e59b75f))
+* keep the holding Meter zone name and pin label sets per width ([5fef7ff](https://github.com/jkrumm/basalt-ui/commit/5fef7ffd68230e42cf1087e01512189217b4b0d8))
+* level the first strip cell with padding, keep the divider rule ([9a5049f](https://github.com/jkrumm/basalt-ui/commit/9a5049f847351c49807f46bbacffcfc188d3dc77))
+* name the button section var like Mantine's own ([cd9f821](https://github.com/jkrumm/basalt-ui/commit/cd9f821736126d1e9f794bc38d691f31b3c407dd))
+* put button section insets on the spacing scale ([a67e246](https://github.com/jkrumm/basalt-ui/commit/a67e2461263c7949350020feaa939bdcd57c940a))
+* review round 1 on strip state, Retry paint and the hosted marker ([8b42a9e](https://github.com/jkrumm/basalt-ui/commit/8b42a9e3d02a70a09b9f2866f03d205238a5a42c))
+* scope the muted Meter default to plain value bars ([e49b713](https://github.com/jkrumm/basalt-ui/commit/e49b7139c3e934d1165a64ae1613e0cf3466adf0))
+* skip disabled controls in the shot contrast measure ([ab28344](https://github.com/jkrumm/basalt-ui/commit/ab2834459280a2357d27d3731667b5dc773412ba))
+* split the buttons specimen into one anchor per size row ([c8a15d0](https://github.com/jkrumm/basalt-ui/commit/c8a15d0082d3144d9db0d1be7fa804dd4aa9a49d))
+* strip cells align their rows instead of stretching to a void ([dd30822](https://github.com/jkrumm/basalt-ui/commit/dd30822c7363bcdb099b4ac844ee49228248472b))
+* strip cells keep on-scale insets and no stretched void ([6a7e7fe](https://github.com/jkrumm/basalt-ui/commit/6a7e7fe86bdbfd92771d33b5b4450c3affe2393b))
+* update zone name layout tests for the holding-name priority ([b0b5043](https://github.com/jkrumm/basalt-ui/commit/b0b504368248e094c01ff9fc8ca85064b427627f))
+
+
+### Features
+
+* basalt-design as a router with concept and decision references ([5699f58](https://github.com/jkrumm/basalt-ui/commit/5699f588cb3322d5e38c2ffa66e95a686c33e8e4))
+* center Meter zone labels under their spans with inline end ticks ([136af57](https://github.com/jkrumm/basalt-ui/commit/136af57a22f1444fbe914ef8d69ab1a4db783b69))
+* harden skill reference placement and cover it end to end ([9e5ab89](https://github.com/jkrumm/basalt-ui/commit/9e5ab89d8ae925d355bc0f58d3de5df26caf1c88))
+* let Meter zones take a short label before a name hides ([faa67b6](https://github.com/jkrumm/basalt-ui/commit/faa67b6ad1298ca8cd0eff417d8474207e720d9c))
+* muted Meter fill and thin BarList rows by default ([428a015](https://github.com/jkrumm/basalt-ui/commit/428a0154978f5ab1792343faf1fd4bdff3f95ee6))
+* register the shared Retry in the shadow-surface registry ([80fefe2](https://github.com/jkrumm/basalt-ui/commit/80fefe260b036a64b516771684f23d414be1440b))
+* series-palette guard computes the series file's palette ([b508eaa](https://github.com/jkrumm/basalt-ui/commit/b508eaabddec8ec1623b4f0022eb3dd18b1a13c7))
+* ship skill reference files through init and sync ([2b012c5](https://github.com/jkrumm/basalt-ui/commit/2b012c551ccfdafba28b68715aba70de10ffbb4d))
+* shot detect, the deterministic second review pass ([716f74b](https://github.com/jkrumm/basalt-ui/commit/716f74bce59dd7cff7dc3ee5d02ecfa2bdf0141f))
+* strip cell state and one Retry in the shared error anatomy ([f5eb252](https://github.com/jkrumm/basalt-ui/commit/f5eb252641fbb6e4a32b20e73c0c69a10ebe10ef))
+
 # [2.20.0](https://github.com/jkrumm/basalt-ui/compare/v2.19.0...v2.20.0) (2026-10-17)
 
 

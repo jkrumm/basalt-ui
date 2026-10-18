@@ -1,6 +1,6 @@
 {
   "name": "basalt-ui",
-  "version": "2.20.0",
+  "version": "2.21.0",
   "description": "Opinionated framework for Mantine-based React apps — theme, app shell, TanStack Charts, toolchain presets",
   "keywords": [
     "charts",
