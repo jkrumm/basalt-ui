@@ -94,12 +94,12 @@ export function finishMeasurement({ texts, radius, nested, ...rest }: Reading): 
 /* oxlint-disable unicorn/consistent-function-scoping -- the helpers below are serialised into the page with it: no outer scope */
 export function measureAnchor(root: Element): Reading {
   const px = (v: string | number): number => Math.round(parseFloat(String(v)) * 100) / 100
-  const sides = (s: CSSStyleDeclaration, p: 'padding'): Measurement['padding'] => ({
-    top: px(s[`${p}Top`]),
-    right: px(s[`${p}Right`]),
-    bottom: px(s[`${p}Bottom`]),
-    left: px(s[`${p}Left`]),
-  })
+  const edges = (s: CSSStyleDeclaration, p: string, x = ''): number[] =>
+    ['top', 'right', 'bottom', 'left'].map((e) => px(s.getPropertyValue(`${p}-${e}${x}`)))
+  const sides = (s: CSSStyleDeclaration): Measurement['padding'] => {
+    const [top = 0, right = 0, bottom = 0, left = 0] = edges(s, 'padding')
+    return { top, right, bottom, left }
+  }
   const ctx = document.createElement('canvas').getContext('2d', { willReadFrequently: true })
   if (!ctx) throw new Error('no 2d canvas context: cannot read colours')
   const parsed = new Map<string, number[]>()
@@ -126,12 +126,13 @@ export function measureAnchor(root: Element): Reading {
     const a = top[3] ?? 1
     return [0, 1, 2, 3].map((i) => (i === 3 ? 1 : (top[i] ?? 0) * a + (under[i] ?? 0) * (1 - a)))
   }
+  const shown = (s: CSSStyleDeclaration): boolean =>
+    s.visibility !== 'hidden' && s.display !== 'none' && s.opacity !== '0'
   const fills = (s: CSSStyleDeclaration): boolean =>
-    s.content !== 'none' && (rgba(s.backgroundColor)[3] ?? 0) > 0
+    shown(s) && s.content !== 'none' && (rgba(s.backgroundColor)[3] ?? 0) > 0
   const visible = (el: Element): CSSStyleDeclaration | null => {
     const s = getComputedStyle(el)
-    const hidden = s.visibility === 'hidden' || s.display === 'none' || s.opacity === '0'
-    return hidden || el.getBoundingClientRect().width === 0 ? null : s
+    return shown(s) && el.getBoundingClientRect().width !== 0 ? s : null
   }
   /** The effective background: layers up to the first opaque ancestor (html/body included), composited. */
   const backdrop = (el: Element): { color: number[]; assumedWhite: boolean } => {
@@ -148,18 +149,13 @@ export function measureAnchor(root: Element): Reading {
 
   const cs = getComputedStyle(root)
   const rect = root.getBoundingClientRect()
-  const widest = Math.max(
-    ...['Top', 'Right', 'Bottom', 'Left'].map((e) =>
-      px(cs.getPropertyValue(`border-${e.toLowerCase()}-width`)),
-    ),
-  )
+  const widest = Math.max(...edges(cs, 'border', '-width'))
 
   // gap: the first flex/grid box (breadth-first) that actually spaces its children.
   let gap = { row: 0, column: 0 }
   const queue: Element[] = [root]
   for (let i = 0; i < queue.length && i < 80; i++) {
-    const item = queue[i]
-    if (!item) break
+    const item = queue[i] as Element
     const s = getComputedStyle(item)
     const row = px(s.rowGap) || 0
     const column = px(s.columnGap) || 0
@@ -188,18 +184,22 @@ export function measureAnchor(root: Element): Reading {
     if (!s) continue
     const r = el.getBoundingClientRect()
     const hasBg = fills(s)
-    const hasBorder = ['Top', 'Right', 'Bottom', 'Left'].some(
-      (e) => px(s.getPropertyValue(`border-${e.toLowerCase()}-width`)) > 0,
-    )
+    const hasBorder = edges(s, 'border', '-width').some((w) => w > 0)
     if (el !== root && (hasBg || hasBorder) && nested.length < 60) {
       nested.push({
         path: pathOf(el),
         radius: { value: s.borderTopLeftRadius, width: px(r.width), height: px(r.height) },
-        padding: sides(s, 'padding'),
+        padding: sides(s),
       })
     }
-    const pseudo = ['::before', '::after'].some((p) => fills(getComputedStyle(el, p)))
-    // Only boxes smaller than the anchor count (wrappers are layout); a pseudo fill is paint (Skeleton).
+    // Only boxes smaller than the anchor count (wrappers are layout); a pseudo fill is paint (Skeleton) only if it covers its host.
+    const pseudo = ['::before', '::after'].some((p) => {
+      const ps = getComputedStyle(el, p)
+      return (
+        fills(ps) &&
+        [px(ps.width) - r.width, px(ps.height) - r.height].every((d) => Math.abs(d) <= 2)
+      )
+    })
     if (
       el !== root &&
       (/^(svg|img|canvas|video|input|textarea)$/i.test(el.tagName) ||
@@ -244,7 +244,7 @@ export function measureAnchor(root: Element): Reading {
 
   return {
     box: { width: px(rect.width), height: px(rect.height) },
-    padding: sides(cs, 'padding'),
+    padding: sides(cs),
     gap,
     radius: { value: cs.borderTopLeftRadius, width: px(rect.width), height: px(rect.height) },
     borderWidth: widest,
