@@ -49,11 +49,15 @@ const SRC = join(import.meta.dir, '..')
 type Hairline = { readonly file: string; readonly selector: string; readonly decl: string }
 
 /**
- * Every `border-{top,bottom,block-start,block-end}` and every 1px inset `box-shadow` in a CSS
- * module, with the selector it sits under. A hand-rolled scanner rather than a regex per file: the
+ * Every `border-{top,bottom,block-start,block-end}`, every 1px inset `box-shadow` and every 1px
+ * `box-shadow` painted in `--vx-divider` in a CSS module, with the selector it sits under. A hand-rolled scanner rather than a regex per file: the
  * SELECTOR is half the classification (`.header` vs `.rows > *:not(:last-child)` are the two
  * opposite verdicts), and a regex over declarations alone cannot see it.
  */
+/** An inset 1px shadow, or an outer one painted in `--vx-divider` (a divider drawn without taking layout space). */
+const isHairlineShadow = (decl: string): boolean =>
+  decl.includes('inset') || decl.includes('var(--vx-divider)')
+
 function scanHairlines(): { rules: Hairline[]; drops: Hairline[] } {
   const rules: Hairline[] = []
   const drops: Hairline[] = []
@@ -85,7 +89,7 @@ function scanHairlines(): { rules: Hairline[]; drops: Hairline[] } {
         ;(border[1] === 'none' ? drops : rules).push({ file, selector, decl })
         continue
       }
-      if (decl.startsWith('box-shadow:') && decl.includes('inset') && /\b-?1px\b/.test(decl)) {
+      if (decl.startsWith('box-shadow:') && /\b-?1px\b/.test(decl) && isHairlineShadow(decl)) {
         rules.push({ file, selector, decl })
       }
     }
@@ -125,9 +129,9 @@ const LEDGER: readonly { file: string; selector: string; kind: Kind; why: string
   },
   {
     file: 'dashboard/stat-strip.module.css',
-    selector: '.cell + .cell',
+    selector: '.cell',
     kind: 'between-rows',
-    why: "The strip's cells, wrapped onto several rows: adjacent-sibling, so the first cell draws no top line and the strip has no trailing rule; the leading row's line is clipped by the section.",
+    why: "The strip's cells, wrapped onto several rows: a LEADING outer box-shadow (no layout space, so every cell keeps one inset), and the leading row's line is clipped by the section, so the strip has no top or trailing rule.",
   },
   {
     file: 'dashboard/stat-strip.module.css',
@@ -206,6 +210,11 @@ describe('every horizontal hairline is inventoried and classified', () => {
     expect(unlisted).toEqual([])
   })
 
+  test('a box-shadow divider is recorded, not only borders', () => {
+    const strip = rules.filter((r) => r.file === 'dashboard/stat-strip.module.css')
+    expect(strip.some((r) => r.selector === '.cell' && r.decl.includes('0 -1px 0'))).toBe(true)
+  })
+
   test('the ledger names nothing that no longer exists', () => {
     const found = new Set(rules.map((r) => `${r.file}|${r.selector}`))
     expect(LEDGER.filter((e) => !found.has(`${e.file}|${e.selector}`)).map((e) => e.file)).toEqual(
@@ -257,8 +266,14 @@ describe('a between-rows family drops its last rule', () => {
     test(`${entry.file} → ${entry.selector}`, () => {
       // Either the selector itself excludes the last member (`:not(:last-child)`, or an
       // adjacent-sibling combinator, which draws the line as the SECOND row's top edge and so has no
-      // trailing rule by construction), or the module carries an explicit `border: none` drop.
-      const selfLimiting = /:not\(:last-child\)|\+/.test(entry.selector)
+      // trailing rule by construction), or the line is a LEADING outer shadow (`0 -1px 0`: it is every
+      // member's top edge, so none draws a trailing one), or the module carries an explicit
+      // `border: none` drop.
+      const leading = rules.some(
+        (r) =>
+          r.file === entry.file && r.selector === entry.selector && r.decl.includes('0 -1px 0'),
+      )
+      const selfLimiting = leading || /:not\(:last-child\)|\+/.test(entry.selector)
       const dropped = drops.some(
         (d) => d.file === entry.file && d.selector.startsWith(`${entry.selector}:last`),
       )
