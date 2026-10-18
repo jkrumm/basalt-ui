@@ -153,6 +153,7 @@ describe('detectFindings', () => {
   test('an off-scale value within 1 px of a step is polish (P3)', () => {
     const m = metrics({ anchors: [anchor({ radius: 8.5 })] })
     expect(detectFindings(m)[0]).toMatchObject({ rule: 'craft-1/off-scale-radius', severity: 'P3' })
+    expect(detectFindings(m)[0]?.defect).toStartWith('Radius 8.5px is not a radius step (')
   })
   test('a scheme × viewport with no scale entry is unverified, not judged off-scale (P1)', () => {
     const m = metrics({ anchors: [anchor({ scheme: 'dark', radius: 99 })] })

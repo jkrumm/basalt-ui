@@ -15,7 +15,7 @@
  * | craft-1/scale-error, -missing| layout  | P1                                                |
  * | craft-1/off-scale-inset, -gap| layout  | P1; P3 when every off value is within 1 px of a step |
  * | craft-3/empty-region         | layout  | P1                                                |
- * | craft-1/off-scale-radius     | style   | P1; P3 within 1 px of a step (never a nested one)    |
+ * | craft-1/off-scale-radius     | style   | P1; P3 within 1 px of a step (never a nested one) |
  * | craft-1/nested-radius-step   | style   | P1                                                |
  * | craft-2/font-sizes           | style   | P1                                                |
  * | lint/basalt/<rule>           | style   | P1 for an error, P2 for a warning                 |
@@ -121,11 +121,15 @@ function craftOne(a: AnchorMetrics, scale: Scale | undefined): Draft[] {
   if (!scale) return []
   const base = { anchor: a.name, route: a.route, where: where(a) }
   const out: Draft[] = []
-  const sides = SIDE_NAMES.map((side) => ({ at: side, v: a.padding[side] }))
-  const gaps = (['row', 'column'] as const).map((axis) => ({ at: axis, v: a.gap[axis] }))
+  const sides = SIDE_NAMES.map((side) => ({ at: side, v: a.padding[side], nested: false }))
+  const gaps = (['row', 'column'] as const).map((axis) => ({
+    at: axis,
+    v: a.gap[axis],
+    nested: false,
+  }))
   const radii = [
-    { at: 'surface', v: a.radius },
-    ...a.nested.map((n) => ({ at: `nested ${n.path}`, v: n.radius })),
+    { at: '', v: a.radius, nested: false },
+    ...a.nested.map((n) => ({ at: `nested ${n.path}`, v: n.radius, nested: true })),
   ]
   const groups = [
     ['inset', 'layout', 'Padding', 'padding', scale.spacing, sides],
@@ -133,18 +137,18 @@ function craftOne(a: AnchorMetrics, scale: Scale | undefined): Draft[] {
     ['radius', 'style', 'Radius', 'radius', scale.radius, radii],
   ] as const
   for (const [rule, layer, label, field, steps, items] of groups) {
-    const off = items.flatMap(({ at, v }) => {
+    const off = items.flatMap(({ at, v, nested }) => {
       const d = offScale(v, Object.values(steps))
-      return d === null ? [] : [{ at, v, d }]
+      return d === null ? [] : [{ at, v, d, nested }]
     })
     if (off.length === 0) continue
     out.push({
       ...base,
       rule: `craft-1/off-scale-${rule}`,
-      severity: off.some((o) => o.at.startsWith('nested')) ? 'P1' : sizing(off.map((o) => o.d)),
+      severity: off.some((o) => o.nested) ? 'P1' : sizing(off.map((o) => o.d)),
       layer,
       cite: `metrics.json anchors[${a.name} ${where(a)}].${field}`,
-      defect: `${label} ${off.map((o) => `${o.at} ${o.v}px`).join(', ')} is not a ${steps === scale.radius ? 'radius' : 'spacing'} step (${stepsText(steps)}).`,
+      defect: `${label} ${off.map((o) => `${o.at} ${o.v}px`.trim()).join(', ')} is not a ${steps === scale.radius ? 'radius' : 'spacing'} step (${stepsText(steps)}).`,
     })
   }
   return out
