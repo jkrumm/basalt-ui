@@ -34,6 +34,7 @@
   "NumberFilter": "argo:apps/dashboard/src/routes/astro-window.tsx",
   "PageAside": "argo:apps/dashboard/src/features/astro-window/components/site-map.tsx",
   "PageBar": "argo:apps/dashboard/src/routes/agents.tsx",
+  "PageSummary": "argo:apps/dashboard/src/components/upstream/page-summary.tsx",
   "PageTitle": "argo:apps/dashboard/src/lib/error-boundary.tsx",
   "Prose": "rb:apps/web/src/features/course/page.tsx",
   "RangeFilter": "argo:apps/dashboard/src/routes/strength-tracker.tsx",

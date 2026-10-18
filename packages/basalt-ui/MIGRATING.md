@@ -1041,10 +1041,32 @@ The `basalt-ui/router-tanstack` subpath is **removed** in 2.x, not moved: an imp
 | `NavItemMeta`, `NavGroupMeta`, `AnyNavItem`, `AnyNavGroup`, `AnyNavLink`, `FlatNavItem`, `NavConfig`, `NavGroupId`, `NavTabId`, `NavIndex`, `UseNavOptions`, `NavBinding`, `NavAnchor`, `NavAnchorProps`, `NavMobilePlacement` | deleted                                                                                                                                                                                                                                                                                                                                                                                                                                                    | no consumer names them; derive with `ComponentProps` / `Parameters` |
 | `useNav`, and `BasaltShell`'s `sections` / `mobileNav` props                                                                                                                                                                   | deleted: pass `nav={NAV}` (plus `badges`, `isActive`, `getScrollElement` — the old `useNav` options) to `BasaltShell`; it resolves the sidebar, the mobile bar and the breadcrumb itself. `mobileNav` tuning moves to `defineNav`'s `mobile`. argo `apps/dashboard/src/routes/__root.tsx`: replace `const nav = useNav(NAV, { badges })` + `{...nav}` with `nav={NAV} badges={…}` (migrates in W12; 1.x consumers stay on their pinned version until then) |
 
-## Unreleased
+## Unreleased — shell and type: PageSummary, untitled Section, page-bar fixes
 
-_Nothing yet. Author the next section under this heading as `## Unreleased — <title>`; the
-release renames it and opens a new one here._
+No export is removed. Five defaults move and one export is new.
+
+### `PageSummary` (new export)
+
+`import { PageSummary } from 'basalt-ui'` — the SPEC § 6.9 page-summary recipe: `sentence` (must carry
+a live number), `facts` (`null`/`false` drop; sans `xs` muted, `·` separators that never lead a wrapped
+line), `aside`, and `loading` for a same-shape skeleton. argo's `components/upstream/page-summary.tsx`
+is deleted in favour of it; its `facts` were mono, they are sans now (D33) — a fact that is a time may
+wrap itself in `<span style={{ fontFamily: 'var(--basalt-font-mono)' }}>`.
+
+### Behaviour changes
+
+| Surface                              | Before                                                                 | Now                                                                                                                                                                   | Opt-out                                                 |
+| ------------------------------------ | ---------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------- |
+| `Section` with `tabs` and no `title` | `title` was required, so a tabs-only switch carried a restated heading | `title` is optional when `tabs` is given: no heading, no fold, the header row is the tabs; the group's name is `aria-label`, else the `tabs` element's string `label` | pass a `title`                                          |
+| `Section` `group` tier heading       | `micro` (11)                                                           | `xs` (12), the step the rows' meta already use: three sizes where argo counted four                                                                                   | none; the rank still reads from case, face and tracking |
+| `SyncButton scope="page"` below `sm` | icon only                                                              | icon plus a short age (`2 m`, `now`), one line, content-width; no age → the square icon as before                                                                     | omit `lastCompletedAt`                                  |
+| Filter pill (`PageBar filters`)      | clipped at `15rem`                                                     | fits its selected option up to `24rem`, then truncates                                                                                                                | none                                                    |
+| `ViewTabs` phone `Select`            | 10.67 px inline-start inset                                            | the `ctl` inset (10 px), the buttons'                                                                                                                                 | none                                                    |
+
+The sticky-PageBar anchor clearance argo filed (`--vx-space-sticky-header-clearance` 12 px vs a 36 px
+bar) needs no change: a shell-less `Section id` already adds the bar's published height
+(`--basalt-page-bar-h`), and in `BasaltShell` both bars sit outside the scrollport. `section-anchor`
+now pins the title, not just the root, at 390 and 1440.
 
 ## 2.21.0 — strip cell state, one Retry, and the marker reading
 

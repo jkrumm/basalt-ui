@@ -133,6 +133,14 @@ Signature: PageBar(props: PageBarProps): ReactNode
   filters?: ReactNode
   filtersEnd?: BarAction[]
   tabs?: ReactNode
+Signature: PageSummary(props: PageSummaryProps): JSX.Element
+  one of: loading=false | loading=true
+  className?: string
+  style?: CSSProperties
+  sentence?: ReactNode
+  facts?: readonly Fact[]
+  aside?: ReactNode
+  loading?: false | true
 Signature: PageTitle(props: PageTitleProps): ReactNode
   className?: string
   style?: CSSProperties
@@ -144,7 +152,6 @@ Signature: Section(props: SectionProps): JSX.Element
   icon?: ReactNode
   className?: string
   style?: CSSProperties
-  title: string
   subtitle?: string
   info?: string
   value?: string
@@ -169,6 +176,8 @@ Signature: Section(props: SectionProps): JSX.Element
   summary?: ReactNode
   id?: string
   children: ReactNode
+  title: string
+  aria-label?: string
 Signature: SettingsRow(props: SettingsRowProps): JSX.Element
   className?: string
   style?: CSSProperties

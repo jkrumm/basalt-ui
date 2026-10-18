@@ -42,6 +42,29 @@
 }
 
 /*
+ * Three type sizes in one section, not four (argo calendar next-days counted group head 11 + row
+ * title 13 + meta 12 + section title 15). The `group` tier is the one head this package draws below
+ * the section title, and it was on `micro` (11) — a step of its own. It joins the `xs` (12) step the
+ * rows' meta already uses; the head stays a mono UPPERCASE caption, which is the one place D33 keeps
+ * mono, so only its size moves and the rank is still carried by case, face and tracking. Section
+ * title (15), row title (13) and meta + group head (12) are then the whole ladder.
+ */
+.root[data-tier='group'] [data-widget-title] {
+  font-size: var(--vx-text-xs);
+}
+
+/*
+ * The untitled header: `tabs` (and `actions`) alone, one control row at the `ctl` height, so the
+ * row costs what the controls cost and nothing for a heading that is not there.
+ */
+.tabsRow {
+  display: flex;
+  align-items: center;
+  gap: var(--vx-space-control-gap);
+  min-width: 0;
+}
+
+/*
  * `summary` — the always-visible row under the header. No border, no background (the Section owns
  * neither); it is a plain flow row, so a consumer's `Group` of stats or one line of `Text` lands
  * where the body would have started.

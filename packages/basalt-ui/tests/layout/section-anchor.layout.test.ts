@@ -9,7 +9,7 @@
  */
 import { afterAll, describe, expect, test } from 'bun:test'
 import type { FixtureSpec } from './fixture/spec'
-import { PHONE, closeLayoutSuite, initLayoutSuite, openFixture } from './harness'
+import { DESKTOP_1440, PHONE, closeLayoutSuite, initLayoutSuite, openFixture } from './harness'
 
 const ready = await initLayoutSuite()
 const layout = ready ? describe : describe.skip
@@ -29,8 +29,9 @@ const specOf = (shell: boolean): FixtureSpec => ({
  */
 async function coldLoadGap(
   shell: boolean,
+  viewport = PHONE,
 ): Promise<{ gap: number; edge: number; clearance: number }> {
-  const page = await openFixture(specOf(shell), PHONE, '/#anchor-2')
+  const page = await openFixture(specOf(shell), viewport, '/#anchor-2')
   return page.raw.evaluate(async (inShell) => {
     await new Promise<void>((r) => requestAnimationFrame(() => requestAnimationFrame(() => r())))
     const target = document.getElementById('anchor-2')
@@ -61,6 +62,40 @@ layout('Section anchor vs the sticky PageBar', () => {
   test('in a shell: the anchored Section sits within [0, clearance + 4] below the scrollport top', async () => {
     const { gap, clearance } = await coldLoadGap(true)
     // The band is outside the scrollport — an offset that counted it would add the bar's height.
+    expect(gap).toBeGreaterThanOrEqual(0)
+    expect(gap).toBeLessThanOrEqual(clearance + 4)
+  })
+})
+
+/**
+ * Wave 37: the section TITLE (not just the root) lands fully below the sticky bar, at both
+ * viewports argo measured (strength sections at 390 and 1440), after a programmatic anchor jump as
+ * well as a cold load.
+ */
+async function titleBelowBarAfterJump(viewport: typeof PHONE): Promise<number> {
+  const page = await openFixture(specOf(false), viewport)
+  return page.raw.evaluate(async () => {
+    const target = document.getElementById('anchor-2')
+    const bar = document.querySelector('[data-basalt-page-bar]')
+    const title = target?.querySelector('[data-widget-title]')
+    if (!target || !bar || !title) throw new Error('FAILED: anchor, bar or title did not render')
+    target.scrollIntoView({ behavior: 'instant' })
+    await new Promise<void>((r) => requestAnimationFrame(() => requestAnimationFrame(() => r())))
+    return title.getBoundingClientRect().top - bar.getBoundingClientRect().bottom
+  })
+}
+
+layout('Section anchor title vs the sticky PageBar (Wave 37)', () => {
+  test('390: the title sits fully below the bar after a jump', async () => {
+    expect(await titleBelowBarAfterJump(PHONE)).toBeGreaterThanOrEqual(0)
+  })
+
+  test('1440: the title sits fully below the bar after a jump', async () => {
+    expect(await titleBelowBarAfterJump(DESKTOP_1440)).toBeGreaterThanOrEqual(0)
+  })
+
+  test('1440 cold load: the anchored Section sits within [0, clearance + 4] below the bar', async () => {
+    const { gap, clearance } = await coldLoadGap(false, DESKTOP_1440)
     expect(gap).toBeGreaterThanOrEqual(0)
     expect(gap).toBeLessThanOrEqual(clearance + 4)
   })

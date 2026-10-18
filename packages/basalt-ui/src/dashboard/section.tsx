@@ -45,7 +45,7 @@
  *   <UsageChart />
  * </Section>
  */
-import { useEffect, useId } from 'react'
+import { isValidElement, useEffect, useId } from 'react'
 import type { ReactNode } from 'react'
 import { cx } from '../common/props'
 import type { BasaltProps, SlotStylesProps } from '../common/props'
@@ -75,7 +75,7 @@ export type SectionSlot = 'root' | 'header' | 'body'
 // intersecting the two would let a caller write `classNames={{ metric: … }}` on a `Section` and get
 // silence. Section's three slots are its whole styling contract; the header's own slots are reached
 // on a `WidgetHeader`.
-export type SectionProps = Omit<WidgetHeaderProps, 'tier' | 'classNames' | 'actions'> &
+type SectionBaseProps = Omit<WidgetHeaderProps, 'tier' | 'classNames' | 'actions' | 'title'> &
   BasaltProps &
   SlotStylesProps<SectionSlot> & {
     /**
@@ -127,6 +127,26 @@ export type SectionProps = Omit<WidgetHeaderProps, 'tier' | 'classNames' | 'acti
     id?: string
     children: ReactNode
   }
+
+/**
+ * A Section names itself with `title` — or, with no title, by its `tabs` alone (argo's m365 phone
+ * pane switch: a heading restating the open pane's name beside the tabs that already say it). The
+ * header row then collapses to the tabs (and `actions`), there is no heading and no fold, and the
+ * accessible name falls back to `aria-label`, else to the `label` of a `ViewTabs`-shaped `tabs`
+ * element. An untitled section whose name cannot be found says so in dev.
+ */
+export type SectionProps = SectionBaseProps &
+  (
+    | { title: string; 'aria-label'?: never }
+    | { title?: undefined; tabs: ReactNode; 'aria-label'?: string }
+  )
+
+/** The `label` prop of a `ViewTabs`-shaped `tabs` element, when it is a string. */
+function tabsLabel(tabs: ReactNode): string | undefined {
+  if (!isValidElement(tabs)) return undefined
+  const { label } = tabs.props as { label?: unknown }
+  return typeof label === 'string' ? label : undefined
+}
 
 function ChevronToggle({
   open,
@@ -187,9 +207,12 @@ export function Section({
   className,
   style,
   classNames,
+  'aria-label': ariaLabel,
   ...headerProps
 }: SectionProps) {
   const { title } = headerProps
+  const untitled = title === undefined
+  const groupName = ariaLabel ?? tabsLabel(tabs)
 
   // A `persistKey` with nothing to fold writes a localStorage key nobody ever reads back — the
   // shape a consumer lands on after deleting `collapsible` and leaving the key behind. It renders
@@ -201,8 +224,12 @@ export function Section({
         ? `${BASALT_PREFIX} Section "${title}": \`persistKey\` is set but \`collapsible\` is ` +
           'false — there is no fold to persist. Add `collapsible`, or drop `persistKey`.'
         : null,
+      untitled && groupName === undefined
+        ? `${BASALT_PREFIX} Section: no \`title\` and no name for the group — pass \`aria-label\`, ` +
+          'or give the `tabs` element a string `label`.'
+        : null,
     ],
-    [persistKey, collapsible, title],
+    [persistKey, collapsible, title, untitled, groupName],
   )
 
   const [stateOpen, setStateOpen] = usePersistedOrLocal({
@@ -242,16 +269,18 @@ export function Section({
   const rootStyle =
     anchorStyle === undefined && style === undefined ? undefined : { ...anchorStyle, ...style }
 
+  // An untitled section has nothing to fold behind: the tabs ARE the header.
+  const foldable = collapsible && !untitled
   const headerActions =
-    tabs !== undefined || actions !== undefined || collapsible ? (
+    tabs !== undefined || actions !== undefined || foldable ? (
       <>
-        {tabs !== undefined && open && <CtlSlot>{tabs}</CtlSlot>}
+        {tabs !== undefined && (open || untitled) && <CtlSlot>{tabs}</CtlSlot>}
         {actions !== undefined && (
           <CtlSlot>
             <BarActionSlot actions={actions} />
           </CtlSlot>
         )}
-        {collapsible && (
+        {foldable && (
           <ChevronToggle open={open} onToggle={() => setOpen(!open)} controls={bodyId} />
         )}
       </>
@@ -261,17 +290,28 @@ export function Section({
     <div
       className={cx(classes.root, classNames?.root, className)}
       data-tier={tier}
+      {...(untitled && {
+        role: 'group',
+        ...(groupName !== undefined && { 'aria-label': groupName }),
+      })}
       {...(id !== undefined && { id })}
       {...(rootStyle !== undefined && { style: rootStyle })}
     >
-      <WidgetHeader
-        tier={tier}
-        {...headerProps}
-        {...(classNames?.header !== undefined && { className: classNames.header })}
-        {...(headerActions !== undefined && { actions: headerActions })}
-      />
+      {untitled ? (
+        <div className={cx(classes.tabsRow, classNames?.header)} data-basalt-hit-scope>
+          {headerActions}
+        </div>
+      ) : (
+        <WidgetHeader
+          tier={tier}
+          {...headerProps}
+          title={title}
+          {...(classNames?.header !== undefined && { className: classNames.header })}
+          {...(headerActions !== undefined && { actions: headerActions })}
+        />
+      )}
       {summary !== undefined && <div className={classes.summary}>{summary}</div>}
-      {open && (
+      {(open || untitled) && (
         <div id={bodyId} className={cx(classes.body, classNames?.body)}>
           {query === undefined ? (
             children

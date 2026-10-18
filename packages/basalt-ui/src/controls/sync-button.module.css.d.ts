@@ -5,6 +5,7 @@
 declare const classes: {
   readonly spin: string
   readonly age: string
+  readonly ageCompact: string
   readonly label: string
   readonly pageButton: string
 }

@@ -6,6 +6,8 @@
  */
 import { MantineProvider } from '@mantine/core'
 import { cleanup, fireEvent, render, screen } from '@testing-library/react'
+import { readFileSync } from 'node:fs'
+import { resolve } from 'node:path'
 import { renderToStaticMarkup } from 'react-dom/server'
 import { afterEach, beforeEach, describe, expect, test } from 'bun:test'
 import { resetFormatDefaults } from '../format/shared'
@@ -219,5 +221,45 @@ describe('format locale', () => {
 
   test('BasaltProvider locale="de" reads German', async () => {
     expect(await ageUnder('de')).toContain('vor 2 Min.')
+  })
+})
+
+/**
+ * `scope: 'page'` below `sm` keeps a SHORT age beside the icon (argo m365 refresh at 390). The long
+ * age and the label are `display: none` there; the compact one is the only text that survives, so
+ * the form is queryable by a data attribute and its CSS is pinned against the shipped stylesheet.
+ */
+describe('the compact age below sm', () => {
+  test.each([
+    [30_000, 'now'],
+    [2 * 60_000, '2 m'],
+    [3 * 3_600_000, '3 h'],
+    [2 * 86_400_000, '2 d'],
+  ])('%ims ago renders "%s"', (ago, text) => {
+    renderSync({ lastCompletedAt: Date.now() - ago })
+    expect(document.querySelector('[data-sync-age="compact"]')?.textContent).toBe(text)
+  })
+
+  test('no age, no compact span', () => {
+    renderSync({ lastCompletedAt: null })
+    expect(document.querySelector('[data-sync-age="compact"]')).toBeNull()
+  })
+
+  test('global scope stays icon-only: no compact age either', () => {
+    renderSync({ scope: 'global', lastCompletedAt: Date.now() - 120_000 })
+    expect(document.querySelector('[data-sync-age="compact"]')).toBeNull()
+  })
+
+  test('the phone form shows the compact age, hides the long one, and never wraps', () => {
+    const css = readFileSync(
+      resolve(import.meta.dirname, 'sync-button.module.css'),
+      'utf8',
+    ).replace(/\/\*[\s\S]*?\*\//g, '')
+    const phone = css.slice(css.indexOf('@media (max-width: 52.49375em)'))
+    expect(phone).toMatch(/\.age\s*\{[^}]*display:\s*none/)
+    expect(phone).toMatch(/\.ageCompact\s*\{[^}]*display:\s*inline/)
+    expect(css).toMatch(/\.ageCompact\s*\{[^}]*white-space:\s*nowrap/)
+    // The square pin is released when an age rides beside the glyph.
+    expect(phone).toMatch(/\.pageButton\[data-with-age\]\s*\{[^}]*width:\s*auto/)
   })
 })

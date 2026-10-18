@@ -112,7 +112,9 @@
 .pill {
   --vx-hit-gap: var(--vx-space-control-gap);
   position: relative;
-  max-width: 15rem;
+  /* A filter pill fits its selected option; this is only the ceiling. 15rem clipped an ordinary site
+   * or project name (argo astro site select) — 24rem holds a long one and the label truncates past it. */
+  max-width: 24rem;
   border-color: color-mix(in srgb, var(--vx-ink) 12%, transparent);
 }
 
@@ -351,6 +353,14 @@
 .phoneSelect {
   max-width: 9rem;
   flex: 0 1 auto;
+}
+
+/* Mantine's own inline-start inset is `--input-height / 3` = 10.67px, off every step. The `ctl` inset
+ * is the one the buttons beside it already use, so the value lines up with their labels. Set on the
+ * input itself: the `--input-padding-inline-start` var is declared on a CHILD of the root this class
+ * lands on, so a root-level override would be shadowed. */
+.phoneSelect input {
+  padding-inline-start: var(--button-padding-x-ctl);
 }
 
 /* ── The facet list (MultiSelectFilter, `panel` + `sheet` surfaces) ──────────────────────────────── */
