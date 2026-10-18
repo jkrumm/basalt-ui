@@ -37,7 +37,7 @@ describe('S4 spend', () => {
       mount(createElement(SpendScenario, { shotState: undefined })),
       'strip-forecast',
     )
-    expect(tickLabels(cell)).toEqual(['Budget'])
+    expect(tickLabels(cell)).toEqual(['€0', 'Budget'])
   })
 
   it('keeps the € out of the card titles and in the facts value', () => {
