@@ -1,3 +1,44 @@
+# [2.24.0](https://github.com/jkrumm/basalt-ui/compare/v2.23.0...v2.24.0) (2026-10-18)
+
+
+### Bug Fixes
+
+* a bleed sparkline reserves its readout line ([0fa1154](https://github.com/jkrumm/basalt-ui/commit/0fa11545974ed75e02bd864ec7e582e24c179153))
+* a compact legend folds to one row, an explicit false stays ([3f7614a](https://github.com/jkrumm/basalt-ui/commit/3f7614a8fee7cf5a41e72dcc172fe55981da6325))
+* a Section summary line joins the chart text step ([e73ea84](https://github.com/jkrumm/basalt-ui/commit/e73ea84504b80eb340942244a855fd534cb688e7))
+* announce a null Meter, name the dropped strip hook ([98a6a8c](https://github.com/jkrumm/basalt-ui/commit/98a6a8c6f0820e4e90566d2351ab9254cb629935))
+* cap the hosted readout chip to its box ([36edd7d](https://github.com/jkrumm/basalt-ui/commit/36edd7d7bcdbb41a137f8bf81d6f7260bcdd85d2))
+* empty strip cells and Meters state the gap once ([1054fb2](https://github.com/jkrumm/basalt-ui/commit/1054fb22cf0d8a355f31091ec4078345beecca14))
+* footer Meter captions never wrap, card qualifiers agree ([a35374d](https://github.com/jkrumm/basalt-ui/commit/a35374dcfdf4a5996a6df06261496f1b2ba56128))
+* hoist nested-radius test helpers ([57463d3](https://github.com/jkrumm/basalt-ui/commit/57463d38333aa26512defb95d42cbede9a0ea029))
+* hover the Filled sizes, drop the error glyph ([2c7f098](https://github.com/jkrumm/basalt-ui/commit/2c7f0987026a68fc601cf12547df31a4b883f863))
+* keep the info bubble on screen and off its glyph ([3d2eab4](https://github.com/jkrumm/basalt-ui/commit/3d2eab4ab86018b032787b90e82acc57596c8ccc))
+* keep the state guidance to public props ([a680a42](https://github.com/jkrumm/basalt-ui/commit/a680a4299462818e063af68a70c6672504100e01))
+* name the +N chip, put the zones first in the legend DOM ([b8cd318](https://github.com/jkrumm/basalt-ui/commit/b8cd31891f0edc8f5dbf628ddcc962f50849072c))
+* name the public state props and label the skeleton ([412d9c0](https://github.com/jkrumm/basalt-ui/commit/412d9c08a0fe0c3dbfcad3d4f6fd7e364c490af8))
+* nested indicator radii on the radius scale ([0d7225f](https://github.com/jkrumm/basalt-ui/commit/0d7225f4df9bd4d55e7aae81138a0a03196aeb12))
+* shot counts a pseudo fill only when it covers its host ([1620645](https://github.com/jkrumm/basalt-ui/commit/1620645fd9d2255aea8c2812e3b0da8a8511bcf2))
+* shot measures skeleton bars as content ([42ca986](https://github.com/jkrumm/basalt-ui/commit/42ca986bc071d8a4059de63d41e7adc54fbb524f))
+* sparkline readout lift is opt-in by host ([1672af5](https://github.com/jkrumm/basalt-ui/commit/1672af5e7bba568ffcac38c2c0c87d91992eabc4))
+* state the Section summary size, pin the exact size set ([0a367b5](https://github.com/jkrumm/basalt-ui/commit/0a367b51b6acaa0d8bbba71018ca9598cf47729f))
+* trim the nested-radius expression under the gzip budgets ([be36e52](https://github.com/jkrumm/basalt-ui/commit/be36e52c362ccda465a96e6b92dae83f7b5fd4af))
+* update the legend order expectations, state the order change ([930b0fe](https://github.com/jkrumm/basalt-ui/commit/930b0fe5a5aea8545718fb00981c4971ae77987d))
+
+
+### Features
+
+* a legend survives 390 and a readout keeps its date ([06ae4d8](https://github.com/jkrumm/basalt-ui/commit/06ae4d8c9ef6bfe72a07d73a6f47c25b268f38a4))
+* a qualifier wraps beside or under its caption, never truncates ([d7ee522](https://github.com/jkrumm/basalt-ui/commit/d7ee522d7bac00b51a07f4bb7aef0d6409624971))
+* apply review on the state copy guidance ([bc466e0](https://github.com/jkrumm/basalt-ui/commit/bc466e0e9a61c450e6d58ba0a418ae3c7774a5e7))
+* chart readouts off the line, units kept at 390 ([28066b0](https://github.com/jkrumm/basalt-ui/commit/28066b0884b0b019afad053d1250b4028e59db9e))
+* one title size per section, bubbles stay in their card ([fe457d2](https://github.com/jkrumm/basalt-ui/commit/fe457d2d9d418a54542ca774af4b90d3e6e5cd7f))
+* promote raw-spacing and inline-spacing to error ([7e21ed1](https://github.com/jkrumm/basalt-ui/commit/7e21ed1f76a5c50dc127ba78606cba94c8e32c02))
+* state copy that says why and what to do next ([a292ac7](https://github.com/jkrumm/basalt-ui/commit/a292ac77fbecbc5b27a5140d44abce558bb57e40))
+* state each S2–S4 playground figure once ([d9e1604](https://github.com/jkrumm/basalt-ui/commit/d9e1604ec1a12d8a6d3038555b13a5b56b969c2f))
+* strip footers that follow their cell, a steady delta column ([3d26c7a](https://github.com/jkrumm/basalt-ui/commit/3d26c7a00e12f39e3e41ef73d774320a7225b8b1))
+* the Meter reading at its fill end, captions that never wrap ([0255c45](https://github.com/jkrumm/basalt-ui/commit/0255c459a790b716cd8f46f726827f2ef67cfa0d))
+* zoned end figures above the track, undroppable captions stay put ([99bd204](https://github.com/jkrumm/basalt-ui/commit/99bd20401c1920a487bcc093c847220622d7d606))
+
 # [2.23.0](https://github.com/jkrumm/basalt-ui/compare/v2.22.0...v2.23.0) (2026-10-18)
 
 
