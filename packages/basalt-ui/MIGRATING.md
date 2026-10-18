@@ -1092,7 +1092,6 @@ state takes `tone` (`good` / `warn` / `bad` / `neutral`) instead of a `color`. A
   surface ink. **Opt out:** `glyph: ''` on the state.
 - A `Heatmap` tooltip opens below the hovered cell (above only when there is no room), so it no
   longer covers the caption row over the grid. **Opt out:** none.
-## Unreleased — chart chrome
 
 ### Chart chrome: tooltips, ticks, reference captions and the `Lines` defaults
 

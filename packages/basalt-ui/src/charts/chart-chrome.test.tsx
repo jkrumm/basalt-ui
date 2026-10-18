@@ -438,6 +438,28 @@ describe('tooltip', () => {
   })
 })
 
+describe('tooltip placement', () => {
+  const placementOf = (extra: object): unknown => {
+    const def = compileCartesian({
+      chartId: 'p',
+      data: daily(),
+      x,
+      series: [A],
+      marks: () => [],
+      band: true,
+      y: { ticks: [] },
+      ...extra,
+    })
+    return def.tooltip && 'placement' in def.tooltip ? def.tooltip.placement : undefined
+  }
+  test('tooltipBelow opens below the chart, above only without room', () => {
+    expect(placementOf({ tooltipBelow: true })).toEqual(['bottom', 'top'])
+  })
+  test('a band chart without the flag keeps the default placement, whatever its ticks', () => {
+    expect(placementOf({})).toBeUndefined()
+  })
+})
+
 describe('Bars hover', () => {
   test('a bar chart paints no crosshair rule (line-chart chrome)', () => {
     const def = compileCartesian({

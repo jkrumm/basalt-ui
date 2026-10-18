@@ -94,6 +94,8 @@ export type CartesianInput<T, X extends ChartX> = Pick<
   stack?: 'stacked' | 'normalized'
   /** The plot area the engine last laid out; `null` before the first layout (the frame stands in). */
   plot?: PlotSizes | null
+  /** The tooltip opens below the chart (a strip of cells), above only when there is no room. */
+  tooltipBelow?: boolean
   /** The vertical rule under the cursor. Default `true`; a bar kind has none (its hover is the bar). */
   crosshair?: boolean
 }
@@ -912,14 +914,10 @@ function cursorDotMarks<T, X extends ChartX>(
 }
 
 /**
- * A band chart with no y ticks is a strip (`BandStrip`): a short bar of cells under a hero value and
- * beside its neighbours. Its tooltip opens below the strip, above only when there is no room, so it
- * never covers the cell's own value, and a gap clear of the cell edge. Detected by shape because
- * `BandStrip.tsx` belongs to the chart-cards change; once that lands it passes an explicit
- * tooltip-placement flag in its place.
+ * `tooltipBelow` (a `BandStrip`, a short bar of cells under a hero value and beside its neighbours):
+ * the tooltip opens below the strip, above only when there is no room, so it never covers the
+ * cell's own value, with a gap clear of the cell edge.
  */
-const stripLike = <T, X extends ChartX>(input: CartesianInput<T, X>): boolean =>
-  input.band === true && Array.isArray(input.y?.ticks) && input.y.ticks.length === 0
 /** The hovered cell's centre x, on the strip's bottom edge: `bottom` opens just under the strip. */
 const stripAnchor = (
   points: readonly ChartPoint[],
@@ -950,8 +948,8 @@ function tooltipSpec<T, X extends ChartX>(opts: {
     use: quietWhileFollowing,
     ...followerOptions(input.tooltip, input.cursorGroup, input.chartId),
     portal,
-    anchor: stripLike(input) ? stripAnchor : 'group-center',
-    ...(stripLike(input) && { placement: STRIP_TOOLTIP_PLACEMENT, offset: STRIP_TOOLTIP_OFFSET }),
+    anchor: input.tooltipBelow ? stripAnchor : 'group-center',
+    ...(input.tooltipBelow && { placement: STRIP_TOOLTIP_PLACEMENT, offset: STRIP_TOOLTIP_OFFSET }),
     content: (points: readonly ChartPoint[]) => {
       const primary = points[0]
       if (!primary) return { rows: [] }

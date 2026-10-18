@@ -460,6 +460,7 @@ export function BandStrip<T, X extends ChartX = ChartX, K extends string = strin
       series={series}
       marks={marks}
       band
+      tooltipBelow
       y={STRIP_AXIS}
       xZones={ZX_ANCHOR}
       cursorResolution={cursorResolution}

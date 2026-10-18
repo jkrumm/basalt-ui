@@ -27,6 +27,8 @@ export type RungOptions = {
   reverseRows?: boolean
   /** How the bar series combine for the auto domain. */
   stack?: 'stacked' | 'normalized'
+  /** The tooltip opens below the chart (a strip of cells), above only when there is no room. */
+  tooltipBelow?: boolean
   /** No vertical rule under the cursor (a bar kind's hover is the bar itself). */
   crosshair?: boolean
   /** The legend goes from the wide class up, where `Lines`' end labels name the series. */
