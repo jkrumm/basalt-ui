@@ -597,10 +597,11 @@ async function budgets(providerOnlyDist: string): Promise<Budget[]> {
     // 8084 -> 8087 (W36 palette-guard): `check-theme` routes the series module to `series-palette` through one helper (+3).
     // 8087 -> 8091 (w36 button-section-inset): `shot` measure skips text inside a disabled control, WCAG 1.4.3 (cli/shot/measure.ts +4).
     // 8091 -> 8427 (w37 harness): shot hides chrome and frames tall anchors, reveals in-page with a short step timeout and reports `absent`, warns and detects a route with no data-shot-states; `init` seeds a stock Vite main.tsx and its peers (+336: 8427 - 8091).
+    // 8427 -> 8443 (w37 harness-hover): the launcher passes blink pointer settings so a desktop context reports `hover: hover` / `pointer: fine` (cli/shot/playwright.ts +16).
     {
       label: 'CLI non-test lines (src/cli/**)',
       value: cliNonTestLines(),
-      ceiling: 8427,
+      ceiling: 8443,
     },
     ...(await providerOnlyRows(providerOnlyDist)),
   ]

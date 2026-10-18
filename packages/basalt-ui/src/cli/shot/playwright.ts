@@ -13,6 +13,16 @@ export const INSTALL_LINE =
 
 const KILL_TIMEOUT_MS = 10_000
 
+/**
+ * A headless Chromium with no pointing device reports `(hover: none) (pointer: coarse)`, so no
+ * `@media (hover: hover)` rule applies in a desktop hover shot. These blink settings make the
+ * browser's primary input a mouse (hover 2, fine 4); a `hasTouch` mobile context still emulates
+ * touch over them.
+ */
+export const POINTER_ARGS = [
+  '--blink-settings=primaryHoverType=2,availableHoverTypes=2,primaryPointerType=4,availablePointerTypes=4',
+]
+
 export type Box = { x: number; y: number; width: number; height: number }
 
 export type ShotOptions = {
@@ -69,7 +79,11 @@ export type PwBrowser<C extends PwContext = PwContext> = {
 type PwServer = { wsEndpoint(): string; kill(): Promise<void> }
 export type Playwright<B extends PwBrowser = PwBrowser> = {
   chromium: {
-    launchServer(options: { channel?: string; chromiumSandbox: boolean }): Promise<PwServer>
+    launchServer(options: {
+      channel?: string
+      chromiumSandbox: boolean
+      args: string[]
+    }): Promise<PwServer>
     connect(wsEndpoint: string): Promise<B>
   }
 }
@@ -132,7 +146,9 @@ export async function withBrowser<B extends PwBrowser, T>(
     let browser: B
     try {
       server = await pw.chromium.launchServer(
-        channel ? { channel, chromiumSandbox } : { chromiumSandbox },
+        channel
+          ? { channel, chromiumSandbox, args: POINTER_ARGS }
+          : { chromiumSandbox, args: POINTER_ARGS },
       )
       browser = await pw.chromium.connect(server.wsEndpoint())
     } catch (error) {

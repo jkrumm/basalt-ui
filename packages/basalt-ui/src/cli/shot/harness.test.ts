@@ -201,6 +201,12 @@ const FIXTURE = `<!doctype html><meta name=viewport content="width=device-width,
   <div id=end></div>
 </main>`
 
+const HOVER_FIXTURE = `<!doctype html><style>
+  body{margin:0}
+  [data-shot=btn]{display:block;width:200px;height:60px;background:#fff}
+  @media (hover:hover){[data-shot=btn]:hover{background:#00f}}
+</style><div data-shot=btn></div>`
+
 const pw = resolvePlaywright(process.cwd())
 const out = mkdtempSync(join(tmpdir(), 'basalt-harness-'))
 afterAll(() => rmSync(out, { recursive: true, force: true }))
@@ -232,6 +238,7 @@ async function shoot(
   states: ShotState[],
   check: (run: Run) => Promise<void>,
   route = '/',
+  inBrowser?: (browser: PwBrowser) => Promise<void>,
 ): Promise<void> {
   if (!pw) {
     if (process.env['CI']) throw new Error('no Playwright to run the real-Chrome tests in CI')
@@ -240,13 +247,14 @@ async function shoot(
   // node:http, not Bun.serve: the unit-test preload replaces the global Response with happy-dom's.
   const server = createServer((req, res) => {
     res.setHeader('content-type', 'text/html')
-    res.end(req.url === '/reveal' ? REVEAL_FIXTURE : FIXTURE)
+    res.end(req.url === '/reveal' ? REVEAL_FIXTURE : req.url === '/hover' ? HOVER_FIXTURE : FIXTURE)
   })
   await new Promise<void>((done) => server.listen(0, '127.0.0.1', done))
   const { port } = server.address() as AddressInfo
   const dir = mkdtempSync(join(out, 'run-'))
   try {
     await withBrowser(pw, async (browser: PwBrowser) => {
+      if (inBrowser) return inBrowser(browser)
       const done = await capture({
         browser,
         base: `http://127.0.0.1:${port}`,
@@ -278,6 +286,52 @@ async function shoot(
 }
 
 describe('real Chrome', () => {
+  test('desktop reports a hovering fine pointer, mobile a coarse touch one', async () => {
+    await shoot(
+      [],
+      async () => undefined,
+      '/',
+      async (browser) => {
+        const probe = async (mobile: boolean) => {
+          const context = await browser.newContext({
+            viewport: { width: mobile ? 390 : 800, height: 600 },
+            deviceScaleFactor: 1,
+            isMobile: mobile,
+            hasTouch: mobile,
+            colorScheme: 'light',
+            reducedMotion: 'reduce',
+          })
+          const page = await context.newPage()
+          const media = await page.evaluate<string[]>(
+            `['(hover: hover)', '(pointer: fine)', '(pointer: coarse)'].map((q) => String(matchMedia(q).matches))`,
+          )
+          await context.close()
+          return media
+        }
+        expect(await probe(false)).toEqual(['true', 'true', 'false'])
+        expect(await probe(true)).toEqual(['false', 'false', 'true'])
+      },
+    )
+  }, 120_000)
+
+  test('a (hover: hover) rule shows in the desktop hover crop, not at rest', async () => {
+    await shoot(
+      ['rest', 'hover'],
+      async ({ shots, rows }) => {
+        const crop = async (state: string) => {
+          const s = shots.find(
+            (x) => x.name === 'btn' && x.state === state && x.viewport === 'desktop',
+          )
+          expect(s?.status).toBe('ok')
+          return rows(s?.file ?? null)
+        }
+        expect((await crop('rest')).includes('blue')).toBe(false)
+        expect((await crop('hover')).includes('blue')).toBe(true)
+      },
+      '/hover',
+    )
+  }, 120_000)
+
   test('a 2.5-viewport-tall anchor is captured whole, with no blank or chrome rows', async () => {
     await shoot(['rest', 'focus'], async ({ shots, rows }) => {
       for (const state of ['rest', 'focus'] as const) {
