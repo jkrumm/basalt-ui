@@ -821,6 +821,7 @@ function buildTheme(data: PaletteData, options: BuildThemeOptions = {}): Mantine
             boxShadow: 'var(--vx-shadow-raised)',
             outline: '1px solid color-mix(in srgb, var(--vx-ink) 14%, transparent)',
             // Nested radius snapped to the scale (SPEC § 8.1 rule 1): 2 when the track leaves a 3 px step, else 0.
+            // `--sc-radius` has no fallback: `defaultProps.radius` above guarantees Mantine sets it.
             borderRadius: 'round(down, min(2px, max(0px, var(--sc-radius) - 3px)), 2px)',
           },
           // Conditionally spread the WHOLE key (never a present `label: undefined`) — the package
