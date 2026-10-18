@@ -103,9 +103,9 @@ const measureStates = (p: LayoutPage): Promise<States> =>
     }
   })
 
-type Oldest = { top: number; bottom: number; contentBottom: number; padTop: number }[]
+type Oldest = { key: string; top: number; bottom: number; contentBottom: number; padTop: number }[]
 
-/** The S3 queue strip: a Meter cell next to sparkline siblings, one of which carries a footer. */
+/** The S3 queue strip: a Meter cell beside a taller legend Meter and sparkline siblings (one with a footer), at 5 columns and in 2. */
 const measureOldest = (p: LayoutPage): Promise<Oldest> =>
   p.raw.evaluate(() => {
     const host = document.querySelector<HTMLElement>('[data-testid="dash-strip-oldest"]')
@@ -117,6 +117,7 @@ const measureOldest = (p: LayoutPage): Promise<Oldest> =>
         ...c.querySelectorAll<HTMLElement>('[data-strip-visual] *, [data-strip-footer]'),
       ]
       return {
+        key: c.getAttribute('data-strip-cell') ?? '',
         top: b.top,
         bottom: b.bottom,
         contentBottom: Math.max(...content.map((e) => e.getBoundingClientRect().bottom)),
@@ -194,7 +195,7 @@ function suite(vp: Viewport) {
 
   test('the oldest-wait Meter cell is under 40 % void next to sparkline siblings', async () => {
     const cells = await measureOldest(p)
-    const c = cells[2]!
+    const c = cells.find((x) => x.key === 'oldest')!
     const void_ = (c.bottom - c.contentBottom) / (c.bottom - c.top)
     expect(void_).toBeLessThan(0.4)
   })
@@ -210,6 +211,27 @@ function suite(vp: Viewport) {
       return h
     })
     for (const c of cells) expect(Math.abs(c.padTop - step)).toBeLessThanOrEqual(0.01)
+  })
+
+  test('forced colors: dividers become borders and the cells stay level', async () => {
+    await p.raw.emulateMedia({ forcedColors: 'active' })
+    try {
+      const r = await p.raw.evaluate(() => {
+        const cs = [
+          ...document.querySelectorAll<HTMLElement>(
+            '[data-testid="dash-strip-oldest"] [data-strip-cell]',
+          ),
+        ].map((c) => getComputedStyle(c))
+        return cs.map((x) => ({
+          line: x.borderInlineStartWidth + x.borderBlockStartWidth,
+          top: x.paddingTop,
+        }))
+      })
+      for (const c of r) expect(c).toEqual(r[0]!)
+      expect(r[0]!.line).toBe('1px1px')
+    } finally {
+      await p.raw.emulateMedia({ forcedColors: 'none' })
+    }
   })
 
   test('a value-only cell’s footer sits directly under its value', () => {

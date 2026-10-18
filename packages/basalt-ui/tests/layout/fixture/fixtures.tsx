@@ -1579,6 +1579,41 @@ function DashFixture(): ReactElement {
           cols={5}
           cells={[
             {
+              key: 'fleet',
+              caption: 'Fleet',
+              qualifier: 'by state',
+              value: '12',
+              unit: 'items',
+              visual: (
+                <Meter
+                  label="Fleet by state"
+                  max={12}
+                  segments={[
+                    { value: 4, label: 'Needs you', color: VX.status.warn },
+                    { value: 3, label: 'Running', color: VX.accent },
+                    { value: 3, label: 'Queued', color: VX.faint },
+                    { value: 2, label: 'Blocked', color: VX.status.bad },
+                  ]}
+                  format={(v) => `${v} items`}
+                />
+              ),
+            },
+            {
+              key: 'oldest',
+              caption: 'Oldest wait',
+              value: '2 d 23 h',
+              visual: (
+                <Meter
+                  label="Oldest wait against the 24 h warning and 7 d abandon limits"
+                  value={71}
+                  max={168}
+                  target={24}
+                  startCaption={null}
+                  endCaption="Warns at 24 h · abandoned at 7 d"
+                />
+              ),
+            },
+            {
               key: 'needs',
               caption: 'Needs you',
               qualifier: 'now',
@@ -1598,21 +1633,6 @@ function DashFixture(): ReactElement {
               ),
             },
             {
-              key: 'oldest',
-              caption: 'Oldest wait',
-              value: '2 d 23 h',
-              visual: (
-                <Meter
-                  label="Oldest wait against the 24 h warning and 7 d abandon limits"
-                  value={71}
-                  max={168}
-                  target={24}
-                  startCaption={null}
-                  endCaption="Warns at 24 h · abandoned at 7 d"
-                />
-              ),
-            },
-            {
               key: 'failures',
               caption: 'Failures',
               qualifier: 'last 24 h',
@@ -1626,26 +1646,6 @@ function DashFixture(): ReactElement {
                   polarity="up-bad"
                   period="vs prior 24 h"
                   format={(v) => `${v} runs`}
-                />
-              ),
-            },
-            {
-              key: 'fleet',
-              caption: 'Fleet',
-              qualifier: 'by state',
-              value: '12',
-              unit: 'items',
-              visual: (
-                <Meter
-                  label="Fleet by state"
-                  max={12}
-                  segments={[
-                    { value: 4, label: 'Needs you', color: VX.status.warn },
-                    { value: 3, label: 'Running', color: VX.accent },
-                    { value: 3, label: 'Queued', color: VX.faint },
-                    { value: 2, label: 'Blocked', color: VX.status.bad },
-                  ]}
-                  format={(v) => `${v} items`}
                 />
               ),
             },
