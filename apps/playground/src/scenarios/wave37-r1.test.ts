@@ -242,7 +242,7 @@ describe('S4 distribution', () => {
     expect(card).toContain('Daily spend, distribution')
     expect(card).not.toContain('Days by total spend per day')
     // Round 2 (W37 r1 #9): the median is a footer fact, not a colour-only second series.
-    expect(card).toContain(`Median`)
+    expect(card).toContain(`median`)
     expect(card).toContain(fmtEur(MEDIAN_DAY_EUR))
   })
 })
