@@ -590,10 +590,11 @@ async function budgets(providerOnlyDist: string): Promise<Budget[]> {
     // 8006 -> 8050 (w36 review round 1): detect's atomic history/detect.json write with `.bak` recovery and clean I/O errors, `craft-1/scale-missing`, P0/P1-only exit (+44).
     // 8084 -> 8087 (W36 palette-guard): `check-theme` routes the series module to `series-palette` through one helper (+3).
     // 8087 -> 8091 (w36 button-section-inset): `shot` measure skips text inside a disabled control, WCAG 1.4.3 (cli/shot/measure.ts +4).
+    // 8091 -> 8409 (w37 harness): shot hides chrome and frames tall anchors, reveals in-page with a short step timeout and reports `absent`, warns and detects a route with no data-shot-states; `init` seeds a stock Vite main.tsx and its peers (+318).
     {
       label: 'CLI non-test lines (src/cli/**)',
       value: cliNonTestLines(),
-      ceiling: 8091,
+      ceiling: 8409,
     },
     ...(await providerOnlyRows(providerOnlyDist)),
   ]

@@ -370,7 +370,7 @@ export function seedTsconfigExtends(cwd: string): string | null {
 }
 
 const SEED_HINT = 'node_modules/basalt-ui/agent/templates/main.tpl'
-const ROUTER_PLUGIN_FIX =
+export const ROUTER_PLUGIN_FIX =
   "Fix: `bun add -D @tanstack/router-plugin`, add `tanstackRouter({ target: 'react', autoCodeSplitting: true })` " +
   "from '@tanstack/router-plugin/vite' to `plugins` in vite.config.ts (before react()), then run vite once " +
   'to generate src/routeTree.gen.ts — or define the tree in code (`createRootRoute` + `createRoute`), drop the routeTree.gen import and pass the tree to createBasaltRouter.'

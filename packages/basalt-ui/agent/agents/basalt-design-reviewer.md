@@ -19,7 +19,7 @@ A shot out dir (default `.basalt/shots`, or the `out` in `.basalt/shots/last.jso
 - `detect.json`, only if the out dir has one (`basalt-ui shot detect`): the deterministic findings for the [measured] items and `basalt/*` lint. Cite each at its own severity as `metrics.json <anchor>`, do not re-derive them, and map the rule to its item: `craft-N/*` → Craft N, `lint/*` → its rubric item, Craft 4 by default.
 - A layout-suite result, only if the out dir has one.
 
-A shot with status `not-declared`, `absent` (the anchor declares itself missing in that state) or `skipped` (mobile hover and tooltip: touch has no hover, by design) is not a defect. A missing hover, focus or tooltip crop for an anchor that has such a target is (Craft 7).
+A shot with status `not-declared`, `absent` (the anchor declares itself missing in that state, or is not rendered at that viewport: the note says why) or `skipped` (mobile hover and tooltip: touch has no hover, by design) is not a defect, except a `not-declared` URL-state shot noted `page declares no data-shot-states`: no state was ever rendered, and `shot detect` reports it as `craft-7/no-declared-states`. A missing hover, focus or tooltip crop for an anchor that has such a target is (Craft 7).
 
 ## Fail closed
 

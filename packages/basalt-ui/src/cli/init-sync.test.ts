@@ -177,6 +177,75 @@ describe('seeds derive from basalt.roots', () => {
  * for: nine `.claude/rules/basalt-*.md` stopped shipping in one minor, and a consumer that never
  * loses them goes on reading superseded doctrine with every gate green.
  */
+describe('init — a stock Vite app', () => {
+  const STOCK = `import { StrictMode } from 'react'
+import { createRoot } from 'react-dom/client'
+import './index.css'
+import App from './App.tsx'
+
+createRoot(document.getElementById('root')!).render(
+  <StrictMode>
+    <App />
+  </StrictMode>,
+)
+`
+  const VITE_PKG = JSON.stringify({
+    name: 'fixture',
+    dependencies: { react: '^19.0.0', 'react-dom': '^19.0.0' },
+  })
+  const seed = (main: string): void => {
+    writeFixture('package.json', VITE_PKG)
+    writeFixture('index.html', '<script type="module" src="/src/main.tsx"></script>')
+    writeFixture('src/main.tsx', main)
+  }
+
+  it('seeds the unmodified template main.tsx and adds the missing peers, without installing', () => {
+    seed(STOCK)
+    const { log } = capture(() => init(dir))
+    const main = readFileSync(resolve(dir, 'src/main.tsx'), 'utf8')
+    expect(main).toContain('createBasaltRouter')
+    expect(main).toContain('<BasaltProvider router={router} />')
+    const pkg = JSON.parse(readFileSync(resolve(dir, 'package.json'), 'utf8')) as {
+      dependencies: Record<string, string>
+    }
+    for (const peer of [
+      '@mantine/core',
+      '@mantine/hooks',
+      '@tanstack/react-router',
+      '@tanstack/react-query',
+      '@fontsource-variable/nunito-sans',
+    ]) {
+      expect(pkg.dependencies[peer]).toBeDefined()
+    }
+    expect(pkg.dependencies['react']).toBe('^19.0.0')
+    expect(existsSync(resolve(dir, 'node_modules'))).toBe(false)
+    expect(log).toContain('seeded src/main.tsx')
+    expect(log).toMatch(/bun install/)
+  })
+
+  it('tolerates formatting and the older template without the css import', () => {
+    seed(
+      STOCK.replace("import './index.css'\n", '').replace(/'/g, '"').replace('./App.tsx', './App'),
+    )
+    capture(() => init(dir))
+    expect(readFileSync(resolve(dir, 'src/main.tsx'), 'utf8')).toContain('createBasaltRouter')
+  })
+
+  it('never overwrites an edited main.tsx: leaves it and prints the exact wiring steps', () => {
+    const edited = `${STOCK}\nconsole.log('mine')\n`
+    seed(edited)
+    const { log } = capture(() => init(dir))
+    expect(readFileSync(resolve(dir, 'src/main.tsx'), 'utf8')).toBe(edited)
+    expect(log).toContain("import 'basalt-ui/styles.css'")
+    expect(log).toContain('createBasaltRouter')
+    expect(log).not.toContain('seeded src/main.tsx')
+    const pkg = JSON.parse(readFileSync(resolve(dir, 'package.json'), 'utf8')) as {
+      dependencies: Record<string, string>
+    }
+    expect(pkg.dependencies['@mantine/core']).toBeUndefined()
+  })
+})
+
 describe('sync — retired rules and skills', () => {
   const RETIRED_RULE = '.claude/rules/basalt-router.md'
   const RETIRED_SKILL = '.claude/skills/basalt-legacy/SKILL.md'

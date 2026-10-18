@@ -7,6 +7,9 @@ export const URL_STATES = ['empty', 'loading', 'error'] as const
 /** Where shot keeps `last.json`, `history.json` and the default out dir. */
 export const SHOT_HOME = '.basalt/shots'
 
+/** The note of a URL-state shot skipped because the route declares no `data-shot-states` at all (`shot detect` reads it). */
+export const NO_STATES_NOTE = 'page declares no data-shot-states'
+
 /** The `name` of a route's full-page shot: not a valid `data-shot` value. */
 export const PAGE_ANCHOR = '_page'
 

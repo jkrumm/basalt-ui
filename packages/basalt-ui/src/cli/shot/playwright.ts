@@ -21,6 +21,7 @@ export type ShotOptions = {
   caret: 'hide'
   fullPage?: boolean
   clip?: Box
+  timeout?: number
 }
 
 export type PwLocator = {
@@ -38,6 +39,7 @@ export type PwLocator = {
 export type PwPage = {
   goto(url: string, options: { waitUntil: 'load' | 'networkidle' }): Promise<unknown>
   setDefaultTimeout(ms: number): void
+  setViewportSize(size: { width: number; height: number }): Promise<void>
   locator(selector: string): PwLocator
   evaluate<R>(expression: string): Promise<R>
   evaluate<R, A>(fn: (arg: A) => R, arg: A): Promise<R>
