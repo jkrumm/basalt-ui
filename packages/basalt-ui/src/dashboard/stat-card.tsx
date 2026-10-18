@@ -217,8 +217,10 @@ export type StatCardProps = BasaltProps &
     value: string
     /**
      * Right-aligned on the caption row, `micro` muted: the period, target or source the figure is
-     * measured over (`30 days`, `target 99.9%`). Wraps under the caption when the card is too narrow for both; below 240px it
-     * truncates instead (the full text is its `title`). Not a restatement of the caption.
+     * measured over (`30 days`, `target 99.9%`). Wraps under the caption when the card is too
+     * narrow for both. Only in a card narrower than 240px does it truncate instead (the full text
+     * is its `title`); between 240px and the width it fits, a long one still wraps and moves the
+     * value down a line. Not a restatement of the caption.
      */
     qualifier?: string
     /**

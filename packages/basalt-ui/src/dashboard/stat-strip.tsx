@@ -72,7 +72,8 @@ type StatStripCellState =
 export type StatStripCell = {
   key: string
   caption: string
-  /** Muted, on the caption line: `CAPTION · qualifier`. */
+  /** Muted, on the caption line: `CAPTION · qualifier`. It wraps whole under the caption when it
+   * does not fit (by design: no truncation, so no `title`). */
   qualifier?: string
   /** A control at the end of the caption line (a popover trigger). Never wraps the line: the
    * caption truncates first. */
@@ -141,12 +142,11 @@ function CellState({ state }: { state: StatStripCellState }) {
 }
 
 /** The last of the six shared tracks (caption, hero, hero footer, visual, rows, footer) a cell paints into. */
-function lastTrackOf(cell: StatStripCell, state: StatStripCellState | undefined, hasHero: boolean) {
+function lastTrackOf(cell: StatStripCell, state: StatStripCellState | undefined) {
   if (state !== undefined) return state.kind === 'empty' && state.reason !== undefined ? 4 : 2
   if (cell.rows !== undefined)
     return cell.footer !== undefined ? 6 : cell.visual !== undefined ? 5 : 4
   if (cell.visual !== undefined) return 4
-  if (!hasHero) return 1
   return cell.footer !== undefined ? 3 : 2
 }
 
@@ -162,7 +162,7 @@ function StripCell({ cell }: { cell: StatStripCell }) {
   const heroFooter = hasHero && cell.visual === undefined && rows === undefined
   // The cell spans the tracks down to its last part, so its box ends at its content (the slot
   // around it still runs the whole row for the dividers).
-  const lastTrack = lastTrackOf(cell, state, hasHero)
+  const lastTrack = lastTrackOf(cell, state)
   const footerEl = cell.footer !== undefined && (
     <div className={cx(classes.footer, heroFooter && classes.heroFooter)} data-strip-footer>
       {cell.footer}
