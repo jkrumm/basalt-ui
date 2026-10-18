@@ -1332,6 +1332,10 @@ function buildPaletteDataUncached(config: DeriveConfig) {
     bg: DERIVED.surface.bg, // page background
     panel: DERIVED.surface.panel, // cards, controls
     panelHover: DERIVED.surface.panelHover,
+    // Row hover / selected on a panel — the panel one ink step along (`derive.ts`), visible in both
+    // schemes where `panelHover` (lighter than `panel` in light) is not.
+    rowHover: DERIVED.surface.rowHover,
+    rowSelected: DERIVED.surface.rowSelected,
     // Elevated surface (chart area, `--mantine-color-default-hover`) — same lift as panel-hover.
     elevated: DERIVED.surface.elevated,
     border: DERIVED.surface.border, // "line" — strong border (layout/control chrome, NOT the card ring)

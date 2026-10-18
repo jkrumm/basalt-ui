@@ -195,16 +195,31 @@ describe('active Tabs underline is ink', () => {
     expect(tabsVars(theme, { color: 'blue' }).root['--tabs-color']).toBeUndefined()
   })
 
-  test('pills and outline do not take the ink underline, and keep the on-color text var', () => {
-    for (const variant of ['pills', 'outline']) {
-      const { root } = tabsVars(theme, { variant })
-      expect(root['--tabs-color']).toBeUndefined()
-      expect(root['--tabs-text-color']).toBe('var(--vx-on-blue)')
-    }
+  test('outline takes the ink border like the underline; the on-color text var stays', () => {
+    const { root } = tabsVars(theme, { variant: 'outline' })
+    expect(root['--tabs-color']).toBe('var(--vx-ink)')
+    expect(root['--tabs-text-color']).toBe('var(--vx-on-blue)')
     expect(tabsVars(theme, { variant: 'default' }).root['--tabs-text-color']).toBe(
       'var(--vx-on-blue)',
     )
   })
+
+  test('pills: the selected pill is an ink-mixed neutral with an ink label, never the accent', () => {
+    const { root } = tabsVars(theme, { variant: 'pills' })
+    expect(root['--tabs-color']).toBe(
+      'color-mix(in srgb, var(--vx-ink) 12%, var(--vx-surface-panel))',
+    )
+    expect(root['--tabs-text-color']).toBe('var(--vx-ink)')
+  })
+
+  test.each(['default', 'pills', 'outline'])(
+    '%s with an explicit colour keeps its hue',
+    (variant) => {
+      const { root } = tabsVars(theme, { variant, color: 'red' })
+      expect(root['--tabs-color']).toBeUndefined()
+      expect(root['--tabs-text-color']).toBe('var(--vx-on-red)')
+    },
+  )
 })
 
 describe('the light badge text clears AA on its own tint, every colour, both schemes', () => {

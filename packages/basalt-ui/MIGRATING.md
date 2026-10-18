@@ -1161,6 +1161,53 @@ and adds the peers `basalt-ui` imports (Mantine, TanStack Router and Query, the 
 `motion`) to `package.json` `dependencies`; it prints `bun install` and never installs. An edited
 `main.tsx` is still left alone, with the wiring steps and the missing peers printed. **Opt out:**
 edit `main.tsx` before running `init`.
+## Unreleased — neutral tab pill, row surfaces and data-text numerals
+
+### Selected Tabs are ink in every variant
+
+**Changed default:** the selected `pills` tab filled with the accent and the `outline` border took the
+default border; both now follow `default`'s underline and read by ink and weight (600). The pill is an
+ink-mixed panel with an ink label, the outline border is ink. **Opt out:** pass `color="blue"` (any
+colour) and the tab keeps its hue and the on-colour label.
+
+### A status `Badge` is a dot on the neutral surface
+
+**Changed default:** the `light` Badge (the theme default) painted a tint of its colour, so a row of
+status chips read as coloured slabs. It is now the subtle surface with an ink word, and a named theme
+colour (`color="green"`) adds a leading 6px dot in that colour; an unnamed or `gray` chip has no dot.
+A `leftSection` or `rightSection` replaces the dot. `filled`, `outline`, `dot` and `default` are
+unchanged, so an accent count keeps its fill. **Opt out:** `variant="filled"` for the old strong chip,
+or a per-site `vars` with `--badge-bg` and `--badge-color` for the tint.
+
+### Disabled Button and the icon-side inset
+
+**Changed default:** a disabled `Button`/`ActionIcon` has one ink-mixed panel surface in both schemes
+(dark had none and read as the subtle variant). A `Button`'s `leftSection`/`rightSection` inset now
+equals its text side (it was one scale step tighter: 8/12, 12/16, 12/20), so an icon Button is
+balanced and one step wider. **Opt out:** set `--button-section-padding-x` on the Button.
+
+### Slashed zero and ligatures only where they belong
+
+**Changed default:** `:root` resets the `zero` feature, so a section title or card title that borrows
+the heading face no longer draws a slashed zero (`2026`, `90 days`); `code`, `kbd`, `samp`, `pre`,
+`[data-numeric]`, `[data-monospace]`, a `ff="monospace"` Text and the `Code`/`Kbd` components keep it.
+The same set also turns mono ligatures off, so `<>` in a facts line is two characters. **Opt out:**
+an unlayered `font-feature-settings` or `font-variant-ligatures` on the element.
+
+### Chart focus ring
+
+**Fixed:** the chart host's keyboard focus ring was the UA ring (white in dark); it is now
+`2px solid var(--vx-accent)`, like every Mantine control. It was never a mobile or coarse-pointer
+branch: no `mantine-focus-*` class reaches the host, so the UA drew it at every width in dark.
+
+### `VX.surface.rowHover` and `VX.surface.rowSelected`
+
+New, additive: `--vx-surface-row-hover` and `--vx-surface-row-selected`, typed on `VX.surface`. The
+panel mixed toward the ink (5% / 9% light, 8% / 11% dark), so a hovered or selected row on a panel
+reads in both schemes where `panelHover` (lighter than `panel` in light) does not. Replace a
+hand-rolled `color-mix(in srgb, var(--vx-ink) N%, …)` row wash with them. The status solids are not
+solved against these two (the default hexes stay byte-identical), so a status word on a selected row
+sits near 4.2:1 in light.
 
 ## 2.21.0 — strip cell state, one Retry, and the marker reading
 

@@ -203,6 +203,8 @@ export const BASALT_VX_NAMES: readonly string[] = [
   '--vx-surface-overlay',
   '--vx-surface-panel',
   '--vx-surface-panel-hover',
+  '--vx-surface-row-hover',
+  '--vx-surface-row-selected',
   '--vx-surface-subtle',
   '--vx-text-display',
   '--vx-text-h1',

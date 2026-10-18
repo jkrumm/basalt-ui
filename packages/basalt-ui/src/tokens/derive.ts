@@ -279,8 +279,12 @@ export type SurfaceKey =
   | 'field'
   | 'border'
   | 'hairline'
+  | RowSurfaceKey
 
-const SURFACE_TONE: Record<Side, Record<SurfaceKey, number>> = {
+/** The row surfaces: the panel mixed toward the ink, not a tone stop of their own. */
+export type RowSurfaceKey = 'rowHover' | 'rowSelected'
+
+const SURFACE_TONE: Record<Side, Record<Exclude<SurfaceKey, RowSurfaceKey>, number>> = {
   light: {
     bg: 93.45,
     panel: 96.21,
@@ -301,6 +305,22 @@ const SURFACE_TONE: Record<Side, Record<SurfaceKey, number>> = {
     border: 26.89,
     hairline: 31.29,
   },
+}
+
+// Ink share of a row surface, per scheme. Hover must clear the `panelHover` step's contrast against the
+// panel (the dark step is the larger, 5.7 tones vs 2.1); selected sits one step above. Light stays
+// shallow so tertiary text and status text keep their margin on a selected row.
+const ROW_INK_MIX: Record<RowSurfaceKey, Record<Side, number>> = {
+  rowHover: { light: 0.05, dark: 0.08 },
+  rowSelected: { light: 0.09, dark: 0.11 },
+}
+
+/** `a` toward `b` by `t` per sRGB channel — the hex twin of `color-mix(in srgb, b t%, a)`. */
+function mixHex(a: string, b: string, t: number): string {
+  const channel = (hex: string, i: number): number =>
+    Number.parseInt(hex.slice(1 + 2 * i, 3 + 2 * i), 16)
+  const out = [0, 1, 2].map((i) => Math.round(channel(a, i) * (1 - t) + channel(b, i) * t))
+  return `#${out.map((c) => c.toString(16).padStart(2, '0')).join('')}`
 }
 
 // Ink ramp tone stops (achromatic). NOT shifted by lightLevel/darkLevel — text tone stays stable
@@ -437,7 +457,7 @@ export function deriveTokensRaw(
   }
 
   const surface = {} as Record<SurfaceKey, ColorPair>
-  for (const key of Object.keys(SURFACE_TONE.light) as SurfaceKey[]) {
+  for (const key of Object.keys(SURFACE_TONE.light) as Exclude<SurfaceKey, RowSurfaceKey>[]) {
     surface[key] = {
       light: hctToHex({
         hue: neutral.hue,
@@ -457,6 +477,15 @@ export function deriveTokensRaw(
     ink[key] = {
       light: hctToHex({ hue: neutral.hue, chroma: neutral.chroma, tone: INK_TONE.light[key] }),
       dark: hctToHex({ hue: neutral.hue, chroma: neutral.chroma, tone: INK_TONE.dark[key] }),
+    }
+  }
+
+  // Row hover/selected: the panel one ink step along, so both read in both schemes (`panelHover`
+  // is LIGHTER than `panel` in light and vanishes on it). `row-surfaces.test.ts` pins the floor.
+  for (const key of Object.keys(ROW_INK_MIX) as RowSurfaceKey[]) {
+    surface[key] = {
+      light: mixHex(surface.panel.light, ink.ink.light, ROW_INK_MIX[key].light),
+      dark: mixHex(surface.panel.dark, ink.ink.dark, ROW_INK_MIX[key].dark),
     }
   }
 
