@@ -1,3 +1,25 @@
+# [2.25.0](https://github.com/jkrumm/basalt-ui/compare/v2.24.0...v2.25.0) (2026-10-18)
+
+
+### Bug Fixes
+
+* a slotted bars chart keeps y2 and sits like a sparkline ([3685696](https://github.com/jkrumm/basalt-ui/commit/368569645f531416b22acc0b26cabb593af3262c))
+* join the distribution facts with the house separator ([23da2d0](https://github.com/jkrumm/basalt-ui/commit/23da2d0c7b0a242cb697d2b18635794c8792bec1))
+* keep the anchor radius text, flag nested items explicitly ([ae40487](https://github.com/jkrumm/basalt-ui/commit/ae40487cd3cb994e2dc87d07cfdf604495f27a54))
+* list and Meter card states end at their content ([20e03c1](https://github.com/jkrumm/basalt-ui/commit/20e03c1d9002b855a62e21a582bce5821e1c189f))
+* match the capitalised median fact in the distribution test ([153914f](https://github.com/jkrumm/basalt-ui/commit/153914fd4145a34721d50812a493a77c2e0ca356))
+* set the distribution fact apart from its headline value ([acfca2f](https://github.com/jkrumm/basalt-ui/commit/acfca2ff916f74848fb1ddb5900710b2a3e11c5c))
+* shorten the distribution fact so it holds one line at 390 ([e55c828](https://github.com/jkrumm/basalt-ui/commit/e55c82848a0f26df674b151268ec3486ec206a99))
+* state a figure in every S2 sentence and shorten the components table ([7258623](https://github.com/jkrumm/basalt-ui/commit/7258623f3ec50bf5b4360656e065c0f7a63d53f7))
+* the slot parity test guards the strip reserve, comments say slotted chart ([3c3633c](https://github.com/jkrumm/basalt-ui/commit/3c3633ccf32b46d428ad4760797bb8c2e1857d3c))
+
+
+### Features
+
+* a nested off-scale radius is always P1 ([70f0175](https://github.com/jkrumm/basalt-ui/commit/70f017556fd3c9dbf713a6f58ed84418c987cc2b))
+* an axis-less bars mode for a visual slot ([08496bf](https://github.com/jkrumm/basalt-ui/commit/08496bfd55bf9f24c2d55ad4edc2071ff78c0fd3))
+* shot detect flags an off-scale nested radius ([5c15283](https://github.com/jkrumm/basalt-ui/commit/5c15283d61b2721e015f9aa644d31a6730b4c198))
+
 # [2.24.0](https://github.com/jkrumm/basalt-ui/compare/v2.23.0...v2.24.0) (2026-10-18)
 
 
