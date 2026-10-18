@@ -2766,6 +2766,54 @@ function DashFixture(): ReactElement {
           format={(v) => `${v} items`}
         />
       </div>
+      {/* Wave 38: an empty or loading Meter keeps the loaded Meter's footprint and states no gap twice. */}
+      {(
+        [
+          ['loaded', { value: 17 }],
+          ['empty', { value: null }],
+          ['loading', { value: 17, loading: true }],
+        ] as const
+      ).map(([kind, extra]) => (
+        // theme-allow -- the wrapper width IS the fixture's payload (a container probe)
+        <div key={kind} data-testid={`dash-w38-bar-${kind}`} style={{ width: 240 }}>
+          <Meter label="Sessions" max={28} format={(v) => `${v} sessions`} {...extra} />
+        </div>
+      ))}
+      {(
+        [
+          ['loaded', { value: 1.1 }],
+          ['empty', { value: null }],
+          ['loading', { value: 1.1, loading: true }],
+        ] as const
+      ).map(([kind, extra]) => (
+        // theme-allow -- the wrapper width IS the fixture's payload (a container probe)
+        <div key={kind} data-testid={`dash-w38-zoned-${kind}`} style={{ width: 350 }}>
+          <Meter
+            label="Training load"
+            max={2}
+            zones={S2_LOAD_ZONES}
+            ticks={LOAD_TICKS}
+            startCaption={null}
+            {...extra}
+          />
+        </div>
+      ))}
+      <div data-testid="dash-w38-strip-empty">
+        <StatGroup
+          variant="strip"
+          label="Empty window"
+          cells={[
+            {
+              key: 'pace',
+              caption: 'Pace',
+              value: null,
+              state: { kind: 'empty', reason: 'No walks' },
+            },
+            { key: 'bare', caption: 'Totals', value: null, state: { kind: 'empty' } },
+            { key: 'ok', caption: 'Steps', value: '4,210' },
+          ]}
+        />
+      </div>
       {/* theme-allow -- the wrapper width IS the fixture's payload (a container probe) */}
       <div data-testid="dash-meter-ring" style={{ width: 160 }}>
         <Meter

@@ -127,13 +127,31 @@ const glueUnits = (text: ReactNode): ReactNode =>
 const glue = (text: ReactNode): ReactNode =>
   typeof text === 'string' ? String(glueUnits(text)).replace(SHORT_LAST_WORD, '$1\u00a0$2') : text
 
+/**
+ * One caption-height line, so a placeholder row stands where the loaded Meter's caption, figure or
+ * zone-name row will (a zoned track's rows are `1.25em`, as its label rows). Not announced; the root carries the state.
+ */
+function Line({ zoned, children }: { zoned: boolean; children?: ReactNode }) {
+  return (
+    <div className={cx(classes.line, zoned && classes.lineZoned)} data-meter-line aria-hidden>
+      {children}
+    </div>
+  )
+}
+
+/**
+ * The loaded Meter's footprint at its loaded height: a zoned track keeps the figure row above and the
+ * zone-name row below, a plain bar the caption row below, so the card does not jump when data lands.
+ */
 export function MeterLoading({
   label,
   ring,
+  zoned,
   shell,
 }: {
   label: string
   ring: boolean
+  zoned: boolean
   shell: Shell
 }) {
   return (
@@ -143,8 +161,15 @@ export function MeterLoading({
         <Skeleton className={classes.skeletonRing} circle />
       ) : (
         <>
+          {zoned && (
+            <Line zoned={zoned}>
+              <Skeleton className={classes.skeletonCaption} radius="sm" />
+            </Line>
+          )}
           <Skeleton className={classes.skeletonTrack} />
-          <Skeleton className={classes.skeletonCaption} radius="sm" />
+          <Line zoned={zoned}>
+            <Skeleton className={classes.skeletonCaption} radius="sm" />
+          </Line>
         </>
       )}
     </div>
@@ -157,11 +182,13 @@ export function MeterEmpty(props: {
   label: string
   text: string | undefined
   ring: boolean
+  zoned: boolean
   shell: Shell
 }) {
-  const { label, text, ring, shell } = props
-  // The ring has a reading slot (its centre), so the dash sits there as the reading; a bar prints
-  // its reading in the caption row, so the dash is that row's muted line. A `text` is the caption.
+  const { label, text, ring, zoned, shell } = props
+  // The ring has a reading slot (its centre), so the dash sits there as the reading. A bar states its
+  // gap once, and only if the host says so (`text`): otherwise the caption rows a loaded Meter would
+  // have stay blank, so the muted track keeps the loaded height without a dash under it.
   return (
     <output {...rootProps(shell)} aria-label={label}>
       {ring ? (
@@ -170,12 +197,17 @@ export function MeterEmpty(props: {
           <span className={classes.ringValue}>{EMPTY_READING}</span>
         </span>
       ) : (
-        <div className={classes.trackBox}>
-          <div className={classes.track} data-meter-track />
-        </div>
+        <>
+          {zoned && !shell.row && <Line zoned />}
+          <div className={classes.trackBox}>
+            <div className={classes.track} data-meter-track />
+          </div>
+        </>
       )}
-      {(!ring || text !== undefined) && (
-        <span className={classes.empty}>{text ?? EMPTY_READING}</span>
+      {text !== undefined ? (
+        <span className={classes.empty}>{text}</span>
+      ) : (
+        !ring && !shell.row && <Line zoned={zoned} />
       )}
     </output>
   )

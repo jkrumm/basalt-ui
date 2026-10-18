@@ -72,7 +72,7 @@ type Common = BasaltProps & {
   format?: (value: number) => string
   /** Renders a skeleton with the meter's footprint. */
   loading?: boolean
-  /** Muted line shown when there is no reading; none by default (the reading is `—`). The track stays so the footprint holds. */
+  /** Muted line shown when there is no reading; none by default (the muted track stands alone, caption rows blank). */
   emptyText?: string
 }
 
@@ -228,12 +228,23 @@ export function Meter(props: MeterProps) {
   const hostTone = useContext(VisualSlotContext)?.tone
   const hostColor = hostTone === undefined ? undefined : VX.status[hostTone]
 
-  if (props.loading === true) return <MeterLoading label={label} ring={ring} shell={shell} />
+  if (props.loading === true)
+    return (
+      <MeterLoading label={label} ring={ring} zoned={props.zones !== undefined} shell={shell} />
+    )
 
   const segments = props.segments === undefined ? undefined : normalizeSegments(props.segments)
   const reading = segments === undefined ? props.value : segmentReading(segments, min)
   if (!isReading(reading) || segments?.length === 0) {
-    return <MeterEmpty label={label} text={props.emptyText} ring={ring} shell={shell} />
+    return (
+      <MeterEmpty
+        label={label}
+        text={props.emptyText}
+        ring={ring}
+        zoned={props.zones !== undefined}
+        shell={shell}
+      />
+    )
   }
 
   if (props.shape === 'ring') {
