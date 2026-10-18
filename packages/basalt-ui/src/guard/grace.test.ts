@@ -9,9 +9,10 @@
  * `assertGraceLedger` is tested directly against synthetic entries below rather than only through
  * the real ledger: every pre-existing entry promoted or moved to `PLUGIN_RULE_ADVISORY`'s guard-side
  * sibling, and an `it.each` over the empty ledger that left behind ran zero assertions, which proved
- * nothing about the gate actually firing. The ledger is empty since 1.36.0 (`unknown-vx-token`, its
- * last tenant, promoted), so the real-ledger check below pins THAT, and the gate's firing is proven
- * on synthetic ledgers (here and in `scripts/check-grace.test.ts`).
+ * nothing about the gate actually firing. The guard-kind ledger is empty since 2.24.0 (`raw-spacing`
+ * and `inline-spacing`, its last tenants, promoted; it was empty once before at 1.36.0), so the
+ * real-ledger check below pins THAT, and the gate's firing is proven on synthetic ledgers (here and
+ * in `scripts/check-grace.test.ts`).
  *
  * This gate measures the version already PUBLISHED, so it can only go red after the release that
  * shipped a due entry. `scripts/check-grace.ts` is the other end — `scripts/release.sh` runs it
@@ -133,24 +134,34 @@ describe('scripts/check-grace.ts', () => {
   })
 
   // 1.27.0 promoted five of the six wave-6 plugin rules and one of the two guard kinds; 1.30.0
-  // promoted four more; 1.33.0 the C1 and breakpoint pairs; 1.36.0 the last, `unknown-vx-token`
-  // (its grace ran one minor past 1.35.0), 2.23.0 `series-palette`. The 2.16 spacing entries (two guard
-  // kinds + `card-inset`) are the 3 entries every version below 2.24.0 is clear of; below the first
-  // deprecation `removeIn` the deprecation half is clear too. That the gate REFUSES a due entry is
-  // proven on synthetic ledgers in `scripts/check-grace.test.ts`.
+  // promoted four more; 1.33.0 the C1 and breakpoint pairs; 1.36.0 `unknown-vx-token` (its grace ran
+  // one minor past 1.35.0), 2.23.0 `series-palette`, 2.24.0 the two 2.16 spacing kinds. The one entry
+  // left is the plugin rule `card-inset` (promote 2.26.0), the 1 entry every version below 2.26.0 is
+  // clear of; below the first deprecation `removeIn` the deprecation half is clear too. That the
+  // gate REFUSES a due entry is proven on synthetic ledgers in `scripts/check-grace.test.ts`.
   it.each(['1.30.0', '1.34.9', '1.35.0', '1.36.0', '1.36.9', '1.37.0', '1.38.0', '1.38.9'])(
     'passes %s — nothing is due until 1.39.0',
     (v) => {
       const { code, stdout } = runCheckGrace(v)
-      expect([code, stdout.includes('clear of all 3 grace entries')]).toEqual([0, true])
+      expect([code, stdout.includes('clear of all 1 grace entry')]).toEqual([0, true])
     },
   )
+
+  it('passes 2.24.0 — the spacing kinds are promoted, only card-inset (2.26.0) remains', () => {
+    const { code, stdout } = runCheckGrace('2.24.0')
+    expect([code, stdout.includes('clear of all 1 grace entry')]).toEqual([0, true])
+  })
+
+  it('refuses 2.26.0 — card-inset is due', () => {
+    const { code, stderr } = runCheckGrace('2.26.0')
+    expect([code, stderr.includes('card-inset')]).toEqual([1, true])
+  })
 
   // The 1.36.0 form-layout aliases and the useForm/schemaResolver re-exports were deleted in 1.39.0
   // (their own commit), so the release that reached their date is clear.
   it('passes 1.39.0 — the form-layout aliases are gone', () => {
     const { code, stdout } = runCheckGrace('1.39.0')
-    expect([code, stdout.includes('clear of all 3 grace entries')]).toEqual([0, true])
+    expect([code, stdout.includes('clear of all 1 grace entry')]).toEqual([0, true])
   })
 
   it('exits 2 on a missing or malformed version rather than passing vacuously', () => {
@@ -162,9 +173,8 @@ describe('scripts/check-grace.ts', () => {
 // `unknown-vx-token` judges every name inside a basalt family, which is sound only while the token
 // factories refuse to point there; the promotion that emptied the ledger made them throw.
 describe('unknown-vx-token promotion reaches the token factories', () => {
-  it('the ledger carries only the 2.16 spacing kinds, promote 2.24.0', () => {
-    expect(Object.keys(GRACE_PERIOD_KINDS).toSorted()).toEqual(['inline-spacing', 'raw-spacing'])
-    expect(Object.values(GRACE_PERIOD_KINDS).map((e) => e.promote)).toEqual(['2.24.0', '2.24.0'])
+  it('the guard-kind ledger is empty (the 2.16 spacing kinds, its last tenants, promoted at 2.24.0)', () => {
+    expect(Object.keys(GRACE_PERIOD_KINDS)).toEqual([])
   })
 
   it('groupTokens throws on a basalt family', () => {

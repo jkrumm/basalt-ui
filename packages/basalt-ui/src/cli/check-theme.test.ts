@@ -278,19 +278,31 @@ describe('check-theme raw-html-layout', () => {
 })
 
 describe('check-theme inline-spacing', () => {
-  // `inline-spacing` rides the 2.16 grace minor (warn → error at 2.17.0): reported, not fatal.
-  it('flags an inline padding literal', () => {
+  // `inline-spacing` and `raw-spacing` left the grace table at 2.24.0: error by default, warn only
+  // when `basalt.severity` turns them down.
+  it('fails (exit 1) on an inline padding literal', () => {
     fixture(`export const C = () => <Box style={{ padding: 16 }} />\n`)
     const { code, err } = run()
-    expect(code).toBe(0)
-    expect(err).toContain('⚠ Theme guard')
+    expect(code).toBe(1)
+    expect(err).toContain('✖ Theme guard')
     expect(err).toContain('inline-spacing')
   })
 
-  it('flags an inline marginTop string literal', () => {
+  it('fails (exit 1) on an inline marginTop string literal', () => {
     fixture(`export const C = () => <Box style={{ marginTop: '12px' }} />\n`)
     const { code, err } = run()
+    expect(code).toBe(1)
+    expect(err).toContain('inline-spacing')
+  })
+
+  it('warns (exit 0) when basalt.severity turns it down', () => {
+    fixture(`export const C = () => <Box style={{ padding: 16 }} />\n`, {
+      roots: ['src'],
+      severity: { 'inline-spacing': 'warn' },
+    })
+    const { code, err } = run()
     expect(code).toBe(0)
+    expect(err).toContain('⚠ Theme guard')
     expect(err).toContain('inline-spacing')
   })
 
@@ -321,6 +333,25 @@ describe('check-theme inline-spacing', () => {
     )
     const { err } = run()
     expect(err).not.toContain('inline-spacing')
+  })
+})
+
+describe('check-theme raw-spacing', () => {
+  it('fails (exit 1) on a spacing prop equal to a scale step', () => {
+    fixture(`export const C = () => <Box p={16} />\n`)
+    const { code, err } = run()
+    expect(code).toBe(1)
+    expect(err).toContain('raw-spacing')
+  })
+
+  it('warns (exit 0) when basalt.severity turns it down', () => {
+    fixture(`export const C = () => <Box p={16} />\n`, {
+      roots: ['src'],
+      severity: { 'raw-spacing': 'warn' },
+    })
+    const { code, err } = run()
+    expect(code).toBe(0)
+    expect(err).toContain('raw-spacing')
   })
 })
 
