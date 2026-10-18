@@ -79,7 +79,8 @@ type BarCommon = Common & {
   target?: number
   /**
    * More marks on the track (cut-offs, a window mean). Each is drawn at `at`; a `label` is captioned
-   * above the track, wrapping to a list when two collide. A tick outside `[min, max]` is dropped, not
+   * above the track, or on a zoned Meter in the zone-name row (the end ticks at the row's ends). A
+   * caption that would collide with another hides. A tick outside `[min, max]` is dropped, not
    * clamped. All are listed in the accessible description. Works with `value`, `zones`, `segments`
    * and `target`.
    */

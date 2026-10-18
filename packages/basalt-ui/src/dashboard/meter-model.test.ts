@@ -7,7 +7,7 @@ import {
   segmentReading,
   spanOf,
   startCaptionText,
-  zoneLabelsFit,
+  placeRowLabels,
 } from './meter-model'
 
 const fmt = (n: number) => String(n)
@@ -158,12 +158,12 @@ describe('caption mode', () => {
 })
 
 describe('zoneLabels', () => {
-  test('one per zone, in order, at the band start, the holding one flagged', () => {
+  test('one per zone, in order, centred on its span, the holding one flagged', () => {
     const m = modelBar({ reading: 612, min: 0, max: 1000, format: fmt, zones: ZONES })
     expect(m.zoneLabels).toEqual([
-      { key: '0', label: 'Low', startPct: 0, holding: false },
-      { key: '1', label: 'Optimal', startPct: 30, holding: true },
-      { key: '2', label: 'High', startPct: 75, holding: false },
+      { key: '0', label: 'Low', centrePct: 15, widthPct: 30, holding: false },
+      { key: '1', label: 'Optimal', centrePct: 52.5, widthPct: 45, holding: true },
+      { key: '2', label: 'High', centrePct: 87.5, widthPct: 25, holding: false },
     ])
   })
   test('a reading outside every zone flags none; no zones has no labels', () => {
@@ -177,7 +177,7 @@ describe('zoneLabels', () => {
     expect(outside.zoneLabels.map((l) => l.holding)).toEqual([false])
     expect(modelBar({ reading: 5, min: 0, max: 10, format: fmt }).zoneLabels).toEqual([])
   })
-  test('a non-zero min offsets the band start', () => {
+  test('a non-zero min offsets the span centre', () => {
     const m = modelBar({
       reading: 30,
       min: 10,
@@ -185,46 +185,23 @@ describe('zoneLabels', () => {
       format: fmt,
       zones: [{ from: 30, to: 50, label: 'Top' }],
     })
-    expect(m.zoneLabels[0]?.startPct).toBe(50)
+    expect(m.zoneLabels[0]?.centrePct).toBe(75)
   })
 })
 
-describe('zoneLabelsFit', () => {
-  test('apart and inside the row fit; touching within the tolerance fits', () => {
-    expect(
-      zoneLabelsFit(
-        [
-          { left: 0, right: 40 },
-          { left: 40.4, right: 80 },
-        ],
-        100,
-      ),
-    ).toBe(true)
+describe('placeRowLabels', () => {
+  const zone = (left: number, right: number, spanLeft: number, spanRight: number) => ({
+    box: { left, right },
+    span: { left: spanLeft, right: spanRight },
   })
-  test('overlapping neighbours do not fit, whatever their order', () => {
-    expect(
-      zoneLabelsFit(
-        [
-          { left: 30, right: 80 },
-          { left: 0, right: 40 },
-        ],
-        100,
-      ),
-    ).toBe(false)
+  test('a label wider than its span is hidden, a fitting one is kept', () => {
+    expect(placeRowLabels([zone(5, 35, 0, 40), zone(55, 105, 60, 80)], 200)).toEqual([true, false])
   })
-  test('a label leaving either end of the row does not fit', () => {
-    expect(zoneLabelsFit([{ left: 60, right: 110 }], 100)).toBe(false)
-    expect(zoneLabelsFit([{ left: -4, right: 20 }], 100)).toBe(false)
+  test('an end tick wins over a zone label it would touch', () => {
+    const tick = { box: { left: 0, right: 8 } }
+    expect(placeRowLabels([zone(2, 30, 0, 32), tick], 100)).toEqual([false, true])
   })
-  test('checks every pair: a long name overlaps a distant one past a short neighbour', () => {
-    const boxes = [
-      { left: 0, right: 90 },
-      { left: 10, right: 20 },
-      { left: 50, right: 60 },
-    ]
-    expect(zoneLabelsFit(boxes, 100)).toBe(false)
-  })
-  test('no labels fit', () => {
-    expect(zoneLabelsFit([], 100)).toBe(true)
+  test('a label leaving the row is hidden', () => {
+    expect(placeRowLabels([zone(-5, 20, -10, 30)], 100)).toEqual([false])
   })
 })
