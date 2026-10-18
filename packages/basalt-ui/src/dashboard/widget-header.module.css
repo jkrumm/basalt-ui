@@ -221,12 +221,6 @@
   min-width: 0;
 }
 
-/* A Section shell holds three sizes (title `md`, this note and the count tag `xs`, body `sm`), so the
- * section tier's note steps down to the count tag's rung instead of sitting between them at `sm`. */
-.root[data-tier='section'] .subtitle {
-  font-size: var(--vx-text-xs);
-}
-
 /* Directly under the title row, 4px off it — 1px put it inside the title's own line box, so a
  * section with both read as a two-line heading rather than a heading plus a note. */
 .subtitle {
