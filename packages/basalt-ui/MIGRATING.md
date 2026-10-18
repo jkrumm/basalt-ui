@@ -1171,6 +1171,7 @@ can see change on a page that was fine before.
 
 Opt-out for the header: `tooltip={{ formatHeader: (x) => yourFormat(x) }}` restores any title. The
 `period` string form is unchanged (write it with its own `· ` as before).
+
 ### Strip `shotAbsent`; `Meter` prints no filler; nested radius steps
 
 `StatGroup variant="strip"` takes `shotAbsent?: ('empty' | 'loading' | 'error')[]` on the group (every
