@@ -101,6 +101,8 @@ export type CartesianInput<T, X extends ChartX> = Pick<
   crosshair?: boolean
   /** The engine's point marker on the focused datum. Default `true`; a bar kind has none (its hover is the bar). */
   focusRing?: boolean
+  /** No axes, grid or margin: the plot is the whole box (a visual slot's bars, as `Sparkline`). */
+  bare?: boolean
 }
 
 /** The one tick-label size, at every container width: the caption size, so a card never mixes sizes. */
@@ -864,6 +866,15 @@ function buildScales<T, X extends ChartX>(opts: {
 }): StoredChartSpec['scales'] {
   const { input, model, axes, formatX, cls, zoneScale } = opts
   const { left, right } = axes
+  if (input.bare === true) {
+    return {
+      x: { scale: model.scale, axis: false as const },
+      y: { scale: yScaleFor(input.y, left.domain), axis: false as const },
+      ...(zoneScale && {
+        zx: { channel: 'x' as const, scale: scaleLinear().domain([0, 1]), axis: false as const },
+      }),
+    }
+  }
   return {
     x: {
       scale: model.scale,
@@ -1205,6 +1216,7 @@ export function compileCartesian<T, X extends ChartX>(
           zoneScale: under.length > 0 || names,
         }),
         theme: CHART_THEME,
+        ...(input.bare === true && { guides: false as const, margin: 0 }),
         ...(gradients.length > 0 && { gradients }),
         clip: true,
       }

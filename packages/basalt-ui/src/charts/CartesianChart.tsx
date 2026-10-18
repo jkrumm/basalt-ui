@@ -35,6 +35,8 @@ export type RungOptions = {
   focusRing?: boolean
   /** The legend goes from the wide class up, where `Lines`' end labels name the series. */
   hideLegendAtWide?: boolean
+  /** No axes, grid, margin or legend: the plot is the whole box (`Bars` in a visual slot). */
+  bare?: boolean
 }
 
 // A size container: the legend picks none/dots/chips from this box's width in CSS, so the server
