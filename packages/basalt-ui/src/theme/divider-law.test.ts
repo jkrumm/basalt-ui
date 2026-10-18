@@ -273,13 +273,17 @@ describe('a between-rows family drops its last rule', () => {
       // Either the selector itself excludes the last member (`:not(:last-child)`, or an
       // adjacent-sibling combinator, which draws the line as the SECOND row's top edge and so has no
       // trailing rule by construction), or the line is a LEADING outer shadow (`0 -1px 0`: it is every
-      // member's top edge, so none draws a trailing one), or the module carries an explicit
+      // member's top edge, so none draws a trailing one; its `@media (forced-colors: active)` border
+      // twin is leading when the shadow it mirrors is), or the module carries an explicit
       // `border: none` drop.
-      const leading = rules.some(
-        (r) =>
-          (r.file === entry.file && r.selector === entry.selector && r.decl.includes('0 -1px 0')) ||
-          r.selector.startsWith('@media (forced-colors'),
-      )
+      const leadingShadow = (selector: string) =>
+        rules.some(
+          (r) => r.file === entry.file && r.selector === selector && r.decl.includes('0 -1px 0'),
+        )
+      const forcedTwin = entry.selector.replace('@media (forced-colors: active) >> ', '')
+      const leading =
+        leadingShadow(entry.selector) ||
+        (forcedTwin !== entry.selector && leadingShadow(forcedTwin))
       const selfLimiting = leading || /:not\(:last-child\)|\+/.test(entry.selector)
       const dropped = drops.some(
         (d) => d.file === entry.file && d.selector.startsWith(`${entry.selector}:last`),
