@@ -89,11 +89,13 @@ describe('the status solids are derived per surface (Wave 34)', () => {
       (surface) => contrastRatio(hex, derived.surface[surface][side]) >= STATUS_TEXT_CONTRAST_MIN,
     )
 
-  test('the default config keeps every status hex byte-identical', () => {
+  // Wave 37 moved three: the row surfaces joined the solve (good light #327a4d, warn light #966200,
+  // bad dark #f97d74 before). `MIGRATING.md` § Unreleased lists them.
+  test('the default config pins every status hex', () => {
     expect(deriveTokens(DEFAULT_DERIVE_CONFIG).status).toEqual({
-      good: { light: '#327a4d', dark: '#52c07c' },
-      warn: { light: '#966200', dark: '#e6a53d' },
-      bad: { light: '#b5403d', dark: '#f97d74' },
+      good: { light: '#2f774b', dark: '#52c07c' },
+      warn: { light: '#935f00', dark: '#e6a53d' },
+      bad: { light: '#b5403d', dark: '#fe8178' },
     })
   })
 

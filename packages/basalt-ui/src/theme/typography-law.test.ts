@@ -6,7 +6,10 @@ import { describe, expect, test } from 'bun:test'
 import { readFileSync } from 'node:fs'
 import { resolve } from 'node:path'
 
-const css = readFileSync(resolve(import.meta.dirname, '../styles.css'), 'utf8')
+const css = readFileSync(resolve(import.meta.dirname, '../styles.css'), 'utf8').replaceAll(
+  /\/\*[\s\S]*?\*\//g,
+  '',
+)
 
 /** The declaration block of the first rule whose selector list contains `needle`. */
 function ruleFor(needle: string): string {
@@ -17,15 +20,33 @@ function ruleFor(needle: string): string {
   return ''
 }
 
-describe('slashed zero only in data text', () => {
-  test(':root resets the zero feature, so a non-heading title inherits a plain zero', () => {
-    const root = css.match(/:root\s*\{[^}]*font-feature-settings:\s*'zero'\s*0/)
-    expect(root).not.toBeNull()
+/** Every rule whose selector list contains `needle` as a whole selector. */
+function rulesFor(needle: string): string[] {
+  const out: string[] = []
+  for (const [, selector, body] of css.matchAll(/([^{}]+)\{([^{}]*)\}/g)) {
+    const list = (selector ?? '').split(',').map((s) => s.trim())
+    if (list.includes(needle)) out.push(body ?? '')
+  }
+  return out
+}
+
+describe('slashed zero only on head-face surfaces', () => {
+  test.each([
+    'h1',
+    'h6',
+    '.mantine-Title-root',
+    '.mantine-Alert-title',
+    '.mantine-Modal-title',
+    '.mantine-Drawer-title',
+    "[style*='basalt-font-head']",
+  ])('%s resets the zero feature', (selector) => {
+    expect(rulesFor(selector).join(' ')).toMatch(/font-feature-settings:\s*'zero'\s*0/)
   })
 
-  test('mono data text opts back in to the zero feature', () => {
-    const body = ruleFor('pre')
-    expect(body).toContain("'zero'")
+  test('there is no root reset: mono text is not touched', () => {
+    for (const selector of [':root', 'html', 'body', '*', 'code', 'pre']) {
+      expect(rulesFor(selector).join(' ')).not.toContain("'zero'")
+    }
   })
 })
 
@@ -43,9 +64,20 @@ describe('mono ligatures are off for data text', () => {
   )
 })
 
+describe('body sans keeps its ligatures', () => {
+  test.each([':root', 'html', 'body', '*', 'p'])('%s does not switch them off', (selector) => {
+    expect(rulesFor(selector).join(' ')).not.toContain('font-variant-ligatures')
+  })
+})
+
 describe('the chart host focus ring', () => {
   test('is the focus token, not the UA ring (white in dark)', () => {
     const body = ruleFor('.basalt-chart:focus-visible')
     expect(body).toMatch(/outline:\s*2px solid var\(--vx-accent\)/)
+    expect(body).toContain('outline-offset: calc(0.125rem * var(--mantine-scale))')
+  })
+
+  test('is the host only, not its descendants', () => {
+    expect(css).not.toContain('.basalt-chart :focus-visible')
   })
 })

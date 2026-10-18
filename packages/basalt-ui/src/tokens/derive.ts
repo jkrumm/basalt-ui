@@ -311,8 +311,8 @@ const SURFACE_TONE: Record<Side, Record<Exclude<SurfaceKey, RowSurfaceKey>, numb
 // panel (the dark step is the larger, 5.7 tones vs 2.1); selected sits one step above. Light stays
 // shallow so tertiary text and status text keep their margin on a selected row.
 const ROW_INK_MIX: Record<RowSurfaceKey, Record<Side, number>> = {
-  rowHover: { light: 0.05, dark: 0.08 },
-  rowSelected: { light: 0.09, dark: 0.11 },
+  rowHover: { light: 0.05, dark: 0.07 },
+  rowSelected: { light: 0.075, dark: 0.09 },
 }
 
 /** `a` toward `b` by `t` per sRGB channel — the hex twin of `color-mix(in srgb, b t%, a)`. */
@@ -331,7 +331,7 @@ const INK_TONE: Record<Side, Record<InkKey, number>> = {
   // light `faint` is tone 44.5 so tertiary text clears WCAG AA (4.5:1) on every text surface
   // (bg / panel / subtle / field); 48.44 landed at 4.23–4.31:1 on bg and subtle.
   light: { ink: 15.16, ink2: 27.09, muted: 34.88, faint: 44.5 },
-  dark: { ink: 90.94, ink2: 88.12, muted: 84.91, faint: 66.24 },
+  dark: { ink: 90.94, ink2: 88.12, muted: 84.91, faint: 68.5 },
 }
 
 // ── Status/semantic — three baked hues, each with its own calibrated tone+chroma stop per scheme.

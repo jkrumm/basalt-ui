@@ -293,11 +293,6 @@ html .accordionItem {
  * divider token, not the heavy gray-3/dark-4 line. Mantine's scheme rules sit at (0,2,0); the
  * `html[...]` prefix lands (0,2,1). The active underline's colour is set in the theme's Tabs `vars`.
  */
-/* The selected tab reads by ink and weight, not hue. */
-.tabsRoot [role='tab'][data-active] {
-  font-weight: 600;
-}
-
 html[data-mantine-color-scheme] .tabsRoot {
   --tab-border-color: var(--vx-divider);
   /* Mantine's dark hover (dark-6) is the page itself, so a hovered tab read identical to rest. The
@@ -329,16 +324,16 @@ html .tableRoot tbody tr:last-of-type {
 }
 
 /*
- * Badge status dot: a named `light` Badge is the neutral surface + ink word with a leading dot in the
+ * Badge status dot: a coloured `light` Badge is the neutral surface + ink word with a leading dot in the
  * status colour (`badgeVars` writes the `--badge-dot*` vars; nothing here without them). The dot is a
  * grid item, so the root takes two columns while it is shown. A section (left or right) replaces it.
  */
-.badgeRoot:not([data-with-left-section], [data-with-right-section]) {
+.badgeRoot[data-variant='light']:not([data-with-left-section], [data-with-right-section]) {
   grid-template-columns: var(--badge-dot-cols, none);
   column-gap: calc(0.25rem * var(--mantine-scale));
 }
 
-.badgeRoot:not([data-with-left-section], [data-with-right-section])::before {
+.badgeRoot[data-variant='light']:not([data-with-left-section], [data-with-right-section])::before {
   content: var(--badge-dot-content, none);
   width: calc(0.375rem * var(--mantine-scale));
   height: calc(0.375rem * var(--mantine-scale));

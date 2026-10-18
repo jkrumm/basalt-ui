@@ -761,6 +761,33 @@ function ButtonSectionsFixture(): ReactElement {
   )
 }
 
+/** Disabled controls and the Badge flavours Wave 37 decides, each addressable by test id. */
+function ChromeW37Fixture(): ReactElement {
+  return (
+    <Card>
+      <div data-testid="w37-panel" style={{ background: 'var(--vx-surface-panel)', height: 4 }} />
+      <Button disabled data-testid="w37-disabled">
+        Disabled
+      </Button>
+      <Button disabled variant="filled" data-testid="w37-disabled-filled">
+        Disabled
+      </Button>
+      <Badge color="green" data-testid="w37-badge-green">
+        Healthy
+      </Badge>
+      <Badge color="#e03131" data-testid="w37-badge-hex">
+        Hex
+      </Badge>
+      <Badge color="red.6" data-testid="w37-badge-indexed">
+        Indexed
+      </Badge>
+      <Badge variant="dot" color="green" data-testid="w37-badge-dot">
+        Dot
+      </Badge>
+    </Card>
+  )
+}
+
 /** Section ids are `s1…sN`; the rail's labels are `Section 1…N`. */
 function TocFixture({ spec }: { spec: TocSpec }): ReactElement {
   const articleRef = useRef<HTMLDivElement>(null)
@@ -2084,6 +2111,7 @@ export function ShellFixture({ spec }: { spec: FixtureSpec }): ReactElement {
       {spec.aside && !spec.aside.noBar && <AsideBar />}
       {spec.bar && <BarFixture spec={spec.bar} />}
       {spec.buttonSections && <ButtonSectionsFixture />}
+      {spec.chromeW37 && <ChromeW37Fixture />}
       {spec.stats !== undefined && (
         <StatsFixture count={spec.stats} wide={spec.statsWide === true} />
       )}
