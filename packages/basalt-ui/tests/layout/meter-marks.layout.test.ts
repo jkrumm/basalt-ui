@@ -18,9 +18,11 @@ const SPEC: FixtureSpec = {
 }
 
 const SNAP = 1
+/** `--vx-space-control-gap` (0.375rem) at the 16px root the fixture runs at. */
+const GAP_STEP = 6
 const SUBPIXEL = 0.5
 
-type Box = { text: string | null; left: number; right: number }
+type Box = { text: string | null; left: number; right: number; hidden: boolean }
 type Shot = {
   anchored: boolean
   described: string
@@ -39,9 +41,16 @@ const measure = (p: LayoutPage, id: string): Promise<Shot> =>
     const host = document.querySelector<HTMLElement>(`[data-testid="${id}"]`)
     const track = host?.querySelector<HTMLElement>('[data-meter-track]')
     if (!host || !track) throw new Error(`LAYOUT: no Meter in ${id}`)
-    const box = (el: Element): { text: string | null; left: number; right: number } => {
+    const box = (
+      el: Element,
+    ): { text: string | null; left: number; right: number; hidden: boolean } => {
       const r = el.getBoundingClientRect()
-      return { text: el.textContent, left: r.left, right: r.right }
+      return {
+        text: el.textContent,
+        left: r.left,
+        right: r.right,
+        hidden: el.hasAttribute('data-hidden'),
+      }
     }
     const shown = (el: Element) => !el.hasAttribute('data-hidden')
     const k = track.getBoundingClientRect()
@@ -136,32 +145,30 @@ layout('Meter marks at 390', () => {
     },
   )
 
-  test('crowded captions are pushed apart, stay near their marks and never overlap', async () => {
+  test('crowded captions: the reading stays at its fill end, the pace caption yields, nothing overlaps', async () => {
     const m = await measure(p, 'dash-r2-crowd')
     expect(m.anchored).toBe(true)
-    const pace = m.captions.find((c) => c.text?.includes('sessions by'))
-    const target = m.captions.find((c) => c.text?.startsWith('Target'))
-    const reading = m.captions.find((c) => c.text === '17 sessions')
-    const tick = m.marks['tick']
-    if (!pace || !target || !reading || tick === undefined) throw new Error('LAYOUT: no captions')
-    // Pace gives way to Target (which sits at the track end): pushed left, and not far.
-    const offset = centre(pace) - tick
-    expect(offset).toBeLessThan(-SNAP)
-    expect(Math.abs(offset)).toBeLessThanOrEqual(24)
+    const kept = m.captions.filter((c) => !c.hidden)
+    const reading = kept.find((c) => c.text === '17 sessions')
+    const target = kept.find((c) => c.text?.startsWith('Target'))
+    if (!reading || !target) throw new Error('LAYOUT: no captions')
+    // The pace caption would sit more than "not far" off its mark beside the reading: it drops.
+    expect(kept.some((c) => c.text?.includes('sessions by'))).toBe(false)
+    expect(m.described).toContain('Pace')
     expect(Math.abs(target.right - m.track[1])).toBeLessThanOrEqual(SNAP)
-    const sorted = [reading, pace, target]
-    for (const [i, c] of sorted.entries()) {
+    for (const [i, c] of kept.entries()) {
       expect(c.left).toBeGreaterThanOrEqual(m.track[0] - SUBPIXEL)
       expect(c.right).toBeLessThanOrEqual(m.track[1] + SUBPIXEL)
-      const next = sorted[i + 1]
+      const next = kept[i + 1]
       if (next) expect(c.right).toBeLessThanOrEqual(next.left + SUBPIXEL)
     }
   })
 
   test('goal: the tick caption, centred on its mark and inside the track', async () => {
-    const m = await measure(p, 'dash-r2-goal')
+    const m = await measure(p, 'dash-w38-goal-wide')
     const cap = m.captions.find((c) => c.text?.includes('sessions by'))
     if (!cap || m.marks['tick'] === undefined) throw new Error('LAYOUT: no pace caption')
+    expect(cap.hidden).toBe(false)
     expect(Math.abs(centre(cap) - m.marks['tick'])).toBeLessThanOrEqual(SNAP)
     expect(cap.left).toBeGreaterThanOrEqual(m.track[0] - SUBPIXEL)
     expect(cap.right).toBeLessThanOrEqual(m.track[1] + SUBPIXEL)
@@ -184,8 +191,14 @@ layout('Meter marks at 390', () => {
   test('forecast: the caption sits at the forecast boundary, not at the track end', async () => {
     const m = await measure(p, 'dash-r2-forecast')
     const cap = m.captions.find((c) => c.text === 'Forecast')
-    if (!cap || m.marks['boundary'] === undefined) throw new Error('LAYOUT: no forecast caption')
-    expect(Math.abs(centre(cap) - m.marks['boundary'])).toBeLessThanOrEqual(SNAP)
+    const reading = m.captions.find((c) => c.text === 'Spent')
+    if (!cap || !reading || m.marks['boundary'] === undefined) {
+      throw new Error('LAYOUT: no forecast caption')
+    }
+    // The reading ends at the boundary and the caption begins there (one gap step between them).
+    expect(Math.abs(reading.right - m.marks['boundary'])).toBeLessThanOrEqual(SNAP)
+    expect(cap.left - m.marks['boundary']).toBeGreaterThanOrEqual(-SNAP)
+    expect(cap.left - m.marks['boundary']).toBeLessThanOrEqual(GAP_STEP + SNAP)
     expect(cap.right).toBeLessThan(m.track[1] - 40)
   })
 

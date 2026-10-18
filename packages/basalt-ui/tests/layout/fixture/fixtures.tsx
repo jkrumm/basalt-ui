@@ -2655,6 +2655,72 @@ function DashFixture(): ReactElement {
           format={(v) => `${v} sessions`}
         />
       </div>
+      {/* Wave 38: the reading at its fill end, captions that drop before they wrap, one zone register. */}
+      {[350, 250].map((w) => (
+        // theme-allow -- the wrapper width IS the fixture's payload (a container probe)
+        <div key={w} data-testid={`dash-w38-goal-${w}`} style={{ width: w }}>
+          <Meter
+            label="Sessions against the goal"
+            max={28}
+            value={17}
+            target={28}
+            ticks={[{ at: 14, label: 'Pace', caption: '14 sessions by 16 Oct' }]}
+            format={(v) => `${v} sessions`}
+          />
+        </div>
+      ))}
+      {/* The reading clears the pace caption: both fit, the tick caption stays centred on its mark. */}
+      {/* theme-allow -- the wrapper width IS the fixture's payload (a container probe) */}
+      <div data-testid="dash-w38-goal-wide" style={{ width: 400 }}>
+        <Meter
+          label="Sessions against the goal"
+          max={28}
+          value={8}
+          target={28}
+          ticks={[{ at: 14, label: 'Pace', caption: '14 sessions by 16 Oct' }]}
+          format={(v) => `${v} sessions`}
+        />
+      </div>
+      {/* theme-allow -- the wrapper width IS the fixture's payload (a container probe) */}
+      <div data-testid="dash-w38-goal-start" style={{ width: 350 }}>
+        <Meter
+          label="Sessions against the goal"
+          max={28}
+          value={17}
+          target={28}
+          readingAt="start"
+          format={(v) => `${v} sessions`}
+        />
+      </div>
+      {/* theme-allow -- the wrapper width IS the fixture's payload (a container probe) */}
+      <div data-testid="dash-w38-budget" style={{ width: 350 }}>
+        <Meter label="Budget used" max={100} value={91} startCaption="91% used" />
+      </div>
+      {/* theme-allow -- the wrapper width IS the fixture's payload (a container probe) */}
+      <div data-testid="dash-w38-load" style={{ width: 350 }}>
+        <Meter
+          label="Training load"
+          max={2}
+          value={1.1}
+          zones={S2_LOAD_ZONES}
+          ticks={LOAD_TICKS}
+          startCaption={null}
+        />
+      </div>
+      {/* theme-allow -- the wrapper width IS the fixture's payload (a container probe) */}
+      <div data-testid="dash-w38-fleet" style={{ width: 200 }}>
+        <Meter
+          label="Fleet"
+          max={20}
+          segments={[
+            { value: 8, label: 'Running' },
+            { value: 5, label: 'Queued' },
+            { value: 4, label: 'Idle' },
+            { value: 3, label: 'Blocked' },
+          ]}
+          format={(v) => `${v} items`}
+        />
+      </div>
       {/* theme-allow -- the wrapper width IS the fixture's payload (a container probe) */}
       <div data-testid="dash-meter-ring" style={{ width: 160 }}>
         <Meter

@@ -181,16 +181,23 @@ function rowSuite(vp: Viewport) {
 
   test('a name too wide for its span shows its short label, inside the span and clear of the rest', async () => {
     const m = await measure(p, 'dash-zl-short')
-    expect(m.labels.map((l) => l.name)).toEqual(['Under', 'Optimal', 'Danger'])
-    expect(m.shorts.map((s) => [s.name, s.text])).toEqual([['Caution', 'Cau']])
+    // Wave 38: "Caution" falls back to its short, so every sibling that has one follows; the holding
+    // zone ("Optimal") never shortens.
+    expect(m.labels.map((l) => l.name)).toEqual(['Optimal'])
+    expect(m.shorts.map((s) => [s.name, s.text])).toEqual([
+      ['Under', 'Und'],
+      ['Caution', 'Cau'],
+      ['Danger', 'Dan'],
+    ])
     for (const name of ZONES) expect(m.described).toContain(name)
-    const [short] = m.shorts
-    const z = m.zones.find((zone) => zone.name === short?.name)
-    if (!short || !z) throw new Error('LAYOUT: no short label')
-    expect(short.left).toBeGreaterThanOrEqual(z.left - SUBPIXEL)
-    expect(short.right).toBeLessThanOrEqual(z.right + SUBPIXEL)
-    for (const o of [...m.labels, ...m.ticks]) {
-      expect(short.right <= o.left + SUBPIXEL || o.right <= short.left + SUBPIXEL).toBe(true)
+    for (const short of m.shorts) {
+      const z = m.zones.find((zone) => zone.name === short.name)
+      if (!z) throw new Error('LAYOUT: no short label')
+      expect(short.left).toBeGreaterThanOrEqual(z.left - SUBPIXEL)
+      expect(short.right).toBeLessThanOrEqual(z.right + SUBPIXEL)
+      for (const o of [...m.labels, ...m.ticks]) {
+        expect(short.right <= o.left + SUBPIXEL || o.right <= short.left + SUBPIXEL).toBe(true)
+      }
     }
   })
 

@@ -1125,6 +1125,17 @@ No export is removed or renamed; four defaults move.
 - **The `under` footer** is a sibling after the cell's `article`, outside its `aria-labelledby` region.
 - **`BarList` delta column: glyph and figure are one unit**, end-aligned together. The fixed glyph slot and the
   four-character figure slot are gone, so `▲ 9%` and `▲ 13%` share a right edge but no longer share a glyph x.
+### Meter captions (Wave 38)
+
+No export is removed. `Meter` gains one optional prop, `readingAt`; five caption defaults move.
+
+| Before                                                                                                                     | Now                                                                                                                                                                              | Opt-out                                                                                                              |
+| -------------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------- |
+| The reading caption (the default `format(value)` or your `startCaption`) sat at the track's start                          | It ends at the end of the fill, clamped inside the track (at the start when the fill is too short to hold it); a committed/forecast bar anchors at the end of the committed part | `readingAt="start"`                                                                                                  |
+| The default target figure (`Target 28 sessions`) could wrap to two lines and clip at the card edge                         | It is one line and never wraps; your own `endCaption` is prose and still wraps                                                                                                   | none: shorten it with `format`                                                                                       |
+| Captions that did not fit one line wrapped onto a second row                                                               | Tick captions go first, then the forecast caption, until the row fits; the reading and the target never drop. A dropped caption stays in the accessible description              | `startCaption`/`endCaption` state what stays; a host that wants a caption always visible gives the Meter a wider row |
+| A zone name fell back to its `short` alone, so one zone read "Over" beside "Low", "Optimal", "High"                        | Once one name falls back to its `short`, every other name that has one follows; the holding zone keeps its full name                                                             | give the zones no `short`, or none will fall back                                                                    |
+| Categorical part captions that did not fit under their segments wrapped, which could leave one entry alone on a second row | One row when they fit, else a grid with the most columns that fit and no lone entry on the last row                                                                              | none                                                                                                                 |
 
 ## 2.23.0 — Wave 37, argo's friction II
 

@@ -122,6 +122,12 @@ type BarCommon = Common & {
    * to print it inside a host. A `stops` track prints it only when `true`.
    */
   reading?: boolean
+  /**
+   * Where the reading caption sits under a plain or segmented bar. `'fill'` (default): at the end of
+   * the fill, clamped inside the track (at the start when the fill is too short to hold it).
+   * `'start'`: at the track's start, as before 2.24.
+   */
+  readingAt?: 'fill' | 'start'
 }
 
 /**
@@ -192,6 +198,7 @@ export type MeterProps =
       startCaption?: never
       endCaption?: never
       reading?: never
+      readingAt?: never
       stops?: never
       track?: never
     })
@@ -256,6 +263,7 @@ export function Meter(props: MeterProps) {
       forecastCaption={props.segments === undefined ? undefined : props.forecastCaption}
       startCaption={props.startCaption}
       endCaption={props.endCaption}
+      readingAt={props.readingAt}
     />
   )
 }

@@ -220,6 +220,19 @@
   text-align: end;
 }
 
+/* The target figure is one line: it never wraps (the row drops other captions first). A consumer's
+ * own end caption is prose and may still wrap. */
+.captionTarget {
+  composes: captionEnd;
+  flex: none;
+  white-space: nowrap;
+}
+
+/* A caption the row has no room for: still laid out (so a resize can measure it again), not shown. */
+.captionsAnchored > [data-hidden] {
+  visibility: hidden;
+}
+
 /* The visually-hidden summary and loading text are still text: they read the caption size, not the
  * body size they would inherit. */
 .root .summary {
@@ -248,6 +261,12 @@
   align-items: baseline;
   gap: var(--vx-space-control-gap, 0.375rem);
   white-space: nowrap;
+}
+
+/* Not every entry fits one row: a grid with the measured column count, never one entry alone. */
+.partCaptionsGrid {
+  display: grid;
+  justify-content: start;
 }
 
 /* Only an entry wider than the whole row may break (measured), so nothing overflows the card. */

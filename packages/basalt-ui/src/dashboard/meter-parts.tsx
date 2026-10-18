@@ -7,8 +7,9 @@ import { cx } from '../common/props'
 import {
   ariaValues,
   modelBar,
+  partColumns,
   partsFitUnder,
-  placeMarkCaptions,
+  placeCaptionRow,
   placeRowLabels,
   ringFraction,
   ringMarks,
@@ -450,19 +451,33 @@ function LabelRow({ zones, ticks }: { zones: readonly ZoneLabel[]; ticks: readon
 }
 
 /** One caption of the marks row, in flow order: its anchor (`pct`, or the row's `edge`) when it has one. */
-type CaptionItem = { key: string; node: ReactNode; pct?: number; edge?: 'end'; end?: boolean }
+type CaptionItem = {
+  key: string
+  node: ReactNode
+  pct?: number
+  edge?: 'end'
+  end?: boolean
+  /** The default target figure: one line, never wrapped. */
+  target?: boolean
+  align?: 'start' | 'center' | 'end'
+  /** Drop rank when the row is too narrow (lowest first); none never drops. */
+  drop?: number
+}
 
 /** The measurement shared by the marks row and the part list: natural widths, row width, gap step. */
 function measureItems(row: HTMLElement) {
   const kids = [...row.children] as HTMLElement[]
   const widths = kids.map((kid) => {
     // In the flow a caption may shrink and wrap inside itself; its anchored width is its one-line one.
-    const { whiteSpace, flex } = kid.style
+    const { whiteSpace, flex, width: inline } = kid.style
     kid.style.whiteSpace = 'nowrap'
     kid.style.flex = 'none'
+    // A grid cell would clamp the box to its column; the natural width is what is measured.
+    kid.style.width = 'max-content'
     const width = kid.offsetWidth
     kid.style.whiteSpace = whiteSpace
     kid.style.flex = flex
+    kid.style.width = inline
     return width
   })
   return { widths, rowWidth: row.clientWidth, gap: columnGapOf(row) }
@@ -502,17 +517,24 @@ function useMeasured(
   }, [rowRef, key])
 }
 
-const sameStarts = (a: number[] | null, b: number[] | null) =>
-  a === b || (a !== null && b !== null && a.length === b.length && a.every((v, i) => v === b[i]))
+type CaptionPlacement = { starts: (number | undefined)[]; dropped: boolean[] }
+const samePlacement = (a: CaptionPlacement | null, b: CaptionPlacement | null) =>
+  a === b ||
+  (a !== null &&
+    b !== null &&
+    a.starts.length === b.starts.length &&
+    a.starts.every((v, i) => v === b.starts[i] && a.dropped[i] === b.dropped[i]))
 
 /**
  * The captions under the track. A caption that names a mark (the forecast boundary, the target) sits
- * AT that mark, centred and clamped inside the track, when every caption fits with a gap step between
- * them; otherwise (and in server markup) the row flows and wraps: start, forecast, end.
+ * AT that mark, centred and clamped inside the track (the reading ends at its fill end), when every
+ * caption fits with a gap step between them. A row that is too narrow drops its droppable captions
+ * (`drop` rank, lowest first) before anything wraps; they stay in the described-by text. Only when
+ * even the rest do not fit (and in server markup) the row flows and wraps: start, forecast, end.
  */
 function CaptionRow({ items }: { items: readonly CaptionItem[] }) {
   const rowRef = useRef<HTMLDivElement>(null)
-  const [starts, setStarts] = useState<number[] | null>(null)
+  const [placed, setPlaced] = useState<CaptionPlacement | null>(null)
   useMeasured(
     rowRef,
     (row) => {
@@ -521,26 +543,36 @@ function CaptionRow({ items }: { items: readonly CaptionItem[] }) {
         width: widths[i] ?? 0,
         ...(item.pct !== undefined && { pct: item.pct }),
         ...(item.edge !== undefined && { edge: item.edge }),
+        ...(item.align !== undefined && { align: item.align }),
+        ...(item.drop !== undefined && { drop: item.drop }),
       }))
-      const next = placeMarkCaptions(marks, rowWidth, gap)
-      setStarts((prev) => (sameStarts(prev, next) ? prev : next))
+      const next = placeCaptionRow(marks, rowWidth, gap)
+      setPlaced((prev) => (samePlacement(prev, next) ? prev : next))
     },
     items
-      .map((i) => `${i.key}@${i.pct ?? i.edge ?? ''}:${typeof i.node === 'string' ? i.node : ''}`)
+      .map(
+        (i) =>
+          `${i.key}@${i.pct ?? i.edge ?? ''}${i.align ?? ''}${i.drop ?? ''}:${typeof i.node === 'string' ? i.node : ''}`,
+      )
       .join('\u0000'),
   )
   return (
     <div
       ref={rowRef}
-      className={cx(classes.captions, starts !== null && classes.captionsAnchored)}
+      className={cx(classes.captions, placed !== null && classes.captionsAnchored)}
       data-meter-captions
-      data-anchored={starts === null ? undefined : ''}
+      data-anchored={placed === null ? undefined : ''}
     >
       {items.map((item, i) => (
         <span
           key={item.key}
-          className={item.end ? classes.captionEnd : classes.caption}
-          {...(starts?.[i] !== undefined && { style: { insetInlineStart: `${starts[i]}px` } })}
+          className={
+            item.target ? classes.captionTarget : item.end ? classes.captionEnd : classes.caption
+          }
+          data-hidden={placed?.dropped[i] ? '' : undefined}
+          {...(placed?.starts[i] !== undefined && {
+            style: { insetInlineStart: `${placed.starts[i]}px` },
+          })}
         >
           {item.node}
         </span>
@@ -551,13 +583,15 @@ function CaptionRow({ items }: { items: readonly CaptionItem[] }) {
 
 /**
  * Categorical part captions (swatch, name, value): each under its own segment when every one fits
- * there on one line, else a wrapping row of entries from the track's start. An entry stays on one
- * line unless it is wider than the row itself.
+ * there on one line, else a grid from the track's start: one row when every entry fits it, else
+ * the most columns that fit with no lone entry on the last row. An entry stays on one line unless
+ * it is wider than the row itself.
  */
 function PartCaptions({ captions }: { captions: readonly PartCaption[] }) {
   const rowRef = useRef<HTMLUListElement>(null)
   const [under, setUnder] = useState(false)
   const [overwide, setOverwide] = useState(false)
+  const [cols, setCols] = useState(0)
   useMeasured(
     rowRef,
     (row) => {
@@ -569,6 +603,7 @@ function PartCaptions({ captions }: { captions: readonly PartCaption[] }) {
         gap,
       )
       setUnder(fits)
+      setCols(fits ? 0 : partColumns(widths, rowWidth, gap))
     },
     captions.map((c) => `${c.label} ${c.text}@${c.startPct}`).join('\u0000'),
   )
@@ -579,7 +614,11 @@ function PartCaptions({ captions }: { captions: readonly PartCaption[] }) {
         classes.partCaptions,
         under && classes.partCaptionsUnder,
         overwide && classes.partCaptionsWrap,
+        cols > 0 && classes.partCaptionsGrid,
       )}
+      style={
+        cols > 0 ? { gridTemplateColumns: `repeat(${cols}, minmax(0, max-content))` } : undefined
+      }
       // The explicit role is deliberate: `list-style: none` makes Safari/VoiceOver drop the implicit one.
       // oxlint-disable-next-line jsx-a11y/no-redundant-roles
       role="list"
@@ -623,6 +662,7 @@ export function MeterBar(props: {
   forecastCaption: string | undefined
   startCaption: ReactNode
   endCaption: ReactNode
+  readingAt: 'fill' | 'start' | undefined
   shell: Shell
 }) {
   const { label, min, max, format, zones, shell } = props
@@ -687,13 +727,27 @@ export function MeterBar(props: {
     ? []
     : [
         ...(start !== null && !anchored
-          ? [{ key: 'start', node: glue(start) } satisfies CaptionItem]
+          ? [
+              {
+                key: 'start',
+                node: glue(start),
+                // The reading sits at its fill's end (clamped inside the track); `readingAt="start"` keeps the old start edge.
+                ...(props.readingAt !== 'start' &&
+                  model.fillEndPct !== undefined && {
+                    pct: model.fillEndPct,
+                    align: 'end' as const,
+                  }),
+              } satisfies CaptionItem,
+            ]
           : []),
         ...(model.forecastText !== null
           ? [
               {
                 key: 'forecast',
                 node: glue(model.forecastText),
+                drop: 2,
+                // The reading ends at the boundary, the forecast begins there.
+                ...(props.readingAt !== 'start' && start !== null && { align: 'start' as const }),
                 ...(model.boundaryPct !== undefined && { pct: model.boundaryPct }),
               } satisfies CaptionItem,
             ]
@@ -708,6 +762,7 @@ export function MeterBar(props: {
                       key: `tick${t.key}`,
                       node: glue(t.caption),
                       pct: t.pct,
+                      drop: 1,
                     } satisfies CaptionItem,
                   ],
             )),
@@ -717,6 +772,7 @@ export function MeterBar(props: {
                 key: 'end',
                 node: glue(end),
                 end: true,
+                ...(targetHere && { target: true }),
                 ...(targetHere && model.targetPct !== undefined
                   ? { pct: model.targetPct }
                   : { edge: 'end' as const }),
