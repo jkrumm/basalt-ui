@@ -21,7 +21,7 @@ import { oneOf, requiredProp } from '../common/errors'
 import { NON_FINITE } from '../format/shared'
 import { VX, alpha } from '../tokens'
 import { CartesianRung } from './CartesianChart'
-import { GLYPH_MIN_PX, groupsOf, resolveNamedState } from './band-fold'
+import { GLYPH_MIN_PX, glyphOf, groupsOf, resolveNamedState } from './band-fold'
 import type { Group, NamedChartState } from './band-fold'
 import { emphasis } from './marks'
 import { rowX } from './types'
@@ -287,7 +287,8 @@ function layoutBands<T>(input: LayoutInput<T>): {
     const span = getBand(datum)
     const cell = { f0: g.start / data.length, f1: (g.start + g.items.length) / data.length }
     const answers = paintSpan(ctx, span, cell)
-    const glyph = input.states.get(span.state)?.glyph
+    const named = input.states.get(span.state)
+    const glyph = named && glyphOf(named)
     // The primary part's centre: an absent share is taken from the right edge.
     if (answers.primary && glyph && (cell.f1 - cell.f0) * input.width >= GLYPH_MIN_PX) {
       const share = absentShareOf(span, absentKey)
@@ -390,7 +391,7 @@ export function BandStrip<T, X extends ChartX = ChartX, K extends string = strin
                   y: () => 0.5,
                   xScale: 'zx',
                   text: 'glyph',
-                  fill: VX.ink,
+                  fill: VX.surface.panel,
                   fontSize: VX.text.xs,
                   fontWeight: 600,
                   anchor: 'middle',

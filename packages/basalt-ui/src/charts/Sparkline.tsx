@@ -13,7 +13,7 @@ import { scaleBand } from '@tanstack/charts/scales/band'
 import { scaleLinear } from '@tanstack/charts/scales/linear'
 import { text } from '@tanstack/charts/text'
 import { useId, useMemo, useState } from 'react'
-import type { FocusEvent, KeyboardEvent, PointerEvent, ReactElement } from 'react'
+import type { CSSProperties, FocusEvent, KeyboardEvent, PointerEvent, ReactElement } from 'react'
 import { cx } from '../common/props'
 import type { BasaltProps } from '../common/props'
 import { VX, alpha } from '../tokens'
@@ -421,6 +421,8 @@ export function Sparkline(props: SparklineProps): ReactElement {
     setKeyed(lastFinite(rows))
   }
 
+  const inset = mark === 'line' ? LINE_INSET : 0
+  const layerStyle = { inset, '--basalt-spark-lift': `${inset}px` } as CSSProperties
   const value = active === null ? null : (rows?.[active]?.v ?? null)
   const at =
     interactive && active !== null && value !== null
@@ -460,29 +462,24 @@ export function Sparkline(props: SparklineProps): ReactElement {
         />
       )}
       {at !== null && (
-        // The dot's layer is the plot rect (inside a line's margin), so its fractions land where the mark did.
-        <span
-          aria-hidden="true"
-          className={classes.layer}
-          style={{ inset: mark === 'line' ? LINE_INSET : 0 }}
-        >
+        // One layer on the plot rect (inside a line's margin): the dot and the readout take their
+        // fractions of the same box, so both land where the mark did.
+        <span aria-hidden="true" className={classes.layer} style={layerStyle}>
           <span
             data-basalt-sparkline-dot=""
             className={classes.dot}
             style={{ left: `${at.fx * 100}%`, top: `${at.fy * 100}%` }}
           />
+          <output
+            data-basalt-sparkline-readout=""
+            aria-live={hover === null ? 'polite' : 'off'}
+            className={classes.readout}
+            style={{ left: `${at.fx * 100}%`, transform: `translateX(-${at.fx * 100}%)` }}
+          >
+            {format(at.value)}
+            {at.label !== undefined && <span className={classes.label}> · {at.label}</span>}
+          </output>
         </span>
-      )}
-      {at !== null && (
-        <output
-          data-basalt-sparkline-readout=""
-          aria-live={hover === null ? 'polite' : 'off'}
-          className={classes.readout}
-          style={{ left: `${at.fx * 100}%`, transform: `translateX(-${at.fx * 100}%)` }}
-        >
-          {format(at.value)}
-          {at.label !== undefined && <span className={classes.label}> · {at.label}</span>}
-        </output>
       )}
     </div>
   )

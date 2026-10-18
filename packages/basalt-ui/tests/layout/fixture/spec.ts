@@ -165,7 +165,16 @@ export type AsideSpec = {
  */
 export type ChartsSpec = {
   /** A real kind from `basalt-ui/charts` — never a hand-rolled stand-in. */
-  kind: 'lines' | 'bars' | 'dual' | 'rail' | 'panel-rail' | 'spark' | 'strip' | 'mirrored'
+  kind:
+    | 'lines'
+    | 'bars'
+    | 'dual'
+    | 'rail'
+    | 'panel-rail'
+    | 'spark'
+    | 'strip'
+    | 'mirrored'
+    | 'heatmap'
   /** `spark`: the row count of the one `Sparkline` (default 3000), in a `width`-px cell. */
   sparkRows?: number
   /** `spark`: draw bars (a short fixed series with zeros) instead of the sine line. */
@@ -173,6 +182,7 @@ export type ChartsSpec = {
   /** `spark`: mount the Sparkline in a 300px `StatCard` sparkline slot (`card`), the same card with `sparklinePlacement="right"` in a 520px box (`right`) or a strip cell
    * `visual` (`strip`) instead of bare. */
   sparkIn?: 'card' | 'right' | 'strip'
+  /** `heatmap`: a status grid (`tone` states) under a `data-testid="heatmap-caption"` row. */
   /** `strip`/`mirrored`: the bucket count of the `BandStrip`/`MirroredBars` (default 60)... */
   stripBuckets?: number
   /** ...and each bucket's width in ms (default one minute — a one-hour range). */

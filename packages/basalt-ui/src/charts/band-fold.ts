@@ -1,4 +1,5 @@
 import { oneOf } from '../common/errors'
+import { VX } from '../tokens'
 import type { ChartSeries } from './types'
 
 /**
@@ -12,9 +13,29 @@ export type NamedChartState = Pick<
 > & {
   /**
    * A short mark (`!`, `×`) drawn in the middle of each cell in this state, so a state is not told
-   * apart by hue alone. Skipped on a cell too narrow to hold it.
+   * apart by hue alone; `''` opts out of the default. Default: `!` for a `warn` state and `×` for a
+   * `bad` one (by `tone`, or by a `color` that is `VX.status.warn` / `VX.status.bad`); none
+   * otherwise. Skipped on a cell too narrow to hold it.
    */
   glyph?: string | undefined
+  /** The status this state means. `Heatmap` also fills from it; on `BandStrip` it only picks the
+   * default `glyph` (the fill is `color`). */
+  tone?: StatusTone | undefined
+}
+
+/** The status inks a state can name: `VX.status.*`. */
+export type StatusTone = 'good' | 'warn' | 'bad' | 'neutral'
+
+/** `warn` and `bad` carry a glyph by default: a status state is not told apart by hue alone. */
+const TONE_GLYPH: Partial<Record<StatusTone, string>> = { warn: '!', bad: '×' }
+
+/** The glyph a state draws: its own, else its status tone's default, else none. */
+export function glyphOf(
+  s: Pick<NamedChartState, 'glyph' | 'tone'> & { color?: string | undefined },
+): string | undefined {
+  const tone =
+    s.tone ?? (s.color === VX.status.warn ? 'warn' : s.color === VX.status.bad ? 'bad' : undefined)
+  return s.glyph ?? (tone === undefined ? undefined : TONE_GLYPH[tone])
 }
 
 /** A cell narrower than this (px) draws no glyph: it would not fit inside the fill. */

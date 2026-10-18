@@ -1076,8 +1076,7 @@ and `period` takes a list, joined by `·`; `ChartCard` takes `stale` (the facts 
 cell's 0.55 while placeholder data shows) and `stateNoun` (an errored card reads "Could not load
 {stateNoun}"); `Sparkline` takes `tone="muted"` and `referenceLabel`; a state of `BandStrip` or
 `Heatmap` takes `glyph` (drawn centred in each of its cells wide enough for it, 12px); a `Heatmap`
-state takes `tone` (`good` / `warn` / `bad` / `neutral`) instead of a `color`, and `warn` / `bad`
-draw `!` / `×` by default. A categorical status grid is therefore `states` + `getState` with a
+state takes `tone` (`good` / `warn` / `bad` / `neutral`) instead of a `color`. A categorical status grid is therefore `states` + `getState` with a
 `tone` per state, nothing read from `dist`.
 
 **Changed defaults:**
@@ -1089,6 +1088,9 @@ draw `!` / `×` by default. A categorical status grid is therefore `states` + `g
   at the opposite corner. **Opt out:** none for the placement.
 - A line `Sparkline`'s plot has a 3px margin so its end marker clears the keyboard focus outline;
   the line is 6px shorter in each axis. **Opt out:** none.
+- A `BandStrip` or `Heatmap` state whose `color` is `VX.status.warn` / `VX.status.bad` (or whose
+  `tone` is `warn` / `bad`) now draws `!` / `×` in its cells wide enough for it, in the panel
+  surface ink. **Opt out:** `glyph: ''` on the state.
 - A `Heatmap` tooltip opens below the hovered cell (above only when there is no room), so it no
   longer covers the caption row over the grid. **Opt out:** none.
 

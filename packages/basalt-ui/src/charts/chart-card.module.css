@@ -92,6 +92,6 @@
   color: var(--vx-muted);
 }
 
-.facts[data-stale] {
+.factsRow[data-stale] {
   opacity: 0.55;
 }

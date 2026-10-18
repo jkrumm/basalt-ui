@@ -11,6 +11,9 @@ import { createRoot } from 'react-dom/client'
 import { renderToString } from 'react-dom/server'
 import { BandStrip } from './BandStrip'
 import type { BandStripSeries } from './BandStrip'
+import { DEFAULT_DERIVE_CONFIG } from '../tokens/derive'
+import { contrastRatio } from '../tokens/hct'
+import { buildPaletteData } from '../tokens/palette'
 import { ChartCard } from './ChartCard'
 import { Heatmap } from './Heatmap'
 import { Sparkline } from './Sparkline'
@@ -85,8 +88,12 @@ describe('ChartCard stale facts (item 2)', () => {
         <i data-testid="plot" />
       </ChartCard>,
     )
-    expect(container.querySelector('[data-basalt-facts]')?.hasAttribute('data-stale')).toBe(true)
-    expect(block(css, '\\.facts\\[data-stale\\]')).toContain('opacity: 0.55')
+    expect(container.querySelector('[data-basalt-facts-row]')?.hasAttribute('data-stale')).toBe(
+      true,
+    )
+    // The dim is the facts row's: the basis subtitle under it stays full ink.
+    expect(container.querySelector('[data-basalt-facts]')?.hasAttribute('data-stale')).toBe(false)
+    expect(block(css, '\\.factsRow\\[data-stale\\]')).toContain('opacity: 0.55')
     const strip = readFileSync(
       new URL('../dashboard/stat-strip.module.css', import.meta.url),
       'utf8',
@@ -272,5 +279,57 @@ describe('Error state noun (item 7)', () => {
     expect(container.querySelector('[role="alert"]')?.textContent).toContain(
       'Could not load stuck items',
     )
+  })
+})
+
+describe('BandStrip default glyphs and glyph contrast (review round 1)', () => {
+  type Day = { t: string; s: 'ok' | 'warn' | 'bad' }
+  const data: Day[] = [
+    { t: 'a', s: 'ok' },
+    { t: 'b', s: 'warn' },
+    { t: 'c', s: 'bad' },
+  ]
+  const strip = (states: BandStripSeries<Day>[]) =>
+    dom(
+      renderToString(
+        <BandStrip
+          ariaLabel="B"
+          data={data}
+          x={(d) => d.t}
+          states={states as (BandStripSeries<Day> & { key: Day['s'] })[]}
+          getBand={(d) => ({ state: d.s })}
+        />,
+      ),
+    )
+  test('a warn / bad status state draws ! / × without naming a glyph', () => {
+    const el = strip([
+      { key: 'ok', label: 'OK', color: 'var(--vx-status-good)' },
+      { key: 'warn', label: 'Warn', color: 'var(--vx-status-warn)' },
+      { key: 'bad', label: 'Bad', color: 'var(--vx-status-bad)', tone: 'bad' },
+    ])
+    expect(glyphs(el).toSorted()).toEqual(['!', '×'])
+  })
+  test("glyph '' opts out, and a non-status colour draws nothing", () => {
+    const el = strip([
+      { key: 'ok', label: 'OK', color: 'var(--vx-good)' },
+      { key: 'warn', label: 'Warn', color: 'var(--vx-status-warn)', glyph: '' },
+      { key: 'bad', label: 'Bad', color: 'var(--vx-accent)' },
+    ])
+    expect(glyphs(el)).toEqual([])
+  })
+  test('the glyph ink is the panel surface, which clears 3:1 on every status fill in both schemes', () => {
+    const el = strip([
+      { key: 'ok', label: 'OK', color: 'var(--vx-good)' },
+      { key: 'warn', label: 'Warn', color: 'var(--vx-status-warn)' },
+      { key: 'bad', label: 'Bad', color: 'var(--vx-status-bad)' },
+    ])
+    for (const t of el.querySelectorAll('svg [data-ts-key$="glyphs"] text'))
+      expect(t.getAttribute('fill')).toBe('var(--vx-surface-panel)')
+    const data = buildPaletteData(DEFAULT_DERIVE_CONFIG)
+    for (const side of ['light', 'dark'] as const)
+      for (const kind of ['good', 'warn', 'bad'] as const)
+        expect(
+          contrastRatio(data.SURFACE.panel[side], data.STATUS[kind][side]),
+        ).toBeGreaterThanOrEqual(3)
   })
 })
