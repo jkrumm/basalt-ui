@@ -82,10 +82,13 @@ type BarCommon = Common & {
   target?: number
   /**
    * More marks on the track (cut-offs, a window mean). Each is drawn at `at`; a `label` is captioned
-   * above the track, or on a zoned Meter in the zone-name row (the end ticks at the row's ends). A
-   * caption that would collide with another hides. A tick outside `[min, max]` is dropped, not
-   * clamped. All are listed in the accessible description. Works with `value`, `zones`, `segments`
-   * and `target`.
+   * above the track, or on a zoned Meter in the zone-name row (the end ticks at the row's ends); a
+   * `caption` sits under the track, centred on the mark and clamped inside it. A label that would
+   * collide with another hides. A tick outside `[min, max]` is dropped, not clamped. All are listed
+   * in the accessible description. Works with `value`, `zones`, `segments` and `target`.
+   *
+   * Given `ticks` (or a `target`), a plain or segmented bar also labels where its track starts: the
+   * start figure `format(min)`, above the track. `startCaption={null}` drops it.
    */
   ticks?: readonly MeterTick[]
   /**
@@ -102,11 +105,14 @@ type BarCommon = Common & {
    * Put the value beside it in your own layout.
    */
   size?: 'row'
-  /** Start caption (default: the formatted reading). `null` drops it; zone labels stay. */
+  /**
+   * Start caption (default: the formatted reading). `null` drops it, and the start figure that
+   * `ticks`/`target` add above the track; zone labels stay.
+   */
   startCaption?: ReactNode
   /**
-   * End caption (default: `Target <target>`, drawn at the target's tick rather than the track end
-   * when it fits). `null` drops it; zone labels stay.
+   * End caption (default: `Target <target>` with the Meter's `format`, drawn at the target's tick
+   * rather than the track end when it fits). `null` drops it; zone labels stay.
    */
   endCaption?: ReactNode
   /**

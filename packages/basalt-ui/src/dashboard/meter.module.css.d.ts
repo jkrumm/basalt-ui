@@ -27,6 +27,7 @@ declare const classes: {
   readonly partCaptions: string
   readonly partCaption: string
   readonly partCaptionsUnder: string
+  readonly partCaptionsWrap: string
   readonly swatch: string
   readonly empty: string
   readonly skeletonTrack: string

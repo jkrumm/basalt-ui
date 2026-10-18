@@ -208,6 +208,7 @@ describe('stops', () => {
         { at: 100, color: 'white' },
       ],
       ticks: [{ at: 50, label: 'Dusk' }],
+      startCaption: null,
     })
     expect(q(container, '[data-meter-tick-label]')?.textContent).toBe('Dusk')
   })
@@ -249,9 +250,26 @@ describe('captions at their marks', () => {
     expect(placeMarkCaptions([{ width: 60, pct: 0 }], 300, 6)).toEqual([0])
   })
 
-  test('a start caption and an anchored one closer than a gap step fall back to the flow', () => {
-    expect(placeMarkCaptions([{ width: 40 }, { width: 60, pct: 12 }], 300, 6)).toBeNull()
-    expect(placeMarkCaptions([{ width: 40 }, { width: 60, pct: 30 }], 300, 6)).not.toBeNull()
+  test('captions closer than a gap step are pushed apart, in order, the least that clears them', () => {
+    expect(placeMarkCaptions([{ width: 40 }, { width: 60, pct: 12 }], 300, 6)).toEqual([0, 46])
+    expect(placeMarkCaptions([{ width: 40 }, { width: 60, pct: 30 }], 300, 6)).toEqual([0, 60])
+    // Two marks at the end: the later one is pulled back inside the row, the earlier one makes room.
+    expect(
+      placeMarkCaptions(
+        [
+          { width: 60, pct: 90 },
+          { width: 60, pct: 100 },
+        ],
+        300,
+        6,
+      ),
+    ).toEqual([174, 240])
+  })
+
+  test('captions that cannot all clear each other inside the row fall back to the flow', () => {
+    expect(
+      placeMarkCaptions([{ width: 40 }, { width: 150, pct: 50 }, { width: 100, pct: 100 }], 300, 6),
+    ).toBeNull()
   })
 
   test('nothing anchored, an unmeasured row or an over-wide caption never anchors', () => {
@@ -305,16 +323,86 @@ describe('the muted ramp', () => {
   })
 })
 
-describe('an end tick yields to a zone name', () => {
-  test('a name that clears the holding one outranks an end tick it would touch', () => {
-    const labels = [
+describe('an end figure outranks a zone name', () => {
+  test('a zone name that would touch an end figure falls back to its short label, then hides', () => {
+    const end = { box: { left: 90, right: 100 }, end: true }
+    const name = { box: { left: 70, right: 95 }, span: { left: 60, right: 100 } }
+    expect(placeRowLabels([end, name], 100).shown).toEqual([true, false])
+    expect(placeRowLabels([end, { ...name, short: { left: 72, right: 82 } }], 100)).toMatchObject({
+      shown: [true, true],
+      short: [false, true],
+    })
+    expect(placeRowLabels([end, { ...name, short: { left: 80, right: 92 } }], 100)).toMatchObject({
+      shown: [true, false],
+    })
+  })
+
+  test('both end figures stay unless the track is narrower than both plus a gap', () => {
+    const ends = [
+      { box: { left: 0, right: 10 }, end: true },
       { box: { left: 90, right: 100 }, end: true },
-      { box: { left: 70, right: 95 }, span: { left: 60, right: 100 } },
     ]
+    expect(placeRowLabels(ends, 100, 6).shown).toEqual([true, true])
+    expect(
+      placeRowLabels([ends[0]!, { box: { left: 10, right: 20 }, end: true }], 20, 6).shown,
+    ).toEqual([true, false])
+  })
+
+  test('an interior tick still keeps its place over an end figure it would touch', () => {
+    const labels = [{ box: { left: 90, right: 100 }, end: true }, { box: { left: 85, right: 95 } }]
     expect(placeRowLabels(labels, 100).shown).toEqual([false, true])
     expect(placeRowLabels([{ box: { left: 90, right: 100 } }, labels[1]!], 100).shown).toEqual([
       true,
       false,
     ])
+  })
+})
+
+describe('a scale labels its start, a tick captions under the track', () => {
+  const labels = (c: HTMLElement) =>
+    [...c.querySelectorAll('[data-meter-tick-label]')].map((l) => l.textContent)
+  const fmt = (v: number) => `${v} sessions`
+
+  test('ticks or a target label the start (`min`) with the Meter format', () => {
+    const ticks = mount({ label: 'G', value: 17, max: 28, ticks: [{ at: 14 }], format: fmt })
+    expect(labels(ticks.container)).toEqual(['0 sessions'])
+    const target = mount({ label: 'G', value: 17, max: 28, target: 28, format: fmt })
+    expect(labels(target.container)).toEqual(['0 sessions'])
+    expect(q(target.container, '[data-meter-captions]')?.textContent).toContain(
+      'Target 28 sessions',
+    )
+  })
+
+  test('a bare value, a zoned track and size="row" get no start figure', () => {
+    expect(labels(mount({ label: 'G', value: 17 }).container)).toEqual([])
+    expect(labels(mount({ label: 'G', value: 17, zones, ticks: [{ at: 50 }] }).container)).toEqual(
+      [],
+    )
+    expect(labels(mount({ label: 'G', value: 17, target: 50, size: 'row' }).container)).toEqual([])
+  })
+
+  test('startCaption={null} drops the start figure; a tick labelled at the start replaces it', () => {
+    const dropped = mount({ label: 'G', value: 17, target: 50, startCaption: null })
+    expect(labels(dropped.container)).toEqual([])
+    const own = mount({ label: 'G', value: 17, ticks: [{ at: 0, label: 'Start' }] })
+    expect(labels(own.container)).toEqual(['Start'])
+  })
+
+  test('endCaption={null} drops the target figure', () => {
+    const { container } = mount({ label: 'G', value: 17, target: 50, endCaption: null })
+    expect(q(container, '[data-meter-captions]')?.textContent ?? '').not.toContain('Target')
+  })
+
+  test('a tick `caption` is a caption under the track, in the accessible description', () => {
+    const { container } = mount({
+      label: 'G',
+      value: 17,
+      max: 28,
+      startCaption: null,
+      ticks: [{ at: 14, label: 'Pace', caption: '14 sessions by 16 Oct' }],
+    })
+    expect(q(container, '[data-meter-captions]')?.textContent).toContain('sessions by')
+    expect(labels(container)).toEqual(['Pace'])
+    expect(container.textContent).toContain('Pace 14')
   })
 })

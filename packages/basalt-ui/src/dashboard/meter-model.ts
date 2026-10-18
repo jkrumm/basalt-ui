@@ -32,8 +32,11 @@ export type MeterZone = {
   short?: string
   color?: string
 }
-/** A mark on the track at `at` (in the reading's units). A label is captioned beside it. */
-export type MeterTick = { at: number; label?: string }
+/**
+ * A mark on the track at `at` (in the reading's units). A `label` is captioned beside it, above the
+ * track; a `caption` sits under the track, centred on the mark and clamped inside the track.
+ */
+export type MeterTick = { at: number; label?: string; caption?: string }
 
 /** A colour of a `stops` gradient at `at` (in the reading's units); the colour is the consumer's. */
 type MeterStop = { at: number; color: string }
@@ -70,7 +73,13 @@ export function zoneFill(zone: MeterZone, index: number, count: number): string 
 }
 
 /** One tick on the track: its percent position and what it says (caption `label`, aria `text`). */
-export type TickMark = { key: string; pct: number; label: string | undefined; text: string }
+export type TickMark = {
+  key: string
+  pct: number
+  label: string | undefined
+  caption: string | undefined
+  text: string
+}
 
 /** A fill on the track, as fractions (0–1) of the span, with the segment it was laid out from. */
 export type Part = {
@@ -130,6 +139,7 @@ export function tickMarks(
             key: String(i),
             pct: toPct((t.at - min) / span),
             label: t.label,
+            caption: t.caption,
             text: `${t.label ?? 'Tick'} ${format(t.at)}`,
           },
         ]
@@ -240,7 +250,7 @@ export type RowLabel = {
   box: LabelBox
   span?: LabelBox
   holding?: boolean
-  /** A tick at the track's start or end: it yields to every zone name it would touch. */
+  /** A tick at the track's start or end: it keeps its place over every zone name it would touch. */
   end?: boolean
   short?: LabelBox
 }
@@ -257,11 +267,12 @@ export type RowPlacement = {
 /**
  * Which labels of the row show, in input order. The holding zone's name claims its place first (it
  * is the reading's verdict, so it never hides for width: it may spill past its span, shifted inside
- * the row); the other ticks go next; every other zone name then shows only
- * when it lies inside the row and its own span and clears every label already kept, trying its full
- * name and then its `short` box; the end ticks (at the track's start or end) go last, so they yield
- * to any name they would touch. A tick keeps at least `gap` px (one gap step of the host's
- * spacing) from every other label; zone names among themselves only must not touch. A hidden name is still named in the described-by text.
+ * the row); the other ticks go next, then the end ticks (at the track's start or end: a scale's
+ * figures); every other zone name then shows only when it lies inside the row and its own span and
+ * clears every label already kept, trying its full name, then its `short` box, then hiding. An end
+ * figure hides only when it cannot clear the holding name, an interior tick or the other end. A tick
+ * keeps at least `gap` px (one gap step of the host's spacing) from every other label; zone names
+ * among themselves only must not touch. A hidden name is still named in the described-by text.
  */
 export function placeRowLabels(
   labels: readonly RowLabel[],
@@ -272,7 +283,7 @@ export function placeRowLabels(
   const short = labels.map(() => false)
   const shift = labels.map(() => 0)
   const kept: { box: LabelBox; tick: boolean }[] = []
-  const rank = (l: RowLabel) => (l.holding ? 0 : l.end ? 3 : l.span ? 2 : 1)
+  const rank = (l: RowLabel) => (l.holding ? 0 : l.span ? 3 : l.end ? 2 : 1)
   const order = labels
     .map((_, i) => i)
     .toSorted((a, b) => rank(labels[a] as RowLabel) - rank(labels[b] as RowLabel))
@@ -482,8 +493,10 @@ export type MarkItem = { width: number; pct?: number; edge?: 'end' }
 /**
  * Where each caption of the marks row starts (px, logical start edge), index-aligned with `items`: an
  * anchored caption is centred on its mark and clamped inside the row, the others sit at the start (or,
- * `edge: 'end'`, the end). `null` when nothing is anchored, the row is unmeasured, a caption is wider
- * than the row, or two captions would sit closer than `gap`: the row then flows and wraps instead.
+ * `edge: 'end'`, the end). Two captions closer than `gap` are pushed apart, in order, the least that
+ * clears them, so a caption stays as near its mark as the row allows. `null` when nothing is anchored,
+ * the row is unmeasured, a caption is wider than the row, or the captions cannot all clear each other
+ * inside the row: the row then flows and wraps instead.
  */
 export function placeMarkCaptions(
   items: readonly MarkItem[],
@@ -497,14 +510,19 @@ export function placeMarkCaptions(
     return Math.max(0, Math.min((rowWidth * i.pct) / 100 - i.width / 2, rowWidth - i.width))
   })
   const order = lefts.map((_, i) => i).toSorted((a, b) => (lefts[a] ?? 0) - (lefts[b] ?? 0))
-  const crowded = order.some((i, n) => {
-    const next = order[n + 1]
-    return (
-      next !== undefined &&
-      (lefts[next] ?? 0) < (lefts[i] ?? 0) + (items[i]?.width ?? 0) + gap - LABEL_SUBPIXEL
-    )
-  })
-  return crowded ? null : lefts
+  const widthOf = (i: number) => items[i]?.width ?? 0
+  for (const [n, i] of order.entries()) {
+    const prev = order[n - 1]
+    if (prev !== undefined)
+      lefts[i] = Math.max(lefts[i] ?? 0, (lefts[prev] ?? 0) + widthOf(prev) + gap)
+  }
+  for (const [n, i] of order.toReversed().entries()) {
+    const next = order.toReversed()[n - 1]
+    const limit = next === undefined ? rowWidth : (lefts[next] ?? 0) - gap
+    lefts[i] = Math.min(lefts[i] ?? 0, limit - widthOf(i))
+  }
+  const first = order[0]
+  return first !== undefined && (lefts[first] ?? 0) < -LABEL_SUBPIXEL ? null : lefts
 }
 
 /**

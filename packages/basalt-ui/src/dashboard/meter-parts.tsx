@@ -539,15 +539,18 @@ function CaptionRow({ items }: { items: readonly CaptionItem[] }) {
 
 /**
  * Categorical part captions (swatch, name, value): each under its own segment when every one fits
- * there on one line, else one wrapped list. A caption never wraps inside itself.
+ * there on one line, else a wrapping row of entries from the track's start. An entry stays on one
+ * line unless it is wider than the row itself.
  */
 function PartCaptions({ captions }: { captions: readonly PartCaption[] }) {
   const rowRef = useRef<HTMLUListElement>(null)
   const [under, setUnder] = useState(false)
+  const [overwide, setOverwide] = useState(false)
   useMeasured(
     rowRef,
     (row) => {
       const { widths, rowWidth, gap } = measureItems(row)
+      setOverwide(widths.some((w) => w > rowWidth))
       const fits = partsFitUnder(
         captions.map((c, i) => ({ startPct: c.startPct, width: widths[i] ?? 0 })),
         rowWidth,
@@ -560,7 +563,11 @@ function PartCaptions({ captions }: { captions: readonly PartCaption[] }) {
   return (
     <ul
       ref={rowRef}
-      className={cx(classes.partCaptions, under && classes.partCaptionsUnder)}
+      className={cx(
+        classes.partCaptions,
+        under && classes.partCaptionsUnder,
+        overwide && classes.partCaptionsWrap,
+      )}
       // The explicit role is deliberate: `list-style: none` makes Safari/VoiceOver drop the implicit one.
       // oxlint-disable-next-line jsx-a11y/no-redundant-roles
       role="list"
@@ -629,7 +636,32 @@ export function MeterBar(props: {
     props.target === undefined &&
     model.ticks.length === 0
   const hasParts = model.partCaptions.length > 0
-  const tickLabels = compact ? [] : model.ticks.filter((t) => t.label !== undefined)
+  // A scale's start figure: a Meter with marks or a target labels where its track begins, with its
+  // `format`, unless the consumer opted out (`startCaption={null}`) or already labelled that end.
+  const zoned = zones !== undefined && zones.length > 0
+  const labelled = model.ticks.filter((t) => t.label !== undefined)
+  const startFigure =
+    !compact &&
+    !zoned &&
+    props.startCaption !== null &&
+    (model.ticks.length > 0 || model.targetPct !== undefined) &&
+    !labelled.some((t) => t.pct <= 0)
+  const tickLabels: TickMark[] = compact
+    ? []
+    : [
+        ...(startFigure
+          ? [
+              {
+                key: 'start',
+                pct: 0,
+                label: format(min),
+                caption: undefined,
+                text: '',
+              } satisfies TickMark,
+            ]
+          : []),
+        ...labelled,
+      ]
   const zoneLabels = compact ? [] : model.zoneLabels
   const describedBy =
     model.describedByText === null ? {} : ({ 'aria-describedby': describedId } as const)
@@ -654,6 +686,19 @@ export function MeterBar(props: {
               } satisfies CaptionItem,
             ]
           : []),
+        ...(compact
+          ? []
+          : model.ticks.flatMap((t) =>
+              t.caption === undefined
+                ? []
+                : [
+                    {
+                      key: `tick${t.key}`,
+                      node: glue(t.caption),
+                      pct: t.pct,
+                    } satisfies CaptionItem,
+                  ],
+            )),
         ...(end !== null
           ? [
               {

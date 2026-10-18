@@ -84,8 +84,13 @@ describe('ticks', () => {
 
   test('captions only the labelled ticks, and size="row" draws the marks without captions', () => {
     const { container } = mount({ label: 'R', value: 50, ticks })
+    // The scale's start figure comes with the marks; `startCaption={null}` drops it.
     expect(
       [...container.querySelectorAll('[data-meter-tick-label]')].map((l) => l.textContent),
+    ).toEqual(['0', 'Low', 'Good'])
+    const bare = mount({ label: 'R', value: 50, ticks, startCaption: null })
+    expect(
+      [...bare.container.querySelectorAll('[data-meter-tick-label]')].map((l) => l.textContent),
     ).toEqual(['Low', 'Good'])
     const row = mount({ label: 'R', value: 50, ticks, size: 'row' })
     expect(row.container.querySelector('[data-meter-tick-label]')).toBeNull()
@@ -134,6 +139,7 @@ describe('tick caption collision', () => {
   const props = {
     label: 'Recovery',
     value: 50,
+    startCaption: null,
     ticks: [
       { at: 40, label: 'Low' },
       { at: 70, label: 'Good' },
@@ -155,7 +161,12 @@ describe('tick caption collision', () => {
   })
 
   test('a caption that would leave the row at the end is right-aligned to its tick, so it fits', () => {
-    const { container } = mount({ label: 'R', value: 50, ticks: [{ at: 95, label: 'Cap' }] })
+    const { container } = mount({
+      label: 'R',
+      value: 50,
+      ticks: [{ at: 95, label: 'Cap' }],
+      startCaption: null,
+    })
     expect(container.querySelector('[data-meter-tick-list]')).toBeNull()
     const label = container.querySelector<HTMLElement>('[data-meter-tick-label]')
     expect(label?.style.insetInlineEnd).toBe('5%')

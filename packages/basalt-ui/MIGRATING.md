@@ -1042,9 +1042,22 @@ The `basalt-ui/router-tanstack` subpath is **removed** in 2.x, not moved: an imp
 | `useNav`, and `BasaltShell`'s `sections` / `mobileNav` props                                                                                                                                                                   | deleted: pass `nav={NAV}` (plus `badges`, `isActive`, `getScrollElement` — the old `useNav` options) to `BasaltShell`; it resolves the sidebar, the mobile bar and the breadcrumb itself. `mobileNav` tuning moves to `defineNav`'s `mobile`. argo `apps/dashboard/src/routes/__root.tsx`: replace `const nav = useNav(NAV, { badges })` + `{...nav}` with `nav={NAV} badges={…}` (migrates in W12; 1.x consumers stay on their pinned version until then) |
 
 ## Unreleased — Wave 37, argo's friction II
+## Unreleased — Meter keeps its end figures and captions at their marks
 
-_Nothing yet. Author the next section under this heading as `## Unreleased — <title>`; the
-release renames it and opens a new one here._
+No export is removed. `MeterTick` gains an optional `caption`; five Meter defaults move.
+
+### Behaviour changes
+
+| Surface                                                     | Before                                                                                                         | Now                                                                                                                                                                                                                | Opt-out                                                   |
+| ----------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ | --------------------------------------------------------- |
+| Zoned Meter, end ticks (`ticks` at `min`/`max`)             | a zone name always won: at 390 the `2.0` / `100` end figure hid                                                | both end figures stay; a zone name that would touch one falls back to its `short`, then hides (still described). An end figure hides only when it cannot clear the other end, an interior tick or the holding name | none                                                      |
+| Bar with `ticks` or `target`                                | no start figure                                                                                                | `format(min)` is labelled at the start of the track, above it                                                                                                                                                      | `startCaption={null}` (also drops the reading, as before) |
+| Captions at their marks                                     | forecast and target captions anchored; two captions closer than a gap step sent the whole row back to the flow | closer captions are pushed apart, in order, the least that clears them; the flow is the fallback only when they cannot all fit inside the row                                                                      | none                                                      |
+| `MeterTick.caption` (new)                                   | a tick's text sat in `endCaption` at the track end                                                             | `ticks={[{ at, label: 'Pace', caption: '14 sessions by 16 Oct' }]}` captions under the track, centred on the mark                                                                                                  | omit `caption`                                            |
+| Categorical part captions that do not fit under their parts | an entry could wrap inside itself                                                                              | each entry (swatch, name, value) stays on one line in a wrapping row from the track's start; only an entry wider than the row breaks                                                                               | none                                                      |
+
+`target` already captioned its value (`Target 28 sessions`, with `format`); `endCaption={null}` drops it.
+An end figure that hides still reads in the accessible description.
 
 ## 2.22.0 — Wave 37, argo's friction II
 
