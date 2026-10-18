@@ -320,6 +320,14 @@ export function placeRowLabels(
     short[i] = useShort
     kept.push({ box, tick })
   }
+  // One register: once any name falls back to its `short`, every other shown name that has one
+  // follows (the holding name, which never shortens, is the one exception). A shorter box only
+  // clears more, so the placement above stays valid.
+  if (short.some(Boolean)) {
+    for (const [i, label] of labels.entries()) {
+      if (shown[i] && !label.holding && label.short !== undefined) short[i] = true
+    }
+  }
   return { shown, short, shift }
 }
 
@@ -363,6 +371,8 @@ export type BarModel = {
   zoneLabels: readonly ZoneLabel[]
   ticks: readonly TickMark[]
   markerPct: number | undefined
+  /** Percent where the committed fill ends: the reading caption's anchor. Absent on a marked track. */
+  fillEndPct: number | undefined
   targetPct: number | undefined
   /** The default start caption (the zone is named on the band, so it is the bare reading); `startCaption` decides whether it shows. */
   startText: string
@@ -475,6 +485,12 @@ export function modelBar(input: BarInput): BarModel {
         }),
     ticks,
     markerPct: zoned || striped ? toPct((reading - min) / span) : undefined,
+    fillEndPct:
+      zoned || striped
+        ? undefined
+        : toPct(
+            parts.filter((p) => !p.forecast).reduce((end, p) => Math.max(end, p.start + p.size), 0),
+          ),
     targetPct: target === undefined ? undefined : toPct((target - min) / span),
     startText: format(reading),
     endText: endCaptionText(reading, target, format),
@@ -486,8 +502,26 @@ export function modelBar(input: BarInput): BarModel {
 export const ringFraction = (reading: number, min: number, max: number): number =>
   clamp01((reading - min) / spanOf(min, max).span)
 
-/** One caption on the marks row: its natural width and where it is anchored (`pct`), else its edge. */
-export type MarkItem = { width: number; pct?: number; edge?: 'end' }
+/**
+ * One caption on the marks row: its natural width and where it is anchored (`pct`), else its edge.
+ * `align` is which edge of the caption sits on the mark (default: its centre). `drop` ranks it for
+ * dropping when the row is too narrow: the lowest rank goes first, none never drops.
+ */
+export type MarkItem = {
+  width: number
+  pct?: number
+  edge?: 'end'
+  align?: 'start' | 'center' | 'end'
+  drop?: number
+}
+
+/** Where a caption starts before any caption is pushed off it: on its mark, else at its edge. */
+function idealLeft(i: MarkItem, rowWidth: number): number {
+  if (i.pct === undefined) return i.edge === 'end' ? rowWidth - i.width : 0
+  const at = (rowWidth * i.pct) / 100
+  const left = i.align === 'end' ? at - i.width : i.align === 'start' ? at : at - i.width / 2
+  return Math.max(0, Math.min(left, rowWidth - i.width))
+}
 
 /**
  * Where each caption of the marks row starts (px, logical start edge), index-aligned with `items`: an
@@ -504,10 +538,7 @@ export function placeMarkCaptions(
 ): number[] | null {
   if (rowWidth <= 0 || !items.some((i) => i.pct !== undefined)) return null
   if (items.some((i) => i.width > rowWidth)) return null
-  const lefts = items.map((i) => {
-    if (i.pct === undefined) return i.edge === 'end' ? rowWidth - i.width : 0
-    return Math.max(0, Math.min((rowWidth * i.pct) / 100 - i.width / 2, rowWidth - i.width))
-  })
+  const lefts = items.map((i) => idealLeft(i, rowWidth))
   const order = lefts.map((_, i) => i).toSorted((a, b) => (lefts[a] ?? 0) - (lefts[b] ?? 0))
   const widthOf = (i: number) => items[i]?.width ?? 0
   for (const [n, i] of order.entries()) {
@@ -522,6 +553,73 @@ export function placeMarkCaptions(
   }
   const first = order[0]
   return first !== undefined && (lefts[first] ?? 0) < -LABEL_SUBPIXEL ? null : lefts
+}
+
+/** The furthest a droppable caption may sit from its own mark (Wave 37 r2's "not far"); past it, it drops. */
+export const MAX_CAPTION_SHIFT = 24
+
+/**
+ * `placeMarkCaptions` with dropping: when the captions cannot all clear each other on one line, the
+ * droppable ones go one at a time in `drop` rank order (a caption without a rank never goes) until
+ * the rest fit. While any droppable caption remains, a kept one that would have to sit more than
+ * `MAX_CAPTION_SHIFT` off its mark, or an undroppable one (the reading) that would move at all, counts
+ * as not fitting: the reading stays at its fill end, so the others yield. Index-aligned with `items`: `starts[i]` is a dropped caption's `undefined` and
+ * `dropped[i]` marks it. `null` when even the undroppable ones do not fit, so the row flows instead.
+ */
+export function placeCaptionRow(
+  items: readonly MarkItem[],
+  rowWidth: number,
+  gap: number,
+): { starts: (number | undefined)[]; dropped: boolean[] } | null {
+  const dropped = items.map(() => false)
+  const order = items
+    .map((item, i) => ({ rank: item.drop, i }))
+    .filter((d): d is { rank: number; i: number } => d.rank !== undefined)
+    .toSorted((a, b) => a.rank - b.rank)
+  for (let step = 0; step <= order.length; step++) {
+    const kept = items.map((_, i) => i).filter((i) => !dropped[i])
+    const lefts = placeMarkCaptions(
+      kept.map((i) => items[i] as MarkItem),
+      rowWidth,
+      gap,
+    )
+    const settled =
+      lefts !== null &&
+      (step === order.length ||
+        kept.every((i, n) => {
+          const item = items[i] as MarkItem
+          if (item.pct === undefined) return true
+          const moved = Math.abs((lefts[n] ?? 0) - idealLeft(item, rowWidth))
+          return moved <= (item.drop === undefined ? LABEL_SUBPIXEL : MAX_CAPTION_SHIFT)
+        }))
+    if (lefts !== null && settled) {
+      const starts = items.map((): number | undefined => undefined)
+      for (const [n, i] of kept.entries()) starts[i] = lefts[n]
+      return { starts, dropped }
+    }
+    const next = order[step]
+    if (next === undefined) return null
+    dropped[next.i] = true
+  }
+  return null
+}
+
+/**
+ * How many columns the categorical part captions take when they do not fit under their segments:
+ * the most columns whose widest-per-column entries fit the row, with no lone entry on the last row
+ * (`n % cols === 1`). All in one row when they fit; one column is always valid.
+ */
+export function partColumns(widths: readonly number[], rowWidth: number, gap: number): number {
+  const n = widths.length
+  for (let cols = n; cols > 1; cols--) {
+    if (n > cols && n % cols === 1) continue
+    const widest = Array.from({ length: cols }, (_, c) =>
+      Math.max(0, ...widths.filter((_w, i) => i % cols === c)),
+    )
+    const total = widest.reduce((a, b) => a + b, 0) + gap * (cols - 1)
+    if (total <= rowWidth + LABEL_SUBPIXEL) return cols
+  }
+  return 1
 }
 
 /**

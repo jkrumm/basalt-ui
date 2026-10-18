@@ -111,6 +111,7 @@ Signature: Meter(props: MeterProps): JSX.Element
   startCaption?: ReactNode  [with segments | zones]
   endCaption?: ReactNode  [with segments | zones]
   reading?: boolean  [with segments | zones]
+  readingAt?: "fill" | "start"  [with segments | zones]
   value?: number | null  [with zones]
   color?: string
   track?: boolean

@@ -598,8 +598,14 @@ layout('Meter / BarList geometry', () => {
     expect(m.anchored).toBe(true)
     const cap = m.caps.find((c) => c.text?.includes(text))
     if (!cap) throw new Error(`LAYOUT: no ${text} caption in ${id}`)
-    const centre = (cap.left + cap.right) / 2
-    expect(Math.abs(centre - m.tick)).toBeLessThanOrEqual(SNAP)
+    // The target's caption is centred on its tick; the forecast's begins at the boundary, where the
+    // reading ends (Wave 38), one gap step (6px) at most after it.
+    if (kind === 'boundary') {
+      expect(cap.left - m.tick).toBeGreaterThanOrEqual(-SNAP)
+      expect(cap.left - m.tick).toBeLessThanOrEqual(6 + SNAP)
+    } else {
+      expect(Math.abs((cap.left + cap.right) / 2 - m.tick)).toBeLessThanOrEqual(SNAP)
+    }
     expect(cap.left).toBeGreaterThanOrEqual((m.track[0] ?? 0) - SUBPIXEL)
     expect(cap.right).toBeLessThanOrEqual((m.track[1] ?? 0) + SUBPIXEL)
     for (const c of m.caps) expect(c.lines).toBe(1)

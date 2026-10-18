@@ -336,7 +336,7 @@ layout('StatStrip part alignment', () => {
   for (const vp of [DESKTOP_1440, PHONE]) describe(`at ${vp.width}px`, () => suite(vp))
 })
 
-type Pair = { gap: number; width: number }[]
+type Pair = { reading: number; fillEnd: number; second: number; width: number }[]
 
 const measureFooter = (p: LayoutPage): Promise<Pair> =>
   p.raw.evaluate(() => {
@@ -347,7 +347,13 @@ const measureFooter = (p: LayoutPage): Promise<Pair> =>
       if (!caps || caps.children.length < 2) throw new Error('LAYOUT: no footer captions')
       const a = caps.children[0]!.getBoundingClientRect()
       const b = caps.children[1]!.getBoundingClientRect()
-      return { gap: b.left - a.right, width: f.getBoundingClientRect().width }
+      const fill = f.querySelector<HTMLElement>('[data-meter-fill="committed"]')!
+      return {
+        reading: a.right,
+        fillEnd: fill.getBoundingClientRect().right,
+        second: b.left - a.right,
+        width: f.getBoundingClientRect().width,
+      }
     })
   })
 
@@ -384,11 +390,14 @@ const measureCardStates = (p: LayoutPage): Promise<CardStates> =>
 
 layout('StatStrip footer row and StatCard states', () => {
   test(
-    'a footer meter keeps its caption beside its value at 1440',
+    'a footer meter states its reading at the end of its fill and keeps both captions on one row at 1440',
     async () => {
       const p = await openFixture(SPEC, DESKTOP_1440)
       await p.settle()
-      for (const f of await measureFooter(p)) expect(f.gap).toBeLessThanOrEqual(160)
+      for (const f of await measureFooter(p)) {
+        expect(Math.abs(f.reading - f.fillEnd)).toBeLessThanOrEqual(1)
+        expect(f.second).toBeGreaterThan(0)
+      }
     },
     CLOSE_BUDGET_MS,
   )
