@@ -351,7 +351,16 @@ function StatsFixture({ count, wide }: { count: number; wide: boolean }): ReactE
   )
 }
 
-const SLOT_SPARK = [1, 5, 3, 8, 2, 9, 4]
+const SLOT_SPARK = [1, 5, 3, 8, 2, 9, 4].map((value, i) => ({
+  at: Date.UTC(2026, 9, 10 + i),
+  value,
+}))
+
+type RefBar = { month: string; sessions: number }
+const REF_BARS: RefBar[] = ['Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep'].map((month, i) => ({
+  month,
+  sessions: i === 5 ? 60 : 10,
+}))
 
 const LONG_FIRST_LINE = `const value = '${'x'.repeat(200)}'\nconst second = 2`
 
@@ -1143,6 +1152,24 @@ function ChartsFixture({ spec }: { spec: ChartsSpec }): ReactElement {
         x={(d) => d.at}
         states={STRIP_STATES}
         getBand={(d) => ({ state: d.state })}
+        {...height}
+      />
+    ) : spec.kind === 'error-card' ? (
+      <ChartCard
+        title="Goal hit rate"
+        state={{ error: new Error('The goal hit rate failed to load.') }}
+        onRetry={() => {}}
+      >
+        <div />
+      </ChartCard>
+    ) : spec.kind === 'ref-bars' ? (
+      <Bars
+        ariaLabel="Fixture reference bars"
+        data={REF_BARS}
+        x={(d) => d.month}
+        y={{ domain: [0, 80] }}
+        bars={[{ key: 'sessions', label: 'Sessions', color: VX.line, getValue: (d) => d.sessions }]}
+        refLines={[{ value: 25, color: VX.faint, dashed: true, label: 'Goal 25' }]}
         {...height}
       />
     ) : spec.kind === 'panel-rail' ? (

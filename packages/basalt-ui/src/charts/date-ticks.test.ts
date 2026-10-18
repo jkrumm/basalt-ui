@@ -1,5 +1,7 @@
 /** The default Date x labels follow the tick step and never repeat on one axis (ledger row 137). */
-import { describe, expect, test } from 'bun:test'
+import { afterEach, beforeEach, describe, expect, test } from 'bun:test'
+import { defineFormat } from '../format'
+import { resetFormatDefaults } from '../format/shared'
 import { compileCartesian, dateTicks } from './compile'
 import { dateTickFormat } from './date-tick-format'
 import type { ChartSeries } from './types'
@@ -36,6 +38,19 @@ function labels(
 const unique = (xs: string[]): boolean => new Set(xs).size === xs.length
 const noAdjacentRepeat = (xs: string[]): boolean => xs.every((x, i) => x !== xs[i - 1])
 
+// The day labels read the page locale: pin one, or the runtime's decides the expected strings.
+beforeEach(() => defineFormat({ locale: 'en-GB' }))
+afterEach(resetFormatDefaults)
+
+/** The en-GB day label of October `d`, as this runtime's ICU spells it. */
+const oct = (d: number): string =>
+  new Intl.DateTimeFormat('en-GB', { day: 'numeric', month: 'short', timeZone: 'UTC' }).format(
+    Date.UTC(2026, 9, d),
+  )
+const jan = (d: number): string =>
+  new Intl.DateTimeFormat('en-GB', { day: 'numeric', month: 'short', timeZone: 'UTC' }).format(
+    Date.UTC(2026, 0, d),
+  )
 const at = (d: number, h = 0): Date => new Date(Date.UTC(2026, 9, d, h))
 const read = (ticks: Date[]): string[] => ticks.map(dateTickFormat(ticks))
 
@@ -45,11 +60,11 @@ describe('dateTickFormat', () => {
     expect(read(ticks)).toEqual([
       '12:00',
       '18:00',
-      '18.10',
+      oct(18),
       '06:00',
       '12:00',
       '18:00',
-      '19.10',
+      oct(19),
       '06:00',
       '12:00',
     ])
@@ -59,20 +74,20 @@ describe('dateTickFormat', () => {
     const ticks = Array.from({ length: 15 }, (_, i) => at(17, i * 12))
     const out = read(ticks)
     expect(out.filter((l) => l === '12:00').length).toBe(7)
-    expect(out.filter((l) => /^\d\d\.\d\d$/.test(l)).length).toBe(8)
+    expect(out.filter((l) => /^\d{1,2} \p{L}+$/u.test(l)).length).toBe(8)
   })
 
   test('36 h with no midnight tick: the first tick of each day carries the date', () => {
     const ticks = [6, 18, 30, 42].map((h) => at(17, h))
-    expect(read(ticks)).toEqual(['17.10 06:00', '18:00', '18.10 06:00', '18:00'])
+    expect(read(ticks)).toEqual([`${oct(17)} 06:00`, '18:00', `${oct(18)} 06:00`, '18:00'])
   })
 
   test('a single day reads plain HH:MM', () => {
     expect(read([at(17, 6), at(17, 12), at(17, 18)])).toEqual(['06:00', '12:00', '18:00'])
   })
 
-  test('days read DD.MM', () => {
-    expect(read([at(17), at(18), at(19)])).toEqual(['17.10', '18.10', '19.10'])
+  test('days read the day and month', () => {
+    expect(read([at(17), at(18), at(19)])).toEqual([oct(17), oct(18), oct(19)])
   })
 
   test('months repeat across years only behind a January year label', () => {
@@ -93,48 +108,48 @@ describe('dateTickFormat', () => {
     expect(read(ticks)).toEqual([
       '12:00',
       '18:00',
-      '18.10',
+      oct(18),
       '06:00',
       '12:00',
       '18:00',
-      '19.10',
+      oct(19),
       '06:00',
       '12:00',
     ])
   })
 
   test('one tick takes the span its instant implies', () => {
-    expect(read([at(17)])).toEqual(['17.10'])
+    expect(read([at(17)])).toEqual([oct(17)])
     expect(read([at(17, 6)])).toEqual(['06:00'])
-    expect(read([new Date(Date.UTC(2026, 0, 1))])).toEqual(['01.01'])
+    expect(read([new Date(Date.UTC(2026, 0, 1))])).toEqual([jan(1)])
   })
 
   test('month-scale ticks that share a month fall to day labels, never repeating', () => {
-    const jan = [new Date(Date.UTC(2026, 0, 1)), new Date(Date.UTC(2026, 0, 31))]
-    expect(read(jan)).toEqual(['01.01', '31.01'])
+    const ticks = [new Date(Date.UTC(2026, 0, 1)), new Date(Date.UTC(2026, 0, 31))]
+    expect(read(ticks)).toEqual([jan(1), jan(31)])
   })
 
   test('sub-minute ticks widen to the second', () => {
     const t = (s: number): Date => new Date(Date.UTC(2026, 9, 17, 6, 0, s))
     expect(read([t(0), t(15), t(30)])).toEqual([
-      '17.10 06:00:00',
-      '17.10 06:00:15',
-      '17.10 06:00:30',
+      `${oct(17)} 06:00:00`,
+      `${oct(17)} 06:00:15`,
+      `${oct(17)} 06:00:30`,
     ])
   })
 
   test('sub-second ticks widen to the millisecond', () => {
     const t = (ms: number): Date => new Date(Date.UTC(2026, 9, 17, 6, 0, 0, ms))
     expect(read([t(0), t(250), t(500)])).toEqual([
-      '17.10 06:00:00.000',
-      '17.10 06:00:00.250',
-      '17.10 06:00:00.500',
+      `${oct(17)} 06:00:00.000`,
+      `${oct(17)} 06:00:00.250`,
+      `${oct(17)} 06:00:00.500`,
     ])
   })
 
-  test('a Date outside the tick set reads as plain DD.MM', () => {
+  test('a Date outside the tick set reads as plain day', () => {
     const ticks = [at(17), at(18)]
-    expect(dateTickFormat(ticks)(at(20, 5))).toBe('20.10')
+    expect(dateTickFormat(ticks)(at(20, 5))).toBe(oct(20))
   })
 })
 
@@ -144,7 +159,7 @@ describe('default date tick labels', () => {
   test('a 48 h hourly series marks the day boundary and never repeats back to back', () => {
     const out = labels(oct17, HOUR, 49)
     expect(noAdjacentRepeat(out)).toBe(true)
-    expect(out).toContain('18.10')
+    expect(out).toContain(oct(18))
     expect(out.some((l) => /^\d\d:\d\d$/.test(l))).toBe(true)
   })
 
@@ -157,13 +172,13 @@ describe('default date tick labels', () => {
   test('a band (BandStrip) axis takes the same default', () => {
     const out = labels(oct17, HOUR, 48, { band: true })
     expect(noAdjacentRepeat(out)).toBe(true)
-    expect(out).toContain('18.10')
+    expect(out).toContain(oct(18))
   })
 
-  test('a 30-day daily series reads DD.MM', () => {
+  test('a 30-day daily series reads the day and month', () => {
     const out = labels(oct17, DAY, 30)
     expect(unique(out)).toBe(true)
-    expect(out.every((l) => /^\d\d\.\d\d$/.test(l))).toBe(true)
+    expect(out.every((l) => /^\d{1,2} \p{L}+$/u.test(l))).toBe(true)
   })
 
   test('a 10-month monthly series reads months with the year on January', () => {
@@ -193,8 +208,8 @@ describe('default date tick labels', () => {
 })
 
 describe('the tick label invariant over a sweep of spans', () => {
-  // A label is date-bearing (a marker) when it starts with `DD.MM` or is a bare year.
-  const isMarker = (l: string): boolean => /^(\d\d\.\d\d|\d{4}$)/.test(l)
+  // A label is date-bearing (a marker) when it starts with a day and month or is a bare year.
+  const isMarker = (l: string): boolean => /^(\d{1,2} \p{L}+|\d{4}$)/u.test(l)
   const STEPS_MS = [
     250,
     1_000,

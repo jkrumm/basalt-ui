@@ -486,7 +486,11 @@ describe('scales', () => {
     expect(new Set(ticks.map(utcAxisDate)).size).toBe(ticks.length)
   })
   test('date labels read UTC, like the time scale', () => {
-    expect(utcAxisDate(day(1))).toBe('01.09')
+    expect(utcAxisDate(day(1))).toBe(
+      new Intl.DateTimeFormat('en-GB', { day: 'numeric', month: 'short', timeZone: 'UTC' }).format(
+        day(1),
+      ),
+    )
     expect(utcHeaderDate(day(1))).toBe(gbDate(new Date(Date.UTC(2026, 8, 1))))
   })
 })

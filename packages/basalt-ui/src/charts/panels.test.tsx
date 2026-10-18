@@ -908,6 +908,12 @@ describe('DualPanel x ticks', () => {
     )
     expect(ticks.length).toBeGreaterThan(1)
     expect(ticks.every((l, i) => l !== ticks[i - 1])).toBe(true)
-    expect(ticks).toContain('18.10')
+    expect(ticks).toContain(
+      new Intl.DateTimeFormat(undefined, {
+        day: 'numeric',
+        month: 'short',
+        timeZone: 'UTC',
+      }).format(Date.UTC(2026, 9, 18)),
+    )
   })
 })

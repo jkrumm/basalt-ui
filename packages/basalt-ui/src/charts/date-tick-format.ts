@@ -1,15 +1,14 @@
 /**
  * The default Date x tick labels: chosen from the TICK step (not the data step), read in UTC like
  * the scale that placed them. A label may recur on one axis only behind a MARKER label (a day or a
- * year) — `12:00, 18:00, 18.10, 06:00, 12:00` is fine, `17.10, 17.10, 18.10` is not. Each span has
+ * year) — `12:00, 18:00, 18 Oct, 06:00, 12:00` is fine, `17 Oct, 17 Oct, 18 Oct` is not. Each span has
  * a ladder of levels, plainest first; the first level that holds the invariant wins. The last rung
  * of every ladder names the whole date (or instant) of its tick, so the invariant always holds.
  */
 
-const MONTHS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec']
-export const pad2 = (n: number): string => String(n).padStart(2, '0')
+import { axisDay, axisDayYear, monthName } from './chart-dates'
 
-export const monthName = (d: Date): string => MONTHS[d.getUTCMonth()]!
+export const pad2 = (n: number): string => String(n).padStart(2, '0')
 
 const DAY_MS = 86_400_000
 const HOUR_MS = 3_600_000
@@ -19,18 +18,16 @@ const HOUR_MS = 3_600_000
  */
 const MONTH_STEP_MS = 27 * DAY_MS
 
-/** `DD.MM`, read in UTC like the time scale (a local read shifts a day west of UTC). */
-export function utcAxisDate(d: Date): string {
-  return `${pad2(d.getUTCDate())}.${pad2(d.getUTCMonth() + 1)}`
-}
+/** The day (`4 Oct`, in the page locale), read in UTC like the time scale (a local read shifts a
+ * day west of UTC). */
+export const utcAxisDate = axisDay
 
 const utcClock = (d: Date): string => `${pad2(d.getUTCHours())}:${pad2(d.getUTCMinutes())}`
 const utcClockSeconds = (d: Date): string => `${utcClock(d)}:${pad2(d.getUTCSeconds())}`
 const utcClockMillis = (d: Date): string =>
   `${utcClockSeconds(d)}.${String(d.getUTCMilliseconds()).padStart(3, '0')}`
-/** Two digits: a widened day label stays 8 characters and still reads as the `DD.MM` family. */
-const utcAxisDateYear = (d: Date): string =>
-  `${utcAxisDate(d)}.${String(d.getUTCFullYear()).slice(2)}`
+/** Two digits: a widened day label stays the same family (`4 Oct 26`). */
+const utcAxisDateYear = axisDayYear
 
 const isMidnight = (t: number): boolean => t % DAY_MS === 0
 const isJanuary = (d: Date): boolean => d.getUTCMonth() === 0
@@ -69,7 +66,7 @@ const subDayLevels: Level[] = [
 ]
 
 /**
- * A day or more: `DD.MM`. Ticks are at least a day apart here, so they fall on different UTC days
+ * A day or more: the day (`18 Oct`). Ticks are at least a day apart here, so they fall on different UTC days
  * and the last rung, which names the full date, cannot repeat.
  */
 const dayLevels: Level[] = [
@@ -121,7 +118,7 @@ function stepOf(times: readonly number[]): number {
 
 /**
  * A formatter for one tick set. A Date that is not among the ticks (a hover, a consumer reading
- * the axis format) reads as plain `DD.MM`: its position in the set is undefined.
+ * the axis format) reads as the plain day: its position in the set is undefined.
  */
 export function dateTickFormat(ticks: readonly Date[]): (d: Date) => string {
   const times = [...new Set(ticks.map((t) => t.getTime()))].toSorted((a, b) => a - b)

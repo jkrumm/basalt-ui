@@ -1075,6 +1075,28 @@ Tests that pinned the old law and were rewritten: `strip-align.layout.test.ts` (
 the column of the cell whose `key` is `under`; an entry without `under` then takes the full row.
 Below 800 px, and for a key that names no cell, nothing changes: full width under the grid. Opt-out:
 omit `under`.
+## Unreleased — Wave 37, chart readouts
+
+No export is removed and none is added. `Sparkline`'s `data` widens, and six chart defaults move.
+
+### Behaviour changes
+
+| Surface                                                          | Before                                                                                                                      | Now                                                                                                                                                                                   | Opt out                                 |
+| ---------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | --------------------------------------- |
+| `Sparkline` readout placement                                    | a chip above the plot box, over whatever the host draws there (a card's delta period) and clipped by a host slot that clips | inside the plot box, beside the hovered point on the roomier side (flips at the edges) and on the half of the box away from it                                                        | none: the chip no longer leaves the box |
+| `Sparkline` readout label                                        | only a consumer's `labels` named the point                                                                                  | `data` may be `{ at, value }` points (`at`: Date, epoch ms or ISO string); the readout names the day (the hour when the points share one day) in the page locale; `labels` still wins | keep `data` a `number[]`                |
+| `Bars` hover                                                     | the engine's point marker drew on the hovered bar                                                                           | bar chrome only (the hovered x at full strength)                                                                                                                                      | none                                    |
+| Reference caption on a band x                                    | could sit over a bar taller than its line                                                                                   | treats each bar as a filled column and takes the first clear spot                                                                                                                     | `RefLine.labelPosition` pins one        |
+| Date tick labels                                                 | `DD.MM`, whatever the page locale                                                                                           | the day and month in the page locale (`4 Oct`, `Oct 4`), the runtime's with none set: the same source as the tooltip header                                                           | `formatX`                               |
+| `Lines` end label that flips left of a falling line's last point | drawn above it, across the last segment                                                                                     | drawn below it (above for a rising line)                                                                                                                                              | `naming: 'legend'`                      |
+| Errored `ChartCard` / chart                                      | the anatomy (dot, title, message, Retry) was centred vertically in the chart's height                                       | top-aligned in the same height: the frame keeps its size (no jump when a fetch fails), the room sits below the content                                                                | none                                    |
+
+A `StatCard` / strip-cell sparkline slot still reserves the old readout line above its plot
+(`--basalt-spark-readout-h`); the chip no longer uses it.
+
+A histogram that marks its median as a second series names the count through the series' own
+`formatValue` (`(v) => \`${v} days\``): a `Bars` tooltip row already takes it, and a bin lists only
+the series that has a value for it.
 
 ## 2.22.0 — Wave 37, argo's friction II
 

@@ -652,9 +652,10 @@ layout('Charts — 2.0 layout', () => {
     }
   }
 
-  describe('a Sparkline readout never overlaps a mark', () => {
+  describe('a Sparkline readout stays inside its box and never covers the hovered point', () => {
     test.each([
       ['the line end point', { kind: 'spark', sparkRows: 12, height: 22, width: 240 }, 0.98],
+      ['a line mid point', { kind: 'spark', sparkRows: 12, height: 22, width: 240 }, 0.5],
       ['a bar', { kind: 'spark', sparkBars: true, height: 22, width: 240 }, 0.05],
     ] as const)('%s', async (_name, spec, fx) => {
       const p = await openFixture(chartFixture(spec), DESKTOP)
@@ -668,28 +669,92 @@ layout('Charts — 2.0 layout', () => {
       await p.raw.mouse.move(box.x + box.w * fx, box.y + box.h / 2)
       const m = await p.raw.evaluate(() => {
         const readout = document.querySelector('[data-basalt-sparkline-readout]')
-        if (!readout) throw new Error('LAYOUT: no readout')
+        const root = document.querySelector('[data-basalt-sparkline]')
+        if (!readout || !root) throw new Error('LAYOUT: no readout')
         const a = readout.getBoundingClientRect()
-        const hits = [
-          ...document.querySelectorAll(
-            '[data-basalt-sparkline] svg.ts-chart g.ts-chart__marks *, [data-basalt-sparkline-dot]',
-          ),
-        ].filter((el) => {
-          const b = el.getBoundingClientRect()
-          return (
-            b.width > 0 &&
-            b.height > 0 &&
-            a.left < b.right &&
-            a.right > b.left &&
-            a.top < b.bottom &&
-            a.bottom > b.top
-          )
-        })
-        return { text: readout.textContent, hits: hits.map((h) => h.tagName) }
+        const r = root.getBoundingClientRect()
+        const dot = document.querySelector('[data-basalt-sparkline-dot]')?.getBoundingClientRect()
+        return {
+          text: readout.textContent,
+          inside:
+            a.left >= r.left - 0.5 &&
+            a.right <= r.right + 0.5 &&
+            a.top >= r.top - 0.5 &&
+            a.bottom <= r.bottom + 0.5,
+          coversDot:
+            dot !== undefined &&
+            a.left < dot.right &&
+            a.right > dot.left &&
+            a.top < dot.bottom &&
+            a.bottom > dot.top,
+        }
       })
       expect(m.text).not.toBe('')
-      expect(m.hits).toEqual([])
+      expect(m.inside).toBe(true)
+      expect(m.coversDot).toBe(false)
     })
+  })
+
+  test('hovering a Bars mark draws no point marker; a Lines hover does', async () => {
+    const markers = (p: LayoutPage): Promise<number> =>
+      p.raw.evaluate(
+        (sel) =>
+          document.querySelectorAll(`${sel} svg.ts-chart .ts-chart__focus-layer circle`).length,
+        FRAME,
+      )
+    const lines = await openFixture(chartFixture({ kind: 'lines', width: 640 }), DESKTOP)
+    await lines.settle()
+    await hover(lines, FRAME, 0.5)
+    expect(await markers(lines)).toBeGreaterThan(0)
+    const bars = await openFixture(chartFixture({ kind: 'bars', width: 640 }), DESKTOP)
+    await bars.settle()
+    await hover(bars, FRAME, 0.5)
+    expect(await markers(bars)).toBe(0)
+  })
+
+  test('a Bars reference caption never lands on a bar', async () => {
+    const p = await openFixture(
+      chartFixture({ kind: 'ref-bars', width: 640, height: 300 }),
+      DESKTOP,
+    )
+    await p.settle()
+    const m = await p.raw.evaluate(() => {
+      const label = document
+        .querySelector('g[data-ts-key="ref-0-label"] text')
+        ?.getBoundingClientRect()
+      if (!label) throw new Error('LAYOUT: no reference caption')
+      const hits = [...document.querySelectorAll('g[data-ts-key="bars"] rect')].filter((el) => {
+        const b = el.getBoundingClientRect()
+        return (
+          label.left < b.right &&
+          label.right > b.left &&
+          label.top < b.bottom &&
+          label.bottom > b.top
+        )
+      })
+      return { hits: hits.length, width: label.width }
+    })
+    expect(m.width).toBeGreaterThan(0)
+    expect(m.hits).toBe(0)
+  })
+
+  test('an errored ChartCard starts its anatomy at the top of the body, keeping the chart height', async () => {
+    const p = await openFixture(chartFixture({ kind: 'error-card', width: 600 }), DESKTOP)
+    await p.settle()
+    const m = await p.raw.evaluate(() => {
+      const alert = document.querySelector<HTMLElement>('[role="alert"]')
+      const retry = alert?.querySelector('button')
+      const head = alert?.firstElementChild
+      if (!alert || !retry || !head) throw new Error('LAYOUT: no error state')
+      const a = alert.getBoundingClientRect()
+      return {
+        above: head.getBoundingClientRect().top - a.top,
+        below: a.bottom - retry.getBoundingClientRect().bottom,
+      }
+    })
+    expect(m.above).toBeLessThanOrEqual(2)
+    // The content ends well above the body's floor (a centred block would leave `above` ≈ `below`).
+    expect(m.below).toBeGreaterThan(m.above)
   })
 
   test('a keyboard-focused Sparkline starts on the last point and its end marker sits inside the focus outline', async () => {
@@ -789,10 +854,11 @@ layout('Charts — 2.0 layout', () => {
         const r = readout.getBoundingClientRect()
         const c = cell.getBoundingClientRect()
         // The hero value's row (value, unit, delta): what a chip above the plot could land on.
+        const spark = document.querySelector('[data-basalt-sparkline]')?.getBoundingClientRect()
         const hero = cell
           .querySelector(':is([class^="valueRow_"],[class*=" valueRow_"])')
           ?.getBoundingClientRect()
-        if (!hero) throw new Error('LAYOUT: no hero value row')
+        if (!hero || !spark) throw new Error('LAYOUT: no hero value row')
         // Fully visible: no ancestor that clips its overflow cuts any side of the readout
         // (`pointer-events: none` rules out `elementFromPoint`).
         let painted = true
@@ -812,6 +878,12 @@ layout('Charts — 2.0 layout', () => {
           text: readout.textContent,
           visible: r.width > 0 && r.height > 0,
           painted,
+          // Inside the sparkline's own box: nothing the host draws round it can sit under the chip.
+          inSpark:
+            r.left >= spark.left - 0.5 &&
+            r.right <= spark.right + 0.5 &&
+            r.top >= spark.top - 0.5 &&
+            r.bottom <= spark.bottom + 0.5,
           overHero:
             r.left < hero.right &&
             r.right > hero.left &&
@@ -825,7 +897,15 @@ layout('Charts — 2.0 layout', () => {
         }
       })
       expect(m.text).not.toBe('')
-      expect(m).toMatchObject({ visible: true, inside: true, painted: true, overHero: false })
+      // `{ at, value }` data: the readout names its day.
+      expect(m.text).toMatch(/·\s*\S*\d{1,2}\S* ?\S*/)
+      expect(m).toMatchObject({
+        visible: true,
+        inside: true,
+        inSpark: true,
+        painted: true,
+        overHero: false,
+      })
     })
   })
   // ── Wave 37 chart chrome ───────────────────────────────────────────────────────────────────

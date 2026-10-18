@@ -31,6 +31,8 @@ export type RungOptions = {
   tooltipBelow?: boolean
   /** No vertical rule under the cursor (a bar kind's hover is the bar itself). */
   crosshair?: boolean
+  /** No engine point marker on the focused datum (a bar kind's hover is the bar itself). */
+  focusRing?: boolean
   /** The legend goes from the wide class up, where `Lines`' end labels name the series. */
   hideLegendAtWide?: boolean
 }

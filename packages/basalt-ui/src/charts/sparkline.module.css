@@ -1,11 +1,10 @@
 /*
  * The sparkline's hover / focus readout: one quiet chip, never a floating tooltip, so a narrow cell
- * cannot be escaped. It sits OUTSIDE the plot box, on the line just above it, so it can never cover
- * a mark: the plot is the whole box, and a chip inside it would have to hide some series (a line's
- * last segment, a bar, the end dot) wherever it landed. Above is always free inside a card or strip
- * cell (the hero value or caption is what sits there), and the chip is opaque so it reads over it.
- * It rides the hovered point: its left edge is the point's fraction, shifted back by that same
- * fraction of its own width, so it is centred on a mid point and flush with the box at either end.
+ * cannot be escaped. It sits INSIDE the plot box, beside the hovered point (the roomier side, so it
+ * flips at the edges) and on the half of the box away from the point, so it covers neither the dot
+ * nor anything the host draws round the sparkline (a card's delta period, a strip's caption): a chip
+ * above the box landed on that text, and a host slot that clips took it off the page. Where it
+ * crosses the line it is opaque, so it reads over it. Placement is inline (`Sparkline.tsx`).
  */
 
 .root {
@@ -14,10 +13,8 @@
 
 .readout {
   position: absolute;
-  /* The layer is inset from the root by the line's plot margin; lifting by it puts the chip back
-   * on the root's top edge, the line a host slot reserves. */
-  bottom: calc(100% + var(--basalt-spark-lift, 0px));
   z-index: 1;
+  max-height: 100%;
   max-width: 100%;
   box-sizing: border-box;
   padding: 0 4px;
@@ -25,8 +22,8 @@
   font-family: var(--basalt-font-numeral, var(--basalt-font-sans));
   font-variant-numeric: lining-nums;
   font-size: var(--vx-text-xs);
-  /* The line a host slot reserves above the plot: it sets `--basalt-spark-readout-h` to the same
-   * value (`stat-card.module.css`, `stat-strip.module.css`), so the chip lands in reserved space. */
+  /* The chip's height: hosts that reserve a line for it set `--basalt-spark-readout-h` to the same
+   * value (`stat-card.module.css`, `stat-strip.module.css`). */
   block-size: var(--basalt-spark-readout-h, 1.125rem);
   line-height: calc(var(--basalt-spark-readout-h, 1.125rem) - 2px);
   color: var(--vx-tooltip-text);
