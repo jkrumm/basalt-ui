@@ -21,6 +21,7 @@ import type { CartesianDefinition } from './compile'
 import { chartCurve } from './curves'
 import { barMark } from './marks'
 import { bucketDay, dayGranular, defaultNumberFormat } from './compile'
+import { referenceLabelPlacement } from './ref-label'
 import { readoutClock, readoutDay } from './chart-dates'
 import { toDate } from '../format/shared'
 import { ChartEngine, idPrefixOf } from './host'
@@ -80,7 +81,8 @@ const READOUT_GAP = 8
 const LINE_INSET = 3
 /** The muted tone's line: the same alpha the consumers hand-built (`alpha(VX.muted, .35)`). */
 const MUTED_LINE = alpha(VX.muted, 0.35)
-const REFERENCE_LABEL_DY = -4
+/** Air between the plot's start and the reference label, so the focus outline never covers it. */
+const REFERENCE_LABEL_DX = 3
 // Pixel policy of the self-pooling (`poolSparkline`): the densest a series may draw.
 const LINE_PX_PER_POINT = 1
 const BAR_PX_PER_BAR = 2
@@ -253,7 +255,7 @@ function compileSparkline(
   referenceLabel: string | undefined,
 ): CartesianDefinition {
   const frame = frameOf(extentOf, mark, source.length, emphasisColor !== null)
-  const referenceMark = (): ChartMarks =>
+  const referenceMark = (height: number): ChartMarks =>
     reference === null
       ? []
       : [
@@ -276,19 +278,26 @@ function compileSparkline(
                     fill: VX.ink2,
                     fontSize: VX.text.micro,
                     anchor: 'start',
-                    dy: REFERENCE_LABEL_DY,
+                    dx: REFERENCE_LABEL_DX,
+                    dy: referenceLabelPlacement({
+                      value: reference,
+                      domain: frame.y,
+                      height,
+                      inset: mark === 'bar' ? 0 : LINE_INSET,
+                      fontSize: VX.text.micro,
+                    }).dy,
                   }),
                 ),
               ]),
         ]
   return {
-    chart: ({ width }) => {
+    chart: ({ width, height }) => {
       const rows = poolSparkline(source, width, mark)
       const last = rows.at(-1)
       if (mark === 'bar') {
         return {
           marks: [
-            ...referenceMark(),
+            ...referenceMark(height),
             barMark(rows, {
               id: 'bars',
               x: 'i',
@@ -316,7 +325,7 @@ function compileSparkline(
       }
       return {
         marks: [
-          ...referenceMark(),
+          ...referenceMark(height),
           lineY(rows, {
             id: 'line',
             x: 'i',

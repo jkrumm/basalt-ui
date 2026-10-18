@@ -22,6 +22,8 @@ const END_LABEL_GLYPH_EM = 0.85
 /** A label flipped inside the plot sits this far above (or, below its point, `BELOW`) its point. */
 const END_LABEL_FLIP_DY = -9
 const END_LABEL_FLIP_DY_BELOW = 13
+/** The room a label's centre keeps from the plot's top and bottom edge, px: half its line. */
+const END_LABEL_EDGE = 7
 
 export type EndLabelAnchor = 'start' | 'end'
 /** Which side of its line a flipped label sits: away from the line's last segment. */
@@ -70,19 +72,19 @@ type LastPoint<T, X extends ChartX> = {
 /**
  * Pushes labels apart: `ys` are the labels' heights in px from the plot's bottom, returned as the
  * shift each needs (positive is up) so no two sit closer than {@link END_LABEL_MIN_GAP} and the
- * topmost stays inside the plot. Order is kept.
+ * lowest and the topmost stay {@link END_LABEL_EDGE} inside the plot. Order is kept.
  */
 export function spreadLabels(ys: readonly number[], plotHeight: number): number[] {
   const order = ys.map((y, i) => i).toSorted((a, b) => (ys[a] as number) - (ys[b] as number))
   const placed = new Map<number, number>()
-  let floor = -Infinity
+  let floor = END_LABEL_EDGE
   for (const i of order) {
     const at = Math.max(ys[i] as number, floor)
     placed.set(i, at)
     floor = at + END_LABEL_MIN_GAP
   }
   // Pushed past the top: slide the whole stack back down, then re-sweep from the top.
-  const top = plotHeight - END_LABEL_MIN_GAP / 2
+  const top = plotHeight - END_LABEL_EDGE
   let ceiling = Infinity
   for (const i of order.toReversed()) {
     const at = Math.min(placed.get(i) as number, ceiling, top)
@@ -117,21 +119,28 @@ export function endLabelPlan<T, X extends ChartX>(
   })
   // No `y2` here (returned above), so every label reads the left domain.
   const [lo, hi] = plot.yDomain
-  const shifts = spreadLabels(
-    last.map(({ y }) => ((y - lo) / (hi - lo || 1)) * plot.plotHeight),
-    plot.plotHeight,
-  )
-  return last.map(({ series, row, fraction, y, prev }, i) => ({
-    series,
-    row,
-    anchor: endLabelAnchor({
+  const placed = last.map(({ series, fraction, y, prev }) => {
+    const anchor = endLabelAnchor({
       fraction,
       plotWidth: plot.plotWidth,
       label: series.label,
       fontSize: VX.text.micro,
-    }),
+    })
     // A line falling into its end point comes from above: the label drops below it.
-    side: prev !== null && prev > y ? ('below' as const) : ('above' as const),
+    const side = prev !== null && prev > y ? ('below' as const) : ('above' as const)
+    // The label's centre, px from the plot's bottom, with its flip: what the spread keeps apart.
+    const centre = ((y - lo) / (hi - lo || 1)) * plot.plotHeight - endLabelOffset(anchor, side).dy
+    return { anchor, side, centre }
+  })
+  const shifts = spreadLabels(
+    placed.map((p) => p.centre),
+    plot.plotHeight,
+  )
+  return last.map(({ series, row }, i) => ({
+    series,
+    row,
+    anchor: (placed[i] as (typeof placed)[number]).anchor,
+    side: (placed[i] as (typeof placed)[number]).side,
     nudge: 0 - (shifts[i] as number),
   }))
 }

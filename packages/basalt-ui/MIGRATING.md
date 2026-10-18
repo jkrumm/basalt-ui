@@ -1153,6 +1153,23 @@ the previous crop was the defect.
 fires on a route with an anchor that renders a state surface (`ChartCard`, `StatCard`, a chart
 state); it names those anchors and the `data-shot-states="empty loading error"` to add. A route
 without one gets no finding. A consumer that gated on exit 2 for it no longer does.
+### Chart header, label and tick behaviour (round r3)
+
+No export is removed and none is added. Seven chart defaults move; the first is the only one a consumer
+can see change on a page that was fine before.
+
+| Surface                                                            | Before                                                                            | Now                                                                                                                                                            |
+| ------------------------------------------------------------------ | --------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Tooltip header of a day-granular Date x under a consumer `formatX` | the tick format (`2 Sep`): weekday and year lost, though this file said otherwise | weekday, day, month and year in the page locale; `formatX` shortens the ticks only                                                                             |
+| `Sparkline` `referenceLabel`                                       | centred 4 px above its dashed line (struck through) at the plot edge              | clear of the line (above, or below when the line is near the top), 3 px inside the plot start                                                                  |
+| `ChartCard` `facts` `period` list behind a `unit`                  | `['basis']` ran into the unit; the separator joined between items only            | `· basis`: the list leads with `·` behind a `unit` (an item already led by `·` is not doubled)                                                                 |
+| Y tick labels when every tick is whole                             | a padding formatter printed `2.0 s`                                               | `2 s`; the tooltip keeps the full format                                                                                                                       |
+| `BandStrip` glyph                                                  | drawn from a 12 px cell, unreadable                                               | drawn from a 16 px cell (`Heatmap` keeps 12 px); a narrower warn/bad cell draws a bottom notch in its own fill pulled to the ink (3 px warn, 6 px bad) instead |
+| Empty chart (`state={{ empty: true }}`) with no label              | the bare filler `No data`                                                         | `Nothing recorded in this range.`; a string `empty` still wins                                                                                                 |
+| `Lines` end label near the plot's top or bottom edge               | its flip offset could push it outside the plot (`Low` clipped)                    | its centre stays 7 px inside the plot                                                                                                                          |
+
+Opt-out for the header: `tooltip={{ formatHeader: (x) => yourFormat(x) }}` restores any title. The
+`period` string form is unchanged (write it with its own `· ` as before).
 
 ## 2.22.0 — Wave 37, argo's friction II
 

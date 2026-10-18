@@ -27,7 +27,7 @@ import type {
   StoredChartSpec,
 } from '@tanstack/charts/types/core'
 import { compact } from '../format/number'
-import { NON_FINITE } from '../format/shared'
+import { NON_FINITE, numberFormat } from '../format/shared'
 import { VX } from '../tokens'
 import type { ContainerClass } from '../tokens/size-classes'
 import { cursorBinding, followerOptions, quietWhileFollowing } from './cursor'
@@ -263,6 +263,40 @@ export function visibleSeries<T>(
 
 type YAxis = { domain: readonly [number, number]; format: (v: number) => string }
 
+/** The page locale's decimal separator (`.` or `,`). */
+const decimalSeparator = (): string =>
+  numberFormat(undefined, {})
+    .formatToParts(1.1)
+    .find((p) => p.type === 'decimal')?.value ?? '.'
+
+/** A trailing zero fraction behind a digit (`2.0`, `2,00`), the separator being a decimal one. */
+const zeroFraction = (separator: string): RegExp =>
+  new RegExp(`(\\d)${separator.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}0+(?!\\d)`, 'g')
+
+/**
+ * The tick formatter. When every tick is a whole number (a whole step), a formatter that pads
+ * decimals (`toFixed(1)`) prints integers: `2 s`, not `2.0 s`. Only the page locale's decimal
+ * separator is read as one, so a thousands group (`1,000`, `1.000` in de) is never cut; a formatter
+ * that writes `.` under a `,` locale keeps its padding. The tooltip keeps the full format. The
+ * ticks are the engine's own (`count` goes through the same linear scale the engine builds).
+ */
+function wholeStepFormat<T>(
+  axis: YAxis,
+  cfg: AxisConfig<T> | undefined,
+  ticks: { values: readonly number[] } | { count: number },
+): (v: number) => string {
+  const [lo, hi] = [Math.min(...axis.domain), Math.max(...axis.domain)]
+  const values =
+    'values' in ticks
+      ? ticks.values
+      : cfg?.scale === 'log'
+        ? []
+        : scaleLinear().domain([lo, hi]).ticks(ticks.count)
+  if (values.length === 0 || !values.every(Number.isInteger)) return axis.format
+  const padded = zeroFraction(decimalSeparator())
+  return (v) => axis.format(v).replace(padded, '$1')
+}
+
 export function yGuide<T>(opts: {
   cfg: AxisConfig<T> | undefined
   axis: YAxis
@@ -278,13 +312,14 @@ export function yGuide<T>(opts: {
       : { count: typeof cfg?.ticks === 'number' ? cfg.ticks : ladder.yTicks }
   const gridLine = grid ? { grid: GRID_LINE } : {}
   if (cls === 'micro') return { ...gridLine, axis: false }
+  const tickFormat = wholeStepFormat(axis, cfg, ticks)
   // Labels sit in a gutter OUTSIDE the plot, against its edge: a line never runs through one.
   return {
     ...gridLine,
     ...(side === 'right' && { side: 'right' as const }),
     axis: {
       line: false,
-      ticks: { ...ticks, format: axis.format, line: false },
+      ticks: { ...ticks, format: tickFormat, line: false },
       tickLabels: { fontSize: TICK_FONT, opacity: 1 },
     },
   }
@@ -823,7 +858,11 @@ function buildScales<T, X extends ChartX>(opts: {
   }
 }
 
-/** The tooltip title: the consumer's header, a long UTC date for a Date x, else the axis format. */
+/**
+ * The tooltip title: the consumer's header, a long UTC date for a Date x, else the axis format. A
+ * day-granular series keeps its long date under a consumer `formatX` too: that formatter shortens
+ * the ticks (`2 Sep`), it does not rename the day.
+ */
 function tooltipHeader<T, X extends ChartX>(
   input: CartesianInput<T, X>,
   formatX: (v: ChartValue) => string,
@@ -832,7 +871,7 @@ function tooltipHeader<T, X extends ChartX>(
   d: T,
 ): string {
   if (input.tooltip && input.tooltip.formatHeader) return input.tooltip.formatHeader(v as X, d)
-  if (v instanceof Date && !input.formatX) return utcHeaderDate(v, dayOnly)
+  if (v instanceof Date && (!input.formatX || dayOnly)) return utcHeaderDate(v, dayOnly)
   return formatX(v)
 }
 

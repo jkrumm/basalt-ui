@@ -451,9 +451,10 @@ describe('tooltip', () => {
     expect(rows).toEqual([expect.objectContaining({ label: 'Alpha · est.', value: '20 ms' })])
   })
 
-  test('header: formatHeader wins, then a long UTC date, then formatX', () => {
+  test('header: formatHeader wins, then a long UTC date', () => {
     expect(headerOf({})).toBe(gbDate(new Date(Date.UTC(2026, 8, 2))))
-    expect(headerOf({ formatX: () => 'X' })).toBe('X')
+    // `formatX` shortens the ticks; a day-granular header stays the long date (w37 r3).
+    expect(headerOf({ formatX: () => 'X' })).toBe(gbDate(new Date(Date.UTC(2026, 8, 2))))
     expect(headerOf({ formatX: () => 'X', tooltip: { formatHeader: () => 'H' } })).toBe('H')
     expect(headerOf({ tooltip: { formatHeader: (d: Date) => d.toISOString().slice(0, 4) } })).toBe(
       '2026',

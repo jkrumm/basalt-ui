@@ -102,3 +102,30 @@ export function refLabelPosition(opts: {
     order.find((p) => inPlot(p) && clear(p)) ?? order.find(inPlot) ?? (order[0] as RefLabelPosition)
   )
 }
+
+/** The gap between a sparkline reference label's box and its line, px. */
+const SPARK_LABEL_GAP = 2
+
+/**
+ * Which side of its line a sparkline's reference label sits on, and its `dy` (the engine centres
+ * the text on its y): above by default, below when the line is too near the plot top for the label
+ * box to fit above it. The box clears the line by {@link SPARK_LABEL_GAP}, so the dashed rule never
+ * strikes the text, and stays inside the plot (`height` less the line inset each side).
+ */
+export function referenceLabelPlacement(opts: {
+  value: number
+  domain: readonly [number, number]
+  height: number
+  /** The plot's margin inside the svg box, px. */
+  inset: number
+  fontSize: number
+}): { side: 'above' | 'below'; dy: number } {
+  const { value, domain, height, inset, fontSize } = opts
+  const [lo, hi] = [Math.min(...domain), Math.max(...domain)]
+  const share = hi === lo ? 0 : (value - lo) / (hi - lo)
+  const line = inset + (height - 2 * inset) * (1 - share)
+  const reach = SPARK_LABEL_GAP + fontSize + 1
+  const side = line - reach >= 0 || line + reach > height ? 'above' : 'below'
+  const dy = (SPARK_LABEL_GAP + (fontSize + 1) / 2) * (side === 'above' ? -1 : 1)
+  return { side, dy }
+}
