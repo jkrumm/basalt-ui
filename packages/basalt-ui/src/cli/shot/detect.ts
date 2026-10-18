@@ -121,48 +121,30 @@ function craftOne(a: AnchorMetrics, scale: Scale | undefined): Draft[] {
   if (!scale) return []
   const base = { anchor: a.name, route: a.route, where: where(a) }
   const out: Draft[] = []
-  const spacing = Object.values(scale.spacing)
-  const radii = Object.values(scale.radius)
-
-  const inset = SIDE_NAMES.map((side) => ({ side, v: a.padding[side] })).flatMap(({ side, v }) => {
-    const d = offScale(v, spacing)
-    return d === null ? [] : [{ side, v, d }]
-  })
-  if (inset.length > 0) {
-    out.push({
-      ...base,
-      rule: 'craft-1/off-scale-inset',
-      severity: sizing(inset.map((i) => i.d)),
-      layer: 'layout',
-      cite: `metrics.json anchors[${a.name} ${where(a)}].padding`,
-      defect: `Padding ${inset.map((i) => `${i.side} ${i.v}px`).join(', ')} is not a spacing step (${stepsText(scale.spacing)}).`,
+  const sides = SIDE_NAMES.map((side) => ({ at: side, v: a.padding[side] }))
+  const gaps = (['row', 'column'] as const).map((axis) => ({ at: axis, v: a.gap[axis] }))
+  const radii = [
+    { at: 'surface', v: a.radius },
+    ...a.nested.map((n) => ({ at: `nested ${n.path}`, v: n.radius })),
+  ]
+  const groups = [
+    ['inset', 'layout', 'Padding', 'padding', scale.spacing, sides],
+    ['gap', 'layout', 'Gap', 'gap', scale.spacing, gaps],
+    ['radius', 'style', 'Radius', 'radius', scale.radius, radii],
+  ] as const
+  for (const [rule, layer, label, field, steps, items] of groups) {
+    const off = items.flatMap(({ at, v }) => {
+      const d = offScale(v, Object.values(steps))
+      return d === null ? [] : [{ at, v, d }]
     })
-  }
-
-  const gap = (['row', 'column'] as const).flatMap((axis) => {
-    const d = offScale(a.gap[axis], spacing)
-    return d === null ? [] : [{ axis, v: a.gap[axis], d }]
-  })
-  if (gap.length > 0) {
+    if (off.length === 0) continue
     out.push({
       ...base,
-      rule: 'craft-1/off-scale-gap',
-      severity: sizing(gap.map((g) => g.d)),
-      layer: 'layout',
-      cite: `metrics.json anchors[${a.name} ${where(a)}].gap`,
-      defect: `Gap ${gap.map((g) => `${g.axis} ${g.v}px`).join(', ')} is not a spacing step (${stepsText(scale.spacing)}).`,
-    })
-  }
-
-  const radius = offScale(a.radius, radii)
-  if (radius !== null) {
-    out.push({
-      ...base,
-      rule: 'craft-1/off-scale-radius',
-      severity: sizing([radius]),
-      layer: 'style',
-      cite: `metrics.json anchors[${a.name} ${where(a)}].radius`,
-      defect: `Radius ${String(a.radius)}px is not a radius step (${stepsText(scale.radius)}).`,
+      rule: `craft-1/off-scale-${rule}`,
+      severity: sizing(off.map((o) => o.d)),
+      layer,
+      cite: `metrics.json anchors[${a.name} ${where(a)}].${field}`,
+      defect: `${label} ${off.map((o) => `${o.at} ${o.v}px`).join(', ')} is not a ${steps === scale.radius ? 'radius' : 'spacing'} step (${stepsText(steps)}).`,
     })
   }
   return out
