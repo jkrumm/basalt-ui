@@ -1,6 +1,6 @@
 /**
  * Wave 36 round 3 after-board specimens: a sectioned Button anchor, the zoned Meters' end ticks,
- * one empty line on readiness, and a goal line that does not collide with its series.
+ * and one empty line on readiness.
  */
 import { MantineProvider } from '@mantine/core'
 import { cleanup, render } from '@testing-library/react'
