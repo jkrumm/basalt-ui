@@ -1381,29 +1381,29 @@ Validators: argo, which deletes its local workarounds in the same cycle (net-neg
 - **Next — stopped: awaiting owner review** of the boards (`.design-parity/w35/r0`–`r3`) and the release decision that
   unblocks the argo validation run. Not released; nothing spawned.
 
-## Wave 36 — The UX-first procedure, shipped <!-- status: active -->
+## Wave 36 — The UX-first procedure, shipped <!-- status: done -->
 
 Owner, 2026-10-17: the flow basalt teaches every consumer's agent through `init`/`sync` is UX research first,
 then encoding, then the build, then rendered critique. Inputs: argo's concept-doc format (proven in argo Waves
 18–20), `docs/waves/design-parity/SKILL-LANDSCAPE.md` (ranked adopt and reject lists), and SPEC § 3/§ 4 (the
 catalogue). This wave takes over old Wave 39's catalogue-shipping step.
 
-- [ ] **`basalt-design` as a router plus references** (landscape #13). Step 1 is a mandatory concept doc. Ship
+- [x] **`basalt-design` as a router plus references** (landscape #13). Step 1 is a mandatory concept doc. Ship
       argo's format as a template in references: the question, the decision it supports, a datasets table
       (source, shape, chosen encoding, reason), the layout at 1440 and 390, the copy, and the pass criteria.
       Nothing is built before the concept exists.
-- [ ] **The decision layer** in references: - the "is it even a chart?" router (landscape #3); - the data-to-expression catalogue as the decision table (dataset shape → pattern → basalt export); - the stat-tile slot contract (#2); - the nine encoding non-negotiables (#4); - tooltips never gate data, and a refetch keeps the frame (#6, #7); - fact-only copy and the dashboard anti-defaults list (#15): equal rounded cards, one radius everywhere, the same
+- [x] **The decision layer** in references: - the "is it even a chart?" router (landscape #3); - the data-to-expression catalogue as the decision table (dataset shape → pattern → basalt export); - the stat-tile slot contract (#2); - the nine encoding non-negotiables (#4); - tooltips never gate data, and a refetch keeps the frame (#6, #7); - fact-only copy and the dashboard anti-defaults list (#15): equal rounded cards, one radius everywhere, the same
       shadow everywhere, a delta with no period, a coloured left edge, filler-question subtitles.
-- [ ] **Reviewer, two isolated passes** (#9, #10): A is the `basalt-design-reviewer` (design and craft, cited
+- [x] **Reviewer, two isolated passes** (#9, #10): A is the `basalt-design-reviewer` (design and craft, cited
       crops); B is a deterministic detector over `metrics.json` and the lint output. A review run inline by the
       builder starts with a `DEGRADED` banner. Order the review content → layout → style, with P0–P3 severities
       and a per-run score trend in `.basalt/shots/`.
-- [ ] **Palette validator as a guard** (#1) over `defineSeries` files: OKLCH lightness band, a chroma floor, CVD
+- [x] **Palette validator as a guard** (#1) over `defineSeries` files: OKLCH lightness band, a chroma floor, CVD
       ΔE ≥ 8, normal-vision worst-pair ΔE ≥ 15, ≥ 3:1 against the surface, and a fixed categorical order (a 9th
       series folds into Other).
-- [ ] **Discovery and precedence:** the AGENTS block also supersedes the bundled `/dataviz` skill inside a
+- [x] **Discovery and precedence:** the AGENTS block also supersedes the bundled `/dataviz` skill inside a
       basalt app, and a monorepo-root session demonstrably loads the skill and the reviewer.
-- [ ] **Wave 35's leftovers and the mother's r3 read** (2.20.0 boards, `.design-parity/w35/r3`): Wave 35's
+- [x] **Wave 35's leftovers and the mother's r3 read** (2.20.0 boards, `.design-parity/w35/r3`): Wave 35's
       Left behind list (strip `state`, one Retry in the error anatomy, `tone="muted"` as the non-verdict Meter
       default, shot's absent-anchor declaration, fixture items), plus four composition defects on every scenario
       page at 1440: - columns end unbalanced with a dead void beside a short card (S2 hit rate, S3 right column, S4
@@ -1412,11 +1412,53 @@ catalogue). This wave takes over old Wave 39's catalogue-shipping step.
       a Meter marker re-states the headline value under the track (S2 training load `1.19`, readiness `76`); - the
       S3 failures cell draws three unlabelled red ticks with no axis. Each fix lands as a playground round with
       before/after boards.
-- [ ] **Expression trial v0:** a scratch `init` app with a fresh agent and three datasets (a ratio against a
+- [x] **Expression trial v0:** a scratch `init` app with a fresh agent and three datasets (a ratio against a
       limit, a status-over-time series, a ranked list), and no component names. Did it write a concept, which
       encodings did it pick, and how does the board score? A fallback to a default is a ledger row. Compare
       with weatherorb's W45 trial.
       **Left behind:**
+
+- **Landed** (all through `rd merge`, `make check` green at every merge and on `bd7dd98f`; 15 PRs, #374–#388): #374 `basalt-design` as a router plus five references (`concept`, `catalogue`, `stat-tile`,
+  `encoding-rules`, `anti-defaults`) with a public-export drift test; #377 `init`/`sync`/`sync-self` place every `*.md`
+  under a shipped skill dir (prune, drift, monorepo-root placement pinned) and the AGENTS block supersedes `/dataviz`;
+  #379 `basalt-ui shot detect` (Assessment B: LLM-free, P0–P3, exit 0/2/1 with P2/P3 non-failing, atomic
+  `history.json` trend) plus the reviewer's ordering/severity/`DEGRADED` contract and `data-shot-absent`; #378
+  `series-palette` guard (OKLab/Machado 2009, grace kind until 2.23.0; the playground series retuned); #376 strip cell
+  `state`, one shared Retry (ChartCard `onRetry`), the hosted Meter drops the restated reading; #380 muted plain-bar
+  Meter and thin BarList rows by default; #375/#384/#385 the S2–S4 composition and round fixes; #383 the catalogue's
+  distribution rows. Folded in from argo Wave 23 by the mother: #382 Meter zone names under their spans with the end
+  ticks in the label row, #381 Button section insets on the scale (and disabled text exempt from the shot contrast
+  measure, WCAG 1.4.3); from argo Wave 25, #386 strip cells align by part (subgrid) instead of stretching to a void, and #388 fixes its r5 regressions (oldest-wait 46 % void, a 13 px first-cell inset: hairlines as box-shadows with a forced-colors border twin); #387 Meter zones take a `short` label before a name hides (r4's P1: "Overreaching" hidden at 390). Every PR had two independent review rounds by a fresh subagent (agent-gateway down), then
+  scope was frozen and the lead read the last fix diff. **2.21.0** was cut by the mother mid-wave from `8a04f9a4`
+  (every package PR above; argo was blocked on the strip alignment); `CHANGELOG.md` untouched by the wave; every break is a
+  plain `feat:` with a MIGRATING entry (released under 2.21.0).
+- **Rounds** (`docs/waves/design-parity/w36/rounds.md`; boards `.design-parity/w36/r0`–`r6`, `trial-v0`): detector B
+  65 → 75 → 100 → 100 → 88 → 100; by r3 every S2, S3 and S4 component and every page passes reviewer A; the components page fails only
+  the Tabs accent pill. r4 (#385's specimens: sectioned Buttons, the zoned Meters' end ticks) is the after-board for
+  the two argo Wave 23 items; r4 → r6 is the S3/S4 strip before/after for the argo Wave 25 item.
+- **Expression trial v0** (`docs/waves/design-parity/w36/expression-trial-v0.md`): a fresh agent in a scratch `init`
+  app with three datasets and no component names invoked `/basalt-design`, wrote the concept first, picked `Meter`
+  segments + forecast, a `Heatmap` status grid and `BarList`, ran three rounds, and a fresh lead-side reviewer passed
+  every component (score 97, detect clean). No fallback to a default. Friction rows: 72 `dist` reads to colour a
+  categorical status grid, `init` leaving a stock Vite `main.tsx`/peers unwired, zero declared shot states passing
+  silently, hue-only heat cells, focus tooltips over captions.
+- **Budgets:** CLI lines 7478 → 8091 (#377 +34, #379 +572, #378 +3, #381 +4); reviewer-doc cap 83 → 100; gzip from
+  CI's Linux runs: provider-only 19921 → 20012, embedded 56238 → 56319, theme-only 15374 → 15451; no new public
+  symbol (`MeterZone.short` is a field). The wave is net-positive (+5134/−781): a feature wave, not a consolidation.
+- **For the next basalt wave (seed; the mother writes it up):** **first**, the strip's remaining stretch: at 1440 every cell still takes the row height, so a cell without a footer or a short visual keeps a ~55 px void at its bottom (r6: S3 oldest-wait 0.359, S4 budget 0.374 — under the 0.4 line, but argo's "cells stay compact" is half met; a per-cell `align="start"` or `align-self: start` default is the likely answer); then argo Wave 25's other rows (`DecisionCard` anatomy, `Meter` hide the track with no target/ticks, `VX.surface.rowHover`/`rowSelected`, an untitled `Section`, a `BandStrip` per-state glyph, the chart tooltip name column, `phoneSelect` inset, `shot` focus timeouts on tall anchors), then argo `docs/design/UPSTREAM.md` § "Wave 23" (three
+  tables) less the two rows #381/#382 closed — ChartCard facts `stale` and mid-body facts; `ChartFact` `tone` and
+  several trailing texts; `StatStripRow` `hideValue` and a context column; `StatStripCell` `action`, a hero-extra
+  slot, `tone` driving the visual; strip column weights, footer per-entry anchors/`absent` and a titled row; `Meter` hide start/end captions but keep zones, per-zone/segment `tone="muted"`, ring `target`/`ticks`,
+  `stops`, `size="row"` part captions; `Sparkline` `tone="muted"` and focus start/inset; sticky clearance under
+  `PageBar`; agenda/`Section` four sizes; `BandStrip` tooltip placement; phone `Select` inset; `StackedArea` band
+  opacity; slashed zero on non-heading titles; `SyncButton` age below `sm`; `PageBar` filter `Select` width; chart
+  tooltip series column, y-tick gutter, tick/legend one size step, dark-390 focus ring; `shot` focus/hover timeouts,
+  tall anchors painted blank and fixed chrome over crops. Plus from this wave: the Tabs accent pill and tinted status
+  Badges (W33 chrome), `refLines[].label` has no position (S2 "Goal 28" sits on the line), the zoned Meter's reading
+  takes its own row (D30 decides), the trial's friction rows above, and the bare "Inputs"/"Table" titles plus the
+  glyph-less Delta column on the components page.
+- **Next — stopped: Wave 36 closed; orchestrated, nothing spawned; this wave released nothing itself.** Owner review of the boards
+  (`.design-parity/w36/r0`–`r6`, `trial-v0`) is the mother's.
 
 ## Wave 37 — Data tables, responsive <!-- status: pending -->
 
