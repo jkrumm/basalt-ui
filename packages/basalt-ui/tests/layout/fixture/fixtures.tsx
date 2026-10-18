@@ -1751,7 +1751,7 @@ function DashFixture(): ReactElement {
         <StatGroup
           variant="strip"
           label="Alignment"
-          cols={5}
+          cols={6}
           cells={[
             {
               key: 'tall',
@@ -1784,6 +1784,16 @@ function DashFixture(): ReactElement {
             { key: 'short', caption: 'Verdicts', value: '78 %', footer: 'of 120 reviewed' },
             { key: 'bare', caption: 'Open', value: '4' },
             { key: 'again', caption: 'Reviewed', value: '120', footer: 'since Monday' },
+            {
+              key: 'rows2',
+              caption: 'Splits',
+              value: '12',
+              rows: [
+                { key: 'a', label: 'Fast', value: '4' },
+                { key: 'b', label: 'Slow', value: '8' },
+              ],
+              footer: 'last 30 days',
+            },
           ]}
         />
       </div>
@@ -1922,6 +1932,38 @@ function DashFixture(): ReactElement {
             },
           ]}
         />
+      </div>
+      <div data-testid="dash-strip-action">
+        <StatGroup
+          variant="strip"
+          label="Actions"
+          cols={2}
+          cells={[
+            {
+              key: 'act',
+              caption: 'A weekly target caption far too long to fit a phone cell',
+              value: '3',
+              action: (
+                <ActionIcon variant="subtle" aria-label="Edit target">
+                  <Glyph />
+                </ActionIcon>
+              ),
+            },
+            { key: 'plain', caption: 'Open', value: '4' },
+          ]}
+        />
+      </div>
+      {/* theme-allow -- the wrapper width IS the fixture's payload (a container probe) */}
+      <div data-testid="dash-stat-300" style={{ width: 620 }}>
+        <StatGroup cols={2}>
+          <StatCard title="Sessions" qualifier="month to date" value="12" />
+          <StatCard
+            title="Distance"
+            qualifier="a long qualifier naming the whole reporting window"
+            value="48"
+            unit="km"
+          />
+        </StatGroup>
       </div>
       <div data-testid="dash-stat-states">
         <StatGroup cols={2}>

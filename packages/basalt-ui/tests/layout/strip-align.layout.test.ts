@@ -30,7 +30,13 @@ const PARTS = ['caption', 'value', 'visual', 'rows', 'footer'] as const
 type Part = (typeof PARTS)[number]
 
 type Box = { top: number; bottom: number }
-type MeasuredCell = { key: string; top: number; parts: Partial<Record<Part, Box>> }
+type MeasuredCell = {
+  key: string
+  top: number
+  /** The measured height of the hero-footer track (the grid's third row) of this cell's band. */
+  track3: number
+  parts: Partial<Record<Part, Box>>
+}
 type Measured = { gap: number; cells: MeasuredCell[] }
 
 const measure = (p: LayoutPage): Promise<Measured> =>
@@ -49,8 +55,17 @@ const measure = (p: LayoutPage): Promise<Measured> =>
       rows: '[data-strip-rows]',
       footer: '[data-strip-footer]',
     }
+    const slots = [...host.querySelectorAll<HTMLElement>('[data-strip-slot]')]
+    const grid = slots[0]!.parentElement!
+    const tracks = getComputedStyle(grid).gridTemplateRows.split(' ').map(parseFloat)
+    const tops = [...new Set(slots.map((e) => Math.round(e.getBoundingClientRect().top)))].toSorted(
+      (a, b) => a - b,
+    )
     const cells = [...host.querySelectorAll<HTMLElement>('[data-strip-cell]')].map((c) => {
       const parts: Record<string, { top: number; bottom: number }> = {}
+      const bandIndex = tops.indexOf(
+        Math.round(c.closest('[data-strip-slot]')!.getBoundingClientRect().top),
+      )
       for (const [name, q] of Object.entries(sel)) {
         const el = c.querySelector<HTMLElement>(q)
         if (!el) continue
@@ -60,6 +75,7 @@ const measure = (p: LayoutPage): Promise<Measured> =>
       return {
         key: c.getAttribute('data-strip-cell') ?? '',
         top: c.getBoundingClientRect().top,
+        track3: tracks[bandIndex * 6 + 2] ?? 0,
         parts,
       }
     })
@@ -211,23 +227,11 @@ function suite(vp: Viewport) {
         const next = present[i + 1]
         if (!next) continue
         const gapBelow = c.parts[next]!.top - c.parts[name]!.bottom
-        // A sibling's own-track footer (under its hero) opens one footer line under every value in
-        // the row; that is "a taller sibling part" too.
-        const heroFooter =
-          name === 'value'
-            ? Math.max(
-                0,
-                ...band(m, c).map((s) =>
-                  s.parts.footer &&
-                  s.parts.value &&
-                  s.parts.footer.top - s.parts.value.bottom <= m.gap + SNAP
-                    ? height(s.parts.footer) + m.gap
-                    : 0,
-                ),
-              )
-            : 0
+        // Under a value, the hero-footer track (measured) opens as soon as ANY sibling has a hero
+        // footer; the cell's own hero footer sits IN it, so only the parts after it pay the track.
+        const track = name === 'value' && next !== 'footer' ? c.track3 : 0
         const slack =
-          heroFooter +
+          track +
           Math.max(0, ...band(m, c).map((s) => height(s.parts[name]) - height(c.parts[name])))
         if (gapBelow > m.gap + slack + SNAP)
           throw new Error(`LAYOUT: ${c.key} ${name}→${next} gap ${gapBelow} slack ${slack}`)
@@ -346,6 +350,26 @@ function suite(vp: Viewport) {
     }
   })
 
+  test('a mixed row keeps one top per footer kind: hero footers together, rows footers together', () => {
+    const hero = ['short', 'again'].map(cell)
+    const rowsCells = ['rows', 'rows2'].map(cell)
+    if (vp.width >= 800) {
+      expect(Math.abs(hero[0]!.parts.footer!.top - hero[1]!.parts.footer!.top)).toBeLessThanOrEqual(
+        1,
+      )
+      expect(
+        Math.abs(rowsCells[0]!.parts.footer!.top - rowsCells[1]!.parts.footer!.top),
+      ).toBeLessThanOrEqual(1)
+      // The relaxation: a rows footer rides the shared footer track, below every hero footer.
+      expect(rowsCells[0]!.parts.footer!.top).toBeGreaterThan(hero[0]!.parts.footer!.bottom)
+    }
+    // Always: a hero footer hugs its value; a rows footer follows its rows (shared footer track).
+    for (const c of hero)
+      expect(c.parts.footer!.top - c.parts.value!.bottom).toBeLessThanOrEqual(m.gap + SNAP)
+    for (const c of rowsCells)
+      expect(c.parts.footer!.top).toBeGreaterThanOrEqual(c.parts.rows!.bottom)
+  })
+
   test('a value-only cell’s footer sits directly under its value', () => {
     const c = cell('short')
     expect(c.parts.footer!.top - c.parts.value!.bottom).toBeLessThanOrEqual(m.gap + SNAP)
@@ -421,6 +445,55 @@ layout('StatStrip footer row and StatCard states', () => {
       const s = await measureCardStates(p)
       expect(Math.abs(s.valueTops[0]! - s.valueTops[1]!)).toBeLessThanOrEqual(1)
       expect(s.qualifier?.title).not.toBeNull()
+    },
+    CLOSE_BUDGET_MS,
+  )
+
+  test(
+    'at 390 a cell with an action and a long caption keeps one truncated caption line',
+    async () => {
+      const p = await openFixture(SPEC, PHONE)
+      await p.settle()
+      const r = await p.raw.evaluate(() => {
+        const host = document.querySelector<HTMLElement>('[data-testid="dash-strip-action"]')!
+        const cap = host.querySelector<HTMLElement>('[data-strip-cell="act"] [data-strip-caption]')!
+        const act = host.querySelector<HTMLElement>('[data-strip-cell="act"] [data-strip-action]')!
+        const line =
+          parseFloat(getComputedStyle(cap).lineHeight) || cap.getBoundingClientRect().height
+        return {
+          truncated: cap.scrollWidth > cap.clientWidth,
+          lines: cap.getBoundingClientRect().height / line,
+          actionRight: act.getBoundingClientRect().right,
+          cellRight: act.closest('[data-strip-cell]')!.getBoundingClientRect().right,
+        }
+      })
+      expect(r.truncated).toBe(true)
+      expect(r.lines).toBeLessThanOrEqual(1.1)
+      expect(r.actionRight).toBeLessThanOrEqual(r.cellRight)
+    },
+    CLOSE_BUDGET_MS,
+  )
+
+  test(
+    'in a ~300px card a long qualifier wraps whole and nothing overflows (no truncation guarantee)',
+    async () => {
+      const p = await openFixture(SPEC, DESKTOP_1440)
+      await p.settle()
+      const r = await p.raw.evaluate(() => {
+        const host = document.querySelector<HTMLElement>('[data-testid="dash-stat-300"]')!
+        const cards = [...host.querySelectorAll<HTMLElement>('.mantine-Card-root')]
+        const top = (c: HTMLElement) =>
+          c.querySelector<HTMLElement>('[class*="value_"]')!.getBoundingClientRect().top
+        return {
+          width: cards[0]!.getBoundingClientRect().width,
+          overflow: cards.some((c) => c.scrollWidth > c.clientWidth),
+          dy: top(cards[1]!) - top(cards[0]!),
+        }
+      })
+      expect(r.width).toBeGreaterThan(240)
+      expect(r.overflow).toBe(false)
+      // Report channel: a failing message carries the measured offset when the law changes.
+      if (r.dy < 0) throw new Error(`LAYOUT: value rose ${r.dy}`)
     },
     CLOSE_BUDGET_MS,
   )

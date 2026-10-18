@@ -1190,7 +1190,8 @@ height. Captions still share one top and values one baseline across a row; a foo
 alone now has its own track right under the hero (it hugs the value, and sibling footers share one
 top); a rows cell's footer keeps the shared footer track. The vertical dividers moved from the cell
 to a row-high `[data-strip-slot]` wrapper, so they still run the full row and the area under a short
-cell is the strip's own surface. The cell's foot inset moved to the slot with them.
+cell is the strip's own surface. The cell's foot inset moved to the slot with them. `stale` dims the cell content only; the dividers on
+the wrapper stay at full strength.
 **Affects you if** you selected `[data-strip-cell]` for its height or its box-shadow, or painted a
 background on it. **Opt out:** none needed for markup; a custom rule that needs the old full-row
 cell can target `[data-strip-slot]` instead (it is the row-high box). No per-cell `align="stretch"`
@@ -1207,9 +1208,11 @@ only, for a reading the hero already shows; `value` is ignored).
 
 **Changed:** in the `empty` and `error` states the `subtitle` footer is no longer drawn (it captioned
 a sparkline that is not there). The default error title is `Could not load` (was
-`Could not load this figure`) so the error line stays on one line in a two-column phone card. In a
-card narrower than 240px the `qualifier` no longer wraps under the caption: it truncates, with the
-full text in its `title`, so the value never drops below its row neighbours'. **Opt out:** put the
+`Could not load this figure`) so the error line stays on one line in a two-column phone card. A
+`qualifier` in a card narrower than 240px (a two-column phone cell) no longer wraps under the caption:
+it truncates, with the full text in its `title`, so the value keeps its row neighbours' line. That
+is the whole guarantee: in a card of 240px or more a long qualifier still wraps and moves the value
+down a line (measured: 10px at a 304px card). **Opt out:** put the
 text in `info` or `subtitle` instead of `qualifier`; for the error title, render `ErrorState` yourself.
 
 ### `BarList` in a wide container
