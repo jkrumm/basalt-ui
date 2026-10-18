@@ -10,6 +10,7 @@ import { stack } from '@tanstack/charts/stack'
 import { useCallback, useMemo } from 'react'
 import type { ReactElement } from 'react'
 import { CartesianRung } from './CartesianChart'
+import { VX } from '../tokens'
 import { emphasis, lineMark } from './marks'
 import { rowX } from './types'
 import type {
@@ -62,6 +63,27 @@ export type BarsProps<T, X extends ChartX = ChartX> = Omit<
 }
 
 const DEFAULT_BAR_OPACITY = 0.85
+/** The faintest shade told-apart-by-shade series step down to. */
+const SHADE_FLOOR = 0.4
+
+/**
+ * Series that share one colour and set no opacity of their own would draw identical bars. They step
+ * down from full strength to `SHADE_FLOOR` in `bars` order (the first is the strongest), so the legend
+ * swatches and the plot tell them apart by more than the label. A bar that sets `fillOpacity`, or a
+ * chart with `barOpacity`, keeps its own shades.
+ */
+function shadeSharedColors<T>(
+  bars: readonly BarsBar<T>[],
+  barOpacity: BarsProps<T>['barOpacity'],
+): readonly BarsBar<T>[] {
+  if (barOpacity !== undefined) return bars
+  return bars.map((b) => {
+    const group = bars.filter((o) => o.color === b.color)
+    if (group.length < 2 || group.some((g) => g.fillOpacity !== undefined)) return b
+    const step = (1 - SHADE_FLOOR) / (group.length - 1)
+    return { ...b, fillOpacity: 1 - group.indexOf(b) * step }
+  })
+}
 
 const paint = (color: string, opacity: number): string =>
   opacity >= 1 ? color : `color-mix(in srgb, ${color} ${Math.round(opacity * 100)}%, transparent)`
@@ -80,7 +102,9 @@ function guardLogStack(layout: string, onLog: boolean): void {
 }
 
 export function Bars<T, X extends ChartX = ChartX>(props: BarsProps<T, X>): ReactElement {
-  const { bars, lines, layout = 'stacked', barOpacity, ...rest } = props
+  const { bars: given, lines, layout = 'stacked', barOpacity, ...rest } = props
+  const bars = useMemo(() => shadeSharedColors(given, barOpacity), [given, barOpacity])
+  const shaded = bars.some((b, i) => b.fillOpacity !== given[i]?.fillOpacity)
   guardLogStack(layout, bars.length > 0 && rest.y?.scale === 'log')
   const sample = rest.data[0]
   const series = useMemo<ChartSeries<T>[]>(
@@ -125,6 +149,8 @@ export function Bars<T, X extends ChartX = ChartX>(props: BarsProps<T, X>): Reac
             y: 'y',
             z: 'series',
             fill,
+            // Shades of one colour touch in a stack: a surface hairline keeps the segments apart.
+            ...(shaded && layout !== 'grouped' && { stroke: VX.surface.panel, strokeWidth: 1 }),
             // The hovered x is its own highlight: the bar reads at full strength (no dimming, no
             // point marker, no crosshair rule: that is line-chart chrome; `focusRing={false}` on the rung).
             states: [{ when: { focus: 'x' }, style: { fill: solid } }],
@@ -140,7 +166,7 @@ export function Bars<T, X extends ChartX = ChartX>(props: BarsProps<T, X>): Reac
       }
       return out
     },
-    [bars, layout, barOpacity],
+    [bars, layout, barOpacity, shaded],
   )
 
   return (

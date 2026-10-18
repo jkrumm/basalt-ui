@@ -1060,6 +1060,29 @@ Opt out: restyle the slot with `classNames.header` (Section / SettingsSection / 
 An info bubble inside a `basalt-card` no longer flips above the glyph into the card above (it
 covered that card's hero at 390): it opens below, slides up to fit, or flips only into room the card
 owns, and never covers its own glyph. Outside a card the viewport flip is unchanged.
+### Chart readouts and chrome (Wave 38)
+
+No export is removed or added. Six chart defaults move.
+
+- **`Sparkline` readout sits above the plot.** The hover/focus chip no longer overlays the plotted line:
+  it takes the line hosts reserve above the plot (`--basalt-spark-readout-h`; `StatCard` and strip cells
+  already reserve it) and slides with the point, so it stays inside the box at either edge and no longer
+  truncates. A `Sparkline` in a host that reserves no line and clips overflow loses the chip: reserve
+  `--basalt-spark-readout-h` above it, or set `--basalt-spark-readout-lift: 0` on the host to put the chip
+  back at the plot's top edge.
+- **Hourly readouts name the hour.** `{ at, value }` points whose span is 24 h or less read `0 runs · 14:00`
+  (the clock alone); a longer hourly span keeps `16 Oct 14:00`. Opt out: pass `labels`.
+- **A bar tooltip stays under the card's headline.** `Bars` (any chart with a bar series) lowers the
+  tooltip anchor so a tall bar's tooltip no longer opens over the header. No opt-out; a short bar is
+  unchanged.
+- **A compact y axis keeps a fixed domain's end.** At the compact width, `y.domain: [0, 25]` ticks
+  `0 · 10 · 20 · 25` (the end joins when it leaves at least 40% of a step above the last tick), so a unit
+  the formatter puts on the top tick survives at 390 px. Opt out: `y.ticks` (a count or exact values).
+- **`Bars` series of one colour step down in shade.** Two or more bars sharing a `color`, none setting
+  `fillOpacity` and no `barOpacity`, draw at full strength down to 0.4, with a surface hairline between
+  stacked segments. Opt out: set `fillOpacity` on a bar, or pass `barOpacity`.
+- **`StackedArea` skips a band whose every value is `0`.** No band, legend entry or tooltip row; a `null`
+  stays a gap and the band stays. Opt out: none (a zero band drew nothing).
 
 ### State defaults (Wave 38)
 

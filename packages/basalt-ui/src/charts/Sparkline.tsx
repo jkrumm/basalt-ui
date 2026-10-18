@@ -74,8 +74,6 @@ type Point = { i: number; v: number | null }
 const LINE_WIDTH = 1.5
 const DOT_R = 2.5
 const BAR_GAP = 0.15
-/** Air between the hovered point and the readout chip beside it, px. */
-const READOUT_GAP = 8
 /** Air round a line's plot, px (the engine's plot margin): the end marker stays inside the svg box,
  * so it clears the 2px focus outline round it. A bar plot is flush. */
 const LINE_INSET = 3
@@ -94,7 +92,7 @@ const DAY_MS = 86_400_000
 const finite = (v: number): number | null => (Number.isFinite(v) ? v : null)
 
 /** The readout's moment per point of `{ at }` data: the day when the points are a day or more apart,
- * else the hour (with the day once they span several). `undefined` for plain values. */
+ * else the hour (with the day once they span more than 24 h). `undefined` for plain values. */
 function momentsOf(data: SparklineProps['data']): readonly (string | undefined)[] | undefined {
   const dates: (Date | null)[] = []
   for (const d of data) {
@@ -111,12 +109,19 @@ function momentsOf(data: SparklineProps['data']): readonly (string | undefined)[
     if (day < lo) lo = day
     if (day > hi) hi = day
   }
-  const oneDay = lo === hi
+  let first = Number.POSITIVE_INFINITY
+  let last = Number.NEGATIVE_INFINITY
+  for (const d of known) {
+    first = Math.min(first, d.getTime())
+    last = Math.max(last, d.getTime())
+  }
+  // Hourly points inside one 24 h window name the hour alone: the day is the whole window's.
+  const clockOnly = lo === hi || last - first <= DAY_MS
   const byDay = dayGranular(known)
   return dates.map((d) => {
     if (d === null) return undefined
     if (byDay) return readoutDay(bucketDay(d))
-    return oneDay ? readoutClock(d) : `${readoutDay(d)} ${readoutClock(d)}`
+    return clockOnly ? readoutClock(d) : `${readoutDay(d)} ${readoutClock(d)}`
   })
 }
 
@@ -474,7 +479,7 @@ export function Sparkline(props: SparklineProps): ReactElement {
   }
 
   const inset = mark === 'line' ? LINE_INSET : 0
-  const layerStyle: CSSProperties = { inset }
+  const layerStyle: CSSProperties = { inset, ['--basalt-spark-inset' as string]: `${inset}px` }
   const value = active === null ? null : (rows?.[active]?.v ?? null)
   const at =
     interactive && active !== null && value !== null
@@ -488,24 +493,11 @@ export function Sparkline(props: SparklineProps): ReactElement {
           label: labels?.[active] ?? model.moments?.[active],
         }
       : null
-  // Beside the point, on the roomier side, and on the half of the box away from it: the chip never
-  // covers the dot or the host's text, and stays inside the box whatever clips above it.
-  const beside = at === null ? null : at.fx > 0.5 ? 'left' : 'right'
+  // Above the plot, in the line hosts reserve for it (`--basalt-spark-readout-h`), so the chip never
+  // sits on the line. It slides with the point (`left` and `translateX` take the same fraction), so
+  // it stays inside the box at either edge whatever its width, and never needs to truncate.
   const readoutStyle: CSSProperties | undefined =
-    at === null
-      ? undefined
-      : {
-          ...(beside === 'right'
-            ? {
-                left: `calc(${at.fx * 100}% + ${READOUT_GAP}px)`,
-                maxWidth: `calc(${(1 - at.fx) * 100}% - ${READOUT_GAP}px)`,
-              }
-            : {
-                right: `calc(${(1 - at.fx) * 100}% + ${READOUT_GAP}px)`,
-                maxWidth: `calc(${at.fx * 100}% - ${READOUT_GAP}px)`,
-              }),
-          ...(at.fy > 0.5 ? { top: 0 } : { bottom: 0 }),
-        }
+    at === null ? undefined : { left: `${at.fx * 100}%`, translate: `${-at.fx * 100}% 0` }
   return (
     <div
       data-basalt-sparkline=""

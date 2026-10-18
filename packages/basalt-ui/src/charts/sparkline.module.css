@@ -1,10 +1,10 @@
 /*
- * The sparkline's hover / focus readout: one quiet chip, never a floating tooltip, so a narrow cell
- * cannot be escaped. It sits INSIDE the plot box, beside the hovered point (the roomier side, so it
- * flips at the edges) and on the half of the box away from the point, so it covers neither the dot
- * nor anything the host draws round the sparkline (a card's delta period, a strip's caption): a chip
- * above the box landed on that text, and a host slot that clips took it off the page. Where it
- * crosses the line it is opaque, so it reads over it. Placement is inline (`Sparkline.tsx`).
+ * The sparkline's hover / focus readout: one quiet chip, never a floating tooltip. It sits ABOVE the
+ * plot, in the line hosts reserve for it (`--basalt-spark-readout-h`; `StatCard` and the strip cell
+ * do), so it never covers the plotted line, the dashed reference or the dot. `Sparkline.tsx` slides
+ * it with the point (`left` + `translate` by the same fraction), which keeps it inside the box at
+ * either edge at any width. `--basalt-spark-readout-lift: 0` puts it back at the plot's top edge, for
+ * a host that reserves no line. Placement is inline (`Sparkline.tsx`).
  */
 
 .root {
@@ -13,8 +13,12 @@
 
 .readout {
   position: absolute;
+  /* The chip's bottom meets the sparkline's own top edge: the layer sits `--basalt-spark-inset` below it. */
+  top: calc(
+    var(--basalt-spark-readout-lift, 1) * -1 *
+      (var(--basalt-spark-readout-h, 1.125rem) + var(--basalt-spark-inset, 0px))
+  );
   z-index: 1;
-  max-height: 100%;
   max-width: 100%;
   box-sizing: border-box;
   padding: 0 4px;

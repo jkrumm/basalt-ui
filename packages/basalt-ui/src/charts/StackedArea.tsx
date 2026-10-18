@@ -4,6 +4,9 @@
  * set is the caller mapping its groups to entries. The y domain is the visible stack total, so a
  * legend toggle shrinks the axis; the tooltip lists the top band first, matching the plot.
  *
+ * A band whose every value is `0` is skipped (no band, no legend entry, no tooltip row); `null` is a
+ * gap, not a zero, and stays.
+ *
  * A stack is only as dense as its sparsest band: a row where ANY visible band is `null` has no
  * total, so every band gaps across it. Reading it as `0` would claim a measured zero.
  */
@@ -44,7 +47,15 @@ export type StackedAreaProps<T, X extends ChartX = ChartX> = Omit<
 export function StackedArea<T, X extends ChartX = ChartX>(
   props: StackedAreaProps<T, X>,
 ): ReactElement {
-  const { series: bands, fillOpacity, ...rest } = props
+  const { series: given, fillOpacity, ...rest } = props
+  // A band whose every value is 0 draws nothing but a legend entry that names an empty layer: skip it.
+  const bands = useMemo(
+    () =>
+      rest.data.length === 0
+        ? given
+        : given.filter((b) => !rest.data.every((d) => b.getValue(d) === 0)),
+    [given, rest.data],
+  )
   // `mark: 'bar'` is what the rung sums for the auto domain, and the legend/tooltip swatch.
   const series = useMemo<ChartSeries<T>[]>(
     () =>
