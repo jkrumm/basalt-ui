@@ -33,12 +33,14 @@
   min-width: 0;
   padding: var(--vx-space-stack-md);
   border-inline-start: 1px solid var(--vx-divider);
+  /* Transparent on the first cell so every cell's content starts at the same offset. */
+  border-block-start: 1px solid transparent;
 }
 
 /* The top line is adjacent-sibling: the first cell draws none (it leads the strip), every later one
  * draws its top edge, which is the rule between wrapped rows. */
 .cell + .cell {
-  border-block-start: 1px solid var(--vx-divider);
+  border-block-start-color: var(--vx-divider);
 }
 
 /* Cells align by PART. Every cell spans the same five tracks of `.cells` (caption, hero, visual, rows,
@@ -46,7 +48,9 @@
  * void opens only where a sibling's same part is taller. A part a cell lacks collapses its track
  * (the spacing is a margin on the part, not a gap, so an empty track adds none). A cell without a
  * visual keeps its rows (and a footer without rows) in the visual track, directly under its hero:
- * short cells stay compact instead of stretching their footer to the row's bottom. */
+ * short cells stay compact instead of stretching their footer to the row's bottom. A hero-less cell
+ * (rows only) starts its rows in the visual track, so the hero track above them is the one void,
+ * and only as tall as a sibling's value. */
 .cell > * {
   grid-column: 1;
   min-width: 0;

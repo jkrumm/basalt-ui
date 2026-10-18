@@ -1135,8 +1135,8 @@ bottom. Each cell spans the same five tracks of the grid (caption, value, visual
 captions, values and footers line up across a row, and a void opens only where a sibling's same part
 is taller. A cell without a visual keeps its `rows` and `footer` directly under its value, so a short
 cell ("verdicts 78 %") stays compact instead of showing value, a dead gap, then footer. No new prop:
-the default covers the compact case. **Opt out:** none per cell; to keep the old pinned footer,
-put the footer inside `visual`.
+the default covers the compact case. There is no opt-out for the alignment, and no per-cell `align`: a cell with no visual (argo Home's
+recovery cell) already stays compact under the default, which was the only case the escape was for.
 
 ### `Button` section insets sit on the spacing scale
 
