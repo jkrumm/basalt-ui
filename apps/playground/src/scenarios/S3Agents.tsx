@@ -99,6 +99,17 @@ const STUCK_ITEMS = STUCK.map((i) => ({
 const WARN_LABEL = `${WARN_HOURS} h`
 const ABANDON_LABEL = `${ABANDON_HOURS / 24} d`
 
+// The strip derives each footer cell's anchor, which cannot carry `data-shot-absent`: the content
+// repeats the name with the declaration, so `shot` reads the footer as absent in empty and error.
+const footerEntry = (key: string, content: ReactNode) => ({
+  key,
+  content: (
+    <Box data-shot={`strip-footer-${key}`} data-shot-absent="empty error">
+      {content}
+    </Box>
+  ),
+})
+
 function QueueStrip({ shotState }: ScenarioProps) {
   const loading = shotState === 'loading'
   const none = shotState === 'empty' || shotState === 'error'
@@ -255,16 +266,6 @@ function QueueStrip({ shotState }: ScenarioProps) {
     />
   )
 
-  // The strip derives each footer cell's anchor, which cannot carry `data-shot-absent`: the content
-  // repeats the name with the declaration, so `shot` reads the footer as absent in empty and error.
-  const footerEntry = (key: string, content: ReactNode) => ({
-    key,
-    content: (
-      <Box data-shot={`strip-footer-${key}`} data-shot-absent="empty error">
-        {content}
-      </Box>
-    ),
-  })
   const footer = none
     ? undefined
     : [
