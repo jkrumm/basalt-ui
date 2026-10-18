@@ -2,14 +2,17 @@
  * `Bars` — bar series on a band x scale (Date, number or string), stacked, grouped or normalized,
  * with line overlays on `y`/`y2` (`docs/V2-SPEC.md` § 9.3). A negative value draws below zero: a
  * stack diverges around the baseline (the 1.x `negativeBars`, now just a signed value). Zones,
- * reference lines, legend, cursor and tooltip are the rung's.
+ * reference lines, legend, cursor and tooltip are the rung's. In a visual slot (a `StatCard`
+ * `sparkline`, a strip cell's `visual`) it drops both axes, the grid, the margin and the legend and
+ * fills the slot like a `Sparkline`: a small histogram, its bins named in the tooltip below it.
  */
 import { barY } from '@tanstack/charts/bar'
 import { group } from '@tanstack/charts/group'
 import { stack } from '@tanstack/charts/stack'
-import { useCallback, useMemo } from 'react'
+import { useCallback, useContext, useMemo } from 'react'
 import type { ReactElement } from 'react'
 import { CartesianRung } from './CartesianChart'
+import { VisualSlotContext } from '../dashboard/visual-slot'
 import { VX } from '../tokens'
 import { emphasis, lineMark } from './marks'
 import { rowX } from './types'
@@ -107,6 +110,7 @@ export function Bars<T, X extends ChartX = ChartX>(props: BarsProps<T, X>): Reac
   const sharedColor = bars.some((b, i) => bars.findIndex((o) => o.color === b.color) !== i)
   guardLogStack(layout, bars.length > 0 && rest.y?.scale === 'log')
   const sample = rest.data[0]
+  const bare = useContext(VisualSlotContext) !== null
   const series = useMemo<ChartSeries<T>[]>(
     () => [
       // The legend has no datum: its swatch wears the shade the bars draw on the first row, so
@@ -179,6 +183,7 @@ export function Bars<T, X extends ChartX = ChartX>(props: BarsProps<T, X>): Reac
       crosshair={false}
       focusRing={false}
       reverseRows={layout !== 'grouped'}
+      {...(bare && { bare, tooltipBelow: true, legend: false as const })}
       {...(layout !== 'grouped' && { stack: layout })}
     />
   )

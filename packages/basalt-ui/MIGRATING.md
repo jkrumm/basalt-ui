@@ -1245,6 +1245,25 @@ A gap is stated once. Moved defaults:
 `size="row"` keeps no caption lines, empty or loading. Ring Meters are unchanged (the centre reading stays `—`).
 
 Opt out: none for the caption and qualifier rows (they are layout fixes; shorten the text instead); pass `emptyText="—"` on a `Meter` to keep the dash caption; for a strip cell, drop `reason` (and say it in the caption or qualifier) to keep the bare `—`.
+### Bars in a visual slot (Wave 38)
+
+New capability, no behaviour moves for a `Bars` outside a slot. A `Bars` rendered inside a
+`StatCard` `sparkline` slot or a strip cell's `visual` now drops both axes, the grid, the plot margin
+and the legend, and fills the slot like a `Sparkline`: the catalogue's "distribution as a slot
+micro-visual". Nothing to opt into and no new prop; the slot is the signal. Give it the slot's box:
+
+```tsx
+<StatCard
+  title="Pace"
+  sparkline={({ height }) => (
+    <Bars ariaLabel="Pace by book" data={bins} x={(d) => d.bin} height={height} bars={[…]} />
+  )}
+/>
+```
+
+The marks keep the house fills. The bins are named in the tooltip, which opens below the slot, so
+5–12 bars read as a distribution, not a time series. A `Bars` you mount in a slot on purpose WITH axes
+has no way back; use a `ChartCard` (the catalogue's "distribution as a card's subject").
 
 ### List and Meter card states (Wave 38)
 
