@@ -168,12 +168,12 @@ describe('buildPaletteCss core-only spacing', () => {
     expect(buildPaletteCss({ only: 'all' })).toBe(buildPaletteCss())
   })
 
-  it('drops 108 of the 121 spacing variables, taking the set from 218 to 110', () => {
-    // 218 variables: 97 non-spacing + 121 `space-*`. `core` keeps the 13 `SPACE` anchors and drops
-    // the 108 component-named one-offs: 97 + 13 = 110. A `@media` re-declaration of a var moves
+  it('drops 108 of the 121 spacing variables, taking the set from 220 to 112', () => {
+    // 220 variables: 99 non-spacing + 121 `space-*`. `core` keeps the 13 `SPACE` anchors and drops
+    // the 108 component-named one-offs: 99 + 13 = 112. A `@media` re-declaration of a var moves
     // none of these counts (`varNames` is a SET).
-    expect(all.size).toBe(218)
-    expect(core.size).toBe(110)
+    expect(all.size).toBe(220)
+    expect(core.size).toBe(112)
     expect([...all].filter((n) => n.startsWith('space-'))).toHaveLength(121)
     expect([...core].filter((n) => n.startsWith('space-'))).toHaveLength(13)
   })

@@ -86,7 +86,7 @@ import { CTL_HEIGHT_VARS } from '../tokens/ctl-vars'
 import type { CtlHeightVar } from '../tokens/ctl-vars'
 import { SIZE_CLASS_BREAKPOINTS } from '../tokens/size-classes'
 import type { BasaltFontsConfig } from '../tokens/core'
-import { onColor, onColorFor, inkVars, tabsVars } from './chrome-vars'
+import { badgeVars, onColor, onColorFor, inkVars, tabsVars } from './chrome-vars'
 import cardInsetClasses from './card-inset.module.css'
 import controlsClasses from './controls.module.css'
 import floatingClasses from './floating.module.css'
@@ -505,10 +505,12 @@ function buildTheme(data: PaletteData, options: BuildThemeOptions = {}): Mantine
         },
       }),
       // Status chip (SPEC § 6.10): `light` + `tight`, neutral until `color=` opts in (the accent is
-      // never a status chip's default); a `leftSection` glyph is sized in `badgeSection`.
+      // never a status chip's default). The neutral surface + ink word is the chip; a named colour is
+      // a leading dot (`badgeVars`); a `leftSection` glyph is sized in `badgeSection`.
       Badge: ext<typeof Badge>({
         defaultProps: { variant: 'light', color: 'gray', radius: radius.tight },
-        classNames: { section: controlsClasses.badgeSection },
+        classNames: { root: controlsClasses.badgeRoot, section: controlsClasses.badgeSection },
+        vars: badgeVars,
       }),
       // Alert renders its title in the body font by default; bring it onto the head-font idiom
       // (docs/DESIGN-SPEC.md §5) like every other titled surface. Radius/padding/color tint are
@@ -1081,8 +1083,9 @@ function buildTheme(data: PaletteData, options: BuildThemeOptions = {}): Mantine
       // The tab-list bottom rule (and the inactive-tab hover underline) is a layout separator, not
       // control chrome — it reads the divider token instead of the heavy gray-3/dark-4 line
       // (controls.module.css; custom properties are stripped from `styles` objects). The active tab
-      // underline takes ink, not the accent (SPEC § 6.12; DESIGN-CORE § Accent discipline);
-      // `color=` opts back in. Only the underline `default` variant — `pills` fills with the colour.
+      // underline, outline border and pill fill take ink, not the accent (SPEC § 6.12; DESIGN-CORE
+      // § Accent discipline), and the selected label is heavier (controls.module.css); `color=` opts
+      // back in.
       Tabs: ext<typeof Tabs>({
         classNames: { root: controlsClasses.tabsRoot },
         vars: tabsVars,
@@ -1257,28 +1260,13 @@ function buttonPaddingX(size: unknown): string | undefined {
 }
 
 /**
- * The inset on a Button's section side, a step of the same stack scale. Mantine derives it as
- * `--button-padding-x / 1.5` (`Button.css`, `[data-with-left-section]` / `[data-with-right-section]`),
- * which lands at 10.67 / 13.33 / 21.33 / 5.33 px — off the scale. Each size takes the nearest step to
- * that quotient at level 0 (xs 8, sm 12, md 12, lg 16, xl 24; compact-xs/sm 4, compact-md/lg 8,
- * compact-xl 12; `ctl` 6.67 → 8). Undefined sizes keep Mantine's own value.
+ * The inset on a Button's section side EQUALS its text side, so an icon Button is balanced (Mantine
+ * derives it as `--button-padding-x / 1.5`, which also left the icon side one step tighter than the
+ * text side: 8/12, 12/16, 12/20). `ctl` has its own `--button-padding-x-ctl`; undefined sizes keep
+ * Mantine's value.
  */
-const BUTTON_SECTION_X: Record<string, string> = {
-  xs: 'var(--vx-space-stack-sm)',
-  sm: 'var(--vx-space-stack-md)',
-  md: 'var(--vx-space-stack-md)',
-  lg: 'var(--vx-space-stack-lg)',
-  xl: 'var(--vx-space-stack-xl)',
-  ctl: 'var(--vx-space-stack-sm)',
-  'compact-xs': 'var(--vx-space-stack-xs)',
-  'compact-sm': 'var(--vx-space-stack-xs)',
-  'compact-md': 'var(--vx-space-stack-sm)',
-  'compact-lg': 'var(--vx-space-stack-sm)',
-  'compact-xl': 'var(--vx-space-stack-md)',
-}
 function buttonSectionX(size: unknown): string | undefined {
-  const step = BUTTON_SECTION_X[typeof size === 'string' ? size : 'sm']
-  return step === undefined ? undefined : `calc(${step} * var(--mantine-scale))`
+  return size === 'ctl' ? 'var(--button-padding-x-ctl)' : buttonPaddingX(size)
 }
 
 /**

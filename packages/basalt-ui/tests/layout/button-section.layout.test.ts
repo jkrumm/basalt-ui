@@ -1,7 +1,8 @@
 /**
- * Button section insets in a real browser (Wave 36): Mantine pads the section side by
- * `--button-padding-x / 1.5` (5.33px at compact-xs, 10.67px at sm) — off the spacing scale. Each
- * section-side inset is a step of the 4px stack scale; the no-section side keeps `--button-padding-x`.
+ * Button section insets in a real browser: Mantine pads the section side by `--button-padding-x / 1.5`
+ * (5.33px at compact-xs, 10.67px at sm) — off the spacing scale, and Wave 36 put it on a step that was
+ * still one tighter than the text side (8/12, 12/16, 12/20), which read as unbalanced. Wave 37: the icon
+ * side EQUALS the text side, so all four insets match the bare Button's `--button-padding-x`.
  */
 import { afterAll, beforeAll, describe, expect, test } from 'bun:test'
 import type { FixtureSpec } from './fixture/spec'
@@ -24,21 +25,19 @@ const SPEC: FixtureSpec = {
   buttonSections: true,
 }
 
-/** The section-side inset per size at level 0 (stack steps 4/8/12/16/24; `buttonSectionX`). */
-const SECTION_INSET: Record<string, number> = {
-  xs: 8,
-  sm: 12,
-  md: 12,
-  lg: 16,
-  xl: 24,
-  ctl: 8,
-  'compact-xs': 4,
-  'compact-sm': 4,
-  'compact-md': 8,
-  'compact-lg': 8,
-  'compact-xl': 12,
-}
-const SIZES = Object.keys(SECTION_INSET)
+const SIZES = [
+  'xs',
+  'sm',
+  'md',
+  'lg',
+  'xl',
+  'ctl',
+  'compact-xs',
+  'compact-sm',
+  'compact-md',
+  'compact-lg',
+  'compact-xl',
+]
 const VARIANTS = ['default', 'filled']
 
 type Insets = { bare: [number, number]; left: [number, number]; right: [number, number] }
@@ -69,10 +68,10 @@ layout('Button section insets', () => {
 
   for (const size of SIZES) {
     for (const variant of VARIANTS) {
-      test(`${size}/${variant}: section side takes its mapped step, the other side is unchanged`, () => {
+      test(`${size}/${variant}: the icon side equals the text side (all four insets match the bare Button)`, () => {
         const r = all[`btn-${size}-${variant}`]!
-        expect(r.left[0]).toBe(SECTION_INSET[size]!)
-        expect(r.right[1]).toBe(SECTION_INSET[size]!)
+        expect(r.left[0]).toBe(r.bare[0])
+        expect(r.right[1]).toBe(r.bare[1])
         expect(r.left[1]).toBe(r.bare[1])
         expect(r.right[0]).toBe(r.bare[0])
       })

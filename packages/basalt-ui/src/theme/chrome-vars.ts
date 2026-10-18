@@ -110,12 +110,17 @@ export function inkVars(props: {
   return INK_BY_VARIANT[variant as keyof typeof INK_BY_VARIANT] ?? {}
 }
 
+/** The selected `pills` Tab: one ink step over the panel, the same neutral the SegmentedControl indicator uses. */
+const PILL_FILL = 'color-mix(in srgb, var(--vx-ink) 12%, var(--vx-surface-panel))'
+
 /**
- * Tabs vars: the on-color re-point plus the active underline in ink (SPEC § 6.12). Only the
- * underline `default` variant takes ink (`pills` fills with the colour); an explicit `color=` opts
- * out. The return type lists `--tabs-text-color` and `--tabs-radius` because Mantine's
- * `TabsCssVariables` type declares only `--tabs-color` / `--tabs-radius` while Tabs' OWN
- * varsResolver writes `--tabs-text-color` (an upstream type gap).
+ * Tabs vars: the selected tab reads by ink and weight, never the accent (SPEC § 6.12; DESIGN-CORE
+ * § Accent discipline). `default` and `outline` paint their active underline/border from
+ * `--tabs-color`, so that is ink; `pills` fills the tab with it, so the fill is an ink-mixed panel
+ * and the label (`--tabs-text-color`) is ink, not the on-accent white. An explicit `color=` opts out
+ * of all three and keeps the on-color text var. The return type lists `--tabs-text-color` and
+ * `--tabs-radius` because Mantine's `TabsCssVariables` type declares only `--tabs-color` /
+ * `--tabs-radius` while Tabs' OWN varsResolver writes `--tabs-text-color` (an upstream type gap).
  */
 export function tabsVars(
   theme: MantineTheme,
@@ -125,12 +130,61 @@ export function tabsVars(
     autoContrast?: boolean | undefined
   },
 ): { root: Record<'--tabs-color' | '--tabs-radius' | '--tabs-text-color', string | undefined> } {
-  const underline = !hasExplicitColor(props.color) && (props.variant ?? 'default') === 'default'
+  if (hasExplicitColor(props.color)) {
+    return {
+      root: {
+        '--tabs-text-color': onColorFor(theme, props),
+        '--tabs-color': undefined,
+        '--tabs-radius': undefined,
+      },
+    }
+  }
+  const pills = props.variant === 'pills'
   return {
     root: {
-      '--tabs-text-color': onColorFor(theme, props),
-      '--tabs-color': underline ? 'var(--vx-ink)' : undefined,
+      '--tabs-text-color': pills ? INK : onColorFor(theme, props),
+      '--tabs-color': pills ? PILL_FILL : INK,
       '--tabs-radius': undefined,
+    },
+  }
+}
+
+/**
+ * Badge vars (SPEC § 6.10): the status chip is the neutral surface with an ink word, and a named
+ * colour is a leading status dot, not a tinted slab (W36 r3/r6 "tinted status Badges"). Only the
+ * `light` variant (the theme default); `filled`, `outline`, `dot` and `default` keep their meaning —
+ * a `filled` accent count is the one tinted-chrome case that stays. A hex or indexed colour keeps
+ * no dot (nothing to name), and `gray` is the no-signal chip. A `leftSection` glyph replaces the dot.
+ */
+export function badgeVars(
+  theme: MantineTheme,
+  props: { color?: string | null | undefined; variant?: string | undefined },
+): {
+  root: Record<
+    '--badge-bg' | '--badge-color' | '--badge-dot' | '--badge-dot-content' | '--badge-dot-cols',
+    string | undefined
+  >
+} {
+  const none = {
+    '--badge-bg': undefined,
+    '--badge-color': undefined,
+    '--badge-dot': undefined,
+    '--badge-dot-content': undefined,
+    '--badge-dot-cols': undefined,
+  }
+  if ((props.variant ?? 'light') !== 'light') return { root: none }
+  const name = props.color ?? 'gray'
+  const named = name !== 'gray' && Object.hasOwn(theme.colors, name)
+  return {
+    root: {
+      ...none,
+      '--badge-bg': SUBTLE,
+      '--badge-color': INK,
+      ...(named && {
+        '--badge-dot': `var(--mantine-color-${name}-filled)`,
+        '--badge-dot-content': "''",
+        '--badge-dot-cols': 'auto 1fr',
+      }),
     },
   }
 }

@@ -200,6 +200,11 @@ html[data-mantine-color-scheme] .inputWrapper[data-variant='default']:not([data-
 .actionIconRoot:disabled:not([data-loading]),
 .actionIconRoot[data-disabled]:not([data-loading]) {
   --ctrl-depth: 0 0 transparent;
+
+  /* One surface in both schemes. Mantine's disabled fill is a gray step that is the PANEL itself in
+   * dark, so a disabled Button there read as the subtle variant with dimmer text; an ink-mixed panel
+   * is visible on either page, and the state is told apart by more than ink. */
+  background: color-mix(in srgb, var(--vx-ink) 8%, var(--vx-surface-panel));
 }
 
 /*
@@ -288,6 +293,11 @@ html .accordionItem {
  * divider token, not the heavy gray-3/dark-4 line. Mantine's scheme rules sit at (0,2,0); the
  * `html[...]` prefix lands (0,2,1). The active underline's colour is set in the theme's Tabs `vars`.
  */
+/* The selected tab reads by ink and weight, not hue. */
+.tabsRoot [role='tab'][data-active] {
+  font-weight: 600;
+}
+
 html[data-mantine-color-scheme] .tabsRoot {
   --tab-border-color: var(--vx-divider);
   /* Mantine's dark hover (dark-6) is the page itself, so a hovered tab read identical to rest. The
@@ -316,6 +326,24 @@ html .tableRoot {
  */
 html .tableRoot tbody tr:last-of-type {
   border-bottom: none;
+}
+
+/*
+ * Badge status dot: a named `light` Badge is the neutral surface + ink word with a leading dot in the
+ * status colour (`badgeVars` writes the `--badge-dot*` vars; nothing here without them). The dot is a
+ * grid item, so the root takes two columns while it is shown. A section (left or right) replaces it.
+ */
+.badgeRoot:not([data-with-left-section], [data-with-right-section]) {
+  grid-template-columns: var(--badge-dot-cols, none);
+  column-gap: calc(0.25rem * var(--mantine-scale));
+}
+
+.badgeRoot:not([data-with-left-section], [data-with-right-section])::before {
+  content: var(--badge-dot-content, none);
+  width: calc(0.375rem * var(--mantine-scale));
+  height: calc(0.375rem * var(--mantine-scale));
+  border-radius: 50%;
+  background: var(--badge-dot);
 }
 
 /*

@@ -16,13 +16,32 @@ const badge = (color?: string): string => {
 }
 
 describe('Badge colour', () => {
-  test('with no colour it takes the gray tint, never the accent', () => {
+  test('with no colour it is the neutral surface with an ink word and no dot, never the accent', () => {
     const style = badge()
-    expect(style).toContain('gray')
+    expect(style).toContain('--badge-bg: var(--vx-surface-subtle)')
+    expect(style).toContain('--badge-color: var(--vx-ink)')
+    expect(style).not.toContain('--badge-dot')
     expect(style).not.toContain('blue')
   })
 
-  test('an explicit colour still wins', () => {
-    expect(badge('blue')).toContain('blue')
+  test('a named colour is a status dot on the neutral surface, not a tinted slab', () => {
+    const style = badge('green')
+    expect(style).toContain('--badge-bg: var(--vx-surface-subtle)')
+    expect(style).toContain('--badge-color: var(--vx-ink)')
+    expect(style).toContain('--badge-dot: var(--mantine-color-green-filled)')
+  })
+
+  test('filled keeps its colour fill: the accent count', () => {
+    const { getByText, unmount } = render(
+      <MantineProvider theme={baseTheme}>
+        <Badge variant="filled" color="blue">
+          chip
+        </Badge>
+      </MantineProvider>,
+    )
+    const style = getByText('chip').closest('.mantine-Badge-root')?.getAttribute('style') ?? ''
+    unmount()
+    expect(style).not.toContain('--badge-dot')
+    expect(style).not.toContain('--badge-bg: var(--vx-surface-subtle)')
   })
 })

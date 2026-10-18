@@ -273,6 +273,8 @@ export const VX = {
     bg: 'var(--vx-surface-bg)',
     panel: 'var(--vx-surface-panel)',
     panelHover: 'var(--vx-surface-panel-hover)',
+    rowHover: 'var(--vx-surface-row-hover)', // a hovered row on a panel, visible in both schemes
+    rowSelected: 'var(--vx-surface-row-selected)', // a selected row on a panel
     elevated: 'var(--vx-surface-elevated)',
     subtle: 'var(--vx-surface-subtle)',
     overlay: 'var(--vx-surface-overlay)', // floating layer (menus, popovers, modals, drawers)
@@ -414,6 +416,8 @@ function frameworkPrimitives(side: Side, data: PaletteData): string {
     decl('surface-bg', su.bg[side]),
     decl('surface-panel', su.panel[side]),
     decl('surface-panel-hover', su.panelHover[side]),
+    decl('surface-row-hover', su.rowHover[side]),
+    decl('surface-row-selected', su.rowSelected[side]),
     decl('surface-elevated', su.elevated[side]),
     decl('surface-subtle', su.subtle[side]),
     decl('surface-overlay', su.overlay[side]),
