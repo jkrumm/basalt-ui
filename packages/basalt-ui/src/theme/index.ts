@@ -1084,8 +1084,7 @@ function buildTheme(data: PaletteData, options: BuildThemeOptions = {}): Mantine
       // control chrome — it reads the divider token instead of the heavy gray-3/dark-4 line
       // (controls.module.css; custom properties are stripped from `styles` objects). The active tab
       // underline, outline border and pill fill take ink, not the accent (SPEC § 6.12; DESIGN-CORE
-      // § Accent discipline), and the selected label is heavier (controls.module.css); `color=` opts
-      // back in.
+      // § Accent discipline); `color=` opts back in.
       Tabs: ext<typeof Tabs>({
         classNames: { root: controlsClasses.tabsRoot },
         vars: tabsVars,

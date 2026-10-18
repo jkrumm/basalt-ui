@@ -31,6 +31,14 @@ describe('Badge colour', () => {
     expect(style).toContain('--badge-dot: var(--mantine-color-green-filled)')
   })
 
+  test.each([
+    ['#e03131', '#e03131'],
+    ['red.6', 'var(--mantine-color-red-6)'],
+    ['var(--my-status)', 'var(--my-status)'],
+  ])('a non-theme colour %s gives the dot that colour', (color, dot) => {
+    expect(badge(color)).toContain(`--badge-dot: ${dot}`)
+  })
+
   test('filled keeps its colour fill: the accent count', () => {
     const { getByText, unmount } = render(
       <MantineProvider theme={baseTheme}>

@@ -67,17 +67,10 @@
     text-size-adjust: 100%;
   }
 
-  /* A slashed zero belongs to data text only. Hubot Sans (the heading face) draws one, and it leaked
-     into every non-heading title that borrows the face (section titles, card titles, `2026`,
-     `90 days`). Reset it at the root so any text that is not mono inherits a plain zero; the mono
-     stack opts back in below. */
-  :root {
-    font-feature-settings: 'zero' 0;
-  }
-
-  /* Data text keeps its zero and drops its ligatures: `<>` in a facts line is two characters, not a
-     diamond. Reaches the mono stack by element (code, kbd, samp, pre), by contract (`data-numeric`,
-     `data-monospace`), by Mantine's `ff="monospace"` inline style, and by the stack's own var. */
+  /* Mono data text drops its ligatures: `<>` in a facts line is two characters, not a diamond. Reaches
+     the mono stack by element (code, kbd, samp, pre), by contract (`data-numeric`, `data-monospace`),
+     by Mantine's `ff="monospace"` inline style, and by the stack's own var in an inline style. Body
+     sans keeps its ligatures. A CSS-module class that only sets the mono family is out of reach. */
   code,
   kbd,
   samp,
@@ -88,7 +81,6 @@
   [style*='basalt-font-mono'],
   .mantine-Code-root,
   .mantine-Kbd-root {
-    font-feature-settings: 'zero' 1;
     font-variant-ligatures: none;
   }
 
@@ -172,10 +164,9 @@
   /* The chart host is a focusable element Mantine does not own, so no `mantine-focus-*` class reaches
      it and the UA ring paints instead: a white double ring in dark (argo strength strip and
      diagnostics at dark 390). There is no media or pointer branch behind it. */
-  .basalt-chart:focus-visible,
-  .basalt-chart :focus-visible {
+  .basalt-chart:focus-visible {
     outline: 2px solid var(--vx-accent);
-    outline-offset: 2px;
+    outline-offset: calc(0.125rem * var(--mantine-scale));
   }
 
   /* Hubot Sans is a condensed display face — the spec pins it at 88% font-stretch everywhere it
@@ -188,9 +179,15 @@
   h4,
   h5,
   h6,
-  .mantine-Title-root {
+  .mantine-Title-root,
+  .mantine-Alert-title,
+  .mantine-Modal-title,
+  .mantine-Drawer-title,
+  [style*='basalt-font-head'] {
     font-stretch: var(--basalt-font-head-stretch, 88%);
-    /* Hubot Sans draws a slashed zero by default; a heading numeral is a figure, not code. */
+    /* Hubot Sans draws a slashed zero by default; a heading numeral is a figure, not code. Scoped to
+       the head-face surfaces (not a root reset: mono keeps its own zero), which also covers the
+       Alert/Modal/Drawer titles the theme sets in the head face and any inline `ff` use of it. */
     font-feature-settings: 'zero' 0;
     font-variant-numeric: lining-nums;
   }

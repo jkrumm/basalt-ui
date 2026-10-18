@@ -29,18 +29,23 @@ describe('row surfaces', () => {
       )
     })
 
-    test(`${side}: ink on a row surface clears AA`, () => {
-      for (const key of ['rowHover', 'rowSelected'] as const) {
-        expect(contrastRatio(data.ink.ink[side], data.surface[key][side])).toBeGreaterThanOrEqual(
-          STATUS_TEXT_CONTRAST_MIN,
-        )
+    test(`${side}: every text colour clears AA on both row surfaces`, () => {
+      for (const surface of ['rowHover', 'rowSelected'] as const) {
+        const bg = data.surface[surface][side]
+        const text = [
+          ...Object.values(data.ink).map((pair) => pair[side]),
+          ...Object.values(data.status).map((pair) => pair[side]),
+        ]
+        for (const hex of text) {
+          expect(contrastRatio(hex, bg)).toBeGreaterThanOrEqual(STATUS_TEXT_CONTRAST_MIN)
+        }
       }
     })
   }
 
-  test('status text is not solved against the row surfaces (the default hexes stay byte-identical)', () => {
-    expect(STATUS_TEXT_SURFACES.rowHover).toBe(false)
-    expect(STATUS_TEXT_SURFACES.rowSelected).toBe(false)
+  test('status text is solved against the row surfaces', () => {
+    expect(STATUS_TEXT_SURFACES.rowHover).toBe(true)
+    expect(STATUS_TEXT_SURFACES.rowSelected).toBe(true)
   })
 
   test('emitted as --vx-surface-row-hover / --vx-surface-row-selected and typed on VX.surface', () => {

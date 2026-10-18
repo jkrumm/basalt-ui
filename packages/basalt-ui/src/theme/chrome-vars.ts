@@ -149,12 +149,27 @@ export function tabsVars(
   }
 }
 
+/** The dot's colour: a theme colour's fill, an indexed shade's own var (`red.6`), or the caller's literal (hex, var). */
+function dotColor(theme: MantineTheme, color: string): string {
+  if (Object.hasOwn(theme.colors, color)) return `var(--mantine-color-${color}-filled)`
+  const [name, shade] = color.split('.')
+  if (
+    name !== undefined &&
+    shade !== undefined &&
+    /^\d$/.test(shade) &&
+    Object.hasOwn(theme.colors, name)
+  ) {
+    return `var(--mantine-color-${name}-${shade})`
+  }
+  return color
+}
+
 /**
  * Badge vars (SPEC § 6.10): the status chip is the neutral surface with an ink word, and a named
  * colour is a leading status dot, not a tinted slab (W36 r3/r6 "tinted status Badges"). Only the
  * `light` variant (the theme default); `filled`, `outline`, `dot` and `default` keep their meaning —
- * a `filled` accent count is the one tinted-chrome case that stays. A hex or indexed colour keeps
- * no dot (nothing to name), and `gray` is the no-signal chip. A `leftSection` glyph replaces the dot.
+ * a `filled` accent count is the one tinted-chrome case that stays. Any colour the caller gives (theme name, indexed shade, hex, var) becomes the dot; `gray` is the
+ * no-signal chip. A `leftSection` glyph replaces the dot.
  */
 export function badgeVars(
   theme: MantineTheme,
@@ -174,14 +189,14 @@ export function badgeVars(
   }
   if ((props.variant ?? 'light') !== 'light') return { root: none }
   const name = props.color ?? 'gray'
-  const named = name !== 'gray' && Object.hasOwn(theme.colors, name)
+  const dot = name === 'gray' ? undefined : dotColor(theme, name)
   return {
     root: {
       ...none,
       '--badge-bg': SUBTLE,
       '--badge-color': INK,
-      ...(named && {
-        '--badge-dot': `var(--mantine-color-${name}-filled)`,
+      ...(dot !== undefined && {
+        '--badge-dot': dot,
         '--badge-dot-content': "''",
         '--badge-dot-cols': 'auto 1fr',
       }),

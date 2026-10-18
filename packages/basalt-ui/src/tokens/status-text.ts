@@ -34,8 +34,8 @@ export const STATUS_TEXT_SURFACES: Readonly<Record<SurfaceKey, boolean>> = {
   field: true,
   border: false,
   hairline: false,
-  rowHover: false,
-  rowSelected: false,
+  rowHover: true,
+  rowSelected: true,
 }
 
 export const STATUS_TEXT_CONTRAST_MIN = 4.5

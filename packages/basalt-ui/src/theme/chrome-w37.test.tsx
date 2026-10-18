@@ -1,4 +1,4 @@
-/** Wave 37 theme chrome: the disabled Button surface and the symmetric Button section inset. */
+/** Wave 37 theme chrome: the symmetric Button section inset and the Badge dot scope (browser checks: tests/layout). */
 import { Button, MantineProvider } from '@mantine/core'
 import { render } from '@testing-library/react'
 import { describe, expect, test } from 'bun:test'
@@ -39,13 +39,10 @@ describe('Button section inset', () => {
   })
 })
 
-describe('disabled Button / ActionIcon surface', () => {
-  test('one ink-mixed surface in both schemes, not the scheme-blind Mantine disabled fill', () => {
-    const rule = controlsCss.match(
-      /\.buttonRoot:disabled:not\(\[data-loading\]\)[^{]*\{([^}]*)\}/,
-    )?.[1]
-    expect(rule).toContain(
-      'background: color-mix(in srgb, var(--vx-ink) 8%, var(--vx-surface-panel))',
-    )
+describe('the Badge dot rule', () => {
+  test('is scoped to the light variant, so variant="dot" keeps its own ::before', () => {
+    const rules = [...controlsCss.matchAll(/([^{}]*\.badgeRoot[^{}]*)\{/g)].map((m) => m[1] ?? '')
+    expect(rules.length).toBeGreaterThan(0)
+    for (const selector of rules) expect(selector).toContain("[data-variant='light']")
   })
 })

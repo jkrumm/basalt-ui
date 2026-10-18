@@ -40,7 +40,7 @@ exports[`createBasaltTheme() shape and resolver output default 1`] = `
       "#e5e5e9",
       "#dddde1",
       "#d4d4d8",
-      "#a1a1a4",
+      "#a7a7aa",
       "#444447",
       "#38383b",
       "#2b2b2e",
@@ -284,14 +284,14 @@ exports[`createBasaltTheme() shape and resolver output default 1`] = `
   };
   if ((props.variant ?? "light") !== "light")
     return { root: none };
-  const name = props.color ?? "gray", named = name !== "gray" && Object.hasOwn(theme.colors, name);
+  const name = props.color ?? "gray", dot = name === "gray" ? void 0 : dotColor(theme, name);
   return {
     root: {
       ...none,
       "--badge-bg": SUBTLE,
       "--badge-color": INK,
-      ...named && {
-        "--badge-dot": \`var(--mantine-color-\${name}-filled)\`,
+      ...dot !== void 0 && {
+        "--badge-dot": dot,
         "--badge-dot-content": "''",
         "--badge-dot-cols": "auto 1fr"
       }
@@ -301,7 +301,7 @@ exports[`createBasaltTheme() shape and resolver output default 1`] = `
 ,
         "outputs": [
           {
-            "probes": 292,
+            "probes": 196,
             "result": "{"root":{"--badge-bg":"var(--vx-surface-subtle)","--badge-color":"var(--vx-ink)"}}",
           },
           {
@@ -315,6 +315,10 @@ exports[`createBasaltTheme() shape and resolver output default 1`] = `
           {
             "probes": 96,
             "result": "{"root":{"--badge-bg":"var(--vx-surface-subtle)","--badge-color":"var(--vx-ink)","--badge-dot":"var(--mantine-color-dark-filled)","--badge-dot-content":"''","--badge-dot-cols":"auto 1fr"}}",
+          },
+          {
+            "probes": 96,
+            "result": "{"root":{"--badge-bg":"var(--vx-surface-subtle)","--badge-color":"var(--vx-ink)","--badge-dot":"accent","--badge-dot-content":"''","--badge-dot-cols":"auto 1fr"}}",
           },
           {
             "probes": 1728,
@@ -1366,7 +1370,7 @@ exports[`createBasaltTheme() shape and resolver output all knobs 1`] = `
       "#e5e5e9",
       "#dddde1",
       "#d4d4d8",
-      "#a1a1a4",
+      "#a7a7aa",
       "#444447",
       "#38383b",
       "#2b2b2e",
@@ -1610,14 +1614,14 @@ exports[`createBasaltTheme() shape and resolver output all knobs 1`] = `
   };
   if ((props.variant ?? "light") !== "light")
     return { root: none };
-  const name = props.color ?? "gray", named = name !== "gray" && Object.hasOwn(theme.colors, name);
+  const name = props.color ?? "gray", dot = name === "gray" ? void 0 : dotColor(theme, name);
   return {
     root: {
       ...none,
       "--badge-bg": SUBTLE,
       "--badge-color": INK,
-      ...named && {
-        "--badge-dot": \`var(--mantine-color-\${name}-filled)\`,
+      ...dot !== void 0 && {
+        "--badge-dot": dot,
         "--badge-dot-content": "''",
         "--badge-dot-cols": "auto 1fr"
       }
@@ -1627,7 +1631,7 @@ exports[`createBasaltTheme() shape and resolver output all knobs 1`] = `
 ,
         "outputs": [
           {
-            "probes": 292,
+            "probes": 196,
             "result": "{"root":{"--badge-bg":"var(--vx-surface-subtle)","--badge-color":"var(--vx-ink)"}}",
           },
           {
@@ -1641,6 +1645,10 @@ exports[`createBasaltTheme() shape and resolver output all knobs 1`] = `
           {
             "probes": 96,
             "result": "{"root":{"--badge-bg":"var(--vx-surface-subtle)","--badge-color":"var(--vx-ink)","--badge-dot":"var(--mantine-color-dark-filled)","--badge-dot-content":"''","--badge-dot-cols":"auto 1fr"}}",
+          },
+          {
+            "probes": 96,
+            "result": "{"root":{"--badge-bg":"var(--vx-surface-subtle)","--badge-color":"var(--vx-ink)","--badge-dot":"accent","--badge-dot-content":"''","--badge-dot-cols":"auto 1fr"}}",
           },
           {
             "probes": 1728,

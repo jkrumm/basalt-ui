@@ -333,6 +333,8 @@ export type FixtureSpec = {
   table?: TableSpec
   /** Renders every Button size x variant with no / a left / a right section (`button-section`). */
   buttonSections?: true
+  /** Renders disabled Buttons and every Badge flavour the Wave 37 chrome decides (`chrome-w37`). */
+  chromeW37?: true
   /** Renders a `PageBar` carrying real controls. Omitted ⇒ no bar of its own (see `aside`). */
   bar?: BarSpec
   /** Renders a `StatGroup` of this many `StatCard`s, each with a bled `BarSparkline`. */
