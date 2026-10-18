@@ -48,7 +48,7 @@ import { ViewTabs } from 'basalt-ui/controls'
 import { createLocalStore, field } from 'basalt-ui/state'
 import type { ReactNode } from 'react'
 import { ActivityPage } from './ActivityPage'
-import { IconSearch } from './icons'
+import { IconChevronRight, IconSearch, IconSend } from './icons'
 import { PrimitivesPage } from './PrimitivesPage'
 
 type ShotAnchor = 'tabs' | 'badges'
@@ -166,6 +166,24 @@ export function ComponentsSurfaces() {
                 <Button size="md">Medium</Button>
                 <Button size="lg">Large</Button>
               </Group>
+            </Box>
+            <Box data-shot="buttons-sections">
+              <Stack gap="sm">
+                {(['xs', 'sm', 'md'] as const).map((size) => (
+                  <Group key={size} gap="sm" align="center">
+                    {(['default', 'filled'] as const).map((variant) => (
+                      <Group key={variant} gap="sm" align="center">
+                        <Button size={size} variant={variant} leftSection={<IconSend />}>
+                          Send
+                        </Button>
+                        <Button size={size} variant={variant} rightSection={<IconChevronRight />}>
+                          Next
+                        </Button>
+                      </Group>
+                    ))}
+                  </Group>
+                ))}
+              </Stack>
             </Box>
             <Box data-shot="buttons-disabled">
               <Group gap="sm">
