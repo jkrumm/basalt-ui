@@ -55,7 +55,11 @@ export function CaptionRow({ title, icon, info, qualifier, tone, actions }: Capt
             />
           )}
         </div>
-        {qualifier !== undefined && <span className={classes.qualifier}>{qualifier}</span>}
+        {qualifier !== undefined && (
+          <span className={classes.qualifier} title={qualifier}>
+            {qualifier}
+          </span>
+        )}
       </div>
       {/* `tier="widget"`: the caption row is 24px (`--vx-space-control-height-widget`), so a card
           with a kebab is the same height as one without (`theme/ctl-theme.tsx`). */}

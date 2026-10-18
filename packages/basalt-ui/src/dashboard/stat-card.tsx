@@ -217,8 +217,8 @@ export type StatCardProps = BasaltProps &
     value: string
     /**
      * Right-aligned on the caption row, `micro` muted: the period, target or source the figure is
-     * measured over (`30 days`, `target 99.9%`). Wraps under the caption when the card is too narrow
-     * for both. Not a restatement of the caption.
+     * measured over (`30 days`, `target 99.9%`). Wraps under the caption when the card is too narrow for both; below 240px it
+     * truncates instead (the full text is its `title`). Not a restatement of the caption.
      */
     qualifier?: string
     /**
@@ -326,7 +326,7 @@ function renderValueBody({
       return (
         <ErrorState
           error={resolved.error}
-          title="Could not load this figure"
+          title="Could not load"
           tier="section"
           onRetry={() => void resolved.query.refetch()}
           retrying={resolved.query.fetchStatus === 'fetching'}
@@ -358,12 +358,16 @@ function renderVisualNode({
 function renderFooterNode({
   subtitle,
   pending,
+  ready,
 }: {
   subtitle: string | undefined
   pending: boolean
+  ready: boolean
 }): ReactNode {
   if (subtitle === undefined) return null
   if (pending) return <FooterSkeleton />
+  // The footer captions the visual; with no figure drawn (empty, failed) it would caption nothing.
+  if (!ready) return null
   return (
     <p className={classes.footer} title={subtitle}>
       {subtitle}
@@ -487,7 +491,7 @@ export function StatCard({
 
   const hasBleedVisual = sparkline !== undefined && bleeds
   const visualNode = renderVisualNode({ show: hasBleedVisual, pending, slot: sparklineSlot })
-  const footerNode = renderFooterNode({ subtitle, pending })
+  const footerNode = renderFooterNode({ subtitle, pending, ready })
 
   return (
     <Card

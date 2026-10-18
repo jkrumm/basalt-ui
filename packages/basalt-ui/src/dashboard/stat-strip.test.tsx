@@ -63,7 +63,8 @@ describe('strip caption line', () => {
     const lead = /\.lead\s*{([^}]*)}/.exec(CSS)?.[1] ?? ''
     expect(lead).toContain('min-width: 0')
     expect(lead).not.toContain('flex-wrap: wrap')
-    expect(/\.captionLine\s*{([^}]*)}/.exec(CSS)?.[1]).toContain('flex-wrap: wrap')
+    // The wrap lives on `.captionMain` (caption + qualifier); `.captionLine` keeps the action beside it.
+    expect(/\.captionMain\s*{([^}]*)}/.exec(CSS)?.[1]).toContain('flex-wrap: wrap')
     expect(/\.caption\s*{([^}]*)}/.exec(CSS)?.[1]).toContain('text-overflow: ellipsis')
   })
 })
@@ -168,7 +169,7 @@ describe('StatGroup variant="strip" — review round 1', () => {
     expect(container.querySelector('[data-strip-cell="s"]')?.getAttribute('data-stale')).toBe(
       'true',
     )
-    expect(CSS).toContain('.cell[data-stale]')
+    expect(CSS).toContain('.content[data-stale]')
     expect(CSS).toContain('opacity: 0.55')
   })
 
@@ -224,7 +225,7 @@ describe('strip CSS', () => {
     expect(CSS).toMatch(/\.footerCell \{[^}]*border-block-start: 1px solid var\(--vx-divider\)/)
   })
 
-  test('cells are split by leading shadow hairlines that take no layout space', () => {
+  test('cells (the row-high column) carry leading shadow hairlines that take no layout space', () => {
     const rule = CSS.slice(CSS.indexOf('.cell {'), CSS.indexOf('}', CSS.indexOf('.cell {')))
     expect(rule).toContain('-1px 0 0 var(--vx-divider)')
     expect(rule).toContain('0 -1px 0 var(--vx-divider)')
@@ -245,5 +246,79 @@ describe('strip CSS', () => {
     const rule = CSS.slice(CSS.indexOf('.value {'), CSS.indexOf('}', CSS.indexOf('.value {')))
     expect(rule).not.toContain('--basalt-font-mono')
     expect(rule).toContain('lining-nums')
+  })
+})
+
+describe('strip compact cells (Wave 37)', () => {
+  test('a cell is wrapped by a slot that owns the dividers, so they run the whole row', () => {
+    const { container } = mount(CELLS)
+    const cell = container.querySelector('[data-strip-cell="rhr"]') as HTMLElement
+    const slot = cell.closest('[data-strip-slot]') as HTMLElement
+    expect(slot).not.toBeNull()
+    expect(slot.parentElement?.contains(cell)).toBe(true)
+    expect(CSS).toMatch(/\.cell\s*\{[^}]*box-shadow/)
+    expect(CSS).not.toMatch(/\.content\s*\{[^}]*box-shadow/)
+  })
+
+  test('the cell box ends at its content: align-self start, never stretched', () => {
+    expect(CSS).toMatch(/\.content\s*\{[^}]*align-self:\s*start/)
+  })
+
+  test('action sits in the caption line, after the caption, and the caption keeps its title', () => {
+    const { container } = mount([
+      {
+        key: 'a',
+        caption: 'Weekly target',
+        value: '3',
+        action: <button type="button">Edit</button>,
+      },
+    ])
+    const line = container.querySelector('[data-strip-cell] > div') as HTMLElement
+    const action = line.querySelector('[data-strip-action]') as HTMLElement
+    expect(action.querySelector('button')?.textContent).toBe('Edit')
+    expect(line.querySelector('[data-strip-caption]')?.getAttribute('title')).toBe('Weekly target')
+    // Last item of the caption line (right-aligned by CSS), and never allowed to shrink.
+    expect(line.lastElementChild).toBe(action)
+    expect(CSS).toMatch(/\.action\s*\{[^}]*margin-inline-start:\s*auto/)
+    expect(CSS).toMatch(/\.captionLine\s*\{[^}]*flex-wrap:\s*nowrap/)
+    expect(line.firstElementChild?.contains(line.querySelector('[data-strip-caption]'))).toBe(true)
+  })
+
+  test('hideValue keeps the row label and drops the reading', () => {
+    const { container } = mount([
+      {
+        key: 'a',
+        caption: 'Fitness',
+        value: '47',
+        rows: [
+          { key: 'vo2', label: 'VO2max', value: '', hideValue: true },
+          { key: 'rhr', label: 'Resting HR', value: '52 bpm' },
+        ],
+      },
+    ])
+    const vo2 = container.querySelector('[data-strip-row="vo2"]') as HTMLElement
+    expect(vo2.textContent).toBe('VO2max')
+    const rhr = container.querySelector('[data-strip-row="rhr"]') as HTMLElement
+    expect(rhr.textContent).toBe('Resting HR52 bpm')
+    // Same four-column row, so a delta still lands in its column.
+    expect(vo2.children.length).toBe(rhr.children.length)
+  })
+
+  test('hideValue wins over a null reading: no em dash', () => {
+    const { container } = mount([
+      {
+        key: 'a',
+        caption: 'X',
+        value: '1',
+        rows: [{ key: 'r', label: 'L', value: null, hideValue: true }],
+      },
+    ])
+    expect((container.querySelector('[data-strip-row="r"]') as HTMLElement).textContent).toBe('L')
+  })
+
+  test('a footer-row entry keeps its meter captions together (CSS contract)', () => {
+    expect(CSS).toMatch(
+      /\.footerCell\s+\[data-meter-captions\][^{]*\{[^}]*justify-content:\s*flex-start/,
+    )
   })
 })
