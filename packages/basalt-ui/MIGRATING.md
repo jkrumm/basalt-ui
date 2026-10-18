@@ -1203,9 +1203,10 @@ No export is removed or renamed; one prop is added and two defaults move.
   still overflows the date moves to its own line under the value and wraps, inside the top band of the plot (never
   up past the host's reserved readout line). Opt-out: pass a shorter `labels` entry (`5/10`) so the one-line form
   fits.
-- **A `StatCard` with a bleed sparkline reserves its readout line.** The slot (and the foot's minimum height) grows
-  by the readout line less the card gap (about 10px), so a hovered readout sits above the plot instead of on the
-  delta / qualifier row. Cards with and without a sparkline keep one height. Opt-out: none; the reserve is the
+- **A `StatCard` with a bleed sparkline reserves its readout line.** The sparkline slot and the foot's minimum height
+  grow by the readout line less the card gap, so EVERY `StatCard` is about 10px taller (the foot's reserve is
+  unconditional, so cards with and without a sparkline keep one height) and a hovered readout sits above the plot
+  instead of on the delta / qualifier row. Opt-out: none; the reserve is the
   fix.
 
 ### `basalt-ui shot`: skeleton bars count as content (Wave 38)

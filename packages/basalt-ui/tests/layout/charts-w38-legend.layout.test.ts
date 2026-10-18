@@ -42,7 +42,7 @@ layout('Wave 38 legends and readouts at 390', () => {
       const more = row.querySelector<HTMLElement>('[data-legend-more]')
       return {
         zones: visible.filter((i) => i.dataset['legendRole'] === 'reference').length,
-        more: more !== null && !more.hidden ? getComputedStyle(more, '::after').content : null,
+        more: more !== null && !more.hidden ? `${more.textContent}` : null,
         overflow: row.scrollWidth - row.clientWidth,
       }
     }, legendOf(id))
@@ -54,7 +54,8 @@ layout('Wave 38 legends and readouts at 390', () => {
       (sel) => document.querySelectorAll(`${sel} [data-legend-key]`).length,
       legendOf(id),
     )
-    if (shown.zones < entries - (id === 'w38-stress' ? 2 : 1)) expect(shown.more).toContain('+')
+    if (shown.zones < entries - (id === 'w38-stress' ? 2 : 1))
+      expect(shown.more).toMatch(/^\+\d+: \w/)
     expect(legend.box.right).toBeLessThanOrEqual(card.box.right + 0.5)
   })
 
