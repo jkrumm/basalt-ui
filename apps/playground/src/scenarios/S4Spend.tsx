@@ -16,7 +16,7 @@ import { Box, SimpleGrid, Stack } from '@mantine/core'
 import { BarList, DeltaBadge, Meter, PageBar, StatGroup } from 'basalt-ui'
 import type { StatStripCell } from 'basalt-ui'
 import { Bars, ChartCard, Lines, Sparkline } from 'basalt-ui/charts'
-import type { BarsBar, ChartSeries, ChartTooltipRow } from 'basalt-ui/charts'
+import type { ChartSeries, ChartTooltipRow } from 'basalt-ui/charts'
 import { CONTAINER_KEYS, VX } from 'basalt-ui/tokens'
 import { demoColors } from '../demo/series'
 import {
@@ -24,6 +24,7 @@ import {
   CUMULATIVE,
   DAYS_ELAPSED,
   DISTRIBUTION,
+  DISTRIBUTION_BARS,
   DRIVERS,
   FORECAST_EUR,
   MEDIAN_DAY_EUR,
@@ -40,7 +41,7 @@ import {
   YEAR,
   spendBand,
 } from './spend-data'
-import type { CumulativeRow, DistributionBin } from './spend-data'
+import type { CumulativeRow } from './spend-data'
 import { fmtEur, fmtEurCompact, fmtShare, fmtSignedEur } from './fixture-utils'
 import { cardStateProps, chartStateFor, noop, retryCopy } from './shot-state'
 import type { ScenarioProps } from './shot-state'
@@ -89,11 +90,6 @@ const BUDGET_LINES = [
 
 /** The band holding the median day: the last band that starts at or below it. */
 const MEDIAN_BIN = DISTRIBUTION.findLast((b) => b.from <= MEDIAN_DAY_EUR)
-/** One series: a vertical reference line is not expressible (`refLines` are horizontal) and a second
- * series would tell the median bin by colour alone, so the median is a footer fact on the card. */
-const DISTRIBUTION_BARS: BarsBar<DistributionBin>[] = [
-  { key: 'days', label: 'Days', color: VX.neutral, getValue: (d) => d.days },
-]
 const MEDIAN_FACT =
   MEDIAN_BIN === undefined
     ? 'median'

@@ -24,6 +24,7 @@ import { TrainingScenario } from './S2Training'
 import {
   BUDGET_EUR,
   DISTRIBUTION,
+  DISTRIBUTION_BARS,
   MEDIAN_DAY_EUR,
   MTD_EUR,
   PROJECTS_MTD,
@@ -129,6 +130,13 @@ describe('S3', () => {
     expect(cell).not.toMatch(/15:00.*15:00/)
   })
 
+  it('the failures bars are a hover anchor, so the bar readout is shot', () => {
+    const cell = anchor(agents(), 'strip-failures')
+    const hover = cell.querySelector('[data-shot-hover]')
+    expect(hover).not.toBeNull()
+    expect(hover?.querySelector('svg')).not.toBeNull()
+  })
+
   it('the failures empty copy keeps "24 h" together', () => {
     expect(text(anchor(agents('empty'), 'strip-failures'))).toContain('24 h')
   })
@@ -196,6 +204,13 @@ describe('S4', () => {
     expect(card).toContain(`${bin?.days} days in ${spendBand({ from: bin?.from ?? 0 })}`)
     expect(card).not.toContain('Median day')
     expect(source('./S4Spend.tsx')).not.toContain("key: 'median'")
+  })
+
+  it('the histogram tooltip row carries a unit', () => {
+    const bar = DISTRIBUTION_BARS[0]
+    const row = itemAt(DISTRIBUTION, 0)
+    expect(bar?.formatValue?.(23, row)).toBe('23 days')
+    expect(bar?.formatValue?.(1, row)).toBe('1 day')
   })
 
   it('month-to-date spend still prints once on the page', () => {
