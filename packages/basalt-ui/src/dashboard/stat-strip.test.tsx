@@ -220,14 +220,16 @@ describe('StatGroup variant="strip" — review round 1', () => {
 })
 
 describe('strip CSS', () => {
-  test('the row rule is adjacent-sibling and the footer seam draws a block-start rule', () => {
-    expect(CSS).toMatch(/\.cell \+ \.cell \{\s*border-block-start: 1px solid var\(--vx-divider\)/)
+  test('the footer seam draws a block-start rule', () => {
     expect(CSS).toMatch(/\.footerCell \{[^}]*border-block-start: 1px solid var\(--vx-divider\)/)
   })
 
-  test('cells are split by hairlines, no per-cell shadow', () => {
-    expect(CSS).toContain('border-inline-start: 1px solid var(--vx-divider)')
-    expect(CSS).not.toContain('box-shadow')
+  test('cells are split by leading shadow hairlines that take no layout space', () => {
+    const rule = CSS.slice(CSS.indexOf('.cell {'), CSS.indexOf('}', CSS.indexOf('.cell {')))
+    expect(rule).toContain('-1px 0 0 var(--vx-divider)')
+    expect(rule).toContain('0 -1px 0 var(--vx-divider)')
+    expect(rule).not.toContain('border')
+    expect(CSS).not.toContain('.cell:first-child')
   })
 
   test('compact container: two columns, odd last cell spans', () => {

@@ -1,11 +1,12 @@
 /*
  * StatGroup `variant="strip"`: one joined surface, cells split by 1px hairlines.
  *
- * The hairlines are LEADING borders (inline-start + block-start) on every cell, and `.clip` hides
- * the ones that lead a row or the strip by pulling the grid 1px up/left inside an `overflow: hidden`
- * box. That is why the rail survives any column count and any wrap with no `nth-child` bookkeeping
- * (`stat-group.module.css` needs it because its cells are not clipped). No shadow per cell, no
- * coloured edge: the one surface is the Card's.
+ * The hairlines are LEADING edges (inline-start + block-start) drawn as outer box-shadows, so they
+ * take no layout space and every cell keeps the same `stack-md` inset. `.clip` hides the ones that
+ * lead a row or the strip by pulling the grid 1px up/left inside an `overflow: hidden` box. That is
+ * why the rail survives any column count and any wrap with no `nth-child` bookkeeping
+ * (`stat-group.module.css` needs it because its cells are not clipped). No coloured edge: the one
+ * surface is the Card's.
  *
  * The column law keys on the CONTAINER like `StatGroup`'s own: two columns at < 480px (the `regular` class boundary) with an odd
  * last cell spanning, never one; up to three below 800px; the full `cols` from 800px.
@@ -32,19 +33,9 @@
   grid-template-rows: subgrid;
   min-width: 0;
   padding: var(--vx-space-stack-md);
-  border-inline-start: 1px solid var(--vx-divider);
-}
-
-/* The top line is adjacent-sibling: the first cell draws none (it leads the strip), every later one
- * draws its top edge, which is the rule between wrapped rows. */
-.cell + .cell {
-  border-block-start: 1px solid var(--vx-divider);
-}
-
-/* The first cell has no top rule; the pixel it would take is padding, so its content starts level
- * with its siblings'. */
-.cell:first-child {
-  padding-block-start: calc(var(--vx-space-stack-md) + 1px);
+  box-shadow:
+    -1px 0 0 var(--vx-divider),
+    0 -1px 0 var(--vx-divider);
 }
 
 /* Cells align by PART. Every cell spans the same five tracks of `.cells` (caption, hero, visual, rows,
@@ -52,7 +43,9 @@
  * void opens only where a sibling's same part is taller. A part a cell lacks collapses its track
  * (the spacing is a margin on the part, not a gap, so an empty track adds none). A cell without a
  * visual keeps its rows (and a footer without rows) in the visual track, directly under its hero:
- * short cells stay compact instead of stretching their footer to the row's bottom. A hero-less cell
+ * short cells stay compact instead of stretching their footer to the row's bottom. A footer under a
+ * visual rides in the visual track with it (`.visualStack`), so it hugs its own visual: only a rows
+ * cell's footer uses the shared footer track. A hero-less cell
  * (rows only) starts its rows in the visual track, so the hero track above them is the one void,
  * and only as tall as a sibling's value. */
 .cell > * {
@@ -70,7 +63,7 @@
   grid-row: 2;
 }
 
-.cell > .visual,
+.cell > .visualStack,
 .cell > .reason,
 .cell > .rows,
 .cell > .footer {
@@ -81,7 +74,6 @@
   grid-row: 4;
 }
 
-.cell[data-strip-has-visual] > .footer,
 .cell[data-strip-has-rows] > .footer {
   grid-row: 5;
 }
@@ -191,6 +183,10 @@
 
 .visual {
   min-width: 0;
+}
+
+.visualStack > .footer {
+  margin-block-start: var(--vx-space-stack-sm);
 }
 
 /* A Sparkline's hover readout takes this line above its plot (`charts/sparkline.module.css`). The

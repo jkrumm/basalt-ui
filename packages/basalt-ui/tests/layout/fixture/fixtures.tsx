@@ -34,6 +34,7 @@ import { CodeBlock } from '../../../src/content/code-block'
 import { ActionIcon, Badge, Button, Card, Paper } from '@mantine/core'
 import {
   BarList,
+  DeltaBadge,
   Meter,
   PageAside,
   PageBar,
@@ -43,6 +44,7 @@ import {
   StatusVerdict,
 } from '../../../src/index'
 import { ShellFrame } from '../../../src/shell'
+import { VX } from '../../../src/tokens'
 import type { SettingsMenuItem } from '../../../src/index'
 import type { GlobalAction } from '../../../src/controls'
 import type { PageBarActions } from '../../../src/controls/actions'
@@ -1567,6 +1569,86 @@ function DashFixture(): ReactElement {
             },
             { key: 'short', caption: 'Verdicts', value: '78 %', footer: 'of 120 reviewed' },
             { key: 'bare', caption: 'Open', value: '4' },
+          ]}
+        />
+      </div>
+      <div data-testid="dash-strip-oldest">
+        <StatGroup
+          variant="strip"
+          label="Oldest wait"
+          cols={5}
+          cells={[
+            {
+              key: 'needs',
+              caption: 'Needs you',
+              qualifier: 'now',
+              value: '7',
+              unit: 'items',
+              visual: (
+                <Sparkline ariaLabel="Needs you" data={SLOT_SPARK} height={28} reference="mean" />
+              ),
+            },
+            {
+              key: 'spend',
+              caption: 'Dispatch spend',
+              qualifier: 'today',
+              value: '€4.20',
+              visual: (
+                <Sparkline ariaLabel="Spend" data={SLOT_SPARK} height={28} reference="mean" />
+              ),
+            },
+            {
+              key: 'oldest',
+              caption: 'Oldest wait',
+              value: '2 d 23 h',
+              visual: (
+                <Meter
+                  label="Oldest wait against the 24 h warning and 7 d abandon limits"
+                  value={71}
+                  max={168}
+                  target={24}
+                  startCaption={null}
+                  endCaption="Warns at 24 h · abandoned at 7 d"
+                />
+              ),
+            },
+            {
+              key: 'failures',
+              caption: 'Failures',
+              qualifier: 'last 24 h',
+              value: '3',
+              unit: 'runs',
+              visual: <Sparkline ariaLabel="Failures" data={SLOT_SPARK} height={28} mark="bar" />,
+              footer: 'Latest 2 h ago',
+              delta: (
+                <DeltaBadge
+                  value={1}
+                  polarity="up-bad"
+                  period="vs prior 24 h"
+                  format={(v) => `${v} runs`}
+                />
+              ),
+            },
+            {
+              key: 'fleet',
+              caption: 'Fleet',
+              qualifier: 'by state',
+              value: '12',
+              unit: 'items',
+              visual: (
+                <Meter
+                  label="Fleet by state"
+                  max={12}
+                  segments={[
+                    { value: 4, label: 'Needs you', color: VX.status.warn },
+                    { value: 3, label: 'Running', color: VX.accent },
+                    { value: 3, label: 'Queued', color: VX.faint },
+                    { value: 2, label: 'Blocked', color: VX.status.bad },
+                  ]}
+                  format={(v) => `${v} items`}
+                />
+              ),
+            },
           ]}
         />
       </div>
