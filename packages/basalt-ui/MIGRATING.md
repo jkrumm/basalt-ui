@@ -1192,6 +1192,7 @@ A strip cell's error body now says `Could not load` instead of `Failed`, matchin
 Opt-out: `Code` has no `radius` prop — set `--basalt-code-radius` on an ancestor or `styles={{ root: {
 borderRadius } }}` on the `Code`; for the indicator, `styles={{ indicator: { borderRadius } }}` on the
 `SegmentedControl`.
+
 ### One error wording, bar Sparkline hover chrome (round r2)
 
 No export is removed and none is added. Two defaults move.
