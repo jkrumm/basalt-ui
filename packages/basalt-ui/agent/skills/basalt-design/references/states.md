@@ -12,15 +12,17 @@ Every empty, loading and error state answers two things: why, and what the reade
 
 One wording per repeated gap: the same missing source reads the same on every card that depends on it. Write it once and pass it to each (`emptyText`, `errorTitle`, `ChartCard` `state`), never rephrase per card.
 
+The default error title is a bare "Could not load" and relies on the host's title naming the thing; outside a titled host pass `errorTitle` (`QueryState`) or `title` (`ErrorState`) as "Could not load <thing>". "The request failed." is the last-resort fallback, not a cause: real causes come from the server message or `errorFallback`. The table's empty default ("No data to display.") is a fallback too; pass `emptyState` with the cause and the next step.
+
 ## Do / don't, on three shapes
 
 A decision queue (items with ages and states):
 
-| Do                                                                                   | Don't                  |
-| ------------------------------------------------------------------------------------ | ---------------------- |
-| Empty: "No decisions are waiting. New ones appear when an agent asks for a verdict." | "No data"              |
-| Filtered: "No blocked decisions older than 2 d. Clear the age filter to see all 12." | "No results found"     |
-| Error: "Could not load decisions" / "The queue service did not answer." / Retry      | "Something went wrong" |
+| Do                                                                                                                              | Don't                  |
+| ------------------------------------------------------------------------------------------------------------------------------- | ---------------------- |
+| Empty (`QueryState` `empty`, table `emptyState`): "No decisions are waiting. New ones appear when an agent asks for a verdict." | "No data"              |
+| Filtered: "No blocked decisions older than 2 d. Clear the age filter to see all 12."                                            | "No results found"     |
+| Error: `errorTitle="Could not load decisions"`, `errorFallback="The queue service did not answer."`, Retry                      | "Something went wrong" |
 
 A health score with zones (low / ok / high):
 
@@ -31,7 +33,7 @@ A health score with zones (low / ok / high):
 
 A cost ledger against a budget:
 
-| Do                                                                                          | Don't                                    |
-| ------------------------------------------------------------------------------------------- | ---------------------------------------- |
-| Empty month: "No spend recorded in October. Costs appear after the first billed run."       | A flat line at `$0` that reads as "free" |
-| One missing source on three cards: "Billing export unavailable" on each, worded identically | Three phrasings of the same gap          |
+| Do                                                                                                                                              | Don't                                    |
+| ----------------------------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------- |
+| Empty month (`StatCard` `emptyText`, `ChartCard` `state={{ empty }}`): "No spend recorded in October. Costs appear after the first billed run." | A flat line at `$0` that reads as "free" |
+| One missing source on three cards: "Billing export unavailable" on each, worded identically                                                     | Three phrasings of the same gap          |

@@ -358,6 +358,17 @@ describe('LoadingState defaults', () => {
     expect(html).toContain('aria-label="Loading decisions"')
     expect(html).toContain('mantine-Skeleton-root')
     expect(html).not.toContain('mantine-Loader-root')
+    expect(html).toContain('<output')
+  })
+
+  test('"section" is exactly three 14px bars: the structure the MIGRATING height note pins', () => {
+    const html = renderToStaticMarkup(
+      <MantineProvider>
+        <LoadingState tier="section" />
+      </MantineProvider>,
+    )
+    expect(html.match(/mantine-Skeleton-root/g)).toHaveLength(3)
+    expect(html.match(/--skeleton-height:calc\(0\.875rem/g)).toHaveLength(3)
   })
 
   test('"page" keeps a spinner, painted neutral rather than in the accent', () => {

@@ -1,8 +1,10 @@
 /**
- * EmptyState — says the cause and the next step, never a bare "No data". A centered icon/title/description/action stack for empty data regions (no shipped
+ * EmptyState — a centered icon/title/description/action stack for empty data regions (no shipped
  * illustration assets — `icon` is a plain, faint-rendered `ReactNode` slot). `tier="page"` uses
  * generous vertical padding for a full-page empty state; `tier="section"` is compact, for an
  * empty card/panel region.
+ *
+ * Its copy says the cause and the next step, never a bare "No data".
  *
  * @example
  * import { EmptyState } from 'basalt-ui'
