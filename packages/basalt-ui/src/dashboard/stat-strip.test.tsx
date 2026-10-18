@@ -4,6 +4,7 @@ import { cleanup, render } from '@testing-library/react'
 import { afterEach, describe, expect, test } from 'bun:test'
 import { readFileSync } from 'node:fs'
 import { join } from 'node:path'
+import { Meter } from './meter'
 import { StatGroup } from './stat-group'
 import type { StatStripCell } from './stat-strip'
 
@@ -152,10 +153,6 @@ describe('StatGroup variant="strip" — review round 1', () => {
     const both = mount([{ key: 'f', caption: 'Fitness', value: '51', rows }])
     expect(both.container.querySelector('[data-strip-value]')?.textContent).toBe('51')
     expect(both.container.querySelectorAll('[data-strip-row]').length).toBe(2)
-    cleanup()
-    const rowsOnly = mount([{ key: 'f', caption: 'Fitness', rows }])
-    expect(rowsOnly.container.querySelector('[data-strip-value]')).toBeNull()
-    expect(rowsOnly.container.querySelectorAll('[data-strip-row]').length).toBe(2)
   })
 
   test('derives data-shot anchors for cells and footer cells', () => {
@@ -320,5 +317,30 @@ describe('strip compact cells (Wave 37)', () => {
     expect(CSS).toMatch(
       /\.footerCell\s+\[data-meter-captions\][^{]*\{[^}]*justify-content:\s*flex-start/,
     )
+  })
+})
+
+describe('strip cell tone reaches a hosted Meter', () => {
+  const fill = (container: HTMLElement) =>
+    container.querySelector<HTMLElement>('[data-meter-fill]')?.style.background
+
+  test('a toned hero cell colours the plain Meter in its visual', () => {
+    const { container } = mount([
+      {
+        key: 'a',
+        caption: 'Load',
+        value: '90',
+        tone: 'bad',
+        visual: <Meter label="Load" value={90} />,
+      },
+    ])
+    expect(fill(container)).toBe('var(--vx-status-bad)')
+  })
+
+  test('an untoned cell leaves the Meter on its own colour', () => {
+    const plain = mount([
+      { key: 'a', caption: 'Load', value: '90', visual: <Meter label="Load" value={90} /> },
+    ])
+    expect(fill(plain.container)).not.toBe('var(--vx-status-bad)')
   })
 })

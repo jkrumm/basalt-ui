@@ -98,7 +98,7 @@ describe('ChartCard stale facts (item 2)', () => {
       new URL('../dashboard/stat-strip.module.css', import.meta.url),
       'utf8',
     )
-    expect(block(strip, '\\.cell\\[data-stale\\]')).toContain('opacity: 0.55')
+    expect(block(strip, '\\.content\\[data-stale\\]')).toContain('opacity: 0.55')
   })
   test('not stale: no attribute', () => {
     const { container } = render(<ChartCard title="W" facts={{ value: '81' }} />)

@@ -455,7 +455,7 @@ export function StatCard({
       >
         {/* A measured slot renders nothing on the first commit (width 0) — an SVG at width 0 is a
             visible 0-width box that then jumps, which is worse than one frame of nothing. */}
-        <VisualSlotContext.Provider value={HOSTED}>
+        <VisualSlotContext.Provider value={tone === undefined ? HOSTED : { tone }}>
           {isRender ? measured.width > 0 && sparkline(measured) : sparkline}
         </VisualSlotContext.Provider>
       </div>

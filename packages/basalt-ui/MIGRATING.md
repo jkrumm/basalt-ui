@@ -1180,7 +1180,6 @@ Changed behaviour (no API change):
   the parts were unnamed. **Opt out:** none for `segments`; a `value` bar is unaffected.
 - **Part captions never wrap inside themselves** while they fit: each sits under its own segment when
   all of them fit there, else the wrapped list (a caption wider than the row still wraps).
-## Unreleased — strip cells stay compact, stat cards keep their states tidy
 
 ### Strip cells end at their content (`StatGroup variant="strip"`)
 
@@ -1203,6 +1202,12 @@ A strip footer-row entry that is a `Meter` now keeps its start and end captions 
 New, additive: `StatStripCell.action` (a control at the end of the caption line; the caption
 truncates first, so it never wraps the line), and `StatStripRow.hideValue` (print the row label
 only, for a reading the hero already shows; `value` is ignored).
+
+### A cell's `tone` colours its visual
+
+A strip cell's `tone` (and `StatCard`'s) now also reaches a plain `Meter` in its `visual` / sparkline
+slot as the fill's verdict colour, not just the value. **Opt out:** give the `Meter` its own `tone` or
+`color`.
 
 ### `StatCard` states
 

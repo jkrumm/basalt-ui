@@ -18,6 +18,7 @@ import { MantineProvider } from '@mantine/core'
 import { render as renderIntoDom } from '@testing-library/react'
 import { afterEach, beforeEach, describe, expect, test } from 'bun:test'
 import { renderToStaticMarkup } from 'react-dom/server'
+import { Meter } from './meter'
 import { StatCard } from './stat-card'
 import type { QueryStateLike } from './query-state'
 
@@ -283,5 +284,21 @@ describe('StatCard states drop the footer that captioned the visual (Wave 37)', 
     const err = markup(query({ isError: true, error: new Error('boom') }))
     expect(err).not.toContain('Could not load this figure')
     expect(err).toContain('Could not load')
+  })
+})
+
+describe('the card tone reaches a hosted Meter', () => {
+  test('a toned StatCard colours the plain Meter in its sparkline slot', () => {
+    const html = renderToStaticMarkup(
+      <MantineProvider>
+        <StatCard
+          title="Load"
+          value="90"
+          tone="bad"
+          sparkline={<Meter label="Load" value={90} />}
+        />
+      </MantineProvider>,
+    )
+    expect(html).toContain('background:var(--vx-status-bad)')
   })
 })
