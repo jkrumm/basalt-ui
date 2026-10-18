@@ -742,6 +742,9 @@ export function MeterBar(props: {
                   key={i}
                   className={classes.zone}
                   data-meter-zone={z.label}
+                  {...(i > 0 &&
+                    zones[i - 1]?.tone === 'muted' &&
+                    z.tone === 'muted' && { 'data-meter-zone-seam': '' })}
                   style={zoneStyle(z, i, zones.length, min, model.span)}
                 />
               ),
@@ -751,6 +754,7 @@ export function MeterBar(props: {
               key={i}
               className={cx(classes.fill, p.forecast && classes.forecastFill)}
               data-meter-fill={p.forecast ? 'forecast' : 'committed'}
+              {...(p.seam && { 'data-meter-seam': '' })}
               data-tone={
                 props.tone === 'muted' && p.color === undefined && !p.forecast ? 'muted' : undefined
               }
