@@ -1,14 +1,15 @@
 /**
  * Zoned Meter label row in a real browser: each zone name centred under its own span, the end ticks
- * inline in the same row, and at most one caption line under the track. Layout outcomes happy-dom
- * cannot observe.
+ * inline in the same row, the holding zone never lost, and at most one caption line under the track.
+ * Layout outcomes happy-dom cannot observe. Run at 1440 (5-col strip) and 390 (2-col strip).
  */
 import { afterAll, beforeAll, describe, expect, test } from 'bun:test'
 import type { FixtureSpec } from './fixture/spec'
-import type { LayoutPage } from './harness'
+import type { LayoutPage, Viewport } from './harness'
 import {
   CLOSE_BUDGET_MS,
   DESKTOP_1440,
+  PHONE,
   closeLayoutSuite,
   initLayoutSuite,
   openFixture,
@@ -26,69 +27,150 @@ const SPEC: FixtureSpec = {
 
 const SUBPIXEL = 0.5
 const SNAP = 1
+const ZONES = ['Under', 'Optimal', 'Caution', 'Danger']
+
+/** Per fixture: which zone names show (in zone order) and which end ticks. `clash` carries "Rest". */
+type Shown = { zones: string[]; ticks: string[]; skipOverflow?: boolean }
+const ENDS = ['0', '2.0']
+
+const CASES: ReadonlyArray<readonly [string, Shown]> = [
+  // 120: only the holding name and the first fit; Caution and Danger are wider than their spans.
+  ['dash-zl-120', { zones: ['Under', 'Optimal'], ticks: ENDS, skipOverflow: true }],
+  ['dash-zl-170', { zones: ['Under', 'Optimal'], ticks: ENDS }],
+  // 220: "Danger" fits its span but the "2.0" end tick takes the place.
+  ['dash-zl-220', { zones: ['Under', 'Optimal'], ticks: ENDS }],
+  ['dash-zl-342', { zones: ['Under', 'Optimal', 'Danger'], ticks: ENDS }],
+  ['dash-zl-card', { zones: ['Under', 'Optimal', 'Danger'], ticks: ENDS }],
+  // The "Rest" tick sits on "Under"'s centre: the tick wins, the name hides.
+  ['dash-zl-clash', { zones: ['Optimal'], ticks: ['Rest', ...ENDS] }],
+]
+const STRIP: Record<string, Shown> = {
+  expanded: { zones: ['Under', 'Optimal'], ticks: ENDS },
+  'iPhone 14': { zones: ['Under', 'Optimal'], ticks: ENDS },
+}
+
+type Measured = {
+  zones: { name: string | null; left: number; right: number }[]
+  labels: { name: string | null; left: number; right: number; top: number; holding: boolean }[]
+  ticks: { name: string | null; left: number; right: number; top: number }[]
+  trackLeft: number
+  trackRight: number
+  described: string
+  captionTops: number[]
+  strayLists: number
+  overflow: boolean
+}
+
+const measure = (p: LayoutPage, root: string): Promise<Measured> =>
+  p.raw.evaluate((id) => {
+    const host = document.querySelector<HTMLElement>(`[data-testid="${id}"]`)
+    if (!host) throw new Error(`LAYOUT: no ${id}`)
+    const box = (el: Element) => el.getBoundingClientRect()
+    const shown = (el: Element) => !el.hasAttribute('data-hidden')
+    const meter = host.querySelector<HTMLElement>('[role="meter"]')
+    const describedId = meter?.getAttribute('aria-describedby')
+    const track = host.querySelector<HTMLElement>('[data-meter-track]')
+    if (!track) throw new Error(`LAYOUT: no track in ${id}`)
+    return {
+      zones: [...host.querySelectorAll<HTMLElement>('[data-meter-zone]')].map((z) => ({
+        name: z.getAttribute('data-meter-zone'),
+        left: box(z).left,
+        right: box(z).right,
+      })),
+      labels: [...host.querySelectorAll<HTMLElement>('[data-meter-zone-label]')]
+        .filter(shown)
+        .map((l) => ({
+          name: l.getAttribute('data-meter-zone-label'),
+          left: box(l).left,
+          right: box(l).right,
+          top: box(l).top,
+          holding: l.hasAttribute('data-holding'),
+        })),
+      ticks: [...host.querySelectorAll<HTMLElement>('[data-meter-tick-label]')]
+        .filter(shown)
+        .map((l) => ({
+          name: l.textContent,
+          left: box(l).left,
+          right: box(l).right,
+          top: box(l).top,
+        })),
+      trackLeft: box(track).left,
+      trackRight: box(track).right,
+      described: describedId ? (document.getElementById(describedId)?.textContent ?? '') : '',
+      captionTops: [
+        ...new Set(
+          [...host.querySelectorAll<HTMLElement>('[data-meter-captions] > span')].map((c) =>
+            Math.round(box(c).top),
+          ),
+        ),
+      ],
+      strayLists: host.querySelectorAll('[data-meter-zone-list], [data-meter-tick-list]').length,
+      overflow: host.scrollWidth > host.clientWidth,
+    }
+  }, root)
+
+function assertRow(m: Measured, expected: Shown) {
+  expect(m.strayLists).toBe(0)
+  // 120px is narrower than any cell the system makes: it probes the holding name, not the caption.
+  if (!expected.skipOverflow) expect(m.overflow).toBe(false)
+  // Every zone stays drawn and named, whatever its label does.
+  expect(m.zones.map((z) => z.name)).toEqual(ZONES)
+  for (const name of ZONES) expect(m.described).toContain(name)
+  expect(m.described).toContain('is in Optimal')
+  // The exact label set.
+  expect(m.labels.map((l) => l.name)).toEqual(expected.zones)
+  expect(m.ticks.map((t) => t.name)).toEqual(expected.ticks)
+  // The holding zone's name is never lost.
+  const holding = m.labels.filter((l) => l.holding)
+  expect(holding.map((l) => l.name)).toEqual(['Optimal'])
+  for (const l of m.labels) {
+    const z = m.zones.find((zone) => zone.name === l.name)
+    if (!z) throw new Error(`LAYOUT: no zone ${l.name}`)
+    expect(l.left).toBeGreaterThanOrEqual(m.trackLeft - SUBPIXEL)
+    expect(l.right).toBeLessThanOrEqual(m.trackRight + SUBPIXEL)
+    if (l.holding) continue
+    const centre = (l.left + l.right) / 2
+    expect(centre).toBeGreaterThanOrEqual(z.left - SUBPIXEL)
+    expect(centre).toBeLessThanOrEqual(z.right + SUBPIXEL)
+  }
+  const all = [...m.labels, ...m.ticks]
+  for (const [i, a] of all.entries()) {
+    for (const b of all.slice(i + 1)) {
+      expect(a.right <= b.left + SUBPIXEL || b.right <= a.left + SUBPIXEL).toBe(true)
+    }
+  }
+  // One row: every label and tick shares one top.
+  for (const x of all) expect(Math.abs(x.top - all[0]!.top)).toBeLessThanOrEqual(SNAP)
+  expect(m.captionTops.length).toBeLessThanOrEqual(1)
+}
 
 layout('zoned Meter label row', () => {
   afterAll(closeLayoutSuite, CLOSE_BUDGET_MS)
+  for (const vp of [DESKTOP_1440, PHONE]) describe(`at ${vp.width}px`, () => rowSuite(vp))
+})
 
+function rowSuite(vp: Viewport) {
   let p: LayoutPage
   beforeAll(async () => {
-    p = await openFixture(SPEC, DESKTOP_1440)
+    p = await openFixture(SPEC, vp)
     await p.settle()
   }, CLOSE_BUDGET_MS)
 
-  test.each(['dash-zl-170', 'dash-zl-220', 'dash-zl-342', 'dash-zl-card'])(
-    'zone names sit in their spans, ticks share their row, one caption line (%s)',
-    async (id) => {
-      const m = await p.raw.evaluate((root) => {
-        const host = document.querySelector<HTMLElement>(`[data-testid="${root}"]`)
-        if (!host) throw new Error(`LAYOUT: no ${root}`)
-        const box = (el: Element) => el.getBoundingClientRect()
-        const shown = (el: Element) => !el.hasAttribute('data-hidden')
-        const zones = [...host.querySelectorAll<HTMLElement>('[data-meter-zone]')].map((z) => ({
-          name: z.getAttribute('data-meter-zone'),
-          left: box(z).left,
-          right: box(z).right,
-        }))
-        const labels = [...host.querySelectorAll<HTMLElement>('[data-meter-zone-label]')]
-          .filter(shown)
-          .map((l) => ({ name: l.getAttribute('data-meter-zone-label'), ...rect(box(l)) }))
-        const ticks = [...host.querySelectorAll<HTMLElement>('[data-meter-tick-label]')]
-          .filter(shown)
-          .map((l) => ({ name: l.textContent, ...rect(box(l)) }))
-        function rect(r: DOMRect) {
-          return { left: r.left, right: r.right, top: r.top }
-        }
-        const caps = [...host.querySelectorAll<HTMLElement>('[data-meter-captions] > span')]
-        return {
-          zones,
-          labels,
-          ticks,
-          captionTops: [...new Set(caps.map((c) => Math.round(box(c).top)))],
-          strayLists: host.querySelectorAll('[data-meter-zone-list], [data-meter-tick-list]')
-            .length,
-          overflow: host.scrollWidth > host.clientWidth,
-        }
-      }, id)
-      expect(m.strayLists).toBe(0)
-      expect(m.overflow).toBe(false)
-      expect(m.ticks.map((t) => t.name)).toEqual(['0', '2.0'])
-      expect(m.labels.length).toBeGreaterThan(0)
-      for (const l of m.labels) {
-        const z = m.zones.find((zone) => zone.name === l.name)
-        if (!z) throw new Error(`LAYOUT: no zone ${l.name}`)
-        const centre = (l.left + l.right) / 2
-        expect(centre).toBeGreaterThanOrEqual(z.left - SUBPIXEL)
-        expect(centre).toBeLessThanOrEqual(z.right + SUBPIXEL)
-      }
-      const all = [...m.labels, ...m.ticks]
-      for (const [i, a] of all.entries()) {
-        for (const b of all.slice(i + 1)) {
-          expect(a.right <= b.left + SUBPIXEL || b.right <= a.left + SUBPIXEL).toBe(true)
-        }
-      }
-      for (const t of m.ticks) expect(Math.abs(t.top - all[0]!.top)).toBeLessThanOrEqual(SNAP)
-      for (const l of m.labels) expect(Math.abs(l.top - m.ticks[0]!.top)).toBeLessThanOrEqual(SNAP)
-      expect(m.captionTops.length).toBeLessThanOrEqual(1)
-    },
-  )
-})
+  test.each(CASES)('zone names in their spans, ticks on their row (%s)', async (id, expected) => {
+    assertRow(await measure(p, id), expected)
+  })
+
+  test('a StatStrip cell hosts it the same way', async () => {
+    const expected = STRIP[vp.name]
+    if (!expected) throw new Error(`LAYOUT: no strip expectation for ${vp.name}`)
+    assertRow(await measure(p, 'dash-zl-strip'), expected)
+  })
+
+  test('a tick beats a zone name it would touch; the name stays described', async () => {
+    const m = await measure(p, 'dash-zl-clash')
+    expect(m.ticks.map((t) => t.name)).toContain('Rest')
+    expect(m.labels.map((l) => l.name)).not.toContain('Under')
+    expect(m.described).toContain('Under')
+    expect(m.described).toContain('Rest')
+  })
+}

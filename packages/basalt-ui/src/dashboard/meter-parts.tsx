@@ -174,10 +174,12 @@ function zoneStyle(zone: MeterZone, index: number, count: number, min: number, s
 }
 
 /** One label on the row: its span in percent of the row (a zone name) or none (an end tick). */
-type RowSlot = { spanPct?: readonly [number, number] }
+type RowSlot = { spanPct?: readonly [number, number]; holding?: boolean }
 
-const sameFlags = (a: readonly boolean[], b: readonly boolean[]) =>
-  a.length === b.length && a.every((v, i) => v === b[i])
+type RowLayout = { shown: boolean[]; shift: number[] }
+const sameLayout = (a: RowLayout, b: RowLayout) =>
+  a.shown.length === b.shown.length &&
+  a.shown.every((v, i) => v === b.shown[i] && a.shift[i] === b.shift[i])
 
 /**
  * Which row labels show, re-measured when the row resizes, when web fonts finish loading (a swap
@@ -189,8 +191,8 @@ function useRowLabelLayout(
   rowRef: RefObject<HTMLDivElement | null>,
   slots: readonly RowSlot[],
   key: string,
-): boolean[] {
-  const [shown, setShown] = useState<boolean[]>([])
+): RowLayout {
+  const [layout, setLayout] = useState<RowLayout>({ shown: [], shift: [] })
   const slotsRef = useRef(slots)
   // Declared before the measuring effect so it reads this render's slots.
   useIsomorphicLayoutEffect(() => {
@@ -207,16 +209,20 @@ function useRowLabelLayout(
       const edge = (pct: number) => (origin.width * (rtl ? 100 - pct : pct)) / 100
       const labels = [...row.children].map((c, i) => {
         const r = c.getBoundingClientRect()
-        const pct = slotsRef.current[i]?.spanPct
+        const slot = slotsRef.current[i]
+        const pct = slot?.spanPct
         const [a, b] = pct ? [edge(pct[0]), edge(pct[1])] : []
         return {
           box: { left: r.left - origin.left, right: r.right - origin.left },
           ...(a !== undefined &&
             b !== undefined && { span: { left: Math.min(a, b), right: Math.max(a, b) } }),
+          ...(slot?.holding && { holding: true }),
         }
       })
-      const next = placeRowLabels(labels, origin.width)
-      setShown((prev) => (sameFlags(prev, next) ? prev : next))
+      const placed = placeRowLabels(labels, origin.width)
+      // The hook measures on the physical x axis; the margin is logical, so it flips with `dir`.
+      const next = { shown: placed.shown, shift: placed.shift.map((v) => (rtl ? -v : v)) }
+      setLayout((prev) => (sameLayout(prev, next) ? prev : next))
     }
     measure()
     const observer = typeof ResizeObserver === 'undefined' ? undefined : new ResizeObserver(measure)
@@ -234,7 +240,7 @@ function useRowLabelLayout(
     }
   }, [rowRef, key])
 
-  return shown
+  return layout
 }
 
 /**
@@ -288,33 +294,28 @@ const TICK_LABEL_FLIP_PCT = 50
  * clashing with a tick or a neighbour, hides (still laid out, so a resize can measure it again) and is
  * still named in the described-by text; the holding zone is ink and heavier. Decorative.
  */
-function LabelRow({
-  zones,
-  ticks,
-  band,
-}: {
-  zones: readonly ZoneLabel[]
-  ticks: readonly TickMark[]
-  band: 'zone' | 'tick'
-}) {
+function LabelRow({ zones, ticks }: { zones: readonly ZoneLabel[]; ticks: readonly TickMark[] }) {
   const rowRef = useRef<HTMLDivElement>(null)
   const slots: RowSlot[] = [
     ...ticks.map((): RowSlot => ({})),
     ...zones.map((z): RowSlot => ({
       spanPct: [z.centrePct - z.widthPct / 2, z.centrePct + z.widthPct / 2],
+      holding: z.holding,
     })),
   ]
   const key = [
     ...ticks.map((t) => `${t.label}@${t.pct}`),
     ...zones.map((z) => `${z.label}${z.holding ? '*' : ''}@${z.centrePct}`),
   ].join('\u0000')
-  const shown = useRowLabelLayout(rowRef, slots, key)
+  const { shown, shift } = useRowLabelLayout(rowRef, slots, key)
   const hidden = (i: number) => (shown[i] === false ? '' : undefined)
+  const nudge = (i: number): CSSProperties =>
+    shift[i] ? { marginInlineStart: `${shift[i]}px` } : {}
   return (
     <div
       ref={rowRef}
       className={classes.labelRow}
-      {...(band === 'zone' ? { 'data-meter-zone-band': '' } : { 'data-meter-tick-band': '' })}
+      {...(zones.length > 0 ? { 'data-meter-zone-band': '' } : { 'data-meter-tick-band': '' })}
       aria-hidden
     >
       {ticks.map((t, i) => (
@@ -339,7 +340,7 @@ function LabelRow({
           data-meter-zone-label={z.label}
           data-holding={z.holding || undefined}
           data-hidden={hidden(ticks.length + i)}
-          style={{ insetInlineStart: `${z.centrePct}%` }}
+          style={{ insetInlineStart: `${z.centrePct}%`, ...nudge(ticks.length + i) }}
         >
           {z.label}
         </span>
@@ -391,7 +392,7 @@ export function MeterBar(props: {
   return (
     <div {...root} className={root.className}>
       {tickLabels.length > 0 && zoneLabels.length === 0 && (
-        <LabelRow zones={zoneLabels} ticks={tickLabels} band="tick" />
+        <LabelRow zones={zoneLabels} ticks={tickLabels} />
       )}
       <div
         className={classes.trackBox}
@@ -428,7 +429,7 @@ export function MeterBar(props: {
         ))}
         <Tick kind="target" className={classes.tick} pct={model.targetPct} />
       </div>
-      {zoneLabels.length > 0 && <LabelRow zones={zoneLabels} ticks={tickLabels} band="zone" />}
+      {zoneLabels.length > 0 && <LabelRow zones={zoneLabels} ticks={tickLabels} />}
       {anchored && <ZoneReading pct={model.markerPct ?? 0}>{start}</ZoneReading>}
       {model.describedByText !== null && (
         <VisuallyHidden id={describedId} className={classes.summary}>

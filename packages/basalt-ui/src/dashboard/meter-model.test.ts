@@ -190,18 +190,43 @@ describe('zoneLabels', () => {
 })
 
 describe('placeRowLabels', () => {
-  const zone = (left: number, right: number, spanLeft: number, spanRight: number) => ({
+  const zone = (
+    left: number,
+    right: number,
+    spanLeft: number,
+    spanRight: number,
+    holding = false,
+  ) => ({
     box: { left, right },
     span: { left: spanLeft, right: spanRight },
+    ...(holding && { holding }),
   })
   test('a label wider than its span is hidden, a fitting one is kept', () => {
-    expect(placeRowLabels([zone(5, 35, 0, 40), zone(55, 105, 60, 80)], 200)).toEqual([true, false])
+    expect(placeRowLabels([zone(5, 35, 0, 40), zone(55, 105, 60, 80)], 200).shown).toEqual([
+      true,
+      false,
+    ])
   })
-  test('an end tick wins over a zone label it would touch', () => {
+  test('an end tick wins over a zone name it would touch', () => {
     const tick = { box: { left: 0, right: 8 } }
-    expect(placeRowLabels([zone(2, 30, 0, 32), tick], 100)).toEqual([false, true])
+    expect(placeRowLabels([zone(2, 30, 0, 32), tick], 100).shown).toEqual([false, true])
   })
   test('a label leaving the row is hidden', () => {
-    expect(placeRowLabels([zone(-5, 20, -10, 30)], 100)).toEqual([false])
+    expect(placeRowLabels([zone(-5, 20, -10, 30)], 100).shown).toEqual([false])
+  })
+  test('the holding zone never hides for width: wider than its span it still shows, over its neighbours', () => {
+    // Holding 40px name in a 20px span; the neighbour (non-holding) fits its own span but clashes.
+    const out = placeRowLabels([zone(30, 50, 30, 50), zone(20, 60, 30, 50, true)], 200)
+    expect(out.shown).toEqual([false, true])
+  })
+  test('the holding name is shifted back inside the row', () => {
+    const left = placeRowLabels([zone(-10, 30, 0, 20, true)], 200)
+    expect([left.shown[0], left.shift[0]]).toEqual([true, 10])
+    const right = placeRowLabels([zone(170, 215, 160, 200, true)], 200)
+    expect([right.shown[0], right.shift[0]]).toEqual([true, -15])
+  })
+  test('a tick still beats a non-holding zone name but the holding name keeps its place over a tick', () => {
+    const tick = { box: { left: 0, right: 8 } }
+    expect(placeRowLabels([zone(2, 30, 0, 32, true), tick], 100).shown).toEqual([true, false])
   })
 })
