@@ -1075,7 +1075,6 @@ Tests that pinned the old law and were rewritten: `strip-align.layout.test.ts` (
 the column of the cell whose `key` is `under`; an entry without `under` then takes the full row.
 Below 800 px, and for a key that names no cell, nothing changes: full width under the grid. Opt-out:
 omit `under`.
-## Unreleased — Wave 37, chart readouts
 
 No export is removed and none is added. `Sparkline`'s `data` widens, and six chart defaults move.
 
