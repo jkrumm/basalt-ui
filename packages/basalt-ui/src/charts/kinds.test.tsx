@@ -124,10 +124,14 @@ describe('Lines', () => {
     expect(one.querySelector('button[data-legend-key]')).toBeNull()
     expect(one.querySelector('[data-legend-key="a"]')).not.toBeNull()
     act(() => root?.unmount())
-    const none = await mount(
+    const none = await mount(<Lines ariaLabel="L" data={data} x={x} series={[a]} legend={false} />)
+    expect(none.querySelector('[data-basalt-chart-legend]')).toBeNull()
+    act(() => root?.unmount())
+    // Wave 38: two entries keep a key below the 480px container (`w38-legend.test.tsx`).
+    const kept = await mount(
       <Lines ariaLabel="L" data={data} x={x} series={[a, b]} legend={false} />,
     )
-    expect(none.querySelector('[data-basalt-chart-legend]')).toBeNull()
+    expect(kept.querySelector('[data-basalt-chart-legend][data-compact-only]')).not.toBeNull()
   })
 
   test('a companion (legend: false + parent) hides with its parent', async () => {

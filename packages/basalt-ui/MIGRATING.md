@@ -1180,6 +1180,26 @@ No export is removed. `Meter` gains one optional prop, `readingAt`; six caption 
 | A zone name fell back to its `short` alone, so one zone read "Over" beside "Low", "Optimal", "High"                                                                                       | Once one name falls back to its `short`, every other name that has one follows; the holding zone keeps its full name                                                             | give the zones no `short`, or none will fall back                                                                    |
 | On a zoned Meter, the figures at the track's two ends (ticks at `min` / `max`) shared the row below with the zone names and won every clash, so a name could vanish ("Good" beside "100") | They sit in a row above the track; the zone names own the row below and show whenever they fit their span. The zoned Meter is one caption row taller when it has end ticks       | none: drop the end ticks to drop the row                                                                             |
 | Categorical part captions that did not fit under their segments wrapped, which could leave one entry alone on a second row                                                                | One row when they fit, else a grid with the most columns that fit and no lone entry on the last row                                                                              | none                                                                                                                 |
+### Narrow legends and readouts (Wave 38)
+
+No export is removed or renamed; one prop is added and two defaults move.
+
+- **`legend: false` no longer drops the key below 480px of chart width when two or more entries need telling
+  apart.** Before: `legend: false` (argo passes it at `compact`) removed the legend at every width, so ACWR,
+  recovery and stress read by hue alone at 390. Now: a chart with two or more legend entries keeps the key in the
+  compact class (it wraps to rows) and drops it from 480px up, as asked. A single-entry chart, and `Lines`
+  `naming="endLabels"` (the end labels name the lines), still have no legend at any width. Opt-out: none for the
+  compact key; remove the entries (`legend: false` on a series, or fewer series) if a key is truly noise.
+- **`ZoneSpec.legend: { label, mark?, color? }`** names a band in the legend, so a zone chart needs no always-`null`
+  legend-only series (argo's `ACWR_SERIES` zone keys). `mark` defaults to `'bar'`; `color` is the swatch when the
+  fill is a whisper-alpha wash (`alpha(VX.goodSolid, 0.06)` would vanish in a 10px swatch), else the fill (a status
+  tint maps to its solid). Named zones count as entries, so one series plus named zones now shows a legend by
+  default. Opt-out: omit `legend` on the zone.
+- **A `Sparkline` readout never ends in an ellipsis.** Before: a chip wider than the box was clipped (`62 bpm · Sun
+  5 O…`, the date lost). Now: a chip that overflows first drops the air round its `·` and its padding, and if it
+  still overflows the date moves to its own line under the value and wraps (hosted, the chip keeps its bottom on
+  the plot's top edge and grows up; bare, it grows down). Opt-out: pass a shorter `labels` entry (`5/10`) so the
+  one-line form fits.
 
 ### `basalt-ui shot`: skeleton bars count as content (Wave 38)
 

@@ -211,6 +211,7 @@ export function seriesRow(
 
 /** Keys the compiler reserves for the legend entries it derives from `refLines`. */
 const REF_KEY_PREFIX = '__ref-'
+const ZONE_KEY_PREFIX = '__zone-'
 
 /** The legend key of a reference line that names itself (`RefLine.legend`). */
 const refLegendKey = (index: number): string => `${REF_KEY_PREFIX}${index}`
@@ -246,6 +247,25 @@ export function refLegendSeries<T>(refLines: readonly RefLine[] | undefined): Ch
             getValue: () => null,
             ...(r.legend.mark !== undefined && { mark: r.legend.mark }),
             ...(r.dashed && { dash: 'dashed' as const }),
+          },
+        ],
+  )
+}
+
+/** Legend-only entries for the zones that name themselves (`ZoneSpec.legend`), in zone order. */
+export function zoneLegendSeries<T>(zones: readonly ZoneSpec[] | undefined): ChartSeries<T>[] {
+  return (zones ?? []).flatMap((z, i) =>
+    z.legend === undefined
+      ? []
+      : [
+          {
+            key: `${ZONE_KEY_PREFIX}${i}`,
+            label: z.legend.label,
+            color: z.legend.color ?? SWATCH_SOLID.get(z.fill) ?? z.fill,
+            mark: z.legend.mark ?? 'bar',
+            role: 'reference' as const,
+            tooltip: false,
+            getValue: () => null,
           },
         ],
   )

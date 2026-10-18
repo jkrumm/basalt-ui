@@ -28,6 +28,11 @@
     --vx-hit-gap: var(--bc-legend-gap);
   }
 
+  /* A `legend: false` chart keeps its key below 480px only (`keepKeyAtCompact`). */
+  .auto[data-compact-only] {
+    display: none;
+  }
+
   .auto .dot {
     display: none;
   }

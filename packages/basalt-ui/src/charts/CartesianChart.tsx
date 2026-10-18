@@ -9,7 +9,7 @@
 import { useCallback, useId, useMemo, useState } from 'react'
 import type { CSSProperties, ReactElement, ReactNode } from 'react'
 import { useInChartCard } from './card-context'
-import { compileCartesian, refLegendSeries } from './compile'
+import { compileCartesian, refLegendSeries, zoneLegendSeries } from './compile'
 import type { CartesianDefinition } from './compile'
 import { samePlots } from './plot-context'
 import type { PlotSizes } from './plot-context'
@@ -33,6 +33,8 @@ export type RungOptions = {
   crosshair?: boolean
   /** No engine point marker on the focused datum (a bar kind's hover is the bar itself). */
   focusRing?: boolean
+  /** The legend is dropped at every width on purpose (`Lines`' end labels name the series). */
+  keepLegendDrop?: boolean
   /** The legend goes from the wide class up, where `Lines`' end labels name the series. */
   hideLegendAtWide?: boolean
 }
@@ -95,6 +97,12 @@ export type ChartShellProps<T> = Pick<
   byWidth?: boolean
   /** `auto` legend only: hidden from the wide class up (CSS). */
   hideLegendAtWide?: boolean
+  /**
+   * The consumer passed `legend: false` and nothing else names the series: a chart of two or more
+   * entries still keeps its key below the 480px container, where hue alone cannot tell them apart.
+   * It is gone from 480px up, as the consumer asked.
+   */
+  keepKeyAtCompact?: boolean
 }
 
 /**
@@ -104,7 +112,7 @@ export type ChartShellProps<T> = Pick<
  */
 export function ChartShell<T>(props: ChartShellProps<T>): ReactElement {
   const { ariaLabel, legend, height, state, className, style, series, compile, byWidth } = props
-  const { hideLegendAtWide } = props
+  const { hideLegendAtWide, keepKeyAtCompact } = props
   const chartId = useId()
   const inCard = useInChartCard()
   const { ref, width: measured, coarse } = useChartSize()
@@ -128,7 +136,12 @@ export function ChartShell<T>(props: ChartShellProps<T>): ReactElement {
   // ── legend: micro has none, compact shows dots, regular and wide show chips (CSS, § 9.6) ──────
   // A single entry names nothing the title, axis and tooltip do not: no legend unless asked for.
   const entryCount = legendEntries(series, false)[0]?.length ?? 0
-  const config = legend === false ? null : (legend ?? (entryCount > 1 ? {} : null))
+  const compactKey = legend === false && keepKeyAtCompact === true && entryCount > 1
+  const config = compactKey
+    ? {}
+    : legend === false
+      ? null
+      : (legend ?? (entryCount > 1 ? {} : null))
   const shown = config !== null && entryCount > 0
   const toggle = config?.toggle ?? entryCount >= 2
   const onToggle = useCallback((key: string) => {
@@ -152,9 +165,20 @@ export function ChartShell<T>(props: ChartShellProps<T>): ReactElement {
           onHighlight={setHighlighted}
           concealed={resolved !== null}
           hideAtWide={hideLegendAtWide === true}
+          compactOnly={compactKey}
         />
       ) : null,
-    [shown, series, hidden, config?.groups, toggle, onToggle, resolved, hideLegendAtWide],
+    [
+      shown,
+      series,
+      hidden,
+      config?.groups,
+      toggle,
+      onToggle,
+      resolved,
+      hideLegendAtWide,
+      compactKey,
+    ],
   )
   // `header` is the enclosing card's header row (`top` outside a card); either way the legend is
   // the first thing in the chart's own markup.
@@ -189,8 +213,18 @@ export function ChartShell<T>(props: ChartShellProps<T>): ReactElement {
 export function CartesianRung<T, X extends ChartX>(
   props: CartesianChartProps<T, X> & RungOptions,
 ): ReactElement {
-  const { ariaLabel, legend, height, state, className, style, series, hideLegendAtWide, ...spec } =
-    props
+  const {
+    ariaLabel,
+    legend,
+    height,
+    state,
+    className,
+    style,
+    series,
+    hideLegendAtWide,
+    keepLegendDrop,
+    ...spec
+  } = props
   const stable = useShallowStable({ ...spec, series })
   const compile = useCallback(
     (ctx: ShellContext) => compileCartesian({ ...stable, ...ctx }),
@@ -198,8 +232,12 @@ export function CartesianRung<T, X extends ChartX>(
   )
   // Reference lines that name themselves join the legend after the series (role `reference`).
   const legendSeries = useMemo(
-    () => [...stable.series, ...refLegendSeries<T>(stable.refLines)],
-    [stable.series, stable.refLines],
+    () => [
+      ...stable.series,
+      ...refLegendSeries<T>(stable.refLines),
+      ...zoneLegendSeries<T>(stable.zones),
+    ],
+    [stable.series, stable.refLines, stable.zones],
   )
   return (
     <ChartShell
@@ -212,6 +250,7 @@ export function CartesianRung<T, X extends ChartX>(
       {...(className !== undefined && { className })}
       {...(style !== undefined && { style })}
       {...(hideLegendAtWide && { hideLegendAtWide })}
+      {...(legend === false && keepLegendDrop !== true && { keepKeyAtCompact: true })}
     />
   )
 }
