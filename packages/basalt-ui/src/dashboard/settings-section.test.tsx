@@ -71,3 +71,16 @@ describe('common props (`common/props.ts`)', () => {
     expect(container.querySelector('.my-row')).toBeTruthy()
   })
 })
+
+describe('a settings shell keeps three type sizes (Wave 38)', () => {
+  test('row label sm, row description xs, danger eyebrow xs', () => {
+    renderWith(
+      <DangerZone title="Delete">
+        <SettingsRow label="Delete workspace" description="Cannot be undone." />
+      </DangerZone>,
+    )
+    expect(screen.getByText('Delete workspace').style.fontSize).toBe('13px')
+    expect(screen.getByText('Cannot be undone.').style.fontSize).toBe('12px')
+    expect(screen.getByText('Danger Zone').style.fontSize).toBe('12px')
+  })
+})
