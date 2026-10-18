@@ -102,12 +102,10 @@ describe('S3', () => {
     expect(cell).toContain('The failure count did not load')
   })
 
-  it('the week footer states what was spent and what is left', () => {
+  it('the week footer states what was spent against the cap', () => {
     // The Meter binds its last word with a no-break space.
     const week = text(anchor(agents(), 'strip-footer-week')).replaceAll('\u00A0', ' ')
-    expect(week).toContain(
-      `${fmtEur(BUDGETS.week.spent)} of ${fmtEur(BUDGETS.week.cap)} · ${fmtEur(BUDGETS.week.cap - BUDGETS.week.spent)} left`,
-    )
+    expect(week).toContain(`${fmtEur(BUDGETS.week.spent)} of ${fmtEur(BUDGETS.week.cap)} cap`)
   })
 
   it('the item flow tooltip rows carry a unit, not the series name again', () => {
@@ -203,7 +201,9 @@ describe('S4', () => {
     const bin = DISTRIBUTION.findLast((b) => b.from <= MEDIAN_DAY_EUR)
     expect(bin).toBeDefined()
     expect(card).toContain(fmtEur(MEDIAN_DAY_EUR))
-    expect(card).toContain(`${bin?.days} days in ${spendBand({ from: bin?.from ?? 0 })}`)
+    expect(card).toContain(
+      `${bin?.days} of the last 90 days landed in ${spendBand({ from: bin?.from ?? 0 })}`,
+    )
     expect(card).not.toContain('Median day')
     expect(source('./S4Spend.tsx')).not.toContain("key: 'median'")
   })
@@ -235,7 +235,7 @@ describe('components page', () => {
 
   it('the table anchor renders its error state with a title and a Retry button', () => {
     const el = tableAt('error')
-    expect(text(el)).toContain('The metrics did not load')
+    expect(text(el)).toContain('Could not load metrics')
     const retry = [...el.querySelectorAll('button')].find((b) => b.textContent === 'Retry')
     expect(retry).toBeDefined()
     expect(el.querySelector('table')).toBeNull()

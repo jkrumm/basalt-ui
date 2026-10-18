@@ -96,10 +96,10 @@ const componentViews = createLocalStore({
 
 /** `delta` is a percent change; `polarity` says whether a rise is good (churn: it is not). */
 const TABLE_ROWS = [
-  { name: 'Sessions, 30 days', value: '12,480', delta: 12.4, polarity: 'up-good' },
-  { name: 'Signups, 30 days', value: '3,210', delta: 8.1, polarity: 'up-good' },
-  { name: 'Revenue, 30 days', value: '$48.9k', delta: 18.9, polarity: 'up-good' },
-  { name: 'Churn, monthly', value: '2.3%', delta: -0.4, polarity: 'up-bad' },
+  { name: 'Sessions, 30 days', value: '12,480', prior: '11,104', delta: 12.4, polarity: 'up-good' },
+  { name: 'Signups, 30 days', value: '3,210', prior: '2,969', delta: 8.1, polarity: 'up-good' },
+  { name: 'Revenue, 30 days', value: '$48.9k', prior: '$41.1k', delta: 18.9, polarity: 'up-good' },
+  { name: 'Churn, monthly', value: '2.3%', prior: '2.7%', delta: -0.4, polarity: 'up-bad' },
 ] as const
 
 /** Numeric columns align to the end so the digits line up. */
@@ -157,7 +157,7 @@ function MetricsTable({ shotState }: { shotState?: ShotState | undefined }) {
     return (
       <EmptyState
         icon={<IconSearch />}
-        title="The metrics did not load"
+        title="Could not load metrics"
         description="Retry, or check the analytics connection."
         action={
           <Button size="xs" variant="default" onClick={noop}>
@@ -168,13 +168,13 @@ function MetricsTable({ shotState }: { shotState?: ShotState | undefined }) {
       />
     )
   }
-  // Capped so a metric name sits near its value at 1440 instead of ~650 px away.
   return (
-    <Table withTableBorder striped highlightOnHover maw={560}>
+    <Table withTableBorder striped highlightOnHover>
       <Table.Thead>
         <Table.Tr>
           <Table.Th>Metric</Table.Th>
           <Table.Th {...NUMERIC}>Value</Table.Th>
+          <Table.Th {...NUMERIC}>Prior 30 days</Table.Th>
           <Table.Th {...NUMERIC}>Delta</Table.Th>
         </Table.Tr>
       </Table.Thead>
@@ -185,18 +185,18 @@ function MetricsTable({ shotState }: { shotState?: ShotState | undefined }) {
                 <Table.Td>
                   <Skeleton height={14} width={120} maw="100%" />
                 </Table.Td>
-                <Table.Td {...NUMERIC}>
-                  <Skeleton height={14} width={48} ml="auto" />
-                </Table.Td>
-                <Table.Td {...NUMERIC}>
-                  <Skeleton height={14} width={48} ml="auto" />
-                </Table.Td>
+                {[0, 1, 2].map((col) => (
+                  <Table.Td key={col} {...NUMERIC}>
+                    <Skeleton height={14} width={48} ml="auto" />
+                  </Table.Td>
+                ))}
               </Table.Tr>
             ))
           : TABLE_ROWS.map((row) => (
               <Table.Tr key={row.name}>
                 <Table.Td>{row.name}</Table.Td>
                 <Table.Td {...NUMERIC}>{row.value}</Table.Td>
+                <Table.Td {...NUMERIC}>{row.prior}</Table.Td>
                 <Table.Td {...NUMERIC}>
                   <DeltaBadge value={row.delta} polarity={row.polarity} />
                 </Table.Td>
@@ -247,22 +247,21 @@ export function ComponentsSurfaces({ shotState }: { shotState?: ShotState | unde
                 </Group>
               </Box>
               <Box data-shot="buttons-sections">
-                <Stack gap="sm">
-                  {(['xs', 'sm', 'md'] as const).map((size) => (
-                    <Group key={size} gap="sm" align="center">
-                      {(['default', 'filled'] as const).map((variant) => (
-                        <Group key={variant} gap="sm" align="center">
-                          <Button size={size} variant={variant} leftSection={<IconSend />}>
-                            Send
-                          </Button>
-                          <Button size={size} variant={variant} rightSection={<IconChevronRight />}>
-                            Next
-                          </Button>
-                        </Group>
-                      ))}
-                    </Group>
-                  ))}
-                </Stack>
+                {/* Size-major pairs: two columns where the card fits two, else one, so a row never splits a pair. */}
+                <SimpleGrid type="container" cols={{ base: 1, [CONTAINER_KEYS.regular]: 2 }}>
+                  {(['xs', 'sm', 'md'] as const).flatMap((size) =>
+                    (['default', 'filled'] as const).map((variant) => (
+                      <Group key={`${size}-${variant}`} gap="sm" align="center" wrap="nowrap">
+                        <Button size={size} variant={variant} leftSection={<IconSend />}>
+                          Send
+                        </Button>
+                        <Button size={size} variant={variant} rightSection={<IconChevronRight />}>
+                          Next
+                        </Button>
+                      </Group>
+                    )),
+                  )}
+                </SimpleGrid>
               </Box>
               <Box data-shot="buttons-disabled">
                 <Group gap="sm">
@@ -426,7 +425,7 @@ export function ComponentsSurfaces({ shotState }: { shotState?: ShotState | unde
             {/* Two rows by design: five in one wrap left "Paused" alone on a second line at 390. */}
             <Group gap="sm">
               <Badge color="orange">Pending</Badge>
-              <Badge color="gray">Paused</Badge>
+              <Badge color="var(--vx-muted)">Paused</Badge>
             </Group>
             <Group gap="sm">
               <Badge

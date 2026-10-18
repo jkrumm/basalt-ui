@@ -263,14 +263,14 @@ function QueueStrip({ shotState }: ScenarioProps) {
               label: s.label,
               color: STATE_COLOR[s.state],
             }))}
-            format={(v) => `${fmtInt(v)} items`}
+            format={fmtInt}
           />
         ),
       }),
     },
   ]
 
-  // Both footers state spend against the cap and what is left; the day's sits under Dispatch spend.
+  // Both footers state the cap; the day's spend is the Dispatch spend headline above it, so its footer does not repeat it.
   const budget = (
     label: string,
     spent: number,
@@ -299,7 +299,7 @@ function QueueStrip({ shotState }: ScenarioProps) {
             BUDGETS.day.spent,
             BUDGETS.day.cap,
             'Today',
-            `${fmtEur(BUDGETS.day.spent)} of ${fmtEur(BUDGETS.day.cap)} · ${fmtEur(BUDGETS.day.cap - BUDGETS.day.spent)} left`,
+            `of ${fmtEur(BUDGETS.day.cap)} cap`,
           ),
           'dispatch-spend',
         ),
@@ -310,7 +310,7 @@ function QueueStrip({ shotState }: ScenarioProps) {
             BUDGETS.week.spent,
             BUDGETS.week.cap,
             'Last 7 days',
-            `${fmtEur(BUDGETS.week.spent)} of ${fmtEur(BUDGETS.week.cap)} · ${fmtEur(BUDGETS.week.cap - BUDGETS.week.spent)} left`,
+            `${fmtEur(BUDGETS.week.spent)} of ${fmtEur(BUDGETS.week.cap)} cap`,
           ),
         ),
       ]

@@ -243,10 +243,7 @@ function GoalRow({ shotState }: ScenarioProps) {
             title={`Sessions against the ${MONTH_NAME} goal`}
             {...(shotState === undefined && {
               // The count lives on the Sessions KPI; this card leads with what is new on it.
-              facts: {
-                value: aheadOrBehind(PACE_GAP),
-                period: `goal ${GOAL_SESSIONS} by ${MONTH_END_LABEL}`,
-              },
+              facts: { value: aheadOrBehind(PACE_GAP) },
             })}
             info={`Strength, walking-pad and mobility sessions all count. The tick is the pace that reaches ${GOAL_SESSIONS} on ${MONTH_END_LABEL}.`}
             {...cardStateProps(shotState, retry('The session goal'), PLACEHOLDER.meter)}
@@ -258,12 +255,10 @@ function GoalRow({ shotState }: ScenarioProps) {
                 max={GOAL_SESSIONS}
                 target={GOAL_SESSIONS}
                 ticks={[
-                  {
-                    at: PACE_SESSIONS,
-                    label: 'Pace',
-                    caption: `${fmtInt(PACE_SESSIONS)} sessions by ${TODAY_LABEL}`,
-                  },
+                  { at: PACE_SESSIONS, caption: `Pace ${fmtInt(PACE_SESSIONS)} by ${TODAY_LABEL}` },
                 ]}
+                startCaption={null}
+                endCaption={`Goal ${GOAL_SESSIONS}`}
                 format={(v) => `${fmtInt(v)} sessions`}
                 loading={loading}
                 emptyText={TRAINING_EMPTY}

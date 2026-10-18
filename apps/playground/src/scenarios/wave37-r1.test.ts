@@ -174,9 +174,8 @@ describe('S3 states each figure once', () => {
     const c = agents()
     const footer = words(anchor(c, 'strip-footer-day'))
     expect(footer[0]).toBe('Today')
-    // W37 r3 (#405): the Today footer sits under Dispatch spend and states spend and left like the
-    // week footer, so the spend figure is deliberately present in it.
-    expect(footer.join(' ')).toContain(fmtEur(BUDGETS.day.spent))
+    // W38: the Today footer states the cap only; the spend is the Dispatch spend headline above it.
+    expect(footer.join(' ')).not.toContain(fmtEur(BUDGETS.day.spent))
   })
 
   it('the item flow states its period once', () => {
@@ -260,7 +259,7 @@ describe('components page', () => {
     const rows = [...(table?.querySelectorAll('tbody tr') ?? [])]
     for (const row of rows) {
       const cells = [...row.querySelectorAll('td')]
-      expect(text(cells[2] as Element)).toMatch(/[▲▼]/)
+      expect(text(cells[3] as Element)).toMatch(/[▲▼]/)
       for (const cell of cells.slice(1)) {
         expect((cell as HTMLElement).style.textAlign).toBe('right')
       }
