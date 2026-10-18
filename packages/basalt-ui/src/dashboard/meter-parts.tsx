@@ -12,7 +12,15 @@ import {
   placeRowLabels,
   zoneBand,
 } from './meter-model'
-import type { MeterSegment, MeterTick, MeterZone, Part, TickMark, ZoneLabel } from './meter-model'
+import type {
+  MeterSegment,
+  MeterTick,
+  MeterZone,
+  Part,
+  RowLabel,
+  TickMark,
+  ZoneLabel,
+} from './meter-model'
 import classes from './meter.module.css'
 import { VisualSlotContext } from './visual-slot'
 import { toPct } from './scale'
@@ -176,27 +184,33 @@ function zoneStyle(zone: MeterZone, index: number, count: number, min: number, s
 /** One label on the row: its span in percent of the row (a zone name) or none (an end tick). */
 type RowSlot = { spanPct?: readonly [number, number]; holding?: boolean }
 
-type RowLayout = { shown: boolean[]; shift: number[] }
+type RowLayout = { shown: boolean[]; short: boolean[]; shift: number[] }
 const sameLayout = (a: RowLayout, b: RowLayout) =>
   a.shown.length === b.shown.length &&
-  a.shown.every((v, i) => v === b.shown[i] && a.shift[i] === b.shift[i])
+  a.shown.every(
+    (v, i) => v === b.shown[i] && a.short[i] === b.short[i] && a.shift[i] === b.shift[i],
+  )
 
 /**
  * Which row labels show, re-measured when the row resizes, when web fonts finish loading (a swap
  * changes label widths without resizing the row) and when the labels change. Server markup shows
  * every label; a name that does not fit its span (or clashes with a tick) hides after measuring.
- * `slots` is index-aligned with the row's children.
+ * `slots` is index-aligned with the row's first children; the children after them are the short
+ * twins, `shortOf[n]` being the label index the n-th twin stands in for.
  */
 function useRowLabelLayout(
   rowRef: RefObject<HTMLDivElement | null>,
   slots: readonly RowSlot[],
+  shortOf: readonly number[],
   key: string,
 ): RowLayout {
-  const [layout, setLayout] = useState<RowLayout>({ shown: [], shift: [] })
+  const [layout, setLayout] = useState<RowLayout>({ shown: [], short: [], shift: [] })
   const slotsRef = useRef(slots)
+  const shortOfRef = useRef(shortOf)
   // Declared before the measuring effect so it reads this render's slots.
   useIsomorphicLayoutEffect(() => {
     slotsRef.current = slots
+    shortOfRef.current = shortOf
   })
 
   // Keyed on a string of the labels, not the `slots` array: the model rebuilds that every render.
@@ -207,7 +221,8 @@ function useRowLabelLayout(
       const origin = row.getBoundingClientRect()
       const rtl = getComputedStyle(row).direction === 'rtl'
       const edge = (pct: number) => (origin.width * (rtl ? 100 - pct : pct)) / 100
-      const labels = [...row.children].map((c, i) => {
+      const children = [...row.children]
+      const labels: RowLabel[] = children.slice(0, slotsRef.current.length).map((c, i) => {
         const r = c.getBoundingClientRect()
         const slot = slotsRef.current[i]
         const pct = slot?.spanPct
@@ -219,9 +234,18 @@ function useRowLabelLayout(
           ...(slot?.holding && { holding: true }),
         }
       })
+      shortOfRef.current.forEach((labelIndex, n) => {
+        const r = children[slotsRef.current.length + n]?.getBoundingClientRect()
+        const label = labels[labelIndex]
+        if (r && label) label.short = { left: r.left - origin.left, right: r.right - origin.left }
+      })
       const placed = placeRowLabels(labels, origin.width)
       // The hook measures on the physical x axis; the margin is logical, so it flips with `dir`.
-      const next = { shown: placed.shown, shift: placed.shift.map((v) => (rtl ? -v : v)) }
+      const next = {
+        shown: placed.shown,
+        short: placed.short,
+        shift: placed.shift.map((v) => (rtl ? -v : v)),
+      }
       setLayout((prev) => (sameLayout(prev, next) ? prev : next))
     }
     measure()
@@ -307,8 +331,15 @@ function LabelRow({ zones, ticks }: { zones: readonly ZoneLabel[]; ticks: readon
     ...ticks.map((t) => `${t.label}@${t.pct}`),
     ...zones.map((z) => `${z.label}${z.holding ? '*' : ''}@${z.centrePct}`),
   ].join('\u0000')
-  const { shown, shift } = useRowLabelLayout(rowRef, slots, key)
-  const hidden = (i: number) => (shown[i] === false ? '' : undefined)
+  // The holding name never shortens, so its zone has no twin.
+  const twins = zones.flatMap((z, i) => (z.short !== undefined && !z.holding ? [i] : []))
+  const { shown, short, shift } = useRowLabelLayout(
+    rowRef,
+    slots,
+    twins.map((i) => ticks.length + i),
+    `${key}\u0001${twins.map((i) => zones[i]?.short).join('\u0000')}`,
+  )
+  const hidden = (i: number) => (shown[i] === false || short[i] === true ? '' : undefined)
   const nudge = (i: number): CSSProperties =>
     shift[i] ? { marginInlineStart: `${shift[i]}px` } : {}
   return (
@@ -345,6 +376,21 @@ function LabelRow({ zones, ticks }: { zones: readonly ZoneLabel[]; ticks: readon
           {z.label}
         </span>
       ))}
+      {twins.map((zi) => {
+        const z = zones[zi] as ZoneLabel
+        const i = ticks.length + zi
+        return (
+          <span
+            key={`s${z.key}`}
+            className={cx(classes.rowLabel, classes.zoneLabel)}
+            data-meter-zone-short={z.label}
+            data-hidden={short[i] === true ? undefined : ''}
+            style={{ insetInlineStart: `${z.centrePct}%`, ...nudge(i) }}
+          >
+            {z.short}
+          </span>
+        )
+      })}
     </div>
   )
 }

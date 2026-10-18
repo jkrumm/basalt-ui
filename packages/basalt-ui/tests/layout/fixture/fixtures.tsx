@@ -1345,6 +1345,12 @@ const LOAD_ZONES = [
   { from: 1.3, to: 1.5, label: 'Caution' },
   { from: 1.5, to: 2, label: 'Danger' },
 ]
+const LOAD_ZONES_SHORT = [
+  { from: 0, to: 0.8, label: 'Under', short: 'Und' },
+  { from: 0.8, to: 1.3, label: 'Optimal', short: 'Opt' },
+  { from: 1.3, to: 1.5, label: 'Caution', short: 'Cau' },
+  { from: 1.5, to: 2, label: 'Danger', short: 'Dan' },
+]
 const LOAD_TICKS = [
   { at: 0, label: '0' },
   { at: 2, label: '2.0' },
@@ -1480,6 +1486,18 @@ function DashFixture(): ReactElement {
           />
         </div>
       ))}
+      {/* "Caution" is wider than its 10% span here; its short label fits. */}
+      {/* theme-allow -- the wrapper width IS the fixture's payload (a container probe) */}
+      <div data-testid="dash-zl-short" style={{ width: 342 }}>
+        <Meter
+          label="Training load"
+          min={0}
+          max={2}
+          value={1.1}
+          zones={LOAD_ZONES_SHORT}
+          ticks={LOAD_TICKS}
+        />
+      </div>
       {/* A tick at 15% lands on "Under"'s centre: the tick wins, the name hides. */}
       {/* theme-allow -- the wrapper width IS the fixture's payload (a container probe) */}
       <div data-testid="dash-zl-clash" style={{ width: 220 }}>
