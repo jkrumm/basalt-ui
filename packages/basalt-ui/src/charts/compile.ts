@@ -121,12 +121,6 @@ export function defaultNumberFormat(v: number): string {
 }
 
 /**
- * The tooltip's date: weekday, day, month and year in the page's locale (`defineFormat` /
- * `BasaltProvider`), read in UTC like the time scale; a non-midnight instant adds `HH:MM`. With
- * `dayOnly` (a day-granular series) the instant is its bucket's DAY, never a clock time: see
- * {@link bucketDay}.
- */
-/**
  * The UTC midnight of the day a day-keyed instant stands for. A key at LOCAL midnight is that local
  * calendar date (east of UTC it is `22:00` UTC of the day before); any other key is its UTC date, so
  * a key at 12:00 UTC or later never rolls to the next day.
@@ -140,6 +134,12 @@ function bucketDay(d: Date): Date {
   )
 }
 
+/**
+ * The tooltip's date: weekday, day, month and year in the page's locale (`defineFormat` /
+ * `BasaltProvider`), read in UTC like the time scale; a non-midnight instant adds `HH:MM`. With
+ * `dayOnly` (a day-granular series) the instant is its bucket's DAY, never a clock time: see
+ * {@link bucketDay}.
+ */
 export function utcHeaderDate(d: Date, dayOnly = false): string {
   if (!Number.isFinite(d.getTime())) return NON_FINITE
   const at = dayOnly ? bucketDay(d) : d
