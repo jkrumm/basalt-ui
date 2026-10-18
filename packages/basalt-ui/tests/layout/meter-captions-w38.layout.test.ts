@@ -120,6 +120,27 @@ layout('Meter captions (Wave 38)', () => {
     }
   })
 
+  test.each(['dash-w38-goal-350', 'dash-w38-goal-250'])(
+    '%s: the figures above the track never touch each other',
+    async (id) => {
+      const labels = await p.raw.evaluate((host) => {
+        const el = document.querySelector(`[data-testid="${host}"]`)
+        return [...(el?.querySelectorAll('[data-meter-tick-label]') ?? [])]
+          .filter((l) => !l.hasAttribute('data-hidden'))
+          .map((l) => {
+            const r = l.getBoundingClientRect()
+            return { left: r.left, right: r.right }
+          })
+          .toSorted((a, b) => a.left - b.left)
+      }, id)
+      expect(labels.length).toBeGreaterThan(0)
+      for (const [i, l] of labels.entries()) {
+        const next = labels[i + 1]
+        if (next) expect(l.right).toBeLessThanOrEqual(next.left - 6 + SUBPIXEL)
+      }
+    },
+  )
+
   test('a narrow row drops the pace caption, never the reading or the target', async () => {
     const m = await measure(p, 'dash-w38-goal-250')
     const names = shown(m.captions).map((c) => c.text)

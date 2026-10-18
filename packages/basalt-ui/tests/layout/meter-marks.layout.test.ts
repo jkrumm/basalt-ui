@@ -22,13 +22,14 @@ const SNAP = 1
 const GAP_STEP = 6
 const SUBPIXEL = 0.5
 
-type Box = { text: string | null; left: number; right: number; hidden: boolean }
+type Box = { text: string | null; left: number; right: number; bottom: number; hidden: boolean }
 type Shot = {
   anchored: boolean
   described: string
   zoneSpans: { name: string | null; left: number; right: number }[]
   zoneBoxes: { name: string | null; shown: boolean; left: number; right: number }[]
   track: [number, number]
+  trackTop: number
   tickLabels: Box[]
   zoneNames: Box[]
   captions: Box[]
@@ -41,14 +42,13 @@ const measure = (p: LayoutPage, id: string): Promise<Shot> =>
     const host = document.querySelector<HTMLElement>(`[data-testid="${id}"]`)
     const track = host?.querySelector<HTMLElement>('[data-meter-track]')
     if (!host || !track) throw new Error(`LAYOUT: no Meter in ${id}`)
-    const box = (
-      el: Element,
-    ): { text: string | null; left: number; right: number; hidden: boolean } => {
+    const box = (el: Element): Box => {
       const r = el.getBoundingClientRect()
       return {
         text: el.textContent,
         left: r.left,
         right: r.right,
+        bottom: r.bottom,
         hidden: el.hasAttribute('data-hidden'),
       }
     }
@@ -78,6 +78,7 @@ const measure = (p: LayoutPage, id: string): Promise<Shot> =>
         }),
       ),
       track: [k.left, k.right],
+      trackTop: k.top,
       tickLabels: [...host.querySelectorAll('[data-meter-tick-label]')].filter(shown).map(box),
       zoneNames: [...host.querySelectorAll('[data-meter-zone-label], [data-meter-zone-short]')]
         .filter(shown)
@@ -99,7 +100,6 @@ const measure = (p: LayoutPage, id: string): Promise<Shot> =>
   }, id)
 
 const centre = (b: Box) => (b.left + b.right) / 2
-const touch = (a: Box, b: Box) => !(a.right <= b.left + SUBPIXEL || b.right <= a.left + SUBPIXEL)
 
 layout('Meter marks at 390', () => {
   afterAll(closeLayoutSuite, CLOSE_BUDGET_MS)
@@ -112,33 +112,27 @@ layout('Meter marks at 390', () => {
   test.each([
     ['dash-r2-load', ['0', '2.0']],
     ['dash-r2-readiness', ['0', '100']],
-  ])('%s keeps both end figures; zone names yield to them', async (id, ends) => {
+  ])('%s keeps both end figures, above the track and inside it', async (id, ends) => {
     const m = await measure(p, id)
     expect(m.tickLabels.map((t) => t.text)).toEqual(ends)
     const [start, end] = m.tickLabels as [Box, Box]
     expect(start.left).toBeGreaterThanOrEqual(m.track[0] - SUBPIXEL)
     expect(end.right).toBeLessThanOrEqual(m.track[1] + SUBPIXEL)
-    for (const name of m.zoneNames) {
-      expect(touch(name, start)).toBe(false)
-      expect(touch(name, end)).toBe(false)
-    }
+    expect(m.tickLabels.every((t) => t.bottom <= m.trackTop + SUBPIXEL)).toBe(true)
+  })
+
+  test('readiness at 390: every zone is named, with no short label', async () => {
+    const m = await measure(p, 'dash-r2-readiness')
+    expect(m.zoneNames.map((n) => n.text)).toEqual(['Rest', 'Fair', 'Good'])
   })
 
   test.each(['dash-zl-s2', 'dash-r2-load', 'dash-r2-readiness'])(
-    '%s: a zone shows its name or short label whenever either fits clear of the end figures',
+    '%s: a zone shows its name or short label whenever either fits its own span',
     async (id) => {
       const m = await measure(p, id)
-      const [start, end] = m.tickLabels as [Box, Box]
-      const gap = 6
       for (const z of m.zoneSpans) {
         const boxes = m.zoneBoxes.filter((b) => b.name === z.name)
-        const fits = boxes.some(
-          (b) =>
-            b.left >= z.left - SUBPIXEL &&
-            b.right <= z.right + SUBPIXEL &&
-            b.left >= start.right + gap - SUBPIXEL &&
-            b.right <= end.left - gap + SUBPIXEL,
-        )
+        const fits = boxes.some((b) => b.left >= z.left - SUBPIXEL && b.right <= z.right + SUBPIXEL)
         if (fits) expect(boxes.some((b) => b.shown)).toBe(true)
         expect(m.described).toContain(z.name ?? '')
       }
