@@ -1100,6 +1100,7 @@ No export is removed or added. Six chart defaults move.
 | `LoadingState` (page tier)            | a `Loader` in the accent    | the same spinner in `VX.muted`                                                                         | no opt-out; the spinner is neutral by design                                                                                      |
 | `BasaltDataTable` `query` error title | `Could not load`            | `Could not load rows`                                                                                  | no opt-out; the title is not a prop                                                                                               |
 | `ChartCard` / chart error, no message | `The chart failed to load.` | `The request failed.` (the same fallback `ErrorState` shows)                                           | an `Error` with a message, or `state.error` as a string                                                                           |
+
 ### Strip and card (Wave 38)
 
 No export is removed or renamed; four defaults move.
