@@ -185,6 +185,8 @@ export type ChartLegendProps<T> = {
   concealed?: boolean
   /** `auto` mode only: gone from the wide class up, where end labels name the lines (CSS). */
   hideAtWide?: boolean
+  /** `auto` mode only: shown below the 480px container only (a `legend: false` chart's key, CSS). */
+  compactOnly?: boolean
 }
 
 export function ChartLegend<T>(props: ChartLegendProps<T>): ReactElement | null {
@@ -200,6 +202,7 @@ export function ChartLegend<T>(props: ChartLegendProps<T>): ReactElement | null 
       {...(props.concealed && { 'aria-hidden': true })}
       {...(auto && { className: classes.auto })}
       {...(auto && props.hideAtWide && { 'data-hide-wide': '' })}
+      {...(auto && props.compactOnly && { 'data-compact-only': '' })}
       style={rowLayout(props.mode, props.concealed === true)}
     >
       {groups.map((group, gi) => [

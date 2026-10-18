@@ -12,7 +12,7 @@ import { ruleY } from '@tanstack/charts/rule'
 import { scaleBand } from '@tanstack/charts/scales/band'
 import { scaleLinear } from '@tanstack/charts/scales/linear'
 import { text } from '@tanstack/charts/text'
-import { useContext, useId, useMemo, useState } from 'react'
+import { useContext, useId, useLayoutEffect, useMemo, useRef, useState } from 'react'
 import type { CSSProperties, FocusEvent, KeyboardEvent, PointerEvent, ReactElement } from 'react'
 import { cx } from '../common/props'
 import type { BasaltProps } from '../common/props'
@@ -414,6 +414,7 @@ export function Sparkline(props: SparklineProps): ReactElement {
   const [hover, setHover] = useState<number | null>(null)
   const [keyed, setKeyed] = useState<number | null>(null)
   const active = hover ?? keyed
+  const readoutRef = useRef<HTMLOutputElement>(null)
   const model = useMemo(() => {
     const rows: Point[] = data.map((d, i) => ({
       i,
@@ -496,6 +497,19 @@ export function Sparkline(props: SparklineProps): ReactElement {
   // `translate` take one fraction), inside the box at either edge whatever its width, and the
   // stylesheet lifts it above the plot. Bare: beside the point, on the roomier side and on the half of
   // the box away from it, so the chip covers neither the dot nor anything the host draws round it.
+  // A readout never loses its date to an ellipsis: when the one-line chip overflows the box it first
+  // tightens (`data-tight`: no air round the dot), then stacks (`data-stacked`: the date on its own
+  // line). Set on the node, so a measure never re-renders.
+  useLayoutEffect(() => {
+    const node = readoutRef.current
+    if (node === null) return
+    const overflows = (): boolean => node.scrollWidth > node.clientWidth
+    node.removeAttribute('data-tight')
+    node.removeAttribute('data-stacked')
+    if (!overflows()) return
+    node.setAttribute('data-tight', '')
+    if (overflows()) node.setAttribute('data-stacked', '')
+  })
   const beside = at === null ? null : at.fx > 0.5 ? 'left' : 'right'
   const readoutStyle: CSSProperties | undefined =
     at === null
@@ -553,13 +567,19 @@ export function Sparkline(props: SparklineProps): ReactElement {
             />
           )}
           <output
+            ref={readoutRef}
             data-basalt-sparkline-readout=""
             aria-live={hover === null ? 'polite' : 'off'}
             className={classes.readout}
             style={readoutStyle}
           >
             {format(at.value)}
-            {at.label !== undefined && <span className={classes.label}> · {at.label}</span>}
+            {at.label !== undefined && (
+              <span className={classes.label}>
+                <span className={classes.sep}> · </span>
+                {at.label}
+              </span>
+            )}
           </output>
         </span>
       )}

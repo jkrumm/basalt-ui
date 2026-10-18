@@ -364,6 +364,8 @@ export type FixtureSpec = {
   infoRing?: true
   /** A Mantine `Button size="xs" variant="default"` beside the shared `RetryButton` (`data-testid="retry-mantine"` / `"retry-shared"`). */
   retryParity?: true
+  /** Wave 38: zone-keyed charts at a 340px card (`w38-*`) and a strip-cell sparkline at 150px (`w38-strip`). */
+  w38Legend?: true
   /**
    * Renders a `CodeBlock` in a `Prose` between `data-testid="codeblock-before"` and
    * `"codeblock-after"` paragraphs, over a long first line. `language` defaults to `'ts'`; pass

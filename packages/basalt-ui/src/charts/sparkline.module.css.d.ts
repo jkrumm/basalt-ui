@@ -6,6 +6,7 @@ declare const classes: {
   readonly root: string
   readonly readout: string
   readonly label: string
+  readonly sep: string
   readonly layer: string
   readonly dot: string
 }

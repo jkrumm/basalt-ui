@@ -85,6 +85,7 @@ import type {
 } from './spec'
 import { InfoRingFixture } from './info-ring-fixture'
 import { RetryParityFixture } from './retry-parity-fixture'
+import { W38LegendFixture } from './w38-legend-fixture'
 import { RAIL_DOMAIN_MAX, RAIL_PX, TOC_SCROLL_MARGIN_PX } from './spec'
 
 /** A consumer-sized (18px) glyph — the bar normalizes it to `--vx-space-mobile-nav-icon-size` in
@@ -2849,6 +2850,7 @@ export function ShellFixture({ spec }: { spec: FixtureSpec }): ReactElement {
       {spec.dash && <DashFixture />}
       {spec.infoRing && <InfoRingFixture />}
       {spec.retryParity && <RetryParityFixture />}
+      {spec.w38Legend && <W38LegendFixture />}
       {spec.codeBlock && <CodeBlockFixture spec={spec.codeBlock} />}
       {spec.forms && <FormsFixture spec={spec.forms} />}
       {spec.table && <TableFixture spec={spec.table} />}

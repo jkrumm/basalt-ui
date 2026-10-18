@@ -132,6 +132,15 @@ export type ZoneSpec = {
   to: number
   fill: string
   axisSide?: 'left' | 'right' | undefined
+  /**
+   * Names the band in the legend (its fill as the swatch, a bar by default), so a zone chart keeps
+   * a key at 390 and needs no always-`null` series. `mark` is the swatch shape. `color` is the
+   * swatch when the fill is a whisper-alpha wash a 10px swatch would lose (default: the fill, a
+   * status tint mapped to its solid).
+   */
+  legend?:
+    | { label: string; mark?: 'line' | 'bar' | undefined; color?: string | undefined }
+    | undefined
   /** A rule on the band's visual `top` (the larger bound) and/or `bottom` (the smaller), whichever
    * of `from`/`to` that is. */
   edge?: ZoneEdge<'top' | 'bottom'> | undefined

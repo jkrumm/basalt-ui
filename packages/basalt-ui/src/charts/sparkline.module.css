@@ -50,6 +50,49 @@
   opacity: 0.7;
 }
 
+.sep {
+  white-space: pre;
+}
+
+/* A readout that overflows its box first drops the air round its separator and its padding. */
+.readout[data-tight] {
+  padding-inline: 2px;
+}
+
+.readout[data-tight] .sep {
+  letter-spacing: -0.15em;
+  word-spacing: -0.25em;
+}
+
+/* A readout that still overflows stacks (set in `Sparkline.tsx`): the date on its own line, wrapped
+ * not clipped. Bare, it grows toward the box's middle; hosted, it keeps its bottom on the plot's top
+ * edge and grows UP, since the host's clipping box ends at the plot and a chip grown down is cut. */
+.readout[data-stacked] {
+  block-size: auto;
+  max-height: none;
+  padding-block: 1px;
+  line-height: 1.25;
+  text-overflow: clip;
+  white-space: normal;
+  overflow-wrap: break-word;
+  /* Not the shrink-to-fit width an absolutely positioned box gets: at a point near the right edge
+   * that is the sliver right of `left`, and the date would wrap letter by letter. */
+  width: max-content;
+}
+
+[data-basalt-hosted] .readout[data-stacked] {
+  top: auto;
+  bottom: calc(100% + var(--basalt-spark-readout-lift, 1) * var(--basalt-spark-inset, 0px));
+}
+
+.readout[data-stacked] .label {
+  display: block;
+}
+
+.readout[data-stacked] .sep {
+  display: none;
+}
+
 .layer {
   position: absolute;
   pointer-events: none;

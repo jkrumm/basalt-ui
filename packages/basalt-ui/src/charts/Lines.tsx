@@ -144,7 +144,7 @@ export function Lines<T, X extends ChartX = ChartX>(props: LinesProps<T, X>): Re
     <CartesianRung
       {...rest}
       marks={marks}
-      {...(labelsOnly && { legend: false as const })}
+      {...(labelsOnly && { legend: false as const, keepLegendDrop: true })}
       {...(hideAtWide && { hideLegendAtWide: true })}
     />
   )
