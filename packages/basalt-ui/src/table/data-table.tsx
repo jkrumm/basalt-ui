@@ -1790,7 +1790,7 @@ export function BasaltDataTable<T extends RowData>(props: BasaltDataTableProps<T
   const errorNode = queryError !== undefined && (
     <ErrorState
       error={queryError.error}
-      title="Could not load"
+      title="Could not load rows"
       tier="section"
       retrying={queryError.fetchStatus === 'fetching'}
       onRetry={() => void queryError.refetch()}

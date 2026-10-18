@@ -1,5 +1,5 @@
 /**
- * EmptyState — a centered icon/title/description/action stack for empty data regions (no shipped
+ * EmptyState — says the cause and the next step, never a bare "No data". A centered icon/title/description/action stack for empty data regions (no shipped
  * illustration assets — `icon` is a plain, faint-rendered `ReactNode` slot). `tier="page"` uses
  * generous vertical padding for a full-page empty state; `tier="section"` is compact, for an
  * empty card/panel region.
@@ -9,8 +9,8 @@
  *
  * <EmptyState
  *   icon={<IconInboxEmpty />}
- *   title="No results"
- *   description="Try adjusting your filters or search terms."
+ *   title="No decisions match"
+ *   description="The queue is filtered to Blocked; clear it to see all 12."
  *   action={<Button onClick={onReset}>Clear filters</Button>}
  *   tier="section"
  * />

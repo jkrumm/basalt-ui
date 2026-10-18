@@ -61,3 +61,13 @@ describe('ChartPlaceholder Retry', () => {
     expect(bare.container.querySelector('button')).toBeNull()
   })
 })
+
+describe('ChartPlaceholder default copy', () => {
+  test('an error without a readable message says the shared fallback, not a restated title', () => {
+    const { container } = render(<ChartPlaceholder state={{ error: {} }} />)
+    const alert = container.querySelector('[role="alert"]')
+    expect(alert?.textContent).toContain('The request failed.')
+    expect(alert?.textContent).not.toContain('failed to load')
+    expect(alert?.querySelector('svg')).toBeNull()
+  })
+})

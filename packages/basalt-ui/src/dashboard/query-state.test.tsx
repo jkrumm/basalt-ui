@@ -347,3 +347,40 @@ describe('ErrorState default title', () => {
     expect(screen.queryByText('Something went wrong')).toBeNull()
   })
 })
+
+describe('LoadingState defaults', () => {
+  test('"section" is a neutral skeleton named by its label, never a spinner', () => {
+    const html = renderToStaticMarkup(
+      <MantineProvider>
+        <LoadingState tier="section" label="Loading decisions" />
+      </MantineProvider>,
+    )
+    expect(html).toContain('aria-label="Loading decisions"')
+    expect(html).toContain('mantine-Skeleton-root')
+    expect(html).not.toContain('mantine-Loader-root')
+  })
+
+  test('"page" keeps a spinner, painted neutral rather than in the accent', () => {
+    const html = renderToStaticMarkup(
+      <MantineProvider>
+        <LoadingState />
+      </MantineProvider>,
+    )
+    expect(html).toContain('mantine-Loader-root')
+    expect(html).toContain('--vx-muted')
+  })
+})
+
+describe('ErrorState defaults', () => {
+  test('the dot is the glyph; the title and cause are two lines, Retry one button', () => {
+    const { container } = render(
+      <MantineProvider>
+        <ErrorState error={{}} title="Could not load decisions" onRetry={() => undefined} />
+      </MantineProvider>,
+    )
+    expect(screen.getByText('Could not load decisions')).toBeTruthy()
+    expect(screen.getByText('The request failed.')).toBeTruthy()
+    expect(container.querySelector('svg')).toBeNull()
+    expect(screen.getAllByRole('button', { name: 'Retry' })).toHaveLength(1)
+  })
+})

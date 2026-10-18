@@ -14,7 +14,7 @@
  * the re-derivation this exists to delete. `LoadingState` / `ErrorState` ship alongside as the
  * escape hatch for a page that must place its branches in different DOM positions.
  */
-import { Center, Group, Loader, Stack, Text } from '@mantine/core'
+import { Center, Group, Loader, Skeleton, Stack, Text } from '@mantine/core'
 import type { CSSProperties, ReactNode } from 'react'
 import { toErrorMessage } from '../common/errors'
 import { cx } from '../common/props'
@@ -60,11 +60,15 @@ export type QueryEmptyCopy = {
 export type LoadingStateProps = BasaltProps & {
   /** How loud this state is. Default `'page'`. */
   tier?: QueryStateTier
-  /** Accessible name for the spinner. Say what is loading. */
+  /** Accessible name for the loading state. Say what is loading. */
   label?: string
 }
 
-/** A spinner on its own — `tier="page"` centres it in a generous block, `'section'` is bare. */
+/**
+ * `tier="page"` centres a neutral spinner in a generous block (a route body whose shape is unknown);
+ * `'section'` is a neutral skeleton, never an accent spinner. A card region that knows its loaded
+ * shape passes `loading` to `QueryState` instead.
+ */
 export function LoadingState({
   tier,
   label = 'Loading',
@@ -74,12 +78,18 @@ export function LoadingState({
   const resolved = tier ?? 'page'
   if (resolved === 'section') {
     return (
-      <Loader
-        size="sm"
+      <Stack
+        component="output"
+        gap="xs"
         aria-label={label}
+        aria-busy="true"
         {...(className !== undefined && { className })}
         {...(style !== undefined && { style })}
-      />
+      >
+        <Skeleton height={14} width="40%" />
+        <Skeleton height={14} />
+        <Skeleton height={14} width="75%" />
+      </Stack>
     )
   }
   // Same page-level vertical inset `EmptyState`'s `'page'` variant uses (`empty-state.tsx`'s
@@ -90,7 +100,7 @@ export function LoadingState({
       {...(className !== undefined && { className })}
       style={{ paddingBlock: 'calc(var(--vx-space-stack-xs, 0.25rem) * 16)', ...style }}
     >
-      <Loader size="sm" aria-label={label} />
+      <Loader size="sm" color={VX.muted} aria-label={label} />
     </Center>
   )
 }
@@ -246,7 +256,7 @@ export type QueryStateProps<TData> = BasaltProps &
     errorAction?: ReactNode
     /** How loud every branch is. Default `'page'`. */
     tier?: QueryStateTier
-    /** Replace the default spinner (e.g. with a skeleton grid). */
+    /** Replace the default loading state (e.g. with a skeleton in the region's loaded shape). */
     loading?: ReactNode
   }
 
