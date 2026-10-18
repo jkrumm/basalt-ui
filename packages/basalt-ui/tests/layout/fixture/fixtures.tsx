@@ -784,6 +784,7 @@ function ChromeW37Fixture(): ReactElement {
       <Badge color="green" data-testid="w37-badge-green">
         Healthy
       </Badge>
+      <Badge data-testid="w37-badge-neutral">Healthy</Badge>
       <Badge color="#e03131" data-testid="w37-badge-hex">
         Hex
       </Badge>
@@ -1566,6 +1567,15 @@ const VARIED_ROWS = [
   { label: 'Prune stale sessions', value: 31 },
 ]
 
+const STATUS_WIDTHS = [700, 300] as const
+const STATUS_ROWS = [
+  { label: 'Upgrade the dependency graph resolver', value: 58, word: 'Blocked · Failing check' },
+  { label: 'Drop the legacy exporter', value: 14, word: 'Needs you' },
+  { label: 'Sleep', value: 8, word: 'Waiting' },
+]
+/** One- and two-digit figures in both directions: the widths a column of deltas actually mixes. */
+const DELTA_VALUES = [9, -13, 2, 41]
+
 function DashFixture(): ReactElement {
   const items = [
     {
@@ -1581,6 +1591,50 @@ function DashFixture(): ReactElement {
       {/* theme-allow -- the wrapper width IS the fixture's payload (a container probe) */}
       <div data-testid="dash-barlist" style={{ width: 320 }}>
         <BarList label="Spend" variant="inline" items={items} format={(v) => `€${v}`} />
+      </div>
+      {STATUS_WIDTHS.map((width) => (
+        // theme-allow -- the wrapper width IS the fixture's payload (a container probe)
+        <div key={width} data-testid={`dash-bar-status-${width}`} style={{ width, padding: 16 }}>
+          <BarList
+            label="Stuck items"
+            format={(v) => `${v} h`}
+            items={STATUS_ROWS.map((r) => ({
+              label: r.label,
+              value: r.value,
+              secondary: <StatusVerdict color="var(--vx-status-bad)" word={r.word} />,
+            }))}
+          />
+        </div>
+      ))}
+      {/* theme-allow -- the wrapper width IS the fixture's payload (a container probe) */}
+      <div data-testid="dash-bar-delta" style={{ width: 700, padding: 16 }}>
+        <BarList
+          label="Top drivers"
+          items={DELTA_VALUES.map((v, i) => ({
+            label: `Driver ${i + 1}`,
+            value: 100 - i * 10,
+            secondary: <DeltaBadge value={v} format={(n) => `${Math.abs(n)}%`} />,
+          }))}
+        />
+      </div>
+      {/* theme-allow -- the wrapper width IS the fixture's payload (a container probe) */}
+      <div data-testid="dash-bar-override" style={{ width: 700, padding: 16 }}>
+        <BarList
+          label="Override"
+          secondaryAlign="end"
+          items={STATUS_ROWS.map((r) => ({
+            label: r.label,
+            value: r.value,
+            secondary: <StatusVerdict color="var(--vx-status-bad)" word={r.word} />,
+          }))}
+        />
+      </div>
+      <div data-testid="dash-delta-column" style={{ width: 120, textAlign: 'right' }}>
+        {DELTA_VALUES.map((v) => (
+          <div key={v} data-delta-row="">
+            <DeltaBadge value={v} format={(n) => `${Math.abs(n)}%`} />
+          </div>
+        ))}
       </div>
       {/* theme-allow -- the wrapper width IS the fixture's payload (a container probe) */}
       <div data-testid="dash-bar-thin" style={{ width: 342 }}>

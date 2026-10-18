@@ -1,7 +1,11 @@
 import { MantineProvider } from '@mantine/core'
 import { cleanup, render } from '@testing-library/react'
+import type { ReactNode } from 'react'
 import { afterEach, describe, expect, test } from 'bun:test'
+import { StatusDot } from '../theme/status-dot'
+import { StatusVerdict } from '../theme/status-verdict'
 import { BarList } from './bar-list'
+import { DeltaBadge } from './delta-badge'
 import type { BarListProps } from './bar-list'
 
 afterEach(cleanup)
@@ -189,6 +193,41 @@ describe('BarList — the track is the label column', () => {
       expect(li.querySelector('[data-bar-track]')?.contains(li.lastElementChild)).toBe(false)
       expect(li.children.length).toBe(3)
     }
+  })
+
+  const alignOf = (secondary: ReactNode, extra: Partial<BarListProps> = {}) => {
+    const { container } = mount({
+      label: 'L',
+      items: [{ label: 'a', value: 5, secondary }],
+      ...extra,
+    })
+    const align = container.querySelector('ul')?.getAttribute('data-secondary-align')
+    cleanup()
+    return align
+  }
+
+  test('secondary alignment is auto by content: status words and marks start, figures and the rest end', () => {
+    expect(alignOf('Blocked · Failing check')).toBe('start')
+    expect(alignOf(<StatusVerdict color="red" word="Blocked" />)).toBe('start')
+    expect(alignOf(<StatusDot color="red" />)).toBe('start')
+    for (const figure of ['▲ 9%', '+€7', '41%', '-3.2', 12, <DeltaBadge key="d" value={9} />])
+      expect(alignOf(figure)).toBe('end')
+  })
+
+  test('one status word start-aligns a column that also holds figures', () => {
+    const { container } = mount({
+      label: 'L',
+      items: [
+        { label: 'a', value: 5, secondary: 'Blocked' },
+        { label: 'b', value: 3, secondary: '41%' },
+      ],
+    })
+    expect(container.querySelector('ul')?.getAttribute('data-secondary-align')).toBe('start')
+  })
+
+  test('secondaryAlign overrides the auto choice either way', () => {
+    expect(alignOf('Blocked', { secondaryAlign: 'end' })).toBe('end')
+    expect(alignOf('41%', { secondaryAlign: 'start' })).toBe('start')
   })
 
   test('a null or false secondary does not open the secondary column', () => {

@@ -87,8 +87,12 @@ export function DeltaBadge({
   const showGlyph = withGlyph && glyph !== undefined
 
   return (
-    <span className={classes.deltaBadge} style={{ color: tone }}>
-      {showGlyph && <span className={classes.deltaGlyph}>{glyph}</span>}
+    <span className={classes.deltaBadge} style={{ color: tone }} data-delta="">
+      {showGlyph && (
+        <span className={classes.deltaGlyph} data-delta-glyph="">
+          {glyph}
+        </span>
+      )}
       {format(value)}
       {period !== undefined && ' '}
       {period !== undefined && (
