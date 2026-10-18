@@ -17,7 +17,7 @@ import { render, screen } from '@testing-library/react'
 import { describe, expect, test } from 'bun:test'
 import type { ReactNode } from 'react'
 import { renderToStaticMarkup } from 'react-dom/server'
-import { LoadingState, QueryState, resolveQueryBranch } from './query-state'
+import { ErrorState, LoadingState, QueryState, resolveQueryBranch } from './query-state'
 import type { QueryStateLike } from './query-state'
 
 type Row = { id: number }
@@ -333,5 +333,17 @@ describe('the error placeholder is a dot, a word, the message and a retry', () =
     expect(screen.getByText('down')).toBeTruthy()
     expect(screen.getByRole('button', { name: 'Retry' })).toBeTruthy()
     expect(container.querySelector('[role="alert"]')).not.toBeNull()
+  })
+})
+
+describe('ErrorState default title', () => {
+  test('with no title it reads "Could not load", the card wording', () => {
+    render(
+      <MantineProvider>
+        <ErrorState error={new Error('boom')} />
+      </MantineProvider>,
+    )
+    expect(screen.getByRole('alert').textContent).toContain('Could not load')
+    expect(screen.queryByText('Something went wrong')).toBeNull()
   })
 })
