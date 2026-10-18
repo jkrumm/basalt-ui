@@ -12,7 +12,10 @@
  * thin bar with the value right-aligned on the label line; `variant="inline"` is the older heavy track
  * with the label inside it.
  *
- * Thin rows sit flush: no inline inset on the label or the rail.
+ * Thin rows sit flush: no inline inset on the label or the rail. In a container wider than the compact
+ * class (480px) a thin row reads `[label][value][secondary][track]` — the label column fits the longest
+ * label, the value and secondary columns are right-aligned and shared, and the track takes the rest on
+ * the one scale, so a name stays beside its value and a full-scale bar ends at the track end.
  *
  * Colour law: bars are neutral. `accentLeader` (opt-in) lets the top row take the accent — the
  * leader bar, and nothing else. Each value is rendered as text, never only a bar length.
@@ -128,69 +131,71 @@ export function BarList({
   const thin = variant === 'thin'
   const hasSecondary = items.some((i) => hasContent(i.secondary))
   return (
-    // The explicit role is deliberate: `list-style: none` makes Safari/VoiceOver drop the implicit one.
-    <ul
-      className={cx(classes.root, className)}
-      style={style}
-      // oxlint-disable-next-line jsx-a11y/no-redundant-roles
-      role="list"
-      aria-label={label}
-      data-secondary={hasSecondary ? '' : undefined}
-      data-variant={variant}
-    >
-      {items.map((item, i) => {
-        const isLeader = accentLeader && i === 0
-        const rowScale = item.max ?? scale
-        const labelNode = (
-          <span className={classes.label} title={item.label}>
-            {item.label}
-          </span>
-        )
-        const tickName =
-          item.tick === undefined
-            ? ''
-            : `${item.tickLabel ?? 'Threshold'} ${format(item.tick, 'value')}`
-        const track = (
-          <span className={classes.track} data-bar-track>
-            {/* theme-allow hidden-inline-style — the width is the row's data (a % of its scale), not styling */}
-            <span
-              className={cx(classes.bar, isLeader && classes.leader)}
-              style={{ width: `${barPercent(item.value, rowScale)}%` }}
-              data-bar-fill=""
-              data-bar-leader={isLeader ? '' : undefined}
-              aria-hidden
-            />
-            {item.tick !== undefined && (
-              // theme-allow hidden-inline-style — the position is the row's data (a % of its scale)
+    // The frame is the width container the wide layout keys on (a container cannot restyle its own grid).
+    <div className={cx(classes.frame, className)} style={style}>
+      {/* The explicit role is deliberate: `list-style: none` makes Safari/VoiceOver drop the implicit one. */}
+      <ul
+        className={classes.root}
+        // oxlint-disable-next-line jsx-a11y/no-redundant-roles
+        role="list"
+        aria-label={label}
+        data-secondary={hasSecondary ? '' : undefined}
+        data-variant={variant}
+      >
+        {items.map((item, i) => {
+          const isLeader = accentLeader && i === 0
+          const rowScale = item.max ?? scale
+          const labelNode = (
+            <span className={classes.label} title={item.label}>
+              {item.label}
+            </span>
+          )
+          const tickName =
+            item.tick === undefined
+              ? ''
+              : `${item.tickLabel ?? 'Threshold'} ${format(item.tick, 'value')}`
+          const track = (
+            <span className={classes.track} data-bar-track>
+              {/* theme-allow hidden-inline-style — the width is the row's data (a % of its scale), not styling */}
               <span
-                className={classes.tick}
-                style={{ insetInlineStart: `${barPercent(item.tick, rowScale)}%` }}
-                data-bar-tick=""
+                className={cx(classes.bar, isLeader && classes.leader)}
+                style={{ width: `${barPercent(item.value, rowScale)}%` }}
+                data-bar-fill=""
+                data-bar-leader={isLeader ? '' : undefined}
                 aria-hidden
               />
-            )}
-            {!thin && labelNode}
-            {/* Inside the track so it is never the row's last child (the value/secondary inset). */}
-            {item.tick !== undefined && <VisuallyHidden>{tickName}</VisuallyHidden>}
-          </span>
-        )
-        return (
-          <li key={item.key ?? `${item.label}-${i}`} className={classes.row}>
-            {thin && labelNode}
-            {!thin && track}
-            <span className={classes.value}>
-              {Number.isFinite(item.value)
-                ? item.max === undefined
-                  ? format(item.value, 'value')
-                  : `${format(item.value, 'value')} / ${format(item.max, 'max')}`
-                : '—'}
+              {item.tick !== undefined && (
+                // theme-allow hidden-inline-style — the position is the row's data (a % of its scale)
+                <span
+                  className={classes.tick}
+                  style={{ insetInlineStart: `${barPercent(item.tick, rowScale)}%` }}
+                  data-bar-tick=""
+                  aria-hidden
+                />
+              )}
+              {!thin && labelNode}
+              {/* Inside the track so it is never the row's last child (the value/secondary inset). */}
+              {item.tick !== undefined && <VisuallyHidden>{tickName}</VisuallyHidden>}
             </span>
-            {/* Kept empty on a row without one: the secondary column is shared, so every row has the cell. */}
-            {hasSecondary && <span className={classes.secondary}>{item.secondary}</span>}
-            {thin && track}
-          </li>
-        )
-      })}
-    </ul>
+          )
+          return (
+            <li key={item.key ?? `${item.label}-${i}`} className={classes.row}>
+              {thin && labelNode}
+              {!thin && track}
+              <span className={classes.value}>
+                {Number.isFinite(item.value)
+                  ? item.max === undefined
+                    ? format(item.value, 'value')
+                    : `${format(item.value, 'value')} / ${format(item.max, 'max')}`
+                  : '—'}
+              </span>
+              {/* Kept empty on a row without one: the secondary column is shared, so every row has the cell. */}
+              {hasSecondary && <span className={classes.secondary}>{item.secondary}</span>}
+              {thin && track}
+            </li>
+          )
+        })}
+      </ul>
+    </div>
   )
 }

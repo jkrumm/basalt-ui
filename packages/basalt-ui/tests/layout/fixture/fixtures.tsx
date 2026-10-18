@@ -1481,6 +1481,16 @@ const LOAD_TICKS = [
   { at: 2, label: '2.0' },
 ]
 
+/** Six rows with a ragged secondary column ("▲ 9%" against "+€7") and labels of similar length. */
+const WIDE_ROWS = [
+  { label: 'Replay the failed ingest', value: 412, secondary: '▲ 9%' },
+  { label: 'Retune the readiness model', value: 288, secondary: '+€7' },
+  { label: 'Backfill the sleep stages', value: 190, secondary: '▼ 12%' },
+  { label: 'Rebuild the cost report', value: 120, secondary: '+€112' },
+  { label: 'Migrate the alert rules', value: 64, secondary: '▲ 2%' },
+  { label: 'Prune stale sessions', value: 31 },
+]
+
 function DashFixture(): ReactElement {
   const items = [
     {
@@ -1525,6 +1535,20 @@ function DashFixture(): ReactElement {
             },
           ]}
         />
+      </div>
+      {/* theme-allow -- the wrapper width IS the fixture's payload (a container probe) */}
+      <div
+        data-testid="dash-bar-wide-528"
+        style={{ width: 528, padding: 16, boxSizing: 'border-box' }}
+      >
+        <BarList label="Top drivers" format={(v) => `€${v}`} items={WIDE_ROWS} />
+      </div>
+      {/* theme-allow -- the wrapper width IS the fixture's payload (a container probe) */}
+      <div
+        data-testid="dash-bar-wide-1400"
+        style={{ width: 1400, padding: 16, boxSizing: 'border-box' }}
+      >
+        <BarList label="Top drivers" format={(v) => `€${v}`} items={WIDE_ROWS} />
       </div>
       {/* theme-allow -- the wrapper width IS the fixture's payload (a container probe) */}
       <div data-testid="dash-meter-orphans" style={{ width: 96 }}>

@@ -1128,6 +1128,16 @@ Changed behaviour (no API change):
   the parts were unnamed. **Opt out:** none for `segments`; a `value` bar is unaffected.
 - **Part captions never wrap inside themselves** while they fit: each sits under its own segment when
   all of them fit there, else the wrapped list (a caption wider than the row still wraps).
+## Unreleased — BarList keeps a name beside its value
+
+### `BarList` in a wide container
+
+A thin `BarList` in a container 480px or wider now lays each row out as `[label][value][secondary][track]`:
+the label column fits the longest label (capped at 40%, truncating with its `title`), value and secondary
+are right-aligned and shared by every row, and the bar track takes the remaining width on the one shared
+scale. Compact containers keep the stacked layout. The root element is now a `div` wrapping the `ul`
+(`className` / `style` land on the wrapper). Opt-out: `variant="inline"` is unchanged; to keep the stacked
+thin layout in a wide card, constrain the list's width below 480px.
 
 ## 2.21.0 — strip cell state, one Retry, and the marker reading
 

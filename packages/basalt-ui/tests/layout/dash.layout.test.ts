@@ -67,6 +67,71 @@ layout('Meter / BarList geometry', () => {
     expect(new Set(rows.map((r) => Math.round(r.value.left))).size).toBe(1)
   })
 
+  test.each(['dash-bar-wide-528', 'dash-bar-wide-1400'])(
+    'a wide BarList keeps each name beside its value and aligns the columns (%s)',
+    async (id) => {
+      const m = await p.raw.evaluate((testId) => {
+        const host = document.querySelector(`[data-testid="${testId}"]`)
+        if (!host) throw new Error(`LAYOUT: no ${testId}`)
+        const textRect = (el: Element) => {
+          const range = document.createRange()
+          range.selectNodeContents(el)
+          const r = range.getBoundingClientRect()
+          return { left: r.left, right: r.right }
+        }
+        const need = (root: Element, selector: string) => {
+          const el = root.querySelector(selector)
+          if (!el) throw new Error(`LAYOUT: no ${selector}`)
+          return el
+        }
+        const list = need(host, 'ul')
+        const inner = list.getBoundingClientRect().right
+        return {
+          inner,
+          rows: [...host.querySelectorAll('li')].map((li) => {
+            const spans = [...li.children]
+            const [label, value, secondary] = spans
+            return {
+              label: textRect(need(li, 'span')),
+              value: textRect(value ?? li),
+              secondary: secondary?.textContent ? textRect(secondary) : null,
+              trackRight: need(li, '[data-bar-track]').getBoundingClientRect().right,
+              fillRight: need(li, '[data-bar-fill]').getBoundingClientRect().right,
+              order: spans.map((s) => (s.hasAttribute('data-bar-track') ? 'track' : 'cell')),
+              labelEl: label !== undefined,
+            }
+          }),
+        }
+      }, id)
+      expect(m.rows).toHaveLength(6)
+      for (const row of m.rows) {
+        expect(row.order.at(-1)).toBe('track')
+        expect(row.value.left - row.label.right).toBeLessThanOrEqual(120)
+        expect(row.trackRight).toBeLessThanOrEqual(m.inner + SUBPIXEL)
+        expect(row.fillRight).toBeLessThanOrEqual(row.trackRight + SUBPIXEL)
+      }
+      const valueRights = m.rows.map((r) => r.value.right)
+      expect(Math.max(...valueRights) - Math.min(...valueRights)).toBeLessThanOrEqual(SNAP)
+      const secondaryRights = m.rows.flatMap((r) => (r.secondary ? [r.secondary.right] : []))
+      expect(secondaryRights.length).toBeGreaterThan(1)
+      expect(Math.max(...secondaryRights) - Math.min(...secondaryRights)).toBeLessThanOrEqual(SNAP)
+    },
+  )
+
+  test('a compact BarList keeps its label above the bar (no regression)', async () => {
+    const { labelBottom, trackTop } = await p.raw.evaluate(() => {
+      const li = document.querySelector('[data-testid="dash-bar-thin"] li')
+      const label = li?.firstElementChild
+      const track = li?.querySelector('[data-bar-track]')
+      if (!label || !track) throw new Error('LAYOUT: no compact BarList row')
+      return {
+        labelBottom: label.getBoundingClientRect().bottom,
+        trackTop: track.getBoundingClientRect().top,
+      }
+    })
+    expect(trackTop).toBeGreaterThanOrEqual(labelBottom - SUBPIXEL)
+  })
+
   test('the full-scale bar spans exactly its track', async () => {
     const [track, bar] = await p.raw.evaluate((list) => {
       const need = (root: ParentNode, selector: string, what: string) => {
