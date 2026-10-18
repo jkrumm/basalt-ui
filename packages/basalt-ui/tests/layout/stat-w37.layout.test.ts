@@ -31,6 +31,7 @@ type Caption = {
   title: string
   truncated: boolean
   qualifierTop: number | null
+  qualifierLines: number
   captionBottom: number
   valueBottom: number
   row: number
@@ -48,6 +49,9 @@ const measureCaptions = (p: LayoutPage): Promise<Caption[]> =>
         title: text.textContent ?? '',
         truncated: text.scrollWidth > text.clientWidth,
         qualifierTop: q ? q.getBoundingClientRect().top : null,
+        qualifierLines: q
+          ? q.getBoundingClientRect().height / parseFloat(getComputedStyle(q).lineHeight)
+          : 0,
         captionBottom: text.getBoundingClientRect().bottom,
         valueBottom: v.getBoundingClientRect().bottom,
         row: Math.round(c.getBoundingClientRect().top),
@@ -118,17 +122,19 @@ function suite(vp: Viewport) {
   }, CLOSE_BUDGET_MS)
 
   if (vp.width < 480) {
-    test('a card keeps its caption whole: the qualifier drops to its own line and values share a baseline', async () => {
+    test('a card keeps its caption whole and values share a baseline (the qualifier sits beside it or under it, Wave 38)', async () => {
       const cards = await measureCaptions(p)
       expect(cards.length).toBe(4)
       for (const c of cards) {
         expect(c.truncated).toBe(false)
-        if (c.qualifierTop !== null)
-          expect(c.qualifierTop).toBeGreaterThanOrEqual(c.captionBottom - SNAP)
       }
+      // Values share a baseline while every qualifier of the row is one line; a qualifier that wraps
+      // (it never truncates) pushes its own value down by the extra lines only.
       for (const a of cards)
-        for (const b of cards.filter((o) => o.row === a.row))
-          expect(Math.abs(a.valueBottom - b.valueBottom)).toBeLessThanOrEqual(SNAP)
+        for (const b of cards.filter((o) => o.row === a.row)) {
+          const extra = Math.abs(Math.round(a.qualifierLines) - Math.round(b.qualifierLines))
+          expect(Math.abs(a.valueBottom - b.valueBottom)).toBeLessThanOrEqual(SNAP + extra * 16)
+        }
     })
   }
 
@@ -225,6 +231,40 @@ function suite(vp: Viewport) {
     for (const d of r) expect(d.glyphLeft - d.left).toBeLessThanOrEqual(SNAP)
     // The column is end-aligned from the wide layout; the compact one stacks start-aligned.
     if (vp.width >= 480) expect(Math.abs(r[0]!.right - r[1]!.right)).toBeLessThanOrEqual(SNAP)
+  })
+  test('a qualifier never truncates: a long one wraps under the caption, a short one stays beside it (Wave 38)', async () => {
+    const r = await p.raw.evaluate(() => {
+      const one = (host: string, rootSel: string, i: number) => {
+        const root = document.querySelectorAll<HTMLElement>(`[data-testid="${host}"] ${rootSel}`)[
+          i
+        ]!
+        const q = root.querySelector<HTMLElement>('[class*="qualifier_"]')!
+        const cap = root.querySelector<HTMLElement>('[data-widget-title], [data-strip-caption]')!
+        const qb = q.getBoundingClientRect()
+        const cb = cap.getBoundingClientRect()
+        const lh = parseFloat(getComputedStyle(q).lineHeight)
+        return {
+          clipped: q.scrollWidth > q.clientWidth + 1,
+          ellipsis: getComputedStyle(q).textOverflow === 'ellipsis',
+          lines: qb.height / lh,
+          under: qb.top >= cb.bottom - 1,
+          width: root.getBoundingClientRect().width,
+        }
+      }
+      return {
+        cardLong: one('dash-qual-card', '.mantine-Card-root', 0),
+        cardShort: one('dash-qual-card', '.mantine-Card-root', 1),
+        stripLong: one('dash-qual-strip', '[data-strip-cell]', 0),
+        stripShort: one('dash-qual-strip', '[data-strip-cell]', 1),
+      }
+    })
+    for (const k of [r.cardLong, r.stripLong]) {
+      expect(k.clipped).toBe(false)
+      expect(k.ellipsis).toBe(false)
+      expect(k.under).toBe(true)
+      expect(k.lines).toBeGreaterThan(1.5)
+    }
+    for (const k of [r.cardShort, r.stripShort]) expect(k.under).toBe(false)
   })
 }
 

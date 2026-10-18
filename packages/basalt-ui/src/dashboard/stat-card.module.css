@@ -96,11 +96,12 @@
   min-width: 0;
 }
 
-/* A card too narrow to share its caption row (a two-column phone cell, ~170px): the qualifier is ALWAYS
- * on its own line under the caption, and a card with one (or a StatGroup row-mate's) reserves that line, so the values of one StatGroup
- * row share a baseline whether or not a sibling has a qualifier. The caption keeps the whole first
- * line (it truncates, with its `title`, only when it alone does not fit); the qualifier is one line
- * too (it truncates with its `title` only when it alone does not fit THAT line). */
+/* A card too narrow to share its caption row (a two-column phone cell, ~170px): the qualifier stays on the
+ * caption row when it fits beside it and otherwise wraps whole to its own line under the caption, where it
+ * wraps again rather than truncating (a qualifier can be the only place a band is stated). A card with one
+ * (or a StatGroup row-mate's) reserves one such line, so the values of one StatGroup row share a baseline
+ * whether the qualifier sat beside the caption or under it. The caption keeps its line (it truncates, with
+ * its `title`, only when it alone does not fit). */
 @container basalt-card (max-width: 239.9px) {
   .captionMain:has(> .qualifier) {
     --basalt-stat-qualifier-reserve: 1;
@@ -113,6 +114,7 @@
       var(--vx-text-micro) * 1.4 * var(--basalt-stat-qualifier-reserve, 0)
     );
     align-content: flex-start;
+    justify-content: flex-start;
     min-height: calc(
       var(--vx-space-control-height-widget, 1.5rem) * var(--mantine-scale, 1) +
         var(--basalt-stat-qualifier-h)
@@ -124,11 +126,8 @@
   }
 
   .qualifier {
-    flex: 0 0 100%;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    white-space: nowrap;
     line-height: 1.4;
+    text-wrap: balance;
   }
 }
 

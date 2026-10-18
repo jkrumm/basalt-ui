@@ -2328,6 +2328,33 @@ function DashFixture(): ReactElement {
           ]}
         />
       </div>
+      <div data-testid="dash-qual-card" style={{ width: 440 }}>
+        <StatGroup cols={2}>
+          <StatCard
+            title="Rate"
+            qualifier="maintain within ±0.5 kg per week of the target"
+            value="0.3"
+            unit="kg"
+          />
+          <StatCard title="Verdicts" qualifier="all time" value="12" />
+        </StatGroup>
+      </div>
+      <div data-testid="dash-qual-strip" style={{ width: 440 }}>
+        <StatGroup
+          variant="strip"
+          label="Qualifiers"
+          cols={2}
+          cells={[
+            {
+              key: 'q-rate',
+              caption: 'Rate',
+              qualifier: 'maintain within ±0.5 kg per week of the target',
+              value: '0.3',
+            },
+            { key: 'q-all', caption: 'Verdicts', qualifier: 'all time', value: '12' },
+          ]}
+        />
+      </div>
       <div data-testid="dash-odd-strip">
         <StatGroup
           variant="strip"
