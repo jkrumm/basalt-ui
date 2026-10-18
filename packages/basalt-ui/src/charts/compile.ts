@@ -870,6 +870,14 @@ function buildScales<T, X extends ChartX>(opts: {
     return {
       x: { scale: model.scale, axis: false as const },
       y: { scale: yScaleFor(input.y, left.domain), axis: false as const },
+      // A right-axis series still needs its scale, drawn or not.
+      ...(right && {
+        y2: {
+          channel: 'y' as const,
+          scale: yScaleFor(input.y2, right.domain),
+          axis: false as const,
+        },
+      }),
       ...(zoneScale && {
         zx: { channel: 'x' as const, scale: scaleLinear().domain([0, 1]), axis: false as const },
       }),

@@ -56,4 +56,31 @@ layout('Bars in a StatCard visual slot', () => {
     expect(Math.abs(measured.bars.width - measured.spark.width)).toBeLessThanOrEqual(1)
     expect(Math.abs(measured.bars.height - measured.spark.height)).toBeLessThanOrEqual(1)
   })
+
+  // A slotted Bars sits like a Sparkline: same card height, the footer line on the same y.
+  test.each(['card', 'strip'])(
+    '%s: the Bars and Sparkline hosts have the same height and footer position',
+    async (kind) => {
+      const p = await openFixture(spec, DESKTOP_1440)
+      await p.settle()
+      const probe = await p.raw.evaluate((k) => {
+        const read = (v: string) => {
+          const host = document.querySelector(`[data-testid="w38-${v}-${k}"]`)
+          if (!host) throw new Error(`LAYOUT: no w38-${v}-${k}`)
+          const foot = [...host.querySelectorAll('*')].find(
+            (el) => el.children.length === 0 && el.textContent?.includes('fastest 71'),
+          )
+          if (!foot) throw new Error('LAYOUT: no footer')
+          const top = host.getBoundingClientRect().top
+          return {
+            height: host.getBoundingClientRect().height,
+            foot: foot.getBoundingClientRect().top - top,
+          }
+        }
+        return { bars: read('bars'), spark: read('spark') }
+      }, kind)
+      expect(Math.abs(probe.bars.height - probe.spark.height)).toBeLessThanOrEqual(1)
+      expect(Math.abs(probe.bars.foot - probe.spark.foot)).toBeLessThanOrEqual(1)
+    },
+  )
 })

@@ -391,7 +391,7 @@
 /* A Sparkline's readout line (`--basalt-spark-readout-h`) above its plot: the card gap already sits
  * above the slot, the slot reserves the rest, so the chip never covers the delta or qualifier row.
  * `.foot` reserves the same, so a card with a sparkline and one without keep the same height. */
-.sparklineBleed:has([data-basalt-sparkline]) {
+.sparklineBleed:has([data-basalt-sparkline], [data-basalt-chart]) {
   box-sizing: content-box;
   padding-top: var(--basalt-spark-readout-reserve);
 }

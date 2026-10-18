@@ -1245,9 +1245,10 @@ A gap is stated once. Moved defaults:
 `size="row"` keeps no caption lines, empty or loading. Ring Meters are unchanged (the centre reading stays `—`).
 
 Opt out: none for the caption and qualifier rows (they are layout fixes; shorten the text instead); pass `emptyText="—"` on a `Meter` to keep the dash caption; for a strip cell, drop `reason` (and say it in the caption or qualifier) to keep the bare `—`.
+
 ### Bars in a visual slot (Wave 38)
 
-New capability, no behaviour moves for a `Bars` outside a slot. A `Bars` rendered inside a
+New capability, no behaviour moves for a `Bars` outside a slot; a `Bars` already in a slot loses its axes. A `Bars` rendered inside a
 `StatCard` `sparkline` slot or a strip cell's `visual` now drops both axes, the grid, the plot margin
 and the legend, and fills the slot like a `Sparkline`: the catalogue's "distribution as a slot
 micro-visual". Nothing to opt into and no new prop; the slot is the signal. Give it the slot's box:

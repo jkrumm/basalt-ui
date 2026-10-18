@@ -12,12 +12,13 @@ const data: Bin[] = ['<20', '20–30', '30–40', '40–50', '50+'].map((bin, i)
 const series: ChartSeries<Bin>[] = [
   { key: 'n', label: 'Books', color: 'var(--vx-accent)', getValue: (d) => d.n, mark: 'bar' },
 ]
-const spec = (bare: boolean) =>
+const spec = (bare: boolean, extra: readonly ChartSeries<Bin>[] = []) =>
   compileCartesian<Bin, string>({
     chartId: 'x',
     data,
     x: (d) => d.bin,
-    series,
+    series: [...series, ...extra],
+    ...(extra.length > 0 && { y2: {} }),
     marks: () => [],
     band: true,
     ...(bare && { bare }),
@@ -31,6 +32,19 @@ describe('compile: bare', () => {
     expect(s.scales['y']).not.toHaveProperty('grid')
     expect(s.margin).toBe(0)
     expect(s.guides).toBe(false)
+  })
+  test('a right-axis series keeps its scale, undrawn', () => {
+    const right: ChartSeries<Bin> = {
+      key: 'r',
+      label: 'Rate',
+      color: 'var(--vx-line)',
+      getValue: (d) => d.n * 2,
+      mark: 'line',
+      axis: 'right',
+    }
+    const s = spec(true, [right])
+    expect(s.scales['y2']?.axis).toBe(false)
+    expect(spec(true).scales['y2']).toBeUndefined()
   })
   test('without bare the axes, the y grid and the engine margin stay', () => {
     const s = spec(false)
