@@ -214,4 +214,24 @@ describe('BarList — the track is the label column', () => {
     expect(kids[2]?.textContent).toBe('40%')
     expect(kids[3]?.hasAttribute('data-bar-track')).toBe(true)
   })
+
+  test('every state wraps in one frame that carries className and style', () => {
+    const props = { label: 'Top projects', className: 'mine', style: { opacity: 0.5 } }
+    for (const state of [
+      { items: ITEMS },
+      { items: [] },
+      { items: [], loading: true },
+    ] satisfies Partial<BarListProps>[]) {
+      const { container, unmount } = mount({ ...props, ...state })
+      const frame = container.querySelector('.mine') as HTMLElement
+      expect(frame.querySelector(':scope > ul, :scope > output, :scope > [aria-busy]')).toBeTruthy()
+      expect(frame.style.opacity).toBe('0.5')
+      expect(container.querySelectorAll('.mine')).toHaveLength(1)
+      unmount()
+    }
+    const { container } = mount({ ...props, items: ITEMS })
+    expect(
+      (container.querySelector('.mine') as HTMLElement).querySelector(':scope > ul'),
+    ).toBeTruthy()
+  })
 })

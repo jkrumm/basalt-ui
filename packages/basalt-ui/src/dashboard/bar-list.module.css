@@ -5,9 +5,16 @@
  * row never wraps: the label truncates, the value is nowrap.
  */
 
-/* The width container the wide layout keys on; a container cannot restyle its own grid. */
+/*
+ * The width container the wide layout keys on (a container cannot restyle its own grid), in every
+ * state. It is named `basalt-card` because the theme guard permits only the declared names; that
+ * shadows an enclosing card's container for the list's descendants only, and the query below measures
+ * the LIST's own inline size, not the card's. `inline-size: 100%` keeps it from collapsing to zero in
+ * a flex row or an auto track (size containment ignores content width).
+ */
 .frame {
   container: basalt-card / inline-size;
+  inline-size: 100%;
   min-width: 0;
 }
 
@@ -173,18 +180,18 @@
 
 /*
  * Wide (a container of 480px or more): one row, `[label][value][secondary][track]`. The label column fits the
- * longest label (capped at 40%, the rest truncates with its `title`), value and secondary are right-
+ * longest label (capped at 40% or 14rem, the rest truncates with its `title`), value and secondary are right-
  * aligned and shared by every row, and the track takes the remaining width on the one scale — a
  * full-scale bar ends at the track end, never under a value. Compact keeps the stacked thin layout.
  */
 @container basalt-card (width >= 480px) {
   .root[data-variant='thin'] {
-    grid-template-columns: fit-content(40%) auto minmax(0, 1fr);
+    grid-template-columns: fit-content(min(40%, 14rem)) auto minmax(0, 1fr);
     column-gap: var(--vx-space-stack-md, 0.75rem);
   }
 
   .root[data-variant='thin'][data-secondary] {
-    grid-template-columns: fit-content(40%) auto fit-content(30%) minmax(0, 1fr);
+    grid-template-columns: fit-content(min(40%, 14rem)) auto fit-content(30%) minmax(0, 1fr);
   }
 
   .root[data-variant='thin'] .row {
