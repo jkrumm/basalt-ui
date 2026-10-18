@@ -1060,6 +1060,7 @@ Opt out: restyle the slot with `classNames.header` (Section / SettingsSection / 
 An info bubble inside a `basalt-card` no longer flips above the glyph into the card above (it
 covered that card's hero at 390): it opens below, slides up to fit, or flips only into room the card
 owns, and never covers its own glyph. Outside a card the viewport flip is unchanged.
+
 ### Chart readouts and chrome (Wave 38)
 
 No export is removed or added. Six chart defaults move.
