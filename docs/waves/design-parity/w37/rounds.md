@@ -42,3 +42,53 @@ carrying P2/P3 notes; argo fails any named defect, and reads repetition, distanc
 - **Playground composition/copy:** the S3 failures ticks with no axis, the S2 goal card with no headline figure, the
   readiness "76 of 100 16 Oct", the S2 390 KPI orphan, an empty state that never names its window, a tooltip contradicting
   its cell, unbalanced row ends on the components page.
+
+## Round 1 — the nine batch-1 PRs on master (r1, `a646a081`, 626 ok shots, 16 absent, 0 failed)
+
+Landed: #392 playground (each figure once, honest encodings), #393 shell (PageSummary, untitled Section, sync age,
+filter pill, phone Select inset), #394 theme (neutral tab pill, dot-and-word Badges, root zero reset, rowHover/rowSelected,
+chart focus ring, disabled surface), #395 Meter (`reading={false}`, host tone, `track={false}`, muted zones/segments,
+ring target/ticks, `stops`, row-size part captions, captions at their ticks), #396 BarList (label | value | secondary |
+track in a wide card), #397 chart cards (`ChartFact` tone/periods, `stale` facts, Sparkline muted/focus/reference label,
+BandStrip/Heatmap state glyphs, Heatmap state tones), #398 harness (tall anchors whole, chrome hidden from crops, fast
+absent, zero declared states fail, `init` seeds a stock Vite app), #399 strip (compact cells, `action`, tone to the
+visual, `hideValue`, StatCard states), #400 chart chrome (tooltip name column, day headers, y gutter, ticks/legend one
+step, refLine label position, linear `Lines`, naming switch, StackedArea opacity, BandStrip tooltip below).
+
+Detector B: 1 finding (P1 `craft-7/no-declared-states` on `/components`, the new #398 rule), score 90.
+
+| Route                 | r0 → r1 score | fixed | carried | new | unscored | Keel                                            |
+| --------------------- | ------------- | ----- | ------- | --- | -------- | ----------------------------------------------- |
+| S2 training           | 50 → 74       | 18    | 5       | 7   | 1        | close (390 truncation, Meter ends)              |
+| S3 agents             | 64 → 75       | 13    | 5       | 6   | 12       | close (failures axis, week meter text)          |
+| S4 spend + components | 55 → 59       | 17    | 9       | 8   | 7        | close / close (forecast ends; uppercase status) |
+
+Still open, basalt-owned: StatCard title and qualifier both truncate at 390 (P1, a #399 side effect); Sparkline hover
+readouts carry no day and overlap the delta period; Meter end captions dropped at 390 and no 0/target figures; the
+Pace and Forecast captions away from their marks; strip cells still stretch (S4 budget emptyRatio 0.323, S3 oldest-wait
+0.248 at 390); strip empty copy flush on the cell edge; the week footer meter sits under other cells; Bars hover draws a
+point marker; the goal label over the last bar; the error state centred in a tall card; three date formats on a card;
+an end label across its own line; the BarList status column ragged and overflowing at 390; delta glyph spacing; Filled
+Button hover invisible; uppercase status Badges.
+
+## Round 2 — batch 2 on master (r2, `20d15266`, 728 ok shots, 16 absent, 0 failed)
+
+Landed since r1: #401 playground r2 (copy and composition, `/components` declares its states), #402 Meter (end figures
+kept at 390, captions at their marks, start/target figures), #403 BarList status/delta columns and sentence-case
+status Badges, #404 chart readouts (Sparkline `{ at, value }` points, bar hover without a marker, one locale source for
+ticks and headers, top-aligned error, reference label off the last bar), #405 compact strip cells by construction and
+the StatCard caption at 390, #406 heading digits from the sans face (Hubot Sans has no `zero` feature; its default
+`0` is slashed), #407 shot's desktop context reports a hovering fine pointer and `no-declared-states` is a P2 naming
+the anchors, #408 muted Meter zones share one flat fill. Detector B: no findings, score 100.
+
+| Route                 | r1 → r2 score | fixed | carried | new | unscored | Keel                              |
+| --------------------- | ------------- | ----- | ------- | --- | -------- | --------------------------------- |
+| S2 training           | 74 → 87       | 8     | 5       | 6   | 0        | close (meter annotation)          |
+| S3 agents             | 75 → 83       | 19    | 4       | 7   | 2        | close (readout and age precision) |
+| S4 spend + components | 59 → 74       | 19    | 5       | 7   | 6        | close / close                     |
+
+Open after r2: the error state keeps the card height with ~50–70 % void under Retry (P2 on every chart card; #404's
+choice); the playground has not adopted the new props (dated Sparkline points, `MeterTick.caption`, footer `under`, the
+page format locale, so three date formats remain); the strip error says "Failed" where cards say "Could not load"; a
+table error shows the empty-state glyph; a Sparkline bar mark still draws a point marker; the Filled Button hover
+still reads as rest on the board.
