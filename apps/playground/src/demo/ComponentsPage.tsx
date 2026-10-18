@@ -94,13 +94,19 @@ const componentViews = createLocalStore({
   tab: { surfaces: 'Surfaces', primitives: 'Primitives', activity: 'Activity' },
 })
 
-/** `delta` is a percent change; `polarity` says whether a rise is good (churn: it is not). */
+/**
+ * `delta` is a percent change, or percentage points for a rate (`pp`); `polarity` says whether a
+ * rise is good (churn: it is not). The period lives in the column headers, once.
+ */
 const TABLE_ROWS = [
-  { name: 'Sessions, 30 days', value: '12,480', prior: '11,104', delta: 12.4, polarity: 'up-good' },
-  { name: 'Signups, 30 days', value: '3,210', prior: '2,969', delta: 8.1, polarity: 'up-good' },
-  { name: 'Revenue, 30 days', value: '$48.9k', prior: '$41.1k', delta: 18.9, polarity: 'up-good' },
-  { name: 'Churn, monthly', value: '2.3%', prior: '2.7%', delta: -0.4, polarity: 'up-bad' },
+  { name: 'Sessions', value: '12,480', prior: '11,104', delta: 12.4, polarity: 'up-good' },
+  { name: 'Signups', value: '3,210', prior: '2,969', delta: 8.1, polarity: 'up-good' },
+  { name: 'Revenue', value: '$48.9k', prior: '$41.1k', delta: 18.9, polarity: 'up-good' },
+  { name: 'Churn rate', value: '2.3%', prior: '2.7%', delta: -0.4, polarity: 'up-bad', pp: true },
 ] as const
+
+/** The card is as wide as the table's columns need; a wider one leaves the label far from its value. */
+const TABLE_MAX_WIDTH = 640
 
 /** Numeric columns align to the end so the digits line up. */
 const NUMERIC = { ta: 'right' } as const
@@ -172,9 +178,9 @@ function MetricsTable({ shotState }: { shotState?: ShotState | undefined }) {
       <Table.Thead>
         <Table.Tr>
           <Table.Th>Metric</Table.Th>
-          <Table.Th {...NUMERIC}>Value</Table.Th>
-          <Table.Th {...NUMERIC}>Prior 30 days</Table.Th>
-          <Table.Th {...NUMERIC}>Delta</Table.Th>
+          <Table.Th {...NUMERIC}>Last 30 d</Table.Th>
+          <Table.Th {...NUMERIC}>Prior 30 d</Table.Th>
+          <Table.Th {...NUMERIC}>Change</Table.Th>
         </Table.Tr>
       </Table.Thead>
       <Table.Tbody>
@@ -197,7 +203,11 @@ function MetricsTable({ shotState }: { shotState?: ShotState | undefined }) {
                 <Table.Td {...NUMERIC}>{row.value}</Table.Td>
                 <Table.Td {...NUMERIC}>{row.prior}</Table.Td>
                 <Table.Td {...NUMERIC}>
-                  <DeltaBadge value={row.delta} polarity={row.polarity} />
+                  <DeltaBadge
+                    value={row.delta}
+                    polarity={row.polarity}
+                    {...('pp' in row && { format: (v: number) => `${Math.abs(v)} pp` })}
+                  />
                 </Table.Td>
               </Table.Tr>
             ))}
@@ -223,15 +233,23 @@ export function ComponentsSurfaces({ shotState }: { shotState?: ShotState | unde
           <ComponentGroup title="Button variants and sizes">
             <Stack gap="sm">
               <Box data-shot="buttons-variants">
-                <Group gap="sm">
-                  <Button variant="filled">Filled</Button>
-                  <Button variant="default">Default</Button>
-                  <Button variant="light" data-shot-hover>
+                <SimpleGrid cols={3} spacing="sm">
+                  <Button fullWidth variant="filled">
+                    Filled
+                  </Button>
+                  <Button fullWidth variant="default">
+                    Default
+                  </Button>
+                  <Button fullWidth variant="light" data-shot-hover>
                     Light
                   </Button>
-                  <Button variant="outline">Outline</Button>
-                  <Button variant="subtle">Subtle</Button>
-                </Group>
+                  <Button fullWidth variant="outline">
+                    Outline
+                  </Button>
+                  <Button fullWidth variant="subtle">
+                    Subtle
+                  </Button>
+                </SimpleGrid>
               </Box>
               <Box data-shot="buttons-sizes-small">
                 <Group gap="sm" align="center">
@@ -348,13 +366,15 @@ export function ComponentsSurfaces({ shotState }: { shotState?: ShotState | unde
         </Stack>
       </SimpleGrid>
 
-      <ComponentGroup
-        title="Table: metric, value, change"
-        shot="table"
-        states="empty loading error"
-      >
-        <MetricsTable shotState={shotState} />
-      </ComponentGroup>
+      <Box maw={TABLE_MAX_WIDTH}>
+        <ComponentGroup
+          title="Table: metric, value, change"
+          shot="table"
+          states="empty loading error"
+        >
+          <MetricsTable shotState={shotState} />
+        </ComponentGroup>
+      </Box>
 
       <SimpleGrid type="container" cols={{ base: 1, [CONTAINER_KEYS.regular]: 2 }}>
         <ComponentGroup title="Accordion: expandable sections">

@@ -63,14 +63,18 @@ const agents = (shotState?: ShotState) => mount(createElement(AgentsScenario, { 
 const spend = (shotState?: ShotState) => mount(createElement(SpendScenario, { shotState }))
 
 describe('S2 states each figure once', () => {
-  it('the summary is words: every figure lives on the surface that owns it', () => {
-    expect(text(anchor(training(), 'summary'))).not.toMatch(/\d/)
+  // W38 (SPEC § 6.9): a page-summary sentence without a number fails, so the summary restates the
+  // load ratio and readiness score by design; the sessions lead lives only on the goal card.
+  it('the summary states a figure in every sentence', () => {
+    const sentences = text(anchor(training(), 'summary')).split(/(?<=\.)\s+/)
+    expect(sentences.length).toBeGreaterThan(1)
+    for (const s of sentences) expect(s).toMatch(/\d/)
   })
 
-  it('the load ratio, the readiness score and the volume each print once on the page', () => {
+  it('the load ratio and the readiness score print twice (summary + owner), the volume once', () => {
     const page = text(training())
-    expect(occurrences(page, new RegExp(`\\b${escapeRe(fmtRatio(LOAD_RATIO))}\\b`, 'g'))).toBe(1)
-    expect(occurrences(page, new RegExp(`(?<![\\d.,])${READINESS_SCORE}(?![\\d.,])`, 'g'))).toBe(1)
+    expect(occurrences(page, new RegExp(`\\b${escapeRe(fmtRatio(LOAD_RATIO))}\\b`, 'g'))).toBe(2)
+    expect(occurrences(page, new RegExp(`(?<![\\d.,])${READINESS_SCORE}(?![\\d.,])`, 'g'))).toBe(2)
     expect(occurrences(page, fmtInt(Math.round(VOLUME_MTD_KG)))).toBe(1)
   })
 
@@ -173,7 +177,8 @@ describe('S3 states each figure once', () => {
   it('the footer meters do not restate the dispatch spend cell', () => {
     const c = agents()
     const footer = words(anchor(c, 'strip-footer-day'))
-    expect(footer[0]).toBe('Today')
+    // W38 r1: the target's scale start (€0) leads; the period caption follows.
+    expect(footer).toContain('Today')
     // W38: the Today footer states the cap only; the spend is the Dispatch spend headline above it.
     expect(footer.join(' ')).not.toContain(fmtEur(BUDGETS.day.spent))
   })

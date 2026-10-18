@@ -106,9 +106,8 @@ const ABANDON_LABEL = `${ABANDON_HOURS / 24} d`
 // carrying the declaration. `shot` resolves the anchor with `.first()` (the derived cell) and reads
 // the declaration from the repeat, so the footer counts as absent in empty and error. A package
 // follow-up would let the entry declare it, and this wrapper would go.
-const footerEntry = (key: string, content: ReactNode, under?: string) => ({
+const footerEntry = (key: string, content: ReactNode) => ({
   key,
-  ...(under !== undefined && { under }),
   content: (
     <Box data-shot={`strip-footer-${key}`} data-shot-absent="empty error">
       {content}
@@ -270,14 +269,8 @@ function QueueStrip({ shotState }: ScenarioProps) {
     },
   ]
 
-  // Both footers state the cap; the day's spend is the Dispatch spend headline above it, so its footer does not repeat it.
-  const budget = (
-    label: string,
-    spent: number,
-    cap: number,
-    caption: string,
-    endCaption: string,
-  ) => (
+  // Both footers state the cap as the Meter's one-line target caption; the day's spend is the Dispatch spend headline above it, so its footer does not repeat it.
+  const budget = (label: string, spent: number, cap: number, caption: string) => (
     <Meter
       label={label}
       value={spent}
@@ -285,7 +278,7 @@ function QueueStrip({ shotState }: ScenarioProps) {
       format={fmtEur}
       loading={loading}
       startCaption={caption}
-      endCaption={endCaption}
+      target={cap}
     />
   )
 
@@ -294,14 +287,7 @@ function QueueStrip({ shotState }: ScenarioProps) {
     : [
         footerEntry(
           'day',
-          budget(
-            'Daily dispatch budget',
-            BUDGETS.day.spent,
-            BUDGETS.day.cap,
-            'Today',
-            `of ${fmtEur(BUDGETS.day.cap)} cap`,
-          ),
-          'dispatch-spend',
+          budget('Daily dispatch budget', BUDGETS.day.spent, BUDGETS.day.cap, 'Today'),
         ),
         footerEntry(
           'week',
@@ -309,8 +295,7 @@ function QueueStrip({ shotState }: ScenarioProps) {
             'Weekly dispatch budget',
             BUDGETS.week.spent,
             BUDGETS.week.cap,
-            'Last 7 days',
-            `${fmtEur(BUDGETS.week.spent)} of ${fmtEur(BUDGETS.week.cap)} cap`,
+            `${fmtEur(BUDGETS.week.spent)}, last 7 days`,
           ),
         ),
       ]

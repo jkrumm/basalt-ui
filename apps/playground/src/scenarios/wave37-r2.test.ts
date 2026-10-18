@@ -80,7 +80,7 @@ describe('S2', () => {
   })
 
   it('the summary binds its last words, so a status word never wraps alone', () => {
-    expect(text(anchor(training(), 'summary'))).toMatch(/readiness\u00A0is\u00A0\S+\.$/)
+    expect(text(anchor(training(), 'summary'))).toMatch(/readiness \d+\u00A0is\u00A0\S+\.$/)
   })
 })
 
@@ -105,7 +105,8 @@ describe('S3', () => {
   it('the week footer states what was spent against the cap', () => {
     // The Meter binds its last word with a no-break space.
     const week = text(anchor(agents(), 'strip-footer-week')).replaceAll('\u00A0', ' ')
-    expect(week).toContain(`${fmtEur(BUDGETS.week.spent)} of ${fmtEur(BUDGETS.week.cap)} cap`)
+    expect(week).toContain(`${fmtEur(BUDGETS.week.spent)}, last 7 days`)
+    expect(week).toContain(`Target ${fmtEur(BUDGETS.week.cap)}`)
   })
 
   it('the item flow tooltip rows carry a unit, not the series name again', () => {
@@ -262,11 +263,16 @@ describe('components page', () => {
     expect(titles).toContain('Toggles: switch, checkbox and radio')
   })
 
+  // W38 r1: the period moved from every row label into the column headers, where it prints once.
   it('the table totals carry a period', () => {
+    const head = text(components().querySelector('thead') as Element)
+    expect(head).toMatch(/Last 30 d/)
+    expect(head).toMatch(/Prior 30 d/)
+  })
+
+  it('the churn change is in percentage points', () => {
     const rows = [...components().querySelectorAll('tbody tr')].map((r) => text(r))
-    for (const metric of ['Sessions', 'Signups', 'Revenue']) {
-      expect(rows.find((r) => r.startsWith(metric))).toMatch(/days|week|month/)
-    }
+    expect(rows.find((r) => r.startsWith('Churn'))).toContain('0.4 pp')
   })
 
   it('the dropdown surfaces card reserves the room its open Menu and Popover need', () => {

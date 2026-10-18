@@ -37,8 +37,8 @@ describe('S4 spend', () => {
       mount(createElement(SpendScenario, { shotState: undefined })),
       'strip-forecast',
     )
-    // W38: the Budget tick also captions its figure; the Spent and Forecast marks are captioned at their marks.
-    expect(tickLabels(cell)).toEqual(['€0', 'Budget'])
+    // W38 r1: the part captions own the row under the track, so the Budget tick states its figure in its label.
+    expect(tickLabels(cell)).toEqual(['€0', 'Budget €1,500'])
     expect(cell?.textContent).toContain('€1,500')
   })
 
@@ -123,8 +123,9 @@ describe('S2 training', () => {
   it('names the pace tick on the goal meter and not again in the end caption', () => {
     const c = mount(createElement(TrainingScenario, { shotState: undefined }))
     const goal = anchor(c, 'goal')
-    // W38: one Pace caption at the mark; the start figure and the tick label are dropped.
-    expect(goal?.textContent?.match(/Pace/g)).toHaveLength(1)
+    // W38 r1: the pace is named by its tick label (the caption row is crowded by the reading), not again under the track.
+    expect(goal?.textContent).toContain('Pace')
+    expect(goal?.querySelector('[data-meter-captions]')?.textContent ?? '').not.toContain('Pace')
   })
 })
 
