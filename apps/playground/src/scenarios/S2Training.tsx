@@ -287,14 +287,7 @@ function GoalRow({ shotState }: ScenarioProps) {
               xTicks={HIT_TICKS}
               y={{ domain: [0, HIT_Y_MAX] }}
               series={HIT_SERIES}
-              refLines={[
-                {
-                  value: GOAL_SESSIONS,
-                  color: VX.faint,
-                  dashed: true,
-                  label: `Goal ${GOAL_SESSIONS}`,
-                },
-              ]}
+              refLines={[{ value: GOAL_SESSIONS, color: VX.faint, dashed: true }]}
             />
           </Box>
         </ChartCard>
@@ -321,6 +314,10 @@ function LoadCard({ shotState }: ScenarioProps) {
             max={LOAD_MAX}
             zones={LOAD_ZONES}
             format={fmtRatio}
+            ticks={[
+              { at: 0, label: '0' },
+              { at: LOAD_MAX, label: LOAD_MAX.toFixed(1) },
+            ]}
             endCaption={`${fmtInt(ACUTE_LOAD)} AU this week · norm ${fmtInt(CHRONIC_LOAD)} AU`}
             loading={shotState === 'loading'}
             emptyText="No sessions in the last 28 days to compare against. Log a workout."
@@ -354,19 +351,25 @@ function ReadinessRow({ shotState }: ScenarioProps) {
               label="Readiness score out of 100"
               value={empty ? null : READINESS_SCORE}
               zones={READINESS_ZONES}
-              endCaption="Scale 0–100"
+              ticks={[
+                { at: 0, label: '0' },
+                { at: 100, label: '100' },
+              ]}
+              endCaption={null}
               loading={loading}
               emptyText="No readiness reading today. Sync the watch."
             />
-            <Box data-shot-hover>
-              <BarList
-                label="Readiness contributors, score out of 100"
-                max={100}
-                items={empty ? [] : READINESS_ITEMS}
-                loading={loading}
-                emptyText="No contributor has a reading today. Sync the watch to score sleep, HRV and recovery."
-              />
-            </Box>
+            {/* The Meter above already says there is no reading; a second empty line would repeat it. */}
+            {!empty && (
+              <Box data-shot-hover>
+                <BarList
+                  label="Readiness contributors, score out of 100"
+                  max={100}
+                  items={READINESS_ITEMS}
+                  loading={loading}
+                />
+              </Box>
+            )}
           </Stack>
         </ChartCard>
       </Box>
