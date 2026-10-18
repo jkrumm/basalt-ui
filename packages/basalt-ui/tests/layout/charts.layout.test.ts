@@ -734,6 +734,7 @@ layout('Charts — 2.0 layout', () => {
     expect(bar).toEqual({ dot: 0, marker: 0 })
     const line = await hoverSpark({ kind: 'spark', sparkRows: 12, height: 22, width: 240 })
     expect(line.dot).toBeGreaterThan(0)
+    expect(line.marker).toBeGreaterThan(0)
   })
 
   test('a Bars reference caption never lands on a bar', async () => {
