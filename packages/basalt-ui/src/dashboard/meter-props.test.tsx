@@ -265,7 +265,8 @@ describe('size="row"', () => {
     expect(container.textContent).not.toContain('end')
   })
 
-  test('drops zone names, the reading and part captions too', () => {
+  // Wave 37: categorical part captions are the one caption row `size="row"` keeps, so parts stay named.
+  test('drops zone names and the reading, but keeps the part captions', () => {
     const zoned = mount({
       label: 'L',
       value: 5,
@@ -280,7 +281,7 @@ describe('size="row"', () => {
       size: 'row',
       segments: [{ value: 30, label: 'Done' }],
     })
-    expect(parts.container.querySelector('[data-meter-parts]')).toBeNull()
+    expect(parts.container.querySelectorAll('[data-meter-parts] li')).toHaveLength(1)
   })
 
   test('the track is one text line tall', () => {

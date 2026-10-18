@@ -27,6 +27,8 @@ const SPEC: FixtureSpec = {
 
 const SUBPIXEL = 0.5
 const SNAP = 1
+/** `--vx-space-control-gap` (0.375rem) at the 16px root the fixture runs at. */
+const GAP_STEP = 6
 const ZONES = ['Under', 'Optimal', 'Caution', 'Danger']
 
 /** Per fixture: which zone names show (in zone order) and which end ticks. `clash` carries "Rest". */
@@ -34,8 +36,9 @@ type Shown = { zones: string[]; ticks: string[] }
 const ENDS = ['0', '2.0']
 
 const CASES: ReadonlyArray<readonly [string, Shown]> = [
-  // 120: only the holding name and the first fit; Caution and Danger are wider than their spans.
-  ['dash-zl-120', { zones: ['Under', 'Optimal'], ticks: ENDS }],
+  // 120: only the holding name fits; "Under" is wider than a gap step clear of the "0" end tick, and
+  // Caution and Danger are wider than their spans.
+  ['dash-zl-120', { zones: ['Optimal'], ticks: ENDS }],
   ['dash-zl-170', { zones: ['Under', 'Optimal'], ticks: ENDS }],
   // 220: "Danger" fits its span but the "2.0" end tick takes the place.
   ['dash-zl-220', { zones: ['Under', 'Optimal'], ticks: ENDS }],
@@ -144,7 +147,10 @@ function assertRow(m: Measured, expected: Shown) {
   const all = [...m.labels, ...m.ticks]
   for (const [i, a] of all.entries()) {
     for (const b of all.slice(i + 1)) {
-      expect(a.right <= b.left + SUBPIXEL || b.right <= a.left + SUBPIXEL).toBe(true)
+      // At least one gap step (0.375rem) apart, never merely not touching.
+      expect(
+        a.right + GAP_STEP <= b.left + SUBPIXEL || b.right + GAP_STEP <= a.left + SUBPIXEL,
+      ).toBe(true)
     }
   }
   // One row: every label and tick shares one top.

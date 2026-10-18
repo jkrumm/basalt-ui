@@ -1452,6 +1452,11 @@ const TRAINING_ZONES = [
 ]
 
 /** The S2 training-load shape: four zones, end ticks and one caption. */
+const LOAD_ZONES_100 = [
+  { from: 0, to: 40, label: 'Rest' },
+  { from: 40, to: 70, label: 'Fair' },
+  { from: 70, to: 100, label: 'Good' },
+]
 const LOAD_ZONES = [
   { from: 0, to: 0.8, label: 'Under' },
   { from: 0.8, to: 1.3, label: 'Optimal' },
@@ -1877,6 +1882,63 @@ function DashFixture(): ReactElement {
             { label: 'Peak', value: '88 ms' },
             { label: 'Median', value: '31 ms' },
           ]}
+        />
+      </div>
+      {/* Wave 37: the reading switched off, a ring with a target, and captions at their marks. */}
+      {/* theme-allow -- the wrapper width IS the fixture's payload (a container probe) */}
+      <div data-testid="dash-w37-reading-off" style={{ width: 300 }}>
+        <Meter label="Readiness" max={100} value={76} zones={LOAD_ZONES_100} reading={false} />
+      </div>
+      {/* theme-allow -- the wrapper width IS the fixture's payload (a container probe) */}
+      <div data-testid="dash-w37-ring-target" style={{ width: 160 }}>
+        <Meter
+          shape="ring"
+          label="Cache hit rate"
+          value={87}
+          max={100}
+          format={(v) => `${v}%`}
+          target={60}
+        />
+      </div>
+      {/* theme-allow -- the wrapper width IS the fixture's payload (a container probe) */}
+      <div data-testid="dash-w37-forecast" style={{ width: 330 }}>
+        <Meter
+          label="Sessions"
+          max={40}
+          segments={[
+            { value: 14, label: 'Done' },
+            { value: 8, label: 'Planned', forecast: true },
+          ]}
+          forecastCaption="14 sessions by 16 Oct"
+        />
+      </div>
+      {/* theme-allow -- the wrapper width IS the fixture's payload (a container probe) */}
+      <div data-testid="dash-w37-target" style={{ width: 330 }}>
+        <Meter label="Goal" max={40} value={24} target={28} format={(v) => `${v}`} />
+      </div>
+      {/* theme-allow -- the wrapper width IS the fixture's payload (a container probe) */}
+      <div data-testid="dash-w37-parts-wide" style={{ width: 480 }}>
+        <Meter
+          label="Spend split"
+          max={100}
+          segments={[
+            { value: 50, label: 'Support' },
+            { value: 30, label: 'Tooling' },
+            { value: 20, label: 'Infra' },
+          ]}
+        />
+      </div>
+      {/* theme-allow -- the wrapper width IS the fixture's payload (a container probe) */}
+      <div data-testid="dash-w37-parts-narrow" style={{ width: 330 }}>
+        <Meter
+          label="Session mix"
+          max={24}
+          segments={[
+            { value: 12, label: 'Strength' },
+            { value: 8, label: 'Cardio' },
+            { value: 4, label: 'Mobility' },
+          ]}
+          format={(v) => `${v} sessions`}
         />
       </div>
       {/* theme-allow -- the wrapper width IS the fixture's payload (a container probe) */}

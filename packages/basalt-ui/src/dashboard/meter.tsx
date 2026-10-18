@@ -51,12 +51,15 @@
  * />
  * <Meter shape="ring" label="Cache hit rate" value={87} max={100} format={(v) => `${v}%`} />
  */
+import { useContext } from 'react'
 import type { ReactNode } from 'react'
 import type { BasaltProps } from '../common/props'
+import { VX } from '../tokens'
 import { isReading, normalizeSegments, segmentReading, spanOf } from './meter-model'
 import type { MeterSegment, MeterTick, MeterZone } from './meter-model'
 import { MeterBar, MeterEmpty, MeterLoading, MeterRing } from './meter-parts'
 import { asText } from './scale'
+import { VisualSlotContext } from './visual-slot'
 
 type Common = BasaltProps & {
   /** Accessible name (`aria-label`). Required: a meter without one is announced as a bare number. */
@@ -94,14 +97,25 @@ type BarCommon = Common & {
   tone?: 'muted' | 'ink'
   /**
    * `'row'`: in-line use — a track one text line tall and no caption rows (reading, target, forecast,
-   * part, zone and tick captions). The label stays as `aria-label`; the described-by text keeps the
-   * rest. Put the value beside it in your own layout.
+   * zone and tick captions). Categorical `segments` keep their per-part captions (swatch, name, value)
+   * so the parts stay named. The label stays as `aria-label`; the described-by text keeps the rest.
+   * Put the value beside it in your own layout.
    */
   size?: 'row'
-  /** Start caption (default: the formatted reading). `null` drops it. */
+  /** Start caption (default: the formatted reading). `null` drops it; zone labels stay. */
   startCaption?: ReactNode
-  /** End caption (default: `Target <target>`). `null` drops it. */
+  /**
+   * End caption (default: `Target <target>`, drawn at the target's tick rather than the track end
+   * when it fits). `null` drops it; zone labels stay.
+   */
   endCaption?: ReactNode
+  /**
+   * The reading printed at the marker of a zoned bar. Default `true`, and `false` inside a basalt host
+   * (`StatCard`, a strip cell's `visual`) that already states the value. Pass `false` when YOUR
+   * headline states it: the marker stays and keeps its `aria-valuenow` / `aria-valuetext`. Pass `true`
+   * to print it inside a host. A `stops` track prints it only when `true`.
+   */
+  reading?: boolean
 }
 
 /**
@@ -109,7 +123,9 @@ type BarCommon = Common & {
  * - Bar `value` (+ `target`, `color`): one reading on a neutral track.
  * - Bar `segments`: ordered parts that sum to the reading (committed/forecast, part of a whole).
  * - Bar `value` + `zones`: the reading is a marker against contiguous bands.
- * - Ring (`shape: 'ring'`) `value` (+ `color`): one headline ratio; no target, captions, segments or zones.
+ * - Bar `value` + `stops`: the reading is a marker on one gradient track.
+ * - Ring (`shape: 'ring'`) `value` (+ `color`, `target`, `ticks`): one headline ratio; no captions,
+ *   segments or zones.
  */
 export type MeterProps =
   | (BarCommon & {
@@ -117,6 +133,17 @@ export type MeterProps =
       value?: number | null | undefined
       /** A status colour, for a verdict only. Omit for the neutral fill. */
       color?: string
+      /**
+       * `false` draws no track for a value with nothing to compare against (no `target`, no `ticks`):
+       * the track stays in the accessibility tree and the captions remain. A `target` or `ticks` keep it.
+       */
+      track?: boolean
+      /**
+       * Draws the track as ONE gradient through these colours (the consumer's: tokens or its own
+       * values, `at` in the reading's units) and the reading as a marker on it. Not a zone: no names,
+       * and no labels unless `ticks` are given. Use it for a scale whose hue IS the quantity.
+       */
+      stops?: readonly { at: number; color: string }[]
       segments?: never
       zones?: never
     })
@@ -128,6 +155,8 @@ export type MeterProps =
       value?: never
       color?: never
       zones?: never
+      stops?: never
+      track?: never
     })
   | (BarCommon & {
       value?: number | null | undefined
@@ -138,20 +167,27 @@ export type MeterProps =
       zones: readonly MeterZone[]
       segments?: never
       color?: never
+      stops?: never
+      track?: never
     })
   | (Common & {
       shape: 'ring'
       value?: number | null | undefined
       /** A status colour, for a verdict only. */
       color?: string
+      /** A short radial mark at this value (a limit to compare the arc against); the value stays centred. */
+      target?: number
+      /** More radial marks, each at its `at`; a `label` is for the accessible text only. */
+      ticks?: readonly MeterTick[]
       segments?: never
       zones?: never
-      target?: never
-      ticks?: never
       tone?: never
       size?: never
       startCaption?: never
       endCaption?: never
+      reading?: never
+      stops?: never
+      track?: never
     })
 
 let warnedTrack = false
@@ -176,6 +212,8 @@ export function Meter(props: MeterProps) {
   const shell = { className, style, row }
   const ring = props.shape === 'ring'
   warnInvalidTrack(min, max)
+  const hostTone = useContext(VisualSlotContext)?.tone
+  const hostColor = hostTone === undefined ? undefined : VX.status[hostTone]
 
   if (props.loading === true) return <MeterLoading label={label} ring={ring} shell={shell} />
 
@@ -188,17 +226,29 @@ export function Meter(props: MeterProps) {
   }
 
   if (props.shape === 'ring') {
-    return <MeterRing {...{ label, reading, min, max, format, shell }} color={props.color} />
+    return (
+      <MeterRing
+        {...{ label, reading, min, max, format, shell }}
+        color={props.color ?? hostColor}
+        target={isReading(props.target) ? props.target : undefined}
+        ticks={props.ticks}
+      />
+    )
   }
+  const plain =
+    props.segments === undefined && props.zones === undefined && props.stops === undefined
   return (
     <MeterBar
       {...{ label, reading, min, max, format, shell }}
-      color={props.color}
+      color={props.color ?? (props.tone === undefined && plain ? hostColor : undefined)}
       segments={segments}
       zones={props.zones}
+      stops={props.stops}
+      track={props.track}
+      markerReading={props.reading}
       target={isReading(props.target) ? props.target : undefined}
       ticks={props.ticks}
-      tone={barTone(props.tone, props.segments === undefined && props.zones === undefined)}
+      tone={barTone(props.tone, plain)}
       forecastCaption={props.segments === undefined ? undefined : props.forecastCaption}
       startCaption={props.startCaption}
       endCaption={props.endCaption}

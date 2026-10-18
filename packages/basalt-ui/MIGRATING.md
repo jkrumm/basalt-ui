@@ -1092,6 +1092,36 @@ state takes `tone` (`good` / `warn` / `bad` / `neutral`) instead of a `color`. A
   surface ink. **Opt out:** `glyph: ''` on the state.
 - A `Heatmap` tooltip opens below the hovered cell (above only when there is no room), so it no
   longer covers the caption row over the grid. **Opt out:** none.
+## Unreleased — Meter prints the reading once
+
+### `Meter`: the reading once, muted zones, stops, ring ticks, captions at their marks
+
+New, additive (a `Meter` that passes none of them draws as before):
+
+- `reading={false}` — a zoned bar prints no reading at its marker (the marker keeps its
+  `aria-valuenow` / `aria-valuetext`). Inside a basalt host (`StatCard` slot, strip `visual`) it was
+  already dropped; pass `reading` there to print it. Use it when your own headline states the value.
+- `track={false}` — a `value` bar with no `target` and no `ticks` draws no track (still `role="meter"`).
+- `tone: 'muted'` on a `MeterZone` or `MeterSegment` — a muted lightness ramp instead of the line ramp.
+- `shape="ring"` takes `target` and `ticks`: a short radial mark at the value, listed in the
+  described-by text; the value stays centred.
+- `stops: { at, color }[]` on a `value` bar — one gradient track through your colours with the reading
+  as a marker; no labels unless `ticks` are given.
+- A plain bar or ring with no `tone` / `color` takes its host's verdict tone once a host passes one.
+
+Changed behaviour (no API change):
+
+- **Captions sit at their marks.** The forecast caption and the target caption are centred on their
+  tick (clamped inside the track) instead of at the track end, whenever every caption fits a gap step
+  apart; otherwise the row flows and wraps as before. **Opt out:** pass your own `endCaption` (it stays
+  at the end as written); the forecast caption has no opt-out beyond `forecastCaption`.
+- **Zone names keep a gap step from an end tick.** A non-holding zone name closer than
+  `--vx-space-control-gap` to a tick or another name now hides (it was "not touching"); it stays in the
+  described-by text. **Opt out:** none; give the zone a `short` label.
+- **`size="row"` keeps categorical part captions** (swatch, name, value); it dropped them before, so
+  the parts were unnamed. **Opt out:** none for `segments`; a `value` bar is unaffected.
+- **Part captions never wrap inside themselves** while they fit: each sits under its own segment when
+  all of them fit there, else the wrapped list (a caption wider than the row still wraps).
 
 ## 2.21.0 — strip cell state, one Retry, and the marker reading
 

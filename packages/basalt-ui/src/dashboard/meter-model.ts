@@ -5,11 +5,20 @@
 import type { ReactNode } from 'react'
 import { clamp01, toPct } from './scale'
 
-export type MeterSegment = { value: number; label: string; color?: string; forecast?: boolean }
+export type MeterSegment = {
+  value: number
+  label: string
+  color?: string
+  /** `'muted'`: the part takes a step of the muted ramp (a lightness step per muted part). A `color` wins. */
+  tone?: 'muted'
+  forecast?: boolean
+}
 export type MeterZone = {
   from: number
   to: number
   label: string
+  /** `'muted'`: the band takes its step of the muted ramp instead of the line ramp. A `color` wins. */
+  tone?: 'muted'
   /**
    * A shorter name for a narrow track. The row tries `label`, then `short`, and only then hides the
    * name; the holding zone always shows its full `label`. The described-by text keeps `label`.
@@ -19,6 +28,28 @@ export type MeterZone = {
 }
 /** A mark on the track at `at` (in the reading's units). A label is captioned beside it. */
 export type MeterTick = { at: number; label?: string }
+
+/** A colour of a `stops` gradient at `at` (in the reading's units); the colour is the consumer's. */
+type MeterStop = { at: number; color: string }
+
+/** A ramp step's strength in percent of its neutral: `lo` at the first step, `lo + step` at the last. */
+const RAMP_ZONE = { lo: 15, step: 45, solo: 40 }
+const RAMP_PART = { lo: 35, step: 50, solo: 60 }
+
+function rampFill(
+  base: 'line' | 'muted',
+  index: number,
+  count: number,
+  ramp: typeof RAMP_ZONE,
+): string {
+  const strength = count > 1 ? ramp.lo + (index / (count - 1)) * ramp.step : ramp.solo
+  return `color-mix(in srgb, var(--vx-${base}) ${strength}%, transparent)`
+}
+
+/** A zone's fill: its own colour, else its step of the line (or, `tone="muted"`, the muted) ramp. */
+export function zoneFill(zone: MeterZone, index: number, count: number): string {
+  return zone.color ?? rampFill(zone.tone === 'muted' ? 'muted' : 'line', index, count, RAMP_ZONE)
+}
 
 /** One tick on the track: its percent position and what it says (caption `label`, aria `text`). */
 export type TickMark = { key: string; pct: number; label: string | undefined; text: string }
@@ -35,7 +66,14 @@ export type Part = {
 }
 
 /** One categorical part's caption: its position key, name, formatted amount and fill colour (`undefined` = neutral). */
-export type PartCaption = { key: string; label: string; text: string; color: string | undefined }
+export type PartCaption = {
+  key: string
+  label: string
+  text: string
+  color: string | undefined
+  /** Where the part starts on the track, in percent: the caption sits under it when they all fit. */
+  startPct: number
+}
 
 /** One zone's name on the label row: its span's centre and width (percent) and whether it holds the reading. */
 export type ZoneLabel = {
@@ -81,6 +119,36 @@ export function tickMarks(
   )
 }
 
+/** A `stops` gradient's colour list, in order along the track; `at` outside `[min, max]` clamps. */
+export function stopsGradient(stops: readonly MeterStop[], min: number, span: number): string {
+  return stops
+    .toSorted((a, b) => a.at - b.at)
+    .map((s) => `${s.color} ${toPct(clamp01((s.at - min) / span))}%`)
+    .join(', ')
+}
+
+const ringAngle = (pct: number) => Math.round(pct * 3.6 * 100) / 100
+
+/** A ring's marks (target, ticks): the angle clockwise from the top, and the accessible text. */
+export function ringMarks(
+  target: number | undefined,
+  ticks: readonly MeterTick[] | undefined,
+  min: number,
+  max: number,
+  format: Format,
+): { angle: number; text: string }[] {
+  const { span } = spanOf(min, max)
+  const marks = tickMarks(ticks, min, max, format).map((t) => ({
+    angle: ringAngle(t.pct),
+    text: t.text,
+  }))
+  if (target === undefined || !Number.isFinite(target) || target < min || target > max) return marks
+  return [
+    { angle: ringAngle(toPct((target - min) / span)), text: `Target ${format(target)}` },
+    ...marks,
+  ]
+}
+
 export const isReading = (n: number | null | undefined): n is number =>
   typeof n === 'number' && Number.isFinite(n)
 
@@ -110,6 +178,9 @@ export function normalizeSegments(segments: readonly MeterSegment[]): MeterSegme
 /** Segment amounts (already normalised) accumulate from `min`; a part never passes the track end. */
 export function layoutSegments(segments: readonly MeterSegment[], span: number): Part[] {
   let cursor = 0
+  const isMuted = (s: MeterSegment) => s.tone === 'muted' && s.color === undefined && !s.forecast
+  const mutedCount = segments.filter(isMuted).length
+  let muted = 0
   return segments.map((s) => {
     const size = Math.max(0, Math.min(clamp01(s.value / span), 1 - cursor))
     const forecast = s.forecast === true
@@ -117,7 +188,11 @@ export function layoutSegments(segments: readonly MeterSegment[], span: number):
     const part = {
       start: cursor,
       size,
-      color: forecast ? undefined : s.color,
+      color: forecast
+        ? undefined
+        : isMuted(s)
+          ? rampFill('muted', muted++, mutedCount, RAMP_PART)
+          : s.color,
       forecast,
       label: s.label,
       amount: s.value,
@@ -159,9 +234,14 @@ export type RowPlacement = {
  * is the reading's verdict, so it never hides for width: it may spill past its span, shifted inside
  * the row); the labels without a span (the end ticks) go next; every other zone name then shows only
  * when it lies inside the row and its own span and clears every label already kept, trying its full
- * name and then its `short` box. A hidden name is still named in the described-by text.
+ * name and then its `short` box. Two shown labels keep at least `gap` px between them (one gap step
+ * of the host's spacing). A hidden name is still named in the described-by text.
  */
-export function placeRowLabels(labels: readonly RowLabel[], rowWidth: number): RowPlacement {
+export function placeRowLabels(
+  labels: readonly RowLabel[],
+  rowWidth: number,
+  gap = 0,
+): RowPlacement {
   const shown = labels.map(() => false)
   const short = labels.map(() => false)
   const shift = labels.map(() => 0)
@@ -171,7 +251,9 @@ export function placeRowLabels(labels: readonly RowLabel[], rowWidth: number): R
     .map((_, i) => i)
     .toSorted((a, b) => rank(labels[a] as RowLabel) - rank(labels[b] as RowLabel))
   const clears = (b: LabelBox) =>
-    !kept.some((k) => b.left < k.right - LABEL_SUBPIXEL && k.left < b.right - LABEL_SUBPIXEL)
+    !kept.some(
+      (k) => b.left < k.right + gap - LABEL_SUBPIXEL && k.left < b.right + gap - LABEL_SUBPIXEL,
+    )
   for (const i of order) {
     const label = labels[i] as RowLabel
     const { span } = label
@@ -219,6 +301,7 @@ export type BarInput = {
   format: Format
   segments?: readonly MeterSegment[] | undefined
   zones?: readonly MeterZone[] | undefined
+  stops?: readonly MeterStop[] | undefined
   target?: number | undefined
   ticks?: readonly MeterTick[] | undefined
   color?: string | undefined
@@ -235,6 +318,8 @@ export type BarModel = {
   captionMode: CaptionMode
   /** Only in `parts` mode: one caption per part, in order. Empty otherwise. */
   partCaptions: readonly PartCaption[]
+  /** The `stops` gradient's colour list; absent without `stops`. */
+  stopsCss: string | undefined
   /** Only on a zoned track: every zone's name, in zone order. Empty otherwise. */
   zoneLabels: readonly ZoneLabel[]
   ticks: readonly TickMark[]
@@ -252,8 +337,8 @@ function endCaptionText(reading: number, target: number | undefined, format: For
   return `Target ${format(target)}`
 }
 
-function fillParts(input: BarInput, span: number, zoned: boolean): Part[] {
-  if (zoned) return []
+function fillParts(input: BarInput, span: number, marked: boolean): Part[] {
+  if (marked) return []
   if (input.segments !== undefined) return layoutSegments(input.segments, span)
   const fill = { value: input.reading - input.min, label: '' }
   return layoutSegments([input.color === undefined ? fill : { ...fill, color: input.color }], span)
@@ -270,6 +355,7 @@ function partCaptionsOf(parts: readonly Part[], format: Format): PartCaption[] {
     label: p.label,
     text: format(p.amount),
     color: p.color,
+    startPct: toPct(p.start),
   }))
 }
 
@@ -294,13 +380,14 @@ export function startCaptionText(model: BarModel, override: ReactNode | undefine
 }
 
 export function modelBar(input: BarInput): BarModel {
-  const { reading, min, max, format, segments, zones, target } = input
+  const { reading, min, max, format, segments, zones, target, stops } = input
   const ticks = tickMarks(input.ticks, min, max, format)
   const { span } = spanOf(min, max)
   const zoned = zones !== undefined && zones.length > 0
   const holding = zoned ? findHoldingZone(zones, reading) : undefined
 
-  const parts = fillParts(input, span, zoned)
+  const striped = !zoned && stops !== undefined && stops.length > 0
+  const parts = fillParts(input, span, zoned || striped)
   const firstForecast = parts.findIndex((p) => p.forecast)
   const forecastLabels =
     segments?.filter((s) => s.forecast === true).map((s) => `${s.label} ${format(s.value)}`) ?? []
@@ -333,6 +420,7 @@ export function modelBar(input: BarInput): BarModel {
         : (input.forecastCaption ?? `Forecast: ${forecastLabels.join(', ')}`),
     captionMode,
     partCaptions,
+    stopsCss: striped ? stopsGradient(stops, min, span) : undefined,
     zoneLabels: !zoned
       ? []
       : zones.map((z, i) => {
@@ -347,7 +435,7 @@ export function modelBar(input: BarInput): BarModel {
           }
         }),
     ticks,
-    markerPct: zoned ? toPct((reading - min) / span) : undefined,
+    markerPct: zoned || striped ? toPct((reading - min) / span) : undefined,
     targetPct: target === undefined ? undefined : toPct((target - min) / span),
     startText: format(reading),
     endText: endCaptionText(reading, target, format),
@@ -358,3 +446,52 @@ export function modelBar(input: BarInput): BarModel {
 /** The ring's one arc, as a fraction of the circumference. */
 export const ringFraction = (reading: number, min: number, max: number): number =>
   clamp01((reading - min) / spanOf(min, max).span)
+
+/** One caption on the marks row: its natural width and where it is anchored (`pct`), else its edge. */
+export type MarkItem = { width: number; pct?: number; edge?: 'end' }
+
+/**
+ * Where each caption of the marks row starts (px, logical start edge), index-aligned with `items`: an
+ * anchored caption is centred on its mark and clamped inside the row, the others sit at the start (or,
+ * `edge: 'end'`, the end). `null` when nothing is anchored, the row is unmeasured, a caption is wider
+ * than the row, or two captions would sit closer than `gap`: the row then flows and wraps instead.
+ */
+export function placeMarkCaptions(
+  items: readonly MarkItem[],
+  rowWidth: number,
+  gap: number,
+): number[] | null {
+  if (rowWidth <= 0 || !items.some((i) => i.pct !== undefined)) return null
+  if (items.some((i) => i.width > rowWidth)) return null
+  const lefts = items.map((i) => {
+    if (i.pct === undefined) return i.edge === 'end' ? rowWidth - i.width : 0
+    return Math.max(0, Math.min((rowWidth * i.pct) / 100 - i.width / 2, rowWidth - i.width))
+  })
+  const order = lefts.map((_, i) => i).toSorted((a, b) => (lefts[a] ?? 0) - (lefts[b] ?? 0))
+  const crowded = order.some((i, n) => {
+    const next = order[n + 1]
+    return (
+      next !== undefined &&
+      (lefts[next] ?? 0) < (lefts[i] ?? 0) + (items[i]?.width ?? 0) + gap - LABEL_SUBPIXEL
+    )
+  })
+  return crowded ? null : lefts
+}
+
+/**
+ * Whether every categorical part's caption fits under its own segment: left-aligned at the part's
+ * start and ending before the next part's start (less `gap`) or the row's end. A zero-width part never fits.
+ */
+export function partsFitUnder(
+  parts: readonly { startPct: number; width: number }[],
+  rowWidth: number,
+  gap: number,
+): boolean {
+  if (rowWidth <= 0) return false
+  return parts.every((p, i) => {
+    const left = (rowWidth * p.startPct) / 100
+    const next = parts[i + 1]
+    const limit = next === undefined ? rowWidth : (rowWidth * next.startPct) / 100 - gap
+    return left + p.width <= limit + LABEL_SUBPIXEL
+  })
+}

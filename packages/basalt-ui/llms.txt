@@ -103,14 +103,17 @@ Signature: Meter(props: MeterProps): JSX.Element
   loading?: boolean
   emptyText?: string
   shape?: "bar" | "ring"
-  target?: number  [with segments | zones]
-  ticks?: readonly MeterTick[]  [with segments | zones]
+  target?: number
+  ticks?: readonly MeterTick[]
   tone?: "muted" | "ink"  [with segments | zones]
   size?: "row"  [with segments | zones]
   startCaption?: ReactNode  [with segments | zones]
   endCaption?: ReactNode  [with segments | zones]
+  reading?: boolean  [with segments | zones]
   value?: number | null  [with zones]
   color?: string
+  track?: boolean
+  stops?: readonly { at: number; color: string; }[]
   segments: readonly MeterSegment[]
   zones: readonly MeterZone[]
   forecastCaption?: string  [with segments]
