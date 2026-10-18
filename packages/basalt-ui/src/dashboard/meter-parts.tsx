@@ -207,7 +207,12 @@ export function MeterEmpty(props: {
       {text !== undefined ? (
         <span className={classes.empty}>{text}</span>
       ) : (
-        !ring && !shell.row && <Line zoned={zoned} />
+        !ring && (
+          <>
+            <VisuallyHidden className={classes.summary}>No reading</VisuallyHidden>
+            {!shell.row && <Line zoned={zoned} />}
+          </>
+        )
       )}
     </output>
   )
