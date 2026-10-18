@@ -57,22 +57,28 @@ describe('Wave 37 r2 chrome rules', () => {
   })
 })
 
-describe('nested radius step (craft-1/nested-radius-step)', () => {
-  /** Evaluate a nested-radius CSS expression for a parent radius, in px (calc/min/max/round only). */
-  const evalRadius = (expr: string, parent: number): number => {
-    const js = expr
-      .replace(/var\(--sc-radius\)|var\(--alert-radius, var\(--vx-radius-ctrl\)\)/g, String(parent))
-      .replace(/(\d+)px/g, '$1')
-      .replace(/\bdown\b/g, "'down'")
-      .replace(/\bcalc\b/g, '')
-    const fn = new Function('min', 'max', 'round', `return ${js}`) as (
-      a: typeof Math.min,
-      b: typeof Math.max,
-      c: (m: string, x: number, s: number) => number,
-    ) => number
-    return fn(Math.min, Math.max, (_m, x, step) => Math.floor(x / step) * step)
-  }
+/** Evaluate a nested-radius CSS expression for a parent radius, in px (calc/min/max/round only). */
+const evalRadius = (expr: string, parent: number): number => {
+  const js = expr
+    .replace(/var\(--sc-radius\)|var\(--alert-radius, var\(--vx-radius-ctrl\)\)/g, String(parent))
+    .replace(/(\d+)px/g, '$1')
+    .replace(/\bdown\b/g, "'down'")
+    .replace(/\bcalc\b/g, '')
+  const fn = new Function('min', 'max', 'round', `return ${js}`) as (
+    a: typeof Math.min,
+    b: typeof Math.max,
+    c: (m: string, x: number, s: number) => number,
+  ) => number
+  return fn(Math.min, Math.max, (_m, x, step) => Math.floor(x / step) * step)
+}
 
+const ctrlAt = (level: number) => deriveRadius(level).ctrl
+const scale = (level: number) => {
+  const r = deriveRadius(level)
+  return new Set([0, RADIUS_STEP.scaleXs, r.fine, r.tight, r.ctrl, r.card])
+}
+
+describe('nested radius step (craft-1/nested-radius-step)', () => {
   const alertExpr = /--basalt-code-radius:\s*(round\([^;]+\));/
     .exec(controlsCss)?.[1]
     ?.replace(/\s+/g, ' ')
@@ -82,12 +88,6 @@ describe('nested radius step (craft-1/nested-radius-step)', () => {
     c: unknown,
   ) => { indicator: { borderRadius: string } }
   const tabsExpr = stylesFn({}, {}, {}).indicator.borderRadius
-  const ctrlAt = (level: number) => deriveRadius(level).ctrl
-  const scale = (level: number) => {
-    const r = deriveRadius(level)
-    return new Set([0, RADIUS_STEP.scaleXs, r.fine, r.tight, r.ctrl, r.card])
-  }
-
   test.each([-5, 0, 5])('indicator and inline-code radii are scale steps at radius %i', (level) => {
     expect(alertExpr).toBeDefined()
     for (const expr of [tabsExpr, alertExpr as string]) {
