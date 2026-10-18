@@ -1,6 +1,7 @@
 export { WidgetHeader } from './widget-header'
 export { DeltaBadge } from './delta-badge'
 export { Section } from './section'
+export { PageSummary, type PageSummaryProps } from './page-summary'
 export { StatCard, type StatCardBreakdownRow, type StatCardSparklineSize } from './stat-card'
 export { StatGroup } from './stat-group'
 export type { StatStripCell, StatStripRow } from './stat-strip'

@@ -25,7 +25,7 @@ import type { ChartMarks } from '../../../src/charts/types'
 import { resolveContainerClass } from '../../../src/tokens/size-classes'
 import type { BandStripSeries, BarsBar, ChartSeries } from '../../../src/charts'
 import { overlays } from '../../../src/commands'
-import { FilterSet, FormRow, SelectFilter, ViewTabs } from '../../../src/controls'
+import { FilterSet, FormRow, SelectFilter, SyncButton, ViewTabs } from '../../../src/controls'
 import { BasaltDataTable } from '../../../src/table'
 import type { DataTableFacet } from '../../../src/table/data-table'
 import type { BasaltColumnDef } from '../../../src/table/table-features'
@@ -38,6 +38,7 @@ import {
   Meter,
   PageAside,
   PageBar,
+  PageSummary,
   Section,
   StatCard,
   StatGroup,
@@ -1294,6 +1295,86 @@ function ConfirmFixture(): ReactElement {
   )
 }
 
+/** Fixed at module load: an impure `Date.now()` in render is a lint error and a moving age. */
+const W37_SYNCED_AT = Date.now() - 2 * 60_000
+const W37_LONG_VALUE = 'kitt-peak'
+const w37PillStore = createLocalStore({
+  key: 'layout-fixture-w37-pill',
+  fields: { site: field.enum([W37_LONG_VALUE, 'other'] as const, W37_LONG_VALUE) },
+}).labels({
+  site: {
+    [W37_LONG_VALUE]: 'Kitt Peak National Observatory Dark Sky Reserve',
+    other: 'Other',
+  },
+})
+
+/** Wave 37's shell half — see `FixtureSpec.w37`. Hosts are plain boxes so each probe measures ONE control. */
+function Wave37Fixture({ spec }: { spec: NonNullable<FixtureSpec['w37']> }): ReactElement {
+  return (
+    <>
+      {spec.summary && (
+        <div data-testid="w37-summary">
+          <PageSummary
+            sentence="12 open, 3 need you"
+            facts={[
+              '3 need you',
+              'oldest 2 d',
+              '41 runs today',
+              'median 4 m 12 s',
+              '2 stalled',
+              '18 resolved this week',
+              '7 waiting on review',
+            ]}
+            aside="Today"
+          />
+        </div>
+      )}
+      {spec.sync && (
+        <div data-testid="w37-sync">
+          <SyncButton
+            scope="page"
+            syncing={false}
+            lastCompletedAt={W37_SYNCED_AT}
+            onSync={() => {}}
+          />
+        </div>
+      )}
+      {spec.phoneSelect && (
+        <div data-testid="w37-phone-select">
+          <ViewTabs
+            field={barStore.field.f0}
+            label="View"
+            options={BAR_VALUES.map((value) => ({ value, label: BAR_LABELS[value] as string }))}
+          />
+        </div>
+      )}
+      {spec.pill && (
+        <div data-testid="w37-pill">
+          <SelectFilter field={w37PillStore.field.site} label="Site" />
+        </div>
+      )}
+      {spec.untitled && (
+        <div data-testid="w37-untitled">
+          <Section
+            tabs={
+              <ViewTabs
+                field={barStore.field.f0}
+                label="Pane"
+                options={BAR_VALUES.slice(0, 2).map((value) => ({
+                  value,
+                  label: BAR_LABELS[value] as string,
+                }))}
+              />
+            }
+          >
+            <div>pane body</div>
+          </Section>
+        </div>
+      )}
+    </>
+  )
+}
+
 function AnchorFixture(): ReactElement {
   return (
     <>
@@ -1838,6 +1919,7 @@ export function ShellFixture({ spec }: { spec: FixtureSpec }): ReactElement {
       })}
     >
       {spec.anchor && <AnchorFixture />}
+      {spec.w37 && <Wave37Fixture spec={spec.w37} />}
       {spec.aside && !spec.aside.noBar && <AsideBar />}
       {spec.bar && <BarFixture spec={spec.bar} />}
       {spec.buttonSections && <ButtonSectionsFixture />}

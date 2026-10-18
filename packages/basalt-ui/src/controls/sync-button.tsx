@@ -13,8 +13,8 @@
  *   pushes a page's own actions into the kebab. The age and the error live in the tooltip; the
  *   accessible name is `label`.
  * - `scope: 'page'` → `PageBar.sync` (the page's own data). The labelled `Button` with the age
- *   inline beside it on desktop, icon-only below `sm` where that width is gone — CSS only, one
- *   mount, never a `visibleFrom` twin (law C9).
+ *   inline beside it on desktop; below `sm` the label and the long age go and the glyph keeps a
+ *   SHORT age (`2 m`) beside it — CSS only, one mount, never a `visibleFrom` twin (law C9).
  *
  * Because the label is hidden rather than unmounted below `sm`, the accessible name comes from
  * `aria-label` in BOTH forms: `display: none` text is out of the accessibility tree, so a page
@@ -69,13 +69,35 @@ function toMillis(at: number | Date | null | undefined): number | undefined {
  * string (`now`, `1 min. ago`, …), so it is stable across calls within a bucket and a tick only
  * re-renders when the label changes. With no timestamp there is no subscription and no timer.
  */
-function useRelativeAge(at: number | Date | null | undefined): string | undefined {
+function useRelativeAge(
+  at: number | Date | null | undefined,
+  format: (timestamp: number) => string = (timestamp) =>
+    relativeTime(timestamp, { style: 'short' }),
+): string | undefined {
   const timestamp = toMillis(at)
   return useSyncExternalStore(
     timestamp === undefined ? subscribeNever : subscribeAgeTick,
-    () => (timestamp === undefined ? undefined : relativeTime(timestamp, { style: 'short' })),
+    () => (timestamp === undefined ? undefined : format(timestamp)),
     () => undefined,
   )
+}
+
+const COMPACT_UNITS = [
+  { short: 'd', seconds: 86_400 },
+  { short: 'h', seconds: 3_600 },
+  { short: 'm', seconds: 60 },
+] as const
+
+/**
+ * The phone form's age: one number and one unit letter (`2 m`, `3 h`, `1 d`), small enough to ride
+ * beside the glyph in the square button at 390. Under a minute it is the locale's own "now", the
+ * same bucket the long age uses, so the two never disagree about whether a sync just landed.
+ */
+function compactAge(timestamp: number): string {
+  const seconds = Math.max(0, (Date.now() - timestamp) / 1000)
+  const unit = COMPACT_UNITS.find((u) => seconds >= u.seconds)
+  if (unit === undefined) return relativeTime(timestamp, { style: 'short' })
+  return `${Math.floor(seconds / unit.seconds)} ${unit.short}`
 }
 
 const subscribeNever = (): (() => void) => () => {}
@@ -108,6 +130,7 @@ export function SyncButton({
   style,
 }: SyncButtonProps): ReactNode {
   const age = useRelativeAge(lastCompletedAt)
+  const shortAge = useRelativeAge(lastCompletedAt, compactAge)
   // Wherever the label is not painted — every `global` mount, and a `page` mount below `sm` — the
   // tooltip is where the age lives; an `error` outranks it everywhere. ONE tooltip, one mount.
   const tooltip = error ?? age
@@ -158,6 +181,7 @@ export function SyncButton({
         <Button
           variant="default"
           className={cx(classes.pageButton, className)}
+          {...(age !== undefined && { 'data-with-age': true })}
           {...(style !== undefined && { style })}
           leftSection={
             <IconSlot>
@@ -168,6 +192,11 @@ export function SyncButton({
         >
           <span className={classes.label}>{label}</span>
           {age !== undefined && <span className={classes.age}>{age}</span>}
+          {shortAge !== undefined && (
+            <span className={classes.ageCompact} data-sync-age="compact">
+              {shortAge}
+            </span>
+          )}
         </Button>
       )}
     </Tooltip>

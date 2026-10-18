@@ -360,6 +360,12 @@ export type FixtureSpec = {
    * renders them as shell children. Exists for the anchor-clearance invariant.
    */
   anchor?: { shell: boolean }
+  /**
+   * Wave 37's shell half (`data-testid="w37-*"`): a `PageSummary` whose facts wrap, a page-scope
+   * `SyncButton` with an age, a 5-option `ViewTabs` (phone `Select`), a filter pill over a very long
+   * option name, and an untitled `Section` (tabs only). Each item renders only when named.
+   */
+  w37?: { summary?: true; sync?: true; phoneSelect?: true; pill?: true; untitled?: true }
   /** Renders a `PageAside` (and, by default, the `PageBar` row 2 it projects into below `sm`). */
   aside?: AsideSpec
   /** A `TableOfContents` + article inside Main's scrollport (the scroll-spy invariants). */

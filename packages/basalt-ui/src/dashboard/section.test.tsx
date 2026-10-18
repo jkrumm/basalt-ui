@@ -15,6 +15,7 @@ import { resetValidatedProps } from '../common/validate'
 import { FilterSetScope } from '../controls/filter-context'
 import { PageBar, ShellFrame } from '../shell'
 import { Section } from './section'
+import type { SectionProps } from './section'
 
 function renderWith(node: ReactElement) {
   return render(<MantineProvider>{node}</MantineProvider>)
@@ -549,7 +550,7 @@ describe('actions — typed BarAction data', () => {
 })
 
 describe('controlled open / onOpenChange', () => {
-  const section = (props: Partial<React.ComponentProps<typeof Section>>) => (
+  const section = (props: Partial<Extract<SectionProps, { title: string }>>) => (
     <MantineProvider>
       <Section title="Usage" collapsible persistKey="usage" {...props}>
         <div>body</div>
@@ -628,5 +629,80 @@ describe('SSR — the anchor offset markup', () => {
     )
     expect(scrollMargin(shell)).not.toContain('--basalt-page-bar-h')
     expect(scrollMargin(shell)).toContain('--vx-space-sticky-header-clearance')
+  })
+})
+
+describe('Section without a title (tabs only)', () => {
+  const tabs = <button type="button">Pane A</button>
+
+  test('renders the tabs and no heading', () => {
+    renderWith(
+      <Section tabs={tabs} aria-label="Panes">
+        <div>body</div>
+      </Section>,
+    )
+    expect(screen.getByRole('button', { name: 'Pane A' })).toBeDefined()
+    expect(screen.queryByRole('heading')).toBeNull()
+  })
+
+  test('the accessible name is the explicit aria-label', () => {
+    renderWith(
+      <Section tabs={tabs} aria-label="Panes">
+        <div>body</div>
+      </Section>,
+    )
+    expect(screen.getByRole('group', { name: 'Panes' })).toBeDefined()
+  })
+
+  test("the accessible name falls back to the tabs' own label", () => {
+    renderWith(
+      <Section tabs={<Labelled label="Mailbox view" />}>
+        <div>body</div>
+      </Section>,
+    )
+    expect(screen.getByRole('group', { name: 'Mailbox view' })).toBeDefined()
+  })
+
+  test('the header row collapses to the tabs: no title row, no count tag', () => {
+    renderWith(
+      <Section tabs={tabs} aria-label="Panes">
+        <div>body</div>
+      </Section>,
+    )
+    expect(document.querySelector('[data-widget-title]')).toBeNull()
+  })
+
+  test('the tabs stay while the body folds is moot: an untitled section never renders a chevron', () => {
+    renderWith(
+      <Section tabs={tabs} aria-label="Panes" collapsible>
+        <div>body</div>
+      </Section>,
+    )
+    expect(screen.queryByRole('button', { name: /collapse section/i })).toBeNull()
+    expect(screen.getByText('body')).toBeDefined()
+  })
+
+  test('anchor id still lands on the root', () => {
+    renderWith(
+      <Section id="panes" tabs={tabs} aria-label="Panes">
+        <div>body</div>
+      </Section>,
+    )
+    expect(document.getElementById('panes')?.style.scrollMarginTop).toContain('clearance')
+  })
+})
+
+function Labelled({ label }: { label: string }) {
+  return <span aria-label={label}>x</span>
+}
+
+describe('the group-tier heading sits on the meta step (three sizes, not four)', () => {
+  test('section.module.css moves the group head from micro (11) to xs (12)', () => {
+    const css = readFileSync(join(import.meta.dirname, 'section.module.css'), 'utf8').replace(
+      /\/\*[\s\S]*?\*\//g,
+      '',
+    )
+    const rule = css.slice(css.indexOf("[data-tier='group'] [data-widget-title]"))
+    expect(rule).toMatch(/font-size:\s*var\(--vx-text-xs\)/)
   })
 })

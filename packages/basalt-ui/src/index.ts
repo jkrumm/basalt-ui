@@ -59,6 +59,8 @@ export {
   type MeterZone,
   BarList,
   type BarListProps,
+  PageSummary,
+  type PageSummaryProps,
 } from './dashboard'
 export { unwrap } from './unwrap'
 

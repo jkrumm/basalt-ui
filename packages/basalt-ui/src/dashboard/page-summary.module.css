@@ -1,0 +1,82 @@
+/*
+ * PageSummary (SPEC § 6.9). A page's opening: headline, then one facts line. No surface of its own —
+ * it sits on the page background above the first Section.
+ */
+.root {
+  display: flex;
+  flex-direction: column;
+  gap: var(--vx-space-stack-xs);
+  min-width: 0;
+}
+
+.top {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: var(--vx-space-stack-md);
+  min-width: 0;
+}
+
+/* `h1` step, head face, tight tracking (SPEC row "Page headline"). Sans with lining figures: the
+ * sentence carries the live number, and D33 keeps figures proportional. */
+.sentence {
+  margin: 0;
+  min-width: 0;
+  font-family: var(--basalt-font-head);
+  font-size: var(--vx-text-h1);
+  font-weight: 550;
+  font-stretch: 88%;
+  letter-spacing: -0.02em;
+  line-height: 1.2;
+  color: var(--vx-ink);
+  text-wrap: balance;
+}
+
+.aside {
+  flex: none;
+  font-size: var(--vx-text-xs);
+  color: var(--vx-muted);
+  white-space: nowrap;
+}
+
+/*
+ * The facts line: sans `xs`, muted, `·`-separated. A wrapping flex list, `--facts-gap` between facts.
+ * Each fact draws its own dot half a gap to its LEFT, and the list clips inline overflow: the fact
+ * that opens a line starts at the list's left edge, so its dot lands outside the clip and a wrapped
+ * line never leads with `·` (argo UPSTREAM § Wave 26). Clip, not hidden — the block axis stays free.
+ */
+.facts {
+  --facts-gap: var(--vx-space-stack-md);
+
+  display: flex;
+  flex-wrap: wrap;
+  column-gap: var(--facts-gap);
+  row-gap: 0;
+  margin: 0;
+  overflow-x: clip;
+  font-size: var(--vx-text-xs);
+  line-height: 1.4;
+  color: var(--vx-muted);
+}
+
+.fact {
+  position: relative;
+  min-width: 0;
+}
+
+.fact::before {
+  content: '·';
+  position: absolute;
+  inset-inline-start: calc(-0.5 * var(--facts-gap));
+  translate: -50% 0;
+  color: var(--vx-faint);
+}
+
+/* Skeleton: the headline bar is one h1 line, the facts bar one xs line. */
+.sentenceSkeleton {
+  height: calc(var(--vx-text-h1) * 1.2);
+}
+
+.factsSkeleton {
+  height: calc(var(--vx-text-xs) * 1.4);
+}

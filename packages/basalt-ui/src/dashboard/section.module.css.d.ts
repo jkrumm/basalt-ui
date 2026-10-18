@@ -6,6 +6,7 @@ declare const classes: {
   readonly root: string
   readonly body: string
   readonly summary: string
+  readonly tabsRow: string
   readonly chevron: string
 }
 export default classes
