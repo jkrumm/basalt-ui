@@ -232,12 +232,33 @@ describe('format locale', () => {
 describe('the compact age below sm', () => {
   test.each([
     [30_000, 'now'],
-    [2 * 60_000, '2 m'],
-    [3 * 3_600_000, '3 h'],
-    [2 * 86_400_000, '2 d'],
+    [2 * 60_000, '2m'],
+    [3 * 3_600_000, '3h'],
+    [2 * 86_400_000, '2d'],
   ])('%ims ago renders "%s"', (ago, text) => {
     renderSync({ lastCompletedAt: Date.now() - ago })
     expect(document.querySelector('[data-sync-age="compact"]')?.textContent).toBe(text)
+  })
+
+  test('the unit follows the format locale (Intl narrow unit), not a hard-coded letter', async () => {
+    const router = testRouter('x', () => (
+      <SyncButton
+        syncing={false}
+        scope="page"
+        onSync={() => {}}
+        lastCompletedAt={Date.now() - 2 * 60_000}
+      />
+    ))
+    render(<BasaltProvider router={router} locale="de" />)
+    await screen.findByRole('button', { name: /sync/i })
+    const compact = document.querySelector('[data-sync-age="compact"]')?.textContent
+    expect(compact).toBe(
+      new Intl.NumberFormat('de', { style: 'unit', unit: 'minute', unitDisplay: 'narrow' }).format(
+        2,
+      ),
+    )
+    expect(compact).not.toBe('2 m')
+    resetFormatDefaults()
   })
 
   test('no age, no compact span', () => {

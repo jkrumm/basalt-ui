@@ -75,6 +75,8 @@ export function FilterPill({
       size="ctl"
       className={cx(classes.pill, className)}
       data-basalt-hit
+      // The label truncates past the pill's width cap; the full name stays one hover away.
+      title={label}
       classNames={{ label: classes.pillLabel }}
       {...(style !== undefined && { style })}
       {...(active === true && { 'data-active': true })}

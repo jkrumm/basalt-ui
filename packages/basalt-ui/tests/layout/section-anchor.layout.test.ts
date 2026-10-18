@@ -100,3 +100,41 @@ layout('Section anchor title vs the sticky PageBar (Wave 37)', () => {
     expect(gap).toBeLessThanOrEqual(clearance + 4)
   })
 })
+
+/**
+ * Wave 37 (review round 1): the SHELL form of the same jump. Both bars sit outside the scrollport,
+ * so the section title must land at or below the scrollport's top edge — which is itself at or below
+ * the header and the band — at both viewports argo measured.
+ */
+async function shellTitleGaps(
+  viewport: typeof PHONE,
+): Promise<{ scrollport: number; chrome: number }> {
+  const page = await openFixture(specOf(true), viewport)
+  return page.raw.evaluate(async () => {
+    const main = document.querySelector('[data-basalt-scrollport]')
+    const header = document.querySelector('.mantine-AppShell-header')
+    const title = document.getElementById('anchor-2')?.querySelector('[data-widget-title]')
+    if (!main || !header || !title) throw new Error('FAILED: scrollport, header or title missing')
+    document.getElementById('anchor-2')?.scrollIntoView({ behavior: 'instant' })
+    await new Promise<void>((r) => requestAnimationFrame(() => requestAnimationFrame(() => r())))
+    const top = title.getBoundingClientRect().top
+    return {
+      scrollport: top - main.getBoundingClientRect().top,
+      chrome: top - header.getBoundingClientRect().bottom,
+    }
+  })
+}
+
+layout('Section anchor title in a shell (Wave 37)', () => {
+  test('390: the title sits at/below the scrollport top and the header after a jump', async () => {
+    const g = await shellTitleGaps(PHONE)
+    expect(g.scrollport).toBeGreaterThanOrEqual(0)
+    expect(g.chrome).toBeGreaterThanOrEqual(0)
+  })
+
+  test('1440: the title sits at/below the scrollport top and the header after a jump', async () => {
+    const g = await shellTitleGaps(DESKTOP_1440)
+    expect(g.scrollport).toBeGreaterThanOrEqual(0)
+    expect(g.chrome).toBeGreaterThanOrEqual(0)
+  })
+})

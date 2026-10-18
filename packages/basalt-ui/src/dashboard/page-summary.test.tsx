@@ -88,12 +88,19 @@ describe('PageSummary CSS (typography law D33, separator law)', () => {
   })
 
   test('the dot sits in the gap BEFORE its fact and the list clips inline overflow, so a line-leading dot is cut', () => {
-    // First fact on any line starts at the list's left edge; its dot is half a gap to the left of that
+    // First fact on any line starts at the list's left edge; its dot box is the gap to the left of that
     // edge, i.e. outside the clip. A mid-line fact's dot is inside the preceding gap.
-    expect(css).toMatch(
-      /\.fact::before\s*\{[^}]*inset-inline-start:\s*calc\(-0\.5 \* var\(--facts-gap\)\)/,
-    )
+    expect(rule('.fact::before')).toMatch(/inset-inline-start:\s*calc\(-1 \* var\(--facts-gap\)\)/)
+    expect(rule('.fact::before')).toMatch(/width:\s*var\(--facts-gap\)/)
     expect(rule('.facts')).toMatch(/overflow-x:\s*clip/)
     expect(rule('.facts')).toMatch(/flex-wrap:\s*wrap/)
+  })
+
+  test('the dot is placed logically: no physical translate that flips wrong under rtl', () => {
+    expect(rule('.fact::before')).not.toMatch(/translate|\bleft\b|\bright\b/)
+  })
+
+  test('a focus ring on a link inside a fact is drawn inside the clip', () => {
+    expect(css).toMatch(/\.fact\s+:where\([^)]*\):focus-visible\s*\{[^}]*outline-offset:\s*-2px/)
   })
 })

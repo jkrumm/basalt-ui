@@ -41,7 +41,7 @@
 
 /*
  * The facts line: sans `xs`, muted, `·`-separated. A wrapping flex list, `--facts-gap` between facts.
- * Each fact draws its own dot half a gap to its LEFT, and the list clips inline overflow: the fact
+ * Each fact draws its own dot one gap to its inline-start, centred in it, and the list clips inline overflow: the fact
  * that opens a line starts at the list's left edge, so its dot lands outside the clip and a wrapped
  * line never leads with `·` (argo UPSTREAM § Wave 26). Clip, not hidden — the block axis stays free.
  */
@@ -67,9 +67,16 @@
 .fact::before {
   content: '·';
   position: absolute;
-  inset-inline-start: calc(-0.5 * var(--facts-gap));
-  translate: -50% 0;
+  inset-inline-start: calc(-1 * var(--facts-gap));
+  width: var(--facts-gap);
+  text-align: center;
   color: var(--vx-faint);
+}
+
+/* The list clips inline overflow, so a focus ring on a link inside a fact is drawn inward: an
+ * outset ring would be cut at the list's edges. */
+.fact :where(a, button, [tabindex]):focus-visible {
+  outline-offset: -2px;
 }
 
 /* Skeleton: the headline bar is one h1 line, the facts bar one xs line. */

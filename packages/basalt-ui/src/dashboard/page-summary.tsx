@@ -1,8 +1,9 @@
 /**
  * PageSummary — a page's opening (docs/waves/design-parity/SPEC.md § 6.9): one headline sentence
  * that carries at least one live number, an optional facts line under it, and an optional `aside`
- * right of the headline. The recipe is `h1`-step type in the head face (−0.02em); the facts are the
- * proportional sans at `xs`, muted, `·`-separated — a time fact may take mono itself, the line does
+ * right of the headline. It renders an `h2` at the `h1` type step (head face, −0.02em): the page's own
+ * h1 is the shell breadcrumb's / `PageTitle`'s, and a second one would split the outline. The facts
+ * are the proportional sans at `xs`, muted, `·`-separated — a time fact may take mono itself, the line does
  * not (D33).
  *
  * The sentence MUST state a live fact — "12 open, 3 need you", never "Overview of your tickets".
@@ -10,8 +11,8 @@
  * That is the reviewer's rule too: a page summary without a number is a defect.
  *
  * `null` / `false` / `undefined` / `''` facts drop, so conditional facts pass inline. A facts line
- * that wraps never opens a line with `·`: each fact owns its separator as a pseudo-element half a gap
- * to its left, and the list clips inline overflow, so the dot of the fact that starts a line falls
+ * that wraps never opens a line with `·`: each fact owns its separator as a pseudo-element in the gap
+ * before it (logical, so RTL mirrors), and the list clips inline overflow, so the dot of the fact that starts a line falls
  * outside the clip.
  *
  * `loading` renders a skeleton of the same shape — the headline bar, plus a facts bar when `facts`
