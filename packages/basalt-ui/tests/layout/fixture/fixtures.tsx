@@ -32,7 +32,16 @@ import type { DataTableFacet } from '../../../src/table/data-table'
 import type { BasaltColumnDef } from '../../../src/table/table-features'
 import { Callout, Prose } from '../../../src/content'
 import { CodeBlock } from '../../../src/content/code-block'
-import { ActionIcon, Alert, Badge, Button, Card, Code, Paper } from '@mantine/core'
+import {
+  ActionIcon,
+  Alert,
+  Badge,
+  Button,
+  Card,
+  Code,
+  Paper,
+  SegmentedControl,
+} from '@mantine/core'
 import {
   BarList,
   DeltaBadge,
@@ -1445,6 +1454,12 @@ function Wave37Fixture({ spec }: { spec: NonNullable<FixtureSpec['w37']> }): Rea
           <Alert title="No snapshot yet">
             Run <Code>warden run</Code> first.
           </Alert>
+        </div>
+      )}
+      {spec.radiusTabs && (
+        <div data-testid="w37-radius-tabs">
+          {/* theme-allow raw-selection-control, raw-radius — a custom track radius is the probe */}
+          <SegmentedControl radius="xl" data={['One', 'Two']} />
         </div>
       )}
       {spec.cardTabs && (

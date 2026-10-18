@@ -21,7 +21,7 @@ const SPEC: FixtureSpec = {
   sections: [
     { label: 'Main', items: [{ key: 'a', label: 'Overview', mobile: 'tab', active: true }] },
   ],
-  w37: { alertCode: true, cardTabs: true },
+  w37: { alertCode: true, cardTabs: true, radiusTabs: true },
 }
 
 const MIN_STEP = 3
@@ -61,6 +61,15 @@ layout('nested radius step', () => {
       '[data-testid="w37-card-tabs"] .mantine-SegmentedControl-root',
       '[data-testid="w37-card-tabs"] .mantine-SegmentedControl-indicator',
     )
+    expect(r.outer - r.inner).toBeGreaterThanOrEqual(MIN_STEP)
+  })
+
+  test('a SegmentedControl with a custom radius still nests its indicator 3 px under the track', async () => {
+    const r = await radii(
+      '[data-testid="w37-radius-tabs"] .mantine-SegmentedControl-root',
+      '[data-testid="w37-radius-tabs"] .mantine-SegmentedControl-indicator',
+    )
+    expect(r.outer).toBeGreaterThan(20)
     expect(r.outer - r.inner).toBeGreaterThanOrEqual(MIN_STEP)
   })
 })

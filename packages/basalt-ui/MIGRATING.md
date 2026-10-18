@@ -1186,6 +1186,8 @@ is 3 px under its own track radius (`--sc-radius` − 3, so a custom `radius` ne
 default). The indicator change is global, not limited to card headers: the track-to-indicator gap was 2 px
 everywhere and the nested-radius lint step (≥ 3 px) wins over exact concentricity.
 
+A strip cell's error body now says `Could not load` instead of `Failed`, matching the card, query and table wording.
+
 Opt-out: `Code` has no `radius` prop — set `--basalt-code-radius` on an ancestor or `styles={{ root: {
 borderRadius } }}` on the `Code`; for the indicator, `styles={{ indicator: { borderRadius } }}` on the
 `SegmentedControl`.

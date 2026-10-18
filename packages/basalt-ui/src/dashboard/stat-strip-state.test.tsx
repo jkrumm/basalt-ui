@@ -28,7 +28,7 @@ describe('strip cell state', () => {
     expect(cell.textContent).toContain('No sleep logged')
     expect(cell.querySelector('[data-basalt-status-dot]')).toBeNull()
     expect(cell.querySelector('button')).toBeNull()
-    expect(cell.textContent).not.toContain('Failed')
+    expect(cell.textContent).not.toContain('Could not load')
   })
 
   test('error: a dot, the word, the message and Retry; onRetry fires', () => {
@@ -38,7 +38,7 @@ describe('strip cell state', () => {
     })
     const cell = cellOf(container)
     expect(cell.querySelector('[data-basalt-status-dot]')).not.toBeNull()
-    expect(cell.textContent).toContain('Failed')
+    expect(cell.textContent).toContain('Could not load')
     expect(cell.textContent).toContain('boom')
     expect(cell.querySelector('[data-strip-value]')).toBeNull()
     const retry = cell.querySelector('button') as HTMLButtonElement

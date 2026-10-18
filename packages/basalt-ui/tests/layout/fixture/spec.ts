@@ -389,6 +389,7 @@ export type FixtureSpec = {
     untitled?: true
     alertCode?: true
     cardTabs?: true
+    radiusTabs?: true
   }
   /** Renders a `PageAside` (and, by default, the `PageBar` row 2 it projects into below `sm`). */
   aside?: AsideSpec
