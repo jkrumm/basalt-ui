@@ -50,6 +50,7 @@ const STRIP: Record<string, Shown> = {
 }
 
 type Measured = {
+  shorts: { name: string | null; text: string | null; left: number; right: number }[]
   zones: { name: string | null; left: number; right: number }[]
   labels: { name: string | null; left: number; right: number; top: number; holding: boolean }[]
   ticks: { name: string | null; left: number; right: number; top: number }[]
@@ -85,6 +86,14 @@ const measure = (p: LayoutPage, root: string): Promise<Measured> =>
           right: box(l).right,
           top: box(l).top,
           holding: l.hasAttribute('data-holding'),
+        })),
+      shorts: [...host.querySelectorAll<HTMLElement>('[data-meter-zone-short]')]
+        .filter(shown)
+        .map((l) => ({
+          name: l.getAttribute('data-meter-zone-short'),
+          text: l.textContent,
+          left: box(l).left,
+          right: box(l).right,
         })),
       ticks: [...host.querySelectorAll<HTMLElement>('[data-meter-tick-label]')]
         .filter(shown)
@@ -163,6 +172,21 @@ function rowSuite(vp: Viewport) {
     const expected = STRIP[vp.name]
     if (!expected) throw new Error(`LAYOUT: no strip expectation for ${vp.name}`)
     assertRow(await measure(p, 'dash-zl-strip'), expected)
+  })
+
+  test('a name too wide for its span shows its short label, inside the span and clear of the rest', async () => {
+    const m = await measure(p, 'dash-zl-short')
+    expect(m.labels.map((l) => l.name)).toEqual(['Under', 'Optimal', 'Danger'])
+    expect(m.shorts.map((s) => [s.name, s.text])).toEqual([['Caution', 'Cau']])
+    for (const name of ZONES) expect(m.described).toContain(name)
+    const [short] = m.shorts
+    const z = m.zones.find((zone) => zone.name === short?.name)
+    if (!short || !z) throw new Error('LAYOUT: no short label')
+    expect(short.left).toBeGreaterThanOrEqual(z.left - SUBPIXEL)
+    expect(short.right).toBeLessThanOrEqual(z.right + SUBPIXEL)
+    for (const o of [...m.labels, ...m.ticks]) {
+      expect(short.right <= o.left + SUBPIXEL || o.right <= short.left + SUBPIXEL).toBe(true)
+    }
   })
 
   test('a tick beats a zone name it would touch; the name stays described', async () => {

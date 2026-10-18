@@ -6,7 +6,17 @@ import type { ReactNode } from 'react'
 import { clamp01, toPct } from './scale'
 
 export type MeterSegment = { value: number; label: string; color?: string; forecast?: boolean }
-export type MeterZone = { from: number; to: number; label: string; color?: string }
+export type MeterZone = {
+  from: number
+  to: number
+  label: string
+  /**
+   * A shorter name for a narrow track. The row tries `label`, then `short`, and only then hides the
+   * name; the holding zone always shows its full `label`. The described-by text keeps `label`.
+   */
+  short?: string
+  color?: string
+}
 /** A mark on the track at `at` (in the reading's units). A label is captioned beside it. */
 export type MeterTick = { at: number; label?: string }
 
@@ -31,6 +41,8 @@ export type PartCaption = { key: string; label: string; text: string; color: str
 export type ZoneLabel = {
   key: string
   label: string
+  /** The fallback name, when the zone has one. */
+  short?: string
   centrePct: number
   widthPct: number
   holding: boolean
@@ -131,11 +143,13 @@ export type LabelBox = { left: number; right: number }
  * A label on the shared row: its measured box and, for a zone name, the span it must stay inside.
  * The holding zone's name never hides for width: it ignores its span and is shifted into the row.
  */
-export type RowLabel = { box: LabelBox; span?: LabelBox; holding?: boolean }
+export type RowLabel = { box: LabelBox; span?: LabelBox; holding?: boolean; short?: LabelBox }
 
 /** The placement of the row's labels, index-aligned with the input. */
 export type RowPlacement = {
   shown: boolean[]
+  /** Index-aligned with `shown`: the label shows as its `short` box rather than the full one. */
+  short: boolean[]
   /** Pixels a shown label moves along the row's physical x axis to stay inside it (0 unless clamped). */
   shift: number[]
 }
@@ -144,17 +158,20 @@ export type RowPlacement = {
  * Which labels of the row show, in input order. The holding zone's name claims its place first (it
  * is the reading's verdict, so it never hides for width: it may spill past its span, shifted inside
  * the row); the labels without a span (the end ticks) go next; every other zone name then shows only
- * when it lies inside the row and its own span and clears every label already kept. A hidden name is
- * still named in the described-by text.
+ * when it lies inside the row and its own span and clears every label already kept, trying its full
+ * name and then its `short` box. A hidden name is still named in the described-by text.
  */
 export function placeRowLabels(labels: readonly RowLabel[], rowWidth: number): RowPlacement {
   const shown = labels.map(() => false)
+  const short = labels.map(() => false)
   const shift = labels.map(() => 0)
   const kept: LabelBox[] = []
   const rank = (l: RowLabel) => (l.holding ? 0 : l.span ? 2 : 1)
   const order = labels
     .map((_, i) => i)
     .toSorted((a, b) => rank(labels[a] as RowLabel) - rank(labels[b] as RowLabel))
+  const clears = (b: LabelBox) =>
+    !kept.some((k) => b.left < k.right - LABEL_SUBPIXEL && k.left < b.right - LABEL_SUBPIXEL)
   for (const i of order) {
     const label = labels[i] as RowLabel
     const { span } = label
@@ -164,22 +181,25 @@ export function placeRowLabels(labels: readonly RowLabel[], rowWidth: number): R
       const left = Math.max(0, Math.min(box.left, rowWidth - width))
       shift[i] = left - box.left
       box = { left, right: left + width }
-    } else {
-      const inside =
-        box.left >= -LABEL_SUBPIXEL &&
-        box.right <= rowWidth + LABEL_SUBPIXEL &&
-        (span === undefined ||
-          (box.left >= span.left - LABEL_SUBPIXEL && box.right <= span.right + LABEL_SUBPIXEL))
-      if (!inside) continue
-    }
-    if (
-      kept.some((k) => box.left < k.right - LABEL_SUBPIXEL && k.left < box.right - LABEL_SUBPIXEL)
-    )
+      if (!clears(box)) continue
+      shown[i] = true
+      kept.push(box)
       continue
+    }
+    const fits = (b: LabelBox) =>
+      b.left >= -LABEL_SUBPIXEL &&
+      b.right <= rowWidth + LABEL_SUBPIXEL &&
+      (span === undefined ||
+        (b.left >= span.left - LABEL_SUBPIXEL && b.right <= span.right + LABEL_SUBPIXEL)) &&
+      clears(b)
+    const useShort = !fits(box) && label.short !== undefined && fits(label.short)
+    if (useShort) box = label.short as LabelBox
+    else if (!fits(box)) continue
     shown[i] = true
+    short[i] = useShort
     kept.push(box)
   }
-  return { shown, shift }
+  return { shown, short, shift }
 }
 
 /** A zone band as left edge + width in percent, clipped to the track. */
@@ -320,6 +340,7 @@ export function modelBar(input: BarInput): BarModel {
           return {
             key: String(i),
             label: z.label,
+            ...(z.short !== undefined && { short: z.short }),
             centrePct: band.start + band.width / 2,
             widthPct: band.width,
             holding: z === holding,

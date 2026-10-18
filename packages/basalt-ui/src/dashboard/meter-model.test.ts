@@ -229,4 +229,32 @@ describe('placeRowLabels', () => {
     const tick = { box: { left: 0, right: 8 } }
     expect(placeRowLabels([zone(2, 30, 0, 32, true), tick], 100).shown).toEqual([true, false])
   })
+  test('a name wider than its span falls back to its short label, then hides', () => {
+    const wide = (short?: { left: number; right: number }) => ({
+      ...zone(5, 55, 0, 40),
+      ...(short && { short }),
+    })
+    expect(placeRowLabels([wide({ left: 10, right: 30 })], 200)).toMatchObject({
+      shown: [true],
+      short: [true],
+    })
+    expect(placeRowLabels([wide({ left: 10, right: 50 })], 200)).toMatchObject({
+      shown: [false],
+      short: [false],
+    })
+    expect(placeRowLabels([wide()], 200)).toMatchObject({ shown: [false], short: [false] })
+  })
+  test('the full name wins when it fits; the short label is not used', () => {
+    const fits = { ...zone(5, 35, 0, 40), short: { left: 10, right: 30 } }
+    expect(placeRowLabels([fits], 200)).toMatchObject({ shown: [true], short: [false] })
+  })
+  test('a short label still hides when it clashes with a kept label', () => {
+    const tick = { box: { left: 15, right: 25 } }
+    const wide = { ...zone(5, 55, 0, 40), short: { left: 10, right: 30 } }
+    expect(placeRowLabels([wide, tick], 200)).toMatchObject({ shown: [false, true] })
+  })
+  test('the holding zone never uses its short label', () => {
+    const holding = { ...zone(30, 50, 40, 44, true), short: { left: 38, right: 46 } }
+    expect(placeRowLabels([holding], 200)).toMatchObject({ shown: [true], short: [false] })
+  })
 })

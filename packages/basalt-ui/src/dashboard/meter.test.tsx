@@ -457,6 +457,7 @@ describe('zone name layout', () => {
   ]
   let labelWidth = 50
   let holdingExtra = 0
+  let shortWidth = 20
   let rowWidth = 300
   let observers: FakeResizeObserver[] = []
 
@@ -482,6 +483,7 @@ describe('zone name layout', () => {
     rowWidth = 300
     labelWidth = 50
     holdingExtra = 0
+    shortWidth = 20
     observers = []
     globalThis.ResizeObserver = FakeResizeObserver as unknown as typeof ResizeObserver
     // happy-dom has no layout: the row is `rowWidth` wide, each name `labelWidth` centred on its span.
@@ -492,6 +494,10 @@ describe('zone name layout', () => {
         const width = labelWidth + (this.hasAttribute('data-holding') ? holdingExtra : 0)
         const centre = (Number.parseFloat(this.style.insetInlineStart) / 100) * rowWidth
         return box(centre - width / 2, width)
+      }
+      if (this.hasAttribute('data-meter-zone-short')) {
+        const centre = (Number.parseFloat(this.style.insetInlineStart) / 100) * rowWidth
+        return box(centre - shortWidth / 2, shortWidth)
       }
       return this.hasAttribute('data-meter-zone-band') ? box(0, rowWidth) : box(0, 0)
     }
@@ -522,6 +528,24 @@ describe('zone name layout', () => {
     expect(hiddenNames(container)).toEqual(['Low', 'High'])
     resize(300)
     expect(hiddenNames(container)).toEqual([])
+  })
+
+  test('a name too wide for its span shows its short label instead; the full name stays described', () => {
+    const zones = ZONES.map((z) => ({ ...z, short: z.label.slice(0, 2) }))
+    const { container } = mount({ ...props, zones })
+    const visible = () =>
+      [...container.querySelectorAll('[data-meter-zone-short]:not([data-hidden])')].map(
+        (l) => l.textContent,
+      )
+    expect(visible()).toEqual([])
+    resize(120)
+    expect(hiddenNames(container)).toEqual(['Low', 'High'])
+    expect(visible()).toEqual(['Lo', 'Hi'])
+    // 30px row: 10px spans, not even a short label fits, so both hide.
+    resize(30)
+    expect(visible()).toEqual([])
+    expect(container.querySelector('[role="meter"]')?.getAttribute('aria-describedby')).toBeTruthy()
+    expect(container.textContent).toContain('Low')
   })
 
   test('there is no list fallback: a hidden name stays in the row', () => {

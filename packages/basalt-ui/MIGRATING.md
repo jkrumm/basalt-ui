@@ -1075,6 +1075,12 @@ except that two colliding tick captions now hide the later one instead of wrappi
 An end tick yields to the holding zone's name; the holding name never hides for width. **Opt out:** none for the placement; render a legend yourself from the same zones if you need every
 name visible at any width.
 
+### `MeterZone` takes a `short` label
+
+New, additive: `{ from, to, label, short? }`. A zone name too wide for its span now falls back to
+`short` before it hides; the holding zone keeps its full `label`, and the described-by text still
+names every zone in full. Without `short` nothing changes. **Opt out:** omit `short`.
+
 ### A zoned `Meter` in a hero host no longer prints the reading at its marker
 
 **Changed default:** a `Meter` with `zones` inside a `StatCard` `sparkline` slot or a strip cell's
