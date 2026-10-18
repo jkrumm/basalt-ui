@@ -10,7 +10,7 @@
  *
  * `state` replaces the readings (hero, visual, rows, footer) with the cell's empty or error body, at
  * the cell's size. Empty: `—` in the value position and the reason, muted. Error: the shared error
- * anatomy compact — status dot, the word `Failed`, the message, the shared Retry. The caption stays.
+ * anatomy compact — status dot, the words `Could not load`, the message, the shared Retry. The caption stays.
  * A `visual` is a hero host: a zoned `Meter` in it does not repeat the value at its marker.
  *
  * Alignment: a cell is a plain column that ends at its content (the slot around it runs the whole
@@ -157,7 +157,7 @@ function CellState({ state }: { state: StatStripCellState }) {
     <div className={classes.error} role="alert" data-strip-state="error">
       <span className={classes.errorHead}>
         <StatusDot color={VX.status.bad} />
-        Failed
+        Could not load
       </span>
       <p className={classes.reason}>{message}</p>
       {state.onRetry !== undefined && (
