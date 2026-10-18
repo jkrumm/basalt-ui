@@ -1138,18 +1138,14 @@ file. The guard now has 27 kinds.
 
 **Changed:** strip cells no longer stretch to the row's tallest cell with the footer pinned to the
 bottom. Each cell spans the same five tracks of the grid (caption, value, visual, rows, footer), so
-captions, values and footers line up across a row, and a void opens only where a sibling's same part
-is taller. A cell without a visual keeps its `rows` and `footer` directly under its value, so a short
-cell ("verdicts 78 %") stays compact instead of showing value, a dead gap, then footer. No new prop:
-the default covers the compact case. There is no opt-out for the alignment, and no per-cell `align`: a cell with no visual (argo Home's
-recovery cell) already stays compact under the default, which was the only case the escape was for.
-
-**Amended:** a `footer` under a `visual` (and no `rows`) now rides with that visual and sits one gap
-under it, instead of dropping to the footer track a taller sibling's visual sets. Footers still line
-up where the visuals are the same height; where they are not, a cell no longer shows the difference
-as a void (S3's oldest-wait Meter read 46 % empty beside a tall fleet legend). A `rows` cell keeps
-the shared footer track. The strip's hairlines are now outer box-shadows, not borders, so every cell
-has the same `stack-md` top inset (the first cell's 13 px is gone); there is no opt-out.
+captions and values line up across a row, and a void opens only where a sibling's same part is
+taller. Footers line up for `rows` cells (the shared footer track) and for visuals of equal height;
+a `footer` under a `visual` (and no `rows`) rides with that visual and sits one gap under it, so a
+taller sibling's visual never pushes it down or shows as a void (S3's oldest-wait Meter read 46 %
+empty beside a tall fleet legend). A cell without a visual keeps its `rows` and `footer` directly
+under its value, so a short cell ("verdicts 78 %") stays compact. The strip's hairlines are outer
+box-shadows (borders in forced-colors mode), so every cell has the same `stack-md` top inset. No new
+prop, no opt-out for the alignment, and no per-cell `align`.
 
 ### `Button` section insets sit on the spacing scale
 

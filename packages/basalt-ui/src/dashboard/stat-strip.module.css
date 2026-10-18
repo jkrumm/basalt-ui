@@ -38,16 +38,25 @@
     0 -1px 0 var(--vx-divider);
 }
 
-/* Cells align by PART. Every cell spans the same five tracks of `.cells` (caption, hero, visual, rows,
- * footer), so a row of cells shares one caption top, one value baseline and one footer top, and a
- * void opens only where a sibling's same part is taller. A part a cell lacks collapses its track
- * (the spacing is a margin on the part, not a gap, so an empty track adds none). A cell without a
- * visual keeps its rows (and a footer without rows) in the visual track, directly under its hero:
- * short cells stay compact instead of stretching their footer to the row's bottom. A footer under a
- * visual rides in the visual track with it (`.visualStack`), so it hugs its own visual: only a rows
- * cell's footer uses the shared footer track. A hero-less cell
- * (rows only) starts its rows in the visual track, so the hero track above them is the one void,
- * and only as tall as a sibling's value. */
+/* Forced colors drop box-shadows, so the hairlines come back as CanvasText borders. Every cell takes
+ * both, so they stay level with each other; `.clip` still hides the leading ones. */
+@media (forced-colors: active) {
+  .cell {
+    border-inline-start: 1px solid CanvasText;
+    border-block-start: 1px solid CanvasText;
+  }
+}
+
+/* Cells align by PART. Every cell spans the same five tracks of `.cells` (caption, hero, visual,
+ * rows, footer), so a row of cells shares one caption top and one value baseline, and a void opens
+ * only where a sibling's same part is taller. A part a cell lacks collapses its track (the spacing
+ * is a margin on the part, not a gap, so an empty track adds none). A cell without a visual keeps
+ * its rows (and a footer without rows) in the visual track, directly under its hero: short cells
+ * stay compact instead of stretching their footer to the row's bottom. A footer under a visual
+ * rides in the visual track with it (`.visualStack`), so it hugs its own visual; only a rows
+ * cell's footer uses the shared footer track. A hero-less cell (rows only) starts its rows in the
+ * visual track, so the hero track above them is the one void, and only as tall as a sibling's
+ * value. */
 .cell > * {
   grid-column: 1;
   min-width: 0;
