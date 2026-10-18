@@ -34,7 +34,7 @@ import { StatusDot } from '../theme/status-dot'
 import { VX } from '../tokens'
 import { InfoGlyph } from './widget-header'
 import classes from './stat-strip.module.css'
-import { VisualSlotContext } from './visual-slot'
+import { HOSTED, VisualSlotContext } from './visual-slot'
 
 export type StatStripRow = {
   key: string
@@ -189,7 +189,9 @@ function StripCell({ cell }: { cell: StatStripCell }) {
       {state === undefined && cell.visual !== undefined && (
         <div className={classes.visualStack}>
           <div className={classes.visual} data-strip-visual>
-            <VisualSlotContext.Provider value={hasHero}>{cell.visual}</VisualSlotContext.Provider>
+            <VisualSlotContext.Provider value={hasHero ? HOSTED : null}>
+              {cell.visual}
+            </VisualSlotContext.Provider>
           </div>
           {ownFooter && footerEl}
         </div>

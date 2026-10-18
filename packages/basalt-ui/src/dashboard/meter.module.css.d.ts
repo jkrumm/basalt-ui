@@ -7,6 +7,7 @@ declare const classes: {
   readonly summary: string
   readonly track: string
   readonly trackBox: string
+  readonly trackHidden: string
   readonly fill: string
   readonly forecastFill: string
   readonly zone: string
@@ -22,8 +23,10 @@ declare const classes: {
   readonly captions: string
   readonly caption: string
   readonly captionEnd: string
+  readonly captionsAnchored: string
   readonly partCaptions: string
   readonly partCaption: string
+  readonly partCaptionsUnder: string
   readonly swatch: string
   readonly empty: string
   readonly skeletonTrack: string
@@ -32,6 +35,8 @@ declare const classes: {
   readonly ring: string
   readonly ringTrack: string
   readonly ringArc: string
+  readonly ringTick: string
+  readonly ringTickHalo: string
   readonly ringValue: string
   readonly skeletonRing: string
   readonly row: string

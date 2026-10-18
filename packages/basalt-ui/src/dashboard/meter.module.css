@@ -28,6 +28,26 @@
   position: relative;
 }
 
+/* A `stops` track is one gradient through the consumer's colours; the reading is a marker on it. */
+.track[data-meter-stops] {
+  background: linear-gradient(var(--basalt-stop-dir, to right), var(--basalt-stops));
+}
+
+.trackBox:dir(rtl) {
+  --basalt-stop-dir: to left;
+}
+
+/* `track={false}`: no drawn track, still in the accessibility tree (the role and value stay). */
+.trackHidden {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  margin: -1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+
 .fill {
   flex: none;
   height: 100%;
@@ -63,6 +83,8 @@
   /* A hidden name keeps its box (so it can be measured again) and may sit past the row's end. */
   overflow-x: clip;
   height: 1.25em;
+  /* Read by the layout: the least two captions keep apart (one gap step). */
+  column-gap: var(--vx-space-control-gap, 0.375rem);
   font-family: var(--basalt-font-numeral, var(--basalt-font-sans));
   font-variant-numeric: lining-nums;
   font-size: var(--basalt-meter-caption);
@@ -164,6 +186,20 @@
   color: var(--vx-muted);
 }
 
+/* Captions at their marks: each is placed (inline `inset-inline-start`) by the measured layout. */
+.captionsAnchored {
+  position: relative;
+  display: block;
+  height: 1lh;
+}
+
+.captionsAnchored > * {
+  position: absolute;
+  top: 0;
+  margin: 0;
+  white-space: nowrap;
+}
+
 /* Captions never truncate: the row wraps, and a caption wider than the row wraps inside itself. */
 .caption {
   min-width: 0;
@@ -205,6 +241,20 @@
   gap: var(--vx-space-control-gap, 0.375rem);
   min-width: 0;
   overflow-wrap: anywhere;
+}
+
+/* Every part's caption fits under its own segment: the list is positioned, not wrapped. */
+.partCaptionsUnder {
+  position: relative;
+  display: block;
+  height: 1lh;
+}
+
+/* Under its segment a caption is one line by construction: it was measured to fit as one. */
+.partCaptionsUnder > .partCaption {
+  position: absolute;
+  top: 0;
+  white-space: nowrap;
 }
 
 /* A shape cue beside the name, so the part never reads by colour alone. */
@@ -263,6 +313,17 @@
 .ringArc {
   fill: none;
   stroke: var(--vx-line);
+}
+
+/* A ring tick: an ink mark with a track-coloured halo, so it reads over the arc and the track. */
+.ringTick {
+  stroke: var(--vx-ink);
+  stroke-width: 1.5;
+}
+
+.ringTickHalo {
+  stroke: var(--vx-surface-subtle);
+  stroke-width: 3;
 }
 
 .ringValue {

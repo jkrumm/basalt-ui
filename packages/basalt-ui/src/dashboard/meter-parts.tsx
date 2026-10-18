@@ -7,16 +7,22 @@ import { cx } from '../common/props'
 import {
   ariaValues,
   modelBar,
-  ringFraction,
-  startCaptionText,
+  partsFitUnder,
+  placeMarkCaptions,
   placeRowLabels,
+  ringFraction,
+  ringMarks,
+  startCaptionText,
   zoneBand,
+  zoneFill,
 } from './meter-model'
 import type {
+  MarkItem,
   MeterSegment,
   MeterTick,
   MeterZone,
   Part,
+  PartCaption,
   RowLabel,
   TickMark,
   ZoneLabel,
@@ -50,8 +56,20 @@ const RING_RADIUS = (RING_VIEWBOX - RING_STROKE) / 2
 const RING_LENGTH = 2 * Math.PI * RING_RADIUS
 const RING_CENTER = RING_VIEWBOX / 2
 
+/** A ring tick spans from just inside the stroke's inner edge to just inside the box. */
+const RING_TICK_INNER = RING_RADIUS - RING_STROKE / 2 - 0.75
+const RING_TICK_OUTER = RING_VIEWBOX / 2 - 0.5
+
 /** The one ring drawing: a track and, when there is a reading, its arc (a fraction of the circle). */
-function RingSvg({ fraction, color }: { fraction?: number; color?: string | undefined }) {
+function RingSvg({
+  fraction,
+  color,
+  marks = [],
+}: {
+  fraction?: number
+  color?: string | undefined
+  marks?: readonly { angle: number }[]
+}) {
   return (
     <svg className={classes.ring} viewBox={`0 0 ${RING_VIEWBOX} ${RING_VIEWBOX}`} aria-hidden>
       <circle
@@ -72,6 +90,22 @@ function RingSvg({ fraction, color }: { fraction?: number; color?: string | unde
           {...(color !== undefined && { style: { stroke: color } })}
         />
       )}
+      {marks.map((m, i) => (
+        // The svg is rotated so 0° is the top: a horizontal line at the rim, turned `angle` clockwise.
+        <g key={i} data-meter-ring-tick="">
+          {[classes.ringTickHalo, classes.ringTick].map((cls, n) => (
+            <line
+              key={n}
+              className={cls}
+              x1={RING_CENTER + RING_TICK_INNER}
+              x2={RING_CENTER + RING_TICK_OUTER}
+              y1={RING_CENTER}
+              y2={RING_CENTER}
+              transform={`rotate(${m.angle} ${RING_CENTER} ${RING_CENTER})`}
+            />
+          ))}
+        </g>
+      ))}
     </svg>
   )
 }
@@ -140,20 +174,30 @@ export function MeterRing(props: {
   min: number
   max: number
   color: string | undefined
+  target: number | undefined
+  ticks: readonly MeterTick[] | undefined
   format: (value: number) => string
   shell: Shell
 }) {
   const { label, reading, min, max, color, format, shell } = props
+  const describedId = useId()
+  const marks = ringMarks(props.target, props.ticks, min, max, format)
   return (
     <div {...rootProps(shell)}>
       <span
         className={classes.ringBox}
         aria-label={label}
         {...ariaValues(reading, min, max, format)}
+        {...(marks.length > 0 && { 'aria-describedby': describedId })}
       >
-        <RingSvg fraction={ringFraction(reading, min, max)} color={color} />
+        <RingSvg fraction={ringFraction(reading, min, max)} color={color} marks={marks} />
         <span className={classes.ringValue}>{format(reading)}</span>
       </span>
+      {marks.length > 0 && (
+        <VisuallyHidden id={describedId} className={classes.summary}>
+          {marks.map((m) => m.text).join('; ')}
+        </VisuallyHidden>
+      )}
     </div>
   )
 }
@@ -162,24 +206,21 @@ function fillStyle(p: Part): CSSProperties {
   return { width: `${toPct(p.size)}%`, ...(p.color !== undefined && { background: p.color }) }
 }
 
-/** Uncoloured zones step from `MIN` to `MIN + STEP` percent of the neutral, so order reads without hue. */
-const ZONE_STRENGTH_MIN = 15
-const ZONE_STRENGTH_STEP = 45
-const ZONE_STRENGTH_SOLO = 40
 /** Every band after the first gives up its leading pixel, so a boundary never relies on fill strength. */
 const ZONE_GAP = '1px'
 
 function zoneStyle(zone: MeterZone, index: number, count: number, min: number, span: number) {
   const band = zoneBand(zone, min, span)
   const gap = index > 0
-  const strength =
-    count > 1 ? ZONE_STRENGTH_MIN + (index / (count - 1)) * ZONE_STRENGTH_STEP : ZONE_STRENGTH_SOLO
   return {
     insetInlineStart: gap ? `calc(${band.start}% + ${ZONE_GAP})` : `${band.start}%`,
     width: gap ? `calc(${band.width}% - ${ZONE_GAP})` : `${band.width}%`,
-    background: zone.color ?? `color-mix(in srgb, var(--vx-line) ${strength}%, transparent)`,
+    background: zoneFill(zone, index, count),
   } satisfies CSSProperties
 }
+
+/** The row's `column-gap` in px: one gap step of the host's spacing, the least two captions keep apart. */
+const columnGapOf = (el: Element): number => Number.parseFloat(getComputedStyle(el).columnGap) || 0
 
 /** One label on the row: its span in percent of the row (a zone name) or none (an end tick). */
 type RowSlot = { spanPct?: readonly [number, number]; holding?: boolean }
@@ -239,7 +280,7 @@ function useRowLabelLayout(
         const label = labels[labelIndex]
         if (r && label) label.short = { left: r.left - origin.left, right: r.right - origin.left }
       })
-      const placed = placeRowLabels(labels, origin.width)
+      const placed = placeRowLabels(labels, origin.width, columnGapOf(row))
       // The hook measures on the physical x axis; the margin is logical, so it flips with `dir`.
       const next = {
         shown: placed.shown,
@@ -395,6 +436,153 @@ function LabelRow({ zones, ticks }: { zones: readonly ZoneLabel[]; ticks: readon
   )
 }
 
+/** One caption of the marks row, in flow order: its anchor (`pct`, or the row's `edge`) when it has one. */
+type CaptionItem = { key: string; node: ReactNode; pct?: number; edge?: 'end'; end?: boolean }
+
+/** The measurement shared by the marks row and the part list: natural widths, row width, gap step. */
+function measureItems(row: HTMLElement) {
+  const kids = [...row.children] as HTMLElement[]
+  const widths = kids.map((kid) => {
+    // In the flow a caption may shrink and wrap inside itself; its anchored width is its one-line one.
+    const { whiteSpace, flex } = kid.style
+    kid.style.whiteSpace = 'nowrap'
+    kid.style.flex = 'none'
+    const width = kid.offsetWidth
+    kid.style.whiteSpace = whiteSpace
+    kid.style.flex = flex
+    return width
+  })
+  return { widths, rowWidth: row.clientWidth, gap: columnGapOf(row) }
+}
+
+/**
+ * Runs `measure` when `key` (what the row says) changes, when the row resizes and when web fonts
+ * load (a swap changes widths without resizing the row). Without layout (server markup, happy-dom)
+ * nothing is measured and the row keeps its flow.
+ */
+function useMeasured(
+  rowRef: RefObject<HTMLElement | null>,
+  measure: (row: HTMLElement) => void,
+  key: string,
+) {
+  const measureRef = useRef(measure)
+  // Declared first so the effect below reads this render's closure.
+  useIsomorphicLayoutEffect(() => {
+    measureRef.current = measure
+  })
+  useIsomorphicLayoutEffect(() => {
+    const row = rowRef.current
+    if (!row) return
+    const run = () => measureRef.current(row)
+    run()
+    const observer = typeof ResizeObserver === 'undefined' ? undefined : new ResizeObserver(run)
+    observer?.observe(row)
+    const fonts =
+      typeof document === 'undefined' ? undefined : (document.fonts as FontFaceSet | undefined)
+    fonts?.addEventListener?.('loadingdone', run)
+    return () => {
+      observer?.disconnect()
+      fonts?.removeEventListener?.('loadingdone', run)
+    }
+  }, [rowRef, key])
+}
+
+const sameStarts = (a: number[] | null, b: number[] | null) =>
+  a === b || (a !== null && b !== null && a.length === b.length && a.every((v, i) => v === b[i]))
+
+/**
+ * The captions under the track. A caption that names a mark (the forecast boundary, the target) sits
+ * AT that mark, centred and clamped inside the track, when every caption fits with a gap step between
+ * them; otherwise (and in server markup) the row flows and wraps: start, forecast, end.
+ */
+function CaptionRow({ items }: { items: readonly CaptionItem[] }) {
+  const rowRef = useRef<HTMLDivElement>(null)
+  const [starts, setStarts] = useState<number[] | null>(null)
+  useMeasured(
+    rowRef,
+    (row) => {
+      const { widths, rowWidth, gap } = measureItems(row)
+      const marks: MarkItem[] = items.map((item, i) => ({
+        width: widths[i] ?? 0,
+        ...(item.pct !== undefined && { pct: item.pct }),
+        ...(item.edge !== undefined && { edge: item.edge }),
+      }))
+      const next = placeMarkCaptions(marks, rowWidth, gap)
+      setStarts((prev) => (sameStarts(prev, next) ? prev : next))
+    },
+    items
+      .map((i) => `${i.key}@${i.pct ?? i.edge ?? ''}:${typeof i.node === 'string' ? i.node : ''}`)
+      .join('\u0000'),
+  )
+  return (
+    <div
+      ref={rowRef}
+      className={cx(classes.captions, starts !== null && classes.captionsAnchored)}
+      data-meter-captions
+      data-anchored={starts === null ? undefined : ''}
+    >
+      {items.map((item, i) => (
+        <span
+          key={item.key}
+          className={item.end ? classes.captionEnd : classes.caption}
+          {...(starts?.[i] !== undefined && { style: { insetInlineStart: `${starts[i]}px` } })}
+        >
+          {item.node}
+        </span>
+      ))}
+    </div>
+  )
+}
+
+/**
+ * Categorical part captions (swatch, name, value): each under its own segment when every one fits
+ * there on one line, else one wrapped list. A caption never wraps inside itself.
+ */
+function PartCaptions({ captions }: { captions: readonly PartCaption[] }) {
+  const rowRef = useRef<HTMLUListElement>(null)
+  const [under, setUnder] = useState(false)
+  useMeasured(
+    rowRef,
+    (row) => {
+      const { widths, rowWidth, gap } = measureItems(row)
+      const fits = partsFitUnder(
+        captions.map((c, i) => ({ startPct: c.startPct, width: widths[i] ?? 0 })),
+        rowWidth,
+        gap,
+      )
+      setUnder(fits)
+    },
+    captions.map((c) => `${c.label} ${c.text}@${c.startPct}`).join('\u0000'),
+  )
+  return (
+    <ul
+      ref={rowRef}
+      className={cx(classes.partCaptions, under && classes.partCaptionsUnder)}
+      // The explicit role is deliberate: `list-style: none` makes Safari/VoiceOver drop the implicit one.
+      // oxlint-disable-next-line jsx-a11y/no-redundant-roles
+      role="list"
+      data-meter-parts
+      data-anchored={under ? '' : undefined}
+    >
+      {captions.map((c) => (
+        <li
+          key={c.key}
+          className={classes.partCaption}
+          {...(under && { style: { insetInlineStart: `${c.startPct}%` } })}
+        >
+          <span
+            className={classes.swatch}
+            // theme-allow hidden-inline-style — the swatch repeats the part's fill colour (data)
+            style={{ background: c.color ?? 'var(--vx-line)' }}
+            aria-hidden
+          />
+          {glueUnits(`${c.label} ${c.text}`)}
+        </li>
+      ))}
+    </ul>
+  )
+}
+
 export function MeterBar(props: {
   label: string
   reading: number
@@ -404,6 +592,9 @@ export function MeterBar(props: {
   color: string | undefined
   segments: readonly MeterSegment[] | undefined
   zones: readonly MeterZone[] | undefined
+  stops: readonly { at: number; color: string }[] | undefined
+  track: boolean | undefined
+  markerReading: boolean | undefined
   target: number | undefined
   ticks: readonly MeterTick[] | undefined
   tone: 'muted' | undefined
@@ -412,27 +603,67 @@ export function MeterBar(props: {
   endCaption: ReactNode
   shell: Shell
 }) {
-  const { label, reading, min, max, format, zones, shell } = props
+  const { label, min, max, format, zones, shell } = props
   const describedId = useId()
   const model = modelBar(props)
   const compact = shell.row
+  const hosted = useContext(VisualSlotContext) !== null
   // A host that already shows the value as its hero (StatCard, a strip cell) owns the reading: a
-  // zoned track keeps its marker and zone labels but does not print the number a second time. A
-  // consumer's own `startCaption` is not the reading and still renders.
-  const hosted =
-    useContext(VisualSlotContext) &&
-    model.markerPct !== undefined &&
-    props.startCaption === undefined
-  const start = compact || hosted ? null : startCaptionText(model, props.startCaption)
-  const end = compact ? null : props.endCaption === undefined ? model.endText : props.endCaption
-  const anchored = model.markerPct !== undefined && start !== null
-  const hasCaptions =
-    (start !== null && !anchored) || end !== null || (!compact && model.forecastText !== null)
-  const hasParts = !compact && model.partCaptions.length > 0
+  // marked track keeps its marker and labels but does not print the number a second time, and a
+  // stops track prints it only on request. `reading` overrides either way. A consumer's own
+  // `startCaption` is not the reading and still renders.
+  const marked = model.markerPct !== undefined
+  const readingOn = props.markerReading ?? (model.zoneLabels.length > 0 && !hosted)
+  const start =
+    compact || (marked && !readingOn && props.startCaption === undefined)
+      ? null
+      : startCaptionText(model, props.startCaption)
+  const anchored = marked && start !== null
+  const trackHidden =
+    props.track === false &&
+    model.parts.length === 1 &&
+    props.segments === undefined &&
+    props.target === undefined &&
+    model.ticks.length === 0
+  const hasParts = model.partCaptions.length > 0
   const tickLabels = compact ? [] : model.ticks.filter((t) => t.label !== undefined)
   const zoneLabels = compact ? [] : model.zoneLabels
   const describedBy =
     model.describedByText === null ? {} : ({ 'aria-describedby': describedId } as const)
+
+  // The caption row, in flow order. The target's caption sits at its tick unless the consumer
+  // supplied an end caption (theirs goes at the end, as written).
+  const endOverride = props.endCaption !== undefined
+  const targetHere = !endOverride && model.targetPct !== undefined && model.endText !== null
+  const end = compact ? null : endOverride ? props.endCaption : model.endText
+  const items: CaptionItem[] = compact
+    ? []
+    : [
+        ...(start !== null && !anchored
+          ? [{ key: 'start', node: glue(start) } satisfies CaptionItem]
+          : []),
+        ...(model.forecastText !== null
+          ? [
+              {
+                key: 'forecast',
+                node: glue(model.forecastText),
+                ...(model.boundaryPct !== undefined && { pct: model.boundaryPct }),
+              } satisfies CaptionItem,
+            ]
+          : []),
+        ...(end !== null
+          ? [
+              {
+                key: 'end',
+                node: glue(end),
+                end: true,
+                ...(targetHere && model.targetPct !== undefined
+                  ? { pct: model.targetPct }
+                  : { edge: 'end' as const }),
+              } satisfies CaptionItem,
+            ]
+          : []),
+      ]
 
   const root = rootProps(shell)
   return (
@@ -441,21 +672,32 @@ export function MeterBar(props: {
         <LabelRow zones={zoneLabels} ticks={tickLabels} />
       )}
       <div
-        className={classes.trackBox}
+        className={cx(classes.trackBox, trackHidden && classes.trackHidden)}
+        data-meter-track-hidden={trackHidden ? '' : undefined}
         aria-label={label}
-        {...ariaValues(reading, min, max, format)}
+        {...ariaValues(props.reading, min, max, format)}
         {...describedBy}
       >
-        <div className={classes.track} data-meter-track>
-          {model.markerPct !== undefined &&
-            zones?.map((z, i) => (
-              <div
-                key={i}
-                className={classes.zone}
-                data-meter-zone={z.label}
-                style={zoneStyle(z, i, zones.length, min, model.span)}
-              />
-            ))}
+        <div
+          className={classes.track}
+          data-meter-track
+          {...(model.stopsCss !== undefined && {
+            'data-meter-stops': '',
+            // theme-allow hidden-inline-style — the gradient is the consumer's colour data
+            style: { '--basalt-stops': model.stopsCss } as CSSProperties,
+          })}
+        >
+          {zones?.map(
+            (z, i) =>
+              model.markerPct !== undefined && (
+                <div
+                  key={i}
+                  className={classes.zone}
+                  data-meter-zone={z.label}
+                  style={zoneStyle(z, i, zones.length, min, model.span)}
+                />
+              ),
+          )}
           {model.parts.map((p, i) => (
             <div
               key={i}
@@ -482,32 +724,8 @@ export function MeterBar(props: {
           {model.describedByText}
         </VisuallyHidden>
       )}
-      {hasParts && (
-        // The explicit role is deliberate: `list-style: none` makes Safari/VoiceOver drop the implicit one.
-        // oxlint-disable-next-line jsx-a11y/no-redundant-roles
-        <ul className={classes.partCaptions} role="list" data-meter-parts>
-          {model.partCaptions.map((c) => (
-            <li key={c.key} className={classes.partCaption}>
-              <span
-                className={classes.swatch}
-                // theme-allow hidden-inline-style — the swatch repeats the part's fill colour (data)
-                style={{ background: c.color ?? 'var(--vx-line)' }}
-                aria-hidden
-              />
-              {glueUnits(`${c.label} ${c.text}`)}
-            </li>
-          ))}
-        </ul>
-      )}
-      {hasCaptions && (
-        <div className={classes.captions} data-meter-captions>
-          {start !== null && !anchored && <span className={classes.caption}>{glue(start)}</span>}
-          {!compact && model.forecastText !== null && (
-            <span className={classes.caption}>{glue(model.forecastText)}</span>
-          )}
-          {end !== null && <span className={classes.captionEnd}>{glue(end)}</span>}
-        </div>
-      )}
+      {hasParts && <PartCaptions captions={model.partCaptions} />}
+      {items.length > 0 && <CaptionRow items={items} />}
     </div>
   )
 }

@@ -420,6 +420,132 @@ layout('Meter / BarList geometry', () => {
     },
   )
 
+  test('a zoned Meter with the reading off has no label row under the marker (300px cell)', async () => {
+    const m = await p.raw.evaluate(() => {
+      const host = document.querySelector<HTMLElement>('[data-testid="dash-w37-reading-off"]')
+      const marker = host?.querySelector<HTMLElement>('[data-meter-tick="marker"]')
+      const names = host?.querySelector<HTMLElement>('[data-meter-zone-band]')
+      if (!host || !marker || !names) throw new Error('LAYOUT: no reading-off Meter')
+      return {
+        readingRows: host.querySelectorAll('[data-meter-reading-row]').length,
+        below: host.getBoundingClientRect().bottom - names.getBoundingClientRect().bottom,
+        valuenow: host.querySelector('[role="meter"]')?.getAttribute('aria-valuenow'),
+      }
+    })
+    expect(m.readingRows).toBe(0)
+    // Nothing sits under the zone-name row: the Meter ends where the names end.
+    expect(Math.abs(m.below)).toBeLessThanOrEqual(SNAP)
+    expect(m.valuenow).toBe('76')
+  })
+
+  test('a ring target draws its tick inside the ring box, value still centred', async () => {
+    const m = await p.raw.evaluate(() => {
+      const host = document.querySelector<HTMLElement>('[data-testid="dash-w37-ring-target"]')
+      const ring = host?.querySelector<HTMLElement>('[role="meter"]')
+      const tick = host?.querySelector<SVGGElement>('[data-meter-ring-tick]')
+      const value = ring?.lastElementChild
+      if (!ring || !tick || !value) throw new Error('LAYOUT: no ring tick')
+      const r = ring.getBoundingClientRect()
+      const t = tick.getBoundingClientRect()
+      const v = value.getBoundingClientRect()
+      return {
+        ring: [r.left, r.top, r.right, r.bottom],
+        tick: [t.left, t.top, t.right, t.bottom],
+        centre: [
+          (v.left + v.right) / 2 - (r.left + r.right) / 2,
+          (v.top + v.bottom) / 2 - (r.top + r.bottom) / 2,
+        ],
+      }
+    })
+    expect(m.tick[0]).toBeGreaterThanOrEqual((m.ring[0] ?? 0) - SUBPIXEL)
+    expect(m.tick[1]).toBeGreaterThanOrEqual((m.ring[1] ?? 0) - SUBPIXEL)
+    expect(m.tick[2]).toBeLessThanOrEqual((m.ring[2] ?? 0) + SUBPIXEL)
+    expect(m.tick[3]).toBeLessThanOrEqual((m.ring[3] ?? 0) + SUBPIXEL)
+    expect(Math.abs(m.centre[0] ?? 9)).toBeLessThanOrEqual(SNAP)
+    expect(Math.abs(m.centre[1] ?? 9)).toBeLessThanOrEqual(SNAP)
+  })
+
+  test.each([
+    ['dash-w37-forecast', 'boundary', 'by 16'],
+    ['dash-w37-target', 'target', 'Target'],
+  ])('%s: the caption sits at its tick, not at the track end', async (id, kind, text) => {
+    const m = await p.raw.evaluate(
+      ({ id, kind }) => {
+        const host = document.querySelector<HTMLElement>(`[data-testid="${id}"]`)
+        const tick = host?.querySelector<HTMLElement>(`[data-meter-tick="${kind}"]`)
+        const track = host?.querySelector<HTMLElement>('[data-meter-track]')
+        const caps = [
+          ...(host?.querySelectorAll<HTMLElement>('[data-meter-captions] > span') ?? []),
+        ]
+        if (!host || !tick || !track) throw new Error(`LAYOUT: no ${kind} tick in ${id}`)
+        const t = tick.getBoundingClientRect()
+        const k = track.getBoundingClientRect()
+        return {
+          anchored: host.querySelector('[data-meter-captions]')?.hasAttribute('data-anchored'),
+          tick: (t.left + t.right) / 2,
+          track: [k.left, k.right],
+          caps: caps.map((c) => {
+            const r = c.getBoundingClientRect()
+            const lh = Number.parseFloat(getComputedStyle(c).lineHeight) || r.height
+            return {
+              text: c.textContent,
+              left: r.left,
+              right: r.right,
+              lines: Math.round(r.height / lh),
+            }
+          }),
+        }
+      },
+      { id, kind },
+    )
+    expect(m.anchored).toBe(true)
+    const cap = m.caps.find((c) => c.text?.includes(text))
+    if (!cap) throw new Error(`LAYOUT: no ${text} caption in ${id}`)
+    const centre = (cap.left + cap.right) / 2
+    expect(Math.abs(centre - m.tick)).toBeLessThanOrEqual(SNAP)
+    expect(cap.left).toBeGreaterThanOrEqual((m.track[0] ?? 0) - SUBPIXEL)
+    expect(cap.right).toBeLessThanOrEqual((m.track[1] ?? 0) + SUBPIXEL)
+    for (const c of m.caps) expect(c.lines).toBe(1)
+  })
+
+  test('categorical part captions sit under their own segment when they fit', async () => {
+    const m = await p.raw.evaluate(() => {
+      const host = document.querySelector<HTMLElement>('[data-testid="dash-w37-parts-wide"]')
+      const list = host?.querySelector<HTMLElement>('[data-meter-parts]')
+      const fills = [...(host?.querySelectorAll<HTMLElement>('[data-meter-fill]') ?? [])]
+      if (!host || !list) throw new Error('LAYOUT: no part captions')
+      return {
+        anchored: list.hasAttribute('data-anchored'),
+        fills: fills.map((f) => f.getBoundingClientRect().left),
+        items: ([...list.children] as HTMLElement[]).map((li) => li.getBoundingClientRect().left),
+      }
+    })
+    expect(m.anchored).toBe(true)
+    for (const [i, left] of m.items.entries())
+      expect(Math.abs(left - (m.fills[i] ?? 0))).toBeLessThanOrEqual(SNAP)
+  })
+
+  test('part captions that do not fit under their segments fall back to a list, none wrapped (390)', async () => {
+    const m = await p.raw.evaluate(() => {
+      const host = document.querySelector<HTMLElement>('[data-testid="dash-w37-parts-narrow"]')
+      const list = host?.querySelector<HTMLElement>('[data-meter-parts]')
+      if (!host || !list) throw new Error('LAYOUT: no part captions')
+      return {
+        anchored: list.hasAttribute('data-anchored'),
+        overflow: host.scrollWidth > host.clientWidth,
+        items: ([...list.children] as HTMLElement[]).map((li) => {
+          const r = li.getBoundingClientRect()
+          const lh = Number.parseFloat(getComputedStyle(li).lineHeight) || r.height
+          return { text: li.textContent, lines: Math.round(r.height / lh) }
+        }),
+      }
+    })
+    expect(m.anchored).toBe(false)
+    expect(m.overflow).toBe(false)
+    expect(m.items.map((i) => i.text)).toContain('Mobility 4 sessions')
+    for (const i of m.items) expect(i.lines).toBe(1)
+  })
+
   test('a ring value of €12,483 stays inside the ring box', async () => {
     const m = await p.raw.evaluate(() => {
       const host = document.querySelector('[data-testid="dash-meter-ring"]')
