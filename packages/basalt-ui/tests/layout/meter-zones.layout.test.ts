@@ -30,12 +30,12 @@ const SNAP = 1
 const ZONES = ['Under', 'Optimal', 'Caution', 'Danger']
 
 /** Per fixture: which zone names show (in zone order) and which end ticks. `clash` carries "Rest". */
-type Shown = { zones: string[]; ticks: string[]; skipOverflow?: boolean }
+type Shown = { zones: string[]; ticks: string[] }
 const ENDS = ['0', '2.0']
 
 const CASES: ReadonlyArray<readonly [string, Shown]> = [
   // 120: only the holding name and the first fit; Caution and Danger are wider than their spans.
-  ['dash-zl-120', { zones: ['Under', 'Optimal'], ticks: ENDS, skipOverflow: true }],
+  ['dash-zl-120', { zones: ['Under', 'Optimal'], ticks: ENDS }],
   ['dash-zl-170', { zones: ['Under', 'Optimal'], ticks: ENDS }],
   // 220: "Danger" fits its span but the "2.0" end tick takes the place.
   ['dash-zl-220', { zones: ['Under', 'Optimal'], ticks: ENDS }],
@@ -111,8 +111,7 @@ const measure = (p: LayoutPage, root: string): Promise<Measured> =>
 
 function assertRow(m: Measured, expected: Shown) {
   expect(m.strayLists).toBe(0)
-  // 120px is narrower than any cell the system makes: it probes the holding name, not the caption.
-  if (!expected.skipOverflow) expect(m.overflow).toBe(false)
+  expect(m.overflow).toBe(false)
   // Every zone stays drawn and named, whatever its label does.
   expect(m.zones.map((z) => z.name)).toEqual(ZONES)
   for (const name of ZONES) expect(m.described).toContain(name)
