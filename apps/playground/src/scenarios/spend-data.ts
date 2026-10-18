@@ -238,3 +238,8 @@ export const DISTRIBUTION_BARS: BarsBar<DistributionBin>[] = [
     formatValue: (v) => `${v} ${v === 1 ? 'day' : 'days'}`,
   },
 ]
+
+/** The y axis tops out at the tallest bin rounded up to 5. */
+export const DISTRIBUTION_Y_MAX = Math.ceil(Math.max(...DISTRIBUTION.map((b) => b.days)) / 5) * 5
+/** The axis states its unit once, on the top tick (`25 days`), so the scale reads without a legend. */
+export const daysTick = (v: number): string => (v === DISTRIBUTION_Y_MAX ? `${v} days` : String(v))

@@ -10,6 +10,7 @@
 import { useMemo } from 'react'
 import { SimpleGrid, Stack } from '@mantine/core'
 import { Section, StatCard, StatGroup } from 'basalt-ui'
+import { date, time } from 'basalt-ui/format'
 import {
   BandStrip,
   ChartCard,
@@ -64,12 +65,12 @@ import type {
 import { money, integer } from './fixtures/format'
 import { demoColors } from './series'
 
-const fmtClock = (d: Date): string =>
-  d.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', timeZone: 'UTC' })
+const fmtClock = (d: Date): string => time(d, { format: 'short', timeZone: 'UTC' })
 const fmtStamp = (d: Date): string =>
-  d.toLocaleString('en-US', { dateStyle: 'medium', timeStyle: 'short', timeZone: 'UTC' })
+  `${date(d, { timeZone: 'UTC' })}, ${time(d, { format: 'short', timeZone: 'UTC' })}`
+// basalt's `date` has no day-and-month width; the page locale (en-GB, `main.tsx`) is spelled out.
 const fmtDay = (d: Date): string =>
-  d.toLocaleDateString('en-US', { month: 'short', day: 'numeric', timeZone: 'UTC' })
+  d.toLocaleDateString('en-GB', { month: 'short', day: 'numeric', timeZone: 'UTC' })
 
 // ── Strips ──────────────────────────────────────────────────────────────────────
 

@@ -10,6 +10,7 @@ import { createRoot } from 'react-dom/client'
 // definition (`defineNav`) before the provider mounts, so Spotlight and the hotkeys see them at boot.
 import './demo/commands'
 import './demo/nav-model'
+import { PAGE_FORMAT } from './demo/page-format'
 import { demoPaletteGroups } from './demo/series'
 import { routeTree } from './routeTree.gen'
 
@@ -44,8 +45,7 @@ createRoot(root).render(
         framework primitives, so the app-side series colors resolve per scheme just like the chrome. */}
     <BasaltProvider
       router={router}
-      locale="en-GB"
-      timeZone="UTC"
+      {...PAGE_FORMAT}
       paletteOptions={{ groups: demoPaletteGroups }}
       {...(telemetry && { telemetry })}
     />

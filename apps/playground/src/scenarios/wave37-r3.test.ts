@@ -8,6 +8,8 @@ import { createElement } from 'react'
 import type { ReactElement } from 'react'
 import { readFileSync } from 'node:fs'
 import { afterEach, describe, expect, it } from 'bun:test'
+import { date, defineFormat } from 'basalt-ui/format'
+import { PAGE_FORMAT } from '../demo/page-format'
 import { ComponentsSurfaces } from '../demo/ComponentsPage'
 import {
   BUDGETS,
@@ -27,7 +29,15 @@ import { fmtEur } from './fixture-utils'
 import { AgentsScenario } from './S3Agents'
 import { SpendScenario } from './S4Spend'
 import { TrainingScenario } from './S2Training'
-import { MTD_POINTS, MTD_TOTALS, PROJECTS_MTD, WINDOW_LABEL } from './spend-data'
+import {
+  DISTRIBUTION,
+  DISTRIBUTION_Y_MAX,
+  MTD_POINTS,
+  MTD_TOTALS,
+  PROJECTS_MTD,
+  WINDOW_LABEL,
+  daysTick,
+} from './spend-data'
 import {
   DISTANCE_7D_POINTS,
   DISTANCE_7D_TREND,
@@ -67,12 +77,26 @@ const source = (file: string): string => readFileSync(new URL(file, import.meta.
 const training = (shotState?: ShotState) => mount(createElement(TrainingScenario, { shotState }))
 const agents = (shotState?: ShotState) => mount(createElement(AgentsScenario, { shotState }))
 const spend = (shotState?: ShotState) => mount(createElement(SpendScenario, { shotState }))
+/**
+ * The layout checks below read the source on purpose: jsdom has no layout, so a grid, a height
+ * fill or a `maw` cap can only be pinned where it is written. The shot rounds judge the geometry.
+ */
 const DAY_MS = 86_400_000
 const values = (points: readonly { value: number }[]) => points.map((p) => p.value)
 
 describe('1. one date format per card', () => {
-  it('the provider sets the page format locale to en-GB once', () => {
-    expect(source('../main.tsx')).toMatch(/<BasaltProvider[^>]*\n?[^>]*locale="en-GB"/)
+  it('the page format config makes basalt print "16 Oct", not "Oct 16", at UTC', () => {
+    defineFormat({ locale: 'en-US', timeZone: 'America/Los_Angeles' })
+    const at = Date.UTC(2026, 9, 16)
+    expect(date(at)).toContain('Oct 15')
+    defineFormat(PAGE_FORMAT)
+    expect(date(at)).toContain('16 Oct')
+    expect(date(at)).not.toContain('Oct 16')
+  })
+
+  it('main.tsx hands that config to the provider', () => {
+    // Deliberate source check: mounting `main.tsx` would boot the router and the app.
+    expect(source('../main.tsx')).toMatch(/<BasaltProvider[\s\S]*?\{\.\.\.PAGE_FORMAT\}/)
   })
 })
 
@@ -165,11 +189,19 @@ describe('4. S3', () => {
 })
 
 describe('5. S4', () => {
-  it('the distribution states its window and its y unit on the surface', () => {
-    const card = text(anchor(spend(), 'spend-distribution'))
-    expect(card).toContain('last 90 days')
-    expect(source('./S4Spend.tsx')).toMatch(/y=\{\{[^}]*format:/)
-    expect(source('./S4Spend.tsx')).toMatch(/days`/)
+  it('the distribution states its window on the surface', () => {
+    expect(text(anchor(spend(), 'spend-distribution'))).toContain('last 90 days')
+  })
+
+  it('the distribution axis names its unit on the top tick only', () => {
+    const ticks = Array.from({ length: DISTRIBUTION_Y_MAX / 5 + 1 }, (_, i) => i * 5)
+    expect(daysTick(DISTRIBUTION_Y_MAX)).toBe(`${DISTRIBUTION_Y_MAX} days`)
+    for (const v of ticks.slice(0, -1)) expect(daysTick(v)).toBe(String(v))
+    expect(DISTRIBUTION_Y_MAX).toBeGreaterThanOrEqual(Math.max(...DISTRIBUTION.map((b) => b.days)))
+    // The chart is handed the same domain and formatter, so its top tick is that label.
+    expect(source('./S4Spend.tsx')).toContain(
+      'y={{ domain: [0, DISTRIBUTION_Y_MAX], format: daysTick }}',
+    )
   })
 
   it('the distribution card ends level with its row neighbour', () => {

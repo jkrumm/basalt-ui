@@ -37,7 +37,7 @@ export function isoDayToDate(day: string): Date {
 export function fmtMonthTick(key: string): string {
   const date = isoDayToDate(key)
   if (Number.isNaN(date.getTime())) return key
-  return date.toLocaleDateString('en-US', { month: 'short', year: '2-digit', timeZone: 'UTC' })
+  return date.toLocaleDateString('en-GB', { month: 'short', year: '2-digit', timeZone: 'UTC' })
 }
 
 /** Percent change from `before` to `after`, the sign `DeltaBadge` wants. */

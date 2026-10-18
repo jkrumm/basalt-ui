@@ -87,7 +87,7 @@ function hourLabel(h: number): string {
 function dayLabel(offset: number): string {
   // Count backwards from "today" (Jun 30) so the 30d view looks recent.
   const d = new Date(2025, 5, 30 - offset)
-  return d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })
+  return d.toLocaleDateString('en-GB', { month: 'short', day: 'numeric' })
 }
 
 /**

@@ -37,6 +37,8 @@ export const monthName = (date: Date, style: 'long' | 'short'): string => {
   return style === 'long' ? name : name.slice(0, 3)
 }
 
+// A fixed table, not `basalt-ui/format`: its `date` has no day-and-month width ("16 Oct"), and ICU
+// differs by platform for en-GB September. Page-level dates are the provider's `locale="en-GB"`.
 export const fmtDay = (date: Date): string => `${date.getUTCDate()} ${monthName(date, 'short')}`
 
 /** `values` as `{ at, value }` points `stepMs` apart, the last at `lastAt` (epoch ms): a sparkline readout names the point it hovers. */
