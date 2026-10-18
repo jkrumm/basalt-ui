@@ -240,7 +240,9 @@ export const RADIUS_STEP = {
   floating: DEFAULT_RADIUS_VALUES.floating, // 11
   /** SegmentedControl's active indicator, Kbd, Code — one step below the control radius. */
   tight: DEFAULT_RADIUS_VALUES.tight, // 5
-  /** Progress bar, and the Mantine scale's `sm` step — two steps below the control radius. */
+  /** Progress bar, and the Mantine scale's `sm` step — two steps below the control radius. (No
+   * longer the SegmentedControl indicator: that is the track radius − 3 px, the nested-radius lint
+   * step, set in `theme/index.ts`.) */
   fine: DEFAULT_RADIUS_VALUES.fine, // 4
   /** The Mantine `radius` scale's `xs` step — independent of both anchors. */
   scaleXs: 2,
@@ -840,15 +842,10 @@ export const SPACE_FIXED = {
   readingProgressHeight: 2,
   /** SegmentedControl track's optical inset (`styles.root` padding) — moved OUT of `SPACE_STEP` and
    * exempted from the density knob because it is load-bearing for the nested-corner law
-   * (docs/DESIGN-SPEC.md §4): `RADIUS.ctrl === RADIUS_STEP.fine + segmentedTrackInset` (`6 = 4 +
-   * 2`; the track takes the control radius, the indicator the `fine` tier). `RADIUS.ctrl`/
-   * `RADIUS_STEP.fine` both shift together under the RADIUS knob (`ctrl = 6 + level`, `fine = ctrl
-   * - 2`), so their difference is exactly 2 regardless of that knob (down to level -4; at -5 `fine`
-   * clamps to 0 against `ctrl` 1) — a density-tracking inset would break concentricity in both directions (verified: this
-   * inset's own value, HAD it stayed density-tracking, resolves via `scaleSpace(2, level, multiplier)`
-   * to 1 at density's floor level -3 and 3 at its ceiling level +3 — the widest swing `deriveSpacing`'s
-   * `[-3, 3]` range can produce) for no compensating benefit, since the two radii it sits between
-   * never move independently of each other. */
+   * (docs/DESIGN-SPEC.md §4). The indicator radius is the track radius − 3 px (the nested-radius
+   * lint step wins over exact concentricity, which would be track − inset), so the inset no longer
+   * sets a corner; it stays fixed because a density-tracking inset (1 at density -3, 3 at +3 via
+   * `scaleSpace(2, level, multiplier)`) would make the track's optical weight swing for no benefit. */
   segmentedTrackInset: 2,
 } as const
 
