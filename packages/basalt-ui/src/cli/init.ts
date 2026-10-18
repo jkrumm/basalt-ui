@@ -71,10 +71,10 @@ const normalise = (code: string): string =>
     .filter(Boolean)
     .join('\n')
 
-const viteTemplate = (css: boolean, ext: string): string => `import { StrictMode } from 'react'
+const viteTemplate = (css: boolean, app: string): string => `import { StrictMode } from 'react'
 import { createRoot } from 'react-dom/client'
 ${css ? "import './index.css'" : ''}
-import App from './App${ext}'
+import App from '${app}'
 
 createRoot(document.getElementById('root')!).render(
   <StrictMode>
@@ -83,7 +83,7 @@ createRoot(document.getElementById('root')!).render(
 )`
 
 const STOCK_MAINS = [true, false].flatMap((css) =>
-  ['.tsx', ''].map((ext) => normalise(viteTemplate(css, ext))),
+  ['.tsx', ''].map((ext) => normalise(viteTemplate(css, './App' + ext))),
 )
 
 /** Whether `text` is create-vite's react-ts `main.tsx`, untouched (formatting aside): never an edited file. */

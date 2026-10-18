@@ -366,19 +366,30 @@ export function showChrome(): void {
  */
 async function frame(c: Ctx, name: string): Promise<() => Promise<void>> {
   const spec = VIEWPORT_SPECS[c.viewport]
-  await c.page.evaluate(hideChrome, name)
-  const height = Number(
-    await within(
-      'measuring the anchor',
-      anchorOf(c, name).evaluate((el) => el.getBoundingClientRect().height),
-    ),
-  )
-  if (height > spec.height)
-    await resize(c, Math.min(MAX_VIEWPORT_PX, Math.ceil(height) + spec.height))
-  return async () => {
+  const undo = async (): Promise<void> => {
     await c.page.evaluate(showChrome, undefined)
     if (c.height !== spec.height) await resize(c, spec.height)
   }
+  await c.page.evaluate(hideChrome, name)
+  try {
+    const anchor = anchorOf(c, name)
+    // A missing anchor is left for `reveal` to name; measuring it would only wait out the step.
+    if ((await within('locating the anchor', anchor.count())) > 0) {
+      const height = Number(
+        await within(
+          'measuring the anchor',
+          anchor.evaluate((el) => el.getBoundingClientRect().height),
+        ),
+      )
+      if (height > spec.height)
+        await resize(c, Math.min(MAX_VIEWPORT_PX, Math.ceil(height) + spec.height))
+    }
+  } catch (error) {
+    // The caller never gets an undo for a frame that threw: put the page back before it surfaces.
+    await undo()
+    throw error
+  }
+  return undo
 }
 
 /** Runs in the page: px of content that scroll inside a large inner scrollport, which `fullPage` cannot see. */

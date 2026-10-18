@@ -100,6 +100,49 @@ describe('a target that is not visible', () => {
   })
 })
 
+describe('framing an anchor', () => {
+  const framed = (locator: Record<string, unknown>) => {
+    const calls: string[] = []
+    const page = fakePage([], locator)
+    const evaluate = page.evaluate
+    page.evaluate = (expression: unknown) => {
+      if (typeof expression === 'function') calls.push(expression.name)
+      return evaluate(expression)
+    }
+    return { page, calls }
+  }
+
+  test('a measure that rejects puts the chrome back and surfaces as the shot error', async () => {
+    const broken = {
+      first: () => broken,
+      count: () => Promise.resolve(1),
+      evaluate: () => Promise.reject(new Error('boom')),
+      screenshot: () => Promise.resolve(),
+    }
+    const { page, calls } = framed(broken)
+    const out = await capture(input(page, ['rest']))
+    const strip = out.shots.filter((s) => s.name === 'strip')
+    expect(strip.every((s) => s.status === 'error' && s.note === 'boom')).toBe(true)
+    // Every hide is followed by its show, and the _page shot still runs with the chrome back.
+    expect(calls.filter((n) => n === 'hideChrome')).toHaveLength(4)
+    expect(calls.filter((n) => n === 'showChrome')).toHaveLength(4)
+    expect(out.shots.find((s) => s.name === '_page')?.status).toBe('ok')
+  })
+
+  test('a missing anchor says so at once instead of timing out measuring it', async () => {
+    const missing = {
+      first: () => missing,
+      count: () => Promise.resolve(0),
+      evaluate: hangs,
+    }
+    const started = Date.now()
+    const out = await capture(input(framed(missing).page, ['rest']))
+    expect(Date.now() - started).toBeLessThan(5_000)
+    const strip = out.shots.filter((s) => s.name === 'strip')
+    expect(strip.every((s) => s.status === 'error' && s.note === 'anchor not found')).toBe(true)
+  }, 8_000)
+})
+
 describe('a route with no declared states', () => {
   const visible = {
     first: () => visible,
