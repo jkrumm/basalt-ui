@@ -118,9 +118,10 @@ describe('max three font sizes per component', () => {
 })
 
 describe('the heading face', () => {
-  test('does not enable the slashed zero and keeps lining figures', () => {
-    // The zero reset is one `:root` rule (every head-face surface inherits it); the heading rule keeps lining figures.
-    expect(styles).toMatch(/:root\s*\{\s*font-feature-settings:\s*'zero'\s*0;\s*\}/)
+  test('draws digits from the sans face (no slashed zero) and keeps lining figures', () => {
+    // Hubot Sans has no `zero` feature, so the head stack leads with a digits-only sans face.
+    expect(styles).toMatch(/--basalt-font-head:\s*'Basalt Head Digits',\s*'Hubot Sans Variable'/)
+    expect(styles).not.toMatch(/font-feature-settings:\s*'zero'/)
     expect(rule(styles, '.mantine-Title-root')).toContain('font-variant-numeric: lining-nums')
   })
 })

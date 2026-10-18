@@ -31,6 +31,21 @@
 @import '@fontsource-variable/hubot-sans';
 @import '@fontsource-variable/jetbrains-mono';
 
+/* Hubot Sans has no `zero` OpenType feature and its default zero is slashed, so a head-face "2026" or
+ * "90 days" cannot be fixed with `font-feature-settings`. Digits come from the sans instead: this
+ * face covers U+0030-0039 only, cut from the Nunito Sans variable file, and leads
+ * `--basalt-font-head`, so Hubot draws every letter and Nunito every digit. */
+@font-face {
+  /* theme-allow raw-font-family — declares the face, uses nothing */
+  font-family: 'Basalt Head Digits';
+  font-style: normal;
+  font-display: swap;
+  font-weight: 200 1000;
+  src: url('@fontsource-variable/nunito-sans/files/nunito-sans-latin-wght-normal.woff2')
+    format('woff2-variations');
+  unicode-range: U+0030-0039;
+}
+
 /* Font stack — overridable via the --basalt-font-* custom properties. */
 @layer base {
   :root {
@@ -42,9 +57,10 @@
     --basalt-font-sans:
       'Nunito Sans Variable', ui-sans-serif, system-ui, -apple-system, 'Segoe UI', Roboto,
       Helvetica, Arial, sans-serif;
+    /* A consumer that sets its own head family replaces this stack, digit face included, by design. */
     --basalt-font-head:
-      'Hubot Sans Variable', ui-sans-serif, system-ui, -apple-system, 'Segoe UI', Roboto, Helvetica,
-      Arial, sans-serif;
+      'Basalt Head Digits', 'Hubot Sans Variable', ui-sans-serif, system-ui, -apple-system,
+      'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
     --basalt-font-mono: 'JetBrains Mono Variable', ui-monospace, 'SF Mono', Menlo, monospace;
     /* Hero values, unit/count/delta text, bar-list and meter figures: proportional sans, lining
        figures. Set to `var(--basalt-font-mono)` to restore the pre-Wave-35 mono numerals. */
@@ -65,15 +81,6 @@
   html {
     -webkit-text-size-adjust: 100%;
     text-size-adjust: 100%;
-  }
-
-  /* A slashed zero belongs to data text only. Hubot Sans (the heading face) draws one, and it leaked
-     into every title that borrows the face (`2026`, `90 days`). `zero` is OFF by default and nothing
-     in the package turns it on, so this is the off state at the root: it inherits into every head-face
-     surface whether a heading element, a Mantine title or a CSS-module class that only sets the
-     family, and is a no-op on the mono stack. */
-  :root {
-    font-feature-settings: 'zero' 0;
   }
 
   /* Mono data text drops its ligatures: `<>` in a facts line is two characters, not a diamond. Reaches

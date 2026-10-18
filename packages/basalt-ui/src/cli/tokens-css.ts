@@ -183,17 +183,17 @@ export function tokensCss(flags: string[], cwd: string = process.cwd()): number 
 }
 
 /** Every `--basalt-font-*` declaration in the shipped stylesheet, in source order. */
-function readShippedFontDecls(pkgRoot: string): { name: string; value: string }[] {
-  const css = readSource(pkgRoot, 'dist/styles.css') ?? readSource(pkgRoot, 'src/styles.css')
-  if (css === null) return []
-  const decls: { name: string; value: string }[] = []
-  for (const match of css.matchAll(/(--basalt-font[\w-]*)\s*:\s*([^;]+);/g)) {
-    decls.push({
-      name: match[1] as string,
-      value: (match[2] as string).replace(/\s+/g, ' ').trim(),
-    })
-  }
-  return decls
+function readShippedFontDecls(pkgRoot: string): {
+  face: string
+  decls: { name: string; value: string }[]
+} {
+  const css = readSource(pkgRoot, 'dist/styles.css') ?? readSource(pkgRoot, 'src/styles.css') ?? ''
+  const face = css.match(/@font-face\s*\{[^}]*'Basalt Head Digits'[^}]*\}\n*/)?.[0] ?? ''
+  const decls = [...css.matchAll(/(--basalt-font[\w-]*)\s*:\s*([^;]+);/g)].map((m) => ({
+    name: m[1] as string,
+    value: (m[2] as string).replace(/\s+/g, ' ').trim(),
+  }))
+  return { face: face && `${face.trim()}\n\n`, decls }
 }
 
 /**
@@ -202,17 +202,15 @@ function readShippedFontDecls(pkgRoot: string): { name: string; value: string }[
  * The typeface half of the framework-free route, which had no supported path at all: `tokens.css`
  * emits no font vars, `styles.css` is the one place the defaults live and a framework-free consumer
  * is told not to import it, and `buildFontsCss` returns `''` unless the caller already knows the
- * stacks. The one non-Mantine consumer lost its font identity entirely and hardcoded the stacks —
- * which the theme guard then flagged as `raw-font-family`.
- *
- * The declarations are READ from the shipped stylesheet rather than restated here, so this command
- * and `basalt-ui/styles.css` can never name different typefaces. Note the fonts themselves are
- * `@fontsource-variable/*` packages: without them the stacks fall through to their own system
- * fallbacks, which is the intended framework-free behaviour.
+ * stacks. The one non-Mantine consumer lost its font identity entirely and hardcoded the stacks.
+ * The declarations (and the `Basalt Head Digits` face the head stack leads with) are READ from the
+ * shipped stylesheet, so this command and `basalt-ui/styles.css` can never name different
+ * typefaces. The fonts are `@fontsource-variable/*` packages (the face's `url()` is a bare package
+ * specifier for a bundler); without them the stacks fall back to system fonts.
  */
 export function fontsCss(flags: string[], cwd: string = process.cwd()): number {
   const pkgRoot = packageRoot()
-  const decls = readShippedFontDecls(pkgRoot)
+  const { face, decls } = readShippedFontDecls(pkgRoot)
   if (decls.length === 0) {
     console.error(
       'fonts:css: could not read the shipped font stacks from styles.css — this is a packaging ' +
@@ -220,7 +218,7 @@ export function fontsCss(flags: string[], cwd: string = process.cwd()): number {
     )
     return 1
   }
-  const body = `:root {\n${decls.map((d) => `  ${d.name}: ${d.value};`).join('\n')}\n}\n`
+  const body = `${face}:root {\n${decls.map((d) => `  ${d.name}: ${d.value};`).join('\n')}\n}\n`
   const header = generatedHeader(readFrameworkVersion(pkgRoot), 'fonts:css', flags)
   return emitGeneratedCss(`${header}${body}`, flags, cwd, 'fonts:css')
 }

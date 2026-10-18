@@ -30,9 +30,14 @@ function rulesFor(needle: string): string[] {
   return out
 }
 
-describe('slashed zero is off at the root', () => {
-  test(':root resets the zero feature, inherited by every head-face surface', () => {
-    expect(rulesFor(':root').join(' ')).toMatch(/font-feature-settings:\s*'zero'\s*0/)
+describe('no slashed zero in the head face', () => {
+  test('a digits-only sans face leads the head stack (Hubot has no `zero` feature to reset)', () => {
+    expect(css).toMatch(
+      /@font-face\s*\{[^}]*font-family:\s*'Basalt Head Digits'[^}]*nunito-sans-latin-wght-normal\.woff2[^}]*unicode-range:\s*U\+0030-0039/,
+    )
+    expect(rulesFor(':root').join(' ')).toMatch(
+      /--basalt-font-head:\s*'Basalt Head Digits',\s*'Hubot Sans Variable'/,
+    )
   })
 
   test('nothing turns it back on', () => {
