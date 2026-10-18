@@ -13,6 +13,9 @@
  * anatomy compact — status dot, the word `Failed`, the message, the shared Retry. The caption stays.
  * A `visual` is a hero host: a zoned `Meter` in it does not repeat the value at its marker.
  *
+ * Alignment: cells of one row align by PART (caption, value, visual, rows, footer share tracks via
+ * subgrid), not by stretching; a cell without a visual keeps its footer directly under its content.
+ *
  * Anchors: each cell is `data-shot="strip-<key>"` and each footer cell
  * `data-shot="strip-footer-<key>"` (derived — a consumer cannot choose another name).
  *
@@ -139,6 +142,8 @@ function StripCell({ cell }: { cell: StatStripCell }) {
       data-strip-cell={cell.key}
       data-shot={`strip-${cell.key}`}
       aria-labelledby={captionId}
+      {...(state === undefined && cell.visual !== undefined && { 'data-strip-has-visual': '' })}
+      {...(state === undefined && rows !== undefined && { 'data-strip-has-rows': '' })}
       {...(cell.stale && { 'data-stale': 'true' })}
     >
       <div className={classes.captionLine}>
@@ -174,7 +179,7 @@ function StripCell({ cell }: { cell: StatStripCell }) {
           </div>
         ))}
       {state === undefined && cell.visual !== undefined && (
-        <div className={classes.visual}>
+        <div className={classes.visual} data-strip-visual>
           <VisualSlotContext.Provider value={hasHero}>{cell.visual}</VisualSlotContext.Provider>
         </div>
       )}
@@ -187,7 +192,7 @@ function StripCell({ cell }: { cell: StatStripCell }) {
             ))}
           </div>
         ) : (
-          <ul className={classes.rows}>
+          <ul className={classes.rows} data-strip-rows>
             {rows.map((row) => (
               <li key={row.key} className={classes.row} data-strip-row={row.key}>
                 <span className={classes.rowLabel}>{row.label}</span>
@@ -199,7 +204,9 @@ function StripCell({ cell }: { cell: StatStripCell }) {
           </ul>
         ))}
       {state === undefined && cell.footer !== undefined && (
-        <div className={classes.footer}>{cell.footer}</div>
+        <div className={classes.footer} data-strip-footer>
+          {cell.footer}
+        </div>
       )}
     </article>
   )

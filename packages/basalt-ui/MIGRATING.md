@@ -1128,6 +1128,16 @@ file, not to waive anything.
 2.23.0, `"basalt": { "exemptRules": { "series-palette": ["<series file>"] } }` silences it for the
 file. The guard now has 27 kinds.
 
+### `StatGroup variant="strip"` cells align by part
+
+**Changed:** strip cells no longer stretch to the row's tallest cell with the footer pinned to the
+bottom. Each cell spans the same five tracks of the grid (caption, value, visual, rows, footer), so
+captions, values and footers line up across a row, and a void opens only where a sibling's same part
+is taller. A cell without a visual keeps its `rows` and `footer` directly under its value, so a short
+cell ("verdicts 78 %") stays compact instead of showing value, a dead gap, then footer. No new prop:
+the default covers the compact case. **Opt out:** none per cell; to keep the old pinned footer,
+put the footer inside `visual`.
+
 ### `Button` section insets sit on the spacing scale
 
 **Changed:** a `Button` with a `leftSection` / `rightSection` padded that side by Mantine's

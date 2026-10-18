@@ -27,9 +27,9 @@
 }
 
 .cell {
-  display: flex;
-  flex-direction: column;
-  gap: var(--vx-space-stack-sm);
+  display: grid;
+  grid-row: span 5;
+  grid-template-rows: subgrid;
   min-width: 0;
   padding: var(--vx-space-stack-md);
   border-inline-start: 1px solid var(--vx-divider);
@@ -39,6 +39,47 @@
  * draws its top edge, which is the rule between wrapped rows. */
 .cell + .cell {
   border-block-start: 1px solid var(--vx-divider);
+}
+
+/* Cells align by PART. Every cell spans the same five tracks of `.cells` (caption, hero, visual, rows,
+ * footer), so a row of cells shares one caption top, one value baseline and one footer top, and a
+ * void opens only where a sibling's same part is taller. A part a cell lacks collapses its track
+ * (the spacing is a margin on the part, not a gap, so an empty track adds none). A cell without a
+ * visual keeps its rows (and a footer without rows) in the visual track, directly under its hero:
+ * short cells stay compact instead of stretching their footer to the row's bottom. */
+.cell > * {
+  grid-column: 1;
+  min-width: 0;
+}
+
+.cell > :not(.captionLine) {
+  margin-block-start: var(--vx-space-stack-sm);
+}
+
+.valueRow,
+.skeletonValue,
+.error {
+  grid-row: 2;
+}
+
+.cell > .visual,
+.cell > .reason,
+.cell > .rows,
+.cell > .footer {
+  grid-row: 3;
+}
+
+.cell[data-strip-has-visual] > .rows {
+  grid-row: 4;
+}
+
+.cell[data-strip-has-visual] > .footer,
+.cell[data-strip-has-rows] > .footer {
+  grid-row: 5;
+}
+
+.cell > .footer {
+  align-self: start;
 }
 
 @container basalt-grid (max-width: 479.9px) {
@@ -58,6 +99,7 @@
 }
 
 .captionLine {
+  grid-row: 1;
   display: flex;
   flex-wrap: wrap;
   align-items: center;
@@ -184,7 +226,6 @@
 }
 
 .footer {
-  margin-top: auto;
   font-size: var(--vx-text-sm);
   color: var(--vx-muted);
 }
