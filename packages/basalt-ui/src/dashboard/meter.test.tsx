@@ -696,9 +696,12 @@ describe('Meter without a reading', () => {
     expect(container.querySelector('[data-meter-track]')).not.toBeNull()
   })
 
-  test('ring: the same em dash', () => {
+  test('ring: the em dash is the reading in the centre, with no caption', () => {
     const { container } = mount({ label: 'R', shape: 'ring', value: null })
     expect(container.querySelector('output')?.textContent).toBe('—')
+    // One child span (the ring box holding the dash): no separate caption span follows it.
+    expect(container.querySelectorAll('output > span')).toHaveLength(1)
+    expect(container.querySelector('output > span > span')?.textContent).toBe('—')
   })
 
   test('a consumer emptyText still replaces it', () => {

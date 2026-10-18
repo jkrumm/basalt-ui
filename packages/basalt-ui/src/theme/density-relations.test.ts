@@ -115,7 +115,7 @@ describe('Fix 2 — the 4px stack rhythm holds its 2:1 pairs at every level', ()
   })
 })
 
-describe('Fix 3 — SegmentedControl concentricity holds at every RADIUS level', () => {
+describe('Fix 3 — `fine` stays ctrl − inset at every RADIUS level (Progress / scale sm; no longer the SegmentedControl indicator)', () => {
   test('fine === ctrl - 2 at every RADIUS level where ctrl >= 2 (the full [-5, 5] range)', () => {
     for (const level of ALL_RADIUS_LEVELS) {
       const radius = deriveRadius(level)
@@ -124,7 +124,7 @@ describe('Fix 3 — SegmentedControl concentricity holds at every RADIUS level',
     }
   })
 
-  test('at the radius floor (-5), ctrl is 1 and fine clamps to 0 — a 1px track radius inside a 2px inset leaves a square indicator, which is what concentricity demands', () => {
+  test('at the radius floor (-5), ctrl is 1 and fine clamps to 0 — `fine` cannot go below 0', () => {
     const radius = deriveRadius(RADIUS_LEVEL_RANGE.min)
     expect(radius.ctrl).toBe(1)
     expect(radius.fine).toBe(0)

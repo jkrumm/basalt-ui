@@ -776,11 +776,11 @@ function buildTheme(data: PaletteData, options: BuildThemeOptions = {}): Mantine
       // label that no longer fits its equal share truncates instead of forcing the column wide.
       //
       // The track's padding is `SPACE_FIXED.segmentedTrackInset`, a plain literal — NOT a
-      // `--vx-space-*` var — because it is density-EXEMPT: it is load-bearing for the nested-corner
-      // law (`RADIUS.ctrl === RADIUS_STEP.fine + segmentedTrackInset`, see that constant's doc in
-      // `tokens/palette.ts`), and `radius.ctrl`/`RADIUS_STEP.fine` below already track the
-      // RADIUS knob together, so the inset between them must stay fixed at exactly 2 regardless of
-      // density.
+      // `--vx-space-*` var — because it is density-EXEMPT (see that constant's doc in
+      // `tokens/palette.ts`). The INDICATOR radius is the track's per-instance radius (`--sc-radius`,
+      // which Mantine sets on the root from the `radius` prop) minus 3 px: exact concentricity would
+      // be track − inset (2 px), but `craft-1/nested-radius-step` wants nested surfaces ≥ 3 px apart
+      // and that lint step wins. A custom `radius` therefore nests too.
       SegmentedControl: ext<typeof SegmentedControl>({
         defaultProps: { radius: radius.ctrl },
         classNames: {
@@ -819,8 +819,8 @@ function buildTheme(data: PaletteData, options: BuildThemeOptions = {}): Mantine
             // ink-12% fill sat one shade from the track and read as a hover state.
             boxShadow: 'var(--vx-shadow-raised)',
             outline: '1px solid color-mix(in srgb, var(--vx-ink) 14%, transparent)',
-            // One nested step under the track (`--vx-radius-ctrl`): craft-1/nested-radius-step.
-            borderRadius: 'max(0px, calc(var(--vx-radius-ctrl) - 3px))',
+            // Track radius − 3 px: craft-1/nested-radius-step beats exact concentricity.
+            borderRadius: 'max(0px, calc(var(--sc-radius, var(--vx-radius-ctrl)) - 3px))',
           },
           // Conditionally spread the WHOLE key (never a present `label: undefined`) — the package
           // builds under `exactOptionalPropertyTypes`, which treats a key present-but-`undefined` as

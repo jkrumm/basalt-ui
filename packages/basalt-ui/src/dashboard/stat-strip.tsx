@@ -49,7 +49,7 @@ import classes from './stat-strip.module.css'
 import { HOSTED, VisualSlotContext } from './visual-slot'
 
 /** The URL shot states an anchor can declare itself absent in (`data-shot-absent`). */
-export type StatStripShotState = 'empty' | 'loading' | 'error'
+type StatStripShotState = 'empty' | 'loading' | 'error'
 
 const absentAttr = (states: readonly StatStripShotState[] | undefined) =>
   states === undefined || states.length === 0 ? {} : { 'data-shot-absent': states.join(' ') }

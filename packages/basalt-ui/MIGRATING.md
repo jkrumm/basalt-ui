@@ -1182,8 +1182,13 @@ caption. Opt-out: pass `emptyText` for the caption you want.
 
 Two nested radii step down so `craft-1/nested-radius-step` passes: an inline `Code` inside an `Alert`
 is 3 px under the Alert's radius (was the tight 5 px), and the `SegmentedControl` (`ViewTabs`) indicator
-is 3 px under its track (`--vx-radius-ctrl` − 3, was 4 px). Opt-out: set a `Code` `radius`/
-`--basalt-code-radius` or the indicator's `styles` yourself.
+is 3 px under its own track radius (`--sc-radius` − 3, so a custom `radius` nests too; was 4 px at the
+default). The indicator change is global, not limited to card headers: the track-to-indicator gap was 2 px
+everywhere and the nested-radius lint step (≥ 3 px) wins over exact concentricity.
+
+Opt-out: `Code` has no `radius` prop — set `--basalt-code-radius` on an ancestor or `styles={{ root: {
+borderRadius } }}` on the `Code`; for the indicator, `styles={{ indicator: { borderRadius } }}` on the
+`SegmentedControl`.
 
 ## 2.22.0 — Wave 37, argo's friction II
 

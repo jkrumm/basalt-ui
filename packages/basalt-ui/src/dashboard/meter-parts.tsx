@@ -150,6 +150,8 @@ export function MeterLoading({
   )
 }
 
+const EMPTY_READING = '—'
+
 export function MeterEmpty(props: {
   label: string
   text: string | undefined
@@ -157,18 +159,23 @@ export function MeterEmpty(props: {
   shell: Shell
 }) {
   const { label, text, ring, shell } = props
+  // The ring has a reading slot (its centre), so the dash sits there as the reading; a bar prints
+  // its reading in the caption row, so the dash is that row's muted line. A `text` is the caption.
   return (
     <output {...rootProps(shell)} aria-label={label}>
       {ring ? (
         <span className={classes.ringBox}>
           <RingSvg />
+          <span className={classes.ringValue}>{EMPTY_READING}</span>
         </span>
       ) : (
         <div className={classes.trackBox}>
           <div className={classes.track} data-meter-track />
         </div>
       )}
-      <span className={classes.empty}>{text ?? '—'}</span>
+      {(!ring || text !== undefined) && (
+        <span className={classes.empty}>{text ?? EMPTY_READING}</span>
+      )}
     </output>
   )
 }
