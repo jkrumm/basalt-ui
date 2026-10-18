@@ -149,20 +149,8 @@ Signature: PageTitle(props: PageTitleProps): ReactNode
   subtitle?: ReactNode
   icon?: ReactNode
 Signature: Section(props: SectionProps): JSX.Element
-  icon?: ReactNode
   className?: string
   style?: CSSProperties
-  subtitle?: string
-  info?: string
-  value?: string
-  unit?: string
-  delta?: number
-  deltaPeriod?: string
-  deltaPolarity?: DeltaPolarity
-  deltaFormat?: (delta: number) => string
-  deltaGlyph?: boolean
-  sparkline?: ReactNode
-  count?: number
   classNames?: Partial<Record<SectionSlot, string>>
   actions?: SectionActions
   query?: QueryStateLike<unknown>
@@ -176,6 +164,18 @@ Signature: Section(props: SectionProps): JSX.Element
   summary?: ReactNode
   id?: string
   children: ReactNode
+  icon?: ReactNode  [with title]
+  subtitle?: string  [with title]
+  info?: string  [with title]
+  value?: string  [with title]
+  unit?: string  [with title]
+  delta?: number  [with title]
+  deltaPeriod?: string  [with title]
+  deltaPolarity?: DeltaPolarity  [with title]
+  deltaFormat?: (delta: number) => string  [with title]
+  deltaGlyph?: boolean  [with title]
+  sparkline?: ReactNode  [with title]
+  count?: number  [with title]
   title: string
   aria-label?: string
 Signature: SettingsRow(props: SettingsRowProps): JSX.Element

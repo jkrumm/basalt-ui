@@ -46,10 +46,10 @@ layout('PageSummary facts at 390', () => {
     const tops = new Set(m.rows.map((r) => r.top))
     expect(tops.size, 'the facts wrap onto at least two lines at 390').toBeGreaterThan(1)
     expect(m.overflowX).toBe('clip')
-    // The dot is drawn half a gap LEFT of its fact: for a fact flush with the list's edge that is
-    // outside the clip (invisible); for every other fact it is inside the preceding gap (visible).
+    // The dot's box is the gap BEFORE its fact: for a fact flush with the list's edge that box is
+    // outside the clip (invisible); for every other fact it is the preceding gap (visible).
     for (const r of m.rows) {
-      expect(r.dotInset).toBeCloseTo(-m.gap / 2, 1)
+      expect(r.dotInset).toBeCloseTo(-m.gap, 1)
       const leading = r.left < 1
       const dotX = r.left + r.dotInset
       if (leading) expect(dotX, 'a line-leading dot is clipped').toBeLessThan(0)
@@ -82,7 +82,7 @@ layout('SyncButton age below sm', () => {
         longDisplay: long ? getComputedStyle(long).display : 'none',
       }
     })
-    expect(m.text).toBe('2 m')
+    expect(m.text).toMatch(/^2\D/)
     expect(m.ageDisplay).not.toBe('none')
     expect(m.longDisplay).toBe('none')
     expect(m.btnW).toBeGreaterThan(m.btnH + 4)
@@ -140,9 +140,7 @@ layout('untitled Section', () => {
   test('390: the header is the tabs row alone, no heading box', async () => {
     const page = await openFixture(specOf({ untitled: true }), PHONE)
     const m = await page.raw.evaluate(() => {
-      const root = document.querySelector<HTMLElement>(
-        '[data-testid="w37-untitled"] [role="group"]',
-      )
+      const root = document.querySelector<HTMLElement>('[data-testid="w37-untitled"] > div')
       if (!root) throw new Error('LAYOUT: no untitled section group')
       return {
         headings: root.querySelectorAll('h2, h3').length,

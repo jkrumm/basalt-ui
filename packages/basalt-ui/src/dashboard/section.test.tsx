@@ -13,6 +13,8 @@ import type { ReactElement } from 'react'
 import { renderToString } from 'react-dom/server'
 import { resetValidatedProps } from '../common/validate'
 import { FilterSetScope } from '../controls/filter-context'
+import { ViewTabs } from '../controls'
+import { createLocalStore, field } from '../state'
 import { PageBar, ShellFrame } from '../shell'
 import { Section } from './section'
 import type { SectionProps } from './section'
@@ -654,13 +656,31 @@ describe('Section without a title (tabs only)', () => {
     expect(screen.getByRole('group', { name: 'Panes' })).toBeDefined()
   })
 
-  test("the accessible name falls back to the tabs' own label", () => {
+  test('a real ViewTabs names its own tablist: the Section adds no second group name', () => {
+    const store = createLocalStore({
+      key: 'section-untitled-tabs',
+      fields: { view: field.enum(['a', 'b'] as const, 'a') },
+    })
     renderWith(
-      <Section tabs={<Labelled label="Mailbox view" />}>
+      <Section
+        tabs={
+          <ViewTabs
+            field={store.field.view}
+            label="Mailbox view"
+            options={[
+              { value: 'a', label: 'A' },
+              { value: 'b', label: 'B' },
+            ]}
+          />
+        }
+      >
         <div>body</div>
       </Section>,
     )
-    expect(screen.getByRole('group', { name: 'Mailbox view' })).toBeDefined()
+    expect(screen.queryByRole('group')).toBeNull()
+    const named = document.querySelectorAll('[aria-label="Mailbox view"]')
+    expect(named.length).toBeGreaterThan(0)
+    expect(document.querySelectorAll('[role="group"][aria-label="Mailbox view"]').length).toBe(0)
   })
 
   test('the header row collapses to the tabs: no title row, no count tag', () => {
@@ -692,17 +712,15 @@ describe('Section without a title (tabs only)', () => {
   })
 })
 
-function Labelled({ label }: { label: string }) {
-  return <span aria-label={label}>x</span>
-}
-
 describe('the group-tier heading sits on the meta step (three sizes, not four)', () => {
   test('section.module.css moves the group head from micro (11) to xs (12)', () => {
     const css = readFileSync(join(import.meta.dirname, 'section.module.css'), 'utf8').replace(
       /\/\*[\s\S]*?\*\//g,
       '',
     )
-    const rule = css.slice(css.indexOf("[data-tier='group'] [data-widget-title]"))
+    const start = css.indexOf("[data-tier='group'] [data-widget-title] {")
+    expect(start).toBeGreaterThan(-1)
+    const rule = css.slice(start, css.indexOf('}', start))
     expect(rule).toMatch(/font-size:\s*var\(--vx-text-xs\)/)
   })
 })

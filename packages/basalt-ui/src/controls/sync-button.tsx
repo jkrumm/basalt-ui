@@ -14,7 +14,7 @@
  *   accessible name is `label`.
  * - `scope: 'page'` → `PageBar.sync` (the page's own data). The labelled `Button` with the age
  *   inline beside it on desktop; below `sm` the label and the long age go and the glyph keeps a
- *   SHORT age (`2 m`) beside it — CSS only, one mount, never a `visibleFrom` twin (law C9).
+ *   SHORT age (`2m`) beside it — CSS only, one mount, never a `visibleFrom` twin (law C9).
  *
  * Because the label is hidden rather than unmounted below `sm`, the accessible name comes from
  * `aria-label` in BOTH forms: `display: none` text is out of the accessibility tree, so a page
@@ -26,6 +26,7 @@ import type { ReactNode } from 'react'
 import { cx } from '../common/props'
 import type { BasaltProps } from '../common/props'
 import { relativeTime } from '../format'
+import { numberFormat } from '../format/shared'
 import { IconSlot } from '../theme/icon-slot'
 import { RefreshGlyph } from './glyphs'
 import classes from './sync-button.module.css'
@@ -83,21 +84,27 @@ function useRelativeAge(
 }
 
 const COMPACT_UNITS = [
-  { short: 'd', seconds: 86_400 },
-  { short: 'h', seconds: 3_600 },
-  { short: 'm', seconds: 60 },
+  { unit: 'day', seconds: 86_400 },
+  { unit: 'hour', seconds: 3_600 },
+  { unit: 'minute', seconds: 60 },
 ] as const
 
 /**
- * The phone form's age: one number and one unit letter (`2 m`, `3 h`, `1 d`), small enough to ride
- * beside the glyph in the square button at 390. Under a minute it is the locale's own "now", the
- * same bucket the long age uses, so the two never disagree about whether a sync just landed.
+ * The phone form's age: one number and a NARROW locale unit (`2m`, `3h`, `2d` in English, `2 Min.`
+ * in German), small enough to ride beside the glyph in the button at 390. `Intl.NumberFormat`'s
+ * unit style honours the `BasaltProvider` / `defineFormat` locale like every other format here.
+ * Under a minute it is the locale's own "now", the same bucket the long age uses, so the two never
+ * disagree about whether a sync just landed.
  */
 function compactAge(timestamp: number): string {
   const seconds = Math.max(0, (Date.now() - timestamp) / 1000)
-  const unit = COMPACT_UNITS.find((u) => seconds >= u.seconds)
-  if (unit === undefined) return relativeTime(timestamp, { style: 'short' })
-  return `${Math.floor(seconds / unit.seconds)} ${unit.short}`
+  const step = COMPACT_UNITS.find((u) => seconds >= u.seconds)
+  if (step === undefined) return relativeTime(timestamp, { style: 'short' })
+  return numberFormat(undefined, {
+    style: 'unit',
+    unit: step.unit,
+    unitDisplay: 'narrow',
+  }).format(Math.floor(seconds / step.seconds))
 }
 
 const subscribeNever = (): (() => void) => () => {}
