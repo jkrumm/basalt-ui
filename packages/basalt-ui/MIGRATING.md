@@ -1224,6 +1224,19 @@ summary 12, chart ticks and legend 11.
 **Now:** that text renders at 11 (the chart text step) whatever its `size`, so the shell is 15, 13, 11. Only a direct `Text` child of the summary slot is capped; a bare `Text` nested inside a `Group` keeps the size it asks for.
 
 **Opt out:** wrap the text in a `<span>` or a `Group`.
+### Empty cells and Meters (Wave 38)
+
+A gap is stated once. Moved defaults:
+
+| Surface                                       | Before                                                        | Now                                                                                    |
+| --------------------------------------------- | ------------------------------------------------------------- | -------------------------------------------------------------------------------------- |
+| Strip cell `state: { kind: 'empty', reason }` | `—` in the value slot, the reason under it                    | the reason in the value's place, no glyph; `—` only when no `reason` is given          |
+| `Meter` with a null reading                   | muted track with a `—` caption line under it                  | muted track, one blank caption line (two when zoned), no glyph; `emptyText` still wins |
+| `Meter` `loading` (bar)                       | track plus a short skeleton bar, about half the loaded height | the loaded footprint: figure row (zoned), track, caption / zone-name row               |
+
+`size="row"` keeps no caption lines, empty or loading. Ring Meters are unchanged (the centre reading stays `—`).
+
+Opt out: pass `emptyText="—"` on a `Meter` to keep the dash caption; for a strip cell, drop `reason` (and say it in the caption or qualifier) to keep the bare `—`.
 
 ## 2.23.0 — Wave 37, argo's friction II
 

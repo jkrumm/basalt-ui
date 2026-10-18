@@ -21,14 +21,23 @@ function mount(cell: Partial<StatStripCell>) {
 const cellOf = (c: HTMLElement) => c.querySelector('[data-strip-cell="a"]') as HTMLElement
 
 describe('strip cell state', () => {
-  test('empty: a dash in the value position and the reason, no dot, word or Retry', () => {
+  test('empty with a reason: the reason in the value place, no dash, dot, word or Retry', () => {
     const { container } = mount({ state: { kind: 'empty', reason: 'No sleep logged' } })
     const cell = cellOf(container)
-    expect(cell.querySelector('[data-strip-value]')?.textContent).toBe('—')
+    expect(cell.querySelector('[data-strip-value]')).toBeNull()
+    expect(cell.querySelector('[data-strip-reason]')?.textContent).toBe('No sleep logged')
+    expect(cell.textContent).not.toContain('—')
     expect(cell.textContent).toContain('No sleep logged')
     expect(cell.querySelector('[data-basalt-status-dot]')).toBeNull()
     expect(cell.querySelector('button')).toBeNull()
     expect(cell.textContent).not.toContain('Could not load')
+  })
+
+  test('empty without a reason: the dash alone', () => {
+    const { container } = mount({ state: { kind: 'empty' } })
+    const cell = cellOf(container)
+    expect(cell.querySelector('[data-strip-value]')?.textContent).toBe('—')
+    expect(cell.querySelector('[data-strip-reason]')).toBeNull()
   })
 
   test('error: a dot, the word, the message and Retry; onRetry fires', () => {

@@ -32,6 +32,8 @@ declare const classes: {
   readonly partCaptionsGrid: string
   readonly swatch: string
   readonly empty: string
+  readonly line: string
+  readonly lineZoned: string
   readonly skeletonTrack: string
   readonly skeletonCaption: string
   readonly ringBox: string

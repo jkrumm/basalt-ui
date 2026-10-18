@@ -271,9 +271,10 @@ describe('Meter', () => {
   })
 
   test('a non-finite reading is the empty state', () => {
-    const { container, getByText } = mount({ label: 'B', value: Number.NaN })
+    const { container } = mount({ label: 'B', value: Number.NaN })
     expect(meter(container)).toBeNull()
-    expect(getByText('—')).toBeTruthy()
+    expect(container.querySelector('[data-meter-track]')).not.toBeNull()
+    expect(container.textContent).not.toContain('—')
   })
 
   test('ring: empty, loading and verdict colour', () => {
@@ -324,9 +325,9 @@ describe('Meter', () => {
   })
 
   test('empty segments render the empty state', () => {
-    const { container, getByText } = mount({ label: 'S', segments: [] })
+    const { container } = mount({ label: 'S', segments: [] })
     expect(meter(container)).toBeNull()
-    expect(getByText('—')).toBeTruthy()
+    expect(container.textContent).not.toContain('—')
   })
 
   test('a non-finite target draws no tick and no caption', () => {
@@ -432,8 +433,8 @@ describe('Meter — captions and roots', () => {
   })
 
   test('empty segments are the empty state: no part list, no captions', () => {
-    const { container, getByText } = mount({ label: 'S', segments: [] })
-    expect(getByText('—')).toBeTruthy()
+    const { container } = mount({ label: 'S', segments: [] })
+    expect(container.textContent).not.toContain('—')
     expect(container.querySelector('[data-meter-parts]')).toBeNull()
     expect(container.querySelector('[data-meter-captions]')).toBeNull()
   })
@@ -689,10 +690,9 @@ describe('Meter — caption orphans', () => {
 })
 
 describe('Meter without a reading', () => {
-  test('prints no filler: an em dash reading and no caption by default', () => {
+  test('prints no filler: no dash, no caption by default, the muted track stays', () => {
     const { container } = mount({ label: 'B', value: null })
-    expect(container.querySelector('output')?.textContent).toBe('—')
-    expect(container.querySelector('output')?.textContent).not.toContain('No data')
+    expect(container.querySelector('output')?.textContent).toBe('')
     expect(container.querySelector('[data-meter-track]')).not.toBeNull()
   })
 
@@ -707,5 +707,33 @@ describe('Meter without a reading', () => {
   test('a consumer emptyText still replaces it', () => {
     const { container } = mount({ label: 'B', value: null, emptyText: 'Not worn' })
     expect(container.querySelector('output')?.textContent).toBe('Not worn')
+  })
+})
+
+describe('Meter empty and loading footprint (Wave 38)', () => {
+  const lines = (c: HTMLElement) => c.querySelectorAll('[data-meter-line]').length
+
+  test('a null bar keeps one blank caption line below its track, a zoned one two', () => {
+    expect(lines(mount({ label: 'B', value: null }).container)).toBe(1)
+    cleanup()
+    const zones = [{ from: 0, to: 10, label: 'All' }]
+    expect(lines(mount({ label: 'Z', value: null, zones }).container)).toBe(2)
+  })
+
+  test('a row-size null Meter has no caption line, like a loaded one', () => {
+    expect(lines(mount({ label: 'R', value: null, size: 'row' }).container)).toBe(0)
+  })
+
+  test('emptyText replaces the blank line', () => {
+    const { container } = mount({ label: 'B', value: null, emptyText: 'Not worn' })
+    expect(lines(container)).toBe(0)
+    expect(container.querySelector('output')?.textContent).toBe('Not worn')
+  })
+
+  test('loading keeps the loaded footprint: a plain bar one line, a zoned bar two around the track', () => {
+    expect(lines(mount({ label: 'B', value: 5, loading: true }).container)).toBe(1)
+    cleanup()
+    const zones = [{ from: 0, to: 10, label: 'All' }]
+    expect(lines(mount({ label: 'Z', value: 5, zones, loading: true }).container)).toBe(2)
   })
 })

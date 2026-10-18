@@ -9,7 +9,7 @@
  * (e.g. VO2max) with `rows` under it; omit `value` to render the rows alone.
  *
  * `state` replaces the readings (hero, visual, rows, footer) with the cell's empty or error body, at
- * the cell's size. Empty: `—` in the value position and the reason, muted. Error: the shared error
+ * the cell's size. Empty: the reason, muted, in the value's place (`—` only when no reason is given). Error: the shared error
  * anatomy compact — status dot, the words `Could not load`, the message, the shared Retry. The caption stays.
  * A `visual` is a hero host: a zoned `Meter` in it does not repeat the value at its marker.
  *
@@ -144,15 +144,20 @@ const EMPTY = '—'
 
 function CellState({ state }: { state: StatStripCellState }) {
   if (state.kind === 'empty') {
+    // A stated reason IS the gap: it takes the value's place, so no bare dash sits above it.
+    if (state.reason !== undefined) {
+      return (
+        <p className={classes.reason} data-strip-reason>
+          {state.reason}
+        </p>
+      )
+    }
     return (
-      <>
-        <div className={classes.valueRow}>
-          <span className={classes.value} data-strip-value>
-            {EMPTY}
-          </span>
-        </div>
-        {state.reason !== undefined && <p className={classes.reason}>{state.reason}</p>}
-      </>
+      <div className={classes.valueRow}>
+        <span className={classes.value} data-strip-value>
+          {EMPTY}
+        </span>
+      </div>
     )
   }
   const message = toErrorMessage(state.error, 'The request failed.')
