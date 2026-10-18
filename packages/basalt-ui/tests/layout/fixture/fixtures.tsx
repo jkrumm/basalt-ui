@@ -30,7 +30,7 @@ import { FilterSet, FormRow, SelectFilter, SyncButton, ViewTabs } from '../../..
 import { BasaltDataTable } from '../../../src/table'
 import type { DataTableFacet } from '../../../src/table/data-table'
 import type { BasaltColumnDef } from '../../../src/table/table-features'
-import { Prose } from '../../../src/content'
+import { Callout, Prose } from '../../../src/content'
 import { CodeBlock } from '../../../src/content/code-block'
 import { ActionIcon, Badge, Button, Card, Paper } from '@mantine/core'
 import {
@@ -784,6 +784,12 @@ function ChromeW37Fixture(): ReactElement {
       <Badge variant="dot" color="green" data-testid="w37-badge-dot">
         Dot
       </Badge>
+      {/* A head-face title that is a CSS-module class on a non-heading element. */}
+      <div data-testid="w37-callout">
+        <Callout kind="info" title="Over 2026, 90 days">
+          body
+        </Callout>
+      </div>
     </Card>
   )
 }

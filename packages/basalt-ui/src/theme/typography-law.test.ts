@@ -30,23 +30,13 @@ function rulesFor(needle: string): string[] {
   return out
 }
 
-describe('slashed zero only on head-face surfaces', () => {
-  test.each([
-    'h1',
-    'h6',
-    '.mantine-Title-root',
-    '.mantine-Alert-title',
-    '.mantine-Modal-title',
-    '.mantine-Drawer-title',
-    "[style*='basalt-font-head']",
-  ])('%s resets the zero feature', (selector) => {
-    expect(rulesFor(selector).join(' ')).toMatch(/font-feature-settings:\s*'zero'\s*0/)
+describe('slashed zero is off at the root', () => {
+  test(':root resets the zero feature, inherited by every head-face surface', () => {
+    expect(rulesFor(':root').join(' ')).toMatch(/font-feature-settings:\s*'zero'\s*0/)
   })
 
-  test('there is no root reset: mono text is not touched', () => {
-    for (const selector of [':root', 'html', 'body', '*', 'code', 'pre']) {
-      expect(rulesFor(selector).join(' ')).not.toContain("'zero'")
-    }
+  test('nothing turns it back on', () => {
+    expect(css).not.toMatch(/'zero'\s*1/)
   })
 })
 

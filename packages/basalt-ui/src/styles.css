@@ -67,6 +67,15 @@
     text-size-adjust: 100%;
   }
 
+  /* A slashed zero belongs to data text only. Hubot Sans (the heading face) draws one, and it leaked
+     into every title that borrows the face (`2026`, `90 days`). `zero` is OFF by default and nothing
+     in the package turns it on, so this is the off state at the root: it inherits into every head-face
+     surface whether a heading element, a Mantine title or a CSS-module class that only sets the
+     family, and is a no-op on the mono stack. */
+  :root {
+    font-feature-settings: 'zero' 0;
+  }
+
   /* Mono data text drops its ligatures: `<>` in a facts line is two characters, not a diamond. Reaches
      the mono stack by element (code, kbd, samp, pre), by contract (`data-numeric`, `data-monospace`),
      by Mantine's `ff="monospace"` inline style, and by the stack's own var in an inline style. Body
@@ -179,16 +188,8 @@
   h4,
   h5,
   h6,
-  .mantine-Title-root,
-  .mantine-Alert-title,
-  .mantine-Modal-title,
-  .mantine-Drawer-title,
-  [style*='basalt-font-head'] {
+  .mantine-Title-root {
     font-stretch: var(--basalt-font-head-stretch, 88%);
-    /* Hubot Sans draws a slashed zero by default; a heading numeral is a figure, not code. Scoped to
-       the head-face surfaces (not a root reset: mono keeps its own zero), which also covers the
-       Alert/Modal/Drawer titles the theme sets in the head face and any inline `ff` use of it. */
-    font-feature-settings: 'zero' 0;
     font-variant-numeric: lining-nums;
   }
 

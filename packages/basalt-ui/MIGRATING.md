@@ -1186,15 +1186,16 @@ or a per-site `vars` with `--badge-bg` and `--badge-color` for the tint.
 equals its text side (it was one scale step tighter: 8/12, 12/16, 12/20), so an icon Button is
 balanced and one step wider. **Opt out:** set `--button-section-padding-x` on the Button.
 
-### Slashed zero only on the head face; no mono ligatures
+### No slashed zero in titles; no mono ligatures
 
-**Changed default:** the heading face's slashed zero is reset on `h1`–`h6`, `Title`, and the
-Alert/Modal/Drawer titles (plus an inline use of the head face), so `2026` and `90 days` there read
-with a plain zero. Mono text is untouched. `font-variant-ligatures: none` applies to `code`, `kbd`,
-`samp`, `pre`, `[data-numeric]`, `[data-monospace]`, a `ff="monospace"` Text and `Code`/`Kbd`, so `<>`
-in a facts line is two characters; body sans keeps its ligatures. Not reached (CSS-module classes
-outside the theme that set the head or mono family themselves): follow-up. **Opt out:** an unlayered
-`font-feature-settings` or `font-variant-ligatures` on the element.
+**Changed default:** `:root` resets the `zero` feature (its off state; nothing in the package turns it
+on), so every head-face surface (headings, `Title`, section/card/widget titles, a CSS-module class that
+only sets the family) inherits a plain zero: `2026` and `90 days` no longer carry a slashed one.
+`font-variant-ligatures: none` applies to `code`, `kbd`, `samp`, `pre`, `[data-numeric]`,
+`[data-monospace]`, a `ff="monospace"` Text and `Code`/`Kbd`, so `<>` in a facts line is two
+characters; body sans keeps its ligatures. Mono-only CSS-module classes are not reached by the
+ligature selectors (follow-up). **Opt out:** an unlayered `font-feature-settings` or
+`font-variant-ligatures` on the element.
 
 ### Chart focus ring
 
