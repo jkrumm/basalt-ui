@@ -368,7 +368,7 @@ export type FixtureSpec = {
   w38Legend?: true
   /** Four `ChartCard`s around a `BarList`: loaded, loading, empty, error, each at two widths (`data-testid="list-<state>-<narrow|wide>"`). */
   barListStates?: true
-  /** Wave 38: `Bars` and a `Sparkline` in a StatCard slot each (`w38-bars-card`, `w38-spark-card`). */
+  /** Wave 38: `Bars` and a `Sparkline` in a StatCard slot each (`w38-bars-card`, `w38-spark-card`) and in a strip cell (`w38-bars-strip`, `w38-spark-strip`). */
   w38BarsSlot?: true
   /**
    * Renders a `CodeBlock` in a `Prose` between `data-testid="codeblock-before"` and

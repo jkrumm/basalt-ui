@@ -57,9 +57,12 @@ layout('Bars in a StatCard visual slot', () => {
     expect(Math.abs(measured.bars.height - measured.spark.height)).toBeLessThanOrEqual(1)
   })
 
-  // A slotted Bars sits like a Sparkline: same card height, the footer line on the same y.
-  test.each(['card', 'strip'])(
-    '%s: the Bars and Sparkline hosts have the same height and footer position',
+  // A slotted Bars sits like a Sparkline. Only the strip cell guards the readout-reserve CSS: a
+  // StatCard's reserve (`--basalt-spark-readout-reserve`) is 0 at the default card gap, so a card
+  // case passes with the selector reverted. Reverting `[data-basalt-chart]` in stat-strip fails it
+  // (plot offset 10px).
+  test.each(['strip'])(
+    '%s: the Bars and Sparkline hosts have the same height, plot offset and footer position',
     async (kind) => {
       const p = await openFixture(spec, DESKTOP_1440)
       await p.settle()
@@ -71,8 +74,12 @@ layout('Bars in a StatCard visual slot', () => {
             (el) => el.children.length === 0 && el.textContent?.includes('fastest 71'),
           )
           if (!foot) throw new Error('LAYOUT: no footer')
+          const plot = host.querySelector('svg')
+          if (!plot) throw new Error('LAYOUT: no plot')
           const top = host.getBoundingClientRect().top
           return {
+            // The readout reserve pads the slot above its plot: the plot's offset is what it decides.
+            plot: plot.getBoundingClientRect().top - top,
             height: host.getBoundingClientRect().height,
             foot: foot.getBoundingClientRect().top - top,
           }
@@ -80,6 +87,7 @@ layout('Bars in a StatCard visual slot', () => {
         return { bars: read('bars'), spark: read('spark') }
       }, kind)
       expect(Math.abs(probe.bars.height - probe.spark.height)).toBeLessThanOrEqual(1)
+      expect(Math.abs(probe.bars.plot - probe.spark.plot)).toBeLessThanOrEqual(1)
       expect(Math.abs(probe.bars.foot - probe.spark.foot)).toBeLessThanOrEqual(1)
     },
   )

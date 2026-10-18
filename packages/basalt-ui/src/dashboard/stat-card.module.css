@@ -388,7 +388,7 @@
   margin-inline: calc(-1 * var(--vx-space-card-inset-x, 1rem));
 }
 
-/* A Sparkline's readout line (`--basalt-spark-readout-h`) above its plot: the card gap already sits
+/* A slotted chart's readout line (`--basalt-spark-readout-h`) above its plot: the card gap already sits
  * above the slot, the slot reserves the rest, so the chip never covers the delta or qualifier row.
  * `.foot` reserves the same, so a card with a sparkline and one without keep the same height. */
 .sparklineBleed:has([data-basalt-sparkline], [data-basalt-chart]) {
