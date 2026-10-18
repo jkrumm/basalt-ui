@@ -89,7 +89,8 @@ describe('S3 agents', () => {
     const c = mount(createElement(AgentsScenario, { shotState: undefined }))
     const text = anchor(c, 'strip-failures')?.textContent
     expect(text).toContain('last 24 h')
-    expect(text).toContain('Latest 13:00 UTC')
+    // Wave 37 r1: the footer is the clock under the bars, window ends around the latest run.
+    expect(text).toContain('latest 13:00 UTC')
   })
 
   it('pairs cells of similar height in the two-column layout', () => {

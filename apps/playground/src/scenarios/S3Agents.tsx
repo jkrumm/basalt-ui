@@ -13,7 +13,7 @@
  * `strip-footer-day` / `strip-footer-week`, declared absent in empty and error, where each cell says
  * why through its own `state`); `ChartCard` does not forward `data-*`, so those anchors are wrapping `Box`es.
  */
-import { Box, Stack } from '@mantine/core'
+import { Box, Group, Stack, Text } from '@mantine/core'
 import type { ReactNode } from 'react'
 import { BarList, DeltaBadge, Meter, PageBar, StatGroup, StatusVerdict } from 'basalt-ui'
 import type { StatStripCell } from 'basalt-ui'
@@ -26,6 +26,7 @@ import {
   BUDGETS,
   DISPATCH_COMPLETE_DAYS,
   FAILURES_24H,
+  FAILURES_WINDOW,
   FAILURES_BY_HOUR,
   FAILURES_LATEST_LABEL,
   FLEET,
@@ -68,6 +69,8 @@ const FLOW_SERIES: ChartSeries<FlowRow>[] = [
     color: demoColors.sessions,
     getValue: (d) => d.opened,
     formatValue: (v) => `${fmtInt(v)} opened`,
+    // Daily integer counts: a smoothed curve would draw days that never happened.
+    curve: 'linear',
   },
   {
     key: 'closed',
@@ -75,6 +78,7 @@ const FLOW_SERIES: ChartSeries<FlowRow>[] = [
     color: demoColors.signups,
     getValue: (d) => d.closed,
     formatValue: (v) => `${fmtInt(v)} closed`,
+    curve: 'linear',
   },
 ]
 const FLOW_DATA = [...FLOW]
@@ -98,6 +102,24 @@ const STUCK_ITEMS = STUCK.map((i) => ({
   value: i.waitHours,
   secondary: stuckStatus(i),
 }))
+
+/** `15:00` — the hour a UTC instant falls in. */
+const hourLabel = (d: Date): string => `${String(d.getUTCHours()).padStart(2, '0')}:00`
+
+/** The failures window as a clock: both ends of the 24 bars, and the hour of the latest run. */
+const failuresClock = (
+  <Group justify="space-between" gap="xs" wrap="nowrap">
+    <Text span inherit>
+      {hourLabel(FAILURES_WINDOW.start)}
+    </Text>
+    <Text span inherit>
+      {`latest ${FAILURES_LATEST_LABEL}`}
+    </Text>
+    <Text span inherit>
+      {hourLabel(FAILURES_WINDOW.end)}
+    </Text>
+  </Group>
+)
 
 const WARN_LABEL = `${WARN_HOURS} h`
 const ABANDON_LABEL = `${ABANDON_HOURS / 24} d`
@@ -189,10 +211,10 @@ function QueueStrip({ shotState }: ScenarioProps) {
             label={`Oldest wait against the ${WARN_LABEL} warning and ${ABANDON_LABEL} abandon limits`}
             value={OLDEST_WAIT_HOURS}
             max={ABANDON_HOURS}
-            target={WARN_HOURS}
+            ticks={[{ at: WARN_HOURS, label: `Warn ${WARN_LABEL}` }]}
             format={fmtAge}
             startCaption={null}
-            endCaption={`Warns at ${WARN_LABEL} · abandoned at ${ABANDON_LABEL}`}
+            endCaption={`Abandoned at ${ABANDON_LABEL}`}
           />
         ),
       }),
@@ -206,8 +228,8 @@ function QueueStrip({ shotState }: ScenarioProps) {
       unit: 'runs',
       ...cellState('Failures', 'No agent runs in the last 24 h to count.'),
       // Hourly bars answer "is it still happening?": three runs, but a burst or a trickle. The
-      // footer prints when each ran, so the marks read without colour and against a clock.
-      ...(!hidden && { footer: `Latest ${FAILURES_LATEST_LABEL}` }),
+      // footer is the clock under them: the window's first and last hour, and the hour of the latest run.
+      ...(!hidden && { footer: failuresClock }),
       ...(!hidden && {
         visual: (
           <Sparkline
@@ -250,7 +272,8 @@ function QueueStrip({ shotState }: ScenarioProps) {
             max={FLEET_TOTAL}
             segments={FLEET.map((s) => ({
               value: s.count,
-              label: s.label,
+              // The strip's first cell is "Needs you"; the legend names the state, not the cell.
+              label: s.state === 'awaiting' ? 'Awaiting' : s.label,
               color: STATE_COLOR[s.state],
             }))}
             format={(v) => `${fmtInt(v)} items`}
@@ -260,6 +283,8 @@ function QueueStrip({ shotState }: ScenarioProps) {
     },
   ]
 
+  // The day meter's spend is the Dispatch spend cell above, so the footer states the period and what
+  // is left, never the spend again.
   const budget = (label: string, spent: number, cap: number, caption: string) => (
     <Meter
       label={label}
@@ -267,7 +292,7 @@ function QueueStrip({ shotState }: ScenarioProps) {
       max={cap}
       format={fmtEur}
       loading={loading}
-      startCaption={`${caption} ${fmtEur(spent)}`}
+      startCaption={caption}
       endCaption={`${fmtEur(cap - spent)} left of ${fmtEur(cap)}`}
     />
   )
@@ -313,11 +338,7 @@ function QueueRow({ shotState }: ScenarioProps) {
             subtitle: `Warden abandons an item at ${ABANDON_LABEL}`,
           })}
           {...(shotState === undefined && {
-            facts: {
-              value: fmtInt(STUCK.length),
-              unit: 'items',
-              period: `${NEEDS_YOU} need you`,
-            },
+            facts: { value: fmtInt(STUCK.length), unit: 'items' },
           })}
           {...cardStateProps(shotState, retry('Waiting and blocked items'), STUCK_PLACEHOLDER)}
         >
@@ -341,7 +362,7 @@ function QueueRow({ shotState }: ScenarioProps) {
           info="Items warden opened and items it closed each day, UTC. A queue that opens more than it closes grows."
           {...(shotState === undefined && {
             facts: [
-              { value: fmtInt(FLOW_OPENED), unit: 'opened', period: FLOW_RANGE_LABEL },
+              { value: fmtInt(FLOW_OPENED), unit: 'opened' },
               { value: fmtInt(FLOW_CLOSED), unit: 'closed', period: FLOW_RANGE_LABEL },
             ],
           })}

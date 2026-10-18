@@ -12,18 +12,21 @@
  */
 import { Box, SimpleGrid, Skeleton, Stack, Text } from '@mantine/core'
 import { BarList, Meter, PageBar, StatCard, StatGroup } from 'basalt-ui'
-import { ChartCard, Lines, Sparkline } from 'basalt-ui/charts'
-import type { ChartSeries } from 'basalt-ui/charts'
+import { Bars, ChartCard, Sparkline } from 'basalt-ui/charts'
+import type { BarsBar } from 'basalt-ui/charts'
 import { CONTAINER_KEYS, VX } from 'basalt-ui/tokens'
+import type { CSSProperties } from 'react'
 import { demoColors } from '../demo/series'
 import { fmtInt, fmtKg, fmtKm, fmtRatio, fmtShare } from './fixture-utils'
 import { cardStateProps, chartStateFor, noop, queryFor, retryCopy } from './shot-state'
 import type { ScenarioProps } from './shot-state'
 import {
+  ACTIVE_DAYS_7D_TREND,
+  ACTIVE_DAYS_CHANGE_PCT,
+  ACTIVE_DAYS_MTD,
   ACUTE_LOAD,
   CHRONIC_LOAD,
   CONTRIBUTORS,
-  DAYS_ELAPSED,
   DISTANCE_7D_TREND,
   DISTANCE_CHANGE_PCT,
   DISTANCE_MTD_KM,
@@ -31,7 +34,6 @@ import {
   HIT_HISTORY,
   HIT_MONTHS,
   HIT_RANGE_LABEL,
-  HIT_RATE_PCT,
   LOAD_MAX,
   LOAD_RATIO,
   LOAD_ZONES,
@@ -82,7 +84,11 @@ const READINESS_INFO = `Mean of the four contributors below, each scored 0–100
 const aheadOrBehind = (gap: number): string =>
   gap === 0 ? 'on pace' : `${Math.abs(gap)} ${gap > 0 ? 'ahead of' : 'behind'} pace`
 
-const SUMMARY = `${SESSIONS_MTD} sessions in ${DAYS_ELAPSED} days, ${aheadOrBehind(PACE_GAP)} for ${GOAL_SESSIONS} by ${MONTH_END_LABEL}. Load is ${loadZoneName(LOAD_RATIO).toLowerCase()} at ${fmtRatio(LOAD_RATIO)}; readiness is ${readinessLevel(READINESS_SCORE).toLowerCase()} at ${READINESS_SCORE}.`
+/** One card height for a row pair: the grid cell sets it, the card fills it. */
+const FILL: CSSProperties = { height: '100%' }
+
+/** Words only: every figure lives on the surface that owns it, so the sentence never restates one. */
+const SUMMARY = `${PACE_GAP === 0 ? 'On' : PACE_GAP > 0 ? 'Ahead of' : 'Behind'} the ${MONTH_NAME} goal pace. Load is ${loadZoneName(LOAD_RATIO).toLowerCase()}; readiness is ${readinessLevel(READINESS_SCORE).toLowerCase()}.`
 
 const SESSION_SEGMENTS = TYPE_MIX.filter((t) => t.count > 0).map((t) => ({
   value: t.count,
@@ -96,12 +102,21 @@ const READINESS_ITEMS = CONTRIBUTORS.toSorted((a, b) => b.value - a.value).map((
   value: c.value,
   secondary: readinessLevel(c.value),
 }))
-const HIT_SERIES: ChartSeries<(typeof HIT_HISTORY)[number]>[] = [
+type HitRow = (typeof HIT_HISTORY)[number]
+/** One bar per month: the bar reaching the goal line is the encoding, a muted fill marks the misses. */
+const HIT_BARS: BarsBar<HitRow>[] = [
   {
-    key: 'sessions',
-    label: 'Sessions',
+    key: 'reached',
+    label: 'Reached goal',
     color: demoColors.sessions,
-    getValue: (d) => d.sessions,
+    getValue: (d) => (d.sessions >= GOAL_SESSIONS ? d.sessions : null),
+    formatValue: (v) => `${fmtInt(v)} sessions`,
+  },
+  {
+    key: 'below',
+    label: 'Below goal',
+    color: VX.faint,
+    getValue: (d) => (d.sessions < GOAL_SESSIONS ? d.sessions : null),
     formatValue: (v) => `${fmtInt(v)} sessions`,
   },
 ]
@@ -110,6 +125,8 @@ const HIT_TICKS = HIT_HISTORY.map((m) => m.label)
 /** The goal line sits inside the y domain: the tallest month and the goal both fit under it. */
 const HIT_Y_MAX = 40
 const TOP_LIFT_COUNT = 6
+/** The share of volume the six listed lifts carry — new on the card, the BarList rows state each one's. */
+const LIFTS_SHARE = TOP_LIFTS.slice(0, TOP_LIFT_COUNT).reduce((a, l) => a + l.share, 0)
 const LIFT_ITEMS = TOP_LIFTS.slice(0, TOP_LIFT_COUNT).map((l) => ({
   label: l.name,
   value: l.volumeKg,
@@ -160,7 +177,7 @@ function TrainingStats({ shotState }: ScenarioProps) {
     isAtRest ? { delta: pct, deltaPeriod: `vs ${PRIOR_WINDOW_LABEL}` } : {}
 
   return (
-    <StatGroup cols={3}>
+    <StatGroup cols={4}>
       <Box data-shot="sessions" h="100%">
         <StatCard
           title="Sessions"
@@ -185,6 +202,23 @@ function TrainingStats({ shotState }: ScenarioProps) {
           {...deltaProps(VOLUME_CHANGE_PCT)}
           {...shared}
           sparkline={trendSparkline('Training volume, kilograms', VOLUME_7D_TREND, fmtKg)}
+        />
+      </Box>
+      <Box data-shot="active-days" h="100%">
+        <StatCard
+          title="Active days"
+          qualifier="month to date"
+          value={fmtInt(ACTIVE_DAYS_MTD)}
+          unit="days"
+          info="Days with at least one session of any type, 7-day rolling. The dashed line is the 30-day mean."
+          subtitle="7-day rolling"
+          {...deltaProps(ACTIVE_DAYS_CHANGE_PCT)}
+          {...shared}
+          sparkline={trendSparkline(
+            'Active days',
+            ACTIVE_DAYS_7D_TREND,
+            (v) => `${fmtInt(v)} ${v === 1 ? 'day' : 'days'}`,
+          )}
         />
       </Box>
       <Box data-shot="distance" h="100%">
@@ -222,6 +256,13 @@ function GoalRow({ shotState }: ScenarioProps) {
         <Box data-shot="goal">
           <ChartCard
             title={`Sessions against the ${MONTH_NAME} goal`}
+            {...(shotState === undefined && {
+              facts: {
+                value: `${fmtInt(SESSIONS_MTD)} of ${GOAL_SESSIONS}`,
+                unit: 'sessions',
+                period: aheadOrBehind(PACE_GAP),
+              },
+            })}
             info={`Strength, walking-pad and mobility sessions all count. The tick is the pace that reaches ${GOAL_SESSIONS} on ${MONTH_END_LABEL}.`}
             {...cardStateProps(shotState, retry('The session goal'), PLACEHOLDER.meter)}
           >
@@ -232,7 +273,7 @@ function GoalRow({ shotState }: ScenarioProps) {
                 max={GOAL_SESSIONS}
                 ticks={[{ at: PACE_SESSIONS, label: 'Pace' }]}
                 format={(v) => `${fmtInt(v)} sessions`}
-                startCaption={`${fmtInt(SESSIONS_MTD)} of ${GOAL_SESSIONS} sessions`}
+                startCaption={null}
                 endCaption={`${fmtInt(PACE_SESSIONS)} sessions by ${TODAY_LABEL}`}
                 loading={loading}
                 emptyText={TRAINING_EMPTY}
@@ -242,10 +283,7 @@ function GoalRow({ shotState }: ScenarioProps) {
         </Box>
         <Box data-shot="session-mix">
           <ChartCard
-            title="Sessions by type"
-            {...(shotState === undefined && {
-              facts: { value: fmtInt(SESSIONS_MTD), unit: 'sessions', period: WINDOW_LABEL },
-            })}
+            title={`Sessions by type, ${WINDOW_LABEL}`}
             {...cardStateProps(shotState, retry('Sessions by type'), PLACEHOLDER.meter)}
           >
             <Box data-shot-hover>
@@ -264,15 +302,16 @@ function GoalRow({ shotState }: ScenarioProps) {
       </Stack>
       <Box data-shot="hit-rate" h="100%">
         <ChartCard
+          style={FILL}
           title={`Goal hit rate, ${HIT_RANGE_LABEL}`}
           {...(shotState === undefined && {
             facts: {
               value: `${MONTHS_HIT} of ${HIT_MONTHS}`,
               unit: 'months',
-              period: `reached ${GOAL_SESSIONS} sessions (${HIT_RATE_PCT}%)`,
+              period: `reached ${GOAL_SESSIONS} sessions`,
             },
           })}
-          info={`Sessions per complete month against the goal of ${GOAL_SESSIONS}; the hit rate is the share of the last ${HIT_MONTHS} months that reached it.`}
+          info={`Sessions per complete month against the goal of ${GOAL_SESSIONS}. A bar that reaches the goal line is a month that hit it.`}
           state={chartStateFor(shotState, {
             empty: 'No complete month logged yet. The history appears after the first full month.',
             error: retry('The goal hit rate'),
@@ -280,13 +319,13 @@ function GoalRow({ shotState }: ScenarioProps) {
           {...(shotState === 'error' && { onRetry: noop })}
         >
           <Box data-shot-hover data-shot-tooltip>
-            <Lines
+            <Bars
               data={HIT_DATA}
               ariaLabel={`Sessions per month against the goal of ${GOAL_SESSIONS}, ${HIT_RANGE_LABEL}`}
               x={(d) => d.label}
               xTicks={HIT_TICKS}
               y={{ domain: [0, HIT_Y_MAX] }}
-              series={HIT_SERIES}
+              bars={HIT_BARS}
               refLines={[
                 {
                   value: GOAL_SESSIONS,
@@ -318,6 +357,7 @@ function LoadCard({ shotState }: ScenarioProps) {
           <Meter
             label="Acute to chronic training load ratio"
             value={shotState === 'empty' ? null : LOAD_RATIO}
+            startCaption={null}
             max={LOAD_MAX}
             zones={LOAD_ZONES}
             format={fmtRatio}
@@ -346,9 +386,11 @@ function ReadinessRow({ shotState }: ScenarioProps) {
     <SimpleGrid type="container" cols={{ base: 1, [CONTAINER_KEYS.regular]: 2 }}>
       <Box data-shot="readiness" h="100%">
         <ChartCard
+          style={FILL}
           title="Readiness"
           {...(shotState === undefined && {
-            facts: { value: fmtInt(READINESS_SCORE), unit: 'of 100', period: TODAY_LABEL },
+            facts: { value: fmtInt(READINESS_SCORE), unit: 'of 100' },
+            subtitle: `As of ${TODAY_LABEL}`,
           })}
           info={READINESS_INFO}
           {...cardStateProps(shotState, retry('Readiness'), PLACEHOLDER.readiness)}
@@ -357,6 +399,7 @@ function ReadinessRow({ shotState }: ScenarioProps) {
             <Meter
               label="Readiness score out of 100"
               value={empty ? null : READINESS_SCORE}
+              startCaption={null}
               zones={READINESS_ZONES}
               ticks={[
                 { at: 0, label: '0' },
@@ -382,11 +425,13 @@ function ReadinessRow({ shotState }: ScenarioProps) {
       </Box>
       <Box data-shot="top-lifts" h="100%">
         <ChartCard
+          style={FILL}
           title="Top lifts by volume"
           {...(shotState === undefined && {
             facts: {
-              value: fmtKg(TOP_LIFTS.reduce((a, l) => a + l.volumeKg, 0)),
-              period: `all lifts, ${WINDOW_LABEL}`,
+              value: fmtShare(LIFTS_SHARE),
+              unit: 'of volume',
+              period: `in ${TOP_LIFT_COUNT} lifts, ${WINDOW_LABEL}`,
             },
           })}
           info="Sets × reps × weight per lift over the strength sessions of the window; the share is of total training volume."
@@ -399,7 +444,7 @@ function ReadinessRow({ shotState }: ScenarioProps) {
               format={fmtKg}
               accentLeader
               loading={loading}
-              emptyText="No strength session logged in the window. Log a lift to rank your lifts."
+              emptyText={`No strength session logged ${WINDOW_LABEL}. Log a lift to rank your lifts.`}
             />
           </Box>
         </ChartCard>
