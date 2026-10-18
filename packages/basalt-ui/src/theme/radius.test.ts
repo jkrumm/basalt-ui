@@ -81,7 +81,7 @@ describe('every re-pointed component defaultProps/styles radius matches its ship
       | undefined
     const resolved = stylesFn?.({}, {}, {})
     expect(resolved?.['indicator']?.['borderRadius']).toBe(
-      'round(down, min(2px, max(0px, var(--sc-radius) - 3px)), 2px)',
+      'round(down,min(2px,max(0px,var(--sc-radius) - 3px)),2px)',
     )
   })
 

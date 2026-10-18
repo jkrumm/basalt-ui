@@ -1144,6 +1144,7 @@ an object `styles` replaces it (dropping the track background, padding and label
 its output:
 
 ```ts
+type StylesFn = (theme: unknown, props: object, ctx: unknown) => Record<string, object>
 const base = createBasaltTheme().components?.SegmentedControl?.styles as StylesFn
 createBasaltTheme({
   components: {
@@ -1152,7 +1153,10 @@ createBasaltTheme({
         const b = base(theme, props, ctx)
         return {
           ...b,
-          indicator: { ...b.indicator, borderRadius: 'max(0px, var(--sc-radius) - 3px)' },
+          indicator: {
+            ...(b.indicator as object),
+            borderRadius: 'max(0px, var(--sc-radius) - 3px)',
+          },
         }
       },
     },
