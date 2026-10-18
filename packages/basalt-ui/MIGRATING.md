@@ -77,7 +77,7 @@ consumer read this index, found nothing, and diffed a KPI row that had silently 
 | **dashboard** (`.`) | `StatCard`: `unit`, `breakdown`, delta format (§ `StatCard`) | `StatGroup`, `WidgetGrid`, query-aware `StatCard` — additive | — | **the column law keys on the CONTAINER; `cols={4}` is 2-up at `sm`** (§ Dashboard) | — | — | — | — | — | — | — | — | — | — | — | — | — | — | — | — | — | — | — | — | — | — | — | — | — | — | — | — | — | — | — | — | — | — | — | — | — | — | — | — | § 1.x compatibility layer removed | — | — | — | — | — | — | — | — | — | — | — | card inset 12/16, `kpi` 22 / 500 (§ 2.16.0) | — | — | StatCard status dot, Meter/BarList refinements (§ 2.19.0) | — | plain `Meter` value bar fill muted (`tone="ink"` to opt out); `BarList` default `thin`, `variant="default"` → `inline` (§ 2.21.0) | — | — | `LoadingState` section skeleton, page spinner neutral (§ State defaults) |
 | **toolchain** (`./configs/*`) | — | — | the shipped lefthook preset's `check-theme` BROKE — the CLI resolver stopped ascending (§ CLI) | the preset's default bin, and the `root:` recipe (§ Toolchain) | — | — | — | — | — | — | — | — | — | — | — | — | — | — | — | — | — | — | — | — | — | — | — | — | — | — | — | — | — | — | — | — | — | — | — | — | — | — | — | — | — | — | — | — | — | — | — | — | — | — | — | — | — | — | — | — | — | — | — | — | — |
 | **CLI** (`basalt-ui`) | — | — | **resolver stops relocating; `doctor` loses 6 of 10 checks** (§ CLI) | — | — | — | — | — | — | — | — | — | — | — | — | — | — | — | — | — | — | — | — | — | the managed block moves `CLAUDE.md` → `AGENTS.md` (§ 1.41.0) | — | — | — | — | — | — | — | — | — | — | — | — | — | — | — | — | — | `doctor`: CSS + forced dropped subpaths, `oxlint-floor`, Start wiring (§ 2.8.0) | — | § 1.x compatibility layer removed | — | — | — | — | — | — | — | — | — | — | — | — | — | — | — | — | — | — | — | — |
-| **guards** | five rules → `error` (§ Guards) | six new ids at `warn` (§ preamble) | `query-dual-import` retired in 1.29.1 (§ Guards) | four rules → `error` (§ Guards) | — | — | — | `raw-breakpoint`: the container-grid answer, `error` at 1.33.0 (§ 1.32.0) | `FormRow`/`FormGroup` homes in both lanes; `basalt-main` dropped (§ Fixes) | C1 + breakpoint pairs → `error`; `unknown-vx-token` `warn` (§ Guards) | — | — | — | `unknown-vx-token` → `error`; the token factories throw (§ Guards) | — | — | — | — | — | — | — | — | — | — | — | — | — | — | — | — | — | — | — | — | — | — | — | — | — | — | — | — | — | — | § 1.x compatibility layer removed | — | — | — | — | — | — | — | — | — | — | — | `inline-spacing` steps, `card-inset` accepts both pairs (§ 2.16.0) | — | — | — | — | `series-palette` at `warn` (§ 2.21.0) | — | `series-palette` → `error` (§ Guards) | — |
+| **guards** | five rules → `error` (§ Guards) | six new ids at `warn` (§ preamble) | `query-dual-import` retired in 1.29.1 (§ Guards) | four rules → `error` (§ Guards) | — | — | — | `raw-breakpoint`: the container-grid answer, `error` at 1.33.0 (§ 1.32.0) | `FormRow`/`FormGroup` homes in both lanes; `basalt-main` dropped (§ Fixes) | C1 + breakpoint pairs → `error`; `unknown-vx-token` `warn` (§ Guards) | — | — | — | `unknown-vx-token` → `error`; the token factories throw (§ Guards) | — | — | — | — | — | — | — | — | — | — | — | — | — | — | — | — | — | — | — | — | — | — | — | — | — | — | — | — | — | — | § 1.x compatibility layer removed | — | — | — | — | — | — | — | — | — | — | — | `inline-spacing` steps, `card-inset` accepts both pairs (§ 2.16.0) | — | — | — | — | `series-palette` at `warn` (§ 2.21.0) | — | `series-palette` → `error` (§ Guards) | `raw-spacing`, `inline-spacing` → `error` (§ Guards) |
 
 ---
 
@@ -1240,6 +1240,18 @@ A gap is stated once. Moved defaults:
 `size="row"` keeps no caption lines, empty or loading. Ring Meters are unchanged (the centre reading stays `—`).
 
 Opt out: none for the caption and qualifier rows (they are layout fixes; shorten the text instead); pass `emptyText="—"` on a `Meter` to keep the dash caption; for a strip cell, drop `reason` (and say it in the caption or qualifier) to keep the bare `—`.
+### Guards
+
+`raw-spacing` and `inline-spacing` promote from `warn` to `error`: their grace entries (since
+2.16.0, re-dated to 2.24.0) came due at 2.24.0. `check-theme` now fails on a Mantine spacing prop
+equal to a scale step (`p={16}`, `gap={24}`) and on an inline spacing literal (`style={{ padding: 16 }}`,
+a CSS `padding: 8px`). The remedy is the scale: `xs` 8, `sm` 12, `md` 16, `lg` 20, `xl` 24 as a
+prop (`p="md"`) or `var(--mantine-spacing-md)` in CSS. Measured before flipping: argo
+`apps/dashboard` on 2.23.0 reports 0 findings of either kind; rb (2.13.1) and rollhook (2.11.1)
+predate 2.16 and meet both rules on their next bump.
+
+Opt-out: `"basalt": { "severity": { "raw-spacing": "warn", "inline-spacing": "warn" } }` keeps both a
+warning; `"basalt": { "exemptRules": { "inline-spacing": ["<path>"] } }` silences one for a path.
 
 ## 2.23.0 — Wave 37, argo's friction II
 

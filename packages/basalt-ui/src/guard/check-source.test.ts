@@ -1672,6 +1672,8 @@ describe('severity', () => {
     'css-raw-surface',
     'inline-font-size',
     'hidden-inline-style',
+    'raw-spacing',
+    'inline-spacing',
   ])('%s is promoted past its grace minor (error)', (kind) => {
     const cases: Record<string, [string, string]> = {
       'theme-allow-unscoped': ['const x = 1 // theme-allow', PATH],
@@ -1682,6 +1684,8 @@ describe('severity', () => {
         `const rowStyle = { display: 'flex', gap: 12 }\nexport const C = () => <div style={rowStyle} />`,
         PATH,
       ],
+      'raw-spacing': [`<Box p={${SPACE_SCALE.md}} />`, PATH],
+      'inline-spacing': [`<Box style={{ padding: ${SPACE_SCALE.md} }} />`, PATH],
     }
     const [src, path] = cases[kind] as [string, string]
     const hit = find(src, path).find((v) => v.kind === kind)
@@ -1698,14 +1702,16 @@ describe('severity', () => {
       PATH,
       cfg,
     )
-    expect(everyKind.length).toBeGreaterThan(0)
-    // The two 2.16 spacing kinds are the ledger: warn until 2.17.0, error for everything else.
+    expect(new Set(everyKind.map((v) => v.kind))).toContain('raw-spacing')
+    expect(new Set(everyKind.map((v) => v.kind))).toContain('inline-spacing')
+    // The ledger is empty (the 2.16 spacing kinds promoted at 2.24.0): every kind is error.
     for (const v of everyKind) {
       expect([v.kind, v.severity]).toEqual([
         v.kind,
         Object.hasOwn(GRACE_PERIOD_KINDS, v.kind) ? 'warn' : 'error',
       ])
     }
+    expect(Object.keys(GRACE_PERIOD_KINDS)).toEqual([])
   })
 })
 
