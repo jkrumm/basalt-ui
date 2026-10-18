@@ -101,7 +101,10 @@ const MEDIAN_BIN = DISTRIBUTION.findLast((b) => b.from <= MEDIAN_DAY_EUR)
 const MEDIAN_FACT =
   MEDIAN_BIN === undefined
     ? DISTRIBUTION_WINDOW
-    : `Median of the ${DISTRIBUTION_WINDOW}. ${MEDIAN_BIN.days} of them landed in ${spendBand(MEDIAN_BIN)}.`
+    : [
+        `median of the ${DISTRIBUTION_WINDOW}`,
+        `${MEDIAN_BIN.days} landed in ${spendBand(MEDIAN_BIN)}`,
+      ]
 
 const CUMULATIVE_DATA = [...CUMULATIVE]
 const DISTRIBUTION_DATA = [...DISTRIBUTION]
