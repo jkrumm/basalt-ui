@@ -1611,6 +1611,17 @@ function DashFixture(): ReactElement {
           />
         </div>
       ))}
+      {/* theme-allow -- the wrapper width IS the fixture's payload (a container probe) */}
+      <div data-testid="dash-zl-short-120" style={{ width: 120 }}>
+        <Meter
+          label="Training load"
+          min={0}
+          max={2}
+          value={1.1}
+          zones={LOAD_ZONES_SHORT}
+          ticks={LOAD_TICKS}
+        />
+      </div>
       {/* "Caution" is wider than its 10% span here; its short label fits. */}
       {/* theme-allow -- the wrapper width IS the fixture's payload (a container probe) */}
       <div data-testid="dash-zl-short" style={{ width: 342 }}>

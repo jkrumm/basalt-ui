@@ -36,20 +36,21 @@ type Shown = { zones: string[]; ticks: string[] }
 const ENDS = ['0', '2.0']
 
 const CASES: ReadonlyArray<readonly [string, Shown]> = [
-  // 120: only the holding name fits; "Under" is wider than a gap step clear of the "0" end tick, and
-  // Caution and Danger are wider than their spans.
+  // 120: only the holding name fits; "Under" would sit closer than a gap step to it, and Caution and
+  // Danger are wider than their spans. Both end ticks stay: no name they could touch is shown.
   ['dash-zl-120', { zones: ['Optimal'], ticks: ENDS }],
-  ['dash-zl-170', { zones: ['Under', 'Optimal'], ticks: ENDS }],
+  // 170/220: "Danger" fits its span and the end tick "2.0" yields to it; the "0" tick stays.
+  ['dash-zl-170', { zones: ['Under', 'Optimal', 'Danger'], ticks: ['0'] }],
   // 220: "Danger" fits its span but the "2.0" end tick takes the place.
-  ['dash-zl-220', { zones: ['Under', 'Optimal'], ticks: ENDS }],
+  ['dash-zl-220', { zones: ['Under', 'Optimal', 'Danger'], ticks: ['0'] }],
   ['dash-zl-342', { zones: ['Under', 'Optimal', 'Danger'], ticks: ENDS }],
   ['dash-zl-card', { zones: ['Under', 'Optimal', 'Danger'], ticks: ENDS }],
   // The "Rest" tick sits on "Under"'s centre: the tick wins, the name hides.
-  ['dash-zl-clash', { zones: ['Optimal'], ticks: ['Rest', ...ENDS] }],
+  ['dash-zl-clash', { zones: ['Optimal', 'Danger'], ticks: ['Rest', '0'] }],
 ]
 const STRIP: Record<string, Shown> = {
-  expanded: { zones: ['Under', 'Optimal'], ticks: ENDS },
-  'iPhone 14': { zones: ['Under', 'Optimal'], ticks: ENDS },
+  expanded: { zones: ['Under', 'Optimal', 'Danger'], ticks: ['0'] },
+  'iPhone 14': { zones: ['Under', 'Optimal', 'Danger'], ticks: ['0'] },
 }
 
 type Measured = {
@@ -195,19 +196,37 @@ function rowSuite(vp: Viewport) {
     }
   })
 
-  test('the S2 training-load zones: "Overreaching" shows as "Over", clear of "High"/"Hi"', async () => {
+  test('the S2 training-load zones: every name shows, the "2.0" end tick yields to "Overreaching"', async () => {
     const m = await measure(p, 'dash-zl-s2')
     const named = [...m.labels.map((l) => l.name), ...m.shorts.map((s) => s.name)]
     expect(named).toContain('Overreaching')
-    expect(m.shorts.map((s) => s.text)).toContain('Over')
+    expect(m.ticks.map((t) => t.name)).toEqual(['0'])
     expect(m.labels.filter((l) => l.holding).map((l) => l.name)).toEqual(['Optimal'])
     for (const name of ['Low', 'Optimal', 'High', 'Overreaching'])
       expect(m.described).toContain(name)
     const all = [...m.labels, ...m.shorts, ...m.ticks]
     for (const [i, a] of all.entries()) {
       for (const b of all.slice(i + 1)) {
-        expect(a.right <= b.left + SUBPIXEL || b.right <= a.left + SUBPIXEL).toBe(true)
+        expect(
+          a.right + GAP_STEP <= b.left + SUBPIXEL || b.right + GAP_STEP <= a.left + SUBPIXEL,
+        ).toBe(true)
       }
+    }
+  })
+
+  test('at 120px a zone that cannot fit its name shows its short label inside its span', async () => {
+    const m = await measure(p, 'dash-zl-short-120')
+    expect(m.shorts.map((s) => [s.name, s.text])).toEqual([
+      ['Under', 'Und'],
+      ['Danger', 'Dan'],
+    ])
+    expect(m.labels.map((l) => l.name)).toEqual(['Optimal'])
+    for (const name of ZONES) expect(m.described).toContain(name)
+    for (const short of m.shorts) {
+      const z = m.zones.find((zone) => zone.name === short.name)
+      if (!z) throw new Error(`LAYOUT: no zone ${short.name}`)
+      expect(short.left).toBeGreaterThanOrEqual(z.left - SUBPIXEL)
+      expect(short.right).toBeLessThanOrEqual(z.right + SUBPIXEL)
     }
   })
 

@@ -1115,9 +1115,15 @@ Changed behaviour (no API change):
   tick (clamped inside the track) instead of at the track end, whenever every caption fits a gap step
   apart; otherwise the row flows and wraps as before. **Opt out:** pass your own `endCaption` (it stays
   at the end as written); the forecast caption has no opt-out beyond `forecastCaption`.
-- **Zone names keep a gap step from an end tick.** A non-holding zone name closer than
-  `--vx-space-control-gap` to a tick or another name now hides (it was "not touching"); it stays in the
-  described-by text. **Opt out:** none; give the zone a `short` label.
+- **Zone names keep a gap step from each other and from ticks, and the end tick yields.** Two labels on
+  the zone row now keep at least `--vx-space-control-gap` apart (it was "not touching"). A zone name
+  that clears the holding one is placed before a tick at the track's start or end, so that end tick
+  hides where it would touch the name (a zone name used to lose to it); interior labelled ticks still
+  beat a name. A hidden name or tick stays in the described-by text. **Opt out:** none; give the zone a
+  `short` label.
+- **The uncoloured zone ramp is floored at 15 points per step**, so five or more zones step further
+  apart than before (cap 95 %); `tone: 'muted'` uses the same ramp. Up to six zones (five segments)
+  stay distinguishable by lightness.
 - **`size="row"` keeps categorical part captions** (swatch, name, value); it dropped them before, so
   the parts were unnamed. **Opt out:** none for `segments`; a `value` bar is unaffected.
 - **Part captions never wrap inside themselves** while they fit: each sits under its own segment when
