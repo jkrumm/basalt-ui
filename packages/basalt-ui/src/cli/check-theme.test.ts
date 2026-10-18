@@ -894,19 +894,19 @@ describe('series-palette — the exempt series file is judged by computed checks
     writeFileSync(resolve(dir, 'src', 'lib', 'series.ts'), source)
   }
 
-  it('warns (exit 0) in its grace minor, naming the key, scheme, number and threshold', () => {
+  it('fails (exit 1) by default, naming the key, scheme, number and threshold', () => {
     withSeries(BAD_SERIES)
     const { code, err } = run()
-    expect(code).toBe(0)
+    expect(code).toBe(1)
     expect(err).toContain('series-palette')
     expect(err).toContain('src/lib/series.ts')
     expect(err).toMatch(/blue \(light\) OKLCH lightness 0\.\d+ is outside 0\.43–0\.77/)
   })
 
-  it('fails (exit 1) when basalt.severity turns it to error', () => {
-    withSeries(BAD_SERIES, { roots: ['src'], severity: { 'series-palette': 'error' } })
+  it('warns (exit 0) when basalt.severity turns it down', () => {
+    withSeries(BAD_SERIES, { roots: ['src'], severity: { 'series-palette': 'warn' } })
     const { code, err } = run()
-    expect(code).toBe(1)
+    expect(code).toBe(0)
     expect(err).toContain('series-palette')
   })
 

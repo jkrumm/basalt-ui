@@ -911,11 +911,6 @@ export const GRACE_PERIOD_KINDS: Partial<Record<GuardKind, GraceEntry>> = {
     promote: '2.24.0',
     why: 'The scale moved to 8/12/16/20/24 and the CSS micro ceiling dropped 10 → 7 in 2.16.0: a literal 8px/10px in CSS is newly a finding.',
   },
-  'series-palette': {
-    since: '2.21.0',
-    promote: '2.23.0',
-    why: 'New in 2.21.0: the series file is judged by computed lightness, chroma, colour-blind separation and contrast; a palette that was tuned by eye is newly a finding.',
-  },
 }
 
 /** A kind's effective severity: consumer override first, then the grace table, then `error`. */

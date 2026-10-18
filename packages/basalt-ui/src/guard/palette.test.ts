@@ -173,20 +173,20 @@ describe('checkSeriesPalette — the guard Finding', () => {
   const check = (cfg = DEFAULT_GUARD_CONFIG, src = bad) =>
     checkSeriesPalette(src, 'src/lib/series.ts', cfg, SURFACES)
 
-  it('ships as a grace kind: warn by default', () => {
-    expect(Object.hasOwn(GRACE_PERIOD_KINDS, 'series-palette')).toBe(true)
+  it('is promoted out of the grace table: error by default', () => {
+    expect(Object.hasOwn(GRACE_PERIOD_KINDS, 'series-palette')).toBe(false)
     const [f] = check()
     expect(f).toMatchObject({
       kind: 'series-palette',
-      severity: 'warn',
+      severity: 'error',
       relPath: 'src/lib/series.ts',
     })
     expect(f?.line).toBe(2)
   })
 
-  it('basalt.severity turns it up', () => {
-    const cfg = { ...DEFAULT_GUARD_CONFIG, severity: { 'series-palette': 'error' as const } }
-    expect(check(cfg)[0]?.severity).toBe('error')
+  it('basalt.severity turns it down', () => {
+    const cfg = { ...DEFAULT_GUARD_CONFIG, severity: { 'series-palette': 'warn' as const } }
+    expect(check(cfg)[0]?.severity).toBe('warn')
   })
 
   it('exemptRules silences it per path', () => {
