@@ -126,12 +126,12 @@ export function measureAnchor(root: Element): Reading {
     const a = top[3] ?? 1
     return [0, 1, 2, 3].map((i) => (i === 3 ? 1 : (top[i] ?? 0) * a + (under[i] ?? 0) * (1 - a)))
   }
+  const fills = (s: CSSStyleDeclaration): boolean =>
+    s.content !== 'none' && (rgba(s.backgroundColor)[3] ?? 0) > 0
   const visible = (el: Element): CSSStyleDeclaration | null => {
     const s = getComputedStyle(el)
-    const r = el.getBoundingClientRect()
-    return s.visibility === 'hidden' || s.display === 'none' || s.opacity === '0' || r.width === 0
-      ? null
-      : s
+    const hidden = s.visibility === 'hidden' || s.display === 'none' || s.opacity === '0'
+    return hidden || el.getBoundingClientRect().width === 0 ? null : s
   }
   /** The effective background: layers up to the first opaque ancestor (html/body included), composited. */
   const backdrop = (el: Element): { color: number[]; assumedWhite: boolean } => {
@@ -187,7 +187,7 @@ export function measureAnchor(root: Element): Reading {
     const s = visible(el)
     if (!s) continue
     const r = el.getBoundingClientRect()
-    const hasBg = (rgba(s.backgroundColor)[3] ?? 0) > 0
+    const hasBg = fills(s)
     const hasBorder = ['Top', 'Right', 'Bottom', 'Left'].some(
       (e) => px(s.getPropertyValue(`border-${e.toLowerCase()}-width`)) > 0,
     )
@@ -198,11 +198,12 @@ export function measureAnchor(root: Element): Reading {
         padding: sides(s, 'padding'),
       })
     }
-    // Wrappers that span the anchor are layout, not content: only smaller painted boxes count.
+    const pseudo = ['::before', '::after'].some((p) => fills(getComputedStyle(el, p)))
+    // Only boxes smaller than the anchor count (wrappers are layout); a pseudo fill is paint (Skeleton).
     if (
       el !== root &&
       (/^(svg|img|canvas|video|input|textarea)$/i.test(el.tagName) ||
-        ((hasBg || hasBorder) && r.height < rect.height * 0.9))
+        ((hasBg || hasBorder || pseudo) && r.height < rect.height * 0.9))
     ) {
       painted.push([r.top, r.bottom])
     }
@@ -230,8 +231,7 @@ export function measureAnchor(root: Element): Reading {
   }
 
   // emptyRatio: the largest vertical run (edges included) with nothing painted in it.
-  const top = rect.top
-  const bottom = rect.bottom
+  const { top, bottom } = rect
   let cursor = top
   let longest = 0
   for (const [a, b] of painted.toSorted((x, y) => x[0] - y[0])) {
