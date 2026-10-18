@@ -25,7 +25,7 @@ const SPEC: FixtureSpec = {
   dash: true,
 }
 
-const SNAP = 1
+const SNAP = 0.5
 const PARTS = ['caption', 'value', 'visual', 'rows', 'footer'] as const
 type Part = (typeof PARTS)[number]
 
@@ -71,6 +71,38 @@ const band = (m: Measured, cell: MeasuredCell) =>
 
 const height = (b: Box | undefined) => (b ? b.bottom - b.top : 0)
 
+type States = {
+  strip: Box & { left: number; right: number }
+  cells: { key: string; left: number; right: number; top: number; bottom: number }[]
+  footer: Box
+}
+
+const measureStates = (p: LayoutPage): Promise<States> =>
+  p.raw.evaluate(() => {
+    const host = document.querySelector<HTMLElement>('[data-testid="dash-strip-states"]')
+    if (!host) throw new Error('LAYOUT: no dash-strip-states')
+    const rect = (el: Element) => el.getBoundingClientRect()
+    const section = host.querySelector<HTMLElement>('section')
+    const foot = host.querySelector<HTMLElement>('[data-strip-footer-cell]')
+    if (!section || !foot) throw new Error('LAYOUT: strip states incomplete')
+    const s = rect(section)
+    const f = rect(foot)
+    return {
+      strip: { left: s.left, right: s.right, top: s.top, bottom: s.bottom },
+      cells: [...host.querySelectorAll<HTMLElement>('[data-strip-cell]')].map((c) => {
+        const b = rect(c)
+        return {
+          key: c.getAttribute('data-strip-cell') ?? '',
+          left: b.left,
+          right: b.right,
+          top: b.top,
+          bottom: b.bottom,
+        }
+      }),
+      footer: { top: f.top, bottom: f.bottom },
+    }
+  })
+
 function suite(vp: Viewport) {
   let p: LayoutPage
   let m: Measured
@@ -92,17 +124,17 @@ function suite(vp: Viewport) {
       for (const [i, name] of present.entries()) {
         const next = present[i + 1]
         if (!next) continue
-        const void_ = c.parts[next]!.top - c.parts[name]!.bottom
+        const gapBelow = c.parts[next]!.top - c.parts[name]!.bottom
         const slack = Math.max(
           0,
           ...band(m, c).map((s) => height(s.parts[name]) - height(c.parts[name])),
         )
-        expect(void_).toBeLessThanOrEqual(m.gap + slack + SNAP)
+        expect(gapBelow).toBeLessThanOrEqual(m.gap + slack + SNAP)
       }
     }
   })
 
-  test('captions share one top and values one baseline within a row of cells', () => {
+  test('captions share one top and values one top within a row of cells', () => {
     for (const c of m.cells) {
       for (const s of band(m, c)) {
         expect(Math.abs(s.parts.caption!.top - c.parts.caption!.top)).toBeLessThanOrEqual(SNAP)
@@ -115,6 +147,26 @@ function suite(vp: Viewport) {
     const a = cell('tall')
     const b = cell('rows')
     expect(Math.abs(a.parts.footer!.top - b.parts.footer!.top)).toBeLessThanOrEqual(SNAP)
+  })
+
+  test('state cells and the footer row keep their bands: no overlap, footer last', async () => {
+    const st = await measureStates(p)
+    const last = st.cells.at(-1)!
+    if (vp.width < 480) {
+      // Two columns: the odd fifth cell spans the full strip width.
+      expect(Math.abs(last.left - st.strip.left)).toBeLessThanOrEqual(SNAP + 1)
+      expect(Math.abs(last.right - st.strip.right)).toBeLessThanOrEqual(SNAP)
+    }
+    const bands = [...new Set(st.cells.map((c) => Math.round(c.top)))].toSorted((a, b) => a - b)
+    for (const [i, top] of bands.entries()) {
+      const next = bands[i + 1]
+      if (next === undefined) continue
+      const bottom = Math.max(
+        ...st.cells.filter((c) => Math.round(c.top) === top).map((c) => c.bottom),
+      )
+      expect(bottom).toBeLessThanOrEqual(next + SNAP)
+    }
+    expect(st.footer.top).toBeGreaterThanOrEqual(Math.max(...st.cells.map((c) => c.bottom)) - SNAP)
   })
 
   test('a value-only cell’s footer sits directly under its value', () => {

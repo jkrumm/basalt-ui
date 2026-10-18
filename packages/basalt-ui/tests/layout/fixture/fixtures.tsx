@@ -1531,6 +1531,25 @@ function DashFixture(): ReactElement {
           ]}
         />
       </div>
+      <div data-testid="dash-strip-states">
+        <StatGroup
+          variant="strip"
+          label="States"
+          cols={5}
+          cells={[
+            { key: 's1', caption: 'Load', value: '1.1', footer: 'vs mean' },
+            { key: 's2', caption: 'Sleep', state: { kind: 'empty', reason: 'No sleep logged' } },
+            {
+              key: 's3',
+              caption: 'HRV',
+              state: { kind: 'error', error: new Error('Timed out'), onRetry: () => {} },
+            },
+            { key: 's4', caption: 'Steps', value: '8 120' },
+            { key: 's5', caption: 'Weight', value: '81.4', unit: 'kg', footer: 'last week' },
+          ]}
+          footer={[{ key: 'note', content: 'Synced 2 min ago' }]}
+        />
+      </div>
       <div data-testid="dash-zl-strip">
         <StatGroup
           variant="strip"
