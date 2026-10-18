@@ -207,6 +207,9 @@ const HOVER_FIXTURE = `<!doctype html><style>
   @media (hover:hover){[data-shot=btn]:hover{background:#00f}}
 </style><div data-shot=btn></div>`
 
+const STATEFUL_FIXTURE = `<!doctype html><div data-shot=chart><section data-basalt-chart-card style="height:80px"></section></div>
+<div data-shot=plain style="height:80px"></div>`
+
 const pw = resolvePlaywright(process.cwd())
 const out = mkdtempSync(join(tmpdir(), 'basalt-harness-'))
 afterAll(() => rmSync(out, { recursive: true, force: true }))
@@ -247,7 +250,15 @@ async function shoot(
   // node:http, not Bun.serve: the unit-test preload replaces the global Response with happy-dom's.
   const server = createServer((req, res) => {
     res.setHeader('content-type', 'text/html')
-    res.end(req.url === '/reveal' ? REVEAL_FIXTURE : req.url === '/hover' ? HOVER_FIXTURE : FIXTURE)
+    res.end(
+      req.url === '/reveal'
+        ? REVEAL_FIXTURE
+        : req.url === '/hover'
+          ? HOVER_FIXTURE
+          : req.url === '/stateful'
+            ? STATEFUL_FIXTURE
+            : FIXTURE,
+    )
   })
   await new Promise<void>((done) => server.listen(0, '127.0.0.1', done))
   const { port } = server.address() as AddressInfo
@@ -286,6 +297,19 @@ async function shoot(
 }
 
 describe('real Chrome', () => {
+  test('an undeclared state is marked stateful only on an anchor holding a state surface', async () => {
+    await shoot(
+      ['empty'],
+      async ({ shots }) => {
+        const flag = (name: string) =>
+          shots.find((s) => s.name === name && s.state === 'empty')?.stateful
+        expect(flag('chart')).toBe(true)
+        expect(flag('plain')).toBeUndefined()
+      },
+      '/stateful',
+    )
+  }, 120_000)
+
   test('desktop reports a hovering fine pointer, mobile a coarse touch one', async () => {
     await shoot(
       [],

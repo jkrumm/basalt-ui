@@ -64,6 +64,8 @@ export type CaptureInput = {
 type PageFacts = {
   anchors: string[]
   declared: string[]
+  /** Anchors that hold a basalt state surface (ChartCard, StatCard, a chart state). */
+  stateful?: string[]
   /** Anchor → the URL states it declares itself absent in (`data-shot-absent="empty error"`). */
   absent?: Record<string, string[]>
 }
@@ -94,6 +96,7 @@ type Outcome = {
   status: ShotRecord['status']
   file?: string
   note?: string
+  stateful?: true
 }
 
 /** Thrown inside a capture when the anchor simply has no such target: recorded `not-declared`, not `error`. */
@@ -167,7 +170,7 @@ const snap = (
     ...extra,
   })
 
-function record(c: Ctx, { name, state, status, file, note }: Outcome): void {
+function record(c: Ctx, { name, state, status, file, note, stateful }: Outcome): void {
   const { route, scheme, viewport } = c
   c.shots.push({
     route,
@@ -178,6 +181,7 @@ function record(c: Ctx, { name, state, status, file, note }: Outcome): void {
     file: file ?? null,
     status,
     ...(note ? { note } : {}),
+    ...(stateful ? { stateful } : {}),
   })
   if (status === 'error')
     c.input.log(`[shot] ${route} ${name} ${scheme}/${viewport}/${state}: ${note}`)
@@ -199,12 +203,17 @@ export function tagAutoAnchors(): void {
   })
 }
 
+/** The DOM marks of a basalt state surface: `ChartCard` and the chart state write theirs; `StatCard` has none but its `basalt-card` container. */
+const STATE_SURFACE =
+  '[data-basalt-chart-card], [data-basalt-chart-state], [style*="container-name: basalt-card"]'
+
 const readFacts = (page: PwPage): Promise<PageFacts> =>
-  page.evaluate(`(() => ({
+  page.evaluate(`(() => { const STATE_SURFACE = ${JSON.stringify(STATE_SURFACE)}; return {
     anchors: [...new Set([...document.querySelectorAll('[data-shot]')].map((e) => e.getAttribute('data-shot')).filter(Boolean))],
     declared: [...document.querySelectorAll('[data-shot-states]')].flatMap((e) => (e.getAttribute('data-shot-states') ?? '').split(/\\s+/)).filter(Boolean),
+    stateful: [...new Set([...document.querySelectorAll('[data-shot]')].filter((e) => e.matches(STATE_SURFACE) || e.querySelector(STATE_SURFACE)).map((e) => e.getAttribute('data-shot')).filter(Boolean))],
     absent: Object.fromEntries([...document.querySelectorAll('[data-shot][data-shot-absent]')].map((e) => [e.getAttribute('data-shot'), (e.getAttribute('data-shot-absent') ?? '').split(/\\s+/).filter(Boolean)])),
-  }))()`)
+  }; })()`)
 
 const addProblem = (c: Ctx, problem: string): void => {
   if (!c.problems.includes(problem)) c.problems.push(problem)
@@ -679,6 +688,9 @@ async function captureUrlState(c: Ctx, state: ShotState): Promise<void> {
         state,
         status: 'not-declared',
         note: c.facts.declared.length === 0 ? NO_STATES_NOTE : 'page does not declare this state',
+        ...(c.facts.declared.length === 0 && c.facts.stateful?.includes(name)
+          ? { stateful: true as const }
+          : {}),
       })
     }
     return

@@ -1137,6 +1137,11 @@ the mobile viewport (`hasTouch`) keeps `hover: none` / `pointer: coarse`. Deskto
 filled controls now differ from rest, so a committed baseline of them will diff once. No opt-out:
 the previous crop was the defect.
 
+`shot detect`'s `craft-7/no-declared-states` is now **P2** (reported, exit 0) instead of P1, and only
+fires on a route with an anchor that renders a state surface (`ChartCard`, `StatCard`, a chart
+state); it names those anchors and the `data-shot-states="empty loading error"` to add. A route
+without one gets no finding. A consumer that gated on exit 2 for it no longer does.
+
 ## 2.22.0 — Wave 37, argo's friction II
 
 No export is removed. Five defaults move and one export is new.
