@@ -182,16 +182,16 @@ export const CHRONIC_LOAD = loadSince(28) / 4
 export const LOAD_RATIO = ACUTE_LOAD / CHRONIC_LOAD
 export const LOAD_MAX = 2
 export const LOAD_ZONES = [
-  { from: 0, to: 0.8, label: 'Low' },
-  { from: 0.8, to: 1.3, label: 'Optimal' },
-  { from: 1.3, to: 1.5, label: 'High' },
-  { from: 1.5, to: LOAD_MAX, label: 'Overreaching' },
+  { from: 0, to: 0.8, label: 'Low', short: 'Lo' },
+  { from: 0.8, to: 1.3, label: 'Optimal', short: 'Opt' },
+  { from: 1.3, to: 1.5, label: 'High', short: 'Hi' },
+  { from: 1.5, to: LOAD_MAX, label: 'Overreaching', short: 'Over' },
 ] as const
 export const loadZoneName = (ratio: number): string => zoneFor(LOAD_ZONES, ratio)?.label ?? '—'
 
 export const READINESS_ZONES = [
-  { from: 0, to: 60, label: 'Low' },
-  { from: 60, to: 80, label: 'Fair' },
+  { from: 0, to: 60, label: 'Low', short: 'Lo' },
+  { from: 60, to: 80, label: 'Fair', short: 'Fr' },
   { from: 80, to: 100, label: 'Good' },
 ] as const
 export const readinessLevel = (score: number): string =>
