@@ -501,7 +501,7 @@ export function Sparkline(props: SparklineProps): ReactElement {
     at === null
       ? undefined
       : hosted
-        ? { left: `${at.fx * 100}%`, translate: `${-at.fx * 100}% 0` }
+        ? { left: `${at.fx * 100}%`, translate: `${-at.fx * 100}% 0`, maxWidth: '100%' }
         : {
             ...(beside === 'right'
               ? {
