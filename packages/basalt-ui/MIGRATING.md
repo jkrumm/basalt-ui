@@ -1041,7 +1041,7 @@ The `basalt-ui/router-tanstack` subpath is **removed** in 2.x, not moved: an imp
 | `NavItemMeta`, `NavGroupMeta`, `AnyNavItem`, `AnyNavGroup`, `AnyNavLink`, `FlatNavItem`, `NavConfig`, `NavGroupId`, `NavTabId`, `NavIndex`, `UseNavOptions`, `NavBinding`, `NavAnchor`, `NavAnchorProps`, `NavMobilePlacement` | deleted                                                                                                                                                                                                                                                                                                                                                                                                                                                    | no consumer names them; derive with `ComponentProps` / `Parameters` |
 | `useNav`, and `BasaltShell`'s `sections` / `mobileNav` props                                                                                                                                                                   | deleted: pass `nav={NAV}` (plus `badges`, `isActive`, `getScrollElement` — the old `useNav` options) to `BasaltShell`; it resolves the sidebar, the mobile bar and the breadcrumb itself. `mobileNav` tuning moves to `defineNav`'s `mobile`. argo `apps/dashboard/src/routes/__root.tsx`: replace `const nav = useNav(NAV, { badges })` + `{...nav}` with `nav={NAV} badges={…}` (migrates in W12; 1.x consumers stay on their pinned version until then) |
 
-## Unreleased — shell and type: PageSummary, untitled Section, page-bar fixes
+## Unreleased — Wave 37, argo's friction II
 
 No export is removed. Five defaults move and one export is new.
 
@@ -1067,7 +1067,6 @@ The sticky-PageBar anchor clearance argo filed (`--vx-space-sticky-header-cleara
 bar) needs no change: a shell-less `Section id` already adds the bar's published height
 (`--basalt-page-bar-h`), and in `BasaltShell` both bars sit outside the scrollport. `section-anchor`
 now pins the title, not just the root, at 390 and 1440.
-## Unreleased — Wave 37, the chart chrome
 
 ### Chart facts, sparklines and strips gain tone, glyph and focus
 
