@@ -27,6 +27,10 @@ export type RungOptions = {
   reverseRows?: boolean
   /** How the bar series combine for the auto domain. */
   stack?: 'stacked' | 'normalized'
+  /** No vertical rule under the cursor (a bar kind's hover is the bar itself). */
+  crosshair?: boolean
+  /** The legend goes from the wide class up, where `Lines`' end labels name the series. */
+  hideLegendAtWide?: boolean
 }
 
 // A size container: the legend picks none/dots/chips from this box's width in CSS, so the server
@@ -85,6 +89,8 @@ export type ChartShellProps<T> = Pick<
   compile: (ctx: ShellContext) => CartesianDefinition
   /** Recompile when the measured width changes (default: it is not an input). */
   byWidth?: boolean
+  /** `auto` legend only: hidden from the wide class up (CSS). */
+  hideLegendAtWide?: boolean
 }
 
 /**
@@ -94,6 +100,7 @@ export type ChartShellProps<T> = Pick<
  */
 export function ChartShell<T>(props: ChartShellProps<T>): ReactElement {
   const { ariaLabel, legend, height, state, className, style, series, compile, byWidth } = props
+  const { hideLegendAtWide } = props
   const chartId = useId()
   const inCard = useInChartCard()
   const { ref, width: measured, coarse } = useChartSize()
@@ -115,8 +122,9 @@ export function ChartShell<T>(props: ChartShellProps<T>): ReactElement {
   )
 
   // ── legend: micro has none, compact shows dots, regular and wide show chips (CSS, § 9.6) ──────
-  const config = legend === false ? null : (legend ?? {})
+  // A single entry names nothing the title, axis and tooltip do not: no legend unless asked for.
   const entryCount = legendEntries(series, false)[0]?.length ?? 0
+  const config = legend === false ? null : (legend ?? (entryCount > 1 ? {} : null))
   const shown = config !== null && entryCount > 0
   const toggle = config?.toggle ?? entryCount >= 2
   const onToggle = useCallback((key: string) => {
@@ -139,9 +147,10 @@ export function ChartShell<T>(props: ChartShellProps<T>): ReactElement {
           onToggle={onToggle}
           onHighlight={setHighlighted}
           concealed={resolved !== null}
+          hideAtWide={hideLegendAtWide === true}
         />
       ) : null,
-    [shown, series, hidden, config?.groups, toggle, onToggle, resolved],
+    [shown, series, hidden, config?.groups, toggle, onToggle, resolved, hideLegendAtWide],
   )
   // `header` is the enclosing card's header row (`top` outside a card); either way the legend is
   // the first thing in the chart's own markup.
@@ -176,7 +185,8 @@ export function ChartShell<T>(props: ChartShellProps<T>): ReactElement {
 export function CartesianRung<T, X extends ChartX>(
   props: CartesianChartProps<T, X> & RungOptions,
 ): ReactElement {
-  const { ariaLabel, legend, height, state, className, style, series, ...spec } = props
+  const { ariaLabel, legend, height, state, className, style, series, hideLegendAtWide, ...spec } =
+    props
   const stable = useShallowStable({ ...spec, series })
   const compile = useCallback(
     (ctx: ShellContext) => compileCartesian({ ...stable, ...ctx }),
@@ -197,6 +207,7 @@ export function CartesianRung<T, X extends ChartX>(
       {...(state !== undefined && { state })}
       {...(className !== undefined && { className })}
       {...(style !== undefined && { style })}
+      {...(hideLegendAtWide && { hideLegendAtWide })}
     />
   )
 }

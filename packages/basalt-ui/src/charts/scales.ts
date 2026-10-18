@@ -7,7 +7,7 @@
 import { scaleBand } from '@tanstack/charts/scales/band'
 import { scaleLinear } from '@tanstack/charts/scales/linear'
 import { scalePoint } from '@tanstack/charts/scales/point'
-import { scaleLog, scaleUtc } from 'd3-scale'
+import { scaleLinear as d3Linear, scaleLog, scaleUtc } from 'd3-scale'
 import type { ChartPositionScaleOptions } from '@tanstack/charts/types/core'
 import type { AxisConfig, ChartSeries, ChartX, XZoneSpec } from './types'
 
@@ -26,6 +26,23 @@ export function padAutoUpper(candidate: number, pad: number): number {
 }
 
 /**
+ * Raises `upper` until the axis' top tick (for `count` ticks over `[lower, upper]`) reaches `max`:
+ * a padded domain can end between ticks, so the line peaks above the last label. Each step adds
+ * one tick interval, so the loop ends within a few turns.
+ */
+function coverTop(lower: number, upper: number, max: number, count: number): number {
+  let top = upper
+  for (let i = 0; i < 4; i++) {
+    const ticks = d3Linear().domain([lower, top]).ticks(count)
+    const last = ticks.at(-1)
+    const step = ticks.length > 1 ? (ticks[1] as number) - (ticks[0] as number) : 0
+    if (last === undefined || step <= 0 || last >= max) return top
+    top = last + step
+  }
+  return top
+}
+
+/**
  * One y axis' domain. `extraBounds` are the finite zone and reference-line values pinned to this
  * axis — a target past the data must stay inside the plot. Infinite bounds clamp to the domain by
  * definition and are ignored. The 1.x law, unchanged (`resolveAxisDomain`).
@@ -35,6 +52,9 @@ export function resolveYDomain<T>(
   data: readonly T[],
   series: readonly ChartSeries<T>[],
   extraBounds: readonly number[] = [],
+  /** The number of ticks the axis will draw (0: none, or its own tick values): when set, an AUTO
+   * domain ends on a tick at or above the data's maximum. */
+  tickCount = 0,
 ): readonly [number, number] {
   const domain = cfg?.domain ?? 'auto'
   if (Array.isArray(domain)) return domain as readonly [number, number]
@@ -67,7 +87,7 @@ export function resolveYDomain<T>(
   const lower = padAutoLower(Math.min(min, cfg?.autoMinCeil ?? 0), pad)
   // A flat series would be a scale with no extent: every point on one pixel.
   if (lower === upper) return [Math.min(lower, 0), upper === 0 ? 1 : upper * pad]
-  return [lower, upper]
+  return [lower, tickCount > 0 && !cfg?.nice ? coverTop(lower, upper, max, tickCount) : upper]
 }
 
 /** A configured y scale instance for a resolved domain. */

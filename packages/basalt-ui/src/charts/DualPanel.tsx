@@ -16,7 +16,7 @@ import { VX, alpha } from '../tokens'
 import { resolveContainerClass } from '../tokens/size-classes'
 import { defaultNumberFormat, engineRow, seriesRow, visibleSeries } from './compile'
 import { barMark, emphasis, lineMark, markersOf, thinFill } from './marks'
-import { PanelRung, chartHeightOf, paneX, paneY, rowsOf } from './panel'
+import { PanelRung, paneX, paneY, rowsOf } from './panel'
 import type { PaneBuilder, PanelInput, PanelPlan } from './panel'
 import { plotContext } from './plot-context'
 import type { SignedSeries } from './legend'
@@ -283,15 +283,13 @@ export function DualPanel<T, X extends Date | number = Date | number>(
               format: topFormat,
               ticks: TOP_TICKS,
               cls,
-              height: chartHeightOf(h, topFraction, PANE_GAP),
             }),
           },
         }
       }
 
-      const barPane: PaneBuilder = ({ width, height: h }) => {
+      const barPane: PaneBuilder = ({ width }) => {
         const cls = resolveContainerClass(width)
-        const whole = chartHeightOf(h, 1 - topFraction, PANE_GAP)
         const barRows = barOn ? rowsOf(data, x, barSeries) : []
         const dim = emphasis(highlighted, { key: BAR_KEY })
         return {
@@ -306,14 +304,13 @@ export function DualPanel<T, X extends Date | number = Date | number>(
             }),
           ],
           scales: {
-            x: paneX({ scale: xScale(), model, format, cls, height: whole }),
+            x: paneX({ scale: xScale(), model, format, cls }),
             y: paneY({
               scale: barScale,
               domain: barDomain,
               format: bar.format,
               ticks: BAR_TICKS,
               cls,
-              height: whole,
             }),
           },
         }

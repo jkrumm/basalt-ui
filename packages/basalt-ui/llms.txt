@@ -464,6 +464,7 @@ Signature: Lines(props: LinesProps<T, X>): ReactElement<unknown, string | JSXEle
   cursorResolution?: CursorResolution
   tooltip?: false | ChartTooltipConfig<T, X>
   thresholds?: [X] extends [string] ? never : readonly Threshold[]
+  naming?: "auto" | "legend" | "endLabels"
 Signature: MirroredBars(props: MirroredBarsProps<T, X, K>): ReactElement<unknown, string | JSXElementConstructor<any>>
   className?: string
   style?: CSSProperties
@@ -521,6 +522,7 @@ Signature: StackedArea(props: StackedAreaProps<T, X>): ReactElement<unknown, str
   cursorResolution?: CursorResolution
   tooltip?: false | ChartTooltipConfig<T, X>
   series: readonly StackedAreaBand<T>[]
+  fillOpacity?: number
   y?: Omit<AxisConfig<T>, "scale">
 Signature: chartCursor(group: string): ChartCursorController<ChartValue, ChartValue>
 Signature: chartCurve(name: CurveName): ChartCurve

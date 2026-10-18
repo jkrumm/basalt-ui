@@ -4,11 +4,14 @@
  * `thresholds` (fills between the first series and a value, Date/number x only). Zones, x-zones,
  * reference lines, `y2`, legend, cursor and tooltip are the rung's.
  *
- * At the wide class with ≤ 3 plotted lines and no `y2`, each line also carries an end label; the
- * legend still names every series (and still toggles them). A label that would not fit between its
- * last point and the plot's right edge ends at the point instead, above it. Before the engine has
- * measured the plot (the server HTML, the first client frame) the room is read off the frame, which
- * is wider by the axis gutters; the measured render corrects it.
+ * `naming` is the one switch for who names the series. `auto` (default): from the wide class up, a
+ * chart of ≤ 3 lines and no `y2` names them with end labels and its legend goes; below it the
+ * legend names them. `legend`: the legend at every width, no end labels. `endLabels`: end labels at
+ * every width, no legend (a chart with a `y2` keeps its legend). A label that would not fit between
+ * its last point and the plot's right edge ends at the point instead, above it; labels that would
+ * collide are spread apart. Before the engine has measured the plot (the server HTML, the first
+ * client frame) the room is read off the frame, which is wider by the axis gutters; the measured
+ * render corrects it.
  */
 import { areaY } from '@tanstack/charts/area'
 import { differenceY } from '@tanstack/charts/difference'
@@ -19,6 +22,7 @@ import { CartesianRung } from './CartesianChart'
 import { areaGradientId } from './compile'
 import { chartCurve } from './curves'
 import { endLabelMarks, endLabelPlan } from './labels'
+import type { LinesNaming } from './labels'
 import { drawnRows, lineMark, loneDots, markersOf, yScaleOf } from './marks'
 import { rowX } from './types'
 import type {
@@ -36,13 +40,31 @@ export type LinesProps<T, X extends ChartX = ChartX> = Omit<CartesianChartProps<
    * x: the engine's `differenceY` takes a Date or number x only.
    */
   thresholds?: [X] extends [string] ? never : readonly Threshold[]
+  /** Who names the series: `'auto'` (default; end labels from the wide class, the legend below it),
+   * `'legend'` or `'endLabels'`. */
+  naming?: 'auto' | 'legend' | 'endLabels' | undefined
 }
 
 const hasValue = <T, X extends ChartX>(r: PlotRow<T, X>): boolean => r.y !== null
 
+/** The most lines `auto` names with end labels (and so the most a legend gives way for). */
+const AUTO_END_LABELS = 3
+
 export function Lines<T, X extends ChartX = ChartX>(props: LinesProps<T, X>): ReactElement {
-  const { thresholds, ...rest } = props
+  const { thresholds, naming = 'auto', ...rest } = props
   const { series } = props
+  // Whether end labels can name every legend entry: only then may the legend give way to them.
+  const labelled = series.filter((s) => s.role !== 'reference')
+  const namedByLabels =
+    props.y2 === undefined &&
+    series.every((s) => s.legend === false || s.role !== 'reference') &&
+    !(props.refLines ?? []).some((r) => r.legend !== undefined)
+  // When the legend must name something the labels cannot (a right axis, a named reference line),
+  // it stays and the labels are not drawn: one naming, never two.
+  const effective: LinesNaming = namedByLabels ? naming : 'legend'
+  const labelsOnly = effective === 'endLabels'
+  const hideAtWide =
+    effective === 'auto' && labelled.length > 0 && labelled.length <= AUTO_END_LABELS
   const marks = useCallback(
     (plot: PlotContext<T, X>): ChartMarks => {
       const indexOf = new Map(series.map((s, i) => [s.key, i]))
@@ -83,7 +105,7 @@ export function Lines<T, X extends ChartX = ChartX>(props: LinesProps<T, X>): Re
               y1: () => 0,
               fill: `url(#${areaGradientId(indexOf.get(s.key) ?? 0)})`,
               fillOpacity: 1,
-              curve: chartCurve(s.curve ?? 'monotone'),
+              curve: chartCurve(s.curve ?? 'linear'),
               ...(yScaleOf(plot, s) !== undefined && { yScale: 'y2' }),
             }),
           ),
@@ -96,10 +118,17 @@ export function Lines<T, X extends ChartX = ChartX>(props: LinesProps<T, X>): Re
         out.push(...markersOf(s, plot.rows(s.key), yScale))
       }
       const labelled = plotted.filter((s) => s.role !== 'reference')
-      out.push(...endLabelMarks(endLabelPlan(plot, labelled)))
+      out.push(...endLabelMarks(endLabelPlan(plot, labelled, effective)))
       return out
     },
-    [series, thresholds],
+    [series, thresholds, effective],
   )
-  return <CartesianRung {...rest} marks={marks} />
+  return (
+    <CartesianRung
+      {...rest}
+      marks={marks}
+      {...(labelsOnly && { legend: false as const })}
+      {...(hideAtWide && { hideLegendAtWide: true })}
+    />
+  )
 }

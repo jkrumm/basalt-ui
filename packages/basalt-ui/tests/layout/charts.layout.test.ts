@@ -1,8 +1,7 @@
 /**
  * Layout invariants for the 2.0 chart layer (docs/V2-SPEC.md § 9.4–§ 9.6) — everything here is
  * measured or computed by a real browser, which happy-dom cannot do: the container class the host
- * resolves from its MEASURED width and the guide ladder it drives, y labels inside the plot at the
- * compact class, the crosshair the engine paints on every chart of a cursor group and clears on
+ * resolves from its MEASURED width and the guide ladder it drives, y labels in a gutter beside the plot, the crosshair the engine paints on every chart of a cursor group and clears on
  * `mouseleave`, `:root`'s `--ts-chart-*` reaching the portalled tooltip, and `touch-action` on a
  * coarse pointer (the harness context is `isMobile` + `hasTouch`, i.e. `(pointer: coarse)`).
  *
@@ -93,7 +92,7 @@ layout('Charts — 2.0 layout', () => {
     readonly cls: string
     readonly width: number
     readonly height: number
-    readonly yLabels: 'none' | 'inside' | 'outside'
+    readonly yLabels: 'none' | 'outside'
     readonly legend: 'none' | 'dots' | 'chips'
   }
   const CLASSES: readonly ClassCase[] = [
@@ -101,7 +100,8 @@ layout('Charts — 2.0 layout', () => {
     { cls: 'micro', width: 200, height: 160, yLabels: 'none', legend: 'none' },
     { cls: 'compact', width: 360, height: 223, yLabels: 'outside', legend: 'dots' },
     { cls: 'regular', width: 640, height: 320, yLabels: 'outside', legend: 'chips' },
-    { cls: 'wide', width: 960, height: 384, yLabels: 'outside', legend: 'chips' },
+    // `naming: 'auto'`: from the wide class the end labels name the lines and the legend goes.
+    { cls: 'wide', width: 960, height: 384, yLabels: 'outside', legend: 'none' },
   ]
 
   for (const c of CLASSES) {
@@ -128,8 +128,7 @@ layout('Charts — 2.0 layout', () => {
       if (c.yLabels === 'none') expect(geometry.labels).toHaveLength(0)
       else expect(geometry.labels.length).toBeGreaterThan(1)
       for (const label of geometry.labels) {
-        if (c.yLabels === 'inside') expect(label.left).toBeGreaterThanOrEqual(geometry.plotLeft)
-        else expect(label.right).toBeLessThanOrEqual(geometry.plotLeft + 0.5)
+        expect(label.right).toBeLessThanOrEqual(geometry.plotLeft + 0.5)
       }
 
       const legend = await p.raw.evaluate(
@@ -161,12 +160,12 @@ layout('Charts — 2.0 layout', () => {
         : 'inside'
     }, SVG)
 
-  // Inside labels need the compact class AND a chart under SHORT_CHART_HEIGHT (180).
+  // Wave 37: a y label never sits inside the plot, however short the chart (a line ran through it).
   const cases: readonly {
     readonly name: string
     readonly vp: Viewport
     readonly spec: ChartsSpec
-    readonly sides: 'inside' | 'outside'
+    readonly sides: 'outside'
   }[] = [
     {
       name: '1280 compact-width, 280 tall',
@@ -184,7 +183,7 @@ layout('Charts — 2.0 layout', () => {
       name: '1280 compact-width, 179 tall',
       vp: DESKTOP_1280,
       spec: { kind: 'lines', width: 360, height: 179 },
-      sides: 'inside',
+      sides: 'outside',
     },
     {
       name: '1280 compact-width, 180 tall',
@@ -202,7 +201,7 @@ layout('Charts — 2.0 layout', () => {
       name: '390 phone, 160 tall',
       vp: PHONE,
       spec: { kind: 'lines', height: 160 },
-      sides: 'inside',
+      sides: 'outside',
     },
     {
       name: '1280 dual panel, compact-width, 280 tall',
@@ -220,7 +219,7 @@ layout('Charts — 2.0 layout', () => {
       name: '390 dual panel, 160 tall',
       vp: PHONE,
       spec: { kind: 'dual', height: 160 },
-      sides: 'inside',
+      sides: 'outside',
     },
   ]
   for (const c of cases) {
@@ -561,7 +560,7 @@ layout('Charts — 2.0 layout', () => {
   // Row 110: the first x tick label must not sit on a y tick label at the plot origin.
   for (const [name, spec, vp] of [
     ['compact, law height', { kind: 'lines', width: 360, origin: true }, DESKTOP],
-    ['compact, inside labels', { kind: 'lines', width: 360, height: 160, origin: true }, DESKTOP],
+    ['compact, short', { kind: 'lines', width: 360, height: 160, origin: true }, DESKTOP],
     ['390 px phone', { kind: 'lines', origin: true }, PHONE],
     ['390 px phone, short', { kind: 'lines', height: 160, origin: true }, PHONE],
   ] as const satisfies readonly (readonly [string, ChartsSpec, Viewport])[]) {
@@ -826,6 +825,220 @@ layout('Charts — 2.0 layout', () => {
       })
       expect(m.text).not.toBe('')
       expect(m).toMatchObject({ visible: true, inside: true, painted: true, overHero: false })
+    })
+  })
+  // ── Wave 37 chart chrome ───────────────────────────────────────────────────────────────────
+  describe('the tooltip name column', () => {
+    // argo strength ACWR: four per-lift series at a phone's width, names of 12–20 characters.
+    const NAMES = ['Barbell squat', 'Romanian deadlift', 'Overhead press', 'Bench press (close)']
+
+    test('keeps one line per name at a 390-wide plot, values right-aligned', async () => {
+      const p = await openFixture(
+        chartFixture({ kind: 'lines', legendEntries: 4, names: NAMES }),
+        PHONE,
+      )
+      await p.settle()
+      await hover(p, FRAME, 0.97)
+      const rows = await p.raw.evaluate((tip) => {
+        const lineHeight = (el: Element): number =>
+          Number.parseFloat(getComputedStyle(el).lineHeight)
+        return [...document.querySelectorAll(`${tip}:not([hidden]) .ts-chart-tooltip__row`)].map(
+          (row) => {
+            const [, name, value] = [...row.children] as HTMLElement[]
+            const n = name?.getBoundingClientRect()
+            const v = value?.getBoundingClientRect()
+            return {
+              text: name?.textContent ?? '',
+              nameHeight: n?.height ?? 0,
+              nameWidth: n?.width ?? 0,
+              line: name ? lineHeight(name) : 0,
+              valueRight: v?.right ?? 0,
+              clipped: name ? name.scrollWidth > name.clientWidth : false,
+              whiteSpace: name ? getComputedStyle(name).whiteSpace : '',
+              overflow: name ? getComputedStyle(name).textOverflow : '',
+            }
+          },
+        )
+      }, TOOLTIP)
+      expect(rows).toHaveLength(NAMES.length)
+      for (const r of rows) {
+        expect(r.nameHeight).toBeLessThanOrEqual(r.line + 1) // one line, never one glyph per line
+        expect(r.nameWidth).toBeGreaterThanOrEqual(96) // the 6rem floor
+        expect(r.clipped).toBe(false) // 12–20 characters fit before the ellipsis
+        expect(r.whiteSpace).toBe('nowrap') // the name never wraps
+        expect(r.overflow).toBe('ellipsis') // a longer one is cut, not wrapped
+      }
+      const rights = rows.map((r) => r.valueRight)
+      expect(Math.max(...rights) - Math.min(...rights)).toBeLessThanOrEqual(0.5)
+    })
+
+    test('a name past the max ends in an ellipsis on one line', async () => {
+      const long = 'A series name far longer than any tooltip column should ever be asked to hold'
+      const p = await openFixture(
+        chartFixture({ kind: 'lines', legendEntries: 2, names: [long, 'Short'] }),
+        PHONE,
+      )
+      await p.settle()
+      await hover(p, FRAME, 0.5)
+      const first = await p.raw.evaluate((tip) => {
+        const name = document.querySelector<HTMLElement>(
+          `${tip}:not([hidden]) .ts-chart-tooltip__row > span:nth-child(2)`,
+        )
+        const r = name?.getBoundingClientRect()
+        return {
+          height: r?.height ?? 0,
+          width: r?.width ?? 0,
+          clipped: name ? name.scrollWidth > name.clientWidth : false,
+          line: name ? Number.parseFloat(getComputedStyle(name).lineHeight) : 0,
+        }
+      }, TOOLTIP)
+      expect(first.clipped).toBe(true)
+      expect(first.height).toBeLessThanOrEqual(first.line + 1)
+      expect(first.width).toBeLessThanOrEqual(14 * 16 + 1)
+    })
+  })
+
+  describe('the y tick gutter', () => {
+    // argo usage latency: a line ran through a tick label drawn inside the plot.
+    for (const [name, spec, vp] of [
+      ['phone, short', { kind: 'lines', height: 160 }, PHONE],
+      ['compact, 179 tall', { kind: 'lines', width: 360, height: 179 }, DESKTOP],
+      ['regular', { kind: 'lines', width: 640 }, DESKTOP],
+      ['wide', { kind: 'lines', width: 960 }, DESKTOP],
+    ] as const satisfies readonly (readonly [string, ChartsSpec, Viewport])[]) {
+      test(`no y tick label box intersects the plot rect, and each sits against it (${name})`, async () => {
+        const p = await openFixture(chartFixture(spec), vp)
+        await p.settle()
+        const plot = (await rectsOf(p, 'g.ts-chart__marks'))[0]
+        const labels = await rectsOf(p, '[data-ts-key^="y-tick-label:"]')
+        expect(plot).toBeDefined()
+        expect(labels.length).toBeGreaterThan(1)
+        for (const l of labels) {
+          expect(overlap(l, plot as Rect)).toBe(false)
+          expect((plot as Rect).left - l.right).toBeLessThanOrEqual(12) // right-aligned against the plot
+        }
+        // Right-aligned: every label ends on the same edge.
+        const rights = labels.map((l) => l.right)
+        expect(Math.max(...rights) - Math.min(...rights)).toBeLessThanOrEqual(0.5)
+      })
+    }
+  })
+
+  describe('one type step', () => {
+    for (const [name, vp, width] of [
+      ['phone', PHONE, undefined],
+      ['desktop', DESKTOP, 960],
+    ] as const) {
+      test(`ticks and legend share one font size (${name})`, async () => {
+        const p = await openFixture(
+          chartFixture({ kind: 'lines', ...(width !== undefined && { width }), legendEntries: 5 }),
+          vp,
+        )
+        await p.settle()
+        const sizes = await p.raw.evaluate((frame) => {
+          const px = (el: Element | null): number =>
+            el ? Number.parseFloat(getComputedStyle(el).fontSize) : Number.NaN
+          const root = document.querySelector(frame)
+          return {
+            ticks: [...(root?.querySelectorAll('[data-ts-key*="tick-label:"]') ?? [])].map(px),
+            legend: px(root?.querySelector('[data-basalt-chart-legend]') ?? null),
+          }
+        }, FRAME)
+        expect(sizes.ticks.length).toBeGreaterThan(0)
+        for (const t of sizes.ticks) expect(t).toBe(sizes.legend)
+      })
+    }
+  })
+
+  describe('Lines naming', () => {
+    const legendShown = (p: LayoutPage): Promise<boolean> =>
+      p.raw.evaluate((frame) => {
+        const row = document.querySelector(`${frame} [data-basalt-chart-legend]`)
+        return row !== null && getComputedStyle(row).display !== 'none'
+      }, FRAME)
+
+    test('auto: wide names the lines with end labels and hides the legend', async () => {
+      const p = await openFixture(chartFixture({ kind: 'lines', width: 960 }), DESKTOP)
+      await p.settle()
+      expect((await endLabelAnchors(p)).length).toBeGreaterThan(0)
+      expect(await legendShown(p)).toBe(false)
+    })
+
+    test('auto: below wide the legend names the lines and no end label draws', async () => {
+      const p = await openFixture(chartFixture({ kind: 'lines', width: 640 }), DESKTOP)
+      await p.settle()
+      expect(await endLabelAnchors(p)).toHaveLength(0)
+      expect(await legendShown(p)).toBe(true)
+    })
+  })
+
+  describe('y ticks cover the data', () => {
+    test('the top tick label sits at or above the highest point of every line (390)', async () => {
+      const p = await openFixture(chartFixture({ kind: 'lines', legendEntries: 1 }), PHONE)
+      await p.settle()
+      const ticks = (await rectsOf(p, '[data-ts-key^="y-tick-label:"]')).toSorted(
+        (a, b) => a.top - b.top,
+      )
+      const line = (await rectsOf(p, 'g.ts-chart__line'))[0]
+      expect(ticks.length).toBeGreaterThan(1)
+      expect(line).toBeDefined()
+      const topTickMid = ((ticks[0] as Rect).top + (ticks[0] as Rect).bottom) / 2
+      expect((line as Rect).top).toBeGreaterThanOrEqual(topTickMid - 1)
+    })
+  })
+
+  describe('Bars hover', () => {
+    test('the hovered bar is highlighted; no crosshair rule paints', async () => {
+      const p = await openFixture(chartFixture({ kind: 'bars', width: 640 }), DESKTOP)
+      await p.settle()
+      const fills = (): Promise<string[]> =>
+        p.raw.evaluate(
+          (frame) =>
+            [
+              ...document.querySelectorAll(
+                `${frame} g[data-ts-key="bars"] rect, ${frame} g[data-ts-key^="bars:"] rect`,
+              ),
+            ].map((r) => r.getAttribute('fill') ?? getComputedStyle(r).fill),
+          FRAME,
+        )
+      const before = await fills()
+      await hover(p, FRAME, 0.5)
+      const after = await fills()
+      expect(after.some((f, i) => f !== before[i])).toBe(true)
+      expect(await paintedRules(p, FRAME)).toHaveLength(0)
+    })
+
+    test('a bar legend swatch is a rounded square at 1440 and at 390', async () => {
+      for (const vp of [DESKTOP, PHONE]) {
+        const p = await openFixture(chartFixture({ kind: 'bars' }), vp)
+        await p.settle()
+        const radii = await p.raw.evaluate(
+          (frame) =>
+            [...document.querySelectorAll(`${frame} [data-legend-key] > [aria-hidden]`)]
+              .filter((el) => getComputedStyle(el).display !== 'none')
+              .map((el) => getComputedStyle(el).borderRadius),
+          FRAME,
+        )
+        expect(radii.length).toBeGreaterThan(0)
+        for (const r of radii) expect(r).toBe('2px')
+      }
+    })
+  })
+
+  describe('BandStrip tooltip placement', () => {
+    test('opens below the strip, inside the viewport, at 390', async () => {
+      const p = await openFixture(chartFixture({ kind: 'strip' }), PHONE)
+      await p.settle()
+      for (const at of [0.05, 0.5, 0.95]) {
+        await hover(p, FRAME, at)
+        const strip = (await rectsOf(p, 'g.ts-chart__marks'))[0] as Rect
+        const tip = await p.box('tooltip', `${TOOLTIP}:not([hidden])`)
+        // Below the plot: nothing above it (the hero value) is covered.
+        expect(tip.box.top).toBeGreaterThanOrEqual(strip.bottom - 0.5)
+        expect(tip.box.left).toBeGreaterThanOrEqual(0)
+        expect(tip.box.right).toBeLessThanOrEqual(PHONE.width)
+        await leave(p, FRAME)
+      }
     })
   })
 })

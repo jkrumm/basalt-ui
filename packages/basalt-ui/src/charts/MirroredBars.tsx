@@ -23,7 +23,7 @@ import { VX, alpha } from '../tokens'
 import { resolveContainerClass } from '../tokens/size-classes'
 import { defaultNumberFormat, seriesRow, visibleSeries } from './compile'
 import { barMark, emphasis } from './marks'
-import { PanelRung, chartHeightOf, paneX, paneY, rowsOf } from './panel'
+import { PanelRung, paneX, paneY, rowsOf } from './panel'
 import type { PaneBuilder, PanelInput, PanelPlan } from './panel'
 import { xScaleFor } from './scales'
 import { foldBands, resolveNamedState } from './band-fold'
@@ -206,9 +206,8 @@ export function MirroredBars<T, X extends ChartX = ChartX, K extends string = st
           on: boolean,
           max: number,
         ): PaneBuilder =>
-        ({ width: w, height: h }) => {
+        ({ width: w }) => {
           const cls = resolveContainerClass(w)
-          const whole = chartHeightOf(h, side === 'up' ? upFraction : 1 - upFraction, 0)
           // The down pane's zero is at its top.
           const domain: [number, number] = side === 'up' ? [0, max] : [max, 0]
           const rows: PlotRow<T, X>[] = on ? rowsOf(drawn, x, s) : []
@@ -282,7 +281,7 @@ export function MirroredBars<T, X extends ChartX = ChartX, K extends string = st
             scales: {
               x:
                 side === 'down'
-                  ? paneX({ scale: bandScale(), model, format, cls, height: whole })
+                  ? paneX({ scale: bandScale(), model, format, cls })
                   : { scale: bandScale(), axis: false },
               y: paneY({
                 scale: scaleLinear().domain(domain),
@@ -290,7 +289,6 @@ export function MirroredBars<T, X extends ChartX = ChartX, K extends string = st
                 format: cfg.format,
                 ticks: cfg.ticks ?? DEFAULT_PANE_TICKS,
                 cls,
-                height: whole,
               }),
               zx: { channel: 'x', scale: scaleLinear().domain([0, 1]), axis: false },
             },

@@ -6,6 +6,7 @@ import type { StoredChartSpec } from '@tanstack/charts/types/core'
 import type { BasaltProps } from '../common/props'
 import type { ContainerClass } from '../tokens/size-classes'
 import type { CurveName } from './curves'
+import type { RefLabelPosition } from './ref-label'
 
 /** What `x` may return. The value type picks the x scale (§ 9.4): `Date` → time, `number` → linear,
  * `string` → point (lines) or band (bars). */
@@ -27,8 +28,10 @@ export type ChartSeries<T> = {
   mark?: 'line' | 'bar' | 'area' | undefined
   /** Default `'solid'`; `'dashed'` is `VX.dashArray` on the line, the legend and the tooltip. */
   dash?: 'solid' | 'dashed' | undefined
-  /** Interpolation between points. Default `'monotone'`. A piecewise-constant quantity (a price
-   * tier, a config value) is a step: a smoothed curve draws values that never existed. */
+  /** Interpolation between points. Default `'linear'`: discrete values (a daily total, a monthly
+   * rate) are joined by straight segments, never by a smoothed curve with crossings between points
+   * that never happened. `'monotone'` is an opt-in for a continuous measure; a piecewise-constant
+   * quantity (a price tier, a config value) is a step. */
   curve?: CurveName | undefined
   strokeWidth?: number | undefined
   /**
@@ -155,11 +158,17 @@ export type RefLine = {
   dashed?: boolean | undefined
   axis?: 'left' | 'right' | undefined
   /**
-   * Names the line on the plot: a small muted caption at the plot's right end (left end for a
-   * right-axis line, clear of its tick labels), above the line, below it near the plot's top. It
-   * follows the legend toggle. The ink is `--vx-ink2`, never the line colour.
+   * Names the line on the plot: a small muted caption on one of four spots (the plot's end or
+   * start, above or below the line). It follows the legend toggle. The ink is `--vx-ink2`, never
+   * the line colour.
    */
   label?: string | undefined
+  /**
+   * Pins the caption's spot. Default: the first spot (the plot's right end above the line; the left
+   * end for a right-axis line) that stays inside the plot and that no data line runs through, so a
+   * line in the top or bottom quarter, or one a series ends on, moves its caption.
+   */
+  labelPosition?: RefLabelPosition | undefined
   /**
    * Names the line in the legend (its color, dashed as `dashed`; a toggle hides the line), so a
    * threshold needs no always-`null` series. `mark` is the swatch shape. Default `'line'`. The

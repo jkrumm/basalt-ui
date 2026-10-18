@@ -2,7 +2,9 @@
  * The pure core: cursor-group teardown, the container-class ladder, the height law, the x scale
  * models and the y domain law. No React, no DOM geometry.
  */
-import { describe, expect, spyOn, test } from 'bun:test'
+import { afterEach, beforeEach, describe, expect, spyOn, test } from 'bun:test'
+import { defineFormat } from '../format'
+import { resetFormatDefaults } from '../format/shared'
 import type { StoredChartSpec } from '@tanstack/charts/types/core'
 import { compileCartesian, dateTicks, utcHeaderDate } from './compile'
 import { utcAxisDate } from './date-tick-format'
@@ -15,6 +17,10 @@ import { Lines } from './Lines'
 import { createElement } from 'react'
 import { renderToString } from 'react-dom/server'
 import type { ChartSeries } from './types'
+
+// The header reads the page locale: pin one, or the runtime's decides the expected strings.
+beforeEach(() => defineFormat({ locale: 'en-GB' }))
+afterEach(resetFormatDefaults)
 
 type Row = { t: Date; v: number | null }
 const day = (d: number): Date => new Date(Date.UTC(2026, 8, d))
@@ -323,19 +329,12 @@ describe('container-class ladder', () => {
     expect(yAxis(at(200))).toBe(false)
     expect(tickFont(at(200), 'x')).toBe(11)
   })
-  test('compact (< 480) and short: y labels inside the plot, the left margin locked to zero', () => {
-    const spec = at(360, 179)
-    const tick = labelTick(spec, 'y')
-    expect(tick.anchor).toBe('start')
-    expect(tick.dx).toBeGreaterThan(0)
-    expect(labelTick(spec, 'x').anchor).toBeFunction()
-    expect(spec.margin).toEqual({ left: 0 })
-    expect(tickFont(spec, 'x')).toBe(11)
-  })
-  test('compact at SHORT_CHART_HEIGHT (180) and above: a left gutter, margin and x anchor untouched', () => {
-    for (const height of [180, 280]) {
+  test('compact and short: y labels stay in a gutter, never inside the plot', () => {
+    for (const height of [120, 179, 180, 280]) {
       const spec = at(360, height)
-      expect(labelTick(spec, 'y').anchor).toBeUndefined()
+      const yLabels = labelTick(spec, 'y')
+      expect(yLabels.anchor).toBeUndefined()
+      expect(yLabels.dx).toBeUndefined()
       expect(spec.margin).toBeUndefined()
       expect(tickFont(spec, 'y')).toBe(11)
       // The x anchor only starts a label on the plot origin; every other tick keeps the default.
@@ -352,11 +351,6 @@ describe('container-class ladder', () => {
       if (typeof anchor !== 'function' || origin === undefined) throw new Error('no x anchor')
       expect(anchor(tick(0, origin))).toBe('start')
     }
-  })
-  test('an unmeasured height (0) never flips a compact chart inside', () => {
-    const spec = at(360, 0)
-    expect(labelTick(spec, 'y').anchor).toBeUndefined()
-    expect(spec.margin).toBeUndefined()
   })
   test('regular and wide never put labels inside, however short', () => {
     for (const width of [640, 1000]) {
@@ -482,7 +476,7 @@ describe('scales', () => {
   })
   test('date labels read UTC, like the time scale', () => {
     expect(utcAxisDate(day(1))).toBe('01.09')
-    expect(utcHeaderDate(day(1))).toBe('Tue Sep 1 2026')
+    expect(utcHeaderDate(day(1))).toBe('Tue, 1 Sep 2026')
   })
 })
 

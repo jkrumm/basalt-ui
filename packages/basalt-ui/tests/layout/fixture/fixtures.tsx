@@ -18,7 +18,7 @@ import {
   Lines,
   Sparkline,
 } from '../../../src/charts'
-import { PanelRung, chartHeightOf, paneX, paneY } from '../../../src/charts/panel'
+import { PanelRung, paneX, paneY } from '../../../src/charts/panel'
 import type { PaneBuilder, PaneContext, PanelInput, PanelPlan } from '../../../src/charts/panel'
 import { plotContext } from '../../../src/charts/plot-context'
 import { xScaleFor } from '../../../src/charts/scales'
@@ -873,10 +873,14 @@ function buildChartData(seriesCount: number, days: number = CHART_DAYS): ChartPo
   }))
 }
 
-function buildLineSeries(seriesCount: number, label?: string): ChartSeries<ChartPoint>[] {
+function buildLineSeries(
+  seriesCount: number,
+  label?: string,
+  names?: readonly string[],
+): ChartSeries<ChartPoint>[] {
   return Array.from({ length: seriesCount }, (_, i) => ({
     key: `s${i}`,
-    label: label ?? `Series ${i + 1}`,
+    label: names?.[i] ?? label ?? `Series ${i + 1}`,
     color: CHART_COLORS[i % CHART_COLORS.length] as string,
     getValue: (d: ChartPoint) => d.values[i] ?? null,
   }))
@@ -940,16 +944,14 @@ function PanelRailChart({
       const pane = (
         ctx: PaneContext,
         marks: ChartMarks,
-        shareOf: number,
         withX: boolean,
       ): ReturnType<PaneBuilder> => {
         const cls = resolveContainerClass(ctx.width)
-        const whole = chartHeightOf(ctx.height, shareOf, 8)
         return {
           marks,
           scales: {
             x: withX
-              ? paneX({ scale: xScale(), model, format: String, cls, height: whole })
+              ? paneX({ scale: xScale(), model, format: String, cls })
               : { scale: xScale(), axis: false },
             y: paneY({
               scale: yScale(),
@@ -957,7 +959,6 @@ function PanelRailChart({
               format: String,
               ticks: 3,
               cls,
-              height: whole,
             }),
           },
         }
@@ -984,15 +985,10 @@ function PanelRailChart({
             },
             ctx.plot,
           )
-          return pane(ctx, [railMark(data, plot.plotHeight)], share, false)
+          return pane(ctx, [railMark(data, plot.plotHeight)], false)
         },
         bottom: (ctx) =>
-          pane(
-            ctx,
-            [ruleY([0], { id: 'zero', stroke: CHART_COLORS[0] as string })],
-            1 - share,
-            true,
-          ),
+          pane(ctx, [ruleY([0], { id: 'zero', stroke: CHART_COLORS[0] as string })], true),
       }
     },
     [data, series],
@@ -1164,7 +1160,7 @@ function ChartsFixture({ spec }: { spec: ChartsSpec }): ReactElement {
         ariaLabel="Fixture lines"
         data={data}
         x={chartX}
-        series={buildLineSeries(seriesCount, spec.endLabel)}
+        series={buildLineSeries(seriesCount, spec.endLabel, spec.names)}
         {...domain}
         {...(spec.origin && originAxes)}
         {...height}

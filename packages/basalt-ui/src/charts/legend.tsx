@@ -49,7 +49,8 @@ const rowBaseStyle: CSSProperties = {
   flexWrap: 'wrap',
   alignItems: 'center',
   rowGap: 4,
-  fontSize: VX.legendFontSize,
+  // The tick step: ticks, legend and tooltip are one size, so a chart card has at most three.
+  fontSize: VX.text.micro,
   color: VX.ink2,
   lineHeight: 1.35,
 }
@@ -153,29 +154,15 @@ function Swatch({ s, mode }: { s: SwatchStyle; mode: LegendMode }): ReactElement
       </>
     )
   if ((s.mark ?? 'line') === 'line') return <LineSwatch s={s} compact={mode === 'dots'} />
-  if (mode === 'dots')
-    return (
-      <span
-        aria-hidden
-        className={classes.dot}
-        style={{
-          width: 8,
-          height: 8,
-          // theme-allow raw-surface — a legend dot is a circle, not a surface corner
-          borderRadius: '50%',
-          background: swatchFill(s),
-          opacity: s.fillOpacity ?? 1,
-          flex: 'none',
-        }}
-      />
-    )
+  // One shape per mark kind at every width: a bar is a rounded square, compact (8) or wide (10).
+  const size = mode === 'dots' ? 8 : 10
   return (
     <span
       aria-hidden
-      className={classes.chip}
+      className={mode === 'dots' ? classes.dot : classes.chip}
       style={{
-        width: 10,
-        height: 10,
+        width: size,
+        height: size,
         // theme-allow raw-surface — swatch geometry, not a surface corner
         borderRadius: 2,
         background: swatchFill(s),
@@ -196,6 +183,8 @@ export type ChartLegendProps<T> = {
   onHighlight: (key: string | null) => void
   /** Keeps the legend's box but shows and offers nothing: a chart with no marks names no series. */
   concealed?: boolean
+  /** `auto` mode only: gone from the wide class up, where end labels name the lines (CSS). */
+  hideAtWide?: boolean
 }
 
 export function ChartLegend<T>(props: ChartLegendProps<T>): ReactElement | null {
@@ -210,6 +199,7 @@ export function ChartLegend<T>(props: ChartLegendProps<T>): ReactElement | null 
       // `aria-hidden` is belt-and-braces for a tree that ignores computed visibility.
       {...(props.concealed && { 'aria-hidden': true })}
       {...(auto && { className: classes.auto })}
+      {...(auto && props.hideAtWide && { 'data-hide-wide': '' })}
       style={rowLayout(props.mode, props.concealed === true)}
     >
       {groups.map((group, gi) => [

@@ -52,7 +52,7 @@ export function lineMark<T, X extends ChartX>(
     stroke: s.color,
     strokeWidth: s.strokeWidth ?? LINE_STROKE_WIDTH,
     strokeOpacity: (s.strokeOpacity ?? 1) * emphasis(plot.highlighted, s),
-    curve: chartCurve(s.curve ?? 'monotone'),
+    curve: chartCurve(s.curve ?? 'linear'),
     ...(s.dash === 'dashed' && { strokeDasharray: DASH }),
     ...(yScale !== undefined && { yScale }),
   })
