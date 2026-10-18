@@ -223,7 +223,7 @@ function zoneStyle(zone: MeterZone, index: number, count: number, min: number, s
 const columnGapOf = (el: Element): number => Number.parseFloat(getComputedStyle(el).columnGap) || 0
 
 /** One label on the row: its span in percent of the row (a zone name) or none (an end tick). */
-type RowSlot = { spanPct?: readonly [number, number]; holding?: boolean }
+type RowSlot = { spanPct?: readonly [number, number]; holding?: boolean; end?: boolean }
 
 type RowLayout = { shown: boolean[]; short: boolean[]; shift: number[] }
 const sameLayout = (a: RowLayout, b: RowLayout) =>
@@ -273,6 +273,7 @@ function useRowLabelLayout(
           ...(a !== undefined &&
             b !== undefined && { span: { left: Math.min(a, b), right: Math.max(a, b) } }),
           ...(slot?.holding && { holding: true }),
+          ...(slot?.end && { end: true }),
         }
       })
       shortOfRef.current.forEach((labelIndex, n) => {
@@ -362,7 +363,7 @@ const TICK_LABEL_FLIP_PCT = 50
 function LabelRow({ zones, ticks }: { zones: readonly ZoneLabel[]; ticks: readonly TickMark[] }) {
   const rowRef = useRef<HTMLDivElement>(null)
   const slots: RowSlot[] = [
-    ...ticks.map((): RowSlot => ({})),
+    ...ticks.map((t): RowSlot => (t.pct <= 0 || t.pct >= 100 ? { end: true } : {})),
     ...zones.map((z): RowSlot => ({
       spanPct: [z.centrePct - z.widthPct / 2, z.centrePct + z.widthPct / 2],
       holding: z.holding,
@@ -477,6 +478,8 @@ function useMeasured(
     run()
     const observer = typeof ResizeObserver === 'undefined' ? undefined : new ResizeObserver(run)
     observer?.observe(row)
+    // A caption's own size changes with its content, whatever it is (a ReactNode has no string key).
+    for (const kid of row.children) observer?.observe(kid)
     const fonts =
       typeof document === 'undefined' ? undefined : (document.fonts as FontFaceSet | undefined)
     fonts?.addEventListener?.('loadingdone', run)

@@ -9,7 +9,10 @@ export type MeterSegment = {
   value: number
   label: string
   color?: string
-  /** `'muted'`: the part takes a step of the muted ramp (a lightness step per muted part). A `color` wins. */
+  /**
+   * `'muted'`: the part takes a step of the muted ramp (a lightness step per muted part). A `color`
+   * wins. Steps stay ≥15 points apart up to five muted parts; more merge at the cap.
+   */
   tone?: 'muted'
   forecast?: boolean
 }
@@ -17,7 +20,10 @@ export type MeterZone = {
   from: number
   to: number
   label: string
-  /** `'muted'`: the band takes its step of the muted ramp instead of the line ramp. A `color` wins. */
+  /**
+   * `'muted'`: the band takes its step of the muted ramp instead of the line ramp. A `color` wins.
+   * Steps stay ≥15 points apart up to six zones; more merge at the cap.
+   */
   tone?: 'muted'
   /**
    * A shorter name for a narrow track. The row tries `label`, then `short`, and only then hides the
@@ -32,9 +38,22 @@ export type MeterTick = { at: number; label?: string }
 /** A colour of a `stops` gradient at `at` (in the reading's units); the colour is the consumer's. */
 type MeterStop = { at: number; color: string }
 
-/** A ramp step's strength in percent of its neutral: `lo` at the first step, `lo + step` at the last. */
-const RAMP_ZONE = { lo: 15, step: 45, solo: 40 }
-const RAMP_PART = { lo: 35, step: 50, solo: 60 }
+/** A ramp step's strength in percent of its neutral: from `lo`, spread over `step` across the steps. */
+export const RAMP_ZONE = { lo: 15, step: 45, solo: 40 }
+export const RAMP_PART = { lo: 35, step: 50, solo: 60 }
+/** Neighbouring steps stay at least this far apart (the contrast the zone ramp always had), up to `RAMP_MAX`. */
+export const RAMP_MIN_STEP = 15
+export const RAMP_MAX = 95
+
+/**
+ * Step `index` of `count`. The spread is floored at `RAMP_MIN_STEP` per step, so a ramp stays
+ * distinguishable by lightness up to six zones (five segments); past that the last steps clamp at
+ * `RAMP_MAX` and merge, which is the cue to group parts.
+ */
+export function rampStrength(index: number, count: number, ramp: typeof RAMP_ZONE): number {
+  if (count <= 1) return ramp.solo
+  return Math.min(RAMP_MAX, ramp.lo + index * Math.max(RAMP_MIN_STEP, ramp.step / (count - 1)))
+}
 
 function rampFill(
   base: 'line' | 'muted',
@@ -42,8 +61,7 @@ function rampFill(
   count: number,
   ramp: typeof RAMP_ZONE,
 ): string {
-  const strength = count > 1 ? ramp.lo + (index / (count - 1)) * ramp.step : ramp.solo
-  return `color-mix(in srgb, var(--vx-${base}) ${strength}%, transparent)`
+  return `color-mix(in srgb, var(--vx-${base}) ${rampStrength(index, count, ramp)}%, transparent)`
 }
 
 /** A zone's fill: its own colour, else its step of the line (or, `tone="muted"`, the muted) ramp. */
@@ -218,7 +236,14 @@ export type LabelBox = { left: number; right: number }
  * A label on the shared row: its measured box and, for a zone name, the span it must stay inside.
  * The holding zone's name never hides for width: it ignores its span and is shifted into the row.
  */
-export type RowLabel = { box: LabelBox; span?: LabelBox; holding?: boolean; short?: LabelBox }
+export type RowLabel = {
+  box: LabelBox
+  span?: LabelBox
+  holding?: boolean
+  /** A tick at the track's start or end: it yields to every zone name it would touch. */
+  end?: boolean
+  short?: LabelBox
+}
 
 /** The placement of the row's labels, index-aligned with the input. */
 export type RowPlacement = {
@@ -232,9 +257,10 @@ export type RowPlacement = {
 /**
  * Which labels of the row show, in input order. The holding zone's name claims its place first (it
  * is the reading's verdict, so it never hides for width: it may spill past its span, shifted inside
- * the row); the labels without a span (the end ticks) go next; every other zone name then shows only
+ * the row); the other ticks go next; every other zone name then shows only
  * when it lies inside the row and its own span and clears every label already kept, trying its full
- * name and then its `short` box. Two shown labels keep at least `gap` px between them (one gap step
+ * name and then its `short` box; the end ticks (at the track's start or end) go last, so they yield
+ * to any name they would touch. Two shown labels keep at least `gap` px between them (one gap step
  * of the host's spacing). A hidden name is still named in the described-by text.
  */
 export function placeRowLabels(
@@ -246,7 +272,7 @@ export function placeRowLabels(
   const short = labels.map(() => false)
   const shift = labels.map(() => 0)
   const kept: LabelBox[] = []
-  const rank = (l: RowLabel) => (l.holding ? 0 : l.span ? 2 : 1)
+  const rank = (l: RowLabel) => (l.holding ? 0 : l.end ? 3 : l.span ? 2 : 1)
   const order = labels
     .map((_, i) => i)
     .toSorted((a, b) => rank(labels[a] as RowLabel) - rank(labels[b] as RowLabel))

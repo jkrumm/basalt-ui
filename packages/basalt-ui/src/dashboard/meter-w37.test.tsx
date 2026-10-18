@@ -7,7 +7,18 @@ import { cleanup, render } from '@testing-library/react'
 import { afterEach, describe, expect, test } from 'bun:test'
 import { Meter } from './meter'
 import type { MeterProps } from './meter'
-import { modelBar, placeMarkCaptions, partsFitUnder, placeRowLabels, zoneFill } from './meter-model'
+import {
+  RAMP_MAX,
+  RAMP_MIN_STEP,
+  RAMP_PART,
+  RAMP_ZONE,
+  modelBar,
+  partsFitUnder,
+  placeMarkCaptions,
+  placeRowLabels,
+  rampStrength,
+  zoneFill,
+} from './meter-model'
 import { VisualSlotContext } from './visual-slot'
 
 afterEach(cleanup)
@@ -276,5 +287,34 @@ describe('captions at their marks', () => {
     ]
     expect(placeRowLabels(labels, 100, 0).shown).toEqual([true, true])
     expect(placeRowLabels(labels, 100, 6).shown).toEqual([true, false])
+  })
+})
+
+describe('the muted ramp', () => {
+  test('neighbouring steps stay ≥15 points apart up to six zones, and never pass the cap', () => {
+    for (const count of [2, 3, 4, 5, 6]) {
+      const s = Array.from({ length: count }, (_, i) => rampStrength(i, count, RAMP_ZONE))
+      for (let i = 1; i < count; i++)
+        expect(s[i]! - s[i - 1]!).toBeGreaterThanOrEqual(RAMP_MIN_STEP)
+    }
+    expect(rampStrength(9, 10, RAMP_ZONE)).toBe(RAMP_MAX)
+    for (let i = 1; i < 5; i++)
+      expect(
+        rampStrength(i, 5, RAMP_PART) - rampStrength(i - 1, 5, RAMP_PART),
+      ).toBeGreaterThanOrEqual(RAMP_MIN_STEP)
+  })
+})
+
+describe('an end tick yields to a zone name', () => {
+  test('a name that clears the holding one outranks an end tick it would touch', () => {
+    const labels = [
+      { box: { left: 90, right: 100 }, end: true },
+      { box: { left: 70, right: 95 }, span: { left: 60, right: 100 } },
+    ]
+    expect(placeRowLabels(labels, 100).shown).toEqual([false, true])
+    expect(placeRowLabels([{ box: { left: 90, right: 100 } }, labels[1]!], 100).shown).toEqual([
+      true,
+      false,
+    ])
   })
 })
