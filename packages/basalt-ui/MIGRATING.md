@@ -1069,7 +1069,9 @@ No export is removed or added. Six chart defaults move.
   `data-basalt-hosted`) the hover/focus chip no longer overlays the plotted line: it takes the reserved
   line above the plot (`--basalt-spark-readout-h`). A bare `Sparkline` is unchanged in kind: its chip
   stays inside its own box, on the half away from the point. A hosted chip slides with the point,
-  so it stays inside the box at either edge and no longer truncates. Opt out in a host: set
+  so it stays inside the box at either edge and no longer truncates. A composite visual (a `Meter` above a
+  `Sparkline` in one `StatCard` or strip slot) sets `--basalt-spark-readout-lift: 0` on its wrapper, or the
+  chip lifts over the `Meter`. Opt out in a host: set
   `--basalt-spark-readout-lift: 0` on it to put the chip back in the box.
 - **Hourly readouts name the hour.** `{ at, value }` points inside one UTC day read `0 runs · 14:00` (the
   clock alone); a window that crosses midnight (24 points from 12:00, or 12:00 to 12:00) reads
