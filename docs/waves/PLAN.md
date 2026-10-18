@@ -1520,8 +1520,8 @@ smoothed line where bars against the goal answer the question.
   BandStrip notch, no bare "No data", #410 strip `shotAbsent` + Meter null + nested radius steps, #411 playground
   adoption, #412 one error title. Every break is a plain `feat:` with a MIGRATING subsection under the one `## Unreleased`
   heading; `CHANGELOG.md` untouched (one worker reformatted it; the lead restored it before merge).
-- **Released mid-wave by the mother:** 2.22.0 from `a646a081` (#393–#400); 2.23.0 requested from `863f5b5e` (#401–#412,
-  argo blocked on the strip-cell `shotAbsent` P0).
+- **Released mid-wave by the mother:** 2.22.0 from `a646a081` (#393–#400); 2.23.0 from `fe021b8a` (#401–#412 and the
+  mother's #414, `series-palette` promoted to error; argo was blocked on the strip-cell `shotAbsent` P0).
 - **Calibration** (`docs/waves/design-parity/w37/setup.md`, `rounds.md` § Round 0; SPEC D34): under argo's bar every
   S2–S4 component that Wave 36 passed failed (scores 50 / 64 / 55); the gap was repetition, name-to-value distance,
   smoothed discrete values, chart chrome and state anatomy, now the standing bar.
