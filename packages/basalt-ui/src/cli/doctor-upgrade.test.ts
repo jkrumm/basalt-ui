@@ -7,6 +7,7 @@ import {
   existsSync,
   mkdirSync,
   mkdtempSync,
+  readdirSync,
   readFileSync,
   rmSync,
   writeFileSync,
@@ -619,7 +620,18 @@ describe('sync — carries a 1.41 install to the installed release', () => {
     }
     const tracked = Object.keys(manifest.files).filter((d) => /^\.claude\/(rules|skills)\//.test(d))
     expect(tracked.filter((d) => d.startsWith('.claude/rules/'))).toHaveLength(6)
-    expect(tracked.filter((d) => d.startsWith('.claude/skills/'))).toHaveLength(3)
+    // Every file under the shipped agent/skills tree is placed: each skill's SKILL.md and its references.
+    const shipped = readdirSync(join(PKG_ROOT, 'agent/skills'), {
+      recursive: true,
+      encoding: 'utf8',
+    })
+      .filter((f) => f.endsWith('.md'))
+      .map((f) => `.claude/skills/${f}`)
+    expect(shipped.filter((f) => f.endsWith('/SKILL.md'))).toHaveLength(3)
+    expect(shipped).toContain('.claude/skills/basalt-design/references/catalogue.md')
+    expect(tracked.filter((d) => d.startsWith('.claude/skills/')).toSorted()).toEqual(
+      shipped.toSorted(),
+    )
 
     // Rewind to 1.41: old bytes on disk, ledger holding the hash of those bytes.
     for (const dest of tracked) {
