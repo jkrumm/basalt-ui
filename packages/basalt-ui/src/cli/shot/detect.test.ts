@@ -167,14 +167,14 @@ describe('detectFindings', () => {
     })
     expect(rules(m)).toEqual([])
   })
-  test('craft-1/off-scale-radius: a nested radius off the scale is named, on-scale and 0 pass', () => {
+  test('craft-1/off-scale-radius: a nested radius off the scale is always P1, on-scale and 0 pass', () => {
     const nested = (radius: number) => [{ path: 'div.chip', radius, padding: SIDES }]
     const run = (radius: number, over: Partial<AnchorMetrics> = {}) =>
       detectFindings(
         metrics({ anchors: [anchor({ radius: 12, nested: nested(radius), ...over })] }),
       )
     const [f] = run(3)
-    expect(f).toMatchObject({ rule: 'craft-1/off-scale-radius', severity: 'P3' })
+    expect(f).toMatchObject({ rule: 'craft-1/off-scale-radius', severity: 'P1' })
     expect(f?.defect).toContain('div.chip 3px')
     expect(run(6)[0]?.severity).toBe('P1')
     expect(run(4)).toEqual([])

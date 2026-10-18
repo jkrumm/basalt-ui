@@ -15,7 +15,7 @@
  * | craft-1/scale-error, -missing| layout  | P1                                                |
  * | craft-1/off-scale-inset, -gap| layout  | P1; P3 when every off value is within 1 px of a step |
  * | craft-3/empty-region         | layout  | P1                                                |
- * | craft-1/off-scale-radius     | style   | P1; P3 when every off value is within 1 px of a step |
+ * | craft-1/off-scale-radius     | style   | P1; P3 within 1 px of a step (never a nested one)    |
  * | craft-1/nested-radius-step   | style   | P1                                                |
  * | craft-2/font-sizes           | style   | P1                                                |
  * | lint/basalt/<rule>           | style   | P1 for an error, P2 for a warning                 |
@@ -141,7 +141,7 @@ function craftOne(a: AnchorMetrics, scale: Scale | undefined): Draft[] {
     out.push({
       ...base,
       rule: `craft-1/off-scale-${rule}`,
-      severity: sizing(off.map((o) => o.d)),
+      severity: off.some((o) => o.at.startsWith('nested')) ? 'P1' : sizing(off.map((o) => o.d)),
       layer,
       cite: `metrics.json anchors[${a.name} ${where(a)}].${field}`,
       defect: `${label} ${off.map((o) => `${o.at} ${o.v}px`).join(', ')} is not a ${steps === scale.radius ? 'radius' : 'spacing'} step (${stepsText(steps)}).`,
