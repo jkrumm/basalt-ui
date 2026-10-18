@@ -332,7 +332,7 @@ layout('Meter / BarList geometry', () => {
           a.top >= c.top && a.bottom <= c.bottom && a.left >= c.left && a.right <= c.right,
       }
     })
-    expect(m.text).toContain('Could not load this chart')
+    expect(m.text).toContain('Could not load')
     expect(m.textAlign).not.toBe('center')
     expect(m.align).toBe('flex-start')
     expect(m.actionInside).toBe(true)

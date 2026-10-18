@@ -1067,6 +1067,30 @@ The sticky-PageBar anchor clearance argo filed (`--vx-space-sticky-header-cleara
 bar) needs no change: a shell-less `Section id` already adds the bar's published height
 (`--basalt-page-bar-h`), and in `BasaltShell` both bars sit outside the scrollport. `section-anchor`
 now pins the title, not just the root, at 390 and 1440.
+## Unreleased — Wave 37, the chart chrome
+
+### Chart facts, sparklines and strips gain tone, glyph and focus
+
+New, additive: `ChartFact` takes `tone` (`good` / `warn` / `bad` / `muted`: ink only, never a fill)
+and `period` takes a list, joined by `·`; `ChartCard` takes `stale` (the facts dim to the strip
+cell's 0.55 while placeholder data shows) and `stateNoun` (an errored card reads "Could not load
+{stateNoun}"); `Sparkline` takes `tone="muted"` and `referenceLabel`; a state of `BandStrip` or
+`Heatmap` takes `glyph` (drawn centred in each of its cells wide enough for it, 12px); a `Heatmap`
+state takes `tone` (`good` / `warn` / `bad` / `neutral`) instead of a `color`, and `warn` / `bad`
+draw `!` / `×` by default. A categorical status grid is therefore `states` + `getState` with a
+`tone` per state, nothing read from `dist`.
+
+**Changed defaults:**
+
+- A failed `ChartCard` / `ChartPlaceholder` used to read "Could not load this chart"; it now reads
+  "Could not load". **Opt out:** `stateNoun="this chart"` on the card restores the old words.
+- The `Sparkline` readout reads the value, then the day (`3 items · 12 Oct`, the label in the
+  proportional sans, no longer mono and first), and rides the hovered point instead of sitting
+  at the opposite corner. **Opt out:** none for the placement.
+- A line `Sparkline`'s plot has a 3px margin so its end marker clears the keyboard focus outline;
+  the line is 6px shorter in each axis. **Opt out:** none.
+- A `Heatmap` tooltip opens below the hovered cell (above only when there is no room), so it no
+  longer covers the caption row over the grid. **Opt out:** none.
 
 ## 2.21.0 — strip cell state, one Retry, and the marker reading
 

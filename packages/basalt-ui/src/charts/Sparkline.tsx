@@ -11,11 +11,12 @@ import { lineY } from '@tanstack/charts/line'
 import { ruleY } from '@tanstack/charts/rule'
 import { scaleBand } from '@tanstack/charts/scales/band'
 import { scaleLinear } from '@tanstack/charts/scales/linear'
+import { text } from '@tanstack/charts/text'
 import { useId, useMemo, useState } from 'react'
 import type { FocusEvent, KeyboardEvent, PointerEvent, ReactElement } from 'react'
 import { cx } from '../common/props'
 import type { BasaltProps } from '../common/props'
-import { VX } from '../tokens'
+import { VX, alpha } from '../tokens'
 import type { CartesianDefinition } from './compile'
 import { chartCurve } from './curves'
 import { barMark } from './marks'
@@ -24,7 +25,7 @@ import { ChartEngine, idPrefixOf } from './host'
 import classes from './sparkline.module.css'
 import { ChartPlaceholder, resolveChartState } from './state'
 import { CHART_THEME, DASH } from './theme'
-import type { ChartState } from './types'
+import type { ChartMarks, ChartState } from './types'
 
 export type SparklineProps = BasaltProps & {
   /** The accessible name. Required: a chart without one is an unlabeled image. */
@@ -38,6 +39,8 @@ export type SparklineProps = BasaltProps & {
   mark?: 'line' | 'bar' | undefined
   /** A `VX.*` ref or a series token. Default `VX.faint`. */
   color?: string | undefined
+  /** `'muted'`: the quiet trend line (a muted ink at low alpha). An explicit `color` wins. */
+  tone?: 'muted' | undefined
   /** Paints the last point in `emphasisColor` — the one reading a trend beside a KPI is for.
    * Default `true`; pass `false` for a bare line. */
   emphasizeLast?: boolean | undefined
@@ -50,9 +53,13 @@ export type SparklineProps = BasaltProps & {
   /** A quiet dashed hairline at a value, or at the mean of the plotted values (`'mean'`). The y
    * domain widens to include it. Not a legend item, never a status colour. */
   reference?: number | 'mean' | undefined
+  /** A short caption for the `reference` line (`PR`, `30 d mean`), drawn at the plot start just
+   * above the line. */
+  referenceLabel?: string | undefined
   /** Formats the readout's value. Default: the compact number format. */
   format?: ((value: number) => string) | undefined
-  /** The readout's x label per point, index-aligned with `data`. Omitted: the value alone. */
+  /** The readout's x label per point, index-aligned with `data`: pass the point's day ("12 Oct"),
+   * and the readout reads `3 items · 12 Oct` beside the point. Omitted: the value alone. */
   labels?: readonly string[] | undefined
 }
 
@@ -61,6 +68,12 @@ type Point = { i: number; v: number | null }
 const LINE_WIDTH = 1.5
 const DOT_R = 2.5
 const BAR_GAP = 0.15
+/** Air round a line's plot, px (the engine's plot margin): the end marker stays inside the svg box,
+ * so it clears the 2px focus outline round it. A bar plot is flush. */
+const LINE_INSET = 3
+/** The muted tone's line: the same alpha the consumers hand-built (`alpha(VX.muted, .35)`). */
+const MUTED_LINE = alpha(VX.muted, 0.35)
+const REFERENCE_LABEL_DY = -4
 // Pixel policy of the self-pooling (`poolSparkline`): the densest a series may draw.
 const LINE_PX_PER_POINT = 1
 const BAR_PX_PER_BAR = 2
@@ -201,9 +214,10 @@ function compileSparkline(
   color: string,
   emphasisColor: string | null,
   reference: number | null,
+  referenceLabel: string | undefined,
 ): CartesianDefinition {
   const frame = frameOf(extentOf, mark, source.length, emphasisColor !== null)
-  const referenceMark = (): readonly ReturnType<typeof ruleY>[] =>
+  const referenceMark = (): ChartMarks =>
     reference === null
       ? []
       : [
@@ -214,6 +228,22 @@ function compileSparkline(
             strokeWidth: 1,
             strokeDasharray: DASH,
           }),
+          ...(referenceLabel === undefined
+            ? []
+            : [
+                decorative(
+                  text([reference], {
+                    id: 'reference-label',
+                    x: () => (mark === 'bar' ? 0 : frame.x[0]),
+                    y: (v: number) => v,
+                    text: () => referenceLabel,
+                    fill: VX.ink2,
+                    fontSize: VX.text.micro,
+                    anchor: 'start',
+                    dy: REFERENCE_LABEL_DY,
+                  }),
+                ),
+              ]),
         ]
   return {
     chart: ({ width }) => {
@@ -276,7 +306,7 @@ function compileSparkline(
         },
         theme: CHART_THEME,
         guides: false,
-        margin: 0,
+        margin: LINE_INSET,
       }
     },
   }
@@ -315,11 +345,13 @@ export function Sparkline(props: SparklineProps): ReactElement {
     height,
     width,
     mark = 'line',
-    color = VX.faint,
+    tone,
+    color = tone === 'muted' ? MUTED_LINE : VX.faint,
     emphasizeLast = true,
     emphasisColor = VX.line,
     state,
     reference,
+    referenceLabel,
     format = defaultNumberFormat,
     labels,
     className,
@@ -344,9 +376,9 @@ export function Sparkline(props: SparklineProps): ReactElement {
     return {
       rows,
       frame: frameOf(full, mark, rows.length, end !== null),
-      definition: compileSparkline(rows, full, mark, color, end, ref),
+      definition: compileSparkline(rows, full, mark, color, end, ref, referenceLabel),
     }
-  }, [data, mark, color, emphasizeLast, emphasisColor, reference])
+  }, [data, mark, color, emphasizeLast, emphasisColor, reference, referenceLabel])
   const resolved = resolveChartState(state)
   const rows = model?.rows
   const interactive = resolved === null && model !== null
@@ -428,21 +460,29 @@ export function Sparkline(props: SparklineProps): ReactElement {
         />
       )}
       {at !== null && (
-        <>
+        // The dot's layer is the plot rect (inside a line's margin), so its fractions land where the mark did.
+        <span
+          aria-hidden="true"
+          className={classes.layer}
+          style={{ inset: mark === 'line' ? LINE_INSET : 0 }}
+        >
           <span
             data-basalt-sparkline-dot=""
             className={classes.dot}
             style={{ left: `${at.fx * 100}%`, top: `${at.fy * 100}%` }}
           />
-          <output
-            data-basalt-sparkline-readout=""
-            aria-live={hover === null ? 'polite' : 'off'}
-            className={cx(classes.readout, at.fx > 0.5 ? classes.start : classes.end)}
-          >
-            {at.label !== undefined && <span className={classes.label}>{at.label} </span>}
-            {format(at.value)}
-          </output>
-        </>
+        </span>
+      )}
+      {at !== null && (
+        <output
+          data-basalt-sparkline-readout=""
+          aria-live={hover === null ? 'polite' : 'off'}
+          className={classes.readout}
+          style={{ left: `${at.fx * 100}%`, transform: `translateX(-${at.fx * 100}%)` }}
+        >
+          {format(at.value)}
+          {at.label !== undefined && <span className={classes.label}> · {at.label}</span>}
+        </output>
       )}
     </div>
   )

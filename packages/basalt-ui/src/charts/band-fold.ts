@@ -9,7 +9,16 @@ import type { ChartSeries } from './types'
 export type NamedChartState = Pick<
   ChartSeries<never>,
   'key' | 'label' | 'color' | 'tooltip' | 'legend' | 'note' | 'fillOpacity'
->
+> & {
+  /**
+   * A short mark (`!`, `×`) drawn in the middle of each cell in this state, so a state is not told
+   * apart by hue alone. Skipped on a cell too narrow to hold it.
+   */
+  glyph?: string | undefined
+}
+
+/** A cell narrower than this (px) draws no glyph: it would not fit inside the fill. */
+export const GLYPH_MIN_PX = 12
 
 /** A run of adjacent slots drawn as one band; `items` are the source data it stands for. */
 export type Group<T> = { start: number; items: T[] }

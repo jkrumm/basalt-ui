@@ -14,13 +14,14 @@
 import { barY } from '@tanstack/charts/bar'
 import { decorative } from '@tanstack/charts/mark/decorative'
 import { rect } from '@tanstack/charts/rect'
+import { text } from '@tanstack/charts/text'
 import { useCallback, useMemo } from 'react'
 import type { ReactElement } from 'react'
 import { oneOf, requiredProp } from '../common/errors'
 import { NON_FINITE } from '../format/shared'
 import { VX, alpha } from '../tokens'
 import { CartesianRung } from './CartesianChart'
-import { groupsOf, resolveNamedState } from './band-fold'
+import { GLYPH_MIN_PX, groupsOf, resolveNamedState } from './band-fold'
 import type { Group, NamedChartState } from './band-fold'
 import { emphasis } from './marks'
 import { rowX } from './types'
@@ -115,6 +116,8 @@ const ZX_ANCHOR = [{ fill: 'transparent' }] as const
 const UNKNOWN_FILL = alpha(VX.neutral, 0.2)
 
 type Cell = { f0: number; f1: number; y0: number; y1: number }
+/** A state's glyph at a band's centre, on the rung's `[0, 1]` zone scale. */
+type Glyph = { f: number; glyph: string }
 /** Cells sharing one paint: a `rect` mark takes a constant fill and opacity. */
 type Layer = { fill: string; opacity: number; cells: Cell[] }
 /** A slot that answers the pointer: its own source datum, and the (possibly merged) one it reads. */
@@ -258,6 +261,7 @@ function layoutBands<T>(input: LayoutInput<T>): {
   base: Layer[]
   markers: Layer[]
   hits: Hit<T>[]
+  glyphs: Glyph[]
 } {
   const { data, getBand, fold, absentState: absentKey } = input
   const cap = Math.floor(input.width / (fold?.minBandPx ?? DEFAULT_MIN_BAND_PX))
@@ -275,6 +279,7 @@ function layoutBands<T>(input: LayoutInput<T>): {
     absentKey,
   }
   const hits: Hit<T>[] = []
+  const glyphs: Glyph[] = []
 
   for (const g of groups) {
     const datum = fold && g.items.length > 1 ? fold.merge(g.items) : g.items[0]
@@ -282,6 +287,12 @@ function layoutBands<T>(input: LayoutInput<T>): {
     const span = getBand(datum)
     const cell = { f0: g.start / data.length, f1: (g.start + g.items.length) / data.length }
     const answers = paintSpan(ctx, span, cell)
+    const glyph = input.states.get(span.state)?.glyph
+    // The primary part's centre: an absent share is taken from the right edge.
+    if (answers.primary && glyph && (cell.f1 - cell.f0) * input.width >= GLYPH_MIN_PX) {
+      const share = absentShareOf(span, absentKey)
+      glyphs.push({ f: cell.f0 + ((cell.f1 - cell.f0) * (1 - share)) / 2, glyph })
+    }
     g.items.forEach((source, i) => {
       const slot = g.start + i
       if (answers.primary) hits.push({ slot, source, state: span.state, datum })
@@ -289,7 +300,7 @@ function layoutBands<T>(input: LayoutInput<T>): {
         hits.push({ slot, source, state: absentKey, datum })
     })
   }
-  return { base: [...ctx.base.values()], markers: [...ctx.markers.values()], hits }
+  return { base: [...ctx.base.values()], markers: [...ctx.markers.values()], hits, glyphs }
 }
 
 export function BandStrip<T, X extends ChartX = ChartX, K extends string = string>(
@@ -337,7 +348,7 @@ export function BandStrip<T, X extends ChartX = ChartX, K extends string = strin
 
   const marks = useCallback(
     (plot: PlotContext<T, X>): ChartMarks => {
-      const { base, markers, hits } = layoutBands({
+      const { base, markers, hits, glyphs } = layoutBands({
         data,
         getBand,
         fold,
@@ -370,6 +381,23 @@ export function BandStrip<T, X extends ChartX = ChartX, K extends string = strin
             }),
           ),
         ),
+        ...(glyphs.length > 0
+          ? [
+              decorative(
+                text(glyphs, {
+                  id: 'band-glyphs',
+                  x: 'f',
+                  y: () => 0.5,
+                  xScale: 'zx',
+                  text: 'glyph',
+                  fill: VX.ink,
+                  fontSize: VX.text.xs,
+                  fontWeight: 600,
+                  anchor: 'middle',
+                }),
+              ),
+            ]
+          : []),
         ...(rows.length > 0
           ? [
               barY(rows, {

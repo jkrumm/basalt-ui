@@ -313,7 +313,7 @@ Signature: BandStrip(props: BandStripProps<T, X, K>): ReactElement<unknown, stri
   cursorGroup?: string
   cursorResolution?: CursorResolution
   tooltip?: false | ChartTooltipConfig<T, X>
-  states: readonly (NamedChartState & { formatValue?: ((d: T) => stri…
+  states: readonly (Pick<ChartSeries<never>, "label" | "legend" | "to…
   getBand: (d: T) => BandSpan
   fold?: BandFold<T>
   absentState?: K
@@ -379,6 +379,8 @@ Signature: ChartCard(props: ChartCardProps): ReactElement<unknown, string | JSXE
   actions?: ReactNode
   state?: ChartState
   placeholderHeight?: number | ResponsiveChartHeight
+  stale?: boolean
+  stateNoun?: string
   onRetry?: (() => void)
   retrying?: boolean
   stateAction?: ReactNode
@@ -489,10 +491,12 @@ Signature: Sparkline(props: SparklineProps): ReactElement<unknown, string | JSXE
   width?: number
   mark?: "bar" | "line"
   color?: string
+  tone?: "muted"
   emphasizeLast?: boolean
   emphasisColor?: string
   state?: ChartState
   reference?: number | "mean"
+  referenceLabel?: string
   format?: ((value: number) => string)
   labels?: readonly string[]
 Signature: StackedArea(props: StackedAreaProps<T, X>): ReactElement<unknown, string | JSXElementConstructor<any>>

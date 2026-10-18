@@ -84,6 +84,8 @@ export function ChartPlaceholder(props: {
   /** For a box too small to hold a sentence (a sparkline): error and empty show a `—` and carry the
    * label as the accessible name and the hover title. */
   compact?: boolean
+  /** Error only: what failed to load, "Could not load {noun}". Default: no noun. */
+  noun?: string
 }): ReactElement | null {
   const kind = resolveChartState(props.state)
   if (kind === null) return null
@@ -110,7 +112,7 @@ export function ChartPlaceholder(props: {
       {kind === 'error' && (
         <span style={errorHeadStyle}>
           <span aria-hidden="true" data-basalt-status-dot="" style={dotStyle} />
-          Could not load this chart
+          Could not load{props.noun === undefined ? '' : ` ${props.noun}`}
         </span>
       )}
       <span style={errorMessageStyle}>{label}</span>
