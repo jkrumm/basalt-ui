@@ -1008,12 +1008,14 @@ const barAnchor =
   ): { x: number; y: number } => {
     const xs = points.map((p) => p.x)
     const ys = points.map((p) => p.y)
-    const x = (Math.min(...xs) + Math.max(...xs)) / 2
+    const centre = (Math.min(...xs) + Math.max(...xs)) / 2
+    const x = Math.min(Math.max(centre, plot.x), plot.x + plot.width)
     const y = (Math.min(...ys) + Math.max(...ys)) / 2
     const floor = plot.y + TIP_TOP_AIR + TIP_CHROME + rows * TIP_ROW
     if (y >= floor) return { x, y }
     const toRight = x - plot.x < plot.width / 2
-    return { x: x + (toRight ? TIP_SIDE_STEP : -TIP_SIDE_STEP), y: floor }
+    const stepped = x + (toRight ? TIP_SIDE_STEP : -TIP_SIDE_STEP)
+    return { x: Math.min(Math.max(stepped, plot.x), plot.x + plot.width), y: floor }
   }
 
 function tooltipSpec<T, X extends ChartX>(opts: {

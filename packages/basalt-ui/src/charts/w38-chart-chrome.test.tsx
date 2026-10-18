@@ -8,6 +8,7 @@ import { afterEach, describe, expect, test } from 'bun:test'
 import { act } from 'react'
 import { createRoot } from 'react-dom/client'
 import { Bars } from './Bars'
+import { HOSTED, VisualSlotContext } from '../dashboard/visual-slot'
 import { Sparkline } from './Sparkline'
 import { StackedArea } from './StackedArea'
 import { compileCartesian, yGuide } from './compile'
@@ -40,63 +41,105 @@ const focusIn = async (el: HTMLElement): Promise<HTMLElement | null> => {
 }
 const text = (el: Element | null): string => el?.textContent?.replace(/\s+/g, ' ').trim() ?? ''
 
-describe('the Sparkline readout is off the line (item 1)', () => {
+const hostedBy = (node: React.ReactNode): React.ReactNode => (
+  <VisualSlotContext.Provider value={HOSTED}>{node}</VisualSlotContext.Provider>
+)
+
+describe('the Sparkline readout is off the line in a host that reserves a line (item 1)', () => {
   test('it slides with the point: the same fraction as left and as the self-offset', async () => {
-    const el = await mount(<Sparkline ariaLabel="S" height={30} data={[1, 5, 2, 4, 3]} />)
+    const el = await mount(hostedBy(<Sparkline ariaLabel="S" height={30} data={[1, 5, 2, 4, 3]} />))
     const style = (await focusIn(el))?.style
     // The focused point is the last, near the right edge: the chip's own width offsets it by the same share.
     const left = Number.parseFloat(style?.left ?? '')
     expect(left).toBeGreaterThan(90)
     expect(style?.translate).toBe(`${-left}% 0`)
   })
-  test('it is never pinned to the plot (no inline top or bottom), whatever the point', async () => {
+  test('hosted (StatCard slot, strip visual): no inline top or bottom, the host attribute is set', async () => {
     for (const data of [
       [1, 2, 3],
       [3, 2, 1],
     ]) {
-      const style = (
-        await focusIn(await mount(<Sparkline ariaLabel="S" height={30} data={data} />))
-      )?.style
+      const el = await mount(hostedBy(<Sparkline ariaLabel="S" height={30} data={data} />))
+      const style = (await focusIn(el))?.style
       expect(style?.top).toBe('')
       expect(style?.bottom).toBe('')
+      expect(el.querySelector('[data-basalt-sparkline]')?.hasAttribute('data-basalt-hosted')).toBe(
+        true,
+      )
+      act(() => root?.unmount())
+      document.body.innerHTML = ''
     }
   })
-  test('the stylesheet lifts it above the plot by the host-reserved line, with an opt-out', () => {
-    const readout = rule('\\.readout').replace(/\s+/g, ' ')
-    expect(readout).toContain('top: calc( var(--basalt-spark-readout-lift, 1) * -1 *')
-    expect(readout).not.toContain('max-height')
-    expect(readout).not.toContain('bottom:')
+  test('bare: the chip stays inside its own box, beside the point, on the half away from it', async () => {
+    const high = await mount(<Sparkline ariaLabel="S" height={30} data={[1, 2, 3]} />)
+    const chip = await focusIn(high)
+    expect(chip?.style.bottom).toBe('0px')
+    expect(chip?.style.right).toMatch(/%/)
+    expect(high.querySelector('[data-basalt-sparkline]')?.hasAttribute('data-basalt-hosted')).toBe(
+      false,
+    )
   })
-  test('a bar sparkline reads out above its plot the same way', async () => {
-    const el = await mount(<Sparkline ariaLabel="S" height={24} mark="bar" data={[2, 0, 3]} />)
+  test('the lift is the hosted rule alone, with an opt-out', () => {
+    const base = rule('\\.readout').replace(/\s+/g, ' ')
+    expect(base).not.toContain('top:')
+    expect(base).toContain('max-height: 100%')
+    const hosted = css.match(/\[data-basalt-hosted\] \.readout\s*\{([^}]*)\}/)?.[1] ?? ''
+    expect(hosted.replace(/\s+/g, ' ')).toContain(
+      'top: calc( var(--basalt-spark-readout-lift, 1) * -1 *',
+    )
+  })
+  test('a hosted bar sparkline reads out the same way', async () => {
+    const el = await mount(
+      hostedBy(<Sparkline ariaLabel="S" height={24} mark="bar" data={[2, 0, 3]} />),
+    )
     expect((await focusIn(el))?.style.top).toBe('')
   })
 })
 
 describe('the Sparkline readout names an hour for hourly points (item 2)', () => {
   const HOUR = 3_600_000
-  const start = Date.UTC(2026, 9, 15, 12)
-  const hourly = (n: number): { at: number; value: number }[] =>
-    Array.from({ length: n }, (_, i) => ({ at: start + i * HOUR, value: i % 3 }))
-  test('24 hourly points read as a clock time, with no day', async () => {
-    const el = await mount(<Sparkline ariaLabel="S" height={24} mark="bar" data={hourly(24)} />)
-    const label = text(await focusIn(el))
-    expect(label).toMatch(/· \d{2}[:.]\d{2}$/)
+  const hourly = (from: number, n: number): { at: number; value: number }[] =>
+    Array.from({ length: n }, (_, i) => ({ at: from + i * HOUR, value: i % 3 }))
+  const readoutOf = async (data: { at: number; value: number }[]): Promise<string> =>
+    text(await focusIn(await mount(<Sparkline ariaLabel="S" height={24} mark="bar" data={data} />)))
+  test('hourly points inside one day read as a clock time, with no day', async () => {
+    const label = await readoutOf(hourly(Date.UTC(2026, 9, 15, 0), 24))
+    expect(label).toMatch(/· 23[:.]00$/)
     expect(label).not.toMatch(/Oct/)
   })
-  test('hourly points across several days keep the day with the hour', async () => {
-    const el = await mount(<Sparkline ariaLabel="S" height={24} mark="bar" data={hourly(72)} />)
-    expect(text(await focusIn(el))).toMatch(/Oct 18 11[:.]00$/)
+  test('24 hourly points from 12:00 cross midnight: day with the hour, so no clock repeats bare', async () => {
+    expect(await readoutOf(hourly(Date.UTC(2026, 9, 15, 12), 24))).toMatch(/Oct 16 11[:.]00$/)
+  })
+  test('25 points 12:00 to 12:00 read day and hour on both ends', async () => {
+    const el = await mount(
+      <Sparkline
+        ariaLabel="S"
+        height={24}
+        mark="bar"
+        data={hourly(Date.UTC(2026, 9, 15, 12), 25)}
+      />,
+    )
+    // The last point is focused first; Home moves to the first.
+    expect(text(await focusIn(el))).toMatch(/Oct 16 12[:.]00$/)
+    await act(async () => {
+      el.querySelector('[data-basalt-sparkline]')?.dispatchEvent(
+        new KeyboardEvent('keydown', { key: 'Home', bubbles: true }),
+      )
+    })
+    expect(text(el.querySelector('[data-basalt-sparkline-readout]'))).toMatch(/Oct 15 12[:.]00$/)
   })
   test('daily points still read as a day', async () => {
-    const data = Array.from({ length: 5 }, (_, i) => ({ at: start + i * 24 * HOUR, value: i }))
+    const data = Array.from({ length: 5 }, (_, i) => ({
+      at: Date.UTC(2026, 9, 15, 12) + i * 24 * HOUR,
+      value: i,
+    }))
     const el = await mount(<Sparkline ariaLabel="S" height={24} data={data} />)
     expect(text(await focusIn(el))).toMatch(/Oct 19$/)
   })
 })
 
 describe('the Sparkline readout clears a sibling end figure (item 3)', () => {
-  test('a Sparkline above a figure leaves nothing below its box: the chip stays above the plot', async () => {
+  test('bare, a 12 px Sparkline above a figure keeps the chip in its box; hosted, it takes the line above', async () => {
     const el = await mount(
       <div style={{ display: 'flex', flexDirection: 'column' }}>
         <Sparkline ariaLabel="S" height={12} data={[40, 52, 48, 60, 100]} />
@@ -104,10 +147,10 @@ describe('the Sparkline readout clears a sibling end figure (item 3)', () => {
       </div>,
     )
     const chip = await focusIn(el)
-    // A 12 px box is shorter than the 18 px chip: any in-box `bottom: 0` hung it onto the figure below.
-    expect(chip?.style.bottom).toBe('')
-    expect(chip?.style.top).toBe('')
-    expect(rule('\\.readout')).toContain('* -1 *')
+    // The chip is capped to the box (`max-height: 100%`) and pinned to one of its edges: it can
+    // never hang onto the figure below.
+    expect(chip?.style.bottom === '0px' || chip?.style.top === '0px').toBe(true)
+    expect(rule('\\.readout')).toContain('max-height: 100%')
   })
 })
 
@@ -145,6 +188,9 @@ describe('a bar tooltip stays under the headline (item 4)', () => {
     // Beside the bar, towards the roomier side, so it does not sit on the bar's top.
     expect(at.x).toBeGreaterThan(50)
     expect(anchor([{ x: 250, y: 4 }] as never, { plot } as never).x).toBeLessThan(250)
+    // At either end the anchor stays in the plot.
+    expect(anchor([{ x: -20, y: 4 }] as never, { plot } as never).x).toBeGreaterThanOrEqual(0)
+    expect(anchor([{ x: 330, y: 4 }] as never, { plot } as never).x).toBeLessThanOrEqual(300)
   })
   test('a short bar keeps its own height; a line chart keeps the group centre', () => {
     const anchor = anchorOf(bar)
@@ -171,7 +217,7 @@ describe('a compact y axis keeps the top tick of a fixed domain (item 5)', () =>
     const ticks = typeof guide.axis === 'object' ? guide.axis.ticks : undefined
     return ticks && 'values' in ticks ? ticks.values : null
   }
-  test('[0, 25] at compact ticks 0, 10, 20 and the end, so the unit on the top tick survives', () => {
+  test('[0, 25] at compact ticks 0, 10, 20 and the end (the uneven last step is intended), so the unit on the top tick survives', () => {
     expect(ticksOf('compact', [0, 25])).toEqual([0, 10, 20, 25])
   })
   test('a domain that already ends on a tick, an auto domain and the regular ladder are untouched', () => {
@@ -214,6 +260,16 @@ describe('shade-only bars tell themselves apart (item 6)', () => {
       '0.7',
       '0.4',
     ])
+  })
+  test('a stack of same-colour bars draws the surface hairline, even with explicit shades; distinct colours do not', async () => {
+    const strokes = async (bars: ReturnType<typeof bar>[]): Promise<number> => {
+      const el = await mount(chart(bars))
+      return [...el.querySelectorAll('g[data-ts-key^="bars"] rect')].filter(
+        (r) => (r.getAttribute('stroke') ?? '') !== '' && r.getAttribute('stroke') !== 'none',
+      ).length
+    }
+    expect(await strokes([bar('a', 'teal', 0.5), bar('b', 'teal', 0.9)])).toBeGreaterThan(0)
+    expect(await strokes([bar('a', 'teal'), bar('b', 'red')])).toBe(0)
   })
   test('distinct colours, and an explicit fillOpacity, keep their shades', async () => {
     expect(await swatches(chart([bar('a', 'teal'), bar('b', 'red'), bar('c', 'blue')]))).toEqual([

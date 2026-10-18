@@ -652,7 +652,7 @@ layout('Charts — 2.0 layout', () => {
     }
   }
 
-  describe('a Sparkline readout sits above the plot, inside its width, and never covers the point', () => {
+  describe('a bare Sparkline readout stays inside its own box and never covers the hovered point', () => {
     test.each([
       ['the line end point', { kind: 'spark', sparkRows: 12, height: 22, width: 240 }, 0.98],
       ['a line mid point', { kind: 'spark', sparkRows: 12, height: 22, width: 240 }, 0.5],
@@ -676,8 +676,13 @@ layout('Charts — 2.0 layout', () => {
         const dot = document.querySelector('[data-basalt-sparkline-dot]')?.getBoundingClientRect()
         return {
           text: readout.textContent,
-          // Wave 38: above the plot, never on the plotted line.
-          inside: a.left >= r.left - 0.5 && a.right <= r.right + 0.5 && a.bottom <= r.top + 0.5,
+          // Wave 38: a bare sparkline (no host line above it) keeps the chip in its own box, so a
+          // sibling above or below is never covered.
+          inside:
+            a.left >= r.left - 0.5 &&
+            a.right <= r.right + 0.5 &&
+            a.top >= r.top - 0.5 &&
+            a.bottom <= r.bottom + 0.5,
           coversDot:
             dot !== undefined &&
             a.left < dot.right &&
@@ -1134,6 +1139,17 @@ layout('Charts — 2.0 layout', () => {
         expect(radii.length).toBeGreaterThan(0)
         for (const r of radii) expect(r).toBe('2px')
       }
+    })
+  })
+
+  describe('a Bars tooltip stays inside the viewport at the first and last bar, at 390', () => {
+    test.each([0.02, 0.98])('hover at %f', async (at) => {
+      const p = await openFixture(chartFixture({ kind: 'bars' }), PHONE)
+      await p.settle()
+      await hover(p, FRAME, at, 0.05)
+      const tip = await p.box('tooltip', `${TOOLTIP}:not([hidden])`)
+      expect(tip.box.left).toBeGreaterThanOrEqual(0)
+      expect(tip.box.right).toBeLessThanOrEqual(PHONE.width)
     })
   })
 

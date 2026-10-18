@@ -104,7 +104,7 @@ function guardLogStack(layout: string, onLog: boolean): void {
 export function Bars<T, X extends ChartX = ChartX>(props: BarsProps<T, X>): ReactElement {
   const { bars: given, lines, layout = 'stacked', barOpacity, ...rest } = props
   const bars = useMemo(() => shadeSharedColors(given, barOpacity), [given, barOpacity])
-  const shaded = bars.some((b, i) => b.fillOpacity !== given[i]?.fillOpacity)
+  const sharedColor = bars.some((b, i) => bars.findIndex((o) => o.color === b.color) !== i)
   guardLogStack(layout, bars.length > 0 && rest.y?.scale === 'log')
   const sample = rest.data[0]
   const series = useMemo<ChartSeries<T>[]>(
@@ -149,8 +149,9 @@ export function Bars<T, X extends ChartX = ChartX>(props: BarsProps<T, X>): Reac
             y: 'y',
             z: 'series',
             fill,
-            // Shades of one colour touch in a stack: a surface hairline keeps the segments apart.
-            ...(shaded && layout !== 'grouped' && { stroke: VX.surface.panel, strokeWidth: 1 }),
+            // Series of one colour differ by shade alone: a surface hairline keeps stacked segments apart.
+            ...(sharedColor &&
+              layout !== 'grouped' && { stroke: VX.surface.panel, strokeWidth: 1 }),
             // The hovered x is its own highlight: the bar reads at full strength (no dimming, no
             // point marker, no crosshair rule: that is line-chart chrome; `focusRing={false}` on the rung).
             states: [{ when: { focus: 'x' }, style: { fill: solid } }],
@@ -166,7 +167,7 @@ export function Bars<T, X extends ChartX = ChartX>(props: BarsProps<T, X>): Reac
       }
       return out
     },
-    [bars, layout, barOpacity, shaded],
+    [bars, layout, barOpacity, sharedColor],
   )
 
   return (
