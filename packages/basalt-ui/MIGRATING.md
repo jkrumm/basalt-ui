@@ -1153,6 +1153,7 @@ the previous crop was the defect.
 fires on a route with an anchor that renders a state surface (`ChartCard`, `StatCard`, a chart
 state); it names those anchors and the `data-shot-states="empty loading error"` to add. A route
 without one gets no finding. A consumer that gated on exit 2 for it no longer does.
+
 ### Chart header, label and tick behaviour (round r3)
 
 No export is removed and none is added. Seven chart defaults move; the first is the only one a consumer
