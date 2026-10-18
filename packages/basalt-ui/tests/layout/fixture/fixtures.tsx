@@ -2328,6 +2328,47 @@ function DashFixture(): ReactElement {
           ]}
         />
       </div>
+      <div data-testid="dash-odd-strip">
+        <StatGroup
+          variant="strip"
+          label="Odd"
+          cells={[
+            { key: 'o1', caption: 'One', value: '1' },
+            { key: 'o2', caption: 'Two', value: '2' },
+            { key: 'o3', caption: 'Three', value: '3' },
+          ]}
+        />
+      </div>
+      <div data-testid="dash-odd-group">
+        <StatGroup cols={3}>
+          <StatCard title="One" value="1" />
+          <StatCard title="Two" value="2" />
+          <StatCard title="Three" value="3" />
+        </StatGroup>
+      </div>
+      <div data-testid="dash-delta-col">
+        <BarList
+          label="Drivers"
+          items={[
+            {
+              key: 'a',
+              label: 'Support bot',
+              value: 37,
+              secondary: (
+                <DeltaBadge value={13} polarity="up-bad" format={(v) => `${Math.round(v)}%`} />
+              ),
+            },
+            {
+              key: 'b',
+              label: 'Ingest',
+              value: 15,
+              secondary: (
+                <DeltaBadge value={9} polarity="up-bad" format={(v) => `${Math.round(v)}%`} />
+              ),
+            },
+          ]}
+        />
+      </div>
       <div data-testid="dash-zl-strip">
         <StatGroup
           variant="strip"

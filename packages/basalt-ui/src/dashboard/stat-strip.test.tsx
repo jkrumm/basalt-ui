@@ -350,25 +350,29 @@ describe('strip cell tone reaches a hosted Meter', () => {
 })
 
 describe('footer entry under a cell', () => {
-  test('`under` places the entry in that cell’s column; an unknown key stays full width', () => {
+  test('`under` renders the entry inside that cell’s slot; an unknown key stays full width', () => {
     const { container } = mount(CELLS, [
       { key: 'a', content: 'one', under: 'load' },
       { key: 'b', content: 'two', under: 'missing' },
       { key: 'c', content: 'three' },
     ])
-    const row = container.querySelector<HTMLElement>('[data-placed]')
-    expect(row).toBeTruthy()
     const placed = container.querySelector<HTMLElement>('[data-strip-footer-cell="a"]')!
     expect(placed.getAttribute('data-under')).toBe('load')
-    expect(placed.style.getPropertyValue('--basalt-strip-footer-col')).toBe('2')
-    for (const key of ['b', 'c'])
-      expect(
-        container.querySelector(`[data-strip-footer-cell="${key}"]`)!.hasAttribute('data-under'),
-      ).toBe(false)
+    const slot = container
+      .querySelector('[data-strip-cell="load"]')!
+      .closest<HTMLElement>('[data-strip-slot]')!
+    expect(slot.contains(placed)).toBe(true)
+    expect(placed.getAttribute('data-shot')).toBe('strip-footer-a')
+    for (const key of ['b', 'c']) {
+      const full = container.querySelector(`[data-strip-footer-cell="${key}"]`)!
+      expect(full.hasAttribute('data-under')).toBe(false)
+      expect(full.closest('[data-strip-slot]')).toBeNull()
+    }
   })
 
-  test('no resolvable `under` leaves the row in its flex layout', () => {
+  test('no resolvable `under` puts every entry in the full-width row', () => {
     const { container } = mount(CELLS, [{ key: 'a', content: 'one', under: 'missing' }])
-    expect(container.querySelector('[data-placed]')).toBeNull()
+    expect(container.querySelector('[data-strip-slot] [data-strip-footer-cell]')).toBeNull()
+    expect(container.querySelectorAll('[data-strip-footer-cell]').length).toBe(1)
   })
 })

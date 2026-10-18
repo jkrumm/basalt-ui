@@ -94,23 +94,21 @@ layout('Wave 37 r2 lists and chrome', () => {
     expect(Math.max(...rights) - Math.min(...rights)).toBeLessThanOrEqual(SNAP)
   })
 
-  test('BarList DeltaBadge secondaries end-align: glyphs and figures share their edges', async () => {
+  test('BarList DeltaBadge secondaries end-align as a unit: the figures share their right edge (Wave 38: the glyph x no longer does)', async () => {
     const p = await openFixture(specFor('light'), DESKTOP_1440)
     await p.settle()
     const rows = await p.raw.evaluate(() => {
       const host = document.querySelector('[data-testid="dash-bar-delta"]')!
       return [...host.querySelectorAll('[data-delta]')].map((badge) => {
-        const glyph = badge.querySelector('[data-delta-glyph]')!.getBoundingClientRect()
         const text = badge.lastChild!
         const range = document.createRange()
         range.setStart(text, 0)
         range.setEnd(text, text.textContent!.length)
-        return { glyphLeft: glyph.left, figRight: range.getBoundingClientRect().right }
+        return { figRight: range.getBoundingClientRect().right }
       })
     })
     expect(rows).toHaveLength(4)
     const spread = (xs: number[]) => Math.max(...xs) - Math.min(...xs)
-    expect(spread(rows.map((r) => r.glyphLeft))).toBeLessThanOrEqual(SNAP)
     expect(spread(rows.map((r) => r.figRight))).toBeLessThanOrEqual(SNAP)
   })
 

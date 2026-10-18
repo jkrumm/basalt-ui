@@ -146,6 +146,12 @@ const LEDGER: readonly { file: string; selector: string; kind: Kind; why: string
     why: "The seam between the strip's cells and its footer row of wider cells: a region boundary inside one surface, the same --vx-divider line the cells use, not a heading echoing its type scale.",
   },
   {
+    file: 'dashboard/stat-strip.module.css',
+    selector: '.underCell',
+    kind: 'region-boundary',
+    why: "The seam between a strip cell's readings and the footer entry that captions them (`under`): a region boundary inside the cell, the same --vx-divider line, not a heading echoing its type scale.",
+  },
+  {
     file: 'dashboard/settings-section.module.css',
     selector: '.rows > *:not(:last-child)',
     kind: 'between-rows',

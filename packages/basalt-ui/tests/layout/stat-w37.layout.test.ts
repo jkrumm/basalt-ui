@@ -170,29 +170,62 @@ function suite(vp: Viewport) {
     for (const c of cells) expect(c.bottomInset).toBeGreaterThanOrEqual(c.padTop - 0.5)
   })
 
-  if (vp.width >= 800) {
-    test('a footer entry with `under` starts at its cell’s left edge', async () => {
-      const r = await p.raw.evaluate(() => {
-        const host = document.querySelector<HTMLElement>('[data-testid="dash-strip-under"]')!
-        const cell = host.querySelector<HTMLElement>('[data-strip-slot]:nth-child(4)')!
-        const f = host.querySelector<HTMLElement>('[data-strip-footer-cell="week"]')!
-        return { cell: cell.getBoundingClientRect(), foot: f.getBoundingClientRect() }
-      })
-      expect(Math.abs(r.foot.left - r.cell.left)).toBeLessThanOrEqual(SNAP)
-      expect(r.foot.right).toBeLessThanOrEqual(r.cell.right + SNAP)
+  test('a footer entry with `under` rides inside its cell at every width (Wave 38)', async () => {
+    const r = await p.raw.evaluate(() => {
+      const host = document.querySelector<HTMLElement>('[data-testid="dash-strip-under"]')!
+      const f = host.querySelector<HTMLElement>('[data-strip-footer-cell="week"]')!
+      const slot = f.closest<HTMLElement>('[data-strip-slot]')!
+      const article = slot.querySelector<HTMLElement>('[data-strip-cell]')!
+      return {
+        slot: slot.getBoundingClientRect(),
+        article: article.getBoundingClientRect(),
+        foot: f.getBoundingClientRect(),
+      }
     })
-  } else {
-    test('a footer entry with `under` stays full width under the grid at 390', async () => {
+    expect(r.foot.left).toBeGreaterThanOrEqual(r.slot.left - SNAP)
+    expect(r.foot.right).toBeLessThanOrEqual(r.slot.right + SNAP)
+    expect(r.foot.top).toBeGreaterThanOrEqual(r.article.bottom - SNAP)
+    expect(r.foot.bottom).toBeLessThanOrEqual(r.slot.bottom + SNAP)
+  })
+  if (vp.width < 480) {
+    test('an odd count folds to a full-width last cell, never an orphan (Wave 38)', async () => {
       const r = await p.raw.evaluate(() => {
-        const host = document.querySelector<HTMLElement>('[data-testid="dash-strip-under"]')!
-        const sec = host.querySelector<HTMLElement>('section')!.getBoundingClientRect()
-        const f = host.querySelector<HTMLElement>('[data-strip-footer-cell="week"]')!
-        return { sec, foot: f.getBoundingClientRect() }
+        const last = (id: string, sel: string) => {
+          const host = document.querySelector<HTMLElement>(`[data-testid="${id}"]`)!
+          const kids = [...host.querySelectorAll<HTMLElement>(sel)]
+          return {
+            last: kids.at(-1)!.getBoundingClientRect(),
+            host: host.getBoundingClientRect(),
+            top: kids[0]!.getBoundingClientRect().top,
+          }
+        }
+        return {
+          strip: last('dash-odd-strip', '[data-strip-slot]'),
+          group: last('dash-odd-group', ':scope > div > div > *'),
+        }
       })
-      expect(Math.abs(r.foot.left - r.sec.left)).toBeLessThanOrEqual(SNAP)
-      expect(Math.abs(r.foot.right - r.sec.right)).toBeLessThanOrEqual(SNAP)
+      for (const k of [r.strip, r.group]) {
+        expect(k.last.top).toBeGreaterThan(k.top + SNAP)
+        expect(k.last.width).toBeGreaterThan(k.host.width * 0.9)
+      }
     })
   }
+
+  test('a delta column keeps glyph and figure one unit (Wave 38)', async () => {
+    const r = await p.raw.evaluate(() => {
+      const host = document.querySelector<HTMLElement>('[data-testid="dash-delta-col"]')!
+      return [...host.querySelectorAll<HTMLElement>('[data-delta]')].map((d) => {
+        const g = d.querySelector('[data-delta-glyph]')!.getBoundingClientRect()
+        const b = d.getBoundingClientRect()
+        return { gap: b.right - g.right, right: b.right, glyphLeft: g.left, left: b.left }
+      })
+    })
+    expect(r.length).toBe(2)
+    // The glyph leads its badge (no empty slot before it) and the right edges are shared.
+    for (const d of r) expect(d.glyphLeft - d.left).toBeLessThanOrEqual(SNAP)
+    // The column is end-aligned from the wide layout; the compact one stacks start-aligned.
+    if (vp.width >= 480) expect(Math.abs(r[0]!.right - r[1]!.right)).toBeLessThanOrEqual(SNAP)
+  })
 }
 
 layout('Wave 37 r2 stat card and strip', () => {

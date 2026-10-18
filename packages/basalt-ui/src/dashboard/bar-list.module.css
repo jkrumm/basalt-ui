@@ -228,22 +228,10 @@
 }
 
 /*
- * A column of DeltaBadges: a two-column grid, the glyph in a fixed-width slot and the figure (the badge's
- * bare text) end-aligned in a tabular slot of four characters, so "▲ 9%" and "▲13%" share both their glyph
- * x and their right edge. A zero delta has no glyph; an empty `::before` holds its slot. Scoped here because
- * a hero metric has no column to line up with (D33: tabular figures only in a table-like column).
+ * A column of DeltaBadges: glyph and figure are ONE unit, end-aligned as a whole, so the glyph never drifts
+ * from its figure however wide the column ("▲ 9%" and "▲13%" share their right edge and keep the badge's own
+ * gap). Tabular figures keep the right edges even (D33: only in a table-like column, not a hero metric).
  */
 .secondary [data-delta] {
-  display: inline-grid;
-  grid-template-columns: 1em minmax(4ch, auto);
-  justify-items: end;
   font-variant-numeric: tabular-nums;
-}
-
-.secondary [data-delta]:not(:has([data-delta-glyph]))::before {
-  content: '';
-}
-
-.secondary [data-delta-glyph] {
-  justify-self: center;
 }

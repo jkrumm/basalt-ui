@@ -1100,6 +1100,20 @@ No export is removed or added. Six chart defaults move.
 | `LoadingState` (page tier)            | a `Loader` in the accent    | the same spinner in `VX.muted`                                                                         | no opt-out; the spinner is neutral by design                                                                                      |
 | `BasaltDataTable` `query` error title | `Could not load`            | `Could not load rows`                                                                                  | no opt-out; the title is not a prop                                                                                               |
 | `ChartCard` / chart error, no message | `The chart failed to load.` | `The request failed.` (the same fallback `ErrorState` shows)                                           | an `Error` with a message, or `state.error` as a string                                                                           |
+### Strip and card (Wave 38)
+
+No export is removed or renamed; three defaults move.
+
+- **A strip footer entry `under` a cell is part of that cell.** It now renders inside the cell's slot, under its
+  content, at every width, instead of in a footer-row grid column from 800px (and full width below). The cell
+  grows by the footer, siblings keep their own height, and the footer follows its cell when the strip folds.
+  `data-placed` and `--basalt-strip-footer-col` are gone; `data-strip-footer-cell` / `data-shot="strip-footer-<key>"`
+  stay. An entry with no `under`, or one naming no cell, still takes the full row. No opt-out: put the meter in the
+  cell's `visual`/`footer` if you want it flush, or drop `under` to keep the old full-width row.
+- **`StatGroup` (grid) folds an odd count to a full-width last cell** below 480px, as the strip already did. Three
+  cards were two plus a half-empty row. Opt-out: none needed for an even count.
+- **`BarList` delta column: glyph and figure are one unit**, end-aligned together. The fixed glyph slot and the
+  four-character figure slot are gone, so `▲ 9%` and `▲ 13%` share a right edge but no longer share a glyph x.
 
 ## 2.23.0 — Wave 37, argo's friction II
 

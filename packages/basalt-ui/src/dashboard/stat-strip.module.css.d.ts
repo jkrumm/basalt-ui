@@ -32,5 +32,6 @@ declare const classes: {
   readonly rowValue: string
   readonly footerRow: string
   readonly footerCell: string
+  readonly underCell: string
 }
 export default classes
