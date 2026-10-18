@@ -60,6 +60,8 @@
 .labelRow {
   --basalt-reading-dir: 1;
   position: relative;
+  /* A hidden name keeps its box (so it can be measured again) and may sit past the row's end. */
+  overflow-x: clip;
   height: 1.25em;
   font-family: var(--basalt-font-numeral, var(--basalt-font-sans));
   font-variant-numeric: lining-nums;

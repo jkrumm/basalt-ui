@@ -1072,7 +1072,7 @@ clashing with a tick) hides instead of wrapping, and every zone stays named in t
 description. Labelled `ticks` on a zoned `Meter` join that row at the track's ends instead of floating
 above the track, so the Meter has at most one caption line below. A plain tick `Meter` is unchanged
 except that two colliding tick captions now hide the later one instead of wrapping to a list.
-**Opt out:** none for the placement; render a legend yourself from the same zones if you need every
+An end tick yields to the holding zone's name; the holding name never hides for width. **Opt out:** none for the placement; render a legend yourself from the same zones if you need every
 name visible at any width.
 
 ### A zoned `Meter` in a hero host no longer prints the reading at its marker
