@@ -1,3 +1,30 @@
+# [2.23.0](https://github.com/jkrumm/basalt-ui/compare/v2.22.0...v2.23.0) (2026-10-18)
+
+
+### Bug Fixes
+
+* compact strip cells, stat caption at 390, footer under a cell ([986fda0](https://github.com/jkrumm/basalt-ui/commit/986fda0460450dcf6070823a2dd65d4e096b7b0c))
+* heading numerals use the sans digits, no slashed zero ([6121256](https://github.com/jkrumm/basalt-ui/commit/612125609f433ee363cd6b8852e37c8bd3cc86b7))
+* indicator radius follows the track; em dash in the ring reading ([f83dba1](https://github.com/jkrumm/basalt-ui/commit/f83dba1555b80b823eaff142ae1ba7fd6002f4df))
+* muted Meter zones share one flat fill ([b1e878a](https://github.com/jkrumm/basalt-ui/commit/b1e878ab6633be9ef4fc1efd224cb155003bed60))
+* pin head digits against font-stretch, document the axis ([fc6f2f1](https://github.com/jkrumm/basalt-ui/commit/fc6f2f189d034f706c2cf3d8ebb0f618b98283f8))
+* regenerate llms.txt ([551bc96](https://github.com/jkrumm/basalt-ui/commit/551bc9674e84bd90bfb9b43c008cc862f1ebc2cc))
+* shot detect names the anchors that lack data-shot-states ([1dc358e](https://github.com/jkrumm/basalt-ui/commit/1dc358e1dc0097882e082b9746ca21f086dea9f2))
+* shot's desktop context reports a fine pointer that hovers ([0523fda](https://github.com/jkrumm/basalt-ui/commit/0523fdab1650d0dea8fde7d4b45095d2d75f7855))
+* strip error body reads Could not load; custom-radius indicator probe ([78498d1](https://github.com/jkrumm/basalt-ui/commit/78498d19522074b70b7450974c3cd12c2b3f33ed))
+
+
+### Features
+
+* aligned list status columns and sentence-case status ([4709a55](https://github.com/jkrumm/basalt-ui/commit/4709a55bd4914282307c8bf4daa11f13c895c0c7))
+* chart readouts name their point and bars hover as bars ([d3ccf1a](https://github.com/jkrumm/basalt-ui/commit/d3ccf1a10caae62b35d325825c3764579efce76a))
+* daily tooltip headers keep weekday and year; labels clear lines ([8986c19](https://github.com/jkrumm/basalt-ui/commit/8986c1941e5e6b5fa43d54075f9a68fee0b80022))
+* keep a meter's end figures and captions at their marks ([66af971](https://github.com/jkrumm/basalt-ui/commit/66af971185d63a03c4945beed6bca1e78e9fb9f0))
+* one error title word, no point marker on a bar sparkline hover ([c758ecd](https://github.com/jkrumm/basalt-ui/commit/c758ecdbd2f97c07bfe9411cef6ae2aec463fa5c))
+* pin the ErrorState default title and the line sparkline marker ([f1ea769](https://github.com/jkrumm/basalt-ui/commit/f1ea769b4fe7264d2fc13b597aeb8b9bc96899ab))
+* promote series-palette to error ([fe021b8](https://github.com/jkrumm/basalt-ui/commit/fe021b8a97e4c9855ccd96d683daa4354ad31712))
+* strip cells declare shot absence; no bare No data defaults ([bf8df89](https://github.com/jkrumm/basalt-ui/commit/bf8df898f3bc10c87faa1abaec6f025b20a7fcdd))
+
 # [2.22.0](https://github.com/jkrumm/basalt-ui/compare/v2.21.0...v2.22.0) (2026-10-18)
 
 
