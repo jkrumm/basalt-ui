@@ -18,7 +18,6 @@ import type { ReactNode } from 'react'
 import { BarList, DeltaBadge, Meter, PageBar, StatGroup, StatusVerdict } from 'basalt-ui'
 import type { StatStripCell } from 'basalt-ui'
 import { ChartCard, Lines, Sparkline } from 'basalt-ui/charts'
-import type { ChartSeries } from 'basalt-ui/charts'
 import { VX } from 'basalt-ui/tokens'
 import { demoColors } from '../demo/series'
 import {
@@ -26,12 +25,11 @@ import {
   BUDGETS,
   DISPATCH_COMPLETE_DAYS,
   FAILURES_24H,
-  FAILURES_WINDOW,
   FAILURES_BY_HOUR,
-  FAILURES_LATEST_LABEL,
   FLEET,
   FLEET_TOTAL,
   FLOW,
+  FLOW_SERIES,
   FLOW_CLOSED,
   FLOW_OPENED,
   FLOW_RANGE_LABEL,
@@ -41,11 +39,15 @@ import {
   STUCK,
   WARN_HOURS,
   fmtAge,
+  fmtAgeCoarse,
 } from './agents-data'
 import type { FlowRow, ItemState } from './agents-data'
 import { fmtEur, fmtInt } from './fixture-utils'
 import { cardStateProps, chartStateFor, noop, retryCopy } from './shot-state'
 import type { ScenarioProps } from './shot-state'
+
+/** Keeps `24 h` on one line when a sentence wraps. */
+const NBSP = '\u00A0'
 
 const WARDEN_EMPTY = 'No agent work in the queue. Dispatch an item to start.'
 const retry = (what: string): string => retryCopy(what, 'warden')
@@ -62,25 +64,6 @@ const STATE_COLOR: Record<ItemState, string> = {
   blocked: VX.status.bad,
 }
 
-const FLOW_SERIES: ChartSeries<FlowRow>[] = [
-  {
-    key: 'opened',
-    label: 'Opened',
-    color: demoColors.sessions,
-    getValue: (d) => d.opened,
-    formatValue: (v) => `${fmtInt(v)} opened`,
-    // Daily integer counts: a smoothed curve would draw days that never happened.
-    curve: 'linear',
-  },
-  {
-    key: 'closed',
-    label: 'Closed',
-    color: demoColors.signups,
-    getValue: (d) => d.closed,
-    formatValue: (v) => `${fmtInt(v)} closed`,
-    curve: 'linear',
-  },
-]
 const FLOW_DATA = [...FLOW]
 
 /** A short word, plus the reason on a blocked row: at 390 px the title is the row label and nothing may crowd it. */
@@ -103,20 +86,14 @@ const STUCK_ITEMS = STUCK.map((i) => ({
   secondary: stuckStatus(i),
 }))
 
-/** `15:00` — the hour a UTC instant falls in. */
-const hourLabel = (d: Date): string => `${String(d.getUTCHours()).padStart(2, '0')}:00`
-
-/** The failures window as a clock: both ends of the 24 bars, and the hour of the latest run. */
+/** The failures window as a clock: the 24 bars run from a day ago to now (the hover readout names the hour). */
 const failuresClock = (
   <Group justify="space-between" gap="xs" wrap="nowrap">
     <Text span inherit>
-      {hourLabel(FAILURES_WINDOW.start)}
+      {`24${NBSP}h ago`}
     </Text>
     <Text span inherit>
-      {`latest ${FAILURES_LATEST_LABEL}`}
-    </Text>
-    <Text span inherit>
-      {hourLabel(FAILURES_WINDOW.end)}
+      now
     </Text>
   </Group>
 )
@@ -144,9 +121,13 @@ function QueueStrip({ shotState }: ScenarioProps) {
   // Loading shows the hero skeleton alone: a visual over placeholder data would contradict it.
   const hidden = none || loading
   // Empty and error say why in the cell itself, with the Retry on a failure.
-  const cellState = (what: string, reason: string): Pick<StatStripCell, 'state'> =>
+  const cellState = (
+    what: string,
+    reason: string,
+    error: string = retry(what),
+  ): Pick<StatStripCell, 'state'> =>
     shotState === 'error'
-      ? { state: { kind: 'error', error: new Error(retry(what)), onRetry: noop } }
+      ? { state: { kind: 'error', error: new Error(error), onRetry: noop } }
       : shotState === 'empty'
         ? { state: { kind: 'empty', reason } }
         : {}
@@ -154,8 +135,8 @@ function QueueStrip({ shotState }: ScenarioProps) {
   const cells: StatStripCell[] = [
     {
       key: 'needs-you',
-      caption: 'Needs you',
-      qualifier: 'now',
+      caption: 'Awaiting',
+      qualifier: 'your decision',
       info: 'Items waiting on your decision. The dashed line is the 14-day mean.',
       value: fmtInt(NEEDS_YOU),
       unit: 'items',
@@ -226,7 +207,11 @@ function QueueStrip({ shotState }: ScenarioProps) {
       info: 'Agent runs that ended in an error in the last 24 hours.',
       value: fmtInt(FAILURES_24H.count),
       unit: 'runs',
-      ...cellState('Failures', 'No agent runs in the last 24 h to count.'),
+      ...cellState(
+        'Failures',
+        `No agent runs in the last 24${NBSP}h to count.`,
+        'The failure count did not load. Retry, or check the warden connection.',
+      ),
       // Hourly bars answer "is it still happening?": three runs, but a burst or a trickle. The
       // footer is the clock under them: the window's first and last hour, and the hour of the latest run.
       ...(!hidden && { footer: failuresClock }),
@@ -272,8 +257,7 @@ function QueueStrip({ shotState }: ScenarioProps) {
             max={FLEET_TOTAL}
             segments={FLEET.map((s) => ({
               value: s.count,
-              // The strip's first cell is "Needs you"; the legend names the state, not the cell.
-              label: s.state === 'awaiting' ? 'Awaiting' : s.label,
+              label: s.label,
               color: STATE_COLOR[s.state],
             }))}
             format={(v) => `${fmtInt(v)} items`}
@@ -285,7 +269,13 @@ function QueueStrip({ shotState }: ScenarioProps) {
 
   // The day meter's spend is the Dispatch spend cell above, so the footer states the period and what
   // is left, never the spend again.
-  const budget = (label: string, spent: number, cap: number, caption: string) => (
+  const budget = (
+    label: string,
+    spent: number,
+    cap: number,
+    caption: string,
+    endCaption: string,
+  ) => (
     <Meter
       label={label}
       value={spent}
@@ -293,7 +283,7 @@ function QueueStrip({ shotState }: ScenarioProps) {
       format={fmtEur}
       loading={loading}
       startCaption={caption}
-      endCaption={`${fmtEur(cap - spent)} left of ${fmtEur(cap)}`}
+      endCaption={endCaption}
     />
   )
 
@@ -302,11 +292,23 @@ function QueueStrip({ shotState }: ScenarioProps) {
     : [
         footerEntry(
           'day',
-          budget('Daily dispatch budget', BUDGETS.day.spent, BUDGETS.day.cap, 'Today'),
+          budget(
+            'Daily dispatch budget',
+            BUDGETS.day.spent,
+            BUDGETS.day.cap,
+            'Today',
+            `${fmtEur(BUDGETS.day.cap - BUDGETS.day.spent)} left of ${fmtEur(BUDGETS.day.cap)}`,
+          ),
         ),
         footerEntry(
           'week',
-          budget('Weekly dispatch budget', BUDGETS.week.spent, BUDGETS.week.cap, 'Last 7 days'),
+          budget(
+            'Weekly dispatch budget',
+            BUDGETS.week.spent,
+            BUDGETS.week.cap,
+            'Last 7 days',
+            `${fmtEur(BUDGETS.week.spent)} of ${fmtEur(BUDGETS.week.cap)} · ${fmtEur(BUDGETS.week.cap - BUDGETS.week.spent)} left`,
+          ),
         ),
       ]
 
@@ -347,7 +349,7 @@ function QueueRow({ shotState }: ScenarioProps) {
               label="Items waiting or blocked, by age"
               items={empty ? [] : STUCK_ITEMS}
               max={ABANDON_HOURS}
-              format={fmtAge}
+              format={fmtAgeCoarse}
               accentLeader
               variant="thin"
               loading={shotState === 'loading'}
@@ -367,7 +369,7 @@ function QueueRow({ shotState }: ScenarioProps) {
             ],
           })}
           state={chartStateFor(shotState, {
-            empty: 'No items opened or closed in the window. Dispatch an item to start.',
+            empty: `No items opened or closed ${FLOW_RANGE_LABEL}. Dispatch an item to start.`,
             error: retry('Item flow'),
           })}
           {...(shotState === 'error' && { onRetry: noop })}

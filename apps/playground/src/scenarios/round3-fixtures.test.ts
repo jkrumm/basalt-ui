@@ -33,7 +33,8 @@ describe('strip cells in empty and error', () => {
     const cells = [...c.querySelectorAll('[data-strip-cell]')]
     expect(cells.length).toBeGreaterThan(0)
     for (const cell of cells) {
-      const reason = cell.querySelector('p')
+      // W37 r2: the budget cell keeps the cap as its hero and says why in its footer, not a `p`.
+      const reason = cell.querySelector('p') ?? cell.querySelector('[data-strip-footer]')
       expect(reason?.textContent?.length ?? 0).toBeGreaterThan(10)
     }
   })

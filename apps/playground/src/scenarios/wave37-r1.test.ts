@@ -10,7 +10,7 @@ import type { ReactElement } from 'react'
 import { readFileSync } from 'node:fs'
 import { afterEach, describe, expect, it } from 'bun:test'
 import { ComponentsSurfaces } from '../demo/ComponentsPage'
-import { BUDGETS, FAILURES_WINDOW, FLOW_RANGE_LABEL, WARN_HOURS } from './agents-data'
+import { BUDGETS, FAILURES_WINDOW, FLOW_RANGE_LABEL, FLOW_SERIES, WARN_HOURS } from './agents-data'
 import { fmtEur, fmtInt, fmtRatio } from './fixture-utils'
 import { AgentsScenario } from './S3Agents'
 import { SpendScenario } from './S4Spend'
@@ -74,10 +74,11 @@ describe('S2 states each figure once', () => {
     expect(occurrences(page, fmtInt(Math.round(VOLUME_MTD_KG)))).toBe(1)
   })
 
-  it('the goal card leads with the count against the goal and states the lead once', () => {
+  // Round 2 (W37 r1 #11): the count moved to the Meter's label; the card leads with the pace verdict.
+  it('the goal card leads with the pace verdict and states the lead once', () => {
     const c = training()
     const goal = text(anchor(c, 'goal'))
-    expect(goal).toContain(`${SESSIONS_MTD} of ${GOAL_SESSIONS}`)
+    expect(goal).not.toContain(`${SESSIONS_MTD} of ${GOAL_SESSIONS}`)
     expect(occurrences(text(c), /ahead of pace/g)).toBe(1)
     expect(PACE_GAP).toBeGreaterThan(0)
     expect(goal).toContain(`${PACE_GAP} ahead of pace`)
@@ -161,9 +162,11 @@ describe('S2 readiness and top lifts', () => {
 })
 
 describe('S3 states each figure once', () => {
-  it('"Needs you" is named once on the strip; the fleet, the list and the footer do not repeat it', () => {
+  // Round 2 (W37 r1 #3): one quantity, one name — the cell and the fleet both say "Awaiting".
+  it('"Awaiting" names the quantity on the strip; "Needs you" is gone from the page', () => {
     const c = agents()
-    expect(occurrences(text(c), /needs? you/gi)).toBe(1)
+    expect(occurrences(text(c), /needs? you/gi)).toBe(0)
+    expect(occurrences(text(anchor(c, 'strip-needs-you')), /awaiting/gi)).toBe(1)
   })
 
   it('the footer meters do not restate the dispatch spend cell', () => {
@@ -182,15 +185,17 @@ describe('S3 states each figure once', () => {
   })
 
   it('the item flow draws integer daily counts as straight segments', () => {
-    expect(source('./S3Agents.tsx')).toContain("curve: 'linear'")
+    for (const series of FLOW_SERIES) expect(series.curve).toBe('linear')
   })
 })
 
 describe('S3 strip', () => {
-  it('failures names the hours at both ends of its window', () => {
+  // Round 2 (W37 r1 #11): two "15:00" ends read as one hour; the clock is "24 h ago" to "now".
+  it('failures names the two ends of its window as relative times', () => {
     const cell = text(anchor(agents(), 'strip-failures'))
-    expect(cell).toContain(hour(FAILURES_WINDOW.start))
-    expect(cell).toContain(hour(FAILURES_WINDOW.end))
+    expect(cell).toContain('24\u00A0h ago')
+    expect(cell).toContain('now')
+    expect(cell).not.toContain(hour(FAILURES_WINDOW.start))
   })
 
   it('oldest wait captions the warn tick at its position and drops the footer sentence', () => {
@@ -229,7 +234,8 @@ describe('S4 distribution', () => {
     const card = text(anchor(spend(), 'spend-distribution'))
     expect(card).toContain('Daily spend, distribution')
     expect(card).not.toContain('Days by total spend per day')
-    expect(card).toContain(`Median day`)
+    // Round 2 (W37 r1 #9): the median is a footer fact, not a colour-only second series.
+    expect(card).toContain(`median`)
     expect(card).toContain(fmtEur(MEDIAN_DAY_EUR))
   })
 })

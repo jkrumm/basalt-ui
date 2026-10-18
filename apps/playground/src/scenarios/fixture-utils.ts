@@ -87,6 +87,23 @@ export const fmtInt = (value: number): string => INT.format(value)
 /** `€400`, `€1.2K`: an axis tick that keeps its unit. */
 export const fmtEurCompact = (value: number): string => EUR_COMPACT.format(value)
 export const fmtShare = (value: number): string => `${Math.round(value * 100)}%`
+/**
+ * Whole percents of `shares` (fractions of one whole) that sum to exactly 100: each share is floored,
+ * then the leftover points go to the largest remainders. Plain rounding gives 99 or 101.
+ */
+export function roundShares(shares: readonly number[]): number[] {
+  const floored = shares.map((s) => Math.floor(s * 100 + 1e-9))
+  let left = 100 - floored.reduce((a, b) => a + b, 0)
+  const byRemainder = shares
+    .map((s, i) => ({ i, rest: s * 100 - (floored[i] ?? 0) }))
+    .toSorted((a, b) => b.rest - a.rest || a.i - b.i)
+  for (const { i } of byRemainder) {
+    if (left <= 0) break
+    floored[i] = (floored[i] ?? 0) + 1
+    left -= 1
+  }
+  return floored
+}
 export const fmtSignedShare = (value: number): string =>
   withSign(value, `${Math.abs(Math.round(value * 100))}%`)
 export const fmtEur = (value: number): string => EUR.format(Math.round(value))

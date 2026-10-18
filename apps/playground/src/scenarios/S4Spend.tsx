@@ -88,24 +88,16 @@ const BUDGET_LINES = [
 ]
 
 /** The band holding the median day: the last band that starts at or below it. */
-const MEDIAN_BIN_FROM = DISTRIBUTION.findLast((b) => b.from <= MEDIAN_DAY_EUR)?.from
-/** The histogram marks its median as a second series: a vertical reference line is not expressible
- * (`refLines` are horizontal), and the legend names the band as `Median day €75`. */
+const MEDIAN_BIN = DISTRIBUTION.findLast((b) => b.from <= MEDIAN_DAY_EUR)
+/** One series: a vertical reference line is not expressible (`refLines` are horizontal) and a second
+ * series would tell the median bin by colour alone, so the median is a footer fact on the card. */
 const DISTRIBUTION_BARS: BarsBar<DistributionBin>[] = [
-  {
-    key: 'days',
-    label: 'Days',
-    color: VX.neutral,
-    getValue: (d) => (d.from === MEDIAN_BIN_FROM ? null : d.days),
-  },
-  {
-    key: 'median',
-    label: 'Median day',
-    note: fmtEur(MEDIAN_DAY_EUR),
-    color: VX.line,
-    getValue: (d) => (d.from === MEDIAN_BIN_FROM ? d.days : null),
-  },
+  { key: 'days', label: 'Days', color: VX.neutral, getValue: (d) => d.days },
 ]
+const MEDIAN_FACT =
+  MEDIAN_BIN === undefined
+    ? 'median'
+    : `median · ${MEDIAN_BIN.days} days in ${spendBand(MEDIAN_BIN)}`
 
 const CUMULATIVE_DATA = [...CUMULATIVE]
 const DISTRIBUTION_DATA = [...DISTRIBUTION]
@@ -113,13 +105,13 @@ const DISTRIBUTION_DATA = [...DISTRIBUTION]
 const DISTRIBUTION_TICKS = DISTRIBUTION.filter((_, i) => i % 2 === 0).map((b) => b.label)
 /** How concentrated the spend is: what the two largest projects carry together. */
 const TOP_PROJECTS = 2
-const TOP_EUR = PROJECTS_MTD.slice(0, TOP_PROJECTS).reduce((a, p) => a + p.spend, 0)
+const TOP_PCT = PROJECTS_MTD.slice(0, TOP_PROJECTS).reduce((a, p) => a + p.pct, 0)
 /** Spend by project: label, month-to-date EUR, share as the muted secondary. */
 const PROJECT_ITEMS = PROJECTS_MTD.map((p) => ({
   key: p.key,
   label: p.label,
   value: p.spend,
-  secondary: fmtShare(p.share),
+  secondary: `${p.pct}%`,
 }))
 /** Top drivers: the € added against the prior window, the relative change as the secondary. */
 const DRIVER_ITEMS = DRIVERS.map((p) => ({
@@ -143,7 +135,7 @@ const TRACK_END_EUR =
 /** Body height of the error placeholder for the BarList cards, so a failed card stays near its resting size. */
 const PROJECT_PLACEHOLDER = 190
 
-const USAGE_EMPTY = 'No spend recorded in the window. Check that the usage export is connected.'
+const USAGE_EMPTY = `No spend recorded ${WINDOW_LABEL}. Check that the usage export is connected.`
 
 const retry = (what: string): string => retryCopy(what, 'usage export')
 
@@ -206,7 +198,7 @@ function SpendStats({ shotState }: ScenarioProps) {
       value: fmtEur(FORECAST_EUR),
       ...cellState(
         'The forecast',
-        'No forecast without spend. It appears after the first day of spend.',
+        `No forecast without spend ${WINDOW_LABEL}. It appears after the first day of spend.`,
       ),
       ...(overBudget && { tone: 'bad' as const }),
       loading,
@@ -237,7 +229,10 @@ function SpendStats({ shotState }: ScenarioProps) {
       info: `Monthly cap in EUR. ${fmtEur(REMAINING_PER_DAY_EUR)} a day over the remaining ${MONTH_DAYS - DAYS_ELAPSED} days lands on the cap.`,
       value: fmtEur(BUDGET_EUR),
       loading,
-      ...cellState('The budget', `No spend to set against the ${fmtEur(BUDGET_EUR)} budget yet.`),
+      // The cap is a figure with or without spend, so an empty cell keeps it as the hero and says why
+      // there is no meter in its footer; only a failure replaces the reading.
+      ...(shotState === 'error' && cellState('The budget', '')),
+      ...(shotState === 'empty' && { footer: `No spend ${WINDOW_LABEL} to set against it.` }),
       ...(!hidden && {
         visual: (
           <Meter
@@ -276,7 +271,7 @@ function SpendCharts({ shotState }: ScenarioProps) {
           }}
           info={`Month-to-date spend per day against the ${fmtEur(BUDGET_EUR)} budget. The dashed line holds the ${fmtEur(MTD_EUR / DAYS_ELAPSED)} daily average flat to the last day.`}
           state={chartStateFor(shotState, {
-            empty: 'No spend this month. Connect a project to the usage export.',
+            empty: `No spend recorded ${WINDOW_LABEL}. Connect a project to the usage export.`,
             error: retry('Cumulative spend'),
           })}
           {...(shotState === 'error' && { onRetry: noop })}
@@ -297,10 +292,11 @@ function SpendCharts({ shotState }: ScenarioProps) {
       <Box data-shot="spend-distribution" h="100%">
         <ChartCard
           title="Daily spend, distribution"
-          facts={{ value: fmtEur(MEDIAN_DAY_EUR), unit: 'a day', period: 'median, last 90 days' }}
-          info="Each bar counts the days whose total spend across all projects landed in that €10 band (€ a day)."
+          facts={{ value: fmtEur(MEDIAN_DAY_EUR), unit: 'a day', period: MEDIAN_FACT }}
+          info="Each bar counts the days, of the last 90, whose total spend across all projects landed in that €10 band (€ a day). The headline is the median day and the band it falls in."
           state={chartStateFor(shotState, {
-            empty: 'No days to bin yet. The histogram needs at least one day of spend.',
+            empty:
+              'No days to bin in the last 90 days. The histogram needs at least one day of spend.',
             error: retry('The distribution'),
           })}
           {...(shotState === 'error' && { onRetry: noop })}
@@ -332,12 +328,12 @@ function SpendBreakdown({ shotState }: ScenarioProps) {
           title="Spend by project"
           {...(shotState === undefined && {
             facts: {
-              value: fmtEur(TOP_EUR),
-              unit: `in ${TOP_PROJECTS} projects`,
-              period: `of ${PROJECTS_MTD.length}, ${WINDOW_LABEL}`,
+              value: `${TOP_PCT}%`,
+              unit: `in ${TOP_PROJECTS} of ${PROJECTS_MTD.length} projects`,
+              period: `of spend, ${WINDOW_LABEL}`,
             },
           })}
-          info="Each project's share of month-to-date spend across all models."
+          info={`Each project's share of the ${fmtEur(MTD_EUR)} month-to-date spend across all models, in whole percent that sum to 100.`}
           {...cardStateProps(shotState, retry('Spend by project'), PROJECT_PLACEHOLDER)}
         >
           <Box data-shot-hover>
@@ -345,7 +341,6 @@ function SpendBreakdown({ shotState }: ScenarioProps) {
               label={`Spend by project, ${WINDOW_LABEL}, EUR`}
               items={shotState === 'empty' ? [] : PROJECT_ITEMS}
               format={fmtEur}
-              accentLeader
               loading={shotState === 'loading'}
               emptyText={`No project spent anything ${WINDOW_LABEL}. Connect one to the usage export.`}
             />
@@ -354,7 +349,7 @@ function SpendBreakdown({ shotState }: ScenarioProps) {
       </Box>
       <Box data-shot="top-drivers" h="100%">
         <ChartCard
-          title="Top drivers"
+          title="Spend change by project"
           {...(shotState === undefined && {
             facts: {
               value: fmtEur(DRIVERS.reduce((a, p) => a + p.delta, 0)),

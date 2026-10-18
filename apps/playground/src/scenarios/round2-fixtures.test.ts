@@ -45,7 +45,10 @@ describe('S4 spend', () => {
     for (const name of ['spend-over-time', 'spend-by-project', 'top-drivers']) {
       const card = anchor(c, name)
       expect(card?.textContent).not.toContain('(€)')
-      expect(card?.querySelector('[data-basalt-fact-value]')?.textContent).toContain('€')
+      // W37 r2: spend by project leads with the top two's share of the whole, in percent.
+      expect(card?.querySelector('[data-basalt-fact-value]')?.textContent).toContain(
+        name === 'spend-by-project' ? '%' : '€',
+      )
     }
   })
 
@@ -89,8 +92,9 @@ describe('S3 agents', () => {
     const c = mount(createElement(AgentsScenario, { shotState: undefined }))
     const text = anchor(c, 'strip-failures')?.textContent
     expect(text).toContain('last 24 h')
-    // Wave 37 r1: the footer is the clock under the bars, window ends around the latest run.
-    expect(text).toContain('latest 13:00 UTC')
+    // W37 r2: the footer is the clock under the bars, "24 h ago" to "now"; the hover names the hour.
+    expect(text).toContain('24\u00A0h ago')
+    expect(text).toContain('now')
   })
 
   it('pairs cells of similar height in the two-column layout', () => {

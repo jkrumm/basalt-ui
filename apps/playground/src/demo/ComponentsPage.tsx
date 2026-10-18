@@ -24,7 +24,6 @@ import {
   Badge,
   Box,
   Button,
-  Card,
   Checkbox,
   Code,
   Group,
@@ -34,6 +33,7 @@ import {
   SegmentedControl,
   Select,
   SimpleGrid,
+  Skeleton,
   Stack,
   Switch,
   Table,
@@ -45,13 +45,15 @@ import {
 import { CONTAINER_KEYS } from 'basalt-ui/tokens'
 import { DeltaBadge, EmptyState, PageBar, SettingsSection } from 'basalt-ui'
 import { ViewTabs } from 'basalt-ui/controls'
+import { noop } from '../scenarios/shot-state'
+import type { ShotState } from '../scenarios/shot-state'
 import { createLocalStore, field } from 'basalt-ui/state'
 import type { ReactNode } from 'react'
 import { ActivityPage } from './ActivityPage'
 import { IconChevronRight, IconSearch, IconSend } from './icons'
 import { PrimitivesPage } from './PrimitivesPage'
 
-type ShotAnchor = 'tabs' | 'badges'
+type ShotAnchor = 'tabs' | 'badges' | 'table'
 
 // The anchor Box is the grid item now, so the card fills it to keep its row's stretched height.
 const FILL = { height: '100%' } as const
@@ -63,15 +65,18 @@ const FILL = { height: '100%' } as const
 function ComponentGroup({
   title,
   shot,
+  states,
   children,
 }: {
   title: string
   shot?: ShotAnchor
+  /** The URL states this anchor renders (`data-shot-states`), for a group that has them. */
+  states?: string
   children: ReactNode
 }) {
   if (shot === undefined) return <SettingsSection title={title}>{children}</SettingsSection>
   return (
-    <Box data-shot={shot} h="100%">
+    <Box data-shot={shot} data-shot-states={states} h="100%">
       <SettingsSection title={title} style={FILL}>
         {children}
       </SettingsSection>
@@ -91,16 +96,16 @@ const componentViews = createLocalStore({
 
 /** `delta` is a percent change; `polarity` says whether a rise is good (churn: it is not). */
 const TABLE_ROWS = [
-  { name: 'Sessions', value: '12,480', delta: 12.4, polarity: 'up-good' },
-  { name: 'Signups', value: '3,210', delta: 8.1, polarity: 'up-good' },
-  { name: 'Revenue', value: '$48.9k', delta: 18.9, polarity: 'up-good' },
-  { name: 'Churn', value: '2.3%', delta: -0.4, polarity: 'up-bad' },
+  { name: 'Sessions, 30 days', value: '12,480', delta: 12.4, polarity: 'up-good' },
+  { name: 'Signups, 30 days', value: '3,210', delta: 8.1, polarity: 'up-good' },
+  { name: 'Revenue, 30 days', value: '$48.9k', delta: 18.9, polarity: 'up-good' },
+  { name: 'Churn, monthly', value: '2.3%', delta: -0.4, polarity: 'up-bad' },
 ] as const
 
 /** Numeric columns align to the end so the digits line up. */
 const NUMERIC = { ta: 'right' } as const
 
-export function ComponentsPage() {
+export function ComponentsPage({ shotState }: { shotState?: ShotState | undefined }) {
   const [tab] = componentViews.field.tab.use()
   return (
     <Stack gap="md">
@@ -123,7 +128,7 @@ export function ComponentsPage() {
           behaviour is unchanged. */}
       <Tabs value={tab}>
         <Tabs.Panel value="surfaces">
-          <ComponentsSurfaces />
+          <ComponentsSurfaces shotState={shotState} />
         </Tabs.Panel>
         <Tabs.Panel value="primitives">
           <PrimitivesPage />
@@ -136,7 +141,72 @@ export function ComponentsPage() {
   )
 }
 
-export function ComponentsSurfaces() {
+/** The metrics table at rest, and the three states `basalt-ui shot` reaches through `?shot-state=`. */
+function MetricsTable({ shotState }: { shotState?: ShotState | undefined }) {
+  if (shotState === 'empty') {
+    return (
+      <EmptyState
+        icon={<IconSearch />}
+        title="No metrics in the last 30 days"
+        description="Metrics appear here once the first event arrives."
+        tier="section"
+      />
+    )
+  }
+  if (shotState === 'error') {
+    return (
+      <EmptyState
+        icon={<IconSearch />}
+        title="The metrics did not load"
+        description="Retry, or check the analytics connection."
+        action={
+          <Button size="xs" variant="default" onClick={noop}>
+            Retry
+          </Button>
+        }
+        tier="section"
+      />
+    )
+  }
+  return (
+    <Table withTableBorder striped highlightOnHover>
+      <Table.Thead>
+        <Table.Tr>
+          <Table.Th>Metric</Table.Th>
+          <Table.Th {...NUMERIC}>Value</Table.Th>
+          <Table.Th {...NUMERIC}>Delta</Table.Th>
+        </Table.Tr>
+      </Table.Thead>
+      <Table.Tbody>
+        {shotState === 'loading'
+          ? TABLE_ROWS.map((row) => (
+              <Table.Tr key={row.name}>
+                <Table.Td>
+                  <Skeleton height={14} width={120} maw="100%" />
+                </Table.Td>
+                <Table.Td {...NUMERIC}>
+                  <Skeleton height={14} width={48} ml="auto" />
+                </Table.Td>
+                <Table.Td {...NUMERIC}>
+                  <Skeleton height={14} width={48} ml="auto" />
+                </Table.Td>
+              </Table.Tr>
+            ))
+          : TABLE_ROWS.map((row) => (
+              <Table.Tr key={row.name}>
+                <Table.Td>{row.name}</Table.Td>
+                <Table.Td {...NUMERIC}>{row.value}</Table.Td>
+                <Table.Td {...NUMERIC}>
+                  <DeltaBadge value={row.delta} polarity={row.polarity} />
+                </Table.Td>
+              </Table.Tr>
+            ))}
+      </Table.Tbody>
+    </Table>
+  )
+}
+
+export function ComponentsSurfaces({ shotState }: { shotState?: ShotState | undefined }) {
   return (
     <Stack gap="md" data-compare="surfaces">
       {/* Two columns balanced by composition: Buttons runs ~93 px over Inputs and Tabs ~100 px over
@@ -275,31 +345,16 @@ export function ComponentsSurfaces() {
         </Stack>
       </SimpleGrid>
 
-      <ComponentGroup title="Table: metric, value, change">
-        <Table withTableBorder striped highlightOnHover>
-          <Table.Thead>
-            <Table.Tr>
-              <Table.Th>Metric</Table.Th>
-              <Table.Th {...NUMERIC}>Value</Table.Th>
-              <Table.Th {...NUMERIC}>Delta</Table.Th>
-            </Table.Tr>
-          </Table.Thead>
-          <Table.Tbody>
-            {TABLE_ROWS.map((row) => (
-              <Table.Tr key={row.name}>
-                <Table.Td>{row.name}</Table.Td>
-                <Table.Td {...NUMERIC}>{row.value}</Table.Td>
-                <Table.Td {...NUMERIC}>
-                  <DeltaBadge value={row.delta} polarity={row.polarity} />
-                </Table.Td>
-              </Table.Tr>
-            ))}
-          </Table.Tbody>
-        </Table>
+      <ComponentGroup
+        title="Table: metric, value, change"
+        shot="table"
+        states="empty loading error"
+      >
+        <MetricsTable shotState={shotState} />
       </ComponentGroup>
 
       <SimpleGrid type="container" cols={{ base: 1, [CONTAINER_KEYS.regular]: 2 }}>
-        <ComponentGroup title="Accordion">
+        <ComponentGroup title="Accordion: expandable sections">
           <Accordion variant="contained" defaultValue="acquisition">
             <Accordion.Item value="acquisition">
               <Accordion.Control>Acquisition</Accordion.Control>
@@ -328,8 +383,10 @@ export function ComponentsSurfaces() {
           </Accordion>
         </ComponentGroup>
 
-        <ComponentGroup title="Dropdown surfaces">
-          <Group gap="sm">
+        <ComponentGroup title="Dropdown surfaces: menu and popover">
+          {/* The open Menu and Popover are absolutely positioned, so the card reserves their height
+              (button, offset and the four-row menu) rather than clipping them at 390. */}
+          <Group gap="sm" align="flex-start" mih={220}>
             {/* defaultOpened is showcase-only — kept open so the overlay styling is visible on this
                 gallery page; real apps open on trigger, not on mount. */}
             <Menu defaultOpened position="bottom-start" withinPortal={false}>
@@ -350,7 +407,7 @@ export function ComponentsSurfaces() {
                 <Button variant="default">Popover</Button>
               </Popover.Target>
               <Popover.Dropdown>
-                <Text size="sm">Popover content on a panel surface.</Text>
+                <Text size="sm">Last synced at 09:12 UTC.</Text>
               </Popover.Dropdown>
             </Popover>
           </Group>
@@ -398,7 +455,7 @@ export function ComponentsSurfaces() {
           </Stack>
         </ComponentGroup>
 
-        <ComponentGroup title="Code">
+        <ComponentGroup title="Code: inline and block">
           <Stack gap="sm">
             <Text size="sm">
               Inline <Code>VX.line</Code> is a token ref.
@@ -407,7 +464,7 @@ export function ComponentsSurfaces() {
           </Stack>
         </ComponentGroup>
 
-        <ComponentGroup title="Toggles">
+        <ComponentGroup title="Toggles: switch, checkbox and radio">
           <Stack gap="sm">
             <Switch label="Enable notifications" defaultChecked />
             <Checkbox label="I agree to the terms" defaultChecked />
@@ -420,28 +477,21 @@ export function ComponentsSurfaces() {
             </Radio.Group>
           </Stack>
         </ComponentGroup>
+
+        <ComponentGroup title="Empty state: no results">
+          <EmptyState
+            icon={<IconSearch />}
+            title="No results"
+            description="Try adjusting your filters or search terms."
+            action={
+              <Button size="xs" variant="default">
+                Clear filters
+              </Button>
+            }
+            tier="section"
+          />
+        </ComponentGroup>
       </SimpleGrid>
-
-      <ComponentGroup title="Empty state">
-        <EmptyState
-          icon={<IconSearch />}
-          title="No results"
-          description="Try adjusting your filters or search terms."
-          action={
-            <Button size="xs" variant="default">
-              Clear filters
-            </Button>
-          }
-          tier="section"
-        />
-      </ComponentGroup>
-
-      <Card>
-        <Text size="sm" c="dimmed">
-          A <Code>Card</Code> surface — same shadow-card, background, and radius as every Paper
-          above.
-        </Text>
-      </Card>
     </Stack>
   )
 }
