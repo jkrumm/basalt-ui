@@ -1351,6 +1351,13 @@ const LOAD_ZONES_SHORT = [
   { from: 1.3, to: 1.5, label: 'Caution', short: 'Cau' },
   { from: 1.5, to: 2, label: 'Danger', short: 'Dan' },
 ]
+// The playground S2 training-load zones, verbatim.
+const S2_LOAD_ZONES = [
+  { from: 0, to: 0.8, label: 'Low', short: 'Lo' },
+  { from: 0.8, to: 1.3, label: 'Optimal', short: 'Opt' },
+  { from: 1.3, to: 1.5, label: 'High', short: 'Hi' },
+  { from: 1.5, to: 2, label: 'Overreaching', short: 'Over' },
+]
 const LOAD_TICKS = [
   { at: 0, label: '0' },
   { at: 2, label: '2.0' },
@@ -1497,6 +1504,20 @@ function DashFixture(): ReactElement {
           zones={LOAD_ZONES_SHORT}
           ticks={LOAD_TICKS}
         />
+      </div>
+      {/* The S2 card at 390: 390 minus the 20px page gutters. The Meter sits in a real ChartCard. */}
+      {/* theme-allow -- the wrapper width IS the fixture's payload (a container probe) */}
+      <div data-testid="dash-zl-s2" style={{ width: 350 }}>
+        <ChartCard title="Training load">
+          <Meter
+            label="Training load"
+            min={0}
+            max={2}
+            value={1.1}
+            zones={S2_LOAD_ZONES}
+            ticks={LOAD_TICKS}
+          />
+        </ChartCard>
       </div>
       {/* A tick at 15% lands on "Under"'s centre: the tick wins, the name hides. */}
       {/* theme-allow -- the wrapper width IS the fixture's payload (a container probe) */}
