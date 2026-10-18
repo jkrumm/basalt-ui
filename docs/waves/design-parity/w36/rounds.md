@@ -65,3 +65,21 @@ the icon side reads ~8 px tighter than the text side at the largest size). New P
 "Overreaching" (narrow span), so that zone reads by colour alone — #387 adds a zone `short` label tried before a name
 hides. Still failing: `tabs` (accent pill, chrome). Strip cells (S3/S4, the "before" for #386): no cell exceeds
 `emptyRatio` 0.4; the stretched cells are oldest-wait (0.356) and budget (0.372) at 1440.
+
+## Round 5 — #386 and #387 on master (r5, `6236c47e`, 626 ok shots)
+
+B: 3 findings, score 88 — P1 `craft-3/empty-region` S3 `strip-oldest-wait` 46 % at 1440 (36 % in r4: #386's shared
+footer track sat it under the fleet legend's 69 px visual track), P3 ×2 `craft-1/off-scale-inset` (#386's first-cell
+`stack-md + 1px` = 13 px). Both fixed by #388 (a footer under a visual rides with that visual; hairlines as
+box-shadows with a forced-colors border twin). Not scored by A (superseded by r6).
+
+## Round 6 — #388 on master, the 2.21.0 head (r6, `8a04f9a4`, 626 ok shots, 16 absent, 0 failed)
+
+B: no findings, score 100 (trend 75 → 100 → 100 → 88 → 100). A: every S2, S3, S4 and components anchor and every page
+passes except `tabs` (Craft 4, P1, the accent pill — chrome, left behind); score 86. Every inset, gap and radius is a
+scale step across 132 anchors; `emptyRatio` peaks at 0.374. S2 training load at 390 names every zone (Low, Optimal,
+High, Over) with 0 / 2.0 in the label row (#382, #387). **The strip still stretches at 1440:** every S3 cell is the row
+height (154 px), so oldest-wait (0.359) and S4 budget (0.374) keep a ~55 px void under their caption — under the 0.4
+line, so not a rubric failure, but argo's Wave 25 ask ("cells without a visual stay compact") is only half met: the
+value-to-footer void is gone, the cell-bottom void is not. Notes: tinted Badges (P2), readiness "76 of 100 16 Oct"
+runs unit and date together (P3), "Good" and "100" nearly touch at 390.
