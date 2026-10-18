@@ -203,4 +203,15 @@ describe('BarList — the track is the label column', () => {
     expect(container.querySelector('ul')?.hasAttribute('data-secondary')).toBe(false)
     for (const li of container.querySelectorAll('li')) expect(li.children.length).toBe(2)
   })
+
+  test('a thin row renders label, value, secondary, then the track (the wide layout reads in that order)', () => {
+    const { container } = mount({ label: 'Top projects', items: ITEMS })
+    const row = container.querySelector('li') as HTMLElement
+    const kids = [...row.children]
+    expect(kids).toHaveLength(4)
+    expect(kids[0]?.getAttribute('title')).toBe('argo')
+    expect(kids[1]?.textContent).toBe('80')
+    expect(kids[2]?.textContent).toBe('40%')
+    expect(kids[3]?.hasAttribute('data-bar-track')).toBe(true)
+  })
 })

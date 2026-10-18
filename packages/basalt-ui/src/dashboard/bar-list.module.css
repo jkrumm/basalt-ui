@@ -5,6 +5,12 @@
  * row never wraps: the label truncates, the value is nowrap.
  */
 
+/* The width container the wide layout keys on; a container cannot restyle its own grid. */
+.frame {
+  container: basalt-card / inline-size;
+  min-width: 0;
+}
+
 .root {
   display: grid;
   grid-template-columns: minmax(0, 1fr) auto;
@@ -163,4 +169,44 @@
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
+}
+
+/*
+ * Wide (a container of 480px or more): one row, `[label][value][secondary][track]`. The label column fits the
+ * longest label (capped at 40%, the rest truncates with its `title`), value and secondary are right-
+ * aligned and shared by every row, and the track takes the remaining width on the one scale — a
+ * full-scale bar ends at the track end, never under a value. Compact keeps the stacked thin layout.
+ */
+@container basalt-card (width >= 480px) {
+  .root[data-variant='thin'] {
+    grid-template-columns: fit-content(40%) auto minmax(0, 1fr);
+    column-gap: var(--vx-space-stack-md, 0.75rem);
+  }
+
+  .root[data-variant='thin'][data-secondary] {
+    grid-template-columns: fit-content(40%) auto fit-content(30%) minmax(0, 1fr);
+  }
+
+  .root[data-variant='thin'] .row {
+    grid-template-rows: auto;
+    align-items: center;
+    padding-block: 0;
+  }
+
+  .root[data-variant='thin'] .track {
+    grid-column: auto;
+    align-self: center;
+  }
+
+  .root[data-variant='thin'] .label {
+    display: block;
+    white-space: nowrap;
+    text-overflow: ellipsis;
+    -webkit-line-clamp: unset;
+    line-clamp: unset;
+  }
+
+  .root[data-variant='thin'] .secondary {
+    text-align: end;
+  }
 }
