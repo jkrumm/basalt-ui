@@ -1189,8 +1189,10 @@ No export is removed or renamed; one prop is added and two defaults move.
   wrapped to as many rows as it had entries (five entries, two rows), so argo dropped it with
   `legend: false` and ACWR, recovery and stress read by hue alone at 390. Now: a chart with two or more legend
   entries shows ONE row there. The zone / reference entries (which hue alone cannot name) lead, the series
-  follow (the title and tooltip name those), and what does not fit folds into a `+N` chip whose `title` lists
-  the folded names. From 480px up the key wraps and shows every entry as before. An explicit `legend: false`
+  follow (the title and tooltip name those), and what does not fit folds into a `+N` chip whose `title` and
+  hidden text list the folded names. From 480px up the key wraps and shows every entry, but the zone / reference
+  entries now come BEFORE the series at every width (the DOM order is the compact row order; before they
+  followed the series). An explicit `legend: false`
   still drops the legend at every width; delete the `compact && { legend: false }` workaround to take the new
   default.
 - **`ZoneSpec.legend: { label, mark?, color? }`** names a band in the legend, so a zone chart needs no always-`null`
