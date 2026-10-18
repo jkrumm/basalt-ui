@@ -1144,6 +1144,13 @@ cell ("verdicts 78 %") stays compact instead of showing value, a dead gap, then 
 the default covers the compact case. There is no opt-out for the alignment, and no per-cell `align`: a cell with no visual (argo Home's
 recovery cell) already stays compact under the default, which was the only case the escape was for.
 
+**Amended:** a `footer` under a `visual` (and no `rows`) now rides with that visual and sits one gap
+under it, instead of dropping to the footer track a taller sibling's visual sets. Footers still line
+up where the visuals are the same height; where they are not, a cell no longer shows the difference
+as a void (S3's oldest-wait Meter read 46 % empty beside a tall fleet legend). A `rows` cell keeps
+the shared footer track. The strip's hairlines are now outer box-shadows, not borders, so every cell
+has the same `stack-md` top inset (the first cell's 13 px is gone); there is no opt-out.
+
 ### `Button` section insets sit on the spacing scale
 
 **Changed:** a `Button` with a `leftSection` / `rightSection` padded that side by Mantine's

@@ -103,6 +103,28 @@ const measureStates = (p: LayoutPage): Promise<States> =>
     }
   })
 
+type Oldest = { top: number; bottom: number; contentBottom: number; padTop: number }[]
+
+/** The S3 queue strip: a Meter cell next to sparkline siblings, one of which carries a footer. */
+const measureOldest = (p: LayoutPage): Promise<Oldest> =>
+  p.raw.evaluate(() => {
+    const host = document.querySelector<HTMLElement>('[data-testid="dash-strip-oldest"]')
+    if (!host) throw new Error('LAYOUT: no dash-strip-oldest')
+    return [...host.querySelectorAll<HTMLElement>('[data-strip-cell]')].map((c) => {
+      const b = c.getBoundingClientRect()
+      // The last painted leaf: a part's own box stretches to its track, its content does not.
+      const content = [
+        ...c.querySelectorAll<HTMLElement>('[data-strip-visual] *, [data-strip-footer]'),
+      ]
+      return {
+        top: b.top,
+        bottom: b.bottom,
+        contentBottom: Math.max(...content.map((e) => e.getBoundingClientRect().bottom)),
+        padTop: parseFloat(getComputedStyle(c).paddingTop),
+      }
+    })
+  })
+
 function suite(vp: Viewport) {
   let p: LayoutPage
   let m: Measured
@@ -143,10 +165,11 @@ function suite(vp: Viewport) {
     }
   })
 
-  test('footers of cells with a visual or rows share one top', () => {
+  test('a footer hugs its own visual; a rows cell keeps the shared footer track', () => {
     const a = cell('tall')
-    const b = cell('rows')
-    expect(Math.abs(a.parts.footer!.top - b.parts.footer!.top)).toBeLessThanOrEqual(SNAP)
+    expect(a.parts.footer!.top - a.parts.visual!.bottom).toBeLessThanOrEqual(m.gap + SNAP)
+    const r = cell('rows')
+    expect(r.parts.footer!.top - r.parts.rows!.bottom).toBeLessThanOrEqual(m.gap + SNAP)
   })
 
   test('state cells and the footer row keep their bands: no overlap, footer last', async () => {
@@ -167,6 +190,26 @@ function suite(vp: Viewport) {
       expect(bottom).toBeLessThanOrEqual(next + SNAP)
     }
     expect(st.footer.top).toBeGreaterThanOrEqual(Math.max(...st.cells.map((c) => c.bottom)) - SNAP)
+  })
+
+  test('the oldest-wait Meter cell is under 40 % void next to sparkline siblings', async () => {
+    const cells = await measureOldest(p)
+    const c = cells[2]!
+    const void_ = (c.bottom - c.contentBottom) / (c.bottom - c.top)
+    expect(void_).toBeLessThan(0.4)
+  })
+
+  test('every strip cell has the same on-scale top inset', async () => {
+    const cells = await measureOldest(p)
+    const step = await p.raw.evaluate(() => {
+      const probe = document.createElement('div')
+      probe.style.height = 'var(--vx-space-stack-md)'
+      document.body.append(probe)
+      const h = probe.getBoundingClientRect().height
+      probe.remove()
+      return h
+    })
+    for (const c of cells) expect(Math.abs(c.padTop - step)).toBeLessThanOrEqual(0.01)
   })
 
   test('a value-only cell’s footer sits directly under its value', () => {

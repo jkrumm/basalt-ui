@@ -136,6 +136,14 @@ function StripCell({ cell }: { cell: StatStripCell }) {
   const { rows, loading } = cell
   const state = loading ? undefined : cell.state
   const hasHero = cell.value !== undefined || rows === undefined
+  // A footer under a visual (and no rows) rides with it, so it hugs that visual instead of dropping
+  // to a taller sibling's; under rows, or with neither, it takes the row's shared footer track.
+  const ownFooter = cell.visual !== undefined && rows === undefined
+  const footerEl = cell.footer !== undefined && (
+    <div className={classes.footer} data-strip-footer>
+      {cell.footer}
+    </div>
+  )
   return (
     <article
       className={classes.cell}
@@ -179,8 +187,11 @@ function StripCell({ cell }: { cell: StatStripCell }) {
           </div>
         ))}
       {state === undefined && cell.visual !== undefined && (
-        <div className={classes.visual} data-strip-visual>
-          <VisualSlotContext.Provider value={hasHero}>{cell.visual}</VisualSlotContext.Provider>
+        <div className={classes.visualStack}>
+          <div className={classes.visual} data-strip-visual>
+            <VisualSlotContext.Provider value={hasHero}>{cell.visual}</VisualSlotContext.Provider>
+          </div>
+          {ownFooter && footerEl}
         </div>
       )}
       {state === undefined &&
@@ -203,11 +214,7 @@ function StripCell({ cell }: { cell: StatStripCell }) {
             ))}
           </ul>
         ))}
-      {state === undefined && cell.footer !== undefined && (
-        <div className={classes.footer} data-strip-footer>
-          {cell.footer}
-        </div>
-      )}
+      {state === undefined && !ownFooter && footerEl}
     </article>
   )
 }
