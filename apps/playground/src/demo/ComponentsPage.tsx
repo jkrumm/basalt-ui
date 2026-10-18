@@ -43,7 +43,7 @@ import {
   Textarea,
 } from '@mantine/core'
 import { CONTAINER_KEYS } from 'basalt-ui/tokens'
-import { EmptyState, PageBar, SettingsSection } from 'basalt-ui'
+import { DeltaBadge, EmptyState, PageBar, SettingsSection } from 'basalt-ui'
 import { ViewTabs } from 'basalt-ui/controls'
 import { createLocalStore, field } from 'basalt-ui/state'
 import type { ReactNode } from 'react'
@@ -89,12 +89,16 @@ const componentViews = createLocalStore({
   tab: { surfaces: 'Surfaces', primitives: 'Primitives', activity: 'Activity' },
 })
 
+/** `delta` is a percent change; `polarity` says whether a rise is good (churn: it is not). */
 const TABLE_ROWS = [
-  { name: 'Sessions', value: '12,480', delta: '12.4%' },
-  { name: 'Signups', value: '3,210', delta: '8.1%' },
-  { name: 'Revenue', value: '$48.9k', delta: '18.9%' },
-  { name: 'Churn', value: '2.3%', delta: '-0.4%' },
-]
+  { name: 'Sessions', value: '12,480', delta: 12.4, polarity: 'up-good' },
+  { name: 'Signups', value: '3,210', delta: 8.1, polarity: 'up-good' },
+  { name: 'Revenue', value: '$48.9k', delta: 18.9, polarity: 'up-good' },
+  { name: 'Churn', value: '2.3%', delta: -0.4, polarity: 'up-bad' },
+] as const
+
+/** Numeric columns align to the end so the digits line up. */
+const NUMERIC = { ta: 'right' } as const
 
 export function ComponentsPage() {
   const [tab] = componentViews.field.tab.use()
@@ -135,151 +139,159 @@ export function ComponentsPage() {
 export function ComponentsSurfaces() {
   return (
     <Stack gap="md" data-compare="surfaces">
+      {/* Two columns balanced by composition: Buttons runs ~93 px over Inputs and Tabs ~100 px over
+          Segmented control, so each column pairs a tall group with a short one and the row ends meet
+          within a gap. At 390 the order is buttons, segmented control, inputs, tabs. */}
       <SimpleGrid
         type="container"
         cols={{ base: 1, [CONTAINER_KEYS.regular]: 2 }}
         style={{ alignItems: 'start' }}
       >
-        {/* One anchor per row: a scored component holds at most three font sizes, and the four
+        <Stack gap="md" data-compare-column="buttons">
+          {/* One anchor per row: a scored component holds at most three font sizes, and the four
             sizes together are four. */}
-        <ComponentGroup title="Button variants and sizes">
-          <Stack gap="sm">
-            <Box data-shot="buttons-variants">
-              <Group gap="sm">
-                <Button variant="filled">Filled</Button>
-                <Button variant="default">Default</Button>
-                <Button variant="light" data-shot-hover>
-                  Light
-                </Button>
-                <Button variant="outline">Outline</Button>
-                <Button variant="subtle">Subtle</Button>
-              </Group>
-            </Box>
-            <Box data-shot="buttons-sizes-small">
-              <Group gap="sm" align="center">
-                <Button size="xs">Extra small</Button>
-                <Button size="sm">Small</Button>
-              </Group>
-            </Box>
-            <Box data-shot="buttons-sizes-large">
-              <Group gap="sm" align="center">
-                <Button size="md">Medium</Button>
-                <Button size="lg">Large</Button>
-              </Group>
-            </Box>
-            <Box data-shot="buttons-sections">
-              <Stack gap="sm">
-                {(['xs', 'sm', 'md'] as const).map((size) => (
-                  <Group key={size} gap="sm" align="center">
-                    {(['default', 'filled'] as const).map((variant) => (
-                      <Group key={variant} gap="sm" align="center">
-                        <Button size={size} variant={variant} leftSection={<IconSend />}>
-                          Send
-                        </Button>
-                        <Button size={size} variant={variant} rightSection={<IconChevronRight />}>
-                          Next
-                        </Button>
-                      </Group>
-                    ))}
-                  </Group>
-                ))}
-              </Stack>
-            </Box>
-            <Box data-shot="buttons-disabled">
-              <Group gap="sm">
-                <Button disabled>Disabled</Button>
-              </Group>
-            </Box>
-          </Stack>
-        </ComponentGroup>
+          <ComponentGroup title="Button variants and sizes">
+            <Stack gap="sm">
+              <Box data-shot="buttons-variants">
+                <Group gap="sm">
+                  <Button variant="filled">Filled</Button>
+                  <Button variant="default">Default</Button>
+                  <Button variant="light" data-shot-hover>
+                    Light
+                  </Button>
+                  <Button variant="outline">Outline</Button>
+                  <Button variant="subtle">Subtle</Button>
+                </Group>
+              </Box>
+              <Box data-shot="buttons-sizes-small">
+                <Group gap="sm" align="center">
+                  <Button size="xs">Extra small</Button>
+                  <Button size="sm">Small</Button>
+                </Group>
+              </Box>
+              <Box data-shot="buttons-sizes-large">
+                <Group gap="sm" align="center">
+                  <Button size="md">Medium</Button>
+                  <Button size="lg">Large</Button>
+                </Group>
+              </Box>
+              <Box data-shot="buttons-sections">
+                <Stack gap="sm">
+                  {(['xs', 'sm', 'md'] as const).map((size) => (
+                    <Group key={size} gap="sm" align="center">
+                      {(['default', 'filled'] as const).map((variant) => (
+                        <Group key={variant} gap="sm" align="center">
+                          <Button size={size} variant={variant} leftSection={<IconSend />}>
+                            Send
+                          </Button>
+                          <Button size={size} variant={variant} rightSection={<IconChevronRight />}>
+                            Next
+                          </Button>
+                        </Group>
+                      ))}
+                    </Group>
+                  ))}
+                </Stack>
+              </Box>
+              <Box data-shot="buttons-disabled">
+                <Group gap="sm">
+                  <Button disabled>Disabled</Button>
+                </Group>
+              </Box>
+            </Stack>
+          </ComponentGroup>
 
-        <ComponentGroup title="Inputs">
-          <Stack gap="sm">
-            <TextInput label="Name" placeholder="Jane Doe" />
-            {/* theme-allow control-outside-home — this Select IS the specimen: the group's subject
+          <ComponentGroup title="Segmented control: day, week, month">
+            {/* theme-allow control-outside-home — the group's title is the rule's own answer to why:
+              the raw control is the specimen. It is uncontrolled and reads nothing, so there is no
+              filter here to give a home to. */}
+            <SegmentedControl
+              data={[
+                { label: 'Day', value: 'day' },
+                { label: 'Week', value: 'week' },
+                { label: 'Month', value: 'month' },
+              ]}
+            />
+          </ComponentGroup>
+        </Stack>
+        <Stack gap="md" data-compare-column="inputs">
+          <ComponentGroup title="Inputs: text, select and textarea">
+            <Stack gap="sm">
+              <TextInput label="Name" placeholder="Jane Doe" />
+              {/* theme-allow control-outside-home — this Select IS the specimen: the group's subject
                 is how a raw, themed Mantine input renders on a panel surface, beside a TextInput
                 and a Textarea, and it carries no state anything else reads. A bound
                 `SelectFilter` here would show basalt's control instead of the Mantine one the
                 screenshot is for. One of the page's two deliberate waivers; the other is the
                 "Segmented control" group below. */}
-            <Select
-              label="Channel"
-              placeholder="Pick one"
-              data={[
-                { value: 'organic', label: 'Organic' },
-                { value: 'paid', label: 'Paid' },
-                { value: 'referral', label: 'Referral' },
-              ]}
-            />
-            <Textarea label="Notes" placeholder="A few words…" autosize minRows={2} />
-          </Stack>
-        </ComponentGroup>
+              <Select
+                label="Channel"
+                placeholder="Pick one"
+                data={[
+                  { value: 'organic', label: 'Organic' },
+                  { value: 'paid', label: 'Paid' },
+                  { value: 'referral', label: 'Referral' },
+                ]}
+              />
+              <Textarea label="Notes" placeholder="A few words…" autosize minRows={2} />
+            </Stack>
+          </ComponentGroup>
 
-        <ComponentGroup title="Tabs: default and pills" shot="tabs">
-          <Stack gap="md">
-            <Tabs defaultValue="deploys">
-              <Tabs.List>
-                <Tabs.Tab value="deploys">Deploys</Tabs.Tab>
-                <Tabs.Tab value="incidents" data-shot-hover>
-                  Incidents
-                </Tabs.Tab>
-                <Tabs.Tab value="alerts">Alerts</Tabs.Tab>
-              </Tabs.List>
-              <Tabs.Panel value="deploys" pt="sm">
-                <Text size="sm" c="dimmed">
-                  14 deploys this week; the last one shipped at 09:12 UTC.
-                </Text>
-              </Tabs.Panel>
-              <Tabs.Panel value="incidents" pt="sm">
-                <Text size="sm" c="dimmed">
-                  One incident in 30 days, resolved in 18 minutes.
-                </Text>
-              </Tabs.Panel>
-              <Tabs.Panel value="alerts" pt="sm">
-                <Text size="sm" c="dimmed">
-                  Alerts page the on-call engineer after two failed checks.
-                </Text>
-              </Tabs.Panel>
-            </Tabs>
-            <Tabs defaultValue="all" variant="pills">
-              <Tabs.List>
-                <Tabs.Tab value="all">All</Tabs.Tab>
-                <Tabs.Tab value="open">Open</Tabs.Tab>
-                <Tabs.Tab value="closed">Closed</Tabs.Tab>
-              </Tabs.List>
-            </Tabs>
-          </Stack>
-        </ComponentGroup>
-
-        <ComponentGroup title="Segmented control">
-          {/* theme-allow control-outside-home — the group's title is the rule's own answer to why:
-              the raw control is the specimen. It is uncontrolled and reads nothing, so there is no
-              filter here to give a home to. */}
-          <SegmentedControl
-            data={[
-              { label: 'Day', value: 'day' },
-              { label: 'Week', value: 'week' },
-              { label: 'Month', value: 'month' },
-            ]}
-          />
-        </ComponentGroup>
+          <ComponentGroup title="Tabs: default and pills" shot="tabs">
+            <Stack gap="md">
+              <Tabs defaultValue="deploys">
+                <Tabs.List>
+                  <Tabs.Tab value="deploys">Deploys</Tabs.Tab>
+                  <Tabs.Tab value="incidents" data-shot-hover>
+                    Incidents
+                  </Tabs.Tab>
+                  <Tabs.Tab value="alerts">Alerts</Tabs.Tab>
+                </Tabs.List>
+                <Tabs.Panel value="deploys" pt="sm">
+                  <Text size="sm" c="dimmed">
+                    14 deploys this week; the last one shipped at 09:12 UTC.
+                  </Text>
+                </Tabs.Panel>
+                <Tabs.Panel value="incidents" pt="sm">
+                  <Text size="sm" c="dimmed">
+                    One incident in 30 days, resolved in 18 minutes.
+                  </Text>
+                </Tabs.Panel>
+                <Tabs.Panel value="alerts" pt="sm">
+                  <Text size="sm" c="dimmed">
+                    Alerts page the on-call engineer after two failed checks.
+                  </Text>
+                </Tabs.Panel>
+              </Tabs>
+              <Tabs defaultValue="all" variant="pills">
+                <Tabs.List>
+                  <Tabs.Tab value="all">All</Tabs.Tab>
+                  <Tabs.Tab value="open">Open</Tabs.Tab>
+                  <Tabs.Tab value="closed">Closed</Tabs.Tab>
+                </Tabs.List>
+              </Tabs>
+            </Stack>
+          </ComponentGroup>
+        </Stack>
       </SimpleGrid>
 
-      <ComponentGroup title="Table">
+      <ComponentGroup title="Table: metric, value, change">
         <Table withTableBorder striped highlightOnHover>
           <Table.Thead>
             <Table.Tr>
               <Table.Th>Metric</Table.Th>
-              <Table.Th>Value</Table.Th>
-              <Table.Th>Delta</Table.Th>
+              <Table.Th {...NUMERIC}>Value</Table.Th>
+              <Table.Th {...NUMERIC}>Delta</Table.Th>
             </Table.Tr>
           </Table.Thead>
           <Table.Tbody>
             {TABLE_ROWS.map((row) => (
               <Table.Tr key={row.name}>
                 <Table.Td>{row.name}</Table.Td>
-                <Table.Td>{row.value}</Table.Td>
-                <Table.Td>{row.delta}</Table.Td>
+                <Table.Td {...NUMERIC}>{row.value}</Table.Td>
+                <Table.Td {...NUMERIC}>
+                  <DeltaBadge value={row.delta} polarity={row.polarity} />
+                </Table.Td>
               </Table.Tr>
             ))}
           </Table.Tbody>
@@ -347,7 +359,7 @@ export function ComponentsSurfaces() {
 
       <SimpleGrid type="container" cols={{ base: 1, [CONTAINER_KEYS.regular]: 2 }}>
         <ComponentGroup title="Status badges and counts" shot="badges">
-          <Stack gap="sm">
+          <Stack gap="md">
             <Group gap="sm">
               <Badge color="green">Healthy</Badge>
               <Badge color="yellow">Degraded</Badge>
@@ -373,6 +385,15 @@ export function ComponentsSurfaces() {
                 Verified
               </Badge>
               <Badge variant="filled">12</Badge>
+            </Group>
+            {/* Light, outline and dot: the three non-default variants, so the group fills the height
+                its Code partner sets instead of leaving a void under two rows. */}
+            <Group gap="sm">
+              <Badge variant="light">Light</Badge>
+              <Badge variant="outline">Outline</Badge>
+              <Badge variant="dot" color="green">
+                Dot
+              </Badge>
             </Group>
           </Stack>
         </ComponentGroup>

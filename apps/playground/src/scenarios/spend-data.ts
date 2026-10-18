@@ -126,6 +126,9 @@ export const MTD_CHANGE_PCT = (MTD_EUR / PRIOR_MTD_EUR - 1) * 100
 /** Naive end-of-month forecast: the month-to-date daily average held flat to the last day. */
 export const FORECAST_EUR = (MTD_EUR / DAYS_ELAPSED) * MONTH_DAYS
 
+/** What each remaining day can spend to land on the cap: the money left over the days left. */
+export const REMAINING_PER_DAY_EUR = (BUDGET_EUR - MTD_EUR) / (MONTH_DAYS - DAYS_ELAPSED)
+
 /** The month-to-date days, oldest first. */
 export const MTD_DAYS: readonly DayRow[] = DAILY.filter((d) =>
   MTD_RAW.some((r) => r.date.getTime() === d.date.getTime()),

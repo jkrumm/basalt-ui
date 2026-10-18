@@ -35,6 +35,7 @@ import {
   MTD_TOTALS,
   PRIOR_WINDOW_LABEL,
   PROJECTS_MTD,
+  REMAINING_PER_DAY_EUR,
   WINDOW_LABEL,
   YEAR,
   spendBand,
@@ -86,15 +87,33 @@ const BUDGET_LINES = [
   },
 ]
 
+/** The band holding the median day: the last band that starts at or below it. */
+const MEDIAN_BIN_FROM = DISTRIBUTION.findLast((b) => b.from <= MEDIAN_DAY_EUR)?.from
+/** The histogram marks its median as a second series: a vertical reference line is not expressible
+ * (`refLines` are horizontal), and the legend names the band as `Median day €75`. */
 const DISTRIBUTION_BARS: BarsBar<DistributionBin>[] = [
-  { key: 'days', label: 'Days', color: VX.neutral, getValue: (d) => d.days },
+  {
+    key: 'days',
+    label: 'Days',
+    color: VX.neutral,
+    getValue: (d) => (d.from === MEDIAN_BIN_FROM ? null : d.days),
+  },
+  {
+    key: 'median',
+    label: 'Median day',
+    note: fmtEur(MEDIAN_DAY_EUR),
+    color: demoColors.sessions,
+    getValue: (d) => (d.from === MEDIAN_BIN_FROM ? d.days : null),
+  },
 ]
 
-const PACE_EUR_PER_DAY = BUDGET_EUR / MONTH_DAYS
 const CUMULATIVE_DATA = [...CUMULATIVE]
 const DISTRIBUTION_DATA = [...DISTRIBUTION]
 /** Every other band is named on the axis: a range label is wide, and the bars still carry the rest. */
 const DISTRIBUTION_TICKS = DISTRIBUTION.filter((_, i) => i % 2 === 0).map((b) => b.label)
+/** How concentrated the spend is: what the two largest projects carry together. */
+const TOP_PROJECTS = 2
+const TOP_EUR = PROJECTS_MTD.slice(0, TOP_PROJECTS).reduce((a, p) => a + p.spend, 0)
 /** Spend by project: label, month-to-date EUR, share as the muted secondary. */
 const PROJECT_ITEMS = PROJECTS_MTD.map((p) => ({
   key: p.key,
@@ -181,8 +200,8 @@ function SpendStats({ shotState }: ScenarioProps) {
     {
       key: 'forecast',
       caption: 'Forecast',
-      // `tone` states the verdict as a word beside the amount; the qualifier names the date.
-      qualifier: overBudget ? `end of ${MONTH_NAME} · over budget` : `end of ${MONTH_NAME}`,
+      // `tone` inks the amount and the footer says the verdict in words, once; the qualifier names the date.
+      qualifier: `end of ${MONTH_NAME}`,
       info: `Average per day so far (${fmtEur(MTD_EUR / DAYS_ELAPSED)}) held flat for all ${MONTH_DAYS} days. Ignores weekends and bursts.`,
       value: fmtEur(FORECAST_EUR),
       ...cellState(
@@ -206,7 +225,7 @@ function SpendStats({ shotState }: ScenarioProps) {
               { value: FORECAST_EUR - MTD_EUR, label: 'Forecast', forecast: true },
             ]}
             forecastCaption="Forecast"
-            startCaption={`Spent ${fmtEur(MTD_EUR)}`}
+            startCaption="Spent"
           />
         ),
       }),
@@ -215,10 +234,10 @@ function SpendStats({ shotState }: ScenarioProps) {
       key: 'budget',
       caption: 'Budget',
       qualifier: MONTH_LABEL,
-      info: `Monthly cap in EUR. ${fmtEur(PACE_EUR_PER_DAY)} a day keeps spend on pace.`,
+      info: `Monthly cap in EUR. ${fmtEur(REMAINING_PER_DAY_EUR)} a day over the remaining ${MONTH_DAYS - DAYS_ELAPSED} days lands on the cap.`,
       value: fmtEur(BUDGET_EUR),
       loading,
-      ...cellState('The budget', 'No spend to set against the budget yet.'),
+      ...cellState('The budget', `No spend to set against the ${fmtEur(BUDGET_EUR)} budget yet.`),
       ...(!hidden && {
         visual: (
           <Meter
@@ -228,7 +247,7 @@ function SpendStats({ shotState }: ScenarioProps) {
             format={fmtEur}
             // A verdict colour only once the cap is passed.
             {...(left < 0 && { color: VX.status.bad })}
-            startCaption={`Spent ${fmtEur(MTD_EUR)}`}
+            startCaption={`${fmtShare(MTD_EUR / BUDGET_EUR)} used`}
             endCaption={left < 0 ? `${fmtEur(-left)} over` : `${fmtEur(left)} left`}
           />
         ),
@@ -251,8 +270,9 @@ function SpendCharts({ shotState }: ScenarioProps) {
         <ChartCard
           title="Cumulative spend"
           facts={{
-            value: fmtEur(MTD_EUR),
-            period: `spent ${WINDOW_LABEL}, of ${fmtEur(BUDGET_EUR)} budget`,
+            value: fmtEur(MTD_EUR / DAYS_ELAPSED),
+            unit: 'a day',
+            period: `average, ${WINDOW_LABEL}`,
           }}
           info={`Month-to-date spend per day against the ${fmtEur(BUDGET_EUR)} budget. The dashed line holds the ${fmtEur(MTD_EUR / DAYS_ELAPSED)} daily average flat to the last day.`}
           state={chartStateFor(shotState, {
@@ -276,7 +296,7 @@ function SpendCharts({ shotState }: ScenarioProps) {
       </Box>
       <Box data-shot="spend-distribution" h="100%">
         <ChartCard
-          title="Days by total spend per day"
+          title="Daily spend, distribution"
           facts={{ value: fmtEur(MEDIAN_DAY_EUR), unit: 'a day', period: 'median, last 90 days' }}
           info="Each bar counts the days whose total spend across all projects landed in that €10 band (€ a day)."
           state={chartStateFor(shotState, {
@@ -311,7 +331,11 @@ function SpendBreakdown({ shotState }: ScenarioProps) {
         <ChartCard
           title="Spend by project"
           {...(shotState === undefined && {
-            facts: { value: fmtEur(MTD_EUR), period: `all projects, ${WINDOW_LABEL}` },
+            facts: {
+              value: fmtEur(TOP_EUR),
+              unit: `in ${TOP_PROJECTS} projects`,
+              period: `of ${PROJECTS_MTD.length}, ${WINDOW_LABEL}`,
+            },
           })}
           info="Each project's share of month-to-date spend across all models."
           {...cardStateProps(shotState, retry('Spend by project'), PROJECT_PLACEHOLDER)}
@@ -330,11 +354,11 @@ function SpendBreakdown({ shotState }: ScenarioProps) {
       </Box>
       <Box data-shot="top-drivers" h="100%">
         <ChartCard
-          title={`Top drivers, ${WINDOW_LABEL} vs ${PRIOR_WINDOW_LABEL}`}
+          title="Top drivers"
           {...(shotState === undefined && {
             facts: {
               value: fmtEur(DRIVERS.reduce((a, p) => a + p.delta, 0)),
-              period: `added by ${DRIVERS.length} projects vs ${PRIOR_WINDOW_LABEL}`,
+              period: `added by ${DRIVERS.length} projects, ${WINDOW_LABEL} vs ${PRIOR_WINDOW_LABEL}`,
             },
           })}
           info={`The € each project added against ${PRIOR_WINDOW_LABEL}, with the relative change.`}

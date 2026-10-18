@@ -91,11 +91,11 @@ describe('retry', () => {
 })
 
 describe('S2 / S3 / S4 encodings', () => {
-  it('S2 hit rate is a line with the goal as a labelled reference, not bars', () => {
+  // Wave 37 r1 changed this law: six discrete monthly values are bars, not a smoothed line.
+  it('S2 hit rate is one bar per month with the goal as a labelled reference', () => {
     const src = source('./S2Training.tsx')
-    expect(src).toContain('<Lines')
-    expect(src).not.toContain('<Bars')
-    expect(src).not.toContain('HIT_BARS')
+    expect(src).toContain('<Bars')
+    expect(src).not.toContain('<Lines')
     expect(src).toContain('label: `Goal ${GOAL_SESSIONS}`')
     expect(src).toContain('xTicks={HIT_TICKS}')
   })
