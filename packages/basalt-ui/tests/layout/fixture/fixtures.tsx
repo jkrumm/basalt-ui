@@ -1505,6 +1505,11 @@ const S2_LOAD_ZONES = [
   { from: 1.3, to: 1.5, label: 'High', short: 'Hi' },
   { from: 1.5, to: 2, label: 'Overreaching', short: 'Over' },
 ]
+const R2_READINESS_ZONES = [
+  { from: 0, to: 40, label: 'Rest', short: 'R' },
+  { from: 40, to: 70, label: 'Fair', short: 'F' },
+  { from: 70, to: 100, label: 'Good', short: 'G' },
+]
 const LOAD_TICKS = [
   { at: 0, label: '0' },
   { at: 2, label: '2.0' },
@@ -2147,6 +2152,95 @@ function DashFixture(): ReactElement {
       <div data-testid="dash-w37-parts-narrow" style={{ width: 330 }}>
         <Meter
           label="Session mix"
+          max={24}
+          segments={[
+            { value: 12, label: 'Strength' },
+            { value: 8, label: 'Cardio' },
+            { value: 4, label: 'Mobility' },
+          ]}
+          format={(v) => `${v} sessions`}
+        />
+      </div>
+      {/* Wave 37 r2: the S2 and S4 Meters at their 390 card width (390 minus the 20px page gutters). */}
+      {/* theme-allow -- the wrapper width IS the fixture's payload (a container probe) */}
+      <div data-testid="dash-r2-load" style={{ width: 350 }}>
+        <Meter
+          label="Training load"
+          max={2}
+          value={1.1}
+          zones={S2_LOAD_ZONES}
+          ticks={LOAD_TICKS}
+          startCaption={null}
+        />
+      </div>
+      {/* theme-allow -- the wrapper width IS the fixture's payload (a container probe) */}
+      <div data-testid="dash-r2-readiness" style={{ width: 350 }}>
+        <Meter
+          label="Readiness"
+          max={100}
+          value={76}
+          zones={R2_READINESS_ZONES}
+          ticks={[
+            { at: 0, label: '0' },
+            { at: 100, label: '100' },
+          ]}
+          startCaption={null}
+        />
+      </div>
+      {/* theme-allow -- the wrapper width IS the fixture's payload (a container probe) */}
+      <div data-testid="dash-r2-goal" style={{ width: 350 }}>
+        <Meter
+          label="Sessions against the goal"
+          max={28}
+          value={17}
+          target={28}
+          ticks={[{ at: 14, label: 'Pace', caption: '14 sessions by 16 Oct' }]}
+          format={(v) => `${v} sessions`}
+        />
+      </div>
+      {/* Start reading, Pace caption and Target caption collide at this width. */}
+      {/* theme-allow -- the wrapper width IS the fixture's payload (a container probe) */}
+      <div data-testid="dash-r2-crowd" style={{ width: 300 }}>
+        <Meter
+          label="Sessions against the goal"
+          max={28}
+          value={17}
+          target={28}
+          ticks={[{ at: 14, label: 'Pace', caption: '14 sessions by 16 Oct' }]}
+          format={(v) => `${v} sessions`}
+        />
+      </div>
+      {/* theme-allow -- the wrapper width IS the fixture's payload (a container probe) */}
+      <div data-testid="dash-r2-goal-optout" style={{ width: 350 }}>
+        <Meter
+          label="Sessions against the goal"
+          max={28}
+          value={17}
+          target={28}
+          ticks={[{ at: 14 }]}
+          startCaption={null}
+          endCaption={null}
+        />
+      </div>
+      {/* theme-allow -- the wrapper width IS the fixture's payload (a container probe) */}
+      <div data-testid="dash-r2-forecast" style={{ width: 350 }}>
+        <Meter
+          label="Forecast against the budget"
+          max={2000}
+          ticks={[{ at: 1500, label: 'Budget' }]}
+          format={(v) => `€${v}`}
+          segments={[
+            { value: 400, label: 'Spent' },
+            { value: 800, label: 'Forecast', forecast: true },
+          ]}
+          forecastCaption="Forecast"
+          startCaption="Spent"
+        />
+      </div>
+      {/* theme-allow -- the wrapper width IS the fixture's payload (a container probe) */}
+      <div data-testid="dash-r2-mix" style={{ width: 350 }}>
+        <Meter
+          label="Sessions by type"
           max={24}
           segments={[
             { value: 12, label: 'Strength' },
