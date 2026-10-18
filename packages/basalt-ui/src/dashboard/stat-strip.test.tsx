@@ -63,13 +63,15 @@ describe('strip caption line', () => {
     expect(q.parentElement?.children.length).toBe(2)
     expect(q.previousElementSibling?.textContent).toBe('Forecast')
   })
-  test('the caption group never wraps; a narrow cell wraps the qualifier under it', () => {
+  test('the caption group never wraps; the qualifier wraps under it instead of truncating (Wave 38)', () => {
     const lead = /\.lead\s*{([^}]*)}/.exec(CSS)?.[1] ?? ''
     expect(lead).toContain('min-width: 0')
     expect(lead).not.toContain('flex-wrap: wrap')
-    // One line by default; only a narrow cell (container query) wraps the qualifier onto its own line.
-    expect(/\.captionMain\s*{([^}]*)}/.exec(CSS)?.[1]).toContain('flex-wrap: nowrap')
-    expect(CSS).toMatch(/@container basalt-card \(max-width: 239\.9px\)[^]*flex-wrap: wrap/)
+    // The line wraps whole: the qualifier sits beside the caption while it fits, under it otherwise.
+    expect(/\.captionMain\s*{([^}]*)}/.exec(CSS)?.[1]).toContain('flex-wrap: wrap')
+    const qualifier = /\n\.qualifier\s*{([^}]*)}/.exec(CSS)?.[1] ?? ''
+    expect(qualifier).not.toContain('text-overflow')
+    expect(qualifier).not.toContain('nowrap')
     expect(/\.caption\s*{([^}]*)}/.exec(CSS)?.[1]).toContain('text-overflow: ellipsis')
   })
 })

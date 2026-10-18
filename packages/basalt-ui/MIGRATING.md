@@ -1111,7 +1111,16 @@ No export is removed or renamed; three defaults move.
   stay. An entry with no `under`, or one naming no cell, still takes the full row. No opt-out: put the meter in the
   cell's `visual`/`footer` if you want it flush, or drop `under` to keep the old full-width row.
 - **`StatGroup` (grid) folds an odd count to a full-width last cell** below 480px, as the strip already did. Three
-  cards were two plus a half-empty row. Opt-out: none needed for an even count.
+  cards were two plus a half-empty row. Opt-out for an odd count that should stay two-up: pad the group with a
+  cell (an empty `div` spans nothing, so the last row keeps its half), or use `variant="strip"`, which has always
+  spanned. An even count is unchanged.
+- **A qualifier never truncates** (`StatCard` and strip cell). It stays on the caption row while it fits beside the
+  caption and wraps whole to its own line under it otherwise, and wraps again there instead of ending in an
+  ellipsis (the strip's qualifier also loses its `title`). A short qualifier in a narrow cell (`all time`) is no
+  longer stranded alone on its own line. The cost: a qualifier that needs a second line pushes its own value down
+  by that line, so a row-mate's value no longer shares its baseline in that one case. Opt-out: shorten the
+  qualifier, or state the band in `info`.
+- **The `under` footer** is a sibling after the cell's `article`, outside its `aria-labelledby` region.
 - **`BarList` delta column: glyph and figure are one unit**, end-aligned together. The fixed glyph slot and the
   four-character figure slot are gone, so `▲ 9%` and `▲ 13%` share a right edge but no longer share a glyph x.
 

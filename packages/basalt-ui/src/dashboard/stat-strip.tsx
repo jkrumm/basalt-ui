@@ -123,7 +123,8 @@ export type StatStripFooterEntry = {
   key: string
   content: ReactNode
   /** The `key` of the cell this entry qualifies: it renders inside that cell, under its content, at
-   * every width. For a key that names no cell it takes the full width under the grid. */
+   * every width, as a sibling AFTER the article (outside its `aria-labelledby` region). For a key that
+   * names no cell it takes the full width under the grid. */
   under?: string
 }
 
@@ -258,9 +259,7 @@ function StripCell({
               {cell.info !== undefined && <InfoGlyph text={cell.info} />}
             </span>
             {cell.qualifier !== undefined && (
-              <span className={classes.qualifier} title={cell.qualifier}>
-                {cell.qualifier}
-              </span>
+              <span className={classes.qualifier}>{cell.qualifier}</span>
             )}
           </div>
           {cell.action !== undefined && (

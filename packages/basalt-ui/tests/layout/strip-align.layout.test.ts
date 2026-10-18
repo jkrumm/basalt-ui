@@ -394,13 +394,16 @@ layout('StatStrip footer row and StatCard states', () => {
   )
 
   test(
-    'at 390 a long qualifier leaves the value row level and truncates with a title',
+    'at 390 a long qualifier wraps instead of truncating: never clipped, the value sits at most one qualifier line lower (Wave 38)',
     async () => {
       const p = await openFixture(SPEC, PHONE)
       await p.settle()
       const s = await measureCardStates(p)
-      expect(Math.abs(s.valueTops[0]! - s.valueTops[1]!)).toBeLessThanOrEqual(1)
-      expect(s.qualifier?.title).not.toBeNull()
+      // The wrapped qualifier is one extra line (11px × 1.4) under the caption, never a cut one.
+      const dy = s.valueTops[1]! - s.valueTops[0]!
+      expect(dy).toBeGreaterThanOrEqual(0)
+      expect(dy).toBeLessThanOrEqual(20)
+      expect(s.qualifier?.clipped).toBe(false)
     },
     CLOSE_BUDGET_MS,
   )

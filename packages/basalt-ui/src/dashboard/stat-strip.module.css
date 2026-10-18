@@ -104,12 +104,14 @@
   min-height: calc(var(--vx-space-control-height-widget, 1.5rem) * var(--mantine-scale, 1));
 }
 
-/* Caption and qualifier share one line: the caption keeps its words, the qualifier gives way first. */
+/* Caption and qualifier share one line while the qualifier fits; when it does not it wraps whole under the
+ * caption and wraps again rather than truncating (it can be the only place a band is stated). */
 .captionMain {
   display: flex;
   flex: 1 1 0;
-  flex-wrap: nowrap;
+  flex-wrap: wrap;
   align-items: baseline;
+  align-content: flex-start;
   column-gap: var(--vx-space-control-gap);
   min-width: 0;
 }
@@ -140,28 +142,18 @@
 
 /* The lowercase qualifier is the muted sans (mono is for the UPPERCASE caption only). */
 .qualifier {
-  flex: 0 100 auto;
+  flex: 0 1 auto;
   min-width: 0;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
+  overflow-wrap: anywhere;
+  text-wrap: balance;
   font-size: var(--vx-text-micro);
   line-height: 1.4;
   color: var(--vx-muted);
 }
 
-/* A narrow cell (~170px at 390): the qualifier takes its own line under the caption, and when any cell
- * of the strip has a qualifier every cell reserves that line, so values share a baseline. */
+/* A narrow cell (~170px at 390): when any cell of the strip has a qualifier every cell reserves one line for
+ * it, whether it sat beside the caption or wrapped under it, so values share a baseline. */
 @container basalt-card (max-width: 239.9px) {
-  .captionMain {
-    flex-wrap: wrap;
-    align-content: flex-start;
-  }
-
-  .qualifier {
-    flex: 0 0 100%;
-  }
-
   .qualifier {
     line-height: 1.25;
   }
