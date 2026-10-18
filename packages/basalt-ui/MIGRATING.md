@@ -1128,7 +1128,6 @@ Changed behaviour (no API change):
   the parts were unnamed. **Opt out:** none for `segments`; a `value` bar is unaffected.
 - **Part captions never wrap inside themselves** while they fit: each sits under its own segment when
   all of them fit there, else the wrapped list (a caption wider than the row still wraps).
-## Unreleased — BarList keeps a name beside its value
 
 ### `BarList` in a wide container
 
