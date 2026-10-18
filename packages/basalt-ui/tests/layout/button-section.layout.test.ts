@@ -24,9 +24,21 @@ const SPEC: FixtureSpec = {
   buttonSections: true,
 }
 
-/** Level-0 stack steps (`--vx-space-stack-*`). */
-const SCALE = [0, 4, 8, 12, 16, 24]
-const SIZES = ['xs', 'sm', 'md', 'lg', 'xl', 'ctl', 'compact-sm']
+/** The section-side inset per size at level 0 (stack steps 4/8/12/16/24; `buttonSectionX`). */
+const SECTION_INSET: Record<string, number> = {
+  xs: 8,
+  sm: 12,
+  md: 12,
+  lg: 16,
+  xl: 24,
+  ctl: 8,
+  'compact-xs': 4,
+  'compact-sm': 4,
+  'compact-md': 8,
+  'compact-lg': 8,
+  'compact-xl': 12,
+}
+const SIZES = Object.keys(SECTION_INSET)
 const VARIANTS = ['default', 'filled']
 
 type Insets = { bare: [number, number]; left: [number, number]; right: [number, number] }
@@ -57,10 +69,10 @@ layout('Button section insets', () => {
 
   for (const size of SIZES) {
     for (const variant of VARIANTS) {
-      test(`${size}/${variant}: section side is a scale step, the other side is unchanged`, () => {
+      test(`${size}/${variant}: section side takes its mapped step, the other side is unchanged`, () => {
         const r = all[`btn-${size}-${variant}`]!
-        expect(SCALE).toContain(r.left[0])
-        expect(SCALE).toContain(r.right[1])
+        expect(r.left[0]).toBe(SECTION_INSET[size]!)
+        expect(r.right[1]).toBe(SECTION_INSET[size]!)
         expect(r.left[1]).toBe(r.bare[1])
         expect(r.right[0]).toBe(r.bare[0])
       })

@@ -719,7 +719,19 @@ function AsideBar(): ReactElement {
   )
 }
 
-const BUTTON_SECTION_SIZES = ['xs', 'sm', 'md', 'lg', 'xl', 'ctl', 'compact-sm'] as const
+const BUTTON_SECTION_SIZES = [
+  'xs',
+  'sm',
+  'md',
+  'lg',
+  'xl',
+  'ctl',
+  'compact-xs',
+  'compact-sm',
+  'compact-md',
+  'compact-lg',
+  'compact-xl',
+] as const
 
 /** Every size x variant, each bare / with a `leftSection` / with a `rightSection`. */
 function ButtonSectionsFixture(): ReactElement {
