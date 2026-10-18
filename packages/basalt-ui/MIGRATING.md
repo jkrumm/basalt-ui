@@ -1245,6 +1245,7 @@ A gap is stated once. Moved defaults:
 `size="row"` keeps no caption lines, empty or loading. Ring Meters are unchanged (the centre reading stays `—`).
 
 Opt out: none for the caption and qualifier rows (they are layout fixes; shorten the text instead); pass `emptyText="—"` on a `Meter` to keep the dash caption; for a strip cell, drop `reason` (and say it in the caption or qualifier) to keep the bare `—`.
+
 ### `shot detect` judges a nested radius (Wave 38)
 
 `craft-1/off-scale-radius` now also reads every `nested` surface in `metrics.json`, not just the anchor, and names it in the defect (`nested <path> 3px`). The steps are the round's own `scale.radius`, so a `radius` knob shift moves them. An off-scale nested radius is always P1; the anchor's own radius keeps P3 within 1 px of a step. A round that was clean may now list a finding; the fix is the component's radius token, not a suppression.
