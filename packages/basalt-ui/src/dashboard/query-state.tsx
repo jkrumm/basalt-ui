@@ -14,7 +14,7 @@
  * the re-derivation this exists to delete. `LoadingState` / `ErrorState` ship alongside as the
  * escape hatch for a page that must place its branches in different DOM positions.
  */
-import { Center, Group, Loader, Skeleton, Stack, Text } from '@mantine/core'
+import { Center, Group, Loader, Skeleton, Stack, Text, VisuallyHidden } from '@mantine/core'
 import type { CSSProperties, ReactNode } from 'react'
 import { toErrorMessage } from '../common/errors'
 import { cx } from '../common/props'
@@ -86,6 +86,7 @@ export function LoadingState({
         {...(className !== undefined && { className })}
         {...(style !== undefined && { style })}
       >
+        <VisuallyHidden>{label}</VisuallyHidden>
         <Skeleton height={14} width="40%" />
         <Skeleton height={14} />
         <Skeleton height={14} width="75%" />
