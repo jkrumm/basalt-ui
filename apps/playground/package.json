@@ -60,6 +60,9 @@
   "basalt": {
     "roots": [
       "src"
+    ],
+    "exempt": [
+      "src/demo/series.ts"
     ]
   }
 }
