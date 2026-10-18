@@ -462,7 +462,7 @@ layout('Charts — 2.0 layout', () => {
       return {
         total: items.length,
         folded: items.filter((i) => i.hasAttribute('data-legend-folded')).length,
-        count: more && !more.hidden ? Number(more.dataset['count']) : 0,
+        count: more && !more.hidden ? Number(more.textContent?.slice(1)) : 0,
       }
     }, FRAME)
     expect(state.total).toBe(8)

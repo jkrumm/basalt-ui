@@ -29,13 +29,17 @@ const ROLE_ORDER = ['series', 'overlay', 'reference'] as const
  */
 const DOTS_GAP = 30
 
+const byReferenceFirst = <T,>(a: ChartSeries<T>, b: ChartSeries<T>): number =>
+  Number(b.role === 'reference') - Number(a.role === 'reference')
+
 /** The entries a series list derives, in display order (by role when `groups`). */
 export function legendEntries<T>(
   series: readonly ChartSeries<T>[],
   groups: boolean,
 ): ChartSeries<T>[][] {
   const entries = series.filter((s) => s.legend !== false)
-  if (!groups) return entries.length ? [entries] : []
+  // Zones and reference lines, which hue alone cannot name, lead: the compact row folds from its end.
+  if (!groups) return entries.length ? [entries.toSorted(byReferenceFirst)] : []
   return ROLE_ORDER.map((role) => entries.filter((s) => (s.role ?? 'series') === role)).filter(
     (g) => g.length > 0,
   )
@@ -190,10 +194,20 @@ export type ChartLegendProps<T> = {
   hideAtWide?: boolean
 }
 
+const VISUALLY_HIDDEN = {
+  position: 'absolute',
+  width: '1px',
+  height: '1px',
+  overflow: 'hidden',
+  clipPath: 'inset(50%)',
+  whiteSpace: 'nowrap',
+} as const
+
 /**
  * The compact legend is ONE row (the stylesheet sets `nowrap` below 480px). Entries that do not fit
- * fold into a `+N` chip, the last in display order first; display order puts the reference/zone
- * entries (which hue alone cannot name) ahead of the series (the title and tooltip name those).
+ * fold into a `+N` chip (named for assistive tech by the folded labels), the last entry first. The
+ * entries are in display order: the reference/zone entries, which hue alone cannot name, lead the
+ * series (the title and tooltip name those).
  * Measured on the node, never in React state, so a hover or a resize does not re-render.
  */
 function foldLegend(row: HTMLElement): void {
@@ -203,9 +217,6 @@ function foldLegend(row: HTMLElement): void {
   more?.setAttribute('hidden', '')
   if (more === null || getComputedStyle(row).flexWrap !== 'nowrap') return
   const display = items
-    .map((el, i) => ({ el, i, ref: el.dataset['legendRole'] === 'reference' ? 0 : 1 }))
-    .toSorted((a, b) => a.ref - b.ref || a.i - b.i)
-    .map((o) => o.el)
   const folded: HTMLElement[] = []
   while (row.scrollWidth > row.clientWidth + 0.5 && folded.length < display.length - 1) {
     const last = display[display.length - 1 - folded.length]
@@ -213,8 +224,14 @@ function foldLegend(row: HTMLElement): void {
     last.setAttribute('data-legend-folded', '')
     folded.push(last)
     more.removeAttribute('hidden')
-    more.dataset['count'] = String(folded.length)
-    more.title = folded.map((f) => f.textContent).join(', ')
+    const names = folded.map((f) => f.textContent).join(', ')
+    more.textContent = `+${folded.length}`
+    more.title = names
+    // The folded labels, visually hidden: assistive tech reads `+2: Caution, Danger`.
+    const hiddenNames = document.createElement('span')
+    hiddenNames.textContent = `: ${names}`
+    Object.assign(hiddenNames.style, VISUALLY_HIDDEN)
+    more.append(hiddenNames)
   }
 }
 

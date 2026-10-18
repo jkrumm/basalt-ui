@@ -33,10 +33,6 @@
     --vx-hit-gap: var(--bc-legend-gap);
   }
 
-  .auto [data-legend-role='reference'] {
-    order: 0 !important;
-  }
-
   .auto .dot {
     display: none;
   }
@@ -53,19 +49,10 @@
   }
 }
 
-/* The compact legend's order and fold (`foldLegend`, which only folds while the row is `nowrap`).
- * Wide keeps DOM order and every entry (`order` resets in the 480px query above). */
-/* `!important`: an entry's inline `all: unset` (legend.tsx) would otherwise reset both. */
-.auto [data-legend-role='reference'] {
-  order: -1 !important;
-}
-
+/* The compact fold (`foldLegend`, which only folds while the row is `nowrap`); wide keeps every entry.
+ * `!important`: an entry's inline `all: unset` (legend.tsx) would otherwise reset `display`. */
 .auto [data-legend-folded] {
   display: none !important;
-}
-
-.auto [data-legend-more]::after {
-  content: '+' attr(data-count);
 }
 
 .auto [data-legend-more] {
