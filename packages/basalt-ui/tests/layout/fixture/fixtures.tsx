@@ -1491,6 +1491,20 @@ const WIDE_ROWS = [
   { label: 'Prune stale sessions', value: 31 },
 ]
 
+/** S3-style rows: a very short name, a ~60 character one, and the lengths between. */
+const VARIED_ROWS = [
+  { label: 'Sleep', value: 412, secondary: '▲ 9%' },
+  {
+    label: 'Upgrade the dependency graph resolver and its lockfile migration · basalt-ui',
+    value: 288,
+    secondary: '+€7',
+  },
+  { label: 'Drop the legacy exporter · argo', value: 190, secondary: '▼ 12%' },
+  { label: 'Rebuild the cost report', value: 120, secondary: '+€112' },
+  { label: 'HRV', value: 64, secondary: '▲ 2%' },
+  { label: 'Prune stale sessions', value: 31 },
+]
+
 function DashFixture(): ReactElement {
   const items = [
     {
@@ -1549,6 +1563,26 @@ function DashFixture(): ReactElement {
         style={{ width: 1400, padding: 16, boxSizing: 'border-box' }}
       >
         <BarList label="Top drivers" format={(v) => `€${v}`} items={WIDE_ROWS} />
+      </div>
+      {/* theme-allow -- the wrapper width IS the fixture's payload (a container probe) */}
+      <div
+        data-testid="dash-bar-varied-1400"
+        style={{ width: 1400, padding: 16, boxSizing: 'border-box' }}
+      >
+        <BarList label="Top drivers" format={(v) => `€${v}`} items={VARIED_ROWS} />
+      </div>
+      {/* theme-allow -- the wrapper width IS the fixture's payload (a container probe) */}
+      <div
+        data-testid="dash-bar-varied-528"
+        style={{ width: 528, padding: 16, boxSizing: 'border-box' }}
+      >
+        <BarList label="Top drivers" format={(v) => `€${v}`} items={VARIED_ROWS} />
+      </div>
+      {/* theme-allow -- the wrapper width IS the fixture's payload (a container probe) */}
+      <div data-testid="dash-bar-flex" style={{ display: 'flex', width: 900 }}>
+        <BarList label="Top drivers" format={(v) => `€${v}`} items={WIDE_ROWS} />
+        {/* theme-allow -- the sibling's width IS the fixture's payload (a flex-row probe) */}
+        <div style={{ flex: 'none', width: 120 }}>Sibling</div>
       </div>
       {/* theme-allow -- the wrapper width IS the fixture's payload (a container probe) */}
       <div data-testid="dash-meter-orphans" style={{ width: 96 }}>

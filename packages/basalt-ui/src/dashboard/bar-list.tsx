@@ -106,19 +106,23 @@ export function BarList({
 }: BarListProps) {
   if (loading) {
     return (
-      <div className={cx(classes.root, className)} style={style} aria-busy="true">
-        <VisuallyHidden>{`Loading ${label}`}</VisuallyHidden>
-        {Array.from({ length: loadingRows }, (_, i) => (
-          <Skeleton key={i} className={classes.skeletonRow} data-bar-skeleton />
-        ))}
+      <div className={cx(classes.frame, className)} style={style}>
+        <div className={classes.root} aria-busy="true">
+          <VisuallyHidden>{`Loading ${label}`}</VisuallyHidden>
+          {Array.from({ length: loadingRows }, (_, i) => (
+            <Skeleton key={i} className={classes.skeletonRow} data-bar-skeleton />
+          ))}
+        </div>
       </div>
     )
   }
   if (items.length === 0) {
     return (
-      <output className={cx(classes.root, className)} style={style} aria-label={label}>
-        <span className={classes.empty}>{emptyText}</span>
-      </output>
+      <div className={cx(classes.frame, className)} style={style}>
+        <output className={classes.root} aria-label={label}>
+          <span className={classes.empty}>{emptyText}</span>
+        </output>
+      </div>
     )
   }
 

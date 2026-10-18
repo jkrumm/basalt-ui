@@ -1133,10 +1133,13 @@ Changed behaviour (no API change):
 ### `BarList` in a wide container
 
 A thin `BarList` in a container 480px or wider now lays each row out as `[label][value][secondary][track]`:
-the label column fits the longest label (capped at 40%, truncating with its `title`), value and secondary
+the label column fits the longest label (capped at 40% or 14rem, truncating with its `title`), value and secondary
 are right-aligned and shared by every row, and the bar track takes the remaining width on the one shared
-scale. Compact containers keep the stacked layout. The root element is now a `div` wrapping the `ul`
-(`className` / `style` land on the wrapper). Opt-out: `variant="inline"` is unchanged; to keep the stacked
+scale. Compact containers keep the stacked layout. Every state (list, loading, empty) is now a `div`
+frame around the list, and `className` / `style` land on that frame. The frame is a size container
+named `basalt-card` (the only names the theme guard permits) with `inline-size: 100%`: it shadows an
+enclosing card's container for the list's descendants only, and the 480px threshold measures the list's
+own width. Opt-out: `variant="inline"` is unchanged; to keep the stacked
 thin layout in a wide card, constrain the list's width below 480px.
 
 ## 2.21.0 — strip cell state, one Retry, and the marker reading
