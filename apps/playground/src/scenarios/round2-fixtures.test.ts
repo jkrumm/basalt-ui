@@ -54,7 +54,7 @@ describe('S4 spend', () => {
       mount(createElement(SpendScenario, { shotState: undefined })),
       'strip-forecast',
     )
-    const footer = cell?.lastElementChild?.textContent ?? ''
+    const footer = cell?.querySelector('[data-strip-footer]')?.textContent ?? ''
     expect(footer).toBe('€1,152 over budget')
     expect(footer.split(' ').length).toBeLessThanOrEqual(4)
   })
