@@ -12,7 +12,7 @@
  * one strip whose cells derive their own anchors: `month-to-date` → `strip-month-to-date`,
  * `forecast` → `strip-forecast`, `budget` → `strip-budget`.
  */
-import { Box, SimpleGrid, Stack, Text } from '@mantine/core'
+import { Box, SimpleGrid, Stack } from '@mantine/core'
 import { BarList, DeltaBadge, Meter, PageBar, StatGroup } from 'basalt-ui'
 import type { StatStripCell } from 'basalt-ui'
 import { Bars, ChartCard, Lines, Sparkline } from 'basalt-ui/charts'
@@ -40,9 +40,8 @@ import {
   spendBand,
 } from './spend-data'
 import type { CumulativeRow, DistributionBin } from './spend-data'
-import { RETRY_ACTION } from './retry-action'
-import { fmtEur, fmtInt, fmtShare, fmtSignedEur } from './fixture-utils'
-import { cardStateProps, chartStateFor, retryCopy } from './shot-state'
+import { fmtEur, fmtEurCompact, fmtShare, fmtSignedEur } from './fixture-utils'
+import { cardStateProps, chartStateFor, noop, retryCopy } from './shot-state'
 import type { ScenarioProps } from './shot-state'
 
 const CUMULATIVE_SERIES: ChartSeries<CumulativeRow>[] = [
@@ -125,7 +124,6 @@ const TRACK_END_EUR =
 /** Body height of the error placeholder for the BarList cards, so a failed card stays near its resting size. */
 const PROJECT_PLACEHOLDER = 190
 
-const USAGE_ERROR = 'The usage export did not answer. Retry, or reconnect it in Settings.'
 const USAGE_EMPTY = 'No spend recorded in the window. Check that the usage export is connected.'
 
 const retry = (what: string): string => retryCopy(what, 'usage export')
@@ -135,11 +133,16 @@ function SpendStats({ shotState }: ScenarioProps) {
   const left = BUDGET_EUR - MTD_EUR
   const overBudget = isAtRest && FORECAST_EUR > BUDGET_EUR
 
-  const none = shotState === 'empty' || shotState === 'error'
   const loading = shotState === 'loading'
-  const note = shotState === 'error' ? USAGE_ERROR : shotState === 'empty' ? USAGE_EMPTY : undefined
   // Loading shows the hero skeleton alone: a visual over placeholder data would contradict it.
-  const hidden = none || loading
+  const hidden = shotState !== undefined
+  // Empty and error say why in the cell itself, with the Retry on a failure.
+  const cellState = (what: string, reason: string): Pick<StatStripCell, 'state'> =>
+    shotState === 'error'
+      ? { state: { kind: 'error', error: new Error(retry(what)), onRetry: noop } }
+      : shotState === 'empty'
+        ? { state: { kind: 'empty', reason } }
+        : {}
 
   // One reading split three ways — spent, where it lands, the cap — so one strip, not three cards.
   const cells: StatStripCell[] = [
@@ -148,8 +151,9 @@ function SpendStats({ shotState }: ScenarioProps) {
       caption: 'Spend',
       qualifier: 'month to date',
       info: `All projects and models, ${WINDOW_LABEL} ${YEAR}, in EUR. The dashed line is the daily mean.`,
-      value: none ? null : fmtEur(MTD_EUR),
+      value: fmtEur(MTD_EUR),
       loading,
+      ...cellState('Spend', USAGE_EMPTY),
       ...(isAtRest && {
         delta: (
           <DeltaBadge
@@ -180,7 +184,11 @@ function SpendStats({ shotState }: ScenarioProps) {
       // `tone` states the verdict as a word beside the amount; the qualifier names the date.
       qualifier: overBudget ? `end of ${MONTH_NAME} · over budget` : `end of ${MONTH_NAME}`,
       info: `Average per day so far (${fmtEur(MTD_EUR / DAYS_ELAPSED)}) held flat for all ${MONTH_DAYS} days. Ignores weekends and bursts.`,
-      value: none ? null : fmtEur(FORECAST_EUR),
+      value: fmtEur(FORECAST_EUR),
+      ...cellState(
+        'The forecast',
+        'No forecast without spend. It appears after the first day of spend.',
+      ),
       ...(overBudget && { tone: 'bad' as const }),
       loading,
       ...(overBudget && {
@@ -208,8 +216,9 @@ function SpendStats({ shotState }: ScenarioProps) {
       caption: 'Budget',
       qualifier: MONTH_LABEL,
       info: `Monthly cap in EUR. ${fmtEur(PACE_EUR_PER_DAY)} a day keeps spend on pace.`,
-      value: none ? null : fmtEur(BUDGET_EUR),
+      value: fmtEur(BUDGET_EUR),
       loading,
+      ...cellState('The budget', 'No spend to set against the budget yet.'),
       ...(!hidden && {
         visual: (
           <Meter
@@ -227,27 +236,7 @@ function SpendStats({ shotState }: ScenarioProps) {
     },
   ]
 
-  // The empty / error note is one line in the footer row, not repeated in every cell.
-  return (
-    <StatGroup
-      variant="strip"
-      label="Spend against budget"
-      cols={3}
-      cells={cells}
-      {...(note !== undefined && {
-        footer: [
-          {
-            key: 'note',
-            content: (
-              <Text size="sm" c="dimmed">
-                {note}
-              </Text>
-            ),
-          },
-        ],
-      })}
-    />
-  )
+  return <StatGroup variant="strip" label="Spend against budget" cols={3} cells={cells} />
 }
 
 /**
@@ -270,14 +259,14 @@ function SpendCharts({ shotState }: ScenarioProps) {
             empty: 'No spend this month. Connect a project to the usage export.',
             error: retry('Cumulative spend'),
           })}
-          {...(shotState === 'error' && { stateAction: RETRY_ACTION })}
+          {...(shotState === 'error' && { onRetry: noop })}
         >
           <Box data-shot-hover data-shot-tooltip>
             <Lines<CumulativeRow, Date>
               data={CUMULATIVE_DATA}
               ariaLabel={`Cumulative spend, ${MONTH_LABEL}, EUR, against the ${fmtEur(BUDGET_EUR)} budget`}
               x={(d) => d.date}
-              y={{ format: fmtInt, domain: [0, TRACK_END_EUR] }}
+              y={{ format: fmtEurCompact, domain: [0, TRACK_END_EUR] }}
               series={CUMULATIVE_SERIES}
               refLines={BUDGET_LINES}
               tooltip={{ rows: forecastRow }}
@@ -294,7 +283,7 @@ function SpendCharts({ shotState }: ScenarioProps) {
             empty: 'No days to bin yet. The histogram needs at least one day of spend.',
             error: retry('The distribution'),
           })}
-          {...(shotState === 'error' && { stateAction: RETRY_ACTION })}
+          {...(shotState === 'error' && { onRetry: noop })}
         >
           <Box data-shot-hover data-shot-tooltip>
             <Bars
