@@ -189,6 +189,22 @@ function rowSuite(vp: Viewport) {
     }
   })
 
+  test('the S2 training-load zones: "Overreaching" shows as "Over", clear of "High"/"Hi"', async () => {
+    const m = await measure(p, 'dash-zl-s2')
+    const named = [...m.labels.map((l) => l.name), ...m.shorts.map((s) => s.name)]
+    expect(named).toContain('Overreaching')
+    expect(m.shorts.map((s) => s.text)).toContain('Over')
+    expect(m.labels.filter((l) => l.holding).map((l) => l.name)).toEqual(['Optimal'])
+    for (const name of ['Low', 'Optimal', 'High', 'Overreaching'])
+      expect(m.described).toContain(name)
+    const all = [...m.labels, ...m.shorts, ...m.ticks]
+    for (const [i, a] of all.entries()) {
+      for (const b of all.slice(i + 1)) {
+        expect(a.right <= b.left + SUBPIXEL || b.right <= a.left + SUBPIXEL).toBe(true)
+      }
+    }
+  })
+
   test('a tick beats a zone name it would touch; the name stays described', async () => {
     const m = await measure(p, 'dash-zl-clash')
     expect(m.ticks.map((t) => t.name)).toContain('Rest')
