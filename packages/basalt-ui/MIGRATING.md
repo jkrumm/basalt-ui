@@ -1125,6 +1125,7 @@ No export is removed or renamed; four defaults move.
 - **The `under` footer** is a sibling after the cell's `article`, outside its `aria-labelledby` region.
 - **`BarList` delta column: glyph and figure are one unit**, end-aligned together. The fixed glyph slot and the
   four-character figure slot are gone, so `▲ 9%` and `▲ 13%` share a right edge but no longer share a glyph x.
+
 ### Nested radii (Wave 38)
 
 The `ViewTabs` / `SegmentedControl` indicator and an inline `Code` inside an `Alert` sat 3 px under
