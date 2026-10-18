@@ -78,7 +78,9 @@
 /*
  * A bare `<Text size="xs">` summary line (argo's strength diagnostics shell: title 15 + chart-card
  * title 13 + summary 12 + chart ticks and legend 11 = four sizes) joins the chart text step, so the
- * shell stays at three: 15, 13, 11. Only a direct `Text` child is capped; a `Group` of stats keeps
+ * shell stays at three: 15, 13, 11. Mantine's `Text` writes `--text-fz` inline from its `size` prop,
+ * so no inherited custom property can reach it: this rule sets `font-size` itself, and the inline
+ * `--text-fz` is then unused. Only a direct `Text` child is capped; a `Group` of stats keeps
  * the sizes its own parts ask for.
  */
 .summary > :global(.mantine-Text-root) {

@@ -1182,11 +1182,13 @@ No export is removed. `Meter` gains one optional prop, `readingAt`; six caption 
 | Categorical part captions that did not fit under their segments wrapped, which could leave one entry alone on a second row                                                                | One row when they fit, else a grid with the most columns that fit and no lone entry on the last row                                                                              | none                                                                                                                 |
 ### Section summary line (Wave 38)
 
-A bare `<Text>` passed as `Section summary` is set at the chart text step (11), not the size it asks
-for. argo's strength diagnostics shell (`summary={<Text size="xs">}`) counted four sizes: title 15,
-chart-card title 13, summary 12, chart ticks and legend 11; it is now 15, 13, 11. Only a direct
-`Text` child of the summary slot is capped; a `Group` of stats keeps its own sizes. Opt out: wrap
-the text in a `<span>` or a `Group`.
+**Before:** a bare `<Text size="xs">` passed as `Section summary` rendered at the size it asked for
+(12). argo's strength diagnostics shell then counted four sizes: title 15, chart-card title 13,
+summary 12, chart ticks and legend 11.
+
+**Now:** that text renders at 11 (the chart text step) whatever its `size`, so the shell is 15, 13, 11. Only a direct `Text` child of the summary slot is capped; a `Group` of stats keeps its own sizes.
+
+**Opt out:** wrap the text in a `<span>` or a `Group`.
 
 ## 2.23.0 — Wave 37, argo's friction II
 

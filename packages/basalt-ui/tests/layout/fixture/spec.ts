@@ -394,9 +394,9 @@ export type FixtureSpec = {
     radiusTabs?: true
   }
   /**
-   * Wave 38: argo's Strength-page Section shells (`data-testid="w38-strength-*"`): a titled Section
-   * with a summary, a two-up grid of `ChartCard`s (info, facts, subtitle, a multi-series `Lines`
-   * with a legend), a Meter with zones and a Sparkline with a labelled reference.
+   * Wave 38: argo's Strength-page Section shells. `data-testid="w38-strength-plain"` is a titled
+   * Section over two `ChartCard`s (title + info, a three-series `Lines` with a legend);
+   * `w38-strength-diagnostics` is a collapsible Section with an `xs` `Text` summary over one card.
    */
   w38Strength?: true
   /** Renders a `PageAside` (and, by default, the `PageBar` row 2 it projects into below `sm`). */
