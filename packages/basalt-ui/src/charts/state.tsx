@@ -76,7 +76,9 @@ const emptyLabel = (state: ChartState | undefined): string =>
  * `<Suspense>` fallback built from one) occupies the final chart's height. */
 export function ChartPlaceholder(props: {
   state: ChartState | undefined
-  height?: ChartBoxHeight
+  /** `'content'`: error and empty end at their content (a list or Meter body, no chart to keep the
+   * frame for); the chart height law and a stated height keep D37's box. Pending always keeps a box. */
+  height?: ChartBoxHeight | 'content'
   /** Error only: the shared Retry button, the same one `ErrorState` renders. */
   onRetry?: () => void
   /** A refetch is in flight: Retry is inert and marked busy. */
@@ -95,11 +97,18 @@ export function ChartPlaceholder(props: {
   // An error keeps the chart's height as a floor (the frame does not jump, `ssr-contract`) and may
   // grow past it rather than clip its action; its anatomy is top-aligned, so the room is plain
   // card below the content, not a block of text floating mid-card.
-  const fit = (node: ReactElement): ReactElement => (
-    <ChartBox height={props.height} {...(kind === 'error' && { className: growClass })}>
-      {node}
-    </ChartBox>
-  )
+  const { height } = props
+  const fit = (node: ReactElement): ReactElement =>
+    height === 'content' && kind !== 'pending' ? (
+      node
+    ) : (
+      <ChartBox
+        height={height === 'content' ? undefined : height}
+        {...(kind === 'error' && { className: growClass })}
+      >
+        {node}
+      </ChartBox>
+    )
   if (kind === 'pending')
     return fit(
       <output aria-label="Loading chart" aria-busy="true" className={stateClass} style={style} />,

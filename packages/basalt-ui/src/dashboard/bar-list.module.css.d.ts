@@ -15,5 +15,6 @@ declare const classes: {
   readonly secondary: string
   readonly empty: string
   readonly skeletonRow: string
+  readonly skeletonFill: string
 }
 export default classes
