@@ -1136,7 +1136,7 @@ side now takes the nearest stack step at level 0: xs 8, sm 12, md 12, lg 16, xl 
 compact-xs/sm 4, compact-md/lg 8, compact-xl 12 (density-scaled). The side without a section is
 unchanged.
 
-**Opt out:** set `--vx-button-section-x` on the Button (`vars` or `style`) — e.g.
+**Opt out:** set `--button-section-padding-x` on the Button (`vars` or `style`) — e.g.
 `calc(var(--button-padding-x) / 1.5)` restores Mantine's value.
 
 ## 2.20.0 — the sparkline reference and readout

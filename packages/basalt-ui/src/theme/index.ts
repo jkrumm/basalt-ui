@@ -690,7 +690,7 @@ function buildTheme(data: PaletteData, options: BuildThemeOptions = {}): Mantine
                   ? 'calc(var(--vx-space-control-height) * var(--mantine-scale))'
                   : undefined,
               '--button-padding-x': buttonPaddingX(props.size),
-              '--vx-button-section-x': buttonSectionX(props.size),
+              '--button-section-padding-x': buttonSectionX(props.size),
               '--button-color': ink.color,
               '--button-hover': ink.hover,
               '--button-bg': ink.bg,
