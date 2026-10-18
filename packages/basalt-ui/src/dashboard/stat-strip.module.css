@@ -230,7 +230,7 @@
   --basalt-spark-readout-h: 1.125rem;
 }
 
-.visual:has([data-basalt-sparkline]) {
+.visual:has([data-basalt-sparkline], [data-basalt-chart]) {
   padding-top: max(0px, calc(var(--basalt-spark-readout-h) - var(--vx-space-stack-sm)));
 }
 
