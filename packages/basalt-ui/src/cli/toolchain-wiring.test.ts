@@ -679,6 +679,8 @@ describe('fonts:css — the typeface half of the token layer', () => {
     expect(css).toContain('--basalt-font-head:')
     expect(css).toContain('--basalt-font-mono:')
     expect(css).toContain('Nunito Sans Variable')
+    expect(css).toMatch(/@font-face\s*\{[^}]*'Basalt Head Digits'[^}]*unicode-range: U\+0030-0039/)
+    expect(css).toMatch(/--basalt-font-head: 'Basalt Head Digits', 'Hubot Sans Variable'/)
     expect(css.endsWith('}\n')).toBe(true)
   })
 

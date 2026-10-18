@@ -623,7 +623,13 @@ for (const pkg of PACKAGES) {
   if (at === -1) throw new Error(`${hook} (@mantine/${pkg}) is missing from the bundled CSS`)
   if (at < mantine || at > basalt) throw new Error(`${hook} (@mantine/${pkg}) is outside @layer mantine{…}: its CSS is unlayered`)
 }
-console.log('styles.css + Mantine layer CSS OK (shipped import)')
+// The head-digits face's url must resolve from the packed tarball: Vite emits the font file as an asset.
+if (!/@font-face\s*\{[^}]*Basalt Head Digits/.test(css)) throw new Error("the shipped styles.css lacks the 'Basalt Head Digits' @font-face")
+const digitsFont = bundle.output.find((o) => /nunito-sans-latin-wght-normal.*\.woff2$/.test(o.fileName))
+if (!digitsFont) throw new Error('the Basalt Head Digits url() did not resolve to a Nunito woff2 asset in the bundled CSS')
+const face = out.match(/@font-face\s*\{[^}]*Basalt Head Digits[^}]*\}/)?.[0] ?? ''
+if (!face.includes(digitsFont.fileName)) throw new Error('the bundled Basalt Head Digits @font-face does not point at the emitted woff2')
+console.log('styles.css + Mantine layer CSS OK (shipped import); head-digits font resolves')
 JS
 node styles-proof.mjs
 

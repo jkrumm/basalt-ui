@@ -67,7 +67,7 @@ layout('Wave 37 chrome', () => {
       expect((await probe(p, 'w37-badge-hex')).dotBg).toBe('rgb(224, 49, 49)')
     })
 
-    test(`${scheme}: a module-styled head-face title (Callout) resolves the zero feature off`, async () => {
+    test(`${scheme}: a module-styled head-face title (Callout) leads with the sans digit face`, async () => {
       const p = await openFixture(specFor(scheme), DESKTOP_1440)
       await p.settle()
       const title = await p.raw.evaluate(() => {
@@ -78,9 +78,9 @@ layout('Wave 37 chrome', () => {
         const style = getComputedStyle(el)
         return { family: style.fontFamily, features: style.fontFeatureSettings, tag: el.tagName }
       })
-      expect(title.family).toContain('Hubot Sans')
+      expect(title.family).toMatch(/^"?Basalt Head Digits"?, "?Hubot Sans/)
       expect(title.tag).not.toMatch(/^H[1-6]$/)
-      expect(title.features).toBe('"zero" 0')
+      expect(title.features).not.toContain('"zero" 1')
     })
 
     test(`${scheme}: variant="dot" keeps its own dot`, async () => {

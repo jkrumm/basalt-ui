@@ -1096,6 +1096,22 @@ A `StatCard` / strip-cell sparkline slot still reserves the old readout line abo
 A histogram that marks its median as a second series names the count through the series' own
 `formatValue` (`(v) => \`${v} days\``): a `Bars` tooltip row already takes it, and a bin lists only
 the series that has a value for it.
+## Unreleased — Wave 37, heading numerals
+
+No export is removed. One default moves.
+
+### Heading digits come from the sans face
+
+Hubot Sans has no `zero` OpenType feature and its default zero is slashed, so the 2.22.0
+`:root { font-feature-settings: 'zero' 0 }` reset was a no-op and head-face titles still showed
+`3Ø days`. `styles.css` now declares `@font-face 'Basalt Head Digits'` over the Nunito Sans variable
+file, `unicode-range: U+0030-0039`, and `--basalt-font-head` leads with it: Hubot draws the letters,
+Nunito the digits, in every h1–h6, Mantine `Title` and CSS-module title that reads the var. The no-op
+reset is removed. `basalt-ui fonts:css` emits the same face.
+
+**Opt out:** set your own `--basalt-font-head` (or `createBasaltTheme(_, { fonts: { head } })`); a
+head stack that does not lead with `'Basalt Head Digits'` draws Hubot's own digits, slashed zero
+included. The face costs no extra download beyond the Nunito latin file `styles.css` already loads.
 
 ## 2.22.0 — Wave 37, argo's friction II
 
