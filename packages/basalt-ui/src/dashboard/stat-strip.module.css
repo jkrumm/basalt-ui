@@ -33,14 +33,18 @@
   min-width: 0;
   padding: var(--vx-space-stack-md);
   border-inline-start: 1px solid var(--vx-divider);
-  /* Transparent on the first cell so every cell's content starts at the same offset. */
-  border-block-start: 1px solid transparent;
 }
 
 /* The top line is adjacent-sibling: the first cell draws none (it leads the strip), every later one
  * draws its top edge, which is the rule between wrapped rows. */
 .cell + .cell {
-  border-block-start-color: var(--vx-divider);
+  border-block-start: 1px solid var(--vx-divider);
+}
+
+/* The first cell has no top rule; the pixel it would take is padding, so its content starts level
+ * with its siblings'. */
+.cell:first-child {
+  padding-block-start: calc(var(--vx-space-stack-md) + 1px);
 }
 
 /* Cells align by PART. Every cell spans the same five tracks of `.cells` (caption, hero, visual, rows,
