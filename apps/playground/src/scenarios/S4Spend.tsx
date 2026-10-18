@@ -355,6 +355,7 @@ function SpendBreakdown({ shotState }: ScenarioProps) {
               items={shotState === 'empty' ? [] : PROJECT_ITEMS}
               format={fmtEur}
               loading={shotState === 'loading'}
+              loadingRows={PROJECT_ITEMS.length}
               emptyText={`No project spent anything ${WINDOW_LABEL}. Connect one to the usage export.`}
             />
           </Box>
@@ -378,6 +379,7 @@ function SpendBreakdown({ shotState }: ScenarioProps) {
               items={shotState === 'empty' ? [] : DRIVER_ITEMS}
               format={fmtSignedEur}
               loading={shotState === 'loading'}
+              loadingRows={DRIVER_ITEMS.length}
               emptyText={
                 shotState === 'empty'
                   ? USAGE_EMPTY

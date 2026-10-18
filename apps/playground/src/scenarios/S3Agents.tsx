@@ -338,6 +338,7 @@ function QueueRow({ shotState }: ScenarioProps) {
               accentLeader
               variant="thin"
               loading={shotState === 'loading'}
+              loadingRows={STUCK_ITEMS.length}
               emptyText="Nothing is waiting on you. New items appear here when an agent needs a decision."
             />
           </Box>

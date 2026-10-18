@@ -339,7 +339,7 @@ function LoadCard({ shotState }: ScenarioProps) {
   // Fill the row beside the taller sibling only while the body is drawn; an empty or failed card ends at its content.
   const fills = shotState === undefined || shotState === 'loading'
   return (
-    <Box data-shot="training-load" flex={1}>
+    <Box data-shot="training-load" {...(fills && { flex: 1 })}>
       <ChartCard
         {...(fills && { style: FILL })}
         title="Training load"
@@ -413,6 +413,7 @@ function ReadinessRow({ shotState }: ScenarioProps) {
                   max={100}
                   items={READINESS_ITEMS}
                   loading={loading}
+                  loadingRows={READINESS_ITEMS.length}
                 />
               </Box>
             )}
@@ -440,6 +441,7 @@ function ReadinessRow({ shotState }: ScenarioProps) {
               format={fmtKg}
               accentLeader
               loading={loading}
+              loadingRows={LIFT_ITEMS.length}
               emptyText={`No strength session logged ${WINDOW_LABEL}. Log a lift to rank your lifts.`}
             />
           </Box>
