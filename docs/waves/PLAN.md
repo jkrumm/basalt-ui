@@ -1318,6 +1318,8 @@ Spec: SPEC § 3, § 4, § 6.3, § 6.4, D1, D2. Scenarios S4 and S2 (build the S2
 
 **Renumbered 2026-10-17:** Waves 35 and 36 below were inserted for the argo-first loop and the UX-first
 procedure. The old Waves 36–41 are now 37–42, so a wave number of 36 or more cited in SPEC.md or AUDIT.md reads one higher.
+**Renumbered 2026-10-18:** Wave 37 (argo's friction II) was inserted; the old Waves 37–42 are now 38–43, so a wave
+number of 37 or more cited in SPEC.md or AUDIT.md (and 36 or more from before 2026-10-17) reads one higher again.
 The old Wave 35's card recipes moved into Wave 38 (record page) and the strip into the new Wave 35.
 
 ## Wave 35 — argo's friction: typography, primitive props and the strip <!-- status: done -->
@@ -1460,7 +1462,46 @@ catalogue). This wave takes over old Wave 39's catalogue-shipping step.
 - **Next — stopped: Wave 36 closed; orchestrated, nothing spawned; this wave released nothing itself.** Owner review of the boards
   (`.design-parity/w36/r0`–`r6`, `trial-v0`) is the mother's.
 
-## Wave 37 — Data tables, responsive <!-- status: pending -->
+## Wave 37 — argo's friction II: compact strip, the reading once, chart chrome, the harness <!-- status: active -->
+
+Source: Wave 36's **Left behind** (its seed list, verbatim scope) and argo `docs/design/UPSTREAM.md` § "Wave 23"–"Wave 27".
+argo ran five live re-score rounds on 2.20/2.21 (argo Waves 23–27): WalkingPad passes, twelve pages fail, and each round
+fixes ~55 defects while ~30 new ones appear. The basalt-owned share of what keeps reappearing is this wave. Validators:
+argo (it bumps and deletes its workarounds after the release) and S2/S3/S4.
+
+The mother's read of `.design-parity/w36/r6` (the playground passes reviewer A, argo's pages do not, so the bar is applied
+unevenly): the S2 zoned Meters still print the reading under the marker (`1.19`, `76`) beside the headline that states it;
+the S3 strip cells still keep a void under short content; the S3 failures cell is three red ticks with no axis or count;
+the S3 waiting list spreads a name and its age 1,000 px apart at 1440; the S2 hit-rate chart draws six monthly values as a
+smoothed line where bars against the goal answer the question.
+
+- [ ] **Calibrate the bar first.** Re-score S2/S3/S4 with argo's reviewer setup (fresh `basalt-design-reviewer`s given
+      the previous round's shots, classifying new / carried / unscored, plus a Keel side-by-side from `.design-parity/keel`).
+      Record where the playground passes what argo fails; that list is part of this wave's scope.
+- [ ] **Strip and Meter, the recurring pair:** strip cells compact by default (`align-self: start` or a per-cell
+      `align`), the footer row still aligned across cells; the zoned Meter's reading printed once (D30: the marker is
+      unlabelled when the host states the value); Meter hides its track with no target or ticks; per-zone/segment
+      `tone="muted"`; ring `target`/`ticks`; `stops`; part captions at `size="row"`; `StatStripCell` `action` and `tone`
+      driving the visual; `StatStripRow` `hideValue`.
+- [ ] **Chart chrome:** the tooltip's series/name column, a y-tick gutter outside the plot, ticks and legend one size step,
+      `refLines[].label` position (S2 "Goal 28" sits on the line), `ChartFact` `tone` and `stale`, `Sparkline`
+      `tone="muted"`, `StackedArea` band opacity, `BandStrip` tooltip placement and a per-state glyph, the dark-390 focus ring.
+- [ ] **Shell and type:** sticky clearance equal to the `PageBar` height; `Section` without a title; the agenda/`Section`
+      four-size default down to three; slashed zero on non-heading titles; `SyncButton` age below `sm`; `PageBar` filter
+      `Select` width; phone `Select` inset; `VX.surface.rowHover`/`rowSelected`; the Tabs accent pill and tinted status
+      Badges (W33 chrome); `PageSummary` (argo's `components/upstream/page-summary.tsx`: sentence, facts, aside) as an
+      export with argo as the named consumer.
+- [ ] **The harness:** `shot` focus/hover timeouts on tall anchors, tall anchors painted blank below one screen, fixed chrome
+      over crops; the trial's friction rows (`init` leaves a stock `main.tsx` and peers unwired, zero declared shot states
+      pass silently, 72 `dist` reads to colour a categorical status grid, hue-only heat cells, focus tooltips over captions).
+- [ ] **Expression trial v1:** a fresh agent in a scratch `init` app, no component names, argo-shaped data (a decision
+      queue with ages and states, a health score with zones, a cost ledger against a budget). Score it with the
+      calibrated setup. A fallback to a default is a ledger row.
+- [ ] Rounds: at least three on S2/S3/S4 with before/after boards; then the mother releases and argo bumps and deletes its
+      workarounds (argo's next wave), reporting the line delta and the new/carried/unscored trend.
+      **Left behind:**
+
+## Wave 38 — Data tables, responsive <!-- status: pending -->
 
 Spec: SPEC § 6.6, § 9.1. Scenarios S1 (outages) and S2 (sessions). Validators: argo, linewatch.
 
@@ -1475,7 +1516,7 @@ Spec: SPEC § 6.6, § 9.1. Scenarios S1 (outages) and S2 (sessions). Validators:
       column is reachable by keyboard. At least three rounds; owner sees the boards.
       **Left behind:**
 
-## Wave 38 — Event list <!-- status: pending -->
+## Wave 39 — Event list <!-- status: pending -->
 
 Spec: SPEC § 6.7, § 9.3, D11. Scenarios S5 (build the S5 fixture: the journal) and S3 (item timeline).
 Validators: argo (warden timeline, narratives), rb (journal, session history), linewatch (transitions).
@@ -1492,7 +1533,7 @@ Validators: argo (warden timeline, narratives), rb (journal, session history), l
 - [ ] At least three rounds on S5 and S3; owner sees the boards.
       **Left behind:**
 
-## Wave 39 — Board and the record page <!-- status: pending -->
+## Wave 40 — Board and the record page <!-- status: pending -->
 
 Spec: SPEC § 6.8, § 6.9, § 9.2, D3, D12. Scenarios S3 and S5. Validators: argo warden, rb knot detail,
 obsidian.
@@ -1509,7 +1550,7 @@ obsidian.
       summary sentence.
       **Left behind:**
 
-## Wave 40 — Forms, states and the guidance half <!-- status: pending -->
+## Wave 41 — Forms, states and the guidance half <!-- status: pending -->
 
 Spec: SPEC § 6.11, § 6.13, § 8, § 11. Scenario S6 (build it), then every scenario's state toggles.
 
@@ -1522,16 +1563,16 @@ Spec: SPEC § 6.11, § 6.13, § 8, § 11. Scenario S6 (build it), then every sce
       here or a recorded reason.
       **Left behind:**
 
-## Wave 41 — Release and rollout: argo and rb <!-- status: pending -->
+## Wave 42 — Release and rollout: argo and rb <!-- status: pending -->
 
 - [ ] Release through `make release` (the reason: the Part 3 patterns, rows 143–162).
 - [ ] argo upgrades, runs the shipped loop on its own screens, retires the hand-rolls its rows name (143–151),
       deploys and gets a before/after board.
 - [ ] rb the same (rows 152–155); rb is never pushed by an agent, so its branch waits for the owner.
-- [ ] Friction and ugliness become ledger rows and are fixed upstream before Wave 41.
+- [ ] Friction and ugliness become ledger rows and are fixed upstream before Wave 42.
       **Left behind:**
 
-## Wave 42 — Rollout, the expression trial and convergence <!-- status: pending -->
+## Wave 43 — Rollout, the expression trial and convergence <!-- status: pending -->
 
 - [ ] linewatch (rows 156–158) and obsidian (row 159) upgrade one at a time, each with a before/after board.
 - [ ] **Expression trial** (shaped like weatherorb's W45): a fresh agent in a scratch `init` app gets five
@@ -1540,7 +1581,7 @@ Spec: SPEC § 6.11, § 6.13, § 8, § 11. Scenario S6 (build it), then every sce
       the default is a guidance row.
 - [ ] Brief weatherorb's orchestrator (row 160). shutterflow is out of this track: the owner coordinates its UX re-establishment from the MacBook,
       including the deferred calendar heat grid (row 161, D10).
-- [ ] Re-run the full audit. If gaps remain, append Waves 42+ in the same shape. The track closes when a fresh
+- [ ] Re-run the full audit. If gaps remain, append Waves 44+ in the same shape. The track closes when a fresh
       scorer finds nothing worth improving against basalt's rubric.
       **Left behind:**
 
