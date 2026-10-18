@@ -46,29 +46,31 @@ describe('a zone names itself in the legend', () => {
   })
 })
 
-describe('legend: false keeps the key below 480px', () => {
-  test('two series: the key renders, compact-only', () => {
-    const el = legendOf(<Lines ariaLabel="L" data={data} x={x} series={[A, B]} legend={false} />)
-    expect(keys(el)).toEqual(['Alpha', 'Beta'])
-    expect(el?.hasAttribute('data-compact-only')).toBe(true)
+describe('an explicit legend: false stays absolute', () => {
+  test('two series: no legend at any width', () => {
+    expect(
+      legendOf(<Lines ariaLabel="L" data={data} x={x} series={[A, B]} legend={false} />),
+    ).toBeNull()
   })
-  test('one series with named zones: the zone key renders, compact-only', () => {
-    const el = legendOf(
-      <Lines ariaLabel="L" data={data} x={x} series={[A]} zones={zones} legend={false} />,
+  test('named zones: no legend', () => {
+    expect(
+      legendOf(<Lines ariaLabel="L" data={data} x={x} series={[A]} zones={zones} legend={false} />),
+    ).toBeNull()
+  })
+  test("naming 'endLabels' has no legend", () => {
+    expect(
+      legendOf(<Lines ariaLabel="L" data={data} x={x} series={[A, B]} naming="endLabels" />),
+    ).toBeNull()
+  })
+})
+
+describe('the compact legend folds', () => {
+  test('every entry is in the markup and reference entries are marked for the fold', () => {
+    const el = legendOf(<Lines ariaLabel="L" data={data} x={x} series={[A]} zones={zones} />)
+    const roles = [...(el?.querySelectorAll('[data-legend-key]') ?? [])].map(
+      (e) => (e as HTMLElement).dataset['legendRole'],
     )
-    expect(keys(el)).toEqual(['Alpha', 'Good', 'Bad'])
-    expect(el?.hasAttribute('data-compact-only')).toBe(true)
-  })
-  test('a single entry drops it', () => {
-    expect(
-      legendOf(<Lines ariaLabel="L" data={data} x={x} series={[A]} legend={false} />),
-    ).toBeNull()
-  })
-  test("naming 'endLabels' drops it at every width", () => {
-    expect(
-      legendOf(
-        <Lines ariaLabel="L" data={data} x={x} series={[A, B]} naming="endLabels" legend={false} />,
-      ),
-    ).toBeNull()
+    expect(roles).toEqual(['series', 'reference', 'reference'])
+    expect(el?.querySelector('[data-legend-more][hidden]')).not.toBeNull()
   })
 })

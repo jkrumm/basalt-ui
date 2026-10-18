@@ -15,7 +15,10 @@
 }
 
 @container (min-width: 240px) {
+  /* One row: `foldLegend` (legend.tsx) folds what does not fit into `+N`; zones lead the series. */
   .auto {
+    flex-wrap: nowrap;
+    overflow: hidden;
     display: flex;
     column-gap: var(--bc-dots-gap);
     --vx-hit-gap: var(--bc-dots-gap);
@@ -24,13 +27,14 @@
 
 @container (min-width: 480px) {
   .auto {
+    flex-wrap: wrap;
+    overflow: visible;
     column-gap: var(--bc-legend-gap);
     --vx-hit-gap: var(--bc-legend-gap);
   }
 
-  /* A `legend: false` chart keeps its key below 480px only (`keepKeyAtCompact`). */
-  .auto[data-compact-only] {
-    display: none;
+  .auto [data-legend-role='reference'] {
+    order: 0 !important;
   }
 
   .auto .dot {
@@ -47,4 +51,24 @@
   .auto[data-hide-wide] {
     display: none;
   }
+}
+
+/* The compact legend's order and fold (`foldLegend`, which only folds while the row is `nowrap`).
+ * Wide keeps DOM order and every entry (`order` resets in the 480px query above). */
+/* `!important`: an entry's inline `all: unset` (legend.tsx) would otherwise reset both. */
+.auto [data-legend-role='reference'] {
+  order: -1 !important;
+}
+
+.auto [data-legend-folded] {
+  display: none !important;
+}
+
+.auto [data-legend-more]::after {
+  content: '+' attr(data-count);
+}
+
+.auto [data-legend-more] {
+  order: 1;
+  flex: none;
 }

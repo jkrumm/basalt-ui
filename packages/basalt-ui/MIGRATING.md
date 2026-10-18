@@ -1184,22 +1184,24 @@ No export is removed. `Meter` gains one optional prop, `readingAt`; six caption 
 
 No export is removed or renamed; one prop is added and two defaults move.
 
-- **`legend: false` no longer drops the key below 480px of chart width when two or more entries need telling
-  apart.** Before: `legend: false` (argo passes it at `compact`) removed the legend at every width, so ACWR,
-  recovery and stress read by hue alone at 390. Now: a chart with two or more legend entries keeps the key in the
-  compact class (it wraps to rows) and drops it from 480px up, as asked. A single-entry chart, and `Lines`
-  `naming="endLabels"` (the end labels name the lines), still have no legend at any width. Opt-out: none for the
-  compact key; remove the entries (`legend: false` on a series, or fewer series) if a key is truly noise.
+- **The compact legend is one row, and a zone-named chart has one.** Before: below 480px of chart width the key
+  wrapped to as many rows as it had entries (five entries, two rows), so argo dropped it with
+  `legend: false` and ACWR, recovery and stress read by hue alone at 390. Now: a chart with two or more legend
+  entries shows ONE row there. The zone / reference entries (which hue alone cannot name) lead, the series
+  follow (the title and tooltip name those), and what does not fit folds into a `+N` chip whose `title` lists
+  the folded names. From 480px up the key wraps and shows every entry as before. An explicit `legend: false`
+  still drops the legend at every width; delete the `compact && { legend: false }` workaround to take the new
+  default.
 - **`ZoneSpec.legend: { label, mark?, color? }`** names a band in the legend, so a zone chart needs no always-`null`
   legend-only series (argo's `ACWR_SERIES` zone keys). `mark` defaults to `'bar'`; `color` is the swatch when the
-  fill is a whisper-alpha wash (`alpha(VX.goodSolid, 0.06)` would vanish in a 10px swatch), else the fill (a status
-  tint maps to its solid). Named zones count as entries, so one series plus named zones now shows a legend by
-  default. Opt-out: omit `legend` on the zone.
+  fill is a whisper-alpha wash (`alpha(VX.goodSolid, 0.06)` would vanish in a 10px swatch), else the fill (a
+  status tint maps to its solid). Named zones count as entries, so one series plus named zones now shows a legend
+  by default. Opt-out: omit `legend` on the zone, or `legend: false` on the chart.
 - **A `Sparkline` readout never ends in an ellipsis.** Before: a chip wider than the box was clipped (`62 bpm · Sun
   5 O…`, the date lost). Now: a chip that overflows first drops the air round its `·` and its padding, and if it
-  still overflows the date moves to its own line under the value and wraps (hosted, the chip keeps its bottom on
-  the plot's top edge and grows up; bare, it grows down). Opt-out: pass a shorter `labels` entry (`5/10`) so the
-  one-line form fits.
+  still overflows the date moves to its own line under the value and wraps, inside the top band of the plot (never
+  up past the host's reserved readout line). Opt-out: pass a shorter `labels` entry (`5/10`) so the one-line form
+  fits.
 
 ### `basalt-ui shot`: skeleton bars count as content (Wave 38)
 

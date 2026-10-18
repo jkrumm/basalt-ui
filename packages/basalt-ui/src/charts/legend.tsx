@@ -4,6 +4,7 @@
  * its parent's entry. Toggling an entry hides the series from the plot, the tooltip and the auto
  * domain together; hovering one emphasizes it (the definition is rebuilt with `highlighted`).
  */
+import { useEffect, useLayoutEffect, useRef } from 'react'
 import type { CSSProperties, ReactElement } from 'react'
 import { VX } from '../tokens'
 import classes from './chart-legend.module.css'
@@ -57,8 +58,10 @@ const rowBaseStyle: CSSProperties = {
 const rowStyle: CSSProperties = { ...rowBaseStyle, display: 'flex' }
 /** The gaps `chart-legend.module.css` reads, as custom properties. */
 type LegendVars = CSSProperties & Record<'--bc-legend-gap' | '--bc-dots-gap', string>
+// `flex-wrap` is the stylesheet's too: one folded row below 480px, wrapping rows from it.
+const { flexWrap: _wrap, ...autoBaseStyle } = rowBaseStyle
 const autoRowStyle: LegendVars = {
-  ...rowBaseStyle,
+  ...autoBaseStyle,
   '--bc-legend-gap': `${VX.legendGap}px`,
   '--bc-dots-gap': `${DOTS_GAP}px`,
 }
@@ -185,16 +188,56 @@ export type ChartLegendProps<T> = {
   concealed?: boolean
   /** `auto` mode only: gone from the wide class up, where end labels name the lines (CSS). */
   hideAtWide?: boolean
-  /** `auto` mode only: shown below the 480px container only (a `legend: false` chart's key, CSS). */
-  compactOnly?: boolean
+}
+
+/**
+ * The compact legend is ONE row (the stylesheet sets `nowrap` below 480px). Entries that do not fit
+ * fold into a `+N` chip, the last in display order first; display order puts the reference/zone
+ * entries (which hue alone cannot name) ahead of the series (the title and tooltip name those).
+ * Measured on the node, never in React state, so a hover or a resize does not re-render.
+ */
+function foldLegend(row: HTMLElement): void {
+  const items = [...row.querySelectorAll<HTMLElement>('[data-legend-key]')]
+  const more = row.querySelector<HTMLElement>('[data-legend-more]')
+  for (const it of items) it.removeAttribute('data-legend-folded')
+  more?.setAttribute('hidden', '')
+  if (more === null || getComputedStyle(row).flexWrap !== 'nowrap') return
+  const display = items
+    .map((el, i) => ({ el, i, ref: el.dataset['legendRole'] === 'reference' ? 0 : 1 }))
+    .toSorted((a, b) => a.ref - b.ref || a.i - b.i)
+    .map((o) => o.el)
+  const folded: HTMLElement[] = []
+  while (row.scrollWidth > row.clientWidth + 0.5 && folded.length < display.length - 1) {
+    const last = display[display.length - 1 - folded.length]
+    if (last === undefined) break
+    last.setAttribute('data-legend-folded', '')
+    folded.push(last)
+    more.removeAttribute('hidden')
+    more.dataset['count'] = String(folded.length)
+    more.title = folded.map((f) => f.textContent).join(', ')
+  }
 }
 
 export function ChartLegend<T>(props: ChartLegendProps<T>): ReactElement | null {
+  const rowRef = useRef<HTMLFieldSetElement>(null)
+  const auto = props.mode === 'auto'
+  // Re-fold when the entries change; a resize re-folds through the observer.
+  const signature = props.series.map((s) => s.key).join('|')
+  useLayoutEffect(() => {
+    if (auto && rowRef.current !== null) foldLegend(rowRef.current)
+  }, [auto, signature])
+  useEffect(() => {
+    const row = rowRef.current
+    if (!auto || row === null || typeof ResizeObserver === 'undefined') return
+    const observer = new ResizeObserver(() => foldLegend(row))
+    observer.observe(row)
+    return () => observer.disconnect()
+  }, [auto, signature])
   const groups = legendEntries(props.series, props.groups)
   if (groups.length === 0) return null
-  const auto = props.mode === 'auto'
   return (
     <fieldset
+      ref={rowRef}
       aria-label="Legend"
       data-basalt-chart-legend={props.mode}
       // `visibility: hidden` is the real guard (nothing is announced, focused or clickable);
@@ -202,7 +245,6 @@ export function ChartLegend<T>(props: ChartLegendProps<T>): ReactElement | null 
       {...(props.concealed && { 'aria-hidden': true })}
       {...(auto && { className: classes.auto })}
       {...(auto && props.hideAtWide && { 'data-hide-wide': '' })}
-      {...(auto && props.compactOnly && { 'data-compact-only': '' })}
       style={rowLayout(props.mode, props.concealed === true)}
     >
       {groups.map((group, gi) => [
@@ -222,6 +264,7 @@ export function ChartLegend<T>(props: ChartLegendProps<T>): ReactElement | null 
               <span
                 key={s.key}
                 data-legend-key={s.key}
+                data-legend-role={s.role ?? 'series'}
                 style={itemStyle}
                 onMouseEnter={() => props.onHighlight(s.key)}
                 onMouseLeave={() => props.onHighlight(null)}
@@ -234,6 +277,7 @@ export function ChartLegend<T>(props: ChartLegendProps<T>): ReactElement | null 
               key={s.key}
               type="button"
               data-legend-key={s.key}
+              data-legend-role={s.role ?? 'series'}
               data-basalt-hit=""
               aria-pressed={!off}
               style={itemStyle}
@@ -248,6 +292,7 @@ export function ChartLegend<T>(props: ChartLegendProps<T>): ReactElement | null 
           )
         }),
       ])}
+      {auto && <span data-legend-more="" hidden style={noteStyle} />}
     </fieldset>
   )
 }
