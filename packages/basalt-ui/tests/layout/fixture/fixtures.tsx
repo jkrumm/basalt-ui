@@ -84,6 +84,7 @@ import type {
   TableSpec,
 } from './spec'
 import { InfoRingFixture } from './info-ring-fixture'
+import { BarListStatesFixture } from './bar-list-states-fixture'
 import { RetryParityFixture } from './retry-parity-fixture'
 import { W38LegendFixture } from './w38-legend-fixture'
 import { RAIL_DOMAIN_MAX, RAIL_PX, TOC_SCROLL_MARGIN_PX } from './spec'
@@ -2949,6 +2950,7 @@ export function ShellFixture({ spec }: { spec: FixtureSpec }): ReactElement {
       {spec.infoRing && <InfoRingFixture />}
       {spec.retryParity && <RetryParityFixture />}
       {spec.w38Legend && <W38LegendFixture />}
+      {spec.barListStates && <BarListStatesFixture />}
       {spec.codeBlock && <CodeBlockFixture spec={spec.codeBlock} />}
       {spec.forms && <FormsFixture spec={spec.forms} />}
       {spec.table && <TableFixture spec={spec.table} />}

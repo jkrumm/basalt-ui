@@ -366,6 +366,8 @@ export type FixtureSpec = {
   retryParity?: true
   /** Wave 38: zone-keyed charts at a 340px card (`w38-*`) and a strip-cell sparkline at 150px (`w38-strip`). */
   w38Legend?: true
+  /** Four `ChartCard`s around a `BarList`: loaded, loading, empty, error, each at two widths (`data-testid="list-<state>-<narrow|wide>"`). */
+  barListStates?: true
   /**
    * Renders a `CodeBlock` in a `Prose` between `data-testid="codeblock-before"` and
    * `"codeblock-after"` paragraphs, over a long first line. `language` defaults to `'ts'`; pass

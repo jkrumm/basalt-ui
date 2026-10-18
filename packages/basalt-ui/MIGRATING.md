@@ -1245,6 +1245,28 @@ A gap is stated once. Moved defaults:
 `size="row"` keeps no caption lines, empty or loading. Ring Meters are unchanged (the centre reading stays `—`).
 
 Opt out: none for the caption and qualifier rows (they are layout fixes; shorten the text instead); pass `emptyText="—"` on a `Meter` to keep the dash caption; for a strip cell, drop `reason` (and say it in the caption or qualifier) to keep the bare `—`.
+### List states (Wave 38)
+
+No export is removed. `BarList` gains four optional props: `error`, `errorTitle`, `onRetry`, `retrying`.
+
+| Before                                                                                                                                                                                           | Now                                                                                                                                                                           | Opt-out                                                                      |
+| ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------- |
+| A list in a `ChartCard` with `state={{ error }}` showed the card's placeholder: the chart height (or your `placeholderHeight`) as a floor, so a four-row list's error was ~half void under Retry | Pass the failure to the list: `<BarList error={e} onRetry={…} />` renders the shared error body (dot, word, cause, Retry) and ends at its content. Leave `state` off the card | keep `state={{ error }}` on the `ChartCard`; it still holds the chart height |
+| The list's empty line and an error body had no common rule                                                                                                                                       | Both end at their content, with no height kept; loading keeps the loaded footprint                                                                                            | none                                                                         |
+
+`error` wins over `items` and `emptyText` and loses to `loading`. A Meter card's error is still the
+card's placeholder (`ChartCard` owns it); the same fix there belongs to `ChartCard`.
+
+### List and Meter card states (Wave 38)
+
+No export is removed. `ChartCard`'s `placeholderHeight` gains the value `'content'`; the default is unchanged.
+
+| Before                                                                                                                                                                                        | Now                                                                                                                                                                                                    | Opt-out                                                        |
+| --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ | -------------------------------------------------------------- |
+| A `ChartCard` around a list or a `Meter` showed its error and empty state in a box at the chart height (or your `placeholderHeight` number) — about half void under Retry for a four-row list | With `placeholderHeight="content"` the error and empty state end at their content: one title, the cause, Retry, no void. A pending state leaves `children` in place, so the body draws its own loading | leave `placeholderHeight` off (or a number): D37 keeps the box |
+| A `BarList` loading skeleton was fixed 1.5rem blocks, shorter than the rows it became                                                                                                         | The skeleton is real empty rows with a skeleton over each: it keeps the loaded height in the compact and the wide layout                                                                               | none                                                           |
+
+A chart body keeps D37 (the loaded height) by default. `BarList`'s own empty line is unchanged.
 
 ### `shot detect` judges a nested radius (Wave 38)
 

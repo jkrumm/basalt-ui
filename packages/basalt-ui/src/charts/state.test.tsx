@@ -1,6 +1,8 @@
 import { cleanup, render } from '@testing-library/react'
 import { afterEach, describe, expect, test } from 'bun:test'
 import { ChartPlaceholder } from './state'
+import { ChartCard } from './ChartCard'
+import type { ChartState } from './types'
 
 afterEach(cleanup)
 
@@ -69,5 +71,43 @@ describe('ChartPlaceholder default copy', () => {
     expect(alert?.textContent).toContain('The request failed.')
     expect(alert?.textContent).not.toContain('failed to load')
     expect(alert?.querySelector('svg')).toBeNull()
+  })
+})
+
+describe('ChartPlaceholder height="content"', () => {
+  test('error and empty render no chart box; pending and the default keep one', () => {
+    const box = (state: ChartState, height?: 'content') =>
+      render(
+        <ChartPlaceholder state={state} {...(height && { height })} />,
+      ).container.querySelector('[data-basalt-box]')
+    expect(box({ error: new Error('x') }, 'content')).toBeNull()
+    cleanup()
+    expect(box({ empty: true }, 'content')).toBeNull()
+    cleanup()
+    expect(box({ pending: true }, 'content')).not.toBeNull()
+    cleanup()
+    expect(box({ error: new Error('x') })).not.toBeNull()
+  })
+})
+
+describe('ChartCard placeholderHeight="content"', () => {
+  const card = (state: ChartState) =>
+    render(
+      <ChartCard title="T" state={state} placeholderHeight="content">
+        <p data-testid="body">rows</p>
+      </ChartCard>,
+    )
+
+  test('error and empty replace the body with a boxless placeholder', () => {
+    const { container, queryByTestId } = card({ error: new Error('boom') })
+    expect(queryByTestId('body')).toBeNull()
+    expect(container.querySelector('[data-basalt-box]')).toBeNull()
+    expect(container.querySelector('[role="alert"]')?.textContent).toContain('boom')
+  })
+
+  test('pending leaves the body in place, marked busy', () => {
+    const { container, queryByTestId } = card({ pending: true })
+    expect(queryByTestId('body')).not.toBeNull()
+    expect(container.querySelector('[aria-busy="true"]')).not.toBeNull()
   })
 })

@@ -384,7 +384,7 @@ Signature: ChartCard(props: ChartCardProps): ReactElement<unknown, string | JSXE
   count?: number
   actions?: ReactNode
   state?: ChartState
-  placeholderHeight?: number | ResponsiveChartHeight
+  placeholderHeight?: number | ResponsiveChartHeight | "content"
   stale?: boolean
   stateNoun?: string
   onRetry?: (() => void)

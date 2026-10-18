@@ -132,12 +132,24 @@ export function BarList({
   style,
 }: BarListProps) {
   if (loading) {
+    // Each row is a real, empty row with a skeleton laid over it, so the list takes the height of
+    // the rows it will become in every layout instead of a fixed guess.
     return (
       <div className={cx(classes.frame, className)} style={style}>
-        <div className={classes.root} aria-busy="true">
+        <div className={classes.root} aria-busy="true" data-variant={variant}>
           <VisuallyHidden>{`Loading ${label}`}</VisuallyHidden>
           {Array.from({ length: loadingRows }, (_, i) => (
-            <Skeleton key={i} className={classes.skeletonRow} data-bar-skeleton />
+            <div
+              key={i}
+              className={cx(classes.row, classes.skeletonRow)}
+              data-bar-skeleton
+              aria-hidden
+            >
+              <span className={classes.label}>{'\u00a0'}</span>
+              <span className={classes.value} />
+              <span className={classes.track} />
+              <Skeleton className={classes.skeletonFill} />
+            </div>
           ))}
         </div>
       </div>

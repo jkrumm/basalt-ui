@@ -100,9 +100,14 @@
   color: var(--vx-muted);
 }
 
+/* A real row with a skeleton laid over it: the row sets the height, the skeleton paints it. */
 .skeletonRow {
-  grid-column: 1 / -1;
-  height: calc(var(--vx-space-control-height-widget, 1.5rem) * var(--mantine-scale, 1));
+  position: relative;
+}
+
+.skeletonFill {
+  position: absolute;
+  inset: 0;
 }
 
 /* A row's threshold: a hairline across the bar at a position on the row's own scale. */

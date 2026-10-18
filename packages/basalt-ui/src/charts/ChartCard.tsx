@@ -142,8 +142,11 @@ type ChartCardBaseProps = BasaltProps &
     state?: ChartState | undefined
     /** Body height while a placeholder shows. Default: the chart height law, i.e. exactly the box an
      * unsized chart takes — pass the chart's own `height` when it states one, so a `<Suspense
-     * fallback={<ChartCard state={{ pending: true }} …/>}>` reserves the final size. */
-    placeholderHeight?: number | ResponsiveChartHeight | undefined
+     * fallback={<ChartCard state={{ pending: true }} …/>}>` reserves the final size.
+     * `'content'` is for a body that is not a chart (a list, a `Meter`): an error or empty state
+     * ends at its content, and a pending state leaves `children` in place — the body draws its own
+     * loading at its loaded height (`BarList loading`). */
+    placeholderHeight?: number | ResponsiveChartHeight | 'content' | undefined
     /** Placeholder data is showing: the facts row dims with the plot (a strip cell's `stale`). */
     stale?: boolean | undefined
     /** What an errored `state` names: "Could not load {stateNoun}". Default: no noun. */
@@ -280,7 +283,7 @@ export function ChartCard({
           {...(classNames?.body !== undefined && { className: classNames.body })}
           style={bodyClipStyle}
         >
-          {resolved === null ? (
+          {resolved === null || (resolved === 'pending' && placeholderHeight === 'content') ? (
             children
           ) : (
             <ChartPlaceholder
