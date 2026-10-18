@@ -1057,7 +1057,6 @@ No export is removed. `MeterTick` gains an optional `caption`; five Meter defaul
 
 `target` already captioned its value (`Target 28 sessions`, with `format`); `endCaption={null}` drops it.
 An end figure that hides still reads in the accessible description.
-## Unreleased — Wave 37 r2, the stat caption and the strip
 
 No export is removed. Four behaviours move and one optional field is new.
 
