@@ -48,16 +48,16 @@ const SRC = join(import.meta.dir, '..')
 
 type Hairline = { readonly file: string; readonly selector: string; readonly decl: string }
 
+/** An inset 1px shadow, or an outer one painted in `--vx-divider` (a divider drawn without taking layout space). */
+const isHairlineShadow = (decl: string): boolean =>
+  decl.includes('inset') || decl.includes('var(--vx-divider)')
+
 /**
  * Every `border-{top,bottom,block-start,block-end}`, every 1px inset `box-shadow` and every 1px
  * `box-shadow` painted in `--vx-divider` in a CSS module, with the selector it sits under. A hand-rolled scanner rather than a regex per file: the
  * SELECTOR is half the classification (`.header` vs `.rows > *:not(:last-child)` are the two
  * opposite verdicts), and a regex over declarations alone cannot see it.
  */
-/** An inset 1px shadow, or an outer one painted in `--vx-divider` (a divider drawn without taking layout space). */
-const isHairlineShadow = (decl: string): boolean =>
-  decl.includes('inset') || decl.includes('var(--vx-divider)')
-
 function scanHairlines(): { rules: Hairline[]; drops: Hairline[] } {
   const rules: Hairline[] = []
   const drops: Hairline[] = []
