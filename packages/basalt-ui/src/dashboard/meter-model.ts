@@ -10,8 +10,8 @@ export type MeterSegment = {
   label: string
   color?: string
   /**
-   * `'muted'`: the part takes a step of the muted ramp (a lightness step per muted part). A `color`
-   * wins. Steps stay ≥15 points apart up to five muted parts; more merge at the cap.
+   * `'muted'`: the part takes the one flat muted fill every muted part shares, a hairline seam
+   * between neighbours (never a lightness step). A `color` wins.
    */
   tone?: 'muted'
   forecast?: boolean
@@ -21,8 +21,8 @@ export type MeterZone = {
   to: number
   label: string
   /**
-   * `'muted'`: the band takes its step of the muted ramp instead of the line ramp. A `color` wins.
-   * Steps stay ≥15 points apart up to six zones; more merge at the cap.
+   * `'muted'`: the band takes the one flat muted fill every muted zone shares, a hairline gap
+   * between neighbours (never a lightness step): a non-verdict band is not a value bar. A `color` wins.
    */
   tone?: 'muted'
   /**
@@ -43,14 +43,16 @@ type MeterStop = { at: number; color: string }
 
 /** A ramp step's strength in percent of its neutral: from `lo`, spread over `step` across the steps. */
 export const RAMP_ZONE = { lo: 15, step: 45, solo: 40 }
-export const RAMP_PART = { lo: 35, step: 50, solo: 60 }
+/** The flat muted fill, in percent of `--vx-muted`: a zone band (argo's alpha) and a segment (clears 3:1 on the track). */
+const MUTED_ZONE = 35
+const MUTED_PART = 65
 /** Neighbouring steps stay at least this far apart (the contrast the zone ramp always had), up to `RAMP_MAX`. */
 export const RAMP_MIN_STEP = 15
 export const RAMP_MAX = 95
 
 /**
  * Step `index` of `count`. The spread is floored at `RAMP_MIN_STEP` per step, so a ramp stays
- * distinguishable by lightness up to six zones (five segments); past that the last steps clamp at
+ * distinguishable by lightness up to six zones; past that the last steps clamp at
  * `RAMP_MAX` and merge, which is the cue to group parts.
  */
 export function rampStrength(index: number, count: number, ramp: typeof RAMP_ZONE): number {
@@ -58,18 +60,16 @@ export function rampStrength(index: number, count: number, ramp: typeof RAMP_ZON
   return Math.min(RAMP_MAX, ramp.lo + index * Math.max(RAMP_MIN_STEP, ramp.step / (count - 1)))
 }
 
-function rampFill(
-  base: 'line' | 'muted',
-  index: number,
-  count: number,
-  ramp: typeof RAMP_ZONE,
-): string {
+function rampFill(base: 'line', index: number, count: number, ramp: typeof RAMP_ZONE): string {
   return `color-mix(in srgb, var(--vx-${base}) ${rampStrength(index, count, ramp)}%, transparent)`
 }
 
-/** A zone's fill: its own colour, else its step of the line (or, `tone="muted"`, the muted) ramp. */
+const mutedFill = (pct: number) => `color-mix(in srgb, var(--vx-muted) ${pct}%, transparent)`
+
+/** A zone's fill: its own colour, else the one flat muted fill (`tone="muted"`), else its step of the line ramp. */
 export function zoneFill(zone: MeterZone, index: number, count: number): string {
-  return zone.color ?? rampFill(zone.tone === 'muted' ? 'muted' : 'line', index, count, RAMP_ZONE)
+  if (zone.color !== undefined) return zone.color
+  return zone.tone === 'muted' ? mutedFill(MUTED_ZONE) : rampFill('line', index, count, RAMP_ZONE)
 }
 
 /** One tick on the track: its percent position and what it says (caption `label`, aria `text`). */
@@ -87,6 +87,8 @@ export type Part = {
   readonly size: number
   readonly color: string | undefined
   readonly forecast: boolean
+  /** A muted part right after another muted part: a hairline seam keeps the shared fill apart. */
+  readonly seam: boolean
   readonly label: string
   /** The segment's own (normalised) amount, in the reading's units — what its caption states. */
   readonly amount: number
@@ -207,8 +209,7 @@ export function normalizeSegments(segments: readonly MeterSegment[]): MeterSegme
 export function layoutSegments(segments: readonly MeterSegment[], span: number): Part[] {
   let cursor = 0
   const isMuted = (s: MeterSegment) => s.tone === 'muted' && s.color === undefined && !s.forecast
-  const mutedCount = segments.filter(isMuted).length
-  let muted = 0
+  let prevMuted = false
   return segments.map((s) => {
     const size = Math.max(0, Math.min(clamp01(s.value / span), 1 - cursor))
     const forecast = s.forecast === true
@@ -216,16 +217,14 @@ export function layoutSegments(segments: readonly MeterSegment[], span: number):
     const part = {
       start: cursor,
       size,
-      color: forecast
-        ? undefined
-        : isMuted(s)
-          ? rampFill('muted', muted++, mutedCount, RAMP_PART)
-          : s.color,
+      color: forecast ? undefined : isMuted(s) ? mutedFill(MUTED_PART) : s.color,
       forecast,
+      seam: isMuted(s) && prevMuted,
       label: s.label,
       amount: s.value,
     }
     cursor += size
+    prevMuted = isMuted(s)
     return part
   })
 }

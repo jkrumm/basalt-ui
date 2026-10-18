@@ -62,6 +62,12 @@
   background: color-mix(in srgb, var(--vx-muted) 65%, transparent);
 }
 
+/* Muted parts share one flat fill: a track-coloured hairline at the shared edge tells them apart. */
+.fill[data-meter-seam] {
+  box-sizing: border-box;
+  border-inline-start: 1px solid var(--vx-surface-subtle);
+}
+
 /* The committed/forecast pair: the same neutral at two strengths. Flat, never hatched. */
 .forecastFill {
   background: color-mix(in srgb, var(--vx-line) 45%, transparent);

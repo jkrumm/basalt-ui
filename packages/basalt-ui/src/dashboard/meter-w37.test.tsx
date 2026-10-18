@@ -10,7 +10,6 @@ import type { MeterProps } from './meter'
 import {
   RAMP_MAX,
   RAMP_MIN_STEP,
-  RAMP_PART,
   RAMP_ZONE,
   modelBar,
   partsFitUnder,
@@ -19,6 +18,8 @@ import {
   rampStrength,
   zoneFill,
 } from './meter-model'
+import { contrastRatio } from '../tokens/hct'
+import { INK, SURFACE } from '../tokens/palette'
 import { VisualSlotContext } from './visual-slot'
 
 afterEach(cleanup)
@@ -107,16 +108,47 @@ describe('track={false}', () => {
 })
 
 describe('tone="muted" per zone and segment', () => {
-  // happy-dom drops `color-mix` from `style`, so the ramp is read from the model that paints it.
-  test('muted zones step in strength, so the ramp reads by lightness', () => {
+  // happy-dom drops `color-mix` from `style`, so the fill is read from the model that paints it.
+  test('muted zones share one flat fill, told apart by a gap, not lightness', () => {
     const muted = zones.map((z) => ({ ...z, tone: 'muted' as const }))
     const bg = muted.map((z, i) => zoneFill(z, i, muted.length))
     for (const b of bg) expect(b).toContain('--vx-muted')
-    expect(new Set(bg).size).toBe(3)
-    const pct = bg.map((b) => Number(/--vx-muted\) (\d+(?:\.\d+)?)%/.exec(b)?.[1]))
-    expect(pct[1]! - pct[0]!).toBeGreaterThanOrEqual(15)
-    expect(pct[2]! - pct[1]!).toBeGreaterThanOrEqual(15)
+    expect(new Set(bg).size).toBe(1)
     expect(zoneFill({ ...zones[0]!, tone: undefined as never }, 0, 3)).toContain('--vx-line')
+    expect(new Set(zones.map((z, i) => zoneFill(z, i, zones.length))).size).toBe(3)
+  })
+
+  test('a boundary separator sits between adjacent muted zones', () => {
+    const { container } = mount({
+      label: 'L',
+      value: 400,
+      max: 1000,
+      zones: zones.map((z) => ({ ...z, tone: 'muted' as const })),
+    })
+    const bands = [...container.querySelectorAll<HTMLElement>('[data-meter-zone]')]
+    expect(bands.length).toBe(3)
+    expect(bands[0]?.hasAttribute('data-meter-zone-seam')).toBe(false)
+    for (const b of bands.slice(1)) {
+      expect(b.hasAttribute('data-meter-zone-seam')).toBe(true)
+      expect(b.style.insetInlineStart).toContain('1px')
+    }
+  })
+
+  test('the marker holds 3:1 against the flat muted fill in both schemes', () => {
+    const pct = Number(
+      /--vx-muted\) (\d+(?:\.\d+)?)%/.exec(zoneFill({ ...zones[0]!, tone: 'muted' }, 0, 3))?.[1],
+    )
+    const mix = (fg: string, bg: string) => {
+      const ch = (h: string, i: number) => Number.parseInt(h.slice(1 + i * 2, 3 + i * 2), 16)
+      const out = [0, 1, 2].map((i) =>
+        Math.round((pct / 100) * ch(fg, i) + (1 - pct / 100) * ch(bg, i)),
+      )
+      return `#${out.map((v) => v.toString(16).padStart(2, '0')).join('')}`
+    }
+    for (const scheme of ['light', 'dark'] as const) {
+      const fill = mix(INK.muted[scheme], SURFACE.subtle[scheme])
+      expect(contrastRatio(INK.ink[scheme], fill)).toBeGreaterThanOrEqual(3)
+    }
   })
 
   test('a colour wins over muted; the holding zone keeps ink and weight', () => {
@@ -130,7 +162,7 @@ describe('tone="muted" per zone and segment', () => {
     expect(q(container, '[data-holding]')?.getAttribute('data-meter-zone-label')).toBe('Optimal')
   })
 
-  test('muted segments get distinct muted fills', () => {
+  test('muted segments share one flat fill and are seamed apart', () => {
     const m = modelBar({
       reading: 70,
       min: 0,
@@ -143,8 +175,18 @@ describe('tone="muted" per zone and segment', () => {
       ],
     })
     const colours = m.parts.map((p) => p.color ?? '')
-    expect(new Set(colours).size).toBe(3)
+    expect(new Set(colours).size).toBe(1)
     for (const c of colours) expect(c).toContain('--vx-muted')
+    const { container } = mount({
+      label: 'P',
+      segments: [
+        { value: 30, label: 'A', tone: 'muted' },
+        { value: 20, label: 'B', tone: 'muted' },
+      ],
+    })
+    const fills = container.querySelectorAll('[data-meter-fill]')
+    expect(fills[0]?.hasAttribute('data-meter-seam')).toBe(false)
+    expect(fills[1]?.hasAttribute('data-meter-seam')).toBe(true)
   })
 })
 
@@ -308,7 +350,7 @@ describe('captions at their marks', () => {
   })
 })
 
-describe('the muted ramp', () => {
+describe('the line zone ramp', () => {
   test('neighbouring steps stay ≥15 points apart up to six zones, and never pass the cap', () => {
     for (const count of [2, 3, 4, 5, 6]) {
       const s = Array.from({ length: count }, (_, i) => rampStrength(i, count, RAMP_ZONE))
@@ -316,10 +358,6 @@ describe('the muted ramp', () => {
         expect(s[i]! - s[i - 1]!).toBeGreaterThanOrEqual(RAMP_MIN_STEP)
     }
     expect(rampStrength(9, 10, RAMP_ZONE)).toBe(RAMP_MAX)
-    for (let i = 1; i < 5; i++)
-      expect(
-        rampStrength(i, 5, RAMP_PART) - rampStrength(i - 1, 5, RAMP_PART),
-      ).toBeGreaterThanOrEqual(RAMP_MIN_STEP)
   })
 })
 

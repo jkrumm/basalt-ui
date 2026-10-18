@@ -1127,6 +1127,15 @@ included. Stretch: the digit face has no `wdth` axis, and neither does the shipp
 so `--basalt-font-head-stretch` (88%) condenses neither letters nor digits today and they cannot
 mismatch. A consumer who swaps in a `wdth` cut of the head face gets condensed letters over
 full-width digits. The face costs no extra download beyond the Nunito latin file `styles.css` already loads.
+### `Meter`: muted zones and segments share one flat fill
+
+`tone: 'muted'` on a `MeterZone` or `MeterSegment` no longer steps lightness per part (2.22.0's ramp):
+an outer non-verdict band read as a value bar. Every muted zone now takes one flat `--vx-muted` fill
+(35%) and every muted segment one flat fill (65%, 3:1 on the track). Neighbours are told apart by a
+1px hairline (`data-meter-zone-seam` / `data-meter-seam`) and their names; the marker stays the only
+strong mark. The plain zone ramp (no `tone`) is unchanged, and a `color` still wins.
+
+Opt-out: give a zone or segment its own `color`, or drop `tone` for the line ramp.
 
 ### `shot` desktop hover reports a hovering fine pointer
 
