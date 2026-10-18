@@ -64,7 +64,7 @@ const spend = (shotState?: ShotState) => mount(createElement(SpendScenario, { sh
 
 describe('S2 states each figure once', () => {
   // W38 (SPEC § 6.9): a page-summary sentence without a number fails, so the summary restates the
-  // load ratio and readiness score by design; the sessions lead lives only on the goal card.
+  // load ratio and readiness score by design (each prints again on its own card).
   it('the summary states a figure in every sentence', () => {
     const sentences = text(anchor(training(), 'summary')).split(/(?<=\.)\s+/)
     expect(sentences.length).toBeGreaterThan(1)

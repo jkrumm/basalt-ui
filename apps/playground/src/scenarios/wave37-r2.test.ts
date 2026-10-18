@@ -203,7 +203,7 @@ describe('S4', () => {
     expect(bin).toBeDefined()
     expect(card).toContain(fmtEur(MEDIAN_DAY_EUR))
     expect(card).toContain(
-      `${bin?.days} of the last 90 days landed in ${spendBand({ from: bin?.from ?? 0 })}`,
+      `Median of the last 90 days. ${bin?.days} of them landed in ${spendBand({ from: bin?.from ?? 0 })}.`,
     )
     expect(card).not.toContain('Median day')
     expect(source('./S4Spend.tsx')).not.toContain("key: 'median'")
