@@ -231,6 +231,20 @@ createRoot(document.getElementById('root')!).render(
     expect(readFileSync(resolve(dir, 'src/main.tsx'), 'utf8')).toContain('createBasaltRouter')
   })
 
+  it('prints no peer or router advice for a main.tsx that already imports basalt-ui', () => {
+    seed(`import { BasaltProvider } from 'basalt-ui'\n`)
+    const { log } = capture(() => init(dir))
+    expect(log).not.toContain('missing peers')
+    expect(log).not.toContain('router plugin')
+  })
+
+  it('does not take a changed string literal for the stock file', () => {
+    const changed = STOCK.replace("'react-dom/client'", "'react-dom/ client'")
+    seed(changed)
+    capture(() => init(dir))
+    expect(readFileSync(resolve(dir, 'src/main.tsx'), 'utf8')).toBe(changed)
+  })
+
   it('never overwrites an edited main.tsx: leaves it and prints the exact wiring steps', () => {
     const edited = `${STOCK}\nconsole.log('mine')\n`
     seed(edited)

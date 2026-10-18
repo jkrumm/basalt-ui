@@ -28,7 +28,11 @@ const fakeBrowser = (page: Record<string, unknown>) =>
       }),
   }) as never
 
-const fakePage = (declared: string[], locator: Record<string, unknown>) => ({
+const fakePage = (
+  declared: string[],
+  locator: Record<string, unknown>,
+  absent: Record<string, string[]> = {},
+) => ({
   setDefaultTimeout: () => undefined,
   setViewportSize: () => Promise.resolve(),
   goto: () => Promise.resolve(),
@@ -40,7 +44,7 @@ const fakePage = (declared: string[], locator: Record<string, unknown>) => ({
   evaluate: (expression: unknown) =>
     Promise.resolve(
       typeof expression === 'string' && expression.includes('data-shot-states')
-        ? { anchors: ['strip'], declared }
+        ? { anchors: ['strip'], declared, absent }
         : undefined,
     ),
 })
@@ -59,8 +63,6 @@ describe('a target that is not visible', () => {
   const hidden = {
     first: () => hidden,
     count: () => Promise.resolve(1),
-    isVisible: () => Promise.resolve(false),
-    scrollIntoViewIfNeeded: hangs,
     boundingBox: hangs,
     hover: hangs,
     waitFor: hangs,
@@ -68,25 +70,40 @@ describe('a target that is not visible', () => {
     evaluate: () => Promise.resolve('display: none'),
   }
 
-  test('is recorded `absent` with its reason in under 5 s, never an error after 30 s', async () => {
+  test('hover, focus and tooltip record `absent` with the reason in under 5 s, never a 30 s error', async () => {
     const started = Date.now()
-    const out = await capture(input(fakePage([], hidden), ['rest', 'hover', 'focus', 'tooltip']))
+    const out = await capture(input(fakePage([], hidden), ['hover', 'focus', 'tooltip']))
+    expect(Date.now() - started).toBeLessThan(5_000)
+    const strip = out.shots.filter((s) => s.name === 'strip' && s.status !== 'skipped')
+    expect(strip.length).toBeGreaterThan(0)
+    expect(strip.every((s) => s.status === 'absent' && s.file === null)).toBe(true)
+    expect(strip.every((s) => /display: none/.test(s.note ?? ''))).toBe(true)
+  }, 8_000)
+
+  test('a hidden `rest` anchor is a fast error naming the reason, never a pass', async () => {
+    const started = Date.now()
+    const out = await capture(input(fakePage([], hidden), ['rest']))
     expect(Date.now() - started).toBeLessThan(5_000)
     const strip = out.shots.filter((s) => s.name === 'strip')
-    expect(strip.length).toBeGreaterThan(0)
-    expect(strip.filter((s) => s.status === 'error')).toEqual([])
-    const absent = strip.filter((s) => s.status === 'absent')
-    expect(absent.length).toBeGreaterThan(0)
-    expect(absent.every((s) => /display: none/.test(s.note ?? '') && s.file === null)).toBe(true)
+    expect(strip).toHaveLength(4)
+    expect(
+      strip.every(
+        (s) => s.status === 'error' && s.note === 'not visible at this viewport: display: none',
+      ),
+    ).toBe(true)
   }, 8_000)
+
+  test('a hidden `rest` anchor that declares itself absent there is `absent`', async () => {
+    const out = await capture(input(fakePage([], hidden, { strip: ['rest'] }), ['rest']))
+    const strip = out.shots.filter((s) => s.name === 'strip')
+    expect(strip.every((s) => s.status === 'absent')).toBe(true)
+  })
 })
 
 describe('a route with no declared states', () => {
   const visible = {
     first: () => visible,
     count: () => Promise.resolve(1),
-    isVisible: () => Promise.resolve(true),
-    scrollIntoViewIfNeeded: () => Promise.resolve(),
     boundingBox: () => Promise.resolve({ x: 0, y: 0, width: 10, height: 10 }),
     screenshot: () => Promise.resolve(),
     evaluate: () => Promise.resolve(''),
@@ -115,20 +132,29 @@ describe('a route with no declared states', () => {
 // ── Real Chrome ────────────────────────────────────────────────────────────────────────────────
 
 const TALL_PX = 2300
+const REVEAL_FIXTURE = `<!doctype html><style>[hidden]{display:block}div{height:40px;background:#00f}</style>
+<div data-shot=attr hidden></div><div data-shot=zero style="height:0"></div>
+<div data-shot=vis style="visibility:hidden"></div><section style="display:none"><div data-shot=anc></div></section>
+<div data-shot=gone-ok data-shot-absent="rest" hidden></div><div data-shot=seen></div>`
+
 const FIXTURE = `<!doctype html><meta name=viewport content="width=device-width,initial-scale=1">
 <style>
   html,body{margin:0;height:100%}
   main{height:100dvh;overflow:auto;padding-bottom:100px;box-sizing:border-box;background:#fff}
   header{position:sticky;top:0;height:56px;background:#f00;z-index:5}
   nav{position:fixed;left:0;right:0;bottom:0;height:80px;background:#f00;z-index:5}
+  main{scroll-behavior:smooth}
+  [data-shot=card]{height:200px;background:#00f}
+  .nb{height:200px;background:#f0f;margin:24px 0}
   [data-shot=tall]{height:${TALL_PX}px;background:#00f;margin:24px 0}
   [data-shot=near]{height:780px;background:#00f;margin:24px 0}
   #end{height:40px;background:#0f0}
 </style>
-<nav></nav>
+<nav><div role=menu hidden></div></nav>
 <main><header></header>
   <div data-shot=near><button>near</button></div>
   <div data-shot=tall><button>tall</button></div>
+  <div class=nb></div><div data-shot=card><button>card</button></div><div class=nb></div>
   <div id=end></div>
 </main>`
 
@@ -147,7 +173,7 @@ const rowsOf = async (page: PwPage, file: string): Promise<string[]> => {
     for (let y = 0; y < img.height; y++) {
       const [r, gr, b] = g.getImageData(Math.floor(img.width / 2), y, 1, 1).data
       rows.push(r > 200 && gr < 60 && b < 60 ? 'red' : b > 200 && r < 60 && gr < 60 ? 'blue'
-        : gr > 200 && r < 60 && b < 60 ? 'green' : r > 240 && gr > 240 && b > 240 ? 'white' : 'other')
+        : gr > 200 && r < 60 && b < 60 ? 'green' : r > 200 && b > 200 && gr < 60 ? 'magenta' : r > 240 && gr > 240 && b > 240 ? 'white' : 'other')
     }
     return rows
   })()`)
@@ -159,12 +185,19 @@ type Run = {
 }
 
 /** One capture of the fixture in real Chrome; `null` when no Chrome can start here. */
-async function shoot(states: ShotState[], check: (run: Run) => Promise<void>): Promise<void> {
-  if (!pw) return
+async function shoot(
+  states: ShotState[],
+  check: (run: Run) => Promise<void>,
+  route = '/',
+): Promise<void> {
+  if (!pw) {
+    if (process.env['CI']) throw new Error('no Playwright to run the real-Chrome tests in CI')
+    return
+  }
   // node:http, not Bun.serve: the unit-test preload replaces the global Response with happy-dom's.
-  const server = createServer((_req, res) => {
+  const server = createServer((req, res) => {
     res.setHeader('content-type', 'text/html')
-    res.end(FIXTURE)
+    res.end(req.url === '/reveal' ? REVEAL_FIXTURE : FIXTURE)
   })
   await new Promise<void>((done) => server.listen(0, '127.0.0.1', done))
   const { port } = server.address() as AddressInfo
@@ -174,7 +207,7 @@ async function shoot(states: ShotState[], check: (run: Run) => Promise<void>): P
       const done = await capture({
         browser,
         base: `http://127.0.0.1:${port}`,
-        routes: ['/'],
+        routes: [route],
         states,
         pngDir: dir,
         log: () => undefined,
@@ -194,7 +227,8 @@ async function shoot(states: ShotState[], check: (run: Run) => Promise<void>): P
       })
     })
   } catch (error) {
-    if (!(error instanceof ShotError)) throw error // no Chrome to launch: the pixel tests cannot run
+    // No Chrome to launch: the pixel tests cannot run here, but CI must have one.
+    if (!(error instanceof ShotError) || process.env['CI']) throw error
   } finally {
     server.close()
   }
@@ -238,5 +272,38 @@ describe('real Chrome', () => {
       expect(px.includes('green')).toBe(true)
       expect(px.includes('red')).toBe(true)
     })
+  }, 120_000)
+
+  test('a focus crop (390 included) is the focused anchor, never shifted onto a neighbour', async () => {
+    await shoot(['focus'], async ({ shots, rows }) => {
+      const crops = shots.filter((s) => s.name === 'card' && s.state === 'focus')
+      expect(crops.map((s) => s.status)).toEqual(['ok', 'ok', 'ok', 'ok'])
+      expect(crops.some((s) => s.viewport === 'mobile')).toBe(true)
+      for (const crop of crops) {
+        const px = await rows(crop.file)
+        expect(px.filter((r) => r === 'blue').length).toBeGreaterThanOrEqual(200 - 4)
+        expect(px.filter((r) => r === 'magenta')).toEqual([])
+      }
+    })
+  }, 120_000)
+
+  test('a hidden anchor says why: hidden attribute, zero size, visibility, an ancestor', async () => {
+    await shoot(
+      ['rest', 'hover'],
+      async ({ shots }) => {
+        const note = (name: string, state: string) =>
+          shots.find((s) => s.name === name && s.state === state && s.viewport === 'desktop')
+        const rest = (name: string) => note(name, 'rest')
+        expect(rest('attr')).toMatchObject({ status: 'error' })
+        expect(rest('attr')?.note).toBe('not visible at this viewport: hidden attribute')
+        expect(rest('zero')?.note).toBe('not visible at this viewport: zero size')
+        expect(rest('vis')?.note).toBe('not visible at this viewport: visibility: hidden')
+        expect(rest('anc')?.note).toBe('not visible at this viewport: display: none on an ancestor')
+        expect(rest('gone-ok')?.status).toBe('absent')
+        expect(rest('seen')?.status).toBe('ok')
+        expect(note('attr', 'hover')?.status).toBe('absent')
+      },
+      '/reveal',
+    )
   }, 120_000)
 })

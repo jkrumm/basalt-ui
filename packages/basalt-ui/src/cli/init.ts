@@ -58,26 +58,36 @@ const KEPT_FILE_COST: Record<string, string> = {
   'DESIGN.md': 'the design brief Claude reads is yours, not the seeded one.',
 }
 
-/** Strips what a formatter changes: whitespace, semicolons, quote style and trailing commas. */
-const squash = (code: string): string =>
-  code.replace(/\s+/g, '').replace(/;/g, '').replace(/"/g, "'").replace(/,\)/g, ')')
+/** One line at a time (string literals keep their inner spaces): trimmed, `;`, trailing `,` and `"` quotes undone. */
+const normalise = (code: string): string =>
+  code
+    .split('\n')
+    .map((line) =>
+      line
+        .trim()
+        .replace(/[;,]$/, '')
+        .replace(/"([^"']*)"/g, "'$1'"),
+    )
+    .filter(Boolean)
+    .join('\n')
 
-const STOCK_MAIN = [true, false].flatMap((css) =>
-  ['.tsx', ''].map((ext) =>
-    squash(
-      [
-        "import { StrictMode } from 'react'",
-        "import { createRoot } from 'react-dom/client'",
-        css ? "import './index.css'" : '',
-        `import App from ${JSON.stringify(`./App${ext}`)}`,
-        "createRoot(document.getElementById('root')!).render(<StrictMode><App /></StrictMode>)",
-      ].join('\n'),
-    ),
-  ),
+const viteTemplate = (css: boolean, ext: string): string => `import { StrictMode } from 'react'
+import { createRoot } from 'react-dom/client'
+${css ? "import './index.css'" : ''}
+import App from './App${ext}'
+
+createRoot(document.getElementById('root')!).render(
+  <StrictMode>
+    <App />
+  </StrictMode>,
+)`
+
+const STOCK_MAINS = [true, false].flatMap((css) =>
+  ['.tsx', ''].map((ext) => normalise(viteTemplate(css, ext))),
 )
 
 /** Whether `text` is create-vite's react-ts `main.tsx`, untouched (formatting aside): never an edited file. */
-export const isStockViteMain = (text: string): boolean => STOCK_MAIN.includes(squash(text))
+export const isStockViteMain = (text: string): boolean => STOCK_MAINS.includes(normalise(text))
 
 const ALSO_REQUIRED_PEERS = ['motion']
 
@@ -247,28 +257,26 @@ export function init(cwd: string = process.cwd(), scaffoldFlags: ScaffoldFlags =
   const mergeLint: MergeLintResult | null =
     scaffoldFlags.noMergeLint === true ? null : mergeOxlintExtends(cwd, ctx.vars.OXLINT_PRESET_PATH)
 
-  // A stock Vite app: the entry was seeded above; add the peers it imports (the install is yours to run).
-  const keptMain = !stockMain && keptFiles.includes(mainDest)
-  let peerLines: string[] = []
-  if (stockMain || keptMain) {
+  // The entry was seeded above or kept; either way the app still needs the peers it imports and the router plugin.
+  const keptUnwired =
+    keptFiles.includes(mainDest) && !/from ['"]basalt-ui['"/]/.test(readFileSync(mainPath, 'utf8'))
+  const advice: string[] = []
+  if (stockMain || keptUnwired) {
     const missing = missingPeers(cwd, ctx.pkgRoot)
-    const names = Object.entries(missing).map(([name, range]) => `${name}@${range}`)
-    if (names.length > 0 && stockMain) {
+    const count = Object.keys(missing).length
+    if (count > 0 && stockMain) {
       patchPackageJson(cwd, (pkg) => {
-        pkg['dependencies'] = {
-          ...((pkg['dependencies'] ?? {}) as Record<string, string>),
-          ...missing,
-        }
+        pkg['dependencies'] = { ...(pkg['dependencies'] as Record<string, string>), ...missing }
         return true
       })
-      peerLines = [
-        `added ${names.length} missing peer(s) to package.json "dependencies"; run \`bun install\` (init does not install).`,
-      ]
-    } else if (names.length > 0) {
-      peerLines = [`peers basalt-ui imports are not declared: \`bun add ${names.join(' ')}\`.`]
+      advice.push(
+        `added ${count} missing peers to package.json; run \`bun install\` (init does not).`,
+      )
+    } else if (count > 0) {
+      const specs = Object.entries(missing).map(([name, range]) => `${name}@${range}`)
+      advice.push(`missing peers: \`bun add ${specs.join(' ')}\`.`)
     }
-    if (!hasRouterPlugin(cwd))
-      peerLines.push(ROUTER_PLUGIN_FIX.replace(/^Fix: /, 'router plugin: '))
+    if (!hasRouterPlugin(cwd)) advice.push(ROUTER_PLUGIN_FIX.replace(/^Fix: /, 'router plugin: '))
   }
 
   manifest.basaltVersion = ctx.vars.BASALT_VERSION
@@ -282,7 +290,7 @@ export function init(cwd: string = process.cwd(), scaffoldFlags: ScaffoldFlags =
   if (stockMain) {
     console.log(`basalt-ui init: seeded ${mainDest} (it was the unmodified Vite template).`)
   }
-  for (const line of peerLines) console.log(`basalt-ui init: ${line}`)
+  for (const line of advice) console.log(`basalt-ui init: ${line}`)
   if (missingSources.length > 0) {
     console.log(
       `basalt-ui init: ${missingSources.length} shipped asset(s) not present, skipped: ${missingSources.join(', ')}`,

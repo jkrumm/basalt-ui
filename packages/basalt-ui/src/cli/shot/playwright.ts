@@ -28,9 +28,7 @@ export type PwLocator = {
   first(): PwLocator
   count(): Promise<number>
   hover(options?: { timeout?: number; position?: { x: number; y: number } }): Promise<void>
-  isVisible(): Promise<boolean>
   boundingBox(): Promise<Box | null>
-  scrollIntoViewIfNeeded(): Promise<void>
   waitFor(options: { state: 'visible'; timeout: number }): Promise<void>
   screenshot(options: ShotOptions): Promise<unknown>
   evaluate<R>(fn: (el: Element) => R): Promise<R>
