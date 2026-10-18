@@ -450,6 +450,65 @@ describe('the info bubble is placed inside the viewport', () => {
     expect(Number.parseFloat(bubble.style.top)).toBe(bottom - 24 - 7 - 40)
   })
 
+  // Wave 38 (argo friction III): at 390 a header near the bottom of the viewport flipped its bubble
+  // ABOVE the glyph, onto the card above and its hero. Inside a `basalt-card` the bubble keeps to
+  // its own card: it never flips past the card's top edge, it slides up inside the viewport instead.
+  describe('inside a card', () => {
+    function openInCard(
+      card: Partial<DOMRect>,
+      trigger: Partial<DOMRect>,
+      bubble: { width: number; height: number },
+    ) {
+      const originalRect = Element.prototype.getBoundingClientRect
+      const originalStyle = window.getComputedStyle
+      Element.prototype.getBoundingClientRect = function (this: Element) {
+        return this.getAttribute('role') === 'tooltip'
+          ? rect(bubble)()
+          : this.getAttribute('aria-label') === 'More information'
+            ? rect(trigger)()
+            : this.hasAttribute('data-test-card')
+              ? rect(card)()
+              : originalRect.call(this)
+      }
+      window.getComputedStyle = ((el: Element) =>
+        el.hasAttribute('data-test-card')
+          ? ({ containerName: 'basalt-card' } as CSSStyleDeclaration)
+          : originalStyle(el)) as typeof window.getComputedStyle
+      try {
+        render(
+          <div data-test-card>
+            <WidgetHeader tier="widget" title="Revenue" info="How it is computed." />
+          </div>,
+        )
+        fireEvent.focus(screen.getByRole('button', { name: 'More information' }))
+        return screen.getByRole('tooltip')
+      } finally {
+        Element.prototype.getBoundingClientRect = originalRect
+        window.getComputedStyle = originalStyle
+      }
+    }
+
+    test('never flips above the card top; it slides up inside the viewport instead', () => {
+      const bottom = VIEW.height - 4
+      const bubble = openInCard(
+        { top: 720, bottom: bottom + 200 },
+        { top: bottom - 24, bottom, left: 40, right: 64, width: 24, height: 24 },
+        { width: 200, height: 60 },
+      )
+      expect(Number.parseFloat(bubble.style.top)).toBe(VIEW.height - 8 - 60)
+    })
+
+    test('flips above only into room the card itself owns', () => {
+      const bottom = VIEW.height - 4
+      const bubble = openInCard(
+        { top: 100, bottom: bottom + 200 },
+        { top: bottom - 24, bottom, left: 40, right: 64, width: 24, height: 24 },
+        { width: 200, height: 40 },
+      )
+      expect(Number.parseFloat(bubble.style.top)).toBe(bottom - 24 - 7 - 40)
+    })
+  })
+
   test('the stylesheet makes it fixed, resets the UA popover styles and caps it to the viewport', () => {
     const rule = block('.infoBubble')
     expect(rule).toContain('position: fixed')
@@ -457,5 +516,14 @@ describe('the info bubble is placed inside the viewport', () => {
       expect(rule).toContain(reset)
     }
     expect(rule).toContain('max-width: min(260px, calc(100% - 16px))')
+  })
+})
+
+// Wave 38: a Section shell holds three type sizes, so the section tier's note shares the count tag's
+// `xs` rung instead of sitting at `sm` between the 15px title and the 13px body.
+describe('the section tier keeps three type sizes', () => {
+  test('its subtitle and the count tag share one step', () => {
+    expect(block(".root[data-tier='section'] .subtitle")).toContain('font-size: var(--vx-text-xs)')
+    expect(block('.count')).toContain('font-size: var(--vx-text-xs)')
   })
 })

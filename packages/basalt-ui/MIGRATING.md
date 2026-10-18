@@ -1041,10 +1041,19 @@ The `basalt-ui/router-tanstack` subpath is **removed** in 2.x, not moved: an imp
 | `NavItemMeta`, `NavGroupMeta`, `AnyNavItem`, `AnyNavGroup`, `AnyNavLink`, `FlatNavItem`, `NavConfig`, `NavGroupId`, `NavTabId`, `NavIndex`, `UseNavOptions`, `NavBinding`, `NavAnchor`, `NavAnchorProps`, `NavMobilePlacement` | deleted                                                                                                                                                                                                                                                                                                                                                                                                                                                    | no consumer names them; derive with `ComponentProps` / `Parameters` |
 | `useNav`, and `BasaltShell`'s `sections` / `mobileNav` props                                                                                                                                                                   | deleted: pass `nav={NAV}` (plus `badges`, `isActive`, `getScrollElement` — the old `useNav` options) to `BasaltShell`; it resolves the sidebar, the mobile bar and the breadcrumb itself. `mobileNav` tuning moves to `defineNav`'s `mobile`. argo `apps/dashboard/src/routes/__root.tsx`: replace `const nav = useNav(NAV, { badges })` + `{...nav}` with `nav={NAV} badges={…}` (migrates in W12; 1.x consumers stay on their pinned version until then) |
 
-## Unreleased — Wave 37, argo's friction II
+## Unreleased — Wave 38, argo's friction III
 
-_Nothing yet. Author the next section under this heading as `## Unreleased — <title>`; the
-release renames it and opens a new one here._
+### Section and Button chrome (Wave 38)
+
+- **A Section shell holds three type sizes.** At the `section` tier the subtitle drops from `sm` (13)
+  to `xs` (12), the count tag's step, so title 15, note and count 12, body 13. `SettingsSection` /
+  `DangerZone` follow: the `SettingsRow` label goes `md` → `sm`, its description `sm` → `xs`, and the
+  danger eyebrow `micro` → `xs`. Opt out: restyle with `classNames.header` / `classNames.label`.
+- **An info bubble keeps to its own card.** Inside a `basalt-card` the bubble no longer flips above the
+  glyph into the card above (it covered that card's hero at 390); it opens below and slides up just far
+  enough to fit the viewport. Outside a card the viewport flip is unchanged.
+- **Button hover is unchanged.** The Filled hover reading as rest on the `/components` sizes anchors
+  was the shot hovering the anchor's centre (a gap), not a missing style; no theme default moved.
 
 ## 2.23.0 — Wave 37, argo's friction II
 

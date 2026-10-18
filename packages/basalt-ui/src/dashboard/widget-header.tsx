@@ -170,6 +170,16 @@ const BUBBLE_EDGE = 8
 
 type BubblePos = { top: number; left: number }
 
+/** The top edge of the `basalt-card` container (`ChartCard`/`StatCard`/`Section`) the glyph sits in. */
+function cardTopOf(trigger: Element): number | null {
+  for (let el = trigger.parentElement; el !== null; el = el.parentElement) {
+    if (getComputedStyle(el).containerName.split(/\s+/).includes('basalt-card')) {
+      return el.getBoundingClientRect().top
+    }
+  }
+  return null
+}
+
 /**
  * Places the bubble in the VIEWPORT: below the glyph, flipped above when it would overflow the
  * bottom edge, shifted sideways to stay inside the left and right edges. Re-places on scroll, resize
@@ -202,7 +212,18 @@ function useBubblePosition(
       const viewH = document.documentElement.clientHeight
       const below = t.bottom + BUBBLE_GAP
       const above = t.top - BUBBLE_GAP - b.height
-      const top = below + b.height > viewH - BUBBLE_EDGE && above >= BUBBLE_EDGE ? above : below
+      const overflows = below + b.height > viewH - BUBBLE_EDGE
+      // Inside a card the bubble never leaves the card's own box upward: above the header is the
+      // card above, and a bubble there covers that card's hero. It flips only into room the card
+      // itself owns; otherwise it stays below the glyph and slides up just far enough to fit.
+      const floor = cardTopOf(trigger) ?? BUBBLE_EDGE
+      const top = !overflows
+        ? below
+        : above >= floor
+          ? above
+          : floor === BUBBLE_EDGE
+            ? below
+            : Math.max(floor, viewH - BUBBLE_EDGE - b.height)
       const left = Math.max(BUBBLE_EDGE, Math.min(t.left, viewW - BUBBLE_EDGE - b.width))
       setPos((prev) => (prev?.top === top && prev.left === left ? prev : { top, left }))
     }

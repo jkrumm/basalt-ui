@@ -40,7 +40,7 @@ import classes from './settings-section.module.css'
 
 const eyebrowStyle = {
   fontFamily: 'var(--basalt-font-mono)',
-  fontSize: VX.text.micro,
+  fontSize: VX.text.xs,
   fontWeight: 500,
   letterSpacing: '0.06em',
   textTransform: 'uppercase' as const,
@@ -102,7 +102,7 @@ export type SettingsRowProps = BasaltProps &
   SlotStylesProps<SettingsRowSlot> & {
     /** 13px ink label on the left. */
     label: string
-    /** Optional 12.5px muted description under the label. */
+    /** Optional 12px muted description under the label. */
     description?: string
     /** Right-aligned control (input/switch/button). */
     control?: ReactNode
@@ -125,9 +125,9 @@ export function SettingsRow({
       {...(style !== undefined && { style })}
     >
       <Stack gap={2} {...(classNames?.label !== undefined && { className: classNames.label })}>
-        <span style={{ fontSize: VX.text.md, color: VX.ink }}>{label}</span>
+        <span style={{ fontSize: VX.text.sm, color: VX.ink }}>{label}</span>
         {description && (
-          <span style={{ fontSize: VX.text.sm, color: VX.muted }}>{description}</span>
+          <span style={{ fontSize: VX.text.xs, color: VX.muted }}>{description}</span>
         )}
       </Stack>
       <div className={cx(classes.control, classNames?.control)}>{control ?? children}</div>
