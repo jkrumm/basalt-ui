@@ -1127,6 +1127,7 @@ included. Stretch: the digit face has no `wdth` axis, and neither does the shipp
 so `--basalt-font-head-stretch` (88%) condenses neither letters nor digits today and they cannot
 mismatch. A consumer who swaps in a `wdth` cut of the head face gets condensed letters over
 full-width digits. The face costs no extra download beyond the Nunito latin file `styles.css` already loads.
+
 ### `Meter`: muted zones and segments share one flat fill
 
 `tone: 'muted'` on a `MeterZone` or `MeterSegment` no longer steps lightness per part (2.22.0's ramp):
