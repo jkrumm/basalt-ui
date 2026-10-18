@@ -1057,6 +1057,25 @@ No export is removed. `MeterTick` gains an optional `caption`; five Meter defaul
 
 `target` already captioned its value (`Target 28 sessions`, with `format`); `endCaption={null}` drops it.
 An end figure that hides still reads in the accessible description.
+## Unreleased — Wave 37 r2, the stat caption and the strip
+
+No export is removed. Four behaviours move and one optional field is new.
+
+| Surface                                   | Before                                                                                                                                                         | Now                                                                                                                                                                                                                                                                                                          |
+| ----------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `StatCard` in a container under 240 px    | caption and qualifier shared one nowrap line and both truncated (`TRAINING V…`, `month to…`)                                                                   | the qualifier takes its own line under the caption; a card with a qualifier, or in a `StatGroup` where one does, reserves that line so values share a baseline. Cost: a qualifier-less card in such a group is one caption line taller. The qualifier truncates (with `title`) only if it alone does not fit |
+| `StatGroup variant="strip"` cell          | a subgrid on six shared tracks: a short visual or rows sat in the track its tallest sibling sized, so its box kept the sibling's void (`emptyRatio` 0.25–0.32) | a plain column that ends at its content; the slot still runs the row, so the dividers do. A cell's caption line is one line (qualifier beside it, truncating with `title`; in a narrow cell under it, reserved on every cell of a strip that has a qualifier), so captions share a top and values a baseline |
+| `StatGroup variant="strip"` footer line   | a cell's footer (rows, visual, hero) sat on a track shared with its row-mates                                                                                  | a footer follows the cell's last part; **footer tops no longer align across cells**. Opt-out: none (a deliberate law change; pin a shared footer with a `footer[]` entry under the strip instead)                                                                                                            |
+| `StatGroup variant="strip"` empty / error | the state copy sat flush on the cell's bottom edge                                                                                                             | the cell's inset (`stack-md`) on every side                                                                                                                                                                                                                                                                  |
+
+Tests that pinned the old law and were rewritten: `strip-align.layout.test.ts` (`compact: … per-footer-track tops are equal`, `a mixed row keeps one top per footer kind`: footers now hug their own part; `no cell has a void beyond one row-gap` lost its sibling-slack allowance) and `stat-strip.test.tsx` (`the caption group never wraps; …`: the wrap is the narrow-cell container query, not the default).
+
+### `footer[].under` (new, optional)
+
+`footer={[{ key: 'week', under: 'spend', content: <Meter … /> }]}` — from 800 px the entry sits in
+the column of the cell whose `key` is `under`; an entry without `under` then takes the full row.
+Below 800 px, and for a key that names no cell, nothing changes: full width under the grid. Opt-out:
+omit `under`.
 
 ## 2.22.0 — Wave 37, argo's friction II
 

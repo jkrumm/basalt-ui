@@ -28,27 +28,26 @@
 }
 
 /* The CELL is the row-high column: it owns the hairlines, so they run the whole row however short
- * the cell inside it ends. It paints nothing else — the one surface stays the Card's. */
+ * the cell inside it ends. It paints nothing else — the one surface stays the Card's. It is also the
+ * size container the caption line answers to (a cell is ~170px at 390, ~250px at 1440). */
 .cell {
   display: grid;
-  grid-row: span 6;
-  grid-template-rows: subgrid;
+  align-content: start;
   min-width: 0;
-  /* The foot inset lives HERE, on the row-high slot (it lands on the last track of every cell
-   * alike). A cell that ends early must not carry it: its padding would inflate the shared track
-   * it ends in and push the parts below out of line. */
+  container-type: inline-size;
+  container-name: basalt-card;
+  /* The foot inset lives HERE, on the row-high slot, so a cell that ends early keeps the strip's
+   * surface under it. */
   padding-block-end: var(--vx-space-stack-md);
   box-shadow:
     -1px 0 0 var(--vx-divider),
     0 -1px 0 var(--vx-divider);
 }
 
-/* The CONTENT spans the same six tracks (parts align through the subgrid) but is `align-self: start`,
- * so its own box ends at its content instead of at the row's bottom. */
+/* The CONTENT is a plain column: its box ends at its content, whatever a sibling holds below. */
 .content {
-  display: grid;
-  grid-row: 1 / span var(--basalt-strip-span, 6);
-  grid-template-rows: subgrid;
+  display: flex;
+  flex-direction: column;
   align-self: start;
   min-width: 0;
   padding: var(--vx-space-stack-md) var(--vx-space-stack-md) 0;
@@ -63,50 +62,16 @@
   }
 }
 
-/* Cells align by PART. Every cell sits on the same six tracks of `.cells` (caption, hero, hero footer,
- * visual, rows, footer), so a row of cells shares one caption top and one value baseline, and a void opens
- * only where a sibling's same part is taller. A cell SPANS only down to its last part
- * (`--basalt-strip-span`), so its own box ends at its content; the slot around it runs the whole
- * row. A part a cell lacks collapses its track (the spacing is a margin on the part, not a gap).
- * A footer rides with what it captions: under a hero alone it takes the hero-footer track right
- * below the hero, under a visual it rides in the visual track (`.visualStack`); only a rows
- * cell's footer uses the shared footer track. A hero-less cell (rows only) starts its rows in the
- * visual track, so the hero track above them is the one void, and only as tall as a sibling's
- * value. */
+/* Cells align by CONSTRUCTION, not by shared tracks: the parts above the value have equal height in
+ * every cell of a row (one caption line; a reserved qualifier line in a narrow cell when any cell has
+ * a qualifier), so a row shares one caption top and one value baseline. Below the value each cell
+ * stacks its own parts and ends at its last one. */
 .content > * {
-  grid-column: 1;
   min-width: 0;
 }
 
 .content > :not(.captionLine) {
   margin-block-start: var(--vx-space-stack-sm);
-}
-
-.valueRow,
-.skeletonValue,
-.error {
-  grid-row: 2;
-}
-
-/* A hero's footer has its own track right under the hero track, so it hugs the value however tall a
- * sibling's visual is, and a cell without a footer never spans (or reserves) it. */
-.content > .heroFooter {
-  grid-row: 3;
-}
-
-.content > .visualStack,
-.content > .reason,
-.content > .rows {
-  grid-row: 4;
-}
-
-.content[data-strip-has-visual] > .rows {
-  grid-row: 5;
-}
-
-.content > .footer:not(.heroFooter) {
-  grid-row: 6;
-  align-self: start;
 }
 
 @container basalt-grid (max-width: 479.9px) {
@@ -126,20 +91,25 @@
 }
 
 .captionLine {
-  grid-row: 1;
   display: flex;
   flex-wrap: nowrap;
-  align-items: center;
+  align-items: flex-start;
   column-gap: var(--vx-space-control-gap);
   min-width: 0;
 }
 
-/* Caption + qualifier wrap among themselves; the `action` beside them never joins the wrap. */
+/* A cell with an action reserves the control's height on every caption line of the strip, so the
+ * values stay level whichever cell carries one. */
+[data-strip-action-row] .captionLine {
+  min-height: calc(var(--vx-space-control-height-widget, 1.5rem) * var(--mantine-scale, 1));
+}
+
+/* Caption and qualifier share one line: the caption keeps its words, the qualifier gives way first. */
 .captionMain {
   display: flex;
   flex: 1 1 0;
-  flex-wrap: wrap;
-  align-items: center;
+  flex-wrap: nowrap;
+  align-items: baseline;
   column-gap: var(--vx-space-control-gap);
   min-width: 0;
 }
@@ -162,17 +132,48 @@
   font-family: var(--basalt-font-mono);
   font-size: var(--vx-text-micro);
   font-weight: 500;
+  line-height: 1.4;
   letter-spacing: 0.06em;
   text-transform: uppercase;
   color: var(--vx-faint);
 }
 
-/* The lowercase qualifier is the muted sans (mono is for the UPPERCASE caption only). It is one flex
- * item, so when it does not fit beside the caption it wraps WHOLE onto its own line below. */
+/* The lowercase qualifier is the muted sans (mono is for the UPPERCASE caption only). */
 .qualifier {
+  flex: 0 100 auto;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
   font-size: var(--vx-text-micro);
+  line-height: 1.4;
   color: var(--vx-muted);
-  overflow-wrap: anywhere;
+}
+
+/* A narrow cell (~170px at 390): the qualifier takes its own line under the caption, and when any cell
+ * of the strip has a qualifier every cell reserves that line, so values share a baseline. */
+@container basalt-card (max-width: 239.9px) {
+  .captionMain {
+    flex-wrap: wrap;
+    align-content: flex-start;
+  }
+
+  .qualifier {
+    flex: 0 0 100%;
+  }
+
+  .qualifier {
+    line-height: 1.25;
+  }
+
+  [data-strip-qualifier] .captionMain {
+    min-height: calc(var(--vx-text-micro) * (1.4 + 1.25));
+  }
+
+  /* The two caption lines read as one block: the value follows at the tight step. */
+  [data-strip-qualifier] .captionLine + * {
+    margin-block-start: var(--vx-space-stack-xs);
+  }
 }
 
 /* A control at the end of the caption line: it keeps its size, the caption truncates first. */
@@ -230,10 +231,6 @@
   min-width: 0;
 }
 
-.visualStack > .footer {
-  margin-block-start: var(--vx-space-stack-sm);
-}
-
 /* A Sparkline's hover readout takes this line above its plot (`charts/sparkline.module.css`). The
  * cell's own stack gap already sits above it; the slot reserves the rest, so the chip never covers
  * the value. */
@@ -243,6 +240,12 @@
 
 .visual:has([data-basalt-sparkline]) {
   padding-top: max(0px, calc(var(--basalt-spark-readout-h) - var(--vx-space-stack-sm)));
+}
+
+/* The state copy keeps the cell's inset on every side: the article ends at its own last track, so the
+ * foot inset (carried by the row-high slot, further down) cannot reach it. */
+.content[data-strip-has-state] {
+  padding-block-end: var(--vx-space-stack-md);
 }
 
 /* An empty cell's reason and an errored cell's message: one muted `sm` line, wrapping rather than
@@ -327,6 +330,25 @@
 .footerCell [data-meter-captions] > * {
   margin-inline-start: 0;
   text-align: start;
+}
+
+/* From the full desktop count a footer entry may sit under the cell it qualifies (`under`): the row
+ * takes the cells' column grid, an entry with `--basalt-strip-footer-col` sits in that column, and any
+ * other takes the full row. Each entry keeps its own leading hairlines (`.footerCell`, below), so a
+ * placed entry reads as attached to its column and the columns beside it stay the strip's surface. */
+@container basalt-grid (min-width: 800px) {
+  .footerRow[data-placed] {
+    display: grid;
+    grid-template-columns: repeat(var(--basalt-strip-cols), minmax(0, 1fr));
+  }
+
+  .footerRow[data-placed] > .footerCell {
+    grid-column: 1 / -1;
+  }
+
+  .footerRow[data-placed] > .footerCell[data-under] {
+    grid-column: var(--basalt-strip-footer-col);
+  }
 }
 
 .footerCell {
