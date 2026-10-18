@@ -393,6 +393,12 @@ export type FixtureSpec = {
     cardTabs?: true
     radiusTabs?: true
   }
+  /**
+   * Wave 38: argo's Strength-page Section shells (`data-testid="w38-strength-*"`): a titled Section
+   * with a summary, a two-up grid of `ChartCard`s (info, facts, subtitle, a multi-series `Lines`
+   * with a legend), a Meter with zones and a Sparkline with a labelled reference.
+   */
+  w38Strength?: true
   /** Renders a `PageAside` (and, by default, the `PageBar` row 2 it projects into below `sm`). */
   aside?: AsideSpec
   /** A `TableOfContents` + article inside Main's scrollport (the scroll-spy invariants). */

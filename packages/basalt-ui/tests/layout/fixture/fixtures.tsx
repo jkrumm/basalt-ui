@@ -42,6 +42,8 @@ import {
   Code,
   Paper,
   SegmentedControl,
+  SimpleGrid,
+  Text,
 } from '@mantine/core'
 import {
   BarList,
@@ -1514,6 +1516,46 @@ function Wave37Fixture({ spec }: { spec: NonNullable<FixtureSpec['w37']> }): Rea
   )
 }
 
+/**
+ * argo's Strength-page Section shells (`routes/strength-tracker.tsx`): a plain titled Section over a
+ * two-up grid of `ChartCard`s (title + info, a multi-series `Lines`), and the collapsible
+ * diagnostics shell with an `xs` summary. One test id per shell, measured separately.
+ */
+function Wave38StrengthFixture(): ReactElement {
+  const data = useMemo(() => buildChartData(3, 60), [])
+  const series = buildLineSeries(3, undefined, ['Squat', 'Bench press', 'Deadlift'])
+  const card = (title: string): ReactElement => (
+    <ChartCard title={title} info="Estimated one-rep max from the heaviest set per day.">
+      <Lines ariaLabel={title} data={data} x={chartX} series={series} height={180} />
+    </ChartCard>
+  )
+  return (
+    <>
+      <div data-testid="w38-strength-plain">
+        <Section title="Strength, 90 days">
+          <SimpleGrid type="container" cols={{ base: 1, '30rem': 2 }} spacing="md">
+            {card('Estimated 1RM')}
+            {card('Momentum')}
+          </SimpleGrid>
+        </Section>
+      </div>
+      <div data-testid="w38-strength-diagnostics">
+        <Section
+          title="Diagnostics: composite load against readiness"
+          summary={
+            <Text size="xs" c="dimmed">
+              90 days
+            </Text>
+          }
+          collapsible
+        >
+          {card('Composite')}
+        </Section>
+      </div>
+    </>
+  )
+}
+
 function AnchorFixture(): ReactElement {
   return (
     <>
@@ -2791,6 +2833,7 @@ export function ShellFixture({ spec }: { spec: FixtureSpec }): ReactElement {
       })}
     >
       {spec.anchor && <AnchorFixture />}
+      {spec.w38Strength && <Wave38StrengthFixture />}
       {spec.w37 && <Wave37Fixture spec={spec.w37} />}
       {spec.aside && !spec.aside.noBar && <AsideBar />}
       {spec.bar && <BarFixture spec={spec.bar} />}
