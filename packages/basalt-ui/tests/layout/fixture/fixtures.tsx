@@ -2007,6 +2007,194 @@ function DashFixture(): ReactElement {
           />
         </StatGroup>
       </div>
+      <div data-testid="dash-stat-caption">
+        <StatGroup cols={2}>
+          <StatCard title="Training volume" qualifier="month to date" value="42" unit="km" />
+          <StatCard title="Sessions" value="12" />
+          <StatCard
+            title="Distance"
+            qualifier="a long qualifier naming the whole reporting window"
+            value="48"
+            unit="km"
+          />
+          <StatCard title="Pace" qualifier="7 days" value="5:12" />
+        </StatGroup>
+      </div>
+      <div data-testid="dash-strip-compact">
+        <StatGroup
+          variant="strip"
+          label="Compact value"
+          cols={2}
+          cells={[
+            { key: 'plain', caption: 'Open', value: '4', footer: 'since Monday' },
+            {
+              key: 'tallrows',
+              caption: 'Zones',
+              value: '78 %',
+              rows: [
+                { key: 'a', label: 'Easy', value: '48 ms' },
+                { key: 'b', label: 'Hard', value: '12 ms' },
+                { key: 'c', label: 'Rest', value: '3 ms' },
+              ],
+              footer: 'last 7 days',
+            },
+          ]}
+        />
+        <StatGroup
+          variant="strip"
+          label="Compact visual"
+          cols={2}
+          cells={[
+            {
+              key: 'budget',
+              caption: 'Budget',
+              value: '91 %',
+              visual: <Meter label="Budget used" value={91} max={100} endCaption="91% used" />,
+            },
+            {
+              key: 'peer',
+              caption: 'Quota',
+              value: '40 %',
+              visual: <Meter label="Quota used" value={40} max={100} endCaption="40% used" />,
+            },
+          ]}
+        />
+      </div>
+      <div data-testid="dash-strip-stretch">
+        <StatGroup
+          variant="strip"
+          label="Short visual beside a taller one"
+          cols={2}
+          cells={[
+            {
+              key: 'budget',
+              caption: 'Budget',
+              qualifier: 'October',
+              value: '€1,500',
+              visual: (
+                <Meter
+                  label="Spent"
+                  value={91}
+                  max={100}
+                  startCaption="91% used"
+                  endCaption="€131 left"
+                />
+              ),
+            },
+            {
+              key: 'forecast',
+              caption: 'Forecast',
+              qualifier: 'end of month',
+              value: '€1,620',
+              visual: (
+                <Meter
+                  label="Forecast against the budget"
+                  max={100}
+                  ticks={[{ at: 80, label: 'Budget' }]}
+                  segments={[
+                    { value: 60, label: 'Spent' },
+                    { value: 30, label: 'Forecast', forecast: true },
+                  ]}
+                  forecastCaption="Forecast"
+                  startCaption="Spent"
+                />
+              ),
+              footer: '€120 over budget',
+            },
+            {
+              key: 'oldest',
+              caption: 'Oldest wait',
+              value: '2 d 23 h',
+              visual: (
+                <Meter
+                  label="Oldest wait"
+                  value={71}
+                  max={168}
+                  target={24}
+                  startCaption={null}
+                  endCaption="Warns at 24 h · abandoned at 7 d"
+                />
+              ),
+            },
+            {
+              key: 'fleet',
+              caption: 'Fleet',
+              qualifier: 'by state',
+              value: '12',
+              visual: (
+                <Meter
+                  label="Fleet by state"
+                  max={12}
+                  segments={[
+                    { value: 4, label: 'Needs you', color: VX.status.warn },
+                    { value: 3, label: 'Running', color: VX.accent },
+                    { value: 3, label: 'Queued', color: VX.faint },
+                    { value: 2, label: 'Blocked', color: VX.status.bad },
+                  ]}
+                  format={(v) => `${v} items`}
+                />
+              ),
+            },
+          ]}
+        />
+      </div>
+      <div data-testid="dash-strip-empty">
+        <StatGroup
+          variant="strip"
+          label="Empty copy"
+          cols={2}
+          cells={[
+            { key: 'e1', caption: 'Sleep', state: { kind: 'empty', reason: 'No sleep logged' } },
+            { key: 'e2', caption: 'Steps', state: { kind: 'empty', reason: 'No steps logged' } },
+          ]}
+        />
+        <StatGroup
+          variant="strip"
+          label="Error copy"
+          cols={2}
+          cells={[
+            {
+              key: 'x1',
+              caption: 'HRV',
+              state: { kind: 'error', error: new Error('Timed out'), onRetry: () => {} },
+            },
+            {
+              key: 'x2',
+              caption: 'Load',
+              state: { kind: 'error', error: new Error('Timed out'), onRetry: () => {} },
+            },
+          ]}
+        />
+      </div>
+      <div data-testid="dash-strip-under">
+        <StatGroup
+          variant="strip"
+          label="Under"
+          cols={5}
+          cells={[
+            { key: 'u1', caption: 'Needs you', value: '7' },
+            { key: 'u2', caption: 'Oldest wait', value: '2 d' },
+            { key: 'u3', caption: 'Failures', value: '3' },
+            { key: 'u4', caption: 'Dispatch spend', value: '€4.20' },
+            { key: 'u5', caption: 'Fleet', value: '12' },
+          ]}
+          footer={[
+            {
+              key: 'week',
+              under: 'u4',
+              content: (
+                <Meter
+                  label="Week budget"
+                  value={20}
+                  max={50}
+                  startCaption="This week €20"
+                  endCaption="€30 left"
+                />
+              ),
+            },
+          ]}
+        />
+      </div>
       <div data-testid="dash-zl-strip">
         <StatGroup
           variant="strip"
