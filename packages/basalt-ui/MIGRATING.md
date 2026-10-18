@@ -1045,15 +1045,21 @@ The `basalt-ui/router-tanstack` subpath is **removed** in 2.x, not moved: an imp
 
 ### Section and Button chrome (Wave 38)
 
-- **A Section shell holds three type sizes.** At the `section` tier the subtitle drops from `sm` (13)
-  to `xs` (12), the count tag's step, so title 15, note and count 12, body 13. `SettingsSection` /
-  `DangerZone` follow: the `SettingsRow` label goes `md` → `sm`, its description `sm` → `xs`, and the
-  danger eyebrow `micro` → `xs`. Opt out: restyle with `classNames.header` / `classNames.label`.
-- **An info bubble keeps to its own card.** Inside a `basalt-card` the bubble no longer flips above the
-  glyph into the card above (it covered that card's hero at 390); it opens below and slides up just far
-  enough to fit the viewport. Outside a card the viewport flip is unchanged.
-- **Button hover is unchanged.** The Filled hover reading as rest on the `/components` sizes anchors
-  was the shot hovering the anchor's centre (a gap), not a missing style; no theme default moved.
+A Section shell holds three type sizes (title 15, note and count 12, body 13). Moved defaults:
+
+| Surface                                            | Before       | Now       |
+| -------------------------------------------------- | ------------ | --------- |
+| `Section` / `WidgetHeader tier="section"` subtitle | `sm` (13)    | `xs` (12) |
+| `SettingsRow` label                                | `md` (15)    | `sm` (13) |
+| `SettingsRow` description                          | `sm` (13)    | `xs` (12) |
+| `DangerZone` eyebrow                               | `micro` (11) | `xs` (12) |
+
+Opt out: restyle the slot with `classNames.header` (Section / SettingsSection / DangerZone) or
+`classNames.label` (`SettingsRow`).
+
+An info bubble inside a `basalt-card` no longer flips above the glyph into the card above (it
+covered that card's hero at 390): it opens below, slides up to fit, or flips only into room the card
+owns, and never covers its own glyph. Outside a card the viewport flip is unchanged.
 
 ## 2.23.0 — Wave 37, argo's friction II
 

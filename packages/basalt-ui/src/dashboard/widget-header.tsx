@@ -170,12 +170,10 @@ const BUBBLE_EDGE = 8
 
 type BubblePos = { top: number; left: number }
 
-/** The top edge of the `basalt-card` container (`ChartCard`/`StatCard`/`Section`) the glyph sits in. */
-function cardTopOf(trigger: Element): number | null {
+/** The `basalt-card` container (`ChartCard`/`StatCard`/`Section`) the glyph sits in, if any. */
+function cardOf(trigger: Element): Element | null {
   for (let el = trigger.parentElement; el !== null; el = el.parentElement) {
-    if (getComputedStyle(el).containerName.split(/\s+/).includes('basalt-card')) {
-      return el.getBoundingClientRect().top
-    }
+    if (getComputedStyle(el).containerName.split(/\s+/).includes('basalt-card')) return el
   }
   return null
 }
@@ -201,6 +199,8 @@ function useBubblePosition(
     // is the same box the placement maths below positions.
     const bubbleEl = bubbleRef.current
     if (bubbleEl !== null && typeof bubbleEl.showPopover === 'function') bubbleEl.showPopover()
+    // The card is resolved once per open, not on every scroll re-place.
+    const card = triggerRef.current === null ? null : cardOf(triggerRef.current)
     const place = () => {
       const trigger = triggerRef.current
       const bubble = bubbleRef.current
@@ -216,14 +216,20 @@ function useBubblePosition(
       // Inside a card the bubble never leaves the card's own box upward: above the header is the
       // card above, and a bubble there covers that card's hero. It flips only into room the card
       // itself owns; otherwise it stays below the glyph and slides up just far enough to fit.
-      const floor = cardTopOf(trigger) ?? BUBBLE_EDGE
-      const top = !overflows
-        ? below
-        : above >= floor
-          ? above
-          : floor === BUBBLE_EDGE
-            ? below
-            : Math.max(floor, viewH - BUBBLE_EDGE - b.height)
+      const viewportFlip = above >= BUBBLE_EDGE ? above : below
+      let top = below
+      if (overflows) {
+        // A card scrolled partly off the top has a negative top: never place above the viewport edge.
+        const floor =
+          card === null ? BUBBLE_EDGE : Math.max(BUBBLE_EDGE, card.getBoundingClientRect().top)
+        if (above >= floor) top = above
+        else if (card !== null) {
+          const slid = Math.max(floor, viewH - BUBBLE_EDGE - b.height)
+          // Never cover the glyph itself: when the slid bubble would, take the viewport flip instead.
+          const covers = slid < t.bottom && slid + b.height > t.top
+          top = covers ? viewportFlip : slid
+        }
+      }
       const left = Math.max(BUBBLE_EDGE, Math.min(t.left, viewW - BUBBLE_EDGE - b.width))
       setPos((prev) => (prev?.top === top && prev.left === left ? prev : { top, left }))
     }

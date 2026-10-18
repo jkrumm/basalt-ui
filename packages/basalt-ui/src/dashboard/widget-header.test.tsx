@@ -488,24 +488,41 @@ describe('the info bubble is placed inside the viewport', () => {
       }
     }
 
-    test('never flips above the card top; it slides up inside the viewport instead', () => {
-      const bottom = VIEW.height - 4
+    const GLYPH_BOTTOM = VIEW.height - 4
+    const glyph = {
+      top: GLYPH_BOTTOM - 24,
+      bottom: GLYPH_BOTTOM,
+      left: 40,
+      right: 64,
+      width: 24,
+      height: 24,
+    }
+
+    test('never flips above the card top; it slides up when the glyph stays clear', () => {
       const bubble = openInCard(
-        { top: 720, bottom: bottom + 200 },
-        { top: bottom - 24, bottom, left: 40, right: 64, width: 24, height: 24 },
+        { top: 700, bottom: 1000 },
+        { top: 708, bottom: 732, left: 40, right: 64, width: 24, height: 24 },
         { width: 200, height: 60 },
       )
       expect(Number.parseFloat(bubble.style.top)).toBe(VIEW.height - 8 - 60)
     })
 
+    test('never covers the glyph: a slid bubble that would falls back to the viewport flip', () => {
+      const bubble = openInCard({ top: 720, bottom: 1000 }, glyph, { width: 200, height: 60 })
+      const top = Number.parseFloat(bubble.style.top)
+      expect(top + 60 <= glyph.top || top >= glyph.bottom).toBe(true)
+    })
+
+    test('a card scrolled partly above the viewport never puts the bubble off-screen', () => {
+      const bubble = openInCard({ top: -300, bottom: 1000 }, glyph, { width: 200, height: 60 })
+      const top = Number.parseFloat(bubble.style.top)
+      expect(top).toBeGreaterThanOrEqual(8)
+      expect(top + 60 <= glyph.top || top >= glyph.bottom).toBe(true)
+    })
+
     test('flips above only into room the card itself owns', () => {
-      const bottom = VIEW.height - 4
-      const bubble = openInCard(
-        { top: 100, bottom: bottom + 200 },
-        { top: bottom - 24, bottom, left: 40, right: 64, width: 24, height: 24 },
-        { width: 200, height: 40 },
-      )
-      expect(Number.parseFloat(bubble.style.top)).toBe(bottom - 24 - 7 - 40)
+      const bubble = openInCard({ top: 100, bottom: 1000 }, glyph, { width: 200, height: 40 })
+      expect(Number.parseFloat(bubble.style.top)).toBe(GLYPH_BOTTOM - 24 - 7 - 40)
     })
   })
 
