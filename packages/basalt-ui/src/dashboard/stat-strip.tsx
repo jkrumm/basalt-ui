@@ -162,6 +162,8 @@ function StripCell({ cell }: { cell: StatStripCell }) {
   const heroFooter = hasHero && cell.visual === undefined && rows === undefined
   // The cell spans the tracks down to its last part, so its box ends at its content (the slot
   // around it still runs the whole row for the dividers).
+  // The cell's verdict colours a plain Meter in its visual too (a hero host only).
+  const hostSlot = !hasHero ? null : cell.tone === undefined ? HOSTED : { tone: cell.tone }
   const lastTrack = lastTrackOf(cell, state)
   const footerEl = cell.footer !== undefined && (
     <div className={cx(classes.footer, heroFooter && classes.heroFooter)} data-strip-footer>
@@ -228,7 +230,7 @@ function StripCell({ cell }: { cell: StatStripCell }) {
         {state === undefined && cell.visual !== undefined && (
           <div className={classes.visualStack}>
             <div className={classes.visual} data-strip-visual>
-              <VisualSlotContext.Provider value={hasHero ? HOSTED : null}>
+              <VisualSlotContext.Provider value={hostSlot}>
                 {cell.visual}
               </VisualSlotContext.Provider>
             </div>
