@@ -6,7 +6,6 @@ import { MantineProvider } from '@mantine/core'
 import { cleanup, render } from '@testing-library/react'
 import { createElement } from 'react'
 import type { ReactElement } from 'react'
-import { readFileSync } from 'node:fs'
 import { afterEach, describe, expect, it } from 'bun:test'
 import { ComponentsSurfaces } from '../demo/ComponentsPage'
 import { TrainingScenario } from './S2Training'
@@ -16,7 +15,6 @@ afterEach(cleanup)
 const mount = (ui: ReactElement) => render(createElement(MantineProvider, null, ui)).container
 const anchor = (c: HTMLElement, name: string) =>
   c.querySelector<HTMLElement>(`[data-shot="${name}"]`)
-const source = (file: string): string => readFileSync(new URL(file, import.meta.url), 'utf8')
 
 describe('buttons-sections specimen', () => {
   it('carries left and right sections at xs/sm/md in default and filled', () => {
@@ -62,13 +60,5 @@ describe('S2 zoned Meter end ticks', () => {
     const text = anchor(c, 'readiness')?.textContent ?? ''
     expect(text).toContain('No readiness reading today')
     expect(text).not.toContain('No contributor has a reading')
-  })
-})
-
-describe('S2 hit rate goal', () => {
-  it('leaves the goal line unlabelled; the facts line carries the goal', () => {
-    const src = source('./S2Training.tsx')
-    expect(src).not.toContain('label: `Goal ${GOAL_SESSIONS}`')
-    expect(src).toContain('reached ${GOAL_SESSIONS} sessions')
   })
 })

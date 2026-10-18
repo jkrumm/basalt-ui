@@ -287,7 +287,14 @@ function GoalRow({ shotState }: ScenarioProps) {
               xTicks={HIT_TICKS}
               y={{ domain: [0, HIT_Y_MAX] }}
               series={HIT_SERIES}
-              refLines={[{ value: GOAL_SESSIONS, color: VX.faint, dashed: true }]}
+              refLines={[
+                {
+                  value: GOAL_SESSIONS,
+                  color: VX.faint,
+                  dashed: true,
+                  label: `Goal ${GOAL_SESSIONS}`,
+                },
+              ]}
             />
           </Box>
         </ChartCard>

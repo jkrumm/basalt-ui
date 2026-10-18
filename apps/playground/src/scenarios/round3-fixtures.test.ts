@@ -91,12 +91,12 @@ describe('retry', () => {
 })
 
 describe('S2 / S3 / S4 encodings', () => {
-  it('S2 hit rate is a line with the goal as a reference line, not bars', () => {
+  it('S2 hit rate is a line with the goal as a labelled reference, not bars', () => {
     const src = source('./S2Training.tsx')
     expect(src).toContain('<Lines')
     expect(src).not.toContain('<Bars')
     expect(src).not.toContain('HIT_BARS')
-    expect(src).toContain('refLines={[{ value: GOAL_SESSIONS')
+    expect(src).toContain('label: `Goal ${GOAL_SESSIONS}`')
     expect(src).toContain('xTicks={HIT_TICKS}')
   })
 
