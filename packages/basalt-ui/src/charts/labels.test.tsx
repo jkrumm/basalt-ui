@@ -152,16 +152,21 @@ describe('endLabelPlan', () => {
     expect(plan(data, [A, B, { ...A, key: 'c' }, { ...A, key: 'd' }])).toEqual([])
   })
 
-  test('two labels closer than the minimum gap are both dropped', () => {
+  test('two labels closer than the minimum gap are spread apart, both drawn', () => {
     const data = rows(5).map((r) => ({ ...r, a: 50, b: 50.5 }))
-    expect(plan(data, [A, B])).toEqual([])
+    const planned = plan(data, [A, B])
+    expect(planned).toHaveLength(2)
+    const [first, second] = planned.map((p) => p.nudge)
+    expect(Math.abs((first ?? 0) - (second ?? 0))).toBeGreaterThan(11)
   })
 
   test('the collision gap is measured on the plot area, not the frame', () => {
-    // 4 units of a 0-100 domain: 12 px on a 300 px plot (collides), 24 px on a 600 px frame.
+    // 4 units of a 0-100 domain: 12 px on a 300 px plot (nudged), 24 px on a 600 px frame (clear).
     const data = rows(5).map((r) => ({ ...r, a: 50, b: 54 }))
-    expect(plan(data, [A, B], { height: 600, plotHeight: 300 })).toEqual([])
-    expect(plan(data, [A, B], { height: 600, plotHeight: 600 })).toHaveLength(2)
+    const nudged = (plotHeight: number): number[] =>
+      plan(data, [A, B], { height: 600, plotHeight }).map((p) => p.nudge)
+    expect(nudged(300).some((n) => n !== 0)).toBe(true)
+    expect(nudged(600)).toEqual([0, 0])
   })
 
   test('a 200k-point series plans without a spread over its rows, and emits its label', () => {

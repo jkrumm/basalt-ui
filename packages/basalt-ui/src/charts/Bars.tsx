@@ -107,6 +107,8 @@ export function Bars<T, X extends ChartX = ChartX>(props: BarsProps<T, X>): Reac
       const byKey = new Map(bars.map((b) => [b.key, b]))
       const rows = visibleBars.flatMap((s) => plot.rows(s.key))
       const h = plot.highlighted
+      const solid = ({ datum }: { datum: PlotRow<T, X> }): string =>
+        byKey.get(datum.series)?.color ?? 'transparent'
       const fill = (row: PlotRow<T, X>): string => {
         const bar = byKey.get(row.series)
         if (!bar) return 'transparent'
@@ -123,6 +125,9 @@ export function Bars<T, X extends ChartX = ChartX>(props: BarsProps<T, X>): Reac
             y: 'y',
             z: 'series',
             fill,
+            // The hovered x is its own highlight: the bar reads at full strength (no dimming, no
+            // point marker, no crosshair rule: that is line-chart chrome).
+            states: [{ when: { focus: 'x' }, style: { fill: solid } }],
             layout:
               layout === 'grouped'
                 ? group({ padding: 0.1 })
@@ -144,6 +149,7 @@ export function Bars<T, X extends ChartX = ChartX>(props: BarsProps<T, X>): Reac
       series={series}
       marks={marks}
       band
+      crosshair={false}
       reverseRows={layout !== 'grouped'}
       {...(layout !== 'grouped' && { stack: layout })}
     />

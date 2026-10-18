@@ -66,7 +66,10 @@ const lines = (state: ChartState): ReactElement => (
     ariaLabel="L"
     data={data}
     x={x}
-    series={[{ key: 'a', label: 'A', color: 'var(--vx-line)', getValue: (d: Slot) => d.v }]}
+    series={[
+      { key: 'a', label: 'A', color: 'var(--vx-line)', getValue: (d: Slot) => d.v },
+      { key: 'b', label: 'B', color: 'var(--vx-line-2)', getValue: (d: Slot) => d.v },
+    ]}
     state={state}
   />
 )

@@ -474,7 +474,7 @@ describe('DualPanel', () => {
     expect(el.querySelectorAll('button[data-legend-key="__bar"]').length).toBe(1)
   })
 
-  test('the split swatch takes the mode shape: a circle in dots, a square in chips', async () => {
+  test('the split swatch is one shape in both modes (a rounded square), only the size follows the mode', async () => {
     const noop = (): void => undefined
     const bar = { key: 'b', label: 'B', color: 'var(--vx-good)', colorNegative: 'var(--vx-bad)' }
     const shape = async (mode: 'dots' | 'chips'): Promise<[string, string, string]> => {
@@ -493,7 +493,7 @@ describe('DualPanel', () => {
       expect(sw.length).toBe(1)
       return [sw[0]!.style.background, sw[0]!.style.borderRadius, sw[0]!.style.width]
     }
-    expect(await shape('dots')).toEqual([SPLIT, '50%', '8px'])
+    expect(await shape('dots')).toEqual([SPLIT, '2px', '8px'])
     expect(await shape('chips')).toEqual([SPLIT, '2px', '10px'])
   })
 

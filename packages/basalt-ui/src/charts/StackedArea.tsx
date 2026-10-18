@@ -24,7 +24,7 @@ export type StackedAreaBand<T> = Pick<
   ChartSeries<T>,
   'key' | 'label' | 'color' | 'getValue' | 'formatValue' | 'tooltip' | 'legend' | 'role' | 'note'
 > & {
-  /** Default 0.85. */
+  /** Default: the chart's `fillOpacity` (0.85). */
   fillOpacity?: number | undefined
 }
 
@@ -34,6 +34,9 @@ export type StackedAreaProps<T, X extends ChartX = ChartX> = Omit<
 > & {
   /** The bands, bottom to top. */
   series: readonly StackedAreaBand<T>[]
+  /** Every band's fill opacity, 0–1 (default 0.85: full-opacity bands read saturated). A band's own
+   * `fillOpacity` wins. The legend swatch wears the same shade. */
+  fillOpacity?: number | undefined
   /** No `scale`: a log axis has no additive zero to stack from. */
   y?: Omit<NonNullable<CartesianChartProps<T, X>['y']>, 'scale'> | undefined
 }
@@ -41,11 +44,18 @@ export type StackedAreaProps<T, X extends ChartX = ChartX> = Omit<
 export function StackedArea<T, X extends ChartX = ChartX>(
   props: StackedAreaProps<T, X>,
 ): ReactElement {
-  const { series: bands, ...rest } = props
+  const { series: bands, fillOpacity, ...rest } = props
   // `mark: 'bar'` is what the rung sums for the auto domain, and the legend/tooltip swatch.
   const series = useMemo<ChartSeries<T>[]>(
-    () => bands.map((s) => ({ ...s, mark: 'bar' as const })),
-    [bands],
+    () =>
+      bands.map((s) => ({
+        ...s,
+        mark: 'bar' as const,
+        ...((s.fillOpacity ?? fillOpacity) !== undefined && {
+          fillOpacity: s.fillOpacity ?? fillOpacity,
+        }),
+      })),
+    [bands, fillOpacity],
   )
 
   const marks = useCallback((plot: PlotContext<T, X>): ChartMarks => {

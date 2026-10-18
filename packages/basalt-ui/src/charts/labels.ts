@@ -9,7 +9,7 @@ import { rowX } from './types'
 import type { ChartMarks, ChartSeries, ChartX, PlotContext, PlotRow } from './types'
 
 const MAX_END_LABELS = 3
-/** Below this vertical gap two end labels would collide; then none is drawn. */
+/** Two end labels closer than this (px, vertically) are pushed apart to it. */
 const END_LABEL_MIN_GAP = 13
 const END_LABEL_DX = 6
 /**
@@ -42,10 +42,15 @@ export function endLabelAnchor(opts: {
   return room >= label.length * fontSize * END_LABEL_GLYPH_EM + END_LABEL_DX ? 'start' : 'end'
 }
 
+/** `Lines`' one naming switch: who names the series. */
+export type LinesNaming = 'auto' | 'legend' | 'endLabels'
+
 export type EndLabel<T, X extends ChartX> = {
   series: ChartSeries<T>
   row: PlotRow<T, X>
   anchor: EndLabelAnchor
+  /** A vertical shift in px (negative is up) that keeps this label clear of its neighbours. */
+  nudge: number
 }
 
 type LastPoint<T, X extends ChartX> = {
@@ -56,17 +61,45 @@ type LastPoint<T, X extends ChartX> = {
 }
 
 /**
- * The end labels to draw: none off the wide class, with a right axis, with more than
- * {@link MAX_END_LABELS} lines, or when two would collide in pixels (against the plot's height).
- * A series whose last point the plot's own x scale cannot place, or places outside the plot
+ * Pushes labels apart: `ys` are the labels' heights in px from the plot's bottom, returned as the
+ * shift each needs (positive is up) so no two sit closer than {@link END_LABEL_MIN_GAP} and the
+ * topmost stays inside the plot. Order is kept.
+ */
+export function spreadLabels(ys: readonly number[], plotHeight: number): number[] {
+  const order = ys.map((y, i) => i).toSorted((a, b) => (ys[a] as number) - (ys[b] as number))
+  const placed = new Map<number, number>()
+  let floor = -Infinity
+  for (const i of order) {
+    const at = Math.max(ys[i] as number, floor)
+    placed.set(i, at)
+    floor = at + END_LABEL_MIN_GAP
+  }
+  // Pushed past the top: slide the whole stack back down, then re-sweep from the top.
+  const top = plotHeight - END_LABEL_MIN_GAP / 2
+  let ceiling = Infinity
+  for (const i of order.toReversed()) {
+    const at = Math.min(placed.get(i) as number, ceiling, top)
+    placed.set(i, at)
+    ceiling = at - END_LABEL_MIN_GAP
+  }
+  return ys.map((y, i) => (placed.get(i) as number) - y)
+}
+
+/**
+ * The end labels to draw. `auto`: on the wide class only, with ≤ {@link MAX_END_LABELS} lines and
+ * no right axis; `endLabels`: at every width and any line count (still no right axis, whose
+ * series read another scale); `legend`: none. Labels that would collide are spread apart, never
+ * dropped. A series whose last point the plot's own x scale cannot place, or places outside the plot
  * (`plot.xFraction` outside [0, 1]: clipped by a narrower `xDomain`), has no label.
  */
 export function endLabelPlan<T, X extends ChartX>(
   plot: PlotContext<T, X>,
   lines: readonly ChartSeries<T>[],
+  naming: LinesNaming = 'auto',
 ): EndLabel<T, X>[] {
-  if (plot.containerClass !== 'wide' || plot.y2 !== undefined) return []
-  if (lines.length === 0 || lines.length > MAX_END_LABELS) return []
+  if (naming === 'legend' || plot.y2 !== undefined || lines.length === 0) return []
+  if (naming === 'auto' && (plot.containerClass !== 'wide' || lines.length > MAX_END_LABELS))
+    return []
   const last = lines.flatMap((series): LastPoint<T, X>[] => {
     const row = plot.rows(series.key).findLast((r) => r.y !== null)
     if (row === undefined || row.y === null) return []
@@ -74,14 +107,13 @@ export function endLabelPlan<T, X extends ChartX>(
     if (fraction === null || fraction < 0 || fraction > 1) return []
     return [{ series, row, y: row.y, fraction }]
   })
-  // Collision check in pixels from the plot height: labels that would overlap are not drawn at all.
   // No `y2` here (returned above), so every label reads the left domain.
   const [lo, hi] = plot.yDomain
-  const ys = last
-    .map(({ y }) => ((y - lo) / (hi - lo || 1)) * plot.plotHeight)
-    .toSorted((a, b) => a - b)
-  if (ys.some((y, i) => i > 0 && y - (ys[i - 1] as number) < END_LABEL_MIN_GAP)) return []
-  return last.map(({ series, row, fraction }) => ({
+  const shifts = spreadLabels(
+    last.map(({ y }) => ((y - lo) / (hi - lo || 1)) * plot.plotHeight),
+    plot.plotHeight,
+  )
+  return last.map(({ series, row, fraction }, i) => ({
     series,
     row,
     anchor: endLabelAnchor({
@@ -90,6 +122,7 @@ export function endLabelPlan<T, X extends ChartX>(
       label: series.label,
       fontSize: VX.text.micro,
     }),
+    nudge: 0 - (shifts[i] as number),
   }))
 }
 
@@ -101,7 +134,7 @@ export function endLabelOffset(anchor: EndLabelAnchor): { dx: number; dy: number
 }
 
 export function endLabelMarks<T, X extends ChartX>(plan: readonly EndLabel<T, X>[]): ChartMarks {
-  return plan.map(({ series, row, anchor }) =>
+  return plan.map(({ series, row, anchor, nudge }) =>
     decorative(
       text([row], {
         id: `${series.key}-end-label`,
@@ -111,7 +144,8 @@ export function endLabelMarks<T, X extends ChartX>(plan: readonly EndLabel<T, X>
         fill: series.color,
         fontSize: VX.text.micro,
         anchor,
-        ...endLabelOffset(anchor),
+        dx: endLabelOffset(anchor).dx,
+        dy: endLabelOffset(anchor).dy + nudge,
       }),
     ),
   )

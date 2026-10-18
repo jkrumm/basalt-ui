@@ -189,6 +189,8 @@ export type ChartsSpec = {
   bucketMs?: number
   /** `lines`: every series' label (and so its end label). Default `Series N`. */
   endLabel?: string
+  /** `lines`: each series' own label (name column probe); wins over `endLabel`. */
+  names?: readonly string[]
   /** `lines`: y domain `[0, 50]` and an x tick on the first datum — a tick label at each axis' origin. */
   origin?: true
   /** Number of series (legend entries). Default 3. */

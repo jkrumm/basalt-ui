@@ -69,7 +69,7 @@ consumer read this index, found nothing, and diffed a KPI row that had silently 
 | Surface | 1.27.0 | 1.28.0 | 1.29.0 | 1.30.0 | 1.30.1 | 1.30.2 | 1.31.0 | 1.32.0 | 1.32.1 | 1.33.0 | 1.34.0 | 1.34.1 | 1.35.0 | 1.36.0 | 1.36.1 | 1.37.0 | 1.37.1 | 1.38.0 | 1.38.1 | 1.39.0 | 1.40.0 | 1.40.1 | 1.40.2 | 1.40.3 | 1.41.0 | 2.0.0 | 2.0.1 | 2.0.2 | 2.0.3 | 2.0.4 | 2.0.5 | 2.1.0 | 2.2.0 | 2.3.0 | 2.4.0 | 2.5.0 | 2.6.0 | 2.6.1 | 2.7.0 | 2.7.1 | 2.7.2 | 2.7.3 | 2.8.0 | 2.8.1 | 2.9.0 | 2.9.1 | 2.10.0 | 2.11.0 | 2.11.1 | 2.12.0 | 2.13.0 | 2.13.1 | 2.13.2 | 2.13.3 | 2.14.0 | 2.15.0 | 2.16.0 | 2.17.0 | 2.18.0 | 2.19.0 | 2.20.0 | 2.21.0 | Unreleased |
 | ----------------------------- | ------------------------------------------------------------ | -------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------- | --------------------------------------------------------------------- | ------ | ----------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------- | ---------------------------------- | ------ | ------ | -------------------------------------------------------------------------------------------- | ------ | ------ | ------ | ------ | ------ | ----------------------------------------------- | ------ | ------ | ------ | ------ | ------------------------------------------------------------ | ---------- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
 | **tokens** (`./tokens`) | — | `--vx-divider` → `rgba()` on both schemes (§ Shell) | `--vx-space-touch-target` added (§ Additions) | eight spacing numbers (§ Chrome) | — | — | `--vx-hit` replaces the touch vars; `SIZE_CLASSES` (§ 1.31.0) | — | `SIZE_CLASSES`/`CONTAINER_CLASSES` actually exported (§ Fixes) | `CONTAINER_GRID_BREAKPOINTS`; `raw-breakpoint` trusts it (§ 1.33.0) | `CONTAINER_KEYS` (§ 1.34.0) | — | — | — | — | — | — | — | | `appShellInset` 20 → 16 (§ 1.38.1) | — | — | — | — | — | — | — | — | — | — | — | — | — | — | — | — | — | — | — | — | — | — | — | — | — | § 1.x compatibility layer removed | — | — | — | — | — | — | — | — | — | — | — | spacing, radius, type and the dense tier (§ 2.16.0) | — | — | — | — | — | — |
-| **charts** (`./charts`) | — | phone tier, `curve`, formatters, `state`, log axis (§ preamble) | `ChartState.empty: string`, `AxisBottomNumeric` (§ Additions) | responsive `height`, `legend.maxRows` (§ Charts) | `height` reaches the kinds; `maxRows` beats the `fill` fit (§ Charts) | — | container-class tier + `height` keys (§ 1.31.0) | — | `ResponsiveChartHeight` `sm` → key (§ Container recipes) | — | — | — | — | — | — | — | — | — | — | — | — | — | — | — | — | — | — | — | — | — | — | — | — | — | — | — | — | — | — | — | — | — | `BandSpan.absentFraction` + `absentState` (§ 2.8.0) | — | — | — | — | — | — | — | — | — | — | — | — | — | — | — | — | — | — | — | — |
+| **charts** (`./charts`) | — | phone tier, `curve`, formatters, `state`, log axis (§ preamble) | `ChartState.empty: string`, `AxisBottomNumeric` (§ Additions) | responsive `height`, `legend.maxRows` (§ Charts) | `height` reaches the kinds; `maxRows` beats the `fill` fit (§ Charts) | — | container-class tier + `height` keys (§ 1.31.0) | — | `ResponsiveChartHeight` `sm` → key (§ Container recipes) | — | — | — | — | — | — | — | — | — | — | — | — | — | — | — | — | — | — | — | — | — | — | — | — | — | — | — | — | — | — | — | — | — | `BandSpan.absentFraction` + `absentState` (§ 2.8.0) | — | — | — | — | — | — | — | — | — | — | — | — | — | — | — | — | — | — | — | `Lines` linear curve, `naming`, no lone-series legend, locale tooltip header, y gutter, `RefLine.labelPosition`, `StackedArea.fillOpacity` (§ Chart chrome) |
 | **shell** (`.`) | — | scrollport, region seams, **the brand left the sidebar** (§§ scrollport, brand, Shell) | `PageTitle`, `BasaltDevDock`, `useBreakpoint` (§ Additions) | More popover, aside pill, the responsive gutter, `useBasaltSpacing` (§ Chrome) | — | — | `theme.breakpoints` derived, `useSizeClass`, `data-basalt-host`, `useBreakpoint` on notice (§ 1.31.0) | `useBreakpoint` removal → 1.33.0; `useSizeClass` is shell-only (§ 1.32.0) | shell-less `shell/` gutter, `AppShell` breakpoints, `useSizeClass` for overlays (§§ Shell-less, `useSizeClass`) | — | `useBreakpoint` removed (§ 1.34.0) | — | — | `useCoarsePointer()` (§ `useCoarsePointer()`) | — | — | — | — | | content gutter 16, block 8 from `sm` (§ 1.38.1) | — | — | — | — | — | — | — | — | — | — | — | — | — | — | — | — | — | — | — | — | — | — | — | `BasaltProvider` embedded mode, `spotlight` (§ 2.8.0) | — | — | — | — | — | — | — | — | — | — | — | — | — | expanded gutter 24 (§ 2.16.0) | — | — | light/outline Buttons ink, no status edges (§ 2.19.0) | — | — | — |
 | **controls** (`./controls`) | `NumberFilter`, `field.number` (§ Controls) | sheet renders panel rows; `PanelRow`, `SliderControl` (§ `basalt-ui/controls`) | — | — | — | — | — | — | — | `NumberFilter clearable`; `createSearchStore` `resets` (§ State and controls) | — | — | — | `FormSection`/`FormRow`/`FormGroup`/`FormActions` move here (§ The form layout moves) | — | — | — | — | — | — | — | — | — | — | — | — | — | — | — | — | — | — | — | — | — | — | — | — | — | — | — | — | — | — | — | — | — | — | — | — | — | — | — | — | — | — | dense 28 tier at a fine pointer (§ 2.16.0) | — | — | — | — | — | — |
 | **forms** (`./forms`) | — | `field` → `inputProps`, **`inputProps` drops `key`**, the layout tier (§ `inputProps`) | `field` DELETED — and the `--fix` recipe no longer works (§ Consolidation) | — | — | — | — | — | `FormGroup` row no longer stretches (§ Fixes) | — | — | — | — | the layout + `useForm`/`schemaResolver` deprecated, removed 1.37.0 (§ The form layout moves) | — | — | — | — | — | — | — | — | — | — | — | — | — | — | — | — | — | — | — | — | — | — | — | — | — | — | — | — | — | — | § 1.x compatibility layer removed | — | — | — | — | — | — | — | — | — | — | — | — | — | — | — | — | — | — |
@@ -1092,6 +1092,58 @@ state takes `tone` (`good` / `warn` / `bad` / `neutral`) instead of a `color`. A
   surface ink. **Opt out:** `glyph: ''` on the state.
 - A `Heatmap` tooltip opens below the hovered cell (above only when there is no room), so it no
   longer covers the caption row over the grid. **Opt out:** none.
+## Unreleased — chart chrome
+
+### Chart chrome: tooltips, ticks, reference captions and the `Lines` defaults
+
+Wave 37, the cartesian half. Every change below is a default; the opt-out is named in each line.
+
+- **`Lines` and `Bars` line overlays default to `curve: 'linear'`.** Discrete daily or monthly values
+  are joined by straight segments; the smoothed curve drew crossings between points that never
+  happened. **Opt out:** `curve: 'monotone'` on the series (a continuous measure). `StackedArea` and
+  `Sparkline` are unchanged.
+- **A single-series chart draws no legend.** The title, the axis and the tooltip name it.
+  **Opt out:** `legend={{}}` (any explicit `legend` config draws it).
+- **`Lines` takes `naming?: 'auto' | 'legend' | 'endLabels'`.** `auto` (default): from the wide class
+  a chart of up to three lines and no `y2` names them with end labels and its legend is hidden; below
+  wide the legend names them and no end label draws. A chart whose legend names more than its lines (a
+  `y2`, a legend-named `refLines` entry, a `role: 'reference'` series) keeps the legend at every width
+  and draws no end labels. Two end labels that collide are now spread apart instead of both dropped.
+  **Opt out:** `naming="legend"` for the old always-legend chart; `naming="endLabels"` for end labels
+  at every width and no legend.
+- **The tooltip header reads the page locale and drops a clock time a daily bucket never had.** It
+  was `Mon Sep 1 2026` (a fixed US order) and printed `22:00` for a bucket keyed by a local midnight
+  east of UTC. A day-granular x (every step at least a day) is now the date only — weekday, day, month,
+  year through `Intl` in the locale `BasaltProvider`/`defineFormat` set, on the nearest UTC day; a
+  sub-day x adds `HH:MM`. **Opt out:** `tooltip.formatHeader`.
+- **A lone series whose formatted value already ends in its own name prints the name once**
+  (`Sessions` / `27 sessions` is `Sessions` / `27`). **Opt out:** `tooltip.rows` for a custom row, or a
+  `formatValue` that omits the unit.
+- **The tooltip name column never wraps.** It keeps a 6rem floor, stays on one line and ends in an
+  ellipsis past 14rem; the value stays right-aligned. No prop; the full name is in the tooltip's
+  accessible label.
+- **Y tick labels always sit in a gutter outside the plot.** The compact-and-short mode that drew them
+  inside the plot, above their grid line, is gone (a line ran through the label). The plot is
+  correspondingly narrower on a chart under 180 px tall at the compact width. **Opt out:** none.
+- **An auto y domain ends on a tick at or above the data's maximum.** The padded top could fall
+  between ticks, so the line peaked above the last label (`4` as the top tick for a series reaching
+  `5`); the domain now rises to the next tick. **Opt out:** `y.domain` as a tuple or function, or
+  `y.nice`.
+- **Ticks and the legend share one size step** (the 11 px tick step, `VX.text.micro`); the legend was
+  12 px. `VX.legendFontSize` is no longer read by the chart layer. A bar legend swatch is one rounded
+  square at every width (it was a circle below 480 px).
+- **`Bars` hover highlights the bar** (the hovered x paints at full series strength) and paints no
+  crosshair rule; the rule is line-chart chrome. **Opt out:** none.
+
+New, additive:
+
+- **`RefLine.labelPosition`:** `'end-above' | 'end-below' | 'start-above' | 'start-below'` pins the
+  caption's spot. Without it the caption takes the first spot (the plot's end above the line; the
+  start for a right-axis line) that stays inside the plot and that no data line runs through, so a
+  line in the top or bottom quarter, or one a series ends on, moves its caption instead of sitting on
+  the data. **Opt out:** pin the old spot with `'end-above'`.
+- **`StackedArea` `fillOpacity`:** every band's opacity, 0–1; a band's own `fillOpacity` wins. The
+  default (0.85) and the legend swatch are unchanged without it.
 
 ### `Meter`: the reading once, muted zones, stops, ring ticks, captions at their marks
 

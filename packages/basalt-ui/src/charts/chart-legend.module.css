@@ -36,3 +36,10 @@
     display: inline-flex;
   }
 }
+
+/* Lines' `naming="auto"`: from the wide class the end labels name the lines, so the legend goes. */
+@container (min-width: 800px) {
+  .auto[data-hide-wide] {
+    display: none;
+  }
+}

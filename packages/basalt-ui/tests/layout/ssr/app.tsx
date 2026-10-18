@@ -147,7 +147,7 @@ export function App(): ReactElement {
     >
       <main style={{ padding: 16, display: 'flex', flexDirection: 'column', gap: 24 }}>
         <Probe name="lines">
-          <Lines ariaLabel="Lines" data={DATA} x={x} series={[A, B]} />
+          <Lines ariaLabel="Lines" data={DATA} x={x} series={[A, B]} naming="legend" />
         </Probe>
         <Probe name="lines-no-legend">
           <Lines ariaLabel="Lines" data={DATA} x={x} series={[A]} legend={false} />
@@ -271,6 +271,7 @@ export function App(): ReactElement {
               x={x}
               series={[A, B]}
               legend={{ placement: 'header' }}
+              naming="legend"
             />
           </ChartCard>
         </Probe>
@@ -290,6 +291,7 @@ export function App(): ReactElement {
               x={x}
               series={[A, B]}
               legend={{ placement: 'header' }}
+              naming="legend"
             />
           </ChartCard>
         </Probe>

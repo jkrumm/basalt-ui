@@ -2,17 +2,23 @@
  * `Lines`, `Bars` and `ChartCard` behaviour through their public props: what the compiled
  * definition and the rendered DOM say, never the engine's internals.
  */
-import { afterEach, describe, expect, spyOn, test } from 'bun:test'
+import { afterEach, beforeEach, describe, expect, spyOn, test } from 'bun:test'
 import type { ChartPoint, StoredChartSpec } from '@tanstack/charts/types/core'
 import { act } from 'react'
 import { createRoot } from 'react-dom/client'
 import { renderToString } from 'react-dom/server'
+import { defineFormat } from '../format'
+import { resetFormatDefaults } from '../format/shared'
 import { Bars } from './Bars'
 import { CartesianChart } from './CartesianChart'
 import { ChartCard } from './ChartCard'
 import { compileCartesian } from './compile'
 import { Lines } from './Lines'
 import type { ChartSeries } from './types'
+
+// The tooltip header reads the page locale: pin one, or the runtime's decides the expected strings.
+beforeEach(() => defineFormat({ locale: 'en-GB' }))
+afterEach(resetFormatDefaults)
 
 const tint = 'var(--vx-area-top)'
 type Row = { t: Date; a: number | null; b: number; c: number }
@@ -99,7 +105,11 @@ describe('Lines', () => {
   })
 
   test('one legend entry: no toggle; legend={false}: no legend', async () => {
-    const one = await mount(<Lines ariaLabel="L" data={data} x={x} series={[a]} />)
+    // A lone series names nothing the title and axis do not: the legend is opt-in there.
+    const alone = await mount(<Lines ariaLabel="L" data={data} x={x} series={[a]} />)
+    expect(alone.querySelector('[data-basalt-chart-legend]')).toBeNull()
+    act(() => root?.unmount())
+    const one = await mount(<Lines ariaLabel="L" data={data} x={x} series={[a]} legend={{}} />)
     expect(one.querySelector('button[data-legend-key]')).toBeNull()
     expect(one.querySelector('[data-legend-key="a"]')).not.toBeNull()
     act(() => root?.unmount())
@@ -216,7 +226,7 @@ describe('Lines', () => {
       xValue: day(2),
     } as ChartPoint
     const content = tooltip.content([point], {} as never)
-    expect(content.title).toBe('Wed Sep 2 2026')
+    expect(content.title).toBe('Wed, 2 Sep 2026')
     expect(content.rows.map((r) => r.label)).toEqual(['Alpha', 'Visible'])
   })
 
@@ -260,7 +270,8 @@ describe('Bars', () => {
     })
     const build = (def: typeof stacked) =>
       def.chart({ width: 640, height: 240, defaultTheme: {} as never })
-    expect(yDomainOf(build(stacked))[1]).toBeCloseTo(44 * 1.1)
+    // 44 padded is 48.4, between ticks: the domain ends on the next tick (50) so the top label covers the stack.
+    expect(yDomainOf(build(stacked))[1]).toBeCloseTo(50)
     expect(yDomainOf(build(grouped))[1]).toBeCloseTo(40 * 1.1)
   })
 
@@ -430,7 +441,7 @@ describe('tooltip', () => {
   })
 
   test('header: formatHeader wins, then a long UTC date, then formatX', () => {
-    expect(headerOf({})).toBe('Wed Sep 2 2026')
+    expect(headerOf({})).toBe('Wed, 2 Sep 2026')
     expect(headerOf({ formatX: () => 'X' })).toBe('X')
     expect(headerOf({ formatX: () => 'X', tooltip: { formatHeader: () => 'H' } })).toBe('H')
     expect(headerOf({ tooltip: { formatHeader: (d: Date) => d.toISOString().slice(0, 4) } })).toBe(
@@ -442,7 +453,7 @@ describe('tooltip', () => {
     const at = new Date(Date.UTC(2026, 8, 2, 13, 5))
     const def = compileCartesian({ ...base, data: [{ ...data[1], t: at } as Row] })
     const datum = { x: at, y: 0, series: 'a', datum: { t: at, a: 1 } }
-    expect(contentOf(def, datum, at).title).toBe('Wed Sep 2 2026 13:05')
+    expect(contentOf(def, datum, at).title).toBe('Wed, 2 Sep 2026 13:05')
   })
 
   test('a number x with no formatX reads through the axis format', () => {

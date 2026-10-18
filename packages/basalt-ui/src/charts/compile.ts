@@ -5,7 +5,7 @@
  * binding, the tooltip content, and the container-class guide ladder.
  * TanStack owns margins (measured), layout, focus and keyboard, the tooltip surface and SSR.
  */
-import { dateTickFormat, monthName, pad2, utcAxisDate } from './date-tick-format'
+import { dateTickFormat, utcAxisDate } from './date-tick-format'
 import { crosshair } from '@tanstack/charts/crosshair'
 import { decorative } from '@tanstack/charts/mark/decorative'
 import { rect } from '@tanstack/charts/rect'
@@ -16,6 +16,7 @@ import { scaleUtc } from 'd3-scale'
 import { portal } from '@tanstack/charts/tooltip/portal'
 import type {
   ChartBuildContext,
+  ChartTooltipAnchorContext,
   ChartGradient,
   ChartPoint,
   ChartPositionScaleOptions,
@@ -24,14 +25,16 @@ import type {
   ResponsiveChartDefinition,
   StoredChartSpec,
 } from '@tanstack/charts/types/core'
-import { SHORT_CHART_HEIGHT } from './box'
 import { compact } from '../format/number'
+import { NON_FINITE, dateFormat } from '../format/shared'
 import { VX } from '../tokens'
 import type { ContainerClass } from '../tokens/size-classes'
 import { cursorBinding, followerOptions, quietWhileFollowing } from './cursor'
 import { cursorDots } from './marks'
 import { bucketTicks, strideEvery } from './ticks'
 import { MAIN_PANE, plotAccess, plotContext } from './plot-context'
+import { refLabelPosition } from './ref-label'
+import type { RefLabelPoint } from './ref-label'
 import type { PlotSizes } from './plot-context'
 import { resolveContainerClass } from '../tokens/size-classes'
 import { resolveYDomain, xScaleFor, xZoneFractions, yScaleFor } from './scales'
@@ -91,6 +94,8 @@ export type CartesianInput<T, X extends ChartX> = Pick<
   stack?: 'stacked' | 'normalized'
   /** The plot area the engine last laid out; `null` before the first layout (the frame stands in). */
   plot?: PlotSizes | null
+  /** The vertical rule under the cursor. Default `true`; a bar kind has none (its hover is the bar). */
+  crosshair?: boolean
 }
 
 /** The one tick-label size, at every container width: the caption size, so a card never mixes sizes. */
@@ -104,36 +109,41 @@ const LADDER = {
   wide: { xTicks: 6, yTicks: 5 },
 } as const satisfies Record<ContainerClass, { xTicks: number; yTicks: number }>
 
-/** Space between the plot's left edge and a compact y label drawn inside it. */
-const INSIDE_LABEL_DX = 4
-
 /**
  * A tick within this share of the x domain from its start counts as on the left edge: half a
  * `DD.MM` label is ~15 px, 4–5% of a compact plot. Round ticks rarely land on the domain start
  * exactly, so an equality test would miss the common case.
  */
 const LEFT_EDGE_SHARE = 0.05
-const INSIDE_LABEL_DY = -6
-
-/**
- * Y labels go inside the plot only for the compact class under `SHORT_CHART_HEIGHT` (the box's own
- * short signal); otherwise they sit in a left gutter. `height` is the whole chart's, `0` before it
- * is measured, which keeps the gutter rather than flipping a first paint inside.
- */
-const labelsInside = (cls: ContainerClass, height: number): boolean =>
-  cls === 'compact' && height > 0 && height < SHORT_CHART_HEIGHT
 
 export function defaultNumberFormat(v: number): string {
   return compact(v, { digits: Math.abs(v) >= 1000 ? 1 : 2 })
 }
 
-const DAYS = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat']
-
-/** `Mon Sep 1 2026`, in UTC; a non-midnight instant adds `HH:MM`. */
-export function utcHeaderDate(d: Date): string {
-  const date = `${DAYS[d.getUTCDay()]} ${monthName(d)} ${d.getUTCDate()} ${d.getUTCFullYear()}`
-  const ms = d.getTime() % DAY_MS
-  return ms === 0 ? date : `${date} ${pad2(d.getUTCHours())}:${pad2(d.getUTCMinutes())}`
+/**
+ * The tooltip's date: weekday, day, month and year in the page's locale (`defineFormat` /
+ * `BasaltProvider`), read in UTC like the time scale; a non-midnight instant adds `HH:MM`. With
+ * `dayOnly` (a day-granular series) the instant is its bucket's DAY, never a clock time: a local
+ * midnight east of UTC is `22:00` of the day before in UTC, so the nearest UTC day is the bucket.
+ */
+export function utcHeaderDate(d: Date, dayOnly = false): string {
+  if (!Number.isFinite(d.getTime())) return NON_FINITE
+  const at = dayOnly ? new Date(Math.round(d.getTime() / DAY_MS) * DAY_MS) : d
+  const date = dateFormat(undefined, {
+    weekday: 'short',
+    day: 'numeric',
+    month: 'short',
+    year: 'numeric',
+    timeZone: 'UTC',
+  }).format(at)
+  if (dayOnly || d.getTime() % DAY_MS === 0) return date
+  const clock = dateFormat(undefined, {
+    hour: '2-digit',
+    minute: '2-digit',
+    hourCycle: 'h23',
+    timeZone: 'UTC',
+  }).format(d)
+  return `${date} ${clock}`
 }
 
 const DAY_MS = 86_400_000
@@ -253,10 +263,8 @@ export function yGuide<T>(opts: {
   cls: ContainerClass
   side: 'left' | 'right'
   grid: boolean
-  /** The whole chart's height: decides inside or gutter labels. */
-  height: number
 }): Omit<ChartPositionScaleOptions<number>, 'scale'> {
-  const { cfg, axis, cls, side, grid, height } = opts
+  const { cfg, axis, cls, side, grid } = opts
   const ladder = LADDER[cls]
   const ticks =
     typeof cfg?.ticks === 'object'
@@ -264,23 +272,14 @@ export function yGuide<T>(opts: {
       : { count: typeof cfg?.ticks === 'number' ? cfg.ticks : ladder.yTicks }
   const gridLine = grid ? { grid: GRID_LINE } : {}
   if (cls === 'micro') return { ...gridLine, axis: false }
-  // Labels sit INSIDE the plot, above their grid line, so the plot keeps the full width.
-  const inside = labelsInside(cls, height)
+  // Labels sit in a gutter OUTSIDE the plot, against its edge: a line never runs through one.
   return {
     ...gridLine,
     ...(side === 'right' && { side: 'right' as const }),
     axis: {
       line: false,
-      ticks: { ...ticks, format: axis.format, line: false, ...(inside && { size: 0, padding: 0 }) },
-      tickLabels: {
-        fontSize: TICK_FONT,
-        opacity: 1,
-        ...(inside && {
-          anchor: side === 'left' ? ('start' as const) : ('end' as const),
-          dx: side === 'left' ? INSIDE_LABEL_DX : -INSIDE_LABEL_DX,
-          dy: INSIDE_LABEL_DY,
-        }),
-      },
+      ticks: { ...ticks, format: axis.format, line: false },
+      tickLabels: { fontSize: TICK_FONT, opacity: 1 },
     },
   }
 }
@@ -339,12 +338,9 @@ export function xGuide<X extends ChartX>(opts: {
   /** A consumer's formatter; absent, Date ticks get the span-aware {@link xTickFormat}. */
   format?: ((v: ChartValue) => string) | undefined
   cls: ContainerClass
-  /** The whole chart's height: decides whether the left margin is locked to zero. */
-  height: number
 }): Omit<ChartPositionScaleOptions<ChartValue>, 'scale'> {
-  const { model, xTicks, cls, height } = opts
+  const { model, xTicks, cls } = opts
   const ladder = LADDER[cls]
-  const inside = labelsInside(cls, height)
   const ticks = xTickPolicy(model, xTicks ?? ladder.xTicks)
   // A Date axis always resolves to `values` (the time scale has an extent; a band axis lists its
   // buckets), so `{ count }` is only ever a number axis and never needs the date formatter.
@@ -363,13 +359,10 @@ export function xGuide<X extends ChartX>(opts: {
         opacity: 1,
         thin: true,
         // A label centred on a tick near the plot's left edge hangs left of it, under the gutter's
-        // lowest y label (outside labels) or off the plot (inside labels, left margin locked to
-        // zero): start-anchor it. `+value` is a Date's timestamp, or the number itself.
-        anchor: ({ index, value }: { index: number; value: ChartValue }) => {
-          const pinnedFirst = inside && index === 0
+        // lowest y label: start-anchor it. `+value` is a Date's timestamp, or the number itself.
+        anchor: ({ value }: { value: ChartValue }) => {
           const share = (+value - leftEdgeX) / spanX
-          const onLeftEdge = share >= 0 && share <= LEFT_EDGE_SHARE
-          return pinnedFirst || onLeftEdge ? ('start' as const) : undefined
+          return share >= 0 && share <= LEFT_EDGE_SHARE ? ('start' as const) : undefined
         },
       },
     },
@@ -536,6 +529,7 @@ function leftDomain<T, X extends ChartX>(
   input: CartesianInput<T, X>,
   series: readonly ChartSeries<T>[],
   bounds: readonly number[],
+  tickCount: number,
 ): readonly [number, number] {
   const auto = input.y?.domain === undefined || input.y.domain === 'auto'
   if (auto && input.stack === 'normalized') return normalizedDomain(input.data, series)
@@ -544,6 +538,7 @@ function leftDomain<T, X extends ChartX>(
     input.data,
     auto && input.stack ? stackedSeries(series) : series,
     bounds,
+    tickCount,
   )
 }
 
@@ -551,8 +546,12 @@ function leftDomain<T, X extends ChartX>(
 function resolveAxes<T, X extends ChartX>(
   input: CartesianInput<T, X>,
   visible: readonly ChartSeries<T>[],
+  cls: ContainerClass,
 ): Axes<T> {
   const hasY2 = input.y2 !== undefined
+  // Ticks the axis draws at this class: a domain that ends on one never leaves the data above the top label.
+  const tickCount = (cfg: AxisConfig<T> | undefined): number =>
+    typeof cfg?.ticks === 'object' ? 0 : (cfg?.ticks ?? LADDER[cls].yTicks)
   const bounds = overlayBounds(input)
   const onRight = (s: ChartSeries<T>): boolean => hasY2 && s.axis === 'right'
   const left: YAxis = {
@@ -560,12 +559,19 @@ function resolveAxes<T, X extends ChartX>(
       input,
       visible.filter((s) => !onRight(s)),
       bounds.left,
+      tickCount(input.y),
     ),
     format: input.y?.format ?? defaultNumberFormat,
   }
   const right: YAxis | null = hasY2
     ? {
-        domain: resolveYDomain(input.y2, input.data, visible.filter(onRight), bounds.right),
+        domain: resolveYDomain(
+          input.y2,
+          input.data,
+          visible.filter(onRight),
+          bounds.right,
+          tickCount(input.y2),
+        ),
         format: input.y2?.format ?? defaultNumberFormat,
       }
     : null
@@ -686,17 +692,40 @@ function underlayMarks<T, X extends ChartX>(
   return [...zones, ...xZones]
 }
 
-/** A ref label within this share of the plot height of the top flips below its line. */
-const REF_LABEL_TOP_SHARE = 0.12
 const REF_LABEL_DX = 6
 const REF_LABEL_DY_ABOVE = -5
 const REF_LABEL_DY_BELOW = 11
 
-/** The caption naming a reference line, at the plot end clear of its own axis' tick labels. */
-const refLabelMark = <T>(r: RefLine, i: number, axes: Axes<T>): ChartMarks[number] => {
-  const [lo, hi] = axes.axisOf(r.axis).domain
-  const nearTop = hi !== lo && (r.value - lo) / (hi - lo) > 1 - REF_LABEL_TOP_SHARE
-  const atStart = r.axis === 'right' && axes.scaleId(r.axis) === 'y2'
+/** What a reference line's caption needs to choose its spot: the plot in px and the data on its axis. */
+type RefLabelContext<T, X extends ChartX> = {
+  plotWidth: number
+  plotHeight: number
+  /** One polyline per visible series on the line's axis. */
+  lines: (side: 'left' | 'right' | undefined) => readonly (readonly RefLabelPoint[])[]
+  axes: Axes<T>
+  model: XScaleModel<X>
+}
+
+/** The caption naming a reference line, at the spot {@link refLabelPosition} picks. */
+const refLabelMark = <T, X extends ChartX>(
+  r: RefLine,
+  i: number,
+  ctx: RefLabelContext<T, X>,
+): ChartMarks[number] => {
+  const { axes } = ctx
+  const startFirst = r.axis === 'right' && axes.scaleId(r.axis) === 'y2'
+  const position = refLabelPosition({
+    pinned: r.labelPosition,
+    startFirst,
+    value: r.value,
+    domain: axes.axisOf(r.axis).domain,
+    plotWidth: ctx.plotWidth,
+    plotHeight: ctx.plotHeight,
+    label: r.label ?? '',
+    fontSize: VX.text.micro,
+    series: ctx.lines(r.axis),
+  })
+  const atStart = position.startsWith('start')
   return decorative(
     text([{ f: atStart ? 0 : 1 }], {
       id: `ref-${i}-label`,
@@ -709,15 +738,16 @@ const refLabelMark = <T>(r: RefLine, i: number, axes: Axes<T>): ChartMarks[numbe
       fontSize: VX.text.micro,
       anchor: atStart ? 'start' : 'end',
       dx: atStart ? REF_LABEL_DX : -REF_LABEL_DX,
-      dy: nearTop ? REF_LABEL_DY_BELOW : REF_LABEL_DY_ABOVE,
+      dy: position.endsWith('above') ? REF_LABEL_DY_ABOVE : REF_LABEL_DY_BELOW,
     }),
   )
 }
 
-/** Reference lines, over the marks. */
+/** Reference lines, over the marks. `label` reads the plot size, so only a chart with an unpinned caption pays for it. */
 const refLineMarks = <T, X extends ChartX>(
   input: CartesianInput<T, X>,
   axes: Axes<T>,
+  label: () => RefLabelContext<T, X>,
 ): ChartMarks =>
   (input.refLines ?? []).flatMap((r, i) =>
     // A line that names itself in the legend can be toggled off there.
@@ -732,7 +762,7 @@ const refLineMarks = <T, X extends ChartX>(
             yScale: axes.scaleId(r.axis),
             ...(r.dashed && { strokeDasharray: DASH }),
           }),
-          ...(r.label ? [refLabelMark(r, i, axes)] : []),
+          ...(r.label ? [refLabelMark(r, i, label())] : []),
         ],
   )
 
@@ -742,10 +772,9 @@ function buildScales<T, X extends ChartX>(opts: {
   axes: Axes<T>
   formatX: (v: ChartValue) => string
   cls: ContainerClass
-  height: number
   zoneScale: boolean
 }): StoredChartSpec['scales'] {
-  const { input, model, axes, formatX, cls, height, zoneScale } = opts
+  const { input, model, axes, formatX, cls, zoneScale } = opts
   const { left, right } = axes
   return {
     x: {
@@ -755,7 +784,6 @@ function buildScales<T, X extends ChartX>(opts: {
         xTicks: input.xTicks,
         format: input.formatX ? formatX : undefined,
         cls,
-        height,
       }),
     },
     y: {
@@ -764,7 +792,6 @@ function buildScales<T, X extends ChartX>(opts: {
         cfg: input.y,
         axis: left,
         cls,
-        height,
         side: 'left',
         grid: input.y?.grid ?? true,
       }),
@@ -777,7 +804,6 @@ function buildScales<T, X extends ChartX>(opts: {
           cfg: input.y2,
           axis: right,
           cls,
-          height,
           side: 'right',
           grid: input.y2?.grid ?? false,
         }),
@@ -793,12 +819,39 @@ function buildScales<T, X extends ChartX>(opts: {
 function tooltipHeader<T, X extends ChartX>(
   input: CartesianInput<T, X>,
   formatX: (v: ChartValue) => string,
+  dayOnly: boolean,
   v: ChartValue,
   d: T,
 ): string {
   if (input.tooltip && input.tooltip.formatHeader) return input.tooltip.formatHeader(v as X, d)
-  if (v instanceof Date && !input.formatX) return utcHeaderDate(v)
+  if (v instanceof Date && !input.formatX) return utcHeaderDate(v, dayOnly)
   return formatX(v)
+}
+
+/**
+ * A day-granular x: every step between its distinct instants is a whole day or more (23 h: a DST
+ * day), or its one instant is a UTC midnight. The tooltip header of such a series is its date, never
+ * a clock time (a bucket keyed by local midnight is `22:00` UTC in a UTC+2 zone).
+ */
+export function dayGranular(values: readonly ChartX[]): boolean {
+  const times = values.flatMap((v) => (v instanceof Date ? [v.getTime()] : []))
+  if (times.length === 0 || times.length !== values.length) return false
+  const sorted = times.toSorted((a, b) => a - b)
+  if (sorted.length === 1) return (sorted[0] as number) % DAY_MS === 0
+  return sorted.every((t, i) => i === 0 || t - (sorted[i - 1] as number) >= DAY_MS - HOUR_MS)
+}
+
+const HOUR_MS = 3_600_000
+
+/** The word without its case or a plural `s`: `Sessions` and `session` are one unit. */
+const stem = (w: string): string => w.toLowerCase().replace(/s$/, '')
+
+/** A row's label repeats the unit its value already carries (`Sessions` / `27 sessions`). */
+function unitIsName(label: string, value: string): string | null {
+  const words = value.trim().split(/\s+/)
+  const unit = words.at(-1)
+  if (words.length < 2 || unit === undefined || stem(unit) !== stem(label.trim())) return null
+  return words.slice(0, -1).join(' ')
 }
 
 /** `plot.rows`: one row per datum for a visible series, `[]` for a hidden one, a throw for a typo. */
@@ -843,6 +896,24 @@ function cursorDotMarks<T, X extends ChartX>(
   })
 }
 
+/**
+ * A band chart with no y ticks is a strip (`BandStrip`): a short bar of cells under a hero value and
+ * beside its neighbours. Its tooltip opens below the strip, above only when there is no room, so it
+ * never covers the cell's own value, and a gap clear of the cell edge.
+ */
+const stripLike = <T, X extends ChartX>(input: CartesianInput<T, X>): boolean =>
+  input.band === true && Array.isArray(input.y?.ticks) && input.y.ticks.length === 0
+/** The hovered cell's centre x, on the strip's bottom edge: `bottom` opens just under the strip. */
+const stripAnchor = (
+  points: readonly ChartPoint[],
+  { plot }: ChartTooltipAnchorContext,
+): { x: number; y: number } => {
+  const xs = points.map((p) => p.x)
+  return { x: (Math.min(...xs) + Math.max(...xs)) / 2, y: plot.y + plot.height }
+}
+const STRIP_TOOLTIP_PLACEMENT = ['bottom', 'top'] as const
+const STRIP_TOOLTIP_OFFSET = 8
+
 function tooltipSpec<T, X extends ChartX>(opts: {
   input: CartesianInput<T, X>
   axes: Axes<T>
@@ -850,8 +921,10 @@ function tooltipSpec<T, X extends ChartX>(opts: {
   keys: ReadonlySet<string>
   visibleKeys: ReadonlySet<string>
   formatX: (v: ChartValue) => string
+  /** The x is day-granular: the header is a date, not a clock time. */
+  dayOnly: boolean
 }): NonNullable<CartesianDefinition['tooltip']> {
-  const { input, axes, visible, keys, visibleKeys, formatX } = opts
+  const { input, axes, visible, keys, visibleKeys, formatX, dayOnly } = opts
   const hidden = input.series.filter((s) => !visibleKeys.has(s.key))
   const rowSeries = (input.reverseRows ? visible.toReversed() : visible).filter(
     (s) => s.tooltip !== false,
@@ -860,7 +933,8 @@ function tooltipSpec<T, X extends ChartX>(opts: {
     use: quietWhileFollowing,
     ...followerOptions(input.tooltip, input.cursorGroup, input.chartId),
     portal,
-    anchor: 'group-center',
+    anchor: stripLike(input) ? stripAnchor : 'group-center',
+    ...(stripLike(input) && { placement: STRIP_TOOLTIP_PLACEMENT, offset: STRIP_TOOLTIP_OFFSET }),
     content: (points: readonly ChartPoint[]) => {
       const primary = points[0]
       if (!primary) return { rows: [] }
@@ -875,20 +949,17 @@ function tooltipSpec<T, X extends ChartX>(opts: {
       for (const s of rowSeries) {
         const v = s.getValue(d)
         if (v === null || !Number.isFinite(v)) continue
-        rows.push(
-          seriesRow(
-            s,
-            s.formatValue
-              ? s.formatValue(v, d)
-              : axes.axisOf(axes.onRight(s) ? 'right' : 'left').format(v),
-            input.highlighted === s.key,
-          ),
-        )
+        const text = s.formatValue
+          ? s.formatValue(v, d)
+          : axes.axisOf(axes.onRight(s) ? 'right' : 'left').format(v)
+        // A lone series whose value already ends in its own name (`27 sessions`) prints the name once.
+        const bare = rowSeries.length === 1 ? unitIsName(s.label, text) : null
+        rows.push(seriesRow(s, bare ?? text, input.highlighted === s.key))
       }
       const extra: readonly ChartTooltipRow[] =
         (input.tooltip || undefined)?.rows?.(d, { visible, hidden }) ?? []
       return {
-        title: tooltipHeader(input, formatX, x, d),
+        title: tooltipHeader(input, formatX, dayOnly, x, d),
         rows: [...rows, ...extra.map(engineRow)],
       }
     },
@@ -913,20 +984,42 @@ export function compileCartesian<T, X extends ChartX>(
   const visibleKeys = new Set(visible.map((s) => s.key))
   const keys = new Set(input.series.map((s) => s.key))
   const model = xScaleFor(input.data.map(input.x), input.band === true, input.xDomain)
-  const axes = resolveAxes(input, visible)
-  const under = underlayMarks(input, model, axes)
-  const over = refLineMarks(input, axes)
-  const dots = cursorDotMarks(input, visible, axes)
+  // The y domain depends on the tick count, so on the class; everything else about the axes
+  // (formats, sides) does not, and `shared` stands for it.
+  const byClass = new Map<ContainerClass, Axes<T>>()
+  const axesAt = (cls: ContainerClass): Axes<T> => {
+    const found = byClass.get(cls)
+    if (found) return found
+    const made = resolveAxes(input, visible, cls)
+    byClass.set(cls, made)
+    return made
+  }
+  const shared = axesAt('regular')
+  const dots = cursorDotMarks(input, visible, shared)
   const rows = rowsOf(input, visibleKeys)
   const formatX = (v: ChartValue): string =>
     input.formatX ? input.formatX(v as X) : defaultFormatX(v)
   const gradients = input.series.flatMap((s, i) =>
-    s.area ? [seriesAreaGradient(s, i, input, axes)] : [],
+    s.area ? [seriesAreaGradient(s, i, input, shared)] : [],
   )
+  const dayOnly = dayGranular(model.values)
+  const names = (input.refLines ?? []).some((r) => r.label !== undefined && r.label !== '')
+  // What an unpinned reference caption avoids: each visible series as (x share, y) points.
+  const linesOn = (side: 'left' | 'right' | undefined): RefLabelPoint[][] =>
+    visible
+      .filter((s) => shared.onRight(s) === (side === 'right' && shared.right !== null))
+      .map((s) =>
+        rows(s.key).flatMap((r) => {
+          const fx = model.fraction(r.x)
+          return fx === null || r.y === null ? [] : [{ fx, y: r.y }]
+        }),
+      )
 
   const definition: CartesianDefinition = {
     chart: ({ width, height }: ChartBuildContext): StoredChartSpec => {
       const cls = resolveContainerClass(width)
+      const axes = axesAt(cls)
+      const access = plotAccess(definition, input.plot, MAIN_PANE)
       const kindMarks = input.marks(
         plotContext(
           {
@@ -942,24 +1035,41 @@ export function compileCartesian<T, X extends ChartX>(
             yDomain: axes.left.domain,
             y2Domain: axes.right?.domain,
           },
-          plotAccess(definition, input.plot, MAIN_PANE),
+          access,
         ),
       )
+      const under = underlayMarks(input, model, axes)
+      const over = refLineMarks(input, axes, () => {
+        // Reading the plot size recompiles once on the measured area; the frame stands in before it.
+        access.read()
+        const size = access.size()
+        return {
+          plotWidth: size?.width ?? width,
+          plotHeight: size?.height ?? height,
+          lines: linesOn,
+          axes,
+          model,
+        }
+      })
       return {
-        marks: [...under, ...kindMarks, ...dots, ...over, crosshair({ x: CROSSHAIR, y: false })],
+        marks: [
+          ...under,
+          ...kindMarks,
+          ...dots,
+          ...over,
+          ...(input.crosshair === false ? [] : [crosshair({ x: CROSSHAIR, y: false })]),
+        ],
         scales: buildScales({
           input,
           model,
           axes,
           formatX,
           cls,
-          height,
-          zoneScale: under.length > 0 || (input.refLines ?? []).some((r) => r.label),
+          zoneScale: under.length > 0 || names,
         }),
         theme: CHART_THEME,
         ...(gradients.length > 0 && { gradients }),
         clip: true,
-        ...(labelsInside(cls, height) && { margin: { left: 0, ...(axes.right && { right: 0 }) } }),
       }
     },
     // Followers resolve the leader's group, so they draw its dots; `quietWhileFollowing` mutes the
@@ -977,7 +1087,7 @@ export function compileCartesian<T, X extends ChartX>(
     tooltip:
       input.tooltip === false
         ? false
-        : tooltipSpec({ input, axes, visible, keys, visibleKeys, formatX }),
+        : tooltipSpec({ input, axes: shared, visible, keys, visibleKeys, formatX, dayOnly }),
   }
   return definition
 }
