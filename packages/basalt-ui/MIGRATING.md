@@ -1096,7 +1096,6 @@ A `StatCard` / strip-cell sparkline slot still reserves the old readout line abo
 A histogram that marks its median as a second series names the count through the series' own
 `formatValue` (`(v) => \`${v} days\``): a `Bars` tooltip row already takes it, and a bin lists only
 the series that has a value for it.
-## Unreleased — Wave 37, heading numerals
 
 No export is removed. One default moves.
 
