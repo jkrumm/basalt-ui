@@ -24,8 +24,10 @@
  *
  * Anchors: each cell is `data-shot="strip-<key>"` and each footer cell
  * `data-shot="strip-footer-<key>"` (derived — a consumer cannot choose another name). A footer entry
- * with `under: '<cell key>'` qualifies that one cell: from 800px it sits in the cell's column (an
- * entry without `under` then takes the full row); below, every entry is full width under the grid.
+ * with `under: '<cell key>'` qualifies that one cell and is PART of it, at every width: it renders in
+ * the cell's own slot under its content, so it neither stretches its siblings nor opens a void, and it
+ * follows its cell when the strip folds. An entry without `under` (or naming no cell) is full width
+ * under the grid.
  *
  * Absence: a page that hides the strip in a declared shot state sets `shotAbsent` on the group
  * (`['empty']`): every derived anchor, cells and footer cells, then carries `data-shot-absent`. A
@@ -120,8 +122,8 @@ export type StatStripCell = {
 export type StatStripFooterEntry = {
   key: string
   content: ReactNode
-  /** The `key` of the cell this entry qualifies. From the full desktop width (800px) it sits in that
-   * cell's column; below it, and for a key that names no cell, it takes the full width under the grid. */
+  /** The `key` of the cell this entry qualifies: it renders inside that cell, under its content, at
+   * every width. For a key that names no cell it takes the full width under the grid. */
   under?: string
 }
 
@@ -167,12 +169,36 @@ function CellState({ state }: { state: StatStripCellState }) {
   )
 }
 
+function FooterCell({
+  entry,
+  shotAbsent,
+  under,
+}: {
+  entry: StatStripFooterEntry
+  shotAbsent: readonly StatStripShotState[] | undefined
+  under: boolean
+}) {
+  return (
+    <div
+      className={under ? classes.underCell : classes.footerCell}
+      data-strip-footer-cell={entry.key}
+      data-shot={`strip-footer-${entry.key}`}
+      {...absentAttr(shotAbsent)}
+      {...(under && { 'data-under': entry.under })}
+    >
+      {entry.content}
+    </div>
+  )
+}
+
 function StripCell({
   cell,
   shotAbsent,
+  under,
 }: {
   cell: StatStripCell
   shotAbsent: readonly StatStripShotState[] | undefined
+  under: readonly StatStripFooterEntry[]
 }) {
   const captionId = useId()
   const { rows, loading } = cell
@@ -274,6 +300,9 @@ function StripCell({
           ))}
         {state === undefined && footerEl}
       </article>
+      {under.map((entry) => (
+        <FooterCell key={entry.key} entry={entry} shotAbsent={shotAbsent} under />
+      ))}
     </div>
   )
 }
@@ -290,14 +319,11 @@ export function StatStrip({
   const desktop = cols ?? Math.min(Math.max(cells.length, 2), 6)
   // `StatGroup`'s rule: four is 2 + 2 below the full count, never 3 + 1.
   const mid = desktop === 4 ? 2 : Math.min(desktop, 3)
-  // A cell's column at the full count; `undefined` for a key that names no cell.
-  const columnOf = (key: string | undefined) => {
-    const at = cells.findIndex((cell) => cell.key === key)
-    return at < 0 ? undefined : (at % desktop) + 1
-  }
+  const keys = new Set(cells.map((cell) => cell.key))
+  const underOf = (key: string) => footer?.filter((entry) => entry.under === key) ?? []
+  const rest = footer?.filter((entry) => entry.under === undefined || !keys.has(entry.under)) ?? []
   const hasQualifier = cells.some((cell) => cell.qualifier !== undefined)
   const hasAction = cells.some((cell) => cell.action !== undefined)
-  const placed = footer?.some((entry) => columnOf(entry.under) !== undefined) ?? false
   return (
     <div className={cx(classes.container, className)} style={style}>
       <Card>
@@ -316,29 +342,19 @@ export function StatStrip({
         >
           <div className={classes.cells}>
             {cells.map((cell) => (
-              <StripCell key={cell.key} cell={cell} shotAbsent={shotAbsent} />
+              <StripCell
+                key={cell.key}
+                cell={cell}
+                shotAbsent={shotAbsent}
+                under={underOf(cell.key)}
+              />
             ))}
           </div>
-          {footer !== undefined && footer.length > 0 && (
-            <div className={classes.footerRow} {...(placed && { 'data-placed': '' })}>
-              {footer.map((entry) => {
-                const column = columnOf(entry.under)
-                return (
-                  <div
-                    key={entry.key}
-                    className={classes.footerCell}
-                    data-strip-footer-cell={entry.key}
-                    data-shot={`strip-footer-${entry.key}`}
-                    {...absentAttr(shotAbsent)}
-                    {...(column !== undefined && {
-                      'data-under': entry.under,
-                      style: { '--basalt-strip-footer-col': column } as CSSProperties,
-                    })}
-                  >
-                    {entry.content}
-                  </div>
-                )
-              })}
+          {rest.length > 0 && (
+            <div className={classes.footerRow}>
+              {rest.map((entry) => (
+                <FooterCell key={entry.key} entry={entry} shotAbsent={shotAbsent} under={false} />
+              ))}
             </div>
           )}
         </Card.Section>

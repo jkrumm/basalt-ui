@@ -63,6 +63,14 @@
   }
 }
 
+/* An odd count never leaves one cell alone on a half-empty row: below 480px (two columns) the last
+ * odd cell spans the row, as the strip's does. */
+@container basalt-grid (max-width: 479.9px) {
+  .root > *:last-child:nth-child(odd) {
+    grid-column: 1 / -1;
+  }
+}
+
 @container basalt-grid (min-width: 800px) {
   .root {
     grid-template-columns: repeat(var(--basalt-stat-group-cols-sm), minmax(0, 1fr));
