@@ -1,10 +1,11 @@
 /*
- * The sparkline's hover / focus readout: one quiet chip, never a floating tooltip. It sits ABOVE the
- * plot, in the line hosts reserve for it (`--basalt-spark-readout-h`; `StatCard` and the strip cell
- * do), so it never covers the plotted line, the dashed reference or the dot. `Sparkline.tsx` slides
- * it with the point (`left` + `translate` by the same fraction), which keeps it inside the box at
- * either edge at any width. `--basalt-spark-readout-lift: 0` puts it back at the plot's top edge, for
- * a host that reserves no line. Placement is inline (`Sparkline.tsx`).
+ * The sparkline's hover / focus readout: one quiet chip, never a floating tooltip. Inside a host that
+ * reserves a line for it (`StatCard`'s sparkline slot, a strip cell's visual: `data-basalt-hosted`,
+ * `--basalt-spark-readout-h`) it sits ABOVE the plot, so it never covers the plotted line, the dashed
+ * reference or the dot. A bare `Sparkline` has no such line, so its chip stays inside its own box
+ * (placed inline in `Sparkline.tsx`, away from the point). `Sparkline.tsx` slides it with the point
+ * (`left` + `translate` by one fraction), which keeps it inside the box at either edge at any width.
+ * `--basalt-spark-readout-lift: 0` on a host puts the chip back in the box.
  */
 
 .root {
@@ -13,12 +14,8 @@
 
 .readout {
   position: absolute;
-  /* The chip's bottom meets the sparkline's own top edge: the layer sits `--basalt-spark-inset` below it. */
-  top: calc(
-    var(--basalt-spark-readout-lift, 1) * -1 *
-      (var(--basalt-spark-readout-h, 1.125rem) + var(--basalt-spark-inset, 0px))
-  );
   z-index: 1;
+  max-height: 100%;
   max-width: 100%;
   box-sizing: border-box;
   padding: 0 4px;
@@ -37,6 +34,16 @@
   background: var(--vx-tooltip-bg);
   border: 1px solid var(--vx-tooltip-border);
   border-radius: var(--vx-radius-ctrl);
+}
+
+/* The host's reserved line: above the plot. The chip's bottom meets the sparkline's own top edge (the
+ * layer sits `--basalt-spark-inset` below it). */
+[data-basalt-hosted] .readout {
+  top: calc(
+    var(--basalt-spark-readout-lift, 1) * -1 *
+      (var(--basalt-spark-readout-h, 1.125rem) + var(--basalt-spark-inset, 0px))
+  );
+  max-height: none;
 }
 
 .label {

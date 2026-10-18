@@ -12,7 +12,7 @@ import { ruleY } from '@tanstack/charts/rule'
 import { scaleBand } from '@tanstack/charts/scales/band'
 import { scaleLinear } from '@tanstack/charts/scales/linear'
 import { text } from '@tanstack/charts/text'
-import { useId, useMemo, useState } from 'react'
+import { useContext, useId, useMemo, useState } from 'react'
 import type { CSSProperties, FocusEvent, KeyboardEvent, PointerEvent, ReactElement } from 'react'
 import { cx } from '../common/props'
 import type { BasaltProps } from '../common/props'
@@ -20,6 +20,7 @@ import { VX, alpha } from '../tokens'
 import type { CartesianDefinition } from './compile'
 import { chartCurve } from './curves'
 import { barMark } from './marks'
+import { VisualSlotContext } from '../dashboard/visual-slot'
 import { bucketDay, dayGranular, defaultNumberFormat } from './compile'
 import { referenceLabelPlacement } from './ref-label'
 import { readoutClock, readoutDay } from './chart-dates'
@@ -74,6 +75,8 @@ type Point = { i: number; v: number | null }
 const LINE_WIDTH = 1.5
 const DOT_R = 2.5
 const BAR_GAP = 0.15
+/** Air between the hovered point and a bare sparkline's readout chip beside it, px. */
+const READOUT_GAP = 8
 /** Air round a line's plot, px (the engine's plot margin): the end marker stays inside the svg box,
  * so it clears the 2px focus outline round it. A bar plot is flush. */
 const LINE_INSET = 3
@@ -92,7 +95,7 @@ const DAY_MS = 86_400_000
 const finite = (v: number): number | null => (Number.isFinite(v) ? v : null)
 
 /** The readout's moment per point of `{ at }` data: the day when the points are a day or more apart,
- * else the hour (with the day once they span more than 24 h). `undefined` for plain values. */
+ * else the hour (with the day once they cross midnight). `undefined` for plain values. */
 function momentsOf(data: SparklineProps['data']): readonly (string | undefined)[] | undefined {
   const dates: (Date | null)[] = []
   for (const d of data) {
@@ -109,14 +112,9 @@ function momentsOf(data: SparklineProps['data']): readonly (string | undefined)[
     if (day < lo) lo = day
     if (day > hi) hi = day
   }
-  let first = Number.POSITIVE_INFINITY
-  let last = Number.NEGATIVE_INFINITY
-  for (const d of known) {
-    first = Math.min(first, d.getTime())
-    last = Math.max(last, d.getTime())
-  }
-  // Hourly points inside one 24 h window name the hour alone: the day is the whole window's.
-  const clockOnly = lo === hi || last - first <= DAY_MS
+  // Hourly points inside one UTC day name the hour alone; a window that crosses midnight (24 points
+  // from 12:00 on, or 25 from 12:00 to 12:00) names the day with each hour, so no clock repeats bare.
+  const clockOnly = lo === hi
   const byDay = dayGranular(known)
   return dates.map((d) => {
     if (d === null) return undefined
@@ -411,6 +409,7 @@ export function Sparkline(props: SparklineProps): ReactElement {
     style,
   } = props
   const id = useId()
+  const hosted = useContext(VisualSlotContext) !== null
   // Two sources, so a pointer leaving a focused chart hands the readout back to the focused point.
   const [hover, setHover] = useState<number | null>(null)
   const [keyed, setKeyed] = useState<number | null>(null)
@@ -493,14 +492,32 @@ export function Sparkline(props: SparklineProps): ReactElement {
           label: labels?.[active] ?? model.moments?.[active],
         }
       : null
-  // Above the plot, in the line hosts reserve for it (`--basalt-spark-readout-h`), so the chip never
-  // sits on the line. It slides with the point (`left` and `translateX` take the same fraction), so
-  // it stays inside the box at either edge whatever its width, and never needs to truncate.
+  // Hosted (a host that reserves a line above the plot): the chip slides with the point (`left` and
+  // `translate` take one fraction), inside the box at either edge whatever its width, and the
+  // stylesheet lifts it above the plot. Bare: beside the point, on the roomier side and on the half of
+  // the box away from it, so the chip covers neither the dot nor anything the host draws round it.
+  const beside = at === null ? null : at.fx > 0.5 ? 'left' : 'right'
   const readoutStyle: CSSProperties | undefined =
-    at === null ? undefined : { left: `${at.fx * 100}%`, translate: `${-at.fx * 100}% 0` }
+    at === null
+      ? undefined
+      : hosted
+        ? { left: `${at.fx * 100}%`, translate: `${-at.fx * 100}% 0` }
+        : {
+            ...(beside === 'right'
+              ? {
+                  left: `calc(${at.fx * 100}% + ${READOUT_GAP}px)`,
+                  maxWidth: `calc(${(1 - at.fx) * 100}% - ${READOUT_GAP}px)`,
+                }
+              : {
+                  right: `calc(${(1 - at.fx) * 100}% + ${READOUT_GAP}px)`,
+                  maxWidth: `calc(${at.fx * 100}% - ${READOUT_GAP}px)`,
+                }),
+            ...(at.fy > 0.5 ? { top: 0 } : { bottom: 0 }),
+          }
   return (
     <div
       data-basalt-sparkline=""
+      {...(hosted && { 'data-basalt-hosted': '' })}
       role="presentation"
       className={cx(classes.root, className)}
       style={{ width: width ?? '100%', height, minWidth: 0, ...style }}

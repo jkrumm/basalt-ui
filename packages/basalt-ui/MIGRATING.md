@@ -1064,25 +1064,30 @@ owns, and never covers its own glyph. Outside a card the viewport flip is unchan
 
 No export is removed or added. Six chart defaults move.
 
-- **`Sparkline` readout sits above the plot.** The hover/focus chip no longer overlays the plotted line:
-  it takes the line hosts reserve above the plot (`--basalt-spark-readout-h`; `StatCard` and strip cells
-  already reserve it) and slides with the point, so it stays inside the box at either edge and no longer
-  truncates. A `Sparkline` in a host that reserves no line and clips overflow loses the chip: reserve
-  `--basalt-spark-readout-h` above it, or set `--basalt-spark-readout-lift: 0` on the host to put the chip
-  back at the plot's top edge.
-- **Hourly readouts name the hour.** `{ at, value }` points whose span is 24 h or less read `0 runs · 14:00`
-  (the clock alone); a longer hourly span keeps `16 Oct 14:00`. Opt out: pass `labels`.
+- **`Sparkline` readout sits above the plot in a host that reserves a line.** In a `StatCard` sparkline
+  slot or a strip cell's `visual` (the `VisualSlotContext` hosts; the sparkline carries
+  `data-basalt-hosted`) the hover/focus chip no longer overlays the plotted line: it takes the reserved
+  line above the plot (`--basalt-spark-readout-h`). A bare `Sparkline` is unchanged in kind: its chip
+  stays inside its own box, on the half away from the point. A hosted chip slides with the point,
+  so it stays inside the box at either edge and no longer truncates. Opt out in a host: set
+  `--basalt-spark-readout-lift: 0` on it to put the chip back in the box.
+- **Hourly readouts name the hour.** `{ at, value }` points inside one UTC day read `0 runs · 14:00` (the
+  clock alone); a window that crosses midnight (24 points from 12:00, or 12:00 to 12:00) reads
+  `16 Oct 14:00`, so no clock repeats bare. Opt out: pass `labels`.
 - **A bar tooltip stays under the card's headline.** `Bars` (any chart with a bar series) lowers the
-  tooltip anchor so a tall bar's tooltip no longer opens over the header. No opt-out; a short bar is
-  unchanged.
+  tooltip anchor, and steps it beside a tall bar, so its tooltip no longer opens over the header; the anchor
+  is clamped into the plot. A short bar is unchanged. Opt-out: none (the tooltip's own `placement` is the
+  engine's and not exposed; the old position covered the card's headline, so there is nothing to keep).
 - **A compact y axis keeps a fixed domain's end.** At the compact width, `y.domain: [0, 25]` ticks
-  `0 · 10 · 20 · 25` (the end joins when it leaves at least 40% of a step above the last tick), so a unit
-  the formatter puts on the top tick survives at 390 px. Opt out: `y.ticks` (a count or exact values).
+  `0 · 10 · 20 · 25` (the end joins when it leaves at least 40% of a step above the last tick; the uneven
+  last step is intended), so a unit the formatter puts on the top tick survives at 390 px. Opt out: `y.ticks` (a count or exact values).
 - **`Bars` series of one colour step down in shade.** Two or more bars sharing a `color`, none setting
-  `fillOpacity` and no `barOpacity`, draw at full strength down to 0.4, with a surface hairline between
-  stacked segments. Opt out: set `fillOpacity` on a bar, or pass `barOpacity`.
+  `fillOpacity` and no `barOpacity`, draw at full strength down to 0.4. Any stacked or normalized `Bars`
+  where two bars share a colour also draws a surface hairline between segments. Opt out: set `fillOpacity`
+  on a bar, or pass `barOpacity` (the shades), and give the bars distinct colours (the hairline).
 - **`StackedArea` skips a band whose every value is `0`.** No band, legend entry or tooltip row; a `null`
-  stays a gap and the band stays. Opt out: none (a zero band drew nothing).
+  stays a gap and the band stays. Opt out: none (a zero band drew nothing but a legend entry; to keep
+  the entry, give the band one non-zero value or pass `null` for the zeros).
 
 ### State defaults (Wave 38)
 
