@@ -5,6 +5,8 @@
  * from `TODAY`, so moving the reading date moves the copy with it.
  */
 
+import type { BarsBar } from 'basalt-ui/charts'
+import { VX } from 'basalt-ui/tokens'
 import { monthName, roundShares, seeded } from './fixture-utils'
 
 const PROJECT_KEYS = ['search', 'support', 'summaries', 'ingest', 'evals', 'sandbox'] as const
@@ -223,3 +225,15 @@ export const CUMULATIVE: readonly CumulativeRow[] = (() => {
     return { date, spent: null, forecast: MTD_EUR + perDay * (i + 1 - DAYS_ELAPSED) }
   })
 })()
+
+/** One series: a vertical reference line is not expressible (`refLines` are horizontal) and a second
+ * series would tell the median bin by colour alone, so the median is a footer fact on the card. */
+export const DISTRIBUTION_BARS: BarsBar<DistributionBin>[] = [
+  {
+    key: 'days',
+    label: 'Days',
+    color: VX.neutral,
+    getValue: (d) => d.days,
+    formatValue: (v) => `${v} ${v === 1 ? 'day' : 'days'}`,
+  },
+]

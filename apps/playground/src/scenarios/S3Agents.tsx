@@ -217,15 +217,17 @@ function QueueStrip({ shotState }: ScenarioProps) {
       ...(!hidden && { footer: failuresClock }),
       ...(!hidden && {
         visual: (
-          <Sparkline
-            ariaLabel="Failed runs per hour, last 24 hours"
-            data={FAILURES_BY_HOUR}
-            height={SPARK_HEIGHT}
-            mark="bar"
-            color={VX.status.bad}
-            emphasizeLast={false}
-            format={(v) => `${fmtInt(v)} ${v === 1 ? 'run' : 'runs'}`}
-          />
+          <Box data-shot-hover>
+            <Sparkline
+              ariaLabel="Failed runs per hour, last 24 hours"
+              data={FAILURES_BY_HOUR}
+              height={SPARK_HEIGHT}
+              mark="bar"
+              color={VX.status.bad}
+              emphasizeLast={false}
+              format={(v) => `${fmtInt(v)} ${v === 1 ? 'run' : 'runs'}`}
+            />
+          </Box>
         ),
       }),
       ...(!hidden && FAILURES_24H.count > FAILURES_24H.prior && { tone: 'bad' as const }),
