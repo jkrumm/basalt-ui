@@ -652,7 +652,7 @@ layout('Charts — 2.0 layout', () => {
     }
   }
 
-  describe('a Sparkline readout stays inside its box and never covers the hovered point', () => {
+  describe('a Sparkline readout sits above the plot, inside its width, and never covers the point', () => {
     test.each([
       ['the line end point', { kind: 'spark', sparkRows: 12, height: 22, width: 240 }, 0.98],
       ['a line mid point', { kind: 'spark', sparkRows: 12, height: 22, width: 240 }, 0.5],
@@ -676,11 +676,8 @@ layout('Charts — 2.0 layout', () => {
         const dot = document.querySelector('[data-basalt-sparkline-dot]')?.getBoundingClientRect()
         return {
           text: readout.textContent,
-          inside:
-            a.left >= r.left - 0.5 &&
-            a.right <= r.right + 0.5 &&
-            a.top >= r.top - 0.5 &&
-            a.bottom <= r.bottom + 0.5,
+          // Wave 38: above the plot, never on the plotted line.
+          inside: a.left >= r.left - 0.5 && a.right <= r.right + 0.5 && a.bottom <= r.top + 0.5,
           coversDot:
             dot !== undefined &&
             a.left < dot.right &&
@@ -859,7 +856,7 @@ layout('Charts — 2.0 layout', () => {
     expect(m.below).toBe(true)
   })
 
-  describe('a Sparkline in a StatCard slot or a strip cell answers hover with a readout inside the cell', () => {
+  describe('a Sparkline in a StatCard slot or a strip cell answers hover with a readout above its plot', () => {
     test.each(['card', 'right', 'strip'] as const)('%s', async (sparkIn) => {
       const p = await openFixture(chartFixture({ kind: 'spark', sparkIn }), DESKTOP)
       await p.settle()
@@ -903,12 +900,11 @@ layout('Charts — 2.0 layout', () => {
           text: readout.textContent,
           visible: r.width > 0 && r.height > 0,
           painted,
-          // Inside the sparkline's own box: nothing the host draws round it can sit under the chip.
+          // Above the plot and inside its width: never on the plotted line.
           inSpark:
             r.left >= spark.left - 0.5 &&
             r.right <= spark.right + 0.5 &&
-            r.top >= spark.top - 0.5 &&
-            r.bottom <= spark.bottom + 0.5,
+            r.bottom <= spark.top + 0.5,
           overHero:
             r.left < hero.right &&
             r.right > hero.left &&

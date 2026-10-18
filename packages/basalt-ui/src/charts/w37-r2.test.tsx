@@ -4,7 +4,6 @@
  * clears a bar, ticks and header share one locale, and an errored card is compact.
  */
 import { render } from '@testing-library/react'
-import { readFileSync } from 'node:fs'
 import { afterEach, describe, expect, test } from 'bun:test'
 import { act } from 'react'
 import { createRoot } from 'react-dom/client'
@@ -17,10 +16,6 @@ import { Sparkline } from './Sparkline'
 import { compileCartesian, utcHeaderDate } from './compile'
 import { dateTickFormat, utcAxisDate } from './date-tick-format'
 import type { ChartSeries } from './types'
-
-const read = (file: string): string => readFileSync(new URL(file, import.meta.url), 'utf8')
-const block = (source: string, selector: string): string =>
-  source.match(new RegExp(`${selector}[^{]*\\{([^}]*)\\}`))?.[1] ?? ''
 
 let root: ReturnType<typeof createRoot> | undefined
 afterEach(() => {
@@ -106,29 +101,17 @@ describe('Sparkline names its point (item 1)', () => {
   })
 })
 
-describe('the Sparkline readout sits inside its own box, beside the point (item 1)', () => {
-  const placed = async (data: number[], mark?: 'bar'): Promise<CSSStyleDeclaration | undefined> => {
-    const el = await mount(
-      <Sparkline ariaLabel="S" height={30} data={data} {...(mark && { mark })} />,
-    )
-    return (await focusIn(el))?.style
-  }
-  test('a point at the right edge: the chip flips to its left and hangs off the box bottom when the point is high', async () => {
-    const style = await placed([1, 2, 3])
-    expect(style?.right).toMatch(/%/)
-    expect(style?.left).toBe('')
-    expect(style?.bottom).toBe('0px')
-    expect(style?.top).toBe('')
-  })
-  test('a low point takes the chip to the top, so it never covers the dot', async () => {
-    const style = await placed([3, 2, 1])
-    expect(style?.top).toBe('0px')
-    expect(style?.bottom).toBe('')
-  })
-  test('the stylesheet no longer lifts the chip above the box', () => {
-    const rule = block(read('./sparkline.module.css'), '\\.readout')
-    expect(rule).not.toContain('bottom: calc(100%')
-    expect(rule).toContain('max-height: 100%')
+// Wave 38 moved the chip above the plot, into the line hosts reserve (the W37 in-box placement sat on
+// the plotted line); the placement tests live in `w38-chart-chrome.test.tsx`.
+describe('the Sparkline readout names its point (item 1)', () => {
+  test('a high last point and a low one both read out', async () => {
+    for (const data of [
+      [1, 2, 3],
+      [3, 2, 1],
+    ]) {
+      const el = await mount(<Sparkline ariaLabel="S" height={30} data={data} />)
+      expect(await focusIn(el)).not.toBeNull()
+    }
   })
 })
 

@@ -297,6 +297,29 @@ function wholeStepFormat<T>(
   return (v) => axis.format(v).replace(padded, '$1')
 }
 
+/** A fixed domain's end this near the last round tick (as a share of the tick step) stays unlabelled. */
+const END_TICK_MIN_GAP = 0.4
+
+/**
+ * The compact ladder's three ticks can stop short of a fixed domain's end (`[0, 25]` ticks `0 10 20`),
+ * and a unit the formatter states on the top tick (`25 days`) goes with it. A fixed domain whose end
+ * leaves at least {@link END_TICK_MIN_GAP} of a step above the last tick gets the end as a tick too.
+ */
+function withEndTick<T>(
+  cfg: AxisConfig<T> | undefined,
+  axis: YAxis,
+  count: number,
+): { values: readonly number[] } | null {
+  if (!Array.isArray(cfg?.domain) || cfg.scale === 'log' || cfg.nice === true) return null
+  const [lo, hi] = [Math.min(...axis.domain), Math.max(...axis.domain)]
+  const round = scaleLinear().domain([lo, hi]).ticks(count)
+  const last = round.at(-1)
+  const next = round.at(1)
+  const first = round.at(0)
+  if (last === undefined || next === undefined || first === undefined || last >= hi) return null
+  return hi - last >= (next - first) * END_TICK_MIN_GAP ? { values: [...round, hi] } : null
+}
+
 export function yGuide<T>(opts: {
   cfg: AxisConfig<T> | undefined
   axis: YAxis
@@ -309,7 +332,9 @@ export function yGuide<T>(opts: {
   const ticks =
     typeof cfg?.ticks === 'object'
       ? { values: cfg.ticks }
-      : { count: typeof cfg?.ticks === 'number' ? cfg.ticks : ladder.yTicks }
+      : ((cls === 'compact' && cfg?.ticks === undefined
+          ? withEndTick(cfg, axis, ladder.yTicks)
+          : null) ?? { count: typeof cfg?.ticks === 'number' ? cfg.ticks : ladder.yTicks })
   const gridLine = grid ? { grid: GRID_LINE } : {}
   if (cls === 'micro') return { ...gridLine, axis: false }
   const tickFormat = wholeStepFormat(axis, cfg, ticks)
@@ -960,6 +985,37 @@ const stripAnchor = (
 const STRIP_TOOLTIP_PLACEMENT = ['bottom', 'top'] as const
 const STRIP_TOOLTIP_OFFSET = 8
 
+/** A tooltip's chrome (title row, padding) and each series row, px: the guess the bar anchor reserves. */
+const TIP_CHROME = 30
+const TIP_ROW = 18
+/** Air between a clamped tooltip's top and the plot's top edge, px. */
+const TIP_TOP_AIR = 4
+
+/** A tall bar's tooltip steps aside by this much (a tooltip's half width plus a bar's), px. */
+const TIP_SIDE_STEP = 96
+
+/**
+ * A bar's tooltip opens above the bar, and above a tall bar that is above the plot, over the card's
+ * headline. For a bar too tall to fit it, the anchor drops to where the open-above tooltip's top meets
+ * the plot's top edge (`rows` series rows tall) and steps to the side with more room, so the tooltip
+ * sits beside the bar, in the plot, and not on the bar's top. A short bar is unaffected.
+ */
+const barAnchor =
+  (rows: number) =>
+  (
+    points: readonly ChartPoint[],
+    { plot }: ChartTooltipAnchorContext,
+  ): { x: number; y: number } => {
+    const xs = points.map((p) => p.x)
+    const ys = points.map((p) => p.y)
+    const x = (Math.min(...xs) + Math.max(...xs)) / 2
+    const y = (Math.min(...ys) + Math.max(...ys)) / 2
+    const floor = plot.y + TIP_TOP_AIR + TIP_CHROME + rows * TIP_ROW
+    if (y >= floor) return { x, y }
+    const toRight = x - plot.x < plot.width / 2
+    return { x: x + (toRight ? TIP_SIDE_STEP : -TIP_SIDE_STEP), y: floor }
+  }
+
 function tooltipSpec<T, X extends ChartX>(opts: {
   input: CartesianInput<T, X>
   axes: Axes<T>
@@ -979,7 +1035,11 @@ function tooltipSpec<T, X extends ChartX>(opts: {
     use: quietWhileFollowing,
     ...followerOptions(input.tooltip, input.cursorGroup, input.chartId),
     portal,
-    anchor: input.tooltipBelow ? stripAnchor : 'group-center',
+    anchor: input.tooltipBelow
+      ? stripAnchor
+      : visible.some((s) => s.mark === 'bar')
+        ? barAnchor(rowSeries.length)
+        : 'group-center',
     ...(input.tooltipBelow && { placement: STRIP_TOOLTIP_PLACEMENT, offset: STRIP_TOOLTIP_OFFSET }),
     content: (points: readonly ChartPoint[]) => {
       const primary = points[0]
