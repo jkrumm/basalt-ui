@@ -5,6 +5,7 @@
 declare const classes: {
   readonly inputWrapper: string
   readonly input: string
+  readonly alertRoot: string
   readonly buttonRoot: string
   readonly actionIconRoot: string
   readonly checkboxCardRoot: string

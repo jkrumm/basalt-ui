@@ -150,7 +150,12 @@ export function MeterLoading({
   )
 }
 
-export function MeterEmpty(props: { label: string; text: string; ring: boolean; shell: Shell }) {
+export function MeterEmpty(props: {
+  label: string
+  text: string | undefined
+  ring: boolean
+  shell: Shell
+}) {
   const { label, text, ring, shell } = props
   return (
     <output {...rootProps(shell)} aria-label={label}>
@@ -163,7 +168,7 @@ export function MeterEmpty(props: { label: string; text: string; ring: boolean; 
           <div className={classes.track} data-meter-track />
         </div>
       )}
-      <span className={classes.empty}>{text}</span>
+      <span className={classes.empty}>{text ?? '—'}</span>
     </output>
   )
 }

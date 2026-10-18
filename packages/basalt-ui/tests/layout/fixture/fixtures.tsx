@@ -32,7 +32,7 @@ import type { DataTableFacet } from '../../../src/table/data-table'
 import type { BasaltColumnDef } from '../../../src/table/table-features'
 import { Callout, Prose } from '../../../src/content'
 import { CodeBlock } from '../../../src/content/code-block'
-import { ActionIcon, Badge, Button, Card, Paper } from '@mantine/core'
+import { ActionIcon, Alert, Badge, Button, Card, Code, Paper } from '@mantine/core'
 import {
   BarList,
   DeltaBadge,
@@ -1438,6 +1438,32 @@ function Wave37Fixture({ spec }: { spec: NonNullable<FixtureSpec['w37']> }): Rea
       {spec.pill && (
         <div data-testid="w37-pill">
           <SelectFilter field={w37PillStore.field.site} label="Site" />
+        </div>
+      )}
+      {spec.alertCode && (
+        <div data-testid="w37-alert-code">
+          <Alert title="No snapshot yet">
+            Run <Code>warden run</Code> first.
+          </Alert>
+        </div>
+      )}
+      {spec.cardTabs && (
+        <div data-testid="w37-card-tabs">
+          <ChartCard
+            title="Cost"
+            actions={
+              <ViewTabs
+                field={barStore.field.f0}
+                label="Metric"
+                options={BAR_VALUES.slice(0, 2).map((value) => ({
+                  value,
+                  label: BAR_LABELS[value] as string,
+                }))}
+              />
+            }
+          >
+            <div>chart body</div>
+          </ChartCard>
         </div>
       )}
       {spec.untitled && (

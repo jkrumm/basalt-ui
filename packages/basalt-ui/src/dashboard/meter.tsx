@@ -72,7 +72,7 @@ type Common = BasaltProps & {
   format?: (value: number) => string
   /** Renders a skeleton with the meter's footprint. */
   loading?: boolean
-  /** Muted line shown when there is no reading. The track stays so the footprint holds. */
+  /** Muted line shown when there is no reading; none by default (the reading is `—`). The track stays so the footprint holds. */
   emptyText?: string
 }
 
@@ -226,9 +226,7 @@ export function Meter(props: MeterProps) {
   const segments = props.segments === undefined ? undefined : normalizeSegments(props.segments)
   const reading = segments === undefined ? props.value : segmentReading(segments, min)
   if (!isReading(reading) || segments?.length === 0) {
-    return (
-      <MeterEmpty label={label} text={props.emptyText ?? 'No data'} ring={ring} shell={shell} />
-    )
+    return <MeterEmpty label={label} text={props.emptyText} ring={ring} shell={shell} />
   }
 
   if (props.shape === 'ring') {
