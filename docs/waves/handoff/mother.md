@@ -48,11 +48,12 @@ Queued behind all of it: Part 2's maturation Waves 20–28.
 
 ## In flight (next actions, in order)
 
-1. basalt 2.20.0 is released (2026-10-18, Wave 35). argo Wave 23 (lead `argo-w23`) adopts it per
-   `argo/docs/design/basalt-2.20-adoption.md`, deletes the prototypes and re-scores every page live.
-2. basalt Wave 36 (the UX-first procedure plus Wave 35's leftovers and the mother's r3 read) is active.
-3. After both: the expression trial result and argo's re-score decide the exit gate. Gaps become basalt
-   Wave 37+ and argo Wave 24+.
+1. basalt 2.21.0 released 2026-10-18 (mid-Wave 36; strip alignment, Meter zone labels, Button insets). Wave 36 closed
+   (the UX-first procedure shipped; expression trial v0 scored 97). Wave 37 (argo's friction II) is active.
+2. argo runs the live re-score loop (argo Waves 23–28+): WalkingPad passes, twelve pages fail; each round fixes ~55 and
+   surfaces ~30 new defects. argo Wave 28 bumps to 2.21.0.
+3. Owner decision queued: warden + agent-gateway emit an authored `question` on items/asks (argo reads it when present).
+4. After basalt Wave 37: release, argo bumps and re-scores. The exit gate is unchanged.
 
 ## Consumers and how to reach them
 
