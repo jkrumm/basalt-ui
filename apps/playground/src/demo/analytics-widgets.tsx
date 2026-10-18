@@ -26,7 +26,7 @@ export function BreakdownList({
   return (
     <Stack gap={2}>
       {rows.map((row) => (
-        <Group key={row.key} justify="space-between" wrap="nowrap" gap="sm" py={8}>
+        <Group key={row.key} justify="space-between" wrap="nowrap" gap="sm" py="xs">
           <Text size="sm" c={VX.ink2}>
             {row.label}
           </Text>

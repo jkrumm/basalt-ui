@@ -17,7 +17,7 @@
     "typecheck": "bun --filter basalt-ui --filter @basalt-ui/playground typecheck && cd packages/basalt-ui && ./node_modules/.bin/tsc -p ../../scripts/evidence",
     "test": "bun test",
     "test:layout": "bun --config=./packages/basalt-ui/tests/layout/bunfig.toml test --timeout 60000 packages/basalt-ui/tests/layout",
-    "check-theme": "cd packages/basalt-ui && bun bin/basalt-ui.mjs check-theme",
+    "check-theme": "cd packages/basalt-ui && bun bin/basalt-ui.mjs check-theme && cd ../../apps/playground && bun ../../packages/basalt-ui/bin/basalt-ui.mjs check-theme",
     "pre": "bun run fmt:check && bun run lint && bun run typecheck && bun run check-theme && bun run check-budgets && bun test",
     "prepare": "lefthook install",
     "hooks:install": "lefthook install",

@@ -27,6 +27,7 @@ import {
   Alert,
   Badge,
   Button,
+  Flex,
   Group,
   SegmentedControl,
   Stack,
@@ -65,26 +66,8 @@ const statusBadgeStyles = {
 
 const identityMetaStyle: CSSProperties = {
   fontFamily: 'var(--basalt-font-mono)',
-  // Mono account-meta line kept at 12px (not bumped onto xs=12.5), matching the "12px stays a
-  // literal" convention (see DashboardPage meterValueStyle).
-  // theme-allow no-raw-font-size — no matching VX.text step
-  fontSize: 12,
+  fontSize: VX.text.xs,
   color: VX.faint,
-}
-
-const initialsBlockStyle: CSSProperties = {
-  display: 'flex',
-  alignItems: 'center',
-  justifyContent: 'center',
-  width: 44,
-  height: 44,
-  flexShrink: 0,
-  borderRadius: 7,
-  backgroundColor: alpha(VX.ink, 0.1),
-  fontFamily: 'var(--basalt-font-mono)',
-  fontSize: VX.text.md,
-  fontWeight: 600,
-  color: VX.ink,
 }
 
 // ── Account ───────────────────────────────────────────────────────────────────────────────────
@@ -100,9 +83,24 @@ function getInitials(name: string): string {
 
 function InitialsBlock({ name }: { name: string }) {
   return (
-    <div style={initialsBlockStyle} aria-hidden>
+    <Flex
+      align="center"
+      justify="center"
+      w={44}
+      h={44}
+      bdrs="sm"
+      fz={VX.text.md}
+      fw={600}
+      c={VX.ink}
+      aria-hidden
+      style={{
+        flexShrink: 0,
+        backgroundColor: alpha(VX.ink, 0.1),
+        fontFamily: 'var(--basalt-font-mono)',
+      }}
+    >
       {getInitials(name)}
-    </div>
+    </Flex>
   )
 }
 

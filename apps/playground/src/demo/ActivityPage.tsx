@@ -11,8 +11,7 @@ import { VX } from 'basalt-ui/tokens'
 
 const timestampStyle: CSSProperties = {
   fontFamily: 'var(--basalt-font-mono)',
-  // theme-allow no-raw-font-size — bespoke mono micro-timestamp condensed for a feed row, no matching token
-  fontSize: 10.5,
+  fontSize: VX.text.micro,
   color: VX.faint,
 }
 
@@ -41,7 +40,7 @@ const ACTIVITY_EVENTS: ActivityEvent[] = [
     id: 'ticket',
     title: 'Support ticket resolved',
     timestamp: '3 hours ago',
-    description: 'Ticket #4821 closed — billing question.',
+    description: 'Ticket 4821 closed — billing question.',
   },
   {
     id: 'digest',
