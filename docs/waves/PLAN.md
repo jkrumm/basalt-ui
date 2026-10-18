@@ -1433,7 +1433,7 @@ catalogue). This wave takes over old Wave 39's catalogue-shipping step.
   (every package PR above; argo was blocked on the strip alignment); `CHANGELOG.md` untouched by the wave; every break is a
   plain `feat:` with a MIGRATING entry (released under 2.21.0).
 - **Rounds** (`docs/waves/design-parity/w36/rounds.md`; boards `.design-parity/w36/r0`–`r6`, `trial-v0`): detector B
-  65 → 75 → 100 → 100 → 88 → 100; by r3 every S2, S3 and S4 component and every page passes reviewer A; the components page fails only
+  (r1–r6) 65 → 75 → 100 → 100 → 88 → 100; by r3 every S2, S3 and S4 component and every page passes reviewer A; the components page fails only
   the Tabs accent pill. r4 (#385's specimens: sectioned Buttons, the zoned Meters' end ticks) is the after-board for
   the two argo Wave 23 items; r4 → r6 is the S3/S4 strip before/after for the argo Wave 25 item.
 - **Expression trial v0** (`docs/waves/design-parity/w36/expression-trial-v0.md`): a fresh agent in a scratch `init`
