@@ -135,6 +135,12 @@ const LEDGER: readonly { file: string; selector: string; kind: Kind; why: string
   },
   {
     file: 'dashboard/stat-strip.module.css',
+    selector: '@media (forced-colors: active) >> .cell',
+    kind: 'between-rows',
+    why: "The same leading edge as `.cell`, as a CanvasText border: forced colors drop box-shadows, so the strip's hairlines would vanish. Every cell takes it, so cells stay level, and `.clip` hides the leading row's.",
+  },
+  {
+    file: 'dashboard/stat-strip.module.css',
     selector: '.footerCell',
     kind: 'region-boundary',
     why: "The seam between the strip's cells and its footer row of wider cells: a region boundary inside one surface, the same --vx-divider line the cells use, not a heading echoing its type scale.",
@@ -271,7 +277,8 @@ describe('a between-rows family drops its last rule', () => {
       // `border: none` drop.
       const leading = rules.some(
         (r) =>
-          r.file === entry.file && r.selector === entry.selector && r.decl.includes('0 -1px 0'),
+          (r.file === entry.file && r.selector === entry.selector && r.decl.includes('0 -1px 0')) ||
+          r.selector.startsWith('@media (forced-colors'),
       )
       const selfLimiting = leading || /:not\(:last-child\)|\+/.test(entry.selector)
       const dropped = drops.some(
