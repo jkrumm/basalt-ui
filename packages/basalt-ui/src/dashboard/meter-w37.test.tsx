@@ -118,6 +118,8 @@ describe('tone="muted" per zone and segment', () => {
     expect(new Set(zones.map((z, i) => zoneFill(z, i, zones.length))).size).toBe(3)
   })
 
+  // The 1px gap (`insetInlineStart: calc(… + 1px)`) is the separator and predates this change; the
+  // `data-meter-zone-seam` attribute is the new marker that names it for muted neighbours.
   test('a boundary separator sits between adjacent muted zones', () => {
     const { container } = mount({
       label: 'L',

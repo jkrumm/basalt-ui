@@ -1131,9 +1131,10 @@ full-width digits. The face costs no extra download beyond the Nunito latin file
 
 `tone: 'muted'` on a `MeterZone` or `MeterSegment` no longer steps lightness per part (2.22.0's ramp):
 an outer non-verdict band read as a value bar. Every muted zone now takes one flat `--vx-muted` fill
-(35%) and every muted segment one flat fill (65%, 3:1 on the track). Neighbours are told apart by a
-1px hairline (`data-meter-zone-seam` / `data-meter-seam`) and their names; the marker stays the only
-strong mark. The plain zone ramp (no `tone`) is unchanged, and a `color` still wins.
+(35%) and every muted segment one flat fill (65%, 3:1 on the track). Neighbours are told apart by the
+1px gap every zone after the first already leaves (the track shows through; no change there), a 1px
+track-coloured seam between muted segments, and their names; the marker stays the only strong mark.
+`data-meter-zone-seam` / `data-meter-seam` are test hooks, not styling API. The plain zone ramp (no `tone`) is unchanged, and a `color` still wins.
 
 Opt-out: give a zone or segment its own `color`, or drop `tone` for the line ramp.
 
