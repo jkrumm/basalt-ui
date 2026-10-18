@@ -7,7 +7,7 @@
 
 import type { BarsBar } from 'basalt-ui/charts'
 import { VX } from 'basalt-ui/tokens'
-import { monthName, roundShares, seeded } from './fixture-utils'
+import { monthName, roundShares, seeded, timedPoints } from './fixture-utils'
 
 const PROJECT_KEYS = ['search', 'support', 'summaries', 'ingest', 'evals', 'sandbox'] as const
 export type ProjectKey = (typeof PROJECT_KEYS)[number]
@@ -136,6 +136,7 @@ export const MTD_DAYS: readonly DayRow[] = DAILY.filter((d) =>
   MTD_RAW.some((r) => r.date.getTime() === d.date.getTime()),
 )
 export const MTD_TOTALS: readonly number[] = MTD_DAYS.map((d) => d.total)
+export const MTD_POINTS = timedPoints(MTD_TOTALS, TODAY.getTime(), DAY_MS)
 
 type Part = { label: string; spend: number; /** 0..1 of the month-to-date total. */ share: number }
 

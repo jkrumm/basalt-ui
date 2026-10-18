@@ -65,7 +65,8 @@ describe('S2', () => {
   it('the goal card leads with the pace verdict; "17 of 28" lives in the Meter label only', () => {
     const c = training()
     const goal = text(anchor(c, 'goal'))
-    expect(goal).toContain(`${PACE_GAP} ahead of pace`)
+    // W37 r3: the verdict names its unit.
+    expect(goal).toContain(`${PACE_GAP} sessions ahead of pace`)
     expect(goal).not.toContain(`${SESSIONS_MTD} of ${GOAL_SESSIONS}`)
     expect(
       anchor(c, 'goal').querySelector(`[aria-label*="${SESSIONS_MTD} of ${GOAL_SESSIONS}"]`),
@@ -118,8 +119,9 @@ describe('S3', () => {
     expect(text(anchor(agents('empty'), 'item-flow'))).toContain(FLOW_RANGE_LABEL)
   })
 
-  it('the oldest wait prints once: the cell owns it, the list rows do not repeat it', () => {
-    expect(count(text(agents()), fmtAge(OLDEST_WAIT_HOURS))).toBe(1)
+  // W37 r3: the stuck list keeps hours so its oldest row matches the strip's Oldest wait figure.
+  it('the oldest wait prints twice: the cell, and the same figure on the oldest list row', () => {
+    expect(count(text(agents()), fmtAge(OLDEST_WAIT_HOURS))).toBe(2)
   })
 
   it('the failures clock reads "24 h ago" to "now" and drops the detached latest label', () => {

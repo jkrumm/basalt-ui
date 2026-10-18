@@ -44,6 +44,8 @@ createRoot(root).render(
         framework primitives, so the app-side series colors resolve per scheme just like the chrome. */}
     <BasaltProvider
       router={router}
+      locale="en-GB"
+      timeZone="UTC"
       paletteOptions={{ groups: demoPaletteGroups }}
       {...(telemetry && { telemetry })}
     />

@@ -81,7 +81,8 @@ describe('S2 states each figure once', () => {
     expect(goal).not.toContain(`${SESSIONS_MTD} of ${GOAL_SESSIONS}`)
     expect(occurrences(text(c), /ahead of pace/g)).toBe(1)
     expect(PACE_GAP).toBeGreaterThan(0)
-    expect(goal).toContain(`${PACE_GAP} ahead of pace`)
+    // W37 r3: the verdict names its unit.
+    expect(goal).toContain(`${PACE_GAP} sessions ahead of pace`)
   })
 
   it('the session mix does not restate the session count', () => {
@@ -173,7 +174,9 @@ describe('S3 states each figure once', () => {
     const c = agents()
     const footer = words(anchor(c, 'strip-footer-day'))
     expect(footer[0]).toBe('Today')
-    expect(footer).not.toContain(fmtEur(BUDGETS.day.spent))
+    // W37 r3 (#405): the Today footer sits under Dispatch spend and states spend and left like the
+    // week footer, so the spend figure is deliberately present in it.
+    expect(footer.join(' ')).toContain(fmtEur(BUDGETS.day.spent))
   })
 
   it('the item flow states its period once', () => {

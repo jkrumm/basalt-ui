@@ -25,7 +25,7 @@ import {
   ACUTE_LOAD,
   CHRONIC_LOAD,
   CONTRIBUTORS,
-  DISTANCE_7D_TREND,
+  DISTANCE_7D_POINTS,
   DISTANCE_CHANGE_PCT,
   DISTANCE_MTD_KM,
   GOAL_SESSIONS,
@@ -43,13 +43,13 @@ import {
   PRIOR_WINDOW_LABEL,
   READINESS_SCORE,
   READINESS_ZONES,
-  SESSIONS_7D_TREND,
+  SESSIONS_7D_POINTS,
   SESSIONS_CHANGE_PCT,
   SESSIONS_MTD,
   TODAY_LABEL,
   TOP_LIFTS,
   TYPE_MIX,
-  VOLUME_7D_TREND,
+  VOLUME_7D_POINTS,
   VOLUME_CHANGE_PCT,
   VOLUME_MTD_KG,
   WINDOW_LABEL,
@@ -80,7 +80,9 @@ const READINESS_INFO = `Mean of the four contributors below, each scored 0–100
 ).join(', ')}.`
 
 const aheadOrBehind = (gap: number): string =>
-  gap === 0 ? 'on pace' : `${Math.abs(gap)} ${gap > 0 ? 'ahead of' : 'behind'} pace`
+  gap === 0
+    ? 'on pace'
+    : `${Math.abs(gap)} ${Math.abs(gap) === 1 ? 'session' : 'sessions'} ${gap > 0 ? 'ahead of' : 'behind'} pace`
 
 /** One card height for a row pair: the grid cell sets it, the card fills it. */
 const FILL: CSSProperties = { height: '100%' }
@@ -156,7 +158,7 @@ function Summary({ shotState }: ScenarioProps) {
 
 /** A rolling-7-day trend for a `StatCard` visual slot. */
 const trendSparkline =
-  (label: string, data: readonly number[], format: (v: number) => string) =>
+  (label: string, data: readonly { at: number; value: number }[], format: (v: number) => string) =>
   (size: SparklineSize) => (
     <Box data-shot-hover>
       <Sparkline
@@ -188,7 +190,7 @@ function TrainingStats({ shotState }: ScenarioProps) {
           subtitle="7-day rolling"
           {...deltaProps(SESSIONS_CHANGE_PCT)}
           {...shared}
-          sparkline={trendSparkline('Sessions', SESSIONS_7D_TREND, (v) => `${fmtInt(v)} sessions`)}
+          sparkline={trendSparkline('Sessions', SESSIONS_7D_POINTS, (v) => `${fmtInt(v)} sessions`)}
         />
       </Box>
       <Box data-shot="volume" h="100%">
@@ -201,7 +203,7 @@ function TrainingStats({ shotState }: ScenarioProps) {
           subtitle="7-day rolling"
           {...deltaProps(VOLUME_CHANGE_PCT)}
           {...shared}
-          sparkline={trendSparkline('Training volume, kilograms', VOLUME_7D_TREND, fmtKg)}
+          sparkline={trendSparkline('Training volume, kilograms', VOLUME_7D_POINTS, fmtKg)}
         />
       </Box>
       <Box data-shot="distance" h="100%" className={classes.lastKpi}>
@@ -216,7 +218,7 @@ function TrainingStats({ shotState }: ScenarioProps) {
           {...shared}
           sparkline={trendSparkline(
             'Walking distance, kilometres',
-            DISTANCE_7D_TREND,
+            DISTANCE_7D_POINTS,
             (v) => `${fmtKm(v)} km`,
           )}
         />
@@ -254,10 +256,15 @@ function GoalRow({ shotState }: ScenarioProps) {
                 label={`${fmtInt(SESSIONS_MTD)} of ${GOAL_SESSIONS} sessions this month against the goal`}
                 value={empty ? null : SESSIONS_MTD}
                 max={GOAL_SESSIONS}
-                ticks={[{ at: PACE_SESSIONS, label: 'Pace' }]}
+                target={GOAL_SESSIONS}
+                ticks={[
+                  {
+                    at: PACE_SESSIONS,
+                    label: 'Pace',
+                    caption: `${fmtInt(PACE_SESSIONS)} sessions by ${TODAY_LABEL}`,
+                  },
+                ]}
                 format={(v) => `${fmtInt(v)} sessions`}
-                startCaption={null}
-                endCaption={`${fmtInt(PACE_SESSIONS)} sessions by ${TODAY_LABEL}`}
                 loading={loading}
                 emptyText={TRAINING_EMPTY}
               />

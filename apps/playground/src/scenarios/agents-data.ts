@@ -7,7 +7,7 @@
 
 import type { ChartSeries } from 'basalt-ui/charts'
 import { demoColors } from '../demo/series'
-import { fmtDay, fmtInt } from './fixture-utils'
+import { fmtDay, fmtInt, timedPoints } from './fixture-utils'
 
 /** The reading date. Fixed, so the 14-day windows never move under a screenshot. */
 const TODAY = new Date(Date.UTC(2026, 9, 16))
@@ -88,6 +88,8 @@ export const OLDEST_WAIT_HOURS = Math.max(0, ...awaiting.map((i) => i.waitHours)
 /** The needs-you count at each day end, 14 days, ending on today's count. */
 export const NEEDS_YOU_TREND: readonly number[] = [2, 3, 3, 4, 3, 2, 3, 4, 5, 4, 5, 4, 5, NEEDS_YOU]
 
+export const NEEDS_YOU_POINTS = timedPoints(NEEDS_YOU_TREND, TODAY.getTime(), DAY_MS)
+
 export const FLEET: readonly { state: ItemState; label: string; count: number }[] = ITEM_STATES.map(
   (state) => ({
     state,
@@ -117,6 +119,13 @@ export const FAILURES_BY_HOUR: readonly number[] = Array.from({ length: 24 }, (_
   return FAILURE_TIMES.filter((t) => t.getTime() >= from && t.getTime() < from + HOUR_MS).length
 })
 
+/** `FAILURES_BY_HOUR` as points: the hour each bar starts, so the readout names it. */
+export const FAILURES_POINTS = timedPoints(
+  FAILURES_BY_HOUR,
+  FAILURES_WINDOW.start.getTime() + 23 * HOUR_MS,
+  HOUR_MS,
+)
+
 /** Dispatch spend per day in EUR, 14 days, oldest first; the last entry is today so far. */
 export const DISPATCH_DAILY: readonly number[] = [
   4.2, 6.8, 5.1, 3.9, 7.4, 6.1, 2.8, 3.3, 8.2, 6.6, 5.9, 7.1, 6.4, 5.4,
@@ -127,6 +136,8 @@ export const BUDGETS = {
 }
 /** The days that are over: today is partial, so a mean or a comparison leaves it out. */
 export const DISPATCH_COMPLETE_DAYS: readonly number[] = DISPATCH_DAILY.slice(0, -1)
+/** The complete days as points: the last is yesterday. */
+export const DISPATCH_POINTS = timedPoints(DISPATCH_COMPLETE_DAYS, TODAY.getTime() - DAY_MS, DAY_MS)
 
 export type FlowRow = { date: Date; opened: number; closed: number }
 
@@ -140,14 +151,8 @@ export const FLOW: readonly FlowRow[] = OPENED.map((opened, i) => ({
 }))
 export const FLOW_OPENED = FLOW.reduce((a, r) => a + r.opened, 0)
 export const FLOW_CLOSED = FLOW.reduce((a, r) => a + r.closed, 0)
-export const FLOW_RANGE_LABEL = `${fmtDay(FLOW[0]?.date ?? TODAY)}–${TODAY_LABEL}`
-
-/** A list row's age: whole days once past a day. The exact `fmtAge` is the Oldest wait cell's, so the
- * longest wait is not printed twice on the page. */
-export function fmtAgeCoarse(hours: number): string {
-  const whole = Math.round(hours)
-  return whole < 24 ? `${whole} h` : `${Math.floor(whole / 24)} d`
-}
+/** `3–16 Oct`: the start names only its day while the window stays in one month. */
+export const FLOW_RANGE_LABEL = `${(FLOW[0]?.date ?? TODAY).getUTCDate()}–${TODAY_LABEL}`
 
 /** `5 h`, `1 d 2 h`, `2 d`: days once past a day, hours only while they still change the call. */
 export function fmtAge(hours: number): string {

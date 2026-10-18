@@ -24,8 +24,9 @@ import {
   ABANDON_HOURS,
   BUDGETS,
   DISPATCH_COMPLETE_DAYS,
+  DISPATCH_POINTS,
   FAILURES_24H,
-  FAILURES_BY_HOUR,
+  FAILURES_POINTS,
   FLEET,
   FLEET_TOTAL,
   FLOW,
@@ -34,12 +35,11 @@ import {
   FLOW_OPENED,
   FLOW_RANGE_LABEL,
   NEEDS_YOU,
-  NEEDS_YOU_TREND,
+  NEEDS_YOU_POINTS,
   OLDEST_WAIT_HOURS,
   STUCK,
   WARN_HOURS,
   fmtAge,
-  fmtAgeCoarse,
 } from './agents-data'
 import type { FlowRow, ItemState } from './agents-data'
 import { fmtEur, fmtInt } from './fixture-utils'
@@ -106,8 +106,9 @@ const ABANDON_LABEL = `${ABANDON_HOURS / 24} d`
 // carrying the declaration. `shot` resolves the anchor with `.first()` (the derived cell) and reads
 // the declaration from the repeat, so the footer counts as absent in empty and error. A package
 // follow-up would let the entry declare it, and this wrapper would go.
-const footerEntry = (key: string, content: ReactNode) => ({
+const footerEntry = (key: string, content: ReactNode, under?: string) => ({
   key,
+  ...(under !== undefined && { under }),
   content: (
     <Box data-shot={`strip-footer-${key}`} data-shot-absent="empty error">
       {content}
@@ -141,13 +142,13 @@ function QueueStrip({ shotState }: ScenarioProps) {
       value: fmtInt(NEEDS_YOU),
       unit: 'items',
       loading,
-      ...cellState('Needs-you items', WARDEN_EMPTY),
+      ...cellState('Awaiting items', WARDEN_EMPTY),
       ...(!hidden && {
         visual: (
           <Box data-shot-hover>
             <Sparkline
               ariaLabel="Items awaiting a decision, end of day, last 14 days"
-              data={NEEDS_YOU_TREND}
+              data={NEEDS_YOU_POINTS}
               height={SPARK_HEIGHT}
               reference="mean"
               format={(v) => `${fmtInt(v)} items`}
@@ -168,7 +169,7 @@ function QueueStrip({ shotState }: ScenarioProps) {
           <Box data-shot-hover>
             <Sparkline
               ariaLabel={`Dispatch spend per day, last ${DISPATCH_COMPLETE_DAYS.length} complete days, EUR`}
-              data={DISPATCH_COMPLETE_DAYS}
+              data={DISPATCH_POINTS}
               height={SPARK_HEIGHT}
               reference="mean"
               format={fmtEur}
@@ -220,7 +221,7 @@ function QueueStrip({ shotState }: ScenarioProps) {
           <Box data-shot-hover>
             <Sparkline
               ariaLabel="Failed runs per hour, last 24 hours"
-              data={FAILURES_BY_HOUR}
+              data={FAILURES_POINTS}
               height={SPARK_HEIGHT}
               mark="bar"
               color={VX.status.bad}
@@ -269,8 +270,7 @@ function QueueStrip({ shotState }: ScenarioProps) {
     },
   ]
 
-  // The day meter's spend is the Dispatch spend cell above, so the footer states the period and what
-  // is left, never the spend again.
+  // Both footers state spend against the cap and what is left; the day's sits under Dispatch spend.
   const budget = (
     label: string,
     spent: number,
@@ -299,8 +299,9 @@ function QueueStrip({ shotState }: ScenarioProps) {
             BUDGETS.day.spent,
             BUDGETS.day.cap,
             'Today',
-            `${fmtEur(BUDGETS.day.cap - BUDGETS.day.spent)} left of ${fmtEur(BUDGETS.day.cap)}`,
+            `${fmtEur(BUDGETS.day.spent)} of ${fmtEur(BUDGETS.day.cap)} · ${fmtEur(BUDGETS.day.cap - BUDGETS.day.spent)} left`,
           ),
+          'dispatch-spend',
         ),
         footerEntry(
           'week',
@@ -351,7 +352,7 @@ function QueueRow({ shotState }: ScenarioProps) {
               label="Items waiting or blocked, by age"
               items={empty ? [] : STUCK_ITEMS}
               max={ABANDON_HOURS}
-              format={fmtAgeCoarse}
+              format={fmtAge}
               accentLeader
               variant="thin"
               loading={shotState === 'loading'}
@@ -367,7 +368,7 @@ function QueueRow({ shotState }: ScenarioProps) {
           {...(shotState === undefined && {
             facts: [
               { value: fmtInt(FLOW_OPENED), unit: 'opened' },
-              { value: fmtInt(FLOW_CLOSED), unit: 'closed', period: FLOW_RANGE_LABEL },
+              { value: fmtInt(FLOW_CLOSED), unit: 'closed', period: `· ${FLOW_RANGE_LABEL}` },
             ],
           })}
           state={chartStateFor(shotState, {

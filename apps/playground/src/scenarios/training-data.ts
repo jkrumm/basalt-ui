@@ -5,7 +5,7 @@
  * derived from `TODAY`, so moving the reading date moves the copy with it.
  */
 
-import { fmtDay, itemAt, monthName, seeded, zoneFor } from './fixture-utils'
+import { fmtDay, itemAt, monthName, seeded, timedPoints, zoneFor } from './fixture-utils'
 
 const SESSION_TYPES = ['strength', 'walk', 'mobility'] as const
 export type SessionType = (typeof SESSION_TYPES)[number]
@@ -170,6 +170,10 @@ const rolling7 = (pick: (s: Session) => number): readonly number[] =>
 export const SESSIONS_7D_TREND = rolling7(() => 1)
 export const VOLUME_7D_TREND = rolling7((s) => s.volumeKg)
 export const DISTANCE_7D_TREND = rolling7((s) => s.km)
+const trendPoints = (values: readonly number[]) => timedPoints(values, dayStart(0), DAY_MS)
+export const SESSIONS_7D_POINTS = trendPoints(SESSIONS_7D_TREND)
+export const VOLUME_7D_POINTS = trendPoints(VOLUME_7D_TREND)
+export const DISTANCE_7D_POINTS = trendPoints(DISTANCE_7D_TREND)
 
 const loadSince = (days: number): number =>
   sum(SESSIONS.filter((s) => s.date.getTime() > dayStart(0) - days * DAY_MS).map((s) => s.load))
