@@ -232,7 +232,7 @@ function suite(vp: Viewport) {
     // The column is end-aligned from the wide layout; the compact one stacks start-aligned.
     if (vp.width >= 480) expect(Math.abs(r[0]!.right - r[1]!.right)).toBeLessThanOrEqual(SNAP)
   })
-  test('a qualifier never truncates: a long one wraps under the caption, a short one stays beside it (Wave 38)', async () => {
+  test('a qualifier never truncates: a long one wraps under the caption; a short one stays beside it in a strip cell and goes under it in a narrow card, so card siblings agree (Wave 38)', async () => {
     const r = await p.raw.evaluate(() => {
       const one = (host: string, rootSel: string, i: number) => {
         const root = document.querySelectorAll<HTMLElement>(`[data-testid="${host}"] ${rootSel}`)[
@@ -264,7 +264,8 @@ function suite(vp: Viewport) {
       expect(k.under).toBe(true)
       expect(k.lines).toBeGreaterThan(1.5)
     }
-    for (const k of [r.cardShort, r.stripShort]) expect(k.under).toBe(false)
+    expect(r.cardShort.under).toBe(true)
+    expect(r.stripShort.under).toBe(false)
   })
   test('a ~300px strip cell wraps a long qualifier whole and only its own value moves (Wave 38)', async () => {
     const r = await p.raw.evaluate(() => {
