@@ -52,9 +52,6 @@ const NBSP = '\u00A0'
 const WARDEN_EMPTY = 'No agent work in the queue. Dispatch an item to start.'
 const retry = (what: string): string => retryCopy(what, 'warden')
 
-/** Body height of the error placeholder for the BarList card, so a failed card stays near its size. */
-const STUCK_PLACEHOLDER = 190
-
 const SPARK_HEIGHT = 28
 
 const STATE_COLOR: Record<ItemState, string> = {
@@ -330,7 +327,7 @@ function QueueRow({ shotState }: ScenarioProps) {
           {...(shotState === undefined && {
             facts: { value: fmtInt(STUCK.length), unit: 'items' },
           })}
-          {...cardStateProps(shotState, retry('Waiting and blocked items'), STUCK_PLACEHOLDER)}
+          {...cardStateProps(shotState, retry('Waiting and blocked items'), 'content')}
         >
           <Box data-shot-hover>
             <BarList
