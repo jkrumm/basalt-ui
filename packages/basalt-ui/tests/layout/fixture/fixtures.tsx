@@ -1428,7 +1428,7 @@ function DashFixture(): ReactElement {
       <div data-testid="dash-meter-zones-360" style={{ width: 360 }}>
         <Meter label="Training load" max={1000} value={400} zones={TRAINING_ZONES} />
       </div>
-      {[170, 220, 342].map((w) => (
+      {[120, 170, 220, 342].map((w) => (
         // theme-allow -- the wrapper width IS the fixture's payload (a container probe)
         <div key={w} data-testid={`dash-zl-${w}`} style={{ width: w }}>
           <Meter
@@ -1442,6 +1442,48 @@ function DashFixture(): ReactElement {
           />
         </div>
       ))}
+      {/* A tick at 15% lands on "Under"'s centre: the tick wins, the name hides. */}
+      {/* theme-allow -- the wrapper width IS the fixture's payload (a container probe) */}
+      <div data-testid="dash-zl-clash" style={{ width: 220 }}>
+        <Meter
+          label="Training load"
+          min={0}
+          max={2}
+          value={1.1}
+          zones={LOAD_ZONES}
+          ticks={[{ at: 0.3, label: 'Rest' }, ...LOAD_TICKS]}
+        />
+      </div>
+      <div data-testid="dash-zl-strip">
+        <StatGroup
+          variant="strip"
+          label="Load"
+          cols={5}
+          cells={[
+            {
+              key: 'load',
+              caption: 'Load',
+              value: '1.1',
+              visual: (
+                <Meter
+                  label="Training load"
+                  min={0}
+                  max={2}
+                  value={1.1}
+                  zones={LOAD_ZONES}
+                  ticks={LOAD_TICKS}
+                  endCaption="rest < 40 · push ≥ 70"
+                />
+              ),
+            },
+            ...[2, 3, 4, 5].map((n) => ({
+              key: `c${n}`,
+              caption: `Metric ${n}`,
+              value: String(n),
+            })),
+          ]}
+        />
+      </div>
       {/* theme-allow -- the wrapper width IS the fixture's payload (a container probe) */}
       <div data-testid="dash-zl-card" style={{ width: 360 }}>
         <StatCard

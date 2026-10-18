@@ -127,34 +127,59 @@ export const LABEL_SUBPIXEL = 0.5
 /** A measured label box on one axis (any shared origin), in CSS pixels. */
 export type LabelBox = { left: number; right: number }
 
-/** A label on the shared row: its measured box and, for a zone name, the span it must stay inside. */
-export type RowLabel = { box: LabelBox; span?: LabelBox }
+/**
+ * A label on the shared row: its measured box and, for a zone name, the span it must stay inside.
+ * The holding zone's name never hides for width: it ignores its span and is shifted into the row.
+ */
+export type RowLabel = { box: LabelBox; span?: LabelBox; holding?: boolean }
+
+/** The placement of the row's labels, index-aligned with the input. */
+export type RowPlacement = {
+  shown: boolean[]
+  /** Pixels a shown label moves along the row's physical x axis to stay inside it (0 unless clamped). */
+  shift: number[]
+}
 
 /**
- * Which labels of the row show, in input order. Labels without a span (the end ticks) claim their
- * place first; a zone name then shows only when it lies inside the row and its own span and clears
- * every label already kept. A hidden name is still named in the described-by text.
+ * Which labels of the row show, in input order. The holding zone's name claims its place first (it
+ * is the reading's verdict, so it never hides for width: it may spill past its span, shifted inside
+ * the row); the labels without a span (the end ticks) go next; every other zone name then shows only
+ * when it lies inside the row and its own span and clears every label already kept. A hidden name is
+ * still named in the described-by text.
  */
-export function placeRowLabels(labels: readonly RowLabel[], rowWidth: number): boolean[] {
+export function placeRowLabels(labels: readonly RowLabel[], rowWidth: number): RowPlacement {
   const shown = labels.map(() => false)
+  const shift = labels.map(() => 0)
   const kept: LabelBox[] = []
-  const order = labels.map((_, i) => i).sort((a, b) => +!!labels[a]?.span - +!!labels[b]?.span)
+  const rank = (l: RowLabel) => (l.holding ? 0 : l.span ? 2 : 1)
+  const order = labels
+    .map((_, i) => i)
+    .toSorted((a, b) => rank(labels[a] as RowLabel) - rank(labels[b] as RowLabel))
   for (const i of order) {
-    const { box, span } = labels[i] as RowLabel
-    const inside =
-      box.left >= -LABEL_SUBPIXEL &&
-      box.right <= rowWidth + LABEL_SUBPIXEL &&
-      (span === undefined ||
-        (box.left >= span.left - LABEL_SUBPIXEL && box.right <= span.right + LABEL_SUBPIXEL))
+    const label = labels[i] as RowLabel
+    const { span } = label
+    let box = label.box
+    if (label.holding) {
+      const width = box.right - box.left
+      const left = Math.max(0, Math.min(box.left, rowWidth - width))
+      shift[i] = left - box.left
+      box = { left, right: left + width }
+    } else {
+      const inside =
+        box.left >= -LABEL_SUBPIXEL &&
+        box.right <= rowWidth + LABEL_SUBPIXEL &&
+        (span === undefined ||
+          (box.left >= span.left - LABEL_SUBPIXEL && box.right <= span.right + LABEL_SUBPIXEL))
+      if (!inside) continue
+    }
     if (
-      !inside ||
       kept.some((k) => box.left < k.right - LABEL_SUBPIXEL && k.left < box.right - LABEL_SUBPIXEL)
     )
       continue
     shown[i] = true
     kept.push(box)
   }
-  return shown
+  return { shown, shift }
 }
 
 /** A zone band as left edge + width in percent, clipped to the track. */
