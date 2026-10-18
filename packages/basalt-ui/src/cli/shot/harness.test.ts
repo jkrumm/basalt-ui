@@ -216,7 +216,8 @@ const SKELETON_FIXTURE = `<!doctype html><style>
   .bar{position:relative;height:30px;margin-bottom:20px}
   .bar::after{content:'';position:absolute;inset:0;background:#ccc}
 </style><div data-shot=loading class=card>${'<div class=bar></div>'.repeat(4)}</div>
-<div data-shot=blank class=card></div>`
+<div data-shot=blank class=card></div>
+<div data-shot=dot class=card style="position:relative"><style>[data-shot=dot]::after{content:'';position:absolute;top:0;left:0;width:8px;height:8px;background:#f00}</style></div>`
 
 const pw = resolvePlaywright(process.cwd())
 const out = mkdtempSync(join(tmpdir(), 'basalt-harness-'))
@@ -316,6 +317,7 @@ describe('real Chrome', () => {
         const ratio = (name: string) => anchors.find((a) => a.name === name)?.emptyRatio
         expect(ratio('loading')).toBeLessThan(0.3)
         expect(ratio('blank')).toBe(1)
+        expect(ratio('dot')).toBeGreaterThan(0.9)
       },
       '/skeleton',
     )
