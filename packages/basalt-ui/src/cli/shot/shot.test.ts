@@ -164,6 +164,24 @@ const fakePw = (failing: readonly (string | undefined)[], log: string[] = []): P
   },
 })
 
+describe('withBrowser launch flags', () => {
+  test('launches Chrome with the blink pointer settings so desktop contexts hover', async () => {
+    const args: string[][] = []
+    const pw: Playwright = {
+      chromium: {
+        launchServer: (options) => {
+          args.push(options.args)
+          return Promise.resolve({ wsEndpoint: () => 'ws://fake', kill: () => Promise.resolve() })
+        },
+        connect: () => Promise.resolve({ newContext: () => Promise.reject(new Error('unused')) }),
+      },
+    }
+    await withBrowser(pw, () => Promise.resolve())
+    expect(args[0]?.join(' ')).toContain('--blink-settings=primaryHoverType=2')
+    expect(args[0]?.join(' ')).toContain('primaryPointerType=4')
+  })
+})
+
 describe('parseShotArgs', () => {
   test('routes, --dist, defaults', () => {
     const a = parseShotArgs(['/', '/dashboard', '--dist', 'dist'])

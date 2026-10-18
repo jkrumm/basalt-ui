@@ -72,6 +72,8 @@ export type ShotRecord = {
   /** `absent`: the anchor declared itself missing in this state (`data-shot-absent`): not a defect. */
   status: 'ok' | 'not-declared' | 'absent' | 'skipped' | 'error'
   note?: string
+  /** The anchor renders a basalt state surface (a ChartCard, StatCard or chart state): set on the `not-declared` shots of a route that declares no `data-shot-states`. */
+  stateful?: true
 }
 
 /** The theme's resolved steps (px) for one scheme × viewport; a missing custom property is omitted. */

@@ -9,7 +9,7 @@
  * |-|-|-|
  * | scan/shot-error              | content | P0                                                |
  * | scan/no-anchors              | content | P0                                                |
- * | craft-7/no-declared-states   | content | P1                                                |
+ * | craft-7/no-declared-states   | content | P2 (only when an anchor renders a state surface)  |
  * | craft-5/contrast             | content | P0                                                |
  * | craft-5/assumed-backdrop     | content | P2                                                |
  * | craft-1/scale-error, -missing| layout  | P1                                                |
@@ -291,20 +291,20 @@ export function detectFindings(m: ShotMetrics, lint?: LintReport): Finding[] {
       defect: `The shot failed${s.note ? `: ${s.note}` : ''}.`,
     })
   }
-  for (const route of new Set(
-    m.shots
-      .filter((s) => s.status === 'not-declared' && s.note === NO_STATES_NOTE)
-      .map((s) => s.route),
-  )) {
+  const stateful = new Map<string, Set<string>>()
+  for (const s of m.shots) {
+    if (s.status !== 'not-declared' || s.note !== NO_STATES_NOTE || !s.stateful) continue
+    stateful.set(s.route, (stateful.get(s.route) ?? new Set()).add(s.name))
+  }
+  for (const [route, names] of stateful) {
     drafts.push({
       ...scan,
       rule: 'craft-7/no-declared-states',
-      severity: 'P1',
+      severity: 'P2',
       anchor: '—',
       route,
       cite: `metrics.json shots[${route} not-declared]`,
-      defect:
-        'No anchor declares data-shot-states, so empty, loading and error were never rendered or scored: declare them with data-shot-states.',
+      defect: `${[...names].join(', ')} render${names.size === 1 ? 's' : ''} a state surface but no anchor declares data-shot-states, so empty, loading and error were never scored: add data-shot-states="empty loading error" to ${names.size === 1 ? 'it' : 'each'}.`,
     })
   }
   if (m.scaleError || m.scale.length === 0) {
