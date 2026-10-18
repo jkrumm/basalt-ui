@@ -32,6 +32,8 @@ export type TextReading = {
   bold: boolean
   /** No opaque ancestor background was found: `bg` is white by assumption. */
   assumedWhite: boolean
+  /** Inside a disabled control: WCAG 1.4.3 exempts inactive components, so it is not measured. */
+  disabled?: boolean
 }
 /** A computed `border-top-left-radius` as the page read it, with the box it rounds. */
 export type RawRadius = { value: string; width: number; height: number }
@@ -72,6 +74,7 @@ export function finishMeasurement({ texts, radius, nested, ...rest }: Reading): 
   const failures: ContrastFailure[] = []
   let min: number | null = null
   for (const t of texts) {
+    if (t.disabled) continue
     const exact = contrastRatio(t.fg, t.bg)
     const ratio = Math.round(exact * 100) / 100
     min = min === null ? ratio : Math.min(min, ratio)
@@ -220,6 +223,7 @@ export function measureAnchor(root: Element): Reading {
       fg: over(rgba(s.color), back.color),
       bg: back.color,
       assumedWhite: back.assumedWhite,
+      disabled: el.closest(':disabled, [aria-disabled="true"], [data-disabled]') !== null,
       fontSize: size,
       bold: parseInt(s.fontWeight, 10) >= 700,
     })

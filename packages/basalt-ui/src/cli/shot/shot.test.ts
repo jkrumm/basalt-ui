@@ -1342,6 +1342,14 @@ describe('finishMeasurement', () => {
     })
     expect(m.contrast.backdrop).toBeUndefined()
   })
+  test('text inside a disabled control is exempt (WCAG 1.4.3 inactive components)', () => {
+    const m = finishMeasurement({
+      ...rest,
+      texts: [text({ text: 'Disabled', fg: [170, 170, 170], disabled: true }), text({})],
+    })
+    expect(m.contrast.failures).toEqual([])
+    expect(m.contrast.min).toBe(21)
+  })
   test('a ratio that ROUNDS to the threshold but sits under it still fails (body 4.5, large 3)', () => {
     for (const [threshold, fontSize] of [
       [4.5, 16],
