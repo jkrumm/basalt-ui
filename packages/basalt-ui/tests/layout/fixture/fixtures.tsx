@@ -1751,7 +1751,7 @@ function DashFixture(): ReactElement {
         <StatGroup
           variant="strip"
           label="Alignment"
-          cols={4}
+          cols={5}
           cells={[
             {
               key: 'tall',
@@ -1783,6 +1783,7 @@ function DashFixture(): ReactElement {
             },
             { key: 'short', caption: 'Verdicts', value: '78 %', footer: 'of 120 reviewed' },
             { key: 'bare', caption: 'Open', value: '4' },
+            { key: 'again', caption: 'Reviewed', value: '120', footer: 'since Monday' },
           ]}
         />
       </div>
@@ -1884,6 +1885,80 @@ function DashFixture(): ReactElement {
           ]}
           footer={[{ key: 'note', content: 'Synced 2 min ago' }]}
         />
+      </div>
+      <div data-testid="dash-strip-footer">
+        <StatGroup
+          variant="strip"
+          label="Spend"
+          cols={2}
+          cells={[
+            { key: 'f1', caption: 'Spend', value: '€5' },
+            { key: 'f2', caption: 'Runs', value: '12' },
+          ]}
+          footer={[
+            {
+              key: 'day',
+              content: (
+                <Meter
+                  label="Day budget"
+                  value={5}
+                  max={10}
+                  startCaption="Today €5"
+                  endCaption="€5 left of €10"
+                />
+              ),
+            },
+            {
+              key: 'week',
+              content: (
+                <Meter
+                  label="Week budget"
+                  value={20}
+                  max={50}
+                  startCaption="This week €20"
+                  endCaption="€30 left of €50"
+                />
+              ),
+            },
+          ]}
+        />
+      </div>
+      <div data-testid="dash-stat-states">
+        <StatGroup cols={2}>
+          <StatCard title="Sessions" qualifier="month to date" value="12" />
+          <StatCard
+            title="Distance"
+            qualifier="a long qualifier naming the whole reporting window"
+            value="48"
+            unit="km"
+          />
+          <StatCard
+            title="Volume"
+            value="—"
+            subtitle="7-day rolling"
+            sparkline={<span />}
+            query={{
+              data: undefined,
+              isError: true,
+              error: new Error('Timed out'),
+              fetchStatus: 'idle',
+              refetch: () => undefined,
+            }}
+          />
+          <StatCard
+            title="Steps"
+            value="—"
+            subtitle="7-day rolling"
+            sparkline={<span />}
+            query={{
+              data: [],
+              isError: false,
+              error: null,
+              fetchStatus: 'idle',
+              refetch: () => undefined,
+            }}
+          />
+        </StatGroup>
       </div>
       <div data-testid="dash-zl-strip">
         <StatGroup

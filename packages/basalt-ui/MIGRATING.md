@@ -1180,6 +1180,37 @@ Changed behaviour (no API change):
   the parts were unnamed. **Opt out:** none for `segments`; a `value` bar is unaffected.
 - **Part captions never wrap inside themselves** while they fit: each sits under its own segment when
   all of them fit there, else the wrapped list (a caption wider than the row still wraps).
+## Unreleased — strip cells stay compact, stat cards keep their states tidy
+
+### Strip cells end at their content (`StatGroup variant="strip"`)
+
+**Changed:** each strip cell now spans only the shared tracks down to its last part, so a cell's own
+box (`[data-strip-cell]`, `data-shot="strip-<key>"`) ends at its content instead of filling the row
+height. Captions still share one top and values one baseline across a row; a footer under a hero
+alone now has its own track right under the hero (it hugs the value, and sibling footers share one
+top); a rows cell's footer keeps the shared footer track. The vertical dividers moved from the cell
+to a row-high `[data-strip-slot]` wrapper, so they still run the full row and the area under a short
+cell is the strip's own surface. The cell's foot inset moved to the slot with them.
+**Affects you if** you selected `[data-strip-cell]` for its height or its box-shadow, or painted a
+background on it. **Opt out:** none needed for markup; a custom rule that needs the old full-row
+cell can target `[data-strip-slot]` instead (it is the row-high box). No per-cell `align="stretch"`
+was added: no consumer case needs it.
+
+A strip footer-row entry that is a `Meter` now keeps its start and end captions together
+(`Today €5  €5 left of €10`) instead of at the two ends of a wide track.
+
+New, additive: `StatStripCell.action` (a control at the end of the caption line; the caption
+truncates first, so it never wraps the line), and `StatStripRow.hideValue` (print the row label
+only, for a reading the hero already shows; `value` is ignored).
+
+### `StatCard` states
+
+**Changed:** in the `empty` and `error` states the `subtitle` footer is no longer drawn (it captioned
+a sparkline that is not there). The default error title is `Could not load` (was
+`Could not load this figure`) so the error line stays on one line in a two-column phone card. In a
+card narrower than 240px the `qualifier` no longer wraps under the caption: it truncates, with the
+full text in its `title`, so the value never drops below its row neighbours'. **Opt out:** put the
+text in `info` or `subtitle` instead of `qualifier`; for the error title, render `ErrorState` yourself.
 
 ### `BarList` in a wide container
 

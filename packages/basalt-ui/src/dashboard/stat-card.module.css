@@ -96,6 +96,23 @@
   min-width: 0;
 }
 
+/* A card too narrow to share its caption row (a two-column phone cell, ~170px) never wraps the
+ * qualifier under the caption: that second line pushed the value below its row neighbours'. The
+ * caption row stays one line; the qualifier truncates (full text in its `title`). */
+@container basalt-card (max-width: 239.9px) {
+  .captionMain {
+    flex-wrap: nowrap;
+  }
+
+  .qualifier {
+    flex: 0 1 auto;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    text-align: end;
+  }
+}
+
 /* Law C15: the shared hit overlay; `--vx-hit-gap` caps the expansion at the control gap. */
 .actions {
   --vx-hit-gap: var(--vx-space-control-gap);

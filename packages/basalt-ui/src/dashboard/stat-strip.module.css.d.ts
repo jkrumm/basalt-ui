@@ -7,11 +7,15 @@ declare const classes: {
   readonly clip: string
   readonly cells: string
   readonly cell: string
+  readonly content: string
+  readonly action: string
   readonly captionLine: string
+  readonly captionMain: string
   readonly lead: string
   readonly caption: string
   readonly qualifier: string
   readonly valueRow: string
+  readonly heroFooter: string
   readonly value: string
   readonly unit: string
   readonly skeletonValue: string

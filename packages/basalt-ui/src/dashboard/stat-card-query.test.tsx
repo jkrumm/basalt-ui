@@ -251,3 +251,37 @@ describe('the sparkline render prop', () => {
     expect(render(query({ fetchStatus: 'fetching' }))).toContain('Loading Active users')
   })
 })
+
+describe('StatCard states drop the footer that captioned the visual (Wave 37)', () => {
+  const sparkline = () => <span data-testid="spark" />
+  function markup(q: QueryStateLike<Row[]> | undefined) {
+    return renderToStaticMarkup(
+      <MantineProvider>
+        <StatCard
+          title="Sessions"
+          value="12"
+          subtitle="7-day rolling"
+          sparkline={sparkline}
+          {...(q !== undefined && { query: q })}
+        />
+      </MantineProvider>,
+    )
+  }
+
+  test('error and empty draw no subtitle', () => {
+    const err = markup(query({ isError: true, error: new Error('boom') }))
+    expect(err).not.toContain('7-day rolling')
+    const empty = markup(query({ data: [] }))
+    expect(empty).not.toContain('7-day rolling')
+  })
+
+  test('a ready card keeps its subtitle', () => {
+    expect(markup(query({ data: [{ label: 'a' }] }))).toContain('7-day rolling')
+  })
+
+  test('the error title is short enough for one line in a 170px card', () => {
+    const err = markup(query({ isError: true, error: new Error('boom') }))
+    expect(err).not.toContain('Could not load this figure')
+    expect(err).toContain('Could not load')
+  })
+})
