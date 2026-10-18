@@ -1,0 +1,10 @@
+/*
+ * The Walking distance KPI is the third of three: on a phone the StatGroup draws two columns, which
+ * leaves it alone on a half-empty row. Below StatGroup's three-column opening (800px of container)
+ * it spans the row. The container name is StatGroup's own.
+ */
+@container basalt-grid (max-width: 799.9px) {
+  .lastKpi {
+    grid-column: 1 / -1;
+  }
+}

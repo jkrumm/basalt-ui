@@ -16,14 +16,12 @@ import { Bars, ChartCard, Sparkline } from 'basalt-ui/charts'
 import type { BarsBar } from 'basalt-ui/charts'
 import { CONTAINER_KEYS, VX } from 'basalt-ui/tokens'
 import type { CSSProperties } from 'react'
+import classes from './training-kpis.module.css'
 import { demoColors } from '../demo/series'
 import { fmtInt, fmtKg, fmtKm, fmtRatio, fmtShare } from './fixture-utils'
 import { cardStateProps, chartStateFor, noop, queryFor, retryCopy } from './shot-state'
 import type { ScenarioProps } from './shot-state'
 import {
-  ACTIVE_DAYS_7D_TREND,
-  ACTIVE_DAYS_CHANGE_PCT,
-  ACTIVE_DAYS_MTD,
   ACUTE_LOAD,
   CHRONIC_LOAD,
   CONTRIBUTORS,
@@ -124,6 +122,8 @@ const HIT_DATA = [...HIT_HISTORY]
 const HIT_TICKS = HIT_HISTORY.map((m) => m.label)
 /** The goal line sits inside the y domain: the tallest month and the goal both fit under it. */
 const HIT_Y_MAX = 40
+/** The axis states its unit once, on the top tick, so the scale reads without a legend entry per bar. */
+const hitTick = (v: number): string => (v === HIT_Y_MAX ? `${v} sessions` : String(v))
 const TOP_LIFT_COUNT = 6
 /** The share of volume the six listed lifts carry — new on the card, the BarList rows state each one's. */
 const LIFTS_SHARE = TOP_LIFTS.slice(0, TOP_LIFT_COUNT).reduce((a, l) => a + l.share, 0)
@@ -177,7 +177,7 @@ function TrainingStats({ shotState }: ScenarioProps) {
     isAtRest ? { delta: pct, deltaPeriod: `vs ${PRIOR_WINDOW_LABEL}` } : {}
 
   return (
-    <StatGroup cols={4}>
+    <StatGroup cols={3}>
       <Box data-shot="sessions" h="100%">
         <StatCard
           title="Sessions"
@@ -204,24 +204,7 @@ function TrainingStats({ shotState }: ScenarioProps) {
           sparkline={trendSparkline('Training volume, kilograms', VOLUME_7D_TREND, fmtKg)}
         />
       </Box>
-      <Box data-shot="active-days" h="100%">
-        <StatCard
-          title="Active days"
-          qualifier="month to date"
-          value={fmtInt(ACTIVE_DAYS_MTD)}
-          unit="days"
-          info="Days with at least one session of any type, 7-day rolling. The dashed line is the 30-day mean."
-          subtitle="7-day rolling"
-          {...deltaProps(ACTIVE_DAYS_CHANGE_PCT)}
-          {...shared}
-          sparkline={trendSparkline(
-            'Active days',
-            ACTIVE_DAYS_7D_TREND,
-            (v) => `${fmtInt(v)} ${v === 1 ? 'day' : 'days'}`,
-          )}
-        />
-      </Box>
-      <Box data-shot="distance" h="100%">
+      <Box data-shot="distance" h="100%" className={classes.lastKpi}>
         <StatCard
           title="Walking distance"
           qualifier="month to date"
@@ -324,7 +307,7 @@ function GoalRow({ shotState }: ScenarioProps) {
               ariaLabel={`Sessions per month against the goal of ${GOAL_SESSIONS}, ${HIT_RANGE_LABEL}`}
               x={(d) => d.label}
               xTicks={HIT_TICKS}
-              y={{ domain: [0, HIT_Y_MAX] }}
+              y={{ domain: [0, HIT_Y_MAX], format: hitTick }}
               bars={HIT_BARS}
               refLines={[
                 {

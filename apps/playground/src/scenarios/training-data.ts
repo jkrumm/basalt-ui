@@ -147,12 +147,6 @@ export const DISTANCE_MTD_KM = sum(MTD.map((s) => s.km))
 const DISTANCE_PRIOR_KM = sum(PRIOR_MTD.map((s) => s.km))
 export const DISTANCE_CHANGE_PCT = changePct(DISTANCE_MTD_KM, DISTANCE_PRIOR_KM)
 
-const activeDays = (sessions: readonly Session[]): number =>
-  new Set(sessions.map((s) => s.date.getTime())).size
-/** Days this month with at least one session, and the same days a month earlier. */
-export const ACTIVE_DAYS_MTD = activeDays(MTD)
-export const ACTIVE_DAYS_CHANGE_PCT = changePct(ACTIVE_DAYS_MTD, activeDays(PRIOR_MTD))
-
 /** Sessions the plan expects by today if they were spread evenly over the month. */
 export const PACE_SESSIONS = (GOAL_SESSIONS * DAYS_ELAPSED) / MONTH_DAYS
 /** Sessions ahead of (+) or behind (−) that pace, in whole sessions. */
@@ -173,17 +167,6 @@ const rolling7 = (pick: (s: Session) => number): readonly number[] =>
     )
   })
 
-/** Days in the last 7 (ending `end`) that carry at least one session. */
-const activeDaysIn7 = (end: number): number =>
-  new Set(
-    SESSIONS.filter((s) => {
-      const t = s.date.getTime()
-      return t <= end && t > end - 7 * DAY_MS
-    }).map((s) => s.date.getTime()),
-  ).size
-export const ACTIVE_DAYS_7D_TREND: readonly number[] = Array.from({ length: TREND_DAYS }, (_, k) =>
-  activeDaysIn7(dayStart(TREND_DAYS - 1 - k)),
-)
 export const SESSIONS_7D_TREND = rolling7(() => 1)
 export const VOLUME_7D_TREND = rolling7((s) => s.volumeKg)
 export const DISTANCE_7D_TREND = rolling7((s) => s.km)

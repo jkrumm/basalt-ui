@@ -223,7 +223,7 @@ export function ComponentsSurfaces() {
                 and a Textarea, and it carries no state anything else reads. A bound
                 `SelectFilter` here would show basalt's control instead of the Mantine one the
                 screenshot is for. One of the page's two deliberate waivers; the other is the
-                "Segmented control" group below. */}
+                "Segmented control" group in the left column. */}
               <Select
                 label="Channel"
                 placeholder="Pick one"
