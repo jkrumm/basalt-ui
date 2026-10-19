@@ -90,9 +90,9 @@ PACKAGE_PATH="packages/basalt-ui"
 REPO_URL="https://github.com/jkrumm/basalt-ui"
 RUN_TIMEOUT=1800  # 30m — a release run takes ~1m; this only ever fires on a wedge.
 START_TIMEOUT=180 # 3m for a dispatched/triggered run to appear.
-# 20m for the published version to be readable — a hang guard, not a budget: 1.32.0 took ~7.5m
-# to be served, and the old 5m gave up on a release that had in fact succeeded.
-REGISTRY_TIMEOUT=1200
+# 60m for the published version to be readable — a hang guard, not a budget: 1.32.0 took ~7.5m
+# and 2.24.0 ~25m to be served, and the old 20m gave up on a release that had in fact succeeded.
+REGISTRY_TIMEOUT=3600
 
 die() {
   echo "✖ $*" >&2
@@ -194,11 +194,18 @@ await_completion() {
 # that fails outright (network, registry 5xx) is retried rather than treated as a mismatch — only a
 # DEFINITE wrong version, or the deadline, ends this.
 await_registry() {
-  local want="$1" deadline=$((SECONDS + REGISTRY_TIMEOUT)) got
+  local want="$1" prev="${last_tag#v}" deadline=$((SECONDS + REGISTRY_TIMEOUT)) got
   while :; do
     got=$(npm view --prefer-online basalt-ui version 2>/dev/null || echo '')
     [ "$got" = "$want" ] && return 0
-    [ "$SECONDS" -lt "$deadline" ] || die "npm published v$want but the registry still serves '${got:-<unreadable>}' after ${REGISTRY_TIMEOUT}s — check $REPO_URL/actions and \`npm view basalt-ui versions\` before releasing again."
+    if [ "$SECONDS" -ge "$deadline" ]; then
+      # Still the previous version: the publish run succeeded, the registry is just slow — not a failure.
+      if [ -n "$got" ] && [ "$got" = "$prev" ]; then
+        echo "published v$want (the publish run succeeded), the registry still serves $got after ${REGISTRY_TIMEOUT}s: still propagating — check \`npm view basalt-ui version\` later; do not release again"
+        exit 3
+      fi
+      die "npm published v$want but the registry serves '${got:-<unreadable>}' after ${REGISTRY_TIMEOUT}s — check $REPO_URL/actions and \`npm view basalt-ui versions\` before releasing again."
+    fi
     sleep 5
   done
 }
