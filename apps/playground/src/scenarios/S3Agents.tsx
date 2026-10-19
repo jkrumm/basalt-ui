@@ -42,7 +42,7 @@ import {
   fmtAge,
 } from './agents-data'
 import type { FlowRow, ItemState } from './agents-data'
-import { fmtEur, fmtInt, fmtShare } from './fixture-utils'
+import { fmtEur, fmtEurCents, fmtInt, fmtShare } from './fixture-utils'
 import { cardStateProps, chartStateFor, noop, retryCopy } from './shot-state'
 import type { ScenarioProps } from './shot-state'
 
@@ -154,7 +154,7 @@ function QueueStrip({ shotState }: ScenarioProps) {
       caption: 'Dispatch spend',
       qualifier: 'today',
       info: `Agent dispatch cost so far today, in EUR; the daily cap is ${fmtEur(BUDGETS.day.cap)}. The sparkline and its dashed mean cover the ${DISPATCH_COMPLETE_DAYS.length} complete days before today.`,
-      value: fmtEur(BUDGETS.day.spent),
+      value: fmtEurCents(BUDGETS.day.spent),
       ...cellState('No dispatch spend today. It appears with the first run.'),
       ...(!hidden && {
         visual: (
@@ -258,7 +258,7 @@ function QueueStrip({ shotState }: ScenarioProps) {
     },
   ]
 
-  // Both footers state the cap as the Meter's one-line target caption. The day's caption is the share of the cap, not the figure: the spend is the Dispatch spend headline above it, and stating €5 twice would read as two readings.
+  // Both footers state the cap as the Meter's one-line target caption. The day's caption is the share only: the Meter's target states the cap and the Dispatch spend headline (to the cent, so 54% agrees with it) states the spend.
   const budget = (label: string, spent: number, cap: number, caption: string) => (
     <Meter
       label={label}
@@ -280,7 +280,7 @@ function QueueStrip({ shotState }: ScenarioProps) {
             'Daily dispatch budget',
             BUDGETS.day.spent,
             BUDGETS.day.cap,
-            `${fmtShare(BUDGETS.day.spent / BUDGETS.day.cap)} of today's ${fmtEur(BUDGETS.day.cap)} cap`,
+            `${fmtShare(BUDGETS.day.spent / BUDGETS.day.cap)} used`,
           ),
         ),
         footerEntry(

@@ -198,9 +198,7 @@ function SpendStats({ shotState }: ScenarioProps) {
       qualifier: `end of ${MONTH_NAME}`,
       info: `Average per day so far (${fmtEur(MTD_EUR / DAYS_ELAPSED)}) held flat for all ${MONTH_DAYS} days. Ignores weekends and bursts.`,
       value: fmtEur(FORECAST_EUR),
-      ...cellState(
-        `No forecast without spend ${WINDOW_LABEL}. It appears after the first day of spend.`,
-      ),
+      ...cellState(`No forecast without spend ${WINDOW_LABEL}.`),
       ...(overBudget && { tone: 'bad' as const }),
       loading,
       ...(overBudget && {
@@ -234,7 +232,7 @@ function SpendStats({ shotState }: ScenarioProps) {
       // there is no meter in its footer; only a failure replaces the reading.
       ...(shotState === 'error' && cellState('')),
       ...(shotState === 'empty' && {
-        footer: `No spend ${WINDOW_LABEL} to set against it. Spend appears once a project runs.`,
+        footer: `No spend ${WINDOW_LABEL} to set against it.`,
       }),
       ...(!hidden && {
         visual: (
