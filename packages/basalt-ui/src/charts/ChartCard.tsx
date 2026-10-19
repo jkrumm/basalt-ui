@@ -19,7 +19,6 @@ import { VX } from '../tokens'
 import { ChartCardContext } from './card-context'
 import classes from './chart-card.module.css'
 import { ChartPlaceholder, resolveChartState } from './state'
-import type { PlotGhostShape } from './state'
 import type { ChartState, ResponsiveChartHeight } from './types'
 
 // Depth is `shadow-card` (a whisper shadow with the 1px ring baked in), never a border, so a
@@ -155,7 +154,7 @@ type ChartCardBaseProps = BasaltProps &
     placeholderHeight?: number | ResponsiveChartHeight | 'content' | undefined
     /** The pending plot's ghost: `'bars'` (default), `'line'` for a line or area chart, or the bar
      * count when the loaded chart's data length is known. */
-    ghost?: PlotGhostShape | undefined
+    ghost?: 'bars' | 'line' | number | undefined
     /** Placeholder data is showing: the facts row dims with the plot (a strip cell's `stale`). */
     stale?: boolean | undefined
     /** What an errored `state` names: "Could not load {stateNoun}". Default: no noun. */
