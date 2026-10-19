@@ -144,13 +144,11 @@ const FILL: CSSProperties = { height: '100%' }
 const retry = (): string => retryCopy('usage export')
 
 function SpendStats({ shotState }: ScenarioProps) {
-  const isAtRest = shotState === undefined
   const left = BUDGET_EUR - MTD_EUR
-  const overBudget = isAtRest && FORECAST_EUR > BUDGET_EUR
-
   const loading = shotState === 'loading'
-  // Loading shows the hero skeleton alone: a visual over placeholder data would contradict it.
-  const hidden = shotState !== undefined
+  // The cell decides what to paint while loading, so visual, footer and delta pass through; only empty and error drop them.
+  const hidden = shotState === 'empty' || shotState === 'error'
+  const overBudget = !hidden && FORECAST_EUR > BUDGET_EUR
   // Empty and error say why in the cell itself, with the Retry on a failure.
   const cellState = (reason: string): Pick<StatStripCell, 'state'> =>
     shotState === 'error'
@@ -169,7 +167,7 @@ function SpendStats({ shotState }: ScenarioProps) {
       value: fmtEur(MTD_EUR),
       loading,
       ...cellState(USAGE_EMPTY),
-      ...(isAtRest && {
+      ...(!hidden && {
         delta: (
           <DeltaBadge
             value={MTD_CHANGE_PCT}
