@@ -9,9 +9,14 @@ import type { Tone } from '../common/props'
 
 export interface VisualSlot {
   readonly tone?: Tone
+  /** The host is loading: a `Meter` in the slot draws its loading state without its own `loading`. */
+  readonly loading?: boolean
 }
 
 /** A host with no verdict of its own: one shared object, so a provider never re-renders its readers. */
 export const HOSTED: VisualSlot = {}
+
+/** `HOSTED` while the host loads. */
+export const HOSTED_LOADING: VisualSlot = { loading: true }
 
 export const VisualSlotContext = createContext<VisualSlot | null>(null)

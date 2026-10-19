@@ -361,6 +361,8 @@ export type BarModel = {
   parts: readonly Part[]
   /** Percent where the first forecast part starts; absent when the forecast opens the track. */
   boundaryPct: number | undefined
+  /** Where the forecast part ends (clamped to the track): the forecast caption ends here. */
+  forecastEndPct: number | undefined
   forecastText: string | null
   captionMode: CaptionMode
   /** Only in `parts` mode: one caption per part, in order. Empty otherwise. */
@@ -463,6 +465,12 @@ export function modelBar(input: BarInput): BarModel {
     span,
     parts,
     boundaryPct: firstForecast > 0 ? toPct(parts[firstForecast]?.start ?? 0) : undefined,
+    forecastEndPct:
+      firstForecast > 0
+        ? toPct(
+            parts.filter((p) => p.forecast).reduce((end, p) => Math.max(end, p.start + p.size), 0),
+          )
+        : undefined,
     forecastText:
       forecastLabels.length === 0
         ? null

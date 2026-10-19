@@ -139,39 +139,12 @@ function Line({ zoned, children }: { zoned: boolean; children?: ReactNode }) {
   )
 }
 
-/**
- * The loaded Meter's footprint at its loaded height: a zoned track keeps the figure row above and the
- * zone-name row below, a plain bar the caption row below, so the card does not jump when data lands.
- */
-export function MeterLoading({
-  label,
-  ring,
-  zoned,
-  shell,
-}: {
-  label: string
-  ring: boolean
-  zoned: boolean
-  shell: Shell
-}) {
+/** The ring's loading state: one skeleton disc at the ring's size. A bar loads through `MeterBar`. */
+export function MeterRingLoading({ label, shell }: { label: string; shell: Shell }) {
   return (
     <div {...rootProps(shell)} aria-busy="true">
       <VisuallyHidden className={classes.summary}>{`Loading ${label}`}</VisuallyHidden>
-      {ring ? (
-        <Skeleton className={classes.skeletonRing} circle />
-      ) : (
-        <>
-          {zoned && (
-            <Line zoned={zoned}>
-              <Skeleton className={classes.skeletonCaption} radius="sm" />
-            </Line>
-          )}
-          <Skeleton className={classes.skeletonTrack} />
-          <Line zoned={zoned}>
-            <Skeleton className={classes.skeletonCaption} radius="sm" />
-          </Line>
-        </>
-      )}
+      <Skeleton className={classes.skeletonRing} circle />
     </div>
   )
 }
@@ -700,9 +673,12 @@ export function MeterBar(props: {
   startCaption: ReactNode
   endCaption: ReactNode
   readingAt: 'fill' | 'start' | undefined
+  /** The loaded structure with its text painted as skeleton: the footprint IS the loaded one. */
+  loading?: boolean
   shell: Shell
 }) {
   const { label, min, max, format, zones, shell } = props
+  const loading = props.loading === true
   const describedId = useId()
   const model = modelBar(props)
   const compact = shell.row
@@ -788,9 +764,10 @@ export function MeterBar(props: {
                 key: 'forecast',
                 node: glue(model.forecastText),
                 drop: 2,
-                // The reading ends at the boundary, the forecast begins there.
-                ...(props.readingAt !== 'start' && start !== null && { align: 'start' as const }),
-                ...(model.boundaryPct !== undefined && { pct: model.boundaryPct }),
+                // The reading ends at the boundary, the forecast ends where its fill does.
+                ...(props.readingAt !== 'start' && model.forecastEndPct !== undefined
+                  ? { pct: model.forecastEndPct, align: 'end' as const }
+                  : model.boundaryPct !== undefined && { pct: model.boundaryPct }),
               } satisfies CaptionItem,
             ]
           : []),
@@ -824,15 +801,32 @@ export function MeterBar(props: {
       ]
 
   const root = rootProps(shell)
+  // Loading is the loaded tree: every caption row stands where it will, its text is painted as
+  // skeleton (CSS) and hidden from assistive tech; the root announces the state once.
+  const quiet = (node: ReactNode) =>
+    loading ? (
+      <div className={classes.hold} aria-hidden>
+        {node}
+      </div>
+    ) : (
+      node
+    )
   return (
-    <div {...root} className={root.className}>
+    <div
+      {...root}
+      className={root.className}
+      {...(loading && { 'aria-busy': 'true', 'data-meter-loading': '' })}
+    >
+      {loading && <VisuallyHidden className={classes.summary}>{`Loading ${label}`}</VisuallyHidden>}
       {aboveTicks.length > 0 && <LabelRow zones={[]} ticks={aboveTicks} />}
       <div
         className={cx(classes.trackBox, trackHidden && classes.trackHidden)}
         data-meter-track-hidden={trackHidden ? '' : undefined}
-        aria-label={label}
-        {...ariaValues(props.reading, min, max, format)}
-        {...describedBy}
+        {...(!loading && {
+          'aria-label': label,
+          ...ariaValues(props.reading, min, max, format),
+          ...describedBy,
+        })}
       >
         <div
           className={classes.track}
@@ -845,6 +839,7 @@ export function MeterBar(props: {
         >
           {zones?.map(
             (z, i) =>
+              !loading &&
               model.markerPct !== undefined && (
                 <div
                   key={i}
@@ -857,7 +852,7 @@ export function MeterBar(props: {
                 />
               ),
           )}
-          {model.parts.map((p, i) => (
+          {(loading ? [] : model.parts).map((p, i) => (
             <div
               key={i}
               className={cx(classes.fill, p.forecast && classes.forecastFill)}
@@ -870,22 +865,26 @@ export function MeterBar(props: {
             />
           ))}
         </div>
-        <Tick kind="marker" className={classes.marker} pct={model.markerPct} />
-        <Tick kind="boundary" className={classes.boundaryTick} pct={model.boundaryPct} />
-        {model.ticks.map((t) => (
-          <Tick key={t.key} kind="tick" className={classes.tick} pct={t.pct} />
-        ))}
-        <Tick kind="target" className={classes.tick} pct={model.targetPct} />
+        {!loading && (
+          <>
+            <Tick kind="marker" className={classes.marker} pct={model.markerPct} />
+            <Tick kind="boundary" className={classes.boundaryTick} pct={model.boundaryPct} />
+            {model.ticks.map((t) => (
+              <Tick key={t.key} kind="tick" className={classes.tick} pct={t.pct} />
+            ))}
+            <Tick kind="target" className={classes.tick} pct={model.targetPct} />
+          </>
+        )}
       </div>
       {zoneLabels.length > 0 && <LabelRow zones={zoneLabels} ticks={belowTicks} />}
-      {anchored && <ZoneReading pct={model.markerPct ?? 0}>{start}</ZoneReading>}
-      {model.describedByText !== null && (
+      {anchored && quiet(<ZoneReading pct={model.markerPct ?? 0}>{start}</ZoneReading>)}
+      {!loading && model.describedByText !== null && (
         <VisuallyHidden id={describedId} className={classes.summary}>
           {model.describedByText}
         </VisuallyHidden>
       )}
-      {hasParts && <PartCaptions captions={model.partCaptions} />}
-      {items.length > 0 && <CaptionRow items={items} />}
+      {hasParts && quiet(<PartCaptions captions={model.partCaptions} />)}
+      {items.length > 0 && quiet(<CaptionRow items={items} />)}
     </div>
   )
 }

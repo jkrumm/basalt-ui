@@ -312,8 +312,7 @@
   color: var(--vx-muted);
 }
 
-/* One caption-height line: a blank caption row (empty) or the home of a skeleton line (loading), so
- * both stand at the loaded Meter's height. */
+/* One caption-height line: a blank caption row of an empty Meter, so it stands at the loaded height. */
 .line {
   display: flex;
   align-items: center;
@@ -325,14 +324,50 @@
   height: 1.25em;
 }
 
-/* The skeleton holds the loaded footprint: figure row (zoned), track, caption / zone-name row. */
-.skeletonTrack {
-  height: 0.375rem;
+/* Loading is the loaded tree (`MeterBar` with `loading`): every row stands where it will and the
+ * height is the loaded one. Text is painted as skeleton in place: transparent ink on a pulsing pill
+ * the width of the caption, the track a pulsing bar. A caption the layout dropped stays hidden. */
+.hold {
+  display: contents;
 }
 
-.skeletonCaption {
-  width: 40%;
-  height: 0.75rem;
+[data-meter-loading] {
+  --basalt-meter-skeleton: color-mix(in srgb, var(--vx-muted) 28%, transparent);
+}
+
+[data-meter-loading]
+  :is(.rowLabel, .caption, .captionEnd, .captionTarget, .zoneReading, .partCaption) {
+  color: transparent;
+  background: var(--basalt-meter-skeleton);
+  border-radius: var(--vx-radius-fine);
+  animation: meterPulse 1500ms linear infinite;
+}
+
+[data-meter-loading] .swatch {
+  visibility: hidden;
+}
+
+[data-meter-loading] .track {
+  background: var(--basalt-meter-skeleton);
+  animation: meterPulse 1500ms linear infinite;
+}
+
+@keyframes meterPulse {
+  0%,
+  100% {
+    opacity: 0.4;
+  }
+
+  50% {
+    opacity: 1;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  [data-meter-loading]
+    :is(.rowLabel, .caption, .captionEnd, .captionTarget, .zoneReading, .partCaption, .track) {
+    animation: none;
+  }
 }
 
 /* ── ring ────────────────────────────────────────────────────────────────────────────────────── */
@@ -403,10 +438,6 @@
 }
 
 .row .track {
-  height: 1lh;
-}
-
-.row .skeletonTrack {
   height: 1lh;
 }
 

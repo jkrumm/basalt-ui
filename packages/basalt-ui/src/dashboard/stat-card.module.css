@@ -194,6 +194,16 @@
   }
 }
 
+/* Cards of one StatGroup share ONE figure size. In the two-column phone state the last odd card spans the
+ * row, so its own width would size its numeral 22 against its row-mates' 16; the group's columns (a
+ * narrow card's size) set it for every card instead, whether or not a qualifier sits on its own line.
+ * `--basalt-stat-group-figure` on the group (or a wrapper) replaces that size. */
+@container basalt-grid (max-width: 479.9px) {
+  [data-sm-cols] .body {
+    --basalt-stat-figure-size: var(--basalt-stat-group-figure, var(--vx-text-lg));
+  }
+}
+
 /* ── states ──────────────────────────────────────────────────────────────────────────────────── */
 
 /* The empty branch: one muted line in the figure's place, at the figure row's height. */

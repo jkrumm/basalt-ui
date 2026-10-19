@@ -21,6 +21,9 @@ declare const classes: {
   readonly skeletonValue: string
   readonly skeletonRow: string
   readonly visual: string
+  readonly hold: string
+  readonly holdSkeleton: string
+  readonly holdHero: string
   readonly visualStack: string
   readonly reason: string
   readonly error: string

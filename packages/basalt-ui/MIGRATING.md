@@ -1059,6 +1059,27 @@ placeholder (`Sparkline`).
 Opt out: pass `state` only once the data settles, or draw the loading yourself as the card's
 `children` with `placeholderHeight="content"` (the card then renders `children` while pending). The
 facts skeleton follows `facts`; omit `facts` while pending to drop it.
+### Strip and Meter loading (Wave 38)
+
+No export is removed or added. A loading state is the loaded shape; two other defaults move with it.
+
+| Surface                                       | Before                                                           | Now                                                                                                                                              |
+| --------------------------------------------- | ---------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `Meter loading` (bar)                         | one track and one or two caption lines                           | the loaded rows (figure row above, zone-name row, reading row, caption row, part captions), text painted as skeleton, at the loaded height ±2 px |
+| Strip cell `loading`                          | a value bar alone; a `visual` and `footer` showed as loaded      | the value bar, the `visual` slot and the `footer` line at their loaded height; the visual and footer are laid out hidden under a skeleton        |
+| Forecast caption (committed/forecast `Meter`) | begins at the spent/forecast boundary                            | ends at the forecast fill end (clamped inside the track); the reading stays at the committed end                                                 |
+| `StatGroup` hero size at 390                  | a card spanning the row rendered 22, its two-column row-mates 16 | one size for every card of the group in the two-column state (16)                                                                                |
+
+- **Pass the loaded structure.** A Meter keeps its rows from its own props (`ticks`, `zones`, `target`,
+  `endCaption`, `segments`), so pass them while loading as at rest; the reading may be `null`. A strip
+  cell keeps a visual or footer only when you pass it: pass the same `visual` and `footer` as at rest
+  (an empty series is fine). A `Meter` in a loading cell's `visual` loads itself; any other visual is
+  covered by one skeleton bar. Give `delta` too, or a delta that wraps under the value is not reserved.
+- **The ring is unchanged:** one skeleton disc.
+- Opt out of the forecast anchor: none (the old anchor put "Forecast" about 100 px from the fill it
+  names); `readingAt="start"` keeps the pre-2.24 anchor at the boundary.
+- Opt out of the shared hero size: set `--basalt-stat-group-figure` (a length, e.g. `var(--vx-text-kpi)`) on the
+  `StatGroup` or a wrapper; it replaces the group's two-column size.
 
 ## 2.25.0
 

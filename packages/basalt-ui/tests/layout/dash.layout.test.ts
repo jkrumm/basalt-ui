@@ -318,7 +318,7 @@ layout('Meter / BarList geometry', () => {
         const card = document.querySelector<HTMLElement>(`${root} .mantine-Card-root`)
         // The card's visual skeleton, or a Meter's own track skeleton sitting in the slot.
         const sk = card?.querySelector<HTMLElement>(
-          '[class*="skeletonVisual"], [class*="skeletonTrack"]',
+          '[class*="skeletonVisual"], [data-meter-loading] [data-meter-track]',
         )
         if (!card || !sk) throw new Error(`LAYOUT: no skeleton in ${root}`)
         const c = card.getBoundingClientRect()
@@ -588,6 +588,7 @@ layout('Meter / BarList geometry', () => {
               text: c.textContent,
               left: r.left,
               right: r.right,
+              hidden: c.hasAttribute('data-hidden'),
               lines: Math.round(r.height / lh),
             }
           }),
@@ -598,11 +599,10 @@ layout('Meter / BarList geometry', () => {
     expect(m.anchored).toBe(true)
     const cap = m.caps.find((c) => c.text?.includes(text))
     if (!cap) throw new Error(`LAYOUT: no ${text} caption in ${id}`)
-    // The target's caption is centred on its tick; the forecast's begins at the boundary, where the
-    // reading ends (Wave 38), one gap step (6px) at most after it.
+    // The target's caption is centred on its tick. The forecast's ends at its fill end (Wave 38): this
+    // one is too long to clear the reading there, so it drops (the existing priority) instead of wrapping.
     if (kind === 'boundary') {
-      expect(cap.left - m.tick).toBeGreaterThanOrEqual(-SNAP)
-      expect(cap.left - m.tick).toBeLessThanOrEqual(6 + SNAP)
+      expect(cap.hidden).toBe(true)
     } else {
       expect(Math.abs((cap.left + cap.right) / 2 - m.tick)).toBeLessThanOrEqual(SNAP)
     }

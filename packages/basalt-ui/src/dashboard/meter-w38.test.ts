@@ -21,6 +21,23 @@ describe('the reading caption anchor (D38 a)', () => {
     ]
     expect(modelBar({ reading: 70, min: 0, max: 100, format: fmt, segments }).fillEndPct).toBe(40)
   })
+  test('the forecast caption anchors at the end of the forecast part, clamped to the track', () => {
+    const segments = [
+      { value: 40, label: 'Spent' },
+      { value: 30, label: 'Forecast', forecast: true },
+    ]
+    expect(modelBar({ reading: 70, min: 0, max: 100, format: fmt, segments }).forecastEndPct).toBe(
+      70,
+    )
+    const over = [
+      { value: 40, label: 'Spent' },
+      { value: 90, label: 'Forecast', forecast: true },
+    ]
+    expect(
+      modelBar({ reading: 130, min: 0, max: 100, format: fmt, segments: over }).forecastEndPct,
+    ).toBe(100)
+    expect(modelBar({ reading: 25, min: 0, max: 100, format: fmt }).forecastEndPct).toBeUndefined()
+  })
   test('a marked track has no fill end: its reading follows the marker', () => {
     const zones = [{ from: 0, to: 100, label: 'All' }]
     expect(

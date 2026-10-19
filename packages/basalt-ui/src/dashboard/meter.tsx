@@ -57,7 +57,7 @@ import type { BasaltProps } from '../common/props'
 import { VX } from '../tokens'
 import { isReading, normalizeSegments, segmentReading, spanOf } from './meter-model'
 import type { MeterSegment, MeterTick, MeterZone } from './meter-model'
-import { MeterBar, MeterEmpty, MeterLoading, MeterRing } from './meter-parts'
+import { MeterBar, MeterEmpty, MeterRing, MeterRingLoading } from './meter-parts'
 import { asText } from './scale'
 import { VisualSlotContext } from './visual-slot'
 
@@ -162,7 +162,7 @@ export type MeterProps =
   | (BarCommon & {
       /** Ordered parts, accumulated from `min`; their sum is the reading. `forecast` parts render lighter. */
       segments: readonly MeterSegment[]
-      /** Names the forecast beside the boundary tick (default: `Forecast: <labels>`). */
+      /** Names the forecast, ending where its fill ends (default: `Forecast: <labels>`). */
       forecastCaption?: string
       value?: never
       color?: never
@@ -225,16 +225,28 @@ export function Meter(props: MeterProps) {
   const shell = { className, style, row }
   const ring = props.shape === 'ring'
   warnInvalidTrack(min, max)
-  const hostTone = useContext(VisualSlotContext)?.tone
+  const host = useContext(VisualSlotContext)
+  const hostTone = host?.tone
   const hostColor = hostTone === undefined ? undefined : VX.status[hostTone]
 
-  if (props.loading === true)
-    return (
-      <MeterLoading label={label} ring={ring} zoned={props.zones !== undefined} shell={shell} />
-    )
+  const loading = props.loading === true || host?.loading === true
+  if (loading && ring) return <MeterRingLoading label={label} shell={shell} />
 
-  const segments = props.segments === undefined ? undefined : normalizeSegments(props.segments)
-  const reading = segments === undefined ? props.value : segmentReading(segments, min)
+  // A loading bar is the loaded bar on a placeholder reading (its captions painted as skeleton), so
+  // it has the loaded rows and height: zoned bars mid-track, plain bars at the start.
+  const segments =
+    props.segments === undefined || (loading && props.segments.length === 0)
+      ? undefined
+      : normalizeSegments(props.segments)
+  const placeholder =
+    props.zones !== undefined && props.zones.length > 0 ? min + spanOf(min, max).span / 2 : min
+  const reading = loading
+    ? segments === undefined
+      ? placeholder
+      : segmentReading(segments, min)
+    : segments === undefined
+      ? props.value
+      : segmentReading(segments, min)
   if (!isReading(reading) || segments?.length === 0) {
     return (
       <MeterEmpty
@@ -275,6 +287,7 @@ export function Meter(props: MeterProps) {
       startCaption={props.startCaption}
       endCaption={props.endCaption}
       readingAt={props.readingAt}
+      loading={loading}
     />
   )
 }
