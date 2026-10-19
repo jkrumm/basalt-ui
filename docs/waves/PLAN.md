@@ -1557,43 +1557,95 @@ smoothed line where bars against the goal answer the question.
 - **Next — stopped: Wave 37 closed; orchestrated, nothing spawned; this wave released nothing itself.** Owner review of the
   boards (`.design-parity/w37/r0`–`r3`, `trial-v1`) is the mother's.
 
-## Wave 38 — argo's friction III: the goal Meter, state copy, the small chrome <!-- status: active -->
+## Wave 38 — argo's friction III: the goal Meter, state copy, the small chrome <!-- status: done -->
 
 Source: Wave 37's **Left behind** (its seed list, verbatim scope) and argo `docs/design/UPSTREAM.md` § "Wave 31"–"Wave 35".
 2.23.0 shipped Wave 37; argo Waves 31–34 bumped through 2.22/2.23. Under the calibrated bar S2/S3/S4 score 71/80/74 and
 no route passes; argo now renders every empty/loading/error state and its remaining failures are state copy plus the
 P2/P3 basalt rows below. Validators: argo (bumps after the release, deletes its workarounds) and S2/S3/S4.
 
-- [ ] **The S2 goal Meter P1 first:** five captions on a narrow card, "Target 28 sessions" wraps and clips at 1440 and 390,
+- [x] **The S2 goal Meter P1 first:** five captions on a narrow card, "Target 28 sessions" wraps and clips at 1440 and 390,
       the reading caption ~270 px from its fill (#402's start/target defaults meeting #411's adoption). Decide and record in
       SPEC: the reading caption sits at the fill end, the target figure stays one line, captions drop before they wrap.
-- [ ] **A state-copy recipe:** the `basalt-design` reference gets the "why + what to do" pattern per state (empty: cause and
+- [x] **A state-copy recipe:** the `basalt-design` reference gets the "why + what to do" pattern per state (empty: cause and
       the next step; loading: a skeleton in the section's shape, never an accent spinner; error: one title, the cause, one
       Retry), worked on argo-shaped data; no false zeros, loading never worded as error, one wording per repeated gap.
       `ErrorState`/`EmptyState` defaults follow it. SPEC D37 (an errored body keeps the loaded height) stays as is unless
       the owner rules otherwise; the reviewer rubric names D37 so it stops scoring that height as a void.
-- [ ] **Small chrome:** readout chips that cover 55–110 px of a sparkline and truncate at 1440; zone names that drop at
+- [x] **Small chrome:** readout chips that cover 55–110 px of a sparkline and truncate at 1440; zone names that drop at
       390 (readiness "Good"); the footer meter `under` one cell making the strip ragged and not following at 390; the
       Filled Button hover reading as rest; the delta glyph drifting in a wide column; a y-axis unit dropped at 390.
-- [ ] **argo's untaken rows** (UPSTREAM § "Wave 31"–"Wave 35"): `Sparkline × Meter` readout over a detached end figure,
+- [x] **argo's untaken rows** (UPSTREAM § "Wave 31"–"Wave 35"): `Sparkline × Meter` readout over a detached end figure,
       `Bars` shade-only series, four type sizes in the `Section` shells, `StackedArea` zero rows, info tooltips over the
       card above at 390, the 390 2 + 1 strip; trial v1 rows: the zoned-bar catalogue row names `short`, sibling section
       titles at one size, a cumulative-with-pace budget recipe; the S4/components items (Budget tick figure via
       `caption`, fragment headlines, a table error title, a badge without a dot).
-- [ ] **Gate gap:** `check-theme` run in `apps/playground` reports 17 findings (raw hex in series data,
+- [x] **Gate gap:** `check-theme` run in `apps/playground` reports 17 findings (raw hex in series data,
       `card-with-border`, …) that the repo's gate never sees (it runs from `packages/basalt-ui`). Fix them and gate the
       playground, so the dogfood surface obeys the rules it demonstrates.
-- [ ] Rounds: at least three on S2/S3/S4 under the calibrated bar with before/after boards (MacBook
+- [x] Rounds: at least three on S2/S3/S4 under the calibrated bar with before/after boards (MacBook
       `~/Downloads/basalt-design-review/.design-parity/w38`); a route passes or the remaining items are named. Then the
       mother releases and argo bumps.
       **Left behind:**
 
+- **Landed** (27 wave PRs, #416–#431, #433–#440, #442–#444; every one through `rd merge` after two independent review rounds by
+  fresh subagents, scope frozen after round 2 with the lead reading the last fix diff, CI green on the PR head; `make check`
+  green on `955f1ab8`, master CI green). Batch 1: #416 the playground gated by `check-theme` locally and in CI, #417 Section
+  shells at three sizes and the info bubble kept in its card, #418 the state-copy recipe (`references/states.md`) and D37 in the
+  shipped reviewer, #419 S2–S4 figures stated once, #420 strip footers in their cell and qualifiers that wrap (argo P1), #421 the
+  Meter reading at its fill end and captions that drop before they wrap (the S2 goal P1, D38), #422 readouts above the plot and
+  units kept at 390, #423 nested radii on the scale (argo P1). Batch 2 (argo's release-blocking set first): #424 `shot` counts
+  skeleton bars as content, #425 a Section summary at the chart step (argo Strength), #426 a one-row compact legend (argo
+  Garmin), #427 empty strip cells and null Meters state the gap once, #428 `placeholderHeight="content"` (D44), #429 S2–S4 copy,
+  #430 `shot detect` flags off-scale radii (nested always P1), #431 Bars in a visual slot (argo Reading pace tile), #433
+  adoption. Batch 3: #434 one wording per gap, #435 chart cards load in their loaded shape, #436 strip and Meter loading, the
+  forecast caption at the forecast end, one hero size per phone StatGroup. Batch 4 (argo Wave 38: three 2.24.0 regressions):
+  #437 the Section subtitle at 12 and ChartCard actions text at 11, #438 compact legends keep every series named, #439 hosted
+  readouts keep their separator and line, opaque dark chips, tooltips inside the card, #440 footer `shotAbsent` and zone names
+  that borrow free room. Close: #442 the facts gate pinned + `ghost`, #443 and #444 playground adoption. The mother's #432 and
+  #441 (guard promotions) landed in between. Every break is a plain `feat:`/`fix:` with a MIGRATING subsection under the one
+  `## Unreleased` heading; `CHANGELOG.md` untouched.
+- **Released by the mother mid-wave:** 2.24.0 (#420–#426 + #432), 2.25.0 from `3c3633cc` (#428/#430/#431, argo's Reading pace
+  tile), 2.26.0 from `f95068de` (#427, #433–#440 + #441). #442–#444 are unreleased.
+- **Rounds** (`docs/waves/design-parity/w38/rounds.md`; boards `.design-parity/w38/r0`–`r4`, copied to the MacBook
+  `~/Downloads/basalt-design-review/.design-parity/w38`): S2 70 → 70 → 91 → 58 → 93, S3 84 → 79 → 91 → 84 → 94, S4 70 → 87 → 96 →
+  92 → 99, components (94) → 97 → 98 → 99. No route passes the argo bar yet; no P0/P1 is left. r3's drop was one playground
+  wiring regression (#434 passing facts in every state + #428's body-owned states), fixed by #443. Remaining, named: S2 goal and
+  session-mix load as a bar ghost (P2 ×2, #444), the hit-rate loading legend row; the strip anatomy on S3 (P2) and S4 (P3) —
+  visuals at different heights in one row; the fix is one cell anatomy with the visual on a shared baseline (cells already share
+  the row; D35/D40); the components table loading header at 390 (Wave 39).
+- **SPEC:** D37 now covers errored and empty chart bodies, not lists; new D38–D47 (Meter captions, readouts in the reserved line,
+  strip footers and qualifiers, radii on the scale, Section sizes, compact legends that keep series, list/Meter card states,
+  page-summary figures, Bars in a slot, `shot` placeholders and radius detection). D37's owner decision is still open.
+- **Budgets:** gzip ceilings ratcheted once to CI's Linux figures (#423: provider-only 20452, embedded 56749, theme-only 15868);
+  public value symbols 108, barrel types 70, CLI lines 8441 / 8457 (#430 folded the detect loop). New public props:
+  `Meter.readingAt`, `ChartCard.placeholderHeight="content"` and `ghost`, `StatStripFooterEntry.shotAbsent`; the `ghost`
+  consumer is the playground (argo's next wave can adopt it).
+- **Harness rows for a later wave:** `release.sh` polls the registry for 1200 s, and 2.24.0 took ~25 min to propagate — wait
+  longer or report "published, still propagating" distinctly; one `shot` flake (a focus crop "outside the resulting image",
+  r1, a re-shoot passed); `rd merge` runs `make check` in a worktree while workers run suites, and one real-data test timed out
+  under that load; GitHub runs no `pull_request` CI on a conflicting PR (every MIGRATING rebase must be pushed to start CI).
+- **For the next wave (written into Wave 39 as its first step):** argo's Wave 40 rows on 2.26.0 (11/14 pages pass; Garmin, Agents
+  and Strength fail on basalt rows only): the P1 Meter zone names at 390 (Caution, "abandoned"), names running together at 1440,
+  folded zone keys told apart by colour, the astro reference lines folded at 390, the Garmin fitness readout over the line,
+  tooltips past the card top and below the card at 390. Then this wave's remaining items above.
+- **Next — stopped: Wave 38 closed; orchestrated, nothing spawned; this wave released nothing itself.** Owner review of the
+  boards (`.design-parity/w38/r0`–`r4`) is the mother's.
+
 **Renumbered 2026-10-18 (second time):** Wave 38 (argo's friction III) was inserted; the old Waves 38–43 are now 39–44.
 
-## Wave 39 — Data tables, responsive <!-- status: pending -->
+## Wave 39 — Data tables, responsive <!-- status: active -->
 
 Spec: SPEC § 6.6, § 9.1. Scenarios S1 (outages) and S2 (sessions). Validators: argo, linewatch.
 
+- [ ] **First: argo's friction IV** (argo `docs/design/UPSTREAM.md` § "Wave 40", argo re-scored on 2.26.0: 11/14 pages pass,
+      Garmin, Agents and Strength fail on basalt rows only), before the tables work: **P1** Meter zone names at 390 still drop one
+      (Garmin load meter loses Caution, Agents oldest-wait drops "abandoned" at 7 d — a lost fact; Wave 38 #440 left the
+      22-vs-25 px case to a `short`); zone names run together at 1440 with no gap (Home "OptimalCaution Danger"); compact-legend
+      zone entries folded into `+N` are then told apart by colour only, and the astro timeline at 390 folds its two reference lines
+      into `+2`; the Sparkline hosted readout still stacks over the line on Garmin fitness (fixed on Usage); tooltips grow past the
+      card top (Garmin activities) and the Reading pace slot readout hangs below its card at 390. Then the Wave 38 leftovers in its
+      **Left behind**. The mother releases after this step if argo is blocked.
 - [ ] Header on the body fill, sorted column brighter; row text `sm`; cell kinds via `meta.kind` (`entity`,
       `status`, `number`, `money`, `relative-time`, `meter`, `text`).
 - [ ] Responsive: `meta.priority` fold, then a pinned non-wrapping first column (opaque, with a `minSize`)

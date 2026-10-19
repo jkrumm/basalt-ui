@@ -104,3 +104,23 @@ S3 stuck-items (P1), S4 spend-by-project and top-drivers (P2). Every other S2 it
 anatomy or visuals pinned to the cell floor, not equal-height cells, is the fix — the cells already share the row), chart
 ghosts that draw bars for a line chart, the S3 day footer stating €10 twice, three remedies for one S4 gap, the components
 table name ~540 px from its value, the table loading header at 390 (Wave 39).
+
+## Round 4 — close-out confirmation (r4, `955f1ab8`, #442–#443; 2.26.0 released between)
+
+Landed: #442 the facts gate pinned by a state matrix and an optional `ghost` (`bars` / a bar count / `line`) for the
+pending plot; #443 the playground reports body-owned loading/empty to the card, one remedy per gap, the components table
+beside its sibling. 728 shots, 0 failed; detector 100; `make check` green; master CI green.
+
+| Route       | r3 → r4 score | fixed | carried | new | unscored | Keel                     |
+| ----------- | ------------- | ----- | ------- | --- | -------- | ------------------------ |
+| S2 training | 58 → 93       | 6     | 1       | 2   | 0        | close (state discipline) |
+| S3 agents   | 84 → 94       | 3     | 2       | 1   | 1        | close (strip anatomy)    |
+| S4 spend    | 92 → 99       | 3     | 0       | 0   | 1        | close (strip anatomy)    |
+| components  | 98 → 99       | 1     | 1       | 0   | 0        | holds up                 |
+
+No P0 or P1 on any route. The r3 regression is gone. The remaining items, all named: S2 goal and session-mix load as a
+bar ghost (P2 ×2; they are told `pending` with a numeric placeholder — #444 gives them `placeholderHeight="content"`),
+the hit-rate loading legend row (P3); the strip anatomy on S3 (P2) and S4 (P3) — visuals at different heights in one
+row, the fix is one cell anatomy with the visual on a shared baseline, not equal-height cells; S3 item-flow loads as bars
+(P3, #444 passes `ghost="line"`); the S3 day-footer wording (P3, #444); the components table loading header at 390
+(Wave 39).
