@@ -9,9 +9,11 @@ import { readdirSync, readFileSync } from 'node:fs'
 import { afterEach, describe, expect, it } from 'bun:test'
 import { ComponentsSurfaces } from '../demo/ComponentsPage'
 import { STUCK } from './agents-data'
-import { fmtEurCompact } from './fixture-utils'
+import { fmtEurCompact, fmtRatio } from './fixture-utils'
+import { LOAD_RATIO, READINESS_SCORE } from './training-data'
 import { AgentsScenario } from './S3Agents'
 import { SpendScenario } from './S4Spend'
+import { TrainingScenario } from './S2Training'
 import { cardStateProps } from './shot-state'
 import type { ShotState } from './shot-state'
 
@@ -75,7 +77,7 @@ describe('retry', () => {
   })
 
   it('cardStateProps retries through onRetry, not a stateAction', () => {
-    const props = cardStateProps('error', 'boom', 72)
+    const props = cardStateProps('error', 'boom', 72, 'none')
     expect(typeof props.onRetry).toBe('function')
     expect('stateAction' in props).toBe(false)
   })
@@ -186,6 +188,26 @@ describe('components buttons specimen', () => {
         [...a.querySelectorAll('button')].map((b) => b.getAttribute('data-size') ?? 'default'),
       )
       expect(sizes.size).toBeLessThanOrEqual(FONT_SIZES_PER_ANCHOR)
+    }
+  })
+})
+
+describe('list and Meter cards in empty and loading', () => {
+  // W38 r4: the card takes the state too, so no loaded headline prints above an empty or pending body.
+  const CARDS = [
+    [TrainingScenario, 'training-load', fmtRatio(LOAD_RATIO)],
+    [TrainingScenario, 'readiness', `${READINESS_SCORE}of 100`],
+    [TrainingScenario, 'top-lifts', 'of volume'],
+    [AgentsScenario, 'stuck-items', `${STUCK.length}items`],
+    [SpendScenario, 'spend-by-project', 'of spend in'],
+    [SpendScenario, 'top-drivers', 'added by'],
+  ] as const
+
+  it.each(['empty', 'loading'] as const)('%s: no card prints its loaded headline', (shotState) => {
+    for (const [Scenario, name, headline] of CARDS) {
+      const c = mount(createElement(Scenario, { shotState }))
+      expect(anchor(c, name)?.textContent ?? '').not.toContain(headline)
+      cleanup()
     }
   })
 })

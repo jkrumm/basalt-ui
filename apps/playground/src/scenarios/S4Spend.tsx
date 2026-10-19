@@ -339,7 +339,7 @@ function SpendBreakdown({ shotState }: ScenarioProps) {
             period: `· ${WINDOW_LABEL}`,
           }}
           info={`Each project's share of the ${fmtEur(MTD_EUR)} month-to-date spend across all models, in whole percent that sum to 100.`}
-          {...cardStateProps(shotState, retry(), 'content')}
+          {...cardStateProps(shotState, retry(), 'content', USAGE_EMPTY)}
         >
           <Box data-shot-hover>
             <BarList
@@ -361,7 +361,7 @@ function SpendBreakdown({ shotState }: ScenarioProps) {
             period: `added by ${DRIVERS.length} projects, ${WINDOW_LABEL} vs ${PRIOR_WINDOW_LABEL}`,
           }}
           info={`The € each project added against ${PRIOR_WINDOW_LABEL}, with the relative change.`}
-          {...cardStateProps(shotState, retry(), 'content')}
+          {...cardStateProps(shotState, retry(), 'content', USAGE_EMPTY)}
         >
           <Box data-shot-hover>
             <BarList
