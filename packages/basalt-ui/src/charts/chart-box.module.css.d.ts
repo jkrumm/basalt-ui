@@ -9,5 +9,7 @@ declare const classes: {
   readonly fill: string
   readonly state: string
   readonly grow: string
+  readonly ghost: string
+  readonly ghostBar: string
 }
 export default classes

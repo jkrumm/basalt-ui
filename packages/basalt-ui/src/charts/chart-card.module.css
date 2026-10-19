@@ -95,3 +95,37 @@
 .factsRow[data-stale] {
   opacity: 0.55;
 }
+
+/*
+ * A pending card keeps its facts footprint: bars as tall as the loaded figure and basis lines (`1lh`
+ * at the same font size), painted a little inside the line box so they read as text, not slabs. The
+ * tone is the chart ghost's (`chart-box.module.css` `.ghost`).
+ */
+.skeletonFigure,
+.skeletonBasis {
+  position: relative;
+  display: block;
+}
+
+.skeletonFigure {
+  font-size: var(--vx-text-kpi);
+  height: 1lh;
+  width: 4.5rem;
+}
+
+.skeletonBasis {
+  font-size: var(--vx-text-sm);
+  height: 1lh;
+  width: 9rem;
+  max-width: 100%;
+}
+
+.skeletonFigure::before,
+.skeletonBasis::before {
+  content: '';
+  position: absolute;
+  inset-inline: 0;
+  inset-block: 0.2lh;
+  border-radius: 3px;
+  background: color-mix(in srgb, var(--vx-ink) 18%, var(--vx-surface-panel));
+}

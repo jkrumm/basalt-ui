@@ -163,8 +163,9 @@ type ChartCardBaseProps = BasaltProps &
 
 /**
  * `facts` replaces the legacy `value`/`delta` hero: the two are mutually exclusive in the type. The
- * facts show only at rest: while `state` is pending, errored or empty the figure would sit above a
- * skeleton or a placeholder that contradicts it, so the header keeps its title row alone.
+ * figures show only at rest: while `state` is errored or empty one would sit above a placeholder that
+ * contradicts it, so the header keeps its title row alone. While pending the row keeps its footprint
+ * as a skeleton (a figure bar and, with a `subtitle`, a basis line), never the stale figure.
  */
 export type ChartCardProps = ChartCardBaseProps &
   (
@@ -232,6 +233,18 @@ function Facts({
   )
 }
 
+/** The facts row of a pending card: bars at the loaded row's height, no figure. */
+function FactsSkeleton({ basis }: { basis: boolean }): ReactElement {
+  return (
+    <div data-basalt-facts-skeleton="" aria-hidden="true" className={classes.facts}>
+      <div className={classes.factsRow}>
+        <span className={classes.skeletonFigure} />
+      </div>
+      {basis && <p className={cx(classes.factsBasis, classes.skeletonBasis)} />}
+    </div>
+  )
+}
+
 export function ChartCard({
   actions,
   state,
@@ -251,8 +264,12 @@ export function ChartCard({
   const { ref, short } = useShortCard()
   const resolved = resolveChartState(state)
   const showFacts = facts !== undefined && resolved === null
+  const skeletonFacts = facts !== undefined && resolved === 'pending'
   const hasHeader =
-    actions !== undefined || showFacts || HEADER_TRIGGERS.some((k) => header[k] !== undefined)
+    actions !== undefined ||
+    showFacts ||
+    skeletonFacts ||
+    HEADER_TRIGGERS.some((k) => header[k] !== undefined)
   // With facts the subtitle is the basis line after them, not WidgetHeader's foldable row.
   const { subtitle, ...rest } = header
   const headerProps = facts === undefined ? header : rest
@@ -278,6 +295,7 @@ export function ChartCard({
               })}
             />
             {showFacts && <Facts facts={facts} basis={subtitle} stale={stale} />}
+            {skeletonFacts && <FactsSkeleton basis={subtitle !== undefined} />}
           </div>
         )}
         <div

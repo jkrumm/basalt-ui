@@ -6,6 +6,7 @@
 import { render } from '@testing-library/react'
 import { readFileSync } from 'node:fs'
 import { describe, expect, test } from 'bun:test'
+import { renderToString } from 'react-dom/server'
 import { ChartCard } from './ChartCard'
 
 const css = readFileSync(new URL('./chart-card.module.css', import.meta.url), 'utf8')
@@ -82,11 +83,8 @@ describe('ChartCard facts', () => {
     expect(root?.lastElementChild).toBe(basis)
   })
 
-  test('facts show only at rest: hidden while pending, in error and when empty', () => {
+  test('facts show only at rest: in error and when empty they are hidden', () => {
     const f = { value: '7.4' }
-    const pending = render(<ChartCard title="T" facts={f} state={{ pending: true }} />)
-    expect(facts(pending.container)).toBeNull()
-    pending.unmount()
     const rest = render(<ChartCard title="T" facts={f} />)
     expect(facts(rest.container)).not.toBeNull()
     rest.unmount()
@@ -107,5 +105,45 @@ describe('ChartCard facts', () => {
     const { container, queryByText } = render(<ChartCard title="T" subtitle="Basis" />)
     expect(facts(container)).toBeNull()
     expect(queryByText('Basis')).not.toBeNull()
+  })
+
+  test('a pending card keeps the facts row as a skeleton, never the stale figure', () => {
+    const f = { value: '7.4', unit: 'h', period: 'last 30 d' }
+    const { container } = render(
+      <ChartCard title="T" facts={f} subtitle="Median of 14 runs" state={{ pending: true }} />,
+    )
+    expect(facts(container)).toBeNull()
+    const skeleton = container.querySelector('[data-basalt-facts-skeleton]')
+    expect(skeleton).not.toBeNull()
+    expect(skeleton?.getAttribute('aria-hidden')).toBe('true')
+    expect(skeleton?.textContent).toBe('')
+    expect(container.textContent).not.toContain('7.4')
+    expect(container.textContent).not.toContain('Median')
+  })
+
+  test('the pending skeleton has a basis line only when the card has a subtitle', () => {
+    const f = { value: '7.4' }
+    const withBasis = render(
+      <ChartCard title="T" facts={f} subtitle="Basis" state={{ pending: true }} />,
+    )
+    expect(withBasis.container.querySelectorAll('[data-basalt-facts-skeleton] > p').length).toBe(1)
+    withBasis.unmount()
+    const without = render(<ChartCard title="T" facts={f} state={{ pending: true }} />)
+    expect(without.container.querySelectorAll('[data-basalt-facts-skeleton] > p').length).toBe(0)
+  })
+
+  test('a pending card without facts has no facts skeleton', () => {
+    const { container } = render(<ChartCard title="T" state={{ pending: true }} />)
+    expect(container.querySelector('[data-basalt-facts-skeleton]')).toBeNull()
+  })
+
+  test('a pending plot draws the ghost', () => {
+    const { container } = render(<ChartCard title="T" state={{ pending: true }} />)
+    expect(container.querySelectorAll('[data-basalt-plot-ghost] > span').length).toBeGreaterThan(2)
+  })
+
+  test('a pending card renders the same twice (SSR parity)', () => {
+    const el = <ChartCard title="T" facts={{ value: '1' }} subtitle="B" state={{ pending: true }} />
+    expect(renderToString(el)).toBe(renderToString(el))
   })
 })
