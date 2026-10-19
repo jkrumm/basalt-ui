@@ -39,6 +39,9 @@ layout('Wave 38 legends and readouts at 390', () => {
     entryWraps: string[]
     overflow: number
     seriesFirst: boolean
+    lines: number
+    foldedNames: string[]
+    moreName: string | null
   }
   const inspect = (p: Awaited<ReturnType<typeof openFixture>>, id: string): Promise<Shown> =>
     p.raw.evaluate((sel) => {
@@ -56,6 +59,11 @@ layout('Wave 38 legends and readouts at 390', () => {
         references: visible.filter((i) => i.dataset['legendRole'] === 'reference').length,
         more: more !== null && !more.hidden ? `${more.textContent}` : null,
         wrapped: tops.size > 1,
+        lines: tops.size,
+        foldedNames: items
+          .filter((i) => i.hasAttribute('data-legend-folded'))
+          .map((i) => i.textContent ?? ''),
+        moreName: more !== null && !more.hidden ? `${more.textContent}` : null,
         // An entry taller than one text line wrapped inside itself.
         entryWraps: visible
           .filter((i) => i.getBoundingClientRect().height > 22)
@@ -106,16 +114,53 @@ layout('Wave 38 legends and readouts at 390', () => {
     },
   )
 
+  test('seven series + two references at 340px: a reference folds only for a line it frees', async () => {
+    const p = await openFixture(spec, PHONE)
+    await p.settle()
+    const plain = await inspect(p, 'w38-seven')
+    const withRefs = await inspect(p, 'w38-seven-refs')
+    expect(withRefs.series).toEqual(plain.series)
+    // Never an extra line for a reference the series row had room for, never more than the series alone.
+    expect(withRefs.lines).toBeLessThanOrEqual(plain.lines + (withRefs.more === null ? 1 : 0))
+    expect(withRefs.references + withRefs.foldedNames.length).toBe(2)
+  })
+
+  test('the +N chip names every folded entry', async () => {
+    const p = await openFixture(spec, PHONE)
+    await p.settle()
+    const shown = await inspect(p, 'w38-two-zones')
+    expect(shown.foldedNames.length).toBeGreaterThan(0)
+    expect(shown.moreName).toMatch(new RegExp(`^\\+${shown.foldedNames.length}: `))
+    for (const name of shown.foldedNames) expect(shown.moreName).toContain(name)
+  })
+
+  test('one entry wider than the card ellipsizes inside it and keeps its name', async () => {
+    const p = await openFixture(spec, PHONE)
+    await p.settle()
+    const card = await p.box('card', '[data-testid="w38-long"]')
+    const legend = await p.box('legend', legendOf('w38-long'))
+    expect(legend.box.right).toBeLessThanOrEqual(card.box.right + 0.5)
+    const label = await p.raw.evaluate((sel) => {
+      const el = document.querySelector<HTMLElement>(`${sel} [data-legend-key="long"] span[title]`)
+      if (!el) throw new Error('LAYOUT: no long label')
+      return { title: el.title, clipped: el.scrollWidth > el.clientWidth }
+    }, legendOf('w38-long'))
+    expect(label.clipped).toBe(true)
+    expect(label.title).toContain('much longer')
+  })
+
+  // argo's usage health card: a Bars key (placement bottom) of three verdict labels in a half column.
   test.each([
-    ['w38-narrow-band', PHONE],
-    ['w38-wide-band', DESKTOP_1440],
-  ] as const)("%s: BandStrip's three tiers read one line each", async (id, viewport) => {
+    ['w38-verdict-340', PHONE],
+    ['w38-verdict-500', PHONE],
+    ['w38-verdict-1000', DESKTOP_1440],
+  ] as const)('%s: each verdict label reads on one line', async (id, viewport) => {
     const p = await openFixture(spec, viewport)
     await p.settle()
     const shown = await inspect(p, id)
-    expect(shown.series).toEqual(['Under 1 % of calls', '1 to 5 % of calls', 'Over 5 % of calls'])
+    expect(shown.series).toEqual(['Under 1 % of calls', '1–3 % of calls', 'Over 3 % of calls'])
     expect(shown.entryWraps).toEqual([])
-    if (id === 'w38-wide-band') expect(shown.wrapped).toBe(false)
+    if (id !== 'w38-verdict-340') expect(shown.wrapped).toBe(false)
   })
 
   test.each(['w38-single', 'w38-unnamed-zones', 'w38-false'])(

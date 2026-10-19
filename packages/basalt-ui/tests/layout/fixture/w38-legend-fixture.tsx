@@ -1,5 +1,5 @@
 import type { ReactElement } from 'react'
-import { BandStrip, Lines, Sparkline } from '../../../src/charts'
+import { Bars, Lines, Sparkline } from '../../../src/charts'
 import type { ChartSeries, LinesProps } from '../../../src/charts'
 import { DeltaBadge, StatCard, StatGroup } from '../../../src/index'
 import { VX, alpha } from '../../../src/tokens'
@@ -52,11 +52,26 @@ const NAMED_ZONES = [
   zone(1.3, 1.5, 'warn', 'Push (≥70)'),
   zone(1.5, 2, 'bad', 'Danger'),
 ]
-// argo's usage errors band: three tiers, the worded OK tier first.
-const TIERS = [
-  { key: 'ok', label: 'Under 1 % of calls', color: VX.good },
-  { key: 'warn', label: '1 to 5 % of calls', color: VX.warn },
-  { key: 'bad', label: 'Over 5 % of calls', color: VX.bad },
+// argo's usage health card (health-card.tsx VERDICT_BARS): three verdict labels.
+const VERDICT = [
+  { key: 'ok', label: 'Under 1 % of calls', color: alpha(VX.muted, 0.5) },
+  { key: 'warn', label: '1–3 % of calls', color: VX.warnSolid },
+  { key: 'bad', label: 'Over 3 % of calls', color: VX.badSolid },
+].map(({ key, label, color }, i) => ({
+  key,
+  label,
+  color,
+  getValue: (d: Point) => (d.a > 1 + i * 0.2 ? d.a : null),
+}))
+// One entry wider than a 340px card.
+const LONG: ChartSeries<Point>[] = [
+  {
+    key: 'long',
+    label: 'A series name much longer than any phone card can hold on a single line of legend',
+    color: VX.line,
+    getValue: (d) => d.a,
+  },
+  { key: 'b', label: 'Short', color: VX.line2, getValue: (d) => d.b },
 ]
 
 const SPARK = [60, 62, 61, 64, 66, 65, 63, 62, 64, 67, 66, 65]
@@ -82,22 +97,25 @@ export function W38LegendFixture(): ReactElement {
       {chart('w38-five-refs', { series: many(5), refLines: REFS })}
       {chart('w38-seven', { series: many(7) })}
       {chart('w38-two-zones', { series: TWO, zones: NAMED_ZONES })}
-      {(['narrow', 'wide'] as const).map((w) => (
-        // theme-allow -- the wrapper width IS the fixture's payload (a container-class probe)
-        <div key={w} data-testid={`w38-${w}-band`} style={{ width: w === 'wide' ? 1000 : 340 }}>
-          <BandStrip
-            ariaLabel="Error rate per day"
-            data={DATA}
-            x={(d) => d.at}
-            states={TIERS}
-            getBand={(d) => ({ state: d.a > 1.3 ? 'bad' : d.a > 1 ? 'warn' : 'ok' })}
-            height={28}
-          />
-        </div>
-      ))}
+      {chart('w38-seven-refs', { series: many(7), refLines: REFS })}
       {chart('w38-five-refs-wide', { series: many(5), refLines: REFS }, 1000)}
       {chart('w38-seven-wide', { series: many(7) }, 1000)}
       {chart('w38-two-zones-wide', { series: TWO, zones: NAMED_ZONES }, 1000)}
+      {chart('w38-long', { series: LONG })}
+      {/* argo's usage health card: a Bars key with three verdict labels, bottom, in a half column */}
+      {[340, 500, 1000].map((w) => (
+        // theme-allow -- the wrapper width IS the fixture's payload (a container-class probe)
+        <div key={w} data-testid={`w38-verdict-${w}`} style={{ width: w }}>
+          <Bars
+            ariaLabel="Error events per day"
+            data={DATA}
+            height={120}
+            x={(d) => d.at}
+            legend={{ placement: 'bottom' }}
+            bars={VERDICT}
+          />
+        </div>
+      ))}
       {chart('w38-single', { series: ONE })}
       {chart('w38-unnamed-zones', { series: ONE, zones: UNNAMED })}
       {chart('w38-false', { series: TWO, zones: REC_ZONES, legend: false })}

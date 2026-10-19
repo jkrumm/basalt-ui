@@ -1081,6 +1081,7 @@ No export is removed or added. A loading state is the loaded shape; two other de
   names); `readingAt="start"` keeps the pre-2.24 anchor at the boundary.
 - Opt out of the shared hero size: set `--basalt-stat-group-figure` (a length, e.g. `var(--vx-text-kpi)`) on the
   `StatGroup` or a wrapper; it replaces the group's two-column size.
+
 ### Compact legends keep series (Wave 38)
 
 No export is removed or added. 2.24.0's compact legend folded series names into `+N`; this restores them.
@@ -1089,13 +1090,14 @@ No export is removed or added. 2.24.0's compact legend folded series names into 
 | --------------------------- | --------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------- |
 | Series in a compact legend  | one row; any entry that did not fit folded into `+N`, so seven lines at 390 read by hue | every series stays named at every width; if the series alone overfill a row, it wraps |
 | Zone / reference entries    | first in the DOM and the row; the last entries folded                                   | after the series; they alone fold into `+N` (last first) until the key is one row     |
+| An entry wider than the row | n/a (the compact row clipped it)                                                        | the label ellipsizes at the row's width, full name in `title`                         |
 | An entry's text             | could wrap inside itself (`Low (< 0.8)` over three lines, `Push` / `(≥70)`)             | never wraps: a threshold stays with its name                                          |
 | Legend order at every width | zones and references before the series                                                  | series first, then zones and references; DOM order is the visual order                |
-| `BandStrip` legend          | labels wrapped inside their column (`Under 1 % of` / `calls`)                           | each label is one line; the row wraps between entries when it must                    |
+| A bottom-placed `Bars` key  | labels wrapped inside their column (`Under 1 % of` / `calls`)                           | each label is one line; the row wraps between entries when it must                    |
 
 The 2.24 premise ("the title and tooltip name the series") is false for a multi-line chart: argo's
 strength lifts and weekly volume (`+5` / `+3`), relative progression (`+2`), readiness (`+1`) and the sky
-panorama (`+3`) were told apart by hue alone. A chart with only series therefore never shows a `+N`.
+panorama (`+3`) were told apart by hue alone. A chart with only series therefore never shows a `+N`, and a reference folds only when it frees a line the series row would not need.
 
 Opt-out: `legend: false` still drops the key, and `naming="endLabels"` names the lines on the plot. To
 keep a long zone name off the key, drop `ZoneSpec.legend` on that zone.
