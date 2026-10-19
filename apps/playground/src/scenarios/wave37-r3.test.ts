@@ -229,6 +229,7 @@ describe('6. components', () => {
     const src = source('../demo/ComponentsPage.tsx')
     expect(src).not.toMatch(/<Table[^>]*maw=/)
     expect(src).not.toContain('TABLE_MAX_WIDTH')
+    expect(src).not.toMatch(/<Box[^>]*\bmaw=[^>]*>\s*<ComponentGroup\s+title="Table/)
     expect(src).toContain('Prior 30 d')
   })
 
