@@ -1,3 +1,13 @@
+## [2.27.1](https://github.com/jkrumm/basalt-ui/compare/v2.27.0...v2.27.1) (2026-10-19)
+
+
+### Bug Fixes
+
+* a hosted row sparkline readout stays one line inside its own row at 390 ([1fd8231](https://github.com/jkrumm/basalt-ui/commit/1fd8231e89a5dbc4944214677ddf261e8fa9cfa8))
+* meter label rows stand a stack step apart ([2df16eb](https://github.com/jkrumm/basalt-ui/commit/2df16eb55ae1c52406f947755784e1c1e95e2eed))
+* slotted bars chip clears the focus ring ([3a31e5f](https://github.com/jkrumm/basalt-ui/commit/3a31e5fd48f57a485c200ae6bea7d3aa7059f997))
+* tooltips stay off the card headline facts ([73cec28](https://github.com/jkrumm/basalt-ui/commit/73cec283570a76b96fdd92aac185bb393825fb0e))
+
 # [2.27.0](https://github.com/jkrumm/basalt-ui/compare/v2.26.0...v2.27.0) (2026-10-19)
 
 
