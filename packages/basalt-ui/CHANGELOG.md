@@ -1,3 +1,27 @@
+# [2.27.0](https://github.com/jkrumm/basalt-ui/compare/v2.26.0...v2.27.0) (2026-10-19)
+
+
+### Bug Fixes
+
+* card facts gate by state, line and counted pending ghosts ([dcf6a5b](https://github.com/jkrumm/basalt-ui/commit/dcf6a5bcf77a9b10d530205ecbccd9755b726f93))
+* ghost the S2 and S4 charts; cover the goal card ([955f1ab](https://github.com/jkrumm/basalt-ui/commit/955f1ab821d4935f6ab0765c1cf3b08b9d61941f))
+* keep chart tooltips and slotted readouts inside their card ([0346925](https://github.com/jkrumm/basalt-ui/commit/0346925c0989dfbb386d1bc9c34ddab2876417f2))
+* list and Meter cards take loading and empty state ([0296c2d](https://github.com/jkrumm/basalt-ui/commit/0296c2d4086acf33c4cef6c1db37604e60cc3e9e))
+* load the meter and composition cards in their own shape ([112c07c](https://github.com/jkrumm/basalt-ui/commit/112c07ca99f700878350c999696a09d5c14a276f))
+* meter captions drop at 390 instead of taking a second row ([10c1e48](https://github.com/jkrumm/basalt-ui/commit/10c1e48370e2fc471e59d6b90baa7122f319f2f5))
+* pin the facts misuse, inline ghost union, before/now note ([2ea2af8](https://github.com/jkrumm/basalt-ui/commit/2ea2af8d42b7645e19d5dc4e365ca9d8606a2d0d))
+* shot re-measures a crop and fails loud when it is empty ([74b6508](https://github.com/jkrumm/basalt-ui/commit/74b6508ad06731ccab8317481559edf71ecb677a))
+* state each r3 figure and remedy once in S2–S4 ([f5f05d6](https://github.com/jkrumm/basalt-ui/commit/f5f05d6b78641c07585a3cda29d28f8a5f44cd19))
+* strip visuals level on the drawn mark ([99f3ffc](https://github.com/jkrumm/basalt-ui/commit/99f3ffcfd65b585f483d187d865cb83cf9075b8d))
+* the components table card ends at its error body ([3b40b3b](https://github.com/jkrumm/basalt-ui/commit/3b40b3b4e465cfaa81799e7ef1135b35a99dcef0))
+
+
+### Features
+
+* compact legends never leave a key told apart by hue alone ([c314b43](https://github.com/jkrumm/basalt-ui/commit/c314b43584c7aa5526f258829ccd44da5d024ef7))
+* meter labels never lost at 390, a gap between zone names ([afad8fb](https://github.com/jkrumm/basalt-ui/commit/afad8fbb794d4446586079b59cf6ea5134032b5c))
+* one strip cell anatomy, visuals on a shared line ([8037453](https://github.com/jkrumm/basalt-ui/commit/803745335e527bdb1d37f4fab97fa55c58b8755c))
+
 # [2.26.0](https://github.com/jkrumm/basalt-ui/compare/v2.25.0...v2.26.0) (2026-10-19)
 
 

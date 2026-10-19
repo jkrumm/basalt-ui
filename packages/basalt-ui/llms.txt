@@ -1,4 +1,4 @@
-# basalt-ui v2.26.0
+# basalt-ui v2.27.0
 # Opinionated framework for Mantine-based React apps — theme, app shell, TanStack Charts, toolchain presets
 #
 # Entry points: use the exact import specifier below; do not guess.
@@ -13,7 +13,7 @@
 # A subpath's `Install:` line is its required peers; `OptionalPeers:` are import()-only, install on use.
 
 Package: basalt-ui
-Version: 2.26.0
+Version: 2.27.0
 
 ## basalt-ui
 Import: import { ... } from 'basalt-ui'
