@@ -27,6 +27,8 @@ const spec: FixtureSpec = {
 }
 
 const AIR = 3.5
+/** The host's focus ring: a 2px outline at a 0.125rem offset, outside the plot. */
+const RING = 2 + 0.125 * 16
 
 /** The page is taller than the viewport: bring the case into view before hovering it. */
 const scrollTo = (p: Awaited<ReturnType<typeof openFixture>>, sel: string): Promise<void> =>
@@ -129,7 +131,7 @@ layout('Wave 39 tooltips and readouts inside the card', () => {
         await p.raw.mouse.move(svg.x + svg.w / 2, svg.y + svg.h / 2)
         await p.raw.mouse.move(svg.x + (svg.w * (bin + 0.5)) / 6, svg.y + svg.h / 2)
         await p.raw.waitForSelector('.ts-chart-tooltip[data-basalt-slot]:not([hidden])')
-        const m = await p.raw.evaluate(() => {
+        const m = await p.raw.evaluate((RING) => {
           const cell = document.querySelector('[data-testid="w39-strip"] [data-strip-cell]')
           const chip = document.querySelector('.ts-chart-tooltip[data-basalt-slot]:not([hidden])')
           const plot = cell?.querySelector('svg')
@@ -165,13 +167,20 @@ layout('Wave 39 tooltips and readouts inside the card', () => {
             ).length,
             clipped: !!title && title.scrollWidth > title.clientWidth,
             lit,
+            ringClear: !(
+              t.left < v.right + RING &&
+              t.right > v.left - RING &&
+              t.top < v.bottom + RING &&
+              t.bottom > v.top - RING
+            ),
           }
-        })
+        }, RING)
         expect(m.separator).toContain('·')
         expect(m.oneLine).toBe(true)
         expect(m.rowsShown).toBe(1)
         expect(m.inCell).toBe(true)
         expect(m.overPlot).toBe(false)
+        expect(m.ringClear).toBe(true)
         expect(m.overCaption).toBe(false)
         expect(m.overValue).toBe(false)
         // The empty bin has no bar to light: the baseline marker says where the readout points.
@@ -298,6 +307,37 @@ layout('Wave 39 tooltips and readouts inside the card', () => {
         expect(m.onText).toBe(false)
         expect(m.bottomBand).toBe(true)
         expect(m.coversDot).toBe(false)
+      }
+    },
+  )
+  test.each([
+    ['1440', DESKTOP_1440],
+    ['390', PHONE],
+  ] as const)(
+    "%s: a tooltip in a card with facts stays off the card's headline facts",
+    async (_, viewport) => {
+      const p = await openFixture(spec, viewport)
+      await p.settle()
+      await scrollTo(p, '[data-testid="w40-tip-facts"]')
+      for (const f of [0.08, 0.35, 0.65, 0.92]) {
+        const svg = await p.raw.evaluate(() => {
+          const r = document
+            .querySelector('[data-testid="w40-tip-facts"] [data-basalt-box] svg')
+            ?.getBoundingClientRect()
+          if (!r) throw new Error('LAYOUT: no chart svg')
+          return { x: r.x, y: r.y, w: r.width, h: r.height }
+        })
+        await p.raw.mouse.move(svg.x + svg.w / 2, svg.y + svg.h / 2)
+        await p.raw.mouse.move(svg.x + svg.w * f, svg.y + svg.h - 2)
+        await p.raw.waitForSelector('.ts-chart-tooltip:not([hidden])')
+        const over = await p.raw.evaluate(() => {
+          const tip = document.querySelector('.ts-chart-tooltip:not([hidden])')
+          const facts = document.querySelector('[data-testid="w40-tip-facts"] [data-basalt-facts]')
+          if (!tip || !facts) throw new Error('LAYOUT: no tooltip or facts')
+          const [t, r] = [tip, facts].map((el) => el.getBoundingClientRect()) as [DOMRect, DOMRect]
+          return t.left < r.right && t.right > r.left && t.top < r.bottom && t.bottom > r.top
+        })
+        expect(over).toBe(false)
       }
     },
   )

@@ -1178,7 +1178,16 @@ export function settleInCard(
   const anchor = toClient(ctx.anchor)
   const gap = Math.max(0, Number.isFinite(ctx.offset) ? (ctx.offset ?? 10) : 10)
   const maxTop = card.bottom - TIP_CARD_AIR - h
-  const minTop = card.top + TIP_CARD_AIR
+  // The card's header (title and facts) is off-limits while the plot area below it can hold the tooltip.
+  const headerBottom = slot
+    ? undefined
+    : within
+        .closest(TIP_CARD)
+        ?.querySelector('[data-basalt-facts]')
+        ?.parentElement?.getBoundingClientRect().bottom
+  const belowHeader = headerBottom === undefined ? undefined : headerBottom + TIP_CARD_AIR
+  const minTop =
+    belowHeader !== undefined && belowHeader <= maxTop ? belowHeader : card.top + TIP_CARD_AIR
   const side = tip.dataset['placement']
   if (slot) {
     // Above the plot, in the reserved line, clear of the focus ring: no flip, never pushed down over the bars.

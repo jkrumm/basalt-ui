@@ -32,11 +32,20 @@ const BINS: Bin[] = [
   { bin: 'Sat', n: 2 },
 ]
 
-const tipCard = (id: string, width: number, height: number, rows: number): ReactElement => (
+const tipCard = (
+  id: string,
+  width: number,
+  height: number,
+  rows: number,
+  facts = false,
+): ReactElement => (
   // theme-allow -- the wrapper width IS the fixture's payload
   <div data-testid={id} style={{ width }}>
     <h2 data-testid={`${id}-heading`}>Training</h2>
-    <ChartCard title="Activities">
+    <ChartCard
+      title="Activities"
+      {...(facts && { facts: { value: '1 730', unit: 'min', period: 'last 7 d' } })}
+    >
       <Bars
         ariaLabel={id}
         data={DAYS}
@@ -64,6 +73,7 @@ export function W39ReadoutFixture(): ReactElement {
       {tipCard('w39-tip', 360, 90, 4)}
       {tipCard('w39-tip-tall', 360, 60, 16)}
       {tipCard('w39-tip-room', 360, 240, 3)}
+      {tipCard('w40-tip-facts', 360, 200, 3, true)}
       {/* theme-allow -- the wrapper width IS the fixture's payload (a 340px phone card) */}
       <div data-testid="w39-strip" style={{ width: 340 }}>
         <StatGroup
