@@ -1637,28 +1637,58 @@ P2/P3 basalt rows below. Validators: argo (bumps after the release, deletes its 
 
 **Renumbered 2026-10-19 (third time):** Wave 39 (argo's friction IV) was inserted; the old Waves 39–44 are now 40–45.
 
-## Wave 39 — argo's friction IV: the Meter fit at 390, legend keys, readouts and tooltips <!-- status: active -->
+## Wave 39 — argo's friction IV: the Meter fit at 390, legend keys, readouts and tooltips <!-- status: done -->
 
 Source: argo `docs/design/UPSTREAM.md` § "Wave 40" (argo re-scored on 2.26.0: 11 of 14 pages pass; Garmin, Agents and
 Strength fail on basalt rows only) and Wave 38's **Left behind**. Validators: argo (bumps after the release, deletes its
 workarounds) and S2/S3/S4 under the calibrated bar (`docs/waves/design-parity/w37/setup.md`).
 
-- [ ] **The Meter zone fit at 390 first (P1, a lost fact):** the Garmin load meter drops Caution and the Agents oldest-wait
+- [x] **The Meter zone fit at 390 first (P1, a lost fact):** the Garmin load meter drops Caution and the Agents oldest-wait
       Meter drops "abandoned" at 7 d. Wave 38 #440 left the 22-vs-25 px case to a consumer `short`; decide in SPEC D38 whether
       basalt derives room (the holding-name policy, the strip cell inset at the phone width) so no zone name is lost.
-- [ ] **Zone names at 1440 run together** with no gap (argo Home: "OptimalCaution Danger"): a minimum gap between adjacent
+- [x] **Zone names at 1440 run together** with no gap (argo Home: "OptimalCaution Danger"): a minimum gap between adjacent
       zone names, the borrow pass of #440 included.
-- [ ] **Compact legend keys:** zone entries folded into `+N` are then told apart by colour only; the astro timeline at 390
+- [x] **Compact legend keys:** zone entries folded into `+N` are then told apart by colour only; the astro timeline at 390
       folds its two reference lines into `+2` (D43: only fold where a fold frees a line, and never leave a hue-only key).
-- [ ] **Readouts and tooltips:** the Sparkline hosted readout still stacks over the line on Garmin fitness (fixed on Usage);
+- [x] **Readouts and tooltips:** the Sparkline hosted readout still stacks over the line on Garmin fitness (fixed on Usage);
       the Garmin activities tooltip grows past the card top; the Reading pace slot readout hangs below its card at 390.
-- [ ] **Wave 38's remaining items:** the strip anatomy on S3/S4 (one cell anatomy with the visual on a shared baseline),
+- [x] **Wave 38's remaining items:** the strip anatomy on S3/S4 (one cell anatomy with the visual on a shared baseline),
       the hit-rate loading legend row, and the harness rows in Wave 38's **Left behind** (release poll, shot flake).
-- [ ] Rounds: at least three under the calibrated bar with before/after boards; a route passes or the remaining items are
+- [x] Rounds: at least three under the calibrated bar with before/after boards; a route passes or the remaining items are
       named. Then the mother releases and argo bumps.
       **Left behind:**
 
-## Wave 40 — Data tables, responsive <!-- status: pending -->
+- **Landed** (8 PRs, #448–#455, every one through `rd merge` with `make check` after each rebase; master CI green on `99f3ffcf`).
+  First, the P1: #451 Meter labels are never lost for width (a second label row, then `short`, then hide), and adjacent zone names
+  keep a 6 px gap; #454 restores D38's caption drop for the start figure at 390. #450 compact legends name every key (the `+N` fold
+  is deleted, net-negative). #449 one strip cell anatomy (visuals level on a shared line) and hosted row visuals; #455 levels on the
+  drawn mark. #452 tooltips stay in their card on both axes (BandStrip keeps the sideways-only clamp); a slotted `Bars` readout is
+  the engine tooltip as a one-line chip in the strip's reserved line, with a hover marker on a zero bin; a short bare Sparkline
+  keeps its chip in its box. #448 `shot` re-measures a crop before each snap and fails loud on an empty clip; `release.sh` waits
+  3600 s and exits 3 with "still propagating" (AGENTS.md § Release Process updated). #453 the components table card ends at its
+  error body (playground). Every break is a plain `feat:`/`fix:` with a `### … (Wave 39)` MIGRATING subsection under the one
+  `## Unreleased` heading (renamed to cover Waves 38 and 39); `CHANGELOG.md` untouched.
+- **Review:** every PR had at least two independent rounds by fresh subagents with no shared context (#452 took four: the
+  first slot readout was a custom chip with its own hit-test, rejected for the engine tooltip). The lead read the last fix diff of
+  each before merging.
+- **Unreleased on master, for the mother:** #442 (card facts gate, Wave 38) plus #448–#455. Nothing was released by this wave.
+- **argo's rows** (UPSTREAM § "Wave 40"/"Wave 41"), proven by layout tests on argo's compositions (the Meter cases shown failing on the
+  previous master): Garmin load meter keeps Caution at 390 (row two) and four full names at 1440; Agents' oldest-wait keeps
+  "abandoned at 7 d" at 390 (row two; argo's warn mark is 24 h); "OptimalCaution Danger" now has gaps; zone keys and the astro
+  references are named at 390; the activities tooltip stays inside its card; the reading pace readout sits in its cell; Garmin
+  fitness rows are hosted. argo can delete nothing new; it should re-score after the bump. Not closed for argo: the row readout
+  taking the row's value column (a Sparkline portal hook, a `todo` layout case in `strip-anatomy-w39`).
+- **Rounds** (`docs/waves/design-parity/w39/rounds.md`, boards `.design-parity/w39/r0`–`r2`): S2 100 → 99 → 99, S3 96 → 98 → 98,
+  S4 98 → 97 → 98, components 96 → 96 → 99. No route passes the zero-item bar; no P0–P2 is left. Remaining P3s, named: pending
+  ChartCard legend rows (hit-rate, spend-over-time, item-flow at 390), the failures zero-bin mark not visible in the hover crop,
+  the spend-over-time tooltip over the forecast/budget crossing, the table loading headers at 390 (Wave 40).
+- **SPEC:** D38 and D43 amended; new D48 (strip anatomy; the level is a client pass, SSR is ragged until hydration), D49 (in-card
+  tooltips, the slot chip), D50 (shot crops, the release poll).
+- **Budgets:** CLI lines at the 8457 ceiling exactly after #448 (no headroom for the next CLI change); no ceiling raised; no new
+  public export or prop.
+- **Next — stopped: Wave 39 closed; orchestrated, nothing spawned.** The mother releases (#442 + #448–#455), argo bumps and re-scores.
+
+## Wave 40 — Data tables, responsive <!-- status: active -->
 
 Spec: SPEC § 6.6, § 9.1. Scenarios S1 (outages) and S2 (sessions). Validators: argo, linewatch.
 

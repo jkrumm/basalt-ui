@@ -250,8 +250,9 @@ _publish_ run, and then a POLL of the registry until it actually serves that ver
 exit means "on npm", not "the release job finished". That last step is load-bearing and was added
 after it wasn't: v1.30.1 printed `✔ … published — registry reports 1.30.0` and exited 0, because
 the read was a single unretried `npm view` interpolated into the success message and never compared
-to anything. It now retries (`--prefer-online`, so a cached metadata document can't answer) and
-`die`s on a version that never arrives.
+to anything. It now retries (`--prefer-online`, so a cached metadata document can't answer) for up
+to 3600 s, `die`s on an unexpected version, and exits 3 ("still propagating", not a failure) when the
+registry still serves the previous version at the deadline: 2.24.0 took ~25 min to be served.
 
 `YES=1 make release` skips only the prompt. **The wrapper's version gate refuses every computed major, any 1.x
 and any prerelease** (`MAINTAINING.md` § The one sanctioned major); rewrite a stray
