@@ -48,16 +48,23 @@ Queued behind all of it: Part 2's maturation Waves 20–28.
 
 ## In flight (next actions, in order)
 
-1. basalt 2.22.0 (`a646a081`) and 2.23.0 (`fe021b8a`, incl. #414 `series-palette` → error) released 2026-10-18 mid-Wave 37.
-   Wave 37 closed (S2/S3/S4 50/64/55 → 71/80/74 under argo's bar, no route passes; trial v1 38). Wave 38 (argo's
-   friction III) is active; the old Waves 38–43 are now 39–44.
-2. argo runs the live re-score loop (argo Waves 23–35+): WalkingPad and Garmin pass; Warden/Reading/Strength failed only
-   on the strip-cell P0 that 2.23.0 closes; the rest is argo state copy plus basalt P2/P3 rows. argo Wave 35 bumps 2.23.0.
-3. Decided 2026-10-18: warden + agent-gateway get an authored `question` field, recorded as a backlog item in each repo's
+1. Released 2026-10-18/19: 2.22.0 (`a646a081`), 2.23.0 (`fe021b8a`, `series-palette` → error), 2.24.0 (#416–#427 +
+   #432 `raw-spacing`/`inline-spacing` → error; the registry took ~25 min, so `release.sh`'s 1200 s poll failed a good
+   publish — don't re-release, curl the registry), 2.25.0 (`3c3633cc`, slotted `Bars`), 2.26.0 (`f95068de`, the three
+   2.24 regressions + #441 `card-inset` → error). Both grace ledgers are now empty. #442 (card facts gate) is unreleased
+   and ships with Wave 39.
+2. basalt Wave 38 closed (`370a1887`); Wave 39 "argo's friction IV" is active (the Meter zone fit at 390 is the P1).
+   The old 39–44 are now 40–45.
+3. argo Waves 38–41: 11/14 → 13/14 pages pass on 2.26.0 (Home 95, Usage 97, Reading 99, WalkingPad 100, Agents 93);
+   Garmin (49) fails on basalt rows only; no argo P1–P3 left. argo Wave 41 stopped with its bump step open: after the
+   next release, `rd say argo-w41` the release (no new wave), it bumps, re-shoots all pages and re-scores.
+4. Decided 2026-10-18: warden + agent-gateway get an authored `question` field, recorded as a backlog item in each repo's
    `docs/BACKLOG.md` for a later structure-and-maturity pass by the owner; argo adds nothing until it ships.
-4. Owner decision queued: SPEC D37 (an errored/empty chart body keeps the loaded height per the SSR contract; the rubric
+5. Owner decision queued: SPEC D37 (an errored/empty chart body keeps the loaded height per the SSR contract; the rubric
    scores it as a void). Default until ruled: SPEC wins, the rubric is told about D37.
-5. After basalt Wave 38: release, argo bumps and re-scores. The exit gate is unchanged.
+6. Release cadence: release only when a consumer is waiting on the change. A patch that only re-shoots argo for nothing
+   waits for the next wave (2026-10-19: #442 held for Wave 39).
+7. After basalt Wave 39: release, argo bumps and re-scores. The exit gate is unchanged.
 
 ## Consumers and how to reach them
 
