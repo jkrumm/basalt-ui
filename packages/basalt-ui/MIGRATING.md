@@ -1059,16 +1059,17 @@ placeholder (`Sparkline`).
 Opt out: pass `state` only once the data settles, or draw the loading yourself as the card's
 `children` with `placeholderHeight="content"` (the card then renders `children` while pending). The
 facts skeleton follows `facts`; omit `facts` while pending to drop it.
+
 ### Strip and Meter loading (Wave 38)
 
 No export is removed or added. A loading state is the loaded shape; two other defaults move with it.
 
-| Surface                                       | Before                                                           | Now                                                                                                                                              |
-| --------------------------------------------- | ---------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------ |
-| `Meter loading` (bar)                         | one track and one or two caption lines                           | the loaded rows (figure row above, zone-name row, reading row, caption row, part captions), text painted as skeleton, at the loaded height ±2 px |
-| Strip cell `loading`                          | a value bar alone; a `visual` and `footer` showed as loaded      | the value bar, the `visual` slot and the `footer` line at their loaded height; the visual and footer are laid out hidden under a skeleton        |
-| Forecast caption (committed/forecast `Meter`) | begins at the spent/forecast boundary                            | ends at the forecast fill end (clamped inside the track); the reading stays at the committed end                                                 |
-| `StatGroup` hero size at 390                  | a card spanning the row rendered 22, its two-column row-mates 16 | one size for every card of the group in the two-column state (16)                                                                                |
+| Surface                                                               | Before                                                           | Now                                                                                                                                                                                  |
+| --------------------------------------------------------------------- | ---------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `Meter loading` (bar)                                                 | one track and one or two caption lines                           | the loaded rows (figure row above, zone-name row, reading row, caption row, part captions), text painted as skeleton, at the loaded height ±2 px                                     |
+| Strip cell `loading`                                                  | a value bar alone; a `visual` and `footer` showed as loaded      | the value bar, the `visual` slot and the `footer` line at their loaded height; the visual and footer are laid out hidden under a skeleton                                            |
+| Forecast caption (committed/forecast `Meter`)                         | begins at the spent/forecast boundary                            | ends at the forecast fill end (clamped inside the track); if that collides it starts at the boundary instead, and drops only if neither fits; the reading stays at the committed end |
+| `StatGroup` hero size in a container under 480 px (a phone, an aside) | a card spanning the row rendered 22, its two-column row-mates 16 | one size for every card of the group in the two-column state (16)                                                                                                                    |
 
 - **Pass the loaded structure.** A Meter keeps its rows from its own props (`ticks`, `zones`, `target`,
   `endCaption`, `segments`), so pass them while loading as at rest; the reading may be `null`. A strip
