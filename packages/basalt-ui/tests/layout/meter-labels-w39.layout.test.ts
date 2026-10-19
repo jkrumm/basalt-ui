@@ -200,4 +200,35 @@ layout('Meter labels are never lost for width (Wave 39)', () => {
     )
     expect(shown).toEqual(['0 sessions', 'Pace 14 sessions by 16 Oct'])
   })
+  test.each(WAITS.map((w) => [w] as const))(
+    'agents oldest-wait %s at 390: two label rows stand a stack step apart',
+    async (w) => {
+      const p = await openFixture(spec, PHONE)
+      await p.settle()
+      const m = await p.raw.evaluate((id) => {
+        const host = document.querySelector(`[data-testid="${id}"]`) as Element
+        const row = (n: 1 | 2) =>
+          [...host.querySelectorAll('[data-meter-tick-label]')]
+            .filter(
+              (e) => !e.hasAttribute('data-hidden') && e.hasAttribute('data-row2') === (n === 2),
+            )
+            .map((e) => e.getBoundingClientRect())
+        const probeEl = document.createElement('div')
+        probeEl.style.height = 'var(--vx-space-stack-xs)'
+        host.append(probeEl)
+        const gap = probeEl.getBoundingClientRect().height
+        probeEl.remove()
+        const [one, two] = [row(1), row(2)]
+        return {
+          gap,
+          first: Math.max(...one.map((r) => r.bottom)),
+          second: Math.min(...two.map((r) => r.top)),
+          has2: two.length > 0,
+        }
+      }, `w39-agents-${w}`)
+      expect(m.has2).toBe(true)
+      expect(m.gap).toBeGreaterThan(0)
+      expect(m.second - m.first).toBeGreaterThanOrEqual(m.gap - 0.5)
+    },
+  )
 })
