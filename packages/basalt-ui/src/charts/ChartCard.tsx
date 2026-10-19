@@ -19,6 +19,7 @@ import { VX } from '../tokens'
 import { ChartCardContext } from './card-context'
 import classes from './chart-card.module.css'
 import { ChartPlaceholder, resolveChartState } from './state'
+import type { PlotGhostShape } from './state'
 import type { ChartState, ResponsiveChartHeight } from './types'
 
 // Depth is `shadow-card` (a whisper shadow with the 1px ring baked in), never a border, so a
@@ -139,7 +140,10 @@ type ChartCardBaseProps = BasaltProps &
     /** Right-aligned controls. A `<Text size="xs">` caption here renders at 11 (the chart-text step,
      * beside the plot's ticks); wrap it in a `span` or give it your own class to opt out. */
     actions?: ReactNode
-    /** A resolved state replaces `children` with its placeholder; the header stays. */
+    /** A resolved state replaces `children` with its placeholder; the header stays. The card learns
+     * a state only from here: a body that draws its own loading or empty line (`Meter loading`,
+     * `BarList emptyText`) must ALSO be reported here (`{ pending: true }`, `{ empty }`), or the
+     * `facts` above it render over a state they contradict. */
     state?: ChartState | undefined
     /** Body height while a placeholder shows. Default: the chart height law, i.e. exactly the box an
      * unsized chart takes — pass the chart's own `height` when it states one, so a `<Suspense
@@ -149,6 +153,9 @@ type ChartCardBaseProps = BasaltProps &
      * its own loading (`BarList loading`, a loading `Meter`); a children-less `<Suspense
      * fallback>` should pass a numeric height instead. */
     placeholderHeight?: number | ResponsiveChartHeight | 'content' | undefined
+    /** The pending plot's ghost: `'bars'` (default), `'line'` for a line or area chart, or the bar
+     * count when the loaded chart's data length is known. */
+    ghost?: PlotGhostShape | undefined
     /** Placeholder data is showing: the facts row dims with the plot (a strip cell's `stale`). */
     stale?: boolean | undefined
     /** What an errored `state` names: "Could not load {stateNoun}". Default: no noun. */
@@ -253,6 +260,7 @@ export function ChartCard({
   stateAction,
   stale,
   stateNoun,
+  ghost,
   onRetry,
   retrying,
   className,
@@ -310,6 +318,7 @@ export function ChartCard({
               state={state}
               {...(placeholderHeight !== undefined && { height: placeholderHeight })}
               {...(stateNoun !== undefined && { noun: stateNoun })}
+              {...(ghost !== undefined && { ghost })}
               {...(onRetry !== undefined && { onRetry })}
               {...(retrying !== undefined && { retrying })}
               action={stateAction}
