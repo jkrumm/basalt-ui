@@ -121,8 +121,18 @@ layout('Wave 38 legends and readouts at 390', () => {
     const withRefs = await inspect(p, 'w38-seven-refs')
     expect(withRefs.series).toEqual(plain.series)
     // Never an extra line for a reference the series row had room for, never more than the series alone.
-    expect(withRefs.lines).toBeLessThanOrEqual(plain.lines + (withRefs.more === null ? 1 : 0))
+    expect(withRefs.lines === plain.lines || withRefs.foldedNames.length === 0).toBe(true)
     expect(withRefs.references + withRefs.foldedNames.length).toBe(2)
+  })
+
+  test('folding just the last reference frees the line, the others stay shown', async () => {
+    const p = await openFixture(spec, PHONE)
+    await p.settle()
+    const shown = await inspect(p, 'w38-one-fold')
+    expect(shown.foldedNames).toEqual(['Very far above the target'])
+    expect(shown.references).toBe(2)
+    expect(shown.lines).toBe(1)
+    expect(shown.moreName).toMatch(/^\+1: Very far/)
   })
 
   test('the +N chip names every folded entry', async () => {

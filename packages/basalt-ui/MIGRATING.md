@@ -1099,6 +1099,8 @@ The 2.24 premise ("the title and tooltip name the series") is false for a multi-
 strength lifts and weekly volume (`+5` / `+3`), relative progression (`+2`), readiness (`+1`) and the sky
 panorama (`+3`) were told apart by hue alone. A chart with only series therefore never shows a `+N`, and a reference folds only when it frees a line the series row would not need.
 
+The fold is measured in the browser, so the server-rendered first paint shows the unfolded key until hydration.
+
 Opt-out: `legend: false` still drops the key, and `naming="endLabels"` names the lines on the plot. To
 keep a long zone name off the key, drop `ZoneSpec.legend` on that zone.
 
