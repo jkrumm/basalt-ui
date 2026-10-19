@@ -172,7 +172,7 @@
  * 2px accent ring at the same offset, which the slotted chip clears (`SLOT_RING_CLEARANCE`). */
 :global(.basalt-chart .ts-chart:focus-visible) {
   outline: 2px solid var(--vx-accent);
-  outline-offset: calc(0.125rem * var(--mantine-scale, 1));
+  outline-offset: calc(0.125rem * var(--mantine-scale));
 }
 
 /*
@@ -217,10 +217,15 @@
 }
 
 :global(.ts-chart-tooltip[data-basalt-slot] .ts-chart-tooltip__row:not(:first-child)),
-/* The engine's series swatch is a block above the figure: it stacks the row taller than the chip and the
- * figure's lower half falls under the chip's `overflow: hidden`. */
-:global(.ts-chart-tooltip[data-basalt-slot] .ts-chart-tooltip__swatch),
 :global(.ts-chart-tooltip[data-basalt-slot] .ts-chart-tooltip__row > span:not(:last-child)) {
+  display: none;
+}
+
+/* The engine's series swatch is a block above the figure: it stacks the row taller than the chip and the
+ * figure's lower half falls under the chip's `overflow: hidden`. `!important`: the engine sets the
+ * swatch's `display` with a rule this one cannot out-rank by specificity alone (measured: the swatch
+ * stayed `block` under a plain selector). */
+:global(.ts-chart-tooltip[data-basalt-slot] .ts-chart-tooltip__swatch) {
   display: none !important;
 }
 

@@ -1041,7 +1041,7 @@ const slotAnchor = (
   return { x: (Math.min(...xs) + Math.max(...xs)) / 2, y: plot.y }
 }
 const SLOT_TOOLTIP_PLACEMENT = ['top'] as const
-/** The plot's focus ring (`svg.ts-chart:focus-visible`, `chart-box.module.css`) is a 2px outline at a 0.125rem offset, and the chip keeps 1px of air above it. */
+/** The plot's focus ring (`svg.ts-chart:focus-visible`, `chart-box.module.css`) is a 2px outline at a 0.125rem offset, and the chip keeps 1px of air above it. Mirrors that CSS ring at `--mantine-scale` 1; the chip's `block-size` in the same file is the reserve less this. */
 const SLOT_RING_CLEARANCE = 2 + 2 + 1
 
 /** A tooltip's chrome (title row, padding) and each series row, px: the guess the bar anchor reserves. */

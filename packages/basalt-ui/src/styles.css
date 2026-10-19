@@ -177,14 +177,6 @@
     outline-color: var(--vx-accent);
   }
 
-  /* The chart host is a focusable element Mantine does not own, so no `mantine-focus-*` class reaches
-     it and the UA ring paints instead: a white double ring in dark (argo strength strip and
-     diagnostics at dark 390). There is no media or pointer branch behind it. */
-  .basalt-chart:focus-visible {
-    outline: 2px solid var(--vx-accent);
-    outline-offset: calc(0.125rem * var(--mantine-scale));
-  }
-
   /* Hubot Sans is a condensed display face — the spec pins it at 88% font-stretch everywhere it
      lands (headings + the Mantine Title component). Read from the knob declared above rather than
      hardcoded here, so a consumer retunes it in one declaration instead of fighting these bare
