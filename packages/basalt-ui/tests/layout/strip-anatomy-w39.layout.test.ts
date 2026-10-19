@@ -64,6 +64,7 @@ const cells = (p: LayoutPage): Promise<Cell[]> =>
 const SNAP = 1
 
 function suite(vp: Viewport) {
+  const SHORT = vp.width < 480
   let p: LayoutPage
   beforeAll(async () => {
     p = await openFixture(SPEC, vp)
@@ -146,49 +147,140 @@ function suite(vp: Viewport) {
     for (const g of r.gaps) expect(Math.abs(g - r.gap)).toBeLessThanOrEqual(SNAP)
   })
 
-  // At 390 the row's plot column is too narrow for the one-line chip: it stacks and `placeStacked`
-  // hangs it below the 28px plot, over the next row. That is the Sparkline's, fixed by the lead's
-  // value-column hook (`VisualSlot.readoutHost`); until it lands the assertion cannot hold.
-  const readout = vp.width < 480 ? test.todo : test
-  readout(
-    'a row Sparkline readout is hosted, sits above its plot and off its own value',
-    async () => {
-      const r = await p.raw.evaluate(async () => {
-        const host = document.querySelector('[data-testid="w39-rows"]')
-        const row = host?.querySelector<HTMLElement>('[data-strip-row="rhr"]')
-        const spark = row?.querySelector<HTMLElement>('[data-basalt-sparkline]')
-        if (!row || !spark) throw new Error('LAYOUT: no row sparkline')
-        const before = row.getBoundingClientRect().height
-        const b = spark.getBoundingClientRect()
-        spark.dispatchEvent(
-          new PointerEvent('pointermove', {
-            bubbles: true,
-            clientX: b.left + b.width * 0.5,
-            clientY: b.top + b.height / 2,
-            pointerType: 'mouse',
-          }),
-        )
-        await new Promise((r) => setTimeout(r, 120))
-        const chip = spark.querySelector<HTMLElement>('[data-basalt-sparkline-readout]')
-        return {
-          hosted: spark.hasAttribute('data-basalt-hosted'),
-          chip: chip ? chip.getBoundingClientRect() : null,
-          plotTop: b.top,
-          plotBottom: b.bottom,
-          rowGrew: row.getBoundingClientRect().height - before,
-          value: row.querySelector('[class*="rowValue_"]')!.getBoundingClientRect(),
+  test('a row Sparkline readout is hosted, sits above its plot and off its own value', async () => {
+    const r = await p.raw.evaluate(async () => {
+      const host = document.querySelector('[data-testid="w39-rows"]')
+      const row = host?.querySelector<HTMLElement>('[data-strip-row="rhr"]')
+      const spark = row?.querySelector<HTMLElement>('[data-basalt-sparkline]')
+      if (!row || !spark) throw new Error('LAYOUT: no row sparkline')
+      const before = row.getBoundingClientRect().height
+      const b = spark.getBoundingClientRect()
+      spark.dispatchEvent(
+        new PointerEvent('pointermove', {
+          bubbles: true,
+          clientX: b.left + b.width * 0.5,
+          clientY: b.top + b.height / 2,
+          pointerType: 'mouse',
+        }),
+      )
+      await new Promise((r) => setTimeout(r, 120))
+      const chip = spark.querySelector<HTMLElement>('[data-basalt-sparkline-readout]')
+      return {
+        hosted: spark.hasAttribute('data-basalt-hosted'),
+        chip: chip ? chip.getBoundingClientRect() : null,
+        plotTop: b.top,
+        plotBottom: b.bottom,
+        rowGrew: row.getBoundingClientRect().height - before,
+        value: row.querySelector('[class*="rowValue_"]')!.getBoundingClientRect(),
+      }
+    })
+    expect(r.hosted).toBe(true)
+    expect(r.rowGrew).toBe(0)
+    expect(r.chip).not.toBeNull()
+    // The chip sits at or above the plot's top and never covers the row's own value.
+    expect(r.chip!.bottom).toBeLessThanOrEqual(r.plotTop + 0.5)
+    const [c, v] = [r.chip!, r.value]
+    const covers = c.left < v.right && c.right > v.left && c.top < v.bottom && c.bottom > v.top
+    expect(covers).toBe(false)
+  })
+
+  // The chip of every row Sparkline, hovered mid-plot and at the last point: one line inside its own
+  // row's box column-wise, off every other row and off every plotted line, inside the cell.
+  test('a row Sparkline readout never leaves its row for another row or the next plot', async () => {
+    const r = await p.raw.evaluate(async () => {
+      const rects = (e: Element) => e.getBoundingClientRect()
+      const cell = document.querySelector<HTMLElement>(
+        '[data-testid="w39-rows"] [data-strip-cell]',
+      )!
+      const rows = [...cell.querySelectorAll<HTMLElement>('[data-strip-row]')]
+      const out: {
+        row: string
+        at: number
+        chip: DOMRect
+        short: boolean
+        fits: boolean
+        others: DOMRect[]
+        plots: DOMRect[]
+        cell: DOMRect
+        own: DOMRect
+      }[] = []
+      for (const row of rows) {
+        const spark = row.querySelector<HTMLElement>('[data-basalt-sparkline]')
+        if (!spark) continue
+        for (const at of [0.5, 0.99, 0.01]) {
+          const b = rects(spark)
+          spark.dispatchEvent(
+            new PointerEvent('pointermove', {
+              bubbles: true,
+              clientX: b.left + b.width * at,
+              clientY: b.top + b.height / 2,
+              pointerType: 'mouse',
+            }),
+          )
+          await new Promise((res) => setTimeout(res, 120))
+          const chip = spark.querySelector<HTMLElement>('[data-basalt-sparkline-readout]')!
+          out.push({
+            row: row.getAttribute('data-strip-row') ?? '',
+            at,
+            chip: rects(chip),
+            short: chip.hasAttribute('data-short'),
+            fits: chip.scrollWidth <= chip.clientWidth,
+            others: rows.filter((o) => o !== row).map(rects),
+            plots: rows
+              .filter((o) => o !== row)
+              .flatMap((o) => [...o.querySelectorAll('[data-basalt-sparkline]')].map(rects)),
+            cell: rects(cell),
+            own: rects(row),
+          })
+          spark.dispatchEvent(new PointerEvent('pointerleave', { bubbles: true }))
         }
-      })
-      expect(r.hosted).toBe(true)
-      expect(r.rowGrew).toBe(0)
-      expect(r.chip).not.toBeNull()
-      // The chip sits at or above the plot's top and never covers the row's own value.
-      expect(r.chip!.bottom).toBeLessThanOrEqual(r.plotTop + 0.5)
-      const [c, v] = [r.chip!, r.value]
-      const covers = c.left < v.right && c.right > v.left && c.top < v.bottom && c.bottom > v.top
-      expect(covers).toBe(false)
-    },
-  )
+      }
+      return out
+    })
+    expect(r.length).toBeGreaterThan(0)
+    const hit = (a: DOMRect, b: DOMRect) =>
+      a.left < b.right && a.right > b.left && a.top < b.bottom && a.bottom > b.top
+    for (const m of r) {
+      const tag = `${m.row}@${m.at}`
+      // The date drops only where the row is too narrow for it: a long date at 390, never a short one.
+      expect(`${tag} ${m.fits}`).toBe(`${tag} true`)
+      expect(`${tag} ${m.short}`).toBe(`${tag} ${m.row === 'long' && SHORT}`)
+      // One line: the 1.125rem reserved line, never the ~30px stacked pair.
+      expect(`${tag} ${m.chip.height <= 22}`).toBe(`${tag} true`)
+      for (const o of m.others) expect(`${tag} ${hit(m.chip, o)}`).toBe(`${tag} false`)
+      for (const o of m.plots) expect(`${tag} ${hit(m.chip, o)}`).toBe(`${tag} false`)
+      expect(
+        `${tag} ${m.chip.left >= m.cell.left - 0.5 && m.chip.right <= m.cell.right + 0.5}`,
+      ).toBe(`${tag} true`)
+      // Above its own plot, in the row's reserved line.
+      expect(m.chip.bottom).toBeLessThanOrEqual(m.own.bottom)
+    }
+  })
+
+  test('a cell-visual Sparkline readout stays one line inside its cell', async () => {
+    const r = await p.raw.evaluate(async () => {
+      const cell = document.querySelector<HTMLElement>(
+        '[data-testid="w39-strip"] [data-strip-cell="spark"]',
+      )!
+      const spark = cell.querySelector<HTMLElement>('[data-basalt-sparkline]')!
+      const b = spark.getBoundingClientRect()
+      spark.dispatchEvent(
+        new PointerEvent('pointermove', {
+          bubbles: true,
+          clientX: b.left + b.width * 0.99,
+          clientY: b.top + b.height / 2,
+          pointerType: 'mouse',
+        }),
+      )
+      await new Promise((res) => setTimeout(res, 120))
+      const chip = spark.querySelector<HTMLElement>('[data-basalt-sparkline-readout]')!
+      return { chip: chip.getBoundingClientRect(), cell: cell.getBoundingClientRect() }
+    })
+    expect(r.chip.height).toBeLessThanOrEqual(22)
+    expect(r.chip.left).toBeGreaterThanOrEqual(r.cell.left - 0.5)
+    expect(r.chip.right).toBeLessThanOrEqual(r.cell.right + 0.5)
+    expect(r.chip.bottom).toBeLessThanOrEqual(r.cell.bottom)
+  })
 }
 
 layout('strip anatomy (Wave 39)', () => {

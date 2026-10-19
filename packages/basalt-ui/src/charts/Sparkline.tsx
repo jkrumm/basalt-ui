@@ -426,16 +426,17 @@ function lineHits(
  * A hosted line's stacked chip is two lines tall, more than the host's one reserved line, so it sits
  * in the plot, and never on the plotted line: first at the cursor (slid with it) at the plot's top,
  * then its bottom, then to the right and to the left of the cursor at either edge, the first of
- * those the line misses. A plot too short for the chip (a 22px strip cell) has no such spot: the
- * chip then hangs from the plot's bottom edge, over the host's footer or card padding: a hover
- * covers the figure's secondary text before it covers the data or the figure's delta above.
+ * those the line misses. A plot too short for the chip has no such spot: it returns false and the
+ * chip hangs from the plot's bottom edge, over the host's footer or card padding: a hover covers the
+ * figure's secondary text before it covers the data or the figure's delta above. Not for a strip
+ * row (`fitReadout` never stacks there: a chip hung below the plot lands on the next row).
  * Offsets go on `margin-left` and `top`, which React's `left` / `translate` do not own.
  */
-function placeStacked(node: HTMLElement, line: () => readonly LinePoint[], fx: number): void {
+function placeStacked(node: HTMLElement, line: () => readonly LinePoint[], fx: number): boolean {
   const layer = node.parentElement
-  if (!layer) return
+  if (!layer) return true
   const [W, H, w, h] = [layer.clientWidth, layer.clientHeight, node.offsetWidth, node.offsetHeight]
-  if (W <= 0 || H <= 0) return
+  if (W <= 0 || H <= 0) return true
   const pts = line().map(([x, y]): [number, number] => [x * W, y * H])
   const slid = fx * (W - w)
   const room = (left: number): number => Math.min(Math.max(left, 0), Math.max(W - w, 0))
@@ -444,12 +445,10 @@ function placeStacked(node: HTMLElement, line: () => readonly LinePoint[], fx: n
   const fit = lefts
     .flatMap((left) => tops.map((top) => ({ left, top, w, h })))
     .find((box) => !lineHits(pts, box))
-  if (!fit) {
-    node.style.top = `${H + CLEAR}px`
-    return
-  }
+  if (!fit) return false
   node.style.top = `${fit.top}px`
   node.style.marginLeft = `${fit.left - slid}px`
+  return true
 }
 
 /** The plotted line's y (fraction of the box) at x, interpolated along the polyline; null outside it. */
@@ -503,10 +502,26 @@ function placeInBand(node: HTMLElement, line: () => readonly LinePoint[], fx: nu
 }
 
 /**
+ * A hosted chip in a strip row measures against the row, not the narrow visual column it is drawn
+ * in: it stays on the reserved line above the plot and slides over the label column, up to the row's
+ * own value. Returns that `[left, right]` in viewport px; null outside a strip row.
+ */
+function rowSpan(node: HTMLElement): readonly [number, number] | null {
+  const row = node.closest('[data-strip-row]')
+  if (row === null) return null
+  const box = row.getBoundingClientRect()
+  const value = row.querySelector('[data-strip-row-value]')
+  const end = value === null ? box.right : value.getBoundingClientRect().left
+  return [box.left, Math.max(box.left, end - CLEAR)]
+}
+
+/**
  * A readout never loses its separator or its date to an ellipsis: when the one-line chip overflows
  * its box it first tightens (`data-tight`: less padding, the separator's air stays), then stacks
- * (`data-stacked`: the date on its own line, placed off the plotted line when `line` is given). Set
- * on the node, so a measure never re-renders.
+ * (`data-stacked`: the date on its own line, placed off the plotted line when `line` is given). A
+ * chip in a strip row never stacks (a second line, or a hang below the plot, lands on the next row):
+ * it measures against the row, tightens, then drops its date (`data-short`). Set on the node, so a
+ * measure never re-renders.
  */
 function fitReadout(
   node: HTMLElement,
@@ -517,19 +532,39 @@ function fitReadout(
   const overflows = (): boolean => node.scrollWidth > node.clientWidth
   node.removeAttribute('data-tight')
   node.removeAttribute('data-stacked')
+  node.removeAttribute('data-short')
   // `top` is React's on a bare chip; a hosted line's chip is the only one `placeStacked` writes to.
   if (line !== null) {
     node.style.removeProperty('top')
     node.style.removeProperty('margin-left')
   }
+  // `max-width` is React's on every chip; a strip row's chip is the only one widened past it.
+  const span = line !== null && !band ? rowSpan(node) : null
+  if (line !== null && !band) node.style.maxWidth = '100%'
+  if (span !== null && span[1] > span[0]) node.style.maxWidth = `${span[1] - span[0]}px`
   if (overflows()) {
     node.setAttribute('data-tight', '')
-    // A short bare box has no room for two lines: it stays one line, tight.
-    if (overflows() && !band) node.setAttribute('data-stacked', '')
+    if (overflows()) {
+      // A short bare box has no room for two lines: it stays one line, tight.
+      if (span !== null) node.setAttribute('data-short', '')
+      else if (!band) node.setAttribute('data-stacked', '')
+    }
   }
   if (line === null) return
-  if (band) placeInBand(node, line, fx)
-  else if (node.hasAttribute('data-stacked')) placeStacked(node, line, fx)
+  if (band) {
+    placeInBand(node, line, fx)
+    return
+  }
+  if (span === null) {
+    // Not in a strip row: the chip hangs from the plot's bottom edge, over the host's footer.
+    if (node.hasAttribute('data-stacked') && !placeStacked(node, line, fx))
+      node.style.top = `${(node.parentElement?.clientHeight ?? 0) + CLEAR}px`
+    return
+  }
+  // Slide the one-line chip back inside the row (`margin-left` on top of the point's own slide).
+  const { left, width } = node.getBoundingClientRect()
+  const inside = Math.min(Math.max(left, span[0]), Math.max(span[1] - width, span[0]))
+  if (inside !== left) node.style.marginLeft = `${inside - left}px`
 }
 
 export function Sparkline(props: SparklineProps): ReactElement {

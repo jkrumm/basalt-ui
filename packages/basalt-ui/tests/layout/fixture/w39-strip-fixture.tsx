@@ -101,6 +101,20 @@ export function W39StripFixture(): ReactElement {
                     />
                   ),
                 },
+                {
+                  key: 'long',
+                  label: 'Recovery',
+                  value: '71 ms',
+                  visual: (
+                    <Sparkline
+                      ariaLabel="Recovery"
+                      data={POINTS}
+                      labels={DAYS.map((d) => `Sunday ${d} 2026`)}
+                      height={28}
+                      format={(v) => `${v} ms`}
+                    />
+                  ),
+                },
                 { key: 'plain', label: 'Steps', value: '8,210' },
               ],
             },
