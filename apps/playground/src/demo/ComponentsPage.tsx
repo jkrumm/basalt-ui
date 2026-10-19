@@ -67,18 +67,25 @@ function ComponentGroup({
   title,
   shot,
   states,
+  fit = false,
   children,
 }: {
   title: string
   shot?: ShotAnchor
   /** The URL states this anchor renders (`data-shot-states`), for a group that has them. */
   states?: string
+  /** End at the content instead of the row neighbour's height (D44: a list card's error body). */
+  fit?: boolean
   children: ReactNode
 }) {
   if (shot === undefined) return <SettingsSection title={title}>{children}</SettingsSection>
   return (
-    <Box data-shot={shot} data-shot-states={states} h="100%">
-      <SettingsSection title={title} style={FILL}>
+    <Box
+      data-shot={shot}
+      data-shot-states={states}
+      {...(fit ? { style: { alignSelf: 'start' } } : { h: '100%' })}
+    >
+      <SettingsSection title={title} {...(!fit && { style: FILL })}>
         {children}
       </SettingsSection>
     </Box>
@@ -364,6 +371,7 @@ export function ComponentsSurfaces({ shotState }: { shotState?: ShotState | unde
           title="Table: metric, value, change"
           shot="table"
           states="empty loading error"
+          fit
         >
           <MetricsTable shotState={shotState} />
         </ComponentGroup>
