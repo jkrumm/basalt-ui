@@ -113,15 +113,17 @@ describe('the Sparkline readout sits inside its own box, beside the point (item 
     )
     return (await focusIn(el))?.style
   }
-  test('a point at the right edge: the chip flips to its left and hangs off the box bottom when the point is high', async () => {
+  // Wave 39: a box under `SHORT_BOX` (30px here) has no room beside the point that the line misses,
+  // so the chip slides with the point like a hosted one and is placed off the line (layout suite).
+  test('a point at the right edge, in a 30px box: the chip slides with the point', async () => {
     const style = await placed([1, 2, 3])
-    expect(style?.right).toMatch(/%/)
-    expect(style?.left).toBe('')
-    expect(style?.bottom).toBe('0px')
-    expect(style?.top).toBe('')
+    expect(style?.left).toMatch(/%/)
+    expect(style?.right).toBe('')
+    expect(style?.maxWidth).toBe('100%')
   })
-  test('a low point takes the chip to the top, so it never covers the dot', async () => {
-    const style = await placed([3, 2, 1])
+  test('a tall enough box keeps the chip beside the point: a low point takes it to the top', async () => {
+    const el = await mount(<Sparkline ariaLabel="S" height={48} data={[3, 2, 1]} />)
+    const style = (await focusIn(el))?.style
     expect(style?.top).toBe('0px')
     expect(style?.bottom).toBe('')
   })

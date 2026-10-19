@@ -71,7 +71,7 @@ describe('the Sparkline readout is off the line in a host that reserves a line (
     }
   })
   test('bare: the chip stays inside its own box, beside the point, on the half away from it', async () => {
-    const high = await mount(<Sparkline ariaLabel="S" height={30} data={[1, 2, 3]} />)
+    const high = await mount(<Sparkline ariaLabel="S" height={48} data={[1, 2, 3]} />)
     const chip = await focusIn(high)
     expect(chip?.style.bottom).toBe('0px')
     expect(chip?.style.right).toMatch(/%/)
@@ -147,9 +147,10 @@ describe('the Sparkline readout clears a sibling end figure (item 3)', () => {
       </div>,
     )
     const chip = await focusIn(el)
-    // The chip is capped to the box (`max-height: 100%`) and pinned to one of its edges: it can
-    // never hang onto the figure below.
-    expect(chip?.style.bottom === '0px' || chip?.style.top === '0px').toBe(true)
+    // The chip is capped to the box (`max-height: 100%`) and slid with the point, one line. Where it
+    // sits in the box (off the line, never out of it) needs layout: `charts-w39-readout.layout`.
+    expect(chip?.style.bottom).toBe('')
+    expect(chip?.style.maxWidth).toBe('100%')
     expect(rule('\\.readout')).toContain('max-height: 100%')
   })
 })
