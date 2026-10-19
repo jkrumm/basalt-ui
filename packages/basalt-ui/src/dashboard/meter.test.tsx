@@ -595,13 +595,14 @@ describe('zone name layout', () => {
   })
 
   test('a reading that moves the bold label re-measures with no resize', () => {
-    // 300px row, spans 0-200 / 200-240 / 240-300: B holding is 40 + 40 = 80px wide, over C's name.
+    // 300px row, spans 0-200 / 200-240 / 240-300: B holding is 45 + 40 = 85px wide, over C's name,
+    // and C (45px) has no room left in its 60px span to slide clear.
     const zones = [
       { from: 0, to: 500, label: 'A' },
       { from: 500, to: 600, label: 'B' },
       { from: 600, to: 750, label: 'C' },
     ]
-    labelWidth = 40
+    labelWidth = 45
     holdingExtra = 40
     const tree = (value: number) => (
       <MantineProvider>

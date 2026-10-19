@@ -281,14 +281,15 @@ export function placeRowLabels(
   const shown = labels.map(() => false)
   const short = labels.map(() => false)
   const shift = labels.map(() => 0)
-  const kept: { box: LabelBox; tick: boolean }[] = []
+  const kept: { box: LabelBox; tick: boolean; i: number }[] = []
   const rank = (l: RowLabel) => (l.holding ? 0 : l.span ? 3 : l.end ? 2 : 1)
   const order = labels
     .map((_, i) => i)
     .toSorted((a, b) => rank(labels[a] as RowLabel) - rank(labels[b] as RowLabel))
   // The gap step applies when either label of a pair is a tick; zone names keep to "not touching".
-  const clears = (b: LabelBox, tick: boolean) =>
-    !kept.some(({ box: k, tick: kTick }) => {
+  const clears = (b: LabelBox, tick: boolean, self = -1) =>
+    !kept.some(({ box: k, tick: kTick, i: ki }) => {
+      if (ki === self) return false
       const pad = tick || kTick ? gap : 0
       return b.left < k.right + pad - LABEL_SUBPIXEL && k.left < b.right + pad - LABEL_SUBPIXEL
     })
@@ -304,7 +305,7 @@ export function placeRowLabels(
       box = { left, right: left + width }
       if (!clears(box, false)) continue
       shown[i] = true
-      kept.push({ box, tick: false })
+      kept.push({ box, tick: false, i })
       continue
     }
     const fits = (b: LabelBox) =>
@@ -318,7 +319,118 @@ export function placeRowLabels(
     else if (!fits(box)) continue
     shown[i] = true
     short[i] = useShort
-    kept.push({ box, tick })
+    kept.push({ box, tick, i })
+  }
+  // A name that did not fit inside its own span borrows room from the row: the zone names beside it
+  // slide inside THEIR spans, away from it, and it takes the gap, staying centred in its span. Full
+  // name first, then `short`; holding names and ticks never move.
+  for (const [i, label] of labels.entries()) {
+    if (label.span === undefined || label.holding || (shown[i] && !short[i])) continue
+    const { span } = label
+    const centre = (b: LabelBox) => (b.left + b.right) / 2
+    const others = kept.filter((k) => k.i !== i)
+    const movable = (k: (typeof kept)[number]) => !k.tick && !labels[k.i]?.holding
+    const fixed = others.filter((k) => !movable(k))
+    const slidable = others.filter(movable)
+    const mid = centre(label.box)
+    // Only a name that sits in the row and clears every tick: a tick keeps its place over a name.
+    const touches = (a: LabelBox, b: LabelBox) =>
+      a.left < b.right + gap - LABEL_SUBPIXEL && b.left < a.right + gap - LABEL_SUBPIXEL
+    if (
+      label.box.left < -LABEL_SUBPIXEL ||
+      label.box.right > rowWidth + LABEL_SUBPIXEL ||
+      others.some((k) => k.tick && touches(label.box, k.box)) ||
+      fixed.some((f) => f.box.left < mid && f.box.right > mid)
+    )
+      continue
+    const rightOf = slidable
+      .filter((k) => centre(k.box) > mid)
+      .toSorted((a, b) => b.box.left - a.box.left)
+    const leftOf = slidable
+      .filter((k) => centre(k.box) < mid)
+      .toSorted((a, b) => a.box.left - b.box.left)
+    const place = (b: LabelBox, lo: number, hi: number): LabelBox => {
+      const left = Math.max(lo, Math.min(b.left, hi - (b.right - b.left)))
+      return { left, right: left + (b.right - b.left) }
+    }
+    // Slide only the sides the name needs: none, then the right, the left, both.
+    const attempt = (right: boolean, left: boolean) => {
+      const slides = new Map<number, number>()
+      let hi = rowWidth
+      for (const k of rightOf) {
+        const w = k.box.right - k.box.left
+        const stop = right
+          ? Math.min(
+              (labels[k.i]?.span?.right ?? rowWidth) + LABEL_SUBPIXEL,
+              hi,
+              ...fixed
+                .filter((f) => f.box.left >= k.box.left)
+                .map((f) => f.box.left - (f.tick ? gap : 0)),
+            )
+          : k.box.left + w
+        const at = Math.max(k.box.left, stop - w)
+        slides.set(k.i, at - k.box.left)
+        hi = at
+      }
+      let lo = 0
+      for (const k of leftOf) {
+        const w = k.box.right - k.box.left
+        const stop = left
+          ? Math.max(
+              (labels[k.i]?.span?.left ?? 0) - LABEL_SUBPIXEL,
+              lo,
+              ...fixed
+                .filter((f) => f.box.right <= k.box.right)
+                .map((f) => f.box.right + (f.tick ? gap : 0)),
+            )
+          : k.box.left
+        const at = Math.min(k.box.left, stop)
+        slides.set(k.i, at - k.box.left)
+        lo = at + w
+      }
+      // The gap this name may take: after the nearest left neighbour and fixed label, before the right.
+      const gapLo = Math.max(
+        lo,
+        ...fixed.filter((f) => f.box.right <= mid).map((f) => f.box.right + (f.tick ? gap : 0)),
+        0,
+      )
+      const gapHi = Math.min(
+        hi,
+        ...fixed.filter((f) => f.box.left >= mid).map((f) => f.box.left - (f.tick ? gap : 0)),
+        rowWidth,
+      )
+      return { slides, gapLo, gapHi }
+    }
+    const tries = [
+      attempt(false, false),
+      attempt(true, false),
+      attempt(false, true),
+      attempt(true, true),
+    ]
+    const names = shown[i] ? [label.box] : label.short ? [label.box, label.short] : [label.box]
+    for (const box of names) {
+      const w = box.right - box.left
+      const fit = tries.find(({ gapLo, gapHi }) => {
+        if (gapHi - gapLo + LABEL_SUBPIXEL < w) return false
+        const c = centre(place(box, gapLo, gapHi))
+        return c >= span.left && c <= span.right
+      })
+      if (fit === undefined) continue
+      const placed = place(box, fit.gapLo, fit.gapHi)
+      for (const k of kept) {
+        const by = fit.slides.get(k.i) ?? 0
+        if (by === 0) continue
+        k.box = { left: k.box.left + by, right: k.box.right + by }
+        shift[k.i] = (shift[k.i] ?? 0) + by
+      }
+      const own = kept.findIndex((k) => k.i === i)
+      if (own >= 0) kept.splice(own, 1)
+      kept.push({ box: placed, tick: false, i })
+      shift[i] = placed.left - box.left
+      shown[i] = true
+      short[i] = box !== label.box
+      break
+    }
   }
   // One register: once any name falls back to its `short`, every other shown name that has one
   // follows (the holding name, which never shortens, is the one exception). A shorter box only

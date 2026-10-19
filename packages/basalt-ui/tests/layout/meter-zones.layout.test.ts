@@ -36,18 +36,20 @@ type Shown = { zones: string[]; ticks: string[] }
 const ENDS = ['0', '2.0']
 
 const CASES: ReadonlyArray<readonly [string, Shown]> = [
+  // Wave 38 (w38-strip2): a name wider than its span borrows free room beside it, so "Caution" shows in
+  // full wherever the row has room.
   // Wave 38: the end figures sit ABOVE the track, so zone names own the row below and show whenever
   // they fit their own span ("Danger" no longer yields to the "2.0" end figure).
   ['dash-zl-120', { zones: ['Under', 'Optimal'], ticks: ENDS }],
   ['dash-zl-170', { zones: ['Under', 'Optimal', 'Danger'], ticks: ENDS }],
-  ['dash-zl-220', { zones: ['Under', 'Optimal', 'Danger'], ticks: ENDS }],
-  ['dash-zl-342', { zones: ['Under', 'Optimal', 'Danger'], ticks: ENDS }],
-  ['dash-zl-card', { zones: ['Under', 'Optimal', 'Danger'], ticks: ENDS }],
+  ['dash-zl-220', { zones: ['Under', 'Optimal', 'Caution', 'Danger'], ticks: ENDS }],
+  ['dash-zl-342', { zones: ['Under', 'Optimal', 'Caution', 'Danger'], ticks: ENDS }],
+  ['dash-zl-card', { zones: ['Under', 'Optimal', 'Caution', 'Danger'], ticks: ENDS }],
   // The "Rest" tick sits on "Under"'s centre: the interior tick wins, the name hides.
-  ['dash-zl-clash', { zones: ['Optimal', 'Danger'], ticks: [...ENDS, 'Rest'] }],
+  ['dash-zl-clash', { zones: ['Optimal', 'Caution', 'Danger'], ticks: [...ENDS, 'Rest'] }],
 ]
 const STRIP: Record<string, Shown> = {
-  expanded: { zones: ['Under', 'Optimal', 'Danger'], ticks: ENDS },
+  expanded: { zones: ['Under', 'Optimal', 'Caution', 'Danger'], ticks: ENDS },
   'iPhone 14': { zones: ['Under', 'Optimal', 'Danger'], ticks: ENDS },
 }
 
@@ -186,25 +188,16 @@ function rowSuite(vp: Viewport) {
     assertRow(await measure(p, 'dash-zl-strip'), expected)
   })
 
-  test('a name too wide for its span shows its short label, inside the span and clear of the rest', async () => {
+  test('a name too wide for its span borrows free room and shows in full, no short used', async () => {
     const m = await measure(p, 'dash-zl-short')
-    // Wave 38: "Caution" falls back to its short, so every sibling that has one follows; the holding
-    // zone ("Optimal") never shortens.
-    expect(m.labels.map((l) => l.name)).toEqual(['Optimal'])
-    expect(m.shorts.map((s) => [s.name, s.text])).toEqual([
-      ['Under', 'Und'],
-      ['Caution', 'Cau'],
-      ['Danger', 'Dan'],
-    ])
-    for (const name of ZONES) expect(m.described).toContain(name)
-    for (const short of m.shorts) {
-      const z = m.zones.find((zone) => zone.name === short.name)
-      if (!z) throw new Error('LAYOUT: no short label')
-      expect(short.left).toBeGreaterThanOrEqual(z.left - SUBPIXEL)
-      expect(short.right).toBeLessThanOrEqual(z.right + SUBPIXEL)
-      for (const o of [...m.labels, ...m.ticks]) {
-        expect(short.right <= o.left + SUBPIXEL || o.right <= short.left + SUBPIXEL).toBe(true)
-      }
+    expect(m.labels.map((l) => l.name)).toEqual(ZONES)
+    expect(m.shorts).toEqual([])
+    for (const l of m.labels) {
+      const z = m.zones.find((zone) => zone.name === l.name)
+      if (!z) throw new Error(`LAYOUT: no zone ${l.name}`)
+      // Centred in its own span, or shifted to make room: the centre stays inside the span.
+      expect((l.left + l.right) / 2).toBeGreaterThanOrEqual(z.left - SUBPIXEL)
+      expect((l.left + l.right) / 2).toBeLessThanOrEqual(z.right + SUBPIXEL)
     }
   })
 
