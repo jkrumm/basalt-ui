@@ -180,18 +180,21 @@ function cardOf(trigger: Element): Element | null {
 
 /**
  * The card's header block: the `WidgetHeader` root (title row, value, subtitle, sparkline) plus the
- * facts row `ChartCard` renders beside it. The bubble opens below THIS, not below the glyph, so it
- * covers the plot and never the headline figures it annotates.
+ * facts row `ChartCard` renders as its sibling. The bubble opens below THIS, not below the glyph, so
+ * it covers the plot and never the headline figures it annotates. Only siblings of the root count —
+ * a facts row deeper in the card's body belongs to the body, never to the header.
  */
+const FACTS = '[data-basalt-facts], [data-basalt-facts-skeleton]'
 function headerBlockOf(trigger: Element, card: Element): Element[] {
   const root = trigger.closest('[data-tier]')
-  if (root === null || !card.contains(root)) return []
-  return [root, ...card.querySelectorAll('[data-basalt-facts], [data-basalt-facts-skeleton]')]
+  if (root === null || root === card || !card.contains(root)) return []
+  const siblings = [...(root.parentElement?.children ?? [])]
+  return [root, ...siblings.filter((el) => el !== root && el.matches(FACTS))]
 }
 
 /**
- * Places the bubble in the VIEWPORT: below the glyph (inside a card, below its header block), flipped above when it would overflow the
- * bottom edge, shifted sideways to stay inside the left and right edges. Re-places on scroll, resize
+ * Places the bubble in the VIEWPORT: below the glyph (inside a card, below its header
+ * block), flipped above when it would overflow the bottom edge, shifted sideways to stay inside the left and right edges. Re-places on scroll, resize
  * and when the bubble's own box changes while open. The bubble is a top-layer popover and
  * `position: fixed`, so a card's `overflow: hidden` (every basalt card has one) can never clip it —
  * the W32 round 0-3 defect at 390. `clear` forgets the position on close, so a reopen starts hidden.
@@ -212,8 +215,6 @@ function useBubblePosition(
     if (bubbleEl !== null && typeof bubbleEl.showPopover === 'function') bubbleEl.showPopover()
     // The card is resolved once per open, not on every scroll re-place.
     const card = triggerRef.current === null ? null : cardOf(triggerRef.current)
-    const block =
-      triggerRef.current === null || card === null ? [] : headerBlockOf(triggerRef.current, card)
     const place = () => {
       const trigger = triggerRef.current
       const bubble = bubbleRef.current
@@ -223,10 +224,11 @@ function useBubblePosition(
       // The documentElement's client box is the viewport minus classic scrollbars.
       const viewW = document.documentElement.clientWidth
       const viewH = document.documentElement.clientHeight
-      const blockBottom = Math.max(
-        t.bottom,
-        ...block.map((el) => el.getBoundingClientRect().bottom),
-      )
+      // Re-queried per place: a skeleton -> facts swap replaces the facts node while open.
+      const block = card === null ? [] : headerBlockOf(trigger, card)
+      const blockRects = block.map((el) => el.getBoundingClientRect())
+      const blockTop = Math.min(t.top, ...blockRects.map((r) => r.top))
+      const blockBottom = Math.max(t.bottom, ...blockRects.map((r) => r.bottom))
       const below = blockBottom + BUBBLE_GAP
       const above = t.top - BUBBLE_GAP - b.height
       const overflows = below + b.height > viewH - BUBBLE_EDGE
@@ -242,8 +244,9 @@ function useBubblePosition(
         if (above >= floor) top = above
         else if (card !== null) {
           const slid = Math.max(floor, viewH - BUBBLE_EDGE - b.height)
-          // Never cover the glyph itself: when the slid bubble would, take the viewport flip instead.
-          const covers = slid < t.bottom && slid + b.height > t.top
+          // Never cover the header block (glyph included): when the slid bubble would, take the
+          // viewport flip instead.
+          const covers = slid < blockBottom && slid + b.height > blockTop
           top = covers ? viewportFlip : slid
         }
       }
