@@ -1,5 +1,5 @@
 /**
- * Wave 38: a chart with two or more named entries or zones shows a compact key at 390 that keeps every series named (argo's
+ * Wave 38: a chart with two or more named entries or zones shows a compact key at 390 that keeps every entry named (argo's
  * ACWR, recovery and stress shapes), an explicit `legend: false` still shows none, and a strip cell's Sparkline
  * readout never loses its date to an ellipsis at ~150px.
  */
@@ -29,19 +29,16 @@ const legendOf = (id: string): string => `[data-testid="${id}"] [data-basalt-cha
 layout('Wave 38 legends and readouts at 390', () => {
   afterAll(closeLayoutSuite, CLOSE_BUDGET_MS)
 
-  // The compact key keeps every SERIES named; only zone / reference entries fold into `+N`.
+  // Wave 39: the compact key names every entry at every width; nothing folds.
   const ONE_ROW = 24
   type Shown = {
     series: string[]
     references: number
-    more: string | null
     wrapped: boolean
     entryWraps: string[]
     overflow: number
     seriesFirst: boolean
     lines: number
-    foldedNames: string[]
-    moreName: string | null
   }
   const inspect = (p: Awaited<ReturnType<typeof openFixture>>, id: string): Promise<Shown> =>
     p.raw.evaluate((sel) => {
@@ -49,7 +46,6 @@ layout('Wave 38 legends and readouts at 390', () => {
       if (!row) throw new Error('LAYOUT: no legend')
       const items = [...row.querySelectorAll<HTMLElement>('[data-legend-key]')]
       const visible = items.filter((i) => getComputedStyle(i).display !== 'none')
-      const more = row.querySelector<HTMLElement>('[data-legend-more]')
       const tops = new Set(visible.map((i) => Math.round(i.getBoundingClientRect().top)))
       const roles = items.map((i) => i.dataset['legendRole'])
       return {
@@ -57,13 +53,8 @@ layout('Wave 38 legends and readouts at 390', () => {
           .filter((i) => i.dataset['legendRole'] !== 'reference')
           .map((i) => i.textContent ?? ''),
         references: visible.filter((i) => i.dataset['legendRole'] === 'reference').length,
-        more: more !== null && !more.hidden ? `${more.textContent}` : null,
         wrapped: tops.size > 1,
         lines: tops.size,
-        foldedNames: items
-          .filter((i) => i.hasAttribute('data-legend-folded'))
-          .map((i) => i.textContent ?? ''),
-        moreName: more !== null && !more.hidden ? `${more.textContent}` : null,
         // An entry taller than one text line wrapped inside itself.
         entryWraps: visible
           .filter((i) => i.getBoundingClientRect().height > 22)
@@ -82,7 +73,7 @@ layout('Wave 38 legends and readouts at 390', () => {
     ['w38-two-zones', ['ACWR', 'Overnight'], 4],
   ]
   test.each(SHAPES)(
-    '%s at 340px: every series named, references fold first, no entry wraps',
+    '%s at 340px: every entry named, no entry wraps mid-label',
     async (id, names, refs) => {
       const p = await openFixture(spec, PHONE)
       await p.settle()
@@ -90,12 +81,11 @@ layout('Wave 38 legends and readouts at 390', () => {
       const legend = await p.box('legend', legendOf(id))
       const shown = await inspect(p, id)
       expect(shown.series).toEqual(names)
+      expect(shown.references).toBe(refs)
       expect(shown.entryWraps).toEqual([])
       expect(shown.overflow).toBeLessThanOrEqual(1)
       expect(shown.seriesFirst).toBe(true)
       expect(legend.box.right).toBeLessThanOrEqual(card.box.right + 0.5)
-      // Series never fold: the row wraps to a second line instead; with one-row series a +N is allowed.
-      if (shown.references < refs) expect(shown.more).toMatch(/^\+\d+: \w/)
       if (!shown.wrapped) expect(legend.box.height).toBeLessThanOrEqual(ONE_ROW)
     },
   )
@@ -108,40 +98,51 @@ layout('Wave 38 legends and readouts at 390', () => {
       const shown = await inspect(p, `${id}-wide`)
       expect(shown.series).toEqual(names)
       expect(shown.references).toBe(refs)
-      expect(shown.more).toBeNull()
       expect(shown.entryWraps).toEqual([])
       expect(shown.seriesFirst).toBe(true)
     },
   )
 
-  test('seven series + two references at 340px: a reference folds only for a line it frees', async () => {
+  test('seven series + two references at 340px: the references wrap onto lines, none fold', async () => {
     const p = await openFixture(spec, PHONE)
     await p.settle()
     const plain = await inspect(p, 'w38-seven')
     const withRefs = await inspect(p, 'w38-seven-refs')
     expect(withRefs.series).toEqual(plain.series)
-    // Never an extra line for a reference the series row had room for, never more than the series alone.
-    expect(withRefs.lines === plain.lines || withRefs.foldedNames.length === 0).toBe(true)
-    expect(withRefs.references + withRefs.foldedNames.length).toBe(2)
+    expect(withRefs.references).toBe(2)
+    expect(withRefs.entryWraps).toEqual([])
+    expect(withRefs.overflow).toBeLessThanOrEqual(1)
   })
 
-  test('folding just the last reference frees the line, the others stay shown', async () => {
+  // argo's INOL / astro shape: 3 series + 3 legend-only zone keys + 2 reference lines.
+  test('3 series + 3 zone keys + 2 references at 390 name all 8, none wrapping mid-label', async () => {
     const p = await openFixture(spec, PHONE)
     await p.settle()
-    const shown = await inspect(p, 'w38-one-fold')
-    expect(shown.foldedNames).toEqual(['Very far above the target'])
-    expect(shown.references).toBe(2)
-    expect(shown.lines).toBe(1)
-    expect(shown.moreName).toMatch(/^\+1: Very far/)
-  })
-
-  test('the +N chip names every folded entry', async () => {
-    const p = await openFixture(spec, PHONE)
-    await p.settle()
-    const shown = await inspect(p, 'w38-two-zones')
-    expect(shown.foldedNames.length).toBeGreaterThan(0)
-    expect(shown.moreName).toMatch(new RegExp(`^\\+${shown.foldedNames.length}: `))
-    for (const name of shown.foldedNames) expect(shown.moreName).toContain(name)
+    const names = await p.raw.evaluate((sel) => {
+      const row = document.querySelector(sel)
+      if (!row) throw new Error('LAYOUT: no legend')
+      return [...row.querySelectorAll<HTMLElement>('[data-legend-key]')].map((i) => ({
+        text: i.textContent ?? '',
+        visible: getComputedStyle(i).display !== 'none' && i.getBoundingClientRect().width > 0,
+        wraps: i.getBoundingClientRect().height > 22,
+      }))
+    }, legendOf('w39-argo'))
+    expect(names.map((n) => n.text).toSorted()).toEqual(
+      [
+        'ACWR',
+        'Overnight',
+        'Sun altitude',
+        'Optimal',
+        'Low',
+        'Very far above the target',
+        'Target',
+        'Floor (< 0.9)',
+      ].toSorted(),
+    )
+    expect(names).toHaveLength(8)
+    expect(names.every((n) => n.visible && !n.wraps)).toBe(true)
+    const row = await inspect(p, 'w39-argo')
+    expect(row.overflow).toBeLessThanOrEqual(1)
   })
 
   test('one entry wider than the card ellipsizes inside it and keeps its name', async () => {

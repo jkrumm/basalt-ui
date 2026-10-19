@@ -1055,6 +1055,17 @@ No export is removed. `ChartCard` learns a pending plot's shape and documents th
 
 - **`ChartCard ghost`** (new optional prop): `'bars'` (default), `'line'` for a line or area chart, or a number for the bar count when the loaded data length is known. Opt-out: omit it for the previous eight-bar ghost.
 
+### Compact legends name every key (Wave 39)
+
+No export changes. Below 480px the legend no longer folds zone / reference entries into `+N`: every entry is named at every width, the row wraps between entries (series, then overlays, then references) and an entry never wraps mid-label. `foldLegend`, `--bc-fold` and the `+N` element are deleted (a deliberate reversal of the Wave 38 reference fold).
+
+| Before                                                                                           | Now                                              |
+| ------------------------------------------------------------------------------------------------ | ------------------------------------------------ |
+| At 390, `role: 'reference'` entries (zone keys, reference lines) fold into `+2: …` while wrapped | Every entry shows; the row takes the extra lines |
+| `[data-legend-more]` / `[data-legend-folded]` exist in the legend markup                         | Gone: drop any selector or test that reads them  |
+
+Opt-out: `legend: false` (still absolute), or remove the legend-only entries (a zone's `legend`, a refLine's `legend`) you do not want named.
+
 ## 2.26.0 — Wave 38, argo's friction III
 
 ### Chart card loading (Wave 38)

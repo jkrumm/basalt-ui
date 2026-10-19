@@ -64,13 +64,31 @@ describe('an explicit legend: false stays absolute', () => {
   })
 })
 
-describe('the compact legend folds zones, never series', () => {
-  test('every entry is in the markup, series first, and reference entries are marked for the fold', () => {
+describe('the compact legend names every entry', () => {
+  test('every entry is in the markup, series first, and nothing can fold into +N', () => {
     const el = legendOf(<Lines ariaLabel="L" data={data} x={x} series={[A]} zones={zones} />)
     const roles = [...(el?.querySelectorAll('[data-legend-key]') ?? [])].map(
       (e) => (e as HTMLElement).dataset['legendRole'],
     )
     expect(roles).toEqual(['series', 'reference', 'reference'])
-    expect(el?.querySelector('[data-legend-more][hidden]')).not.toBeNull()
+    expect(el?.querySelector('[data-legend-more]')).toBeNull()
+  })
+  test('3 series + 3 zone keys + 2 references render all 8 names', () => {
+    const series = ['a', 'b', 'c'].map((k, i) => ({ ...A, key: k, label: `S${i}` }))
+    const zs = [0, 1, 2].map((i) => ({
+      from: i,
+      to: i + 1,
+      fill: VX.good,
+      legend: { label: `Zone ${i}` },
+    }))
+    const refLines = [1, 2].map((v) => ({
+      value: v,
+      color: VX.faint,
+      legend: { label: `Ref ${v}` },
+    }))
+    const el = legendOf(
+      <Lines ariaLabel="L" data={data} x={x} series={series} zones={zs} refLines={refLines} />,
+    )
+    expect(keys(el)).toEqual(['S0', 'S1', 'S2', 'Ref 1', 'Ref 2', 'Zone 0', 'Zone 1', 'Zone 2'])
   })
 })
