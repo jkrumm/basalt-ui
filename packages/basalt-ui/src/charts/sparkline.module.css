@@ -31,7 +31,9 @@
   text-overflow: ellipsis;
   white-space: nowrap;
   pointer-events: none;
-  background: var(--vx-tooltip-bg);
+  /* Opaque in both schemes: `--vx-tooltip-bg` is translucent in dark, and a footer under the chip
+   * would ghost through it. */
+  background: var(--vx-surface-elevated);
   border: 1px solid var(--vx-tooltip-border);
   border-radius: var(--vx-radius-ctrl);
 }
@@ -54,19 +56,17 @@
   white-space: pre;
 }
 
-/* A readout that overflows its box first drops the air round its separator and its padding. */
+/* A readout that overflows its box first shrinks its padding. The separator and the air round it
+ * never drop. */
 .readout[data-tight] {
   padding-inline: 2px;
 }
 
-.readout[data-tight] .sep {
-  letter-spacing: -0.15em;
-  word-spacing: -0.25em;
-}
-
 /* A readout that still overflows stacks (set in `Sparkline.tsx`): the date on its own line, wrapped
- * not clipped. It sits INSIDE the plot's top band (the lift-0 placement), hosted or bare: a hosted
- * chip grown past the host's one reserved line would cover the figure's delta or qualifier above. */
+ * not clipped. It sits INSIDE the plot (the lift-0 placement), hosted or bare: a hosted chip grown
+ * past the host's one reserved line would cover the figure's delta or qualifier above. A hosted
+ * line's chip is then placed by `Sparkline.tsx` where the plotted line is not (`top`/`margin-left`
+ * inline); `top: 0` is the fallback. */
 .readout[data-stacked] {
   block-size: auto;
   max-height: none;

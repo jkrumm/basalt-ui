@@ -389,18 +389,86 @@ function meanOf(rows: readonly Point[]): number {
   return sum / n
 }
 
+/** A plotted point as fractions of the plot rect: `[fx, fy]`, fy down. */
+type LinePoint = readonly [number, number]
+
+/** Air between a stacked chip and the plotted line (stroke and dot radius included), px. */
+const CLEAR = 4
+
+/** Whether the polyline passes through the box `[left, left + w] x [top, top + h]`, grown by CLEAR. */
+function lineHits(
+  pts: readonly (readonly [number, number])[],
+  box: { left: number; top: number; w: number; h: number },
+): boolean {
+  const x0 = box.left - CLEAR
+  const x1 = box.left + box.w + CLEAR
+  const y0 = box.top - CLEAR
+  const y1 = box.top + box.h + CLEAR
+  for (let i = 0; i < pts.length; i += 1) {
+    const [ax, ay] = pts[i] as readonly [number, number]
+    const next = pts[i + 1]
+    if (next === undefined) return ax >= x0 && ax <= x1 && ay >= y0 && ay <= y1
+    const [bx, by] = next
+    if (Math.max(ax, bx) < x0 || Math.min(ax, bx) > x1) continue
+    // y at the segment's ends clipped to the box's x-range: y is linear, so its range is the ends'.
+    const yAt = (x: number): number => (bx === ax ? ay : ay + ((by - ay) * (x - ax)) / (bx - ax))
+    const ya = yAt(Math.max(Math.min(ax, bx), x0))
+    const yb = yAt(Math.min(Math.max(ax, bx), x1))
+    if (Math.max(ya, yb) >= y0 && Math.min(ya, yb) <= y1) return true
+  }
+  return false
+}
+
 /**
- * A readout never loses its date to an ellipsis: when the one-line chip overflows its box it first
- * tightens (`data-tight`: no air round the dot), then stacks (`data-stacked`: the date on its own
- * line). Set on the node, so a measure never re-renders.
+ * A hosted line's stacked chip is two lines tall, more than the host's one reserved line, so it sits
+ * in the plot, and never on the plotted line: first at the cursor (slid with it) at the plot's top,
+ * then its bottom, then to the right and to the left of the cursor at either edge, the first of
+ * those the line misses. A plot too short for the chip (a 22px strip cell) has no such spot: the
+ * chip then hangs from the plot's bottom edge, over the host's footer or card padding: a hover
+ * covers the figure's secondary text before it covers the data or the figure's delta above. Offsets go on `margin-left` and `top`, which React's `left` / `translate` do
+ * not own.
  */
-function fitReadout(node: HTMLElement): void {
+function placeStacked(node: HTMLElement, line: readonly LinePoint[], fx: number): void {
+  const layer = node.parentElement
+  if (!layer) return
+  const [W, H, w, h] = [layer.clientWidth, layer.clientHeight, node.offsetWidth, node.offsetHeight]
+  if (W <= 0 || H <= 0) return
+  const pts = line.map(([x, y]): [number, number] => [x * W, y * H])
+  const slid = fx * (W - w)
+  const room = (left: number): number => Math.min(Math.max(left, 0), Math.max(W - w, 0))
+  const lefts = [slid, room(fx * W + CLEAR * 2), room(fx * W - CLEAR * 2 - w)]
+  const tops = [0, Math.max(H - h, 0)]
+  const fit = lefts
+    .flatMap((left) => tops.map((top) => ({ left, top, w, h })))
+    .find((box) => !lineHits(pts, box))
+  if (!fit) {
+    node.style.top = `${H + CLEAR}px`
+    return
+  }
+  node.style.top = `${fit.top}px`
+  node.style.marginLeft = `${fit.left - slid}px`
+}
+
+/**
+ * A readout never loses its separator or its date to an ellipsis: when the one-line chip overflows
+ * its box it first tightens (`data-tight`: less padding, the separator's air stays), then stacks
+ * (`data-stacked`: the date on its own line, placed off the plotted line when `line` is given). Set
+ * on the node, so a measure never re-renders.
+ */
+function fitReadout(node: HTMLElement, line: readonly LinePoint[] | null, fx: number): void {
   const overflows = (): boolean => node.scrollWidth > node.clientWidth
   node.removeAttribute('data-tight')
   node.removeAttribute('data-stacked')
+  // `top` is React's on a bare chip; a hosted line's chip is the only one `placeStacked` writes to.
+  if (line !== null) {
+    node.style.removeProperty('top')
+    node.style.removeProperty('margin-left')
+  }
   if (!overflows()) return
   node.setAttribute('data-tight', '')
-  if (overflows()) node.setAttribute('data-stacked', '')
+  if (!overflows()) return
+  node.setAttribute('data-stacked', '')
+  if (line !== null) placeStacked(node, line, fx)
 }
 
 export function Sparkline(props: SparklineProps): ReactElement {
@@ -514,16 +582,33 @@ export function Sparkline(props: SparklineProps): ReactElement {
   const beside = at === null ? null : at.fx > 0.5 ? 'left' : 'right'
   // The chip's fit depends on its text and (bare) its side, not on the pointer's every tick.
   const shown = at !== null
+  const fx = at?.fx ?? 0
+  const fitRef = useRef<() => void>(() => {})
   useLayoutEffect(() => {
-    if (readoutRef.current !== null) fitReadout(readoutRef.current)
-  }, [active, at?.label, at?.value, beside])
+    // A hosted line's stacked chip clears the plotted line; a bar or a bare chip keeps its place.
+    const line: LinePoint[] | null =
+      hosted && mark === 'line' && model !== null && shown
+        ? model.rows.flatMap((r, i): LinePoint[] =>
+            r.v === null
+              ? []
+              : [
+                  [
+                    (i - model.frame.x[0]) / (model.frame.x[1] - model.frame.x[0]),
+                    (model.frame.y[1] - r.v) / (model.frame.y[1] - model.frame.y[0]),
+                  ],
+                ],
+          )
+        : null
+    fitRef.current = () => {
+      if (readoutRef.current !== null) fitReadout(readoutRef.current, line, fx)
+    }
+    fitRef.current()
+  }, [active, at?.label, at?.value, beside, hosted, mark, model, shown, fx])
   // ...and on the box, which a container resize changes without a hover.
   useEffect(() => {
     const layer = readoutRef.current?.parentElement
     if (!shown || !layer || typeof ResizeObserver === 'undefined') return
-    const observer = new ResizeObserver(() => {
-      if (readoutRef.current !== null) fitReadout(readoutRef.current)
-    })
+    const observer = new ResizeObserver(() => fitRef.current())
     observer.observe(layer)
     return () => observer.disconnect()
   }, [shown])

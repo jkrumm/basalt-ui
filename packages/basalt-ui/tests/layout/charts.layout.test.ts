@@ -344,7 +344,8 @@ layout('Charts — 2.0 layout', () => {
       if (!el) return null
       // What the tokens resolve to, measured through a probe that paints them directly.
       const probe = document.createElement('div')
-      probe.style.background = 'var(--vx-tooltip-bg)'
+      // Opaque since Wave 38: the tooltip paints the elevated surface, not the translucent fill.
+      probe.style.background = 'var(--vx-surface-elevated)'
       probe.style.color = 'var(--vx-tooltip-text)'
       document.body.append(probe)
       const want = getComputedStyle(probe)
@@ -998,15 +999,15 @@ layout('Charts — 2.0 layout', () => {
       for (const r of rows) {
         expect(r.nameHeight).toBeLessThanOrEqual(r.line + 1) // one line, never one glyph per line
         expect(r.nameWidth).toBeGreaterThanOrEqual(96) // the 6rem floor
-        expect(r.clipped).toBe(false) // 12–20 characters fit before the ellipsis
-        expect(r.whiteSpace).toBe('nowrap') // the name never wraps
-        expect(r.overflow).toBe('ellipsis') // a longer one is cut, not wrapped
+        expect(r.clipped).toBe(false) // 12–20 characters fit on one line
+        expect(r.whiteSpace).toBe('normal') // a longer one wraps at word breaks (Wave 38)
+        expect(r.overflow).not.toBe('ellipsis') // and is never cut
       }
       const rights = rows.map((r) => r.valueRight)
       expect(Math.max(...rights) - Math.min(...rights)).toBeLessThanOrEqual(0.5)
     })
 
-    test('a name past the max ends in an ellipsis on one line', async () => {
+    test('a name past the max wraps at word breaks and is never cut', async () => {
       const long = 'A series name far longer than any tooltip column should ever be asked to hold'
       const p = await openFixture(
         chartFixture({ kind: 'lines', legendEntries: 2, names: [long, 'Short'] }),
@@ -1021,14 +1022,14 @@ layout('Charts — 2.0 layout', () => {
         const r = name?.getBoundingClientRect()
         return {
           height: r?.height ?? 0,
-          width: r?.width ?? 0,
           clipped: name ? name.scrollWidth > name.clientWidth : false,
           line: name ? Number.parseFloat(getComputedStyle(name).lineHeight) : 0,
+          text: name?.textContent ?? '',
         }
       }, TOOLTIP)
-      expect(first.clipped).toBe(true)
-      expect(first.height).toBeLessThanOrEqual(first.line + 1)
-      expect(first.width).toBeLessThanOrEqual(14 * 16 + 1)
+      expect(first.clipped).toBe(false)
+      expect(first.text).toBe(long)
+      expect(first.height).toBeGreaterThan(first.line + 1) // wrapped, whole
     })
   })
 

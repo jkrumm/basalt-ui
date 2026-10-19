@@ -1081,6 +1081,22 @@ No export is removed or added. A loading state is the loaded shape; two other de
   names); `readingAt="start"` keeps the pre-2.24 anchor at the boundary.
 - Opt out of the shared hero size: set `--basalt-stat-group-figure` (a length, e.g. `var(--vx-text-kpi)`) on the
   `StatGroup` or a wrapper; it replaces the group's two-column size.
+### Hosted readouts and tooltips (Wave 38)
+
+No export is removed or added. Three chart readouts keep what they print and stay where they belong.
+
+| Surface                                    | Before                                                                                  | Now                                                                                                                 |
+| ------------------------------------------ | --------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------- |
+| `Sparkline` readout, tight                 | the " · " separator and its spaces collapsed (`62 bpm· 12 Oct`)                         | the separator and its air never drop; tightening only shrinks the chip's padding                                    |
+| `Sparkline` readout, stacked (hosted line) | value over date at the plot's top, over the plotted line                                | value over date placed where the line is not: the plot's top or bottom, beside the cursor, else hung below the plot |
+| Slotted `Bars` tooltip, `Sparkline` chip   | `--vx-tooltip-bg` (96% in dark): the card's footer ghosted through                      | the opaque `--vx-surface-elevated`, both schemes                                                                    |
+| Chart tooltip at the first or last point   | placed against the viewport: it opened past the card's edge, over the neighbouring card | slid back inside its card (`ChartCard`, `Card`, `Paper`, strip cell) when the card is wide enough for it            |
+| Tooltip rows                               | the label column was one line with an ellipsis, so a figure in a label ended in `…`     | the label wraps at word breaks; the figure column never wraps or truncates                                          |
+
+Opt out: a consumer that wants the translucent tooltip sets `--ts-chart-tooltip-background` on the
+tooltip's own class with `!important`; `--basalt-spark-readout-lift: 0` still puts a one-line chip
+back in the plot. The card clamp has no switch: render the chart outside a card and the viewport
+placement stands.
 
 ## 2.25.0
 
