@@ -50,7 +50,7 @@ import type { ScenarioProps } from './shot-state'
 const NBSP = '\u00A0'
 
 const WARDEN_EMPTY = 'No agent work in the queue. Dispatch an item to start.'
-const retry = (what: string): string => retryCopy(what, 'warden')
+const retry = (): string => retryCopy('warden')
 
 const SPARK_HEIGHT = 28
 
@@ -121,7 +121,7 @@ function QueueStrip({ shotState }: ScenarioProps) {
   const cellState = (
     what: string,
     reason: string,
-    error: string = retry(what),
+    error: string = retry(),
   ): Pick<StatStripCell, 'state'> =>
     shotState === 'error'
       ? { state: { kind: 'error', error: new Error(error), onRetry: noop } }
@@ -204,11 +204,7 @@ function QueueStrip({ shotState }: ScenarioProps) {
       info: 'Agent runs that ended in an error in the last 24 hours.',
       value: fmtInt(FAILURES_24H.count),
       unit: 'runs',
-      ...cellState(
-        'Failures',
-        `No agent runs in the last 24${NBSP}h to count.`,
-        'The failure count did not load. Retry, or check the warden connection.',
-      ),
+      ...cellState('Failures', `No agent runs in the last 24${NBSP}h to count.`),
       // Hourly bars answer "is it still happening?": three runs, but a burst or a trickle. The
       // footer is the clock under them: the window's first and last hour, and the hour of the latest run.
       ...(!hidden && { footer: failuresClock }),
@@ -284,7 +280,12 @@ function QueueStrip({ shotState }: ScenarioProps) {
     : [
         footerEntry(
           'day',
-          budget('Daily dispatch budget', BUDGETS.day.spent, BUDGETS.day.cap, 'Today'),
+          budget(
+            'Daily dispatch budget',
+            BUDGETS.day.spent,
+            BUDGETS.day.cap,
+            `${fmtEur(BUDGETS.day.spent)} today`,
+          ),
         ),
         footerEntry(
           'week',
@@ -327,7 +328,7 @@ function QueueRow({ shotState }: ScenarioProps) {
           {...(shotState === undefined && {
             facts: { value: fmtInt(STUCK.length), unit: 'items' },
           })}
-          {...cardStateProps(shotState, retry('Waiting and blocked items'), 'content')}
+          {...cardStateProps(shotState, retry(), 'content')}
         >
           <Box data-shot-hover>
             <BarList
@@ -356,7 +357,7 @@ function QueueRow({ shotState }: ScenarioProps) {
           })}
           state={chartStateFor(shotState, {
             empty: `No items opened or closed ${FLOW_RANGE_LABEL}. Dispatch an item to start.`,
-            error: retry('Item flow'),
+            error: retry(),
           })}
           {...(shotState === 'error' && { onRetry: noop })}
         >

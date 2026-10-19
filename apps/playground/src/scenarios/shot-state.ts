@@ -20,9 +20,9 @@ export function validateShotSearch(raw: Record<string, unknown>): { 'shot-state'
   return isShotState(value) ? { 'shot-state': value } : {}
 }
 
-/** The error copy of a failed load: what failed, and the connection to check. */
-export const retryCopy = (what: string, source: string): string =>
-  `${what} failed to load. Retry, or check the ${source} connection.`
+/** The error cause of a failed load: the source that did not answer, once, then the next step. */
+export const retryCopy = (source: string): string =>
+  `The ${source} did not answer. Retry, or reconnect it in Settings.`
 
 /** The inert handler of a fixture's Retry. */
 export const noop = (): void => {}

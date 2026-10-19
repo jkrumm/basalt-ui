@@ -141,7 +141,7 @@ const USAGE_EMPTY = `No spend recorded ${WINDOW_LABEL}. Check that the usage exp
 /** One card height for a row pair: the grid cell sets it, the card fills it. */
 const FILL: CSSProperties = { height: '100%' }
 
-const retry = (what: string): string => retryCopy(what, 'usage export')
+const retry = (): string => retryCopy('usage export')
 
 function SpendStats({ shotState }: ScenarioProps) {
   const isAtRest = shotState === undefined
@@ -154,7 +154,7 @@ function SpendStats({ shotState }: ScenarioProps) {
   // Empty and error say why in the cell itself, with the Retry on a failure.
   const cellState = (what: string, reason: string): Pick<StatStripCell, 'state'> =>
     shotState === 'error'
-      ? { state: { kind: 'error', error: new Error(retry(what)), onRetry: noop } }
+      ? { state: { kind: 'error', error: new Error(retry()), onRetry: noop } }
       : shotState === 'empty'
         ? { state: { kind: 'empty', reason } }
         : {}
@@ -278,8 +278,8 @@ function SpendCharts({ shotState }: ScenarioProps) {
           })}
           info={`Cumulative spend since the 1st, summed day by day, against the ${fmtEur(BUDGET_EUR)} budget. The dashed line holds the ${fmtEur(MTD_EUR / DAYS_ELAPSED)} daily average flat to the last day.`}
           state={chartStateFor(shotState, {
-            empty: `No spend recorded ${WINDOW_LABEL}. Connect a project to the usage export.`,
-            error: retry('Cumulative spend'),
+            empty: USAGE_EMPTY,
+            error: retry(),
           })}
           {...(shotState === 'error' && { onRetry: noop })}
         >
@@ -309,7 +309,7 @@ function SpendCharts({ shotState }: ScenarioProps) {
           state={chartStateFor(shotState, {
             empty:
               'No days to bin in the last 90 days. The histogram needs at least one day of spend.',
-            error: retry('The distribution'),
+            error: retry(),
           })}
           {...(shotState === 'error' && { onRetry: noop })}
         >
@@ -347,7 +347,7 @@ function SpendBreakdown({ shotState }: ScenarioProps) {
             },
           })}
           info={`Each project's share of the ${fmtEur(MTD_EUR)} month-to-date spend across all models, in whole percent that sum to 100.`}
-          {...cardStateProps(shotState, retry('Spend by project'), 'content')}
+          {...cardStateProps(shotState, retry(), 'content')}
         >
           <Box data-shot-hover>
             <BarList
@@ -356,7 +356,7 @@ function SpendBreakdown({ shotState }: ScenarioProps) {
               format={fmtEur}
               loading={shotState === 'loading'}
               loadingRows={PROJECT_ITEMS.length}
-              emptyText={`No project spent anything ${WINDOW_LABEL}. Connect one to the usage export.`}
+              emptyText={USAGE_EMPTY}
             />
           </Box>
         </ChartCard>
@@ -371,7 +371,7 @@ function SpendBreakdown({ shotState }: ScenarioProps) {
             },
           })}
           info={`The € each project added against ${PRIOR_WINDOW_LABEL}, with the relative change.`}
-          {...cardStateProps(shotState, retry('Spend change by project'), 'content')}
+          {...cardStateProps(shotState, retry(), 'content')}
         >
           <Box data-shot-hover>
             <BarList

@@ -215,19 +215,20 @@ describe('5. S4', () => {
     )
   })
 
-  it('the top-drivers error uses the card name', () => {
+  it('the top-drivers error names the cause, not the failure again', () => {
     const card = text(anchor(spend('error'), 'top-drivers'))
-    expect(card).toContain('Spend change by project failed to load')
+    expect(card).toContain('The usage export did not answer')
+    expect(card).not.toContain('failed to load')
     expect(card).not.toContain('Top drivers')
   })
 })
 
 describe('6. components', () => {
-  // W38 r1: the card is capped to fit the table (the card, not the table, so no half-empty card).
-  it('caps the table card at its content width', () => {
+  // W38 r2: a capped card sat alone in its row with ~495 px empty beside it; it fills the row.
+  it('lets the table card fill its row', () => {
     const src = source('../demo/ComponentsPage.tsx')
     expect(src).not.toMatch(/<Table[^>]*maw=/)
-    expect(src).toMatch(/<Box maw=\{TABLE_MAX_WIDTH\}>\s*<ComponentGroup/)
+    expect(src).not.toContain('TABLE_MAX_WIDTH')
     expect(src).toContain('Prior 30 d')
   })
 

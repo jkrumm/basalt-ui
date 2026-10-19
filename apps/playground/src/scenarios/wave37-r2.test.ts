@@ -97,10 +97,10 @@ describe('S3', () => {
     expect(fleet).toContain('Awaiting')
   })
 
-  it('the failures error is a sentence, not "Failures failed to load"', () => {
+  it('the failures error names the warden once, not "Failures failed to load"', () => {
     const cell = text(anchor(agents('error'), 'strip-failures'))
     expect(cell).not.toContain('Failures failed to load')
-    expect(cell).toContain('The failure count did not load')
+    expect(cell).toContain('The warden did not answer')
   })
 
   it('the week footer states what was spent against the cap', () => {

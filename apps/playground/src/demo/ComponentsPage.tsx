@@ -43,6 +43,7 @@ import {
   Textarea,
 } from '@mantine/core'
 import { CONTAINER_KEYS } from 'basalt-ui/tokens'
+import { ErrorNote } from './fixtures/error-note'
 import { DeltaBadge, EmptyState, PageBar, SettingsSection } from 'basalt-ui'
 import { ViewTabs } from 'basalt-ui/controls'
 import { noop } from '../scenarios/shot-state'
@@ -105,9 +106,6 @@ const TABLE_ROWS = [
   { name: 'Churn rate', value: '2.3%', prior: '2.7%', delta: -0.4, polarity: 'up-bad', pp: true },
 ] as const
 
-/** The card is as wide as the table's columns need; a wider one leaves the label far from its value. */
-const TABLE_MAX_WIDTH = 640
-
 /** Numeric columns align to the end so the digits line up. */
 const NUMERIC = { ta: 'right' } as const
 
@@ -161,15 +159,10 @@ function MetricsTable({ shotState }: { shotState?: ShotState | undefined }) {
   }
   if (shotState === 'error') {
     return (
-      <EmptyState
+      <ErrorNote
         title="Could not load metrics"
-        description="Retry, or check the analytics connection."
-        action={
-          <Button size="xs" variant="default" onClick={noop}>
-            Retry
-          </Button>
-        }
-        tier="section"
+        cause="The analytics service did not answer. Retry, or reconnect it in Settings."
+        onRetry={noop}
       />
     )
   }
@@ -366,15 +359,13 @@ export function ComponentsSurfaces({ shotState }: { shotState?: ShotState | unde
         </Stack>
       </SimpleGrid>
 
-      <Box maw={TABLE_MAX_WIDTH}>
-        <ComponentGroup
-          title="Table: metric, value, change"
-          shot="table"
-          states="empty loading error"
-        >
-          <MetricsTable shotState={shotState} />
-        </ComponentGroup>
-      </Box>
+      <ComponentGroup
+        title="Table: metric, value, change"
+        shot="table"
+        states="empty loading error"
+      >
+        <MetricsTable shotState={shotState} />
+      </ComponentGroup>
 
       <SimpleGrid type="container" cols={{ base: 1, [CONTAINER_KEYS.regular]: 2 }}>
         <ComponentGroup title="Accordion: expandable sections">

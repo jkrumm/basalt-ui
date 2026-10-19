@@ -115,7 +115,7 @@ const NO_OUTAGES: Outage[] = []
 const PROBE_ERROR = 'The probe did not answer. Retry, or check that the monitor is running.'
 const PROBE_EMPTY = 'No readings in the window. Check that the probe is reporting.'
 
-const retry = (what: string): string => retryCopy(what, 'probe')
+const retry = (): string => retryCopy('probe')
 
 const columns = (() => {
   const col = createColumnHelper<Outage>()
@@ -221,7 +221,7 @@ function OpsCharts({ shotState }: ScenarioProps) {
           info={`One band per hour. An outage is any hour with downtime; loss above ${DEGRADED_LOSS_PCT}% without downtime is degraded. Last outage: ${fmtStamp(LAST_OUTAGE.start)} UTC, ${fmtDuration(LAST_OUTAGE.minutes)}.`}
           state={chartStateFor(shotState, {
             empty: 'No hourly readings in the window. Check that the probe is reporting.',
-            error: retry('Line state'),
+            error: retry(),
           })}
           {...(shotState === 'error' && { onRetry: noop })}
         >
@@ -246,7 +246,7 @@ function OpsCharts({ shotState }: ScenarioProps) {
             state={chartStateFor(shotState, {
               empty:
                 'No throughput readings in the window. Check that the speed test is scheduled.',
-              error: retry('Throughput'),
+              error: retry(),
             })}
             {...(shotState === 'error' && { onRetry: noop })}
           >
@@ -271,7 +271,7 @@ function OpsCharts({ shotState }: ScenarioProps) {
             info={`How many of the ${MEASURED_HOURS} hours with a reading landed in each ${LATENCY_BIN_MS} ms band of median round-trip time. Outage hours have no reading.`}
             state={chartStateFor(shotState, {
               empty: 'No latency readings to bin yet. The histogram needs at least one hour.',
-              error: retry('The latency distribution'),
+              error: retry(),
             })}
             {...(shotState === 'error' && { onRetry: noop })}
           >
@@ -292,7 +292,7 @@ function OpsCharts({ shotState }: ScenarioProps) {
 }
 
 function OpsOutages({ shotState }: ScenarioProps) {
-  const query = queryFor(shotState, retry('Outages'))
+  const query = queryFor(shotState, retry())
   return (
     <Box data-shot="outages" h="100%">
       <Section title={`Outages, ${WINDOW_LABEL}`}>
