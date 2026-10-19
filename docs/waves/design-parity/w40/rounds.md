@@ -17,7 +17,7 @@ subagents (S2; S3; S4 with the components), each told to check the Wave 40 focus
 
 No new defect; fixed 0, every item carried from w39 r2, all P3: the pending `ChartCard` legend row (S2 hit-rate, S3 item-flow at
 390, S4 spend-over-time), the S3 failures readout on an unmarked zero bin, the S4 spend-over-time tooltip over the forecast/budget
-crossing, the components table loading headers at 390 (Wave 41).
+crossing, the components table loading headers at 390 (Wave 42).
 
 Focus rows: the Agents oldest-wait Meter at 390 shows `Warn 24 h` and `Abandoned at 7 d` a clear gap apart (S3); tooltips stay
 below the headline facts (S2 hit-rate, S3 item-flow, S4 spend-over-time). Not provable from shots: the slotted `Bars` chip

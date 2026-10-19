@@ -17,7 +17,7 @@ All three rounds: 728 shots, 0 failed, detector 100.
 
 S2 passes (its r4 items fixed by #444). Open: the S3 strip ~20 px ragged at 1440 (P2) and its failures readout with no marked bin
 (P3); the S4 strip ragged (P3) and spend-over-time loading without its legend row (P3); the components table error void (P2,
-playground) and its 390 loading headers (P3, Wave 41). None of argo's Wave 39 rows reproduce on the playground (no narrow-span
+playground) and its 390 loading headers (P3, Wave 42). None of argo's Wave 39 rows reproduce on the playground (no narrow-span
 zoned Meter at 390, no `+N` fold, no tooltip leaving a card), so those are proven by layout tests on argo's compositions instead.
 
 ## Round 1 — #448–#451
@@ -36,6 +36,6 @@ Fixed: the goal caption row, the S4 strip, the table error void. No P0, P1 or P2
 - the S3 failures readout shows no mark for a zero bin in the hover crop, although #452 adds a hover-only baseline marker — check
   the shot's hover target before the next round;
 - the S4 spend-over-time tooltip covers the forecast/budget crossing at 15–18 Oct;
-- the components table loading headers wrap at 390 (Wave 41).
+- the components table loading headers wrap at 390 (Wave 42).
 
 Against Keel: S2 close (r0: holds up), S3 close, S4 close, components holds up.
