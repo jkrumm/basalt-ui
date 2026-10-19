@@ -411,6 +411,12 @@ export type FixtureSpec = {
    * `w38-strength-diagnostics` is a collapsible Section with an `xs` `Text` summary over one card.
    */
   w38Strength?: true
+  /**
+   * Wave 38: argo's Section subtitle and summary. `w38-subtitle-head` is a titled Section with a
+   * `subtitle`, a `count` and a 13 body; `w38-subtitle-backlog` is argo's reading backlog shell: a
+   * bare `Text` summary sized by the consumer's own class (13) over rows with a 12 meta line.
+   */
+  w38Subtitle?: true
   /** Renders a `PageAside` (and, by default, the `PageBar` row 2 it projects into below `sm`). */
   aside?: AsideSpec
   /** A `TableOfContents` + article inside Main's scrollport (the scroll-spy invariants). */

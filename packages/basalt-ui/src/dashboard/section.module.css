@@ -81,9 +81,12 @@
  * shell stays at three: 15, 13, 11. Mantine's `Text` writes `--text-fz` inline from its `size` prop,
  * so no inherited custom property can reach it: this rule sets `font-size` itself, and the inline
  * `--text-fz` is then unused. Only a direct `Text` child is capped; a `Group` of stats keeps
- * the sizes its own parts ask for.
+ * the sizes its own parts ask for. Only a `Text` that CARRIES a `size` is capped: Mantine writes the
+ * inline `--text-fz` for a `size` prop and nothing for a bare `Text`, so a `Text` sized by the
+ * consumer's own class (argo's reading `.facts`, 13) is left alone — the cap used to outrank that
+ * class and drag the line to 11, a fourth size beside the rows' 12.
  */
-.summary > :global(.mantine-Text-root) {
+.summary > :global(.mantine-Text-root[style*='--text-fz']) {
   font-size: var(--vx-text-micro);
 }
 
