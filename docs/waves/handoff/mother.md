@@ -48,21 +48,22 @@ Queued behind all of it: Part 2's maturation Waves 20–28.
 
 ## In flight (next actions, in order)
 
-**PARKED 2026-10-19 for the owner's weekly Claude limit (~86 %).** No agent is running; every wave is closed and pushed, no
+**PARKED 2026-10-19 for the owner's weekly Claude limit (87 %, resets 2026-10-21 18:00 CEST).** No agent is running; every wave is closed and pushed, no
 worktrees are left. Resume after the reset with a fresh mother from this file.
 
-1. Released 2026-10-18/19: 2.22.0 → 2.27.1. 2.24.0 took ~25 min to reach the registry; `release.sh` now polls 60 min and
+1. Released 2026-10-18/19: 2.22.0 → 2.27.2. 2.24.0 took ~25 min to reach the registry; `release.sh` now polls 60 min and
    exits 3 ("still propagating, do not release again") instead of failing (#e7eb5573). Both grace ledgers are empty
    (`series-palette`, `raw-spacing`, `inline-spacing`, `card-inset` promoted to error, each after argo measured 0).
 2. basalt Waves 38 (friction III), 39 (friction IV, r2: S2 99 / S3 98 / S4 98 / components 99) and 40 (friction V, the
    fitness readout) are done. Wave 41 (friction VI) is done; Wave 42 "Data tables, responsive" is `active` but NOT spawned.
-3. argo Waves 38–42 done (argo is on 2.27.1). Latest verdicts: 13 of 14 pages pass (Home 97, WalkingPad 100, Reading 90,
+3. argo Waves 38–43 done; argo is on 2.27.2. Latest verdicts: 13 of 14 pages pass (Home 97, WalkingPad 100, Reading 94,
    Hermes 98, Calendar 97, Body comp 96, Usage 95, astro 94/94, m365 94/93, Warden 92, Agents 92, Strength 90 provisional).
-   **Garmin fails on basalt rows only** (55 in argo w42; it was 71 in w41: reviewer variance plus the carried rows).
-   argo's PLAN has no active wave; the mother authors the next re-score wave before `rd wave` (the gate refuses otherwise).
-4. basalt Wave 41 "argo friction VI" is DONE (2026-10-19, PLAN § Wave 41 Left behind): #461/#463 info bubble below the header
-   block, #462 slot chip + one chart focus ring. Unreleased on master. Next: release, an argo Garmin + Reading re-score (Sonnet is
-   enough; argo also drops ACWR's upper axis with `xTicks={[]}`), then Data tables (Wave 42, marked `active`, not spawned).
+   Garmin 82 (up from 55) fails on ONE P1: ACWR draws its date axis twice. That is argo's own composition (the line chart
+   stacked over delta bars; the upper chart drops its axis with `xTicks={[]}`), handled in argo Wave 44.
+   argo's PLAN has no active wave after it; the mother authors each re-score wave before `rd wave` (the gate refuses otherwise).
+4. basalt Wave 41 "argo friction VI" is done and released as 2.27.2 (#461/#463 info bubble below the header block, #462 slot
+   chip and one chart focus ring). **First on resume:** read argo Wave 44's verdict, then spawn basalt Wave 42 "Data tables"
+   (marked `active`). Next after it: Event list, Board and the record page, Forms, rollout to argo + rb, the expression trial.
 5. Decided 2026-10-18: warden + agent-gateway get an authored `question` field, recorded as a backlog item in each repo's
    `docs/BACKLOG.md` for a later structure-and-maturity pass by the owner; argo adds nothing until it ships.
 6. Owner decision queued: SPEC D37 (an errored/empty chart body keeps the loaded height per the SSR contract; the rubric
