@@ -111,3 +111,75 @@ export function W39StripFixture(): ReactElement {
     </>
   )
 }
+
+/** S4's composition: a Sparkline cell, a Meter with a tick label above its track, a plain Meter, Bars. */
+export function W39S4StripFixture(): ReactElement {
+  return (
+    <div data-testid="w39-s4">
+      <StatGroup
+        variant="strip"
+        label="S4 strip"
+        cols={4}
+        cells={[
+          {
+            key: 'spend',
+            caption: 'Spend',
+            qualifier: 'month to date',
+            value: '€182',
+            visual: <Sparkline ariaLabel="Daily spend" data={POINTS} height={28} />,
+            footer: 'Daily, 1–16 Oct',
+          },
+          {
+            key: 'forecast',
+            caption: 'Forecast',
+            qualifier: 'end of October',
+            value: '€590',
+            tone: 'bad',
+            visual: (
+              <Meter
+                label="Forecast against the budget"
+                max={700}
+                ticks={[{ at: 500, label: 'Budget €500' }]}
+                segments={[
+                  { value: 182, label: 'Spent' },
+                  { value: 408, label: 'Forecast', forecast: true },
+                ]}
+                startCaption="Spent"
+                forecastCaption="Forecast"
+              />
+            ),
+          },
+          {
+            key: 'budget',
+            caption: 'Budget',
+            qualifier: 'October',
+            value: '€500',
+            visual: (
+              <Meter
+                label="Spent against the budget"
+                max={500}
+                value={182}
+                startCaption="36% used"
+                endCaption="€318 left"
+              />
+            ),
+          },
+          {
+            key: 'days',
+            caption: 'Days',
+            value: '16',
+            visual: (
+              <Bars
+                ariaLabel="Spend per day"
+                data={BARS}
+                x={(d) => d.bin}
+                height={28}
+                bars={[{ key: 'n', label: 'Spend', color: VX.accent, getValue: (d) => d.n }]}
+              />
+            ),
+          },
+        ]}
+      />
+    </div>
+  )
+}
