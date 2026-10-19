@@ -29,8 +29,8 @@ const ROLE_ORDER = ['series', 'overlay', 'reference'] as const
  */
 const DOTS_GAP = 30
 
-const byReferenceFirst = <T,>(a: ChartSeries<T>, b: ChartSeries<T>): number =>
-  Number(b.role === 'reference') - Number(a.role === 'reference')
+const byReferenceLast = <T,>(a: ChartSeries<T>, b: ChartSeries<T>): number =>
+  Number(a.role === 'reference') - Number(b.role === 'reference')
 
 /** The entries a series list derives, in display order (by role when `groups`). */
 export function legendEntries<T>(
@@ -38,8 +38,8 @@ export function legendEntries<T>(
   groups: boolean,
 ): ChartSeries<T>[][] {
   const entries = series.filter((s) => s.legend !== false)
-  // Zones and reference lines, which hue alone cannot name, lead: the compact row folds from its end.
-  if (!groups) return entries.length ? [entries.toSorted(byReferenceFirst)] : []
+  // Series lead, zones and reference lines follow: the compact fold takes the references from the end.
+  if (!groups) return entries.length ? [entries.toSorted(byReferenceLast)] : []
   return ROLE_ORDER.map((role) => entries.filter((s) => (s.role ?? 'series') === role)).filter(
     (g) => g.length > 0,
   )
@@ -62,7 +62,7 @@ const rowBaseStyle: CSSProperties = {
 const rowStyle: CSSProperties = { ...rowBaseStyle, display: 'flex' }
 /** The gaps `chart-legend.module.css` reads, as custom properties. */
 type LegendVars = CSSProperties & Record<'--bc-legend-gap' | '--bc-dots-gap', string>
-// `flex-wrap` is the stylesheet's too: one folded row below 480px, wrapping rows from it.
+// `flex-wrap` is the stylesheet's too, so the same rule wraps at every width.
 const { flexWrap: _wrap, ...autoBaseStyle } = rowBaseStyle
 const autoRowStyle: LegendVars = {
   ...autoBaseStyle,
@@ -94,6 +94,8 @@ const buttonStyle: CSSProperties = {
   border: '1px solid transparent',
   display: 'inline-flex',
   alignItems: 'center',
+  // An entry never wraps inside itself: a threshold stays with its name.
+  whiteSpace: 'nowrap',
   gap: 6,
   cursor: 'pointer',
   borderRadius: VX.radiusCtrl,
@@ -203,11 +205,21 @@ const VISUALLY_HIDDEN = {
   whiteSpace: 'nowrap',
 } as const
 
+/** True when an entry (or the chip) sits on a later line than the first. */
+function wraps(row: HTMLElement, more: HTMLElement): boolean {
+  const shown = [...row.querySelectorAll<HTMLElement>('[data-legend-key]')].filter(
+    (it) => !it.hasAttribute('data-legend-folded'),
+  )
+  if (!more.hidden) shown.push(more)
+  const first = shown[0]
+  return first !== undefined && shown.some((it) => it.offsetTop > first.offsetTop + 1)
+}
+
 /**
- * The compact legend is ONE row (the stylesheet sets `nowrap` below 480px). Entries that do not fit
- * fold into a `+N` chip (named for assistive tech by the folded labels), the last entry first. The
- * entries are in display order: the reference/zone entries, which hue alone cannot name, lead the
- * series (the title and tooltip name those).
+ * The compact legend names every series at every width. When the row wraps below 480px, the
+ * zone / reference entries fold into a `+N` chip (named for assistive tech by the folded labels), the
+ * last first, until the row is one line; if the series alone do not fit, the row stays two lines and
+ * no series folds. The entries are in display order: series, then zones / references.
  * Measured on the node, never in React state, so a hover or a resize does not re-render.
  */
 function foldLegend(row: HTMLElement): void {
@@ -215,11 +227,12 @@ function foldLegend(row: HTMLElement): void {
   const more = row.querySelector<HTMLElement>('[data-legend-more]')
   for (const it of items) it.removeAttribute('data-legend-folded')
   more?.setAttribute('hidden', '')
-  if (more === null || getComputedStyle(row).flexWrap !== 'nowrap') return
-  const display = items
+  // `--bc-fold` is the stylesheet's compact flag (chart-legend.module.css); wide keeps every entry.
+  if (more === null || getComputedStyle(row).getPropertyValue('--bc-fold').trim() !== '1') return
+  const references = items.filter((it) => it.dataset['legendRole'] === 'reference')
   const folded: HTMLElement[] = []
-  while (row.scrollWidth > row.clientWidth + 0.5 && folded.length < display.length - 1) {
-    const last = display[display.length - 1 - folded.length]
+  while (folded.length < references.length && wraps(row, more)) {
+    const last = references[references.length - 1 - folded.length]
     if (last === undefined) break
     last.setAttribute('data-legend-folded', '')
     folded.push(last)

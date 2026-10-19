@@ -180,12 +180,12 @@ describe('reference-line legend entries', () => {
     expect(entries.map((e) => e.color)).toEqual(colors)
   })
 
-  test('the legend lists them before the series (Wave 38: DOM order is the compact row order); a line without `legend` adds none', () => {
+  test('the legend lists them after the series (DOM order is the visual order); a line without `legend` adds none', () => {
     const el = ssr(<Lines ariaLabel="L" data={data} x={x} series={[a]} refLines={refs} />)
     const keys = [...el.querySelectorAll('[data-legend-key]')].map((n) =>
       n.getAttribute('data-legend-key'),
     )
-    expect(keys).toEqual(['__ref-0', '__ref-2', 'a'])
+    expect(keys).toEqual(['a', '__ref-0', '__ref-2'])
     expect(el.querySelector('[data-legend-key="__ref-0"]')?.textContent).toContain('MEV')
     expect(
       el.querySelector('[data-legend-key="__ref-0"] line')?.getAttribute('stroke-dasharray'),

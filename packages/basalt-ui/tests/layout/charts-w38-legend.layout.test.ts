@@ -1,11 +1,18 @@
 /**
- * Wave 38: a chart with two or more named entries or zones shows a one-row compact key at 390 (argo's
+ * Wave 38: a chart with two or more named entries or zones shows a compact key at 390 that keeps every series named (argo's
  * ACWR, recovery and stress shapes), an explicit `legend: false` still shows none, and a strip cell's Sparkline
  * readout never loses its date to an ellipsis at ~150px.
  */
 import { afterAll, describe, expect, test } from 'bun:test'
 import type { FixtureSpec } from './fixture/spec'
-import { CLOSE_BUDGET_MS, PHONE, closeLayoutSuite, initLayoutSuite, openFixture } from './harness'
+import {
+  CLOSE_BUDGET_MS,
+  DESKTOP_1440,
+  PHONE,
+  closeLayoutSuite,
+  initLayoutSuite,
+  openFixture,
+} from './harness'
 
 const ready = await initLayoutSuite()
 const layout = ready ? describe : describe.skip
@@ -22,41 +29,93 @@ const legendOf = (id: string): string => `[data-testid="${id}"] [data-basalt-cha
 layout('Wave 38 legends and readouts at 390', () => {
   afterAll(closeLayoutSuite, CLOSE_BUDGET_MS)
 
-  // One row: a wrapped compact key is the noise argo dropped it for.
+  // The compact key keeps every SERIES named; only zone / reference entries fold into `+N`.
   const ONE_ROW = 24
-  test.each([
-    ['w38-acwr', 4],
-    ['w38-recovery', 3],
-    ['w38-stress', 3],
-  ])('%s: the default key is one row at 340px and leads with the zones', async (id, zonesNamed) => {
-    const p = await openFixture(spec, PHONE)
-    await p.settle()
-    const card = await p.box('card', `[data-testid="${id}"]`)
-    const legend = await p.box('legend', legendOf(id))
-    expect(legend.box.height).toBeLessThanOrEqual(ONE_ROW)
-    const shown = await p.raw.evaluate((sel) => {
+  type Shown = {
+    series: string[]
+    references: number
+    more: string | null
+    wrapped: boolean
+    entryWraps: string[]
+    overflow: number
+    seriesFirst: boolean
+  }
+  const inspect = (p: Awaited<ReturnType<typeof openFixture>>, id: string): Promise<Shown> =>
+    p.raw.evaluate((sel) => {
       const row = document.querySelector(sel)
       if (!row) throw new Error('LAYOUT: no legend')
       const items = [...row.querySelectorAll<HTMLElement>('[data-legend-key]')]
       const visible = items.filter((i) => getComputedStyle(i).display !== 'none')
       const more = row.querySelector<HTMLElement>('[data-legend-more]')
+      const tops = new Set(visible.map((i) => Math.round(i.getBoundingClientRect().top)))
+      const roles = items.map((i) => i.dataset['legendRole'])
       return {
-        zones: visible.filter((i) => i.dataset['legendRole'] === 'reference').length,
+        series: visible
+          .filter((i) => i.dataset['legendRole'] !== 'reference')
+          .map((i) => i.textContent ?? ''),
+        references: visible.filter((i) => i.dataset['legendRole'] === 'reference').length,
         more: more !== null && !more.hidden ? `${more.textContent}` : null,
+        wrapped: tops.size > 1,
+        // An entry taller than one text line wrapped inside itself.
+        entryWraps: visible
+          .filter((i) => i.getBoundingClientRect().height > 22)
+          .map((i) => i.textContent ?? ''),
         overflow: row.scrollWidth - row.clientWidth,
+        seriesFirst:
+          roles.indexOf('reference') === -1 ||
+          roles.lastIndexOf('series') < roles.indexOf('reference'),
       }
     }, legendOf(id))
-    expect(shown.overflow).toBeLessThanOrEqual(1)
-    expect(shown.zones).toBeGreaterThan(0)
-    expect(shown.zones).toBeLessThanOrEqual(zonesNamed)
-    // Every entry that does not fit is folded into a +N, never dropped silently.
-    const entries = await p.raw.evaluate(
-      (sel) => document.querySelectorAll(`${sel} [data-legend-key]`).length,
-      legendOf(id),
-    )
-    if (shown.zones < entries - (id === 'w38-stress' ? 2 : 1))
-      expect(shown.more).toMatch(/^\+\d+: \w/)
-    expect(legend.box.right).toBeLessThanOrEqual(card.box.right + 0.5)
+
+  // argo-shaped: [id, series names, total references]
+  const SHAPES: [string, string[], number][] = [
+    ['w38-five-refs', ['Squat', 'Bench', 'Deadlift', 'Press', 'Row'], 2],
+    ['w38-seven', ['Squat', 'Bench', 'Deadlift', 'Press', 'Row', 'Pull-up', 'Carry'], 0],
+    ['w38-two-zones', ['ACWR', 'Overnight'], 4],
+  ]
+  test.each(SHAPES)(
+    '%s at 340px: every series named, references fold first, no entry wraps',
+    async (id, names, refs) => {
+      const p = await openFixture(spec, PHONE)
+      await p.settle()
+      const card = await p.box('card', `[data-testid="${id}"]`)
+      const legend = await p.box('legend', legendOf(id))
+      const shown = await inspect(p, id)
+      expect(shown.series).toEqual(names)
+      expect(shown.entryWraps).toEqual([])
+      expect(shown.overflow).toBeLessThanOrEqual(1)
+      expect(shown.seriesFirst).toBe(true)
+      expect(legend.box.right).toBeLessThanOrEqual(card.box.right + 0.5)
+      // Series never fold: the row wraps to a second line instead; with one-row series a +N is allowed.
+      if (shown.references < refs) expect(shown.more).toMatch(/^\+\d+: \w/)
+      if (!shown.wrapped) expect(legend.box.height).toBeLessThanOrEqual(ONE_ROW)
+    },
+  )
+
+  test.each(SHAPES)(
+    '%s at 1440: every entry shown, series first, no entry wraps',
+    async (id, names, refs) => {
+      const p = await openFixture(spec, DESKTOP_1440)
+      await p.settle()
+      const shown = await inspect(p, `${id}-wide`)
+      expect(shown.series).toEqual(names)
+      expect(shown.references).toBe(refs)
+      expect(shown.more).toBeNull()
+      expect(shown.entryWraps).toEqual([])
+      expect(shown.seriesFirst).toBe(true)
+    },
+  )
+
+  test.each([
+    ['w38-narrow-band', PHONE],
+    ['w38-wide-band', DESKTOP_1440],
+  ] as const)("%s: BandStrip's three tiers read one line each", async (id, viewport) => {
+    const p = await openFixture(spec, viewport)
+    await p.settle()
+    const shown = await inspect(p, id)
+    expect(shown.series).toEqual(['Under 1 % of calls', '1 to 5 % of calls', 'Over 5 % of calls'])
+    expect(shown.entryWraps).toEqual([])
+    if (id === 'w38-wide-band') expect(shown.wrapped).toBe(false)
   })
 
   test.each(['w38-single', 'w38-unnamed-zones', 'w38-false'])(
