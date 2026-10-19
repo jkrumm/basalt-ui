@@ -74,10 +74,11 @@ layout('ACWR zone names (Wave 38)', () => {
     expect(full).toContain('Caution')
   })
 
-  test.each([
+  const SHORT_CASES: [string, { full: string[]; short: string[] }][] = [
     ['w38-zshort-170', { full: ['Optimal'], short: ['Und', 'Cau', 'Dan'] }],
     ['w38-zshort-210', { full: ['Under', 'Optimal', 'Caution', 'Danger'], short: [] }],
-  ] as const)(
+  ]
+  test.each(SHORT_CASES)(
     '%s: the short fallback runs as one register, or not at all',
     async (id, expected) => {
       const p = await openFixture(spec, DESKTOP_1440)
