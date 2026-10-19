@@ -1,6 +1,6 @@
 /**
- * Wave 38: argo's `Section` subtitle sits at 12 (`xs`) and the reading backlog shell holds three sizes, at 1440 and 390. The
- * count is `basalt-ui shot`'s craft-2 count (`src/cli/shot/measure.ts`): every distinct font size
+ * Wave 38: argo's `Section` subtitle sits at 12 (`xs`) and the reading backlog shell holds three
+ * sizes, at 1440 and 390. The count is `basalt-ui shot`'s craft-2 count (`src/cli/shot/measure.ts`): every distinct font size
  * of a visible element with a direct text node inside the component (SVG `<text>` included).
  */
 import { afterAll, describe, expect, test } from 'bun:test'

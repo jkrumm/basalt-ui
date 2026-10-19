@@ -1541,6 +1541,10 @@ function Wave38StrengthFixture(): ReactElement {
       <Text span size="xs" c="dimmed">
         %/mo, 30 d velocity
       </Text>
+      <Text span fw={600} size="xs">
+        ↗
+      </Text>
+      <SegmentedControl size="sm" data={['Wk', 'Mo']} defaultValue="Wk" aria-label="Window" />
     </Group>
   )
   const inolActions = (

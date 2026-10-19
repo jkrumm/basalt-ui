@@ -1098,7 +1098,7 @@ shells held four sizes.
 - A `<Text size="xs">` in a `ChartCard` `actions` slot renders at 11, the chart text step. `sm` and
   `md` figures are untouched.
 
-**Opt out:** size the `Text` with your own class, or wrap it in a `span` / `Group` (summary) or give
+**Opt out:** size the `Text` with your own class, or replace the `Text` with a plain `span` (summary) / give
 it another `size` (actions).
 
 | Shell (measured, 1440 and 390)                               | 2.24.0 / 2.25.0   | Now          |
@@ -1314,7 +1314,7 @@ summary 12, chart ticks and legend 11.
 sized by a `size` prop or not. A `Text` sized by your own class keeps that size (see "Section
 subtitle and summary sizes" below). A bare `Text` nested inside a `Group` keeps the size it asks for.
 
-**Opt out:** wrap the text in a `<span>` or a `Group`, or size it with your own class.
+**Opt out:** replace the `Text` with a plain `<span>`, wrap it in a `Group`, or size it with your own class.
 
 ### Empty cells and Meters (Wave 38)
 
