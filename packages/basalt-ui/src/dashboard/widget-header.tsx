@@ -189,7 +189,7 @@ const FACTS = '[data-basalt-facts], [data-basalt-facts-skeleton]'
 function headerBlockOf(trigger: Element, card: Element): Element[] {
   // `StatCard` and strip cells mark the element bounding their headline (caption row + value rows).
   const marked = trigger.closest('[data-basalt-header-block]')
-  if (marked !== null) return card.contains(marked) ? [marked] : []
+  if (marked !== null && card.contains(marked)) return [marked]
   const root = trigger.closest('[data-tier]')
   if (root === null || root === card || !card.contains(root)) return []
   const siblings = [...(root.parentElement?.children ?? [])]
