@@ -278,6 +278,19 @@ export function placeRowLabels(
   rowWidth: number,
   gap = 0,
 ): RowPlacement {
+  const first = placeOnce(labels, rowWidth, gap, false)
+  // One register: once any name falls back to its `short`, every other name that has one follows
+  // (the holding name, which never shortens, is the one exception). The row is placed again with
+  // those names in their `short` box, so every shift is computed against the box that renders.
+  return first.short.some(Boolean) ? placeOnce(labels, rowWidth, gap, true) : first
+}
+
+function placeOnce(
+  labels: readonly RowLabel[],
+  rowWidth: number,
+  gap: number,
+  registerShort: boolean,
+): RowPlacement {
   const shown = labels.map(() => false)
   const short = labels.map(() => false)
   const shift = labels.map(() => 0)
@@ -314,7 +327,9 @@ export function placeRowLabels(
       (span === undefined ||
         (b.left >= span.left - LABEL_SUBPIXEL && b.right <= span.right + LABEL_SUBPIXEL)) &&
       clears(b, tick)
-    const useShort = !fits(box) && label.short !== undefined && fits(label.short)
+    const useShort =
+      label.short !== undefined && (registerShort ? true : !fits(box)) && fits(label.short)
+    if (registerShort && label.short !== undefined && !useShort) continue
     if (useShort) box = label.short as LabelBox
     else if (!fits(box)) continue
     shown[i] = true
@@ -332,14 +347,15 @@ export function placeRowLabels(
     const movable = (k: (typeof kept)[number]) => !k.tick && !labels[k.i]?.holding
     const fixed = others.filter((k) => !movable(k))
     const slidable = others.filter(movable)
-    const mid = centre(label.box)
+    const base = registerShort && label.short ? label.short : label.box
+    const mid = centre(base)
     // Only a name that sits in the row and clears every tick: a tick keeps its place over a name.
     const touches = (a: LabelBox, b: LabelBox) =>
       a.left < b.right + gap - LABEL_SUBPIXEL && b.left < a.right + gap - LABEL_SUBPIXEL
     if (
-      label.box.left < -LABEL_SUBPIXEL ||
-      label.box.right > rowWidth + LABEL_SUBPIXEL ||
-      others.some((k) => k.tick && touches(label.box, k.box)) ||
+      base.left < -LABEL_SUBPIXEL ||
+      base.right > rowWidth + LABEL_SUBPIXEL ||
+      others.some((k) => k.tick && touches(base, k.box)) ||
       fixed.some((f) => f.box.left < mid && f.box.right > mid)
     )
       continue
@@ -407,7 +423,14 @@ export function placeRowLabels(
       attempt(false, true),
       attempt(true, true),
     ]
-    const names = shown[i] ? [label.box] : label.short ? [label.box, label.short] : [label.box]
+    const names =
+      registerShort && label.short
+        ? [label.short]
+        : shown[i]
+          ? [label.box]
+          : label.short
+            ? [label.box, label.short]
+            : [label.box]
     for (const box of names) {
       const w = box.right - box.left
       const fit = tries.find(({ gapLo, gapHi }) => {
@@ -430,14 +453,6 @@ export function placeRowLabels(
       shown[i] = true
       short[i] = box !== label.box
       break
-    }
-  }
-  // One register: once any name falls back to its `short`, every other shown name that has one
-  // follows (the holding name, which never shortens, is the one exception). A shorter box only
-  // clears more, so the placement above stays valid.
-  if (short.some(Boolean)) {
-    for (const [i, label] of labels.entries()) {
-      if (shown[i] && !label.holding && label.short !== undefined) short[i] = true
     }
   }
   return { shown, short, shift }

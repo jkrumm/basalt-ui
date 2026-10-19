@@ -48,13 +48,11 @@ layout('ACWR zone names (Wave 38)', () => {
     expect(full.length + short.length).toBe(4)
   })
 
-  test('at 390 the names never touch, and the holding zone stays', async () => {
+  test('at 390 the exact name set shows: Caution hides (the accepted geometry limit), the holding zone stays', async () => {
     const p = await openFixture(spec, PHONE)
     await p.settle()
-    const { full, short } = await names(p)
-    expect(full).toContain('Optimal')
-    // "Caution" / "Caut." need 25px beside "Optimal" and "Danger"; the 164px track leaves 22.
-    expect(full.length + short.length).toBeGreaterThanOrEqual(3)
+    // "Caut." needs 25px beside "Optimal" and "Danger"; the 164px track leaves 22. argo gives it a short.
+    expect(await names(p)).toEqual({ full: ['Low', 'Optimal', 'Danger'], short: [] })
     const boxes = await p.raw.evaluate(() =>
       [...document.querySelectorAll('[data-testid="w38-acwr-strip"] [data-meter-zone-band] > span')]
         .filter((e) => !e.hasAttribute('data-hidden'))
@@ -75,4 +73,24 @@ layout('ACWR zone names (Wave 38)', () => {
     expect(short).toEqual([])
     expect(full).toContain('Caution')
   })
+
+  test.each([
+    ['w38-zshort-170', { full: ['Optimal'], short: ['Und', 'Cau', 'Dan'] }],
+    ['w38-zshort-210', { full: ['Under', 'Optimal', 'Caution', 'Danger'], short: [] }],
+  ] as const)(
+    '%s: the short fallback runs as one register, or not at all',
+    async (id, expected) => {
+      const p = await openFixture(spec, DESKTOP_1440)
+      await p.settle()
+      const shown = await p.raw.evaluate((id) => {
+        const host = document.querySelector(`[data-testid="${id}"]`)
+        const pick = (sel: string) =>
+          [...(host?.querySelectorAll(sel) ?? [])]
+            .filter((e) => !e.hasAttribute('data-hidden'))
+            .map((e) => e.textContent)
+        return { full: pick('[data-meter-zone-label]'), short: pick('[data-meter-zone-short]') }
+      }, id)
+      expect(shown).toEqual(expected)
+    },
+  )
 })

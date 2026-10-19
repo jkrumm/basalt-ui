@@ -190,3 +190,50 @@ describe('a zone name borrows room past its span (Wave 38)', () => {
     expect(placeRowLabels(tight, 164).shown).toEqual([true, false, true])
   })
 })
+
+describe('borrowing and the one register never overlap (Wave 38)', () => {
+  // Deterministic LCG so a failure reproduces.
+  const rng = (seed: number) => () =>
+    (seed = (seed * 1664525 + 1013904223) % 4294967296) / 4294967296
+  test('20k random rows: no two shown names touch, and every shown name stays in the row', () => {
+    const next = rng(7)
+    for (let n = 0; n < 20000; n++) {
+      const rowWidth = 80 + Math.floor(next() * 240)
+      const count = 3 + Math.floor(next() * 3)
+      const cuts = [
+        0,
+        ...Array.from({ length: count - 1 }, () => next() * rowWidth),
+        rowWidth,
+      ].toSorted((a, b) => a - b)
+      const holdingAt = Math.floor(next() * count)
+      const labels = Array.from({ length: count }, (_, i) => {
+        const span = { left: cuts[i] as number, right: cuts[i + 1] as number }
+        const centre = (span.left + span.right) / 2
+        const w = 20 + next() * 50
+        const sw = Math.max(8, w * (0.45 + next() * 0.35))
+        return {
+          box: { left: centre - w / 2, right: centre + w / 2 },
+          span,
+          ...(i === holdingAt && { holding: true }),
+          ...(next() < 0.6 &&
+            i !== holdingAt && {
+              short: { left: centre - sw / 2, right: centre + sw / 2 },
+            }),
+        }
+      })
+      const out = placeRowLabels(labels, rowWidth)
+      const boxes = labels.flatMap((l, i) => {
+        if (!out.shown[i]) return []
+        const b = out.short[i] ? (l.short as { left: number; right: number }) : l.box
+        const by = out.shift[i] as number
+        return [{ left: b.left + by, right: b.right + by }]
+      })
+      boxes.sort((a, b) => a.left - b.left)
+      for (let k = 1; k < boxes.length; k++) {
+        expect((boxes[k] as { left: number }).left).toBeGreaterThanOrEqual(
+          (boxes[k - 1] as { right: number }).right - 0.5,
+        )
+      }
+    }
+  })
+})

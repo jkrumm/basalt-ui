@@ -36,10 +36,9 @@ type Shown = { zones: string[]; ticks: string[] }
 const ENDS = ['0', '2.0']
 
 const CASES: ReadonlyArray<readonly [string, Shown]> = [
-  // Wave 38 (w38-strip2): a name wider than its span borrows free room beside it, so "Caution" shows in
-  // full wherever the row has room.
   // Wave 38: the end figures sit ABOVE the track, so zone names own the row below and show whenever
-  // they fit their own span ("Danger" no longer yields to the "2.0" end figure).
+  // they fit ("Danger" no longer yields to the "2.0" end figure); a name wider than its span borrows
+  // free room beside it, so "Caution" shows in full wherever the row has room.
   ['dash-zl-120', { zones: ['Under', 'Optimal'], ticks: ENDS }],
   ['dash-zl-170', { zones: ['Under', 'Optimal', 'Danger'], ticks: ENDS }],
   ['dash-zl-220', { zones: ['Under', 'Optimal', 'Caution', 'Danger'], ticks: ENDS }],
