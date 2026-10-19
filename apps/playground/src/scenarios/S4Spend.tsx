@@ -265,6 +265,7 @@ function SpendCharts({ shotState }: ScenarioProps) {
       <Box data-shot="spend-over-time" h="100%">
         <ChartCard
           title="Cumulative spend"
+          ghost="line"
           facts={
             BUDGET_CROSSING === undefined
               ? { value: fmtEur(FORECAST_EUR), period: 'forecast, end of month' }
