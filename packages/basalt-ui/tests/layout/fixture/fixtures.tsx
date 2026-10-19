@@ -1564,6 +1564,37 @@ function Wave38StrengthFixture(): ReactElement {
   )
 }
 
+/** argo's reading backlog and a subtitle + count head: the shells W38's subtitle row measured. */
+function Wave38SubtitleFixture(): ReactElement {
+  return (
+    <>
+      <style>
+        {'.w38-facts{font-size:var(--vx-text-sm)}.w38-meta{font-size:var(--vx-text-xs)}'}
+      </style>
+      <div data-testid="w38-subtitle-head">
+        <Section title="Revenue" subtitle="Trailing 30 days" count={12}>
+          <Text size="sm">Body copy</Text>
+        </Section>
+      </div>
+      <div data-testid="w38-subtitle-backlog">
+        <Section
+          title="Backlog"
+          summary={<Text className="w38-facts">12 books · 3,400 pages</Text>}
+        >
+          <ul>
+            {['Dune', 'Emma'].map((t) => (
+              <li key={t}>
+                <Text size="sm">{t}</Text>
+                <span className="w38-meta">★ 4.2 · 1,200 ratings</span>
+              </li>
+            ))}
+          </ul>
+        </Section>
+      </div>
+    </>
+  )
+}
+
 function AnchorFixture(): ReactElement {
   return (
     <>
@@ -2940,6 +2971,7 @@ export function ShellFixture({ spec }: { spec: FixtureSpec }): ReactElement {
     >
       {spec.anchor && <AnchorFixture />}
       {spec.w38Strength && <Wave38StrengthFixture />}
+      {spec.w38Subtitle && <Wave38SubtitleFixture />}
       {spec.w37 && <Wave37Fixture spec={spec.w37} />}
       {spec.aside && !spec.aside.noBar && <AsideBar />}
       {spec.bar && <BarFixture spec={spec.bar} />}

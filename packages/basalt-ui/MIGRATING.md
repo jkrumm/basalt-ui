@@ -1081,6 +1081,26 @@ No export is removed or added. A loading state is the loaded shape; two other de
   names); `readingAt="start"` keeps the pre-2.24 anchor at the boundary.
 - Opt out of the shared hero size: set `--basalt-stat-group-figure` (a length, e.g. `var(--vx-text-kpi)`) on the
   `StatGroup` or a wrapper; it replaces the group's two-column size.
+### Section subtitle and summary sizes (Wave 38)
+
+**What 2.24.0 got wrong:** the summary cap (a bare `Text` in `Section summary` renders at 11) was
+written as `.summary > .mantine-Text-root`, which outranks a consumer's own class. argo's reading
+backlog sets its summary `Text` to 13 through a class, got 11 instead, and the shell held four sizes
+(title 15, rows 13, row meta 12, summary 11). The `Section` subtitle itself was at 12 (`xs`) as
+promised; argo's "subtitle" report was this summary line.
+
+**Now:** the cap applies only to a `Text` that carries a `size` prop (Mantine writes the inline
+`--text-fz` for one and for nothing else). A bare `Text` sized by your own class keeps that size.
+`<Text size="xs">` in `summary` still renders at 11.
+
+| Shell (measured, 1440 and 390)                   | Before 2.25.x     | Now          |
+| ------------------------------------------------ | ----------------- | ------------ |
+| `Section` head: title, `subtitle`, `count`, body | 12 / 13 / 15      | 12 / 13 / 15 |
+| reading backlog: class-sized summary over rows   | 11 / 12 / 13 / 15 | 12 / 13 / 15 |
+
+The 11 in the `size="xs"` row of "Section summary line" above is the chart text step, not the
+subtitle. A `ChartCard` whose `actions` holds `<Text size="xs">` beside the chart's 11 ticks still
+counts 12 as a fourth size; that is the consumer's `Text`, not a `Section` slot.
 
 ### Hosted readouts and tooltips (Wave 38)
 

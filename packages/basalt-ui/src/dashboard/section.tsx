@@ -138,7 +138,8 @@ type SectionBaseProps = Omit<
     /** Rendered directly under the header and ALWAYS visible, collapsed or not: a collapsed section
      * still states its headline figures, which is what makes collapsing it a real option. Keep it to
      * one row — the body is what `children` is for. Section owns the summary text size (11 px, the
-     * chart-text step): a `size` prop on a bare `Text` here is ignored — wrap it to opt out. */
+     * chart-text step): a `size` prop on a bare `Text` here is ignored (a `Text` sized by the consumer's own class is left
+     * alone) — wrap it to opt out. */
     summary?: ReactNode
     /** Turns the root into a scroll anchor (`id` + `scroll-margin-top`). Inside `BasaltShell` the
      * offset is the clearance token; without a shell it also clears `PageBar`, which assumes the
