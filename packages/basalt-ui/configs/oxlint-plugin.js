@@ -613,7 +613,7 @@ function attrValue(attr) {
   return unwrapExpressionContainer(attr.value)
 }
 
-// Ships: warn (grace → 2.26.0)
+// Ships: error
 const cardInset = {
   meta: {
     type: 'suggestion',
@@ -4216,7 +4216,7 @@ const routeViewTransition = {
 
 /**
  * Plugin rules still inside their grace minor — `warn` in the shipped consumer preset, `error`
- * repo-locally. This is the plugin's counterpart to `src/guard`'s `GRACE_PERIOD_KINDS`, and it
+ * repo-locally. Empty since 2.26.0: `card-inset` (since 2.16.0), the last tenant, promoted. This is the plugin's counterpart to `src/guard`'s `GRACE_PERIOD_KINDS`, and it
  * exists because its ABSENCE is what let three rules sit at `warn` for up to twelve minors with
  * nothing tracking them: `configs/oxlint.json` is generated and its top-level keys are fixed by
  * oxlint's own parser, so the ledger cannot live there.
@@ -4236,13 +4236,7 @@ const routeViewTransition = {
  *
  * @type {Record<string, GraceEntry>}
  */
-export const PLUGIN_RULE_GRACE = {
-  'card-inset': {
-    since: '2.16.0',
-    promote: '2.26.0',
-    why: 'Tightened in 2.16.0: only py="sm" px="md" together (or neither) passed. Inverted in 2.20.0 (Wave 35): the theme owns the 12/16 inset, so the pair is now a "redundant" finding and "neither" is the idiom; flush is variant="flush" or Card.Section. The redundant pair is a NEW finding class first shipping in 2.20.0, so consumers get the full grace again: promote moved 2.24.0 → 2.26.0.',
-  },
-}
+export const PLUGIN_RULE_GRACE = {}
 
 // ── Plugin export ───────────────────────────────────────────────────────────────────────────────
 

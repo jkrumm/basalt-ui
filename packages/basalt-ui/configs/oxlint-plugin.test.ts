@@ -1535,6 +1535,12 @@ describe('PLUGIN_RULE_GRACE', () => {
   const graceIds = graceEntries.map(([id]) => id)
   const shippedBasaltIds = Object.keys(shipped.rules).filter((id) => id.startsWith('basalt/'))
 
+  // Empty since 2.26.0 (`card-inset`, the last tenant, promoted). The per-entry tests below run
+  // zero assertions on an empty ledger; the gate itself is proven on synthetic ledgers above.
+  it('the ledger is empty (card-inset, its last tenant, promoted at 2.26.0)', () => {
+    expect(graceIds).toEqual([])
+  })
+
   // The mechanism whose ABSENCE let three rules sit at `warn` for up to twelve minors with nothing
   // tracking them. Deleting a ledger entry IS the promotion, and this test makes flipping the
   // shipped level part of the same commit.
