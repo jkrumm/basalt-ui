@@ -77,6 +77,25 @@ function suite(vp: Viewport) {
         expect(Math.abs(o.plotTop - c.plotTop)).toBeLessThanOrEqual(SNAP)
   })
 
+  test('S4 composition: the drawn marks (plot, track) share one top, captions above the track sit above it', async () => {
+    const r = await p.raw.evaluate(() => {
+      const host = document.querySelector('[data-testid="w39-s4"]')!
+      return [...host.querySelectorAll<HTMLElement>('[data-strip-cell]')].map((c) => {
+        const mark = c.querySelector<HTMLElement>(
+          '[data-strip-visual] :is([data-meter-track], [data-basalt-sparkline], [data-basalt-chart])',
+        )!
+        return {
+          key: c.getAttribute('data-strip-cell'),
+          row: Math.round(c.getBoundingClientRect().top),
+          top: mark.getBoundingClientRect().top,
+        }
+      })
+    })
+    for (const c of r)
+      for (const o of r.filter((x) => x.row === c.row))
+        expect(Math.abs(o.top - c.top)).toBeLessThanOrEqual(SNAP)
+  })
+
   test('a longer qualifier pushes only its own value down', async () => {
     const all = await cells(p)
     const get = (k: string) => all.find((c) => c.key === k)!

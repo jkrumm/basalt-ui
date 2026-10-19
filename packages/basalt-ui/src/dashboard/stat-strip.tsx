@@ -360,17 +360,22 @@ function StripCell({
 }
 
 /**
- * One anatomy, a shared visual line: the cells of a row put the top of their drawn visual on one line.
+ * One anatomy, a shared visual line: the cells of a row put the top of their drawn mark (Meter track, plot) on one line.
  * Each cell's head (caption line, qualifier, value row) keeps its own height, so a longer qualifier
  * pushes only its own value down; a visual cell whose head is shorter than a sibling's visual offset
  * grows ITS head's min-height by the difference. Cells without a visual are untouched, so a footer
  * still hugs its value and no sibling is stretched.
  */
+const DRAWN_MARK = '[data-meter-track], [data-basalt-sparkline], [data-basalt-chart]'
+
 function alignVisuals(root: HTMLElement): void {
   const rows = new Map<number, { head: HTMLElement; natural: number; offset: number }[]>()
   for (const head of root.querySelectorAll<HTMLElement>('[data-strip-head]')) {
     const article = head.parentElement
-    const plot = article?.querySelector<HTMLElement>('[data-strip-visual]')?.firstElementChild
+    const visual = article?.querySelector<HTMLElement>('[data-strip-visual]')
+    // The shared line is the top of the drawn MARK (Meter track, sparkline or chart plot): a Meter's
+    // caption or tick-label row above its track sits above that line.
+    const plot = visual?.querySelector(DRAWN_MARK) ?? visual?.firstElementChild
     const last = head.lastElementChild
     if (!article || !plot || !last) continue
     const { top, bottom } = head.getBoundingClientRect()

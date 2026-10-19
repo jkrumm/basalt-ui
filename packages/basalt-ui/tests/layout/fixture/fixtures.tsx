@@ -92,7 +92,7 @@ import { W38ZonesFixture } from './w38-zones-fixture'
 import { W38LegendFixture } from './w38-legend-fixture'
 import { W38LoadingFixture } from './w38-loading-fixture'
 import { W38StripMeterFixture } from './w38-strip-meter-fixture'
-import { W39StripFixture } from './w39-strip-fixture'
+import { W39S4StripFixture, W39StripFixture } from './w39-strip-fixture'
 import { W39MeterFixture } from './w39-meter-fixture'
 import { W38Readout2Fixture } from './w38-readout2-fixture'
 import { W39ReadoutFixture } from './w39-readout-fixture'
@@ -3080,6 +3080,7 @@ export function ShellFixture({ spec }: { spec: FixtureSpec }): ReactElement {
       {spec.w38Loading && <W38LoadingFixture />}
       {spec.w38StripMeter && <W38StripMeterFixture />}
       {spec.w39Strip && <W39StripFixture />}
+      {spec.w39Strip && <W39S4StripFixture />}
       {spec.w39Meter && <W39MeterFixture />}
       {spec.w38Readout2 && <W38Readout2Fixture />}
       {spec.w39Readout && <W39ReadoutFixture />}

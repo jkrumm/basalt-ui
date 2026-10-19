@@ -26,6 +26,9 @@ const SPEC: FixtureSpec = {
 
 const SNAP = 1
 const EMPTY_LIMIT = 0.15
+/** Wave 39: beside a Meter whose tick labels sit above its track, a plain Meter's head grows by that
+ * row so both TRACKS level (the ruled shared line is the drawn mark); that gap is the only new void. */
+const LEVELLED_LIMIT = 0.25
 
 type Caption = {
   title: string
@@ -150,7 +153,7 @@ function suite(vp: Viewport) {
     const cells = await measureStrips(p, 'dash-strip-stretch')
     expect(cells.length).toBe(4)
     for (const c of cells)
-      if (c.emptyRatio >= EMPTY_LIMIT)
+      if (c.emptyRatio >= LEVELLED_LIMIT)
         throw new Error(`LAYOUT: ${c.key} emptyRatio ${c.emptyRatio.toFixed(3)}`)
   })
 
