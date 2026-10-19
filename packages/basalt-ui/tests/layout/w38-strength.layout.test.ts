@@ -1,5 +1,5 @@
 /**
- * Wave 38: argo's Strength-page `Section` shells render three type sizes, at 1440 and 390. The
+ * Wave 38: argo's Strength-page `Section` shells (strength, load, balance, diagnostics, with argo's `actions` captions) render three type sizes, at 1440 and 390. The
  * count is `basalt-ui shot`'s craft-2 count (`src/cli/shot/measure.ts`): every distinct font size
  * of a visible element with a direct text node inside the component (SVG `<text>` included).
  */
@@ -50,11 +50,22 @@ async function measure(viewport: Viewport, id: string): Promise<Sizes> {
 }
 
 layout('argo Strength Section shell: three type sizes', () => {
-  for (const id of ['w38-strength-plain', 'w38-strength-diagnostics']) {
+  for (const id of [
+    'w38-strength-plain',
+    'w38-strength-strength',
+    'w38-strength-load',
+    'w38-strength-balance',
+    'w38-strength-diagnostics',
+  ]) {
     for (const viewport of [DESKTOP_1440, PHONE]) {
       test(`${id} at ${viewport.width}px`, async () => {
         const { sizes, byText } = await measure(viewport, id)
         expect(sizes).toEqual([11, 13, 15])
+        if (id.endsWith('strength') || id.endsWith('load') || id.endsWith('balance')) {
+          expect(
+            byText['11']?.some((t) => /velocity|Productive|week of|since its first/.test(t)),
+          ).toBe(true)
+        }
         if (id.endsWith('diagnostics')) expect(byText['11']).toContain('90 days')
       })
     }
