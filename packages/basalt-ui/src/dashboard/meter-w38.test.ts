@@ -117,12 +117,12 @@ describe('one register for zone names (D38 d)', () => {
     ...(short && { short: { left: short[0], right: short[1] } }),
   })
   test('a sibling that has a short follows the one that fell back', () => {
-    // The middle name needs 50px and the row leaves it 45: it falls back, the others follow.
+    // Full names this wide hold neither row (Wave 39 tries them first): one falls back, the others follow.
     const out = placeRowLabels(
       [
-        name(0, 40, 0, 40, [5, 15]),
-        name(40, 90, 40, 80, [50, 65]),
-        name(85, 125, 80, 125, [100, 110]),
+        name(-10, 50, 0, 40, [5, 15]),
+        name(25, 105, 40, 80, [50, 65]),
+        name(70, 150, 80, 125, [100, 110]),
       ],
       125,
     )
@@ -137,9 +137,9 @@ describe('one register for zone names (D38 d)', () => {
     expect(out.short).toEqual([false, false])
   })
   test('the holding name and a sibling without a short keep their full names', () => {
-    const holding = { ...name(0, 40, 0, 40, [5, 15]), holding: true }
+    const holding = { ...name(-10, 50, 0, 40, [5, 15]), holding: true }
     const out = placeRowLabels(
-      [holding, name(40, 90, 40, 80, [50, 65]), name(85, 125, 80, 125)],
+      [holding, name(25, 105, 40, 80, [50, 65]), name(70, 150, 80, 125)],
       125,
     )
     expect(out.short).toEqual([false, true, false])
@@ -161,7 +161,7 @@ describe('part captions never leave one alone on a row (D38 e)', () => {
   })
 })
 
-describe('a zone name borrows room past its span (Wave 38)', () => {
+describe('a zone name borrows room past its span: the neighbours slide, each centre staying inside its own span (Wave 38, 39)', () => {
   // Row 203: Low 30-51, Optimal (holding) 87-127, Caution 123-161 (span 132-152), Danger 160-196.
   const row = (box: [number, number], span: [number, number], extra = {}) => ({
     box: { left: box[0], right: box[1] },
@@ -181,13 +181,17 @@ describe('a zone name borrows room past its span (Wave 38)', () => {
     expect(placed.shift[3]).toBeGreaterThan(0)
     expect(placed.shift[0]).toBe(0)
   })
-  test('a gap too small for the short name keeps it hidden', () => {
+  test('a gap too small for the short name: the borrow reaches all three on one row (Wave 39)', () => {
     const tight = [
       row([66, 106], [66, 107], { holding: true }),
       row([95, 133], [107, 123], { short: { left: 102, right: 127 } }),
       row([125, 161], [123, 164]),
     ]
-    expect(placeRowLabels(tight, 164).shown).toEqual([true, false, true])
+    const out = placeRowLabels(tight, 164)
+    expect([out.shown, out.row]).toEqual([
+      [true, true, true],
+      [0, 0, 0],
+    ])
   })
 })
 
@@ -222,17 +226,27 @@ describe('borrowing and the one register never overlap (Wave 38)', () => {
         }
       })
       const out = placeRowLabels(labels, rowWidth)
+      const rowOf: number[] = []
       const boxes = labels.flatMap((l, i) => {
         if (!out.shown[i]) return []
+        rowOf.push(out.row[i] as number)
         const b = out.short[i] ? (l.short as { left: number; right: number }) : l.box
         const by = out.shift[i] as number
         return [{ left: b.left + by, right: b.right + by }]
       })
-      boxes.sort((a, b) => a.left - b.left)
-      for (let k = 1; k < boxes.length; k++) {
-        expect((boxes[k] as { left: number }).left).toBeGreaterThanOrEqual(
-          (boxes[k - 1] as { right: number }).right - 0.5,
-        )
+      for (const r of [0, 1]) {
+        const onRow = boxes
+          .filter((_, k) => k >= 0 && rowOf[k] === r)
+          .toSorted((a, b) => a.left - b.left)
+        for (let k = 1; k < onRow.length; k++) {
+          expect((onRow[k] as { left: number }).left).toBeGreaterThanOrEqual(
+            (onRow[k - 1] as { right: number }).right - 0.5,
+          )
+        }
+      }
+      for (const b of boxes) {
+        expect(b.left).toBeGreaterThanOrEqual(-0.5)
+        expect(b.right).toBeLessThanOrEqual(rowWidth + 0.5)
       }
     }
   })

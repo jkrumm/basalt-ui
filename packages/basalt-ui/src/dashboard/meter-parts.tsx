@@ -18,6 +18,7 @@ import {
   zoneFill,
 } from './meter-model'
 import type {
+  LabelBox,
   MarkItem,
   MeterSegment,
   MeterTick,
@@ -248,11 +249,15 @@ const columnGapOf = (el: Element): number => Number.parseFloat(getComputedStyle(
 /** One label on the row: its span in percent of the row (a zone name) or none (an end tick). */
 type RowSlot = { spanPct?: readonly [number, number]; holding?: boolean; end?: boolean }
 
-type RowLayout = { shown: boolean[]; short: boolean[]; shift: number[] }
+type RowLayout = { shown: boolean[]; short: boolean[]; shift: number[]; row: (0 | 1)[] }
 const sameLayout = (a: RowLayout, b: RowLayout) =>
   a.shown.length === b.shown.length &&
   a.shown.every(
-    (v, i) => v === b.shown[i] && a.short[i] === b.short[i] && a.shift[i] === b.shift[i],
+    (v, i) =>
+      v === b.shown[i] &&
+      a.short[i] === b.short[i] &&
+      a.shift[i] === b.shift[i] &&
+      a.row[i] === b.row[i],
   )
 
 /**
@@ -268,7 +273,7 @@ function useRowLabelLayout(
   shortOf: readonly number[],
   key: string,
 ): RowLayout {
-  const [layout, setLayout] = useState<RowLayout>({ shown: [], short: [], shift: [] })
+  const [layout, setLayout] = useState<RowLayout>({ shown: [], short: [], shift: [], row: [] })
   const slotsRef = useRef(slots)
   const shortOfRef = useRef(shortOf)
   // Declared before the measuring effect so it reads this render's slots.
@@ -286,13 +291,21 @@ function useRowLabelLayout(
       const rtl = getComputedStyle(row).direction === 'rtl'
       const edge = (pct: number) => (origin.width * (rtl ? 100 - pct : pct)) / 100
       const children = [...row.children]
-      const labels: RowLabel[] = children.slice(0, slotsRef.current.length).map((c, i) => {
+      // A label's natural box: the physical offset a previous placement applied (`--basalt-nudge`) is
+      // taken back out, so a re-measure (a resize, a font swap, the second row changing the height)
+      // never compounds it.
+      const naturalBox = (c: Element): LabelBox => {
         const r = c.getBoundingClientRect()
+        const by =
+          Number.parseFloat((c as HTMLElement).style.getPropertyValue('--basalt-nudge')) || 0
+        return { left: r.left - origin.left - by, right: r.right - origin.left - by }
+      }
+      const labels: RowLabel[] = children.slice(0, slotsRef.current.length).map((c, i) => {
         const slot = slotsRef.current[i]
         const pct = slot?.spanPct
         const [a, b] = pct ? [edge(pct[0]), edge(pct[1])] : []
         return {
-          box: { left: r.left - origin.left, right: r.right - origin.left },
+          box: naturalBox(c),
           ...(a !== undefined &&
             b !== undefined && { span: { left: Math.min(a, b), right: Math.max(a, b) } }),
           ...(slot?.holding && { holding: true }),
@@ -300,16 +313,18 @@ function useRowLabelLayout(
         }
       })
       shortOfRef.current.forEach((labelIndex, n) => {
-        const r = children[slotsRef.current.length + n]?.getBoundingClientRect()
+        const twin = children[slotsRef.current.length + n]
         const label = labels[labelIndex]
-        if (r && label) label.short = { left: r.left - origin.left, right: r.right - origin.left }
+        if (twin && label) label.short = naturalBox(twin)
       })
       const placed = placeRowLabels(labels, origin.width, columnGapOf(row))
-      // The hook measures on the physical x axis; the margin is logical, so it flips with `dir`.
+      // Measured and applied on the physical x axis (`--basalt-nudge` is a physical `translate`), so
+      // it needs no flip under `dir="rtl"`.
       const next = {
         shown: placed.shown,
         short: placed.short,
-        shift: placed.shift.map((v) => (rtl ? -v : v)),
+        shift: placed.shift,
+        row: placed.row,
       }
       setLayout((prev) => (sameLayout(prev, next) ? prev : next))
     }
@@ -378,10 +393,11 @@ function ZoneReading({ pct, children }: { pct: number; children: ReactNode }) {
 const TICK_LABEL_FLIP_PCT = 50
 
 /**
- * The one label row: each zone name centred under its own span and the labelled ticks hugging their
- * marks (the end ticks sit at the row's ends), all on one baseline. A name wider than its span, or
- * clashing with a tick or a neighbour, hides (still laid out, so a resize can measure it again) and is
- * still named in the described-by text; the holding zone is ink and heavier. Decorative.
+ * The label row: each zone name centred under its own span and the labelled ticks hugging their
+ * marks (the end ticks sit at the row's ends), all on one baseline. A label that cannot hold its place
+ * there stands on a second row directly under it, only while one needs it; it hides (still laid out,
+ * so a resize can measure it again, and named in the described-by text) when neither row holds it.
+ * The holding zone is ink and heavier. Decorative.
  */
 function LabelRow({ zones, ticks }: { zones: readonly ZoneLabel[]; ticks: readonly TickMark[] }) {
   const rowRef = useRef<HTMLDivElement>(null)
@@ -398,19 +414,24 @@ function LabelRow({ zones, ticks }: { zones: readonly ZoneLabel[]; ticks: readon
   ].join('\u0000')
   // The holding name never shortens, so its zone has no twin.
   const twins = zones.flatMap((z, i) => (z.short !== undefined && !z.holding ? [i] : []))
-  const { shown, short, shift } = useRowLabelLayout(
+  const { shown, short, shift, row } = useRowLabelLayout(
     rowRef,
     slots,
     twins.map((i) => ticks.length + i),
     `${key}\u0001${twins.map((i) => zones[i]?.short).join('\u0000')}`,
   )
   const hidden = (i: number) => (shown[i] === false || short[i] === true ? '' : undefined)
+  // The second row exists only while a shown label stands on it.
+  const second = (i: number) => (shown[i] === true && row[i] === 1 ? '' : undefined)
+  const rows = row.some((r, i) => r === 1 && shown[i] === true) ? 2 : 1
+  // theme-allow hidden-inline-style — the placement's offset is measured data, applied by `translate`
   const nudge = (i: number): CSSProperties =>
-    shift[i] ? { marginInlineStart: `${shift[i]}px` } : {}
+    shift[i] ? ({ '--basalt-nudge': `${shift[i]}px` } as CSSProperties) : {}
   return (
     <div
       ref={rowRef}
       className={classes.labelRow}
+      data-meter-rows={rows}
       {...(zones.length > 0 ? { 'data-meter-zone-band': '' } : { 'data-meter-tick-band': '' })}
       aria-hidden
     >
@@ -420,10 +441,11 @@ function LabelRow({ zones, ticks }: { zones: readonly ZoneLabel[]; ticks: readon
           className={classes.rowLabel}
           data-meter-tick-label=""
           data-hidden={hidden(i)}
+          data-row2={second(i)}
           style={
             t.pct > TICK_LABEL_FLIP_PCT
-              ? { insetInlineEnd: `${100 - t.pct}%` }
-              : { insetInlineStart: `${t.pct}%` }
+              ? { insetInlineEnd: `${100 - t.pct}%`, ...nudge(i) }
+              : { insetInlineStart: `${t.pct}%`, ...nudge(i) }
           }
         >
           {t.label}
@@ -436,6 +458,7 @@ function LabelRow({ zones, ticks }: { zones: readonly ZoneLabel[]; ticks: readon
           data-meter-zone-label={z.label}
           data-holding={z.holding || undefined}
           data-hidden={hidden(ticks.length + i)}
+          data-row2={second(ticks.length + i)}
           style={{ insetInlineStart: `${z.centrePct}%`, ...nudge(ticks.length + i) }}
         >
           {z.label}
@@ -450,6 +473,7 @@ function LabelRow({ zones, ticks }: { zones: readonly ZoneLabel[]; ticks: readon
             className={cx(classes.rowLabel, classes.zoneLabel)}
             data-meter-zone-short={z.label}
             data-hidden={short[i] === true ? undefined : ''}
+            data-row2={second(i)}
             style={{ insetInlineStart: `${z.centrePct}%`, ...nudge(i) }}
           >
             {z.short}
