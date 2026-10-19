@@ -140,20 +140,22 @@ export function withParam(route: string, state: ShotState): string {
   return `${path}${path.includes('?') ? '&' : '?'}shot-state=${state}${fragment}`
 }
 
-/** The rect union of `boxes`, grown by `margin` and clamped to the viewport (`tall`: its current height). */
+/** The rect union of `boxes`, grown by `margin` and clamped to the viewport (`tall`: its current height); null when nothing of it is inside. */
 export function unionClip(
   boxes: readonly Box[],
   margin: number,
   viewport: Viewport,
   tall?: number,
-): Box {
+): Box | null {
   const { width, height: base } = VIEWPORT_SPECS[viewport]
   const height = tall ?? base
   const left = Math.max(0, Math.min(...boxes.map((b) => b.x)) - margin)
   const top = Math.max(0, Math.min(...boxes.map((b) => b.y)) - margin)
   const right = Math.min(width, Math.max(...boxes.map((b) => b.x + b.width)) + margin)
   const bottom = Math.min(height, Math.max(...boxes.map((b) => b.y + b.height)) + margin)
-  return { x: left, y: top, width: Math.max(1, right - left), height: Math.max(1, bottom - top) }
+  return right <= left || bottom <= top
+    ? null
+    : { x: left, y: top, width: right - left, height: bottom - top }
 }
 
 /** One screenshot with the options every shot shares. */
@@ -169,6 +171,19 @@ const snap = (
     timeout: SHOT_TIMEOUT_MS,
     ...extra,
   })
+
+/** A clip of `targets` re-measured against the live page height (`c.height` goes stale after a reflow); an empty clip is retried once after a frame, then fails. */
+export async function snapClip(c: Ctx, path: string, targets: readonly PwLocator[]): Promise<void> {
+  for (let retry = true; ; retry = false) {
+    const live = await c.page.evaluate<number>('window.innerHeight')
+    const boxes = (await Promise.all(targets.map((t) => t.boundingBox()))).filter((b) => b !== null)
+    const clip =
+      boxes.length === targets.length && unionClip(boxes, FOCUS_MARGIN_PX, c.viewport, live)
+    if (clip) return void (await snap(c.page, path, { clip }))
+    if (!retry) throw new Error('Clipped area is either empty or outside the resulting image')
+    await c.page.evaluate(FRAMES)
+  }
+}
 
 function record(c: Ctx, { name, state, status, file, note, stateful }: Outcome): void {
   const { route, scheme, viewport } = c
@@ -545,6 +560,9 @@ export async function hoverTrigger(target: PwLocator): Promise<void> {
   await target.hover({ timeout: HOVER_TIMEOUT_MS, ...(position && { position }) })
 }
 
+const tipOf = (c: Ctx, describedBy: string): PwLocator =>
+  c.page.locator(visibleTooltip(describedBy)).first()
+
 /**
  * The box of the tooltip an action opened, or null when none shows up. Call `markVisibleTooltips`
  * before the action; `describedBy` is the trigger's own tooltip id, when it has one.
@@ -554,7 +572,7 @@ async function openTooltipBox(
   describedBy: string,
   timeout = TIP_PROBE_MS,
 ): Promise<Box | null> {
-  const tip = c.page.locator(visibleTooltip(describedBy)).first()
+  const tip = tipOf(c, describedBy)
   try {
     await tip.waitFor({ state: 'visible', timeout })
   } catch {
@@ -586,7 +604,7 @@ async function captureHover(c: Ctx, name: string): Promise<void> {
     const describedBy = idOf(await target.evaluate(describedByOf))
     const [box, tip] = [await settledBox(anchor), await openTooltipBox(c, describedBy)]
     if (!box || !tip) return void (await snap(anchor, path))
-    await snap(c.page, path, { clip: unionClip([box, tip], FOCUS_MARGIN_PX, c.viewport, c.height) })
+    await snapClip(c, path, [anchor, tipOf(c, describedBy)])
   })
   await c.page.mouse.move(0, 0)
 }
@@ -645,9 +663,7 @@ async function captureFocus(c: Ctx, name: string): Promise<void> {
       ),
     )
     const tip = await openTooltipBox(c, focused)
-    await snap(c.page, path, {
-      clip: unionClip(tip ? [box, tip] : [box], FOCUS_MARGIN_PX, c.viewport, c.height),
-    })
+    await snapClip(c, path, tip ? [anchor, tipOf(c, focused)] : [anchor])
   })
   await c.page.evaluate('document.activeElement?.blur()')
 }
@@ -666,7 +682,7 @@ async function captureTooltip(c: Ctx, name: string): Promise<void> {
     if (!t) throw new Error('no visible [role="tooltip"] after hover')
     const a = await settledBox(anchor)
     if (!a) throw new Error('tooltip or anchor has no box')
-    await snap(c.page, path, { clip: unionClip([a, t], FOCUS_MARGIN_PX, c.viewport, c.height) })
+    await snapClip(c, path, [anchor, tipOf(c, describedBy)])
   })
   await c.page.mouse.move(0, 0)
 }
