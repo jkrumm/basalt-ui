@@ -1626,7 +1626,7 @@ P2/P3 basalt rows below. Validators: argo (bumps after the release, deletes its 
   longer or report "published, still propagating" distinctly; one `shot` flake (a focus crop "outside the resulting image",
   r1, a re-shoot passed); `rd merge` runs `make check` in a worktree while workers run suites, and one real-data test timed out
   under that load; GitHub runs no `pull_request` CI on a conflicting PR (every MIGRATING rebase must be pushed to start CI).
-- **For the next wave (written into Wave 39 as its first step):** argo's Wave 40 rows on 2.26.0 (11/14 pages pass; Garmin, Agents
+- **For the next wave (written up as Wave 39, argo's friction IV):** argo's Wave 40 rows on 2.26.0 (11/14 pages pass; Garmin, Agents
   and Strength fail on basalt rows only): the P1 Meter zone names at 390 (Caution, "abandoned"), names running together at 1440,
   folded zone keys told apart by colour, the astro reference lines folded at 390, the Garmin fitness readout over the line,
   tooltips past the card top and below the card at 390. Then this wave's remaining items above.
@@ -1635,18 +1635,33 @@ P2/P3 basalt rows below. Validators: argo (bumps after the release, deletes its 
 
 **Renumbered 2026-10-18 (second time):** Wave 38 (argo's friction III) was inserted; the old Waves 38–43 are now 39–44.
 
-## Wave 39 — Data tables, responsive <!-- status: active -->
+**Renumbered 2026-10-19 (third time):** Wave 39 (argo's friction IV) was inserted; the old Waves 39–44 are now 40–45.
+
+## Wave 39 — argo's friction IV: the Meter fit at 390, legend keys, readouts and tooltips <!-- status: active -->
+
+Source: argo `docs/design/UPSTREAM.md` § "Wave 40" (argo re-scored on 2.26.0: 11 of 14 pages pass; Garmin, Agents and
+Strength fail on basalt rows only) and Wave 38's **Left behind**. Validators: argo (bumps after the release, deletes its
+workarounds) and S2/S3/S4 under the calibrated bar (`docs/waves/design-parity/w37/setup.md`).
+
+- [ ] **The Meter zone fit at 390 first (P1, a lost fact):** the Garmin load meter drops Caution and the Agents oldest-wait
+      Meter drops "abandoned" at 7 d. Wave 38 #440 left the 22-vs-25 px case to a consumer `short`; decide in SPEC D38 whether
+      basalt derives room (the holding-name policy, the strip cell inset at the phone width) so no zone name is lost.
+- [ ] **Zone names at 1440 run together** with no gap (argo Home: "OptimalCaution Danger"): a minimum gap between adjacent
+      zone names, the borrow pass of #440 included.
+- [ ] **Compact legend keys:** zone entries folded into `+N` are then told apart by colour only; the astro timeline at 390
+      folds its two reference lines into `+2` (D43: only fold where a fold frees a line, and never leave a hue-only key).
+- [ ] **Readouts and tooltips:** the Sparkline hosted readout still stacks over the line on Garmin fitness (fixed on Usage);
+      the Garmin activities tooltip grows past the card top; the Reading pace slot readout hangs below its card at 390.
+- [ ] **Wave 38's remaining items:** the strip anatomy on S3/S4 (one cell anatomy with the visual on a shared baseline),
+      the hit-rate loading legend row, and the harness rows in Wave 38's **Left behind** (release poll, shot flake).
+- [ ] Rounds: at least three under the calibrated bar with before/after boards; a route passes or the remaining items are
+      named. Then the mother releases and argo bumps.
+      **Left behind:**
+
+## Wave 40 — Data tables, responsive <!-- status: pending -->
 
 Spec: SPEC § 6.6, § 9.1. Scenarios S1 (outages) and S2 (sessions). Validators: argo, linewatch.
 
-- [ ] **First: argo's friction IV** (argo `docs/design/UPSTREAM.md` § "Wave 40", argo re-scored on 2.26.0: 11/14 pages pass,
-      Garmin, Agents and Strength fail on basalt rows only), before the tables work: **P1** Meter zone names at 390 still drop one
-      (Garmin load meter loses Caution, Agents oldest-wait drops "abandoned" at 7 d — a lost fact; Wave 38 #440 left the
-      22-vs-25 px case to a `short`); zone names run together at 1440 with no gap (Home "OptimalCaution Danger"); compact-legend
-      zone entries folded into `+N` are then told apart by colour only, and the astro timeline at 390 folds its two reference lines
-      into `+2`; the Sparkline hosted readout still stacks over the line on Garmin fitness (fixed on Usage); tooltips grow past the
-      card top (Garmin activities) and the Reading pace slot readout hangs below its card at 390. Then the Wave 38 leftovers in its
-      **Left behind**. The mother releases after this step if argo is blocked.
 - [ ] Header on the body fill, sorted column brighter; row text `sm`; cell kinds via `meta.kind` (`entity`,
       `status`, `number`, `money`, `relative-time`, `meter`, `text`).
 - [ ] Responsive: `meta.priority` fold, then a pinned non-wrapping first column (opaque, with a `minSize`)
@@ -1658,7 +1673,7 @@ Spec: SPEC § 6.6, § 9.1. Scenarios S1 (outages) and S2 (sessions). Validators:
       column is reachable by keyboard. At least three rounds; owner sees the boards.
       **Left behind:**
 
-## Wave 40 — Event list <!-- status: pending -->
+## Wave 41 — Event list <!-- status: pending -->
 
 Spec: SPEC § 6.7, § 9.3, D11. Scenarios S5 (build the S5 fixture: the journal) and S3 (item timeline).
 Validators: argo (warden timeline, narratives), rb (journal, session history), linewatch (transitions).
@@ -1675,7 +1690,7 @@ Validators: argo (warden timeline, narratives), rb (journal, session history), l
 - [ ] At least three rounds on S5 and S3; owner sees the boards.
       **Left behind:**
 
-## Wave 41 — Board and the record page <!-- status: pending -->
+## Wave 42 — Board and the record page <!-- status: pending -->
 
 Spec: SPEC § 6.8, § 6.9, § 9.2, D3, D12. Scenarios S3 and S5. Validators: argo warden, rb knot detail,
 obsidian.
@@ -1692,7 +1707,7 @@ obsidian.
       summary sentence.
       **Left behind:**
 
-## Wave 42 — Forms, states and the guidance half <!-- status: pending -->
+## Wave 43 — Forms, states and the guidance half <!-- status: pending -->
 
 Spec: SPEC § 6.11, § 6.13, § 8, § 11. Scenario S6 (build it), then every scenario's state toggles.
 
@@ -1705,7 +1720,7 @@ Spec: SPEC § 6.11, § 6.13, § 8, § 11. Scenario S6 (build it), then every sce
       here or a recorded reason.
       **Left behind:**
 
-## Wave 43 — Release and rollout: argo and rb <!-- status: pending -->
+## Wave 44 — Release and rollout: argo and rb <!-- status: pending -->
 
 - [ ] Release through `make release` (the reason: the Part 3 patterns, rows 143–162).
 - [ ] argo upgrades, runs the shipped loop on its own screens, retires the hand-rolls its rows name (143–151),
@@ -1714,7 +1729,7 @@ Spec: SPEC § 6.11, § 6.13, § 8, § 11. Scenario S6 (build it), then every sce
 - [ ] Friction and ugliness become ledger rows and are fixed upstream before Wave 43.
       **Left behind:**
 
-## Wave 44 — Rollout, the expression trial and convergence <!-- status: pending -->
+## Wave 45 — Rollout, the expression trial and convergence <!-- status: pending -->
 
 - [ ] linewatch (rows 156–158) and obsidian (row 159) upgrade one at a time, each with a before/after board.
 - [ ] **Expression trial** (shaped like weatherorb's W45): a fresh agent in a scratch `init` app gets five
