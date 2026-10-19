@@ -348,7 +348,12 @@ describe('captions at their marks', () => {
       { box: { left: 24, right: 60 }, span: { left: 20, right: 100 } },
     ]
     expect(placeRowLabels(labels, 100, 0).shown).toEqual([true, true])
-    expect(placeRowLabels(labels, 100, 6).shown).toEqual([true, false])
+    // The name loses the first row to the gap step and stands on the second (Wave 39).
+    const gapped = placeRowLabels(labels, 100, 6)
+    expect([gapped.shown, gapped.row]).toEqual([
+      [true, true],
+      [0, 1],
+    ])
   })
 })
 
@@ -364,16 +369,25 @@ describe('the line zone ramp', () => {
 })
 
 describe('an end figure outranks a zone name', () => {
-  test('a zone name that would touch an end figure falls back to its short label, then hides', () => {
+  test('a zone name that would touch an end figure takes the second row with its full name, then its short label', () => {
     const end = { box: { left: 90, right: 100 }, end: true }
     const name = { box: { left: 70, right: 95 }, span: { left: 60, right: 100 } }
-    expect(placeRowLabels([end, name], 100).shown).toEqual([true, false])
+    const out = placeRowLabels([end, name], 100)
+    expect([out.shown, out.row]).toEqual([
+      [true, true],
+      [0, 1],
+    ])
     expect(placeRowLabels([end, { ...name, short: { left: 72, right: 82 } }], 100)).toMatchObject({
       shown: [true, true],
-      short: [false, true],
+      short: [false, false],
+      row: [0, 1],
     })
-    expect(placeRowLabels([end, { ...name, short: { left: 80, right: 92 } }], 100)).toMatchObject({
-      shown: [true, false],
+    // Wider than the row itself, neither row holds the full name: the short stands on the first.
+    const wide = { box: { left: 0, right: 120 }, span: name.span, short: { left: 72, right: 82 } }
+    expect(placeRowLabels([end, wide], 100)).toMatchObject({
+      shown: [true, true],
+      short: [false, true],
+      row: [0, 0],
     })
   })
 
@@ -383,17 +397,25 @@ describe('an end figure outranks a zone name', () => {
       { box: { left: 90, right: 100 }, end: true },
     ]
     expect(placeRowLabels(ends, 100, 6).shown).toEqual([true, true])
-    expect(
-      placeRowLabels([ends[0]!, { box: { left: 10, right: 20 }, end: true }], 20, 6).shown,
-    ).toEqual([true, false])
+    // Narrower than both plus a gap: the second end figure stands on the second row (Wave 39).
+    const narrow = placeRowLabels([ends[0]!, { box: { left: 10, right: 20 }, end: true }], 20, 6)
+    expect([narrow.shown, narrow.row]).toEqual([
+      [true, true],
+      [0, 1],
+    ])
   })
 
   test('an interior tick still keeps its place over an end figure it would touch', () => {
     const labels = [{ box: { left: 90, right: 100 }, end: true }, { box: { left: 85, right: 95 } }]
-    expect(placeRowLabels(labels, 100).shown).toEqual([false, true])
-    expect(placeRowLabels([{ box: { left: 90, right: 100 } }, labels[1]!], 100).shown).toEqual([
-      true,
-      false,
+    const out = placeRowLabels(labels, 100)
+    expect([out.shown, out.row]).toEqual([
+      [true, true],
+      [1, 0],
+    ])
+    const ticks = placeRowLabels([{ box: { left: 90, right: 100 } }, labels[1]!], 100)
+    expect([ticks.shown, ticks.row]).toEqual([
+      [true, true],
+      [0, 1],
     ])
   })
 })

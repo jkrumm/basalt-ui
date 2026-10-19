@@ -261,6 +261,8 @@ export type RowPlacement = {
   short: boolean[]
   /** Pixels a shown label moves along the row's physical x axis to stay inside it (0 unless clamped). */
   shift: number[]
+  /** Index-aligned: the row a shown label stands on, 0 the first, 1 the second (staggered under it). */
+  row: (0 | 1)[]
 }
 
 /**
@@ -268,21 +270,98 @@ export type RowPlacement = {
  * is the reading's verdict, so it never hides for width: it may spill past its span, shifted inside
  * the row); the other ticks go next, then the end ticks (at the track's start or end: a scale's
  * figures); every other zone name then shows only when it lies inside the row and its own span and
- * clears every label already kept, trying its full name, then its `short` box, then hiding. An end
+ * clears every label already kept, trying its full name, then its `short` box, then hiding. A name
+ * that does not fit its span borrows room: its neighbours (the holding name too) slide away, each
+ * keeping its CENTRE inside its own span (it may overhang a span edge by up to half its width).
+ * Order per name: full on row one, full on row two, `short` on row one, `short` on row two, hidden;
+ * on an equal count of shown labels the full-name layout wins over the `short` one. An end
  * figure hides only when it cannot clear the holding name, an interior tick or the other end. A tick
- * keeps at least `gap` px (one gap step of the host's spacing) from every other label; zone names
- * among themselves only must not touch. A hidden name is still named in the described-by text.
+ * keeps at least `gap` px (one gap step of the host's spacing) from every other label, and so does
+ * a zone name from its neighbour. No zone name and no tick label is lost for width: one that cannot
+ * hold its place on the first row stands on a second row directly under it (centred on its span or
+ * mark, clamped inside the row, keeping the same gap), and only hides when neither row can hold it.
+ * A hidden label is still named in the described-by text.
  */
 export function placeRowLabels(
   labels: readonly RowLabel[],
   rowWidth: number,
   gap = 0,
 ): RowPlacement {
+  // A name's order: full on row one (borrowing included), full on row two, then its `short` on row
+  // one, `short` on row two, then hidden. So the full names are tried alone first and the `short`
+  // fallback only runs when some label would otherwise be lost.
+  const full = layOut(
+    labels.map(({ short: _short, ...l }) => l),
+    rowWidth,
+    gap,
+  )
+  if (full.shown.every(Boolean) || labels.every((l) => l.short === undefined)) return full
+  const withShort = layOut(labels, rowWidth, gap)
+  return withShort.shown.filter(Boolean).length > full.shown.filter(Boolean).length
+    ? withShort
+    : full
+}
+
+function layOut(labels: readonly RowLabel[], rowWidth: number, gap: number): RowPlacement {
   const first = placeOnce(labels, rowWidth, gap, false)
   // One register: once any name falls back to its `short`, every other name that has one follows
   // (the holding name, which never shortens, is the one exception). The row is placed again with
   // those names in their `short` box, so every shift is computed against the box that renders.
-  return first.short.some(Boolean) ? placeOnce(labels, rowWidth, gap, true) : first
+  const registerShort = first.short.some(Boolean)
+  const one = registerShort ? placeOnce(labels, rowWidth, gap, true) : first
+  return stagger(labels, one, rowWidth, gap, registerShort)
+}
+
+/**
+ * The second row: every label the first row could not hold, ticks before names, each centred on its
+ * own box (a tick keeps its anchoring) and clamped inside the row like the holding name, keeping `gap`
+ * px from the labels already on that row. The register follows the first row; a label that fits
+ * neither row stays hidden.
+ */
+function stagger(
+  labels: readonly RowLabel[],
+  one: Omit<RowPlacement, 'row'>,
+  rowWidth: number,
+  gap: number,
+  registerShort: boolean,
+): RowPlacement {
+  const row = labels.map((): 0 | 1 => 0)
+  const { shown, short, shift } = one
+  const kept: LabelBox[] = []
+  const rank = (l: RowLabel) => (l.end ? 0 : l.span ? 2 : 1)
+  const pending = labels
+    .map((_, i) => i)
+    .filter((i) => !shown[i])
+    .toSorted((a, b) => rank(labels[a] as RowLabel) - rank(labels[b] as RowLabel))
+  const clamped = (b: LabelBox): LabelBox => {
+    const width = b.right - b.left
+    const left = Math.max(0, Math.min(b.left, rowWidth - width))
+    return { left, right: left + width }
+  }
+  const clears = (b: LabelBox) =>
+    !kept.some(
+      (k) => b.left < k.right + gap - LABEL_SUBPIXEL && k.left < b.right + gap - LABEL_SUBPIXEL,
+    )
+  for (const i of pending) {
+    const label = labels[i] as RowLabel
+    const useShort = registerShort && label.short !== undefined
+    const candidates = useShort
+      ? [label.short as LabelBox]
+      : label.short !== undefined
+        ? [label.box, label.short]
+        : [label.box]
+    for (const base of candidates) {
+      const box = clamped(base)
+      if (box.right - box.left > rowWidth + LABEL_SUBPIXEL || !clears(box)) continue
+      kept.push(box)
+      shown[i] = true
+      short[i] = base !== label.box
+      shift[i] = box.left - base.left
+      row[i] = 1
+      break
+    }
+  }
+  return { shown, short, shift, row }
 }
 
 function placeOnce(
@@ -290,7 +369,7 @@ function placeOnce(
   rowWidth: number,
   gap: number,
   registerShort: boolean,
-): RowPlacement {
+): Omit<RowPlacement, 'row'> {
   const shown = labels.map(() => false)
   const short = labels.map(() => false)
   const shift = labels.map(() => 0)
@@ -299,24 +378,31 @@ function placeOnce(
   const order = labels
     .map((_, i) => i)
     .toSorted((a, b) => rank(labels[a] as RowLabel) - rank(labels[b] as RowLabel))
-  // The gap step applies when either label of a pair is a tick; zone names keep to "not touching".
-  const clears = (b: LabelBox, tick: boolean, self = -1) =>
-    !kept.some(({ box: k, tick: kTick, i: ki }) => {
-      if (ki === self) return false
-      const pad = tick || kTick ? gap : 0
-      return b.left < k.right + pad - LABEL_SUBPIXEL && k.left < b.right + pad - LABEL_SUBPIXEL
-    })
+  // Every pair of labels keeps the gap step apart, a zone name from its neighbour as a tick does.
+  const clears = (b: LabelBox) =>
+    !kept.some(
+      ({ box: k }) =>
+        b.left < k.right + gap - LABEL_SUBPIXEL && k.left < b.right + gap - LABEL_SUBPIXEL,
+    )
   for (const i of order) {
     const label = labels[i] as RowLabel
     const { span } = label
     const tick = span === undefined && !label.holding
     let box = label.box
+    if (tick) {
+      // A tick may sit past the row's end (a wide label hugging a mark in the near half): it is
+      // shifted inside the row, as the holding name is, rather than lost.
+      const width = box.right - box.left
+      const left = Math.max(0, Math.min(box.left, rowWidth - width))
+      shift[i] = left - box.left
+      box = { left, right: left + width }
+    }
     if (label.holding) {
       const width = box.right - box.left
       const left = Math.max(0, Math.min(box.left, rowWidth - width))
       shift[i] = left - box.left
       box = { left, right: left + width }
-      if (!clears(box, false)) continue
+      if (!clears(box)) continue
       shown[i] = true
       kept.push({ box, tick: false, i })
       continue
@@ -326,25 +412,29 @@ function placeOnce(
       b.right <= rowWidth + LABEL_SUBPIXEL &&
       (span === undefined ||
         (b.left >= span.left - LABEL_SUBPIXEL && b.right <= span.right + LABEL_SUBPIXEL)) &&
-      clears(b, tick)
+      clears(b)
     const useShort =
       label.short !== undefined && (registerShort ? true : !fits(box)) && fits(label.short)
     if (registerShort && label.short !== undefined && !useShort) continue
     if (useShort) box = label.short as LabelBox
-    else if (!fits(box)) continue
+    else if (!fits(box)) {
+      shift[i] = 0
+      continue
+    }
     shown[i] = true
     short[i] = useShort
     kept.push({ box, tick, i })
   }
   // A name that did not fit inside its own span borrows room from the row: the zone names beside it
-  // slide inside THEIR spans, away from it, and it takes the gap, staying centred in its span. Full
-  // name first, then `short`; holding names and ticks never move.
+  // (the holding one included) slide away from it and it takes the gap. The rule is D38's: a name's
+  // CENTRE stays inside its own span, so a slid name may overhang a span edge by up to half its width,
+  // never past its centre. Full name first, then `short`; ticks never move.
   for (const [i, label] of labels.entries()) {
     if (label.span === undefined || label.holding || (shown[i] && !short[i])) continue
     const { span } = label
     const centre = (b: LabelBox) => (b.left + b.right) / 2
     const others = kept.filter((k) => k.i !== i)
-    const movable = (k: (typeof kept)[number]) => !k.tick && !labels[k.i]?.holding
+    const movable = (k: (typeof kept)[number]) => !k.tick
     const fixed = others.filter((k) => !movable(k))
     const slidable = others.filter(movable)
     const base = registerShort && label.short ? label.short : label.box
@@ -360,7 +450,7 @@ function placeOnce(
     )
       continue
     const rightOf = slidable
-      .filter((k) => centre(k.box) > mid)
+      .filter((k) => centre(k.box) >= mid)
       .toSorted((a, b) => b.box.left - a.box.left)
     const leftOf = slidable
       .filter((k) => centre(k.box) < mid)
@@ -377,42 +467,38 @@ function placeOnce(
         const w = k.box.right - k.box.left
         const stop = right
           ? Math.min(
-              (labels[k.i]?.span?.right ?? rowWidth) + LABEL_SUBPIXEL,
+              (labels[k.i]?.span?.right ?? rowWidth) + w / 2 + LABEL_SUBPIXEL,
               hi,
-              ...fixed
-                .filter((f) => f.box.left >= k.box.left)
-                .map((f) => f.box.left - (f.tick ? gap : 0)),
+              ...fixed.filter((f) => f.box.left >= k.box.left).map((f) => f.box.left - gap),
             )
           : k.box.left + w
         const at = Math.max(k.box.left, stop - w)
         slides.set(k.i, at - k.box.left)
-        hi = at
+        hi = at - gap
       }
       let lo = 0
       for (const k of leftOf) {
         const w = k.box.right - k.box.left
         const stop = left
           ? Math.max(
-              (labels[k.i]?.span?.left ?? 0) - LABEL_SUBPIXEL,
+              (labels[k.i]?.span?.left ?? 0) - w / 2 - LABEL_SUBPIXEL,
               lo,
-              ...fixed
-                .filter((f) => f.box.right <= k.box.right)
-                .map((f) => f.box.right + (f.tick ? gap : 0)),
+              ...fixed.filter((f) => f.box.right <= k.box.right).map((f) => f.box.right + gap),
             )
           : k.box.left
         const at = Math.min(k.box.left, stop)
         slides.set(k.i, at - k.box.left)
-        lo = at + w
+        lo = at + w + gap
       }
       // The gap this name may take: after the nearest left neighbour and fixed label, before the right.
       const gapLo = Math.max(
         lo,
-        ...fixed.filter((f) => f.box.right <= mid).map((f) => f.box.right + (f.tick ? gap : 0)),
+        ...fixed.filter((f) => f.box.right <= mid).map((f) => f.box.right + gap),
         0,
       )
       const gapHi = Math.min(
         hi,
-        ...fixed.filter((f) => f.box.left >= mid).map((f) => f.box.left - (f.tick ? gap : 0)),
+        ...fixed.filter((f) => f.box.left >= mid).map((f) => f.box.left - gap),
         rowWidth,
       )
       return { slides, gapLo, gapHi }

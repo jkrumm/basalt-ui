@@ -48,14 +48,14 @@ layout('ACWR zone names (Wave 38)', () => {
     expect(full.length + short.length).toBe(4)
   })
 
-  test('at 390 the exact name set shows: Caution hides (the accepted geometry limit), the holding zone stays', async () => {
+  test('at 390 the exact name set shows: Caution stands on the second row (Wave 39), the holding zone stays', async () => {
     const p = await openFixture(spec, PHONE)
     await p.settle()
-    // "Caut." needs 25px beside "Optimal" and "Danger"; the 164px track leaves 22. argo gives it a short.
-    expect(await names(p)).toEqual({ full: ['Low', 'Optimal', 'Danger'], short: [] })
+    // "Caut." needs 25px beside "Optimal" and "Danger"; the 164px track leaves 22: the name moves down.
+    expect(await names(p)).toEqual({ full: ['Low', 'Optimal', 'Caution', 'Danger'], short: [] })
     const boxes = await p.raw.evaluate(() =>
       [...document.querySelectorAll('[data-testid="w38-acwr-strip"] [data-meter-zone-band] > span')]
-        .filter((e) => !e.hasAttribute('data-hidden'))
+        .filter((e) => !e.hasAttribute('data-hidden') && !e.hasAttribute('data-row2'))
         .map((e) => e.getBoundingClientRect())
         .toSorted((a, b) => a.left - b.left)
         .map((r) => ({ left: r.left, right: r.right })),
@@ -66,7 +66,7 @@ layout('ACWR zone names (Wave 38)', () => {
     }
   })
 
-  test('at 1440 where the full name fits, Caution is not abbreviated', async () => {
+  test('at 1440 where the full name fits, Caution is not abbreviated (a gap step from its neighbours)', async () => {
     const p = await openFixture(spec, DESKTOP_1440)
     await p.settle()
     const { full, short } = await names(p)
@@ -75,7 +75,8 @@ layout('ACWR zone names (Wave 38)', () => {
   })
 
   const SHORT_CASES: [string, { full: string[]; short: string[] }][] = [
-    ['w38-zshort-170', { full: ['Optimal'], short: ['Und', 'Cau', 'Dan'] }],
+    // Wave 39: full names are tried on both rows before any `short`: at 170 the second row holds them.
+    ['w38-zshort-170', { full: ['Under', 'Optimal', 'Caution', 'Danger'], short: [] }],
     ['w38-zshort-210', { full: ['Under', 'Optimal', 'Caution', 'Danger'], short: [] }],
   ]
   test.each(SHORT_CASES)(

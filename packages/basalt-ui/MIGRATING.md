@@ -1078,6 +1078,19 @@ No export is added or removed. A `StatGroup variant="strip"` cell is now a head 
 
 Opt-outs: none for the levelling (it only ever adds head height to a visual cell); omit `visual` on a cell to keep it out. A zoned row `Meter` keeps its marker reading with `reading` set on the `Meter` (the prop overrides the host).
 
+### Meter labels at 390 (Wave 39)
+
+No export is removed. A `Meter` zone name or tick label no longer drops for width. A zone name is tried in this order: its full name on the first label row (the names beside it, the holding one included, slide inside their spans to make room, each keeping the gap step), its full name on a **second label row** directly under the first, its `short` on the first row, its `short` on the second, then hidden. A tick label takes the second row before it hides. A second-row label is centred on its span or mark, clamped inside the track, and keeps the gap step from the other labels on that row. The row exists only while a label stands on it; a Meter whose labels all fit keeps its single `1.25em` row and its loading skeleton. The caption row (start figure, tick captions, pace/forecast) keeps its drop order.
+
+| Before                                                                                                         | Now                                                                                                                               |
+| -------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------- |
+| A zone name too wide for its span (and its `short`) was hidden: argo's Garmin ACWR meter lost `Caution` at 390 | `Caution` stands on a second row; the other names stay on the first                                                               |
+| Zone names only had to not touch: `OptimalCaution Danger`                                                      | Adjacent names keep the gap step; at 1440 (a 203 px cell) all four ACWR names stay full on ONE row, the holding name sliding left |
+| A name that did not fit fell back to its `short` on the first row, and every sibling's `short` followed        | The full name goes on the second row first; the `short` register only starts when no full name can hold either row                |
+| A tick label wider than the room beside its mark, or one touching another label, was hidden                    | It is shifted inside the track, or stands on the second row (argo's `abandoned at 7 d` at any cell width and reading)             |
+
+Opt-out: give the zone a `short` that fits its span (it is used once the full name holds neither row), or drop the tick's `label` (the mark stays, named in the described-by text). A Meter that needs no second row renders as before. One that now shows a second row is one line (`1.25em`) taller at that width: a card or strip cell that pins the Meter's height should not. At 115 px of track argo's four ACWR zones all show (one a `short` or on the second row); below that the last label hides and stays in the described-by text.
+
 ## 2.26.0 — Wave 38, argo's friction III
 
 ### Chart card loading (Wave 38)

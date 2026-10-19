@@ -491,14 +491,17 @@ describe('zone name layout', () => {
     HTMLElement.prototype.getBoundingClientRect = function (this: HTMLElement) {
       const box = (left: number, width: number) =>
         ({ left, right: left + width, width, top: 0, bottom: 10, height: 10 }) as DOMRect
+      // A placement's nudge is a `translate`: the layout includes it in the box, as a browser does.
+      const nudge = (el: HTMLElement) =>
+        Number.parseFloat(el.style.getPropertyValue('--basalt-nudge')) || 0
       if (this.hasAttribute('data-meter-zone-label')) {
         const width = labelWidth + (this.hasAttribute('data-holding') ? holdingExtra : 0)
         const centre = (Number.parseFloat(this.style.insetInlineStart) / 100) * rowWidth
-        return box(centre - width / 2, width)
+        return box(centre - width / 2 + nudge(this), width)
       }
       if (this.hasAttribute('data-meter-zone-short')) {
         const centre = (Number.parseFloat(this.style.insetInlineStart) / 100) * rowWidth
-        return box(centre - shortWidth / 2, shortWidth)
+        return box(centre - shortWidth / 2 + nudge(this), shortWidth)
       }
       return this.hasAttribute('data-meter-zone-band') ? box(0, rowWidth) : box(0, 0)
     }
@@ -514,6 +517,13 @@ describe('zone name layout', () => {
   const props = { label: 'Load', max: 750, value: 300, zones: ZONES } as const
   const hiddenNames = (c: HTMLElement) =>
     [...c.querySelectorAll('[data-meter-zone-label][data-hidden]')].map((l) => l.textContent)
+  // Wave 39: a name that cannot hold the first row stands on the second, still shown.
+  const movedNames = (c: HTMLElement) =>
+    [...c.querySelectorAll('[data-meter-zone-label][data-row2]:not([data-hidden])')].map(
+      (l) => l.textContent,
+    )
+  const labelRows = (c: HTMLElement) =>
+    c.querySelector('[data-meter-zone-band]')?.getAttribute('data-meter-rows')
   const resize = (width: number) => {
     rowWidth = width
     act(() => {
@@ -521,14 +531,20 @@ describe('zone name layout', () => {
     })
   }
 
-  test('shows every name on a wide row, hides those wider than their span (never the holding one) when narrowed, and returns', () => {
+  test('shows every name on a wide row, moves those wider than their span to a second row when narrowed, and returns', () => {
     const { container } = mount(props)
     expect(hiddenNames(container)).toEqual([])
-    // 120px row: each span is 40px, a 50px name does not fit. The holding name (Optimal) never hides.
+    expect(movedNames(container)).toEqual([])
+    expect(labelRows(container)).toBe('1')
+    // 120px row: each span is 40px, a 50px name does not fit. The holding name (Optimal) stays on row one.
     resize(120)
-    expect(hiddenNames(container)).toEqual(['Low', 'High'])
+    expect(hiddenNames(container)).toEqual([])
+    expect(movedNames(container)).toEqual(['Low', 'High'])
+    expect(labelRows(container)).toBe('2')
     resize(300)
     expect(hiddenNames(container)).toEqual([])
+    expect(movedNames(container)).toEqual([])
+    expect(labelRows(container)).toBe('1')
   })
 
   test('a name too wide for its span shows its short label instead; the full name stays described', () => {
@@ -539,12 +555,15 @@ describe('zone name layout', () => {
         (l) => l.textContent,
       )
     expect(visible()).toEqual([])
+    // 120px row: the full names take the second row before any short label is tried (Wave 39).
     resize(120)
-    expect(hiddenNames(container)).toEqual(['Low', 'High'])
-    expect(visible()).toEqual(['Lo', 'Hi'])
-    // 30px row: 10px spans, not even a short label fits, so both hide.
-    resize(30)
+    expect(hiddenNames(container)).toEqual([])
+    expect(movedNames(container)).toEqual(['Low', 'High'])
     expect(visible()).toEqual([])
+    // 30px row: no full name fits either row, so the short labels run as one register; the second
+    // short has no room beside the first and hides.
+    resize(30)
+    expect(visible()).toEqual(['Lo'])
     expect(container.querySelector('[role="meter"]')?.getAttribute('aria-describedby')).toBeTruthy()
     expect(container.textContent).toContain('Low')
   })
@@ -596,7 +615,7 @@ describe('zone name layout', () => {
 
   test('a reading that moves the bold label re-measures with no resize', () => {
     // 300px row, spans 0-200 / 200-240 / 240-300: B holding is 45 + 40 = 85px wide, over C's name,
-    // and C (45px) has no room left in its 60px span to slide clear.
+    // so C's name borrows room (a nudge) once B is the holding one.
     const zones = [
       { from: 0, to: 500, label: 'A' },
       { from: 500, to: 600, label: 'B' },
@@ -611,11 +630,18 @@ describe('zone name layout', () => {
     )
     const { container, rerender } = render(tree(100))
     expect(hiddenNames(container)).toEqual([])
-    // B holding is bolder and claims its place first, so C's name yields. No observer callback fires.
+    const nudged = () =>
+      [...container.querySelectorAll<HTMLElement>('[data-meter-zone-label]')].filter(
+        (l) => l.style.getPropertyValue('--basalt-nudge') !== '',
+      ).length
+    const before = nudged()
+    // B holding is bolder and claims its place first, so a name moves clear of it. No observer callback fires.
     rerender(tree(550))
-    expect(hiddenNames(container)).toEqual(['C'])
+    expect(hiddenNames(container)).toEqual([])
+    expect(nudged()).toBeGreaterThan(before)
     rerender(tree(100))
     expect(hiddenNames(container)).toEqual([])
+    expect(nudged()).toBe(before)
   })
 
   describe('web fonts', () => {
@@ -643,12 +669,12 @@ describe('zone name layout', () => {
       else Reflect.deleteProperty(document, 'fonts')
     })
 
-    test('loadingdone re-measures: widths that changed with no resize hide names', () => {
+    test('loadingdone re-measures: widths that changed with no resize move names to the second row', () => {
       const { container } = mount(props)
-      expect(hiddenNames(container)).toEqual([])
+      expect(movedNames(container)).toEqual([])
       labelWidth = 120
       act(() => loadingDone?.())
-      expect(hiddenNames(container)).toEqual(['Low', 'High'])
+      expect(movedNames(container)).toEqual(['Low', 'High'])
     })
 
     test('the listener is removed on unmount', () => {

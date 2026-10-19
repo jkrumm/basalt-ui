@@ -157,7 +157,13 @@ describe('tick caption collision', () => {
     act(() => {
       for (const o of observers) o.callback()
     })
-    expect(hidden()).toEqual([false, true])
+    // The later caption stands on the second row instead of hiding (Wave 39).
+    expect(hidden()).toEqual([false, false])
+    expect(
+      [...container.querySelectorAll('[data-meter-tick-label]')].map((l) =>
+        l.hasAttribute('data-row2'),
+      ),
+    ).toEqual([false, true])
   })
 
   test('a caption that would leave the row at the end is right-aligned to its tick, so it fits', () => {

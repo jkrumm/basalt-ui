@@ -101,10 +101,21 @@
   --basalt-reading-dir: -1;
 }
 
+/* A label that cannot hold its place on the first row stands on a second, directly under it. */
+.labelRow[data-meter-rows='2'] {
+  height: 2.5em;
+}
+
+.rowLabel[data-row2] {
+  top: 1.25em;
+}
+
 .rowLabel {
   position: absolute;
   top: 0;
   white-space: nowrap;
+  /* The placement's physical offset (a label kept inside the row): both anchors, either direction. */
+  translate: var(--basalt-nudge, 0px) 0;
 }
 
 .rowLabel[data-hidden] {
@@ -113,7 +124,7 @@
 
 /* A zone name is centred on its span: the physical `translate` flips sign in RTL. */
 .zoneLabel {
-  translate: calc(-50% * var(--basalt-reading-dir)) 0;
+  translate: calc(-50% * var(--basalt-reading-dir) + var(--basalt-nudge, 0px)) 0;
 }
 
 .zoneLabelHolding {

@@ -376,6 +376,8 @@ export type FixtureSpec = {
   w38Zones?: true
   /** Wave 38: strip cells, Meters and a forecast Meter loaded and loading side by side, a StatGroup's hero sizes (`w38l-*`). */
   w38StripMeter?: true
+  /** Wave 39: argo's Garmin ACWR strip (`w39-garmin`), Agents oldest-wait strip (`w39-agents`) and a wide ACWR Meter (`w39-home`). */
+  w39Meter?: true
   /** Wave 38: a high-line Sparkline in a 150px strip cell and card (`w38r2-strip`, `w38r2-card`), a slotted `Bars` (`w38r2-bars`) and two `ChartCard` line charts (`w38r2-lines-narrow`, `w38r2-lines-wide`). */
   w38Readout2?: true
   /** Wave 39: a mixed one-row strip (Meter, Sparkline, Bars, a wrapping qualifier, a footer `under`) and a multi-row cell with row Sparklines (`w39-strip`, `w39-rows`). */

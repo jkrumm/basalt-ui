@@ -220,6 +220,7 @@ layout('Meter / BarList geometry', () => {
             right: r.right,
             top: r.top,
             bottom: r.bottom,
+            row2: el.hasAttribute('data-row2'),
           }
         })
         const box = host.getBoundingClientRect()
@@ -236,13 +237,15 @@ layout('Meter / BarList geometry', () => {
           ).color,
         }
       }, `dash-meter-zones-${width}`)
-      // 'Overreaching' is wider than its 40px span at 160px and hides.
+      // Wave 39: 'Overreaching' is wider than its 40px span at 160px and stands on the second row.
       expect(m.boxes).toHaveLength(4 - m.hidden)
-      expect(m.hidden).toBe(width === 160 ? 1 : 0)
+      expect(m.hidden).toBe(0)
       for (const [i, a] of m.boxes.entries()) {
         expect(a.left).toBeGreaterThanOrEqual(m.rootLeft - SUBPIXEL)
         expect(a.right).toBeLessThanOrEqual(m.rootRight + SUBPIXEL)
         for (const b of m.boxes.slice(i + 1)) {
+          // Wave 39: the two rows are separate lines; a name only has to clear the ones on its row.
+          if (a.row2 !== b.row2) continue
           const apart =
             a.right <= b.left + SUBPIXEL ||
             b.right <= a.left + SUBPIXEL ||
@@ -334,7 +337,7 @@ layout('Meter / BarList geometry', () => {
     },
   )
 
-  test('Meter zone names hide when the row narrows and return when it widens', async () => {
+  test('Meter zone names move to a second row when the row narrows and return when it widens', async () => {
     const hiddenAt = (width: number) =>
       p.raw.evaluate(async (w) => {
         const host = document.querySelector<HTMLElement>('[data-testid="dash-meter-zones-360"]')
@@ -342,7 +345,7 @@ layout('Meter / BarList geometry', () => {
         host.style.width = `${w}px`
         // A ResizeObserver callback lands before the next paint; two frames is enough to see it.
         await new Promise((r) => requestAnimationFrame(() => requestAnimationFrame(r)))
-        return host.querySelectorAll('[data-meter-zone-label][data-hidden]').length
+        return host.querySelectorAll('[data-meter-zone-label][data-row2]:not([data-hidden])').length
       }, width)
     expect(await hiddenAt(120)).toBeGreaterThan(0)
     expect(await hiddenAt(360)).toBe(0)
