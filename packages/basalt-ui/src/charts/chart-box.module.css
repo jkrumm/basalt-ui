@@ -167,6 +167,14 @@
     var(--vx-surface-elevated) !important;
 }
 
+/* The engine focuses the plot's `svg.ts-chart` (tabindex 0), not the `.basalt-chart` wrapper
+ * `styles.css` rings, so the UA's `auto` ring paints (a 5px white double ring in dark): the same
+ * 2px accent ring at the same offset, which the slotted chip clears (`SLOT_RING_CLEARANCE`). */
+:global(.basalt-chart .ts-chart:focus-visible) {
+  outline: 2px solid var(--vx-accent);
+  outline-offset: calc(0.125rem * var(--mantine-scale, 1));
+}
+
 /*
  * A slotted `Bars` (`data-basalt-slot`, set by `compile.ts`) is a micro-visual: its tooltip is the
  * Sparkline's one-line chip, `<value> · <x label>` in the line the host reserves above the plot. The
@@ -179,15 +187,15 @@
   align-items: center;
   box-sizing: border-box;
   width: max-content;
-  /* The line the cell reserves (1.125rem) less the focus ring's clearance (2px outline + 0.125rem offset), so
+  /* The line the cell reserves (1.125rem) less the focus ring's clearance (2px outline + 0.125rem offset) and 1px of air, so
    * the chip sits clear of the ring and still inside the reserve. */
-  block-size: calc(1.125rem - 0.25rem);
+  block-size: calc(1.125rem - 0.3125rem);
   padding: 0 4px !important;
   overflow: hidden;
   font-family: var(--basalt-font-numeral, var(--basalt-font-sans));
   font-variant-numeric: lining-nums;
   font-size: var(--vx-text-xs);
-  line-height: calc(1.125rem - 0.25rem - 2px);
+  line-height: calc(1.125rem - 0.3125rem - 2px);
   white-space: nowrap !important;
   border-radius: var(--vx-radius-ctrl) !important;
   /* theme-allow css-raw-surface — the chip is flat, like the Sparkline's, not a floating panel */
@@ -209,8 +217,11 @@
 }
 
 :global(.ts-chart-tooltip[data-basalt-slot] .ts-chart-tooltip__row:not(:first-child)),
+/* The engine's series swatch is a block above the figure: it stacks the row taller than the chip and the
+ * figure's lower half falls under the chip's `overflow: hidden`. */
+:global(.ts-chart-tooltip[data-basalt-slot] .ts-chart-tooltip__swatch),
 :global(.ts-chart-tooltip[data-basalt-slot] .ts-chart-tooltip__row > span:not(:last-child)) {
-  display: none;
+  display: none !important;
 }
 
 :global(.ts-chart-tooltip[data-basalt-slot] .ts-chart-tooltip__title) {

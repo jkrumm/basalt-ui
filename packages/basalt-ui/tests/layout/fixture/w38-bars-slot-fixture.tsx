@@ -10,6 +10,12 @@ const BINS: Bin[] = ['<20', '20–30', '30–40', '40–50', '50–60', '60–70
   n: [1, 3, 6, 4, 5, 2, 1][i] ?? 0,
 }))
 
+const TITLES = ['Mistborn: The Final Empire', 'Dune']
+const BOOKS = [
+  { book: 0, pace: 48 },
+  { book: 1, pace: 53 },
+]
+
 const SPARK = BINS.map((b) => b.n)
 
 const visuals = {
@@ -57,6 +63,40 @@ export function W38BarsSlotFixture(): ReactElement {
           />
         </div>
       ))}
+      <div data-testid="w41-chip-strip" style={{ width: 400 }}>
+        <StatGroup
+          variant="strip"
+          label="Reading"
+          cells={[
+            {
+              key: 'pace',
+              caption: 'Pace · median of 2 books',
+              value: '51',
+              unit: 'pages/h',
+              visual: (
+                <Bars
+                  ariaLabel="Pace per book"
+                  data={BOOKS}
+                  height={28}
+                  x={(d) => d.book}
+                  formatX={(i) => TITLES[i] ?? ''}
+                  bars={[
+                    {
+                      key: 'pace',
+                      label: 'Pace',
+                      color: VX.muted,
+                      getValue: (d) => d.pace,
+                      formatValue: (v) => `${Math.round(v)} pages/h`,
+                    },
+                  ]}
+                  legend={false}
+                />
+              ),
+              footer: 'slowest 48, fastest 53 pages/h',
+            },
+          ]}
+        />
+      </div>
     </>
   )
 }
