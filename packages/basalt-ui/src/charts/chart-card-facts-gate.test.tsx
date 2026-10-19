@@ -70,3 +70,23 @@ describe('ChartCard pending ghost', () => {
     expect(ghost({ ghost: 12 })?.querySelectorAll('span').length).toBe(12)
   })
 })
+
+describe('ChartCard facts gate: documented misuse', () => {
+  test.each([
+    [
+      'loading',
+      <div key="m" aria-busy="true">
+        loading rows
+      </div>,
+    ],
+    ['empty', <p key="m">No sessions logged</p>],
+  ])('a content card not told via state still renders facts over a body-owned %s', (_n, body) => {
+    const { container } = render(
+      <ChartCard title="T" facts={{ value: 'HEADLINE' }} placeholderHeight="content">
+        {body}
+      </ChartCard>,
+    )
+    expect(container.textContent).toContain('HEADLINE')
+    expect(container.querySelector('[data-basalt-facts-skeleton]')).toBeNull()
+  })
+})

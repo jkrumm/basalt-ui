@@ -1435,7 +1435,12 @@ Opt-out: none for the zone names; a zone that must keep to its span sets a `shor
 
 No export is removed. `ChartCard` learns a pending plot's shape and documents the state contract.
 
-- **Facts show only at rest.** A card's `facts` and basis `subtitle` render when `state` resolves to ready; pending draws the facts skeleton, empty and error draw neither, in every `placeholderHeight` mode. The card knows a state only through its `state` prop, so a body that draws its own loading or empty line (`Meter loading`, `BarList emptyText`) must ALSO pass `state={{ pending: true }}` / `state={{ empty }}` to the card, or the loaded headline renders above it. Opt-out: none needed; omit `facts` to keep a card state-agnostic.
+- **Facts show only at rest.** A card's `facts` and basis `subtitle` render when `state` resolves to ready; pending draws the facts skeleton, empty and error draw neither, in every `placeholderHeight` mode. The card knows a state only through its `state` prop. Opt-out: omit `facts` to keep a card state-agnostic.
+
+  | Before                                                                                         | Now                                                                                                 |
+  | ---------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------- |
+  | Facts render above the body's own loading or empty line (`Meter loading`, `BarList emptyText`) | Also pass `state={{ pending: true }}` / `state={{ empty }}` to the card; the facts hide or skeleton |
+
 - **`ChartCard ghost`** (new optional prop): `'bars'` (default), `'line'` for a line or area chart, or a number for the bar count when the loaded data length is known. Opt-out: omit it for the previous eight-bar ghost.
 
 ## 2.23.0 — Wave 37, argo's friction II
