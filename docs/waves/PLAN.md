@@ -1722,21 +1722,45 @@ Validator: argo (bumps after the mother's release).
 - **Unreleased on master, for the mother:** #457, #458. argo bumps and re-scores Garmin at 390.
 - **Next — stopped: Wave 40 closed; orchestrated, nothing spawned.**
 
-## Wave 41 — argo friction VI: info popovers and the slot chip <!-- status: active -->
+## Wave 41 — argo friction VI: info popovers and the slot chip <!-- status: done -->
 
 Source: argo `docs/design/UPSTREAM.md` § "Wave 42 bump" (argo on 2.27.1, Garmin fails on basalt rows only). Short wave: one
 fan-out, one review round under the calibrated bar (`docs/waves/design-parity/w37/setup.md`), close-out. Validator: argo (bumps
 after the mother's release).
 
-- [ ] **P1:** the info popover covers the card's headline facts (argo Garmin ACWR, Recovery, Activity score). Placement must never
+- [x] **P1:** the info popover covers the card's headline facts (argo Garmin ACWR, Recovery, Activity score). Placement must never
       sit over the card's own headline/facts. A layout test on argo's composition failing first.
-- [ ] **P1:** Reading's slotted `Bars` chip still touches its focus ring and is clipped in a `basalt-ui shot` of argo although #457
+- [x] **P1:** Reading's slotted `Bars` chip still touches its focus ring and is clipped in a `basalt-ui shot` of argo although #457
       claimed it. Find why first (the slot case missed, or the shot crop/state), then fix the real cause.
-- [ ] **If cheap:** the activity-strip focus readout over its footer; ACWR drawing its date axis twice.
-- [ ] One review round under the calibrated bar; close-out. The mother releases.
+- [x] **If cheap:** the activity-strip focus readout over its footer; ACWR drawing its date axis twice.
+- [x] One review round under the calibrated bar; close-out. The mother releases.
       **Left behind:**
 
-## Wave 42 — Data tables, responsive <!-- status: pending -->
+- **Landed** (3 PRs through `rd merge`, `make check` after each rebase). #461 + #463 the info-bubble P1: inside a card the bubble
+  opens below the card's header block, not below the glyph — the `WidgetHeader` root plus its sibling facts row (#461), or the
+  element a `StatCard` header / strip-cell head marks `data-basalt-header-block` (#463, found by the round: `CaptionRow` hosts had
+  no `[data-tier]` root and kept the glyph-bottom placement); a slid bubble that would cover the block takes the viewport flip;
+  a `Section` root never counts as a header block. Layout tests on argo's ChartCard composition, a StatCard and a strip cell,
+  failing first (bubble top 97 vs block bottom 154 at 1440 on master). #462 the slot-chip P1, root cause: #457 ringed
+  `.basalt-chart:focus-visible`, but the engine focuses `svg.ts-chart`, so the UA `auto` ring (5 px, white double in dark) painted
+  and #457's clearance never applied; and the engine's block-level series swatch stacked the chip row to 24 px inside a 14 px chip,
+  so `overflow: hidden` cut the figure. Now one ring home (`.basalt-chart .ts-chart:focus-visible` in `chart-box.module.css`, the
+  dead `styles.css` rule deleted, the law test retargeted), the swatch hidden in the slot chip, chip 13 px with 1 px air. The
+  shot was not the cause. `charts-w41-chip.layout.test.ts` on argo's Reading composition fails first (air −1 px → +1 px).
+- **If cheap:** the activity-strip readout over its footer — skipped (the `BandStrip` readout opens under the 48 px strip by
+  design; moving it is a design decision, not a small diff). ACWR's double date axis — no basalt change: argo passes `xTicks={[]}`
+  on the upper `Lines` in `acwr-chart.tsx` (unverified in argo).
+- **Review:** one gateway round per PR: #461 actionable (two blocking: the slide path checked only the glyph; a `Section` root
+  swept body facts), both fixed and the fix diff read; #462 clean (one ring home, test guards taken); #463 clean (test oracle
+  tightened to the marked block).
+- **Round** (`docs/waves/design-parity/w41/rounds.md`, board `.design-parity/w41/r0`): S2 90, S3 89, S4 89, components 99 — the
+  drop is nine previously unscored StatCard/strip bubble P2s, fixed after the round by #463 (layout-proven, not re-scored).
+- **SPEC:** D23/D42/D49 amendment (Wave 41). **MIGRATING:** no entry (visual only, no API change); `## Unreleased` keeps its
+  placeholder. `CHANGELOG.md` untouched. Budgets: no public symbol, no ceiling raised.
+- **Unreleased on master, for the mother:** #461, #462, #463. argo bumps and re-scores Garmin + Reading, and drops ACWR's upper axis.
+- **Next — stopped: Wave 41 closed; orchestrated, nothing spawned.** Wave 42 (Data tables) is `active` for the mother.
+
+## Wave 42 — Data tables, responsive <!-- status: active -->
 
 Spec: SPEC § 6.6, § 9.1. Scenarios S1 (outages) and S2 (sessions). Validators: argo, linewatch.
 
