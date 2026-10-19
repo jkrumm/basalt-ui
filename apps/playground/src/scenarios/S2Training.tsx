@@ -10,12 +10,13 @@
  * draw their own loading and empty states (`shot-state` → `loading` / no reading); the card only
  * takes the error.
  */
-import { Box, Button, Group, SimpleGrid, Skeleton, Stack, Text } from '@mantine/core'
+import { Box, SimpleGrid, Skeleton, Stack, Text } from '@mantine/core'
 import { BarList, Meter, PageBar, StatCard, StatGroup } from 'basalt-ui'
 import { Bars, ChartCard, Sparkline } from 'basalt-ui/charts'
 import type { BarsBar } from 'basalt-ui/charts'
 import { CONTAINER_KEYS, VX } from 'basalt-ui/tokens'
 import type { CSSProperties } from 'react'
+import { ErrorNote } from '../demo/fixtures/error-note'
 import classes from './training-kpis.module.css'
 import { demoColors } from '../demo/series'
 import { fmtInt, fmtKg, fmtKm, fmtRatio, fmtShare } from './fixture-utils'
@@ -66,9 +67,8 @@ const TYPE_COLOR: Record<SessionType, string> = {
   mobility: demoColors.revenue,
 }
 
-const TRAINING_ERROR = 'The training log did not answer. Retry, or reconnect it in Settings.'
 const TRAINING_EMPTY = 'No sessions logged this month. Log a workout to start the month.'
-const retry = (what: string): string => retryCopy(what, 'training log')
+const retry = (): string => retryCopy('training log')
 
 /** Body height of the error placeholder for the single-bar Meter cards. */
 const PLACEHOLDER = { meter: 72 }
@@ -137,28 +137,25 @@ const LIFT_ITEMS = TOP_LIFTS.slice(0, TOP_LIFT_COUNT).map((l) => ({
 
 /** The page's state in one sentence; the live numbers only exist at rest. */
 function Summary({ shotState }: ScenarioProps) {
-  const text = {
-    empty: TRAINING_EMPTY,
-    error: retry('The month summary'),
-    loading: '',
-    rest: SUMMARY,
-  }[shotState ?? 'rest']
+  if (shotState === 'loading') {
+    return (
+      <Box data-shot="summary">
+        <Skeleton height={20} width={420} maw="100%" />
+      </Box>
+    )
+  }
+  if (shotState === 'error') {
+    return (
+      <Box data-shot="summary">
+        <ErrorNote title="Could not load the summary" cause={retry()} onRetry={noop} />
+      </Box>
+    )
+  }
   return (
     <Box data-shot="summary">
-      {shotState === 'loading' ? (
-        <Skeleton height={20} width={420} maw="100%" />
-      ) : (
-        <Group gap="sm" wrap="wrap">
-          <Text size="sm" c="dimmed">
-            {text}
-          </Text>
-          {shotState === 'error' && (
-            <Button variant="default" size="xs" onClick={noop}>
-              Retry
-            </Button>
-          )}
-        </Group>
-      )}
+      <Text size="sm" c="dimmed">
+        {shotState === 'empty' ? TRAINING_EMPTY : SUMMARY}
+      </Text>
     </Box>
   )
 }
@@ -180,7 +177,7 @@ const trendSparkline =
 
 function TrainingStats({ shotState }: ScenarioProps) {
   const isAtRest = shotState === undefined
-  const query = queryFor(shotState, TRAINING_ERROR)
+  const query = queryFor(shotState, retry())
   const shared = { emptyText: TRAINING_EMPTY, ...(query !== undefined && { query }) }
   const deltaProps = (pct: number) =>
     isAtRest ? { delta: pct, deltaPeriod: `vs ${PRIOR_WINDOW_LABEL}` } : {}
@@ -253,7 +250,7 @@ function GoalRow({ shotState }: ScenarioProps) {
               facts: { value: aheadOrBehind(PACE_GAP) },
             })}
             info={`Strength, walking-pad and mobility sessions all count. The tick is the pace that reaches ${GOAL_SESSIONS} on ${MONTH_END_LABEL}.`}
-            {...cardStateProps(shotState, retry('The session goal'), PLACEHOLDER.meter)}
+            {...cardStateProps(shotState, retry(), PLACEHOLDER.meter)}
           >
             <Box data-shot-hover>
               <Meter
@@ -277,7 +274,7 @@ function GoalRow({ shotState }: ScenarioProps) {
         <Box data-shot="session-mix">
           <ChartCard
             title={`Sessions by type, ${WINDOW_LABEL}`}
-            {...cardStateProps(shotState, retry('Sessions by type'), PLACEHOLDER.meter)}
+            {...cardStateProps(shotState, retry(), PLACEHOLDER.meter)}
           >
             <Box data-shot-hover>
               <Meter
@@ -307,7 +304,7 @@ function GoalRow({ shotState }: ScenarioProps) {
           info={`Sessions per complete month against the goal of ${GOAL_SESSIONS}. A bar that reaches the goal line is a month that hit it.`}
           state={chartStateFor(shotState, {
             empty: 'No complete month logged yet. The history appears after the first full month.',
-            error: retry('The goal hit rate'),
+            error: retry(),
           })}
           {...(shotState === 'error' && { onRetry: noop })}
         >
@@ -347,7 +344,7 @@ function LoadCard({ shotState }: ScenarioProps) {
           facts: { value: fmtRatio(LOAD_RATIO), period: '7 days against the 4-week norm' },
         })}
         info="Load of the last 7 days divided by the weekly average of the last 28 days. Load is minutes × session intensity (1–10), in arbitrary units (AU)."
-        {...cardStateProps(shotState, retry('Training load'), 'content')}
+        {...cardStateProps(shotState, retry(), 'content')}
       >
         <Box data-shot-hover>
           <Meter
@@ -389,7 +386,7 @@ function ReadinessRow({ shotState }: ScenarioProps) {
             subtitle: `As of ${TODAY_LABEL}`,
           })}
           info={READINESS_INFO}
-          {...cardStateProps(shotState, retry('Readiness'), 'content')}
+          {...cardStateProps(shotState, retry(), 'content')}
         >
           <Stack gap="md">
             <Meter
@@ -432,7 +429,7 @@ function ReadinessRow({ shotState }: ScenarioProps) {
             },
           })}
           info="Sets × reps × weight per lift over the strength sessions of the window; the share is of total training volume."
-          {...cardStateProps(shotState, retry('Top lifts'), 'content')}
+          {...cardStateProps(shotState, retry(), 'content')}
         >
           <Box data-shot-hover>
             <BarList

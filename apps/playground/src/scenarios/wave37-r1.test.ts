@@ -174,13 +174,14 @@ describe('S3 states each figure once', () => {
     expect(occurrences(text(anchor(c, 'strip-needs-you')), /awaiting/gi)).toBe(1)
   })
 
-  it('the footer meters do not restate the dispatch spend cell', () => {
+  it('the day footer states its spend like the week footer', () => {
     const c = agents()
     const footer = words(anchor(c, 'strip-footer-day'))
     // W38 r1: the target's scale start (€0) leads; the period caption follows.
-    expect(footer).toContain('Today')
-    // W38: the Today footer states the cap only; the spend is the Dispatch spend headline above it.
-    expect(footer.join(' ')).not.toContain(fmtEur(BUDGETS.day.spent))
+    // W38 r2: the day's caption states its spend the way the week's does ("€5 today").
+    expect(footer.map((w) => w.replaceAll('\u00a0', ' '))).toContain(
+      `${fmtEur(BUDGETS.day.spent)} today`.replaceAll('\u00a0', ' '),
+    )
   })
 
   it('the item flow states its period once', () => {
