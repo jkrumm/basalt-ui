@@ -179,7 +179,18 @@ function cardOf(trigger: Element): Element | null {
 }
 
 /**
- * Places the bubble in the VIEWPORT: below the glyph, flipped above when it would overflow the
+ * The card's header block: the `WidgetHeader` root (title row, value, subtitle, sparkline) plus the
+ * facts row `ChartCard` renders beside it. The bubble opens below THIS, not below the glyph, so it
+ * covers the plot and never the headline figures it annotates.
+ */
+function headerBlockOf(trigger: Element, card: Element): Element[] {
+  const root = trigger.closest('[data-tier]')
+  if (root === null || !card.contains(root)) return []
+  return [root, ...card.querySelectorAll('[data-basalt-facts], [data-basalt-facts-skeleton]')]
+}
+
+/**
+ * Places the bubble in the VIEWPORT: below the glyph (inside a card, below its header block), flipped above when it would overflow the
  * bottom edge, shifted sideways to stay inside the left and right edges. Re-places on scroll, resize
  * and when the bubble's own box changes while open. The bubble is a top-layer popover and
  * `position: fixed`, so a card's `overflow: hidden` (every basalt card has one) can never clip it —
@@ -201,6 +212,8 @@ function useBubblePosition(
     if (bubbleEl !== null && typeof bubbleEl.showPopover === 'function') bubbleEl.showPopover()
     // The card is resolved once per open, not on every scroll re-place.
     const card = triggerRef.current === null ? null : cardOf(triggerRef.current)
+    const block =
+      triggerRef.current === null || card === null ? [] : headerBlockOf(triggerRef.current, card)
     const place = () => {
       const trigger = triggerRef.current
       const bubble = bubbleRef.current
@@ -210,7 +223,11 @@ function useBubblePosition(
       // The documentElement's client box is the viewport minus classic scrollbars.
       const viewW = document.documentElement.clientWidth
       const viewH = document.documentElement.clientHeight
-      const below = t.bottom + BUBBLE_GAP
+      const blockBottom = Math.max(
+        t.bottom,
+        ...block.map((el) => el.getBoundingClientRect().bottom),
+      )
+      const below = blockBottom + BUBBLE_GAP
       const above = t.top - BUBBLE_GAP - b.height
       const overflows = below + b.height > viewH - BUBBLE_EDGE
       // Inside a card the bubble never leaves the card's own box upward: above the header is the

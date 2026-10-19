@@ -362,6 +362,8 @@ export type FixtureSpec = {
   cards?: CardsSpec
   /** A `StatCard` with `info` + `tone` (`data-testid="info-ring-stat"`) — the info glyph's focus-ring probe. */
   infoRing?: true
+  /** An argo-shaped `ChartCard` with a long `info`, `facts` and a basis line (`data-testid="info-header"`) — the bubble-vs-header probe. */
+  infoHeader?: true
   /** A Mantine `Button size="xs" variant="default"` beside the shared `RetryButton` (`data-testid="retry-mantine"` / `"retry-shared"`). */
   retryParity?: true
   /** Wave 38: zone-keyed charts at a 340px card (`w38-*`) and a strip-cell sparkline at 150px (`w38-strip`). */
