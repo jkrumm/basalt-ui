@@ -115,6 +115,16 @@
     bottom / 100% 1px no-repeat;
 }
 
+.ghostLine {
+  width: 100%;
+  height: 100%;
+  fill: none;
+  stroke: color-mix(in srgb, var(--vx-ink) 24%, var(--vx-surface-panel));
+  stroke-width: 2px;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
 .ghostBar {
   flex: 1 1 0;
   min-width: 0;

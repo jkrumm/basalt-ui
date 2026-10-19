@@ -10,6 +10,7 @@ declare const classes: {
   readonly state: string
   readonly grow: string
   readonly ghost: string
+  readonly ghostLine: string
   readonly ghostBar: string
 }
 export default classes
