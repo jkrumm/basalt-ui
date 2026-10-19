@@ -157,4 +157,13 @@ layout('loading keeps the loaded shape (Wave 38)', () => {
     // The first two cards share a row: one baseline.
     expect(Math.abs((cards[0]?.bottom ?? 0) - (cards[1]?.bottom ?? 1))).toBeLessThanOrEqual(1)
   })
+
+  test('a one-column group keeps the card-width figure size', async () => {
+    const size = await p.raw.evaluate((valueClass) => {
+      const el = document.querySelector(`[data-testid="w38l-group-one"] ${valueClass}`)
+      return el === null ? 0 : Number.parseFloat(getComputedStyle(el).fontSize)
+    }, moduleClass('value'))
+    // 8cqi of a ~240px card is above `lg` (16): the clamp, not the shared two-column size.
+    expect(size).toBeGreaterThan(16)
+  })
 })

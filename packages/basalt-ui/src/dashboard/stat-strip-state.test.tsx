@@ -1,6 +1,7 @@
 import { MantineProvider } from '@mantine/core'
 import { cleanup, fireEvent, render } from '@testing-library/react'
 import { afterEach, describe, expect, test } from 'bun:test'
+import { Meter } from './meter'
 import { StatGroup } from './stat-group'
 import type { StatStripCell } from './stat-strip'
 
@@ -72,5 +73,31 @@ describe('strip cell state', () => {
     })
     expect(cellOf(container).querySelector('[data-v]')).toBeNull()
     expect(cellOf(container).querySelector('[data-strip-row]')).toBeNull()
+  })
+})
+
+describe('strip cell loading', () => {
+  test('a rows-only cell loads its Meter visual too: no fill, no reading, busy', () => {
+    const { container } = render(
+      <MantineProvider>
+        <StatGroup
+          variant="strip"
+          label="Health"
+          cells={[
+            {
+              key: 'a',
+              caption: 'Resting HR',
+              rows: [{ key: 'r', label: 'HRV', value: '48' }],
+              visual: <Meter label="Load" value={5} max={10} />,
+              loading: true,
+            },
+            { key: 'b', caption: 'Load', value: '410' },
+          ]}
+        />
+      </MantineProvider>,
+    )
+    const meter = cellOf(container).querySelector('[data-basalt-meter]')
+    expect(meter?.getAttribute('aria-busy')).toBe('true')
+    expect(meter?.querySelector('[data-meter-fill]')).toBeNull()
   })
 })

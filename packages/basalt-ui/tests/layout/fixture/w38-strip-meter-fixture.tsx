@@ -154,6 +154,11 @@ export function W38StripMeterFixture(): ReactElement {
           )),
         ),
       )}
+      <div data-testid="w38l-group-one" style={{ width: 240 }}>
+        <StatGroup cols={3}>
+          <StatCard title="Sessions" value="17" unit="sessions" />
+        </StatGroup>
+      </div>
       <div data-testid="w38l-group" style={{ width: 358 }}>
         <StatGroup cols={3}>
           <StatCard title="Sessions" qualifier="month to date" value="17" unit="sessions" />
