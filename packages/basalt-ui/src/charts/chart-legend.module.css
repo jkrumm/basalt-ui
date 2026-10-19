@@ -15,10 +15,10 @@
 }
 
 @container (min-width: 240px) {
-  /* One row: `foldLegend` (legend.tsx) folds what does not fit into `+N`; zones lead the series. */
+  /* `foldLegend` (legend.tsx) folds the zones / references that wrap the row into `+N`; series never fold. */
   .auto {
-    flex-wrap: nowrap;
-    overflow: hidden;
+    --bc-fold: 1;
+    flex-wrap: wrap;
     display: flex;
     column-gap: var(--bc-dots-gap);
     --vx-hit-gap: var(--bc-dots-gap);
@@ -27,8 +27,7 @@
 
 @container (min-width: 480px) {
   .auto {
-    flex-wrap: wrap;
-    overflow: visible;
+    --bc-fold: 0;
     column-gap: var(--bc-legend-gap);
     --vx-hit-gap: var(--bc-legend-gap);
   }
@@ -49,7 +48,7 @@
   }
 }
 
-/* The compact fold (`foldLegend`, which only folds while the row is `nowrap`); wide keeps every entry.
+/* The compact fold (`foldLegend`, which only folds while `--bc-fold` is 1); wide keeps every entry.
  * `!important`: an entry's inline `all: unset` (legend.tsx) would otherwise reset `display`. */
 .auto [data-legend-folded] {
   display: none !important;

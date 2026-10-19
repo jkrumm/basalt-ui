@@ -1,5 +1,5 @@
 import type { ReactElement } from 'react'
-import { Lines, Sparkline } from '../../../src/charts'
+import { BandStrip, Lines, Sparkline } from '../../../src/charts'
 import type { ChartSeries, LinesProps } from '../../../src/charts'
 import { DeltaBadge, StatCard, StatGroup } from '../../../src/index'
 import { VX, alpha } from '../../../src/tokens'
@@ -25,19 +25,39 @@ const zone = (from: number, to: number, tone: 'good' | 'warn' | 'bad', label: st
   fill: alpha(VX[`${tone}Solid`], 0.06),
   legend: { label, color: VX[`${tone}Solid`] },
 })
-// argo's three garmin shapes: ACWR (1 series, 4 named zones), recovery (1 series, 3), stress (2, 3).
-const ACWR_ZONES = [
-  zone(0, 0.8, 'warn', 'Undertrained'),
-  zone(0.8, 1.3, 'good', 'Optimal'),
-  zone(1.3, 1.5, 'warn', 'Caution'),
-  zone(1.5, 2, 'bad', 'Danger'),
-]
 const REC_ZONES = [
   zone(0, 0.8, 'bad', 'Rest'),
   zone(0.8, 1.3, 'warn', 'Normal'),
   zone(1.3, 2, 'good', 'Push'),
 ]
 const UNNAMED = REC_ZONES.map(({ from, to, fill }) => ({ from, to, fill }))
+
+// argo's multi-line shapes: strength (5 series + 2 reference lines), sky panorama (7 series), stress.
+const NAMES = ['Squat', 'Bench', 'Deadlift', 'Press', 'Row', 'Pull-up', 'Carry']
+const COLORS = [VX.line, VX.line2, VX.accent, VX.good, VX.warn, VX.bad, VX.neutral]
+const many = (n: number): ChartSeries<Point>[] =>
+  NAMES.slice(0, n).map((label, i) => ({
+    key: `s${i}`,
+    label,
+    color: COLORS[i] ?? VX.line,
+    getValue: (d) => d.a + i * 0.1,
+  }))
+const REFS = [
+  { value: 1.2, color: VX.faint, dashed: true, legend: { label: 'Target' } },
+  { value: 0.9, color: VX.faint, dashed: true, legend: { label: 'Floor (< 0.9)' } },
+]
+const NAMED_ZONES = [
+  zone(0, 0.8, 'warn', 'Low (< 0.8)'),
+  zone(0.8, 1.3, 'good', 'Optimal'),
+  zone(1.3, 1.5, 'warn', 'Push (≥70)'),
+  zone(1.5, 2, 'bad', 'Danger'),
+]
+// argo's usage errors band: three tiers, the worded OK tier first.
+const TIERS = [
+  { key: 'ok', label: 'Under 1 % of calls', color: VX.good },
+  { key: 'warn', label: '1 to 5 % of calls', color: VX.warn },
+  { key: 'bad', label: 'Over 5 % of calls', color: VX.bad },
+]
 
 const SPARK = [60, 62, 61, 64, 66, 65, 63, 62, 64, 67, 66, 65]
 const LABELS = SPARK.map(() => 'Sun 5 Oct 2026')
@@ -47,9 +67,10 @@ const SHORT = SPARK.map(() => '5 Oct')
 const chart = (
   id: string,
   props: Omit<LinesProps<Point>, 'ariaLabel' | 'data' | 'x' | 'height'>,
+  width = 340,
 ): ReactElement => (
   // theme-allow -- the wrapper width IS the fixture's payload (a container-class probe)
-  <div data-testid={id} style={{ width: 340 }}>
+  <div data-testid={id} style={{ width }}>
     <Lines ariaLabel={id} data={DATA} x={(d) => d.at} height={160} {...props} />
   </div>
 )
@@ -58,9 +79,25 @@ const chart = (
 export function W38LegendFixture(): ReactElement {
   return (
     <>
-      {chart('w38-acwr', { series: ONE, zones: ACWR_ZONES })}
-      {chart('w38-recovery', { series: ONE, zones: REC_ZONES })}
-      {chart('w38-stress', { series: TWO, zones: REC_ZONES })}
+      {chart('w38-five-refs', { series: many(5), refLines: REFS })}
+      {chart('w38-seven', { series: many(7) })}
+      {chart('w38-two-zones', { series: TWO, zones: NAMED_ZONES })}
+      {(['narrow', 'wide'] as const).map((w) => (
+        // theme-allow -- the wrapper width IS the fixture's payload (a container-class probe)
+        <div key={w} data-testid={`w38-${w}-band`} style={{ width: w === 'wide' ? 1000 : 340 }}>
+          <BandStrip
+            ariaLabel="Error rate per day"
+            data={DATA}
+            x={(d) => d.at}
+            states={TIERS}
+            getBand={(d) => ({ state: d.a > 1.3 ? 'bad' : d.a > 1 ? 'warn' : 'ok' })}
+            height={28}
+          />
+        </div>
+      ))}
+      {chart('w38-five-refs-wide', { series: many(5), refLines: REFS }, 1000)}
+      {chart('w38-seven-wide', { series: many(7) }, 1000)}
+      {chart('w38-two-zones-wide', { series: TWO, zones: NAMED_ZONES }, 1000)}
       {chart('w38-single', { series: ONE })}
       {chart('w38-unnamed-zones', { series: ONE, zones: UNNAMED })}
       {chart('w38-false', { series: TWO, zones: REC_ZONES, legend: false })}

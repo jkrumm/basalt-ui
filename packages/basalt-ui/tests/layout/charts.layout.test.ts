@@ -448,13 +448,12 @@ layout('Charts — 2.0 layout', () => {
   })
 
   // ── legend ──────────────────────────────────────────────────────────────────────────────────
-  // Wave 38: the compact legend is ONE row; what does not fit folds into `+N` (was: wrapped rows).
-  test('an 8-entry legend folds to one row inside the chart box on a phone', async () => {
+  // Wave 38: the compact legend never folds a SERIES (only zone / reference entries fold into `+N`),
+  // so eight series wrap to more rows and every one stays named, inside the chart box.
+  test('an 8-series legend wraps and keeps every series named inside the chart box on a phone', async () => {
     const p = await openFixture(chartFixture({ kind: 'bars', legendEntries: 8 }), PHONE)
     await p.settle()
     const frame = await p.box('frame', FRAME)
-    const legend = await p.box('legend', `${FRAME} [data-basalt-chart-legend]`)
-    expect(legend.box.height).toBeLessThanOrEqual(24)
     const state = await p.raw.evaluate((sel) => {
       const row = document.querySelector(`${sel} [data-basalt-chart-legend]`)
       if (!row) throw new Error('LAYOUT: no legend')
@@ -463,14 +462,12 @@ layout('Charts — 2.0 layout', () => {
       return {
         total: items.length,
         folded: items.filter((i) => i.hasAttribute('data-legend-folded')).length,
-        count: more && !more.hidden ? Number.parseInt(more.textContent?.slice(1) ?? '', 10) : 0,
+        more: more !== null && !more.hidden,
       }
     }, FRAME)
-    expect(state.total).toBe(8)
-    expect(state.folded).toBeGreaterThan(0)
-    expect(state.count).toBe(state.folded)
+    expect(state).toEqual({ total: 8, folded: 0, more: false })
     const entries = (await p.boxes(`${FRAME} [data-legend-key]`)).filter((e) => e.width > 0)
-    expect(entries).toHaveLength(8 - state.folded)
+    expect(entries).toHaveLength(8)
     for (const e of entries) {
       expect(e.left).toBeGreaterThanOrEqual(frame.box.left - 0.5)
       expect(e.right).toBeLessThanOrEqual(frame.box.right + 0.5)
