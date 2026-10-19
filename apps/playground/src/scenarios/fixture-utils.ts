@@ -80,6 +80,7 @@ export const withSign = (value: number, body: string): string =>
   `${value < 0 ? '\u2212' : '+'}${body}`
 
 const INT = new Intl.NumberFormat('en-GB', { maximumFractionDigits: 0 })
+const EUR_CENTS = new Intl.NumberFormat('en-IE', { style: 'currency', currency: 'EUR' })
 const EUR = new Intl.NumberFormat('en-IE', {
   style: 'currency',
   currency: 'EUR',
@@ -117,6 +118,8 @@ export function roundShares(shares: readonly number[]): number[] {
 export const fmtSignedShare = (value: number): string =>
   withSign(value, `${Math.abs(Math.round(value * 100))}%`)
 export const fmtEur = (value: number): string => EUR.format(Math.round(value))
+/** `€5.40`: a figure whose share is stated beside it, so rounding to the euro would disagree with the percent. */
+export const fmtEurCents = (value: number): string => EUR_CENTS.format(value)
 export const fmtSignedEur = (value: number): string => withSign(value, fmtEur(Math.abs(value)))
 export const fmtKg = (value: number): string => `${fmtInt(Math.round(value))} kg`
 export const fmtKm = (value: number): string => value.toFixed(1)

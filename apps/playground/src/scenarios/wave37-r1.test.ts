@@ -11,7 +11,7 @@ import { readFileSync } from 'node:fs'
 import { afterEach, describe, expect, it } from 'bun:test'
 import { ComponentsSurfaces } from '../demo/ComponentsPage'
 import { BUDGETS, FAILURES_WINDOW, FLOW_RANGE_LABEL, FLOW_SERIES, WARN_HOURS } from './agents-data'
-import { fmtEur, fmtInt, fmtRatio, fmtShare } from './fixture-utils'
+import { fmtEur, fmtEurCents, fmtInt, fmtRatio, fmtShare } from './fixture-utils'
 import { AgentsScenario } from './S3Agents'
 import { SpendScenario } from './S4Spend'
 import { TrainingScenario } from './S2Training'
@@ -180,11 +180,11 @@ describe('S3 states each figure once', () => {
     // W38 r1: the target's scale start (€0) leads; the period caption follows.
     // W38 r2: the day's caption is the share of the cap; the spend is the headline above it.
     expect(footer.map((w) => w.replaceAll('\u00a0', ' '))).toContain(
-      `${fmtShare(BUDGETS.day.spent / BUDGETS.day.cap)} of today's ${fmtEur(BUDGETS.day.cap)} cap`.replaceAll(
-        '\u00a0',
-        ' ',
-      ),
+      `${fmtShare(BUDGETS.day.spent / BUDGETS.day.cap)} used`,
     )
+    // W38 r4: the cap prints once (the Meter's target) and the headline carries the cents the share implies.
+    expect(occurrences(text(anchor(c, 'strip-footer-day')), fmtEur(BUDGETS.day.cap))).toBe(1)
+    expect(text(c)).toContain(fmtEurCents(BUDGETS.day.spent))
   })
 
   it('the item flow states its period once', () => {

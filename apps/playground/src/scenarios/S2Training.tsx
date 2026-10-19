@@ -369,8 +369,14 @@ function LoadCard({ shotState }: ScenarioProps) {
 function ReadinessRow({ shotState }: ScenarioProps) {
   const empty = shotState === 'empty'
   const loading = shotState === 'loading'
+  // The lifts card fills the row beside the readiness card only while its body is drawn; empty or failed it ends at its content.
+  const fills = shotState === undefined || loading
   return (
-    <SimpleGrid type="container" cols={{ base: 1, [CONTAINER_KEYS.regular]: 2 }}>
+    <SimpleGrid
+      type="container"
+      cols={{ base: 1, [CONTAINER_KEYS.regular]: 2 }}
+      {...(!fills && { style: { alignItems: 'start' } })}
+    >
       <Box data-shot="readiness" h="100%">
         <ChartCard
           style={FILL}
@@ -409,9 +415,9 @@ function ReadinessRow({ shotState }: ScenarioProps) {
           </Stack>
         </ChartCard>
       </Box>
-      <Box data-shot="top-lifts" h="100%">
+      <Box data-shot="top-lifts" {...(fills && { h: '100%' })}>
         <ChartCard
-          style={FILL}
+          {...(fills && { style: FILL })}
           title="Top lifts by volume"
           facts={{
             value: fmtShare(LIFTS_SHARE),

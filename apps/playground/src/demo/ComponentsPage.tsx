@@ -359,15 +359,15 @@ export function ComponentsSurfaces({ shotState }: { shotState?: ShotState | unde
         </Stack>
       </SimpleGrid>
 
-      <ComponentGroup
-        title="Table: metric, value, change"
-        shot="table"
-        states="empty loading error"
-      >
-        <MetricsTable shotState={shotState} />
-      </ComponentGroup>
-
       <SimpleGrid type="container" cols={{ base: 1, [CONTAINER_KEYS.regular]: 2 }}>
+        <ComponentGroup
+          title="Table: metric, value, change"
+          shot="table"
+          states="empty loading error"
+        >
+          <MetricsTable shotState={shotState} />
+        </ComponentGroup>
+
         <ComponentGroup title="Accordion: expandable sections">
           <Accordion variant="contained" defaultValue="acquisition">
             <Accordion.Item value="acquisition">
