@@ -15,7 +15,10 @@ import { ruleX, ruleY } from '@tanstack/charts/rule'
 import { scaleLinear } from '@tanstack/charts/scales/linear'
 import { scaleUtc } from 'd3-scale'
 import { portal } from '@tanstack/charts/tooltip/portal'
-import type { ChartTooltipPortalExtension } from '@tanstack/charts/tooltip/portal'
+import type {
+  ChartTooltipPortalExtension,
+  ChartTooltipPortalPositionContext,
+} from '@tanstack/charts/tooltip/portal'
 import type {
   ChartBuildContext,
   ChartTooltipAnchorContext,
@@ -1024,6 +1027,20 @@ const stripAnchor = (
 }
 const STRIP_TOOLTIP_PLACEMENT = ['bottom', 'top'] as const
 const STRIP_TOOLTIP_OFFSET = 8
+/**
+ * A slotted `Bars` (`tooltipBelow` and `bare`): a micro-visual whose tooltip is the one-line chip
+ * (`chart-box.module.css`, `data-basalt-slot`) in the line the cell reserves above the plot. It
+ * anchors to the plot's top edge, flush, and opens upward, never below the plot and never over the
+ * bars; the card clamp's vertical flip does not apply to it.
+ */
+const slotAnchor = (
+  points: readonly ChartPoint[],
+  { plot }: ChartTooltipAnchorContext,
+): { x: number; y: number } => {
+  const xs = points.map((p) => p.x)
+  return { x: (Math.min(...xs) + Math.max(...xs)) / 2, y: plot.y }
+}
+const SLOT_TOOLTIP_PLACEMENT = ['top'] as const
 
 /** A tooltip's chrome (title row, padding) and each series row, px: the guess the bar anchor reserves. */
 const TIP_CHROME = 30
@@ -1062,38 +1079,126 @@ const barAnchor =
 const TIP_CARD = '[data-basalt-chart-card], [data-strip-cell], .mantine-Card-root'
 /** Air between a card-clamped tooltip and the card's edge, px. */
 const TIP_CARD_AIR = 4
+/** A card narrower than this keeps the engine's width and horizontal placement (a ~120px strip
+ * cell would squeeze a tooltip to its 6rem label floor); the vertical rule applies to every card. */
+const TIP_CARD_ROOMY = 192
 
 /**
- * The engine places a portalled tooltip against the viewport, so at the first or last point of a
- * chart it opens past the card's edge, over the neighbouring card. Its placements (a hover, and its
- * own resize / scroll repositions, which never pass through `position`) all write the element's
- * inline `left`, so each write is followed by a slide back inside the card (the viewport placement
- * stands when the card is narrower than the tooltip).
+ * The engine places a portalled tooltip against the viewport, so it opens past the card's edge, over
+ * the neighbouring card or the section heading above. Its placements (a hover, and its own resize /
+ * scroll repositions, which never pass through `position`) all write the element's inline `left` and
+ * `top`, so each write is followed by a settle inside the card (`settleInCard`).
  */
-const cardPortal: ChartTooltipPortalExtension = {
+/** What a card clamp does: `card` a chart tooltip (both axes, the card's width), `slot` a slotted
+ * `Bars` chip (flush above its plot), `strip` a `BandStrip`'s (sideways only, as before Wave 39). */
+type TipMode = 'card' | 'slot' | 'strip'
+
+const cardPortal = (mode: TipMode): ChartTooltipPortalExtension => ({
   id: portal.id,
   create(context, options) {
     const inner = portal.create(context, options)
     const { element, container } = context
-    const watch = new MutationObserver(() => clampToCard(element, container))
+    if (mode === 'slot') element.dataset['basaltSlot'] = ''
+    let last: ChartTooltipPortalPositionContext | undefined
+    const watch = new MutationObserver(() => {
+      if (last) settleInCard(element, container, last, mode)
+    })
     watch.observe(element, { attributes: true, attributeFilter: ['style'] })
     return {
       ...inner,
+      position(next) {
+        last = next
+        return inner.position(next)
+      },
       destroy() {
         watch.disconnect()
         inner.destroy()
       },
     }
   },
-}
+})
 
-function clampToCard(tip: HTMLElement, within: Element): void {
+/**
+ * Keeps a tooltip inside its card on both axes. A card with room lets the tooltip grow up to its
+ * width before a label wraps, and re-centres it on the anchor at that width. A tooltip that would
+ * cross the card's top or bottom flips to the other side of its anchor when that side fits; neither
+ * fitting, it slides in; taller than the card, it aligns to the card's top (the only overflow).
+ * A `slot` tooltip (a slotted `Bars`, one line) keeps its place above the plot, centred on the
+ * anchor, capped at the card's width and held inside the card sideways and at its top. A hidden or unmeasured tooltip is left alone, and an unchanged position
+ * is not written back (a write re-runs this).
+ */
+export function settleInCard(
+  tip: HTMLElement,
+  within: Element,
+  ctx: ChartTooltipPortalPositionContext,
+  mode: TipMode = 'card',
+): void {
+  const slot = mode === 'slot'
+  if (tip.hidden || tip.offsetHeight === 0) return
   const card = within.closest(TIP_CARD)?.getBoundingClientRect()
-  const left = Number.parseFloat(tip.style.left)
-  const width = tip.offsetWidth
-  if (!card || Number.isNaN(left) || width + 2 * TIP_CARD_AIR > card.width) return
-  const next = Math.min(Math.max(left, card.left + TIP_CARD_AIR), card.right - width - TIP_CARD_AIR)
-  if (Math.abs(next - left) > 0.5) tip.style.left = `${next}px`
+  const surface = ctx.surface.element.getBoundingClientRect()
+  const { width: sceneW, height: sceneH } = ctx.scene
+  let left = Number.parseFloat(tip.style.left)
+  let top = Number.parseFloat(tip.style.top)
+  if (!card || Number.isNaN(left) || Number.isNaN(top) || !surface.width || !sceneW || !sceneH)
+    return
+  const w0 = tip.offsetWidth
+  const toClient = (p: { x: number; y: number }): { x: number; y: number } => ({
+    x: surface.left + (p.x / sceneW) * surface.width,
+    y: surface.top + (p.y / sceneH) * surface.height,
+  })
+  if (mode === 'strip') {
+    // A `BandStrip`: sideways only, as before; the engine's width and vertical placement stand.
+    if (w0 + 2 * TIP_CARD_AIR <= card.width)
+      left = Math.min(Math.max(left, card.left + TIP_CARD_AIR), card.right - w0 - TIP_CARD_AIR)
+    if (Math.abs(left - Number.parseFloat(tip.style.left)) > 0.5) tip.style.left = `${left}px`
+    return
+  }
+  const roomy = card.width >= TIP_CARD_ROOMY
+  // A wider tooltip is centred again on its anchor at that width, and held inside the card.
+  const grown = roomy || slot
+  if (!grown) {
+    // A card that shrank under a wider tooltip: the engine's own width and cap again.
+    if (tip.dataset['basaltMax'] !== undefined) {
+      tip.style.maxWidth = tip.dataset['basaltMax']
+      tip.style.removeProperty('width')
+      delete tip.dataset['basaltMax']
+    }
+  } else {
+    tip.dataset['basaltMax'] ??= tip.style.maxWidth
+    // Grows to its content, capped at the card's width; the engine's shrink-to-fit would narrow it
+    // to the room right of its `left`.
+    const cap = `${card.width - 2 * TIP_CARD_AIR}px`
+    if (tip.style.maxWidth !== cap) tip.style.maxWidth = cap
+    if (tip.style.width !== 'max-content') tip.style.width = 'max-content'
+  }
+  const [w, h] = [tip.offsetWidth, tip.offsetHeight]
+  const anchor = toClient(ctx.anchor)
+  const gap = Math.max(0, Number.isFinite(ctx.offset) ? (ctx.offset ?? 10) : 10)
+  const minTop = card.top + TIP_CARD_AIR
+  const maxTop = card.bottom - TIP_CARD_AIR - h
+  const side = tip.dataset['placement']
+  if (slot) {
+    // Flush above the plot, in the reserved line: no flip, never pushed down over the bars.
+    top = Math.max(anchor.y - gap - h, card.top)
+    left = anchor.x - w / 2
+  } else if (side === 'top' || side === 'bottom') {
+    const above = anchor.y - gap - h
+    const below = anchor.y + gap
+    const order = side === 'top' ? [above, below] : [below, above]
+    const fits = order.findIndex((t) => t >= minTop && t <= maxTop)
+    top = order[Math.max(fits, 0)] ?? top
+    if (fits > 0) tip.dataset['placement'] = side === 'top' ? 'bottom' : 'top'
+    if (roomy) left = anchor.x - w / 2
+  }
+  if (!slot) top = maxTop < minTop ? minTop : Math.min(Math.max(top, minTop), maxTop)
+  if (grown || w + 2 * TIP_CARD_AIR <= card.width)
+    left = Math.min(
+      Math.max(left, card.left + TIP_CARD_AIR),
+      Math.max(card.right - w - TIP_CARD_AIR, card.left + TIP_CARD_AIR),
+    )
+  if (Math.abs(left - Number.parseFloat(tip.style.left)) > 0.5) tip.style.left = `${left}px`
+  if (Math.abs(top - Number.parseFloat(tip.style.top)) > 0.5) tip.style.top = `${top}px`
 }
 
 function tooltipSpec<T, X extends ChartX>(opts: {
@@ -1108,19 +1213,25 @@ function tooltipSpec<T, X extends ChartX>(opts: {
 }): NonNullable<CartesianDefinition['tooltip']> {
   const { input, axes, visible, keys, visibleKeys, formatX, dayOnly } = opts
   const hidden = input.series.filter((s) => !visibleKeys.has(s.key))
+  const slot = input.tooltipBelow === true && input.bare === true
   const rowSeries = (input.reverseRows ? visible.toReversed() : visible).filter(
     (s) => s.tooltip !== false,
   )
   return {
     use: quietWhileFollowing,
     ...followerOptions(input.tooltip, input.cursorGroup, input.chartId),
-    portal: cardPortal,
+    portal: cardPortal(slot ? 'slot' : input.tooltipBelow === true ? 'strip' : 'card'),
     anchor: input.tooltipBelow
-      ? stripAnchor
+      ? slot
+        ? slotAnchor
+        : stripAnchor
       : visible.some((s) => s.mark === 'bar')
         ? barAnchor(rowSeries.length)
         : 'group-center',
-    ...(input.tooltipBelow && { placement: STRIP_TOOLTIP_PLACEMENT, offset: STRIP_TOOLTIP_OFFSET }),
+    ...(input.tooltipBelow &&
+      (slot
+        ? { placement: SLOT_TOOLTIP_PLACEMENT, offset: 0 }
+        : { placement: STRIP_TOOLTIP_PLACEMENT, offset: STRIP_TOOLTIP_OFFSET })),
     content: (points: readonly ChartPoint[]) => {
       const primary = points[0]
       if (!primary) return { rows: [] }

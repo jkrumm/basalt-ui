@@ -80,6 +80,9 @@ const READOUT_GAP = 8
 /** Air round a line's plot, px (the engine's plot margin): the end marker stays inside the svg box,
  * so it clears the 2px focus outline round it. A bar plot is flush. */
 const LINE_INSET = 3
+/** A bare line sparkline shorter than this has no room for a two-line readout (about 34px with its
+ * padding and border): it keeps the one-line form, in the in-box band farthest from the line. */
+const SHORT_BOX = 36
 /** The muted tone's line: the same alpha the consumers hand-built (`alpha(VX.muted, .35)`). */
 const MUTED_LINE = alpha(VX.muted, 0.35)
 /** Air between the plot's start and the reference label, so the focus outline never covers it. */
@@ -449,6 +452,56 @@ function placeStacked(node: HTMLElement, line: () => readonly LinePoint[], fx: n
   node.style.marginLeft = `${fit.left - slid}px`
 }
 
+/** The plotted line's y (fraction of the box) at x, interpolated along the polyline; null outside it. */
+function lineYAt(pts: readonly (readonly [number, number])[], x: number): number | null {
+  for (let i = 0; i + 1 < pts.length; i += 1) {
+    const [ax, ay] = pts[i] as readonly [number, number]
+    const [bx, by] = pts[i + 1] as readonly [number, number]
+    if (x >= Math.min(ax, bx) && x <= Math.max(ax, bx))
+      return bx === ax ? ay : ay + ((by - ay) * (x - ax)) / (bx - ax)
+  }
+  return null
+}
+
+/**
+ * A short bare line's one-line chip stays inside its box (it can never reach a sibling above or
+ * below). It slides with the point and takes the band, top or bottom, farthest from the plotted line
+ * under it; a box so short that the chip fills it moves beside the point instead, so the chip never
+ * covers the dot. Offsets go on `margin-left` and `top`, which React's `left` / `translate` do not own.
+ */
+function placeInBand(node: HTMLElement, line: () => readonly LinePoint[], fx: number): void {
+  const layer = node.parentElement
+  if (!layer) return
+  const [W, H, w, h] = [layer.clientWidth, layer.clientHeight, node.offsetWidth, node.offsetHeight]
+  if (W <= 0 || H <= 0) return
+  const pts = line().map(([x, y]): [number, number] => [x * W, y * H])
+  const slid = fx * (W - w)
+  const room = (left: number): number => Math.min(Math.max(left, 0), Math.max(W - w, 0))
+  const lefts = [slid, room(fx * W + CLEAR * 2), room(fx * W - CLEAR * 2 - w)]
+  const bands = [0, Math.max(H - h, 0)]
+  const dotY = lineYAt(pts, fx * W)
+  const score = (left: number, top: number): number => {
+    const covers =
+      dotY !== null &&
+      fx * W + CLEAR > left &&
+      fx * W - CLEAR < left + w &&
+      dotY + CLEAR > top &&
+      dotY - CLEAR < top + h
+    let nearest = Number.POSITIVE_INFINITY
+    for (let x = left; x <= left + w; x += 2) {
+      const y = lineYAt(pts, x)
+      if (y === null) continue
+      nearest = Math.min(nearest, y < top ? top - y : y > top + h ? y - (top + h) : 0)
+    }
+    return (covers ? -1000 : 0) + Math.min(nearest, 999)
+  }
+  const fit = lefts
+    .flatMap((left) => bands.map((top) => ({ left, top, s: score(left, top) })))
+    .reduce((a, b) => (b.s > a.s ? b : a))
+  node.style.top = `${fit.top}px`
+  node.style.marginLeft = `${fit.left - slid}px`
+}
+
 /**
  * A readout never loses its separator or its date to an ellipsis: when the one-line chip overflows
  * its box it first tightens (`data-tight`: less padding, the separator's air stays), then stacks
@@ -459,6 +512,7 @@ function fitReadout(
   node: HTMLElement,
   line: (() => readonly LinePoint[]) | null,
   fx: number,
+  band: boolean,
 ): void {
   const overflows = (): boolean => node.scrollWidth > node.clientWidth
   node.removeAttribute('data-tight')
@@ -468,11 +522,14 @@ function fitReadout(
     node.style.removeProperty('top')
     node.style.removeProperty('margin-left')
   }
-  if (!overflows()) return
-  node.setAttribute('data-tight', '')
-  if (!overflows()) return
-  node.setAttribute('data-stacked', '')
-  if (line !== null) placeStacked(node, line, fx)
+  if (overflows()) {
+    node.setAttribute('data-tight', '')
+    // A short bare box has no room for two lines: it stays one line, tight.
+    if (overflows() && !band) node.setAttribute('data-stacked', '')
+  }
+  if (line === null) return
+  if (band) placeInBand(node, line, fx)
+  else if (node.hasAttribute('data-stacked')) placeStacked(node, line, fx)
 }
 
 export function Sparkline(props: SparklineProps): ReactElement {
@@ -583,6 +640,7 @@ export function Sparkline(props: SparklineProps): ReactElement {
   // `translate` take one fraction), inside the box at either edge whatever its width, and the
   // stylesheet lifts it above the plot. Bare: beside the point, on the roomier side and on the half of
   // the box away from it, so the chip covers neither the dot nor anything the host draws round it.
+  const short = !hosted && mark === 'line' && height < SHORT_BOX
   const beside = at === null ? null : at.fx > 0.5 ? 'left' : 'right'
   // The chip's fit depends on its text and (bare) its side, not on the pointer's every tick.
   const shown = at !== null
@@ -596,7 +654,7 @@ export function Sparkline(props: SparklineProps): ReactElement {
     // A hosted line's stacked chip clears the plotted line, built only when the chip stacks; a bar
     // or a bare chip keeps its place.
     const line =
-      hosted && mark === 'line' && model !== null
+      (hosted || short) && mark === 'line' && model !== null
         ? (): LinePoint[] =>
             model.rows.flatMap((r, i): LinePoint[] =>
               r.v === null
@@ -610,10 +668,10 @@ export function Sparkline(props: SparklineProps): ReactElement {
             )
         : null
     fitRef.current = () => {
-      if (readoutRef.current !== null) fitReadout(readoutRef.current, line, fxRef.current)
+      if (readoutRef.current !== null) fitReadout(readoutRef.current, line, fxRef.current, short)
     }
     fitRef.current()
-  }, [active, at?.label, at?.value, beside, hosted, mark, model])
+  }, [active, at?.label, at?.value, beside, hosted, short, mark, model])
   // ...and on the box, which a container resize changes without a hover.
   useEffect(() => {
     const layer = readoutRef.current?.parentElement
@@ -625,7 +683,7 @@ export function Sparkline(props: SparklineProps): ReactElement {
   const readoutStyle: CSSProperties | undefined =
     at === null
       ? undefined
-      : hosted
+      : hosted || short
         ? { left: `${at.fx * 100}%`, translate: `${-at.fx * 100}% 0`, maxWidth: '100%' }
         : {
             ...(beside === 'right'

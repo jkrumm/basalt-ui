@@ -1091,6 +1091,31 @@ No export is removed. A `Meter` zone name or tick label no longer drops for widt
 
 Opt-out: give the zone a `short` that fits its span (it is used once the full name holds neither row), or drop the tick's `label` (the mark stays, named in the described-by text). A Meter that needs no second row renders as before. One that now shows a second row is one line (`1.25em`) taller at that width: a card or strip cell that pins the Meter's height should not. At 115 px of track argo's four ACWR zones all show (one a `short` or on the second row); below that the last label hides and stays in the described-by text.
 
+### Tooltips and readouts inside the card (Wave 39)
+
+No export is removed or added; four defaults move.
+
+- **A chart tooltip stays inside its card on both axes.** A tooltip taller than the room above its anchor used to cross the card's top (over the section heading); it now flips to the other side of its anchor, slides in when neither side fits, and only a tooltip taller than the card overflows, aligned to the card's top. In a card at least 192px wide it also grows to its content, up to the card's width, before a label wraps. Narrower cards (a ~120px strip cell) keep the engine's width and horizontal placement. Opt-out: render the chart outside a `ChartCard`, strip cell or `StatCard` (no card ancestor keeps the engine's viewport placement).
+
+  | Before                                                                      | Now                                                                                |
+  | --------------------------------------------------------------------------- | ---------------------------------------------------------------------------------- |
+  | A tall tooltip crossed the card top; its width was the room right of `left` | It flips or slides inside the card, and is as wide as its content (up to the card) |
+
+- **A slotted `Bars` tooltip is the one-line chip.** A `Bars` in a `StatCard` slot or a strip cell opened the engine's titled panel below the plot, hanging out of a cell that sat at the card floor. It keeps the engine's tooltip (hit-test, accessible text, rows) but renders it as the hosted Sparkline's chip: the first row's figure, then the header (`48 pages/h · Mistborn`), one line high (`--basalt-spark-readout-h`), anchored flush above the plot in the line the cell reserves, centred on the bin and held inside the cell; an overlong header ends in an ellipsis. Further rows are hidden in a slot (a chart that needs them belongs in a `ChartCard`). A bin that sums to zero draws no bar, so a baseline marker shows which bin the chip names while it is hovered. Opt-out: render the `Bars` outside the slot to get the card tooltip.
+
+  | Before                                                    | Now                                                                |
+  | --------------------------------------------------------- | ------------------------------------------------------------------ |
+  | Titled panel under the plot, ~18px below the card at 390  | One-line chip in the reserved line above the plot, inside the cell |
+  | A zero bin: the readout named it, nothing in the plot did | A baseline marker on the hovered empty bin                         |
+
+- **Tooltip labels wrap between words.** A label no longer breaks inside a token (`Load (7)` was `Load` / `7)`, `TE 2.1/0.4` could split mid-figure); a single token wider than the card overflows it. Opt-out: `.ts-chart-tooltip__row > span:nth-child(2) { overflow-wrap: anywhere }` in the app's CSS.
+
+- **A short bare `Sparkline` keeps the one-line readout inside its box.** A line `Sparkline` under 36px outside a `StatCard` slot or a hosted strip visual used to put its chip beside the point (over the line) and stack it into two lines when the box was narrow. The chip now slides with the point like a hosted one, stays one line, and takes the in-box band, top or bottom, farthest from the plotted line. It never leaves the box. Opt-out: host it (a `StatCard` slot; a strip visual) to get the readout line above the plot.
+
+  | Before                                                                                      | Now                                                                                        |
+  | ------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------ |
+  | `<Sparkline height={28} />` bare: chip beside the point, on the line, two lines when narrow | chip slid with the point, one line (`48 bpm · 19 Oct`), in the band farthest from the line |
+
 ## 2.26.0 — Wave 38, argo's friction III
 
 ### Chart card loading (Wave 38)

@@ -159,7 +159,7 @@ describe('Sparkline (items 3 and 7)', () => {
   })
   test('the readout sits next to the point, not pinned to a corner', async () => {
     const el = await mount(
-      <Sparkline ariaLabel="S" data={[1, 2, 3]} height={30} labels={['a', 'b', 'c']} />,
+      <Sparkline ariaLabel="S" data={[1, 2, 3]} height={48} labels={['a', 'b', 'c']} />,
     )
     await act(async () => {
       el.querySelector('svg')?.dispatchEvent(new FocusEvent('focusin', { bubbles: true }))

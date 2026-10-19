@@ -145,7 +145,9 @@
 }
 
 :global(.ts-chart-tooltip__row > span:nth-child(2)) {
-  overflow-wrap: break-word;
+  /* Words wrap, tokens do not: the engine's `anywhere` on the card would split `Load (7)` as
+   * `Load` / `7)` and `TE 2.1/0.4` mid-figure. A single token wider than the card overflows it. */
+  overflow-wrap: normal;
   white-space: normal;
 }
 
@@ -163,4 +165,67 @@
       var(--basalt-tooltip-surface, var(--vx-tooltip-bg))
     )
     var(--vx-surface-elevated) !important;
+}
+
+/*
+ * A slotted `Bars` (`data-basalt-slot`, set by `compile.ts`) is a micro-visual: its tooltip is the
+ * Sparkline's one-line chip, `<value> · <x label>` in the line the host reserves above the plot. The
+ * first row's figure leads, the header follows it, further rows are hidden (a chart that needs rows
+ * lives in a `ChartCard`); an overlong header ends in an ellipsis. Height, type and edge are the
+ * chip's (`sparkline.module.css`); the tooltip is portalled out of the host, so its fallbacks stand.
+ */
+:global(.ts-chart-tooltip[data-basalt-slot]) {
+  display: flex !important;
+  align-items: center;
+  box-sizing: border-box;
+  width: max-content;
+  block-size: 1.125rem;
+  padding: 0 4px !important;
+  overflow: hidden;
+  font-family: var(--basalt-font-numeral, var(--basalt-font-sans));
+  font-variant-numeric: lining-nums;
+  font-size: var(--vx-text-xs);
+  line-height: calc(1.125rem - 2px);
+  white-space: nowrap !important;
+  border-radius: var(--vx-radius-ctrl) !important;
+  /* theme-allow css-raw-surface — the chip is flat, like the Sparkline's, not a floating panel */
+  box-shadow: none !important;
+}
+
+:global(.ts-chart-tooltip[data-basalt-slot]:is([hidden], [popover]:not(:popover-open))) {
+  /* The flex above must not beat the engine's own hide. */
+  display: none !important;
+}
+
+:global(.ts-chart-tooltip[data-basalt-slot] .ts-chart-tooltip__rows) {
+  flex: none;
+  order: 0;
+}
+
+:global(.ts-chart-tooltip[data-basalt-slot] .ts-chart-tooltip__row) {
+  display: block !important;
+}
+
+:global(.ts-chart-tooltip[data-basalt-slot] .ts-chart-tooltip__row:not(:first-child)),
+:global(.ts-chart-tooltip[data-basalt-slot] .ts-chart-tooltip__row > span:not(:last-child)) {
+  display: none;
+}
+
+:global(.ts-chart-tooltip[data-basalt-slot] .ts-chart-tooltip__title) {
+  display: block !important;
+  flex: 0 1 auto;
+  min-width: 0;
+  order: 1;
+  margin: 0 !important;
+  overflow: hidden;
+  font-weight: inherit !important;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  overflow-wrap: normal;
+  opacity: 0.7;
+}
+
+:global(.ts-chart-tooltip[data-basalt-slot] .ts-chart-tooltip__title::before) {
+  content: ' · ';
+  white-space: pre;
 }

@@ -4,9 +4,11 @@
  * stack diverges around the baseline (the 1.x `negativeBars`, now just a signed value). Zones,
  * reference lines, legend, cursor and tooltip are the rung's. In a visual slot (a `StatCard`
  * `sparkline`, a strip cell's `visual`) it drops both axes, the grid, the margin and the legend and
- * fills the slot like a `Sparkline`: a small histogram, its bins named in the tooltip below it.
+ * fills the slot like a `Sparkline`: a small histogram whose tooltip is the one-line chip
+ * (`<value> · <x label>`) in the line the host reserves above the plot.
  */
 import { barY } from '@tanstack/charts/bar'
+import { dot } from '@tanstack/charts/dot'
 import { group } from '@tanstack/charts/group'
 import { stack } from '@tanstack/charts/stack'
 import { useCallback, useContext, useMemo } from 'react'
@@ -66,6 +68,8 @@ export type BarsProps<T, X extends ChartX = ChartX> = Omit<
 }
 
 const DEFAULT_BAR_OPACITY = 0.85
+/** The empty-bin marker's radius, px: the plot's floor clips it to a 2px-high tick. */
+const EMPTY_BIN_R = 2
 /** The faintest shade told-apart-by-shade series step down to. */
 const SHADE_FLOOR = 0.4
 
@@ -104,12 +108,55 @@ function guardLogStack(layout: string, onLog: boolean): void {
   warnedLogStack = true
 }
 
+/**
+ * A slotted chart has no axes to name the hovered bin, and an empty bin has no bar to light: the
+ * readout says `0 runs · 16 Oct 02:00` and nothing in the plot would mark where. Each bin whose
+ * stack sums to zero gets a baseline mark (a half-dot on the plot's floor), hidden until that x is hovered (the same `focus: 'x'`
+ * state that takes a drawn bar to full strength).
+ */
+function emptyBinTicks<T, X extends ChartX>(rows: readonly PlotRow<T, X>[]): ChartMarks {
+  // A gap (`y: null` on every series) is an absence, not a zero: only a bin with a value counts.
+  const sums = new Map<string, { row: PlotRow<T, X>; sum: number; values: number }>()
+  for (const row of rows) {
+    const key = String(row.x instanceof Date ? row.x.getTime() : row.x)
+    const entry = sums.get(key) ?? { row, sum: 0, values: 0 }
+    if (row.y !== null && Number.isFinite(row.y)) {
+      entry.sum += Math.abs(row.y)
+      entry.values += 1
+    }
+    sums.set(key, entry)
+  }
+  const empty = [...sums.values()].filter((e) => e.values > 0 && e.sum === 0).map((e) => e.row)
+  if (empty.length === 0) return []
+  return [
+    dot(empty, {
+      id: 'empty-bins',
+      x: rowX,
+      y: () => 0,
+      r: EMPTY_BIN_R,
+      fill: VX.muted,
+      fillOpacity: 0,
+      states: [{ when: { focus: 'x' }, style: { fillOpacity: 1 } }],
+    }),
+  ]
+}
+
+/** Whether the baseline (y = 0) is on the plot: not on a log axis, not in a domain that starts above it. */
+function floorIsZero<T>(y: BarsProps<T>['y']): boolean {
+  if (y?.scale === 'log') return false
+  const domain = y?.domain
+  if (Array.isArray(domain)) return domain[0] <= 0 && domain[1] >= 0
+  if (typeof domain === 'function') return false
+  return (y?.autoMinCeil ?? 0) <= 0
+}
+
 export function Bars<T, X extends ChartX = ChartX>(props: BarsProps<T, X>): ReactElement {
   const { bars: given, lines, layout = 'stacked', barOpacity, ...rest } = props
   const bars = useMemo(() => shadeSharedColors(given, barOpacity), [given, barOpacity])
   const sharedColor = bars.some((b, i) => bars.findIndex((o) => o.color === b.color) !== i)
   guardLogStack(layout, bars.length > 0 && rest.y?.scale === 'log')
   const sample = rest.data[0]
+  const zeroFloor = floorIsZero(rest.y)
   const bare = useContext(VisualSlotContext) !== null
   const series = useMemo<ChartSeries<T>[]>(
     () => [
@@ -165,13 +212,14 @@ export function Bars<T, X extends ChartX = ChartX>(props: BarsProps<T, X>): Reac
                 : stack({ order, ...(layout === 'normalized' && { offset: 'normalize' }) }),
           }),
         )
+      if (bare && zeroFloor) out.push(...emptyBinTicks(rows))
       for (const s of plot.visible) {
         if (barKeys.has(s.key)) continue
         out.push(lineMark(plot, s))
       }
       return out
     },
-    [bars, layout, barOpacity, sharedColor],
+    [bars, layout, barOpacity, sharedColor, bare, zeroFloor],
   )
 
   return (

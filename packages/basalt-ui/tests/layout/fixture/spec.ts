@@ -382,6 +382,8 @@ export type FixtureSpec = {
   w38Readout2?: true
   /** Wave 39: a mixed one-row strip (Meter, Sparkline, Bars, a wrapping qualifier, a footer `under`) and a multi-row cell with row Sparklines (`w39-strip`, `w39-rows`). */
   w39Strip?: true
+  /** Wave 39: a tall tooltip in a short `ChartCard` (`w39-tip`, `w39-tip-tall`), a slotted `Bars` in a strip cell (`w39-strip`), a 28px bare `Sparkline` (`w39-spark`). */
+  w39Readout?: true
   /**
    * Renders a `CodeBlock` in a `Prose` between `data-testid="codeblock-before"` and
    * `"codeblock-after"` paragraphs, over a long first line. `language` defaults to `'ts'`; pass
