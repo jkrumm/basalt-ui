@@ -1605,7 +1605,7 @@ P2/P3 basalt rows below. Validators: argo (bumps after the release, deletes its 
   that borrow free room. Close: #442 the facts gate pinned + `ghost`, #443 and #444 playground adoption. The mother's #432 and
   #441 (guard promotions) landed in between. Every break is a plain `feat:`/`fix:` with a MIGRATING subsection under the one
   `## Unreleased` heading; `CHANGELOG.md` untouched.
-- **Released by the mother mid-wave:** 2.24.0 (#420–#427 + #432), 2.25.0 from `3c3633cc` (#428/#430/#431, argo's Reading pace
+- **Released by the mother mid-wave:** 2.24.0 (#416–#427 + #432), 2.25.0 from `3c3633cc` (#428–#431, argo's Reading pace
   tile), 2.26.0 from `f95068de` (#433–#440 + #441). #442–#444 are unreleased.
 - **Rounds** (`docs/waves/design-parity/w38/rounds.md`; boards `.design-parity/w38/r0`–`r4` in the main checkout. Only r0 reached the
   MacBook: at close-out `ssh iumac` timed out, so the copy is open — `rsync -a --relative .design-parity/w38
@@ -1619,7 +1619,7 @@ P2/P3 basalt rows below. Validators: argo (bumps after the release, deletes its 
   strip footers and qualifiers, radii on the scale, Section sizes, compact legends that keep series, list/Meter card states,
   page-summary figures, Bars in a slot, `shot` placeholders and radius detection). D37's owner decision is still open.
 - **Budgets:** gzip ceilings ratcheted once to CI's Linux figures (#423: provider-only 20452, embedded 56749, theme-only 15868);
-  public value symbols 108, barrel types 70, CLI lines 8441 / 8457 (#430 folded the detect loop). New public props:
+  public value symbols 108, barrel types 70, CLI lines 8441 measured against an unchanged 8457 ceiling (#430 folded the detect loop). New public props:
   `Meter.readingAt`, `ChartCard.placeholderHeight="content"` and `ghost`, `StatStripFooterEntry.shotAbsent`; the `ghost`
   consumer is the playground (argo's next wave can adopt it).
 - **Harness rows for a later wave:** `release.sh` polls the registry for 1200 s, and 2.24.0 took ~25 min to propagate — wait
