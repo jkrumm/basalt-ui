@@ -103,11 +103,16 @@
 
 /* A label that cannot hold its place on the first row stands on a second, directly under it. */
 .labelRow[data-meter-rows='2'] {
-  height: 2.5em;
+  height: calc(2.5em + var(--vx-space-stack-xs, 0.25rem));
+}
+
+.labelRow[data-meter-rows='2'] .rowLabel {
+  /* The label's box is its row (1.25em), so the rows' gap is the gap between their boxes. */
+  line-height: 1.25em;
 }
 
 .rowLabel[data-row2] {
-  top: 1.25em;
+  top: calc(1.25em + var(--vx-space-stack-xs, 0.25rem));
 }
 
 .rowLabel {
