@@ -1688,21 +1688,41 @@ workarounds) and S2/S3/S4 under the calibrated bar (`docs/waves/design-parity/w3
   public export or prop.
 - **Next — stopped: Wave 39 closed; orchestrated, nothing spawned.** The mother releases (#442 + #448–#455), argo bumps and re-scores.
 
-## Wave 40 — argo friction V: the fitness readout at 390 <!-- status: active -->
+## Wave 40 — argo friction V: the fitness readout at 390 <!-- status: done -->
 
 Source: argo `docs/design/UPSTREAM.md` § "Wave 41 bump" (argo on 2.27.0, all 13 routes re-scored; Garmin fails on one basalt
 row). Short wave: one fan-out, one review round under the calibrated bar (`docs/waves/design-parity/w37/setup.md`), close-out.
 Validator: argo (bumps after the mother's release).
 
-- [ ] **P1, the only row failing argo Garmin:** at 390 the hosted `Sparkline` fitness readout (`44 bpm · 19 Oct`) lands on the
+- [x] **P1, the only row failing argo Garmin:** at 390 the hosted `Sparkline` fitness readout (`44 bpm · 19 Oct`) lands on the
       next row's line (HRV) in the Fitness strip cell and the joined strip; 2.27 made it worse. Root cause in the strip-cell
       anatomy and the readout reserve, a layout test on argo's composition failing first. No consumer workaround.
-- [ ] **P3s:** the `warn at 24 h` / `abandoned at 7 d` Meter captions stacked nearly touching; the slotted `Bars` chip touching
+- [x] **P3s:** the `warn at 24 h` / `abandoned at 7 d` Meter captions stacked nearly touching; the slotted `Bars` chip touching
       its focus ring; the activities tooltip covering the card's headline facts.
-- [ ] One review round under the calibrated bar; close-out. The mother releases.
+- [x] One review round under the calibrated bar; close-out. The mother releases.
       **Left behind:**
 
-## Wave 41 — Data tables, responsive <!-- status: pending -->
+- **Landed** (2 PRs, both through `rd merge` with `make check` after the rebase; master `7ab0de3d`). #458 the P1: the cause was
+  #449 hosting row visuals: the chip was capped to the narrow row visual column, stacked to two lines, found no spot in the 28 px
+  plot and hung below it onto the next row. In a strip row (`[data-strip-row]`) the chip now measures against the row (label
+  column up to `[data-strip-row-value]`), never stacks, and drops its date (`data-short`) rather than leave the row; other hosts
+  keep the stacked/hang-below path. The `strip-anatomy-w39` `todo` is a real test at 390 and 1440, shown failing first (chip bottom
+  569.9 vs 449.4). #457 the P3s: Meter label row two sits one `--vx-space-stack-xs` below row one; the slotted `Bars` chip is 4 px
+  shorter (14 px) and sits 4 px above the plot, clear of the focus ring, inside the reserve; `settleInCard` keeps a tooltip below a
+  card's facts header when the plot area holds it, else the old card clamp.
+- **Review:** one gateway round per PR. #457 clean (three cheap improvements applied: the line-height scoped to two-row Meters,
+  unconditional gap asserts, exact fallback tops). #458 actionable, two blocking (a row chip could still stack in the plot; an
+  imperative `max-width: 100%` clobbered the bare chip's side cap), both fixed; the lead read the fix diff before merging.
+- **Round** (`docs/waves/design-parity/w40/rounds.md`, board `.design-parity/w40/r0`): S2 99, S3 98, S4 98, components 99, all
+  unchanged from w39 r2; no new defect, every item carried. The 390 readout has no shot (mobile hover is skipped), so the P1 is
+  proven by the layout test on argo's composition, as in Wave 39.
+- **MIGRATING:** no entry (visual-only, no API change); `## Unreleased` keeps its placeholder. `CHANGELOG.md` untouched.
+- **Not done:** the `VisualSlot.readoutHost` hook (the reviewer's typed alternative to the `[data-strip-row]` selector contract);
+  the readout still covers the row label column while shown. Budgets: no public symbol, no ceiling raised.
+- **Unreleased on master, for the mother:** #457, #458. argo bumps and re-scores Garmin at 390.
+- **Next — stopped: Wave 40 closed; orchestrated, nothing spawned.**
+
+## Wave 41 — Data tables, responsive <!-- status: active -->
 
 Spec: SPEC § 6.6, § 9.1. Scenarios S1 (outages) and S2 (sessions). Validators: argo, linewatch.
 
