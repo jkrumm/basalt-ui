@@ -221,6 +221,15 @@
   min-width: 0;
 }
 
+/* A `widget` tier (ChartCard) caption in `actions` — `<Text size="xs">`, 12 — joins the chart text
+ * step beside the plot's ticks and legend (argo's strength cards: title 13 + caption 12 + ticks 11
+ * + section title 15 was four sizes). The cap is the `--text-fz` variable `Text` reads, pinned
+ * `!important` over the inline value its `size` prop writes; other sizes (`md` figures, `sm`) are
+ * not touched, and a `Text` sized by a consumer class never reads the variable. */
+.root[data-tier='widget'] .actions :global(.mantine-Text-root[style*='--mantine-font-size-xs']) {
+  --text-fz: var(--vx-text-micro) !important;
+}
+
 /* Directly under the title row, 4px off it — 1px put it inside the title's own line box, so a
  * section with both read as a two-line heading rather than a heading plus a note. */
 .subtitle {

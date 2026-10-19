@@ -4,7 +4,7 @@
  * the dev-only persistKey-with-no-fold warning, plus
  * the `className`/`classNames`/`style` contract from `common/props.ts`.
  */
-import { MantineProvider } from '@mantine/core'
+import { MantineProvider, Text } from '@mantine/core'
 import { fireEvent, render, screen } from '@testing-library/react'
 import { beforeEach, describe, expect, mock, spyOn, test } from 'bun:test'
 import { readFileSync } from 'node:fs'
@@ -722,5 +722,20 @@ describe('the group-tier heading sits on the meta step (three sizes, not four)',
     expect(start).toBeGreaterThan(-1)
     const rule = css.slice(start, css.indexOf('}', start))
     expect(rule).toMatch(/font-size:\s*var\(--vx-text-xs\)/)
+  })
+})
+
+describe('summary size cap — Mantine contract', () => {
+  // The caps in section.module.css and widget-header.module.css pin `--text-fz`, the variable
+  // `Text` reads. They only bite while a `size` prop is written inline as that variable.
+  test('Mantine writes --text-fz inline for a Text size', () => {
+    const { container } = render(
+      <MantineProvider>
+        <Text size="xs">cap</Text>
+      </MantineProvider>,
+    )
+    expect(container.querySelector('.mantine-Text-root')?.getAttribute('style')).toContain(
+      '--text-fz',
+    )
   })
 })

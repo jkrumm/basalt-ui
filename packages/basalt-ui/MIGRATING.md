@@ -1083,24 +1083,30 @@ No export is removed or added. A loading state is the loaded shape; two other de
   `StatGroup` or a wrapper; it replaces the group's two-column size.
 ### Section subtitle and summary sizes (Wave 38)
 
-**What 2.24.0 got wrong:** the summary cap (a bare `Text` in `Section summary` renders at 11) was
-written as `.summary > .mantine-Text-root`, which outranks a consumer's own class. argo's reading
-backlog sets its summary `Text` to 13 through a class, got 11 instead, and the shell held four sizes
-(title 15, rows 13, row meta 12, summary 11). The `Section` subtitle itself was at 12 (`xs`) as
-promised; argo's "subtitle" report was this summary line.
+**What 2.24.0 / 2.25.0 got wrong:** the summary cap was written as a `font-size` rule on
+`.summary > .mantine-Text-root`, which outranks a consumer's own class. argo's reading backlog sets
+its summary `Text` to 13 through a class, got 11 instead, and the shell held four sizes (title 15,
+rows 13, row meta 12, summary 11). The `Section` subtitle itself was at 12 (`xs`) as promised;
+argo's "subtitle" report was this summary line. Separately, a `<Text size="xs">` caption in a
+`ChartCard` `actions` slot stayed at 12 beside the chart's 11 ticks: argo's strength / load / balance
+shells held four sizes.
 
-**Now:** the cap applies only to a `Text` that carries a `size` prop (Mantine writes the inline
-`--text-fz` for one and for nothing else). A bare `Text` sized by your own class keeps that size.
-`<Text size="xs">` in `summary` still renders at 11.
+**Now:**
 
-| Shell (measured, 1440 and 390)                   | Before 2.25.x     | Now          |
-| ------------------------------------------------ | ----------------- | ------------ |
-| `Section` head: title, `subtitle`, `count`, body | 12 / 13 / 15      | 12 / 13 / 15 |
-| reading backlog: class-sized summary over rows   | 11 / 12 / 13 / 15 | 12 / 13 / 15 |
+- The cap pins `--text-fz`, the variable `Text` reads, `!important`: a `Text` with a `size`, or none,
+  in `Section summary` renders at 11; a `Text` sized by your own class keeps that size.
+- A `<Text size="xs">` in a `ChartCard` `actions` slot renders at 11, the chart text step. `sm` and
+  `md` figures are untouched.
 
-The 11 in the `size="xs"` row of "Section summary line" above is the chart text step, not the
-subtitle. A `ChartCard` whose `actions` holds `<Text size="xs">` beside the chart's 11 ticks still
-counts 12 as a fourth size; that is the consumer's `Text`, not a `Section` slot.
+**Opt out:** size the `Text` with your own class, or wrap it in a `span` / `Group` (summary) or give
+it another `size` (actions).
+
+| Shell (measured, 1440 and 390)                               | 2.24.0 / 2.25.0   | Now          |
+| ------------------------------------------------------------ | ----------------- | ------------ |
+| `Section` head: title, `subtitle`, `count`, body             | 12 / 13 / 15      | 12 / 13 / 15 |
+| reading backlog: class-sized summary over rows               | 11 / 12 / 13 / 15 | 12 / 13 / 15 |
+| strength / load / balance: `ChartCard` `actions` xs captions | 11 / 12 / 13 / 15 | 11 / 13 / 15 |
+| strength diagnostics: `xs` summary                           | 11 / 13 / 15      | 11 / 13 / 15 |
 
 ### Hosted readouts and tooltips (Wave 38)
 
@@ -1304,9 +1310,11 @@ No export is removed or renamed; one prop is added and two defaults move.
 (12). argo's strength diagnostics shell then counted four sizes: title 15, chart-card title 13,
 summary 12, chart ticks and legend 11.
 
-**Now:** that text renders at 11 (the chart text step) whatever its `size`, so the shell is 15, 13, 11. Only a direct `Text` child of the summary slot is capped; a bare `Text` nested inside a `Group` keeps the size it asks for.
+**Now:** a `Text` that is a direct child of the summary slot renders at 11 (the chart text step),
+sized by a `size` prop or not. A `Text` sized by your own class keeps that size (see "Section
+subtitle and summary sizes" below). A bare `Text` nested inside a `Group` keeps the size it asks for.
 
-**Opt out:** wrap the text in a `<span>` or a `Group`.
+**Opt out:** wrap the text in a `<span>` or a `Group`, or size it with your own class.
 
 ### Empty cells and Meters (Wave 38)
 

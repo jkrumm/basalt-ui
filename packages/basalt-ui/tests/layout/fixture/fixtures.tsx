@@ -40,6 +40,7 @@ import {
   Button,
   Card,
   Code,
+  Group,
   Paper,
   SegmentedControl,
   SimpleGrid,
@@ -1532,8 +1533,32 @@ function Wave37Fixture({ spec }: { spec: NonNullable<FixtureSpec['w37']> }): Rea
 function Wave38StrengthFixture(): ReactElement {
   const data = useMemo(() => buildChartData(3, 60), [])
   const series = buildLineSeries(3, undefined, ['Squat', 'Bench press', 'Deadlift'])
-  const card = (title: string): ReactElement => (
-    <ChartCard title={title} info="Estimated one-rep max from the heaviest set per day.">
+  const momentumActions = (
+    <Group gap={4} align="baseline" wrap="nowrap">
+      <Text span fw={600} size="md">
+        +1.4
+      </Text>
+      <Text span size="xs" c="dimmed">
+        %/mo, 30 d velocity
+      </Text>
+    </Group>
+  )
+  const inolActions = (
+    <Group gap={6} align="baseline" wrap="nowrap">
+      <Text span fw={600} size="md">
+        1.12
+      </Text>
+      <Text span size="xs" c="dimmed">
+        Productive
+      </Text>
+    </Group>
+  )
+  const card = (title: string, actions?: ReactElement): ReactElement => (
+    <ChartCard
+      title={title}
+      info="Estimated one-rep max from the heaviest set per day."
+      {...(actions !== undefined && { actions })}
+    >
       <Lines ariaLabel={title} data={data} x={chartX} series={series} height={180} />
     </ChartCard>
   )
@@ -1544,6 +1569,46 @@ function Wave38StrengthFixture(): ReactElement {
           <SimpleGrid type="container" cols={{ base: 1, '30rem': 2 }} spacing="md">
             {card('Estimated 1RM')}
             {card('Momentum')}
+          </SimpleGrid>
+        </Section>
+      </div>
+      <div data-testid="w38-strength-strength">
+        <Section title="Strength, 90 days">
+          <SimpleGrid type="container" cols={{ base: 1, '30rem': 2 }} spacing="md">
+            {card('Estimated 1RM')}
+            {card('Momentum', momentumActions)}
+          </SimpleGrid>
+        </Section>
+      </div>
+      <div data-testid="w38-strength-load">
+        <Section title="Load, 90 days">
+          <SimpleGrid type="container" cols={{ base: 1, '30rem': 2 }} spacing="md">
+            {card(
+              'Weekly volume',
+              <Text span size="xs" c="dimmed">
+                12.4 t week of 12. Feb
+              </Text>,
+            )}
+            {card('ACWR')}
+            {card('INOL per session', inolActions)}
+          </SimpleGrid>
+        </Section>
+      </div>
+      <div data-testid="w38-strength-balance">
+        <Section title="Balance">
+          <SimpleGrid type="container" cols={{ base: 1, '30rem': 2 }} spacing="md">
+            {card(
+              'Relative progression',
+              <Group gap={6} align="baseline" wrap="nowrap">
+                <Text span fw={600} size="md">
+                  ▲ +8.2 %
+                </Text>
+                <Text span size="xs" c="dimmed">
+                  Squat since its first session in the window
+                </Text>
+              </Group>,
+            )}
+            {card('Strength ratios')}
           </SimpleGrid>
         </Section>
       </div>
@@ -1575,6 +1640,21 @@ function Wave38SubtitleFixture(): ReactElement {
         <Section title="Revenue" subtitle="Trailing 30 days" count={12}>
           <Text size="sm">Body copy</Text>
         </Section>
+      </div>
+      <div data-testid="w38-subtitle-bare">
+        <Section title="Usage" summary={<Text c="dimmed">48,204 requests</Text>}>
+          <Text size="sm">Body copy</Text>
+        </Section>
+        <ChartCard
+          title="Latency"
+          actions={
+            <Text span size="xs">
+              p95 210 ms
+            </Text>
+          }
+        >
+          <Text size="sm">chart body</Text>
+        </ChartCard>
       </div>
       <div data-testid="w38-subtitle-backlog">
         <Section

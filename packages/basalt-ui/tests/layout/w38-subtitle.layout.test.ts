@@ -58,6 +58,12 @@ layout('argo Section subtitle and summary sizes', () => {
       if (viewport === DESKTOP_1440) expect(byText['12']).toContain('Trailing 30 days')
     })
 
+    test(`an unclassed summary Text and an actions caption are 11 at ${viewport.width}px`, async () => {
+      const { sizes, byText } = await measure(viewport, 'w38-subtitle-bare')
+      expect(sizes).toEqual([11, 13, 15])
+      expect(byText['11']).toEqual(expect.arrayContaining(['48,204 requests', 'p95 210 ms']))
+    })
+
     test(`reading backlog holds 12/13/15 at ${viewport.width}px`, async () => {
       const { sizes, byText } = await measure(viewport, 'w38-subtitle-backlog')
       expect(sizes).toEqual([12, 13, 15])

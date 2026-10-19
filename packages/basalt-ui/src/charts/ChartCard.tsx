@@ -136,7 +136,8 @@ type ChartCardBaseProps = BasaltProps &
     deltaPolarity?: DeltaPolarity | undefined
     /** A mono count tag after the title. */
     count?: number | undefined
-    /** Right-aligned controls. */
+    /** Right-aligned controls. A `<Text size="xs">` caption here renders at 11 (the chart-text step,
+     * beside the plot's ticks); wrap it in a `span` or give it your own class to opt out. */
     actions?: ReactNode
     /** A resolved state replaces `children` with its placeholder; the header stays. */
     state?: ChartState | undefined
