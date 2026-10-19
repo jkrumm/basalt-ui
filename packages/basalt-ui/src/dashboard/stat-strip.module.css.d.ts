@@ -10,6 +10,7 @@ declare const classes: {
   readonly content: string
   readonly action: string
   readonly captionLine: string
+  readonly head: string
   readonly captionMain: string
   readonly lead: string
   readonly caption: string

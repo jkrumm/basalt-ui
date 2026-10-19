@@ -66,11 +66,22 @@
  * every cell of a row (one caption line; a reserved qualifier line in a narrow cell when any cell has
  * a qualifier), so a row shares one caption top and one value baseline. Below the value each cell
  * stacks its own parts and ends at its last one. */
-.content > * {
+/* The HEAD (caption line, qualifier, value row) is one block with its own height: a longer qualifier
+ * pushes only its own value down. A visual cell whose head is shorter than a sibling's visual offset
+ * grows its head's min-height (`alignVisuals`), so the drawn visuals of a row share one top. */
+.head {
+  display: flex;
+  flex-direction: column;
   min-width: 0;
 }
 
-.content > :not(.captionLine) {
+.content > *,
+.head > * {
+  min-width: 0;
+}
+
+.content > :not(.head),
+.head > :not(.captionLine) {
   margin-block-start: var(--vx-space-stack-sm);
 }
 
@@ -272,7 +283,6 @@
 .visual:has([data-basalt-sparkline], [data-basalt-chart]) {
   padding-top: max(0px, calc(var(--basalt-spark-readout-h) - var(--vx-space-stack-sm)));
 }
-
 /* The state copy keeps the cell's inset on every side: the article ends at its own last track, so the
  * foot inset (carried by the row-high slot, further down) cannot reach it. */
 .content[data-strip-has-state] {

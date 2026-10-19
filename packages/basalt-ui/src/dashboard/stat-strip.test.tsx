@@ -136,6 +136,41 @@ describe('StatGroup variant="strip"', () => {
     expect(container.querySelector('[data-strip-row] [data-v]')).toBeTruthy()
   })
 
+  test('a row visual is hosted (Wave 39): a Meter in a row sees the slot, like the cell visual', () => {
+    const { container } = mount([
+      {
+        key: 'g',
+        caption: 'Signals',
+        rows: [
+          {
+            key: 'load',
+            label: 'Load',
+            value: '1.1',
+            visual: (
+              <Meter
+                label="Load"
+                min={0}
+                max={2}
+                value={1.1}
+                zones={[{ from: 0, to: 2, label: 'All' }]}
+              />
+            ),
+          },
+        ],
+      },
+    ])
+    // A hosted zoned Meter does not repeat the reading at its marker.
+    expect(container.querySelector('[data-strip-row="load"] [data-meter-reading]')).toBeNull()
+  })
+
+  test('the head wraps the caption line and the value; the visual follows it (Wave 39)', () => {
+    const { container } = mount([{ key: 'a', caption: 'A', value: '1', visual: <i data-v /> }])
+    const head = container.querySelector('[data-strip-head]')!
+    expect(head.querySelector('[data-strip-caption]')).toBeTruthy()
+    expect(head.querySelector('[data-strip-value]')).toBeTruthy()
+    expect(head.nextElementSibling?.hasAttribute('data-strip-visual')).toBe(true)
+  })
+
   test('footer row renders under the cells', () => {
     const { container, getByText } = mount(CELLS, [{ key: 'b', content: <b>Budget</b> }])
     expect(container.querySelectorAll('[data-strip-footer-cell]').length).toBe(1)
@@ -276,7 +311,7 @@ describe('strip compact cells (Wave 37)', () => {
         action: <button type="button">Edit</button>,
       },
     ])
-    const line = container.querySelector('[data-strip-cell] > div') as HTMLElement
+    const line = container.querySelector('[data-strip-head] > div') as HTMLElement
     const action = line.querySelector('[data-strip-action]') as HTMLElement
     expect(action.querySelector('button')?.textContent).toBe('Edit')
     expect(line.querySelector('[data-strip-caption]')?.getAttribute('title')).toBe('Weekly target')
