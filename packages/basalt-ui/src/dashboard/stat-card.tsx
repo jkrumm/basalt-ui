@@ -525,7 +525,7 @@ export function StatCard({
         {...(pending && { 'aria-busy': true })}
       >
         {pending && <VisuallyHidden>{`Loading ${title}`}</VisuallyHidden>}
-        <div className={cx(classes.header, classNames?.header)}>
+        <div className={cx(classes.header, classNames?.header)} data-basalt-header-block>
           <CaptionRow
             title={title}
             {...(icon !== undefined && { icon })}

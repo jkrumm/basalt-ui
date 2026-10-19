@@ -286,7 +286,7 @@ function StripCell({
         {...(state === undefined && rows !== undefined && { 'data-strip-has-rows': '' })}
         {...(cell.stale && { 'data-stale': 'true' })}
       >
-        <div className={classes.head} data-strip-head>
+        <div className={classes.head} data-strip-head data-basalt-header-block>
           <div className={classes.captionLine}>
             <div className={classes.captionMain}>
               {/* The caption and its info glyph are one unit: the qualifier wraps whole, never between them. */}
