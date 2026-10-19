@@ -599,10 +599,13 @@ layout('Meter / BarList geometry', () => {
     expect(m.anchored).toBe(true)
     const cap = m.caps.find((c) => c.text?.includes(text))
     if (!cap) throw new Error(`LAYOUT: no ${text} caption in ${id}`)
-    // The target's caption is centred on its tick. The forecast's ends at its fill end (Wave 38): this
-    // one is too long to clear the reading there, so it drops (the existing priority) instead of wrapping.
+    // The target's caption is centred on its tick. A short forecast fill cannot hold the forecast
+    // caption ending at its end (it would cover the reading), so it falls back to starting at the
+    // boundary, where the reading ends, one gap step (6px) at most after it (Wave 38).
     if (kind === 'boundary') {
-      expect(cap.hidden).toBe(true)
+      expect(cap.hidden).toBe(false)
+      expect(cap.left - m.tick).toBeGreaterThanOrEqual(-SNAP)
+      expect(cap.left - m.tick).toBeLessThanOrEqual(6 + SNAP)
     } else {
       expect(Math.abs((cap.left + cap.right) / 2 - m.tick)).toBeLessThanOrEqual(SNAP)
     }

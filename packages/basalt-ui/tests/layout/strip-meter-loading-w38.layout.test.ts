@@ -110,7 +110,7 @@ layout('loading keeps the loaded shape (Wave 38)', () => {
   })
 
   test.each(METER_WIDTHS.map((w) => [w] as const))(
-    'the forecast caption ends at the forecast fill end at %ipx',
+    'a long forecast: the caption ends at the forecast fill end at %ipx',
     async (w) => {
       const probe = await p.raw.evaluate((w) => {
         const root = document.querySelector(`[data-testid="w38l-meter-forecast-${w}-rest"]`)
