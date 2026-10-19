@@ -221,7 +221,9 @@ function StripCell({
   // The cell's verdict colours a plain Meter in its visual too (a hero host only). While loading, a
   // Meter in the slot draws its own loading state (the loaded rows, text painted as skeleton).
   const hostSlot = !hasHero
-    ? null
+    ? loading
+      ? HOSTED_LOADING
+      : null
     : cell.tone === undefined
       ? loading
         ? HOSTED_LOADING

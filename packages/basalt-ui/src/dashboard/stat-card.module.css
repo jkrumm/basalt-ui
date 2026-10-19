@@ -204,6 +204,13 @@
   }
 }
 
+/* A one-column group (under 260px) has no spanning card: each keeps its own width's clamp. */
+@container basalt-grid (max-width: 259.9px) {
+  [data-sm-cols] .body {
+    --basalt-stat-figure-size: clamp(var(--vx-text-lg), 8cqi, var(--vx-text-kpi));
+  }
+}
+
 /* ── states ──────────────────────────────────────────────────────────────────────────────────── */
 
 /* The empty branch: one muted line in the figure's place, at the figure row's height. */
