@@ -1041,10 +1041,19 @@ The `basalt-ui/router-tanstack` subpath is **removed** in 2.x, not moved: an imp
 | `NavItemMeta`, `NavGroupMeta`, `AnyNavItem`, `AnyNavGroup`, `AnyNavLink`, `FlatNavItem`, `NavConfig`, `NavGroupId`, `NavTabId`, `NavIndex`, `UseNavOptions`, `NavBinding`, `NavAnchor`, `NavAnchorProps`, `NavMobilePlacement` | deleted                                                                                                                                                                                                                                                                                                                                                                                                                                                    | no consumer names them; derive with `ComponentProps` / `Parameters` |
 | `useNav`, and `BasaltShell`'s `sections` / `mobileNav` props                                                                                                                                                                   | deleted: pass `nav={NAV}` (plus `badges`, `isActive`, `getScrollElement` — the old `useNav` options) to `BasaltShell`; it resolves the sidebar, the mobile bar and the breadcrumb itself. `mobileNav` tuning moves to `defineNav`'s `mobile`. argo `apps/dashboard/src/routes/__root.tsx`: replace `const nav = useNav(NAV, { badges })` + `{...nav}` with `nav={NAV} badges={…}` (migrates in W12; 1.x consumers stay on their pinned version until then) |
 
-## Unreleased
+## Unreleased — Wave 38, card facts
 
-_Nothing yet. Author the next section under this heading as `## Unreleased — <title>`; the
-release renames it and opens a new one here._
+### Card facts and the pending ghost (Wave 38)
+
+No export is removed. `ChartCard` learns a pending plot's shape and documents the state contract.
+
+- **Facts show only at rest.** A card's `facts` and basis `subtitle` render when `state` resolves to ready; pending draws the facts skeleton, empty and error draw neither, in every `placeholderHeight` mode. The card knows a state only through its `state` prop. Opt-out: omit `facts` to keep a card state-agnostic.
+
+  | Before                                                                                         | Now                                                                                                 |
+  | ---------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------- |
+  | Facts render above the body's own loading or empty line (`Meter loading`, `BarList emptyText`) | Also pass `state={{ pending: true }}` / `state={{ empty }}` to the card; the facts hide or skeleton |
+
+- **`ChartCard ghost`** (new optional prop): `'bars'` (default), `'line'` for a line or area chart, or a number for the bar count when the loaded data length is known. Opt-out: omit it for the previous eight-bar ghost.
 
 ## 2.26.0 — Wave 38, argo's friction III
 
@@ -1430,18 +1439,6 @@ No export is removed or added. `StatStripFooterEntry` gains an optional `shotAbs
 A row that is genuinely too narrow still hides a name (argo's ACWR at 390 has 22px where `Caut.` needs 25); the name stays in the described-by text.
 
 Opt-out: none for the zone names; a zone that must keep to its span sets a `short` that fits it, and a page that does not want a footer entry's shot anchor omitted declares no `shotAbsent`.
-
-### Card facts and the pending ghost (Wave 38)
-
-No export is removed. `ChartCard` learns a pending plot's shape and documents the state contract.
-
-- **Facts show only at rest.** A card's `facts` and basis `subtitle` render when `state` resolves to ready; pending draws the facts skeleton, empty and error draw neither, in every `placeholderHeight` mode. The card knows a state only through its `state` prop. Opt-out: omit `facts` to keep a card state-agnostic.
-
-  | Before                                                                                         | Now                                                                                                 |
-  | ---------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------- |
-  | Facts render above the body's own loading or empty line (`Meter loading`, `BarList emptyText`) | Also pass `state={{ pending: true }}` / `state={{ empty }}` to the card; the facts hide or skeleton |
-
-- **`ChartCard ghost`** (new optional prop): `'bars'` (default), `'line'` for a line or area chart, or a number for the bar count when the loaded data length is known. Opt-out: omit it for the previous eight-bar ghost.
 
 ## 2.23.0 — Wave 37, argo's friction II
 
