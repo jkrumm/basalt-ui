@@ -58,9 +58,13 @@ worktrees are left. Resume after the reset with a fresh mother from this file.
    fitness readout) are done. Wave 41 (friction VI) is done; Wave 42 "Data tables, responsive" is `active` but NOT spawned.
 3. argo Waves 38–44 done; argo is on 2.27.2. **All 14 argo pages pass** the fresh reviewers (2026-10-19): Garmin 95 (w44,
    after argo's own fix drew one date axis on the ACWR card), Home 97, WalkingPad 100, Reading 94, Hermes 98, Calendar 97,
-   Body comp 96, Usage 95, astro 94/94, m365 94/93, Warden 92, Agents 92, Strength 90 (provisional: its w42 reviewer read 4 of
-   13 sheets, so re-score it first if in doubt). Against Keel: close everywhere. argo's PLAN has no active wave; the mother
+   Body comp 96, Usage 95, astro 94/94, m365 94/93, Warden 92, Agents 92, Strength 68 (argo w45, a complete 13-sheet read:
+   every component passes, no P0/P1). Against Keel: close everywhere. argo's PLAN has no active wave; the mother
    authors each re-score wave before `rd wave` (the gate refuses otherwise).
+   **argo debt to schedule on resume (argo-only, Sonnet):** Strength P2s from w45: the Estimated 1RM dashed companion line has
+   no legend; the scan folds Volume/INOL at 390 (a lost fact); the "Balance" title scope; the accent on the selected timer
+   preset; low-contrast dark Warm-up bars; scan/Log/Timer/Recent and the expanded diagnostics have no shot anchor. Detail:
+   argo `docs/design/strength-tracker.md`, `docs/waves/PLAN.md` § Wave 45.
 4. basalt Wave 41 "argo friction VI" is done and released as 2.27.2 (#461/#463 info bubble below the header block, #462 slot
    chip and one chart focus ring). **First on resume:** spawn basalt Wave 42 "Data tables"
    (marked `active`). Next after it: Event list, Board and the record page, Forms, rollout to argo + rb, the expression trial.
