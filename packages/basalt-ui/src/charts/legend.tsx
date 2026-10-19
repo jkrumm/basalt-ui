@@ -94,13 +94,17 @@ const buttonStyle: CSSProperties = {
   border: '1px solid transparent',
   display: 'inline-flex',
   alignItems: 'center',
-  // An entry never wraps inside itself: a threshold stays with its name.
+  // An entry never wraps inside itself (a threshold stays with its name) and never outgrows the row:
+  // the label ellipsizes at the row's width (`labelStyle`), its full name in `title`.
   whiteSpace: 'nowrap',
+  maxWidth: '100%',
+  minWidth: 0,
   gap: 6,
   cursor: 'pointer',
   borderRadius: VX.radiusCtrl,
 }
-const noteStyle: CSSProperties = { color: VX.axis }
+const noteStyle: CSSProperties = { color: VX.axis, flex: 'none' }
+const labelStyle: CSSProperties = { minWidth: 0, overflow: 'hidden', textOverflow: 'ellipsis' }
 
 /**
  * A legend entry that may be a sign-coloured bar: `colorNegative` is the below-zero colour and the
@@ -205,21 +209,19 @@ const VISUALLY_HIDDEN = {
   whiteSpace: 'nowrap',
 } as const
 
-/** True when an entry (or the chip) sits on a later line than the first. */
-function wraps(row: HTMLElement, more: HTMLElement): boolean {
+/** The number of lines the visible entries (and the chip) sit on. */
+function lineCount(row: HTMLElement, more: HTMLElement): number {
   const shown = [...row.querySelectorAll<HTMLElement>('[data-legend-key]')].filter(
     (it) => !it.hasAttribute('data-legend-folded'),
   )
   if (!more.hidden) shown.push(more)
-  const first = shown[0]
-  return first !== undefined && shown.some((it) => it.offsetTop > first.offsetTop + 1)
+  return new Set(shown.map((it) => Math.round(it.offsetTop))).size
 }
 
 /**
  * The compact legend names every series at every width. When the row wraps below 480px, the
  * zone / reference entries fold into a `+N` chip (named for assistive tech by the folded labels), the
- * last first, until the row is one line; if the series alone do not fit, the row stays two lines and
- * no series folds. The entries are in display order: series, then zones / references.
+ * last first, only while the row has more lines than the series alone would; a series never folds. The entries are in display order: series, then zones / references.
  * Measured on the node, never in React state, so a hover or a resize does not re-render.
  */
 function foldLegend(row: HTMLElement): void {
@@ -230,8 +232,12 @@ function foldLegend(row: HTMLElement): void {
   // `--bc-fold` is the stylesheet's compact flag (chart-legend.module.css); wide keeps every entry.
   if (more === null || getComputedStyle(row).getPropertyValue('--bc-fold').trim() !== '1') return
   const references = items.filter((it) => it.dataset['legendRole'] === 'reference')
+  // The series-only line count is the floor: folding a reference that frees no line only hides a name.
+  for (const r of references) r.setAttribute('data-legend-folded', '')
+  const floor = lineCount(row, more)
+  for (const r of references) r.removeAttribute('data-legend-folded')
   const folded: HTMLElement[] = []
-  while (folded.length < references.length && wraps(row, more)) {
+  while (folded.length < references.length && lineCount(row, more) > floor) {
     const last = references[references.length - 1 - folded.length]
     if (last === undefined) break
     last.setAttribute('data-legend-folded', '')
@@ -286,7 +292,9 @@ export function ChartLegend<T>(props: ChartLegendProps<T>): ReactElement | null 
           const content = (
             <>
               <Swatch s={s} mode={props.mode} />
-              <span>{s.label}</span>
+              <span style={labelStyle} title={s.label}>
+                {s.label}
+              </span>
               {s.note !== undefined && <span style={noteStyle}>{s.note}</span>}
             </>
           )
