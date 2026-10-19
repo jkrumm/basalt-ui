@@ -115,8 +115,8 @@ const footerEntry = (key: string, content: ReactNode) => ({
 function QueueStrip({ shotState }: ScenarioProps) {
   const loading = shotState === 'loading'
   const none = shotState === 'empty' || shotState === 'error'
-  // Loading shows the hero skeleton alone: a visual over placeholder data would contradict it.
-  const hidden = none || loading
+  // The cell decides what to paint while loading, so visual, footer and delta pass through; only empty and error drop them.
+  const hidden = none
   // Empty and error say why in the cell itself, with the Retry on a failure.
   const cellState = (reason: string, error: string = retry()): Pick<StatStripCell, 'state'> =>
     shotState === 'error'

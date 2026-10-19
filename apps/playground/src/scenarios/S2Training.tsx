@@ -176,11 +176,11 @@ const trendSparkline =
   )
 
 function TrainingStats({ shotState }: ScenarioProps) {
-  const isAtRest = shotState === undefined
+  const hidden = shotState === 'empty' || shotState === 'error'
   const query = queryFor(shotState, retry())
   const shared = { emptyText: TRAINING_EMPTY, ...(query !== undefined && { query }) }
   const deltaProps = (pct: number) =>
-    isAtRest ? { delta: pct, deltaPeriod: `vs ${PRIOR_WINDOW_LABEL}` } : {}
+    !hidden ? { delta: pct, deltaPeriod: `vs ${PRIOR_WINDOW_LABEL}` } : {}
 
   return (
     <StatGroup cols={3}>
