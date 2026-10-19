@@ -11,7 +11,7 @@ import { readFileSync } from 'node:fs'
 import { afterEach, describe, expect, it } from 'bun:test'
 import { ComponentsSurfaces } from '../demo/ComponentsPage'
 import { BUDGETS, FAILURES_WINDOW, FLOW_RANGE_LABEL, FLOW_SERIES, WARN_HOURS } from './agents-data'
-import { fmtEur, fmtInt, fmtRatio } from './fixture-utils'
+import { fmtEur, fmtInt, fmtRatio, fmtShare } from './fixture-utils'
 import { AgentsScenario } from './S3Agents'
 import { SpendScenario } from './S4Spend'
 import { TrainingScenario } from './S2Training'
@@ -174,13 +174,16 @@ describe('S3 states each figure once', () => {
     expect(occurrences(text(anchor(c, 'strip-needs-you')), /awaiting/gi)).toBe(1)
   })
 
-  it('the day footer states its spend like the week footer', () => {
+  it('the day footer states the share of the cap, not the spend', () => {
     const c = agents()
     const footer = words(anchor(c, 'strip-footer-day'))
     // W38 r1: the target's scale start (€0) leads; the period caption follows.
-    // W38 r2: the day's caption states its spend the way the week's does ("€5 today").
+    // W38 r2: the day's caption is the share of the cap; the spend is the headline above it.
     expect(footer.map((w) => w.replaceAll('\u00a0', ' '))).toContain(
-      `${fmtEur(BUDGETS.day.spent)} today`.replaceAll('\u00a0', ' '),
+      `${fmtShare(BUDGETS.day.spent / BUDGETS.day.cap)} of today's ${fmtEur(BUDGETS.day.cap)} cap`.replaceAll(
+        '\u00a0',
+        ' ',
+      ),
     )
   })
 

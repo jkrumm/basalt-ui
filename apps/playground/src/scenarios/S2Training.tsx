@@ -245,10 +245,8 @@ function GoalRow({ shotState }: ScenarioProps) {
         <Box data-shot="goal">
           <ChartCard
             title={`Sessions against the ${MONTH_NAME} goal`}
-            {...(shotState === undefined && {
-              // The count lives on the Sessions KPI; this card leads with what is new on it.
-              facts: { value: aheadOrBehind(PACE_GAP) },
-            })}
+            // The count lives on the Sessions KPI; this card leads with what is new on it.
+            facts={{ value: aheadOrBehind(PACE_GAP) }}
             info={`Strength, walking-pad and mobility sessions all count. The tick is the pace that reaches ${GOAL_SESSIONS} on ${MONTH_END_LABEL}.`}
             {...cardStateProps(shotState, retry(), PLACEHOLDER.meter)}
           >
@@ -294,13 +292,11 @@ function GoalRow({ shotState }: ScenarioProps) {
         <ChartCard
           style={FILL}
           title={`Goal hit rate, ${HIT_RANGE_LABEL}`}
-          {...(shotState === undefined && {
-            facts: {
-              value: `${MONTHS_HIT} of ${HIT_MONTHS}`,
-              unit: 'months',
-              period: `reached ${GOAL_SESSIONS} sessions`,
-            },
-          })}
+          facts={{
+            value: `${MONTHS_HIT} of ${HIT_MONTHS}`,
+            unit: 'months',
+            period: `reached ${GOAL_SESSIONS} sessions`,
+          }}
           info={`Sessions per complete month against the goal of ${GOAL_SESSIONS}. A bar that reaches the goal line is a month that hit it.`}
           state={chartStateFor(shotState, {
             empty: 'No complete month logged yet. The history appears after the first full month.',
@@ -340,9 +336,7 @@ function LoadCard({ shotState }: ScenarioProps) {
       <ChartCard
         {...(fills && { style: FILL })}
         title="Training load"
-        {...(shotState === undefined && {
-          facts: { value: fmtRatio(LOAD_RATIO), period: '7 days against the 4-week norm' },
-        })}
+        facts={{ value: fmtRatio(LOAD_RATIO), period: '7 days against the 4-week norm' }}
         info="Load of the last 7 days divided by the weekly average of the last 28 days. Load is minutes × session intensity (1–10), in arbitrary units (AU)."
         {...cardStateProps(shotState, retry(), 'content')}
       >
@@ -381,10 +375,8 @@ function ReadinessRow({ shotState }: ScenarioProps) {
         <ChartCard
           style={FILL}
           title="Readiness"
-          {...(shotState === undefined && {
-            facts: { value: fmtInt(READINESS_SCORE), unit: 'of 100' },
-            subtitle: `As of ${TODAY_LABEL}`,
-          })}
+          facts={{ value: fmtInt(READINESS_SCORE), unit: 'of 100' }}
+          subtitle={`As of ${TODAY_LABEL}`}
           info={READINESS_INFO}
           {...cardStateProps(shotState, retry(), 'content')}
         >
@@ -421,13 +413,11 @@ function ReadinessRow({ shotState }: ScenarioProps) {
         <ChartCard
           style={FILL}
           title="Top lifts by volume"
-          {...(shotState === undefined && {
-            facts: {
-              value: fmtShare(LIFTS_SHARE),
-              unit: 'of volume',
-              period: `in ${TOP_LIFT_COUNT} lifts, ${WINDOW_LABEL}`,
-            },
-          })}
+          facts={{
+            value: fmtShare(LIFTS_SHARE),
+            unit: 'of volume',
+            period: `in ${TOP_LIFT_COUNT} lifts, ${WINDOW_LABEL}`,
+          }}
           info="Sets × reps × weight per lift over the strength sessions of the window; the share is of total training volume."
           {...cardStateProps(shotState, retry(), 'content')}
         >

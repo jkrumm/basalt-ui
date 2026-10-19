@@ -42,7 +42,7 @@ import {
   fmtAge,
 } from './agents-data'
 import type { FlowRow, ItemState } from './agents-data'
-import { fmtEur, fmtInt } from './fixture-utils'
+import { fmtEur, fmtInt, fmtShare } from './fixture-utils'
 import { cardStateProps, chartStateFor, noop, retryCopy } from './shot-state'
 import type { ScenarioProps } from './shot-state'
 
@@ -118,11 +118,7 @@ function QueueStrip({ shotState }: ScenarioProps) {
   // Loading shows the hero skeleton alone: a visual over placeholder data would contradict it.
   const hidden = none || loading
   // Empty and error say why in the cell itself, with the Retry on a failure.
-  const cellState = (
-    what: string,
-    reason: string,
-    error: string = retry(),
-  ): Pick<StatStripCell, 'state'> =>
+  const cellState = (reason: string, error: string = retry()): Pick<StatStripCell, 'state'> =>
     shotState === 'error'
       ? { state: { kind: 'error', error: new Error(error), onRetry: noop } }
       : shotState === 'empty'
@@ -138,7 +134,7 @@ function QueueStrip({ shotState }: ScenarioProps) {
       value: fmtInt(NEEDS_YOU),
       unit: 'items',
       loading,
-      ...cellState('Awaiting items', WARDEN_EMPTY),
+      ...cellState(WARDEN_EMPTY),
       ...(!hidden && {
         visual: (
           <Box data-shot-hover>
@@ -159,7 +155,7 @@ function QueueStrip({ shotState }: ScenarioProps) {
       qualifier: 'today',
       info: `Agent dispatch cost so far today, in EUR; the daily cap is ${fmtEur(BUDGETS.day.cap)}. The sparkline and its dashed mean cover the ${DISPATCH_COMPLETE_DAYS.length} complete days before today.`,
       value: fmtEur(BUDGETS.day.spent),
-      ...cellState('Dispatch spend', 'No dispatch spend today. It appears with the first run.'),
+      ...cellState('No dispatch spend today. It appears with the first run.'),
       ...(!hidden && {
         visual: (
           <Box data-shot-hover>
@@ -181,7 +177,7 @@ function QueueStrip({ shotState }: ScenarioProps) {
       info: `The longest an item has waited on you. Warden warns past ${WARN_LABEL} and closes an item as abandoned at ${ABANDON_LABEL}.`,
       value: fmtAge(OLDEST_WAIT_HOURS),
       ...(OLDEST_WAIT_HOURS > WARN_HOURS && !none && { tone: 'warn' as const }),
-      ...cellState('The oldest wait', 'Nothing is waiting on you, so there is no wait to measure.'),
+      ...cellState('Nothing is waiting on you, so there is no wait to measure.'),
       loading,
       ...(!hidden && {
         visual: (
@@ -204,7 +200,7 @@ function QueueStrip({ shotState }: ScenarioProps) {
       info: 'Agent runs that ended in an error in the last 24 hours.',
       value: fmtInt(FAILURES_24H.count),
       unit: 'runs',
-      ...cellState('Failures', `No agent runs in the last 24${NBSP}h to count.`),
+      ...cellState(`No agent runs in the last 24${NBSP}h to count.`),
       // Hourly bars answer "is it still happening?": three runs, but a burst or a trickle. The
       // footer is the clock under them: the window's first and last hour, and the hour of the latest run.
       ...(!hidden && { footer: failuresClock }),
@@ -244,7 +240,7 @@ function QueueStrip({ shotState }: ScenarioProps) {
       value: fmtInt(FLEET_TOTAL),
       unit: 'items',
       loading,
-      ...cellState('The fleet', WARDEN_EMPTY),
+      ...cellState(WARDEN_EMPTY),
       ...(!hidden && {
         visual: (
           <Meter
@@ -262,7 +258,7 @@ function QueueStrip({ shotState }: ScenarioProps) {
     },
   ]
 
-  // Both footers state the cap as the Meter's one-line target caption; the day's spend is the Dispatch spend headline above it, so its footer does not repeat it.
+  // Both footers state the cap as the Meter's one-line target caption. The day's caption is the share of the cap, not the figure: the spend is the Dispatch spend headline above it, and stating €5 twice would read as two readings.
   const budget = (label: string, spent: number, cap: number, caption: string) => (
     <Meter
       label={label}
@@ -284,7 +280,7 @@ function QueueStrip({ shotState }: ScenarioProps) {
             'Daily dispatch budget',
             BUDGETS.day.spent,
             BUDGETS.day.cap,
-            `${fmtEur(BUDGETS.day.spent)} today`,
+            `${fmtShare(BUDGETS.day.spent / BUDGETS.day.cap)} of today's ${fmtEur(BUDGETS.day.cap)} cap`,
           ),
         ),
         footerEntry(
@@ -322,12 +318,8 @@ function QueueRow({ shotState }: ScenarioProps) {
         <ChartCard
           title="Waiting or blocked, by age"
           info={`Items waiting on your decision and items blocked on something else, oldest first. The status marks a wait past the ${WARN_LABEL} warning.`}
-          {...(shotState === undefined && {
-            subtitle: `Warden abandons an item at ${ABANDON_LABEL}`,
-          })}
-          {...(shotState === undefined && {
-            facts: { value: fmtInt(STUCK.length), unit: 'items' },
-          })}
+          subtitle={`Warden abandons an item at ${ABANDON_LABEL}`}
+          facts={{ value: fmtInt(STUCK.length), unit: 'items' }}
           {...cardStateProps(shotState, retry(), 'content')}
         >
           <Box data-shot-hover>
@@ -349,12 +341,10 @@ function QueueRow({ shotState }: ScenarioProps) {
         <ChartCard
           title="Items opened and closed per day"
           info="Items warden opened and items it closed each day, UTC. A queue that opens more than it closes grows."
-          {...(shotState === undefined && {
-            facts: [
-              { value: fmtInt(FLOW_OPENED), unit: 'opened' },
-              { value: fmtInt(FLOW_CLOSED), unit: 'closed', period: `· ${FLOW_RANGE_LABEL}` },
-            ],
-          })}
+          facts={[
+            { value: fmtInt(FLOW_OPENED), unit: 'opened' },
+            { value: fmtInt(FLOW_CLOSED), unit: 'closed', period: `· ${FLOW_RANGE_LABEL}` },
+          ]}
           state={chartStateFor(shotState, {
             empty: `No items opened or closed ${FLOW_RANGE_LABEL}. Dispatch an item to start.`,
             error: retry(),

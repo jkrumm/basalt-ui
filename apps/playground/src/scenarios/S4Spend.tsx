@@ -152,7 +152,7 @@ function SpendStats({ shotState }: ScenarioProps) {
   // Loading shows the hero skeleton alone: a visual over placeholder data would contradict it.
   const hidden = shotState !== undefined
   // Empty and error say why in the cell itself, with the Retry on a failure.
-  const cellState = (what: string, reason: string): Pick<StatStripCell, 'state'> =>
+  const cellState = (reason: string): Pick<StatStripCell, 'state'> =>
     shotState === 'error'
       ? { state: { kind: 'error', error: new Error(retry()), onRetry: noop } }
       : shotState === 'empty'
@@ -168,7 +168,7 @@ function SpendStats({ shotState }: ScenarioProps) {
       info: `All projects and models, ${WINDOW_LABEL} ${YEAR}, in EUR. The dashed line is the daily mean.`,
       value: fmtEur(MTD_EUR),
       loading,
-      ...cellState('Spend', USAGE_EMPTY),
+      ...cellState(USAGE_EMPTY),
       ...(isAtRest && {
         delta: (
           <DeltaBadge
@@ -201,7 +201,6 @@ function SpendStats({ shotState }: ScenarioProps) {
       info: `Average per day so far (${fmtEur(MTD_EUR / DAYS_ELAPSED)}) held flat for all ${MONTH_DAYS} days. Ignores weekends and bursts.`,
       value: fmtEur(FORECAST_EUR),
       ...cellState(
-        'The forecast',
         `No forecast without spend ${WINDOW_LABEL}. It appears after the first day of spend.`,
       ),
       ...(overBudget && { tone: 'bad' as const }),
@@ -235,7 +234,7 @@ function SpendStats({ shotState }: ScenarioProps) {
       loading,
       // The cap is a figure with or without spend, so an empty cell keeps it as the hero and says why
       // there is no meter in its footer; only a failure replaces the reading.
-      ...(shotState === 'error' && cellState('The budget', '')),
+      ...(shotState === 'error' && cellState('')),
       ...(shotState === 'empty' && {
         footer: `No spend ${WINDOW_LABEL} to set against it. Spend appears once a project runs.`,
       }),
@@ -270,12 +269,11 @@ function SpendCharts({ shotState }: ScenarioProps) {
       <Box data-shot="spend-over-time" h="100%">
         <ChartCard
           title="Cumulative spend"
-          {...(shotState === undefined && {
-            facts:
-              BUDGET_CROSSING === undefined
-                ? { value: fmtEur(FORECAST_EUR), period: 'forecast, end of month' }
-                : { value: fmtDay(BUDGET_CROSSING.date), period: 'forecast reaches the budget' },
-          })}
+          facts={
+            BUDGET_CROSSING === undefined
+              ? { value: fmtEur(FORECAST_EUR), period: 'forecast, end of month' }
+              : { value: fmtDay(BUDGET_CROSSING.date), period: 'forecast reaches the budget' }
+          }
           info={`Cumulative spend since the 1st, summed day by day, against the ${fmtEur(BUDGET_EUR)} budget. The dashed line holds the ${fmtEur(MTD_EUR / DAYS_ELAPSED)} daily average flat to the last day.`}
           state={chartStateFor(shotState, {
             empty: USAGE_EMPTY,
@@ -339,13 +337,11 @@ function SpendBreakdown({ shotState }: ScenarioProps) {
             question is also "which project", a ranking, which length on a shared scale answers. */}
         <ChartCard
           title="Spend by project"
-          {...(shotState === undefined && {
-            facts: {
-              value: `${TOP_PCT}%`,
-              unit: `of spend in ${TOP_PROJECTS} of ${PROJECTS_MTD.length} projects`,
-              period: `· ${WINDOW_LABEL}`,
-            },
-          })}
+          facts={{
+            value: `${TOP_PCT}%`,
+            unit: `of spend in ${TOP_PROJECTS} of ${PROJECTS_MTD.length} projects`,
+            period: `· ${WINDOW_LABEL}`,
+          }}
           info={`Each project's share of the ${fmtEur(MTD_EUR)} month-to-date spend across all models, in whole percent that sum to 100.`}
           {...cardStateProps(shotState, retry(), 'content')}
         >
@@ -364,12 +360,10 @@ function SpendBreakdown({ shotState }: ScenarioProps) {
       <Box data-shot="top-drivers" h="100%">
         <ChartCard
           title="Spend change by project"
-          {...(shotState === undefined && {
-            facts: {
-              value: fmtEur(DRIVERS.reduce((a, p) => a + p.delta, 0)),
-              period: `added by ${DRIVERS.length} projects, ${WINDOW_LABEL} vs ${PRIOR_WINDOW_LABEL}`,
-            },
-          })}
+          facts={{
+            value: fmtEur(DRIVERS.reduce((a, p) => a + p.delta, 0)),
+            period: `added by ${DRIVERS.length} projects, ${WINDOW_LABEL} vs ${PRIOR_WINDOW_LABEL}`,
+          }}
           info={`The € each project added against ${PRIOR_WINDOW_LABEL}, with the relative change.`}
           {...cardStateProps(shotState, retry(), 'content')}
         >
