@@ -1,10 +1,16 @@
 /**
  * Wave 37 type and focus laws that live in `styles.css`: a slashed zero only in mono text, no mono
- * ligatures in data text, and the chart host's focus ring as the focus token in dark.
+ * ligatures in data text, and the chart's focus ring (in `chart-box.module.css`) as the focus token in dark.
  */
 import { describe, expect, test } from 'bun:test'
 import { readFileSync } from 'node:fs'
 import { resolve } from 'node:path'
+
+/** The chart ring lives with the chart's own CSS: the engine focuses `svg.ts-chart`, not the wrapper. */
+const chartBoxCss = readFileSync(
+  resolve(import.meta.dirname, '../charts/chart-box.module.css'),
+  'utf8',
+).replaceAll(/\/\*[\s\S]*?\*\//g, '')
 
 const css = readFileSync(resolve(import.meta.dirname, '../styles.css'), 'utf8').replaceAll(
   /\/\*[\s\S]*?\*\//g,
@@ -12,9 +18,9 @@ const css = readFileSync(resolve(import.meta.dirname, '../styles.css'), 'utf8').
 )
 
 /** The declaration block of the first rule whose selector list contains `needle`. */
-function ruleFor(needle: string): string {
+function ruleFor(needle: string, source = css): string {
   const re = /([^{}]+)\{([^{}]*)\}/g
-  for (const [, selector, body] of css.matchAll(re)) {
+  for (const [, selector, body] of source.matchAll(re)) {
     if (selector?.includes(needle)) return body ?? ''
   }
   return ''
@@ -65,14 +71,16 @@ describe('body sans keeps its ligatures', () => {
   })
 })
 
-describe('the chart host focus ring', () => {
+describe('the chart focus ring', () => {
   test('is the focus token, not the UA ring (white in dark)', () => {
-    const body = ruleFor('.basalt-chart:focus-visible')
+    const body = ruleFor('.basalt-chart .ts-chart:focus-visible', chartBoxCss)
     expect(body).toMatch(/outline:\s*2px solid var\(--vx-accent\)/)
     expect(body).toContain('outline-offset: calc(0.125rem * var(--mantine-scale))')
   })
 
-  test('is the host only, not its descendants', () => {
+  test('is the plot svg only, not its descendants, and no dead wrapper rule remains', () => {
     expect(css).not.toContain('.basalt-chart :focus-visible')
+    expect(chartBoxCss).not.toContain('.basalt-chart :focus-visible')
+    expect(css).not.toContain('.basalt-chart:focus-visible')
   })
 })
