@@ -85,10 +85,11 @@ import type {
 } from './spec'
 import { InfoRingFixture } from './info-ring-fixture'
 import { BarListStatesFixture } from './bar-list-states-fixture'
-import { W38LoadingFixture } from './w38-loading-fixture'
 import { RetryParityFixture } from './retry-parity-fixture'
 import { W38BarsSlotFixture } from './w38-bars-slot-fixture'
 import { W38LegendFixture } from './w38-legend-fixture'
+import { W38LoadingFixture } from './w38-loading-fixture'
+import { W38StripMeterFixture } from './w38-strip-meter-fixture'
 import { RAIL_DOMAIN_MAX, RAIL_PX, TOC_SCROLL_MARGIN_PX } from './spec'
 
 /** A consumer-sized (18px) glyph — the bar normalizes it to `--vx-space-mobile-nav-icon-size` in
@@ -2953,8 +2954,9 @@ export function ShellFixture({ spec }: { spec: FixtureSpec }): ReactElement {
       {spec.retryParity && <RetryParityFixture />}
       {spec.w38Legend && <W38LegendFixture />}
       {spec.barListStates && <BarListStatesFixture />}
-      {spec.w38Loading && <W38LoadingFixture />}
       {spec.w38BarsSlot && <W38BarsSlotFixture />}
+      {spec.w38Loading && <W38LoadingFixture />}
+      {spec.w38StripMeter && <W38StripMeterFixture />}
       {spec.codeBlock && <CodeBlockFixture spec={spec.codeBlock} />}
       {spec.forms && <FormsFixture spec={spec.forms} />}
       {spec.table && <TableFixture spec={spec.table} />}

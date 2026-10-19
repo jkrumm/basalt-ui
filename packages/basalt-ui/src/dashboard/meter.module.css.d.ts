@@ -34,8 +34,7 @@ declare const classes: {
   readonly empty: string
   readonly line: string
   readonly lineZoned: string
-  readonly skeletonTrack: string
-  readonly skeletonCaption: string
+  readonly hold: string
   readonly ringBox: string
   readonly ring: string
   readonly ringTrack: string

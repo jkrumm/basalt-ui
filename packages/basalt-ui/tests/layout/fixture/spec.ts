@@ -372,6 +372,8 @@ export type FixtureSpec = {
   w38Loading?: true
   /** Wave 38: `Bars` and a `Sparkline` in a StatCard slot each (`w38-bars-card`, `w38-spark-card`) and in a strip cell (`w38-bars-strip`, `w38-spark-strip`). */
   w38BarsSlot?: true
+  /** Wave 38: strip cells, Meters and a forecast Meter loaded and loading side by side, a StatGroup's hero sizes (`w38l-*`). */
+  w38StripMeter?: true
   /**
    * Renders a `CodeBlock` in a `Prose` between `data-testid="codeblock-before"` and
    * `"codeblock-after"` paragraphs, over a long first line. `language` defaults to `'ts'`; pass

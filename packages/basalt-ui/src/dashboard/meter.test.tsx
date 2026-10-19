@@ -731,10 +731,28 @@ describe('Meter empty and loading footprint (Wave 38)', () => {
     expect(container.querySelector('output')?.textContent).toBe('Not worn')
   })
 
-  test('loading keeps the loaded footprint: a plain bar one line, a zoned bar two around the track', () => {
-    expect(lines(mount({ label: 'B', value: 5, loading: true }).container)).toBe(1)
+  test('loading is the loaded tree: a plain bar keeps its caption row, a zoned one its name row and reading row', () => {
+    const plain = mount({ label: 'B', value: 5, loading: true }).container
+    expect(plain.querySelectorAll('[data-meter-captions]')).toHaveLength(1)
+    expect(plain.querySelector('[data-meter-track]')).not.toBeNull()
     cleanup()
     const zones = [{ from: 0, to: 10, label: 'All' }]
-    expect(lines(mount({ label: 'Z', value: 5, zones, loading: true }).container)).toBe(2)
+    const zoned = mount({ label: 'Z', value: 5, zones, loading: true }).container
+    expect(zoned.querySelector('[data-meter-zone-band]')).not.toBeNull()
+    expect(zoned.querySelector('[data-meter-reading-row]')).not.toBeNull()
+  })
+
+  test('loading carries its ticks, target and forecast captions, and no values or meter role', () => {
+    const { container } = mount({
+      label: 'G',
+      max: 28,
+      target: 28,
+      ticks: [{ at: 14, label: 'Pace', caption: '14 sessions' }],
+      loading: true,
+    })
+    expect(container.querySelector('[data-meter-tick-band]')).not.toBeNull()
+    expect(container.textContent).toMatch(/Target.28/)
+    expect(container.querySelector('[role="meter"], [aria-valuenow]')).toBeNull()
+    expect(container.querySelector('[data-meter-fill], [data-meter-tick]')).toBeNull()
   })
 })

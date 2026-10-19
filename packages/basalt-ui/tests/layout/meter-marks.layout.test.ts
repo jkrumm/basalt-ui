@@ -18,8 +18,6 @@ const SPEC: FixtureSpec = {
 }
 
 const SNAP = 1
-/** `--vx-space-control-gap` (0.375rem) at the 16px root the fixture runs at. */
-const GAP_STEP = 6
 const SUBPIXEL = 0.5
 
 type Box = { text: string | null; left: number; right: number; bottom: number; hidden: boolean }
@@ -182,17 +180,18 @@ layout('Meter marks at 390', () => {
     expect(m.captions).toEqual([])
   })
 
-  test('forecast: the caption sits at the forecast boundary, not at the track end', async () => {
+  test('forecast: the caption ends at the forecast fill end, the reading at the committed end', async () => {
     const m = await measure(p, 'dash-r2-forecast')
     const cap = m.captions.find((c) => c.text === 'Forecast')
     const reading = m.captions.find((c) => c.text === 'Spent')
     if (!cap || !reading || m.marks['boundary'] === undefined) {
       throw new Error('LAYOUT: no forecast caption')
     }
-    // The reading ends at the boundary and the caption begins there (one gap step between them).
+    // The reading ends at the boundary; the forecast (1200 of 2000) ends where its fill does.
+    const forecastEnd = m.track[0] + (m.track[1] - m.track[0]) * (1200 / 2000)
     expect(Math.abs(reading.right - m.marks['boundary'])).toBeLessThanOrEqual(SNAP)
-    expect(cap.left - m.marks['boundary']).toBeGreaterThanOrEqual(-SNAP)
-    expect(cap.left - m.marks['boundary']).toBeLessThanOrEqual(GAP_STEP + SNAP)
+    expect(Math.abs(cap.right - forecastEnd)).toBeLessThanOrEqual(SNAP)
+    expect(cap.left).toBeGreaterThanOrEqual(reading.right)
     expect(cap.right).toBeLessThan(m.track[1] - 40)
   })
 

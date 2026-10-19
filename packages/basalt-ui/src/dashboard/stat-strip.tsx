@@ -8,6 +8,9 @@
  * `tone` inks the VALUE only, for a verdict; a null reading is `—`. A cell may carry BOTH: the hero
  * (e.g. VO2max) with `rows` under it; omit `value` to render the rows alone.
  *
+ * `loading` keeps the loaded shape: the value bar, the visual slot and the footer line at their loaded
+ * height (the visual and footer are laid out hidden under a skeleton).
+ *
  * `state` replaces the readings (hero, visual, rows, footer) with the cell's empty or error body, at
  * the cell's size. Empty: the reason, muted, in the value's place (`—` only when no reason is given). Error: the shared error
  * anatomy compact — status dot, the words `Could not load`, the message, the shared Retry. The caption stays.
@@ -48,7 +51,7 @@ import { StatusDot } from '../theme/status-dot'
 import { VX } from '../tokens'
 import { InfoGlyph } from './widget-header'
 import classes from './stat-strip.module.css'
-import { HOSTED, VisualSlotContext } from './visual-slot'
+import { HOSTED, HOSTED_LOADING, VisualSlotContext } from './visual-slot'
 
 /** The URL shot states an anchor can declare itself absent in (`data-shot-absent`). */
 type StatStripShotState = 'empty' | 'loading' | 'error'
@@ -109,7 +112,12 @@ export type StatStripCell = {
   rows?: readonly StatStripRow[]
   /** Inks the value only — set it when the reading is a verdict. */
   tone?: Tone
-  /** Skeleton in place of the readings. */
+  /**
+   * Skeleton in place of the readings, in the loaded shape: the value bar, the `visual` slot and the
+   * `footer` line keep the height they have loaded. Pass the same `visual` and `footer` as at rest
+   * (empty data is fine): the slot is measured, never shown — a `Meter` in it draws its own loading
+   * rows, any other visual is covered by one skeleton.
+   */
   loading?: boolean
   /** Dims the cell while placeholder data shows. */
   stale?: boolean
@@ -210,16 +218,39 @@ function StripCell({
   const { rows, loading } = cell
   const state = loading ? undefined : cell.state
   const hasHero = cell.value !== undefined || rows === undefined
-  // The cell's verdict colours a plain Meter in its visual too (a hero host only).
-  const hostSlot = !hasHero ? null : cell.tone === undefined ? HOSTED : { tone: cell.tone }
+  // The cell's verdict colours a plain Meter in its visual too (a hero host only). While loading, a
+  // Meter in the slot draws its own loading state (the loaded rows, text painted as skeleton).
+  const hostSlot = !hasHero
+    ? null
+    : cell.tone === undefined
+      ? loading
+        ? HOSTED_LOADING
+        : HOSTED
+      : { tone: cell.tone, ...(loading && { loading }) }
   // A footer rides with what it captions: it follows the cell's last part, whatever a sibling holds.
+  // Loading keeps its box (so a wrapping footer keeps its lines) and lays a skeleton over it.
   const footerEl = cell.footer !== undefined && (
-    <div className={classes.footer} data-strip-footer>
+    <div
+      className={cx(classes.footer, loading && classes.hold)}
+      data-strip-footer
+      {...(loading && { 'aria-hidden': true, inert: true })}
+    >
       {cell.footer}
+      {loading && <Skeleton className={classes.holdSkeleton} radius="sm" />}
     </div>
   )
+  // A delta can wrap under the value in a narrow cell: with one, loading lays out the loaded value row
+  // (hidden) under the skeleton bar, so the cell has the lines the loaded one has.
   const heroEl = loading ? (
-    <Skeleton className={classes.skeletonValue} radius="sm" />
+    cell.delta === undefined ? (
+      <Skeleton className={classes.skeletonValue} radius="sm" />
+    ) : (
+      <div className={cx(classes.valueRow, classes.hold)} aria-hidden inert>
+        <span className={classes.value}>{cell.value ?? EMPTY}</span>
+        {cell.delta}
+        <Skeleton className={classes.holdHero} radius="sm" />
+      </div>
+    )
   ) : (
     <div className={classes.valueRow}>
       <span
@@ -276,8 +307,13 @@ function StripCell({
         {state !== undefined && <CellState state={state} />}
         {state === undefined && hasHero && heroEl}
         {state === undefined && cell.visual !== undefined && (
-          <div className={classes.visual} data-strip-visual>
+          <div
+            className={cx(classes.visual, loading && classes.hold)}
+            data-strip-visual
+            {...(loading && { 'aria-hidden': true, inert: true })}
+          >
             <VisualSlotContext.Provider value={hostSlot}>{cell.visual}</VisualSlotContext.Provider>
+            {loading && <Skeleton className={classes.holdSkeleton} radius="sm" />}
           </div>
         )}
         {state === undefined &&

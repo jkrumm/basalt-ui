@@ -223,6 +223,44 @@
   min-width: 0;
 }
 
+/* Loading keeps the slot's or footer's own box (the consumer's visual or footer, laid out as loaded) and
+ * hides it under a skeleton, so the cell has its loaded height. A `Meter` inside draws its own loading
+ * rows and so stays visible; any other visual is covered by the one skeleton bar. */
+.hold {
+  position: relative;
+  visibility: hidden;
+}
+
+.hold [data-basalt-meter],
+.holdSkeleton {
+  visibility: visible;
+}
+
+.holdSkeleton {
+  position: absolute;
+  inset-block: 0.25rem;
+  inset-inline-start: 0;
+  width: 55%;
+}
+
+/* The hero's bar: the value row's first line, as the plain skeleton. */
+.holdHero {
+  composes: holdSkeleton;
+  inset-block: 0 auto;
+  width: 45%;
+  height: calc(var(--vx-text-kpi) * 1.25);
+}
+
+.visual.hold > .holdSkeleton {
+  inset-block-start: max(0px, calc(var(--basalt-spark-readout-h) - var(--vx-space-stack-sm)));
+  inset-block-end: 0;
+  width: 100%;
+}
+
+.hold:has([data-basalt-meter]) > .holdSkeleton {
+  display: none;
+}
+
 /* A Sparkline's hover readout takes this line above its plot (`charts/sparkline.module.css`). The
  * cell's own stack gap already sits above it; the slot reserves the rest, so the chip never covers
  * the value. */
