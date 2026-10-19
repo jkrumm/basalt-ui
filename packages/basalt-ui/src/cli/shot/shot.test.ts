@@ -25,6 +25,7 @@ import {
   parseHoverAt,
   readScaleInPage,
   sheetName,
+  snapClip,
   tagAutoAnchors,
   tooltipSelector,
   unionClip,
@@ -1410,6 +1411,36 @@ describe('capture helpers', () => {
       width: 158,
       height: 146,
     })
+  })
+  test('unionClip reports a box below the live page height as empty, never a sliver', () => {
+    expect(unionClip([{ x: 10, y: 900, width: 50, height: 40 }], 8, 'mobile', 600)).toBeNull()
+  })
+})
+
+describe('snapClip', () => {
+  const out = { x: 10, y: 900, width: 50, height: 40 }
+  const rig = (reads: (typeof out | null)[]) => {
+    const shots: unknown[] = []
+    const locator = { boundingBox: async () => reads.shift() ?? null }
+    const page = {
+      evaluate: async () => 600,
+      screenshot: async (o: unknown) => void shots.push(o),
+    }
+    const c = { page, viewport: 'mobile' } as unknown as Parameters<typeof snapClip>[0]
+    return { shots, run: () => snapClip(c, 'x.png', [locator as never]) }
+  }
+  const inside = { x: 10, y: 100, width: 50, height: 40 }
+
+  test('an out-of-viewport box is re-measured after a frame and snapped once in view', async () => {
+    const { shots, run } = rig([out, inside])
+    await run()
+    expect(shots).toHaveLength(1)
+    expect(shots[0]).toMatchObject({ clip: { x: 2, y: 92, width: 66, height: 56 } })
+  })
+  test('a box that stays out of the viewport throws and never snaps', async () => {
+    const { shots, run } = rig([out, out])
+    await expect(run()).rejects.toThrow(/Clipped area/)
+    expect(shots).toHaveLength(0)
   })
 })
 
