@@ -342,7 +342,7 @@ function StripCell({
                       {row.visual}
                     </VisualSlotContext.Provider>
                   </span>
-                  <span className={classes.rowValue}>
+                  <span className={classes.rowValue} data-strip-row-value>
                     {row.hideValue ? null : (row.value ?? EMPTY)}
                   </span>
                   <span>{row.delta}</span>

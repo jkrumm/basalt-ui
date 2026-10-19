@@ -88,6 +88,10 @@
   top: 0;
 }
 
+.readout[data-short] .label {
+  display: none;
+}
+
 .readout[data-stacked] .label {
   display: block;
 }
