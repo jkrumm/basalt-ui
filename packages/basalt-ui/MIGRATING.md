@@ -1066,6 +1066,18 @@ No export changes. Below 480px the legend no longer folds zone / reference entri
 
 Opt-out: `legend: false` (still absolute), or remove the legend-only entries (a zone's `legend`, a refLine's `legend`) you do not want named.
 
+### One strip cell anatomy (Wave 39)
+
+No export is added or removed. A `StatGroup variant="strip"` cell is now a head (caption line, qualifier, value row) over its readings, and a row's visuals share one drawn top.
+
+| Before                                                                                                                                                        | Now                                                                                                                                                                                                                                                                |
+| ------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| A Meter, a Sparkline and Bars in one row sat at different heights (a wrapped qualifier, a delta, the Sparkline's readout line).                               | The visuals of one row put their drawn top on one line: a visual cell with a shorter head grows its head's `min-height`. A longer qualifier still pushes only its own value down (D40).                                                                            |
+| A cell without a visual, a footer `under` and the odd-count phone rule were untouched by a sibling's height.                                                  | Unchanged: only cells that have a `visual` are levelled, so a footer still hugs its value and no sibling is stretched.                                                                                                                                             |
+| A `rows` entry's `visual` had no host: a zoned `Meter` in a row printed its reading at the marker, and a Sparkline readout stacked over its own plotted line. | A row visual is hosted like the cell visual. A zoned `Meter` in a row no longer repeats the row's value at its marker; a Sparkline's hover chip sits above its plot, never over it. Row height is unchanged: a Sparkline row keeps the slot padding it always had. |
+
+Opt-outs: none for the levelling (it only ever adds head height to a visual cell); omit `visual` on a cell to keep it out. A zoned row `Meter` keeps its marker reading with `reading` set on the `Meter` (the prop overrides the host).
+
 ## 2.26.0 — Wave 38, argo's friction III
 
 ### Chart card loading (Wave 38)

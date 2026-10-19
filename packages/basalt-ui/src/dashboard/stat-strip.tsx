@@ -41,9 +41,10 @@
  * weights are not supported. `stale` dims a cell while placeholder data shows.
  */
 import { Card, Skeleton } from '@mantine/core'
-import { useId } from 'react'
+import { useId, useRef } from 'react'
 import type { CSSProperties, ReactNode } from 'react'
 import { toErrorMessage } from '../common/errors'
+import { useIsomorphicLayoutEffect } from '../common/isomorphic-layout-effect'
 import { cx } from '../common/props'
 import type { BasaltProps, Tone } from '../common/props'
 import { RetryButton } from '../common/retry-button'
@@ -285,32 +286,34 @@ function StripCell({
         {...(state === undefined && rows !== undefined && { 'data-strip-has-rows': '' })}
         {...(cell.stale && { 'data-stale': 'true' })}
       >
-        <div className={classes.captionLine}>
-          <div className={classes.captionMain}>
-            {/* The caption and its info glyph are one unit: the qualifier wraps whole, never between them. */}
-            <span className={classes.lead}>
-              <span
-                className={classes.caption}
-                id={captionId}
-                title={cell.caption}
-                data-strip-caption
-              >
-                {cell.caption}
+        <div className={classes.head} data-strip-head>
+          <div className={classes.captionLine}>
+            <div className={classes.captionMain}>
+              {/* The caption and its info glyph are one unit: the qualifier wraps whole, never between them. */}
+              <span className={classes.lead}>
+                <span
+                  className={classes.caption}
+                  id={captionId}
+                  title={cell.caption}
+                  data-strip-caption
+                >
+                  {cell.caption}
+                </span>
+                {cell.info !== undefined && <InfoGlyph text={cell.info} />}
               </span>
-              {cell.info !== undefined && <InfoGlyph text={cell.info} />}
-            </span>
-            {cell.qualifier !== undefined && (
-              <span className={classes.qualifier}>{cell.qualifier}</span>
+              {cell.qualifier !== undefined && (
+                <span className={classes.qualifier}>{cell.qualifier}</span>
+              )}
+            </div>
+            {cell.action !== undefined && (
+              <span className={classes.action} data-strip-action>
+                {cell.action}
+              </span>
             )}
           </div>
-          {cell.action !== undefined && (
-            <span className={classes.action} data-strip-action>
-              {cell.action}
-            </span>
-          )}
+          {state !== undefined && <CellState state={state} />}
+          {state === undefined && hasHero && heroEl}
         </div>
-        {state !== undefined && <CellState state={state} />}
-        {state === undefined && hasHero && heroEl}
         {state === undefined && cell.visual !== undefined && (
           <div
             className={cx(classes.visual, loading && classes.hold)}
@@ -334,7 +337,11 @@ function StripCell({
               {rows.map((row) => (
                 <li key={row.key} className={classes.row} data-strip-row={row.key}>
                   <span className={classes.rowLabel}>{row.label}</span>
-                  <span className={classes.visual}>{row.visual}</span>
+                  <span className={classes.visual}>
+                    <VisualSlotContext.Provider value={HOSTED}>
+                      {row.visual}
+                    </VisualSlotContext.Provider>
+                  </span>
                   <span className={classes.rowValue}>
                     {row.hideValue ? null : (row.value ?? EMPTY)}
                   </span>
@@ -350,6 +357,41 @@ function StripCell({
       ))}
     </div>
   )
+}
+
+/**
+ * One anatomy, a shared visual line: the cells of a row put the top of their drawn visual on one line.
+ * Each cell's head (caption line, qualifier, value row) keeps its own height, so a longer qualifier
+ * pushes only its own value down; a visual cell whose head is shorter than a sibling's visual offset
+ * grows ITS head's min-height by the difference. Cells without a visual are untouched, so a footer
+ * still hugs its value and no sibling is stretched.
+ */
+function alignVisuals(root: HTMLElement): void {
+  const rows = new Map<number, { head: HTMLElement; natural: number; offset: number }[]>()
+  for (const head of root.querySelectorAll<HTMLElement>('[data-strip-head]')) {
+    const article = head.parentElement
+    const plot = article?.querySelector<HTMLElement>('[data-strip-visual]')?.firstElementChild
+    const last = head.lastElementChild
+    if (!article || !plot || !last) continue
+    const { top, bottom } = head.getBoundingClientRect()
+    const articleTop = article.getBoundingClientRect().top
+    // The head's own height (its content, bottom of the last part) without any min-height we set.
+    const natural = last.getBoundingClientRect().bottom - top
+    const grown = bottom - top - natural
+    const key = Math.round(articleTop)
+    rows.set(key, [
+      ...(rows.get(key) ?? []),
+      { head, natural, offset: plot.getBoundingClientRect().top - articleTop - Math.max(grown, 0) },
+    ])
+  }
+  for (const cells of rows.values()) {
+    const target = cells.length < 2 ? 0 : Math.max(...cells.map((c) => c.offset))
+    for (const { head, natural, offset } of cells) {
+      const grow = target - offset
+      const next = grow > 0.5 ? `${natural + grow}px` : ''
+      if (head.style.minHeight !== next) head.style.minHeight = next
+    }
+  }
 }
 
 export function StatStrip({
@@ -369,6 +411,47 @@ export function StatStrip({
   const rest = footer?.filter((entry) => entry.under === undefined || !keys.has(entry.under)) ?? []
   const hasQualifier = cells.some((cell) => cell.qualifier !== undefined)
   const hasAction = cells.some((cell) => cell.action !== undefined)
+  const gridRef = useRef<HTMLDivElement>(null)
+  const observerRef = useRef<ResizeObserver | null>(null)
+  const watched = useRef('')
+  // Mount-only: one observer; a resize or a late font re-levels in the next frame (a write inside the
+  // callback would resize the observed grid in the same frame).
+  useIsomorphicLayoutEffect(() => {
+    const grid = gridRef.current
+    if (!grid || typeof ResizeObserver === 'undefined') return
+    let frame = 0
+    let live = true
+    const schedule = () => {
+      cancelAnimationFrame(frame)
+      frame = requestAnimationFrame(() => alignVisuals(grid))
+    }
+    const observer = new ResizeObserver(schedule)
+    observerRef.current = observer
+    void document.fonts?.ready?.then(() => {
+      if (live) schedule()
+    })
+    return () => {
+      live = false
+      cancelAnimationFrame(frame)
+      observer.disconnect()
+      observerRef.current = null
+      watched.current = ''
+    }
+  }, [])
+  // Re-level when the cells change, and watch the heads that now exist: a head that rewraps without
+  // changing the grid's height re-levels too.
+  useIsomorphicLayoutEffect(() => {
+    const grid = gridRef.current
+    if (!grid) return
+    alignVisuals(grid)
+    const observer = observerRef.current
+    const key = cells.map((cell) => cell.key).join('|')
+    if (!observer || watched.current === key) return
+    watched.current = key
+    observer.disconnect()
+    observer.observe(grid)
+    for (const head of grid.querySelectorAll('[data-strip-head]')) observer.observe(head)
+  }, [cells, footer])
   return (
     <div className={cx(classes.container, className)} style={style}>
       <Card>
@@ -385,7 +468,7 @@ export function StatStrip({
             } as CSSProperties
           }
         >
-          <div className={classes.cells}>
+          <div ref={gridRef} className={classes.cells}>
             {cells.map((cell) => (
               <StripCell
                 key={cell.key}
