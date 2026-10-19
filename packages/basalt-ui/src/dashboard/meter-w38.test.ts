@@ -117,13 +117,14 @@ describe('one register for zone names (D38 d)', () => {
     ...(short && { short: { left: short[0], right: short[1] } }),
   })
   test('a sibling that has a short follows the one that fell back', () => {
+    // The middle name needs 50px and the row leaves it 45: it falls back, the others follow.
     const out = placeRowLabels(
       [
-        name(0, 20, 0, 40, [5, 15]),
+        name(0, 40, 0, 40, [5, 15]),
         name(40, 90, 40, 80, [50, 65]),
-        name(120, 160, 100, 200, [130, 140]),
+        name(85, 125, 80, 125, [100, 110]),
       ],
-      200,
+      125,
     )
     expect(out.shown).toEqual([true, true, true])
     expect(out.short).toEqual([true, true, true])
@@ -136,10 +137,10 @@ describe('one register for zone names (D38 d)', () => {
     expect(out.short).toEqual([false, false])
   })
   test('the holding name and a sibling without a short keep their full names', () => {
-    const holding = { ...name(0, 20, 0, 40, [5, 15]), holding: true }
+    const holding = { ...name(0, 40, 0, 40, [5, 15]), holding: true }
     const out = placeRowLabels(
-      [holding, name(40, 90, 40, 80, [50, 65]), name(120, 150, 100, 200)],
-      200,
+      [holding, name(40, 90, 40, 80, [50, 65]), name(85, 125, 80, 125)],
+      125,
     )
     expect(out.short).toEqual([false, true, false])
   })
@@ -157,5 +158,35 @@ describe('part captions never leave one alone on a row (D38 e)', () => {
   })
   test('three entries that do not fit one row stack in one column, not 2 + 1', () => {
     expect(partColumns([80, 80, 80], 200, 8)).toBe(1)
+  })
+})
+
+describe('a zone name borrows room past its span (Wave 38)', () => {
+  // Row 203: Low 30-51, Optimal (holding) 87-127, Caution 123-161 (span 132-152), Danger 160-196.
+  const row = (box: [number, number], span: [number, number], extra = {}) => ({
+    box: { left: box[0], right: box[1] },
+    span: { left: span[0], right: span[1] },
+    ...extra,
+  })
+  const labels = [
+    row([30, 51], [0, 81]),
+    row([87, 127], [81, 132], { holding: true }),
+    row([123, 161], [132, 152], { short: { left: 133, right: 159 } }),
+    row([160, 196], [152, 203]),
+  ]
+  test('the full name wins by sliding the name beside it inside its own span', () => {
+    const placed = placeRowLabels(labels, 203)
+    expect(placed.shown).toEqual([true, true, true, true])
+    expect(placed.short).toEqual([false, false, false, false])
+    expect(placed.shift[3]).toBeGreaterThan(0)
+    expect(placed.shift[0]).toBe(0)
+  })
+  test('a gap too small for the short name keeps it hidden', () => {
+    const tight = [
+      row([66, 106], [66, 107], { holding: true }),
+      row([95, 133], [107, 123], { short: { left: 102, right: 127 } }),
+      row([125, 161], [123, 164]),
+    ]
+    expect(placeRowLabels(tight, 164).shown).toEqual([true, false, true])
   })
 })

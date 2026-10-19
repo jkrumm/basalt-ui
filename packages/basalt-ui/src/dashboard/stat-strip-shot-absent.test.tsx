@@ -16,7 +16,10 @@ const mount = (props: Partial<StatStripProps> = {}) =>
           { key: 'a', caption: 'Resting HR', value: '52' },
           { key: 'b', caption: 'Load', value: '410', shotAbsent: ['error'] },
         ]}
-        footer={[{ key: 'note', content: 'Note' }]}
+        footer={[
+          { key: 'note', content: 'Note' },
+          { key: 'poller', under: 'a', content: 'Polled', shotAbsent: ['empty'] },
+        ]}
         {...props}
       />
     </MantineProvider>,
@@ -46,5 +49,16 @@ describe('strip shot absence', () => {
   test('a cell prop alone, without a group declaration', () => {
     const { container } = mount()
     expect(anchor(container, 'strip-b')).toBe('error')
+  })
+
+  test('a footer entry prop replaces the strip declaration, under a cell or not', () => {
+    const { container } = mount({ shotAbsent: ['loading'] })
+    expect(anchor(container, 'strip-footer-poller')).toBe('empty')
+    expect(anchor(container, 'strip-footer-note')).toBe('loading')
+  })
+
+  test('a footer entry prop alone, without a strip declaration', () => {
+    const { container } = mount()
+    expect(anchor(container, 'strip-footer-poller')).toBe('empty')
   })
 })

@@ -134,6 +134,9 @@ export type StatStripFooterEntry = {
    * every width, as a sibling AFTER the article (outside its `aria-labelledby` region). For a key that
    * names no cell it takes the full width under the grid. */
   under?: string
+  /** The shot states this entry is absent in; replaces the strip's `shotAbsent` (an entry production
+   * omits where the strip itself shows, e.g. a fact that needs data the empty state lacks). */
+  shotAbsent?: readonly StatStripShotState[]
 }
 
 export type StatStripProps = BasaltProps & {
@@ -197,7 +200,7 @@ function FooterCell({
       className={under ? classes.underCell : classes.footerCell}
       data-strip-footer-cell={entry.key}
       data-shot={`strip-footer-${entry.key}`}
-      {...absentAttr(shotAbsent)}
+      {...absentAttr(entry.shotAbsent ?? shotAbsent)}
       {...(under && { 'data-under': entry.under })}
     >
       {entry.content}

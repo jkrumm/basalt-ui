@@ -1381,6 +1381,19 @@ predate 2.16 and meet both rules on their next bump.
 Opt-out: `"basalt": { "severity": { "raw-spacing": "warn", "inline-spacing": "warn" } }` keeps both a
 warning; `"basalt": { "exemptRules": { "inline-spacing": ["<path>"] } }` silences one for a path.
 
+### Footer shot states and zone names (Wave 38)
+
+No export is removed or added. `StatStripFooterEntry` gains an optional `shotAbsent`, and a zoned `Meter` names more of its zones.
+
+| Surface                | Before                                                                                                                                                                     | Now                                                                                                                                                                                                                                                 |
+| ---------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `StatStripFooterEntry` | no `shotAbsent`: a footer entry production omits in a state (argo's budget poller line under `empty`) was recorded by `shot` as an `error` ("anchor absent in this state") | `shotAbsent?: readonly StatStripShotState[]` on the entry emits `data-shot-absent` on its `strip-footer-<key>` anchor and replaces the strip's `shotAbsent` for that entry, as a cell's does                                                        |
+| `Meter` zone names     | a name wider than its own span hid or fell to its `short` even with free room beside it (argo's ACWR `Caut.` at 1440)                                                      | the zone names beside it slide inside their own spans and it takes the gap, centre kept in its span: the full name shows wherever the row has room, then the `short`, then nothing. The holding zone, ticks and the one-register rule are unchanged |
+
+A row that is genuinely too narrow still hides a name (argo's ACWR at 390 has 22px where `Caut.` needs 25); the name stays in the described-by text.
+
+Opt-out: none for the zone names; a zone that must keep to its span sets a `short` that fits it, and a page that does not want a footer entry's shot anchor omitted declares no `shotAbsent`.
+
 ## 2.23.0 — Wave 37, argo's friction II
 
 No export is removed. `MeterTick` gains an optional `caption`; five Meter defaults move.

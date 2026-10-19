@@ -372,6 +372,8 @@ export type FixtureSpec = {
   w38Loading?: true
   /** Wave 38: `Bars` and a `Sparkline` in a StatCard slot each (`w38-bars-card`, `w38-spark-card`) and in a strip cell (`w38-bars-strip`, `w38-spark-strip`). */
   w38BarsSlot?: true
+  /** Wave 38: argo's ACWR load Meter (four zones, one `short`) in a 5-col strip cell (`w38-acwr-strip`). */
+  w38Zones?: true
   /** Wave 38: strip cells, Meters and a forecast Meter loaded and loading side by side, a StatGroup's hero sizes (`w38l-*`). */
   w38StripMeter?: true
   /** Wave 38: a high-line Sparkline in a 150px strip cell and card (`w38r2-strip`, `w38r2-card`), a slotted `Bars` (`w38r2-bars`) and two `ChartCard` line charts (`w38r2-lines-narrow`, `w38r2-lines-wide`). */

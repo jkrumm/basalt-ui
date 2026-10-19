@@ -201,8 +201,14 @@ describe('placeRowLabels', () => {
     span: { left: spanLeft, right: spanRight },
     ...(holding && { holding }),
   })
-  test('a label wider than its span is hidden, a fitting one is kept', () => {
+  test('a label wider than its span borrows free room in the row, a fitting one is kept', () => {
     expect(placeRowLabels([zone(5, 35, 0, 40), zone(55, 105, 60, 80)], 200).shown).toEqual([
+      true,
+      true,
+    ])
+  })
+  test('a label wider than its span is hidden when the row has no room for it', () => {
+    expect(placeRowLabels([zone(5, 35, 0, 40), zone(55, 105, 60, 80)], 100).shown).toEqual([
       true,
       false,
     ])
@@ -234,15 +240,15 @@ describe('placeRowLabels', () => {
       ...zone(5, 55, 0, 40),
       ...(short && { short }),
     })
-    expect(placeRowLabels([wide({ left: 10, right: 30 })], 200)).toMatchObject({
+    expect(placeRowLabels([wide({ left: 10, right: 30 })], 50)).toMatchObject({
       shown: [true],
       short: [true],
     })
-    expect(placeRowLabels([wide({ left: 10, right: 50 })], 200)).toMatchObject({
+    expect(placeRowLabels([wide({ left: 10, right: 50 })], 50)).toMatchObject({
       shown: [false],
       short: [false],
     })
-    expect(placeRowLabels([wide()], 200)).toMatchObject({ shown: [false], short: [false] })
+    expect(placeRowLabels([wide()], 50)).toMatchObject({ shown: [false], short: [false] })
   })
   test('the full name wins when it fits; the short label is not used', () => {
     const fits = { ...zone(5, 35, 0, 40), short: { left: 10, right: 30 } }
