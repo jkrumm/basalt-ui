@@ -1081,6 +1081,7 @@ No export is removed or added. A loading state is the loaded shape; two other de
   names); `readingAt="start"` keeps the pre-2.24 anchor at the boundary.
 - Opt out of the shared hero size: set `--basalt-stat-group-figure` (a length, e.g. `var(--vx-text-kpi)`) on the
   `StatGroup` or a wrapper; it replaces the group's two-column size.
+
 ### Section subtitle and summary sizes (Wave 38)
 
 **What 2.24.0 / 2.25.0 got wrong:** the summary cap was written as a `font-size` rule on
