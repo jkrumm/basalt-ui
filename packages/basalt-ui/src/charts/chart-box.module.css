@@ -144,7 +144,13 @@
 }
 
 /* Opaque in both schemes: `--vx-tooltip-bg` is translucent in dark and the card's footer ghosts
- * through a tooltip that opens over it (a slotted `Bars`). The engine's own value is inline. */
+ * through a tooltip that opens over it (a slotted `Bars`). The tint is layered over the elevated
+ * surface, so a consumer's `tooltipBg` and `--basalt-tooltip-surface` still colour it. The engine's
+ * own value is inline. */
 :global(.ts-chart-tooltip) {
-  background: var(--vx-surface-elevated) !important;
+  background: linear-gradient(
+      var(--basalt-tooltip-surface, var(--vx-tooltip-bg)),
+      var(--basalt-tooltip-surface, var(--vx-tooltip-bg))
+    )
+    var(--vx-surface-elevated) !important;
 }
