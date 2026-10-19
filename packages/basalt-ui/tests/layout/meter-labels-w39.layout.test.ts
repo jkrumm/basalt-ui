@@ -167,4 +167,37 @@ layout('Meter labels are never lost for width (Wave 39)', () => {
       expect(m.clipped).toBe(false)
     },
   )
+
+  test('the S2 goal Meter at 390 keeps one label row: the start figure drops instead of taking a second row', async () => {
+    const p = await openFixture(spec, PHONE)
+    await p.settle()
+    const m = await p.raw.evaluate(() => {
+      const host = document.querySelector('[data-testid="w39-goal-348"]') as Element
+      const band = host.querySelector('[data-meter-tick-band]') as HTMLElement
+      const labels = [...host.querySelectorAll<HTMLElement>('[data-meter-tick-label]')]
+      return {
+        rows: band.getAttribute('data-meter-rows'),
+        height: band.getBoundingClientRect().height,
+        shown: labels.filter((l) => !l.hasAttribute('data-hidden')).map((l) => l.textContent),
+        second: labels.filter((l) => l.hasAttribute('data-row2')).length,
+        fontSize: Number.parseFloat(getComputedStyle(band).fontSize),
+      }
+    })
+    expect(m.rows).toBe('1')
+    expect(m.second).toBe(0)
+    expect(m.shown).toEqual(['Pace 14 sessions by 16 Oct'])
+    // One caption-sized line (1.25em), not two.
+    expect(m.height).toBeLessThanOrEqual(m.fontSize * 1.25 + 1)
+  })
+
+  test('the same Meter on a wide row keeps its start figure on the one row', async () => {
+    const p = await openFixture(spec, DESKTOP_1440)
+    await p.settle()
+    const shown = await p.raw.evaluate(() =>
+      [...document.querySelectorAll('[data-testid="w39-goal-640"] [data-meter-tick-label]')]
+        .filter((l) => !l.hasAttribute('data-hidden') && !l.hasAttribute('data-row2'))
+        .map((l) => l.textContent),
+    )
+    expect(shown).toEqual(['0 sessions', 'Pace 14 sessions by 16 Oct'])
+  })
 })

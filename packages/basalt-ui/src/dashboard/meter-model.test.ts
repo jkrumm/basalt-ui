@@ -462,6 +462,28 @@ describe('Meter labels are never lost for width (Wave 39)', () => {
     expect([out.shown[0], out.row[0], out.shift[0]]).toEqual([true, 0, -35])
   })
 
+  test("the scale's start figure never takes the second row: it hides (D38 drops it before anything wraps)", () => {
+    // S2 goal at 390: `0 sessions` (start figure) clashes with the `Pace 14 sessions by 16 Oct` tick label.
+    const figure = { box: { left: 0, right: 60 }, end: true, figure: true }
+    const pace = { box: { left: 57, right: 193 } }
+    const out = placeRowLabels([figure, pace], 358, GAP)
+    expect([out.shown, out.row]).toEqual([
+      [false, true],
+      [0, 0],
+    ])
+    // A consumer tick label in the same spot still takes the second row.
+    const tick = { box: { left: 0, right: 60 }, end: true }
+    expect(placeRowLabels([tick, pace], 358, GAP)).toMatchObject({
+      shown: [true, true],
+      row: [1, 0],
+    })
+    // Room for both: the figure shows on the first row.
+    expect(placeRowLabels([figure, { box: { left: 200, right: 336 } }], 358, GAP)).toMatchObject({
+      shown: [true, true],
+      row: [0, 0],
+    })
+  })
+
   test('a label that fits neither row hides, and only then', () => {
     const wide = [{ box: { left: 0, right: 120 } }]
     expect(placeRowLabels(wide, 100, GAP).shown).toEqual([false])

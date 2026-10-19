@@ -251,6 +251,11 @@ export type RowLabel = {
   holding?: boolean
   /** A tick at the track's start or end: it keeps its place over every zone name it would touch. */
   end?: boolean
+  /**
+   * The scale's own start figure (not a consumer tick): D38's caption order drops it before anything
+   * wraps, so it never takes the second row; it hides when the first row cannot hold it.
+   */
+  figure?: boolean
   short?: LabelBox
 }
 
@@ -331,7 +336,7 @@ function stagger(
   const rank = (l: RowLabel) => (l.end ? 0 : l.span ? 2 : 1)
   const pending = labels
     .map((_, i) => i)
-    .filter((i) => !shown[i])
+    .filter((i) => !shown[i] && labels[i]?.figure !== true)
     .toSorted((a, b) => rank(labels[a] as RowLabel) - rank(labels[b] as RowLabel))
   const clamped = (b: LabelBox): LabelBox => {
     const width = b.right - b.left

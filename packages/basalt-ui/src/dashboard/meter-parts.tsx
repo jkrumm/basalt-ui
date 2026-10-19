@@ -247,7 +247,12 @@ function zoneStyle(zone: MeterZone, index: number, count: number, min: number, s
 const columnGapOf = (el: Element): number => Number.parseFloat(getComputedStyle(el).columnGap) || 0
 
 /** One label on the row: its span in percent of the row (a zone name) or none (an end tick). */
-type RowSlot = { spanPct?: readonly [number, number]; holding?: boolean; end?: boolean }
+type RowSlot = {
+  spanPct?: readonly [number, number]
+  holding?: boolean
+  end?: boolean
+  figure?: boolean
+}
 
 type RowLayout = { shown: boolean[]; short: boolean[]; shift: number[]; row: (0 | 1)[] }
 const sameLayout = (a: RowLayout, b: RowLayout) =>
@@ -310,6 +315,7 @@ function useRowLabelLayout(
             b !== undefined && { span: { left: Math.min(a, b), right: Math.max(a, b) } }),
           ...(slot?.holding && { holding: true }),
           ...(slot?.end && { end: true }),
+          ...(slot?.figure && { figure: true }),
         }
       })
       shortOfRef.current.forEach((labelIndex, n) => {
@@ -402,7 +408,11 @@ const TICK_LABEL_FLIP_PCT = 50
 function LabelRow({ zones, ticks }: { zones: readonly ZoneLabel[]; ticks: readonly TickMark[] }) {
   const rowRef = useRef<HTMLDivElement>(null)
   const slots: RowSlot[] = [
-    ...ticks.map((t): RowSlot => (t.pct <= 0 || t.pct >= 100 ? { end: true } : {})),
+    // The scale's own start figure (key `start`) drops before it wraps: it never takes the second row.
+    ...ticks.map((t): RowSlot => ({
+      ...(t.pct <= 0 || t.pct >= 100 ? { end: true } : {}),
+      ...(t.key === 'start' && { figure: true }),
+    })),
     ...zones.map((z): RowSlot => ({
       spanPct: [z.centrePct - z.widthPct / 2, z.centrePct + z.widthPct / 2],
       holding: z.holding,

@@ -136,6 +136,19 @@ export function W39MeterFixture(): ReactElement {
           />
         </div>
       ))}
+      {[348, 640].map((w) => (
+        // theme-allow hidden-inline-style -- the wrapper width IS the fixture's payload
+        <div key={w} data-testid={`w39-goal-${w}`} style={{ width: w }}>
+          <Meter
+            label="17 of 28 sessions this month against the goal"
+            value={17}
+            max={28}
+            target={28}
+            ticks={[{ at: 14.5, label: 'Pace 14 sessions by 16 Oct' }]}
+            format={(v) => `${v} sessions`}
+          />
+        </div>
+      ))}
       {/* theme-allow hidden-inline-style -- the wrapper width IS the fixture's payload */}
       {(
         [
