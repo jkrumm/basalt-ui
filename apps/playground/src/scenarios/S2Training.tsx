@@ -248,7 +248,7 @@ function GoalRow({ shotState }: ScenarioProps) {
             // The count lives on the Sessions KPI; this card leads with what is new on it.
             facts={{ value: aheadOrBehind(PACE_GAP) }}
             info={`Strength, walking-pad and mobility sessions all count. The tick is the pace that reaches ${GOAL_SESSIONS} on ${MONTH_END_LABEL}.`}
-            {...cardStateProps(shotState, retry(), PLACEHOLDER.meter)}
+            {...cardStateProps(shotState, retry(), PLACEHOLDER.meter, TRAINING_EMPTY)}
           >
             <Box data-shot-hover>
               <Meter
@@ -272,7 +272,7 @@ function GoalRow({ shotState }: ScenarioProps) {
         <Box data-shot="session-mix">
           <ChartCard
             title={`Sessions by type, ${WINDOW_LABEL}`}
-            {...cardStateProps(shotState, retry(), PLACEHOLDER.meter)}
+            {...cardStateProps(shotState, retry(), PLACEHOLDER.meter, TRAINING_EMPTY)}
           >
             <Box data-shot-hover>
               <Meter
@@ -338,7 +338,12 @@ function LoadCard({ shotState }: ScenarioProps) {
         title="Training load"
         facts={{ value: fmtRatio(LOAD_RATIO), period: '7 days against the 4-week norm' }}
         info="Load of the last 7 days divided by the weekly average of the last 28 days. Load is minutes × session intensity (1–10), in arbitrary units (AU)."
-        {...cardStateProps(shotState, retry(), 'content')}
+        {...cardStateProps(
+          shotState,
+          retry(),
+          'content',
+          'No sessions in the last 28 days to compare against. Log a workout.',
+        )}
       >
         <Box data-shot-hover>
           <Meter
@@ -384,7 +389,12 @@ function ReadinessRow({ shotState }: ScenarioProps) {
           facts={{ value: fmtInt(READINESS_SCORE), unit: 'of 100' }}
           subtitle={`As of ${TODAY_LABEL}`}
           info={READINESS_INFO}
-          {...cardStateProps(shotState, retry(), 'content')}
+          {...cardStateProps(
+            shotState,
+            retry(),
+            'content',
+            'No readiness reading today. Sync the watch.',
+          )}
         >
           <Stack gap="md">
             <Meter
@@ -425,7 +435,12 @@ function ReadinessRow({ shotState }: ScenarioProps) {
             period: `in ${TOP_LIFT_COUNT} lifts, ${WINDOW_LABEL}`,
           }}
           info="Sets × reps × weight per lift over the strength sessions of the window; the share is of total training volume."
-          {...cardStateProps(shotState, retry(), 'content')}
+          {...cardStateProps(
+            shotState,
+            retry(),
+            'content',
+            `No strength session logged ${WINDOW_LABEL}. Log a lift to rank your lifts.`,
+          )}
         >
           <Box data-shot-hover>
             <BarList

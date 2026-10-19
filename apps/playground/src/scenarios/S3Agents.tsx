@@ -320,7 +320,12 @@ function QueueRow({ shotState }: ScenarioProps) {
           info={`Items waiting on your decision and items blocked on something else, oldest first. The status marks a wait past the ${WARN_LABEL} warning.`}
           subtitle={`Warden abandons an item at ${ABANDON_LABEL}`}
           facts={{ value: fmtInt(STUCK.length), unit: 'items' }}
-          {...cardStateProps(shotState, retry(), 'content')}
+          {...cardStateProps(
+            shotState,
+            retry(),
+            'content',
+            'Nothing is waiting on you. New items appear here when an agent needs a decision.',
+          )}
         >
           <Box data-shot-hover>
             <BarList
