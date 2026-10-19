@@ -100,4 +100,36 @@ describe('settleInCard', () => {
     expect(tip.style.maxWidth).toBe('')
     expect(tip.style.width).toBe('')
   })
+  test('a card with facts keeps the tooltip below its header while the plot area holds it', () => {
+    const { card, tip, ctx } = setup({ height: 60 })
+    const header = document.createElement('div')
+    header.getBoundingClientRect = () => rect(0, 100, 400, 50)
+    const facts = document.createElement('div')
+    facts.setAttribute('data-basalt-facts', '')
+    header.append(facts)
+    card.append(header)
+    // The anchor sits 20px under the card top, inside the header: above fits nowhere, below starts
+    // at 130, which is under the header's bottom (150) less the air: it is pushed to 154.
+    settleInCard(tip, card, ctx)
+    expect(Number.parseFloat(tip.style.top)).toBe(154)
+    // A plot area too short to hold it falls back to the card clamp.
+    const short = setup({ height: 160 })
+    const h2 = document.createElement('div')
+    h2.getBoundingClientRect = () => rect(0, 100, 400, 150)
+    const f2 = document.createElement('div')
+    f2.setAttribute('data-basalt-facts', '')
+    h2.append(f2)
+    short.card.append(h2)
+    settleInCard(short.tip, short.card, short.ctx)
+    // Header floor (254) is past the last fit (236): the card clamp stands, `offset` below the anchor.
+    expect(Number.parseFloat(short.tip.style.top)).toBe(130)
+  })
+  test('a card header without facts leaves the card clamp alone', () => {
+    const { card, tip, ctx } = setup({ height: 60 })
+    const header = document.createElement('div')
+    header.getBoundingClientRect = () => rect(0, 100, 400, 50)
+    card.append(header)
+    settleInCard(tip, card, ctx)
+    expect(Number.parseFloat(tip.style.top)).toBe(130)
+  })
 })
