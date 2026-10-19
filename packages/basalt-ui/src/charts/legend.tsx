@@ -209,26 +209,41 @@ const VISUALLY_HIDDEN = {
   whiteSpace: 'nowrap',
 } as const
 
-/** The number of lines the visible entries (and the chip) sit on. */
+/**
+ * The number of lines the visible entries (and the chip) sit on. Bucketed by vertical centre, so the
+ * chip's own height (shorter than an entry's) does not read as another line.
+ */
 function lineCount(row: HTMLElement, more: HTMLElement): number {
   const shown = [...row.querySelectorAll<HTMLElement>('[data-legend-key]')].filter(
     (it) => !it.hasAttribute('data-legend-folded'),
   )
   if (!more.hidden) shown.push(more)
-  return new Set(shown.map((it) => Math.round(it.offsetTop))).size
+  const centres = shown
+    .map((it) => {
+      const r = it.getBoundingClientRect()
+      return r.top + r.height / 2
+    })
+    .toSorted((x, y) => x - y)
+  // A new line starts where the centre jumps by more than half an entry's height.
+  return centres.filter((c, i) => i === 0 || c - (centres[i - 1] ?? c) > 6).length
 }
 
 /**
  * The compact legend names every series at every width. When the row wraps below 480px, the
  * zone / reference entries fold into a `+N` chip (named for assistive tech by the folded labels), the
  * last first, only while the row has more lines than the series alone would; a series never folds. The entries are in display order: series, then zones / references.
- * Measured on the node, never in React state, so a hover or a resize does not re-render.
+ * * Measured on the node, never in React state, so a hover or a resize does not re-render.
  */
 function foldLegend(row: HTMLElement): void {
   const items = [...row.querySelectorAll<HTMLElement>('[data-legend-key]')]
   const more = row.querySelector<HTMLElement>('[data-legend-more]')
   for (const it of items) it.removeAttribute('data-legend-folded')
   more?.setAttribute('hidden', '')
+  // A label that ellipsizes carries its full name in `title`; one that fits carries none.
+  for (const label of row.querySelectorAll<HTMLElement>('[data-legend-label]')) {
+    if (label.scrollWidth > label.clientWidth + 0.5) label.title = label.textContent ?? ''
+    else label.removeAttribute('title')
+  }
   // `--bc-fold` is the stylesheet's compact flag (chart-legend.module.css); wide keeps every entry.
   if (more === null || getComputedStyle(row).getPropertyValue('--bc-fold').trim() !== '1') return
   const references = items.filter((it) => it.dataset['legendRole'] === 'reference')
@@ -252,6 +267,11 @@ function foldLegend(row: HTMLElement): void {
     Object.assign(hiddenNames.style, VISUALLY_HIDDEN)
     more.append(hiddenNames)
   }
+  // Folding freed no line (the chip's own width cost it): show every name instead.
+  if (folded.length > 0 && lineCount(row, more) > floor) {
+    for (const f of folded) f.removeAttribute('data-legend-folded')
+    more.setAttribute('hidden', '')
+  }
 }
 
 export function ChartLegend<T>(props: ChartLegendProps<T>): ReactElement | null {
@@ -269,7 +289,13 @@ export function ChartLegend<T>(props: ChartLegendProps<T>): ReactElement | null 
     if (!auto || row === null || typeof ResizeObserver === 'undefined') return
     const observer = new ResizeObserver(() => foldLegend(row))
     observer.observe(row)
-    return () => observer.disconnect()
+    // A web font landing changes the entry widths without resizing the row.
+    let live = true
+    void document.fonts?.ready?.then(() => live && foldLegend(row))
+    return () => {
+      live = false
+      observer.disconnect()
+    }
   }, [auto, signature])
   const groups = legendEntries(props.series, props.groups)
   if (groups.length === 0) return null
@@ -292,7 +318,7 @@ export function ChartLegend<T>(props: ChartLegendProps<T>): ReactElement | null 
           const content = (
             <>
               <Swatch s={s} mode={props.mode} />
-              <span style={labelStyle} title={s.label}>
+              <span style={labelStyle} data-legend-label="">
                 {s.label}
               </span>
               {s.note !== undefined && <span style={noteStyle}>{s.note}</span>}

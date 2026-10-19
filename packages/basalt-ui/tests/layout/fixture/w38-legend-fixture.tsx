@@ -63,6 +63,12 @@ const VERDICT = [
   color,
   getValue: (d: Point) => (d.a > 1 + i * 0.2 ? d.a : null),
 }))
+// One zone too many: the last reference wraps a second line, folding just it frees that line.
+const ONE_FOLD_ZONES = [
+  zone(0.8, 1.3, 'good', 'Optimal'),
+  zone(0, 0.8, 'warn', 'Low'),
+  zone(1.5, 2, 'bad', 'Very far above the target'),
+]
 // One entry wider than a 340px card.
 const LONG: ChartSeries<Point>[] = [
   {
@@ -101,6 +107,7 @@ export function W38LegendFixture(): ReactElement {
       {chart('w38-five-refs-wide', { series: many(5), refLines: REFS }, 1000)}
       {chart('w38-seven-wide', { series: many(7) }, 1000)}
       {chart('w38-two-zones-wide', { series: TWO, zones: NAMED_ZONES }, 1000)}
+      {chart('w38-one-fold', { series: ONE, zones: ONE_FOLD_ZONES })}
       {chart('w38-long', { series: LONG })}
       {/* argo's usage health card: a Bars key with three verdict labels, bottom, in a half column */}
       {[340, 500, 1000].map((w) => (
