@@ -45,13 +45,13 @@ async function measure(
   viewport: Viewport,
   id: string,
   park = false,
-  /** Text of the headline leaves (value, delta) of a host with no WidgetHeader. */
-  needles: readonly string[] = [],
+  /** Exact text of the headline value leaves of a host with no WidgetHeader (delta is `[data-delta]`). */
+  values: readonly string[] = [],
 ): Promise<Measure> {
   const p = await openFixture(spec, viewport, '/', 'reduce', 'fine')
   await p.settle()
   const m = await p.raw.evaluate(
-    async ({ id, park, needles }) => {
+    async ({ id, park, values }) => {
       const need = <T extends Element>(found: T | null, what: string): T => {
         if (found === null) throw new Error(`missing ${what} under ${id}`)
         return found
@@ -81,12 +81,16 @@ async function measure(
       const card = trigger.closest('[data-basalt-chart-card], [data-tier="section"]') ?? root
       const headRoot = trigger.closest('[data-tier]')
       const factsEl = root.querySelector(`[data-testid="${id}-facts"]`)
-      const leaves = [...root.querySelectorAll('*')].filter(
-        (el) => el.children.length === 0 && needles.some((n) => el.textContent?.includes(n)),
+      // The headline itself: leaves whose text IS a value, and the delta badge.
+      const valueLeaves = [...root.querySelectorAll('*')].filter(
+        (el) => el.children.length === 0 && values.includes(el.textContent?.trim() ?? ''),
       )
-      if (needles.length > 0 && leaves.length === 0) throw new Error(`no headline leaf in ${id}`)
+      if (values.length > 0 && valueLeaves.length === 0)
+        throw new Error(`headline not found in ${id}`)
+      const leaves = [...valueLeaves, ...root.querySelectorAll('[data-delta]')]
       const parts = [
         trigger,
+        ...[trigger.closest('[data-basalt-header-block]')].filter((el) => el !== null),
         ...(headRoot === null ? [] : [headRoot]),
         ...(headRoot?.parentElement?.querySelectorAll(':scope > [data-basalt-facts]') ?? []),
         ...leaves,
@@ -104,7 +108,7 @@ async function measure(
         viewW: document.documentElement.clientWidth,
       }
     },
-    { id, park, needles },
+    { id, park, values },
   )
   return m
 }
@@ -140,14 +144,14 @@ layout('info bubble inside a card', () => {
     })
 
     test(`at ${viewport.width}px a StatCard's bubble clears its value and delta`, async () => {
-      const m = await measure(viewport, 'info-header-stat', false, ['12,847', '4.2'])
+      const m = await measure(viewport, 'info-header-stat', false, ['12,847'])
       expect(m.bubble.top).toBeGreaterThanOrEqual(m.header.bottom)
       expect(m.bubble.left).toBeGreaterThanOrEqual(0)
       expect(m.bubble.right).toBeLessThanOrEqual(m.viewW)
     })
 
     test(`at ${viewport.width}px a strip cell's bubble clears its value and delta`, async () => {
-      const m = await measure(viewport, 'info-header-strip', false, ['12,847', '4.2'])
+      const m = await measure(viewport, 'info-header-strip', false, ['12,847'])
       expect(m.bubble.top).toBeGreaterThanOrEqual(m.header.bottom)
       expect(m.bubble.left).toBeGreaterThanOrEqual(0)
       expect(m.bubble.right).toBeLessThanOrEqual(m.viewW)
