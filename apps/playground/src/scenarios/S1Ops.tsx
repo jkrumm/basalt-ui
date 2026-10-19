@@ -112,7 +112,6 @@ const LATENCY_DATA = [...LATENCY_DISTRIBUTION]
 const OUTAGE_ROWS = [...OUTAGES]
 const NO_OUTAGES: Outage[] = []
 
-const PROBE_ERROR = 'The probe did not answer. Retry, or check that the monitor is running.'
 const PROBE_EMPTY = 'No readings in the window. Check that the probe is reporting.'
 
 const retry = (): string => retryCopy('probe')
@@ -133,7 +132,7 @@ const columns = (() => {
 
 function OpsStats({ shotState }: ScenarioProps) {
   const isAtRest = shotState === undefined
-  const query = queryFor(shotState, PROBE_ERROR)
+  const query = queryFor(shotState, retry())
   // The empty branch says why and what to do in one muted line. Computed once for all three cards.
   const shared = {
     emptyText: PROBE_EMPTY,
