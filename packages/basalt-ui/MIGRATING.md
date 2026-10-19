@@ -77,7 +77,7 @@ consumer read this index, found nothing, and diffed a KPI row that had silently 
 | **dashboard** (`.`) | `StatCard`: `unit`, `breakdown`, delta format (§ `StatCard`) | `StatGroup`, `WidgetGrid`, query-aware `StatCard` — additive | — | **the column law keys on the CONTAINER; `cols={4}` is 2-up at `sm`** (§ Dashboard) | — | — | — | — | — | — | — | — | — | — | — | — | — | — | — | — | — | — | — | — | — | — | — | — | — | — | — | — | — | — | — | — | — | — | — | — | — | — | — | — | § 1.x compatibility layer removed | — | — | — | — | — | — | — | — | — | — | — | card inset 12/16, `kpi` 22 / 500 (§ 2.16.0) | — | — | StatCard status dot, Meter/BarList refinements (§ 2.19.0) | — | plain `Meter` value bar fill muted (`tone="ink"` to opt out); `BarList` default `thin`, `variant="default"` → `inline` (§ 2.21.0) | — | — | `LoadingState` section skeleton, page spinner neutral (§ State defaults) | — | — |
 | **toolchain** (`./configs/*`) | — | — | the shipped lefthook preset's `check-theme` BROKE — the CLI resolver stopped ascending (§ CLI) | the preset's default bin, and the `root:` recipe (§ Toolchain) | — | — | — | — | — | — | — | — | — | — | — | — | — | — | — | — | — | — | — | — | — | — | — | — | — | — | — | — | — | — | — | — | — | — | — | — | — | — | — | — | — | — | — | — | — | — | — | — | — | — | — | — | — | — | — | — | — | — | — | — | — | — | — |
 | **CLI** (`basalt-ui`) | — | — | **resolver stops relocating; `doctor` loses 6 of 10 checks** (§ CLI) | — | — | — | — | — | — | — | — | — | — | — | — | — | — | — | — | — | — | — | — | — | the managed block moves `CLAUDE.md` → `AGENTS.md` (§ 1.41.0) | — | — | — | — | — | — | — | — | — | — | — | — | — | — | — | — | — | `doctor`: CSS + forced dropped subpaths, `oxlint-floor`, Start wiring (§ 2.8.0) | — | § 1.x compatibility layer removed | — | — | — | — | — | — | — | — | — | — | — | — | — | — | — | — | — | — | — | — | — | — |
-| **guards** | five rules → `error` (§ Guards) | six new ids at `warn` (§ preamble) | `query-dual-import` retired in 1.29.1 (§ Guards) | four rules → `error` (§ Guards) | — | — | — | `raw-breakpoint`: the container-grid answer, `error` at 1.33.0 (§ 1.32.0) | `FormRow`/`FormGroup` homes in both lanes; `basalt-main` dropped (§ Fixes) | C1 + breakpoint pairs → `error`; `unknown-vx-token` `warn` (§ Guards) | — | — | — | `unknown-vx-token` → `error`; the token factories throw (§ Guards) | — | — | — | — | — | — | — | — | — | — | — | — | — | — | — | — | — | — | — | — | — | — | — | — | — | — | — | — | — | — | § 1.x compatibility layer removed | — | — | — | — | — | — | — | — | — | — | — | `inline-spacing` steps, `card-inset` accepts both pairs (§ 2.16.0) | — | — | — | — | `series-palette` at `warn` (§ 2.21.0) | — | `series-palette` → `error` (§ Guards) | `raw-spacing`, `inline-spacing` → `error` (§ Guards) | — | — |
+| **guards** | five rules → `error` (§ Guards) | six new ids at `warn` (§ preamble) | `query-dual-import` retired in 1.29.1 (§ Guards) | four rules → `error` (§ Guards) | — | — | — | `raw-breakpoint`: the container-grid answer, `error` at 1.33.0 (§ 1.32.0) | `FormRow`/`FormGroup` homes in both lanes; `basalt-main` dropped (§ Fixes) | C1 + breakpoint pairs → `error`; `unknown-vx-token` `warn` (§ Guards) | — | — | — | `unknown-vx-token` → `error`; the token factories throw (§ Guards) | — | — | — | — | — | — | — | — | — | — | — | — | — | — | — | — | — | — | — | — | — | — | — | — | — | — | — | — | — | — | § 1.x compatibility layer removed | — | — | — | — | — | — | — | — | — | — | — | `inline-spacing` steps, `card-inset` accepts both pairs (§ 2.16.0) | — | — | — | — | `series-palette` at `warn` (§ 2.21.0) | — | `series-palette` → `error` (§ Guards) | `raw-spacing`, `inline-spacing` → `error` (§ Guards) | — | `basalt/card-inset` → `error` (§ Guards) |
 
 ---
 
@@ -1403,6 +1403,15 @@ predate 2.16 and meet both rules on their next bump.
 
 Opt-out: `"basalt": { "severity": { "raw-spacing": "warn", "inline-spacing": "warn" } }` keeps both a
 warning; `"basalt": { "exemptRules": { "inline-spacing": ["<path>"] } }` silences one for a path.
+
+`basalt/card-inset` is now `error` in the shipped preset (`warn` since 2.16.0; the redundant
+`py="sm" px="md"` pair class since 2.20.0). It fails an explicit `py="sm" px="md"` pair on a `Card`
+(the theme owns the 12/16 inset) and a partial inset. Delete the pair; for a flush card use
+`variant="flush"` or `Card.Section`; for a deliberate exception write
+`{/* theme-allow card-inset — reason */}`. Measured before flipping: argo already runs it at
+`error` with 0 findings.
+
+Opt-out: in the consumer's `.oxlintrc.json` set `"basalt/card-inset": "warn"`.
 
 ### Footer shot states and zone names (Wave 38)
 

@@ -135,33 +135,28 @@ describe('scripts/check-grace.ts', () => {
 
   // 1.27.0 promoted five of the six wave-6 plugin rules and one of the two guard kinds; 1.30.0
   // promoted four more; 1.33.0 the C1 and breakpoint pairs; 1.36.0 `unknown-vx-token` (its grace ran
-  // one minor past 1.35.0), 2.23.0 `series-palette`, 2.24.0 the two 2.16 spacing kinds. The one entry
-  // left is the plugin rule `card-inset` (promote 2.26.0), the 1 entry every version below 2.26.0 is
-  // clear of; below the first deprecation `removeIn` the deprecation half is clear too. That the
+  // one minor past 1.35.0), 2.23.0 `series-palette`, 2.24.0 the two 2.16 spacing kinds, 2.26.0 the
+  // plugin rule `card-inset`, the last tenant. Both ledgers are empty, so every version is clear of
+  // 0 entries; below the first deprecation `removeIn` the deprecation half is clear too. That the
   // gate REFUSES a due entry is proven on synthetic ledgers in `scripts/check-grace.test.ts`.
   it.each(['1.30.0', '1.34.9', '1.35.0', '1.36.0', '1.36.9', '1.37.0', '1.38.0', '1.38.9'])(
     'passes %s — nothing is due until 1.39.0',
     (v) => {
       const { code, stdout } = runCheckGrace(v)
-      expect([code, stdout.includes('clear of all 1 grace entry')]).toEqual([0, true])
+      expect([code, stdout.includes('clear of all 0 grace entries')]).toEqual([0, true])
     },
   )
 
-  it('passes 2.24.0 — the spacing kinds are promoted, only card-inset (2.26.0) remains', () => {
-    const { code, stdout } = runCheckGrace('2.24.0')
-    expect([code, stdout.includes('clear of all 1 grace entry')]).toEqual([0, true])
-  })
-
-  it('refuses 2.26.0 — card-inset is due', () => {
-    const { code, stderr } = runCheckGrace('2.26.0')
-    expect([code, stderr.includes('card-inset')]).toEqual([1, true])
+  it('passes 2.26.0 — card-inset, the last entry, is promoted', () => {
+    const { code, stdout } = runCheckGrace('2.26.0')
+    expect([code, stdout.includes('clear of all 0 grace entries')]).toEqual([0, true])
   })
 
   // The 1.36.0 form-layout aliases and the useForm/schemaResolver re-exports were deleted in 1.39.0
   // (their own commit), so the release that reached their date is clear.
   it('passes 1.39.0 — the form-layout aliases are gone', () => {
     const { code, stdout } = runCheckGrace('1.39.0')
-    expect([code, stdout.includes('clear of all 1 grace entry')]).toEqual([0, true])
+    expect([code, stdout.includes('clear of all 0 grace entries')]).toEqual([0, true])
   })
 
   it('exits 2 on a missing or malformed version rather than passing vacuously', () => {
