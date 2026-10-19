@@ -162,7 +162,7 @@ describe('4. S3', () => {
     // W38 r1: no `under`; the day and week budgets share the strip's footer row.
     expect(source('./S3Agents.tsx')).not.toMatch(/under\??:/)
     const day = text(anchor(agents(), 'strip-footer-day'))
-    expect(day).toContain(`Target ${fmtEur(BUDGETS.day.cap)}`)
+    expect(day).toContain(`Cap ${fmtEur(BUDGETS.day.cap)}`)
     expect(day).not.toMatch(/\bof €/)
   })
 

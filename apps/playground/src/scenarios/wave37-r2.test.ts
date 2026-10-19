@@ -107,7 +107,7 @@ describe('S3', () => {
     // The Meter binds its last word with a no-break space.
     const week = text(anchor(agents(), 'strip-footer-week')).replaceAll('\u00A0', ' ')
     expect(week).toContain(`${fmtEur(BUDGETS.week.spent)}, last 7 days`)
-    expect(week).toContain(`Target ${fmtEur(BUDGETS.week.cap)}`)
+    expect(week).toContain(`Cap ${fmtEur(BUDGETS.week.cap)}`)
   })
 
   it('the item flow tooltip rows carry a unit, not the series name again', () => {

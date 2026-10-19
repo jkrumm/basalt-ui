@@ -70,9 +70,6 @@ const TYPE_COLOR: Record<SessionType, string> = {
 const TRAINING_EMPTY = 'No sessions logged this month. Log a workout to start the month.'
 const retry = (): string => retryCopy('training log')
 
-/** Body height of the error placeholder for the single-bar Meter cards. */
-const PLACEHOLDER = { meter: 72 }
-
 /** `Low under 60, Fair 60–79, Good 80+` — the legend, built from the zones the Meter draws. */
 const READINESS_INFO = `Mean of the four contributors below, each scored 0–100: ${READINESS_ZONES.map(
   (z, i, all) =>
@@ -248,7 +245,7 @@ function GoalRow({ shotState }: ScenarioProps) {
             // The count lives on the Sessions KPI; this card leads with what is new on it.
             facts={{ value: aheadOrBehind(PACE_GAP) }}
             info={`Strength, walking-pad and mobility sessions all count. The tick is the pace that reaches ${GOAL_SESSIONS} on ${MONTH_END_LABEL}.`}
-            {...cardStateProps(shotState, retry(), PLACEHOLDER.meter, TRAINING_EMPTY)}
+            {...cardStateProps(shotState, retry(), 'content', TRAINING_EMPTY)}
           >
             <Box data-shot-hover>
               <Meter
@@ -272,7 +269,7 @@ function GoalRow({ shotState }: ScenarioProps) {
         <Box data-shot="session-mix">
           <ChartCard
             title={`Sessions by type, ${WINDOW_LABEL}`}
-            {...cardStateProps(shotState, retry(), PLACEHOLDER.meter, TRAINING_EMPTY)}
+            {...cardStateProps(shotState, retry(), 'content', TRAINING_EMPTY)}
           >
             <Box data-shot-hover>
               <Meter
