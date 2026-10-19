@@ -1,3 +1,36 @@
+# [2.26.0](https://github.com/jkrumm/basalt-ui/compare/v2.25.0...v2.26.0) (2026-10-19)
+
+
+### Bug Fixes
+
+* a rows-only strip cell loads its Meter, one-column groups keep their clamp ([02dcecf](https://github.com/jkrumm/basalt-ui/commit/02dcecf9c66a9a3ea7b62f23c8cd35af28027ad9))
+* cap a Section summary Text only when it carries a size ([e5b4261](https://github.com/jkrumm/basalt-ui/commit/e5b42610ab05440c0d91019103382d2fe77fd430))
+* cap legend entries, fold only for a freed line ([d212cc0](https://github.com/jkrumm/basalt-ui/commit/d212cc0d7441826f7dfba39ce58af73b14e9c31d))
+* chart loading in the loaded shape, facts kept while pending ([529f6d1](https://github.com/jkrumm/basalt-ui/commit/529f6d1b1edd900b0e4af79e94158e7df8ab9f72))
+* compact legends keep every series named ([6777c9f](https://github.com/jkrumm/basalt-ui/commit/6777c9fe671827834fdc5417d1b1bd799894af4c))
+* count legend lines by centre, undo a fold that frees none ([93ed0f1](https://github.com/jkrumm/basalt-ui/commit/93ed0f17eec27136537adc2bb6c4ea9e73e90175))
+* day footer states the cap share, facts stay in every state ([7d37d1e](https://github.com/jkrumm/basalt-ui/commit/7d37d1e649728450d448af0dccbcf4d00195b644))
+* end list and Meter card states at their content ([1b7d279](https://github.com/jkrumm/basalt-ui/commit/1b7d2799e388f4c96d811e1c4e9fc10da2e56686))
+* footer entries declare absent states, the Caution zone fits ([24e6197](https://github.com/jkrumm/basalt-ui/commit/24e6197aabae90161a05cfdf73030c874f7d441e))
+* forecast caption falls back to the boundary before it drops ([33e7ec0](https://github.com/jkrumm/basalt-ui/commit/33e7ec0b4bdd9ff8d062668967b5c8c536b58c52))
+* hold Section summary and ChartCard actions text at 11 ([35953f8](https://github.com/jkrumm/basalt-ui/commit/35953f87b01fcf4149e82acfd2c696d2708a4cfe))
+* hosted readouts keep their separator and their line ([01ab899](https://github.com/jkrumm/basalt-ui/commit/01ab89942c832facf542ac6115abc3ab29d22b7a))
+* layer the tooltip tint over the opaque surface ([981b506](https://github.com/jkrumm/basalt-ui/commit/981b50636ca048041b79df262cde25adceee350d))
+* match the load card's conditional fill in its source test ([6cf6fed](https://github.com/jkrumm/basalt-ui/commit/6cf6fed5e6e9e03e76c1903e525a240d64a6e252))
+* one probe outage wording, guard the table card against a width cap ([8d15b3d](https://github.com/jkrumm/basalt-ui/commit/8d15b3d0935f34fbba93e67e1aa52d9bba9a304b))
+* one wording per gap and real causes in S2–S4 states ([eee772c](https://github.com/jkrumm/basalt-ui/commit/eee772c11344b087ddba4d9c6d46f70d52d2d313))
+* pin the actions cap against a control and the Mantine contract ([f05ac74](https://github.com/jkrumm/basalt-ui/commit/f05ac7464fc704d0fdd0b83cab45ec91f2869f7a))
+* size list skeletons to the loaded rows, end empty load card ([1a3e30d](https://github.com/jkrumm/basalt-ui/commit/1a3e30d433d4306c54fbd5759df978eceab68461))
+* strip and Meter loading in the loaded shape ([45afdd8](https://github.com/jkrumm/basalt-ui/commit/45afdd879627e59ccbd4e743d8206cd003f3c40a))
+* strip cells paint visual, footer and delta while loading ([0a88ef6](https://github.com/jkrumm/basalt-ui/commit/0a88ef61656d6a13f702faed977507d362b585a6))
+* the borrow pass runs again in the one register ([9d7f079](https://github.com/jkrumm/basalt-ui/commit/9d7f079aa11821d4be71192381f98d58024be0ae))
+* type the short-fallback layout cases ([ab5259e](https://github.com/jkrumm/basalt-ui/commit/ab5259ea56fe14132f5a8580d5a7c870dd6eee32))
+
+
+### Features
+
+* promote card-inset to error ([f95068d](https://github.com/jkrumm/basalt-ui/commit/f95068de197a0c35a813e028752cdfcc2d432bb7))
+
 # [2.25.0](https://github.com/jkrumm/basalt-ui/compare/v2.24.0...v2.25.0) (2026-10-18)
 
 
