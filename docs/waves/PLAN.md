@@ -1605,10 +1605,11 @@ P2/P3 basalt rows below. Validators: argo (bumps after the release, deletes its 
   that borrow free room. Close: #442 the facts gate pinned + `ghost`, #443 and #444 playground adoption. The mother's #432 and
   #441 (guard promotions) landed in between. Every break is a plain `feat:`/`fix:` with a MIGRATING subsection under the one
   `## Unreleased` heading; `CHANGELOG.md` untouched.
-- **Released by the mother mid-wave:** 2.24.0 (#420–#426 + #432), 2.25.0 from `3c3633cc` (#428/#430/#431, argo's Reading pace
-  tile), 2.26.0 from `f95068de` (#427, #433–#440 + #441). #442–#444 are unreleased.
-- **Rounds** (`docs/waves/design-parity/w38/rounds.md`; boards `.design-parity/w38/r0`–`r4`, copied to the MacBook
-  `~/Downloads/basalt-design-review/.design-parity/w38`): S2 70 → 70 → 91 → 58 → 93, S3 84 → 79 → 91 → 84 → 94, S4 70 → 87 → 96 →
+- **Released by the mother mid-wave:** 2.24.0 (#420–#427 + #432), 2.25.0 from `3c3633cc` (#428/#430/#431, argo's Reading pace
+  tile), 2.26.0 from `f95068de` (#433–#440 + #441). #442–#444 are unreleased.
+- **Rounds** (`docs/waves/design-parity/w38/rounds.md`; boards `.design-parity/w38/r0`–`r4` in the main checkout. Only r0 reached the
+  MacBook: at close-out `ssh iumac` timed out, so the copy is open — `rsync -a --relative .design-parity/w38
+  iumac:Downloads/basalt-design-review/` from the main checkout): S2 70 → 70 → 91 → 58 → 93, S3 84 → 79 → 91 → 84 → 94, S4 70 → 87 → 96 →
   92 → 99, components (94) → 97 → 98 → 99. No route passes the argo bar yet; no P0/P1 is left. r3's drop was one playground
   wiring regression (#434 passing facts in every state + #428's body-owned states), fixed by #443. Remaining, named: S2 goal and
   session-mix load as a bar ghost (P2 ×2, #444), the hit-rate loading legend row; the strip anatomy on S3 (P2) and S4 (P3) —
