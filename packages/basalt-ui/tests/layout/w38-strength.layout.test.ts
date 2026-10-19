@@ -1,6 +1,6 @@
 /**
- * Wave 38: argo's Strength-page `Section` shells (strength, load, balance, diagnostics, with argo's `actions` captions) render three type sizes, at 1440 and 390. The
- * count is `basalt-ui shot`'s craft-2 count (`src/cli/shot/measure.ts`): every distinct font size
+ * Wave 38: argo's Strength-page `Section` shells (strength, load, balance, diagnostics, with argo's
+ * `actions` captions) render three type sizes, at 1440 and 390. The count is `basalt-ui shot`'s craft-2 count (`src/cli/shot/measure.ts`): every distinct font size
  * of a visible element with a direct text node inside the component (SVG `<text>` included).
  */
 import { afterAll, describe, expect, test } from 'bun:test'
@@ -65,6 +65,11 @@ layout('argo Strength Section shell: three type sizes', () => {
           expect(
             byText['11']?.some((t) => /velocity|Productive|week of|since its first/.test(t)),
           ).toBe(true)
+        }
+        if (id.endsWith('strength')) {
+          // The arrow is a bare xs Text: capped. The control's label is not a Text: untouched.
+          expect(byText['11']).toContain('↗')
+          expect(byText['13']).toContain('Wk')
         }
         if (id.endsWith('diagnostics')) expect(byText['11']).toContain('90 days')
       })

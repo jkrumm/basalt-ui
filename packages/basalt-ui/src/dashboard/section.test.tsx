@@ -734,8 +734,9 @@ describe('summary size cap — Mantine contract', () => {
         <Text size="xs">cap</Text>
       </MantineProvider>,
     )
-    expect(container.querySelector('.mantine-Text-root')?.getAttribute('style')).toContain(
-      '--text-fz',
-    )
+    const style = container.querySelector('.mantine-Text-root')?.getAttribute('style')
+    expect(style).toContain('--text-fz')
+    // The actions cap in widget-header.module.css matches on this value.
+    expect(style).toContain('--mantine-font-size-xs')
   })
 })
