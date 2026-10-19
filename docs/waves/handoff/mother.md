@@ -48,23 +48,37 @@ Queued behind all of it: Part 2's maturation Waves 20–28.
 
 ## In flight (next actions, in order)
 
-1. Released 2026-10-18/19: 2.22.0 (`a646a081`), 2.23.0 (`fe021b8a`, `series-palette` → error), 2.24.0 (#416–#427 +
-   #432 `raw-spacing`/`inline-spacing` → error; the registry took ~25 min, so `release.sh`'s 1200 s poll failed a good
-   publish — don't re-release, curl the registry), 2.25.0 (`3c3633cc`, slotted `Bars`), 2.26.0 (`f95068de`, the three
-   2.24 regressions + #441 `card-inset` → error). Both grace ledgers are now empty. #442 (card facts gate) is unreleased
-   and ships with Wave 39.
-2. basalt Wave 38 closed (`370a1887`); Wave 39 "argo's friction IV" is active (the Meter zone fit at 390 is the P1).
-   The old 39–44 are now 40–45.
-3. argo Waves 38–41: 11/14 → 13/14 pages pass on 2.26.0 (Home 95, Usage 97, Reading 99, WalkingPad 100, Agents 93);
-   Garmin (49) fails on basalt rows only; no argo P1–P3 left. argo Wave 41 stopped with its bump step open: after the
-   next release, `rd say argo-w41` the release (no new wave), it bumps, re-shoots all pages and re-scores.
-4. Decided 2026-10-18: warden + agent-gateway get an authored `question` field, recorded as a backlog item in each repo's
+**PARKED 2026-10-19 for the owner's weekly Claude limit (~86 %).** No agent is running; every wave is closed and pushed, no
+worktrees are left. Resume after the reset with a fresh mother from this file.
+
+1. Released 2026-10-18/19: 2.22.0 → 2.27.1. 2.24.0 took ~25 min to reach the registry; `release.sh` now polls 60 min and
+   exits 3 ("still propagating, do not release again") instead of failing (#e7eb5573). Both grace ledgers are empty
+   (`series-palette`, `raw-spacing`, `inline-spacing`, `card-inset` promoted to error, each after argo measured 0).
+2. basalt Waves 38 (friction III), 39 (friction IV, r2: S2 99 / S3 98 / S4 98 / components 99) and 40 (friction V, the
+   fitness readout) are done. Wave 41 "Data tables, responsive" is marked `active` but NOT spawned.
+3. argo Waves 38–42 done (argo is on 2.27.1). Latest verdicts: 13 of 14 pages pass (Home 97, WalkingPad 100, Reading 90,
+   Hermes 98, Calendar 97, Body comp 96, Usage 95, astro 94/94, m365 94/93, Warden 92, Agents 92, Strength 90 provisional).
+   **Garmin fails on basalt rows only** (55 in argo w42; it was 71 in w41: reviewer variance plus the carried rows).
+   argo's PLAN has no active wave; the mother authors the next re-score wave before `rd wave` (the gate refuses otherwise).
+4. **First on resume: a short basalt wave "argo friction VI"** before Data tables (insert + renumber as before), from argo
+   `docs/design/UPSTREAM.md` § "Wave 42 bump":
+   - P1: the info popover covers the card's headline facts (Garmin ACWR, Recovery, Activity score). This is the
+     long-standing "info bubble over headlines" row; 2.24 only stopped the flip into the card above.
+   - P1: Reading's slotted `Bars` chip still touches its focus ring and is clipped. #457 claimed this; check why the fix
+     does not show in a `basalt-ui shot` of argo (a state/hover crop question, or the fix missing the slot case).
+   - The activity-strip focus readout over its footer; ACWR drawing its date axis twice.
+     Then release, an argo Garmin + Reading re-score (Sonnet is enough for argo re-score waves), then Data tables.
+5. Decided 2026-10-18: warden + agent-gateway get an authored `question` field, recorded as a backlog item in each repo's
    `docs/BACKLOG.md` for a later structure-and-maturity pass by the owner; argo adds nothing until it ships.
-5. Owner decision queued: SPEC D37 (an errored/empty chart body keeps the loaded height per the SSR contract; the rubric
+6. Owner decision queued: SPEC D37 (an errored/empty chart body keeps the loaded height per the SSR contract; the rubric
    scores it as a void). Default until ruled: SPEC wins, the rubric is told about D37.
-6. Release cadence: release only when a consumer is waiting on the change. A patch that only re-shoots argo for nothing
-   waits for the next wave (2026-10-19: #442 held for Wave 39).
-7. After basalt Wave 39: release, argo bumps and re-scores. The exit gate is unchanged.
+7. Release cadence: release only when a consumer is waiting on the change. A patch that only makes argo re-shoot for
+   nothing waits for the next wave.
+8. Budget practice: basalt waves (component design) on Opus; argo bump/re-score waves on Sonnet. A narrow "friction" wave
+   (one fan-out, one round) costs a few % of the week; a full basalt wave ~10–15 h.
+9. Exit gate (phase 1) unchanged: every argo page passes at 1440/390 in both schemes, no Keel category ahead, the
+   fresh-agent expression trial (Wave 46 after renumbering) passes, the owner signs off. Then the owner decides whether to
+   pause before phase 2 (fresh mother, fleet rollout).
 
 ## Consumers and how to reach them
 
