@@ -56,13 +56,13 @@ worktrees are left. Resume after the reset with a fresh mother from this file.
    (`series-palette`, `raw-spacing`, `inline-spacing`, `card-inset` promoted to error, each after argo measured 0).
 2. basalt Waves 38 (friction III), 39 (friction IV, r2: S2 99 / S3 98 / S4 98 / components 99) and 40 (friction V, the
    fitness readout) are done. Wave 41 (friction VI) is done; Wave 42 "Data tables, responsive" is `active` but NOT spawned.
-3. argo Waves 38–43 done; argo is on 2.27.2. Latest verdicts: 13 of 14 pages pass (Home 97, WalkingPad 100, Reading 94,
-   Hermes 98, Calendar 97, Body comp 96, Usage 95, astro 94/94, m365 94/93, Warden 92, Agents 92, Strength 90 provisional).
-   Garmin 82 (up from 55) fails on ONE P1: ACWR draws its date axis twice. That is argo's own composition (the line chart
-   stacked over delta bars; the upper chart drops its axis with `xTicks={[]}`), handled in argo Wave 44.
-   argo's PLAN has no active wave after it; the mother authors each re-score wave before `rd wave` (the gate refuses otherwise).
+3. argo Waves 38–44 done; argo is on 2.27.2. **All 14 argo pages pass** the fresh reviewers (2026-10-19): Garmin 95 (w44,
+   after argo's own fix drew one date axis on the ACWR card), Home 97, WalkingPad 100, Reading 94, Hermes 98, Calendar 97,
+   Body comp 96, Usage 95, astro 94/94, m365 94/93, Warden 92, Agents 92, Strength 90 (provisional: its w42 reviewer read 4 of
+   13 sheets, so re-score it first if in doubt). Against Keel: close everywhere. argo's PLAN has no active wave; the mother
+   authors each re-score wave before `rd wave` (the gate refuses otherwise).
 4. basalt Wave 41 "argo friction VI" is done and released as 2.27.2 (#461/#463 info bubble below the header block, #462 slot
-   chip and one chart focus ring). **First on resume:** read argo Wave 44's verdict, then spawn basalt Wave 42 "Data tables"
+   chip and one chart focus ring). **First on resume:** spawn basalt Wave 42 "Data tables"
    (marked `active`). Next after it: Event list, Board and the record page, Forms, rollout to argo + rb, the expression trial.
 5. Decided 2026-10-18: warden + agent-gateway get an authored `question` field, recorded as a backlog item in each repo's
    `docs/BACKLOG.md` for a later structure-and-maturity pass by the owner; argo adds nothing until it ships.
