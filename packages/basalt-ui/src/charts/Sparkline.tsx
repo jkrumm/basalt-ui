@@ -425,15 +425,15 @@ function lineHits(
  * then its bottom, then to the right and to the left of the cursor at either edge, the first of
  * those the line misses. A plot too short for the chip (a 22px strip cell) has no such spot: the
  * chip then hangs from the plot's bottom edge, over the host's footer or card padding: a hover
- * covers the figure's secondary text before it covers the data or the figure's delta above. Offsets go on `margin-left` and `top`, which React's `left` / `translate` do
- * not own.
+ * covers the figure's secondary text before it covers the data or the figure's delta above.
+ * Offsets go on `margin-left` and `top`, which React's `left` / `translate` do not own.
  */
-function placeStacked(node: HTMLElement, line: readonly LinePoint[], fx: number): void {
+function placeStacked(node: HTMLElement, line: () => readonly LinePoint[], fx: number): void {
   const layer = node.parentElement
   if (!layer) return
   const [W, H, w, h] = [layer.clientWidth, layer.clientHeight, node.offsetWidth, node.offsetHeight]
   if (W <= 0 || H <= 0) return
-  const pts = line.map(([x, y]): [number, number] => [x * W, y * H])
+  const pts = line().map(([x, y]): [number, number] => [x * W, y * H])
   const slid = fx * (W - w)
   const room = (left: number): number => Math.min(Math.max(left, 0), Math.max(W - w, 0))
   const lefts = [slid, room(fx * W + CLEAR * 2), room(fx * W - CLEAR * 2 - w)]
@@ -455,7 +455,11 @@ function placeStacked(node: HTMLElement, line: readonly LinePoint[], fx: number)
  * (`data-stacked`: the date on its own line, placed off the plotted line when `line` is given). Set
  * on the node, so a measure never re-renders.
  */
-function fitReadout(node: HTMLElement, line: readonly LinePoint[] | null, fx: number): void {
+function fitReadout(
+  node: HTMLElement,
+  line: (() => readonly LinePoint[]) | null,
+  fx: number,
+): void {
   const overflows = (): boolean => node.scrollWidth > node.clientWidth
   node.removeAttribute('data-tight')
   node.removeAttribute('data-stacked')
@@ -582,28 +586,34 @@ export function Sparkline(props: SparklineProps): ReactElement {
   const beside = at === null ? null : at.fx > 0.5 ? 'left' : 'right'
   // The chip's fit depends on its text and (bare) its side, not on the pointer's every tick.
   const shown = at !== null
-  const fx = at?.fx ?? 0
+  // The cursor's fraction is read at fit time: it moves with `active`, which already refits.
+  const fxRef = useRef(0)
+  useLayoutEffect(() => {
+    fxRef.current = at?.fx ?? 0
+  })
   const fitRef = useRef<() => void>(() => {})
   useLayoutEffect(() => {
-    // A hosted line's stacked chip clears the plotted line; a bar or a bare chip keeps its place.
-    const line: LinePoint[] | null =
-      hosted && mark === 'line' && model !== null && shown
-        ? model.rows.flatMap((r, i): LinePoint[] =>
-            r.v === null
-              ? []
-              : [
-                  [
-                    (i - model.frame.x[0]) / (model.frame.x[1] - model.frame.x[0]),
-                    (model.frame.y[1] - r.v) / (model.frame.y[1] - model.frame.y[0]),
+    // A hosted line's stacked chip clears the plotted line, built only when the chip stacks; a bar
+    // or a bare chip keeps its place.
+    const line =
+      hosted && mark === 'line' && model !== null
+        ? (): LinePoint[] =>
+            model.rows.flatMap((r, i): LinePoint[] =>
+              r.v === null
+                ? []
+                : [
+                    [
+                      (i - model.frame.x[0]) / (model.frame.x[1] - model.frame.x[0]),
+                      (model.frame.y[1] - r.v) / (model.frame.y[1] - model.frame.y[0]),
+                    ],
                   ],
-                ],
-          )
+            )
         : null
     fitRef.current = () => {
-      if (readoutRef.current !== null) fitReadout(readoutRef.current, line, fx)
+      if (readoutRef.current !== null) fitReadout(readoutRef.current, line, fxRef.current)
     }
     fitRef.current()
-  }, [active, at?.label, at?.value, beside, hosted, mark, model, shown, fx])
+  }, [active, at?.label, at?.value, beside, hosted, mark, model])
   // ...and on the box, which a container resize changes without a hover.
   useEffect(() => {
     const layer = readoutRef.current?.parentElement

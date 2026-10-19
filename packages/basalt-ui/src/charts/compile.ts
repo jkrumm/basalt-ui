@@ -1058,9 +1058,8 @@ const barAnchor =
     return { x: Math.min(Math.max(stepped, plot.x), plot.x + plot.width), y: floor }
   }
 
-/** The card a tooltip stays inside: a `ChartCard`, a `StatCard`, a strip cell. */
-const TIP_CARD =
-  '[data-basalt-chart-card], .mantine-Card-root,.mantine-Paper-root, [data-strip-cell]'
+/** The card a tooltip stays inside: a `ChartCard`, a strip cell, a `StatCard` (a Mantine Card). Never a Paper: the nearest small inner one would clamp. */
+const TIP_CARD = '[data-basalt-chart-card], [data-strip-cell], .mantine-Card-root'
 /** Air between a card-clamped tooltip and the card's edge, px. */
 const TIP_CARD_AIR = 4
 

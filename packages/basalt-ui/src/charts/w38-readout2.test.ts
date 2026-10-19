@@ -16,8 +16,18 @@ describe('the Sparkline readout chip', () => {
     expect(css).not.toMatch(/letter-spacing|word-spacing/)
   })
 
-  test('the chip background is an opaque surface, not the translucent tooltip fill', () => {
-    const bg = rule('.readout').match(/background:\s*([^;]+);/)?.[1]
-    expect(bg).toBe('var(--vx-surface-elevated)')
+  test('the chip background layers the tooltip tint over the opaque elevated surface', () => {
+    const bg = rule('.readout').replaceAll(/\s+/g, ' ')
+    expect(bg).toContain('var(--basalt-tooltip-surface, var(--vx-tooltip-bg))')
+    expect(bg).toMatch(/\) var\(--vx-surface-elevated\);/)
+  })
+
+  test('the engine tooltip gets the same layering, through the one override', () => {
+    const tip = readFileSync(new URL('./chart-box.module.css', import.meta.url), 'utf8')
+    const rule2 = tip.match(/:global\(\.ts-chart-tooltip\)\s*\{([^}]*)\}/)?.[1] ?? ''
+    expect(rule2.replaceAll(/\s+/g, ' ')).toContain(
+      'var(--basalt-tooltip-surface, var(--vx-tooltip-bg))',
+    )
+    expect(rule2).toContain('var(--vx-surface-elevated) !important')
   })
 })

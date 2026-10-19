@@ -32,8 +32,12 @@
   white-space: nowrap;
   pointer-events: none;
   /* Opaque in both schemes: `--vx-tooltip-bg` is translucent in dark, and a footer under the chip
-   * would ghost through it. */
-  background: var(--vx-surface-elevated);
+   * would ghost through it, so the tint is layered over the elevated surface. */
+  background: linear-gradient(
+      var(--basalt-tooltip-surface, var(--vx-tooltip-bg)),
+      var(--basalt-tooltip-surface, var(--vx-tooltip-bg))
+    )
+    var(--vx-surface-elevated);
   border: 1px solid var(--vx-tooltip-border);
   border-radius: var(--vx-radius-ctrl);
 }
