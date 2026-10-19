@@ -180,7 +180,7 @@ describe('S3 states each figure once', () => {
     // W38 r1: the target's scale start (€0) leads; the period caption follows.
     // W38 r2: the day's caption is the share of the cap; the spend is the headline above it.
     expect(footer.map((w) => w.replaceAll('\u00a0', ' '))).toContain(
-      `${fmtShare(BUDGETS.day.spent / BUDGETS.day.cap)} used`,
+      `${fmtShare(BUDGETS.day.spent / BUDGETS.day.cap)} of today's cap`,
     )
     // W38 r4: the cap prints once (the Meter's target) and the headline carries the cents the share implies.
     expect(occurrences(text(anchor(c, 'strip-footer-day')), fmtEur(BUDGETS.day.cap))).toBe(1)

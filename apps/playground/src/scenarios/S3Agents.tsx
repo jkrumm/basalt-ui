@@ -258,7 +258,7 @@ function QueueStrip({ shotState }: ScenarioProps) {
     },
   ]
 
-  // Both footers state the cap as the Meter's one-line target caption. The day's caption is the share only: the Meter's target states the cap and the Dispatch spend headline (to the cent, so 54% agrees with it) states the spend.
+  // Both footers name the limit "cap" (as the Dispatch spend tooltip does) and state it once, as the Meter's end caption. The day's caption is the share only: the Meter's target states the cap and the Dispatch spend headline (to the cent, so 54% agrees with it) states the spend.
   const budget = (label: string, spent: number, cap: number, caption: string) => (
     <Meter
       label={label}
@@ -268,6 +268,7 @@ function QueueStrip({ shotState }: ScenarioProps) {
       loading={loading}
       startCaption={caption}
       target={cap}
+      endCaption={`Cap ${fmtEur(cap)}`}
     />
   )
 
@@ -280,7 +281,7 @@ function QueueStrip({ shotState }: ScenarioProps) {
             'Daily dispatch budget',
             BUDGETS.day.spent,
             BUDGETS.day.cap,
-            `${fmtShare(BUDGETS.day.spent / BUDGETS.day.cap)} used`,
+            `${fmtShare(BUDGETS.day.spent / BUDGETS.day.cap)} of today's cap`,
           ),
         ),
         footerEntry(
@@ -345,6 +346,7 @@ function QueueRow({ shotState }: ScenarioProps) {
       <Box data-shot="item-flow">
         <ChartCard
           title="Items opened and closed per day"
+          ghost="line"
           info="Items warden opened and items it closed each day, UTC. A queue that opens more than it closes grows."
           facts={[
             { value: fmtInt(FLOW_OPENED), unit: 'opened' },
