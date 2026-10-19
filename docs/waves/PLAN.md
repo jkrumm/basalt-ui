@@ -1548,7 +1548,7 @@ smoothed line where bars against the goal answer the question.
   the catalogue's zoned-bar row should name `short`, a loading skeleton instead of an accent spinner in sections, sibling
   section titles at two sizes, a cumulative-with-pace recipe for budgets; a state-copy recipe (argo now renders every
   empty/loading/error: the reference needs the "why + what to do" pattern per state); the table card-per-row fold at 390
-  (Wave 39's scope); the S4/components playground items (Budget tick figure via `caption`, fragment headlines, a table
+  (Wave 40's scope); the S4/components playground items (Budget tick figure via `caption`, fragment headlines, a table
   error title, a badge without a dot).
 - **Process notes:** a local `merge=union` attribute for `packages/basalt-ui/MIGRATING.md` (in `.git/info/attributes`,
   not committed) plus a one-heading normaliser made parallel package PRs rebase without conflicts; force-pushes to an
@@ -1614,7 +1614,7 @@ P2/P3 basalt rows below. Validators: argo (bumps after the release, deletes its 
   wiring regression (#434 passing facts in every state + #428's body-owned states), fixed by #443. Remaining, named: S2 goal and
   session-mix load as a bar ghost (P2 ×2, #444), the hit-rate loading legend row; the strip anatomy on S3 (P2) and S4 (P3) —
   visuals at different heights in one row; the fix is one cell anatomy with the visual on a shared baseline (cells already share
-  the row; D35/D40); the components table loading header at 390 (Wave 39).
+  the row; D35/D40); the components table loading header at 390 (Wave 40).
 - **SPEC:** D37 now covers errored and empty chart bodies, not lists; new D38–D47 (Meter captions, readouts in the reserved line,
   strip footers and qualifiers, radii on the scale, Section sizes, compact legends that keep series, list/Meter card states,
   page-summary figures, Bars in a slot, `shot` placeholders and radius detection). D37's owner decision is still open.
@@ -1726,7 +1726,7 @@ Spec: SPEC § 6.11, § 6.13, § 8, § 11. Scenario S6 (build it), then every sce
 - [ ] argo upgrades, runs the shipped loop on its own screens, retires the hand-rolls its rows name (143–151),
       deploys and gets a before/after board.
 - [ ] rb the same (rows 152–155); rb is never pushed by an agent, so its branch waits for the owner.
-- [ ] Friction and ugliness become ledger rows and are fixed upstream before Wave 43.
+- [ ] Friction and ugliness become ledger rows and are fixed upstream before Wave 45 (the rollout).
       **Left behind:**
 
 ## Wave 45 — Rollout, the expression trial and convergence <!-- status: pending -->
