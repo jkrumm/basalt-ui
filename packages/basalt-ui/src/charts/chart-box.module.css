@@ -126,17 +126,25 @@
  * The engine paints its tooltip rows as a grid of `.55rem | minmax(0, 1fr) | auto` with inline
  * styles and `overflow-wrap: anywhere` on the card, so a narrow tooltip (a 390 viewport, a pointer
  * near an edge) squeezes the name column to one character per line. The name keeps a floor and
- * never wraps; a long name ends in an ellipsis, the value stays right-aligned. The tooltip is
- * portalled out of the chart's tree, hence the global class names. `!important` because the
- * engine's own values are inline.
+ * wraps at word breaks when it must; the figure never wraps and never ends in an ellipsis, it stays
+ * right-aligned. The tooltip is portalled out of the chart's tree, hence the global class names.
+ * `!important` because the engine's own values are inline.
  */
 :global(.ts-chart-tooltip__row) {
-  grid-template-columns: 0.55rem minmax(6rem, max-content) auto !important;
+  grid-template-columns: 0.55rem minmax(6rem, 1fr) auto !important;
 }
 
 :global(.ts-chart-tooltip__row > span:nth-child(2)) {
-  max-width: 14rem;
-  overflow: hidden;
-  text-overflow: ellipsis;
+  overflow-wrap: break-word;
+  white-space: normal;
+}
+
+:global(.ts-chart-tooltip__row > span:nth-child(3)) {
   white-space: nowrap;
+}
+
+/* Opaque in both schemes: `--vx-tooltip-bg` is translucent in dark and the card's footer ghosts
+ * through a tooltip that opens over it (a slotted `Bars`). The engine's own value is inline. */
+:global(.ts-chart-tooltip) {
+  background: var(--vx-surface-elevated) !important;
 }

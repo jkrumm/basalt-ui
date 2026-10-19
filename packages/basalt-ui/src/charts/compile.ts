@@ -15,6 +15,7 @@ import { ruleX, ruleY } from '@tanstack/charts/rule'
 import { scaleLinear } from '@tanstack/charts/scales/linear'
 import { scaleUtc } from 'd3-scale'
 import { portal } from '@tanstack/charts/tooltip/portal'
+import type { ChartTooltipPortalExtension } from '@tanstack/charts/tooltip/portal'
 import type {
   ChartBuildContext,
   ChartTooltipAnchorContext,
@@ -1057,6 +1058,45 @@ const barAnchor =
     return { x: Math.min(Math.max(stepped, plot.x), plot.x + plot.width), y: floor }
   }
 
+/** The card a tooltip stays inside: a `ChartCard`, a `StatCard`, a strip cell. */
+const TIP_CARD =
+  '[data-basalt-chart-card], .mantine-Card-root,.mantine-Paper-root, [data-strip-cell]'
+/** Air between a card-clamped tooltip and the card's edge, px. */
+const TIP_CARD_AIR = 4
+
+/**
+ * The engine places a portalled tooltip against the viewport, so at the first or last point of a
+ * chart it opens past the card's edge, over the neighbouring card. Its placements (a hover, and its
+ * own resize / scroll repositions, which never pass through `position`) all write the element's
+ * inline `left`, so each write is followed by a slide back inside the card (the viewport placement
+ * stands when the card is narrower than the tooltip).
+ */
+const cardPortal: ChartTooltipPortalExtension = {
+  id: portal.id,
+  create(context, options) {
+    const inner = portal.create(context, options)
+    const { element, container } = context
+    const watch = new MutationObserver(() => clampToCard(element, container))
+    watch.observe(element, { attributes: true, attributeFilter: ['style'] })
+    return {
+      ...inner,
+      destroy() {
+        watch.disconnect()
+        inner.destroy()
+      },
+    }
+  },
+}
+
+function clampToCard(tip: HTMLElement, within: Element): void {
+  const card = within.closest(TIP_CARD)?.getBoundingClientRect()
+  const left = Number.parseFloat(tip.style.left)
+  const width = tip.offsetWidth
+  if (!card || Number.isNaN(left) || width + 2 * TIP_CARD_AIR > card.width) return
+  const next = Math.min(Math.max(left, card.left + TIP_CARD_AIR), card.right - width - TIP_CARD_AIR)
+  if (Math.abs(next - left) > 0.5) tip.style.left = `${next}px`
+}
+
 function tooltipSpec<T, X extends ChartX>(opts: {
   input: CartesianInput<T, X>
   axes: Axes<T>
@@ -1075,7 +1115,7 @@ function tooltipSpec<T, X extends ChartX>(opts: {
   return {
     use: quietWhileFollowing,
     ...followerOptions(input.tooltip, input.cursorGroup, input.chartId),
-    portal,
+    portal: cardPortal,
     anchor: input.tooltipBelow
       ? stripAnchor
       : visible.some((s) => s.mark === 'bar')
