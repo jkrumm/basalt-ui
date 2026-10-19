@@ -1041,10 +1041,24 @@ The `basalt-ui/router-tanstack` subpath is **removed** in 2.x, not moved: an imp
 | `NavItemMeta`, `NavGroupMeta`, `AnyNavItem`, `AnyNavGroup`, `AnyNavLink`, `FlatNavItem`, `NavConfig`, `NavGroupId`, `NavTabId`, `NavIndex`, `UseNavOptions`, `NavBinding`, `NavAnchor`, `NavAnchorProps`, `NavMobilePlacement` | deleted                                                                                                                                                                                                                                                                                                                                                                                                                                                    | no consumer names them; derive with `ComponentProps` / `Parameters` |
 | `useNav`, and `BasaltShell`'s `sections` / `mobileNav` props                                                                                                                                                                   | deleted: pass `nav={NAV}` (plus `badges`, `isActive`, `getScrollElement` — the old `useNav` options) to `BasaltShell`; it resolves the sidebar, the mobile bar and the breadcrumb itself. `mobileNav` tuning moves to `defineNav`'s `mobile`. argo `apps/dashboard/src/routes/__root.tsx`: replace `const nav = useNav(NAV, { badges })` + `{...nav}` with `nav={NAV} badges={…}` (migrates in W12; 1.x consumers stay on their pinned version until then) |
 
-## Unreleased
+## Unreleased — Wave 38, argo's friction III
 
-_Nothing yet. Author the next section under this heading as `## Unreleased — <title>`; the
-release renames it and opens a new one here._
+### Chart card loading (Wave 38)
+
+No export is removed or added. A pending `ChartCard` now loads in its loaded shape.
+
+| Surface                                         | Before                                      | Now                                                                              |
+| ----------------------------------------------- | ------------------------------------------- | -------------------------------------------------------------------------------- |
+| `ChartCard` with `facts`, `state={{ pending }}` | the facts row was dropped: 40–70 px shorter | a skeleton facts row (figure bar, basis line if `subtitle`) at the loaded height |
+| A pending chart body (`ChartPlaceholder`)       | a near-invisible blank shimmer plate        | a faint plot skeleton: an axis baseline and bar ghosts in a neutral tone         |
+
+The stale figure is never shown while pending. Error and empty keep their rule: no facts, and
+`placeholderHeight="content"` ends at the content. The plot skeleton is skipped for a `compact`
+placeholder (`Sparkline`).
+
+Opt out: pass `state` only once the data settles, or draw the loading yourself as the card's
+`children` with `placeholderHeight="content"` (the card then renders `children` while pending). The
+facts skeleton follows `facts`; omit `facts` while pending to drop it.
 
 ## 2.25.0
 

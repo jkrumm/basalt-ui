@@ -7,6 +7,7 @@ import { toErrorMessage } from '../common/errors'
 import { RetryButton } from '../common/retry-button'
 import { VX } from '../tokens'
 import { ChartBox, growClass, stateClass } from './box'
+import boxClasses from './chart-box.module.css'
 import type { ChartBoxHeight } from './box'
 import type { ChartState } from './types'
 
@@ -35,6 +36,20 @@ const pendingStyle: CSSProperties = {
   ...boxStyle,
   borderRadius: VX.radiusCtrl,
   background: `linear-gradient(90deg, transparent, ${VX.surface.subtle}, transparent)`,
+}
+
+/** Bar ghost heights (% of the plot) of a pending plot: a mild rise, not data. */
+const GHOST_BARS = [38, 52, 44, 66, 58, 74, 62, 48] as const
+
+/** The loaded shape of a plot, drawn in neutral tone (`chart-box.module.css` `.ghost`). */
+function PlotGhost(): ReactElement {
+  return (
+    <div aria-hidden="true" data-basalt-plot-ghost="" className={boxClasses.ghost}>
+      {GHOST_BARS.map((h, i) => (
+        <span key={i} className={boxClasses.ghostBar} style={{ height: `${h}%` }} />
+      ))}
+    </div>
+  )
 }
 
 // The error idiom (D28, SPEC § 6.12): a status dot + a word + the message + the action, on the
@@ -111,7 +126,9 @@ export function ChartPlaceholder(props: {
     )
   if (kind === 'pending')
     return fit(
-      <output aria-label="Loading chart" aria-busy="true" className={stateClass} style={style} />,
+      <output aria-label="Loading chart" aria-busy="true" className={stateClass} style={style}>
+        {!props.compact && <PlotGhost />}
+      </output>,
     )
   const label =
     kind === 'error'
