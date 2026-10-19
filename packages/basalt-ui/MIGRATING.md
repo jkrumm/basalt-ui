@@ -1041,7 +1041,7 @@ The `basalt-ui/router-tanstack` subpath is **removed** in 2.x, not moved: an imp
 | `NavItemMeta`, `NavGroupMeta`, `AnyNavItem`, `AnyNavGroup`, `AnyNavLink`, `FlatNavItem`, `NavConfig`, `NavGroupId`, `NavTabId`, `NavIndex`, `UseNavOptions`, `NavBinding`, `NavAnchor`, `NavAnchorProps`, `NavMobilePlacement` | deleted                                                                                                                                                                                                                                                                                                                                                                                                                                                    | no consumer names them; derive with `ComponentProps` / `Parameters` |
 | `useNav`, and `BasaltShell`'s `sections` / `mobileNav` props                                                                                                                                                                   | deleted: pass `nav={NAV}` (plus `badges`, `isActive`, `getScrollElement` — the old `useNav` options) to `BasaltShell`; it resolves the sidebar, the mobile bar and the breadcrumb itself. `mobileNav` tuning moves to `defineNav`'s `mobile`. argo `apps/dashboard/src/routes/__root.tsx`: replace `const nav = useNav(NAV, { badges })` + `{...nav}` with `nav={NAV} badges={…}` (migrates in W12; 1.x consumers stay on their pinned version until then) |
 
-## Unreleased — Wave 38, card facts
+## Unreleased — Wave 38 card facts, Wave 39 argo's friction IV
 
 ### Card facts and the pending ghost (Wave 38)
 
