@@ -77,7 +77,7 @@ worktrees are left. Resume after the reset with a fresh mother from this file.
 8. Budget practice: basalt waves (component design) on Opus; argo bump/re-score waves on Sonnet. A narrow "friction" wave
    (one fan-out, one round) costs a few % of the week; a full basalt wave ~10–15 h.
 9. Exit gate (phase 1) unchanged: every argo page passes at 1440/390 in both schemes, no Keel category ahead, the
-   fresh-agent expression trial (Wave 46 after renumbering) passes, the owner signs off. Then the owner decides whether to
+   fresh-agent expression trial (Wave 47 after renumbering) passes, the owner signs off. Then the owner decides whether to
    pause before phase 2 (fresh mother, fleet rollout).
 
 ## Consumers and how to reach them

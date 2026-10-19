@@ -1548,7 +1548,7 @@ smoothed line where bars against the goal answer the question.
   the catalogue's zoned-bar row should name `short`, a loading skeleton instead of an accent spinner in sections, sibling
   section titles at two sizes, a cumulative-with-pace recipe for budgets; a state-copy recipe (argo now renders every
   empty/loading/error: the reference needs the "why + what to do" pattern per state); the table card-per-row fold at 390
-  (Wave 41's scope); the S4/components playground items (Budget tick figure via `caption`, fragment headlines, a table
+  (Wave 42's scope); the S4/components playground items (Budget tick figure via `caption`, fragment headlines, a table
   error title, a badge without a dot).
 - **Process notes:** a local `merge=union` attribute for `packages/basalt-ui/MIGRATING.md` (in `.git/info/attributes`,
   not committed) plus a one-heading normaliser made parallel package PRs rebase without conflicts; force-pushes to an
@@ -1614,7 +1614,7 @@ P2/P3 basalt rows below. Validators: argo (bumps after the release, deletes its 
   wiring regression (#434 passing facts in every state + #428's body-owned states), fixed by #443. Remaining, named: S2 goal and
   session-mix load as a bar ghost (P2 ×2, #444), the hit-rate loading legend row; the strip anatomy on S3 (P2) and S4 (P3) —
   visuals at different heights in one row; the fix is one cell anatomy with the visual on a shared baseline (cells already share
-  the row; D35/D40); the components table loading header at 390 (Wave 41).
+  the row; D35/D40); the components table loading header at 390 (Wave 42).
 - **SPEC:** D37 now covers errored and empty chart bodies, not lists; new D38–D47 (Meter captions, readouts in the reserved line,
   strip footers and qualifiers, radii on the scale, Section sizes, compact legends that keep series, list/Meter card states,
   page-summary figures, Bars in a slot, `shot` placeholders and radius detection). D37's owner decision is still open.
@@ -1681,7 +1681,7 @@ workarounds) and S2/S3/S4 under the calibrated bar (`docs/waves/design-parity/w3
 - **Rounds** (`docs/waves/design-parity/w39/rounds.md`, boards `.design-parity/w39/r0`–`r2`): S2 100 → 99 → 99, S3 96 → 98 → 98,
   S4 98 → 97 → 98, components 96 → 96 → 99. No route passes the zero-item bar; no P0–P2 is left. Remaining P3s, named: pending
   ChartCard legend rows (hit-rate, spend-over-time, item-flow at 390), the failures zero-bin mark not visible in the hover crop,
-  the spend-over-time tooltip over the forecast/budget crossing, the table loading headers at 390 (Wave 41).
+  the spend-over-time tooltip over the forecast/budget crossing, the table loading headers at 390 (Wave 42).
 - **SPEC:** D38 and D43 amended; new D48 (strip anatomy; the level is a client pass, SSR is ragged until hydration), D49 (in-card
   tooltips, the slot chip), D50 (shot crops, the release poll).
 - **Budgets:** CLI lines at the 8457 ceiling exactly after #448 (no headroom for the next CLI change); no ceiling raised; no new
@@ -1722,7 +1722,21 @@ Validator: argo (bumps after the mother's release).
 - **Unreleased on master, for the mother:** #457, #458. argo bumps and re-scores Garmin at 390.
 - **Next — stopped: Wave 40 closed; orchestrated, nothing spawned.**
 
-## Wave 41 — Data tables, responsive <!-- status: active -->
+## Wave 41 — argo friction VI: info popovers and the slot chip <!-- status: active -->
+
+Source: argo `docs/design/UPSTREAM.md` § "Wave 42 bump" (argo on 2.27.1, Garmin fails on basalt rows only). Short wave: one
+fan-out, one review round under the calibrated bar (`docs/waves/design-parity/w37/setup.md`), close-out. Validator: argo (bumps
+after the mother's release).
+
+- [ ] **P1:** the info popover covers the card's headline facts (argo Garmin ACWR, Recovery, Activity score). Placement must never
+      sit over the card's own headline/facts. A layout test on argo's composition failing first.
+- [ ] **P1:** Reading's slotted `Bars` chip still touches its focus ring and is clipped in a `basalt-ui shot` of argo although #457
+      claimed it. Find why first (the slot case missed, or the shot crop/state), then fix the real cause.
+- [ ] **If cheap:** the activity-strip focus readout over its footer; ACWR drawing its date axis twice.
+- [ ] One review round under the calibrated bar; close-out. The mother releases.
+      **Left behind:**
+
+## Wave 42 — Data tables, responsive <!-- status: pending -->
 
 Spec: SPEC § 6.6, § 9.1. Scenarios S1 (outages) and S2 (sessions). Validators: argo, linewatch.
 
@@ -1737,7 +1751,7 @@ Spec: SPEC § 6.6, § 9.1. Scenarios S1 (outages) and S2 (sessions). Validators:
       column is reachable by keyboard. At least three rounds; owner sees the boards.
       **Left behind:**
 
-## Wave 42 — Event list <!-- status: pending -->
+## Wave 43 — Event list <!-- status: pending -->
 
 Spec: SPEC § 6.7, § 9.3, D11. Scenarios S5 (build the S5 fixture: the journal) and S3 (item timeline).
 Validators: argo (warden timeline, narratives), rb (journal, session history), linewatch (transitions).
@@ -1754,7 +1768,7 @@ Validators: argo (warden timeline, narratives), rb (journal, session history), l
 - [ ] At least three rounds on S5 and S3; owner sees the boards.
       **Left behind:**
 
-## Wave 43 — Board and the record page <!-- status: pending -->
+## Wave 44 — Board and the record page <!-- status: pending -->
 
 Spec: SPEC § 6.8, § 6.9, § 9.2, D3, D12. Scenarios S3 and S5. Validators: argo warden, rb knot detail,
 obsidian.
@@ -1771,7 +1785,7 @@ obsidian.
       summary sentence.
       **Left behind:**
 
-## Wave 44 — Forms, states and the guidance half <!-- status: pending -->
+## Wave 45 — Forms, states and the guidance half <!-- status: pending -->
 
 Spec: SPEC § 6.11, § 6.13, § 8, § 11. Scenario S6 (build it), then every scenario's state toggles.
 
@@ -1784,16 +1798,16 @@ Spec: SPEC § 6.11, § 6.13, § 8, § 11. Scenario S6 (build it), then every sce
       here or a recorded reason.
       **Left behind:**
 
-## Wave 45 — Release and rollout: argo and rb <!-- status: pending -->
+## Wave 46 — Release and rollout: argo and rb <!-- status: pending -->
 
 - [ ] Release through `make release` (the reason: the Part 3 patterns, rows 143–162).
 - [ ] argo upgrades, runs the shipped loop on its own screens, retires the hand-rolls its rows name (143–151),
       deploys and gets a before/after board.
 - [ ] rb the same (rows 152–155); rb is never pushed by an agent, so its branch waits for the owner.
-- [ ] Friction and ugliness become ledger rows and are fixed upstream before Wave 46 (the rollout).
+- [ ] Friction and ugliness become ledger rows and are fixed upstream before Wave 47 (the rollout).
       **Left behind:**
 
-## Wave 46 — Rollout, the expression trial and convergence <!-- status: pending -->
+## Wave 47 — Rollout, the expression trial and convergence <!-- status: pending -->
 
 - [ ] linewatch (rows 156–158) and obsidian (row 159) upgrade one at a time, each with a before/after board.
 - [ ] **Expression trial** (shaped like weatherorb's W45): a fresh agent in a scratch `init` app gets five
@@ -1802,7 +1816,7 @@ Spec: SPEC § 6.11, § 6.13, § 8, § 11. Scenario S6 (build it), then every sce
       the default is a guidance row.
 - [ ] Brief weatherorb's orchestrator (row 160). shutterflow is out of this track: the owner coordinates its UX re-establishment from the MacBook,
       including the deferred calendar heat grid (row 161, D10).
-- [ ] Re-run the full audit. If gaps remain, append Waves 47+ in the same shape. The track closes when a fresh
+- [ ] Re-run the full audit. If gaps remain, append Waves 48+ in the same shape. The track closes when a fresh
       scorer finds nothing worth improving against basalt's rubric.
       **Left behind:**
 
