@@ -231,8 +231,9 @@ function lineCount(row: HTMLElement, more: HTMLElement): number {
 /**
  * The compact legend names every series at every width. When the row wraps below 480px, the
  * zone / reference entries fold into a `+N` chip (named for assistive tech by the folded labels), the
- * last first, only while the row has more lines than the series alone would; a series never folds. The entries are in display order: series, then zones / references.
- * * Measured on the node, never in React state, so a hover or a resize does not re-render.
+ * last first, only while the row has more lines than the series alone would; a series never folds.
+ * The entries are in display order: series, then zones / references.
+ * Measured on the node, never in React state, so a hover or a resize does not re-render.
  */
 function foldLegend(row: HTMLElement): void {
   const items = [...row.querySelectorAll<HTMLElement>('[data-legend-key]')]
