@@ -41,11 +41,17 @@ type Measure = {
 }
 
 /** Opens the bubble of `[data-testid=id]` and measures it; `park` scrolls the card's header to the viewport bottom first. */
-async function measure(viewport: Viewport, id: string, park = false): Promise<Measure> {
+async function measure(
+  viewport: Viewport,
+  id: string,
+  park = false,
+  /** Text of the headline leaves (value, delta) of a host with no WidgetHeader. */
+  needles: readonly string[] = [],
+): Promise<Measure> {
   const p = await openFixture(spec, viewport, '/', 'reduce', 'fine')
   await p.settle()
   const m = await p.raw.evaluate(
-    async ({ id, park }) => {
+    async ({ id, park, needles }) => {
       const need = <T extends Element>(found: T | null, what: string): T => {
         if (found === null) throw new Error(`missing ${what} under ${id}`)
         return found
@@ -53,7 +59,8 @@ async function measure(viewport: Viewport, id: string, park = false): Promise<Me
       const root = need(document.querySelector(`[data-testid="${id}"]`), 'fixture root')
       const trigger = need(root.querySelector<HTMLElement>('[data-info-trigger]'), 'info trigger')
       if (park) {
-        // Glyph 250px above the viewport bottom: the facts rows end near the edge and the bubble needs more room than is left below them, so a slide-up lands on the header unless it is checked against the whole block.
+        // Glyph 250px above the viewport bottom: the bubble needs more room than is left below the
+        // facts rows, so a slide-up lands on the header unless checked against the whole block.
         const viewH = document.documentElement.clientHeight
         const scrollers = [
           document.scrollingElement,
@@ -64,24 +71,26 @@ async function measure(viewport: Viewport, id: string, park = false): Promise<Me
             el.scrollTop += trigger.getBoundingClientRect().top - (viewH - 250)
         }
       } else trigger.scrollIntoView({ block: 'center' })
-      trigger.focus({ preventScroll: true })
-      await new Promise((r) => requestAnimationFrame(() => requestAnimationFrame(r)))
       const rect = (el: Element): Rect => {
         const r = el.getBoundingClientRect()
         return { top: r.top, bottom: r.bottom, left: r.left, right: r.right }
       }
+      trigger.focus({ preventScroll: true })
+      await new Promise((r) => requestAnimationFrame(() => requestAnimationFrame(r)))
       const bubble = need(root.querySelector<HTMLElement>('[role="tooltip"]'), 'open bubble')
-      const card = need(
-        trigger.closest('[data-basalt-chart-card], [data-tier="section"]'),
-        'card or section',
-      )
-      const headRoot = need(trigger.closest('[data-tier]'), 'header root')
+      const card = trigger.closest('[data-basalt-chart-card], [data-tier="section"]') ?? root
+      const headRoot = trigger.closest('[data-tier]')
       const factsEl = root.querySelector(`[data-testid="${id}-facts"]`)
+      const leaves = [...root.querySelectorAll('*')].filter(
+        (el) => el.children.length === 0 && needles.some((n) => el.textContent?.includes(n)),
+      )
+      if (needles.length > 0 && leaves.length === 0) throw new Error(`no headline leaf in ${id}`)
       const parts = [
-        rect(trigger),
-        rect(headRoot),
-        ...(headRoot.parentElement?.querySelectorAll(':scope > [data-basalt-facts]') ?? []),
-      ].map((r) => (r instanceof Element ? rect(r) : r))
+        trigger,
+        ...(headRoot === null ? [] : [headRoot]),
+        ...(headRoot?.parentElement?.querySelectorAll(':scope > [data-basalt-facts]') ?? []),
+        ...leaves,
+      ].map(rect)
       return {
         bubble: rect(bubble),
         cardTop: rect(card).top,
@@ -95,7 +104,7 @@ async function measure(viewport: Viewport, id: string, park = false): Promise<Me
         viewW: document.documentElement.clientWidth,
       }
     },
-    { id, park },
+    { id, park, needles },
   )
   return m
 }
@@ -128,6 +137,20 @@ layout('info bubble inside a card', () => {
       // Placed from the section's own header: a handful of px below it, not below the inner facts.
       expect(m.bubble.top).toBeLessThan(m.header.bottom + 24)
       expect(m.bubble.top).toBeLessThan(m.facts?.bottom ?? 0)
+    })
+
+    test(`at ${viewport.width}px a StatCard's bubble clears its value and delta`, async () => {
+      const m = await measure(viewport, 'info-header-stat', false, ['12,847', '4.2'])
+      expect(m.bubble.top).toBeGreaterThanOrEqual(m.header.bottom)
+      expect(m.bubble.left).toBeGreaterThanOrEqual(0)
+      expect(m.bubble.right).toBeLessThanOrEqual(m.viewW)
+    })
+
+    test(`at ${viewport.width}px a strip cell's bubble clears its value and delta`, async () => {
+      const m = await measure(viewport, 'info-header-strip', false, ['12,847', '4.2'])
+      expect(m.bubble.top).toBeGreaterThanOrEqual(m.header.bottom)
+      expect(m.bubble.left).toBeGreaterThanOrEqual(0)
+      expect(m.bubble.right).toBeLessThanOrEqual(m.viewW)
     })
 
     test(`at ${viewport.width}px a header parked at the viewport bottom never has the bubble over it`, async () => {

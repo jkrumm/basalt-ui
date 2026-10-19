@@ -180,12 +180,16 @@ function cardOf(trigger: Element): Element | null {
 
 /**
  * The card's header block: the `WidgetHeader` root (title row, value, subtitle, sparkline) plus the
- * facts row `ChartCard` renders as its sibling. The bubble opens below THIS, not below the glyph, so
+ * facts row `ChartCard` renders as its sibling; a host with no `WidgetHeader` (`StatCard`, a strip cell)
+ * marks its own block with `data-basalt-header-block`. The bubble opens below THIS, not below the glyph, so
  * it covers the plot and never the headline figures it annotates. Only siblings of the root count —
  * a facts row deeper in the card's body belongs to the body, never to the header.
  */
 const FACTS = '[data-basalt-facts], [data-basalt-facts-skeleton]'
 function headerBlockOf(trigger: Element, card: Element): Element[] {
+  // `StatCard` and strip cells mark the element bounding their headline (caption row + value rows).
+  const marked = trigger.closest('[data-basalt-header-block]')
+  if (marked !== null) return card.contains(marked) ? [marked] : []
   const root = trigger.closest('[data-tier]')
   if (root === null || root === card || !card.contains(root)) return []
   const siblings = [...(root.parentElement?.children ?? [])]
