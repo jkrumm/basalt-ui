@@ -196,6 +196,7 @@ describe('list and Meter cards in empty and loading', () => {
   // W38 r4: the card takes the state too, so no loaded headline prints above an empty or pending body.
   const CARDS = [
     [TrainingScenario, 'training-load', fmtRatio(LOAD_RATIO)],
+    [TrainingScenario, 'goal', 'ahead of pace'],
     [TrainingScenario, 'readiness', `${READINESS_SCORE}of 100`],
     [TrainingScenario, 'top-lifts', 'of volume'],
     [AgentsScenario, 'stuck-items', `${STUCK.length}items`],

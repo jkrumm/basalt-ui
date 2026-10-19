@@ -292,6 +292,7 @@ function GoalRow({ shotState }: ScenarioProps) {
         <ChartCard
           style={FILL}
           title={`Goal hit rate, ${HIT_RANGE_LABEL}`}
+          ghost={6}
           facts={{
             value: `${MONTHS_HIT} of ${HIT_MONTHS}`,
             unit: 'months',
