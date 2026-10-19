@@ -1,3 +1,15 @@
+## [2.27.2](https://github.com/jkrumm/basalt-ui/compare/v2.27.1...v2.27.2) (2026-10-19)
+
+
+### Bug Fixes
+
+* clear the whole header block when the bubble slides ([11269b5](https://github.com/jkrumm/basalt-ui/commit/11269b5f896e89455d315726d6e11184ec1fc6fc))
+* keep the info bubble off StatCard and strip-cell headlines ([73f0670](https://github.com/jkrumm/basalt-ui/commit/73f0670fa69580a8b9341cf2ae54b29232329037))
+* measure the marked header block and exact headline text ([04546f2](https://github.com/jkrumm/basalt-ui/commit/04546f27caa7a7befe1d6801837f3ae0721fb66d))
+* one home for the chart ring, tidy the w41 chip test ([b9938a7](https://github.com/jkrumm/basalt-ui/commit/b9938a713f793ae575bda448a3c6797ec96d37ec))
+* open the info bubble below the card's header block ([a5d57cd](https://github.com/jkrumm/basalt-ui/commit/a5d57cd4c4416aa8e95512238560acaf9e659fd9))
+* slotted bars chip clears the plot's focus ring and swatch ([d456c08](https://github.com/jkrumm/basalt-ui/commit/d456c0856f7bb7d270f4263795f42f2fc768ae83))
+
 ## [2.27.1](https://github.com/jkrumm/basalt-ui/compare/v2.27.0...v2.27.1) (2026-10-19)
 
 
