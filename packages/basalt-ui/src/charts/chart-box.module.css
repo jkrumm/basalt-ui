@@ -171,21 +171,23 @@
  * A slotted `Bars` (`data-basalt-slot`, set by `compile.ts`) is a micro-visual: its tooltip is the
  * Sparkline's one-line chip, `<value> · <x label>` in the line the host reserves above the plot. The
  * first row's figure leads, the header follows it, further rows are hidden (a chart that needs rows
- * lives in a `ChartCard`); an overlong header ends in an ellipsis. Height, type and edge are the
- * chip's (`sparkline.module.css`); the tooltip is portalled out of the host, so its fallbacks stand.
+ * lives in a `ChartCard`); an overlong header ends in an ellipsis. Type and edge are the
+ * chip's (`sparkline.module.css`), its height that less the focus ring's clearance; the tooltip is portalled out of the host, so its fallbacks stand.
  */
 :global(.ts-chart-tooltip[data-basalt-slot]) {
   display: flex !important;
   align-items: center;
   box-sizing: border-box;
   width: max-content;
-  block-size: 1.125rem;
+  /* The line the cell reserves (1.125rem) less the focus ring's clearance (2px outline + 0.125rem offset), so
+   * the chip sits clear of the ring and still inside the reserve. */
+  block-size: calc(1.125rem - 0.25rem);
   padding: 0 4px !important;
   overflow: hidden;
   font-family: var(--basalt-font-numeral, var(--basalt-font-sans));
   font-variant-numeric: lining-nums;
   font-size: var(--vx-text-xs);
-  line-height: calc(1.125rem - 2px);
+  line-height: calc(1.125rem - 0.25rem - 2px);
   white-space: nowrap !important;
   border-radius: var(--vx-radius-ctrl) !important;
   /* theme-allow css-raw-surface — the chip is flat, like the Sparkline's, not a floating panel */

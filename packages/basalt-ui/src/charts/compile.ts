@@ -1030,7 +1030,7 @@ const STRIP_TOOLTIP_OFFSET = 8
 /**
  * A slotted `Bars` (`tooltipBelow` and `bare`): a micro-visual whose tooltip is the one-line chip
  * (`chart-box.module.css`, `data-basalt-slot`) in the line the cell reserves above the plot. It
- * anchors to the plot's top edge, flush, and opens upward, never below the plot and never over the
+ * anchors to the plot's top edge, clear of the focus ring, and opens upward, never below the plot and never over the
  * bars; the card clamp's vertical flip does not apply to it.
  */
 const slotAnchor = (
@@ -1041,6 +1041,8 @@ const slotAnchor = (
   return { x: (Math.min(...xs) + Math.max(...xs)) / 2, y: plot.y }
 }
 const SLOT_TOOLTIP_PLACEMENT = ['top'] as const
+/** The host's focus ring sits outside the plot: `.basalt-chart:focus-visible` is a 2px outline at a 0.125rem offset. */
+const SLOT_RING_CLEARANCE = 2 + 2
 
 /** A tooltip's chrome (title row, padding) and each series row, px: the guess the bar anchor reserves. */
 const TIP_CHROME = 30
@@ -1175,12 +1177,12 @@ export function settleInCard(
   const [w, h] = [tip.offsetWidth, tip.offsetHeight]
   const anchor = toClient(ctx.anchor)
   const gap = Math.max(0, Number.isFinite(ctx.offset) ? (ctx.offset ?? 10) : 10)
-  const minTop = card.top + TIP_CARD_AIR
   const maxTop = card.bottom - TIP_CARD_AIR - h
+  const minTop = card.top + TIP_CARD_AIR
   const side = tip.dataset['placement']
   if (slot) {
-    // Flush above the plot, in the reserved line: no flip, never pushed down over the bars.
-    top = Math.max(anchor.y - gap - h, card.top)
+    // Above the plot, in the reserved line, clear of the focus ring: no flip, never pushed down over the bars.
+    top = Math.max(anchor.y - gap - SLOT_RING_CLEARANCE - h, card.top)
     left = anchor.x - w / 2
   } else if (side === 'top' || side === 'bottom') {
     const above = anchor.y - gap - h
