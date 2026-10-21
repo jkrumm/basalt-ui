@@ -37,10 +37,12 @@ import {
   LOSS_7D_PCT,
   MEASURED_HOURS,
   MINUTE_LATENCY,
+  NOW_DATE,
   OUTAGES,
   UPTIME_PCT,
   WINDOW_LABEL,
   fmtDuration,
+  fmtFullStamp,
   fmtLoss,
   fmtMbit,
   latencyBand,
@@ -50,6 +52,7 @@ import {
   lineState,
 } from './ops-data'
 import type { HourRow, LatencyBin, Outage } from './ops-data'
+import { FixedClockTime } from './FixedClockTime'
 import { chartStateFor, noop, queryFor, retryCopy } from './shot-state'
 import type { ScenarioProps } from './shot-state'
 
@@ -119,13 +122,11 @@ const retry = (): string => retryCopy('probe')
 const columns = (() => {
   const col = createColumnHelper<Outage>()
   return [
-    // `relative-time` is the kind's mono column class: D33 sets times in mono. The cell stays an
-    // absolute UTC stamp: the question is WHEN to the minute (to match a provider ticket), "5 days
-    // ago" would blur it, and the live clock would disagree with this page's fixed reading time.
-    // End is dropped: Start plus Duration carries it.
     col.accessor('start', {
-      header: 'Start (UTC)',
-      cell: (c) => fmtStamp(c.getValue()),
+      header: 'Started',
+      cell: (c) => (
+        <FixedClockTime date={c.getValue()} now={NOW_DATE} full={fmtFullStamp(c.getValue())} />
+      ),
       meta: { kind: 'relative-time' },
     }),
     col.accessor('minutes', { header: 'Duration (min)', meta: { kind: 'number' } }),

@@ -10,17 +10,19 @@
  * draw their own loading and empty states (`shot-state` → `loading` / no reading); the card only
  * takes the error.
  */
-import { Box, Button, SimpleGrid, Skeleton, Stack, Text, Tooltip } from '@mantine/core'
-import { BarList, EmptyState, Meter, PageBar, Section, StatCard, StatGroup } from 'basalt-ui'
+import { Box, SimpleGrid, Skeleton, Stack, Text } from '@mantine/core'
+import { BarList, Meter, PageBar, Section, StatCard, StatGroup } from 'basalt-ui'
 import { Bars, ChartCard, Sparkline } from 'basalt-ui/charts'
 import type { BarsBar } from 'basalt-ui/charts'
 import { BasaltDataTable, createColumnHelper } from 'basalt-ui/table'
 import { CONTAINER_KEYS, VX } from 'basalt-ui/tokens'
 import type { CSSProperties } from 'react'
+import { tableEmptyState, useFilterReset } from '../demo/table-empty-state'
 import { ErrorNote } from '../demo/fixtures/error-note'
 import classes from './training-kpis.module.css'
 import { demoColors } from '../demo/series'
 import { fmtInt, fmtKg, fmtKm, fmtRatio, fmtShare } from './fixture-utils'
+import { FixedClockTime } from './FixedClockTime'
 import { cardStateProps, chartStateFor, noop, queryFor, retryCopy } from './shot-state'
 import type { ScenarioProps } from './shot-state'
 import {
@@ -465,15 +467,6 @@ const EXERCISE_OPTIONS = EXERCISES.map((value) => ({ value, label: value }))
 const SESSION_ROWS = [...SESSION_LOG]
 const NO_SESSIONS: SessionLogRow[] = []
 
-const DAY_MS = 86_400_000
-
-/** Relative to the page's reading date, not the live clock, so the label never drifts under a shot. */
-const daysAgoLabel = (date: Date): string => {
-  const days = Math.round((READING_DATE.getTime() - date.getTime()) / DAY_MS)
-  if (days <= 0) return 'today'
-  if (days === 1) return 'yesterday'
-  return days < 14 ? `${days} days ago` : `${Math.round(days / 7)} weeks ago`
-}
 const fullDate = (date: Date): string =>
   date.toLocaleDateString('en-GB', {
     weekday: 'short',
@@ -492,11 +485,7 @@ const sessionColumns = (() => {
     col.accessor('date', {
       header: 'Date',
       cell: (c) => (
-        <Tooltip label={fullDate(c.getValue())}>
-          <time dateTime={c.getValue().toISOString()} data-shot-tooltip>
-            {daysAgoLabel(c.getValue())}
-          </time>
-        </Tooltip>
+        <FixedClockTime date={c.getValue()} now={READING_DATE} full={fullDate(c.getValue())} />
       ),
       meta: { kind: 'relative-time', priority: 2 },
     }),
@@ -520,10 +509,12 @@ const sessionColumns = (() => {
 
 function TrainingSessions({ shotState }: ScenarioProps) {
   const query = queryFor(shotState, retry())
+  const reset = useFilterReset([], shotState === undefined)
   return (
     <Box data-shot="session-log" h="100%">
       <Section title={`Lift log, ${WINDOW_LABEL}`}>
         <BasaltDataTable
+          key={reset.tableKey}
           // Rows only at rest: the empty branch needs `data` empty, the others have no rows yet.
           data={shotState === undefined ? SESSION_ROWS : NO_SESSIONS}
           columns={sessionColumns}
@@ -532,14 +523,15 @@ function TrainingSessions({ shotState }: ScenarioProps) {
           facets={[{ columnId: 'exercise', label: 'Exercise', options: EXERCISE_OPTIONS }]}
           initialSorting={[{ id: 'date', desc: true }]}
           {...(query !== undefined && { query })}
-          emptyState={
-            <EmptyState
-              tier="section"
-              title="No lift logged yet"
-              description="Log a lift to start the log."
-              action={<Button onClick={noop}>Log a lift</Button>}
-            />
-          }
+          onGlobalFilterChange={reset.onGlobalFilterChange}
+          onColumnFiltersChange={reset.onColumnFiltersChange}
+          emptyState={tableEmptyState({
+            noun: 'lifts',
+            total: SESSION_ROWS.length,
+            cause: `No lift logged ${WINDOW_LABEL}. Lifts appear here once logged.`,
+            filtered: reset.filtered,
+            onClear: reset.clear,
+          })}
         />
       </Section>
     </Box>
