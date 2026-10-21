@@ -1043,8 +1043,41 @@ The `basalt-ui/router-tanstack` subpath is **removed** in 2.x, not moved: an imp
 
 ## Unreleased
 
-_Nothing yet. Author the next section under this heading as `## Unreleased — <title>`; the
-release renames it and opens a new one here._
+### Data tables (Wave 42)
+
+Nothing to change unless a test or a style depends on the old look. Each line names its opt-out.
+
+- **Cell kinds.** `BasaltColumnMeta` gains `kind` (`entity` | `status` | `number` | `money` | `relative-time` |
+  `meter` | `text`), plus `statusColor(value)`, `meterMax` and `currency`. A kind supplies the cell's chrome, and its
+  content when the column has no `cell`. Unset `kind` keeps the plain cell. Units belong in the header
+  (`Volume (kg)`, `Salary (USD / yr)`), never in the cell: `money` without a `cell` prints the bare figure
+  (`120,000.00`, was `$120,000.00`).
+- **Figures are sans.** The automatic numeral style moves from mono to the proportional sans with `tabular-nums`
+  (SPEC D33). Opt out per column with `meta.numeral: false`.
+- **One line per row.** Body cells no longer wrap; only `meta.kind: 'text'` does. A column that relied on wrapping
+  sets `kind: 'text'`. Headers never wrap.
+- **Header and widths.** The header shares the body fill; a sorted column's header is ink, the rest faint. In a table
+  with any `meta.kind`, data columns (`entity` included) size to their content and a wide container's slack goes to
+  the last `kind: 'text'` column, else to an `aria-hidden` trailing spacer cell. A table with no `kind` is
+  unchanged. Mark a notes/detail column `kind: 'text'` to have it take the width.
+- **Compact (< 480 px container).** The `meta.priority` fold now stops at two data columns (was one). A table that
+  still overflows pins its first visible data column (`columnDef.minSize` is its floor, default 120 px) and scrolls
+  the rest in a focusable `region` (style it with `:focus-visible`). A caller's `initialColumnPinning.start` turns
+  the auto-pin off. The table carries `aria-colcount` and every cell `aria-colindex`. The fold toggle is named
+  `Show <folded headers>` / `Hide …` (was `Show row details`), and its header cell shows `+N`.
+- **States.** The error title is the house `Could not load` (was `Could not load rows`); the count chip and the
+  pager range are hidden while loading or failed; an empty paginated table drops its pager; empty and error keep
+  the column header, and an empty state's title is never larger than the table's title.
+- **Hover.** `highlightOnHover` defaults to `true` (`VX.surface.rowHover`); pass `highlightOnHover={false}` to opt
+  out.
+- **Toolbar.** One row at the dense 28 tier from a 240 px container up; on a narrow table the facets move behind one
+  `Filters (n)` pill. The footer's rows-per-page `Select` and pager are 28 px on a fine pointer. New prop
+  `initialColumnFilters` presets the facets.
+- **Filter pills.** A set pill reads `Label  Value`, the label muted and the value ink, and its accessible name and
+  `title` change with it (`EUR` → `Currency EUR`): a query for `{ name: 'EUR' }` becomes `{ name: 'Currency EUR' }`
+  or `/EUR$/`. `MultiSelectFilter` with no `noun` reads `Channels  3 selected` (was `3 channels`; pass `noun` to
+  keep a word). `RangeFilter` off its default reads `Window  7d`. An active pill's border and `Pagination`'s current
+  page are ink, not the accent; an explicit `color=` on `Pagination` keeps the accent.
 
 ## 2.27.2
 
