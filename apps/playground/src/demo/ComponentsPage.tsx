@@ -44,7 +44,7 @@ import { CONTAINER_KEYS } from 'basalt-ui/tokens'
 import { DeltaBadge, EmptyState, PageBar, SettingsSection } from 'basalt-ui'
 import { ViewTabs } from 'basalt-ui/controls'
 import { BasaltDataTable, createColumnHelper } from 'basalt-ui/table'
-import { noop } from '../scenarios/shot-state'
+import { queryFor, retryCopy } from '../scenarios/shot-state'
 import type { ShotState } from '../scenarios/shot-state'
 import { createLocalStore, field } from 'basalt-ui/state'
 import type { ReactNode } from 'react'
@@ -153,11 +153,14 @@ const METRIC_COLUMNS = [
   metric.accessor('name', { header: 'Metric', meta: { kind: 'entity' } }),
   metric.accessor('value', {
     header: 'Last 30 d',
+    // Pre-formatted figures with mixed units: a lexical sort would be wrong, so there is none.
+    enableSorting: false,
     cell: (info) => info.getValue(),
     meta: { kind: 'number' },
   }),
   metric.accessor('prior', {
     header: 'Prior 30 d',
+    enableSorting: false,
     cell: (info) => info.getValue(),
     meta: { kind: 'number' },
   }),
@@ -174,25 +177,16 @@ const METRIC_COLUMNS = [
   }),
 ]
 
-/** The failed load `basalt-ui shot` reaches through `?shot-state=error`: the table keeps its header. */
-const FAILED_QUERY = {
-  data: undefined,
-  isError: true,
-  error: new Error('The analytics service did not answer. Retry, or reconnect it in Settings.'),
-  fetchStatus: 'idle',
-  refetch: noop,
-} as const
-
 /** The metrics table at rest, and the three states `basalt-ui shot` reaches through `?shot-state=`. */
 function MetricsTable({ shotState }: { shotState?: ShotState | undefined }) {
+  const query = queryFor(shotState, retryCopy('analytics service'))
   return (
     <BasaltDataTable
-      data={shotState === 'empty' || shotState === 'error' ? [] : TABLE_ROWS.slice()}
+      data={shotState === undefined ? TABLE_ROWS.slice() : []}
       columns={METRIC_COLUMNS}
       striped
-      isLoading={shotState === 'loading'}
       skeletonRows={TABLE_ROWS.length}
-      {...(shotState === 'error' && { query: FAILED_QUERY })}
+      {...(query !== undefined && { query })}
       emptyState={
         <EmptyState
           icon={<IconSearch />}
