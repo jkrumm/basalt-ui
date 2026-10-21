@@ -267,13 +267,13 @@ describe('components page', () => {
     expect(table).not.toBeNull()
     const rows = [...(table?.querySelectorAll('tbody tr') ?? [])]
     for (const row of rows) {
-      const cells = [...row.querySelectorAll('td')]
+      const cells = [...row.querySelectorAll('td:not([aria-hidden])')]
       expect(text(cells[3] as Element)).toMatch(/[▲▼]/)
       for (const cell of cells.slice(1)) {
         expect((cell as HTMLElement).style.textAlign).toBe('right')
       }
     }
-    for (const th of [...(table?.querySelectorAll('th') ?? [])].slice(1)) {
+    for (const th of [...(table?.querySelectorAll('th:not([aria-hidden])') ?? [])].slice(1)) {
       expect((th as HTMLElement).style.textAlign).toBe('right')
     }
   })
