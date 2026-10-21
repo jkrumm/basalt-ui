@@ -4,13 +4,13 @@
  * calls three seams from its header and cell render sites: {@link resolveKind} (validate),
  * {@link kindClass} / {@link kindAlign} (chrome) and {@link KindCell} (content).
  */
-import { Badge, Tooltip } from '@mantine/core'
+import { Badge, Skeleton, Tooltip } from '@mantine/core'
 import type { Cell, Column, RowData } from '@tanstack/react-table'
 import { FlexRender } from '@tanstack/react-table'
 import type { ReactNode } from 'react'
 import { cx } from '../common/props'
 import { Meter } from '../dashboard/meter'
-import { dateTime, integer, money, relativeTime } from '../format'
+import { dateTime, integer, relativeTime } from '../format'
 import { numberFormat } from '../format/shared'
 import { DATA_TABLE_COLUMN_KINDS } from './table-features'
 import type { BasaltTableFeatures, DataTableAlign, DataTableColumnKind } from './table-features'
@@ -47,6 +47,72 @@ export function kindAlign(kind: DataTableColumnKind | undefined): DataTableAlign
   return kind === 'number' || kind === 'money' ? 'right' : undefined
 }
 
+/** Kinds whose column sizes to its content; `text` and kindless columns keep the browser's auto share. */
+const FIT_KINDS: ReadonlySet<DataTableColumnKind> = new Set([
+  'entity',
+  'status',
+  'number',
+  'money',
+  'relative-time',
+  'meter',
+])
+
+/**
+ * Column sizing law (SPEC § 6.6): a kinded data column is as wide as its header or widest cell, and
+ * the slack of a wide container goes to ONE column — the first `entity`/`text` one, else a trailing
+ * spacer — so a value sits beside its name instead of a third of the table away. `fixedIds` (the
+ * checkbox and actions columns) fit their content too but are not data. A kindless or later `text`
+ * column keeps its auto share, so a table that uses them is no worse off than before.
+ */
+export function planColumnSizing<T extends RowData>(
+  columns: readonly Column<BasaltTableFeatures, T, unknown>[],
+  fixedIds: ReadonlySet<string>,
+): { fitIds: ReadonlySet<string>; spacer: boolean } {
+  const fitIds = new Set<string>()
+  let hasSlack = false
+  let hasData = false
+  for (const column of columns) {
+    if (fixedIds.has(column.id)) {
+      fitIds.add(column.id)
+      continue
+    }
+    hasData = true
+    const kind = resolveKind(column)
+    if (kind === undefined) {
+      hasSlack = true
+    } else if (!hasSlack && (kind === 'entity' || kind === 'text')) {
+      hasSlack = true
+    } else if (FIT_KINDS.has(kind)) {
+      fitIds.add(column.id)
+    } else {
+      hasSlack = true
+    }
+  }
+  return { fitIds, spacer: hasData && !hasSlack }
+}
+
+/** A loading bar shaped like the kind's value: a figure short and flush right, a chip chip-sized. */
+export function KindSkeleton({
+  kind,
+  right,
+}: {
+  kind: DataTableColumnKind | undefined
+  right: boolean
+}): ReactNode {
+  const chip = kind === 'status'
+  const width =
+    kind === 'number' || kind === 'money'
+      ? '3rem'
+      : chip || kind === 'relative-time'
+        ? '4.5rem'
+        : kind === 'meter'
+          ? '4rem'
+          : kind === 'entity'
+            ? '70%'
+            : '100%'
+  return <Skeleton height={chip ? 20 : 16} radius="sm" w={width} {...(right && { ml: 'auto' })} />
+}
+
 const KIND_CLASS: Record<DataTableColumnKind, string> = {
   entity: classes.entity,
   status: classes.status,
@@ -66,6 +132,20 @@ function formatFigure(value: number): string {
   return Number.isInteger(value)
     ? integer(value)
     : numberFormat(undefined, { signDisplay: 'negative', maximumFractionDigits: 20 }).format(value)
+}
+
+/**
+ * A `money` figure: grouped, with the currency's own minor digits (`120,000.00` USD, `120,000` JPY)
+ * and no symbol — the header names the code (`Salary (USD / yr)`, SPEC § 6.6).
+ */
+function formatMoney(value: number, currency: string): string {
+  const digits = numberFormat(undefined, { style: 'currency', currency }).resolvedOptions()
+    .maximumFractionDigits
+  return numberFormat(undefined, {
+    signDisplay: 'negative',
+    minimumFractionDigits: digits,
+    maximumFractionDigits: digits,
+  }).format(value)
 }
 
 /** The theme draws no dot for plain `gray`, but every chip in a status column carries one. */
@@ -120,9 +200,7 @@ export function KindCell<T extends RowData>({
     case 'number':
     case 'money': {
       if (typeof value !== 'number' || !Number.isFinite(value)) return <Dash />
-      return kind === 'money'
-        ? money(value, { currency: meta?.currency ?? 'USD' })
-        : formatFigure(value)
+      return kind === 'money' ? formatMoney(value, meta?.currency ?? 'USD') : formatFigure(value)
     }
     case 'relative-time':
       return <RelativeTime value={value} />

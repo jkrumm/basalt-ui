@@ -759,12 +759,16 @@ exports[`createBasaltTheme() shape and resolver output default 1`] = `
       "vars": {
         "fn": 
 "(theme, props) => ({
-          root: { "--pagination-active-color": onColorFor(theme, props) }
+          root: { "--pagination-active-color": props.color && onColorFor(theme, props) }
         })"
 ,
         "outputs": [
           {
             "probes": 772,
+            "result": "{"root":{}}",
+          },
+          {
+            "probes": 384,
             "result": "{"root":{"--pagination-active-color":"var(--vx-on-blue)"}}",
           },
           {
@@ -778,10 +782,6 @@ exports[`createBasaltTheme() shape and resolver output default 1`] = `
           {
             "probes": 384,
             "result": "{"root":{"--pagination-active-color":"var(--vx-on-dark)"}}",
-          },
-          {
-            "probes": 384,
-            "result": "{"root":{}}",
           },
         ],
       },
@@ -2091,12 +2091,16 @@ exports[`createBasaltTheme() shape and resolver output all knobs 1`] = `
       "vars": {
         "fn": 
 "(theme, props) => ({
-          root: { "--pagination-active-color": onColorFor(theme, props) }
+          root: { "--pagination-active-color": props.color && onColorFor(theme, props) }
         })"
 ,
         "outputs": [
           {
             "probes": 772,
+            "result": "{"root":{}}",
+          },
+          {
+            "probes": 384,
             "result": "{"root":{"--pagination-active-color":"var(--vx-on-blue)"}}",
           },
           {
@@ -2110,10 +2114,6 @@ exports[`createBasaltTheme() shape and resolver output all knobs 1`] = `
           {
             "probes": 384,
             "result": "{"root":{"--pagination-active-color":"var(--vx-on-dark)"}}",
-          },
-          {
-            "probes": 384,
-            "result": "{"root":{}}",
           },
         ],
       },

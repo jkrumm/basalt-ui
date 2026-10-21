@@ -406,7 +406,7 @@ describe('MultiSelectFilter', () => {
       entry: '/dashboard?channels=web&channels=email&channels=social',
       Page: () => <MultiSelectFilter field={store.field.channels} label="All channels" />,
     })
-    // One predicate: not filtering means muted AND no accent border — never one without the other.
+    // One predicate: not filtering means muted AND no ink border — never one without the other.
     const pill = screen.getByRole('button', { name: 'All channels' })
     expect(pill.hasAttribute('data-active')).toBe(false)
     expect(pill.querySelector('[data-pill-part="value"]')).toBeNull()

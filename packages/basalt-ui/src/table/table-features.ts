@@ -78,8 +78,8 @@ export type BasaltColumnMeta = {
    * - `entity`: never wraps, ink, weight 500; the column's `cell` (glyph + name) or the raw value.
    * - `status`: the status chip; colour from `statusColor`, default `gray`. Never wraps.
    * - `number` / `money`: proportional tabular numerals (SPEC D33, not mono), right-aligned (an explicit `align` wins). Without a
-   *   `cell` the raw number is formatted (`integer`; `money` in `currency`), null as a muted dash.
-   *   The UNIT belongs in the header (`Volume (kg)`), never in the cell.
+   *   `cell` the raw number is formatted (`integer`; `money` grouped to `currency`'s minor digits, no symbol), null as a muted dash.
+   *   The UNIT belongs in the header (`Volume (kg)`, `Salary (USD / yr)`), never in the cell.
    * - `relative-time`: mono, muted; a raw `Date | number | string` renders as `3 hours ago` in a
    *   `<time>`, the full date in a tooltip and as its accessible name.
    * - `meter`: the inline `Meter` bar for the value against `meterMax`.
@@ -90,7 +90,7 @@ export type BasaltColumnMeta = {
   statusColor?(value: unknown): string
   /** `meter`: the value that fills the bar. Default 1 (a ratio). */
   meterMax?: number
-  /** `money` without a `cell`: the ISO 4217 code. Default `USD`. */
+  /** `money` without a `cell`: the ISO 4217 code that sets the minor digits (the header names it). Default `USD`. */
   currency?: string
 }
 

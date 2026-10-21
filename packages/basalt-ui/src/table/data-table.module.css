@@ -339,3 +339,18 @@ td.pinnedFluid {
   text-overflow: ellipsis;
   white-space: nowrap;
 }
+
+/*
+ * Column sizing (SPEC § 6.6): `data-fit` columns take their content width — `1px` plus a no-wrap
+ * cell is "as narrow as the content allows" in the auto table layout — and the one slack column (or
+ * the trailing spacer) takes everything else, so a value sits next to its name at any width. The
+ * fold reads these natural `<th>` widths; the pinned identifier keeps its own cap.
+ */
+.table [data-fit] {
+  width: 1px;
+  white-space: nowrap;
+}
+
+.spacer {
+  padding: 0;
+}
