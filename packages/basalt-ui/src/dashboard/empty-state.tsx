@@ -96,7 +96,8 @@ export function EmptyState({
         style={{
           fontFamily: 'var(--basalt-font-head)',
           fontStretch: '88%',
-          fontSize: VX.text.xl,
+          // Internal seam: a host (the data table) sets the var to cap the title at its own tier.
+          fontSize: `var(--basalt-state-title-size, ${VX.text.xl})`,
           fontWeight: 550,
           color: VX.ink,
         }}

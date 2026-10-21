@@ -1,5 +1,6 @@
 import { Box, Card } from '@mantine/core'
 import type { ReactElement } from 'react'
+import { EmptyState } from '../../../src/dashboard/empty-state'
 import { BasaltDataTable, createColumnHelper } from '../../../src/table'
 
 type Row = { name: string; start: string; duration: number; state: string }
@@ -32,10 +33,12 @@ const LONG_ERROR_QUERY = {
 /** Wave 42 sizing and state chrome: a 4-column kinded table spanning its container, with an active facet pill and a pager (`w42-states`). */
 export function W42StatesFixture({
   loading,
+  empty,
   pinned,
   longError,
 }: {
   loading?: true
+  empty?: true
   pinned?: true | 'striped-page'
   longError?: true
 }): ReactElement {
@@ -47,6 +50,16 @@ export function W42StatesFixture({
         data={loading === true ? [] : ROWS}
         columns={COLUMNS}
         isLoading={loading === true}
+        {...(empty === true && {
+          data: [],
+          emptyState: (
+            <EmptyState
+              title="No outages listed"
+              description="Nothing was returned."
+              tier="section"
+            />
+          ),
+        })}
         {...(longError === true && { data: [], query: LONG_ERROR_QUERY })}
         {...(pinned === true && {
           stickyHeader: true,

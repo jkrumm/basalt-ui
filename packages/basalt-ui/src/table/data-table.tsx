@@ -1701,10 +1701,22 @@ export function BasaltDataTable<T extends RowData>(props: BasaltDataTableProps<T
       onRetry={() => void queryError.refetch()}
     />
   )
-  const emptyNode = emptyState ?? (
-    <Text c="dimmed" ta="center" size="sm" py="sm">
-      No data to display.
-    </Text>
+  // An empty body never out-sizes the table's own title (SPEC § 6.11): `EmptyState` reads this var
+  // for its title, so it takes the title's tier, or `sm` when the table has none.
+  const emptyNode = (
+    <Box
+      style={
+        {
+          '--basalt-state-title-size': title !== undefined ? VX.text.md : VX.text.sm,
+        } as CSSProperties
+      }
+    >
+      {emptyState ?? (
+        <Text c="dimmed" ta="center" size="sm" py="sm">
+          No data to display.
+        </Text>
+      )}
+    </Box>
   )
 
   // The cells in render order (start → center → end) with only the visible ones — the skeleton rows
