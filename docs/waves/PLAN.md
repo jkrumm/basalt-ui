@@ -1817,7 +1817,8 @@ Spec: SPEC § 6.6, § 9.1. Scenarios S1 (outages) and S2 (sessions). Validators:
 ## Wave 43 — argo upstream rows <!-- status: active -->
 
 Source: argo `docs/design/UPSTREAM.md` § "Strength review" and § Wave 50–53 (argo on 2.27.2). P1 rows first; each row
-gets a failing-first test on argo's composition, and argo is the validator (it bumps after the mother's release).
+gets a failing-first test on argo's composition. **argo is paused (owner, 2026-10-22: a major overhaul is coming)**, so
+the validator is the playground plus `basalt-ui shot` with two fresh reviewers; argo picks the rows up on its next bump.
 
 - [ ] **P1:** `Meter` with the reading at the track start (`readingAt="start"`, or `'fill'` too short to hold it): the
       start caption's descender is clipped at 390 (`low 72.3 kg` reads `kq`) and the end caption wraps to a second line
@@ -1888,23 +1889,25 @@ Spec: SPEC § 6.11, § 6.13, § 8, § 11. Scenario S6 (build it), then every sce
       here or a recorded reason.
       **Left behind:**
 
-## Wave 47 — Release and rollout: argo and rb <!-- status: pending -->
+## Wave 47 — Release and rollout: rb, linewatch, rollhook, obsidian <!-- status: pending -->
 
-- [ ] Release through `make release` (the reason: the Part 3 patterns, rows 143–162).
-- [ ] argo upgrades, runs the shipped loop on its own screens, retires the hand-rolls its rows name (143–151),
-      deploys and gets a before/after board.
-- [ ] rb the same (rows 152–155); rb is never pushed by an agent, so its branch waits for the owner.
+argo is out of this rollout (owner pause, 2026-10-22); it bumps during its own overhaul. weatherorb is coordinated by the
+owner from weatherorb; shutterflow stays excluded.
+
+- [ ] Release through `make release` (the reason: the Part 3 patterns, rows 143–162, and Wave 43's upstream rows).
+- [ ] Bump waves, one repo at a time, on Sonnet: version bump, fix what the guards promoted to error raise, one shot
+      per page and a before/after board. rb (rows 152–155; never pushed by an agent, its branch waits for the owner),
+      linewatch (rows 156–158), rollhook, obsidian (row 159).
 - [ ] Friction and ugliness become ledger rows and are fixed upstream before Wave 48 (the rollout).
       **Left behind:**
 
 ## Wave 48 — Rollout, the expression trial and convergence <!-- status: pending -->
 
-- [ ] linewatch (rows 156–158) and obsidian (row 159) upgrade one at a time, each with a before/after board.
 - [ ] **Expression trial** (shaped like weatherorb's W45): a fresh agent in a scratch `init` app gets five
       datasets (one per catalogue shape: trend, target, parts, ranking, events) and no component names. Did it
       find and follow the shipped procedure, and which encodings did it pick? Score the boards. A fallback to
       the default is a guidance row.
-- [ ] Brief weatherorb's orchestrator (row 160). shutterflow is out of this track: the owner coordinates its UX re-establishment from the MacBook,
+- [ ] weatherorb (row 160) is the owner's, from weatherorb itself; no brief from here. shutterflow is out of this track: the owner coordinates its UX re-establishment from the MacBook,
       including the deferred calendar heat grid (row 161, D10).
 - [ ] Re-run the full audit. If gaps remain, append Waves 49+ in the same shape. The track closes when a fresh
       scorer finds nothing worth improving against basalt's rubric.
