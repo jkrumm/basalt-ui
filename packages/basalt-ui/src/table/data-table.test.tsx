@@ -71,6 +71,7 @@ describe('planColumnFold', () => {
       // A is pinned — never in `order` — but its measured width is fixed overhead against the
       // baseline, exactly as `useColumnFold` computes it from the excluded ids.
       overhead: 100,
+      fixedCount: 1,
       order: ['c', 'b'],
       widths,
     })

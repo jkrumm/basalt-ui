@@ -396,6 +396,15 @@ export type FixtureSpec = {
   w39Strip?: true
   /** Wave 42: a table with a sorted and an unsorted header and an entity beside a text cell in a narrow box (`w42-kinds`). */
   w42Kinds?: true
+  /** Wave 42: argo's workouts table and S2's sessions table in a fixed-width card (`w42-responsive`). */
+  w42Responsive?: {
+    /** argo's workouts (no `meta.priority`) or the playground's S2 sessions. */
+    shape: 'workouts' | 'sessions'
+    /** The card's width in px; omitted ⇒ the shell body's own width. */
+    width?: number
+    /** `isLoading` skeleton rows instead of data. */
+    loading?: true
+  }
   /** Wave 39: a tall tooltip in a short `ChartCard` (`w39-tip`, `w39-tip-tall`), a slotted `Bars` in a strip cell (`w39-strip`), a 28px bare `Sparkline` (`w39-spark`). */
   w39Readout?: true
   /**

@@ -62,7 +62,7 @@ import type {
 } from '@tanstack/react-table'
 import { constructFilterFn, FlexRender, useTable } from '@tanstack/react-table'
 import type { CSSProperties, MouseEvent as ReactMouseEvent, ReactNode, RefObject } from 'react'
-import { Fragment, useLayoutEffect, useMemo, useRef, useState } from 'react'
+import { Fragment, useId, useLayoutEffect, useMemo, useRef, useState } from 'react'
 import { useDebouncedCallback } from '@mantine/hooks'
 import { cx } from '../common/props'
 import type { BasaltProps, SlotStylesProps } from '../common/props'
@@ -323,6 +323,9 @@ const facetAnyOf = constructFilterFn({
  * selection state, which is a reordering nobody asked for.
  */
 const SELECT_COLUMN_ID = '__basalt_select__'
+/** The checkbox column's width when it pins beside an auto-pinned identifier — the pinned offsets
+ * sum `getSize()`, so the real cell is held to it (the coarse hit floor, one tap target wide). */
+const SELECT_COLUMN_SIZE = HIT_COARSE
 
 /**
  * Built per render inside a `useMemo`, not hoisted as a constant: `ColumnDef` is generic in `T`, and
@@ -335,6 +338,7 @@ const SELECT_COLUMN_ID = '__basalt_select__'
 function selectionColumn<T extends RowData>(): ColumnDef<BasaltTableFeatures, T, unknown> {
   return {
     id: SELECT_COLUMN_ID,
+    size: SELECT_COLUMN_SIZE,
     enableSorting: false,
     header: ({ table }) => (
       // oxlint-disable-next-line jsx-a11y/label-has-associated-control -- wraps <Checkbox>, which oxlint cannot see is an input
@@ -1067,26 +1071,33 @@ function getOrderedHeaderGroups<T extends RowData>(table: TanstackTable<BasaltTa
 // accurate — center columns stay naturally sized. The hairline shadow marks the edge column
 // touching the unpinned center (first end-pinned index 0 / last start-pinned index). Offsets are
 // logical insets, so `dir=rtl` mirrors them; the hairline shadow is a physical offset and does not.
+//
+// `startOffset` is the room the fold toggle column takes ahead of the first start-pinned cell (it
+// sticks too, see `.foldToggleCell`). `fluidMinWidth` marks the AUTO-pinned identifier column: it
+// takes its content width bounded by that floor and the `.pinnedFluid` cap instead of the fixed
+// `getSize()` — a 150px default would waste a 360px table's room on a short date.
 function getPinnedCellStyle<T extends RowData>(
   table: TanstackTable<BasaltTableFeatures, T>,
   column: Column<BasaltTableFeatures, T, unknown>,
+  options: { startOffset: number; fluidMinWidth: number | undefined },
 ): CSSProperties | undefined {
   const pinned = column.getIsPinned()
   if (!pinned) return undefined
   const size = column.getSize()
+  const fluid = options.fluidMinWidth !== undefined
   const shared: CSSProperties = {
     position: 'sticky',
     zIndex: 1,
-    width: size,
-    minWidth: size,
-    maxWidth: size,
+    ...(fluid
+      ? { minWidth: options.fluidMinWidth }
+      : { width: size, minWidth: size, maxWidth: size }),
     backgroundColor: VX.surface.panel,
   }
   if (pinned === 'start') {
     const isEdge = column.getPinnedIndex() === table.getStartLeafColumns().length - 1
     return {
       ...shared,
-      insetInlineStart: column.getStart('start'),
+      insetInlineStart: column.getStart('start') + options.startOffset,
       boxShadow: isEdge ? `4px 0 6px -4px ${alpha(VX.ink, 0.18)}` : undefined,
     }
   }
@@ -1141,10 +1152,25 @@ function foldOrder<T extends RowData>(
 const FOLD_ID_ATTR = 'data-basalt-fold-id'
 
 /**
+ * How many data columns the fold always leaves visible: the identifier plus its most important
+ * value (SPEC § 6.6). A one-column table keeps its one.
+ */
+const FOLD_FLOOR = 2
+
+/** The auto-pinned identifier column's width floor, px, when its `columnDef.minSize` is unset. */
+const PIN_MIN_WIDTH = 120
+
+/** The half pixel per measured width plus the room's own rounding — see {@link planColumnFold}. */
+function roundingSlack(measured: number, fixedCount: number): number {
+  return (measured + fixedCount + 1) / 2
+}
+
+/**
  * Pure decision: fold columns off the FRONT of `order` (already fold-first sorted) until the
  * still-unfolded ones — plus `overhead` (the columns excluded from candidacy altogether — pinned,
  * or `enableHiding: false` — which occupy room but can never fold) and the disclosure toggle's own
- * width, once anything is folded — fit `room`. A candidate with no measured width yet (never
+ * width, once anything is folded — fit `room`, or only {@link FOLD_FLOOR} data columns remain
+ * (`fixedCount` of them are the excluded ones). A candidate with no measured width yet (never
  * rendered) is skipped rather than folded blind, since folding it would remove the one place its
  * width could ever be read from.
  *
@@ -1166,21 +1192,47 @@ export function planColumnFold(input: {
 }): ReadonlySet<string> {
   const { room, toggleWidth, overhead, fixedCount = 0, order, widths } = input
   const known = order.filter((id) => widths.has(id))
-  const roundingSlack = (known.length + fixedCount + 1) / 2
+  const slack = roundingSlack(known.length, fixedCount)
   let unfolded = overhead + known.reduce((sum, id) => sum + (widths.get(id) ?? 0), 0)
   const folded = new Set<string>()
   for (const id of known) {
-    // Never fold the last remaining data column — a table with every column folded has no row
-    // identifier left to read at all, which is worse than the horizontal scroll this exists to
-    // avoid. With no explicit `meta.priority` this is `order`'s LAST id, which `foldOrder`'s own
-    // doc pins as the FIRST declared column (the last-declared one folds first).
-    if (folded.size >= known.length - 1) break
+    // Never fold below the floor — a table with every column folded has no row identifier left to
+    // read at all, which is worse than the horizontal scroll this exists to avoid; one with only
+    // the identifier left hides every value. With no explicit `meta.priority` the survivors are
+    // `order`'s LAST ids, which `foldOrder`'s own doc pins as the FIRST declared columns (the
+    // last-declared one folds first).
+    if (known.length - folded.size + fixedCount <= FOLD_FLOOR) break
     const withToggle = unfolded + (folded.size > 0 ? toggleWidth : 0)
-    if (withToggle <= room + roundingSlack) break
+    if (withToggle <= room + slack) break
     folded.add(id)
     unfolded -= widths.get(id) ?? 0
   }
   return folded
+}
+
+/**
+ * Whether what `planColumnFold` left still overflows `room` — the signal to pin the first column
+ * and scroll the rest. Computed from the cached NATURAL widths, never the painted ones: pinning
+ * caps the identifier's width, and reading that back would unpin the table the moment the cap made
+ * it fit, then pin it again at the next measure.
+ */
+function foldOverflows(input: {
+  room: number
+  toggleWidth: number
+  overhead: number
+  fixedCount: number
+  order: readonly string[]
+  widths: ReadonlyMap<string, number>
+  folded: ReadonlySet<string>
+}): boolean {
+  const { room, toggleWidth, overhead, fixedCount, order, widths, folded } = input
+  const known = order.filter((id) => widths.has(id))
+  const kept = known.filter((id) => !folded.has(id))
+  const total =
+    overhead +
+    kept.reduce((sum, id) => sum + (widths.get(id) ?? 0), 0) +
+    (folded.size > 0 ? toggleWidth : 0)
+  return total > room + roundingSlack(known.length, fixedCount)
 }
 
 /**
@@ -1200,20 +1252,40 @@ function useColumnFold(input: {
    * fold baseline. See `planColumnFold`'s `overhead` param.
    */
   fixedIds: readonly string[]
+  /** Every caller column id in declared order — the auto-pin picks its first VISIBLE one. */
+  declaredIds: readonly string[]
+  /** False when the caller pinned a start column itself: an explicit pin wins, nothing auto-pins. */
+  allowPin: boolean
 }): {
   wrapperRef: RefObject<HTMLDivElement | null>
   folded: ReadonlySet<string>
+  /** The column pinned to the start edge because the floor-folded table still overflows. */
+  pinId: string | undefined
+  /** Whether the table is wider than its container right now — i.e. whether the scroller scrolls. */
+  overflowing: boolean
 } {
-  const { active, order, fixedIds } = input
+  const { active, order, fixedIds, declaredIds, allowPin } = input
   const wrapperRef = useRef<HTMLDivElement>(null)
   const [folded, setFolded] = useState<ReadonlySet<string>>(EMPTY_FOLD_SET)
+  const [pinId, setPinId] = useState<string | undefined>(undefined)
+  const [overflowing, setOverflowing] = useState(false)
   const orderRef = useRef(order)
   const fixedIdsRef = useRef(fixedIds)
+  const declaredIdsRef = useRef(declaredIds)
+  const allowPinRef = useRef(allowPin)
+  const pinIdRef = useRef(pinId)
   useLayoutEffect(() => {
     orderRef.current = order
     fixedIdsRef.current = fixedIds
+    declaredIdsRef.current = declaredIds
+    allowPinRef.current = allowPin
+    pinIdRef.current = pinId
   })
-  if ((!active || order.length === 0) && folded.size > 0) setFolded(EMPTY_FOLD_SET)
+  if ((!active || order.length === 0) && (folded.size > 0 || pinId !== undefined)) {
+    setFolded(EMPTY_FOLD_SET)
+    setPinId(undefined)
+    setOverflowing(false)
+  }
 
   useMeasuredWidths({
     resolveRoot: () => wrapperRef.current,
@@ -1225,7 +1297,9 @@ function useColumnFold(input: {
     onMeasure: (root, boxes) => {
       for (const cell of root.querySelectorAll<HTMLElement>(`[${FOLD_ID_ATTR}]`)) {
         const id = cell.getAttribute(FOLD_ID_ATTR)
-        if (id !== null && cell.offsetWidth > 0) {
+        // The pinned column's painted width is the capped one; its natural width stays cached.
+        const keepNatural = id === pinIdRef.current && boxes.current.has(id)
+        if (id !== null && !keepNatural && cell.offsetWidth > 0) {
           boxes.current.set(id, { width: cell.offsetWidth, height: cell.offsetHeight })
         }
       }
@@ -1233,9 +1307,11 @@ function useColumnFold(input: {
       // A zero reading is an un-laid-out ancestor, not a table with no room — the same guard
       // `useMeasuredContainment` above runs against the aside animating in from 0.
       if (room === 0) return
+      // The pinned identifier's cap and the disclosure row's sticky width both read the room.
+      root.style.setProperty('--basalt-table-room', `${room}px`)
       const widths = new Map([...boxes.current].map(([id, box]) => [id, box.width]))
       const overhead = fixedIdsRef.current.reduce((sum, id) => sum + (widths.get(id) ?? 0), 0)
-      const next = planColumnFold({
+      const plan = {
         room,
         // The disclosure toggle is a fixed icon-button cell matched to the coarse hit floor, so it
         // reads as one more `--vx-hit` control rather than a narrower afterthought.
@@ -1244,14 +1320,28 @@ function useColumnFold(input: {
         fixedCount: fixedIdsRef.current.length,
         order: orderRef.current,
         widths,
-      })
+      }
+      const next = planColumnFold(plan)
       setFolded((current) =>
         current.size === next.size && [...current].every((id) => next.has(id)) ? current : next,
       )
+      const nextPin =
+        allowPinRef.current && foldOverflows({ ...plan, folded: next })
+          ? declaredIdsRef.current.find((id) => !next.has(id))
+          : undefined
+      setPinId((current) => (current === nextPin ? current : nextPin))
+      const table = root.querySelector('table')
+      const nextOverflowing = table !== null && table.offsetWidth > room
+      setOverflowing((current) => (current === nextOverflowing ? current : nextOverflowing))
     },
   })
 
-  return { wrapperRef, folded: active ? folded : EMPTY_FOLD_SET }
+  return {
+    wrapperRef,
+    folded: active ? folded : EMPTY_FOLD_SET,
+    pinId: active ? pinId : undefined,
+    overflowing: active && overflowing,
+  }
 }
 
 /** The label half of a folded column's disclosure row — its own header when it is a plain string
@@ -1287,15 +1377,18 @@ function RowDisclosure<T extends RowData>({
   )
 }
 
-/** The per-row expand/collapse control the fold-disclosure column renders — a text glyph, since
- * basalt ships no icon set (`docs/CONTROLS-SPEC.md` §2, mirrors `SortIndicator` above). */
+/** The per-row expand/collapse control the fold-disclosure column renders — a real button at the
+ * pointer-tier hit floor whose accessible name says WHAT folded ("Show Volume, Duration"), with an
+ * inline chevron since basalt ships no icon set (`docs/CONTROLS-SPEC.md` §2). */
 function FoldToggle({
   expanded,
   controlsId,
+  foldedLabel,
   onToggle,
 }: {
   expanded: boolean
   controlsId: string
+  foldedLabel: string
   onToggle: () => void
 }): ReactNode {
   return (
@@ -1305,7 +1398,7 @@ function FoldToggle({
       data-basalt-hit
       aria-expanded={expanded}
       aria-controls={controlsId}
-      aria-label={expanded ? 'Hide row details' : 'Show row details'}
+      aria-label={`${expanded ? 'Hide' : 'Show'} ${foldedLabel}`}
       // A row carrying `onRowActivate` reads a bubbled click as "activate the row" — the toggle
       // would open/close its disclosure AND fire the row's own action underneath it.
       onClick={(event) => {
@@ -1313,9 +1406,15 @@ function FoldToggle({
         onToggle()
       }}
     >
-      <Box component="span" aria-hidden>
-        {expanded ? '▾' : '▸'}
-      </Box>
+      <svg
+        className={classes.foldChevron}
+        data-expanded={expanded ? 'true' : 'false'}
+        viewBox="0 0 16 16"
+        aria-hidden
+        focusable="false"
+      >
+        <path d="M5.5 3.5 10.5 8l-5 4.5" />
+      </svg>
     </button>
   )
 }
@@ -1672,10 +1771,27 @@ export function BasaltDataTable<T extends RowData>(props: BasaltDataTableProps<T
   const { cards: showCards, rootRef: projectionRootRef } = useCardProjection(
     renderCard !== undefined,
   )
-  const { folded: foldedColumns, wrapperRef: foldWrapperRef } = useColumnFold({
+  const declaredIds = useMemo(
+    () =>
+      columns.flatMap((column) => {
+        const id = columnDefId(column)
+        return id === undefined || 'columns' in column ? [] : [id]
+      }),
+    [columns],
+  )
+  const {
+    folded: foldedColumns,
+    wrapperRef: foldWrapperRef,
+    pinId: autoPinId,
+    overflowing: foldOverflowing,
+  } = useColumnFold({
     active: foldEligible && !showCards,
     order: columnFoldOrder,
     fixedIds: columnFoldFixedIds,
+    declaredIds,
+    // An explicit caller pin wins: the fold already treats it as fixed overhead, and a second,
+    // implicit one beside it would stack two sticky columns nobody asked for.
+    allowPin: columnPinning.start.length === 0,
   })
   const columnVisibility: ColumnVisibilityState = useMemo(
     () => Object.fromEntries([...foldedColumns].map((id) => [id, false])),
@@ -1686,14 +1802,27 @@ export function BasaltDataTable<T extends RowData>(props: BasaltDataTableProps<T
 
   // The actions column always sticks to the end edge, behind any end-pinned columns the caller
   // asked for — so it is pinned through TanStack's own state, which also keeps their offsets right.
-  const pinningActive = enablePinning || hasRowActions
-  const tablePinning = useMemo(
-    () =>
-      hasRowActions
-        ? { ...columnPinning, end: [...columnPinning.end, ACTIONS_COLUMN_ID] }
-        : columnPinning,
-    [columnPinning, hasRowActions],
-  )
+  //
+  // The auto-pin (SPEC § 6.6): once the fold has hit its floor and the table STILL overflows, the
+  // first visible data column pins to the start edge (with the checkbox column ahead of it) so the
+  // rest scrolls under a fixed identifier. It rides TanStack's own `columnPinning` state, merged
+  // with the caller's — which wins outright whenever it pins a start column itself.
+  const pinningActive = enablePinning || hasRowActions || autoPinId !== undefined
+  const tablePinning = useMemo(() => {
+    const start =
+      autoPinId === undefined
+        ? columnPinning.start
+        : [...(enableRowSelection ? [SELECT_COLUMN_ID] : []), autoPinId]
+    const end = hasRowActions ? [...columnPinning.end, ACTIONS_COLUMN_ID] : columnPinning.end
+    return { start, end }
+  }, [columnPinning, hasRowActions, autoPinId, enableRowSelection])
+  // The fold toggle column leads the row and sticks beside the pinned start cells, so they sit past it.
+  const pinStartOffset = hasFolded && tablePinning.start.length > 0 ? HIT_COARSE : 0
+  const autoPinMinWidth =
+    autoPinId === undefined
+      ? undefined
+      : (columns.find((column) => columnDefId(column) === autoPinId)?.minSize ?? PIN_MIN_WIDTH)
+  const tableId = useId()
 
   const table = useTable({
     features: basaltTableFeatures,
@@ -1766,6 +1895,28 @@ export function BasaltDataTable<T extends RowData>(props: BasaltDataTableProps<T
     (hasFolded ? 1 : 0) -
     foldedColumns.size
 
+  // ARIA column positions (WCAG F102): `aria-colcount` counts the FULL column set — folded and
+  // hidden columns included — and every cell's `aria-colindex` is its 1-based slot in that order,
+  // so a fold leaves a gap a screen-reader user can hear. The fold toggle column is a real cell
+  // leading the row, so while it renders it takes slot 1 and shifts the rest.
+  const fullLeafColumns = pinningActive
+    ? [
+        ...table.getStartLeafColumns(),
+        ...table.getCenterLeafColumns(),
+        ...table.getEndLeafColumns(),
+      ]
+    : table.getAllLeafColumns()
+  const colIndexOffset = hasFolded ? 1 : 0
+  const colIndexById = new Map(
+    fullLeafColumns.map((column, index) => [column.id, index + 1 + colIndexOffset]),
+  )
+  const ariaColCount = fullLeafColumns.length + colIndexOffset
+  // What the toggle announces: the folded columns' own headers, in column order.
+  const foldedLabel = fullLeafColumns
+    .filter((column) => foldedColumns.has(column.id))
+    .map((column) => columnLabel(column))
+    .join(', ')
+
   // `getSelectedRowModel()` is TanStack's own memo, so its `rows` array keeps its identity until
   // the selection or the row model actually moves — which is what makes both memos below hold.
   const selectedModelRows = enableRowSelection ? table.getSelectedRowModel().rows : undefined
@@ -1810,6 +1961,17 @@ export function BasaltDataTable<T extends RowData>(props: BasaltDataTableProps<T
     pageStickyHeader && !showCards,
   )
   const resolvedStickyHeaderOffset = scrolls ? undefined : stickyHeaderOffset
+  // The declared-`minWidth` shape has no fold hook, so its scroller is measured on its own.
+  const { wrapperRef: minWidthScrollerRef, contained: minWidthOverflowing } =
+    useMeasuredContainment(!foldEligible && !showCards)
+  // A scroll container is a keyboard tab stop ONLY while it actually scrolls (WCAG 2.1.1 — a
+  // sighted keyboard user otherwise has no way to reach the clipped columns), and a focusable box
+  // needs a role and a name (axe `scrollable-region-focusable`). The ring is `.scroller`'s.
+  const scrollerLabel = `${title ?? 'Table'}, scrolls horizontally`
+  const scrollerProps = (overflowing: boolean) =>
+    overflowing
+      ? { tabIndex: 0, role: 'region', 'aria-label': scrollerLabel, className: classes.scroller }
+      : undefined
 
   // The error branch the table did not have (components audit #3) carries the query's OWN `refetch`
   // behind Retry, so the failure is reported where the rows would have been — in a row spanning
@@ -1829,6 +1991,21 @@ export function BasaltDataTable<T extends RowData>(props: BasaltDataTableProps<T
     </Text>
   )
 
+  // The cells in render order (start → center → end) with only the visible ones — the skeleton rows
+  // mirror the header with it.
+  const orderedVisibleColumns = pinningActive
+    ? [
+        ...table.getStartVisibleLeafColumns(),
+        ...table.getCenterVisibleLeafColumns(),
+        ...table.getEndVisibleLeafColumns(),
+      ]
+    : table.getVisibleLeafColumns()
+  const stickyStart = pinStartOffset > 0
+  const pinOptionsFor = (columnId: string) => ({
+    startOffset: pinStartOffset,
+    fluidMinWidth: columnId === autoPinId ? autoPinMinWidth : undefined,
+  })
+
   const tableNode = (
     <Table
       className={cx(
@@ -1836,6 +2013,7 @@ export function BasaltDataTable<T extends RowData>(props: BasaltDataTableProps<T
         pageStickyHeader && !contained && classes.pageSticky,
         classNames?.table,
       )}
+      aria-colcount={ariaColCount}
       {...(striped !== undefined && { striped })}
       {...(highlightOnHover !== undefined && { highlightOnHover })}
       {...(stickyHeader !== undefined && { stickyHeader })}
@@ -1853,7 +2031,11 @@ export function BasaltDataTable<T extends RowData>(props: BasaltDataTableProps<T
             {/* The disclosure toggle column has no header of its own — nothing is "sorted" or
                 "selected all" across it, only revealed per row. */}
             {hasFolded && (
-              <Table.Th className={classes.foldToggleCell}>
+              <Table.Th
+                className={cx(classes.foldToggleCell, stickyStart && classes.pinnedLayer)}
+                data-sticky={stickyStart ? 'true' : undefined}
+                aria-colindex={1}
+              >
                 <span className={classes.srOnly}>Details</span>
               </Table.Th>
             )}
@@ -1862,15 +2044,21 @@ export function BasaltDataTable<T extends RowData>(props: BasaltDataTableProps<T
               const sorted = header.column.getIsSorted()
               const toggleSorting = header.column.getToggleSortingHandler()
               const pinnedStyle = pinningActive
-                ? getPinnedCellStyle(table, header.column)
+                ? getPinnedCellStyle(table, header.column, pinOptionsFor(header.column.id))
                 : undefined
+              const isAutoPin = header.column.id === autoPinId
               const align = resolveAlign(header.column) ?? kindAlign(resolveKind(header.column))
               const isSelectColumn = header.column.id === SELECT_COLUMN_ID
               const isFoldCandidate = !isSelectColumn && header.column.id !== ACTIONS_COLUMN_ID
               return (
                 <Table.Th
                   key={header.id}
-                  {...(isSelectColumn && { className: classes.selectCell })}
+                  aria-colindex={colIndexById.get(header.column.id)}
+                  className={cx(
+                    isSelectColumn && classes.selectCell,
+                    pinnedStyle !== undefined && classes.pinnedLayer,
+                    isAutoPin && classes.pinnedFluid,
+                  )}
                   // The measured fold's own read (`useColumnFold`) — never present on the
                   // selection column, which is never a fold candidate.
                   {...(isFoldCandidate && { [FOLD_ID_ATTR]: header.column.id })}
@@ -1906,13 +2094,35 @@ export function BasaltDataTable<T extends RowData>(props: BasaltDataTableProps<T
             <Table.Td colSpan={columnCount}>{errorNode}</Table.Td>
           </Table.Tr>
         ) : showSkeleton ? (
+          // The same visible columns as the header — a folded table loads folded, and the pinned
+          // identifier keeps its sticky cell, so nothing shifts when the rows arrive.
           Array.from({ length: skeletonRows }, (_, rowIndex) => (
             <Table.Tr key={`skeleton-${rowIndex}`}>
-              {Array.from({ length: columnCount }, (__, colIndex) => (
-                <Table.Td key={`skeleton-${rowIndex}-${colIndex}`}>
-                  <Skeleton height={16} radius="sm" />
-                </Table.Td>
-              ))}
+              {hasFolded && (
+                <Table.Td
+                  className={cx(classes.foldToggleCell, stickyStart && classes.pinnedLayer)}
+                  data-sticky={stickyStart ? 'true' : undefined}
+                  aria-colindex={1}
+                />
+              )}
+              {orderedVisibleColumns.map((column) => {
+                const pinnedStyle = pinningActive
+                  ? getPinnedCellStyle(table, column, pinOptionsFor(column.id))
+                  : undefined
+                return (
+                  <Table.Td
+                    key={column.id}
+                    aria-colindex={colIndexById.get(column.id)}
+                    className={cx(
+                      pinnedStyle !== undefined && classes.pinnedLayer,
+                      column.id === autoPinId && classes.pinnedFluid,
+                    )}
+                    style={pinnedStyle}
+                  >
+                    <Skeleton height={16} radius="sm" />
+                  </Table.Td>
+                )
+              })}
             </Table.Tr>
           ))
         ) : rows.length === 0 ? (
@@ -1936,27 +2146,42 @@ export function BasaltDataTable<T extends RowData>(props: BasaltDataTableProps<T
                   {...activationProps(onRowActivate, row.original)}
                 >
                   {hasFolded && (
-                    <Table.Td className={classes.foldToggleCell}>
+                    <Table.Td
+                      className={cx(classes.foldToggleCell, stickyStart && classes.pinnedLayer)}
+                      data-sticky={stickyStart ? 'true' : undefined}
+                      aria-colindex={1}
+                    >
                       <FoldToggle
                         expanded={rowExpanded}
-                        controlsId={`${row.id}-fold`}
+                        controlsId={`${tableId}-${row.id}-fold`}
+                        foldedLabel={foldedLabel}
                         onToggle={() => foldRows.toggle(row.id)}
                       />
                     </Table.Td>
                   )}
                   {cells.map((cell) => {
                     const pinnedStyle = pinningActive
-                      ? getPinnedCellStyle(table, cell.column)
+                      ? getPinnedCellStyle(table, cell.column, pinOptionsFor(cell.column.id))
                       : undefined
+                    const isAutoPin = cell.column.id === autoPinId
+                    const pinnedValue = isAutoPin ? cell.getValue() : undefined
                     const kind = resolveKind(cell.column)
                     const align = resolveAlign(cell.column) ?? kindAlign(kind)
                     return (
                       <Table.Td
                         key={cell.id}
+                        aria-colindex={colIndexById.get(cell.column.id)}
                         className={cx(
                           cell.column.id === SELECT_COLUMN_ID && classes.selectCell,
                           kind !== undefined && kindClass(kind),
+                          pinnedStyle !== undefined && classes.pinnedLayer,
+                          isAutoPin && classes.pinnedFluid,
                         )}
+                        // The pinned column ellipsizes past its cap — the full text stays reachable.
+                        {...((typeof pinnedValue === 'string' ||
+                          typeof pinnedValue === 'number') && {
+                          title: String(pinnedValue),
+                        })}
                         {...(kind !== undefined && { 'data-kind': kind })}
                         {...(stopsRowActivation(cell) && {
                           // The label's ::after fills the select cell, so a tap on it bubbles to the
@@ -1979,8 +2204,15 @@ export function BasaltDataTable<T extends RowData>(props: BasaltDataTableProps<T
                   })}
                 </Table.Tr>
                 {rowExpanded && (
-                  <Table.Tr id={`${row.id}-fold`} className={classes.foldDisclosureRowTr}>
-                    <Table.Td colSpan={columnCount} className={classes.foldDisclosureCell}>
+                  <Table.Tr
+                    id={`${tableId}-${row.id}-fold`}
+                    className={classes.foldDisclosureRowTr}
+                  >
+                    <Table.Td
+                      colSpan={columnCount}
+                      className={classes.foldDisclosureCell}
+                      aria-colindex={1}
+                    >
                       <RowDisclosure row={row} folded={foldedColumns} />
                     </Table.Td>
                   </Table.Tr>
@@ -2133,7 +2365,13 @@ export function BasaltDataTable<T extends RowData>(props: BasaltDataTableProps<T
         // An explicit `minWidth` is the one genuinely DECLARED horizontal floor — the column fold
         // never engages here (see `foldEligible`, above), so this shape keeps its exact
         // pre-existing DOM: no extra measuring wrapper for a table nothing folds.
-        <Table.ScrollContainer type="native" minWidth={minWidth ?? 0} maxHeight={maxHeight}>
+        <Table.ScrollContainer
+          ref={minWidthScrollerRef}
+          type="native"
+          minWidth={minWidth ?? 0}
+          maxHeight={maxHeight}
+          {...scrollerProps(minWidthOverflowing)}
+        >
           {tableNode}
         </Table.ScrollContainer>
       ) : (
@@ -2149,15 +2387,25 @@ export function BasaltDataTable<T extends RowData>(props: BasaltDataTableProps<T
             // used to sit here was the exact inert-sticky defect this shape exists to avoid.
             <div
               ref={containmentRef}
-              className={classes.containment}
+              className={cx(classes.containment, contained && classes.scroller)}
               data-contained={contained ? 'true' : 'false'}
+              {...(contained && {
+                tabIndex: 0,
+                role: 'region',
+                'aria-label': scrollerLabel,
+              })}
             >
               {tableNode}
             </div>
           ) : (
             // `pageStickyHeader` is false whenever `maxHeight` is set (`scrolls` above), so a vertical
             // cap lands here — its own `ScrollArea` scrollport, just with no `minWidth` floor.
-            <Table.ScrollContainer type="native" minWidth={0} maxHeight={maxHeight}>
+            <Table.ScrollContainer
+              type="native"
+              minWidth={0}
+              maxHeight={maxHeight}
+              {...scrollerProps(foldOverflowing)}
+            >
               {tableNode}
             </Table.ScrollContainer>
           )}

@@ -96,6 +96,7 @@ import { W38StripMeterFixture } from './w38-strip-meter-fixture'
 import { W39S4StripFixture, W39StripFixture } from './w39-strip-fixture'
 import { W39MeterFixture } from './w39-meter-fixture'
 import { W42KindsFixture } from './w42-kinds-fixture'
+import { W42ResponsiveFixture } from './w42-responsive-fixture'
 import { W38Readout2Fixture } from './w38-readout2-fixture'
 import { W39ReadoutFixture } from './w39-readout-fixture'
 import { RAIL_DOMAIN_MAX, RAIL_PX, TOC_SCROLL_MARGIN_PX } from './spec'
@@ -3099,6 +3100,7 @@ export function ShellFixture({ spec }: { spec: FixtureSpec }): ReactElement {
       {spec.w39Strip && <W39S4StripFixture />}
       {spec.w39Meter && <W39MeterFixture />}
       {spec.w42Kinds && <W42KindsFixture />}
+      {spec.w42Responsive && <W42ResponsiveFixture spec={spec.w42Responsive} />}
       {spec.w38Readout2 && <W38Readout2Fixture />}
       {spec.w39Readout && <W39ReadoutFixture />}
       {spec.codeBlock && <CodeBlockFixture spec={spec.codeBlock} />}

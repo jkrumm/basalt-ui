@@ -329,7 +329,8 @@ layout('BasaltDataTable sticky header — real layout', () => {
       )
     }
 
-    const toggles = await p.count('button[aria-label="Show row details"]')
+    // The toggle names what folded ("Show Volume, Duration"), so it is found by its state, not a label.
+    const toggles = await p.count('tbody button[aria-expanded][aria-controls]')
     if (toggles === 0) {
       throw new Error(
         'LAYOUT INVARIANT VIOLATED — columns folded but no per-row disclosure toggle rendered to ' +
@@ -341,7 +342,7 @@ layout('BasaltDataTable sticky header — real layout', () => {
     // controls): click the first toggle and confirm the id it names is the row that actually appears.
     const linked = await p.raw.evaluate((sel) => {
       const toggle = document.querySelector<HTMLButtonElement>(
-        `${sel} button[aria-label="Show row details"]`,
+        `${sel} tbody button[aria-expanded][aria-controls]`,
       )
       const controlsId = toggle?.getAttribute('aria-controls')
       toggle?.click()
