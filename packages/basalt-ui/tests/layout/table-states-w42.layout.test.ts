@@ -111,6 +111,8 @@ layout('table sizing and state chrome', () => {
             pillBorder: pill === null ? '' : getComputedStyle(pill).borderTopColor,
             pageBg: page === null ? '' : getComputedStyle(page).backgroundColor,
             accent: resolve('var(--vx-accent)'),
+            ink: resolve('var(--vx-ink)'),
+            pageText: page === null ? '' : getComputedStyle(page).color,
           }
           probe.remove()
           return out
@@ -119,6 +121,7 @@ layout('table sizing and state chrome', () => {
         expect(colors.pillBorder).not.toBe(colors.accent)
         expect(colors.pageBg, 'the current page exists').not.toBe('')
         expect(colors.pageBg).not.toBe(colors.accent)
+        expect(colors.pageText, 'the current page label is ink').toBe(colors.ink)
       })
     }
   }
