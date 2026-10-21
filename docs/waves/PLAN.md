@@ -1760,22 +1760,88 @@ after the mother's release).
 - **Unreleased on master, for the mother:** #461, #462, #463. argo bumps and re-scores Garmin + Reading, and drops ACWR's upper axis.
 - **Next — stopped: Wave 41 closed; orchestrated, nothing spawned.** Wave 42 (Data tables) is `active` for the mother.
 
-## Wave 42 — Data tables, responsive <!-- status: active -->
+## Wave 42 — Data tables, responsive <!-- status: done -->
 
 Spec: SPEC § 6.6, § 9.1. Scenarios S1 (outages) and S2 (sessions). Validators: argo, linewatch.
 
-- [ ] Header on the body fill, sorted column brighter; row text `sm`; cell kinds via `meta.kind` (`entity`,
+- [x] Header on the body fill, sorted column brighter; row text `sm`; cell kinds via `meta.kind` (`entity`,
       `status`, `number`, `money`, `relative-time`, `meter`, `text`).
-- [ ] Responsive: `meta.priority` fold, then a pinned non-wrapping first column (opaque, with a `minSize`)
+- [x] Responsive: `meta.priority` fold, then a pinned non-wrapping first column (opaque, with a `minSize`)
       and keyboard-reachable horizontal scroll at compact; `renderCard` stays opt-in; `aria-colcount` and
       `aria-colindex` stay correct and a folded column stays reachable (rows 151, 157). Check each TanStack API
       against the installed v9 source.
-- [ ] The toolbar in one row at the dense tier; filter chips with a muted label and a bright value.
-- [ ] Tests: each `meta.kind` renders; at compact the first column stays pinned and never wraps, the folded
+- [x] The toolbar in one row at the dense tier; filter chips with a muted label and a bright value.
+- [x] Tests: each `meta.kind` renders; at compact the first column stays pinned and never wraps, the folded
       column is reachable by keyboard. At least three rounds; owner sees the boards.
       **Left behind:**
 
-## Wave 43 — Event list <!-- status: pending -->
+- **Landed** (8 PRs through `rd merge`, `make check` after every rebase, each independently reviewed — two rounds,
+  then the last fix diff read by the lead): #468 cell kinds (`meta.kind`: `entity`, `status`, `number`, `money`,
+  `relative-time`, `meter`, `text`, plus `statusColor`/`meterMax`/`currency`), the header on the body fill with the
+  sorted column in ink, figures sans `tabular-nums` (D33 supersedes § 6.6's "mono"); #469 the one-row toolbar at the
+  dense 28 tier (container query, wraps below 240 px), filter pills with a muted label and an ink value (one
+  `filterReading` for Enum/MultiSelect/Range), `initialColumnFilters`; #470 the responsive law (fold floor two
+  columns, then the first unpinned data column auto-pins — opaque in every row state, nowrap, capped — and the rest
+  scrolls in a focusable `region`; `aria-colcount`/`aria-colindex` over the full order; a ghost chevron with a `+N`
+  header; the fold subsystem in `table/data-table-fold.tsx`); #473 one-line rows (only `text` wraps), honest state
+  chrome (no 0 count or range while pending/errored, bare "Could not load", skeleton at the page size), row hover
+  on by default, ink for the active pill and the current page, money as a bare figure; #475 columns sized to
+  content with the slack on the last `text` column or a trailing spacer, ≤3 type sizes, the pinned header fill, no
+  pager under an empty table, the empty-title seam. Playground: #471, #472, #474 (S1 outages, the S2 lift log, /data,
+  and /components on `BasaltDataTable`). Every TanStack API was checked against the installed `@tanstack/table-core`
+  9.2.8 `dist/features/**` (named in each PR body).
+- **Validation:** `make check` green after each of the 8 rebases (merge train); master CI green on `e99a6dcb`; the
+  budgets gate was red on Linux by 4–7 B on three gzip bundles after #470–#472 and is fixed in #475, which sets the
+  three ceilings to CI's measurement (all three went DOWN: 20445, 56744, 15862). No public symbol, no barrel type,
+  no subpath added; `initialColumnFilters` is a prop (playground `/data` only so far — argo walking-pad is the
+  candidate consumer).
+- **Rounds** (`docs/waves/design-parity/w42/rounds.md`, boards `.design-parity/w42/r0`–`r4`, r0 the before board):
+  S1 outages 78 → 90 (route 33 → table P1s gone), S2 99 (no table) → 84, /data 62 → 77, /components 96 → 99. No P1 on
+  a table after r4; Keel: /components holds up, S1/S2/data close (layout decides). The open P2/P3 list is in
+  rounds.md § r4 — the main basalt one: the slack still lands on a non-trailing `text` column, and a table with no
+  text column leaves its right half blank. Accepted: the 16 px field text (`sub-16-input-font`) and cold-state
+  fold/x-shift. The P3 carried since Wave 38 (the /components loading headers wrapping at 390) is fixed.
+- **Rows:** 151 (pin-and-scroll as the compact default, entity cells never wrap) and 157 (`BasaltDataTable` covers
+  linewatch's table-to-card switch) are ready for the validators; argo's workouts table (no compact treatment, row 151) and linewatch's outages/transitions (row 157, needs `@tanstack/react-table`) adopt after the release.
+- **SPEC:** § 6.6 amended (kinds per D33, the fold floor and pin, the `+N` header, states keep the last fold, the
+  toolbar's narrow tier and ink). **MIGRATING:** one `### Data tables (Wave 42)` section under the single
+  `## Unreleased`; `release-migrating.ts --check` passes. `CHANGELOG.md` untouched. The shipped rule's `## Table` line
+  names the kinds and the one-line law (`make sync-self` copy committed separately).
+- **Boards:** r0–r2 copied to the MacBook (`~/Downloads/basalt-design-review/.design-parity/w42/`); r3–r4 only if the
+  last sync got through (iumac timed out from 23:20) — `/tmp/basalt-briefs/w42/sync.sh` resumes it.
+- **Unreleased on master, for the mother:** #468–#475. argo bumps and re-scores its four tables; linewatch migrates
+  outages/transitions.
+- **Next — stopped: Wave 42 closed; orchestrated, nothing spawned.** Wave 43 (argo upstream rows, inserted
+  2026-10-22 by the owner) is `active` for the mother; Event list and later are renumbered 44–48.
+
+## Wave 43 — argo upstream rows <!-- status: active -->
+
+Source: argo `docs/design/UPSTREAM.md` § "Strength review" and § Wave 50–53 (argo on 2.27.2). P1 rows first; each row
+gets a failing-first test on argo's composition, and argo is the validator (it bumps after the mother's release).
+
+- [ ] **P1:** `Meter` with the reading at the track start (`readingAt="start"`, or `'fill'` too short to hold it): the
+      start caption's descender is clipped at 390 (`low 72.3 kg` reads `kq`) and the end caption wraps to a second line
+      at 1440 with room to spare. Blocks argo body-composition.
+- [ ] **P1:** a `map` catalogue form (canvas plus a key rail) so a geographic raster on a map canvas has a standard
+      (Expression 1), and MapLibre's compact attribution styled to basalt's radius and size (`craft-1/off-scale-radius`,
+      the nested step at 390). Blocks argo astro. Also decide the radius step for a `Paper` floating over a
+      `Card variant="flush"` (`craft-1/nested-radius-step`).
+- [ ] `VX.status.excellent` used as TEXT: it is a fill (forest[2], about 2.9:1 on a card) and `tokens/status-text.ts`
+      solves only good/warn/bad. Either run `excellent` through the text solver, or make it fill-only and documented,
+      with a guard flagging `status.excellent` in a text-colour position.
+- [ ] `Sparkline` `band`/`zones` prop (a productive range, argo's INOL 0.6–1.0), and its reference label overprinted by
+      the line's start at 390.
+- [ ] `ChartCard` `subtitle` dropped at compact: the key it carries is reachable only in the focus tooltip on a phone.
+- [ ] `BasaltDataTable` `danger` row action: red only on hover or focus, not on every row at rest. (The `FoldToggle`
+      glyph argo also names was fixed in Wave 42: a ghost chevron with a `+N` header.)
+- [ ] A `--basalt-main-content-h` var or a fill prop for a page that fills the scrollport (argo computes it from five
+      shell vars plus the band's 1 px border).
+- [ ] The `RefLine` legend glyph (a goal line's swatch is the series' solid stroke) and `Lines` end-label collisions.
+- [ ] Shot harness: anchors inside a strip cell are recorded "not captured" at rest and "only present in this state"
+      under `empty`.
+      **Left behind:**
+
+## Wave 44 — Event list <!-- status: pending -->
 
 Spec: SPEC § 6.7, § 9.3, D11. Scenarios S5 (build the S5 fixture: the journal) and S3 (item timeline).
 Validators: argo (warden timeline, narratives), rb (journal, session history), linewatch (transitions).
@@ -1792,7 +1858,7 @@ Validators: argo (warden timeline, narratives), rb (journal, session history), l
 - [ ] At least three rounds on S5 and S3; owner sees the boards.
       **Left behind:**
 
-## Wave 44 — Board and the record page <!-- status: pending -->
+## Wave 45 — Board and the record page <!-- status: pending -->
 
 Spec: SPEC § 6.8, § 6.9, § 9.2, D3, D12. Scenarios S3 and S5. Validators: argo warden, rb knot detail,
 obsidian.
@@ -1809,7 +1875,7 @@ obsidian.
       summary sentence.
       **Left behind:**
 
-## Wave 45 — Forms, states and the guidance half <!-- status: pending -->
+## Wave 46 — Forms, states and the guidance half <!-- status: pending -->
 
 Spec: SPEC § 6.11, § 6.13, § 8, § 11. Scenario S6 (build it), then every scenario's state toggles.
 
@@ -1822,16 +1888,16 @@ Spec: SPEC § 6.11, § 6.13, § 8, § 11. Scenario S6 (build it), then every sce
       here or a recorded reason.
       **Left behind:**
 
-## Wave 46 — Release and rollout: argo and rb <!-- status: pending -->
+## Wave 47 — Release and rollout: argo and rb <!-- status: pending -->
 
 - [ ] Release through `make release` (the reason: the Part 3 patterns, rows 143–162).
 - [ ] argo upgrades, runs the shipped loop on its own screens, retires the hand-rolls its rows name (143–151),
       deploys and gets a before/after board.
 - [ ] rb the same (rows 152–155); rb is never pushed by an agent, so its branch waits for the owner.
-- [ ] Friction and ugliness become ledger rows and are fixed upstream before Wave 47 (the rollout).
+- [ ] Friction and ugliness become ledger rows and are fixed upstream before Wave 48 (the rollout).
       **Left behind:**
 
-## Wave 47 — Rollout, the expression trial and convergence <!-- status: pending -->
+## Wave 48 — Rollout, the expression trial and convergence <!-- status: pending -->
 
 - [ ] linewatch (rows 156–158) and obsidian (row 159) upgrade one at a time, each with a before/after board.
 - [ ] **Expression trial** (shaped like weatherorb's W45): a fresh agent in a scratch `init` app gets five
@@ -1840,7 +1906,7 @@ Spec: SPEC § 6.11, § 6.13, § 8, § 11. Scenario S6 (build it), then every sce
       the default is a guidance row.
 - [ ] Brief weatherorb's orchestrator (row 160). shutterflow is out of this track: the owner coordinates its UX re-establishment from the MacBook,
       including the deferred calendar heat grid (row 161, D10).
-- [ ] Re-run the full audit. If gaps remain, append Waves 48+ in the same shape. The track closes when a fresh
+- [ ] Re-run the full audit. If gaps remain, append Waves 49+ in the same shape. The track closes when a fresh
       scorer finds nothing worth improving against basalt's rubric.
       **Left behind:**
 
