@@ -81,7 +81,7 @@ import { EnumFilter } from '../controls/enum-filter'
 import { MultiSelectFilter } from '../controls/multi-select-filter'
 import { CtlSlot } from '../theme'
 import { IconSlot } from '../theme/icon-slot'
-import { alpha, VX } from '../tokens'
+import { alpha, CONTAINER_CLASSES, VX } from '../tokens'
 import type { EnumField, FieldHandle, MultiField } from '../state/fields'
 import { WidgetHeader } from '../dashboard'
 import { ErrorState } from '../dashboard/query-state'
@@ -649,6 +649,11 @@ export type BasaltDataTableProps<T extends RowData> = BasaltProps &
      * restoring the search term from a URL search param.
      */
     initialGlobalFilter?: string
+    /**
+     * Initial facet filters — `[{ id: 'department', value: 'Engineering' }]` opens the table with
+     * that facet preset. Uncontrolled, like `initialSorting`; `onColumnFiltersChange` reports edits.
+     */
+    initialColumnFilters?: ColumnFiltersState
     /** Called whenever the internal global filter value changes. */
     onGlobalFilterChange?: (value: string) => void
     /**
@@ -1418,6 +1423,33 @@ function enforceManualPaginationContract(breaches: ManualPaginationBreach[]): vo
  * not overflow (the aside animates its width in from 0). `useLayoutEffect` runs before paint, so an
  * already-measurable table resolves without a flash; the default is bare for SSR and first paint.
  */
+/**
+ * Whether the header row is narrower than the `regular` container class (`CONTAINER_CLASSES`, 480px)
+ * — the PHONE tier of the toolbar, read off the table's own width, never the viewport. There the
+ * facets live behind the one `Filters (n)` pill (`FilterSet inline={0}`); from `regular` up they keep
+ * `FilterSet`'s normal inline budget. A search, a facet pill, `Filters` and the actions cannot share
+ * a ~272px row, and two homes for the same facets is worse than one.
+ */
+function useNarrowToolbar(active: boolean): {
+  headerRef: RefObject<HTMLDivElement | null>
+  narrow: boolean
+} {
+  const headerRef = useRef<HTMLDivElement>(null)
+  const [narrow, setNarrow] = useState(false)
+  useMeasuredWidths({
+    resolveRoot: () => headerRef.current,
+    signature: String(active),
+    enabled: active,
+    onMeasure: (root) => {
+      // A zero reading is an un-laid-out ancestor, not a narrow one.
+      if (root.clientWidth === 0) return
+      const next = root.clientWidth < CONTAINER_CLASSES.regular
+      setNarrow((current) => (current === next ? current : next))
+    },
+  })
+  return { headerRef, narrow }
+}
+
 function useMeasuredContainment(active: boolean): {
   wrapperRef: RefObject<HTMLDivElement | null>
   contained: boolean
@@ -1733,6 +1765,7 @@ export function BasaltDataTable<T extends RowData>(props: BasaltDataTableProps<T
   const showSearch = enableGlobalFilter && filteringEnabled
   const showFacets = hasFacets && filteringEnabled
   const showToolbar = showSearch || showFacets || Boolean(actions)
+  const { headerRef, narrow: narrowToolbar } = useNarrowToolbar(showToolbar)
 
   // ── The query branch (law C3) ───────────────────────────────────────────────
   // `query`, when given, owns the body: it resolves the pending branch `isLoading` used to own,
@@ -2029,6 +2062,7 @@ export function BasaltDataTable<T extends RowData>(props: BasaltDataTableProps<T
        */}
       {(title !== undefined || showToolbar) && (
         <Group
+          ref={headerRef}
           className={classes.tableHeader}
           justify="space-between"
           align="center"
@@ -2058,6 +2092,9 @@ export function BasaltDataTable<T extends RowData>(props: BasaltDataTableProps<T
               >
                 {showSearch && (
                   <TextInput
+                    size="ctl"
+                    classNames={{ wrapper: classes.toolbarWrapper, input: classes.toolbarInput }}
+                    wrapperProps={{ 'data-basalt-hit': true }}
                     radius="md"
                     style={TABLE_SEARCH_STYLE}
                     placeholder={globalFilterPlaceholder}
@@ -2070,9 +2107,7 @@ export function BasaltDataTable<T extends RowData>(props: BasaltDataTableProps<T
                   />
                 )}
                 {showFacets && (
-                  // `inline={0}`: on a phone the facets live behind the one `Filters (n)` pill — a
-                  // search, a facet pill, `Filters` and the actions cannot share a 272px row.
-                  <FilterSet inline={0}>
+                  <FilterSet inline={narrowToolbar ? 0 : 1}>
                     {facets?.map((facet) => {
                       const column = resolveFacetColumn(table, facet)
                       if (!column) return null
@@ -2165,6 +2200,8 @@ export function BasaltDataTable<T extends RowData>(props: BasaltDataTableProps<T
                 filter: its state is the table's pagination, owned inside this component. */}
             <Select
               size="ctl"
+              classNames={{ wrapper: classes.toolbarWrapper, input: classes.toolbarInput }}
+              wrapperProps={{ 'data-basalt-hit': true }}
               radius="md"
               w={PAGE_SIZE_WIDTH}
               data={pageSizeRows}
@@ -2178,8 +2215,16 @@ export function BasaltDataTable<T extends RowData>(props: BasaltDataTableProps<T
                   `data-basalt-hit`, not through the `ctl` size), so `CtlSlot` cannot restore this
                   size on its own — an explicit `size="sm"` is the visual this footer always had. */}
               <Pagination
-                className={classes.pager}
                 size="sm"
+                // Mantine writes `--pagination-control-size` inline from `size`, which a class cannot
+                // outrank — `vars` is the seam. The `ctl` height of the dense group above: 28 at a
+                // fine pointer, 32 at a coarse one, the Select's own height either way.
+                vars={() => ({
+                  root: {
+                    '--pagination-control-size':
+                      'calc(var(--vx-space-control-height-ctl) * var(--mantine-scale))',
+                  },
+                })}
                 radius="md"
                 total={Math.max(table.getPageCount(), 1)}
                 value={paginationState.pageIndex + 1}

@@ -3,11 +3,9 @@
  * full: the pill carries it as `title`.
  */
 import { MantineProvider } from '@mantine/core'
-import { readFileSync } from 'node:fs'
-import { join } from 'node:path'
 import { cleanup, fireEvent, render, screen } from '@testing-library/react'
 import { afterEach, describe, expect, test } from 'bun:test'
-import { FilterPill } from './filter-pill'
+import { FilterPill, filterReading } from './filter-pill'
 
 afterEach(cleanup)
 
@@ -77,13 +75,40 @@ describe('FilterPill anatomy — muted label, bright value', () => {
   })
 })
 
-describe('FilterPill anatomy — the two colours', () => {
-  const CSS = readFileSync(join(import.meta.dir, 'controls.module.css'), 'utf8')
-  const rule = (selector: string): string =>
-    new RegExp(`${selector}\\s*\\{([^}]*)\\}`).exec(CSS)?.[1] ?? ''
+describe('filterReading — the one place a facet turns state into a pill reading', () => {
+  const input = { name: 'Exercise', value: 'Squat', unsetText: 'Any exercise' }
 
-  test('the name span is muted and the value span is ink', () => {
-    expect(rule('\\.pillName')).toContain('color: var(--vx-muted)')
-    expect(rule('\\.pillValue')).toContain('color: var(--vx-ink)')
+  test('informative: name + value', () => {
+    expect(filterReading({ ...input, informative: true })).toEqual({
+      label: 'Exercise',
+      value: 'Squat',
+    })
+  })
+
+  test('not informative: the control’s own unset copy', () => {
+    expect(filterReading({ ...input, informative: false })).toEqual({
+      label: 'Any exercise',
+      unset: true,
+    })
+  })
+
+  test('an empty value is not a selection', () => {
+    expect(filterReading({ ...input, informative: true, value: '' })).toEqual({
+      label: 'Any exercise',
+      unset: true,
+    })
+  })
+})
+
+describe('FilterPill — an empty value reads as unset', () => {
+  test('no value span, one muted name span, and the title stays the bare label', () => {
+    render(
+      <MantineProvider>
+        <FilterPill label="Exercise" value="" />
+      </MantineProvider>,
+    )
+    const button = screen.getByRole('button')
+    expect(button.querySelector('[data-pill-part="value"]')).toBeNull()
+    expect(button.getAttribute('title')).toBe('Exercise')
   })
 })

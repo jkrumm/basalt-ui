@@ -680,6 +680,7 @@ Signature: BasaltDataTable(props: BasaltDataTableProps<T>): JSX.Element
   globalFilterPlaceholder?: string
   searchIcon?: ReactNode
   initialGlobalFilter?: string
+  initialColumnFilters?: ColumnFiltersState
   onGlobalFilterChange?: (value: string) => void
   facets?: DataTableFacet<T>[]
   onColumnFiltersChange?: (filters: ColumnFiltersState) => void
@@ -697,8 +698,7 @@ Signature: BasaltDataTable(props: BasaltDataTableProps<T>): JSX.Element
   enablePagination?: boolean
   pageSizeOptions?: number[]
   initialPagination?: PaginationState
-  onPaginationChange?: (pagination: PaginationState) => void
-  … +13 more
+  … +14 more
 Signature: createColumnHelper(): ColumnHelper<{ rowSortingFeature: TableFeature; columnFilteringFeatur…
 Install: bun add @tanstack/react-table@9.2.8
 

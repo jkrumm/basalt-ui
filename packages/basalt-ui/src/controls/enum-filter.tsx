@@ -33,7 +33,7 @@ import type { FieldOption } from '../state/fields'
 import classes from './controls.module.css'
 import { POPOVER_ROW_HIT_GAP, useFilterRegistration, useFilterSurface } from './filter-context'
 import type { FilterBase, FilterOption } from './filter-base'
-import { FilterClearButton, FilterPill } from './filter-pill'
+import { FilterClearButton, FilterPill, filterReading } from './filter-pill'
 import { useControlName } from './control-name'
 import { PanelChoice, PanelRow } from './panel-row'
 
@@ -166,11 +166,15 @@ export function EnumFilter<T extends string>({
     </Radio.Group>
   )
 
+  const shownLabel = selected?.label ?? unmatchedLabel
   return (
     <FilterPill
-      {...(isDefault
-        ? { label: selected?.label ?? unmatchedLabel ?? label, unset: true }
-        : { label, value: selected?.label ?? unmatchedLabel ?? value })}
+      {...filterReading({
+        name: label,
+        informative: !isDefault,
+        value: shownLabel ?? value,
+        unsetText: shownLabel ?? label,
+      })}
       active={!isDefault}
       {...(numeric === true && { numeric: true })}
       {...(disabled === true && { disabled: true })}

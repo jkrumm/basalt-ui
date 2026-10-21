@@ -253,6 +253,8 @@ function TableFixture({ spec }: { spec: TableSpec }): ReactElement {
       })}
       {...(spec.search === true && { enableGlobalFilter: true, title: 'Projects' })}
       {...(facets.length > 0 && { facets })}
+      {...(spec.paginate === true && { enablePagination: true })}
+      {...(spec.preset === true && { initialColumnFilters: [{ id: 'name', value: 'Row 1' }] })}
       {...(spec.actions === true && {
         actions: [{ key: 'export', label: 'Export CSV', onClick: () => undefined }],
       })}

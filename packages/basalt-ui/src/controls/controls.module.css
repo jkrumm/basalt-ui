@@ -179,11 +179,32 @@
 /* The two-span anatomy (`filter-pill.tsx`): the facet's name muted, the selection bright. A pill
  * without a value renders neither span, so its single label keeps the button's own colour. */
 .pillName {
+  flex-shrink: 0;
   color: var(--vx-muted);
 }
 
+/* The Button label is a flex row (whitespace between its spans collapses), so the gap is the
+ * tier's own control gap, and the VALUE is what truncates past the pill's width cap. */
+.pillLabel:has(.pillValue) {
+  column-gap: var(--vx-space-control-gap, 0.375rem);
+}
+
 .pillValue {
+  overflow: hidden;
+  text-overflow: ellipsis;
   color: var(--vx-ink);
+}
+
+/* A numeric pill that also carries a name keeps the NAME in the body face — only the value is a
+ * number. */
+.pill[data-numeric]:has(.pillValue) .pillName {
+  font-family: var(--mantine-font-family);
+  font-size: var(--vx-text-sm);
+}
+
+.pill[data-numeric] .pillValue {
+  font-family: var(--basalt-font-mono);
+  font-size: var(--vx-text-xs);
 }
 
 /* Numeric pill labels read mono at the smaller step. The FACE comes from the package-wide

@@ -31,7 +31,7 @@ import type { MultiField } from '../state/fields'
 import type { FilterBase, FilterOption } from './filter-base'
 import classes from './controls.module.css'
 import { POPOVER_ROW_HIT_GAP, useFilterRegistration, useFilterSurface } from './filter-context'
-import { FilterClearButton, FilterPill } from './filter-pill'
+import { FilterClearButton, FilterPill, filterReading } from './filter-pill'
 import { useControlName } from './control-name'
 import { CheckGlyph } from './glyphs'
 import { PanelRow } from './panel-row'
@@ -113,7 +113,10 @@ export function MultiSelectFilter<T extends string>(props: MultiSelectFilterProp
   const options: readonly FilterOption[] = optionsProp ?? field.options
   const inSheet = surface === 'sheet'
   const inPanel = surface === 'panel'
-  const carriesInformation = value.length > 0 && value.length < options.length
+  // ONE predicate for "this filter is filtering": the muted/bright anatomy and the accent border
+  // both read it. An empty or every-option selection says nothing (`isDefault` aside), so neither
+  // may light up.
+  const informative = !isDefault && value.length > 0 && value.length < options.length
   const { labelId } = useControlName(label, inSheet || inPanel)
 
   // One toggle, shared by both list forms — the rows are rendered from `options`, whose values
@@ -181,13 +184,13 @@ export function MultiSelectFilter<T extends string>(props: MultiSelectFilterProp
 
   return (
     <FilterPill
-      {...(carriesInformation
-        ? {
-            label,
-            value: noun === undefined ? `${value.length} selected` : `${value.length} ${noun}`,
-          }
-        : { label, unset: true })}
-      active={!isDefault}
+      {...filterReading({
+        name: label,
+        informative,
+        value: `${value.length} ${noun ?? 'selected'}`,
+        unsetText: label,
+      })}
+      active={informative}
       {...(disabled === true && { disabled: true })}
       {...(icon !== undefined && { icon })}
       {...(className !== undefined && { className })}
