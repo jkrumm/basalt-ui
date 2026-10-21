@@ -404,6 +404,10 @@ export type FixtureSpec = {
     width?: number
     /** `isLoading` skeleton rows instead of data. */
     loading?: true
+    /** Render on the page surface instead of inside a card. */
+    onPage?: true
+    /** A button that flips the mounted table into `isLoading` and back (a refetch). */
+    reload?: true
   }
   /** Wave 39: a tall tooltip in a short `ChartCard` (`w39-tip`, `w39-tip-tall`), a slotted `Bars` in a strip cell (`w39-strip`), a 28px bare `Sparkline` (`w39-spark`). */
   w39Readout?: true
