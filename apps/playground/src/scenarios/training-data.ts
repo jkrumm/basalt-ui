@@ -147,21 +147,32 @@ export type SessionLogRow = {
 /** Epley: the load that one rep would match. */
 const estimatedOneRepMax = (kg: number, reps: number): number => Math.round(kg * (1 + reps / 30))
 
+const sum = (values: readonly number[]): number => values.reduce((a, b) => a + b, 0)
+
+const inMonthToDate = (monthStart: Date) => (s: Session) =>
+  s.date.getUTCFullYear() === monthStart.getUTCFullYear() &&
+  s.date.getUTCMonth() === monthStart.getUTCMonth() &&
+  s.date.getUTCDate() <= DAYS_ELAPSED
+
 /**
  * The strength log, newest first: every lift of every strength session in the month-to-date window.
  * It is the data: "Top lifts by volume" sums these rows and the session mix counts its distinct days,
  * so the three cannot disagree. A lift's result compares its top set with the previous session's.
  */
-const resultOf = (kg: number, previousKg: number | undefined): SessionResult =>
-  previousKg === undefined || kg === previousKg ? 'Held' : kg > previousKg ? 'PR' : 'Dropped'
+const resultOf = (kg: number, previousKg: number | undefined): SessionResult => {
+  if (previousKg === undefined || kg === previousKg) return 'Held'
+  if (kg > previousKg) return 'PR'
+  return 'Dropped'
+}
+
+const isMonthToDate = inMonthToDate(TODAY)
 
 export const SESSION_LOG: readonly SessionLogRow[] = (() => {
   const lastKg = new Map<string, number>()
   const rows: SessionLogRow[] = []
   for (const s of SESSIONS) {
     for (const l of s.lifts) {
-      const inWindow = s.date.getUTCFullYear() === YEAR && s.date.getUTCMonth() === month
-      if (inWindow) {
+      if (isMonthToDate(s)) {
         rows.push({
           date: s.date,
           exercise: l.name,
@@ -177,14 +188,7 @@ export const SESSION_LOG: readonly SessionLogRow[] = (() => {
   return rows.toReversed()
 })()
 
-const sum = (values: readonly number[]): number => values.reduce((a, b) => a + b, 0)
-
-const inMonthToDate = (monthStart: Date) => (s: Session) =>
-  s.date.getUTCFullYear() === monthStart.getUTCFullYear() &&
-  s.date.getUTCMonth() === monthStart.getUTCMonth() &&
-  s.date.getUTCDate() <= DAYS_ELAPSED
-
-const MTD = SESSIONS.filter(inMonthToDate(TODAY))
+const MTD = SESSIONS.filter(isMonthToDate)
 const PRIOR_MTD = SESSIONS.filter(inMonthToDate(priorMonthStart))
 
 /** Strength volume by lift this month, heaviest first: the sums of the session log's rows. */
@@ -200,6 +204,8 @@ export const TOP_LIFTS: readonly { name: string; volumeKg: number; share: number
 const changePct = (now: number, before: number): number => (now / before - 1) * 100
 
 export const SESSIONS_MTD = MTD.length
+/** The lifts of the month-to-date strength sessions: what the log must list, row for row. */
+export const MTD_STRENGTH_LIFTS = MTD.flatMap((s) => s.lifts).length
 export const SESSIONS_PRIOR = PRIOR_MTD.length
 export const SESSIONS_CHANGE_PCT = changePct(SESSIONS_MTD, SESSIONS_PRIOR)
 export const VOLUME_MTD_KG = sum(TOP_LIFTS.map((l) => l.volumeKg))
