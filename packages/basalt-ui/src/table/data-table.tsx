@@ -91,6 +91,7 @@ import {
   EMPTY_FOLD_SET,
   useCardProjection,
   useDataTableState,
+  useNarrowerThan,
   useRowDisclosure,
 } from './data-table-state'
 import { dataQueryBranch } from './query-branch'
@@ -1423,33 +1424,6 @@ function enforceManualPaginationContract(breaches: ManualPaginationBreach[]): vo
  * not overflow (the aside animates its width in from 0). `useLayoutEffect` runs before paint, so an
  * already-measurable table resolves without a flash; the default is bare for SSR and first paint.
  */
-/**
- * Whether the header row is narrower than the `regular` container class (`CONTAINER_CLASSES`, 480px)
- * — the PHONE tier of the toolbar, read off the table's own width, never the viewport. There the
- * facets live behind the one `Filters (n)` pill (`FilterSet inline={0}`); from `regular` up they keep
- * `FilterSet`'s normal inline budget. A search, a facet pill, `Filters` and the actions cannot share
- * a ~272px row, and two homes for the same facets is worse than one.
- */
-function useNarrowToolbar(active: boolean): {
-  headerRef: RefObject<HTMLDivElement | null>
-  narrow: boolean
-} {
-  const headerRef = useRef<HTMLDivElement>(null)
-  const [narrow, setNarrow] = useState(false)
-  useMeasuredWidths({
-    resolveRoot: () => headerRef.current,
-    signature: String(active),
-    enabled: active,
-    onMeasure: (root) => {
-      // A zero reading is an un-laid-out ancestor, not a narrow one.
-      if (root.clientWidth === 0) return
-      const next = root.clientWidth < CONTAINER_CLASSES.regular
-      setNarrow((current) => (current === next ? current : next))
-    },
-  })
-  return { headerRef, narrow }
-}
-
 function useMeasuredContainment(active: boolean): {
   wrapperRef: RefObject<HTMLDivElement | null>
   contained: boolean
@@ -1765,7 +1739,14 @@ export function BasaltDataTable<T extends RowData>(props: BasaltDataTableProps<T
   const showSearch = enableGlobalFilter && filteringEnabled
   const showFacets = hasFacets && filteringEnabled
   const showToolbar = showSearch || showFacets || Boolean(actions)
-  const { headerRef, narrow: narrowToolbar } = useNarrowToolbar(showToolbar)
+  // The PHONE tier of the toolbar, read off the header row's own width (never the viewport): below
+  // the `regular` container class the facets live behind the one `Filters (n)` pill
+  // (`FilterSet inline={0}`) — a search, a facet pill, `Filters` and the actions cannot share a
+  // ~272px row, and two homes for the same facets is worse than one.
+  const { ref: headerRef, narrow: narrowToolbar } = useNarrowerThan(
+    CONTAINER_CLASSES.regular,
+    showToolbar,
+  )
 
   // ── The query branch (law C3) ───────────────────────────────────────────────
   // `query`, when given, owns the body: it resolves the pending branch `isLoading` used to own,

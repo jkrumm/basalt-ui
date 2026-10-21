@@ -174,27 +174,37 @@ export function useDataTableState(props: DataTableStateProps, defaultPageSize: n
   }
 }
 
-/** Whether the table renders as `renderCard` projections: its own root measured below the `regular`
- * container class. A zero width is an un-laid-out ancestor, not a narrow table, so it moves nothing
- * — the default (and the SSR answer) is the table. The root's width never depends on which body it
- * holds, so the swap cannot oscillate. */
-export function useCardProjection(enabled: boolean): {
-  rootRef: RefObject<HTMLDivElement | null>
-  cards: boolean
-} {
-  const rootRef = useRef<HTMLDivElement>(null)
+/** Whether an element's own width is below `px`, measured on a ResizeObserver — never the viewport.
+ * A zero width is an un-laid-out ancestor, not a narrow one, so it moves nothing; the default (and
+ * the SSR answer) is `false`. */
+export function useNarrowerThan(
+  px: number,
+  enabled: boolean,
+): { ref: RefObject<HTMLDivElement | null>; narrow: boolean } {
+  const ref = useRef<HTMLDivElement>(null)
   const [narrow, setNarrow] = useState(false)
   useMeasuredWidths({
-    resolveRoot: () => rootRef.current,
+    resolveRoot: () => ref.current,
     signature: '',
     enabled,
     onMeasure: (root) => {
       if (root.clientWidth === 0) return
-      const next = root.clientWidth < CONTAINER_CLASSES.regular
+      const next = root.clientWidth < px
       setNarrow((current) => (current === next ? current : next))
     },
   })
-  return { rootRef, cards: enabled && narrow }
+  return { ref, narrow: enabled && narrow }
+}
+
+/** Whether the table renders as `renderCard` projections: its own root measured below the `regular`
+ * container class. The root's width never depends on which body it holds, so the swap cannot
+ * oscillate. */
+export function useCardProjection(enabled: boolean): {
+  rootRef: RefObject<HTMLDivElement | null>
+  cards: boolean
+} {
+  const { ref, narrow } = useNarrowerThan(CONTAINER_CLASSES.regular, enabled)
+  return { rootRef: ref, cards: narrow }
 }
 
 /** Click + Enter activation, shared by a row and its card. Enter only: Space is the browser's own
