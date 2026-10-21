@@ -273,7 +273,9 @@ const logRow = (
   kg: number,
   result: SessionResult,
 ): SessionLogRow => ({
-  date: new Date(TODAY.getTime() - daysAgo * DAY_MS + 18 * 3_600_000),
+  // Relative to NOW, not TODAY: the table's relative-time column reads the live clock, so fixed
+  // dates would drift ("6 days ago" becoming "2 weeks ago") under every later shot.
+  date: new Date(Date.now() - daysAgo * DAY_MS),
   exercise,
   sets,
   volumeKg: sets * reps * kg,
@@ -281,7 +283,7 @@ const logRow = (
   result,
 })
 
-/** The strength log, newest first: the last two weeks of top sets, fixed data shaped like argo's workouts. */
+/** The strength log, newest first: the last two weeks of top sets, shaped like argo's workouts. */
 export const SESSION_LOG: readonly SessionLogRow[] = [
   logRow(1, 'Squat', 4, 5, 117.5, 'PR'),
   logRow(3, 'Bench press', 4, 6, 82.5, 'Held'),
