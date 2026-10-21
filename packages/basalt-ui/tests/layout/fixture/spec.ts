@@ -397,7 +397,7 @@ export type FixtureSpec = {
   /** Wave 42: a table with a sorted and an unsorted header and an entity beside a text cell in a narrow box (`w42-kinds`). */
   w42Kinds?: true
   /** Wave 42: a 4-column kinded table with an active facet pill and a pager; `loading` shows its skeleton (`w42-states`). */
-  w42States?: { loading?: true; pinned?: true }
+  w42States?: { loading?: true; pinned?: true; longError?: true }
   /** Wave 42: argo's workouts table and S2's sessions table in a fixed-width card (`w42-responsive`). */
   w42Responsive?: {
     /** argo's workouts (no `meta.priority`) or the playground's S2 sessions. */

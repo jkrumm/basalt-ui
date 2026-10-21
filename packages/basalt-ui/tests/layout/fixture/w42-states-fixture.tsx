@@ -19,13 +19,25 @@ const COLUMNS = [
   col.accessor('state', { header: 'State', meta: { kind: 'status' } }),
 ]
 
+const LONG_ERROR_QUERY = {
+  data: undefined,
+  isError: true,
+  error: new Error(
+    'The upstream service did not answer the request within its window, so nothing could be loaded here.',
+  ),
+  fetchStatus: 'idle',
+  refetch: () => undefined,
+} as const
+
 /** Wave 42 sizing and state chrome: a 4-column kinded table spanning its container, with an active facet pill and a pager (`w42-states`). */
 export function W42StatesFixture({
   loading,
   pinned,
+  longError,
 }: {
   loading?: true
   pinned?: true
+  longError?: true
 }): ReactElement {
   const Wrap = pinned === true ? Card : Box
   return (
@@ -35,6 +47,7 @@ export function W42StatesFixture({
         data={loading === true ? [] : ROWS}
         columns={COLUMNS}
         isLoading={loading === true}
+        {...(longError === true && { data: [], query: LONG_ERROR_QUERY })}
         {...(pinned === true && {
           stickyHeader: true,
           enablePinning: true,

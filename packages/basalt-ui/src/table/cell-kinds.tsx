@@ -163,8 +163,9 @@ function RelativeTime({ value }: { value: unknown }) {
     // Below the cell and on keyboard focus: above it the tip covered the header's label on row one.
     <Tooltip label={full} position="bottom" events={{ hover: true, focus: true, touch: false }}>
       {/* oxlint-disable-next-line jsx-a11y/no-noninteractive-tabindex -- the tooltip opens on focus */}
-      <time dateTime={date.toISOString()} aria-label={full} tabIndex={0}>
+      <time dateTime={date.toISOString()} tabIndex={0}>
         {relativeTime(date)}
+        <span className={classes.srOnly}>{`, ${full}`}</span>
       </time>
     </Tooltip>
   )

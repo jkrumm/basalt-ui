@@ -43,3 +43,13 @@
 .dash {
   color: var(--vx-faint);
 }
+
+/* The full date for assistive tech, inside the `<time>`: visually hidden, still announced. */
+.srOnly {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}

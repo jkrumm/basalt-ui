@@ -51,6 +51,17 @@ layout('table kinds — computed style', () => {
       expect(await p.computed(`${TABLE} thead th`, 'background-color')).toBe(td)
     })
 
+    test(`number and kindless cells hold one line, a text cell wraps (${viewport.name})`, async () => {
+      const p = await openFixture(spec, viewport)
+      expect(await p.computed(`${TABLE} tbody td[data-kind="number"]`, 'white-space')).toBe(
+        'nowrap',
+      )
+      expect(await p.computed(`${TABLE} tbody tr:first-child td:last-child`, 'white-space')).toBe(
+        'nowrap',
+      )
+      expect(await p.computed(`${TABLE} tbody td[data-kind="text"]`, 'white-space')).toBe('normal')
+    })
+
     test(`an entity cell holds one line; a text cell may wrap (${viewport.name})`, async () => {
       const p = await openFixture(spec, viewport)
       const entity = await p.box('entity', `${TABLE} tbody td[data-kind="entity"]`)

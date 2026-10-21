@@ -356,13 +356,15 @@ td.pinnedFluid {
 /*
  * Rows hold one line (SPEC § 6.6, 40 px): a body cell never wraps, so the fold measures natural
  * one-line widths and folds or pins instead of "fitting" by wrapping. Only an explicit `text` kind
- * may wrap — never a pinned one.
+ * may wrap — never a pinned one. A full-row cell (empty and error bodies, the fold
+ * disclosure) holds prose and wraps inside the table width.
  */
 .table td {
   white-space: nowrap;
 }
 
-.table td[data-kind='text']:not(.pinnedLayer) {
+.table td[data-kind='text']:not(.pinnedLayer),
+.table td[colspan] {
   white-space: normal;
 }
 

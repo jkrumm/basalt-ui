@@ -8,6 +8,7 @@ declare const classes: {
   readonly meter: string
   readonly number: string
   readonly relativeTime: string
+  readonly srOnly: string
   readonly status: string
   readonly text: string
 }
