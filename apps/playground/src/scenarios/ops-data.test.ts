@@ -74,6 +74,10 @@ describe('ops-data', () => {
     }
   })
 
+  it('every outage carries a scope, and the list spans wan, lan and dns', () => {
+    expect(new Set(OUTAGES.map((o) => o.scope))).toEqual(new Set(['wan', 'lan', 'dns']))
+  })
+
   it('transitions pair every outage, newest first, alternating up then down', () => {
     expect(TRANSITIONS).toHaveLength(OUTAGES.length * 2)
     for (const [i, t] of TRANSITIONS.entries()) expect(t.to).toBe(i % 2 === 0 ? 'up' : 'down')

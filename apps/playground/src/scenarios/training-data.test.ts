@@ -21,6 +21,7 @@ import {
   PACE_SESSIONS,
   PRIOR_WINDOW_LABEL,
   READINESS_SCORE,
+  SESSION_LOG,
   SESSIONS_7D_TREND,
   SESSIONS_CHANGE_PCT,
   SESSIONS_MTD,
@@ -123,5 +124,22 @@ describe('training-data', () => {
     expect(HIT_HISTORY.map((m) => m.label)).toEqual(['Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep'])
     expect(HIT_HISTORY.map((m) => m.sessions)).toEqual([...MONTHLY_SESSIONS])
     expect(HIT_HISTORY.filter((m) => m.sessions >= GOAL_SESSIONS)).toHaveLength(MONTHS_HIT)
+  })
+})
+
+describe('session log', () => {
+  it('is eight rows, newest first, covering four exercises and all three results', () => {
+    expect(SESSION_LOG).toHaveLength(8)
+    const times = SESSION_LOG.map((r) => r.date.getTime())
+    expect(times).toEqual(times.toSorted((a, b) => b - a))
+    expect(new Set(SESSION_LOG.map((r) => r.exercise)).size).toBe(4)
+    expect(new Set(SESSION_LOG.map((r) => r.result))).toEqual(new Set(['PR', 'Held', 'Dropped']))
+  })
+
+  it('every row has a positive volume and a positive estimated 1RM', () => {
+    for (const r of SESSION_LOG) {
+      expect(r.volumeKg).toBeGreaterThan(0)
+      expect(r.e1rmKg).toBeGreaterThan(0)
+    }
   })
 })

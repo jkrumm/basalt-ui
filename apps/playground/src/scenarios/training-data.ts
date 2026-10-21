@@ -250,3 +250,45 @@ export const HIT_HISTORY: readonly { label: string; sessions: number }[] = MONTH
     sessions,
   }),
 )
+
+export type SessionResult = 'PR' | 'Held' | 'Dropped'
+
+export type SessionLogRow = {
+  date: Date
+  exercise: string
+  sets: number
+  volumeKg: number
+  e1rmKg: number
+  result: SessionResult
+}
+
+/** Epley: the load that one rep would match. */
+const estimatedOneRepMax = (kg: number, reps: number): number => Math.round(kg * (1 + reps / 30))
+
+const logRow = (
+  daysAgo: number,
+  exercise: string,
+  sets: number,
+  reps: number,
+  kg: number,
+  result: SessionResult,
+): SessionLogRow => ({
+  date: new Date(TODAY.getTime() - daysAgo * DAY_MS + 18 * 3_600_000),
+  exercise,
+  sets,
+  volumeKg: sets * reps * kg,
+  e1rmKg: estimatedOneRepMax(kg, reps),
+  result,
+})
+
+/** The strength log, newest first: the last two weeks of top sets, fixed data shaped like argo's workouts. */
+export const SESSION_LOG: readonly SessionLogRow[] = [
+  logRow(1, 'Squat', 4, 5, 117.5, 'PR'),
+  logRow(3, 'Bench press', 4, 6, 82.5, 'Held'),
+  logRow(4, 'Deadlift', 3, 5, 140, 'PR'),
+  logRow(6, 'Overhead press', 4, 6, 52.5, 'Dropped'),
+  logRow(8, 'Squat', 4, 5, 115, 'Held'),
+  logRow(10, 'Bench press', 4, 6, 82.5, 'Held'),
+  logRow(11, 'Deadlift', 3, 5, 137.5, 'Held'),
+  logRow(14, 'Overhead press', 4, 6, 55, 'PR'),
+]

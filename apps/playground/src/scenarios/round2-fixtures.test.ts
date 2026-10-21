@@ -157,15 +157,16 @@ const shareGrid = (c: HTMLElement, a: string, b: string): boolean => {
 }
 
 describe('composition', () => {
-  it('S2 reads goal, mix, load, history, then readiness and lifts', () => {
+  it('S2 reads goal, mix, load, history, readiness and lifts, then the session log', () => {
     const c = mount(createElement(TrainingScenario, { shotState: undefined }))
-    expect(order(c).slice(-6)).toEqual([
+    expect(order(c).slice(-7)).toEqual([
       'goal',
       'session-mix',
       'training-load',
       'hit-rate',
       'readiness',
       'top-lifts',
+      'sessions',
     ])
     expect(shareGrid(c, 'training-load', 'hit-rate')).toBe(true)
     expect(shareGrid(c, 'readiness', 'top-lifts')).toBe(true)

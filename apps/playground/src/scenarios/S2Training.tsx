@@ -10,10 +10,11 @@
  * draw their own loading and empty states (`shot-state` → `loading` / no reading); the card only
  * takes the error.
  */
-import { Box, SimpleGrid, Skeleton, Stack, Text } from '@mantine/core'
-import { BarList, Meter, PageBar, StatCard, StatGroup } from 'basalt-ui'
+import { Box, ColorSwatch, Group, SimpleGrid, Skeleton, Stack, Text } from '@mantine/core'
+import { BarList, Meter, PageBar, Section, StatCard, StatGroup } from 'basalt-ui'
 import { Bars, ChartCard, Sparkline } from 'basalt-ui/charts'
 import type { BarsBar } from 'basalt-ui/charts'
+import { BasaltDataTable, createColumnHelper } from 'basalt-ui/table'
 import { CONTAINER_KEYS, VX } from 'basalt-ui/tokens'
 import type { CSSProperties } from 'react'
 import { ErrorNote } from '../demo/fixtures/error-note'
@@ -45,6 +46,7 @@ import {
   READINESS_SCORE,
   READINESS_ZONES,
   SESSIONS_7D_POINTS,
+  SESSION_LOG,
   SESSIONS_CHANGE_PCT,
   SESSIONS_MTD,
   TODAY_LABEL,
@@ -57,7 +59,7 @@ import {
   loadZoneName,
   readinessLevel,
 } from './training-data'
-import type { SessionType } from './training-data'
+import type { SessionLogRow, SessionType } from './training-data'
 
 type SparklineSize = { width: number; height: number }
 
@@ -457,6 +459,71 @@ function ReadinessRow({ shotState }: ScenarioProps) {
   )
 }
 
+const EXERCISE_COLOR: Record<string, string> = {
+  Squat: demoColors.sessions,
+  'Bench press': demoColors.signups,
+  Deadlift: demoColors.revenue,
+  'Overhead press': demoColors.churn,
+}
+const EXERCISES = [...new Set(SESSION_LOG.map((r) => r.exercise))]
+const EXERCISE_OPTIONS = EXERCISES.map((value) => ({ value, label: value }))
+const SESSION_ROWS = [...SESSION_LOG]
+const NO_SESSIONS: SessionLogRow[] = []
+
+/** Units live in the headers; `priority` orders the fold (highest folds first). */
+const sessionColumns = (() => {
+  const col = createColumnHelper<SessionLogRow>()
+  return [
+    col.accessor('exercise', {
+      header: 'Exercise',
+      cell: (c) => (
+        <Group gap="xs" wrap="nowrap">
+          <ColorSwatch size={8} color={EXERCISE_COLOR[c.getValue()] ?? VX.faint} />
+          {c.getValue()}
+        </Group>
+      ),
+      meta: { kind: 'entity', priority: 1 },
+    }),
+    col.accessor('date', {
+      header: 'Date',
+      meta: { kind: 'relative-time', priority: 2 },
+    }),
+    col.accessor('result', {
+      header: 'Result',
+      meta: {
+        kind: 'status',
+        priority: 3,
+        statusColor: (result) =>
+          result === 'PR' ? 'green' : result === 'Dropped' ? 'red' : 'gray',
+      },
+    }),
+    col.accessor('e1rmKg', { header: 'Est. 1RM (kg)', meta: { kind: 'number', priority: 4 } }),
+    col.accessor('volumeKg', { header: 'Volume (kg)', meta: { kind: 'number', priority: 5 } }),
+    col.accessor('sets', { header: 'Sets', meta: { kind: 'number', priority: 6 } }),
+  ]
+})()
+
+function TrainingSessions({ shotState }: ScenarioProps) {
+  const query = queryFor(shotState, retry())
+  return (
+    <Box data-shot="sessions" h="100%">
+      <Section title="Sessions">
+        <BasaltDataTable
+          // Rows only at rest: the empty branch needs `data` empty, the others have no rows yet.
+          data={shotState === undefined ? SESSION_ROWS : NO_SESSIONS}
+          columns={sessionColumns}
+          enableGlobalFilter
+          globalFilterPlaceholder="Search exercises"
+          facets={[{ columnId: 'exercise', label: 'Exercise', options: EXERCISE_OPTIONS }]}
+          initialSorting={[{ id: 'date', desc: true }]}
+          {...(query !== undefined && { query })}
+          emptyState={<span>No session logged yet. Log a lift to start the log.</span>}
+        />
+      </Section>
+    </Box>
+  )
+}
+
 export function TrainingScenario({ shotState }: ScenarioProps) {
   return (
     <Stack gap="sm" data-shot-states="empty loading error">
@@ -465,6 +532,7 @@ export function TrainingScenario({ shotState }: ScenarioProps) {
       <TrainingStats shotState={shotState} />
       <GoalRow shotState={shotState} />
       <ReadinessRow shotState={shotState} />
+      <TrainingSessions shotState={shotState} />
     </Stack>
   )
 }

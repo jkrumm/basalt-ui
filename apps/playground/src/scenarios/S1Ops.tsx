@@ -119,14 +119,25 @@ const retry = (): string => retryCopy('probe')
 const columns = (() => {
   const col = createColumnHelper<Outage>()
   return [
-    col.accessor('start', { header: 'Start (UTC)', cell: (c) => fmtStamp(c.getValue()) }),
-    col.accessor('end', { header: 'End (UTC)', cell: (c) => fmtStamp(c.getValue()) }),
-    col.accessor('minutes', {
-      header: 'Duration',
-      cell: (c) => fmtDuration(c.getValue()),
-      meta: { align: 'right', numeral: true },
+    // Absolute UTC stamps stay `text`: the question on this table is WHEN to the minute (to match a
+    // provider ticket), which "5 days ago" would blur, and `relative-time` reads the live clock, so it
+    // would also drift under a screenshot.
+    col.accessor('start', {
+      header: 'Start (UTC)',
+      cell: (c) => fmtStamp(c.getValue()),
+      meta: { kind: 'text' },
     }),
-    col.accessor('cause', { header: 'Cause' }),
+    col.accessor('end', {
+      header: 'End (UTC)',
+      cell: (c) => fmtStamp(c.getValue()),
+      meta: { kind: 'text' },
+    }),
+    col.accessor('minutes', { header: 'Duration (min)', meta: { kind: 'number' } }),
+    col.accessor('scope', {
+      header: 'Scope',
+      meta: { kind: 'status', statusColor: (scope) => (scope === 'wan' ? 'red' : 'orange') },
+    }),
+    col.accessor('cause', { header: 'Cause', meta: { kind: 'text' } }),
   ]
 })()
 

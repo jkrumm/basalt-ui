@@ -7,6 +7,9 @@
  */
 import { fmtDay, itemAt, seeded } from './fixture-utils'
 
+/** Where the line broke, shaped like linewatch's probe scopes. */
+export type OutageScope = 'wan' | 'lan' | 'dns'
+
 export type OutageCause = 'Modem reboot' | 'ISP upstream fault' | 'Line retrain'
 
 /** The reading time. Fixed, so "last 24 h" and "last outage" never move under a screenshot. */
@@ -30,21 +33,28 @@ export type Outage = {
   end: Date
   minutes: number
   cause: OutageCause
+  scope: OutageScope
 }
 
-const outage = (startMs: number, minutes: number, cause: OutageCause): Outage => ({
+const outage = (
+  startMs: number,
+  minutes: number,
+  cause: OutageCause,
+  scope: OutageScope,
+): Outage => ({
   start: new Date(startMs),
   end: new Date(startMs + minutes * MIN_MS),
   minutes,
   cause,
+  scope,
 })
 
 /** Oldest first. */
 const OUTAGES_ASC: readonly Outage[] = [
-  outage(at(20, 5), 9, 'Modem reboot'),
-  outage(at(71, 40), 47, 'ISP upstream fault'),
-  outage(at(118, 12), 6, 'Line retrain'),
-  outage(at(141, 30), 23, 'ISP upstream fault'),
+  outage(at(20, 5), 9, 'Modem reboot', 'lan'),
+  outage(at(71, 40), 47, 'ISP upstream fault', 'wan'),
+  outage(at(118, 12), 6, 'Line retrain', 'wan'),
+  outage(at(141, 30), 23, 'ISP upstream fault', 'dns'),
 ]
 
 /** Newest first — the order a person asks "when did it last break" in. */
