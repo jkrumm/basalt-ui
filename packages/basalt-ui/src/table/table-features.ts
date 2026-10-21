@@ -56,10 +56,10 @@ export type DataTableColumnKind = (typeof DATA_TABLE_COLUMN_KINDS)[number]
 export type BasaltColumnMeta = {
   align?: DataTableAlign
   /**
-   * Opt OUT of the automatic mono-numeral cell style. The table applies it whenever the cell's
-   * raw value is a number — which is right for a plain figure and wrong for a numeric accessor
-   * whose `cell` renders its own chrome (a coloured `Text`, a `Badge`, a sparkline), because the
-   * `<td>`'s mono font then overrides what the cell asked for.
+   * Opt OUT of the automatic numeral cell style (proportional sans with `tabular-nums`, SPEC D33).
+   * The table applies it whenever the cell's raw value is a number — which is right for a plain
+   * figure and wrong for a numeric accessor whose `cell` renders its own chrome (a coloured `Text`,
+   * a `Badge`, a sparkline), because the `<td>`'s numeral style then overrides what the cell asked for.
    */
   numeral?: boolean
   /**

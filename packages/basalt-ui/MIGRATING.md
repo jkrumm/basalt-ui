@@ -1060,9 +1060,9 @@ Nothing to change unless a test or a style depends on the old look. Each line na
   with any `meta.kind`, data columns (`entity` included) size to their content and a wide container's slack goes to
   the last `kind: 'text'` column, else to an `aria-hidden` trailing spacer cell. A table with no `kind` is
   unchanged. Mark a notes/detail column `kind: 'text'` to have it take the width.
-- **Compact (< 480 px container).** The `meta.priority` fold now stops at two data columns (was one). A table that
-  still overflows pins its first visible data column (`columnDef.minSize` is its floor, default 120 px) and scrolls
-  the rest in a focusable `region` (style it with `:focus-visible`). A caller's `initialColumnPinning.start` turns
+- **Narrow tables.** When the columns no longer fit their container, the `meta.priority` fold now stops at two
+  data columns (was one). A table that still overflows pins its first visible data column (`columnDef.minSize` is
+  its floor, default 120 px) and scrolls the rest in a focusable `region` (style it with `:focus-visible`). A caller's `initialColumnPinning.start` turns
   the auto-pin off. The table carries `aria-colcount` and every cell `aria-colindex`. The fold toggle is named
   `Show <folded headers>` / `Hide …` (was `Show row details`), and its header cell shows `+N`.
 - **States.** The error title is the house `Could not load` (was `Could not load rows`); the count chip and the
