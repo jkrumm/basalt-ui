@@ -3,8 +3,8 @@
  *
  * The pill reads the filter's name while the selection carries no information — empty (no
  * constraint) or every option (the same thing said the long way) — and switches to a count once it
- * does: `All channels` → `3 channels`. `noun` is the plural read in that count and defaults to the
- * label lowercased, so `label="Channels"` needs no second prop.
+ * does: `Channels` → `Channels  3 selected` (label muted, count bright — the pill anatomy in
+ * `filter-pill.tsx`). A `noun` replaces `selected`: `Channels  3 channels`.
  *
  * @example
  * <MultiSelectFilter field={analytics.field.channels} label="All channels" noun="channels" />
@@ -52,9 +52,9 @@ export type MultiSelectFilterProps<T extends string> = UncontrolledProps &
      */
     readonly clearable?: boolean
     /**
-     * The plural noun in the `3 channels` count.
+     * The word after the count, in place of `selected`: `3 channels`.
      *
-     * @default the label, lowercased
+     * @default 'selected'
      */
     readonly noun?: string
     /**
@@ -181,7 +181,12 @@ export function MultiSelectFilter<T extends string>(props: MultiSelectFilterProp
 
   return (
     <FilterPill
-      label={carriesInformation ? `${value.length} ${noun ?? label.toLowerCase()}` : label}
+      {...(carriesInformation
+        ? {
+            label,
+            value: noun === undefined ? `${value.length} selected` : `${value.length} ${noun}`,
+          }
+        : { label, unset: true })}
       active={!isDefault}
       {...(disabled === true && { disabled: true })}
       {...(icon !== undefined && { icon })}

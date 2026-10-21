@@ -146,7 +146,7 @@ describe('a call-site fallback (`withFallback`) reaches the control, not just th
     fireEvent.click(pill('bench'))
     fireEvent.click(await screen.findByLabelText('squat'))
     await waitFor(() => expect(hook()).toBe('squat'))
-    expect(pill('squat')).toBeDefined()
+    expect(pill('Lift squat')).toBeDefined()
     expect(localStorage.getItem('basalt:select-filter-leader')).not.toBeNull()
 
     act(() => {

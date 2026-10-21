@@ -74,6 +74,10 @@ export type TableSpec = {
    * production one and not a stand-in.
    */
   facets?: number
+  /** Adds an `actions` button (`Export CSV`) to the toolbar's right edge. */
+  actions?: true
+  /** Pins the table's own container to this many px — the toolbar reads it, never the viewport. */
+  containerWidth?: number
   /**
    * Adds a `State` column of `Badge` cells beside breakable prose columns, the shape that shrank
    * `WORKING` to `WOR…` in argo: a Badge's clipped label has a ~0 min-content, so an auto-layout

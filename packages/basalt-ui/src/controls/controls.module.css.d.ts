@@ -11,6 +11,8 @@ declare const classes: {
   readonly pill: string
   readonly pillIcon: string
   readonly pillLabel: string
+  readonly pillName: string
+  readonly pillValue: string
   readonly glyph: string
   readonly dropdown: string
   readonly optionList: string

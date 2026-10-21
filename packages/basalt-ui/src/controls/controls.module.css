@@ -176,6 +176,16 @@
   font-weight: 500;
 }
 
+/* The two-span anatomy (`filter-pill.tsx`): the facet's name muted, the selection bright. A pill
+ * without a value renders neither span, so its single label keeps the button's own colour. */
+.pillName {
+  color: var(--vx-muted);
+}
+
+.pillValue {
+  color: var(--vx-ink);
+}
+
 /* Numeric pill labels read mono at the smaller step. The FACE comes from the package-wide
  * `[data-numeric]` law in `styles.css`; the `font-size` is the pill's own decision, which is why
  * this rule exists at all. */

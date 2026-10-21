@@ -128,7 +128,7 @@ describe('SelectFilter', () => {
     await waitFor(() => {
       expect(search(router)['currency']).toBe('EUR')
     })
-    const active = screen.getByRole('button', { name: 'EUR' })
+    const active = screen.getByRole('button', { name: 'Currency EUR' })
     expect(active.hasAttribute('data-active')).toBe(true)
   })
 
@@ -140,7 +140,7 @@ describe('SelectFilter', () => {
       entry: '/dashboard?currency=EUR',
       Page: () => <SelectFilter field={store.field.currency} label="Currency" />,
     })
-    await openPill('EUR')
+    await openPill('Currency EUR')
     expect(screen.getByRole('radiogroup', { name: 'Currency', hidden: true })).toBeDefined()
   })
 
@@ -150,7 +150,7 @@ describe('SelectFilter', () => {
       entry: '/dashboard?currency=EUR',
       Page: () => <SelectFilter field={store.field.currency} label="Currency" />,
     })
-    expect(screen.getByRole('button', { name: 'EUR' })).toBeDefined()
+    expect(screen.getByRole('button', { name: 'Currency EUR' })).toBeDefined()
   })
 })
 
@@ -233,7 +233,7 @@ describe('a control resets by CLEARING its field, never by writing the fallback 
       expect(mirrored()).toBe(true)
     })
 
-    await openPill('EUR')
+    await openPill('Currency EUR')
     await act(async () => {
       fireEvent.click(screen.getByRole('button', { name: 'Clear', hidden: true }))
     })
@@ -284,7 +284,7 @@ describe('SelectFilter — options as a runtime catalogue', () => {
     await waitFor(() => {
       expect(search(router)['currency']).toBe('EUR')
     })
-    expect(screen.getByRole('button', { name: 'EUR · 1.08' })).toBeDefined()
+    expect(screen.getByRole('button', { name: 'Currency EUR · 1.08' })).toBeDefined()
   })
 
   test('a string field plus options round-trips an id no enum could have declared', async () => {
@@ -301,7 +301,7 @@ describe('SelectFilter — options as a runtime catalogue', () => {
     await waitFor(() => {
       expect(search(router)['projectId']).toBe('argo')
     })
-    expect(screen.getByRole('button', { name: 'Argo' })).toBeDefined()
+    expect(screen.getByRole('button', { name: 'Project Argo' })).toBeDefined()
   })
 
   test('a deep link into that id set is read with no interaction at all', async () => {
@@ -310,7 +310,7 @@ describe('SelectFilter — options as a runtime catalogue', () => {
       entry: '/dashboard?projectId=linewatch',
       Page: () => <SelectFilter field={store.field.projectId} label="Project" options={PROJECTS} />,
     })
-    expect(screen.getByRole('button', { name: 'Linewatch' })).toBeDefined()
+    expect(screen.getByRole('button', { name: 'Project Linewatch' })).toBeDefined()
   })
 
   test('a disabled catalogue row is offered and refused — it still labels the value it names', async () => {
@@ -321,8 +321,8 @@ describe('SelectFilter — options as a runtime catalogue', () => {
     })
     // A live catalogue cannot express "archived" by omitting the row — the URL may already point at
     // it, and a missing row would read as the filter's default.
-    expect(screen.getByRole('button', { name: 'Retired app' })).toBeDefined()
-    await openPill('Retired app')
+    expect(screen.getByRole('button', { name: 'Project Retired app' })).toBeDefined()
+    await openPill('Project Retired app')
     expect(
       screen.getByRole('radio', { name: 'Retired app', hidden: true }).hasAttribute('disabled'),
     ).toBe(true)
@@ -352,7 +352,7 @@ describe('MultiSelectFilter', () => {
     await waitFor(() => {
       expect(search(router)['channels']).toEqual(['web'])
     })
-    expect(screen.getByRole('button', { name: '1 channels' })).toBeDefined()
+    expect(screen.getByRole('button', { name: 'All channels 1 channels' })).toBeDefined()
   })
 
   test('every option selected is the same information as none — the label comes back', async () => {
@@ -388,7 +388,7 @@ describe('MultiSelectFilter', () => {
       expect(search(router)['channels']).toEqual(['web'])
     })
     // Two rows shown, not the field's three — so `1 channels` is counted against what is offered.
-    expect(screen.getByRole('button', { name: '1 channels' })).toBeDefined()
+    expect(screen.getByRole('button', { name: 'All channels 1 channels' })).toBeDefined()
   })
 })
 
@@ -841,7 +841,9 @@ describe('NumberFilter — the options form', () => {
       expect(search(router)['nights']).toBe(7)
     })
     expect(typeof search(router)['nights']).toBe('number')
-    expect(screen.getByRole('button', { name: 'A week' }).hasAttribute('data-active')).toBe(true)
+    expect(screen.getByRole('button', { name: 'Nights A week' }).hasAttribute('data-active')).toBe(
+      true,
+    )
   })
 
   test('the popover names the FILTER — the pill text is the value', async () => {
@@ -850,7 +852,7 @@ describe('NumberFilter — the options form', () => {
       entry: '/dashboard?nights=7',
       Page: () => <NumberFilter field={store.field.nights} label="Nights" options={NIGHTS} />,
     })
-    await openPill('A week')
+    await openPill('Nights A week')
     expect(screen.getByRole('radiogroup', { name: 'Nights', hidden: true })).toBeDefined()
   })
 
@@ -860,7 +862,7 @@ describe('NumberFilter — the options form', () => {
       entry: '/dashboard?nights=1',
       Page: () => <NumberFilter field={store.field.nights} label="Nights" options={NIGHTS} />,
     })
-    expect(screen.getByRole('button', { name: '1 night' })).toBeDefined()
+    expect(screen.getByRole('button', { name: 'Nights 1 night' })).toBeDefined()
   })
 
   /**
@@ -886,7 +888,7 @@ describe('NumberFilter — the options form', () => {
       ),
     })
 
-    await openPill('Level 2')
+    await openPill('Difficulty Level 2')
     await act(async () => {
       fireEvent.click(screen.getByRole('button', { name: 'Clear', hidden: true }))
     })
@@ -921,7 +923,7 @@ describe('NumberFilter — the options form names the unset state', () => {
     await waitFor(() => {
       expect(search(router)['nights']).toBe(2)
     })
-    expect(screen.getByRole('button', { name: '2 nights' })).toBeTruthy()
+    expect(screen.getByRole('button', { name: 'Nights 2 nights' })).toBeTruthy()
   })
 
   test('an unnamed unmatched value still reads the filter label', async () => {

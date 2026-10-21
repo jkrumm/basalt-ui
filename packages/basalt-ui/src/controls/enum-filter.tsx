@@ -168,7 +168,9 @@ export function EnumFilter<T extends string>({
 
   return (
     <FilterPill
-      label={selected?.label ?? unmatchedLabel ?? label}
+      {...(isDefault
+        ? { label: selected?.label ?? unmatchedLabel ?? label, unset: true }
+        : { label, value: selected?.label ?? unmatchedLabel ?? value })}
       active={!isDefault}
       {...(numeric === true && { numeric: true })}
       {...(disabled === true && { disabled: true })}

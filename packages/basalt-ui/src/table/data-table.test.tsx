@@ -274,14 +274,16 @@ describe('the toolbar has no fixed-width literals and resolves controls to the c
     // Asserted as LONGHANDS: the DOM expands the `flex` shorthand, so matching the shorthand
     // string would pass or fail on the serializer rather than on the declaration.
     // `flex-shrink: 0` here is the whole defect — it is what let the item outgrow its column.
+    // Wave 42: the toolbar now GROWS (it takes the row beside the title and pushes `actions` to the
+    // right edge); shrinking and `min-width: 0` are still what keeps it inside its column.
     expect(toolbarStyle).toContain('flex-shrink: 1')
-    expect(toolbarStyle).toContain('flex-grow: 0')
+    expect(toolbarStyle).toContain('flex-grow: 1')
     expect(toolbarStyle).toContain('min-width: 0')
 
     const search = container.querySelector('.mantine-TextInput-root')
     const searchStyle = search?.getAttribute('style') ?? ''
     expect(searchStyle).toContain('flex-basis: 220px')
-    expect(searchStyle).toContain('flex-shrink: 1')
+    expect(searchStyle).toContain('flex-shrink: 100')
     expect(searchStyle).toContain('flex-grow: 0')
     expect(searchStyle).toContain('max-width: 100%')
     // The width itself is pinned by the layout suite (`data-table.layout.test.ts`), not by a string.
@@ -562,7 +564,7 @@ describe('onColumnFiltersChange — the seam server-side faceting needs', () => 
     fireEvent.click(screen.getByRole('radio', { name: 'argo', hidden: true }))
     await waitFor(() => expect(seen).toEqual([[{ id: 'project', value: 'argo' }]]))
 
-    await openPill('argo')
+    await openPill('Project argo')
     fireEvent.click(screen.getByRole('radio', { name: 'Any project', hidden: true }))
     await waitFor(() => expect(seen[seen.length - 1]).toEqual([]))
   })
