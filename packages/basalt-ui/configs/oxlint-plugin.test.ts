@@ -71,6 +71,7 @@ beforeEach(() => {
         'basalt/raw-breakpoint': 'error',
         'basalt/no-dev-helper': 'error',
         'basalt/route-view-transition': 'error',
+        'basalt/status-fill-as-text': 'error',
       },
     }),
   )
@@ -4278,6 +4279,99 @@ describe('basalt/route-view-transition', () => {
   it('honours a theme-allow annotation naming the rule', () => {
     const source = `import { ViewTransition } from 'react'\n${RR}export const C = () => (\n  // theme-allow route-view-transition: legacy page under migration\n  <ViewTransition><Outlet /></ViewTransition>\n)\n`
     expect(run(source, 'lib.tsx').rules).not.toContain('route-view-transition')
+  })
+})
+
+// ── status-fill-as-text ──────────────────────────────────────────────────────
+
+describe('basalt/status-fill-as-text', () => {
+  const VXI = `import { VX } from 'basalt-ui/tokens'\n`
+  it.each([
+    [
+      'c= on a Text',
+      `${VXI}export const C = () => <Text c={VX.status.excellent}>Excellent</Text>\n`,
+    ],
+    [
+      'c= with the CSS var',
+      `export const C = () => <Text c="var(--vx-status-excellent)">x</Text>\n`,
+    ],
+    [
+      'c= through a ternary',
+      `${VXI}export const C = (p: { ok: boolean }) => <Text c={p.ok ? VX.status.excellent : VX.status.warn}>x</Text>\n`,
+    ],
+    [
+      'a style color key',
+      `${VXI}export const C = () => <span style={{ color: VX.status.excellent }}>x</span>\n`,
+    ],
+    [
+      'a styles-prop color key',
+      `${VXI}export const C = () => <Badge styles={{ label: { color: VX.status.excellent } }}>x</Badge>\n`,
+    ],
+    [
+      'a nested styles key on a non-text part (the CSS color property paints its text)',
+      `${VXI}export const C = () => <Progress styles={{ section: { color: VX.status.excellent } }} />\n`,
+    ],
+    [
+      'a style color with the CSS var',
+      `export const C = () => <span style={{ color: 'var(--vx-status-excellent)' }}>x</span>\n`,
+    ],
+  ])('flags %s', (_name, source) => {
+    const { code, rules } = run(source, 'lib.tsx')
+    expect(code).toBe(1)
+    expect(rules).toContain('status-fill-as-text')
+  })
+
+  it.each([
+    ['bg=', `${VXI}export const C = () => <Box bg={VX.status.excellent} />\n`],
+    [
+      'a swatch backgroundColor',
+      `${VXI}export const C = () => <i style={{ backgroundColor: VX.status.excellent }} />\n`,
+    ],
+    [
+      'a style borderColor',
+      `${VXI}export const C = () => <i style={{ borderColor: VX.status.excellent }} />\n`,
+    ],
+    [
+      'fill= and stroke=',
+      `${VXI}export const C = () => <rect fill={VX.status.excellent} stroke={VX.status.excellent} />\n`,
+    ],
+    [
+      'alpha() on a fill',
+      `${VXI}export const C = () => <Box bg={alpha(VX.status.excellent, 0.2)} />\n`,
+    ],
+    [
+      'c= with the solved text token',
+      `${VXI}export const C = () => <Text c={VX.status.good}>x</Text>\n`,
+    ],
+    [
+      'a chart series color key',
+      `${VXI}export const S = { zone: { color: VX.status.excellent } }\n`,
+    ],
+    [
+      'a Badge color prop (fill)',
+      `${VXI}export const C = () => <Badge color={VX.status.excellent}>x</Badge>\n`,
+    ],
+    [
+      'a Progress/Badge color prop and its styles background (fills)',
+      `${VXI}export const C = () => <Progress color={VX.status.excellent} styles={{ section: { backgroundColor: VX.status.excellent } }} />\n`,
+    ],
+    // Out of static reach: argo's ZONE_COLORS map, read later — `c={ZONE_COLORS[grade]}`.
+    [
+      'a map value consumed through a lookup (statically out of reach)',
+      `${VXI}const ZONE_COLORS = { excellent: VX.status.excellent } as const\nexport const C = () => <Text c={ZONE_COLORS.excellent}>x</Text>\n`,
+    ],
+  ])('does NOT flag %s', (_name, source) => {
+    expect(run(source, 'lib.tsx').rules).not.toContain('status-fill-as-text')
+  })
+
+  it('does not apply in test files', () => {
+    const source = `${VXI}export const C = () => <Text c={VX.status.excellent}>x</Text>\n`
+    expect(run(source, 'lib.test.tsx').rules).not.toContain('status-fill-as-text')
+  })
+
+  it('honours a theme-allow annotation naming the rule', () => {
+    const source = `${VXI}export const C = () => (\n  // theme-allow status-fill-as-text: decorative large display numeral\n  <Text c={VX.status.excellent}>x</Text>\n)\n`
+    expect(run(source, 'lib.tsx').rules).not.toContain('status-fill-as-text')
   })
 })
 

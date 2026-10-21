@@ -152,6 +152,7 @@ export const KNOWN_RULE_IDS = new Set([
   'raw-breakpoint',
   'no-dev-helper',
   'route-view-transition',
+  'status-fill-as-text',
   // These two honour `basalt-agent-allow`, never `theme-allow` — but they are real ids, so an
   // annotation naming one must parse as a (useless) scoped annotation rather than as prose.
   'agent-no-raw-usechat',
@@ -4208,6 +4209,109 @@ const routeViewTransition = {
   },
 }
 
+// ── Rule 36 — status-fill-as-text ───────────────────────────────────────────────────────────────
+
+const STATUS_FILL_AS_TEXT_MESSAGE =
+  'VX.status.excellent is a FILL (about 3:1 on a light card) and fails AA as text. Paint zone words and ' +
+  'numerals with VX.status.good (solved to AA) and keep excellent on a swatch, band or heatmap ' +
+  'cell (bg / fill / backgroundColor). (basalt/status-fill-as-text)'
+
+const EXCELLENT_CSS_VAR = /var\(\s*--vx-status-excellent\b/
+
+/** Strips parentheses-equivalent wrappers: TS `as` / `satisfies` / `!` and the JSX expression container. */
+function unwrapExpression(node) {
+  let current = unwrapExpressionContainer(node)
+  while (
+    current &&
+    (current.type === 'TSAsExpression' ||
+      current.type === 'TSSatisfiesExpression' ||
+      current.type === 'TSNonNullExpression' ||
+      current.type === 'ParenthesizedExpression')
+  ) {
+    current = current.expression
+  }
+  return current
+}
+
+/** True when `node` is `VX.status.excellent` or the string `var(--vx-status-excellent)`. */
+function isExcellentToken(node) {
+  if (node?.type === 'MemberExpression' && !node.computed) {
+    const status = node.object
+    return (
+      node.property?.name === 'excellent' &&
+      status?.type === 'MemberExpression' &&
+      !status.computed &&
+      status.property?.name === 'status' &&
+      status.object?.type === 'Identifier' &&
+      status.object.name === 'VX'
+    )
+  }
+  if (isStringLiteral(node)) return EXCELLENT_CSS_VAR.test(node.value)
+  if (node?.type === 'TemplateLiteral') {
+    return node.quasis.some((quasi) => EXCELLENT_CSS_VAR.test(quasi.value.cooked ?? ''))
+  }
+  return false
+}
+
+/** True when any value `node` can evaluate to (through ternaries and `??` / `||` / `&&`) is the token. */
+function mayBeExcellentToken(node) {
+  const value = unwrapExpression(node)
+  if (value?.type === 'ConditionalExpression') {
+    return mayBeExcellentToken(value.consequent) || mayBeExcellentToken(value.alternate)
+  }
+  if (value?.type === 'LogicalExpression') {
+    return mayBeExcellentToken(value.left) || mayBeExcellentToken(value.right)
+  }
+  return isExcellentToken(value)
+}
+
+/** True when an object literal is, or sits inside, the value of a `style` / `styles` JSX prop. */
+function insideStyleProp(objectNode) {
+  for (let up = objectNode.parent; up; up = up.parent) {
+    if (up.type === 'JSXAttribute') {
+      return (
+        up.name?.type === 'JSXIdentifier' && (up.name.name === 'style' || up.name.name === 'styles')
+      )
+    }
+    if (up.type === 'JSXElement' || up.type === 'Program') return false
+  }
+  return false
+}
+
+// A static check: it sees the token written at the text position, not a map read later
+// (`c={ZONE_COLORS[grade]}`). `color=` is deliberately not judged — on a Mantine Badge/Button/
+// ThemeIcon or a chart mark it is a fill — so a `<Text color=…>` / `<Title color=…>` is a known
+// false negative. Only `c=` and a `color:` key under a `style`/`styles` prop are text: the key is
+// the CSS `color` property, so it paints text on whichever part it sits (`styles={{ section: … }}`
+// included).
+// Ships: error
+const statusFillAsText = {
+  meta: {
+    type: 'problem',
+    docs: {
+      description: 'Disallow the fill-only VX.status.excellent in a text-colour position.',
+    },
+    schema: [],
+  },
+  create(context) {
+    if (isTestFile(context)) return {}
+    const report = (node) => {
+      if (hasThemeAllow(context, node, 'status-fill-as-text')) return
+      context.report({ node, message: STATUS_FILL_AS_TEXT_MESSAGE })
+    }
+    return {
+      JSXAttribute(node) {
+        if (node.name?.type !== 'JSXIdentifier' || node.name.name !== 'c') return
+        if (node.value && mayBeExcellentToken(node.value)) report(node)
+      },
+      Property(node) {
+        if (propertyKeyName(node) !== 'color' || !mayBeExcellentToken(node.value)) return
+        if (node.parent?.type === 'ObjectExpression' && insideStyleProp(node.parent)) report(node)
+      },
+    }
+  },
+}
+
 // ── Grace ledger ────────────────────────────────────────────────────────────────────────────────
 
 /**
@@ -4269,5 +4373,6 @@ export default {
     'raw-breakpoint': rawBreakpoint,
     'no-dev-helper': noDevHelper,
     'route-view-transition': routeViewTransition,
+    'status-fill-as-text': statusFillAsText,
   },
 }

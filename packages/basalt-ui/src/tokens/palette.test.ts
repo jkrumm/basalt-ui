@@ -5,6 +5,7 @@
  */
 import { describe, expect, test } from 'bun:test'
 import { DEFAULT_DERIVE_CONFIG } from './derive'
+import { contrastRatio } from './hct'
 import {
   ACCENT,
   buildPaletteData,
@@ -110,5 +111,17 @@ describe('scaleSpace floors a base >= 1 at 1, never lets it round down to 0', ()
 
   test('level 0 bypasses scaling (and therefore the floor) entirely, returning value verbatim', () => {
     expect(scaleSpace(0.4, 0, 0.1)).toBe(0.4)
+  })
+})
+
+describe('STATUS.excellent is a fill, not a text colour', () => {
+  // Keeps the "fill-only" JSDoc and `basalt/status-fill-as-text` honest: if a retune ever lifts the
+  // light `excellent` to AA this fails, and the guard's premise is up for review. Dark clears AA by
+  // accident of the forest ramp; the guard is scheme-blind because the light side does not.
+  test('light excellent misses 4.5:1 on the panel; good clears it on both sides', () => {
+    expect(contrastRatio(STATUS.excellent.light, SURFACE.panel.light)).toBeLessThan(4.5)
+    for (const side of ['light', 'dark'] as const) {
+      expect(contrastRatio(STATUS.good[side], SURFACE.panel[side])).toBeGreaterThanOrEqual(4.5)
+    }
   })
 })

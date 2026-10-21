@@ -284,6 +284,7 @@ export const VX = {
 
   // Score / zone status scale (excellent → poor)
   status: {
+    /** FILL-ONLY: zones, bands, heatmap cells. Not AA as text (~3:1 on a light card) — text uses `good`. */
     excellent: 'var(--vx-status-excellent)',
     good: 'var(--vx-status-good)',
     warn: 'var(--vx-status-warn)',

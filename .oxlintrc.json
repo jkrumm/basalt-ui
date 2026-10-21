@@ -53,6 +53,7 @@
     "basalt/raw-breakpoint": "error",
     "basalt/no-dev-helper": "error",
     "basalt/route-view-transition": "error",
+    "basalt/status-fill-as-text": "error",
     "basalt/no-import-meta-env": "error"
   },
   "ignorePatterns": [

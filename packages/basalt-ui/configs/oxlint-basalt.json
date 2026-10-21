@@ -22,6 +22,7 @@
     "basalt/agent-no-raw-usechat": "error",
     "basalt/ai-sdk-major": "error",
     "basalt/raw-breakpoint": "error",
-    "basalt/route-view-transition": "error"
+    "basalt/route-view-transition": "error",
+    "basalt/status-fill-as-text": "error"
   }
 }
