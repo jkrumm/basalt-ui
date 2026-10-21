@@ -215,6 +215,24 @@ layout('table sizing and state chrome', () => {
     expect(Math.abs(heights.select - heights.pager)).toBeLessThanOrEqual(1)
   })
 
+  test("an empty table's title is not larger than the table title (1440)", async () => {
+    const p = await openFixture({ ...base, w42States: { empty: true } }, DESKTOP_1440)
+    const sizes = await p.raw.evaluate((root) => {
+      const host = document.querySelector(root) as HTMLElement
+      const size = (el: Element | null | undefined) =>
+        Number.parseFloat(getComputedStyle(el as Element).fontSize)
+      const tableTitle = [...host.querySelectorAll('*')].find(
+        (el) => el.children.length === 0 && el.textContent === 'Outages',
+      )
+      const emptyTitle = [...host.querySelectorAll('tbody span')].find(
+        (el) => el.textContent === 'No outages listed',
+      )
+      return { table: size(tableTitle), empty: size(emptyTitle) }
+    }, ROOT)
+    expect(sizes.empty).toBeGreaterThan(0)
+    expect(sizes.empty).toBeLessThanOrEqual(sizes.table)
+  })
+
   test('skeleton bars take their column shape, not the width of the slack (1440)', async () => {
     const p = await openFixture({ ...base, w42States: { loading: true } }, DESKTOP_1440)
     const widths = await p.raw.evaluate(
