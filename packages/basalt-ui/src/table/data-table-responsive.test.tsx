@@ -9,7 +9,7 @@
 import { MantineProvider } from '@mantine/core'
 import { act, fireEvent, render } from '@testing-library/react'
 import { afterEach, describe, expect, test } from 'bun:test'
-import { BasaltDataTable } from './data-table'
+import { BasaltDataTable, planColumnFold } from './data-table'
 import { createColumnHelper } from './index'
 
 type Row = { a: string; b: string; c: string; d: string }
@@ -83,7 +83,9 @@ async function resize(
   wrapper.dataset['testWidth'] = String(room)
   table.dataset['testWidth'] = String(tableWidth)
   for (const [id, width] of Object.entries(columnWidths)) {
-    const cell = wrapper.querySelector(`[data-basalt-fold-id="${id}"]`)
+    const cell = wrapper.querySelector(
+      `[data-basalt-fold-id="${id}"], [data-basalt-fixed-id="${id}"]`,
+    )
     if (cell instanceof HTMLElement) cell.dataset['testWidth'] = String(width)
   }
   await act(async () => {
@@ -125,7 +127,7 @@ describe('aria-colcount / aria-colindex', () => {
     expect(colIndexes(container.querySelector('thead tr'))).toEqual(['1', '2', '3', '4', '5', '6'])
 
     await resize(container, 100, 240, WIDE)
-    // toggle(1) select(2) a(3) b(4) … c(5) d(6) folded … actions(8)? No: 7 columns in all.
+    // toggle(1) select(2) a(3) b(4) · c(5) d(6) folded · actions(7): seven slots in all.
     expect(container.querySelector('table')?.getAttribute('aria-colcount')).toBe('7')
     expect(colIndexes(container.querySelector('thead tr'))).toEqual(['1', '2', '3', '4', '7'])
   })
@@ -220,9 +222,9 @@ describe('pin and scroll', () => {
     const { container } = mount({ enableRowSelection: true })
     await resize(container, 100, 300, WIDE)
     const cells = [...container.querySelectorAll('tbody tr:first-child td')] as HTMLElement[]
-    // toggle (sticky by class), select, a (sticky inline), b (scrolls)
-    expect(cells[0]?.dataset['sticky']).toBe('true')
-    expect(cells.map((cell) => cell.style.position)).toEqual(['', 'sticky', 'sticky', ''])
+    // toggle, select and a stick through the same helper; b scrolls
+    expect(cells.map((cell) => cell.style.position)).toEqual(['sticky', 'sticky', 'sticky', ''])
+    expect(cells[0]?.style.insetInlineStart).toBe('0')
     expect(cells[1]?.style.insetInlineStart).toBe('44px')
     expect(cells[2]?.style.insetInlineStart).toBe('88px')
   })
@@ -231,7 +233,7 @@ describe('pin and scroll', () => {
     stubLayout()
     const { container } = mount({ enablePinning: true, initialColumnPinning: { start: ['c'] } })
     await resize(container, 100, 240, WIDE)
-    const sticky = [...container.querySelectorAll('thead th')].filter(
+    const sticky = [...container.querySelectorAll('thead th[data-basalt-fold-id]')].filter(
       (th) => (th as HTMLElement).style.position === 'sticky',
     )
     expect(sticky.map((th) => th.textContent)).toEqual(['C'])
@@ -265,5 +267,173 @@ describe('the walking-pad shape does not regress', () => {
     expect(headers.map((th) => th.getAttribute('data-basalt-fold-id'))).toEqual(['started_at', 'x'])
     const sticky = headers.filter((th) => (th as HTMLElement).style.position === 'sticky')
     expect(sticky.map((th) => th.textContent)).toEqual(['Started'])
+  })
+})
+
+describe('the fold plan counts every column that takes room', () => {
+  test('the checkbox column is overhead: 3 x 50px + selection in a 150px wrapper folds and pins', async () => {
+    stubLayout()
+    const { container } = mount({ enableRowSelection: true }, COLUMNS.slice(0, 3))
+    await resize(container, 150, 244, { a: 50, b: 50, c: 50, __basalt_select__: 44 })
+    const ids = [...container.querySelectorAll('thead th[data-basalt-fold-id]')].map((th) =>
+      th.getAttribute('data-basalt-fold-id'),
+    )
+    expect(ids).toEqual(['a', 'b'])
+    const sticky = [...container.querySelectorAll('thead th')].filter(
+      (th) => (th as HTMLElement).style.position === 'sticky',
+    )
+    // toggle, checkbox and the identifier
+    expect(sticky).toHaveLength(3)
+  })
+
+  test('without the checkbox the same three columns fit and nothing folds', async () => {
+    stubLayout()
+    const { container } = mount({}, COLUMNS.slice(0, 3))
+    await resize(container, 150, 150, { a: 50, b: 50, c: 50 })
+    expect(container.querySelectorAll('thead th[data-basalt-fold-id]')).toHaveLength(3)
+  })
+
+  test('the actions column is overhead too', async () => {
+    stubLayout()
+    const rowActions = [{ key: 'e', label: 'Edit', icon: <i />, onClick: () => undefined }]
+    const { container } = mount({ rowActions }, COLUMNS.slice(0, 3))
+    await resize(container, 150, 206, { a: 50, b: 50, c: 50, __basalt_actions__: 56 })
+    expect(container.querySelectorAll('thead th[data-basalt-fold-id]')).toHaveLength(2)
+  })
+})
+
+describe('auto-pin candidates and boundaries', () => {
+  test('a caller END pin is never also the start pin', async () => {
+    stubLayout()
+    const { container } = mount({ enablePinning: true, initialColumnPinning: { end: ['a'] } })
+    await resize(container, 100, 240, WIDE)
+    const byId = (id: string) =>
+      container.querySelector(`thead th[data-basalt-fold-id="${id}"]`) as HTMLElement
+    expect(byId('b').style.insetInlineStart).not.toBe('')
+    expect(byId('a').style.insetInlineStart).toBe('')
+    expect(byId('a').style.insetInlineEnd).not.toBe('')
+  })
+
+  test('a two-column table that overflows pins its first column', async () => {
+    stubLayout()
+    const { container } = mount({}, COLUMNS.slice(0, 2))
+    await resize(container, 100, 200, { a: 100, b: 100 })
+    expect(container.querySelectorAll('thead th[data-basalt-fold-id]')).toHaveLength(2)
+    const first = container.querySelector('thead th[data-basalt-fold-id="a"]') as HTMLElement
+    expect(first.style.position).toBe('sticky')
+  })
+
+  test('a one-column table neither folds nor pins', async () => {
+    stubLayout()
+    const { container } = mount({}, COLUMNS.slice(0, 1))
+    await resize(container, 100, 300, { a: 300 })
+    const only = container.querySelector('thead th[data-basalt-fold-id="a"]') as HTMLElement
+    expect(only.style.position).toBe('')
+    expect(container.querySelector('tbody button[aria-expanded]')).toBeNull()
+  })
+
+  test('measuring a pinned table again (a capped painted width) keeps the fold and the pin', async () => {
+    stubLayout()
+    const { container } = mount()
+    await resize(container, 100, 240, WIDE)
+    const first = () => container.querySelector('thead th[data-basalt-fold-id]') as HTMLElement
+    expect(first().style.position).toBe('sticky')
+    // The pinned cell now paints at its cap; the table is narrower, but the NATURAL width is cached.
+    await resize(container, 100, 160, { a: 30 })
+    await resize(container, 100, 160, { a: 30 })
+    expect(first().style.position).toBe('sticky')
+    expect(container.querySelectorAll('thead th[data-basalt-fold-id]')).toHaveLength(2)
+  })
+})
+
+describe('planColumnFold floor', () => {
+  const widths = new Map([
+    ['a', 100],
+    ['b', 100],
+    ['c', 100],
+  ])
+  const base = { room: 10, toggleWidth: 0, overhead: 0, widths }
+
+  test('two candidates and nothing fixed: the floor of two holds', () => {
+    expect(planColumnFold({ ...base, order: ['b', 'a'] }).size).toBe(0)
+  })
+
+  test('one fixed data column leaves room for exactly one candidate', () => {
+    expect(planColumnFold({ ...base, overhead: 100, fixedCount: 1, order: ['c', 'b'] }).size).toBe(
+      1,
+    )
+  })
+
+  test('two fixed data columns already are the floor: every candidate folds', () => {
+    expect(planColumnFold({ ...base, overhead: 200, fixedCount: 2, order: ['c', 'b'] }).size).toBe(
+      2,
+    )
+  })
+
+  test('a one-column table keeps its one', () => {
+    expect(planColumnFold({ ...base, order: ['a'] }).size).toBe(0)
+  })
+
+  test('the checkbox and actions overhead never count toward the floor', () => {
+    expect(
+      planColumnFold({ ...base, overhead: 100, extraCount: 2, order: ['c', 'b', 'a'] }).size,
+    ).toBe(1)
+  })
+})
+
+describe('loading, empty and error keep the loaded fold', () => {
+  test('a folded table in loading renders the same visible columns as loaded', async () => {
+    stubLayout()
+    const loaded = mount()
+    await resize(loaded.container, 100, 240, WIDE)
+    const loadedIds = [...loaded.container.querySelectorAll('thead th[data-basalt-fold-id]')].map(
+      (th) => th.getAttribute('data-basalt-fold-id'),
+    )
+    loaded.unmount()
+
+    const { container, rerender } = mount()
+    await resize(container, 100, 240, WIDE)
+    rerender(
+      <MantineProvider>
+        <BasaltDataTable data={[]} columns={COLUMNS} isLoading />
+      </MantineProvider>,
+    )
+    // The headers are re-measured at their (narrow) header-only widths: the fold must not unfold.
+    await resize(container, 100, 120, { a: 10, b: 10, c: 10, d: 10 })
+    const ids = [...container.querySelectorAll('thead th[data-basalt-fold-id]')].map((th) =>
+      th.getAttribute('data-basalt-fold-id'),
+    )
+    expect(ids).toEqual(loadedIds)
+    // Skeleton rows mirror the head: toggle + the two kept columns.
+    expect(container.querySelectorAll('tbody tr:first-child td')).toHaveLength(ids.length + 1)
+  })
+})
+
+describe('the fold toggle says what folded', () => {
+  type MixedRow = { a: string; b: string; c: string; d: string }
+  const mixed = createColumnHelper<MixedRow>()
+  const MIXED = [
+    mixed.accessor('a', { header: 'A' }),
+    mixed.accessor('b', { header: 'B' }),
+    mixed.accessor('c', { header: () => 'C as a node' }),
+    mixed.accessor('d', { header: '' }),
+  ]
+
+  test('a non-string or empty header falls back to the column id', async () => {
+    stubLayout()
+    const { container } = mount({}, MIXED)
+    await resize(container, 100, 240, WIDE)
+    const toggle = container.querySelector('tbody button[aria-expanded]')
+    expect(toggle?.getAttribute('aria-label')).toBe('Show c, d')
+  })
+
+  test('the header above the toggles counts the folded columns and names them', async () => {
+    stubLayout()
+    const { container } = mount()
+    await resize(container, 100, 240, WIDE)
+    const label = container.querySelector('thead th [title]')
+    expect(label?.getAttribute('title')).toBe('C, D')
+    expect(label?.textContent).toContain('+2')
+    expect(label?.textContent).toContain('2 columns folded: C, D')
   })
 })

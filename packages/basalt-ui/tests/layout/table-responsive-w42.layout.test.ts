@@ -133,43 +133,61 @@ layout('compact tables pin the first column and scroll', () => {
     })
 
     for (const scheme of ['light', 'dark'] as const) {
-      test(`${name}, ${scheme}: the pinned cell is opaque at rest and under the hover tint`, async () => {
-        // A fine pointer: the touch emulation matches `(hover: none)`, where Mantine tints on :active.
-        const p = await openFixture(spec(scheme), WIDE, '/', 'reduce', 'fine')
-        const bg = await p.computed(FIRST_TD, 'background-color')
-        const alpha = /rgba\(.*,\s*([\d.]+)\)$/.exec(bg)
-        expect(alpha === null || Number(alpha[1]) === 1).toBe(true)
-        // Rest equals the card behind the table: the pinned cell is the surface, not a patch on it.
-        const surface = await p.raw.evaluate((s) => {
-          let el: Element | null = document.querySelector(s)
-          while (el !== null) {
-            const bgc = getComputedStyle(el).backgroundColor
-            if (bgc !== 'rgba(0, 0, 0, 0)') return bgc
-            el = el.parentElement
-          }
-          return 'none'
-        }, TABLE)
-        expect(bg).toBe(surface)
-
-        // Hover the row: its tint is layered over the same opaque base inside the pinned cell.
-        await p.raw.hover(`${TABLE} tbody tr:nth-child(2)`)
-        await p.settle()
-        const hovered = await p.raw.evaluate(
-          ([row, cell]) => {
-            const tr = document.querySelector(row as string) as HTMLElement
-            const td = document.querySelector(cell as string) as HTMLElement
-            return {
-              rowBg: getComputedStyle(tr).backgroundColor,
-              cellBg: getComputedStyle(td).backgroundColor,
-              cellImage: getComputedStyle(td).backgroundImage,
+      for (const onPage of [false, true]) {
+        test(`${name}, ${scheme}, ${onPage ? 'on the page' : 'in a card'}: the pinned cell takes the row's own background in every state`, async () => {
+          // A fine pointer: the touch emulation matches `(hover: none)`, where Mantine tints on :active.
+          const p = await openFixture(
+            {
+              ...spec(scheme),
+              w42Responsive: { shape, width, ...(onPage && { onPage: true as const }) },
+            },
+            WIDE,
+            '/',
+            'reduce',
+            'fine',
+          )
+          const surface = await p.raw.evaluate((s) => {
+            let el: Element | null = document.querySelector(s)
+            while (el !== null) {
+              const bgc = getComputedStyle(el).backgroundColor
+              if (bgc !== 'rgba(0, 0, 0, 0)') return bgc
+              el = el.parentElement
             }
-          },
-          [`${TABLE} tbody tr:nth-child(2)`, `${TABLE} tbody tr:nth-child(2) td[data-kind]`],
-        )
-        expect(hovered.rowBg).not.toBe('rgba(0, 0, 0, 0)')
-        expect(hovered.cellBg).toMatch(/^rgb\(/)
-        expect(hovered.cellImage).toContain(hovered.rowBg)
-      })
+            return 'none'
+          }, TABLE)
+          const read = (row: number) =>
+            p.raw.evaluate(
+              ([tr, td]) => {
+                const rowEl = document.querySelector(tr as string) as HTMLElement
+                const cell = document.querySelector(td as string) as HTMLElement
+                return {
+                  rowBg: getComputedStyle(rowEl).backgroundColor,
+                  cellBg: getComputedStyle(cell).backgroundColor,
+                  cellImage: getComputedStyle(cell).backgroundImage,
+                }
+              },
+              [
+                `${TABLE} tbody tr:nth-child(${row})`,
+                `${TABLE} tbody tr:nth-child(${row}) td[data-kind]`,
+              ],
+            )
+          // Rest, every row: a striped row's tint is layered over the surface; an unstriped row IS
+          // the surface. Either way the pinned cell paints what its row paints.
+          for (const row of [1, 2]) {
+            const state = await read(row)
+            expect(state.cellBg, `row ${row} base`).toBe(surface)
+            if (state.rowBg !== 'rgba(0, 0, 0, 0)') expect(state.cellImage).toContain(state.rowBg)
+            else expect(state.cellImage).toBe('linear-gradient(rgba(0, 0, 0, 0), rgba(0, 0, 0, 0))')
+          }
+          // Hover: the row's hover tint is layered the same way.
+          await p.raw.hover(`${TABLE} tbody tr:nth-child(2)`)
+          await p.settle()
+          const hovered = await read(2)
+          expect(hovered.rowBg).not.toBe('rgba(0, 0, 0, 0)')
+          expect(hovered.cellBg).toBe(surface)
+          expect(hovered.cellImage).toContain(hovered.rowBg)
+        })
+      }
     }
 
     test.if(scrolls)(`${name}: the scroller takes focus and the arrow keys scroll it`, async () => {
@@ -230,19 +248,47 @@ layout('compact tables pin the first column and scroll', () => {
     expect(overflow.documentScrollWidth).toBeLessThanOrEqual(overflow.innerWidth)
   })
 
-  test('the loading branch folds like the loaded one and its headers hold one line', async () => {
+  for (const { shape, width } of [
+    { shape: 'workouts', width: 360 },
+    { shape: 'sessions', width: 390 },
+  ] as const) {
+    const headerTexts = (p: Awaited<ReturnType<typeof openFixture>>) =>
+      p.raw.evaluate((s) => {
+        return [...document.querySelectorAll(s)].map((th) => ({
+          text: th.textContent,
+          height: th.getBoundingClientRect().height,
+        }))
+      }, `${TABLE} thead th`)
+
+    test(`a refetching ${shape} table @${width} keeps the loaded fold; its headers hold one line`, async () => {
+      const p = await openFixture({ ...base, w42Responsive: { shape, width, reload: true } }, WIDE)
+      await p.quiesce()
+      const loaded = await headerTexts(p)
+      await p.raw.click('[data-testid="w42-reload"]')
+      await p.quiesce()
+      expect(await p.count(`${TABLE} tbody tr:first-child td`)).toBe(loaded.length)
+      const loading = await headerTexts(p)
+      expect(loading.map((h) => h.text)).toEqual(loaded.map((h) => h.text))
+      for (const header of loading) expect(header.height).toBeLessThanOrEqual(41)
+    })
+
+    test(`a cold-loading ${shape} table @${width} never wraps a header or overflows its box`, async () => {
+      const p = await openFixture({ ...base, w42Responsive: { shape, width, loading: true } }, WIDE)
+      await p.quiesce()
+      for (const header of await headerTexts(p)) expect(header.height).toBeLessThanOrEqual(41)
+      const info = await p.raw.evaluate((s) => {
+        const el = document.querySelector(s) as HTMLElement
+        return { scrollWidth: el.scrollWidth, clientWidth: el.clientWidth }
+      }, SCROLLER)
+      expect(info.scrollWidth).toBeLessThanOrEqual(info.clientWidth + 1)
+    })
+  }
+
+  test('a loading table never overflows the page (phone)', async () => {
     const p = await openFixture(
-      { ...base, w42Responsive: { shape: 'workouts', width: 360, loading: true } },
-      WIDE,
+      { ...base, w42Responsive: { shape: 'sessions', loading: true } },
+      PHONE,
     )
-    const heights = await p.raw.evaluate((s) => {
-      return [...document.querySelectorAll(s)].map((el) => el.getBoundingClientRect().height)
-    }, `${TABLE} thead th`)
-    for (const height of heights) expect(height).toBeLessThanOrEqual(41)
-    // Folded: fewer headers than the six columns plus nothing; the skeleton rows mirror the head.
-    const headers = await p.count(`${TABLE} thead th`)
-    expect(headers).toBeLessThan(6)
-    expect(await p.count(`${TABLE} tbody tr:first-child td`)).toBe(headers)
     const overflow = await p.horizontalOverflow()
     expect(overflow.documentScrollWidth).toBeLessThanOrEqual(overflow.innerWidth)
   })

@@ -1,4 +1,5 @@
 import { Box, Card } from '@mantine/core'
+import { useState } from 'react'
 import type { ReactElement } from 'react'
 import { BasaltDataTable, createColumnHelper } from '../../../src/table'
 import type { FixtureSpec } from './spec'
@@ -104,30 +105,38 @@ const SESSION_COLUMNS = [
 
 /** Wave 42 responsive tables: argo's workouts shape and S2's sessions shape in a fixed-width card (`w42-responsive`). */
 export function W42ResponsiveFixture({ spec }: { spec: W42ResponsiveSpec }): ReactElement {
-  const loading = spec.loading === true
+  const [refetching, setRefetching] = useState(false)
+  const loading = spec.loading === true || refetching
+  // A refetch keeps its rows: the skeleton replaces them, the headers stay.
+  const keepRows = spec.loading !== true
+  const table =
+    spec.shape === 'workouts' ? (
+      <BasaltDataTable
+        title="Workouts"
+        data={keepRows ? WORKOUT_ROWS : []}
+        columns={WORKOUT_COLUMNS}
+        highlightOnHover
+        striped
+        isLoading={loading}
+      />
+    ) : (
+      <BasaltDataTable
+        title="Sessions"
+        data={keepRows ? SESSION_ROWS : []}
+        columns={SESSION_COLUMNS}
+        highlightOnHover
+        striped
+        isLoading={loading}
+      />
+    )
   return (
     <Box data-testid="w42-responsive" {...(spec.width !== undefined && { w: spec.width })}>
-      <Card>
-        {spec.shape === 'workouts' ? (
-          <BasaltDataTable
-            title="Workouts"
-            data={loading ? [] : WORKOUT_ROWS}
-            columns={WORKOUT_COLUMNS}
-            highlightOnHover
-            striped
-            isLoading={loading}
-          />
-        ) : (
-          <BasaltDataTable
-            title="Sessions"
-            data={loading ? [] : SESSION_ROWS}
-            columns={SESSION_COLUMNS}
-            highlightOnHover
-            striped
-            isLoading={loading}
-          />
-        )}
-      </Card>
+      {spec.reload === true && (
+        <button type="button" data-testid="w42-reload" onClick={() => setRefetching((on) => !on)}>
+          reload
+        </button>
+      )}
+      {spec.onPage === true ? table : <Card>{table}</Card>}
     </Box>
   )
 }

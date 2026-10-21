@@ -140,16 +140,14 @@
  */
 .foldToggleCell {
   box-sizing: border-box;
-  width: 2.75rem;
-  min-width: 2.75rem;
-  max-width: 2.75rem;
   padding-inline: 0;
   text-align: center;
 }
 
-/* A VISIBLE control — a ringed square with a chevron, not the 5px caret the glyph version was. It is
-   28px so the 40px row holds it; `data-basalt-hit` extends the tap target to the pointer tier's floor
-   (`--vx-hit`) without growing the row. */
+/* A ghost chevron: no box at rest (eight bordered squares down a column read as clutter), muted, ink
+   on hover and focus, the focus ring on keyboard focus. It is 28px so the 40px row holds it;
+   `data-basalt-hit` carries the tap target to the pointer tier's floor (`--vx-hit`) without growing
+   the row. */
 .foldToggle {
   display: inline-flex;
   align-items: center;
@@ -157,7 +155,7 @@
   box-sizing: border-box;
   width: 1.75rem;
   height: 1.75rem;
-  border: 1px solid var(--vx-surface-border);
+  border: none;
   border-radius: var(--vx-radius-ctrl);
   background: none;
   padding: 0;
@@ -165,13 +163,22 @@
   cursor: pointer;
 }
 
-.foldToggle:hover {
+.foldToggle:hover,
+.foldToggle:focus-visible {
   color: var(--vx-ink);
 }
 
 .foldToggle:focus-visible {
   outline: 2px solid var(--vx-accent);
   outline-offset: 1px;
+}
+
+/* The header above the toggles: a micro count of the folded columns. */
+.foldCount {
+  font-family: var(--mantine-font-family-monospace);
+  font-size: var(--vx-text-micro);
+  color: var(--vx-muted);
+  cursor: help;
 }
 
 .foldChevron {
@@ -331,12 +338,4 @@ td.pinnedFluid {
   max-width: calc(var(--basalt-table-room, 24rem) * 0.45);
   text-overflow: ellipsis;
   white-space: nowrap;
-}
-
-/* The fold toggle column sticks at the start edge beside a pinned column (`data-sticky`). */
-.foldToggleCell[data-sticky='true'] {
-  position: sticky;
-  z-index: 1;
-  inset-inline-start: 0;
-  background-color: var(--vx-surface-panel);
 }
