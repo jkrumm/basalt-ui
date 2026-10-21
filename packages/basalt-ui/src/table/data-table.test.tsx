@@ -792,7 +792,7 @@ describe('query — the four container states', () => {
     // Never the empty branch — that is the misreport this replaces.
     expect(screen.queryByText('No data to display.')).toBeNull()
     // House wording names the thing, and the error glyph is the status dot — never an empty glyph.
-    expect(screen.getByText('Could not load rows')).toBeDefined()
+    expect(screen.getByText('Could not load')).toBeDefined()
     const alert = screen.getByRole('alert')
     expect(alert.querySelector('svg')).toBeNull()
     fireEvent.click(screen.getByRole('button', { name: 'Retry' }))

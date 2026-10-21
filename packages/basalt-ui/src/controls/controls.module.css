@@ -131,8 +131,9 @@
   padding-inline: var(--button-padding-x-ctl);
 }
 
+/* An active filter is selection state, so its border is ink, not the accent (SPEC § 6.12). */
 .pill[data-active] {
-  border-color: var(--vx-accent);
+  border-color: color-mix(in srgb, var(--vx-ink) 55%, transparent);
   color: var(--vx-ink);
 }
 

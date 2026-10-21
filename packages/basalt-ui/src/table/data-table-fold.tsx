@@ -72,6 +72,8 @@ export const FIXED_ID_ATTR = 'data-basalt-fixed-id'
  */
 const FOLD_FLOOR = 2
 
+const EMPTY_WIDTHS: ReadonlyMap<string, number> = new Map()
+
 /** The auto-pinned identifier column's width floor, px, when its `columnDef.minSize` is unset. */
 export const PIN_MIN_WIDTH = 120
 
@@ -202,6 +204,8 @@ export function useColumnFold(input: {
   pinId: string | undefined
   /** Whether the table is wider than its container right now — i.e. whether the scroller scrolls. */
   overflowing: boolean
+  /** The last natural width of every column the sweep has seen, read by the loading skeleton's grid. */
+  widths: ReadonlyMap<string, number>
 } {
   const { active, order, fixedIds, extraIds, pinCandidates, allowPin, headerOnly, renderedRows } =
     input
@@ -209,6 +213,7 @@ export function useColumnFold(input: {
   const [folded, setFolded] = useState<ReadonlySet<string>>(EMPTY_FOLD_SET)
   const [pinId, setPinId] = useState<string | undefined>(undefined)
   const [overflowing, setOverflowing] = useState(false)
+  const [measuredWidths, setMeasuredWidths] = useState<ReadonlyMap<string, number>>(EMPTY_WIDTHS)
   const latest = useRef({ order, fixedIds, extraIds, pinCandidates, allowPin, headerOnly })
   // The pin the LAST measure decided, written inside `onMeasure` itself: a measure that runs again
   // before React commits the state must still see which column the previous one pinned.
@@ -256,6 +261,11 @@ export function useColumnFold(input: {
       const surface = surfaceBehind(root)
       if (surface !== '') root.style.setProperty('--basalt-table-surface', surface)
       const widths = new Map([...boxes.current].map(([id, box]) => [id, box.width]))
+      setMeasuredWidths((prev) =>
+        prev.size === widths.size && [...widths].every(([id, width]) => prev.get(id) === width)
+          ? prev
+          : widths,
+      )
       const overhead = [...current.fixedIds, ...current.extraIds].reduce(
         (sum, id) => sum + (widths.get(id) ?? 0),
         0,
@@ -315,6 +325,7 @@ export function useColumnFold(input: {
     folded: active ? folded : EMPTY_FOLD_SET,
     pinId: active ? pinId : undefined,
     overflowing: active && overflowing,
+    widths: measuredWidths,
   }
 }
 

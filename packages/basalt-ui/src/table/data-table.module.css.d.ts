@@ -29,6 +29,7 @@ declare const classes: {
   readonly scroller: string
   readonly selectCell: string
   readonly selectHit: string
+  readonly spacer: string
   readonly srOnly: string
   readonly table: string
 }

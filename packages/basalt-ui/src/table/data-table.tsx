@@ -111,7 +111,15 @@ import {
   useColumnFold,
 } from './data-table-fold'
 import type { PinContext } from './data-table-fold'
-import { CellContent, DEFAULT_CELL, kindAlign, kindClass, resolveKind } from './cell-kinds'
+import {
+  CellContent,
+  DEFAULT_CELL,
+  kindAlign,
+  kindClass,
+  KindSkeleton,
+  planColumnSizing,
+  resolveKind,
+} from './cell-kinds'
 import classes from './data-table.module.css'
 
 // ── Column alignment ──────────────────────────────────────────────────────────
@@ -624,7 +632,9 @@ export type BasaltDataTableProps<T extends RowData> = BasaltProps &
      */
     query?: QueryStateLike<unknown>
     /**
-     * Number of skeleton rows to render when `isLoading` is true.
+     * Number of skeleton rows to render when `isLoading` is true and neither a page size nor an
+     * earlier load says better: a paginated table loads at its page size, any other at the row
+     * count it last showed.
      * @default 5
      */
     skeletonRows?: number
@@ -1282,7 +1292,7 @@ export function BasaltDataTable<T extends RowData>(props: BasaltDataTableProps<T
     emptyState,
     isLoading = false,
     query,
-    skeletonRows = 5,
+    skeletonRows,
     enableGlobalFilter = false,
     globalFilterPlaceholder = 'Search…',
     searchIcon,
@@ -1468,6 +1478,8 @@ export function BasaltDataTable<T extends RowData>(props: BasaltDataTableProps<T
     renderCard !== undefined,
   )
   const renderedRows = useRef(0)
+  // The row count the table last showed with data: a reload skeleton is that tall, not a guess.
+  const [lastLoadedRows, setLastLoadedRows] = useState(0)
   const foldExtraIds = useMemo(
     () => [
       ...(enableRowSelection ? [SELECT_COLUMN_ID] : []),
@@ -1480,6 +1492,7 @@ export function BasaltDataTable<T extends RowData>(props: BasaltDataTableProps<T
     wrapperRef: foldWrapperRef,
     pinId: autoPinId,
     overflowing: foldOverflowing,
+    widths: measuredWidths,
   } = useColumnFold({
     active: foldEligible && !showCards,
     order: columnFoldOrder,
@@ -1630,9 +1643,14 @@ export function BasaltDataTable<T extends RowData>(props: BasaltDataTableProps<T
   // The rows actually rendered, not `data` — a filter or a page index that matches nothing leaves
   // `data` non-empty while the body has nothing in it, and a blank body reads as a broken table.
   const rows = table.getRowModel().rows
+  const stateless = showSkeleton || queryError !== undefined
   useLayoutEffect(() => {
     renderedRows.current = rows.length
   })
+  // Derived during render (React's own seam for state that follows a prop), not in an effect.
+  if (!stateless && rows.length > 0 && rows.length !== lastLoadedRows) {
+    setLastLoadedRows(rows.length)
+  }
 
   // `stickyHeaderOffset` is a WINDOW-scroll concept — the height of whatever fixed chrome the page
   // scrolls under (the AppShell header plus `PageBar` row 2). Inside the scroll container it is
@@ -1674,7 +1692,7 @@ export function BasaltDataTable<T extends RowData>(props: BasaltDataTableProps<T
   const errorNode = queryError !== undefined && (
     <ErrorState
       error={queryError.error}
-      title="Could not load rows"
+      title="Could not load"
       tier="section"
       retrying={queryError.fetchStatus === 'fetching'}
       onRetry={() => void queryError.refetch()}
@@ -1703,6 +1721,19 @@ export function BasaltDataTable<T extends RowData>(props: BasaltDataTableProps<T
     autoPinMinWidth,
   }
   const toggleCell = foldToggleCellProps(pinCtx)
+  const { fitIds, spacer } = planColumnSizing(
+    orderedVisibleColumns,
+    new Set([SELECT_COLUMN_ID, ACTIONS_COLUMN_ID]),
+  )
+  const fitAttr = (id: string) => (fitIds.has(id) ? { 'data-fit': true } : undefined)
+  // colSpan covers the rendered cells, the trailing spacer included.
+  const spanCount = columnCount + (spacer ? 1 : 0)
+  // A page of rows when paginated, else what the table last showed, else the caller's guess.
+  const skeletonCount = enablePagination
+    ? table.state.pagination.pageSize
+    : lastLoadedRows > 0
+      ? lastLoadedRows
+      : (skeletonRows ?? 5)
 
   const tableNode = (
     <Table
@@ -1746,6 +1777,7 @@ export function BasaltDataTable<T extends RowData>(props: BasaltDataTableProps<T
                   key={header.id}
                   aria-colindex={colIndexById.get(header.column.id)}
                   className={cx(isSelectColumn && classes.selectCell, pinned?.className)}
+                  {...fitAttr(header.column.id)}
                   // The measured fold's own read (`useColumnFold`): a candidate's width plans the
                   // fold, the checkbox / actions column's is fixed overhead against it.
                   {...{
@@ -1774,38 +1806,56 @@ export function BasaltDataTable<T extends RowData>(props: BasaltDataTableProps<T
                 </Table.Th>
               )
             })}
+            {spacer && <Table.Th className={classes.spacer} aria-hidden />}
           </Table.Tr>
         ))}
       </Table.Thead>
       <Table.Tbody>
         {queryError !== undefined ? (
           <Table.Tr>
-            <Table.Td colSpan={columnCount}>{errorNode}</Table.Td>
+            <Table.Td colSpan={spanCount}>{errorNode}</Table.Td>
           </Table.Tr>
         ) : showSkeleton ? (
           // The same visible columns as the header — a folded table loads folded, and the pinned
           // identifier keeps its sticky cell, so nothing shifts when the rows arrive.
-          Array.from({ length: skeletonRows }, (_, rowIndex) => (
+          Array.from({ length: skeletonCount }, (_, rowIndex) => (
             <Table.Tr key={`skeleton-${rowIndex}`}>
               {hasFolded && <Table.Td {...toggleCell} aria-colindex={1} />}
               {orderedVisibleColumns.map((column) => {
                 const pinned = pinningActive ? pinnedCellProps(pinCtx, column) : undefined
+                const kind = resolveKind(column)
+                // The loaded grid: a content-sized column keeps the width it last measured, the
+                // others the kind's floor, so the rows arrive without the columns moving.
+                const measuredWidth = fitIds.has(column.id)
+                  ? measuredWidths.get(column.id)
+                  : undefined
                 return (
                   <Table.Td
                     key={column.id}
                     aria-colindex={colIndexById.get(column.id)}
                     className={pinned?.className}
-                    style={{ minWidth: skeletonMinWidth(column), ...pinned?.style }}
+                    {...fitAttr(column.id)}
+                    style={{
+                      minWidth:
+                        measuredWidth === undefined ? skeletonMinWidth(column) : measuredWidth,
+                      ...pinned?.style,
+                    }}
                   >
-                    <Skeleton height={16} radius="sm" />
+                    {column.id === SELECT_COLUMN_ID || column.id === ACTIONS_COLUMN_ID ? null : (
+                      <KindSkeleton
+                        kind={kind}
+                        right={(resolveAlign(column) ?? kindAlign(kind)) === 'right'}
+                      />
+                    )}
                   </Table.Td>
                 )
               })}
+              {spacer && <Table.Td aria-hidden />}
             </Table.Tr>
           ))
         ) : rows.length === 0 ? (
           <Table.Tr>
-            <Table.Td colSpan={columnCount}>{emptyNode}</Table.Td>
+            <Table.Td colSpan={spanCount}>{emptyNode}</Table.Td>
           </Table.Tr>
         ) : (
           rows.map((row) => {
@@ -1853,6 +1903,7 @@ export function BasaltDataTable<T extends RowData>(props: BasaltDataTableProps<T
                           title: String(pinnedValue),
                         })}
                         {...(kind !== undefined && { 'data-kind': kind })}
+                        {...fitAttr(cell.column.id)}
                         {...(stopsRowActivation(cell) && {
                           // The label's ::after fills the select cell, so a tap on it bubbles to the
                           // row; the actions menu portals out but React bubbles through the portal.
@@ -1872,6 +1923,7 @@ export function BasaltDataTable<T extends RowData>(props: BasaltDataTableProps<T
                       </Table.Td>
                     )
                   })}
+                  {spacer && <Table.Td aria-hidden />}
                 </Table.Tr>
                 {rowExpanded && (
                   <Table.Tr
@@ -1879,7 +1931,7 @@ export function BasaltDataTable<T extends RowData>(props: BasaltDataTableProps<T
                     className={classes.foldDisclosureRowTr}
                   >
                     <Table.Td
-                      colSpan={columnCount}
+                      colSpan={spanCount}
                       className={classes.foldDisclosureCell}
                       aria-colindex={1}
                     >
@@ -1901,7 +1953,7 @@ export function BasaltDataTable<T extends RowData>(props: BasaltDataTableProps<T
       {queryError !== undefined
         ? errorNode
         : showSkeleton
-          ? Array.from({ length: skeletonRows }, (_, index) => (
+          ? Array.from({ length: skeletonCount }, (_, index) => (
               <Skeleton key={`skeleton-${index}`} height={48} radius="md" />
             ))
           : rows.length === 0
@@ -1960,7 +2012,8 @@ export function BasaltDataTable<T extends RowData>(props: BasaltDataTableProps<T
                 title={title}
                 {...(icon !== undefined && { icon })}
                 {...(subtitle !== undefined && { subtitle })}
-                count={table.getRowCount()}
+                // A count is a figure read from rows: none while the rows are loading or failed.
+                {...(!stateless && { count: table.getRowCount() })}
               />
             </Box>
           ) : null}
@@ -2090,7 +2143,10 @@ export function BasaltDataTable<T extends RowData>(props: BasaltDataTableProps<T
           gap="xs"
           align="center"
         >
-          <Text style={RANGE_LABEL_STYLE}>
+          <Text
+            // Hidden, not removed: the footer keeps its height and nothing shifts when rows land.
+            style={stateless ? { ...RANGE_LABEL_STYLE, visibility: 'hidden' } : RANGE_LABEL_STYLE}
+          >
             Showing {rangeStart}–{rangeEnd}
             {totalIsAuthoritative ? ` of ${total}` : ''}
           </Text>

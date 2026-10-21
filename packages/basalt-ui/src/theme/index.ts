@@ -1122,9 +1122,11 @@ function buildTheme(data: PaletteData, options: BuildThemeOptions = {}): Mantine
           },
         }),
       }),
+      // The current page is selection state: ink, not the accent (SPEC § 6.12) — the fill and label
+      // are `controls.module.css`'s unless a caller's `color=` writes its own inline.
       Pagination: ext<typeof Pagination>({
         vars: (theme, props) => ({
-          root: { '--pagination-active-color': onColorFor(theme, props) },
+          root: { '--pagination-active-color': props.color && onColorFor(theme, props) },
         }),
       }),
       // `Pagination`'s own controls (prev/next/page buttons) resolve `PaginationControl`'s

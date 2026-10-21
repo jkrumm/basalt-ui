@@ -121,7 +121,7 @@ describe('cell kinds', () => {
     ])
   })
 
-  test('money formats in meta.currency (default USD); an explicit align still wins', () => {
+  test("money is the bare grouped figure in the currency's minor digits; an explicit align still wins", () => {
     const { container } = renderKinds([
       col.accessor('cost', { header: 'Cost', meta: { kind: 'money' } }),
       col.accessor('count', {
@@ -130,9 +130,16 @@ describe('cell kinds', () => {
       }),
     ])
     const [usd, eur] = cells(container, 'money')
-    expect(usd?.textContent).toBe('$1,234.50')
-    expect(eur?.textContent).toContain('€')
+    expect(usd?.textContent).toBe('1,234.50')
+    expect(eur?.textContent).toBe('12,480.00')
     expect(eur?.style.textAlign).toBe('left')
+  })
+
+  test('money in a zero-minor-digit currency prints no fraction', () => {
+    const { container } = renderKinds([
+      col.accessor('count', { header: 'Count', meta: { kind: 'money', currency: 'JPY' } }),
+    ])
+    expect(cells(container, 'money')[0]?.textContent).toBe('12,480')
   })
 
   test('relative-time renders a <time> with the full date as name; garbage is a dash', () => {

@@ -356,7 +356,7 @@ describe('column fold — meta.priority (docs/CONTROLS-SPEC.md §2)', () => {
     if (!(toggle instanceof HTMLElement)) throw new Error('expected the fold toggle button')
     fireEvent.click(toggle)
     const disclosure = container.querySelectorAll('tbody tr')[1]
-    expect(disclosure?.textContent).toContain('$1,234.50')
+    expect(disclosure?.textContent).toContain('1,234.50')
     expect(disclosure?.textContent).not.toContain('1234.5')
     expect(disclosure?.querySelector('time')?.getAttribute('datetime')).toBe(
       '2026-01-15T09:30:00.000Z',

@@ -45,7 +45,7 @@ export type FilterPillReading =
 /**
  * The ONE place a facet filter turns its state into a {@link FilterPillReading}: `informative` is
  * the single predicate for "this filter is filtering" (and what the caller hands `active` too, so
- * the muted anatomy and the accent border can never disagree); `value` is the selection's text and
+ * the muted anatomy and the ink border can never disagree); `value` is the selection's text and
  * `unsetText` what the pill reads while it is not filtering (the control's existing copy).
  */
 export function filterReading(input: {
@@ -61,7 +61,7 @@ export function filterReading(input: {
 export type FilterPillProps = BasaltProps &
   FilterPillReading & {
     readonly icon?: ReactNode
-    /** Non-default → accent-tinted border. Derived from `field.isDefault(value)`, never hand-set. */
+    /** Non-default → ink border (selection is ink, never the accent). Derived from `field.isDefault(value)`, never hand-set. */
     readonly active?: boolean
     /** Mono label, for a numeric preset set (`7d` / `30d`) — the same law `[data-numeric]` applies
      *  to a numeric SegmentedControl label (`theme/segmented-control.module.css`). */
