@@ -45,6 +45,7 @@ import type {
   NavLink,
   Notification,
   NumberInput,
+  Pagination,
   PaginationControl,
   Paper,
   PasswordInput,
@@ -1121,6 +1122,9 @@ function buildTheme(data: PaletteData, options: BuildThemeOptions = {}): Mantine
           },
         }),
       }),
+      // The current page is ink (SPEC § 6.12); its one home is `controls.module.css`, so this entry only
+      // registers the component for the border-coverage gate.
+      Pagination: ext<typeof Pagination>({}),
       // `Pagination`'s own controls (prev/next/page buttons) resolve `PaginationControl`'s
       // defaultProps independently of the parent — `data-basalt-hit` here is what closes the
       // gap Switch/Checkbox/Radio already close at their own theme entries.
