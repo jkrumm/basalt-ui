@@ -55,7 +55,7 @@ worktrees are left. Resume after the reset with a fresh mother from this file.
    exits 3 ("still propagating, do not release again") instead of failing (#e7eb5573). Both grace ledgers are empty
    (`series-palette`, `raw-spacing`, `inline-spacing`, `card-inset` promoted to error, each after argo measured 0).
 2. basalt Waves 38 (friction III), 39 (friction IV, r2: S2 99 / S3 98 / S4 98 / components 99) and 40 (friction V, the
-   fitness readout) are done. Wave 41 (friction VI) is done; Wave 42 "Data tables, responsive" is `active` but NOT spawned.
+   fitness readout) are done. Wave 41 (friction VI) is done; Wave 42 "Data tables, responsive" is done (2026-10-22, #468–#475, unreleased).
 3. argo Waves 38–44 done; argo is on 2.27.2. **All 14 argo pages pass** the fresh reviewers (2026-10-19): Garmin 95 (w44,
    after argo's own fix drew one date axis on the ACWR card), Home 97, WalkingPad 100, Reading 94, Hermes 98, Calendar 97,
    Body comp 96, Usage 95, astro 94/94, m365 94/93, Warden 92, Agents 92, Strength 68 (argo w45, a complete 13-sheet read:
@@ -66,8 +66,9 @@ worktrees are left. Resume after the reset with a fresh mother from this file.
    preset; low-contrast dark Warm-up bars; scan/Log/Timer/Recent and the expanded diagnostics have no shot anchor. Detail:
    argo `docs/design/strength-tracker.md`, `docs/waves/PLAN.md` § Wave 45.
 4. basalt Wave 41 "argo friction VI" is done and released as 2.27.2 (#461/#463 info bubble below the header block, #462 slot
-   chip and one chart focus ring). **First on resume:** spawn basalt Wave 42 "Data tables"
-   (marked `active`). Next after it: Event list, Board and the record page, Forms, rollout to argo + rb, the expression trial.
+   chip and one chart focus ring). Wave 42 "Data tables" is done (#468–#475, unreleased on
+   master). **Next:** basalt Wave 43 "argo upstream rows" (marked `active`). After it: Event list (44), Board and the
+   record page (45), Forms (46), rollout to argo + rb (47), the expression trial (48).
 5. Decided 2026-10-18: warden + agent-gateway get an authored `question` field, recorded as a backlog item in each repo's
    `docs/BACKLOG.md` for a later structure-and-maturity pass by the owner; argo adds nothing until it ships.
 6. Owner decision queued: SPEC D37 (an errored/empty chart body keeps the loaded height per the SSR contract; the rubric
