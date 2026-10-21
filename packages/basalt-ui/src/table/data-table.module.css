@@ -139,15 +139,26 @@
  * button cell line up under one another regardless of how many columns folded.
  */
 .foldToggleCell {
+  box-sizing: border-box;
   width: 2.75rem;
+  min-width: 2.75rem;
+  max-width: 2.75rem;
+  padding-inline: 0;
   text-align: center;
 }
 
+/* A VISIBLE control — a ringed square with a chevron, not the 5px caret the glyph version was. It is
+   28px so the 40px row holds it; `data-basalt-hit` extends the tap target to the pointer tier's floor
+   (`--vx-hit`) without growing the row. */
 .foldToggle {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  border: none;
+  box-sizing: border-box;
+  width: 1.75rem;
+  height: 1.75rem;
+  border: 1px solid var(--vx-surface-border);
+  border-radius: var(--vx-radius-ctrl);
   background: none;
   padding: 0;
   color: var(--vx-muted);
@@ -158,6 +169,25 @@
   color: var(--vx-ink);
 }
 
+.foldToggle:focus-visible {
+  outline: 2px solid var(--vx-accent);
+  outline-offset: 1px;
+}
+
+.foldChevron {
+  width: 0.875rem;
+  height: 0.875rem;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.5;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.foldChevron[data-expanded='true'] {
+  transform: rotate(90deg);
+}
+
 /* The disclosure row itself carries no border of its own — it reads as part of the row above it,
    not a new one. */
 .foldDisclosureRowTr {
@@ -166,14 +196,22 @@
 
 .foldDisclosureCell {
   padding-top: 0;
+  padding-inline: 0;
   background: var(--vx-surface-subtle);
 }
 
 .foldDisclosure {
+  /* The disclosure row spans every column, so it would scroll away with them: the content box is as
+     wide as the container and sticks at its start edge. */
+  position: sticky;
+  inset-inline-start: 0;
+  box-sizing: border-box;
+  width: var(--basalt-table-room, 100%);
+  padding-inline: var(--vx-space-row-inset-x, 0.5rem);
   display: flex;
   flex-direction: column;
   gap: var(--vx-space-row-inset-y, 0.375rem);
-  padding: var(--vx-space-row-inset-y, 0.375rem) 0;
+  padding-block: var(--vx-space-row-inset-y, 0.375rem);
 }
 
 .foldDisclosureRow {
@@ -234,4 +272,71 @@
   .toolbarInput.toolbarInput {
     min-height: 0;
   }
+}
+
+/*
+ * Headers never wrap (SPEC § 6.6 / § 9.1): a two-line label doubles the header row and, at a compact
+ * container, was the first thing to give — the fold and the pin-and-scroll take the room instead.
+ */
+.table th {
+  white-space: nowrap;
+}
+
+/*
+ * The table's own scroll box, a keyboard tab stop only while it overflows (`data-table.tsx`
+ * `scrollerProps`). The ring sits INSIDE the box: its edges are the container's, and an outset
+ * outline would be clipped by the page's own overflow.
+ */
+.scroller:focus-visible {
+  outline: 2px solid var(--vx-accent);
+  outline-offset: -2px;
+}
+
+/*
+ * A pinned cell is opaque in EVERY row state (TanStack issue 5392 — the cell under it bled through).
+ * Its inline `background-color` is the panel; the row's own state tint is layered over it as an image,
+ * so a translucent tint composes on the panel exactly as it does on the row. The selectors mirror
+ * Mantine's `Table.css` tint rules (hover on a pointer, `:active` on touch; striped by `nth-of-type`).
+ */
+.pinnedLayer {
+  --pinned-tint: transparent;
+  background-image: linear-gradient(var(--pinned-tint), var(--pinned-tint));
+}
+
+tr[data-striped='odd']:nth-of-type(odd) > .pinnedLayer,
+tr[data-striped='even']:nth-of-type(even) > .pinnedLayer {
+  --pinned-tint: var(--table-striped-color);
+}
+
+@media (hover: hover) {
+  tr[data-hover]:hover > .pinnedLayer {
+    --pinned-tint: var(--tr-hover-bg);
+  }
+}
+
+@media (hover: none) {
+  tr[data-hover]:active > .pinnedLayer {
+    --pinned-tint: var(--tr-hover-bg);
+  }
+}
+
+/*
+ * The auto-pinned identifier: one line, ellipsized past 45% of the container (`--basalt-table-room`,
+ * written by the fold measurement; the title attribute carries the full text). Its min width is the
+ * inline `minWidth` from `columnDef.minSize`.
+ */
+th.pinnedFluid,
+td.pinnedFluid {
+  overflow: hidden;
+  max-width: calc(var(--basalt-table-room, 24rem) * 0.45);
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* The fold toggle column sticks at the start edge beside a pinned column (`data-sticky`). */
+.foldToggleCell[data-sticky='true'] {
+  position: sticky;
+  z-index: 1;
+  inset-inline-start: 0;
+  background-color: var(--vx-surface-panel);
 }

@@ -7,6 +7,7 @@ declare const classes: {
   readonly bulkBar: string
   readonly bulkCount: string
   readonly containment: string
+  readonly foldChevron: string
   readonly foldDisclosure: string
   readonly foldDisclosureCell: string
   readonly foldDisclosureLabel: string
@@ -22,6 +23,9 @@ declare const classes: {
   readonly tableHeader: string
   readonly toolbar: string
   readonly toolbarActions: string
+  readonly pinnedFluid: string
+  readonly pinnedLayer: string
+  readonly scroller: string
   readonly selectCell: string
   readonly selectHit: string
   readonly srOnly: string

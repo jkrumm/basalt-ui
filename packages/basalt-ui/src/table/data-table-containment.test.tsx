@@ -266,12 +266,12 @@ describe('column fold — meta.priority (docs/CONTROLS-SPEC.md §2)', () => {
       rowActions: [{ key: 'e', label: 'Edit', icon: <i />, onClick: () => undefined }],
     })
     await resizeFold(container, 100, { a: 50, b: 50, c: 50 })
-    expect(headerIds(container)).toEqual(['a'])
+    expect(headerIds(container)).toEqual(['a', 'b'])
     expect(container.querySelector('tbody button[aria-label="Edit"]')).not.toBeNull()
     const toggle = container.querySelector('tbody button[aria-expanded]') as HTMLElement
     fireEvent.click(toggle)
-    // toggle column + a + actions
-    expect(container.querySelector('tbody td[colspan]')?.getAttribute('colspan')).toBe('3')
+    // toggle column + a + b + actions
+    expect(container.querySelector('tbody td[colspan]')?.getAttribute('colspan')).toBe('4')
   })
 
   test('no priority anywhere: declared order folds LAST column first', async () => {
@@ -281,10 +281,9 @@ describe('column fold — meta.priority (docs/CONTROLS-SPEC.md §2)', () => {
     expect(headerIds(container)).toEqual(['a', 'b', 'c'])
 
     await resizeFold(container, 100, { a: 50, b: 50, c: 50 })
-    // 150 total over a 100 room: 'c' (last declared) folds first, then 'b' — 'a' plus the 44px
-    // toggle column (50 + 44 = 94) fits, so it stays a real column.
-    expect(headerIds(container)).toEqual(['a'])
-    expect(container.querySelector('[data-basalt-fold-id="b"]')).toBeNull()
+    // 150 total over a 100 room: 'c' (last declared) folds first; 'b' would follow, but the
+    // two-column floor (the identifier plus its most important value) keeps 'a' and 'b'.
+    expect(headerIds(container)).toEqual(['a', 'b'])
     expect(container.querySelector('[data-basalt-fold-id="c"]')).toBeNull()
   })
 
@@ -292,7 +291,7 @@ describe('column fold — meta.priority (docs/CONTROLS-SPEC.md §2)', () => {
     stubLayout()
     const { container } = mountFold()
     await resizeFold(container, 100, { a: 50, b: 50, c: 50 })
-    expect(headerIds(container)).toEqual(['a'])
+    expect(headerIds(container)).toEqual(['a', 'b'])
 
     await resizeFold(container, 1000, {})
     expect(headerIds(container)).toEqual(['a', 'b', 'c'])
@@ -302,35 +301,33 @@ describe('column fold — meta.priority (docs/CONTROLS-SPEC.md §2)', () => {
     stubLayout()
     const { container } = mountFold({}, FOLD_COLUMNS_PRIORITY)
     // priority a=5, c=3, b=1 — 'a' (declared FIRST) folds before 'b' (declared LAST) because its
-    // priority number is higher.
+    // priority number is higher; the floor then keeps the two lower-priority columns.
     await resizeFold(container, 100, { a: 50, b: 50, c: 50 })
-    expect(headerIds(container)).toEqual(['b'])
+    expect(headerIds(container)).toEqual(['b', 'c'])
     expect(container.querySelector('[data-basalt-fold-id="a"]')).toBeNull()
-    expect(container.querySelector('[data-basalt-fold-id="c"]')).toBeNull()
   })
 
   test('the disclosure toggle reveals exactly the folded columns, as label/value pairs', async () => {
     stubLayout()
     const { container } = mountFold()
     await resizeFold(container, 100, { a: 50, b: 50, c: 50 })
-    expect(headerIds(container)).toEqual(['a'])
+    expect(headerIds(container)).toEqual(['a', 'b'])
 
     // Folded, so absent from the row's own cells…
-    expect(container.querySelector('tbody tr')?.textContent).not.toContain('B1')
+    expect(container.querySelector('tbody tr')?.textContent).toContain('B1')
     expect(container.querySelector('tbody tr')?.textContent).not.toContain('C1')
 
-    const toggle = container.querySelector('tbody button[aria-label="Show row details"]')
+    const toggle = container.querySelector('tbody button[aria-label="Show C"]')
     if (!(toggle instanceof HTMLElement)) throw new Error('expected the fold toggle button')
     fireEvent.click(toggle)
 
     // …and present, labelled, once the row is expanded.
     const rows = container.querySelectorAll('tbody tr')
     const disclosure = rows[1]
-    expect(disclosure?.textContent).toContain('B')
-    expect(disclosure?.textContent).toContain('B1')
     expect(disclosure?.textContent).toContain('C')
     expect(disclosure?.textContent).toContain('C1')
     expect(disclosure?.textContent).not.toContain('A1')
+    expect(disclosure?.textContent).not.toContain('B1')
 
     fireEvent.click(toggle)
     expect(container.querySelectorAll('tbody tr')).toHaveLength(1)
@@ -338,23 +335,24 @@ describe('column fold — meta.priority (docs/CONTROLS-SPEC.md §2)', () => {
 
   test('a folded kind column is formatted in the disclosure, not shown raw', async () => {
     stubLayout()
-    type KindRow = { a: string; cost: number; seen: string }
+    type KindRow = { a: string; b: string; cost: number; seen: string }
     const kindCol = createColumnHelper<KindRow>()
     const { container } = render(
       <MantineProvider>
         <BasaltDataTable
-          data={[{ a: 'A1', cost: 1234.5, seen: '2026-01-15T09:30:00Z' }]}
+          data={[{ a: 'A1', b: 'B1', cost: 1234.5, seen: '2026-01-15T09:30:00Z' }]}
           columns={[
             kindCol.accessor('a', { header: 'A' }),
+            kindCol.accessor('b', { header: 'B' }),
             kindCol.accessor('cost', { header: 'Cost', meta: { kind: 'money' } }),
             kindCol.accessor('seen', { header: 'Seen', meta: { kind: 'relative-time' } }),
           ]}
         />
       </MantineProvider>,
     )
-    await resizeFold(container, 100, { a: 50, cost: 50, seen: 50 })
-    expect(headerIds(container)).toEqual(['a'])
-    const toggle = container.querySelector('tbody button[aria-label="Show row details"]')
+    await resizeFold(container, 100, { a: 50, b: 50, cost: 50, seen: 50 })
+    expect(headerIds(container)).toEqual(['a', 'b'])
+    const toggle = container.querySelector('tbody button[aria-label="Show Cost, Seen"]')
     if (!(toggle instanceof HTMLElement)) throw new Error('expected the fold toggle button')
     fireEvent.click(toggle)
     const disclosure = container.querySelectorAll('tbody tr')[1]
@@ -376,7 +374,7 @@ describe('column fold — meta.priority (docs/CONTROLS-SPEC.md §2)', () => {
     stubLayout()
     const { container } = mountFold({ maxHeight: 480 })
     await resizeFold(container, 100, { a: 50, b: 50, c: 50 })
-    expect(headerIds(container)).toEqual(['a'])
+    expect(headerIds(container)).toEqual(['a', 'b'])
   })
 
   test('expanded rows survive a non-memoized `data` array carrying the same rows', async () => {
@@ -387,9 +385,9 @@ describe('column fold — meta.priority (docs/CONTROLS-SPEC.md §2)', () => {
       </MantineProvider>,
     )
     await resizeFold(container, 100, { a: 50, b: 50, c: 50 })
-    expect(headerIds(container)).toEqual(['a'])
+    expect(headerIds(container)).toEqual(['a', 'b'])
 
-    const toggle = container.querySelector('tbody button[aria-label="Show row details"]')
+    const toggle = container.querySelector('tbody button[aria-label="Show C"]')
     if (!(toggle instanceof HTMLElement)) throw new Error('expected the fold toggle button')
     fireEvent.click(toggle)
     expect(container.querySelectorAll('tbody tr')).toHaveLength(2)
@@ -423,9 +421,9 @@ describe('column fold — meta.priority (docs/CONTROLS-SPEC.md §2)', () => {
       </MantineProvider>,
     )
     await resizeFold(container, 100, { a: 50, b: 50, c: 50 })
-    expect(headerIds(container)).toEqual(['a'])
+    expect(headerIds(container)).toEqual(['a', 'b'])
 
-    const toggle = container.querySelector('tbody button[aria-label="Show row details"]')
+    const toggle = container.querySelector('tbody button[aria-label="Show C"]')
     if (!(toggle instanceof HTMLElement)) throw new Error('expected the fold toggle button')
     fireEvent.click(toggle)
     expect(container.querySelectorAll('tbody tr')).toHaveLength(2)
@@ -454,9 +452,9 @@ describe('column fold — meta.priority (docs/CONTROLS-SPEC.md §2)', () => {
       </MantineProvider>,
     )
     await resizeFold(container, 100, { a: 50, b: 50, c: 50 })
-    expect(headerIds(container)).toEqual(['a'])
+    expect(headerIds(container)).toEqual(['a', 'b'])
 
-    const toggle = container.querySelector('tbody button[aria-label="Show row details"]')
+    const toggle = container.querySelector('tbody button[aria-label="Show C"]')
     if (!(toggle instanceof HTMLElement)) throw new Error('expected the fold toggle button')
     fireEvent.click(toggle)
     expect(container.querySelectorAll('tbody tr')).toHaveLength(2)
@@ -494,11 +492,10 @@ describe('column fold — meta.priority (docs/CONTROLS-SPEC.md §2)', () => {
    */
   test('enableHiding:false and a pinned column never fold — an ordinary eligible column folds first', async () => {
     stubLayout()
-    // Four columns so the "never fold the last remaining CANDIDATE" floor (`planColumnFold`) has
-    // two eligible columns to work with ('b' and 'd') rather than one — with only one eligible
-    // column left, that floor alone would keep it visible and the test would pass whether or not
-    // the exclusion itself worked. Here 'd' (declared last among the eligible pair) folds while
-    // 'a' (enableHiding:false) and 'c' (pinned) stay up regardless of how little room is measured.
+    // Four columns so the two-column floor (`planColumnFold`) has two eligible columns to work with
+    // ('b' and 'd'): 'a' (enableHiding:false) and 'c' (pinned) already make the floor's two, so BOTH
+    // eligible columns fold, 'd' first — and neither excluded column does, however little room is
+    // measured.
     const exclusionColumns = [
       exclusionCol.accessor('a', { header: 'A', enableHiding: false }),
       exclusionCol.accessor('b', { header: 'B' }),
@@ -518,7 +515,7 @@ describe('column fold — meta.priority (docs/CONTROLS-SPEC.md §2)', () => {
     await resizeFold(container, 1, { a: 50, b: 50, c: 50, d: 50 })
     // 'c' renders FIRST — pinned-left columns render ahead of the center group
     // (`getOrderedHeaderGroups`: left → center → right).
-    expect(headerIds(container)).toEqual(['c', 'a', 'b'])
+    expect(headerIds(container)).toEqual(['c', 'a'])
   })
 
   test('row selection composes with column folding — selection cell, fold toggle, and colSpan all agree', async () => {
@@ -529,31 +526,31 @@ describe('column fold — meta.priority (docs/CONTROLS-SPEC.md §2)', () => {
       </MantineProvider>,
     )
     await resizeFold(container, 100, { a: 50, b: 50, c: 50 })
-    expect(headerIds(container)).toEqual(['a'])
+    expect(headerIds(container)).toEqual(['a', 'b'])
 
     const bodyRow = container.querySelector('tbody tr')
     if (!bodyRow) throw new Error('expected a body row')
-    // The fold-toggle cell, the selection checkbox cell, and the one column that stayed visible.
-    expect(bodyRow.querySelectorAll('td')).toHaveLength(3)
+    // The fold-toggle cell, the selection checkbox cell, and the two columns that stayed visible.
+    expect(bodyRow.querySelectorAll('td')).toHaveLength(4)
     expect(bodyRow.querySelector('input[type="checkbox"]')).not.toBeNull()
 
-    const toggle = bodyRow.querySelector('button[aria-label="Show row details"]')
+    const toggle = bodyRow.querySelector('button[aria-label="Show C"]')
     if (!(toggle instanceof HTMLElement)) throw new Error('expected the fold toggle button')
     fireEvent.click(toggle)
 
     const disclosure = container.querySelectorAll('tbody tr')[1]
-    // colSpan = columns(3) + selection(1) + fold-toggle(1) - folded(2) = 3, the same width a real
+    // colSpan = columns(3) + selection(1) + fold-toggle(1) - folded(1) = 4, the same width a real
     // row renders at above — the count the selection column and the fold toggle both feed.
-    expect(disclosure?.querySelector('td')?.getAttribute('colspan')).toBe('3')
-    expect(disclosure?.textContent).toContain('B1')
+    expect(disclosure?.querySelector('td')?.getAttribute('colspan')).toBe('4')
     expect(disclosure?.textContent).toContain('C1')
   })
 })
 
 /**
  * `planColumnFold`'s own floor — even a wrapper too narrow for a single data column must not fold
- * every column away: a table with no columns left has no row identifier at all, which is worse
- * than the horizontal scroll this mechanism exists to avoid.
+ * below TWO data columns: a table with no columns left has no row identifier at all, and one with
+ * only the identifier hides every value; both are worse than the horizontal scroll that takes over
+ * (the first column pins, the rest scrolls — SPEC § 6.6).
  */
 describe('column fold — never folds every data column away', () => {
   type WideFoldRow = { a: string; b: string; c: string; d: string; e: string; f: string }
@@ -563,7 +560,7 @@ describe('column fold — never folds every data column away', () => {
     wideFoldCol.accessor(id, { header: id.toUpperCase() }),
   )
 
-  test('6 columns at 120px each in a 100px wrapper still leave the first data column visible', async () => {
+  test('6 columns at 120px each in a 100px wrapper still leave the first two data columns visible', async () => {
     stubLayout()
     const { container } = render(
       <MantineProvider>
@@ -572,8 +569,8 @@ describe('column fold — never folds every data column away', () => {
     )
     await resizeFold(container, 100, { a: 120, b: 120, c: 120, d: 120, e: 120, f: 120 })
     // Every column's own arithmetic says fold everything (6 x 120 vastly overflows 100px even
-    // one at a time) — the guard stops one short, at the declared-first column, 'a'.
-    expect(headerIds(container)).toEqual(['a'])
+    // one at a time) — the guard stops at the floor: the declared-first two columns.
+    expect(headerIds(container)).toEqual(['a', 'b'])
   })
 })
 
