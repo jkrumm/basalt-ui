@@ -63,6 +63,7 @@ export const PLUGIN_RULE_ID_LIST = [
   'raw-breakpoint',
   'no-dev-helper',
   'route-view-transition',
+  'status-fill-as-text',
 ] as const
 
 /** One registered oxlint plugin rule id — the literal union of {@link PLUGIN_RULE_ID_LIST}. */
@@ -357,7 +358,12 @@ export const SURFACES = {
     // The type-scale rules live with the tokens, not with `.`: both police a value that left the
     // `--vx-*` system, which is this surface's whole subject. `token-layer-boundary` is the
     // repo-local-only rule that keeps the layer upstream of Mantine (see below).
-    pluginRules: ['no-raw-font-size', 'raw-size-literal', 'token-layer-boundary'],
+    pluginRules: [
+      'no-raw-font-size',
+      'raw-size-literal',
+      'status-fill-as-text',
+      'token-layer-boundary',
+    ],
     description:
       'VX token refs, buildPaletteCss, defineSeries, seriesTokens, groupTokens, alpha (Mantine-free)',
     globs: {
