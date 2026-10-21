@@ -210,6 +210,14 @@ const HOVER_FIXTURE = `<!doctype html><style>
 const STATEFUL_FIXTURE = `<!doctype html><div data-shot=chart><section data-basalt-chart-card style="height:80px"></section></div>
 <div data-shot=plain style="height:80px"></div>`
 
+/** A strip cell holding a nested anchor (at rest and empty), and an `empty-row` that renders only under `empty`. */
+const STRIP_FIXTURE = `<!doctype html><body style="margin:0"><script>
+  const empty = location.search.includes('shot-state=empty')
+  document.body.innerHTML = '<div data-shot-states="empty"><div data-shot="strip-weight" style="height:80px">' +
+    '<div data-shot="strip-footer-weight-goal" style="height:30px">Set a goal</div></div>' +
+    (empty ? '<div data-shot="empty-row" style="height:40px">No session</div>' : '') + '</div>'
+</script>`
+
 const SKELETON_FIXTURE = `<!doctype html><style>
   body{margin:0}
   .card{height:200px;position:relative}
@@ -261,15 +269,17 @@ async function shoot(
   const server = createServer((req, res) => {
     res.setHeader('content-type', 'text/html')
     res.end(
-      req.url === '/reveal'
-        ? REVEAL_FIXTURE
-        : req.url === '/hover'
-          ? HOVER_FIXTURE
-          : req.url === '/stateful'
-            ? STATEFUL_FIXTURE
-            : req.url === '/skeleton'
-              ? SKELETON_FIXTURE
-              : FIXTURE,
+      req.url?.startsWith('/strip')
+        ? STRIP_FIXTURE
+        : req.url === '/reveal'
+          ? REVEAL_FIXTURE
+          : req.url === '/hover'
+            ? HOVER_FIXTURE
+            : req.url === '/stateful'
+              ? STATEFUL_FIXTURE
+              : req.url === '/skeleton'
+                ? SKELETON_FIXTURE
+                : FIXTURE,
     )
   })
   await new Promise<void>((done) => server.listen(0, '127.0.0.1', done))
@@ -451,6 +461,27 @@ describe('real Chrome', () => {
         expect(note('attr', 'hover')?.status).toBe('absent')
       },
       '/reveal',
+    )
+  }, 120_000)
+
+  test('an anchor nested in a strip cell is captured at rest and under empty; one that renders only under empty is absent at rest, not missing', async () => {
+    await shoot(
+      ['rest', 'empty'],
+      async ({ shots }) => {
+        const of = (name: string, state: string) =>
+          shots.filter((s) => s.name === name && s.state === state)
+        for (const state of ['rest', 'empty']) {
+          expect(of('strip-footer-weight-goal', state)).toHaveLength(4)
+          expect(of('strip-footer-weight-goal', state).every((s) => s.status === 'ok')).toBe(true)
+        }
+        const rest = of('empty-row', 'rest')
+        expect(rest).toHaveLength(4)
+        expect(rest.every((s) => s.status === 'absent' && s.note === 'not rendered at rest')).toBe(
+          true,
+        )
+        expect(of('empty-row', 'empty').every((s) => s.status === 'ok')).toBe(true)
+      },
+      '/strip',
     )
   }, 120_000)
 })

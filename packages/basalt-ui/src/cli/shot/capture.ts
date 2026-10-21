@@ -731,7 +731,12 @@ async function captureUrlState(c: Ctx, state: ShotState): Promise<void> {
       )
       continue
     }
-    const note = restNames.includes(name) ? undefined : 'anchor only present in this state'
+    const atRest = restNames.includes(name)
+    // A rest record names the legitimate absence, so the board's "not captured" stays a real miss.
+    const seen = c.shots.some((s) => s.name === name && s.state === 'rest')
+    if (!atRest && !seen && c.input.states.includes('rest'))
+      record(c, { name, state: 'rest', status: 'absent', note: 'not rendered at rest' })
+    const note = atRest ? undefined : 'anchor only present in this state'
     await attempt(c, name, state, (path) => restCrop(c, name, state, path), note)
   }
 }
