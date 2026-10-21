@@ -33,19 +33,17 @@ import {
   SegmentedControl,
   Select,
   SimpleGrid,
-  Skeleton,
   Stack,
   Switch,
-  Table,
   Tabs,
   Text,
   TextInput,
   Textarea,
 } from '@mantine/core'
 import { CONTAINER_KEYS } from 'basalt-ui/tokens'
-import { ErrorNote } from './fixtures/error-note'
 import { DeltaBadge, EmptyState, PageBar, SettingsSection } from 'basalt-ui'
 import { ViewTabs } from 'basalt-ui/controls'
+import { BasaltDataTable, createColumnHelper } from 'basalt-ui/table'
 import { noop } from '../scenarios/shot-state'
 import type { ShotState } from '../scenarios/shot-state'
 import { createLocalStore, field } from 'basalt-ui/state'
@@ -113,9 +111,6 @@ const TABLE_ROWS = [
   { name: 'Churn rate', value: '2.3%', prior: '2.7%', delta: -0.4, polarity: 'up-bad', pp: true },
 ] as const
 
-/** Numeric columns align to the end so the digits line up. */
-const NUMERIC = { ta: 'right' } as const
-
 export function ComponentsPage({ shotState }: { shotState?: ShotState | undefined }) {
   const [tab] = componentViews.field.tab.use()
   return (
@@ -152,67 +147,60 @@ export function ComponentsPage({ shotState }: { shotState?: ShotState | undefine
   )
 }
 
+type MetricRow = (typeof TABLE_ROWS)[number]
+const metric = createColumnHelper<MetricRow>()
+const METRIC_COLUMNS = [
+  metric.accessor('name', { header: 'Metric', meta: { kind: 'entity' } }),
+  metric.accessor('value', {
+    header: 'Last 30 d',
+    cell: (info) => info.getValue(),
+    meta: { kind: 'number' },
+  }),
+  metric.accessor('prior', {
+    header: 'Prior 30 d',
+    cell: (info) => info.getValue(),
+    meta: { kind: 'number' },
+  }),
+  metric.accessor('delta', {
+    header: 'Change',
+    cell: ({ row }) => (
+      <DeltaBadge
+        value={row.original.delta}
+        polarity={row.original.polarity}
+        {...('pp' in row.original && { format: (v: number) => `${Math.abs(v)} pp` })}
+      />
+    ),
+    meta: { kind: 'number' },
+  }),
+]
+
+/** The failed load `basalt-ui shot` reaches through `?shot-state=error`: the table keeps its header. */
+const FAILED_QUERY = {
+  data: undefined,
+  isError: true,
+  error: new Error('The analytics service did not answer. Retry, or reconnect it in Settings.'),
+  fetchStatus: 'idle',
+  refetch: noop,
+} as const
+
 /** The metrics table at rest, and the three states `basalt-ui shot` reaches through `?shot-state=`. */
 function MetricsTable({ shotState }: { shotState?: ShotState | undefined }) {
-  if (shotState === 'empty') {
-    return (
-      <EmptyState
-        icon={<IconSearch />}
-        title="No metrics in the last 30 days"
-        description="Metrics appear here once the first event arrives."
-        tier="section"
-      />
-    )
-  }
-  if (shotState === 'error') {
-    return (
-      <ErrorNote
-        title="Could not load metrics"
-        cause="The analytics service did not answer. Retry, or reconnect it in Settings."
-        onRetry={noop}
-      />
-    )
-  }
   return (
-    <Table withTableBorder striped highlightOnHover>
-      <Table.Thead>
-        <Table.Tr>
-          <Table.Th>Metric</Table.Th>
-          <Table.Th {...NUMERIC}>Last 30 d</Table.Th>
-          <Table.Th {...NUMERIC}>Prior 30 d</Table.Th>
-          <Table.Th {...NUMERIC}>Change</Table.Th>
-        </Table.Tr>
-      </Table.Thead>
-      <Table.Tbody>
-        {shotState === 'loading'
-          ? TABLE_ROWS.map((row) => (
-              <Table.Tr key={row.name}>
-                <Table.Td>
-                  <Skeleton height={14} width={120} maw="100%" />
-                </Table.Td>
-                {[0, 1, 2].map((col) => (
-                  <Table.Td key={col} {...NUMERIC}>
-                    <Skeleton height={14} width={48} ml="auto" />
-                  </Table.Td>
-                ))}
-              </Table.Tr>
-            ))
-          : TABLE_ROWS.map((row) => (
-              <Table.Tr key={row.name}>
-                <Table.Td>{row.name}</Table.Td>
-                <Table.Td {...NUMERIC}>{row.value}</Table.Td>
-                <Table.Td {...NUMERIC}>{row.prior}</Table.Td>
-                <Table.Td {...NUMERIC}>
-                  <DeltaBadge
-                    value={row.delta}
-                    polarity={row.polarity}
-                    {...('pp' in row && { format: (v: number) => `${Math.abs(v)} pp` })}
-                  />
-                </Table.Td>
-              </Table.Tr>
-            ))}
-      </Table.Tbody>
-    </Table>
+    <BasaltDataTable
+      data={shotState === 'empty' || shotState === 'error' ? [] : TABLE_ROWS.slice()}
+      columns={METRIC_COLUMNS}
+      striped
+      isLoading={shotState === 'loading'}
+      {...(shotState === 'error' && { query: FAILED_QUERY })}
+      emptyState={
+        <EmptyState
+          icon={<IconSearch />}
+          title="No metrics in the last 30 days"
+          description="Metrics appear here once the first event arrives."
+          tier="section"
+        />
+      }
+    />
   )
 }
 
