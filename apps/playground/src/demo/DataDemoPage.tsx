@@ -11,10 +11,11 @@
  *
  * The table uses a small typed dataset with columns built by createColumnHelper.
  */
-import { Button, Divider, Paper, Stack, Tabs } from '@mantine/core'
-import { EmptyState, PageBar } from 'basalt-ui'
+import { Divider, Paper, Stack, Tabs } from '@mantine/core'
+import { PageBar } from 'basalt-ui'
 import { FilterSet, RangeFilter, SearchFilter, ViewTabs } from 'basalt-ui/controls'
 import { createLocalStore, field } from 'basalt-ui/state'
+import { date } from 'basalt-ui/format'
 import { BasaltDataTable, createColumnHelper } from 'basalt-ui/table'
 import { queryFor, retryCopy } from '../scenarios/shot-state'
 import type { ScenarioProps } from '../scenarios/shot-state'
@@ -22,9 +23,9 @@ import { dataStressFilters } from './data-stress-store'
 import { DataStressPage } from './DataStressPage'
 import { DataTableChromeDemoPage } from './DataTableChromeDemoPage'
 import { QueryDemoPage } from './QueryDemoPage'
-import { useState } from 'react'
 import type { ComponentProps } from 'react'
 import { IconSearch } from './icons'
+import { tableEmptyState, useFilterReset } from './table-empty-state'
 
 // The route's view switch, store-bound (law C3) so a back navigation lands on the tab left behind.
 const dataViews = createLocalStore({
@@ -33,59 +34,6 @@ const dataViews = createLocalStore({
 }).labels({
   tab: { overview: 'Employee tables', chrome: 'Table chrome', stress: 'Stress', query: 'Query' },
 })
-
-// ── Shared empty state and filter reset ────────────────────────────────────────
-
-type TableProps = ComponentProps<typeof BasaltDataTable>
-type ColumnFilters = NonNullable<TableProps['initialColumnFilters']>
-
-/**
- * The table's filters are uncontrolled, so "clear" is a remount with no preset: the hook watches the
- * search and facet reports to know whether the empty table is the filters' doing.
- */
-export function useFilterReset(preset: ColumnFilters = []) {
-  const [state, setState] = useState({ resets: 0, search: '', facets: preset.length })
-  return {
-    tableKey: state.resets,
-    initialColumnFilters: state.resets === 0 ? preset : [],
-    onGlobalFilterChange: (search: string) => setState((s) => ({ ...s, search })),
-    onColumnFiltersChange: (filters: ColumnFilters) =>
-      setState((s) => ({ ...s, facets: filters.length })),
-    filtered: state.search !== '' || state.facets > 0,
-    clear: () => setState((s) => ({ resets: s.resets + 1, search: '', facets: 0 })),
-  }
-}
-
-/**
- * One wording pattern for every table here: a title naming what is absent, a description with the
- * cause and the next step, and the one action only when filters are the cause.
- */
-export function tableEmptyState({
-  noun,
-  total,
-  cause,
-  filtered,
-  onClear,
-}: {
-  noun: string
-  total: number
-  cause: string
-  filtered: boolean
-  onClear?: () => void
-}) {
-  if (filtered && onClear !== undefined) {
-    return (
-      <EmptyState
-        icon={<IconSearch />}
-        title={`No ${noun} match`}
-        description={`The search or filters exclude all ${total}. Clear them to see every one.`}
-        action={<Button onClick={onClear}>Clear filters</Button>}
-        tier="section"
-      />
-    )
-  }
-  return <EmptyState title={`No ${noun} listed`} description={cause} tier="section" />
-}
 
 // ── Table demo ────────────────────────────────────────────────────────────────
 
@@ -207,7 +155,7 @@ const TABLE_FACETS: NonNullable<ComponentProps<typeof BasaltDataTable>['facets']
 
 function TableSection({ shotState }: ScenarioProps) {
   const query = queryFor(shotState, retryCopy('employee directory'))
-  const reset = useFilterReset()
+  const reset = useFilterReset([], shotState === undefined)
   return (
     <div data-compare="table" data-shot="employees-table" data-shot-states="empty loading error">
       <BasaltDataTable
@@ -271,7 +219,11 @@ const PINNED_COLUMNS = [
   pinnedCol.accessor('role', { header: 'Role', meta: { kind: 'text' } }),
   pinnedCol.accessor('level', { header: 'Level', meta: { kind: 'text' } }),
   pinnedCol.accessor('location', { header: 'Location', meta: { kind: 'text' } }),
-  pinnedCol.accessor('startDate', { header: 'Start date', meta: { kind: 'relative-time' } }),
+  pinnedCol.accessor('startDate', {
+    header: 'Start date',
+    cell: (ctx) => date(ctx.getValue(), { timeZone: 'UTC' }),
+    meta: { kind: 'text' },
+  }),
   pinnedCol.accessor('projects', { header: 'Projects', meta: { kind: 'number' } }),
   pinnedCol.accessor('utilization', { header: 'Utilization (%)', meta: { kind: 'number' } }),
   pinnedCol.accessor('salary', {

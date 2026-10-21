@@ -137,12 +137,12 @@ describe('session log', () => {
     expect(new Set(SESSION_LOG.map((r) => r.result))).toEqual(new Set(['PR', 'Held', 'Dropped']))
   })
 
-  it('the rows of each lift sum to its volume on the top-lifts card', () => {
+  it('the top-lifts card sums the log rows of each logged lift', () => {
     for (const exercise of new Set(SESSION_LOG.map((r) => r.exercise))) {
       const rows = SESSION_LOG.filter((r) => r.exercise === exercise)
       const top = TOP_LIFTS.find((l) => l.name === exercise)
       expect(top).toBeDefined()
-      expect(sum(rows.map((r) => r.volumeKg))).toBe(Math.round(top?.volumeKg ?? Number.NaN))
+      expect(sum(rows.map((r) => r.volumeKg))).toBe(top?.volumeKg ?? Number.NaN)
     }
   })
 

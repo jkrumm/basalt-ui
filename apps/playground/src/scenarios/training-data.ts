@@ -127,6 +127,87 @@ const SESSIONS: readonly Session[] = Array.from({ length: WINDOW_DAYS }, (_, i) 
   return sessions
 }).flat()
 
+export type SessionResult = 'PR' | 'Held' | 'Dropped'
+
+export type SessionLogRow = {
+  date: Date
+  exercise: string
+  sets: number
+  volumeKg: number
+  e1rmKg: number
+  result: SessionResult
+}
+
+/** Epley: the load that one rep would match. */
+const estimatedOneRepMax = (kg: number, reps: number): number => Math.round(kg * (1 + reps / 30))
+
+type LogEntry = {
+  daysAgo: number
+  exercise: string
+  sets: number
+  reps: number
+  kg: number
+  volumeKg: number
+  result: SessionResult
+}
+
+/**
+ * The strength log, newest first: top sets of the four main lifts, all inside the month-to-date
+ * window. It is the data: "Top lifts by volume" sums these rows for these lifts. The row's volume
+ * is the whole session's work on the lift, so it is not `sets × reps × top kg`.
+ */
+const LOG_ENTRIES: readonly LogEntry[] = [
+  { daysAgo: 1, exercise: 'Squat', sets: 4, reps: 5, kg: 117.5, volumeKg: 2148, result: 'PR' },
+  {
+    daysAgo: 3,
+    exercise: 'Bench press',
+    sets: 4,
+    reps: 6,
+    kg: 82.5,
+    volumeKg: 2970,
+    result: 'Held',
+  },
+  { daysAgo: 4, exercise: 'Deadlift', sets: 3, reps: 5, kg: 140, volumeKg: 1890, result: 'PR' },
+  {
+    daysAgo: 6,
+    exercise: 'Overhead press',
+    sets: 4,
+    reps: 6,
+    kg: 52.5,
+    volumeKg: 1231,
+    result: 'Dropped',
+  },
+  { daysAgo: 8, exercise: 'Squat', sets: 4, reps: 5, kg: 115, volumeKg: 2102, result: 'Held' },
+  {
+    daysAgo: 10,
+    exercise: 'Bench press',
+    sets: 4,
+    reps: 6,
+    kg: 82.5,
+    volumeKg: 2970,
+    result: 'Held',
+  },
+  { daysAgo: 11, exercise: 'Deadlift', sets: 3, reps: 5, kg: 135, volumeKg: 1823, result: 'Held' },
+  {
+    daysAgo: 14,
+    exercise: 'Overhead press',
+    sets: 4,
+    reps: 6,
+    kg: 55,
+    volumeKg: 1289,
+    result: 'PR',
+  },
+]
+
+export const SESSION_LOG: readonly SessionLogRow[] = LOG_ENTRIES.map((e) => ({
+  date: new Date(TODAY.getTime() - e.daysAgo * DAY_MS),
+  exercise: e.exercise,
+  sets: e.sets,
+  volumeKg: e.volumeKg,
+  e1rmKg: estimatedOneRepMax(e.kg, e.reps),
+  result: e.result,
+}))
+
 const sum = (values: readonly number[]): number => values.reduce((a, b) => a + b, 0)
 
 const inMonthToDate = (monthStart: Date) => (s: Session) =>
@@ -137,12 +218,33 @@ const inMonthToDate = (monthStart: Date) => (s: Session) =>
 const MTD = SESSIONS.filter(inMonthToDate(TODAY))
 const PRIOR_MTD = SESSIONS.filter(inMonthToDate(priorMonthStart))
 
+/**
+ * Strength volume by lift this month, heaviest first. The lifts in the session log take the log's
+ * sums (the log is the data); the rest keep what the generated sessions lifted.
+ */
+export const TOP_LIFTS: readonly { name: string; volumeKg: number; share: number }[] = (() => {
+  const totals = new Map<string, number>()
+  for (const l of MTD.flatMap((s) => s.lifts)) {
+    totals.set(l.name, (totals.get(l.name) ?? 0) + l.volumeKg)
+  }
+  const logged = new Map<string, number>()
+  for (const r of SESSION_LOG) logged.set(r.exercise, (logged.get(r.exercise) ?? 0) + r.volumeKg)
+  for (const [name, volumeKg] of logged) {
+    if (!totals.has(name)) throw new Error(`Session log names an unknown lift: ${name}`)
+    totals.set(name, volumeKg)
+  }
+  const total = sum([...totals.values()])
+  return [...totals]
+    .map(([name, volumeKg]) => ({ name, volumeKg, share: volumeKg / total }))
+    .toSorted((a, b) => b.volumeKg - a.volumeKg)
+})()
+
 const changePct = (now: number, before: number): number => (now / before - 1) * 100
 
 export const SESSIONS_MTD = MTD.length
 export const SESSIONS_PRIOR = PRIOR_MTD.length
 export const SESSIONS_CHANGE_PCT = changePct(SESSIONS_MTD, SESSIONS_PRIOR)
-export const VOLUME_MTD_KG = sum(MTD.map((s) => s.volumeKg))
+export const VOLUME_MTD_KG = sum(TOP_LIFTS.map((l) => l.volumeKg))
 const VOLUME_PRIOR_KG = sum(PRIOR_MTD.map((s) => s.volumeKg))
 export const VOLUME_CHANGE_PCT = changePct(VOLUME_MTD_KG, VOLUME_PRIOR_KG)
 export const DISTANCE_MTD_KM = sum(MTD.map((s) => s.km))
@@ -225,17 +327,6 @@ export const TYPE_MIX = SESSION_TYPES.map((type) => ({
   count: MTD.filter((s) => s.type === type).length,
 }))
 
-/** Strength volume by lift this month, heaviest first. */
-export const TOP_LIFTS: readonly { name: string; volumeKg: number; share: number }[] = (() => {
-  const totals = new Map<string, number>()
-  for (const l of MTD.flatMap((s) => s.lifts)) {
-    totals.set(l.name, (totals.get(l.name) ?? 0) + l.volumeKg)
-  }
-  return [...totals]
-    .map(([name, volumeKg]) => ({ name, volumeKg, share: volumeKg / VOLUME_MTD_KG }))
-    .toSorted((a, b) => b.volumeKg - a.volumeKg)
-})()
-
 /** Sessions in each of the six complete months before this one, oldest first. */
 export const MONTHLY_SESSIONS: readonly number[] = Array.from({ length: HIT_MONTHS }, (_, k) => {
   const start = Date.UTC(YEAR, month - HIT_MONTHS + k, 1)
@@ -252,71 +343,3 @@ export const HIT_HISTORY: readonly { label: string; sessions: number }[] = MONTH
     sessions,
   }),
 )
-
-export type SessionResult = 'PR' | 'Held' | 'Dropped'
-
-export type SessionLogRow = {
-  date: Date
-  exercise: string
-  sets: number
-  volumeKg: number
-  e1rmKg: number
-  result: SessionResult
-}
-
-/** Epley: the load that one rep would match. */
-const estimatedOneRepMax = (kg: number, reps: number): number => Math.round(kg * (1 + reps / 30))
-
-type LogEntry = {
-  daysAgo: number
-  exercise: string
-  sets: number
-  reps: number
-  kg: number
-  result: SessionResult
-}
-
-/** The strength log, newest first: top sets of the four main lifts, all inside the month-to-date window. */
-const LOG_ENTRIES: readonly LogEntry[] = [
-  { daysAgo: 1, exercise: 'Squat', sets: 4, reps: 5, kg: 117.5, result: 'PR' },
-  { daysAgo: 3, exercise: 'Bench press', sets: 4, reps: 6, kg: 82.5, result: 'Held' },
-  { daysAgo: 4, exercise: 'Deadlift', sets: 3, reps: 5, kg: 140, result: 'PR' },
-  { daysAgo: 6, exercise: 'Overhead press', sets: 4, reps: 6, kg: 52.5, result: 'Dropped' },
-  { daysAgo: 8, exercise: 'Squat', sets: 4, reps: 5, kg: 115, result: 'Held' },
-  { daysAgo: 10, exercise: 'Bench press', sets: 4, reps: 6, kg: 82.5, result: 'Held' },
-  { daysAgo: 11, exercise: 'Deadlift', sets: 3, reps: 5, kg: 135, result: 'Held' },
-  { daysAgo: 14, exercise: 'Overhead press', sets: 4, reps: 6, kg: 55, result: 'PR' },
-]
-
-const topLiftVolume = (exercise: string): number =>
-  Math.round(TOP_LIFTS.find((l) => l.name === exercise)?.volumeKg ?? 0)
-
-/**
- * The log's rows of a lift sum to that lift's month-to-date volume on the "Top lifts by volume" card
- * (one number, two views, whole kilograms like the card shows it): the lift's volume is split across its rows by each top set's weight, the
- * last row taking the rounding remainder. The row's volume is the whole session's work on the lift,
- * so it is not `sets × reps × top kg`.
- */
-export const SESSION_LOG: readonly SessionLogRow[] = (() => {
-  const nominal = (e: LogEntry): number => e.sets * e.reps * e.kg
-  const rowsOf = (exercise: string) => LOG_ENTRIES.filter((e) => e.exercise === exercise)
-  const allocated = new Map<string, number>()
-  return LOG_ENTRIES.map((e) => {
-    const rows = rowsOf(e.exercise)
-    const isLast = rows.at(-1) === e
-    const done = allocated.get(e.exercise) ?? 0
-    const total = topLiftVolume(e.exercise)
-    const volumeKg = isLast
-      ? total - done
-      : Math.round((total * nominal(e)) / sum(rows.map(nominal)))
-    allocated.set(e.exercise, done + volumeKg)
-    return {
-      date: new Date(TODAY.getTime() - e.daysAgo * DAY_MS),
-      exercise: e.exercise,
-      sets: e.sets,
-      volumeKg,
-      e1rmKg: estimatedOneRepMax(e.kg, e.reps),
-      result: e.result,
-    }
-  })
-})()

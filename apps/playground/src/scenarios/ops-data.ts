@@ -205,4 +205,21 @@ export const fmtStamp = (date: Date): string =>
     hour12: false,
     timeZone: 'UTC',
   })
+/** Full UTC date and time, the tooltip and accessible name of a relative time: `Thu, 15 Oct 2026, 09:30 UTC`. */
+export const fmtFullStamp = (date: Date): string => {
+  const day = date.toLocaleDateString('en-GB', {
+    weekday: 'short',
+    day: 'numeric',
+    month: 'short',
+    year: 'numeric',
+    timeZone: 'UTC',
+  })
+  const time = date.toLocaleTimeString('en-GB', {
+    hour: '2-digit',
+    minute: '2-digit',
+    hour12: false,
+    timeZone: 'UTC',
+  })
+  return `${day}, ${time} UTC`
+}
 export const WINDOW_LABEL = `${fmtDay(new Date(WINDOW_START))}–${fmtDay(NOW_DATE)}`

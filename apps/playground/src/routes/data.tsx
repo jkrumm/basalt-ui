@@ -1,7 +1,8 @@
 import { Paper, Stack } from '@mantine/core'
 import { createFileRoute } from '@tanstack/react-router'
 import { BasaltDataTable, createColumnHelper } from 'basalt-ui/table'
-import { DataDemoPage, tableEmptyState, useFilterReset } from '../demo/DataDemoPage'
+import { DataDemoPage } from '../demo/DataDemoPage'
+import { tableEmptyState, useFilterReset } from '../demo/table-empty-state'
 import { queryFor, retryCopy, validateShotSearch } from '../scenarios/shot-state'
 import type { ShotState } from '../scenarios/shot-state'
 
@@ -28,7 +29,7 @@ const LIFT_COLUMNS = [
 /** The full toolbar (SPEC § 6.6): title, search, two facets and an action on one 28px row. */
 function ToolbarTable({ shotState }: { shotState: ShotState | undefined }) {
   const query = queryFor(shotState, retryCopy('workout log'))
-  const reset = useFilterReset(PRESET_FILTERS)
+  const reset = useFilterReset(PRESET_FILTERS, shotState === undefined)
   return (
     <div data-shot="table-toolbar" data-shot-states="empty loading error">
       <BasaltDataTable

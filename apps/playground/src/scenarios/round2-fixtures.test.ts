@@ -1,10 +1,10 @@
 /**
  * Wave 35 round 2 fixture fixes: each assertion is one defect the round's crops showed.
  */
-import { MantineProvider } from '@mantine/core'
+import { ColorSwatch, MantineProvider } from '@mantine/core'
 import { cleanup, render } from '@testing-library/react'
 import { createElement } from 'react'
-import type { ReactElement } from 'react'
+import type { ComponentType, ReactElement } from 'react'
 import { afterEach, describe, expect, it } from 'bun:test'
 import { ComponentsSurfaces } from '../demo/ComponentsPage'
 import { STUCK } from './agents-data'
@@ -134,10 +134,14 @@ describe('W42 r1 tables', () => {
   const headers = (c: HTMLElement, name: string) =>
     [...(anchor(c, name)?.querySelectorAll('th') ?? [])].map((n) => n.textContent)
 
-  it('S1 outages keep a mono Start, no End, and a neutral Scope', () => {
+  it('S1 outages read Started as a relative time, with no End and a neutral Scope', () => {
     const table = anchor(mount(createElement(OpsScenario, { shotState: undefined })), 'outages')
-    expect(table?.textContent).toContain('Start (UTC)')
+    expect(table?.textContent).toContain('Started')
+    expect(table?.textContent).toContain('yesterday')
     expect(table?.textContent).not.toContain('End (UTC)')
+    const time = table?.querySelector('time')
+    expect(time?.getAttribute('aria-label')).toBe('Thu, 15 Oct 2026, 09:30 UTC')
+    expect(time?.getAttribute('tabindex')).toBe('0')
     expect(table?.querySelector('td[data-kind="relative-time"]')).not.toBeNull()
     expect(table?.querySelector('[data-kind="status"]')).toBeNull()
   })
@@ -151,7 +155,14 @@ describe('W42 r1 tables', () => {
 
   it('S2 draws no exercise glyph: colour on the log is the result column only', () => {
     const c = mount(createElement(TrainingScenario, { shotState: undefined }))
-    expect(anchor(c, 'session-log')?.querySelector('[class*="ColorSwatch"]')).toBeNull()
+    const swatch = '[class*="ColorSwatch"]'
+    // Positive control: the selector does find a swatch when one is drawn.
+    expect(
+      mount(
+        createElement(ColorSwatch as ComponentType<{ color: string }>, { color: 'red' }),
+      ).querySelector(swatch),
+    ).not.toBeNull()
+    expect(anchor(c, 'session-log')?.querySelector(swatch)).toBeNull()
   })
 
   it('S2 declares the date tooltip for the shot', () => {
@@ -159,10 +170,21 @@ describe('W42 r1 tables', () => {
     expect(anchor(c, 'session-log')?.querySelector('[data-shot-tooltip]')).not.toBeNull()
   })
 
-  it('S2 empty log offers its one action', () => {
+  it('S2 date cell is a focusable <time> named by its full date', () => {
+    const c = mount(createElement(TrainingScenario, { shotState: undefined }))
+    const time = anchor(c, 'session-log')?.querySelector('time')
+    expect(time?.getAttribute('tabindex')).toBe('0')
+    expect(time?.getAttribute('aria-label')).toBe('Thu, 15 Oct 2026')
+  })
+
+  it('S2 empty log states the cause and has no dead action', () => {
     const c = mount(createElement(TrainingScenario, { shotState: 'empty' }))
-    const buttons = [...(anchor(c, 'session-log')?.querySelectorAll('button') ?? [])]
-    expect(buttons.map((b) => b.textContent)).toContain('Log a lift')
+    const log = anchor(c, 'session-log')
+    expect(log?.textContent).toContain('No lift logged 1–16 Oct')
+    expect(log?.textContent).not.toMatch(/filter/i)
+    expect([...(log?.querySelectorAll('button') ?? [])].map((b) => b.textContent)).not.toContain(
+      'Log a lift',
+    )
   })
 })
 
