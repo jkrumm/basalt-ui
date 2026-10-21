@@ -47,48 +47,32 @@ export function kindAlign(kind: DataTableColumnKind | undefined): DataTableAlign
   return kind === 'number' || kind === 'money' ? 'right' : undefined
 }
 
-/** Kinds whose column sizes to its content; `text` and kindless columns keep the browser's auto share. */
-const FIT_KINDS: ReadonlySet<DataTableColumnKind> = new Set([
-  'entity',
-  'status',
-  'number',
-  'money',
-  'relative-time',
-  'meter',
-])
-
 /**
- * Column sizing law (SPEC § 6.6): a kinded data column is as wide as its header or widest cell, and
- * the slack of a wide container goes to ONE column — the first `entity`/`text` one, else a trailing
- * spacer — so a value sits beside its name instead of a third of the table away. `fixedIds` (the
- * checkbox and actions columns) fit their content too but are not data. A kindless or later `text`
- * column keeps its auto share, so a table that uses them is no worse off than before.
+ * Column sizing law (SPEC § 6.6): a data column is as wide as its header or widest cell (body cells
+ * hold one line), and the slack of a wide container goes to ONE column — the first `entity`/`text`
+ * one, else a trailing spacer — so a value sits beside its name instead of a third of the table
+ * away. `fixedIds` (the checkbox and actions columns) fit too but are not data. A later `text`
+ * column keeps its auto share (it may wrap), and a table with no entity/text column but a kindless
+ * one lets that column absorb the slack, so a table that never opted into kinds renders as before.
  */
 export function planColumnSizing<T extends RowData>(
   columns: readonly Column<BasaltTableFeatures, T, unknown>[],
   fixedIds: ReadonlySet<string>,
 ): { fitIds: ReadonlySet<string>; spacer: boolean } {
-  const fitIds = new Set<string>()
-  let hasSlack = false
-  let hasData = false
-  for (const column of columns) {
-    if (fixedIds.has(column.id)) {
-      fitIds.add(column.id)
-      continue
-    }
-    hasData = true
-    const kind = resolveKind(column)
-    if (kind === undefined) {
-      hasSlack = true
-    } else if (!hasSlack && (kind === 'entity' || kind === 'text')) {
-      hasSlack = true
-    } else if (FIT_KINDS.has(kind)) {
-      fitIds.add(column.id)
-    } else {
-      hasSlack = true
-    }
+  const data = columns.filter((column) => !fixedIds.has(column.id))
+  const kinds = new Map(data.map((column) => [column.id, resolveKind(column)]))
+  const slackId = data.find((column) => {
+    const kind = kinds.get(column.id)
+    return kind === 'entity' || kind === 'text'
+  })?.id
+  const absorbs = slackId !== undefined || data.some((column) => kinds.get(column.id) === undefined)
+  const fitIds = new Set(columns.filter((column) => fixedIds.has(column.id)).map((c) => c.id))
+  for (const column of data) {
+    const kind = kinds.get(column.id)
+    if (column.id === slackId || kind === 'text') continue
+    if (kind !== undefined || slackId !== undefined) fitIds.add(column.id)
   }
-  return { fitIds, spacer: hasData && !hasSlack }
+  return { fitIds, spacer: data.length > 0 && !absorbs }
 }
 
 /** A loading bar shaped like the kind's value: a figure short and flush right, a chip chip-sized. */
