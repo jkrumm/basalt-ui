@@ -291,6 +291,6 @@ export const SESSION_LOG: readonly SessionLogRow[] = [
   logRow(6, 'Overhead press', 4, 6, 52.5, 'Dropped'),
   logRow(8, 'Squat', 4, 5, 115, 'Held'),
   logRow(10, 'Bench press', 4, 6, 82.5, 'Held'),
-  logRow(11, 'Deadlift', 3, 5, 137.5, 'Held'),
+  logRow(11, 'Deadlift', 3, 5, 135, 'Held'),
   logRow(14, 'Overhead press', 4, 6, 55, 'PR'),
 ]
