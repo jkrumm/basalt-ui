@@ -61,7 +61,7 @@ import type {
 } from '@tanstack/react-table'
 import { constructFilterFn, FlexRender, useTable } from '@tanstack/react-table'
 import type { CSSProperties, MouseEvent as ReactMouseEvent, ReactNode, RefObject } from 'react'
-import { Fragment, useId, useMemo, useRef, useState } from 'react'
+import { Fragment, useId, useLayoutEffect, useMemo, useRef, useState } from 'react'
 import { useDebouncedCallback } from '@mantine/hooks'
 import { cx } from '../common/props'
 import type { BasaltProps, SlotStylesProps } from '../common/props'
@@ -1467,6 +1467,7 @@ export function BasaltDataTable<T extends RowData>(props: BasaltDataTableProps<T
   const { cards: showCards, rootRef: projectionRootRef } = useCardProjection(
     renderCard !== undefined,
   )
+  const renderedRows = useRef(0)
   const foldExtraIds = useMemo(
     () => [
       ...(enableRowSelection ? [SELECT_COLUMN_ID] : []),
@@ -1489,7 +1490,8 @@ export function BasaltDataTable<T extends RowData>(props: BasaltDataTableProps<T
     // implicit one beside it would stack two sticky columns nobody asked for.
     // A one-column table has nothing to scroll beside an identifier.
     allowPin: columnPinning.start.length === 0 && columns.length > 1,
-    headerOnly: showSkeleton || queryError !== undefined || data.length === 0,
+    headerOnly: showSkeleton || queryError !== undefined,
+    renderedRows,
   })
   const columnVisibility: ColumnVisibilityState = useMemo(
     () => Object.fromEntries([...foldedColumns].map((id) => [id, false])),
@@ -1628,6 +1630,9 @@ export function BasaltDataTable<T extends RowData>(props: BasaltDataTableProps<T
   // The rows actually rendered, not `data` — a filter or a page index that matches nothing leaves
   // `data` non-empty while the body has nothing in it, and a blank body reads as a broken table.
   const rows = table.getRowModel().rows
+  useLayoutEffect(() => {
+    renderedRows.current = rows.length
+  })
 
   // `stickyHeaderOffset` is a WINDOW-scroll concept — the height of whatever fixed chrome the page
   // scrolls under (the AppShell header plus `PageBar` row 2). Inside the scroll container it is

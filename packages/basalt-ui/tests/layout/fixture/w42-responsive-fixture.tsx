@@ -71,10 +71,14 @@ type SessionRow = {
   sets: number
 }
 const session = createColumnHelper<SessionRow>()
+// Offsets from module load, so the relative-time text (and so the column's width) never drifts
+// with the wall clock — the same device as `W37_SYNCED_AT` in fixtures.tsx.
+const LOADED_AT = Date.now()
+const daysAgo = (days: number): string => new Date(LOADED_AT - days * 86_400_000).toISOString()
 const SESSION_ROWS: SessionRow[] = [
   {
     exercise: 'Overhead press (strict, no leg drive, paused)',
-    date: '2026-10-19T09:00:00Z',
+    date: daysAgo(2),
     result: 'PR',
     e1rm: 72,
     volume: 1080,
@@ -82,7 +86,7 @@ const SESSION_ROWS: SessionRow[] = [
   },
   {
     exercise: 'Squat',
-    date: '2026-10-17T09:00:00Z',
+    date: daysAgo(4),
     result: 'Held',
     e1rm: 132,
     volume: 3400,

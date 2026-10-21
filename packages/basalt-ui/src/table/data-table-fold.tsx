@@ -193,6 +193,8 @@ export function useColumnFold(input: {
    * keep the loaded fold instead of unfolding a column the rows would fold again.
    */
   headerOnly: boolean
+  /** The rows the body renders right now: a filter that matches nothing leaves a header-only body too. */
+  renderedRows: RefObject<number>
 }): {
   wrapperRef: RefObject<HTMLDivElement | null>
   folded: ReadonlySet<string>
@@ -201,7 +203,8 @@ export function useColumnFold(input: {
   /** Whether the table is wider than its container right now — i.e. whether the scroller scrolls. */
   overflowing: boolean
 } {
-  const { active, order, fixedIds, extraIds, pinCandidates, allowPin, headerOnly } = input
+  const { active, order, fixedIds, extraIds, pinCandidates, allowPin, headerOnly, renderedRows } =
+    input
   const wrapperRef = useRef<HTMLDivElement>(null)
   const [folded, setFolded] = useState<ReadonlySet<string>>(EMPTY_FOLD_SET)
   const [pinId, setPinId] = useState<string | undefined>(undefined)
@@ -212,6 +215,8 @@ export function useColumnFold(input: {
   const decidedPin = useRef<string | undefined>(undefined)
   useLayoutEffect(() => {
     latest.current = { order, fixedIds, extraIds, pinCandidates, allowPin, headerOnly }
+    // A deactivated hook decided nothing: the next activation starts from no pin.
+    if (!active || order.length === 0) decidedPin.current = undefined
   })
   if ((!active || order.length === 0) && (folded.size > 0 || pinId !== undefined)) {
     setFolded(EMPTY_FOLD_SET)
@@ -236,7 +241,8 @@ export function useColumnFold(input: {
         // The pinned column's painted width is the capped one, and a header-only body's is the
         // narrow one: either way the natural width already cached stays.
         const keepCached =
-          (id === decidedPin.current || current.headerOnly) && boxes.current.has(id)
+          (id === decidedPin.current || current.headerOnly || renderedRows.current === 0) &&
+          boxes.current.has(id)
         if (!keepCached)
           boxes.current.set(id, { width: cell.offsetWidth, height: cell.offsetHeight })
       }
@@ -287,12 +293,21 @@ export function useColumnFold(input: {
   })
   useLayoutEffect(() => {
     if (!active || typeof MutationObserver === 'undefined') return
-    const observer = new MutationObserver(() => remeasureRef.current())
-    observer.observe(document.documentElement, {
-      attributes: true,
-      attributeFilter: ['data-mantine-color-scheme', 'class'],
+    const root = document.documentElement
+    let scheme = root.getAttribute('data-mantine-color-scheme')
+    let frame = 0
+    const observer = new MutationObserver(() => {
+      const next = root.getAttribute('data-mantine-color-scheme')
+      if (next === scheme) return
+      scheme = next
+      cancelAnimationFrame(frame)
+      frame = requestAnimationFrame(() => remeasureRef.current())
     })
-    return () => observer.disconnect()
+    observer.observe(root, { attributes: true, attributeFilter: ['data-mantine-color-scheme'] })
+    return () => {
+      cancelAnimationFrame(frame)
+      observer.disconnect()
+    }
   }, [active])
 
   return {
