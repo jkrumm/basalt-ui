@@ -28,7 +28,7 @@ paths:
 
 ## Table
 
-- Tables are `BasaltDataTable` with columns from `createColumnHelper` (`basalt-ui/table`, TanStack Table v9: `sortFn`, not v8's `sortingFn`); column `meta` is `{ align, numeral }`; a streamed table's fallback is the same table with `isLoading` and `skeletonRows`. [type createColumnHelper] [type BasaltDataTable]
+- Tables are `BasaltDataTable` with columns from `createColumnHelper` (`basalt-ui/table`, TanStack Table v9: `sortFn`, not v8's `sortingFn`); column `meta` is `{ align, numeral, priority, kind }`, `kind` one of `entity`, `status`, `number`, `money`, `relative-time`, `meter`, `text` (a cell without `kind` is unchanged; units go in the header); a streamed table's fallback is the same table with `isLoading` and `skeletonRows`. [type createColumnHelper] [type BasaltDataTable]
 
 ## Content
 
