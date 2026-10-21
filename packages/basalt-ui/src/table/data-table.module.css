@@ -310,6 +310,12 @@
   background-image: linear-gradient(var(--pinned-tint), var(--pinned-tint));
 }
 
+/* A sticky header paints `--mantine-color-body` on every `th`; its pinned cells must not read the
+   table's surface instead, or the pinned name is a different shade from the rest of the header. */
+.table thead[data-sticky] {
+  --basalt-pin-fill: var(--mantine-color-body);
+}
+
 tr[data-striped='odd']:nth-of-type(odd) > .pinnedLayer,
 tr[data-striped='even']:nth-of-type(even) > .pinnedLayer {
   --pinned-tint: var(--table-striped-color);
@@ -341,6 +347,29 @@ td.pinnedFluid {
 }
 
 /*
+ * Rows hold one line (SPEC § 6.6, 40 px): a body cell never wraps, so the fold measures natural
+ * one-line widths and folds or pins instead of "fitting" by wrapping. Only an explicit `text` kind
+ * may wrap.
+ */
+.table td {
+  white-space: nowrap;
+}
+
+.table td[data-kind='text'] {
+  white-space: normal;
+}
+
+/* The error body shares the EmptyState anatomy's centred alignment. */
+.errorState {
+  align-items: center;
+  text-align: center;
+}
+
+.errorState > * {
+  justify-content: center;
+}
+
+/*
  * Column sizing (SPEC § 6.6): `data-fit` columns take their content width — `1px` plus a no-wrap
  * cell is "as narrow as the content allows" in the auto table layout — and the one slack column (or
  * the trailing spacer) takes everything else, so a value sits next to its name at any width. The
@@ -348,7 +377,6 @@ td.pinnedFluid {
  */
 .table [data-fit] {
   width: 1px;
-  white-space: nowrap;
 }
 
 .spacer {
