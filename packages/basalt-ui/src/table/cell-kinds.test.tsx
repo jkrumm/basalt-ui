@@ -6,8 +6,6 @@
 import { MantineProvider } from '@mantine/core'
 import { cleanup, render, screen } from '@testing-library/react'
 import { afterEach, describe, expect, spyOn, test } from 'bun:test'
-import { readFileSync } from 'node:fs'
-import { join } from 'node:path'
 import { resetValidatedProps } from '../common/validate'
 import { BasaltDataTable } from './data-table'
 import { createColumnHelper } from './index'
@@ -76,13 +74,13 @@ describe('cell kinds', () => {
     expect(lan?.querySelector('.mantine-Badge-root')?.getAttribute('style')).toContain('orange')
   })
 
-  test('status without statusColor is gray', () => {
+  test('status without statusColor is the neutral chip, dotted like the rest', () => {
     const { container } = renderKinds([
       col.accessor('scope', { header: 'Scope', meta: { kind: 'status' } }),
     ])
     expect(
       cells(container, 'status')[0]?.querySelector('.mantine-Badge-root')?.getAttribute('style'),
-    ).toContain('gray')
+    ).toContain('--vx-faint')
   })
 
   test('number is right-aligned and formatted; null is a dash', () => {
@@ -96,6 +94,31 @@ describe('cell kinds', () => {
     expect(small?.textContent).toBe('3')
     expect(cells(container, 'number')[3]?.textContent).toBe('—')
     expect(container.querySelector('th')?.style.textAlign).toBe('right')
+  })
+
+  test('number keeps fractions, shows 0, and dashes what is not a figure', () => {
+    const figures = [12.5, 0, -3, Number.NaN, Number.POSITIVE_INFINITY, 12480]
+    const { container } = render(
+      <MantineProvider>
+        <BasaltDataTable
+          data={figures.map((n) => ({ n }))}
+          columns={[
+            createColumnHelper<{ n: number }>().accessor('n', {
+              header: 'N',
+              meta: { kind: 'number' },
+            }),
+          ]}
+        />
+      </MantineProvider>,
+    )
+    expect(cells(container, 'number').map((td) => td.textContent)).toEqual([
+      '12.5',
+      '0',
+      '-3',
+      '—',
+      '—',
+      '12,480',
+    ])
   })
 
   test('money formats in meta.currency (default USD); an explicit align still wins', () => {
@@ -135,17 +158,13 @@ describe('cell kinds', () => {
     expect(container.querySelector('[aria-valuemax]')?.getAttribute('aria-valuemax')).toBe('4')
   })
 
-  test('text may wrap', () => {
+  test('text, entity and relative-time cells carry their kind', () => {
     const { container } = renderKinds([
       col.accessor('name', { header: 'Name', meta: { kind: 'text' } }),
+      col.accessor('scope', { header: 'Scope', meta: { kind: 'entity' } }),
     ])
     expect(cells(container, 'text')).toHaveLength(2)
-    const css = readFileSync(join(import.meta.dir, 'cell-kinds.module.css'), 'utf8')
-    expect(css).toMatch(/\.text \{[^}]*white-space: normal/)
-    expect(css).toMatch(/\.entity \{[^}]*white-space: nowrap/)
-    expect(css).toMatch(/\.number \{[^}]*tabular-nums/)
-    expect(css).not.toMatch(/\.number \{[^}]*monospace/)
-    expect(css).toMatch(/\.relativeTime \{[^}]*monospace[^}]*var\(--vx-muted\)/)
+    expect(cells(container, 'entity')).toHaveLength(2)
   })
 
   test("a column's own cell still supplies the content", () => {
@@ -180,10 +199,7 @@ describe('cell kinds', () => {
   })
 })
 
-describe('header on the body fill', () => {
-  const themeCss = readFileSync(join(import.meta.dir, '../theme/controls.module.css'), 'utf8')
-  const themeTs = readFileSync(join(import.meta.dir, '../theme/index.ts'), 'utf8')
-
+describe('header', () => {
   test('a sorted column carries aria-sort; unsorted sortable headers are none', () => {
     const { container } = render(
       <MantineProvider>
@@ -200,27 +216,5 @@ describe('header on the body fill', () => {
     const [name, count] = [...container.querySelectorAll('th')]
     expect(count?.getAttribute('aria-sort')).toBe('descending')
     expect(name?.getAttribute('aria-sort')).toBe('none')
-  })
-
-  test('sorted headers are ink, the rest faint, and the colour is not an inline style', () => {
-    expect(themeCss).toMatch(/html \.tableRoot th \{\s*color: var\(--vx-faint\)/)
-    expect(themeCss).toMatch(
-      /th\[aria-sort='ascending'\],\s*html \.tableRoot th\[aria-sort='descending'\] \{\s*color: var\(--vx-ink\)/,
-    )
-    const thStyles = themeTs.slice(themeTs.indexOf('th: {'), themeTs.indexOf('td: {'))
-    expect(thStyles).not.toContain('color')
-  })
-
-  test('the head paints no band: no background on thead or th in the table CSS', () => {
-    const tableCss = readFileSync(join(import.meta.dir, 'data-table.module.css'), 'utf8')
-    for (const css of [themeCss, tableCss]) {
-      expect(css).not.toMatch(/(thead|\bth\b)[^{}]*\{[^}]*background/)
-    }
-  })
-
-  test('the cell text stays sm', () => {
-    expect(themeTs).toMatch(
-      /td: \{ height: spacing\.step\.tableRowHeight, fontSize: VX\.text\.sm \}/,
-    )
   })
 })

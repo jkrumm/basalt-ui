@@ -96,7 +96,7 @@ import {
 import { dataQueryBranch } from './query-branch'
 import { basaltTableFeatures } from './table-features'
 import type { BasaltColumnDef, BasaltTableFeatures, DataTableAlign } from './table-features'
-import { DEFAULT_CELL, KindCell, kindAlign, kindClass, resolveKind } from './cell-kinds'
+import { CellContent, DEFAULT_CELL, kindAlign, kindClass, resolveKind } from './cell-kinds'
 import classes from './data-table.module.css'
 
 // ── Column alignment ──────────────────────────────────────────────────────────
@@ -1261,7 +1261,7 @@ function RowDisclosure<T extends RowData>({
         <div key={cell.id} className={classes.foldDisclosureRow}>
           <Text className={classes.foldDisclosureLabel}>{columnLabel(cell.column)}</Text>
           <div className={classes.foldDisclosureValue}>
-            <FlexRender cell={cell} />
+            <CellContent cell={cell} />
           </div>
         </div>
       ))}
@@ -1927,13 +1927,11 @@ export function BasaltDataTable<T extends RowData>(props: BasaltDataTableProps<T
                     return (
                       <Table.Td
                         key={cell.id}
-                        {...(cell.column.id === SELECT_COLUMN_ID && {
-                          className: classes.selectCell,
-                        })}
-                        {...(kind !== undefined && {
-                          className: kindClass(kind),
-                          'data-kind': kind,
-                        })}
+                        className={cx(
+                          cell.column.id === SELECT_COLUMN_ID && classes.selectCell,
+                          kind !== undefined && kindClass(kind),
+                        )}
+                        {...(kind !== undefined && { 'data-kind': kind })}
                         {...(stopsRowActivation(cell) && {
                           // The label's ::after fills the select cell, so a tap on it bubbles to the
                           // row; the actions menu portals out but React bubbles through the portal.
@@ -1949,11 +1947,7 @@ export function BasaltDataTable<T extends RowData>(props: BasaltDataTableProps<T
                           ...pinnedStyle,
                         }}
                       >
-                        {kind === undefined ? (
-                          <FlexRender cell={cell} />
-                        ) : (
-                          <KindCell kind={kind} cell={cell} />
-                        )}
+                        <CellContent cell={cell} />
                       </Table.Td>
                     )
                   })}

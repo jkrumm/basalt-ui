@@ -336,6 +336,35 @@ describe('column fold — meta.priority (docs/CONTROLS-SPEC.md §2)', () => {
     expect(container.querySelectorAll('tbody tr')).toHaveLength(1)
   })
 
+  test('a folded kind column is formatted in the disclosure, not shown raw', async () => {
+    stubLayout()
+    type KindRow = { a: string; cost: number; seen: string }
+    const kindCol = createColumnHelper<KindRow>()
+    const { container } = render(
+      <MantineProvider>
+        <BasaltDataTable
+          data={[{ a: 'A1', cost: 1234.5, seen: '2026-01-15T09:30:00Z' }]}
+          columns={[
+            kindCol.accessor('a', { header: 'A' }),
+            kindCol.accessor('cost', { header: 'Cost', meta: { kind: 'money' } }),
+            kindCol.accessor('seen', { header: 'Seen', meta: { kind: 'relative-time' } }),
+          ]}
+        />
+      </MantineProvider>,
+    )
+    await resizeFold(container, 100, { a: 50, cost: 50, seen: 50 })
+    expect(headerIds(container)).toEqual(['a'])
+    const toggle = container.querySelector('tbody button[aria-label="Show row details"]')
+    if (!(toggle instanceof HTMLElement)) throw new Error('expected the fold toggle button')
+    fireEvent.click(toggle)
+    const disclosure = container.querySelectorAll('tbody tr')[1]
+    expect(disclosure?.textContent).toContain('$1,234.50')
+    expect(disclosure?.textContent).not.toContain('1234.5')
+    expect(disclosure?.querySelector('time')?.getAttribute('datetime')).toBe(
+      '2026-01-15T09:30:00.000Z',
+    )
+  })
+
   test('a table with `minWidth` never folds — the declared horizontal floor wins', async () => {
     stubLayout()
     const { container } = mountFold({ minWidth: 720 })
