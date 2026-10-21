@@ -1073,6 +1073,8 @@ export const PLUGIN_RULE_IDS: ReadonlySet<string> = new Set([
   'no-dev-helper',
   // AST-only: a `<ViewTransition>` ancestor of `<Outlet>` is a JSX-ancestry claim over two import-resolved names.
   'route-view-transition',
+  // AST-only: a text-colour position (`c=`, a `style` object's `color`) is a JSX/property claim over a member chain.
+  'status-fill-as-text',
   // These two honour `basalt-agent-allow`, never `theme-allow` — but they are still REAL ids, so
   // a `theme-allow ai-sdk-major` must parse as a (useless) scoped annotation rather than as prose.
   'agent-no-raw-usechat',
