@@ -119,23 +119,22 @@ const retry = (): string => retryCopy('probe')
 const columns = (() => {
   const col = createColumnHelper<Outage>()
   return [
-    // Absolute UTC stamps stay `text`: the question on this table is WHEN to the minute (to match a
-    // provider ticket), which "5 days ago" would blur, and `relative-time` reads the live clock, so it
-    // would also drift under a screenshot.
+    // `relative-time` is the kind's mono column class: D33 sets times in mono. The cell stays an
+    // absolute UTC stamp: the question is WHEN to the minute (to match a provider ticket), "5 days
+    // ago" would blur it, and the live clock would disagree with this page's fixed reading time.
+    // End is dropped: Start plus Duration carries it.
     col.accessor('start', {
       header: 'Start (UTC)',
       cell: (c) => fmtStamp(c.getValue()),
-      meta: { kind: 'text' },
-    }),
-    col.accessor('end', {
-      header: 'End (UTC)',
-      cell: (c) => fmtStamp(c.getValue()),
-      meta: { kind: 'text' },
+      meta: { kind: 'relative-time' },
     }),
     col.accessor('minutes', { header: 'Duration (min)', meta: { kind: 'number' } }),
+    // Scope is a category, not a status: a status chip's hue reads as severity (wan red, dns amber)
+    // while the word names only where the line broke.
     col.accessor('scope', {
       header: 'Scope',
-      meta: { kind: 'status', statusColor: (scope) => (scope === 'wan' ? 'red' : 'orange') },
+      cell: (c) => c.getValue().toUpperCase(),
+      meta: { kind: 'text' },
     }),
     col.accessor('cause', { header: 'Cause', meta: { kind: 'text' } }),
   ]
