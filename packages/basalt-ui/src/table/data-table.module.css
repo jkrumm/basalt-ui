@@ -218,11 +218,20 @@
   margin-inline-start: auto;
 }
 
-/* The footer's page buttons join the toolbar's dense tier at a fine pointer, so the rows-per-page
- * Select (`data-basalt-dense`, `ctl` → 28) and the pager share one height. A coarse pointer keeps
- * `size="sm"` and the 44px hit overlay. */
-@media (pointer: fine) {
-  .pager {
-    --pagination-control-size: calc(var(--vx-space-control-height-dense) * var(--mantine-scale));
+/*
+ * The toolbar search and the footer's rows-per-page Select are the SAME height as the controls beside
+ * them at every pointer tier. At a coarse pointer the theme gives an input a real 44px floor
+ * (`min-height: var(--vx-hit)` — an input cannot host the `[data-basalt-hit]` overlay), which made the
+ * search ~12px taller than the 32px chips next to it. Here the visible box is the `ctl` height (the
+ * floor is lifted) and the wrapper hosts the 44px overlay instead, capped at the toolbar gap exactly
+ * like a pill. The input keeps its 16px type.
+ */
+.toolbarWrapper {
+  --vx-hit-gap: var(--vx-space-control-gap);
+}
+
+@media (pointer: coarse) {
+  .toolbarInput.toolbarInput {
+    min-height: 0;
   }
 }

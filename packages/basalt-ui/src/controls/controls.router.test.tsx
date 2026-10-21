@@ -361,7 +361,10 @@ describe('MultiSelectFilter', () => {
       entry: '/dashboard?channels=web&channels=email&channels=social',
       Page: () => <MultiSelectFilter field={store.field.channels} label="All channels" />,
     })
-    expect(screen.getByRole('button', { name: 'All channels' })).toBeDefined()
+    // One predicate: not filtering means muted AND no accent border — never one without the other.
+    const pill = screen.getByRole('button', { name: 'All channels' })
+    expect(pill.hasAttribute('data-active')).toBe(false)
+    expect(pill.querySelector('[data-pill-part="value"]')).toBeNull()
   })
 
   test("options relabels the boxes while the values stay the field's own", async () => {
@@ -512,9 +515,8 @@ describe('RangeFilter', () => {
     })
   })
 
-  test('the pill never reads `label`, at the fallback or anywhere else', async () => {
-    // Same law as `SelectFilter`/`CompareFilter`: `label` is the popover heading and the accessible
-    // name, and the pill text is the value. `30d` here IS the fallback.
+  test('at the fallback the pill reads the range alone; off it, `label` is the muted name', async () => {
+    // `30d` here IS the fallback, so the pill is unset: no `label`, one muted text.
     await mountPage({
       validateSearch: store.validateSearch,
       entry: '/dashboard',
@@ -522,6 +524,18 @@ describe('RangeFilter', () => {
     })
     expect(screen.getByRole('button', { name: '30d' })).toBeDefined()
     expect(screen.queryByRole('button', { name: 'Window' })).toBeNull()
+  })
+
+  test('a chosen range splits into the muted filter name and the bright range', async () => {
+    await mountPage({
+      validateSearch: store.validateSearch,
+      entry: '/dashboard?range=7d',
+      Page: () => <RangeFilter field={store.field.range} label="Window" customPicker={Picker} />,
+    })
+    const pill = screen.getByRole('button', { name: 'Window 7d' })
+    expect(pill.hasAttribute('data-active')).toBe(true)
+    expect(pill.querySelector('[data-pill-part="name"]')?.textContent).toBe('Window')
+    expect(pill.querySelector('[data-pill-part="value"]')?.textContent).toBe('7d')
   })
 
   test('the preset track carries the filter name — a radiogroup must not be anonymous', async () => {

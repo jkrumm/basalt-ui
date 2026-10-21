@@ -40,7 +40,7 @@ import type { RangeField, RangeValue } from '../state/fields'
 import classes from './controls.module.css'
 import { useFilterRegistration, useFilterSurface } from './filter-context'
 import type { FilterBase } from './filter-base'
-import { FilterPill } from './filter-pill'
+import { FilterPill, filterReading } from './filter-pill'
 import { CalendarGlyph } from './glyphs'
 import { useControlName } from './control-name'
 import { PanelRow } from './panel-row'
@@ -67,7 +67,7 @@ export type RangeCustomPickerProps = {
 /** Everything about the props that does not depend on the field's `custom` flag. */
 type RangeFilterCommon<P extends string, C extends boolean> = UncontrolledProps &
   Omit<FilterBase, 'clearable' | 'label'> & {
-    /** Sheet-form heading. The pill's own label is the VALUE, which is what a bar reads. @default 'Range' */
+    /** The filter's name: the sheet-form heading, and the pill's muted label once a range is chosen (`Window  7d`); at the default the pill reads the range alone. @default 'Range' */
     readonly label?: string
     /**
      * A range handle from either store factory. Generic over the field's `custom` flag so a
@@ -216,7 +216,12 @@ export function RangeFilter<P extends string>(
 
   return (
     <FilterPill
-      label={rangeLabel(value, options)}
+      {...filterReading({
+        name: label,
+        informative: !isDefault,
+        value: rangeLabel(value, options),
+        unsetText: rangeLabel(value, options),
+      })}
       active={!isDefault}
       numeric={numeric && value.preset !== 'custom'}
       {...(disabled === true && { disabled: true })}

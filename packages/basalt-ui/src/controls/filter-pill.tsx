@@ -29,36 +29,58 @@ import { IconSlot } from '../theme/icon-slot'
 import classes from './controls.module.css'
 import { UpDownGlyph } from './glyphs'
 
-export type FilterPillProps = BasaltProps & {
-  readonly label: string
-  /** The selected value. Present ⇒ the two-span anatomy: `label` muted, `value` ink. */
-  readonly value?: string
-  /** Nothing selected: the single `label` text reads muted. Ignored when `value` is set. */
-  readonly unset?: boolean
-  readonly icon?: ReactNode
-  /** Non-default → accent-tinted border. Derived from `field.isDefault(value)`, never hand-set. */
-  readonly active?: boolean
-  /** Mono label, for a numeric preset set (`7d` / `30d`) — the same law `[data-numeric]` applies
-   *  to a numeric SegmentedControl label (`theme/segmented-control.module.css`). */
-  readonly numeric?: boolean
-  /** Popover body. Omit for a press-to-act pill. */
-  readonly children?: ReactNode
-  readonly onClick?: () => void
-  /** Accessible name when the visible label is a bare count (`+2`). */
-  readonly ariaLabel?: string
-  /**
-   * `aria-pressed` for the press-to-act mode (`ToggleFilter`) — without it the on/off state is
-   * carried by a border colour and nothing else. Deliberately NOT set on a popover-target pill,
-   * where `aria-expanded` (which Mantine's `Popover.Target` supplies) is the correct state.
-   */
-  readonly pressed?: boolean
-  /** Inert: the pill cannot be pressed, so its popover never opens. */
-  readonly disabled?: boolean
-  /** Set by `FilterSet` on its own fold/sheet pills; a filter never passes either of these. */
-  readonly hideGlyph?: boolean
-  /** `data-shown` — the CSS hook that reveals the `+N` fold pill once folding is needed. */
-  readonly shown?: boolean
+/**
+ * What the pill SAYS, one of three shapes: a facet name plus its selection (`label` muted, `value`
+ * ink), a facet that is not filtering (one muted text), or a plain label (press-to-act pills). An
+ * empty `value` is the second shape — a selection with no text is not a selection.
+ */
+export type FilterPillReading =
+  | { readonly label: string; readonly value: string; readonly unset?: never }
+  | { readonly label: string; readonly unset: true; readonly value?: never }
+  | { readonly label: string; readonly value?: never; readonly unset?: never }
+
+/**
+ * The ONE place a facet filter turns its state into a {@link FilterPillReading}: `informative` is
+ * the single predicate for "this filter is filtering" (and what the caller hands `active` too, so
+ * the muted anatomy and the accent border can never disagree); `value` is the selection's text and
+ * `unsetText` what the pill reads while it is not filtering (the control's existing copy).
+ */
+export function filterReading(input: {
+  readonly name: string
+  readonly informative: boolean
+  readonly value: string
+  readonly unsetText: string
+}): FilterPillReading {
+  if (input.informative && input.value !== '') return { label: input.name, value: input.value }
+  return { label: input.unsetText, unset: true }
 }
+
+export type FilterPillProps = BasaltProps &
+  FilterPillReading & {
+    readonly icon?: ReactNode
+    /** Non-default → accent-tinted border. Derived from `field.isDefault(value)`, never hand-set. */
+    readonly active?: boolean
+    /** Mono label, for a numeric preset set (`7d` / `30d`) — the same law `[data-numeric]` applies
+     *  to a numeric SegmentedControl label (`theme/segmented-control.module.css`). */
+    readonly numeric?: boolean
+    /** Popover body. Omit for a press-to-act pill. */
+    readonly children?: ReactNode
+    readonly onClick?: () => void
+    /** Accessible name when the visible label is a bare count (`+2`). */
+    readonly ariaLabel?: string
+    /**
+     * `aria-pressed` for the press-to-act mode (`ToggleFilter`) — without it the on/off state is
+     * carried by a border colour and nothing else. Deliberately NOT set on a popover-target pill,
+     * where `aria-expanded` (which Mantine's `Popover.Target` supplies) is the correct state.
+     */
+    readonly pressed?: boolean
+    /** Inert: the pill cannot be pressed, so its popover never opens. */
+    readonly disabled?: boolean
+    /** Set by `FilterSet` on its own fold/sheet pills; a filter never passes either of these. */
+    readonly hideGlyph?: boolean
+    /** `data-shown` — the CSS hook that reveals the `+N` fold pill once folding is needed. */
+    readonly shown?: boolean
+  }
 
 export function FilterPill({
   label,
@@ -89,7 +111,7 @@ export function FilterPill({
       className={cx(classes.pill, className)}
       data-basalt-hit
       // The label truncates past the pill's width cap; the full name stays one hover away.
-      title={value === undefined ? label : `${label} ${value}`}
+      title={value === undefined || value === '' ? label : `${label} ${value}`}
       classNames={{ label: classes.pillLabel }}
       {...(style !== undefined && { style })}
       {...(active === true && { 'data-active': true })}
@@ -117,11 +139,11 @@ export function FilterPill({
         })
       }
     >
-      {value !== undefined ? (
+      {value !== undefined && value !== '' ? (
         <>
           <span className={classes.pillName} data-pill-part="name">
             {label}
-          </span>{' '}
+          </span>
           <span className={classes.pillValue} data-pill-part="value">
             {value}
           </span>

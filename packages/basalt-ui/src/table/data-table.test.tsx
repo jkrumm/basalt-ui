@@ -272,19 +272,23 @@ describe('the toolbar has no fixed-width literals and resolves controls to the c
     const toolbar = container.querySelector('[data-basalt-tier="ctl"] > .mantine-Group-root')
     const toolbarStyle = toolbar?.getAttribute('style') ?? ''
     // Asserted as LONGHANDS: the DOM expands the `flex` shorthand, so matching the shorthand
-    // string would pass or fail on the serializer rather than on the declaration.
-    // `flex-shrink: 0` here is the whole defect — it is what let the item outgrow its column.
-    // Wave 42: the toolbar now GROWS (it takes the row beside the title and pushes `actions` to the
-    // right edge); shrinking and `min-width: 0` are still what keeps it inside its column.
-    expect(toolbarStyle).toContain('flex-shrink: 1')
-    expect(toolbarStyle).toContain('flex-grow: 1')
+    // string would pass or fail on the serializer rather than on the declaration. The invariants,
+    // not the numbers: the toolbar grows (takes the row, pushes `actions` right) AND shrinks with
+    // `min-width: 0` (`flex-shrink: 0` is what let it outgrow its column); the search never grows,
+    // does shrink, and gives way before the pill row (a larger shrink factor than the toolbar's).
+    const longhand = (style: string, name: string): number =>
+      Number.parseFloat(new RegExp(`${name}: ([\\d.]+)`).exec(style)?.[1] ?? 'NaN')
+    expect(longhand(toolbarStyle, 'flex-grow')).toBeGreaterThan(0)
+    expect(longhand(toolbarStyle, 'flex-shrink')).toBeGreaterThan(0)
     expect(toolbarStyle).toContain('min-width: 0')
 
     const search = container.querySelector('.mantine-TextInput-root')
     const searchStyle = search?.getAttribute('style') ?? ''
-    expect(searchStyle).toContain('flex-basis: 220px')
-    expect(searchStyle).toContain('flex-shrink: 100')
-    expect(searchStyle).toContain('flex-grow: 0')
+    expect(searchStyle).toMatch(/flex-basis: \d+px/)
+    expect(longhand(searchStyle, 'flex-grow')).toBe(0)
+    expect(longhand(searchStyle, 'flex-shrink')).toBeGreaterThan(
+      longhand(toolbarStyle, 'flex-shrink'),
+    )
     expect(searchStyle).toContain('max-width: 100%')
     // The width itself is pinned by the layout suite (`data-table.layout.test.ts`), not by a string.
   })

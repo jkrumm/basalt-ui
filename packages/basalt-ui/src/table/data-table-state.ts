@@ -101,6 +101,7 @@ export type DataTableStateProps = {
   onSortingChange?: ((sorting: SortingState) => void) | undefined
   initialGlobalFilter?: string | undefined
   onGlobalFilterChange?: ((value: string) => void) | undefined
+  initialColumnFilters?: ColumnFiltersState | undefined
   onColumnFiltersChange?: ((filters: ColumnFiltersState) => void) | undefined
   initialPagination?: PaginationState | undefined
   onPaginationChange?: ((pagination: PaginationState) => void) | undefined
@@ -123,7 +124,7 @@ export function useDataTableState(props: DataTableStateProps, defaultPageSize: n
     props.onGlobalFilterChange,
   )
   const [columnFilters, onColumnFiltersChange] = useReportedState<ColumnFiltersState>(
-    [],
+    props.initialColumnFilters ?? [],
     props.onColumnFiltersChange,
   )
   const [pagination, onPaginationChange] = useReportedState(

@@ -74,6 +74,10 @@ export type TableSpec = {
    * production one and not a stand-in.
    */
   facets?: number
+  /** Opens the first facet preset to its first option, so the pill shows its bright value. */
+  preset?: true
+  /** Adds the pagination footer (rows-per-page Select + pager). */
+  paginate?: true
   /** Adds an `actions` button (`Export CSV`) to the toolbar's right edge. */
   actions?: true
   /** Pins the table's own container to this many px — the toolbar reads it, never the viewport. */

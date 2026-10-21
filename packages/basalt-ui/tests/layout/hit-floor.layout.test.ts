@@ -70,6 +70,25 @@ layout('pointer tier — hit floor', () => {
             const lr = label.getBoundingClientRect()
             if (lr.width >= HIT && lr.height >= HIT) continue
           }
+          // An input cannot host the overlay itself; one whose WRAPPER adopted `data-basalt-hit`
+          // (the table toolbar's search / page-size Select, lifted to the `ctl` height) is judged by
+          // that wrapper's box and `::after` — the same measurement every other control gets.
+          const host =
+            el instanceof HTMLInputElement ? el.closest<HTMLElement>('[data-basalt-hit]') : null
+          if (host !== null && host !== el) {
+            const hr = host.getBoundingClientRect()
+            const hAfter = getComputedStyle(host, '::after')
+            const hGap = parseFloat(getComputedStyle(host).getPropertyValue('--vx-hit-gap')) || 0
+            const hw = Math.max(hr.width, parseFloat(hAfter.width) || 0)
+            const hh = Math.max(hr.height, parseFloat(hAfter.height) || 0)
+            const needHH = hGap ? Math.min(HIT, hr.height + hGap) : HIT
+            checked++
+            if (hh + 0.5 < needHH || hw + 0.5 < Math.min(HIT, hr.width))
+              short.push(
+                `${el.tagName.toLowerCase()} wrapper ${hw.toFixed(0)}x${hh.toFixed(0)} < ${needHH.toFixed(0)}`,
+              )
+            continue
+          }
           const after = getComputedStyle(el, '::after')
           const aw = parseFloat(after.width)
           const ah = parseFloat(after.height)

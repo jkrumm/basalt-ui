@@ -17,7 +17,8 @@ declare const classes: {
   readonly foldToggleCell: string
   readonly foldWrapper: string
   readonly pageSticky: string
-  readonly pager: string
+  readonly toolbarInput: string
+  readonly toolbarWrapper: string
   readonly tableHeader: string
   readonly toolbar: string
   readonly toolbarActions: string
