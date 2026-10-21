@@ -1,7 +1,7 @@
-import { Stack } from '@mantine/core'
+import { Paper, Stack } from '@mantine/core'
 import { createFileRoute } from '@tanstack/react-router'
 import { BasaltDataTable, createColumnHelper } from 'basalt-ui/table'
-import { DataDemoPage } from '../demo/DataDemoPage'
+import { DataDemoPage, tableEmptyState, useFilterReset } from '../demo/DataDemoPage'
 import { queryFor, retryCopy, validateShotSearch } from '../scenarios/shot-state'
 import type { ShotState } from '../scenarios/shot-state'
 
@@ -16,25 +16,37 @@ const LIFTS: Lift[] = [
   { id: 6, exercise: 'Overhead press', block: 'Volume', load: 60 },
 ]
 
+const PRESET_FILTERS = [{ id: 'exercise', value: 'Squat' }]
+
 const lift = createColumnHelper<Lift>()
 const LIFT_COLUMNS = [
-  lift.accessor('exercise', { header: 'Exercise' }),
-  lift.accessor('block', { header: 'Block' }),
-  lift.accessor('load', { header: 'Load (kg)' }),
+  lift.accessor('exercise', { header: 'Exercise', meta: { kind: 'entity' } }),
+  lift.accessor('block', { header: 'Block', meta: { kind: 'text' } }),
+  lift.accessor('load', { header: 'Load (kg)', meta: { kind: 'number' } }),
 ]
 
 /** The full toolbar (SPEC § 6.6): title, search, two facets and an action on one 28px row. */
 function ToolbarTable({ shotState }: { shotState: ShotState | undefined }) {
   const query = queryFor(shotState, retryCopy('workout log'))
+  const reset = useFilterReset(PRESET_FILTERS)
   return (
     <div data-shot="table-toolbar" data-shot-states="empty loading error">
       <BasaltDataTable
+        key={reset.tableKey}
         title="Workouts, strength and volume blocks"
         // Rows only at rest: the empty branch needs `data` empty, the others have no rows yet.
         data={shotState === undefined ? LIFTS : []}
-        initialColumnFilters={[{ id: 'exercise', value: 'Squat' }]}
+        initialColumnFilters={reset.initialColumnFilters}
+        onGlobalFilterChange={reset.onGlobalFilterChange}
+        onColumnFiltersChange={reset.onColumnFiltersChange}
         {...(query !== undefined && { query })}
-        emptyState={<span>No workout logged in this window.</span>}
+        emptyState={tableEmptyState({
+          noun: 'workouts',
+          total: LIFTS.length,
+          cause: 'No workout was logged in this window. Log one to see it here.',
+          filtered: reset.filtered,
+          onClear: reset.clear,
+        })}
         columns={LIFT_COLUMNS}
         enableGlobalFilter
         facets={[
@@ -67,14 +79,16 @@ function DataRoute() {
   const search = Route.useSearch()
   return (
     <Stack gap="md">
-      <ToolbarTable shotState={search['shot-state']} />
+      <Paper>
+        <ToolbarTable shotState={search['shot-state']} />
+      </Paper>
       <DataDemoPage shotState={search['shot-state']} />
     </Stack>
   )
 }
 
 export const Route = createFileRoute('/data')({
-  staticData: { title: 'Data' },
+  staticData: { title: 'Data tables' },
   validateSearch: validateShotSearch,
   component: DataRoute,
 })
