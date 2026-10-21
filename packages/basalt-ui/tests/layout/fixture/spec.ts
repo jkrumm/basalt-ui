@@ -386,6 +386,8 @@ export type FixtureSpec = {
   w38Readout2?: true
   /** Wave 39: a mixed one-row strip (Meter, Sparkline, Bars, a wrapping qualifier, a footer `under`) and a multi-row cell with row Sparklines (`w39-strip`, `w39-rows`). */
   w39Strip?: true
+  /** Wave 42: a table with a sorted and an unsorted header and an entity beside a text cell in a narrow box (`w42-kinds`). */
+  w42Kinds?: true
   /** Wave 39: a tall tooltip in a short `ChartCard` (`w39-tip`, `w39-tip-tall`), a slotted `Bars` in a strip cell (`w39-strip`), a 28px bare `Sparkline` (`w39-spark`). */
   w39Readout?: true
   /**

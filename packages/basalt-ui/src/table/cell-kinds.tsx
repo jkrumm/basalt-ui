@@ -11,6 +11,8 @@ import type { ReactNode } from 'react'
 import { cx } from '../common/props'
 import { Meter } from '../dashboard/meter'
 import { dateTime, integer, money, relativeTime } from '../format'
+import { numberFormat } from '../format/shared'
+import { DATA_TABLE_COLUMN_KINDS } from './table-features'
 import type { BasaltTableFeatures, DataTableAlign, DataTableColumnKind } from './table-features'
 import classes from './cell-kinds.module.css'
 
@@ -23,15 +25,7 @@ export function DEFAULT_CELL(props: { renderValue(): unknown }) {
   return (props.renderValue() as { toString?(): string } | null | undefined)?.toString?.() ?? null
 }
 
-const KINDS: ReadonlySet<string> = new Set<DataTableColumnKind>([
-  'entity',
-  'status',
-  'number',
-  'money',
-  'relative-time',
-  'meter',
-  'text',
-])
+const KINDS: ReadonlySet<string> = new Set(DATA_TABLE_COLUMN_KINDS)
 
 /** Reads `meta.kind`, throwing on a value outside the seven — the check a type cannot make at runtime. */
 export function resolveKind<T extends RowData>(
@@ -42,7 +36,7 @@ export function resolveKind<T extends RowData>(
   if (!KINDS.has(kind)) {
     throw new Error(
       `BasaltDataTable: column "${column.id}" has meta.kind=${JSON.stringify(kind)} — ` +
-        "expected 'entity' | 'status' | 'number' | 'money' | 'relative-time' | 'meter' | 'text'.",
+        `expected ${DATA_TABLE_COLUMN_KINDS.map((k) => `'${k}'`).join(' | ')}.`,
     )
   }
   return kind
@@ -66,6 +60,17 @@ const KIND_CLASS: Record<DataTableColumnKind, string> = {
 export function kindClass(kind: DataTableColumnKind): string {
   return cx(KIND_CLASS[kind])
 }
+
+/** A whole number groups; a fraction is kept whole (`integer` would round 12.5 to 13). */
+function formatFigure(value: number): string {
+  return Number.isInteger(value)
+    ? integer(value)
+    : numberFormat(undefined, { signDisplay: 'negative', maximumFractionDigits: 20 }).format(value)
+}
+
+/** The theme draws no dot for plain `gray`, but every chip in a status column carries one. */
+const chipColor = (color: string | undefined): string =>
+  color === undefined || color === 'gray' ? 'var(--vx-faint)' : color
 
 const Dash = () => <span className={classes.dash}>—</span>
 
@@ -114,14 +119,16 @@ export function KindCell<T extends RowData>({
   switch (kind) {
     case 'number':
     case 'money': {
-      if (typeof value !== 'number') return <Dash />
-      return kind === 'money' ? money(value, { currency: meta?.currency ?? 'USD' }) : integer(value)
+      if (typeof value !== 'number' || !Number.isFinite(value)) return <Dash />
+      return kind === 'money'
+        ? money(value, { currency: meta?.currency ?? 'USD' })
+        : formatFigure(value)
     }
     case 'relative-time':
       return <RelativeTime value={value} />
     case 'status':
       if (isAbsent(value)) return <Dash />
-      return <Badge color={meta?.statusColor?.(value) ?? 'gray'}>{String(value)}</Badge>
+      return <Badge color={chipColor(meta?.statusColor?.(value))}>{String(value)}</Badge>
     case 'meter':
       return (
         <Meter
@@ -137,4 +144,14 @@ export function KindCell<T extends RowData>({
     default:
       return kind satisfies never
   }
+}
+
+/** A cell's content through its kind when it has one — the body cell and the fold disclosure share it. */
+export function CellContent<T extends RowData>({
+  cell,
+}: {
+  cell: Cell<BasaltTableFeatures, T, unknown>
+}): ReactNode {
+  const kind = resolveKind(cell.column)
+  return kind === undefined ? <FlexRender cell={cell} /> : <KindCell kind={kind} cell={cell} />
 }

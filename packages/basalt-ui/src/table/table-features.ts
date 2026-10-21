@@ -30,18 +30,22 @@ import type { ColumnDef, ColumnHelper, RowData } from '@tanstack/react-table'
 /** Horizontal alignment of a column's header AND its cells. */
 export type DataTableAlign = 'left' | 'center' | 'right'
 
+/** The one list of cell kinds: the type, the runtime check and its error text derive from it. */
+export const DATA_TABLE_COLUMN_KINDS = [
+  'entity',
+  'status',
+  'number',
+  'money',
+  'relative-time',
+  'meter',
+  'text',
+] as const
+
 /**
  * The cell kinds `meta.kind` names (`docs/waves/design-parity/SPEC.md` § 6.6). Unset keeps the
  * table's plain cell. The chrome and the content each kind supplies live in `cell-kinds.tsx`.
  */
-export type DataTableColumnKind =
-  | 'entity'
-  | 'status'
-  | 'number'
-  | 'money'
-  | 'relative-time'
-  | 'meter'
-  | 'text'
+export type DataTableColumnKind = (typeof DATA_TABLE_COLUMN_KINDS)[number]
 
 /**
  * What a column def's `meta` may carry. Registered per table through `columnMeta: metaHelper<…>()`
