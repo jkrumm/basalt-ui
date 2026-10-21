@@ -312,7 +312,7 @@ function OpsOutages({ shotState }: ScenarioProps) {
           columns={columns}
           enableSorting={false}
           {...(query !== undefined && { query })}
-          emptyState={<span>No outage in {WINDOW_LABEL}. The line stayed up.</span>}
+          emptyState={<span>No outage {WINDOW_LABEL}. The line stayed up.</span>}
         />
       </Section>
     </Box>

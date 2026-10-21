@@ -74,6 +74,8 @@ const TYPE_COLOR: Record<SessionType, string> = {
 
 const TRAINING_EMPTY = 'No sessions logged this month. Log a workout to start the month.'
 const retry = (): string => retryCopy('training log')
+/** One sentence for the one gap: the lift log and the lift ranking both read it. */
+const NO_STRENGTH = `No strength session logged ${WINDOW_LABEL}.`
 
 /** `Low under 60, Fair 60–79, Good 80+` — the legend, built from the zones the Meter draws. */
 const READINESS_INFO = `Mean of the four contributors below, each scored 0–100: ${READINESS_ZONES.map(
@@ -438,12 +440,7 @@ function ReadinessRow({ shotState }: ScenarioProps) {
             period: `in ${TOP_LIFT_COUNT} lifts, ${WINDOW_LABEL}`,
           }}
           info="Sets × reps × weight per lift over the strength sessions of the window; the share is of total training volume."
-          {...cardStateProps(
-            shotState,
-            retry(),
-            'content',
-            `No strength session logged ${WINDOW_LABEL}. Log a lift to rank your lifts.`,
-          )}
+          {...cardStateProps(shotState, retry(), 'content', NO_STRENGTH)}
         >
           <Box data-shot-hover>
             <BarList
@@ -453,7 +450,7 @@ function ReadinessRow({ shotState }: ScenarioProps) {
               accentLeader
               loading={loading}
               loadingRows={LIFT_ITEMS.length}
-              emptyText={`No strength session logged ${WINDOW_LABEL}. Log a lift to rank your lifts.`}
+              emptyText={NO_STRENGTH}
             />
           </Box>
         </ChartCard>
@@ -518,17 +515,15 @@ function TrainingSessions({ shotState }: ScenarioProps) {
           // Rows only at rest: the empty branch needs `data` empty, the others have no rows yet.
           data={shotState === undefined ? SESSION_ROWS : NO_SESSIONS}
           columns={sessionColumns}
-          enableGlobalFilter
-          globalFilterPlaceholder="Search exercises"
+          enablePagination
           facets={[{ columnId: 'exercise', label: 'Exercise', options: EXERCISE_OPTIONS }]}
           initialSorting={[{ id: 'date', desc: true }]}
           {...(query !== undefined && { query })}
-          onGlobalFilterChange={reset.onGlobalFilterChange}
           onColumnFiltersChange={reset.onColumnFiltersChange}
           emptyState={tableEmptyState({
             noun: 'lifts',
             total: SESSION_ROWS.length,
-            cause: `No lift logged ${WINDOW_LABEL}. Lifts appear here once logged.`,
+            cause: NO_STRENGTH,
             filtered: reset.filtered,
             onClear: reset.clear,
           })}

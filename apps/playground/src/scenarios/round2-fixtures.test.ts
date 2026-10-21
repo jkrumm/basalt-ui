@@ -174,17 +174,41 @@ describe('W42 r1 tables', () => {
     const c = mount(createElement(TrainingScenario, { shotState: undefined }))
     const time = anchor(c, 'session-log')?.querySelector('time')
     expect(time?.getAttribute('tabindex')).toBe('0')
-    expect(time?.getAttribute('aria-label')).toBe('Thu, 15 Oct 2026')
+    expect(time?.getAttribute('aria-label')).toBe('Wed, 14 Oct 2026')
   })
 
   it('S2 empty log states the cause and has no dead action', () => {
     const c = mount(createElement(TrainingScenario, { shotState: 'empty' }))
     const log = anchor(c, 'session-log')
-    expect(log?.textContent).toContain('No lift logged 1–16 Oct')
+    expect(log?.textContent).toContain('No strength session logged 1–16 Oct.')
     expect(log?.textContent).not.toMatch(/filter/i)
     expect([...(log?.querySelectorAll('button') ?? [])].map((b) => b.textContent)).not.toContain(
       'Log a lift',
     )
+  })
+})
+
+describe('W42 r2 fixtures', () => {
+  it('S2 empty log and empty top lifts say the gap the same way', () => {
+    const c = mount(createElement(TrainingScenario, { shotState: 'empty' }))
+    const gap = 'No strength session logged 1–16 Oct.'
+    expect(anchor(c, 'session-log')?.textContent).toContain(gap)
+    expect(anchor(c, 'top-lifts')?.textContent).toContain(gap)
+  })
+
+  it('S2 log has the facet and no second search field for the same column', () => {
+    const log = anchor(
+      mount(createElement(TrainingScenario, { shotState: undefined })),
+      'session-log',
+    )
+    expect(log?.querySelector('input[placeholder="Search exercises"]')).toBeNull()
+    expect(log?.textContent).toContain('Any exercise')
+  })
+
+  it('S1 empty outages names the range without a preposition', () => {
+    const table = anchor(mount(createElement(OpsScenario, { shotState: 'empty' })), 'outages')
+    expect(table?.textContent).toContain('No outage 9 Oct–16 Oct.')
+    expect(table?.textContent).not.toContain('No outage in')
   })
 })
 

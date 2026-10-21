@@ -129,19 +129,25 @@ describe('training-data', () => {
 })
 
 describe('session log', () => {
-  it('is eight rows, newest first, covering four exercises and all three results', () => {
-    expect(SESSION_LOG).toHaveLength(8)
+  it('carries every lift of each strength session, newest first, with all three results', () => {
     const times = SESSION_LOG.map((r) => r.date.getTime())
     expect(times).toEqual(times.toSorted((a, b) => b - a))
-    expect(new Set(SESSION_LOG.map((r) => r.exercise)).size).toBe(4)
     expect(new Set(SESSION_LOG.map((r) => r.result))).toEqual(new Set(['PR', 'Held', 'Dropped']))
   })
 
-  it('the top-lifts card sums the log rows of each logged lift', () => {
-    for (const exercise of new Set(SESSION_LOG.map((r) => r.exercise))) {
+  it("the session mix counts the log's distinct days, so the two cannot disagree", () => {
+    const days = new Set(SESSION_LOG.map((r) => r.date.getTime())).size
+    expect(days).toBeLessThan(SESSION_LOG.length)
+    expect(TYPE_MIX.find((t) => t.type === 'strength')?.count).toBe(days)
+    expect(days).toBe(5)
+  })
+
+  it('top lifts ranks exactly the lifts the log lists, each at the sum of its rows', () => {
+    const exercises = new Set(SESSION_LOG.map((r) => r.exercise))
+    expect(new Set(TOP_LIFTS.map((l) => l.name))).toEqual(exercises)
+    for (const exercise of exercises) {
       const rows = SESSION_LOG.filter((r) => r.exercise === exercise)
       const top = TOP_LIFTS.find((l) => l.name === exercise)
-      expect(top).toBeDefined()
       expect(sum(rows.map((r) => r.volumeKg))).toBe(top?.volumeKg ?? Number.NaN)
     }
   })
