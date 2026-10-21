@@ -213,13 +213,20 @@ only when the number has no history, target or parts; the reviewer fails a card 
   hairline; the sorted column is brighter with its arrow.
 - Rows: 40 (hold). Cell text `sm` (§ 5).
 - **Cell kinds** via `meta.kind`: `entity` (avatar or glyph + name, never wraps), `status` (status chip,
-  § 6.10), `number` and `money` (mono, right-aligned, unit in the header), `relative-time` (mono muted, full date
-  in a tooltip), `meter` (§ 6.3 inline), `text`.
+  § 6.10), `number` and `money` (sans `tabular-nums` per D33, right-aligned, unit in the header, never in the
+  cell), `relative-time` (mono muted, full date in a tooltip below the cell, also on focus), `meter` (§ 6.3
+  inline), `text` (the one kind that wraps; every other cell holds one line). Kinded columns size to content; the
+  last `text` column takes the slack, else a trailing spacer (Wave 42).
 - **Responsive** (§ 9.1): fold by `meta.priority` (exists) → at compact the first column pins (opaque
   background) and the rest scroll horizontally in a keyboard-reachable container → `renderCard` only for
   non-comparable rows. A folded column stays reachable and `aria-colcount`/`aria-colindex` stay correct.
+  Landed in Wave 42: the fold stops at two data columns; the pin engages only if the table still overflows; the
+  fold toggle column takes `aria-colindex` 1 (so `aria-colcount` is the column count + 1 while anything is
+  folded), sits ahead of the pinned column, and its header shows `+N` with the folded names. States keep the last
+  loaded fold; a cold state folds from header widths.
 - **Toolbar:** one row at the dense 28 tier; filter chips show a muted label and a bright value; secondary
-  controls right-aligned; wraps only below the compact container.
+  controls right-aligned; wraps only below the compact container. A narrow table (< 480) moves its facets behind
+  one `Filters (n)` pill. An active pill and the current page are ink (§ 6.12), never the accent (Wave 42).
 
 ### 6.7 `EventList`
 
