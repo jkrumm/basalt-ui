@@ -137,7 +137,8 @@ const columns = (() => {
       cell: (c) => c.getValue().toUpperCase(),
       meta: { kind: 'text' },
     }),
-    col.accessor('cause', { header: 'Cause', meta: { kind: 'text' } }),
+    // A short cause is one line: no kind, so it never wraps and can fold or pin.
+    col.accessor('cause', { header: 'Cause' }),
   ]
 })()
 

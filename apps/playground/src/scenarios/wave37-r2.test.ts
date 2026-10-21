@@ -230,15 +230,16 @@ describe('components page', () => {
   it('the table anchor renders its empty state with a title', () => {
     const el = tableAt('empty')
     expect(text(el)).toContain('No metrics in the last 30 days')
-    expect(el.querySelector('table')).toBeNull()
+    // The column header stays (W42): the empty body sits inside the table.
+    expect(el.querySelector('table thead')).not.toBeNull()
   })
 
   it('the table anchor renders its error state with a title and a Retry button', () => {
     const el = tableAt('error')
-    expect(text(el)).toContain('Could not load metrics')
+    expect(text(el)).toContain('Could not load')
+    expect(el.querySelector('table thead')).not.toBeNull()
     const retry = [...el.querySelectorAll('button')].find((b) => b.textContent === 'Retry')
     expect(retry).toBeDefined()
-    expect(el.querySelector('table')).toBeNull()
   })
 
   it('the table anchor renders skeleton rows while loading, and no figures', () => {
