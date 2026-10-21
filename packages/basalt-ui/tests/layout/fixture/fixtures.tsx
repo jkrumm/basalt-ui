@@ -241,7 +241,7 @@ function tableFacets(count: number): DataTableFacet<TableRow>[] {
  */
 function TableFixture({ spec }: { spec: TableSpec }): ReactElement {
   const facets = tableFacets(spec.facets ?? 0)
-  return (
+  const table = (
     <BasaltDataTable
       data={tableRows(spec.rows)}
       columns={tableColumns(spec.columns ?? 2, spec.badges === true)}
@@ -253,6 +253,9 @@ function TableFixture({ spec }: { spec: TableSpec }): ReactElement {
       })}
       {...(spec.search === true && { enableGlobalFilter: true, title: 'Projects' })}
       {...(facets.length > 0 && { facets })}
+      {...(spec.actions === true && {
+        actions: [{ key: 'export', label: 'Export CSV', onClick: () => undefined }],
+      })}
       {...(spec.error === true && {
         query: {
           data: undefined,
@@ -264,6 +267,13 @@ function TableFixture({ spec }: { spec: TableSpec }): ReactElement {
         emptyState: <EmptyState icon={<span data-testid="empty-glyph">⌕</span>} title="No rows" />,
       })}
     />
+  )
+  return spec.containerWidth === undefined ? (
+    table
+  ) : (
+    <div data-testid="table-container" style={{ width: spec.containerWidth }}>
+      {table}
+    </div>
   )
 }
 

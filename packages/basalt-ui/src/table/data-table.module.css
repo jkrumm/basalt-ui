@@ -193,3 +193,36 @@
   color: var(--vx-ink);
   text-align: right;
 }
+
+/*
+ * The header row's toolbar (`docs/waves/design-parity/SPEC.md` § 6.6): search, facet chips and the
+ * `actions` slot on ONE line from the `compact` container class (240px, `CONTAINER_CLASSES`) up.
+ * The header row is the container, so the table reads its own width and never the viewport; below
+ * 240px the row may wrap. The base `flex-wrap: wrap` is Mantine `Group`'s own; this module is
+ * unlayered, so it outranks `@layer mantine` regardless of specificity.
+ */
+.tableHeader {
+  container-type: inline-size;
+}
+
+@container (min-width: 240px) {
+  .toolbar {
+    flex-wrap: nowrap;
+  }
+}
+
+/* The actions sit at the row's right edge even when no facet row is there to push them. */
+.toolbarActions {
+  flex: 0 1 auto;
+  min-width: 0;
+  margin-inline-start: auto;
+}
+
+/* The footer's page buttons join the toolbar's dense tier at a fine pointer, so the rows-per-page
+ * Select (`data-basalt-dense`, `ctl` → 28) and the pager share one height. A coarse pointer keeps
+ * `size="sm"` and the 44px hit overlay. */
+@media (pointer: fine) {
+  .pager {
+    --pagination-control-size: calc(var(--vx-space-control-height-dense) * var(--mantine-scale));
+  }
+}

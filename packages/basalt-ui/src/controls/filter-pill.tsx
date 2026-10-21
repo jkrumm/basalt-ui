@@ -9,6 +9,13 @@
  * `--button-height-ctl` var set (`docs/CONTROLS-SPEC.md` §5), so the pill is the same height whether
  * or not the home wrapped its slot in `CtlSlot`, and it tracks the density knob for free.
  *
+ * **Anatomy.** A facet pill reads `Label  Value`: the facet's name muted (`--vx-muted`), the selection
+ * bright (`--vx-ink`) — two spans inside the one Button label, so a reader finds the value without
+ * parsing a sentence. `value` is the SELECTION and its presence IS the anatomy; an unset facet
+ * (`unset`) renders its one text muted, since it names a filter that is not filtering. A pill with
+ * neither (`ToggleFilter`, `RangeFilter`, `NumberFilter`, the `+N` fold, `Filters (n)`) keeps its
+ * single label exactly as before.
+ *
  * Two modes, one component: with `children` the pill is a `Popover` target (every enum-ish filter);
  * with only `onClick` it is a plain button that acts on press (`ToggleFilter`, the `+N` fold's
  * sibling, the `Filters (n)` sheet opener).
@@ -24,6 +31,10 @@ import { UpDownGlyph } from './glyphs'
 
 export type FilterPillProps = BasaltProps & {
   readonly label: string
+  /** The selected value. Present ⇒ the two-span anatomy: `label` muted, `value` ink. */
+  readonly value?: string
+  /** Nothing selected: the single `label` text reads muted. Ignored when `value` is set. */
+  readonly unset?: boolean
   readonly icon?: ReactNode
   /** Non-default → accent-tinted border. Derived from `field.isDefault(value)`, never hand-set. */
   readonly active?: boolean
@@ -51,6 +62,8 @@ export type FilterPillProps = BasaltProps & {
 
 export function FilterPill({
   label,
+  value,
+  unset,
   icon,
   active,
   numeric,
@@ -76,7 +89,7 @@ export function FilterPill({
       className={cx(classes.pill, className)}
       data-basalt-hit
       // The label truncates past the pill's width cap; the full name stays one hover away.
-      title={label}
+      title={value === undefined ? label : `${label} ${value}`}
       classNames={{ label: classes.pillLabel }}
       {...(style !== undefined && { style })}
       {...(active === true && { 'data-active': true })}
@@ -104,7 +117,22 @@ export function FilterPill({
         })
       }
     >
-      {label}
+      {value !== undefined ? (
+        <>
+          <span className={classes.pillName} data-pill-part="name">
+            {label}
+          </span>{' '}
+          <span className={classes.pillValue} data-pill-part="value">
+            {value}
+          </span>
+        </>
+      ) : unset === true ? (
+        <span className={classes.pillName} data-pill-part="name">
+          {label}
+        </span>
+      ) : (
+        label
+      )}
     </Button>
   )
 

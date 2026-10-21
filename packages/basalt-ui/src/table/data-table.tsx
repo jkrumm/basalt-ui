@@ -987,21 +987,25 @@ const RANGE_LABEL_STYLE: CSSProperties = {
 const DEFAULT_PAGE_SIZE_OPTIONS = [10, 25, 50, 100]
 
 /**
- * The header row's two halves. The lead GROWS and the toolbar does not — a title can ellipsize into
- * whatever is left, and a search field that grew with it was 600px on a wide table.
+ * The header row's two halves (`docs/waves/design-parity/SPEC.md` § 6.6). The TOOLBAR grows and the
+ * title does not: the title ellipsizes into whatever it needs, and the toolbar takes the rest of the
+ * row, so its facet row (`FilterSet`, `flex: 1 1 auto`) fills it and pushes the `actions` slot to
+ * the right edge — beside the title when the two fit, full-width under it when they do not.
  *
  * Both SHRINK, and that half is not a preference. `CtlSlot` between the header row and the toolbar
- * is `display: contents`, so the toolbar `Group` IS the row's flex item — and with the
- * `flex: 0 0 auto` it used to carry (plus flex's default `min-width: auto`) it could not give up a
- * pixel. MEASURED at 390x844 on `/data`: a 220px search beside a 230px facet pill row, gap 11, is a
- * 461px item in a 302px column, and `AppShell.Main` read `scrollWidth` 505 against `clientWidth`
- * 390 — the whole app draggable sideways over a table header. `0 1 auto` + `min-width: 0` lets the
- * item shrink to the column, and `wrap="wrap"` then does the rest: the search takes one line and
- * the pills the next. Nothing here is width-gated, so it holds in a narrow grid cell at any
- * viewport, the same way the chart tier resolves.
+ * is `display: contents`, so the toolbar `Group` IS the row's flex item — and a flex item with
+ * `min-width: auto` cannot give up a pixel. MEASURED at 390x844 on `/data`: a 220px search beside a
+ * 230px facet pill row, gap 11, is a 461px item in a 302px column, and `AppShell.Main` read
+ * `scrollWidth` 505 against `clientWidth` 390 — the whole app draggable sideways over a table
+ * header. `min-width: 0` lets the item shrink to the column; inside it the search gives up width
+ * down to its floor and `FilterSet` folds what still does not fit behind its own `+N`.
+ *
+ * The toolbar is ONE row at every container width from the `compact` class (240px) up
+ * (`.toolbar` in `data-table.module.css`, keyed on the header row's own width — never the
+ * viewport). Only below it may the row wrap.
  */
-const TABLE_HEADER_LEAD_STYLE: CSSProperties = { flex: '1 1 auto', minWidth: 0 }
-const TABLE_TOOLBAR_STYLE: CSSProperties = { flex: '0 1 auto', minWidth: 0 }
+const TABLE_HEADER_LEAD_STYLE: CSSProperties = { flex: '0 1 auto', minWidth: 0 }
+const TABLE_TOOLBAR_STYLE: CSSProperties = { flex: '1 1 auto', minWidth: 0 }
 /**
  * The toolbar search's width. Mantine's Input grows to its container, which in a `justify:
  * space-between` row means "whatever is left" — so the field was 600px on a wide table and 180px on a
@@ -1017,12 +1021,20 @@ const TABLE_TOOLBAR_STYLE: CSSProperties = { flex: '0 1 auto', minWidth: 0 }
  * column was half of the overflow above.
  */
 const SEARCH_WIDTH = 220
+/**
+ * The search gives up width FIRST. Flex shrinks items in proportion to `shrink × basis`; at `1` the
+ * search and `FilterSet`'s row (`flex: 1 1 auto`, whose slots cannot shrink) split the deficit, so the
+ * pills overflowed their own box and the phone's `Filters` pill was clipped. A large factor takes the
+ * whole deficit from the search until its `12ch` floor, and only then from the pill row — where
+ * `FilterSet`'s fold takes over.
+ */
+const SEARCH_SHRINK = 100
 /** How long the global search waits after the last keystroke before filtering. */
 const SEARCH_DEBOUNCE_MS = 250
 const TABLE_SEARCH_STYLE: CSSProperties = {
   // `width` as well as the basis — see the `SEARCH_WIDTH` JSDoc.
   width: SEARCH_WIDTH,
-  flex: `0 1 ${SEARCH_WIDTH}px`,
+  flex: `0 ${SEARCH_SHRINK} ${SEARCH_WIDTH}px`,
   minWidth: '12ch',
   maxWidth: '100%',
 }
@@ -2010,13 +2022,20 @@ export function BasaltDataTable<T extends RowData>(props: BasaltDataTableProps<T
        * spent title → 11px → search → 11px → thead before a single datum appeared, and the toolbar
        * read as page furniture rather than as this table's controls.
        *
-       * `wrap="wrap"` is the below-`sm` behaviour and needs no media query: the toolbar's minimum
-       * width (a 220px search plus its pills) exceeds what is left beside a title on a phone, so flex
-       * wraps it under the title on its own. `align="center"` puts the 30px toolbar controls on the
-       * title's optical line rather than on its baseline.
+       * `wrap="wrap"` is the header row's own: a toolbar whose natural width exceeds what is left
+       * beside a title drops under it, full width. The TOOLBAR itself never wraps from the `compact`
+       * container class up (`.toolbar`) — the search shrinks to its floor and `FilterSet` folds the
+       * rest behind `+N`. `align="center"` puts the 28px controls on the title's optical line.
        */}
       {(title !== undefined || showToolbar) && (
-        <Group justify="space-between" align="center" wrap="wrap" gap="xs" mb="xs">
+        <Group
+          className={classes.tableHeader}
+          justify="space-between"
+          align="center"
+          wrap="wrap"
+          gap="xs"
+          mb="xs"
+        >
           {title !== undefined ? (
             <Box style={TABLE_HEADER_LEAD_STYLE}>
               <WidgetHeader
@@ -2031,10 +2050,9 @@ export function BasaltDataTable<T extends RowData>(props: BasaltDataTableProps<T
           {showToolbar && (
             <CtlSlot>
               <Group
-                className={cx(classNames?.toolbar)}
+                className={cx(classes.toolbar, classNames?.toolbar)}
                 data-basalt-dense
                 gap="xs"
-                wrap="wrap"
                 align="center"
                 style={TABLE_TOOLBAR_STYLE}
               >
@@ -2052,7 +2070,9 @@ export function BasaltDataTable<T extends RowData>(props: BasaltDataTableProps<T
                   />
                 )}
                 {showFacets && (
-                  <FilterSet>
+                  // `inline={0}`: on a phone the facets live behind the one `Filters (n)` pill — a
+                  // search, a facet pill, `Filters` and the actions cannot share a 272px row.
+                  <FilterSet inline={0}>
                     {facets?.map((facet) => {
                       const column = resolveFacetColumn(table, facet)
                       if (!column) return null
@@ -2072,7 +2092,11 @@ export function BasaltDataTable<T extends RowData>(props: BasaltDataTableProps<T
                     })}
                   </FilterSet>
                 )}
-                {actions !== undefined && <BarActionSlot actions={actions} />}
+                {actions !== undefined && (
+                  <div className={classes.toolbarActions}>
+                    <BarActionSlot actions={actions} />
+                  </div>
+                )}
               </Group>
             </CtlSlot>
           )}
@@ -2136,7 +2160,7 @@ export function BasaltDataTable<T extends RowData>(props: BasaltDataTableProps<T
             Showing {rangeStart}–{rangeEnd}
             {totalIsAuthoritative ? ` of ${total}` : ''}
           </Text>
-          <Group gap="xs" align="center">
+          <Group gap="xs" align="center" data-basalt-dense>
             {/* theme-allow control-outside-home — the table's own page-size setting, not a page
                 filter: its state is the table's pagination, owned inside this component. */}
             <Select
@@ -2154,6 +2178,7 @@ export function BasaltDataTable<T extends RowData>(props: BasaltDataTableProps<T
                   `data-basalt-hit`, not through the `ctl` size), so `CtlSlot` cannot restore this
                   size on its own — an explicit `size="sm"` is the visual this footer always had. */}
               <Pagination
+                className={classes.pager}
                 size="sm"
                 radius="md"
                 total={Math.max(table.getPageCount(), 1)}
