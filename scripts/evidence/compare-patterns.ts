@@ -134,12 +134,11 @@ export const PATTERNS = {
     note: 'EmptyState (section tier) on the Components → Surfaces tab',
   },
   'loading-state': {
-    route: '/data',
+    route: '/data?shot-state=loading',
     anchor: 'table',
     select: 'tbody tr',
     rowLike: true,
-    before: { click: '[data-compare="table"] .mantine-Switch-root' },
-    note: 'BasaltDataTable skeleton row, behind the isLoading toggle',
+    note: 'BasaltDataTable skeleton row, behind the `shot-state=loading` search param',
   },
   'page-header': {
     route: '/dashboard',
