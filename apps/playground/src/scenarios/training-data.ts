@@ -18,6 +18,8 @@ const TYPE_LABEL: Record<SessionType, string> = {
 
 /** The reading date. Fixed, so the month-to-date window never moves under a screenshot. */
 const TODAY = new Date(Date.UTC(2026, 9, 16))
+/** The reading date as a `Date`, for the log's relative labels. */
+export const READING_DATE = TODAY
 const DAY_MS = 86_400_000
 const WINDOW_DAYS = 200
 /** Months a goal hit rate is read over: the six complete months before the current one. */
@@ -265,32 +267,56 @@ export type SessionLogRow = {
 /** Epley: the load that one rep would match. */
 const estimatedOneRepMax = (kg: number, reps: number): number => Math.round(kg * (1 + reps / 30))
 
-const logRow = (
-  daysAgo: number,
-  exercise: string,
-  sets: number,
-  reps: number,
-  kg: number,
-  result: SessionResult,
-): SessionLogRow => ({
-  // Relative to NOW, not TODAY: the table's relative-time column reads the live clock, so fixed
-  // dates would drift ("6 days ago" becoming "2 weeks ago") under every later shot.
-  date: new Date(Date.now() - daysAgo * DAY_MS),
-  exercise,
-  sets,
-  volumeKg: sets * reps * kg,
-  e1rmKg: estimatedOneRepMax(kg, reps),
-  result,
-})
+type LogEntry = {
+  daysAgo: number
+  exercise: string
+  sets: number
+  reps: number
+  kg: number
+  result: SessionResult
+}
 
-/** The strength log, newest first: the last two weeks of top sets, shaped like argo's workouts. */
-export const SESSION_LOG: readonly SessionLogRow[] = [
-  logRow(1, 'Squat', 4, 5, 117.5, 'PR'),
-  logRow(3, 'Bench press', 4, 6, 82.5, 'Held'),
-  logRow(4, 'Deadlift', 3, 5, 140, 'PR'),
-  logRow(6, 'Overhead press', 4, 6, 52.5, 'Dropped'),
-  logRow(8, 'Squat', 4, 5, 115, 'Held'),
-  logRow(10, 'Bench press', 4, 6, 82.5, 'Held'),
-  logRow(11, 'Deadlift', 3, 5, 135, 'Held'),
-  logRow(14, 'Overhead press', 4, 6, 55, 'PR'),
+/** The strength log, newest first: top sets of the four main lifts, all inside the month-to-date window. */
+const LOG_ENTRIES: readonly LogEntry[] = [
+  { daysAgo: 1, exercise: 'Squat', sets: 4, reps: 5, kg: 117.5, result: 'PR' },
+  { daysAgo: 3, exercise: 'Bench press', sets: 4, reps: 6, kg: 82.5, result: 'Held' },
+  { daysAgo: 4, exercise: 'Deadlift', sets: 3, reps: 5, kg: 140, result: 'PR' },
+  { daysAgo: 6, exercise: 'Overhead press', sets: 4, reps: 6, kg: 52.5, result: 'Dropped' },
+  { daysAgo: 8, exercise: 'Squat', sets: 4, reps: 5, kg: 115, result: 'Held' },
+  { daysAgo: 10, exercise: 'Bench press', sets: 4, reps: 6, kg: 82.5, result: 'Held' },
+  { daysAgo: 11, exercise: 'Deadlift', sets: 3, reps: 5, kg: 135, result: 'Held' },
+  { daysAgo: 14, exercise: 'Overhead press', sets: 4, reps: 6, kg: 55, result: 'PR' },
 ]
+
+const topLiftVolume = (exercise: string): number =>
+  Math.round(TOP_LIFTS.find((l) => l.name === exercise)?.volumeKg ?? 0)
+
+/**
+ * The log's rows of a lift sum to that lift's month-to-date volume on the "Top lifts by volume" card
+ * (one number, two views, whole kilograms like the card shows it): the lift's volume is split across its rows by each top set's weight, the
+ * last row taking the rounding remainder. The row's volume is the whole session's work on the lift,
+ * so it is not `sets × reps × top kg`.
+ */
+export const SESSION_LOG: readonly SessionLogRow[] = (() => {
+  const nominal = (e: LogEntry): number => e.sets * e.reps * e.kg
+  const rowsOf = (exercise: string) => LOG_ENTRIES.filter((e) => e.exercise === exercise)
+  const allocated = new Map<string, number>()
+  return LOG_ENTRIES.map((e) => {
+    const rows = rowsOf(e.exercise)
+    const isLast = rows.at(-1) === e
+    const done = allocated.get(e.exercise) ?? 0
+    const total = topLiftVolume(e.exercise)
+    const volumeKg = isLast
+      ? total - done
+      : Math.round((total * nominal(e)) / sum(rows.map(nominal)))
+    allocated.set(e.exercise, done + volumeKg)
+    return {
+      date: new Date(TODAY.getTime() - e.daysAgo * DAY_MS),
+      exercise: e.exercise,
+      sets: e.sets,
+      volumeKg,
+      e1rmKg: estimatedOneRepMax(e.kg, e.reps),
+      result: e.result,
+    }
+  })
+})()
