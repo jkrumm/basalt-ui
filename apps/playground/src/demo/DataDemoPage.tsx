@@ -32,7 +32,7 @@ const dataViews = createLocalStore({
   key: 'data-view',
   fields: { tab: field.enum(['overview', 'chrome', 'stress', 'query'], 'overview') },
 }).labels({
-  tab: { overview: 'Employee tables', chrome: 'Table chrome', stress: 'Stress', query: 'Query' },
+  tab: { overview: 'Employees', chrome: 'Chrome', stress: 'Stress', query: 'Query' },
 })
 
 // ── Table demo ────────────────────────────────────────────────────────────────
@@ -178,7 +178,7 @@ function TableSection({ shotState }: ScenarioProps) {
         emptyState={tableEmptyState({
           noun: 'employees',
           total: EMPLOYEES.length,
-          cause: 'The directory is empty. Employees appear here once they are added.',
+          cause: 'No employee records were returned for this directory.',
           filtered: reset.filtered,
           onClear: reset.clear,
         })}
@@ -238,7 +238,7 @@ function PinnedTableSection({ shotState }: ScenarioProps) {
   return (
     <div data-shot="roster-table" data-shot-states="empty loading error">
       <BasaltDataTable
-        title="Employee roster, wide view"
+        title={`Employee roster, ${LOCATIONS.length} locations`}
         data={shotState === undefined ? PINNED_EMPLOYEES : []}
         columns={PINNED_COLUMNS}
         enablePinning
@@ -248,7 +248,7 @@ function PinnedTableSection({ shotState }: ScenarioProps) {
         emptyState={tableEmptyState({
           noun: 'staff',
           total: PINNED_EMPLOYEES.length,
-          cause: 'The roster is empty. Staff appear here once they are added.',
+          cause: 'No staff records were returned for this roster.',
           filtered: false,
         })}
       />

@@ -45,7 +45,7 @@ export const HIT_RANGE_LABEL = `${monthName(new Date(Date.UTC(YEAR, month - HIT_
 /** Sessions per month the plan asks for. */
 export const GOAL_SESSIONS = 28
 
-type Lift = { name: string; volumeKg: number }
+type Lift = { name: string; sets: number; reps: number; kg: number; volumeKg: number }
 type Session = {
   date: Date
   type: SessionType
@@ -84,7 +84,13 @@ const strengthSession = (date: Date, progress: number): Session => {
   const lifts = Array.from({ length: LIFTS_PER_SESSION }, (_, k) => {
     const lift = itemAt(LIFTS, (first + k) % LIFTS.length)
     const kg = Math.round((lift.kg * (0.92 + progress * 0.12) * between(0.97, 1.03)) / 2.5) * 2.5
-    return { name: lift.name, volumeKg: kg * lift.sets * lift.reps }
+    return {
+      name: lift.name,
+      sets: lift.sets,
+      reps: lift.reps,
+      kg,
+      volumeKg: kg * lift.sets * lift.reps,
+    }
   })
   return {
     date,
@@ -141,72 +147,35 @@ export type SessionLogRow = {
 /** Epley: the load that one rep would match. */
 const estimatedOneRepMax = (kg: number, reps: number): number => Math.round(kg * (1 + reps / 30))
 
-type LogEntry = {
-  daysAgo: number
-  exercise: string
-  sets: number
-  reps: number
-  kg: number
-  volumeKg: number
-  result: SessionResult
-}
-
 /**
- * The strength log, newest first: top sets of the four main lifts, all inside the month-to-date
- * window. It is the data: "Top lifts by volume" sums these rows for these lifts. The row's volume
- * is the whole session's work on the lift, so it is not `sets × reps × top kg`.
+ * The strength log, newest first: every lift of every strength session in the month-to-date window.
+ * It is the data: "Top lifts by volume" sums these rows and the session mix counts its distinct days,
+ * so the three cannot disagree. A lift's result compares its top set with the previous session's.
  */
-const LOG_ENTRIES: readonly LogEntry[] = [
-  { daysAgo: 1, exercise: 'Squat', sets: 4, reps: 5, kg: 117.5, volumeKg: 2148, result: 'PR' },
-  {
-    daysAgo: 3,
-    exercise: 'Bench press',
-    sets: 4,
-    reps: 6,
-    kg: 82.5,
-    volumeKg: 2970,
-    result: 'Held',
-  },
-  { daysAgo: 4, exercise: 'Deadlift', sets: 3, reps: 5, kg: 140, volumeKg: 1890, result: 'PR' },
-  {
-    daysAgo: 6,
-    exercise: 'Overhead press',
-    sets: 4,
-    reps: 6,
-    kg: 52.5,
-    volumeKg: 1231,
-    result: 'Dropped',
-  },
-  { daysAgo: 8, exercise: 'Squat', sets: 4, reps: 5, kg: 115, volumeKg: 2102, result: 'Held' },
-  {
-    daysAgo: 10,
-    exercise: 'Bench press',
-    sets: 4,
-    reps: 6,
-    kg: 82.5,
-    volumeKg: 2970,
-    result: 'Held',
-  },
-  { daysAgo: 11, exercise: 'Deadlift', sets: 3, reps: 5, kg: 135, volumeKg: 1823, result: 'Held' },
-  {
-    daysAgo: 14,
-    exercise: 'Overhead press',
-    sets: 4,
-    reps: 6,
-    kg: 55,
-    volumeKg: 1289,
-    result: 'PR',
-  },
-]
+const resultOf = (kg: number, previousKg: number | undefined): SessionResult =>
+  previousKg === undefined || kg === previousKg ? 'Held' : kg > previousKg ? 'PR' : 'Dropped'
 
-export const SESSION_LOG: readonly SessionLogRow[] = LOG_ENTRIES.map((e) => ({
-  date: new Date(TODAY.getTime() - e.daysAgo * DAY_MS),
-  exercise: e.exercise,
-  sets: e.sets,
-  volumeKg: e.volumeKg,
-  e1rmKg: estimatedOneRepMax(e.kg, e.reps),
-  result: e.result,
-}))
+export const SESSION_LOG: readonly SessionLogRow[] = (() => {
+  const lastKg = new Map<string, number>()
+  const rows: SessionLogRow[] = []
+  for (const s of SESSIONS) {
+    for (const l of s.lifts) {
+      const inWindow = s.date.getUTCFullYear() === YEAR && s.date.getUTCMonth() === month
+      if (inWindow) {
+        rows.push({
+          date: s.date,
+          exercise: l.name,
+          sets: l.sets,
+          volumeKg: l.volumeKg,
+          e1rmKg: estimatedOneRepMax(l.kg, l.reps),
+          result: resultOf(l.kg, lastKg.get(l.name)),
+        })
+      }
+      lastKg.set(l.name, l.kg)
+    }
+  }
+  return rows.toReversed()
+})()
 
 const sum = (values: readonly number[]): number => values.reduce((a, b) => a + b, 0)
 
@@ -218,21 +187,10 @@ const inMonthToDate = (monthStart: Date) => (s: Session) =>
 const MTD = SESSIONS.filter(inMonthToDate(TODAY))
 const PRIOR_MTD = SESSIONS.filter(inMonthToDate(priorMonthStart))
 
-/**
- * Strength volume by lift this month, heaviest first. The lifts in the session log take the log's
- * sums (the log is the data); the rest keep what the generated sessions lifted.
- */
+/** Strength volume by lift this month, heaviest first: the sums of the session log's rows. */
 export const TOP_LIFTS: readonly { name: string; volumeKg: number; share: number }[] = (() => {
   const totals = new Map<string, number>()
-  for (const l of MTD.flatMap((s) => s.lifts)) {
-    totals.set(l.name, (totals.get(l.name) ?? 0) + l.volumeKg)
-  }
-  const logged = new Map<string, number>()
-  for (const r of SESSION_LOG) logged.set(r.exercise, (logged.get(r.exercise) ?? 0) + r.volumeKg)
-  for (const [name, volumeKg] of logged) {
-    if (!totals.has(name)) throw new Error(`Session log names an unknown lift: ${name}`)
-    totals.set(name, volumeKg)
-  }
+  for (const r of SESSION_LOG) totals.set(r.exercise, (totals.get(r.exercise) ?? 0) + r.volumeKg)
   const total = sum([...totals.values()])
   return [...totals]
     .map(([name, volumeKg]) => ({ name, volumeKg, share: volumeKg / total }))
@@ -321,10 +279,13 @@ export const READINESS_SCORE = Math.round(
   sum(CONTRIBUTORS.map((c) => c.value)) / CONTRIBUTORS.length,
 )
 
+/** Strength sessions this month, counted from the log's distinct days: one session holds several lifts. */
+const STRENGTH_DAYS = new Set(SESSION_LOG.map((r) => r.date.getTime())).size
+
 export const TYPE_MIX = SESSION_TYPES.map((type) => ({
   type,
   label: TYPE_LABEL[type],
-  count: MTD.filter((s) => s.type === type).length,
+  count: type === 'strength' ? STRENGTH_DAYS : MTD.filter((s) => s.type === type).length,
 }))
 
 /** Sessions in each of the six complete months before this one, oldest first. */
