@@ -25,6 +25,7 @@ import { DataTableChromeDemoPage } from './DataTableChromeDemoPage'
 import { QueryDemoPage } from './QueryDemoPage'
 import type { ComponentProps } from 'react'
 import { IconSearch } from './icons'
+import { RELOAD_STEP } from './table-copy'
 import { tableEmptyState, useFilterReset } from './table-empty-state'
 
 // The route's view switch, store-bound (law C3) so a back navigation lands on the tab left behind.
@@ -178,8 +179,7 @@ function TableSection({ shotState }: ScenarioProps) {
         emptyState={tableEmptyState({
           noun: 'employees',
           total: EMPLOYEES.length,
-          cause:
-            'No employee records were returned by the directory service. Reload to fetch them again.',
+          cause: `No employee records were returned by the directory service. ${RELOAD_STEP}`,
           filtered: reset.filtered,
           onClear: reset.clear,
         })}
@@ -250,7 +250,7 @@ function PinnedTableSection({ shotState }: ScenarioProps) {
         emptyState={tableEmptyState({
           noun: 'staff',
           total: PINNED_EMPLOYEES.length,
-          cause: 'No staff records were returned by the roster feed. Reload to fetch them again.',
+          cause: `No staff records were returned by the roster feed. ${RELOAD_STEP}`,
           filtered: false,
         })}
       />

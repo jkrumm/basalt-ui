@@ -310,3 +310,6 @@ export const HIT_HISTORY: readonly { label: string; sessions: number }[] = MONTH
     sessions,
   }),
 )
+
+/** One sentence for the one gap: the lift log and the lift ranking both read it. */
+export const NO_STRENGTH = `No strength session logged ${WINDOW_LABEL}. Log a workout to see it here.`

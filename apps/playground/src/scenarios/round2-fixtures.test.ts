@@ -12,8 +12,8 @@ import { WINDOW_LABEL as OPS_WINDOW_LABEL } from './ops-data'
 import { OpsScenario } from './S1Ops'
 import { AgentsScenario } from './S3Agents'
 import { SpendScenario } from './S4Spend'
-import { NO_STRENGTH, TrainingScenario } from './S2Training'
-import { SESSION_LOG } from './training-data'
+import { TrainingScenario } from './S2Training'
+import { NO_STRENGTH, SESSION_LOG } from './training-data'
 import type { ShotState } from './shot-state'
 
 afterEach(cleanup)
@@ -132,10 +132,10 @@ describe('S2 training', () => {
   })
 })
 
-describe('W42 r1 tables', () => {
-  const headers = (c: HTMLElement, name: string) =>
-    [...(anchor(c, name)?.querySelectorAll('th') ?? [])].map((n) => n.textContent)
+const headers = (c: HTMLElement, name: string) =>
+  [...(anchor(c, name)?.querySelectorAll('th') ?? [])].map((n) => n.textContent)
 
+describe('W42 r1 tables', () => {
   it('S1 outages read Started as a relative time, with no End and a neutral Scope', () => {
     const table = anchor(mount(createElement(OpsScenario, { shotState: undefined })), 'outages')
     expect(table?.textContent).toContain('Started')
