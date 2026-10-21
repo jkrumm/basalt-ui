@@ -755,6 +755,7 @@ exports[`createBasaltTheme() shape and resolver output default 1`] = `
         "size": "md",
       },
     },
+    "Pagination": {},
     "PaginationControl": {
       "defaultProps": {
         "data-basalt-hit": true,
@@ -2056,6 +2057,7 @@ exports[`createBasaltTheme() shape and resolver output all knobs 1`] = `
         "size": "md",
       },
     },
+    "Pagination": {},
     "PaginationControl": {
       "defaultProps": {
         "data-basalt-hit": true,
