@@ -166,7 +166,7 @@ describe('composition', () => {
       'hit-rate',
       'readiness',
       'top-lifts',
-      'sessions',
+      'session-log',
     ])
     expect(shareGrid(c, 'training-load', 'hit-rate')).toBe(true)
     expect(shareGrid(c, 'readiness', 'top-lifts')).toBe(true)
