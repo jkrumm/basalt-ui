@@ -140,6 +140,8 @@
  */
 .foldToggleCell {
   box-sizing: border-box;
+  /* The 28px toggle sits inside the 40px row; the cell's own block padding added 3px to it. */
+  padding-block: 0;
   padding-inline: 0;
   text-align: center;
 }
