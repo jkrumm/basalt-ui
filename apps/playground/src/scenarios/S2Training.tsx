@@ -506,7 +506,7 @@ const sessionColumns = (() => {
 function TrainingSessions({ shotState }: ScenarioProps) {
   const query = queryFor(shotState, retry())
   return (
-    <Box data-shot="sessions" h="100%">
+    <Box data-shot="session-log" h="100%">
       <Section title="Sessions">
         <BasaltDataTable
           // Rows only at rest: the empty branch needs `data` empty, the others have no rows yet.
