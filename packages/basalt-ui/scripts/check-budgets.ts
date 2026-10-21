@@ -611,10 +611,11 @@ async function budgets(providerOnlyDist: string): Promise<Budget[]> {
     // 8091 -> 8427 (w37 harness): shot hides chrome and frames tall anchors, reveals in-page with a short step timeout and reports `absent`, warns and detects a route with no data-shot-states; `init` seeds a stock Vite main.tsx and its peers (+336: 8427 - 8091).
     // 8427 -> 8443 (w37 harness-hover): the launcher passes blink pointer settings so a desktop context reports `hover: hover` / `pointer: fine` (cli/shot/playwright.ts +16).
     // 8443 -> 8457 (w37 harness-hover r2): `craft-7/no-declared-states` is P2 and names the anchors holding a state surface (`stateful` on the shot record, cli/shot/capture.ts + detect.ts +14).
+    // 8457 -> 8462 (w43 shot-strip, argo UPSTREAM Wave 53 row 2): an anchor first seen in a URL state gets a `rest` `absent` record, so the board never calls a legitimate absence "not captured" (cli/shot/capture.ts +5). Consumer: argo body composition.
     {
       label: 'CLI non-test lines (src/cli/**)',
       value: cliNonTestLines(),
-      ceiling: 8457,
+      ceiling: 8462,
     },
     ...(await providerOnlyRows(providerOnlyDist)),
   ]
