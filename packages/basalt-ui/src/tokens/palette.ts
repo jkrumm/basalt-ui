@@ -1190,6 +1190,8 @@ function buildPaletteDataUncached(config: DeriveConfig) {
    * success/warning/danger pairs as `SEMANTIC` (also the direct source for Badge/Notification/delta
    * -badge status-tint idioms in the theme — one set of hexes, several consumers). `excellent`
    * (top-of-scale grade) and `neutral` keep their prior chart-only families (unchanged BP families).
+   * `excellent` is FILL-ONLY (zones, bands, heatmap cells): about 3:1 on a light card, so text uses
+   * `good`, which the status-text solver holds to AA. `basalt/status-fill-as-text` guards it.
    */
   const STATUS = {
     excellent: p(BP.forest),
@@ -1412,7 +1414,8 @@ export const SEMANTIC = STATIC_PALETTE_DATA.SEMANTIC
 
 /**
  * Score / zone status scale (excellent → poor). `good`/`warn`/`bad` are the SAME spec
- * success/warning/danger pairs as `SEMANTIC`. GENERATED — see `buildPaletteData` above.
+ * success/warning/danger pairs as `SEMANTIC`. `excellent` is fill-only (not AA as text); use `good`
+ * for text. GENERATED — see `buildPaletteData` above.
  */
 export const STATUS = STATIC_PALETTE_DATA.STATUS
 
