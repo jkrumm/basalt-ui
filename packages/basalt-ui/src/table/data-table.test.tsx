@@ -221,12 +221,13 @@ describe('the auto mono-numeral style has an opt-out', () => {
       .container.querySelector('tbody tr')
       ?.children[1]?.getAttribute('style') ?? ''
 
-  test('a numeric cell is mono by default', () => {
-    expect(costStyle(styled)).toContain('font-family: var(--mantine-font-family-monospace)')
+  test('a numeric cell is tabular sans by default, never mono (SPEC D33)', () => {
+    expect(costStyle(styled)).toContain('font-variant-numeric: tabular-nums')
+    expect(costStyle(styled)).not.toContain('font-family')
   })
 
-  test('meta.numeral=false leaves a bespoke cell renderer in charge of its own font', () => {
-    expect(costStyle(opted)).not.toContain('font-family')
+  test('meta.numeral=false leaves a bespoke cell renderer in charge of its own figures', () => {
+    expect(costStyle(opted)).not.toContain('tabular-nums')
   })
 })
 

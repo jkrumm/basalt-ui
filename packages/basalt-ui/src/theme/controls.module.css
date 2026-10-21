@@ -310,6 +310,20 @@ html .tableRoot {
 }
 
 /*
+ * The header is a faint micro-label on the body's own fill (no band; the hairline below the head row
+ * is its only divider). The SORTED column steps up to ink — its arrow inherits it; unsorted sortable
+ * headers stay faint. `aria-sort` is the state the table already writes, so no extra class.
+ */
+html .tableRoot th {
+  color: var(--vx-faint);
+}
+
+html .tableRoot th[aria-sort='ascending'],
+html .tableRoot th[aria-sort='descending'] {
+  color: var(--vx-ink);
+}
+
+/*
  * The LAST row's separator is dropped — exactly the rule (and exactly the reasoning) the Accordion
  * above already carries: a separator BETWEEN items is information, and the same line drawn after the
  * final item is an outer border pretending to be one. It mattered more once `BasaltDataTable`'s

@@ -1049,7 +1049,9 @@ function buildTheme(data: PaletteData, options: BuildThemeOptions = {}): Mantine
           },
         },
       }),
-      // Header cells become a micro-label (mono, uppercase, faint) — numeral/tabular styling for
+      // Header cells become a micro-label (mono, uppercase; the colour — faint, ink when sorted — is
+      // `.tableRoot th` in controls.module.css, since an inline colour here could not be overridden by
+      // the sorted state). The head shares the body's fill: no band, only the hairline. Numeral/tabular styling for
       // body cells is a per-table call-site concern, left to consumers. `--table-border-color`
       // drives row separators AND the opt-in `withTableBorder` outer border — both drop to the
       // hairline (Mantine's default reads gray-3/dark-4 = the STRONG line, too heavy in a card).
@@ -1068,7 +1070,6 @@ function buildTheme(data: PaletteData, options: BuildThemeOptions = {}): Mantine
             fontWeight: 500,
             letterSpacing: '0.06em',
             textTransform: 'uppercase',
-            color: 'var(--vx-faint)',
           },
           td: { height: spacing.step.tableRowHeight, fontSize: VX.text.sm },
         },

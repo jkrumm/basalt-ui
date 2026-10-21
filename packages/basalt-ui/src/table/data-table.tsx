@@ -96,6 +96,7 @@ import {
 import { dataQueryBranch } from './query-branch'
 import { basaltTableFeatures } from './table-features'
 import type { BasaltColumnDef, BasaltTableFeatures, DataTableAlign } from './table-features'
+import { DEFAULT_CELL, KindCell, kindAlign, kindClass, resolveKind } from './cell-kinds'
 import classes from './data-table.module.css'
 
 // ── Column alignment ──────────────────────────────────────────────────────────
@@ -965,11 +966,10 @@ function SortIndicator({ direction }: { direction: 'asc' | 'desc' | false }) {
 
 const ARIA_SORT = { asc: 'ascending', desc: 'descending' } as const
 
-// ── Numeral cell idiom (docs/DESIGN-SPEC.md §3: "Stat/table numeral: mono, 12-12.5px, weight
-// 500, ink") — auto-detected from the cell's raw value (no column-level opt-in prop needed) so
-// every numeric column gets tabular, mono figures with zero call-site configuration.
+// ── Numeral cell idiom (SPEC D33: figures are the proportional sans with `tabular-nums`, mono is
+// for captions, times and code) — auto-detected from the cell's raw value (no column-level opt-in
+// prop needed) so every numeric column gets tabular figures with zero call-site configuration.
 const NUMERIC_CELL_STYLE: CSSProperties = {
-  fontFamily: 'var(--mantine-font-family-monospace)',
   fontSize: VX.text.sm,
   fontWeight: 500,
   fontVariantNumeric: 'tabular-nums',
@@ -1681,6 +1681,7 @@ export function BasaltDataTable<T extends RowData>(props: BasaltDataTableProps<T
     features: basaltTableFeatures,
     data,
     columns: tableColumns,
+    defaultColumn: { cell: DEFAULT_CELL },
     state: {
       sorting: tableState.sorting,
       globalFilter,
@@ -1837,7 +1838,7 @@ export function BasaltDataTable<T extends RowData>(props: BasaltDataTableProps<T
               const pinnedStyle = pinningActive
                 ? getPinnedCellStyle(table, header.column)
                 : undefined
-              const align = resolveAlign(header.column)
+              const align = resolveAlign(header.column) ?? kindAlign(resolveKind(header.column))
               const isSelectColumn = header.column.id === SELECT_COLUMN_ID
               const isFoldCandidate = !isSelectColumn && header.column.id !== ACTIONS_COLUMN_ID
               return (
@@ -1921,12 +1922,17 @@ export function BasaltDataTable<T extends RowData>(props: BasaltDataTableProps<T
                     const pinnedStyle = pinningActive
                       ? getPinnedCellStyle(table, cell.column)
                       : undefined
-                    const align = resolveAlign(cell.column)
+                    const kind = resolveKind(cell.column)
+                    const align = resolveAlign(cell.column) ?? kindAlign(kind)
                     return (
                       <Table.Td
                         key={cell.id}
                         {...(cell.column.id === SELECT_COLUMN_ID && {
                           className: classes.selectCell,
+                        })}
+                        {...(kind !== undefined && {
+                          className: kindClass(kind),
+                          'data-kind': kind,
                         })}
                         {...(stopsRowActivation(cell) && {
                           // The label's ::after fills the select cell, so a tap on it bubbles to the
@@ -1934,7 +1940,8 @@ export function BasaltDataTable<T extends RowData>(props: BasaltDataTableProps<T
                           onClick: (event: ReactMouseEvent) => event.stopPropagation(),
                         })}
                         style={{
-                          ...(typeof cell.getValue() === 'number' &&
+                          ...(kind === undefined &&
+                          typeof cell.getValue() === 'number' &&
                           cell.column.columnDef.meta?.numeral !== false
                             ? NUMERIC_CELL_STYLE
                             : undefined),
@@ -1942,7 +1949,11 @@ export function BasaltDataTable<T extends RowData>(props: BasaltDataTableProps<T
                           ...pinnedStyle,
                         }}
                       >
-                        <FlexRender cell={cell} />
+                        {kind === undefined ? (
+                          <FlexRender cell={cell} />
+                        ) : (
+                          <KindCell kind={kind} cell={cell} />
+                        )}
                       </Table.Td>
                     )
                   })}
