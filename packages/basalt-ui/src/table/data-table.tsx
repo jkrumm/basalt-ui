@@ -596,7 +596,8 @@ export type BasaltDataTableProps<T extends RowData> = BasaltProps &
     manualSorting?: boolean
     /** Stripe alternate rows. Forwarded to Mantine `Table` — `'odd'`/`'even'` pick the phase. */
     striped?: boolean | 'odd' | 'even'
-    /** Highlight hovered rows. Forwarded to Mantine `Table`. */
+    /** Highlight hovered rows with `VX.surface.rowHover` on a fine pointer. Forwarded to Mantine `Table`.
+     * @default true */
     highlightOnHover?: boolean
     /**
      * Rendered when no rows are VISIBLE — `data` is empty, or a filter/page matches none of it.
@@ -1288,7 +1289,7 @@ export function BasaltDataTable<T extends RowData>(props: BasaltDataTableProps<T
     enableSorting = true,
     manualSorting = false,
     striped,
-    highlightOnHover,
+    highlightOnHover = true,
     emptyState,
     isLoading = false,
     query,
@@ -1694,6 +1695,7 @@ export function BasaltDataTable<T extends RowData>(props: BasaltDataTableProps<T
       error={queryError.error}
       title="Could not load"
       tier="section"
+      className={classes.errorState}
       retrying={queryError.fetchStatus === 'fetching'}
       onRetry={() => void queryError.refetch()}
     />

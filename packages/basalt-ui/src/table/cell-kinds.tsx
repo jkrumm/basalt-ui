@@ -176,8 +176,10 @@ function RelativeTime({ value }: { value: unknown }) {
   if (date === undefined) return <Dash />
   const full = dateTime(date)
   return (
-    <Tooltip label={full}>
-      <time dateTime={date.toISOString()} aria-label={full}>
+    // Below the cell and on keyboard focus: above it the tip covered the header's label on row one.
+    <Tooltip label={full} position="bottom" events={{ hover: true, focus: true, touch: false }}>
+      {/* oxlint-disable-next-line jsx-a11y/no-noninteractive-tabindex -- the tooltip opens on focus */}
+      <time dateTime={date.toISOString()} aria-label={full} tabIndex={0}>
         {relativeTime(date)}
       </time>
     </Tooltip>

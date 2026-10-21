@@ -133,3 +133,18 @@ describe('column sizing', () => {
     expect(container.querySelectorAll('thead th')).toHaveLength(1)
   })
 })
+
+describe('row chrome', () => {
+  test('rows highlight on hover by default and a consumer can opt out', () => {
+    expect(
+      mount().container.querySelector('tbody[data-hover], tbody tr[data-hover]'),
+    ).not.toBeNull()
+    cleanup()
+    expect(mount({ highlightOnHover: false }).container.querySelector('tr[data-hover]')).toBeNull()
+  })
+
+  test('a relative time is a keyboard stop, so its tooltip opens on focus too', () => {
+    const { container } = mount()
+    expect(container.querySelector('time')?.getAttribute('tabindex')).toBe('0')
+  })
+})

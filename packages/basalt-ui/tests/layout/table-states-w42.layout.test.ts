@@ -122,4 +122,48 @@ layout('table sizing and state chrome', () => {
       })
     }
   }
+
+  test('rows hold one line at 390: every body row is the 40 px row (add-on 7)', async () => {
+    const p = await openFixture({ ...base, w42States: {} }, PHONE)
+    const heights = await p.raw.evaluate((selector) => {
+      return [...document.querySelectorAll(`${selector} tbody tr`)].map(
+        (row) => row.getBoundingClientRect().height,
+      )
+    }, TABLE)
+    expect(heights.length).toBeGreaterThan(0)
+    for (const height of heights) expect(height).toBeLessThanOrEqual(41)
+  })
+
+  test('a row hovers to VX.surface.rowHover (add-on 10)', async () => {
+    // The harness page reports `hover: none`, so Mantine's fine-pointer rule never paints; the fill
+    // the rule would use is the row's `--tr-hover-bg`, and that must be the row-hover token.
+    const p = await openFixture({ ...base, w42States: {} }, DESKTOP_1440)
+    const fills = await p.raw.evaluate((selector) => {
+      const row = document.querySelector(`${selector} tbody tr`) as HTMLElement
+      const probe = document.createElement('i')
+      row.append(probe)
+      probe.style.color = 'var(--vx-surface-row-hover)'
+      const token = getComputedStyle(probe).color
+      probe.style.color = 'var(--tr-hover-bg)'
+      const hover = getComputedStyle(probe).color
+      probe.remove()
+      return { token, hover, marked: row.hasAttribute('data-hover') }
+    }, TABLE)
+    expect(fills.marked).toBe(true)
+    expect(fills.hover).toBe(fills.token)
+  })
+
+  test("a pinned header cell paints the header's own fill (add-on 12)", async () => {
+    for (const scheme of ['light', 'dark'] as const) {
+      const p = await openFixture(
+        { ...base, colorScheme: scheme, w42States: { pinned: true } },
+        DESKTOP_1440,
+      )
+      const fills = await p.raw.evaluate((selector) => {
+        const [first, second] = [...document.querySelectorAll(`${selector} thead th`)]
+        return [first, second].map((th) => getComputedStyle(th as Element).backgroundColor)
+      }, TABLE)
+      expect(fills[0], scheme).toBe(fills[1])
+    }
+  })
 })

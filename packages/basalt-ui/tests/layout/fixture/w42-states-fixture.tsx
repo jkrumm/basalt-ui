@@ -1,4 +1,4 @@
-import { Box } from '@mantine/core'
+import { Box, Card } from '@mantine/core'
 import type { ReactElement } from 'react'
 import { BasaltDataTable, createColumnHelper } from '../../../src/table'
 
@@ -20,14 +20,26 @@ const COLUMNS = [
 ]
 
 /** Wave 42 sizing and state chrome: a 4-column kinded table spanning its container, with an active facet pill and a pager (`w42-states`). */
-export function W42StatesFixture({ loading }: { loading?: true }): ReactElement {
+export function W42StatesFixture({
+  loading,
+  pinned,
+}: {
+  loading?: true
+  pinned?: true
+}): ReactElement {
+  const Wrap = pinned === true ? Card : Box
   return (
-    <Box data-testid="w42-states">
+    <Wrap data-testid="w42-states">
       <BasaltDataTable
         title="Outages"
         data={loading === true ? [] : ROWS}
         columns={COLUMNS}
         isLoading={loading === true}
+        {...(pinned === true && {
+          stickyHeader: true,
+          enablePinning: true,
+          initialColumnPinning: { start: ['name'] },
+        })}
         enablePagination
         initialPagination={{ pageIndex: 0, pageSize: 5 }}
         initialColumnFilters={[{ id: 'state', value: 'Open' }]}
@@ -42,6 +54,6 @@ export function W42StatesFixture({ loading }: { loading?: true }): ReactElement 
           },
         ]}
       />
-    </Box>
+    </Wrap>
   )
 }

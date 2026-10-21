@@ -83,7 +83,8 @@ export type BasaltColumnMeta = {
    * - `relative-time`: mono, muted; a raw `Date | number | string` renders as `3 hours ago` in a
    *   `<time>`, the full date in a tooltip and as its accessible name.
    * - `meter`: the inline `Meter` bar for the value against `meterMax`.
-   * - `text`: plain `sm` ink that may wrap (the explicit default).
+   * - `text`: plain `sm` ink that MAY wrap — the only kind that does. Every other body cell holds one line, so
+   *   the fold measures natural widths and folds or pins instead of fitting by wrapping.
    */
   kind?: DataTableColumnKind
   /** `status`: the chip colour for a cell value — a theme colour name or a CSS var. Default `gray`. */

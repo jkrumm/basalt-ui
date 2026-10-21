@@ -343,11 +343,12 @@ export type PinContext<T extends RowData> = {
 }
 
 /** `getStart` / `getAfter` sum `getSize()`, so a sticky cell states its width in px and the offsets
- * stay true. The panel is only the fallback: the surface behind the table is measured. */
+ * stay true. The panel is only the fallback: the surface behind the table is measured, unless a sticky
+ * header paints its own fill, which `--basalt-pin-fill` hands the header's pinned cells. */
 const STICKY_BASE: CSSProperties = {
   position: 'sticky',
   zIndex: 1,
-  backgroundColor: `var(--basalt-table-surface, ${VX.surface.panel})`,
+  backgroundColor: `var(--basalt-pin-fill, var(--basalt-table-surface, ${VX.surface.panel}))`,
 }
 
 /**
