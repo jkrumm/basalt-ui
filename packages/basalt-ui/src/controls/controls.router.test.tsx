@@ -355,6 +355,51 @@ describe('MultiSelectFilter', () => {
     expect(screen.getByRole('button', { name: 'All channels 1 channels' })).toBeDefined()
   })
 
+  test('a narrowed catalogue is judged by set equality, not by length', async () => {
+    // `[web, social]` over a catalogue of `[web, email]` is as long as the catalogue and still
+    // filters `email` out — it must read, count and clear as a filter.
+    await mountPage({
+      validateSearch: store.validateSearch,
+      entry: '/dashboard?channels=web&channels=social',
+      Page: () => (
+        <FilterSet>
+          <MultiSelectFilter
+            field={store.field.channels}
+            label="Channels"
+            options={[
+              { value: 'web', label: 'web' },
+              { value: 'email', label: 'email' },
+            ]}
+          />
+        </FilterSet>
+      ),
+    })
+    const pill = screen.getByRole('button', { name: 'Channels 2 selected' })
+    expect(pill.hasAttribute('data-active')).toBe(true)
+  })
+
+  test('with no noun, one selection reads `Channels 1 selected`', async () => {
+    await mountPage({
+      validateSearch: store.validateSearch,
+      entry: '/dashboard',
+      Page: () => <MultiSelectFilter field={store.field.channels} label="Channels" />,
+    })
+    await openPill('Channels')
+    fireEvent.click(screen.getByRole('checkbox', { name: 'web', hidden: true }))
+    await waitFor(() => {
+      expect(screen.getByRole('button', { name: 'Channels 1 selected' })).toBeDefined()
+    })
+  })
+
+  test('none selected reads the label alone and counts as not filtering', async () => {
+    await mountPage({
+      validateSearch: store.validateSearch,
+      entry: '/dashboard',
+      Page: () => <MultiSelectFilter field={store.field.channels} label="Channels" />,
+    })
+    expect(screen.getByRole('button', { name: 'Channels' }).hasAttribute('data-active')).toBe(false)
+  })
+
   test('every option selected is the same information as none — the label comes back', async () => {
     await mountPage({
       validateSearch: store.validateSearch,

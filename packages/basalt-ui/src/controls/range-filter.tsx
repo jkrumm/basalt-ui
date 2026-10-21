@@ -214,13 +214,14 @@ export function RangeFilter<P extends string>(
     </Stack>
   )
 
+  const rangeText = rangeLabel(value, options)
   return (
     <FilterPill
       {...filterReading({
         name: label,
         informative: !isDefault,
-        value: rangeLabel(value, options),
-        unsetText: rangeLabel(value, options),
+        value: rangeText,
+        unsetText: rangeText,
       })}
       active={!isDefault}
       numeric={numeric && value.preset !== 'custom'}

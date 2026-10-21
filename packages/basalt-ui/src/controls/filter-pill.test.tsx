@@ -100,6 +100,20 @@ describe('filterReading — the one place a facet turns state into a pill readin
   })
 })
 
+describe('FilterPill — a whitespace-only value reads as unset', () => {
+  test('no value span, one muted name span', () => {
+    render(
+      <MantineProvider>
+        <FilterPill label="Exercise" value="   " />
+      </MantineProvider>,
+    )
+    const button = screen.getByRole('button')
+    expect(button.querySelector('[data-pill-part="value"]')).toBeNull()
+    expect(button.querySelector('[data-pill-part="name"]')?.textContent).toBe('Exercise')
+    expect(button.getAttribute('title')).toBe('Exercise')
+  })
+})
+
 describe('FilterPill — an empty value reads as unset', () => {
   test('no value span, one muted name span, and the title stays the bare label', () => {
     render(

@@ -32,8 +32,11 @@ import { UpDownGlyph } from './glyphs'
 /**
  * What the pill SAYS, one of three shapes: a facet name plus its selection (`label` muted, `value`
  * ink), a facet that is not filtering (one muted text), or a plain label (press-to-act pills). An
- * empty `value` is the second shape — a selection with no text is not a selection.
+ * empty or whitespace-only `value` is the second shape — a selection with no text is not a selection.
  */
+/** A value with nothing visible in it (`''`, `'  '`) is not a selection. */
+const hasText = (value: string): boolean => value.trim() !== ''
+
 export type FilterPillReading =
   | { readonly label: string; readonly value: string; readonly unset?: never }
   | { readonly label: string; readonly unset: true; readonly value?: never }
@@ -51,7 +54,7 @@ export function filterReading(input: {
   readonly value: string
   readonly unsetText: string
 }): FilterPillReading {
-  if (input.informative && input.value !== '') return { label: input.name, value: input.value }
+  if (input.informative && hasText(input.value)) return { label: input.name, value: input.value }
   return { label: input.unsetText, unset: true }
 }
 
@@ -111,7 +114,7 @@ export function FilterPill({
       className={cx(classes.pill, className)}
       data-basalt-hit
       // The label truncates past the pill's width cap; the full name stays one hover away.
-      title={value === undefined || value === '' ? label : `${label} ${value}`}
+      title={value !== undefined && hasText(value) ? `${label} ${value}` : label}
       classNames={{ label: classes.pillLabel }}
       {...(style !== undefined && { style })}
       {...(active === true && { 'data-active': true })}
@@ -139,7 +142,7 @@ export function FilterPill({
         })
       }
     >
-      {value !== undefined && value !== '' ? (
+      {value !== undefined && hasText(value) ? (
         <>
           <span className={classes.pillName} data-pill-part="name">
             {label}
@@ -148,7 +151,7 @@ export function FilterPill({
             {value}
           </span>
         </>
-      ) : unset === true ? (
+      ) : unset === true || value !== undefined ? (
         <span className={classes.pillName} data-pill-part="name">
           {label}
         </span>

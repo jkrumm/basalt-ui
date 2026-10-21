@@ -106,17 +106,20 @@ export function MultiSelectFilter<T extends string>(props: MultiSelectFilterProp
   const clearFilter = (): void => {
     field.clear()
   }
-  useFilterRegistration(!isDefault, clearFilter)
 
   // The prop wins whole, never merged — same rule as `EnumFilter`: a catalogue that dropped a row
-  // must be able to drop it, and `All channels` is counted against the rows actually shown.
+  // must be able to drop it, and `All channels` is judged against the rows actually shown.
   const options: readonly FilterOption[] = optionsProp ?? field.options
   const inSheet = surface === 'sheet'
   const inPanel = surface === 'panel'
-  // ONE predicate for "this filter is filtering": the muted/bright anatomy and the accent border
-  // both read it. An empty or every-option selection says nothing (`isDefault` aside), so neither
-  // may light up.
-  const informative = !isDefault && value.length > 0 && value.length < options.length
+  // ONE predicate for "this filter is filtering" — registration (the `Filters (n)` count and `Reset
+  // all`), the Clear button, the muted/bright anatomy and the accent border all read it. An empty
+  // selection or one holding EVERY offered option says nothing; "every" is set equality against the
+  // option values, never a length comparison (a deep link `[web, social]` over a catalogue
+  // `[web, email]` has the same length and still filters `email` out).
+  const everyOffered = options.every((option) => value.includes(option.value as T))
+  const informative = !isDefault && value.length > 0 && !everyOffered
+  useFilterRegistration(informative, clearFilter)
   const { labelId } = useControlName(label, inSheet || inPanel)
 
   // One toggle, shared by both list forms — the rows are rendered from `options`, whose values
@@ -178,7 +181,7 @@ export function MultiSelectFilter<T extends string>(props: MultiSelectFilterProp
           />
         ))}
       </Stack>
-      {clearable && !isDefault && disabled !== true && <FilterClearButton onClear={clearFilter} />}
+      {clearable && informative && disabled !== true && <FilterClearButton onClear={clearFilter} />}
     </Checkbox.Group>
   )
 
