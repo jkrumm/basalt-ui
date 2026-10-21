@@ -326,7 +326,8 @@ html .tableRoot th[aria-sort='descending'] {
 /*
  * The current page is selection state, so it is an ink-mixed fill with an ink label, the `pills` Tab's
  * step (SPEC § 6.12). Mantine writes `--pagination-active-bg` inline only for an explicit `color=`,
- * which therefore keeps its accent fill.
+ * which therefore keeps its accent fill. This is the one home of the ink; the `Pagination` entry in
+ * `theme/index.ts` only handles the explicit `color=` case.
  */
 html :global(.mantine-Pagination-root) {
   --pagination-active-bg: color-mix(in srgb, var(--vx-ink) 12%, var(--vx-surface-panel));

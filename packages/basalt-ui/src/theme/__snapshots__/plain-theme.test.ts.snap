@@ -759,7 +759,9 @@ exports[`createBasaltTheme() shape and resolver output default 1`] = `
       "vars": {
         "fn": 
 "(theme, props) => ({
-          root: { "--pagination-active-color": props.color && onColorFor(theme, props) }
+          root: {
+            "--pagination-active-color": hasExplicitColor(props.color) ? onColorFor(theme, props) : void 0
+          }
         })"
 ,
         "outputs": [
@@ -2091,7 +2093,9 @@ exports[`createBasaltTheme() shape and resolver output all knobs 1`] = `
       "vars": {
         "fn": 
 "(theme, props) => ({
-          root: { "--pagination-active-color": props.color && onColorFor(theme, props) }
+          root: {
+            "--pagination-active-color": hasExplicitColor(props.color) ? onColorFor(theme, props) : void 0
+          }
         })"
 ,
         "outputs": [

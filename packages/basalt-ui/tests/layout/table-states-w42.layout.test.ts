@@ -166,4 +166,24 @@ layout('table sizing and state chrome', () => {
       expect(fills[0], scheme).toBe(fills[1])
     }
   })
+
+  test('a long error string wraps inside the table width at 390', async () => {
+    const p = await openFixture({ ...base, w42States: { longError: true } }, PHONE)
+    const geometry = await p.raw.evaluate((selector) => {
+      const table = document.querySelector(selector) as HTMLElement
+      const message = [...table.querySelectorAll('p')].find((el) =>
+        el.textContent.includes('upstream'),
+      )
+      return {
+        table: table.getBoundingClientRect().width,
+        wrapper: (table.parentElement as HTMLElement).getBoundingClientRect().width,
+        lines: message === undefined ? 0 : message.getClientRects().length,
+        height: message?.getBoundingClientRect().height ?? 0,
+        whiteSpace: message === undefined ? '' : getComputedStyle(message).whiteSpace,
+      }
+    }, TABLE)
+    expect(geometry.table).toBeLessThanOrEqual(geometry.wrapper + 1)
+    expect(geometry.whiteSpace).toBe('normal')
+    expect(geometry.height, 'the message takes more than one line').toBeGreaterThan(24)
+  })
 })

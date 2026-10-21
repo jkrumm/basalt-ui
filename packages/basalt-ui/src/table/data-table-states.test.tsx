@@ -67,6 +67,10 @@ describe('state chrome', () => {
       },
     })
     expect(header(container)).toBe('Rows')
+    const range = [...container.querySelectorAll('p')].find((p) =>
+      p.textContent.startsWith('Showing'),
+    )
+    expect(range?.getAttribute('style')).toContain('visibility: hidden')
   })
 })
 
