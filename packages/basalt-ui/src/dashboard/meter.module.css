@@ -142,7 +142,8 @@
   --basalt-reading-dir: 1;
   position: relative;
   height: 1.25em;
-  overflow: clip;
+  /* Clipped along the row only: a descender hangs below the 1.25em box of a taller caption line. */
+  overflow-x: clip;
   font-family: var(--basalt-font-numeral, var(--basalt-font-sans));
   font-variant-numeric: lining-nums;
   font-size: var(--basalt-meter-caption);

@@ -96,6 +96,7 @@ import { W38LoadingFixture } from './w38-loading-fixture'
 import { W38StripMeterFixture } from './w38-strip-meter-fixture'
 import { W39S4StripFixture, W39StripFixture } from './w39-strip-fixture'
 import { W39MeterFixture } from './w39-meter-fixture'
+import { W43MeterStartFixture } from './w43-meter-start-fixture'
 import { W42KindsFixture } from './w42-kinds-fixture'
 import { W42StatesFixture } from './w42-states-fixture'
 import { W43SubtitleFixture } from './w43-subtitle-fixture'
@@ -3103,6 +3104,7 @@ export function ShellFixture({ spec }: { spec: FixtureSpec }): ReactElement {
       {spec.w39Strip && <W39StripFixture />}
       {spec.w39Strip && <W39S4StripFixture />}
       {spec.w39Meter && <W39MeterFixture />}
+      {spec.w43MeterStart && <W43MeterStartFixture />}
       {spec.w42Kinds && <W42KindsFixture />}
       {spec.w42States && <W42StatesFixture {...spec.w42States} />}
       {spec.w43Subtitle && <W43SubtitleFixture />}

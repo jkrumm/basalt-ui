@@ -774,6 +774,9 @@ export function MeterBar(props: {
         ...labelled,
       ]
   const zoneLabels = compact ? [] : model.zoneLabels
+  // With no zone names to own the row below the track, the marker's reading shares the caption row
+  // with the end caption (both on one line when they fit), centred on the marker like ZoneReading.
+  const readingInRow = anchored && zoneLabels.length === 0
   // On a zoned track the zone names own the row below; the figures at its two ends sit above the
   // track, where nothing else competes for them. Every other tick label stays with the names.
   const isEnd = (t: TickMark) => t.pct <= 0 || t.pct >= 100
@@ -790,13 +793,15 @@ export function MeterBar(props: {
   const items: CaptionItem[] = compact
     ? []
     : [
-        ...(start !== null && !anchored
+        ...(start !== null && (!anchored || readingInRow)
           ? [
               {
                 key: 'start',
                 node: glue(start),
+                ...(readingInRow && model.markerPct !== undefined && { pct: model.markerPct }),
                 // The reading sits at its fill's end (clamped inside the track); `readingAt="start"` keeps the old start edge.
                 ...(props.readingAt !== 'start' &&
+                  !readingInRow &&
                   model.fillEndPct !== undefined && {
                     pct: model.fillEndPct,
                     align: 'end' as const,
@@ -933,7 +938,9 @@ export function MeterBar(props: {
         )}
       </div>
       {zoneLabels.length > 0 && <LabelRow zones={zoneLabels} ticks={belowTicks} />}
-      {anchored && quiet(<ZoneReading pct={model.markerPct ?? 0}>{start}</ZoneReading>)}
+      {anchored &&
+        !readingInRow &&
+        quiet(<ZoneReading pct={model.markerPct ?? 0}>{start}</ZoneReading>)}
       {!loading && model.describedByText !== null && (
         <VisuallyHidden id={describedId} className={classes.summary}>
           {model.describedByText}
