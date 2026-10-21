@@ -10,8 +10,8 @@
  * draw their own loading and empty states (`shot-state` → `loading` / no reading); the card only
  * takes the error.
  */
-import { Box, ColorSwatch, Group, SimpleGrid, Skeleton, Stack, Text } from '@mantine/core'
-import { BarList, Meter, PageBar, Section, StatCard, StatGroup } from 'basalt-ui'
+import { Box, Button, SimpleGrid, Skeleton, Stack, Text, Tooltip } from '@mantine/core'
+import { BarList, EmptyState, Meter, PageBar, Section, StatCard, StatGroup } from 'basalt-ui'
 import { Bars, ChartCard, Sparkline } from 'basalt-ui/charts'
 import type { BarsBar } from 'basalt-ui/charts'
 import { BasaltDataTable, createColumnHelper } from 'basalt-ui/table'
@@ -43,6 +43,7 @@ import {
   PACE_GAP,
   PACE_SESSIONS,
   PRIOR_WINDOW_LABEL,
+  READING_DATE,
   READINESS_SCORE,
   READINESS_ZONES,
   SESSIONS_7D_POINTS,
@@ -459,33 +460,44 @@ function ReadinessRow({ shotState }: ScenarioProps) {
   )
 }
 
-const EXERCISE_COLOR: Record<string, string> = {
-  Squat: demoColors.sessions,
-  'Bench press': demoColors.signups,
-  Deadlift: demoColors.revenue,
-  'Overhead press': demoColors.churn,
-}
 const EXERCISES = [...new Set(SESSION_LOG.map((r) => r.exercise))]
 const EXERCISE_OPTIONS = EXERCISES.map((value) => ({ value, label: value }))
 const SESSION_ROWS = [...SESSION_LOG]
 const NO_SESSIONS: SessionLogRow[] = []
 
+const DAY_MS = 86_400_000
+
+/** Relative to the page's reading date, not the live clock, so the label never drifts under a shot. */
+const daysAgoLabel = (date: Date): string => {
+  const days = Math.round((READING_DATE.getTime() - date.getTime()) / DAY_MS)
+  if (days <= 0) return 'today'
+  if (days === 1) return 'yesterday'
+  return days < 14 ? `${days} days ago` : `${Math.round(days / 7)} weeks ago`
+}
+const fullDate = (date: Date): string =>
+  date.toLocaleDateString('en-GB', {
+    weekday: 'short',
+    day: 'numeric',
+    month: 'short',
+    year: 'numeric',
+    timeZone: 'UTC',
+  })
+
 /** Units live in the headers; `priority` orders the fold (highest folds first). */
 const sessionColumns = (() => {
   const col = createColumnHelper<SessionLogRow>()
   return [
-    col.accessor('exercise', {
-      header: 'Exercise',
-      cell: (c) => (
-        <Group gap="xs" wrap="nowrap">
-          <ColorSwatch size={8} color={EXERCISE_COLOR[c.getValue()] ?? VX.faint} />
-          {c.getValue()}
-        </Group>
-      ),
-      meta: { kind: 'entity', priority: 1 },
-    }),
+    // Entity glyph-free: colour on this page means one thing per hue, and the result column owns it.
+    col.accessor('exercise', { header: 'Exercise', meta: { kind: 'entity', priority: 1 } }),
     col.accessor('date', {
       header: 'Date',
+      cell: (c) => (
+        <Tooltip label={fullDate(c.getValue())}>
+          <time dateTime={c.getValue().toISOString()} data-shot-tooltip>
+            {daysAgoLabel(c.getValue())}
+          </time>
+        </Tooltip>
+      ),
       meta: { kind: 'relative-time', priority: 2 },
     }),
     col.accessor('result', {
@@ -497,7 +509,10 @@ const sessionColumns = (() => {
           result === 'PR' ? 'green' : result === 'Dropped' ? 'red' : 'gray',
       },
     }),
-    col.accessor('e1rmKg', { header: 'Est. 1RM (kg)', meta: { kind: 'number', priority: 4 } }),
+    col.accessor('e1rmKg', {
+      header: 'Est. 1RM (kg, Epley)',
+      meta: { kind: 'number', priority: 4 },
+    }),
     col.accessor('volumeKg', { header: 'Volume (kg)', meta: { kind: 'number', priority: 5 } }),
     col.accessor('sets', { header: 'Sets', meta: { kind: 'number', priority: 6 } }),
   ]
@@ -507,7 +522,7 @@ function TrainingSessions({ shotState }: ScenarioProps) {
   const query = queryFor(shotState, retry())
   return (
     <Box data-shot="session-log" h="100%">
-      <Section title="Sessions">
+      <Section title={`Lift log, ${WINDOW_LABEL}`}>
         <BasaltDataTable
           // Rows only at rest: the empty branch needs `data` empty, the others have no rows yet.
           data={shotState === undefined ? SESSION_ROWS : NO_SESSIONS}
@@ -517,7 +532,14 @@ function TrainingSessions({ shotState }: ScenarioProps) {
           facets={[{ columnId: 'exercise', label: 'Exercise', options: EXERCISE_OPTIONS }]}
           initialSorting={[{ id: 'date', desc: true }]}
           {...(query !== undefined && { query })}
-          emptyState={<span>No session logged yet. Log a lift to start the log.</span>}
+          emptyState={
+            <EmptyState
+              tier="section"
+              title="No lift logged yet"
+              description="Log a lift to start the log."
+              action={<Button onClick={noop}>Log a lift</Button>}
+            />
+          }
         />
       </Section>
     </Box>

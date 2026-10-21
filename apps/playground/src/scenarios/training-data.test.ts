@@ -21,6 +21,7 @@ import {
   PACE_SESSIONS,
   PRIOR_WINDOW_LABEL,
   READINESS_SCORE,
+  READING_DATE,
   SESSION_LOG,
   SESSIONS_7D_TREND,
   SESSIONS_CHANGE_PCT,
@@ -134,6 +135,23 @@ describe('session log', () => {
     expect(times).toEqual(times.toSorted((a, b) => b - a))
     expect(new Set(SESSION_LOG.map((r) => r.exercise)).size).toBe(4)
     expect(new Set(SESSION_LOG.map((r) => r.result))).toEqual(new Set(['PR', 'Held', 'Dropped']))
+  })
+
+  it('the rows of each lift sum to its volume on the top-lifts card', () => {
+    for (const exercise of new Set(SESSION_LOG.map((r) => r.exercise))) {
+      const rows = SESSION_LOG.filter((r) => r.exercise === exercise)
+      const top = TOP_LIFTS.find((l) => l.name === exercise)
+      expect(top).toBeDefined()
+      expect(sum(rows.map((r) => r.volumeKg))).toBe(Math.round(top?.volumeKg ?? Number.NaN))
+    }
+  })
+
+  it('every row falls inside the month-to-date window', () => {
+    const start = Date.UTC(2026, 9, 1)
+    for (const r of SESSION_LOG) {
+      expect(r.date.getTime()).toBeGreaterThanOrEqual(start)
+      expect(r.date.getTime()).toBeLessThanOrEqual(READING_DATE.getTime())
+    }
   })
 
   it('every row has a positive volume and a positive estimated 1RM', () => {
