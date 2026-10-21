@@ -1,17 +1,18 @@
-import { Tooltip } from '@mantine/core'
+import { Tooltip, VisuallyHidden } from '@mantine/core'
 import { agoLabel } from './ago-label'
 
 /**
- * A relative time against a fixed reading date: the full date is the tooltip and the accessible
- * name, and the `<time>` takes focus so a keyboard user reaches the tooltip. `data-shot-tooltip` is
- * what `basalt-ui shot` hovers.
+ * A relative time against a fixed reading date, behaving like the package's `relative-time` cell:
+ * the full date opens below the cell (above it covers the header) on hover and on keyboard focus,
+ * and is the `<time>`'s accessible text. `data-shot-tooltip` is what `basalt-ui shot` hovers.
  */
 export function FixedClockTime({ date, now, full }: { date: Date; now: Date; full: string }) {
   return (
-    <Tooltip label={full}>
-      {/* oxlint-disable-next-line jsx-a11y/no-noninteractive-tabindex -- the tooltip must be keyboard-reachable */}
-      <time dateTime={date.toISOString()} aria-label={full} tabIndex={0} data-shot-tooltip>
+    <Tooltip label={full} position="bottom" events={{ hover: true, focus: true, touch: false }}>
+      {/* oxlint-disable-next-line jsx-a11y/no-noninteractive-tabindex -- the tooltip opens on focus */}
+      <time dateTime={date.toISOString()} tabIndex={0} data-shot-tooltip>
         {agoLabel(date, now)}
+        <VisuallyHidden>{`, ${full}`}</VisuallyHidden>
       </time>
     </Tooltip>
   )

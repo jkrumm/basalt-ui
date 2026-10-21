@@ -32,7 +32,7 @@ const dataViews = createLocalStore({
   key: 'data-view',
   fields: { tab: field.enum(['overview', 'chrome', 'stress', 'query'], 'overview') },
 }).labels({
-  tab: { overview: 'Employees', chrome: 'Chrome', stress: 'Stress', query: 'Query' },
+  tab: { overview: 'Tables', chrome: 'Chrome', stress: 'Stress', query: 'Query' },
 })
 
 // ── Table demo ────────────────────────────────────────────────────────────────
@@ -120,7 +120,7 @@ const groupedFigure = (value: number): string => value.toLocaleString('en-US')
 const TABLE_COLUMNS = [
   col.accessor('name', { header: 'Name', meta: { kind: 'entity' } }),
   col.accessor('department', { header: 'Department', meta: { kind: 'text' } }),
-  col.accessor('role', { header: 'Role', meta: { kind: 'text' } }),
+  col.accessor('role', { header: 'Role' }),
   col.accessor('salary', {
     header: 'Salary (USD / yr)',
     cell: (ctx) => groupedFigure(ctx.getValue()),
@@ -178,7 +178,8 @@ function TableSection({ shotState }: ScenarioProps) {
         emptyState={tableEmptyState({
           noun: 'employees',
           total: EMPLOYEES.length,
-          cause: 'No employee records were returned for this directory.',
+          cause:
+            'No employee records were returned by the directory service. Reload to fetch them again.',
           filtered: reset.filtered,
           onClear: reset.clear,
         })}
@@ -216,7 +217,7 @@ const pinnedCol = createColumnHelper<PinnedEmployee>()
 const PINNED_COLUMNS = [
   pinnedCol.accessor('name', { header: 'Name', meta: { kind: 'entity' } }),
   pinnedCol.accessor('department', { header: 'Department', meta: { kind: 'text' } }),
-  pinnedCol.accessor('role', { header: 'Role', meta: { kind: 'text' } }),
+  pinnedCol.accessor('role', { header: 'Role' }),
   pinnedCol.accessor('level', { header: 'Level', meta: { kind: 'text' } }),
   pinnedCol.accessor('location', { header: 'Location', meta: { kind: 'text' } }),
   pinnedCol.accessor('startDate', {
@@ -244,11 +245,12 @@ function PinnedTableSection({ shotState }: ScenarioProps) {
         enablePinning
         initialColumnPinning={{ start: ['name'] }}
         striped
+        skeletonRows={PINNED_EMPLOYEES.length}
         {...(query !== undefined && { query })}
         emptyState={tableEmptyState({
           noun: 'staff',
           total: PINNED_EMPLOYEES.length,
-          cause: 'No staff records were returned for this roster.',
+          cause: 'No staff records were returned by the roster feed. Reload to fetch them again.',
           filtered: false,
         })}
       />

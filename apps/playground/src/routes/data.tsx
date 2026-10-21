@@ -17,7 +17,9 @@ const LIFTS: Lift[] = [
   { id: 6, exercise: 'Overhead press', block: 'Volume', load: 60 },
 ]
 
-const PRESET_FILTERS = [{ id: 'exercise', value: 'Squat' }]
+// A facet the Exercise column does not repeat: every kept row still names a different lift.
+const PRESET_FILTERS = [{ id: 'block', value: 'Strength' }]
+const PRESET_ROWS = LIFTS.filter((l) => l.block === 'Strength').length
 
 const lift = createColumnHelper<Lift>()
 const LIFT_COLUMNS = [
@@ -29,12 +31,16 @@ const LIFT_COLUMNS = [
 /** The full toolbar (SPEC § 6.6): title, search, two facets and an action on one 28px row. */
 function ToolbarTable({ shotState }: { shotState: ShotState | undefined }) {
   const query = queryFor(shotState, retryCopy('workout log'))
-  const reset = useFilterReset(PRESET_FILTERS, shotState === undefined)
+  const reset = useFilterReset(
+    shotState === undefined ? PRESET_FILTERS : [],
+    shotState === undefined,
+  )
   return (
     <div data-shot="table-toolbar" data-shot-states="empty loading error">
       <BasaltDataTable
         key={reset.tableKey}
-        title="Workouts, strength and volume blocks"
+        title="Workouts, last 30 days"
+        skeletonRows={PRESET_ROWS}
         // Rows only at rest: the empty branch needs `data` empty, the others have no rows yet.
         data={shotState === undefined ? LIFTS : []}
         initialColumnFilters={reset.initialColumnFilters}
@@ -44,7 +50,7 @@ function ToolbarTable({ shotState }: { shotState: ShotState | undefined }) {
         emptyState={tableEmptyState({
           noun: 'workouts',
           total: LIFTS.length,
-          cause: 'No workout was logged in this window. Log one to see it here.',
+          cause: 'No workout was logged in the last 30 days. Log one to see it here.',
           filtered: reset.filtered,
           onClear: reset.clear,
         })}

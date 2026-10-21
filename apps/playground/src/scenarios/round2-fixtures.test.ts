@@ -142,7 +142,8 @@ describe('W42 r1 tables', () => {
     expect(table?.textContent).toContain('yesterday')
     expect(table?.textContent).not.toContain('End (UTC)')
     const time = table?.querySelector('time')
-    expect(time?.getAttribute('aria-label')).toBe('Thu, 15 Oct 2026, 09:30 UTC')
+    expect(time?.getAttribute('aria-label')).toBeNull()
+    expect(time?.textContent).toContain(', Thu, 15 Oct 2026, 09:30 UTC')
     expect(time?.getAttribute('tabindex')).toBe('0')
     expect(table?.querySelector('td[data-kind="relative-time"]')).not.toBeNull()
     expect(table?.querySelector('[data-kind="status"]')).toBeNull()
@@ -172,7 +173,7 @@ describe('W42 r1 tables', () => {
     expect(anchor(c, 'session-log')?.querySelector('[data-shot-tooltip]')).not.toBeNull()
   })
 
-  it('S2 date cell is a focusable <time> named by its full date', () => {
+  it('S2 date cell is a focusable <time> whose text carries its full date', () => {
     const c = mount(createElement(TrainingScenario, { shotState: undefined }))
     const time = anchor(c, 'session-log')?.querySelector('time')
     expect(time?.getAttribute('tabindex')).toBe('0')
@@ -183,7 +184,8 @@ describe('W42 r1 tables', () => {
       year: 'numeric',
       timeZone: 'UTC',
     })
-    expect(time?.getAttribute('aria-label')).toBe(newest)
+    expect(time?.getAttribute('aria-label')).toBeNull()
+    expect(time?.textContent).toContain(`, ${newest}`)
   })
 
   it('S2 empty log states the cause and has no dead action', () => {

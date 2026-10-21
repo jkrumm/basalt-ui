@@ -29,4 +29,21 @@ describe('DataDemoPage copy', () => {
       expect(text).not.toMatch(/is empty|once they are added/)
     }
   })
+
+  it('names the first tab for what it shows and states the employees cause', () => {
+    const c = mount(undefined)
+    expect(c.textContent).toContain('Tables')
+    const empty = mount('empty')
+    const text = empty.querySelector('[data-shot="employees-table"]')?.textContent ?? ''
+    expect(text).toContain('Reload to fetch them again')
+  })
+
+  it('leaves Role a one-line column: only notes wrap', () => {
+    const c = mount(undefined)
+    const roster = c.querySelector('[data-shot="roster-table"]')
+    const role = [...(roster?.querySelectorAll('th') ?? [])].find((h) => h.textContent === 'Role')
+    expect(role).toBeDefined()
+    const cell = roster?.querySelector('tbody tr td:nth-child(3)')
+    expect(cell?.className ?? '').not.toMatch(/wrap/i)
+  })
 })

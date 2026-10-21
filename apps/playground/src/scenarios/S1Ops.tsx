@@ -312,6 +312,7 @@ function OpsOutages({ shotState }: ScenarioProps) {
           data={shotState === undefined ? OUTAGE_ROWS : NO_OUTAGES}
           columns={columns}
           enableSorting={false}
+          skeletonRows={OUTAGE_ROWS.length}
           {...(query !== undefined && { query })}
           emptyState={<span>No outage {WINDOW_LABEL}. The line stayed up.</span>}
         />
