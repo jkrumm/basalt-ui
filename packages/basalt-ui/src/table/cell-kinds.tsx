@@ -73,6 +73,21 @@ export function planColumnSizing<T extends RowData>(
   return { fitIds, spacer: slackId === undefined }
 }
 
+/**
+ * A bar's width by kind. A share (`100%`) of a content-sized cell is that cell's own width, so the
+ * fit columns take it; the slack column has no width of its own and takes a fixed length.
+ */
+const SKELETON_WIDTH: Record<DataTableColumnKind | 'kindless', string> = {
+  number: '3rem',
+  money: '3rem',
+  status: '4.5rem',
+  'relative-time': '4.5rem',
+  meter: '4rem',
+  entity: '100%',
+  text: '10rem',
+  kindless: '100%',
+}
+
 /** A loading bar shaped like the kind's value: a figure short and flush right, a chip chip-sized. */
 export function KindSkeleton({
   kind,
@@ -82,20 +97,7 @@ export function KindSkeleton({
   right: boolean
 }): ReactNode {
   const chip = kind === 'status'
-  const width =
-    kind === 'number' || kind === 'money'
-      ? '3rem'
-      : chip || kind === 'relative-time'
-        ? '4.5rem'
-        : kind === 'meter'
-          ? '4rem'
-          : kind === 'entity'
-            ? '9rem'
-            : kind === 'text'
-              ? '10rem'
-              : '6rem'
-  // A fixed length, never a share of the cell: a content-sized column has no width to take a share
-  // of, and the slack column's is the whole container. `maw` keeps it inside a narrow cell.
+  const width = SKELETON_WIDTH[kind ?? 'kindless']
   return (
     <Skeleton
       height={chip ? 20 : 16}

@@ -172,6 +172,31 @@ describe('empty table pager', () => {
     const loading = mount({ data: [], isLoading: true, enablePagination: true })
     expect(loading.container.textContent).toContain('Showing')
   })
+
+  test('a filter that matches nothing keeps the footer; only a table with no rows drops it', () => {
+    const { container } = mount({
+      enablePagination: true,
+      initialColumnFilters: [{ id: 'name', value: 'no such row' }],
+    })
+    expect(container.textContent).toContain('Showing 0–0 of 0')
+    expect(container.querySelector('.mantine-Pagination-root')).not.toBeNull()
+  })
+
+  test('a server page past the end keeps its pager and states no range', () => {
+    const { container } = mount({
+      data: [],
+      enablePagination: true,
+      manualPagination: true,
+      manualSorting: true,
+      rowCount: 7,
+      initialPagination: { pageIndex: 9, pageSize: 10 },
+    })
+    expect(container.querySelector('.mantine-Pagination-root')).not.toBeNull()
+    const range = [...container.querySelectorAll('p')].find((p) =>
+      (p.textContent ?? '').startsWith('Showing'),
+    )
+    expect(range?.style.visibility).toBe('hidden')
+  })
 })
 
 describe('row chrome', () => {

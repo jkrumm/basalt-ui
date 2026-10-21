@@ -1992,6 +1992,14 @@ export function BasaltDataTable<T extends RowData>(props: BasaltDataTableProps<T
   const total = table.getRowCount()
   const rangeStart = total === 0 ? 0 : paginationState.pageIndex * paginationState.pageSize + 1
   const rangeEnd = Math.min((paginationState.pageIndex + 1) * paginationState.pageSize, total)
+  // A page past the end (server-driven, the count shrank) keeps its pager so the reader can step
+  // back, but states no range: "Showing 91–7 of 7" is a contradiction.
+  const rangeInBounds = rangeStart <= rangeEnd || total === 0
+  // Only a table that has NO rows drops its footer: a filter or search that matches nothing keeps
+  // it (the pager and "Showing 0–0 of 0" belong to a table that has rows to page). Loading and
+  // error keep the box too, the rows are about to land.
+  const unfilteredCount = manualPagination ? total : table.getPreFilteredRowModel().rows.length
+  const showFooter = enablePagination && (stateless || unfilteredCount > 0)
 
   return (
     <div
@@ -2149,10 +2157,7 @@ export function BasaltDataTable<T extends RowData>(props: BasaltDataTableProps<T
           )}
         </div>
       )}
-      {/* An empty table has nothing to page: no pager, no "Showing 0–0 of 0". Loading and error keep
-          the footer's box (the rows are about to land); empty is a settled state, so there is no
-          later arrival the footer's height would be holding room for. */}
-      {enablePagination && (stateless || table.getRowCount() > 0) && (
+      {showFooter && (
         <Group
           className={cx(classNames?.footer)}
           justify="space-between"
@@ -2163,7 +2168,11 @@ export function BasaltDataTable<T extends RowData>(props: BasaltDataTableProps<T
         >
           <Text
             // Hidden, not removed: the footer keeps its height and nothing shifts when rows land.
-            style={stateless ? { ...RANGE_LABEL_STYLE, visibility: 'hidden' } : RANGE_LABEL_STYLE}
+            style={
+              stateless || !rangeInBounds
+                ? { ...RANGE_LABEL_STYLE, visibility: 'hidden' }
+                : RANGE_LABEL_STYLE
+            }
           >
             Showing {rangeStart}–{rangeEnd}
             {totalIsAuthoritative ? ` of ${total}` : ''}
