@@ -64,11 +64,8 @@
     },
     "loading-state": {
       "anchor": "table",
-      "before": {
-        "click": "[data-compare=\"table\"] .mantine-Switch-root"
-      },
-      "note": "BasaltDataTable skeleton row, behind the isLoading toggle",
-      "route": "/data",
+      "note": "BasaltDataTable skeleton row, behind the `shot-state=loading` search param",
+      "route": "/data?shot-state=loading",
       "rowLike": true,
       "select": "tbody tr"
     },
