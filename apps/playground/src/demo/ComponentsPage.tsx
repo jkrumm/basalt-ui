@@ -191,6 +191,7 @@ function MetricsTable({ shotState }: { shotState?: ShotState | undefined }) {
       columns={METRIC_COLUMNS}
       striped
       isLoading={shotState === 'loading'}
+      skeletonRows={TABLE_ROWS.length}
       {...(shotState === 'error' && { query: FAILED_QUERY })}
       emptyState={
         <EmptyState
