@@ -16,6 +16,7 @@ import {
   LOAD_RATIO,
   MONTHLY_SESSIONS,
   MONTHS_HIT,
+  MTD_STRENGTH_LIFTS,
   MONTH_DAYS,
   PACE_GAP,
   PACE_SESSIONS,
@@ -150,6 +151,10 @@ describe('session log', () => {
       const top = TOP_LIFTS.find((l) => l.name === exercise)
       expect(sum(rows.map((r) => r.volumeKg))).toBe(top?.volumeKg ?? Number.NaN)
     }
+  })
+
+  it('lists exactly the lifts of the in-window strength sessions', () => {
+    expect(SESSION_LOG).toHaveLength(MTD_STRENGTH_LIFTS)
   })
 
   it('every row falls inside the month-to-date window', () => {

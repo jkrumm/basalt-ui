@@ -8,10 +8,12 @@ import type { ComponentType, ReactElement } from 'react'
 import { afterEach, describe, expect, it } from 'bun:test'
 import { ComponentsSurfaces } from '../demo/ComponentsPage'
 import { STUCK } from './agents-data'
+import { WINDOW_LABEL as OPS_WINDOW_LABEL } from './ops-data'
 import { OpsScenario } from './S1Ops'
 import { AgentsScenario } from './S3Agents'
 import { SpendScenario } from './S4Spend'
-import { TrainingScenario } from './S2Training'
+import { NO_STRENGTH, TrainingScenario } from './S2Training'
+import { SESSION_LOG } from './training-data'
 import type { ShotState } from './shot-state'
 
 afterEach(cleanup)
@@ -174,13 +176,20 @@ describe('W42 r1 tables', () => {
     const c = mount(createElement(TrainingScenario, { shotState: undefined }))
     const time = anchor(c, 'session-log')?.querySelector('time')
     expect(time?.getAttribute('tabindex')).toBe('0')
-    expect(time?.getAttribute('aria-label')).toBe('Wed, 14 Oct 2026')
+    const newest = SESSION_LOG[0]?.date.toLocaleDateString('en-GB', {
+      weekday: 'short',
+      day: 'numeric',
+      month: 'short',
+      year: 'numeric',
+      timeZone: 'UTC',
+    })
+    expect(time?.getAttribute('aria-label')).toBe(newest)
   })
 
   it('S2 empty log states the cause and has no dead action', () => {
     const c = mount(createElement(TrainingScenario, { shotState: 'empty' }))
     const log = anchor(c, 'session-log')
-    expect(log?.textContent).toContain('No strength session logged 1–16 Oct.')
+    expect(log?.textContent).toContain(NO_STRENGTH)
     expect(log?.textContent).not.toMatch(/filter/i)
     expect([...(log?.querySelectorAll('button') ?? [])].map((b) => b.textContent)).not.toContain(
       'Log a lift',
@@ -191,7 +200,7 @@ describe('W42 r1 tables', () => {
 describe('W42 r2 fixtures', () => {
   it('S2 empty log and empty top lifts say the gap the same way', () => {
     const c = mount(createElement(TrainingScenario, { shotState: 'empty' }))
-    const gap = 'No strength session logged 1–16 Oct.'
+    const gap = NO_STRENGTH
     expect(anchor(c, 'session-log')?.textContent).toContain(gap)
     expect(anchor(c, 'top-lifts')?.textContent).toContain(gap)
   })
@@ -207,7 +216,7 @@ describe('W42 r2 fixtures', () => {
 
   it('S1 empty outages names the range without a preposition', () => {
     const table = anchor(mount(createElement(OpsScenario, { shotState: 'empty' })), 'outages')
-    expect(table?.textContent).toContain('No outage 9 Oct–16 Oct.')
+    expect(table?.textContent).toContain(`No outage ${OPS_WINDOW_LABEL}.`)
     expect(table?.textContent).not.toContain('No outage in')
   })
 })
