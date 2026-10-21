@@ -127,10 +127,21 @@ describe('column sizing', () => {
     expect(container.querySelectorAll('tbody tr:first-child td')).toHaveLength(3)
   })
 
-  test('a kindless column keeps its auto share: no fit marks, no spacer', () => {
+  test('a table with no kinds renders as before: no fit marks, no spacer', () => {
     const { container } = mount({ columns: [col.accessor('note', { header: 'Note' })] })
     expect(container.querySelectorAll('[data-fit]')).toHaveLength(0)
     expect(container.querySelectorAll('thead th')).toHaveLength(1)
+  })
+
+  test('beside an entity column a kindless column fits its content too', () => {
+    const { container } = mount({
+      columns: [
+        col.accessor('name', { header: 'Name', meta: { kind: 'entity' } }),
+        col.accessor('note', { header: 'Note' }),
+      ],
+    })
+    const heads = [...container.querySelectorAll('thead th')]
+    expect(heads.map((th) => th.hasAttribute('data-fit'))).toEqual([false, true])
   })
 })
 
