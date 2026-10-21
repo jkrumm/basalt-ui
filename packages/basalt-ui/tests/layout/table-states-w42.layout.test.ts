@@ -71,9 +71,9 @@ layout('table sizing and state chrome', () => {
     const size = (selector: string) => p.computed(selector, 'font-size')
     const range = await p.raw.evaluate((root) => {
       const el = [...document.querySelectorAll(`${root} p`)].find((node) =>
-        node.textContent.startsWith('Showing'),
-      ) as HTMLElement
-      return getComputedStyle(el).fontSize
+        (node.textContent ?? '').startsWith('Showing'),
+      )
+      return getComputedStyle(el as Element).fontSize
     }, ROOT)
     expect(range).toBe(await size(`${TABLE} thead th`))
     expect(await size(`${ROOT} .mantine-Pagination-control`)).toBe(await size(`${TABLE} tbody td`))
@@ -91,7 +91,7 @@ layout('table sizing and state chrome', () => {
     const state = await q.raw.evaluate((root) => {
       const host = document.querySelector(root) as HTMLElement
       const range = [...host.querySelectorAll('p')].find((el) =>
-        el.textContent.startsWith('Showing'),
+        (el.textContent ?? '').startsWith('Showing'),
       )
       const footer = host.querySelector('.mantine-Select-root')?.closest('.mantine-Group-root')
       return {

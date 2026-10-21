@@ -61,15 +61,10 @@ export function W42StatesFixture({
           ),
         })}
         {...(longError === true && { data: [], query: LONG_ERROR_QUERY })}
-        {...(pinned === true && {
-          stickyHeader: true,
+        {...(pinned !== undefined && {
           enablePinning: true,
           initialColumnPinning: { start: ['name'] },
-        })}
-        {...(pinned === 'striped-page' && {
-          enablePinning: true,
-          initialColumnPinning: { start: ['name'] },
-          striped: true,
+          ...(pinned === true ? { stickyHeader: true } : { striped: true }),
         })}
         enablePagination
         initialPagination={{ pageIndex: 0, pageSize: 5 }}
