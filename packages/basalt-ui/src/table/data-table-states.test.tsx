@@ -110,11 +110,26 @@ describe('skeleton rows', () => {
 })
 
 describe('column sizing', () => {
-  test('with an entity column the slack is its own: the others fit, no spacer', () => {
+  test('an entity column is content-sized: every column fits, a trailing spacer takes the slack', () => {
     const { container } = mount()
-    const fit = [...container.querySelectorAll('thead th')].map((th) => th.hasAttribute('data-fit'))
-    expect(fit).toEqual([false, true, true])
-    expect(container.querySelectorAll('thead th')).toHaveLength(3)
+    const heads = [...container.querySelectorAll('thead th')]
+    expect(heads.map((th) => th.hasAttribute('data-fit'))).toEqual([true, true, true, false])
+    expect(heads[3]?.getAttribute('aria-hidden')).toBe('true')
+    expect(heads[3]?.textContent).toBe('')
+  })
+
+  test('the last text column takes the slack: no spacer, the others fit', () => {
+    const { container } = mount({
+      columns: [
+        col.accessor('name', { header: 'Name', meta: { kind: 'text' } }),
+        col.accessor('when', { header: 'When', meta: { kind: 'relative-time' } }),
+        col.accessor('cost', { header: 'Cost', meta: { kind: 'money' } }),
+        col.accessor('note', { header: 'Note', meta: { kind: 'text' } }),
+      ],
+    })
+    const heads = [...container.querySelectorAll('thead th')]
+    expect(heads).toHaveLength(4)
+    expect(heads.map((th) => th.hasAttribute('data-fit'))).toEqual([false, true, true, false])
   })
 
   test('without an entity or text column a trailing spacer takes the slack', () => {
@@ -145,7 +160,17 @@ describe('column sizing', () => {
       ],
     })
     const heads = [...container.querySelectorAll('thead th')]
-    expect(heads.map((th) => th.hasAttribute('data-fit'))).toEqual([false, true])
+    expect(heads.map((th) => th.hasAttribute('data-fit'))).toEqual([true, true, false])
+  })
+})
+
+describe('empty table pager', () => {
+  test('an empty table drops the pager and the range; a loading one keeps its footer', () => {
+    const empty = mount({ data: [], enablePagination: true })
+    expect(empty.container.textContent).not.toContain('Showing')
+    expect(empty.container.querySelector('.mantine-Pagination-root')).toBeNull()
+    const loading = mount({ data: [], isLoading: true, enablePagination: true })
+    expect(loading.container.textContent).toContain('Showing')
   })
 })
 

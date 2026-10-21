@@ -1,9 +1,10 @@
 /**
  * Wave 42: column sizing and state chrome as real geometry (SPEC § 6.6, § 6.12).
  *
- * - At 1440 a 4-column kinded table with an entity column spans its container and its data columns
+ * - At 1440 a 4-column kinded table (entity, no text column) spans its container and its data columns
  *   sit next to each other: the gap between two adjacent values is at most twice the cell inset plus
  *   the widest content, not a quarter of the table.
+ * - A paginated table's range label reads the header's size and its pager the cells' size.
  * - Loading hides the count chip and the pager range but keeps the footer's height; the skeleton is
  *   one page of rows.
  * - An active filter pill's border and the pager's current page are ink, not the accent.
@@ -41,10 +42,10 @@ layout('table sizing and state chrome', () => {
       const heads = [...table.querySelectorAll('thead th')] as HTMLElement[]
       const wrapper = table.parentElement as HTMLElement
       const cells = [...table.querySelectorAll('tbody tr:first-child td')] as HTMLElement[]
-      const inset = Number.parseFloat(getComputedStyle(cells[1] as HTMLElement).paddingLeft)
+      const inset = Number.parseFloat(getComputedStyle(cells[0] as HTMLElement).paddingLeft)
       const widest = Math.max(
-        ...heads.slice(1).map((th) => (th.querySelector('*') ?? th).scrollWidth),
-        ...cells.slice(1).map((td) => td.scrollWidth),
+        ...heads.slice(0, -1).map((th) => (th.querySelector('*') ?? th).scrollWidth),
+        ...cells.slice(0, -1).map((td) => td.scrollWidth),
       )
       return {
         table: table.getBoundingClientRect().width,
@@ -55,12 +56,27 @@ layout('table sizing and state chrome', () => {
       }
     }, TABLE)
     expect(geometry.table).toBeGreaterThanOrEqual(geometry.wrapper - 1)
-    const [entity, ...data] = geometry.widths as [number, ...number[]]
-    // The slack is the entity column's; every other column is its content plus its insets.
-    expect(entity).toBeGreaterThan(data.reduce((sum, width) => sum + width, 0))
+    // The slack is the trailing spacer's; every data column (the entity too) is its content plus
+    // its insets, so a name sits beside its figures.
+    const data = geometry.widths.slice(0, -1)
+    const spacer = geometry.widths.at(-1) ?? 0
+    expect(spacer).toBeGreaterThan(data.reduce((sum, width) => sum + width, 0))
     for (const width of data) {
       expect(width).toBeLessThanOrEqual(geometry.inset * 2 + geometry.widest)
     }
+  })
+
+  test("a paginated table reads in few sizes: the range is the header's, the pager the cells' (1440)", async () => {
+    const p = await openFixture({ ...base, w42States: {} }, DESKTOP_1440)
+    const size = (selector: string) => p.computed(selector, 'font-size')
+    const range = await p.raw.evaluate((root) => {
+      const el = [...document.querySelectorAll(`${root} p`)].find((node) =>
+        node.textContent.startsWith('Showing'),
+      ) as HTMLElement
+      return getComputedStyle(el).fontSize
+    }, ROOT)
+    expect(range).toBe(await size(`${TABLE} thead th`))
+    expect(await size(`${ROOT} .mantine-Pagination-control`)).toBe(await size(`${TABLE} tbody td`))
   })
 
   test('loading: no count, no range, the footer keeps its height, one page of skeleton rows', async () => {
@@ -168,6 +184,48 @@ layout('table sizing and state chrome', () => {
       }, TABLE)
       expect(fills[0], scheme).toBe(fills[1])
     }
+  })
+
+  test("an explicitly pinned header cell of a striped table keeps the header's fill (1440)", async () => {
+    for (const scheme of ['light', 'dark'] as const) {
+      const p = await openFixture(
+        { ...base, colorScheme: scheme, w42States: { pinned: 'striped-page' } },
+        DESKTOP_1440,
+      )
+      const tint = await p.raw.evaluate(
+        (selector) =>
+          getComputedStyle(
+            document.querySelector(`${selector} thead th`) as Element,
+          ).getPropertyValue('--pinned-tint'),
+        TABLE,
+      )
+      // The stripe's tint is a body-row state: the header cell layers nothing over its fill.
+      expect(tint.trim(), scheme).toBe('transparent')
+    }
+  })
+
+  test('the footer controls share one height: the page-size Select and the page buttons (1440)', async () => {
+    const p = await openFixture({ ...base, w42States: {} }, DESKTOP_1440)
+    const heights = await p.raw.evaluate((root) => {
+      const h = (selector: string) =>
+        (document.querySelector(`${root} ${selector}`) as HTMLElement).getBoundingClientRect()
+          .height
+      return { select: h('.mantine-Select-input'), pager: h('.mantine-Pagination-control') }
+    }, ROOT)
+    expect(Math.abs(heights.select - heights.pager)).toBeLessThanOrEqual(1)
+  })
+
+  test('skeleton bars take their column shape, not the width of the slack (1440)', async () => {
+    const p = await openFixture({ ...base, w42States: { loading: true } }, DESKTOP_1440)
+    const widths = await p.raw.evaluate(
+      (selector) =>
+        [...document.querySelectorAll(`${selector} tbody .mantine-Skeleton-root`)].map(
+          (bar) => bar.getBoundingClientRect().width,
+        ),
+      TABLE,
+    )
+    expect(widths.length).toBeGreaterThan(0)
+    for (const width of widths) expect(width).toBeLessThanOrEqual(160)
   })
 
   test('a long error string wraps inside the table width at 390', async () => {

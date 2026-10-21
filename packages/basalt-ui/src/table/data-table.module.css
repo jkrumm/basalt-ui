@@ -318,19 +318,21 @@
   --basalt-pin-fill: var(--mantine-color-body);
 }
 
-tr[data-striped='odd']:nth-of-type(odd) > .pinnedLayer,
-tr[data-striped='even']:nth-of-type(even) > .pinnedLayer {
+/* Body rows only: Mantine stamps `data-striped` / `data-hover` on the header's `<tr>` too, and an
+   unscoped rule tinted the pinned `<th>` of an odd first row — a grey block in the header. */
+tbody > tr[data-striped='odd']:nth-of-type(odd) > .pinnedLayer,
+tbody > tr[data-striped='even']:nth-of-type(even) > .pinnedLayer {
   --pinned-tint: var(--table-striped-color);
 }
 
 @media (hover: hover) {
-  tr[data-hover]:hover > .pinnedLayer {
+  tbody > tr[data-hover]:hover > .pinnedLayer {
     --pinned-tint: var(--tr-hover-bg);
   }
 }
 
 @media (hover: none) {
-  tr[data-hover]:active > .pinnedLayer {
+  tbody > tr[data-hover]:active > .pinnedLayer {
     --pinned-tint: var(--tr-hover-bg);
   }
 }

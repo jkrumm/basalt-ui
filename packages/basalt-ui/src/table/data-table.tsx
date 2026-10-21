@@ -1033,10 +1033,11 @@ const NUMERIC_CELL_STYLE: CSSProperties = {
   color: 'var(--vx-ink)',
 }
 
-// docs/DESIGN-SPEC.md §3: mono/micro-label idiom for the pagination bar's row-count label.
+// docs/DESIGN-SPEC.md §3: mono/micro-label idiom for the pagination bar's row-count label — the
+// header's own micro size, so a paginated table reads in three sizes (micro, sm, the field's 16).
 const RANGE_LABEL_STYLE: CSSProperties = {
   fontFamily: 'var(--mantine-font-family-monospace)',
-  fontSize: VX.text.xs,
+  fontSize: VX.text.micro,
   fontVariantNumeric: 'tabular-nums',
   color: 'var(--vx-faint)',
 }
@@ -2136,7 +2137,10 @@ export function BasaltDataTable<T extends RowData>(props: BasaltDataTableProps<T
           )}
         </div>
       )}
-      {enablePagination && (
+      {/* An empty table has nothing to page: no pager, no "Showing 0–0 of 0". Loading and error keep
+          the footer's box (the rows are about to land); empty is a settled state, so there is no
+          later arrival the footer's height would be holding room for. */}
+      {enablePagination && (stateless || table.getRowCount() > 0) && (
         <Group
           className={cx(classNames?.footer)}
           justify="space-between"
@@ -2175,11 +2179,13 @@ export function BasaltDataTable<T extends RowData>(props: BasaltDataTableProps<T
                 size="sm"
                 // Mantine writes `--pagination-control-size` inline from `size`, which a class cannot
                 // outrank — `vars` is the seam. The `ctl` height of the dense group above: 28 at a
-                // fine pointer, 32 at a coarse one, the Select's own height either way.
+                // fine pointer, 32 at a coarse one, the Select's own height either way. The labels
+                // read `sm`, the cells' size, whatever the `size` prop maps to.
                 vars={() => ({
                   root: {
                     '--pagination-control-size':
                       'calc(var(--vx-space-control-height-ctl) * var(--mantine-scale))',
+                    '--pagination-control-fz': 'var(--vx-text-sm)',
                   },
                 })}
                 radius="md"

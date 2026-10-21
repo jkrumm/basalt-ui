@@ -36,7 +36,7 @@ export function W42StatesFixture({
   longError,
 }: {
   loading?: true
-  pinned?: true
+  pinned?: true | 'striped-page'
   longError?: true
 }): ReactElement {
   const Wrap = pinned === true ? Card : Box
@@ -52,6 +52,11 @@ export function W42StatesFixture({
           stickyHeader: true,
           enablePinning: true,
           initialColumnPinning: { start: ['name'] },
+        })}
+        {...(pinned === 'striped-page' && {
+          enablePinning: true,
+          initialColumnPinning: { start: ['name'] },
+          striped: true,
         })}
         enablePagination
         initialPagination={{ pageIndex: 0, pageSize: 5 }}

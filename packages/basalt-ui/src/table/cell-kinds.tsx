@@ -49,11 +49,12 @@ export function kindAlign(kind: DataTableColumnKind | undefined): DataTableAlign
 
 /**
  * Column sizing law (SPEC § 6.6): a data column is as wide as its header or widest cell (body cells
- * hold one line), and the slack of a wide container goes to ONE column — the first `entity`/`text`
- * one, else a trailing spacer — so a value sits beside its name instead of a third of the table
- * away. `fixedIds` (the checkbox and actions columns) fit too but are not data. A later `text`
- * column keeps its auto share (it may wrap), and a table with no entity/text column but a kindless
- * one lets that column absorb the slack, so a table that never opted into kinds renders as before.
+ * hold one line), and the slack of a wide container goes to ONE place — the LAST `text` column (a
+ * notes/detail column that may wrap), else a trailing spacer after the last data column — so a name
+ * sits beside its figures, never a third of the table away. An `entity` column is content-sized.
+ * `fixedIds` (the checkbox and actions columns) fit too but are not data. An earlier `text` column
+ * keeps its auto share (it may wrap), and a table where no column opted into a kind renders as
+ * before: no fit marks, no spacer.
  */
 export function planColumnSizing<T extends RowData>(
   columns: readonly Column<BasaltTableFeatures, T, unknown>[],
@@ -61,18 +62,15 @@ export function planColumnSizing<T extends RowData>(
 ): { fitIds: ReadonlySet<string>; spacer: boolean } {
   const data = columns.filter((column) => !fixedIds.has(column.id))
   const kinds = new Map(data.map((column) => [column.id, resolveKind(column)]))
-  const slackId = data.find((column) => {
-    const kind = kinds.get(column.id)
-    return kind === 'entity' || kind === 'text'
-  })?.id
-  const absorbs = slackId !== undefined || data.some((column) => kinds.get(column.id) === undefined)
   const fitIds = new Set(columns.filter((column) => fixedIds.has(column.id)).map((c) => c.id))
+  const hasKinds = data.some((column) => kinds.get(column.id) !== undefined)
+  if (!hasKinds) return { fitIds, spacer: false }
+  const slackId = data.findLast((column) => kinds.get(column.id) === 'text')?.id
   for (const column of data) {
-    const kind = kinds.get(column.id)
-    if (column.id === slackId || kind === 'text') continue
-    if (kind !== undefined || slackId !== undefined) fitIds.add(column.id)
+    if (column.id === slackId || kinds.get(column.id) === 'text') continue
+    fitIds.add(column.id)
   }
-  return { fitIds, spacer: data.length > 0 && !absorbs }
+  return { fitIds, spacer: slackId === undefined }
 }
 
 /** A loading bar shaped like the kind's value: a figure short and flush right, a chip chip-sized. */
@@ -92,9 +90,21 @@ export function KindSkeleton({
         : kind === 'meter'
           ? '4rem'
           : kind === 'entity'
-            ? '70%'
-            : '100%'
-  return <Skeleton height={chip ? 20 : 16} radius="sm" w={width} {...(right && { ml: 'auto' })} />
+            ? '9rem'
+            : kind === 'text'
+              ? '10rem'
+              : '6rem'
+  // A fixed length, never a share of the cell: a content-sized column has no width to take a share
+  // of, and the slack column's is the whole container. `maw` keeps it inside a narrow cell.
+  return (
+    <Skeleton
+      height={chip ? 20 : 16}
+      radius="sm"
+      w={width}
+      maw="100%"
+      {...(right && { ml: 'auto' })}
+    />
+  )
 }
 
 const KIND_CLASS: Record<DataTableColumnKind, string> = {
