@@ -3,10 +3,11 @@
  * for the 390 picker.
  */
 import { MantineProvider } from '@mantine/core'
-import { cleanup, render } from '@testing-library/react'
+import { cleanup, render, within } from '@testing-library/react'
 import { createElement } from 'react'
 import { afterEach, describe, expect, it } from 'bun:test'
 import { DataDemoPage } from './DataDemoPage'
+import { RELOAD_STEP } from './table-copy'
 
 afterEach(cleanup)
 
@@ -30,20 +31,36 @@ describe('DataDemoPage copy', () => {
     }
   })
 
-  it('names the first tab for what it shows and states the employees cause', () => {
-    const c = mount(undefined)
-    expect(c.textContent).toContain('Tables')
-    const empty = mount('empty')
-    const text = empty.querySelector('[data-shot="employees-table"]')?.textContent ?? ''
-    expect(text).toContain('Reload to fetch them again')
+  it('names the first tab for what it shows, with no Employees tab', () => {
+    const { container, queryByRole, getByRole } = render(
+      createElement(MantineProvider, null, createElement(DataDemoPage, { shotState: undefined })),
+    )
+    // `ViewTabs` draws the switch as a SegmentedControl radiogroup (a phone Select past three options).
+    const tabs = within(getByRole('radiogroup', { name: 'Demo' }))
+      .getAllByRole('radio')
+      .map((t) => t.getAttribute('value'))
+    expect(tabs[0]).toBe('overview')
+    expect(getByRole('radio', { name: 'Tables' })).toBeDefined()
+    expect(queryByRole('radio', { name: 'Employees' })).toBeNull()
+    expect(container.querySelector('[data-shot="employees-table"]')).not.toBeNull()
+  })
+
+  it('states the employees cause and its one step', () => {
+    const text = mount('empty').querySelector('[data-shot="employees-table"]')?.textContent ?? ''
+    expect(text).toContain(RELOAD_STEP)
   })
 
   it('leaves Role a one-line column: only notes wrap', () => {
-    const c = mount(undefined)
-    const roster = c.querySelector('[data-shot="roster-table"]')
-    const role = [...(roster?.querySelectorAll('th') ?? [])].find((h) => h.textContent === 'Role')
-    expect(role).toBeDefined()
-    const cell = roster?.querySelector('tbody tr td:nth-child(3)')
-    expect(cell?.className ?? '').not.toMatch(/wrap/i)
+    const roster = mount(undefined).querySelector('[data-shot="roster-table"]')
+    expect(roster).not.toBeNull()
+    const heads = [...(roster?.querySelectorAll('th') ?? [])].map((h) => h.textContent)
+    const cellKind = (name: string) =>
+      roster
+        ?.querySelector(`tbody tr td:nth-child(${heads.indexOf(name) + 1})`)
+        ?.getAttribute('data-kind')
+    expect(heads).toContain('Role')
+    // Positive control: a column that opts into `kind: 'text'` carries it on its cells.
+    expect(cellKind('Department')).toBe('text')
+    expect(cellKind('Role')).not.toBe('text')
   })
 })

@@ -31,10 +31,8 @@ const LIFT_COLUMNS = [
 /** The full toolbar (SPEC § 6.6): title, search, two facets and an action on one 28px row. */
 function ToolbarTable({ shotState }: { shotState: ShotState | undefined }) {
   const query = queryFor(shotState, retryCopy('workout log'))
-  const reset = useFilterReset(
-    shotState === undefined ? PRESET_FILTERS : [],
-    shotState === undefined,
-  )
+  const atRest = shotState === undefined
+  const reset = useFilterReset(atRest ? PRESET_FILTERS : [], atRest)
   return (
     <div data-shot="table-toolbar" data-shot-states="empty loading error">
       <BasaltDataTable
@@ -42,7 +40,7 @@ function ToolbarTable({ shotState }: { shotState: ShotState | undefined }) {
         title="Workouts, last 30 days"
         skeletonRows={PRESET_ROWS}
         // Rows only at rest: the empty branch needs `data` empty, the others have no rows yet.
-        data={shotState === undefined ? LIFTS : []}
+        data={atRest ? LIFTS : []}
         initialColumnFilters={reset.initialColumnFilters}
         onGlobalFilterChange={reset.onGlobalFilterChange}
         onColumnFiltersChange={reset.onColumnFiltersChange}
@@ -87,7 +85,7 @@ function DataRoute() {
   return (
     <Stack gap="md">
       <Paper>
-        <ToolbarTable shotState={search['shot-state']} />
+        <ToolbarTable key={search['shot-state'] ?? 'rest'} shotState={search['shot-state']} />
       </Paper>
       <DataDemoPage shotState={search['shot-state']} />
     </Stack>

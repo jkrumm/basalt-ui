@@ -42,6 +42,7 @@ import {
   MONTHS_HIT,
   MONTH_END_LABEL,
   MONTH_NAME,
+  NO_STRENGTH,
   PACE_GAP,
   PACE_SESSIONS,
   PRIOR_WINDOW_LABEL,
@@ -74,8 +75,6 @@ const TYPE_COLOR: Record<SessionType, string> = {
 
 const TRAINING_EMPTY = 'No sessions logged this month. Log a workout to start the month.'
 const retry = (): string => retryCopy('training log')
-/** One sentence for the one gap: the lift log and the lift ranking both read it. */
-export const NO_STRENGTH = `No strength session logged ${WINDOW_LABEL}. Log a workout to see it here.`
 
 /** `Low under 60, Fair 60–79, Good 80+` — the legend, built from the zones the Meter draws. */
 const READINESS_INFO = `Mean of the four contributors below, each scored 0–100: ${READINESS_ZONES.map(
