@@ -28,6 +28,23 @@ export const typoValue = col.accessor('cost', {
   // @ts-expect-error 'end' is not a DataTableAlign — the CSS word is not the token
   meta: { align: 'end' },
 })
+export const okKind = col.accessor('cost', {
+  header: 'Cost (USD)',
+  meta: { kind: 'money', currency: 'EUR', meterMax: 10, statusColor: (v) => String(v) },
+})
+
+export const typoKind = col.accessor('cost', {
+  header: 'Cost',
+  // @ts-expect-error `kinds` is not a ColumnMeta key
+  meta: { kinds: 'money' },
+})
+
+export const badKindValue = col.accessor('cost', {
+  header: 'Cost',
+  // @ts-expect-error 'currency' is not a DataTableColumnKind — the seven kinds are a closed union
+  meta: { kind: 'currency' },
+})
+
 export const unknownKey = [
   // @ts-expect-error 'nope' is not a DeepKeys<Row> — createColumnHelper<Row> rejects it
   col.accessor('nope', { header: 'Nope' }),

@@ -1,0 +1,45 @@
+/*
+ * Cell kinds (`meta.kind`, SPEC § 6.6). Each class is the CHROME of one kind on its `<td>`; the font
+ * SIZE stays the theme's `sm` on `td`. Colours are tokens, never literals.
+ */
+.entity {
+  max-width: 100%;
+  overflow: hidden;
+  font-weight: 500;
+  color: var(--vx-ink);
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.status {
+  white-space: nowrap;
+}
+
+/* SPEC D33: figures are the proportional sans with lining tabular numerals; only times are mono. */
+.number {
+  font-variant-numeric: tabular-nums;
+  font-weight: 500;
+  color: var(--vx-ink);
+  white-space: nowrap;
+}
+
+.relativeTime {
+  font-family: var(--mantine-font-family-monospace);
+  font-variant-numeric: tabular-nums;
+  color: var(--vx-muted);
+  white-space: nowrap;
+}
+
+.meter {
+  min-width: calc(4rem * var(--mantine-scale));
+}
+
+.text {
+  color: var(--vx-ink);
+  white-space: normal;
+}
+
+/* An absent value: a muted em dash, never an empty cell. */
+.dash {
+  color: var(--vx-faint);
+}

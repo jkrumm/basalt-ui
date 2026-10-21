@@ -978,7 +978,6 @@ exports[`createBasaltTheme() shape and resolver output default 1`] = `
           "height": 40,
         },
         "th": {
-          "color": "var(--vx-faint)",
           "fontFamily": "var(--basalt-font-mono)",
           "fontSize": 11,
           "fontWeight": 500,
@@ -2311,7 +2310,6 @@ exports[`createBasaltTheme() shape and resolver output all knobs 1`] = `
           "height": 32,
         },
         "th": {
-          "color": "var(--vx-faint)",
           "fontFamily": "var(--basalt-font-mono)",
           "fontSize": 11,
           "fontWeight": 500,

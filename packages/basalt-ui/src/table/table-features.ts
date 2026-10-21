@@ -31,6 +31,19 @@ import type { ColumnDef, ColumnHelper, RowData } from '@tanstack/react-table'
 export type DataTableAlign = 'left' | 'center' | 'right'
 
 /**
+ * The cell kinds `meta.kind` names (`docs/waves/design-parity/SPEC.md` § 6.6). Unset keeps the
+ * table's plain cell. The chrome and the content each kind supplies live in `cell-kinds.tsx`.
+ */
+export type DataTableColumnKind =
+  | 'entity'
+  | 'status'
+  | 'number'
+  | 'money'
+  | 'relative-time'
+  | 'meter'
+  | 'text'
+
+/**
  * What a column def's `meta` may carry. Registered per table through `columnMeta: metaHelper<…>()`
  * rather than a global `declare module '@tanstack/react-table'`, so `meta: { aling: 'right' }` is a
  * compile error (excess-property check on the literal) and nothing leaks into a consumer's own
@@ -53,6 +66,28 @@ export type BasaltColumnMeta = {
    * LAST column first — nothing regresses with no `meta.priority` set anywhere. See `foldOrder`.
    */
   priority?: number
+  /**
+   * The cell's kind: chrome always, content only when the column has no `cell` renderer of its own
+   * (a `cell` still supplies the content). Unset renders exactly the plain cell. A wrong value
+   * throws at render, like `align`.
+   *
+   * - `entity`: never wraps, ink, weight 500; the column's `cell` (glyph + name) or the raw value.
+   * - `status`: the status chip; colour from `statusColor`, default `gray`. Never wraps.
+   * - `number` / `money`: proportional tabular numerals (SPEC D33, not mono), right-aligned (an explicit `align` wins). Without a
+   *   `cell` the raw number is formatted (`integer`; `money` in `currency`), null as a muted dash.
+   *   The UNIT belongs in the header (`Volume (kg)`), never in the cell.
+   * - `relative-time`: mono, muted; a raw `Date | number | string` renders as `3 hours ago` in a
+   *   `<time>`, the full date in a tooltip and as its accessible name.
+   * - `meter`: the inline `Meter` bar for the value against `meterMax`.
+   * - `text`: plain `sm` ink that may wrap (the explicit default).
+   */
+  kind?: DataTableColumnKind
+  /** `status`: the chip colour for a cell value — a theme colour name or a CSS var. Default `gray`. */
+  statusColor?(value: unknown): string
+  /** `meter`: the value that fills the bar. Default 1 (a ratio). */
+  meterMax?: number
+  /** `money` without a `cell`: the ISO 4217 code. Default `USD`. */
+  currency?: string
 }
 
 /**
