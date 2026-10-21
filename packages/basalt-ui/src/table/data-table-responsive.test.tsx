@@ -437,3 +437,30 @@ describe('the fold toggle says what folded', () => {
     expect(label?.textContent).toContain('2 columns folded: C, D')
   })
 })
+
+describe('a filter that matches nothing does not unfold the table', () => {
+  test('the fold stays stable through a no-match search and back', async () => {
+    stubLayout()
+    const { container } = mount({ enableGlobalFilter: true })
+    const ids = () =>
+      [...container.querySelectorAll('thead th[data-basalt-fold-id]')].map((th) =>
+        th.getAttribute('data-basalt-fold-id'),
+      )
+    await resize(container, 100, 240, WIDE)
+    expect(ids()).toEqual(['a', 'b'])
+
+    const search = container.querySelector('input') as HTMLInputElement
+    const settle = () => act(async () => void (await new Promise((done) => setTimeout(done, 320))))
+    fireEvent.change(search, { target: { value: 'no such row' } })
+    await settle()
+    expect(container.querySelector('tbody td[colspan]')).not.toBeNull()
+    // The empty body measures header-only (narrow) widths; the loaded fold must hold.
+    await resize(container, 100, 120, { a: 10, b: 10, c: 10, d: 10 })
+    expect(ids()).toEqual(['a', 'b'])
+
+    fireEvent.change(search, { target: { value: '' } })
+    await settle()
+    await resize(container, 100, 240, WIDE)
+    expect(ids()).toEqual(['a', 'b'])
+  })
+})
