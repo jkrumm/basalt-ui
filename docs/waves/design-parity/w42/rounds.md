@@ -22,7 +22,7 @@ newly shot per-table states and anchors (13 new items), not a regression.
   pin (P1, carried from W33 r3); `min` repeated in every Duration cell (P2, playground); columns stretched evenly at 1440, a
   start time ~700 px from its duration (P2); the generic "Could not load rows" (P3); a 5-row skeleton for 4 rows (P3). The other
   18 items are the KPI cards and charts (hover readouts, empty-card voids, loading ghosts in the wrong shape, the availability
-  state body growing past its loaded height, P1) — outside this wave's table scope; recorded for the Wave 45 state pass.
+  state body growing past its loaded height, P1) — outside this wave's table scope; recorded for the Wave 46 state pass.
 - **S2 (99).** One carried P3 (the hit-rate skeleton has no legend row). The sessions table does not exist yet.
 - **/data (62; page shots only, no anchors).** Names and roles wrap at 390 (P1 ×2); money mono but left-aligned (P2); a grey
   column fill in light (P2); the pinned demo neither pins nor scrolls at 390 and its 5 px unlabelled fold caret (P2); narrated
