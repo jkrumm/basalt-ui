@@ -11,17 +11,17 @@
  *
  * The table uses a small typed dataset with columns built by createColumnHelper.
  */
-import { Button, Divider, Group, Paper, Stack, Switch, Tabs, Text } from '@mantine/core'
+import { Divider, Paper, Stack, Tabs } from '@mantine/core'
 import { EmptyState, PageBar } from 'basalt-ui'
 import { FilterSet, RangeFilter, SearchFilter, ViewTabs } from 'basalt-ui/controls'
 import { createLocalStore, field } from 'basalt-ui/state'
 import { BasaltDataTable, createColumnHelper } from 'basalt-ui/table'
+import { queryFor, retryCopy } from '../scenarios/shot-state'
+import type { ScenarioProps } from '../scenarios/shot-state'
 import { dataStressFilters } from './data-stress-store'
 import { DataStressPage } from './DataStressPage'
 import { DataTableChromeDemoPage } from './DataTableChromeDemoPage'
 import { QueryDemoPage } from './QueryDemoPage'
-import type { SortingState } from '@tanstack/react-table'
-import { useState } from 'react'
 import type { ComponentProps } from 'react'
 import { IconSearch } from './icons'
 
@@ -147,71 +147,33 @@ const TABLE_FACETS: NonNullable<ComponentProps<typeof BasaltDataTable>['facets']
   { columnId: 'role', label: 'Role', multiple: true, options: ROLE_OPTIONS },
 ]
 
-function TableSection() {
-  const [isLoading, setIsLoading] = useState(false)
-  const [cleared, setCleared] = useState(false)
-  const [lastSorting, setLastSorting] = useState<SortingState | null>(null)
-  const data = cleared ? [] : EMPLOYEES
-
+function TableSection({ shotState }: ScenarioProps) {
+  const query = queryFor(shotState, retryCopy('employee directory'))
   return (
-    <Stack gap="xs" data-compare="table">
-      <Group justify="space-between" align="center">
-        <Text size="xs" tt="uppercase" fw={600} c="dimmed">
-          BasaltDataTable — sortable, filterable, paginated employee table
-        </Text>
-        <Group gap="xs">
-          <Switch
-            size="sm"
-            label="isLoading"
-            checked={isLoading}
-            onChange={(e) => setIsLoading(e.currentTarget.checked)}
-          />
-          <Button
-            size="compact-xs"
-            variant={cleared ? 'filled' : 'default'}
-            color={cleared ? 'teal' : 'gray'}
-            onClick={() => setCleared((v) => !v)}
-          >
-            {cleared ? 'Restore data' : 'Clear data'}
-          </Button>
-        </Group>
-      </Group>
-      <Text size="sm">
-        Search, filter by department or role, and page through the results (10 rows/page). Toggle{' '}
-        <em>isLoading</em> → skeleton rows appear (5). Click <em>Clear data</em> → the real{' '}
-        <code>EmptyState</code> renders below. <code>onSortingChange</code> is the search-param-sync
-        seam — click any header and observe the state update below (mirror:{' '}
-        <code>navigate({'{ search: { sorting } }'})</code>
-        in a real TanStack Router app).
-      </Text>
+    <div data-compare="table" data-shot="employees-table" data-shot-states="empty loading error">
       <BasaltDataTable
-        data={data}
+        title="Employees, 3 departments"
+        data={shotState === undefined ? EMPLOYEES : []}
         columns={TABLE_COLUMNS}
         enableSorting
         striped
         highlightOnHover
-        isLoading={isLoading}
         skeletonRows={5}
         enableGlobalFilter
         searchIcon={<IconSearch />}
         facets={TABLE_FACETS}
         enablePagination
+        {...(query !== undefined && { query })}
         emptyState={
           <EmptyState
             icon={<IconSearch />}
             title="No employees found"
-            description="Try adjusting your filters or search terms."
+            description="No employee matches this department, role or search."
             tier="section"
           />
         }
-        onSortingChange={setLastSorting}
       />
-      {lastSorting !== null && (
-        <Text size="xs" c="dimmed" ff="monospace">
-          onSortingChange → {JSON.stringify(lastSorting)}
-        </Text>
-      )}
-    </Stack>
+    </div>
   )
 }
 
@@ -259,30 +221,27 @@ const PINNED_COLUMNS = [
   }),
 ]
 
-function PinnedTableSection() {
+function PinnedTableSection({ shotState }: ScenarioProps) {
+  const query = queryFor(shotState, retryCopy('roster'))
   return (
-    <Stack gap="xs">
-      <Text size="xs" tt="uppercase" fw={600} c="dimmed">
-        BasaltDataTable — enablePinning (9 columns, name pinned left)
-      </Text>
-      <Text size="sm">
-        Scroll horizontally — the <em>Name</em> column stays pinned to the left edge with a hairline
-        shadow marking the seam, via <code>initialColumnPinning</code>.
-      </Text>
+    <div data-shot="roster-table" data-shot-states="empty loading error">
       <BasaltDataTable
-        data={PINNED_EMPLOYEES}
+        title="Employee roster, 8 staff"
+        data={shotState === undefined ? PINNED_EMPLOYEES : []}
         columns={PINNED_COLUMNS}
         enablePinning
         initialColumnPinning={{ start: ['name'] }}
         striped
+        {...(query !== undefined && { query })}
+        emptyState={<span>No employee on the roster.</span>}
       />
-    </Stack>
+    </div>
   )
 }
 
 // ── Page ──────────────────────────────────────────────────────────────────────
 
-export function DataDemoPage() {
+export function DataDemoPage({ shotState }: ScenarioProps) {
   const [tab] = dataViews.field.tab.use()
   // No `p="md"` and no in-body `<Title>` — the shell pads Main and the breadcrumb names the page
   // (ComponentsPage's module doc states the wave's page-chrome rule).
@@ -306,25 +265,6 @@ export function DataDemoPage() {
         })}
       />
 
-      <Text size="sm" c="dimmed">
-        BasaltDataTable (TanStack Table + Mantine)
-      </Text>
-
-      <Paper>
-        <Stack gap="xs">
-          <Text size="xs" tt="uppercase" fw={600} c="dimmed">
-            About
-          </Text>
-          <Text size="sm">
-            The <code>./table</code> battery provides a headless-backed, Mantine-rendered sortable,
-            filterable, paginated data table. The optional peer (<code>@tanstack/react-table</code>)
-            must be installed by the consumer. The table's toolbar (global search + faceted
-            Select/MultiSelect filters), its pagination bar, and sticky column pinning are all
-            opt-in chrome — row selection is still out of scope for 1.0.
-          </Text>
-        </Stack>
-      </Paper>
-
       {/* `/data-table-chrome`, `/data-stress`, and `/query` absorbed here (audit E §7). Controlled
           off `dataViews` and rendering no `Tabs.List` of its own — the switch is the `ViewTabs` in
           the bar above. The panels stay Mantine's, so `keepMounted` behaviour is unchanged. */}
@@ -332,9 +272,9 @@ export function DataDemoPage() {
         <Tabs.Panel value="overview">
           <Paper>
             <Stack gap="md">
-              <TableSection />
+              <TableSection shotState={shotState} />
               <Divider />
-              <PinnedTableSection />
+              <PinnedTableSection shotState={shotState} />
             </Stack>
           </Paper>
         </Tabs.Panel>

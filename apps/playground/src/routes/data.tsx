@@ -32,6 +32,7 @@ function ToolbarTable({ shotState }: { shotState: ShotState | undefined }) {
         title="Workouts, strength and volume blocks"
         // Rows only at rest: the empty branch needs `data` empty, the others have no rows yet.
         data={shotState === undefined ? LIFTS : []}
+        initialColumnFilters={[{ id: 'exercise', value: 'Squat' }]}
         {...(query !== undefined && { query })}
         emptyState={<span>No workout logged in this window.</span>}
         columns={LIFT_COLUMNS}
@@ -44,6 +45,7 @@ function ToolbarTable({ shotState }: { shotState: ShotState | undefined }) {
               { value: 'Squat', label: 'Squat' },
               { value: 'Bench press', label: 'Bench press' },
               { value: 'Deadlift', label: 'Deadlift' },
+              { value: 'Overhead press', label: 'Overhead press' },
             ],
           },
           {
@@ -66,7 +68,7 @@ function DataRoute() {
   return (
     <Stack gap="md">
       <ToolbarTable shotState={search['shot-state']} />
-      <DataDemoPage />
+      <DataDemoPage shotState={search['shot-state']} />
     </Stack>
   )
 }
