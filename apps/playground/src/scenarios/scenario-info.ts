@@ -34,4 +34,14 @@ export const SCENARIO_INFO: readonly ScenarioInfo[] = [
     title: 'Spend and usage',
     blurb: 'Am I within budget, and what drives it? Budget burn and spend breakdown by project.',
   },
+  {
+    id: 's7-body',
+    title: 'Body and strength',
+    blurb: 'Am I trending toward my weight goal, and is my training load productive?',
+  },
+  {
+    id: 's8-map',
+    title: 'Sky map',
+    blurb: 'Where is the sky clear tonight? A forecast raster on a map with its key.',
+  },
 ]
