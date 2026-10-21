@@ -45,7 +45,6 @@ import type {
   NavLink,
   Notification,
   NumberInput,
-  Pagination,
   PaginationControl,
   Paper,
   PasswordInput,
@@ -86,7 +85,7 @@ import { CTL_HEIGHT_VARS } from '../tokens/ctl-vars'
 import type { CtlHeightVar } from '../tokens/ctl-vars'
 import { SIZE_CLASS_BREAKPOINTS } from '../tokens/size-classes'
 import type { BasaltFontsConfig } from '../tokens/core'
-import { badgeVars, hasExplicitColor, onColor, onColorFor, inkVars, tabsVars } from './chrome-vars'
+import { badgeVars, onColor, onColorFor, inkVars, tabsVars } from './chrome-vars'
 import cardInsetClasses from './card-inset.module.css'
 import controlsClasses from './controls.module.css'
 import floatingClasses from './floating.module.css'
@@ -1119,17 +1118,6 @@ function buildTheme(data: PaletteData, options: BuildThemeOptions = {}): Mantine
           root: {
             '--radio-icon-color':
               props.iconColor || props.variant === 'outline' ? undefined : onColorFor(theme, props),
-          },
-        }),
-      }),
-      // The current page is ink (SPEC § 6.12) — its home is `html .mantine-Pagination-root` in
-      // `controls.module.css`. Only a caller's explicit `color=` writes its own on-color here.
-      Pagination: ext<typeof Pagination>({
-        vars: (theme, props) => ({
-          root: {
-            '--pagination-active-color': hasExplicitColor(props.color)
-              ? onColorFor(theme, props)
-              : undefined,
           },
         }),
       }),

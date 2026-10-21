@@ -755,39 +755,6 @@ exports[`createBasaltTheme() shape and resolver output default 1`] = `
         "size": "md",
       },
     },
-    "Pagination": {
-      "vars": {
-        "fn": 
-"(theme, props) => ({
-          root: {
-            "--pagination-active-color": hasExplicitColor(props.color) ? onColorFor(theme, props) : void 0
-          }
-        })"
-,
-        "outputs": [
-          {
-            "probes": 772,
-            "result": "{"root":{}}",
-          },
-          {
-            "probes": 384,
-            "result": "{"root":{"--pagination-active-color":"var(--vx-on-blue)"}}",
-          },
-          {
-            "probes": 384,
-            "result": "{"root":{"--pagination-active-color":"var(--vx-on-red)"}}",
-          },
-          {
-            "probes": 384,
-            "result": "{"root":{"--pagination-active-color":"var(--vx-on-gray)"}}",
-          },
-          {
-            "probes": 384,
-            "result": "{"root":{"--pagination-active-color":"var(--vx-on-dark)"}}",
-          },
-        ],
-      },
-    },
     "PaginationControl": {
       "defaultProps": {
         "data-basalt-hit": true,
@@ -2087,39 +2054,6 @@ exports[`createBasaltTheme() shape and resolver output all knobs 1`] = `
     "NumberInput": {
       "defaultProps": {
         "size": "md",
-      },
-    },
-    "Pagination": {
-      "vars": {
-        "fn": 
-"(theme, props) => ({
-          root: {
-            "--pagination-active-color": hasExplicitColor(props.color) ? onColorFor(theme, props) : void 0
-          }
-        })"
-,
-        "outputs": [
-          {
-            "probes": 772,
-            "result": "{"root":{}}",
-          },
-          {
-            "probes": 384,
-            "result": "{"root":{"--pagination-active-color":"var(--vx-on-blue)"}}",
-          },
-          {
-            "probes": 384,
-            "result": "{"root":{"--pagination-active-color":"var(--vx-on-red)"}}",
-          },
-          {
-            "probes": 384,
-            "result": "{"root":{"--pagination-active-color":"var(--vx-on-gray)"}}",
-          },
-          {
-            "probes": 384,
-            "result": "{"root":{"--pagination-active-color":"var(--vx-on-dark)"}}",
-          },
-        ],
       },
     },
     "PaginationControl": {
