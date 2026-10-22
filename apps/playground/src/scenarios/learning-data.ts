@@ -192,3 +192,20 @@ export const fmtReviewDue = (days: number): string =>
         : `a review is overdue by ${-days} ${days === -1 ? 'day' : 'days'}`
 /** Days until the review: the interval minus the days since the last session. */
 export const REVIEW_IN_DAYS = NEXT_REVIEW_DAYS - DAYS_SINCE_LAST
+
+export type PartnerRow = { name: string; sessions: number; last: string }
+/** Practice partners, most sessions first: the aside's list. `last` is the date of the latest shared session. */
+export const PARTNERS_BY_SESSIONS: readonly PartnerRow[] = Object.values(
+  JOURNAL.reduce<Record<string, PartnerRow>>((acc, e) => {
+    if (e.partnerLabel === null) return acc
+    const row = acc[e.partnerLabel] ?? { name: e.partnerLabel, sessions: 0, last: e.date }
+    // Newest first: the first entry met is the latest.
+    acc[e.partnerLabel] = { ...row, sessions: row.sessions + 1 }
+    return acc
+  }, {}),
+).toSorted((a, b) => b.sessions - a.sessions || a.name.localeCompare(b.name))
+
+/** The record's review question: the ratings of the last three rated sessions, newest first. */
+export const RECENT_RATINGS: readonly number[] = JOURNAL.flatMap((e) =>
+  e.rating === null ? [] : [e.rating],
+).slice(0, 3)

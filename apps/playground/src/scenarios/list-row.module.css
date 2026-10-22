@@ -1,0 +1,19 @@
+.row {
+  display: flex;
+  align-items: center;
+  gap: 8px; /* theme-allow inline-spacing — SPEC § 6.9 list row: 6 × 8 inset, 8 between glyph and text */
+  width: 100%;
+  padding: 6px 8px; /* theme-allow inline-spacing — SPEC § 6.9 list row: inset 6 × 8 */
+  border-radius: var(--vx-radius-ctrl);
+  color: inherit;
+  text-align: start;
+}
+
+.row:hover {
+  background: var(--vx-surface-row-hover);
+}
+
+.text {
+  flex: 1;
+  min-width: 0;
+}

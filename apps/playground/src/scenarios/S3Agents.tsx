@@ -10,7 +10,9 @@
  *
  * The item timeline below them is `agents/item-timeline.tsx` (Wave 44: EventList fills it).
  *
- * Anchors for `basalt-ui shot`: strip cells carry their own `data-shot` (`strip-needs-you`,
+ * The decision card above the strip is `agents/decision-card.tsx` (Wave 45): the oldest awaiting item.
+ *
+ * Anchors for `basalt-ui shot`: `agents-decision`, strip cells carry their own `data-shot` (`strip-needs-you`,
  * `strip-oldest-wait`, `strip-fleet`, `strip-dispatch-spend`, `strip-failures`; footer meters
  * `strip-footer-day` / `strip-footer-week`, declared absent in empty and error, where each cell says
  * why through its own `state`); `ChartCard` does not forward `data-*`, so those anchors are wrapping `Box`es.
@@ -47,6 +49,7 @@ import {
   fmtAge,
 } from './agents-data'
 import type { FlowRow, ItemState } from './agents-data'
+import { DecisionCard, DecisionCardSkeleton } from './agents/decision-card'
 import { ItemTimeline } from './agents/item-timeline'
 import { fmtEur, fmtEurCents, fmtInt, fmtShare } from './fixture-utils'
 import { cardStateProps, chartStateFor, noop, retryCopy } from './shot-state'
@@ -378,14 +381,43 @@ function QueueRow({ shotState }: ScenarioProps) {
   )
 }
 
+/** The oldest item awaiting the user: the one decision the queue asks for. */
+const DECISION_ITEM = STUCK.find((i) => i.state === 'awaiting')
+
+function AgentsDecision({ shotState }: ScenarioProps) {
+  if (shotState === 'loading') return <DecisionCardSkeleton />
+  // Empty and error say why in the strip's cells; a card with nothing to decide is not drawn.
+  if (shotState === 'empty' || shotState === 'error' || DECISION_ITEM === undefined) return null
+  const { id, title, waitHours } = DECISION_ITEM
+  return (
+    <DecisionCard
+      question={`Approve “${title}”?`}
+      facts={[id, `${fmtAge(waitHours - WARN_HOURS)} past the ${WARN_LABEL} warning`]}
+      evidence={
+        <Text size="sm">
+          {`The oldest item awaiting you. Warden closes it as abandoned in ${fmtAge(ABANDON_HOURS - waitHours)}.`}
+        </Text>
+      }
+      primary={{ label: 'Approve', keyHint: 'A', onClick: noop }}
+      secondary={{ label: 'Reassign', keyHint: 'R', onClick: noop }}
+      quiet={{ label: 'Leave', keyHint: 'L', onClick: noop }}
+    />
+  )
+}
+
 export function AgentsScenario({ shotState }: ScenarioProps) {
   return (
     <Stack gap="sm" data-shot-states="empty loading error">
       <PageBar
         actions={[{ key: 'approve', label: 'Approve oldest', onClick: () => {}, primary: true }]}
       />
+      <Box data-shot="agents-decision" data-shot-absent="empty error">
+        <AgentsDecision shotState={shotState} />
+      </Box>
       <QueueStrip shotState={shotState} />
       <QueueRow shotState={shotState} />
+      {/* Wave 45: Board (agents/board.tsx) lands here */}
+      <Box data-shot="board" />
       <Box data-shot="item-timeline">
         <Section title={`History · ${TIMELINE_ITEM}`}>
           <ItemTimeline events={ITEM_TIMELINE} total={ITEM_TIMELINE_TOTAL} shotState={shotState} />
