@@ -199,13 +199,19 @@ export const PARTNERS_BY_SESSIONS: readonly PartnerRow[] = Object.values(
   JOURNAL.reduce<Record<string, PartnerRow>>((acc, e) => {
     if (e.partnerLabel === null) return acc
     const row = acc[e.partnerLabel] ?? { name: e.partnerLabel, sessions: 0, last: e.date }
-    // Newest first: the first entry met is the latest.
-    acc[e.partnerLabel] = { ...row, sessions: row.sessions + 1 }
+    acc[e.partnerLabel] = {
+      ...row,
+      sessions: row.sessions + 1,
+      last: e.date > row.last ? e.date : row.last,
+    }
     return acc
   }, {}),
 ).toSorted((a, b) => b.sessions - a.sessions || a.name.localeCompare(b.name))
 
 /** The record's review question: the ratings of the last three rated sessions, newest first. */
-export const RECENT_RATINGS: readonly number[] = JOURNAL.flatMap((e) =>
-  e.rating === null ? [] : [e.rating],
-).slice(0, 3)
+export const RECENT_RATINGS: readonly number[] = JOURNAL.filter((e) => e.rating !== null)
+  .toSorted((a, b) =>
+    `${b.date}T${b.time ?? '00:00'}`.localeCompare(`${a.date}T${a.time ?? '00:00'}`),
+  )
+  .slice(0, 3)
+  .map((e) => e.rating ?? 0)
