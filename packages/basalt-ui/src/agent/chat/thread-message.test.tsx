@@ -8,18 +8,11 @@
  */
 import { MantineProvider } from '@mantine/core'
 import { cleanup, fireEvent, render, screen, waitFor, within } from '@testing-library/react'
-import { afterEach, beforeEach, describe, expect, mock, spyOn, test } from 'bun:test'
+import { afterEach, beforeEach, describe, expect, spyOn, test } from 'bun:test'
 import { definePartRenderers } from '../foreign'
 import type { ChatMessage } from '../history'
 import type { TranscriptPart } from '../foreign'
-import {
-  applyInitialScroll,
-  MAX_INITIAL_SCROLL_ATTEMPTS,
-  nonVirtualizedRowsFallback,
-  resolveGuardedMeasurement,
-  resolveInitialScrollAction,
-} from '../../common/virtual-rows'
-import type { InitialScrollState } from '../../common/virtual-rows'
+import { nonVirtualizedRowsFallback } from '../../common/virtual-rows'
 import { messageBlockRenderCounter, ThreadTranscript } from './thread-message'
 import type { ThreadTranscriptProps } from './thread-message'
 
@@ -799,215 +792,6 @@ describe('groupConsecutive — the Slack rhythm (AGENT-CHAT-SPEC.md §11, defaul
   })
 })
 
-/** A minimal fake matching `MeasurementCacheHost`'s structural shape — no ResizeObserver, no
- * layout engine, no `@tanstack/react-virtual` import at all needed to prove the guard branch. */
-function fakeMeasurementHost({
-  cached,
-  estimate = 999,
-}: { readonly cached?: number; readonly estimate?: number } = {}) {
-  const itemSizeCache = new Map<unknown, number>()
-  if (cached !== undefined) itemSizeCache.set('row-key', cached)
-  return {
-    indexFromElement: () => 0,
-    itemSizeCache,
-    options: {
-      getItemKey: () => 'row-key',
-      estimateSize: () => estimate,
-    },
-  }
-}
-
-describe('resolveGuardedMeasurement — a 0 ResizeObserver reading is never a real row measurement', () => {
-  const element = document.createElement('div')
-
-  test('a genuine (non-zero) measurement passes through unchanged', () => {
-    const host = fakeMeasurementHost({ cached: 40 })
-    expect(resolveGuardedMeasurement(host, element, 145)).toBe(145)
-  })
-
-  test('a 0 reading with a cached size falls back to the LAST-KNOWN size, not 0 — this is the exact mechanism that stops a collapsed virtualized row from poisoning itemSizeCache', () => {
-    const host = fakeMeasurementHost({ cached: 220 })
-    expect(resolveGuardedMeasurement(host, element, 0)).toBe(220)
-  })
-
-  test('a 0 reading with no prior measurement (first mount) falls back to estimateSize, not 0', () => {
-    const host = fakeMeasurementHost({ estimate: 160 })
-    expect(resolveGuardedMeasurement(host, element, 0)).toBe(160)
-  })
-})
-
-describe('resolveInitialScrollAction — the pure decision behind "a virtualized transcript opens at the newest message"', () => {
-  test('"start" resolves to skip-done regardless of row count or container height', () => {
-    expect(resolveInitialScrollAction('start', 50, 300)).toBe('skip-done')
-    expect(resolveInitialScrollAction('start', 0, 0)).toBe('skip-done')
-  })
-
-  test('an empty transcript resolves to skip-done even when targeting "end" — nothing to scroll to', () => {
-    expect(resolveInitialScrollAction('end', 0, 300)).toBe('skip-done')
-  })
-
-  test('a non-positive container height resolves to skip-retry, NOT skip-done — a hidden ancestor must not permanently strand the transcript at the top', () => {
-    expect(resolveInitialScrollAction('end', 50, 0)).toBe('skip-retry')
-    expect(resolveInitialScrollAction('end', 50, -1)).toBe('skip-retry')
-  })
-
-  test('a genuinely measured, non-empty, "end"-targeted mount resolves to scroll', () => {
-    expect(resolveInitialScrollAction('end', 50, 300)).toBe('scroll')
-  })
-})
-
-describe('applyInitialScroll — the ACROSS-CALLS guard that makes the jump fire once, ever', () => {
-  // A fake `scrollToEnd` is the boundary here rather than a real DOM `Element.scrollTo` spy on
-  // purpose: a real `Virtualizer`'s own `followOnAppend` ALSO calls `scrollTo` on a later append
-  // (verified against the installed virtual-core 3.17.1 — `setOptions`'s edge-key-change branch),
-  // making that call indistinguishable from this effect's own at the DOM boundary. `applyInitialScroll`
-  // is the exact function `VirtualizedRowsInner`'s effect calls, so this proves the real guard, not
-  // a hand-mirrored copy of it. `isAtEnd` is likewise a fake rather than a real DOM `scrollTop` read
-  // — this describe block proves the STATE MACHINE (fire → verify → settle-or-retry, bounded), not
-  // the real browser race the fix exists for, which happy-dom cannot observe (no layout engine —
-  // see the `initialScroll` describe block below for what IS provable against the real component).
-
-  test('fires once, stays unsettled until a later call confirms it via isAtEnd, then never fires again', () => {
-    const state: InitialScrollState = { hasApplied: false, attempts: 0 }
-    const scrollToEnd = mock(() => {})
-    const isAtEnd = mock(() => true)
-
-    applyInitialScroll(state, 'end', 60, () => 300, scrollToEnd, isAtEnd)
-    expect(scrollToEnd).toHaveBeenCalledTimes(1)
-    // Not yet permanent: firing is not landing. Verification happens on the NEXT call.
-    expect(state.hasApplied).toBe(false)
-
-    // Simulates the effect re-running on every later streamed append (rows.length keeps growing)
-    // — the exact scenario that must NOT re-trigger the jump once it has settled.
-    applyInitialScroll(state, 'end', 61, () => 300, scrollToEnd, isAtEnd)
-    expect(state.hasApplied).toBe(true)
-
-    applyInitialScroll(state, 'end', 62, () => 300, scrollToEnd, isAtEnd)
-    expect(scrollToEnd).toHaveBeenCalledTimes(1)
-  })
-
-  test('re-fires when isAtEnd reports the jump was reverted before settling — the clobber-recovery path', () => {
-    const state: InitialScrollState = { hasApplied: false, attempts: 0 }
-    const scrollToEnd = mock(() => {})
-    let atEnd = false
-    const isAtEnd = () => atEnd
-
-    // First attempt: fires, unconfirmed.
-    applyInitialScroll(state, 'end', 60, () => 300, scrollToEnd, isAtEnd)
-    expect(scrollToEnd).toHaveBeenCalledTimes(1)
-
-    // Next commit: the DOM reports NOT at the end (something else clobbered `scrollTop` in the
-    // meantime, e.g. virtual-core's own `_willUpdate` anchor branch) — re-fires rather than
-    // accepting the reverted position as final.
-    applyInitialScroll(state, 'end', 60, () => 300, scrollToEnd, isAtEnd)
-    expect(scrollToEnd).toHaveBeenCalledTimes(2)
-    expect(state.hasApplied).toBe(false)
-
-    // The DOM now holds: settles on the next confirming call.
-    atEnd = true
-    applyInitialScroll(state, 'end', 60, () => 300, scrollToEnd, isAtEnd)
-    expect(scrollToEnd).toHaveBeenCalledTimes(2)
-    expect(state.hasApplied).toBe(true)
-
-    // A further call must not fire again.
-    applyInitialScroll(state, 'end', 61, () => 300, scrollToEnd, isAtEnd)
-    expect(scrollToEnd).toHaveBeenCalledTimes(2)
-  })
-
-  test('gives up after MAX_INITIAL_SCROLL_ATTEMPTS rather than retrying forever against a DOM that never confirms', () => {
-    const state: InitialScrollState = { hasApplied: false, attempts: 0 }
-    const scrollToEnd = mock(() => {})
-    // never confirms — the pathological case this bound exists for
-    const isAtEnd = mock(() => false)
-
-    for (let i = 0; i < 20; i += 1) {
-      applyInitialScroll(state, 'end', 60, () => 300, scrollToEnd, isAtEnd)
-    }
-
-    expect(state.hasApplied).toBe(true)
-    expect(scrollToEnd).toHaveBeenCalledTimes(MAX_INITIAL_SCROLL_ATTEMPTS)
-
-    // Once given up, further calls are true no-ops.
-    applyInitialScroll(state, 'end', 61, () => 300, scrollToEnd, isAtEnd)
-    expect(scrollToEnd).toHaveBeenCalledTimes(MAX_INITIAL_SCROLL_ATTEMPTS)
-  })
-
-  test('"start" marks done WITHOUT ever calling scrollToEnd — mutation-proof for the skip-done branch not silently becoming skip-retry', () => {
-    const state: InitialScrollState = { hasApplied: false, attempts: 0 }
-    const scrollToEnd = mock(() => {})
-    const isAtEnd = mock(() => false)
-
-    applyInitialScroll(state, 'start', 60, () => 300, scrollToEnd, isAtEnd)
-
-    expect(scrollToEnd).not.toHaveBeenCalled()
-    expect(isAtEnd).not.toHaveBeenCalled()
-    expect(state.hasApplied).toBe(true)
-  })
-
-  test('an empty transcript marks done WITHOUT ever calling scrollToEnd', () => {
-    const state: InitialScrollState = { hasApplied: false, attempts: 0 }
-    const scrollToEnd = mock(() => {})
-    const isAtEnd = mock(() => false)
-
-    applyInitialScroll(state, 'end', 0, () => 300, scrollToEnd, isAtEnd)
-
-    expect(scrollToEnd).not.toHaveBeenCalled()
-    expect(isAtEnd).not.toHaveBeenCalled()
-    expect(state.hasApplied).toBe(true)
-  })
-
-  test('a hidden (0px) container retries on a later call instead of being permanently stranded, then settles once confirmed', () => {
-    const state: InitialScrollState = { hasApplied: false, attempts: 0 }
-    const scrollToEnd = mock(() => {})
-    const isAtEnd = mock(() => true)
-
-    // First attempt: mounted behind a `display: none` ancestor — measures 0.
-    applyInitialScroll(state, 'end', 60, () => 0, scrollToEnd, isAtEnd)
-    expect(scrollToEnd).not.toHaveBeenCalled()
-    expect(state.hasApplied).toBe(false)
-
-    // Second attempt — the row was re-expanded, so the SAME row count now measures. Deliberately
-    // NOT a changed count: the commit that un-hides a `ThreadFeedRow` body changes nothing the
-    // effect could key a dependency array on, which is why that effect has none. Fires, unconfirmed.
-    applyInitialScroll(state, 'end', 60, () => 300, scrollToEnd, isAtEnd)
-    expect(scrollToEnd).toHaveBeenCalledTimes(1)
-    expect(state.hasApplied).toBe(false)
-
-    // Third attempt (next commit): confirmed settled.
-    applyInitialScroll(state, 'end', 61, () => 300, scrollToEnd, isAtEnd)
-    expect(scrollToEnd).toHaveBeenCalledTimes(1)
-    expect(state.hasApplied).toBe(true)
-
-    // A fourth attempt must not fire again.
-    applyInitialScroll(state, 'end', 62, () => 300, scrollToEnd, isAtEnd)
-    expect(scrollToEnd).toHaveBeenCalledTimes(1)
-  })
-
-  test('the container-height read happens at most once per mount — verification never touches it, only isAtEnd', () => {
-    const state: InitialScrollState = { hasApplied: false, attempts: 0 }
-    const scrollToEnd = mock(() => {})
-    const getContainerHeight = mock(() => 300)
-    const isAtEnd = mock(() => true)
-
-    applyInitialScroll(state, 'end', 60, getContainerHeight, scrollToEnd, isAtEnd)
-    expect(getContainerHeight).toHaveBeenCalledTimes(1)
-    expect(isAtEnd).not.toHaveBeenCalled()
-
-    // Verification call — reads `isAtEnd`, not `getContainerHeight` (no forced `offsetHeight`
-    // layout once the row count / container height have already done their one job).
-    applyInitialScroll(state, 'end', 61, getContainerHeight, scrollToEnd, isAtEnd)
-    expect(getContainerHeight).toHaveBeenCalledTimes(1)
-    expect(isAtEnd).toHaveBeenCalledTimes(1)
-    expect(state.hasApplied).toBe(true)
-
-    // Every later commit (one per streamed chunk on a live thread) re-runs the dependency-free
-    // effect — a settled transcript must touch neither thunk.
-    applyInitialScroll(state, 'end', 62, getContainerHeight, scrollToEnd, isAtEnd)
-    expect(getContainerHeight).toHaveBeenCalledTimes(1)
-    expect(isAtEnd).toHaveBeenCalledTimes(1)
-  })
-})
-
 function manyMessages(count: number): ChatMessage<TranscriptPart>[] {
   const t0 = 1_000_000_000
   return Array.from({ length: count }, (_, i) => ({
@@ -1028,7 +812,7 @@ function manyMessages(count: number): ChatMessage<TranscriptPart>[] {
 // ever run `setOptions` again), it can only have come from that effect: `followOnAppend`'s own
 // `behavior: 'auto'` re-scroll is gated on `prevOptions !== undefined`, i.e. it never fires on
 // construction. (A later append's `followOnAppend` call is indistinguishable from the effect's own
-// at this DOM boundary — the `applyInitialScroll` describe block above proves the once-ever
+// at this DOM boundary — the `applyInitialScroll` describe block in `common/virtual-rows.test.tsx` proves the once-ever
 // guarantee with a fake `scrollToEnd` instead, precisely because of that ambiguity.)
 // Typed structurally rather than as `ReturnType<typeof spyOn>`: `spyOn` is generic over the object
 // and key being spied on, so referencing its return type with the type arguments unresolved leaves
