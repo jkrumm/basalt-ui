@@ -384,6 +384,8 @@ export type FixtureSpec = {
   w38BarsSlot?: true
   /** Wave 41: argo's Reading pace strip cell, a slotted `Bars` at focus (`w41-chip-strip`). */
   w41ChipStrip?: true
+  /** Wave 43: a Weight cell in its empty state with an `under` goal footer and a full-width one (`w43-strip-footer`). */
+  w43StripFooter?: true
   /** Wave 43: a table with one `danger` icon row action and one plain one (`w43-danger`). */
   w43Danger?: true
   /** Wave 43: a lift strip whose Sparkline `PR` reference sits on the line's start / end (`w43-spark`). */

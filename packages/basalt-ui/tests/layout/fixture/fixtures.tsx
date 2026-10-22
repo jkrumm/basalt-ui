@@ -90,6 +90,7 @@ import { BarListStatesFixture } from './bar-list-states-fixture'
 import { RetryParityFixture } from './retry-parity-fixture'
 import { W38BarsSlotFixture, W41ChipStripFixture } from './w38-bars-slot-fixture'
 import { W43DangerFixture } from './w43-danger-fixture'
+import { W43StripFooterFixture } from './w43-strip-footer-fixture'
 import { W43SparkFixture } from './sparkline-w43-fixture'
 import { W38ZonesFixture } from './w38-zones-fixture'
 import { W38LegendFixture } from './w38-legend-fixture'
@@ -3100,6 +3101,7 @@ export function ShellFixture({ spec }: { spec: FixtureSpec }): ReactElement {
       {spec.w38BarsSlot && <W38BarsSlotFixture />}
       {spec.w41ChipStrip && <W41ChipStripFixture />}
       {spec.w43Danger && <W43DangerFixture />}
+      {spec.w43StripFooter && <W43StripFooterFixture />}
       {spec.w43Spark && <W43SparkFixture />}
       {spec.w38Zones && <W38ZonesFixture />}
       {spec.w38Loading && <W38LoadingFixture />}

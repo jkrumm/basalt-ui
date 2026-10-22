@@ -378,15 +378,18 @@
 .footerCell {
   flex: 1 1 14rem;
   min-width: 0;
+  font-size: var(--vx-text-sm);
   padding: var(--vx-space-stack-md);
   border-inline-start: 1px solid var(--vx-divider);
   border-block-start: 1px solid var(--vx-divider);
 }
 
 /* A footer entry `under` a cell is part of that cell: it sits in the slot under the article, inset like
- * the article, split from the readings by the strip's own hairline. */
+ * the article, split from the readings by the strip's own hairline. Both footer slots take the strip's
+ * `sm` step, never the inherited body size (it would outrank the cell's own statement). */
 .underCell {
   min-width: 0;
+  font-size: var(--vx-text-sm);
   margin: var(--vx-space-stack-md) var(--vx-space-stack-md) 0;
   padding-block-start: var(--vx-space-stack-sm);
   border-block-start: 1px solid var(--vx-divider);
