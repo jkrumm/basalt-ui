@@ -72,16 +72,21 @@ type LastPoint<T, X extends ChartX> = {
 /**
  * Pushes labels apart: `ys` are the labels' heights in px from the plot's bottom, returned as the
  * shift each needs (positive is up) so no two sit closer than {@link END_LABEL_MIN_GAP} and the
- * lowest and the topmost stay {@link END_LABEL_EDGE} inside the plot. Order is kept.
+ * lowest and the topmost stay {@link END_LABEL_EDGE} inside the plot; a stack too tall for the plot
+ * shrinks its gap to fit. Order is kept.
  */
 export function spreadLabels(ys: readonly number[], plotHeight: number): number[] {
   const order = ys.map((y, i) => i).toSorted((a, b) => (ys[a] as number) - (ys[b] as number))
   const placed = new Map<number, number>()
+  // A stack taller than the plot closes its gaps evenly rather than leave the plot.
+  const room = Math.max(plotHeight - 2 * END_LABEL_EDGE, 0)
+  const gap =
+    ys.length > 1 ? Math.min(END_LABEL_MIN_GAP, room / (ys.length - 1)) : END_LABEL_MIN_GAP
   let floor = END_LABEL_EDGE
   for (const i of order) {
     const at = Math.max(ys[i] as number, floor)
     placed.set(i, at)
-    floor = at + END_LABEL_MIN_GAP
+    floor = at + gap
   }
   // Pushed past the top: slide the whole stack back down, then re-sweep from the top.
   const top = plotHeight - END_LABEL_EDGE
@@ -89,7 +94,7 @@ export function spreadLabels(ys: readonly number[], plotHeight: number): number[
   for (const i of order.toReversed()) {
     const at = Math.min(placed.get(i) as number, ceiling, top)
     placed.set(i, at)
-    ceiling = at - END_LABEL_MIN_GAP
+    ceiling = at - gap
   }
   return ys.map((y, i) => (placed.get(i) as number) - y)
 }
@@ -127,25 +132,29 @@ export function endLabelPlan<T, X extends ChartX>(
       fontSize: VX.text.micro,
     }),
   )
-  // Flipped labels (left of their point) sit over their own line, and between two close lines they
-  // would sit on the neighbour's too: the lowest takes the side below its point, the rest above, so
-  // the stack wraps the lines instead of filling the gap between them.
-  const flipped = last.flatMap((p, i) => (anchors[i] === 'end' ? [i] : []))
-  const lowest = flipped.length > 1 ? flipped.toSorted((a, b) => lineY(a) - lineY(b))[0] : undefined
-  function lineY(i: number): number {
-    return (last[i] as (typeof last)[number]).y
-  }
-  const placed = last.map(({ y, prev }, i) => {
+  // Flipped labels (left of their point) sit over their own line. A line falling into its end
+  // comes from above, so its label drops below; a rising line's rises above. Several flipped lines
+  // that move the same way would all take the same side and stack in the gap between them, so they
+  // wrap the lines instead: falling, the lowest below and the rest above; rising, the mirror.
+  const falls = last.map(({ y, prev }) => prev !== null && prev > y)
+  const flipped = last.flatMap((_, i) => (anchors[i] === 'end' ? [i] : []))
+  const lineY = (i: number): number => (last[i] as (typeof last)[number]).y
+  const sameWay =
+    flipped.length > 1 && flipped.every((i) => falls[i] === falls[flipped[0] as number])
+  const wrapped = sameWay ? flipped.toSorted((a, b) => lineY(a) - lineY(b)) : []
+  // The one that keeps the far side: the lowest when falling, the highest when rising.
+  const outlier = falls[flipped[0] as number] ? wrapped[0] : wrapped.at(-1)
+  const placed = last.map(({ y }, i) => {
     const anchor = anchors[i] as EndLabelAnchor
-    // A line falling into its end point comes from above: alone, the label drops below it.
-    const side =
-      lowest !== undefined && anchor === 'end'
-        ? i === lowest
-          ? ('below' as const)
-          : ('above' as const)
-        : prev !== null && prev > y
-          ? ('below' as const)
-          : ('above' as const)
+    const fall = falls[i] as boolean
+    const side: EndLabelSide =
+      sameWay && anchor === 'end'
+        ? (i === outlier) === fall
+          ? 'below'
+          : 'above'
+        : fall
+          ? 'below'
+          : 'above'
     // The label's centre, px from the plot's bottom, with its flip: what the spread keeps apart.
     const centre = ((y - lo) / (hi - lo || 1)) * plot.plotHeight - endLabelOffset(anchor, side).dy
     return { anchor, side, centre }

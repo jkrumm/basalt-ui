@@ -291,11 +291,71 @@ describe('endLabelPlan collision avoidance (argo body weight: Weight + 7 d mean)
     expect(sides).toEqual({ a: 'below', b: 'above' })
   })
 
-  test('three close flipped labels: the highest above, the lowest below, none between the points', () => {
+  test('three close falling flipped labels: the lowest below, the rest above', () => {
     const { plan } = falling(50, 50.2, 50.4)
     const sides = Object.fromEntries(plan.map((p) => [p.series.key, p.side]))
     expect(sides['a']).toBe('below')
     expect(sides['b']).toBe('above')
     expect(sides['c']).toBe('above')
+  })
+
+  /** Lines ending on `ends`, each coming from `from` (above or below its end). */
+  const moving = (ends: number[], from: number[]) => {
+    const keys = ['a', 'b', 'c'] as const
+    const series = ends.map((_, i) => ({
+      key: keys[i] as string,
+      label: `Line ${i}`,
+      color: 'red',
+      getValue: (d: Record<string, number>) => d[keys[i] as string] as number,
+    }))
+    const data = Array.from({ length: 20 }, (_, i) => ({
+      t: day(i + 1),
+      ...Object.fromEntries(keys.map((k, j) => [k, i === 19 ? ends[j] : from[j]])),
+    }))
+    return endLabelPlan(
+      plotOf(data as never, series as never, { yDomain: [0, 100] }),
+      series as never,
+    ).map((p) => p.side)
+  }
+
+  test('two close RISING lines mirror: the highest above, the lower below its point', () => {
+    // The lower label must not sit above-left on its own rising segment.
+    expect(moving([50, 50.2], [47, 47])).toEqual(['below', 'above'])
+  })
+
+  test('a mixed pair keeps each line on the side away from its own segment', () => {
+    // a falls into its end (label below), b rises into it (label above).
+    expect(moving([50, 50.2], [53, 47])).toEqual(['below', 'above'])
+    expect(moving([50, 50.2], [47, 53])).toEqual(['above', 'below'])
+  })
+
+  test('a stack taller than the plot closes its gaps and stays inside it', () => {
+    const ends = [50, 50.1, 50.2]
+    const lines = ['a', 'b', 'c'] as const
+    const series = lines.map((k) => ({
+      key: k as string,
+      label: k,
+      color: 'red',
+      getValue: (d: Record<string, number>) => d[k] as number,
+    }))
+    const data = Array.from({ length: 20 }, (_, i) => ({
+      t: day(i + 1),
+      a: ends[0],
+      b: ends[1],
+      c: ends[2],
+    }))
+    const plotHeight = 30
+    const plan = endLabelPlan(
+      plotOf(data as never, series as never, { yDomain: [0, 100], plotHeight }),
+      series as never,
+    )
+    const centres = plan.map(
+      (p, i) =>
+        ((ends[i] as number) / 100) * plotHeight - (endLabelOffset(p.anchor, p.side).dy + p.nudge),
+    )
+    for (const c of centres) {
+      expect(c).toBeGreaterThanOrEqual(7)
+      expect(c).toBeLessThanOrEqual(plotHeight - 7)
+    }
   })
 })

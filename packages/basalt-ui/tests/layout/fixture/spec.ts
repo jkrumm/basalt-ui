@@ -419,6 +419,8 @@ export type FixtureSpec = {
   }
   /** Wave 39: a tall tooltip in a short `ChartCard` (`w39-tip`, `w39-tip-tall`), a slotted `Bars` in a strip cell (`w39-strip`), a 28px bare `Sparkline` (`w39-spark`). */
   w39Readout?: true
+  /** Wave 43: argo's body-weight `Lines` (Weight + 7 d mean, last values 0.1 kg apart, goal rule), end labels at every width (`w43-lines`). */
+  w43Lines?: true
   /**
    * Renders a `CodeBlock` in a `Prose` between `data-testid="codeblock-before"` and
    * `"codeblock-after"` paragraphs, over a long first line. `language` defaults to `'ts'`; pass
