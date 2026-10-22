@@ -814,7 +814,7 @@ export function Sparkline(props: SparklineProps): ReactElement {
     <div
       data-basalt-sparkline=""
       {...(hosted && { 'data-basalt-hosted': '' })}
-      {...(at !== null && { 'data-basalt-readout': '' })}
+      {...(shown && { 'data-basalt-readout': '' })}
       role="presentation"
       className={cx(classes.root, className)}
       style={{ width: width ?? '100%', height, minWidth: 0, ...style }}
@@ -837,7 +837,7 @@ export function Sparkline(props: SparklineProps): ReactElement {
           coarse={false}
         />
       )}
-      {at !== null && (
+      {shown && at !== null && (
         // One layer on the plot rect (inside a line's margin): the dot and the readout take their
         // fractions of the same box, so both land where the mark did. A bar has no dot: the bar
         // is the marker.

@@ -117,6 +117,6 @@
 
 /* The reference caption steps aside while a readout shows: the chip can land on it (a long caption
  * reaches the chip's line), and the readout is what the pointer asked for. */
-.root[data-basalt-readout] svg text {
+.root[data-basalt-readout] [data-ts-key='reference-label'] {
   visibility: hidden;
 }
