@@ -18,3 +18,25 @@ export const KEY_UNIT = '% cloud cover'
 
 /** The scrubber's forecast hours, local time. */
 export const HOURS = ['21:00', '22:00', '23:00', '00:00', '01:00', '02:00'] as const
+
+/** The area and the night the whole forecast describes (invented geography). */
+export const AREA = 'Harrow Coast'
+export const NIGHT = 'Fri 23 Oct'
+
+/** The scrubber's readout names the day: hours past midnight belong to the next date. */
+export const HOUR_LABELS = [
+  'Fri 21:00',
+  'Fri 22:00',
+  'Fri 23:00',
+  'Sat 00:00',
+  'Sat 01:00',
+  'Sat 02:00',
+] as const
+
+/** Invented coastline, 0–100 on both axes (sea on the left), and three invented places in percent. */
+export const COAST = 'M34 0 C30 10 26 16 28 24 S42 34 40 44 S28 54 30 62 S46 72 44 82 S38 94 40 100'
+export const PLACES = [
+  { name: 'Harrow Bay', left: 8, top: 46 },
+  { name: 'Port Elden', left: 44, top: 38 },
+  { name: 'Kessel Heights', left: 66, top: 72 },
+] as const

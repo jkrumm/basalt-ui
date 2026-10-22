@@ -4,8 +4,9 @@ import { StatGroup } from 'basalt-ui'
 import type { StatStripCell } from 'basalt-ui'
 import { ChartCard, Sparkline } from 'basalt-ui/charts'
 import { VX } from 'basalt-ui/tokens'
-import { chartStateFor } from '../shot-state'
+import { cardStateProps, noop } from '../shot-state'
 import type { ScenarioProps } from '../shot-state'
+import { STRENGTH_ERROR } from './body-data'
 
 /** INOL per session; the productive range is 0.6–1.0. */
 const INOL_BAND = { from: 0.6, to: 1 } as const
@@ -40,7 +41,6 @@ const LIFTS: readonly { id: string; name: string; data: readonly number[] }[] = 
 const fmtInol = (v: number): string => v.toFixed(2)
 const fmtKg = (v: number): string => `${v.toFixed(1)} kg`
 
-const INOL_ERROR = 'The training log did not answer. Retry, or reconnect it in Settings.'
 const INOL_EMPTY = 'No sessions logged in this window. INOL needs at least two sessions per lift.'
 
 function InolSparks({ shotState }: ScenarioProps) {
@@ -49,7 +49,7 @@ function InolSparks({ shotState }: ScenarioProps) {
       <ChartCard
         title="INOL per lift"
         info="Intensity-weighted volume per session. The band marks the productive range, 0.6 to 1.0."
-        state={chartStateFor(shotState, { empty: INOL_EMPTY, error: INOL_ERROR })}
+        {...cardStateProps(shotState, STRENGTH_ERROR, 'content', INOL_EMPTY)}
       >
         <Stack gap="xs">
           {INOL_LIFTS.map((lift) => (
@@ -78,7 +78,12 @@ function InolSparks({ shotState }: ScenarioProps) {
 }
 
 function LiftPrStrip({ shotState }: ScenarioProps) {
-  const state = chartStateFor(shotState, { empty: INOL_EMPTY, error: INOL_ERROR })
+  const state: StatStripCell['state'] =
+    shotState === 'empty'
+      ? { kind: 'empty', reason: INOL_EMPTY }
+      : shotState === 'error'
+        ? { kind: 'error', error: new Error(STRENGTH_ERROR), onRetry: noop }
+        : undefined
   const cells: StatStripCell[] = LIFTS.map((lift) => {
     const pr = Math.max(...lift.data)
     return {
@@ -95,10 +100,11 @@ function LiftPrStrip({ shotState }: ScenarioProps) {
           format={fmtKg}
           reference={pr}
           referenceLabel="PR"
-          state={state}
         />
       ),
       footer: `PR ${fmtKg(pr)}`,
+      loading: shotState === 'loading',
+      ...(state !== undefined && { state }),
     }
   })
   return (

@@ -3,8 +3,10 @@ import { Box } from '@mantine/core'
 import { IconTrash } from '../../demo/icons'
 import { Section } from 'basalt-ui'
 import { BasaltDataTable, createColumnHelper } from 'basalt-ui/table'
+import { tableEmptyState } from '../../demo/table-empty-state'
 import { noop, queryFor } from '../shot-state'
 import type { ScenarioProps } from '../shot-state'
+import { CALIPER_NEXT, SKINFOLD_ERROR } from './body-data'
 
 type Skinfold = {
   date: string
@@ -42,12 +44,18 @@ const COLUMNS = [
 ]
 
 export function BodySkinfoldTable({ shotState }: ScenarioProps) {
-  const query = queryFor(shotState, 'The skinfold log did not answer.')
+  const query = queryFor(shotState, SKINFOLD_ERROR)
   return (
     <Box data-shot="skinfold-history">
       <Section title="Skinfold history">
         <BasaltDataTable
-          data={SKINFOLDS}
+          data={shotState === 'empty' ? [] : SKINFOLDS}
+          emptyState={tableEmptyState({
+            noun: 'caliper sessions',
+            total: 0,
+            cause: CALIPER_NEXT,
+            filtered: false,
+          })}
           columns={COLUMNS}
           rowLabel={(r) => r.date.slice(0, 10)}
           rowActions={[
