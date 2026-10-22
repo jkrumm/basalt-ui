@@ -237,11 +237,11 @@ function LearningAside({ shotState }: ScenarioProps) {
         <Box data-shot="learning-aside" data-shot-absent="error" />
       ) : (
         <Box data-shot="learning-aside" data-shot-absent="error">
-          {shotState === 'empty' ? (
-            <Stack gap="xs">
-              <Text size="xs" c="dimmed">
-                Practice partners · sessions together
-              </Text>
+          <Stack gap="xs">
+            <Text size="xs" c="dimmed">
+              Practice partners · sessions together
+            </Text>
+            {shotState === 'empty' ? (
               <EmptyState
                 tier="section"
                 title="No practice partners yet"
@@ -249,15 +249,10 @@ function LearningAside({ shotState }: ScenarioProps) {
                 // The list rows beside it are `sm`: the tile's title stays at their size.
                 style={{ '--basalt-state-title-size': 'var(--vx-text-sm)' } as CSSProperties}
               />
-            </Stack>
-          ) : (
-            <Stack gap="xs">
-              <Text size="xs" c="dimmed">
-                Practice partners · sessions together
-              </Text>
+            ) : (
               <PartnerRows />
-            </Stack>
-          )}
+            )}
+          </Stack>
         </Box>
       )}
     </PageAside>
