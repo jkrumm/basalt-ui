@@ -768,7 +768,6 @@ exports[`createBasaltTheme() shape and resolver output default 1`] = `
       "styles": {
         "root": {
           "backgroundColor": "var(--vx-surface-panel)",
-          "borderRadius": "var(--vx-radius-card)",
           "boxShadow": "var(--vx-shadow-card)",
         },
       },
@@ -2070,7 +2069,6 @@ exports[`createBasaltTheme() shape and resolver output all knobs 1`] = `
       "styles": {
         "root": {
           "backgroundColor": "var(--vx-surface-panel)",
-          "borderRadius": "var(--vx-radius-card)",
           "boxShadow": "var(--vx-shadow-card)",
         },
       },

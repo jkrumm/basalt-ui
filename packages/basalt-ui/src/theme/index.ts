@@ -496,11 +496,12 @@ function buildTheme(data: PaletteData, options: BuildThemeOptions = {}): Mantine
       }),
       Paper: ext<typeof Paper>({
         classNames: { root: cardInsetClasses.inset },
+        // The radius is in `card-inset.module.css`, not inline: an inline value cannot be stepped
+        // down for a Paper floating over a flush card.
         styles: {
           root: {
             backgroundColor: 'var(--vx-surface-panel)',
             boxShadow: 'var(--vx-shadow-card)',
-            borderRadius: 'var(--vx-radius-card)',
           },
         },
       }),

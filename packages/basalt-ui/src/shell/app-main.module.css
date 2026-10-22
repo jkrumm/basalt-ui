@@ -107,6 +107,24 @@
    * table's page-sticky offset reads it instead of repeating this module's `sm` switch.
    */
   --basalt-main-pad-block: var(--vx-space-stack-md);
+  /*
+   * PUBLIC `--basalt-main-content-h` — the height of Main's CONTENT box: what an element at
+   * `height: var(--basalt-main-content-h)` needs to fill the scrollport with nothing to scroll (a
+   * map, an editor, a full-page canvas). Descendants inherit the resolved length.
+   *
+   * It is the viewport minus the five things that are not content: the header offset, the footer
+   * offset PLUS the safe-area inset (same pair as `margin-bottom` above), the band, and Main's block
+   * padding twice. The band is `--basalt-page-bar-h` (its content box, published by `PageBar`) plus
+   * its own 1 px `border-bottom` the var never counts (`page-aside.module.css` explains the same
+   * pixel): `var(--basalt-page-bar-h, -1px) + 1px` adds it only while a band exists and nets to 0
+   * without one. `h="100%"` cannot do this job — Main sizes itself by flex, so a percentage height
+   * on a child does not resolve against it.
+   */
+  --basalt-main-content-h: calc(
+    100dvh - var(--app-shell-header-offset, 0px) - var(--app-shell-footer-offset, 0px) -
+      env(safe-area-inset-bottom, 0px) - (var(--basalt-page-bar-h, -1px) + 1px) - 2 *
+      var(--basalt-main-pad-block)
+  );
   padding: var(--basalt-main-pad-block) var(--app-shell-padding);
   /* Without this a wide flex/grid child (a bare table, a nowrap control row) sizes Main to ITSELF. */
   min-width: 0;
