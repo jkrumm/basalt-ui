@@ -94,6 +94,7 @@ import { VirtualRowsFixture } from './virtual-rows-fixture'
 import { EventListFixture } from './event-list-fixture'
 import { BoardFixture } from './board-fixture'
 import { BoardRecordFixture } from './board-record-fixture'
+import { FormsW46Fixture } from './forms-w46-fixture'
 import { W43StripFooterFixture } from './w43-strip-footer-fixture'
 import { W43SparkFixture } from './sparkline-w43-fixture'
 import { W38ZonesFixture } from './w38-zones-fixture'
@@ -3127,6 +3128,7 @@ export function ShellFixture({ spec }: { spec: FixtureSpec }): ReactElement {
       {spec.w43Lines && <W43LinesFixture />}
       {spec.codeBlock && <CodeBlockFixture spec={spec.codeBlock} />}
       {spec.forms && <FormsFixture spec={spec.forms} />}
+      {spec.formsW46 && <FormsW46Fixture />}
       {spec.table && <TableFixture spec={spec.table} />}
       {spec.charts && <ChartsFixture spec={spec.charts} />}
       {spec.agent && <AgentFixture spec={spec.agent} />}

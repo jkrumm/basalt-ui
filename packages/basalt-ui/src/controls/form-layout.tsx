@@ -21,7 +21,7 @@
  */
 import { VisuallyHidden } from '@mantine/core'
 import { useId } from 'react'
-import type { ReactNode } from 'react'
+import type { CSSProperties, ReactNode } from 'react'
 import { cx } from '../common/props'
 import type { BasaltProps, SlotStylesProps } from '../common/props'
 import { assertRequiredProps } from '../common/validate'
@@ -30,7 +30,6 @@ import type { SlotActions } from './actions'
 import { WidgetHeader } from '../dashboard/widget-header'
 import type { WidgetHeaderTitleProps } from '../dashboard/widget-header'
 import { CtlSlot } from '../theme'
-import { useSizeClass } from '../shell/use-size-class'
 import { useFormState } from '../forms/form-state'
 import classes from './form-layout.module.css'
 
@@ -57,10 +56,26 @@ function RequiredMark({ required }: { required: boolean | undefined }) {
   )
 }
 
-/** True when `error` carries a message: `undefined`, `null` and `false` are three shapes of "clean". */
+/**
+ * True when `error` carries a message. `undefined`, `null`, `false`, `true` and `''` are all
+ * "clean": `form.errors[path]` is `undefined` on a clean field, `null` once cleared, `false` from a
+ * `cond && message`, and `''` from a validator that returns an empty string.
+ */
 function hasError(error: ReactNode): boolean {
-  return error !== undefined && error !== null && error !== false
+  return error !== undefined && error !== null && typeof error !== 'boolean' && error !== ''
 }
+
+/**
+ * The error glyph, drawn once: the inline `FieldError` svg renders these shapes and the Mantine
+ * input's own error draws the SAME data URI as a CSS mask (`--basalt-field-error-glyph`, set on the
+ * control region), so the two paths cannot drift.
+ */
+const GLYPH_CIRCLE = { cx: 8, cy: 8, r: 6.25 } as const
+const GLYPH_PATH = 'M8 4.75v3.9M8 11.2v.05'
+const GLYPH_MASK = `url("data:image/svg+xml,${encodeURIComponent(
+  `<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16' fill='none' stroke='black' stroke-width='1.5' stroke-linecap='round'><circle cx='${GLYPH_CIRCLE.cx}' cy='${GLYPH_CIRCLE.cy}' r='${GLYPH_CIRCLE.r}'/><path d='${GLYPH_PATH}'/></svg>`,
+)}")`
+const glyphVars = { '--basalt-field-error-glyph': GLYPH_MASK } as CSSProperties
 
 /**
  * The error line under a control region: the bad-status icon, then one sentence.
@@ -74,7 +89,7 @@ function hasError(error: ReactNode): boolean {
 function FieldError({ error, id }: { error: ReactNode; id: string }) {
   if (!hasError(error)) return null
   return (
-    <span id={id} className={classes.error}>
+    <span id={id} className={classes.error} aria-live="polite">
       <svg
         className={classes.errorIcon}
         viewBox="0 0 16 16"
@@ -85,8 +100,8 @@ function FieldError({ error, id }: { error: ReactNode; id: string }) {
         aria-hidden="true"
         data-field-error-icon=""
       >
-        <circle cx="8" cy="8" r="6.25" />
-        <path d="M8 4.75v3.9M8 11.2v.05" />
+        <circle {...GLYPH_CIRCLE} />
+        <path d={GLYPH_PATH} />
       </svg>
       <span>{error}</span>
     </span>
@@ -212,7 +227,7 @@ export type FormRowProps = BasaltProps &
  * @example
  * // A raw control renders no error of its own — pass it explicitly.
  * <FormRow label="Email" required error={inputProps(form, 'email').error}>
- *   <input value={form.values.email} onChange={(e) => form.setFieldValue('email', e.target.value)} />
+ *   <MyEmailField value={form.values.email} onChange={(v) => form.setFieldValue('email', v)} />
  * </FormRow>
  */
 export function FormRow(props: FormRowProps) {
@@ -242,6 +257,7 @@ export function FormRow(props: FormRowProps) {
         <fieldset
           className={cx(classes.control, classNames?.control)}
           disabled={disabled}
+          style={glyphVars}
           {...(describedBy !== undefined && { 'aria-describedby': describedBy })}
         >
           <CtlSlot>{children}</CtlSlot>
@@ -325,9 +341,9 @@ export function FormGroup(props: FormGroupProps) {
     <fieldset
       className={cx(classes.group, className)}
       disabled={disabled}
+      style={style === undefined ? glyphVars : { ...glyphVars, ...style }}
       {...(section && { 'data-section': '' })}
       {...(describedBy !== undefined && { 'aria-describedby': describedBy })}
-      {...(style !== undefined && { style })}
     >
       <legend className={classes.legend}>
         {label}
@@ -362,8 +378,7 @@ export type FormActionsProps = BasaltProps & {
 }
 
 /**
- * The row a form ends on. Trailing-aligned, wrapping, sticky to the bottom of the scrollport on a
- * compact screen (a long form's primary stays in reach), and `disabled` as a unit while the enclosing
+ * The row a form ends on. Trailing-aligned, wrapping, and `disabled` as a unit while the enclosing
  * `FormStateProvider` reports a submit in flight — which is what stops the double-submit that
  * a per-button `loading` prop only hides.
  *
@@ -381,13 +396,11 @@ export function FormActions(props: FormActionsProps) {
   // empty case, which `BarActionSlot` already renders as nothing.
   const { actions, className, style } = props
   const { disabled } = useFormState()
-  const compact = useSizeClass() === 'compact'
 
   return (
     <fieldset
       className={cx(classes.actions, className)}
       disabled={disabled}
-      {...(compact && { 'data-sticky': '' })}
       {...(style !== undefined && { style })}
     >
       <BarActionSlot actions={actions} />

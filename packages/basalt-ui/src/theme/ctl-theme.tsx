@@ -40,10 +40,13 @@ import type {
   MantineThemeOverride,
   MultiSelect,
   NativeSelect,
+  NumberInput,
+  PasswordInput,
   Radio,
   SegmentedControl,
   Select,
   Switch,
+  Textarea,
   TextInput,
 } from '@mantine/core'
 import type { ReactNode } from 'react'
@@ -68,6 +71,11 @@ export const CTL_THEME: MantineThemeOverride = {
     MultiSelect: ext<typeof MultiSelect>({ defaultProps: { size: 'ctl' } }),
     SegmentedControl: ext<typeof SegmentedControl>({ defaultProps: { size: 'ctl' } }),
     NativeSelect: ext<typeof NativeSelect>({ defaultProps: { size: 'ctl' } }),
+    // The form fields a `FormRow` / `SettingsRow` hosts (SPEC § 6.13): the 32 px field without a
+    // per-call `size`. `theme/index.ts` already carries the `ctl` stepper column for NumberInput.
+    NumberInput: ext<typeof NumberInput>({ defaultProps: { size: 'ctl' } }),
+    PasswordInput: ext<typeof PasswordInput>({ defaultProps: { size: 'ctl' } }),
+    Textarea: ext<typeof Textarea>({ defaultProps: { size: 'ctl' } }),
     // The theme keys are the component names Mantine's own `useProps` looks up — `RadioGroup`, not
     // `Radio.Group` (`RadioGroup.mjs`: `useProps("RadioGroup", …)`).
     Radio: ext<typeof Radio>({

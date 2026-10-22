@@ -15,7 +15,7 @@
  * `renderToStaticMarkup` rather than the DOM harness for the same reason `stat-card.test.tsx` uses
  * it: these are structural claims about painted markup, not interaction.
  */
-import { MantineProvider } from '@mantine/core'
+import { MantineProvider, TextInput } from '@mantine/core'
 import { describe, expect, test } from 'bun:test'
 import { readFileSync } from 'node:fs'
 import { resolve } from 'node:path'
@@ -338,6 +338,48 @@ describe('FormRow description and error wiring (SPEC § 6.13)', () => {
     expect(markup).toContain('Enter a valid email address.')
   })
 
+  test.each([[null], [false], [true], ['']])(
+    'error=%p is clean: no icon, no error node, no dangling describedby id',
+    (error) => {
+      const markup = render(
+        <FormRow label="Email" hint="Receipts only." error={error}>
+          <span>control</span>
+        </FormRow>,
+      )
+      expect(markup).not.toContain('data-field-error-icon')
+      expect(markup).not.toContain('aria-live')
+      expect(describedBy(markup)).toHaveLength(1)
+      const group = render(
+        <FormGroup label="Notify me" error={error}>
+          <span>option</span>
+        </FormGroup>,
+      )
+      expect(group).not.toContain('aria-describedby')
+      expect(group).not.toContain('data-field-error-icon')
+    },
+  )
+
+  test('the error is a polite live region', () => {
+    expect(
+      render(
+        <FormRow label="E" error="Bad.">
+          {null}
+        </FormRow>,
+      ),
+    ).toContain('aria-live="polite"')
+  })
+
+  test('the glyph has one source: the inline svg and the mask var come from the same constants', () => {
+    const markup = render(
+      <FormRow label="E" error="Bad.">
+        {null}
+      </FormRow>,
+    )
+    expect(markup).toContain('M8 4.75v3.9M8 11.2v.05')
+    expect(decodeURIComponent(markup)).toContain('M8 4.75v3.9M8 11.2v.05')
+    expect(markup).toContain('--basalt-field-error-glyph')
+  })
+
   test('a FormGroup names its description and error the same way', () => {
     const markup = render(
       <FormGroup label="Notify me" hint="Pick any." error="Pick at least one.">
@@ -349,7 +391,7 @@ describe('FormRow description and error wiring (SPEC § 6.13)', () => {
   })
 })
 
-describe('FormGroup section, FormActions sticky', () => {
+describe('FormGroup section', () => {
   const css = readFileSync(resolve(import.meta.dirname, 'form-layout.module.css'), 'utf8').replace(
     /\/\*[\s\S]*?\*\//g,
     '',
@@ -387,9 +429,20 @@ describe('FormGroup section, FormActions sticky', () => {
     expect(block('.label')).toContain('font-size: var(--vx-text-sm)')
     expect(block('.hint')).toContain('font-size: var(--vx-text-xs)')
   })
+})
 
-  test('actions stick to the bottom only when marked compact', () => {
-    expect(block('.actions[data-sticky]')).toContain('position: sticky')
-    expect(block('.actions')).not.toContain('sticky')
+describe('a control inside FormRow takes the 32 px tier unless it states a size', () => {
+  const heightVar = (size?: string) => {
+    const markup = render(
+      <FormRow label="Name">
+        <TextInput {...(size !== undefined && { size })} />
+      </FormRow>,
+    )
+    return /data-size="([^"]*)"/.exec(markup)?.[1]
+  }
+
+  test('default is ctl; an explicit size="md" wins', () => {
+    expect(heightVar()).toBe('ctl')
+    expect(heightVar('md')).toBe('md')
   })
 })

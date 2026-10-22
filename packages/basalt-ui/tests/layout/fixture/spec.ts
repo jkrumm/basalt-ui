@@ -390,6 +390,8 @@ export type FixtureSpec = {
   w43Danger?: true
   /** Wave 44: the lazy virtual-rows seam, own scroll node or against the shell scrollport. */
   virtualRows?: 'height' | 'parent' | 'parent-grow'
+  /** Wave 46: a two-section `FormGroup section` form, 700 px wide, plus a `size="md"` opt-out (`forms-w46`). */
+  formsW46?: true
   /** Wave 45: `Board`, four columns each bounded at 360 px (`board`). */
   board?: 'columns' | 'compact'
   /** Wave 46: a `Board` card with a linked record (`board-record-host`). */
