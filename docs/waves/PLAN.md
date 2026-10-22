@@ -1814,35 +1814,64 @@ Spec: SPEC § 6.6, § 9.1. Scenarios S1 (outages) and S2 (sessions). Validators:
 - **Next — stopped: Wave 42 closed; orchestrated, nothing spawned.** Wave 43 (argo upstream rows, inserted
   2026-10-22 by the owner) is `active` for the mother; Event list and later are renumbered 44–48.
 
-## Wave 43 — argo upstream rows <!-- status: active -->
+## Wave 43 — argo upstream rows <!-- status: done -->
 
 Source: argo `docs/design/UPSTREAM.md` § "Strength review" and § Wave 50–53 (argo on 2.27.2). P1 rows first; each row
 gets a failing-first test on argo's composition. **argo is paused (owner, 2026-10-22: a major overhaul is coming)**, so
 the validator is the playground plus `basalt-ui shot` with two fresh reviewers; argo picks the rows up on its next bump.
 
-- [ ] **P1:** `Meter` with the reading at the track start (`readingAt="start"`, or `'fill'` too short to hold it): the
+- [x] **P1:** `Meter` with the reading at the track start (`readingAt="start"`, or `'fill'` too short to hold it): the
       start caption's descender is clipped at 390 (`low 72.3 kg` reads `kq`) and the end caption wraps to a second line
       at 1440 with room to spare. Blocks argo body-composition.
-- [ ] **P1:** a `map` catalogue form (canvas plus a key rail) so a geographic raster on a map canvas has a standard
+- [x] **P1:** a `map` catalogue form (canvas plus a key rail) so a geographic raster on a map canvas has a standard
       (Expression 1), and MapLibre's compact attribution styled to basalt's radius and size (`craft-1/off-scale-radius`,
       the nested step at 390). Blocks argo astro. Also decide the radius step for a `Paper` floating over a
       `Card variant="flush"` (`craft-1/nested-radius-step`).
-- [ ] `VX.status.excellent` used as TEXT: it is a fill (forest[2], about 2.9:1 on a card) and `tokens/status-text.ts`
+- [x] `VX.status.excellent` used as TEXT: it is a fill (forest[2], about 2.9:1 on a card) and `tokens/status-text.ts`
       solves only good/warn/bad. Either run `excellent` through the text solver, or make it fill-only and documented,
       with a guard flagging `status.excellent` in a text-colour position.
-- [ ] `Sparkline` `band`/`zones` prop (a productive range, argo's INOL 0.6–1.0), and its reference label overprinted by
+- [x] `Sparkline` `band`/`zones` prop (a productive range, argo's INOL 0.6–1.0), and its reference label overprinted by
       the line's start at 390.
-- [ ] `ChartCard` `subtitle` dropped at compact: the key it carries is reachable only in the focus tooltip on a phone.
-- [ ] `BasaltDataTable` `danger` row action: red only on hover or focus, not on every row at rest. (The `FoldToggle`
+- [x] `ChartCard` `subtitle` dropped at compact: the key it carries is reachable only in the focus tooltip on a phone.
+- [x] `BasaltDataTable` `danger` row action: red only on hover or focus, not on every row at rest. (The `FoldToggle`
       glyph argo also names was fixed in Wave 42: a ghost chevron with a `+N` header.)
-- [ ] A `--basalt-main-content-h` var or a fill prop for a page that fills the scrollport (argo computes it from five
+- [x] A `--basalt-main-content-h` var or a fill prop for a page that fills the scrollport (argo computes it from five
       shell vars plus the band's 1 px border).
-- [ ] The `RefLine` legend glyph (a goal line's swatch is the series' solid stroke) and `Lines` end-label collisions.
-- [ ] Shot harness: anchors inside a strip cell are recorded "not captured" at rest and "only present in this state"
+- [x] The `RefLine` legend glyph (a goal line's swatch is the series' solid stroke) and `Lines` end-label collisions.
+- [x] Shot harness: anchors inside a strip cell are recorded "not captured" at rest and "only present in this state"
       under `empty`.
       **Left behind:**
 
-## Wave 44 — Event list <!-- status: pending -->
+- **Landed** (14 PRs through `rd merge`, `make check` after every rebase; every package diff independently reviewed by a
+  fresh subagent, fixes sent back and re-pushed before merge): #478 the S7 body and S8 map scaffold (one stub per
+  worker); #481 `Meter` reading in the caption row (no clipped descender, both captions on one line); #486 the `map`
+  catalogue form, MapLibre's attribution styled onto basalt's scale (no maplibre dep), a `Paper` over a flush card at
+  the control radius (dropdowns and modal content excluded), `--basalt-main-content-h`; #485
+  `basalt/status-fill-as-text` at error (argo and the playground measured 0); #484 `Sparkline` `band` and a reference
+  label clear of the line (with a `check-dist-layering.mjs` fix: its import regex matched the string `"from"`); #479
+  `ChartCard` subtitle kept under the title below 480 px; #483 the danger row action red only on its own hover/focus;
+  #482, #489, #491 the reference legend key at the line's weight, end labels and the Goal caption clear of every line
+  and each other; #480 shot records rest `absent` for an anchor seen only in a URL state (argo's "not captured" did not
+  reproduce: data-dependent rest); #488 strip footers at the `sm` step; #487, #490 honest fixture states and copy.
+- **Rows:** all nine addressed. The `RefLine` glyph row resolves as "the key follows the drawn line": argo's goal is
+  `dashed: false`, so it reads apart only by weight and colour until argo sets `dashed: true` (said in MIGRATING).
+  Still open, P3: the INOL band flush on the plot edge (`docs/waves/design-parity/w43/rounds.md` § r3).
+- **Rounds** (`docs/waves/design-parity/w43/rounds.md`, boards `.design-parity/w43/r1`–`r3`): S7 body 0 → 59 → 66
+  (P1 9 → 0 → 0), S8 map 50 → 95 → 99, `shot detect` 90 → 100 → 100; S2, S4 and /components unchanged (no new item).
+  Two fresh `basalt-design-reviewer` subagents per round. The basalt-owned items found outside the rows are listed in
+  rounds.md § Open (Meter marked track at full ink, the Sparkline focus chip, the INOL list layout, a focus tooltip over
+  the card title, the table focus ring at 390) — candidates for Wave 46.
+- **Public surface:** no new exported symbol, type or subpath. New props/vars and their consumers: `Sparkline` `band`
+  (argo INOL), `--basalt-main-content-h` (argo astro `MAP_FULL_BLEED_HEIGHT`), the `basalt/status-fill-as-text` rule
+  (argo strength/garmin). CLI ceiling 8457 → 8463 (#480).
+- **SPEC:** § 3 gains the geographic-field row, § 6.3 the reading-in-the-caption-row bullet, D51 records the wave's
+  decisions. **MIGRATING:** one `### argo upstream rows (Wave 43)` section under the single `## Unreleased`;
+  `release-migrating.ts --check` passes. `CHANGELOG.md` untouched.
+- **Release-ready, not released** (owner: no release this wave): #468–#491 on master are unreleased (Waves 42 and 43).
+  argo is paused; it picks the rows up on its next bump.
+- **Next — stopped: Wave 43 closed; orchestrated, nothing spawned.** Wave 44 (Event list) is `active` for the mother.
+
+## Wave 44 — Event list <!-- status: active -->
 
 Spec: SPEC § 6.7, § 9.3, D11. Scenarios S5 (build the S5 fixture: the journal) and S3 (item timeline).
 Validators: argo (warden timeline, narratives), rb (journal, session history), linewatch (transitions).
