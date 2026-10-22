@@ -15,6 +15,12 @@ const GLYPH_EM = 0.62
 const EDGE_INSET = 6
 const LINE_GAP = 3
 
+/**
+ * A box another label has claimed in the same plot: a share of the plot width and a span of values
+ * on the left axis. A caption never takes a spot that overlaps one.
+ */
+export type LabelBox = { fx0: number; fx1: number; y0: number; y1: number }
+
 const ORDER_END: readonly RefLabelPosition[] = [
   'end-above',
   'end-below',
@@ -29,7 +35,7 @@ const ORDER_START: readonly RefLabelPosition[] = [
 ]
 
 /** The y range of the polyline `points` (sorted by `fx`) between `fx0` and `fx1`, or `null`. */
-function yRangeWithin(
+export function yRangeWithin(
   points: readonly RefLabelPoint[],
   fx0: number,
   fx1: number,
@@ -70,8 +76,11 @@ export function refLabelPosition(opts: {
   fontSize: number
   /** One polyline per visible series on the line's axis. */
   series: readonly (readonly RefLabelPoint[])[]
+  /** Labels already placed on this axis (end labels): a caption keeps clear of them too. */
+  claimed?: readonly LabelBox[] | undefined
 }): RefLabelPosition {
   const { pinned, startFirst, value, plotWidth, plotHeight, label, fontSize, series } = opts
+  const { claimed = [] } = opts
   const order = startFirst ? ORDER_START : ORDER_END
   if (pinned !== undefined) return pinned
   const [lo, hi] = [Math.min(...opts.domain), Math.max(...opts.domain)]
@@ -92,10 +101,12 @@ export function refLabelPosition(opts: {
     const [fx0, fx1] = position.startsWith('end')
       ? [1 - widthFx, 1 - EDGE_INSET / plotWidth]
       : [EDGE_INSET / plotWidth, widthFx]
-    return series.every((points) => {
-      const range = yRangeWithin(points, fx0, fx1)
-      return range === null || range[1] < from || range[0] > to
-    })
+    return (
+      series.every((points) => {
+        const range = yRangeWithin(points, fx0, fx1)
+        return range === null || range[1] < from || range[0] > to
+      }) && claimed.every((b) => b.fx1 < fx0 || b.fx0 > fx1 || b.y1 < from || b.y0 > to)
+    )
   }
   // A caption that cannot avoid the data still stays inside the plot.
   return (
@@ -116,10 +127,10 @@ export type SparkLabelPlacement = {
 }
 
 /**
- * Where a sparkline's reference label sits: the first of start-above, start-below, end-above,
- * end-below whose box stays inside the plot (`height` in full) and that the data line does not run
- * through (the box grown by {@link SPARK_LINE_AIR}), else the fitting spot the line comes least near.
- * The box clears the reference by {@link SPARK_LABEL_GAP}, so the dashed rule never strikes the text.
+ * Where a sparkline's reference label sits: of start-above, start-below, end-above, end-below, the
+ * one whose box stays inside the plot (`height` in full) and moves least off the reference to clear
+ * the data line by {@link SPARK_LINE_AIR} (the first of the four on a tie). The box clears the
+ * reference by at least {@link SPARK_LABEL_GAP}, so the dashed rule never strikes the text.
  * `line` is the plotted polyline as `{ fx, y }` (a share of the plot width, a value on `domain`);
  * without it (a bar sparkline, or no `width`/`label`) only the plot bounds decide.
  */
@@ -147,26 +158,43 @@ export function referenceLabelPlacement(opts: {
   const pxLine = line?.map((p) => ({ fx: p.fx, y: px(p.y) }))
   const candidates = (['start', 'end'] as const).flatMap((end) =>
     (['above', 'below'] as const).map((side) => {
-      const top = side === 'above' ? at - SPARK_LABEL_GAP - boxH : at + SPARK_LABEL_GAP
+      const nominal = side === 'above' ? at - SPARK_LABEL_GAP - boxH : at + SPARK_LABEL_GAP
       const [fx0, fx1] = end === 'start' ? [0, boxW / plotW] : [1 - boxW / plotW, 1]
-      const range = pxLine === undefined || plotW <= 0 ? null : yRangeWithin(pxLine, fx0, fx1)
-      // Air between the box and the nearest the line comes (negative: it runs through the box).
-      const air =
-        range === null
-          ? Number.POSITIVE_INFINITY
-          : Math.max(top - range[1], range[0] - (top + boxH))
-      return { side, end, fits: top >= 0 && top + boxH <= height, air }
+      // The curve between two points stays between their values but not on the chord, so the
+      // window reaches out to the vertices that bound it.
+      const lead = pxLine?.find((p) => p.fx >= fx1)?.fx ?? fx1
+      const trail = pxLine?.findLast((p) => p.fx <= fx0)?.fx ?? fx0
+      const range =
+        pxLine === undefined || plotW <= 0
+          ? null
+          : yRangeWithin(pxLine, Math.min(trail, fx0), Math.max(lead, fx1))
+      // A box the line comes within the air of slides away from the reference, along its side, until it has air.
+      const near =
+        range !== null &&
+        range[1] + SPARK_LINE_AIR > nominal &&
+        range[0] - SPARK_LINE_AIR < nominal + boxH
+      const top = !near
+        ? nominal
+        : side === 'above'
+          ? range[0] - SPARK_LINE_AIR - boxH
+          : range[1] + SPARK_LINE_AIR
+      return {
+        side,
+        end,
+        top,
+        shift: Math.abs(top - nominal),
+        fits: top >= 0 && top + boxH <= height,
+      }
     }),
   )
   const fitting = candidates.filter((c) => c.fits)
-  const found =
-    fitting.find((c) => c.air >= SPARK_LINE_AIR) ??
-    fitting.reduce<(typeof candidates)[number] | undefined>(
-      (best, c) => (best === undefined || c.air > best.air ? c : best),
-      undefined,
-    ) ??
-    candidates[0]
-  const { side, end } = found as (typeof candidates)[number]
-  const dy = (SPARK_LABEL_GAP + boxH / 2) * (side === 'above' ? -1 : 1)
+  // The fitting spot that stays nearest the reference (the first of the four on a tie), else the
+  // first: the plot bounds alone decide when nothing fits.
+  const found = fitting.reduce<(typeof candidates)[number] | undefined>(
+    (best, c) => (best === undefined || c.shift < best.shift ? c : best),
+    undefined,
+  )
+  const { side, end, top } = found ?? (candidates[0] as (typeof candidates)[number])
+  const dy = top + boxH / 2 - at
   return { side, end, dy }
 }

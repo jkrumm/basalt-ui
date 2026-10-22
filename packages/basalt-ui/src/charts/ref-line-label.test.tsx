@@ -5,6 +5,7 @@ import { createRoot } from 'react-dom/client'
 import { renderToString } from 'react-dom/server'
 import { Bars } from './Bars'
 import { Lines } from './Lines'
+import { referenceLabelPlacement, refLabelPosition } from './ref-label'
 import type { ChartSeries, RefLine } from './types'
 
 type Row = { t: Date; a: number }
@@ -133,5 +134,50 @@ describe('RefLine.label', () => {
     const el = ssr(lines([ref({ label: undefined })]))
     expect(labelOf(el, 0)).toBeNull()
     expect(el.querySelector('g[data-ts-key$="-label"]')).toBeNull()
+  })
+})
+
+describe('a caption keeps clear of claimed boxes (w43 r2)', () => {
+  const base = {
+    pinned: undefined,
+    startFirst: false,
+    value: 50,
+    domain: [0, 100] as const,
+    plotWidth: 1000,
+    plotHeight: 300,
+    label: 'Goal',
+    fontSize: 11,
+    series: [],
+  }
+  test('with the plot empty the caption takes the end, above', () => {
+    expect(refLabelPosition(base)).toBe('end-above')
+  })
+  test('an end label over that spot sends it to the next one that is free', () => {
+    const claimed = [{ fx0: 0.9, fx1: 1, y0: 51, y1: 56 }]
+    expect(refLabelPosition({ ...base, claimed })).toBe('end-below')
+    expect(
+      refLabelPosition({ ...base, claimed: [...claimed, { fx0: 0.9, fx1: 1, y0: 44, y1: 49 }] }),
+    ).toBe('start-above')
+  })
+})
+
+describe('a sparkline caption slides off a line that starts on its reference (w43 r2)', () => {
+  const line = [0, 0.1, 0.2, 0.4, 1].map((fx, i) => ({ fx, y: [100, 98, 96, 92, 85][i] as number }))
+  const place = (width: number) =>
+    referenceLabelPlacement({
+      value: 100,
+      domain: [84, 101],
+      height: 28,
+      width,
+      inset: 3,
+      fontSize: 11,
+      label: 'PR',
+      line,
+    })
+  test('the box takes the spot below, moved past the line, never touching it', () => {
+    const { side, end, dy } = place(500)
+    expect([side, end]).toEqual(['below', 'start'])
+    // Nominal is 2 px of gap plus half the box (7.5); the line's 2 px drop in the box's span pushes it further.
+    expect(dy).toBeGreaterThan(7.5)
   })
 })

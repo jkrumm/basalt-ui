@@ -5,6 +5,8 @@
 import { decorative } from '@tanstack/charts/mark/decorative'
 import { text } from '@tanstack/charts/text'
 import { VX } from '../tokens'
+import { yRangeWithin } from './ref-label'
+import type { LabelBox, RefLabelPoint } from './ref-label'
 import { rowX } from './types'
 import type { ChartMarks, ChartSeries, ChartX, PlotContext, PlotRow } from './types'
 
@@ -24,6 +26,14 @@ const END_LABEL_FLIP_DY = -9
 const END_LABEL_FLIP_DY_BELOW = 13
 /** The room a label's centre keeps from the plot's top and bottom edge, px: half its line. */
 const END_LABEL_EDGE = 7
+/** A glyph's advance as a share of the font size, for a label's drawn box (the room check's {@link END_LABEL_GLYPH_EM} errs wide). */
+const BOX_GLYPH_EM = 0.62
+/** A label's ink is this share of its font size tall, centred on its text's y. */
+const BOX_INK = 0.75
+/** Air a label keeps from any line, px, and the margin a claimed box carries for a caption. */
+const LINE_AIR = 3
+/** The most flipped labels whose two sides are all tried (2 ** n assignments). */
+const MAX_SIDE_SEARCH = 5
 
 export type EndLabelAnchor = 'start' | 'end'
 /** Which side of its line a flipped label sits: away from the line's last segment. */
@@ -56,8 +66,20 @@ export type EndLabel<T, X extends ChartX> = {
   anchor: EndLabelAnchor
   /** Only a flipped label (left of its point) can meet its own line; it takes the clear side. */
   side: EndLabelSide
-  /** A vertical shift in px (negative is up) that keeps this label clear of its neighbours. */
+  /** A vertical shift in px (negative is up) that keeps this label clear of its neighbours and the lines. */
   nudge: number
+  /** The room the drawn label takes, for a reference caption to keep clear of. */
+  box: LabelBox
+}
+
+const claimedBoxes = new WeakMap<object, readonly LabelBox[]>()
+/** Records the boxes the end labels of `plot` take (once per plot, by `Lines`). */
+export function claimLabelBoxes(plot: object, boxes: readonly LabelBox[]): void {
+  claimedBoxes.set(plot, boxes)
+}
+/** The boxes {@link claimLabelBoxes} recorded for `plot`: what a reference caption avoids. */
+export function claimedLabelBoxes(plot: object): readonly LabelBox[] {
+  return claimedBoxes.get(plot) ?? []
 }
 
 type LastPoint<T, X extends ChartX> = {
@@ -110,6 +132,8 @@ export function endLabelPlan<T, X extends ChartX>(
   plot: PlotContext<T, X>,
   lines: readonly ChartSeries<T>[],
   naming: LinesNaming = 'auto',
+  /** The values of the reference lines on the left axis: rules a label must not sit on. */
+  rules: readonly number[] = [],
 ): EndLabel<T, X>[] {
   if (naming === 'legend' || plot.y2 !== undefined || lines.length === 0) return []
   if (naming === 'auto' && (plot.containerClass !== 'wide' || lines.length > MAX_END_LABELS))
@@ -144,32 +168,119 @@ export function endLabelPlan<T, X extends ChartX>(
   const wrapped = sameWay ? flipped.toSorted((a, b) => lineY(a) - lineY(b)) : []
   // The one that keeps the far side: the lowest when falling, the highest when rising.
   const outlier = falls[flipped[0] as number] ? wrapped[0] : wrapped.at(-1)
-  const placed = last.map(({ y }, i) => {
-    const anchor = anchors[i] as EndLabelAnchor
+  const preferred = last.map((_, i): EndLabelSide => {
     const fall = falls[i] as boolean
-    const side: EndLabelSide =
-      sameWay && anchor === 'end'
-        ? (i === outlier) === fall
-          ? 'below'
-          : 'above'
-        : fall
-          ? 'below'
-          : 'above'
-    // The label's centre, px from the plot's bottom, with its flip: what the spread keeps apart.
-    const centre = ((y - lo) / (hi - lo || 1)) * plot.plotHeight - endLabelOffset(anchor, side).dy
-    return { anchor, side, centre }
+    return sameWay && anchors[i] === 'end'
+      ? (i === outlier) === fall
+        ? 'below'
+        : 'above'
+      : fall
+        ? 'below'
+        : 'above'
   })
-  const shifts = spreadLabels(
-    placed.map((p) => p.centre),
-    plot.plotHeight,
-  )
-  return last.map(({ series, row }, i) => ({
-    series,
-    row,
-    anchor: (placed[i] as (typeof placed)[number]).anchor,
-    side: (placed[i] as (typeof placed)[number]).side,
-    nudge: 0 - (shifts[i] as number),
-  }))
+  const toPx = (y: number): number => ((y - lo) / (hi - lo || 1)) * plot.plotHeight
+  const nominal = (i: number, side: EndLabelSide): number =>
+    toPx(lineY(i)) - endLabelOffset(anchors[i] as EndLabelAnchor, side).dy
+  const half = (VX.text.micro * BOX_INK) / 2
+  const plotW = Math.max(plot.plotWidth, 1)
+  const spans = last.map(({ series, fraction }, i) => {
+    const room = (END_LABEL_DX + series.label.length * VX.text.micro * BOX_GLYPH_EM) / plotW
+    const edge = END_LABEL_DX / plotW
+    return anchors[i] === 'end'
+      ? ([fraction - room, fraction - edge] as const)
+      : ([fraction + edge, fraction + room] as const)
+  })
+  // Every line a label could sit on, as polylines in px from the plot's bottom: each visible
+  // series and each reference rule. Only the stretch under the labels matters.
+  const from = Math.min(...spans.map(([x0]) => x0))
+  const obstacles: RefLabelPoint[][] = [
+    ...plot.visible.map((s) => {
+      const pts: RefLabelPoint[] = []
+      let before: RefLabelPoint | undefined
+      for (const r of plot.rows(s.key)) {
+        const fx = r.y === null ? null : plot.xFraction(r.x)
+        if (fx === null || r.y === null) continue
+        const pt = { fx, y: toPx(r.y) }
+        if (fx < from) before = pt
+        else {
+          if (before !== undefined) pts.push(before)
+          before = undefined
+          pts.push(pt)
+        }
+      }
+      if (before !== undefined) pts.push(before)
+      return pts
+    }),
+    ...rules.map((v) => [
+      { fx: 0, y: toPx(v) },
+      { fx: 1, y: toPx(v) },
+    ]),
+  ]
+  /** The line ranges (px) a label spanning `i`'s x-window runs into. */
+  const ranges = (i: number): [number, number][] =>
+    obstacles.flatMap((pts) => {
+      const [x0, x1] = spans[i] as readonly [number, number]
+      const range = yRangeWithin(pts, x0, x1)
+      return range === null ? [] : [range]
+    })
+  /** Where the centre goes to clear the lines on `side` of `start`, stepping past each one it meets. */
+  const cleared = (i: number, side: EndLabelSide, start: number): number => {
+    const blockers = ranges(i)
+    let c = start
+    for (let n = 0; n <= blockers.length; n++) {
+      const hit = blockers.find(([a, b]) => b + LINE_AIR > c - half && a - LINE_AIR < c + half)
+      if (hit === undefined) break
+      c = side === 'above' ? hit[1] + LINE_AIR + half : hit[0] - LINE_AIR - half
+    }
+    return c
+  }
+  const airOf = (i: number, c: number): number =>
+    Math.min(
+      Number.POSITIVE_INFINITY,
+      ...ranges(i).map(([a, b]) => Math.max(a - (c + half), c - half - b)),
+    )
+  const place = (sides: readonly EndLabelSide[]) => {
+    const start = last.map((_, i) =>
+      cleared(i, sides[i] as EndLabelSide, nominal(i, sides[i] as EndLabelSide)),
+    )
+    const shifts = spreadLabels(start, plot.plotHeight)
+    const centres = start.map((c, i) => c + (shifts[i] as number))
+    const score = centres.reduce((sum, c, i) => sum + Math.min(airOf(i, c), LINE_AIR), 0)
+    return { sides, centres, score }
+  }
+  // Each flipped label may take either side: the assignment that keeps most air from the lines
+  // wins, the preferred one on a tie. Level labels (right of
+  // their point) keep theirs.
+  const options = flipped.length <= MAX_SIDE_SEARCH ? flipped.length : 0
+  let best = place(preferred)
+  for (let mask = 1; mask < 1 << options; mask++) {
+    const sides = preferred.map((side, i): EndLabelSide => {
+      const at = flipped.indexOf(i)
+      return at >= 0 && (mask >> at) & 1 ? (side === 'above' ? 'below' : 'above') : side
+    })
+    const trial = place(sides)
+    if (trial.score > best.score + 0.01) best = trial
+  }
+  return last.map(({ series, row }, i) => {
+    const side = best.sides[i] as EndLabelSide
+    const centre = best.centres[i] as number
+    const [x0, x1] = spans[i] as readonly [number, number]
+    const perPx = (hi - lo) / (plot.plotHeight || 1)
+    // Two pixels of margin each way: the caption keeps its own gap from the claimed box.
+    return {
+      series,
+      row,
+      anchor: anchors[i] as EndLabelAnchor,
+      side,
+      nudge: nominal(i, side) - centre,
+      box: {
+        fx0: x0 - 2 / plotW,
+        fx1: x1 + 2 / plotW,
+        y0: lo + (centre - half - 2) * perPx,
+        y1: lo + (centre + half + 2) * perPx,
+      },
+    }
+  })
 }
 
 /** The offset of a label from its point: right of it, level; or left of it, above or below. */

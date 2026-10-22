@@ -22,6 +22,12 @@ const LABELS = '[data-ts-key$="-end-label"] text'
 const EDGE_EPS = 0.5
 /** Air between the two label boxes, px: one label line is the pitch, so the boxes never touch. */
 const LABEL_AIR = 2
+/** Path samples per px of length, so a thin stroke cannot slip between two. */
+const SAMPLE_STEP_PX = 0.5
+/** A stroke's half width plus a hair, px: the path's real ink. */
+const INK = 1.5
+/** A label's glyph ink is this share of its font size tall; the text box's rest is line-height air. */
+const GLYPH_INK = 0.75
 
 const spec: FixtureSpec = {
   sections: [
@@ -94,6 +100,80 @@ layout('Wave 43 end labels on two close lines', () => {
         expect(b.left).toBeGreaterThanOrEqual(m.frame.left - EDGE_EPS)
         expect(b.right).toBeLessThanOrEqual(m.frame.right + EDGE_EPS)
       }
+    },
+  )
+
+  test.each([
+    ['1440', DESKTOP_1440],
+    ['390', PHONE],
+  ] as const)(
+    '%s: the end labels and the Goal caption sit on no line and on each other',
+    async (_, viewport) => {
+      const p = await openFixture(spec, viewport)
+      await p.settle()
+      const m = await p.raw.evaluate(
+        ({ root, labels, step, ink, inkH }) => {
+          const svg = document.querySelector(`${root} svg`)
+          if (!svg) throw new Error('LAYOUT: no chart svg')
+          const boxOf = (el: Element) => {
+            const r = el.getBoundingClientRect()
+            const fs = parseFloat(getComputedStyle(el).fontSize)
+            const mid = (r.top + r.bottom) / 2
+            return {
+              text: el.textContent ?? '',
+              left: r.left,
+              right: r.right,
+              top: mid - (fs * inkH) / 2,
+              bottom: mid + (fs * inkH) / 2,
+            }
+          }
+          const texts = [
+            ...[...svg.querySelectorAll(labels)].map(boxOf),
+            ...[...svg.querySelectorAll('[data-ts-key="ref-0-label"] text')].map(boxOf),
+          ]
+          const paths = [
+            ...[...svg.querySelectorAll<SVGPathElement>('path')].filter(
+              (path) => (path.getAttribute('d') ?? '').split(/[ML]/).length > 20,
+            ),
+            ...svg.querySelectorAll<SVGPathElement>('[data-ts-key="ref-0"] path'),
+          ]
+          const hits = texts.map(() => 0)
+          for (const path of paths) {
+            const ctm = path.getScreenCTM()
+            if (!ctm) continue
+            const len = path.getTotalLength()
+            for (let at = 0; at <= len; at += step) {
+              const pt = path.getPointAtLength(at).matrixTransform(ctm)
+              texts.forEach((b, i) => {
+                if (
+                  pt.x + ink >= b.left &&
+                  pt.x - ink <= b.right &&
+                  pt.y + ink >= b.top &&
+                  pt.y - ink <= b.bottom
+                )
+                  hits[i] = (hits[i] ?? 0) + 1
+              })
+            }
+          }
+          return { texts, hits }
+        },
+        { root: ROOT, labels: LABELS, step: SAMPLE_STEP_PX, ink: INK, inkH: GLYPH_INK },
+      )
+      expect(m.texts.map((t) => t.text).toSorted()).toEqual([
+        '7\u00a0d\u00a0mean',
+        'Goal',
+        'Weight',
+      ])
+      m.texts.forEach((t, i) => {
+        // A text over a line, named by the text, so the failing tail says which one.
+        expect(`${t.text}: ${m.hits[i]} samples on a line`).toBe(`${t.text}: 0 samples on a line`)
+      })
+      m.texts.forEach((a, i) =>
+        m.texts.slice(i + 1).forEach((b) => {
+          const over = a.left < b.right && b.left < a.right && a.top < b.bottom && b.top < a.bottom
+          expect(`${a.text}/${b.text}: ${over}`).toBe(`${a.text}/${b.text}: false`)
+        }),
+      )
     },
   )
 })
