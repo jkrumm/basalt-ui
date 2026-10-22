@@ -191,4 +191,27 @@ describe('the filled accent hover step', () => {
       }
     })
   }
+
+  test('the step is pinned: 10 tone at the default seed (old 4.8)', () => {
+    const { accentFill, accentFillHover } = deriveTokens(DEFAULT_DERIVE_CONFIG)
+    const step = hexToHct(accentFill.light).tone - hexToHct(accentFillHover.light).tone
+    expect(step).toBeGreaterThan(9.5)
+    expect(step).toBeLessThan(10.5)
+  })
+
+  // A spread of hues: the label floor is the band's law, the hover only ever darkens, so it holds.
+  const SEEDS = ['#0077bd', '#c2410c', '#16a34a', '#7c3aed', '#db2777', '#ca8a04']
+  for (const accent of SEEDS) {
+    test(`seed ${accent}: the hover fill keeps the white label at 4.5:1 in both schemes`, () => {
+      const { accentFill, accentFillHover } = deriveTokens({ ...DEFAULT_DERIVE_CONFIG, accent })
+      for (const side of ['light', 'dark'] as const) {
+        expect(contrastRatio('#ffffff', accentFill[side])).toBeGreaterThanOrEqual(
+          LABEL_CONTRAST_MIN,
+        )
+        expect(contrastRatio('#ffffff', accentFillHover[side])).toBeGreaterThanOrEqual(
+          LABEL_CONTRAST_MIN,
+        )
+      }
+    })
+  }
 })

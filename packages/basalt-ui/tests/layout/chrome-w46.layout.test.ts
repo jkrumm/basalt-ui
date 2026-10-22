@@ -27,6 +27,10 @@ const CAPTION = '[data-ts-key="reference-label"]'
 const MIN_HOVER_CONTRAST = 1.25
 /** Consecutive equal reads that mean the hover transition has finished. */
 const STABLE_READS = 3
+/** The longest the hovered fill may keep changing before the test reports the last colour it saw. */
+const SETTLE_DEADLINE_MS = 3_000
+/** Pause between settle reads. */
+const SETTLE_POLL_MS = 50
 const READOUT = '[data-basalt-sparkline-readout]'
 const SPARK_HOSTS = ['w43-spark', 'w43-spark-wide'] as const
 /** Sparklines per host in the w43 fixture. */
@@ -94,8 +98,13 @@ layout('Wave 46 chrome', () => {
       )
       // Read the colour once the transition has finished, then compare it to rest.
       let hovered = await bg()
+      const deadline = Date.now() + SETTLE_DEADLINE_MS
       for (let stable = 0; stable < STABLE_READS;) {
-        await p.raw.waitForTimeout(50)
+        if (Date.now() > deadline)
+          throw new Error(
+            `LAYOUT: the hovered fill never settled; last colour ${hovered}, rest ${rest}`,
+          )
+        await p.raw.waitForTimeout(SETTLE_POLL_MS)
         const next = await bg()
         stable = next === hovered ? stable + 1 : 0
         hovered = next
