@@ -1973,20 +1973,61 @@ obsidian.
 - **Next — stopped: Wave 45 closed; orchestrated, nothing spawned.** Wave 46 (Forms, states and the guidance half) is
   `active` for the mother.
 
-## Wave 46 — Forms, states and the guidance half <!-- status: active -->
+## Wave 46 — Forms, states and the guidance half <!-- status: done -->
 
 Spec: SPEC § 6.11, § 6.13, § 8, § 11. Scenario S6 (build it), then every scenario's state toggles.
 
-- [ ] Field, control and form-section quality on S6 (SPEC § 6.13).
-- [ ] The `EmptyState` anatomy (row 154); align every pattern's empty, loading and error states on it and
+- [x] Field, control and form-section quality on S6 (SPEC § 6.13).
+- [x] The `EmptyState` anatomy (row 154); align every pattern's empty, loading and error states on it and
       re-shoot them.
-- [ ] (The catalogue shipped in Wave 36.) Fold SPEC § 3, § 5, § 8 and § 11 into
+- [x] (The catalogue shipped in Wave 36.) Fold SPEC § 3, § 5, § 8 and § 11 into
       `DESIGN-CORE.md`, offsetting the spec-prose budget by deleting what the fold replaces.
-- [ ] Re-score the whole inventory with the shipped reviewer. Every pattern still below the rubric gets a step
+- [x] Re-score the whole inventory with the shipped reviewer. Every pattern still below the rubric gets a step
       here or a recorded reason.
       **Left behind:**
 
-## Wave 47 — Release and rollout: rb, linewatch, rollhook, obsidian <!-- status: pending -->
+- **Landed** (fan-out of four Sonnet workers, then two fix rounds on the same three; `rd merge` with `make check` per
+  branch; every diff reviewed by agent-gateway, blocking findings fixed before merge): #506 the DESIGN-CORE fold
+  (§ Scales with the landed values, § Expression and review linking the shipped catalogue and reviewer; SPEC § 3, § 5,
+  § 8, § 11 are pointers; spec prose 2420 → 2427 / 2432, offset inside DESIGN-CORE); #507 S6 (`/scenarios/s6-settings`,
+  shutterflow's account page + argo's workout form) and the form row (32 px `ctl` fields in `FormRow`/`SettingsRow`,
+  `NumberInput`/`PasswordInput`/`Textarea` in the tier, `sm` labels, `xs` descriptions, error glyph in a live region,
+  `FormGroup section`); #508 the sparkline readout hides its reference caption, the w42 arrow-key test polls; #509 the
+  `EmptyState` anatomy across `Board`, `BarList`, `EventList`, the data table, the board record link in ink; #510 one
+  row rule for both forms (D54); #511/#513 tile ring in both schemes, errors left-aligned everywhere, `sm` 500 titles
+  inside a section, S5/S7/S8 states; #512/#514 chart and `StatCard` empties as the tile, kind-aware loading ghosts
+  (line, band, sparkline), `StatCard` loading keeps delta and breakdown rows, the primary hover step 4.8 → 10 tone.
+  This close-out (PR from `w46-closeout`): MIGRATING, SPEC § 6.11/§ 6.13 + D54, the shipped catalogue's record-facts
+  row (+ dogfood copy), the S2 summary's absent declaration, `rounds.md`.
+- **Decision D54** (SPEC § 6.13): one form row for `FormRow` and `SettingsRow` — 15rem label column, 20rem control
+  cap, left-packed, stacked under 600 px of the row; section heads `md` 500; field errors only on a failed validation.
+  § 6.11 amended: the tile title is `sm` 500 inside a section/card (`md` on a page), errors left-aligned in every host,
+  a joined strip cell's empty is a value or em dash plus a muted reason line (no tile).
+- **Rounds** (`docs/waves/design-parity/w46/rounds.md`, boards `.design-parity/w46/r1`–`r3`, owner cap three, two fresh
+  Sonnet reviewers per round over the whole inventory): r3 S1 96, S2 99, S3 99, S4 100, S5 79, S6 97, S7 97, S8 99;
+  `shot detect` 100. **Below the rubric, recorded reason = the three-round cap**, each a Wave 47 friction candidate:
+  P1 `EventList` 390 feed row with a long note pushes its chip to a third line (basalt; W44's P3, now a P1 by the
+  dense-row rule); P1 S5 aside skeleton 3 rows vs 5 (playground); P2 the folded table's 390 skeleton lacks the scope and
+  chevron columns; P2 S6 entry rows without the settings rows' dividers; P3s listed in `rounds.md`. Measured and not
+  changed: light-scheme input boundaries ≈ 1.04:1 against the card (dark 1.22:1), below WCAG 1.4.11's 3:1 — a theme
+  decision for the input ring.
+- **Public surface:** no new symbol or type (non-chart 110, barrel types 72 unchanged); one new prop (`FormGroup
+  section`), `ghost` accepts `'band'`. `FormSection`/`FormActions` exist in `form-layout.tsx` but no barrel exports them
+  (dead on the 2.x fleet; shutterflow 1.40.3 imports them) — adopt-or-delete candidate, not touched. Gzip ceilings
+  raised once by the measured delta for the three `ctl`-tier inputs (provider-only 20446, embedded 56755,
+  createBasaltTheme-only 15874; the hover step was chosen inside them).
+- **MIGRATING:** `### Forms and states (Wave 46)` under the single `## Unreleased`; `release-migrating.ts --check`
+  passes. `CHANGELOG.md` untouched.
+- **Process notes:** a fixture registry (`tests/layout/fixture/*`) shared by two workers conflicts on every second
+  merge — append-only ownership works but costs a rebase round; the train caught a real gate (`check-theme-css`
+  `ctl-tier-coverage`) a worker had called load; a reviewer suggestion (drop `data-shot-absent` from the loaded render)
+  was wrong for the shot harness — the declaration is read at rest.
+- **Release-ready, not released** (owner: no release this wave): #468–#514 on master are unreleased (Waves 42–46).
+  argo is paused; no argo PR was opened.
+- **Next — stopped: Wave 46 closed; orchestrated, nothing spawned.** Wave 47 (Release and rollout) is `active` for the
+  mother.
+
+## Wave 47 — Release and rollout: rb, linewatch, rollhook, obsidian <!-- status: active -->
 
 argo is out of this rollout (owner pause, 2026-10-22); it bumps during its own overhaul. weatherorb is coordinated by the
 owner from weatherorb; shutterflow stays excluded.
