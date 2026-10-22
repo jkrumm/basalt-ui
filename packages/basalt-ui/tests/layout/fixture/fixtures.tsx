@@ -101,6 +101,7 @@ import { W42KindsFixture } from './w42-kinds-fixture'
 import { W42StatesFixture } from './w42-states-fixture'
 import { W43SubtitleFixture } from './w43-subtitle-fixture'
 import { W42ResponsiveFixture } from './w42-responsive-fixture'
+import { W43LinesFixture } from './w43-lines-fixture'
 import { W38Readout2Fixture } from './w38-readout2-fixture'
 import { W39ReadoutFixture } from './w39-readout-fixture'
 import { RAIL_DOMAIN_MAX, RAIL_PX, TOC_SCROLL_MARGIN_PX } from './spec'
@@ -3111,6 +3112,7 @@ export function ShellFixture({ spec }: { spec: FixtureSpec }): ReactElement {
       {spec.w42Responsive && <W42ResponsiveFixture spec={spec.w42Responsive} />}
       {spec.w38Readout2 && <W38Readout2Fixture />}
       {spec.w39Readout && <W39ReadoutFixture />}
+      {spec.w43Lines && <W43LinesFixture />}
       {spec.codeBlock && <CodeBlockFixture spec={spec.codeBlock} />}
       {spec.forms && <FormsFixture spec={spec.forms} />}
       {spec.table && <TableFixture spec={spec.table} />}
