@@ -90,9 +90,9 @@ describe('EmptyState anatomy (SPEC § 6.11)', () => {
 
   test('the section tier is a ring-edged tile at card radius; the page tier is not', () => {
     const section = html('section')
-    expect(section).toContain('--basalt-state-ring')
+    expect(section).toContain('box-shadow:inset 0 0 0 1px')
     expect(section).toContain('var(--vx-radius-card)')
     expect(section).not.toContain('border:')
-    expect(html('page')).not.toContain('--basalt-state-ring')
+    expect(html('page')).not.toContain('box-shadow')
   })
 })

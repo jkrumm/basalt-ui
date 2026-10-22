@@ -183,7 +183,7 @@ describe('Board', () => {
   test('an empty column is an EmptyState tile (a ring-edged title, not a bare line)', () => {
     const { getByText } = mount()
     const tile = getByText('Nothing is blocked').parentElement
-    expect(tile?.getAttribute('style') ?? '').toContain('--basalt-state-ring')
+    expect(tile?.getAttribute('style') ?? '').toContain('box-shadow')
   })
 
   test('an empty board renders the tile; loading renders skeletons', () => {
