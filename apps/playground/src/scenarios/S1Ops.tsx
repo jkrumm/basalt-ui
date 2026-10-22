@@ -140,6 +140,8 @@ const columns = (() => {
 
 function OpsStats({ shotState }: ScenarioProps) {
   const isAtRest = shotState === undefined
+  // Loading keeps the rows the loaded card has (delta, breakdown), so its skeleton keeps their lines.
+  const keepsRows = isAtRest || shotState === 'loading'
   // Each card names its own source: the failure and the empty cause differ per card, so no two read alike.
   const sharedFor = (source: string, empty: string) => {
     const query = queryFor(shotState, retryCopy(source))
@@ -154,7 +156,7 @@ function OpsStats({ shotState }: ScenarioProps) {
           qualifier="last minute"
           value={fmtMs(LATENCY_NOW_MS)}
           info="Round-trip time in the last minute. The sparkline shows the last 60 minutes; the change compares with the 7-day median hour."
-          {...((isAtRest || shotState === 'loading') && {
+          {...(keepsRows && {
             delta: (LATENCY_NOW_MS / LATENCY_MEDIAN_7D_MS - 1) * 100,
             deltaPeriod: 'vs 7-day median',
             deltaPolarity: 'up-bad' as const,
@@ -178,7 +180,7 @@ function OpsStats({ shotState }: ScenarioProps) {
           qualifier="24 hours"
           value={fmtLoss(LOSS_24H_PCT)}
           info="Share of probe packets with no reply, averaged over the hourly buckets."
-          {...(isAtRest && {
+          {...(keepsRows && {
             breakdown: [
               { label: 'Last 7 days', value: fmtLoss(LOSS_7D_PCT) },
               { label: 'Uptime, 7 days', value: fmtUptime(UPTIME_PCT) },
@@ -204,7 +206,7 @@ function OpsStats({ shotState }: ScenarioProps) {
           value={fmtMbit(DOWN_24H_MBIT)}
           info="Mean measured throughput over the hourly buckets, against the speed in the contract."
           // Wave 34: Meter — the measured share of the ceiling belongs in a Meter; rows are the nearest.
-          {...(isAtRest && {
+          {...(keepsRows && {
             breakdown: [
               { label: 'Contracted', value: fmtMbit(CONTRACT_DOWN_MBIT) },
               { label: '7-day peak', value: fmtMbit(DOWN_PEAK_MBIT) },
