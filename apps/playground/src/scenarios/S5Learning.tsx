@@ -11,7 +11,7 @@
  * Anchors for `basalt-ui shot`: `learning-summary`, `learning-strip`, `learning-journal`,
  * `learning-aside`. `Section` and `PageAside` do not forward `data-*`, so each anchor is a wrapping `Box`.
  */
-import { Box, Button, Flex, Skeleton, Stack, Text } from '@mantine/core'
+import { Box, Flex, Skeleton, Stack, Text } from '@mantine/core'
 import type { ReactNode } from 'react'
 import { PageAside, PageBar, PageSummary, Section, StatGroup, useSizeClass } from 'basalt-ui'
 import type { StatStripCell } from 'basalt-ui'
@@ -47,9 +47,9 @@ const RECORD_ERROR = queryFor('error', retryCopy('practice record'))
 /** One wording for every gap on the page: the record has no sessions. */
 const NO_SESSIONS = 'No sessions logged yet'
 
-/** The headline wraps to three lines on a compact screen and two elsewhere: the skeleton holds the same height. */
+/** The headline wraps to four lines on a compact screen and two elsewhere: the skeleton holds the same height. */
 function SummarySkeleton() {
-  const lines = useSizeClass() === 'compact' ? 3 : 2
+  const lines = useSizeClass() === 'compact' ? 4 : 2
   return (
     <Stack gap={0} aria-busy="true" data-page-summary="">
       {Array.from({ length: lines }, (_, i) => (
@@ -64,17 +64,7 @@ function SummarySkeleton() {
 function LearningSummary({ shotState }: ScenarioProps) {
   if (shotState === 'loading') return <SummarySkeleton />
   if (shotState === 'empty') {
-    return (
-      <PageSummary
-        sentence={NO_SESSIONS}
-        facts={[`Log a session to start the record for ${KNOT_TITLE}.`]}
-        aside={
-          <Button size="xs" onClick={noop}>
-            Log a session
-          </Button>
-        }
-      />
-    )
+    return <PageSummary sentence={NO_SESSIONS} facts={['Log a session to start the record.']} />
   }
   // The one error of the page: the whole record is one source, so the strip, aside and journal stay quiet.
   if (shotState === 'error') {
@@ -92,7 +82,7 @@ function LearningSummary({ shotState }: ScenarioProps) {
         : 'down from'
   return (
     <PageSummary
-      sentence={`Practised ${SESSIONS_LAST_30} times in the last 30 days, ${trend} ${SESSIONS_PRIOR_30} — ${fmtReviewDue(REVIEW_IN_DAYS)}.`}
+      sentence={`${KNOT_TITLE}: practised ${SESSIONS_LAST_30} times in the last 30 days, ${trend} ${SESSIONS_PRIOR_30} — ${fmtReviewDue(REVIEW_IN_DAYS)}.`}
     />
   )
 }
@@ -212,7 +202,7 @@ function LearningAside({ shotState }: ScenarioProps) {
   // The anchor sits inside the aside: in the shell the panel portals into its own region, so a wrapper
   // beside it would measure zero on desktop.
   return (
-    <PageAside title="About this knot" persistKey="learning-record">
+    <PageAside title={KNOT_TITLE} persistKey="learning-record">
       {shotState === 'loading' ? (
         <AsideSkeleton />
       ) : shotState === 'error' ? (
@@ -224,7 +214,7 @@ function LearningAside({ shotState }: ScenarioProps) {
             {shotState === 'empty' ? '—' : fmtLearningDay(FIRST_DATE)}
           </AsideFact>
           <AsideFact label="Practice partners">
-            {shotState === 'empty' ? '—' : `${fmtInt(PARTNER_COUNT)} partners`}
+            {shotState === 'empty' ? '—' : fmtInt(PARTNER_COUNT)}
           </AsideFact>
         </Stack>
       )}
@@ -235,24 +225,27 @@ function LearningAside({ shotState }: ScenarioProps) {
 export function LearningScenario({ shotState }: ScenarioProps) {
   return (
     <Stack gap="sm" data-shot-states="empty loading error">
-      {shotState !== 'empty' && (
-        <PageBar
-          actions={[
-            { key: 'review', label: 'Start review', onClick: noop, primary: true },
-            { key: 'log', label: 'Log a session', onClick: noop },
-          ]}
-        />
-      )}
+      {/* One action when the record is empty: the log. Review only means something once there is a record. */}
+      <PageBar
+        actions={
+          shotState === 'empty'
+            ? [{ key: 'log', label: 'Log a session', onClick: noop, primary: true }]
+            : [
+                { key: 'review', label: 'Start review', onClick: noop, primary: true },
+                { key: 'log', label: 'Log a session', onClick: noop },
+              ]
+        }
+      />
       <Box data-shot="learning-summary">
         <LearningSummary shotState={shotState} />
       </Box>
       <Box data-shot="learning-strip" data-shot-absent="error">
         {shotState !== 'error' && <LearningStrip shotState={shotState} />}
       </Box>
-      <Box data-shot="learning-journal" data-shot-absent="error">
-        {shotState !== 'error' && (
+      <Box data-shot="learning-journal" data-shot-absent="empty error">
+        {shotState !== 'error' && shotState !== 'empty' && (
           <Section title="Practice journal">
-            <LearningJournal entries={shotState === 'empty' ? [] : JOURNAL} shotState={shotState} />
+            <LearningJournal entries={JOURNAL} shotState={shotState} />
           </Section>
         )}
       </Box>
