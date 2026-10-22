@@ -11,75 +11,117 @@
  * Anchors for `basalt-ui shot`: `learning-summary`, `learning-strip`, `learning-journal`,
  * `learning-aside`. `Section` and `PageAside` do not forward `data-*`, so each anchor is a wrapping `Box`.
  */
-import { Box, Stack, Text } from '@mantine/core'
+import { Box, Button, Skeleton, Stack, Text } from '@mantine/core'
 import type { ReactNode } from 'react'
 import { PageAside, PageBar, PageSummary, Section, StatGroup } from 'basalt-ui'
 import type { StatStripCell } from 'basalt-ui'
+import { Sparkline } from 'basalt-ui/charts'
 import { fmtInt } from './fixture-utils'
 import {
-  DAYS_SINCE_LAST,
   FIRST_DATE,
   JOURNAL,
   KNOT_TITLE,
   LAST_DATE,
   MEAN_RATING,
+  MINUTES_PER_WEEK,
   MINUTES_THIS_MONTH,
-  NEXT_REVIEW,
   NEXT_REVIEW_DAYS,
   PARTNER_COUNT,
   RATED_COUNT,
+  REVIEW_IN_DAYS,
+  SESSIONS_LAST_30,
   SESSIONS_LOGGED,
-  SESSIONS_THIS_MONTH,
-  fmtLearningDate,
+  SESSIONS_PER_WEEK,
+  SESSIONS_PRIOR_30,
   fmtLearningDay,
   fmtMinutes,
-  fmtSince,
+  fmtReviewDue,
 } from './learning-data'
 import { LearningJournal } from './learning/journal'
-import { noop, retryCopy } from './shot-state'
+import { noop, queryFor, retryCopy } from './shot-state'
 import type { ScenarioProps } from './shot-state'
 
-const EMPTY_COPY = `No sessions logged for ${KNOT_TITLE}. Log a session to start the record.`
-const retry = (): string => retryCopy('journal')
+const SPARK_HEIGHT = 28
+const RECORD_ERROR = queryFor('error', retryCopy('practice record'))
+/** One wording for every gap on the page: the record has no sessions. */
+const NO_SESSIONS = 'No sessions logged yet'
 
 function LearningSummary({ shotState }: ScenarioProps) {
   if (shotState === 'loading') return <PageSummary loading facts={[]} />
   if (shotState === 'empty') {
-    return <PageSummary sentence="0 sessions logged" facts={[EMPTY_COPY]} />
+    return (
+      <PageSummary
+        sentence={NO_SESSIONS}
+        facts={[`Log a session to start the record for ${KNOT_TITLE}.`]}
+        aside={
+          <Button size="xs" onClick={noop}>
+            Log a session
+          </Button>
+        }
+      />
+    )
   }
+  // The one error of the page: the whole record is one source, so the strip, aside and journal stay quiet.
   if (shotState === 'error') {
-    return <PageSummary sentence="Record unavailable" facts={[retry()]} />
+    return (
+      <Section title="Practice record" {...(RECORD_ERROR && { query: RECORD_ERROR })}>
+        {null}
+      </Section>
+    )
   }
+  const trend =
+    SESSIONS_LAST_30 === SESSIONS_PRIOR_30
+      ? 'level with'
+      : SESSIONS_LAST_30 > SESSIONS_PRIOR_30
+        ? 'up from'
+        : 'down from'
   return (
     <PageSummary
-      sentence={`${KNOT_TITLE}: ${fmtInt(SESSIONS_LOGGED)} sessions, last ${fmtSince(DAYS_SINCE_LAST)}`}
-      facts={[
-        `review due ${fmtLearningDate(NEXT_REVIEW)}`,
-        `${fmtInt(SESSIONS_THIS_MONTH)} sessions this month`,
-        `mean rating ${MEAN_RATING.toFixed(1)} of 5`,
-      ]}
+      sentence={`Practised ${SESSIONS_LAST_30} times in the last 30 days, ${trend} ${SESSIONS_PRIOR_30} — ${fmtReviewDue(REVIEW_IN_DAYS)}.`}
     />
   )
 }
 
 function LearningStrip({ shotState }: ScenarioProps) {
   const loading = shotState === 'loading'
+  const empty = shotState === 'empty'
   const cellState = (reason: string): Pick<StatStripCell, 'state'> =>
-    shotState === 'error'
-      ? { state: { kind: 'error', error: new Error(retry()), onRetry: noop } }
-      : shotState === 'empty'
-        ? { state: { kind: 'empty', reason } }
-        : {}
+    empty ? { state: { kind: 'empty', reason } } : {}
+  const spark = (
+    ariaLabel: string,
+    data: typeof SESSIONS_PER_WEEK,
+    format: (v: number) => string,
+  ) =>
+    loading || empty
+      ? {}
+      : {
+          visual: (
+            <Box data-shot-hover>
+              <Sparkline
+                ariaLabel={ariaLabel}
+                data={data}
+                height={SPARK_HEIGHT}
+                reference="mean"
+                format={format}
+              />
+            </Box>
+          ),
+        }
   const cells: StatStripCell[] = [
     {
       key: 'sessions',
       caption: 'Sessions',
       qualifier: 'logged',
-      info: `Every practice session logged for ${KNOT_TITLE}, since ${fmtLearningDay(FIRST_DATE)}.`,
+      info: `Every practice session logged for ${KNOT_TITLE}, since ${fmtLearningDay(FIRST_DATE)}. The sparkline shows sessions per week, last 12 weeks.`,
       value: fmtInt(SESSIONS_LOGGED),
       unit: 'sessions',
       loading,
-      ...cellState(EMPTY_COPY),
+      ...cellState(NO_SESSIONS),
+      ...spark(
+        'Sessions per week, last 12 weeks',
+        SESSIONS_PER_WEEK,
+        (v) => `${fmtInt(v)} sessions`,
+      ),
     },
     {
       key: 'last-practised',
@@ -87,29 +129,39 @@ function LearningStrip({ shotState }: ScenarioProps) {
       info: `The date of the latest session. A review comes due ${NEXT_REVIEW_DAYS} days after it.`,
       value: fmtLearningDay(LAST_DATE),
       loading,
-      ...cellState('Nothing practised yet, so there is no date. Log a session to start.'),
+      ...cellState(NO_SESSIONS),
     },
     {
       key: 'mean-rating',
       caption: 'Mean rating',
-      qualifier: `of ${fmtInt(RATED_COUNT)} rated`,
+      // The qualifier states the count behind the figure, so it only exists where there is a figure.
+      ...(!empty && { qualifier: `of ${fmtInt(RATED_COUNT)} rated` }),
       info: 'Average of the 1–5 ratings you gave your sessions; unrated sessions are left out.',
       value: MEAN_RATING.toFixed(1),
       unit: 'of 5',
       loading,
-      ...cellState('No rated sessions. Rate a session to see how it is going.'),
+      ...cellState(NO_SESSIONS),
     },
     {
       key: 'minutes-month',
       caption: 'Practice time',
       qualifier: 'this month',
-      info: 'Minutes logged across this month’s sessions.',
+      info: 'Minutes logged across this month’s sessions. The sparkline shows minutes per week, last 12 weeks.',
       value: fmtMinutes(MINUTES_THIS_MONTH),
       loading,
-      ...cellState('No sessions this month. Log one to start counting.'),
+      ...cellState(NO_SESSIONS),
+      ...spark('Practice minutes per week, last 12 weeks', MINUTES_PER_WEEK, fmtMinutes),
     },
   ]
-  return <StatGroup variant="strip" label="Learning record" cols={4} cells={cells} />
+  return (
+    <StatGroup
+      variant="strip"
+      label="Learning record"
+      cols={4}
+      cells={cells}
+      shotAbsent={['error']}
+    />
+  )
 }
 
 function AsideFact({ label, children }: { label: string; children: ReactNode }) {
@@ -123,33 +175,39 @@ function AsideFact({ label, children }: { label: string; children: ReactNode }) 
   )
 }
 
+function AsideSkeleton() {
+  return (
+    <Stack gap="md" data-shot="learning-aside" aria-busy="true">
+      {[0, 1].map((i) => (
+        <Stack key={i} gap={6}>
+          <Skeleton height={10} width="40%" radius="sm" />
+          <Skeleton height={14} width="65%" radius="sm" />
+        </Stack>
+      ))}
+    </Stack>
+  )
+}
+
 function LearningAside({ shotState }: ScenarioProps) {
-  const text = (value: ReactNode): ReactNode =>
-    shotState === 'loading'
-      ? '…'
-      : shotState === 'empty'
-        ? 'Not yet'
-        : shotState === 'error'
-          ? 'Unavailable'
-          : value
   // The anchor sits inside the aside: in the shell the panel portals into its own region, so a wrapper
   // beside it would measure zero on desktop.
   return (
     <PageAside title="Record facts" persistKey="learning-record">
-      <Stack gap="md" data-shot="learning-aside">
-        <AsideFact label="First practised">{text(fmtLearningDay(FIRST_DATE))}</AsideFact>
-        <AsideFact label="Practice partners">
-          {text(`${fmtInt(PARTNER_COUNT)} different partners`)}
-        </AsideFact>
-        <AsideFact label="Next review due">
-          {text(`${fmtLearningDate(NEXT_REVIEW)}, in ${NEXT_REVIEW_DAYS - DAYS_SINCE_LAST} days`)}
-        </AsideFact>
-        {shotState === 'error' && (
-          <Text size="xs" c="dimmed">
-            {retry()}
-          </Text>
-        )}
-      </Stack>
+      {shotState === 'loading' ? (
+        <AsideSkeleton />
+      ) : shotState === 'error' ? (
+        // The summary carries the one error; the aside only marks its own anchor absent.
+        <Box data-shot="learning-aside" data-shot-absent="error" />
+      ) : (
+        <Stack gap="md" data-shot="learning-aside" data-shot-absent="error">
+          <AsideFact label="First practised">
+            {shotState === 'empty' ? NO_SESSIONS : fmtLearningDay(FIRST_DATE)}
+          </AsideFact>
+          <AsideFact label="Practice partners">
+            {shotState === 'empty' ? NO_SESSIONS : `${fmtInt(PARTNER_COUNT)} partners`}
+          </AsideFact>
+        </Stack>
+      )}
     </PageAside>
   )
 }
@@ -157,19 +215,26 @@ function LearningAside({ shotState }: ScenarioProps) {
 export function LearningScenario({ shotState }: ScenarioProps) {
   return (
     <Stack gap="sm" data-shot-states="empty loading error">
-      <PageBar
-        actions={[{ key: 'log', label: 'Log a session', onClick: () => {}, primary: true }]}
-      />
+      {shotState !== 'empty' && (
+        <PageBar
+          actions={[
+            { key: 'review', label: 'Start review', onClick: noop, primary: true },
+            { key: 'log', label: 'Log a session', onClick: noop },
+          ]}
+        />
+      )}
       <Box data-shot="learning-summary">
         <LearningSummary shotState={shotState} />
       </Box>
-      <Box data-shot="learning-strip">
-        <LearningStrip shotState={shotState} />
+      <Box data-shot="learning-strip" data-shot-absent="error">
+        {shotState !== 'error' && <LearningStrip shotState={shotState} />}
       </Box>
-      <Box data-shot="learning-journal">
-        <Section title="Practice journal">
-          <LearningJournal entries={shotState === 'empty' ? [] : JOURNAL} shotState={shotState} />
-        </Section>
+      <Box data-shot="learning-journal" data-shot-absent="error">
+        {shotState !== 'error' && (
+          <Section title="Practice journal">
+            <LearningJournal entries={shotState === 'empty' ? [] : JOURNAL} shotState={shotState} />
+          </Section>
+        )}
       </Box>
       <LearningAside shotState={shotState} />
     </Stack>
