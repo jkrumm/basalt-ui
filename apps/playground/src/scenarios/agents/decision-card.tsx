@@ -30,14 +30,21 @@ function ActionButton({
   variant: 'filled' | 'default' | 'subtle'
 }) {
   return (
-    <Button
-      size="xs"
-      variant={variant}
-      onClick={action.onClick}
-      rightSection={<Kbd size="xs">{action.keyHint}</Kbd>}
-    >
-      {action.label}
-    </Button>
+    // The key hint sits beside the button, not inside it: on the accent fill it failed contrast and
+    // nested a radius inside the button's.
+    <Group gap="xs" wrap="nowrap">
+      <Button
+        size="xs"
+        variant={variant}
+        onClick={action.onClick}
+        aria-keyshortcuts={action.keyHint}
+      >
+        {action.label}
+      </Button>
+      <Kbd fz="xs" aria-hidden>
+        {action.keyHint}
+      </Kbd>
+    </Group>
   )
 }
 

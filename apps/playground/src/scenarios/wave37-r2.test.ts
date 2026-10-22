@@ -120,8 +120,13 @@ describe('S3', () => {
   })
 
   // W37 r3: the stuck list keeps hours so its oldest row matches the strip's Oldest wait figure.
-  it('the oldest wait prints twice: the cell, and the same figure on the oldest list row', () => {
-    expect(count(text(agents()), fmtAge(OLDEST_WAIT_HOURS))).toBe(2)
+  it('the oldest wait prints twice outside the board: the cell, and the same figure on the oldest list row', () => {
+    // The board's card for that item states its own wait: a per-item fact, not a restatement.
+    const page = agents()
+    const board = page.querySelector('[data-shot="board"]')
+    expect(board).not.toBeNull()
+    board?.remove()
+    expect(count(text(page), fmtAge(OLDEST_WAIT_HOURS))).toBe(2)
   })
 
   it('the failures clock reads "24 h ago" to "now" and drops the detached latest label', () => {

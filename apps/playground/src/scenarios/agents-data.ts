@@ -352,10 +352,13 @@ export const ITEM_TIMELINE_TOTAL = 57
 const BOARD_AGE = (hours: number): string =>
   hours >= 24 ? `${Math.floor(hours / 24)} d ${hours % 24} h` : `${hours} h`
 
-const boardCard = (i: Item, type: string, extra?: { status?: string; href?: string }) => ({
+/** The agent that holds each card: the caption names who, the column already says what state. */
+const BOARD_AGENTS = ['claude', 'codex', 'opencode'] as const
+const BOARD_TYPES = ['PR review', 'Migration', 'Upgrade', 'Bug'] as const
+const boardCard = (i: Item, extra?: { status?: string; href?: string }) => ({
   id: i.id,
-  actor: 'warden',
-  type,
+  actor: BOARD_AGENTS[Number(i.id.slice(2)) % BOARD_AGENTS.length] ?? 'claude',
+  type: BOARD_TYPES[Number(i.id.slice(2)) % BOARD_TYPES.length] ?? 'Bug',
   title: i.title,
   record: { label: i.id.toUpperCase(), href: extra?.href ?? `/warden/${i.id}` },
   status: extra?.status ?? `Waiting ${BOARD_AGE(i.waitHours)}`,
@@ -364,11 +367,10 @@ const boardCard = (i: Item, type: string, extra?: { status?: string; href?: stri
 export const BOARD_COLUMNS = [
   {
     id: 'needs-you',
-    title: 'Needs you',
+    title: 'Awaiting',
     tone: VX.status.warn,
-    total: `${NEEDS_YOU} items`,
     empty: 'Nothing needs a decision',
-    cards: ITEMS.filter((i) => i.state === 'awaiting').map((i) => boardCard(i, 'Decision')),
+    cards: ITEMS.filter((i) => i.state === 'awaiting').map((i) => boardCard(i)),
   },
   {
     id: 'working',
@@ -376,7 +378,7 @@ export const BOARD_COLUMNS = [
     tone: VX.status.neutral,
     empty: 'No run in flight',
     cards: ITEMS.filter((i) => i.state === 'running').map((i) =>
-      boardCard(i, 'Run', { status: `Running ${BOARD_AGE(i.waitHours)}` }),
+      boardCard(i, { status: `Running ${BOARD_AGE(i.waitHours)}` }),
     ),
   },
   {
@@ -385,7 +387,7 @@ export const BOARD_COLUMNS = [
     tone: VX.status.bad,
     empty: 'Nothing is blocked',
     cards: ITEMS.filter((i) => i.state === 'blocked').map((i) =>
-      boardCard(i, 'Blocked', { status: `${i.reason ?? 'Blocked'} · ${BOARD_AGE(i.waitHours)}` }),
+      boardCard(i, { status: `${i.reason ?? 'Blocked'} · ${BOARD_AGE(i.waitHours)}` }),
     ),
   },
   { id: 'done', title: 'Done', tone: VX.status.good, empty: 'Nothing finished today', cards: [] },
