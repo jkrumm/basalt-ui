@@ -355,7 +355,7 @@ describe('Heatmap', () => {
     )
     const empty = await mount(<Heatmap ariaLabel="H" data={[]} {...grid} state={{ empty: true }} />)
     expect(empty.querySelector('svg')).toBeNull()
-    expect(empty.textContent).toContain('Nothing recorded in this range.')
+    expect(empty.textContent).toContain('Nothing recorded in this range')
   })
 })
 

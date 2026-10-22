@@ -380,6 +380,8 @@ export type FixtureSpec = {
   barListStates?: true
   /** Wave 38: a facts `ChartCard` over a chart and over a `content` list, at rest and pending (`w38-load-<chart|list>-<rest|loading>`). */
   w38Loading?: true
+  /** Wave 46 r1: a line `ChartCard` and a `StatCard` at rest and in their empty / loading states (`w46-chart-*`, `w46-stat-*`). */
+  w46Charts?: true
   /** Wave 38: `Bars` and a `Sparkline` in a StatCard slot each (`w38-bars-card`, `w38-spark-card`) and in a strip cell (`w38-bars-strip`, `w38-spark-strip`). */
   w38BarsSlot?: true
   /** Wave 41: argo's Reading pace strip cell, a slotted `Bars` at focus (`w41-chip-strip`). */

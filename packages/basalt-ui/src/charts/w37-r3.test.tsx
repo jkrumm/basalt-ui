@@ -375,7 +375,7 @@ describe('empty chart default (argo Wave 32)', () => {
     ).textContent ?? ''
   test('says the range is empty, without the banned filler', () => {
     const text = emptyText({ empty: true })
-    expect(text).toContain('Nothing recorded in this range.')
+    expect(text).toContain('Nothing recorded in this range')
     expect(text).not.toContain('No data')
   })
   test('a consumer label wins', () => {

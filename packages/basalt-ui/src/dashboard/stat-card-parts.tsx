@@ -106,12 +106,29 @@ export function rightSlotStyle(width: number, height: number): CSSProperties {
   } as CSSProperties
 }
 
-export function ValueSkeleton() {
-  return <Skeleton className={classes.skeletonValue} radius="sm" />
+/** The value bar, and a delta chip beside it when the loaded card carries a delta. */
+export function ValueSkeleton({ delta }: { delta: boolean }) {
+  if (!delta) return <Skeleton className={classes.skeletonValue} radius="sm" />
+  return (
+    <div className={classes.skeletonValueRow}>
+      <Skeleton className={classes.skeletonValueWithDelta} radius="sm" />
+      <Skeleton className={classes.skeletonDelta} radius="sm" data-stat-skeleton-delta="" />
+    </div>
+  )
 }
 
+/** A mild rise across the width in a 100 x 40 box: the sparkline's shape, not data. */
+const SPARK_GHOST = '0,30 12,26 25,28 38,18 50,22 62,12 75,16 88,8 100,12'
+
+/** The visual slot's loading shape: a line ghost at the sparkline's own height, no spinner. */
 export function VisualSkeleton() {
-  return <Skeleton className={classes.skeletonVisual} />
+  return (
+    <div aria-hidden="true" className={classes.skeletonVisual} data-stat-skeleton-spark="">
+      <svg viewBox="0 0 100 40" preserveAspectRatio="none">
+        <polyline points={SPARK_GHOST} vectorEffect="non-scaling-stroke" />
+      </svg>
+    </div>
+  )
 }
 
 export function FooterSkeleton() {

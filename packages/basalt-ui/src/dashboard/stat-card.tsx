@@ -109,6 +109,8 @@ import type {
 import { DeltaBadge } from './delta-badge'
 import { cx } from '../common/props'
 import type { BasaltProps, SlotStylesProps, Tone } from '../common/props'
+import { splitEmptyCopy } from '../common/empty-copy'
+import { EmptyState } from './empty-state'
 import { ErrorState, QueryState, resolveQueryBranch } from './query-state'
 import type { QueryBranch, QueryStateLike } from './query-state'
 import classes from './stat-card.module.css'
@@ -310,18 +312,21 @@ function renderValueBody({
   resolved,
   figure,
   emptyText,
+  hasDelta,
 }: {
+  hasDelta: boolean
   pending: boolean
   resolved: QueryBranch<unknown> | undefined
   figure: ReactNode
   emptyText: string
 }): ReactNode {
-  if (resolved === undefined) return pending ? <ValueSkeleton /> : figure
+  const copy = splitEmptyCopy(emptyText)
+  if (resolved === undefined) return pending ? <ValueSkeleton delta={hasDelta} /> : figure
   // `loading` with a query still shows the skeleton, but a failed query is never hidden by it.
-  if (pending && resolved.kind !== 'error') return <ValueSkeleton />
+  if (pending && resolved.kind !== 'error') return <ValueSkeleton delta={hasDelta} />
   switch (resolved.kind) {
     case 'pending':
-      return <ValueSkeleton />
+      return <ValueSkeleton delta={hasDelta} />
     case 'error':
       // The error state itself — not `QueryState` with nothing to wrap, which over cached-empty data
       // would draw its "cached data" banner above an empty region.
@@ -335,7 +340,14 @@ function renderValueBody({
         />
       )
     case 'empty':
-      return <p className={classes.empty}>{emptyText}</p>
+      return (
+        <EmptyState
+          tier="section"
+          title={copy.title}
+          {...(copy.description !== undefined && { description: copy.description })}
+          className={classes.empty}
+        />
+      )
     case 'ready':
       return figure
     default:
@@ -479,7 +491,13 @@ export function StatCard({
     </div>
   )
 
-  const valueBody = renderValueBody({ pending, resolved, figure, emptyText })
+  const valueBody = renderValueBody({
+    pending,
+    resolved,
+    figure,
+    emptyText,
+    hasDelta: delta !== undefined,
+  })
 
   const breakdownCount = breakdown?.length ?? 0
   const hasBreakdown = breakdownCount > 0
