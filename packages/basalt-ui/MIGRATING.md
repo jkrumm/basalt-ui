@@ -1161,6 +1161,26 @@ New export, nothing to change in existing code.
 - **States.** `loading` draws column-shaped skeletons; an empty column is its `empty` line, an empty board is
   `empty={{ title, description?, action? }}` (the § 6.11 tile). The prototype's "Empty: A, B" fold line is gone.
 
+### Forms and states (Wave 46)
+
+Nothing is removed. Each line names its opt-out.
+
+- **Form fields are 32 px.** `FormRow` and `SettingsRow` mount a `CtlSlot`, so a control inside renders at the `ctl`
+  tier: 32 px (44 px and 16 px text under a coarse pointer) instead of Mantine's 42 px `md`. `NumberInput`,
+  `PasswordInput` and `Textarea` join the tier app-wide through the theme. Opt out per control with `size="md"` (a
+  control's own `size` wins). Inside a tiered home slot `basalt/control-size-literal` now also flags a `size` on those
+  three.
+- **Form type.** `FormRow` labels go from `md` to `sm`, descriptions from `sm` to `xs`; an error leads with a status
+  glyph and sits in an always-mounted polite live region. The hint and error ids are on the row's `aria-describedby`.
+- **`FormGroup section`** (new prop): the legend becomes the section title (`md`, 500), rows stack 12 apart and
+  consecutive sections 24 apart.
+- **`EmptyState`.** The title goes from head-font `xl` 550 to `md` 500 in the body font, the description from `md` to
+  `sm`, and `tier="section"` draws its own ring at card radius: drop a border you wrapped around it. A `Board` column's
+  `empty`, `BarList`'s `emptyText` (default now "No items to compare yet"; pass the real cause), an empty
+  `BasaltDataTable` body and an empty `renderCard` list all render as that tile. The error title is `md` 500.
+- **`Board` record links** are ink in both schemes and do not change colour once visited; hover underlines.
+- **`Sparkline`** hides its `referenceLabel` caption while a readout shows.
+
 ## 2.27.2
 
 _Nothing to migrate in this release._
