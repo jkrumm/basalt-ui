@@ -202,11 +202,15 @@ layout('compact tables pin the first column and scroll', () => {
         SCROLLER,
       )
       await p.raw.keyboard.press('ArrowRight')
-      await p.settle()
-      const after = await p.raw.evaluate(
-        (s) => (document.querySelector(s) as HTMLElement).scrollLeft,
-        SCROLLER,
-      )
+      // The keyboard scroll is smooth and lands after the key press returns: poll for it, since a
+      // single read races the animation under host load.
+      const scrollLeft = (): Promise<number> =>
+        p.raw.evaluate((s) => (document.querySelector(s) as HTMLElement).scrollLeft, SCROLLER)
+      let after = await scrollLeft()
+      for (let waited = 0; after <= before && waited < 2_000; waited += 50) {
+        await Bun.sleep(50)
+        after = await scrollLeft()
+      }
       expect(after).toBeGreaterThan(before)
     })
 
