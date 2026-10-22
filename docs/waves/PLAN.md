@@ -1871,24 +1871,59 @@ the validator is the playground plus `basalt-ui shot` with two fresh reviewers; 
   argo is paused; it picks the rows up on its next bump.
 - **Next — stopped: Wave 43 closed; orchestrated, nothing spawned.** Wave 44 (Event list) is `active` for the mother.
 
-## Wave 44 — Event list <!-- status: active -->
+## Wave 44 — Event list <!-- status: done -->
 
 Spec: SPEC § 6.7, § 9.3, D11. Scenarios S5 (build the S5 fixture: the journal) and S3 (item timeline).
 Validators: argo (warden timeline, narratives), rb (journal, session history), linewatch (transitions).
 
-- [ ] Extract one lazy virtualiser seam from the chat's `LazyVirtualizedRows`
+- [x] Extract one lazy virtualiser seam from the chat's `LazyVirtualizedRows`
       (`src/agent/chat/thread-message.tsx:838`) and move the chat onto it with no behaviour change (its tests
       stay green).
-- [ ] `EventList`: `feed` and `timeline` densities, day groups, time pinned right, chips, optional rail;
+- [x] `EventList`: `feed` and `timeline` densities, day groups, time pinned right, chips, optional rail;
       above about 200 rows it virtualises through the seam in a `"use no memo"` component with sticky day
       headers and `anchorTo: 'end'` for "earlier" (rows 149, 155, 157).
-- [ ] Tests: sticky header stays rendered while scrolled, prepend keeps the visible row in place, the plain
+- [x] Tests: sticky header stays rendered while scrolled, prepend keeps the visible row in place, the plain
       path below the threshold renders without the peer installed; empty and loading states. Budgets: non-chart
       symbols +1, barrel types +1, consumers named; the provider-only and embedded gzip budgets unchanged.
-- [ ] At least three rounds on S5 and S3; owner sees the boards.
+- [x] At least three rounds on S5 and S3; owner sees the boards.
       **Left behind:**
 
-## Wave 45 — Board and the record page <!-- status: pending -->
+- **Landed** (8 PRs through `rd merge`, `make check` after every rebase; every package diff reviewed by agent-gateway,
+  fixes sent back until the last pass was clean or its one item was a small fix the lead read): #494 the lazy
+  `src/common/virtual-rows.tsx` seam (the only `import('@tanstack/react-virtual')` in the package; sticky rows via
+  `rangeExtractor`, a `scroll: 'parent'` mode against the shell scrollport, `"use no memo"`), the chat moved onto it
+  with its tests unchanged; #495 `EventList` (root, `src/dashboard/event-list*.ts{x}`): `feed`/`timeline`, day groups
+  with a count, rail, `time` modes, `order`, `earlier`, `height`, `loading`, `empty={{ title, description?, action? }}`,
+  an SSR-safe default clock, and the S5 journal + S3 item timeline filled in; #499 `basalt-ui shot` grows a `_page`
+  shot only by the page scrollport's hidden height (a bounded inner list had added its hidden rows as blank page);
+  #493, #496, #497, #498, #500 the S5 learning-record fixture and the S3 timeline slot, then honest states and one
+  statement per figure on S5.
+- **Decision D52** (SPEC § 6.7 amended, D52 row): the time leads line two at every width instead of being pinned
+  right — four review rounds read the right-pinned time as a value far from its name. The 200-row crossing keeps the
+  scroll root and its offset and may land a few rows off (a frame-budgeted restore was built, found racy in review and
+  deleted). Below 200 rows the peer is never loaded.
+- **Rounds** (`docs/waves/design-parity/w44/rounds.md`, boards `.design-parity/w44/r0`–`r6`, r0 the stub page): S5
+  0 → 39 → 57 → 81 → 98, S3 timeline 49 → 78 → 66 → 90 → 99, `shot detect` 70 → 100 → 90 → 100 → 100 (r6, the merged
+  tree: 100). Two fresh `basalt-design-reviewer` subagents per round. Open P3s: a long note pushes the chip to a third
+  line at 390, chips flush to the right edge at 390, the S5 summary empty at headline size (Wave 45's record-page
+  recipe). Out of this wave, for Wave 46: the Sparkline hover readout over its reference label, the strip skeleton
+  without the sparkline row. Wave 45: a decision card on S3/S5.
+- **Public surface:** +1 symbol `EventList`, +1 barrel type `EventListProps` (non-chart 108 → 109, barrel types
+  70 → 71); `consumers.json` names argo `apps/dashboard/src/features/agents/narratives-section.tsx` (argo's own
+  `event-list.tsx` prototype is what it replaces); rb journal and linewatch transitions are the next adopters. The
+  provider-only and embedded gzip budgets did not move. CLI ceiling 8463 → 8480 (#499).
+- **MIGRATING:** one `### Event list (Wave 44)` section under the single `## Unreleased`;
+  `release-migrating.ts --check` passes. The shipped catalogue row moved `EventList` from "Not shipped" to shipped.
+  `CHANGELOG.md` untouched.
+- **Flakes seen under host load (other repos' jobs, load 15–26):** `table-responsive-w42` "the arrow keys scroll it"
+  (reads `scrollLeft` once after a smooth keyboard scroll; failed twice, passed on retry), a DualPanel SSR timing test
+  and a `gen-llms --check` 30 s timeout (once each). Not fixed here (untouched code); the arrow-key test wants a poll.
+- **Release-ready, not released** (owner: no release this wave): #468–#500 on master are unreleased (Waves 42–44).
+  argo is paused; no argo PR was opened.
+- **Next — stopped: Wave 44 closed; orchestrated, nothing spawned.** Wave 45 (Board and the record page) is `active`
+  for the mother.
+
+## Wave 45 — Board and the record page <!-- status: active -->
 
 Spec: SPEC § 6.8, § 6.9, § 9.2, D3, D12. Scenarios S3 and S5. Validators: argo warden, rb knot detail,
 obsidian.
