@@ -63,12 +63,6 @@ These are settled doctrine, drawn from studied systems and stated to be promotab
    `{light,dark}` pair resolved in pure CSS off the colour-scheme selector. Never branch on scheme
    in JS; never read `localStorage.getItem('theme')`.
 
-### Influences
-
-Three studied systems, the best of each: **IBM Carbon** for discipline (one scarce accent, "every
-colour has a reason"), **Linear** for dark-first craft (a deep surface ramp, tight precise radii),
-**Coinbase** for signal-only colour (up/down as text colour only).
-
 ## Token architecture (three tiers)
 
 Three tiers, matching the W3C Design Tokens model. The structure is the law; basalt's `--vx-*`
@@ -82,15 +76,7 @@ prefix is the framework instantiation.
 
 **Flow** — three layers, strictly separated:
 
-```
-palette data        pure {light,dark} pairs — no React, no @mantine/*, no browser API
-      │
-      ▼  buildPaletteCss()
---vx-* CSS vars     emitted under each colour-scheme selector — resolution is pure CSS
-      │
-      ▼
-VX.* token refs     thin var(--vx-*) strings (colours) + non-colour sizing constants
-```
+Palette data (pure `{light,dark}` pairs, no React) → `buildPaletteCss()` emits `--vx-*` vars → `VX.*` refs.
 
 Because the tokens are CSS variables, `VX.*` works identically in components **and** non-component
 files (constants, formulas) — no hook required. The UI-chrome theme (Mantine) is reskinned from the
@@ -124,9 +110,8 @@ Worked rule: a multi-toggle bar chart colours bars `isMulti ? series.x : VX.line
 
 ## Layout, elevation, shapes
 
-- **Density is the point.** This is a terminal, not a marketing page — sections separate by surface
-  change and shadow-carried depth, not by large air. Card interior padding is `sm`/`md` (12px/16px) on
-  the even-pixel grid, not the roomier Mantine default.
+- **Density is the point.** A terminal, not a marketing page: sections separate by surface change
+  and shadow-carried depth, not air. Every inset, gap and radius is a step of the scales below.
 - **Depth = a whisper shadow + ring, never a bare hairline border.** Elevation tiers:
 
   | Level        | Treatment                                           | Use                                |
@@ -141,9 +126,8 @@ Worked rule: a multi-toggle bar chart colours bars `isMulti ? series.x : VX.line
   hairline. There **is** a card-shadow token (`--vx-shadow-card`); reach for a plain Mantine
   `shadow` prop only for a genuinely one-off floating surface outside the standard card system.
 
-- **Tight radii.** Small radii read precise/technical (Linear), not soft/consumer: `defaultRadius`
-  is `md` (6px) for controls; cards read a separate 10px `--vx-radius-card`, still tighter than 12.
-  Owned in the theme, not inherited.
+- **Tight radii.** Small radii read precise, not soft; nested surfaces step by at least 3 px. Owned in
+  the theme (the `radius` knob shifts all). Values: § Scales.
 - **Type carried by size + weight.** A three-font system, not a single system-sans: body
   (`'Nunito Sans Variable'`), head (`'Hubot Sans Variable'`, headings/brand/card titles at
   `font-stretch: 88%`), and mono (`'JetBrains Mono Variable'`) for captions, times and code only.
@@ -160,6 +144,35 @@ Worked rule: a multi-toggle bar chart colours bars `isMulti ? series.x : VX.line
   `StatGroup` and `WidgetGrid` both declare `basalt-grid`, and a query resolves against the nearest.
   (3) **Pointer tier** — modality, not width: `--vx-hit` 24px (WCAG 2.5.8), 44px under `(pointer:
   coarse)` (2.5.5); hover gates on `(hover: hover)`. A narrow desktop is not a phone.
+
+## Scales (decided values)
+
+Every change goes through the derive config and `src/tokens/` constants, never a hand-edited value;
+level 0 of `density`/`radius`/`fonts` is the verbatim baseline.
+
+| Scale         | Value                                                                                                                                       |
+| ------------- | ------------------------------------------------------------------------------------------------------------------------------------------- |
+| Spacing grid  | xs 8, sm 12, md 16, lg 20, xl 24 (`space-scale.ts`); gap between sibling cards 12, 1 inside a joined strip                                  |
+| Card inset    | 12 vertical, 16 horizontal; 12 horizontal in a compact container                                                                            |
+| Page gutter   | 24 expanded, 16 medium, 8 compact                                                                                                           |
+| Radius        | card 10, control 6, floating card 11, inset panel = control; tighter than the reference's 12                                                |
+| Row text      | `sm` 13 / 20 line for dense rows (table, nav, list, event, menu); `md` 15 stays prose and form labels; inputs keep 16 under coarse pointers |
+| Meta, caption | `xs` 12 / 16 line; `micro` 11 mono uppercase +0.06em faint; `nano` 10 only inside drawn objects                                             |
+| Hero figure   | `kpi` 22, proportional sans 500, lining, -0.02em; page headline is the `h1` 26 recipe, not a token                                          |
+| Controls      | `ctl` 32, 44 under coarse pointers; dense 28 tier for toolbars at fine pointers only; nav row 32                                            |
+| Aside         | 300 (D53)                                                                                                                                   |
+
+## Expression and review
+
+- **Data shape picks the encoding.** The catalogue (a decision table by data shape, with "is it even a
+  chart?" first) is `packages/basalt-ui/agent/skills/basalt-design/references/catalogue.md`; this file
+  keeps no copy.
+- **A fresh reviewer scores every component on Craft, Expression and Communication.** One failed item
+  fails the component; [measured] items read `metrics.json`, never the eye. Items, banned filler and
+  severity: `packages/basalt-ui/agent/agents/basalt-design-reviewer.md`. Only a pass merges.
+- **Reconciled decisions.** Deltas are text colour, never a fill; accent never marks selection; a
+  single-series sparkline is neutral; metric captions are mono uppercase `micro`; `Meter` and
+  `BarList` are not chart kinds (`src/dashboard`).
 
 ## Data visualization — the chart contract
 
@@ -189,18 +202,8 @@ config-first props. When to extract one, stay bespoke or add a colour: `docs/V2-
 Series colours are **domain data**, not framework identity — so they live **app-side**, not in
 basalt. The framework ships the primitives; the consumer defines its own series and wires them in:
 
-```ts
-import { defineSeries, seriesTokens, groupTokens, buildPaletteCss } from 'basalt-ui/tokens'
-
-// Domain series colours: a {light,dark} pair per series, in ONE app-side file.
-const series = defineSeries({/* metricA: { light, dark }, metricB: { light, dark }, ... */})
-
-// Read stable, exact-keyed token refs (a stale key fails tsc).
-const tokens = seriesTokens(series) // → { metricA: 'var(--vx-metricA)', ... }
-
-// Embed the series into the emitted CSS (BasaltProvider does this via paletteOptions).
-buildPaletteCss({ series })
-```
+Define the series map in ONE app-side file via `defineSeries` / `seriesTokens` / `groupTokens`, and pass
+it to `buildPaletteCss({ series })` (`BasaltProvider`'s `paletteOptions`).
 
 `buildPaletteCss()` with no options already emits **every framework var** (status scale, semantic
 solids, neutral line/axis/grid/tooltip chrome, legend text, surface ramp). There is **no built-in
