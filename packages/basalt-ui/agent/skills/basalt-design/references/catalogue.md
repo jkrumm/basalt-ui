@@ -40,16 +40,17 @@ Run this first. A "yes, chart" answer sends you to § 2.
 | A set of KPIs about one record                                                 | One joined surface, cells split by hairlines                                                                                                                                                                                                                                     | `StatGroup variant="strip"`                                                                       | N unrelated cards                                                        |
 | Many rows, several attributes                                                  | Table, right-aligned figures                                                                                                                                                                                                                                                     | `BasaltDataTable` (`basalt-ui/table`)                                                             | Cards per row                                                            |
 | A geographic field: a raster or grid of values over an area, read as a pattern | A map canvas filling its card flush (the Mantine flush card variant), with a key rail at its edge (beside it or overlaid): the colour ramp, its unit and 3–5 labelled stops; the time scrubber and any legend float over the canvas as panels, whose radius steps down by itself | The map library's canvas in that card; `height: var(--basalt-main-content-h)` for a page-high map | A choropleth of a few regions; a point set; a ramp with no unit or stops |
+| Work items by status (columns with counts)                                     | `Board`                                                                                                                                                                                                                                                                          |
+| Record page, decision card, entity card, list row, page summary                | Recipes: `recipes.md`                                                                                                                                                                                                                                                            |
+| Category counts as a card's subject (swatch, count)                            | `Bars` in a `ChartCard` or `Meter` `segments`: `recipes.md`                                                                                                                                                                                                                      |
 | Nothing yet / failed                                                           | Why and what to do                                                                                                                                                                                                                                                               | `EmptyState`, or the component's own `query` state                                                | "No data"                                                                |
 
 Sections that sit side by side use one title size; a `Section` beside a `ChartCard` does not step a size down.
 
 ## Not shipped — report the gap, don't hand-roll
 
-| Shape                                                                | Missing        |
-| -------------------------------------------------------------------- | -------------- |
-| Work items by status (columns with counts)                           | `Board`        |
-| Record page (header, facts line, strip, events) and list-row recipes | recipes only   |
-| Bounded score inside a row                                           | tick meter     |
-| Daily data over months with month labels                             | calendar grid  |
-| Gapless histogram with bin-edge ticks                                | histogram kind |
+| Shape                                    | Missing        |
+| ---------------------------------------- | -------------- |
+| Bounded score inside a row               | tick meter     |
+| Daily data over months with month labels | calendar grid  |
+| Gapless histogram with bin-edge ticks    | histogram kind |
