@@ -172,6 +172,11 @@
   .label {
     padding-block-start: 0;
   }
+
+  /* Stacked, the grid gap is the label-to-control distance: do not pull the description into it. */
+  .hint {
+    margin-block-end: 0;
+  }
 }
 
 /* ── FormGroup ───────────────────────────────────────────────────────────────────────────────── */

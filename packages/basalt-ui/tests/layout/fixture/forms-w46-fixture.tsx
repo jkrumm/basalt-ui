@@ -14,7 +14,7 @@ export function FormsW46Fixture(): ReactElement {
       {/* theme-allow -- the wrapper width IS the fixture's payload (a container-class probe) */}
       <div data-testid="w46-form" style={{ width: 700 }}>
         <FormGroup label="Profile" section>
-          <FormRow label="Name" htmlFor="w46-name">
+          <FormRow label="Name" htmlFor="w46-name" hint="Shown on receipts.">
             <TextInput id="w46-name" data-testid="w46-name" />
           </FormRow>
           <FormRow label="Weight" htmlFor="w46-weight">
@@ -32,6 +32,12 @@ export function FormsW46Fixture(): ReactElement {
             <TextInput id="w46-md" size="md" data-testid="w46-md" />
           </FormRow>
         </FormGroup>
+      </div>
+      {/* theme-allow -- the wrapper width IS the fixture's payload (a container-class probe) */}
+      <div data-testid="w46-stacked" style={{ width: 370 }}>
+        <FormRow label="Name" htmlFor="w46-stacked-name" hint="Shown on receipts.">
+          <TextInput id="w46-stacked-name" />
+        </FormRow>
       </div>
       <div data-testid="w46-settings" style={{ width: 700 }}>
         <SettingsSection title="Account">

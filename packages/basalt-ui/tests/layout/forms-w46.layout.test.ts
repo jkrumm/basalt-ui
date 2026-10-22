@@ -116,18 +116,56 @@ layout('Wave 46 FormRow geometry', () => {
   test('1440: one row rule — FormRow and SettingsRow share the label column and the control cap', async () => {
     const p = await openFixture(SPEC, DESKTOP_1440, '/', 'reduce', 'fine')
     await p.settle()
-    const measure = async (inputId: string, hostId: string) =>
+    // The grid is the control cell's parent: FormRow's `fieldset`, SettingsRow's control div.
+    const measure = async (inputId: string, cell: string) =>
       (await p.raw.evaluate(`(() => {
-        const i = document.querySelector('#${inputId}').getBoundingClientRect()
-        const host = document.querySelector('[data-testid="${hostId}"]').getBoundingClientRect()
-        return { width: Math.round(i.width), offset: Math.round(i.left - host.left) }
-      })()`)) as { width: number; offset: number }
-    const form = await measure('w46-name', 'w46-form')
-    const settings = await measure('w46-sname', 'w46-settings')
-    // The control is the 20rem (320) cap; the label column is 15rem (240) and the card adds its own inset.
-    expect(form.width).toBe(320)
-    expect(settings.width).toBe(320)
-    expect(form.offset).toBe(240 + 16)
-    expect(settings.offset - form.offset).toBe(16)
+        const input = document.querySelector('#${inputId}')
+        const grid = input.closest('${cell}').parentElement
+        const i = input.getBoundingClientRect()
+        const g = grid.getBoundingClientRect()
+        const rem = parseFloat(getComputedStyle(document.documentElement).fontSize)
+        return {
+          width: Math.round(i.width),
+          offset: Math.round(i.left - g.left),
+          cap: Math.round(20 * rem),
+          labelColumn: Math.round(15 * rem),
+          gap: Math.round(parseFloat(getComputedStyle(grid).columnGap)),
+        }
+      })()`)) as { width: number; offset: number; cap: number; labelColumn: number; gap: number }
+    const form = await measure('w46-name', 'fieldset')
+    const settings = await measure('w46-sname', '[class*="control"]')
+    for (const m of [form, settings]) {
+      expect(m.width).toBe(m.cap)
+      expect(m.offset).toBe(m.labelColumn + m.gap)
+    }
+    expect(settings.offset).toBe(form.offset)
+  })
+
+  test('1440: a described row keeps the row-to-row distance; the description tucks into the gap', async () => {
+    const p = await openFixture(SPEC, DESKTOP_1440, '/', 'reduce', 'fine')
+    await p.settle()
+    const r = (await p.raw.evaluate(`(() => {
+      const first = document.querySelector('#w46-name').closest('fieldset').parentElement.parentElement
+      const second = document.querySelector('#w46-weight').closest('fieldset').parentElement.parentElement
+      const hint = first.querySelector('[id$="-hint"]').getBoundingClientRect()
+      const a = first.getBoundingClientRect()
+      const b = second.getBoundingClientRect()
+      return { rowGap: Math.round(b.top - a.bottom), hintToNext: Math.round(b.top - hint.bottom) }
+    })()`)) as { rowGap: number; hintToNext: number }
+    // Row boxes stay 12 apart (the same as two plain rows); the description sits 4 px into that gap.
+    expect(r.rowGap).toBe(12)
+    expect(r.hintToNext).toBe(8)
+  })
+
+  test('370 px container: the control sits stack-xs (4 px) below the description, not against it', async () => {
+    const p = await openFixture(SPEC, DESKTOP_1440, '/', 'reduce', 'fine')
+    await p.settle()
+    const gap = (await p.raw.evaluate(`(() => {
+      const root = document.querySelector('[data-testid="w46-stacked"]')
+      const hint = root.querySelector('[id$="-hint"]').getBoundingClientRect()
+      const input = root.querySelector('input').getBoundingClientRect()
+      return Math.round(input.top - hint.bottom)
+    })()`)) as number
+    expect(gap).toBe(4)
   })
 })
