@@ -10,7 +10,7 @@ import { demoColors } from '../demo/series'
 import { fmtDay, fmtInt, timedPoints } from './fixture-utils'
 
 /** The reading date. Fixed, so the 14-day windows never move under a screenshot. */
-const TODAY = new Date(Date.UTC(2026, 9, 16))
+export const TODAY = new Date(Date.UTC(2026, 9, 16))
 const DAY_MS = 86_400_000
 export const TODAY_LABEL = fmtDay(TODAY)
 
@@ -183,3 +183,166 @@ export const FLOW_SERIES: ChartSeries<FlowRow>[] = [
     curve: 'linear',
   },
 ]
+
+/** The item whose history the S3 timeline shows: `w-421`, awaiting a decision for 30 h. */
+export const TIMELINE_ITEM = 'Raise queue concurrency'
+
+export type TransitionEvent = {
+  kind: 'transition'
+  id: string
+  at: Date
+  /** `null` on the synthetic `created` row. */
+  from: string | null
+  to: string
+  reason?: string
+  synthetic?: boolean
+}
+export type DispatchEvent = {
+  kind: 'dispatch'
+  id: string
+  /** When the dispatch was created. */
+  at: Date
+  tier: 'light' | 'standard' | 'deep'
+  status: 'merged' | 'failed' | 'closed' | 'open'
+  /** One sentence: what the run concluded. */
+  verdict: string
+  mergedAt?: Date
+}
+export type OperationEvent = {
+  kind: 'operation'
+  id: string
+  at: Date
+  op: 'checkout' | 'build' | 'test' | 'review' | 'deploy' | 'rebase'
+  repo: string
+  outcome: 'ok' | 'failed' | 'skipped'
+}
+export type TimelineEvent = TransitionEvent | DispatchEvent | OperationEvent
+
+const at = (day: number, hour: number, minute: number): Date =>
+  new Date(Date.UTC(2026, 9, day, hour, minute))
+let seq = 0
+const nextId = (): string => `e-${String(++seq).padStart(2, '0')}`
+const tr = (
+  when: Date,
+  from: string | null,
+  to: string,
+  reason?: string,
+  synthetic?: boolean,
+): TransitionEvent => ({
+  kind: 'transition',
+  id: nextId(),
+  at: when,
+  from,
+  to,
+  ...(reason !== undefined && { reason }),
+  ...(synthetic === true && { synthetic }),
+})
+const dp = (
+  when: Date,
+  tier: DispatchEvent['tier'],
+  status: DispatchEvent['status'],
+  verdict: string,
+  mergedAt?: Date,
+): DispatchEvent => ({
+  kind: 'dispatch',
+  id: nextId(),
+  at: when,
+  tier,
+  status,
+  verdict,
+  ...(mergedAt !== undefined && { mergedAt }),
+})
+const op = (
+  when: Date,
+  kind: OperationEvent['op'],
+  repo: string,
+  outcome: OperationEvent['outcome'],
+): OperationEvent => ({ kind: 'operation', id: nextId(), at: when, op: kind, repo, outcome })
+
+/**
+ * One warden item's history, OLDEST FIRST (warden's order), over five days ending at the transition
+ * that put it in `awaiting` (30 h before `TODAY`, matching `w-421` in `ITEMS`). It is the last
+ * `ITEM_TIMELINE.length` of `ITEM_TIMELINE_TOTAL` events.
+ */
+export const ITEM_TIMELINE: readonly TimelineEvent[] = [
+  tr(at(10, 9, 12), null, 'queued', 'Opened from a capacity report', true),
+  tr(at(10, 9, 40), 'queued', 'running', 'Slot free'),
+  op(at(10, 9, 41), 'checkout', 'queue-service', 'ok'),
+  dp(
+    at(10, 9, 44),
+    'light',
+    'failed',
+    'The worker pool is sized in two places, so the change is not local.',
+  ),
+  op(at(10, 10, 2), 'test', 'queue-service', 'failed'),
+  tr(at(10, 10, 5), 'running', 'blocked', 'Pool size is read from the deploy config'),
+  tr(at(10, 14, 30), 'blocked', 'queued', 'Deploy config repo added to the scope'),
+  tr(at(10, 15, 3), 'queued', 'running', 'Slot free'),
+  op(at(10, 15, 4), 'checkout', 'deploy-config', 'ok'),
+  op(at(10, 15, 5), 'checkout', 'queue-service', 'ok'),
+  dp(
+    at(10, 15, 9),
+    'standard',
+    'open',
+    'Raised the default from 4 to 8 and read it from one setting.',
+  ),
+  op(at(10, 15, 41), 'build', 'queue-service', 'ok'),
+  op(at(10, 15, 52), 'test', 'queue-service', 'ok'),
+  op(at(10, 16, 20), 'review', 'queue-service', 'failed'),
+  tr(at(10, 16, 24), 'running', 'awaiting', 'Review found an unbounded retry loop'),
+  tr(at(11, 8, 31), 'awaiting', 'queued', 'Decision: bound the retries at 5'),
+  tr(at(11, 8, 50), 'queued', 'running', 'Slot free'),
+  dp(at(11, 8, 55), 'standard', 'closed', 'Superseded by a run that also bounds the retries.'),
+  dp(
+    at(11, 9, 0),
+    'standard',
+    'open',
+    'Bounded the retry loop at 5 and kept the new pool default.',
+  ),
+  op(at(11, 9, 28), 'build', 'queue-service', 'ok'),
+  op(at(11, 9, 37), 'test', 'queue-service', 'ok'),
+  op(at(11, 10, 2), 'review', 'queue-service', 'ok'),
+  tr(at(11, 10, 6), 'running', 'awaiting', 'Ready to merge'),
+  tr(at(11, 17, 14), 'awaiting', 'running', 'Approved'),
+  op(at(11, 17, 16), 'rebase', 'queue-service', 'ok'),
+  dp(
+    at(11, 17, 20),
+    'light',
+    'merged',
+    'Merged after a clean rebase; the pool default is now 8.',
+    at(11, 17, 31),
+  ),
+  op(at(11, 17, 33), 'deploy', 'queue-service', 'ok'),
+  op(at(11, 17, 52), 'deploy', 'deploy-config', 'skipped'),
+  tr(at(11, 18, 0), 'running', 'awaiting', 'Deployed, waiting on a canary read'),
+  tr(at(12, 9, 5), 'awaiting', 'running', 'Canary read: queue depth fell by a third'),
+  op(at(12, 9, 6), 'checkout', 'queue-service', 'ok'),
+  dp(
+    at(12, 9, 10),
+    'light',
+    'merged',
+    'Raised the staging pool to match production.',
+    at(12, 9, 24),
+  ),
+  op(at(12, 9, 26), 'deploy', 'deploy-config', 'ok'),
+  tr(at(12, 9, 40), 'running', 'queued', 'Waiting for the staging window'),
+  tr(at(12, 15, 2), 'queued', 'running', 'Staging window open'),
+  op(at(12, 15, 4), 'test', 'queue-service', 'ok'),
+  op(at(12, 15, 30), 'test', 'deploy-config', 'failed'),
+  dp(
+    at(12, 15, 34),
+    'standard',
+    'failed',
+    'The staging smoke test timed out on the second worker.',
+  ),
+  tr(at(12, 15, 40), 'running', 'blocked', 'Failing check on staging'),
+  tr(at(13, 10, 18), 'blocked', 'queued', 'Staging check fixed upstream'),
+  tr(at(13, 10, 44), 'queued', 'running', 'Slot free'),
+  op(at(13, 10, 46), 'test', 'deploy-config', 'ok'),
+  dp(at(13, 10, 50), 'deep', 'open', 'Proposed raising the cap to 12 with a per-queue override.'),
+  op(at(13, 11, 40), 'review', 'queue-service', 'ok'),
+  tr(at(14, 18, 0), 'running', 'awaiting', 'Needs a decision on the cap of 12'),
+]
+
+/** Warden keeps the whole history; the page fetches the last `ITEM_TIMELINE.length` of these. */
+export const ITEM_TIMELINE_TOTAL = 57

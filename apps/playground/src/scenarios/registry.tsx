@@ -16,6 +16,7 @@ import { OpsScenario } from './S1Ops'
 import { TrainingScenario } from './S2Training'
 import { AgentsScenario } from './S3Agents'
 import { SpendScenario } from './S4Spend'
+import { LearningScenario } from './S5Learning'
 import { BodyScenario } from './S7Body'
 import { MapScenario } from './S8Map'
 import type { ScenarioProps } from './shot-state'
@@ -25,6 +26,7 @@ const RENDERERS = {
   's2-training': (p) => <TrainingScenario {...p} />,
   's3-agents': (p) => <AgentsScenario {...p} />,
   's4-spend': (p) => <SpendScenario {...p} />,
+  's5-learning': (p) => <LearningScenario {...p} />,
   's7-body': (p) => <BodyScenario {...p} />,
   's8-map': (p) => <MapScenario {...p} />,
   'probe-3': () => <CalibrateGood />,
