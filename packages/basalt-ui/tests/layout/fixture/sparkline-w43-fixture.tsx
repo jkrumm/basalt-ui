@@ -1,5 +1,6 @@
 import type { ReactElement } from 'react'
-import { Sparkline } from '../../../src/charts'
+import { Group, Stack, Text } from '@mantine/core'
+import { ChartCard, Sparkline } from '../../../src/charts'
 import { StatGroup } from '../../../src/index'
 
 /** A lift's e1RM history that opens at its best: the line starts on the `PR` reference. */
@@ -99,18 +100,28 @@ export function W43SparkFixture(): ReactElement {
           ]}
         />
       </div>
-      <div data-testid="w43-inol">
-        {Object.entries(INOL).map(([name, data]) => (
-          <div key={name} data-lift={name} style={{ width: 120, height: 28, marginBottom: 8 }}>
-            <Sparkline
-              ariaLabel={`${name} INOL`}
-              data={data}
-              width={120}
-              height={28}
-              band={INOL_BAND}
-            />
-          </div>
-        ))}
+      <div data-testid="w43-inol" style={{ width: 1100 }}>
+        <ChartCard title="INOL per lift">
+          <Stack gap="xs">
+            {Object.entries(INOL).map(([name, data]) => (
+              <Group key={name} data-lift={name} gap="md" wrap="nowrap" justify="space-between">
+                <Text size="sm">{name}</Text>
+                <Group gap="xs" wrap="nowrap">
+                  <Sparkline
+                    ariaLabel={`${name} INOL`}
+                    data={data}
+                    width={120}
+                    height={28}
+                    band={INOL_BAND}
+                  />
+                  <Text size="sm" w={40} ta="right">
+                    {data.at(-1)}
+                  </Text>
+                </Group>
+              </Group>
+            ))}
+          </Stack>
+        </ChartCard>
       </div>
     </>
   )

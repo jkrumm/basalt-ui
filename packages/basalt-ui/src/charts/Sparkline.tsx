@@ -253,10 +253,12 @@ function frameOf(
   mark: 'line' | 'bar',
   count: number,
   hasEnd: boolean,
+  banded = false,
 ): Frame {
   if (mark === 'bar') return { x: [0, count], y: [Math.min(lo, 0), Math.max(hi, 0) || 1] }
   // A flat or single-point series needs an extent; 10% air keeps the stroke inside the box.
-  const pad = (hi - lo) * 0.1 || 1
+  // A band edge that sets the domain needs air to read as an edge: a quarter of the span, not a tenth.
+  const pad = (hi - lo) * (banded ? 0.25 : 0.1) || 1
   // Half a dot of air at each end, in index units, so the last-point dot is not clipped.
   const xPad = hasEnd ? (count - 1) * 0.04 || 0.5 : 0
   return { x: [-xPad, Math.max(count - 1, 1) + xPad], y: [lo - pad, hi + pad] }
@@ -271,8 +273,9 @@ function compileSparkline(
   reference: number | null,
   referenceLabel: string | undefined,
   band: { from: number; to: number } | null,
+  bandEdges: boolean,
 ): CartesianDefinition {
-  const frame = frameOf(extentOf, mark, source.length, emphasisColor !== null)
+  const frame = frameOf(extentOf, mark, source.length, emphasisColor !== null, bandEdges)
   const bandMark = (): ChartMarks =>
     band === null
       ? []
@@ -670,11 +673,23 @@ export function Sparkline(props: SparklineProps): ReactElement {
       Math.max(range[1], ...edges),
     ]
     const end = emphasizeLast ? emphasisColor : null
+    // A band that sets the domain's edge gets the wider air; one inside the data leaves it alone.
+    const bandEdges = full[0] < range[0] || full[1] > range[1]
     return {
       rows,
       moments: momentsOf(data),
-      frame: frameOf(full, mark, rows.length, end !== null),
-      definition: compileSparkline(rows, full, mark, color, end, ref, referenceLabel, bandSpan),
+      frame: frameOf(full, mark, rows.length, end !== null, bandSpan !== null && bandEdges),
+      definition: compileSparkline(
+        rows,
+        full,
+        mark,
+        color,
+        end,
+        ref,
+        referenceLabel,
+        bandSpan,
+        bandSpan !== null && bandEdges,
+      ),
     }
   }, [data, mark, color, emphasizeLast, emphasisColor, reference, referenceLabel, bandFrom, bandTo])
   const resolved = resolveChartState(state)
