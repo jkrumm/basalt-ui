@@ -612,10 +612,11 @@ async function budgets(providerOnlyDist: string): Promise<Budget[]> {
     // 8427 -> 8443 (w37 harness-hover): the launcher passes blink pointer settings so a desktop context reports `hover: hover` / `pointer: fine` (cli/shot/playwright.ts +16).
     // 8443 -> 8457 (w37 harness-hover r2): `craft-7/no-declared-states` is P2 and names the anchors holding a state surface (`stateful` on the shot record, cli/shot/capture.ts + detect.ts +14).
     // 8457 -> 8463 (w43 shot-strip, argo UPSTREAM Wave 53 row 2): an anchor first seen in a URL state gets a `rest` `absent` record, so the board never calls a legitimate absence "not captured" (cli/shot/capture.ts +6). Consumer: argo body composition.
+    // 8463 -> 8480 (w44 shot-scrollport): a full-page shot grows only by the page scrollport's hidden height, never a nested scroll box's (cli/shot/capture.ts +17). Consumer: every `basalt-ui shot` user — found on the playground S3 item timeline at 390; argo boards shoot the same harness.
     {
       label: 'CLI non-test lines (src/cli/**)',
       value: cliNonTestLines(),
-      ceiling: 8463,
+      ceiling: 8480,
     },
     ...(await providerOnlyRows(providerOnlyDist)),
   ]

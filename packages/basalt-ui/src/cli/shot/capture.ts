@@ -416,14 +416,31 @@ async function frame(c: Ctx, name: string): Promise<() => Promise<void>> {
   return undo
 }
 
-/** Runs in the page: px of content that scroll inside a large inner scrollport, which `fullPage` cannot see. */
+/**
+ * Runs in the page: px the PAGE scrollport hides, which `fullPage` cannot see. That is the element
+ * carrying `data-basalt-scrollport` (BasaltShell's `AppShell.Main`); a shell-less app has none, so
+ * the outermost auto/scroll box counts instead. A bounded scroll box nested inside it (an event
+ * list, a table) never does: its hidden rows are not page height.
+ */
 export function hiddenScrollPx(): number {
-  let extra = 0
-  for (const el of Array.from(document.querySelectorAll('*'))) {
-    if (el.clientHeight < window.innerHeight / 2) continue
+  const hidden = (el: Element): number => Math.max(0, el.scrollHeight - el.clientHeight)
+  const declared = document.querySelector('[data-basalt-scrollport]')
+  if (declared !== null) return hidden(declared)
+  const scrolls = (el: Element): boolean => {
     const { overflowY } = getComputedStyle(el)
-    if (overflowY === 'auto' || overflowY === 'scroll')
-      extra = Math.max(extra, el.scrollHeight - el.clientHeight)
+    return overflowY === 'auto' || overflowY === 'scroll'
+  }
+  let extra = 0
+  for (const el of Array.from(document.body.querySelectorAll('*'))) {
+    if (el.clientHeight < window.innerHeight / 2 || !scrolls(el)) continue
+    let nested = false
+    for (
+      let p = el.parentElement;
+      p !== null && p !== document.documentElement;
+      p = p.parentElement
+    )
+      if (scrolls(p)) nested = true
+    if (!nested) extra = Math.max(extra, hidden(el))
   }
   return extra
 }
