@@ -41,6 +41,12 @@ export const SCENARIO_INFO: readonly ScenarioInfo[] = [
       'Where am I with this topic? Review it now or later: sessions, ratings and the practice journal.',
   },
   {
+    id: 's6-settings',
+    title: 'Settings and entry',
+    blurb:
+      'Change one thing without breaking another. An account page and a set-logging form: save or cancel.',
+  },
+  {
     id: 's7-body',
     title: 'Body and strength',
     blurb: 'Am I trending toward my weight goal, and is my training load productive?',
