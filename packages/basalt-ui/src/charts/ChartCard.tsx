@@ -293,7 +293,7 @@ export function ChartCard({
         {...(short && { 'data-basalt-card-short': '' })}
       >
         {hasHeader && (
-          <div className={cx(classes.header, classNames?.header)}>
+          <div data-basalt-chart-header="" className={cx(classes.header, classNames?.header)}>
             <WidgetHeader
               tier="widget"
               {...definedOnly(headerProps)}

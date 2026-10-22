@@ -98,6 +98,7 @@ import { W39S4StripFixture, W39StripFixture } from './w39-strip-fixture'
 import { W39MeterFixture } from './w39-meter-fixture'
 import { W42KindsFixture } from './w42-kinds-fixture'
 import { W42StatesFixture } from './w42-states-fixture'
+import { W43SubtitleFixture } from './w43-subtitle-fixture'
 import { W42ResponsiveFixture } from './w42-responsive-fixture'
 import { W38Readout2Fixture } from './w38-readout2-fixture'
 import { W39ReadoutFixture } from './w39-readout-fixture'
@@ -3104,6 +3105,7 @@ export function ShellFixture({ spec }: { spec: FixtureSpec }): ReactElement {
       {spec.w39Meter && <W39MeterFixture />}
       {spec.w42Kinds && <W42KindsFixture />}
       {spec.w42States && <W42StatesFixture {...spec.w42States} />}
+      {spec.w43Subtitle && <W43SubtitleFixture />}
       {spec.w42Responsive && <W42ResponsiveFixture spec={spec.w42Responsive} />}
       {spec.w38Readout2 && <W38Readout2Fixture />}
       {spec.w39Readout && <W39ReadoutFixture />}

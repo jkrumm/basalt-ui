@@ -131,15 +131,18 @@ layout('card chrome by container', () => {
   test.each([
     [320, false],
     [700, false],
-  ])('in a %ipx card the open bubble shows the folded note: %s', async (width, shown) => {
-    const root = `[data-testid="fold-${width}"]`
-    await p.raw.focus(`${root} button[aria-label^="More information"]`)
-    const note = (await p.boxes(`${root} ${moduleClass('foldNote')}`))[0]
-    expect(note !== undefined && note.height > 0).toBe(shown)
-    const bubble = await p.box('bubble', `${root} [role="tooltip"]`)
-    expect(bubble.box.left).toBeGreaterThanOrEqual(0)
-    expect(bubble.box.right).toBeLessThanOrEqual(1440)
-  })
+  ])(
+    'a ChartCard bubble at %ipx carries no folded note (shown: %s) and stays in the viewport',
+    async (width, shown) => {
+      const root = `[data-testid="fold-${width}"]`
+      await p.raw.focus(`${root} button[aria-label^="More information"]`)
+      const note = (await p.boxes(`${root} ${moduleClass('foldNote')}`))[0]
+      expect(note !== undefined && note.height > 0).toBe(shown)
+      const bubble = await p.box('bubble', `${root} [role="tooltip"]`)
+      expect(bubble.box.left).toBeGreaterThanOrEqual(0)
+      expect(bubble.box.right).toBeLessThanOrEqual(1440)
+    },
+  )
 
   test('a `right` card with a footer and no sparkline adds one footer line, not a visual band', async () => {
     const bare = await p.box('b', '[data-testid="foot-right-bare"] > div')
