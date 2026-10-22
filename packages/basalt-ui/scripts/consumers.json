@@ -20,6 +20,7 @@
   "Donut": "argo:apps/dashboard/src/features/usage-tracking/charts/billing-split.tsx",
   "DualPanel": "argo:apps/dashboard/src/features/garmin-health/charts/divergence-chart.tsx",
   "EmptyState": "argo:apps/dashboard/src/routes/strength-tracker.tsx",
+  "EventList": "argo:apps/dashboard/src/features/agents/narratives-section.tsx",
   "FilterSet": "argo:apps/dashboard/src/routes/strength-tracker.tsx",
   "FormGroup": "image-gateway:app/src/views/Create.tsx",
   "FormRow": "argo:apps/dashboard/src/features/m365-explorer/explorer-page.tsx",

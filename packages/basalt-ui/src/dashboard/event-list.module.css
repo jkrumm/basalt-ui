@@ -1,0 +1,270 @@
+/*
+ * EventList (docs/waves/design-parity/SPEC.md § 6.7). One row shape for the plain and the virtualised
+ * path: nothing here keys on a parent selector, so the seam's wrapper divs change no geometry.
+ * Two sizes only: the row size (actor, sentence, body) and the micro size (day header, time, chips).
+ * Two lines at every width: line one is the glyph and the sentence at full width; line two leads
+ * with the mono time, then the body (it wraps, never truncates), then the chips.
+ */
+.frame {
+  inline-size: 100%;
+  min-width: 0;
+  /* The sticky header backdrop, for the plain path and the seam alike: the page surface a `Section`
+     sits on. A list inside a card sets `--event-list-bg: var(--vx-surface-panel)` via `className`. */
+  --event-list-bg: var(--vx-surface-bg);
+  --virtual-rows-sticky-bg: var(--event-list-bg);
+  /* Chip and hover fill: a faint ink tint over the backdrop, visible in both schemes. */
+  --event-list-tint: color-mix(in srgb, var(--vx-ink) 7%, var(--event-list-bg));
+  --event-list-hover: color-mix(in srgb, var(--vx-ink) 12%, var(--event-list-bg));
+}
+
+.root {
+  min-width: 0;
+}
+
+.scroll {
+  overflow: auto;
+  /* The prepend anchor is manual (event-list.tsx); native anchoring would add the delta twice. */
+  overflow-anchor: none;
+}
+
+.virtual {
+  min-width: 0;
+  /* The plain rows' last height (see useHeldHeight): no collapse while the seam loads. */
+  min-block-size: var(--event-list-held, 0px);
+}
+
+.group {
+  min-width: 0;
+}
+
+.list {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.header {
+  position: sticky;
+  top: 0;
+  z-index: 1;
+  display: flex;
+  align-items: baseline;
+  gap: var(--vx-space-control-gap);
+  margin: 0;
+  padding-block: var(--vx-space-stack-xs);
+  background: var(--event-list-bg);
+  font-family: var(--basalt-font-mono);
+  font-size: var(--vx-text-micro);
+  font-weight: 400;
+  letter-spacing: 0.06em;
+  color: var(--vx-muted);
+}
+
+/* A scrolled box: a short fade under the sticky day header, so a row passing beneath it reads as
+   scrolled, not overlapped. */
+.scroll[data-scrolled] .header::after {
+  content: '';
+  position: absolute;
+  inset-inline: 0;
+  inset-block-start: 100%;
+  block-size: var(--vx-space-stack-sm);
+  background: linear-gradient(var(--event-list-bg), transparent);
+  pointer-events: none;
+}
+
+.count {
+  opacity: 0.7;
+}
+
+.row {
+  --event-list-lead: calc(1.25rem * var(--mantine-scale, 1));
+  position: relative;
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  grid-template-areas:
+    'line line'
+    'time meta';
+  column-gap: var(--vx-space-stack-md);
+  padding-block: var(--vx-space-stack-xs);
+  font-size: var(--vx-text-sm);
+  line-height: 1.4;
+  color: var(--vx-ink);
+}
+
+.row[data-density='timeline'] {
+  padding-block: var(--vx-space-stack-sm);
+}
+
+.row[data-lead] {
+  grid-template-columns: var(--event-list-lead) auto minmax(0, 1fr);
+  grid-template-areas:
+    'lead line line'
+    '. time meta';
+}
+
+/* An untimed row has no time to lead the meta line: the meta takes the whole line. */
+.row[data-untimed] {
+  grid-template-areas:
+    'line line'
+    'meta meta';
+}
+
+.row[data-lead][data-untimed] {
+  grid-template-areas:
+    'lead line line'
+    '. meta meta';
+}
+
+.leading {
+  grid-area: lead;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 1.4em;
+  color: var(--vx-muted);
+}
+
+/* The rail: a 1 px neutral line through the leading column; the first and last rows start and stop at the glyph. */
+.row[data-rail]::before {
+  content: '';
+  position: absolute;
+  inset-inline-start: calc(var(--event-list-lead) / 2);
+  inset-block: 0;
+  inline-size: 1px;
+  background: var(--vx-surface-border);
+}
+
+.row[data-rail][data-first]::before {
+  inset-block-start: calc(var(--vx-space-stack-sm) + 0.7em);
+}
+
+.row[data-rail][data-last]::before {
+  inset-block-end: calc(100% - var(--vx-space-stack-sm) - 0.7em);
+}
+
+.row[data-rail][data-first][data-last]::before {
+  display: none;
+}
+
+.line {
+  grid-area: line;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.row[data-density='timeline'] .line {
+  overflow: visible;
+  white-space: normal;
+  overflow-wrap: anywhere;
+}
+
+.actor {
+  /* 550, the theme's medium: at 13 px a plain 500 reads the same as the sentence. */
+  font-weight: 550;
+}
+
+.time {
+  grid-area: time;
+  font-family: var(--basalt-font-mono);
+  font-size: var(--vx-text-micro);
+  line-height: 1.4;
+  color: var(--vx-muted);
+  white-space: nowrap;
+  /* As tall as a row line and centred in it, so it sits on the first line of a wrapped body. */
+  display: flex;
+  align-items: center;
+  align-self: start;
+  block-size: calc(var(--vx-text-sm) * 1.4);
+}
+
+/* The meta line: the body, then the chips; it wraps, and body text is never truncated. */
+.meta {
+  grid-area: meta;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--vx-space-stack-xs) var(--vx-space-control-gap);
+  min-width: 0;
+  color: var(--vx-muted);
+}
+
+.body {
+  flex: 0 1 auto;
+  min-width: 0;
+  max-inline-size: 100%;
+  overflow-wrap: anywhere;
+}
+
+.chips {
+  display: inline-flex;
+  flex: none;
+  align-items: center;
+  gap: var(--vx-space-control-gap);
+  font-size: var(--vx-text-micro);
+}
+
+/* A neutral chip needs a visible surface in light as well: the theme's subtle fill is the page. */
+.chips :global(.mantine-Badge-root) {
+  background: var(--event-list-tint);
+}
+
+.earlier {
+  display: flex;
+  justify-content: flex-start;
+  padding-block: var(--vx-space-stack-xs);
+}
+
+.earlierButton {
+  /* The label starts on the rows' edge: cancel the button's own inline padding. */
+  margin-inline-start: calc(var(--button-padding-x, 0px) * -1);
+}
+
+.earlierButton:hover:not(:disabled, [data-disabled]) {
+  background: var(--event-list-hover);
+}
+
+.skeletonGlyph {
+  inline-size: 0.5rem;
+  block-size: 0.5rem;
+}
+
+.skeletonLine {
+  /* A share of the row, capped near a loaded sentence so a wide list does not stretch the bar. */
+  inline-size: min(70%, 28rem);
+  block-size: 0.75rem;
+  margin-block: 0.25rem;
+}
+
+.skeletonTime {
+  inline-size: 3rem;
+  block-size: 0.625rem;
+}
+
+.skeletonGroup {
+  min-width: 0;
+}
+
+.skeletonHeader {
+  inline-size: 6rem;
+  block-size: 0.5rem;
+}
+
+.skeletonChip {
+  inline-size: 3rem;
+  block-size: 1rem;
+}
+
+.skeletonMeta {
+  inline-size: min(40%, 16rem);
+  block-size: 0.625rem;
+}
+
+/* The empty state: a ring-edged tile in the list's place (SPEC § 6.11), its title at the row tier. */
+.empty {
+  display: block;
+  --basalt-state-title-size: var(--vx-text-md);
+  border: 1px solid var(--vx-surface-hairline);
+  border-radius: var(--vx-radius-ctrl);
+}

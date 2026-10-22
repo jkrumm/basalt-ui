@@ -59,6 +59,8 @@ export {
   type MeterZone,
   BarList,
   type BarListProps,
+  EventList,
+  type EventListProps,
   PageSummary,
   type PageSummaryProps,
 } from './dashboard'
