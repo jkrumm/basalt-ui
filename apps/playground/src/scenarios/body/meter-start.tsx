@@ -46,7 +46,7 @@ const strip = (anchor: string, visual: StatStripCell['visual'], props: ScenarioP
           {
             key: 'weight',
             caption: 'Weight',
-            value: kg(LOW).replace(' kg', ''),
+            value: '72.3',
             unit: 'kg',
             visual,
             loading: props.shotState === 'loading',
