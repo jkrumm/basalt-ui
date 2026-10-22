@@ -66,7 +66,7 @@
 }
 
 .hint {
-  font-size: var(--vx-text-sm);
+  font-size: var(--vx-text-xs);
   color: var(--vx-muted);
 }
 
@@ -90,9 +90,47 @@
   padding: 0;
 }
 
+/*
+ * The error: the bad-status glyph, then one sentence. `1lh` is the glyph's box so it centres on the
+ * FIRST line when the sentence wraps. A Mantine input wired through `inputProps` renders its own
+ * error (Input.Wrapper), so the same glyph is drawn on that error as a mask, in the same colour:
+ * the two paths read as one.
+ */
 .error {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--vx-space-stack-xs);
   font-size: var(--vx-text-sm);
   color: var(--vx-status-bad);
+}
+
+.errorIcon {
+  flex: none;
+  inline-size: 1em;
+  block-size: 1lh;
+}
+
+.control :global(.mantine-InputWrapper-error),
+.control :global(.mantine-Checkbox-error),
+.control :global(.mantine-Switch-error) {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--vx-space-stack-xs);
+  margin-block-start: 0;
+  font-size: var(--vx-text-sm);
+  color: var(--vx-status-bad);
+}
+
+.control :global(.mantine-InputWrapper-error)::before,
+.control :global(.mantine-Checkbox-error)::before,
+.control :global(.mantine-Switch-error)::before {
+  content: '';
+  flex: none;
+  inline-size: 1em;
+  block-size: 1lh;
+  background-color: currentColor;
+  mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16' fill='none' stroke='black' stroke-width='1.5' stroke-linecap='round'%3E%3Ccircle cx='8' cy='8' r='6.25'/%3E%3Cpath d='M8 4.75v3.9M8 11.2v.05'/%3E%3C/svg%3E")
+    center / contain no-repeat;
 }
 
 /* The narrow twin: the control needs the full width, so the label goes above it. */
@@ -128,6 +166,25 @@
   color: var(--vx-ink);
 }
 
+/* A section: the legend is the section title (`sm`, 500), the cluster stacks 12 apart like rows, and
+   a section that is followed by another keeps 24 — the form's whole rhythm, owned here. */
+.group[data-section] {
+  gap: var(--vx-space-stack-sm);
+}
+
+.group[data-section]:not(:last-child) {
+  margin-block-end: var(--vx-space-stack-xl);
+}
+
+.group[data-section] > .legend {
+  font-size: var(--vx-text-sm);
+  font-weight: 500;
+}
+
+.group[data-section] > .groupControls[data-direction='column'] {
+  gap: var(--vx-space-stack-md);
+}
+
 .groupControls {
   display: flex;
   clear: both;
@@ -160,4 +217,17 @@
   border: 0;
   margin: 0;
   padding: 0;
+}
+
+/*
+ * Compact: the primary stays in reach at the bottom of a long form. A surface behind it so rows do
+ * not show through; the 1px divider is the one boundary the sticky bar draws.
+ */
+.actions[data-sticky] {
+  position: sticky;
+  bottom: 0;
+  z-index: 1;
+  padding-block: var(--vx-space-stack-sm);
+  background: var(--vx-surface-bg);
+  border-block-start: 1px solid var(--vx-divider);
 }
