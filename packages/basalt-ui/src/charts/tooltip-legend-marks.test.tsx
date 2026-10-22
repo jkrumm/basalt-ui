@@ -192,6 +192,22 @@ describe('reference-line legend entries', () => {
     ).not.toBeNull()
   })
 
+  test('a goal line draws its glyph as the plot draws it: 1px, dashed only when the line is; the series stays 2px solid', () => {
+    // argo's body-weight goal: `dashed: false` (a solid 1px rule in neutral ink) beside the Weight series.
+    const goal: RefLine[] = [
+      { value: 30, color: 'var(--vx-muted)', dashed: false, legend: { label: 'goal' } },
+      { value: 20, color: 'var(--vx-muted)', dashed: true, legend: { label: 'floor' } },
+    ]
+    const el = ssr(<Lines ariaLabel="L" data={data} x={x} series={[a]} refLines={goal} />)
+    const line = (key: string) => el.querySelector(`[data-legend-key="${key}"] line`)
+    expect(line('a')?.getAttribute('stroke-width')).toBe('2')
+    expect(line('a')?.getAttribute('stroke-dasharray')).toBeNull()
+    expect(line('__ref-0')?.getAttribute('stroke-width')).toBe('1')
+    expect(line('__ref-0')?.getAttribute('stroke-dasharray')).toBeNull()
+    expect(line('__ref-1')?.getAttribute('stroke-width')).toBe('1')
+    expect(line('__ref-1')?.getAttribute('stroke-dasharray')).toBe(LINE_SWATCH.wide.dash)
+  })
+
   test('mark "bar" draws a filled chip, not a line swatch', () => {
     const el = ssr(<Lines ariaLabel="L" data={data} x={x} series={[a]} refLines={refs} />)
     const bar = el.querySelector('[data-legend-key="__ref-2"]')

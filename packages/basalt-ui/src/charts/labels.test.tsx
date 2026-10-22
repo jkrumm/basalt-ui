@@ -156,15 +156,18 @@ describe('endLabelPlan', () => {
     const data = rows(5).map((r) => ({ ...r, a: 50, b: 50.5 }))
     const planned = plan(data, [A, B])
     expect(planned).toHaveLength(2)
-    const [first, second] = planned.map((p) => p.nudge)
-    expect(Math.abs((first ?? 0) - (second ?? 0))).toBeGreaterThan(11)
+    // Flipped: the lower label drops below its point, the higher rises above its own.
+    const drawn = planned.map(
+      (p, i) => (i === 0 ? 50 : 50.5) * 3 - (endLabelOffset(p.anchor, p.side).dy + p.nudge),
+    )
+    expect(Math.abs((drawn[0] ?? 0) - (drawn[1] ?? 0))).toBeGreaterThanOrEqual(15)
   })
 
   test('the collision gap is measured on the plot area, not the frame', () => {
-    // 4 units of a 0-100 domain: 12 px on a 300 px plot (nudged), 24 px on a 600 px frame (clear).
+    // Room to the right (level labels): 4 units of a 0-100 domain are 12 px on a 300 px plot (nudged), 24 px on a 600 px frame (clear).
     const data = rows(5).map((r) => ({ ...r, a: 50, b: 54 }))
     const nudged = (plotHeight: number): number[] =>
-      plan(data, [A, B], { height: 600, plotHeight }).map((p) => p.nudge)
+      plan(data, [A, B], { height: 600, plotHeight }, [day(1), day(40)]).map((p) => p.nudge)
     expect(nudged(300).some((n) => n !== 0)).toBe(true)
     expect(nudged(600)).toEqual([0, 0])
   })
@@ -205,5 +208,94 @@ describe('an end label never crosses its own line (w37 r2)', () => {
   })
   test('a label right of its point has no line to cross: level', () => {
     expect(endLabelOffset('start', 'below').dy).toBe(0)
+  })
+})
+
+describe('endLabelPlan collision avoidance (argo body weight: Weight + 7 d mean)', () => {
+  const LINE_HEIGHT = 15
+  /** Two lines ending on the given values, both rising into the end (the same flip side). */
+  const ending = (a: number, b: number, over: Partial<PlotContext<Row, Date>> = {}) => {
+    const data = Array.from({ length: 20 }, (_, i) => ({
+      t: day(i + 1),
+      a: i === 19 ? a : a - 2,
+      b: i === 19 ? b : b - 2,
+    }))
+    const lines = [A, B]
+    return endLabelPlan(plotOf(data, lines, { yDomain: [0, 100], ...over }), lines)
+  }
+  /** A label's centre in px from the plot bottom, as it is drawn. */
+  const centre = (
+    l: ReturnType<typeof ending>[number],
+    last: number,
+    over: { plotHeight?: number } = {},
+  ) => (last / 100) * (over.plotHeight ?? 300) - (endLabelOffset(l.anchor, l.side).dy + l.nudge)
+
+  test('two equal last values end at least one line apart', () => {
+    const [a, b] = ending(50, 50)
+    expect(Math.abs(centre(a as never, 50) - centre(b as never, 50))).toBeGreaterThanOrEqual(
+      LINE_HEIGHT,
+    )
+  })
+
+  test('two values 0.2 apart on a 20-unit axis still clear each other', () => {
+    const [a, b] = ending(50, 50.2, { yDomain: [40, 60] })
+    const yA = ((50 - 40) / 20) * 300
+    const yB = ((50.2 - 40) / 20) * 300
+    expect(
+      Math.abs(centre(a as never, 0) + yA - (centre(b as never, 0) + yB)),
+    ).toBeGreaterThanOrEqual(LINE_HEIGHT)
+  })
+
+  test('the stack slides down from the top edge and keeps its order', () => {
+    const [a, b] = ending(100, 100)
+    expect(centre(a as never, 100)).toBeLessThanOrEqual(300 - 7)
+    expect(centre(b as never, 100)).toBeLessThanOrEqual(300 - 7)
+    expect(Math.abs(centre(a as never, 100) - centre(b as never, 100))).toBeGreaterThanOrEqual(
+      LINE_HEIGHT,
+    )
+  })
+
+  test('a label keeps its own colour key and series', () => {
+    const plan = ending(50, 50)
+    expect(plan.map((p) => p.series.color)).toEqual(['red', 'blue'])
+  })
+
+  /** Both lines FALL into their end point (argo's weight loss): the per-line rule alone says "below" twice. */
+  const falling = (a: number, b: number, c?: number) => {
+    const last = [a, b, c]
+    const data = Array.from({ length: 20 }, (_, i) => ({
+      t: day(i + 1),
+      a: i === 19 ? a : a + 3,
+      b: i === 19 ? b : b + 3,
+      c: i === 19 ? (c ?? null) : c === undefined ? null : c + 3,
+    }))
+    const C: ChartSeries<Row & { c: number | null }> = {
+      key: 'c',
+      label: 'Third',
+      color: 'green',
+      getValue: (d) => d.c,
+    }
+    const lines = c === undefined ? [A, B] : [A, B, C]
+    return {
+      last,
+      plan: endLabelPlan(
+        plotOf(data as never, lines as never, { yDomain: [0, 100] }),
+        lines as never,
+      ),
+    }
+  }
+
+  test('two close flipped labels straddle their points: the higher above, the lower below', () => {
+    const { plan } = falling(50, 50.2)
+    const sides = Object.fromEntries(plan.map((p) => [p.series.key, p.side]))
+    expect(sides).toEqual({ a: 'below', b: 'above' })
+  })
+
+  test('three close flipped labels: the highest above, the lowest below, none between the points', () => {
+    const { plan } = falling(50, 50.2, 50.4)
+    const sides = Object.fromEntries(plan.map((p) => [p.series.key, p.side]))
+    expect(sides['a']).toBe('below')
+    expect(sides['b']).toBe('above')
+    expect(sides['c']).toBe('above')
   })
 })

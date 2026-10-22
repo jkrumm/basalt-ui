@@ -115,7 +115,7 @@ export type SignedSeries<T> = ChartSeries<T> & { colorNegative?: string | undefi
 
 type SwatchStyle = Pick<
   SignedSeries<never>,
-  'color' | 'colorNegative' | 'mark' | 'dash' | 'strokeOpacity' | 'fillOpacity'
+  'color' | 'colorNegative' | 'mark' | 'dash' | 'strokeOpacity' | 'fillOpacity' | 'role'
 >
 
 /** A swatch fill: the series colour, or a hard-stop split for a sign-coloured bar. */
@@ -149,7 +149,8 @@ function LineSwatch({ s, compact }: { s: SwatchStyle; compact: boolean }): React
         y1={4}
         y2={4}
         stroke={s.color}
-        strokeWidth={2}
+        // A reference line is drawn as a 1px rule (`refLineMarks`), a series from 2px: the key keeps that difference.
+        strokeWidth={s.role === 'reference' ? 1 : 2}
         strokeLinecap={s.dash === 'dashed' ? 'butt' : 'round'}
         strokeOpacity={s.strokeOpacity ?? 1}
         {...(s.dash === 'dashed' && { strokeDasharray: dash })}

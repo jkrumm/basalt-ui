@@ -9,8 +9,8 @@ import { rowX } from './types'
 import type { ChartMarks, ChartSeries, ChartX, PlotContext, PlotRow } from './types'
 
 const MAX_END_LABELS = 3
-/** Two end labels closer than this (px, vertically) are pushed apart to it. */
-const END_LABEL_MIN_GAP = 13
+/** Two end labels closer than this (px, vertically) are pushed apart to it: one label line (11px at 1.35) plus a pixel of air. */
+const END_LABEL_MIN_GAP = 15
 const END_LABEL_DX = 6
 /**
  * A glyph's advance as a share of the font size, for the room check. 0.85 covers proportional
@@ -119,15 +119,33 @@ export function endLabelPlan<T, X extends ChartX>(
   })
   // No `y2` here (returned above), so every label reads the left domain.
   const [lo, hi] = plot.yDomain
-  const placed = last.map(({ series, fraction, y, prev }) => {
-    const anchor = endLabelAnchor({
+  const anchors = last.map(({ series, fraction }) =>
+    endLabelAnchor({
       fraction,
       plotWidth: plot.plotWidth,
       label: series.label,
       fontSize: VX.text.micro,
-    })
-    // A line falling into its end point comes from above: the label drops below it.
-    const side = prev !== null && prev > y ? ('below' as const) : ('above' as const)
+    }),
+  )
+  // Flipped labels (left of their point) sit over their own line, and between two close lines they
+  // would sit on the neighbour's too: the lowest takes the side below its point, the rest above, so
+  // the stack wraps the lines instead of filling the gap between them.
+  const flipped = last.flatMap((p, i) => (anchors[i] === 'end' ? [i] : []))
+  const lowest = flipped.length > 1 ? flipped.toSorted((a, b) => lineY(a) - lineY(b))[0] : undefined
+  function lineY(i: number): number {
+    return (last[i] as (typeof last)[number]).y
+  }
+  const placed = last.map(({ y, prev }, i) => {
+    const anchor = anchors[i] as EndLabelAnchor
+    // A line falling into its end point comes from above: alone, the label drops below it.
+    const side =
+      lowest !== undefined && anchor === 'end'
+        ? i === lowest
+          ? ('below' as const)
+          : ('above' as const)
+        : prev !== null && prev > y
+          ? ('below' as const)
+          : ('above' as const)
     // The label's centre, px from the plot's bottom, with its flip: what the spread keeps apart.
     const centre = ((y - lo) / (hi - lo || 1)) * plot.plotHeight - endLabelOffset(anchor, side).dy
     return { anchor, side, centre }
