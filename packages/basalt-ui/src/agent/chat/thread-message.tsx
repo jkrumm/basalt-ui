@@ -30,7 +30,7 @@ import {
   UnstyledButton,
 } from '@mantine/core'
 import { useDisclosure, useFocusWithin, useHover, useMergedRef } from '@mantine/hooks'
-import { Fragment, lazy, memo, Suspense, useLayoutEffect, useMemo, useRef } from 'react'
+import { Fragment, memo, useLayoutEffect, useMemo, useRef } from 'react'
 import type { JSX } from 'react'
 import type {
   AgentPart,
@@ -49,6 +49,7 @@ import { coalesceParts } from '../coalesce'
 import { narrowAgentPart } from '../foreign'
 import { PartList } from '../part-list'
 import { cx } from '../../common/props'
+import { VirtualRows } from '../../common/virtual-rows'
 import type { BasaltProps } from '../../common/props'
 import { assertRequiredProps } from '../../common/validate'
 import { Markdown } from '../../content/markdown'
@@ -552,13 +553,9 @@ MessageBlock.displayName = 'MessageBlock'
 
 // ── Virtualization (AGENT-CHAT-SPEC.md §9) ─────────────────────────────────────
 //
-// `@tanstack/react-virtual` is an OPTIONAL peer (see `./virtualize`'s module doc). `agent-chat` is
-// ONE package.json export subpath — unlike `basalt-ui/data/virtual`, which gets to statically
-// import the peer because it lives behind its OWN subpath (a consumer who never imports it never
-// resolves the peer either) — so a static top-level import here would make every `ThreadTranscript`
-// consumer require the peer, even ones that never pass `virtualize`. Lazy + dynamic `import()` +
-// `.catch()` degrade, mirroring `../agent/stick-to-bottom.tsx`'s established pattern exactly, keeps
-// the non-virtualized path working with the package absent.
+// The windowing itself lives in the package's one lazy seam, `../../common/virtual-rows` — the
+// only module that may `import('@tanstack/react-virtual')` (an OPTIONAL peer), and only
+// dynamically with a `.catch()` degrade to plain rows. This section keeps only the chat's tuning.
 
 /** Default extra rows rendered beyond the viewport, each side. Higher than
  * `BasaltVirtualList`'s generic-list default (5) — a streaming transcript's scroll bursts benefit
@@ -576,407 +573,13 @@ const DEFAULT_VIRTUALIZE_OVERSCAN = 6
  * defensible on a shorter/plainer demo thread. */
 const DEFAULT_VIRTUALIZE_ESTIMATE_SIZE = 160
 
-/** Default `scrollEndThreshold` — how close (px) to the end still counts as "at the end" for
- * `followOnAppend`/`anchorTo: 'end'` to keep tracking rather than freezing the scroll position. */
-const DEFAULT_VIRTUALIZE_SCROLL_END_THRESHOLD = 64
-
 /** Default `VirtualizeOptions.initialScroll` — see `./virtualize`'s fourth composition rule for
  * why a chat transcript opens at the newest message rather than the oldest. */
 const DEFAULT_VIRTUALIZE_INITIAL_SCROLL: NonNullable<VirtualizeOptions['initialScroll']> = 'end'
 
-/** Caps `applyInitialScroll`'s clobber-recovery retries (see `./virtualize`'s fourth composition
- * rule for the full mechanism this guards). A small fixed budget, not a time/frame-based deadline:
- * every observed case of virtual-core's `_willUpdate` clobbering this effect's jump resolves within
- * one extra commit, so this exists purely as a backstop against a pathological DOM that never
- * reports settled — not as the expected path. Once exhausted, the effect gives up and marks the
- * jump permanently done wherever the last attempt landed, rather than fighting the DOM (or a user
- * who has since scrolled away) forever. Exported (like `messageBlockRenderCounter`) purely so its
- * test can assert the exact bound without duplicating the number; not part of the public surface. */
-export const MAX_INITIAL_SCROLL_ATTEMPTS = 5
-
 type TranscriptRow = {
   readonly key: string
   readonly node: JSX.Element
-}
-
-type VirtualizedTranscriptProps = BasaltProps & {
-  readonly rows: readonly TranscriptRow[]
-  readonly height: number | string
-  readonly overscan: number
-  readonly estimateSize: number
-  readonly initialScroll: NonNullable<VirtualizeOptions['initialScroll']>
-}
-
-/**
- * The degrade target: every row rendered unwindowed inside a fixed-height scroll container.
- * This is what a `virtualize: true` transcript falls back to when `@tanstack/react-virtual` fails
- * to resolve (peer absent) — same visual shape (a scrollable `height`-bound pane), just without
- * windowing.
- *
- * NOT used as the `Suspense` fallback (see `VirtualizeSuspenseFallback` below) — mounting every
- * real `MessageBlock` subtree for the one tick the lazy import takes to settle would make that
- * settle a genuine unmount/remount of every rendered row, re-firing each row's effects once and
- * risking hitting a message mid-stream during the resolve window.
- */
-function NonVirtualizedRows({
-  rows,
-  height,
-  className,
-  style,
-}: VirtualizedTranscriptProps): JSX.Element {
-  return (
-    // theme-allow raw-scroll-container — degrade target owns its own scroll node, same as the real virtualizer below.
-    <Box className={cx(className)} style={{ height, overflow: 'auto', ...style }}>
-      <Stack gap="sm">
-        {rows.map((row) => (
-          <Fragment key={row.key}>{row.node}</Fragment>
-        ))}
-      </Stack>
-    </Box>
-  )
-}
-
-/** Test-only escape hatch (mirrors `messageBlockRenderCounter` above) — proves the peer-absent
- * degrade target itself renders every row without windowing and without throwing, without having
- * to fight `React.lazy`'s permanent once-per-module-instance resolution cache to simulate the
- * peer's absence at the `import()` layer (see thread-message.test.tsx's virtualization describe
- * block for why that approach was rejected). Not exported from `agent-chat/index.ts`. */
-export const nonVirtualizedRowsFallback = NonVirtualizedRows
-
-/**
- * Minimal structural slice of `Virtualizer` (virtual-core 3.17.1) that
- * {@link resolveGuardedMeasurement} needs — `indexFromElement`/`itemSizeCache`/`options` are all
- * public instance members, but typing against the real (generic, peer-only) `Virtualizer` class
- * would force this test-only-exported helper to import the peer's runtime types at module scope,
- * the exact static-import-forces-the-peer problem the surrounding `lazy(() => import(...))` exists
- * to avoid. A structural type sidesteps that without loosening to `any`. Generic over the item
- * element type (rather than fixed at `Element`) so it stays exactly assignable FROM a real
- * `Virtualizer<TScrollElement, TItemElement>` at the call site below — `indexFromElement` is
- * declared with arrow-property (not method) syntax upstream, so it is checked contravariantly, and
- * a fixed `Element` parameter there does not structurally match a real instance's narrower
- * `TItemElement` parameter.
- */
-type MeasurementCacheHost<TItemElement extends Element> = {
-  readonly indexFromElement: (node: TItemElement) => number
-  readonly itemSizeCache: Map<unknown, number>
-  readonly options: {
-    readonly getItemKey: (index: number) => unknown
-    readonly estimateSize: (index: number) => number
-  }
-}
-
-/**
- * Resolves the size a `measureElement` implementation should report, given what the underlying
- * (default or custom) measurement already produced: that value unchanged when it is a genuine
- * measurement, or the row's own last-known size when it is `0` — never a real reading for a mounted
- * row, so a `0` only ever means the ResizeObserver measured through a `display: none` (or otherwise
- * unlaid-out) ancestor, e.g. a virtualized transcript sitting inside a collapsed `ThreadFeedRow`.
- * Falling through to it unguarded is what corrupted `itemSizeCache`/`measurementsCache`: virtual-
- * core's default `resizeItem` writes whatever `measureElement` returns with no floor, so every
- * mounted row remeasures at 0px the instant an ancestor hides, `getTotalSize()` collapses within
- * the same tick, and the collapse is never undone — a later real remeasurement only OVERWRITES
- * entries the ResizeObserver happens to re-fire for, it does not restore ones that silently kept
- * their poisoned 0 (see `virtualize.ts`'s composition-rule doc for the full mechanism and the
- * measured numbers).
- *
- * Takes the already-computed `size` plus the {@link MeasurementCacheHost} slice, rather than
- * wrapping the `measureElement` function itself, so this stays a plain, non-generic-over-a-
- * generic-function call at its one call site below (`instance` there is `Virtualizer<TScrollElement,
- * TItemElement>` for THAT call's concrete type arguments, not the peer's own generic
- * `measureElement` export — wrapping the latter directly hits TS's higher-rank inference limits on
- * a doubly-generic HOF). That shape is also what makes this unit-testable with a fake host object
- * and no ResizeObserver/layout engine at all (happy-dom has neither). Not exported from
- * `agent-chat/index.ts`: a test-only escape hatch, matching
- * `messageBlockRenderCounter`/`nonVirtualizedRowsFallback` above.
- */
-export function resolveGuardedMeasurement<TItemElement extends Element>(
-  host: MeasurementCacheHost<TItemElement>,
-  element: TItemElement,
-  size: number,
-): number {
-  if (size > 0) return size
-  // Same key derivation `resizeItem` itself uses (index → getItemKey), read BEFORE `resizeItem`
-  // writes the new (bad) size — `itemSizeCache` still holds the last-good measurement here.
-  const index = host.indexFromElement(element)
-  const key = host.options.getItemKey(index)
-  return host.itemSizeCache.get(key) ?? host.options.estimateSize(index)
-}
-
-/**
- * Decides what `VirtualizedRowsInner`'s one-shot initial-scroll effect should do this render,
- * given the inputs the effect closes over. Pure and peer/DOM-free — pulled out of the lazy-loaded
- * closure for the same reason `resolveGuardedMeasurement` is: it stays unit-testable without a
- * real `Virtualizer` instance or `@tanstack/react-virtual` itself.
- *
- * `'start'` and an empty transcript resolve to `'skip-done'` — there is nothing to scroll to, and
- * DONE is permanent (see `virtualize.ts`'s fourth composition rule: the real scroll must fire at
- * most once, ever, so a later append never yanks a user who has scrolled up). A non-positive
- * `containerHeight` — the transcript's own scroll node measuring `0`, e.g. mounted behind a
- * `display: none` ancestor per `virtualize.ts`'s third composition rule — resolves to
- * `'skip-retry'`: NOT done, so the caller's effect (which re-runs after EVERY commit until the jump
- * lands — see {@link applyInitialScroll}) gets another chance the next time this subtree renders,
- * instead of permanently stranding the transcript at the top the moment it becomes visible. Only a
- * genuinely measured, non-empty, `'end'`-targeted mount resolves to `'scroll'`.
- */
-export function resolveInitialScrollAction(
-  initialScroll: NonNullable<VirtualizeOptions['initialScroll']>,
-  rowCount: number,
-  containerHeight: number,
-): 'scroll' | 'skip-done' | 'skip-retry' {
-  if (initialScroll === 'start') return 'skip-done'
-  if (rowCount === 0) return 'skip-done'
-  if (containerHeight <= 0) return 'skip-retry'
-  return 'scroll'
-}
-
-/** The mutable half of the one-shot initial-scroll contract. `hasApplied` is whether it has
- * PERMANENTLY finished — either there was nothing to do (`'start'`/empty transcript), or
- * `scrollToEnd` fired and was subsequently CONFIRMED (via a real DOM read — see
- * {@link applyInitialScroll}'s doc for why virtual-core's own tracked offset can't be trusted for
- * this) to have survived whatever else committed since. `attempts` counts how many times
- * `scrollToEnd` has been (re-)fired this mount; 0 means never attempted, and also gates whether a
- * call re-derives {@link resolveInitialScrollAction} at all. One instance lives for the lifetime of
- * a `VirtualizedRowsInner` mount, held in a `useRef` so it survives re-renders without itself
- * triggering one. */
-export type InitialScrollState = { hasApplied: boolean; attempts: number }
-
-/**
- * The stateful half of "fires once, on first mount, and never again" (`virtualize.ts`'s fourth
- * composition rule): wraps {@link resolveInitialScrollAction}'s per-call decision with the
- * ACROSS-CALLS memory that decision alone can't carry. Exported (like `resolveGuardedMeasurement`)
- * so `VirtualizedRowsInner`'s effect below calls this SAME function rather than a hand-mirrored
- * copy for tests — a fake `scrollToEnd` is the only DOM/peer-free way to prove the guard, since a
- * real `Virtualizer`'s own `followOnAppend` also calls the real DOM `scrollTo` on a later append,
- * making that specific call indistinguishable from this one at the DOM boundary (see this
- * function's test suite for the measurement that ruled that boundary out).
- *
- * Firing `scrollToEnd()` once is NOT the same as landing there: virtual-core 3.17.1's own
- * `_willUpdate` (verified against the installed dist) writes to the SAME scroll container from
- * `this.scrollOffset`, which updates only from the ASYNCHRONOUS native `scroll` event — never from
- * the synchronous call that requested a scroll. A commit that runs `_willUpdate` before this
- * effect gets a turn (element-attach) or that re-derives an anchor while `scrollOffset` still holds
- * the pre-jump value writes that STALE offset straight back to `scrollTop`, undoing the jump within
- * about one extra commit of it landing (see `./virtualize`'s fourth composition rule for the full
- * trace this was diagnosed from). So `resolveInitialScrollAction`'s `'scroll'` outcome does not, by
- * itself, set `hasApplied`: `isAtEnd` — a real `scrollTop`/`scrollHeight`/`clientHeight` read, the
- * one piece of ground truth that is NEVER stale, unlike virtual-core's own tracked offset — is
- * consulted on the NEXT call (i.e. the next commit, exactly the cadence this dependency-free effect
- * already runs on) to confirm the jump survived. If it didn't, `scrollToEnd` fires again; if it did,
- * `hasApplied` is set and the effect is inert for the rest of the mount. `MAX_INITIAL_SCROLL_ATTEMPTS`
- * bounds this so a DOM that pathologically never reports settled — or a user who scrolls away mid-
- * measurement — can never be fought forever; once exhausted, `hasApplied` is set regardless, wherever
- * the last attempt left the container.
- *
- * `state.hasApplied` is the ONLY thing that can permanently stop this from calling `scrollToEnd`
- * again: `'start'` and an empty transcript set it immediately (nothing to verify), and `'skip-retry'`
- * deliberately leaves it `false` so a transcript that mounted behind a hidden ancestor gets another
- * attempt on the caller's next commit, rather than being silently abandoned the moment it becomes
- * visible. That retry — and the clobber-recovery above — is why the caller's effect carries NO
- * dependency array: the commit that matters (a collapsed `ThreadFeedRow` flipping its body back to
- * `display: block`, or virtual-core's own follow-up commit after this effect's own jump) changes
- * neither the row count nor the virtualizer identity, so a dependency-keyed effect would never
- * re-run for it.
- *
- * `getContainerHeight` is a THUNK, not a number, for the same reason: reading `offsetHeight` forces
- * a synchronous layout, and it is read at most ONCE per mount — only on the very first call
- * (`attempts === 0`) — never again while verifying or retrying, so a landed transcript still pays
- * nothing for the effect it keeps re-running (a streaming transcript commits on every chunk).
- * `isAtEnd` is cheaper (a plain property read, no forced reflow beyond what the browser already
- * tracks) and is exactly what the verification/retry loop above consults instead.
- */
-export function applyInitialScroll(
-  state: InitialScrollState,
-  initialScroll: NonNullable<VirtualizeOptions['initialScroll']>,
-  rowCount: number,
-  getContainerHeight: () => number,
-  scrollToEnd: () => void,
-  isAtEnd: () => boolean,
-): void {
-  if (state.hasApplied) return
-
-  // Already fired at least once this mount — verify it survived rather than re-deriving
-  // `resolveInitialScrollAction` (row count / container height are irrelevant to "did the DOM
-  // keep the scroll we already decided on").
-  if (state.attempts > 0) {
-    if (isAtEnd() || state.attempts >= MAX_INITIAL_SCROLL_ATTEMPTS) {
-      state.hasApplied = true
-      return
-    }
-    scrollToEnd()
-    state.attempts += 1
-    return
-  }
-
-  const action = resolveInitialScrollAction(initialScroll, rowCount, getContainerHeight())
-  if (action === 'skip-retry') return
-  if (action === 'skip-done') {
-    state.hasApplied = true
-    return
-  }
-  scrollToEnd()
-  state.attempts += 1
-}
-
-/** Reads the transcript's own scroll container to answer "is it currently at (or within
- * `threshold`px of) the end" — the ground-truth check {@link applyInitialScroll} verifies its jump
- * against. Deliberately NOT `virtualizer.isAtEnd()`/`getScrollOffset()`: both are backed by
- * `this.scrollOffset`, the exact value that lags a real scroll until the next native `scroll`
- * event fires — using it here would make the verification vulnerable to the identical staleness
- * that causes the clobber in the first place. `scrollTop`/`scrollHeight`/`clientHeight` are plain
- * DOM properties with no such lag: `Element.scrollTo` with `'auto'` (this module's own behavior)
- * updates `scrollTop` synchronously, so a read immediately after — or, as here, on the next
- * commit — reflects reality. `null` (container not yet attached) reads as "not at end" rather than
- * throwing, matching every other guard in this file's tolerance for a not-yet-mounted ref. */
-function isContainerAtEnd(container: HTMLDivElement | null, threshold: number): boolean {
-  if (container === null) return false
-  const distanceFromEnd = container.scrollHeight - container.clientHeight - container.scrollTop
-  return distanceFromEnd <= threshold
-}
-
-/** Lazy-loaded real virtualizer. Resolves once, permanently, for the lifetime of this module
- * instance — identical caching behaviour to `../agent/stick-to-bottom.tsx`'s `LazyStickToBottom`. */
-const LazyVirtualizedRows = lazy(() =>
-  import('@tanstack/react-virtual')
-    .then(({ useVirtualizer, measureElement: defaultMeasureElement }) => {
-      function VirtualizedRowsInner({
-        rows,
-        height,
-        overscan,
-        estimateSize,
-        initialScroll,
-        className,
-        style,
-      }: VirtualizedTranscriptProps): JSX.Element {
-        const parentRef = useRef<HTMLDivElement>(null)
-        const initialScrollStateRef = useRef<InitialScrollState>({
-          hasApplied: false,
-          attempts: 0,
-        })
-
-        // Resolved research facts (virtual-core 3.17.1, carried by react-virtual 3.14.3):
-        // `getItemKey` returning `message.id` (NOT the default index) so prepending/streaming
-        // doesn't scramble anchoring; `anchorTo: 'end'` + `followOnAppend` for chat-scroll rhythm;
-        // `useFlushSync: false` per the same React-19 opt-out `BasaltVirtualList` documents.
-        const virtualizer = useVirtualizer({
-          count: rows.length,
-          getScrollElement: () => parentRef.current,
-          estimateSize: () => estimateSize,
-          overscan,
-          getItemKey: (index) => rows[index]?.key ?? index,
-          anchorTo: 'end',
-          followOnAppend: true,
-          scrollEndThreshold: DEFAULT_VIRTUALIZE_SCROLL_END_THRESHOLD,
-          useFlushSync: false,
-          // Guards against the hidden-ancestor cache-poisoning mechanism
-          // `resolveGuardedMeasurement`'s doc and `virtualize.ts`'s composition rules describe —
-          // NOT `enabled: false`, which virtual-core 3.17.1 wires to WIPE
-          // `itemSizeCache`/`measurementsCache` entirely (`getMeasurements`'s `!enabled` branch)
-          // rather than pause measurement, so toggling it off/on around a collapse would be
-          // strictly worse than the bug it was meant to fix.
-          measureElement: (element, entry, instance) =>
-            resolveGuardedMeasurement(
-              instance,
-              element,
-              defaultMeasureElement(element, entry, instance),
-            ),
-        })
-
-        // The one-shot "open at the newest message" jump (`virtualize.ts`'s fourth composition
-        // rule) — see `applyInitialScroll`'s doc for the guard mechanics, including why this effect
-        // deliberately carries NO dependency array. Short version: this subtree can mount while
-        // INVISIBLE (the lazy `import()` above settles asynchronously, so a `ThreadFeedRow`
-        // collapsed during that window mounts it behind `display: none`), and the commit that makes
-        // it visible again changes no dependency a keyed array could watch. That SAME dependency-
-        // free cadence is also what lets this effect recover from virtual-core's own `_willUpdate`
-        // clobbering the jump on the commit right after it lands (see `applyInitialScroll`'s doc) —
-        // `state.hasApplied` only becomes permanent once `isContainerAtEnd` confirms it on a later
-        // call, not the instant `scrollToEnd` is invoked. `parentRef.current.offsetHeight` (not
-        // `getBoundingClientRect`) matches what virtual-core's own `getRect` reads for the scroll
-        // container, so a hidden ancestor is treated as unmeasured in exactly the cases virtual-core
-        // itself would also treat that way; it is passed as a thunk (like the `isContainerAtEnd`
-        // read below) so nothing is forced once the jump has landed and been confirmed.
-        useLayoutEffect(() => {
-          applyInitialScroll(
-            initialScrollStateRef.current,
-            initialScroll,
-            rows.length,
-            () => parentRef.current?.offsetHeight ?? 0,
-            () => virtualizer.scrollToEnd({ behavior: 'auto' }),
-            () => isContainerAtEnd(parentRef.current, DEFAULT_VIRTUALIZE_SCROLL_END_THRESHOLD),
-          )
-        })
-
-        return (
-          <Box
-            ref={parentRef}
-            className={cx(className)}
-            // theme-allow raw-scroll-container — TanStack Virtual measures/scrolls this element (never nest in BasaltStickToBottom, see ./virtualize).
-            style={{ height, overflow: 'auto', ...style }}
-          >
-            <Box style={{ height: virtualizer.getTotalSize(), position: 'relative' }}>
-              {virtualizer.getVirtualItems().map((virtualItem) => {
-                const row = rows[virtualItem.index]
-                if (row === undefined) return null
-                return (
-                  <Box
-                    key={row.key}
-                    // Dynamic measurement of variable-height rows (messages vary a lot: a
-                    // one-line reply vs. a long streamed answer with code fences) — both required
-                    // together, per the resolved research facts.
-                    ref={virtualizer.measureElement}
-                    data-index={virtualItem.index}
-                    style={{
-                      position: 'absolute',
-                      top: 0,
-                      left: 0,
-                      width: '100%',
-                      transform: `translateY(${virtualItem.start}px)`,
-                    }}
-                  >
-                    {row.node}
-                  </Box>
-                )
-              })}
-            </Box>
-          </Box>
-        )
-      }
-      return { default: VirtualizedRowsInner }
-    })
-    .catch(() => ({ default: NonVirtualizedRows })),
-)
-Object.assign(LazyVirtualizedRows, { displayName: 'LazyVirtualizedRows' })
-
-/**
- * Lightweight `Suspense` fallback for `VirtualizedTranscript` — shown only for the one tick the
- * dynamic `@tanstack/react-virtual` import takes to resolve. Deliberately NOT `NonVirtualizedRows`:
- * see that component's doc for why mounting every real row here would be a genuine (if one-time)
- * unmount/remount of the whole transcript. An empty, correctly-sized scroll pane avoids a layout
- * flash without paying that cost — it settles state before any row has meaningfully mounted.
- */
-function VirtualizeSuspenseFallback({
-  height,
-  className,
-  style,
-}: BasaltProps & { readonly height: number | string }): JSX.Element {
-  // theme-allow raw-scroll-container — placeholder owns its own scroll node, matching the real virtualizer's shape.
-  return <Box className={cx(className)} style={{ height, overflow: 'auto', ...style }} />
-}
-
-function VirtualizedTranscript(props: VirtualizedTranscriptProps): JSX.Element {
-  return (
-    <Suspense
-      fallback={
-        <VirtualizeSuspenseFallback
-          height={props.height}
-          {...(props.className !== undefined && { className: props.className })}
-          {...(props.style !== undefined && { style: props.style })}
-        />
-      }
-    >
-      <LazyVirtualizedRows {...props} />
-    </Suspense>
-  )
 }
 
 // ── ThreadTranscript ──────────────────────────────────────────────────────────
@@ -1194,9 +797,13 @@ export function ThreadTranscript(props: ThreadTranscriptProps): JSX.Element {
 
   if (virtualized !== null) {
     return (
-      <VirtualizedTranscript
+      <VirtualRows
         rows={rows}
         height={virtualized.height}
+        gap={0}
+        fallbackGap="var(--mantine-spacing-sm)"
+        anchorTo="end"
+        followOnAppend
         overscan={virtualized.options.overscan ?? DEFAULT_VIRTUALIZE_OVERSCAN}
         estimateSize={virtualized.options.estimateSize ?? DEFAULT_VIRTUALIZE_ESTIMATE_SIZE}
         initialScroll={virtualized.options.initialScroll ?? DEFAULT_VIRTUALIZE_INITIAL_SCROLL}

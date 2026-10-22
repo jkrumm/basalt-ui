@@ -24,11 +24,11 @@
  * `ThreadFeedRow`) — collapsing does not corrupt its measurement cache, and re-expanding restores
  * the same scroll position (same top-visible row) it had before the collapse. This is NOT free of
  * virtual-core: hiding an ancestor makes every mounted row's ResizeObserver box report `0` (a
- * `display: none` ancestor un-lays-out its descendants), and virtual-core 3.17.1's default
+ * `display: none` ancestor un-lays-out its descendants), and virtual-core 3.18.0's default
  * `measureElement`/`resizeItem` write that `0` into `itemSizeCache` with no floor — unguarded, a
  * few collapse/expand cycles permanently shrink `getTotalSize()` and silently scroll the visible
  * window to a DIFFERENT part of the transcript (`scrollTop` stays put; the content under it moves).
- * `thread-message.tsx` closes this with a `measureElement` override (`resolveGuardedMeasurement`)
+ * `common/virtual-rows.tsx` closes this with a `measureElement` override (`resolveGuardedMeasurement`)
  * that treats a `0` reading as unreliable and keeps the last-known size instead of committing it —
  * see that function's doc for the full mechanism, including why `useVirtualizer`'s `enabled` option
  * is NOT the fix (it wipes the measurement cache outright, worse than the bug). A consumer combining a
@@ -37,7 +37,7 @@
  * `useVirtualizer` call has no stale cache to poison).
  *
  * A fourth composition rule: a virtualized transcript SCROLLS ITSELF on mount. `initialScroll`
- * defaults to `'end'` — `anchorTo: 'end'` and `followOnAppend` (both wired in `thread-message.tsx`)
+ * defaults to `'end'` — `anchorTo: 'end'` and `followOnAppend` (both wired in `common/virtual-rows.tsx`)
  * only keep an ALREADY-at-the-end transcript pinned as content changes; neither performs the initial
  * jump, so left alone a freshly mounted virtualized transcript renders at message #0, not the
  * newest. The fix fires exactly once, on first mount, via `scrollToEnd()` — never again, so a user
@@ -50,11 +50,11 @@
  * if the transcript's own scroll container measures 0px on mount (e.g. mounted behind a hidden
  * ancestor) — it then lands on the first commit where the container is genuinely measurable, which
  * is what makes "opens at the newest message" hold for a transcript whose lazy virtualizer settled
- * while its `ThreadFeedRow` was collapsed. See `thread-message.tsx`'s `applyInitialScroll` for the
+ * while its `ThreadFeedRow` was collapsed. See `common/virtual-rows.tsx`'s `applyInitialScroll` for the
  * guard, and `VirtualizedRowsInner` for why its effect is deliberately dependency-free.
  *
  * Firing `scrollToEnd()` once is not sufficient on its own to land there, because virtual-core
- * 3.17.1's own `_willUpdate` writes to the SAME scroll container on the very next commit it runs
+ * 3.18.0's own `_willUpdate` writes to the SAME scroll container on the very next commit it runs
  * on, from state that lags behind the DOM: `_scrollToOffset` only ever records the write's
  * intent (`_intendedScrollOffset`) — `this.scrollOffset` itself updates ASYNCHRONOUSLY, from the
  * native `scroll` event, not from the call that requested it. So a commit that runs `_willUpdate`
