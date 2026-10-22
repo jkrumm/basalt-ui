@@ -5,13 +5,9 @@
  */
 import { Box, Paper } from '@mantine/core'
 import { StatGroup } from 'basalt-ui'
-import type { StatStripCell, StatStripFooterEntry } from 'basalt-ui'
+import type { StatStripCell } from 'basalt-ui'
 import { noop } from '../shot-state'
 import type { ScenarioProps } from '../shot-state'
-
-const FOOTER: readonly StatStripFooterEntry[] = [
-  { key: 'weight-goal', under: 'weight', content: 'Set a goal weight' },
-]
 
 export function BodyWeightStrip({ shotState }: ScenarioProps) {
   const loading = shotState === 'loading'
@@ -35,7 +31,7 @@ export function BodyWeightStrip({ shotState }: ScenarioProps) {
         label="Body composition at a glance"
         cols={3}
         cells={cells}
-        footer={FOOTER}
+        footer={[{ key: 'weight-goal', under: 'weight', content: 'Set a goal weight' }]}
       />
       {shotState === 'empty' && (
         <Paper>
