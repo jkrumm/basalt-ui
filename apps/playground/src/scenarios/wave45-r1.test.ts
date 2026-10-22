@@ -46,7 +46,13 @@ describe('S5 record page', () => {
     const empty = s5('empty')
     expect(empty.querySelector('[data-shot="learning-decision"]')?.textContent).toBe('')
     expect(empty.querySelector('[data-shot="learning-summary"]')?.textContent).toBe('')
-    expect(empty.textContent).toContain('No sessions logged yet')
+    const journal = empty.querySelector('[data-shot="learning-journal"]')
+    expect(journal?.textContent).toContain('No sessions logged yet')
+    const logs = [...empty.querySelectorAll('button')].filter(
+      (b) => b.textContent === 'Log a session',
+    )
+    expect(logs).toHaveLength(1)
+    expect(journal?.contains(logs[0] ?? null)).toBe(true)
   })
 })
 

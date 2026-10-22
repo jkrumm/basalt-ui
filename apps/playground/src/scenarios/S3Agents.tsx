@@ -392,10 +392,10 @@ function AgentsDecision({ shotState }: ScenarioProps) {
   return (
     <DecisionCard
       question={`Approve “${title}”?`}
-      facts={[id, `${fmtAge(waitHours - WARN_HOURS)} past the ${WARN_LABEL} warning`]}
+      facts={[id, `${fmtAge(Math.max(0, waitHours - WARN_HOURS))} past the ${WARN_LABEL} warning`]}
       evidence={
         <Text size="sm">
-          {`The oldest item awaiting you. Warden closes it as abandoned in ${fmtAge(ABANDON_HOURS - waitHours)}.`}
+          {`The oldest item awaiting you. Warden closes it as abandoned in ${fmtAge(Math.max(0, ABANDON_HOURS - waitHours))}.`}
         </Text>
       }
       primary={{ label: 'Approve', keyHint: 'A', onClick: noop }}

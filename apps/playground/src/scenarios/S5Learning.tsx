@@ -285,7 +285,10 @@ export function LearningScenario({ shotState }: ScenarioProps) {
   return (
     <Stack gap="sm" data-shot-states="empty loading error">
       {/* Review lives in the decision card; the page's one primary is logging, the verb that makes a record. */}
-      <PageBar actions={[{ key: 'log', label: 'Log a session', onClick: noop, primary: true }]} />
+      {/* In empty the tile's button is the one "Log a session"; the bar's would be a second home. */}
+      {!empty && (
+        <PageBar actions={[{ key: 'log', label: 'Log a session', onClick: noop, primary: true }]} />
+      )}
       <Box data-shot="learning-header" data-shot-absent="error">
         {shotState !== 'error' && <RecordHeader shotState={shotState} />}
       </Box>
