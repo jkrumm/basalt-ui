@@ -67,7 +67,8 @@
  */
 .label {
   padding-block-start: calc(
-    (max(var(--vx-space-control-height-ctl), var(--vx-hit, 0px)) - 1lh) / 2
+    (max(var(--vx-space-control-height-ctl) * var(--mantine-scale, 1), var(--vx-hit, 0px)) - 1lh) /
+      2
   );
   font-size: var(--vx-text-sm);
   color: var(--vx-ink);
@@ -109,7 +110,10 @@
  * the floor is the field height itself, 44 under a coarse pointer.
  */
 .control :global(.mantine-Textarea-input) {
-  min-block-size: max(var(--vx-space-control-height-ctl), var(--vx-hit, 0px));
+  min-block-size: max(
+    var(--vx-space-control-height-ctl) * var(--mantine-scale, 1),
+    var(--vx-hit, 0px)
+  );
 }
 
 .error {
@@ -120,15 +124,21 @@
   color: var(--vx-status-bad);
 }
 
+/* The always-mounted live region is empty while clean: out of flow (no flex gap), still in the a11y tree. */
+.error:empty {
+  position: absolute;
+}
+
 .errorIcon {
   flex: none;
   inline-size: 1em;
   block-size: 1lh;
 }
 
-.control :global(.mantine-InputWrapper-error),
-.control :global(.mantine-Checkbox-error),
-.control :global(.mantine-Switch-error) {
+:is(.control, .group) :global(.mantine-InputWrapper-error),
+:is(.control, .group) :global(.mantine-Checkbox-error),
+:is(.control, .group) :global(.mantine-Switch-error),
+:is(.control, .group) :global(.mantine-Radio-error) {
   display: flex;
   align-items: flex-start;
   gap: var(--vx-space-stack-xs);
@@ -137,9 +147,10 @@
   color: var(--vx-status-bad);
 }
 
-.control :global(.mantine-InputWrapper-error)::before,
-.control :global(.mantine-Checkbox-error)::before,
-.control :global(.mantine-Switch-error)::before {
+:is(.control, .group) :global(.mantine-InputWrapper-error)::before,
+:is(.control, .group) :global(.mantine-Checkbox-error)::before,
+:is(.control, .group) :global(.mantine-Switch-error)::before,
+:is(.control, .group) :global(.mantine-Radio-error)::before {
   content: '';
   flex: none;
   inline-size: 1em;
@@ -186,13 +197,13 @@
 }
 
 /* A section: the legend is the section title (`md`, 500), the cluster stacks 12 apart like rows, and
-   a section that is followed by another keeps 24 — the form's whole rhythm, owned here. */
+   a section that follows another keeps 24 above it (never before the action row) — the form's whole rhythm, owned here. */
 .group[data-section] {
   gap: var(--vx-space-stack-sm);
 }
 
-.group[data-section]:not(:last-child) {
-  margin-block-end: var(--vx-space-stack-xl);
+.group[data-section] + .group[data-section] {
+  margin-block-start: var(--vx-space-stack-xl);
 }
 
 .group[data-section] > .legend {
