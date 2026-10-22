@@ -263,6 +263,14 @@ describe('strip CSS', () => {
     expect(CSS).toMatch(/\.footerCell \{[^}]*border-block-start: 1px solid var\(--vx-divider\)/)
   })
 
+  test('both footer slots take the sm step, not the inherited body size', () => {
+    for (const sel of ['.footerCell', '.underCell']) {
+      expect(CSS).toMatch(
+        new RegExp(`${sel.replace('.', '\\.')} \\{[^}]*font-size: var\\(--vx-text-sm\\)`),
+      )
+    }
+  })
+
   test('cells (the row-high column) carry leading shadow hairlines that take no layout space', () => {
     const rule = CSS.slice(CSS.indexOf('.cell {'), CSS.indexOf('}', CSS.indexOf('.cell {')))
     expect(rule).toContain('-1px 0 0 var(--vx-divider)')
