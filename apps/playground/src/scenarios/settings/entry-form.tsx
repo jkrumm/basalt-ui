@@ -5,6 +5,9 @@
  */
 import {
   Button,
+  Card,
+  Flex,
+  Group,
   NumberInput,
   Select,
   Skeleton,
@@ -16,10 +19,13 @@ import {
 import { FormGroup, FormRow } from 'basalt-ui/controls'
 import { fieldKey, inputProps, useBasaltForm } from 'basalt-ui/forms'
 import * as v from 'valibot'
-import { noop } from '../shot-state'
+import { Section, SettingsSection } from 'basalt-ui'
+import { noop, queryFor } from '../shot-state'
 import type { ScenarioProps } from '../shot-state'
 import { EXERCISES, REPS_ERROR } from './settings-data'
 import classes from './entry-form.module.css'
+
+const SAVE_ERROR = queryFor('error', 'The set did not save. Retry, or check your connection.')
 
 const SetSchema = v.object({
   exercise: v.pipe(v.string(), v.minLength(1, 'Pick an exercise.')),
@@ -60,7 +66,6 @@ function EntryFormFields() {
   const form = useBasaltForm<SetValues>({
     initialValues: INITIAL,
     schema: SetSchema,
-    initialErrors: { reps: REPS_ERROR },
   })
   return (
     <form className={classes.form} onSubmit={form.onSubmit(noop)} noValidate>
@@ -87,6 +92,7 @@ function EntryFormFields() {
         <FormRow label="Weight" htmlFor="set-weight" hint="The bar and plates, in kg.">
           <NumberInput
             id="set-weight"
+            hideControls
             suffix=" kg"
             min={0}
             step={2.5}
@@ -99,6 +105,7 @@ function EntryFormFields() {
         <FormRow label="Reps" htmlFor="set-reps" required>
           <NumberInput
             id="set-reps"
+            hideControls
             min={1}
             max={30}
             inputMode="numeric"
@@ -142,22 +149,44 @@ const SKELETON_ROWS = [
   [32, 76],
 ]
 
-/** The form's own shape in grey: a title and its rows per section. */
+/** The form's own shape in grey, at the fields' width, with its action row: a title and rows per section. */
 function EntrySkeleton() {
   return (
     <Stack gap="xl" aria-busy="true">
       {SKELETON_ROWS.map((heights, s) => (
         <Stack key={s} gap="md">
-          <Skeleton height={16} width={80} radius="sm" />
+          <Skeleton height={20} width={72} radius="sm" />
           {heights.map((h, i) => (
-            <Skeleton key={i} height={h} radius="md" />
+            <Flex key={i} columnGap="md" rowGap={4} wrap="wrap" align="flex-start">
+              <Skeleton height={20} width="min(15rem, 100%)" radius="sm" />
+              <Skeleton height={h} width="min(20rem, 100%)" radius="md" />
+            </Flex>
           ))}
         </Stack>
       ))}
+      <Group justify="flex-end" gap="xs">
+        <Skeleton height={32} width={72} radius="md" />
+        <Skeleton height={32} width={88} radius="md" />
+      </Group>
     </Stack>
   )
 }
 
+/** The entry form in the same section surface as the account page's cards. */
 export function EntryForm({ shotState }: ScenarioProps) {
-  return shotState === 'loading' ? <EntrySkeleton /> : <EntryFormFields />
+  // The failed save replaces the form in its own surface (§ 6.11), one sentence and a retry.
+  if (shotState === 'error' && SAVE_ERROR) {
+    return (
+      <Card>
+        <Section title="Log a set" query={SAVE_ERROR}>
+          {null}
+        </Section>
+      </Card>
+    )
+  }
+  return (
+    <SettingsSection title="Log a set" subtitle="One set of one exercise.">
+      {shotState === 'loading' ? <EntrySkeleton /> : <EntryFormFields />}
+    </SettingsSection>
+  )
 }
