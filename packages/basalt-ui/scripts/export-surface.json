@@ -3,6 +3,7 @@
     "BarList",
     "BasaltProvider",
     "BasaltShell",
+    "Board",
     "DangerZone",
     "DeltaBadge",
     "EmptyState",

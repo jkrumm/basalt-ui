@@ -61,6 +61,8 @@ export {
   type BarListProps,
   EventList,
   type EventListProps,
+  Board,
+  type BoardProps,
   PageSummary,
   type PageSummaryProps,
 } from './dashboard'

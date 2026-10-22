@@ -68,6 +68,17 @@ Signature: BasaltShell(props: BasaltShellProps<G, T>): JSX.Element
   isActive?: (item: NavItemMeta & { link: AnyNavLink; children?: Readonl…
   getScrollElement?: () => HTMLElement | null
   nav: NavConfig<G, T>
+Signature: Board(props: BoardProps): JSX.Element
+  className?: string
+  style?: CSSProperties
+  label?: string
+  columns: readonly { id: string; title: string; tone?: string; total?…
+  onOpen?: (cardId: string, columnId: string) => void
+  height?: string | number
+  loading?: boolean
+  empty?: { title: string; description?: string; action?: ReactNode; }
+  column?: string
+  onColumnChange?: (columnId: string) => void
 Signature: DangerZone(props: SettingsSectionProps): JSX.Element
   className?: string
   style?: CSSProperties

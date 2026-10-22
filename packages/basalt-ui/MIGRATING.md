@@ -1143,6 +1143,23 @@ New export, nothing to change in existing code.
   the outermost scroller in a shell-less app); a bounded scroll box inside the page no longer adds its hidden rows as
   blank page. `_page` shots of pages with a scrolling sidebar or inner list get shorter.
 
+### Board (Wave 45)
+
+New export, nothing to change in existing code.
+
+- **`Board`** (`basalt-ui`, type `BoardProps`): status columns of cards with roving-focus keyboard navigation. It
+  replaces argo's `features/warden/board.tsx` prototype, its `board.module.css` and `BoardColumn`. Pass `columns`
+  (`id`, `title`, `tone?`, `total?`, `empty?`, `cards`) and `onOpen(cardId, columnId)`; a card is typed data
+  (`id`, `actor?`, `type?`, `title`, `record?: { label, href? }`, `status?`, `meter?`; the type is
+  `BoardProps['columns'][number]['cards'][number]`). `record.href` links only when http(s) or relative, the same rule
+  as the prototype's `isSafeHttpUrl`.
+- **Keyboard.** One tab stop; arrows move within and across columns, Home/End within one, Enter/Space/click open,
+  a polite live region announces the move. `height` bounds each column's own scroll.
+- **Compact.** One column at a time under a `SegmentedControl`. The selected column is internal; argo's persisted
+  `boardStore.field.column` maps to `column` + `onColumnChange`.
+- **States.** `loading` draws column-shaped skeletons; an empty column is its `empty` line, an empty board is
+  `empty={{ title, description?, action? }}` (the § 6.11 tile). The prototype's "Empty: A, B" fold line is gone.
+
 ## 2.27.2
 
 _Nothing to migrate in this release._

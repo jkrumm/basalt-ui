@@ -390,6 +390,8 @@ export type FixtureSpec = {
   w43Danger?: true
   /** Wave 44: the lazy virtual-rows seam, own scroll node or against the shell scrollport. */
   virtualRows?: 'height' | 'parent' | 'parent-grow'
+  /** Wave 45: `Board`, four columns each bounded at 360 px (`board`). */
+  board?: 'columns' | 'compact'
   /** Wave 44: `EventList`, plain or windowed, own scroll node or the shell scrollport (`event-list`). */
   eventList?:
     | 'plain'
