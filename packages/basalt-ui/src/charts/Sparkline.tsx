@@ -64,7 +64,8 @@ export type SparklineProps = BasaltProps & {
    * is not near, just above the reference (below when there is no room above). */
   referenceLabel?: string | undefined
   /** A productive range (`{ from: 0.6, to: 1 }`) drawn as a quiet band behind the line. The y
-   * domain widens to include it. Not a series: no legend item, no tooltip row. */
+   * domain widens to include it. Not a series: no legend item, no tooltip row. A non-finite bound or
+   * an empty range (`from === to`) draws nothing and leaves the domain alone. */
   band?: { from: number; to: number } | undefined
   /** Formats the readout's value. Default: the compact number format. */
   format?: ((value: number) => string) | undefined
@@ -89,8 +90,12 @@ const LINE_INSET = 3
 const SHORT_BOX = 36
 /** The muted tone's line: the same alpha the consumers hand-built (`alpha(VX.muted, .35)`). */
 const MUTED_LINE = alpha(VX.muted, 0.35)
-/** The productive band: a whisper of the muted ink behind the line, under it in the paint order. */
-const BAND_FILL = alpha(VX.muted, 0.14)
+/** The productive band: the chart layer's neutral wash (`BandStrip`'s), under the line in the paint order. */
+/** The unit x scale (`zx`) a band is drawn on, whatever the series' own x is. */
+const ZONE_X = {
+  zx: { channel: 'x' as const, scale: scaleLinear().domain([0, 1]), axis: false as const },
+}
+const BAND_FILL = alpha(VX.neutral, 0.2)
 /** Air between the plot's start and the reference label, so the focus outline never covers it. */
 const REFERENCE_LABEL_DX = 3
 // Pixel policy of the self-pooling (`poolSparkline`): the densest a series may draw.
@@ -268,15 +273,16 @@ function compileSparkline(
   band: { from: number; to: number } | null,
 ): CartesianDefinition {
   const frame = frameOf(extentOf, mark, source.length, emphasisColor !== null)
-  const bandMark = (rows: readonly Point[]): ChartMarks =>
+  const bandMark = (): ChartMarks =>
     band === null
       ? []
       : [
           decorative(
             rect([band], {
               id: 'band',
-              x1: () => (mark === 'bar' ? (rows[0]?.i ?? 0) : frame.x[0]),
-              x2: () => (mark === 'bar' ? (rows.at(-1)?.i ?? 0) : frame.x[1]),
+              x1: () => 0,
+              x2: () => 1,
+              xScale: 'zx',
               y1: 'from',
               y2: 'to',
               fill: BAND_FILL,
@@ -343,7 +349,7 @@ function compileSparkline(
       if (mark === 'bar') {
         return {
           marks: [
-            ...bandMark(rows),
+            ...bandMark(),
             ...referenceMark(height, width, rows),
             barMark(rows, {
               id: 'bars',
@@ -360,6 +366,8 @@ function compileSparkline(
                 .padding(BAR_GAP),
               axis: false as const,
             },
+            // The band spans the whole plot, outer half-bars included: a unit scale, not the band x.
+            ...ZONE_X,
             y: {
               scale: scaleLinear().domain(frame.y),
               axis: false as const,
@@ -372,7 +380,7 @@ function compileSparkline(
       }
       return {
         marks: [
-          ...bandMark(rows),
+          ...bandMark(),
           ...referenceMark(height, width, rows),
           lineY(rows, {
             id: 'line',
@@ -395,6 +403,7 @@ function compileSparkline(
             scale: scaleLinear().domain(frame.x),
             axis: false as const,
           },
+          ...ZONE_X,
           y: { scale: scaleLinear().domain(frame.y), axis: false as const },
         },
         theme: CHART_THEME,
@@ -647,7 +656,10 @@ export function Sparkline(props: SparklineProps): ReactElement {
     const ref = at !== null && Number.isFinite(at) ? at : null
     // The reference is part of the extent, so it is never clipped.
     const bandSpan =
-      bandFrom !== undefined && bandTo !== undefined && Number.isFinite(bandFrom + bandTo)
+      bandFrom !== undefined &&
+      bandTo !== undefined &&
+      Number.isFinite(bandFrom + bandTo) &&
+      bandFrom !== bandTo
         ? { from: Math.min(bandFrom, bandTo), to: Math.max(bandFrom, bandTo) }
         : null
     const edges = [ref, bandSpan?.from, bandSpan?.to].filter(
