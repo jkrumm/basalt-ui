@@ -8,6 +8,7 @@
 import { dot } from '@tanstack/charts/dot'
 import { decorative } from '@tanstack/charts/mark/decorative'
 import { lineY } from '@tanstack/charts/line'
+import { rect } from '@tanstack/charts/rect'
 import { ruleY } from '@tanstack/charts/rule'
 import { scaleBand } from '@tanstack/charts/scales/band'
 import { scaleLinear } from '@tanstack/charts/scales/linear'
@@ -59,9 +60,12 @@ export type SparklineProps = BasaltProps & {
   /** A quiet dashed hairline at a value, or at the mean of the plotted values (`'mean'`). The y
    * domain widens to include it. Not a legend item, never a status colour. */
   reference?: number | 'mean' | undefined
-  /** A short caption for the `reference` line (`PR`, `30 d mean`), drawn at the plot start just
-   * above the line. */
+  /** A short caption for the `reference` line (`PR`, `30 d mean`), drawn at the plot end the line
+   * is not near, just above the reference (below when there is no room above). */
   referenceLabel?: string | undefined
+  /** A productive range (`{ from: 0.6, to: 1 }`) drawn as a quiet band behind the line. The y
+   * domain widens to include it. Not a series: no legend item, no tooltip row. */
+  band?: { from: number; to: number } | undefined
   /** Formats the readout's value. Default: the compact number format. */
   format?: ((value: number) => string) | undefined
   /** The readout's x label per point, index-aligned with `data`: pass the point's day ("12 Oct"),
@@ -85,6 +89,8 @@ const LINE_INSET = 3
 const SHORT_BOX = 36
 /** The muted tone's line: the same alpha the consumers hand-built (`alpha(VX.muted, .35)`). */
 const MUTED_LINE = alpha(VX.muted, 0.35)
+/** The productive band: a whisper of the muted ink behind the line, under it in the paint order. */
+const BAND_FILL = alpha(VX.muted, 0.14)
 /** Air between the plot's start and the reference label, so the focus outline never covers it. */
 const REFERENCE_LABEL_DX = 3
 // Pixel policy of the self-pooling (`poolSparkline`): the densest a series may draw.
@@ -259,43 +265,74 @@ function compileSparkline(
   emphasisColor: string | null,
   reference: number | null,
   referenceLabel: string | undefined,
+  band: { from: number; to: number } | null,
 ): CartesianDefinition {
   const frame = frameOf(extentOf, mark, source.length, emphasisColor !== null)
-  const referenceMark = (height: number): ChartMarks =>
-    reference === null
+  const bandMark = (rows: readonly Point[]): ChartMarks =>
+    band === null
       ? []
       : [
-          ruleY([reference], {
-            id: 'reference',
-            stroke: VX.line,
-            strokeOpacity: 1,
-            strokeWidth: 1,
-            strokeDasharray: DASH,
-          }),
-          ...(referenceLabel === undefined
-            ? []
-            : [
-                decorative(
-                  text([reference], {
-                    id: 'reference-label',
-                    x: () => (mark === 'bar' ? 0 : frame.x[0]),
-                    y: (v: number) => v,
-                    text: () => referenceLabel,
-                    fill: VX.ink2,
-                    fontSize: VX.text.micro,
-                    anchor: 'start',
-                    dx: REFERENCE_LABEL_DX,
-                    dy: referenceLabelPlacement({
-                      value: reference,
-                      domain: frame.y,
-                      height,
-                      inset: mark === 'bar' ? 0 : LINE_INSET,
-                      fontSize: VX.text.micro,
-                    }).dy,
-                  }),
-                ),
-              ]),
+          decorative(
+            rect([band], {
+              id: 'band',
+              x1: () => (mark === 'bar' ? (rows[0]?.i ?? 0) : frame.x[0]),
+              x2: () => (mark === 'bar' ? (rows.at(-1)?.i ?? 0) : frame.x[1]),
+              y1: 'from',
+              y2: 'to',
+              fill: BAND_FILL,
+              inset: 0,
+            }),
+          ),
         ]
+  const referenceMark = (height: number, width: number, rows: readonly Point[]): ChartMarks => {
+    if (reference === null) return []
+    const place =
+      referenceLabel === undefined
+        ? null
+        : referenceLabelPlacement({
+            value: reference,
+            domain: frame.y,
+            height,
+            width,
+            inset: mark === 'bar' ? 0 : LINE_INSET,
+            fontSize: VX.text.micro,
+            label: referenceLabel,
+            line:
+              mark === 'bar'
+                ? undefined
+                : rows.flatMap((r) =>
+                    r.v === null
+                      ? []
+                      : [{ fx: (r.i - frame.x[0]) / (frame.x[1] - frame.x[0]), y: r.v }],
+                  ),
+          })
+    return [
+      ruleY([reference], {
+        id: 'reference',
+        stroke: VX.line,
+        strokeOpacity: 1,
+        strokeWidth: 1,
+        strokeDasharray: DASH,
+      }),
+      ...(referenceLabel === undefined || place === null
+        ? []
+        : [
+            decorative(
+              text([reference], {
+                id: 'reference-label',
+                x: () => (place.end === 'end' ? frame.x[1] : mark === 'bar' ? 0 : frame.x[0]),
+                y: (v: number) => v,
+                text: () => referenceLabel,
+                fill: VX.ink2,
+                fontSize: VX.text.micro,
+                anchor: place.end,
+                dx: place.end === 'end' ? -REFERENCE_LABEL_DX : REFERENCE_LABEL_DX,
+                dy: place.dy,
+              }),
+            ),
+          ]),
+    ]
+  }
   return {
     // A bar's hover is the bar and the readout chip: no engine point marker (bar chrome only, as
     // `Bars`).
@@ -306,7 +343,8 @@ function compileSparkline(
       if (mark === 'bar') {
         return {
           marks: [
-            ...referenceMark(height),
+            ...bandMark(rows),
+            ...referenceMark(height, width, rows),
             barMark(rows, {
               id: 'bars',
               x: 'i',
@@ -334,7 +372,8 @@ function compileSparkline(
       }
       return {
         marks: [
-          ...referenceMark(height),
+          ...bandMark(rows),
+          ...referenceMark(height, width, rows),
           lineY(rows, {
             id: 'line',
             x: 'i',
@@ -581,6 +620,7 @@ export function Sparkline(props: SparklineProps): ReactElement {
     state,
     reference,
     referenceLabel,
+    band,
     format = defaultNumberFormat,
     labels,
     className,
@@ -593,6 +633,8 @@ export function Sparkline(props: SparklineProps): ReactElement {
   const [keyed, setKeyed] = useState<number | null>(null)
   const active = hover ?? keyed
   const readoutRef = useRef<HTMLOutputElement>(null)
+  const bandFrom = band?.from
+  const bandTo = band?.to
   const model = useMemo(() => {
     const rows: Point[] = data.map((d, i) => ({
       i,
@@ -604,16 +646,25 @@ export function Sparkline(props: SparklineProps): ReactElement {
     const at = reference === 'mean' ? meanOf(rows) : (reference ?? null)
     const ref = at !== null && Number.isFinite(at) ? at : null
     // The reference is part of the extent, so it is never clipped.
-    const full: readonly [number, number] =
-      ref === null ? range : [Math.min(range[0], ref), Math.max(range[1], ref)]
+    const bandSpan =
+      bandFrom !== undefined && bandTo !== undefined && Number.isFinite(bandFrom + bandTo)
+        ? { from: Math.min(bandFrom, bandTo), to: Math.max(bandFrom, bandTo) }
+        : null
+    const edges = [ref, bandSpan?.from, bandSpan?.to].filter(
+      (v): v is number => typeof v === 'number',
+    )
+    const full: readonly [number, number] = [
+      Math.min(range[0], ...edges),
+      Math.max(range[1], ...edges),
+    ]
     const end = emphasizeLast ? emphasisColor : null
     return {
       rows,
       moments: momentsOf(data),
       frame: frameOf(full, mark, rows.length, end !== null),
-      definition: compileSparkline(rows, full, mark, color, end, ref, referenceLabel),
+      definition: compileSparkline(rows, full, mark, color, end, ref, referenceLabel, bandSpan),
     }
-  }, [data, mark, color, emphasizeLast, emphasisColor, reference, referenceLabel])
+  }, [data, mark, color, emphasizeLast, emphasisColor, reference, referenceLabel, bandFrom, bandTo])
   const resolved = resolveChartState(state)
   const rows = model?.rows
   const interactive = resolved === null && model !== null
