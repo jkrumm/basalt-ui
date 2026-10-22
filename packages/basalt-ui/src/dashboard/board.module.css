@@ -139,11 +139,6 @@ a.record:focus-visible {
   display: block;
 }
 
-/* An empty column's title never out-sizes the card titles beside it (SPEC § 6.11). */
-.emptyColumn {
-  --basalt-state-title-size: var(--vx-text-sm);
-}
-
 .skeletonTitle {
   inline-size: 40%;
   block-size: 0.75rem;

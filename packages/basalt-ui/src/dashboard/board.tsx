@@ -216,11 +216,7 @@ function BoardView<T extends string>({
     const headId = `${labelId}-${col.id}`
     const list =
       col.cards.length === 0 ? (
-        <EmptyState
-          tier="section"
-          title={col.empty ?? 'Nothing here'}
-          className={classes.emptyColumn}
-        />
+        <EmptyState tier="section" title={col.empty ?? 'Nothing here'} />
       ) : (
         // The explicit role is deliberate: `list-style: none` makes Safari/VoiceOver drop the implicit one.
         // oxlint-disable-next-line jsx-a11y/no-redundant-roles
@@ -303,6 +299,18 @@ function BoardView<T extends string>({
     content = (
       <div aria-busy="true">
         <VisuallyHidden>{`Loading ${label}`}</VisuallyHidden>
+        {compact && columns.length > 0 && (
+          // The loaded switcher's footprint with the titles it will carry, inert until the cards land.
+          // theme-allow raw-selection-control — the board's own column switcher, not a page filter.
+          <SegmentedControl
+            aria-label={`${label} column`}
+            disabled
+            fullWidth
+            size="ctl"
+            value={columns[0]?.id ?? ''}
+            data={columns.map((c) => ({ value: c.id, label: c.title }))}
+          />
+        )}
         <div className={classes.columns}>
           {compact ? (
             <SkeletonColumn />

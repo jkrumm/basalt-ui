@@ -398,6 +398,8 @@ export type FixtureSpec = {
   board?: 'columns' | 'compact'
   /** Wave 46: a `Board` card with a linked record (`board-record-host`). */
   w46BoardRecord?: true
+  /** Wave 46: a loading `Board` with known column titles (`board-loading-host`). */
+  w46BoardLoading?: true
   /** Wave 44: `EventList`, plain or windowed, own scroll node or the shell scrollport (`event-list`). */
   eventList?:
     | 'plain'

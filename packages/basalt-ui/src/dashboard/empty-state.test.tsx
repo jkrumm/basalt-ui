@@ -72,11 +72,13 @@ describe('EmptyState anatomy (SPEC § 6.11)', () => {
       </MantineProvider>,
     )
 
-  test('the title is md at weight 500 in the body font, never the old head-font xl 550', () => {
-    for (const tier of ['page', 'section'] as const) {
+  test('the title is weight 500 in the body font: sm in a section tile, md on a page', () => {
+    for (const [tier, size] of [
+      ['section', VX.text.sm],
+      ['page', VX.text.md],
+    ] as const) {
       const out = html(tier)
-      expect(out).toContain('var(--basalt-state-title-size, var(--vx-text-md))')
-      expect(out).toContain('font-weight:500')
+      expect(out).toContain(`font-size:${size}px;font-weight:500`)
       expect(out).not.toContain('font-weight:550')
       expect(out).not.toContain('--basalt-font-head')
     }
