@@ -346,6 +346,7 @@ function renderValueBody({
           title={copy.title}
           {...(copy.description !== undefined && { description: copy.description })}
           className={classes.empty}
+          style={{ padding: 'var(--vx-space-stack-md) var(--vx-space-stack-lg)' }}
         />
       )
     case 'ready':

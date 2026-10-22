@@ -153,6 +153,13 @@
   border-radius: var(--vx-radius-card);
 }
 
+.emptyCopy {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--vx-space-stack-xs, 0.25rem);
+}
+
 .emptyTitle {
   font-size: var(--basalt-state-title-size, var(--vx-text-md));
   font-weight: 500;

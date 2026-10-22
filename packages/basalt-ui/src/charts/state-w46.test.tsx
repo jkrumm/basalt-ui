@@ -33,6 +33,12 @@ describe('chart empty tile', () => {
     const spans = tile?.querySelectorAll('span') ?? []
     expect(spans[0]?.textContent).toBe('No hourly readings in the window')
     expect(spans[1]?.textContent).toBe('Check that the probe is reporting.')
+    // The live region is the copy; the action is its sibling, not announced with it.
+    const live = tile?.querySelector('output')
+    expect(live?.textContent).toBe(
+      'No hourly readings in the windowCheck that the probe is reporting.',
+    )
+    expect(live?.querySelector('button')).toBeNull()
     expect(tile?.querySelector('button')?.textContent).toBe('Reset')
   })
 
@@ -100,6 +106,57 @@ describe('pending ghost follows the chart kind', () => {
         />,
       ),
     ).toBe('bars')
+  })
+
+  test('no children and a body with no chart load as bars', () => {
+    expect(ghost(null)).toBe('bars')
+    expect(ghost(<p>text</p>)).toBe('bars')
+    expect(ghost(<div>{null}</div>)).toBe('bars')
+  })
+
+  test('a Lines body nested several elements deep, or beside other nodes, loads as a line', () => {
+    expect(
+      ghost(
+        <div>
+          <section>
+            <span>{line}</span>
+          </section>
+        </div>,
+      ),
+    ).toBe('line')
+    expect(
+      ghost(
+        <>
+          <p>caption</p>
+          {line}
+        </>,
+      ),
+    ).toBe('line')
+  })
+
+  test('a Bars body beside a Lines body: any line body makes the ghost a line', () => {
+    const bars = (
+      <Bars
+        ariaLabel="B"
+        data={[{ k: 'a', v: 1 }]}
+        x={(d) => d.k}
+        bars={[{ key: 'v', label: 'V', getValue: (d) => d.v, color: 'red' }]}
+      />
+    )
+    expect(
+      ghost(
+        <div>
+          {bars}
+          {line}
+        </div>,
+      ),
+    ).toBe('line')
+  })
+
+  test('a body wrapped in a component hides its kind: bars unless ghost is passed', () => {
+    const Wrapped = (): React.ReactElement => line
+    expect(ghost(<Wrapped />)).toBe('bars')
+    expect(ghost(<Wrapped />, { ghost: 'line' })).toBe('line')
   })
 
   test('an explicit ghost wins over the body', () => {

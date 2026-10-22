@@ -49,24 +49,27 @@ layout('Wave 46 r1 chart and stat states', () => {
         if (!t) throw new Error('LAYOUT: no empty tile')
         const b = t.getBoundingClientRect()
         const title = t.querySelector('span')!
-        const card = document.querySelector(
-          '[data-testid="w46-chart-empty"] [data-basalt-chart-card]',
-        )!
+        const copy = t.querySelector('output')!
+        const cardTitle = document.querySelector(
+          '[data-testid="w46-chart-empty"] [data-widget-title]',
+        )
+        if (!cardTitle) throw new Error('LAYOUT: no [data-widget-title] on the chart card')
         const cs = getComputedStyle(t)
         return {
-          h: b.height,
-          w: b.width,
           shadow: cs.boxShadow,
           radius: cs.borderTopLeftRadius,
           weight: getComputedStyle(title).fontWeight,
           titleSize: parseFloat(getComputedStyle(title).fontSize),
-          cardTitleSize: parseFloat(
-            getComputedStyle(card.querySelector('[data-widget-title]') ?? card).fontSize,
-          ),
-          mid:
+          cardTitleSize: parseFloat(getComputedStyle(cardTitle).fontSize),
+          // The copy block's centre against the tile's, both axes.
+          midY:
             b.top +
             b.height / 2 -
-            (title.getBoundingClientRect().top + title.getBoundingClientRect().height / 2),
+            (copy.getBoundingClientRect().top + copy.getBoundingClientRect().height / 2),
+          midX:
+            b.left +
+            b.width / 2 -
+            (copy.getBoundingClientRect().left + copy.getBoundingClientRect().width / 2),
         }
       })
       expect(tile.shadow).not.toBe('none')
@@ -80,8 +83,9 @@ layout('Wave 46 r1 chart and stat states', () => {
         await heightOf(p, 'w46-chart-empty'),
       ]
       expect(Math.abs(empty - rest)).toBeLessThanOrEqual(SLACK)
-      // The copy sits in the tile's vertical middle (it is above, since the action/line follow).
-      expect(Math.abs(tile.mid)).toBeLessThan(tile.h / 2)
+      // With no action the copy block is centred in the tile, both ways.
+      expect(Math.abs(tile.midY)).toBeLessThanOrEqual(SLACK)
+      expect(Math.abs(tile.midX)).toBeLessThanOrEqual(SLACK)
     })
 
     test(`${scheme}: a pending line chart draws a line ghost, at the loaded height`, async () => {
@@ -99,6 +103,32 @@ layout('Wave 46 r1 chart and stat states', () => {
         await heightOf(p, 'w46-chart-pending'),
       ]
       expect(Math.abs(pending - rest)).toBeLessThanOrEqual(SLACK)
+    })
+
+    test(`${scheme}: the empty StatCard is a ringed tile, its title at 500 and no louder than sm`, async () => {
+      const p = await openFixture(specFor(scheme), DESKTOP_1440)
+      await p.settle()
+      const tile = await p.raw.evaluate(() => {
+        const card = document.querySelector('[data-testid="w46-stat-empty"] > *')
+        const ring = [...(card?.querySelectorAll<HTMLElement>('*') ?? [])].find(
+          (el) => getComputedStyle(el).boxShadow !== 'none' && el.querySelector('span'),
+        )
+        if (!card || !ring) throw new Error('LAYOUT: no empty tile in the StatCard')
+        const span = ring.querySelector('span')!
+        const cs = getComputedStyle(ring)
+        const [c, r] = [card.getBoundingClientRect(), ring.getBoundingClientRect()]
+        return {
+          weight: getComputedStyle(span).fontWeight,
+          size: parseFloat(getComputedStyle(span).fontSize),
+          sm: parseFloat(getComputedStyle(document.documentElement).fontSize) * 0.875,
+          radius: parseFloat(cs.borderTopLeftRadius),
+          inside: r.left >= c.left && r.right <= c.right && r.top >= c.top && r.bottom <= c.bottom,
+        }
+      })
+      expect(tile.weight).toBe('500')
+      expect(tile.size).toBeLessThanOrEqual(tile.sm + SLACK)
+      expect(tile.radius).toBeGreaterThan(0)
+      expect(tile.inside).toBe(true)
     })
 
     test(`${scheme}: a loading StatCard keeps the delta chip and a sparkline-shaped row, at rest height`, async () => {
