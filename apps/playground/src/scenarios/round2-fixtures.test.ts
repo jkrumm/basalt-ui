@@ -269,7 +269,7 @@ describe('composition', () => {
 
   it('S3 gives the waiting list, the flow chart and the item timeline a full-width row each', () => {
     const c = mount(createElement(AgentsScenario, { shotState: undefined }))
-    expect(order(c).slice(-3)).toEqual(['stuck-items', 'item-flow', 'item-timeline'])
+    expect(order(c).slice(-4)).toEqual(['stuck-items', 'item-flow', 'board', 'item-timeline'])
     expect(anchor(c, 'stuck-items')?.closest('.mantine-SimpleGrid-root')).toBeNull()
     expect(anchor(c, 'item-flow')?.closest('.mantine-SimpleGrid-root')).toBeNull()
     expect(anchor(c, 'item-timeline')?.closest('.mantine-SimpleGrid-root')).toBeNull()

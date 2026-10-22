@@ -19,7 +19,7 @@
  */
 import { Box, Group, Stack, Text } from '@mantine/core'
 import type { ReactNode } from 'react'
-import { BarList, DeltaBadge, Meter, PageBar, Section, StatGroup, StatusVerdict } from 'basalt-ui'
+import { BarList, DeltaBadge, Meter, Section, StatGroup, StatusVerdict } from 'basalt-ui'
 import type { StatStripCell } from 'basalt-ui'
 import { ChartCard, Lines, Sparkline } from 'basalt-ui/charts'
 import { VX } from 'basalt-ui/tokens'
@@ -408,9 +408,6 @@ function AgentsDecision({ shotState }: ScenarioProps) {
 export function AgentsScenario({ shotState }: ScenarioProps) {
   return (
     <Stack gap="sm" data-shot-states="empty loading error">
-      <PageBar
-        actions={[{ key: 'approve', label: 'Approve oldest', onClick: () => {}, primary: true }]}
-      />
       <Box data-shot="agents-decision" data-shot-absent="empty error">
         <AgentsDecision shotState={shotState} />
       </Box>
