@@ -255,11 +255,11 @@ describe('the subtitle folds into the info glyph in a card under 480px (CSS-only
     expect(narrow).toContain('.foldGlyph {\n    display: inline-flex')
     // the bubble is a top-layer popover still inside the card's subtree: the same rule reveals it
     expect(narrow).toContain('.foldNote {\n    display: block')
-    // a ChartCard (marked `data-basalt-chart-card`) keeps its subtitle, clamped to two lines, and
+    // a ChartCard (its header is marked `data-basalt-chart-header`) keeps its subtitle, clamped to two lines, and
     // hides the fold pieces; the heavier short-card selector below still folds it
-    expect(narrow).toMatch(/\[data-basalt-chart-card\] \.subtitle \{[^}]*-webkit-line-clamp: 2/)
+    expect(narrow).toMatch(/\[data-basalt-chart-header\] \.subtitle \{[^}]*-webkit-line-clamp: 2/)
     expect(narrow).toMatch(
-      /\[data-basalt-chart-card\] \.foldGlyph,\s*\[data-basalt-chart-card\] \.foldNote \{\s*display: none/,
+      /\[data-basalt-chart-header\] \.foldGlyph,\s*\[data-basalt-chart-header\] \.foldNote \{\s*display: none/,
     )
   })
 })

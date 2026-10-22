@@ -398,6 +398,8 @@ export type FixtureSpec = {
   w39Strip?: true
   /** Wave 42: a table with a sorted and an unsorted header and an entity beside a text cell in a narrow box (`w42-kinds`). */
   w42Kinds?: true
+  /** Wave 43: ChartCard / Section subtitle probes at 390 (`w43-sub-*`). */
+  w43Subtitle?: true
   /** Wave 42: a 4-column kinded table with an active facet pill and a pager; `loading` shows its skeleton; `pinned: true` is a sticky-header card, `'striped-page'` a striped table on the page (`w42-states`). */
   w42States?: { loading?: true; empty?: true; pinned?: true | 'striped-page'; longError?: true }
   /** Wave 42: argo's workouts table and S2's sessions table in a fixed-width card (`w42-responsive`). */

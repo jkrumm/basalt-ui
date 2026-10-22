@@ -398,7 +398,7 @@
   /* A chart card keeps its subtitle (argo's line/dot key) on its own line at every width: up to two
    * lines, then an ellipsis; the full text stays in the DOM. StatCard and Section still fold. The
    * short-height block below out-ranks this (its selector is one class heavier). */
-  [data-basalt-chart-card] .subtitle {
+  [data-basalt-chart-header] .subtitle {
     display: -webkit-box;
     -webkit-box-orient: vertical;
     -webkit-line-clamp: 2;
@@ -406,8 +406,8 @@
     overflow: hidden;
   }
 
-  [data-basalt-chart-card] .foldGlyph,
-  [data-basalt-chart-card] .foldNote {
+  [data-basalt-chart-header] .foldGlyph,
+  [data-basalt-chart-header] .foldNote {
     display: none;
   }
 }
