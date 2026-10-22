@@ -14,7 +14,6 @@ export const STRENGTH_ERROR = retryCopy('strength log')
 export const SKINFOLD_ERROR = retryCopy('skinfold log')
 export const CALIPER_NEXT = 'Log a session to start the history.'
 export const CALIPER_GAP = 'No caliper session in this window'
-export const NO_CALIPER = `${CALIPER_GAP}. ${CALIPER_NEXT}`
 export const INOL_GAP = 'No sessions logged in this window'
 export const INOL_NEXT = 'INOL needs at least two sessions per lift.'
 export const NO_INOL = `${INOL_GAP}. ${INOL_NEXT}`

@@ -158,7 +158,7 @@ function Summary({ shotState }: ScenarioProps) {
   // own cause, so the line is omitted rather than repeating TRAINING_EMPTY a fifth time.
   if (shotState === 'empty') return <Box data-shot="summary" data-shot-absent="empty" />
   return (
-    <Box data-shot="summary" data-shot-absent="empty">
+    <Box data-shot="summary">
       <Text size="sm" c="dimmed">
         {SUMMARY}
       </Text>

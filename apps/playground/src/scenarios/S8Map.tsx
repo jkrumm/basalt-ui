@@ -277,17 +277,17 @@ function Canvas({ shotState }: ScenarioProps) {
 }
 
 function Body({ shotState }: ScenarioProps) {
+  // The floating chrome (heading, scrubber, key) leaves the state readable: it shows at rest and while loading.
+  const chrome = shotState !== 'empty' && shotState !== 'error'
   return (
     <Group gap={0} wrap="nowrap" align="stretch" h="100%">
       <Box pos="relative" flex={1} miw={0}>
         <Canvas shotState={shotState} />
-        {shotState !== 'empty' && shotState !== 'error' && <Heading />}
-        {shotState !== 'empty' && shotState !== 'error' && (
-          <Scrubber loading={shotState === 'loading'} />
-        )}
+        {chrome && <Heading />}
+        {chrome && <Scrubber loading={shotState === 'loading'} />}
         <Attribution />
       </Box>
-      {shotState !== 'empty' && shotState !== 'error' && <KeyRail />}
+      {chrome && <KeyRail />}
     </Group>
   )
 }
