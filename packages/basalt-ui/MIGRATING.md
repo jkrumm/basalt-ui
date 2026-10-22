@@ -1079,6 +1079,48 @@ Nothing to change unless a test or a style depends on the old look. Each line na
   keep a word). `RangeFilter` off its default reads `Window  7d`. An active pill's border and `Pagination`'s current
   page are ink, not the accent; an explicit `color=` on `Pagination` keeps the accent.
 
+### argo upstream rows (Wave 43)
+
+Nothing to change unless a test or a style depends on the old look. Each line names its opt-out.
+
+- **`Meter` reading at the track start.** A marked `Meter` with no zone names puts its reading in the caption row,
+  centred on the marker, so it is one caption row (~17 px) shorter and both captions share one line whenever they fit
+  the track. The caption row no longer clips descenders (`low 72.3 kg`). Zoned meters are unchanged. No opt-out.
+- **`ChartCard` subtitle at compact.** Below a 480 px card a `ChartCard` subtitle stays under the title, up to two lines,
+  instead of folding into the info glyph (a chart subtitle is often its key). `StatCard` and `Section` still fold. A
+  card under 280 px high still folds it. No opt-out.
+- **`Sparkline` `band`.** New prop `band?: { from: number; to: number }`: a productive range drawn behind the line in
+  the neutral fill and included in the y domain; not a series (no legend, no tooltip row). `from === to` or a non-finite
+  bound draws nothing; a band edge that sets the domain gets a quarter of the band's span as air. The `reference`
+  label now takes the start or end, above or below, wherever the line is not;
+  it moves only when the old start-above spot would cross the line.
+- **Reference legend key and end labels.** A reference line's legend key is drawn at the line's own weight (1 px) and
+  dash, not the series' 2 px. `Lines` end labels take the side away from their own last segment, several close labels
+  wrap their lines, the gap is one label line plus air (17 px, was 13), and a stack taller than the plot closes up to fit.
+  End labels and a `RefLine` caption clear every line's path and each other, not only their own segment.
+  No opt-out. A goal line that should read apart from its series sets `dashed: true`.
+- **Strip footers.** A `StatGroup` footer entry (`under` or full width) takes the 13 px `sm` step instead of
+  inheriting the 15 px body size, so a strip holds three type sizes. No opt-out.
+- **`BasaltDataTable` danger row action.** A lone `danger: true` icon action is neutral at rest and red on its own hover
+  (fine pointer) or keyboard focus, never on the row's hover. The menu's danger item is unchanged. No opt-out.
+- **`basalt/status-fill-as-text` (error).** `VX.status.excellent` is a fill (about 3:1 on a light card): paint zone
+  TEXT with `VX.status.good`, keep `excellent` on `bg`, fills and swatches. Flags `c=` and a style-object `color:`;
+  `color=` is not judged (a fill on `Badge`/`ThemeIcon`). Waive with `{/* theme-allow status-fill-as-text — <why> */}`.
+  Measured zero hits in argo and the playground, so it ships at `error`.
+- **`--basalt-main-content-h`.** New CSS custom property on the main region: `height: var(--basalt-main-content-h)`
+  fills the scrollport with no page scroll, with or without a `PageBar` band. It replaces a hand-built
+  `calc(100dvh - …)` of shell vars (argo's `MAP_FULL_BLEED_HEIGHT`).
+- **A `Paper` over a flush card.** A `Paper` inside a `Card variant="flush"` renders at the control radius (6 px at
+  level 0, 4 px under the card at every radius level) instead of the card's 10, so a floating panel passes
+  `craft-1/nested-radius-step`. Mantine's dropdowns and modal content keep their own. Opt out with an explicit `radius`
+  on that Paper. `Paper`'s default radius now comes from a stylesheet rule rather than an inline style, so a consumer
+  class can override it.
+- **MapLibre attribution.** `basalt-ui/styles.css` styles MapLibre's compact attribution control onto basalt's radius
+  and type scale (no maplibre dependency). Override with a selector of equal or higher specificity than
+  `:root .maplibregl-ctrl.maplibregl-ctrl-attrib`, later in source.
+- **`basalt-ui shot`.** An anchor that renders only in a URL state (`empty`, …) is recorded `absent` at rest with the
+  note "not rendered at rest"; the board's "not captured" now means a real capture miss only.
+
 ## 2.27.2
 
 _Nothing to migrate in this release._
