@@ -8,11 +8,12 @@ type Point = { at: Date; weight: number; mean: number }
 const DAYS = 60
 const NBSP = ' '
 
-/** Invented, shaped like argo's body weight: a slow fall, a daily wobble, the last two values 0.1 apart. */
-const RAW = Array.from(
-  { length: DAYS },
-  (_, i) => 84 - i * 0.09 + (i === DAYS - 1 ? 0.5 : Math.sin(i * 2.1) * 0.6),
-)
+/** Invented, shaped like argo's body weight: a slow fall, a daily wobble, the last weight 0.1 kg off its mean. */
+const RAW = Array.from({ length: DAYS }, (_, i) => {
+  const trend = 84 - i * 0.09
+  const wobble = Math.sin(i * 2.1) * 0.6 + Math.cos(i * 0.9) * 0.3
+  return i === DAYS - 1 ? trend + 0.1 : trend + wobble
+})
 const DATA: Point[] = RAW.map((weight, i) => {
   const window = RAW.slice(Math.max(0, i - 6), i + 1)
   return {
@@ -23,12 +24,13 @@ const DATA: Point[] = RAW.map((weight, i) => {
 })
 
 const SERIES: ChartSeries<Point>[] = [
-  { key: 'weight', label: 'Weight', color: VX.line, getValue: (d) => d.weight },
+  { key: 'weight', label: 'Weight', color: VX.line, strokeWidth: 2.25, getValue: (d) => d.weight },
   {
     key: 'ma',
     label: `7${NBSP}d${NBSP}mean`,
     color: VX.line,
     dash: 'dashed',
+    strokeWidth: 1.5,
     role: 'overlay',
     parent: 'weight',
     getValue: (d) => d.mean,
@@ -47,7 +49,7 @@ export function W43LinesFixture(): ReactElement {
           x={(d) => d.at}
           series={SERIES}
           naming="endLabels"
-          refLines={[{ value: 78, color: VX.muted }]}
+          refLines={[{ value: 78, color: VX.muted, label: 'Goal' }]}
           y={{ domain: [77, 86] }}
         />
       </ChartCard>

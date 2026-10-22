@@ -5,7 +5,15 @@
 import { describe, expect, test } from 'bun:test'
 import { renderToString } from 'react-dom/server'
 import { Lines } from './Lines'
-import { endLabelAnchor, endLabelMarks, endLabelOffset, endLabelPlan } from './labels'
+import {
+  claimLabelBoxes,
+  claimedLabelBoxes,
+  endLabelAnchor,
+  endLabelMarks,
+  endLabelOffset,
+  endLabelPlan,
+} from './labels'
+import type { EndLabel } from './labels'
 import { xScaleFor } from './scales'
 import type { ChartSeries, PlotContext, PlotRow } from './types'
 
@@ -357,5 +365,46 @@ describe('endLabelPlan collision avoidance (argo body weight: Weight + 7 d mean)
       expect(c).toBeGreaterThanOrEqual(7)
       expect(c).toBeLessThanOrEqual(plotHeight - 7)
     }
+  })
+})
+
+describe('end labels keep off every line and rule (w43 r2)', () => {
+  // A jagged series ending at 50 beside a smooth one ending at 51, over a rule at 49.
+  const jag = (i: number): number => 50 + (i === 19 ? 0 : i % 2 ? 6 : -6)
+  const data: Row[] = Array.from({ length: 20 }, (_, i) => ({
+    t: day(i + 1),
+    a: jag(i),
+    b: 51,
+  }))
+  const lines = [A, B]
+  const draw = (plan: EndLabel<Row, Date>[], i: number, y: number): number => {
+    const p = plan[i] as EndLabel<Row, Date>
+    return (y / 100) * 300 - (endLabelOffset(p.anchor, p.side).dy + p.nudge)
+  }
+
+  test('a label sits clear of the other line and a rule, not only of its own', () => {
+    const plan = endLabelPlan(plotOf(data, lines), lines, 'auto', [49])
+    expect(plan).toHaveLength(2)
+    const [a, b] = [draw(plan, 0, 50), draw(plan, 1, 51)]
+    // Centres in px from the plot's bottom: the rule at 49 is 147, the smooth line at 51 is 153.
+    for (const c of [a, b]) {
+      expect(Math.abs(c - 147)).toBeGreaterThan(4.1)
+    }
+    expect(Math.abs(a - 153)).toBeGreaterThan(4.1)
+  })
+
+  test('the plan claims a box per label for a reference caption to avoid', () => {
+    const plan = endLabelPlan(plotOf(data, lines), lines)
+    for (const p of plan) {
+      expect(p.box.fx1).toBeLessThanOrEqual(1)
+      expect(p.box.y1).toBeGreaterThan(p.box.y0)
+    }
+    const plot = plotOf(data, lines)
+    claimLabelBoxes(
+      plot,
+      plan.map((p) => p.box),
+    )
+    expect(claimedLabelBoxes(plot)).toHaveLength(2)
+    expect(claimedLabelBoxes(plotOf(data, lines))).toEqual([])
   })
 })

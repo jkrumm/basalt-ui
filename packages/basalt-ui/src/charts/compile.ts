@@ -38,8 +38,9 @@ import { cursorBinding, followerOptions, quietWhileFollowing } from './cursor'
 import { cursorDots } from './marks'
 import { bucketTicks, strideEvery } from './ticks'
 import { MAIN_PANE, plotAccess, plotContext } from './plot-context'
+import { claimedLabelBoxes } from './labels'
 import { refLabelPosition } from './ref-label'
-import type { RefLabelPoint } from './ref-label'
+import type { LabelBox, RefLabelPoint } from './ref-label'
 import type { PlotSizes } from './plot-context'
 import { resolveContainerClass } from '../tokens/size-classes'
 import { resolveYDomain, xScaleFor, xZoneFractions, yScaleFor } from './scales'
@@ -796,6 +797,8 @@ type RefLabelContext<T, X extends ChartX> = {
   plotHeight: number
   /** One polyline per visible series on the line's axis. */
   lines: (side: 'left' | 'right' | undefined) => readonly (readonly RefLabelPoint[])[]
+  /** The end labels placed on the left axis: a caption there keeps clear of them. */
+  claimed: readonly LabelBox[]
   axes: Axes<T>
   model: XScaleModel<X>
 }
@@ -818,6 +821,7 @@ const refLabelMark = <T, X extends ChartX>(
     label: r.label ?? '',
     fontSize: VX.text.micro,
     series: ctx.lines(r.axis),
+    claimed: startFirst ? [] : ctx.claimed,
   })
   const atStart = position.startsWith('start')
   return decorative(
@@ -1337,24 +1341,23 @@ export function compileCartesian<T, X extends ChartX>(
       const cls = resolveContainerClass(width)
       const axes = axesAt(cls)
       const access = plotAccess(definition, input.plot, MAIN_PANE)
-      const kindMarks = input.marks(
-        plotContext(
-          {
-            rows,
-            visible,
-            highlighted: input.highlighted ?? null,
-            containerClass: cls,
-            width,
-            height,
-            data: input.data,
-            xFraction: model.fraction,
-            y2: axes.right ? 'y2' : undefined,
-            yDomain: axes.left.domain,
-            y2Domain: axes.right?.domain,
-          },
-          access,
-        ),
+      const plot = plotContext(
+        {
+          rows,
+          visible,
+          highlighted: input.highlighted ?? null,
+          containerClass: cls,
+          width,
+          height,
+          data: input.data,
+          xFraction: model.fraction,
+          y2: axes.right ? 'y2' : undefined,
+          yDomain: axes.left.domain,
+          y2Domain: axes.right?.domain,
+        },
+        access,
       )
+      const kindMarks = input.marks(plot)
       const under = underlayMarks(input, model, axes)
       const over = refLineMarks(input, axes, () => {
         // Reading the plot size recompiles once on the measured area; the frame stands in before it.
@@ -1364,6 +1367,7 @@ export function compileCartesian<T, X extends ChartX>(
           plotWidth: size?.width ?? width,
           plotHeight: size?.height ?? height,
           lines: linesOn,
+          claimed: claimedLabelBoxes(plot),
           axes,
           model,
         }

@@ -21,7 +21,7 @@ import type { ReactElement } from 'react'
 import { CartesianRung } from './CartesianChart'
 import { areaGradientId } from './compile'
 import { chartCurve } from './curves'
-import { endLabelMarks, endLabelPlan } from './labels'
+import { claimLabelBoxes, endLabelMarks, endLabelPlan } from './labels'
 import type { LinesNaming } from './labels'
 import { drawnRows, lineMark, loneDots, markersOf, yScaleOf } from './marks'
 import { rowX } from './types'
@@ -65,7 +65,7 @@ function lastIsPlaceable<T, X extends ChartX>(
 const AUTO_END_LABELS = 3
 
 export function Lines<T, X extends ChartX = ChartX>(props: LinesProps<T, X>): ReactElement {
-  const { thresholds, naming = 'auto', ...rest } = props
+  const { thresholds, naming = 'auto', refLines, ...rest } = props
   const { series } = props
   // Whether end labels can name every legend entry: only then may the legend give way to them.
   const labelled = series.filter((s) => s.role !== 'reference')
@@ -135,14 +135,23 @@ export function Lines<T, X extends ChartX = ChartX>(props: LinesProps<T, X>): Re
         out.push(...markersOf(s, plot.rows(s.key), yScale))
       }
       const labelled = plotted.filter((s) => s.role !== 'reference')
-      out.push(...endLabelMarks(endLabelPlan(plot, labelled, effective)))
+      // The reference rules on the left axis are lines a label must not sit on; the captions in turn
+      // keep clear of the labels placed here.
+      const rules = (refLines ?? []).flatMap((r) => (r.axis === 'right' ? [] : [r.value]))
+      const plan = endLabelPlan(plot, labelled, effective, rules)
+      claimLabelBoxes(
+        plot,
+        plan.map((p) => p.box),
+      )
+      out.push(...endLabelMarks(plan))
       return out
     },
-    [series, thresholds, effective],
+    [series, thresholds, effective, refLines],
   )
   return (
     <CartesianRung
       {...rest}
+      {...(refLines !== undefined && { refLines })}
       marks={marks}
       {...(labelsOnly && { legend: false as const })}
       {...(hideAtWide && { hideLegendAtWide: true })}
