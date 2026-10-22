@@ -191,7 +191,7 @@ export type FormRowSlot = 'root' | 'label' | 'control'
 
 export type FormRowProps = BasaltProps &
   SlotStylesProps<FormRowSlot> & {
-    /** The field's label. Ink, `--vx-text-md` — the same weight `SettingsRow` gives its own. */
+    /** The field's label. Ink, `--vx-text-sm` — the same size `SettingsRow` gives its own. */
     label: string
     /** Muted line under the label: the rule, the unit, the example. Never the error. */
     hint?: string
@@ -216,7 +216,7 @@ export type FormRowProps = BasaltProps &
   }
 
 /**
- * One labelled field: label left / control right on desktop, label above the control below `sm`.
+ * One labelled field: label left / control right, label above the control under 600 px of the row (`basalt-form`).
  * The swap is CSS (law C9) — no `useMediaQuery`, so it is correct in SSR markup and it costs no
  * render.
  *

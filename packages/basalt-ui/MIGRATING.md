@@ -1178,7 +1178,7 @@ Nothing is removed. Each line names its opt-out.
   section, card or chart body (the error title follows), the description from `md` to
   `sm`, and `tier="section"` draws its own ring at card radius: drop a border you wrapped around it. A `Board` column's
   `empty`, `BarList`'s `emptyText` (default now "No items to compare yet"; pass the real cause), an empty
-  `BasaltDataTable` body and an empty `renderCard` list all render as that tile. The error title is `md` 500.
+  `BasaltDataTable` body and an empty `renderCard` list all render as that tile.
 - **One form row.** `FormRow` and `SettingsRow` share one geometry: a 15rem label column and a control column capped
   at 20rem, left-packed (was `FormRow` 1fr / 1.4fr and `SettingsRow` with its control flush right); below 600 px of the
   row's own width they stack. A wider control (a long textarea, a table) sets its own width. `SettingsRow` is a grid now,
@@ -1189,8 +1189,8 @@ Nothing is removed. Each line names its opt-out.
 - **Pending shapes.** A pending `Lines`/`StackedArea` card draws a line ghost (a body wrapped in your own component passes
   `ghost="line"`); a loading `StatCard` with a `delta` keeps a delta chip.
 - **Primary hover.** A filled accent control (`Button`, `ActionIcon`, a `derive`-retuned accent) hovers 10 tone darker
-  than rest (was 4.8): default rest `#4374a6`, hover `#2d5b88` (was `#3c6895`); the white label stays at 4.90:1 and
-  7.09:1. An explicit `color=` keeps its family hover.
+  than rest (was 4.8); at the default seed rest is `#4374a6`, hover `#2d5b88` (was `#3c6895`), and the white label
+  stays at 4.90:1 and 7.09:1. An explicit `color=` keeps its family hover.
 - **Pending ghosts.** A pending `Sparkline` draws a line (or bar) ghost; a pending card around a `BandStrip` draws one
   band row at the strip's stated `height` (a number or the per-class object), keeping the legend row's room when the
   strip is legended. `ghost` accepts `'band'`; `placeholderHeight` still wins.
