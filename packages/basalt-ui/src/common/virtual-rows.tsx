@@ -50,7 +50,16 @@ type InitialScroll = 'start' | 'end'
 
 type ScrollOwner =
   | { readonly height: number | string; readonly scroll?: never }
-  | { readonly scroll: 'parent'; readonly height?: never }
+  | {
+      readonly scroll: 'parent'
+      readonly height?: never
+      /**
+       * The caller's own scroll node for the parent mode, instead of the detected scrolling ancestor:
+       * lets one stable element own the scroll whether or not its rows are windowed. `null` = not
+       * mounted yet (the rows wait for it); omitted = detect the ancestor.
+       */
+      readonly scrollRoot?: HTMLElement | null
+    }
 
 export type VirtualRowsProps = BasaltProps &
   ScrollOwner & {
@@ -410,6 +419,7 @@ type RowsOptions = Pick<
   | 'gap'
   | 'scrollMargin'
   | 'rangeExtractor'
+  | 'initialOffset'
 > & { readonly getScrollElement: () => Element | null }
 
 type UseRowsVirtualizer = (options: RowsOptions) => RowsVirtualizer
@@ -466,6 +476,10 @@ function createRows(rv: ReactVirtual, useRowsVirtualizer: UseRowsVirtualizer, on
       overscan,
       gap,
       scrollMargin: parent?.margin ?? 0,
+      // `scroll: 'parent'` mounts on a scroller that may already be scrolled (a list that was plain
+      // DOM a frame ago): start at that offset, not 0 — virtual-core writes its tracked offset back
+      // on attach, which would jump the scroller to the top.
+      ...(parent !== undefined && { initialOffset: () => scrollNode()?.scrollTop ?? 0 }),
       rangeExtractor,
       getItemKey: (index) => rows[index]?.key ?? index,
       anchorTo,
@@ -583,9 +597,12 @@ function SuspensePane({
 }
 
 /** Measures which box scrolls the list and where the list starts inside it. */
-function measureParent(list: HTMLElement | null): ParentScroll | null {
-  if (list === null) return null
-  const element = scrollParentOf(list)
+function measureParent(
+  list: HTMLElement | null,
+  scrollRoot: HTMLElement | null | undefined,
+): ParentScroll | null {
+  if (list === null || scrollRoot === null) return null
+  const element = scrollRoot ?? scrollParentOf(list)
   const top = list.getBoundingClientRect().top
   const margin =
     element === null
@@ -599,12 +616,12 @@ function sameParent(a: ParentScroll | null, b: ParentScroll): boolean {
 }
 
 function ParentRows(props: Extract<VirtualRowsProps, { scroll: 'parent' }>): JSX.Element {
-  const { className, style, ...rest } = props
+  const { className, style, scrollRoot, ...rest } = props
   const listRef = useRef<HTMLDivElement>(null)
   const [parent, setParent] = useState<ParentScroll | null>(null)
 
   const remeasure = (): void => {
-    const next = measureParent(listRef.current)
+    const next = measureParent(listRef.current, scrollRoot)
     if (next !== null) setParent((prev) => (sameParent(prev, next) ? prev : next))
   }
 
@@ -618,7 +635,7 @@ function ParentRows(props: Extract<VirtualRowsProps, { scroll: 'parent' }>): JSX
   // the list and the scrollport (the list's own box and the scrollport's do not change). Observe
   // that chain, plus the window for the window case.
   const scroller = parent?.element
-  // oxlint-disable-next-line react-hooks/exhaustive-deps -- `remeasure` only reads refs and a stable setter
+  // oxlint-disable react-hooks/exhaustive-deps -- `remeasure` reads refs, a stable setter and `scrollRoot` (in the deps)
   useEffect(() => {
     const list = listRef.current
     if (list === null) return
@@ -632,7 +649,8 @@ function ParentRows(props: Extract<VirtualRowsProps, { scroll: 'parent' }>): JSX
       window.removeEventListener('resize', remeasure)
       observer?.disconnect()
     }
-  }, [scroller])
+  }, [scroller, scrollRoot])
+  // oxlint-enable react-hooks/exhaustive-deps
 
   return (
     <div ref={listRef} className={cx(className)} style={style}>

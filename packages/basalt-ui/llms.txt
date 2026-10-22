@@ -94,6 +94,23 @@ Signature: EmptyState(props: EmptyStateProps): JSX.Element
   description?: string
   action?: ReactNode
   tier?: "section" | "page"
+Signature: EventList(props: EventListProps): JSX.Element
+  className?: string
+  style?: CSSProperties
+  label?: string
+  items: readonly { id: string; at: Date | number; actor?: ReactNode…
+  density?: "feed" | "timeline"
+  rail?: boolean
+  group?: "day" | "none"
+  now?: number | Date
+  dayLabel?: (day: Date, now: Date) => string
+  time?: "clock" | "relative" | "date-time" | ((at: Date) => string)
+  order?: "newest-first" | "oldest-first"
+  earlier?: { onLoad: () => void; loading?: boolean; remaining?: number…
+  height?: string | number
+  loading?: boolean
+  loadingRows?: number
+  empty?: { title: string; description?: string; action?: ReactNode; }
 Signature: Meter(props: MeterProps): JSX.Element
   className?: string
   style?: CSSProperties

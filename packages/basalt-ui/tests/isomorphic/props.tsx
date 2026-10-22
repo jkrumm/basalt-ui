@@ -197,6 +197,7 @@ export const MINIMAL_PROPS: Record<string, Record<string, unknown>> = {
   StatCard: { label: 'Revenue', value: '1.2k' },
   EmptyState: { title: 'Nothing here' },
   BarList: { label: 'Top', items: [] },
+  EventList: { label: 'Events', items: [] },
   Meter: { label: 'Usage', value: 40 },
   ErrorState: { title: 'Broke' },
   SettingsSection: { title: 'Settings', children: TEXT },
