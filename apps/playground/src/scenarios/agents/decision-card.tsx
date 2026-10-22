@@ -40,7 +40,7 @@ function ActionButton({
         size="xs"
         variant={variant}
         onClick={action.onClick}
-        aria-keyshortcuts={action.keyHint}
+        {...(!coarse && { 'aria-keyshortcuts': action.keyHint })}
         // The shot's hover lands here: the card's primary is its one accent fill.
         {...(variant === 'filled' && { 'data-shot-hover': true })}
       >
