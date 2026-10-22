@@ -157,8 +157,9 @@ function Summary({ shotState }: ScenarioProps) {
   // A summary is a sentence with a live number; an empty month has none, and every host below states its
   // own cause, so the line is omitted rather than repeating TRAINING_EMPTY a fifth time.
   if (shotState === 'empty') return <Box data-shot="summary" data-shot-absent="empty" />
+  // The shot reads `data-shot-absent` at rest, so the loaded box declares the omitted empty.
   return (
-    <Box data-shot="summary">
+    <Box data-shot="summary" data-shot-absent="empty">
       <Text size="sm" c="dimmed">
         {SUMMARY}
       </Text>
