@@ -5,7 +5,6 @@
  */
 import {
   Button,
-  Card,
   Flex,
   Group,
   NumberInput,
@@ -19,13 +18,11 @@ import {
 import { FormGroup, FormRow } from 'basalt-ui/controls'
 import { fieldKey, inputProps, useBasaltForm } from 'basalt-ui/forms'
 import * as v from 'valibot'
-import { Section, SettingsSection } from 'basalt-ui'
-import { noop, queryFor } from '../shot-state'
+import { SettingsSection } from 'basalt-ui'
+import { noop } from '../shot-state'
 import type { ScenarioProps } from '../shot-state'
 import { EXERCISES, REPS_ERROR } from './settings-data'
 import classes from './entry-form.module.css'
-
-const SAVE_ERROR = queryFor('error', 'The set did not save. Retry, or check your connection.')
 
 const SetSchema = v.object({
   exercise: v.pipe(v.string(), v.minLength(1, 'Pick an exercise.')),
@@ -62,10 +59,13 @@ function EntryActions() {
   )
 }
 
-function EntryFormFields() {
+function EntryFormFields({ invalid }: { invalid: boolean }) {
   const form = useBasaltForm<SetValues>({
     initialValues: INITIAL,
     schema: SetSchema,
+    // The error state is a failed validation: the form stays, the inputs keep their values, and the
+    // one field that failed says so in one sentence. Never at rest.
+    ...(invalid && { initialErrors: { reps: REPS_ERROR } }),
   })
   return (
     <form className={classes.form} onSubmit={form.onSubmit(noop)} noValidate>
@@ -174,19 +174,13 @@ function EntrySkeleton() {
 
 /** The entry form in the same section surface as the account page's cards. */
 export function EntryForm({ shotState }: ScenarioProps) {
-  // The failed save replaces the form in its own surface (§ 6.11), one sentence and a retry.
-  if (shotState === 'error' && SAVE_ERROR) {
-    return (
-      <Card>
-        <Section title="Log a set" query={SAVE_ERROR}>
-          {null}
-        </Section>
-      </Card>
-    )
-  }
   return (
     <SettingsSection title="Log a set" subtitle="One set of one exercise.">
-      {shotState === 'loading' ? <EntrySkeleton /> : <EntryFormFields />}
+      {shotState === 'loading' ? (
+        <EntrySkeleton />
+      ) : (
+        <EntryFormFields invalid={shotState === 'error'} />
+      )}
     </SettingsSection>
   )
 }
