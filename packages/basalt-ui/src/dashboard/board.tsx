@@ -22,8 +22,8 @@
  * "<title> <count>" (not `ViewTabs`: past three options it becomes a `Select` on a phone, and the
  * board's switcher is always the track). The selected column is a store field when you pass `field` (an enum field whose
  * values are column ids, like `ViewTabs`'s; the URL or storage then remembers it), else internal
- * state. An empty column and an empty board are both `EmptyState` tiles (`empty` on the column or the board); `loading` is column-shaped skeletons. An error is the
- * caller's: put the board in a `Section` with `query`.
+ * state. An empty column and an empty board are both `EmptyState` tiles (`empty` on the column
+ * or the board); `loading` is column-shaped skeletons. An error is the caller's: put the board in a `Section` with `query`.
  *
  * @example
  * import { Board } from 'basalt-ui'
@@ -65,7 +65,7 @@ export type BoardProps<T extends string = string> = BasaltProps & {
     tone?: string
     /** Right-aligned header text, already formatted ("3 items", "$12.40"). */
     total?: string
-    /** The muted line an empty column shows. Default "Nothing here". */
+    /** The title of the `EmptyState` tile an empty column shows. Default "Nothing here"; say why it is empty. */
     empty?: string
     cards: readonly {
       id: string

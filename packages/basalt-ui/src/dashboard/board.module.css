@@ -124,6 +124,11 @@ a.record:hover {
   text-decoration: underline;
 }
 
+a.record:focus-visible {
+  outline: 2px solid var(--vx-focus-ring, var(--mantine-primary-color-filled));
+  outline-offset: 1px;
+}
+
 .status {
   margin: 0;
   font-size: var(--vx-text-xs);

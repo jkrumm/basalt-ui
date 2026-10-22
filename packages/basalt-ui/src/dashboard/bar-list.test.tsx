@@ -144,8 +144,8 @@ describe('BarList', () => {
     expect(full.container.querySelector('ul')?.getAttribute('role')).toBe('list')
     cleanup()
     const empty = mount({ label: 'Top', items: [] })
-    const status = empty.container.querySelector('output')
-    expect(status?.getAttribute('aria-label')).toBe('Top')
+    const status = empty.container.querySelector('[role="status"]')
+    expect(status?.textContent).toContain('Top')
   })
 
   test('non-finite values render a dash and a 0% bar; they do not set the scale', () => {
@@ -270,7 +270,9 @@ describe('BarList — the track is the label column', () => {
     ] satisfies Partial<BarListProps>[]) {
       const { container, unmount } = mount({ ...props, ...state })
       const frame = container.querySelector('.mine') as HTMLElement
-      expect(frame.querySelector(':scope > ul, :scope > output, :scope > [aria-busy]')).toBeTruthy()
+      expect(
+        frame.querySelector(':scope > ul, :scope > [role="status"], :scope > [aria-busy]'),
+      ).toBeTruthy()
       expect(frame.style.opacity).toBe('0.5')
       expect(container.querySelectorAll('.mine')).toHaveLength(1)
       unmount()

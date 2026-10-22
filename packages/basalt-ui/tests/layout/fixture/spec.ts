@@ -392,6 +392,8 @@ export type FixtureSpec = {
   virtualRows?: 'height' | 'parent' | 'parent-grow'
   /** Wave 45: `Board`, four columns each bounded at 360 px (`board`). */
   board?: 'columns' | 'compact'
+  /** Wave 46: a `Board` card with a linked record (`board-record-host`). */
+  w46BoardRecord?: true
   /** Wave 44: `EventList`, plain or windowed, own scroll node or the shell scrollport (`event-list`). */
   eventList?:
     | 'plain'
