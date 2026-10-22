@@ -90,7 +90,7 @@ describe('BarList', () => {
   test('empty renders through the EmptyState tile', () => {
     const { getByText } = mount({ label: 'L', items: [], emptyText: 'No projects' })
     expect(getByText('No projects').parentElement?.getAttribute('style') ?? '').toContain(
-      '--basalt-state-ring',
+      'box-shadow',
     )
   })
 

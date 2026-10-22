@@ -8,7 +8,6 @@ declare const classes: {
   readonly bulkCount: string
   readonly containment: string
   readonly dangerAction: string
-  readonly errorState: string
   readonly foldChevron: string
   readonly foldCount: string
   readonly foldDisclosure: string

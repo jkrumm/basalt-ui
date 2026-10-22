@@ -19,7 +19,7 @@
  */
 import { Center, Stack } from '@mantine/core'
 import type { ReactNode } from 'react'
-import { VX } from '../tokens'
+import { VX, alpha } from '../tokens'
 import { cx } from '../common/props'
 import type { BasaltProps, SlotStylesProps } from '../common/props'
 
@@ -78,11 +78,12 @@ export function EmptyState({
             ? `${PAGE_PADDING_Y} ${PAGE_PADDING_X}`
             : `${SECTION_PADDING_Y} ${SECTION_PADDING_X}`,
         textAlign: 'center',
-        // The section tile: one ring (a shadow, never a border), card radius. A host that is already
-        // a ringed surface (the data table) sets `--basalt-state-ring: none`.
+        // The section tile: one ring (a shadow, never a border), card radius. The ring is a neutral
+        // tint, not the card hairline: the tile sits on the page or a panel, and the hairline (a card
+        // edge on a white card) vanishes on the grey page in light.
         ...(resolved === 'section' && {
           // theme-allow surface-shadow-override — an inset ring on a tile inside a surface, not a card's depth
-          boxShadow: `var(--basalt-state-ring, inset 0 0 0 1px ${VX.surface.hairline})`,
+          boxShadow: `inset 0 0 0 1px ${alpha(VX.neutral, 0.25)}`,
           borderRadius: 'var(--vx-radius-card)',
         }),
         ...style,

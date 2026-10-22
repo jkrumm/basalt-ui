@@ -370,16 +370,6 @@ td.pinnedFluid {
   white-space: normal;
 }
 
-/* The error body shares the EmptyState anatomy's centred alignment. */
-.errorState {
-  align-items: center;
-  text-align: center;
-}
-
-.errorState > * {
-  justify-content: center;
-}
-
 /*
  * Column sizing (SPEC § 6.6): `data-fit` columns take their content width — `1px` plus a no-wrap
  * cell is "as narrow as the content allows" in the auto table layout — and the one slack column (or

@@ -115,14 +115,17 @@
     '. meta meta';
 }
 
+/* The chips follow the sentence's last word, not the row's far edge: the sentence's track grows to
+   its content (and shrinks, wrapping, when the chips need the room), the chips' track hugs them. */
 .row[data-chips-only] {
-  grid-template-columns: minmax(0, 1fr) auto;
+  grid-template-columns: minmax(0, max-content) auto;
   grid-template-areas: 'line meta';
+  justify-content: start;
   align-items: start;
 }
 
 .row[data-lead][data-chips-only] {
-  grid-template-columns: var(--event-list-lead) minmax(0, 1fr) auto;
+  grid-template-columns: var(--event-list-lead) minmax(0, max-content) auto;
   grid-template-areas: 'lead line meta';
 }
 

@@ -29,6 +29,8 @@ const RECORD_HOST = '[data-testid="board-record-host"]'
 /** `EmptyState`'s title (`md`) and a column or table title's size (`sm`), in computed px. */
 const TITLE_MD = '15px'
 const TITLE_SM = '13px'
+/** The ring over its backdrop must move a channel by at least this much (of 255). */
+const RING_MIN_DELTA = 12
 const BROWSER_LINK_BLUE = 'rgb(0, 0, 238)'
 
 type Tile = {
@@ -87,6 +89,77 @@ layout('Wave 46 states', () => {
   })
 
   for (const scheme of ['light', 'dark'] as const) {
+    test(`${scheme}: the empty column tile's ring shows against the page`, async () => {
+      const p = await openFixture({ sections: SECTIONS, board: 'columns' }, DESKTOP_1440)
+      await p.raw.waitForSelector(`${BOARD} [role="group"]`)
+      await p.raw.evaluate(
+        `document.documentElement.setAttribute('data-mantine-color-scheme', '${scheme}')`,
+      )
+      const delta = (await p.raw.evaluate(`(() => {
+        const title = [...document.querySelectorAll('${BOARD} span')].find((s) => s.textContent === 'Nothing is blocked')
+        if (!title) throw new Error('LAYOUT: no empty column tile')
+        const tile = title.parentElement
+        const rgba = (css) => {
+          const probe = document.createElement('span')
+          probe.style.color = css
+          document.body.append(probe)
+          const c = getComputedStyle(probe).color
+          probe.remove()
+          const n = c.match(/-?[\\d.]+/g).map(Number)
+          return c.startsWith('color(') ? [n[0] * 255, n[1] * 255, n[2] * 255, n[3] ?? 1] : [n[0], n[1], n[2], n[3] ?? 1]
+        }
+        let bgEl = tile
+        let bg = [0, 0, 0, 0]
+        while (bgEl && bg[3] === 0) { bg = rgba(getComputedStyle(bgEl).backgroundColor); bgEl = bgEl.parentElement }
+        const ringCss = getComputedStyle(tile).boxShadow.match(/(rgba?\\([^)]*\\)|color\\([^)]*\\))/)[1]
+        const ring = rgba(ringCss)
+        const over = ring.slice(0, 3).map((c, i) => c * ring[3] + bg[i] * (1 - ring[3]))
+        return Math.max(...over.map((c, i) => Math.abs(c - bg[i])))
+      })()`)) as number
+      expect(delta).toBeGreaterThanOrEqual(RING_MIN_DELTA)
+    })
+  }
+
+  test('the empty tile title is the same size at 390 as at 1440', async () => {
+    const size = async (vp: typeof PHONE) => {
+      const p = await openFixture({ sections: SECTIONS, eventList: 'empty' }, vp)
+      await p.raw.waitForSelector(`${EL} [role="status"] span`)
+      return ((await p.raw.evaluate(tileOf(EL, 'Nothing has happened yet'))) as Tile).titleSize
+    }
+    expect(await size(PHONE)).toBe(await size(DESKTOP_1440))
+  })
+
+  for (const vp of [DESKTOP_1440, PHONE]) {
+    test(`${vp.width}: a table error is left-aligned with the table title size`, async () => {
+      const p = await openFixture(
+        {
+          sections: SECTIONS,
+          table: { rows: 8, columns: 3, stickyHeader: false, error: true },
+        },
+        vp,
+      )
+      await p.raw.waitForSelector('table [role="alert"]')
+      const r = (await p.raw.evaluate(`(() => {
+        const alert = document.querySelector('table [role="alert"]')
+        const td = alert.closest('td').getBoundingClientRect()
+        const first = alert.firstElementChild.getBoundingClientRect()
+        const title = alert.querySelector('.mantine-Text-root')
+        return { titleSize: getComputedStyle(title).fontSize, offset: first.left - td.left, tdWidth: td.width, align: getComputedStyle(alert).alignItems, textAlign: getComputedStyle(alert).textAlign }
+      })()`)) as {
+        titleSize: string
+        offset: number
+        tdWidth: number
+        align: string
+        textAlign: string
+      }
+      expect(r.titleSize).toBe(TITLE_MD)
+      expect(r.align).not.toBe('center')
+      expect(r.textAlign).not.toBe('center')
+      expect(r.offset).toBeLessThan(r.tdWidth / 4)
+    })
+  }
+
+  for (const scheme of ['light', 'dark'] as const) {
     test(`${scheme}: the board record link is ink, not the browser link blue`, async () => {
       const p = await openFixture({ sections: SECTIONS, w46BoardRecord: true }, DESKTOP_1440)
       await p.raw.waitForSelector(`${RECORD_HOST} a[href="#record-482"]`)
@@ -137,9 +210,14 @@ layout('Wave 46 states', () => {
         row.setAttribute('data-chips-only', '')
         const line = row.querySelector('${moduleClass('line')}').getBoundingClientRect()
         const chips = row.querySelector('${moduleClass('chips')}').getBoundingClientRect()
-        return { lineTop: line.top, lineBottom: line.bottom, chipsTop: chips.top, rowRight: row.getBoundingClientRect().right, chipsRight: chips.right }
+        const range = document.createRange()
+        range.selectNodeContents(row.querySelector('${moduleClass('line')}'))
+        const lineTextRight = Math.max(...[...range.getClientRects()].map((q) => q.right))
+        return { lineTextRight, chipsLeft: chips.left, lineTop: line.top, lineBottom: line.bottom, chipsTop: chips.top, rowRight: row.getBoundingClientRect().right, chipsRight: chips.right }
       })()`)) as Record<string, number>
       expect(r['chipsTop']).toBeLessThan(r['lineBottom'] as number)
+      // ...and right after the sentence's last word, not pinned to the row's far edge.
+      expect((r['chipsLeft'] as number) - (r['lineTextRight'] as number)).toBeLessThanOrEqual(24)
       expect(r['chipsRight']).toBeLessThanOrEqual((r['rowRight'] as number) + 1)
     })
   }
