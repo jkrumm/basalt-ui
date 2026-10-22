@@ -105,27 +105,68 @@ export function refLabelPosition(opts: {
 
 /** The gap between a sparkline reference label's box and its line, px. */
 const SPARK_LABEL_GAP = 2
+/** Air between a sparkline label's box and the data line (stroke and end dot included), px. */
+const SPARK_LINE_AIR = 3
+
+export type SparkLabelPlacement = {
+  side: 'above' | 'below'
+  end: 'start' | 'end'
+  /** The engine centres the text on its y: the offset that puts the box on `side` of the line. */
+  dy: number
+}
 
 /**
- * Which side of its line a sparkline's reference label sits on, and its `dy` (the engine centres
- * the text on its y): above by default, below when the line is too near the plot top for the label
- * box to fit above it. The box clears the line by {@link SPARK_LABEL_GAP}, so the dashed rule never
- * strikes the text, and stays inside the plot (`height` less the line inset each side).
+ * Where a sparkline's reference label sits: the first of start-above, start-below, end-above,
+ * end-below whose box stays inside the plot (`height` in full) and that the data line does not run
+ * through (the box grown by {@link SPARK_LINE_AIR}), else the fitting spot the line comes least near.
+ * The box clears the reference by {@link SPARK_LABEL_GAP}, so the dashed rule never strikes the text.
+ * `line` is the plotted polyline as `{ fx, y }` (a share of the plot width, a value on `domain`);
+ * without it (a bar sparkline, or no `width`/`label`) only the plot bounds decide.
  */
 export function referenceLabelPlacement(opts: {
   value: number
   domain: readonly [number, number]
   height: number
+  /** Plot width, px. */
+  width?: number | undefined
   /** The plot's margin inside the svg box, px. */
   inset: number
   fontSize: number
-}): { side: 'above' | 'below'; dy: number } {
-  const { value, domain, height, inset, fontSize } = opts
+  label?: string | undefined
+  line?: readonly RefLabelPoint[] | undefined
+}): SparkLabelPlacement {
+  const { value, domain, height, inset, fontSize, line } = opts
+  const { width = 0, label = '' } = opts
   const [lo, hi] = [Math.min(...domain), Math.max(...domain)]
-  const share = hi === lo ? 0 : (value - lo) / (hi - lo)
-  const line = inset + (height - 2 * inset) * (1 - share)
-  const reach = SPARK_LABEL_GAP + fontSize + 1
-  const side = line - reach >= 0 || line + reach > height ? 'above' : 'below'
-  const dy = (SPARK_LABEL_GAP + (fontSize + 1) / 2) * (side === 'above' ? -1 : 1)
-  return { side, dy }
+  const plotH = height - 2 * inset
+  const plotW = width - 2 * inset
+  const px = (y: number): number => inset + plotH * (1 - (hi === lo ? 0 : (y - lo) / (hi - lo)))
+  const at = px(value)
+  const boxH = fontSize
+  const boxW = label.length * fontSize * GLYPH_EM + EDGE_INSET
+  const pxLine = line?.map((p) => ({ fx: p.fx, y: px(p.y) }))
+  const candidates = (['start', 'end'] as const).flatMap((end) =>
+    (['above', 'below'] as const).map((side) => {
+      const top = side === 'above' ? at - SPARK_LABEL_GAP - boxH : at + SPARK_LABEL_GAP
+      const [fx0, fx1] = end === 'start' ? [0, boxW / plotW] : [1 - boxW / plotW, 1]
+      const range = pxLine === undefined || plotW <= 0 ? null : yRangeWithin(pxLine, fx0, fx1)
+      // Air between the box and the nearest the line comes (negative: it runs through the box).
+      const air =
+        range === null
+          ? Number.POSITIVE_INFINITY
+          : Math.max(top - range[1], range[0] - (top + boxH))
+      return { side, end, fits: top >= 0 && top + boxH <= height, air }
+    }),
+  )
+  const fitting = candidates.filter((c) => c.fits)
+  const found =
+    fitting.find((c) => c.air >= SPARK_LINE_AIR) ??
+    fitting.reduce<(typeof candidates)[number] | undefined>(
+      (best, c) => (best === undefined || c.air > best.air ? c : best),
+      undefined,
+    ) ??
+    candidates[0]
+  const { side, end } = found as (typeof candidates)[number]
+  const dy = (SPARK_LABEL_GAP + boxH / 2) * (side === 'above' ? -1 : 1)
+  return { side, end, dy }
 }

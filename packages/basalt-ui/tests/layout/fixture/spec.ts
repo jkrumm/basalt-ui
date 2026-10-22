@@ -386,6 +386,8 @@ export type FixtureSpec = {
   w41ChipStrip?: true
   /** Wave 43: a table with one `danger` icon row action and one plain one (`w43-danger`). */
   w43Danger?: true
+  /** Wave 43: a lift strip whose Sparkline `PR` reference sits on the line's start / end (`w43-spark`). */
+  w43Spark?: true
   /** Wave 38: argo's ACWR load Meter (four zones, one `short`) in a 5-col strip cell (`w38-acwr-strip`). */
   w38Zones?: true
   /** Wave 38: strip cells, Meters and a forecast Meter loaded and loading side by side, a StatGroup's hero sizes (`w38l-*`). */
