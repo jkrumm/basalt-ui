@@ -1406,6 +1406,10 @@ function ctlSizeVars(): Record<string, string> & Record<CtlHeightVar, string> {
     '--combobox-chevron-size-ctl': pxRem(CTL_CHEVRON_SIZE),
     '--ni-chevron-size-ctl': pxRem(CTL_NUMBER_CHEVRON_SIZE),
     '--ni-right-section-width-ctl': `calc(${pxRem(CTL_NUMBER_RIGHT_SECTION_WIDTH)} * var(--mantine-scale))`,
+    // PasswordInput's visibility toggle: Mantine's own `xs` pair (22 px button, 16 px icon), the tier
+    // whose input height already equals `ctl`; undeclared, `size="ctl"` left the toggle unsized.
+    '--psi-button-size-ctl': 'calc(1.375rem * var(--mantine-scale))',
+    '--psi-icon-size-ctl': 'calc(1rem * var(--mantine-scale))',
     '--badge-padding-x-ctl': `calc(${pxRem(CTL_PADDING_X)} * var(--mantine-scale))`,
     '--badge-fz-ctl': `calc(${pxRem(VX.text.xs)} * var(--mantine-scale))`,
     // `= VX.text.sm` per `docs/CONTROLS-SPEC.md` §5 — same `calc(<rem> * var(--mantine-scale))`
