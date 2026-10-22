@@ -31,7 +31,7 @@ describe('S5 record page', () => {
 
   it('draws the decision card with exactly one primary', () => {
     const card = s5().querySelector('[data-shot="learning-decision"]')
-    expect(card?.textContent).toContain(`Review ${KNOT_TITLE} now?`)
+    expect(card?.textContent).toContain('Review now, or wait for the interval?')
     expect(card?.querySelectorAll('button[data-variant="filled"]').length).toBe(1)
   })
 

@@ -24,6 +24,7 @@ import type { StatStripCell } from 'basalt-ui'
 import { ChartCard, Lines, Sparkline } from 'basalt-ui/charts'
 import { VX } from 'basalt-ui/tokens'
 import { demoColors } from '../demo/series'
+import { AgentsBoard } from './agents/board'
 import {
   ABANDON_HOURS,
   BUDGETS,
@@ -392,7 +393,10 @@ function AgentsDecision({ shotState }: ScenarioProps) {
   return (
     <DecisionCard
       question={`Approve “${title}”?`}
-      facts={[id, `${fmtAge(Math.max(0, waitHours - WARN_HOURS))} past the ${WARN_LABEL} warning`]}
+      facts={[
+        id.toUpperCase(),
+        `${fmtAge(Math.max(0, waitHours - WARN_HOURS))} past the ${WARN_LABEL} warning`,
+      ]}
       evidence={
         <Text size="sm">
           {`The oldest item awaiting you. Warden closes it as abandoned in ${fmtAge(Math.max(0, ABANDON_HOURS - waitHours))}.`}
@@ -413,8 +417,9 @@ export function AgentsScenario({ shotState }: ScenarioProps) {
       </Box>
       <QueueStrip shotState={shotState} />
       <QueueRow shotState={shotState} />
-      {/* Wave 45: Board (agents/board.tsx) lands here */}
-      <Box data-shot="board" />
+      <Section title="Board">
+        <AgentsBoard shotState={shotState} />
+      </Section>
       <Box data-shot="item-timeline">
         <Section title={`History · ${TIMELINE_ITEM}`}>
           <ItemTimeline events={ITEM_TIMELINE} total={ITEM_TIMELINE_TOTAL} shotState={shotState} />

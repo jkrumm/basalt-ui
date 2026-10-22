@@ -40,14 +40,12 @@ import {
   PARTNERS_BY_SESSIONS,
   RECENT_RATINGS,
   RATED_COUNT,
-  REVIEW_IN_DAYS,
   SESSIONS_LAST_30,
   SESSIONS_LOGGED,
   SESSIONS_PER_WEEK,
   SESSIONS_PRIOR_30,
   fmtLearningDay,
   fmtMinutes,
-  fmtReviewDue,
 } from './learning-data'
 import { RecordHeader } from './learning/header'
 import { LearningJournal } from './learning/journal'
@@ -262,12 +260,10 @@ function LearningDecision({ shotState }: ScenarioProps) {
   if (shotState === 'empty' || shotState === 'error') return null
   return (
     <DecisionCard
-      question={`Review ${KNOT_TITLE} now?`}
-      facts={[
-        `last practised ${fmtLearningDay(LAST_DATE)}`,
-        fmtReviewDue(REVIEW_IN_DAYS),
-        `${MEAN_RATING.toFixed(1)} of 5 mean`,
-      ]}
+      // The header names the topic and its due date and the strip its dates and mean, so the card
+      // states only what the decision adds: the interval it would cut short.
+      question="Review now, or wait for the interval?"
+      facts={[`${NEXT_REVIEW_DAYS}-day review interval`]}
       evidence={
         <Text size="sm">
           {`Your last ${RECENT_RATINGS.length} rated sessions scored ${RECENT_RATINGS.join(', ')} of 5.`}
