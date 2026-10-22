@@ -214,10 +214,8 @@
 /* ── states ──────────────────────────────────────────────────────────────────────────────────── */
 
 /* The empty branch (SPEC § 6.11): `EmptyState`'s section tile in the figure's place, at the card's
- * own inset, its title capped at `sm` so it is never louder than the figure it replaces. */
+ * own inset; `EmptyState`'s section tier sets its title at `sm`. */
 .empty {
-  --basalt-state-title-size: var(--vx-text-sm);
-
   min-height: var(--basalt-stat-figure-h);
 }
 
