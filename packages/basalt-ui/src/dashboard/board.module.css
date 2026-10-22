@@ -112,13 +112,19 @@
   font-size: var(--vx-text-xs);
 }
 
-.status {
-  margin: 0;
-  font-size: var(--vx-text-xs);
-  color: var(--vx-muted);
+/* The record link is chrome, not an accent site (SPEC § 6.12): ink in both schemes, and a visited
+   record never changes colour. */
+a.record,
+a.record:visited {
+  color: var(--vx-ink);
+  text-decoration: none;
 }
 
-.emptyLine {
+a.record:hover {
+  text-decoration: underline;
+}
+
+.status {
   margin: 0;
   font-size: var(--vx-text-xs);
   color: var(--vx-muted);
@@ -126,9 +132,11 @@
 
 .empty {
   display: block;
-  --basalt-state-title-size: var(--vx-text-md);
-  border: 1px solid var(--vx-surface-hairline);
-  border-radius: var(--vx-radius-ctrl);
+}
+
+/* An empty column's title never out-sizes the card titles beside it (SPEC § 6.11). */
+.emptyColumn {
+  --basalt-state-title-size: var(--vx-text-sm);
 }
 
 .skeletonTitle {

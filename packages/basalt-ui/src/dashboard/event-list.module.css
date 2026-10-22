@@ -115,6 +115,17 @@
     '. meta meta';
 }
 
+.row[data-chips-only] {
+  grid-template-columns: minmax(0, 1fr) auto;
+  grid-template-areas: 'line meta';
+  align-items: start;
+}
+
+.row[data-lead][data-chips-only] {
+  grid-template-columns: var(--event-list-lead) minmax(0, 1fr) auto;
+  grid-template-areas: 'lead line meta';
+}
+
 .leading {
   grid-area: lead;
   display: flex;
@@ -261,10 +272,7 @@
   block-size: 0.625rem;
 }
 
-/* The empty state: a ring-edged tile in the list's place (SPEC § 6.11), its title at the row tier. */
+/* The live region around the `EmptyState` tile (SPEC § 6.11); the tile paints its own ring. */
 .empty {
   display: block;
-  --basalt-state-title-size: var(--vx-text-md);
-  border: 1px solid var(--vx-surface-hairline);
-  border-radius: var(--vx-radius-ctrl);
 }

@@ -243,6 +243,26 @@ describe('EventList', () => {
     expect(container.querySelector('time')).toBeNull()
   })
 
+  test('a row with chips only and no time marks itself so the chips join the sentence line', () => {
+    const { container } = mount({
+      items: [{ id: 'a', at: local(2026, 3, 10, 9), title: 't', chips: <span>rated 5/5</span> }],
+      time: () => '',
+    })
+    expect(container.querySelector('[data-event-id="a"]')?.hasAttribute('data-chips-only')).toBe(
+      true,
+    )
+  })
+
+  test('a row with a body or a time is not chips-only', () => {
+    const { container } = mount({
+      items: [
+        { id: 'a', at: local(2026, 3, 10, 9), title: 't', body: 'b', chips: <span>c</span> },
+        { id: 'b', at: local(2026, 3, 10, 9), title: 't', chips: <span>c</span> },
+      ],
+    })
+    expect(container.querySelectorAll('[data-chips-only]')).toHaveLength(0)
+  })
+
   test('feed keeps body and chips on ONE meta line; the time is a sibling of the sentence', () => {
     const { container } = mount({
       items: [{ id: 'a', at: local(2026, 3, 10, 9), title: 't', body: 'b', chips: <i>c</i> }],

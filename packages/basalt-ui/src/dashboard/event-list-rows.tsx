@@ -37,6 +37,8 @@ export function EventRow({
       role={Tag === 'div' ? 'listitem' : undefined}
       data-event-id={item.id}
       data-untimed={stamp === '' ? '' : undefined}
+      // A row whose only meta is chips and has no time: the chips join the sentence's line, not a line of their own.
+      data-chips-only={stamp === '' && !present(item.body) && present(item.chips) ? '' : undefined}
       {...rowAttributes(ctx, first, last)}
     >
       {ctx.lead && <span className={classes.leading}>{item.leading}</span>}

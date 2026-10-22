@@ -46,6 +46,7 @@
  * />
  */
 import { Skeleton, VisuallyHidden } from '@mantine/core'
+import { EmptyState } from './empty-state'
 import { isValidElement } from 'react'
 import type { ReactNode } from 'react'
 import { cx } from '../common/props'
@@ -96,7 +97,7 @@ export type BarListProps = BasaltProps & {
   loading?: boolean
   /** Skeleton rows while loading. Default 5. */
   loadingRows?: number
-  /** Muted line shown when `items` is empty. */
+  /** Title of the `EmptyState` tile shown when `items` is empty. Default "No data". */
   emptyText?: string
 }
 
@@ -159,7 +160,7 @@ export function BarList({
     return (
       <div className={cx(classes.frame, className)} style={style}>
         <output className={classes.root} aria-label={label}>
-          <span className={classes.empty}>{emptyText}</span>
+          <EmptyState tier="section" title={emptyText} className={classes.empty} />
         </output>
       </div>
     )

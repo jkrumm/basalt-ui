@@ -22,8 +22,7 @@
  * "<title> <count>" (not `ViewTabs`: past three options it becomes a `Select` on a phone, and the
  * board's switcher is always the track). The selected column is a store field when you pass `field` (an enum field whose
  * values are column ids, like `ViewTabs`'s; the URL or storage then remembers it), else internal
- * state. An empty column is one muted line (`empty`); an empty board is the
- * `EmptyState` tile (`empty` on the board); `loading` is column-shaped skeletons. An error is the
+ * state. An empty column and an empty board are both `EmptyState` tiles (`empty` on the column or the board); `loading` is column-shaped skeletons. An error is the
  * caller's: put the board in a `Section` with `query`.
  *
  * @example
@@ -217,7 +216,11 @@ function BoardView<T extends string>({
     const headId = `${labelId}-${col.id}`
     const list =
       col.cards.length === 0 ? (
-        <p className={classes.emptyLine}>{col.empty ?? 'Nothing here'}</p>
+        <EmptyState
+          tier="section"
+          title={col.empty ?? 'Nothing here'}
+          className={classes.emptyColumn}
+        />
       ) : (
         // The explicit role is deliberate: `list-style: none` makes Safari/VoiceOver drop the implicit one.
         // oxlint-disable-next-line jsx-a11y/no-redundant-roles

@@ -96,8 +96,6 @@
 
 .empty {
   grid-column: 1 / -1;
-  font-size: var(--vx-text-sm);
-  color: var(--vx-muted);
 }
 
 /* A real row with a skeleton laid over it: the row sets the height, the skeleton paints it. */
