@@ -11,7 +11,8 @@ import {
   LEARNING_TODAY,
   MEAN_RATING,
   MINUTES_PER_WEEK,
-  MINUTES_THIS_MONTH,
+  MINUTES_LAST_30,
+  RATING_PER_WEEK,
   SESSIONS_LAST_30,
   SESSIONS_PER_WEEK,
   fmtReviewDue,
@@ -62,8 +63,10 @@ describe('learning-data', () => {
   it('the strip figures match the data', () => {
     const ratings = JOURNAL.flatMap((e) => (e.rating === null ? [] : [e.rating]))
     expect(MEAN_RATING).toBeCloseTo(ratings.reduce((a, b) => a + b, 0) / ratings.length, 9)
-    const october = JOURNAL.filter((e) => e.date.startsWith('2026-10'))
-    expect(MINUTES_THIS_MONTH).toBe(october.reduce((a, e) => a + e.durationMin, 0))
+    const last30 = JOURNAL.filter(
+      (e) => (Date.parse('2026-10-16') - Date.parse(e.date)) / 86_400_000 < 30,
+    )
+    expect(MINUTES_LAST_30).toBe(last30.reduce((a, e) => a + e.durationMin, 0))
     expect(PARTNER_COUNT).toBe(new Set(JOURNAL.map((e) => e.partnerLabel).filter(Boolean)).size)
     expect(LAST_DATE).toBe(JOURNAL[0]?.date ?? '')
     expect(FIRST_DATE).toBe(JOURNAL.at(-1)?.date ?? '')
@@ -145,5 +148,30 @@ describe('learning-data summary figures', () => {
     expect(fmtReviewDue(1)).toBe('a review is due tomorrow')
     expect(fmtReviewDue(0)).toBe('a review is due today')
     expect(fmtReviewDue(-2)).toBe('a review is overdue by 2 days')
+  })
+})
+
+describe('learning-data ordering and trends', () => {
+  it('lists every day newest first by time, untimed sessions last', () => {
+    for (const [i, e] of JOURNAL.entries()) {
+      const prev = JOURNAL[i - 1]
+      if (!prev || prev.date !== e.date) continue
+      expect((prev.time ?? '') >= (e.time ?? '')).toBe(true)
+    }
+    const byDay = new Map<string, string[]>()
+    for (const e of JOURNAL) {
+      if (e.time !== undefined) byDay.set(e.date, [...(byDay.get(e.date) ?? []), e.time])
+    }
+    for (const times of byDay.values()) {
+      expect(times).toEqual(times.toSorted((a, b) => b.localeCompare(a)))
+    }
+  })
+
+  it('has a twelve-week rating trend inside the 1–5 scale', () => {
+    expect(RATING_PER_WEEK).toHaveLength(12)
+    for (const p of RATING_PER_WEEK) {
+      expect(p.value).toBeGreaterThanOrEqual(1)
+      expect(p.value).toBeLessThanOrEqual(5)
+    }
   })
 })

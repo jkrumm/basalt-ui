@@ -86,7 +86,10 @@ function buildJournal(): JournalEntry[] {
       })
     }
   }
-  const newestFirst = sessions.slice(0, ENTRY_COUNT)
+  // Newest first by date, then by time within the day; an untimed session sorts last in its day.
+  const newestFirst = sessions
+    .slice(0, ENTRY_COUNT)
+    .toSorted((a, b) => b.date.localeCompare(a.date) || (b.time ?? '').localeCompare(a.time ?? ''))
   // Ids ascend with time, so the newest entry carries the highest.
   return newestFirst.map((s, i) => ({ id: ENTRY_COUNT - i, ...s }))
 }
@@ -97,18 +100,12 @@ export const JOURNAL: readonly JournalEntry[] = buildJournal()
 export const LAST_SESSIONS: readonly JournalEntry[] = JOURNAL.slice(0, 5)
 
 const rated = JOURNAL.flatMap((e) => (e.rating === null ? [] : [e.rating]))
-const monthPrefix = isoDay(LEARNING_TODAY.getTime()).slice(0, 7)
 
 export const SESSIONS_LOGGED = JOURNAL.length
 export const FIRST_DATE = JOURNAL.at(-1)?.date ?? ''
 export const LAST_DATE = JOURNAL[0]?.date ?? ''
 export const MEAN_RATING = rated.reduce((a, b) => a + b, 0) / rated.length
 export const RATED_COUNT = rated.length
-export const MINUTES_THIS_MONTH = JOURNAL.filter((e) => e.date.startsWith(monthPrefix)).reduce(
-  (a, e) => a + e.durationMin,
-  0,
-)
-export const SESSIONS_THIS_MONTH = JOURNAL.filter((e) => e.date.startsWith(monthPrefix)).length
 export const PARTNER_COUNT = new Set(
   JOURNAL.flatMap((e) => (e.partnerLabel === null ? [] : [e.partnerLabel])),
 ).size
@@ -120,6 +117,11 @@ const daysBack = (iso: string): number =>
   Math.round((LEARNING_TODAY.getTime() - Date.parse(iso)) / DAY_MS)
 /** Sessions in the last 30 days, and in the 30 before — the summary's live number and its direction. */
 export const SESSIONS_LAST_30 = JOURNAL.filter((e) => daysBack(e.date) < 30).length
+/** Minutes in the last 30 days: the strip's window is the headline's. */
+export const MINUTES_LAST_30 = JOURNAL.filter((e) => daysBack(e.date) < 30).reduce(
+  (a, e) => a + e.durationMin,
+  0,
+)
 export const SESSIONS_PRIOR_30 = JOURNAL.filter(
   (e) => daysBack(e.date) >= 30 && daysBack(e.date) < 60,
 ).length
@@ -135,8 +137,21 @@ const perWeek = (weight: (e: JournalEntry) => number): number[] =>
   })
 const weekPoints = (values: number[]) =>
   timedPoints(values, LEARNING_TODAY.getTime(), WEEK_DAYS * DAY_MS)
+/** Mean rating per week; a week with no rated session repeats the previous week's mean. */
+const ratingPerWeek = (): number[] => {
+  let prev = MEAN_RATING
+  return Array.from({ length: WEEKS }, (_, i) => {
+    const from = (WEEKS - 1 - i) * WEEK_DAYS
+    const ratings = JOURNAL.filter(
+      (e) => e.rating !== null && daysBack(e.date) >= from && daysBack(e.date) < from + WEEK_DAYS,
+    ).map((e) => e.rating ?? 0)
+    if (ratings.length > 0) prev = ratings.reduce((a, b) => a + b, 0) / ratings.length
+    return prev
+  })
+}
 /** Twelve weeks, oldest first: the strip's trends. */
 export const SESSIONS_PER_WEEK = weekPoints(perWeek(() => 1))
+export const RATING_PER_WEEK = weekPoints(ratingPerWeek())
 export const MINUTES_PER_WEEK = weekPoints(perWeek((e) => e.durationMin))
 
 /** Spaced-repetition review: a fixed interval after the last session. */
