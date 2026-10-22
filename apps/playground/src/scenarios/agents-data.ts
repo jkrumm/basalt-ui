@@ -6,6 +6,7 @@
  */
 
 import type { ChartSeries } from 'basalt-ui/charts'
+import { VX } from 'basalt-ui/tokens'
 import { demoColors } from '../demo/series'
 import { fmtDay, fmtInt, timedPoints } from './fixture-utils'
 
@@ -346,3 +347,46 @@ export const ITEM_TIMELINE: readonly TimelineEvent[] = [
 
 /** Warden keeps the whole history; the page fetches the last `ITEM_TIMELINE.length` of these. */
 export const ITEM_TIMELINE_TOTAL = 57
+
+/** The warden board: items by state as `Board` columns, `Done` empty on purpose (the empty-column line). */
+const BOARD_AGE = (hours: number): string =>
+  hours >= 24 ? `${Math.floor(hours / 24)} d ${hours % 24} h` : `${hours} h`
+
+const boardCard = (i: Item, type: string, extra?: { status?: string; href?: string }) => ({
+  id: i.id,
+  actor: 'warden',
+  type,
+  title: i.title,
+  record: { label: i.id.toUpperCase(), href: extra?.href ?? `/warden/${i.id}` },
+  status: extra?.status ?? `Waiting ${BOARD_AGE(i.waitHours)}`,
+})
+
+export const BOARD_COLUMNS = [
+  {
+    id: 'needs-you',
+    title: 'Needs you',
+    tone: VX.status.warn,
+    total: `${NEEDS_YOU} items`,
+    empty: 'Nothing needs a decision',
+    cards: ITEMS.filter((i) => i.state === 'awaiting').map((i) => boardCard(i, 'Decision')),
+  },
+  {
+    id: 'working',
+    title: 'Working',
+    tone: VX.status.neutral,
+    empty: 'No run in flight',
+    cards: ITEMS.filter((i) => i.state === 'running').map((i) =>
+      boardCard(i, 'Run', { status: `Running ${BOARD_AGE(i.waitHours)}` }),
+    ),
+  },
+  {
+    id: 'blocked',
+    title: 'Blocked',
+    tone: VX.status.bad,
+    empty: 'Nothing is blocked',
+    cards: ITEMS.filter((i) => i.state === 'blocked').map((i) =>
+      boardCard(i, 'Blocked', { status: `${i.reason ?? 'Blocked'} · ${BOARD_AGE(i.waitHours)}` }),
+    ),
+  },
+  { id: 'done', title: 'Done', tone: VX.status.good, empty: 'Nothing finished today', cards: [] },
+] as const
