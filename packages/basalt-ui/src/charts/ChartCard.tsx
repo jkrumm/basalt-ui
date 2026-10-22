@@ -155,7 +155,9 @@ type ChartCardBaseProps = BasaltProps &
      * fallback>` should pass a numeric height instead. */
     placeholderHeight?: number | ResponsiveChartHeight | 'content' | undefined
     /** The pending plot's ghost: `'bars'` (default), `'line'` for a line or area chart, or the bar
-     * count when the loaded chart's data length is known. */
+     * count when the loaded chart's data length is known. Omitted, a `Lines` or `StackedArea` body
+     * (bare, or inside plain elements) loads as a line; a body wrapped in your own component hides
+     * its kind from the card, so pass `ghost="line"` there. */
     ghost?: 'bars' | 'line' | number | undefined
     /** Placeholder data is showing: the facts row dims with the plot (a strip cell's `stale`). */
     stale?: boolean | undefined

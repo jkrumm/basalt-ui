@@ -203,14 +203,17 @@ export function ChartPlaceholder(props: {
     )
   // The § 6.11 empty tile inside the chart's own box: one ring, card radius, the title at `md` 500
   // and a muted line, centred. `EmptyState` is Mantine-coupled, so the anatomy is plain HTML here.
+  // The live region holds the copy only; the action is its sibling, so a button is not announced.
   const { title, description } = splitEmptyCopy(label)
   return fit(
-    <output data-basalt-chart-state={kind} className={stateClass}>
+    <div data-basalt-chart-state={kind} className={stateClass} style={boxStyle}>
       <div data-basalt-empty-tile="" className={boxClasses.emptyTile} style={tileStyle}>
-        <span className={boxClasses.emptyTitle}>{title}</span>
-        {description !== undefined && <span className={boxClasses.emptyText}>{description}</span>}
+        <output className={boxClasses.emptyCopy}>
+          <span className={boxClasses.emptyTitle}>{title}</span>
+          {description !== undefined && <span className={boxClasses.emptyText}>{description}</span>}
+        </output>
         {props.action !== undefined && <div>{props.action}</div>}
       </div>
-    </output>,
+    </div>,
   )
 }

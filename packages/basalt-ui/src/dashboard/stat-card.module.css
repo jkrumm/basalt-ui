@@ -219,7 +219,6 @@
   --basalt-state-title-size: var(--vx-text-sm);
 
   min-height: var(--basalt-stat-figure-h);
-  padding: var(--vx-space-stack-md) var(--vx-space-stack-lg) !important;
 }
 
 /* The pending skeleton holds the card's own footprint: a value bar at the figure's height, the

@@ -13,6 +13,7 @@ declare const classes: {
   readonly ghostLine: string
   readonly ghostBar: string
   readonly emptyTile: string
+  readonly emptyCopy: string
   readonly emptyTitle: string
   readonly emptyText: string
 }
