@@ -25,7 +25,7 @@ const opacityOf = (pct: number): number => 0.04 + (pct / 100) * 0.92
 
 /** Only the box model of MapLibre's compact control; its radius, fill and type come from basalt. */
 const MAPLIBRE_SHAPE = `
-.sky-map-attrib .maplibregl-ctrl-attrib.maplibregl-compact{min-height:20px;padding:2px 24px 2px 0;margin:10px;position:relative;box-sizing:content-box}
+.sky-map-attrib .maplibregl-ctrl-attrib.maplibregl-compact{/* theme-allow inline-spacing — a static mock of the third-party control's own box model */min-height:20px;padding:2px 24px 2px 0;margin:10px;position:relative;box-sizing:content-box}
 .sky-map-attrib .maplibregl-ctrl-attrib-button{position:absolute;top:0;right:0;width:24px;height:24px;box-sizing:border-box;border:0;padding:0;list-style:none}
 .sky-map-attrib .maplibregl-ctrl-attrib-button::-webkit-details-marker{display:none}
 .sky-map-attrib .maplibregl-ctrl-attrib.maplibregl-compact .maplibregl-ctrl-attrib-inner{display:none}`
@@ -133,7 +133,7 @@ function Attribution() {
 
 /** The canvas's own content: the field at rest, or the state's body. The map chrome stays in every state. */
 function Canvas({ shotState }: ScenarioProps) {
-  if (shotState === 'loading') return <Skeleton h="100%" radius={0} />
+  if (shotState === 'loading') return <Skeleton h="100%" />
   if (shotState === 'error') {
     return (
       <EmptyState
