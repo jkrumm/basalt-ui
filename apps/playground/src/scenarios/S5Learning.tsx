@@ -11,7 +11,7 @@
  * Anchors for `basalt-ui shot`: `learning-summary`, `learning-strip`, `learning-journal`,
  * `learning-aside`. `Section` and `PageAside` do not forward `data-*`, so each anchor is a wrapping `Box`.
  */
-import { Box, Flex, Skeleton, Stack, Text } from '@mantine/core'
+import { Box, Button, Flex, Skeleton, Stack, Text } from '@mantine/core'
 import type { ReactNode } from 'react'
 import { PageAside, PageBar, PageSummary, Section, StatGroup, useSizeClass } from 'basalt-ui'
 import type { StatStripCell } from 'basalt-ui'
@@ -64,7 +64,17 @@ function SummarySkeleton() {
 function LearningSummary({ shotState }: ScenarioProps) {
   if (shotState === 'loading') return <SummarySkeleton />
   if (shotState === 'empty') {
-    return <PageSummary sentence={NO_SESSIONS} facts={['Log a session to start the record.']} />
+    return (
+      <PageSummary
+        sentence={NO_SESSIONS}
+        facts={['Log a session to start the record.']}
+        aside={
+          <Button size="xs" onClick={noop}>
+            Log a session
+          </Button>
+        }
+      />
+    )
   }
   // The one error of the page: the whole record is one source, so the strip, aside and journal stay quiet.
   if (shotState === 'error') {
@@ -225,17 +235,15 @@ function LearningAside({ shotState }: ScenarioProps) {
 export function LearningScenario({ shotState }: ScenarioProps) {
   return (
     <Stack gap="sm" data-shot-states="empty loading error">
-      {/* One action when the record is empty: the log. Review only means something once there is a record. */}
-      <PageBar
-        actions={
-          shotState === 'empty'
-            ? [{ key: 'log', label: 'Log a session', onClick: noop, primary: true }]
-            : [
-                { key: 'review', label: 'Start review', onClick: noop, primary: true },
-                { key: 'log', label: 'Log a session', onClick: noop },
-              ]
-        }
-      />
+      {/* In empty the summary's button is the one action; review only means something once there is a record. */}
+      {shotState !== 'empty' && (
+        <PageBar
+          actions={[
+            { key: 'review', label: 'Start review', onClick: noop, primary: true },
+            { key: 'log', label: 'Log a session', onClick: noop },
+          ]}
+        />
+      )}
       <Box data-shot="learning-summary">
         <LearningSummary shotState={shotState} />
       </Box>
