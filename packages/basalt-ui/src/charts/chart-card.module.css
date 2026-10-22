@@ -1,7 +1,6 @@
 /*
  * ChartCard's header inset, by the card's own inline size (W10 SSR contract). A card under 480px
- * trims the header's top inset: the subtitle has already folded into the info glyph there, and the
- * chart below is sized by the 160–420px law, so a narrow card is a short one. Decided in CSS, not
+ * trims the header's top inset: the chart below is sized by the 160–420px law, so a narrow card is a short one. Decided in CSS, not
  * from a post-hydration height measurement, so the server HTML is the hydrated header. The literal
  * is CONTAINER_CLASSES.regular (`breakpoint-literals.test.ts`).
  */

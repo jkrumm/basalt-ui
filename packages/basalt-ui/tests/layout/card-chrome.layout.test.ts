@@ -125,10 +125,11 @@ layout('card chrome by container', () => {
     expect(heights.footer).toBe(heights.both)
   })
 
-  // The info bubble is a top-layer popover, but it stays in the card's DOM subtree: the card's own
-  // container query still reveals the folded subtitle inside it (below 480px) and hides it above.
+  // The info bubble is a top-layer popover, but it stays in the card's DOM subtree. A ChartCard no
+  // longer folds its subtitle at any width (wave 43: the line stays under the title), so the bubble's
+  // folded note is hidden at both widths; the bubble itself still stays inside the viewport.
   test.each([
-    [320, true],
+    [320, false],
     [700, false],
   ])('in a %ipx card the open bubble shows the folded note: %s', async (width, shown) => {
     const root = `[data-testid="fold-${width}"]`
