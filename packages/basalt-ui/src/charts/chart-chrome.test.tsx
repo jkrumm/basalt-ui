@@ -15,7 +15,7 @@ import { Bars } from './Bars'
 import { Lines } from './Lines'
 import { StackedArea } from './StackedArea'
 import { compileCartesian } from './compile'
-import { endLabelPlan } from './labels'
+import { endLabelOffset, endLabelPlan } from './labels'
 import type { ChartSeries, PlotContext, PlotRow, RefLine } from './types'
 
 afterEach(resetFormatDefaults)
@@ -397,8 +397,12 @@ describe('Lines naming', () => {
       'auto',
     )
     expect(plan).toHaveLength(2)
-    const shifts = plan.map((p) => p.nudge)
-    expect(Math.abs((shifts[0] ?? 0) - (shifts[1] ?? 0))).toBeGreaterThanOrEqual(13 - 1.3)
+    // Flipped labels straddle their points; what is drawn (px from the plot bottom) is one label line apart.
+    const drawn = plan.map(
+      (p, i) =>
+        ((i === 0 ? 200 : 202) / 500) * 300 - (endLabelOffset(p.anchor, p.side).dy + p.nudge),
+    )
+    expect(Math.abs((drawn[0] ?? 0) - (drawn[1] ?? 0))).toBeGreaterThanOrEqual(15)
   })
 })
 
