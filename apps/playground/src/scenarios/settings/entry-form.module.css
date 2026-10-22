@@ -18,7 +18,7 @@
     position: sticky;
     bottom: 0;
     z-index: 1;
-    background: var(--vx-surface-bg);
+    background: var(--vx-surface-panel);
     border-block-start: 1px solid var(--vx-divider);
   }
 }

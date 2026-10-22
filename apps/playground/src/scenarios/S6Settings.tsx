@@ -7,7 +7,7 @@
  *
  * Two boxes: `settings-account` (SettingsSection / SettingsRow / DangerZone) and `settings-entry`
  * (`basalt-ui/forms` + FormRow / FormGroup). Empty empties the key list, loading draws the forms'
- * shapes in grey, error is the account page's one failed load (the entry form has no source).
+ * shapes in grey, error is the account page's failed load and the entry form's failed save, each in its own surface.
  */
 import { Box, Stack } from '@mantine/core'
 import { AccountSettings } from './settings/account'
@@ -16,12 +16,12 @@ import type { ScenarioProps } from './shot-state'
 
 export function SettingsScenario({ shotState }: ScenarioProps) {
   return (
-    <Stack gap="lg" data-shot-states="empty loading error">
+    <Stack gap="sm" data-shot-states="empty loading error">
       <Box data-shot="settings-account">
         <AccountSettings shotState={shotState} />
       </Box>
-      <Box data-shot="settings-entry" data-shot-absent="error">
-        {shotState !== 'error' && <EntryForm shotState={shotState} />}
+      <Box data-shot="settings-entry">
+        <EntryForm shotState={shotState} />
       </Box>
     </Stack>
   )

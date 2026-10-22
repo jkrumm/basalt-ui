@@ -2,7 +2,7 @@
  * S6 part (a): the account settings page (the shape of a desktop app's settings): profile,
  * notifications, API keys and a danger zone on `SettingsSection`/`SettingsRow`/`DangerZone`.
  */
-import { Button, Select, Skeleton, Stack, Switch, TextInput } from '@mantine/core'
+import { Button, Card, Flex, Select, Skeleton, Stack, Switch, TextInput } from '@mantine/core'
 import { DangerZone, EmptyState, Section, SettingsRow, SettingsSection } from 'basalt-ui'
 import { noop, queryFor, retryCopy } from '../shot-state'
 import type { ScenarioProps } from '../shot-state'
@@ -10,20 +10,48 @@ import { API_KEYS, DIGEST_OPTIONS } from './settings-data'
 
 const ACCOUNT_ERROR = queryFor('error', retryCopy('account'))
 
-/** Each section keeps its loaded shape: a title row, then label/control rows. */
+/**
+ * The four sections in grey: a title and a subtitle line per card, then label/control rows at the
+ * loaded heights (a description makes a row taller; the key rows carry one).
+ */
+const SKELETON_SECTIONS: { subtitle: boolean; danger?: boolean; rows: boolean[] }[] = [
+  { subtitle: true, rows: [false, true] },
+  { subtitle: false, rows: [true, false] },
+  { subtitle: false, rows: [true, true, true] },
+  { subtitle: true, danger: true, rows: [false] },
+]
+
 function AccountSkeleton() {
   return (
     <Stack gap="sm" aria-busy="true">
-      {[2, 2, 3].map((rows, s) => (
-        <SettingsSection key={s} title="Loading">
-          {Array.from({ length: rows }, (_, i) => (
-            <SettingsRow
+      {SKELETON_SECTIONS.map((section, s) => (
+        <Card key={s}>
+          <Stack gap={2} mb="sm" mih={section.subtitle ? 61 : 41}>
+            {section.danger && <Skeleton height={14} width={88} radius="sm" />}
+            <Skeleton height={20} width={120} radius="sm" />
+            {section.subtitle && <Skeleton height={14} width="38%" radius="sm" />}
+          </Stack>
+          {section.rows.map((described, i) => (
+            <Flex
               key={i}
-              label=""
-              control={<Skeleton height={32} width={200} radius="md" />}
-            />
+              columnGap="md"
+              rowGap={4}
+              wrap="wrap"
+              py={10}
+              align="flex-start"
+              mih={described ? 61 : 53}
+              style={
+                i < section.rows.length - 1 ? { borderBottom: '1px solid var(--vx-divider)' } : {}
+              }
+            >
+              <Stack gap={4} w="min(15rem, 100%)">
+                <Skeleton height={20} width="60%" radius="sm" />
+                {described && <Skeleton height={16} width="80%" radius="sm" />}
+              </Stack>
+              <Skeleton height={32} width={i === 0 ? 'min(20rem, 100%)' : '4.5rem'} radius="md" />
+            </Flex>
           ))}
-        </SettingsSection>
+        </Card>
       ))}
     </Stack>
   )
@@ -65,10 +93,15 @@ function KeyRows({ empty }: { empty: boolean }) {
 export function AccountSettings({ shotState }: ScenarioProps) {
   if (shotState === 'loading') return <AccountSkeleton />
   if (shotState === 'error') {
+    // § 6.11: the error anatomy inside the section surface it replaces, with that surface's inset.
     return (
-      <Section title="Account" {...(ACCOUNT_ERROR && { query: ACCOUNT_ERROR })}>
-        {null}
-      </Section>
+      <Card>
+        {ACCOUNT_ERROR && (
+          <Section title="Account" query={ACCOUNT_ERROR}>
+            {null}
+          </Section>
+        )}
+      </Card>
     )
   }
   return (
