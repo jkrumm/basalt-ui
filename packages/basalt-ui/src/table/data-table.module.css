@@ -393,3 +393,13 @@ td.pinnedFluid {
 .spacer {
   padding: 0;
 }
+
+/*
+ * A lone `danger` row action. Repeated once per row, a red icon at rest is a status hue on chrome,
+ * so it rests as the same neutral as any row action and takes the danger colour (the menu's red
+ * item) on the control's OWN hover or keyboard focus only — never the row's, which would light a
+ * column of red icons as the pointer moves down. A disabled or loading control stays neutral.
+ */
+.dangerAction:not(:disabled, [data-disabled], [data-loading]):is(:hover, :focus-visible) {
+  color: var(--mantine-color-red-light-color);
+}

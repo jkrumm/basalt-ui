@@ -444,7 +444,7 @@ function RowActionCell<T>({
         aria-label={named === undefined ? only.label : `${only.label}: ${named}`}
         disabled={only.disabled?.(row) === true}
         loading={only.loading?.(row) === true}
-        {...(only.danger === true && { color: 'red' })}
+        {...(only.danger === true && { className: classes.dangerAction })}
         onClick={() => {
           if (!inert) only.onClick(row)
         }}
