@@ -216,13 +216,14 @@ export function endLabelPlan<T, X extends ChartX>(
       { fx: 1, y: toPx(v) },
     ]),
   ]
-  /** The line ranges (px) a label spanning `i`'s x-window runs into. */
-  const ranges = (i: number): [number, number][] =>
+  /** Per label, the line ranges (px) its x-window runs into: fixed, so computed once. */
+  const windowRanges = spans.map(([x0, x1]) =>
     obstacles.flatMap((pts) => {
-      const [x0, x1] = spans[i] as readonly [number, number]
       const range = yRangeWithin(pts, x0, x1)
       return range === null ? [] : [range]
-    })
+    }),
+  )
+  const ranges = (i: number): readonly [number, number][] => windowRanges[i] as [number, number][]
   /** Where the centre goes to clear the lines on `side` of `start`, stepping past each one it meets. */
   const cleared = (i: number, side: EndLabelSide, start: number): number => {
     const blockers = ranges(i)
