@@ -23,9 +23,18 @@
  * first-visible row at the same on-screen offset.
  */
 // theme-allow-file raw-html-layout, hidden-inline-style — src/common is Mantine-free by contract (common/boundary.test.ts), so the seam owns plain elements.
-import { Fragment, lazy, Suspense, useLayoutEffect, useMemo, useRef, useState } from 'react'
+import {
+  Fragment,
+  lazy,
+  Suspense,
+  useEffect,
+  useLayoutEffect,
+  useMemo,
+  useRef,
+  useState,
+} from 'react'
 import type { ComponentType, CSSProperties, JSX, ReactNode } from 'react'
-import type { Range } from '@tanstack/react-virtual'
+import type { Range, Virtualizer } from '@tanstack/react-virtual'
 import { cx } from './props'
 import type { BasaltProps } from './props'
 import { scrollParentOf } from './scroll-parent'
@@ -278,6 +287,23 @@ function isContainerAtEnd(container: Element | null, threshold: number): boolean
   return distanceFromEnd <= threshold
 }
 
+/** `scroll: 'parent'`'s ground-truth "at the end": the LIST's bottom edge against the scrollport's
+ * visible bottom (`null` scroller → the window). Not the whole scrollport — content after the list
+ * keeps that distance positive forever, which would make {@link applyInitialScroll} re-fire
+ * `scrollToEnd` up to its attempt cap and yank a user who has scrolled away. */
+export function isListAtEnd(
+  list: Element | null,
+  scroller: HTMLElement | null,
+  threshold: number,
+): boolean {
+  if (list === null) return false
+  const visibleBottom =
+    scroller === null
+      ? window.innerHeight
+      : scroller.getBoundingClientRect().top + scroller.clientTop + scroller.clientHeight
+  return list.getBoundingClientRect().bottom - visibleBottom <= threshold
+}
+
 // ── Sticky headers ───────────────────────────────────────────────────────────────
 
 /** The active sticky header: the last sticky index at or before the first visible index. */
@@ -388,6 +414,16 @@ type RowsOptions = Pick<
 
 type UseRowsVirtualizer = (options: RowsOptions) => RowsVirtualizer
 
+/** `measureElement` with the hidden-ancestor 0px guard (see {@link resolveGuardedMeasurement}).
+ * NOT `enabled: false`, which virtual-core wipes `itemSizeCache`/`measurementsCache` on. */
+function guardedMeasure<TScroll extends Element | Window>(base: ReactVirtual['measureElement']) {
+  return (
+    element: Element,
+    entry: ResizeObserverEntry | undefined,
+    instance: Virtualizer<TScroll, Element>,
+  ): number => resolveGuardedMeasurement(instance, element, base(element, entry, instance))
+}
+
 /** One rows component per scroll owner (element or window), since the hook differs. Window height
  * for the `null` scroll parent, else the element's own `offsetHeight` — the measurement
  * virtual-core's `getRect` takes, so a hidden ancestor reads as unmeasured. */
@@ -407,6 +443,7 @@ function createRows(rv: ReactVirtual, useRowsVirtualizer: UseRowsVirtualizer, on
   }: InnerProps): JSX.Element {
     'use no memo'
     const ownRef = useRef<HTMLDivElement>(null)
+    const listRef = useRef<HTMLDivElement>(null)
     const initialScrollStateRef = useRef<InitialScrollState>({ hasApplied: false, attempts: 0 })
     const stickyIndexes = useMemo(
       () => rows.flatMap((row, index) => (row.sticky === true ? [index] : [])),
@@ -446,15 +483,22 @@ function createRows(rv: ReactVirtual, useRowsVirtualizer: UseRowsVirtualizer, on
         rows.length,
         () => (onWindow ? window.innerHeight : (elementNode()?.offsetHeight ?? 0)),
         () => virtualizer.scrollToEnd({ behavior: 'auto' }),
-        () => isContainerAtEnd(scrollNode(), SCROLL_END_THRESHOLD),
+        () =>
+          parent === undefined
+            ? isContainerAtEnd(scrollNode(), SCROLL_END_THRESHOLD)
+            : isListAtEnd(listRef.current, parent.element, SCROLL_END_THRESHOLD),
       )
     })
 
     const margin = parent?.margin ?? 0
+    const virtualItems = virtualizer.getVirtualItems()
+    // `range` is assigned inside `calculateRange` (virtual-core index.js:795), which
+    // `getVirtualItems()` drives through `getVirtualIndexes` — before this call it is the PREVIOUS
+    // render's (null on the first), so the active header is derived after it.
     const activeSticky = activeStickyIndex(stickyIndexes, virtualizer.range?.startIndex)
     const items = (
-      <div style={{ height: virtualizer.getTotalSize(), position: 'relative' }}>
-        {virtualizer.getVirtualItems().map((virtualItem) => {
+      <div ref={listRef} style={{ height: virtualizer.getTotalSize(), position: 'relative' }}>
+        {virtualItems.map((virtualItem) => {
           const row = rows[virtualItem.index]
           if (row === undefined) return null
           return (
@@ -507,30 +551,14 @@ const LazyVirtualRows = lazy<ComponentType<InnerProps>>(() =>
         (o) =>
           useVirtualizer({
             ...o,
-            // NOT `enabled: false`, which virtual-core wipes `itemSizeCache`/`measurementsCache`
-            // on: this guards the hidden-ancestor 0px poisoning instead
-            // (see `resolveGuardedMeasurement`).
-            measureElement: (element, entry, instance) =>
-              resolveGuardedMeasurement(
-                instance,
-                element,
-                measureElement(element, entry, instance),
-              ),
+            measureElement: guardedMeasure(measureElement),
           }),
         false,
       )
       const WindowRows = createRows(
         rv,
         ({ getScrollElement: _unused, ...o }) =>
-          useWindowVirtualizer({
-            ...o,
-            measureElement: (element, entry, instance) =>
-              resolveGuardedMeasurement(
-                instance,
-                element,
-                measureElement(element, entry, instance),
-              ),
-          }),
+          useWindowVirtualizer({ ...o, measureElement: guardedMeasure(measureElement) }),
         true,
       )
       return {
@@ -566,27 +594,51 @@ function measureParent(list: HTMLElement | null): ParentScroll | null {
   return { element, margin: Math.round(margin) }
 }
 
-function ParentRows(props: VirtualRowsProps): JSX.Element {
+function sameParent(a: ParentScroll | null, b: ParentScroll): boolean {
+  return a !== null && a.element === b.element && a.margin === b.margin
+}
+
+function ParentRows(props: Extract<VirtualRowsProps, { scroll: 'parent' }>): JSX.Element {
   const { className, style, ...rest } = props
   const listRef = useRef<HTMLDivElement>(null)
   const [parent, setParent] = useState<ParentScroll | null>(null)
 
-  // Re-measured after every commit (a layout read, no dependency array): the offset moves whenever
-  // content above the list resizes. Returning `prev` for an unchanged value bails the state out.
-  // oxlint-disable-next-line react-hooks/exhaustive-deps -- every commit, by design (see above)
-  useLayoutEffect(() => {
+  const remeasure = (): void => {
     const next = measureParent(listRef.current)
-    if (next === null) return
-    setParent((prev) =>
-      prev !== null && prev.element === next.element && prev.margin === next.margin ? prev : next,
-    )
-  })
+    if (next !== null) setParent((prev) => (sameParent(prev, next) ? prev : next))
+  }
+
+  // After every commit (a layout read, no dependency array); an unchanged value bails the state
+  // out. Changes that arrive WITHOUT a commit — a font or image settling above the list — are the
+  // observer's job below.
+  // oxlint-disable-next-line react-hooks/exhaustive-deps -- every commit, by design (see above)
+  useLayoutEffect(remeasure)
+
+  // The offset moves when anything above the list resizes, and that resizes every ancestor between
+  // the list and the scrollport (the list's own box and the scrollport's do not change). Observe
+  // that chain, plus the window for the window case.
+  const scroller = parent?.element
+  // oxlint-disable-next-line react-hooks/exhaustive-deps -- `remeasure` only reads refs and a stable setter
+  useEffect(() => {
+    const list = listRef.current
+    if (list === null) return
+    window.addEventListener('resize', remeasure)
+    const observer = typeof ResizeObserver === 'undefined' ? null : new ResizeObserver(remeasure)
+    for (let node: HTMLElement | null = list; node !== null; node = node.parentElement) {
+      observer?.observe(node)
+      if (node === scroller) break
+    }
+    return () => {
+      window.removeEventListener('resize', remeasure)
+      observer?.disconnect()
+    }
+  }, [scroller])
 
   return (
     <div ref={listRef} className={cx(className)} style={style}>
       {parent !== null && (
         <Suspense fallback={null}>
-          <LazyVirtualRows {...(rest as VirtualRowsProps)} parent={parent} />
+          <LazyVirtualRows {...rest} parent={parent} />
         </Suspense>
       )}
     </div>
