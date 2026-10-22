@@ -400,6 +400,13 @@ td.pinnedFluid {
  * item) on the control's OWN hover or keyboard focus only — never the row's, which would light a
  * column of red icons as the pointer moves down. A disabled or loading control stays neutral.
  */
-.dangerAction:not(:disabled, [data-disabled], [data-loading]):is(:hover, :focus-visible) {
+.dangerAction:not(:disabled, [data-disabled], [data-loading]):focus-visible {
   color: var(--mantine-color-red-light-color);
+}
+
+/* Hover only where a pointer can hover: a tap on a phone must not leave a sticky red icon. */
+@media (hover: hover) {
+  .dangerAction:not(:disabled, [data-disabled], [data-loading]):hover {
+    color: var(--mantine-color-red-light-color);
+  }
 }
