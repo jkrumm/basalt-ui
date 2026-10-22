@@ -43,10 +43,10 @@ const pendingStyle: CSSProperties = {
 const GHOST_BARS = [38, 52, 44, 66, 58, 74, 62, 48] as const
 
 /**
- * The shape a pending plot draws: `'bars'` (default), `'line'` for a line or area chart, or a bar
- * count when the loaded chart's data length is known (a 6-month chart loads 6 bars).
+ * The shape a pending plot draws: `'bars'` (default), `'line'` for a line or area chart, `'band'`
+ * for a `BandStrip` (one row), or a bar count when the loaded chart's data length is known (a 6-month chart loads 6 bars).
  */
-export type PlotGhostShape = 'bars' | 'line' | number
+export type PlotGhostShape = 'bars' | 'line' | 'band' | number
 
 /** A mild rise across the width, in a 100 x 40 box stretched to the plot. */
 const GHOST_LINE = '0,30 12,26 25,28 38,18 50,22 62,12 75,16 88,8 100,12'
@@ -59,6 +59,12 @@ function PlotGhost({ shape = 'bars' }: { shape?: PlotGhostShape }): ReactElement
         <svg viewBox="0 0 100 40" preserveAspectRatio="none" className={boxClasses.ghostLine}>
           <polyline points={GHOST_LINE} vectorEffect="non-scaling-stroke" />
         </svg>
+      </div>
+    )
+  if (shape === 'band')
+    return (
+      <div aria-hidden="true" data-basalt-plot-ghost="band" className={boxClasses.ghost}>
+        <span className={boxClasses.ghostBand} />
       </div>
     )
   const count =
@@ -158,7 +164,8 @@ export function ChartPlaceholder(props: {
   if (kind === 'pending')
     return fit(
       <output aria-label="Loading chart" aria-busy="true" className={stateClass} style={style}>
-        {!props.compact && <PlotGhost {...(props.ghost !== undefined && { shape: props.ghost })} />}
+        {/* A sparkline's box is too small for bars: it ghosts a line, in the same tone as every ghost. */}
+        <PlotGhost shape={props.ghost ?? (props.compact ? 'line' : 'bars')} />
       </output>,
     )
   const label =
@@ -201,7 +208,7 @@ export function ChartPlaceholder(props: {
         {body}
       </output>,
     )
-  // The § 6.11 empty tile inside the chart's own box: one ring, card radius, the title at `md` 500
+  // The § 6.11 empty tile inside the chart's own box: one ring, card radius, the title at `sm` 500
   // and a muted line, centred. `EmptyState` is Mantine-coupled, so the anatomy is plain HTML here.
   // The live region holds the copy only; the action is its sibling, so a button is not announced.
   const { title, description } = splitEmptyCopy(label)

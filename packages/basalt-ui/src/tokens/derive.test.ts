@@ -164,3 +164,31 @@ describe('the status solids are derived per surface (Wave 34)', () => {
     expect(at(Number.NaN, Number.POSITIVE_INFINITY)).toEqual(at(0, 0))
   })
 })
+
+describe('the filled accent hover step', () => {
+  /** A step that reads at button size: the old 4.8 was indistinguishable from rest (Wave 45-46). */
+  const MIN_HOVER_STEP_TONE = 8
+  const LABEL_CONTRAST_MIN = 4.5
+
+  for (const accentBrightness of [0, 5, -5]) {
+    test(`accentBrightness ${accentBrightness}: hover is at least ${MIN_HOVER_STEP_TONE} tone darker and keeps the white label at 4.5:1`, () => {
+      const { accentFill, accentFillHover } = deriveTokens({
+        ...DEFAULT_DERIVE_CONFIG,
+        accentBrightness,
+      })
+      for (const side of ['light', 'dark'] as const) {
+        const step = hexToHct(accentFill[side]).tone - hexToHct(accentFillHover[side]).tone
+        expect(step).toBeGreaterThanOrEqual(MIN_HOVER_STEP_TONE)
+        // The label floor holds at rest and hover on the default band; a positive brightness
+        // shift lightens the fill itself (its own clamp is the 3:1 page law above).
+        if (accentBrightness > 0) continue
+        expect(contrastRatio('#ffffff', accentFill[side])).toBeGreaterThanOrEqual(
+          LABEL_CONTRAST_MIN,
+        )
+        expect(contrastRatio('#ffffff', accentFillHover[side])).toBeGreaterThanOrEqual(
+          LABEL_CONTRAST_MIN,
+        )
+      }
+    })
+  }
+})

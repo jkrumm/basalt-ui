@@ -128,3 +128,12 @@
   border-radius: 3px;
   background: color-mix(in srgb, var(--vx-ink) 18%, var(--vx-surface-panel));
 }
+
+/* A pending `BandStrip` card keeps the room of the legend row the loaded strip carries under its box:
+ * the chart root's 6px gap plus one legend line (`micro` x 1.35 and the 2px entry border, `legend.tsx`).
+ * The legend shows from 240px, the same container class the chart picks it by. */
+@container basalt-card (min-width: 240px) {
+  .legendReserve {
+    padding-bottom: calc(6px + var(--vx-text-micro) * 1.35 + 2px);
+  }
+}

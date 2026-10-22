@@ -827,7 +827,14 @@ export function Sparkline(props: SparklineProps): ReactElement {
         setKeyed(null)
       }}
     >
-      {resolved !== null && <ChartPlaceholder state={state} height={height} compact />}
+      {resolved !== null && (
+        <ChartPlaceholder
+          state={state}
+          height={height}
+          compact
+          ghost={mark === 'bar' ? 'bars' : 'line'}
+        />
+      )}
       {resolved === null && model !== null && (
         <ChartEngine
           definition={model.definition}

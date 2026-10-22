@@ -203,7 +203,12 @@ describe('Sparkline', () => {
 
     test('pending fills the sparkline box with a busy placeholder and draws no chart', () => {
       const el = spark({ pending: true })
-      expect(el.querySelector('svg')).toBeNull()
+      // No chart: the only svg is the placeholder's own ghost.
+      expect(
+        [...el.querySelectorAll('svg')].filter(
+          (v) => v.closest('[data-basalt-plot-ghost]') === null,
+        ),
+      ).toHaveLength(0)
       expect(el.querySelector('output[aria-busy="true"]')).not.toBeNull()
       expect(el.querySelector('[data-basalt-sparkline]')?.getAttribute('style')).toContain(
         'height:28px',

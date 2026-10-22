@@ -111,11 +111,15 @@ describe('ChartCard placeholderHeight="content"', () => {
     expect(container.querySelector('[aria-busy="true"]')).not.toBeNull()
   })
 
-  test('pending draws the plot ghost; compact stays a bare plate', () => {
+  test('pending draws the plot ghost; compact ghosts a line, in the same tone as every ghost', () => {
     const full = render(<ChartPlaceholder state={{ pending: true }} />)
     expect(full.container.querySelector('[data-basalt-plot-ghost]')).not.toBeNull()
     full.unmount()
     const compact = render(<ChartPlaceholder state={{ pending: true }} compact />)
-    expect(compact.container.querySelector('[data-basalt-plot-ghost]')).toBeNull()
+    expect(
+      compact.container
+        .querySelector('[data-basalt-plot-ghost]')
+        ?.getAttribute('data-basalt-plot-ghost'),
+    ).toBe('line')
   })
 })
