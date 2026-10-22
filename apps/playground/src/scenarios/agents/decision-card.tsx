@@ -5,6 +5,7 @@
  * Actions are inert in fixtures. S5 imports it for its review, S3 for the oldest awaiting item.
  */
 import { Box, Button, Card, Group, Kbd, Skeleton, Stack, Text } from '@mantine/core'
+import { useCoarsePointer } from 'basalt-ui'
 import { VX } from 'basalt-ui/tokens'
 import type { ReactNode } from 'react'
 
@@ -29,6 +30,8 @@ function ActionButton({
   action: DecisionAction
   variant: 'filled' | 'default' | 'subtle'
 }) {
+  // A key hint names a keyboard shortcut: on a touch device there is no keyboard to press it.
+  const coarse = useCoarsePointer()
   return (
     // The key hint sits beside the button, not inside it: on the accent fill it failed contrast and
     // nested a radius inside the button's.
@@ -38,12 +41,16 @@ function ActionButton({
         variant={variant}
         onClick={action.onClick}
         aria-keyshortcuts={action.keyHint}
+        // The shot's hover lands here: the card's primary is its one accent fill.
+        {...(variant === 'filled' && { 'data-shot-hover': true })}
       >
         {action.label}
       </Button>
-      <Kbd fz="xs" aria-hidden>
-        {action.keyHint}
-      </Kbd>
+      {!coarse && (
+        <Kbd fz="xs" aria-hidden>
+          {action.keyHint}
+        </Kbd>
+      )}
     </Group>
   )
 }

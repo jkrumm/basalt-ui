@@ -24,6 +24,7 @@ import {
 } from 'basalt-ui'
 import type { StatStripCell } from 'basalt-ui'
 import { Sparkline } from 'basalt-ui/charts'
+import type { CSSProperties } from 'react'
 import { DecisionCard, DecisionCardSkeleton } from './agents/decision-card'
 import { ListRow } from './agents/list-row'
 import { fmtInt } from './fixture-utils'
@@ -237,11 +238,18 @@ function LearningAside({ shotState }: ScenarioProps) {
       ) : (
         <Box data-shot="learning-aside" data-shot-absent="error">
           {shotState === 'empty' ? (
-            <EmptyState
-              tier="section"
-              title="No practice partners yet"
-              description="Partners appear with the first session you log together."
-            />
+            <Stack gap="xs">
+              <Text size="xs" c="dimmed">
+                Practice partners · sessions together
+              </Text>
+              <EmptyState
+                tier="section"
+                title="No practice partners yet"
+                description="Partners appear with the first session you log together."
+                // The list rows beside it are `sm`: the tile's title stays at their size.
+                style={{ '--basalt-state-title-size': 'var(--vx-text-sm)' } as CSSProperties}
+              />
+            </Stack>
           ) : (
             <Stack gap="xs">
               <Text size="xs" c="dimmed">

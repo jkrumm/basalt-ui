@@ -106,8 +106,30 @@ function KeyRail() {
   )
 }
 
-function Scrubber({ disabled }: { disabled: boolean }) {
+function Scrubber({ loading }: { loading: boolean }) {
   const [hour, setHour] = useState(2)
+  if (loading) {
+    // The loaded scrubber's footprint, with no live value: a disabled slider still printed the hour.
+    return (
+      <Paper
+        data-shot="map-scrubber"
+        data-shot-absent="empty error"
+        pos="absolute"
+        left="var(--vx-space-stack-md)"
+        bottom="var(--vx-space-stack-md)"
+        w="min(320px, calc(100% - 2 * var(--vx-space-stack-md)))"
+        aria-busy="true"
+      >
+        <Stack gap="xs">
+          <Group justify="space-between">
+            <Skeleton h={12} w="35%" />
+            <Skeleton h={14} w="18%" />
+          </Group>
+          <Skeleton h={8} mt={6} mb="md" />
+        </Stack>
+      </Paper>
+    )
+  }
   return (
     <Paper
       data-shot="map-scrubber"
@@ -138,7 +160,6 @@ function Scrubber({ disabled }: { disabled: boolean }) {
           ]}
           aria-label="Forecast hour"
           mb="md"
-          disabled={disabled}
         />
       </Stack>
     </Paper>
@@ -223,13 +244,13 @@ function Canvas({ shotState }: ScenarioProps) {
   if (shotState === 'loading') return <Skeleton h="100%" />
   if (shotState === 'error') {
     return (
-      <Center h="100%" p="md">
+      <Box p="md">
         <ErrorNote
           title="Could not load the cloud forecast"
           cause={retryCopy('forecast service')}
           onRetry={noop}
         />
-      </Center>
+      </Box>
     )
   }
   if (shotState === 'empty') {
@@ -258,7 +279,7 @@ function Body({ shotState }: ScenarioProps) {
         <Canvas shotState={shotState} />
         <Heading />
         {shotState !== 'empty' && shotState !== 'error' && (
-          <Scrubber disabled={shotState === 'loading'} />
+          <Scrubber loading={shotState === 'loading'} />
         )}
         <Attribution />
       </Box>
