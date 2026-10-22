@@ -1,6 +1,7 @@
 import { MantineProvider } from '@mantine/core'
 import { cleanup, fireEvent, render } from '@testing-library/react'
 import { afterEach, describe, expect, test } from 'bun:test'
+import { Sparkline } from '../charts'
 import { Meter } from './meter'
 import { StatGroup } from './stat-group'
 import type { StatStripCell } from './stat-strip'
@@ -99,5 +100,20 @@ describe('strip cell loading', () => {
     const meter = cellOf(container).querySelector('[data-basalt-meter]')
     expect(meter?.getAttribute('aria-busy')).toBe('true')
     expect(meter?.querySelector('[data-meter-fill]')).toBeNull()
+  })
+
+  test('a loading cell keeps its Sparkline row: the slot stays in the flow under one skeleton', () => {
+    const visual = <Sparkline ariaLabel="Sessions" data={[3, 5, 4, 6]} height={28} />
+    const { container } = mount({ visual })
+    const rest = cellOf(container).querySelector('[data-strip-visual]')
+    expect(rest?.querySelector('[data-basalt-sparkline]')).not.toBeNull()
+    cleanup()
+    const loading = mount({ visual, loading: true })
+    const slot = cellOf(loading.container).querySelector('[data-strip-visual]')
+    expect(slot).not.toBeNull()
+    expect(slot?.hasAttribute('inert')).toBe(true)
+    // The measured sparkline is still laid out (hidden): the row keeps its loaded height.
+    expect(slot?.querySelector('[data-basalt-sparkline]')).not.toBeNull()
+    expect(slot?.querySelector('.mantine-Skeleton-root')).not.toBeNull()
   })
 })

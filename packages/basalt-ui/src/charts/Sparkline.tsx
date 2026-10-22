@@ -814,6 +814,7 @@ export function Sparkline(props: SparklineProps): ReactElement {
     <div
       data-basalt-sparkline=""
       {...(hosted && { 'data-basalt-hosted': '' })}
+      {...(at !== null && { 'data-basalt-readout': '' })}
       role="presentation"
       className={cx(classes.root, className)}
       style={{ width: width ?? '100%', height, minWidth: 0, ...style }}
