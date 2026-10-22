@@ -3,12 +3,12 @@
  * line `strip-footer-weight-goal` rides `under` the Weight cell, which shows its empty reason (a
  * cell in `state` draws no footer of its own), and `empty-row` joins it under `shotState === 'empty'`.
  */
-import { Anchor, Box, Paper } from '@mantine/core'
-import { DeltaBadge, StatGroup } from 'basalt-ui'
+import { Anchor, Box } from '@mantine/core'
+import { DeltaBadge, EmptyState, StatGroup } from 'basalt-ui'
 import type { StatStripCell } from 'basalt-ui'
 import { VX } from 'basalt-ui/tokens'
 import { noop } from '../shot-state'
-import { BODY, BODY_PREV, NO_CALIPER, NO_WEIGH_INS, WEIGHT_ERROR } from './body-data'
+import { BODY, BODY_PREV, CALIPER_GAP, CALIPER_NEXT, WEIGH_IN_GAP, WEIGHT_ERROR } from './body-data'
 import type { ScenarioProps } from '../shot-state'
 
 /** A real, inert control: the footer states the next step as something that can be pressed. */
@@ -26,9 +26,23 @@ export function BodyWeightStrip({ shotState }: ScenarioProps) {
       key: 'weight',
       caption: 'Weight',
       loading,
-      state: failed
-        ? { kind: 'error', error: new Error(WEIGHT_ERROR), onRetry: noop }
-        : { kind: 'empty', reason: NO_WEIGH_INS },
+      // At rest the cell carries the reading the trend and the meters state; it is a state only in empty or error.
+      ...(failed
+        ? { state: { kind: 'error', error: new Error(WEIGHT_ERROR), onRetry: noop } }
+        : shotState === 'empty'
+          ? { state: { kind: 'empty', reason: WEIGH_IN_GAP } }
+          : {
+              value: String(BODY.weightKg),
+              unit: 'kg',
+              delta: (
+                <DeltaBadge
+                  value={BODY.weightKg - BODY_PREV.weightKg}
+                  polarity="up-bad"
+                  period="vs 5 Oct"
+                  format={(v) => `${Math.abs(v).toFixed(1)} kg`}
+                />
+              ),
+            }),
     },
     {
       key: 'body-fat',
@@ -45,6 +59,8 @@ export function BodyWeightStrip({ shotState }: ScenarioProps) {
       ),
       footer: `Measured ${BODY.measured}`,
       loading,
+      // The caliper reading is what is missing in empty; the cells say so instead of keeping last month's figures.
+      ...(shotState === 'empty' && { state: { kind: 'empty', reason: CALIPER_GAP } }),
     },
     {
       key: 'lean-mass',
@@ -61,6 +77,8 @@ export function BodyWeightStrip({ shotState }: ScenarioProps) {
       ),
       footer: `Measured ${BODY.measured}`,
       loading,
+      // The caliper reading is what is missing in empty; the cells say so instead of keeping last month's figures.
+      ...(shotState === 'empty' && { state: { kind: 'empty', reason: CALIPER_GAP } }),
     },
   ]
   return (
@@ -73,9 +91,9 @@ export function BodyWeightStrip({ shotState }: ScenarioProps) {
         footer={[{ key: 'weight-goal', under: 'weight', content: GOAL_LINK }]}
       />
       {shotState === 'empty' && (
-        <Paper>
-          <Box data-shot="empty-row">{NO_CALIPER}</Box>
-        </Paper>
+        <Box data-shot="empty-row">
+          <EmptyState tier="section" title={CALIPER_GAP} description={CALIPER_NEXT} />
+        </Box>
       )}
     </Box>
   )

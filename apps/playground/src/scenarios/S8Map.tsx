@@ -108,28 +108,33 @@ function KeyRail() {
 
 function Scrubber({ loading }: { loading: boolean }) {
   const [hour, setHour] = useState(2)
-  if (loading) {
-    // The loaded scrubber's footprint, with no live value: a disabled slider still printed the hour.
-    return (
-      <Paper
-        data-shot="map-scrubber"
-        data-shot-absent="empty error"
-        pos="absolute"
-        left="var(--vx-space-stack-md)"
-        bottom="var(--vx-space-stack-md)"
-        w="min(320px, calc(100% - 2 * var(--vx-space-stack-md)))"
-        aria-busy="true"
-      >
-        <Stack gap="xs">
-          <Group justify="space-between">
-            <Skeleton h={12} w="35%" />
-            <Skeleton h={14} w="18%" />
-          </Group>
-          <Skeleton h={8} mt={6} mb="md" />
-        </Stack>
-      </Paper>
-    )
-  }
+  // One body for both states: loading draws the same box (so it keeps the loaded height) and lays
+  // skeletons over it in the same grid cell, with the live values hidden.
+  const body = (
+    <Stack gap="xs">
+      <Group justify="space-between">
+        <Text size="xs" c="dimmed">
+          Forecast hour
+        </Text>
+        <Text size="sm" fw={550}>
+          {HOUR_LABELS[hour]}
+        </Text>
+      </Group>
+      <Slider
+        value={hour}
+        onChange={setHour}
+        min={0}
+        max={HOURS.length - 1}
+        label={null}
+        marks={[
+          { value: 0, label: HOURS[0] },
+          { value: HOURS.length - 1, label: HOURS[HOURS.length - 1] },
+        ]}
+        aria-label="Forecast hour"
+        mb="md"
+      />
+    </Stack>
+  )
   return (
     <Paper
       data-shot="map-scrubber"
@@ -138,35 +143,34 @@ function Scrubber({ loading }: { loading: boolean }) {
       left="var(--vx-space-stack-md)"
       bottom="var(--vx-space-stack-md)"
       w="min(320px, calc(100% - 2 * var(--vx-space-stack-md)))"
+      // theme-allow inline-display — the loading skeleton overlays the hidden live body in one grid cell, so the box keeps its loaded height
+      {...(loading && { 'aria-busy': true, display: 'grid' })}
     >
-      <Stack gap="xs">
-        <Group justify="space-between">
-          <Text size="xs" c="dimmed">
-            Forecast hour
-          </Text>
-          <Text size="sm" fw={550}>
-            {HOUR_LABELS[hour]}
-          </Text>
-        </Group>
-        <Slider
-          value={hour}
-          onChange={setHour}
-          min={0}
-          max={HOURS.length - 1}
-          label={null}
-          marks={[
-            { value: 0, label: HOURS[0] },
-            { value: HOURS.length - 1, label: HOURS[HOURS.length - 1] },
-          ]}
-          aria-label="Forecast hour"
-          mb="md"
-        />
-      </Stack>
+      {loading ? (
+        <>
+          <Box aria-hidden style={{ gridArea: '1 / 1', visibility: 'hidden' }}>
+            {body}
+          </Box>
+          <Stack gap="xs" justify="space-between" style={{ gridArea: '1 / 1' }}>
+            <Group justify="space-between">
+              <Skeleton h={12} w="35%" />
+              <Skeleton h={14} w="18%" />
+            </Group>
+            <Skeleton h={8} />
+            <Group justify="space-between">
+              <Skeleton h={10} w={36} />
+              <Skeleton h={10} w={36} />
+            </Group>
+          </Stack>
+        </>
+      ) : (
+        body
+      )}
     </Paper>
   )
 }
 
-/** The card's title: the area and the night, over the map, in every state. */
+/** The card's title: the area and the night, over the map. Error and empty leave it out: the state's own copy names the forecast and the panel would sit on it. */
 function Heading() {
   return (
     <Paper
@@ -258,7 +262,7 @@ function Canvas({ shotState }: ScenarioProps) {
       <Center h="100%" p="md">
         <EmptyState
           tier="section"
-          title="No forecast for tonight"
+          title={`No cloud forecast for ${AREA} tonight`}
           description="The next run publishes at 18:00. Check back then."
         />
       </Center>
@@ -277,7 +281,7 @@ function Body({ shotState }: ScenarioProps) {
     <Group gap={0} wrap="nowrap" align="stretch" h="100%">
       <Box pos="relative" flex={1} miw={0}>
         <Canvas shotState={shotState} />
-        <Heading />
+        {shotState !== 'empty' && shotState !== 'error' && <Heading />}
         {shotState !== 'empty' && shotState !== 'error' && (
           <Scrubber loading={shotState === 'loading'} />
         )}
