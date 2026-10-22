@@ -87,9 +87,18 @@ const glyphVars = { '--basalt-field-error-glyph': GLYPH_MASK } as CSSProperties
  * the region it sits in names it through `aria-describedby`.
  */
 function FieldError({ error, id }: { error: ReactNode; id: string }) {
-  if (!hasError(error)) return null
+  // The live region is always mounted and empty while clean: a region inserted together with its
+  // text is not reliably announced, one that gains text is.
   return (
     <span id={id} className={classes.error} aria-live="polite">
+      {hasError(error) && <FieldErrorBody error={error} />}
+    </span>
+  )
+}
+
+function FieldErrorBody({ error }: { error: ReactNode }) {
+  return (
+    <>
       <svg
         className={classes.errorIcon}
         viewBox="0 0 16 16"
@@ -104,7 +113,7 @@ function FieldError({ error, id }: { error: ReactNode; id: string }) {
         <path d={GLYPH_PATH} />
       </svg>
       <span>{error}</span>
-    </span>
+    </>
   )
 }
 
@@ -113,9 +122,7 @@ function useDescribedBy(hint: string | undefined, error: ReactNode) {
   const uid = useId()
   const hintId = `${uid}-hint`
   const errorId = `${uid}-error`
-  const ids = [hint !== undefined ? hintId : null, hasError(error) ? errorId : null].filter(
-    (id) => id !== null,
-  )
+  const ids = [hint !== undefined && hintId, hasError(error) && errorId].filter(Boolean)
   return { hintId, errorId, describedBy: ids.length > 0 ? ids.join(' ') : undefined }
 }
 

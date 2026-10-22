@@ -1876,9 +1876,10 @@ describe('basalt/hand-rolled-filter', () => {
     expect(rules).not.toContain('hand-rolled-filter')
   })
 
-  // The settled reading of law C1's THIRD home (docs/CONTROLS-SPEC.md §5/§6): a form row keeps
-  // Mantine's `md` tier, so a raw input bound to a setting is right there — and `control` /
-  // `SettingsRow` are absent from the slot set for exactly that reason.
+  // The settled reading of law C1's THIRD home (docs/CONTROLS-SPEC.md §5/§6): a form row is not a
+  // chrome slot, so a raw input bound to a setting is right there (it mounts its own `CtlSlot` since
+  // Wave 46, and a `size` on the control is the opt-out) — `control` / `SettingsRow` are absent from
+  // the slot set for exactly that reason.
   it("does NOT flag a raw Select in a SettingsRow's control — the form-row home", () => {
     const { code, rules } = run(
       `${BASALT_IMPORT}${MANTINE_IMPORT}export const C = () => (\n  <SettingsSection title="S">\n    <SettingsRow label="Channel" control={<Select data={[]} />} />\n  </SettingsSection>\n)\n`,
@@ -2646,7 +2647,7 @@ describe('basalt/control-size-literal', () => {
     expect(rules).toContain('control-size-literal')
   })
 
-  it("does NOT flag a size prop in a SettingsRow's control — the form tier is Mantine's md", () => {
+  it('does NOT flag a size prop in a SettingsRow\'s control — it is a form row, and size="md" is the opt-out of its ctl tier', () => {
     const { code, rules } = run(
       `${MANTINE_IMPORT}export const C = () => (\n  <SettingsRow label="L" control={<Button size="compact-sm">Go</Button>} />\n)\n`,
     )

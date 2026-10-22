@@ -15,12 +15,13 @@
  * `renderToStaticMarkup` rather than the DOM harness for the same reason `stat-card.test.tsx` uses
  * it: these are structural claims about painted markup, not interaction.
  */
-import { MantineProvider, TextInput } from '@mantine/core'
+import { MantineProvider, NumberInput, PasswordInput, Textarea, TextInput } from '@mantine/core'
 import { describe, expect, test } from 'bun:test'
 import { readFileSync } from 'node:fs'
 import { resolve } from 'node:path'
 import { renderToStaticMarkup } from 'react-dom/server'
 import { FormActions, FormGroup, FormRow, FormSection } from './form-layout'
+import { SettingsRow } from '../dashboard/settings-section'
 import { FormStateProvider } from '../forms/form-state'
 import type { ReactNode } from 'react'
 
@@ -347,7 +348,7 @@ describe('FormRow description and error wiring (SPEC § 6.13)', () => {
         </FormRow>,
       )
       expect(markup).not.toContain('data-field-error-icon')
-      expect(markup).not.toContain('aria-live')
+      expect(markup).toMatch(/aria-live="polite"[^>]*><\/span>/)
       expect(describedBy(markup)).toHaveLength(1)
       const group = render(
         <FormGroup label="Notify me" error={error}>
@@ -355,6 +356,7 @@ describe('FormRow description and error wiring (SPEC § 6.13)', () => {
         </FormGroup>,
       )
       expect(group).not.toContain('aria-describedby')
+      expect(group).toMatch(/aria-live="polite"[^>]*><\/span>/)
       expect(group).not.toContain('data-field-error-icon')
     },
   )
@@ -414,8 +416,8 @@ describe('FormGroup section', () => {
   })
 
   test('the rhythm is 24 between sections and 12 between rows, on tokens', () => {
-    expect(block('.group[data-section]:not(:last-child)')).toContain(
-      'margin-block-end: var(--vx-space-stack-xl)',
+    expect(block('.group[data-section] + .group[data-section]')).toContain(
+      'margin-block-start: var(--vx-space-stack-xl)',
     )
     expect(block(".group[data-section] > .groupControls[data-direction='column']")).toContain(
       'gap: var(--vx-space-stack-md)',
@@ -431,18 +433,24 @@ describe('FormGroup section', () => {
   })
 })
 
-describe('a control inside FormRow takes the 32 px tier unless it states a size', () => {
-  const heightVar = (size?: string) => {
-    const markup = render(
-      <FormRow label="Name">
-        <TextInput {...(size !== undefined && { size })} />
-      </FormRow>,
-    )
-    return /data-size="([^"]*)"/.exec(markup)?.[1]
-  }
+describe('a control inside FormRow or SettingsRow takes the 32 px tier unless it states a size', () => {
+  const sizeOf = (tree: ReactNode): string | undefined =>
+    /data-size="([^"]*)"/.exec(render(tree))?.[1]
 
-  test('default is ctl; an explicit size="md" wins', () => {
-    expect(heightVar()).toBe('ctl')
-    expect(heightVar('md')).toBe('md')
+  const fields: [string, (size?: string) => ReactNode][] = [
+    ['TextInput', (size) => <TextInput {...(size !== undefined && { size })} />],
+    ['NumberInput', (size) => <NumberInput {...(size !== undefined && { size })} />],
+    ['PasswordInput', (size) => <PasswordInput {...(size !== undefined && { size })} />],
+    ['Textarea', (size) => <Textarea {...(size !== undefined && { size })} />],
+  ]
+
+  test.each(fields)('%s in a FormRow: ctl by default, an explicit size wins', (_, field) => {
+    expect(sizeOf(<FormRow label="Name">{field()}</FormRow>)).toBe('ctl')
+    expect(sizeOf(<FormRow label="Name">{field('md')}</FormRow>)).toBe('md')
+  })
+
+  test('a bare TextInput as a SettingsRow control is ctl; an explicit size wins', () => {
+    expect(sizeOf(<SettingsRow label="Name" control={<TextInput />} />)).toBe('ctl')
+    expect(sizeOf(<SettingsRow label="Name" control={<TextInput size="md" />} />)).toBe('md')
   })
 })
