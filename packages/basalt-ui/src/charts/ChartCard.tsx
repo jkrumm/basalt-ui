@@ -258,7 +258,17 @@ function FactsSkeleton({ basis }: { basis: boolean }): ReactElement {
   )
 }
 
-type BodyKind = { ghost: 'line' | 'band'; height?: number; legend?: true }
+/** A stated `BandStrip` height the placeholder can take: a px number or the per-class object. */
+function isChartHeight(value: unknown): value is number | ResponsiveChartHeight {
+  return (
+    typeof value === 'number' ||
+    (typeof value === 'object' &&
+      value !== null &&
+      typeof (value as { base?: unknown }).base === 'number')
+  )
+}
+
+type BodyKind = { ghost: 'line' | 'band'; height?: number | ResponsiveChartHeight; legend?: true }
 
 /**
  * What a pending body draws when `ghost` is not passed: a line for a `Lines` or `StackedArea` body,
@@ -277,7 +287,7 @@ function bodyKindOf(node: ReactNode): BodyKind | undefined {
       }
       return {
         ghost: 'band',
-        ...(typeof height === 'number' && { height }),
+        ...(isChartHeight(height) && { height }),
         // The loaded strip's legend row sits under the box: the ghost keeps its room.
         ...(legend !== false && (states?.length ?? 0) > 1 && { legend: true as const }),
       }
@@ -286,6 +296,17 @@ function bodyKindOf(node: ReactNode): BodyKind | undefined {
     if (inner !== undefined) return inner
   }
   return undefined
+}
+
+/** The loaded strip's legend row keeps its room under a pending box; other placeholders get no wrapper. */
+function reserveLegend(reserve: boolean, placeholder: ReactElement): ReactElement {
+  return reserve ? (
+    <div className={classes.legendReserve} data-basalt-legend-reserve="">
+      {placeholder}
+    </div>
+  ) : (
+    placeholder
+  )
 }
 
 export function ChartCard({
@@ -309,7 +330,8 @@ export function ChartCard({
   const resolved = resolveChartState(state)
   const kind = resolved === 'pending' ? bodyKindOf(children) : undefined
   const plotGhost = ghost ?? kind?.ghost
-  const pendingHeight = placeholderHeight ?? (ghost === undefined ? kind?.height : undefined)
+  // `ghost` changes the shape only: the wrapped strip's height still sizes the pending box.
+  const pendingHeight = placeholderHeight ?? kind?.height
   const showFacts = facts !== undefined && resolved === null
   const skeletonFacts = facts !== undefined && resolved === 'pending'
   const hasHeader =
@@ -349,21 +371,20 @@ export function ChartCard({
           {...(classNames?.body !== undefined && { className: classNames.body })}
           style={bodyClipStyle}
         >
-          {resolved === null || (resolved === 'pending' && placeholderHeight === 'content') ? (
-            children
-          ) : (
-            <div className={kind?.legend === true ? classes.legendReserve : undefined}>
-              <ChartPlaceholder
-                state={state}
-                {...(pendingHeight !== undefined && { height: pendingHeight })}
-                {...(stateNoun !== undefined && { noun: stateNoun })}
-                {...(plotGhost !== undefined && { ghost: plotGhost })}
-                {...(onRetry !== undefined && { onRetry })}
-                {...(retrying !== undefined && { retrying })}
-                action={stateAction}
-              />
-            </div>
-          )}
+          {resolved === null || (resolved === 'pending' && placeholderHeight === 'content')
+            ? children
+            : reserveLegend(
+                kind?.legend === true,
+                <ChartPlaceholder
+                  state={state}
+                  {...(pendingHeight !== undefined && { height: pendingHeight })}
+                  {...(stateNoun !== undefined && { noun: stateNoun })}
+                  {...(plotGhost !== undefined && { ghost: plotGhost })}
+                  {...(onRetry !== undefined && { onRetry })}
+                  {...(retrying !== undefined && { retrying })}
+                  action={stateAction}
+                />,
+              )}
         </div>
       </div>
     </ChartCardContext.Provider>

@@ -160,33 +160,60 @@ describe('pending ghost follows the chart kind', () => {
     expect(ghost(<Wrapped />, { ghost: 'line' })).toBe('line')
   })
 
-  test('a BandStrip body loads as one band row at its own height, legend room kept', () => {
-    const strip = (
-      <BandStrip
-        ariaLabel="Band"
-        data={rows}
-        x={(d: Row) => d.t}
-        states={[
-          { key: 'up', label: 'Up', color: 'green' },
-          { key: 'down', label: 'Down', color: 'red' },
-        ]}
-        getBand={() => ({ state: 'up' })}
-        height={90}
-      />
-    )
+  const STATES = [
+    { key: 'up', label: 'Up', color: 'green' },
+    { key: 'down', label: 'Down', color: 'red' },
+  ]
+  const strip = (over: Partial<React.ComponentProps<typeof BandStrip<Row>>> = {}) => (
+    <BandStrip
+      ariaLabel="Band"
+      data={rows}
+      x={(d: Row) => d.t}
+      states={STATES}
+      getBand={() => ({ state: 'up' })}
+      height={90}
+      {...over}
+    />
+  )
+  const pending = (body: React.ReactNode, over: { ghost?: 'bars' | 'line' | 'band' } = {}) => {
     const { container } = render(
-      <ChartCard title="T" state={{ pending: true }}>
-        <div>{strip}</div>
+      <ChartCard title="T" state={{ pending: true }} {...over}>
+        <div>{body}</div>
       </ChartCard>,
     )
-    const ghost = container.querySelector('[data-basalt-plot-ghost]')
-    expect(ghost?.getAttribute('data-basalt-plot-ghost')).toBe('band')
-    expect(ghost?.children).toHaveLength(1)
-    expect(
-      container
-        .querySelector('[data-basalt-chart-state], output[aria-busy]')
-        ?.parentElement?.getAttribute('style') ?? '',
-    ).toContain('90px')
+    const box = container.querySelector('output[aria-busy]')?.parentElement
+    return {
+      ghost: container
+        .querySelector('[data-basalt-plot-ghost]')
+        ?.getAttribute('data-basalt-plot-ghost'),
+      boxStyle: box?.getAttribute('style') ?? '',
+      reserve: container.querySelector('[data-basalt-legend-reserve]') !== null,
+    }
+  }
+
+  test('a BandStrip body loads as one band row at its own height, legend room kept', () => {
+    const got = pending(strip())
+    expect(got.ghost).toBe('band')
+    expect(got.boxStyle).toContain('90px')
+    expect(got.reserve).toBe(true)
+  })
+
+  test('an explicit ghost changes the shape only: the strip height still sizes the box', () => {
+    const got = pending(strip(), { ghost: 'bars' })
+    expect(got.ghost).toBe('bars')
+    expect(got.boxStyle).toContain('90px')
+  })
+
+  test('a per-class strip height is forwarded, not only a number', () => {
+    const got = pending(strip({ height: { base: 80, regular: 120 } }))
+    expect(got.boxStyle).toContain('80px')
+    expect(got.boxStyle).toContain('120px')
+  })
+
+  test('no legend room for legend={false}, a single-state strip, or another kind', () => {
+    expect(pending(strip({ legend: false })).reserve).toBe(false)
+    expect(pending(strip({ states: STATES.slice(0, 1) })).reserve).toBe(false)
+    expect(pending(line).reserve).toBe(false)
   })
 
   test('an explicit ghost wins over the body', () => {
