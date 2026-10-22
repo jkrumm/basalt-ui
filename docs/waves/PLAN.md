@@ -1923,24 +1923,57 @@ Validators: argo (warden timeline, narratives), rb (journal, session history), l
 - **Next — stopped: Wave 44 closed; orchestrated, nothing spawned.** Wave 45 (Board and the record page) is `active`
   for the mother.
 
-## Wave 45 — Board and the record page <!-- status: active -->
+## Wave 45 — Board and the record page <!-- status: done -->
 
 Spec: SPEC § 6.8, § 6.9, § 9.2, D3, D12. Scenarios S3 and S5. Validators: argo warden, rb knot detail,
 obsidian.
 
-- [ ] `Board`: columns with count and totals, compact cards with slots, roving-focus keyboard model with
+- [x] `Board`: columns with count and totals, compact cards with slots, roving-focus keyboard model with
       announcements, one column at a time with a switcher on compact; no drag (row 148).
-- [ ] The record-page recipe on S5 (header, joined strip, event list, `PageAside`) and the list-row recipe
+- [x] The record-page recipe on S5 (header, joined strip, event list, `PageAside`) and the list-row recipe
       (row 159); decide the aside width (SPEC § 5) on S5.
-- [ ] Tests: arrow keys move across cards and columns, Enter opens, the compact switcher; an empty column.
+- [x] Tests: arrow keys move across cards and columns, Enter opens, the compact switcher; an empty column.
       Budgets: non-chart symbols +1, barrel types +1, argo named as the consumer.
-- [ ] At least three rounds per pattern; owner sees the boards. - [ ] (From the old Wave 35.) Recipes in `basalt-design`: distribution in a card (row 153), the entity card
+- [x] At least three rounds per pattern; owner sees the boards.
+- [x] (From the old Wave 35.) Recipes in `basalt-design`: distribution in a card (row 153), the entity card
       (row 150, argo's `features/agents/entity-card.tsx`), the decision card (argo's
       `components/upstream/decision-card.tsx`; promote it to an export only if rb's converges, D4), and the page
       summary sentence.
-      **Left behind:**
 
-## Wave 46 — Forms, states and the guidance half <!-- status: pending -->
+**Left behind:**
+
+- **Landed** (fan-out of three Sonnet workers, `rd merge` with `make check` per branch; every diff reviewed by
+  agent-gateway, blocking findings sent back and fixed before merge): #503 `Board` (root, `src/dashboard/board*.ts{x}`):
+  typed columns/cards, roving focus (one tab stop, arrows across cards and columns, Home/End, Enter/Space/click
+  `onOpen`, a polite `<output>` announcement), per-column `ScrollArea` bounded by `height`, compact = one column under a
+  `SegmentedControl` bound to an optional `field` (else internal state), empty tile / column-shaped skeleton, http(s)-or-
+  relative record links; unit + layout tests. #502 S5 as the record-page recipe (header, summary, strip, decision card,
+  journal, aside with list rows) and the decision card on S3, both playground recipes (D4). #504 `basalt-design`
+  `references/recipes.md` (record page, decision card, entity card, distribution in a card, page summary, list row) and
+  the catalogue moving `Board` and the recipes to shipped. The round fixes (S3 board wiring, hints beside buttons,
+  compact column head) land as the wave's last PR.
+- **Decision D53** (SPEC § 5 and § 12): the aside stays 300 — S5's record facts and list rows fit with about 100 px to
+  spare; `Board`'s compact column head shows only its total (the switcher states title and count).
+- **Rounds** (`docs/waves/design-parity/w45/rounds.md`, boards `.design-parity/w45/r1`–`r3`; owner cap three): S3 26 →
+  97 → 96, S5 21 → 94 → 93, `shot detect` 0 → 100 → 100. No P0/P1 at r3. Open, not shot again: the board's record link
+  in default browser link colours (P2, basalt — theme the link in `board.module.css`); S5 primary hover crop equal to
+  rest (P2, basalt `Button` or the shot's hover target); key-hint chips shown at 390 (P3, hide on coarse pointers); 390
+  summary headline ragged, S5 topic named three times, a bare "Board" section title, S3 strip footer meters without a
+  noun (P3, playground). Wave 46: the S5 aside's bare empty sentence (`EmptyState` anatomy), the journal chip wrap (now
+  also at 1440), the sparkline readout over its reference label.
+- **Public surface:** +1 symbol `Board`, +1 barrel type `BoardProps` (non-chart 109 → 110, barrel types 71 → 72);
+  `consumers.json` names argo `apps/dashboard/src/features/warden/board.tsx` (its prototype; argo maps
+  `boardStore.field.column` to `field=`). The provider-only and embedded gzip budgets did not move.
+- **MIGRATING:** `### Board (Wave 45)` under the single `## Unreleased`; `release-migrating.ts --check` passes.
+  `CHANGELOG.md` untouched.
+- **Process cost lesson:** `rd merge` fails a draft PR only at the merge call, after `make check` (about 10 min per
+  branch) — mark worker PRs ready before the train.
+- **Release-ready, not released** (owner: no release this wave): #468–#505 on master are unreleased (Waves 42–45).
+  argo is paused; no argo PR was opened.
+- **Next — stopped: Wave 45 closed; orchestrated, nothing spawned.** Wave 46 (Forms, states and the guidance half) is
+  `active` for the mother.
+
+## Wave 46 — Forms, states and the guidance half <!-- status: active -->
 
 Spec: SPEC § 6.11, § 6.13, § 8, § 11. Scenario S6 (build it), then every scenario's state toggles.
 
