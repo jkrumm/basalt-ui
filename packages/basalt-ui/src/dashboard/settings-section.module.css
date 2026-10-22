@@ -21,13 +21,28 @@
   border-bottom: 1px solid var(--vx-divider);
 }
 
+/* One row rule with FormRow (`controls/form-layout.module.css`): a 15rem label column, a control
+ * column capped at 20rem, left-packed; stacked under 600px of the section's OWN width. */
+.rows {
+  container-type: inline-size;
+  container-name: basalt-form;
+}
+
 .row {
-  display: flex;
-  align-items: flex-start;
-  justify-content: space-between;
+  display: grid;
+  grid-template-columns: minmax(0, 15rem) minmax(0, 20rem);
+  justify-content: start;
+  align-items: start;
   gap: var(--vx-space-settings-row-gap);
 }
 
 .control {
-  flex-shrink: 0;
+  min-inline-size: 0;
+}
+
+@container basalt-form (max-width: 599.9px) {
+  .row {
+    grid-template-columns: minmax(0, 1fr);
+    gap: var(--vx-space-stack-xs);
+  }
 }

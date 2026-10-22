@@ -37,8 +37,8 @@
 /* ── FormRow ─────────────────────────────────────────────────────────────────────────────────── */
 
 /*
- * Label left, control right. The control column is the wider one: a label is a phrase, a control is
- * an input that has to hold real content. `align-items: start` so a two-line label does not centre
+ * One row rule for FormRow and SettingsRow: a 15rem label column, then a control column capped at
+ * 20rem — beside each other, left-packed, never a 656px field behind a 480px gutter. `align-items: start` so a two-line label does not centre
  * itself against a one-line input.
  */
 .row {
@@ -48,7 +48,8 @@
 
 .grid {
   display: grid;
-  grid-template-columns: minmax(0, 1fr) minmax(0, 1.4fr);
+  grid-template-columns: minmax(0, 15rem) minmax(0, 20rem);
+  justify-content: start;
   align-items: start;
   gap: var(--vx-space-settings-row-gap);
 }
@@ -56,7 +57,6 @@
 .rowLabel {
   display: flex;
   flex-direction: column;
-  gap: var(--vx-space-stack-xs);
   min-inline-size: 0;
 }
 
@@ -77,6 +77,9 @@
 .hint {
   font-size: var(--vx-text-xs);
   color: var(--vx-muted);
+  /* Hangs tight under the label and gives back the line it would add to the row: the next row
+     reads as near as its own gap, not a description-high further. */
+  margin-block-end: calc(-1 * var(--vx-space-stack-xs));
 }
 
 .required {

@@ -112,4 +112,22 @@ layout('Wave 46 FormRow geometry', () => {
     expect(await h('w46-name')).toBe(44)
     expect(await h('w46-weight')).toBe(44)
   })
+
+  test('1440: one row rule — FormRow and SettingsRow share the label column and the control cap', async () => {
+    const p = await openFixture(SPEC, DESKTOP_1440, '/', 'reduce', 'fine')
+    await p.settle()
+    const measure = async (inputId: string, hostId: string) =>
+      (await p.raw.evaluate(`(() => {
+        const i = document.querySelector('#${inputId}').getBoundingClientRect()
+        const host = document.querySelector('[data-testid="${hostId}"]').getBoundingClientRect()
+        return { width: Math.round(i.width), offset: Math.round(i.left - host.left) }
+      })()`)) as { width: number; offset: number }
+    const form = await measure('w46-name', 'w46-form')
+    const settings = await measure('w46-sname', 'w46-settings')
+    // The control is the 20rem (320) cap; the label column is 15rem (240) and the card adds its own inset.
+    expect(form.width).toBe(320)
+    expect(settings.width).toBe(320)
+    expect(form.offset).toBe(240 + 16)
+    expect(settings.offset - form.offset).toBe(16)
+  })
 })

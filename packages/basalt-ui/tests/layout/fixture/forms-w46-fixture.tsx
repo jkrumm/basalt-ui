@@ -1,6 +1,7 @@
 import { NumberInput, PasswordInput, Textarea, TextInput } from '@mantine/core'
 import type { ReactElement } from 'react'
 import { FormGroup, FormRow } from '../../../src/controls'
+import { SettingsRow, SettingsSection } from '../../../src/dashboard/settings-section'
 
 /**
  * Wave 46 (SPEC § 6.13): two `FormGroup section`s of two rows each in a 700 px column (the beside
@@ -31,6 +32,14 @@ export function FormsW46Fixture(): ReactElement {
             <TextInput id="w46-md" size="md" data-testid="w46-md" />
           </FormRow>
         </FormGroup>
+      </div>
+      <div data-testid="w46-settings" style={{ width: 700 }}>
+        <SettingsSection title="Account">
+          <SettingsRow
+            label="Display name"
+            control={<TextInput id="w46-sname" data-testid="w46-sname" />}
+          />
+        </SettingsSection>
       </div>
     </>
   )
