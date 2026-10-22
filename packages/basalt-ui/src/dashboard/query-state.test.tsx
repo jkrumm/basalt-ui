@@ -395,3 +395,17 @@ describe('ErrorState defaults', () => {
     expect(screen.getAllByRole('button', { name: 'Retry' })).toHaveLength(1)
   })
 })
+
+describe('ErrorState title size (SPEC § 6.11)', () => {
+  const title = (tier: 'page' | 'section') =>
+    renderToStaticMarkup(
+      <MantineProvider>
+        <ErrorState error={new Error('boom')} title="Could not load" tier={tier} />
+      </MantineProvider>,
+    )
+
+  test('sm inside a card or section, md on a page, like the empty tile', () => {
+    expect(title('section')).toContain('--text-fz:var(--mantine-font-size-sm)')
+    expect(title('page')).toContain('--text-fz:var(--mantine-font-size-md)')
+  })
+})

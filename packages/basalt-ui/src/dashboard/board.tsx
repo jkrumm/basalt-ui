@@ -101,6 +101,34 @@ const SKELETON_CARDS = 3
 
 const cardKey = (col: string, card: string): string => `${col}\u0000${card}`
 
+/** The compact board's column switcher: the loading and the loaded branch share one box and one selection. */
+function ColumnSwitcher({
+  label,
+  items,
+  value,
+  onChange,
+  disabled = false,
+}: {
+  label: string
+  items: readonly { id: string; text: string }[]
+  value: string
+  onChange?: (id: string) => void
+  disabled?: boolean
+}) {
+  return (
+    // theme-allow raw-selection-control — the board's own column switcher, its selection is the board's own (a `field` when given, else internal), not a page filter.
+    <SegmentedControl
+      aria-label={`${label} column`}
+      disabled={disabled}
+      fullWidth
+      size="ctl"
+      value={value}
+      {...(onChange !== undefined && { onChange })}
+      data={items.map((i) => ({ value: i.id, label: i.text }))}
+    />
+  )
+}
+
 function SkeletonColumn({ title }: { title?: string }) {
   return (
     <div className={classes.column} aria-hidden>
@@ -301,14 +329,11 @@ function BoardView<T extends string>({
         <VisuallyHidden>{`Loading ${label}`}</VisuallyHidden>
         {compact && columns.length > 0 && (
           // The loaded switcher's footprint with the titles it will carry, inert until the cards land.
-          // theme-allow raw-selection-control — the board's own column switcher, not a page filter.
-          <SegmentedControl
-            aria-label={`${label} column`}
+          <ColumnSwitcher
+            label={label}
             disabled
-            fullWidth
-            size="ctl"
-            value={columns[0]?.id ?? ''}
-            data={columns.map((c) => ({ value: c.id, label: c.title }))}
+            value={selected?.id ?? ''}
+            items={columns.map((c) => ({ id: c.id, text: c.title }))}
           />
         )}
         <div className={classes.columns}>
@@ -339,17 +364,14 @@ function BoardView<T extends string>({
     content = (
       <Fragment>
         {compact && (
-          // theme-allow raw-selection-control — the board's own column switcher, its selection is the board's own (a `field` when given, else internal), not a page filter.
-          <SegmentedControl
-            aria-label={`${label} column`}
-            fullWidth
-            size="ctl"
+          <ColumnSwitcher
+            label={label}
             value={selected?.id ?? ''}
             onChange={(id) => {
               const col = columns.find((c) => c.id === id)
               if (col) selectColumn(col.id)
             }}
-            data={columns.map((c) => ({ value: c.id, label: `${c.title} ${c.cards.length}` }))}
+            items={columns.map((c) => ({ id: c.id, text: `${c.title} ${c.cards.length}` }))}
           />
         )}
         <div className={classes.columns}>

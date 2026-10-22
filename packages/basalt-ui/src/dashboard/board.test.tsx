@@ -206,6 +206,10 @@ describe('Board', () => {
     expect(switcher).toBeTruthy()
     expect(container.querySelectorAll('input[type="radio"][disabled]').length).toBeGreaterThan(0)
     expect(container.textContent).toContain('Needs you')
+    // The selected column is highlighted while loading too, as in the loaded switcher.
+    expect(container.querySelector('input[type="radio"]:checked')?.getAttribute('value')).toBe(
+      'needs',
+    )
   })
 
   test('compact shows one column under a switcher and switches', () => {

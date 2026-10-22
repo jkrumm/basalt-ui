@@ -27,8 +27,7 @@ const EL = '[data-testid="el-host"]'
 const BOARD = '[data-testid="board-host"]'
 const LOADING_HOST = '[data-testid="board-loading-host"]'
 const RECORD_HOST = '[data-testid="board-record-host"]'
-/** `sm`: a section tile's title (never above its host's); `md`: the page tier and the error title. In computed px. */
-const TITLE_MD = '15px'
+/** A section tile's and an error's title in a card or section (never above the host's own title), in computed px. */
 const TITLE_SM = '13px'
 /** The ring over its backdrop must move a channel by at least this much (of 255). */
 const RING_MIN_DELTA = 12
@@ -174,7 +173,7 @@ layout('Wave 46 states', () => {
         align: string
         textAlign: string
       }
-      expect(r.titleSize).toBe(TITLE_MD)
+      expect(r.titleSize).toBe(TITLE_SM)
       expect(r.align).not.toBe('center')
       expect(r.textAlign).not.toBe('center')
       expect(r.offset).toBeLessThan(r.tdWidth / 4)
