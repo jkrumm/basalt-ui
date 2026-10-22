@@ -10,7 +10,11 @@ import {
   LAST_SESSIONS,
   LEARNING_TODAY,
   MEAN_RATING,
+  MINUTES_PER_WEEK,
   MINUTES_THIS_MONTH,
+  SESSIONS_LAST_30,
+  SESSIONS_PER_WEEK,
+  fmtReviewDue,
   PARTNER_COUNT,
   SESSIONS_LOGGED,
   fmtMinutes,
@@ -119,5 +123,27 @@ describe('S3 item timeline fixture', () => {
       expect(d.status === 'merged').toBe(d.mergedAt !== undefined)
       if (d.mergedAt) expect(d.mergedAt.getTime()).toBeGreaterThan(d.at.getTime())
     }
+  })
+})
+
+describe('learning-data summary figures', () => {
+  it('states a live 30-day count that the journal can back', () => {
+    expect(SESSIONS_LAST_30).toBeGreaterThan(0)
+    expect(SESSIONS_LAST_30).toBeLessThan(SESSIONS_LOGGED)
+  })
+
+  it('has twelve weekly points that never exceed the journal', () => {
+    expect(SESSIONS_PER_WEEK).toHaveLength(12)
+    expect(MINUTES_PER_WEEK).toHaveLength(12)
+    const total = SESSIONS_PER_WEEK.reduce((a, p) => a + p.value, 0)
+    expect(total).toBeLessThanOrEqual(SESSIONS_LOGGED)
+    expect(total).toBeGreaterThanOrEqual(SESSIONS_LAST_30)
+  })
+
+  it('words the review date by days', () => {
+    expect(fmtReviewDue(4)).toBe('a review is due in 4 days')
+    expect(fmtReviewDue(1)).toBe('a review is due tomorrow')
+    expect(fmtReviewDue(0)).toBe('a review is due today')
+    expect(fmtReviewDue(-2)).toBe('a review is overdue by 2 days')
   })
 })

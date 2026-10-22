@@ -4,7 +4,7 @@
  * entries are deliberate: they cross the EventList's ~200-row virtualisation threshold. Every figure
  * the page states is derived here so it cannot drift from the journal it summarises.
  */
-import { fmtDay, fmtInt, seeded } from './fixture-utils'
+import { fmtDay, fmtInt, seeded, timedPoints } from './fixture-utils'
 
 /** The reading date. Fixed, so Today/Yesterday labels never move under a screenshot. */
 export const LEARNING_TODAY = new Date(Date.UTC(2026, 9, 16))
@@ -116,6 +116,29 @@ export const PARTNER_COUNT = new Set(
 export const DAYS_SINCE_LAST = Math.round(
   (LEARNING_TODAY.getTime() - Date.parse(LAST_DATE)) / DAY_MS,
 )
+const daysBack = (iso: string): number =>
+  Math.round((LEARNING_TODAY.getTime() - Date.parse(iso)) / DAY_MS)
+/** Sessions in the last 30 days, and in the 30 before — the summary's live number and its direction. */
+export const SESSIONS_LAST_30 = JOURNAL.filter((e) => daysBack(e.date) < 30).length
+export const SESSIONS_PRIOR_30 = JOURNAL.filter(
+  (e) => daysBack(e.date) >= 30 && daysBack(e.date) < 60,
+).length
+
+const WEEKS = 12
+const WEEK_DAYS = 7
+const perWeek = (weight: (e: JournalEntry) => number): number[] =>
+  Array.from({ length: WEEKS }, (_, i) => {
+    const from = (WEEKS - 1 - i) * WEEK_DAYS
+    return JOURNAL.filter((e) => daysBack(e.date) >= from && daysBack(e.date) < from + WEEK_DAYS)
+      .map(weight)
+      .reduce((a, b) => a + b, 0)
+  })
+const weekPoints = (values: number[]) =>
+  timedPoints(values, LEARNING_TODAY.getTime(), WEEK_DAYS * DAY_MS)
+/** Twelve weeks, oldest first: the strip's trends. */
+export const SESSIONS_PER_WEEK = weekPoints(perWeek(() => 1))
+export const MINUTES_PER_WEEK = weekPoints(perWeek((e) => e.durationMin))
+
 /** Spaced-repetition review: a fixed interval after the last session. */
 export const NEXT_REVIEW_DAYS = 4
 export const NEXT_REVIEW = new Date(Date.parse(LAST_DATE) + NEXT_REVIEW_DAYS * DAY_MS)
@@ -142,3 +165,15 @@ export const fmtMinutes = (minutes: number): string => {
 /** `today`, `yesterday`, `5 days ago`. */
 export const fmtSince = (days: number): string =>
   days === 0 ? 'today' : days === 1 ? 'yesterday' : `${days} days ago`
+
+/** `a review is due in 4 days`, `a review is due today`, `a review is overdue by 2 days`. */
+export const fmtReviewDue = (days: number): string =>
+  days > 1
+    ? `a review is due in ${days} days`
+    : days === 1
+      ? 'a review is due tomorrow'
+      : days === 0
+        ? 'a review is due today'
+        : `a review is overdue by ${-days} ${days === -1 ? 'day' : 'days'}`
+/** Days until the review: the interval minus the days since the last session. */
+export const REVIEW_IN_DAYS = NEXT_REVIEW_DAYS - DAYS_SINCE_LAST
