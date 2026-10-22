@@ -14,6 +14,7 @@ import {
   endLabelPlan,
 } from './labels'
 import type { EndLabel } from './labels'
+import { yRangeWithin } from './ref-label'
 import { xScaleFor } from './scales'
 import type { ChartSeries, PlotContext, PlotRow } from './types'
 
@@ -369,28 +370,68 @@ describe('endLabelPlan collision avoidance (argo body weight: Weight + 7 d mean)
 })
 
 describe('end labels keep off every line and rule (w43 r2)', () => {
-  // A jagged series ending at 50 beside a smooth one ending at 51, over a rule at 49.
-  const jag = (i: number): number => 50 + (i === 19 ? 0 : i % 2 ? 6 : -6)
-  const data: Row[] = Array.from({ length: 20 }, (_, i) => ({
-    t: day(i + 1),
-    a: jag(i),
-    b: 51,
-  }))
-  const lines = [A, B]
-  const draw = (plan: EndLabel<Row, Date>[], i: number, y: number): number => {
-    const p = plan[i] as EndLabel<Row, Date>
-    return (y / 100) * 300 - (endLabelOffset(p.anchor, p.side).dy + p.nudge)
+  // argo's body weight, invented: a falling jagged Weight ending 0.1 kg off its smooth 7 d mean,
+  // over a Goal rule at 78 kg on a 77-86 kg axis, 190 px tall and 1000 px wide.
+  const DAYS = 60
+  const raw = Array.from({ length: DAYS }, (_, i) => {
+    const trend = 84 - i * 0.09
+    return i === DAYS - 1 ? trend + 0.1 : trend + Math.sin(i * 2.1) * 0.6 + Math.cos(i * 0.9) * 0.3
+  })
+  const data: Row[] = raw.map((a, i) => {
+    const win = raw.slice(Math.max(0, i - 6), i + 1)
+    return { t: day(i + 1), a, b: win.reduce((sum, v) => sum + v, 0) / win.length }
+  })
+  const W = { ...A, key: 'a', label: 'Weight' }
+  const M = { ...B, key: 'b', label: '7 d mean' }
+  const lines = [W, M]
+  const GOAL = 78
+  const over = {
+    yDomain: [77, 86] as [number, number],
+    plotHeight: 190,
+    containerClass: 'wide' as const,
   }
+  const perKg = 190 / 9
+  const px = (v: number): number => (v - 77) * perKg
 
-  test('a label sits clear of the other line and a rule, not only of its own', () => {
-    const plan = endLabelPlan(plotOf(data, lines), lines, 'auto', [49])
+  /** The px (from the bottom) a label's ink spans, and the lines it runs into: [] when clear. */
+  const crossed = (plan: EndLabel<Row, Date>[]): string[] =>
+    plan.flatMap((p) => {
+      const last = data.at(-1) as Row
+      const y = px((p.series.key === 'a' ? last.a : last.b) as number)
+      const c = y - (endLabelOffset(p.anchor, p.side).dy + p.nudge)
+      const [from, to] = [c - 4.125, c + 4.125]
+      const fx = 1
+      const x0 = fx - (6 + p.series.label.length * 11 * 0.62) / 1000
+      const x1 = fx - 6 / 1000
+      const hit = [
+        ...lines.map(
+          (s) =>
+            [
+              s.key,
+              data.map((d, i) => ({
+                fx: (i + 0) / (DAYS - 1),
+                y: px((s.key === 'a' ? d.a : d.b) as number),
+              })),
+            ] as const,
+        ),
+        [
+          'goal',
+          [
+            { fx: 0, y: px(GOAL) },
+            { fx: 1, y: px(GOAL) },
+          ],
+        ] as const,
+      ].filter(([, pts]) => {
+        const range = yRangeWithin(pts as never, x0, x1)
+        return range !== null && range[1] >= from && range[0] <= to
+      })
+      return hit.map(([name]) => `${p.series.label} over ${name}`)
+    })
+
+  test('a label sits clear of the other line and the rule, not only of its own', () => {
+    const plan = endLabelPlan(plotOf(data, lines, over), lines, 'auto', [GOAL])
     expect(plan).toHaveLength(2)
-    const [a, b] = [draw(plan, 0, 50), draw(plan, 1, 51)]
-    // Centres in px from the plot's bottom: the rule at 49 is 147, the smooth line at 51 is 153.
-    for (const c of [a, b]) {
-      expect(Math.abs(c - 147)).toBeGreaterThan(4.1)
-    }
-    expect(Math.abs(a - 153)).toBeGreaterThan(4.1)
+    expect(crossed(plan)).toEqual([])
   })
 
   test('the plan claims a box per label for a reference caption to avoid', () => {
