@@ -60,6 +60,15 @@ layout('Wave 46 r1 chart and stat states', () => {
           radius: cs.borderTopLeftRadius,
           weight: getComputedStyle(title).fontWeight,
           titleSize: parseFloat(getComputedStyle(title).fontSize),
+          // The `sm` step the host's own titles use, resolved to px by a probe.
+          sm: (() => {
+            const probe = document.createElement('span')
+            probe.style.fontSize = 'var(--vx-text-sm)'
+            t.append(probe)
+            const px = parseFloat(getComputedStyle(probe).fontSize)
+            probe.remove()
+            return px
+          })(),
           cardTitleSize: parseFloat(getComputedStyle(cardTitle).fontSize),
           // The copy block's centre against the tile's, both axes.
           midY:
@@ -75,7 +84,8 @@ layout('Wave 46 r1 chart and stat states', () => {
       expect(tile.shadow).not.toBe('none')
       expect(parseFloat(tile.radius)).toBeGreaterThan(0)
       expect(tile.weight).toBe('500')
-      // Never louder than the card title beside it.
+      // `sm` in every chart host, and never louder than the card title beside it.
+      expect(tile.titleSize).toBe(tile.sm)
       expect(tile.titleSize).toBeLessThanOrEqual(tile.cardTitleSize + SLACK)
       // The D37 height: the empty card is as tall as the card at rest.
       const [rest, empty] = [
@@ -101,6 +111,29 @@ layout('Wave 46 r1 chart and stat states', () => {
       const [rest, pending] = [
         await heightOf(p, 'w46-chart-rest'),
         await heightOf(p, 'w46-chart-pending'),
+      ]
+      expect(Math.abs(pending - rest)).toBeLessThanOrEqual(SLACK)
+    })
+
+    test(`${scheme}: a pending BandStrip draws one band row, at the loaded card height`, async () => {
+      const p = await openFixture(specFor(scheme), DESKTOP_1440)
+      await p.settle()
+      const ghost = await p.raw.evaluate(() => {
+        const g = document.querySelector(
+          '[data-testid="w46-band-pending"] [data-basalt-plot-ghost]',
+        )
+        const row = g?.firstElementChild?.getBoundingClientRect()
+        return {
+          kind: g?.getAttribute('data-basalt-plot-ghost') ?? null,
+          rows: g?.children.length ?? 0,
+          h: row?.height ?? 0,
+        }
+      })
+      expect(ghost.kind).toBe('band')
+      expect(ghost.rows).toBe(1)
+      const [rest, pending] = [
+        await heightOf(p, 'w46-band-rest'),
+        await heightOf(p, 'w46-band-pending'),
       ]
       expect(Math.abs(pending - rest)).toBeLessThanOrEqual(SLACK)
     })

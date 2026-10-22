@@ -13,5 +13,6 @@ declare const classes: {
   readonly factPeriod: string
   readonly skeletonFigure: string
   readonly skeletonBasis: string
+  readonly legendReserve: string
 }
 export default classes

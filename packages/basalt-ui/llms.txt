@@ -412,7 +412,7 @@ Signature: ChartCard(props: ChartCardProps): ReactElement<unknown, string | JSXE
   actions?: ReactNode
   state?: ChartState
   placeholderHeight?: number | ResponsiveChartHeight | "content"
-  ghost?: number | "line" | "bars"
+  ghost?: number | "line" | "bars" | "band"
   stale?: boolean
   stateNoun?: string
   onRetry?: (() => void)

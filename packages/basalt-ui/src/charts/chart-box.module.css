@@ -125,6 +125,16 @@
   stroke-linejoin: round;
 }
 
+.ghostBand {
+  flex: 1 1 0;
+  min-width: 0;
+  align-self: stretch;
+  /* The loaded strip is one row above its axis labels: the row keeps their room. */
+  margin-bottom: var(--basalt-ghost-band-axis, 1.5rem);
+  border-radius: 3px;
+  background: color-mix(in srgb, var(--vx-ink) 18%, var(--vx-surface-panel));
+}
+
 .ghostBar {
   flex: 1 1 0;
   min-width: 0;
@@ -134,8 +144,8 @@
 
 /*
  * The empty body (SPEC § 6.11): a ring-edged tile (one inset ring, set inline in `state.tsx` so the divider ledger does not read it as a rule; card radius) filling the chart's
- * own box, so the D37 height holds, with its copy centred: the title at `md` 500, never louder than
- * the card title beside it, and one muted line. `EmptyState`'s section anatomy, in plain CSS
+ * own box, so the D37 height holds, with its copy centred: the title at `sm` 500, the size of the
+ * host's own title in every chart host, and one muted line. `EmptyState`'s section anatomy, in plain CSS
  * because `src/charts/**` is Mantine-free.
  */
 .emptyTile {
@@ -161,7 +171,7 @@
 }
 
 .emptyTitle {
-  font-size: var(--basalt-state-title-size, var(--vx-text-md));
+  font-size: var(--basalt-state-title-size, var(--vx-text-sm));
   font-weight: 500;
   color: var(--vx-ink);
 }

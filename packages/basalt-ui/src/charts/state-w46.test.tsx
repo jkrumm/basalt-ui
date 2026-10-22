@@ -2,6 +2,7 @@
 import { cleanup, render } from '@testing-library/react'
 import { afterEach, describe, expect, test } from 'bun:test'
 import { Bars } from './Bars'
+import { BandStrip } from './BandStrip'
 import { ChartCard } from './ChartCard'
 import { Lines } from './Lines'
 import { StackedArea } from './StackedArea'
@@ -157,6 +158,35 @@ describe('pending ghost follows the chart kind', () => {
     const Wrapped = (): React.ReactElement => line
     expect(ghost(<Wrapped />)).toBe('bars')
     expect(ghost(<Wrapped />, { ghost: 'line' })).toBe('line')
+  })
+
+  test('a BandStrip body loads as one band row at its own height, legend room kept', () => {
+    const strip = (
+      <BandStrip
+        ariaLabel="Band"
+        data={rows}
+        x={(d: Row) => d.t}
+        states={[
+          { key: 'up', label: 'Up', color: 'green' },
+          { key: 'down', label: 'Down', color: 'red' },
+        ]}
+        getBand={() => ({ state: 'up' })}
+        height={90}
+      />
+    )
+    const { container } = render(
+      <ChartCard title="T" state={{ pending: true }}>
+        <div>{strip}</div>
+      </ChartCard>,
+    )
+    const ghost = container.querySelector('[data-basalt-plot-ghost]')
+    expect(ghost?.getAttribute('data-basalt-plot-ghost')).toBe('band')
+    expect(ghost?.children).toHaveLength(1)
+    expect(
+      container
+        .querySelector('[data-basalt-chart-state], output[aria-busy]')
+        ?.parentElement?.getAttribute('style') ?? '',
+    ).toContain('90px')
   })
 
   test('an explicit ghost wins over the body', () => {

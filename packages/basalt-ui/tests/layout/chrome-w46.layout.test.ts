@@ -23,6 +23,10 @@ const HOVER_SETTLE_MS = 2_000
 const POINTER_STOPS = [0.05, 0.25, 0.5, 0.75, 0.95] as const
 /** The engine's reference caption group (`ref-label.ts` → the `reference-label` text mark). */
 const CAPTION = '[data-ts-key="reference-label"]'
+/** The hovered fill must read against rest at button size: a luminance ratio the old 4.8-tone step missed. */
+const MIN_HOVER_CONTRAST = 1.25
+/** Consecutive equal reads that mean the hover transition has finished. */
+const STABLE_READS = 3
 const READOUT = '[data-basalt-sparkline-readout]'
 const SPARK_HOSTS = ['w43-spark', 'w43-spark-wide'] as const
 /** Sparklines per host in the w43 fixture. */
@@ -88,7 +92,31 @@ layout('Wave 46 chrome', () => {
         [button, rest] as const,
         { timeout: HOVER_SETTLE_MS },
       )
-      expect(await bg()).not.toBe(rest)
+      // Read the colour once the transition has finished, then compare it to rest.
+      let hovered = await bg()
+      for (let stable = 0; stable < STABLE_READS;) {
+        await p.raw.waitForTimeout(50)
+        const next = await bg()
+        stable = next === hovered ? stable + 1 : 0
+        hovered = next
+      }
+      expect(hovered).not.toBe(rest)
+      const ratio = await p.raw.evaluate(
+        ([a, b]) => {
+          const lum = (css: string): number => {
+            const [r = 0, g = 0, bl = 0] = (css.match(/[\d.]+/g) ?? []).map(Number).slice(0, 3)
+            const lin = (c: number): number => {
+              const v = c / 255
+              return v <= 0.03928 ? v / 12.92 : ((v + 0.055) / 1.055) ** 2.4
+            }
+            return 0.2126 * lin(r) + 0.7152 * lin(g) + 0.0722 * lin(bl)
+          }
+          const [hi, lo] = [Math.max(lum(a!), lum(b!)), Math.min(lum(a!), lum(b!))]
+          return (hi + 0.05) / (lo + 0.05)
+        },
+        [rest, hovered] as const,
+      )
+      expect(ratio).toBeGreaterThanOrEqual(MIN_HOVER_CONTRAST)
     })
   }
 

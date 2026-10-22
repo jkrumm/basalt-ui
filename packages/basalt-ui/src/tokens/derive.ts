@@ -114,7 +114,7 @@ const FILL_LUMINANCE = 0.165
 
 // ── Accent family ────────────────────────────────────────────────────────────────────────────
 // Fill hover: fillTone - FILL_HOVER_TONE_DELTA, fillChroma + FILL_HOVER_CHROMA_DELTA.
-const FILL_HOVER_TONE_DELTA = 4.8
+const FILL_HOVER_TONE_DELTA = 10
 const FILL_HOVER_CHROMA_DELTA = -3.6
 // Dark-mode accent-as-INK: lighter tone, chroma pulled back off the fill's saturation so it reads
 // as an ink color rather than a second fill.

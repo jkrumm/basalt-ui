@@ -1,5 +1,5 @@
 import type { ReactElement } from 'react'
-import { ChartCard, Lines } from '../../../src/charts'
+import { BandStrip, ChartCard, Lines } from '../../../src/charts'
 import { StatCard } from '../../../src/dashboard/stat-card'
 import { VX } from '../../../src/tokens'
 
@@ -20,10 +20,27 @@ const line = (
   />
 )
 
+const BAND_STATES = [
+  { key: 'up', label: 'Up', color: VX.neutral, fillOpacity: 0.14 },
+  { key: 'down', label: 'Outage', color: VX.status.bad },
+]
+
+const band = (
+  <BandStrip
+    ariaLabel="Line state"
+    data={DATA}
+    x={(d) => d.t}
+    states={BAND_STATES}
+    getBand={(d) => ({ state: d.v > 28 ? 'down' : 'up' })}
+    height={90}
+  />
+)
+
 const SPARK = () => <span style={{ display: 'block', height: 22 }} />
 
 /**
- * Wave 46 r1: a line `ChartCard` at rest, empty and pending (`w46-chart-<mode>`), and a `StatCard`
+ * Wave 46 r1: a line `ChartCard` at rest, empty and pending (`w46-chart-<mode>`), a `BandStrip`
+ * card at rest and pending (`w46-band-<mode>`), and a `StatCard`
  * with a delta and a sparkline at rest, loading and empty (`w46-stat-<mode>`), each in a 420px cell.
  */
 export function W46ChartsFixture(): ReactElement {
@@ -37,6 +54,13 @@ export function W46ChartsFixture(): ReactElement {
             {...(mode === 'pending' && { state: { pending: true } })}
           >
             {line}
+          </ChartCard>
+        </div>
+      ))}
+      {(['rest', 'pending'] as const).map((mode) => (
+        <div key={mode} data-testid={`w46-band-${mode}`}>
+          <ChartCard title="Line state" {...(mode === 'pending' && { state: { pending: true } })}>
+            {band}
           </ChartCard>
         </div>
       ))}

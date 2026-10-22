@@ -17,6 +17,7 @@ import type { DeltaPolarity } from '../dashboard/delta-badge'
 import { WidgetHeader } from '../dashboard/widget-header'
 import { VX } from '../tokens'
 import { ChartCardContext } from './card-context'
+import { BandStrip } from './BandStrip'
 import { Lines } from './Lines'
 import { StackedArea } from './StackedArea'
 import classes from './chart-card.module.css'
@@ -155,10 +156,11 @@ type ChartCardBaseProps = BasaltProps &
      * fallback>` should pass a numeric height instead. */
     placeholderHeight?: number | ResponsiveChartHeight | 'content' | undefined
     /** The pending plot's ghost: `'bars'` (default), `'line'` for a line or area chart, or the bar
-     * count when the loaded chart's data length is known. Omitted, a `Lines` or `StackedArea` body
-     * (bare, or inside plain elements) loads as a line; a body wrapped in your own component hides
+     * count when the loaded chart's data length is known, `'band'` for a `BandStrip`. Omitted, a
+     * `Lines` or `StackedArea` body (bare, or inside plain elements) loads as a line, a `BandStrip`
+     * as one band row at its own `height`; a body wrapped in your own component hides
      * its kind from the card, so pass `ghost="line"` there. */
-    ghost?: 'bars' | 'line' | number | undefined
+    ghost?: 'bars' | 'line' | 'band' | number | undefined
     /** Placeholder data is showing: the facts row dims with the plot (a strip cell's `stale`). */
     stale?: boolean | undefined
     /** What an errored `state` names: "Could not load {stateNoun}". Default: no noun. */
@@ -256,16 +258,31 @@ function FactsSkeleton({ basis }: { basis: boolean }): ReactElement {
   )
 }
 
+type BodyKind = { ghost: 'line' | 'band'; height?: number; legend?: true }
+
 /**
- * The ghost a pending body draws when `ghost` is not passed: a line for a `Lines` or `StackedArea`
- * body (found through wrappers such as a `Box`), the default bars otherwise, so a loading line chart
- * is not drawn as bars.
+ * What a pending body draws when `ghost` is not passed: a line for a `Lines` or `StackedArea` body,
+ * one band row at the strip's own `height` for a `BandStrip` (found through plain elements such as a
+ * `Box`), the default bars otherwise, so a loading chart is drawn as its kind, at its loaded height.
  */
-function ghostOf(node: ReactNode): 'line' | undefined {
+function bodyKindOf(node: ReactNode): BodyKind | undefined {
   for (const child of Children.toArray(node)) {
-    if (!isValidElement<{ children?: ReactNode }>(child)) continue
-    if (child.type === Lines || child.type === StackedArea) return 'line'
-    const inner = ghostOf(child.props.children)
+    if (!isValidElement<{ children?: ReactNode; height?: unknown }>(child)) continue
+    if (child.type === Lines || child.type === StackedArea) return { ghost: 'line' }
+    if (child.type === BandStrip) {
+      const { height, states, legend } = child.props as {
+        height?: unknown
+        states?: readonly unknown[]
+        legend?: unknown
+      }
+      return {
+        ghost: 'band',
+        ...(typeof height === 'number' && { height }),
+        // The loaded strip's legend row sits under the box: the ghost keeps its room.
+        ...(legend !== false && (states?.length ?? 0) > 1 && { legend: true as const }),
+      }
+    }
+    const inner = bodyKindOf(child.props.children)
     if (inner !== undefined) return inner
   }
   return undefined
@@ -290,7 +307,9 @@ export function ChartCard({
 }: ChartCardProps): ReactElement {
   const { ref, short } = useShortCard()
   const resolved = resolveChartState(state)
-  const plotGhost = ghost ?? (resolved === 'pending' ? ghostOf(children) : undefined)
+  const kind = resolved === 'pending' ? bodyKindOf(children) : undefined
+  const plotGhost = ghost ?? kind?.ghost
+  const pendingHeight = placeholderHeight ?? (ghost === undefined ? kind?.height : undefined)
   const showFacts = facts !== undefined && resolved === null
   const skeletonFacts = facts !== undefined && resolved === 'pending'
   const hasHeader =
@@ -333,15 +352,17 @@ export function ChartCard({
           {resolved === null || (resolved === 'pending' && placeholderHeight === 'content') ? (
             children
           ) : (
-            <ChartPlaceholder
-              state={state}
-              {...(placeholderHeight !== undefined && { height: placeholderHeight })}
-              {...(stateNoun !== undefined && { noun: stateNoun })}
-              {...(plotGhost !== undefined && { ghost: plotGhost })}
-              {...(onRetry !== undefined && { onRetry })}
-              {...(retrying !== undefined && { retrying })}
-              action={stateAction}
-            />
+            <div className={kind?.legend === true ? classes.legendReserve : undefined}>
+              <ChartPlaceholder
+                state={state}
+                {...(pendingHeight !== undefined && { height: pendingHeight })}
+                {...(stateNoun !== undefined && { noun: stateNoun })}
+                {...(plotGhost !== undefined && { ghost: plotGhost })}
+                {...(onRetry !== undefined && { onRetry })}
+                {...(retrying !== undefined && { retrying })}
+                action={stateAction}
+              />
+            </div>
           )}
         </div>
       </div>
