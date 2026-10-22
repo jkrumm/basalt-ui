@@ -912,6 +912,7 @@ Signature: FormGroup(props: FormGroupProps): JSX.Element
   error?: ReactNode
   required?: boolean
   direction?: "row" | "column"
+  section?: boolean
   children: ReactNode
 Signature: FormRow(props: FormRowProps): JSX.Element
   className?: string
