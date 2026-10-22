@@ -19,7 +19,8 @@
  * `::after` stretches over the card, so the whole card is the target). No `grid` role.
  *
  * Compact (`useSizeClass() === 'compact'`): one column at a time under a `SegmentedControl` labelled
- * "<title> <count>". The selected column is a store field when you pass `field` (an enum field whose
+ * "<title> <count>" (not `ViewTabs`: past three options it becomes a `Select` on a phone, and the
+ * board's switcher is always the track). The selected column is a store field when you pass `field` (an enum field whose
  * values are column ids, like `ViewTabs`'s; the URL or storage then remembers it), else internal
  * state. An empty column is one muted line (`empty`); an empty board is the
  * `EmptyState` tile (`empty` on the board); `loading` is column-shaped skeletons. An error is the
@@ -50,8 +51,8 @@ import type { EnumField, FieldHandle } from '../state'
 import { StatusDot } from '../theme/status-dot'
 import { VX } from '../tokens'
 import classes from './board.module.css'
-import { BOARD_KEYS, isSafeHref, moveOnBoard } from './board-nav'
-import type { BoardKey, BoardPos } from './board-nav'
+import { isBoardKey, isSafeHref, moveOnBoard } from './board-nav'
+import type { BoardPos } from './board-nav'
 import { EmptyState } from './empty-state'
 
 export type BoardProps<T extends string = string> = BasaltProps & {
@@ -59,7 +60,7 @@ export type BoardProps<T extends string = string> = BasaltProps & {
   label?: string
   /** Columns in display order. Column and card `id`s must be unique within their parent. */
   columns: readonly {
-    id: string
+    id: T
     title: string
     /** Colour of the header's status dot (a `VX.status.*` token). Default muted. */
     tone?: string
@@ -124,10 +125,10 @@ function SkeletonColumn({ title }: { title?: string }) {
   )
 }
 
-type BoardViewProps = Omit<BoardProps, 'field'> & {
+type BoardViewProps<T extends string> = Omit<BoardProps<T>, 'field'> & {
   /** The selected column id and its setter, from the field or from internal state. */
-  picked: string | undefined
-  onPick: (columnId: string) => void
+  picked: T | undefined
+  onPick: (columnId: T) => void
 }
 
 /** The field's `use()` is a hook, so the field and internal-state forms are two components over one view. */
@@ -136,12 +137,11 @@ function FieldBoard<T extends string>({
   ...props
 }: Omit<BoardProps<T>, 'field'> & { field: FieldHandle<EnumField<T>> }) {
   const [picked, setPicked] = field.use()
-  // The switcher offers only the board's column ids, so `id` is the declared value the caller's field holds.
-  return <BoardView {...props} picked={picked} onPick={(id) => setPicked(id as T)} />
+  return <BoardView {...props} picked={picked} onPick={setPicked} />
 }
 
-function InternalBoard(props: Omit<BoardProps, 'field'>) {
-  const [picked, setPicked] = useState<string | undefined>(undefined)
+function InternalBoard<T extends string>(props: Omit<BoardProps<T>, 'field'>) {
+  const [picked, setPicked] = useState<T | undefined>(undefined)
   return <BoardView {...props} picked={picked} onPick={setPicked} />
 }
 
@@ -153,7 +153,7 @@ export function Board<T extends string = string>({ field, ...props }: BoardProps
   )
 }
 
-function BoardView({
+function BoardView<T extends string>({
   label = 'Board',
   columns,
   onOpen,
@@ -164,7 +164,7 @@ function BoardView({
   onPick,
   className,
   style,
-}: BoardViewProps) {
+}: BoardViewProps<T>) {
   const compact = useSizeClass() === 'compact'
   const labelId = useId()
   const [active, setActive] = useState<{ col: string; card: string } | null>(null)
@@ -177,12 +177,15 @@ function BoardView({
   const selected = columns.find((c) => c.id === picked) ?? columns[0]
   const selectColumn = onPick
 
-  // The roving stop: the focused card if it still exists, else the first card of the first non-empty column.
-  const firstCol = columns.findIndex((c) => c.cards.length > 0)
+  // The roving stop sits in what is rendered: the focused card if it still exists there (compact
+  // renders only the selected column), else the first card of the first rendered non-empty column.
+  const selectedIndex = selected === undefined ? -1 : columns.indexOf(selected)
+  const rendered = (colIndex: number): boolean => !compact || colIndex === selectedIndex
+  const firstCol = columns.findIndex((c, i) => rendered(i) && c.cards.length > 0)
   const activeCol = columns.findIndex((c) => c.id === active?.col)
   const activeRow = columns[activeCol]?.cards.findIndex((c) => c.id === active?.card) ?? -1
   const stop: BoardPos | null =
-    activeCol >= 0 && activeRow >= 0
+    activeCol >= 0 && activeRow >= 0 && rendered(activeCol)
       ? { col: activeCol, row: activeRow }
       : firstCol >= 0
         ? { col: firstCol, row: 0 }
@@ -190,17 +193,17 @@ function BoardView({
 
   // A move in compact may first have to mount the target column; focus lands after that render.
   useEffect(() => {
-    if (pending.current === null) return
-    const el = buttons.current.get(pending.current)
-    if (el === undefined) return
+    const key = pending.current
+    if (key === null) return
+    // One shot: a target that did not mount is dropped, never retried on a later render.
     pending.current = null
-    el.focus()
+    buttons.current.get(key)?.focus()
   })
 
   const onKeyDown = (event: KeyboardEvent<HTMLButtonElement>, from: BoardPos): void => {
-    if (!BOARD_KEYS.includes(event.key)) return
+    if (!isBoardKey(event.key)) return
     event.preventDefault()
-    const to = moveOnBoard(sizes, from, event.key as BoardKey)
+    const to = moveOnBoard(sizes, from, event.key)
     const col = to && columns[to.col]
     const card = col && col.cards[to.row]
     if (!to || !col || !card) return
@@ -328,7 +331,10 @@ function BoardView({
             fullWidth
             size="ctl"
             value={selected?.id ?? ''}
-            onChange={selectColumn}
+            onChange={(id) => {
+              const col = columns.find((c) => c.id === id)
+              if (col) selectColumn(col.id)
+            }}
             data={columns.map((c) => ({ value: c.id, label: `${c.title} ${c.cards.length}` }))}
           />
         )}

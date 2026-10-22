@@ -72,7 +72,7 @@ Signature: Board(props: BoardProps<T>): JSX.Element
   className?: string
   style?: CSSProperties
   label?: string
-  columns: readonly { id: string; title: string; tone?: string; total?…
+  columns: readonly { id: T; title: string; tone?: string; total?: str…
   onOpen?: (cardId: string, columnId: string) => void
   height?: string | number
   loading?: boolean
