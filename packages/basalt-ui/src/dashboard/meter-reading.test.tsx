@@ -93,3 +93,38 @@ describe('the marker reading in a host that already shows the value', () => {
     expect(reading(container)).not.toBeNull()
   })
 })
+
+describe('the marker reading on an unzoned marked track (Wave 43)', () => {
+  const caption = (c: HTMLElement) => c.querySelector('[data-meter-captions]')
+  const weight = (
+    <Meter
+      label="Weight in the window"
+      value={72.3}
+      min={72.3}
+      max={78.9}
+      format={(v) => `${v.toFixed(1)} kg`}
+      stops={[
+        { at: 72.3, color: 'gray' },
+        { at: 78.9, color: 'gray' },
+      ]}
+      startCaption="low 72.3 kg"
+      endCaption="high 78.9 kg"
+      readingAt="start"
+    />
+  )
+
+  test('the reading shares the caption row with the end caption: no reading row of its own', () => {
+    const { container } = render(<MantineProvider>{weight}</MantineProvider>)
+    expect(reading(container)).toBeNull()
+    const row = caption(container)
+    expect([...(row?.children ?? [])].map((c) => c.textContent?.replaceAll('\u00a0', ' '))).toEqual(
+      ['low 72.3 kg', 'high 78.9 kg'],
+    )
+  })
+
+  test('a zoned track keeps the reading under its own row', () => {
+    const { container } = render(<MantineProvider>{meter}</MantineProvider>)
+    expect(reading(container)).not.toBeNull()
+    expect(caption(container)?.textContent ?? '').not.toContain('612')
+  })
+})

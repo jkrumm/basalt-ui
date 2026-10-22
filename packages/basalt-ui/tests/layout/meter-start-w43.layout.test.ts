@@ -98,11 +98,11 @@ layout('Wave 43 start-side Meter captions', () => {
       expect(m.texts.length).toBe(2)
       // (a) no clipping ancestor cuts the glyph box
       for (const c of m.clipped) expect(c).toBeLessThanOrEqual(EPS)
-      // (b) both captions are whole, on one line, and share it whenever they fit the track together
-      if (m.fits) {
-        for (const l of m.lines) expect(l).toBeLessThan(ONE_LINE)
-        expect(Math.abs((m.tops[0] ?? 0) - (m.tops[1] ?? 0))).toBeLessThanOrEqual(EPS)
-      }
+      // (b) argo's captions (~128px together) fit the track at both widths (1440: ~355px, 390: ~164px),
+      // so the single-line assertions can never be skipped: a track that stopped fitting fails here.
+      expect(m.fits).toBe(true)
+      for (const l of m.lines) expect(l).toBeLessThan(ONE_LINE)
+      expect(Math.abs((m.tops[0] ?? 0) - (m.tops[1] ?? 0))).toBeLessThanOrEqual(EPS)
     }
   })
 })
