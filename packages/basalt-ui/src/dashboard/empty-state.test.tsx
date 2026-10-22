@@ -15,6 +15,7 @@
 import { MantineProvider } from '@mantine/core'
 import { describe, expect, test } from 'bun:test'
 import { renderToStaticMarkup } from 'react-dom/server'
+import { VX } from '../tokens'
 import { EmptyState } from './empty-state'
 
 function markup(tier: 'page' | 'section') {
@@ -60,5 +61,38 @@ describe('common props (`common/props.ts`)', () => {
       </MantineProvider>,
     )
     expect(html).toContain('my-empty-state')
+  })
+})
+
+describe('EmptyState anatomy (SPEC § 6.11)', () => {
+  const html = (tier: 'page' | 'section') =>
+    renderToStaticMarkup(
+      <MantineProvider>
+        <EmptyState title="No results" description="Widen the range." tier={tier} />
+      </MantineProvider>,
+    )
+
+  test('the title is md at weight 500 in the body font, never the old head-font xl 550', () => {
+    for (const tier of ['page', 'section'] as const) {
+      const out = html(tier)
+      expect(out).toContain('var(--basalt-state-title-size, var(--vx-text-md))')
+      expect(out).toContain('font-weight:500')
+      expect(out).not.toContain('font-weight:550')
+      expect(out).not.toContain('--basalt-font-head')
+    }
+  })
+
+  test('the description is sm: the component uses two font sizes', () => {
+    const out = html('section')
+    expect(out).toContain(`font-size:${VX.text.sm}px`)
+    expect(out.match(/font-size:[^;"]+/g)).toHaveLength(2)
+  })
+
+  test('the section tier is a ring-edged tile at card radius; the page tier is not', () => {
+    const section = html('section')
+    expect(section).toContain('--basalt-state-ring')
+    expect(section).toContain('var(--vx-radius-card)')
+    expect(section).not.toContain('border:')
+    expect(html('page')).not.toContain('--basalt-state-ring')
   })
 })

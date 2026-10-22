@@ -30,10 +30,10 @@ export type EmptyStateProps = BasaltProps &
   SlotStylesProps<EmptyStateSlot> & {
     /** Optional glyph slot, rendered faint at ~28-32px. No shipped illustration assets. */
     icon?: ReactNode
-    /** Head-font title (18px, weight 550, ink). */
+    /** Title at `md`, weight 500, ink: never louder than the card title beside it (SPEC § 6.11). */
     title: string
     /**
-     * Muted 15px description, capped at ~360px so it reads as a short explanation. Optional: a
+     * Muted `sm` description, capped at ~360px so it reads as a short explanation. Optional: a
      * compact panel ("No data yet") should not have to invent a second sentence, and five argo
      * features wrapped this component solely to avoid doing so.
      */
@@ -41,7 +41,7 @@ export type EmptyStateProps = BasaltProps &
     /** Optional call-to-action rendered below the description. */
     action?: ReactNode
     /** How loud this state is: `'page'` (default) = generous padding for a full-page state;
-     * `'section'` = compact. */
+     * `'section'` = a compact, ring-edged tile (one ring, card radius) inside the surface it replaces. */
     tier?: 'page' | 'section'
   }
 
@@ -78,6 +78,13 @@ export function EmptyState({
             ? `${PAGE_PADDING_Y} ${PAGE_PADDING_X}`
             : `${SECTION_PADDING_Y} ${SECTION_PADDING_X}`,
         textAlign: 'center',
+        // The section tile: one ring (a shadow, never a border), card radius. A host that is already
+        // a ringed surface (the data table) sets `--basalt-state-ring: none`.
+        ...(resolved === 'section' && {
+          // theme-allow surface-shadow-override — an inset ring on a tile inside a surface, not a card's depth
+          boxShadow: `var(--basalt-state-ring, inset 0 0 0 1px ${VX.surface.hairline})`,
+          borderRadius: 'var(--vx-radius-card)',
+        }),
         ...style,
       }}
     >
@@ -94,11 +101,10 @@ export function EmptyState({
       <span
         className={classNames?.title}
         style={{
-          fontFamily: 'var(--basalt-font-head)',
-          fontStretch: '88%',
           // Internal seam: a host (the data table) sets the var to cap the title at its own tier.
-          fontSize: `var(--basalt-state-title-size, ${VX.text.xl})`,
-          fontWeight: 550,
+          // (`VX.text.*` are bare numbers: a number inside a `var()` fallback has no unit, so name the var.)
+          fontSize: 'var(--basalt-state-title-size, var(--vx-text-md))',
+          fontWeight: 500,
           color: VX.ink,
         }}
       >
@@ -108,7 +114,7 @@ export function EmptyState({
         // 360px (22.5rem) is a reading-width cap, not a density inset — kept structural.
         <span
           className={classNames?.description}
-          style={{ fontSize: VX.text.md, color: VX.muted, maxWidth: '22.5rem' }}
+          style={{ fontSize: VX.text.sm, color: VX.muted, maxWidth: '22.5rem' }}
         >
           {description}
         </span>

@@ -17,8 +17,8 @@ declare const classes: {
   readonly record: string
   readonly meter: string
   readonly status: string
-  readonly emptyLine: string
   readonly empty: string
+  readonly emptyColumn: string
   readonly skeletonTitle: string
   readonly skeletonCaption: string
   readonly skeletonLine: string

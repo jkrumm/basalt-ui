@@ -360,11 +360,13 @@ layout('Wave 44 EventList', () => {
     const p = await openFixture(spec('empty'), DESKTOP_1440)
     await p.raw.waitForSelector(`${HOST} [role="status"]`)
     const r = (await p.raw.evaluate(`(() => {
-      const tile = document.querySelector('${HOST} [role="status"]')
-      const cs = getComputedStyle(tile)
-      return { height: tile.getBoundingClientRect().height, border: cs.borderTopWidth, host: document.querySelector('${HOST}').getBoundingClientRect().height }
-    })()`)) as { height: number; border: string; host: number }
-    expect(r.border).toBe('1px')
+      const region = document.querySelector('${HOST} [role="status"]')
+      const cs = getComputedStyle(region.lastElementChild)
+      return { height: region.getBoundingClientRect().height, border: cs.borderTopWidth, ring: cs.boxShadow, host: document.querySelector('${HOST}').getBoundingClientRect().height }
+    })()`)) as { height: number; border: string; ring: string; host: number }
+    // Wave 46: the EmptyState tile paints one ring (a shadow), never a border on top of it.
+    expect(r.border).toBe('0px')
+    expect(r.ring).not.toBe('none')
     expect(r.height).toBeLessThan(300)
     expect(r.host).toBeLessThan(400)
   })

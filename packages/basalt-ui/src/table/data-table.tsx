@@ -83,6 +83,7 @@ import { IconSlot } from '../theme/icon-slot'
 import { CONTAINER_CLASSES, VX } from '../tokens'
 import type { EnumField, FieldHandle, MultiField } from '../state/fields'
 import { WidgetHeader } from '../dashboard'
+import { EmptyState } from '../dashboard/empty-state'
 import { ErrorState } from '../dashboard/query-state'
 import type { QueryStateLike } from '../dashboard/query-state'
 import {
@@ -1702,20 +1703,18 @@ export function BasaltDataTable<T extends RowData>(props: BasaltDataTableProps<T
     />
   )
   // An empty body never out-sizes the table's own title (SPEC § 6.11): `EmptyState` reads this var
-  // for its title, so it takes the title's tier, or `sm` when the table has none.
+  // for its title, so it takes the table title's size (`sm`).
   const emptyNode = (
     <Box
       style={
         {
-          '--basalt-state-title-size': title !== undefined ? VX.text.md : VX.text.sm,
+          '--basalt-state-title-size': 'var(--vx-text-sm)',
+          // The table body is already a ringed surface: no second ring around the empty tile.
+          '--basalt-state-ring': 'none',
         } as CSSProperties
       }
     >
-      {emptyState ?? (
-        <Text c="dimmed" ta="center" size="sm" py="sm">
-          No data to display.
-        </Text>
-      )}
+      {emptyState ?? <EmptyState tier="section" title="No data to display." />}
     </Box>
   )
 

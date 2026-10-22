@@ -151,7 +151,7 @@ export function ErrorState({
     >
       <Group gap="xs" wrap="nowrap">
         <StatusDot color={VX.status.bad} />
-        <Text size="sm" fw={500}>
+        <Text size="md" fw={500}>
           {title}
         </Text>
       </Group>

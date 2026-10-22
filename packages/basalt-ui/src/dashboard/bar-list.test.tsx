@@ -87,6 +87,13 @@ describe('BarList', () => {
     expect(container.querySelector('ul')).toBeNull()
   })
 
+  test('empty renders through the EmptyState tile', () => {
+    const { getByText } = mount({ label: 'L', items: [], emptyText: 'No projects' })
+    expect(getByText('No projects').parentElement?.getAttribute('style') ?? '').toContain(
+      '--basalt-state-ring',
+    )
+  })
+
   test('loading renders row skeletons and no list', () => {
     const { container } = mount({ label: 'L', items: ITEMS, loading: true, loadingRows: 4 })
     expect(container.querySelector('ul')).toBeNull()
