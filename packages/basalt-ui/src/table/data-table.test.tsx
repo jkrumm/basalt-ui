@@ -1250,6 +1250,12 @@ describe('rowActions', () => {
     expect(onClick).toHaveBeenCalledWith(ROWS[0])
   })
 
+  test('a lone danger icon action keeps its accessible name and no resting red colour prop (hover/focus colour: layout suite)', () => {
+    renderTable({ rowActions: [edit(() => undefined, { danger: true })] })
+    const [button] = screen.getAllByRole('button', { name: 'Edit' }) as HTMLElement[]
+    expect(button?.getAttribute('data-color')).toBeNull()
+  })
+
   test('disabled(row) and loading(row) are evaluated per row and never fire', () => {
     const onClick = mock((_row: Row) => undefined)
     renderTable({
