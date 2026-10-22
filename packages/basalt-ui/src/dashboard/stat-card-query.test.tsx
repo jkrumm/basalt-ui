@@ -302,3 +302,36 @@ describe('the card tone reaches a hosted Meter', () => {
     expect(html).toContain('background:var(--vx-status-bad)')
   })
 })
+
+describe('Wave 46 r1: empty tile and loading shape', () => {
+  const html = (node: React.ReactElement): string =>
+    renderToStaticMarkup(<MantineProvider>{node}</MantineProvider>)
+
+  test('empty is the section tile: the first sentence is the title, the rest the muted line', () => {
+    const out = html(
+      <StatCard
+        title="Latency"
+        value="18 ms"
+        query={query({ data: [] })}
+        emptyText="No readings in the window. Check that the probe is reporting."
+      />,
+    )
+    expect(out).toContain('No readings in the window')
+    expect(out).toContain('Check that the probe is reporting.')
+    expect(out).toContain('font-weight:500')
+  })
+
+  test('loading keeps the value bar, the delta chip and a sparkline-shaped visual row', () => {
+    const out = html(
+      <StatCard title="Latency" value="18 ms" delta={4} loading sparkline={() => null} />,
+    )
+    expect(out).toContain('data-stat-skeleton-delta')
+    expect(out).toContain('data-stat-skeleton-spark')
+    expect(out).toContain('<polyline')
+  })
+
+  test('loading without a delta draws no delta chip', () => {
+    const out = html(<StatCard title="Latency" value="18 ms" loading />)
+    expect(out).not.toContain('data-stat-skeleton-delta')
+  })
+})

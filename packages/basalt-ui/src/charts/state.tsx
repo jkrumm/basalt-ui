@@ -3,6 +3,7 @@
  * the chart chrome and `ChartCard`, so a pending card and a pending chart read the same.
  */
 import type { CSSProperties, ReactElement, ReactNode } from 'react'
+import { splitEmptyCopy } from '../common/empty-copy'
 import { toErrorMessage } from '../common/errors'
 import { RetryButton } from '../common/retry-button'
 import { VX } from '../tokens'
@@ -97,6 +98,11 @@ const errorStyle: CSSProperties = {
   fontSize: VX.text.sm,
   gap: VX.space.controlGap,
 }
+// The empty tile's one ring: an inset shadow, never a border, as `EmptyState`'s section tier draws it.
+const tileStyle: CSSProperties = {
+  // theme-allow surface-shadow-override — an inset ring on a tile inside a surface, not a card's depth
+  boxShadow: `var(--basalt-state-ring, inset 0 0 0 1px ${VX.surface.hairline})`,
+}
 const errorHeadStyle: CSSProperties = {
   display: 'inline-flex',
   alignItems: 'center',
@@ -189,9 +195,22 @@ export function ChartPlaceholder(props: {
         {body}
       </div>,
     )
+  if (props.compact)
+    return fit(
+      <output data-basalt-chart-state={kind} className={stateClass} style={style} {...name}>
+        {body}
+      </output>,
+    )
+  // The § 6.11 empty tile inside the chart's own box: one ring, card radius, the title at `md` 500
+  // and a muted line, centred. `EmptyState` is Mantine-coupled, so the anatomy is plain HTML here.
+  const { title, description } = splitEmptyCopy(label)
   return fit(
-    <output data-basalt-chart-state={kind} className={stateClass} style={style} {...name}>
-      {body}
+    <output data-basalt-chart-state={kind} className={stateClass}>
+      <div data-basalt-empty-tile="" className={boxClasses.emptyTile} style={tileStyle}>
+        <span className={boxClasses.emptyTitle}>{title}</span>
+        {description !== undefined && <span className={boxClasses.emptyText}>{description}</span>}
+        {props.action !== undefined && <div>{props.action}</div>}
+      </div>
     </output>,
   )
 }

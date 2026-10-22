@@ -133,6 +133,39 @@
 }
 
 /*
+ * The empty body (SPEC § 6.11): a ring-edged tile (one inset ring, set inline in `state.tsx` so the divider ledger does not read it as a rule; card radius) filling the chart's
+ * own box, so the D37 height holds, with its copy centred: the title at `md` 500, never louder than
+ * the card title beside it, and one muted line. `EmptyState`'s section anatomy, in plain CSS
+ * because `src/charts/**` is Mantine-free.
+ */
+.emptyTile {
+  box-sizing: border-box;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: var(--vx-space-stack-xs, 0.25rem);
+  width: 100%;
+  height: 100%;
+  padding: var(--vx-space-stack-md) var(--vx-space-stack-lg);
+  overflow: hidden;
+  text-align: center;
+  border-radius: var(--vx-radius-card);
+}
+
+.emptyTitle {
+  font-size: var(--basalt-state-title-size, var(--vx-text-md));
+  font-weight: 500;
+  color: var(--vx-ink);
+}
+
+.emptyText {
+  max-width: 22.5rem;
+  font-size: var(--vx-text-sm);
+  color: var(--vx-muted);
+}
+
+/*
  * The engine paints its tooltip rows as a grid of `.55rem | minmax(0, 1fr) | auto` with inline
  * styles and `overflow-wrap: anywhere` on the card, so a narrow tooltip (a 390 viewport, a pointer
  * near an edge) squeezes the name column to one character per line. The name keeps a floor and

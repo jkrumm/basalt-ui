@@ -8,7 +8,7 @@
  * `legend={{ placement: 'header' }}` legend is drawn by the chart, at the top of the body under the
  * header, so it is in the server HTML and the header never grows on hydration.
  */
-import { useRef, useState } from 'react'
+import { Children, isValidElement, useRef, useState } from 'react'
 import type { CSSProperties, ReactElement, ReactNode } from 'react'
 import { useIsomorphicLayoutEffect } from '../common/isomorphic-layout-effect'
 import { cx } from '../common/props'
@@ -17,6 +17,8 @@ import type { DeltaPolarity } from '../dashboard/delta-badge'
 import { WidgetHeader } from '../dashboard/widget-header'
 import { VX } from '../tokens'
 import { ChartCardContext } from './card-context'
+import { Lines } from './Lines'
+import { StackedArea } from './StackedArea'
 import classes from './chart-card.module.css'
 import { ChartPlaceholder, resolveChartState } from './state'
 import type { ChartState, ResponsiveChartHeight } from './types'
@@ -252,6 +254,21 @@ function FactsSkeleton({ basis }: { basis: boolean }): ReactElement {
   )
 }
 
+/**
+ * The ghost a pending body draws when `ghost` is not passed: a line for a `Lines` or `StackedArea`
+ * body (found through wrappers such as a `Box`), the default bars otherwise, so a loading line chart
+ * is not drawn as bars.
+ */
+function ghostOf(node: ReactNode): 'line' | undefined {
+  for (const child of Children.toArray(node)) {
+    if (!isValidElement<{ children?: ReactNode }>(child)) continue
+    if (child.type === Lines || child.type === StackedArea) return 'line'
+    const inner = ghostOf(child.props.children)
+    if (inner !== undefined) return inner
+  }
+  return undefined
+}
+
 export function ChartCard({
   actions,
   state,
@@ -271,6 +288,7 @@ export function ChartCard({
 }: ChartCardProps): ReactElement {
   const { ref, short } = useShortCard()
   const resolved = resolveChartState(state)
+  const plotGhost = ghost ?? (resolved === 'pending' ? ghostOf(children) : undefined)
   const showFacts = facts !== undefined && resolved === null
   const skeletonFacts = facts !== undefined && resolved === 'pending'
   const hasHeader =
@@ -317,7 +335,7 @@ export function ChartCard({
               state={state}
               {...(placeholderHeight !== undefined && { height: placeholderHeight })}
               {...(stateNoun !== undefined && { noun: stateNoun })}
-              {...(ghost !== undefined && { ghost })}
+              {...(plotGhost !== undefined && { ghost: plotGhost })}
               {...(onRetry !== undefined && { onRetry })}
               {...(retrying !== undefined && { retrying })}
               action={stateAction}

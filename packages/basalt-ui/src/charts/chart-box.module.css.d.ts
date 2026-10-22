@@ -12,5 +12,8 @@ declare const classes: {
   readonly ghost: string
   readonly ghostLine: string
   readonly ghostBar: string
+  readonly emptyTile: string
+  readonly emptyTitle: string
+  readonly emptyText: string
 }
 export default classes

@@ -100,6 +100,7 @@ import { W43SparkFixture } from './sparkline-w43-fixture'
 import { W38ZonesFixture } from './w38-zones-fixture'
 import { W38LegendFixture } from './w38-legend-fixture'
 import { W38LoadingFixture } from './w38-loading-fixture'
+import { W46ChartsFixture } from './w46-charts-fixture'
 import { W38StripMeterFixture } from './w38-strip-meter-fixture'
 import { W39S4StripFixture, W39StripFixture } from './w39-strip-fixture'
 import { W39MeterFixture } from './w39-meter-fixture'
@@ -3114,6 +3115,7 @@ export function ShellFixture({ spec }: { spec: FixtureSpec }): ReactElement {
       {spec.w43Spark && <W43SparkFixture />}
       {spec.w38Zones && <W38ZonesFixture />}
       {spec.w38Loading && <W38LoadingFixture />}
+      {spec.w46Charts && <W46ChartsFixture />}
       {spec.w38StripMeter && <W38StripMeterFixture />}
       {spec.w39Strip && <W39StripFixture />}
       {spec.w39Strip && <W39S4StripFixture />}
