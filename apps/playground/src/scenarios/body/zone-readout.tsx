@@ -8,7 +8,7 @@ import { Section } from 'basalt-ui'
 import { VX } from 'basalt-ui/tokens'
 import { queryFor } from '../shot-state'
 import type { ScenarioProps } from '../shot-state'
-import { STRENGTH_ERROR } from './body-data'
+import { INOL_GAP, INOL_NEXT, STRENGTH_ERROR } from './body-data'
 
 const ZONE = { name: 'Productive', inol: 0.84, lift: 'Squat' } as const
 
@@ -19,8 +19,8 @@ export function BodyZoneReadout({ shotState }: ScenarioProps) {
       <Section
         title="INOL zone"
         empty={{
-          title: 'No zone to read',
-          description: 'INOL needs at least two sessions per lift in this window.',
+          title: INOL_GAP,
+          description: INOL_NEXT,
         }}
         {...(query !== undefined && { query })}
       >

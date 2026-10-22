@@ -4,11 +4,11 @@
  * cell in `state` draws no footer of its own), and `empty-row` joins it under `shotState === 'empty'`.
  */
 import { Anchor, Box, Paper } from '@mantine/core'
-import { StatGroup } from 'basalt-ui'
+import { DeltaBadge, StatGroup } from 'basalt-ui'
 import type { StatStripCell } from 'basalt-ui'
 import { VX } from 'basalt-ui/tokens'
 import { noop } from '../shot-state'
-import { BODY, NO_CALIPER, NO_WEIGH_INS, WEIGHT_ERROR } from './body-data'
+import { BODY, BODY_PREV, NO_CALIPER, NO_WEIGH_INS, WEIGHT_ERROR } from './body-data'
 import type { ScenarioProps } from '../shot-state'
 
 /** A real, inert control: the footer states the next step as something that can be pressed. */
@@ -35,6 +35,14 @@ export function BodyWeightStrip({ shotState }: ScenarioProps) {
       caption: 'Body fat',
       value: String(BODY.fatPct),
       unit: '%',
+      delta: (
+        <DeltaBadge
+          value={BODY.fatPct - BODY_PREV.fatPct}
+          polarity="up-bad"
+          period="vs 5 Oct"
+          format={(v) => `${Math.abs(v).toFixed(1)} pts`}
+        />
+      ),
       footer: `Measured ${BODY.measured}`,
       loading,
     },
@@ -43,6 +51,14 @@ export function BodyWeightStrip({ shotState }: ScenarioProps) {
       caption: 'Lean mass',
       value: String(BODY.leanKg),
       unit: 'kg',
+      delta: (
+        <DeltaBadge
+          value={BODY.leanKg - BODY_PREV.leanKg}
+          polarity="up-good"
+          period="vs 5 Oct"
+          format={(v) => `${Math.abs(v).toFixed(1)} kg`}
+        />
+      ),
       footer: `Measured ${BODY.measured}`,
       loading,
     },

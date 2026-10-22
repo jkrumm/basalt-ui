@@ -42,7 +42,7 @@ const strip = (anchor: string, visual: StatStripCell['visual'], props: ScenarioP
       <StatGroup
         variant="strip"
         label="Body"
-        cols={3}
+        cols={2}
         cells={[
           {
             key: 'weight',
@@ -52,22 +52,6 @@ const strip = (anchor: string, visual: StatStripCell['visual'], props: ScenarioP
             visual,
             loading: props.shotState === 'loading',
             ...(state !== undefined && { state }),
-          },
-          {
-            key: 'fat',
-            caption: 'Body fat',
-            value: String(BODY.fatPct),
-            unit: '%',
-            footer: `Measured ${BODY.measured}`,
-            loading: props.shotState === 'loading',
-          },
-          {
-            key: 'lean',
-            caption: 'Lean mass',
-            value: String(BODY.leanKg),
-            unit: 'kg',
-            footer: `Measured ${BODY.measured}`,
-            loading: props.shotState === 'loading',
           },
         ]}
       />

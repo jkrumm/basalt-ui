@@ -5,7 +5,7 @@ import type { ChartSeries } from 'basalt-ui/charts'
 import { demoColors } from '../../demo/series'
 import { chartStateFor, noop } from '../shot-state'
 import type { ScenarioProps } from '../shot-state'
-import { STRENGTH_ERROR } from './body-data'
+import { NO_E1RM, STRENGTH_ERROR } from './body-data'
 
 type Row = { day: Date; e1rm: number[]; avg: number[]; pr: boolean[] }
 
@@ -61,7 +61,6 @@ const SERIES: ChartSeries<Row>[] = LIFTS.flatMap((l, i) => [
 ])
 
 const HEIGHT = 280
-const EMPTY = 'No estimated 1RM in this window.'
 
 export function BodyE1rmCard({ shotState }: ScenarioProps) {
   return (
@@ -71,7 +70,7 @@ export function BodyE1rmCard({ shotState }: ScenarioProps) {
         info="Epley estimate from each lift's best set of the week."
         subtitle="Dashed line: 30 d average · dot: new PR"
         state={chartStateFor(shotState, {
-          empty: EMPTY,
+          empty: NO_E1RM,
           error: STRENGTH_ERROR,
         })}
         ghost="line"
