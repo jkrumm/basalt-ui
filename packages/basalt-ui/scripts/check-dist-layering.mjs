@@ -13,15 +13,28 @@ const fail = (msg) => {
   failed = true
 }
 
-// All relative + bare specifiers in a JS module (from '…' | import('…') | import '…').
-function specifiers(file) {
-  const src = readFileSync(file, 'utf8')
-  const re = /(?:from|import)\s*\(?\s*['"]([^'"]+)['"]/g
-  const out = []
-  let m
-  while ((m = re.exec(src))) out.push(m[1])
-  return out
+// `from` / `import` as a KEYWORD only: never after a quote, dot, word char or `$`, so the string
+// "from" in `{ y1: "from", y2: "to" }` or a `.from(…)` call is not an import clause.
+const SPECIFIER = /(?<![\w$.'"])(?:from|import)\b\s*\(?\s*['"]([^'"]+)['"]/g
+const matchSpecifiers = (src) => [...src.matchAll(SPECIFIER)].map((m) => m[1])
+
+// Self-check: the keyword forms match, a string that merely says "from" does not.
+const sample = [
+  [`import { a } from "./a.js"`, ['./a.js']],
+  [`export * from '../b.js'`, ['../b.js']],
+  [`import "./side.js"`, ['./side.js']],
+  [`const m = await import("@tanstack/charts/line")`, ['@tanstack/charts/line']],
+  [`rect(r, { y1: "from", y2: "to" })`, []],
+  [`rect(r, { y1: 'from', y2: 'to' })`, []],
+  [`Array.from("abc")`, []],
+]
+for (const [src, want] of sample) {
+  if (JSON.stringify(matchSpecifiers(src)) !== JSON.stringify(want))
+    throw new Error(`check-dist-layering self-check failed on: ${src}`)
 }
+
+// All relative + bare specifiers in a JS module (from '…' | import('…') | import '…').
+const specifiers = (file) => matchSpecifiers(readFileSync(file, 'utf8'))
 
 // Transitive graph over relative specifiers; collects the bare (external) specifiers reached.
 function walkGraph(entry) {
