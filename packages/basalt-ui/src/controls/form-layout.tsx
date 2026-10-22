@@ -20,6 +20,7 @@
  * `form-state.tsx` for why that rather than `cloneElement`.
  */
 import { VisuallyHidden } from '@mantine/core'
+import { useId } from 'react'
 import type { ReactNode } from 'react'
 import { cx } from '../common/props'
 import type { BasaltProps, SlotStylesProps } from '../common/props'
@@ -28,6 +29,7 @@ import { BarActionSlot } from './actions'
 import type { SlotActions } from './actions'
 import { WidgetHeader } from '../dashboard/widget-header'
 import type { WidgetHeaderTitleProps } from '../dashboard/widget-header'
+import { useSizeClass } from '../shell/use-size-class'
 import { useFormState } from '../forms/form-state'
 import classes from './form-layout.module.css'
 
@@ -54,16 +56,51 @@ function RequiredMark({ required }: { required: boolean | undefined }) {
   )
 }
 
+/** True when `error` carries a message: `undefined`, `null` and `false` are three shapes of "clean". */
+function hasError(error: ReactNode): boolean {
+  return error !== undefined && error !== null && error !== false
+}
+
 /**
- * The error line under a control region.
+ * The error line under a control region: the bad-status icon, then one sentence.
  *
  * The falsy test is the reason this is shared: `error` takes `form.errors[path]` verbatim, which is
  * `undefined` on a clean field, `null` after a cleared error and `false` from a `cond && message`
- * — three shapes, and a call site testing only one paints an empty red box on the other two.
+ * — three shapes, and a call site testing only one paints an empty red box on the other two. The
+ * icon is decorative (`aria-hidden`): colour and a glyph are not the message, the sentence is, and
+ * the region it sits in names it through `aria-describedby`.
  */
-function FieldError({ error }: { error: ReactNode }) {
-  if (error === undefined || error === null || error === false) return null
-  return <span className={classes.error}>{error}</span>
+function FieldError({ error, id }: { error: ReactNode; id: string }) {
+  if (!hasError(error)) return null
+  return (
+    <span id={id} className={classes.error}>
+      <svg
+        className={classes.errorIcon}
+        viewBox="0 0 16 16"
+        fill="none"
+        stroke="currentColor"
+        strokeWidth="1.5"
+        strokeLinecap="round"
+        aria-hidden="true"
+        data-field-error-icon=""
+      >
+        <circle cx="8" cy="8" r="6.25" />
+        <path d="M8 4.75v3.9M8 11.2v.05" />
+      </svg>
+      <span>{error}</span>
+    </span>
+  )
+}
+
+/** The ids a row/group hangs its description and error on, and the `aria-describedby` that names them. */
+function useDescribedBy(hint: string | undefined, error: ReactNode) {
+  const uid = useId()
+  const hintId = `${uid}-hint`
+  const errorId = `${uid}-error`
+  const ids = [hint !== undefined ? hintId : null, hasError(error) ? errorId : null].filter(
+    (id) => id !== null,
+  )
+  return { hintId, errorId, describedBy: ids.length > 0 ? ids.join(' ') : undefined }
 }
 
 // ── FormSection ───────────────────────────────────────────────────────────────
@@ -182,6 +219,7 @@ export function FormRow(props: FormRowProps) {
   assertRequiredProps('FormRow', props, ['label'])
   const { label, hint, error, required, htmlFor, children, className, style, classNames } = props
   const { disabled } = useFormState()
+  const { hintId, errorId, describedBy } = useDescribedBy(hint, error)
 
   return (
     <div
@@ -194,11 +232,19 @@ export function FormRow(props: FormRowProps) {
             {label}
             <RequiredMark required={required} />
           </label>
-          {hint !== undefined && <span className={classes.hint}>{hint}</span>}
+          {hint !== undefined && (
+            <span id={hintId} className={classes.hint}>
+              {hint}
+            </span>
+          )}
         </div>
-        <fieldset className={cx(classes.control, classNames?.control)} disabled={disabled}>
+        <fieldset
+          className={cx(classes.control, classNames?.control)}
+          disabled={disabled}
+          {...(describedBy !== undefined && { 'aria-describedby': describedBy })}
+        >
           {children}
-          <FieldError error={error} />
+          <FieldError error={error} id={errorId} />
         </fieldset>
       </div>
     </div>
@@ -223,6 +269,12 @@ export type FormGroupProps = BasaltProps & {
    * container, so its intrinsic width is zero and it collapses otherwise. @default 'column'
    */
   direction?: 'row' | 'column'
+  /**
+   * Sets the group up as a form SECTION: the legend becomes the section title (`sm`, 500), the
+   * children stack 12 apart like rows, and a section followed by another keeps 24 between them —
+   * so a form is a run of `section` groups with no wrapper to space them. @default false
+   */
+  section?: boolean
   /** The cluster — checkboxes, radios, chips. */
   children: ReactNode
 }
@@ -254,24 +306,41 @@ export type FormGroupProps = BasaltProps & {
  */
 export function FormGroup(props: FormGroupProps) {
   assertRequiredProps('FormGroup', props, ['label'])
-  const { label, hint, error, required, direction = 'column', children, className, style } = props
+  const {
+    label,
+    hint,
+    error,
+    required,
+    direction = 'column',
+    section = false,
+    children,
+    className,
+    style,
+  } = props
   const { disabled } = useFormState()
+  const { hintId, errorId, describedBy } = useDescribedBy(hint, error)
 
   return (
     <fieldset
       className={cx(classes.group, className)}
       disabled={disabled}
+      {...(section && { 'data-section': '' })}
+      {...(describedBy !== undefined && { 'aria-describedby': describedBy })}
       {...(style !== undefined && { style })}
     >
       <legend className={classes.legend}>
         {label}
         <RequiredMark required={required} />
       </legend>
-      {hint !== undefined && <span className={classes.hint}>{hint}</span>}
+      {hint !== undefined && (
+        <span id={hintId} className={classes.hint}>
+          {hint}
+        </span>
+      )}
       <div className={classes.groupControls} data-direction={direction}>
         {children}
       </div>
-      <FieldError error={error} />
+      <FieldError error={error} id={errorId} />
     </fieldset>
   )
 }
@@ -292,7 +361,8 @@ export type FormActionsProps = BasaltProps & {
 }
 
 /**
- * The row a form ends on. Trailing-aligned, wrapping, and `disabled` as a unit while the enclosing
+ * The row a form ends on. Trailing-aligned, wrapping, sticky to the bottom of the scrollport on a
+ * compact screen (a long form's primary stays in reach), and `disabled` as a unit while the enclosing
  * `FormStateProvider` reports a submit in flight — which is what stops the double-submit that
  * a per-button `loading` prop only hides.
  *
@@ -310,11 +380,13 @@ export function FormActions(props: FormActionsProps) {
   // empty case, which `BarActionSlot` already renders as nothing.
   const { actions, className, style } = props
   const { disabled } = useFormState()
+  const compact = useSizeClass() === 'compact'
 
   return (
     <fieldset
       className={cx(classes.actions, className)}
       disabled={disabled}
+      {...(compact && { 'data-sticky': '' })}
       {...(style !== undefined && { style })}
     >
       <BarActionSlot actions={actions} />

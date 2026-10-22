@@ -13,6 +13,7 @@ declare const classes: {
   readonly required: string
   readonly control: string
   readonly error: string
+  readonly errorIcon: string
   readonly group: string
   readonly legend: string
   readonly groupControls: string

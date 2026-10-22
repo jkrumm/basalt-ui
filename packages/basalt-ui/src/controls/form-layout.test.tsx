@@ -296,3 +296,99 @@ describe('FormActions', () => {
     expect(markup).not.toContain('<button')
   })
 })
+
+// ── Wave 46: description / error wiring and the section rhythm ────────────────
+
+describe('FormRow description and error wiring (SPEC § 6.13)', () => {
+  const describedBy = (markup: string): string[] =>
+    (/<fieldset[^>]*aria-describedby="([^"]*)"/.exec(markup)?.[1] ?? '').split(' ').filter(Boolean)
+
+  test('the description and the error are both named by the control region', () => {
+    const markup = render(
+      <FormRow label="Email" hint="Receipts only." error="Enter a valid email address.">
+        <span>control</span>
+      </FormRow>,
+    )
+    const ids = describedBy(markup)
+    expect(ids).toHaveLength(2)
+    for (const id of ids) expect(markup).toContain(`id="${id}"`)
+  })
+
+  test('only the description is named while the field is clean', () => {
+    const markup = render(
+      <FormRow label="Email" hint="Receipts only." error={undefined}>
+        <span>control</span>
+      </FormRow>,
+    )
+    expect(describedBy(markup)).toHaveLength(1)
+    expect(markup).not.toContain('data-field-error-icon')
+  })
+
+  test('a row with neither carries no aria-describedby', () => {
+    expect(render(<FormRow label="Email">{null}</FormRow>)).not.toContain('aria-describedby')
+  })
+
+  test('the error leads with a decorative icon and keeps its sentence', () => {
+    const markup = render(
+      <FormRow label="Email" error="Enter a valid email address.">
+        <span>control</span>
+      </FormRow>,
+    )
+    expect(markup).toMatch(/<svg[^>]*aria-hidden="true"[^>]*data-field-error-icon/)
+    expect(markup).toContain('Enter a valid email address.')
+  })
+
+  test('a FormGroup names its description and error the same way', () => {
+    const markup = render(
+      <FormGroup label="Notify me" hint="Pick any." error="Pick at least one.">
+        <span>option</span>
+      </FormGroup>,
+    )
+    expect(describedBy(markup)).toHaveLength(2)
+    expect(markup).toContain('data-field-error-icon')
+  })
+})
+
+describe('FormGroup section, FormActions sticky', () => {
+  const css = readFileSync(resolve(import.meta.dirname, 'form-layout.module.css'), 'utf8').replace(
+    /\/\*[\s\S]*?\*\//g,
+    '',
+  )
+  const block = (selector: string): string => {
+    const start = css.indexOf(`${selector} {`)
+    expect(start).toBeGreaterThan(-1)
+    return css.slice(start, css.indexOf('}', start))
+  }
+
+  test('`section` marks the fieldset; the default group is not a section', () => {
+    expect(
+      render(
+        <FormGroup label="Profile" section>
+          {null}
+        </FormGroup>,
+      ),
+    ).toContain('data-section')
+    expect(render(<FormGroup label="Profile">{null}</FormGroup>)).not.toContain('data-section')
+  })
+
+  test('the rhythm is 24 between sections and 12 between rows, on tokens', () => {
+    expect(block('.group[data-section]:not(:last-child)')).toContain(
+      'margin-block-end: var(--vx-space-stack-xl)',
+    )
+    expect(block(".group[data-section] > .groupControls[data-direction='column']")).toContain(
+      'gap: var(--vx-space-stack-md)',
+    )
+  })
+
+  test('the section title is sm 500 and the description is xs', () => {
+    const title = block('.group[data-section] > .legend')
+    expect(title).toContain('font-size: var(--vx-text-sm)')
+    expect(title).toContain('font-weight: 500')
+    expect(block('.hint')).toContain('font-size: var(--vx-text-xs)')
+  })
+
+  test('actions stick to the bottom only when marked compact', () => {
+    expect(block('.actions[data-sticky]')).toContain('position: sticky')
+    expect(block('.actions')).not.toContain('sticky')
+  })
+})
