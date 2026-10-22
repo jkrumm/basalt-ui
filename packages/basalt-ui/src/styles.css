@@ -423,7 +423,7 @@
   background-image: none;
 }
 
-:root:root .maplibregl-ctrl-attrib-button::before {
+:root:root .maplibregl-ctrl-attrib-button::after {
   content: '';
   position: absolute;
   inset: 0;

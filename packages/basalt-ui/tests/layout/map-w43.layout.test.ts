@@ -149,7 +149,7 @@ layout('Wave 43 MapLibre compact attribution', () => {
     expect(await p.computed(BUTTON, 'filter')).toBe('none')
     expect(await p.computed(BUTTON, 'background-image')).toBe('none')
     const mask = await p.raw.evaluate(
-      (sel) => getComputedStyle(document.querySelector(sel) as Element, '::before').maskImage,
+      (sel) => getComputedStyle(document.querySelector(sel) as Element, '::after').maskImage,
       BUTTON,
     )
     expect(mask).toContain('svg')
