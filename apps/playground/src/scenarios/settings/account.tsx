@@ -21,9 +21,7 @@ function AccountSkeleton() {
               key={i}
               label=""
               control={<Skeleton height={32} width={200} radius="md" />}
-            >
-              <Skeleton height={32} width={200} radius="md" />
-            </SettingsRow>
+            />
           ))}
         </SettingsSection>
       ))}
@@ -54,7 +52,7 @@ function KeyRows({ empty }: { empty: boolean }) {
           label={k.name}
           description={`…${k.tail} · ${k.lastUsed}`}
           control={
-            <Button size="xs" variant="default" onClick={noop}>
+            <Button size="xs" variant="default" aria-label={`Revoke ${k.name}`} onClick={noop}>
               Revoke
             </Button>
           }
@@ -123,7 +121,13 @@ export function AccountSettings({ shotState }: ScenarioProps) {
         <SettingsRow
           label="Delete this account"
           control={
-            <Button color="red" variant="outline" size="xs" onClick={noop}>
+            <Button
+              color="red"
+              variant="outline"
+              size="xs"
+              aria-label="Delete this account"
+              onClick={noop}
+            >
               Delete
             </Button>
           }
