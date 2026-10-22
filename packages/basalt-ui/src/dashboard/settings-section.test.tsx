@@ -1,3 +1,5 @@
+import { readFileSync } from 'node:fs'
+import { resolve } from 'node:path'
 /**
  * SettingsSection / DangerZone — the WidgetHeader composition (docs/CONTROLS-SPEC.md §2.2):
  * `description` renamed to `subtitle`, both now render an h2 (`tier="section"`) via `WidgetHeader`,
@@ -82,5 +84,25 @@ describe('a settings shell keeps three type sizes (Wave 38)', () => {
     expect(screen.getByText('Delete workspace').style.fontSize).toBe('13px')
     expect(screen.getByText('Cannot be undone.').style.fontSize).toBe('12px')
     expect(screen.getByText('Danger Zone').style.fontSize).toBe('12px')
+  })
+})
+
+describe('SettingsRow follows the same row rule as FormRow (Wave 46 r1)', () => {
+  const read = (file: string) =>
+    readFileSync(resolve(import.meta.dirname, file), 'utf8').replace(/\/\*[\s\S]*?\*\//g, '')
+
+  test('label column 15rem, control cap 20rem, stacked under the shared container name', () => {
+    const settings = read('settings-section.module.css')
+    const forms = read('../controls/form-layout.module.css')
+    const columns = 'grid-template-columns: minmax(0, 15rem) minmax(0, 20rem)'
+    expect(settings).toContain(columns)
+    expect(forms).toContain(columns)
+    expect(settings).toContain('@container basalt-form (max-width: 599.9px)')
+  })
+
+  test('a description hangs tight under its label (no gap, pulled into the row gap)', () => {
+    const forms = read('../controls/form-layout.module.css')
+    const hint = forms.slice(forms.indexOf('.hint {'), forms.indexOf('}', forms.indexOf('.hint {')))
+    expect(hint).toContain('margin-block-end: calc(-1 * var(--vx-space-stack-xs))')
   })
 })

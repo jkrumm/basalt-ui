@@ -36,11 +36,11 @@ describe('the label-above swap is CSS at the row’s own ~600px width, never a J
   /** Declarations only — the comments above them name the breakpoint and the columns in prose. */
   const decls = css.replace(/\/\*[\s\S]*?\*\//g, '')
 
-  test('the desktop grid is two columns', () => {
+  test('the desktop grid is the one row rule: a 15rem label column and a 20rem control cap', () => {
     const start = decls.indexOf('.grid {')
     expect(start).toBeGreaterThan(-1)
     expect(decls.slice(start, decls.indexOf('}', start))).toContain(
-      'grid-template-columns: minmax(0, 1fr) minmax(0, 1.4fr)',
+      'grid-template-columns: minmax(0, 15rem) minmax(0, 20rem)',
     )
   })
 
