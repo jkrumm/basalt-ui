@@ -1,0 +1,152 @@
+/*
+ * Board (docs/waves/design-parity/SPEC.md § 6.8). Columns share the row; each scrolls alone inside a
+ * Mantine ScrollArea bounded by `height`. Cards are Mantine Cards: the theme owns inset, radius and
+ * surface, so nothing here sets them. The open button is stretched over its card (one click target,
+ * one tab stop); the record link and the meter slot sit above that overlay.
+ */
+.root {
+  inline-size: 100%;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: var(--vx-space-stack-sm);
+}
+
+.columns {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--vx-space-stack-sm);
+}
+
+.column {
+  flex: 1 1 0;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: var(--vx-space-stack-sm);
+}
+
+.head {
+  display: flex;
+  align-items: center;
+  gap: var(--vx-space-control-gap);
+  min-width: 0;
+}
+
+.title {
+  margin: 0;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: var(--vx-text-sm);
+  font-weight: 500;
+  color: var(--vx-ink);
+}
+
+.count {
+  font-family: var(--basalt-font-mono);
+  font-size: var(--vx-text-micro);
+  color: var(--vx-muted);
+}
+
+.total {
+  margin-inline-start: auto;
+  font-family: var(--basalt-font-mono);
+  font-size: var(--vx-text-micro);
+  color: var(--vx-muted);
+  white-space: nowrap;
+}
+
+.list {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  /* 6 px at level 0, riding the density multiplier like every other step. */
+  gap: calc(var(--vx-space-stack-xs) * 1.5);
+}
+
+.card {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  gap: var(--vx-space-stack-xs);
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+
+.caption {
+  margin: 0;
+  font-family: var(--basalt-font-mono);
+  font-size: var(--vx-text-micro);
+  color: var(--vx-muted);
+}
+
+.open {
+  all: unset;
+  display: block;
+  font-size: var(--vx-text-sm);
+  color: var(--vx-ink);
+  cursor: pointer;
+}
+
+/* The whole card is the target. */
+.open::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+}
+
+.open:focus-visible::after {
+  outline: 2px solid var(--vx-focus-ring, var(--mantine-primary-color-filled));
+  outline-offset: 1px;
+}
+
+.record,
+.meter {
+  position: relative;
+  z-index: 1;
+  font-size: var(--vx-text-xs);
+}
+
+.status {
+  margin: 0;
+  font-size: var(--vx-text-xs);
+  color: var(--vx-muted);
+}
+
+.emptyLine {
+  margin: 0;
+  font-size: var(--vx-text-xs);
+  color: var(--vx-muted);
+}
+
+.empty {
+  display: block;
+  --basalt-state-title-size: var(--vx-text-md);
+  border: 1px solid var(--vx-surface-hairline);
+  border-radius: var(--vx-radius-ctrl);
+}
+
+.skeletonTitle {
+  inline-size: 40%;
+  block-size: 0.75rem;
+}
+
+.skeletonCaption {
+  inline-size: 35%;
+  block-size: 0.5rem;
+}
+
+.skeletonLine {
+  inline-size: 85%;
+  block-size: 0.75rem;
+}
+
+.skeletonStatus {
+  inline-size: 50%;
+  block-size: 0.5rem;
+}
