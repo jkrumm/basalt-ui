@@ -5,9 +5,10 @@ import { retryCopy } from '../shot-state'
 export const BODY = { weightKg: 72.3, fatPct: 17.8, leanKg: 59.4, measured: '19 Oct' } as const
 
 /** The previous caliper reading (5 Oct), for the change since it. */
-export const BODY_PREV = { fatPct: 18.2, leanKg: 59.1 } as const
+export const BODY_PREV = { weightKg: 72.8, fatPct: 18.2, leanKg: 59.1 } as const
 
-export const NO_WEIGH_INS = 'No weigh-ins in this window.'
+export const WEIGH_IN_GAP = 'No weigh-ins in this window'
+export const NO_WEIGH_INS = `${WEIGH_IN_GAP}. Log your weight to start the trend.`
 export const WEIGHT_ERROR = retryCopy('weight log')
 export const STRENGTH_ERROR = retryCopy('strength log')
 export const SKINFOLD_ERROR = retryCopy('skinfold log')

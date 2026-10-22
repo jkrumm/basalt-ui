@@ -24,7 +24,6 @@ import {
 } from 'basalt-ui'
 import type { StatStripCell } from 'basalt-ui'
 import { Sparkline } from 'basalt-ui/charts'
-import type { CSSProperties } from 'react'
 import { DecisionCard, DecisionCardSkeleton } from './agents/decision-card'
 import { ListRow } from './agents/list-row'
 import { fmtInt } from './fixture-utils'
@@ -98,8 +97,9 @@ function LearningSummary({ shotState }: ScenarioProps) {
 function LearningStrip({ shotState }: ScenarioProps) {
   const loading = shotState === 'loading'
   const empty = shotState === 'empty'
-  // The summary owns the sentence about the gap; a cell prints its honest empty figure.
-  const cellState: Pick<StatStripCell, 'state'> = empty ? { state: { kind: 'empty' } } : {}
+  // A cell in empty prints the strip's rule: a dash and a muted reason line, never a bare zero.
+  const cellState = (reason: string): Pick<StatStripCell, 'state'> =>
+    empty ? { state: { kind: 'empty', reason } } : {}
   const spark = (
     ariaLabel: string,
     data: typeof SESSIONS_PER_WEEK,
@@ -127,9 +127,10 @@ function LearningStrip({ shotState }: ScenarioProps) {
       caption: 'Sessions',
       qualifier: 'logged',
       info: `Every practice session logged for ${KNOT_TITLE}, since ${fmtLearningDay(FIRST_DATE)}. The sparkline shows sessions per week, last 12 weeks.`,
-      value: empty ? '0' : fmtInt(SESSIONS_LOGGED),
+      value: fmtInt(SESSIONS_LOGGED),
       unit: 'sessions',
       loading,
+      ...cellState('No sessions logged yet'),
       ...spark(
         'Sessions per week, last 12 weeks',
         SESSIONS_PER_WEEK,
@@ -142,7 +143,7 @@ function LearningStrip({ shotState }: ScenarioProps) {
       info: `The date of the latest session. A review comes due ${NEXT_REVIEW_DAYS} days after it.`,
       value: fmtLearningDay(LAST_DATE),
       loading,
-      ...cellState,
+      ...cellState('Nothing practised yet'),
     },
     {
       key: 'mean-rating',
@@ -153,7 +154,7 @@ function LearningStrip({ shotState }: ScenarioProps) {
       value: MEAN_RATING.toFixed(1),
       unit: 'of 5',
       loading,
-      ...cellState,
+      ...cellState('No sessions rated yet'),
       ...spark(
         'Mean rating per week, last 12 weeks',
         RATING_PER_WEEK,
@@ -167,7 +168,7 @@ function LearningStrip({ shotState }: ScenarioProps) {
       info: 'Minutes logged across the last 30 days’ sessions. The sparkline shows minutes per week, last 12 weeks.',
       value: fmtMinutes(MINUTES_LAST_30),
       loading,
-      ...cellState,
+      ...cellState('No practice in the last 30 days'),
       ...spark('Practice minutes per week, last 12 weeks', MINUTES_PER_WEEK, fmtMinutes),
     },
   ]
@@ -211,16 +212,21 @@ function PartnerRows() {
 
 function AsideSkeleton() {
   return (
-    <Stack gap="md" data-shot="learning-aside" aria-busy="true">
-      {[0, 1, 2].map((i) => (
-        <Flex key={i} gap="xs" align="center">
-          <Skeleton height={26} width={26} radius="md" />
-          <Stack gap={6} flex={1}>
-            <Skeleton height={12} width="40%" radius="sm" />
-            <Skeleton height={10} width="65%" radius="sm" />
-          </Stack>
-        </Flex>
-      ))}
+    <Stack gap="xs" data-shot="learning-aside" aria-busy="true">
+      <Text size="xs" c="dimmed">
+        Practice partners · sessions together
+      </Text>
+      <Stack gap="md">
+        {[0, 1, 2].map((i) => (
+          <Flex key={i} gap="xs" align="center">
+            <Skeleton height={26} width={26} radius="md" />
+            <Stack gap={6} flex={1}>
+              <Skeleton height={12} width="40%" radius="sm" />
+              <Skeleton height={10} width="65%" radius="sm" />
+            </Stack>
+          </Flex>
+        ))}
+      </Stack>
     </Stack>
   )
 }
@@ -246,8 +252,6 @@ function LearningAside({ shotState }: ScenarioProps) {
                 tier="section"
                 title="No practice partners yet"
                 description="Partners appear with the first session you log together."
-                // The list rows beside it are `sm`: the tile's title stays at their size.
-                style={{ '--basalt-state-title-size': 'var(--vx-text-sm)' } as CSSProperties}
               />
             ) : (
               <PartnerRows />
