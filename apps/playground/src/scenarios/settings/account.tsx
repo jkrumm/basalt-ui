@@ -4,51 +4,94 @@
  */
 import { Button, Card, Flex, Select, Skeleton, Stack, Switch, TextInput } from '@mantine/core'
 import { DangerZone, EmptyState, Section, SettingsRow, SettingsSection } from 'basalt-ui'
-import { noop, queryFor, retryCopy } from '../shot-state'
+import type { QueryStateLike } from '../../demo/query-state-like'
+import { noop, retryCopy } from '../shot-state'
 import type { ScenarioProps } from '../shot-state'
 import { API_KEYS, DIGEST_OPTIONS } from './settings-data'
 
-const ACCOUNT_ERROR = queryFor('error', retryCopy('account'))
+/** The account page's one failed load: no data, an error, nothing in flight. */
+const ACCOUNT_ERROR: QueryStateLike<unknown> = {
+  data: undefined,
+  isError: true,
+  error: new Error(retryCopy('account')),
+  fetchStatus: 'idle',
+  refetch: noop,
+}
+
+type SkeletonRow = { key: string; described: boolean; control: 'field' | 'button' }
+type SkeletonSection = { key: string; subtitle: boolean; danger?: boolean; rows: SkeletonRow[] }
 
 /**
  * The four sections in grey: a title and a subtitle line per card, then label/control rows at the
- * loaded heights (a description makes a row taller; the key rows carry one).
+ * loaded heights (a description makes a row taller; the key rows carry one). Each row names its own
+ * shape: a field is the 20rem control, a button the short one.
  */
-const SKELETON_SECTIONS: { subtitle: boolean; danger?: boolean; rows: boolean[] }[] = [
-  { subtitle: true, rows: [false, true] },
-  { subtitle: false, rows: [true, false] },
-  { subtitle: false, rows: [true, true, true] },
-  { subtitle: true, danger: true, rows: [false] },
+const SKELETON_SECTIONS: SkeletonSection[] = [
+  {
+    key: 'profile',
+    subtitle: true,
+    rows: [
+      { key: 'name', described: false, control: 'field' },
+      { key: 'email', described: true, control: 'field' },
+    ],
+  },
+  {
+    key: 'notifications',
+    subtitle: false,
+    rows: [
+      { key: 'sync', described: true, control: 'button' },
+      { key: 'digest', described: false, control: 'field' },
+    ],
+  },
+  {
+    key: 'keys',
+    subtitle: false,
+    rows: [
+      { key: 'k1', described: true, control: 'button' },
+      { key: 'k2', described: true, control: 'button' },
+      { key: 'k3', described: true, control: 'button' },
+    ],
+  },
+  {
+    key: 'danger',
+    subtitle: true,
+    danger: true,
+    rows: [{ key: 'delete', described: false, control: 'button' }],
+  },
 ]
 
 function AccountSkeleton() {
   return (
     <Stack gap="sm" aria-busy="true">
-      {SKELETON_SECTIONS.map((section, s) => (
-        <Card key={s}>
+      {SKELETON_SECTIONS.map((section) => (
+        <Card key={section.key}>
           <Stack gap={2} mb="sm" mih={section.subtitle ? 61 : 41}>
             {section.danger && <Skeleton height={14} width={88} radius="sm" />}
             <Skeleton height={20} width={120} radius="sm" />
             {section.subtitle && <Skeleton height={14} width="38%" radius="sm" />}
           </Stack>
-          {section.rows.map((described, i) => (
+          {section.rows.map((row, i) => (
             <Flex
-              key={i}
+              key={row.key}
               columnGap="md"
               rowGap={4}
               wrap="wrap"
               py={10}
               align="flex-start"
-              mih={described ? 61 : 53}
+              mih={row.described ? 61 : 53}
               style={
                 i < section.rows.length - 1 ? { borderBottom: '1px solid var(--vx-divider)' } : {}
               }
             >
               <Stack gap={4} w="min(15rem, 100%)">
                 <Skeleton height={20} width="60%" radius="sm" />
-                {described && <Skeleton height={16} width="80%" radius="sm" />}
+                {row.described && <Skeleton height={16} width="80%" radius="sm" />}
               </Stack>
-              <Skeleton height={32} width={i === 0 ? 'min(20rem, 100%)' : '4.5rem'} radius="md" />
+              <Skeleton
+                height={32}
+                width={row.control === 'field' ? 'min(20rem, 100%)' : '4.5rem'}
+                radius="md"
+              />
             </Flex>
           ))}
         </Card>
@@ -96,11 +139,9 @@ export function AccountSettings({ shotState }: ScenarioProps) {
     // § 6.11: the error anatomy inside the section surface it replaces, with that surface's inset.
     return (
       <Card>
-        {ACCOUNT_ERROR && (
-          <Section title="Account" query={ACCOUNT_ERROR}>
-            {null}
-          </Section>
-        )}
+        <Section title="Account" query={ACCOUNT_ERROR}>
+          {null}
+        </Section>
       </Card>
     )
   }

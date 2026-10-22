@@ -179,7 +179,7 @@ export function EntryForm({ shotState }: ScenarioProps) {
       {shotState === 'loading' ? (
         <EntrySkeleton />
       ) : (
-        <EntryFormFields invalid={shotState === 'error'} />
+        <EntryFormFields key={shotState ?? 'rest'} invalid={shotState === 'error'} />
       )}
     </SettingsSection>
   )
