@@ -648,6 +648,8 @@ const CTL_TIER_COMPONENTS = [
   'NativeSelect',
   'Slider',
   'NumberInput',
+  'PasswordInput',
+  'Textarea',
 ] as const
 
 function collectMjsFiles(dir: string): string[] {
