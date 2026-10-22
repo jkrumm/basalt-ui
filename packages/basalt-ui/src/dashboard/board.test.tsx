@@ -3,6 +3,7 @@ import { cleanup, fireEvent, render } from '@testing-library/react'
 import { afterEach, describe, expect, mock, test } from 'bun:test'
 import { Board } from './board'
 import type { BoardProps } from './board'
+import { createLocalStore, field } from '../state'
 import { isSafeHref, moveOnBoard } from './board-nav'
 import { SizeClassHintContext } from '../shell/use-size-class'
 import type { SizeClass } from '../shell/use-size-class'
@@ -184,6 +185,30 @@ describe('Board', () => {
     const { container } = mount({}, 'compact')
     fireEvent.keyDown(button(container, 'Alpha'), { key: 'ArrowRight' })
     expect(document.activeElement).toBe(button(container, 'Delta'))
+  })
+})
+
+describe('Board field', () => {
+  test('a store field owns the selected column in compact', () => {
+    const store = createLocalStore({
+      key: 'board-test-column',
+      fields: { column: field.enum(['needs', 'working', 'blocked', 'done'] as const, 'working') },
+    })
+    viewport(390)
+    const { container, getByLabelText } = render(
+      <MantineProvider>
+        <SizeClassHintContext.Provider value="compact">
+          <Board label="Warden" columns={COLUMNS} field={store.field.column} />
+        </SizeClassHintContext.Provider>
+      </MantineProvider>,
+    )
+    expect(container.querySelector('[role="group"]')?.textContent).toContain('Delta')
+    const done = [...container.querySelectorAll('input[type="radio"]')].find(
+      (i) => i.getAttribute('value') === 'done',
+    )
+    fireEvent.click(done as Element)
+    expect(getByLabelText('Warden column')).toBeTruthy()
+    expect(container.querySelector('[role="group"]')?.textContent).toContain('Echo')
   })
 })
 

@@ -19,8 +19,9 @@
  * `::after` stretches over the card, so the whole card is the target). No `grid` role.
  *
  * Compact (`useSizeClass() === 'compact'`): one column at a time under a `SegmentedControl` labelled
- * "<title> <count>". The selected column is internal state; pass `column` + `onColumnChange` to own
- * it (a store field, say). An empty column is one muted line (`empty`); an empty board is the
+ * "<title> <count>". The selected column is a store field when you pass `field` (an enum field whose
+ * values are column ids, like `ViewTabs`'s; the URL or storage then remembers it), else internal
+ * state. An empty column is one muted line (`empty`); an empty board is the
  * `EmptyState` tile (`empty` on the board); `loading` is column-shaped skeletons. An error is the
  * caller's: put the board in a `Section` with `query`.
  *
@@ -45,6 +46,7 @@ import type { KeyboardEvent, ReactNode } from 'react'
 import { cx } from '../common/props'
 import type { BasaltProps } from '../common/props'
 import { useSizeClass } from '../shell/use-size-class'
+import type { EnumField, FieldHandle } from '../state'
 import { StatusDot } from '../theme/status-dot'
 import { VX } from '../tokens'
 import classes from './board.module.css'
@@ -52,7 +54,7 @@ import { BOARD_KEYS, isSafeHref, moveOnBoard } from './board-nav'
 import type { BoardKey, BoardPos } from './board-nav'
 import { EmptyState } from './empty-state'
 
-export type BoardProps = BasaltProps & {
+export type BoardProps<T extends string = string> = BasaltProps & {
   /** Accessible name of the board. Default "Board". */
   label?: string
   /** Columns in display order. Column and card `id`s must be unique within their parent. */
@@ -86,9 +88,11 @@ export type BoardProps = BasaltProps & {
   loading?: boolean
   /** The tile shown when no column has a card. Default "Nothing on the board". */
   empty?: { title: string; description?: string; action?: ReactNode }
-  /** Compact: the selected column id (controlled with `onColumnChange`). Default internal, first column. */
-  column?: string
-  onColumnChange?: (columnId: string) => void
+  /**
+   * Compact: the store field holding the selected column id (an enum field of the column ids, the
+   * type `ViewTabs` takes). Omitted: internal state, first column.
+   */
+  field?: FieldHandle<EnumField<T>>
 }
 
 const DEFAULT_EMPTY = { title: 'Nothing on the board' } as const
@@ -120,21 +124,49 @@ function SkeletonColumn({ title }: { title?: string }) {
   )
 }
 
-export function Board({
+type BoardViewProps = Omit<BoardProps, 'field'> & {
+  /** The selected column id and its setter, from the field or from internal state. */
+  picked: string | undefined
+  onPick: (columnId: string) => void
+}
+
+/** The field's `use()` is a hook, so the field and internal-state forms are two components over one view. */
+function FieldBoard<T extends string>({
+  field,
+  ...props
+}: Omit<BoardProps<T>, 'field'> & { field: FieldHandle<EnumField<T>> }) {
+  const [picked, setPicked] = field.use()
+  // The switcher offers only the board's column ids, so `id` is the declared value the caller's field holds.
+  return <BoardView {...props} picked={picked} onPick={(id) => setPicked(id as T)} />
+}
+
+function InternalBoard(props: Omit<BoardProps, 'field'>) {
+  const [picked, setPicked] = useState<string | undefined>(undefined)
+  return <BoardView {...props} picked={picked} onPick={setPicked} />
+}
+
+export function Board<T extends string = string>({ field, ...props }: BoardProps<T>) {
+  return field === undefined ? (
+    <InternalBoard {...props} />
+  ) : (
+    <FieldBoard field={field} {...props} />
+  )
+}
+
+function BoardView({
   label = 'Board',
   columns,
   onOpen,
   height,
   loading = false,
   empty = DEFAULT_EMPTY,
-  column,
-  onColumnChange,
+  picked,
+  onPick,
   className,
   style,
-}: BoardProps) {
+}: BoardViewProps) {
   const compact = useSizeClass() === 'compact'
   const labelId = useId()
-  const [innerColumn, setInnerColumn] = useState<string | undefined>(undefined)
   const [active, setActive] = useState<{ col: string; card: string } | null>(null)
   const [announcement, setAnnouncement] = useState('')
   const buttons = useRef(new Map<string, HTMLButtonElement>())
@@ -142,11 +174,8 @@ export function Board({
 
   const sizes = columns.map((c) => c.cards.length)
   const total = sizes.reduce((a, b) => a + b, 0)
-  const selected = columns.find((c) => c.id === (column ?? innerColumn)) ?? columns[0]
-  const selectColumn = (id: string): void => {
-    setInnerColumn(id)
-    onColumnChange?.(id)
-  }
+  const selected = columns.find((c) => c.id === picked) ?? columns[0]
+  const selectColumn = onPick
 
   // The roving stop: the focused card if it still exists, else the first card of the first non-empty column.
   const firstCol = columns.findIndex((c) => c.cards.length > 0)
@@ -293,7 +322,7 @@ export function Board({
     content = (
       <Fragment>
         {compact && (
-          // theme-allow raw-selection-control — the board's own column switcher, internal state or the caller's `column`, not a page filter.
+          // theme-allow raw-selection-control — the board's own column switcher, its selection is the board's own (a `field` when given, else internal), not a page filter.
           <SegmentedControl
             aria-label={`${label} column`}
             fullWidth
