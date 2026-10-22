@@ -270,15 +270,18 @@ function BoardView<T extends string>({
     return (
       // oxlint-disable-next-line jsx-a11y/prefer-tag-over-role -- a named group of cards, not a fieldset
       <div key={col.id} className={classes.column} role="group" aria-labelledby={headId}>
+        {/* Compact: the switcher already names the column and its count, so only the total stays visible. */}
         <div className={classes.head}>
-          <StatusDot color={col.tone ?? VX.muted} />
+          {!compact && <StatusDot color={col.tone ?? VX.muted} />}
           <h3 id={headId} className={classes.title}>
-            {col.title}
+            {compact ? <VisuallyHidden>{col.title}</VisuallyHidden> : col.title}
             <VisuallyHidden>{`, ${col.cards.length} ${col.cards.length === 1 ? 'card' : 'cards'}`}</VisuallyHidden>
           </h3>
-          <span className={classes.count} aria-hidden>
-            {col.cards.length}
-          </span>
+          {!compact && (
+            <span className={classes.count} aria-hidden>
+              {col.cards.length}
+            </span>
+          )}
           {col.total !== undefined && <span className={classes.total}>{col.total}</span>}
         </div>
         <ScrollArea.Autosize
