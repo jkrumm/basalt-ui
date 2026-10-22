@@ -35,6 +35,12 @@ export const SCENARIO_INFO: readonly ScenarioInfo[] = [
     blurb: 'Am I within budget, and what drives it? Budget burn and spend breakdown by project.',
   },
   {
+    id: 's5-learning',
+    title: 'Learning record',
+    blurb:
+      'Where am I with this topic? Review it now or later: sessions, ratings and the practice journal.',
+  },
+  {
     id: 's7-body',
     title: 'Body and strength',
     blurb: 'Am I trending toward my weight goal, and is my training load productive?',

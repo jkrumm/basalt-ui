@@ -8,6 +8,8 @@
  * warden's budget meters as its footer; a ranked list of the stuck items and the open/close flow
  * sit below. Actions are inert in fixtures.
  *
+ * The item timeline below them is `agents/item-timeline.tsx` (Wave 44: EventList fills it).
+ *
  * Anchors for `basalt-ui shot`: strip cells carry their own `data-shot` (`strip-needs-you`,
  * `strip-oldest-wait`, `strip-fleet`, `strip-dispatch-spend`, `strip-failures`; footer meters
  * `strip-footer-day` / `strip-footer-week`, declared absent in empty and error, where each cell says
@@ -15,7 +17,7 @@
  */
 import { Box, Group, Stack, Text } from '@mantine/core'
 import type { ReactNode } from 'react'
-import { BarList, DeltaBadge, Meter, PageBar, StatGroup, StatusVerdict } from 'basalt-ui'
+import { BarList, DeltaBadge, Meter, PageBar, Section, StatGroup, StatusVerdict } from 'basalt-ui'
 import type { StatStripCell } from 'basalt-ui'
 import { ChartCard, Lines, Sparkline } from 'basalt-ui/charts'
 import { VX } from 'basalt-ui/tokens'
@@ -34,14 +36,18 @@ import {
   FLOW_CLOSED,
   FLOW_OPENED,
   FLOW_RANGE_LABEL,
+  ITEM_TIMELINE,
+  ITEM_TIMELINE_TOTAL,
   NEEDS_YOU,
   NEEDS_YOU_POINTS,
   OLDEST_WAIT_HOURS,
   STUCK,
+  TIMELINE_ITEM,
   WARN_HOURS,
   fmtAge,
 } from './agents-data'
 import type { FlowRow, ItemState } from './agents-data'
+import { ItemTimeline } from './agents/item-timeline'
 import { fmtEur, fmtEurCents, fmtInt, fmtShare } from './fixture-utils'
 import { cardStateProps, chartStateFor, noop, retryCopy } from './shot-state'
 import type { ScenarioProps } from './shot-state'
@@ -380,6 +386,11 @@ export function AgentsScenario({ shotState }: ScenarioProps) {
       />
       <QueueStrip shotState={shotState} />
       <QueueRow shotState={shotState} />
+      <Box data-shot="item-timeline">
+        <Section title={`History · ${TIMELINE_ITEM}`}>
+          <ItemTimeline events={ITEM_TIMELINE} total={ITEM_TIMELINE_TOTAL} shotState={shotState} />
+        </Section>
+      </Box>
     </Stack>
   )
 }
