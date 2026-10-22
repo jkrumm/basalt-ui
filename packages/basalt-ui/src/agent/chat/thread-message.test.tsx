@@ -15,13 +15,13 @@ import type { TranscriptPart } from '../foreign'
 import {
   applyInitialScroll,
   MAX_INITIAL_SCROLL_ATTEMPTS,
-  messageBlockRenderCounter,
   nonVirtualizedRowsFallback,
   resolveGuardedMeasurement,
   resolveInitialScrollAction,
-  ThreadTranscript,
-} from './thread-message'
-import type { InitialScrollState, ThreadTranscriptProps } from './thread-message'
+} from '../../common/virtual-rows'
+import type { InitialScrollState } from '../../common/virtual-rows'
+import { messageBlockRenderCounter, ThreadTranscript } from './thread-message'
+import type { ThreadTranscriptProps } from './thread-message'
 
 // `nonVirtualizedRowsFallback` is a plain function component but its export name (this module's
 // test-only-escape-hatch convention, matching `messageBlockRenderCounter`) is lowercase-first, so
