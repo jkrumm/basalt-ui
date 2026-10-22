@@ -1178,6 +1178,15 @@ Nothing is removed. Each line names its opt-out.
   `sm`, and `tier="section"` draws its own ring at card radius: drop a border you wrapped around it. A `Board` column's
   `empty`, `BarList`'s `emptyText` (default now "No items to compare yet"; pass the real cause), an empty
   `BasaltDataTable` body and an empty `renderCard` list all render as that tile. The error title is `md` 500.
+- **One form row.** `FormRow` and `SettingsRow` share one geometry: a 15rem label column and a control column capped
+  at 20rem, left-packed (was `FormRow` 1fr / 1.4fr and `SettingsRow` with its control flush right); below 600 px of the
+  row's own width they stack. A wider control (a long textarea, a table) sets its own width. `SettingsRow` is a grid now,
+  and `SettingsSection`/`DangerZone` bodies are `basalt-form` inline-size containers.
+- **Chart and `StatCard` empties.** Chart `state.empty` and `StatCard` `emptyText` render as the same tile: the first
+  sentence is the title (trailing period dropped), the rest the muted line — write "Why it is empty. What to do." The
+  data table keeps the tile ring in its empty body and left-aligns its error body (it was centred), like every other host.
+- **Pending shapes.** A pending `Lines`/`StackedArea` card draws a line ghost (a body wrapped in your own component passes
+  `ghost="line"`); a loading `StatCard` with a `delta` keeps a delta chip.
 - **`Board` record links** are ink in both schemes and do not change colour once visited; hover underlines.
 - **`Sparkline`** hides its `referenceLabel` caption while a readout shows.
 
