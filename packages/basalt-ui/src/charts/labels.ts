@@ -11,8 +11,8 @@ import { rowX } from './types'
 import type { ChartMarks, ChartSeries, ChartX, PlotContext, PlotRow } from './types'
 
 const MAX_END_LABELS = 3
-/** Two end labels closer than this (px, vertically) are pushed apart to it: one label line (11px at 1.35) plus a pixel of air. */
-const END_LABEL_MIN_GAP = 15
+/** Two end labels closer than this (px, vertically) are pushed apart to it: one label line (11px at 1.35) plus two pixels of air. */
+const END_LABEL_MIN_GAP = 17
 const END_LABEL_DX = 6
 /**
  * A glyph's advance as a share of the font size, for the room check. 0.85 covers proportional
@@ -27,11 +27,13 @@ const END_LABEL_FLIP_DY_BELOW = 13
 /** The room a label's centre keeps from the plot's top and bottom edge, px: half its line. */
 const END_LABEL_EDGE = 7
 /** A glyph's advance as a share of the font size, for a label's drawn box (the room check's {@link END_LABEL_GLYPH_EM} errs wide). */
-const BOX_GLYPH_EM = 0.62
+const BOX_GLYPH_EM = 0.68
 /** A label's ink is this share of its font size tall, centred on its text's y. */
 const BOX_INK = 0.75
 /** Air a label keeps from any line, px, and the margin a claimed box carries for a caption. */
-const LINE_AIR = 3
+const LINE_AIR = 4.5
+/** What a label across a reference rule from its own line costs in {@link place}'s air score, px. */
+const CROSSED_PENALTY = 100
 /** The most flipped labels whose two sides are all tried (2 ** n assignments). */
 const MAX_SIDE_SEARCH = 5
 
@@ -246,7 +248,17 @@ export function endLabelPlan<T, X extends ChartX>(
     )
     const shifts = spreadLabels(start, plot.plotHeight)
     const centres = start.map((c, i) => c + (shifts[i] as number))
-    const score = centres.reduce((sum, c, i) => sum + Math.min(airOf(i, c), LINE_AIR), 0)
+    // A label across a reference rule from its own line's end reads as the rule's label: worse
+    // than any amount of lost air.
+    const crossed = centres.filter((c, i) => {
+      const end = toPx(lineY(i))
+      return rules.some(
+        (v) => (toPx(v) - c) * (toPx(v) - end) < 0 && (c - end) * (toPx(v) - end) > 0,
+      )
+    }).length
+    const score =
+      centres.reduce((sum, c, i) => sum + Math.min(airOf(i, c), LINE_AIR), 0) -
+      CROSSED_PENALTY * crossed
     return { sides, centres, score }
   }
   // Each flipped label may take either side: the assignment that keeps most air from the lines

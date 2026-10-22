@@ -24,8 +24,8 @@ const EDGE_EPS = 0.5
 const LABEL_AIR = 2
 /** Path samples per px of length, so a thin stroke cannot slip between two. */
 const SAMPLE_STEP_PX = 0.5
-/** A stroke's half width plus a hair, px: the path's real ink. */
-const INK = 1.5
+/** The widest stroke's half width (1.125) plus 3 px of air, px: how near a path may come to a label's glyphs (r2 #12: 1.5 px read as touching). */
+const INK = 4.1
 /** A label's glyph ink is this share of its font size tall; the text box's rest is line-height air. */
 const GLYPH_INK = 0.75
 
@@ -131,12 +131,12 @@ layout('Wave 43 end labels on two close lines', () => {
             ...[...svg.querySelectorAll(labels)].map(boxOf),
             ...[...svg.querySelectorAll('[data-ts-key="ref-0-label"] text')].map(boxOf),
           ]
-          const paths = [
-            ...[...svg.querySelectorAll<SVGPathElement>('path')].filter(
-              (path) => (path.getAttribute('d') ?? '').split(/[ML]/).length > 20,
-            ),
-            ...svg.querySelectorAll<SVGPathElement>('[data-ts-key="ref-0"] path'),
-          ]
+          const paths = [...svg.querySelectorAll<SVGPathElement>('path')].filter(
+            (path) => (path.getAttribute('d') ?? '').split(/[ML]/).length > 20,
+          )
+          // The Goal rule is a <line>: sampled along its width, at its y.
+          const rule = svg.querySelector('[data-ts-key="ref-0"] line')?.getBoundingClientRect()
+          const ruleY = rule ? (rule.top + rule.bottom) / 2 : undefined
           const hits = texts.map(() => 0)
           for (const path of paths) {
             const ctm = path.getScreenCTM()
@@ -155,7 +155,24 @@ layout('Wave 43 end labels on two close lines', () => {
               })
             }
           }
-          return { texts, hits }
+          // Each end point (page px) and the Goal rule's y: a label stays on its series' side of the rule.
+          const ends = paths.flatMap((path) => {
+            const ctm = path.getScreenCTM()
+            if (!ctm) return []
+            const pt = path.getPointAtLength(path.getTotalLength()).matrixTransform(ctm)
+            return [pt.y]
+          })
+          if (rule)
+            for (let x = rule.left; x <= rule.right; x += step)
+              texts.forEach((b, i) => {
+                if (
+                  x + ink >= b.left &&
+                  x - ink <= b.right &&
+                  Math.abs((b.top + b.bottom) / 2 - (ruleY ?? 0)) <= (b.bottom - b.top) / 2 + ink
+                )
+                  hits[i] = (hits[i] ?? 0) + 1
+              })
+          return { texts, hits, ends, ruleY }
         },
         { root: ROOT, labels: LABELS, step: SAMPLE_STEP_PX, ink: INK, inkH: GLYPH_INK },
       )
@@ -168,6 +185,19 @@ layout('Wave 43 end labels on two close lines', () => {
         // A text over a line, named by the text, so the failing tail says which one.
         expect(`${t.text}: ${m.hits[i]} samples on a line`).toBe(`${t.text}: 0 samples on a line`)
       })
+      const ruleY = m.ruleY
+      if (ruleY === undefined) throw new Error('LAYOUT: no Goal rule')
+      for (const t of m.texts.filter((x) => x.text !== 'Goal')) {
+        const centre = (t.top + t.bottom) / 2
+        const nearest = m.ends.reduce((a, b) =>
+          Math.abs(b - centre) < Math.abs(a - centre) ? b : a,
+        )
+        const apart = (centre - ruleY) * (nearest - ruleY) < 0
+        // The Goal rule between a label and its series' end reads as the rule's label.
+        expect(`${t.text}: ${apart ? 'across the Goal rule' : 'beside its series'}`).toBe(
+          `${t.text}: beside its series`,
+        )
+      }
       m.texts.forEach((a, i) =>
         m.texts.slice(i + 1).forEach((b) => {
           const over = a.left < b.right && b.left < a.right && a.top < b.bottom && b.top < a.bottom

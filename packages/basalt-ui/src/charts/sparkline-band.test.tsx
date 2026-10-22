@@ -77,8 +77,8 @@ describe('Sparkline band', () => {
     const b = box(bandRect(el))
     expect(b.y).toBeGreaterThan(LINE_INSET)
     expect(b.y + b.h).toBeLessThan(VIEW_H - LINE_INSET)
-    // Domain 0.01..1.09 (data 0.1..1 with the band's 1, plus 10% air): 0.4 of 1.08 of the plot.
-    expect(b.h).toBeCloseTo((0.4 / 1.08) * (VIEW_H - 2 * LINE_INSET), 1)
+    // Domain -0.125..1.225 (data 0.1..1 with the band's 1, plus a quarter of the span): 0.4 of 1.35.
+    expect(b.h).toBeCloseTo((0.4 / 1.35) * (VIEW_H - 2 * LINE_INSET), 1)
   })
 
   test('a band below the data grows the domain to hold it', () => {
@@ -86,8 +86,8 @@ describe('Sparkline band', () => {
     const b = box(bandRect(el))
     expect(b.y).toBeGreaterThan(LINE_INSET)
     expect(b.y + b.h).toBeLessThan(VIEW_H - LINE_INSET)
-    // Domain 0.5..1.7 (the band's 0.6 below the data, plus 10% air): 0.4 of 1.2 of the plot.
-    expect(b.h).toBeCloseTo((0.4 / 1.2) * (VIEW_H - 2 * LINE_INSET), 1)
+    // Domain 0.35..1.85 (the band's 0.6 below the data, plus a quarter of the span): 0.4 of 1.5.
+    expect(b.h).toBeCloseTo((0.4 / 1.5) * (VIEW_H - 2 * LINE_INSET), 1)
   })
 
   test('reversed bounds draw the same band', () => {

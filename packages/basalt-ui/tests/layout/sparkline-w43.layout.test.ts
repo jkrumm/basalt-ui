@@ -19,8 +19,8 @@ const layout = ready ? describe : describe.skip
 const SPARK = '[data-testid^="w43-spark"] [data-basalt-sparkline]'
 /** Path samples per px of length, so a thin stroke cannot slip between two. */
 const SAMPLE_STEP_PX = 0.5
-/** The stroke's half width (0.75) plus 2.5 px of air, px: how near the path may come to a label's glyphs. */
-const INK = 3.4
+/** The stroke's half width (0.75) plus 4 px of air, px: how near the path may come to a label's glyphs (r2 #16: 2.5 px read as touching). */
+const INK = 4.75
 /** A label's glyph ink is this share of its font size tall; the text box's rest is line-height air. */
 const GLYPH_INK = 0.75
 
@@ -121,15 +121,15 @@ layout('Wave 43 sparkline reference label', () => {
     expect(rows.map((r) => r.lift)).toEqual(['squat', 'bench', 'deadlift'])
     for (const r of rows) {
       const data = INOL[r.lift as keyof typeof INOL]
-      // The y domain is the data and the band, padded a tenth of its span each side: the plot is
+      // The y domain is the data and the band, padded a quarter of its span each side: the plot is
       // 22 px of the 28, and the band is its 0.6–1.0 share of the padded domain.
       const lo = Math.min(...data, 0.6)
       const hi = Math.max(...data, 1)
-      const expected = (22 * 0.4) / ((hi - lo) * 1.2)
+      const expected = (22 * 0.4) / ((hi - lo) * 1.5)
       expect(r.height).toBeCloseTo(expected, 0)
-      // Both edges inside the box, never flush with it.
-      expect(r.top).toBeGreaterThan(3)
-      expect(r.bottom).toBeGreaterThan(3)
+      // Both edges inside the box with air (r2 #21: 4.8 px read as running off the plot).
+      expect(r.top).toBeGreaterThan(6)
+      expect(r.bottom).toBeGreaterThan(6)
       // The band spans the plot the line is drawn in: its start (and, with the end dot, its end).
       expect(r.left).toBeLessThanOrEqual(r.lineLeft + 0.5)
       expect(r.right).toBeLessThanOrEqual(r.lineRight + 0.5)
