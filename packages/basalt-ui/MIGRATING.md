@@ -1121,6 +1121,28 @@ Nothing to change unless a test or a style depends on the old look. Each line na
 - **`basalt-ui shot`.** An anchor that renders only in a URL state (`empty`, …) is recorded `absent` at rest with the
   note "not rendered at rest"; the board's "not captured" now means a real capture miss only.
 
+### Event list (Wave 44)
+
+New export, nothing to change in existing code.
+
+- **`EventList`** (`basalt-ui`, type `EventListProps`): a day-grouped event feed (`density="feed"`) or record history
+  (`density="timeline"`, with a rail). It replaces argo's `features/agents/event-list.tsx` prototype and its
+  `home/activity-feed.tsx` fork, argo's `warden/item-timeline.tsx` rows, rb's journal day groups and linewatch's
+  `transition-timeline.tsx`. Pass `items` (`id`, `at`, `actor?`, `title`, `body?`, `leading?`, `chips?`; the type is
+  `EventListProps['items'][number]`) in display order — the list never sorts. Line one is the glyph, actor and
+  sentence; line two leads with the time, then the body and chips. `group="day"` (default) adds a header per local
+  day; `now` makes Today/Yesterday deterministic; `time` picks `clock`, `relative`, `date-time` or a formatter. The
+  prototype's `groups`/`limit`/`narrowLines` map to `group="day"`, `earlier={{ onLoad, remaining }}` and the density.
+- **History in a box.** `order="oldest-first"` with a `height` opens at the newest row, puts "Show earlier (N)" at the
+  top, and keeps the visible row when earlier items are prepended. Without `height` the list scrolls with the page.
+- **States.** `loading` draws skeleton rows in the row's shape; `empty={{ title, description?, action? }}` draws the
+  § 6.11 tile. Compose an error with the surrounding `Section`'s query, not inside the list.
+- **Long lists.** Above 200 rows the list virtualises through `@tanstack/react-virtual` (an optional peer, already one
+  for `./agent`), loaded lazily; without it every row renders. At or below 200 rows the peer is never loaded.
+- **`basalt-ui shot`.** A full-page shot grows only by the page scrollport's hidden height (`data-basalt-scrollport`, or
+  the outermost scroller in a shell-less app); a bounded scroll box inside the page no longer adds its hidden rows as
+  blank page. `_page` shots of pages with a scrolling sidebar or inner list get shorter.
+
 ## 2.27.2
 
 _Nothing to migrate in this release._
