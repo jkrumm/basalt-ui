@@ -1,0 +1,15 @@
+/* The entry form's action row: right-aligned, and pinned to the scrollport's bottom on a compact screen. */
+.actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: var(--vx-space-control-gap);
+  padding-block: var(--vx-space-stack-sm);
+}
+
+.actions[data-sticky] {
+  position: sticky;
+  bottom: 0;
+  z-index: 1;
+  background: var(--vx-surface-bg);
+  border-block-start: 1px solid var(--vx-divider);
+}

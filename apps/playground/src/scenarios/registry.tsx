@@ -1,6 +1,6 @@
 /**
  * The scenario registry: `$name` → fixture. The route stays thin; a new scenario is one entry here.
- * S1–S6 are SPEC § 2; S7 and S8 are Wave 43's argo upstream rows. `probe-1`…`probe-6` are the reviewer's calibration boards (SPEC § 8.5): five
+ * S1–S6 are SPEC § 2 (S6 settings and entry is the forms pattern); S7 and S8 are Wave 43's argo upstream rows. `probe-1`…`probe-6` are the reviewer's calibration boards (SPEC § 8.5): five
  * seeded with exactly one defect each and one known-good; the ids are neutral so the defect is not
  * readable from the route (the map lives in calibration.md). A Map, so `/scenarios/constructor` is
  * unknown rather than an inherited `Object` member.
@@ -17,6 +17,7 @@ import { TrainingScenario } from './S2Training'
 import { AgentsScenario } from './S3Agents'
 import { SpendScenario } from './S4Spend'
 import { LearningScenario } from './S5Learning'
+import { SettingsScenario } from './S6Settings'
 import { BodyScenario } from './S7Body'
 import { MapScenario } from './S8Map'
 import type { ScenarioProps } from './shot-state'
@@ -27,6 +28,7 @@ const RENDERERS = {
   's3-agents': (p) => <AgentsScenario {...p} />,
   's4-spend': (p) => <SpendScenario {...p} />,
   's5-learning': (p) => <LearningScenario {...p} />,
+  's6-settings': (p) => <SettingsScenario {...p} />,
   's7-body': (p) => <BodyScenario {...p} />,
   's8-map': (p) => <MapScenario {...p} />,
   'probe-3': () => <CalibrateGood />,
