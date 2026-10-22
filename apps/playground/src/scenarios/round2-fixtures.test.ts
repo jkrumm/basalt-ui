@@ -218,7 +218,7 @@ describe('W42 r2 fixtures', () => {
 
   it('S1 empty outages names the range without a preposition', () => {
     const table = anchor(mount(createElement(OpsScenario, { shotState: 'empty' })), 'outages')
-    expect(table?.textContent).toContain(`No outage ${OPS_WINDOW_LABEL}.`)
+    expect(table?.textContent).toContain(`No outage ${OPS_WINDOW_LABEL}`)
     expect(table?.textContent).not.toContain('No outage in')
   })
 })

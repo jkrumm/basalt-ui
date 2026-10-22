@@ -14,7 +14,7 @@
  * and `Section` do not forward `data-*`, so the anchor is the wrapping `Box`.
  */
 import { Box, SimpleGrid, Stack } from '@mantine/core'
-import { PageBar, Section, StatCard, StatGroup } from 'basalt-ui'
+import { EmptyState, PageBar, Section, StatCard, StatGroup } from 'basalt-ui'
 import { BandStrip, Bars, ChartCard, Lines, Sparkline } from 'basalt-ui/charts'
 import type { BandSpan, BandStripSeries, BarsBar, ChartSeries } from 'basalt-ui/charts'
 import { BasaltDataTable, createColumnHelper } from 'basalt-ui/table'
@@ -115,10 +115,6 @@ const LATENCY_DATA = [...LATENCY_DISTRIBUTION]
 const OUTAGE_ROWS = [...OUTAGES]
 const NO_OUTAGES: Outage[] = []
 
-const PROBE_EMPTY = 'No readings in the window. Check that the probe is reporting.'
-
-const retry = (): string => retryCopy('probe')
-
 const columns = (() => {
   const col = createColumnHelper<Outage>()
   return [
@@ -144,11 +140,10 @@ const columns = (() => {
 
 function OpsStats({ shotState }: ScenarioProps) {
   const isAtRest = shotState === undefined
-  const query = queryFor(shotState, retry())
-  // The empty branch says why and what to do in one muted line. Computed once for all three cards.
-  const shared = {
-    emptyText: PROBE_EMPTY,
-    ...(query !== undefined && { query }),
+  // Each card names its own source: the failure and the empty cause differ per card, so no two read alike.
+  const sharedFor = (source: string, empty: string) => {
+    const query = queryFor(shotState, retryCopy(source))
+    return { emptyText: empty, ...(query !== undefined && { query }) }
   }
 
   return (
@@ -164,7 +159,10 @@ function OpsStats({ shotState }: ScenarioProps) {
             deltaPeriod: 'vs 7-day median',
             deltaPolarity: 'up-bad' as const,
           })}
-          {...shared}
+          {...sharedFor(
+            'latency probe',
+            'No ping answered in the last minute. Check that the probe is online.',
+          )}
           sparkline={(size) => (
             <Sparkline
               ariaLabel="Latency per minute, last 60 minutes, ms"
@@ -186,7 +184,10 @@ function OpsStats({ shotState }: ScenarioProps) {
               { label: 'Uptime, 7 days', value: fmtUptime(UPTIME_PCT) },
             ],
           })}
-          {...shared}
+          {...sharedFor(
+            'packet-loss counter',
+            'The probe sent no packets in the window. Check its test schedule.',
+          )}
           sparkline={(size) => (
             <Sparkline
               ariaLabel="Packet loss per hour, last 24 hours, percent"
@@ -209,7 +210,7 @@ function OpsStats({ shotState }: ScenarioProps) {
               { label: '7-day peak', value: fmtMbit(DOWN_PEAK_MBIT) },
             ],
           })}
-          {...shared}
+          {...sharedFor('speed test', 'No speed test ran in the window. Start one from the probe.')}
           sparkline={(size) => (
             <Sparkline
               ariaLabel="Download per hour, last 24 hours, Mbit/s"
@@ -232,7 +233,7 @@ function OpsCharts({ shotState }: ScenarioProps) {
           info={`One band per hour. An outage is any hour with downtime; loss above ${DEGRADED_LOSS_PCT}% without downtime is degraded. Last outage: ${fmtStamp(LAST_OUTAGE.start)} UTC, ${fmtDuration(LAST_OUTAGE.minutes)}.`}
           state={chartStateFor(shotState, {
             empty: 'No hourly readings in the window. Check that the probe is reporting.',
-            error: retry(),
+            error: retryCopy('link monitor'),
           })}
           {...(shotState === 'error' && { onRetry: noop })}
         >
@@ -257,7 +258,7 @@ function OpsCharts({ shotState }: ScenarioProps) {
             state={chartStateFor(shotState, {
               empty:
                 'No throughput readings in the window. Check that the speed test is scheduled.',
-              error: retry(),
+              error: retryCopy('throughput meter'),
             })}
             {...(shotState === 'error' && { onRetry: noop })}
           >
@@ -282,7 +283,7 @@ function OpsCharts({ shotState }: ScenarioProps) {
             info={`How many of the ${MEASURED_HOURS} hours with a reading landed in each ${LATENCY_BIN_MS} ms band of median round-trip time. Outage hours have no reading.`}
             state={chartStateFor(shotState, {
               empty: 'No latency readings to bin yet. The histogram needs at least one hour.',
-              error: retry(),
+              error: retryCopy('latency log'),
             })}
             {...(shotState === 'error' && { onRetry: noop })}
           >
@@ -303,7 +304,7 @@ function OpsCharts({ shotState }: ScenarioProps) {
 }
 
 function OpsOutages({ shotState }: ScenarioProps) {
-  const query = queryFor(shotState, retry())
+  const query = queryFor(shotState, retryCopy('outage log'))
   return (
     <Box data-shot="outages" h="100%">
       <Section title={`Outages, ${WINDOW_LABEL}`}>
@@ -314,7 +315,13 @@ function OpsOutages({ shotState }: ScenarioProps) {
           enableSorting={false}
           skeletonRows={OUTAGE_ROWS.length}
           {...(query !== undefined && { query })}
-          emptyState={<span>No outage {WINDOW_LABEL}. The line stayed up.</span>}
+          emptyState={
+            <EmptyState
+              tier="section"
+              title={`No outage ${WINDOW_LABEL}`}
+              description="The line stayed up; any outage the probe sees lists here."
+            />
+          }
         />
       </Section>
     </Box>
