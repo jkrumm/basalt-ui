@@ -104,7 +104,10 @@ export type SettingsRowProps = BasaltProps &
     label: string
     /** Optional 12px muted description under the label. */
     description?: string
-    /** Right-aligned control (input/switch/button). */
+    /**
+     * Right-aligned control (input/switch/button). Mounted in a `CtlSlot`: a bound input is the 32 px
+     * field (44 under a coarse pointer), not Mantine's 42 px `md`; a control's own `size` still wins.
+     */
     control?: ReactNode
     /** Alternative to `control` for a fully custom right-hand region. */
     children?: ReactNode

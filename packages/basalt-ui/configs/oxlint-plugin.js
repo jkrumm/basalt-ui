@@ -2710,6 +2710,9 @@ export const CTL_THEME_TAGS = new Set([
   'MultiSelect',
   'SegmentedControl',
   'NativeSelect',
+  'NumberInput',
+  'PasswordInput',
+  'Textarea',
   'Radio',
   'RadioGroup',
   'Checkbox',
@@ -2721,8 +2724,8 @@ export const CTL_THEME_TAGS = new Set([
 /**
  * A size/width/breakpoint prop on a control the slot theme tiers. The slot's hoisted
  * `MantineThemeProvider` already resolves the tier with no prop. A `SettingsRow`'s `control` is NOT
- * a tiered slot (see {@link SLOT_ATTRS}): a form row keeps Mantine's `md`, so the `size` written
- * there is load-bearing rather than redundant.
+ * a tiered slot for this rule (see {@link SLOT_ATTRS}): it mounts its own `CtlSlot` (Wave 46), but a
+ * `size="md"` written there is the documented opt-out back to Mantine's `md`, so it stays legal.
  *
  * Scoped to `RAW_FILTER_TAGS` ∪ `BOUND_TAGS` (basalt's own controls, by name) ∪ a Mantine-imported
  * {@link CTL_THEME_TAGS} member, and skipped under an overlay ({@link hostedInsideSlot}) — see
