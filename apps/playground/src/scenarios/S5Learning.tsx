@@ -104,7 +104,7 @@ function LearningStrip({ shotState }: ScenarioProps) {
     data: typeof SESSIONS_PER_WEEK,
     format: (v: number) => string,
   ) =>
-    loading || empty
+    empty
       ? {}
       : {
           visual: (
@@ -237,9 +237,11 @@ function LearningAside({ shotState }: ScenarioProps) {
       ) : (
         <Box data-shot="learning-aside" data-shot-absent="error">
           {shotState === 'empty' ? (
-            <Text size="sm" c="dimmed">
-              Partners appear with the first shared session.
-            </Text>
+            <EmptyState
+              tier="section"
+              title="No practice partners yet"
+              description="Partners appear with the first session you log together."
+            />
           ) : (
             <Stack gap="xs">
               <Text size="xs" c="dimmed">
@@ -306,7 +308,7 @@ export function LearningScenario({ shotState }: ScenarioProps) {
                 title="No sessions logged yet"
                 description="Log a session to start the record; the first review follows four days later."
                 action={
-                  <Button size="xs" onClick={noop}>
+                  <Button size="xs" onClick={noop} data-shot-hover>
                     Log a session
                   </Button>
                 }
