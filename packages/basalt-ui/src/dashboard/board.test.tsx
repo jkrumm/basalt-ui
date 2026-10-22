@@ -200,6 +200,14 @@ describe('Board', () => {
     expect(loading.container.querySelectorAll('.mantine-Skeleton-root').length).toBeGreaterThan(0)
   })
 
+  test('compact loading keeps the column switcher, inert, with the column titles', () => {
+    const { container, getByLabelText } = mount({ loading: true }, 'compact')
+    const switcher = getByLabelText('Warden column')
+    expect(switcher).toBeTruthy()
+    expect(container.querySelectorAll('input[type="radio"][disabled]').length).toBeGreaterThan(0)
+    expect(container.textContent).toContain('Needs you')
+  })
+
   test('compact shows one column under a switcher and switches', () => {
     const { container, getByLabelText } = mount({}, 'compact')
     expect(container.querySelectorAll('[role="group"]')).toHaveLength(1)

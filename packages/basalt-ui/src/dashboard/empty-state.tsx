@@ -30,7 +30,7 @@ export type EmptyStateProps = BasaltProps &
   SlotStylesProps<EmptyStateSlot> & {
     /** Optional glyph slot, rendered faint at ~28-32px. No shipped illustration assets. */
     icon?: ReactNode
-    /** Title at `md`, weight 500, ink: never louder than the card title beside it (SPEC § 6.11). */
+    /** Weight 500, ink: `sm` in a section tile (never louder than its host's title), `md` on a page (SPEC § 6.11). */
     title: string
     /**
      * Muted `sm` description, capped at ~360px so it reads as a short explanation. Optional: a
@@ -102,9 +102,8 @@ export function EmptyState({
       <span
         className={classNames?.title}
         style={{
-          // Internal seam: a host (the data table) sets the var to cap the title at its own tier.
-          // (`VX.text.*` are bare numbers: a number inside a `var()` fallback has no unit, so name the var.)
-          fontSize: 'var(--basalt-state-title-size, var(--vx-text-md))',
+          // A section tile never out-sizes its host's own title (`sm`); the page tier has none and keeps `md`.
+          fontSize: resolved === 'section' ? VX.text.sm : VX.text.md,
           fontWeight: 500,
           color: VX.ink,
         }}

@@ -25,8 +25,9 @@ const SECTIONS: FixtureSpec['sections'] = [
 ]
 const EL = '[data-testid="el-host"]'
 const BOARD = '[data-testid="board-host"]'
+const LOADING_HOST = '[data-testid="board-loading-host"]'
 const RECORD_HOST = '[data-testid="board-record-host"]'
-/** `EmptyState`'s title (`md`) and a column or table title's size (`sm`), in computed px. */
+/** `sm`: a section tile's title (never above its host's); `md`: the page tier and the error title. In computed px. */
 const TITLE_MD = '15px'
 const TITLE_SM = '13px'
 /** The ring over its backdrop must move a channel by at least this much (of 255). */
@@ -62,7 +63,7 @@ const tileOf = (host: string, text: string): string => `(() => {
   }
 })()`
 
-function expectTile(t: Tile, titleSize = TITLE_MD): void {
+function expectTile(t: Tile, titleSize = TITLE_SM): void {
   expect(t.shadow).not.toBe('none')
   expect(t.borderTop).toBe('0px')
   expect(t.radius).toBe(t.cardRadius)
@@ -73,7 +74,7 @@ function expectTile(t: Tile, titleSize = TITLE_MD): void {
 layout('Wave 46 states', () => {
   afterAll(closeLayoutSuite, CLOSE_BUDGET_MS)
 
-  test('an empty EventList is the section tile: one ring, card radius, md 500 title', async () => {
+  test('an empty EventList is the section tile: one ring, card radius, sm 500 title', async () => {
     const p = await openFixture({ sections: SECTIONS, eventList: 'empty' }, DESKTOP_1440)
     await p.raw.waitForSelector(`${EL} [role="status"] span`)
     const t = (await p.raw.evaluate(tileOf(EL, 'Nothing has happened yet'))) as Tile
@@ -85,7 +86,23 @@ layout('Wave 46 states', () => {
     await p.raw.waitForSelector(`${BOARD} [role="group"]`)
     const t = (await p.raw.evaluate(tileOf(BOARD, 'Nothing is blocked'))) as Tile
     // The column title is the card-title size (sm), never louder than the cards beside it.
-    expectTile(t, TITLE_SM)
+    expectTile(t)
+  })
+
+  test('390: the loading board keeps the column switcher; 1440 has none', async () => {
+    const count = async (vp: typeof PHONE) => {
+      const p = await openFixture({ sections: SECTIONS, w46BoardLoading: true }, vp)
+      await p.raw.waitForSelector(`${LOADING_HOST} [aria-busy="true"]`)
+      return (await p.raw.evaluate(`(() => {
+        const sw = document.querySelector('${LOADING_HOST} .mantine-SegmentedControl-root')
+        return sw ? { height: sw.getBoundingClientRect().height, text: sw.textContent } : null
+      })()`)) as { height: number; text: string } | null
+    }
+    const phone = await count(PHONE)
+    expect(phone).not.toBeNull()
+    expect(phone?.height).toBeGreaterThan(24)
+    expect(phone?.text).toContain('Needs you')
+    expect(await count(DESKTOP_1440)).toBeNull()
   })
 
   for (const scheme of ['light', 'dark'] as const) {
