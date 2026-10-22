@@ -154,7 +154,7 @@ function OpsStats({ shotState }: ScenarioProps) {
           qualifier="last minute"
           value={fmtMs(LATENCY_NOW_MS)}
           info="Round-trip time in the last minute. The sparkline shows the last 60 minutes; the change compares with the 7-day median hour."
-          {...(isAtRest && {
+          {...((isAtRest || shotState === 'loading') && {
             delta: (LATENCY_NOW_MS / LATENCY_MEDIAN_7D_MS - 1) * 100,
             deltaPeriod: 'vs 7-day median',
             deltaPolarity: 'up-bad' as const,

@@ -202,9 +202,14 @@ describe('W42 r1 tables', () => {
 describe('W42 r2 fixtures', () => {
   it('S2 empty log and empty top lifts say the gap the same way', () => {
     const c = mount(createElement(TrainingScenario, { shotState: 'empty' }))
-    const gap = NO_STRENGTH
-    expect(anchor(c, 'session-log')?.textContent).toContain(gap)
-    expect(anchor(c, 'top-lifts')?.textContent).toContain(gap)
+    // A chart's empty tile reads the gap as a title and a muted line (first sentence, trailing
+    // period dropped); the log prints the sentence whole. Both carry both parts.
+    const [title, ...rest] = NO_STRENGTH.split('. ')
+    const description = rest.join('. ')
+    for (const name of ['session-log', 'top-lifts']) {
+      expect(anchor(c, name)?.textContent).toContain(title)
+      expect(anchor(c, name)?.textContent).toContain(description)
+    }
   })
 
   it('S2 log has the facet and no second search field for the same column', () => {
