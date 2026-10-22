@@ -11,7 +11,7 @@
  *
  * Layout keys on the enclosing card's OWN width (`container: basalt-card`, declared by ChartCard /
  * StatCard / Section — docs/DESIGN-CORE.md § Layout, elevation, shapes), never the viewport: below 480px the subtitle folds
- * into the info glyph; from 480px (wave 8) `value` + `delta` move onto the title row. Wrapping and
+ * into the info glyph (a ChartCard keeps it, wrapped to two lines — wave 43); from 480px (wave 8) `value` + `delta` move onto the title row. Wrapping and
  * shrinking are unconditional. The subtitle ALSO folds (regardless of width) whenever the card's own
  * height is under 280px — see the `[data-basalt-card-short]` block below (wave 8's header-economy
  * law). No enclosing card, no container: the standard layout. Container conditions are px literals
@@ -393,6 +393,22 @@
 
   .foldNote {
     display: block;
+  }
+
+  /* A chart card keeps its subtitle (argo's line/dot key) on its own line at every width: up to two
+   * lines, then an ellipsis; the full text stays in the DOM. StatCard and Section still fold. The
+   * short-height block below out-ranks this (its selector is one class heavier). */
+  [data-basalt-chart-card] .subtitle {
+    display: -webkit-box;
+    -webkit-box-orient: vertical;
+    -webkit-line-clamp: 2;
+    line-clamp: 2;
+    overflow: hidden;
+  }
+
+  [data-basalt-chart-card] .foldGlyph,
+  [data-basalt-chart-card] .foldNote {
+    display: none;
   }
 }
 
