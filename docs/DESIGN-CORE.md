@@ -1,7 +1,7 @@
 # Basalt Design Core — The Design Source (internal)
 
-This is basalt-ui's **internal design rationale** — the universal law in full, with the influences
-and reasoning behind it. It governs the chart system, the token architecture, and the
+This is basalt-ui's **internal design rationale** — the universal law in full, with the reasoning
+behind it. It governs the chart system, the token architecture, and the
 colour/elevation discipline that make a basalt app read as a calm, professional terminal.
 
 **It is NOT shipped to consumers.** The consumer-facing, enforceable subset is distilled into the
@@ -148,7 +148,9 @@ Worked rule: a multi-toggle bar chart colours bars `isMulti ? series.x : VX.line
 ## Scales (decided values)
 
 Every change goes through the derive config and `src/tokens/` constants, never a hand-edited value;
-level 0 of `density`/`radius`/`fonts` is the verbatim baseline.
+level 0 of `density`/`radius`/`fonts` is the verbatim baseline. These values changed the 1.x law on
+purpose; the old → new table and the `density`/`radius` knobs that restore the old feel are in
+`packages/basalt-ui/MIGRATING.md`.
 
 | Scale         | Value                                                                                                                                       |
 | ------------- | ------------------------------------------------------------------------------------------------------------------------------------------- |
@@ -170,6 +172,8 @@ level 0 of `density`/`radius`/`fonts` is the verbatim baseline.
 - **A fresh reviewer scores every component on Craft, Expression and Communication.** One failed item
   fails the component; [measured] items read `metrics.json`, never the eye. Items, banned filler and
   severity: `packages/basalt-ui/agent/agents/basalt-design-reviewer.md`. Only a pass merges.
+- **The reviewer is calibrated.** Seeded known-bad boards must fail with the right citation; a reviewer that
+  misses a seeded defect is fixed before it gates (`docs/waves/design-parity/w31/calibration.md`).
 - **Reconciled decisions.** Deltas are text colour, never a fill; accent never marks selection; a
   single-series sparkline is neutral; metric captions are mono uppercase `micro`; `Meter` and
   `BarList` are not chart kinds (`src/dashboard`).
