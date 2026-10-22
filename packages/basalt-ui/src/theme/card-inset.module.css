@@ -29,6 +29,27 @@
   padding: 0;
 }
 
+/* The card radius tier. Paper's lives here rather than in the theme's inline `styles` so the rule
+   below can step it down; a Card keeps its inline value, which this one equals. */
+.inset {
+  border-radius: var(--vx-radius-card);
+}
+
+/*
+ * A `Paper` floating over a flush card (a scrubber or key over a map canvas) is a nested surface:
+ * sharing the card's radius fails `craft-1/nested-radius-step` (< 3 px apart). It steps DOWN to the
+ * control tier, which is always a scale step and 4 px under the card at every radius level (`card =
+ * 10 + level`, `ctrl = 6 + level`), the same snap-down law as the Wave 38 nested radii.
+ *
+ * An explicit `radius` prop still wins: Mantine writes it inline as `--paper-radius`, which beats
+ * this rule's `initial` reset; unset, Mantine's own class value (the theme default radius) is
+ * reset away so the `var()` falls through to the control tier.
+ */
+.inset[data-variant='flush'] .inset {
+  --paper-radius: initial;
+  border-radius: var(--paper-radius, var(--vx-radius-ctrl));
+}
+
 .inset:where(
   :not(
     [data-variant='flush'],
