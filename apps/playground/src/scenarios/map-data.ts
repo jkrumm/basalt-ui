@@ -38,5 +38,5 @@ export const COAST = 'M34 0 C30 10 26 16 28 24 S42 34 40 44 S28 54 30 62 S46 72 
 export const PLACES = [
   { name: 'Harrow Bay', left: 8, top: 46 },
   { name: 'Port Elden', left: 44, top: 38 },
-  { name: 'Kessel Heights', left: 66, top: 72 },
+  { name: 'Kessel Heights', left: 50, top: 72 },
 ] as const

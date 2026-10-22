@@ -71,7 +71,14 @@ function Field() {
 
 function KeyRail() {
   return (
-    <Stack gap="xs" p="sm" w={116} data-shot="map-key" aria-label={`Key: ${KEY_UNIT}`}>
+    <Stack
+      gap="xs"
+      p="sm"
+      w={116}
+      data-shot="map-key"
+      data-shot-absent="empty error"
+      aria-label={`Key: ${KEY_UNIT}`}
+    >
       <Text size="xs" c="dimmed" style={{ whiteSpace: 'nowrap' }}>
         {KEY_UNIT}
       </Text>
@@ -130,6 +137,7 @@ function Scrubber({ disabled }: { disabled: boolean }) {
             { value: HOURS.length - 1, label: HOURS[HOURS.length - 1] },
           ]}
           aria-label="Forecast hour"
+          mb="md"
           disabled={disabled}
         />
       </Stack>
@@ -187,6 +195,7 @@ function Geography() {
           px={4}
           bg={VX.surface.panel}
           bdrs={2}
+          style={{ whiteSpace: 'nowrap' }}
         >
           {p.name}
         </Text>
@@ -253,7 +262,7 @@ function Body({ shotState }: ScenarioProps) {
         )}
         <Attribution />
       </Box>
-      <KeyRail />
+      {shotState !== 'empty' && shotState !== 'error' && <KeyRail />}
     </Group>
   )
 }

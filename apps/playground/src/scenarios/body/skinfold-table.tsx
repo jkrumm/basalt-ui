@@ -1,15 +1,25 @@
 /** The skinfold history table with a danger row action (argo UPSTREAM Wave 52). */
 import { Box } from '@mantine/core'
 import { IconTrash } from '../../demo/icons'
-import { Section } from 'basalt-ui'
+import { EmptyState, Section } from 'basalt-ui'
 import { BasaltDataTable, createColumnHelper } from 'basalt-ui/table'
-import { tableEmptyState } from '../../demo/table-empty-state'
+import { FixedClockTime } from '../FixedClockTime'
 import { noop, queryFor } from '../shot-state'
 import type { ScenarioProps } from '../shot-state'
-import { CALIPER_NEXT, SKINFOLD_ERROR } from './body-data'
+import { CALIPER_GAP, CALIPER_NEXT, SKINFOLD_ERROR } from './body-data'
+
+/** The reading date: the day after the latest measurement, at noon, fixed so the labels never drift. */
+const READING = new Date(Date.UTC(2026, 9, 20, 12))
+const fullDate = (date: Date): string =>
+  date.toLocaleDateString('en-GB', {
+    day: 'numeric',
+    month: 'short',
+    year: 'numeric',
+    timeZone: 'UTC',
+  })
 
 type Skinfold = {
-  date: string
+  date: Date
   chest: number
   abdomen: number
   thigh: number
@@ -17,7 +27,7 @@ type Skinfold = {
 }
 
 const row = (date: string, chest: number, abdomen: number, thigh: number): Skinfold => ({
-  date,
+  date: new Date(date),
   chest,
   abdomen,
   thigh,
@@ -36,7 +46,11 @@ const SKINFOLDS: Skinfold[] = [
 const col = createColumnHelper<Skinfold>()
 
 const COLUMNS = [
-  col.accessor('date', { header: 'Measured', meta: { kind: 'relative-time', priority: 1 } }),
+  col.accessor('date', {
+    header: 'Measured',
+    cell: (c) => <FixedClockTime date={c.getValue()} now={READING} full={fullDate(c.getValue())} />,
+    meta: { kind: 'relative-time', priority: 1 },
+  }),
   col.accessor('chest', { header: 'Chest (mm)', meta: { kind: 'number', priority: 3 } }),
   col.accessor('abdomen', { header: 'Abdomen (mm)', meta: { kind: 'number', priority: 3 } }),
   col.accessor('thigh', { header: 'Thigh (mm)', meta: { kind: 'number', priority: 3 } }),
@@ -50,14 +64,9 @@ export function BodySkinfoldTable({ shotState }: ScenarioProps) {
       <Section title="Skinfold history">
         <BasaltDataTable
           data={shotState === 'empty' ? [] : SKINFOLDS}
-          emptyState={tableEmptyState({
-            noun: 'caliper sessions',
-            total: 0,
-            cause: CALIPER_NEXT,
-            filtered: false,
-          })}
+          emptyState={<EmptyState title={CALIPER_GAP} description={CALIPER_NEXT} tier="section" />}
           columns={COLUMNS}
-          rowLabel={(r) => r.date.slice(0, 10)}
+          rowLabel={(r) => r.date.toISOString().slice(0, 10)}
           rowActions={[
             {
               key: 'delete',
