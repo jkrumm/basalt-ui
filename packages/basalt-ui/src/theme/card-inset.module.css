@@ -44,8 +44,22 @@
  * An explicit `radius` prop still wins: Mantine writes it inline as `--paper-radius`, which beats
  * this rule's `initial` reset; unset, Mantine's own class value (the theme default radius) is
  * reset away so the `var()` falls through to the control tier.
+ *
+ * Excluded: Mantine's own floating surfaces, which are Papers too but are not panels over the
+ * canvas, and a `withinPortal={false}` one renders INSIDE the card. Every `mantine-*-dropdown`
+ * part (Popover, Menu, HoverCard, Combobox and the Selects built on it) and Modal / Drawer / Dialog
+ * content keep their own radius. What still matches is any other Paper under the flush card, at any
+ * depth: a Paper used as an inner card steps down too, which is the nested-step law's intent.
  */
-.inset[data-variant='flush'] .inset {
+.inset[data-variant='flush']
+  .inset:where(
+    :not(
+      [class*='mantine-'][class*='-dropdown'],
+      [class*='mantine-Modal-'],
+      [class*='mantine-Drawer-'],
+      [class*='mantine-Dialog-']
+    )
+  ) {
   --paper-radius: initial;
   border-radius: var(--paper-radius, var(--vx-radius-ctrl));
 }
