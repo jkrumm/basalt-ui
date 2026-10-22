@@ -12,6 +12,7 @@ const REFERENCES = [
   'encoding-rules',
   'anti-defaults',
   'states',
+  'recipes',
 ]
 const NOT_SHIPPED_HEADING = '## Not shipped'
 
@@ -81,7 +82,7 @@ function pascalIdentifiers(text: string): string[] {
 describe('basalt-design references', () => {
   const skill = readFileSync(join(SKILL_DIR, 'SKILL.md'), 'utf8')
 
-  it('ships exactly the five reference files', () => {
+  it('ships exactly the seven reference files', () => {
     const dir = join(SKILL_DIR, 'references')
     expect(existsSync(dir)).toBe(true)
     expect(readdirSync(dir).toSorted()).toEqual(REFERENCES.map((r) => `${r}.md`).toSorted())
