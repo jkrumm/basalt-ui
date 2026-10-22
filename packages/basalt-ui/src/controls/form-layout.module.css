@@ -60,8 +60,16 @@
   min-inline-size: 0;
 }
 
+/*
+ * The label's first line sits on the optical centre of the 32 px field it names (44 under a coarse
+ * pointer): top padding is half of field height minus one line. The description then follows the
+ * label directly instead of hanging 32 px below it. Stacked, the label is just a line.
+ */
 .label {
-  font-size: var(--vx-text-md);
+  padding-block-start: calc(
+    (max(var(--vx-space-control-height-ctl), var(--vx-hit, 0px)) - 1lh) / 2
+  );
+  font-size: var(--vx-text-sm);
   color: var(--vx-ink);
 }
 
@@ -139,6 +147,10 @@
     grid-template-columns: minmax(0, 1fr);
     gap: var(--vx-space-stack-xs);
   }
+
+  .label {
+    padding-block-start: 0;
+  }
 }
 
 /* ── FormGroup ───────────────────────────────────────────────────────────────────────────────── */
@@ -162,11 +174,11 @@
   float: left;
   width: 100%;
   padding: 0;
-  font-size: var(--vx-text-md);
+  font-size: var(--vx-text-sm);
   color: var(--vx-ink);
 }
 
-/* A section: the legend is the section title (`sm`, 500), the cluster stacks 12 apart like rows, and
+/* A section: the legend is the section title (`md`, 500), the cluster stacks 12 apart like rows, and
    a section that is followed by another keeps 24 — the form's whole rhythm, owned here. */
 .group[data-section] {
   gap: var(--vx-space-stack-sm);
@@ -177,7 +189,7 @@
 }
 
 .group[data-section] > .legend {
-  font-size: var(--vx-text-sm);
+  font-size: var(--vx-text-md);
   font-weight: 500;
 }
 

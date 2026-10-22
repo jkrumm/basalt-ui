@@ -130,7 +130,9 @@ export function SettingsRow({
           <span style={{ fontSize: VX.text.xs, color: VX.muted }}>{description}</span>
         )}
       </Stack>
-      <div className={cx(classes.control, classNames?.control)}>{control ?? children}</div>
+      <div className={cx(classes.control, classNames?.control)}>
+        <CtlSlot>{control ?? children}</CtlSlot>
+      </div>
     </div>
   )
 }
