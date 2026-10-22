@@ -1,6 +1,7 @@
 /**
  * Wave 45: `Board` in real Chrome — what happy-dom cannot see.
  * - At 1440 the populated and empty columns share one row, and a long column scrolls alone.
+ * - Enter and Space on a focused card open it (native button activation).
  * - At 390 one column shows under the switcher; there is no horizontal scroll.
  */
 import { afterAll, describe, expect, test } from 'bun:test'
@@ -60,6 +61,17 @@ layout('Wave 45 Board', () => {
     expect(r.heights[0]).toBeLessThanOrEqual(360)
     expect(r.scrolls[3]).toBe(false)
     expect(r.pageOverflow).toBe(false)
+  })
+
+  test('1440: Enter and Space on a focused card call onOpen', async () => {
+    const p = await openFixture(spec('columns'), DESKTOP_1440)
+    await p.raw.waitForSelector(`${HOST} [role="group"]`)
+    await p.raw.focus(`${HOST} button[tabindex="0"]`)
+    await p.raw.keyboard.press('Enter')
+    await p.raw.keyboard.press('ArrowDown')
+    await p.raw.keyboard.press('Space')
+    const opened = await p.raw.evaluate('window.basaltBoardOpened')
+    expect(opened).toEqual(['n0', 'n1'])
   })
 
   test('390: one column under the switcher, no horizontal scroll', async () => {

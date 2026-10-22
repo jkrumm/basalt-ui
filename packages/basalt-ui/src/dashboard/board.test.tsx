@@ -28,7 +28,9 @@ afterEach(() => {
   window.matchMedia = realMatchMedia
 })
 
-const COLUMNS: BoardProps['columns'] = [
+type ColumnId = 'needs' | 'working' | 'blocked' | 'done'
+
+const COLUMNS: BoardProps<ColumnId>['columns'] = [
   {
     id: 'needs',
     title: 'Needs you',
@@ -126,12 +128,37 @@ describe('Board', () => {
     expect(onOpen).toHaveBeenCalledWith('e', 'done')
   })
 
+  test('Enter and Space are left to the button, so its native activation opens the card', () => {
+    // happy-dom does not turn a keydown into a click; the real press is in board.layout.test.ts.
+    const { container } = mount()
+    for (const key of ['Enter', ' ']) {
+      expect(fireEvent.keyDown(button(container, 'Alpha'), { key })).toBe(true)
+    }
+  })
+
+  test.each([
+    ['https://x.test/a', true],
+    ['HTTPS://x.test/a', true],
+    ['http://x.test', true],
+    ['/pr/1', true],
+    ['./pr/1', true],
+    ['../pr/1', true],
+    ['#top', true],
+    ['?q=1', true],
+    ['//evil.test', false],
+    ['/\\evil.test', false],
+    ['\\evil.test', false],
+    ['javascript:alert(1)', false],
+    [' javascript:alert(1)', false],
+    [' https://x.test', false],
+    ['mailto:a@b.test', false],
+    ['data:text/html,x', false],
+    ['', false],
+  ])('isSafeHref(%j) is %p', (href, safe) => {
+    expect(isSafeHref(href)).toBe(safe)
+  })
+
   test('only http(s) and relative record hrefs render as links', () => {
-    expect(isSafeHref('https://x.test/a')).toBe(true)
-    expect(isSafeHref('/pr/1')).toBe(true)
-    expect(isSafeHref('./pr/1')).toBe(true)
-    expect(isSafeHref('//evil.test')).toBe(false)
-    expect(isSafeHref('javascript:alert(1)')).toBe(false)
     const { container } = mount({
       columns: [
         {
@@ -188,7 +215,59 @@ describe('Board', () => {
   })
 })
 
+const tabStops = (c: HTMLElement): string[] =>
+  [...c.querySelectorAll('button[type="button"]')]
+    .filter((b) => b.getAttribute('tabindex') === '0')
+    .map((b) => b.textContent ?? '')
+
 describe('Board field', () => {
+  test('compact keeps exactly one tab stop in the rendered column, whatever the field holds', () => {
+    const store = createLocalStore({
+      key: 'board-test-stop',
+      fields: { column: field.enum(['needs', 'working', 'blocked', 'done'] as const, 'done') },
+    })
+    viewport(390)
+    const { container } = render(
+      <MantineProvider>
+        <SizeClassHintContext.Provider value="compact">
+          <Board label="Warden" columns={COLUMNS} field={store.field.column} />
+        </SizeClassHintContext.Provider>
+      </MantineProvider>,
+    )
+    expect(tabStops(container)).toEqual(['Echo'])
+    const radio = (value: string): Element =>
+      [...container.querySelectorAll('input[type="radio"]')].find(
+        (i) => i.getAttribute('value') === value,
+      ) as Element
+    fireEvent.click(radio('needs'))
+    expect(tabStops(container)).toEqual(['Alpha'])
+    // Focus a card, then switch with the control: the stop moves to the new column's first card.
+    fireEvent.focus(button(container, 'Bravo'))
+    expect(tabStops(container)).toEqual(['Bravo'])
+    fireEvent.click(radio('working'))
+    expect(tabStops(container)).toEqual(['Delta'])
+  })
+
+  test('a switcher pick writes the clicked column id to the store field', () => {
+    const store = createLocalStore({
+      key: 'board-test-writeback',
+      fields: { column: field.enum(['needs', 'working', 'blocked', 'done'] as const, 'needs') },
+    })
+    viewport(390)
+    const { container } = render(
+      <MantineProvider>
+        <SizeClassHintContext.Provider value="compact">
+          <Board label="Warden" columns={COLUMNS} field={store.field.column} />
+        </SizeClassHintContext.Provider>
+      </MantineProvider>,
+    )
+    const done = [...container.querySelectorAll('input[type="radio"]')].find(
+      (i) => i.getAttribute('value') === 'done',
+    )
+    fireEvent.click(done as Element)
+    expect(store.readStored().column).toBe('done')
+  })
+
   test('a store field owns the selected column in compact', () => {
     const store = createLocalStore({
       key: 'board-test-column',

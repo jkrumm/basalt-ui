@@ -21,10 +21,24 @@ const COLUMNS: BoardProps['columns'] = [
 ]
 
 /** Wave 45: `Board` with each column bounded at 360 px; the viewport picks columns or compact. */
+declare global {
+  interface Window {
+    /** Card ids the fixture board opened, in order (W45 board layout test). */
+    basaltBoardOpened?: string[]
+  }
+}
+
 export function BoardFixture(): ReactElement {
   return (
     <div data-testid="board-host">
-      <Board label="Board" columns={COLUMNS} height={360} />
+      <Board
+        label="Board"
+        columns={COLUMNS}
+        height={360}
+        onOpen={(id) => {
+          window.basaltBoardOpened = [...(window.basaltBoardOpened ?? []), id]
+        }}
+      />
     </div>
   )
 }

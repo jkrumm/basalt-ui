@@ -2,14 +2,18 @@
 
 export type BoardKey = 'ArrowUp' | 'ArrowDown' | 'ArrowLeft' | 'ArrowRight' | 'Home' | 'End'
 
-export const BOARD_KEYS: readonly string[] = [
+export const BOARD_KEYS = [
   'ArrowUp',
   'ArrowDown',
   'ArrowLeft',
   'ArrowRight',
   'Home',
   'End',
-]
+] as const satisfies readonly BoardKey[]
+
+export function isBoardKey(key: string): key is BoardKey {
+  return (BOARD_KEYS as readonly string[]).includes(key)
+}
 
 export type BoardPos = { col: number; row: number }
 
@@ -38,19 +42,26 @@ export function moveOnBoard(
     case 'End':
       next = { col: from.col, row: size - 1 }
       break
-    default: {
+    case 'ArrowLeft':
+    case 'ArrowRight': {
       const step = key === 'ArrowLeft' ? -1 : 1
       let col = from.col + step
       while (col >= 0 && col < sizes.length && (sizes[col] ?? 0) === 0) col += step
       if (col < 0 || col >= sizes.length) return null
       next = { col, row: Math.min(from.row, (sizes[col] ?? 1) - 1) }
+      break
     }
   }
   if (next.row < 0 || next.row >= (sizes[next.col] ?? 0)) return null
   return next.col === from.col && next.row === from.row ? null : next
 }
 
-/** Only http(s) and relative references render as links; anything else (`javascript:`, `data:`) stays text. */
+/**
+ * Only http(s) and relative references render as links; anything else (`javascript:`, `data:`,
+ * `mailto:`) stays text. The scheme is case-insensitive (`HTTPS://` is http). A leading `/` must not
+ * be followed by another `/` or a `\` — browsers read both as a host (`//evil`, `/\evil`) — and a
+ * leading `\` is rejected the same way.
+ */
 export function isSafeHref(href: string): boolean {
-  return /^https?:\/\//i.test(href) || /^(?:\/(?!\/)|\.{1,2}\/|#|\?)/.test(href)
+  return /^https?:\/\//i.test(href) || /^(?:\/(?![/\\])|\.{1,2}\/|#|\?)/.test(href)
 }
