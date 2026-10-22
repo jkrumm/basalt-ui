@@ -1174,7 +1174,8 @@ Nothing is removed. Each line names its opt-out.
   glyph and sits in an always-mounted polite live region. The hint and error ids are on the row's `aria-describedby`.
 - **`FormGroup section`** (new prop): the legend becomes the section title (`md`, 500), rows stack 12 apart and
   consecutive sections 24 apart.
-- **`EmptyState`.** The title goes from head-font `xl` 550 to `md` 500 in the body font, the description from `md` to
+- **`EmptyState`.** The title goes from head-font `xl` 550 to the body font at 500: `md` on a page, `sm` inside a
+  section, card or chart body (the error title follows), the description from `md` to
   `sm`, and `tier="section"` draws its own ring at card radius: drop a border you wrapped around it. A `Board` column's
   `empty`, `BarList`'s `emptyText` (default now "No items to compare yet"; pass the real cause), an empty
   `BasaltDataTable` body and an empty `renderCard` list all render as that tile. The error title is `md` 500.
@@ -1187,6 +1188,12 @@ Nothing is removed. Each line names its opt-out.
   data table keeps the tile ring in its empty body and left-aligns its error body (it was centred), like every other host.
 - **Pending shapes.** A pending `Lines`/`StackedArea` card draws a line ghost (a body wrapped in your own component passes
   `ghost="line"`); a loading `StatCard` with a `delta` keeps a delta chip.
+- **Primary hover.** A filled accent control (`Button`, `ActionIcon`, a `derive`-retuned accent) hovers 10 tone darker
+  than rest (was 4.8): default rest `#4374a6`, hover `#2d5b88` (was `#3c6895`); the white label stays at 4.90:1 and
+  7.09:1. An explicit `color=` keeps its family hover.
+- **Pending ghosts.** A pending `Sparkline` draws a line (or bar) ghost; a pending card around a `BandStrip` draws one
+  band row at the strip's stated `height` (a number or the per-class object), keeping the legend row's room when the
+  strip is legended. `ghost` accepts `'band'`; `placeholderHeight` still wins.
 - **`Board` record links** are ink in both schemes and do not change colour once visited; hover underlines.
 - **`Sparkline`** hides its `referenceLabel` caption while a readout shows.
 
