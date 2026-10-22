@@ -1155,8 +1155,9 @@ New export, nothing to change in existing code.
   as the prototype's `isSafeHttpUrl`.
 - **Keyboard.** One tab stop; arrows move within and across columns, Home/End within one, Enter/Space/click open,
   a polite live region announces the move. `height` bounds each column's own scroll.
-- **Compact.** One column at a time under a `SegmentedControl`. The selected column is internal; argo's persisted
-  `boardStore.field.column` maps to `column` + `onColumnChange`.
+- **Compact.** One column at a time under a `SegmentedControl`. The selected column is internal state unless you pass
+  `field` (an enum field of the column ids, the type `ViewTabs` takes): argo's persisted `boardStore.field.column`
+  maps straight to `field={boardStore.field.column}`.
 - **States.** `loading` draws column-shaped skeletons; an empty column is its `empty` line, an empty board is
   `empty={{ title, description?, action? }}` (the § 6.11 tile). The prototype's "Empty: A, B" fold line is gone.
 

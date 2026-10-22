@@ -68,7 +68,7 @@ Signature: BasaltShell(props: BasaltShellProps<G, T>): JSX.Element
   isActive?: (item: NavItemMeta & { link: AnyNavLink; children?: Readonl…
   getScrollElement?: () => HTMLElement | null
   nav: NavConfig<G, T>
-Signature: Board(props: BoardProps): JSX.Element
+Signature: Board(props: BoardProps<T>): JSX.Element
   className?: string
   style?: CSSProperties
   label?: string
@@ -77,8 +77,7 @@ Signature: Board(props: BoardProps): JSX.Element
   height?: string | number
   loading?: boolean
   empty?: { title: string; description?: string; action?: ReactNode; }
-  column?: string
-  onColumnChange?: (columnId: string) => void
+  field?: FieldHandle<EnumField<T>>
 Signature: DangerZone(props: SettingsSectionProps): JSX.Element
   className?: string
   style?: CSSProperties
