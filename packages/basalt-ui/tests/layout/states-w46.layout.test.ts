@@ -108,9 +108,14 @@ layout('Wave 46 states', () => {
           const n = c.match(/-?[\\d.]+/g).map(Number)
           return c.startsWith('color(') ? [n[0] * 255, n[1] * 255, n[2] * 255, n[3] ?? 1] : [n[0], n[1], n[2], n[3] ?? 1]
         }
-        let bgEl = tile
-        let bg = [0, 0, 0, 0]
-        while (bgEl && bg[3] === 0) { bg = rgba(getComputedStyle(bgEl).backgroundColor); bgEl = bgEl.parentElement }
+        // The backdrop starts from the page's computed background; the nearest opaque ancestor of the tile overrides it.
+        let bg = rgba(getComputedStyle(document.body).backgroundColor)
+        if (bg[3] === 0) bg = rgba(getComputedStyle(document.documentElement).backgroundColor)
+        for (let el = tile; el; el = el.parentElement) {
+          const c = rgba(getComputedStyle(el).backgroundColor)
+          if (c[3] > 0) { bg = c; break }
+        }
+        if (bg[3] === 0) throw new Error('LAYOUT: no opaque backdrop behind the tile')
         const ringCss = getComputedStyle(tile).boxShadow.match(/(rgba?\\([^)]*\\)|color\\([^)]*\\))/)[1]
         const ring = rgba(ringCss)
         const over = ring.slice(0, 3).map((c, i) => c * ring[3] + bg[i] * (1 - ring[3]))
