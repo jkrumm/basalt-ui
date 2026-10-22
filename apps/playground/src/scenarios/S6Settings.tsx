@@ -7,7 +7,7 @@
  *
  * Two boxes: `settings-account` (SettingsSection / SettingsRow / DangerZone) and `settings-entry`
  * (`basalt-ui/forms` + FormRow / FormGroup). Empty empties the key list, loading draws the forms'
- * shapes in grey, error is the account page's failed load and the entry form's failed save, each in its own surface.
+ * shapes in grey, error is the account page's failed load and the entry form's failed validation (Reps keeps its value and shows one sentence).
  */
 import { Box, Stack } from '@mantine/core'
 import { AccountSettings } from './settings/account'
