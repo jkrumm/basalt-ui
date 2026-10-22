@@ -9,6 +9,8 @@ declare global {
   interface Window {
     /** Prepends `n` rows to the fixture list (W44 virtual-rows). */
     basaltVrPrepend?: (n: number) => void
+    /** Sets the height of the block above the `parent-grow` list. */
+    basaltVrGrow?: (px: number) => void
   }
 }
 
@@ -35,15 +37,32 @@ const INITIAL: VirtualRow[] = Array.from({ length: 300 }, (_, i) =>
 
 /** Wave 44: the lazy virtual-rows seam — a fixed-height list (sticky headers, prepend anchoring)
  * or `scroll: 'parent'` against the shell's scrollport. */
-export function VirtualRowsFixture({ mode }: { mode: 'height' | 'parent' }): ReactElement {
+export function VirtualRowsFixture({
+  mode,
+}: {
+  mode: 'height' | 'parent' | 'parent-grow'
+}): ReactElement {
   const [rows, setRows] = useState(INITIAL)
+  const [above, setAbove] = useState(40)
   useEffect(() => {
     window.basaltVrPrepend = (n) =>
       setRows((prev) => [
         ...Array.from({ length: n }, (_, i) => makeRow(`p${n}-${i}`, i, false)),
         ...prev,
       ])
+    window.basaltVrGrow = setAbove
   }, [])
+  if (mode === 'parent-grow') {
+    return (
+      <div>
+        {/* theme-allow hidden-inline-style, raw-html-layout — a measured filler height IS the fixture's payload */}
+        <div data-testid="vr-above" style={{ height: above }} />
+        <div data-testid="vr-host">
+          <VirtualRows scroll="parent" rows={rows} overscan={4} estimateSize={48} />
+        </div>
+      </div>
+    )
+  }
   if (mode === 'parent') {
     return (
       <div data-testid="vr-host">
