@@ -4,18 +4,28 @@
  *   Question: Where am I with this topic?
  *   Decision: Review it now or later.
  *
- * One invented topic: a summary sentence, a joined strip (sessions, last practised, mean rating,
- * minutes this month), the practice journal and an aside with the record facts. The journal body is
- * `learning/journal.tsx` (Wave 44: EventList fills it). Actions are inert in fixtures.
+ * The record-page recipe (SPEC § 6.9): record header, one summary sentence, a joined strip (sessions,
+ * last practised, mean rating, minutes this month), a pending decision card, the practice journal and
+ * an aside with the practice partners as list rows. The journal body is `learning/journal.tsx`
+ * (Wave 44: EventList fills it). Actions are inert in fixtures; they live in `PageBar`, the one home.
  *
- * Anchors for `basalt-ui shot`: `learning-summary`, `learning-strip`, `learning-journal`,
- * `learning-aside`. `Section` and `PageAside` do not forward `data-*`, so each anchor is a wrapping `Box`.
+ * Anchors for `basalt-ui shot`: `learning-header`, `learning-summary`, `learning-strip`,
+ * `learning-decision`, `learning-journal`, `learning-aside`. `Section` and `PageAside` do not forward `data-*`, so each anchor is a wrapping `Box`.
  */
-import { Box, Button, Flex, Skeleton, Stack, Text } from '@mantine/core'
-import type { ReactNode } from 'react'
-import { PageAside, PageBar, PageSummary, Section, StatGroup, useSizeClass } from 'basalt-ui'
+import { Avatar, Box, Button, Flex, Skeleton, Stack, Text } from '@mantine/core'
+import {
+  EmptyState,
+  PageAside,
+  PageBar,
+  PageSummary,
+  Section,
+  StatGroup,
+  useSizeClass,
+} from 'basalt-ui'
 import type { StatStripCell } from 'basalt-ui'
 import { Sparkline } from 'basalt-ui/charts'
+import { DecisionCard, DecisionCardSkeleton } from './agents/decision-card'
+import { ListRow } from './agents/list-row'
 import { fmtInt } from './fixture-utils'
 import {
   FIRST_DATE,
@@ -27,7 +37,8 @@ import {
   RATING_PER_WEEK,
   MINUTES_LAST_30,
   NEXT_REVIEW_DAYS,
-  PARTNER_COUNT,
+  PARTNERS_BY_SESSIONS,
+  RECENT_RATINGS,
   RATED_COUNT,
   REVIEW_IN_DAYS,
   SESSIONS_LAST_30,
@@ -38,14 +49,13 @@ import {
   fmtMinutes,
   fmtReviewDue,
 } from './learning-data'
+import { RecordHeader } from './learning/header'
 import { LearningJournal } from './learning/journal'
 import { noop, queryFor, retryCopy } from './shot-state'
 import type { ScenarioProps } from './shot-state'
 
 const SPARK_HEIGHT = 28
 const RECORD_ERROR = queryFor('error', retryCopy('practice record'))
-/** One wording for every gap on the page: the record has no sessions. */
-const NO_SESSIONS = 'No sessions logged yet'
 
 /** The headline wraps to four lines on a compact screen and two elsewhere: the skeleton holds the same height. */
 function SummarySkeleton() {
@@ -63,19 +73,8 @@ function SummarySkeleton() {
 
 function LearningSummary({ shotState }: ScenarioProps) {
   if (shotState === 'loading') return <SummarySkeleton />
-  if (shotState === 'empty') {
-    return (
-      <PageSummary
-        sentence={NO_SESSIONS}
-        facts={['Log a session to start the record.']}
-        aside={
-          <Button size="xs" onClick={noop}>
-            Log a session
-          </Button>
-        }
-      />
-    )
-  }
+  // Empty has no sentence to state: the tile in the main column says it once.
+  if (shotState === 'empty') return null
   // The one error of the page: the whole record is one source, so the strip, aside and journal stay quiet.
   if (shotState === 'error') {
     return (
@@ -92,7 +91,7 @@ function LearningSummary({ shotState }: ScenarioProps) {
         : 'down from'
   return (
     <PageSummary
-      sentence={`${KNOT_TITLE}: practised ${SESSIONS_LAST_30} times in the last 30 days, ${trend} ${SESSIONS_PRIOR_30} — ${fmtReviewDue(REVIEW_IN_DAYS)}.`}
+      sentence={`${KNOT_TITLE}: practised ${SESSIONS_LAST_30} times in the last 30 days, ${trend} ${SESSIONS_PRIOR_30}.`}
     />
   )
 }
@@ -184,13 +183,29 @@ function LearningStrip({ shotState }: ScenarioProps) {
   )
 }
 
-function AsideFact({ label, children }: { label: string; children: ReactNode }) {
+const initial = (name: string): string => name.charAt(0).toUpperCase()
+
+function PartnerRows() {
   return (
-    <Stack gap={2}>
-      <Text size="xs" c="dimmed">
-        {label}
-      </Text>
-      <Text size="sm">{children}</Text>
+    <Stack gap={0}>
+      {PARTNERS_BY_SESSIONS.map((p) => (
+        <ListRow
+          key={p.name}
+          glyph={
+            <Avatar size="sm" radius="md" color="gray" aria-hidden="true">
+              {initial(p.name)}
+            </Avatar>
+          }
+          title={p.name}
+          meta={`Last together ${fmtLearningDay(p.last)}`}
+          trailing={
+            <Text size="xs" c="dimmed" ff="monospace">
+              {fmtInt(p.sessions)}
+            </Text>
+          }
+          onClick={noop}
+        />
+      ))}
     </Stack>
   )
 }
@@ -198,11 +213,14 @@ function AsideFact({ label, children }: { label: string; children: ReactNode }) 
 function AsideSkeleton() {
   return (
     <Stack gap="md" data-shot="learning-aside" aria-busy="true">
-      {[0, 1].map((i) => (
-        <Stack key={i} gap={6}>
-          <Skeleton height={10} width="40%" radius="sm" />
-          <Skeleton height={14} width="65%" radius="sm" />
-        </Stack>
+      {[0, 1, 2].map((i) => (
+        <Flex key={i} gap="xs" align="center">
+          <Skeleton height={26} width={26} radius="md" />
+          <Stack gap={6} flex={1}>
+            <Skeleton height={12} width="40%" radius="sm" />
+            <Skeleton height={10} width="65%" radius="sm" />
+          </Stack>
+        </Flex>
       ))}
     </Stack>
   )
@@ -219,41 +237,84 @@ function LearningAside({ shotState }: ScenarioProps) {
         // The summary carries the one error; the aside only marks its own anchor absent.
         <Box data-shot="learning-aside" data-shot-absent="error" />
       ) : (
-        <Stack gap="md" data-shot="learning-aside" data-shot-absent="error">
-          <AsideFact label="First practised">
-            {shotState === 'empty' ? '—' : fmtLearningDay(FIRST_DATE)}
-          </AsideFact>
-          <AsideFact label="Practice partners">
-            {shotState === 'empty' ? '—' : fmtInt(PARTNER_COUNT)}
-          </AsideFact>
-        </Stack>
+        <Box data-shot="learning-aside" data-shot-absent="error">
+          {shotState === 'empty' ? (
+            <Text size="sm" c="dimmed">
+              Partners appear with the first shared session.
+            </Text>
+          ) : (
+            <Stack gap="xs">
+              <Text size="xs" c="dimmed">
+                Practice partners · sessions together
+              </Text>
+              <PartnerRows />
+            </Stack>
+          )}
+        </Box>
       )}
     </PageAside>
   )
 }
 
+/** The pending decision: the review the spaced-repetition interval has put in front of the user. */
+function LearningDecision({ shotState }: ScenarioProps) {
+  if (shotState === 'loading') return <DecisionCardSkeleton />
+  if (shotState === 'empty' || shotState === 'error') return null
+  return (
+    <DecisionCard
+      question={`Review ${KNOT_TITLE} now?`}
+      facts={[
+        `last practised ${fmtLearningDay(LAST_DATE)}`,
+        fmtReviewDue(REVIEW_IN_DAYS),
+        `${MEAN_RATING.toFixed(1)} of 5 mean`,
+      ]}
+      evidence={
+        <Text size="sm">
+          {`Your last ${RECENT_RATINGS.length} rated sessions scored ${RECENT_RATINGS.join(', ')} of 5.`}
+        </Text>
+      }
+      primary={{ label: 'Start review', keyHint: 'R', onClick: noop }}
+      secondary={{ label: 'Snooze a day', keyHint: 'S', onClick: noop }}
+      quiet={{ label: 'Skip', keyHint: 'X', onClick: noop }}
+    />
+  )
+}
+
 export function LearningScenario({ shotState }: ScenarioProps) {
+  const empty = shotState === 'empty'
   return (
     <Stack gap="sm" data-shot-states="empty loading error">
-      {/* In empty the summary's button is the one action; review only means something once there is a record. */}
-      {shotState !== 'empty' && (
-        <PageBar
-          actions={[
-            { key: 'review', label: 'Start review', onClick: noop, primary: true },
-            { key: 'log', label: 'Log a session', onClick: noop },
-          ]}
-        />
-      )}
-      <Box data-shot="learning-summary">
+      {/* Review lives in the decision card; the page's one primary is logging, the verb that makes a record. */}
+      <PageBar actions={[{ key: 'log', label: 'Log a session', onClick: noop, primary: true }]} />
+      <Box data-shot="learning-header" data-shot-absent="error">
+        {shotState !== 'error' && <RecordHeader shotState={shotState} />}
+      </Box>
+      <Box data-shot="learning-summary" data-shot-absent="empty">
         <LearningSummary shotState={shotState} />
       </Box>
       <Box data-shot="learning-strip" data-shot-absent="error">
         {shotState !== 'error' && <LearningStrip shotState={shotState} />}
       </Box>
-      <Box data-shot="learning-journal" data-shot-absent="empty error">
-        {shotState !== 'error' && shotState !== 'empty' && (
+      <Box data-shot="learning-decision" data-shot-absent="empty error">
+        <LearningDecision shotState={shotState} />
+      </Box>
+      <Box data-shot="learning-journal" data-shot-absent="error">
+        {shotState !== 'error' && (
           <Section title="Practice journal">
-            <LearningJournal entries={JOURNAL} shotState={shotState} />
+            {empty ? (
+              <EmptyState
+                tier="section"
+                title="No sessions logged yet"
+                description="Log a session to start the record; the first review follows four days later."
+                action={
+                  <Button size="xs" onClick={noop}>
+                    Log a session
+                  </Button>
+                }
+              />
+            ) : (
+              <LearningJournal entries={JOURNAL} shotState={shotState} />
+            )}
           </Section>
         )}
       </Box>
