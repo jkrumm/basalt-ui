@@ -17,13 +17,7 @@ export function BodyZoneReadout({ shotState }: ScenarioProps) {
     <Box data-shot="zone-readout">
       <Section title="INOL zone" {...(query !== undefined && { query })}>
         <Group gap="xs" wrap="nowrap" align="center">
-          <Box
-            aria-hidden
-            w={10}
-            h={10}
-            bg={VX.status.excellent}
-            style={{ borderRadius: '50%', flex: 'none' }}
-          />
+          <Box aria-hidden w={10} h={10} bg={VX.status.excellent} bdrs="50%" flex="none" />
           <Text fw={600} c={VX.status.good}>
             {ZONE.name}
           </Text>
