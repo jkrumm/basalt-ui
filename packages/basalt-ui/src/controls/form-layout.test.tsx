@@ -380,10 +380,11 @@ describe('FormGroup section, FormActions sticky', () => {
     )
   })
 
-  test('the section title is sm 500 and the description is xs', () => {
+  test('the section title is md 500, the label sm and the description xs', () => {
     const title = block('.group[data-section] > .legend')
-    expect(title).toContain('font-size: var(--vx-text-sm)')
+    expect(title).toContain('font-size: var(--vx-text-md)')
     expect(title).toContain('font-weight: 500')
+    expect(block('.label')).toContain('font-size: var(--vx-text-sm)')
     expect(block('.hint')).toContain('font-size: var(--vx-text-xs)')
   })
 

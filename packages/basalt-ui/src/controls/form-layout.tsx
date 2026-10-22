@@ -10,11 +10,11 @@
  * label/control geometry, and each one picked its own breakpoint behaviour.
  *
  * **`FormRow` IS law C1's third home, the form row** (`docs/CONTROLS-SPEC.md` §1). Like
- * `SettingsRow` it keeps Mantine's `md` size tier and mounts no `CtlSlot`: a control bound to a
- * field is read and typed into, not a 30px chrome affordance, and its own `size` prop stays
- * load-bearing. `SettingsRow` is not deprecated and is not duplicated here — reach for it on a
- * settings page (a stack of divider-separated rows inside a `SettingsSection` card), and for
- * `FormRow` inside a `<form>` with validation, hints and errors.
+ * `SettingsRow` it mounts a `CtlSlot`, so a bound control is the 32 px field (44 under a coarse
+ * pointer, 16 px text) of SPEC § 6.13 and not Mantine's 42 px `md`; a child's own `size` still wins.
+ * `SettingsRow` is not deprecated and is not duplicated here — reach for it on a settings page (a
+ * stack of divider-separated rows inside a `SettingsSection` card), and for `FormRow` inside a
+ * `<form>` with validation, hints and errors.
  *
  * Disabled propagation is native `<fieldset disabled>` driven by `FormStateProvider` — see
  * `form-state.tsx` for why that rather than `cloneElement`.
@@ -29,6 +29,7 @@ import { BarActionSlot } from './actions'
 import type { SlotActions } from './actions'
 import { WidgetHeader } from '../dashboard/widget-header'
 import type { WidgetHeaderTitleProps } from '../dashboard/widget-header'
+import { CtlSlot } from '../theme'
 import { useSizeClass } from '../shell/use-size-class'
 import { useFormState } from '../forms/form-state'
 import classes from './form-layout.module.css'
@@ -243,7 +244,7 @@ export function FormRow(props: FormRowProps) {
           disabled={disabled}
           {...(describedBy !== undefined && { 'aria-describedby': describedBy })}
         >
-          {children}
+          <CtlSlot>{children}</CtlSlot>
           <FieldError error={error} id={errorId} />
         </fieldset>
       </div>
@@ -270,7 +271,7 @@ export type FormGroupProps = BasaltProps & {
    */
   direction?: 'row' | 'column'
   /**
-   * Sets the group up as a form SECTION: the legend becomes the section title (`sm`, 500), the
+   * Sets the group up as a form SECTION: the legend becomes the section title (`md`, 500), the
    * children stack 12 apart like rows, and a section followed by another keeps 24 between them —
    * so a form is a run of `section` groups with no wrapper to space them. @default false
    */
