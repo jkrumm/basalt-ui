@@ -3,11 +3,20 @@
  * line `strip-footer-weight-goal` rides `under` the Weight cell, which shows its empty reason (a
  * cell in `state` draws no footer of its own), and `empty-row` joins it under `shotState === 'empty'`.
  */
-import { Box, Paper } from '@mantine/core'
+import { Anchor, Box, Paper } from '@mantine/core'
 import { StatGroup } from 'basalt-ui'
 import type { StatStripCell } from 'basalt-ui'
+import { VX } from 'basalt-ui/tokens'
 import { noop } from '../shot-state'
+import { BODY, NO_CALIPER, NO_WEIGH_INS, WEIGHT_ERROR } from './body-data'
 import type { ScenarioProps } from '../shot-state'
+
+/** A real, inert control: the footer states the next step as something that can be pressed. */
+const GOAL_LINK = (
+  <Anchor component="button" type="button" fz={VX.text.sm} onClick={noop}>
+    Set a goal weight
+  </Anchor>
+)
 
 export function BodyWeightStrip({ shotState }: ScenarioProps) {
   const loading = shotState === 'loading'
@@ -18,11 +27,25 @@ export function BodyWeightStrip({ shotState }: ScenarioProps) {
       caption: 'Weight',
       loading,
       state: failed
-        ? { kind: 'error', error: new Error('The weight source did not answer.'), onRetry: noop }
-        : { kind: 'empty', reason: 'No weigh-in in this window.' },
+        ? { kind: 'error', error: new Error(WEIGHT_ERROR), onRetry: noop }
+        : { kind: 'empty', reason: NO_WEIGH_INS },
     },
-    { key: 'body-fat', caption: 'Body fat', value: '17.8', unit: '%', loading },
-    { key: 'lean-mass', caption: 'Lean mass', value: '66.9', unit: 'kg', loading },
+    {
+      key: 'body-fat',
+      caption: 'Body fat',
+      value: String(BODY.fatPct),
+      unit: '%',
+      footer: `Measured ${BODY.measured}`,
+      loading,
+    },
+    {
+      key: 'lean-mass',
+      caption: 'Lean mass',
+      value: String(BODY.leanKg),
+      unit: 'kg',
+      footer: `Measured ${BODY.measured}`,
+      loading,
+    },
   ]
   return (
     <Box data-shot="weight-strip">
@@ -31,11 +54,11 @@ export function BodyWeightStrip({ shotState }: ScenarioProps) {
         label="Body composition at a glance"
         cols={3}
         cells={cells}
-        footer={[{ key: 'weight-goal', under: 'weight', content: 'Set a goal weight' }]}
+        footer={[{ key: 'weight-goal', under: 'weight', content: GOAL_LINK }]}
       />
       {shotState === 'empty' && (
         <Paper>
-          <Box data-shot="empty-row">No caliper session in this window.</Box>
+          <Box data-shot="empty-row">{NO_CALIPER}</Box>
         </Paper>
       )}
     </Box>

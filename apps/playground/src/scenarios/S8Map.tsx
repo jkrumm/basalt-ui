@@ -12,11 +12,24 @@
  * Anchors for `basalt-ui shot`: `sky-map` (the card), `map-key` (the rail), `map-scrubber` (the
  * floating panel).
  */
-import { Box, Button, Card, Group, Paper, Skeleton, Slider, Stack, Text } from '@mantine/core'
+import { Box, Card, Center, Group, Paper, Skeleton, Slider, Stack, Text } from '@mantine/core'
 import { useState } from 'react'
 import { EmptyState, PageBar } from 'basalt-ui'
+import { ErrorNote } from '../demo/fixtures/error-note'
 import { VX } from 'basalt-ui/tokens'
-import { FIELD, FIELD_COLS, FIELD_ROWS, HOURS, KEY_STOPS, KEY_UNIT } from './map-data'
+import {
+  AREA,
+  COAST,
+  FIELD,
+  FIELD_COLS,
+  FIELD_ROWS,
+  HOURS,
+  HOUR_LABELS,
+  KEY_STOPS,
+  KEY_UNIT,
+  NIGHT,
+  PLACES,
+} from './map-data'
 import { noop, retryCopy } from './shot-state'
 import type { ScenarioProps } from './shot-state'
 
@@ -58,20 +71,22 @@ function Field() {
 
 function KeyRail() {
   return (
-    <Stack gap="xs" p="sm" w={96} data-shot="map-key" aria-label={`Key: ${KEY_UNIT}`}>
-      <Text size="xs" c="dimmed">
+    <Stack gap="xs" p="sm" w={116} data-shot="map-key" aria-label={`Key: ${KEY_UNIT}`}>
+      <Text size="xs" c="dimmed" style={{ whiteSpace: 'nowrap' }}>
         {KEY_UNIT}
       </Text>
       <Group gap="xs" wrap="nowrap" align="stretch" flex={1} mih={120}>
-        <svg width={10} height="100%" aria-hidden>
-          <defs>
-            <linearGradient id="sky-key-ramp" x1="0" y1="0" x2="0" y2="1">
-              <stop offset="0" stopColor={VX.accent} stopOpacity={opacityOf(0)} />
-              <stop offset="1" stopColor={VX.accent} stopOpacity={opacityOf(100)} />
-            </linearGradient>
-          </defs>
-          <rect width="100%" height="100%" fill="url(#sky-key-ramp)" />
-        </svg>
+        <Box w={12} flex="none" bd={`1px solid ${VX.line}`} bdrs={2} style={{ overflow: 'hidden' }}>
+          <svg width="100%" height="100%" display="block" aria-hidden>
+            <defs>
+              <linearGradient id="sky-key-ramp" x1="0" y1="0" x2="0" y2="1">
+                <stop offset="0" stopColor={VX.accent} stopOpacity={opacityOf(0)} />
+                <stop offset="1" stopColor={VX.accent} stopOpacity={opacityOf(100)} />
+              </linearGradient>
+            </defs>
+            <rect width="100%" height="100%" fill="url(#sky-key-ramp)" />
+          </svg>
+        </Box>
         <Stack gap={0} justify="space-between">
           {KEY_STOPS.map((stop) => (
             <Text key={stop} size="xs">
@@ -89,6 +104,7 @@ function Scrubber({ disabled }: { disabled: boolean }) {
   return (
     <Paper
       data-shot="map-scrubber"
+      data-shot-absent="empty error"
       pos="absolute"
       left="var(--vx-space-stack-md)"
       bottom="var(--vx-space-stack-md)"
@@ -100,7 +116,7 @@ function Scrubber({ disabled }: { disabled: boolean }) {
             Forecast hour
           </Text>
           <Text size="sm" fw={550}>
-            {HOURS[hour]}
+            {HOUR_LABELS[hour]}
           </Text>
         </Group>
         <Slider
@@ -108,12 +124,74 @@ function Scrubber({ disabled }: { disabled: boolean }) {
           onChange={setHour}
           min={0}
           max={HOURS.length - 1}
-          label={(v) => HOURS[v]}
+          label={null}
+          marks={[
+            { value: 0, label: HOURS[0] },
+            { value: HOURS.length - 1, label: HOURS[HOURS.length - 1] },
+          ]}
           aria-label="Forecast hour"
           disabled={disabled}
         />
       </Stack>
     </Paper>
+  )
+}
+
+/** The card's title: the area and the night, over the map, in every state. */
+function Heading() {
+  return (
+    <Paper
+      pos="absolute"
+      top="var(--vx-space-stack-md)"
+      left="var(--vx-space-stack-md)"
+      style={{ zIndex: 1 }}
+    >
+      <Text size="sm" fw={600}>
+        Cloud cover, {AREA}
+      </Text>
+      <Text size="xs" c="dimmed">
+        Night of {NIGHT}
+      </Text>
+    </Paper>
+  )
+}
+
+/** An invented coastline and three place names: the field reads as a place, not a bare grid. */
+function Geography() {
+  return (
+    <>
+      <svg
+        viewBox="0 0 100 100"
+        preserveAspectRatio="none"
+        width="100%"
+        height="100%"
+        aria-hidden
+        style={{ position: 'absolute', inset: 0 }}
+      >
+        <path
+          d={COAST}
+          fill="none"
+          stroke={VX.ink2}
+          strokeWidth={1.5}
+          vectorEffect="non-scaling-stroke"
+        />
+      </svg>
+      {PLACES.map((p) => (
+        <Text
+          key={p.name}
+          size="xs"
+          c={VX.ink}
+          pos="absolute"
+          left={`${p.left}%`}
+          top={`${p.top}%`}
+          px={4}
+          bg={VX.surface.panel}
+          bdrs={2}
+        >
+          {p.name}
+        </Text>
+      ))}
+    </>
   )
 }
 
@@ -136,28 +214,32 @@ function Canvas({ shotState }: ScenarioProps) {
   if (shotState === 'loading') return <Skeleton h="100%" />
   if (shotState === 'error') {
     return (
-      <EmptyState
-        tier="section"
-        title="Could not load the cloud forecast"
-        description={retryCopy('forecast service')}
-        action={
-          <Button size="xs" variant="default" onClick={noop}>
-            Retry
-          </Button>
-        }
-      />
+      <Center h="100%" p="md">
+        <ErrorNote
+          title="Could not load the cloud forecast"
+          cause={retryCopy('forecast service')}
+          onRetry={noop}
+        />
+      </Center>
     )
   }
   if (shotState === 'empty') {
     return (
-      <EmptyState
-        tier="section"
-        title="No forecast for tonight"
-        description="The next run publishes at 18:00. Check back then."
-      />
+      <Center h="100%" p="md">
+        <EmptyState
+          tier="section"
+          title="No forecast for tonight"
+          description="The next run publishes at 18:00. Check back then."
+        />
+      </Center>
     )
   }
-  return <Field />
+  return (
+    <>
+      <Field />
+      <Geography />
+    </>
+  )
 }
 
 function Body({ shotState }: ScenarioProps) {
@@ -165,7 +247,10 @@ function Body({ shotState }: ScenarioProps) {
     <Group gap={0} wrap="nowrap" align="stretch" h="100%">
       <Box pos="relative" flex={1} miw={0}>
         <Canvas shotState={shotState} />
-        <Scrubber disabled={shotState !== undefined} />
+        <Heading />
+        {shotState !== 'empty' && shotState !== 'error' && (
+          <Scrubber disabled={shotState === 'loading'} />
+        )}
         <Attribution />
       </Box>
       <KeyRail />

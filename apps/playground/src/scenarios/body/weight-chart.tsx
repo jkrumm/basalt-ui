@@ -3,8 +3,9 @@ import { Box } from '@mantine/core'
 import { ChartCard, Lines } from 'basalt-ui/charts'
 import type { ChartSeries } from 'basalt-ui/charts'
 import { VX } from 'basalt-ui/tokens'
-import { chartStateFor } from '../shot-state'
+import { chartStateFor, noop } from '../shot-state'
 import type { ScenarioProps } from '../shot-state'
+import { NO_WEIGH_INS, WEIGHT_ERROR } from './body-data'
 
 type WeightPoint = { date: Date; weightKg: number; ma: number }
 
@@ -52,10 +53,9 @@ export function BodyWeightChart({ shotState }: ScenarioProps) {
     <Box data-shot="weight-trend">
       <ChartCard
         title="Body weight, last 60 days"
-        state={chartStateFor(shotState, {
-          empty: 'No weigh-ins in this window.',
-          error: 'The weight log did not answer.',
-        })}
+        ghost="line"
+        state={chartStateFor(shotState, { empty: NO_WEIGH_INS, error: WEIGHT_ERROR })}
+        {...(shotState === 'error' && { onRetry: noop })}
       >
         <Lines<WeightPoint, Date>
           ariaLabel="Body weight trend over time"
