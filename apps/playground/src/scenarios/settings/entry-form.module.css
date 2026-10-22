@@ -1,4 +1,10 @@
-/* The entry form's action row: right-aligned, and pinned to the scrollport's bottom on a compact screen. */
+/* The form is its own size container: the action row pins below 600 px of ITS width (SPEC § 7), not the viewport's. */
+.form {
+  container-type: inline-size;
+  container-name: basalt-form;
+}
+
+/* The entry form's action row: right-aligned. */
 .actions {
   display: flex;
   justify-content: flex-end;
@@ -6,10 +12,13 @@
   padding-block: var(--vx-space-stack-sm);
 }
 
-.actions[data-sticky] {
-  position: sticky;
-  bottom: 0;
-  z-index: 1;
-  background: var(--vx-surface-bg);
-  border-block-start: 1px solid var(--vx-divider);
+/* A long form keeps its one primary in reach at the bottom of the scrollport. */
+@container basalt-form (max-width: 599.9px) {
+  .actions {
+    position: sticky;
+    bottom: 0;
+    z-index: 1;
+    background: var(--vx-surface-bg);
+    border-block-start: 1px solid var(--vx-divider);
+  }
 }

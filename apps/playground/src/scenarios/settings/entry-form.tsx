@@ -15,7 +15,6 @@ import {
 } from '@mantine/core'
 import { FormGroup, FormRow } from 'basalt-ui/controls'
 import { fieldKey, inputProps, useBasaltForm } from 'basalt-ui/forms'
-import { useSizeClass } from 'basalt-ui'
 import * as v from 'valibot'
 import { noop } from '../shot-state'
 import type { ScenarioProps } from '../shot-state'
@@ -47,9 +46,8 @@ const INITIAL: SetValues = {
 }
 
 function EntryActions() {
-  const compact = useSizeClass() === 'compact'
   return (
-    <div className={classes.actions} {...(compact && { 'data-sticky': '' })}>
+    <div className={classes.actions}>
       <Button variant="default" onClick={noop}>
         Cancel
       </Button>
@@ -65,7 +63,7 @@ function EntryFormFields() {
     initialErrors: { reps: REPS_ERROR },
   })
   return (
-    <form onSubmit={form.onSubmit(noop)} noValidate>
+    <form className={classes.form} onSubmit={form.onSubmit(noop)} noValidate>
       <FormGroup label="Set" section>
         <FormRow label="Exercise" htmlFor="set-exercise" required>
           <Select
@@ -89,7 +87,6 @@ function EntryFormFields() {
         <FormRow label="Weight" htmlFor="set-weight" hint="The bar and plates, in kg.">
           <NumberInput
             id="set-weight"
-            size="ctl"
             suffix=" kg"
             min={0}
             step={2.5}
@@ -102,7 +99,6 @@ function EntryFormFields() {
         <FormRow label="Reps" htmlFor="set-reps" required>
           <NumberInput
             id="set-reps"
-            size="ctl"
             min={1}
             max={30}
             inputMode="numeric"
