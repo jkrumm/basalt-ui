@@ -1,6 +1,6 @@
 # Recipes
 
-Shapes composed from shipped exports, not components of their own. Compose them; never hand-roll a variant. A recipe is promoted to a component only when two apps converge on it. The reviewer cites this file for Expression 1.
+Shapes composed from shipped exports, not components of their own. Compose them; never hand-roll a variant. A recipe is promoted to a component only when two apps converge on it. Routing by data shape lives in `catalogue.md`.
 
 ## Record page
 
@@ -17,15 +17,11 @@ Not this: a card per section, or facts spread over the header, strip and aside.
 
 The question is the headline (`md`, 500). Facts sit under it on one `xs` muted line, `·`-separated. Evidence goes in an inset panel on `VX.surface.field` with the control radius. The action row holds one filled primary, one subtle secondary and one quiet (menu or ghost), each with a key hint.
 
-Reference (argo, read-only, not importable): `apps/dashboard/src/components/upstream/decision-card.tsx`.
-
 Not this: a topic title as the headline, or three filled buttons.
 
 ## Entity card
 
 A card whose header is avatar, name and a status badge. Under it a 2×2 `StatGroup variant="strip"` (caption, value, unit per cell), then one status line ("Now …").
-
-Reference: argo `apps/dashboard/src/features/agents/entity-card.tsx`.
 
 Not this: a bespoke facts layout per entity kind.
 
