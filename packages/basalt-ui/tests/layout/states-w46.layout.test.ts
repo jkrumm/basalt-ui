@@ -25,6 +25,11 @@ const SECTIONS: FixtureSpec['sections'] = [
 ]
 const EL = '[data-testid="el-host"]'
 const BOARD = '[data-testid="board-host"]'
+const RECORD_HOST = '[data-testid="board-record-host"]'
+/** `EmptyState`'s title (`md`) and a column or table title's size (`sm`), in computed px. */
+const TITLE_MD = '15px'
+const TITLE_SM = '13px'
+const BROWSER_LINK_BLUE = 'rgb(0, 0, 238)'
 
 type Tile = {
   shadow: string
@@ -39,6 +44,7 @@ type Tile = {
 /** In-page: the computed anatomy of the `EmptyState` whose title reads `text`, inside `host`. */
 const tileOf = (host: string, text: string): string => `(() => {
   const title = [...document.querySelectorAll('${host} span')].find((s) => s.textContent === ${JSON.stringify(text)})
+  if (!title) throw new Error('LAYOUT: no EmptyState title ' + ${JSON.stringify(text)})
   const root = title.parentElement
   const cs = getComputedStyle(root)
   const probe = document.createElement('div')
@@ -54,7 +60,7 @@ const tileOf = (host: string, text: string): string => `(() => {
   }
 })()`
 
-function expectTile(t: Tile, titleSize = '15px'): void {
+function expectTile(t: Tile, titleSize = TITLE_MD): void {
   expect(t.shadow).not.toBe('none')
   expect(t.borderTop).toBe('0px')
   expect(t.radius).toBe(t.cardRadius)
@@ -77,23 +83,18 @@ layout('Wave 46 states', () => {
     await p.raw.waitForSelector(`${BOARD} [role="group"]`)
     const t = (await p.raw.evaluate(tileOf(BOARD, 'Nothing is blocked'))) as Tile
     // The column title is the card-title size (sm), never louder than the cards beside it.
-    expectTile(t, '13px')
+    expectTile(t, TITLE_SM)
   })
 
   for (const scheme of ['light', 'dark'] as const) {
     test(`${scheme}: the board record link is ink, not the browser link blue`, async () => {
-      const p = await openFixture({ sections: SECTIONS, board: 'columns' }, DESKTOP_1440)
-      await p.raw.waitForSelector(`${BOARD} ${moduleClass('status')}`)
+      const p = await openFixture({ sections: SECTIONS, w46BoardRecord: true }, DESKTOP_1440)
+      await p.raw.waitForSelector(`${RECORD_HOST} a[href="#record-482"]`)
       await p.raw.evaluate(
         `document.documentElement.setAttribute('data-mantine-color-scheme', '${scheme}')`,
       )
       const r = (await p.raw.evaluate(`(() => {
-        const status = document.querySelector('${BOARD} ${moduleClass('status')}')
-        const a = document.createElement('a')
-        a.href = '#record'
-        a.className = status.className.split(' ').find((c) => c.startsWith('status_')).replace(/^status_/, 'record_')
-        a.textContent = '#482'
-        status.before(a)
+        const a = document.querySelector('${RECORD_HOST} a[href="#record-482"]')
         const ink = document.createElement('span')
         ink.style.color = 'var(--vx-ink)'
         document.body.append(ink)
@@ -102,9 +103,28 @@ layout('Wave 46 states', () => {
         return out
       })()`)) as { link: string; ink: string }
       expect(r.link).toBe(r.ink)
-      expect(r.link).not.toBe('rgb(0, 0, 238)')
+      expect(r.link).not.toBe(BROWSER_LINK_BLUE)
     })
   }
+
+  test('the record link keeps a visible keyboard focus indicator', async () => {
+    const p = await openFixture({ sections: SECTIONS, w46BoardRecord: true }, DESKTOP_1440)
+    await p.raw.waitForSelector(`${RECORD_HOST} a[href="#record-482"]`)
+    let focused = false
+    for (let i = 0; i < 12 && !focused; i++) {
+      await p.raw.keyboard.press('Tab')
+      focused = (await p.raw.evaluate(
+        `document.activeElement?.matches('${RECORD_HOST} a[href="#record-482"]') ?? false`,
+      )) as boolean
+    }
+    expect(focused).toBe(true)
+    const r = (await p.raw.evaluate(`(() => {
+      const cs = getComputedStyle(document.activeElement)
+      return { style: cs.outlineStyle, width: cs.outlineWidth }
+    })()`)) as { style: string; width: string }
+    expect(r.style).not.toBe('none')
+    expect(r.width).not.toBe('0px')
+  })
 
   for (const vp of [DESKTOP_1440, PHONE]) {
     test(`${vp.width}: a chips-only, time-less row keeps its chip on the sentence's line`, async () => {

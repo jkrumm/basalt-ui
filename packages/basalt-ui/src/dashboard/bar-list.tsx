@@ -97,7 +97,7 @@ export type BarListProps = BasaltProps & {
   loading?: boolean
   /** Skeleton rows while loading. Default 5. */
   loadingRows?: number
-  /** Title of the `EmptyState` tile shown when `items` is empty. Default "No data". */
+  /** Title of the `EmptyState` tile shown when `items` is empty. Default "No items to compare yet"; pass the cause for your list. */
   emptyText?: string
 }
 
@@ -128,7 +128,7 @@ export function BarList({
   secondaryAlign,
   loading = false,
   loadingRows = 5,
-  emptyText = 'No data',
+  emptyText = 'No items to compare yet',
   className,
   style,
 }: BarListProps) {
@@ -159,9 +159,11 @@ export function BarList({
   if (items.length === 0) {
     return (
       <div className={cx(classes.frame, className)} style={style}>
-        <output className={classes.root} aria-label={label}>
+        {/* oxlint-disable-next-line jsx-a11y/prefer-tag-over-role -- a polite live region whose name is the visually hidden label inside; `<output>` cannot hold the tile's block content */}
+        <div className={classes.root} role="status">
+          <VisuallyHidden>{label}</VisuallyHidden>
           <EmptyState tier="section" title={emptyText} className={classes.empty} />
-        </output>
+        </div>
       </div>
     )
   }

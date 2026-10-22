@@ -1704,13 +1704,14 @@ export function BasaltDataTable<T extends RowData>(props: BasaltDataTableProps<T
   )
   // An empty body never out-sizes the table's own title (SPEC § 6.11): `EmptyState` reads this var
   // for its title, so it takes the table title's size (`sm`).
-  const emptyNode = (
+  const emptyBody = (inTable: boolean) => (
     <Box
       style={
         {
           '--basalt-state-title-size': 'var(--vx-text-sm)',
-          // The table body is already a ringed surface: no second ring around the empty tile.
-          '--basalt-state-ring': 'none',
+          // The table body is already a ringed surface: no second ring around the empty tile. The
+          // `renderCard` list sits on the page, so its tile keeps the ring.
+          ...(inTable && { '--basalt-state-ring': 'none' }),
         } as CSSProperties
       }
     >
@@ -1869,7 +1870,7 @@ export function BasaltDataTable<T extends RowData>(props: BasaltDataTableProps<T
           ))
         ) : rows.length === 0 ? (
           <Table.Tr>
-            <Table.Td colSpan={spanCount}>{emptyNode}</Table.Td>
+            <Table.Td colSpan={spanCount}>{emptyBody(true)}</Table.Td>
           </Table.Tr>
         ) : (
           rows.map((row) => {
@@ -1971,7 +1972,7 @@ export function BasaltDataTable<T extends RowData>(props: BasaltDataTableProps<T
               <Skeleton key={`skeleton-${index}`} height={48} radius="md" />
             ))
           : rows.length === 0
-            ? emptyNode
+            ? emptyBody(false)
             : rows.map((row) => (
                 <Box key={row.id} {...activationProps(onRowActivate, row.original)}>
                   {renderCard?.(row.original)}
