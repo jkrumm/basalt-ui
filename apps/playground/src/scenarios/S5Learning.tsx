@@ -11,9 +11,9 @@
  * Anchors for `basalt-ui shot`: `learning-summary`, `learning-strip`, `learning-journal`,
  * `learning-aside`. `Section` and `PageAside` do not forward `data-*`, so each anchor is a wrapping `Box`.
  */
-import { Box, Button, Skeleton, Stack, Text } from '@mantine/core'
+import { Box, Button, Flex, Skeleton, Stack, Text } from '@mantine/core'
 import type { ReactNode } from 'react'
-import { PageAside, PageBar, PageSummary, Section, StatGroup } from 'basalt-ui'
+import { PageAside, PageBar, PageSummary, Section, StatGroup, useSizeClass } from 'basalt-ui'
 import type { StatStripCell } from 'basalt-ui'
 import { Sparkline } from 'basalt-ui/charts'
 import { fmtInt } from './fixture-utils'
@@ -24,7 +24,8 @@ import {
   LAST_DATE,
   MEAN_RATING,
   MINUTES_PER_WEEK,
-  MINUTES_THIS_MONTH,
+  RATING_PER_WEEK,
+  MINUTES_LAST_30,
   NEXT_REVIEW_DAYS,
   PARTNER_COUNT,
   RATED_COUNT,
@@ -46,8 +47,22 @@ const RECORD_ERROR = queryFor('error', retryCopy('practice record'))
 /** One wording for every gap on the page: the record has no sessions. */
 const NO_SESSIONS = 'No sessions logged yet'
 
+/** The headline wraps to three lines on a compact screen and two elsewhere: the skeleton holds the same height. */
+function SummarySkeleton() {
+  const lines = useSizeClass() === 'compact' ? 3 : 2
+  return (
+    <Stack gap={0} aria-busy="true" data-page-summary="">
+      {Array.from({ length: lines }, (_, i) => (
+        <Flex key={i} h={31} align="center">
+          <Skeleton height={22} width={i === lines - 1 ? '45%' : '85%'} radius="sm" />
+        </Flex>
+      ))}
+    </Stack>
+  )
+}
+
 function LearningSummary({ shotState }: ScenarioProps) {
-  if (shotState === 'loading') return <PageSummary loading facts={[]} />
+  if (shotState === 'loading') return <SummarySkeleton />
   if (shotState === 'empty') {
     return (
       <PageSummary
@@ -85,8 +100,8 @@ function LearningSummary({ shotState }: ScenarioProps) {
 function LearningStrip({ shotState }: ScenarioProps) {
   const loading = shotState === 'loading'
   const empty = shotState === 'empty'
-  const cellState = (reason: string): Pick<StatStripCell, 'state'> =>
-    empty ? { state: { kind: 'empty', reason } } : {}
+  // The summary owns the sentence about the gap; a cell prints its honest empty figure.
+  const cellState: Pick<StatStripCell, 'state'> = empty ? { state: { kind: 'empty' } } : {}
   const spark = (
     ariaLabel: string,
     data: typeof SESSIONS_PER_WEEK,
@@ -102,6 +117,7 @@ function LearningStrip({ shotState }: ScenarioProps) {
                 data={data}
                 height={SPARK_HEIGHT}
                 reference="mean"
+                referenceLabel="12 wk mean"
                 format={format}
               />
             </Box>
@@ -113,10 +129,9 @@ function LearningStrip({ shotState }: ScenarioProps) {
       caption: 'Sessions',
       qualifier: 'logged',
       info: `Every practice session logged for ${KNOT_TITLE}, since ${fmtLearningDay(FIRST_DATE)}. The sparkline shows sessions per week, last 12 weeks.`,
-      value: fmtInt(SESSIONS_LOGGED),
+      value: empty ? '0' : fmtInt(SESSIONS_LOGGED),
       unit: 'sessions',
       loading,
-      ...cellState(NO_SESSIONS),
       ...spark(
         'Sessions per week, last 12 weeks',
         SESSIONS_PER_WEEK,
@@ -129,7 +144,7 @@ function LearningStrip({ shotState }: ScenarioProps) {
       info: `The date of the latest session. A review comes due ${NEXT_REVIEW_DAYS} days after it.`,
       value: fmtLearningDay(LAST_DATE),
       loading,
-      ...cellState(NO_SESSIONS),
+      ...cellState,
     },
     {
       key: 'mean-rating',
@@ -140,16 +155,21 @@ function LearningStrip({ shotState }: ScenarioProps) {
       value: MEAN_RATING.toFixed(1),
       unit: 'of 5',
       loading,
-      ...cellState(NO_SESSIONS),
+      ...cellState,
+      ...spark(
+        'Mean rating per week, last 12 weeks',
+        RATING_PER_WEEK,
+        (v) => `${v.toFixed(1)} of 5`,
+      ),
     },
     {
-      key: 'minutes-month',
+      key: 'minutes-30d',
       caption: 'Practice time',
-      qualifier: 'this month',
-      info: 'Minutes logged across this month’s sessions. The sparkline shows minutes per week, last 12 weeks.',
-      value: fmtMinutes(MINUTES_THIS_MONTH),
+      qualifier: 'last 30 days',
+      info: 'Minutes logged across the last 30 days’ sessions. The sparkline shows minutes per week, last 12 weeks.',
+      value: fmtMinutes(MINUTES_LAST_30),
       loading,
-      ...cellState(NO_SESSIONS),
+      ...cellState,
       ...spark('Practice minutes per week, last 12 weeks', MINUTES_PER_WEEK, fmtMinutes),
     },
   ]
@@ -192,7 +212,7 @@ function LearningAside({ shotState }: ScenarioProps) {
   // The anchor sits inside the aside: in the shell the panel portals into its own region, so a wrapper
   // beside it would measure zero on desktop.
   return (
-    <PageAside title="Record facts" persistKey="learning-record">
+    <PageAside title="About this knot" persistKey="learning-record">
       {shotState === 'loading' ? (
         <AsideSkeleton />
       ) : shotState === 'error' ? (
@@ -201,10 +221,10 @@ function LearningAside({ shotState }: ScenarioProps) {
       ) : (
         <Stack gap="md" data-shot="learning-aside" data-shot-absent="error">
           <AsideFact label="First practised">
-            {shotState === 'empty' ? NO_SESSIONS : fmtLearningDay(FIRST_DATE)}
+            {shotState === 'empty' ? '—' : fmtLearningDay(FIRST_DATE)}
           </AsideFact>
           <AsideFact label="Practice partners">
-            {shotState === 'empty' ? NO_SESSIONS : `${fmtInt(PARTNER_COUNT)} partners`}
+            {shotState === 'empty' ? '—' : `${fmtInt(PARTNER_COUNT)} partners`}
           </AsideFact>
         </Stack>
       )}
