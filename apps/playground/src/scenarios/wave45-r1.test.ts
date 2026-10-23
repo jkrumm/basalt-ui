@@ -5,6 +5,7 @@ import { createElement } from 'react'
 import type { ReactElement } from 'react'
 import { afterEach, describe, expect, it } from 'bun:test'
 import {
+  JOURNAL,
   KNOT_TITLE,
   PARTNERS_BY_SESSIONS,
   PARTNER_COUNT,
@@ -105,5 +106,12 @@ describe('Wave 49 playground copy', () => {
     const c = mount(createElement(SettingsScenario, {}))
     const labels = [...c.querySelectorAll('label, legend, h2, h3')].map((e) => e.textContent)
     expect(labels.filter((l) => l === 'Notes').length).toBeLessThanOrEqual(1)
+  })
+
+  it('S5 journal skeleton is as tall as the loaded list', () => {
+    const skeletonRows = s5('loading').querySelectorAll(
+      '[data-shot="learning-journal"] [class*="Skeleton"]',
+    ).length
+    expect(skeletonRows).toBeGreaterThanOrEqual(Math.min(JOURNAL.length, 40))
   })
 })

@@ -60,6 +60,7 @@ export function LearningJournal({
       now={TODAY}
       time={clock}
       loading={shotState === 'loading'}
+      loadingRows={Math.min(entries.length, shown)}
       empty={{
         title: `No sessions logged for ${KNOT_TITLE}`,
         description: 'Log a practice session to start the record.',
