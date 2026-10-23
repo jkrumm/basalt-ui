@@ -1,6 +1,6 @@
 import type { ReactElement } from 'react'
 import { Sparkline } from '../../../src/charts'
-import { Meter, StatGroup } from '../../../src/index'
+import { Meter, StatCard, StatGroup } from '../../../src/index'
 import { VX } from '../../../src/tokens'
 
 const kg = (v: number): string => `${v.toFixed(1)} kg`
@@ -14,7 +14,12 @@ const INK = [
   { at: 78.9, color: VX.ink },
 ]
 
-const weight = (tone: 'muted' | 'ink', value: number) => (
+const LIGHT = [
+  { at: 72.3, color: VX.surface.subtle },
+  { at: 78.9, color: VX.surface.subtle },
+]
+
+const weight = (tone: 'muted' | 'ink' | 'light', value: number) => (
   <Meter
     label="Current weight within the window's lowest and highest weigh-in"
     value={value}
@@ -22,10 +27,10 @@ const weight = (tone: 'muted' | 'ink', value: number) => (
     max={78.9}
     format={kg}
     readingAt="start"
-    stops={tone === 'muted' ? FLAT : INK}
+    stops={tone === 'muted' ? FLAT : tone === 'light' ? LIGHT : INK}
     startCaption={`low ${kg(72.3)}`}
     endCaption={`high ${kg(78.9)}`}
-    tone={tone}
+    tone={tone === 'muted' ? 'muted' : 'ink'}
   />
 )
 
@@ -133,6 +138,17 @@ export function W50FiguresFixture(): ReactElement {
           ]}
           footer={[{ key: 'goal', under: 'weight', content: 'Set a goal weight' }]}
         />
+      </div>
+      <div data-testid="w50-bleed" style={{ width: 300 }}>
+        <StatCard
+          title="Sessions"
+          value="12"
+          subtitle="Since 3 Aug"
+          sparkline={(size) => <Sparkline ariaLabel="Per week" data={weekly(WEEKS[0])} {...size} />}
+        />
+      </div>
+      <div data-testid="w50-light">
+        <StatGroup variant="strip" label="Body" cols={2} cells={[cell(weight('light', 75.5))]} />
       </div>
       <div data-testid="w50-ink">
         <StatGroup variant="strip" label="Body" cols={2} cells={[cell(weight('ink', 75.5))]} />

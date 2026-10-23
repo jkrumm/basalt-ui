@@ -2,7 +2,7 @@
 import { describe, expect, test } from 'bun:test'
 import type { ReactElement } from 'react'
 import { renderToString } from 'react-dom/server'
-import { HOSTED, VisualSlotContext } from '../dashboard/visual-slot'
+import { HOSTED, HOSTED_COMPACT, VisualSlotContext } from '../dashboard/visual-slot'
 import { Sparkline } from './Sparkline'
 
 const DAY = 86_400_000
@@ -17,8 +17,26 @@ const windowOf = (html: string): string | undefined => {
 
 describe('Sparkline window', () => {
   test('a hosted dated series states its first and last day', () => {
-    expect(windowOf(hosted(<Sparkline ariaLabel="S" data={points} height={28} />))).toMatch(
-      /^\d+ \w+ – \d+ \w+$|^\w+ \d+ – \w+ \d+$/,
+    expect(windowOf(hosted(<Sparkline ariaLabel="S" data={points} height={28} />))).toBe(
+      'Oct 1 – Oct 22',
+    )
+  })
+  test('a compact slot states none, but an explicit window still shows', () => {
+    const compact = (node: ReactElement): string =>
+      renderToString(
+        <VisualSlotContext.Provider value={HOSTED_COMPACT}>{node}</VisualSlotContext.Provider>,
+      )
+    expect(windowOf(compact(<Sparkline ariaLabel="S" data={points} height={28} />))).toBe(undefined)
+    expect(
+      windowOf(compact(<Sparkline ariaLabel="S" data={points} height={28} window="12 wk" />)),
+    ).toBe('12 wk')
+  })
+  test('a blank window states none, like false', () => {
+    expect(
+      windowOf(hosted(<Sparkline ariaLabel="S" data={points} height={28} window="  " />)),
+    ).toBe(undefined)
+    expect(windowOf(hosted(<Sparkline ariaLabel="S" data={points} height={28} window="" />))).toBe(
+      undefined,
     )
   })
   test('`window` wins, and `false` states none', () => {

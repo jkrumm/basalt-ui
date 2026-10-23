@@ -22,6 +22,7 @@ import type { CartesianDefinition } from './compile'
 import { chartCurve } from './curves'
 import { barMark } from './marks'
 import { VisualSlotContext } from '../dashboard/visual-slot'
+import type { VisualSlot } from '../dashboard/visual-slot'
 import { bucketDay, dayGranular, defaultNumberFormat } from './compile'
 import { referenceLabelPlacement } from './ref-label'
 import { readoutClock, readoutDay } from './chart-dates'
@@ -75,7 +76,7 @@ export type SparklineProps = BasaltProps & {
   labels?: readonly string[] | undefined
   /** The span the series covers, stated quietly under the plot (`12 wk`). Default inside a `StatCard`
    * or strip cell: the first and last of `labels`, or of an `{ at }` series' days (`3 Aug – 19 Oct`; an hourly series states none);
-   * plain values state none. `false` states none. With a `referenceLabel`, a stated window also takes
+   * plain values state none. `false` or a blank string states none. With a `referenceLabel`, a stated window also takes
    * that label out of the plot into the same row, where no line can run through it. */
   window?: string | false | undefined
 }
@@ -159,6 +160,25 @@ function spanOf(names: readonly (string | undefined)[] | undefined): string | un
   return first === undefined || last === undefined || first === last
     ? undefined
     : `${first} – ${last}`
+}
+
+/**
+ * The window caption under a hosted plot, or `undefined`. A stated `window` wins (blank or `false`:
+ * none); otherwise a host with room for it (not `compact`) gets `first – last` of the `labels`, or of a
+ * day-dated series' days.
+ */
+function windowCaption(opts: {
+  prop: string | false | undefined
+  slot: VisualSlot | null
+  data: SparklineProps['data']
+  labels: readonly string[] | undefined
+  moments: readonly (string | undefined)[] | undefined
+}): string | undefined {
+  const { prop, slot, data, labels, moments } = opts
+  if (prop === false) return undefined
+  if (prop !== undefined) return prop.trim() === '' ? undefined : prop.trim()
+  if (slot === null || slot.compact === true) return undefined
+  return spanOf(labels ?? (isDayWindow(data) ? moments : undefined))
 }
 
 /** Min and max of the finite values, by loop (a spread overflows the stack on long series). */
@@ -667,13 +687,10 @@ export function Sparkline(props: SparklineProps): ReactElement {
   const slot = useContext(VisualSlotContext)
   const hosted = slot !== null
   const moments = useMemo(() => momentsOf(data), [data])
-  const windowText =
-    windowProp === false
-      ? undefined
-      : (windowProp ??
-        (hosted && slot.compact !== true
-          ? spanOf(labels ?? (isDayWindow(data) ? moments : undefined))
-          : undefined))
+  const windowText = useMemo(
+    () => windowCaption({ prop: windowProp, slot, data, labels, moments }),
+    [windowProp, slot, data, labels, moments],
+  )
   // The window's row also holds the reference label: out of the plot, no line can run through it.
   const labelInRow = windowText !== undefined && referenceLabel !== undefined
   const plotLabel = labelInRow ? undefined : referenceLabel

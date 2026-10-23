@@ -147,7 +147,8 @@ export type StatStripProps = BasaltProps & {
   cells: readonly StatStripCell[]
   /** Wider cells under the cells. */
   footer?: readonly StatStripFooterEntry[]
-  /** The DESKTOP column count. Default: the cell count, capped at 6. */
+  /** The DESKTOP column count. Default: the cell count, capped at 6. A lone cell takes the whole strip
+   * whatever `cols` says. */
   cols?: 2 | 3 | 4 | 5 | 6
   /** The shot states the page hides the whole strip in (`data-shot-absent` on every derived anchor). */
   shotAbsent?: readonly StatStripShotState[]

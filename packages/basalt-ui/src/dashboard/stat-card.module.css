@@ -437,6 +437,12 @@
   padding-top: var(--basalt-spark-readout-reserve);
 }
 
+/* A sparkline that states its window has a caption line under its plot: the slot grows by it rather than
+ * letting the caption run into the footer. */
+.sparklineBleed:has([data-basalt-sparkline-caption]) {
+  height: auto;
+}
+
 /* A Meter in the visual slot is a block, not a chart: it sizes to its content and keeps the card's
  * inline inset instead of the sparkline's fixed 22px and side bleed. */
 .sparklineBleed:has(> [data-basalt-meter]) {
