@@ -26,7 +26,7 @@ function setup(opts: { hidden?: boolean; height?: number } = {}) {
   card.append(surface)
   document.body.append(card)
   const ctx = {
-    scene: { width: 400, height: 200 },
+    scene: { width: 400, height: 200, margin: { top: 20, right: 10, bottom: 30, left: 40 } },
     surface: { element: surface },
     anchor: { x: 200, y: 20 },
     offset: 10,
@@ -52,6 +52,18 @@ describe('settleInCard', () => {
     // A 400px card: the tooltip grows to its content, capped at the card's width less the air.
     expect(tip.style.maxWidth).toBe('392px')
     expect(tip.style.width).toBe('max-content')
+  })
+
+  test('a first-point tooltip keeps clear of the y tick labels and the x ticks', () => {
+    const { card, tip, ctx } = setup()
+    // The anchor sits on the plot's left edge (x 40) at its bottom (y 170): centred it would cover the
+    // 40px y-label margin; below the anchor it would cover the 30px x-tick margin.
+    ;(ctx as { anchor: { x: number; y: number } }).anchor = { x: 40, y: 170 }
+    tip.dataset['placement'] = 'bottom'
+    settleInCard(tip, card, ctx)
+    expect(Number.parseFloat(tip.style.left)).toBeGreaterThanOrEqual(40)
+    // plot bottom = surface top 100 + 200 - 30 = 270; the tooltip is 60 tall.
+    expect(Number.parseFloat(tip.style.top) + 60).toBeLessThanOrEqual(270)
   })
 
   test('a hidden tooltip is not written', () => {

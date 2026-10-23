@@ -1185,6 +1185,12 @@ export function settleInCard(
   const [w, h] = [tip.offsetWidth, tip.offsetHeight]
   const anchor = toClient(ctx.anchor)
   const gap = Math.max(0, Number.isFinite(ctx.offset) ? (ctx.offset ?? 10) : 10)
+  // The plot's rect: the axis tick labels sit in the margins around it, so a card tooltip stays inside
+  // it when it fits (a first-point tooltip would otherwise cover the y ticks and an x tick).
+  const { margin } = ctx.scene
+  const plotTL = toClient({ x: margin.left, y: margin.top })
+  const plotBR = toClient({ x: sceneW - margin.right, y: sceneH - margin.bottom })
+  const plotFence = !slot && plotBR.x - plotTL.x >= w && plotBR.y - plotTL.y >= h
   const maxTop = card.bottom - TIP_CARD_AIR - h
   // The card's header (title and facts) is off-limits while the plot area below it can hold the tooltip.
   const headerBottom = slot
@@ -1211,6 +1217,10 @@ export function settleInCard(
     if (roomy) left = anchor.x - w / 2
   }
   if (!slot) top = maxTop < minTop ? minTop : Math.min(Math.max(top, minTop), maxTop)
+  if (plotFence) {
+    top = Math.min(Math.max(top, plotTL.y), plotBR.y - h)
+    left = Math.min(Math.max(left, plotTL.x), plotBR.x - w)
+  }
   if (grown || w + 2 * TIP_CARD_AIR <= card.width)
     left = Math.min(
       Math.max(left, card.left + TIP_CARD_AIR),
