@@ -49,7 +49,9 @@ export function LearningJournal({
 }) {
   const [shown, setShown] = useState(PAGE)
   if (shotState === 'error') {
-    return <ErrorNote title="Journal unavailable" cause={retryCopy('journal')} onRetry={noop} />
+    return (
+      <ErrorNote title="Could not load the journal" cause={retryCopy('journal')} onRetry={noop} />
+    )
   }
   // The fixture is newest-first by day but unsorted inside a day.
   const sorted = entries.map((e) => ({ e, at: localAt(e) })).sort((a, b) => +b.at - +a.at)
