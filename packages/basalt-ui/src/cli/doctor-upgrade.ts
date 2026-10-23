@@ -661,11 +661,7 @@ export function subpathPeersCheck(cwd: string, scanned: string[], install: Basal
   })
 }
 
-/**
- * Emitted `tokens:css` / `fonts:css` sheets whose header version is not the installed one. The
- * header's second line names the exact invocation, so the fix is that command verbatim: `--check`
- * is byte-exact and fails after every bump until the sheet is re-emitted.
- */
+/** Emitted `tokens:css` / `fonts:css` sheets from another version; the header names the re-emit command. */
 export function staleEmittedSheets(
   cwd: string,
   files: readonly string[],
@@ -675,16 +671,11 @@ export function staleEmittedSheets(
   const out: string[] = []
   for (const rel of files) {
     if (!rel.endsWith('.css')) continue
-    const head = (readIfExists(resolve(cwd, rel)) ?? '').split('\n', 2)
+    const provenance = (readIfExists(resolve(cwd, rel)) ?? '').split('\n')[1]?.trim() ?? ''
     const m = /^\/\* basalt-ui (\S+) — `(basalt-ui (?:tokens|fonts):css[^`]*)` \*\/$/.exec(
-      head[1]?.trim() ?? '',
+      provenance,
     )
-    if (
-      m === null ||
-      !(head[0] ?? '').includes('@generated basalt-ui') ||
-      m[1] === installedVersion
-    )
-      continue
+    if (m === null || m[1] === installedVersion) continue
     out.push(
       `emitted-sheets: ${rel} was emitted by ${m[1]}, installed is ${installedVersion} — ` +
         `\`--check\` fails until it is re-emitted. Fix: \`${m[2]}\``,
@@ -693,24 +684,25 @@ export function staleEmittedSheets(
   return out
 }
 
-const versionParts = (v: string): number[] => v.split('.').map((n) => Number.parseInt(n, 10) || 0)
-
 /** `a` versus `b` as dotted numbers: negative when `a` is older. */
-function compareVersions(a: string, b: string): number {
-  const [x, y] = [versionParts(a), versionParts(b)]
-  for (let i = 0; i < 3; i++) if ((x[i] ?? 0) !== (y[i] ?? 0)) return (x[i] ?? 0) - (y[i] ?? 0)
-  return 0
+export function compareVersions(a: string, b: string): number {
+  const y = b.split('.').map(Number)
+  return (
+    a
+      .split('.')
+      .map((n, i) => Number(n) - (y[i] ?? 0))
+      .find((d) => d !== 0) ?? 0
+  )
 }
 
 const VISIBLE_HEADING = /^#{2,4}\s+Visible without code change/i
 const CONSUMER_VISIBLE = /basalt\/[a-z][\w-]*|--vx-[\w-]+|\berror\b|\bpromoted?\b/i
-const MAX_LINE = 240
 
 /**
  * The consumer-visible lines of every MIGRATING.md section with `from < version <= to` (`to`
  * null: no upper bound), newest first as the file is ordered: lines naming a `basalt/*` rule id, a
  * `--vx-*` token, `error` or `promoted`, plus the whole `Visible without code change` subsection.
- * Fenced code and table separators are skipped; long table rows are cut.
+ * Fenced code and table separators are skipped; only long table rows are cut, never a bullet.
  */
 export function migratingSince(markdown: string, from: string, to: string | null): string[] {
   const out: string[] = []
@@ -737,7 +729,9 @@ export function migratingSince(markdown: string, from: string, to: string | null
     const trimmed = line.trim()
     if (trimmed === '' || /^\|[-\s|:]+\|$/.test(trimmed)) continue
     if (!visible && !CONSUMER_VISIBLE.test(line)) continue
-    out.push(trimmed.length > MAX_LINE ? `${trimmed.slice(0, MAX_LINE)}…` : trimmed)
+    out.push(
+      trimmed.startsWith('|') && trimmed.length > 240 ? `${trimmed.slice(0, 240)}…` : trimmed,
+    )
   }
   return out
 }

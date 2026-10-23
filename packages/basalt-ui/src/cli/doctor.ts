@@ -41,6 +41,7 @@ import {
   appWiringCheck,
   shellDeclarationFindings,
   startWiringWarnings,
+  compareVersions,
   droppedSubpathsCheck,
   exactPeersCheck,
   migratingSince,
@@ -106,24 +107,25 @@ function aiMajorsAt(dir: string): Partial<Record<AiMajorField, number>> {
 /** `doctor --from <version>`: the consumer-visible MIGRATING.md changes since `from`, up to the install. */
 function doctorFrom(invocationCwd: string, from: string | undefined): number {
   if (from === undefined || !/^\d+\.\d+\.\d+$/.test(from)) {
-    console.error(
-      'basalt-ui doctor --from <version>: pass the version you are upgrading from (x.y.z).',
-    )
+    console.error('basalt-ui doctor --from <x.y.z>: the version you are upgrading from.')
     return 1
   }
   const install = findBasaltInstall(resolveProjectDir(invocationCwd).dir)
   const markdown = install.dir === null ? null : readIfExists(resolve(install.dir, 'MIGRATING.md'))
   if (markdown === null) {
-    console.error(
-      'basalt-ui doctor --from: no installed basalt-ui with a MIGRATING.md. Fix: `bun add basalt-ui`.',
-    )
+    console.error('basalt-ui doctor --from: no installed basalt-ui. Fix: `bun add basalt-ui`.')
+    return 1
+  }
+  if (install.version !== null && compareVersions(from, install.version) > 0) {
+    console.error(`basalt-ui doctor --from ${from}: newer than the installed ${install.version}.`)
     return 1
   }
   const lines = migratingSince(markdown, from, install.version)
+  const span = `after ${from} up to ${install.version ?? 'the install'}`
   console.log(
     lines.length === 0
-      ? `No consumer-visible changes recorded after ${from} up to ${install.version ?? 'the install'}.`
-      : `Consumer-visible changes after ${from} up to ${install.version ?? 'the install'} (full text: MIGRATING.md):\n${lines.join('\n')}`,
+      ? `No consumer-visible changes recorded ${span}.`
+      : `Consumer-visible changes ${span} (full text: MIGRATING.md):\n${lines.join('\n')}`,
   )
   return 0
 }
@@ -156,8 +158,11 @@ export function doctor(
   designLoop: DesignLoopProbes = {},
 ): number {
   if (conflictingProfileFlags('doctor', flags)) return 1
-  const fromAt = flags.indexOf('--from')
-  if (fromAt !== -1) return doctorFrom(invocationCwd, flags[fromAt + 1])
+  const fromAt = flags.findIndex((f) => f === '--from' || f.startsWith('--from='))
+  if (fromAt !== -1) {
+    const flag = flags[fromAt] as string
+    return doctorFrom(invocationCwd, flag.startsWith('--from=') ? flag.slice(7) : flags[fromAt + 1])
+  }
   const project = resolveProjectDir(invocationCwd)
   // Inside the app package of a monorepo the manifest is above: read the install root instead.
   const aboveRoot = project.relocatedFrom === null ? installRootAbove(project.dir) : null
