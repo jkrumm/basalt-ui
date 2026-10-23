@@ -183,7 +183,7 @@ export function Board<T extends string = string>({ field, ...props }: BoardProps
 }
 
 /** One column's scroll box. It marks its viewport `data-more` while cards remain below the fold, and
- * CSS paints `EventList`'s bottom fade there, so a clipped last card is never silent. */
+ * CSS masks the column's bottom edge there, so a clipped last card is never silent. */
 function ColumnScroll({ height, children }: { height?: number | string; children: ReactNode }) {
   const [viewport, setViewport] = useState<HTMLDivElement | null>(null)
   useScrolledEdge(viewport)

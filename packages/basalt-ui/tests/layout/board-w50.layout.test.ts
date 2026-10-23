@@ -23,7 +23,7 @@ const spec: FixtureSpec = {
   board: 'columns',
 }
 
-type Fade = { clips: boolean; more: boolean; fadeHeight: number }
+type Fade = { clips: boolean; more: boolean; masked: boolean }
 
 layout('Board column scroll fade', () => {
   afterAll(closeLayoutSuite, CLOSE_BUDGET_MS)
@@ -40,11 +40,10 @@ layout('Board column scroll fade', () => {
             requestAnimationFrame(() =>
               resolve(
                 viewports.map((v) => {
-                  const fade = getComputedStyle(v, '::after')
                   return {
                     clips: v.scrollHeight > v.clientHeight + 1,
                     more: v.hasAttribute('data-more'),
-                    fadeHeight: fade.content === 'none' ? 0 : Number.parseFloat(fade.height),
+                    masked: getComputedStyle(v).maskImage !== 'none',
                   }
                 }),
               ),
@@ -62,11 +61,11 @@ layout('Board column scroll fade', () => {
     const columns = await read(p, false)
     expect(columns[0]!.clips).toBe(true)
     expect(columns[0]!.more).toBe(true)
-    expect(columns[0]!.fadeHeight).toBeGreaterThanOrEqual(16)
+    expect(columns[0]!.masked).toBe(true)
     const fitting = columns.at(-1)!
     expect(fitting.clips).toBe(false)
     expect(fitting.more).toBe(false)
-    expect(fitting.fadeHeight).toBe(0)
+    expect(fitting.masked).toBe(false)
   })
 
   test('1440: scrolled to its end the column drops the fade', async () => {
@@ -75,6 +74,6 @@ layout('Board column scroll fade', () => {
     await p.quiesce()
     const [column] = await read(p, true)
     expect(column!.more).toBe(false)
-    expect(column!.fadeHeight).toBe(0)
+    expect(column!.masked).toBe(false)
   })
 })
