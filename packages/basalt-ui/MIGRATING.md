@@ -1068,6 +1068,46 @@ worktrees.
   must accept null), shows the finding count beside each trend score, chains a trend only within one `--out` dir,
   and names the contrast threshold it applied (`needs 4.5:1 at 22px regular`).
 
+### The trial and audit gaps (Wave 49, argo-friction rows 180–189)
+
+Nothing to change unless a test asserts the old copy or geometry below.
+
+- **Error titles name the thing.** `StatCard`, a strip cell, `ChartCard` and the data table fall back to their own title
+  or caption: "Could not load revenue" instead of a bare "Could not load". `stateNoun`/`errorTitle` still win. A bare
+  title remains only where the host has no name at all.
+- **`ChartCard` empty default** reads "Nothing plotted in this range. Widen the range or check the source." (cause and
+  next step); `state.empty` as a string still overrides it.
+- **`Meter`.** Adjacent categorical parts are split by a 2px separator in the track colour (muted parts keep their one
+  shared fill; three or more all-muted parts log a dev warning pointing at per-part colours). The forecast caption ends
+  at the forecast end, with a tick there, and falls back to the boundary only when the end cannot hold it. Captions
+  keep at least one gap step apart at 390. The bar fills its container's width; the reading tick carries a
+  panel-coloured halo so it reads on an ink fill.
+- **`EventList`.** A feed row's chips follow the note's last word instead of taking a line of their own (the note still
+  wraps, never truncates, D52). A scroll box shows a bottom fade while rows remain below. A skeleton that replaces
+  loaded rows keeps their height.
+- **`BarList`** reserves a gap between a truncated name and its value; the delta aligns with the value. The folded
+  table's "+N" header reads "N more columns: …".
+- **Charts.** A reference label sits a full font size off its line; the keyboard focus ring is inset so a card's
+  overflow cannot clip it (sparklines keep the outer ring); a fixed domain's raw end is a tick only when its label
+  carries something the round ticks do not (a unit), so a uniform formatter no longer prints 77 above 76; a sparkline
+  label stays inside its plot. A `Slider` fills in ink unless `color` is set; a browser-autofilled field keeps the field
+  surface.
+- **CLI.** `init` on a stock Vite app wires `tanstackRouter()` before `react()`, adds `@tanstack/router-plugin`, runs
+  the install and a first build for `routeTree.gen.ts`, and repeats the advice on every run until the artifacts exist;
+  `--no-install` prints the commands instead. `llms.txt` expands the option types a signature names
+  (`DateOptions`, `ChartLegendConfig`, `ResponsiveChartHeight`, …). `shot` clears the previous anchor's tooltip before
+  a hover crop. **`shot detect`** `craft-7/no-declared-states` is per anchor: every anchor that renders a state surface
+  needs its own `data-shot-states` (or `data-shot-absent`), so a route that declared states on one anchor only now
+  reports the others.
+- **Skills.** `/basalt-design` checks four repeated defects before round 1 and shoots each round to a fresh `--out`;
+  the parts row says each part takes a series colour; `/basalt-charts` names `other` as the neutral series key.
+
+### Visible without code change
+
+- Error titles, the chart empty copy, the Meter separators/forecast caption/full width, the EventList chip flow and
+  fade, the chart ticks, label offset and focus ring, the slider fill: all render differently with no edit.
+- `shot detect` may report `craft-7/no-declared-states` on anchors it passed before.
+
 ## 2.28.0
 
 ### Data tables (Wave 42)
