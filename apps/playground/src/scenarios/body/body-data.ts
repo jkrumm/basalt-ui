@@ -18,3 +18,7 @@ export const INOL_GAP = 'No sessions logged in this window'
 export const INOL_NEXT = 'INOL needs at least two sessions per lift.'
 export const NO_INOL = `${INOL_GAP}. ${INOL_NEXT}`
 export const NO_E1RM = 'No estimated 1RM in this window. Log a lift to start the trend.'
+
+/** INOL, defined once for every card that shows it. */
+export const INOL_DEFINITION =
+  "INOL (Intensity-Number of Lifts) weighs a session's volume by how close the sets are to your max. 0.6 to 1.0 is the productive range."

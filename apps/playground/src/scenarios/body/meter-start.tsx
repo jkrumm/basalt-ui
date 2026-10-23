@@ -5,7 +5,7 @@ import type { StatStripCell } from 'basalt-ui'
 import { VX } from 'basalt-ui/tokens'
 import { noop } from '../shot-state'
 import type { ScenarioProps } from '../shot-state'
-import { NO_WEIGH_INS, WEIGHT_ERROR } from './body-data'
+import { BODY, NO_WEIGH_INS, WEIGHT_ERROR } from './body-data'
 
 const LOW = 72.3
 const HIGH = 78.9
@@ -42,15 +42,14 @@ const strip = (anchor: string, visual: StatStripCell['visual'], props: ScenarioP
       <StatGroup
         variant="strip"
         label="Body"
-        cols={1}
+        cols={2}
         cells={[
           {
             key: 'weight',
-            caption: 'Weight range',
-            qualifier: 'last 60 days',
-            info: 'Where the latest weigh-in sits between the lowest and the highest weigh-in of the last 60 days.',
-            value: `${LOW.toFixed(1)}–${HIGH.toFixed(1)}`,
-            unit: 'kg',
+            caption: 'Weight',
+            qualifier: `60-day range ${LOW.toFixed(1)}–${HIGH.toFixed(1)} kg`,
+            info: 'The latest weigh-in against the lowest and the highest weigh-in of the last 60 days.',
+            value: kg(BODY.weightKg),
             visual,
             loading: props.shotState === 'loading',
             ...(state !== undefined && { state }),

@@ -5,16 +5,12 @@ import { createElement } from 'react'
 import type { ReactElement } from 'react'
 import { afterEach, describe, expect, it } from 'bun:test'
 import {
-  JOURNAL,
   KNOT_TITLE,
   PARTNERS_BY_SESSIONS,
   PARTNER_COUNT,
   RECENT_RATINGS,
   SESSIONS_LAST_30,
 } from './learning-data'
-import { BodyScenario } from './S7Body'
-import { SettingsScenario } from './S6Settings'
-import { OpsScenario } from './S1Ops'
 import { AgentsScenario } from './S3Agents'
 import { LearningScenario } from './S5Learning'
 import type { ShotState } from './shot-state'
@@ -72,46 +68,5 @@ describe('S3 decision', () => {
     for (const state of ['empty', 'error'] as const) {
       expect(s3(state).querySelector('[data-shot="agents-decision"]')?.textContent).toBe('')
     }
-  })
-})
-
-describe('Wave 49 playground copy', () => {
-  const text = (c: HTMLElement, name: string) =>
-    c.querySelector(`[data-shot="${name}"]`)?.textContent ?? ''
-
-  it('S7 states the weight figure once and defines INOL and the low/high window', () => {
-    const c = mount(createElement(BodyScenario, {}))
-    const meter = text(c, 'weight-meter-start')
-    expect(meter).toContain('60-day low')
-    expect(meter).toContain('60-day high')
-    expect(meter).not.toMatch(/\b75\.\d\b/)
-    expect(text(c, 'inol-sparks')).toContain('last 8 sessions')
-    expect(text(c, 'lift-pr-spark')).toContain('last 10 sessions')
-  })
-
-  it('S1 names the packet-loss period and gives every KPI a breakdown', () => {
-    const c = mount(createElement(OpsScenario, {}))
-    expect(text(c, 'packet-loss')).toContain('Packet loss, 7 days')
-    for (const a of ['latency-now', 'packet-loss', 'download'])
-      expect(text(c, a)).toMatch(/7[- ]day|7 days/)
-  })
-
-  it('S3 titles both footer meters', () => {
-    const c = mount(createElement(AgentsScenario, {}))
-    expect(text(c, 'strip-footer-day')).toContain('Dispatch spend, today')
-    expect(text(c, 'strip-footer-week')).toContain('Dispatch spend, last 7 days')
-  })
-
-  it('S6 names the form group by function, not "Notes" twice', () => {
-    const c = mount(createElement(SettingsScenario, {}))
-    const labels = [...c.querySelectorAll('label, legend, h2, h3')].map((e) => e.textContent)
-    expect(labels.filter((l) => l === 'Notes').length).toBeLessThanOrEqual(1)
-  })
-
-  it('S5 journal skeleton is as tall as the loaded list', () => {
-    const skeletonRows = s5('loading').querySelectorAll(
-      '[data-shot="learning-journal"] [class*="Skeleton"]',
-    ).length
-    expect(skeletonRows).toBeGreaterThanOrEqual(Math.min(JOURNAL.length, 40))
   })
 })

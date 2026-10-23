@@ -8,7 +8,7 @@ import { Section } from 'basalt-ui'
 import { VX } from 'basalt-ui/tokens'
 import { queryFor } from '../shot-state'
 import type { ScenarioProps } from '../shot-state'
-import { INOL_GAP, INOL_NEXT, STRENGTH_ERROR } from './body-data'
+import { INOL_DEFINITION, INOL_GAP, INOL_NEXT, STRENGTH_ERROR } from './body-data'
 
 const ZONE = { name: 'Productive', inol: 0.84, lift: 'Squat' } as const
 
@@ -18,7 +18,7 @@ export function BodyZoneReadout({ shotState }: ScenarioProps) {
     <Box data-shot="zone-readout">
       <Section
         title="INOL zone, this week"
-        info="INOL (Intensity-Number of Lifts) weighs session volume by how close the sets are to your max; 0.6 to 1.0 is productive."
+        info={INOL_DEFINITION}
         empty={{
           title: INOL_GAP,
           description: INOL_NEXT,

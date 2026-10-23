@@ -269,7 +269,19 @@ function QueueStrip({ shotState }: ScenarioProps) {
   ]
 
   // Both footers name the limit "cap" (as the Dispatch spend tooltip does) and state it once, as the Meter's end caption. The day's caption is the share only: the Meter's target states the cap and the Dispatch spend headline (to the cent, so 54% agrees with it) states the spend.
-  const budget = (label: string, title: string, spent: number, cap: number, caption: string) => (
+  const budget = ({
+    label,
+    title,
+    spent,
+    cap,
+    caption,
+  }: {
+    label: string
+    title: string
+    spent: number
+    cap: number
+    caption: string
+  }) => (
     <Stack gap={4}>
       <Text size="xs" c="dimmed">
         {title}
@@ -292,23 +304,23 @@ function QueueStrip({ shotState }: ScenarioProps) {
     : [
         footerEntry(
           'day',
-          budget(
-            'Daily dispatch budget',
-            'Dispatch spend, today',
-            BUDGETS.day.spent,
-            BUDGETS.day.cap,
-            `${fmtShare(BUDGETS.day.spent / BUDGETS.day.cap)} of today's cap`,
-          ),
+          budget({
+            label: 'Daily dispatch budget',
+            title: 'Dispatch spend, today',
+            spent: BUDGETS.day.spent,
+            cap: BUDGETS.day.cap,
+            caption: `${fmtShare(BUDGETS.day.spent / BUDGETS.day.cap)} of today's cap`,
+          }),
         ),
         footerEntry(
           'week',
-          budget(
-            'Weekly dispatch budget',
-            'Dispatch spend, last 7 days',
-            BUDGETS.week.spent,
-            BUDGETS.week.cap,
-            `${fmtEur(BUDGETS.week.spent)}, last 7 days`,
-          ),
+          budget({
+            label: 'Weekly dispatch budget',
+            title: 'Dispatch spend, last 7 days',
+            spent: BUDGETS.week.spent,
+            cap: BUDGETS.week.cap,
+            caption: `${fmtEur(BUDGETS.week.spent)}, last 7 days`,
+          }),
         ),
       ]
 
