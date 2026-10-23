@@ -78,6 +78,21 @@ export function W52ChartsFixture(): ReactElement {
           {body('w52-e', 160)}
         </ChartCard>
       </div>
+      {/* theme-allow -- the wrapper width IS the fixture's payload (a roomy chart, two series) */}
+      <div data-testid="w52-focus-roomy" style={{ width: 'min(640px, 100%)' }}>
+        <ChartCard title="Orders against target">
+          <Lines
+            ariaLabel="w52-focus-roomy-chart"
+            data={DATA}
+            x={(d) => d.at}
+            height={240}
+            series={[
+              { key: 'v', label: 'Orders', color: VX.line, getValue: (d) => d.v },
+              { key: 'tg', label: 'Target', color: VX.line, getValue: () => 45 },
+            ]}
+          />
+        </ChartCard>
+      </div>
       {/* theme-allow -- the wrapper width IS the fixture's payload */}
       <div data-testid="w52-focus" style={{ width: 640 }}>
         <ChartCard title="Throughput">
@@ -94,6 +109,25 @@ export function W52ChartsFixture(): ReactElement {
             ]}
           />
         </ChartCard>
+      </div>
+      {/* theme-allow -- the wrapper width IS the fixture's payload (a 1440 content width) */}
+      <div data-testid="w52-trial" style={{ width: 1100 }}>
+        {/* theme-allow -- the trial's shape: a value hero card beside a sibling with no value */}
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16 }}>
+          <ChartCard title="Orders" value="1,284" delta={4.2} deltaPeriod="vs previous 30 days">
+            {body('w52-t1')}
+          </ChartCard>
+          <ChartCard title="Revenue against target">{body('w52-t2')}</ChartCard>
+        </div>
+      </div>
+      {/* theme-allow -- the wrapper width IS the fixture's payload (a 340px phone column) */}
+      <div data-testid="w52-trial-phone" style={{ width: 340 }}>
+        <ChartCard title="Orders" value="1,284" delta={4.2} deltaPeriod="vs previous 30 days">
+          {body('w52-t3', 160)}
+        </ChartCard>
+        {/* theme-allow -- stacked cards on a phone */}
+        <div style={{ height: 16 }} />
+        <ChartCard title="Revenue against target">{body('w52-t4', 160)}</ChartCard>
       </div>
       {/* theme-allow -- the wrapper width IS the fixture's payload */}
       <div data-testid="w52-band" style={{ width: 900 }}>

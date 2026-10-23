@@ -1091,6 +1091,8 @@ const barAnchor =
 const TIP_CARD = '[data-basalt-chart-card], [data-strip-cell], .mantine-Card-root'
 /** Air between a card-clamped tooltip and the card's edge, px. */
 const TIP_CARD_AIR = 4
+/** Air between the plot's left edge and a tooltip, so the first point's cursor dot stays visible, px. */
+const TIP_DOT_AIR = 10
 /** A card narrower than this keeps the engine's width and horizontal placement (a ~120px strip
  * cell would squeeze a tooltip to its 6rem label floor); the vertical rule applies to every card. */
 const TIP_CARD_ROOMY = 192
@@ -1196,7 +1198,7 @@ export function settleInCard(
   const plotTL = toClient({ x: margin.left, y: margin.top })
   const plotBR = toClient({ x: sceneW - margin.right, y: sceneH - margin.bottom })
   // Per axis: a tooltip taller than a short plot still keeps its left edge clear of the y tick labels.
-  const fenceX = !slot && plotBR.x - plotTL.x >= w
+  const fenceX = !slot && plotBR.x - plotTL.x >= w + TIP_DOT_AIR
   const fenceY = !slot && plotBR.y - plotTL.y >= h
   const maxTop = card.bottom - TIP_CARD_AIR - h
   // The card's header (title and facts) is off-limits while the plot area below it can hold the tooltip.
@@ -1225,7 +1227,8 @@ export function settleInCard(
   }
   if (!slot) top = maxTop < minTop ? minTop : Math.min(Math.max(top, minTop), maxTop)
   if (fenceY) top = Math.min(Math.max(top, plotTL.y), plotBR.y - h)
-  if (fenceX) left = Math.min(Math.max(left, plotTL.x), plotBR.x - w)
+  // The left bound also clears the focused point's dot, drawn on the plot's edge at the first point.
+  if (fenceX) left = Math.min(Math.max(left, plotTL.x + TIP_DOT_AIR), plotBR.x - w)
   if (grown || w + 2 * TIP_CARD_AIR <= card.width)
     left = Math.min(
       Math.max(left, card.left + TIP_CARD_AIR),
