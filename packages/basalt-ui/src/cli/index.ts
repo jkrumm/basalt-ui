@@ -176,15 +176,8 @@ export function readBasaltConfig(cwd: string): BasaltConfig {
 const SCANNABLE_EXT = /\.(?:tsx?|jsx|[cm][jt]s|astro|vue|css|html?|webmanifest)$/
 
 /**
- * Recursively collect scannable files under a root, skipping dependency/build dirs. Node+Bun-safe.
- * `checkSource` is already syntax-aware per extension (`guardSyntaxFor`); the walker was the only
- * gap, twice over — `.css` (CSS modules / `styles.css`) and now `.html`/`.webmanifest`.
- *
- * `.json` is deliberately NOT here even though the guard resolves it as markup: a consumer repo is
- * full of JSON that is configuration, fixtures and lockfiles, and blanket-scanning it produces
- * exactly the class of false positive already reported against a `data.json` test fixture. A JSON
- * that IS a design surface (a `manifest.json` rather than a `*.webmanifest`) is reachable by naming
- * it in `basalt.include`.
+ * Recursively collect scannable files under a root, skipping dependency/build dirs. `.json` is NOT
+ * scanned (config, fixtures, lockfiles: false positives); name a design-surface JSON in `basalt.include`.
  */
 function walkSourceFiles(dir: string, out: string[] = []): string[] {
   let entries: string[]
@@ -512,12 +505,7 @@ export function basaltBinCommand(install: BasaltInstall, cwd: string): string {
   return `${relativePosix(cwd, binDir).replace(/^\.\//, '')}/basalt-ui`
 }
 
-/**
- * The flag every basalt-written `oxlint .` carries. oxlint discovers a nested `.oxlintrc.json` in a
- * `.claude/worktrees/<name>` checkout and loads its plugin a second time ("Plugin name basalt is
- * already registered"); config `ignorePatterns` and `.oxlintignore` do not stop that discovery, the CLI
- * flag does (verified on oxlint 1.87).
- */
+/** Every basalt-written `oxlint .` carries it: config ignores don't stop oxlint loading a worktree's nested config (1.87). */
 export const OXLINT_IGNORE_FLAG = "--ignore-pattern '.claude/worktrees/**'"
 
 /**
@@ -1010,10 +998,8 @@ export function managedFiles(
   }
   const scaffolds: ManagedFile[] = [navModule, rootRoute, mainEntry]
 
-  // lefthook.yml / .github/workflows/check.yml are repo-root-shaped: lefthook and GitHub Actions
-  // only ever read config at the repo root, so a package living in a subdirectory (a monorepo's
-  // `web/`) skips both rather than relocating them — the repo root very often already has its own
-  // lefthook/CI config, and writing over or beside it is worse than not writing at all.
+  // lefthook and GitHub Actions only read config at the repo root: a package in a subdirectory skips
+  // both (the root often has its own), and `sync` reports on the root's files instead.
   const rootTooling: ManagedFile[] = placement.isPackageRepoRoot ? [lefthook, ci] : []
 
   return [
@@ -1030,12 +1016,9 @@ export function managedFiles(
 }
 
 /**
- * The PERMANENT placement skips as sentences — one text for `init` and `sync`, which carried two
- * near-copies that had already drifted apart. Correct and unchanging, which is why `sync --check`
- * hides them behind `--verbose`. `extends` alone is NOT the recipe for the hook, and saying only
- * that shipped a broken one: lefthook merges the preset's commands but runs every one at the REPO
- * ROOT, with no oxlint config, no local binary and no basalt config. `root:` moves the invocation
- * cwd per command and merges (the preset does not define it) — see the preset's MONOREPO RECIPE.
+ * The placement skips as sentences — one text for `init` and `sync`. `extends` alone is NOT the
+ * recipe for the hook: lefthook runs every merged command at the REPO ROOT, where there is no oxlint
+ * config, binary or basalt config. `root:` moves the cwd per command (the preset's MONOREPO RECIPE).
  */
 export function placementNotices(cwd: string, placement: PlacementFlags): string[] {
   const out: string[] = []
@@ -1060,123 +1043,27 @@ export function placementNotices(cwd: string, placement: PlacementFlags): string
   return out
 }
 
-/** The repo-root-shaped templates a package below the repo root does not place itself. */
-type RootToolingKind = 'lefthook' | 'ci'
-
-/** `lefthook.yml` as it belongs at the repo root: extends the preset, every job re-rooted to the package. */
-function rootLefthook(cwd: string, ctx: RenderContext, repoRoot: string, pkg: string): string {
-  const install = findBasaltInstall(cwd)
-  const preset = shippedAssetPath(install, repoRoot, 'configs/lefthook.yml').replace(/^\.\//, '')
-  const bin = ctx.vars.BASALT_BIN
-  const jobs = ['oxlint', 'oxfmt', 'check-theme'].map((name) => {
-    const env =
-      name === 'check-theme' && !bin.startsWith('bunx ')
-        ? `      env:\n        BASALT_BIN: ${bin}\n`
-        : ''
-    return `    ${name}:\n      root: '${pkg}/'\n${env}`
-  })
-  return (
-    '# Placed by `basalt-ui sync --root` — you own this file; sync never rewrites it.\n' +
-    `extends:\n  - ${preset}\n\npre-commit:\n  commands:\n${jobs.join('')}`
-  )
-}
-
-/** `check.yml` as it belongs at the repo root: the shipped steps, run inside the package. */
-function rootCi(ctx: RenderContext, pkg: string): string | null {
-  const tpl = readSource(ctx.pkgRoot, 'configs/check.yml')
-  if (tpl === null) return null
-  return fillTemplate(tpl, ctx.vars).replace(
-    /^(\s+runs-on:.*\n)/m,
-    `$1    defaults:\n      run:\n        working-directory: ${pkg}\n`,
-  )
-}
-
-/** The `- run:` commands of a workflow, whitespace-trimmed — what "the steps are all there" compares. */
-function runLines(text: string): Set<string> {
-  return new Set(
-    text
-      .split('\n')
-      .map((l) => l.trim())
-      .filter((l) => l.startsWith('- run:')),
-  )
-}
-
-function rootToolingInSync(
-  kind: RootToolingKind,
-  current: string,
-  desired: string,
-  pkg: string,
-): boolean {
-  if (kind === 'lefthook') {
-    const preset = /^\s*-\s*(\S*configs\/lefthook\.yml)\s*$/m.exec(desired)?.[1]
-    const rooted = current.match(
-      new RegExp(`root:\\s*['"]?${pkg.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}/['"]?`, 'g'),
-    )
-    return preset !== undefined && current.includes(preset) && (rooted?.length ?? 0) >= 3
+/** The two repo-root templates vs the repo root's own files, read-only: 'in sync' | 'drifted' | 'absent'. */
+export function rootToolingStates(cwd: string, p: PlacementFlags, ctx: RenderContext): string[] {
+  if (p.isPackageRepoRoot) return []
+  const pkg = relativePosix(p.repoRoot, cwd).replace(/^\.\//, '')
+  const preset = shippedAssetPath(findBasaltInstall(cwd), p.repoRoot, 'configs/lefthook.yml')
+  const ci = fillTemplate(readSource(ctx.pkgRoot, 'configs/check.yml') ?? '', ctx.vars)
+  const steps = ci
+    .split('\n')
+    .map((l) => l.trim())
+    .filter((l) => l.startsWith('- run:'))
+  const state = (file: string, ok: (text: string) => boolean): string => {
+    const text = readIfExists(resolve(p.repoRoot, file))
+    return text === null ? 'absent' : ok(text) ? 'in sync' : 'drifted'
   }
-  const have = runLines(current)
-  return (
-    current.includes(`working-directory: ${pkg}`) &&
-    [...runLines(desired)].every((l) => have.has(l))
-  )
-}
-
-export type RootToolingReport = {
-  /** One line per skipped template: its state at the repo root, plus how to act on it. */
-  lines: string[]
-  /** Templates that are absent or drifted at the repo root (not counting ones just placed). */
-  unsynced: number
-}
-
-/**
- * What `sync` says about the two repo-root-shaped templates when the package lives below the repo
- * root. Instead of an unconditional skip it COMPARES the shipped template with what the root
- * has: in sync / drifted / absent. With `place` (`--root`), an absent file is written once and then
- * belongs to the consumer — a present one is never overwritten. The files are not in the manifest,
- * so the retire/prune pass can never delete them.
- */
-export function rootToolingReport(
-  cwd: string,
-  placement: PlacementFlags,
-  ctx: RenderContext,
-  opts: { place: boolean; write: boolean },
-): RootToolingReport {
-  const notices = placementNotices(cwd, placement)
-  if (placement.isPackageRepoRoot) return { lines: [], unsynced: 0 }
-  const pkg = relativePosix(placement.repoRoot, cwd).replace(/^\.\//, '')
-  const specs: { kind: RootToolingKind; dest: string; desired: string | null }[] = [
-    {
-      kind: 'lefthook',
-      dest: 'lefthook.yml',
-      desired: rootLefthook(cwd, ctx, placement.repoRoot, pkg),
-    },
-    { kind: 'ci', dest: '.github/workflows/check.yml', desired: rootCi(ctx, pkg) },
+  return [
+    state(
+      'lefthook.yml',
+      (t) => t.includes(preset.replace(/^\.\//, '')) && t.split(`root: '${pkg}/'`).length > 3,
+    ),
+    state('.github/workflows/check.yml', (t) => steps.every((l) => t.includes(l))),
   ]
-  const lines: string[] = []
-  let unsynced = 0
-  specs.forEach(({ kind, dest, desired }, i) => {
-    const abs = resolve(placement.repoRoot, dest)
-    const current = readIfExists(abs)
-    const where = `${dest} at the repo root`
-    if (desired === null) {
-      lines.push(notices[i] ?? `skipped ${dest}`)
-    } else if (current === null && opts.place) {
-      if (opts.write) writeFileEnsuringDir(abs, desired.endsWith('\n') ? desired : `${desired}\n`)
-      lines.push(
-        `${opts.write ? 'placed' : 'would place'} ${where} (yours from now on; sync never rewrites it).`,
-      )
-    } else if (current !== null && rootToolingInSync(kind, current, desired, pkg)) {
-      lines.push(`${where}: in sync with the shipped template.`)
-    } else {
-      unsynced++
-      const state = current === null ? 'absent' : 'drifted'
-      const hint = opts.place
-        ? '(kept — it is yours; edit it by hand)'
-        : '(run with --root to place it)'
-      lines.push(`${where}: ${state} ${hint}. ${notices[i] ?? ''}`.trimEnd())
-    }
-  })
-  return { lines, unsynced }
 }
 
 export type Manifest = {
@@ -1221,14 +1108,10 @@ export function readManifest(cwd: string): Manifest {
 }
 
 /**
- * The managed NAMESPACES whose membership is derived, not fixed: `RULE_NAMES`, `SKILL_NAMES` and
- * `AGENT_NAMES` decide which files `managedFiles()` places under them, so a rule, skill or agent that is RETIRED
- * upstream leaves a file behind in every consumer that ever synced it — and Claude keeps loading it.
- *
- * Scoped to these patterns on purpose, and never applied to the manifest wholesale: several
- * managed/seed entries are legitimately absent from `managedFiles()` for a run (`lefthook.yml` and
- * `check.yml` when the package is not the repo root). Deleting a dest just because this run did not place it would
- * remove a consumer's CI workflow on a monorepo.
+ * The managed NAMESPACES whose membership is derived (`RULE_NAMES`, `SKILL_NAMES`, `AGENT_NAMES`): a
+ * file RETIRED upstream stays behind in every consumer that synced it, and Claude keeps loading it.
+ * Scoped to these patterns, never the whole manifest: `lefthook.yml` and `check.yml` are legitimately
+ * absent from `managedFiles()` below the repo root, and deleting them would remove a consumer's CI.
  */
 const RETIREABLE_DEST_PATTERNS: readonly RegExp[] = [
   /^\.claude\/rules\/basalt-[a-z0-9-]+\.md$/,
@@ -1477,14 +1360,10 @@ export function patchPackageJson(
 }
 
 /**
- * The source roots for THIS repo, inferred from its actual layout — the fix for the single most
- * reported false-green: without `basalt.roots` a workspace repo scaffolds a `check-theme` that
- * scans zero files and a CI `oxfmt 'src/**'` that matches nothing, while `doctor` reports green.
- *
- * A workspace repo resolves to the `src/` of every workspace package that depends on basalt or
- * Mantine (a backend package's `src/` has nothing for a design guard to say); with no such package
- * it falls back to every workspace `src/`, and a single-package repo to plain `src`. Empty when
- * nothing plausible exists — `init` says so rather than writing a root that matches nothing.
+ * The source roots for THIS repo, inferred from its layout (without `basalt.roots` a workspace repo
+ * scaffolds a `check-theme` that scans zero files while `doctor` reports green). A workspace repo
+ * resolves to the `src/` of every package depending on basalt or Mantine, else every workspace
+ * `src/`; a single-package repo to `src`. Empty when nothing plausible exists.
  */
 function detectRoots(cwd: string): string[] {
   const workspacePackages = collectWorkspacePackages(cwd).packages.filter((pkg) => pkg.dir !== cwd)
@@ -1713,27 +1592,19 @@ export function mergeOxlintExtends(cwd: string, presetPath: string): MergeLintRe
   return 'added'
 }
 
-// ──────────────────────────────────────────────────────────────────────────────
-// workspace-glob primitives — shared by findBasaltInstall and reconcileRoots (`doctor` moved to
-// its own file in C2 and no longer walks the workspace: ai-major-parity is scoped to one
-// package.json, and project resolution is BASALT_CWD → cwd, nothing inferred).
-// ──────────────────────────────────────────────────────────────────────────────
+// workspace-glob primitives — shared by findBasaltInstall and reconcileRoots
 
 /**
- * Which shape of consumer a project-scoped command is looking at.
- *
- * `framework` — the Mantine app the scaffold is for. `tokens-only` — a consumer that took the
- * `--vx-*` layer and nothing else (rollhook: no Mantine, no manifest, `tokens:css` output). Telling
- * the second to "run `basalt-ui init`" is the wrong instruction: init scaffolds Mantine rules,
- * skills and a DESIGN.md it will never read. DECLARED only (`--framework` / `--tokens-only`, or
- * `"basalt": { "profile": "tokens-only" }`) — never inferred; see {@link declaredProfile}.
+ * Which shape of consumer a command is looking at: `framework` (the Mantine app the scaffold is
+ * for) or `tokens-only` (took the `--vx-*` layer and nothing else, so `init` is the wrong advice).
+ * DECLARED only (`--framework` / `--tokens-only` / `basalt.profile`), never inferred; see
+ * {@link declaredProfile}.
  */
 export type DoctorProfile = 'framework' | 'tokens-only'
 
 type WorkspacePackage = { readonly name: string; readonly dir: string }
 
-/** {@link collectWorkspacePackages}'s return: the walked packages plus whether a `workspaces`
- * field was present at all (distinguishes "nothing to compare" from "not a workspace root"). */
+/** {@link collectWorkspacePackages}'s return: the packages plus whether a `workspaces` field existed. */
 type WorkspaceWalk = {
   readonly packages: readonly WorkspacePackage[]
   readonly hasWorkspacesField: boolean
@@ -1793,14 +1664,9 @@ function expandPatternSegments(baseDir: string, segments: readonly string[]): st
 }
 
 /**
- * Expands a root `package.json`'s `workspaces` patterns into concrete package directories.
- * Supports literal segments, a single-wildcard segment, and a double-wildcard segment, both
- * interior and trailing (e.g. `packages` followed by a double wildcard, or an interior single
- * wildcard between two literal segments) — not just one trailing single-wildcard segment. A
- * candidate directory that has no `package.json` of its own is skipped, not reported — an empty
- * scaffold directory is not a workspace package. Also honours npm/bun/yarn `!`-prefixed exclusion
- * entries (e.g. `["packages/*", "!packages/legacy"]`) — both the included and excluded patterns
- * are expanded through the same machinery, then the excluded set is subtracted.
+ * Expands a root `package.json`'s `workspaces` patterns into package directories: literal,
+ * single-wildcard and double-wildcard segments (interior or trailing) and `!`-prefixed exclusions.
+ * A directory without its own `package.json` is skipped.
  */
 function expandWorkspaceGlobs(cwd: string, patterns: readonly string[]): string[] {
   const expand = (pattern: string): string[] =>
@@ -1827,15 +1693,10 @@ function expandWorkspaceGlobs(cwd: string, patterns: readonly string[]): string[
 }
 
 /**
- * Every workspace package declared by `cwd`'s root `package.json` (npm/bun/yarn `workspaces`
- * field, array or `{ packages: [...] }` object form), named + directory-resolved — PLUS the root
- * manifest itself, labelled `"{name} (root)"`. The root is walked because it commonly carries a
- * hoisted `ai` dev dependency that can itself skew against a workspace package's own major — that
- * is the producer/consumer shape the whole check exists to catch, and it is invisible if only the
- * expanded workspace dirs are inspected. `hasWorkspacesField` is `false` (and `packages` empty)
- * when `cwd` has no `package.json`, no `workspaces` field, or the field is a shape this doesn't
- * recognize — a repo-wide walk is a bonus check, not something that should ever throw doctor over
- * an unrecognized `workspaces` shape.
+ * Every workspace package declared by `cwd`'s root `package.json` (array or `{ packages }` form),
+ * PLUS the root manifest itself, labelled `"{name} (root)"` (it commonly carries a hoisted `ai`
+ * dev dependency that can skew against a package's major). `hasWorkspacesField` is `false` when
+ * there is no `package.json`, no `workspaces` field, or a shape this doesn't recognize; never throws.
  */
 function collectWorkspacePackages(cwd: string): WorkspaceWalk {
   const parsed = readPackageJson<{ workspaces?: unknown; name?: string }>(cwd)

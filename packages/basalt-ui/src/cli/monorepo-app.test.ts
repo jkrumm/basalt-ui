@@ -295,8 +295,8 @@ describe('doctor in a monorepo', () => {
   })
 })
 
-// Row 178: below the repo root, `sync` used to print two unconditional "not the repo root" skips on
-// every run. It now compares the shipped templates with what the root has, and `--root` places them.
+// Row 178: below the repo root, `sync` compares the shipped lefthook.yml / check.yml with the repo
+// root's own files instead of printing two unconditional skips — read-only, it never writes there.
 describe('sync — repo-root templates for a package below the repo root', () => {
   let web: string
 
@@ -308,59 +308,54 @@ describe('sync — repo-root templates for a package below the repo root', () =>
     quiet(() => init(web))
   })
 
-  function syncLog(flags: string[]): { code: number; log: string } {
+  function syncLog(): string {
     const lines: string[] = []
     const log = spyOn(console, 'log').mockImplementation((m: unknown) => void lines.push(String(m)))
     const err = spyOn(console, 'error').mockImplementation(() => {})
     try {
-      return { code: sync({ flags }, web), log: lines.join('\n') }
+      expect(sync({}, web)).toBe(0)
+      return lines.join('\n')
     } finally {
       log.mockRestore()
       err.mockRestore()
     }
   }
 
-  it('reports absent templates with the --root hint and writes nothing', () => {
-    const { code, log } = syncLog([])
-    expect(code).toBe(0)
-    expect(log).toContain('lefthook.yml at the repo root: absent (run with --root to place it)')
+  it('reports both as absent and writes nothing at the root', () => {
+    const log = syncLog()
+    expect(log).toContain('lefthook.yml at the repo root: absent')
     expect(log).toContain('check.yml at the repo root: absent')
     expect(existsSync(join(dir, 'lefthook.yml'))).toBe(false)
   })
 
-  it('--root places both templates at the repo root, re-rooted to the package', () => {
-    const { code, log } = syncLog(['--root', '..'])
-    expect(code).toBe(0)
-    expect(log).toContain('placed lefthook.yml at the repo root')
-    const lefthook = readFileSync(join(dir, 'lefthook.yml'), 'utf8')
-    expect(lefthook.match(/root: 'web\/'/g)).toHaveLength(3)
-    const ci = readFileSync(join(dir, '.github/workflows/check.yml'), 'utf8')
-    expect(ci).toContain('working-directory: web')
+  it('reports in sync once the root files carry the re-rooted preset and the shipped steps', () => {
+    // The same package placed at a repo root renders the shipped check.yml this one is judged against.
+    const flat = mkdtempSync(resolve(tmpdir(), 'basalt-flat-'))
+    onTestFinished(() => rmSync(flat, { recursive: true, force: true }))
+    writeFileSync(join(flat, 'package.json'), JSON.stringify({ name: 'web' }))
+    quiet(() => init(flat))
+    write(
+      '.github/workflows/check.yml',
+      readFileSync(join(flat, '.github/workflows/check.yml'), 'utf8'),
+    )
+    const root = "root: 'web/'"
+    write(
+      'lefthook.yml',
+      `extends:\n  - node_modules/basalt-ui/configs/lefthook.yml\npre-commit:\n  commands:\n    oxlint:\n      ${root}\n    oxfmt:\n      ${root}\n    check-theme:\n      ${root}\n`,
+    )
+    const log = syncLog()
+    expect(log).toContain('lefthook.yml at the repo root: in sync')
+    expect(log).toContain('check.yml at the repo root: in sync')
   })
 
-  it('then reports in sync, with and without --root, and never rewrites the files', () => {
-    syncLog(['--root=..'])
-    const before = readFileSync(join(dir, 'lefthook.yml'), 'utf8')
-    for (const flags of [[], ['--root', '..']]) {
-      const { log } = syncLog(flags)
-      expect(log).toContain('lefthook.yml at the repo root: in sync')
-      expect(log).toContain('check.yml at the repo root: in sync')
-    }
-    expect(readFileSync(join(dir, 'lefthook.yml'), 'utf8')).toBe(before)
-  })
-
-  it('reports drifted when the root file lost the package re-rooting, and keeps it', () => {
-    syncLog(['--root', '..'])
-    writeFileSync(join(dir, 'lefthook.yml'), 'extends:\n  - somewhere/else.yml\n')
-    const { log } = syncLog([])
-    expect(log).toContain('lefthook.yml at the repo root: drifted (run with --root to place it)')
-    syncLog(['--root', '..'])
+  it('reports drifted when the root files lack the preset or a shipped step, and leaves them alone', () => {
+    write('lefthook.yml', 'extends:\n  - somewhere/else.yml\n')
+    write('.github/workflows/check.yml', 'name: mine\n')
+    const log = syncLog()
+    expect(log).toContain('lefthook.yml at the repo root: drifted')
+    expect(log).toContain('check.yml at the repo root: drifted')
     expect(readFileSync(join(dir, 'lefthook.yml'), 'utf8')).toBe(
       'extends:\n  - somewhere/else.yml\n',
     )
-  })
-
-  it('refuses a --root that is not an ancestor', () => {
-    expect(syncLog(['--root', 'src']).code).toBe(1)
   })
 })
