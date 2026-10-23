@@ -272,12 +272,13 @@ describe('composition', () => {
     expect(shareGrid(c, 'hit-rate', 'readiness')).toBe(false)
   })
 
-  it('S3 gives the waiting list, the flow chart and the item timeline a full-width row each', () => {
+  it('S3 gives the waiting list a full-width row and pairs the flow chart with the item history', () => {
     const c = mount(createElement(AgentsScenario, { shotState: undefined }))
-    expect(order(c).slice(-4)).toEqual(['stuck-items', 'item-flow', 'board', 'item-timeline'])
+    expect(order(c).slice(-4)).toEqual(['stuck-items', 'board', 'item-flow', 'item-timeline'])
     expect(anchor(c, 'stuck-items')?.closest('.mantine-SimpleGrid-root')).toBeNull()
-    expect(anchor(c, 'item-flow')?.closest('.mantine-SimpleGrid-root')).toBeNull()
-    expect(anchor(c, 'item-timeline')?.closest('.mantine-SimpleGrid-root')).toBeNull()
+    const grid = anchor(c, 'item-flow')?.closest('.mantine-SimpleGrid-root')
+    expect(grid).not.toBeNull()
+    expect(grid?.contains(anchor(c, 'item-timeline'))).toBe(true)
   })
 
   it('S3 lists every waiting or blocked item', () => {

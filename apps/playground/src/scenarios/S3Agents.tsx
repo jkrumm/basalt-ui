@@ -17,12 +17,12 @@
  * `strip-footer-day` / `strip-footer-week`, declared absent in empty and error, where each cell says
  * why through its own `state`); `ChartCard` does not forward `data-*`, so those anchors are wrapping `Box`es.
  */
-import { Box, Group, Stack, Text } from '@mantine/core'
+import { Box, Group, SimpleGrid, Stack, Text } from '@mantine/core'
 import type { ReactNode } from 'react'
 import { BarList, DeltaBadge, Meter, Section, StatGroup, StatusVerdict } from 'basalt-ui'
 import type { StatStripCell } from 'basalt-ui'
 import { ChartCard, Lines, Sparkline } from 'basalt-ui/charts'
-import { VX } from 'basalt-ui/tokens'
+import { CONTAINER_KEYS, VX } from 'basalt-ui/tokens'
 import { demoColors } from '../demo/series'
 import { AgentsBoard } from './agents/board'
 import {
@@ -334,11 +334,7 @@ function QueueStrip({ shotState }: ScenarioProps) {
   )
 }
 
-/**
- * Column rule: a card with no short partner spans the row alone rather than pairing with a
- * mismatched one. Measured at 1440: the 9-row list is 478 and the flow chart 542 (its default
- * height at full width), one row each. At 390 the order is the list (651), then the flow (331).
- */
+/** The 9-row list spans the row alone: it has no short partner. The flow chart pairs with the item history below the board. */
 function QueueRow({ shotState }: ScenarioProps) {
   const empty = shotState === 'empty'
   return (
@@ -370,32 +366,37 @@ function QueueRow({ shotState }: ScenarioProps) {
           </Box>
         </ChartCard>
       </Box>
-      <Box data-shot="item-flow">
-        <ChartCard
-          title="Items opened and closed per day"
-          ghost="line"
-          info="Items warden opened and items it closed each day, UTC. A queue that opens more than it closes grows."
-          facts={[
-            { value: fmtInt(FLOW_OPENED), unit: 'opened' },
-            { value: fmtInt(FLOW_CLOSED), unit: 'closed', period: `· ${FLOW_RANGE_LABEL}` },
-          ]}
-          state={chartStateFor(shotState, {
-            empty: `No items opened or closed ${FLOW_RANGE_LABEL}. Dispatch an item to start.`,
-            error: retry(),
-          })}
-          {...(shotState === 'error' && { onRetry: noop })}
-        >
-          <Box data-shot-hover data-shot-tooltip>
-            <Lines<FlowRow, Date>
-              data={FLOW_DATA}
-              ariaLabel={`Items opened and closed per day, ${FLOW_RANGE_LABEL}`}
-              x={(d) => d.date}
-              series={FLOW_SERIES}
-            />
-          </Box>
-        </ChartCard>
-      </Box>
     </Stack>
+  )
+}
+
+function FlowCard({ shotState }: ScenarioProps) {
+  return (
+    <Box data-shot="item-flow" h="100%">
+      <ChartCard
+        title="Items opened and closed per day"
+        ghost="line"
+        info="Items warden opened and items it closed each day, UTC. A queue that opens more than it closes grows."
+        facts={[
+          { value: fmtInt(FLOW_OPENED), unit: 'opened' },
+          { value: fmtInt(FLOW_CLOSED), unit: 'closed', period: `· ${FLOW_RANGE_LABEL}` },
+        ]}
+        state={chartStateFor(shotState, {
+          empty: `No items opened or closed ${FLOW_RANGE_LABEL}. Dispatch an item to start.`,
+          error: retry(),
+        })}
+        {...(shotState === 'error' && { onRetry: noop })}
+      >
+        <Box data-shot-hover data-shot-tooltip>
+          <Lines<FlowRow, Date>
+            data={FLOW_DATA}
+            ariaLabel={`Items opened and closed per day, ${FLOW_RANGE_LABEL}`}
+            x={(d) => d.date}
+            series={FLOW_SERIES}
+          />
+        </Box>
+      </ChartCard>
+    </Box>
   )
 }
 
@@ -430,11 +431,18 @@ export function AgentsScenario({ shotState }: ScenarioProps) {
       <Section title="Board">
         <AgentsBoard shotState={shotState} />
       </Section>
-      <Box data-shot="item-timeline">
-        <Section title={`History · ${TIMELINE_ITEM}`}>
-          <ItemTimeline events={ITEM_TIMELINE} total={ITEM_TIMELINE_TOTAL} shotState={shotState} />
-        </Section>
-      </Box>
+      <SimpleGrid type="container" cols={{ base: 1, [CONTAINER_KEYS.regular]: 2 }}>
+        <FlowCard shotState={shotState} />
+        <Box data-shot="item-timeline">
+          <Section title={`History · ${TIMELINE_ITEM}`}>
+            <ItemTimeline
+              events={ITEM_TIMELINE}
+              total={ITEM_TIMELINE_TOTAL}
+              shotState={shotState}
+            />
+          </Section>
+        </Box>
+      </SimpleGrid>
     </Stack>
   )
 }

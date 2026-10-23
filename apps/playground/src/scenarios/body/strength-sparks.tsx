@@ -1,9 +1,9 @@
 /** Per-lift INOL sparklines with a productive band and a PR reference (argo UPSTREAM Wave 50). */
-import { Box, Group, Skeleton, Stack, Text } from '@mantine/core'
+import { Box, Group, SimpleGrid, Skeleton, Stack, Text } from '@mantine/core'
 import { StatGroup } from 'basalt-ui'
 import type { StatStripCell } from 'basalt-ui'
 import { ChartCard, Sparkline } from 'basalt-ui/charts'
-import { VX } from 'basalt-ui/tokens'
+import { CONTAINER_KEYS, VX } from 'basalt-ui/tokens'
 import { cardStateProps, noop } from '../shot-state'
 import type { ScenarioProps } from '../shot-state'
 import { INOL_DEFINITION, NO_E1RM, NO_INOL, STRENGTH_ERROR } from './body-data'
@@ -38,6 +38,9 @@ const LIFTS: readonly { id: string; name: string; data: readonly number[] }[] = 
   { id: 'press', name: 'Overhead press', data: [58, 60, 59, 62, 64, 63, 66, 67, 69, 71] },
 ]
 
+/** Fits "Bench press", the longest lift name, at the `sm` size. */
+const LIFT_NAME_WIDTH = 110
+
 const fmtInol = (v: number): string => v.toFixed(2)
 const fmtKg = (v: number): string => `${v.toFixed(1)} kg`
 
@@ -52,8 +55,10 @@ function InolSparks({ shotState }: ScenarioProps) {
       >
         <Stack gap="xs">
           {INOL_LIFTS.map((lift) => (
-            <Group key={lift.id} gap="md" wrap="nowrap" justify="space-between">
-              <Text size="sm">{lift.name}</Text>
+            <Group key={lift.id} gap="md" wrap="nowrap">
+              <Text size="sm" w={LIFT_NAME_WIDTH} flex="none">
+                {lift.name}
+              </Text>
               <Group gap="xs" wrap="nowrap">
                 <Sparkline
                   ariaLabel={`${lift.name} INOL, ${lift.note} the productive range`}
@@ -121,9 +126,10 @@ function LiftPrStrip({ shotState }: ScenarioProps) {
 
 export function BodyStrengthSparks(props: ScenarioProps) {
   return (
-    <Stack gap="sm">
+    // Paired: either alone leaves most of a 1440 row empty.
+    <SimpleGrid type="container" cols={{ base: 1, [CONTAINER_KEYS.regular]: 2 }} spacing="sm">
       <InolSparks {...props} />
       <LiftPrStrip {...props} />
-    </Stack>
+    </SimpleGrid>
   )
 }
