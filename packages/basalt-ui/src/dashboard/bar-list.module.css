@@ -69,6 +69,8 @@
 .label {
   position: relative;
   min-width: 0;
+  /* A name truncates before it touches the value, whatever the column gap. */
+  padding-inline-end: var(--vx-space-stack-md, 0.75rem);
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;

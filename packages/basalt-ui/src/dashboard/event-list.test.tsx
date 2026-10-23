@@ -1,3 +1,4 @@
+import { readFileSync } from 'node:fs'
 import { MantineProvider } from '@mantine/core'
 import { cleanup, fireEvent, render } from '@testing-library/react'
 import { afterEach, describe, expect, mock, spyOn, test } from 'bun:test'
@@ -387,5 +388,38 @@ describe('EventList on the server', () => {
     expect(html).not.toContain('Yesterday')
     expect(html).not.toContain(' ago')
     expect(html).toContain('one')
+  })
+})
+
+describe('EventList feed note, clipped-feed cue and skeleton height', () => {
+  test('a string body carries its whole text in a title (the feed clamps it to one line)', () => {
+    const { container } = mount({
+      items: [{ id: 'a', at: local(2026, 3, 10, 9), title: 't', body: 'a long journal note' }],
+    })
+    expect(container.querySelector('[title="a long journal note"]')).not.toBeNull()
+  })
+
+  test('the feed clamps the body to one line in CSS', () => {
+    const css = readFileSync(new URL('./event-list.module.css', import.meta.url), 'utf8')
+    expect(css).toMatch(/\[data-density='feed'\] \.body \{[^}]*-webkit-line-clamp: 1/)
+  })
+
+  test('data-more marks a box with content below the fold, and clears at the end', () => {
+    const { container } = mount({ height: 100, items: ITEMS })
+    const box = container.querySelector<HTMLElement>('[data-density] > div') as HTMLElement
+    const metrics = { scrollHeight: 300, clientHeight: 100, scrollTop: 0 }
+    for (const key of ['scrollHeight', 'clientHeight'] as const) {
+      Object.defineProperty(box, key, { configurable: true, get: () => metrics[key] })
+    }
+    box.dispatchEvent(new Event('scroll'))
+    expect(box.hasAttribute('data-more')).toBe(true)
+    box.scrollTop = 200
+    box.dispatchEvent(new Event('scroll'))
+    expect(box.hasAttribute('data-more')).toBe(false)
+  })
+
+  test('a skeleton keeps the held height of the rows it replaces', () => {
+    const css = readFileSync(new URL('./event-list.module.css', import.meta.url), 'utf8')
+    expect(css).toMatch(/\.skeleton \{[^}]*min-block-size: var\(--event-list-held/)
   })
 })

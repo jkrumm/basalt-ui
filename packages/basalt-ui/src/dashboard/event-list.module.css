@@ -3,7 +3,7 @@
  * path: nothing here keys on a parent selector, so the seam's wrapper divs change no geometry.
  * Two sizes only: the row size (actor, sentence, body) and the micro size (day header, time, chips).
  * Two lines at every width: line one is the glyph and the sentence at full width; line two leads
- * with the mono time, then the body (it wraps, never truncates), then the chips.
+ * with the mono time, then the body (it wraps in a timeline, one clamped line in a feed), then the chips.
  */
 .frame {
   inline-size: 100%;
@@ -25,6 +25,23 @@
   overflow: auto;
   /* The prepend anchor is manual (event-list.tsx); native anchoring would add the delta twice. */
   overflow-anchor: none;
+}
+
+/* A bottom fade while more rows sit below the fold (`data-more`); it overlays the last rows and adds no height. */
+.scroll[data-more]::after {
+  content: '';
+  display: block;
+  position: sticky;
+  inset-block-end: 0;
+  block-size: var(--vx-space-stack-lg, 1.5rem);
+  margin-block-start: calc(var(--vx-space-stack-lg, 1.5rem) * -1);
+  background: linear-gradient(transparent, var(--event-list-bg));
+  pointer-events: none;
+}
+
+/* Loading after rows: the skeleton keeps their last height, so the box does not collapse. */
+.skeleton {
+  min-block-size: var(--event-list-held, 0px);
 }
 
 .virtual {
@@ -210,6 +227,15 @@
   min-width: 0;
   max-inline-size: 100%;
   overflow-wrap: anywhere;
+}
+
+/* A feed row stays two lines: the note clamps to one line (its `title` carries the whole text) and the chips stay beside it. */
+.frame[data-density='feed'] .body {
+  display: -webkit-box;
+  overflow: hidden;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 1;
+  line-clamp: 1;
 }
 
 .chips {
