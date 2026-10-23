@@ -324,6 +324,28 @@ Signature: unwrap(response: R): UnwrapResult<R>
 Signature: useBasaltNav(): { currentPath: string; isActive: (href: string, opts?: { exact?: bool…
 Signature: useCoarsePointer(): boolean
 Signature: useSizeClass(): "compact" | "medium" | "expanded"
+Type: AnyNavGroup = NavGroupMeta & { items: ReadonlyArray<AnyNavItem> }
+Type: BarAction = BarActionItem | BarActionMenu | BarActionCustom
+Type: BarListItem = { label: string, value: number, secondary?: ReactNode, key?: string, max?: number, tick?: number, tickLabel?: string }
+Type: BasaltAccountProps = { state: BasaltAccountState, actions?: BasaltAccountActions, showEmail?: boolean }
+Type: BuildPaletteOpts = {
+  groups?: readonly SeriesGroup[]
+  derived?: string[]
+  scheme?: ColorSchemeSelector
+  defaultScheme?: 'dark' | 'light' | 'none'
+  mediaFallback?: boolean
+  only?: 'core' | 'all'
+}
+Type: CreateBasaltThemeOptions = {
+  derive?: Partial<DeriveConfig>
+  fonts?: BasaltFontsConfig
+  radius?: BasaltRadiusLevel
+  density?: BasaltDensityLevel
+}
+Type: GlobalAction = { key: string, node: ReactNode, mobile?: 'bar' | 'more' | 'hidden' }
+Type: MeterSegment = { value: number, label: string, color?: string, tone?: 'muted', forecast?: boolean }
+Type: MeterTick = { at: number, label?: string, caption?: string }
+Type: MeterZone = { from: number, to: number, label: string, tone?: 'muted', short?: string, color?: string }
 OptionalPeers: remark-gfm@^4.0.1, rehype-sanitize@^6.0.0, remend@1.4.0, shiki@^4.5.0, beautiful-mermaid@^1.1.0, @tanstack/react-router-devtools@^1.166.13
 
 ## basalt-ui/charts
@@ -559,6 +581,40 @@ Signature: StackedArea(props: StackedAreaProps<T, X>): ReactElement<unknown, str
 Signature: chartCursor(group: string): ChartCursorController<ChartValue, ChartValue>
 Signature: chartCurve(name: CurveName): ChartCurve
 Signature: foldBands(data: readonly T[], cap: number, merge: (group: T[]) => T): T[]
+Type: ChartFact = {
+  value: ReactNode
+  unit?: string | undefined
+  comparison?: ReactNode
+  period?: string | readonly string[] | undefined
+  tone?: ChartFactTone | undefined
+}
+Type: ChartLegendConfig = { placement?: 'top' | 'bottom' | 'header' | undefined, groups?: boolean | undefined, toggle?: boolean | undefined }
+Type: ChartState = { pending?: boolean | undefined, error?: unknown, empty?: boolean | string | undefined }
+Type: MirroredBarPane = {
+  key: string
+  max?: number | 'auto' | undefined
+  autoMaxFloor?: number | undefined
+  ticks?: number | undefined
+  format: (v: number) => string
+}
+Type: RefLine = {
+  value: number
+  color: string
+  dashed?: boolean | undefined
+  axis?: 'left' | 'right' | undefined
+  label?: string | undefined
+  labelPosition?: RefLabelPosition | undefined
+  legend?: { label: string, mark?: 'line' | 'bar' | undefined } | undefined
+}
+Type: ResponsiveChartHeight = { base: number, regular?: number | undefined, wide?: number | undefined }
+Type: ZoneSpec = {
+  from: number
+  to: number
+  fill: string
+  axisSide?: 'left' | 'right' | undefined
+  legend?: { label: string, mark?: 'line' | 'bar' | undefined, color?: string | undefined } | undefined
+  edge?: ZoneEdge<'top' | 'bottom'> | undefined
+}
 Install: bun add @tanstack/charts@1.1.0 d3-scale@4.0.2
 
 ## basalt-ui/tokens
@@ -589,6 +645,8 @@ Signature: defineSeries(map: T): T
 Signature: groupTokens(name: string, map: T): { readonly [K in keyof T]: GroupRef; }
 Signature: p(fam: readonly string[], light: number, dark: number): ColorPair
 Signature: seriesTokens(map: T, prefix: string): { [K in keyof T]: string; }
+Type: ColorSchemeSelector = { attribute?: string, darkValue?: string, lightValue?: string }
+Type: SeriesGroup = { readonly [key: string]: GroupRef }
 
 ## basalt-ui/vite
 Import: import { ... } from 'basalt-ui/vite'
@@ -619,6 +677,13 @@ Signature: basaltViteConfig(opts: BasaltViteOptions): UserConfig
   basaltSrc?: string
   version?: string
   enforcementNotice?: boolean
+Type: BasaltAppIcon = {
+  src: string
+  sizes?: string
+  type?: string
+  purpose?: string
+  rel?: 'icon' | 'shortcut icon' | 'apple-touch-icon' | 'mask-icon'
+}
 Install: bun add 'vite@^7 || ^8'
 OptionalPeers: vite-plugin-pwa@^1.3.0
 
@@ -644,6 +709,16 @@ Signature: percent(value: Numeric, options: PercentOptions): string
 Signature: relativeTime(value: DateInput, options: RelativeTimeOptions): string
 Signature: time(value: DateInput, options: DateOptions): string
 Signature: weekday(value: string | number | Date, options: WeekdayOptions): string
+Type: BytesOptions = LocaleOption & { digits?: number }
+Type: CompactOptions = LocaleOption & { digits?: number }
+Type: DateOptions = LocaleOption & { format?: 'short' | 'medium' | 'long', timeZone?: string }
+Type: DeltaOptions = LocaleOption & { digits?: number }
+Type: DurationOptions = LocaleOption & { style?: 'clock' | 'compact' | 'long', largest?: 'day' | 'hour' | 'minute' }
+Type: KcalOptions = LocaleOption & { digits?: number }
+Type: KmOptions = LocaleOption & { digits?: number }
+Type: LocaleOption = { locale?: string | undefined }
+Type: MoneyOptions = LocaleOption & { currency: string, compact?: boolean, digits?: number }
+Type: PercentOptions = LocaleOption & { digits?: number, input?: 'ratio' | 'percent' }
 
 ## basalt-ui/forms
 Import: import { ... } from 'basalt-ui/forms'
@@ -728,6 +803,7 @@ Signature: BasaltDataTable(props: BasaltDataTableProps<T>): JSX.Element
   initialPagination?: PaginationState
   … +14 more
 Signature: createColumnHelper(): ColumnHelper<{ rowSortingFeature: TableFeature; columnFilteringFeatur…
+Type: BarAction = BarActionItem | BarActionMenu | BarActionCustom
 Install: bun add @tanstack/react-table@9.2.8
 
 ## basalt-ui/agent
@@ -812,6 +888,20 @@ Signature: useAgentThreadRuns(props: UseAgentThreadRunsArgs<TPart>): UseAgentThr
   onError?: ((info: { readonly threadId: string; readonly error: unknow…
   throttle?: number
   telemetry?: Telemetry
+Type: ComposerAttachment = { readonly id: string, readonly name: string, readonly mediaType: string, readonly size: number, readonly url: string }
+Type: MessageAffordances = {
+  readonly timestamp?: 'relative' | 'absolute' | 'none' | undefined
+  readonly copy?: boolean | undefined
+  readonly onRegenerate?: ((messageId: string) => void) | undefined
+  readonly actions?: ((ctx: { readonly message: ChatMessage<TranscriptPart> }) => ReactNode) | undefined
+}
+Type: ToolCallPart = (Identified & { readonly state: 'input-streaming', readonly input?: unknown }) | (Identified & { readonly state: 'input-available', readonly input: unknown }) | (Identified & { readonly state: 'approval-requested', readonly input: unknown, readonly approval: ToolApproval & { readonly approved?: never, readonly reason…
+Type: TranscriptPart = AgentPart | ForeignPart
+Type: VirtualizeOptions = {
+  readonly overscan?: number | undefined
+  readonly estimateSize?: number | undefined
+  readonly initialScroll?: 'end' | 'start' | undefined
+}
 Install: bun add ai@^7.0.137 @ai-sdk/provider@^4.0.26 motion@^14.1.0
 OptionalPeers: use-stick-to-bottom@^1.1.6, @tanstack/react-virtual@>=3.14.0 <4
 
@@ -890,6 +980,15 @@ Signature: mergeSanitizeSchema(base: SanitizeSchemaInput, extensions: readonly (
   strip?: readonly string[] | null
   tagNames?: readonly string[] | null
 Signature: settledOnly(render: FenceRenderer): FenceRenderer
+Type: ArticleLayoutMeta = { readonly title: string, readonly description?: string, readonly date?: string, readonly readingTime?: number }
+Type: ArticleNavTarget = { readonly label: string, readonly href: string, readonly description?: string }
+Type: SanitizeSchemaExtension = {
+  readonly tagNames?: readonly string[]
+  readonly attributes?: Readonly<Record<string, readonly SanitizePropertyDefinition[]>>
+  readonly protocols?: Readonly<Record<string, readonly string[]>>
+  readonly clobberPrefix?: string
+}
+Type: TocItem = { readonly id: string, readonly label: string, readonly level: number }
 Install: bun add react-markdown@^10.1.0
 OptionalPeers: shiki@^4.5.0, @shikijs/langs@^4.5.0, @shikijs/themes@^4.5.0, beautiful-mermaid@^1.1.0, remark-gfm@^4.0.1, rehype-sanitize@^6.0.0, remend@1.4.0
 

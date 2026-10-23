@@ -12,6 +12,12 @@ const MAX_LINE = 170
 const MAX_PARAM_TYPE = 70
 export const MAX_PROP_TYPE = 60
 export const MAX_PROPS = 40
+/** Named option types printed under one subpath: a prop or parameter type read by name, expanded one level. */
+export const MAX_OPTION_TYPES = 10
+/** An option type body prints on one line up to this width, else one member per line. */
+const MAX_OPTION_LINE = 150
+/** Members an expanded option type prints before `… +n more`. */
+const MAX_OPTION_MEMBERS = 12
 /** A literal-union alias wider than this stays out of the glossary: it would swamp the section. */
 export const MAX_UNION_MEMBERS = 12
 /** A constant map with more keys than this prints its key tree instead of its values. */
@@ -224,6 +230,126 @@ export function typeGlossary(
         : []
     })
     .toSorted()
+}
+
+const printer = ts.createPrinter({ removeComments: true })
+
+/** A declaration's members/alias body as source text, comments dropped, whitespace collapsed. */
+function declBody(decl: ts.TypeAliasDeclaration | ts.InterfaceDeclaration): string[] {
+  const source = decl.getSourceFile()
+  const text = (n: ts.Node): string =>
+    printer
+      .printNode(ts.EmitHint.Unspecified, n, source)
+      .replace(/\s+/g, ' ')
+      .replace(/; \}/g, ' }')
+      .replace(/; /g, ', ')
+  if (ts.isInterfaceDeclaration(decl)) return decl.members.map((m) => text(m).replace(/;$/, ''))
+  const body = decl.type
+  return ts.isTypeLiteralNode(body)
+    ? body.members.map((m) => text(m).replace(/;$/, ''))
+    : [text(body)]
+}
+
+/**
+ * `Type: Name = { a: A, b?: B }` — one line when it fits, else a block of one member per line. A
+ * non-object alias (a union of shapes) prints as its body on one line.
+ */
+export function optionTypeBlock(decl: ts.TypeAliasDeclaration | ts.InterfaceDeclaration): string {
+  const name = decl.name.text
+  const members = declBody(decl)
+  const isObject = ts.isInterfaceDeclaration(decl) || ts.isTypeLiteralNode(decl.type)
+  if (!isObject) return clip(`Type: ${name} = ${members[0]}`, MAX_LINE * 2)
+  const flat = `Type: ${name} = { ${members.join(', ')} }`
+  if (flat.length <= MAX_OPTION_LINE) return flat
+  const shown = members.slice(0, MAX_OPTION_MEMBERS).map((m) => `  ${clip(m, MAX_LINE)}`)
+  if (members.length > MAX_OPTION_MEMBERS)
+    shown.push(`  … +${members.length - MAX_OPTION_MEMBERS} more`)
+  return [`Type: ${name} = {`, ...shown, '}'].join('\n')
+}
+
+/** The own object-ish alias or interface a type names, looking through `| undefined`, unions and arrays. */
+function namedOptionTypes(checker: ts.TypeChecker, type: ts.Type): ts.Declaration[] {
+  const t = checker.getNonNullableType(type)
+  const direct = t.aliasSymbol ?? t.getSymbol()
+  const decl = direct?.declarations?.find(
+    (d): d is ts.TypeAliasDeclaration | ts.InterfaceDeclaration =>
+      ts.isTypeAliasDeclaration(d) || ts.isInterfaceDeclaration(d),
+  )
+  if (decl !== undefined && direct !== undefined && isOwn(direct)) {
+    const shape = ts.isInterfaceDeclaration(decl) || ts.isTypeAliasDeclaration(decl)
+    const callable = t.getCallSignatures().length > 0
+    const literals = ts.isTypeAliasDeclaration(decl) && literalUnionText(decl) !== undefined
+    // A generic shape reads as a puzzle without its arguments (`FieldHandle<F>`, `ChartSeries<T>`).
+    const generic = decl.typeParameters !== undefined
+    if (shape && !callable && !literals && !generic) return [decl]
+  }
+  if (checker.isArrayType(t))
+    return checker
+      .getTypeArguments(t as ts.TypeReference)
+      .flatMap((a) => namedOptionTypes(checker, a))
+  return t.isUnion() && t.aliasSymbol === undefined
+    ? t.types.flatMap((member) => namedOptionTypes(checker, member))
+    : []
+}
+
+/**
+ * Per subpath, the named option types a public export's parameters or props name — `DateOptions`
+ * of `date()`, `ChartLegendConfig` of a chart's `legend` — as `Type:` blocks, one level deep
+ * (a type named only inside another option type is not followed), each once, capped at
+ * `MAX_OPTION_TYPES`. The props type that `propShapeLines` already lists member by member is not
+ * repeated. A program of its own, like the glossary, so the signatures print as they always did.
+ */
+export function readOptionTypes(
+  subpaths: Readonly<Record<string, string>>,
+): Record<string, string[]> {
+  const { entries, program } = entryProgram(subpaths)
+  const checker = program.getTypeChecker()
+  const out: Record<string, string[]> = {}
+  for (const [key, file] of entries) {
+    const source = program.getSourceFile(file)
+    const moduleSymbol = source === undefined ? undefined : checker.getSymbolAtLocation(source)
+    if (moduleSymbol === undefined) continue
+    const found = new Map<string, ts.TypeAliasDeclaration | ts.InterfaceDeclaration>()
+    for (const exported of checker
+      .getExportsOfModule(moduleSymbol)
+      .toSorted((a, b) => a.name.localeCompare(b.name))) {
+      const symbol =
+        exported.flags & ts.SymbolFlags.Alias ? checker.getAliasedSymbol(exported) : exported
+      if (!(symbol.flags & ts.SymbolFlags.Value) || exported.name === 'default') continue
+      const node = symbol.valueDeclaration ?? symbol.declarations?.[0] ?? source!
+      const call = checker.getTypeOfSymbolAtLocation(symbol, node).getCallSignatures()[0]
+      if (call === undefined) continue
+      for (const [i, param] of call.getParameters().entries()) {
+        const paramType = checker.getTypeOfSymbolAtLocation(param, node)
+        const named = namedOptionTypes(checker, paramType)
+        // The first parameter's own shape is already printed as props.
+        const listedAsProps =
+          i === 0 &&
+          propShapeLines(checker, paramType, node, ts.TypeFormatFlags.NoTruncation).length > 0
+        for (const decl of listedAsProps ? [] : named) {
+          if (ts.isTypeAliasDeclaration(decl) || ts.isInterfaceDeclaration(decl))
+            found.set(decl.name.text, decl)
+        }
+        if (listedAsProps) {
+          const members = checker.getNonNullableType(paramType)
+          for (const m of (members.isUnion() ? members.types : [members])
+            .flatMap((t) => t.getProperties())
+            .filter(isOwn)) {
+            for (const decl of namedOptionTypes(
+              checker,
+              checker.getTypeOfSymbolAtLocation(m, node),
+            )) {
+              if (ts.isTypeAliasDeclaration(decl) || ts.isInterfaceDeclaration(decl))
+                found.set(decl.name.text, decl)
+            }
+          }
+        }
+      }
+    }
+    const blocks = [...found.values()].map(optionTypeBlock).toSorted()
+    if (blocks.length > 0) out[key] = blocks.slice(0, MAX_OPTION_TYPES)
+  }
+  return out
 }
 
 /** Program over the published source entries, shared by the signature and glossary readers. */

@@ -9,7 +9,7 @@
 import { readFileSync, writeFileSync } from 'node:fs'
 import { join } from 'node:path'
 import { SURFACES } from '../src/surfaces'
-import { readSignatures, readTypeGlossary } from './llms-signatures'
+import { readOptionTypes, readSignatures, readTypeGlossary } from './llms-signatures'
 import { SUBPATH_REQUIRED_PEERS } from './surface-gates'
 
 const root = join(import.meta.dirname, '..', '..', '..')
@@ -51,6 +51,7 @@ const SUBPATH_TYPES: Record<string, string> = Object.fromEntries(
   ),
 )
 const SIGNATURES = readSignatures(SUBPATH_TYPES)
+const OPTION_TYPES = readOptionTypes(SUBPATH_TYPES)
 
 // Literal-union aliases a signature names but cannot show (`kind?: CalloutKind`). Read AFTER the
 // signatures, from a program of its own, so it cannot change how they print.
@@ -72,6 +73,8 @@ type Row = {
   install?: string
   /** One-line signature per public value export, generated from source. */
   signatures?: readonly string[]
+  /** `Type:` blocks for the option types those signatures name. */
+  optionTypes?: readonly string[]
   /** Doctrine rule name — present only for doctrine surfaces */
   rule?: string
 }
@@ -116,11 +119,13 @@ for (const [key, spec] of Object.entries(SURFACES)) {
           })
           .join(' ')}`
   const signatures = SIGNATURES[key]
+  const optionTypes = OPTION_TYPES[key]
 
   rows.push({
     importSpec,
     ...(install === undefined ? {} : { install }),
     ...(signatures === undefined ? {} : { signatures }),
+    ...(optionTypes === undefined ? {} : { optionTypes }),
     description,
     layer: spec.layer,
     optionalPeers: resolvedPeers,
@@ -176,6 +181,7 @@ export function generateLlmsTxt(): string {
       lines.push(`Rule: basalt-${row.rule}`)
     }
     for (const signature of row.signatures ?? []) lines.push(`Signature: ${signature}`)
+    for (const block of row.optionTypes ?? []) lines.push(block)
     if (row.install !== undefined) lines.push(`Install: ${row.install}`)
     if (row.optionalPeers.length > 0) {
       lines.push(`OptionalPeers: ${row.optionalPeers.join(', ')}`)
