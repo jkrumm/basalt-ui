@@ -406,6 +406,10 @@ describe('loading, empty and error keep the loaded fold', () => {
     expect(ids).toEqual(loadedIds)
     // Skeleton rows mirror the head: toggle + the two kept columns.
     expect(container.querySelectorAll('tbody tr:first-child td')).toHaveLength(ids.length + 1)
+    // The toggle cell draws the chevron as a block, so loaded and loading share their anatomy.
+    expect(
+      container.querySelector('tbody tr:first-child td:first-child .mantine-Skeleton-root'),
+    ).not.toBeNull()
   })
 })
 

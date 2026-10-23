@@ -1819,7 +1819,11 @@ export function BasaltDataTable<T extends RowData>(props: BasaltDataTableProps<T
           // identifier keeps its sticky cell, so nothing shifts when the rows arrive.
           Array.from({ length: skeletonCount }, (_, rowIndex) => (
             <Table.Tr key={`skeleton-${rowIndex}`}>
-              {hasFolded && <Table.Td {...toggleCell} aria-colindex={1} />}
+              {hasFolded && (
+                <Table.Td {...toggleCell} aria-colindex={1}>
+                  <Skeleton h={12} w={12} radius="sm" display="inline-block" />
+                </Table.Td>
+              )}
               {orderedVisibleColumns.map((column) => {
                 const pinned = pinningActive ? pinnedCellProps(pinCtx, column) : undefined
                 const kind = resolveKind(column)
