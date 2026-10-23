@@ -452,14 +452,22 @@ export function RowDisclosure<T extends RowData>({
   )
 }
 
+/** The count word of a fold label, singular for one: "column", or "col" for the tight visible header. */
+function foldNoun(count: number, short: boolean): string {
+  const noun = short ? 'col' : 'column'
+  return count === 1 ? noun : `${noun}s`
+}
+
 /** "2 more columns: C, D" — the folded columns, counted and named. */
 export function foldedSummary(count: number, label: string): string {
-  return `${count} more ${count === 1 ? 'column' : 'columns'}: ${label}`
+  return `${count} more ${foldNoun(count, false)}: ${label}`
 }
 
 /** The header cell above the toggles: a micro count of what folded. The screen-reader span is the one
  * accessible label (F102 — a hidden column must be announced, not merely reachable); the visible
- * `+N` is a hidden duplicate whose `title` is the sighted hover hint. */
+ * `+N cols` is a hidden duplicate whose `title` is the sighted hover hint. A bare `+N` read as an
+ * unexplained figure at 390, so the word rides with it — in the sans micro face, which keeps
+ * "+4 cols" inside the 44px toggle cell (the mono face did not). */
 export function FoldHeaderLabel({
   count,
   foldedLabel,
@@ -471,7 +479,7 @@ export function FoldHeaderLabel({
   return (
     <span className={classes.foldCount}>
       <span aria-hidden title={summary}>
-        +{count}
+        +{count} {foldNoun(count, true)}
       </span>
       <span className={classes.srOnly}>{summary}</span>
     </span>

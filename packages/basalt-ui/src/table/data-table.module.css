@@ -130,6 +130,7 @@
  * wrapper sized by its own min-content would never read a shrunken `clientWidth` back.
  */
 .foldWrapper {
+  position: relative;
   min-width: 0;
 }
 
@@ -175,9 +176,12 @@
   outline-offset: 1px;
 }
 
-/* The header above the toggles: a micro count of the folded columns. */
+/* The header above the toggles: a micro count of the folded columns, the word included ("+4 cols"). */
 .foldCount {
-  font-family: var(--mantine-font-family-monospace);
+  /* The header cell is mono caps with tracking; "+4 COLS" in it is 51px, wider than the 44px cell. */
+  font-family: var(--mantine-font-family);
+  letter-spacing: normal;
+  text-transform: none;
   font-size: var(--vx-text-micro);
   color: var(--vx-muted);
   cursor: help;
@@ -299,6 +303,26 @@
 .scroller:focus-visible {
   outline: 2px solid var(--vx-accent);
   outline-offset: -2px;
+}
+
+/*
+ * Inside the fold wrapper the ring is an overlay instead: an outline paints UNDER the sticky cells
+ * (pinned column, toggle, header), so at 390 it was open along the top and start edge. The overlay
+ * sits over them, on the wrapper — the scroller's own box, which never scrolls — closed on all four.
+ */
+@supports selector(:has(*)) {
+  .foldWrapper .scroller:focus-visible {
+    outline: none;
+  }
+
+  .foldWrapper:has(.scroller:focus-visible)::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    z-index: 5;
+    border: 2px solid var(--vx-accent);
+    pointer-events: none;
+  }
 }
 
 /*

@@ -11,4 +11,11 @@ describe('FoldHeaderLabel', () => {
     expect(hint?.getAttribute('title')).toBe('1 more column: X')
     expect(hint?.nextElementSibling?.textContent).toBe('1 more column: X')
   })
+
+  test('the visible header carries the word, singular for one', () => {
+    const { container, rerender } = render(<FoldHeaderLabel count={4} foldedLabel="X" />)
+    expect(container.querySelector('[aria-hidden]')?.textContent).toBe('+4 cols')
+    rerender(<FoldHeaderLabel count={1} foldedLabel="X" />)
+    expect(container.querySelector('[aria-hidden]')?.textContent).toBe('+1 col')
+  })
 })

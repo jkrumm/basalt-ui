@@ -107,14 +107,61 @@ const SESSION_COLUMNS = [
   session.accessor('sets', { header: 'Sets', meta: { kind: 'number', priority: 6 } }),
 ]
 
+type OutageRow = { start: string; minutes: number; scope: string; cause: string }
+const outage = createColumnHelper<OutageRow>()
+const OUTAGE_ROWS: OutageRow[] = [
+  { start: daysAgo(1), minutes: 23, scope: 'dns', cause: 'ISP upstream fault' },
+  { start: daysAgo(3), minutes: 6, scope: 'wan', cause: 'Line retrain' },
+  { start: daysAgo(5), minutes: 47, scope: 'wan', cause: 'ISP upstream fault' },
+  { start: daysAgo(7), minutes: 9, scope: 'lan', cause: 'Modem reboot' },
+]
+// The playground's S1 outage log: a short category word, a cause with no kind, nothing prioritised.
+const OUTAGE_COLUMNS = [
+  outage.accessor('start', { header: 'Started', meta: { kind: 'relative-time' } }),
+  outage.accessor('minutes', { header: 'Duration (min)', meta: { kind: 'number' } }),
+  outage.accessor('scope', {
+    header: 'Scope',
+    cell: (c) => c.getValue().toUpperCase(),
+    meta: { kind: 'text' },
+  }),
+  outage.accessor('cause', { header: 'Cause' }),
+]
+
+// Fourteen numeric columns: at 390 the fold takes the table to its floor, a two-digit count.
+const WIDE_KEYS = Array.from({ length: 14 }, (_, i) => `m${i}`)
+type WideRow = Record<string, number>
+const wide = createColumnHelper<WideRow>()
+const WIDE_ROWS: WideRow[] = [Object.fromEntries(WIDE_KEYS.map((k, i) => [k, 1000 + i]))]
+const WIDE_COLUMNS = WIDE_KEYS.map((k, i) =>
+  wide.accessor(k, { header: `Metric ${i}`, meta: { kind: 'number', priority: i + 1 } }),
+)
+
 /** Wave 42 responsive tables: argo's workouts shape and S2's sessions shape in a fixed-width card (`w42-responsive`). */
 export function W42ResponsiveFixture({ spec }: { spec: W42ResponsiveSpec }): ReactElement {
   const [refetching, setRefetching] = useState(false)
   const loading = spec.loading === true || refetching
   // A refetch keeps its rows: the skeleton replaces them, the headers stay.
   const keepRows = spec.loading !== true
+  const select = spec.select === true
   const table =
-    spec.shape === 'workouts' ? (
+    spec.shape === 'wide' ? (
+      <BasaltDataTable
+        title="Wide"
+        data={keepRows ? WIDE_ROWS : []}
+        columns={WIDE_COLUMNS}
+        enableSorting={false}
+        isLoading={loading}
+      />
+    ) : spec.shape === 'outages' ? (
+      <BasaltDataTable
+        title="Outages"
+        data={keepRows ? OUTAGE_ROWS : []}
+        columns={OUTAGE_COLUMNS}
+        enableSorting={false}
+        enableRowSelection={select}
+        isLoading={loading}
+      />
+    ) : spec.shape === 'workouts' ? (
       <BasaltDataTable
         title="Workouts"
         data={keepRows ? WORKOUT_ROWS : []}
