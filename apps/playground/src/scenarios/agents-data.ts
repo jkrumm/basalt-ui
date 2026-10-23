@@ -348,7 +348,7 @@ export const ITEM_TIMELINE: readonly TimelineEvent[] = [
 /** Warden keeps the whole history; the page fetches the last `ITEM_TIMELINE.length` of these. */
 export const ITEM_TIMELINE_TOTAL = 57
 
-/** The warden board: items by state as `Board` columns, `Done` empty on purpose (the empty-column line). */
+/** The warden board: items by state as `Board` columns, `Done` empty on purpose (the empty-column line). The queue list and the Oldest wait cell carry the waits; the Awaiting and Blocked cards omit the age (Running cards keep it: the list does not carry them). */
 const BOARD_AGE = (hours: number): string =>
   hours >= 24 ? `${Math.floor(hours / 24)} d ${hours % 24} h` : `${hours} h`
 
@@ -361,7 +361,7 @@ const boardCard = (i: Item, extra?: { status?: string; href?: string }) => ({
   type: BOARD_TYPES[Number(i.id.slice(2)) % BOARD_TYPES.length] ?? 'Bug',
   title: i.title,
   record: { label: i.id.toUpperCase(), href: extra?.href ?? `/warden/${i.id}` },
-  status: extra?.status ?? `Waiting ${BOARD_AGE(i.waitHours)}`,
+  status: extra?.status ?? 'Your decision',
 })
 
 export const BOARD_COLUMNS = [
@@ -387,7 +387,7 @@ export const BOARD_COLUMNS = [
     tone: VX.status.bad,
     empty: 'Nothing is blocked',
     cards: ITEMS.filter((i) => i.state === 'blocked').map((i) =>
-      boardCard(i, { status: `${i.reason ?? 'Blocked'} · ${BOARD_AGE(i.waitHours)}` }),
+      boardCard(i, { status: i.reason ?? 'Blocked' }),
     ),
   },
   { id: 'done', title: 'Done', tone: VX.status.good, empty: 'Nothing finished today', cards: [] },

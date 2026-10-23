@@ -54,7 +54,6 @@ import {
 import type { HourRow, LatencyBin, Outage } from './ops-data'
 import { FixedClockTime } from './FixedClockTime'
 import { chartStateFor, noop, queryFor, retryCopy } from './shot-state'
-import { TableCap } from './table-cap'
 import type { ScenarioProps } from './shot-state'
 
 const LINE_STATES: BandStripSeries<HourRow>[] = [
@@ -204,7 +203,7 @@ function OpsStats({ shotState }: ScenarioProps) {
       <Box data-shot="download" h="100%">
         <StatCard
           title="Download"
-          qualifier={`24 hours · contract ${fmtMbit(CONTRACT_DOWN_MBIT)}`}
+          qualifier="24 hours"
           value={fmtMbit(DOWN_24H_MBIT)}
           info="Mean measured throughput over the hourly buckets, against the speed in the contract."
           // Wave 34: Meter — the measured share of the ceiling belongs in a Meter; rows are the nearest.
@@ -312,23 +311,21 @@ function OpsOutages({ shotState }: ScenarioProps) {
   return (
     <Box data-shot="outages" h="100%">
       <Section title={`Outages, ${WINDOW_LABEL}`}>
-        <TableCap>
-          <BasaltDataTable
-            // Rows only at rest: the empty branch needs `data` empty, the others have no rows yet.
-            data={shotState === undefined ? OUTAGE_ROWS : NO_OUTAGES}
-            columns={columns}
-            enableSorting={false}
-            skeletonRows={OUTAGE_ROWS.length}
-            {...(query !== undefined && { query })}
-            emptyState={
-              <EmptyState
-                tier="section"
-                title={`No outage ${WINDOW_LABEL}`}
-                description="The line stayed up; any outage the probe sees lists here."
-              />
-            }
-          />
-        </TableCap>
+        <BasaltDataTable
+          // Rows only at rest: the empty branch needs `data` empty, the others have no rows yet.
+          data={shotState === undefined ? OUTAGE_ROWS : NO_OUTAGES}
+          columns={columns}
+          enableSorting={false}
+          skeletonRows={OUTAGE_ROWS.length}
+          {...(query !== undefined && { query })}
+          emptyState={
+            <EmptyState
+              tier="section"
+              title={`No outage ${WINDOW_LABEL}`}
+              description="The line stayed up; any outage the probe sees lists here."
+            />
+          }
+        />
       </Section>
     </Box>
   )

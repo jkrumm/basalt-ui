@@ -175,7 +175,6 @@ function SpendStats({ shotState }: ScenarioProps) {
             period={`vs ${PRIOR_WINDOW_LABEL}`}
           />
         ),
-        footer: `Daily, ${WINDOW_LABEL}`,
       }),
       ...(!hidden && {
         visual: (

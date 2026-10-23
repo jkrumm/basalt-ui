@@ -48,9 +48,16 @@ describe('S7 body, r3', () => {
 
   it('gives every skinfold row a distinct date label', () => {
     const times = [...(shot(body(undefined), 'skinfold-history')?.querySelectorAll('time') ?? [])]
-    expect(times.length).toBe(6)
+    expect(times.length).toBe(5)
     const labels = times.map((t) => t.firstChild?.textContent)
     expect(new Set(labels).size).toBe(labels.length)
+  })
+
+  it('keeps the empty row out of the weight strip anchor', () => {
+    const empty = body('empty')
+    const row = shot(empty, 'empty-row')
+    expect(row).not.toBeNull()
+    expect(shot(empty, 'weight-strip')?.contains(row ?? null)).toBe(false)
   })
 
   it('states body fat and lean mass once, with the change since the last reading', () => {

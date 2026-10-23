@@ -3,7 +3,7 @@
  * line `strip-footer-weight-goal` rides `under` the Weight cell, which shows its empty reason (a
  * cell in `state` draws no footer of its own), and `empty-row` joins it under `shotState === 'empty'`.
  */
-import { Box } from '@mantine/core'
+import { Box, Stack } from '@mantine/core'
 import { DeltaBadge, EmptyState, StatGroup } from 'basalt-ui'
 import type { StatStripCell } from 'basalt-ui'
 import { noop } from '../shot-state'
@@ -88,19 +88,22 @@ export function BodyWeightStrip({ shotState }: ScenarioProps) {
     },
   ]
   return (
-    <Box data-shot="weight-strip">
-      <StatGroup
-        variant="strip"
-        label="Body composition at a glance"
-        cols={3}
-        cells={cells}
-        footer={[{ key: 'weight-goal', under: 'weight', content: goalFooter(shotState) }]}
-      />
+    // Siblings, not nested: the strip's crop must not catch the empty row below it.
+    <Stack gap="xs">
+      <Box data-shot="weight-strip">
+        <StatGroup
+          variant="strip"
+          label="Body composition at a glance"
+          cols={3}
+          cells={cells}
+          footer={[{ key: 'weight-goal', under: 'weight', content: goalFooter(shotState) }]}
+        />
+      </Box>
       {shotState === 'empty' && (
         <Box data-shot="empty-row">
           <EmptyState tier="section" title={CALIPER_GAP} description={CALIPER_NEXT} />
         </Box>
       )}
-    </Box>
+    </Stack>
   )
 }

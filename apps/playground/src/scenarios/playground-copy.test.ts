@@ -135,6 +135,6 @@ describe('Wave 50: each figure once per surface', () => {
     expect(
       countOf(t, `${BODY.weightKg} kg`) + countOf(t, `${BODY.weightKg}kg`),
     ).toBeLessThanOrEqual(2)
-    expect(text(c, 'skinfold-history')).toContain('Skinfold history, 10 Aug–19 Oct')
+    expect(text(c, 'skinfold-history')).toContain('Skinfold history, last 60 days')
   })
 })

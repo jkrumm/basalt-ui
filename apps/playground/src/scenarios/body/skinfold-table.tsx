@@ -4,11 +4,9 @@ import { IconTrash } from '../../demo/icons'
 import { EmptyState, Section } from 'basalt-ui'
 import { BasaltDataTable, createColumnHelper } from 'basalt-ui/table'
 import { FixedClockTime } from '../FixedClockTime'
-import { fmtDay } from '../fixture-utils'
 import { noop, queryFor } from '../shot-state'
-import { TableCap } from '../table-cap'
 import type { ScenarioProps } from '../shot-state'
-import { CALIPER_GAP, CALIPER_NEXT, READING_DATE, SKINFOLD_ERROR } from './body-data'
+import { CALIPER_GAP, CALIPER_NEXT, READING_DATE, SKINFOLD_ERROR, WEIGHT_DAYS } from './body-data'
 
 const fullDate = (date: Date): string =>
   date.toLocaleDateString('en-GB', {
@@ -40,11 +38,10 @@ const SKINFOLDS: Skinfold[] = [
   row('2026-09-21T07:30:00Z', 9, 18, 13),
   row('2026-09-07T07:30:00Z', 9, 19, 13),
   row('2026-08-24T07:30:00Z', 10, 21, 14),
-  row('2026-08-10T07:30:00Z', 11, 22, 15),
 ]
 
-/** Newest first: the title scopes the table to the dates it lists. */
-const SKINFOLD_TITLE = `Skinfold history, ${fmtDay(SKINFOLDS.at(-1)?.date ?? READING_DATE)}–${fmtDay(SKINFOLDS[0]?.date ?? READING_DATE)}`
+/** Newest first: the title names the window the weight chart and the weight spread use, and every row sits inside it. */
+const SKINFOLD_TITLE = `Skinfold history, last ${WEIGHT_DAYS} days`
 
 const col = createColumnHelper<Skinfold>()
 
@@ -67,26 +64,22 @@ export function BodySkinfoldTable({ shotState }: ScenarioProps) {
   return (
     <Box data-shot="skinfold-history">
       <Section title={SKINFOLD_TITLE}>
-        <TableCap>
-          <BasaltDataTable
-            data={shotState === 'empty' ? [] : SKINFOLDS}
-            emptyState={
-              <EmptyState title={CALIPER_GAP} description={CALIPER_NEXT} tier="section" />
-            }
-            columns={COLUMNS}
-            rowLabel={(r) => r.date.toISOString().slice(0, 10)}
-            rowActions={[
-              {
-                key: 'delete',
-                label: 'Delete measurement',
-                icon: <IconTrash />,
-                danger: true,
-                onClick: noop,
-              },
-            ]}
-            {...(query !== undefined && { query })}
-          />
-        </TableCap>
+        <BasaltDataTable
+          data={shotState === 'empty' ? [] : SKINFOLDS}
+          emptyState={<EmptyState title={CALIPER_GAP} description={CALIPER_NEXT} tier="section" />}
+          columns={COLUMNS}
+          rowLabel={(r) => r.date.toISOString().slice(0, 10)}
+          rowActions={[
+            {
+              key: 'delete',
+              label: 'Delete measurement',
+              icon: <IconTrash />,
+              danger: true,
+              onClick: noop,
+            },
+          ]}
+          {...(query !== undefined && { query })}
+        />
       </Section>
     </Box>
   )

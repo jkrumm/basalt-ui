@@ -21,7 +21,6 @@ import { tableEmptyState, useFilterReset } from '../demo/table-empty-state'
 import { ErrorNote } from '../demo/fixtures/error-note'
 import classes from './training-kpis.module.css'
 import { demoColors } from '../demo/series'
-import { TableCap } from './table-cap'
 import { fmtInt, fmtKg, fmtKm, fmtRatio, fmtShare } from './fixture-utils'
 import { FixedClockTime } from './FixedClockTime'
 import { cardStateProps, chartStateFor, noop, queryFor, retryCopy } from './shot-state'
@@ -99,9 +98,8 @@ const TRAINING = trainingVerdict({
   loadRatio: LOAD_RATIO,
   readiness: READINESS_SCORE,
 })
-const LOAD_WORDS = { low: 'load is low', holds: 'load holds', high: 'load is high' } as const
-/** The one judgement the cards do not state: what pace, load and readiness add up to. Its only figure is the days left, which no card prints; the month binds to it with no-break spaces so it never wraps alone at 390. */
-const SUMMARY = `${TRAINING.verdict[0]?.toUpperCase()}${TRAINING.verdict.slice(1)} today: ${TRAINING.pace === 'holds' ? 'pace holds' : 'pace is behind'}, ${LOAD_WORDS[TRAINING.load]}, readiness is ${readinessLevel(READINESS_SCORE).toLowerCase()}, with ${DAYS_LEFT}\u00A0days\u00A0left\u00A0in\u00A0${MONTH_NAME}.`
+/** The one thing the cards do not state: the decision. Pace, load and readiness each have a card; the lede gives the verdict and the days left, which no card prints. The month binds to the count with no-break spaces so it never wraps alone at 390. */
+const SUMMARY = `${TRAINING.verdict.charAt(0).toUpperCase()}${TRAINING.verdict.slice(1)} today, with ${DAYS_LEFT}\u00A0days\u00A0left\u00A0in\u00A0${MONTH_NAME}.`
 
 const SESSION_SEGMENTS = TYPE_MIX.filter((t) => t.count > 0).map((t) => ({
   value: t.count,
@@ -523,26 +521,24 @@ function TrainingSessions({ shotState }: ScenarioProps) {
   return (
     <Box data-shot="session-log" h="100%">
       <Section title={`Lift log, ${WINDOW_LABEL}`}>
-        <TableCap>
-          <BasaltDataTable
-            key={reset.tableKey}
-            // Rows only at rest: the empty branch needs `data` empty, the others have no rows yet.
-            data={shotState === undefined ? SESSION_ROWS : NO_SESSIONS}
-            columns={sessionColumns}
-            enablePagination
-            facets={[{ columnId: 'exercise', label: 'Exercise', options: EXERCISE_OPTIONS }]}
-            initialSorting={[{ id: 'date', desc: true }]}
-            {...(query !== undefined && { query })}
-            onColumnFiltersChange={reset.onColumnFiltersChange}
-            emptyState={tableEmptyState({
-              noun: 'lifts',
-              total: SESSION_ROWS.length,
-              cause: NO_STRENGTH,
-              filtered: reset.filtered,
-              onClear: reset.clear,
-            })}
-          />
-        </TableCap>
+        <BasaltDataTable
+          key={reset.tableKey}
+          // Rows only at rest: the empty branch needs `data` empty, the others have no rows yet.
+          data={shotState === undefined ? SESSION_ROWS : NO_SESSIONS}
+          columns={sessionColumns}
+          enablePagination
+          facets={[{ columnId: 'exercise', label: 'Exercise', options: EXERCISE_OPTIONS }]}
+          initialSorting={[{ id: 'date', desc: true }]}
+          {...(query !== undefined && { query })}
+          onColumnFiltersChange={reset.onColumnFiltersChange}
+          emptyState={tableEmptyState({
+            noun: 'lifts',
+            total: SESSION_ROWS.length,
+            cause: NO_STRENGTH,
+            filtered: reset.filtered,
+            onClear: reset.clear,
+          })}
+        />
       </Section>
     </Box>
   )

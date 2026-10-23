@@ -216,7 +216,7 @@ function AsideSkeleton() {
   return (
     <Stack gap="xs" data-shot="learning-aside" aria-busy="true">
       <Text size="xs" c="dimmed">
-        Practice partners · sessions together
+        Sessions together
       </Text>
       <Stack gap="md">
         {PARTNERS_BY_SESSIONS.map((p) => (
@@ -237,7 +237,7 @@ function LearningAside({ shotState }: ScenarioProps) {
   // The anchor sits inside the aside: in the shell the panel portals into its own region, so a wrapper
   // beside it would measure zero on desktop.
   return (
-    <PageAside title={KNOT_TITLE} persistKey="learning-record">
+    <PageAside title="Practice partners" persistKey="learning-record">
       {shotState === 'loading' ? (
         <AsideSkeleton />
       ) : shotState === 'error' ? (
@@ -247,7 +247,7 @@ function LearningAside({ shotState }: ScenarioProps) {
         <Box data-shot="learning-aside" data-shot-absent="error">
           <Stack gap="xs">
             <Text size="xs" c="dimmed">
-              Practice partners · sessions together
+              Sessions together
             </Text>
             {shotState === 'empty' ? (
               <EmptyState

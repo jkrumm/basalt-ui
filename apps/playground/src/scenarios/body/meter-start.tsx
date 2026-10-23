@@ -1,5 +1,5 @@
 /** The body Weight cell: a no-goal low–high Meter read at the track start (argo UPSTREAM Wave 53). */
-import { Box, Stack } from '@mantine/core'
+import { Box } from '@mantine/core'
 import { Meter, StatGroup } from 'basalt-ui'
 import type { StatStripCell } from 'basalt-ui'
 import { VX } from 'basalt-ui/tokens'
@@ -15,14 +15,14 @@ const FLAT = [
   { at: HIGH, color: VX.line },
 ]
 
-const weightMeter = (value: number, readingAt: 'start' | 'fill') => (
+const weightMeter = (
   <Meter
     label="Current weight within the lowest and highest weigh-in of the last 60 days"
-    value={value}
+    value={BODY.weightKg}
     min={LOW}
     max={HIGH}
     format={kg}
-    readingAt={readingAt}
+    readingAt="start"
     stops={FLAT}
     startCaption={`60-day low ${kg(LOW)}`}
     endCaption={`60-day high ${kg(HIGH)}`}
@@ -30,7 +30,7 @@ const weightMeter = (value: number, readingAt: 'start' | 'fill') => (
   />
 )
 
-const strip = (anchor: string, visual: StatStripCell['visual'], props: ScenarioProps) => {
+export function BodyMeterStart(props: ScenarioProps) {
   const state: StatStripCell['state'] =
     props.shotState === 'empty'
       ? { kind: 'empty', reason: NO_WEIGH_INS }
@@ -38,7 +38,7 @@ const strip = (anchor: string, visual: StatStripCell['visual'], props: ScenarioP
         ? { kind: 'error', error: new Error(WEIGHT_ERROR), onRetry: noop }
         : undefined
   return (
-    <Box data-shot={anchor}>
+    <Box data-shot="weight-meter-start">
       <StatGroup
         variant="strip"
         label="Body"
@@ -50,21 +50,12 @@ const strip = (anchor: string, visual: StatStripCell['visual'], props: ScenarioP
             qualifier: '60-day range',
             info: 'The distance between the lowest and the highest weigh-in of the last 60 days; the track marks the latest weigh-in on it. The reading itself is in the strip above.',
             value: kg(HIGH - LOW),
-            visual,
+            visual: weightMeter,
             loading: props.shotState === 'loading',
             ...(state !== undefined && { state }),
           },
         ]}
       />
     </Box>
-  )
-}
-
-export function BodyMeterStart(props: ScenarioProps) {
-  return (
-    <Stack gap="md">
-      {strip('weight-meter-start', weightMeter(BODY.weightKg, 'start'), props)}
-      {strip('weight-meter-fill-short', weightMeter(LOW + 0.2, 'fill'), props)}
-    </Stack>
   )
 }
