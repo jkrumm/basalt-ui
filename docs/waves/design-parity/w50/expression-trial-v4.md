@@ -1,8 +1,8 @@
 # Expression trial v4 (Wave 50)
 
-**Setup:** as v3 ([../w49/expression-trial-v3.md](../w49/expression-trial-v3.md)), with the datasets and the prompt
-committed beside this file so every later trial runs the same task: `bun create vite roastery --template react-ts` in a
-`mktemp -d` directory outside every repo, then `bun trial-data.ts data` ([trial-data.ts](trial-data.ts), seed 50: 60
+**Setup:** as v3 ([../w49/expression-trial-v3.md](../w49/expression-trial-v3.md)), with the dataset generator (`scripts/trial-data.ts`; the licence-boundary test keeps `design-parity/` to md and json) and the
+prompt (beside this file) committed so every later trial runs the same task: `bun create vite roastery --template react-ts` in a
+`mktemp -d` directory outside every repo, then `bun scripts/trial-data.ts data` (seed 50: 60
 days of orders ending 22 Oct, October revenue €36,330 to date against €60,000, four channels summing to exactly that,
 12 products summing to October's 2,529 bags, a 15-entry log whose notes explain the low and the high day). `bun add` a
 tarball packed from `master` at `435b971b` (#536–#539, unreleased, `2.28.0` + Waves 48–50), `basalt-ui init`. A fresh
