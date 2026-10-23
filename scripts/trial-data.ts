@@ -117,8 +117,19 @@ const products = PRODUCTS.map((name, i) => ({ product: name, bags: productBags[i
   (a, b) => b.bags - a.bags,
 )
 
-const day = (i: number) => orders[i]?.date ?? FIRST_DAY
-const log = [
+function at(i: number): (typeof orders)[number] {
+  const row = orders[i]
+  if (!row) throw new Error(`no order day ${i}`)
+  return row
+}
+const day = (i: number): string => at(i).date
+type LogEntry = {
+  at: string
+  severity: 'info' | 'warning' | 'critical'
+  kind: string
+  note: string
+}
+const log: LogEntry[] = [
   {
     at: `${day(40)}T07:10`,
     severity: 'info',
@@ -195,7 +206,7 @@ const log = [
     at: `${day(PROMO_DAY)}T18:00`,
     severity: 'info',
     kind: 'Shop',
-    note: `Busiest day of the month: ${orders[PROMO_DAY]?.orders ?? 0} orders.`,
+    note: `Busiest day of the month: ${at(PROMO_DAY).orders} orders.`,
   },
   {
     at: `${day(57)}T08:20`,
@@ -211,6 +222,26 @@ const log = [
   },
 ]
 
+// Invariants from independent sources, checked before anything is written.
+const sum = (xs: number[]): number => xs.reduce((s, x) => s + x, 0)
+const octoberOrders = october.map((d) => d.orders)
+const invariants: [string, boolean][] = [
+  [
+    'channels sum to October revenue',
+    sum(channels.map((c) => c.revenue)) === sum(october.map((d) => d.revenue)),
+  ],
+  [
+    'products sum to October bags',
+    sum(products.map((p) => p.bags)) === sum(october.map((d) => d.bags)),
+  ],
+  ['the cumulative ends at revenue to date', target.daily.at(-1)?.cumulative === revenueToDate],
+  ["the outage day is October's low", at(OUTAGE_DAY).orders === Math.min(...octoberOrders)],
+  ["the promo day is October's high", at(PROMO_DAY).orders === Math.max(...octoberOrders)],
+  ['every log entry is in October', log.every((e) => e.at.startsWith('2026-10-'))],
+]
+const broken = invariants.filter(([, ok]) => !ok).map(([name]) => name)
+if (broken.length > 0) throw new Error(`datasets disagree: ${broken.join('; ')}`)
+
 const out = process.argv[2]
 if (!out) throw new Error('usage: bun scripts/trial-data.ts <out-dir>')
 mkdirSync(out, { recursive: true })
@@ -224,9 +255,6 @@ const files = {
 for (const [name, data] of Object.entries(files))
   writeFileSync(join(out, name), `${JSON.stringify(data, null, 2)}\n`)
 
-const channelSum = channels.reduce((s, c) => s + c.revenue, 0)
-const productSum = products.reduce((s, p) => s + p.bags, 0)
-if (channelSum !== revenueToDate || productSum !== bagsToDate) throw new Error('datasets disagree')
 process.stdout.write(
   `wrote 5 files to ${out}: October revenue €${revenueToDate}, ${bagsToDate} bags\n`,
 )
