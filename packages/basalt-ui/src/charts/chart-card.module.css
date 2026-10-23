@@ -71,24 +71,32 @@
 }
 
 /*
- * A fact's tone is INK only (the value and its trailing text), never a fill. The status solids are
- * the text-safe ones (`status-text.ts`). `stale` is the strip cell's dimmed value, verbatim
+ * A fact's tone is INK only (never a fill) and rides the DELTA alone: the comparison, with its direction
+ * glyph. The value, unit and period stay ink and muted. A fact with no comparison has no delta, so its
+ * tone inks the value (`.factTone` is on whichever element carries it). The status solids are the
+ * text-safe ones (`status-text.ts`). `stale` is the strip cell's dimmed value, verbatim
  * (`stat-strip.module.css` `.cell[data-stale]`).
  */
-.fact[data-tone='good'] :is(.factValue, .factUnit, .factPeriod) {
+.fact[data-tone='good'] .factTone {
   color: var(--vx-status-good);
 }
 
-.fact[data-tone='warn'] :is(.factValue, .factUnit, .factPeriod) {
+.fact[data-tone='warn'] .factTone {
   color: var(--vx-status-warn);
 }
 
-.fact[data-tone='bad'] :is(.factValue, .factUnit, .factPeriod) {
+.fact[data-tone='bad'] .factTone {
   color: var(--vx-status-bad);
 }
 
-.fact[data-tone='muted'] :is(.factValue, .factUnit, .factPeriod) {
+.fact[data-tone='muted'] .factTone {
   color: var(--vx-muted);
+}
+
+/* The direction glyph of a plain-text comparison: DeltaBadge's (`widget-header.module.css` `.deltaGlyph`). */
+.factGlyph {
+  margin-inline-end: 3px;
+  font-size: var(--vx-text-micro);
 }
 
 .factsRow[data-stale] {

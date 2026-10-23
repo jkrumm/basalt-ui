@@ -31,6 +31,9 @@ import type { ChartState, ResponsiveChartHeight } from './types'
 const cardStyle: CSSProperties = {
   display: 'flex',
   flexDirection: 'column',
+  // Fills its grid cell (or a `h="100%"` anchor wrapper): two cards in one row end together, with
+  // no wrapper background under the shorter one. In an auto-height parent it resolves to auto.
+  height: '100%',
   minHeight: 0,
   containerType: 'inline-size',
   containerName: 'basalt-card',
@@ -105,6 +108,22 @@ function periodText(period: string | readonly string[], afterUnit: boolean): str
   return afterUnit && !text.startsWith(PERIOD_SEPARATOR.trim()) ? PERIOD_SEPARATOR + text : text
 }
 
+/**
+ * A plain-text comparison with a leading sign ("+0.3", "-4%") reads as a delta: the sign becomes
+ * DeltaBadge's direction glyph (▲/▼). Any other node (a `DeltaBadge`, which carries its own) is as is.
+ */
+function Comparison({ node }: { node: ReactNode }): ReactNode {
+  if (typeof node !== 'string') return node
+  const sign = /^\s*([+\-−])\s*(.+)$/.exec(node)
+  if (sign === null) return node
+  return (
+    <>
+      <span className={classes.factGlyph}>{sign[1] === '+' ? '▲' : '▼'}</span>
+      {sign[2]}
+    </>
+  )
+}
+
 /** One headline figure: the value is the hero, then its unit, a comparison node and the period. */
 export type ChartFact = {
   value: ReactNode
@@ -114,7 +133,8 @@ export type ChartFact = {
   /** Plain text the figure covers, e.g. `last 30 d`. A list is joined by ` · ` (`['last entry 3 d
    * ago', '12 entries']`) and, behind a `unit`, led by one. */
   period?: string | readonly string[] | undefined
-  /** Ink for the whole fact (text only, never a fill): a stale or off-target figure reads `warn`. */
+  /** Ink for the comparison, with its direction glyph (text only, never a fill): an off-target
+   * change reads `warn`. A fact with no comparison inks its value instead. */
   tone?: ChartFactTone | undefined
 }
 
@@ -231,11 +251,23 @@ function Facts({
               {...(f.tone !== undefined && { 'data-tone': f.tone })}
               className={classes.fact}
             >
-              <span data-basalt-fact-value="" className={classes.factValue}>
+              <span
+                data-basalt-fact-value=""
+                {...(f.comparison === undefined && { 'data-basalt-fact-tone': '' })}
+                className={cx(classes.factValue, f.comparison === undefined && classes.factTone)}
+              >
                 {f.value}
               </span>
               {f.unit !== undefined && <span className={classes.factUnit}>{f.unit}</span>}
-              {f.comparison}
+              {f.comparison !== undefined && (
+                <span
+                  data-basalt-fact-delta=""
+                  data-basalt-fact-tone=""
+                  className={classes.factTone}
+                >
+                  <Comparison node={f.comparison} />
+                </span>
+              )}
               {period !== '' && <span className={classes.factPeriod}>{period}</span>}
             </span>
           )
