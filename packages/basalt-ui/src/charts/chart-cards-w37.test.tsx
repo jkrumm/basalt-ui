@@ -267,11 +267,14 @@ describe('Heatmap status states (items 5 and 6)', () => {
 })
 
 describe('Error state noun (item 7)', () => {
-  test('the default names no noun', () => {
-    const { container } = render(<ChartCard title="T" state={{ error: new Error('boom') }} />)
+  test('the default names the card title', () => {
+    const { container } = render(<ChartCard title="Revenue" state={{ error: new Error('boom') }} />)
     const text = container.querySelector('[role="alert"]')?.textContent ?? ''
-    expect(text).toContain('Could not load')
-    expect(text).not.toContain('this chart')
+    expect(text).toContain('Could not load revenue')
+  })
+  test('an acronym title keeps its case', () => {
+    const { container } = render(<ChartCard title="MRR" state={{ error: new Error('boom') }} />)
+    expect(container.querySelector('[role="alert"]')?.textContent).toContain('Could not load MRR')
   })
   test('the card takes its own noun', () => {
     const { container } = render(

@@ -421,3 +421,9 @@ describe('footer entry under a cell', () => {
     expect(container.querySelectorAll('[data-strip-footer-cell]').length).toBe(1)
   })
 })
+
+describe('strip cell inset', () => {
+  test('the content insets its foot equal to its head', () => {
+    expect(CSS).toMatch(/\.content\s*\{[^}]*padding:\s*var\(--vx-space-stack-md\);/)
+  })
+})

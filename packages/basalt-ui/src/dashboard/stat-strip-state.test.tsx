@@ -49,7 +49,7 @@ describe('strip cell state', () => {
     })
     const cell = cellOf(container)
     expect(cell.querySelector('[data-basalt-status-dot]')).not.toBeNull()
-    expect(cell.textContent).toContain('Could not load')
+    expect(cell.textContent).toContain('Could not load resting HR')
     expect(cell.textContent).toContain('boom')
     expect(cell.querySelector('[data-strip-value]')).toBeNull()
     const retry = cell.querySelector('button') as HTMLButtonElement

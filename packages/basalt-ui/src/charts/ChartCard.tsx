@@ -309,6 +309,12 @@ function reserveLegend(reserve: boolean, placeholder: ReactElement): ReactElemen
   )
 }
 
+/** "Revenue" → "revenue"; an acronym ("KPI", "MRR") keeps its case. */
+function lowerLead(label: string): string {
+  const t = label.trim()
+  return t.length > 1 && t[1] === t[1]?.toLowerCase() ? t.charAt(0).toLowerCase() + t.slice(1) : t
+}
+
 export function ChartCard({
   actions,
   state,
@@ -328,6 +334,8 @@ export function ChartCard({
 }: ChartCardProps): ReactElement {
   const { ref, short } = useShortCard()
   const resolved = resolveChartState(state)
+  // The noun an error names: `stateNoun`, else the card's own title ("Revenue" → "revenue").
+  const noun = stateNoun ?? (header.title ? lowerLead(header.title) : undefined)
   const kind = resolved === 'pending' ? bodyKindOf(children) : undefined
   const plotGhost = ghost ?? kind?.ghost
   // `ghost` changes the shape only: the wrapped strip's height still sizes the pending box.
@@ -378,7 +386,7 @@ export function ChartCard({
                 <ChartPlaceholder
                   state={state}
                   {...(pendingHeight !== undefined && { height: pendingHeight })}
-                  {...(stateNoun !== undefined && { noun: stateNoun })}
+                  {...(noun !== undefined && { noun })}
                   {...(plotGhost !== undefined && { ghost: plotGhost })}
                   {...(onRetry !== undefined && { onRetry })}
                   {...(retrying !== undefined && { retrying })}

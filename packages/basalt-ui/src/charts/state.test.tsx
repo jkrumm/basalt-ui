@@ -123,3 +123,12 @@ describe('ChartCard placeholderHeight="content"', () => {
     ).toBe('line')
   })
 })
+
+describe('ChartPlaceholder empty default', () => {
+  test('states the cause and a next step', () => {
+    const { container } = render(<ChartPlaceholder state={{ empty: true }} />)
+    const tile = container.querySelector('[data-basalt-empty-tile]')
+    expect(tile?.textContent).toContain('Nothing plotted in this range')
+    expect(tile?.textContent).toContain('Widen the range or check the source.')
+  })
+})

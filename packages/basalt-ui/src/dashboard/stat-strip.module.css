@@ -36,9 +36,6 @@
   min-width: 0;
   container-type: inline-size;
   container-name: basalt-card;
-  /* The foot inset lives HERE, on the row-high slot, so a cell that ends early keeps the strip's
-   * surface under it. */
-  padding-block-end: var(--vx-space-stack-md);
   box-shadow:
     -1px 0 0 var(--vx-divider),
     0 -1px 0 var(--vx-divider);
@@ -50,7 +47,7 @@
   flex-direction: column;
   align-self: start;
   min-width: 0;
-  padding: var(--vx-space-stack-md) var(--vx-space-stack-md) 0;
+  padding: var(--vx-space-stack-md);
 }
 
 /* Forced colors drop box-shadows, so the hairlines come back as CanvasText borders. Every cell takes

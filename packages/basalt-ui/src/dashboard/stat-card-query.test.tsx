@@ -283,7 +283,7 @@ describe('StatCard states drop the footer that captioned the visual (Wave 37)', 
   test('the error title is short enough for one line in a 170px card', () => {
     const err = markup(query({ isError: true, error: new Error('boom') }))
     expect(err).not.toContain('Could not load this figure')
-    expect(err).toContain('Could not load')
+    expect(err).toContain('Could not load sessions')
   })
 })
 
