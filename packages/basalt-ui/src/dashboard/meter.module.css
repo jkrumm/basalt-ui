@@ -208,9 +208,7 @@
   flex-wrap: wrap;
   align-items: baseline;
   justify-content: space-between;
-  /* Read by the layout as the least two captions keep apart: a gap step, and never under one caption
-   * em, so two figures at 390 px do not read as one run. */
-  gap: max(var(--vx-space-control-gap, 0.375rem), 1em);
+  gap: var(--vx-space-control-gap, 0.375rem);
   font-family: var(--basalt-font-numeral, var(--basalt-font-sans));
   font-variant-numeric: lining-nums;
   font-size: var(--basalt-meter-caption);
