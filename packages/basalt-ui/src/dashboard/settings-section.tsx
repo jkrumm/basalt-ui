@@ -34,8 +34,8 @@ import { WidgetHeader } from './widget-header'
 import type { WidgetHeaderTitleProps } from './widget-header'
 import { CtlSlot } from '../theme'
 import { VX } from '../tokens'
-import { cx } from '../common/props'
-import type { BasaltProps, SlotStylesProps } from '../common/props'
+import { cx, pickDataAttributes } from '../common/props'
+import type { BasaltProps, DataAttributes, SlotStylesProps } from '../common/props'
 import classes from './settings-section.module.css'
 
 const eyebrowStyle = {
@@ -59,6 +59,7 @@ export type SettingsSectionSlot = 'root' | 'header' | 'body'
  * slices.
  */
 export type SettingsSectionProps = BasaltProps &
+  DataAttributes &
   SlotStylesProps<SettingsSectionSlot> &
   WidgetHeaderTitleProps & {
     /** Header-right slot — wrapped in `CtlSlot` (C1/C5). */
@@ -77,9 +78,10 @@ export function SettingsSection({
   className,
   style,
   classNames,
+  ...rest
 }: SettingsSectionProps) {
   return (
-    <Card className={cx(classNames?.root, className)} style={style}>
+    <Card {...pickDataAttributes(rest)} className={cx(classNames?.root, className)} style={style}>
       <div className={cx(classes.header, classNames?.header)}>
         <WidgetHeader
           tier="section"
@@ -152,9 +154,11 @@ export function DangerZone({
   className,
   style,
   classNames,
+  ...rest
 }: DangerZoneProps) {
   return (
     <Card
+      {...pickDataAttributes(rest)}
       className={cx(classes.danger, classNames?.root, className)}
       style={{
         // The card's depth plus ONE edge in the class's scheme-independent ring colour.

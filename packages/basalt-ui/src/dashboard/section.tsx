@@ -47,8 +47,8 @@
  */
 import { useContext, useEffect, useId } from 'react'
 import type { ReactNode } from 'react'
-import { cx } from '../common/props'
-import type { BasaltProps, SlotStylesProps } from '../common/props'
+import { cx, splitDataAttributes } from '../common/props'
+import type { BasaltProps, DataAttributes, SlotStylesProps } from '../common/props'
 import { BASALT_PREFIX } from '../common/errors'
 import { useValidateProps } from '../common/validate'
 import { CtlSlot } from '../theme'
@@ -96,6 +96,7 @@ type SectionBaseProps = Omit<
   'tier' | 'classNames' | 'actions' | 'title' | HeaderOnlyKey
 > &
   BasaltProps &
+  DataAttributes &
   SlotStylesProps<SectionSlot> & {
     /**
      * Header actions as typed data (law C15), projected through the SAME row `PageBar` uses — one
@@ -232,8 +233,9 @@ export function Section({
   style,
   classNames,
   'aria-label': ariaLabel,
-  ...headerProps
+  ...headerAndData
 }: SectionProps) {
+  const { data, rest: headerProps } = splitDataAttributes(headerAndData)
   const { title } = headerProps
   const outerTitle = useContext(HostTitleContext)
   const untitled = title === undefined
@@ -309,6 +311,7 @@ export function Section({
   return (
     <HostTitleContext value={title ?? outerTitle}>
       <div
+        {...data}
         className={cx(classes.root, classNames?.root, className)}
         data-tier={tier}
         {...(untitled && ariaLabel !== undefined && { role: 'group', 'aria-label': ariaLabel })}

@@ -107,8 +107,8 @@ import type {
   WidgetHeaderTitleProps,
 } from './widget-header'
 import { DeltaBadge } from './delta-badge'
-import { cx } from '../common/props'
-import type { BasaltProps, SlotStylesProps, Tone } from '../common/props'
+import { cx, pickDataAttributes } from '../common/props'
+import type { BasaltProps, DataAttributes, SlotStylesProps, Tone } from '../common/props'
 import { splitEmptyCopy } from '../common/empty-copy'
 import { EmptyState } from './empty-state'
 import { couldNotLoad, HostTitleContext } from '../common/could-not-load'
@@ -212,6 +212,7 @@ function useSlotWidth(active: boolean): {
  * three slices.
  */
 export type StatCardProps = BasaltProps &
+  DataAttributes &
   SlotStylesProps<StatCardSlot> &
   Omit<WidgetHeaderTitleProps, 'subtitle'> &
   Omit<WidgetHeaderMetricProps, 'value'> &
@@ -430,6 +431,7 @@ export function StatCard({
   className,
   style,
   classNames,
+  ...rest
 }: StatCardProps) {
   const isRender = typeof sparkline === 'function'
   const bleeds = sparklinePlacement === 'bleed'
@@ -536,6 +538,7 @@ export function StatCard({
 
   return (
     <Card
+      {...pickDataAttributes(rest)}
       className={cx(classNames?.root, className)}
       style={{
         // The inset is the theme's (`card-inset.module.css`: the `cardInsetY`/`cardInsetX` tokens, 12/16

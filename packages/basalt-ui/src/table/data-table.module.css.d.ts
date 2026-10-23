@@ -10,12 +10,15 @@ declare const classes: {
   readonly dangerAction: string
   readonly foldChevron: string
   readonly foldCount: string
+  readonly foldCountButton: string
   readonly foldDisclosure: string
   readonly foldDisclosureCell: string
   readonly foldDisclosureLabel: string
   readonly foldDisclosureRow: string
   readonly foldDisclosureRowTr: string
   readonly foldDisclosureValue: string
+  readonly foldNameList: string
+  readonly foldNames: string
   readonly foldToggle: string
   readonly foldToggleCell: string
   readonly foldWrapper: string

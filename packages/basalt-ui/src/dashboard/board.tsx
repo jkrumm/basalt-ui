@@ -43,8 +43,8 @@
 import { ScrollArea, SegmentedControl, Skeleton, Card, VisuallyHidden } from '@mantine/core'
 import { Fragment, useEffect, useId, useRef, useState } from 'react'
 import type { KeyboardEvent, ReactNode } from 'react'
-import { cx } from '../common/props'
-import type { BasaltProps } from '../common/props'
+import { cx, pickDataAttributes } from '../common/props'
+import type { BasaltProps, DataAttributes } from '../common/props'
 import { useSizeClass } from '../shell/use-size-class'
 import type { EnumField, FieldHandle } from '../state'
 import { StatusDot } from '../theme/status-dot'
@@ -55,46 +55,47 @@ import type { BoardPos } from './board-nav'
 import { EmptyState } from './empty-state'
 import { useScrolledEdge } from './event-list-scroll'
 
-export type BoardProps<T extends string = string> = BasaltProps & {
-  /** Accessible name of the board. Default "Board". */
-  label?: string
-  /** Columns in display order. Column and card `id`s must be unique within their parent. */
-  columns: readonly {
-    id: T
-    title: string
-    /** Colour of the header's status dot (a `VX.status.*` token). Default muted. */
-    tone?: string
-    /** Right-aligned header text, already formatted ("3 items", "$12.40"). */
-    total?: string
-    /** The title of the `EmptyState` tile an empty column shows. Default "Nothing here"; say why it is empty. */
-    empty?: string
-    cards: readonly {
-      id: string
-      actor?: string
-      type?: string
+export type BoardProps<T extends string = string> = BasaltProps &
+  DataAttributes & {
+    /** Accessible name of the board. Default "Board". */
+    label?: string
+    /** Columns in display order. Column and card `id`s must be unique within their parent. */
+    columns: readonly {
+      id: T
       title: string
-      /** A linked record; `href` is a link only when http(s) or relative. */
-      record?: { label: string; href?: string }
-      /** One muted status line ("Deferred · waiting on CI"). */
-      status?: string
-      /** An optional meter or preview; the one ReactNode slot. */
-      meter?: ReactNode
+      /** Colour of the header's status dot (a `VX.status.*` token). Default muted. */
+      tone?: string
+      /** Right-aligned header text, already formatted ("3 items", "$12.40"). */
+      total?: string
+      /** The title of the `EmptyState` tile an empty column shows. Default "Nothing here"; say why it is empty. */
+      empty?: string
+      cards: readonly {
+        id: string
+        actor?: string
+        type?: string
+        title: string
+        /** A linked record; `href` is a link only when http(s) or relative. */
+        record?: { label: string; href?: string }
+        /** One muted status line ("Deferred · waiting on CI"). */
+        status?: string
+        /** An optional meter or preview; the one ReactNode slot. */
+        meter?: ReactNode
+      }[]
     }[]
-  }[]
-  /** Called with the card and column ids on Enter, Space or a click. */
-  onOpen?: (cardId: string, columnId: string) => void
-  /** Each column scrolls alone inside a box of this height. Omitted: content-sized. */
-  height?: number | string
-  /** Renders column-shaped skeletons. */
-  loading?: boolean
-  /** The tile shown when no column has a card. Default "Nothing on the board". */
-  empty?: { title: string; description?: string; action?: ReactNode }
-  /**
-   * Compact: the store field holding the selected column id (an enum field of the column ids, the
-   * type `ViewTabs` takes). Omitted: internal state, first column.
-   */
-  field?: FieldHandle<EnumField<T>>
-}
+    /** Called with the card and column ids on Enter, Space or a click. */
+    onOpen?: (cardId: string, columnId: string) => void
+    /** Each column scrolls alone inside a box of this height. Omitted: content-sized. */
+    height?: number | string
+    /** Renders column-shaped skeletons. */
+    loading?: boolean
+    /** The tile shown when no column has a card. Default "Nothing on the board". */
+    empty?: { title: string; description?: string; action?: ReactNode }
+    /**
+     * Compact: the store field holding the selected column id (an enum field of the column ids, the
+     * type `ViewTabs` takes). Omitted: internal state, first column.
+     */
+    field?: FieldHandle<EnumField<T>>
+  }
 
 const DEFAULT_EMPTY = { title: 'Nothing on the board' } as const
 const SKELETON_COLUMNS = 3
@@ -210,6 +211,7 @@ function BoardView<T extends string>({
   onPick,
   className,
   style,
+  ...rest
 }: BoardViewProps<T>) {
   const compact = useSizeClass() === 'compact'
   const labelId = useId()
@@ -400,7 +402,12 @@ function BoardView<T extends string>({
   }
 
   return (
-    <div className={cx(classes.root, className)} style={style} data-board="">
+    <div
+      {...pickDataAttributes(rest)}
+      className={cx(classes.root, className)}
+      style={style}
+      data-board=""
+    >
       {content}
     </div>
   )

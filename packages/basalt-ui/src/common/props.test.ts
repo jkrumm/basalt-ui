@@ -5,7 +5,7 @@
  */
 import { describe, expect, test } from 'bun:test'
 import { BASALT_PREFIX, duplicateMount, oneOf, requiredProp } from './errors'
-import { cx } from './props'
+import { cx, pickDataAttributes, splitDataAttributes } from './props'
 
 describe('cx', () => {
   test('joins the truthy parts with one space', () => {
@@ -19,6 +19,21 @@ describe('cx', () => {
   test('is the empty string when nothing survives', () => {
     expect(cx(undefined, false)).toBe('')
     expect(cx()).toBe('')
+  })
+})
+
+describe('splitDataAttributes', () => {
+  test('moves only data-* keys, keeping falsy values, and leaves lookalikes in rest', () => {
+    const input = { 'data-a': '1', 'data-b': false, data: 'x', 'database-x': 'y', id: 'k' }
+    const { data, rest } = splitDataAttributes(input)
+    expect(data).toEqual({ 'data-a': '1', 'data-b': false })
+    expect(rest).toEqual({ data: 'x', 'database-x': 'y', id: 'k' })
+    expect(Object.keys(input)).toHaveLength(5)
+  })
+
+  test('an empty object splits into two empty objects; pick returns the data half', () => {
+    expect(splitDataAttributes({})).toEqual({ data: {}, rest: {} })
+    expect(pickDataAttributes({ 'data-shot': 'x', title: 't' })).toEqual({ 'data-shot': 'x' })
   })
 })
 

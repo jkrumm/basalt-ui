@@ -31,6 +31,36 @@ export interface BasaltProps {
   readonly style?: CSSProperties | undefined
 }
 
+/**
+ * Free-form `data-*` attributes. A composite takes them on top of `BasaltProps` and forwards them to
+ * its ROOT element through `pickDataAttributes` — the seam `basalt-ui shot` (`data-shot`,
+ * `data-shot-states`) and consumer test hooks read. Only `data-*` crosses: basalt still does not
+ * spread `...rest`.
+ */
+export type DataAttributes = {
+  readonly [K in `data-${string}`]?: string | number | boolean | undefined
+}
+
+/**
+ * Splits `props` into its `data-*` entries (spread them onto the root: `{...data}`) and everything
+ * else. A composite that already forwards its remainder to a child (`...header`) splits first, or
+ * the anchor lands on the child instead of the root.
+ */
+export function splitDataAttributes<P extends object>(
+  props: P,
+): { data: DataAttributes; rest: Omit<P, `data-${string}`> } {
+  const data: Record<string, unknown> = {}
+  const rest: Record<string, unknown> = {}
+  for (const [key, value] of Object.entries(props)) {
+    if (key.startsWith('data-')) data[key] = value
+    else rest[key] = value
+  }
+  return { data: data as DataAttributes, rest: rest as Omit<P, `data-${string}`> }
+}
+
+/** The `data-*` entries of `props` alone, for a component that destructures the rest itself. */
+export const pickDataAttributes = (props: object): DataAttributes => splitDataAttributes(props).data
+
 /** One class per named slot. The slot union is the component's documented contract. */
 export type SlotClassNames<S extends string> = Partial<Record<S, string>>
 

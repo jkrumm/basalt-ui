@@ -64,8 +64,8 @@ import type { CSSProperties, MouseEvent as ReactMouseEvent, ReactNode, RefObject
 import { Fragment, useId, useLayoutEffect, useMemo, useRef, useState } from 'react'
 import { useDebouncedCallback } from '@mantine/hooks'
 import { HostTitleContext } from '../common/could-not-load'
-import { cx } from '../common/props'
-import type { BasaltProps, SlotStylesProps } from '../common/props'
+import { cx, pickDataAttributes } from '../common/props'
+import type { BasaltProps, DataAttributes, SlotStylesProps } from '../common/props'
 import { BASALT_PREFIX } from '../common/errors'
 import { HIT_COARSE } from '../common/hit-floor'
 import { useMeasuredWidths } from '../common/use-measured-widths'
@@ -548,6 +548,7 @@ export type BasaltDataTableSlot = 'root' | 'toolbar' | 'table' | 'footer'
  * }
  */
 export type BasaltDataTableProps<T extends RowData> = BasaltProps &
+  DataAttributes &
   SlotStylesProps<BasaltDataTableSlot> & {
     // ── Header (WidgetHeader, docs/CONTROLS-SPEC.md §2.2) ──────────────────────────
 
@@ -1631,10 +1632,10 @@ export function BasaltDataTable<T extends RowData>(props: BasaltDataTableProps<T
   )
   const ariaColCount = fullLeafColumns.length + colIndexOffset
   // What the toggle announces: the folded columns' own headers, in column order.
-  const foldedLabel = fullLeafColumns
+  const foldedNames = fullLeafColumns
     .filter((column) => foldedColumns.has(column.id))
     .map((column) => columnLabel(column))
-    .join(', ')
+  const foldedLabel = foldedNames.join(', ')
 
   // `getSelectedRowModel()` is TanStack's own memo, so its `rows` array keeps its identity until
   // the selection or the row model actually moves — which is what makes both memos below hold.
@@ -1706,7 +1707,9 @@ export function BasaltDataTable<T extends RowData>(props: BasaltDataTableProps<T
   const errorNode = queryError !== undefined && (
     <ErrorState
       error={queryError.error}
-      title={title === undefined ? 'Could not load' : `Could not load ${title}`}
+      // A titled table names itself; an untitled one reads its host's title (`Section`, a card)
+      // through `ErrorState`, which falls back to the bare "Could not load" outside any host.
+      {...(title !== undefined && { title: `Could not load ${title}` })}
       tier="section"
       retrying={queryError.fetchStatus === 'fetching'}
       onRetry={() => void queryError.refetch()}
@@ -1775,7 +1778,7 @@ export function BasaltDataTable<T extends RowData>(props: BasaltDataTableProps<T
                 are folded, and which. */}
             {hasFolded && (
               <Table.Th {...toggleCell} aria-colindex={1}>
-                <FoldHeaderLabel count={foldedColumns.size} foldedLabel={foldedLabel} />
+                <FoldHeaderLabel names={foldedNames} />
               </Table.Th>
             )}
             {headerGroup.headers.map((header) => {
@@ -2006,6 +2009,7 @@ export function BasaltDataTable<T extends RowData>(props: BasaltDataTableProps<T
 
   return (
     <div
+      {...pickDataAttributes(props)}
       ref={projectionRootRef}
       className={cx(classNames?.root, className)}
       {...(style !== undefined && { style })}

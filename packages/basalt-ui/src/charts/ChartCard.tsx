@@ -12,8 +12,8 @@ import { Children, isValidElement, useRef, useState } from 'react'
 import type { CSSProperties, ReactElement, ReactNode } from 'react'
 import { useIsomorphicLayoutEffect } from '../common/isomorphic-layout-effect'
 import { HostTitleContext } from '../common/could-not-load'
-import { cx } from '../common/props'
-import type { BasaltProps, SlotStylesProps } from '../common/props'
+import { cx, splitDataAttributes } from '../common/props'
+import type { BasaltProps, DataAttributes, SlotStylesProps } from '../common/props'
 import type { DeltaPolarity } from '../dashboard/delta-badge'
 import { WidgetHeader } from '../dashboard/widget-header'
 import { VX } from '../tokens'
@@ -125,6 +125,7 @@ export type ChartFactTone = 'good' | 'warn' | 'bad' | 'muted'
 export type ChartCardSlot = 'root' | 'header' | 'body'
 
 type ChartCardBaseProps = BasaltProps &
+  DataAttributes &
   SlotStylesProps<ChartCardSlot> & {
     title?: string | undefined
     icon?: ReactNode
@@ -327,8 +328,9 @@ export function ChartCard({
   style,
   children,
   facts,
-  ...header
+  ...headerAndData
 }: ChartCardProps): ReactElement {
+  const { data, rest: header } = splitDataAttributes(headerAndData)
   const { ref, short } = useShortCard()
   const resolved = resolveChartState(state)
   // The noun an error names: `stateNoun`, else the card's own title ("Revenue" → "revenue").
@@ -354,6 +356,7 @@ export function ChartCard({
     <ChartCardContext.Provider value>
       <div
         ref={ref}
+        {...data}
         data-basalt-chart-card=""
         className={cx(classNames?.root, className)}
         style={{ ...cardStyle, ...style }}

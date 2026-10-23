@@ -9,11 +9,14 @@
   min-width: 0;
 }
 
+/* The aside sits right after the sentence it dates and wraps under it when the line is full — never
+ * pinned to the far edge, where it read as belonging to nothing. */
 .top {
   display: flex;
+  flex-wrap: wrap;
   align-items: baseline;
-  justify-content: space-between;
-  gap: var(--vx-space-stack-md);
+  column-gap: var(--vx-space-stack-md);
+  row-gap: var(--vx-space-stack-xs);
   min-width: 0;
 }
 

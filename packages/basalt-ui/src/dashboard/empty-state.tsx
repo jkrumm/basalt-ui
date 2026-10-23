@@ -20,13 +20,14 @@
 import { Center, Stack } from '@mantine/core'
 import type { ReactNode } from 'react'
 import { VX, alpha } from '../tokens'
-import { cx } from '../common/props'
-import type { BasaltProps, SlotStylesProps } from '../common/props'
+import { cx, pickDataAttributes } from '../common/props'
+import type { BasaltProps, DataAttributes, SlotStylesProps } from '../common/props'
 
 /** The five boxes `EmptyState` paints, and the whole styling seam it offers (`common/props.ts`). */
 export type EmptyStateSlot = 'root' | 'icon' | 'title' | 'description' | 'action'
 
 export type EmptyStateProps = BasaltProps &
+  DataAttributes &
   SlotStylesProps<EmptyStateSlot> & {
     /** Optional glyph slot, rendered faint at ~28-32px. No shipped illustration assets. */
     icon?: ReactNode
@@ -65,10 +66,12 @@ export function EmptyState({
   className,
   style,
   classNames,
+  ...rest
 }: EmptyStateProps) {
   const resolved = tier ?? 'page'
   return (
     <Stack
+      {...pickDataAttributes(rest)}
       align="center"
       gap="xs"
       className={cx(classNames?.root, className)}

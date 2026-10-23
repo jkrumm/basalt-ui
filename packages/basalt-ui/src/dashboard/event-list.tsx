@@ -38,8 +38,8 @@
 import { Button, VisuallyHidden } from '@mantine/core'
 import { useId, useRef, useState, useSyncExternalStore } from 'react'
 import type { CSSProperties, ReactNode } from 'react'
-import { cx } from '../common/props'
-import type { BasaltProps } from '../common/props'
+import { cx, pickDataAttributes } from '../common/props'
+import type { BasaltProps, DataAttributes } from '../common/props'
 import { VirtualRows } from '../common/virtual-rows'
 import classes from './event-list.module.css'
 import { EmptyState } from './empty-state'
@@ -59,59 +59,60 @@ import { SkeletonRows } from './event-list-skeleton'
 /** Rows above this window through the virtual-list seam; at or below it the list is plain DOM. */
 const VIRTUALIZE_THRESHOLD = 200
 
-export type EventListProps = BasaltProps & {
-  /** Accessible name of the list. Default "Events". */
-  label?: string
-  /** Events in display order — kept as given, never re-sorted. `id`s must be unique within the list. */
-  items: readonly {
-    id: string
-    at: Date | number
-    actor?: ReactNode
-    title: ReactNode
-    body?: ReactNode
-    /** A glyph or avatar in the leading column. */
-    leading?: ReactNode
-    chips?: ReactNode
-  }[]
-  /** `feed`: one clamped line, about 52 px a two-line row. `timeline`: a rail, full sentences, body and chips in full. */
-  density?: 'feed' | 'timeline'
-  /** The 1 px line through the leading column joining rows within a day group. Default: `density === 'timeline'`. */
-  rail?: boolean
-  /** Day headers (`micro` mono, muted, with the row count) or one flat list. Default `day`. */
-  group?: 'day' | 'none'
-  /**
-   * The instant "Today" and relative times are measured from. Default: the client clock, read once
-   * after mount; until then (the server render, the hydrating paint) days read as dates and a
-   * `relative` time as a date-time, so server and client markup match.
-   */
-  now?: number | Date
-  /** Overrides the `Today` / `Yesterday` / short-date header text. Without a clock yet, `now` is the day itself. */
-  dayLabel?: (day: Date, now: Date) => string
-  /**
-   * The time column. Default `clock` when grouped by day, `date-time` when not. A function formats it
-   * yourself; one returning an empty string renders no time for that row (an untimed entry).
-   */
-  time?: 'clock' | 'relative' | 'date-time' | ((at: Date) => string)
-  /** Which end of `items` is earlier. Does not sort. Default `newest-first`. */
-  order?: 'newest-first' | 'oldest-first'
-  /**
-   * A quiet "Show earlier (N)" control at the earlier end (bottom for newest-first, top for
-   * oldest-first). With `height`, prepending (oldest-first) keeps the visible row where it is and a
-   * list opens on its newest end; a content-sized list leaves scrolling to the page.
-   */
-  earlier?: { onLoad: () => void; loading?: boolean; remaining?: number }
-  /** The list owns a scroll node of this height (modal, aside, card). Omitted: content-sized. */
-  height?: number | string
-  /** Renders row-shaped skeletons. */
-  loading?: boolean
-  /** Skeleton rows while loading. Default: the rows `items` holds now (a refetch, capped at 30), else 5. */
-  loadingRows?: number
-  /**
-   * The empty state, an `EmptyState` in a ring-edged tile that sizes to its content (no void in a
-   * bounded `height`). Default: "Nothing has happened yet" with a one-line why.
-   */
-  empty?: { title: string; description?: string; action?: ReactNode }
-}
+export type EventListProps = BasaltProps &
+  DataAttributes & {
+    /** Accessible name of the list. Default "Events". */
+    label?: string
+    /** Events in display order — kept as given, never re-sorted. `id`s must be unique within the list. */
+    items: readonly {
+      id: string
+      at: Date | number
+      actor?: ReactNode
+      title: ReactNode
+      body?: ReactNode
+      /** A glyph or avatar in the leading column. */
+      leading?: ReactNode
+      chips?: ReactNode
+    }[]
+    /** `feed`: one clamped line, about 52 px a two-line row. `timeline`: a rail, full sentences, body and chips in full. */
+    density?: 'feed' | 'timeline'
+    /** The 1 px line through the leading column joining rows within a day group. Default: `density === 'timeline'`. */
+    rail?: boolean
+    /** Day headers (`micro` mono, muted, with the row count) or one flat list. Default `day`. */
+    group?: 'day' | 'none'
+    /**
+     * The instant "Today" and relative times are measured from. Default: the client clock, read once
+     * after mount; until then (the server render, the hydrating paint) days read as dates and a
+     * `relative` time as a date-time, so server and client markup match.
+     */
+    now?: number | Date
+    /** Overrides the `Today` / `Yesterday` / short-date header text. Without a clock yet, `now` is the day itself. */
+    dayLabel?: (day: Date, now: Date) => string
+    /**
+     * The time column. Default `clock` when grouped by day, `date-time` when not. A function formats it
+     * yourself; one returning an empty string renders no time for that row (an untimed entry).
+     */
+    time?: 'clock' | 'relative' | 'date-time' | ((at: Date) => string)
+    /** Which end of `items` is earlier. Does not sort. Default `newest-first`. */
+    order?: 'newest-first' | 'oldest-first'
+    /**
+     * A quiet "Show earlier (N)" control at the earlier end (bottom for newest-first, top for
+     * oldest-first). With `height`, prepending (oldest-first) keeps the visible row where it is and a
+     * list opens on its newest end; a content-sized list leaves scrolling to the page.
+     */
+    earlier?: { onLoad: () => void; loading?: boolean; remaining?: number }
+    /** The list owns a scroll node of this height (modal, aside, card). Omitted: content-sized. */
+    height?: number | string
+    /** Renders row-shaped skeletons. */
+    loading?: boolean
+    /** Skeleton rows while loading. Default: the rows `items` holds now (a refetch, capped at 30), else 5. */
+    loadingRows?: number
+    /**
+     * The empty state, an `EmptyState` in a ring-edged tile that sizes to its content (no void in a
+     * bounded `height`). Default: "Nothing has happened yet" with a one-line why.
+     */
+    empty?: { title: string; description?: string; action?: ReactNode }
+  }
 
 const subscribeNever = (): (() => void) => () => {}
 
@@ -159,6 +160,7 @@ export function EventList({
   empty = DEFAULT_EMPTY,
   className,
   style,
+  ...rest
 }: EventListProps) {
   const clock = useClientClock()
   // The scroll node as state, so a windowed list can wait for it (see `VirtualRows` `scrollRoot`).
@@ -301,7 +303,12 @@ export function EventList({
   const boxed = ownScroll && (loading || items.length > 0)
   const scrollStyle: CSSProperties | undefined = boxed ? { height } : undefined
   return (
-    <div className={cx(classes.frame, className)} style={style} data-density={density}>
+    <div
+      {...pickDataAttributes(rest)}
+      className={cx(classes.frame, className)}
+      style={style}
+      data-density={density}
+    >
       {oldestFirst && control}
       {/* theme-allow raw-scroll-container — the list owns its scroll node when given a height, like the virtual seam. */}
       <div

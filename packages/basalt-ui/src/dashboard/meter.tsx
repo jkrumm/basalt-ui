@@ -62,7 +62,8 @@
  */
 import { useContext } from 'react'
 import type { ReactNode } from 'react'
-import type { BasaltProps } from '../common/props'
+import { pickDataAttributes } from '../common/props'
+import type { BasaltProps, DataAttributes } from '../common/props'
 import { VX } from '../tokens'
 import { reportOnce } from '../common/validate'
 import { allPartsMuted, isReading, normalizeSegments, segmentReading, spanOf } from './meter-model'
@@ -71,20 +72,21 @@ import { MeterBar, MeterEmpty, MeterRing, MeterRingLoading } from './meter-parts
 import { asText } from './scale'
 import { VisualSlotContext } from './visual-slot'
 
-type Common = BasaltProps & {
-  /** Accessible name (`aria-label`). Required: a meter without one is announced as a bare number. */
-  label: string
-  /** Track start. Default 0. */
-  min?: number
-  /** Track end. Default 100. */
-  max?: number
-  /** Formats values in captions and the accessible text. Default: the number as written. */
-  format?: (value: number) => string
-  /** Renders a skeleton with the meter's footprint. */
-  loading?: boolean
-  /** Muted line shown when there is no reading; none by default (the muted track stands alone, caption rows blank). */
-  emptyText?: string
-}
+type Common = BasaltProps &
+  DataAttributes & {
+    /** Accessible name (`aria-label`). Required: a meter without one is announced as a bare number. */
+    label: string
+    /** Track start. Default 0. */
+    min?: number
+    /** Track end. Default 100. */
+    max?: number
+    /** Formats values in captions and the accessible text. Default: the number as written. */
+    format?: (value: number) => string
+    /** Renders a skeleton with the meter's footprint. */
+    loading?: boolean
+    /** Muted line shown when there is no reading; none by default (the muted track stands alone, caption rows blank). */
+    emptyText?: string
+  }
 
 type BarCommon = Common & {
   shape?: 'bar'
@@ -232,7 +234,7 @@ function barTone(tone: 'muted' | 'ink' | undefined, plain: boolean): 'muted' | u
 export function Meter(props: MeterProps) {
   const { label, min = 0, max = 100, format = asText, className, style } = props
   const row = props.size === 'row'
-  const shell = { className, style, row }
+  const shell = { className, style, row, data: pickDataAttributes(props) }
   const ring = props.shape === 'ring'
   warnInvalidTrack(min, max)
   const host = useContext(VisualSlotContext)

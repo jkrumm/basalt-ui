@@ -19,9 +19,9 @@ import { useContext } from 'react'
 import type { CSSProperties, ReactNode } from 'react'
 import { toErrorMessage } from '../common/errors'
 import { couldNotLoad, HostTitleContext } from '../common/could-not-load'
-import { cx } from '../common/props'
+import { cx, pickDataAttributes } from '../common/props'
 import { RetryButton } from '../common/retry-button'
-import type { BasaltProps, SlotStylesProps } from '../common/props'
+import type { BasaltProps, DataAttributes, SlotStylesProps } from '../common/props'
 import { VX } from '../tokens'
 import { StatusDot } from '../theme/status-dot'
 import { EmptyState } from './empty-state'
@@ -59,12 +59,13 @@ export type QueryEmptyCopy = {
 
 // ── LoadingState ──────────────────────────────────────────────────────────────────────────────────
 
-export type LoadingStateProps = BasaltProps & {
-  /** How loud this state is. Default `'page'`. */
-  tier?: QueryStateTier
-  /** Accessible name for the loading state. Say what is loading. */
-  label?: string
-}
+export type LoadingStateProps = BasaltProps &
+  DataAttributes & {
+    /** How loud this state is. Default `'page'`. */
+    tier?: QueryStateTier
+    /** Accessible name for the loading state. Say what is loading. */
+    label?: string
+  }
 
 /**
  * `tier="page"` centres a neutral spinner in a generous block (a route body whose shape is unknown);
@@ -76,11 +77,14 @@ export function LoadingState({
   label = 'Loading',
   className,
   style,
+  ...rest
 }: LoadingStateProps): ReactNode {
   const resolved = tier ?? 'page'
+  const data = pickDataAttributes(rest)
   if (resolved === 'section') {
     return (
       <Stack
+        {...data}
         component="output"
         gap="xs"
         aria-label={label}
@@ -100,6 +104,7 @@ export function LoadingState({
   // renders at today's 64px at level 0 and tracks every other density level with it.
   return (
     <Center
+      {...data}
       {...(className !== undefined && { className })}
       style={{ paddingBlock: 'calc(var(--vx-space-stack-xs, 0.25rem) * 16)', ...style }}
     >
@@ -110,21 +115,22 @@ export function LoadingState({
 
 // ── ErrorState ────────────────────────────────────────────────────────────────────────────────────
 
-export type ErrorStateProps = BasaltProps & {
-  /** Whatever was thrown — the raw Eden/fetch envelope is fine, it gets decoded. */
-  error: unknown
-  /** Alert heading. Say what failed, e.g. `Could not load images`. */
-  title?: string
-  /** Shown only when the server body carries no readable message. */
-  fallback?: string
-  onRetry?: () => void
-  /** Disables the retry button while a refetch is in flight. */
-  retrying?: boolean
-  /** How loud this state is. Default `'page'`. */
-  tier?: QueryStateTier
-  /** Extra controls beside Retry (e.g. a "Back to shares" link). */
-  action?: ReactNode
-}
+export type ErrorStateProps = BasaltProps &
+  DataAttributes & {
+    /** Whatever was thrown — the raw Eden/fetch envelope is fine, it gets decoded. */
+    error: unknown
+    /** Alert heading. Say what failed, e.g. `Could not load images`. */
+    title?: string
+    /** Shown only when the server body carries no readable message. */
+    fallback?: string
+    onRetry?: () => void
+    /** Disables the retry button while a refetch is in flight. */
+    retrying?: boolean
+    /** How loud this state is. Default `'page'`. */
+    tier?: QueryStateTier
+    /** Extra controls beside Retry (e.g. a "Back to shares" link). */
+    action?: ReactNode
+  }
 
 /**
  * The error branch: the REAL server message (via `toErrorMessage`) plus a retry. Usable on its own,
@@ -140,7 +146,9 @@ export function ErrorState({
   action,
   className,
   style,
+  ...rest
 }: ErrorStateProps): ReactNode {
+  const data = pickDataAttributes(rest)
   const hostTitle = useContext(HostTitleContext)
   const title = titleProp ?? couldNotLoad(hostTitle)
   const resolved = tier ?? 'page'
@@ -150,6 +158,7 @@ export function ErrorState({
     <Stack
       gap="xs"
       role="alert"
+      {...(resolved === 'section' && data)}
       {...(resolved === 'section' && className !== undefined && { className })}
       {...(resolved === 'section' && style !== undefined && { style })}
     >
@@ -174,6 +183,7 @@ export function ErrorState({
   return (
     <Stack
       py="md"
+      {...data}
       {...(className !== undefined && { className })}
       {...(style !== undefined && { style })}
     >
@@ -245,6 +255,7 @@ export function resolveQueryBranch<TData>(
 export type QueryStateSlot = 'root'
 
 export type QueryStateProps<TData> = BasaltProps &
+  DataAttributes &
   SlotStylesProps<QueryStateSlot> & {
     query: QueryStateLike<TData>
     /** A render function gets `data` narrowed to non-undefined; a plain node also works. */
@@ -298,8 +309,12 @@ export function QueryState<TData>({
   className,
   style,
   classNames,
+  ...rest
 }: QueryStateProps<TData>): ReactNode {
   assertQueryStateLike('QueryState', query)
+  // The live branch's root carries the consumer's `data-*`. The READY branch renders `children`
+  // alone and has no root of its own, so an anchor there belongs on the host (`Section`, a card).
+  const dataAttrs = pickDataAttributes(rest)
   const resolvedTier = tier ?? 'page'
   // One class for every branch — see {@link QueryStateSlot}. `cx` returns `''` when both are
   // absent, and an empty `className` on a branch that previously carried none would be a DOM diff,
@@ -312,6 +327,7 @@ export function QueryState<TData>({
   if (isError && data === undefined) {
     return (
       <ErrorState
+        {...dataAttrs}
         error={error}
         {...(errorTitle !== undefined && { title: errorTitle })}
         fallback={errorFallback}
@@ -327,10 +343,11 @@ export function QueryState<TData>({
 
   if (data === undefined) {
     if (fetchStatus === 'idle' && !isError)
-      return empty ? renderEmpty(empty, resolvedTier, rootClassName, style) : null
+      return empty ? renderEmpty(empty, resolvedTier, rootClassName, style, dataAttrs) : null
     return (
       loading ?? (
         <LoadingState
+          {...dataAttrs}
           tier={resolvedTier}
           {...(rootClassName !== undefined && { className: rootClassName })}
           {...(style !== undefined && { style })}
@@ -342,7 +359,7 @@ export function QueryState<TData>({
   const emptyNow = isEmpty ? isEmpty(data) : defaultIsEmpty(data)
   const body = emptyNow
     ? empty
-      ? renderEmpty(empty, resolvedTier, rootClassName, style)
+      ? renderEmpty(empty, resolvedTier, rootClassName, style, dataAttrs)
       : null
     : typeof children === 'function'
       ? children(data)
@@ -352,6 +369,7 @@ export function QueryState<TData>({
 
   return (
     <Stack
+      {...dataAttrs}
       gap="sm"
       {...(rootClassName !== undefined && { className: rootClassName })}
       {...(style !== undefined && { style })}
@@ -374,9 +392,11 @@ function renderEmpty(
   tier: QueryStateTier,
   className?: string,
   style?: CSSProperties,
+  data?: DataAttributes,
 ): ReactNode {
   return (
     <EmptyState
+      {...data}
       title={empty.title}
       tier={tier}
       {...(empty.description !== undefined && { description: empty.description })}

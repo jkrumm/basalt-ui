@@ -49,8 +49,8 @@ import { Skeleton, VisuallyHidden } from '@mantine/core'
 import { EmptyState } from './empty-state'
 import { isValidElement } from 'react'
 import type { ReactNode } from 'react'
-import { cx } from '../common/props'
-import type { BasaltProps } from '../common/props'
+import { cx, pickDataAttributes } from '../common/props'
+import type { BasaltProps, DataAttributes } from '../common/props'
 import classes from './bar-list.module.css'
 import { StatusDot } from '../theme/status-dot'
 import { StatusVerdict } from '../theme/status-verdict'
@@ -70,37 +70,38 @@ type BarListItem = {
   tickLabel?: string
 }
 
-export type BarListProps = BasaltProps & {
-  /** Accessible name of the list. Required. */
-  label: string
-  /** Rows in display order (sort them yourself; the list does not reorder). */
-  items: readonly BarListItem[]
-  /**
-   * Formats each number. `part` is `'max'` for a row's denominator, `'value'` otherwise (the value and
-   * the tick), so a unit can sit on one side only: `'32 / 40 pts'`. Default: the number as written.
-   */
-  format?: (value: number, part: 'value' | 'max') => string
-  /** Scale end shared by rows without their own `max`. Default: the largest of those rows' values. */
-  max?: number
-  /**
-   * `thin` (default): label on its own line above a thin bar, value right-aligned on that line.
-   * `inline`: the label sits inside a heavier track, the value outside it.
-   */
-  variant?: 'thin' | 'inline'
-  /** The first row's bar takes the accent. Off by default. */
-  accentLeader?: boolean
-  /**
-   * Which edge the secondary column aligns to. Default: by content — text (a status word, a status
-   * mark) starts, figures and other elements end.
-   */
-  secondaryAlign?: 'start' | 'end'
-  /** Renders row-shaped skeletons. */
-  loading?: boolean
-  /** Skeleton rows while loading. Default: the rows `items` holds now (a refetch, capped at 30), else 5. */
-  loadingRows?: number
-  /** Title of the `EmptyState` tile shown when `items` is empty. Default "No items to compare yet"; pass the cause for your list. */
-  emptyText?: string
-}
+export type BarListProps = BasaltProps &
+  DataAttributes & {
+    /** Accessible name of the list. Required. */
+    label: string
+    /** Rows in display order (sort them yourself; the list does not reorder). */
+    items: readonly BarListItem[]
+    /**
+     * Formats each number. `part` is `'max'` for a row's denominator, `'value'` otherwise (the value and
+     * the tick), so a unit can sit on one side only: `'32 / 40 pts'`. Default: the number as written.
+     */
+    format?: (value: number, part: 'value' | 'max') => string
+    /** Scale end shared by rows without their own `max`. Default: the largest of those rows' values. */
+    max?: number
+    /**
+     * `thin` (default): label on its own line above a thin bar, value right-aligned on that line.
+     * `inline`: the label sits inside a heavier track, the value outside it.
+     */
+    variant?: 'thin' | 'inline'
+    /** The first row's bar takes the accent. Off by default. */
+    accentLeader?: boolean
+    /**
+     * Which edge the secondary column aligns to. Default: by content — text (a status word, a status
+     * mark) starts, figures and other elements end.
+     */
+    secondaryAlign?: 'start' | 'end'
+    /** Renders row-shaped skeletons. */
+    loading?: boolean
+    /** Skeleton rows while loading. Default: the rows `items` holds now (a refetch, capped at 30), else 5. */
+    loadingRows?: number
+    /** Title of the `EmptyState` tile shown when `items` is empty. Default "No items to compare yet"; pass the cause for your list. */
+    emptyText?: string
+  }
 
 /** `null`, `undefined`, `false` and `true` render nothing, so they are not a secondary value. */
 const hasContent = (node: ReactNode): boolean =>
@@ -132,12 +133,14 @@ export function BarList({
   emptyText = 'No items to compare yet',
   className,
   style,
+  ...rest
 }: BarListProps) {
+  const data = pickDataAttributes(rest)
   if (loading) {
     // Each row is a real, empty row with a skeleton laid over it, so the list takes the height of
     // the rows it will become in every layout instead of a fixed guess.
     return (
-      <div className={cx(classes.frame, className)} style={style}>
+      <div {...data} className={cx(classes.frame, className)} style={style}>
         <div className={classes.root} aria-busy="true" data-variant={variant}>
           <VisuallyHidden>{`Loading ${label}`}</VisuallyHidden>
           {Array.from({ length: skeletonRowCount(loadingRows, items.length) }, (_, i) => (
@@ -159,7 +162,7 @@ export function BarList({
   }
   if (items.length === 0) {
     return (
-      <div className={cx(classes.frame, className)} style={style}>
+      <div {...data} className={cx(classes.frame, className)} style={style}>
         {/* oxlint-disable-next-line jsx-a11y/prefer-tag-over-role -- a polite live region whose name is the visually hidden label inside; `<output>` cannot hold the tile's block content */}
         <div className={classes.root} role="status">
           <VisuallyHidden>{label}</VisuallyHidden>
@@ -180,7 +183,7 @@ export function BarList({
   const align = secondaryAlign ?? (items.some((i) => isText(i.secondary)) ? 'start' : 'end')
   return (
     // The frame is the width container the wide layout keys on (a container cannot restyle its own grid).
-    <div className={cx(classes.frame, className)} style={style}>
+    <div {...data} className={cx(classes.frame, className)} style={style}>
       {/* The explicit role is deliberate: `list-style: none` makes Safari/VoiceOver drop the implicit one. */}
       <ul
         className={classes.root}
