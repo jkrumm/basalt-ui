@@ -1831,3 +1831,47 @@ describe('staleEmittedSheets', () => {
     expect(staleEmittedSheets(dir, ['tokens.css'], null)).toEqual([])
   })
 })
+
+describe('doctor --from', () => {
+  let dir: string
+  beforeEach(() => {
+    dir = mkdtempSync(join(tmpdir(), 'basalt-from-'))
+    const pkg = join(dir, 'node_modules', 'basalt-ui')
+    mkdirSync(pkg, { recursive: true })
+    writeFileSync(join(pkg, 'package.json'), '{"name":"basalt-ui","version":"2.28.0"}')
+    writeFileSync(
+      join(pkg, 'MIGRATING.md'),
+      `## 2.28.0\n### Visible without code change\n- ${'long '.repeat(80)}Fix: \`basalt-ui tokens:css\`\n`,
+    )
+    writeFileSync(join(dir, 'package.json'), '{}')
+  })
+  afterEach(() => rmSync(dir, { recursive: true, force: true }))
+  const run = (...flags: string[]): { code: number; out: string; err: string } => {
+    const [log, error] = [console.log, console.error]
+    let out = ''
+    let err = ''
+    console.log = (m: string) => void (out += m)
+    console.error = (m: string) => void (err += m)
+    try {
+      return { code: doctor(dir, flags), out, err }
+    } finally {
+      console.log = log
+      console.error = error
+    }
+  }
+
+  it('keeps the Fix text of a long bullet', () => {
+    expect(run('--from=2.27.0').out).toContain('Fix: `basalt-ui tokens:css`')
+  })
+
+  it('accepts --from=<v> and --from <v> alike', () => {
+    expect(run('--from', '2.27.0').out).toBe(run('--from=2.27.0').out)
+    expect(run('--from', '2.27.0').code).toBe(0)
+  })
+
+  it('rejects a --from above the installed version', () => {
+    const r = run('--from=2.29.0')
+    expect(r.code).toBe(1)
+    expect(r.err).toContain('newer than the installed 2.28.0')
+  })
+})
