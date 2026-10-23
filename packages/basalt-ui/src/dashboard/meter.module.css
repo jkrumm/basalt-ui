@@ -336,11 +336,6 @@
   border-radius: var(--vx-radius-fine);
 }
 
-.empty {
-  font-size: var(--basalt-meter-caption);
-  color: var(--vx-muted);
-}
-
 /* One caption-height line: a blank caption row of an empty Meter, so it stands at the loaded height. */
 .line {
   display: flex;

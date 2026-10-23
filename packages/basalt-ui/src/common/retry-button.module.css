@@ -2,8 +2,8 @@
  * The one Retry. ErrorState (Mantine, StatCard / pages), ChartCard's placeholder and a strip cell's
  * error all render this, so the three read as one button. It is a plain element because `./charts`
  * resolves with no Mantine, and it is styled to be a Mantine `size="xs" variant="default"` Button
- * reading the same `--vx-*` tokens the theme binds that button to: panel fill (elevated on hover), no
- * border, `shadow-raised`, the control radius, the xs type size, the theme's inline padding step and
+ * reading the same `--vx-*` tokens the theme binds that button to: panel fill (elevated on hover),
+ * `shadow-raised`, the control radius, the xs type size, the theme's inline padding step and
  * Mantine's 30px xs height. `--mantine-scale` carries the app's scale knob, 1 where Mantine is absent.
  */
 .retry {
@@ -15,7 +15,10 @@
   height: calc(1.875rem * var(--mantine-scale, 1));
   padding-block: 0;
   padding-inline: calc(var(--vx-space-stack-md, 0.75rem) * var(--mantine-scale, 1));
-  border: calc(0.0625rem * var(--mantine-scale, 1)) solid transparent;
+  /* A visible edge: the panel fill and `shadow-raised` alone read as a pale chip on the page or a card,
+   so the border is ink mixed into the panel (>= 3:1 against it in both schemes), not the hairline. */
+  border: calc(0.0625rem * var(--mantine-scale, 1)) solid
+    color-mix(in srgb, var(--vx-ink) 55%, var(--vx-surface-panel));
   border-radius: var(--vx-radius-ctrl);
   background: var(--vx-surface-panel);
   box-shadow: var(--vx-shadow-raised);
@@ -46,6 +49,7 @@
 /* Busy is Mantine's disabled paint: its own disabled colour and background, flat, no border. */
 .retry:disabled {
   background: var(--mantine-color-disabled, var(--vx-surface-subtle));
+  border-color: transparent;
   color: var(--mantine-color-disabled-color, var(--vx-muted));
   box-shadow: none;
   cursor: not-allowed;

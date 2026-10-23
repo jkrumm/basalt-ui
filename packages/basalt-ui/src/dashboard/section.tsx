@@ -45,7 +45,7 @@
  *   <UsageChart />
  * </Section>
  */
-import { useContext, useEffect, useId } from 'react'
+import { Children, cloneElement, isValidElement, useContext, useEffect, useId } from 'react'
 import type { ReactNode } from 'react'
 import { cx, splitDataAttributes } from '../common/props'
 import type { BasaltProps, DataAttributes, SlotStylesProps } from '../common/props'
@@ -60,6 +60,9 @@ import { LoadingState, QueryState } from './query-state'
 import type { QueryEmptyCopy, QueryStateLike } from './query-state'
 import { usePersistedOrLocal } from '../state/persisted-or-local'
 import { PAGE_BAR_HEIGHT_VAR, useInPageBarShell } from '../shell'
+import { BarList } from './bar-list'
+import { EventList } from './event-list'
+import { Meter } from './meter'
 import { WidgetHeader } from './widget-header'
 import type { WidgetHeaderProps } from './widget-header'
 import classes from './section.module.css'
@@ -123,7 +126,9 @@ type SectionBaseProps = Omit<
     /**
      * The loaded body's height in px. While `query` is pending the loading skeleton fills it, so
      * the section does not jump when the data lands. Declared, not measured: a first load has no
-     * previous body to measure. Ignored without `query`.
+     * previous body to measure. Omitted, a body that is one `BarList`, `EventList` or `Meter`
+     * loads as that figure's own skeleton (set its `loadingRows` to the loaded count); any other
+     * body gets the three-bar default. Ignored without `query`.
      */
     loadingHeight?: number
     /** Rendered in the header row, in its own `CtlSlot` — hidden while the section is collapsed. */
@@ -205,6 +210,18 @@ function ChevronToggle({
       </svg>
     </button>
   )
+}
+
+/**
+ * A body that is ONE figure with a row-shaped loading state loads as that figure, so the skeleton has
+ * the loaded footprint (rows, track) rather than a guess. Anything else has no shape to borrow.
+ */
+function figureLoading(children: ReactNode): ReactNode {
+  const only = Children.toArray(children)
+  const [child] = only
+  if (only.length !== 1 || !isValidElement<{ loading?: boolean }>(child)) return null
+  if (child.type !== BarList && child.type !== EventList && child.type !== Meter) return null
+  return cloneElement(child, { loading: true })
 }
 
 const ANCHOR_CLEARANCE = 'var(--vx-space-sticky-header-clearance)'
@@ -308,6 +325,8 @@ export function Section({
       </>
     ) : undefined
 
+  const figure = query !== undefined && loadingHeight === undefined ? figureLoading(children) : null
+
   return (
     <HostTitleContext value={title ?? outerTitle}>
       <div
@@ -344,9 +363,11 @@ export function Section({
                 query={query}
                 tier="section"
                 {...(empty !== undefined && { empty })}
-                {...(loadingHeight !== undefined && {
-                  loading: <LoadingState tier="section" style={{ minHeight: loadingHeight }} />,
-                })}
+                {...(loadingHeight !== undefined
+                  ? {
+                      loading: <LoadingState tier="section" style={{ minHeight: loadingHeight }} />,
+                    }
+                  : figure !== null && { loading: figure })}
               >
                 {children}
               </QueryState>

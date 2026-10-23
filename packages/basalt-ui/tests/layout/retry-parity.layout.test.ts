@@ -1,7 +1,8 @@
 /**
  * The shared `RetryButton` (a plain element, so `./charts` stays Mantine-free) must paint like the
  * Mantine `Button size="xs" variant="default"` it replaced: same box, padding, radius, border, font,
- * fill, ink and shadow, in both schemes. Markup equality cannot prove it; computed CSS can.
+ * fill, ink and shadow, in both schemes. The border COLOUR is the one deliberate difference (Wave 52:
+ * Retry has a visible edge, the Mantine default button none); `states-w52.layout.test.ts` pins it. Markup equality cannot prove it; computed CSS can.
  */
 import { afterAll, describe, expect, test } from 'bun:test'
 import type { FixtureSpec } from './fixture/spec'
@@ -36,7 +37,6 @@ const PROPS = [
   'paddingLeft',
   'borderTopWidth',
   'borderTopStyle',
-  'borderTopColor',
   'borderTopLeftRadius',
   'fontSize',
   'fontWeight',

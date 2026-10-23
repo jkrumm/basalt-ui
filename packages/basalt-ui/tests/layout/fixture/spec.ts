@@ -376,6 +376,8 @@ export type FixtureSpec = {
   retryParity?: true
   /** Wave 38: zone-keyed charts at a 340px card (`w38-*`) and a strip-cell sparkline at 150px (`w38-strip`). */
   w38Legend?: true
+  /** Wave 52: a `Section` loading vs loaded per figure, the empty boxes, Retry and the start caption (`w52-*`). */
+  w52States?: true
   /** Four `ChartCard`s around a `BarList`: loaded, loading, empty, error, each at two widths (`data-testid="list-<state>-<narrow|wide>"`). */
   barListStates?: true
   /** Wave 38: a facts `ChartCard` over a chart and over a `content` list, at rest and pending (`w38-load-<chart|list>-<rest|loading>`). */

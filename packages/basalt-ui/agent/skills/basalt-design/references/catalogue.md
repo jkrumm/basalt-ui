@@ -47,6 +47,8 @@ Run this first. A "yes, chart" answer sends you to § 2.
 
 Sections that sit side by side use one title size; a `Section` beside a `ChartCard` does not step a size down.
 
+A `Section` has no surface of its own. A lone `BarList`, `EventList` or `Meter` in a grid beside `ChartCard`s goes in a `ChartCard` (`placeholderHeight="content"`), so the row reads as one surface level; a `Section` holding several figures or cards stays flat.
+
 ## Not shipped — report the gap, don't hand-roll
 
 | Shape                                    | Missing        |

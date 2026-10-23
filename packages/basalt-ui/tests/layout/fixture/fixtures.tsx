@@ -87,6 +87,7 @@ import type {
 import { InfoHeaderFixture } from './info-header-fixture'
 import { InfoRingFixture } from './info-ring-fixture'
 import { BarListStatesFixture } from './bar-list-states-fixture'
+import { W52StatesFixture } from './w52-states-fixture'
 import { RetryParityFixture } from './retry-parity-fixture'
 import { W38BarsSlotFixture, W41ChipStripFixture } from './w38-bars-slot-fixture'
 import { W43DangerFixture } from './w43-danger-fixture'
@@ -3106,6 +3107,7 @@ export function ShellFixture({ spec }: { spec: FixtureSpec }): ReactElement {
       {spec.retryParity && <RetryParityFixture />}
       {spec.w38Legend && <W38LegendFixture />}
       {spec.barListStates && <BarListStatesFixture />}
+      {spec.w52States && <W52StatesFixture />}
       {spec.w38BarsSlot && <W38BarsSlotFixture />}
       {spec.w41ChipStrip && <W41ChipStripFixture />}
       {spec.w43Danger && <W43DangerFixture />}
