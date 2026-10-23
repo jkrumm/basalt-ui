@@ -3,7 +3,7 @@
  * the managed-file manifest engine back from `./index`, this package's shared CLI helpers, and the
  * oxlint-preset plugin reader from `./sync` (also called there).
  */
-import { existsSync, readFileSync } from 'node:fs'
+import { existsSync, readFileSync, writeFileSync } from 'node:fs'
 import { resolve } from 'node:path'
 
 import { deriveSpacing } from '../tokens/core'
@@ -117,11 +117,40 @@ function missingPeers(cwd: string, pkgRoot: string): Record<string, string> {
   )
 }
 
+const VITE_CONFIGS = ['vite.config.ts', 'vite.config.mts', 'vite.config.js', 'vite.config.mjs']
+
 const hasRouterPlugin = (cwd: string): boolean =>
-  ['vite.config.ts', 'vite.config.mts', 'vite.config.js', 'vite.config.mjs'].some((f) => {
+  VITE_CONFIGS.some((f) => {
     const abs = resolve(cwd, f)
     return existsSync(abs) && readFileSync(abs, 'utf8').includes('@tanstack/router-plugin')
   })
+
+/** Splices the router plugin in front of `react()` in create-vite's `plugins: [react()]`; false for any other shape. */
+function wireRouterPlugin(cwd: string): boolean {
+  const file = VITE_CONFIGS.map((f) => resolve(cwd, f)).find((abs) => existsSync(abs))
+  if (file === undefined) return false
+  const text = readFileSync(file, 'utf8')
+  const wired = text.replace(
+    /(plugins:\s*\[\s*)(react\()/,
+    "$1tanstackRouter({ target: 'react', autoCodeSplitting: true }), $2",
+  )
+  if (wired === text) return false
+  writeFileSync(
+    file,
+    `import { tanstackRouter } from '@tanstack/router-plugin/vite'\n${wired}`,
+    'utf8',
+  )
+  return true
+}
+
+/** The package manager the app's lockfile names (bun without one) and its install and one-off-`vite` argv. */
+function packageManager(cwd: string): { install: string[]; vite: string[] } {
+  const has = (f: string): boolean => existsSync(resolve(cwd, f))
+  if (has('pnpm-lock.yaml')) return { install: ['pnpm', 'install'], vite: ['pnpm', 'exec', 'vite'] }
+  if (has('yarn.lock')) return { install: ['yarn', 'install'], vite: ['yarn', 'vite'] }
+  if (has('package-lock.json')) return { install: ['npm', 'install'], vite: ['npx', 'vite'] }
+  return { install: ['bun', 'install'], vite: ['bunx', 'vite'] }
+}
 
 /** What happened to a kept `.oxlintrc.json`, by the merge result (null: `--no-merge-lint`). */
 function oxlintrcCost(merge: MergeLintResult | null): string {
@@ -265,19 +294,52 @@ export function init(cwd: string = process.cwd(), scaffoldFlags: ScaffoldFlags =
   if (stockMain || keptUnwired) {
     const missing = missingPeers(cwd, ctx.pkgRoot)
     const count = Object.keys(missing).length
+    const pm = packageManager(cwd)
+    const viteBuild = `${[...pm.vite, 'build'].join(' ')}`
+    let pendingInstall = false
     if (count > 0 && stockMain) {
       patchPackageJson(cwd, (pkg) => {
         pkg['dependencies'] = { ...(pkg['dependencies'] as Record<string, string>), ...missing }
         return true
       })
-      advice.push(
-        `added ${count} missing peers to package.json; run \`bun install\` (init does not).`,
-      )
+      pendingInstall = true
+      advice.push(`added ${count} missing peers to package.json.`)
     } else if (count > 0) {
       const specs = Object.entries(missing).map(([name, range]) => `${name}@${range}`)
       advice.push(`missing peers: \`bun add ${specs.join(' ')}\`.`)
     }
-    if (!hasRouterPlugin(cwd)) advice.push(ROUTER_PLUGIN_FIX.replace(/^Fix: /, 'router plugin: '))
+    if (!hasRouterPlugin(cwd)) {
+      if (stockMain && wireRouterPlugin(cwd)) {
+        patchPackageJson(cwd, (pkg) => {
+          pkg['devDependencies'] = {
+            ...(pkg['devDependencies'] as Record<string, string> | undefined),
+            '@tanstack/router-plugin': 'latest', // its versions do not track the router's, so no peer range fits
+          }
+          return true
+        })
+        pendingInstall = true
+        advice.push('wired the TanStack router plugin into vite.config (before react()).')
+      } else {
+        advice.push(ROUTER_PLUGIN_FIX.replace(/^Fix: /, 'router plugin: '))
+      }
+    }
+    if (stockMain && pendingInstall) {
+      const installCmd = pm.install.join(' ')
+      const { run } = scaffoldFlags
+      if (run?.(pm.install, cwd) !== true) {
+        advice.push(
+          `run \`${installCmd}\` (init did not), then \`${viteBuild}\` once to generate routeTree.gen.ts.`,
+        )
+      } else {
+        // The plugin writes the tree before the build can fail on anything else, so the file, not the exit code, is the answer.
+        if (hasRouterPlugin(cwd)) run([...pm.vite, 'build'], cwd)
+        advice.push(
+          existsSync(resolve(cwd, 'src/routeTree.gen.ts'))
+            ? `ran \`${installCmd}\` and \`${viteBuild}\` (generated routeTree.gen.ts).`
+            : `ran \`${installCmd}\`; run \`${viteBuild}\` once to generate routeTree.gen.ts.`,
+        )
+      }
+    }
   }
 
   manifest.basaltVersion = ctx.vars.BASALT_VERSION

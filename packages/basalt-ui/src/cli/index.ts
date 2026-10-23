@@ -677,6 +677,8 @@ export type ScaffoldFlags = {
   noMergeLint?: boolean
   /** Shipped-source root; defaults to this package. Tests point it at a scratch package. */
   pkgRoot?: string
+  /** Runs a command in the app dir for `init` (install, first vite build); true on exit 0. Absent: `init` runs nothing and prints the command. */
+  run?: (argv: string[], cwd: string) => boolean
 }
 
 export { ROUTER_SEED_DESTS, START_PROVIDER_HINT, routerSeedDest, routerSeedDests }
@@ -1771,6 +1773,8 @@ export function run(argv: string[], cwd: string = process.cwd()): number | Promi
     case 'init':
       return init(cwd, {
         noMergeLint: flags.includes('--no-merge-lint'),
+        run: (argv, dir) =>
+          spawnSync(argv[0] ?? '', argv.slice(1), { cwd: dir, stdio: 'inherit' }).status === 0,
       })
     case 'sync':
       return sync(
