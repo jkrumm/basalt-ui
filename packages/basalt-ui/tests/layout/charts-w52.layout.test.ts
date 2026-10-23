@@ -93,16 +93,16 @@ layout('Wave 52 chart cards', () => {
   })
 
   /** The tooltip, the plot's tick labels and the chart box after `open` drove the chart. */
-  async function readout(open: 'hover' | 'focus') {
+  async function readout(open: 'hover' | 'focus', id = 'w52-focus') {
     const p = await openFixture(spec, DESKTOP_1440)
     await p.settle()
-    const box = await p.raw.evaluate(() => {
-      const svg = document.querySelector('[data-testid="w52-focus"] [data-basalt-box] svg')
+    const box = await p.raw.evaluate((host) => {
+      const svg = document.querySelector(`[data-testid="${host}"] [data-basalt-box] svg`)
       svg?.scrollIntoView({ block: 'center' })
       const r = svg?.getBoundingClientRect()
       if (!r) throw new Error('LAYOUT: no chart svg')
       return { x: r.x, y: r.y, w: r.width, h: r.height }
-    })
+    }, id)
     if (open === 'hover') {
       await p.raw.mouse.move(box.x + box.w / 2, box.y + box.h / 2)
       await p.raw.mouse.move(box.x + 2, box.y + box.h / 2)
@@ -110,7 +110,8 @@ layout('Wave 52 chart cards', () => {
       // Keyboard path: Tab onto the chart; the focus alone opens the tooltip at its first point.
       for (let i = 0; i < 12; i += 1) {
         const inside = await p.raw.evaluate(
-          () => document.activeElement?.closest('[data-testid="w52-focus"]') !== null,
+          (host) => document.activeElement?.closest(`[data-testid="${host}"]`) !== null,
+          id,
         )
         if (inside) break
         await p.raw.keyboard.press('Tab')
@@ -119,11 +120,13 @@ layout('Wave 52 chart cards', () => {
     }
     await p.raw.waitForSelector('.ts-chart-tooltip:not([hidden])')
     await p.settle()
-    return p.raw.evaluate(() => {
+    return p.raw.evaluate((host) => {
       const tip = document.querySelector('.ts-chart-tooltip:not([hidden])')
-      const svg = document.querySelector('[data-testid="w52-focus"] [data-basalt-box] svg')
-      if (!tip || !svg) throw new Error('LAYOUT: no tooltip or chart')
+      const svg = document.querySelector(`[data-testid="${host}"] [data-basalt-box] svg`)
+      const title = document.querySelector(`[data-testid="${host}"] [data-widget-title]`)
+      if (!tip || !svg || !title) throw new Error('LAYOUT: no tooltip, chart or title')
       const t = tip.getBoundingClientRect()
+      const s = svg.getBoundingClientRect()
       const labels = [...svg.querySelectorAll('text')].map((el) => {
         const r = el.getBoundingClientRect()
         return {
@@ -145,10 +148,12 @@ layout('Wave 52 chart cards', () => {
       )
       return {
         tip: { left: t.left, right: t.right, top: t.top, bottom: t.bottom },
+        svg: { left: s.left, right: s.right, top: s.top, bottom: s.bottom },
+        titleBottom: title.getBoundingClientRect().bottom,
         labels: labels.length,
         hit: hit.map((l) => l.text),
       }
-    })
+    }, id)
   }
 
   test.each(['hover', 'focus'] as const)(
@@ -157,6 +162,17 @@ layout('Wave 52 chart cards', () => {
       const m = await readout(open)
       expect(m.labels).toBeGreaterThan(3)
       expect(m.hit).toEqual([])
+    },
+  )
+
+  test.each(['hover', 'focus'] as const)(
+    '1440: a roomy chart keeps its first-point tooltip inside the plot box and under the title on %s',
+    async (open) => {
+      const m = await readout(open, 'w52-focus-roomy')
+      expect(m.hit).toEqual([])
+      expect(m.tip.top).toBeGreaterThanOrEqual(m.titleBottom)
+      expect(m.tip.bottom).toBeLessThanOrEqual(m.svg.bottom)
+      expect(m.tip.left).toBeGreaterThanOrEqual(m.svg.left)
     },
   )
 
