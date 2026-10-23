@@ -3,6 +3,7 @@ import { Skeleton, VisuallyHidden } from '@mantine/core'
 import { useContext, useId, useRef, useState } from 'react'
 import type { CSSProperties, ReactNode, RefObject } from 'react'
 import { useIsomorphicLayoutEffect } from '../common/isomorphic-layout-effect'
+import { splitEmptyCopy } from '../common/empty-copy'
 import { cx } from '../common/props'
 import type { DataAttributes } from '../common/props'
 import {
@@ -31,6 +32,7 @@ import type {
   ZoneLabel,
 } from './meter-model'
 import classes from './meter.module.css'
+import { EmptyState } from './empty-state'
 import { VisualSlotContext } from './visual-slot'
 import { toPct } from './scale'
 
@@ -164,6 +166,21 @@ export function MeterEmpty(props: {
   shell: Shell
 }) {
   const { label, text, ring, zoned, shell } = props
+  // A host that states its gap (`text`) gets the one empty box `BarList` and `EventList` draw: no
+  // track, no ring, the same `EmptyState` tile.
+  if (text !== undefined) {
+    const copy = splitEmptyCopy(text)
+    return (
+      // oxlint-disable-next-line jsx-a11y/prefer-tag-over-role -- a polite live region named by the Meter's label; `<output>` cannot hold the tile's block content
+      <div {...rootProps(shell)} role="status" aria-label={label}>
+        <EmptyState
+          tier="section"
+          title={copy.title}
+          {...(copy.description !== undefined && { description: copy.description })}
+        />
+      </div>
+    )
+  }
   // The ring has a reading slot (its centre), so the dash sits there as the reading. A bar states its
   // gap once, and only if the host says so (`text`): otherwise the caption rows a loaded Meter would
   // have stay blank, so the muted track keeps the loaded height without a dash under it.
@@ -182,15 +199,11 @@ export function MeterEmpty(props: {
           </div>
         </>
       )}
-      {text !== undefined ? (
-        <span className={classes.empty}>{text}</span>
-      ) : (
-        !ring && (
-          <>
-            <VisuallyHidden className={classes.summary}>No reading</VisuallyHidden>
-            {!shell.row && <Line zoned={zoned} />}
-          </>
-        )
+      {!ring && (
+        <>
+          <VisuallyHidden className={classes.summary}>No reading</VisuallyHidden>
+          {!shell.row && <Line zoned={zoned} />}
+        </>
       )}
     </output>
   )
@@ -802,7 +815,11 @@ export function MeterBar(props: {
               {
                 key: 'start',
                 node: glue(start),
-                ...(readingInRow && model.markerPct !== undefined && { pct: model.markerPct }),
+                // `readingAt="start"` labels the track's start edge ("60-day low"), not the reading: it stays
+                // at the edge instead of sitting centred under the reading tick as if it were its caption.
+                ...(readingInRow &&
+                  props.readingAt !== 'start' &&
+                  model.markerPct !== undefined && { pct: model.markerPct }),
                 // The reading sits at its fill's end (clamped inside the track); `readingAt="start"` keeps the old start edge.
                 ...(props.readingAt !== 'start' &&
                   !readingInRow &&

@@ -105,11 +105,11 @@ describe('Meter', () => {
     expect(container.querySelector('svg')).not.toBeNull()
   })
 
-  test('empty: no meter role, empty text, track kept', () => {
+  test('empty: no meter role, the empty box with its text, no leftover track', () => {
     const { container, getByText } = mount({ label: 'B', value: null, emptyText: 'Nothing yet' })
     expect(meter(container)).toBeNull()
     expect(getByText('Nothing yet')).toBeTruthy()
-    expect(container.querySelector('[data-meter-track]')).not.toBeNull()
+    expect(container.querySelector('[data-meter-track]')).toBeNull()
   })
 
   test('loading: skeleton, busy, no meter role', () => {
@@ -732,9 +732,19 @@ describe('Meter without a reading', () => {
     expect(container.querySelector('output > span > span')?.textContent).toBe('—')
   })
 
+  test('a consumer emptyText replaces it with the EmptyState box, ring and bar alike', () => {
+    const ring = mount({ label: 'R', shape: 'ring', value: null, emptyText: 'Not worn' }).container
+    expect(ring.querySelector('[data-basalt-meter]')?.textContent).toBe('Not worn')
+    expect(ring.querySelector('svg, [data-meter-track]')).toBeNull()
+    cleanup()
+    const bar = mount({ label: 'B', value: null, emptyText: 'Not worn. Put it on.' }).container
+    expect(bar.querySelector('[data-basalt-meter]')?.textContent).toBe('Not wornPut it on.')
+    expect(bar.querySelector('[role="status"]')?.getAttribute('aria-label')).toBe('B')
+  })
+
   test('a consumer emptyText still replaces it', () => {
     const { container } = mount({ label: 'B', value: null, emptyText: 'Not worn' })
-    expect(container.querySelector('output')?.textContent).toBe('Not worn')
+    expect(container.querySelector('[data-basalt-meter]')?.textContent).toBe('Not worn')
   })
 })
 
@@ -755,7 +765,7 @@ describe('Meter empty and loading footprint (Wave 38)', () => {
   test('emptyText replaces the blank line', () => {
     const { container } = mount({ label: 'B', value: null, emptyText: 'Not worn' })
     expect(lines(container)).toBe(0)
-    expect(container.querySelector('output')?.textContent).toBe('Not worn')
+    expect(container.querySelector('[data-basalt-meter]')?.textContent).toBe('Not worn')
   })
 
   test('loading is the loaded tree: a plain bar keeps its caption row, a zoned one its name row and reading row', () => {

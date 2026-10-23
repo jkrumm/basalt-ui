@@ -84,7 +84,7 @@ type Common = BasaltProps &
     format?: (value: number) => string
     /** Renders a skeleton with the meter's footprint. */
     loading?: boolean
-    /** Muted line shown when there is no reading; none by default (the muted track stands alone, caption rows blank). */
+    /** The empty box shown when there is no reading (the same `EmptyState` tile `BarList` and `EventList` draw, no track; the first sentence is its title, the rest its muted line). None by default: the muted track stands alone, caption rows blank. */
     emptyText?: string
   }
 
