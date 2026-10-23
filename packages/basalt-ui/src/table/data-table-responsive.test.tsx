@@ -438,7 +438,7 @@ describe('the fold toggle says what folded', () => {
     const hint = container.querySelector('thead th [title]')
     expect(hint?.getAttribute('title')).toBe('2 more columns: C, D')
     expect(hint?.getAttribute('aria-hidden')).toBe('true')
-    expect(hint?.textContent).toBe('+2')
+    expect(hint?.textContent).toBe('+2 cols')
     expect(hint?.nextElementSibling?.textContent).toBe('2 more columns: C, D')
   })
 })

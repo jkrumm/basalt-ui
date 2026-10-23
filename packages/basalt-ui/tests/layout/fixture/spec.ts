@@ -439,12 +439,14 @@ export type FixtureSpec = {
   w42States?: { loading?: true; empty?: true; pinned?: true | 'striped-page'; longError?: true }
   /** Wave 42: argo's workouts table and S2's sessions table in a fixed-width card (`w42-responsive`). */
   w42Responsive?: {
-    /** argo's workouts (no `meta.priority`) or the playground's S2 sessions. */
-    shape: 'workouts' | 'sessions'
+    /** argo's workouts (no `meta.priority`), the playground's S2 sessions or S1 outages or a 14-column `wide` table. */
+    shape: 'workouts' | 'sessions' | 'outages' | 'wide'
     /** The card's width in px; omitted ⇒ the shell body's own width. */
     width?: number
     /** `isLoading` skeleton rows instead of data. */
     loading?: true
+    /** `enableRowSelection`: the synthetic checkbox column. */
+    select?: true
     /** Render on the page surface instead of inside a card. */
     onPage?: true
     /** A button that flips the mounted table into `isLoading` and back (a refetch). */

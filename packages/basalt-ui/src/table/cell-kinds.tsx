@@ -84,7 +84,7 @@ const SKELETON_WIDTH: Record<DataTableColumnKind | 'kindless', string> = {
   'relative-time': '4.5rem',
   meter: '4rem',
   entity: '100%',
-  text: '10rem',
+  text: 'min(100%, 10rem)',
   kindless: '100%',
 }
 

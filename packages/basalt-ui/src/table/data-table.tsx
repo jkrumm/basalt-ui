@@ -97,7 +97,12 @@ import {
 export { planColumnFold } from './data-table-fold'
 import { dataQueryBranch } from './query-branch'
 import { basaltTableFeatures } from './table-features'
-import type { BasaltColumnDef, BasaltTableFeatures, DataTableAlign } from './table-features'
+import type {
+  BasaltColumnDef,
+  BasaltTableFeatures,
+  DataTableAlign,
+  DataTableColumnKind,
+} from './table-features'
 import {
   columnDefId,
   columnLabel,
@@ -993,11 +998,15 @@ export type BasaltDataTableProps<T extends RowData> = BasaltProps &
 /**
  * A skeleton cell's floor by `meta.kind`, rem: roughly what a typical value of the kind measures, so
  * a loading table plans the same fold as the loaded one instead of squeezing every column to its
- * (narrow) header. A column without a kind keeps its natural width.
+ * (narrow) header. A kindless column floors at a short phrase. `text` is a short word
+ * (a scope, a category): the bar was once 10rem wide, which made such a column 3x its loaded width
+ * and folded one column more than the rows do.
  */
-const SKELETON_MIN_REM: Record<string, number> = {
+const SKELETON_MIN_REM: Partial<Record<DataTableColumnKind | 'kindless', number>> = {
   entity: 7,
-  text: 6,
+  text: 4.5,
+  // A kindless column is the one-line cause or note of an outage or event log.
+  kindless: 8,
   'relative-time': 5,
   status: 4,
   money: 4.5,
@@ -1007,8 +1016,9 @@ const SKELETON_MIN_REM: Record<string, number> = {
 function skeletonMinWidth<T extends RowData>(
   column: Column<BasaltTableFeatures, T, unknown>,
 ): string | undefined {
-  const kind = resolveKind(column)
-  const rem = kind === undefined ? undefined : SKELETON_MIN_REM[kind]
+  // The checkbox and actions columns are synthetic: no kind, and a fixed width of their own.
+  if (column.id === SELECT_COLUMN_ID || column.id === ACTIONS_COLUMN_ID) return undefined
+  const rem = SKELETON_MIN_REM[resolveKind(column) ?? 'kindless']
   return rem === undefined ? undefined : `${rem}rem`
 }
 
