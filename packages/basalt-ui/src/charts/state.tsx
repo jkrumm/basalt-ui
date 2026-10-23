@@ -4,6 +4,7 @@
  */
 import type { CSSProperties, ReactElement, ReactNode } from 'react'
 import { splitEmptyCopy } from '../common/empty-copy'
+import { couldNotLoad } from '../common/could-not-load'
 import { toErrorMessage } from '../common/errors'
 import { RetryButton } from '../common/retry-button'
 import { VX } from '../tokens'
@@ -140,7 +141,7 @@ export function ChartPlaceholder(props: {
   /** For a box too small to hold a sentence (a sparkline): error and empty show a `—` and carry the
    * label as the accessible name and the hover title. */
   compact?: boolean
-  /** Error only: what failed to load, "Could not load {noun}". Default: no noun. */
+  /** Error only: what failed to load, "Could not load {noun}" (see `couldNotLoad`). Default: bare. */
   noun?: string
   /** Pending only: the ghost's shape. Default `'bars'`. */
   ghost?: PlotGhostShape
@@ -181,7 +182,7 @@ export function ChartPlaceholder(props: {
       {kind === 'error' && (
         <span style={errorHeadStyle}>
           <span aria-hidden="true" data-basalt-status-dot="" style={dotStyle} />
-          Could not load{props.noun === undefined ? '' : ` ${props.noun}`}
+          {couldNotLoad(props.noun)}
         </span>
       )}
       <span style={errorMessageStyle}>{label}</span>
