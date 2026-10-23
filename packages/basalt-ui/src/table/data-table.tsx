@@ -1741,6 +1741,8 @@ export function BasaltDataTable<T extends RowData>(props: BasaltDataTableProps<T
   const { fitIds, spacer } = planColumnSizing(
     orderedVisibleColumns,
     new Set([SELECT_COLUMN_ID, ACTIONS_COLUMN_ID]),
+    // Every row, not the page: paging, sorting or filtering must not move a column's width.
+    table.getCoreRowModel().rows,
   )
   const fitAttr = (id: string) => (fitIds.has(id) ? { 'data-fit': true } : undefined)
   // colSpan covers the rendered cells, the trailing spacer included.

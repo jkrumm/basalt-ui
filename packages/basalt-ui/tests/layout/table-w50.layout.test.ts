@@ -50,15 +50,25 @@ layout('folded table chrome', () => {
         const th = document.querySelector(s) as HTMLElement
         const visible = th.querySelector('button') as HTMLElement
         const range = document.createRange()
-        range.selectNodeContents(visible)
+        // The count is the button's first child; the second is the first folded name (a hint).
+        range.selectNodeContents(visible.firstChild as Node)
         return {
-          text: visible.textContent,
+          text: visible.firstChild?.textContent,
           width: th.getBoundingClientRect().width,
           height: th.getBoundingClientRect().height,
           textWidth: range.getBoundingClientRect().width,
+          hintInside: (() => {
+            const hint = visible.querySelector('span')?.getBoundingClientRect()
+            const cell = th.getBoundingClientRect()
+            return (
+              hint !== undefined && hint.left >= cell.left - 0.5 && hint.right <= cell.right + 0.5
+            )
+          })(),
         }
       }, FOLD_HEADER)
       expect(header.text).toMatch(/^\+\d+ cols?$/)
+      // The hint under the count stays inside the cell too.
+      expect(header.hintInside).toBe(true)
       expect(header.width).toBeLessThanOrEqual(TOGGLE_WIDTH + 0.5)
       expect(header.textWidth).toBeLessThanOrEqual(header.width)
       expect(header.height).toBeLessThanOrEqual(41)
@@ -96,9 +106,9 @@ layout('folded table chrome', () => {
       const th = document.querySelector(s) as HTMLElement
       const visible = th.querySelector('button') as HTMLElement
       const range = document.createRange()
-      range.selectNodeContents(visible)
+      range.selectNodeContents(visible.firstChild as Node)
       return {
-        text: visible.textContent,
+        text: visible.firstChild?.textContent,
         width: th.getBoundingClientRect().width,
         textWidth: range.getBoundingClientRect().width,
       }

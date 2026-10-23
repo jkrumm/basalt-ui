@@ -186,6 +186,16 @@
   color: var(--vx-muted);
 }
 
+/* The first folded name under the count: one ellipsised line the width of the 44px toggle cell. */
+.foldCountHint {
+  display: block;
+  inline-size: calc(2.75rem * var(--mantine-scale, 1));
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  opacity: 0.8;
+}
+
 /* The count is a button: bare, inheriting the micro face, `help` for the mouse's title hint. */
 .foldCountButton {
   padding: 0;
@@ -434,6 +444,12 @@ td.pinnedFluid {
  */
 .table [data-fit] {
   width: 1px;
+}
+
+/* A fitted `text` column (all cells short) is as wide as its longest cell, so it holds one line: at
+   `width: 1px` the wrapping law would break "Payment failed" onto two. */
+.table td[data-fit][data-kind='text']:not(.pinnedLayer) {
+  white-space: nowrap;
 }
 
 .spacer {

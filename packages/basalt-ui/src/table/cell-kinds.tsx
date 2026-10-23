@@ -5,7 +5,7 @@
  * {@link kindClass} / {@link kindAlign} (chrome) and {@link KindCell} (content).
  */
 import { Badge, Skeleton, Tooltip } from '@mantine/core'
-import type { Cell, Column, RowData } from '@tanstack/react-table'
+import type { Cell, Column, Row, RowData } from '@tanstack/react-table'
 import { FlexRender } from '@tanstack/react-table'
 import type { ReactNode } from 'react'
 import { cx } from '../common/props'
@@ -47,30 +47,55 @@ export function kindAlign(kind: DataTableColumnKind | undefined): DataTableAlign
   return kind === 'number' || kind === 'money' ? 'right' : undefined
 }
 
+/** A `text` column whose longest cell is this many characters or fewer has nothing to wrap. */
+const SHORT_TEXT = 32
+
+/** Whether every cell of the column renders a short string (needs at least one row to say so). */
+function isShortText<T extends RowData>(
+  id: string,
+  rows: readonly Row<BasaltTableFeatures, T>[],
+): boolean {
+  return (
+    rows.length > 0 &&
+    rows.every((row) => {
+      const value: unknown = row.getValue(id)
+      return typeof value === 'string' && value.length <= SHORT_TEXT
+    })
+  )
+}
+
 /**
  * Column sizing law (SPEC § 6.6): a data column is as wide as its header or widest cell (body cells
- * hold one line), and the slack of a wide container goes to ONE place — the LAST `text` column (a
- * notes/detail column that may wrap), else the LAST `entity` column (the name the row is about; figures
- * stay content-sized beside it), else a trailing spacer after the last data column — so the table fills
- * its container instead of hugging its left edge.
+ * hold one line), and the slack of a wide container goes to ONE place, so a value sits beside its name:
+ * the LAST data column when it is a `text`, `entity` or kindless one (the row's tail reads on after the
+ * columns before it); else the LAST `text` column (a notes/detail column that may wrap, ahead of figures);
+ * (one whose cells are not all short); else a trailing spacer after the last data column — never an `entity` with columns after it, which
+ * would put a short name hundreds of pixels from its next value.
  * `fixedIds` (the checkbox and actions columns) fit too but are not data. An earlier `text` column
- * keeps its auto share (it may wrap), and a table where no column opted into a kind renders as
- * before: no fit marks, no spacer.
+ * keeps its auto share (it may wrap) unless every cell it holds is short ({@link SHORT_TEXT} characters:
+ * nothing to wrap, so it takes no slack either; `rows` says what it holds), and a table where no column
+ * opted into a kind renders as before: no fit marks, no spacer.
  */
 export function planColumnSizing<T extends RowData>(
   columns: readonly Column<BasaltTableFeatures, T, unknown>[],
   fixedIds: ReadonlySet<string>,
+  rows: readonly Row<BasaltTableFeatures, T>[],
 ): { fitIds: ReadonlySet<string>; spacer: boolean } {
   const data = columns.filter((column) => !fixedIds.has(column.id))
   const kinds = new Map(data.map((column) => [column.id, resolveKind(column)]))
   const fitIds = new Set(columns.filter((column) => fixedIds.has(column.id)).map((c) => c.id))
   const hasKinds = data.some((column) => kinds.get(column.id) !== undefined)
   if (!hasKinds) return { fitIds, spacer: false }
-  const lastOfKind = (kind: DataTableColumnKind) =>
-    data.findLast((column) => kinds.get(column.id) === kind)?.id
-  const slackId = lastOfKind('text') ?? lastOfKind('entity')
+  const tail = data.at(-1)
+  const tailKind = tail === undefined ? undefined : kinds.get(tail.id)
+  const slackId =
+    tail !== undefined && (tailKind === undefined || tailKind === 'text' || tailKind === 'entity')
+      ? tail.id
+      : data.findLast((column) => kinds.get(column.id) === 'text' && !isShortText(column.id, rows))
+          ?.id
   for (const column of data) {
-    if (column.id === slackId || kinds.get(column.id) === 'text') continue
+    if (column.id === slackId) continue
+    if (kinds.get(column.id) === 'text' && !isShortText(column.id, rows)) continue
     fitIds.add(column.id)
   }
   return { fitIds, spacer: slackId === undefined }
@@ -175,8 +200,9 @@ function RelativeTime({ value }: { value: unknown }) {
   if (date === undefined) return <Dash />
   const full = dateTime(date)
   return (
-    // Below the cell and on keyboard focus: above it the tip covered the header's label on row one.
-    <Tooltip label={full} position="bottom" events={{ hover: true, focus: true, touch: false }}>
+    // Beside the cell, on hover and keyboard focus: below it the tip covered the next row's time, above it
+    // the header's label on row one.
+    <Tooltip label={full} position="right" events={{ hover: true, focus: true, touch: false }}>
       {/* oxlint-disable-next-line jsx-a11y/no-noninteractive-tabindex -- the tooltip opens on focus */}
       <time dateTime={date.toISOString()} tabIndex={0}>
         {relativeTime(date)}

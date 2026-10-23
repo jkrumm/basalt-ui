@@ -11,6 +11,7 @@ declare const classes: {
   readonly foldChevron: string
   readonly foldCount: string
   readonly foldCountButton: string
+  readonly foldCountHint: string
   readonly foldDisclosure: string
   readonly foldDisclosureCell: string
   readonly foldDisclosureLabel: string

@@ -41,6 +41,45 @@
   pointer-events: none;
 }
 
+/* The count of rows out of view each way (`data-above` / `data-below`, set by `useScrolledEdge`): small mono
+   text at the end of the edge, over the sticky header (top) and the fade (bottom). Zero height: no shift. */
+.scroll[data-above]::before {
+  content: '↑ ' attr(data-above) ' earlier';
+  display: block;
+  position: sticky;
+  inset-block-start: 0;
+  z-index: 2;
+  block-size: 0;
+  /* Moved, not padded: padding would add height to the content. */
+  translate: 0 var(--vx-space-stack-xs);
+  text-align: end;
+  font-family: var(--basalt-font-mono);
+  font-size: var(--vx-text-micro);
+  line-height: 1.4;
+  white-space: nowrap;
+  color: var(--vx-muted);
+  pointer-events: none;
+}
+
+.scroll[data-below]::after {
+  content: '↓ ' attr(data-below) ' later';
+  display: flex;
+  align-items: flex-end;
+  justify-content: flex-end;
+  box-sizing: border-box;
+  /* Self-contained, like the fade it shares the pseudo with: sticky and cancelled, so it adds no height. */
+  position: sticky;
+  inset-block-end: 0;
+  block-size: var(--vx-space-stack-lg, 1.5rem);
+  margin-block-start: calc(var(--vx-space-stack-lg, 1.5rem) * -1);
+  pointer-events: none;
+  font-family: var(--basalt-font-mono);
+  font-size: var(--vx-text-micro);
+  line-height: 1.4;
+  white-space: nowrap;
+  color: var(--vx-muted);
+}
+
 /* Loading after rows: the skeleton keeps their last height, so the box does not collapse. */
 .skeleton {
   min-block-size: var(--event-list-held, var(--event-list-last, 0px));
@@ -109,6 +148,13 @@
   font-size: var(--vx-text-sm);
   line-height: 1.4;
   color: var(--vx-ink);
+}
+
+/* A consistent gap between the rows of a feed (a rail row has its rail; a hairline would be a divider the
+   divider law does not list): nine rows of one day read as nine. Padding, not margin: the windowed seam
+   measures a row's own box, and the same on every row, so a prepend moves nothing. */
+.row:not([data-rail]) {
+  padding-block: calc(var(--vx-space-stack-xs) * 1.5);
 }
 
 .row[data-density='timeline'] {

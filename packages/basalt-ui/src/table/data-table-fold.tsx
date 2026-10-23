@@ -469,7 +469,8 @@ export function foldedSummary(count: number, label: string): string {
  * folded columns, because a touch reader never sees a `title` (the 390 crop read as an unexplained
  * "+3 cols"). The popover closes on outside click and Escape. A bare `+N` read as an unexplained
  * figure at 390, so the word rides with it — in the sans micro face, which keeps "+4 cols" inside
- * the 44px toggle cell (the mono face did not). */
+ * the 44px toggle cell (the mono face did not). A second line shows the first folded name, ellipsised to
+ * the cell, so the button says what it opens before it is tapped. */
 export function FoldHeaderLabel({
   names,
 }: {
@@ -505,6 +506,10 @@ export function FoldHeaderLabel({
             }}
           >
             {visible}
+            {/* What the count reveals, truncated to the toggle cell: the first folded name. Spoken in full by the label. */}
+            <span className={classes.foldCountHint} aria-hidden>
+              {names[0]}
+            </span>
           </button>
         </Popover.Target>
         <Popover.Dropdown p="xs" className={classes.foldNames} aria-label={summary}>

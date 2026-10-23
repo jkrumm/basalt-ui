@@ -109,6 +109,7 @@ import { W39MeterFixture } from './w39-meter-fixture'
 import { W43MeterStartFixture } from './w43-meter-start-fixture'
 import { W50FiguresFixture } from './w50-figures-fixture'
 import { W42KindsFixture } from './w42-kinds-fixture'
+import { W52ListsFixture } from './w52-lists-fixture'
 import { W42StatesFixture } from './w42-states-fixture'
 import { W43SubtitleFixture } from './w43-subtitle-fixture'
 import { W52ChartsFixture } from './w52-charts-fixture'
@@ -3125,6 +3126,7 @@ export function ShellFixture({ spec }: { spec: FixtureSpec }): ReactElement {
       {spec.w43MeterStart && <W43MeterStartFixture />}
       {spec.w50Figures && <W50FiguresFixture />}
       {spec.w42Kinds && <W42KindsFixture />}
+      {spec.w52Lists && <W52ListsFixture mode={spec.w52Lists} />}
       {spec.w42States && <W42StatesFixture {...spec.w42States} />}
       {spec.w43Subtitle && <W43SubtitleFixture />}
       {spec.w52Charts && <W52ChartsFixture />}

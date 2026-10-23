@@ -437,6 +437,8 @@ export type FixtureSpec = {
   w42Kinds?: true
   /** Wave 52: headline-card header rows, a short and a tall card in a row, phone headline cards and a focus-tooltip chart (`w52-*`). */
   w52Charts?: true
+  /** Wave 52: lists probes (`w52-host`): the item timeline, a nine-row feed, table slack, the fold label, the time tooltip. */
+  w52Lists?: 'timeline' | 'feed9' | 'slack' | 'fold' | 'tooltip'
   /** Wave 43: ChartCard / Section subtitle probes at 390 (`w43-sub-*`). */
   w43Subtitle?: true
   /** Wave 42: a 4-column kinded table with an active facet pill and a pager; `loading` shows its skeleton; `pinned: true` is a sticky-header card, `'striped-page'` a striped table on the page (`w42-states`). */

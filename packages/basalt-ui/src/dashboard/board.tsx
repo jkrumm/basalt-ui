@@ -193,7 +193,8 @@ function ColumnScroll({ height, children }: { height?: number | string; children
       type="auto"
       offsetScrollbars="y"
       viewportRef={setViewport}
-      classNames={{ viewport: classes.viewport }}
+      scrollbarSize={6}
+      classNames={{ viewport: classes.viewport, thumb: classes.thumb }}
     >
       {children}
     </ScrollArea.Autosize>

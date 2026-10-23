@@ -110,15 +110,46 @@ describe('skeleton rows', () => {
 })
 
 describe('column sizing', () => {
-  test('without a text column the last entity column takes the slack: no spacer, the figures fit', () => {
+  test('an entity with figures after it does not take the slack: a trailing spacer does, so a name sits by its next value', () => {
     const { container } = mount()
     const heads = [...container.querySelectorAll('thead th')]
-    expect(heads).toHaveLength(3)
-    expect(heads.map((th) => th.hasAttribute('data-fit'))).toEqual([false, true, true])
+    expect(heads).toHaveLength(4)
+    expect(heads.map((th) => th.hasAttribute('data-fit'))).toEqual([true, true, true, false])
+    expect(heads[3]?.getAttribute('aria-hidden')).toBe('true')
   })
 
-  test('the last text column takes the slack: no spacer, the others fit', () => {
+  test('a trailing entity column takes the slack: no spacer, the figures fit', () => {
     const { container } = mount({
+      columns: [
+        col.accessor('when', { header: 'When', meta: { kind: 'relative-time' } }),
+        col.accessor('cost', { header: 'Cost', meta: { kind: 'money' } }),
+        col.accessor('name', { header: 'Name', meta: { kind: 'entity' } }),
+      ],
+    })
+    const heads = [...container.querySelectorAll('thead th')]
+    expect(heads).toHaveLength(3)
+    expect(heads.map((th) => th.hasAttribute('data-fit'))).toEqual([true, true, false])
+  })
+
+  test('a kindless tail takes the slack, and a text column ahead of it whose cells are all short fits its content', () => {
+    const { container } = mount({
+      columns: [
+        col.accessor('when', { header: 'When', meta: { kind: 'relative-time' } }),
+        col.accessor('name', { header: 'Scope', meta: { kind: 'text' } }),
+        col.accessor('note', { header: 'Cause' }),
+      ],
+    })
+    const heads = [...container.querySelectorAll('thead th')]
+    expect(heads).toHaveLength(3)
+    expect(heads.map((th) => th.hasAttribute('data-fit'))).toEqual([true, true, false])
+  })
+
+  test('the last text column takes the slack: no spacer, the others fit; an earlier text column holding long cells keeps its share', () => {
+    const { container } = mount({
+      data: ROWS.map((row) => ({
+        ...row,
+        name: `${row.name} ${'a long description that wraps '.repeat(2)}`,
+      })),
       columns: [
         col.accessor('name', { header: 'Name', meta: { kind: 'text' } }),
         col.accessor('when', { header: 'When', meta: { kind: 'relative-time' } }),
@@ -145,13 +176,38 @@ describe('column sizing', () => {
     expect(container.querySelectorAll('tbody tr:first-child td')).toHaveLength(3)
   })
 
+  test('a short text column ahead of figures takes no slack: a trailing spacer does', () => {
+    const { container } = mount({
+      columns: [
+        col.accessor('name', { header: 'Scope', meta: { kind: 'text' } }),
+        col.accessor('cost', { header: 'Cost', meta: { kind: 'money' } }),
+      ],
+    })
+    const heads = [...container.querySelectorAll('thead th')]
+    expect(heads.map((th) => th.hasAttribute('data-fit'))).toEqual([true, true, false])
+  })
+
+  test('a text cell of 32 characters is short, one of 33 is not', () => {
+    const at = (length: number) =>
+      mount({
+        data: [{ ...ROWS[0], name: 'x'.repeat(length) } as Row],
+        columns: [
+          col.accessor('name', { header: 'Scope', meta: { kind: 'text' } }),
+          col.accessor('cost', { header: 'Cost', meta: { kind: 'money' } }),
+        ],
+      })
+    expect(at(32).container.querySelector('thead th')?.hasAttribute('data-fit')).toBe(true)
+    cleanup()
+    expect(at(33).container.querySelector('thead th')?.hasAttribute('data-fit')).toBe(false)
+  })
+
   test('a table with no kinds renders as before: no fit marks, no spacer', () => {
     const { container } = mount({ columns: [col.accessor('note', { header: 'Note' })] })
     expect(container.querySelectorAll('[data-fit]')).toHaveLength(0)
     expect(container.querySelectorAll('thead th')).toHaveLength(1)
   })
 
-  test('beside the slack entity column a kindless column fits its content', () => {
+  test('a kindless tail takes the slack and the entity ahead of it fits its content', () => {
     const { container } = mount({
       columns: [
         col.accessor('name', { header: 'Name', meta: { kind: 'entity' } }),
@@ -159,7 +215,7 @@ describe('column sizing', () => {
       ],
     })
     const heads = [...container.querySelectorAll('thead th')]
-    expect(heads.map((th) => th.hasAttribute('data-fit'))).toEqual([false, true])
+    expect(heads.map((th) => th.hasAttribute('data-fit'))).toEqual([true, false])
   })
 })
 

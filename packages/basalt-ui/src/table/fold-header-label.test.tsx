@@ -10,6 +10,8 @@ const wrap = (names: readonly string[]) => (
     <FoldHeaderLabel names={names} />
   </MantineProvider>
 )
+/** The popover's list item for a folded name (the button's own hint repeats the first name). */
+const listed = (name: string) => screen.queryAllByText(name).find((el) => el.tagName === 'LI')
 const mount = (names: readonly string[]) => render(wrap(names))
 
 describe('FoldHeaderLabel', () => {
@@ -23,34 +25,43 @@ describe('FoldHeaderLabel', () => {
 
   test('the visible header carries the word, singular for one', () => {
     const { rerender } = mount(['A', 'B', 'C', 'D'])
-    expect(screen.getByRole('button').textContent).toBe('+4 cols')
+    expect(screen.getByRole('button').firstChild?.textContent).toBe('+4 cols')
     rerender(wrap(['A']))
-    expect(screen.getByRole('button').textContent).toBe('+1 col')
+    expect(screen.getByRole('button').firstChild?.textContent).toBe('+1 col')
+  })
+
+  test('the button shows the first folded name before a tap, hidden from the accessible name', () => {
+    mount(['Cause', 'Owner', 'Notes'])
+    const button = screen.getByRole('button')
+    const hint = screen.getByText('Cause')
+    expect(button.contains(hint)).toBe(true)
+    expect(hint.getAttribute('aria-hidden')).toBe('true')
+    expect(button.getAttribute('aria-label')).toBe('+3 cols, 3 more columns: Cause, Owner, Notes')
   })
 
   test('a tap lists the folded columns by name, with no hover', () => {
     mount(['Volume', 'Duration', 'Notes'])
-    expect(screen.queryByText('Duration')).toBeNull()
+    expect(listed('Duration')).toBeUndefined()
     fireEvent.click(screen.getByRole('button'))
     expect(screen.getByRole('button').getAttribute('aria-expanded')).toBe('true')
-    for (const name of ['Volume', 'Duration', 'Notes']) expect(screen.getByText(name)).toBeDefined()
+    for (const name of ['Volume', 'Duration', 'Notes']) expect(listed(name)).toBeDefined()
   })
 
   test('Escape closes it', () => {
     mount(['Volume', 'Duration'])
     fireEvent.click(screen.getByRole('button'))
-    fireEvent.keyDown(screen.getByText('Volume'), { key: 'Escape' })
-    expect(screen.queryByText('Volume')).toBeNull()
+    fireEvent.keyDown(listed('Volume') as HTMLElement, { key: 'Escape' })
+    expect(listed('Volume')).toBeUndefined()
   })
 
   test('an outside click closes it', () => {
     mount(['Volume', 'Duration'])
     fireEvent.click(screen.getByRole('button'))
-    expect(screen.getByText('Volume')).toBeDefined()
+    expect(listed('Volume')).toBeDefined()
     // Mantine's outside-click listener reads the pointer-down/up pair; the click completes the tap.
     fireEvent.mouseDown(document.body)
     fireEvent.mouseUp(document.body)
     fireEvent.click(document.body)
-    expect(screen.queryByText('Volume')).toBeNull()
+    expect(listed('Volume')).toBeUndefined()
   })
 })
