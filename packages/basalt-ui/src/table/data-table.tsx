@@ -63,6 +63,7 @@ import { constructFilterFn, FlexRender, useTable } from '@tanstack/react-table'
 import type { CSSProperties, MouseEvent as ReactMouseEvent, ReactNode, RefObject } from 'react'
 import { Fragment, useId, useLayoutEffect, useMemo, useRef, useState } from 'react'
 import { useDebouncedCallback } from '@mantine/hooks'
+import { HostTitleContext } from '../common/could-not-load'
 import { cx } from '../common/props'
 import type { BasaltProps, SlotStylesProps } from '../common/props'
 import { BASALT_PREFIX } from '../common/errors'
@@ -1990,222 +1991,224 @@ export function BasaltDataTable<T extends RowData>(props: BasaltDataTableProps<T
   const showFooter = enablePagination && (stateless || unfilteredCount > 0)
 
   return (
-    <div
-      ref={projectionRootRef}
-      className={cx(classNames?.root, className)}
-      {...(style !== undefined && { style })}
-    >
-      {/*
-       * ONE header row: the `WidgetHeader` (title · count) on the left, the toolbar right-aligned in
-       * the SAME row. It was two stacked rows with `mb="xs"` on each, so a titled table with search
-       * spent title → 11px → search → 11px → thead before a single datum appeared, and the toolbar
-       * read as page furniture rather than as this table's controls.
-       *
-       * `wrap="wrap"` is the header row's own: a toolbar whose natural width exceeds what is left
-       * beside a title drops under it, full width. The TOOLBAR itself never wraps from the `compact`
-       * container class up (`.toolbar`) — the search shrinks to its floor and `FilterSet` folds the
-       * rest behind `+N`. `align="center"` puts the 28px controls on the title's optical line.
-       */}
-      {(title !== undefined || showToolbar) && (
-        <Group
-          ref={headerRef}
-          className={classes.tableHeader}
-          justify="space-between"
-          align="center"
-          wrap="wrap"
-          gap="xs"
-          mb="xs"
-        >
-          {title !== undefined ? (
-            <Box style={TABLE_HEADER_LEAD_STYLE}>
-              <WidgetHeader
-                tier="widget"
-                title={title}
-                {...(icon !== undefined && { icon })}
-                {...(subtitle !== undefined && { subtitle })}
-                // A count is a figure read from rows: none while the rows are loading or failed.
-                {...(!stateless && { count: table.getRowCount() })}
-              />
-            </Box>
-          ) : null}
-          {showToolbar && (
-            <CtlSlot>
-              <Group
-                className={cx(classes.toolbar, classNames?.toolbar)}
-                data-basalt-dense
-                gap="xs"
-                align="center"
-                style={TABLE_TOOLBAR_STYLE}
-              >
-                {showSearch && (
-                  <TextInput
-                    size="ctl"
-                    classNames={{ wrapper: classes.toolbarWrapper, input: classes.toolbarInput }}
-                    wrapperProps={{ 'data-basalt-hit': true }}
-                    radius="md"
-                    style={TABLE_SEARCH_STYLE}
-                    placeholder={globalFilterPlaceholder}
-                    leftSection={searchIcon}
-                    value={searchDraft}
-                    onChange={(event) => {
-                      setSearchDraft(event.currentTarget.value)
-                      commitSearch(event.currentTarget.value)
-                    }}
-                  />
-                )}
-                {showFacets && (
-                  <FilterSet inline={narrowToolbar ? 0 : 1}>
-                    {facets?.map((facet) => {
-                      const column = resolveFacetColumn(table, facet)
-                      if (!column) return null
-                      return facet.multiple ? (
-                        <MultiSelectFilter
-                          key={facet.columnId}
-                          field={facetMultiHandle(column, facet)}
-                          label={facet.label}
-                        />
-                      ) : (
-                        <EnumFilter
-                          key={facet.columnId}
-                          field={facetEnumHandle(column, facet)}
-                          label={facet.label}
-                        />
-                      )
-                    })}
-                  </FilterSet>
-                )}
-                {actions !== undefined && (
-                  <div className={classes.toolbarActions}>
-                    <BarActionSlot actions={actions} />
-                  </div>
-                )}
-              </Group>
-            </CtlSlot>
-          )}
-        </Group>
-      )}
-      {bulkBarActions !== undefined && (
-        <BulkActionBar count={selectedRows.length} actions={bulkBarActions} />
-      )}
-      {showCards ? (
-        maxHeight === undefined ? (
-          renderCardList()
-        ) : (
-          <ScrollArea.Autosize mah={maxHeight} type="hover" scrollbars="y">
-            {renderCardList()}
-          </ScrollArea.Autosize>
-        )
-      ) : !foldEligible ? (
-        // An explicit `minWidth` is the one genuinely DECLARED horizontal floor — the column fold
-        // never engages here (see `foldEligible`, above), so this shape keeps its exact
-        // pre-existing DOM: no extra measuring wrapper for a table nothing folds.
-        <Table.ScrollContainer
-          ref={minWidthScrollerRef}
-          type="native"
-          minWidth={minWidth ?? 0}
-          maxHeight={maxHeight}
-          {...scrollerProps(minWidthOverflowing)}
-        >
-          {tableNode}
-        </Table.ScrollContainer>
-      ) : (
-        // The column fold's own measuring box (`useColumnFold`) — wraps every remaining shape,
-        // `maxHeight`-only included: a vertical cap is orthogonal to column width, so a
-        // `stickyHeader` + `maxHeight` table (the pairing this package's own docs recommend) still
-        // folds instead of silently regressing to horizontal scroll. A plain block box, so it
-        // constrains nothing on its own; `foldWrapperRef` only reads it.
-        <div ref={foldWrapperRef} className={classes.foldWrapper}>
-          {pageStickyHeader ? (
-            // Pinning takes this wrapper too — a pinned column's offsets are `position: sticky` on
-            // the cells and need no overflow box of their own, so the `overflow-x: auto` Box that
-            // used to sit here was the exact inert-sticky defect this shape exists to avoid.
-            <div
-              ref={containmentRef}
-              className={cx(classes.containment, contained && classes.scroller)}
-              data-contained={contained ? 'true' : 'false'}
-              {...(contained && {
-                tabIndex: 0,
-                role: 'region',
-                'aria-label': scrollerLabel,
-              })}
-            >
-              {tableNode}
-            </div>
-          ) : (
-            // `pageStickyHeader` is false whenever `maxHeight` is set (`scrolls` above), so a vertical
-            // cap lands here — its own `ScrollArea` scrollport, just with no `minWidth` floor.
-            <Table.ScrollContainer
-              type="native"
-              minWidth={0}
-              maxHeight={maxHeight}
-              {...scrollerProps(foldOverflowing)}
-            >
-              {tableNode}
-            </Table.ScrollContainer>
-          )}
-        </div>
-      )}
-      {showFooter && (
-        <Group
-          className={cx(classNames?.footer)}
-          justify="space-between"
-          mt="xs"
-          wrap="wrap"
-          gap="xs"
-          align="center"
-        >
-          <Text
-            // Hidden, not removed: the footer keeps its height and nothing shifts when rows land.
-            style={
-              stateless || !rangeInBounds
-                ? { ...RANGE_LABEL_STYLE, visibility: 'hidden' }
-                : RANGE_LABEL_STYLE
-            }
+    <HostTitleContext value={title}>
+      <div
+        ref={projectionRootRef}
+        className={cx(classNames?.root, className)}
+        {...(style !== undefined && { style })}
+      >
+        {/*
+         * ONE header row: the `WidgetHeader` (title · count) on the left, the toolbar right-aligned in
+         * the SAME row. It was two stacked rows with `mb="xs"` on each, so a titled table with search
+         * spent title → 11px → search → 11px → thead before a single datum appeared, and the toolbar
+         * read as page furniture rather than as this table's controls.
+         *
+         * `wrap="wrap"` is the header row's own: a toolbar whose natural width exceeds what is left
+         * beside a title drops under it, full width. The TOOLBAR itself never wraps from the `compact`
+         * container class up (`.toolbar`) — the search shrinks to its floor and `FilterSet` folds the
+         * rest behind `+N`. `align="center"` puts the 28px controls on the title's optical line.
+         */}
+        {(title !== undefined || showToolbar) && (
+          <Group
+            ref={headerRef}
+            className={classes.tableHeader}
+            justify="space-between"
+            align="center"
+            wrap="wrap"
+            gap="xs"
+            mb="xs"
           >
-            Showing {rangeStart}–{rangeEnd}
-            {totalIsAuthoritative ? ` of ${total}` : ''}
-          </Text>
-          <Group gap="xs" align="center" data-basalt-dense>
-            {/* theme-allow control-outside-home — the table's own page-size setting, not a page
+            {title !== undefined ? (
+              <Box style={TABLE_HEADER_LEAD_STYLE}>
+                <WidgetHeader
+                  tier="widget"
+                  title={title}
+                  {...(icon !== undefined && { icon })}
+                  {...(subtitle !== undefined && { subtitle })}
+                  // A count is a figure read from rows: none while the rows are loading or failed.
+                  {...(!stateless && { count: table.getRowCount() })}
+                />
+              </Box>
+            ) : null}
+            {showToolbar && (
+              <CtlSlot>
+                <Group
+                  className={cx(classes.toolbar, classNames?.toolbar)}
+                  data-basalt-dense
+                  gap="xs"
+                  align="center"
+                  style={TABLE_TOOLBAR_STYLE}
+                >
+                  {showSearch && (
+                    <TextInput
+                      size="ctl"
+                      classNames={{ wrapper: classes.toolbarWrapper, input: classes.toolbarInput }}
+                      wrapperProps={{ 'data-basalt-hit': true }}
+                      radius="md"
+                      style={TABLE_SEARCH_STYLE}
+                      placeholder={globalFilterPlaceholder}
+                      leftSection={searchIcon}
+                      value={searchDraft}
+                      onChange={(event) => {
+                        setSearchDraft(event.currentTarget.value)
+                        commitSearch(event.currentTarget.value)
+                      }}
+                    />
+                  )}
+                  {showFacets && (
+                    <FilterSet inline={narrowToolbar ? 0 : 1}>
+                      {facets?.map((facet) => {
+                        const column = resolveFacetColumn(table, facet)
+                        if (!column) return null
+                        return facet.multiple ? (
+                          <MultiSelectFilter
+                            key={facet.columnId}
+                            field={facetMultiHandle(column, facet)}
+                            label={facet.label}
+                          />
+                        ) : (
+                          <EnumFilter
+                            key={facet.columnId}
+                            field={facetEnumHandle(column, facet)}
+                            label={facet.label}
+                          />
+                        )
+                      })}
+                    </FilterSet>
+                  )}
+                  {actions !== undefined && (
+                    <div className={classes.toolbarActions}>
+                      <BarActionSlot actions={actions} />
+                    </div>
+                  )}
+                </Group>
+              </CtlSlot>
+            )}
+          </Group>
+        )}
+        {bulkBarActions !== undefined && (
+          <BulkActionBar count={selectedRows.length} actions={bulkBarActions} />
+        )}
+        {showCards ? (
+          maxHeight === undefined ? (
+            renderCardList()
+          ) : (
+            <ScrollArea.Autosize mah={maxHeight} type="hover" scrollbars="y">
+              {renderCardList()}
+            </ScrollArea.Autosize>
+          )
+        ) : !foldEligible ? (
+          // An explicit `minWidth` is the one genuinely DECLARED horizontal floor — the column fold
+          // never engages here (see `foldEligible`, above), so this shape keeps its exact
+          // pre-existing DOM: no extra measuring wrapper for a table nothing folds.
+          <Table.ScrollContainer
+            ref={minWidthScrollerRef}
+            type="native"
+            minWidth={minWidth ?? 0}
+            maxHeight={maxHeight}
+            {...scrollerProps(minWidthOverflowing)}
+          >
+            {tableNode}
+          </Table.ScrollContainer>
+        ) : (
+          // The column fold's own measuring box (`useColumnFold`) — wraps every remaining shape,
+          // `maxHeight`-only included: a vertical cap is orthogonal to column width, so a
+          // `stickyHeader` + `maxHeight` table (the pairing this package's own docs recommend) still
+          // folds instead of silently regressing to horizontal scroll. A plain block box, so it
+          // constrains nothing on its own; `foldWrapperRef` only reads it.
+          <div ref={foldWrapperRef} className={classes.foldWrapper}>
+            {pageStickyHeader ? (
+              // Pinning takes this wrapper too — a pinned column's offsets are `position: sticky` on
+              // the cells and need no overflow box of their own, so the `overflow-x: auto` Box that
+              // used to sit here was the exact inert-sticky defect this shape exists to avoid.
+              <div
+                ref={containmentRef}
+                className={cx(classes.containment, contained && classes.scroller)}
+                data-contained={contained ? 'true' : 'false'}
+                {...(contained && {
+                  tabIndex: 0,
+                  role: 'region',
+                  'aria-label': scrollerLabel,
+                })}
+              >
+                {tableNode}
+              </div>
+            ) : (
+              // `pageStickyHeader` is false whenever `maxHeight` is set (`scrolls` above), so a vertical
+              // cap lands here — its own `ScrollArea` scrollport, just with no `minWidth` floor.
+              <Table.ScrollContainer
+                type="native"
+                minWidth={0}
+                maxHeight={maxHeight}
+                {...scrollerProps(foldOverflowing)}
+              >
+                {tableNode}
+              </Table.ScrollContainer>
+            )}
+          </div>
+        )}
+        {showFooter && (
+          <Group
+            className={cx(classNames?.footer)}
+            justify="space-between"
+            mt="xs"
+            wrap="wrap"
+            gap="xs"
+            align="center"
+          >
+            <Text
+              // Hidden, not removed: the footer keeps its height and nothing shifts when rows land.
+              style={
+                stateless || !rangeInBounds
+                  ? { ...RANGE_LABEL_STYLE, visibility: 'hidden' }
+                  : RANGE_LABEL_STYLE
+              }
+            >
+              Showing {rangeStart}–{rangeEnd}
+              {totalIsAuthoritative ? ` of ${total}` : ''}
+            </Text>
+            <Group gap="xs" align="center" data-basalt-dense>
+              {/* theme-allow control-outside-home — the table's own page-size setting, not a page
                 filter: its state is the table's pagination, owned inside this component. */}
-            <Select
-              size="ctl"
-              classNames={{ wrapper: classes.toolbarWrapper, input: classes.toolbarInput }}
-              wrapperProps={{ 'data-basalt-hit': true }}
-              radius="md"
-              w={PAGE_SIZE_WIDTH}
-              data={pageSizeRows}
-              value={String(paginationState.pageSize)}
-              onChange={(value) => value && table.setPageSize(Number(value))}
-              allowDeselect={false}
-            />
-            <CtlSlot>
-              {/* `Pagination` carries no `ctl`-tier entry in `CTL_THEME` (its own controls resolve
+              <Select
+                size="ctl"
+                classNames={{ wrapper: classes.toolbarWrapper, input: classes.toolbarInput }}
+                wrapperProps={{ 'data-basalt-hit': true }}
+                radius="md"
+                w={PAGE_SIZE_WIDTH}
+                data={pageSizeRows}
+                value={String(paginationState.pageSize)}
+                onChange={(value) => value && table.setPageSize(Number(value))}
+                allowDeselect={false}
+              />
+              <CtlSlot>
+                {/* `Pagination` carries no `ctl`-tier entry in `CTL_THEME` (its own controls resolve
                   the 44px coarse hit floor through `PaginationControl`'s theme-level
                   `data-basalt-hit`, not through the `ctl` size), so `CtlSlot` cannot restore this
                   size on its own — an explicit `size="sm"` is the visual this footer always had. */}
-              <Pagination
-                size="sm"
-                // Mantine writes `--pagination-control-size` inline from `size`, which a class cannot
-                // outrank — `vars` is the seam. The `ctl` height of the dense group above: 28 at a
-                // fine pointer, 32 at a coarse one, the Select's own height either way. The labels
-                // read `sm`, the cells' size, whatever the `size` prop maps to.
-                vars={() => ({
-                  root: {
-                    '--pagination-control-size':
-                      'calc(var(--vx-space-control-height-ctl) * var(--mantine-scale))',
-                    '--pagination-control-fz': 'var(--vx-text-sm)',
-                  },
-                })}
-                radius="md"
-                total={Math.max(table.getPageCount(), 1)}
-                value={paginationState.pageIndex + 1}
-                onChange={(page) => table.setPageIndex(page - 1)}
-              />
-            </CtlSlot>
+                <Pagination
+                  size="sm"
+                  // Mantine writes `--pagination-control-size` inline from `size`, which a class cannot
+                  // outrank — `vars` is the seam. The `ctl` height of the dense group above: 28 at a
+                  // fine pointer, 32 at a coarse one, the Select's own height either way. The labels
+                  // read `sm`, the cells' size, whatever the `size` prop maps to.
+                  vars={() => ({
+                    root: {
+                      '--pagination-control-size':
+                        'calc(var(--vx-space-control-height-ctl) * var(--mantine-scale))',
+                      '--pagination-control-fz': 'var(--vx-text-sm)',
+                    },
+                  })}
+                  radius="md"
+                  total={Math.max(table.getPageCount(), 1)}
+                  value={paginationState.pageIndex + 1}
+                  onChange={(page) => table.setPageIndex(page - 1)}
+                />
+              </CtlSlot>
+            </Group>
           </Group>
-        </Group>
-      )}
-    </div>
+        )}
+      </div>
+    </HostTitleContext>
   )
 }

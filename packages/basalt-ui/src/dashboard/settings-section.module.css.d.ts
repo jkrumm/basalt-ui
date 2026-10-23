@@ -7,5 +7,6 @@ declare const classes: {
   readonly rows: string
   readonly row: string
   readonly control: string
+  readonly danger: string
 }
 export default classes

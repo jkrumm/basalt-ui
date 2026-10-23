@@ -46,3 +46,9 @@
     gap: var(--vx-space-stack-xs);
   }
 }
+
+/* DangerZone's ring colour: the status token mixed into the panel surface — one formula in both
+ * schemes, never an alpha over whatever sits behind it. The component layers it on `shadow-card`. */
+.danger {
+  --danger-ring: color-mix(in srgb, var(--vx-status-bad) 40%, var(--vx-surface-panel));
+}

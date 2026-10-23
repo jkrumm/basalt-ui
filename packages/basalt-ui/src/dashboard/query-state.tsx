@@ -132,7 +132,7 @@ export type ErrorStateProps = BasaltProps & {
  */
 export function ErrorState({
   error,
-  title = couldNotLoad(),
+  title: titleProp,
   fallback = 'The request failed.',
   onRetry,
   retrying = false,
@@ -141,6 +141,8 @@ export function ErrorState({
   className,
   style,
 }: ErrorStateProps): ReactNode {
+  const hostTitle = useContext(HostTitleContext)
+  const title = titleProp ?? couldNotLoad(hostTitle)
   const resolved = tier ?? 'page'
   // D28: a status dot + a word + the message + the retry, on the neutral surface — never a
   // red-tinted filled panel (SPEC § 6.12).
@@ -288,7 +290,7 @@ export function QueryState<TData>({
   children,
   empty,
   isEmpty,
-  errorTitle: errorTitleProp,
+  errorTitle,
   errorFallback = 'The request failed.',
   errorAction,
   tier,
@@ -298,8 +300,6 @@ export function QueryState<TData>({
   classNames,
 }: QueryStateProps<TData>): ReactNode {
   assertQueryStateLike('QueryState', query)
-  const hostTitle = useContext(HostTitleContext)
-  const errorTitle = errorTitleProp ?? couldNotLoad(hostTitle)
   const resolvedTier = tier ?? 'page'
   // One class for every branch — see {@link QueryStateSlot}. `cx` returns `''` when both are
   // absent, and an empty `className` on a branch that previously carried none would be a DOM diff,
@@ -313,7 +313,7 @@ export function QueryState<TData>({
     return (
       <ErrorState
         error={error}
-        title={errorTitle}
+        {...(errorTitle !== undefined && { title: errorTitle })}
         fallback={errorFallback}
         onRetry={retry}
         retrying={retrying}

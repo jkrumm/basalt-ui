@@ -7,6 +7,7 @@ import { MantineProvider } from '@mantine/core'
 import { render, screen } from '@testing-library/react'
 import { describe, expect, test } from 'bun:test'
 import type { ReactElement } from 'react'
+import { readFileSync } from 'node:fs'
 import { DangerZone, SettingsRow, SettingsSection } from './settings-section'
 
 function renderWith(node: ReactElement) {
@@ -86,18 +87,23 @@ describe('a settings shell keeps three type sizes (Wave 38)', () => {
 })
 
 describe('the DangerZone ring is one token-derived treatment in both schemes', () => {
-  test('the ring mixes the status token into the panel surface — no alpha over the backdrop', () => {
+  const css = readFileSync(new URL('./settings-section.module.css', import.meta.url), 'utf8')
+
+  test('the class mixes the status token into the panel surface — no alpha over the backdrop', () => {
+    const danger = css.slice(css.indexOf('.danger {'))
+    expect(danger).toContain(
+      'color-mix(in srgb, var(--vx-status-bad) 40%, var(--vx-surface-panel))',
+    )
+    expect(danger).not.toMatch(/rgba?\(|#[0-9a-f]{3}/i)
+  })
+
+  test('the card layers that ring on shadow-card inline', () => {
     renderWith(
       <DangerZone title="Delete">
         <div>rows</div>
       </DangerZone>,
     )
     const card = screen.getByText('Danger Zone').closest('.mantine-Card-root') as HTMLElement | null
-    const shadow = card?.style.boxShadow ?? ''
-    expect(shadow).toContain('var(--vx-shadow-card)')
-    expect(shadow).toContain(
-      'color-mix(in srgb, var(--vx-status-bad) 40%, var(--vx-surface-panel))',
-    )
-    expect(shadow).not.toMatch(/rgba?\(|#[0-9a-f]{3}/i)
+    expect(card?.style.boxShadow).toBe('var(--vx-shadow-card), 0 0 0 1px var(--danger-ring)')
   })
 })

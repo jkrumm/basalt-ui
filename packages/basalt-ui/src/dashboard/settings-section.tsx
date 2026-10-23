@@ -155,11 +155,10 @@ export function DangerZone({
 }: DangerZoneProps) {
   return (
     <Card
-      className={cx(classNames?.root, className)}
+      className={cx(classes.danger, classNames?.root, className)}
       style={{
-        // The card's depth plus ONE token-derived edge: the status colour mixed into the panel
-        // surface, never an alpha over whatever sits behind it (that read differently per scheme).
-        boxShadow: `${VX.shadowCard}, 0 0 0 1px color-mix(in srgb, ${VX.status.bad} 40%, ${VX.surface.panel})`,
+        // The card's depth plus ONE edge in the class's scheme-independent ring colour.
+        boxShadow: `${VX.shadowCard}, 0 0 0 1px var(--danger-ring)`,
         ...style,
       }}
     >
