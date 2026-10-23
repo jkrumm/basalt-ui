@@ -17,8 +17,8 @@
   padding-inline: calc(var(--vx-space-stack-md, 0.75rem) * var(--mantine-scale, 1));
   /* A visible edge: the panel fill and `shadow-raised` alone read as a pale chip on the page or a card,
    so the border is ink mixed into the panel (>= 3:1 against it in both schemes), not the hairline. */
-  border: calc(0.0625rem * var(--mantine-scale, 1)) solid
-    color-mix(in srgb, var(--vx-ink) 55%, var(--vx-surface-panel));
+  border: calc(0.0625rem * var(--mantine-scale, 1)) solid var(--vx-muted);
+  border-color: color-mix(in srgb, var(--vx-ink) 55%, var(--vx-surface-panel));
   border-radius: var(--vx-radius-ctrl);
   background: var(--vx-surface-panel);
   box-shadow: var(--vx-shadow-raised);

@@ -166,9 +166,9 @@ export function MeterEmpty(props: {
   shell: Shell
 }) {
   const { label, text, ring, zoned, shell } = props
-  // A host that states its gap (`text`) gets the one empty box `BarList` and `EventList` draw: no
+  // A host that states its gap (non-blank `text`) gets the one empty box `BarList` and `EventList` draw: no
   // track, no ring, the same `EmptyState` tile.
-  if (text !== undefined) {
+  if (text !== undefined && text.trim() !== '') {
     const copy = splitEmptyCopy(text)
     return (
       // oxlint-disable-next-line jsx-a11y/prefer-tag-over-role -- a polite live region named by the Meter's label; `<output>` cannot hold the tile's block content

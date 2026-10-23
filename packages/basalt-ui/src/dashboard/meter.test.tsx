@@ -742,6 +742,12 @@ describe('Meter without a reading', () => {
     expect(bar.querySelector('[role="status"]')?.getAttribute('aria-label')).toBe('B')
   })
 
+  test('a blank emptyText draws no tile', () => {
+    const { container } = mount({ label: 'B', value: null, emptyText: '  ' })
+    expect(container.querySelector('[role="status"]')).toBeNull()
+    expect(container.querySelector('[data-meter-track]')).not.toBeNull()
+  })
+
   test('a consumer emptyText still replaces it', () => {
     const { container } = mount({ label: 'B', value: null, emptyText: 'Not worn' })
     expect(container.querySelector('[data-basalt-meter]')?.textContent).toBe('Not worn')
