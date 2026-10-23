@@ -66,6 +66,14 @@ describe('settleInCard', () => {
     expect(Number.parseFloat(tip.style.top) + 60).toBeLessThanOrEqual(270)
   })
 
+  test('a tooltip taller than the plot still keeps its left edge off the y tick labels', () => {
+    // 180px tall against a 150px plot: no vertical fence, but the width fits, so the y labels stay clear.
+    const { card, tip, ctx } = setup({ height: 180 })
+    ;(ctx as { anchor: { x: number; y: number } }).anchor = { x: 40, y: 100 }
+    settleInCard(tip, card, ctx)
+    expect(Number.parseFloat(tip.style.left)).toBeGreaterThanOrEqual(40)
+  })
+
   test('a hidden tooltip is not written', () => {
     const { card, tip, ctx, writes } = setup({ hidden: true })
     const before = tip.style.cssText
