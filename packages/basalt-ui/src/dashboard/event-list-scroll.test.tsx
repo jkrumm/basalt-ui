@@ -7,6 +7,7 @@ import { MantineProvider } from '@mantine/core'
 import { cleanup, fireEvent, render } from '@testing-library/react'
 import { afterEach, beforeEach, describe, expect, mock, test } from 'bun:test'
 import { EventList } from './event-list'
+import { rowBoundaryTrim } from './event-list-scroll'
 
 let observed: (() => void)[] = []
 let releaseFonts: () => void = () => {}
@@ -94,5 +95,52 @@ describe('open on the newest end', () => {
     const after = scrollTo.mock.calls.length
     for (const fire of observed) fire()
     expect(scrollTo.mock.calls.length).toBe(after)
+  })
+})
+
+describe('rowBoundaryTrim', () => {
+  const rect = (top: number, bottom: number) => () => ({ top, bottom }) as DOMRect
+  // A box of 100 with 300 of content; the sole header's group starts at 0, 25 tall; the row at 110-150 straddles the line at max (200) + 25.
+  const build = (rows: [number, number][], clientHeight = 100) => {
+    const el = document.createElement('div')
+    const content = document.createElement('div')
+    const group = document.createElement('div')
+    const header = document.createElement('div')
+    header.setAttribute('data-day-header', '')
+    Object.defineProperty(header, 'offsetHeight', { value: 25 })
+    group.append(header)
+    group.getBoundingClientRect = rect(0, 300)
+    content.append(group)
+    for (const [top, bottom] of rows) {
+      const row = document.createElement('div')
+      row.setAttribute('data-event-id', String(top))
+      row.getBoundingClientRect = rect(top, bottom)
+      content.append(row)
+    }
+    content.getBoundingClientRect = rect(0, 300)
+    el.append(content)
+    Object.defineProperty(el, 'scrollHeight', { value: 300 })
+    Object.defineProperty(el, 'clientHeight', { value: clientHeight })
+    return { el, content }
+  }
+  test('trims by the remainder of the row the stuck header cuts', () => {
+    const { el, content } = build([[200, 250]])
+    expect(rowBoundaryTrim(el, content, 0)).toBe(25)
+  })
+  test('is pure of the current trim', () => {
+    const { el, content } = build([[200, 250]], 75)
+    expect(rowBoundaryTrim(el, content, 25)).toBe(25)
+  })
+  test('is 0 when no row is cut, or the cut is in the row padding', () => {
+    const clean = build([[225, 250]])
+    expect(rowBoundaryTrim(clean.el, clean.content, 0)).toBe(0)
+    const { el, content } = build([[200, 250]])
+    const real = window.getComputedStyle
+    window.getComputedStyle = (() => ({ paddingTop: '30px' })) as unknown as typeof real
+    try {
+      expect(rowBoundaryTrim(el, content, 0)).toBe(0)
+    } finally {
+      window.getComputedStyle = real
+    }
   })
 })
