@@ -815,19 +815,10 @@ export function MeterBar(props: {
                 key: 'forecast',
                 node: glue(model.forecastText),
                 drop: 2,
-                // The reading ends at the boundary, the forecast ends where its fill does.
-                // If that collides, it falls back to starting at the boundary before it drops.
+                // The reading ends at the boundary, the forecast ends where its fill does (a tick
+                // marks that end); it drops before it ever sits under the boundary tick.
                 ...(props.readingAt !== 'start' && model.forecastEndPct !== undefined
-                  ? {
-                      pct: model.forecastEndPct,
-                      align: 'end' as const,
-                      ...(model.boundaryPct !== undefined && {
-                        alt: {
-                          pct: model.boundaryPct,
-                          ...(start !== null && { align: 'start' as const }),
-                        },
-                      }),
-                    }
+                  ? { pct: model.forecastEndPct, align: 'end' as const }
                   : model.boundaryPct !== undefined && { pct: model.boundaryPct }),
               } satisfies CaptionItem,
             ]
@@ -930,6 +921,16 @@ export function MeterBar(props: {
           <>
             <Tick kind="marker" className={classes.marker} pct={model.markerPct} />
             <Tick kind="boundary" className={classes.boundaryTick} pct={model.boundaryPct} />
+            {/* At the track end the track itself marks the forecast end. */}
+            <Tick
+              kind="forecastEnd"
+              className={classes.boundaryTick}
+              pct={
+                model.forecastEndPct !== undefined && model.forecastEndPct < 100
+                  ? model.forecastEndPct
+                  : undefined
+              }
+            />
             {model.ticks.map((t) => (
               <Tick key={t.key} kind="tick" className={classes.tick} pct={t.pct} />
             ))}
@@ -961,11 +962,12 @@ const TICK_WIDTH = '2px'
  * reads inside. The marker is the reading itself and stays centred.
  */
 function tickPosition(kind: TickKind, pct: number): CSSProperties {
-  if (pct < 100 || kind === 'marker' || kind === 'boundary') return { insetInlineStart: `${pct}%` }
+  if (pct < 100 || kind === 'marker' || kind === 'boundary' || kind === 'forecastEnd')
+    return { insetInlineStart: `${pct}%` }
   return { insetInlineStart: `calc(100% - ${TICK_WIDTH})`, marginInlineStart: 0 }
 }
 
-type TickKind = 'marker' | 'boundary' | 'target' | 'tick'
+type TickKind = 'marker' | 'boundary' | 'forecastEnd' | 'target' | 'tick'
 
 function Tick({
   kind,

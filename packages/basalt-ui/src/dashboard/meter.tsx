@@ -24,7 +24,16 @@
  *
  * Categorical `segments` (no `forecast` part) are captioned one per part — swatch, name, value — under
  * the track and the default start caption is dropped (an explicit `startCaption` still shows);
- * committed/forecast keeps the reading plus the forecast caption.
+ * committed/forecast keeps the reading plus the forecast caption. The reading is captioned at the
+ * committed fill's end and the forecast at the forecast's end, which a tick marks (none when it
+ * reaches the track end); the forecast caption drops before it ever sits under the boundary tick.
+ * Adjacent categorical parts are separated by a 2px gap, muted ones included; give each part its own
+ * series colour (`tone="muted"` is for a tail "other" part — a bar of only muted parts warns once in
+ * development).
+ *
+ * Captions keep at least one caption em (never under the gap step) between them at any width: at
+ * narrow widths the lower-priority ones drop first (tick captions, then the forecast), and what is
+ * dropped stays in the described-by text. A bar fills its container's width.
  *
  * @example
  * import { Meter } from 'basalt-ui'
@@ -219,6 +228,18 @@ function barTone(tone: 'muted' | 'ink' | undefined, plain: boolean): 'muted' | u
   return tone === 'muted' || plain ? 'muted' : undefined
 }
 
+let warnedMuted = false
+/** One dev warning per page load for a categorical bar whose parts are all muted: one slab, however seamed. */
+function warnAllMuted(segments: readonly MeterSegment[]) {
+  if (warnedMuted || process.env.NODE_ENV === 'production') return
+  const parts = segments.filter((s) => s.forecast !== true)
+  if (parts.length < 3 || !parts.every((s) => s.tone === 'muted' && s.color === undefined)) return
+  warnedMuted = true
+  console.warn(
+    '[basalt] Meter: every segment is tone="muted", so the parts read as one slab; give each part its own series colour (muted is for a tail "other" part)',
+  )
+}
+
 export function Meter(props: MeterProps) {
   const { label, min = 0, max = 100, format = asText, className, style } = props
   const row = props.size === 'row'
@@ -238,6 +259,7 @@ export function Meter(props: MeterProps) {
     props.segments === undefined || (loading && props.segments.length === 0)
       ? undefined
       : normalizeSegments(props.segments)
+  if (segments !== undefined) warnAllMuted(segments)
   const placeholder =
     props.zones !== undefined && props.zones.length > 0 ? min + spanOf(min, max).span / 2 : min
   const reading = loading

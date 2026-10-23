@@ -10,8 +10,9 @@ export type MeterSegment = {
   label: string
   color?: string
   /**
-   * `'muted'`: the part takes the one flat muted fill every muted part shares, a hairline seam
-   * between neighbours (never a lightness step). A `color` wins.
+   * `'muted'`: the part takes the one flat muted fill every muted part shares, a visible gap
+   * between neighbours (never a lightness step). A `color` wins. Give each categorical part its own
+   * series `color`; `muted` is for a tail "other" part, and a bar of only muted parts reads as one slab.
    */
   tone?: 'muted'
   forecast?: boolean
@@ -87,7 +88,7 @@ export type Part = {
   readonly size: number
   readonly color: string | undefined
   readonly forecast: boolean
-  /** A muted part right after another muted part: a hairline seam keeps the shared fill apart. */
+  /** A categorical part right after another: a gap (not a hairline) keeps neighbours, muted ones included, apart. */
   readonly seam: boolean
   readonly label: string
   /** The segment's own (normalised) amount, in the reading's units — what its caption states. */
@@ -209,7 +210,7 @@ export function normalizeSegments(segments: readonly MeterSegment[]): MeterSegme
 export function layoutSegments(segments: readonly MeterSegment[], span: number): Part[] {
   let cursor = 0
   const isMuted = (s: MeterSegment) => s.tone === 'muted' && s.color === undefined && !s.forecast
-  let prevMuted = false
+  let prevCategorical = false
   return segments.map((s) => {
     const size = Math.max(0, Math.min(clamp01(s.value / span), 1 - cursor))
     const forecast = s.forecast === true
@@ -219,12 +220,12 @@ export function layoutSegments(segments: readonly MeterSegment[], span: number):
       size,
       color: forecast ? undefined : isMuted(s) ? mutedFill(MUTED_PART) : s.color,
       forecast,
-      seam: isMuted(s) && prevMuted,
+      seam: !forecast && prevCategorical,
       label: s.label,
       amount: s.value,
     }
     cursor += size
-    prevMuted = isMuted(s)
+    prevCategorical = !forecast
     return part
   })
 }

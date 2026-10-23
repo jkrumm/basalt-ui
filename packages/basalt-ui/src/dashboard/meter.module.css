@@ -14,6 +14,12 @@
   --basalt-meter-caption: var(--vx-text-micro);
 }
 
+/* A bar fills its container's width: as a flex item (a StatCard visual, a strip cell) it would
+ * otherwise size to its captions and stop part-way across the card. */
+.root:has(> .trackBox) {
+  inline-size: 100%;
+}
+
 .track {
   position: relative;
   display: flex;
@@ -62,10 +68,10 @@
   background: color-mix(in srgb, var(--vx-muted) 65%, transparent);
 }
 
-/* Muted parts share one flat fill: a track-coloured hairline at the shared edge tells them apart. */
+/* Adjacent categorical parts (muted ones share one fill): a track-coloured gap, not a hairline, tells them apart. */
 .fill[data-meter-seam] {
   box-sizing: border-box;
-  border-inline-start: 1px solid var(--vx-surface-subtle);
+  border-inline-start: 2px solid var(--vx-surface-subtle);
 }
 
 /* The committed/forecast pair: the same neutral at two strengths. Flat, never hatched. */
@@ -187,8 +193,9 @@
   margin-inline-start: -1px;
   border-radius: var(--vx-radius-fine);
   background: var(--vx-ink);
-  /* A track-coloured halo keeps an ink tick readable on a fill that is itself near-ink (dark). */
-  box-shadow: 0 0 0 1px var(--vx-surface-subtle);
+  /* A panel-coloured 2px halo (the opposite pole of ink in both schemes) keeps the tick readable on
+   * a fill that is itself near-ink: `tone="ink"`, or --vx-line in dark. */
+  box-shadow: 0 0 0 2px var(--vx-surface-panel);
 }
 
 .boundaryTick {
@@ -201,7 +208,9 @@
   flex-wrap: wrap;
   align-items: baseline;
   justify-content: space-between;
-  gap: var(--vx-space-control-gap, 0.375rem);
+  /* Read by the layout as the least two captions keep apart: a gap step, and never under one caption
+   * em, so two figures at 390 px do not read as one run. */
+  gap: max(var(--vx-space-control-gap, 0.375rem), 1em);
   font-family: var(--basalt-font-numeral, var(--basalt-font-sans));
   font-variant-numeric: lining-nums;
   font-size: var(--basalt-meter-caption);
