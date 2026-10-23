@@ -406,8 +406,8 @@ describe('target at max', () => {
     expect(t?.style.marginInlineStart).toBe('')
   })
 
-  test('the tick carries a track-coloured halo so ink on an ink fill still reads', () => {
-    expect(css).toMatch(/\.tick\s*\{[^}]*box-shadow:[^;]*var\(--vx-surface-subtle\)/)
+  test('the tick carries a 2px panel halo (ink contrasts with it in both schemes) so it reads on an ink fill', () => {
+    expect(css).toMatch(/\.tick\s*\{[^}]*box-shadow:\s*0 0 0 2px var\(--vx-surface-panel\)/)
   })
 })
 
