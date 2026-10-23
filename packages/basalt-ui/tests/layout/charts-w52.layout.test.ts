@@ -74,7 +74,8 @@ layout('Wave 52 chart cards', () => {
 
   test('1440: a short card and a tall card in one row share the title baseline', async () => {
     const [short, tall] = await cards('w52-plain')
-    expect(Math.abs((short?.title?.top ?? 0) - (tall?.title?.top ?? 99))).toBeLessThanOrEqual(EPS)
+    if (!short?.title || !tall?.title) throw new Error('LAYOUT: missing card part')
+    expect(Math.abs(short.title.top - tall.title.top)).toBeLessThanOrEqual(EPS)
   })
 
   test.each([
@@ -85,6 +86,7 @@ layout('Wave 52 chart cards', () => {
     if (!c?.value || !c.card) throw new Error('LAYOUT: missing card part')
     expect(c.card.right - c.card.left).toBeLessThanOrEqual(340.5)
     // The value, unit and delta each stay one line (a wrapped unit doubles its box).
+    if (host === 'w52-phone') expect(c.unit).not.toBeNull()
     if (c.unit) expect(c.unit.bottom - c.unit.top).toBeLessThan(24)
     for (const h of c.deltaLines) expect(h).toBeLessThan(24)
     expect(c.value.right).toBeLessThanOrEqual(c.card.right)
@@ -105,8 +107,7 @@ layout('Wave 52 chart cards', () => {
       await p.raw.mouse.move(box.x + box.w / 2, box.y + box.h / 2)
       await p.raw.mouse.move(box.x + 2, box.y + box.h / 2)
     } else {
-      // Keyboard path: Tab onto the chart, then Home for the first point.
-      await p.raw.focus('[data-testid="w52-focus"] [data-basalt-box] svg').catch(() => undefined)
+      // Keyboard path: Tab onto the chart; the focus alone opens the tooltip at its first point.
       for (let i = 0; i < 12; i += 1) {
         const inside = await p.raw.evaluate(
           () => document.activeElement?.closest('[data-testid="w52-focus"]') !== null,
@@ -181,6 +182,8 @@ layout('Wave 52 chart cards', () => {
       const ticks = [...svg.querySelectorAll('text')].filter((el) => (el.textContent ?? '') !== '')
       return {
         ticks: ticks.length,
+        lowestTick: Math.max(...ticks.map((el) => el.getBoundingClientRect().bottom)),
+        tipTop: t.top,
         covered: ticks
           .filter((el) => {
             const r = el.getBoundingClientRect()
@@ -191,5 +194,6 @@ layout('Wave 52 chart cards', () => {
     })
     expect(m.ticks).toBeGreaterThan(2)
     expect(m.covered).toEqual([])
+    expect(m.tipTop).toBeGreaterThanOrEqual(m.lowestTick)
   })
 })

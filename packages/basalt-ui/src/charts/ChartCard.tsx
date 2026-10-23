@@ -234,7 +234,7 @@ function legacyFact(header: {
   const { value, delta, deltaPeriod, deltaPolarity } = header
   if (value === undefined && delta === undefined) return undefined
   return {
-    value: value ?? '',
+    value: value ?? null,
     ...(delta !== undefined && {
       comparison: (
         <DeltaBadge
@@ -282,13 +282,18 @@ function Facts({
               {...(f.tone !== undefined && { 'data-tone': f.tone })}
               className={classes.fact}
             >
-              <span
-                data-basalt-fact-value=""
-                {...(!hasComparison(f.comparison) && { 'data-basalt-fact-tone': '' })}
-                className={cx(classes.factValue, !hasComparison(f.comparison) && classes.factTone)}
-              >
-                {f.value}
-              </span>
+              {f.value !== null && f.value !== undefined && f.value !== '' && (
+                <span
+                  data-basalt-fact-value=""
+                  {...(!hasComparison(f.comparison) && { 'data-basalt-fact-tone': '' })}
+                  className={cx(
+                    classes.factValue,
+                    !hasComparison(f.comparison) && classes.factTone,
+                  )}
+                >
+                  {f.value}
+                </span>
+              )}
               {f.unit !== undefined && <span className={classes.factUnit}>{f.unit}</span>}
               {hasComparison(f.comparison) && (
                 <span

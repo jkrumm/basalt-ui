@@ -15,8 +15,8 @@
   }
 }
 
-/* A short card keeps the same inset: its title shares a baseline with a tall neighbour in the row
- * (the short fold removes the subtitle line, never the header's top air). */
+/* A short card keeps this inset too, so its title shares a baseline with a tall neighbour in the
+ * row; its other short-state rules (the folded subtitle) live in `dashboard/widget-header.module.css`. */
 
 /*
  * The facts line (`facts` prop): the headline figure under the title, in place of a subtitle. It wraps

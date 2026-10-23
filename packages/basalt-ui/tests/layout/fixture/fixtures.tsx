@@ -629,8 +629,6 @@ function CardsFixture({ spec }: { spec: CardsSpec }): ReactElement {
           <ChartCard
             title="Availability"
             subtitle="Last 24 hours"
-            value="99.982%"
-            delta={0.4}
             actions={
               <ActionIcon variant="subtle" aria-label="Menu">
                 ⋯
@@ -652,8 +650,6 @@ function CardsFixture({ spec }: { spec: CardsSpec }): ReactElement {
           <ChartCard
             title="Availability"
             subtitle="Last 24 hours"
-            value="99.982%"
-            delta={0.4}
             actions={
               <ActionIcon variant="subtle" aria-label="Menu">
                 ⋯
