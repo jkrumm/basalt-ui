@@ -279,21 +279,13 @@ export function Chat() {
 
 ## Verify
 
-1. `./node_modules/.bin/basalt-ui doctor`; read to the last line. `SKIPPED` exits non-zero.
-2. Fix every finding doctor prints, then rerun until it is clean.
-3. Run the repo's own gate (e.g. `make check`), which runs lint, the theme guard (`basalt-ui check-theme`) and typecheck; fix every finding at its source, and every type error without `as never` or `any`.
-
-## Bump with a board
-
-1. Before the bump, build the OLD version and keep it: `vite build --outDir /tmp/before-dist`. The old CLI may have no `shot`; the new one shoots the old build.
-2. Bump (`bun add basalt-ui@latest`, `sync`), build into `dist`, then `./node_modules/.bin/basalt-ui doctor --from <old version>` and read it before shooting.
-3. `shot` resolves `playwright` (then `playwright-core`) upward from the app's `package.json`, so it may sit in any ancestor `node_modules`: install it in the repo's PARENT directory (`bun add --cwd "$(dirname "$PWD")" playwright`, run from the repo root), which no manifest of the repo records. Without the bundled chromium it falls back to the installed `chrome` channel. Revert any `package.json`/lockfile edit that appears.
-4. `./node_modules/.bin/basalt-ui shot /route … --dist /tmp/before-dist --out <app-dir>/.shots/before`, then the same with `--dist dist --out <app-dir>/.shots/after`. `--out` must sit inside the app dir; pass routes as separate arguments (a quoted list is one route).
-5. A locked or API-backed app shoots its lock screen on every route and still reports `0 failed`. Serve fixtures from a local script on `127.0.0.1` and proxy to it: `--api /api=http://127.0.0.1:<port>` (loopback may be http; the proxy is read-only unless `--api-allow-writes`), plus `--local-storage key=@env:NAME` for the session key. Check two routes differ before trusting the board.
+1. `./node_modules/.bin/basalt-ui doctor`; read to the last line (`SKIPPED` exits non-zero); fix every finding it prints and rerun until it is clean.
+2. Run the repo's own gate (e.g. `make check`), which runs lint, the theme guard (`basalt-ui check-theme`) and typecheck; fix every finding at its source, and every type error without `as never` or `any`.
 
 ## Refresh after any upgrade
 
 1. `./node_modules/.bin/basalt-ui sync` (`--check` in CI, `--force` overwrites local edits); read its output: edited files are skipped, retired files are deleted, the AGENTS.md block is rewritten.
+2. A bump with a board: build the OLD version first (`vite build --outDir /tmp/before-dist`; the new CLI shoots it), bump, build, read `basalt-ui doctor --from <old version>`, then `shot /a /b --dist /tmp/before-dist --out <app-dir>/.shots/before` and the same with `--dist dist --out <app-dir>/.shots/after` (`--out` inside the app dir; each route its own argument). `shot` finds `playwright` in any ancestor `node_modules`: `bun add --cwd "$(dirname "$PWD")" playwright` keeps it out of the repo's manifest. A locked or API-backed app shoots its lock screen on every route: serve fixtures on `127.0.0.1` and pass `--api /api=http://127.0.0.1:<port>` (read-only unless `--api-allow-writes`) plus `--local-storage key=@env:NAME`.
 
 ## Upgrade 1.x to 2.x
 
