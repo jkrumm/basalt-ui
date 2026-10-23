@@ -43,6 +43,8 @@ import {
   startWiringWarnings,
   droppedSubpathsCheck,
   exactPeersCheck,
+  migratingSince,
+  staleEmittedSheets,
   oxlintFloorCheck,
   retiredLintRulesCheck,
   subpathPeersCheck,
@@ -101,6 +103,31 @@ function aiMajorsAt(dir: string): Partial<Record<AiMajorField, number>> {
   return out
 }
 
+/** `doctor --from <version>`: the consumer-visible MIGRATING.md changes since `from`, up to the install. */
+function doctorFrom(invocationCwd: string, from: string | undefined): number {
+  if (from === undefined || !/^\d+\.\d+\.\d+$/.test(from)) {
+    console.error(
+      'basalt-ui doctor --from <version>: pass the version you are upgrading from (x.y.z).',
+    )
+    return 1
+  }
+  const install = findBasaltInstall(resolveProjectDir(invocationCwd).dir)
+  const markdown = install.dir === null ? null : readIfExists(resolve(install.dir, 'MIGRATING.md'))
+  if (markdown === null) {
+    console.error(
+      'basalt-ui doctor --from: no installed basalt-ui with a MIGRATING.md. Fix: `bun add basalt-ui`.',
+    )
+    return 1
+  }
+  const lines = migratingSince(markdown, from, install.version)
+  console.log(
+    lines.length === 0
+      ? `No consumer-visible changes recorded after ${from} up to ${install.version ?? 'the install'}.`
+      : `Consumer-visible changes after ${from} up to ${install.version ?? 'the install'} (full text: MIGRATING.md):\n${lines.join('\n')}`,
+  )
+  return 0
+}
+
 /**
  * Check a consumer repo's basalt integration and print a pass/warn report. One directory, no
  * workspace walking (see {@link resolveProjectDir}). Checks, in print order:
@@ -129,6 +156,8 @@ export function doctor(
   designLoop: DesignLoopProbes = {},
 ): number {
   if (conflictingProfileFlags('doctor', flags)) return 1
+  const fromAt = flags.indexOf('--from')
+  if (fromAt !== -1) return doctorFrom(invocationCwd, flags[fromAt + 1])
   const project = resolveProjectDir(invocationCwd)
   // Inside the app package of a monorepo the manifest is above: read the install root instead.
   const aboveRoot = project.relocatedFrom === null ? installRootAbove(project.dir) : null
@@ -425,6 +454,8 @@ export function doctor(
     if (shell.fail !== null) fail(shell.fail)
     for (const line of shell.warnings) warn(line)
   }
+
+  for (const line of staleEmittedSheets(cwd, scannableFiles(cwd, cfg), install.version)) warn(line)
 
   // ── Design loop: advisory info lines (no warning count — they never change the verdict) ─────
   if (profile !== 'tokens-only') lines.push(...designLoopLines(cwd, resolveRoots(cfg), designLoop))

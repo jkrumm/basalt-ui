@@ -1041,10 +1041,39 @@ The `basalt-ui/router-tanstack` subpath is **removed** in 2.x, not moved: an imp
 | `NavItemMeta`, `NavGroupMeta`, `AnyNavItem`, `AnyNavGroup`, `AnyNavLink`, `FlatNavItem`, `NavConfig`, `NavGroupId`, `NavTabId`, `NavIndex`, `UseNavOptions`, `NavBinding`, `NavAnchor`, `NavAnchorProps`, `NavMobilePlacement` | deleted                                                                                                                                                                                                                                                                                                                                                                                                                                                    | no consumer names them; derive with `ComponentProps` / `Parameters` |
 | `useNav`, and `BasaltShell`'s `sections` / `mobileNav` props                                                                                                                                                                   | deleted: pass `nav={NAV}` (plus `badges`, `isActive`, `getScrollElement` — the old `useNav` options) to `BasaltShell`; it resolves the sidebar, the mobile bar and the breadcrumb itself. `mobileNav` tuning moves to `defineNav`'s `mobile`. argo `apps/dashboard/src/routes/__root.tsx`: replace `const nav = useNav(NAV, { badges })` + `{...nav}` with `nav={NAV} badges={…}` (migrates in W12; 1.x consumers stay on their pinned version until then) |
 
-## Unreleased
+## Unreleased — visible without code change
 
-_Nothing yet. Author the next section under this heading as `## Unreleased — <title>`; the
-release renames it and opens a new one here._
+### Visible without code change
+
+What a consumer sees after a bump with no edit of its own, recorded retroactively for the 2.16–2.28
+range (argo-friction rows 171–176). Every release from here adds its own such lines under this
+heading; `basalt-ui doctor --from <version>` prints them with the guard and token changes since
+`<version>`.
+
+- **`--vx-status-bad` (dark) is pink-leaning.** `#f97d74` → `#fe8178` in 2.22.0 (§ 2.22.0: the status
+  text solve against the row surfaces). Chart bars and badges that read `VX.status.bad` shift with
+  it; there is no opt-out for the hex. The `#e06761` in friction row 175 is not in this repo's
+  source history, so it predates the derivation or is a consumer's own pin.
+- **`Badge` is sentence case, not upper case.** `DIFFICULTY 2` → `Difficulty 2` in 2.23.0 (§ 2.23.0
+  Badge row). Opt in per Badge with `tt="uppercase"`.
+- **`tokens:css --check` / `fonts:css --check` fail on every bump.** The emitted sheet's header names
+  the emitting version, and the check is byte-exact. Run the command in the header's second line
+  (`basalt-ui tokens:css --out <path>`, with the flags it records) and commit; `doctor` prints that
+  command for each stale sheet.
+- **The active nav row has no accent tint.** `NavLink[data-active]` is a neutral ink fill (10 %, 14 %
+  on hover) since 2.20.0 (§ 2.20.0 Chrome); the accent stays on the active icon. Opt out with a
+  consumer class that sets `background-color` on the row. Whether the cue needs a weight or marker
+  is an open owner decision (friction row 176).
+- **`Lines` and `Bars` line overlays are straight segments, not a smoothed curve.** The default
+  became `curve: 'linear'` in 2.22.0 (§ 2.22.0, chart chrome): daily or monthly values were joined by
+  a monotone curve that drew crossings between points that never happened. A continuous measure (a
+  speed trace) opts back in with `curve: 'monotone'` on the series. `StackedArea` and `Sparkline`
+  are unchanged.
+- **The spacing scale moved: `xs` 11 → 8 px** (`xs / sm / md / lg / xl` = 8 / 12 / 16 / 20 / 24,
+  2.16.0, § 2.16.0). `gap={8}` is `gap="xs"`, `py={8}` is `py="xs"`. `basalt/raw-spacing` is `error`
+  since 2.24.0. The `py="xs" px="sm"` card idiom is now a `basalt/card-inset` `error` (2.24.0): the
+  theme sets the Card inset itself (12 / 16, density-scaled), so drop the padding props. A
+  deliberately denser card has no compact tier; it becomes a visible density change.
 
 ## 2.28.0
 
