@@ -74,6 +74,14 @@ html[data-mantine-color-scheme] .inputWrapper[data-variant='default']:not([data-
   transition: background-color 600000s 0s;
 }
 
+/* Tab into a field selects its value, and the UA paints that selection in its own colour (a green
+   in the dark scheme). The shot crop of a focused field showed exactly that, not an autofill fill:
+   `:-webkit-autofill` never matches there. The selection takes the accent, tinted, with the ink kept. */
+.input::selection {
+  background: color-mix(in srgb, var(--mantine-primary-color-filled) 35%, transparent);
+  color: var(--vx-ink);
+}
+
 /* An input cannot host the `[data-basalt-hit]` ::after overlay, so its touch floor is real height. */
 @media (pointer: coarse) {
   .input {
