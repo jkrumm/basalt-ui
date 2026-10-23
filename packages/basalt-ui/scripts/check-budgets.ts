@@ -619,10 +619,11 @@ async function budgets(providerOnlyDist: string): Promise<Budget[]> {
     // 8443 -> 8457 (w37 harness-hover r2): `craft-7/no-declared-states` is P2 and names the anchors holding a state surface (`stateful` on the shot record, cli/shot/capture.ts + detect.ts +14).
     // 8457 -> 8463 (w43 shot-strip, argo UPSTREAM Wave 53 row 2): an anchor first seen in a URL state gets a `rest` `absent` record, so the board never calls a legitimate absence "not captured" (cli/shot/capture.ts +6). Consumer: argo body composition.
     // 8463 -> 8480 (w44 shot-scrollport): a full-page shot grows only by the page scrollport's hidden height, never a nested scroll box's (cli/shot/capture.ts +17). Consumer: every `basalt-ui shot` user — found on the playground S3 item timeline at 390; argo boards shoot the same harness.
+    // 8480 -> 8668 (w48 friction rows 168-179, argo-friction.md): `shot` rejects a whitespace route, names the project in --out errors, auto-anchors fall back to main/section/header/form, `shot detect` prints "nothing measured" and a per-out-dir trend with finding counts, warns when every route renders the same content, names the contrast threshold (cli/shot/ + help.ts +77); `doctor --from <version>` and the stale tokens/fonts sheet warning (cli/doctor*.ts +112); sync's read-only root-template report paid for itself by trimming comments (-1). Consumers: linewatch, rollhook, obsidian, rb (the 2.28 bumps).
     {
       label: 'CLI non-test lines (src/cli/**)',
       value: cliNonTestLines(),
-      ceiling: 8480,
+      ceiling: 8668,
     },
     ...(await providerOnlyRows(providerOnlyDist)),
   ]
