@@ -183,7 +183,7 @@ describe('a sparkline caption slides off a line that starts on its reference (w4
 })
 
 describe('a caption box clears its line (W49)', () => {
-  test('the centred text is offset by half its font size plus the gap, above and below', () => {
+  test('the centred text is a full font size off the line, above and below', () => {
     for (const fontSize of [10, 11, 13]) {
       const above = refLabelDy('end-above', fontSize)
       const below = refLabelDy('start-below', fontSize)
@@ -194,26 +194,53 @@ describe('a caption box clears its line (W49)', () => {
   })
 })
 
-describe('a sparkline caption stays in the box when the line peaks on its reference (W49)', () => {
-  // The PR strip: 28 px tall, the reference is the series maximum, so the line touches it.
-  const line = [3, 5, 8, 6, 9, 12, 10, 11, 14, 12].map((y, i, all) => ({
-    fx: i / (all.length - 1),
-    y,
-  }))
-  test('the box stays inside the plot and off the line where a spot allows', () => {
-    const { dy } = referenceLabelPlacement({
-      value: 14,
-      domain: [3, 14],
-      height: 28,
-      width: 120,
-      inset: 3,
-      fontSize: 11,
+describe('a sparkline caption with no clear spot stays in the box (W49)', () => {
+  // The PR strip: a 28 px box, 3 px inset, an 11 px caption; the reference is the series maximum.
+  const BOX_HEIGHT = 28
+  const INSET = 3
+  const FONT = 11
+  const PLOT_WIDTH = 120
+  const PEAK = 14
+  const FLOOR = 3
+  const LINE_VALUES = [3, 5, 8, 6, 9, 12, 10, 11, 14, 12]
+  const line = LINE_VALUES.map((y, i) => ({ fx: i / (LINE_VALUES.length - 1), y }))
+  const place = (over: Partial<Parameters<typeof referenceLabelPlacement>[0]> = {}) =>
+    referenceLabelPlacement({
+      value: PEAK,
+      domain: [FLOOR, PEAK],
+      height: BOX_HEIGHT,
+      width: PLOT_WIDTH,
+      inset: INSET,
+      fontSize: FONT,
       label: 'PR',
       line,
+      ...over,
     })
-    const at = 3 + 22 * (1 - (14 - 3) / (14 - 3))
-    const top = at + dy - 11 / 2
+  const topOf = (dy: number, height: number, value = PEAK): number =>
+    INSET + (height - 2 * INSET) * (1 - (value - FLOOR) / (PEAK - FLOOR)) + dy - FONT / 2
+
+  test('the box stays inside the plot where a spot allows', () => {
+    const top = topOf(place().dy, BOX_HEIGHT)
     expect(top).toBeGreaterThanOrEqual(0)
-    expect(top + 11).toBeLessThanOrEqual(28)
+    expect(top + FONT).toBeLessThanOrEqual(BOX_HEIGHT)
+  })
+  test('a box taller than the plot starts at the top edge', () => {
+    const height = FONT - 2
+    expect(topOf(place({ height }).dy, height)).toBe(0)
+  })
+  test('a line along the reference leaves no clear spot, yet the box never strikes the rule', () => {
+    const MID = 8.5
+    const height = 22
+    const flat = [0, 1].map((fx) => ({ fx, y: MID }))
+    const { dy } = place({ value: MID, height, line: flat })
+    const top = topOf(dy, height, MID)
+    const at = INSET + (height - 2 * INSET) * (1 - (MID - FLOOR) / (PEAK - FLOOR))
+    expect(top < at && top + FONT > at).toBe(false)
+  })
+  test('without a line only the plot bounds decide', () => {
+    const { dy } = place({ line: undefined })
+    const top = topOf(dy, BOX_HEIGHT)
+    expect(top).toBeGreaterThanOrEqual(0)
+    expect(top + FONT).toBeLessThanOrEqual(BOX_HEIGHT)
   })
 })

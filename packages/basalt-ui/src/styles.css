@@ -155,11 +155,12 @@
 
   /* Browser autofill paints its own yellow/blue over a field, and a focused Select keeps it. The UA
      background cannot be overridden directly, so the field surface is painted over it with an inset
-     shadow and the long transition holds the UA colour off; text and caret keep the ink. */
+     shadow and the long transition holds the UA colour off; text and caret keep the ink. A themed
+     `.input` sets its own `box-shadow` UNLAYERED, which outranks this layer: `controls.module.css`
+     re-points `--field-depth` under `:-webkit-autofill` for those. */
   input:-webkit-autofill,
   input:-webkit-autofill:hover,
-  input:-webkit-autofill:focus,
-  input:autofill {
+  input:-webkit-autofill:focus {
     -webkit-text-fill-color: var(--vx-ink);
     caret-color: var(--vx-ink);
     box-shadow: 0 0 0 100vmax var(--vx-surface-field) inset;

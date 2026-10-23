@@ -324,6 +324,35 @@ function wholeStepFormat<T>(
   return (v) => axis.format(v).replace(padded, '$1')
 }
 
+/** A fixed domain's end this near the last round tick (as a share of the tick step) stays unlabelled. */
+const END_TICK_MIN_GAP = 0.4
+
+/** A label without its digits, separators and spaces: the unit or symbol text it carries. */
+const labelShape = (label: string): string => label.replace(/[\d.,\s]/g, '')
+
+/**
+ * The compact ladder's few ticks can stop short of a fixed domain's end (`[0, 25]` ticks `0 10 20`).
+ * The end joins them only when it carries something the round ticks do not: a formatter that states
+ * the unit on the end alone (`25 days`) would lose it otherwise. A uniform formatter (`77 kg` beside
+ * `76 kg`) gains nothing from a tick off the step, so the end stays unlabelled and every label sits
+ * on an even step.
+ */
+function withEndTick<T>(
+  cfg: AxisConfig<T> | undefined,
+  axis: YAxis,
+  count: number,
+): { values: readonly number[] } | null {
+  if (!Array.isArray(cfg?.domain) || cfg.scale === 'log' || cfg.nice === true) return null
+  const [lo, hi] = [Math.min(...axis.domain), Math.max(...axis.domain)]
+  const round = scaleLinear().domain([lo, hi]).ticks(count)
+  const [first, next, last] = [round.at(0), round.at(1), round.at(-1)]
+  if (first === undefined || next === undefined || last === undefined || last >= hi) return null
+  if (hi - last < (next - first) * END_TICK_MIN_GAP) return null
+  return labelShape(axis.format(hi)) === labelShape(axis.format(last))
+    ? null
+    : { values: [...round, hi] }
+}
+
 export function yGuide<T>(opts: {
   cfg: AxisConfig<T> | undefined
   axis: YAxis
@@ -336,7 +365,9 @@ export function yGuide<T>(opts: {
   const ticks =
     typeof cfg?.ticks === 'object'
       ? { values: cfg.ticks }
-      : { count: typeof cfg?.ticks === 'number' ? cfg.ticks : ladder.yTicks }
+      : ((cls === 'compact' && cfg?.ticks === undefined
+          ? withEndTick(cfg, axis, ladder.yTicks)
+          : null) ?? { count: typeof cfg?.ticks === 'number' ? cfg.ticks : ladder.yTicks })
   const gridLine = grid ? { grid: GRID_LINE } : {}
   if (cls === 'micro') return { ...gridLine, axis: false }
   const tickFormat = wholeStepFormat(axis, cfg, ticks)
@@ -1018,7 +1049,7 @@ const slotAnchor = (
   return { x: (Math.min(...xs) + Math.max(...xs)) / 2, y: plot.y }
 }
 const SLOT_TOOLTIP_PLACEMENT = ['top'] as const
-/** The plot's focus ring (`svg.ts-chart:focus-visible`, `chart-box.module.css`) is a 2px outline at a 0.125rem offset, and the chip keeps 1px of air above it. Mirrors that CSS ring at `--mantine-scale` 1; the chip's `block-size` in the same file is the reserve less this. */
+/** The plot's focus ring (`svg.ts-chart:focus-visible`, `chart-box.module.css`) is a 2px outline at a 0.125rem offset, and the chip keeps 1px of air above it. Mirrors that CSS ring at `--mantine-scale` 1; the chip's `block-size` in the same file is the reserve less this. A chart's ring is inset (W49) but a Sparkline's stays outer, and the chip is sized to the Sparkline's reserve. */
 const SLOT_RING_CLEARANCE = 2 + 2 + 1
 
 /** A tooltip's chrome (title row, padding) and each series row, px: the guess the bar anchor reserves. */

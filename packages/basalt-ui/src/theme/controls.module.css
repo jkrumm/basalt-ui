@@ -61,6 +61,15 @@ html[data-mantine-color-scheme] .inputWrapper[data-variant='default']:not([data-
   box-shadow: var(--field-depth);
 }
 
+/* Browser autofill: the field surface over the UA colour, keeping the variant's resting depth. */
+.input:-webkit-autofill {
+  --field-depth: 0 0 0 100vmax var(--vx-surface-field) inset;
+}
+
+.input[data-variant='default']:-webkit-autofill {
+  --field-depth: 0 0 0 100vmax var(--vx-surface-field) inset, var(--vx-shadow-raised);
+}
+
 /* An input cannot host the `[data-basalt-hit]` ::after overlay, so its touch floor is real height. */
 @media (pointer: coarse) {
   .input {

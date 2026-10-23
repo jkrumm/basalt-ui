@@ -270,5 +270,14 @@ describe('autofill does not recolour a field', () => {
   test('styles.css paints the field surface over the UA autofill background', () => {
     const css = readFileSync(new URL('../styles.css', import.meta.url), 'utf8')
     expect(css).toMatch(/input:-webkit-autofill:focus[\s\S]*?--vx-surface-field\) inset/)
+    expect(css).not.toContain('input:autofill')
+  })
+
+  test('a themed .input re-points --field-depth, since its unlayered box-shadow outranks the layer', () => {
+    const css = readFileSync(new URL('./controls.module.css', import.meta.url), 'utf8')
+    expect(css).toMatch(
+      /\.input:-webkit-autofill\s*\{\s*--field-depth:[^;]*--vx-surface-field\) inset/,
+    )
+    expect(css).toMatch(/\[data-variant='default'\]:-webkit-autofill[^}]*--vx-shadow-raised/)
   })
 })
