@@ -25,5 +25,16 @@ export const INOL_DEFINITION =
 
 /** The weight goal: drawn on the trend chart, so no surface asks for one. */
 export const GOAL_KG = 70
+/** Days of weigh-ins behind the trend chart and the range cell. */
+export const WEIGHT_DAYS = 60
+/** Invented: a slow fall with a daily wobble, ending on the strip's reading. One series feeds the chart and the 60-day range. */
+export const WEIGHT_KG: readonly number[] = Array.from({ length: WEIGHT_DAYS }, (_, i) => {
+  const trend = 75.6 - i * 0.055
+  const wobble = Math.sin(i * 2.1) * 0.6 + Math.cos(i * 0.9) * 0.3
+  return i === WEIGHT_DAYS - 1 ? BODY.weightKg : trend + wobble
+})
+/** The lowest and highest weigh-in of the window, rounded to the 0.1 kg the cells print. */
+export const WEIGHT_LOW_KG = Math.round(Math.min(...WEIGHT_KG) * 10) / 10
+export const WEIGHT_HIGH_KG = Math.round(Math.max(...WEIGHT_KG) * 10) / 10
 /** The reading date: the weigh-in chart, the strips and the skinfold history all end here. */
 export const READING_DATE = new Date(Date.UTC(2026, 9, 20, 12))

@@ -269,6 +269,33 @@ export const READINESS_ZONES = [
 export const readinessLevel = (score: number): string =>
   zoneFor(READINESS_ZONES, score)?.label ?? '—'
 
+export type TrainingVerdict = {
+  verdict: 'ease off' | 'train as planned' | 'train, but keep it light'
+  pace: 'holds' | 'behind'
+  load: 'low' | 'holds' | 'high'
+}
+/**
+ * The page's one judgement. Pace and load are read separately; only a load above the optimal band
+ * says ease off (a low load or a pace behind the goal is a reason to train, not to rest). Within the
+ * band, a good readiness trains as planned and anything under it trains light.
+ */
+export const trainingVerdict = (input: {
+  paceGap: number
+  loadRatio: number
+  readiness: number
+}): TrainingVerdict => {
+  const zone = loadZoneName(input.loadRatio)
+  const load = zone === 'Low' ? 'low' : zone === 'Optimal' ? 'holds' : 'high'
+  const pace = input.paceGap >= 0 ? 'holds' : 'behind'
+  const verdict =
+    load === 'high'
+      ? 'ease off'
+      : readinessLevel(input.readiness) === 'Good'
+        ? 'train as planned'
+        : 'train, but keep it light'
+  return { verdict, pace, load }
+}
+
 /** The load contributor: 100 at a ratio of 1, falling 100 points per 1.0 of distance from it. */
 const loadScore = (ratio: number): number =>
   Math.max(0, Math.round(100 - Math.abs(ratio - 1) * 100))

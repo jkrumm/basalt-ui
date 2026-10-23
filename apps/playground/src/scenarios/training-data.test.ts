@@ -36,6 +36,7 @@ import {
   WINDOW_LABEL,
   loadZoneName,
   readinessLevel,
+  trainingVerdict,
 } from './training-data'
 
 const sum = (values: readonly number[]): number => values.reduce((a, b) => a + b, 0)
@@ -170,5 +171,37 @@ describe('session log', () => {
       expect(r.volumeKg).toBeGreaterThan(0)
       expect(r.e1rmKg).toBeGreaterThan(0)
     }
+  })
+})
+
+describe('trainingVerdict', () => {
+  const GOOD = 90
+  const FAIR = 70
+  it('eases off only when the load is above the optimal band', () => {
+    for (const loadRatio of [1.4, 1.8]) {
+      expect(trainingVerdict({ paceGap: 3, loadRatio, readiness: GOOD })).toEqual({
+        verdict: 'ease off',
+        pace: 'holds',
+        load: 'high',
+      })
+    }
+  })
+  it('trains as planned inside the band with a good readiness', () => {
+    expect(trainingVerdict({ paceGap: 0, loadRatio: 1, readiness: GOOD })).toEqual({
+      verdict: 'train as planned',
+      pace: 'holds',
+      load: 'holds',
+    })
+  })
+  it('trains light inside the band with a fair readiness', () => {
+    expect(trainingVerdict({ paceGap: 2, loadRatio: 1.1, readiness: FAIR }).verdict).toBe(
+      'train, but keep it light',
+    )
+  })
+  it('does not ease off for a pace behind the goal or a low load', () => {
+    const behind = trainingVerdict({ paceGap: -2, loadRatio: 1, readiness: GOOD })
+    expect(behind).toEqual({ verdict: 'train as planned', pace: 'behind', load: 'holds' })
+    const low = trainingVerdict({ paceGap: 1, loadRatio: 0.5, readiness: GOOD })
+    expect(low).toEqual({ verdict: 'train as planned', pace: 'holds', load: 'low' })
   })
 })

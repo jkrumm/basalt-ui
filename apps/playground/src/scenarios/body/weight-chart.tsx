@@ -5,21 +5,23 @@ import type { ChartSeries } from 'basalt-ui/charts'
 import { VX } from 'basalt-ui/tokens'
 import { chartStateFor, noop } from '../shot-state'
 import type { ScenarioProps } from '../shot-state'
-import { BODY, GOAL_KG, NO_WEIGH_INS, READING_DATE, WEIGHT_ERROR } from './body-data'
+import {
+  GOAL_KG,
+  NO_WEIGH_INS,
+  READING_DATE,
+  WEIGHT_DAYS,
+  WEIGHT_ERROR,
+  WEIGHT_KG,
+} from './body-data'
 
 type WeightPoint = { date: Date; weightKg: number; ma: number }
 
-const DAYS = 60
 const DAY_MS = 86_400_000
-const NBSP = ' '
+const NBSP = ' '
 const fmtKg = (v: number): string => `${v.toFixed(1)}${NBSP}kg`
 
-/** Invented: a slow fall with a daily wobble, ending on the strip's reading. */
-const RAW = Array.from({ length: DAYS }, (_, i) => {
-  const trend = 75.6 - i * 0.055
-  const wobble = Math.sin(i * 2.1) * 0.6 + Math.cos(i * 0.9) * 0.3
-  return i === DAYS - 1 ? BODY.weightKg : trend + wobble
-})
+const RAW = WEIGHT_KG
+const DAYS = WEIGHT_DAYS
 const DATA: WeightPoint[] = RAW.map((weightKg, i) => {
   const window = RAW.slice(Math.max(0, i - 6), i + 1)
   const ma = window.reduce((sum, v) => sum + v, 0) / window.length

@@ -21,6 +21,7 @@ import { tableEmptyState, useFilterReset } from '../demo/table-empty-state'
 import { ErrorNote } from '../demo/fixtures/error-note'
 import classes from './training-kpis.module.css'
 import { demoColors } from '../demo/series'
+import { TableCap } from './table-cap'
 import { fmtInt, fmtKg, fmtKm, fmtRatio, fmtShare } from './fixture-utils'
 import { FixedClockTime } from './FixedClockTime'
 import { cardStateProps, chartStateFor, noop, queryFor, retryCopy } from './shot-state'
@@ -62,8 +63,8 @@ import {
   VOLUME_CHANGE_PCT,
   VOLUME_MTD_KG,
   WINDOW_LABEL,
-  loadZoneName,
   readinessLevel,
+  trainingVerdict,
 } from './training-data'
 import type { SessionLogRow, SessionType } from './training-data'
 
@@ -93,15 +94,14 @@ const aheadOrBehind = (gap: number): string =>
 const FILL: CSSProperties = { height: '100%' }
 
 const DAYS_LEFT = MONTH_DAYS - DAYS_ELAPSED
-const ON_PACE = PACE_GAP >= 0 && loadZoneName(LOAD_RATIO) === 'Optimal'
-const READY = readinessLevel(READINESS_SCORE)
-const VERDICT = !ON_PACE
-  ? 'ease off'
-  : READY === 'Good'
-    ? 'train as planned'
-    : 'train, but keep it light'
+const TRAINING = trainingVerdict({
+  paceGap: PACE_GAP,
+  loadRatio: LOAD_RATIO,
+  readiness: READINESS_SCORE,
+})
+const LOAD_WORDS = { low: 'load is low', holds: 'load holds', high: 'load is high' } as const
 /** The one judgement the cards do not state: what pace, load and readiness add up to. Its only figure is the days left, which no card prints; the month binds to it with no-break spaces so it never wraps alone at 390. */
-const SUMMARY = `${VERDICT[0]?.toUpperCase()}${VERDICT.slice(1)} today: ${ON_PACE ? 'pace and load hold' : 'pace or load is off'}, readiness is ${READY.toLowerCase()}, with ${DAYS_LEFT}\u00A0days\u00A0left\u00A0in\u00A0${MONTH_NAME}.`
+const SUMMARY = `${TRAINING.verdict[0]?.toUpperCase()}${TRAINING.verdict.slice(1)} today: ${TRAINING.pace === 'holds' ? 'pace holds' : 'pace is behind'}, ${LOAD_WORDS[TRAINING.load]}, readiness is ${readinessLevel(READINESS_SCORE).toLowerCase()}, with ${DAYS_LEFT}\u00A0days\u00A0left\u00A0in\u00A0${MONTH_NAME}.`
 
 const SESSION_SEGMENTS = TYPE_MIX.filter((t) => t.count > 0).map((t) => ({
   value: t.count,
@@ -517,16 +517,13 @@ const sessionColumns = (() => {
   ]
 })()
 
-/** Six short columns never fill a 1440 card: the table ends where its rows do. */
-const TABLE_MAX_WIDTH = 720
-
 function TrainingSessions({ shotState }: ScenarioProps) {
   const query = queryFor(shotState, retry())
   const reset = useFilterReset([], shotState === undefined)
   return (
     <Box data-shot="session-log" h="100%">
       <Section title={`Lift log, ${WINDOW_LABEL}`}>
-        <Box maw={TABLE_MAX_WIDTH}>
+        <TableCap>
           <BasaltDataTable
             key={reset.tableKey}
             // Rows only at rest: the empty branch needs `data` empty, the others have no rows yet.
@@ -545,7 +542,7 @@ function TrainingSessions({ shotState }: ScenarioProps) {
               onClear: reset.clear,
             })}
           />
-        </Box>
+        </TableCap>
       </Section>
     </Box>
   )

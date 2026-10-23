@@ -5,10 +5,10 @@ import type { StatStripCell } from 'basalt-ui'
 import { VX } from 'basalt-ui/tokens'
 import { noop } from '../shot-state'
 import type { ScenarioProps } from '../shot-state'
-import { NO_WEIGH_INS, WEIGHT_ERROR } from './body-data'
+import { BODY, NO_WEIGH_INS, WEIGHT_ERROR, WEIGHT_HIGH_KG, WEIGHT_LOW_KG } from './body-data'
 
-const LOW = 72.3
-const HIGH = 78.9
+const LOW = WEIGHT_LOW_KG
+const HIGH = WEIGHT_HIGH_KG
 const kg = (v: number): string => `${v.toFixed(1)} kg`
 const FLAT = [
   { at: LOW, color: VX.line },
@@ -46,9 +46,9 @@ const strip = (anchor: string, visual: StatStripCell['visual'], props: ScenarioP
         cells={[
           {
             key: 'weight',
-            caption: 'Weight',
+            caption: 'Weight spread',
             qualifier: '60-day range',
-            info: 'The spread between the lowest and the highest weigh-in of the last 60 days; the track marks the latest weigh-in on it.',
+            info: 'The distance between the lowest and the highest weigh-in of the last 60 days; the track marks the latest weigh-in on it. The reading itself is in the strip above.',
             value: kg(HIGH - LOW),
             visual,
             loading: props.shotState === 'loading',
@@ -63,7 +63,7 @@ const strip = (anchor: string, visual: StatStripCell['visual'], props: ScenarioP
 export function BodyMeterStart(props: ScenarioProps) {
   return (
     <Stack gap="md">
-      {strip('weight-meter-start', weightMeter(LOW, 'start'), props)}
+      {strip('weight-meter-start', weightMeter(BODY.weightKg, 'start'), props)}
       {strip('weight-meter-fill-short', weightMeter(LOW + 0.2, 'fill'), props)}
     </Stack>
   )
