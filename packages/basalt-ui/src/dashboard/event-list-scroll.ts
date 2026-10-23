@@ -132,21 +132,27 @@ export function rowBoundaryTrim(el: HTMLElement, content: Element, current: numb
  * height) while an oldest-first box opens on its newest end; cleared otherwise.
  */
 export function useRowBoundary(node: HTMLElement | null, active: boolean): void {
-  useEffect(() => {
+  // Before paint, like `useOpenAtEnd`: no frame with a row cut across the header.
+  useIsomorphicLayoutEffect(() => {
     const content = node?.firstElementChild
     if (node === null || content === null || content === undefined || !active) return
     const el: HTMLElement = node
+    let disposed = false
     const run = (): void => {
+      if (disposed) return
       const current = Number.parseFloat(el.style.getPropertyValue(TRIM)) || 0
-      const next = Math.min(rowBoundaryTrim(el, content, current), el.clientHeight / 2)
+      const untrimmed = el.clientHeight + current
+      const next = Math.min(rowBoundaryTrim(el, content, current), untrimmed / 2)
       if (Math.abs(next - current) < 1.5) return
       el.style.setProperty(TRIM, `${next}px`)
     }
     const observer = typeof ResizeObserver === 'undefined' ? null : new ResizeObserver(run)
     observer?.observe(content)
+    observer?.observe(el)
     run()
     void document.fonts?.ready?.then(run)
     return () => {
+      disposed = true
       observer?.disconnect()
       el.style.removeProperty(TRIM)
     }
