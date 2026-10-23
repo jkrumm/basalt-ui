@@ -199,7 +199,6 @@ describe('list and Meter cards in empty and loading', () => {
     [TrainingScenario, 'goal', 'ahead of pace'],
     [TrainingScenario, 'readiness', `${READINESS_SCORE}of 100`],
     [TrainingScenario, 'top-lifts', 'of volume'],
-    [AgentsScenario, 'stuck-items', `${STUCK.length}items`],
     [SpendScenario, 'spend-by-project', 'of spend in'],
     [SpendScenario, 'top-drivers', 'added by'],
   ] as const

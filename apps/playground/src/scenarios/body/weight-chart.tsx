@@ -5,12 +5,12 @@ import type { ChartSeries } from 'basalt-ui/charts'
 import { VX } from 'basalt-ui/tokens'
 import { chartStateFor, noop } from '../shot-state'
 import type { ScenarioProps } from '../shot-state'
-import { BODY, NO_WEIGH_INS, WEIGHT_ERROR } from './body-data'
+import { BODY, GOAL_KG, NO_WEIGH_INS, READING_DATE, WEIGHT_ERROR } from './body-data'
 
 type WeightPoint = { date: Date; weightKg: number; ma: number }
 
 const DAYS = 60
-const GOAL_KG = 70
+const DAY_MS = 86_400_000
 const NBSP = ' '
 const fmtKg = (v: number): string => `${v.toFixed(1)}${NBSP}kg`
 
@@ -23,7 +23,7 @@ const RAW = Array.from({ length: DAYS }, (_, i) => {
 const DATA: WeightPoint[] = RAW.map((weightKg, i) => {
   const window = RAW.slice(Math.max(0, i - 6), i + 1)
   const ma = window.reduce((sum, v) => sum + v, 0) / window.length
-  return { date: new Date(Date.UTC(2026, 7, 1 + i)), weightKg, ma }
+  return { date: new Date(READING_DATE.getTime() - (DAYS - 1 - i) * DAY_MS), weightKg, ma }
 })
 
 const SERIES: ChartSeries<WeightPoint>[] = [

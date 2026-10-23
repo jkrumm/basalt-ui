@@ -63,18 +63,20 @@ const agents = (shotState?: ShotState) => mount(createElement(AgentsScenario, { 
 const spend = (shotState?: ShotState) => mount(createElement(SpendScenario, { shotState }))
 
 describe('S2 states each figure once', () => {
-  // W38 (SPEC § 6.9): a page-summary sentence without a number fails, so the summary restates the
-  // load ratio and readiness score by design (each prints again on its own card).
-  it('the summary states a figure in every sentence', () => {
-    const sentences = text(anchor(training(), 'summary')).split(/(?<=\.)\s+/)
-    expect(sentences.length).toBeGreaterThan(1)
-    for (const s of sentences) expect(s).toMatch(/\d/)
+  // W50: the lede states the one judgement the cards do not; its only figure is the days left.
+  it('the summary is one sentence and repeats no card figure', () => {
+    const summary = text(anchor(training(), 'summary'))
+    expect(summary.split(/(?<=\.)\s+/).length).toBe(1)
+    expect(summary).toMatch(/\d+\u00A0days/)
+    expect(summary).not.toContain(fmtRatio(LOAD_RATIO))
+    expect(summary).not.toMatch(new RegExp(`(?<![\\d.,])${READINESS_SCORE}(?![\\d.,])`))
+    expect(summary).not.toContain(String(SESSIONS_MTD))
   })
 
-  it('the load ratio and the readiness score print twice (summary + owner), the volume once', () => {
+  it('the load ratio, the readiness score and the volume each print once', () => {
     const page = text(training())
-    expect(occurrences(page, new RegExp(`\\b${escapeRe(fmtRatio(LOAD_RATIO))}\\b`, 'g'))).toBe(2)
-    expect(occurrences(page, new RegExp(`(?<![\\d.,])${READINESS_SCORE}(?![\\d.,])`, 'g'))).toBe(2)
+    expect(occurrences(page, new RegExp(`\\b${escapeRe(fmtRatio(LOAD_RATIO))}\\b`, 'g'))).toBe(1)
+    expect(occurrences(page, new RegExp(`(?<![\\d.,])${READINESS_SCORE}(?![\\d.,])`, 'g'))).toBe(1)
     expect(occurrences(page, fmtInt(Math.round(VOLUME_MTD_KG)))).toBe(1)
   })
 

@@ -33,8 +33,8 @@ import {
 import { noop, retryCopy } from './shot-state'
 import type { ScenarioProps } from './shot-state'
 
-/** Cloud cover as the accent's own opacity: one hue, a darker cell is a cloudier one. */
-const opacityOf = (pct: number): number => 0.04 + (pct / 100) * 0.92
+/** Cloud cover as the accent's own opacity: one hue, a darker cell is a cloudier one. The floor keeps 0 % visible against the card in both schemes, in the field and in the key. */
+const opacityOf = (pct: number): number => 0.14 + (pct / 100) * 0.86
 
 /** Only the box model of MapLibre's compact control; its radius, fill and type come from basalt. */
 const MAPLIBRE_SHAPE = `

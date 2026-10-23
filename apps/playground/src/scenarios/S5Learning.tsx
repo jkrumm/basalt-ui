@@ -28,6 +28,7 @@ import { DecisionCard, DecisionCardSkeleton } from './agents/decision-card'
 import { ListRow } from './agents/list-row'
 import { fmtInt } from './fixture-utils'
 import {
+  DAYS_PER_WEEK,
   FIRST_DATE,
   JOURNAL,
   KNOT_TITLE,
@@ -140,10 +141,11 @@ function LearningStrip({ shotState }: ScenarioProps) {
     {
       key: 'last-practised',
       caption: 'Last practised',
-      info: `The date of the latest session. A review comes due ${NEXT_REVIEW_DAYS} days after it.`,
+      info: `The date of the latest session. A review comes due ${NEXT_REVIEW_DAYS} days after it. The sparkline shows days practised per week, last 12 weeks.`,
       value: fmtLearningDay(LAST_DATE),
       loading,
       ...cellState('Nothing practised yet'),
+      ...spark('Days practised per week, last 12 weeks', DAYS_PER_WEEK, (v) => `${fmtInt(v)} days`),
     },
     {
       key: 'mean-rating',
@@ -168,7 +170,7 @@ function LearningStrip({ shotState }: ScenarioProps) {
       info: 'Minutes logged across the last 30 days’ sessions. The sparkline shows minutes per week, last 12 weeks.',
       value: fmtMinutes(MINUTES_LAST_30),
       loading,
-      ...cellState('No practice in the last 30 days'),
+      ...cellState('No practice yet'),
       ...spark('Practice minutes per week, last 12 weeks', MINUTES_PER_WEEK, fmtMinutes),
     },
   ]

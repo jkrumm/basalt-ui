@@ -306,26 +306,31 @@ function OpsCharts({ shotState }: ScenarioProps) {
   )
 }
 
+/** The table's width cap: five short columns never fill a 1440 card, so the card ends where the rows do. */
+const TABLE_MAX_WIDTH = 640
+
 function OpsOutages({ shotState }: ScenarioProps) {
   const query = queryFor(shotState, retryCopy('outage log'))
   return (
     <Box data-shot="outages" h="100%">
       <Section title={`Outages, ${WINDOW_LABEL}`}>
-        <BasaltDataTable
-          // Rows only at rest: the empty branch needs `data` empty, the others have no rows yet.
-          data={shotState === undefined ? OUTAGE_ROWS : NO_OUTAGES}
-          columns={columns}
-          enableSorting={false}
-          skeletonRows={OUTAGE_ROWS.length}
-          {...(query !== undefined && { query })}
-          emptyState={
-            <EmptyState
-              tier="section"
-              title={`No outage ${WINDOW_LABEL}`}
-              description="The line stayed up; any outage the probe sees lists here."
-            />
-          }
-        />
+        <Box maw={TABLE_MAX_WIDTH}>
+          <BasaltDataTable
+            // Rows only at rest: the empty branch needs `data` empty, the others have no rows yet.
+            data={shotState === undefined ? OUTAGE_ROWS : NO_OUTAGES}
+            columns={columns}
+            enableSorting={false}
+            skeletonRows={OUTAGE_ROWS.length}
+            {...(query !== undefined && { query })}
+            emptyState={
+              <EmptyState
+                tier="section"
+                title={`No outage ${WINDOW_LABEL}`}
+                description="The line stayed up; any outage the probe sees lists here."
+              />
+            }
+          />
+        </Box>
       </Section>
     </Box>
   )

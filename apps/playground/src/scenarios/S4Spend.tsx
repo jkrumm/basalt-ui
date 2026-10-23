@@ -89,7 +89,7 @@ const BUDGET_LINES = [
     // A verdict colour only when the forecast lands past the cap, like the Budget Meter.
     color: FORECAST_EUR > BUDGET_EUR ? VX.status.bad : VX.faint,
     dashed: true,
-    label: `Budget ${fmtEur(BUDGET_EUR)}`,
+    label: 'Budget',
   },
 ]
 
@@ -209,7 +209,7 @@ function SpendStats({ shotState }: ScenarioProps) {
           <Meter
             label={`Forecast against the ${fmtEur(BUDGET_EUR)} budget`}
             max={TRACK_END_EUR}
-            ticks={[{ at: BUDGET_EUR, label: `Budget ${fmtEur(BUDGET_EUR)}` }]}
+            ticks={[{ at: BUDGET_EUR, label: 'Budget' }]}
             format={fmtEur}
             segments={[
               { value: MTD_EUR, label: 'Spent' },

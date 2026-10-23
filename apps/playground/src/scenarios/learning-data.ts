@@ -135,6 +135,16 @@ const perWeek = (weight: (e: JournalEntry) => number): number[] =>
       .map(weight)
       .reduce((a, b) => a + b, 0)
   })
+/** Distinct days practised in each of the twelve weeks, oldest first. */
+const daysPerWeek = (): number[] =>
+  Array.from({ length: WEEKS }, (_, i) => {
+    const from = (WEEKS - 1 - i) * WEEK_DAYS
+    return new Set(
+      JOURNAL.filter((e) => daysBack(e.date) >= from && daysBack(e.date) < from + WEEK_DAYS).map(
+        (e) => e.date,
+      ),
+    ).size
+  })
 const weekPoints = (values: number[]) =>
   timedPoints(values, LEARNING_TODAY.getTime(), WEEK_DAYS * DAY_MS)
 /** Mean rating per week; a week with no rated session repeats the previous week's mean. */
@@ -151,6 +161,7 @@ const ratingPerWeek = (): number[] => {
 }
 /** Twelve weeks, oldest first: the strip's trends. */
 export const SESSIONS_PER_WEEK = weekPoints(perWeek(() => 1))
+export const DAYS_PER_WEEK = weekPoints(daysPerWeek())
 export const RATING_PER_WEEK = weekPoints(ratingPerWeek())
 export const MINUTES_PER_WEEK = weekPoints(perWeek((e) => e.durationMin))
 
