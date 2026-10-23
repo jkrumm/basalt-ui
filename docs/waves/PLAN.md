@@ -2091,24 +2091,67 @@ owner from weatherorb; shutterflow stays excluded.
       hand (MIGRATING says how; `sync` does not rewrite scripts). Process: `make check` in the train runs ~8–10 min and
       writes ~35 MB of DOM dumps to its log; the trial ran via `claude -p` because `rd wave` only resolves repos under
       `~/SourceRoot`/`~/IuRoot`.
-      **Next — stopped: Wave 48 closed; orchestrated, nothing spawned.** Wave 49 is `active` for the orchestrator.
+      **Next — stopped: Wave 48 closed; orchestrated, nothing spawned.** Wave 49 was then active.
 
-## Wave 49 — The trial and audit gaps, then the trial again <!-- status: active -->
+## Wave 49 — The trial and audit gaps, then the trial again <!-- status: done -->
 
 Same shape as Wave 48. Budget as Wave 48 (Sonnet workers and reviewers, at most three shot rounds). argo paused; the
 light-scheme input contrast stays the owner's.
 
-- [ ] Upstream fixes for rows 180–189 (`argo-friction.md`): the parts `Meter` guidance (180), the forecast caption at
-      its end (181), Meter captions at 390 (182), the strip cell bottom inset (183), a clipped feed's cue (184), the
-      default chart empty copy (185), `init` on stock Vite (186), option shapes in `llms.txt` (187), a fresh `--out` per
-      round in `/basalt-design` (188), a neutral series in the dictionary (189).
-- [ ] The basalt-owned audit findings in `design-parity/w48/rounds.md`: the S5 `EventList` 390 wrap and journal
-      skeleton (P1), the bare "Could not load" error title (P2, every route), the S7 Meter track width and tick, the
-      reference label struck by its line, the chart focus ring, off-step ticks; then the P3s. The playground-owned copy
-      findings in the same file go to one playground worker.
-- [ ] Expression trial v3, same five datasets (`docs/waves/design-parity/w48/expression-trial-v2.md` § Setup), a fresh
-      agent and a fresh scorer; compare against v2.
-- [ ] Re-run the full audit. If gaps remain, append Wave 50 in the same shape. The track closes when a fresh scorer
+- [x] Upstream fixes for rows 180–189 and the basalt-owned W48 audit findings (six Sonnet workers, `rd fan`, agent-gateway
+      `/review` per PR with fixes sent back until clean or the blocking items were resolved, `rd merge`): #531 `Meter`
+      (2px part separator, all-muted dev warning, forecast caption at the forecast end with its tick and the W38
+      boundary fallback, a gap step between captions at 390, full container width, a halo on the reading tick); #530
+      `EventList`/`BarList`/table (chips flow after the note's last word, D52 kept: no truncation; a bottom fade on a
+      scroll box with rows below; a skeleton keeps the replaced rows' height; BarList name/value gap and delta
+      alignment; "N more columns" fold label; a titled table names its error); #532 states (`couldNotLoad` in
+      `src/common`, `StatCard`/strip/`ChartCard` titles name the thing; the chart empty states cause and next step; the
+      strip cell's bottom inset); #533 charts and theme (reference label a full font size off its line, inset focus
+      ring, the raw domain end a tick only when its label carries a unit, sparkline label inside its plot, slider in ink,
+      autofill keeps the field surface); #534 CLI (`init` wires the router plugin, installs and builds the route tree on
+      stock Vite and repeats the advice until the artifacts exist, `--no-install`; `llms.txt` expands named option types;
+      hover crops clear the previous tooltip; `craft-7/no-declared-states` per anchor; CLI ceiling 8668 → 8827 by the
+      measured delta).
+- [x] Playground copy (#529): the W48 playground-owned list, the S5 journal `loadingRows`, named error titles.
+- [x] Extra scope (owner): the four app-owned defects the trial agent repeated in v1 and v2 (one anchor declaring
+      states, a fixed-height feed, a generic page title, a qualifier run into the next sentence) are a pre-round-1
+      checklist in `/basalt-design` (#528), plus row 188 (a fresh `--out` per round), row 180's parts colours and row
+      189's `other` key in `/basalt-charts`. basalt-design SKILL.md 28/36 lines.
+- [x] Expression trial v3 ([design-parity/w49/expression-trial-v3.md](design-parity/w49/expression-trial-v3.md)): fresh
+      headless Sonnet agent, the same five dataset shapes, a fresh Sonnet scorer: **32** (v2 31). Three of the four
+      repeated app defects are gone and parts no longer fall back; the fourth (a run-on qualifier) came back through
+      #530's chip flow. Rows 190–197.
+- [x] Re-run the full audit ([design-parity/w49/rounds.md](design-parity/w49/rounds.md)): S1 92, S2 91, S3 95, S4 98,
+      S5 92, S6 94, S7 76, S8 99; `shot detect` 100. Gaps remain → Wave 50 appended.
+      **Left behind:** #528–#534 on master plus this close-out (MIGRATING `### The trial and audit gaps (Wave 49)` and a
+      `### Visible without code change` under the single `## Unreleased`, `release-migrating --check` passes; rows
+      180–189 closed, 190–197 open; the trial and audit records; the states reference's titled-host line). Every merge
+      ran `make check` green in the train. **Release-ready, not released** (owner: report only): `v2.28.0..master` is a
+      minor (Wave 48's one `feat:` plus 28 `fix:`es across Waves 48–49; #534's `init --no-install` is a new flag under a `fix:`).
+      Light-scheme input contrast untouched (owner). argo paused, no argo PR. **Still open:** the S7 Meter track at ~48 %
+      (#531's `inline-size: 100%` did not reach that layout), the S7 reading tick on an ink fill, a `Section`'s title not
+      reaching a nested `QueryState` (six cards + the trial), the visible "+N" fold header. Process: three failed trains
+      cost ~10 min each (a test-file tsc error, two layout-suite cases) until every worker ran `typecheck`, `pre` and the
+      full layout suite before reporting; six workers' suites at once drove the load to ~80 and failed timing tests in
+      the train (re-run green); backticks inside an `rd say` string run as command substitution in the sender's shell —
+      write the message to a file and pass `"$(cat file)"`. All fan worktrees and tabs removed (`rd fan --clean`).
+      **Next — stopped: Wave 49 closed; orchestrated, nothing spawned.** Wave 50 is `active` for the orchestrator.
+
+## Wave 50 — The second layer: section states, the feed's chips, repeated figures <!-- status: active -->
+
+Same shape as Wave 49. Budget as Wave 49 (Sonnet workers and reviewers, at most three shot rounds). argo paused; the
+light-scheme input contrast stays the owner's. Every worker runs `typecheck`, `pre` and the full layout suite before
+reporting.
+
+- [ ] Upstream fixes for rows 190–197 (`argo-friction.md`): one fixed place for the `EventList` chips (190) and three
+      font sizes (191); a `Section`'s title names the thing in a nested `QueryState` (192); skeletons sized to the loaded
+      body (193); each figure once per surface in `/basalt-design`'s pre-round check (194); the 390 scope line (195);
+      a sparkline's window at rest (196); slot-type props in `llms.txt` (197).
+- [ ] The basalt-owned findings in `design-parity/w49/rounds.md`: the S7 Meter width and reading tick (measure the host
+      first), the visible "+N" fold header, then the P3s. The playground-owned list goes to one playground worker.
+- [ ] Expression trial v4, same five datasets — consistent this time (commit the generator beside the trial record), a
+      fresh agent and a fresh scorer; compare against v3.
+- [ ] Re-run the full audit. If gaps remain, append Wave 51 in the same shape. The track closes when a fresh scorer
       finds nothing worth improving against basalt's rubric.
       **Left behind:**
 
