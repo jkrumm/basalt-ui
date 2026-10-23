@@ -6,6 +6,7 @@ declare const classes: {
   readonly root: string
   readonly columns: string
   readonly column: string
+  readonly viewport: string
   readonly head: string
   readonly title: string
   readonly count: string

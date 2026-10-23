@@ -26,6 +26,19 @@
   gap: var(--vx-space-stack-sm);
 }
 
+/* A bottom fade while more cards sit below the fold (`data-more`, set by `ColumnScroll`) — the same
+   cue as `EventList`'s scroll fade: it overlays the last card and adds no height. */
+.viewport[data-more]::after {
+  content: '';
+  display: block;
+  position: sticky;
+  inset-block-end: 0;
+  block-size: var(--vx-space-stack-lg, 1.5rem);
+  margin-block-start: calc(var(--vx-space-stack-lg, 1.5rem) * -1);
+  background: linear-gradient(transparent, var(--board-fade-bg, var(--vx-surface-bg)));
+  pointer-events: none;
+}
+
 .head {
   display: flex;
   align-items: center;
