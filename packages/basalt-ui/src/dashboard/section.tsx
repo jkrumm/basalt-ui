@@ -45,7 +45,7 @@
  *   <UsageChart />
  * </Section>
  */
-import { useEffect, useId } from 'react'
+import { useContext, useEffect, useId } from 'react'
 import type { ReactNode } from 'react'
 import { cx } from '../common/props'
 import type { BasaltProps, SlotStylesProps } from '../common/props'
@@ -235,6 +235,7 @@ export function Section({
   ...headerProps
 }: SectionProps) {
   const { title } = headerProps
+  const outerTitle = useContext(HostTitleContext)
   const untitled = title === undefined
 
   // A `persistKey` with nothing to fold writes a localStorage key nobody ever reads back — the
@@ -306,7 +307,7 @@ export function Section({
     ) : undefined
 
   return (
-    <HostTitleContext value={title}>
+    <HostTitleContext value={title ?? outerTitle}>
       <div
         className={cx(classes.root, classNames?.root, className)}
         data-tier={tier}

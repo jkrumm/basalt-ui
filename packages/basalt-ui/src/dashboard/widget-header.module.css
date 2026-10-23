@@ -233,6 +233,7 @@
  * section with both read as a two-line heading rather than a heading plus a note. */
 .subtitle {
   margin-top: 4px;
+  overflow-wrap: anywhere;
   font-size: var(--vx-text-sm);
   font-weight: 400;
   color: var(--vx-muted);

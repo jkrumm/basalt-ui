@@ -18,7 +18,9 @@ import { describe, expect, test } from 'bun:test'
 import type { ReactNode } from 'react'
 import { renderToStaticMarkup } from 'react-dom/server'
 import { ErrorState, LoadingState, QueryState, resolveQueryBranch } from './query-state'
+import { ChartCard } from '../charts/ChartCard'
 import { Section } from './section'
+import { StatCard } from './stat-card'
 import type { QueryStateLike } from './query-state'
 
 type Row = { id: number }
@@ -458,6 +460,55 @@ describe('a Section names its nested QueryState error', () => {
       </MantineProvider>,
     )
     expect(alert()).toContain('Could not load KPI trend')
+  })
+
+  test('a failing StatCard inside a titled Section names itself, not the section', () => {
+    render(
+      <MantineProvider>
+        <Section title="Practice record">
+          <StatCard title="Active users" value="—" query={failed} />
+        </Section>
+      </MantineProvider>,
+    )
+    expect(alert()).toContain('Could not load active users')
+    expect(alert()).not.toContain('practice record')
+  })
+
+  test('a QueryState inside a ChartCard in a titled Section names the card', () => {
+    render(
+      <MantineProvider>
+        <Section title="Practice record">
+          <ChartCard title="Estimated 1RM">
+            <QueryState query={failed}>{() => null}</QueryState>
+          </ChartCard>
+        </Section>
+      </MantineProvider>,
+    )
+    expect(alert()).toContain('Could not load estimated 1RM')
+  })
+
+  test('an untitled Section inside a titled one keeps the outer title', () => {
+    render(
+      <MantineProvider>
+        <Section title="Practice record">
+          <Section tabs={<span>tabs</span>}>
+            <QueryState query={failed}>{() => null}</QueryState>
+          </Section>
+        </Section>
+      </MantineProvider>,
+    )
+    expect(alert()).toContain('Could not load practice record')
+  })
+
+  test('ErrorState used bare inside a Section reads the same default', () => {
+    render(
+      <MantineProvider>
+        <Section title="Practice record">
+          <ErrorState error={new Error('down')} tier="section" />
+        </Section>
+      </MantineProvider>,
+    )
+    expect(alert()).toContain('Could not load practice record')
   })
 
   test('loadingHeight sets the pending skeleton min-height', () => {

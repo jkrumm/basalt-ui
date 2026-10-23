@@ -11,6 +11,7 @@
 import { Children, isValidElement, useRef, useState } from 'react'
 import type { CSSProperties, ReactElement, ReactNode } from 'react'
 import { useIsomorphicLayoutEffect } from '../common/isomorphic-layout-effect'
+import { HostTitleContext } from '../common/could-not-load'
 import { cx } from '../common/props'
 import type { BasaltProps, SlotStylesProps } from '../common/props'
 import type { DeltaPolarity } from '../dashboard/delta-badge'
@@ -349,48 +350,50 @@ export function ChartCard({
 
   return (
     <ChartCardContext.Provider value>
-      <div
-        ref={ref}
-        data-basalt-chart-card=""
-        className={cx(classNames?.root, className)}
-        style={{ ...cardStyle, ...style }}
-        {...(resolved === 'pending' && { 'aria-busy': 'true' })}
-        {...(short && { 'data-basalt-card-short': '' })}
-      >
-        {hasHeader && (
-          <div data-basalt-chart-header="" className={cx(classes.header, classNames?.header)}>
-            <WidgetHeader
-              tier="widget"
-              {...definedOnly(headerProps)}
-              title={header.title ?? ''}
-              {...(actions !== undefined && {
-                actions: <span data-basalt-tier="widget">{actions}</span>,
-              })}
-            />
-            {showFacts && <Facts facts={facts} basis={subtitle} stale={stale} />}
-            {skeletonFacts && <FactsSkeleton basis={subtitle !== undefined} />}
-          </div>
-        )}
+      <HostTitleContext value={header.title}>
         <div
-          {...(classNames?.body !== undefined && { className: classNames.body })}
-          style={bodyClipStyle}
+          ref={ref}
+          data-basalt-chart-card=""
+          className={cx(classNames?.root, className)}
+          style={{ ...cardStyle, ...style }}
+          {...(resolved === 'pending' && { 'aria-busy': 'true' })}
+          {...(short && { 'data-basalt-card-short': '' })}
         >
-          {resolved === null || (resolved === 'pending' && placeholderHeight === 'content')
-            ? children
-            : reserveLegend(
-                kind?.legend === true,
-                <ChartPlaceholder
-                  state={state}
-                  {...(pendingHeight !== undefined && { height: pendingHeight })}
-                  {...(noun !== undefined && { noun })}
-                  {...(plotGhost !== undefined && { ghost: plotGhost })}
-                  {...(onRetry !== undefined && { onRetry })}
-                  {...(retrying !== undefined && { retrying })}
-                  action={stateAction}
-                />,
-              )}
+          {hasHeader && (
+            <div data-basalt-chart-header="" className={cx(classes.header, classNames?.header)}>
+              <WidgetHeader
+                tier="widget"
+                {...definedOnly(headerProps)}
+                title={header.title ?? ''}
+                {...(actions !== undefined && {
+                  actions: <span data-basalt-tier="widget">{actions}</span>,
+                })}
+              />
+              {showFacts && <Facts facts={facts} basis={subtitle} stale={stale} />}
+              {skeletonFacts && <FactsSkeleton basis={subtitle !== undefined} />}
+            </div>
+          )}
+          <div
+            {...(classNames?.body !== undefined && { className: classNames.body })}
+            style={bodyClipStyle}
+          >
+            {resolved === null || (resolved === 'pending' && placeholderHeight === 'content')
+              ? children
+              : reserveLegend(
+                  kind?.legend === true,
+                  <ChartPlaceholder
+                    state={state}
+                    {...(pendingHeight !== undefined && { height: pendingHeight })}
+                    {...(noun !== undefined && { noun })}
+                    {...(plotGhost !== undefined && { ghost: plotGhost })}
+                    {...(onRetry !== undefined && { onRetry })}
+                    {...(retrying !== undefined && { retrying })}
+                    action={stateAction}
+                  />,
+                )}
+          </div>
         </div>
-      </div>
+      </HostTitleContext>
     </ChartCardContext.Provider>
   )
 }
