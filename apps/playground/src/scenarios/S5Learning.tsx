@@ -217,8 +217,8 @@ function AsideSkeleton() {
         Practice partners · sessions together
       </Text>
       <Stack gap="md">
-        {[0, 1, 2].map((i) => (
-          <Flex key={i} gap="xs" align="center">
+        {PARTNERS_BY_SESSIONS.map((p) => (
+          <Flex key={p.name} gap="xs" align="center">
             <Skeleton height={26} width={26} radius="md" />
             <Stack gap={6} flex={1}>
               <Skeleton height={12} width="40%" radius="sm" />
