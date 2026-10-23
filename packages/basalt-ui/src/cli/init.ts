@@ -43,6 +43,7 @@ import {
   routerSeedDest,
   VITE_CONFIGS,
 } from './router-wiring'
+import { readPackageJson } from './source-text'
 import { readOxlintPresetPlugins } from './sync'
 
 /**
@@ -115,10 +116,8 @@ function requiredPeers(pkgRoot: string): Record<string, string> {
 
 /** Every dependency name the app's package.json declares, in any dependency block. */
 function declaredNames(cwd: string): Set<string> {
-  const app = JSON.parse(readFileSync(resolve(cwd, 'package.json'), 'utf8')) as Record<
-    string,
-    Record<string, string> | undefined
-  >
+  const app = (readPackageJson<Record<string, Record<string, string> | undefined>>(cwd) ??
+    {}) as Record<string, Record<string, string> | undefined>
   return new Set(
     ['dependencies', 'devDependencies', 'peerDependencies'].flatMap((k) =>
       Object.keys(app[k] ?? {}),
