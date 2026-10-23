@@ -1080,10 +1080,9 @@ Nothing to change unless a test asserts the old copy or geometry below.
 - **`Meter`.** Adjacent categorical parts are split by a 2px separator in the track colour (muted parts keep their one
   shared fill; three or more all-muted parts log a dev warning pointing at per-part colours). The forecast caption ends
   at the forecast end, with a tick there, and falls back to the boundary only when the end cannot hold it. Captions
-  keep at least one gap step apart at 390. The bar fills its container's width; the reading tick carries a
-  panel-coloured halo so it reads on an ink fill.
-- **`EventList`.** A feed row's chips follow the note's last word instead of taking a line of their own (the note still
-  wraps, never truncates, D52). A scroll box shows a bottom fade while rows remain below. A skeleton that replaces
+  keep at least one gap step apart at 390. The bar fills its container's width; the reading marker is Wave 50's
+  ring below.
+- **`EventList`.** The note still wraps, never truncates (D52); where the chips sit is Wave 50's line below. A scroll box shows a bottom fade while rows remain below. A skeleton that replaces
   loaded rows keeps their height.
 - **`BarList`** reserves a gap between a truncated name and its value; the delta aligns with the value. The folded
   table's "+N" header reads "N more columns: …".
