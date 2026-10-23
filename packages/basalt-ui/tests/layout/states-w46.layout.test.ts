@@ -227,7 +227,9 @@ layout('Wave 46 states', () => {
       // The fixture has no chips-only row: shape one from a real row the way `EventListRow` renders it.
       const r = (await p.raw.evaluate(`(() => {
         const row = document.querySelector('${EL} ${moduleClass('chips')}').closest('${moduleClass('row')}')
-        row.querySelector('${moduleClass('body')}')?.remove()
+        // A note's last word and its chips share a nowrap run; a chips-only row has the chips in the meta line alone.
+        const meta = row.querySelector('${moduleClass('chips')}').parentElement.closest('${moduleClass('meta')}')
+        meta.replaceChildren(row.querySelector('${moduleClass('chips')}'))
         row.setAttribute('data-chips-only', '')
         const line = row.querySelector('${moduleClass('line')}').getBoundingClientRect()
         const chips = row.querySelector('${moduleClass('chips')}').getBoundingClientRect()
