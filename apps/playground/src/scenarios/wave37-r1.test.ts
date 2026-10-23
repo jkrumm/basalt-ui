@@ -245,7 +245,7 @@ describe('S4 states each figure once', () => {
 describe('S4 distribution', () => {
   it('is titled as a precise noun and marks the median day', () => {
     const card = text(anchor(spend(), 'spend-distribution'))
-    expect(card).toContain('Daily spend, distribution')
+    expect(card).toContain('Daily spend distribution, last 90 days')
     expect(card).not.toContain('Days by total spend per day')
     // Round 2 (W37 r1 #9): the median is a footer fact, not a colour-only second series.
     expect(card).toContain(`median`)

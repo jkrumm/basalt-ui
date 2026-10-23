@@ -271,6 +271,7 @@ function GoalRow({ shotState }: ScenarioProps) {
                 value={empty ? null : SESSIONS_MTD}
                 max={GOAL_SESSIONS}
                 target={GOAL_SESSIONS}
+                startCaption={null}
                 ticks={[
                   {
                     at: PACE_SESSIONS,

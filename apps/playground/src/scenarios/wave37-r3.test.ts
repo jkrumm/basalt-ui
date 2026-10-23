@@ -188,7 +188,7 @@ describe('4. S3', () => {
 
 describe('5. S4', () => {
   it('the distribution states its window on the surface', () => {
-    expect(text(anchor(spend(), 'spend-distribution'))).toContain('median of 90 days')
+    expect(text(anchor(spend(), 'spend-distribution'))).toContain('median day')
   })
 
   it('the distribution axis names its unit on the top tick only', () => {
@@ -208,11 +208,12 @@ describe('5. S4', () => {
     )
   })
 
-  it('spend by project reads "49% of spend in 2 of 6 projects · 1–16 Oct"', () => {
+  it('spend by project reads "49% of spend in 2 of 6 projects" and leaves the period to the strip', () => {
     const top = PROJECTS_MTD.slice(0, 2).reduce((a, p) => a + p.pct, 0)
     expect(text(anchor(spend(), 'spend-by-project'))).toContain(
-      `${top}% of spend in 2 of ${PROJECTS_MTD.length} projects · ${WINDOW_LABEL}`,
+      `${top}% of spend in 2 of ${PROJECTS_MTD.length} projects`,
     )
+    expect(text(anchor(spend(), 'spend-by-project'))).not.toContain(WINDOW_LABEL)
   })
 
   it('the top-drivers error names the cause, not the failure again', () => {

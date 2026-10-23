@@ -22,22 +22,30 @@ type Skinfold = {
   abdomen: number
   thigh: number
   sum: number
+  note: string
 }
 
-const row = (date: string, chest: number, abdomen: number, thigh: number): Skinfold => ({
+const row = (
+  date: string,
+  chest: number,
+  abdomen: number,
+  thigh: number,
+  note: string,
+): Skinfold => ({
   date: new Date(date),
   chest,
   abdomen,
   thigh,
   sum: chest + abdomen + thigh,
+  note,
 })
 
 const SKINFOLDS: Skinfold[] = [
-  row('2026-10-19T07:30:00Z', 8, 16, 12),
-  row('2026-10-05T07:30:00Z', 8, 17, 12),
-  row('2026-09-21T07:30:00Z', 9, 18, 13),
-  row('2026-09-07T07:30:00Z', 9, 19, 13),
-  row('2026-08-24T07:30:00Z', 10, 21, 14),
+  row('2026-10-19T07:30:00Z', 8, 16, 12, 'Fasted, before training'),
+  row('2026-10-05T07:30:00Z', 8, 17, 12, 'Fasted, before training'),
+  row('2026-09-21T07:30:00Z', 9, 18, 13, 'After a rest day'),
+  row('2026-09-07T07:30:00Z', 9, 19, 13, 'Fasted, before training'),
+  row('2026-08-24T07:30:00Z', 10, 21, 14, 'After a rest day'),
 ]
 
 /** Newest first: the title names the window the weight chart and the weight spread use, and every row sits inside it. */
@@ -57,6 +65,7 @@ const COLUMNS = [
   col.accessor('abdomen', { header: 'Abdomen (mm)', meta: { kind: 'number', priority: 3 } }),
   col.accessor('thigh', { header: 'Thigh (mm)', meta: { kind: 'number', priority: 3 } }),
   col.accessor('sum', { header: 'Sum (mm)', meta: { kind: 'number', priority: 2 } }),
+  col.accessor('note', { header: 'Conditions', meta: { kind: 'text', priority: 4 } }),
 ]
 
 export function BodySkinfoldTable({ shotState }: ScenarioProps) {

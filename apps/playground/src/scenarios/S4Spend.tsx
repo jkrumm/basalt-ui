@@ -101,7 +101,7 @@ const MEDIAN_BIN = DISTRIBUTION.findLast((b) => b.from <= MEDIAN_DAY_EUR)
 const MEDIAN_FACT =
   MEDIAN_BIN === undefined
     ? DISTRIBUTION_WINDOW
-    : ['median of 90 days', `${MEDIAN_BIN.days} days in ${spendBand(MEDIAN_BIN)}`]
+    : ['median day', `${MEDIAN_BIN.days} days in ${spendBand(MEDIAN_BIN)}`]
 
 const CUMULATIVE_DATA = [...CUMULATIVE]
 const DISTRIBUTION_DATA = [...DISTRIBUTION]
@@ -263,7 +263,7 @@ function SpendCharts({ shotState }: ScenarioProps) {
     <SimpleGrid type="container" cols={{ base: 1, [CONTAINER_KEYS.regular]: 2 }}>
       <Box data-shot="spend-over-time" h="100%">
         <ChartCard
-          title="Cumulative spend"
+          title={`Cumulative spend, ${MONTH_NAME}`}
           ghost="line"
           facts={
             BUDGET_CROSSING === undefined
@@ -293,7 +293,7 @@ function SpendCharts({ shotState }: ScenarioProps) {
       <Box data-shot="spend-distribution" h="100%">
         <ChartCard
           style={FILL}
-          title="Daily spend, distribution"
+          title={`Daily spend distribution, ${DISTRIBUTION_WINDOW}`}
           facts={{
             value: fmtEur(MEDIAN_DAY_EUR),
             unit: 'a day',
@@ -332,11 +332,10 @@ function SpendBreakdown({ shotState }: ScenarioProps) {
             and six near-identical hues with captions under 5 % segments do not survive 390 px; the
             question is also "which project", a ranking, which length on a shared scale answers. */}
         <ChartCard
-          title="Spend by project"
+          title="Spend by project, month to date"
           facts={{
             value: `${TOP_PCT}%`,
             unit: `of spend in ${TOP_PROJECTS} of ${PROJECTS_MTD.length} projects`,
-            period: `· ${WINDOW_LABEL}`,
           }}
           info={`Each project's share of the ${fmtEur(MTD_EUR)} month-to-date spend across all models, in whole percent that sum to 100.`}
           {...cardStateProps(shotState, retry(), 'content', USAGE_EMPTY)}
@@ -355,10 +354,10 @@ function SpendBreakdown({ shotState }: ScenarioProps) {
       </Box>
       <Box data-shot="top-drivers" h="100%">
         <ChartCard
-          title="Spend change by project"
+          title="Spend change by project, month to date"
           facts={{
             value: fmtEur(DRIVERS.reduce((a, p) => a + p.delta, 0)),
-            period: `added by ${DRIVERS.length} projects, ${WINDOW_LABEL} vs ${PRIOR_WINDOW_LABEL}`,
+            period: `added by ${DRIVERS.length} projects vs ${PRIOR_WINDOW_LABEL}`,
           }}
           info={`The € each project added against ${PRIOR_WINDOW_LABEL}, with the relative change.`}
           {...cardStateProps(shotState, retry(), 'content', USAGE_EMPTY)}
