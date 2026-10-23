@@ -10,8 +10,8 @@ export type MeterSegment = {
   label: string
   color?: string
   /**
-   * `'muted'`: the part takes the one flat muted fill every muted part shares, a visible gap
-   * between neighbours (never a lightness step). A `color` wins. Give each categorical part its own
+   * `'muted'`: the part takes the one flat muted fill every muted part shares, a visible 2px
+   * separator between neighbours (never a lightness step). A `color` wins. Give each categorical part its own
    * series `color`; `muted` is for a tail "other" part, and a bar of only muted parts reads as one slab.
    */
   tone?: 'muted'
@@ -88,7 +88,7 @@ export type Part = {
   readonly size: number
   readonly color: string | undefined
   readonly forecast: boolean
-  /** A categorical part right after another: a gap (not a hairline) keeps neighbours, muted ones included, apart. */
+  /** A categorical part right after another: a 2px separator (not a hairline) keeps neighbours, muted ones included, apart. */
   readonly seam: boolean
   readonly label: string
   /** The segment's own (normalised) amount, in the reading's units — what its caption states. */
@@ -206,10 +206,17 @@ export function normalizeSegments(segments: readonly MeterSegment[]): MeterSegme
   return segments.map((s) => ({ ...s, value: Number.isFinite(s.value) ? Math.max(0, s.value) : 0 }))
 }
 
+const isMuted = (s: MeterSegment) => s.tone === 'muted' && s.color === undefined && !s.forecast
+
+/** Three or more categorical parts that all take the one muted fill read as a single slab. */
+export function allPartsMuted(segments: readonly MeterSegment[]): boolean {
+  const parts = segments.filter((s) => s.forecast !== true)
+  return parts.length >= 3 && parts.every(isMuted)
+}
+
 /** Segment amounts (already normalised) accumulate from `min`; a part never passes the track end. */
 export function layoutSegments(segments: readonly MeterSegment[], span: number): Part[] {
   let cursor = 0
-  const isMuted = (s: MeterSegment) => s.tone === 'muted' && s.color === undefined && !s.forecast
   let prevCategorical = false
   return segments.map((s) => {
     const size = Math.max(0, Math.min(clamp01(s.value / span), 1 - cursor))
@@ -225,7 +232,8 @@ export function layoutSegments(segments: readonly MeterSegment[], span: number):
       amount: s.value,
     }
     cursor += size
-    prevCategorical = !forecast
+    // A zero-size part has no visible edge: the next part has no neighbour to be separated from.
+    if (size > 0) prevCategorical = !forecast
     return part
   })
 }
