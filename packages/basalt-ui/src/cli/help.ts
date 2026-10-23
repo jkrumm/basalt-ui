@@ -18,6 +18,7 @@ export const COMMAND_OPTIONS: Record<
 > = {
   init: {
     'no-merge-lint': { type: 'boolean' },
+    'no-install': { type: 'boolean' },
   },
   sync: {
     force: { type: 'boolean' },
@@ -82,7 +83,7 @@ export function unknownFlag(cmd: string, flags: readonly string[]): string | nul
 
 /** The one usage string — printed by `basalt help` / `--help` / `-h` AND the unknown-command fallback. */
 export const USAGE =
-  'Usage: basalt-ui <--version | init [--no-merge-lint] |\n' +
+  'Usage: basalt-ui <--version | init [--no-merge-lint] [--no-install] |\n' +
   '                  sync [--force] [--check] [--verbose] [--tokens-only|--framework] |\n' +
   '                  check-theme [--audit-allows] |\n' +
   '                  doctor [--tokens-only|--framework|--from <x.y.z>] | guard-hook | tokens:css | fonts:css |\n' +

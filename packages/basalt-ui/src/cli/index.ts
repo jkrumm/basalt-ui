@@ -1776,14 +1776,19 @@ export function run(argv: string[], cwd: string = process.cwd()): number | Promi
     case 'init':
       return init(cwd, {
         noMergeLint: flags.includes('--no-merge-lint'),
-        run: (argv, dir) =>
-          // A timeout kills the child and leaves `status` null, which reads as failure; `shell` resolves `bun.cmd`/`npx.cmd` on Windows.
-          spawnSync(argv[0] ?? '', argv.slice(1), {
-            cwd: dir,
-            stdio: 'inherit',
-            timeout: RUN_TIMEOUT_MS,
-            shell: process.platform === 'win32',
-          }).status === 0,
+        // `--no-install` leaves `run` out: init writes the files and prints the commands (CI, offline).
+        ...(flags.includes('--no-install')
+          ? {}
+          : {
+              run: (argv: string[], dir: string) =>
+                // A timeout kills the child and leaves `status` null, which reads as failure; `shell` resolves `bun.cmd`/`npx.cmd` on Windows.
+                spawnSync(argv[0] ?? '', argv.slice(1), {
+                  cwd: dir,
+                  stdio: 'inherit',
+                  timeout: RUN_TIMEOUT_MS,
+                  shell: process.platform === 'win32',
+                }).status === 0,
+            }),
       })
     case 'sync':
       return sync(
