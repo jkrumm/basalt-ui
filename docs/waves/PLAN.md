@@ -2032,6 +2032,15 @@ Spec: SPEC § 6.11, § 6.13, § 8, § 11. Scenario S6 (build it), then every sce
 argo is out of this rollout (owner pause, 2026-10-22); it bumps during its own overhaul. weatherorb is coordinated by the
 owner from weatherorb; shutterflow stays excluded.
 
+- [x] Step 0, before the release: the Wave 46 Left-behind fixes (#516–#519, Sonnet workers, one shot round, two Sonnet
+      reviewers, boards in gitignored `.design-parity/w47/r1`): S5 aside skeleton row count derives from the loaded
+      constant (#516); folded table skeleton draws the chevron cell (#517, S1 97); `FormGroup section` rows divide like
+      `SettingsSection` rows (#518, S6 99); EventList meta no longer wraps the chip to its own line (#519, S5 97). Test
+      follow-ups: divider-law ledger entry, forms-w46 row geometry, the virtual-rows prepend read waits for the anchor.
+      **Still open (not fixed, one round only):** P2 folded-table 390 skeleton lacks the scope column and shows "+2" hidden
+      against "+1" loaded (S1 outages); P3 S6 entry form's footer rule reads as a trailing row divider; P2 S5 summary
+      error state splits the title and offers a second action (pre-existing, unscored before). Light-scheme input
+      contrast untouched (owner's call).
 - [ ] Release through `make release` (the reason: the Part 3 patterns, rows 143–162, and Wave 43's upstream rows).
 - [ ] Bump waves, one repo at a time, on Sonnet: version bump, fix what the guards promoted to error raise, one shot
       per page and a before/after board. rb (rows 152–155; never pushed by an agent, its branch waits for the owner),
