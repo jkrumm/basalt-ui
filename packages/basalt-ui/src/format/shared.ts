@@ -118,7 +118,36 @@ export function dateFormat(
     options.timeZone === undefined && defaults.timeZone !== undefined
       ? { ...options, timeZone: defaults.timeZone }
       : options
-  return memoize(dateCaches, resolved, withZone, () => new Intl.DateTimeFormat(resolved, withZone))
+  return memoize(dateCaches, resolved, withZone, () =>
+    shortSeptember(new Intl.DateTimeFormat(resolved, withZone)),
+  )
+}
+
+const toShortSeptember = (text: string): string => text.replace(/\bSept\b/g, 'Sep')
+
+/**
+ * ICU 72+ writes September as `Sept` in en-GB (and kin) but `Sep` in en-US. One short month form
+ * across every basalt date text: an English formatter prints `Sep`, whichever region tag it got.
+ * Other languages keep their own abbreviation (`Sept.` in German is correct).
+ */
+function shortSeptember(formatter: Intl.DateTimeFormat): Intl.DateTimeFormat {
+  if (!formatter.resolvedOptions().locale.startsWith('en')) return formatter
+  const nativeFormat = formatter.format
+  const nativeParts = formatter.formatToParts.bind(formatter)
+  const format = (date?: Date | number): string => toShortSeptember(nativeFormat(date))
+  const formatToParts = (date?: Date | number): Intl.DateTimeFormatPart[] =>
+    nativeParts(date).map((part) =>
+      part.type === 'month' ? { ...part, value: toShortSeptember(part.value) } : part,
+    )
+  const nativeRange = formatter.formatRange.bind(formatter)
+  const formatRange = (start: Date | number, end: Date | number): string =>
+    toShortSeptember(nativeRange(start, end))
+  Object.defineProperties(formatter, {
+    format: { value: format },
+    formatRange: { value: formatRange },
+    formatToParts: { value: formatToParts },
+  })
+  return formatter
 }
 
 /** What every number/measure formatter accepts. */

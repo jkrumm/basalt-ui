@@ -50,8 +50,9 @@ export function kindAlign(kind: DataTableColumnKind | undefined): DataTableAlign
 /**
  * Column sizing law (SPEC § 6.6): a data column is as wide as its header or widest cell (body cells
  * hold one line), and the slack of a wide container goes to ONE place — the LAST `text` column (a
- * notes/detail column that may wrap), else a trailing spacer after the last data column — so a name
- * sits beside its figures, never a third of the table away. An `entity` column is content-sized.
+ * notes/detail column that may wrap), else the LAST `entity` column (the name the row is about; figures
+ * stay content-sized beside it), else a trailing spacer after the last data column — so the table fills
+ * its container instead of hugging its left edge.
  * `fixedIds` (the checkbox and actions columns) fit too but are not data. An earlier `text` column
  * keeps its auto share (it may wrap), and a table where no column opted into a kind renders as
  * before: no fit marks, no spacer.
@@ -65,7 +66,9 @@ export function planColumnSizing<T extends RowData>(
   const fitIds = new Set(columns.filter((column) => fixedIds.has(column.id)).map((c) => c.id))
   const hasKinds = data.some((column) => kinds.get(column.id) !== undefined)
   if (!hasKinds) return { fitIds, spacer: false }
-  const slackId = data.findLast((column) => kinds.get(column.id) === 'text')?.id
+  const lastOfKind = (kind: DataTableColumnKind) =>
+    data.findLast((column) => kinds.get(column.id) === kind)?.id
+  const slackId = lastOfKind('text') ?? lastOfKind('entity')
   for (const column of data) {
     if (column.id === slackId || kinds.get(column.id) === 'text') continue
     fitIds.add(column.id)
@@ -75,7 +78,7 @@ export function planColumnSizing<T extends RowData>(
 
 /**
  * A bar's width by kind. A share (`100%`) of a content-sized cell is that cell's own width, so the
- * fit columns take it; the slack column has no width of its own and takes a fixed length.
+ * fit columns take it; the slack column (a text, else the last entity) has no width of its own and takes a fixed length.
  */
 const SKELETON_WIDTH: Record<DataTableColumnKind | 'kindless', string> = {
   number: '3rem',
@@ -83,7 +86,7 @@ const SKELETON_WIDTH: Record<DataTableColumnKind | 'kindless', string> = {
   status: '4.5rem',
   'relative-time': '4.5rem',
   meter: '4rem',
-  entity: '100%',
+  entity: 'min(100%, 10rem)',
   text: 'min(100%, 10rem)',
   kindless: '100%',
 }

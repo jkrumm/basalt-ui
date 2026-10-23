@@ -443,6 +443,11 @@
   height: auto;
 }
 
+/* The slot bleeds past the card's inset, the plot with it; the caption is text and takes the inset back. */
+.sparklineBleed [data-basalt-sparkline-caption] {
+  padding-inline: var(--vx-space-card-inset-x, 1rem);
+}
+
 /* A Meter in the visual slot is a block, not a chart: it sizes to its content and keeps the card's
  * inline inset instead of the sparkline's fixed 22px and side bleed. */
 .sparklineBleed:has(> [data-basalt-meter]) {
