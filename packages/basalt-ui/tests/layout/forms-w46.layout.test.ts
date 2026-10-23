@@ -73,7 +73,7 @@ layout('Wave 46 FormRow geometry', () => {
     expect(await h('w46-notes')).toBeGreaterThanOrEqual(32)
   })
 
-  test('1440: 12 between rows, 24 between sections, legend md 500', async () => {
+  test('1440: rows adjoin (the inset is their padding, D54), 24 between sections, legend md 500', async () => {
     const p = await openFixture(SPEC, DESKTOP_1440, '/', 'reduce', 'fine')
     await p.settle()
     const r = (await p.raw.evaluate(`(() => {
@@ -98,8 +98,8 @@ layout('Wave 46 FormRow geometry', () => {
       legendWeight: string
       legendSize: string
     }
-    expect(r.rowGap).toBe(12)
-    expect(r.rowGapB).toBe(12)
+    expect(r.rowGap).toBe(0)
+    expect(r.rowGapB).toBe(0)
     expect(r.sectionGap).toBe(24)
     expect(r.legendWeight).toBe('500')
   })
@@ -152,9 +152,9 @@ layout('Wave 46 FormRow geometry', () => {
       const b = second.getBoundingClientRect()
       return { rowGap: Math.round(b.top - a.bottom), hintToNext: Math.round(b.top - hint.bottom) }
     })()`)) as { rowGap: number; hintToNext: number }
-    // Row boxes stay 12 apart (the same as two plain rows); the description sits 4 px into that gap.
-    expect(r.rowGap).toBe(12)
-    expect(r.hintToNext).toBe(8)
+    // Row boxes adjoin (the inset is padding inside them, D54); the description keeps the row inset below it.
+    expect(r.rowGap).toBe(0)
+    expect(r.hintToNext).toBe(7)
   })
 
   test('370 px container: the control sits stack-xs (4 px) below the description, not against it', async () => {
