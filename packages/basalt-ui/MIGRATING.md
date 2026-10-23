@@ -32,6 +32,8 @@ catch a shape it cannot rewrite), and it FAILS rather than doing nothing when th
 it. If you are reading a heading that still says `Unreleased` in an installed tarball, that is a
 bug, not an authoring slip.
 
+**Each release's `### Visible without code change` subsection lists what a consumer sees with no edit of its own** (`basalt-ui doctor --from <version>` prints it). Standing for every release: `tokens:css --check` is byte-exact, so it fails after each bump until the sheet is re-emitted; `doctor` prints the command.
+
 **Skipping that step is what this file's worst defect was.** 1.27.0, 1.28.0 and 1.29.0 all shipped
 under one `## Unreleased` heading — ~1000 lines, two of its subsections still titled "targeting
 1.29.0" weeks after 1.29.0 was on npm. Four of five consumer migrations off 1.25.0/1.27.0 named it
@@ -1041,39 +1043,10 @@ The `basalt-ui/router-tanstack` subpath is **removed** in 2.x, not moved: an imp
 | `NavItemMeta`, `NavGroupMeta`, `AnyNavItem`, `AnyNavGroup`, `AnyNavLink`, `FlatNavItem`, `NavConfig`, `NavGroupId`, `NavTabId`, `NavIndex`, `UseNavOptions`, `NavBinding`, `NavAnchor`, `NavAnchorProps`, `NavMobilePlacement` | deleted                                                                                                                                                                                                                                                                                                                                                                                                                                                    | no consumer names them; derive with `ComponentProps` / `Parameters` |
 | `useNav`, and `BasaltShell`'s `sections` / `mobileNav` props                                                                                                                                                                   | deleted: pass `nav={NAV}` (plus `badges`, `isActive`, `getScrollElement` — the old `useNav` options) to `BasaltShell`; it resolves the sidebar, the mobile bar and the breadcrumb itself. `mobileNav` tuning moves to `defineNav`'s `mobile`. argo `apps/dashboard/src/routes/__root.tsx`: replace `const nav = useNav(NAV, { badges })` + `{...nav}` with `nav={NAV} badges={…}` (migrates in W12; 1.x consumers stay on their pinned version until then) |
 
-## Unreleased — visible without code change
+## Unreleased
 
-### Visible without code change
-
-What a consumer sees after a bump with no edit of its own, recorded retroactively for the 2.16–2.28
-range (argo-friction rows 171–176). Every release from here adds its own such lines under this
-heading; `basalt-ui doctor --from <version>` prints them with the guard and token changes since
-`<version>`.
-
-- **`--vx-status-bad` (dark) is pink-leaning.** `#f97d74` → `#fe8178` in 2.22.0 (§ 2.22.0: the status
-  text solve against the row surfaces). Chart bars and badges that read `VX.status.bad` shift with
-  it; there is no opt-out for the hex. The `#e06761` in friction row 175 is not in this repo's
-  source history, so it predates the derivation or is a consumer's own pin.
-- **`Badge` is sentence case, not upper case.** `DIFFICULTY 2` → `Difficulty 2` in 2.23.0 (§ 2.23.0
-  Badge row). Opt in per Badge with `tt="uppercase"`.
-- **`tokens:css --check` / `fonts:css --check` fail on every bump.** The emitted sheet's header names
-  the emitting version, and the check is byte-exact. Run the command in the header's second line
-  (`basalt-ui tokens:css --out <path>`, with the flags it records) and commit; `doctor` prints that
-  command for each stale sheet.
-- **The active nav row has no accent tint.** `NavLink[data-active]` is a neutral ink fill (10 %, 14 %
-  on hover) since 2.20.0 (§ 2.20.0 Chrome); the accent stays on the active icon. Opt out with a
-  consumer class that sets `background-color` on the row. Whether the cue needs a weight or marker
-  is an open owner decision (friction row 176).
-- **`Lines` and `Bars` line overlays are straight segments, not a smoothed curve.** The default
-  became `curve: 'linear'` in 2.22.0 (§ 2.22.0, chart chrome): daily or monthly values were joined by
-  a monotone curve that drew crossings between points that never happened. A continuous measure (a
-  speed trace) opts back in with `curve: 'monotone'` on the series. `StackedArea` and `Sparkline`
-  are unchanged.
-- **The spacing scale moved: `xs` 11 → 8 px** (`xs / sm / md / lg / xl` = 8 / 12 / 16 / 20 / 24,
-  2.16.0, § 2.16.0). `gap={8}` is `gap="xs"`, `py={8}` is `py="xs"`. `basalt/raw-spacing` is `error`
-  since 2.24.0. The `py="xs" px="sm"` card idiom is now a `basalt/card-inset` `error` (2.24.0): the
-  theme sets the Card inset itself (12 / 16, density-scaled), so drop the padding props. A
-  deliberately denser card has no compact tier; it becomes a visible density change.
+_Nothing yet. Author the next section under this heading as `## Unreleased — <title>`; the
+release renames it and opens a new one here._
 
 ## 2.28.0
 
@@ -1699,6 +1672,10 @@ A row that is genuinely too narrow still hides a name (argo's ACWR at 390 has 22
 
 Opt-out: none for the zone names; a zone that must keep to its span sets a `short` that fits it, and a page that does not want a footer entry's shot anchor omitted declares no `shotAbsent`.
 
+### Visible without code change
+
+- **`basalt/raw-spacing` and `basalt/card-inset` are `error`.** `gap={8}` is `gap="xs"` and `py={8}` is `py="xs"` (the scale moved in 2.16.0). The `py="xs" px="sm"` card idiom is now a `card-inset` error: the theme sets the Card inset itself (12 / 16, density-scaled), so drop the padding props. A deliberately denser card has no compact tier; it becomes a visible density change.
+
 ## 2.23.0 — Wave 37, argo's friction II
 
 No export is removed. `MeterTick` gains an optional `caption`; five Meter defaults move.
@@ -1873,6 +1850,10 @@ series file. Measured before flipping: argo `apps/dashboard` on 2.22.0 reports 0
 
 Opt-out: `"basalt": { "severity": { "series-palette": "warn" } }` keeps it a warning;
 `"basalt": { "exemptRules": { "series-palette": ["<series file>"] } }` silences it for the file.
+
+### Visible without code change
+
+- **`Badge` is sentence case, not upper case.** `DIFFICULTY 2` → `Difficulty 2`. Opt in per Badge with `tt="uppercase"`.
 
 ## 2.22.0 — Wave 37, argo's friction II
 
@@ -2138,6 +2119,11 @@ clears 4.5:1 on both. At the default config three status hexes moved to clear th
 `#327a4d` → `#2f774b`, warn light `#966200` → `#935f00`, bad dark `#f97d74` → `#fe8178`; and the dark
 `faint` ink `#a1a1a4` → `#a7a7aa` (tone 66.24 → 68.5). **Opt out:** none for the hexes; a consumer
 that pinned them reads them from `VX.status.*` / `VX.faint`.
+
+### Visible without code change
+
+- **`--vx-status-bad` (dark) is pink-leaning.** `#f97d74` → `#fe8178` (the status text solve against the row surfaces). Chart bars and badges that read `VX.status.bad` shift with it; no opt-out for the hex.
+- **`Lines` and `Bars` line overlays are straight segments, not a smoothed curve.** The default became `curve: 'linear'`: a monotone curve drew crossings between daily or monthly points that never happened. A continuous measure (a speed trace) opts back in with `curve: 'monotone'` on the series. `StackedArea` and `Sparkline` are unchanged.
 
 ## 2.21.0 — strip cell state, one Retry, and the marker reading
 
@@ -2418,6 +2404,10 @@ size in muted ink, not the mono: it is a sentence fragment, not an UPPERCASE cap
 `StatCard` tone word, `BarList` secondaries that use it, and the notification centre. **Opt out:** pass
 `className` with `font-family: var(--basalt-font-mono)`.
 
+### Visible without code change
+
+- **The active nav row has no accent tint.** `NavLink[data-active]` is a neutral ink fill (10 %, 14 % on hover); the accent stays on the active icon. Opt out with a consumer class that sets `background-color` on the row.
+
 ## 2.19.0 — the status dot, ink buttons and Meter refinements
 
 ### Status is a dot and a word, not an edge stripe (`StatCard`, `Callout`, notification centre)
@@ -2661,6 +2651,10 @@ number below changes at level 0**, so a layout that was tuned against the old sc
 | Type `sm` / `xs` / `kpi`                                | none      | The `fonts` knob changes families, not sizes. A consumer that needs 13.5 / 12.5 / 24 at one site writes the size at that site with a `theme-allow`.                                                                                                                                               |
 | Faint chart ink                                         | none      | `derive` retunes the whole neutral ramp; there is no separate knob for the axis ink, and a lighter axis fails the 4.5:1 gate by construction.                                                                                                                                                     |
 | Page gutter                                             | none      | The expanded gutter is a constant; `density` scales it (`-1` gives 22).                                                                                                                                                                                                                           |
+
+### Visible without code change
+
+- **The spacing scale moved: `xs` 11 → 8 px** (`xs / sm / md / lg / xl` = 8 / 12 / 16 / 20 / 24). Spacing props and `--mantine-spacing-*` reads shrink; hand-written `gap={8}` is now `gap="xs"`.
 
 ## 2.15.0 — the reviewer subagent and the ViewTabs law
 
