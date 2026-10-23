@@ -53,7 +53,7 @@ import { VX } from '../tokens'
 import { InfoGlyph } from './widget-header'
 import classes from './stat-strip.module.css'
 import { couldNotLoad } from '../common/could-not-load'
-import { HOSTED, HOSTED_LOADING, VisualSlotContext } from './visual-slot'
+import { HOSTED, HOSTED_LOADING, HOSTED_COMPACT, VisualSlotContext } from './visual-slot'
 
 /** The URL shot states an anchor can declare itself absent in (`data-shot-absent`). */
 type StatStripShotState = 'empty' | 'loading' | 'error'
@@ -339,7 +339,7 @@ function StripCell({
                 <li key={row.key} className={classes.row} data-strip-row={row.key}>
                   <span className={classes.rowLabel}>{row.label}</span>
                   <span className={classes.visual}>
-                    <VisualSlotContext.Provider value={HOSTED}>
+                    <VisualSlotContext.Provider value={HOSTED_COMPACT}>
                       {row.visual}
                     </VisualSlotContext.Provider>
                   </span>

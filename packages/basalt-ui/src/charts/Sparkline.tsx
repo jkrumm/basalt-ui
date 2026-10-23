@@ -664,13 +664,16 @@ export function Sparkline(props: SparklineProps): ReactElement {
     style,
   } = props
   const id = useId()
-  const hosted = useContext(VisualSlotContext) !== null
+  const slot = useContext(VisualSlotContext)
+  const hosted = slot !== null
   const moments = useMemo(() => momentsOf(data), [data])
   const windowText =
     windowProp === false
       ? undefined
       : (windowProp ??
-        (hosted ? spanOf(labels ?? (isDayWindow(data) ? moments : undefined)) : undefined))
+        (hosted && slot.compact !== true
+          ? spanOf(labels ?? (isDayWindow(data) ? moments : undefined))
+          : undefined))
   // The window's row also holds the reference label: out of the plot, no line can run through it.
   const labelInRow = windowText !== undefined && referenceLabel !== undefined
   const plotLabel = labelInRow ? undefined : referenceLabel
