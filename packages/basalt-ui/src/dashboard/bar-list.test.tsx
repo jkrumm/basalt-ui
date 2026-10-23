@@ -100,6 +100,16 @@ describe('BarList', () => {
     expect(container.querySelectorAll('[data-bar-skeleton]').length).toBe(4)
   })
 
+  test('loading takes its row count from the items it holds, else loadingRows, else 5', () => {
+    const count = (props: Partial<Parameters<typeof mount>[0]>) =>
+      mount({ label: 'L', items: ITEMS, loading: true, ...props }).container.querySelectorAll(
+        '[data-bar-skeleton]',
+      ).length
+    expect(count({})).toBe(ITEMS.length)
+    expect(count({ loadingRows: 2 })).toBe(2)
+    expect(count({ items: [] })).toBe(5)
+  })
+
   test('all-zero values draw empty bars', () => {
     const { container } = mount({
       label: 'L',

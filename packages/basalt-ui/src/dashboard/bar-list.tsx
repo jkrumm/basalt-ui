@@ -95,7 +95,7 @@ export type BarListProps = BasaltProps & {
   secondaryAlign?: 'start' | 'end'
   /** Renders row-shaped skeletons. */
   loading?: boolean
-  /** Skeleton rows while loading. Default 5. */
+  /** Skeleton rows while loading. Default: the rows `items` holds now (a refetch), else 5. */
   loadingRows?: number
   /** Title of the `EmptyState` tile shown when `items` is empty. Default "No items to compare yet"; pass the cause for your list. */
   emptyText?: string
@@ -127,7 +127,7 @@ export function BarList({
   accentLeader = false,
   secondaryAlign,
   loading = false,
-  loadingRows = 5,
+  loadingRows,
   emptyText = 'No items to compare yet',
   className,
   style,
@@ -139,7 +139,7 @@ export function BarList({
       <div className={cx(classes.frame, className)} style={style}>
         <div className={classes.root} aria-busy="true" data-variant={variant}>
           <VisuallyHidden>{`Loading ${label}`}</VisuallyHidden>
-          {Array.from({ length: loadingRows }, (_, i) => (
+          {Array.from({ length: loadingRows ?? (items.length > 0 ? items.length : 5) }, (_, i) => (
             <div
               key={i}
               className={cx(classes.row, classes.skeletonRow)}

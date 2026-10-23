@@ -3,7 +3,8 @@
  * - An empty `EventList` and an empty `Board` column are the same `EmptyState` tile: one ring (a shadow,
  *   no border), the card radius, the title at `md` 500 and the description at `sm`.
  * - The board card's record link is ink in both schemes (never the browser's link blue).
- * - A chips-only, time-less journal row keeps its chips on the sentence's line at 1440 and 390.
+ * - A chips-only, time-less journal row puts its chips on the line under the sentence, at its left edge (Wave 50:
+ *   the chips have one place), at 1440 and 390.
  */
 import { afterAll, describe, expect, test } from 'bun:test'
 import type { FixtureSpec } from './fixture/spec'
@@ -221,26 +222,21 @@ layout('Wave 46 states', () => {
   })
 
   for (const vp of [DESKTOP_1440, PHONE]) {
-    test(`${vp.width}: a chips-only, time-less row keeps its chip on the sentence's line`, async () => {
+    test(`${vp.width}: a chips-only, time-less row puts its chip on the line under the sentence`, async () => {
       const p = await openFixture({ sections: SECTIONS, eventList: 'untimed' }, vp)
       await p.raw.waitForSelector(`${EL} ${moduleClass('chips')}`)
-      // The fixture has no chips-only row: shape one from a real row the way `EventListRow` renders it.
+      // The fixture has no chips-only row: shape one from a real row by dropping its note.
       const r = (await p.raw.evaluate(`(() => {
         const row = document.querySelector('${EL} ${moduleClass('chips')}').closest('${moduleClass('row')}')
-        // A note's last word and its chips share a nowrap run; a chips-only row has the chips in the meta line alone.
-        const meta = row.querySelector('${moduleClass('chips')}').parentElement.closest('${moduleClass('meta')}')
-        meta.replaceChildren(row.querySelector('${moduleClass('chips')}'))
-        row.setAttribute('data-chips-only', '')
+        row.querySelector('${moduleClass('meta')}')?.remove()
         const line = row.querySelector('${moduleClass('line')}').getBoundingClientRect()
         const chips = row.querySelector('${moduleClass('chips')}').getBoundingClientRect()
-        const range = document.createRange()
-        range.selectNodeContents(row.querySelector('${moduleClass('line')}'))
-        const lineTextRight = Math.max(...[...range.getClientRects()].map((q) => q.right))
-        return { lineTextRight, chipsLeft: chips.left, lineTop: line.top, lineBottom: line.bottom, chipsTop: chips.top, rowRight: row.getBoundingClientRect().right, chipsRight: chips.right }
+        return { lineLeft: line.left, lineBottom: line.bottom, chipsLeft: chips.left, chipsTop: chips.top, rowRight: row.getBoundingClientRect().right, chipsRight: chips.right }
       })()`)) as Record<string, number>
-      expect(r['chipsTop']).toBeLessThan(r['lineBottom'] as number)
-      // ...and right after the sentence's last word, not pinned to the row's far edge.
-      expect((r['chipsLeft'] as number) - (r['lineTextRight'] as number)).toBeLessThanOrEqual(24)
+      expect(r['chipsTop']).toBeGreaterThanOrEqual((r['lineBottom'] as number) - 1)
+      expect(Math.abs((r['chipsLeft'] as number) - (r['lineLeft'] as number))).toBeLessThanOrEqual(
+        2,
+      )
       expect(r['chipsRight']).toBeLessThanOrEqual((r['rowRight'] as number) + 1)
     })
   }

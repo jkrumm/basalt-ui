@@ -243,33 +243,41 @@ describe('EventList', () => {
     expect(container.querySelector('time')).toBeNull()
   })
 
-  test('a row with chips only and no time marks itself so the chips join the sentence line', () => {
-    const { container } = mount({
-      items: [{ id: 'a', at: local(2026, 3, 10, 9), title: 't', chips: <span>rated 5/5</span> }],
-      time: () => '',
-    })
-    expect(container.querySelector('[data-event-id="a"]')?.hasAttribute('data-chips-only')).toBe(
-      true,
-    )
-  })
-
-  test('a row with a body or a time is not chips-only', () => {
+  test('chips are their own element, a sibling of the time and the note, whatever the row holds', () => {
     const { container } = mount({
       items: [
-        { id: 'a', at: local(2026, 3, 10, 9), title: 't', body: 'b', chips: <span>c</span> },
-        { id: 'b', at: local(2026, 3, 10, 9), title: 't', chips: <span>c</span> },
+        { id: 'a', at: local(2026, 3, 10, 9), title: 't', body: 'two files', chips: <i>c</i> },
+        { id: 'b', at: local(2026, 3, 10, 9), title: 't', chips: <i>c</i> },
       ],
     })
-    expect(container.querySelectorAll('[data-chips-only]')).toHaveLength(0)
+    for (const id of ['a', 'b']) {
+      const chip = container.querySelector(`[data-event-id="${id}"] i`)
+      // The chips' wrapper is a direct child of the row: never nested in the time's or the note's element.
+      expect(chip?.parentElement?.parentElement?.getAttribute('data-event-id')).toBe(id)
+    }
+    // The note holds its text alone: no chip is inside the note.
+    const notes = container.querySelectorAll('[data-event-id="a"] i, [data-event-id="a"] time')
+    expect(notes).toHaveLength(2)
+    expect(container.querySelector('[data-event-id="a"] i')?.closest('time')).toBeNull()
+    expect(container.querySelector('[data-event-id="a"]')?.textContent).toContain('two files')
+    expect(container.querySelectorAll('[data-event-id="b"] > div')).toHaveLength(1)
   })
 
-  test('feed keeps body and chips on ONE meta line; the time is a sibling of the sentence', () => {
-    const { container } = mount({
-      items: [{ id: 'a', at: local(2026, 3, 10, 9), title: 't', body: 'b', chips: <i>c</i> }],
-    })
-    const meta = container.querySelectorAll('li > div')
-    expect(meta).toHaveLength(1)
-    expect(meta[0]?.children).toHaveLength(2)
+  test('a skeleton keeps the loaded row count while refetching, else loadingRows or 5', () => {
+    const rows = (n: number) =>
+      Array.from({ length: n }, (_, i) => ({
+        id: `r${i}`,
+        at: local(2026, 3, 10, 9, i),
+        title: `r${i}`,
+      }))
+    const count = (props: Pick<EventListProps, 'items'> & Partial<EventListProps>) =>
+      mount({ loading: true, group: 'none', ...props }).container.querySelectorAll(
+        '[aria-busy="true"] [aria-hidden]',
+      ).length
+    expect(count({ items: rows(12) })).toBe(12)
+    expect(count({ items: rows(12), loadingRows: 4 })).toBe(4)
+    expect(count({ items: [] })).toBe(5)
+    expect(count({ items: rows(80) })).toBe(30)
   })
 })
 
@@ -450,17 +458,5 @@ describe('EventList feed note, clipped-feed cue and skeleton height', () => {
     expect(box.style.getPropertyValue('--event-list-held')).toBe('321px')
     at({ loading: false, items: [] })
     expect(box.style.getPropertyValue('--event-list-held')).toBe('')
-  })
-
-  test('a string body hands its last word to the chips in one unbreakable run', () => {
-    const { container } = mount({
-      items: [
-        { id: 'a', at: local(2026, 3, 10, 9), title: 't', body: 'two files', chips: <i>c</i> },
-      ],
-    })
-    const meta = container.querySelector('li > div')
-    expect(meta?.children).toHaveLength(2)
-    expect(meta?.children[0]?.textContent).toBe('two ')
-    expect(meta?.children[1]?.textContent).toBe('filesc')
   })
 })

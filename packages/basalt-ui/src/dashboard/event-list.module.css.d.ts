@@ -8,7 +8,6 @@ declare const classes: {
   readonly scroll: string
   readonly virtual: string
   readonly skeleton: string
-  readonly tail: string
   readonly group: string
   readonly list: string
   readonly header: string

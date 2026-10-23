@@ -233,12 +233,21 @@
 }
 
 /*
- * A column of DeltaBadges: glyph and figure are ONE unit, end-aligned as a whole, so the glyph never drifts
- * from its figure however wide the column ("▲ 9%" and "▲13%" share their right edge and keep the badge's own
- * gap). Tabular figures keep the right edges even (D33: only in a table-like column, not a hero metric).
+ * A column of DeltaBadges is a fixed two-track grid: the glyph track, then a figure track at least four
+ * tabular digits wide with the figure end-aligned in it. "▲ 9%" and "▲13%" then share their glyph x AND
+ * their right edge, whatever the digit count (D33: tabular only in a table-like column, not a hero metric).
  */
 .secondary [data-delta] {
+  display: inline-grid;
+  grid-auto-flow: column;
+  grid-template-columns: auto minmax(4ch, auto);
+  justify-items: end;
   font-variant-numeric: tabular-nums;
   /* The row's line box, not the badge's own `line-height: 1`: its baseline then sits on the value's. */
   line-height: inherit;
+}
+
+/* A zero delta has no glyph: its figure is the only track. */
+.secondary [data-delta]:not(:has([data-delta-glyph])) {
+  grid-template-columns: minmax(4ch, auto);
 }
