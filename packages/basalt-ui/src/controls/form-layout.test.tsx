@@ -415,12 +415,17 @@ describe('FormGroup section', () => {
     expect(render(<FormGroup label="Profile">{null}</FormGroup>)).not.toContain('data-section')
   })
 
-  test('the rhythm is 24 between sections and 12 between rows, on tokens', () => {
+  test('the rhythm is 24 between sections; rows divide like SettingsSection rows, on tokens', () => {
     expect(block('.group[data-section] + .group[data-section]')).toContain(
       'margin-block-start: var(--vx-space-stack-xl)',
     )
     expect(block(".group[data-section] > .groupControls[data-direction='column']")).toContain(
-      'gap: var(--vx-space-stack-md)',
+      'display: block',
+    )
+    const row = ".group[data-section] > .groupControls[data-direction='column'] > .row"
+    expect(block(row)).toContain('padding-block: var(--vx-space-settings-row-inset-y)')
+    expect(block(`${row}:not(:last-child)`)).toContain(
+      'border-block-end: 1px solid var(--vx-divider)',
     )
   })
 

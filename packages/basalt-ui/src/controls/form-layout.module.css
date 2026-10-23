@@ -220,7 +220,17 @@
 }
 
 .group[data-section] > .groupControls[data-direction='column'] {
-  gap: var(--vx-space-stack-md);
+  display: block;
+}
+
+/* D54: the rows of a section divide exactly as `SettingsSection`'s do — the row inset above and below
+   and a 1px `--vx-divider` rule under every row but the last, so a form and a settings page read as one system. */
+.group[data-section] > .groupControls[data-direction='column'] > .row {
+  padding-block: var(--vx-space-settings-row-inset-y);
+}
+
+.group[data-section] > .groupControls[data-direction='column'] > .row:not(:last-child) {
+  border-block-end: 1px solid var(--vx-divider);
 }
 
 .groupControls {
