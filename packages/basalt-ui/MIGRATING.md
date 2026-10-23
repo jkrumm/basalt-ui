@@ -1135,6 +1135,40 @@ opt-out.
   other anchor's tooltip while it is taken. `/basalt-design`'s pre-round check has a fifth item: each figure once per
   surface.
 
+### Anchors, host titles and the fixes that did not land (Wave 51, argo-friction rows 198–204)
+
+Nothing to change unless a test, a selector or a style depends on the old markup, copy or geometry below. Each line
+names its opt-out.
+
+- **`data-*` on the root.** Every composite (`Section`, `ChartCard`, `StatCard`, `StatGroup`, `StatStrip`, `Board`,
+  `EventList`, `BarList`, `Meter`, `PageSummary`, `SettingsSection`, `DangerZone`, `WidgetHeader`, the state
+  components, `QueryState`'s drawn branches, `BasaltDataTable`) forwards `data-*` attributes to its root element in
+  every state. A `data-shot` anchor that `Section` and `ChartCard` used to pass to their header now lands on the root.
+  A ready `QueryState` has no root of its own: anchor its host.
+- **Host-titled tables.** An untitled `BasaltDataTable` inside a titled `Section` reads "Could not load <section
+  title>"; give the table a `title` to name it yourself.
+- **Fold header.** The `+N cols` header is a `<button>`: tap, Enter or Space opens a popover listing the folded column
+  names (Escape and an outside click close it); the `title` stays for the mouse. `FoldHeaderLabel` takes `names`.
+- **Table width.** In a kinded table the slack goes to the last `text` column, else the last `entity` column, else
+  the trailing spacer; the slack `entity` column loses `data-fit` and no spacer cell renders. Mark a column
+  `kind: 'text'` to choose it.
+- **`PageSummary`.** The `aside` follows its sentence and wraps under it, no longer at the row's far edge.
+- **`ChartCard`.** Fills its grid cell (`height: 100%`), so two cards in a row end level. The default empty copy is
+  the cause only ("Nothing plotted in this range."); pass `state.empty` for a next step. `ChartFact.tone` inks the
+  comparison, with ▲/▼ on a signed plain-text comparison, not the value, unit or period; a fact with no comparison
+  still inks its value. A card-mode tooltip stays inside the plot rect, clear of the tick labels, when it fits.
+- **`BarList`.** The delta column is start-aligned: one glyph x and a fixed gap, figures ragged right (was a shared
+  right edge with a hole after the glyph).
+- **`EventList`.** "Show earlier" is a default-variant (bordered) button. An oldest-first box with `height` trims
+  itself by up to one row so its first visible row is whole under the sticky day header.
+- **`Board`.** A clipped column dissolves its cards with a mask (2 × stack-lg) instead of a page-colour gradient, so
+  the cue shows on a panel surface.
+- **Dates and inputs.** English dates print `Sep` everywhere (en-GB printed `Sept` on chart axes); other languages
+  keep their own abbreviation. A selected input value takes the accent tint instead of the UA colour. The stat-card
+  sparkline caption sits at the card inset. Small reference-label and key spacing changes on charts.
+- **CLI.** A `shot` hover crop marks every tooltip outside its own trigger as seen, so a tooltip woken on the way to
+  the trigger no longer shows in the crop.
+
 ### Visible without code change
 
 - Error titles, the chart empty copy, the Meter separators/forecast caption/full width, the EventList chip flow and
@@ -1143,6 +1177,9 @@ opt-out.
 - Wave 50: the EventList chips line and two type rungs, list and table skeleton counts and fold floors, named
   Section errors, visible subtitles at 390, the full-width lone strip cell, the Meter ring marker, the sparkline window
   caption, the `+N cols` header and the Board fade: all render differently with no edit.
+- Wave 51: anchors on composite roots (more crops per page), host-named table errors, the fold-header button and
+  popover, table slack, level chart cards, fact tone on the comparison, the BarList delta track, the earlier button,
+  the Board mask, `Sep`, the selection tint: all render differently with no edit.
 
 ## 2.28.0
 
