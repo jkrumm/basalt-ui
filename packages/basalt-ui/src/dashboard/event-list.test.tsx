@@ -225,7 +225,7 @@ describe('EventList', () => {
   test('loading keeps the declared height box; an empty list sizes to its content', () => {
     const box = (c: HTMLElement) => c.querySelector<HTMLElement>('[data-density] > div')
     const loading = mount({ items: [], loading: true, height: 240 })
-    expect(box(loading.container)?.style.height).toBe('240px')
+    expect(box(loading.container)?.style.height).toBe('calc(240px - var(--event-list-trim, 0px))')
     loading.rerender(
       <MantineProvider>
         <EventList label="Activity" now={NOW} items={[]} height={240} />

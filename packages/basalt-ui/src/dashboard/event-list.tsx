@@ -53,7 +53,13 @@ import {
   toEventDate,
 } from './event-list-model'
 import type { RowContext } from './event-list-model'
-import { useHeldHeight, useOpenAtEnd, usePrependAnchor, useScrolledEdge } from './event-list-scroll'
+import {
+  useHeldHeight,
+  useOpenAtEnd,
+  usePrependAnchor,
+  useRowBoundary,
+  useScrolledEdge,
+} from './event-list-scroll'
 import { SkeletonRows } from './event-list-skeleton'
 
 /** Rows above this window through the virtual-list seam; at or below it the list is plain DOM. */
@@ -184,6 +190,7 @@ export function EventList({
   const plainBefore = usePlainBefore(hasRows, virtualised)
   usePrependAnchor(scrollEl, opensAtEnd && hasRows && !virtualised, items)
   useOpenAtEnd(scrollEl, opensAtEnd && hasRows && !virtualised, items.length)
+  useRowBoundary(scrollEl, opensAtEnd && hasRows && !virtualised)
   useScrolledEdge(ownScroll ? scrollEl : null)
   useHeldHeight(
     scrollEl,
@@ -194,8 +201,7 @@ export function EventList({
     earlier === undefined || !hasRows ? null : (
       <div className={classes.earlier} data-end={oldestFirst ? 'top' : 'bottom'}>
         <Button
-          variant="subtle"
-          color="gray"
+          variant="default"
           size="compact-sm"
           className={classes.earlierButton}
           loading={earlier.loading === true}
@@ -301,7 +307,12 @@ export function EventList({
 
   // The box keeps its height for rows and skeletons; an empty state sizes to its content.
   const boxed = ownScroll && (loading || items.length > 0)
-  const scrollStyle: CSSProperties | undefined = boxed ? { height } : undefined
+  // `--event-list-trim` is set by `useRowBoundary`: the box gives up the remainder of a row it would cut.
+  const scrollStyle: CSSProperties | undefined = boxed
+    ? {
+        height: `calc(${typeof height === 'number' ? `${height}px` : String(height)} - var(--event-list-trim, 0px))`,
+      }
+    : undefined
   return (
     <div
       {...pickDataAttributes(rest)}
