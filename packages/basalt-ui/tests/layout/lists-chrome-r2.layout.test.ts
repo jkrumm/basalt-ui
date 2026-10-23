@@ -112,6 +112,32 @@ layout('Wave 37 r2 lists and chrome', () => {
     expect(spread(rows.map((r) => r.figRight))).toBeLessThanOrEqual(SNAP)
   })
 
+  test("a BarList DeltaBadge sits on its value's baseline", async () => {
+    const p = await openFixture(specFor('light'), DESKTOP_1440)
+    await p.settle()
+    const offsets = await p.raw.evaluate(() => {
+      const host = document.querySelector<HTMLElement>('[data-testid="dash-bar-delta"]')!
+      // The stacked (narrow) layout is where the offset showed.
+      host.style.width = '340px'
+      // A zero-size inline-block at the text's end sits on the baseline: its bottom IS the baseline.
+      const baseline = (el: Element) => {
+        const probe = document.createElement('span')
+        probe.style.cssText = 'display:inline-block;width:0;height:0'
+        el.append(probe)
+        const y = probe.getBoundingClientRect().bottom
+        probe.remove()
+        return y
+      }
+      return [...host.querySelectorAll('li')].map((li) => {
+        const value = li.children[1]!
+        const delta = li.querySelector('[data-delta]')!
+        return Math.abs(baseline(value) - baseline(delta))
+      })
+    })
+    expect(offsets).toHaveLength(4)
+    for (const off of offsets) expect(off).toBeLessThanOrEqual(1)
+  })
+
   test('secondaryAlign="end" overrides the auto start alignment of status marks', async () => {
     const p = await openFixture(specFor('light'), DESKTOP_1440)
     await p.settle()

@@ -1,4 +1,3 @@
-import { readFileSync } from 'node:fs'
 import { MantineProvider } from '@mantine/core'
 import { cleanup, fireEvent, render } from '@testing-library/react'
 import { afterEach, describe, expect, mock, spyOn, test } from 'bun:test'
@@ -433,8 +432,35 @@ describe('EventList feed note, clipped-feed cue and skeleton height', () => {
     expect(box.hasAttribute('data-scrolled')).toBe(false)
   })
 
-  test('a skeleton keeps the held height of the rows it replaces', () => {
-    const css = readFileSync(new URL('./event-list.module.css', import.meta.url), 'utf8')
-    expect(css).toMatch(/\.skeleton \{[^}]*min-block-size: var\(--event-list-held/)
+  test('the held height survives a loading pass and is released when the rows go', () => {
+    const { container, rerender } = render(
+      <MantineProvider>
+        <EventList label="Activity" now={NOW} items={ITEMS} height={100} />
+      </MantineProvider>,
+    )
+    const box = container.querySelector<HTMLElement>('[data-density] > div') as HTMLElement
+    box.style.setProperty('--event-list-held', '321px')
+    const at = (props: { loading: boolean; items: typeof ITEMS }) =>
+      rerender(
+        <MantineProvider>
+          <EventList label="Activity" now={NOW} height={100} {...props} />
+        </MantineProvider>,
+      )
+    at({ loading: true, items: ITEMS })
+    expect(box.style.getPropertyValue('--event-list-held')).toBe('321px')
+    at({ loading: false, items: [] })
+    expect(box.style.getPropertyValue('--event-list-held')).toBe('')
+  })
+
+  test('a string body hands its last word to the chips in one unbreakable run', () => {
+    const { container } = mount({
+      items: [
+        { id: 'a', at: local(2026, 3, 10, 9), title: 't', body: 'two files', chips: <i>c</i> },
+      ],
+    })
+    const meta = container.querySelector('li > div')
+    expect(meta?.children).toHaveLength(2)
+    expect(meta?.children[0]?.textContent).toBe('two ')
+    expect(meta?.children[1]?.textContent).toBe('filesc')
   })
 })

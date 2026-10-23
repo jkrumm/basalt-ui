@@ -39,6 +39,13 @@
   pointer-events: none;
 }
 
+/* The loaded meta row, mirrored: the note bar, then (timeline) the chip. */
+.skeleton .meta {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--vx-space-stack-xs) var(--vx-space-control-gap);
+}
+
 /* Loading after rows: the skeleton keeps their last height, so the box does not collapse. */
 .skeleton {
   min-block-size: var(--event-list-held, var(--event-list-last, 0px));
@@ -233,7 +240,13 @@
   white-space: nowrap;
 }
 
-.body + .chips {
+/* A string body's last word and the chips: one unbreakable run, so the chips share the last line with it. */
+.tail {
+  white-space: nowrap;
+}
+
+.body + .chips,
+.tail > .chips {
   margin-inline-start: var(--vx-space-control-gap);
 }
 

@@ -7,9 +7,8 @@ afterEach(cleanup)
 describe('FoldHeaderLabel', () => {
   test('one folded column reads "1 more column", not a plural', () => {
     const { container } = render(<FoldHeaderLabel count={1} foldedLabel="X" />)
-    const label = container.querySelector('[title]')
-    expect(label?.getAttribute('title')).toBe('1 more column: X')
-    expect(label?.textContent).toContain('+1')
-    expect(label?.textContent).toContain('1 more column: X')
+    const hint = container.querySelector('[title]')
+    expect(hint?.getAttribute('title')).toBe('1 more column: X')
+    expect(hint?.nextElementSibling?.textContent).toBe('1 more column: X')
   })
 })

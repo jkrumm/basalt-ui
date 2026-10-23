@@ -53,11 +53,43 @@ export function EventRow({
       )}
       {hasMeta && (
         <div className={classes.meta}>
-          {present(item.body) && <span className={classes.body}>{item.body}</span>}
-          {present(item.chips) && <span className={classes.chips}>{item.chips}</span>}
+          <MetaFlow body={item.body} chips={item.chips} />
         </div>
       )}
     </Tag>
+  )
+}
+
+const TRAILING_WORD = /^([\s\S]*\s)(\S+)\s*$/
+
+/**
+ * The meta line's text flow: the body, then the chips after its last word. A string body hands its
+ * final word to the chips in one unbreakable span, so the chips never wrap onto a line of their own;
+ * a node body keeps the plain flow.
+ */
+function MetaFlow({ body, chips }: { body: EventItem['body']; chips: EventItem['chips'] }) {
+  const hasBody = present(body)
+  const hasChips = present(chips)
+  const chipsNode = hasChips && <span className={classes.chips}>{chips}</span>
+  if (!hasBody) return chipsNode
+  if (!hasChips) return <span className={classes.body}>{body}</span>
+  if (typeof body !== 'string') {
+    return (
+      <>
+        <span className={classes.body}>{body}</span>
+        {chipsNode}
+      </>
+    )
+  }
+  const [, lead = '', last = body.trim()] = TRAILING_WORD.exec(body) ?? []
+  return (
+    <>
+      <span className={classes.body}>{lead}</span>
+      <span className={classes.tail}>
+        {last}
+        {chipsNode}
+      </span>
+    </>
   )
 }
 

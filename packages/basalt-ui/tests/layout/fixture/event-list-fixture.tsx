@@ -11,6 +11,8 @@ declare global {
     basaltElSet?: (n: number) => void
     /** Appends `n` older events to the end (newest-first modes). */
     basaltElAppend?: (n: number) => void
+    /** Flips the list to its loading skeleton and back, rows kept (refetch). */
+    basaltElLoading?: (on: boolean) => void
   }
 }
 
@@ -31,6 +33,23 @@ type Item = {
 /** `n` events, 12 a day, newest first from `NOW`. Even steps carry a body and two chips. */
 const LONG_NOTE =
   'Forgot the second wrap and caught it at the check, then re-ran every dependent report to confirm nothing drifted after the change'
+
+/** Notes of 6..45 words with chips: some last line always ends where the last word fits but word + chips does not. */
+function sweepItems(): Item[] {
+  return Array.from({ length: 40 }, (_, i) => ({
+    id: `sw${i}`,
+    at: new Date(NOW.getTime() - i * 3_600_000),
+    actor: 'Ada',
+    title: `step ${i}`,
+    body: `${'note'.repeat(1)} ${Array.from({ length: 5 + i }, (_, w) => `w${'x'.repeat(w % 5)}`).join(' ')} lastword`,
+    chips: (
+      <>
+        <Badge>standard</Badge>
+        <Badge color="green">merged</Badge>
+      </>
+    ),
+  }))
+}
 
 function makeItems(n: number, from = 0, longNote = false): Item[] {
   return Array.from({ length: n }, (_, i) => {
@@ -64,6 +83,7 @@ export type EventListMode =
   | 'empty'
   | 'untimed'
   | 'wrap'
+  | 'wrap-sweep'
   | 'threshold-oldest'
   | 'threshold'
   | 'timeline'
@@ -82,10 +102,13 @@ export function EventListFixture({ mode }: { mode: EventListMode }): ReactElemen
           ? 57
           : 300
   const [items, setItems] = useState<Item[]>(() => {
+    if (mode === 'wrap-sweep') return sweepItems()
     const list = makeItems(count, 0, mode === 'wrap')
     return oldest ? list.toReversed() : list
   })
+  const [loadingOn, setLoadingOn] = useState(false)
   useEffect(() => {
+    window.basaltElLoading = setLoadingOn
     window.basaltElPrepend = (n) =>
       setItems((prev) => [...makeItems(n, prev.length).toReversed(), ...prev])
     window.basaltElSet = (n) => setItems(oldest ? makeItems(n).toReversed() : makeItems(n))
@@ -97,7 +120,7 @@ export function EventListFixture({ mode }: { mode: EventListMode }): ReactElemen
         label="Events"
         now={NOW}
         items={mode === 'loading' || mode === 'empty' ? [] : items}
-        loading={mode === 'loading'}
+        loading={mode === 'loading' || loadingOn}
         density={mode.startsWith('timeline') ? 'timeline' : 'feed'}
         order={oldest ? 'oldest-first' : 'newest-first'}
         {...((mode === 'plain' || mode === 'timeline' || mode === 'timeline-oldest') && {
