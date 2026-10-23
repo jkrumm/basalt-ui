@@ -14,6 +14,7 @@ import { useIsomorphicLayoutEffect } from '../common/isomorphic-layout-effect'
 import { HostTitleContext } from '../common/could-not-load'
 import { cx, splitDataAttributes } from '../common/props'
 import type { BasaltProps, DataAttributes, SlotStylesProps } from '../common/props'
+import { DeltaBadge } from '../dashboard/delta-badge'
 import type { DeltaPolarity } from '../dashboard/delta-badge'
 import { WidgetHeader } from '../dashboard/widget-header'
 import { VX } from '../tokens'
@@ -223,6 +224,29 @@ export type ChartCardProps = ChartCardBaseProps &
     | { facts?: undefined }
   )
 
+/** The legacy `value`/`delta` hero as the one fact the headline row draws. */
+function legacyFact(header: {
+  value?: string | undefined
+  delta?: number | undefined
+  deltaPeriod?: string | undefined
+  deltaPolarity?: DeltaPolarity | undefined
+}): ChartFact | undefined {
+  const { value, delta, deltaPeriod, deltaPolarity } = header
+  if (value === undefined && delta === undefined) return undefined
+  return {
+    value: value ?? '',
+    ...(delta !== undefined && {
+      comparison: (
+        <DeltaBadge
+          value={delta}
+          period={deltaPeriod}
+          {...(deltaPolarity !== undefined && { polarity: deltaPolarity })}
+        />
+      ),
+    }),
+  }
+}
+
 /** Drops explicit `undefined`s: `WidgetHeader` is exact-optional, this props type is not. */
 const definedOnly = <T extends object>(o: T): { [K in keyof T]?: Exclude<T[K], undefined> } =>
   Object.fromEntries(Object.entries(o).filter(([, v]) => v !== undefined)) as {
@@ -378,16 +402,20 @@ export function ChartCard({
   const plotGhost = ghost ?? kind?.ghost
   // `ghost` changes the shape only: the wrapped strip's height still sizes the pending box.
   const pendingHeight = placeholderHeight ?? kind?.height
-  const showFacts = facts !== undefined && resolved === null
-  const skeletonFacts = facts !== undefined && resolved === 'pending'
+  // One headline anatomy: the legacy `value`/`delta` hero is drawn as a fact (title, then value, delta
+  // and period in one baseline group), never pushed to the far edge of the title row.
+  const headline = facts ?? legacyFact(header)
+  const showFacts = headline !== undefined && resolved === null
+  const skeletonFacts = headline !== undefined && resolved === 'pending'
   const hasHeader =
     actions !== undefined ||
     showFacts ||
     skeletonFacts ||
     HEADER_TRIGGERS.some((k) => header[k] !== undefined)
   // With facts the subtitle is the basis line after them, not WidgetHeader's foldable row.
-  const { subtitle, ...rest } = header
-  const headerProps = facts === undefined ? header : rest
+  // The hero props are drawn by the facts row below, so `WidgetHeader` never sees them.
+  const { subtitle, value: _v, delta: _d, deltaPeriod: _p, deltaPolarity: _pol, ...rest } = header
+  const headerProps = headline === undefined ? header : rest
 
   const hostBody = <HostTitleContext value={header.title}>{children}</HostTitleContext>
 
@@ -412,7 +440,7 @@ export function ChartCard({
                 actions: <span data-basalt-tier="widget">{actions}</span>,
               })}
             />
-            {showFacts && <Facts facts={facts} basis={subtitle} stale={stale} />}
+            {showFacts && <Facts facts={headline} basis={subtitle} stale={stale} />}
             {skeletonFacts && <FactsSkeleton basis={subtitle !== undefined} />}
           </div>
         )}

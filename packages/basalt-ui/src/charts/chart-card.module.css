@@ -15,13 +15,8 @@
   }
 }
 
-/* A short card trims it at any width: its chart states a small `height` (`data-basalt-chart-short`,
- * in the server HTML), or, for a body that is not a chart, `ChartCard` measured it under 280px. */
-/* (`data-basalt-chart-short` is written by `ChartBox`, `box.tsx`; the same `:is` is in
- * `dashboard/widget-header.module.css`.) */
-:is([data-basalt-card-short], [data-basalt-chart-card]:has([data-basalt-chart-short])) .header {
-  padding-top: 4px;
-}
+/* A short card keeps the same inset: its title shares a baseline with a tall neighbour in the row
+ * (the short fold removes the subtitle line, never the header's top air). */
 
 /*
  * The facts line (`facts` prop): the headline figure under the title, in place of a subtitle. It wraps

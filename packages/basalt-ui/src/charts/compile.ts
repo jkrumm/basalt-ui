@@ -1035,6 +1035,8 @@ const stripAnchor = (
 }
 const STRIP_TOOLTIP_PLACEMENT = ['bottom', 'top'] as const
 const STRIP_TOOLTIP_OFFSET = 8
+/** Air between a strip tooltip opened below and the scene's bottom edge (under the tick labels), px. */
+const STRIP_TICK_AIR = 2
 /**
  * A slotted `Bars` (`tooltipBelow` and `bare`): a micro-visual whose tooltip is the one-line chip
  * (`chart-box.module.css`, `data-basalt-slot`) in the line the cell reserves above the plot. It
@@ -1162,6 +1164,9 @@ export function settleInCard(
     if (w0 + 2 * TIP_CARD_AIR <= card.width)
       left = Math.min(Math.max(left, card.left + TIP_CARD_AIR), card.right - w0 - TIP_CARD_AIR)
     if (Math.abs(left - Number.parseFloat(tip.style.left)) > 0.5) tip.style.left = `${left}px`
+    // Opening below the strip, it starts under the scene (the x tick labels sit in its bottom margin).
+    const clear = surface.bottom + STRIP_TICK_AIR
+    if (tip.dataset['placement'] === 'bottom' && top < clear) tip.style.top = `${clear}px`
     return
   }
   const roomy = card.width >= TIP_CARD_ROOMY
@@ -1190,7 +1195,9 @@ export function settleInCard(
   const margin = ctx.scene.margin ?? { top: 0, right: 0, bottom: 0, left: 0 }
   const plotTL = toClient({ x: margin.left, y: margin.top })
   const plotBR = toClient({ x: sceneW - margin.right, y: sceneH - margin.bottom })
-  const plotFence = !slot && plotBR.x - plotTL.x >= w && plotBR.y - plotTL.y >= h
+  // Per axis: a tooltip taller than a short plot still keeps its left edge clear of the y tick labels.
+  const fenceX = !slot && plotBR.x - plotTL.x >= w
+  const fenceY = !slot && plotBR.y - plotTL.y >= h
   const maxTop = card.bottom - TIP_CARD_AIR - h
   // The card's header (title and facts) is off-limits while the plot area below it can hold the tooltip.
   const headerBottom = slot
@@ -1217,10 +1224,8 @@ export function settleInCard(
     if (roomy) left = anchor.x - w / 2
   }
   if (!slot) top = maxTop < minTop ? minTop : Math.min(Math.max(top, minTop), maxTop)
-  if (plotFence) {
-    top = Math.min(Math.max(top, plotTL.y), plotBR.y - h)
-    left = Math.min(Math.max(left, plotTL.x), plotBR.x - w)
-  }
+  if (fenceY) top = Math.min(Math.max(top, plotTL.y), plotBR.y - h)
+  if (fenceX) left = Math.min(Math.max(left, plotTL.x), plotBR.x - w)
   if (grown || w + 2 * TIP_CARD_AIR <= card.width)
     left = Math.min(
       Math.max(left, card.left + TIP_CARD_AIR),
