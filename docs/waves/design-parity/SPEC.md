@@ -175,7 +175,7 @@ only when the number has no history, target or parts; the reviewer fails a card 
   § 6.10), `number` and `money` (sans `tabular-nums` per D33, right-aligned, unit in the header, never in the
   cell), `relative-time` (mono muted, full date in a tooltip below the cell, also on focus), `meter` (§ 6.3
   inline), `text` (the one kind that wraps; every other cell holds one line). Kinded columns size to content; the
-  last `text` column takes the slack, else a trailing spacer (Wave 42).
+  last `text` column takes the slack, else the last `entity` column (Wave 51), else a trailing spacer (Wave 42).
 - **Responsive** (§ 9.1): fold by `meta.priority` (exists) → at compact the first column pins (opaque
   background) and the rest scroll horizontally in a keyboard-reachable container → `renderCard` only for
   non-comparable rows. A folded column stays reachable and `aria-colcount`/`aria-colindex` stay correct.
