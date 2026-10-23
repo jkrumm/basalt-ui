@@ -105,6 +105,7 @@ export function useScrolledEdge(node: HTMLElement | null): void {
     if (node === null) return
     const el: HTMLElement = node
     const flag = (name: string, on: boolean): void => {
+      if (on === el.hasAttribute(name)) return
       if (on) el.setAttribute(name, '')
       else el.removeAttribute(name)
     }
@@ -120,18 +121,23 @@ export function useScrolledEdge(node: HTMLElement | null): void {
     return () => {
       el.removeEventListener('scroll', mark)
       observer?.disconnect()
+      el.removeAttribute('data-scrolled')
+      el.removeAttribute('data-more')
     }
   }, [node])
 }
 
 const HELD = '--event-list-held'
+const LAST = '--event-list-last'
 
 /**
  * While rows are plain DOM the content height is kept on the node as `--event-list-held`; the
  * windowed wrapper takes it as a minimum height, so swapping plain rows for the lazy seam never
  * collapses the scroller (the browser would clamp `scrollTop` to 0 before the peer resolves). It is
- * only for that handoff: it is released as soon as the windowed rows have rendered, and whenever
- * there are no rows, so a shorter list never leaves blank space below its last row.
+ * only for that handoff: it is released as soon as the windowed rows have rendered (their height is
+ * measured into `--event-list-last` first), and whenever there are no rows, so a shorter list never
+ * leaves blank space below its last row. `loading` leaves both untouched: the skeleton takes
+ * `--event-list-held`, else `--event-list-last`, as its minimum height, so a refetch keeps the box.
  */
 export function useHeldHeight(
   node: HTMLElement | null,
@@ -141,9 +147,10 @@ export function useHeldHeight(
     const content = node?.firstElementChild
     if (node === null || content === null || content === undefined) return
     const el: HTMLElement = node
-    if (mode === 'loading') return // a skeleton keeps the last rows' height (see `.skeleton`)
+    if (mode === 'loading') return
     if (mode === 'none') {
       el.style.removeProperty(HELD)
+      el.style.removeProperty(LAST)
       return
     }
     const observer = typeof ResizeObserver === 'undefined' ? null : new ResizeObserver(() => run())
@@ -152,6 +159,7 @@ export function useHeldHeight(
         el.style.setProperty(HELD, `${content?.getBoundingClientRect().height ?? 0}px`)
       } else if (observer === null || content?.querySelector('[data-index]') !== null) {
         // The seam has committed rows (or there is nothing to observe): the hold is spent.
+        el.style.setProperty(LAST, `${content?.getBoundingClientRect().height ?? 0}px`)
         el.style.removeProperty(HELD)
         observer?.disconnect()
       }
