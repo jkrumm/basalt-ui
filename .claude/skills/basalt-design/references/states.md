@@ -12,7 +12,7 @@ Every empty, loading and error state answers two things: why, and what the reade
 
 One wording per repeated gap: the same missing source reads the same on every card that depends on it. Write it once and pass it to each (`emptyText`, `ChartCard` `state`), never rephrase per card.
 
-A titled host names the thing itself (`StatCard`, a strip cell, `ChartCard`, the data table: "Could not load revenue" from the title). A `Section` title does not reach a `QueryState` inside it; there, and outside a titled host, the title must name it ("Could not load <thing>"): `QueryState.errorTitle` / `QueryState.errorFallback`, `ErrorState.title` / `ErrorState.fallback`, and `ChartCard` `stateNoun` on a chart. "The request failed." is the fallback only, never a cause: the real cause is the server message or the fallback prop. The table's empty default ("No data to display.") is a fallback too; pass `emptyState` with the cause and the next step.
+A titled host names the thing itself (`StatCard`, a strip cell, `ChartCard`, the data table: "Could not load revenue" from the title). A `Section` `query` error stays bare (its title does not reach it yet); outside a titled host the title must name it ("Could not load <thing>"): `QueryState.errorTitle` / `QueryState.errorFallback`, `ErrorState.title` / `ErrorState.fallback`, and `ChartCard` `stateNoun` on a chart. "The request failed." is the fallback only, never a cause: the real cause is the server message or the fallback prop. The table's empty default ("No data to display.") is a fallback too; pass `emptyState` with the cause and the next step.
 
 ## Do / don't, on three shapes
 
