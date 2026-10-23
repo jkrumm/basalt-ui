@@ -52,6 +52,7 @@ import { StatusDot } from '../theme/status-dot'
 import { VX } from '../tokens'
 import { InfoGlyph } from './widget-header'
 import classes from './stat-strip.module.css'
+import { couldNotLoad } from './query-state'
 import { HOSTED, HOSTED_LOADING, VisualSlotContext } from './visual-slot'
 
 /** The URL shot states an anchor can declare itself absent in (`data-shot-absent`). */
@@ -154,7 +155,7 @@ export type StatStripProps = BasaltProps & {
 
 const EMPTY = '—'
 
-function CellState({ state }: { state: StatStripCellState }) {
+function CellState({ state, caption }: { state: StatStripCellState; caption: string }) {
   if (state.kind === 'empty') {
     // A stated reason IS the gap: it takes the value's place, so no bare dash sits above it.
     if (state.reason !== undefined) {
@@ -177,7 +178,7 @@ function CellState({ state }: { state: StatStripCellState }) {
     <div className={classes.error} role="alert" data-strip-state="error">
       <span className={classes.errorHead}>
         <StatusDot color={VX.status.bad} />
-        Could not load
+        {couldNotLoad(caption)}
       </span>
       <p className={classes.reason}>{message}</p>
       {state.onRetry !== undefined && (
@@ -311,7 +312,7 @@ function StripCell({
               </span>
             )}
           </div>
-          {state !== undefined && <CellState state={state} />}
+          {state !== undefined && <CellState state={state} caption={cell.caption} />}
           {state === undefined && hasHero && heroEl}
         </div>
         {state === undefined && cell.visual !== undefined && (

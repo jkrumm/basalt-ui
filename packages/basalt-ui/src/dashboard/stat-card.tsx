@@ -111,7 +111,7 @@ import { cx } from '../common/props'
 import type { BasaltProps, SlotStylesProps, Tone } from '../common/props'
 import { splitEmptyCopy } from '../common/empty-copy'
 import { EmptyState } from './empty-state'
-import { ErrorState, QueryState, resolveQueryBranch } from './query-state'
+import { ErrorState, QueryState, couldNotLoad, resolveQueryBranch } from './query-state'
 import type { QueryBranch, QueryStateLike } from './query-state'
 import classes from './stat-card.module.css'
 import { HOSTED, VisualSlotContext } from './visual-slot'
@@ -313,8 +313,10 @@ function renderValueBody({
   figure,
   emptyText,
   hasDelta,
+  label,
 }: {
   hasDelta: boolean
+  label: string | undefined
   pending: boolean
   resolved: QueryBranch<unknown> | undefined
   figure: ReactNode
@@ -333,7 +335,7 @@ function renderValueBody({
       return (
         <ErrorState
           error={resolved.error}
-          title="Could not load"
+          title={couldNotLoad(label)}
           tier="section"
           onRetry={() => void resolved.query.refetch()}
           retrying={resolved.query.fetchStatus === 'fetching'}
@@ -498,6 +500,7 @@ export function StatCard({
     figure,
     emptyText,
     hasDelta: delta !== undefined,
+    label: title,
   })
 
   const breakdownCount = breakdown?.length ?? 0

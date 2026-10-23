@@ -106,6 +106,20 @@ export function LoadingState({
   )
 }
 
+/**
+ * "Could not load <thing>" from a component's own label ("Revenue" → "Could not load revenue"). A
+ * label whose second letter is also capital ("KPI", "MRR") keeps its case; no label stays bare.
+ */
+export function couldNotLoad(label?: string): string {
+  const noun = label?.trim()
+  if (!noun) return 'Could not load'
+  const lower =
+    noun.length > 1 && noun[1] === noun[1]?.toLowerCase()
+      ? noun.toLowerCase().slice(0, 1) + noun.slice(1)
+      : noun
+  return `Could not load ${lower}`
+}
+
 // ── ErrorState ────────────────────────────────────────────────────────────────────────────────────
 
 export type ErrorStateProps = BasaltProps & {
