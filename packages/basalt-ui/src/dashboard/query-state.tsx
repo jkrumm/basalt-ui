@@ -15,9 +15,10 @@
  * escape hatch for a page that must place its branches in different DOM positions.
  */
 import { Center, Group, Loader, Skeleton, Stack, Text, VisuallyHidden } from '@mantine/core'
+import { useContext } from 'react'
 import type { CSSProperties, ReactNode } from 'react'
 import { toErrorMessage } from '../common/errors'
-import { couldNotLoad } from '../common/could-not-load'
+import { couldNotLoad, HostTitleContext } from '../common/could-not-load'
 import { cx } from '../common/props'
 import { RetryButton } from '../common/retry-button'
 import type { BasaltProps, SlotStylesProps } from '../common/props'
@@ -250,7 +251,8 @@ export type QueryStateProps<TData> = BasaltProps &
     empty?: QueryEmptyCopy
     /** Override the default `[]` / `{ data: [] }` emptiness test — `() => false` disables it. */
     isEmpty?: (data: TData) => boolean
-    /** Alert heading on the error branch — say what failed. */
+    /** Alert heading on the error branch — say what failed. Omitted inside a titled `Section`, it
+     * names that section ("Could not load practice record"); elsewhere it is "Could not load". */
     errorTitle?: string
     /** Shown only when the server body carries no readable message. */
     errorFallback?: string
@@ -286,7 +288,7 @@ export function QueryState<TData>({
   children,
   empty,
   isEmpty,
-  errorTitle = couldNotLoad(),
+  errorTitle: errorTitleProp,
   errorFallback = 'The request failed.',
   errorAction,
   tier,
@@ -296,6 +298,8 @@ export function QueryState<TData>({
   classNames,
 }: QueryStateProps<TData>): ReactNode {
   assertQueryStateLike('QueryState', query)
+  const hostTitle = useContext(HostTitleContext)
+  const errorTitle = errorTitleProp ?? couldNotLoad(hostTitle)
   const resolvedTier = tier ?? 'page'
   // One class for every branch — see {@link QueryStateSlot}. `cx` returns `''` when both are
   // absent, and an empty `className` on a branch that previously carried none would be a DOM diff,

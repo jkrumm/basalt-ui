@@ -187,6 +187,7 @@ Signature: Section(props: SectionProps): JSX.Element
   actions?: SectionActions
   query?: QueryStateLike<unknown>
   empty?: QueryEmptyCopy
+  loadingHeight?: number
   tabs?: ReactNode
   collapsible?: boolean
   persistKey?: string

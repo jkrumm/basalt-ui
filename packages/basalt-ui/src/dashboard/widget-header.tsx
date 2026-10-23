@@ -65,9 +65,9 @@ export type WidgetHeaderProps = BasaltProps &
     title: string
     /** Optional leading icon, rendered before the title. Decorative — hidden from assistive tech. */
     icon?: ReactNode
-    /** Optional muted line rendered below the title row. In a card narrower than 480px, or shorter
-     * than 280px regardless of width, it folds into the info glyph's bubble instead (CSS only —
-     * exactly one of the two shows). */
+    /** Optional muted line rendered below the title row. Visible text at every width (it wraps
+     * under the title); in a card shorter than 280px it folds into the info glyph's bubble instead
+     * (CSS only — exactly one of the two shows). */
     subtitle?: string
     /**
      * Renders an info glyph BESIDE the heading (never inside it — this text would otherwise become

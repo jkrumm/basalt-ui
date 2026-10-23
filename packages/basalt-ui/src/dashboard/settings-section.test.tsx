@@ -84,3 +84,20 @@ describe('a settings shell keeps three type sizes (Wave 38)', () => {
     expect(screen.getByText('Danger Zone').style.fontSize).toBe('12px')
   })
 })
+
+describe('the DangerZone ring is one token-derived treatment in both schemes', () => {
+  test('the ring mixes the status token into the panel surface — no alpha over the backdrop', () => {
+    renderWith(
+      <DangerZone title="Delete">
+        <div>rows</div>
+      </DangerZone>,
+    )
+    const card = screen.getByText('Danger Zone').closest('.mantine-Card-root') as HTMLElement | null
+    const shadow = card?.style.boxShadow ?? ''
+    expect(shadow).toContain('var(--vx-shadow-card)')
+    expect(shadow).toContain(
+      'color-mix(in srgb, var(--vx-status-bad) 40%, var(--vx-surface-panel))',
+    )
+    expect(shadow).not.toMatch(/rgba?\(|#[0-9a-f]{3}/i)
+  })
+})
