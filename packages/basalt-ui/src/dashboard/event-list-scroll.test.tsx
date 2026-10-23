@@ -7,7 +7,7 @@ import { MantineProvider } from '@mantine/core'
 import { cleanup, fireEvent, render } from '@testing-library/react'
 import { afterEach, beforeEach, describe, expect, mock, test } from 'bun:test'
 import { EventList } from './event-list'
-import { rowBoundaryTrim } from './event-list-scroll'
+import { rowBoundaryTrim, rowsOutOfView } from './event-list-scroll'
 
 let observed: (() => void)[] = []
 let releaseFonts: () => void = () => {}
@@ -142,5 +142,75 @@ describe('rowBoundaryTrim', () => {
     } finally {
       window.getComputedStyle = real
     }
+  })
+})
+
+describe('rowsOutOfView', () => {
+  const rect = (top: number, bottom: number) => () =>
+    ({ top, bottom, height: bottom - top }) as DOMRect
+  function box(rows: [number, number][], header?: [number, number]): HTMLElement {
+    const el = document.createElement('div')
+    el.getBoundingClientRect = rect(0, 100)
+    if (header !== undefined) {
+      const h = document.createElement('h3')
+      h.setAttribute('data-day-header', '')
+      h.getBoundingClientRect = rect(...header)
+      el.append(h)
+    }
+    for (const [top, bottom] of rows) {
+      const row = document.createElement('li')
+      row.setAttribute('data-event-id', 'x')
+      row.getBoundingClientRect = rect(top, bottom)
+      el.append(row)
+    }
+    return el
+  }
+
+  test('counts the rows cut or hidden above (under the stuck header) and below', () => {
+    const el = box(
+      [
+        [-40, 0],
+        [0, 30],
+        [30, 60],
+        [60, 90],
+        [90, 120],
+      ],
+      [0, 20],
+    )
+    // Row two starts at the header's top, under it: cut. The last row runs past the floor.
+    expect(rowsOutOfView(el)).toEqual({ above: 2, below: 1 })
+  })
+
+  test('under two day headers the one at the top edge sets the offset', () => {
+    const el = box(
+      [
+        [30, 60],
+        [60, 90],
+      ],
+      [-80, -60],
+    )
+    const second = document.createElement('h3')
+    second.setAttribute('data-day-header', '')
+    second.getBoundingClientRect = rect(0, 40)
+    el.insertBefore(second, el.children[1] ?? null)
+    // The first day's header is scrolled away; the second (40 high) covers the first row's top.
+    expect(rowsOutOfView(el)).toEqual({ above: 1, below: 0 })
+  })
+
+  test('a box showing every row has no cue, and a windowed one has no count', () => {
+    expect(
+      rowsOutOfView(
+        box([
+          [0, 40],
+          [40, 80],
+        ]),
+      ),
+    ).toEqual({ above: 0, below: 0 })
+    const windowed = box([
+      [-40, 0],
+      [90, 140],
+    ])
+    windowed.firstElementChild?.setAttribute('data-index', '0')
+    expect(rowsOutOfView(windowed)).toEqual({ above: 0, below: 0 })
   })
 })

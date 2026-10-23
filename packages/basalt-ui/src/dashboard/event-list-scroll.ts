@@ -160,9 +160,33 @@ export function useRowBoundary(node: HTMLElement | null, active: boolean): void 
 }
 
 /**
+ * How many plain rows sit above and below what the box shows (a row not wholly in view counts), measured
+ * under the stuck day header. Windowed rows (the seam) are a slice of the list, so they have no count.
+ */
+export function rowsOutOfView(el: HTMLElement): { above: number; below: number } {
+  const rows = el.querySelectorAll('[data-event-id]')
+  if (rows.length === 0 || el.querySelector('[data-index]') !== null) return { above: 0, below: 0 }
+  const box = el.getBoundingClientRect()
+  // The stuck header is the last one at or above the top edge (an earlier day's is scrolled away).
+  const stuck = Array.from(el.querySelectorAll('[data-day-header]')).findLast(
+    (h) => h.getBoundingClientRect().top <= box.top + 1,
+  )
+  const top = box.top + (stuck?.getBoundingClientRect().height ?? 0)
+  let above = 0
+  let below = 0
+  for (const row of rows) {
+    const rect = row.getBoundingClientRect()
+    if (rect.top < top - 1) above += 1
+    else if (rect.bottom > box.bottom + 1) below += 1
+  }
+  return { above, below }
+}
+
+/**
  * Marks the scroll node `data-scrolled` while it is off the top (CSS lifts the sticky day header) and
  * `data-more` while content remains below the fold (CSS paints a bottom fade), so a clipped last row
- * is never silent.
+ * is never silent. `data-above` / `data-below` carry how many rows are out of view each way: CSS names
+ * them ("1 earlier" at the top edge, "2 later" at the bottom) so a cut row has a cue, not only a fade.
  */
 export function useScrolledEdge(node: HTMLElement | null): void {
   useEffect(() => {
@@ -173,12 +197,36 @@ export function useScrolledEdge(node: HTMLElement | null): void {
       if (on) el.setAttribute(name, '')
       else el.removeAttribute(name)
     }
-    const mark = (): void => {
+    const flags = (): void => {
       flag('data-scrolled', el.scrollTop > 0)
       flag('data-more', el.scrollHeight - el.scrollTop - el.clientHeight > 1)
     }
+    const counts = (): void => {
+      const { above, below } = rowsOutOfView(el)
+      for (const [name, count] of [
+        ['data-above', above],
+        ['data-below', below],
+      ] as const) {
+        if (count === 0) el.removeAttribute(name)
+        else if (el.getAttribute(name) !== String(count)) el.setAttribute(name, String(count))
+      }
+    }
+    const mark = (): void => {
+      flags()
+      counts()
+    }
     mark()
-    el.addEventListener('scroll', mark, { passive: true })
+    // The counts measure every row: on a scroll they are read once a frame, the flags at once.
+    let frame = 0
+    const onScroll = (): void => {
+      flags()
+      if (frame !== 0) return
+      frame = requestAnimationFrame(() => {
+        frame = 0
+        counts()
+      })
+    }
+    el.addEventListener('scroll', onScroll, { passive: true })
     const observer = typeof ResizeObserver === 'undefined' ? null : new ResizeObserver(mark)
     observer?.observe(el)
     const content = el.firstElementChild
@@ -187,11 +235,14 @@ export function useScrolledEdge(node: HTMLElement | null): void {
     const swaps = typeof MutationObserver === 'undefined' ? null : new MutationObserver(mark)
     if (content !== null) swaps?.observe(content, { childList: true })
     return () => {
-      el.removeEventListener('scroll', mark)
+      cancelAnimationFrame(frame)
+      el.removeEventListener('scroll', onScroll)
       observer?.disconnect()
       swaps?.disconnect()
       el.removeAttribute('data-scrolled')
       el.removeAttribute('data-more')
+      el.removeAttribute('data-above')
+      el.removeAttribute('data-below')
     }
   }, [node])
 }

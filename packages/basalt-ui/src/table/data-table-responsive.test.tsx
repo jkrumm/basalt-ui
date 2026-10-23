@@ -439,7 +439,7 @@ describe('the fold toggle says what folded', () => {
     expect(hint?.getAttribute('title')).toBe('2 more columns: C, D')
     expect(hint?.tagName).toBe('BUTTON')
     expect(hint?.getAttribute('aria-label')).toBe('+2 cols, 2 more columns: C, D')
-    expect(hint?.textContent).toBe('+2 cols')
+    expect(hint?.firstChild?.textContent).toBe('+2 cols')
   })
 })
 

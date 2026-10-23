@@ -9,6 +9,7 @@ declare const classes: {
   readonly viewport: string
   readonly head: string
   readonly title: string
+  readonly thumb: string
   readonly count: string
   readonly total: string
   readonly list: string

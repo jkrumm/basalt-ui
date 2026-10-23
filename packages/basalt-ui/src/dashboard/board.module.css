@@ -35,6 +35,16 @@
   mask-image: linear-gradient(to bottom, black calc(100% - var(--board-fade)), transparent);
 }
 
+/* A quiet thumb: 6 px, a faint ink tint that firms on hover, no rail behind it (Mantine's default is a
+   heavy grey bar that read as chrome on the page). */
+.thumb {
+  background: color-mix(in srgb, var(--vx-ink) 22%, transparent);
+}
+
+.thumb:hover {
+  background: color-mix(in srgb, var(--vx-ink) 40%, transparent);
+}
+
 .head {
   display: flex;
   align-items: center;
