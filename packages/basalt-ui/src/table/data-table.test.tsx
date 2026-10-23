@@ -799,6 +799,15 @@ describe('query — the four container states', () => {
     expect(refetch).toHaveBeenCalledTimes(1)
   })
 
+  test('a titled table names what failed to load', () => {
+    renderTable({
+      data: [],
+      title: 'Invoices',
+      query: query({ isError: true, error: new Error('boom') }),
+    })
+    expect(screen.getByText('Could not load Invoices')).toBeDefined()
+  })
+
   test('a resolved but empty result renders the existing emptyState', () => {
     renderTable({
       data: [],
