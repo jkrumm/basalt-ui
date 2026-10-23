@@ -51,12 +51,49 @@ describe('ChartFact tone and trailing texts (item 1)', () => {
     const { container } = render(<ChartCard title="W" facts={{ value: '81', tone: 'warn' }} />)
     expect(container.querySelector('[data-basalt-fact]')?.getAttribute('data-tone')).toBe('warn')
     for (const tone of ['warn', 'bad', 'good', 'muted']) {
-      const rule = block(css, `\\.fact\\[data-tone="${tone}"\\]`)
+      const rule = block(css, `\\.fact\\[data-tone="${tone}"\\] \\.factTone`)
       expect(rule).toContain('color')
       expect(rule).not.toContain('background')
     }
-    expect(block(css, '\\.fact\\[data-tone="warn"\\]')).toContain('--vx-status-warn')
-    expect(block(css, '\\.fact\\[data-tone="muted"\\]')).toContain('--vx-muted')
+    expect(block(css, '\\.fact\\[data-tone="warn"\\] \\.factTone')).toContain('--vx-status-warn')
+    expect(block(css, '\\.fact\\[data-tone="muted"\\] \\.factTone')).toContain('--vx-muted')
+  })
+  test('tone inks the delta only, with a glyph; the value, unit and period stay put', () => {
+    const { container } = render(
+      <ChartCard
+        title="W"
+        facts={{ value: '81', unit: 'bpm', comparison: '+3', period: 'last 7 d', tone: 'warn' }}
+      />,
+    )
+    const fact = container.querySelector('[data-basalt-fact]')
+    const delta = fact?.querySelector('[data-basalt-fact-delta]')
+    expect(delta?.hasAttribute('data-basalt-fact-tone')).toBe(true)
+    expect(delta?.textContent).toBe('▲3')
+    expect(
+      fact?.querySelector('[data-basalt-fact-value]')?.hasAttribute('data-basalt-fact-tone'),
+    ).toBe(false)
+    expect(block(css, '\\.fact\\[data-tone="warn"\\] \\.factTone')).toContain('--vx-status-warn')
+    expect(css).not.toMatch(/data-tone[^{]*\.factPeriod/)
+  })
+  test('a negative plain comparison takes ▼; an element is left as it is', () => {
+    const { container } = render(
+      <ChartCard
+        title="W"
+        facts={[
+          { value: '1', comparison: '-4%', tone: 'good' },
+          { value: '2', comparison: <b>+0.3</b>, tone: 'good' },
+        ]}
+      />,
+    )
+    const deltas = container.querySelectorAll('[data-basalt-fact-delta]')
+    expect(deltas[0]?.textContent).toBe('▼4%')
+    expect(deltas[1]?.textContent).toBe('+0.3')
+  })
+  test('no comparison: the tone inks the value', () => {
+    const { container } = render(<ChartCard title="W" facts={{ value: '81', tone: 'bad' }} />)
+    expect(
+      container.querySelector('[data-basalt-fact-value]')?.hasAttribute('data-basalt-fact-tone'),
+    ).toBe(true)
   })
   test('no tone: no attribute', () => {
     const { container } = render(<ChartCard title="W" facts={{ value: '81' }} />)
