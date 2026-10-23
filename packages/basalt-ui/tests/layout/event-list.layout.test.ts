@@ -348,11 +348,16 @@ layout('Wave 44 EventList', () => {
       const b = box.getBoundingClientRect()
       const main = document.querySelector('[data-basalt-scrollport]')
       const host = document.querySelector('${HOST}').getBoundingClientRect()
+      // The stuck day header's lower edge: no row may straddle it (a row cut across its first line).
+      const header = [...box.querySelectorAll('[data-day-header]')].map((h) => h.getBoundingClientRect()).find((h) => h.top <= b.top + 1 && h.bottom > b.top)
+      const straddling = header ? rows.filter((r) => { const q = r.getBoundingClientRect(); return q.top < header.bottom - 1 && q.bottom > header.bottom + 1 }).length : 0
       return {
+        straddling,
         lastBottom: last.bottom, lastTop: last.top, boxTop: b.top, boxBottom: b.bottom,
         mainScroll: main.scrollHeight, mainClient: main.clientHeight, hostBottom: host.bottom - main.getBoundingClientRect().top + main.scrollTop,
       }
     })()`)) as Record<string, number>
+    expect(r['straddling']).toBe(0)
     expect(r['lastBottom']).toBeLessThanOrEqual((r['boxBottom'] ?? 0) + 1)
     expect(r['lastTop']).toBeGreaterThanOrEqual((r['boxTop'] ?? 0) - 1)
     // The page is as tall as its content: nothing leaks scroll height below the list.
@@ -361,7 +366,7 @@ layout('Wave 44 EventList', () => {
     )
   })
 
-  test("Show earlier sits at the rows' start and has a clearly visible hover step; rows have none", async () => {
+  test("Show earlier is a bordered control whose edge sits at the rows' start, with a clearly visible hover step; rows have none", async () => {
     const p = await openFixture(spec('plain'), DESKTOP_1440)
     await p.raw.waitForSelector(`${HOST} time`)
     const bg = (sel: string) =>
@@ -387,11 +392,8 @@ layout('Wave 44 EventList', () => {
     const button = `${HOST} ${moduleClass('earlier')} button`
     const row = `${HOST} ${moduleClass('row')}`
     const start = (await p.raw.evaluate(`(() => {
-      const label = document.querySelector(${JSON.stringify(button)} + ' [class*="label"]')
-      const range = document.createRange()
-      range.selectNodeContents(label)
       const r = document.querySelector(${JSON.stringify(row)}).getBoundingClientRect()
-      return range.getBoundingClientRect().left - r.left
+      return document.querySelector(${JSON.stringify(button)}).getBoundingClientRect().left - r.left
     })()`)) as number
     expect(Math.abs(start)).toBeLessThanOrEqual(EPS)
     const [btnRest, rowRest] = [await bg(button), await bg(row)]

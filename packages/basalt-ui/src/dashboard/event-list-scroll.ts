@@ -95,6 +95,64 @@ export function useOpenAtEnd(node: HTMLElement | null, active: boolean, count: n
   }, [node, active])
 }
 
+const TRIM = '--event-list-trim'
+
+/**
+ * How far the box must be shorter for its newest end to open on a row boundary: with a sticky day
+ * header stuck at the top, the row beneath its lower edge is cut across its first line. Trimming the
+ * box by that row's remainder hides it entirely, so the first row in view is whole and the last row
+ * still ends on the box's floor. Pure of the current trim (it adds it back), so it settles in one
+ * step. 0 when no header is stuck or nothing is cut.
+ */
+export function rowBoundaryTrim(el: HTMLElement, content: Element, current: number): number {
+  const header = content.querySelector<HTMLElement>('[data-day-header]')
+  if (header === null) return 0
+  const origin = content.getBoundingClientRect().top
+  const rel = (e: Element, edge: 'top' | 'bottom'): number =>
+    e.getBoundingClientRect()[edge] - origin
+  // The end position of the untrimmed box, and the line the stuck header's lower edge sits on there.
+  const end = el.scrollHeight - (el.clientHeight + current)
+  const stuck = Array.from(content.querySelectorAll('[data-day-header]')).some(
+    (h) => h.parentElement !== null && rel(h.parentElement, 'top') < end - 0.5,
+  )
+  if (!stuck) return 0
+  const cut = end + header.offsetHeight
+  for (const row of content.querySelectorAll('[data-event-id]')) {
+    const [top, bottom] = [rel(row, 'top'), rel(row, 'bottom')]
+    if (top >= cut - 0.5 || bottom <= cut + 0.5) continue
+    // A cut through the row's own top padding hides nothing of it.
+    if (cut - top <= Number.parseFloat(getComputedStyle(row).paddingTop)) return 0
+    return bottom - cut
+  }
+  return 0
+}
+
+/**
+ * Keeps `--event-list-trim` on the scroll node at `rowBoundaryTrim` (the box subtracts it from its
+ * height) while an oldest-first box opens on its newest end; cleared otherwise.
+ */
+export function useRowBoundary(node: HTMLElement | null, active: boolean): void {
+  useEffect(() => {
+    const content = node?.firstElementChild
+    if (node === null || content === null || content === undefined || !active) return
+    const el: HTMLElement = node
+    const run = (): void => {
+      const current = Number.parseFloat(el.style.getPropertyValue(TRIM)) || 0
+      const next = Math.min(rowBoundaryTrim(el, content, current), el.clientHeight / 2)
+      if (Math.abs(next - current) < 1.5) return
+      el.style.setProperty(TRIM, `${next}px`)
+    }
+    const observer = typeof ResizeObserver === 'undefined' ? null : new ResizeObserver(run)
+    observer?.observe(content)
+    run()
+    void document.fonts?.ready?.then(run)
+    return () => {
+      observer?.disconnect()
+      el.style.removeProperty(TRIM)
+    }
+  }, [node, active])
+}
+
 /**
  * Marks the scroll node `data-scrolled` while it is off the top (CSS lifts the sticky day header) and
  * `data-more` while content remains below the fold (CSS paints a bottom fade), so a clipped last row

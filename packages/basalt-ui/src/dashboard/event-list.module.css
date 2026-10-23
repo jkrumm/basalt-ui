@@ -241,11 +241,6 @@
   padding-block: var(--vx-space-stack-xs);
 }
 
-.earlierButton {
-  /* The label starts on the rows' edge: cancel the button's own inline padding. */
-  margin-inline-start: calc(var(--button-padding-x, 0px) * -1);
-}
-
 .earlierButton:hover:not(:disabled, [data-disabled]) {
   background: var(--event-list-hover);
 }
