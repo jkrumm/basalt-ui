@@ -108,6 +108,10 @@ function periodText(period: string | readonly string[], afterUnit: boolean): str
   return afterUnit && !text.startsWith(PERIOD_SEPARATOR.trim()) ? PERIOD_SEPARATOR + text : text
 }
 
+/** A comparison that renders something: `cond && <DeltaBadge />` leaves `false`, `null` or `''`. */
+const hasComparison = (node: ReactNode): boolean =>
+  node !== undefined && node !== null && node !== false && node !== ''
+
 /**
  * A plain-text comparison with a leading sign ("+0.3", "-4%") reads as a delta: the sign becomes
  * DeltaBadge's direction glyph (▲/▼). Any other node (a `DeltaBadge`, which carries its own) is as is.
@@ -118,7 +122,9 @@ function Comparison({ node }: { node: ReactNode }): ReactNode {
   if (sign === null) return node
   return (
     <>
-      <span className={classes.factGlyph}>{sign[1] === '+' ? '▲' : '▼'}</span>
+      <span aria-hidden="true" className={classes.factGlyph}>
+        {sign[1] === '+' ? '▲' : '▼'}
+      </span>
       {sign[2]}
     </>
   )
@@ -134,7 +140,8 @@ export type ChartFact = {
    * ago', '12 entries']`) and, behind a `unit`, led by one. */
   period?: string | readonly string[] | undefined
   /** Ink for the comparison, with its direction glyph (text only, never a fill): an off-target
-   * change reads `warn`. A fact with no comparison inks its value instead. */
+   * change reads `warn`. A fact with no comparison inks its value instead. A `DeltaBadge` comparison keeps
+   * its own polarity ink (it is inline), so `tone` is for plain-text comparisons. */
   tone?: ChartFactTone | undefined
 }
 
@@ -253,13 +260,13 @@ function Facts({
             >
               <span
                 data-basalt-fact-value=""
-                {...(f.comparison === undefined && { 'data-basalt-fact-tone': '' })}
-                className={cx(classes.factValue, f.comparison === undefined && classes.factTone)}
+                {...(!hasComparison(f.comparison) && { 'data-basalt-fact-tone': '' })}
+                className={cx(classes.factValue, !hasComparison(f.comparison) && classes.factTone)}
               >
                 {f.value}
               </span>
               {f.unit !== undefined && <span className={classes.factUnit}>{f.unit}</span>}
-              {f.comparison !== undefined && (
+              {hasComparison(f.comparison) && (
                 <span
                   data-basalt-fact-delta=""
                   data-basalt-fact-tone=""

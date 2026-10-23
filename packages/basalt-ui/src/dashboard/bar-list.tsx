@@ -18,9 +18,10 @@
  * the one scale, so a name stays beside its value and a full-scale bar ends at the track end.
  *
  * The secondary column aligns by content (override: `secondaryAlign`): a text secondary (a status word,
- * `StatusVerdict`/`StatusDot`) starts on one x so the dots line up; figures ("41%", "+€7"), numbers and a
- * `DeltaBadge` end. A delta column also gets a fixed-width glyph slot and a tabular figure slot, so the
- * glyphs AND the figures' right edges line up (a column of deltas is table-like, D33 allows tabular there).
+ * `StatusVerdict`/`StatusDot`) starts on one x so the dots line up; figures ("41%", "+€7") and numbers
+ * end. A `DeltaBadge` starts on one x too: a glyph track, then the figure, so every glyph shares an x and
+ * sits one fixed gap from its own figure; the figures are ragged on the right (a column of deltas is
+ * table-like, D33 allows tabular there).
  *
  * Colour law: bars are neutral. `accentLeader` (opt-in) lets the top row take the accent — the
  * leader bar, and nothing else. Each value is rendered as text, never only a bar length.

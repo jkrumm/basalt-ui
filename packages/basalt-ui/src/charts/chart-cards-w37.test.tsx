@@ -89,6 +89,15 @@ describe('ChartFact tone and trailing texts (item 1)', () => {
     expect(deltas[0]?.textContent).toBe('▼4%')
     expect(deltas[1]?.textContent).toBe('+0.3')
   })
+  test('a falsy comparison counts as none: no empty delta, the value takes the tone', () => {
+    const { container } = render(
+      <ChartCard title="W" facts={{ value: '81', comparison: false, tone: 'warn' }} />,
+    )
+    expect(container.querySelector('[data-basalt-fact-delta]')).toBeNull()
+    expect(
+      container.querySelector('[data-basalt-fact-value]')?.hasAttribute('data-basalt-fact-tone'),
+    ).toBe(true)
+  })
   test('no comparison: the tone inks the value', () => {
     const { container } = render(<ChartCard title="W" facts={{ value: '81', tone: 'bad' }} />)
     expect(
