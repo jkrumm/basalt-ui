@@ -52,7 +52,7 @@ import { StatusDot } from '../theme/status-dot'
 import { VX } from '../tokens'
 import { InfoGlyph } from './widget-header'
 import classes from './stat-strip.module.css'
-import { couldNotLoad } from './query-state'
+import { couldNotLoad } from '../common/could-not-load'
 import { HOSTED, HOSTED_LOADING, VisualSlotContext } from './visual-slot'
 
 /** The URL shot states an anchor can declare itself absent in (`data-shot-absent`). */

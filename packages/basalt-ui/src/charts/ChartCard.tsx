@@ -163,7 +163,9 @@ type ChartCardBaseProps = BasaltProps &
     ghost?: 'bars' | 'line' | 'band' | number | undefined
     /** Placeholder data is showing: the facts row dims with the plot (a strip cell's `stale`). */
     stale?: boolean | undefined
-    /** What an errored `state` names: "Could not load {stateNoun}". Default: no noun. */
+    /** What an errored `state` names: "Could not load {stateNoun}". Default: the card's `title`; with
+     * neither, the title is a bare "Could not load". A leading capital is lowercased unless the next
+     * character is a capital or a non-letter ("Revenue" → "revenue", "KPI" and "2024 sales" stay). */
     stateNoun?: string | undefined
     /** An errored `state` shows the shared Retry button (the one `ErrorState` renders). */
     onRetry?: (() => void) | undefined
@@ -309,12 +311,6 @@ function reserveLegend(reserve: boolean, placeholder: ReactElement): ReactElemen
   )
 }
 
-/** "Revenue" → "revenue"; an acronym ("KPI", "MRR") keeps its case. */
-function lowerLead(label: string): string {
-  const t = label.trim()
-  return t.length > 1 && t[1] === t[1]?.toLowerCase() ? t.charAt(0).toLowerCase() + t.slice(1) : t
-}
-
 export function ChartCard({
   actions,
   state,
@@ -335,7 +331,7 @@ export function ChartCard({
   const { ref, short } = useShortCard()
   const resolved = resolveChartState(state)
   // The noun an error names: `stateNoun`, else the card's own title ("Revenue" → "revenue").
-  const noun = stateNoun ?? (header.title ? lowerLead(header.title) : undefined)
+  const noun = stateNoun ?? header.title
   const kind = resolved === 'pending' ? bodyKindOf(children) : undefined
   const plotGhost = ghost ?? kind?.ghost
   // `ghost` changes the shape only: the wrapped strip's height still sizes the pending box.

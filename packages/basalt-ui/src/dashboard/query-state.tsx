@@ -17,6 +17,7 @@
 import { Center, Group, Loader, Skeleton, Stack, Text, VisuallyHidden } from '@mantine/core'
 import type { CSSProperties, ReactNode } from 'react'
 import { toErrorMessage } from '../common/errors'
+import { couldNotLoad } from '../common/could-not-load'
 import { cx } from '../common/props'
 import { RetryButton } from '../common/retry-button'
 import type { BasaltProps, SlotStylesProps } from '../common/props'
@@ -106,20 +107,6 @@ export function LoadingState({
   )
 }
 
-/**
- * "Could not load <thing>" from a component's own label ("Revenue" → "Could not load revenue"). A
- * label whose second letter is also capital ("KPI", "MRR") keeps its case; no label stays bare.
- */
-export function couldNotLoad(label?: string): string {
-  const noun = label?.trim()
-  if (!noun) return 'Could not load'
-  const lower =
-    noun.length > 1 && noun[1] === noun[1]?.toLowerCase()
-      ? noun.toLowerCase().slice(0, 1) + noun.slice(1)
-      : noun
-  return `Could not load ${lower}`
-}
-
 // ── ErrorState ────────────────────────────────────────────────────────────────────────────────────
 
 export type ErrorStateProps = BasaltProps & {
@@ -144,7 +131,7 @@ export type ErrorStateProps = BasaltProps & {
  */
 export function ErrorState({
   error,
-  title = 'Could not load',
+  title = couldNotLoad(),
   fallback = 'The request failed.',
   onRetry,
   retrying = false,
@@ -299,7 +286,7 @@ export function QueryState<TData>({
   children,
   empty,
   isEmpty,
-  errorTitle = 'Could not load',
+  errorTitle = couldNotLoad(),
   errorFallback = 'The request failed.',
   errorAction,
   tier,
