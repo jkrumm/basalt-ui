@@ -115,7 +115,8 @@ import { couldNotLoad } from '../common/could-not-load'
 import { ErrorState, QueryState, resolveQueryBranch } from './query-state'
 import type { QueryBranch, QueryStateLike } from './query-state'
 import classes from './stat-card.module.css'
-import { HOSTED, VisualSlotContext } from './visual-slot'
+import { VisualSlotContext } from './visual-slot'
+import type { VisualSlot } from './visual-slot'
 
 /**
  * The boxes `StatCard` paints, and the whole styling seam it offers (`common/props.ts`).
@@ -459,6 +460,10 @@ export function StatCard({
 
   // Built ONLY when ready: the render prop must not run in a pending / failed / empty branch, where
   // the last measured width is stale.
+  const hostSlot: VisualSlot = {
+    ...(tone !== undefined && { tone }),
+    ...(!bleeds && { compact: true as const }),
+  }
   const sparklineSlot: ReactNode =
     !ready || sparkline === undefined ? null : (
       <div
@@ -471,7 +476,7 @@ export function StatCard({
       >
         {/* A measured slot renders nothing on the first commit (width 0) — an SVG at width 0 is a
             visible 0-width box that then jumps, which is worse than one frame of nothing. */}
-        <VisualSlotContext.Provider value={tone === undefined ? HOSTED : { tone }}>
+        <VisualSlotContext.Provider value={hostSlot}>
           {isRender ? measured.width > 0 && sparkline(measured) : sparkline}
         </VisualSlotContext.Provider>
       </div>

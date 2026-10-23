@@ -128,6 +128,11 @@
   min-width: 0;
 }
 
+/* The plot keeps its stated height whatever box the frame sits in. */
+.frame > :first-child {
+  flex: none;
+}
+
 .caption {
   display: flex;
   align-items: baseline;
