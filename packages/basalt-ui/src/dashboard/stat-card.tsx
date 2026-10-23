@@ -115,7 +115,7 @@ import { couldNotLoad } from '../common/could-not-load'
 import { ErrorState, QueryState, resolveQueryBranch } from './query-state'
 import type { QueryBranch, QueryStateLike } from './query-state'
 import classes from './stat-card.module.css'
-import { VisualSlotContext } from './visual-slot'
+import { HOSTED, HOSTED_COMPACT, VisualSlotContext } from './visual-slot'
 import type { VisualSlot } from './visual-slot'
 
 /**
@@ -394,6 +394,18 @@ function renderFooterNode({
   )
 }
 
+/** One shared slot object per tone and size, so a provider never re-renders its readers (`visual-slot.ts`). */
+const toneSlots = new Map<string, VisualSlot>()
+function slotFor(tone: Tone | undefined, compact: boolean): VisualSlot {
+  if (tone === undefined) return compact ? HOSTED_COMPACT : HOSTED
+  const key = `${tone}:${compact}`
+  const known = toneSlots.get(key)
+  if (known !== undefined) return known
+  const slot: VisualSlot = compact ? { tone, compact: true } : { tone }
+  toneSlots.set(key, slot)
+  return slot
+}
+
 export function StatCard({
   title,
   icon,
@@ -460,10 +472,7 @@ export function StatCard({
 
   // Built ONLY when ready: the render prop must not run in a pending / failed / empty branch, where
   // the last measured width is stale.
-  const hostSlot: VisualSlot = {
-    ...(tone !== undefined && { tone }),
-    ...(!bleeds && { compact: true as const }),
-  }
+  const hostSlot = slotFor(tone, !bleeds)
   const sparklineSlot: ReactNode =
     !ready || sparkline === undefined ? null : (
       <div

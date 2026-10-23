@@ -57,44 +57,56 @@ layout('Wave 50 figures', () => {
     expect(m.track, m.chain.join(' > ')).toBeGreaterThanOrEqual(m.inner * 0.95)
   })
 
+  const dark = { ...spec, colorScheme: 'dark' } satisfies FixtureSpec
+  // The marker is a panel core in an ink ring: the core must meet an ink fill, the ring a light one.
   test.each([
-    ['light', spec],
-    ['dark', { ...spec, colorScheme: 'dark' } satisfies FixtureSpec],
-  ] as const)('%s: the reading tick contrasts 3:1 with an ink fill', async (_, fixture) => {
-    const p = await openFixture(fixture, DESKTOP_1440)
-    await p.settle()
-    const ratio = await p.raw.evaluate(() => {
-      const rgb = (css: string): [number, number, number] => {
-        const ctx = document.createElement('canvas').getContext('2d', {
-          willReadFrequently: true,
-        }) as CanvasRenderingContext2D
-        ctx.fillStyle = css
-        ctx.fillRect(0, 0, 1, 1)
-        const d = ctx.getImageData(0, 0, 1, 1).data
-        return [d[0] ?? 0, d[1] ?? 0, d[2] ?? 0]
-      }
-      const lum = ([r, g, b]: [number, number, number]) => {
-        const f = (v: number) => {
-          const c = v / 255
-          return c <= 0.03928 ? c / 12.92 : ((c + 0.055) / 1.055) ** 2.4
-        }
-        return 0.2126 * f(r) + 0.7152 * f(g) + 0.0722 * f(b)
-      }
-      const contrast = (a: string, b: string) => {
-        const [hi, lo] = [lum(rgb(a)), lum(rgb(b))].sort((x, y) => y - x) as [number, number]
-        return (hi + 0.05) / (lo + 0.05)
-      }
-      const host = document.querySelector('[data-testid="w50-ink"]') as HTMLElement
-      const tick = host.querySelector('[data-meter-tick="marker"]') as HTMLElement
-      const probe = document.createElement('span')
-      probe.style.color = 'var(--vx-ink)'
-      host.append(probe)
-      const fill = getComputedStyle(probe).color
-      probe.remove()
-      return contrast(getComputedStyle(tick).backgroundColor, fill)
-    })
-    expect(ratio).toBeGreaterThanOrEqual(3)
-  })
+    ['light', spec, 'w50-ink', 'core'],
+    ['dark', dark, 'w50-ink', 'core'],
+    ['light', spec, 'w50-light', 'ring'],
+    ['dark', dark, 'w50-light', 'ring'],
+  ] as const)(
+    '%s: the reading tick contrasts 3:1 with the fill (%s, %s)',
+    async (_, fixture, host, part) => {
+      const p = await openFixture(fixture, DESKTOP_1440)
+      await p.settle()
+      const ratio = await p.raw.evaluate(
+        ([id, which]) => {
+          const rgb = (css: string): [number, number, number] => {
+            const ctx = document.createElement('canvas').getContext('2d', {
+              willReadFrequently: true,
+            }) as CanvasRenderingContext2D
+            ctx.fillStyle = css
+            ctx.fillRect(0, 0, 1, 1)
+            const d = ctx.getImageData(0, 0, 1, 1).data
+            return [d[0] ?? 0, d[1] ?? 0, d[2] ?? 0]
+          }
+          const lum = ([r, g, b]: [number, number, number]) => {
+            const f = (v: number) => {
+              const c = v / 255
+              return c <= 0.03928 ? c / 12.92 : ((c + 0.055) / 1.055) ** 2.4
+            }
+            return 0.2126 * f(r) + 0.7152 * f(g) + 0.0722 * f(b)
+          }
+          const contrast = (a: string, b: string) => {
+            const [hi, lo] = [lum(rgb(a)), lum(rgb(b))].sort((x, y) => y - x) as [number, number]
+            return (hi + 0.05) / (lo + 0.05)
+          }
+          const host = document.querySelector(`[data-testid="${id}"]`) as HTMLElement
+          const tick = host.querySelector('[data-meter-tick="marker"]') as HTMLElement
+          const probe = document.createElement('span')
+          probe.style.color = id === 'w50-ink' ? 'var(--vx-ink)' : 'var(--vx-surface-subtle)'
+          host.append(probe)
+          const fill = getComputedStyle(probe).color
+          probe.remove()
+          const cs = getComputedStyle(tick)
+          const ring = cs.boxShadow.split(/\s+0px 0px 0px/)[0] ?? ''
+          return contrast(which === 'core' ? cs.backgroundColor : ring, fill)
+        },
+        [host, part] as const,
+      )
+      expect(ratio).toBeGreaterThanOrEqual(3)
+    },
+  )
 
   test.each([
     ['1440', DESKTOP_1440],
@@ -221,4 +233,39 @@ layout('Wave 50 figures', () => {
     expect(m.below).toBeGreaterThanOrEqual(8)
     expect(m.sectionBelow).toBeGreaterThanOrEqual(8)
   })
+
+  test.each([
+    ['1440', DESKTOP_1440],
+    ['390', PHONE],
+  ] as const)(
+    '%s: a bleed StatCard sparkline caption clears the footer and the card edge',
+    async (_, viewport) => {
+      const p = await openFixture(spec, viewport)
+      await p.settle()
+      const m = await p.raw.evaluate(() => {
+        const card = document.querySelector(
+          '[data-testid="w50-bleed"] .mantine-Card-root',
+        ) as HTMLElement
+        const cap = card.querySelector('[data-basalt-sparkline-window]') as HTMLElement | null
+        const foot = card.querySelector('p[title]') as HTMLElement
+        if (!cap) return null
+        const c = cap.getBoundingClientRect()
+        const f = foot.getBoundingClientRect()
+        const k = card.getBoundingClientRect()
+        return {
+          text: cap.textContent,
+          capBottom: c.bottom,
+          footTop: f.top,
+          cardBottom: k.bottom,
+          capRight: c.right,
+          cardRight: k.right,
+        }
+      })
+      expect(m).not.toBeNull()
+      expect(m?.text).toMatch(/\d.*–.*\d/)
+      expect(m!.footTop - m!.capBottom).toBeGreaterThanOrEqual(0)
+      expect(m!.cardBottom - m!.capBottom).toBeGreaterThanOrEqual(0)
+      expect(m!.cardRight - m!.capRight).toBeGreaterThanOrEqual(0)
+    },
+  )
 })
