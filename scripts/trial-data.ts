@@ -1,10 +1,10 @@
 /**
- * The expression trial's five datasets (Wave 50, v4 onward), generated from one seed so every
+ * The expression trial's five datasets (Wave 50, v4 onward; the record and the prompt are in docs/waves/design-parity/w50/), generated from one seed so every
  * figure agrees with every other: the channel split and the product split sum exactly to the
  * October totals of the daily orders, the revenue-to-date is the same sum, and each log entry is
  * tied to the day whose numbers it explains (the outage day is the low day, the promo the spike).
  *
- * Usage: bun docs/waves/design-parity/w50/trial-data.ts <out-dir>
+ * Usage: bun scripts/trial-data.ts <out-dir>
  * Writes orders.json, target.json, channels.json, products.json, log.json into <out-dir>.
  */
 import { mkdirSync, writeFileSync } from 'node:fs'
@@ -212,7 +212,7 @@ const log = [
 ]
 
 const out = process.argv[2]
-if (!out) throw new Error('usage: bun trial-data.ts <out-dir>')
+if (!out) throw new Error('usage: bun scripts/trial-data.ts <out-dir>')
 mkdirSync(out, { recursive: true })
 const files = {
   'orders.json': orders,

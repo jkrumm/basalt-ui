@@ -2137,21 +2137,66 @@ light-scheme input contrast stays the owner's.
       write the message to a file and pass `"$(cat file)"`. All fan worktrees and tabs removed (`rd fan --clean`).
       **Next — stopped: Wave 49 closed; orchestrated, nothing spawned.** Wave 50 is `active` for the orchestrator.
 
-## Wave 50 — The second layer: section states, the feed's chips, repeated figures <!-- status: active -->
+## Wave 50 — The second layer: section states, the feed's chips, repeated figures <!-- status: done -->
 
 Same shape as Wave 49. Budget as Wave 49 (Sonnet workers and reviewers, at most three shot rounds). argo paused; the
 light-scheme input contrast stays the owner's. Every worker runs `typecheck`, `pre` and the full layout suite before
 reporting.
 
-- [ ] Upstream fixes for rows 190–197 (`argo-friction.md`): one fixed place for the `EventList` chips (190) and three
-      font sizes (191); a `Section`'s title names the thing in a nested `QueryState` (192); skeletons sized to the loaded
-      body (193); each figure once per surface in `/basalt-design`'s pre-round check (194); the 390 scope line (195);
-      a sparkline's window at rest (196); slot-type props in `llms.txt` (197).
-- [ ] The basalt-owned findings in `design-parity/w49/rounds.md`: the S7 Meter width and reading tick (measure the host
-      first), the visible "+N" fold header, then the P3s. The playground-owned list goes to one playground worker.
-- [ ] Expression trial v4, same five datasets — consistent this time (commit the generator beside the trial record), a
-      fresh agent and a fresh scorer; compare against v3.
-- [ ] Re-run the full audit. If gaps remain, append Wave 51 in the same shape. The track closes when a fresh scorer
+- [x] Upstream fixes for rows 190–197 (four Sonnet workers, `rd fan`, agent-gateway `/review` per PR, fixes sent back
+      until clean, `rd merge`): #536 `EventList`/`BarList` (chips on their own line under the time, two type rungs with
+      the chip `Badge` pinned to micro, skeletons keep the loaded row count capped at 30, the delta a two-track cell);
+      #537 states (a titled `Section` names a nested `QueryState`, `StatCard`/`ChartCard`/table name their own body,
+      `Section loadingHeight`, subtitles wrap under the title at every width, the danger-zone ring in both schemes,
+      autofill on focus); #538 table and agent layer (`+N cols`, skeleton fold floors by kind without the synthetic
+      columns, a closed focus ring, the Board column fade, other anchors' tooltips muted in a hover crop, generic option
+      types in `llms.txt`, the fifth pre-round item "each figure once per surface"; CLI ceiling 8843 → 8870 by the
+      measured delta); #539 figures (a lone strip cell is the whole strip, which was the S7 Meter at 48 %: measured, a
+      one-cell strip stating `cols={2}`; the reading marker a panel core in an ink ring; `Sparkline window`; strip kicker
+      and footer insets).
+- [x] The basalt-owned W49 findings went into those four PRs; the playground-owned list went to one playground worker
+      (#540: copy, one figure per surface, the S2 verdict derived from pace and load separately, a shared table cap).
+- [x] Expression trial v4 ([design-parity/w50/expression-trial-v4.md](design-parity/w50/expression-trial-v4.md)): the
+      datasets from a committed seeded generator (`scripts/trial-data.ts`: channels and products sum exactly to the
+      October totals, log notes tied to their days) and a committed prompt; fresh headless Sonnet agent, fresh Sonnet
+      scorer: **40** (v3 32). P1 1 (basalt 1, app 0), P2 8 (basalt 4, app 4), P3 10 (basalt 2, app 8); v3 was P1 4, P2
+      7, P3 7 (basalt 8, app 10). `dist` look-ups 6 (v3 14). Rows 198–204.
+- [x] Re-run the full audit ([design-parity/w50/rounds.md](design-parity/w50/rounds.md)): S1 92, S2 91, S3 94, S4 97,
+      S5 97, S6 97, S7 89, S8 99; `shot detect` 100; no P1 anywhere. Gaps remain → Wave 51 appended.
+      **Left behind:** #536–#540 on master plus this close-out (MIGRATING `### The second layer (Wave 50, …)` and its
+      `### Visible without code change` line under the single `## Unreleased`, `release-migrating --check` passes; rows
+      190–197 closed except 193 and 197 half (a `Section` skeleton takes a declared `loadingHeight`, it does not
+      measure; `EventList`'s item type is anonymous, so `llms.txt` cannot expand it); rows 198–204 open; the trial and
+      audit records). Every merge ran `make check` green in the train. **Release-ready, not released** (owner: report
+      only): `v2.28.0..master` is a minor (Wave 48's `feat:`, #538's `feat:` for `llms.txt`, and the `fix:`es of Waves
+      48–50). Light-scheme input contrast untouched (owner). argo paused, no argo PR. **Still open:** row 198 (`Section`
+      drops `data-shot`, the trial's one P1); a table inside a titled `Section` still shows a bare "Could not load";
+      four W50 fixes that did not reach their playground crop (Board fade, S4 delta, S1 hover fragment, the `+N cols`
+      read). Process: the train failed twice on load (a 30 s `gen-llms --check` subprocess killed at load ~30, then 22
+      ordering failures that passed alone) while three workers ran their suites; it passed once they finished, so run
+      the train between worker validations. The trial generator moved from `design-parity/w50/` to `scripts/` because
+      the licence-boundary test keeps that tree to md and json. The layout suite takes ~25 min at load 20+. All fan
+      worktrees and tabs removed (`rd fan --clean`).
+      **Next — stopped: Wave 50 closed; orchestrated, nothing spawned.** Wave 51 is `active` for the orchestrator.
+
+## Wave 51 — Anchors, host titles and the fixes that did not land <!-- status: active -->
+
+Same shape as Wave 50. Budget as Wave 50 (Sonnet workers and reviewers, at most three shot rounds, at most four parallel
+workers, the train run between worker validations). argo paused; the light-scheme input contrast stays the owner's.
+Every worker runs `typecheck`, `pre` and the full layout suite before reporting.
+
+- [ ] Upstream fixes for rows 198–204 (`argo-friction.md`): `Section` (and every composite) forwards `data-*` to its
+      root, with a test over all composites (198, the trial's P1); the chart empty default without a range it cannot
+      offer (199); `ChartCard` fills its grid column (200); `PageSummary`'s aside next to its sentence (201); facts tone
+      on the delta with its glyph (202); the `EventList` earlier control (203); a focus tooltip clear of the axis labels
+      (204).
+- [ ] The basalt-owned findings in `design-parity/w50/rounds.md`: a `BasaltDataTable`/list inside a titled `Section`
+      names its error from the host; the S3 `EventList` day header over the first row at 390; then the four W50 fixes
+      that did not reach their crop (Board fade, S4 delta, S1 hover fragment, `+N cols`) — reproduce each in its
+      playground crop first; then the P3s. The playground-owned list goes to one playground worker.
+- [ ] Expression trial v5 from `scripts/trial-data.ts` and `design-parity/w50/trial-prompt.md` unchanged, a fresh agent
+      and a fresh scorer; report P1/P2/P3 by owner beside the score; compare against v4.
+- [ ] Re-run the full audit. If gaps remain, append Wave 52 in the same shape. The track closes when a fresh scorer
       finds nothing worth improving against basalt's rubric.
       **Left behind:**
 
