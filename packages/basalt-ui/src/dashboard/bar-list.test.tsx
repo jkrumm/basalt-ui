@@ -108,6 +108,8 @@ describe('BarList', () => {
     expect(count({})).toBe(ITEMS.length)
     expect(count({ loadingRows: 2 })).toBe(2)
     expect(count({ items: [] })).toBe(5)
+    const many = Array.from({ length: 80 }, (_, i) => ({ label: `r${i}`, value: i }))
+    expect(count({ items: many })).toBe(30)
   })
 
   test('all-zero values draw empty bars', () => {

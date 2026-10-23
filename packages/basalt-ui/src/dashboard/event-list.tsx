@@ -49,6 +49,7 @@ import {
   groupByDay,
   isValidEventDate,
   present,
+  skeletonRowCount,
   toEventDate,
 } from './event-list-model'
 import type { RowContext } from './event-list-model'
@@ -111,9 +112,6 @@ export type EventListProps = BasaltProps & {
    */
   empty?: { title: string; description?: string; action?: ReactNode }
 }
-
-/** A refetch keeps the loaded row count; a cold load has no count to keep. */
-const skeletonCount = (loaded: number): number => (loaded > 0 ? Math.min(loaded, 30) : 5)
 
 const subscribeNever = (): (() => void) => () => {}
 
@@ -212,7 +210,7 @@ export function EventList({
       <div aria-busy="true" className={classes.skeleton}>
         <VisuallyHidden>{`Loading ${label}`}</VisuallyHidden>
         <SkeletonRows
-          count={loadingRows ?? skeletonCount(items.length)}
+          count={skeletonRowCount(loadingRows, items.length)}
           ctx={ctx}
           grouped={grouped}
           height={height}

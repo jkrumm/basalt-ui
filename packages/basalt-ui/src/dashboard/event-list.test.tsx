@@ -263,6 +263,13 @@ describe('EventList', () => {
     expect(container.querySelectorAll('[data-event-id="b"] > div')).toHaveLength(1)
   })
 
+  test('an empty chips array renders no chips row, like an absent one', () => {
+    const { container } = mount({
+      items: [{ id: 'a', at: local(2026, 3, 10, 9), title: 't', chips: [], body: 'b' }],
+    })
+    expect(container.querySelectorAll('[data-event-id="a"] > div')).toHaveLength(1)
+  })
+
   test('a skeleton keeps the loaded row count while refetching, else loadingRows or 5', () => {
     const rows = (n: number) =>
       Array.from({ length: n }, (_, i) => ({
