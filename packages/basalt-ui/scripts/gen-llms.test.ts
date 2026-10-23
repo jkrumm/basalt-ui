@@ -8,6 +8,7 @@ import {
   MAX_PROP_TYPE,
   MAX_PROPS,
   MAX_UNION_MEMBERS,
+  optionTypeBlock,
   propShapeLines,
   typeGlossary,
   valueSignature,
@@ -299,5 +300,43 @@ describe('propShapeLines', () => {
     const { lines } = firstParam(`export function f(p: { ${members} }) {}`)
     expect(lines).toHaveLength(MAX_PROPS + 1)
     expect(lines.at(-1)).toBe('  … +5 more')
+  })
+})
+
+describe('option types (row 187)', () => {
+  const decl = (source: string): ts.TypeAliasDeclaration | ts.InterfaceDeclaration =>
+    compile(source).sf.statements.findLast(
+      (n): n is ts.TypeAliasDeclaration | ts.InterfaceDeclaration =>
+        ts.isTypeAliasDeclaration(n) || ts.isInterfaceDeclaration(n),
+    )!
+
+  test('llms.txt expands the three shapes an agent had to grep dist for', () => {
+    expect(text).toMatch(/^Type: DateOptions = .*format\?: 'short' \| 'medium' \| 'long'/m)
+    expect(text).toMatch(/^Type: ChartLegendConfig = .*placement\?: 'top' \| 'bottom' \| 'header'/m)
+    expect(text).toMatch(/^Type: ResponsiveChartHeight = \{ base: number, regular\?/m)
+  })
+
+  test('a generic shape and a literal union are not expanded', () => {
+    expect(text).not.toMatch(/^Type: (FieldHandle|ChartSeries|CalloutKind) =/m)
+  })
+
+  test('a short object prints on one line, comments dropped', () => {
+    expect(
+      optionTypeBlock(decl(`/** doc */ export type O = { /** a */ a?: number; b: 'x' | 'y' }`)),
+    ).toBe("Type: O = { a?: number, b: 'x' | 'y' }")
+  })
+
+  test('a wide object prints one member per line, capped with a count', () => {
+    const members = Array.from({ length: 20 }, (_, i) => `member${i}?: string | undefined`)
+    const out = optionTypeBlock(decl(`export interface Wide { ${members.join('; ')} }`)).split('\n')
+    expect(out[0]).toBe('Type: Wide = {')
+    expect(out.at(-2)).toBe('  … +8 more')
+    expect(out.at(-1)).toBe('}')
+  })
+
+  test('a union alias prints its body on one line', () => {
+    expect(optionTypeBlock(decl(`type A = {a: 1}; export type U = A | { b: 2 }`))).toBe(
+      'Type: U = A | { b: 2 }',
+    )
   })
 })
