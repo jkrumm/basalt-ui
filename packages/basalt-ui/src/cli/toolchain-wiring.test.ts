@@ -297,7 +297,7 @@ describe('init — describing the repo it is actually in', () => {
     write('src/app.tsx', 'export const App = () => null\n')
     init(dir)
     const scripts = readPkg()['scripts'] as Record<string, string>
-    expect(scripts['lint:basalt']).toContain('oxlint .')
+    expect(scripts['lint:basalt']).toContain("oxlint --ignore-pattern '.claude/worktrees/**' .")
     expect(scripts['lint:basalt']).toContain('check-theme')
   })
 
@@ -1260,5 +1260,58 @@ describe('shipped lefthook preset — staged files that are all ignored', () => 
   it.each(['oxlint', 'oxfmt'])('%s passes when every staged file is ignore-listed', (tool) => {
     const run = new RegExp(`^ {6}run: (bunx ${tool} .*\\{staged_files\\})$`, 'm').exec(preset)?.[1]
     expect(run).toContain('--no-error-on-unmatched-pattern')
+  })
+})
+
+// Row 179: an agent worktree under `.claude/worktrees/` is a full checkout with its own
+// `.oxlintrc.json` + plugin. oxlint 1.87 loads that nested config even when the root's
+// `ignorePatterns` names the directory, so only the CLI flag `init` writes keeps `oxlint .` green.
+describe('oxlint beside an agent worktree', () => {
+  const oxlint = fileURLToPath(new URL('../../../../node_modules/.bin/oxlint', import.meta.url))
+  const FLAG = "--ignore-pattern '.claude/worktrees/**'"
+  let scratch: string
+
+  beforeEach(() => {
+    scratch = mkdtempSync(join(tmpdir(), 'basalt-worktree-lint-'))
+    const preset = '{"jsPlugins":["./plug.js"],"rules":{"basalt/x":"error"}}'
+    const plugin = "export default {meta:{name:'basalt'},rules:{x:{create(){return {}}}}}"
+    for (const base of ['', '.claude/worktrees/wt/']) {
+      mkdirSync(join(scratch, base, 'shared'), { recursive: true })
+      writeFileSync(join(scratch, base, 'shared/preset.json'), preset)
+      writeFileSync(join(scratch, base, 'shared/plug.js'), plugin)
+      writeFileSync(join(scratch, base, 'a.ts'), 'export const a = 1\n')
+      writeFileSync(
+        join(scratch, base, '.oxlintrc.json'),
+        '{"extends":["./shared/preset.json"],"ignorePatterns":[".claude/worktrees/**"]}',
+      )
+    }
+  })
+  afterEach(() => rmSync(scratch, { recursive: true, force: true }))
+
+  const run = (args: string): string => {
+    try {
+      return execSync(`${oxlint} ${args} .`, { cwd: scratch, encoding: 'utf8', stdio: 'pipe' })
+    } catch (err) {
+      const e = err as { stdout?: string; stderr?: string }
+      return `${e.stdout ?? ''}${e.stderr ?? ''}`
+    }
+  }
+
+  it.skipIf(!existsSync(oxlint))(
+    'config ignorePatterns alone still dies on the duplicate plugin',
+    () => {
+      expect(run('')).toContain('already registered')
+    },
+  )
+
+  it.skipIf(!existsSync(oxlint))('the --ignore-pattern flag init writes lints clean', () => {
+    expect(run(FLAG)).not.toContain('already registered')
+  })
+
+  it('the shipped preset ignores the worktree directory', () => {
+    const preset = JSON.parse(
+      readFileSync(resolve(import.meta.dir, '../../configs/oxlint.json'), 'utf8'),
+    )
+    expect(preset.ignorePatterns).toContain('.claude/worktrees/**')
   })
 })

@@ -31,6 +31,19 @@ const ALLOWED_TOP_LEVEL_KEYS: ReadonlySet<string> = new Set([
   'extends',
 ])
 
+// Agent worktrees (`.claude/worktrees/<name>`) are full checkouts: their files are never this
+// checkout's to lint. NOTE this only drops their SOURCE files — oxlint (1.87) still discovers and
+// loads a nested `.oxlintrc.json` there regardless of any ignorePatterns, which is the
+// "Plugin name basalt is already registered" failure; that is closed by the `--ignore-pattern` flag
+// on the lint invocations `init` writes (`OXLINT_IGNORE_FLAG` in src/cli/index.ts).
+const WORKTREE_IGNORE = '.claude/worktrees/**'
+
+function withWorktreeIgnore(base: Record<string, unknown>): Record<string, unknown> {
+  const existing = Array.isArray(base['ignorePatterns']) ? (base['ignorePatterns'] as string[]) : []
+  if (existing.includes(WORKTREE_IGNORE)) return base
+  return { ...base, ignorePatterns: [...existing, WORKTREE_IGNORE] }
+}
+
 function stripUnknownTopLevelKeys(base: Record<string, unknown>): Record<string, unknown> {
   const result: Record<string, unknown> = {}
   for (const [key, value] of Object.entries(base)) {
@@ -282,8 +295,10 @@ function generate(): {
 } {
   // Read and parse the hand-maintained base (preserves all known keys except overrides;
   // unknown top-level keys — e.g. a stray doc-comment key — are dropped, never re-emitted)
-  const shippedBase = stripUnknownTopLevelKeys(
-    JSON.parse(readFileSync(shippedPath, 'utf8')) as Record<string, unknown>,
+  const shippedBase = withWorktreeIgnore(
+    stripUnknownTopLevelKeys(
+      JSON.parse(readFileSync(shippedPath, 'utf8')) as Record<string, unknown>,
+    ),
   )
   const repoBase = stripUnknownTopLevelKeys(
     JSON.parse(readFileSync(repoPath, 'utf8')) as Record<string, unknown>,

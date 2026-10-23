@@ -113,7 +113,7 @@ describe('seeds derive from basalt.roots', () => {
     writeFixture('Makefile', 'build:\n\ttrue\n')
     init(dir)
     const ci = readFileSync(resolve(dir, '.github/workflows/check.yml'), 'utf8')
-    expect(ci).toContain('- run: bunx oxlint .')
+    expect(ci).toContain("- run: bunx oxlint --ignore-pattern '.claude/worktrees/**' .")
     expect(ci).toContain('check-theme')
     expect(ci).not.toContain('- run: make check')
   })

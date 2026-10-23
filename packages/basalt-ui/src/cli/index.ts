@@ -513,6 +513,14 @@ export function basaltBinCommand(install: BasaltInstall, cwd: string): string {
 }
 
 /**
+ * The flag every basalt-written `oxlint .` carries. oxlint discovers a nested `.oxlintrc.json` in a
+ * `.claude/worktrees/<name>` checkout and loads its plugin a second time ("Plugin name basalt is
+ * already registered"); config `ignorePatterns` and `.oxlintignore` do not stop that discovery, the CLI
+ * flag does (verified on oxlint 1.87).
+ */
+export const OXLINT_IGNORE_FLAG = "--ignore-pattern '.claude/worktrees/**'"
+
+/**
  * The consumer owns the CI gate when its Makefile has a `check:` target: `doctor` and `sync --check`
  * stay as steps of their own (drift is never skippable), then `make check` replaces the built-in
  * lint/theme/format steps. Without one, the built-in steps run. Rendered at `{{GATE_STEPS}}`.
@@ -523,7 +531,7 @@ export function ciGateSteps(cwd: string): string {
   const steps = owned
     ? [...drift, '- run: make check']
     : [
-        '- run: bunx oxlint .',
+        `- run: bunx oxlint ${OXLINT_IGNORE_FLAG} .`,
         drift[0],
         "- run: '{{BASALT_BIN}} check-theme'",
         drift[1],
@@ -1050,6 +1058,125 @@ export function placementNotices(cwd: string, placement: PlacementFlags): string
     )
   }
   return out
+}
+
+/** The repo-root-shaped templates a package below the repo root does not place itself. */
+type RootToolingKind = 'lefthook' | 'ci'
+
+/** `lefthook.yml` as it belongs at the repo root: extends the preset, every job re-rooted to the package. */
+function rootLefthook(cwd: string, ctx: RenderContext, repoRoot: string, pkg: string): string {
+  const install = findBasaltInstall(cwd)
+  const preset = shippedAssetPath(install, repoRoot, 'configs/lefthook.yml').replace(/^\.\//, '')
+  const bin = ctx.vars.BASALT_BIN
+  const jobs = ['oxlint', 'oxfmt', 'check-theme'].map((name) => {
+    const env =
+      name === 'check-theme' && !bin.startsWith('bunx ')
+        ? `      env:\n        BASALT_BIN: ${bin}\n`
+        : ''
+    return `    ${name}:\n      root: '${pkg}/'\n${env}`
+  })
+  return (
+    '# Placed by `basalt-ui sync --root` — you own this file; sync never rewrites it.\n' +
+    `extends:\n  - ${preset}\n\npre-commit:\n  commands:\n${jobs.join('')}`
+  )
+}
+
+/** `check.yml` as it belongs at the repo root: the shipped steps, run inside the package. */
+function rootCi(ctx: RenderContext, pkg: string): string | null {
+  const tpl = readSource(ctx.pkgRoot, 'configs/check.yml')
+  if (tpl === null) return null
+  return fillTemplate(tpl, ctx.vars).replace(
+    /^(\s+runs-on:.*\n)/m,
+    `$1    defaults:\n      run:\n        working-directory: ${pkg}\n`,
+  )
+}
+
+/** The `- run:` commands of a workflow, whitespace-trimmed — what "the steps are all there" compares. */
+function runLines(text: string): Set<string> {
+  return new Set(
+    text
+      .split('\n')
+      .map((l) => l.trim())
+      .filter((l) => l.startsWith('- run:')),
+  )
+}
+
+function rootToolingInSync(
+  kind: RootToolingKind,
+  current: string,
+  desired: string,
+  pkg: string,
+): boolean {
+  if (kind === 'lefthook') {
+    const preset = /^\s*-\s*(\S*configs\/lefthook\.yml)\s*$/m.exec(desired)?.[1]
+    const rooted = current.match(
+      new RegExp(`root:\\s*['"]?${pkg.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}/['"]?`, 'g'),
+    )
+    return preset !== undefined && current.includes(preset) && (rooted?.length ?? 0) >= 3
+  }
+  const have = runLines(current)
+  return (
+    current.includes(`working-directory: ${pkg}`) &&
+    [...runLines(desired)].every((l) => have.has(l))
+  )
+}
+
+export type RootToolingReport = {
+  /** One line per skipped template: its state at the repo root, plus how to act on it. */
+  lines: string[]
+  /** Templates that are absent or drifted at the repo root (not counting ones just placed). */
+  unsynced: number
+}
+
+/**
+ * What `sync` says about the two repo-root-shaped templates when the package lives below the repo
+ * root. Instead of an unconditional skip it COMPARES the shipped template with what the root
+ * has: in sync / drifted / absent. With `place` (`--root`), an absent file is written once and then
+ * belongs to the consumer — a present one is never overwritten. The files are not in the manifest,
+ * so the retire/prune pass can never delete them.
+ */
+export function rootToolingReport(
+  cwd: string,
+  placement: PlacementFlags,
+  ctx: RenderContext,
+  opts: { place: boolean; write: boolean },
+): RootToolingReport {
+  const notices = placementNotices(cwd, placement)
+  if (placement.isPackageRepoRoot) return { lines: [], unsynced: 0 }
+  const pkg = relativePosix(placement.repoRoot, cwd).replace(/^\.\//, '')
+  const specs: { kind: RootToolingKind; dest: string; desired: string | null }[] = [
+    {
+      kind: 'lefthook',
+      dest: 'lefthook.yml',
+      desired: rootLefthook(cwd, ctx, placement.repoRoot, pkg),
+    },
+    { kind: 'ci', dest: '.github/workflows/check.yml', desired: rootCi(ctx, pkg) },
+  ]
+  const lines: string[] = []
+  let unsynced = 0
+  specs.forEach(({ kind, dest, desired }, i) => {
+    const abs = resolve(placement.repoRoot, dest)
+    const current = readIfExists(abs)
+    const where = `${dest} at the repo root`
+    if (desired === null) {
+      lines.push(notices[i] ?? `skipped ${dest}`)
+    } else if (current === null && opts.place) {
+      if (opts.write) writeFileEnsuringDir(abs, desired.endsWith('\n') ? desired : `${desired}\n`)
+      lines.push(
+        `${opts.write ? 'placed' : 'would place'} ${where} (yours from now on; sync never rewrites it).`,
+      )
+    } else if (current !== null && rootToolingInSync(kind, current, desired, pkg)) {
+      lines.push(`${where}: in sync with the shipped template.`)
+    } else {
+      unsynced++
+      const state = current === null ? 'absent' : 'drifted'
+      const hint = opts.place
+        ? '(kept — it is yours; edit it by hand)'
+        : '(run with --root to place it)'
+      lines.push(`${where}: ${state} ${hint}. ${notices[i] ?? ''}`.trimEnd())
+    }
+  })
+  return { lines, unsynced }
 }
 
 export type Manifest = {
