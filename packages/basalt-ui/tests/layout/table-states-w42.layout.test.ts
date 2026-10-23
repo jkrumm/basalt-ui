@@ -44,8 +44,8 @@ layout('table sizing and state chrome', () => {
       const cells = [...table.querySelectorAll('tbody tr:first-child td')] as HTMLElement[]
       const inset = Number.parseFloat(getComputedStyle(cells[0] as HTMLElement).paddingLeft)
       const widest = Math.max(
-        ...heads.slice(0, -1).map((th) => (th.querySelector('*') ?? th).scrollWidth),
-        ...cells.slice(0, -1).map((td) => td.scrollWidth),
+        ...heads.slice(1).map((th) => (th.querySelector('*') ?? th).scrollWidth),
+        ...cells.slice(1).map((td) => td.scrollWidth),
       )
       return {
         table: table.getBoundingClientRect().width,
@@ -56,12 +56,11 @@ layout('table sizing and state chrome', () => {
       }
     }, TABLE)
     expect(geometry.table).toBeGreaterThanOrEqual(geometry.wrapper - 1)
-    // The slack is the trailing spacer's; every data column (the entity too) is its content plus
-    // its insets, so a name sits beside its figures.
-    const data = geometry.widths.slice(0, -1)
-    const spacer = geometry.widths.at(-1) ?? 0
-    expect(spacer).toBeGreaterThan(data.reduce((sum, width) => sum + width, 0))
-    for (const width of data) {
+    // No text column: the slack is the entity column's (the first); every figure column after it is
+    // its content plus its insets, so the table fills its container instead of hugging the left.
+    const [entity = 0, ...figures] = geometry.widths
+    expect(entity).toBeGreaterThan(figures.reduce((sum, width) => sum + width, 0))
+    for (const width of figures) {
       expect(width).toBeLessThanOrEqual(geometry.inset * 2 + geometry.widest)
     }
   })

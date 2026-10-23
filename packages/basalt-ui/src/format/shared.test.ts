@@ -53,3 +53,24 @@ describe('defineFormat', () => {
     )
   })
 })
+
+describe('dateFormat short September', () => {
+  test('English short month prints Sep whatever the region, other languages keep their own', () => {
+    const d = new Date(Date.UTC(2026, 8, 15))
+    const opts = { day: 'numeric', month: 'short', timeZone: 'UTC' } as const
+    expect(dateFormat('en-GB', opts).format(d)).toBe('15 Sep')
+    expect(dateFormat('en-US', opts).format(d)).toBe('Sep 15')
+    expect(
+      dateFormat('en-GB', opts)
+        .formatToParts(d)
+        .find((p) => p.type === 'month')?.value,
+    ).toBe('Sep')
+    expect(dateFormat('en-GB', { dateStyle: 'medium', timeZone: 'UTC' }).format(d)).toBe(
+      '15 Sep 2026',
+    )
+    expect(dateFormat('en-GB', opts).formatRange(d, new Date(Date.UTC(2026, 8, 20)))).not.toContain(
+      'Sept',
+    )
+    expect(dateFormat('de', opts).format(d)).toBe(new Intl.DateTimeFormat('de', opts).format(d))
+  })
+})

@@ -110,12 +110,11 @@ describe('skeleton rows', () => {
 })
 
 describe('column sizing', () => {
-  test('an entity column is content-sized: every column fits, a trailing spacer takes the slack', () => {
+  test('without a text column the last entity column takes the slack: no spacer, the figures fit', () => {
     const { container } = mount()
     const heads = [...container.querySelectorAll('thead th')]
-    expect(heads.map((th) => th.hasAttribute('data-fit'))).toEqual([true, true, true, false])
-    expect(heads[3]?.getAttribute('aria-hidden')).toBe('true')
-    expect(heads[3]?.textContent).toBe('')
+    expect(heads).toHaveLength(3)
+    expect(heads.map((th) => th.hasAttribute('data-fit'))).toEqual([false, true, true])
   })
 
   test('the last text column takes the slack: no spacer, the others fit', () => {
@@ -152,7 +151,7 @@ describe('column sizing', () => {
     expect(container.querySelectorAll('thead th')).toHaveLength(1)
   })
 
-  test('beside an entity column a kindless column fits its content too', () => {
+  test('beside the slack entity column a kindless column fits its content', () => {
     const { container } = mount({
       columns: [
         col.accessor('name', { header: 'Name', meta: { kind: 'entity' } }),
@@ -160,7 +159,7 @@ describe('column sizing', () => {
       ],
     })
     const heads = [...container.querySelectorAll('thead th')]
-    expect(heads.map((th) => th.hasAttribute('data-fit'))).toEqual([true, true, false])
+    expect(heads.map((th) => th.hasAttribute('data-fit'))).toEqual([false, true])
   })
 })
 
