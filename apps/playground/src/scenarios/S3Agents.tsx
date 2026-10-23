@@ -33,7 +33,6 @@ import {
   FAILURES_24H,
   FAILURES_POINTS,
   FLEET,
-  FLEET_TOTAL,
   FLOW,
   FLOW_SERIES,
   FLOW_CLOSED,
@@ -104,6 +103,10 @@ const failuresClock = (
     </Text>
   </Group>
 )
+
+/** The fleet without the items waiting on the owner: the Awaiting items cell and the board carry that count. */
+const FLEET_OPEN = FLEET.filter((s) => s.state !== 'awaiting')
+const FLEET_OPEN_TOTAL = FLEET_OPEN.reduce((n, s) => n + s.count, 0)
 
 const WARN_LABEL = `${WARN_HOURS} h`
 const ABANDON_LABEL = `${ABANDON_HOURS / 24} d`
@@ -244,9 +247,9 @@ function QueueStrip({ shotState }: ScenarioProps) {
     {
       key: 'fleet',
       caption: 'Fleet',
-      qualifier: 'by state',
-      info: 'Every item in the queue by its state.',
-      value: fmtInt(FLEET_TOTAL),
+      qualifier: 'not awaiting you',
+      info: 'Every item the queue holds that is not waiting on your decision, by its state. The awaiting count is the Awaiting items cell.',
+      value: fmtInt(FLEET_OPEN_TOTAL),
       unit: 'items',
       loading,
       ...cellState(WARDEN_EMPTY),
@@ -254,8 +257,8 @@ function QueueStrip({ shotState }: ScenarioProps) {
         visual: (
           <Meter
             label="Fleet by state"
-            max={FLEET_TOTAL}
-            segments={FLEET.map((s) => ({
+            max={FLEET_OPEN_TOTAL}
+            segments={FLEET_OPEN.map((s) => ({
               value: s.count,
               label: s.label,
               color: STATE_COLOR[s.state],
@@ -370,11 +373,15 @@ function QueueRow({ shotState }: ScenarioProps) {
   )
 }
 
+/** Tall enough that the chart card ends level with the history card beside it at 1440. */
+const FLOW_HEIGHT = { base: 240, regular: 400 }
+
 function FlowCard({ shotState }: ScenarioProps) {
   return (
     <Box data-shot="item-flow" h="100%">
       <ChartCard
         title="Items opened and closed per day"
+        placeholderHeight={FLOW_HEIGHT}
         ghost="line"
         info="Items warden opened and items it closed each day, UTC. A queue that opens more than it closes grows."
         facts={[
@@ -391,6 +398,7 @@ function FlowCard({ shotState }: ScenarioProps) {
           <Lines<FlowRow, Date>
             data={FLOW_DATA}
             ariaLabel={`Items opened and closed per day, ${FLOW_RANGE_LABEL}`}
+            height={FLOW_HEIGHT}
             x={(d) => d.date}
             series={FLOW_SERIES}
           />
@@ -401,7 +409,12 @@ function FlowCard({ shotState }: ScenarioProps) {
 }
 
 /** The oldest item awaiting the user: the one decision the queue asks for. */
-const DECISION_ITEM = STUCK.find((i) => i.state === 'awaiting')
+const AWAITING_ITEMS = STUCK.filter((i) => i.state === 'awaiting').toSorted(
+  (a, b) => b.waitHours - a.waitHours,
+)
+const DECISION_ITEM = AWAITING_ITEMS[0]
+/** The decision behind the one on screen: what answering this one unblocks the owner to look at next. */
+const NEXT_ITEM = AWAITING_ITEMS.at(1)
 
 function AgentsDecision({ shotState }: ScenarioProps) {
   if (shotState === 'loading') return <DecisionCardSkeleton />
@@ -412,7 +425,13 @@ function AgentsDecision({ shotState }: ScenarioProps) {
     <DecisionCard
       question={`Approve “${title}”?`}
       facts={[id.toUpperCase(), `Abandoned in ${fmtAge(Math.max(0, ABANDON_HOURS - waitHours))}`]}
-      evidence={<Text size="sm">The oldest item awaiting you.</Text>}
+      evidence={
+        <Text size="sm">
+          {NEXT_ITEM === undefined
+            ? 'Nothing else is waiting on you.'
+            : `Next in line: “${NEXT_ITEM.title}”, waiting ${fmtAge(NEXT_ITEM.waitHours)}.`}
+        </Text>
+      }
       primary={{ label: 'Approve', keyHint: 'A', onClick: noop }}
       secondary={{ label: 'Reassign', keyHint: 'R', onClick: noop }}
       quiet={{ label: 'Leave', keyHint: 'L', onClick: noop }}
@@ -433,14 +452,14 @@ export function AgentsScenario({ shotState }: ScenarioProps) {
       </Section>
       <SimpleGrid type="container" cols={{ base: 1, [CONTAINER_KEYS.regular]: 2 }}>
         <FlowCard shotState={shotState} />
-        <Box data-shot="item-timeline">
-          <Section title={`History · ${TIMELINE_ITEM}`}>
+        <Box data-shot="item-timeline" h="100%">
+          <ChartCard title={`History · ${TIMELINE_ITEM}`} style={{ height: '100%' }}>
             <ItemTimeline
               events={ITEM_TIMELINE}
               total={ITEM_TIMELINE_TOTAL}
               shotState={shotState}
             />
-          </Section>
+          </ChartCard>
         </Box>
       </SimpleGrid>
     </Stack>

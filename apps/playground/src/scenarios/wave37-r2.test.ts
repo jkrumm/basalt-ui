@@ -94,9 +94,11 @@ describe('S3', () => {
     expect(count(page, 'Awaiting')).toBeGreaterThanOrEqual(2)
   })
 
-  it('the fleet legend uses the same word as the awaiting cell', () => {
+  // W52: the awaiting count was on the cell, the fleet legend and the board; the fleet now counts the rest.
+  it('the fleet legend leaves the awaiting count to the awaiting cell', () => {
     const fleet = text(anchor(agents(), 'strip-fleet'))
-    expect(fleet).toContain('Awaiting')
+    expect(fleet).not.toContain('Awaiting')
+    for (const label of ['Running', 'Queued', 'Blocked']) expect(fleet).toContain(label)
   })
 
   it('the failures error names the warden once, not "Failures failed to load"', () => {

@@ -308,7 +308,8 @@ export function LearningScenario({ shotState }: ScenarioProps) {
       <Box data-shot="learning-decision" data-shot-absent="empty error">
         <LearningDecision shotState={shotState} />
       </Box>
-      <Box data-shot="learning-journal" data-shot-absent="error">
+      {/* A journal row is a short line (who, minutes, a note): past ~40rem it only adds void to the right of every row. */}
+      <Box data-shot="learning-journal" data-shot-absent="error" maw="40rem">
         {shotState !== 'error' && (
           <Section title="Practice journal">
             {empty ? (

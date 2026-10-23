@@ -155,7 +155,7 @@ function OpsStats({ shotState }: ScenarioProps) {
           title="Latency"
           qualifier="last minute"
           value={fmtMs(LATENCY_NOW_MS)}
-          info="Round-trip time in the last minute. The sparkline shows the last 60 minutes; the rows give the 7-day median hour and the slowest minute of the last hour."
+          info="Round-trip time in the last minute; the sparkline covers the last 60 minutes."
           {...(keepsRows && {
             breakdown: [
               { label: 'Median, 7 days', value: fmtMs(LATENCY_MEDIAN_7D_MS) },

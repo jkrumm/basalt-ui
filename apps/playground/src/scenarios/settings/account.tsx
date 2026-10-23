@@ -189,11 +189,11 @@ export function AccountSettings({ shotState }: ScenarioProps) {
         <KeyRows empty={shotState === 'empty'} />
       </SettingsSection>
       <DangerZone
-        title="Delete account"
+        title="Close account"
         subtitle="Removes your data for good. This cannot be undone."
       >
         <SettingsRow
-          label="Delete this account"
+          label="Profile, API keys and activity history"
           control={
             <Button
               color="red"
