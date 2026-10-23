@@ -347,7 +347,48 @@ Type: GlobalAction = { key: string, node: ReactNode, mobile?: 'bar' | 'more' | '
 Type: MeterSegment = { value: number, label: string, color?: string, tone?: 'muted', forecast?: boolean }
 Type: MeterTick = { at: number, label?: string, caption?: string }
 Type: MeterZone = { from: number, to: number, label: string, tone?: 'muted', short?: string, color?: string }
-Type: … +9 more option types
+Type: NavConfig<G extends ReadonlyArray<AnyNavGroup>, T extends ReadonlyArray<NavTabId<G>>> = {
+  groups: G
+  mobile?: { tabs?: T; maxTabs?: number; menuMax?: number; moreLabel?: string; }
+}
+Type: NavSectionMobile = { tab?: true, label?: string, icon?: ReactNode }
+Type: PageBarActions = [ PrimaryBarAction ] | [ PrimaryBarAction, MoreBarAction ] | [ PrimaryBarAction, MoreBarAction, MoreBarAction ] | [ PrimaryBarAction, MoreBarAction, MoreBarAction, MoreBarAction ] | [ PrimaryBarAction, MoreBarAction, MoreBarAction, MoreBarAction, MoreBarAction ]
+Type: QueryEmptyCopy = { title: string, description?: string, icon?: ReactNode, action?: ReactNode }
+Type: QueryStateLike<TData> = {
+  data: TData | undefined
+  isError: boolean
+  error: unknown
+  fetchStatus: 'fetching' | 'paused' | 'idle'
+  refetch: () => unknown
+}
+Type: SectionActions = [ ] | [ BarAction ] | [ BarAction, BarAction ] | [ BarAction, BarAction, BarAction ]
+Type: SettingsMenuItem = {
+  key: string
+  label: string
+  icon?: ReactNode
+  onClick?: (e: MouseEvent) => void
+  Anchor?: NavAnchor
+  active?: boolean
+  current?: 'selection' | 'page'
+}
+Type: SidebarBlock = SidebarListBlock | SidebarProgressBlock | SidebarCustomBlock
+Type: StatCardBreakdownRow = { readonly label: string, readonly value: string, readonly tone?: Tone }
+Type: StatStripCell = {
+  key: string
+  caption: string
+  qualifier?: string
+  action?: ReactNode
+  info?: string
+  value?: string | null
+  unit?: string
+  delta?: ReactNode
+  visual?: ReactNode
+  footer?: ReactNode
+  rows?: readonly StatStripRow[]
+  tone?: Tone
+  … +4 more
+}
+Type: StatStripFooterEntry = { key: string, content: ReactNode, under?: string, shotAbsent?: readonly StatStripShotState[] }
 OptionalPeers: remark-gfm@^4.0.1, rehype-sanitize@^6.0.0, remend@1.4.0, shiki@^4.5.0, beautiful-mermaid@^1.1.0, @tanstack/react-router-devtools@^1.166.13
 
 ## basalt-ui/charts
@@ -584,6 +625,20 @@ Signature: StackedArea(props: StackedAreaProps<T, X>): ReactElement<unknown, str
 Signature: chartCursor(group: string): ChartCursorController<ChartValue, ChartValue>
 Signature: chartCurve(name: CurveName): ChartCurve
 Signature: foldBands(data: readonly T[], cap: number, merge: (group: T[]) => T): T[]
+Type: AxisConfig<T> = {
+  domain?: readonly [ number, number ] | 'auto' | ((data: readonly T[], visible: readonly ChartSeries<T>[]) => readonly [ number, number ]) | undefined
+  autoMaxFloor?: number | undefined
+  autoMinCeil?: number | undefined
+  autoPad?: number | undefined
+  ticks?: number | readonly number[] | undefined
+  format?: ((v: number) => string) | undefined
+  grid?: boolean | undefined
+  nice?: boolean | undefined
+  scale?: 'linear' | 'log' | undefined
+}
+Type: BandFold<T> = { minBandPx?: number | undefined, merge: (group: T[]) => T }
+Type: BarsBar<T> = Pick<ChartSeries<T>, 'key' | 'label' | 'color' | 'getValue' | 'formatValue' | 'tooltip' | 'legend' | 'role' | 'note'> & { fillOpacity?: number | undefined; }
+Type: BarsLine<T> = Pick<ChartSeries<T>, 'key' | 'label' | 'color' | 'getValue' | 'formatValue' | 'tooltip' | 'legend' | 'role' | 'note' | 'axis' | 'dash' | 'curve' | 'strokeWidth' | 'strokeOpacity'>
 Type: ChartFact = {
   value: ReactNode
   unit?: string | undefined
@@ -592,7 +647,41 @@ Type: ChartFact = {
   tone?: ChartFactTone | undefined
 }
 Type: ChartLegendConfig = { placement?: 'top' | 'bottom' | 'header' | undefined, groups?: boolean | undefined, toggle?: boolean | undefined }
+Type: ChartSeries<T> = {
+  key: string
+  label: string
+  color: string
+  getValue: (d: T) => number | null
+  mark?: 'line' | 'bar' | 'area' | undefined
+  dash?: 'solid' | 'dashed' | undefined
+  curve?: CurveName | undefined
+  strokeWidth?: number | undefined
+  gaps?: 'break' | 'connect' | undefined
+  strokeOpacity?: number | undefined
+  fillOpacity?: number | undefined
+  area?: boolean | 'zones' | (string & {}) | undefined
+  … +9 more
+}
 Type: ChartState = { pending?: boolean | undefined, error?: unknown, empty?: boolean | string | undefined }
+Type: ChartTooltipConfig<T, X extends ChartX = ChartX> = {
+  formatHeader?: ((x: X, d: T) => string) | undefined
+  rows?: ((d: T, ctx: { visible: readonly ChartSeries<T>[]; hidden: readonly ChartSeries<T>[]; }) => readonly ChartTooltipRow[]) | undefined
+  onFollow?: boolean | undefined
+}
+Type: DonutDatum<K extends string = string> = { key: K, value: number }
+Type: DualPanelBar<T> = {
+  label: string
+  getValue: (d: T) => number | null
+  positive: string
+  negative: string
+  format: (v: number) => string
+  tooltipFormat?: ((v: number) => string) | undefined
+  formatValue?: ((v: number, d: T) => string) | undefined
+  domain?: readonly [ number, number ] | 'auto' | undefined
+  maxAbsFloor?: number | undefined
+}
+Type: DualPanelLine<T> = Pick<ChartSeries<T>, 'key' | 'label' | 'color' | 'getValue' | 'formatValue' | 'tooltip' | 'legend' | 'role' | 'note' | 'dash' | 'curve' | 'strokeWidth' | 'strokeOpacity' | 'getMarker'>
+Type: HeatmapState<K extends string = string> = Omit<NamedChartState, 'key' | 'tooltip' | 'color'> & { key: K; color?: string | undefined; }
 Type: MirroredBarPane = {
   key: string
   max?: number | 'auto' | undefined
@@ -600,6 +689,7 @@ Type: MirroredBarPane = {
   ticks?: number | undefined
   format: (v: number) => string
 }
+Type: MirroredBarsSeries<T, K extends string = string> = Pick<ChartSeries<T>, 'label' | 'color' | 'getValue' | 'formatValue' | 'tooltip' | 'legend' | 'role' | 'note'> & { key: K; fillOpacity?: number | undefined; }
 Type: RefLine = {
   value: number
   color: string
@@ -610,6 +700,14 @@ Type: RefLine = {
   legend?: { label: string; mark?: 'line' | 'bar' | undefined; } | undefined
 }
 Type: ResponsiveChartHeight = { base: number, regular?: number | undefined, wide?: number | undefined }
+Type: StackedAreaBand<T> = Pick<ChartSeries<T>, 'key' | 'label' | 'color' | 'getValue' | 'formatValue' | 'tooltip' | 'legend' | 'role' | 'note'> & { fillOpacity?: number | undefined; }
+Type: XZoneSpec<X extends ChartX = ChartX> = {
+  from?: X | undefined
+  to?: X | undefined
+  fill: string
+  align?: 'center' | 'edge' | undefined
+  edge?: ZoneEdge<'start' | 'end'> | undefined
+}
 Type: ZoneSpec = {
   from: number
   to: number
@@ -722,7 +820,8 @@ Type: KmOptions = LocaleOption & { digits?: number; }
 Type: LocaleOption = { locale?: string | undefined }
 Type: MoneyOptions = LocaleOption & { currency: string; compact?: boolean; digits?: number; }
 Type: PercentOptions = LocaleOption & { digits?: number; input?: 'ratio' | 'percent'; }
-Type: … +2 more option types
+Type: RelativeTimeOptions = LocaleOption & { style?: 'long' | 'short' | 'narrow'; numeric?: 'auto' | 'always'; now?: number; }
+Type: WeekdayOptions = LocaleOption & { format?: 'short' | 'long' | 'narrow'; }
 
 ## basalt-ui/forms
 Import: import { ... } from 'basalt-ui/forms'
@@ -734,6 +833,7 @@ Signature: inputProps(form: UseFormReturnType<Values>, path: Path): InputProps
 Signature: useBasaltForm(opts: UseBasaltFormOptions<Values>): UseFormReturnType<Values>
   mode?: "controlled" | "uncontrolled"
   schema?: StandardSchemaV1<unknown, Values>
+Type: StandardSchemaV1<Input = unknown, Output = Input> = { readonly '~standard': StandardSchemaV1.Props<Input, Output> }
 Install: bun add @mantine/form@^9.7.0
 
 ## basalt-ui/commands
@@ -808,6 +908,24 @@ Signature: BasaltDataTable(props: BasaltDataTableProps<T>): JSX.Element
   … +14 more
 Signature: createColumnHelper(): ColumnHelper<{ rowSortingFeature: TableFeature; columnFilteringFeatur…
 Type: BarAction = BarActionItem | BarActionMenu | BarActionCustom
+Type: DataTableColumnPinning<T = unknown> = { start?: DataTableColumnId<T>[], end?: DataTableColumnId<T>[] }
+Type: DataTableFacet<T = unknown> = { columnId: DataTableColumnId<T>, label: string, options: DataTableFacetOption[], multiple?: boolean }
+Type: DataTableRowAction<T = unknown> = {
+  key: string
+  label: string
+  icon?: ReactNode
+  onClick: (row: T) => void
+  danger?: boolean
+  disabled?: (row: T) => boolean
+  loading?: (row: T) => boolean
+}
+Type: QueryStateLike<TData> = {
+  data: TData | undefined
+  isError: boolean
+  error: unknown
+  fetchStatus: 'fetching' | 'paused' | 'idle'
+  refetch: () => unknown
+}
 Install: bun add @tanstack/react-table@9.2.8
 
 ## basalt-ui/agent
@@ -892,12 +1010,49 @@ Signature: useAgentThreadRuns(props: UseAgentThreadRunsArgs<TPart>): UseAgentThr
   onError?: ((info: { readonly threadId: string; readonly error: unknow…
   throttle?: number
   telemetry?: Telemetry
+Type: AgentThread<TPart = AgentPart> = {
+  readonly id: string
+  readonly messages: ChatMessage<TPart>[]
+  readonly outcome: AgentOutcome | null
+  readonly status: ThreadStatus
+  readonly read: boolean
+  readonly createdAt: number
+  readonly updatedAt: number
+  readonly resumeToken?: string | undefined
+  readonly meta?: Record<string, unknown> | undefined
+}
+Type: AgentTransport<TPart = AgentPartDraft, TInput = string> = {
+  stream: (input: TInput, signal?: AbortSignal, ctx?: AgentStreamContext) => AsyncGenerator<TPart>
+  resume?: ((resumeToken: string, signal?: AbortSignal) => AsyncGenerator<TPart>) | undefined
+}
+Type: ChatMessage<TPart = AgentPart> = {
+  readonly id: string
+  readonly role: 'user' | 'assistant'
+  readonly parts: TPart[]
+  readonly createdAt: number
+  readonly finish?: 'complete' | 'stopped' | 'error' | undefined
+}
 Type: ComposerAttachment = { readonly id: string, readonly name: string, readonly mediaType: string, readonly size: number, readonly url: string }
 Type: MessageAffordances = {
   readonly timestamp?: 'relative' | 'absolute' | 'none' | undefined
   readonly copy?: boolean | undefined
   readonly onRegenerate?: ((messageId: string) => void) | undefined
   readonly actions?: ((ctx: { readonly message: ChatMessage<TranscriptPart>; }) => ReactNode) | undefined
+}
+Type: ThreadsStore<TPart = AgentPart> = {
+  readonly threads: AgentThread<TPart>[]
+  readonly activeId: string | null
+  readonly select: (id: string | null) => void
+  readonly create: (opts?: { readonly meta?: Record<string, unknown> | undefined; }) => string
+  readonly appendMessage: (id: string, message: ChatMessage<TPart>) => void
+  readonly setOutcome: (id: string, outcome: AgentOutcome) => void
+  readonly setStatus: (id: string, status: ThreadStatus) => void
+  readonly setResumeToken: (id: string, token: string | undefined) => void
+  readonly markRead: (id: string) => void
+  readonly remove: (id: string) => void
+  readonly clear: () => void
+  readonly hydrated: boolean
+  … +1 more
 }
 Type: ToolCallPart = (Identified & { readonly state: 'input-streaming'; readonly input?: unknown; }) | (Identified & { readonly state: 'input-available'; readonly input: unknown; }) | (Identified & { readonly state: 'approval-requested'; readonly input: unknown; readonly approval: ToolApproval & { readonly approved?: never; readonly reas…
 Type: TranscriptPart = AgentPart | ForeignPart
@@ -1118,6 +1273,7 @@ Signature: ViewTabs(props: ViewTabsProps<T>): ReactNode
   field: FieldHandle<EnumField<T>>
   options?: readonly ViewTabsOption<T>[]
   label?: string
+Type: FilterOption<V extends string | number = string> = { readonly value: V, readonly label: string, readonly disabled?: boolean }
 
 ## basalt-ui/controls-dates
 Import: import { ... } from 'basalt-ui/controls-dates'
@@ -1155,6 +1311,8 @@ Signature: externalField(o: { values: readonly T[]; fallback: NoInfer<T>; labels
   labels?: Partial<Record<T, string>>
   store: ExternalStore<T>
 Signature: field: { enum, multi, range, number, boolean, string }
+Type: ExternalStore<T> = { get: () => T, set: (next: T) => void, subscribe: (onChange: () => void) => () => void }
+Type: StandardSchemaV1<Input = unknown, Output = Input> = { readonly '~standard': StandardSchemaV1.Props<Input, Output> }
 
 ## basalt-ui/styles.css
 Asset: basalt-ui/styles.css

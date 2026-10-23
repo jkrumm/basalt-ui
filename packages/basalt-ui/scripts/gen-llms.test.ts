@@ -5,9 +5,11 @@ import ts from 'typescript'
 import { generateLlmsTxt, outPath } from './gen-llms'
 import {
   MAX_LITERAL_MAP_KEYS,
+  MAX_OPTION_TYPES,
   MAX_PROP_TYPE,
   MAX_PROPS,
   MAX_UNION_MEMBERS,
+  namedOptionTypes,
   optionTypeBlock,
   propShapeLines,
   typeGlossary,
@@ -316,8 +318,49 @@ describe('option types (row 187)', () => {
     expect(text).toMatch(/^Type: ResponsiveChartHeight = \{ base: number, regular\?/m)
   })
 
-  test('a generic shape and a literal union are not expanded', () => {
-    expect(text).not.toMatch(/^Type: (FieldHandle|ChartSeries|CalloutKind) =/m)
+  test('the slot and composite types an agent builds first are expanded (row 197)', () => {
+    expect(text).toMatch(/^Type: StatStripCell = \{/m)
+    expect(text).toMatch(/^Type: MeterSegment = \{ value: number, label: string/m)
+    expect(text).toMatch(/^Type: QueryStateLike<TData> = \{/m)
+    expect(text).toMatch(/^Type: ChartSeries<T> = \{/m)
+    expect(text).toMatch(/^ {2}getValue: \(d: T\) => number \| null/m)
+  })
+
+  test('a generic member list keeps its parameters in the name; a conditional alias and a literal union stay out', () => {
+    const generic = decl(
+      `export type S<T, K extends string = string> = { key: K; get: (d: T) => number }`,
+    )
+    expect(optionTypeBlock(generic)).toBe(
+      'Type: S<T, K extends string = string> = { key: K, get: (d: T) => number }',
+    )
+    expect(text).not.toMatch(/^Type: (EmitArgs|CalloutKind)\b/m)
+  })
+
+  test('an intersection of a Pick and a member list (BarsBar<T>) gets its Type block', () => {
+    expect(text).toMatch(/^Type: BarsBar<T> = Pick<ChartSeries<T>, .*> & \{ fillOpacity\?: number/m)
+  })
+
+  test('no subpath prints more option types than MAX_OPTION_TYPES, plus the remainder line', () => {
+    for (const section of text.split(/^## /m).slice(1)) {
+      const types = section.split('\n').filter((line) => line.startsWith('Type: '))
+      expect(types.length, section.split('\n')[0]).toBeLessThanOrEqual(MAX_OPTION_TYPES + 1)
+      if (types.length > MAX_OPTION_TYPES)
+        expect(types.at(-1)).toMatch(/^Type: … \+\d+ more option types$/)
+    }
+  })
+
+  test('an element type of an array prop is expanded, generic or not', () => {
+    const { checker, exports } = compile(
+      `export type Cell<T> = { id: T }
+       export function f(p: { cells: readonly Cell<string>[] }) {}`,
+    )
+    const fn = exports.find((e) => e.name === 'f')!
+    const param = checker.getTypeOfSymbol(fn).getCallSignatures()[0]!.getParameters()[0]!
+    const cells = checker.getTypeOfSymbol(param).getProperty('cells')!
+    const [found] = namedOptionTypes(checker, checker.getTypeOfSymbol(cells))
+    expect(found && optionTypeBlock(found as ts.TypeAliasDeclaration)).toBe(
+      'Type: Cell<T> = { id: T }',
+    )
   })
 
   test('a short object prints on one line, comments dropped', () => {
