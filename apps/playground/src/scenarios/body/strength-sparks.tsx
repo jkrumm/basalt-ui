@@ -6,7 +6,7 @@ import { ChartCard, Sparkline } from 'basalt-ui/charts'
 import { VX } from 'basalt-ui/tokens'
 import { cardStateProps, noop } from '../shot-state'
 import type { ScenarioProps } from '../shot-state'
-import { NO_E1RM, NO_INOL, STRENGTH_ERROR } from './body-data'
+import { INOL_DEFINITION, NO_E1RM, NO_INOL, STRENGTH_ERROR } from './body-data'
 
 /** INOL per session; the productive range is 0.6–1.0. */
 const INOL_BAND = { from: 0.6, to: 1 } as const
@@ -47,7 +47,7 @@ function InolSparks({ shotState }: ScenarioProps) {
     <Box data-shot="inol-sparks">
       <ChartCard
         title="INOL per lift, last 8 sessions"
-        info="INOL (Intensity-Number of Lifts) weighs each session's volume by how close the sets are to your max. The band marks the productive range, 0.6 to 1.0."
+        info={`${INOL_DEFINITION} The band marks that range.`}
         {...cardStateProps(shotState, STRENGTH_ERROR, 'content', NO_INOL)}
       >
         <Stack gap="xs">
