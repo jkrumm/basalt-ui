@@ -2027,7 +2027,7 @@ Spec: SPEC § 6.11, § 6.13, § 8, § 11. Scenario S6 (build it), then every sce
 - **Next — stopped: Wave 46 closed; orchestrated, nothing spawned.** Wave 47 (Release and rollout) is `active` for the
   mother.
 
-## Wave 47 — Release and rollout: rb, linewatch, rollhook, obsidian <!-- status: active -->
+## Wave 47 — Release and rollout: rb, linewatch, rollhook, obsidian <!-- status: done -->
 
 argo is out of this rollout (owner pause, 2026-10-22); it bumps during its own overhaul. weatherorb is coordinated by the
 owner from weatherorb; shutterflow stays excluded.
@@ -2041,14 +2041,26 @@ owner from weatherorb; shutterflow stays excluded.
       against "+1" loaded (S1 outages); P3 S6 entry form's footer rule reads as a trailing row divider; P2 S5 summary
       error state splits the title and offers a second action (pre-existing, unscored before). Light-scheme input
       contrast untouched (owner's call).
-- [ ] Release through `make release` (the reason: the Part 3 patterns, rows 143–162, and Wave 43's upstream rows).
-- [ ] Bump waves, one repo at a time, on Sonnet: version bump, fix what the guards promoted to error raise, one shot
+- [x] Release through `make release` (2.28.0, live on npm) (the reason: the Part 3 patterns, rows 143–162, and Wave 43's upstream rows).
+- [x] Bump waves, one repo at a time, on Sonnet: version bump, fix what the guards promoted to error raise, one shot
       per page and a before/after board. rb (rows 152–155; never pushed by an agent, its branch waits for the owner),
       linewatch (rows 156–158), rollhook, obsidian (row 159).
-- [ ] Friction and ugliness become ledger rows and are fixed upstream before Wave 48 (the rollout).
-      **Left behind:**
+- [x] Friction and ugliness become ledger rows (`argo-friction.md` rows 168–179); the upstream fixes are Wave 48's
+      first step, not done here.
+      **Left behind:** all four repos are on basalt-ui 2.28.0 with `make check` green, one board each (before = old
+      build, after = bump, both shot with the 2.28.0 CLI; gitignored `.design-parity/w47/` in each repo, bump notes in
+      each repo's `docs/basalt-2.28-bump.md`, except linewatch/obsidian/rollhook where they are committed and rb's is on
+      its branch). linewatch (7 guard fixes, detect 0 → 90) pushed to master and live via `make up`; rollhook PR #48
+      merged, marketing deployed, **the dashboard image waits for a Make Release (not cut)**; obsidian pushed to master
+      (7 `inline-spacing` fixes) and live via `make up`; **rb is NOT pushed**: branch `chore/bump-basalt-ui-2.28.0` (3
+      commits, 7 guard fixes) sits in its worktree `~/SourceRoot/rb/.claude/worktrees/chore-bump-basalt-ui-2.28.0`
+      for the owner. Fresh gotcha: `make up` in obsidian ran after a red `make check` because I chained them with `;`;
+      the red was a worktree inside the live checkout (row 179), now removed, and the re-run is green. Rows 152–155
+      (rb), 156–158 (linewatch) and 159 (obsidian) adoption work is NOT done by the bumps. Still open from step 0: the
+      folded-table scope-column skeleton, the S6 footer rule, the S5 summary error state.
+      **Next:** Wave 48 is `active` for the orchestrator; its first step is rows 168–179.
 
-## Wave 48 — Rollout, the expression trial and convergence <!-- status: pending -->
+## Wave 48 — Rollout, the expression trial and convergence <!-- status: active -->
 
 - [ ] **Expression trial** (shaped like weatherorb's W45): a fresh agent in a scratch `init` app gets five
       datasets (one per catalogue shape: trend, target, parts, ranking, events) and no component names. Did it
