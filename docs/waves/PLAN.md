@@ -2060,16 +2060,56 @@ owner from weatherorb; shutterflow stays excluded.
       folded-table scope-column skeleton, the S6 footer rule, the S5 summary error state.
       **Next:** Wave 48 is `active` for the orchestrator; its first step is rows 168–179.
 
-## Wave 48 — Rollout, the expression trial and convergence <!-- status: active -->
+## Wave 48 — Rollout, the expression trial and convergence <!-- status: done -->
 
-- [ ] **Expression trial** (shaped like weatherorb's W45): a fresh agent in a scratch `init` app gets five
-      datasets (one per catalogue shape: trend, target, parts, ranking, events) and no component names. Did it
-      find and follow the shipped procedure, and which encodings did it pick? Score the boards. A fallback to
-      the default is a guidance row.
-- [ ] weatherorb (row 160) is the owner's, from weatherorb itself; no brief from here. shutterflow is out of this track: the owner coordinates its UX re-establishment from the MacBook,
+- [x] Step 0: the upstream fixes for friction rows 168–179 (Sonnet workers, `rd fan`, `/review` per PR, `rd merge`):
+      #523 `raw-spacing` lists the scale (`8 → "xs"`), `card-inset` names the old idiom (173); #524 `init` writes
+      `oxlint --ignore-pattern '.claude/worktrees/**'` (179: config ignores do not stop oxlint 1.87 loading a worktree's
+      nested config), `sync` reports root templates in sync / drifted / absent read-only (178); #526 `shot`/`shot detect`
+      (168, 169, 170, 172, 177: whitespace routes refused, `--out` errors name the project, auto-anchor fallback,
+      "nothing measured" / `score: null`, per-out-dir trend with finding counts, same-content warning, the contrast
+      threshold named); #525 `doctor --from <x.y.z>`, the stale tokens/fonts sheet warning, `### Visible without code
+      change` per release (174, 175, 176's curve half: the 2.22.0 `curve: 'linear'` default), the bump-with-a-board step
+      in `basalt-app` (171, 172). Rows 173 (dense Card tier) and 176 (active nav row cue) stay half: owner calls.
+- [x] **Expression trial** v2 ([design-parity/w48/expression-trial-v2.md](design-parity/w48/expression-trial-v2.md)):
+      fresh headless Sonnet agent in a `mktemp -d` init app, five datasets (trend, target, parts, ranking, events), no
+      component names. It invoked `/basalt-design` first, wrote the concept, and picked the catalogue's encoding for 4 of
+      5; parts fell back to `BarList` after the parts `Meter` read as one slab (guidance gap, row 180). Fresh Sonnet
+      scorer: **31** (v1 38). Rows 180–189.
+- [x] weatherorb (row 160) is the owner's, from weatherorb itself; no brief from here. shutterflow is out of this track: the owner coordinates its UX re-establishment from the MacBook,
       including the deferred calendar heat grid (row 161, D10).
-- [ ] Re-run the full audit. If gaps remain, append Waves 49+ in the same shape. The track closes when a fresh
-      scorer finds nothing worth improving against basalt's rubric.
+- [x] Re-run the full audit ([design-parity/w48/rounds.md](design-parity/w48/rounds.md)): S1 91, S2 94, S3 93, S4 92,
+      S5 74, S6 95, S7 58, S8 98; `shot detect` 100. Gaps remain → Wave 49 appended.
+      **Left behind:** #523–#526 on master plus this close-out (MIGRATING `## Unreleased — the 2.28 bump friction (Wave
+      48)`, rows 168–179 closed/half, rows 180–189 open, the trial and audit records). Each merge ran `make check` green
+      in the train; the CLI line ceiling rose once, 8480 → 8668, by the measured delta (ledger line in
+      `check-budgets.ts`); the basalt-app skill stays at its 300-line budget (the board recipe folded into the refresh
+      step). **Release-ready, not released** (owner: report only): #523–#526 on master are unreleased (`v2.28.0..master`, a minor: one `feat:` plus `fix:`es); a
+      consumer with agent worktrees (obsidian, row 179) and the four bumps' `doctor --from` are the reasons to cut one.
+      Light-scheme input contrast untouched (owner). argo paused, no argo PR. Open owner calls: a dense Card tier (173),
+      the active nav row cue (176). Existing consumers keep `oxlint .` without the worktree flag until they add it by
+      hand (MIGRATING says how; `sync` does not rewrite scripts). Process: `make check` in the train runs ~8–10 min and
+      writes ~35 MB of DOM dumps to its log; the trial ran via `claude -p` because `rd wave` only resolves repos under
+      `~/SourceRoot`/`~/IuRoot`.
+      **Next — stopped: Wave 48 closed; orchestrated, nothing spawned.** Wave 49 is `active` for the orchestrator.
+
+## Wave 49 — The trial and audit gaps, then the trial again <!-- status: active -->
+
+Same shape as Wave 48. Budget as Wave 48 (Sonnet workers and reviewers, at most three shot rounds). argo paused; the
+light-scheme input contrast stays the owner's.
+
+- [ ] Upstream fixes for rows 180–189 (`argo-friction.md`): the parts `Meter` guidance (180), the forecast caption at
+      its end (181), Meter captions at 390 (182), the strip cell bottom inset (183), a clipped feed's cue (184), the
+      default chart empty copy (185), `init` on stock Vite (186), option shapes in `llms.txt` (187), a fresh `--out` per
+      round in `/basalt-design` (188), a neutral series in the dictionary (189).
+- [ ] The basalt-owned audit findings in `design-parity/w48/rounds.md`: the S5 `EventList` 390 wrap and journal
+      skeleton (P1), the bare "Could not load" error title (P2, every route), the S7 Meter track width and tick, the
+      reference label struck by its line, the chart focus ring, off-step ticks; then the P3s. The playground-owned copy
+      findings in the same file go to one playground worker.
+- [ ] Expression trial v3, same five datasets (`docs/waves/design-parity/w48/expression-trial-v2.md` § Setup), a fresh
+      agent and a fresh scorer; compare against v2.
+- [ ] Re-run the full audit. If gaps remain, append Wave 50 in the same shape. The track closes when a fresh scorer
+      finds nothing worth improving against basalt's rubric.
       **Left behind:**
 
 # Part 2, continued — queued behind Part 3
