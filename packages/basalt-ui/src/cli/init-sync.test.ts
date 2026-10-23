@@ -364,6 +364,76 @@ export default defineConfig({
     expect(readFileSync(resolve(dir, 'vite.config.ts'), 'utf8')).toBe(two)
   })
 
+  it('--no-install writes the files, spawns nothing and prints the commands', () => {
+    seed(STOCK)
+    writeFixture('vite.config.ts', VITE_CONFIG)
+    const { code, log } = capture(() => run(['init', '--no-install'], dir) as number)
+    expect(code).toBe(0)
+    expect(log).toContain('run `bun install` (init did not), then `bunx vite build`')
+    expect(readFileSync(resolve(dir, 'vite.config.ts'), 'utf8')).toMatch(/tanstackRouter\(/)
+    expect(existsSync(resolve(dir, 'node_modules'))).toBe(false)
+  })
+
+  it('reuses an existing tanstackRouter import that is not registered', () => {
+    seed(STOCK)
+    writeFixture(
+      'vite.config.ts',
+      `import { tanstackRouter } from '@tanstack/router-plugin/vite'\n${VITE_CONFIG}`,
+    )
+    capture(() => init(dir))
+    const config = readFileSync(resolve(dir, 'vite.config.ts'), 'utf8')
+    expect(config.match(/import \{ tanstackRouter \}/g)).toHaveLength(1)
+    expect(config).toMatch(/plugins: \[tanstackRouter\(/)
+  })
+
+  it('an init killed after the vite step still finishes on the re-run', () => {
+    seed(STOCK)
+    writeFixture('vite.config.ts', VITE_CONFIG)
+    // The state a kill between the vite write and main.tsx leaves: package.json and config done, main.tsx still the template.
+    capture(() => init(dir, { run: () => false }))
+    writeFixture('src/main.tsx', STOCK)
+    const { log } = capture(() => init(dir))
+    expect(readFileSync(resolve(dir, 'src/main.tsx'), 'utf8')).toContain('createBasaltRouter')
+    expect(log).toContain('run `bun install` (init did not)')
+  })
+
+  it('a kill after package.json but before the vite config re-wires the config', () => {
+    seed(STOCK)
+    writeFixture('vite.config.ts', VITE_CONFIG)
+    const pkg = JSON.parse(readFileSync(resolve(dir, 'package.json'), 'utf8')) as Record<
+      string,
+      unknown
+    >
+    writeFixture(
+      'package.json',
+      JSON.stringify({ ...pkg, devDependencies: { '@tanstack/router-plugin': '^1.168.40' } }),
+    )
+    capture(() => init(dir))
+    expect(readFileSync(resolve(dir, 'vite.config.ts'), 'utf8')).toMatch(
+      /plugins: \[tanstackRouter\(/,
+    )
+    expect(readFileSync(resolve(dir, 'src/main.tsx'), 'utf8')).toContain('createBasaltRouter')
+  })
+
+  it('finds the lockfile of a pnpm workspace root above the app', () => {
+    writeFixture('pnpm-lock.yaml', '')
+    writeFixture('pnpm-workspace.yaml', 'packages:\n  - apps/*\n')
+    writeFixture('apps/web/package.json', VITE_PKG)
+    writeFixture('apps/web/index.html', '<script type="module" src="/src/main.tsx"></script>')
+    writeFixture('apps/web/src/main.tsx', STOCK)
+    writeFixture('apps/web/vite.config.ts', VITE_CONFIG)
+    const calls: string[] = []
+    capture(() =>
+      init(resolve(dir, 'apps/web'), {
+        run: (argv) => {
+          calls.push(argv.join(' '))
+          return false
+        },
+      }),
+    )
+    expect(calls).toEqual(['pnpm install'])
+  })
+
   it('leaves a vite.config of another shape alone and prints the router plugin fix', () => {
     seed(STOCK)
     const custom = `export default { plugins: [somethingElse()] }\n`

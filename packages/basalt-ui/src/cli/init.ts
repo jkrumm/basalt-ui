@@ -43,7 +43,7 @@ import {
   routerSeedDest,
   VITE_CONFIGS,
 } from './router-wiring'
-import { readPackageJson } from './source-text'
+import { readPackageJson, tokenize } from './source-text'
 import { readOxlintPresetPlugins } from './sync'
 
 /**
@@ -155,7 +155,10 @@ function withRouterPlugin(text: string): string | null {
     /(\bplugins\s*:\s*\[\s*)(react\()/,
     "$1tanstackRouter({ target: 'react', autoCodeSplitting: true }), $2",
   )
-  return wired === text ? null : `${ROUTER_PLUGIN_IMPORT}\n${wired}`
+  if (wired === text) return null
+  const imported =
+    /\bimport\s*(?:type\s*)?\{[^}]*\btanstackRouter\b[^}]*\}\s*from\s*['"]@tanstack\/router-plugin\/vite['"]/
+  return imported.test(tokenize(text).code) ? wired : `${ROUTER_PLUGIN_IMPORT}\n${wired}`
 }
 
 /** Whether `name` resolves from `dir`: a `node_modules/<name>` in it or any directory above. */
@@ -166,13 +169,17 @@ function isInstalled(dir: string, name: string): boolean {
   }
 }
 
-/** The package manager the app's lockfile names (bun without one) and its install and one-off-`vite` argv. */
-function packageManager(cwd: string): { install: string[]; vite: string[] } {
-  const has = (f: string): boolean => existsSync(resolve(cwd, f))
-  if (has('pnpm-lock.yaml')) return { install: ['pnpm', 'install'], vite: ['pnpm', 'exec', 'vite'] }
-  if (has('yarn.lock')) return { install: ['yarn', 'install'], vite: ['yarn', 'vite'] }
-  if (has('package-lock.json')) return { install: ['npm', 'install'], vite: ['npx', 'vite'] }
-  return { install: ['bun', 'install'], vite: ['bunx', 'vite'] }
+/** The package manager the nearest lockfile (the app's directory or any above, like `isInstalled`) names, bun without one; its install and one-off-`vite` argv. */
+function packageManager(dir: string): { install: string[]; vite: string[] } {
+  for (let d = dir; ; d = dirname(d)) {
+    const has = (f: string): boolean => existsSync(resolve(d, f))
+    if (has('pnpm-lock.yaml'))
+      return { install: ['pnpm', 'install'], vite: ['pnpm', 'exec', 'vite'] }
+    if (has('yarn.lock')) return { install: ['yarn', 'install'], vite: ['yarn', 'vite'] }
+    if (has('package-lock.json')) return { install: ['npm', 'install'], vite: ['npx', 'vite'] }
+    if (has('bun.lock') || has('bun.lockb') || dirname(d) === d)
+      return { install: ['bun', 'install'], vite: ['bunx', 'vite'] }
+  }
 }
 
 /**
@@ -311,6 +318,36 @@ export function init(cwd: string = process.cwd(), scaffoldFlags: ScaffoldFlags =
     !skippedSeeds.has(mainDest) &&
     existsSync(mainPath) &&
     isStockViteMain(readFileSync(mainPath, 'utf8'))
+  const advice: string[] = []
+  const appDir = resolve(cwd, placement.appRel)
+  // Before main.tsx is seeded: a run killed in between leaves a stock main.tsx, so the next run
+  // finds the app unwired again and finishes (the artifact check in `finishInstall` covers the rest).
+  // package.json goes first, the vite config last: a declared-but-uninstalled plugin is found by that
+  // check, a wired config with nothing declared is never left behind.
+  if (stockMain) {
+    const missing = missingPeers(cwd, ctx.pkgRoot)
+    const count = Object.keys(missing).length
+    const vite = viteConfigOf(appDir)
+    const wired =
+      vite !== undefined && !registersRouterPlugin(vite.text) ? withRouterPlugin(vite.text) : null
+    patchPackageJson(cwd, (pkg) => {
+      pkg['dependencies'] = { ...(pkg['dependencies'] as Record<string, string>), ...missing }
+      if (wired !== null) {
+        pkg['devDependencies'] = {
+          '@tanstack/router-plugin': ROUTER_PLUGIN_RANGE,
+          ...(pkg['devDependencies'] as Record<string, string> | undefined),
+        }
+      }
+      return count > 0 || wired !== null
+    })
+    if (count > 0) advice.push(`added ${count} missing peers to package.json.`)
+    if (wired !== null && vite !== undefined) {
+      writeFileSync(vite.file, wired, 'utf8')
+      advice.push('wired the TanStack router plugin into vite.config (before react()).')
+    } else if (!registersRouterPlugin(vite?.text ?? '')) {
+      advice.push(ROUTER_PLUGIN_FIX.replace(/^Fix: /, 'router plugin: '))
+    }
+  }
   const writtenFiles: string[] = []
   const keptFiles: string[] = []
   const missingSources: string[] = []
@@ -348,42 +385,16 @@ export function init(cwd: string = process.cwd(), scaffoldFlags: ScaffoldFlags =
   const mergeLint: MergeLintResult | null =
     scaffoldFlags.noMergeLint === true ? null : mergeOxlintExtends(cwd, ctx.vars.OXLINT_PRESET_PATH)
 
-  // The entry was seeded above or kept; either way the app still needs the peers it imports and the router plugin.
+  // The entry was kept (it is not the stock template): the app still needs the peers it imports and the router plugin.
   const keptUnwired =
     keptFiles.includes(mainDest) && !/from ['"]basalt-ui['"/]/.test(readFileSync(mainPath, 'utf8'))
-  const advice: string[] = []
-  const appDir = resolve(cwd, placement.appRel)
-  if (stockMain || keptUnwired) {
+  if (keptUnwired) {
     const missing = missingPeers(cwd, ctx.pkgRoot)
-    const count = Object.keys(missing).length
-    const vite = viteConfigOf(appDir)
-    const wired =
-      stockMain && vite !== undefined && !registersRouterPlugin(vite.text)
-        ? withRouterPlugin(vite.text)
-        : null
-    if (count > 0 && stockMain) {
-      advice.push(`added ${count} missing peers to package.json.`)
-    } else if (count > 0) {
+    if (Object.keys(missing).length > 0) {
       const specs = Object.entries(missing).map(([name, range]) => `${name}@${range}`)
       advice.push(`missing peers: \`bun add ${specs.join(' ')}\`.`)
     }
-    // package.json first: an interrupted run then leaves a declared-but-uninstalled plugin the artifact check below finds, never a wired config with nothing declared.
-    if (stockMain) {
-      patchPackageJson(cwd, (pkg) => {
-        pkg['dependencies'] = { ...(pkg['dependencies'] as Record<string, string>), ...missing }
-        if (wired !== null) {
-          pkg['devDependencies'] = {
-            '@tanstack/router-plugin': ROUTER_PLUGIN_RANGE,
-            ...(pkg['devDependencies'] as Record<string, string> | undefined),
-          }
-        }
-        return count > 0 || wired !== null
-      })
-    }
-    if (wired !== null && vite !== undefined) {
-      writeFileSync(vite.file, wired, 'utf8')
-      advice.push('wired the TanStack router plugin into vite.config (before react()).')
-    } else if (!registersRouterPlugin(vite?.text ?? '')) {
+    if (!registersRouterPlugin(viteConfigOf(appDir)?.text ?? '')) {
       advice.push(ROUTER_PLUGIN_FIX.replace(/^Fix: /, 'router plugin: '))
     }
   }
