@@ -73,6 +73,11 @@ export type SparklineProps = BasaltProps & {
    * and the readout reads `3 items · 12 Oct` beside the point. Omitted: the moment of an `{ at }`
    * point, else the value alone. */
   labels?: readonly string[] | undefined
+  /** The span the series covers, stated quietly under the plot (`12 wk`). Default inside a `StatCard`
+   * or strip cell: the first and last of `labels`, or of an `{ at }` series' days (`3 Aug – 19 Oct`; an hourly series states none);
+   * plain values state none. `false` states none. With a `referenceLabel`, a stated window also takes
+   * that label out of the plot into the same row, where no line can run through it. */
+  window?: string | false | undefined
 }
 
 type Point = { i: number; v: number | null }
@@ -135,6 +140,25 @@ function momentsOf(data: SparklineProps['data']): readonly (string | undefined)[
     if (byDay) return readoutDay(bucketDay(d))
     return clockOnly ? readoutClock(d) : `${readoutDay(d)} ${readoutClock(d)}`
   })
+}
+
+/** Whether `{ at }` points are a day or more apart: the span of an hourly series is the host's to state. */
+function isDayWindow(data: SparklineProps['data']): boolean {
+  const known: Date[] = []
+  for (const d of data) {
+    const at = typeof d === 'object' && d !== null ? toDate(d.at) : null
+    if (at !== null) known.push(at)
+  }
+  return known.length > 0 && dayGranular(known)
+}
+
+/** `first – last` of a series' day labels, or `undefined` when there are fewer than two distinct ones. */
+function spanOf(names: readonly (string | undefined)[] | undefined): string | undefined {
+  const first = names?.find((n) => n !== undefined)
+  const last = names?.findLast((n) => n !== undefined)
+  return first === undefined || last === undefined || first === last
+    ? undefined
+    : `${first} – ${last}`
 }
 
 /** Min and max of the finite values, by loop (a spread overflows the stack on long series). */
@@ -635,11 +659,21 @@ export function Sparkline(props: SparklineProps): ReactElement {
     band,
     format = defaultNumberFormat,
     labels,
+    window: windowProp,
     className,
     style,
   } = props
   const id = useId()
   const hosted = useContext(VisualSlotContext) !== null
+  const moments = useMemo(() => momentsOf(data), [data])
+  const windowText =
+    windowProp === false
+      ? undefined
+      : (windowProp ??
+        (hosted ? spanOf(labels ?? (isDayWindow(data) ? moments : undefined)) : undefined))
+  // The window's row also holds the reference label: out of the plot, no line can run through it.
+  const labelInRow = windowText !== undefined && referenceLabel !== undefined
+  const plotLabel = labelInRow ? undefined : referenceLabel
   // Two sources, so a pointer leaving a focused chart hands the readout back to the focused point.
   const [hover, setHover] = useState<number | null>(null)
   const [keyed, setKeyed] = useState<number | null>(null)
@@ -677,7 +711,7 @@ export function Sparkline(props: SparklineProps): ReactElement {
     const bandEdges = full[0] < range[0] || full[1] > range[1]
     return {
       rows,
-      moments: momentsOf(data),
+      moments,
       frame: frameOf(full, mark, rows.length, end !== null, bandSpan !== null && bandEdges),
       definition: compileSparkline(
         rows,
@@ -686,12 +720,23 @@ export function Sparkline(props: SparklineProps): ReactElement {
         color,
         end,
         ref,
-        referenceLabel,
+        plotLabel,
         bandSpan,
         bandSpan !== null && bandEdges,
       ),
     }
-  }, [data, mark, color, emphasizeLast, emphasisColor, reference, referenceLabel, bandFrom, bandTo])
+  }, [
+    data,
+    moments,
+    mark,
+    color,
+    emphasizeLast,
+    emphasisColor,
+    reference,
+    plotLabel,
+    bandFrom,
+    bandTo,
+  ])
   const resolved = resolveChartState(state)
   const rows = model?.rows
   const interactive = resolved === null && model !== null
@@ -810,7 +855,7 @@ export function Sparkline(props: SparklineProps): ReactElement {
                 }),
             ...(at.fy > 0.5 ? { top: 0 } : { bottom: 0 }),
           }
-  return (
+  const plot = (
     <div
       data-basalt-sparkline=""
       {...(hosted && { 'data-basalt-hosted': '' })}
@@ -873,6 +918,20 @@ export function Sparkline(props: SparklineProps): ReactElement {
           </output>
         </span>
       )}
+    </div>
+  )
+  if (windowText === undefined) return plot
+  return (
+    <div className={classes.frame} style={{ width: width ?? '100%' }}>
+      {plot}
+      <div className={classes.caption} data-basalt-sparkline-caption="">
+        <span data-basalt-sparkline-window="">{windowText}</span>
+        {labelInRow && (
+          <span className={classes.key} data-basalt-sparkline-key="">
+            {referenceLabel}
+          </span>
+        )}
+      </div>
     </div>
   )
 }

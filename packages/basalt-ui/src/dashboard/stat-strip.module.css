@@ -163,6 +163,8 @@
  * it, whether it sat beside the caption or wrapped under it, so values share a baseline. */
 @container basalt-card (max-width: 239.9px) {
   .qualifier {
+    /* Always on its own line under the caption: whether it fits beside it must not vary cell to cell. */
+    flex-basis: 100%;
     line-height: 1.25;
   }
 
@@ -387,7 +389,7 @@
 .underCell {
   min-width: 0;
   font-size: var(--vx-text-sm);
-  margin: var(--vx-space-stack-md) var(--vx-space-stack-md) 0;
+  margin: var(--vx-space-stack-md);
   padding-block-start: var(--vx-space-stack-sm);
   border-block-start: 1px solid var(--vx-divider);
 }

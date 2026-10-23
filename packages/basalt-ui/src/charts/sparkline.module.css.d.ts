@@ -9,5 +9,8 @@ declare const classes: {
   readonly sep: string
   readonly layer: string
   readonly dot: string
+  readonly frame: string
+  readonly caption: string
+  readonly key: string
 }
 export default classes

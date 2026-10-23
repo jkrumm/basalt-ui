@@ -425,6 +425,8 @@ export type FixtureSpec = {
   w39Meter?: true
   /** Wave 43: argo's Weight cell no-goal low–high Meter read at the track start (`w43-start`, `w43-fill-short`). */
   w43MeterStart?: true
+  /** Wave 50: the S7 one-cell strip and the Meter reading tick on an ink fill (`w50-*`). */
+  w50Figures?: true
   /** Wave 38: a high-line Sparkline in a 150px strip cell and card (`w38r2-strip`, `w38r2-card`), a slotted `Bars` (`w38r2-bars`) and two `ChartCard` line charts (`w38r2-lines-narrow`, `w38r2-lines-wide`). */
   w38Readout2?: true
   /** Wave 39: a mixed one-row strip (Meter, Sparkline, Bars, a wrapping qualifier, a footer `under`) and a multi-row cell with row Sparklines (`w39-strip`, `w39-rows`). */

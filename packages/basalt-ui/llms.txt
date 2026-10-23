@@ -558,6 +558,7 @@ Signature: Sparkline(props: SparklineProps): ReactElement<unknown, string | JSXE
   band?: { from: number; to: number; }
   format?: ((value: number) => string)
   labels?: readonly string[]
+  window?: string | false
 Signature: StackedArea(props: StackedAreaProps<T, X>): ReactElement<unknown, string | JSXElementConstructor<any>>
   className?: string
   style?: CSSProperties
