@@ -90,6 +90,8 @@ layout('Wave 44 virtual-rows seam', () => {
     const before = await stable(() => p.raw.evaluate(probe, SCROLL))
     expect(before).not.toBeNull()
     await p.raw.evaluate(() => window.basaltVrPrepend?.(50))
+    // Under a loaded suite the first two reads can both land before the anchor compensation does.
+    await p.raw.waitForTimeout(600)
     const after = await stable(() =>
       p.raw.evaluate(
         ([sel, id]) => {
