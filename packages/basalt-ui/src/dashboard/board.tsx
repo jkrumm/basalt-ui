@@ -53,6 +53,7 @@ import classes from './board.module.css'
 import { isBoardKey, isSafeHref, moveOnBoard } from './board-nav'
 import type { BoardPos } from './board-nav'
 import { EmptyState } from './empty-state'
+import { useScrolledEdge } from './event-list-scroll'
 
 export type BoardProps<T extends string = string> = BasaltProps & {
   /** Accessible name of the board. Default "Board". */
@@ -177,6 +178,24 @@ export function Board<T extends string = string>({ field, ...props }: BoardProps
     <InternalBoard {...props} />
   ) : (
     <FieldBoard field={field} {...props} />
+  )
+}
+
+/** One column's scroll box. It marks its viewport `data-more` while cards remain below the fold, and
+ * CSS paints `EventList`'s bottom fade there, so a clipped last card is never silent. */
+function ColumnScroll({ height, children }: { height?: number | string; children: ReactNode }) {
+  const [viewport, setViewport] = useState<HTMLDivElement | null>(null)
+  useScrolledEdge(viewport)
+  return (
+    <ScrollArea.Autosize
+      {...(height !== undefined && { mah: height })}
+      type="auto"
+      offsetScrollbars="y"
+      viewportRef={setViewport}
+      classNames={{ viewport: classes.viewport }}
+    >
+      {children}
+    </ScrollArea.Autosize>
   )
 }
 
@@ -311,13 +330,7 @@ function BoardView<T extends string>({
           )}
           {col.total !== undefined && <span className={classes.total}>{col.total}</span>}
         </div>
-        <ScrollArea.Autosize
-          {...(height !== undefined && { mah: height })}
-          type="auto"
-          offsetScrollbars="y"
-        >
-          {list}
-        </ScrollArea.Autosize>
+        <ColumnScroll {...(height !== undefined && { height })}>{list}</ColumnScroll>
       </div>
     )
   }
