@@ -99,7 +99,19 @@ export type RowContext = {
 
 /** `null`, `undefined`, booleans and the empty string render nothing, so they are not content. */
 export const present = (node: ReactNode): boolean =>
-  node !== undefined && node !== null && typeof node !== 'boolean' && node !== ''
+  node !== undefined &&
+  node !== null &&
+  typeof node !== 'boolean' &&
+  node !== '' &&
+  !(Array.isArray(node) && !node.some(present))
+
+const SKELETON_DEFAULT_ROWS = 5
+const SKELETON_MAX_ROWS = 30
+
+/** Skeleton rows while loading, shared by `EventList` and `BarList`: an explicit `loadingRows`, else the
+ * rows held now (a refetch), capped at 30, else 5 (a cold load has no count to keep). */
+export const skeletonRowCount = (loadingRows: number | undefined, held: number): number =>
+  loadingRows ?? (held > 0 ? Math.min(held, SKELETON_MAX_ROWS) : SKELETON_DEFAULT_ROWS)
 
 /** The data attributes a row (real or skeleton) carries; the CSS keys on them. */
 export function rowAttributes(ctx: RowContext, first: boolean, last: boolean) {

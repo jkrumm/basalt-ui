@@ -54,6 +54,7 @@ import type { BasaltProps } from '../common/props'
 import classes from './bar-list.module.css'
 import { StatusDot } from '../theme/status-dot'
 import { StatusVerdict } from '../theme/status-verdict'
+import { skeletonRowCount } from './event-list-model'
 import { asText, barPercent } from './scale'
 
 type BarListItem = {
@@ -95,7 +96,7 @@ export type BarListProps = BasaltProps & {
   secondaryAlign?: 'start' | 'end'
   /** Renders row-shaped skeletons. */
   loading?: boolean
-  /** Skeleton rows while loading. Default: the rows `items` holds now (a refetch), else 5. */
+  /** Skeleton rows while loading. Default: the rows `items` holds now (a refetch, capped at 30), else 5. */
   loadingRows?: number
   /** Title of the `EmptyState` tile shown when `items` is empty. Default "No items to compare yet"; pass the cause for your list. */
   emptyText?: string
@@ -139,7 +140,7 @@ export function BarList({
       <div className={cx(classes.frame, className)} style={style}>
         <div className={classes.root} aria-busy="true" data-variant={variant}>
           <VisuallyHidden>{`Loading ${label}`}</VisuallyHidden>
-          {Array.from({ length: loadingRows ?? (items.length > 0 ? items.length : 5) }, (_, i) => (
+          {Array.from({ length: skeletonRowCount(loadingRows, items.length) }, (_, i) => (
             <div
               key={i}
               className={cx(classes.row, classes.skeletonRow)}

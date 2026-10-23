@@ -69,6 +69,51 @@ layout('Wave 50 EventList chips, type scale and skeleton', () => {
     })
   }
 
+  for (const [name, viewport] of [
+    ['1440', DESKTOP_1440],
+    ['390', PHONE],
+  ] as const) {
+    test(`${name}: a short note and a multi-line note put the chips at one offset below the note`, async () => {
+      const p = await openFixture(eventList('wrap'), viewport)
+      await p.raw.waitForSelector(`${HOST} ${moduleClass('chips')}`)
+      const rows = (await p.raw.evaluate(`(() => {
+        const read = (row) => {
+          const line = row.querySelector('${moduleClass('line')}').getBoundingClientRect()
+          const meta = row.querySelector('${moduleClass('meta')}').getBoundingClientRect()
+          const chips = row.querySelector('${moduleClass('chips')}').getBoundingClientRect()
+          return { x: chips.left - line.left, belowNote: chips.top - meta.bottom, noteHeight: meta.height }
+        }
+        const rows = [...document.querySelectorAll('${HOST} ${moduleClass('row')}')].filter((r) => r.querySelector('${moduleClass('chips')}'))
+        // Long enough to wrap at 1440 too.
+        rows[0].querySelector('${moduleClass('body')}').textContent = 'a long note that wraps '.repeat(40)
+        const long = read(rows[0])
+        rows[0].querySelector('${moduleClass('body')}').textContent = 'ok'
+        return { long, short: read(rows[0]) }
+      })()`)) as { long: Record<string, number>; short: Record<string, number> }
+      // The note really changed height, and the chips stayed put relative to it.
+      expect(rows.long['noteHeight']! - rows.short['noteHeight']!).toBeGreaterThan(0)
+      expect(Math.abs(rows.long['x']! - rows.short['x']!)).toBeLessThanOrEqual(SNAP)
+      expect(Math.abs(rows.long['belowNote']! - rows.short['belowNote']!)).toBeLessThanOrEqual(SNAP)
+    })
+  }
+
+  test('a chip Badge asking for size lg still computes to the micro size', async () => {
+    const p = await openFixture(eventList('timeline'), DESKTOP_1440)
+    await p.raw.waitForSelector(`${HOST} ${moduleClass('chips')}`)
+    const r = (await p.raw.evaluate(`(() => {
+      const badge = document.querySelector('${HOST} ${moduleClass('chips')} .mantine-Badge-root')
+      // What \`<Badge size="lg">\` writes: Mantine's vars resolver sets \`--badge-fz\` inline.
+      badge.style.setProperty('--badge-fz', 'var(--badge-fz-lg)')
+      return {
+        badge: getComputedStyle(badge).fontSize,
+        label: getComputedStyle(badge.querySelector('.mantine-Badge-label')).fontSize,
+        time: getComputedStyle(document.querySelector('${HOST} time')).fontSize,
+      }
+    })()`)) as { badge: string; label: string; time: string }
+    expect(r.badge).toBe(r.time)
+    expect(r.label).toBe(r.time)
+  })
+
   test('1440: every row without a note puts its chips at the same y under its title', async () => {
     const p = await openFixture(eventList('plain'), DESKTOP_1440)
     await p.raw.waitForSelector(`${HOST} ${moduleClass('chips')}`)
@@ -135,6 +180,24 @@ layout('Wave 50 BarList delta column', () => {
     ['1440', DESKTOP_1440],
     ['390', PHONE],
   ] as const) {
+    test(`${name}: a zero delta (no glyph) ends on the same right edge as the others`, async () => {
+      const p = await openFixture(dash(), viewport)
+      await p.settle()
+      const rights = (await p.raw.evaluate(`(() => {
+        const badges = [...document.querySelectorAll('[data-testid="dash-bar-delta"] [data-delta]')]
+        // A zero delta renders no glyph: drop one row's.
+        badges[2].querySelector('[data-delta-glyph]').remove()
+        return badges.map((b) => {
+          const range = document.createRange()
+          range.selectNodeContents(b.lastChild)
+          return { box: b.getBoundingClientRect().right, fig: range.getBoundingClientRect().right }
+        })
+      })()`)) as { box: number; fig: number }[]
+      const spread = (xs: number[]) => Math.max(...xs) - Math.min(...xs)
+      expect(spread(rights.map((r) => r.box))).toBeLessThanOrEqual(SNAP)
+      expect(spread(rights.map((r) => r.fig))).toBeLessThanOrEqual(SNAP)
+    })
+
     test(`${name}: every delta shares its glyph x and its right edge, one digit or two`, async () => {
       const p = await openFixture(dash(), viewport)
       await p.settle()

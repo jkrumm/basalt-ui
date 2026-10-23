@@ -1,7 +1,8 @@
 /*
  * EventList (docs/waves/design-parity/SPEC.md § 6.7). One row shape for the plain and the virtualised
  * path: nothing here keys on a parent selector, so the seam's wrapper divs change no geometry.
- * Two sizes only: the row size (actor, sentence, body) and the micro size (day header, time, chips).
+ * Two type rungs: the row size (actor, sentence, body, leading glyph) and the micro size (day header,
+ * time, chips; a chip Badge is pinned to it whatever `size` it asks for).
  * Line one is the glyph and the sentence at full width; line two leads with the mono time, then the
  * body (it wraps, never truncates); the chips, when a row has any, sit on a line of their own under the
  * time, so their place never depends on the body.
@@ -229,8 +230,9 @@
 /* A neutral chip needs a visible surface in light as well: the theme's subtle fill is the page. */
 .chips :global(.mantine-Badge-root) {
   background: var(--event-list-tint);
-  /* A chip is always the micro rung, whatever size the caller's Badge asks for: the list keeps three sizes. */
-  --badge-fz: var(--vx-text-micro);
+  /* A chip is always the micro rung: Mantine writes `--badge-fz` inline from `size`, so the pin is the
+     property itself, which the class beats and the inline custom property does not reach. */
+  font-size: var(--vx-text-micro);
 }
 
 .earlier {
