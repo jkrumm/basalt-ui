@@ -13,7 +13,7 @@ const MAX_PARAM_TYPE = 70
 export const MAX_PROP_TYPE = 60
 export const MAX_PROPS = 40
 /** Named option types printed under one subpath: a prop or parameter type read by name, expanded one level. */
-export const MAX_OPTION_TYPES = 10
+export const MAX_OPTION_TYPES = 30
 /** An option type body prints on one line up to this width, else one member per line. */
 const MAX_OPTION_LINE = 150
 /** Members an expanded option type prints before `… +n more`. */
@@ -248,11 +248,13 @@ function declBody(decl: ts.TypeAliasDeclaration | ts.InterfaceDeclaration): stri
 }
 
 /**
- * `Type: Name = { a: A, b?: B }` — one line when it fits, else a block of one member per line. A
+ * `Type: Name = { a: A, b?: B }` (`Name<T>` for a generic one) — one line when it fits, else a block of one member per line. A
  * non-object alias (a union of shapes) prints as its body on one line.
  */
 export function optionTypeBlock(decl: ts.TypeAliasDeclaration | ts.InterfaceDeclaration): string {
-  const name = decl.name.text
+  // A generic shape keeps its parameters in the name (`ChartSeries<T>`): its members read them.
+  const params = decl.typeParameters?.map((p) => p.getText()).join(', ')
+  const name = params === undefined ? decl.name.text : `${decl.name.text}<${params}>`
   const members = declBody(decl)
   const isObject = ts.isInterfaceDeclaration(decl) || ts.isTypeLiteralNode(decl.type)
   if (!isObject) return clip(`Type: ${name} = ${members[0]}`, MAX_LINE * 2)
@@ -264,8 +266,19 @@ export function optionTypeBlock(decl: ts.TypeAliasDeclaration | ts.InterfaceDecl
   return [`Type: ${name} = {`, ...shown, '}'].join('\n')
 }
 
+/** A member list, a `Pick`/`Omit` of one, or an intersection of those; an interface is always one. */
+function isPlainNode(node: ts.TypeNode): boolean {
+  if (ts.isTypeLiteralNode(node)) return true
+  if (ts.isParenthesizedTypeNode(node)) return isPlainNode(node.type)
+  if (ts.isIntersectionTypeNode(node)) return node.types.every(isPlainNode)
+  return ts.isTypeReferenceNode(node) && /^(Pick|Omit)$/.test(node.typeName.getText())
+}
+
+const isPlainBody = (decl: ts.TypeAliasDeclaration | ts.InterfaceDeclaration): boolean =>
+  ts.isInterfaceDeclaration(decl) || isPlainNode(decl.type)
+
 /** The own object-ish alias or interface a type names, looking through `| undefined`, unions and arrays. */
-function namedOptionTypes(checker: ts.TypeChecker, type: ts.Type): ts.Declaration[] {
+export function namedOptionTypes(checker: ts.TypeChecker, type: ts.Type): ts.Declaration[] {
   const t = checker.getNonNullableType(type)
   const direct = t.aliasSymbol ?? t.getSymbol()
   const decl = direct?.declarations?.find(
@@ -276,9 +289,11 @@ function namedOptionTypes(checker: ts.TypeChecker, type: ts.Type): ts.Declaratio
     const shape = ts.isInterfaceDeclaration(decl) || ts.isTypeAliasDeclaration(decl)
     const callable = t.getCallSignatures().length > 0
     const literals = ts.isTypeAliasDeclaration(decl) && literalUnionText(decl) !== undefined
-    // A generic shape reads as a puzzle without its arguments (`FieldHandle<F>`, `ChartSeries<T>`).
-    const generic = decl.typeParameters !== undefined
-    if (shape && !callable && !literals && !generic) return [decl]
+    // A generic shape reads as a puzzle unless its body is a plain member list (`ChartSeries<T>`),
+    // a `Pick`/`Omit` of one, or an intersection of those (`BarsBar<T>`): a conditional or mapped
+    // alias (`EmitArgs<K>`) stays out.
+    const plain = decl.typeParameters === undefined || isPlainBody(decl)
+    if (shape && !callable && !literals && plain) return [decl]
   }
   if (checker.isArrayType(t))
     return checker
