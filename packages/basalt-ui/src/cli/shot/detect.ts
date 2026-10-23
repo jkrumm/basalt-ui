@@ -9,7 +9,7 @@
  * |-|-|-|
  * | scan/shot-error              | content | P0                                                |
  * | scan/no-anchors              | content | P0                                                |
- * | craft-7/no-declared-states   | content | P2 (only when an anchor renders a state surface)  |
+ * | craft-7/no-declared-states   | content | P2 (per anchor that renders a state surface)      |
  * | craft-5/contrast             | content | P0                                                |
  * | craft-5/assumed-backdrop     | content | P2                                                |
  * | craft-1/scale-error, -missing| layout  | P1                                                |
@@ -30,7 +30,7 @@ import { isAbsolute, join, relative, resolve } from 'node:path'
 import { parseArgs } from 'node:util'
 
 import { contrastThreshold } from './measure'
-import { NO_STATES_NOTE, PAGE_ANCHOR, SHOT_HOME } from './types'
+import { PAGE_ANCHOR, SHOT_HOME } from './types'
 import type { AnchorMetrics, Scale, ShotMetrics, Sides } from './types'
 
 export type Severity = 'P0' | 'P1' | 'P2' | 'P3'
@@ -281,20 +281,20 @@ export function detectFindings(m: ShotMetrics, lint?: LintReport): Finding[] {
       defect: `The shot failed${s.note ? `: ${s.note}` : ''}.`,
     })
   }
-  const stateful = new Map<string, Set<string>>()
+  const stateful = new Map<string, { route: string; name: string }>()
   for (const s of m.shots) {
-    if (s.status !== 'not-declared' || s.note !== NO_STATES_NOTE || !s.stateful) continue
-    stateful.set(s.route, (stateful.get(s.route) ?? new Set()).add(s.name))
+    if (!s.stateful || s.status === 'absent') continue
+    stateful.set(`${s.route}\0${s.name}`, { route: s.route, name: s.name })
   }
-  for (const [route, names] of stateful) {
+  for (const { route, name } of stateful.values()) {
     drafts.push({
       ...scan,
       rule: 'craft-7/no-declared-states',
       severity: 'P2',
-      anchor: '—',
+      anchor: name,
       route,
-      cite: `metrics.json shots[${route} not-declared]`,
-      defect: `${[...names].join(', ')} render${names.size === 1 ? 's' : ''} a state surface but no anchor declares data-shot-states, so empty, loading and error were never scored: add data-shot-states="empty loading error" to ${names.size === 1 ? 'it' : 'each'}.`,
+      cite: `metrics.json shots[${route} ${name} stateful]`,
+      defect: `${name} renders a state surface but declares no data-shot-states of its own, so empty, loading and error were never scored: add data-shot-states="empty loading error" to it, or data-shot-absent for a state it never shows.`,
     })
   }
   if (m.scaleError || m.scale.length === 0) {

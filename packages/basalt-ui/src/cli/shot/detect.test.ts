@@ -80,37 +80,51 @@ describe('detectFindings', () => {
     expect(detectFindings(metrics())).toEqual([])
   })
 
-  test('craft-7/no-declared-states: names the anchors with a state surface and the attribute to add (P2)', () => {
-    const skipped = (
-      state: 'empty' | 'loading' | 'error',
-      route = '/',
-      over: Partial<ShotRecord> = {},
-    ) =>
-      okShot({
-        route,
-        state,
-        file: null,
-        status: 'not-declared',
-        note: 'page declares no data-shot-states',
-        ...over,
-      })
-    const m = metrics({
-      states: ['rest', 'empty', 'loading', 'error'],
-      shots: [
-        okShot(),
-        skipped('empty', '/', { name: 'revenue', stateful: true }),
-        skipped('loading', '/', { name: 'revenue', stateful: true }),
-        skipped('error', '/', { name: 'kpis', stateful: true }),
-        skipped('empty', '/', { name: 'plain' }),
-        skipped('empty', '/b'),
-      ],
+  describe('craft-7/no-declared-states (per anchor)', () => {
+    const shot = (name: string, over: Partial<ShotRecord> = {}) =>
+      okShot({ name, state: 'empty', ...over })
+    const flagged = (shots: ShotRecord[]) =>
+      detectFindings(metrics({ states: ['rest', 'empty', 'loading', 'error'], shots })).filter(
+        (f) => f.rule === 'craft-7/no-declared-states',
+      )
+
+    test('two state-surface anchors, one declaring: only the other is flagged (P2)', () => {
+      const found = flagged([
+        shot('revenue'),
+        shot('kpis', { stateful: true }),
+        shot('kpis', { state: 'loading', stateful: true }),
+      ])
+      expect(found).toHaveLength(1)
+      expect(found[0]).toMatchObject({ severity: 'P2', anchor: 'kpis', route: '/' })
+      expect(found[0]?.defect).toContain('kpis renders a state surface')
+      expect(found[0]?.defect).toContain('data-shot-states="empty loading error"')
     })
-    const found = detectFindings(m).filter((f) => f.rule === 'craft-7/no-declared-states')
-    expect(found.map((f) => f.route)).toEqual(['/'])
-    expect(found[0]).toMatchObject({ severity: 'P2', anchor: '—' })
-    expect(found[0]?.defect).toContain('revenue, kpis')
-    expect(found[0]?.defect).not.toContain('plain')
-    expect(found[0]?.defect).toContain('data-shot-states="empty loading error"')
+
+    test('every anchor declaring its own states is clean', () => {
+      expect(flagged([shot('revenue'), shot('kpis')])).toEqual([])
+    })
+
+    test('an anchor whose data-shot-absent covers the state is clean', () => {
+      expect(flagged([shot('kpis', { status: 'absent', stateful: true })])).toEqual([])
+    })
+
+    test('a route with no declaration at all flags each state-surface anchor once', () => {
+      const skipped = (name: string, over: Partial<ShotRecord> = {}) =>
+        shot(name, {
+          file: null,
+          status: 'not-declared',
+          note: 'page declares no data-shot-states',
+          ...over,
+        })
+      const found = flagged([
+        skipped('revenue', { stateful: true }),
+        skipped('revenue', { state: 'loading', stateful: true }),
+        skipped('kpis', { state: 'error', stateful: true }),
+        skipped('plain'),
+        skipped('other', { route: '/b' }),
+      ])
+      expect(found.map((f) => f.anchor)).toEqual(['revenue', 'kpis'])
+    })
   })
 
   test('a route that declares some state, or skipped one by choice, is not flagged', () => {

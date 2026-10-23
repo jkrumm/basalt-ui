@@ -66,6 +66,8 @@ export type CaptureInput = {
 type PageFacts = {
   anchors: string[]
   declared: string[]
+  /** Anchors that carry `data-shot-states` themselves (on, inside or above the anchor element). Absent in a hand-built fact: the page's `declared` stands for every anchor. */
+  declaring?: string[]
   /** Anchors that hold a basalt state surface (ChartCard, StatCard, a chart state). */
   stateful?: string[]
   /** Anchor → the URL states it declares itself absent in (`data-shot-absent="empty error"`). */
@@ -244,6 +246,7 @@ const readFacts = (page: PwPage): Promise<PageFacts> =>
   page.evaluate(`(() => { const STATE_SURFACE = ${JSON.stringify(STATE_SURFACE)}; return {
     anchors: [...new Set([...document.querySelectorAll('[data-shot]')].map((e) => e.getAttribute('data-shot')).filter(Boolean))],
     declared: [...document.querySelectorAll('[data-shot-states]')].flatMap((e) => (e.getAttribute('data-shot-states') ?? '').split(/\\s+/)).filter(Boolean),
+    declaring: [...new Set([...document.querySelectorAll('[data-shot]')].filter((e) => e.closest('[data-shot-states]') || e.querySelector('[data-shot-states]')).map((e) => e.getAttribute('data-shot')).filter(Boolean))],
     stateful: [...new Set([...document.querySelectorAll('[data-shot]')].filter((e) => e.matches(STATE_SURFACE) || e.querySelector(STATE_SURFACE)).map((e) => e.getAttribute('data-shot')).filter(Boolean))],
     content: document.body ? document.body.innerText : '',
     absent: Object.fromEntries([...document.querySelectorAll('[data-shot][data-shot-absent]')].map((e) => [e.getAttribute('data-shot'), (e.getAttribute('data-shot-absent') ?? '').split(/\\s+/).filter(Boolean)])),
@@ -753,6 +756,15 @@ const POINTER_STATES = {
   tooltip: captureTooltip,
 }
 
+/** A state surface no `data-shot-states` covers and no `data-shot-absent` excuses: its `state` was never scored. */
+function lacksStates(c: Ctx, name: string, state: ShotState): boolean {
+  const { stateful, declaring, declared, absent } = c.facts
+  const own = declaring ?? (declared.length > 0 ? c.facts.anchors : [])
+  return (
+    stateful?.includes(name) === true && !own.includes(name) && !absent?.[name]?.includes(state)
+  )
+}
+
 /** `empty`/`loading`/`error`: reload with `shot-state=<state>`, re-read the anchors, crop each. */
 async function captureUrlState(c: Ctx, state: ShotState): Promise<void> {
   const restNames = c.facts.anchors
@@ -763,9 +775,7 @@ async function captureUrlState(c: Ctx, state: ShotState): Promise<void> {
         state,
         status: 'not-declared',
         note: c.facts.declared.length === 0 ? NO_STATES_NOTE : 'page does not declare this state',
-        ...(c.facts.declared.length === 0 && c.facts.stateful?.includes(name)
-          ? { stateful: true as const }
-          : {}),
+        ...(lacksStates(c, name, state) ? { stateful: true as const } : {}),
       })
     }
     return
@@ -792,6 +802,8 @@ async function captureUrlState(c: Ctx, state: ShotState): Promise<void> {
     }
     const note = restNames.includes(name) ? undefined : 'anchor only present in this state'
     await attempt(c, name, state, (path) => restCrop(c, name, state, path), note)
+    const shot = c.shots.findLast((r) => r.name === name && r.state === state)
+    if (shot && shot.status !== 'not-declared' && lacksStates(c, name, state)) shot.stateful = true
   }
 }
 
