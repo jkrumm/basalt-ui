@@ -87,7 +87,6 @@ type Ctx = {
   measured: Set<string>
   /** What the last visit showed to be wrong about the data itself: a failed seed, a 401/403, no API answer. */
   problems: string[]
-  /** Hash of the page's text at first load; absent when the page never loaded. */
   content?: string
   /** Read on the first page of a context that loads. */
   scale?: Steps | undefined
@@ -1054,7 +1053,7 @@ export async function capture(input: CaptureInput): Promise<{
             out.scale.push({ scheme, viewport, ...done.scale })
             scaled = true
           }
-          if (done.content) contents.set(route, done.content)
+          if (done.content && !contents.has(route)) contents.set(route, done.content)
           if (done.scaleError) out.scaleError = out.scaleError ?? done.scaleError
           out.anchors.push(...done.anchors)
           out.shots.push(...done.shots)
@@ -1066,7 +1065,7 @@ export async function capture(input: CaptureInput): Promise<{
   }
   if (
     input.routes.length > 1 &&
-    contents.size === input.routes.length &&
+    contents.size === new Set(input.routes).size &&
     new Set(contents.values()).size === 1
   )
     input.log(SAME_CONTENT_WARNING)
