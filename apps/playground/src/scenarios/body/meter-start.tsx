@@ -42,7 +42,7 @@ const strip = (anchor: string, visual: StatStripCell['visual'], props: ScenarioP
       <StatGroup
         variant="strip"
         label="Body"
-        cols={2}
+        cols={1}
         cells={[
           {
             key: 'weight',
