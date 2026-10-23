@@ -95,18 +95,32 @@ export function useOpenAtEnd(node: HTMLElement | null, active: boolean, count: n
   }, [node, active])
 }
 
-/** Marks the scroll node `data-scrolled` while it is off the top, so CSS can lift the sticky day header. */
+/**
+ * Marks the scroll node `data-scrolled` while it is off the top (CSS lifts the sticky day header) and
+ * `data-more` while content remains below the fold (CSS paints a bottom fade), so a clipped last row
+ * is never silent.
+ */
 export function useScrolledEdge(node: HTMLElement | null): void {
   useEffect(() => {
     if (node === null) return
     const el: HTMLElement = node
+    const flag = (name: string, on: boolean): void => {
+      if (on) el.setAttribute(name, '')
+      else el.removeAttribute(name)
+    }
     const mark = (): void => {
-      if (el.scrollTop > 0) el.setAttribute('data-scrolled', '')
-      else el.removeAttribute('data-scrolled')
+      flag('data-scrolled', el.scrollTop > 0)
+      flag('data-more', el.scrollHeight - el.scrollTop - el.clientHeight > 1)
     }
     mark()
     el.addEventListener('scroll', mark, { passive: true })
-    return () => el.removeEventListener('scroll', mark)
+    const observer = typeof ResizeObserver === 'undefined' ? null : new ResizeObserver(mark)
+    observer?.observe(el)
+    if (el.firstElementChild !== null) observer?.observe(el.firstElementChild)
+    return () => {
+      el.removeEventListener('scroll', mark)
+      observer?.disconnect()
+    }
   }, [node])
 }
 
@@ -119,11 +133,15 @@ const HELD = '--event-list-held'
  * only for that handoff: it is released as soon as the windowed rows have rendered, and whenever
  * there are no rows, so a shorter list never leaves blank space below its last row.
  */
-export function useHeldHeight(node: HTMLElement | null, mode: 'plain' | 'windowed' | 'none'): void {
+export function useHeldHeight(
+  node: HTMLElement | null,
+  mode: 'plain' | 'windowed' | 'loading' | 'none',
+): void {
   useEffect(() => {
     const content = node?.firstElementChild
     if (node === null || content === null || content === undefined) return
     const el: HTMLElement = node
+    if (mode === 'loading') return // a skeleton keeps the last rows' height (see `.skeleton`)
     if (mode === 'none') {
       el.style.removeProperty(HELD)
       return

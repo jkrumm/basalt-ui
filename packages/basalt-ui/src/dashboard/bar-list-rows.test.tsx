@@ -1,3 +1,4 @@
+import { readFileSync } from 'node:fs'
 import { MantineProvider } from '@mantine/core'
 import { cleanup, render } from '@testing-library/react'
 import { afterEach, describe, expect, test } from 'bun:test'
@@ -150,5 +151,12 @@ describe('BarList tick', () => {
   test('rows without a tick render none', () => {
     const { container } = mount({ label: 'L', items: [{ label: 'a', value: 1 }] })
     expect(container.querySelector('[data-bar-tick]')).toBeNull()
+  })
+})
+
+describe('BarList name/value gap', () => {
+  test('the label reserves an end gap so a truncated name never touches its value', () => {
+    const css = readFileSync(new URL('./bar-list.module.css', import.meta.url), 'utf8')
+    expect(css).toMatch(/\.label \{[^}]*padding-inline-end/)
   })
 })

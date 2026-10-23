@@ -461,11 +461,12 @@ export function FoldHeaderLabel({
   count: number
   foldedLabel: string
 }): ReactNode {
+  const more = `${count} more ${count === 1 ? 'column' : 'columns'}`
   return (
-    <span className={classes.foldCount} title={foldedLabel}>
+    <span className={classes.foldCount} title={`${more}: ${foldedLabel}`}>
       <span aria-hidden>+{count}</span>
       <span className={classes.srOnly}>
-        {count} {count === 1 ? 'column' : 'columns'} folded: {foldedLabel}
+        {more}: {foldedLabel}
       </span>
     </span>
   )

@@ -9,8 +9,8 @@
  * rows' identity (keys, prepend anchoring): keep them unique and stable.
  *
  * The row is two lines at every width: line one is the glyph and `actor + sentence` (clamped to one line in
- * `feed`, wrapping in `timeline`); line two leads with the time, then the body (it wraps, never
- * truncates), then the chips (they wrap to the next line only if they must). A row with no body or
+ * `feed`, wrapping in `timeline`); line two leads with the time, then the body (one clamped line in a
+ * `feed`, wrapping in a `timeline`), then the chips (they wrap to the next line only if they must). A row with no body or
  * chips still has line two, the time alone; an untimed row's line two is body and chips only.
  *
  * Above 200 rows the rows window through the package's one lazy virtual-list seam
@@ -182,7 +182,10 @@ export function EventList({
   usePrependAnchor(scrollEl, opensAtEnd && hasRows && !virtualised, items)
   useOpenAtEnd(scrollEl, opensAtEnd && hasRows && !virtualised, items.length)
   useScrolledEdge(ownScroll ? scrollEl : null)
-  useHeldHeight(scrollEl, !hasRows ? 'none' : virtualised ? 'windowed' : 'plain')
+  useHeldHeight(
+    scrollEl,
+    loading ? 'loading' : !hasRows ? 'none' : virtualised ? 'windowed' : 'plain',
+  )
 
   const control =
     earlier === undefined || !hasRows ? null : (
@@ -203,7 +206,7 @@ export function EventList({
   let content: ReactNode
   if (loading) {
     content = (
-      <div aria-busy="true">
+      <div aria-busy="true" className={classes.skeleton}>
         <VisuallyHidden>{`Loading ${label}`}</VisuallyHidden>
         <SkeletonRows count={loadingRows} ctx={ctx} grouped={grouped} height={height} />
       </div>

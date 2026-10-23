@@ -436,9 +436,9 @@ describe('the fold toggle says what folded', () => {
     const { container } = mount()
     await resize(container, 100, 240, WIDE)
     const label = container.querySelector('thead th [title]')
-    expect(label?.getAttribute('title')).toBe('C, D')
+    expect(label?.getAttribute('title')).toBe('2 more columns: C, D')
     expect(label?.textContent).toContain('+2')
-    expect(label?.textContent).toContain('2 columns folded: C, D')
+    expect(label?.textContent).toContain('2 more columns: C, D')
   })
 })
 

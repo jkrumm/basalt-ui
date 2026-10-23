@@ -53,7 +53,14 @@ export function EventRow({
       )}
       {hasMeta && (
         <div className={classes.meta}>
-          {present(item.body) && <span className={classes.body}>{item.body}</span>}
+          {present(item.body) && (
+            <span
+              className={classes.body}
+              title={typeof item.body === 'string' ? item.body : undefined}
+            >
+              {item.body}
+            </span>
+          )}
           {present(item.chips) && <span className={classes.chips}>{item.chips}</span>}
         </div>
       )}
