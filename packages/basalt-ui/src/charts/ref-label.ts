@@ -197,34 +197,31 @@ export function referenceLabelPlacement(opts: {
       }
     }),
   )
-  const fitting = candidates.filter((c) => c.fits)
-  // The fitting spot that stays nearest the reference (the first of the four on a tie).
-  const nearest = fitting.reduce<(typeof candidates)[number] | undefined>(
-    (best, c) => (best === undefined || c.shift < best.shift ? c : best),
-    undefined,
-  )
-  // Nothing fits (the line peaks on the reference in a short box): keep the box inside the plot
-  // (the top edge last, so a box taller than the plot starts at 0) and take the spot that clears the
-  // reference rule first, then covers the least of the data line. A tie keeps the first of the four.
+  // The box stays inside the plot (the top edge last, so a box taller than the plot starts at 0).
   const scored = candidates.map((c) => {
     const top = Math.max(0, Math.min(c.top, height - boxH))
-    const strikesRule = top < at && top + boxH > at
     const covered =
       c.range === null
         ? 0
         : Math.max(0, Math.min(top + boxH, c.range[1]) - Math.max(top, c.range[0]))
-    return { ...c, top, strikesRule, covered }
+    return { ...c, top, strikesRule: top < at && top + boxH > at, covered }
   })
-  const least = scored.reduce((best, c) =>
-    c.strikesRule !== best.strikesRule
-      ? c.strikesRule
-        ? best
-        : c
-      : c.covered < best.covered
-        ? c
-        : best,
-  )
-  const { side, end, top } = nearest ?? least
+  type Spot = (typeof scored)[number]
+  // The fitting spot that stays nearest the reference (the first of the four on a tie).
+  const nearer = (c: Spot, best: Spot): boolean => c.shift < best.shift
+  // Nothing fits (the line peaks on the reference in a short box): the spot that clears the
+  // reference rule first, then covers the least of the data line.
+  const better = (c: Spot, best: Spot): boolean =>
+    c.strikesRule === best.strikesRule ? c.covered < best.covered : best.strikesRule
+  const pick = (spots: Spot[], beats: (c: Spot, best: Spot) => boolean): Spot | undefined =>
+    spots.reduce<Spot | undefined>(
+      (best, c) => (best === undefined || beats(c, best) ? c : best),
+      undefined,
+    )
+  const { side, end, top } = (pick(
+    scored.filter((c) => c.fits),
+    nearer,
+  ) ?? pick(scored, better)) as Spot
   const dy = top + boxH / 2 - at
   return { side, end, dy }
 }

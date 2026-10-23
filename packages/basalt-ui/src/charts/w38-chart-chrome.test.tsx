@@ -225,6 +225,10 @@ describe('a compact y axis keeps the unit its formatter puts on a fixed domain e
     expect(values).toEqual([0, 10, 20, 25])
     expect(format?.(values.at(-1) as number)).toBe('25 days')
   })
+  test('a native-digit formatter is judged on its text, not its digits', () => {
+    const arabic = new Intl.NumberFormat('ar-EG')
+    expect(ticksOf([69, 77], (v) => arabic.format(v)).values).toEqual([70, 72, 74, 76])
+  })
   test('a uniform formatter ends on the step: weight 70 72 74 76, no lone 77', () => {
     expect(ticksOf([69, 77], (v) => `${v} kg`).values).toEqual([70, 72, 74, 76])
   })

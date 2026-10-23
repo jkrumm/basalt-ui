@@ -149,17 +149,6 @@ export function tabsVars(
   }
 }
 
-/**
- * Slider fill: neutral ink unless the slider encodes a status. Mantine fills the bar and thumb from
- * `--slider-color`, which falls back to the primary (the accent); an explicit `color=` opts out.
- */
-export function sliderVars(
-  _theme: MantineTheme,
-  props: { color?: string | null | undefined },
-): { root: Record<'--slider-color', string | undefined> } {
-  return { root: { '--slider-color': hasExplicitColor(props.color) ? undefined : INK } }
-}
-
 /** The dot's colour: a theme colour's fill, an indexed shade's own var (`red.6`), or the caller's literal (hex, var). */
 function dotColor(theme: MantineTheme, color: string): string {
   if (Object.hasOwn(theme.colors, color)) return `var(--mantine-color-${color}-filled)`

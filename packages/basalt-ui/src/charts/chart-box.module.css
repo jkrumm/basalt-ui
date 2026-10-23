@@ -228,7 +228,7 @@
 
 /* A Sparkline keeps the outer ring: its cell reserves the clearance (the readout chip and the end
  * marker are placed against it) and an inset ring would cross the end marker. */
-:global([data-basalt-sparkline] .ts-chart:focus-visible) {
+:global([data-basalt-sparkline] .basalt-chart .ts-chart:focus-visible) {
   outline-offset: calc(0.125rem * var(--mantine-scale));
 }
 
