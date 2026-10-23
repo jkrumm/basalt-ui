@@ -31,7 +31,11 @@ export const COMMAND_OPTIONS: Record<
     'tokens-only': { type: 'boolean' },
     framework: { type: 'boolean' },
   },
-  doctor: { 'tokens-only': { type: 'boolean' }, framework: { type: 'boolean' } },
+  doctor: {
+    'tokens-only': { type: 'boolean' },
+    framework: { type: 'boolean' },
+    from: { type: 'string' },
+  },
   'guard-hook': {},
   'tokens:css': {
     out: { type: 'string' },
@@ -81,7 +85,7 @@ export const USAGE =
   'Usage: basalt-ui <--version | init [--no-merge-lint] |\n' +
   '                  sync [--force] [--check] [--verbose] [--tokens-only|--framework] |\n' +
   '                  check-theme [--audit-allows] |\n' +
-  '                  doctor [--tokens-only|--framework] | guard-hook | tokens:css | fonts:css |\n' +
+  '                  doctor [--tokens-only|--framework|--from <x.y.z>] | guard-hook | tokens:css | fonts:css |\n' +
   '                  shot <route…> | shot detect | help>\n\n' +
   'check-theme [--tokens-only|--framework] [--audit-allows]\n' +
   '  --audit-allows reports instead of scanning: every `theme-allow` annotation and every\n' +
@@ -102,13 +106,15 @@ export const USAGE =
   '  Render routes in Chromium (Playwright from YOUR project: bun add -d playwright) and write\n' +
   '  board.html, metrics.json and png/* — every data-shot anchor × light/dark × desktop/mobile ×\n' +
   '  rest, hover, focus, tooltip, empty, loading, error. --dist serves a built SPA dir itself.\n' +
+  '  --out must resolve inside the project (the app dir in a monorepo, not the repo root); routes are\n' +
+  '  separate arguments (zsh does not word-split $ROUTES).\n' +
   '  Default --out .basalt/shots (emptied each run); .basalt/shots/last.json names the last out dir.\n' +
   '  A real, signed-in app: [--local-storage <key>=<@env:NAME|@file:path>]… seeds localStorage (app origin\n' +
   '  only) before any page script; [--api <prefix>=<origin>]… (with --dist) proxies GET/HEAD under that\n' +
   '  prefix to the origin (other methods get 405 unless --api-allow-writes); [--header <name>=@env:NAME]… is\n' +
   '  added to every proxied request, to EVERY --api origin (never on a navigation; https required);\n' +
   '  [--wait <ms|networkidle>] adds ms of settle AFTER networkidle (default none); [--auto-anchors] crops\n' +
-  '  each Card, Paper and table over 120×60 px on a page with no data-shot. Values are never printed or\n' +
+  '  each Card, Paper and table over 120×60 px (else main, section, header, form) on a page with no data-shot. Values are never printed or\n' +
   '  written; a redirect, 401/403/404, 5xx or dead API fails every shot of that page. Shots of real data go to the\n' +
   '  reviewer subagent and so to its model provider: point --api at staging or synthetic data when the\n' +
   "  app holds other people's data. Example:\n" +
@@ -127,10 +133,13 @@ export const USAGE =
   '    P2  noted, not failing: degraded: a lint warning, a contrast measured on an assumed white backdrop\n' +
   '    P3  noted, not failing: polish: an off-scale value within 1 px of a step\n' +
   '  score = 100 - (25 per P0 + 10 per P1 + 3 per P2 + 1 per P3), floored at 0. Each run appends\n' +
-  '  {at, out, commit, counts, score} to .basalt/shots/history.json and prints the last 5 scores as a trend.\n' +
+  '  {at, out, commit, counts, score} to .basalt/shots/history.json and prints the last 5 scores of THAT --out dir as a trend\n' +
+  '  with the finding count beside each (the score floors at 0). No anchor measured: "nothing measured", no score.\n' +
+  '  detect takes --out <dir>, never a positional.\n' +
   '  A component can declare a rest anchor absent in a URL state with data-shot-absent="empty error": that\n' +
   '  cell is recorded `absent`, not `error`.\n\n' +
-  'doctor [--tokens-only|--framework]\n' +
+  'doctor [--tokens-only|--framework] [--from <x.y.z>]\n' +
+  '  doctor --from <x.y.z>  print the consumer-visible MIGRATING changes since that version\n' +
   '  Checks THIS project only: the manifest exists, the oxlint preset is wired, the pre-commit\n' +
   '  hook runs check-theme (via `lefthook dump`), and the ai package major is consistent within\n' +
   '  this package.json. Profile is DECLARED, same as check-theme — never inferred.\n\n' +

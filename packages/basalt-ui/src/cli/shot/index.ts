@@ -90,6 +90,11 @@ export function parseShotArgs(
   if (positionals.length === 0) throw new ShotError(`no route given.\n${USAGE_LINE}`)
   const bad = positionals.find((r) => !r.startsWith('/'))
   if (bad) throw new ShotError(`route '${bad}' must start with '/'.\n${USAGE_LINE}`)
+  const spaced = positionals.find((r) => /\s/.test(r))
+  if (spaced)
+    throw new ShotError(
+      `route '${spaced}' contains whitespace: pass each route as its own argument (zsh does not word-split $ROUTES; use \${=ROUTES} or an array).\n${USAGE_LINE}`,
+    )
   if (Boolean(values.base) === Boolean(values.dist)) {
     throw new ShotError(`pass exactly one of --base <url> or --dist <dir>.\n${USAGE_LINE}`)
   }
@@ -172,7 +177,8 @@ export function planOut(cwd: string, out: string): string {
   const refuse = (why: string): never => {
     throw new ShotError(`--out ${out} ${why}`)
   }
-  if (rel === '' || outside(rel)) refuse('must be a directory inside the project')
+  const inProject = `a directory inside the project (${cwd}; in a monorepo, the app dir)`
+  if (rel === '' || outside(rel)) refuse(`must be ${inProject}`)
   if (relative(join(cwd, HOME), dir) === '')
     refuse('is the shot home (holds last.json); use a subdirectory')
   if (rel === '.basalt' || rel.split(sep).some((part) => PROTECTED_SEGMENTS.has(part))) {
@@ -188,7 +194,7 @@ export function planOut(cwd: string, out: string): string {
   } catch {
     refuse('sits behind a dangling symlink')
   }
-  if (outside(relative(realpathSync(cwd), real))) refuse('resolves outside the project')
+  if (outside(relative(realpathSync(cwd), real))) refuse(`resolves outside the project (${cwd})`)
   if (probe === dir) {
     if (!statSync(dir).isDirectory()) refuse('exists and is not a directory')
     if (readdirSync(dir).length > 0 && !isPreviousShot(dir)) {

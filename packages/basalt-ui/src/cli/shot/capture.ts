@@ -68,6 +68,8 @@ type PageFacts = {
   stateful?: string[]
   /** Anchor → the URL states it declares itself absent in (`data-shot-absent="empty error"`). */
   absent?: Record<string, string[]>
+  /** The page's visible text, to tell whether every route rendered the same thing. */
+  content?: string
 }
 
 /** Everything one page visit shares: where the records go and what was already measured. */
@@ -85,6 +87,8 @@ type Ctx = {
   measured: Set<string>
   /** What the last visit showed to be wrong about the data itself: a failed seed, a 401/403, no API answer. */
   problems: string[]
+  /** Hash of the page's text at first load; absent when the page never loaded. */
+  content?: string
   /** Read on the first page of a context that loads. */
   scale?: Steps | undefined
   scaleError?: string | undefined
@@ -115,6 +119,9 @@ function within<T>(what: string, work: Promise<T>, ms = STEP_TIMEOUT_MS): Promis
   })
   return Promise.race([work, late]).finally(() => clearTimeout(timer))
 }
+
+export const SAME_CONTENT_WARNING =
+  '[shot] warning: every route rendered the same content — a lock screen or auth wall? see --api'
 
 const hash = (text: string): string => createHash('sha1').update(text).digest('hex').slice(0, 6)
 const slug = (text: string): string => text.replace(/[^\w-]+/g, '-').replace(/^-+|-+$/g, '')
@@ -208,14 +215,24 @@ async function load(page: PwPage, url: string, settle = 0): Promise<void> {
   if (settle > 0) await new Promise((done) => setTimeout(done, settle))
 }
 
-/** Runs in the page: numbers every Card, Paper and table in DOM order, tagging those over 120×60 px as anchors. */
+/**
+ * Runs in the page: numbers every Card, Paper and table in DOM order, tagging those over 120×60 px as
+ * anchors. A page with none of them (Tailwind, a reader) falls back to `main`, `section`, `header`
+ * and `form` under the same floor.
+ */
 export function tagAutoAnchors(): void {
-  const found = document.querySelectorAll('.mantine-Card-root, .mantine-Paper-root, table')
-  Array.from(found).forEach((el, i) => {
-    const { width, height } = el.getBoundingClientRect()
-    if (width > 120 && height > 60)
+  const tag = (selector: string): number => {
+    let tagged = 0
+    Array.from(document.querySelectorAll(selector)).forEach((el, i) => {
+      const { width, height } = el.getBoundingClientRect()
+      if (width <= 120 || height <= 60) return
       el.setAttribute('data-shot', `auto-${String(i + 1).padStart(2, '0')}`)
-  })
+      tagged++
+    })
+    return tagged
+  }
+  if (tag('.mantine-Card-root, .mantine-Paper-root, table') === 0)
+    tag('main, section, header, form')
 }
 
 /** The DOM marks of a basalt state surface: `ChartCard` and the chart state write theirs; `StatCard` has none but its `basalt-card` container. */
@@ -227,6 +244,7 @@ const readFacts = (page: PwPage): Promise<PageFacts> =>
     anchors: [...new Set([...document.querySelectorAll('[data-shot]')].map((e) => e.getAttribute('data-shot')).filter(Boolean))],
     declared: [...document.querySelectorAll('[data-shot-states]')].flatMap((e) => (e.getAttribute('data-shot-states') ?? '').split(/\\s+/)).filter(Boolean),
     stateful: [...new Set([...document.querySelectorAll('[data-shot]')].filter((e) => e.matches(STATE_SURFACE) || e.querySelector(STATE_SURFACE)).map((e) => e.getAttribute('data-shot')).filter(Boolean))],
+    content: document.body ? document.body.innerText : '',
     absent: Object.fromEntries([...document.querySelectorAll('[data-shot][data-shot-absent]')].map((e) => [e.getAttribute('data-shot'), (e.getAttribute('data-shot-absent') ?? '').split(/\\s+/).filter(Boolean)])),
   }; })()`)
 
@@ -857,6 +875,7 @@ async function capturePage(
   input.apiProblems?.() // calls still in flight from an earlier route are not this page's
   try {
     c.facts = await visit(c, input.base + route)
+    if (c.facts.content) c.content = hash(c.facts.content)
   } catch (error) {
     record(c, {
       name: PAGE_ANCHOR,
@@ -1007,6 +1026,7 @@ export async function capture(input: CaptureInput): Promise<{
     scale: [] as Scale[],
     scaleError: undefined as string | undefined,
   }
+  const contents = new Map<string, string>()
   for (const scheme of SCHEMES) {
     for (const viewport of VIEWPORTS) {
       input.apiProblems?.() // a new context starts with a clean queue
@@ -1034,6 +1054,7 @@ export async function capture(input: CaptureInput): Promise<{
             out.scale.push({ scheme, viewport, ...done.scale })
             scaled = true
           }
+          if (done.content) contents.set(route, done.content)
           if (done.scaleError) out.scaleError = out.scaleError ?? done.scaleError
           out.anchors.push(...done.anchors)
           out.shots.push(...done.shots)
@@ -1043,6 +1064,12 @@ export async function capture(input: CaptureInput): Promise<{
       }
     }
   }
+  if (
+    input.routes.length > 1 &&
+    contents.size === input.routes.length &&
+    new Set(contents.values()).size === 1
+  )
+    input.log(SAME_CONTENT_WARNING)
   await writeSheets(input, out).catch((error: unknown) =>
     input.log(`[shot] contact sheets not written: ${firstLine(error)}`),
   )

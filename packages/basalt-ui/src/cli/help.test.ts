@@ -180,6 +180,17 @@ describe('shot detect help', () => {
     expect(log).toContain('score = 100')
   })
 
+  it('states the --out constraint and that routes are separate arguments', () => {
+    const { log } = capture(() => run(['--help'], dir))
+    expect(log).toContain('--out must resolve inside the project')
+    expect(log).toContain('zsh does not word-split')
+  })
+
+  it('parses doctor --from', () => {
+    expect(unknownFlag('doctor', ['--from', '2.20.0'])).toBeNull()
+    expect(unknownFlag('doctor', ['--nope'])).toBe('--nope')
+  })
+
   it('accepts --lint on shot and still rejects an unknown flag', () => {
     expect(unknownFlag('shot', ['detect', '--lint', 'oxlint.json'])).toBeNull()
     expect(unknownFlag('shot', ['detect', '--nope'])).toBe('--nope')

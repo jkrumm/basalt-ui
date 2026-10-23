@@ -31,6 +31,9 @@ export type ContrastFailure = {
   fg: string
   bg: string
   fontSize: number
+  /** The WCAG threshold applied (3 for large text, else 4.5); absent in older metrics.json. */
+  needs?: number
+  bold?: boolean
 }
 
 /** What the in-page measurer returns for one anchor. */
