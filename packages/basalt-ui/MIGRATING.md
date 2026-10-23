@@ -1043,10 +1043,30 @@ The `basalt-ui/router-tanstack` subpath is **removed** in 2.x, not moved: an imp
 | `NavItemMeta`, `NavGroupMeta`, `AnyNavItem`, `AnyNavGroup`, `AnyNavLink`, `FlatNavItem`, `NavConfig`, `NavGroupId`, `NavTabId`, `NavIndex`, `UseNavOptions`, `NavBinding`, `NavAnchor`, `NavAnchorProps`, `NavMobilePlacement` | deleted                                                                                                                                                                                                                                                                                                                                                                                                                                                    | no consumer names them; derive with `ComponentProps` / `Parameters` |
 | `useNav`, and `BasaltShell`'s `sections` / `mobileNav` props                                                                                                                                                                   | deleted: pass `nav={NAV}` (plus `badges`, `isActive`, `getScrollElement` — the old `useNav` options) to `BasaltShell`; it resolves the sidebar, the mobile bar and the breadcrumb itself. `mobileNav` tuning moves to `defineNav`'s `mobile`. argo `apps/dashboard/src/routes/__root.tsx`: replace `const nav = useNav(NAV, { badges })` + `{...nav}` with `nav={NAV} badges={…}` (migrates in W12; 1.x consumers stay on their pinned version until then) |
 
-## Unreleased
+## Unreleased — the 2.28 bump friction (Wave 48)
 
-_Nothing yet. Author the next section under this heading as `## Unreleased — <title>`; the
-release renames it and opens a new one here._
+### CLI and guards (argo-friction rows 168–179)
+
+Nothing to change unless a script parses `shot detect` output or runs `oxlint .` inside a checkout that holds agent
+worktrees.
+
+- **`oxlint` and agent worktrees.** A `.claude/worktrees/<name>` checkout inside a live one made `oxlint .` fail with
+  "Plugin name basalt is already registered": oxlint loads the worktree's nested `.oxlintrc.json` whatever
+  `ignorePatterns` says. `init` now writes `oxlint --ignore-pattern '.claude/worktrees/**' .` into `lint:basalt` and
+  the CI lint step. **Fix** for an existing app (`sync` does not rewrite scripts): add the flag to every `oxlint .`
+  you run (`package.json`, `make check`, CI).
+- **`sync` below the repo root** reports the repo root's `lefthook.yml` and `check.yml` as in sync, drifted or absent
+  (read-only) instead of two skip lines on every run.
+- **`doctor --from <x.y.z>`** prints the guard, token and visible-without-code-change lines of every release after
+  that version, and `doctor` names the re-emit command for a `tokens:css`/`fonts:css` sheet another version wrote.
+- **Guard messages.** `raw-spacing` lists the scale it wants (`8 → "xs"`, `12 → "sm"` …); `card-inset` names the
+  older `py="xs" px="sm"` idiom as off-idiom.
+- **`shot`.** A route containing whitespace is refused (zsh does not word-split `$ROUTES`); the `--out` errors name
+  the project dir; `--auto-anchors` falls back to `main`/`section`/`header`/`form` when no Card, Paper or table
+  qualifies; a warning fires when every route renders the same content (a lock screen). **`shot detect`** writes
+  `score: null` and prints "nothing measured" when no anchor resolved (a parser of `detect.json` or `history.json`
+  must accept null), shows the finding count beside each trend score, chains a trend only within one `--out` dir,
+  and names the contrast threshold it applied (`needs 4.5:1 at 22px regular`).
 
 ## 2.28.0
 
