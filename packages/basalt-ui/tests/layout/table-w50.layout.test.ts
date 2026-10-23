@@ -48,7 +48,7 @@ layout('folded table chrome', () => {
       await p.quiesce()
       const header = await p.raw.evaluate((s) => {
         const th = document.querySelector(s) as HTMLElement
-        const visible = th.querySelector('[aria-hidden]') as HTMLElement
+        const visible = th.querySelector('button') as HTMLElement
         const range = document.createRange()
         range.selectNodeContents(visible)
         return {
@@ -80,7 +80,7 @@ layout('folded table chrome', () => {
           )
           await p.quiesce()
           return p.raw.evaluate(
-            (s) => document.querySelector(s)?.querySelector('[aria-hidden]')?.textContent ?? null,
+            (s) => document.querySelector(s)?.querySelector('button')?.textContent ?? null,
             FOLD_HEADER,
           )
         }
@@ -94,7 +94,7 @@ layout('folded table chrome', () => {
     await p.quiesce()
     const header = await p.raw.evaluate((s) => {
       const th = document.querySelector(s) as HTMLElement
-      const visible = th.querySelector('[aria-hidden]') as HTMLElement
+      const visible = th.querySelector('button') as HTMLElement
       const range = document.createRange()
       range.selectNodeContents(visible)
       return {
@@ -125,7 +125,7 @@ layout('folded table chrome', () => {
       await p.quiesce()
       return p.raw.evaluate(
         ([fold, table]) => ({
-          fold: document.querySelector(fold!)?.querySelector('[aria-hidden]')?.textContent ?? null,
+          fold: document.querySelector(fold!)?.querySelector('button')?.textContent ?? null,
           selectWidth: (
             document.querySelector(
               `${table} tr:first-child [data-basalt-fixed-id="__basalt_select__"]`,

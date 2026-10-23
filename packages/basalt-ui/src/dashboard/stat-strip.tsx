@@ -45,8 +45,8 @@ import { useId, useRef } from 'react'
 import type { CSSProperties, ReactNode } from 'react'
 import { toErrorMessage } from '../common/errors'
 import { useIsomorphicLayoutEffect } from '../common/isomorphic-layout-effect'
-import { cx } from '../common/props'
-import type { BasaltProps, Tone } from '../common/props'
+import { cx, pickDataAttributes } from '../common/props'
+import type { BasaltProps, DataAttributes, Tone } from '../common/props'
 import { RetryButton } from '../common/retry-button'
 import { StatusDot } from '../theme/status-dot'
 import { VX } from '../tokens'
@@ -141,18 +141,19 @@ export type StatStripFooterEntry = {
   shotAbsent?: readonly StatStripShotState[]
 }
 
-export type StatStripProps = BasaltProps & {
-  /** The strip's accessible name. */
-  label: string
-  cells: readonly StatStripCell[]
-  /** Wider cells under the cells. */
-  footer?: readonly StatStripFooterEntry[]
-  /** The DESKTOP column count. Default: the cell count, capped at 6. A lone cell takes the whole strip
-   * whatever `cols` says. */
-  cols?: 2 | 3 | 4 | 5 | 6
-  /** The shot states the page hides the whole strip in (`data-shot-absent` on every derived anchor). */
-  shotAbsent?: readonly StatStripShotState[]
-}
+export type StatStripProps = BasaltProps &
+  DataAttributes & {
+    /** The strip's accessible name. */
+    label: string
+    cells: readonly StatStripCell[]
+    /** Wider cells under the cells. */
+    footer?: readonly StatStripFooterEntry[]
+    /** The DESKTOP column count. Default: the cell count, capped at 6. A lone cell takes the whole strip
+     * whatever `cols` says. */
+    cols?: 2 | 3 | 4 | 5 | 6
+    /** The shot states the page hides the whole strip in (`data-shot-absent` on every derived anchor). */
+    shotAbsent?: readonly StatStripShotState[]
+  }
 
 const EMPTY = '—'
 
@@ -409,6 +410,7 @@ export function StatStrip({
   shotAbsent,
   className,
   style,
+  ...domProps
 }: StatStripProps) {
   // A lone cell is the whole strip: a stated `cols` would leave it one track of an empty grid.
   const desktop = cells.length === 1 ? 1 : (cols ?? Math.min(Math.max(cells.length, 2), 6))
@@ -461,7 +463,11 @@ export function StatStrip({
     for (const head of grid.querySelectorAll('[data-strip-head]')) observer.observe(head)
   }, [cells, footer])
   return (
-    <div className={cx(classes.container, className)} style={style}>
+    <div
+      {...pickDataAttributes(domProps)}
+      className={cx(classes.container, className)}
+      style={style}
+    >
       <Card>
         <Card.Section
           component="section"

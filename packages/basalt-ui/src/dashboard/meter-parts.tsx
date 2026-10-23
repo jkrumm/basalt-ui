@@ -4,6 +4,7 @@ import { useContext, useId, useRef, useState } from 'react'
 import type { CSSProperties, ReactNode, RefObject } from 'react'
 import { useIsomorphicLayoutEffect } from '../common/isomorphic-layout-effect'
 import { cx } from '../common/props'
+import type { DataAttributes } from '../common/props'
 import {
   ariaValues,
   modelBar,
@@ -38,6 +39,8 @@ export type Shell = {
   style: CSSProperties | undefined
   /** `size="row"`: one text line tall, no caption rows. */
   row: boolean
+  /** The consumer's `data-*` (`data-shot`), on the root of every state. */
+  data: DataAttributes
 }
 
 /**
@@ -46,6 +49,7 @@ export type Shell = {
  */
 function rootProps(shell: Shell) {
   return {
+    ...shell.data,
     className: cx(classes.root, shell.row && classes.row, shell.className),
     style: shell.style,
     'data-basalt-meter': '',

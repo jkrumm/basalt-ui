@@ -7,6 +7,7 @@
  * may reach it too.
  */
 export { type BasaltProps, type SlotClassNames, type SlotStylesProps } from './props'
+export { type DataAttributes, pickDataAttributes, splitDataAttributes } from './props'
 export { type Tone, type ToneWithNeutral, type Tier, cx } from './props'
 export { assignRef, mergeRefs } from './refs'
 export { BASALT_PREFIX, requiredProp, oneOf, duplicateMount, missingLayer } from './errors'

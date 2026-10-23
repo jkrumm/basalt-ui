@@ -32,8 +32,8 @@
 import { useEffect, useId, useRef, useState } from 'react'
 import type { ReactNode, RefObject } from 'react'
 import { useIsomorphicLayoutEffect } from '../common/isomorphic-layout-effect'
-import { cx } from '../common/props'
-import type { BasaltProps, SlotStylesProps } from '../common/props'
+import { cx, pickDataAttributes } from '../common/props'
+import type { BasaltProps, DataAttributes, SlotStylesProps } from '../common/props'
 import { IconSlot } from '../theme/icon-slot'
 import { DeltaBadge } from './delta-badge'
 import type { DeltaPolarity } from './delta-badge'
@@ -54,6 +54,7 @@ export type WidgetHeaderTier = 'section' | 'widget' | 'group'
 export type WidgetHeaderSlot = 'root' | 'title' | 'metric' | 'icon'
 
 export type WidgetHeaderProps = BasaltProps &
+  DataAttributes &
   SlotStylesProps<WidgetHeaderSlot> & {
     /** `section` renders an `<h2>` at the section-header height; `widget` renders an `<h3>` at the
      * tighter icon-tier height, display-only; `group` also renders an `<h3>` but as the quietest
@@ -406,11 +407,13 @@ export function WidgetHeader({
   className,
   style,
   classNames,
+  ...rest
 }: WidgetHeaderProps) {
   const Heading = tier === 'section' ? 'h2' : 'h3'
 
   return (
     <div
+      {...pickDataAttributes(rest)}
       className={cx(classes.root, classNames?.root, className)}
       data-tier={tier}
       {...(style !== undefined && { style })}

@@ -21,6 +21,7 @@ import { afterEach, beforeEach, describe, expect, mock, spyOn, test } from 'bun:
 import type { ColumnFiltersState } from '@tanstack/react-table'
 import { resetValidatedProps } from '../common/validate'
 import { BAR_KEY_ATTR, PAGE_BAR_END_ATTR } from '../controls/actions'
+import { Section } from '../dashboard/section'
 import { BasaltDataTable, planColumnFold } from './data-table'
 import { createColumnHelper } from './index'
 import type { BasaltDataTableProps } from './data-table'
@@ -806,6 +807,21 @@ describe('query — the four container states', () => {
       query: query({ isError: true, error: new Error('boom') }),
     })
     expect(screen.getByText('Could not load Invoices')).toBeDefined()
+  })
+
+  test('an untitled table inside a titled Section names its failure from the Section', () => {
+    render(
+      <MantineProvider>
+        <Section title="Session log">
+          <BasaltDataTable
+            data={[]}
+            columns={COLUMNS}
+            query={query({ isError: true, error: new Error('boom') })}
+          />
+        </Section>
+      </MantineProvider>,
+    )
+    expect(screen.getByText('Could not load session log')).toBeDefined()
   })
 
   test('a resolved but empty result renders the existing emptyState', () => {

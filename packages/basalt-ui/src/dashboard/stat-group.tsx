@@ -33,8 +33,8 @@
  * </StatGroup>
  */
 import type { CSSProperties, ReactNode } from 'react'
-import { cx } from '../common/props'
-import type { BasaltProps } from '../common/props'
+import { cx, pickDataAttributes } from '../common/props'
+import type { BasaltProps, DataAttributes } from '../common/props'
 import { StatStrip } from './stat-strip'
 import type { StatStripProps } from './stat-strip'
 import classes from './stat-group.module.css'
@@ -42,16 +42,17 @@ import classes from './stat-group.module.css'
 /** The desktop KPI column count. */
 export type StatGroupCols = 2 | 3 | 4 | 5
 
-export type StatGridProps = BasaltProps & {
-  variant?: 'grid'
-  /** The DESKTOP column count (`lg` and up). Default `4`. `sm` gets `min(cols, 3)` — except `4`, which gets 2 rather than an orphan row. A phone gets 2.
-   * Never a responsive object — the law is basalt's, see the module docblock. */
-  cols?: StatGroupCols
-  /** Swap the column gap for a hairline rail between cells. Default `false`. */
-  divided?: boolean
-  /** The KPI cells — normally `StatCard`s. */
-  children: ReactNode
-}
+export type StatGridProps = BasaltProps &
+  DataAttributes & {
+    variant?: 'grid'
+    /** The DESKTOP column count (`lg` and up). Default `4`. `sm` gets `min(cols, 3)` — except `4`, which gets 2 rather than an orphan row. A phone gets 2.
+     * Never a responsive object — the law is basalt's, see the module docblock. */
+    cols?: StatGroupCols
+    /** Swap the column gap for a hairline rail between cells. Default `false`. */
+    divided?: boolean
+    /** The KPI cells — normally `StatCard`s. */
+    children: ReactNode
+  }
 
 /** `variant="strip"`: one joined surface of typed `cells` split by hairlines, plus an optional
  * `footer` row — see `StatStripProps`. `cols` here may be 6 (the strip's desktop count). */
@@ -65,7 +66,14 @@ export function StatGroup(props: StatGroupProps) {
   return <StatGrid {...props} />
 }
 
-function StatGrid({ cols = 4, divided = false, children, className, style }: StatGridProps) {
+function StatGrid({
+  cols = 4,
+  divided = false,
+  children,
+  className,
+  style,
+  ...rest
+}: StatGridProps) {
   // `4 -> 2`, not `4 -> 3`. `min(cols, 3)` is the general rule and it is right for 2, 3 and 5, but
   // FOUR is the default and the overwhelmingly common count, and three columns leave a four-KPI row
   // as 3 + 1 — one orphan cell against two thirds of empty track. MEASURED on the playground
@@ -82,7 +90,7 @@ function StatGrid({ cols = 4, divided = false, children, className, style }: Sta
     // sized is the whole point. `container-type: inline-size` contains the inline axis only, so the
     // wrapper's block size still comes from the grid: no percentage height resolves differently,
     // and there is no paint containment, so nothing inside is clipped.
-    <div className={cx(classes.container, className)} style={style}>
+    <div {...pickDataAttributes(rest)} className={cx(classes.container, className)} style={style}>
       <div
         className={classes.root}
         data-cols={cols}

@@ -4,7 +4,7 @@
  * overflows, and the toggle, disclosure and sticky-cell props that draw both. `data-table.tsx`
  * composes them; nothing here knows the rest of the table.
  */
-import { Text } from '@mantine/core'
+import { Popover, Text } from '@mantine/core'
 import type {
   Cell,
   Column,
@@ -463,25 +463,58 @@ export function foldedSummary(count: number, label: string): string {
   return `${count} more ${foldNoun(count, false)}: ${label}`
 }
 
-/** The header cell above the toggles: a micro count of what folded. The screen-reader span is the one
- * accessible label (F102 — a hidden column must be announced, not merely reachable); the visible
- * `+N cols` is a hidden duplicate whose `title` is the sighted hover hint. A bare `+N` read as an
- * unexplained figure at 390, so the word rides with it — in the sans micro face, which keeps
- * "+4 cols" inside the 44px toggle cell (the mono face did not). */
+/** The header cell above the toggles: a micro count of what folded, and a button that NAMES them. The
+ * button's accessible name is the one summary (F102 — a hidden column must be announced, not merely
+ * reachable); its `title` is the mouse hint, and a tap, Enter or Space opens a popover listing the
+ * folded columns, because a touch reader never sees a `title` (the 390 crop read as an unexplained
+ * "+3 cols"). The popover closes on outside click and Escape. A bare `+N` read as an unexplained
+ * figure at 390, so the word rides with it — in the sans micro face, which keeps "+4 cols" inside
+ * the 44px toggle cell (the mono face did not). */
 export function FoldHeaderLabel({
-  count,
-  foldedLabel,
+  names,
 }: {
-  count: number
-  foldedLabel: string
+  /** The folded columns' headers, in column order. */
+  names: readonly string[]
 }): ReactNode {
-  const summary = foldedSummary(count, foldedLabel)
+  const [opened, setOpened] = useState(false)
+  const count = names.length
+  const summary = foldedSummary(count, names.join(', '))
+  const visible = `+${count} ${foldNoun(count, true)}`
   return (
     <span className={classes.foldCount}>
-      <span aria-hidden title={summary}>
-        +{count} {foldNoun(count, true)}
-      </span>
-      <span className={classes.srOnly}>{summary}</span>
+      <Popover
+        opened={opened}
+        onChange={setOpened}
+        position="bottom-start"
+        withinPortal
+        shadow="md"
+        transitionProps={{ duration: 0 }}
+      >
+        <Popover.Target>
+          <button
+            type="button"
+            className={classes.foldCountButton}
+            data-basalt-hit
+            title={summary}
+            aria-label={`${visible}, ${summary}`}
+            aria-haspopup="dialog"
+            aria-expanded={opened}
+            onClick={(event) => {
+              event.stopPropagation()
+              setOpened((open) => !open)
+            }}
+          >
+            {visible}
+          </button>
+        </Popover.Target>
+        <Popover.Dropdown p="xs" className={classes.foldNames} aria-label={summary}>
+          <ul className={classes.foldNameList}>
+            {names.map((name, index) => (
+              <li key={`${index}-${name}`}>{name}</li>
+            ))}
+          </ul>
+        </Popover.Dropdown>
+      </Popover>
     </span>
   )
 }

@@ -184,7 +184,39 @@
   text-transform: none;
   font-size: var(--vx-text-micro);
   color: var(--vx-muted);
+}
+
+/* The count is a button: bare, inheriting the micro face, `help` for the mouse's title hint. */
+.foldCountButton {
+  padding: 0;
+  border: none;
+  background: none;
+  font: inherit;
+  color: inherit;
   cursor: help;
+}
+
+.foldCountButton:hover,
+.foldCountButton:focus-visible {
+  color: var(--vx-ink);
+}
+
+.foldCountButton:focus-visible {
+  outline: 2px solid var(--vx-accent);
+  outline-offset: 2px;
+  border-radius: var(--vx-radius-ctrl);
+}
+
+/* The popover naming the folded columns: a quiet list in the table's own sans. */
+.foldNames {
+  font-size: var(--vx-text-sm);
+  color: var(--vx-ink);
+}
+
+.foldNameList {
+  margin: 0;
+  padding: 0;
+  list-style: none;
 }
 
 .foldChevron {
