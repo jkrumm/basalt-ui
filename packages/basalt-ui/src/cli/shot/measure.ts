@@ -78,8 +78,17 @@ export function finishMeasurement({ texts, radius, nested, ...rest }: Reading): 
     const exact = contrastRatio(t.fg, t.bg)
     const ratio = Math.round(exact * 100) / 100
     min = min === null ? ratio : Math.min(min, ratio)
-    if (exact < contrastThreshold(t.fontSize, t.bold)) {
-      failures.push({ text: t.text, ratio, fg: hex(t.fg), bg: hex(t.bg), fontSize: t.fontSize })
+    const needs = contrastThreshold(t.fontSize, t.bold)
+    if (exact < needs) {
+      failures.push({
+        text: t.text,
+        ratio,
+        fg: hex(t.fg),
+        bg: hex(t.bg),
+        fontSize: t.fontSize,
+        needs,
+        bold: t.bold,
+      })
     }
   }
   const backdrop = texts.some((t) => t.assumedWhite) ? ({ backdrop: 'assumed-white' } as const) : {}

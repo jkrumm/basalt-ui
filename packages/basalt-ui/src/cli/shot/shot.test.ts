@@ -204,6 +204,7 @@ describe('parseShotArgs', () => {
     [['a', '--dist', 'd'], /must start with '\//],
     [['/a', '--dist', 'd', '--states', 'rest,nope'], /unknown state 'nope'/],
     [['/a', '--dist', 'd', '--bogus'], /bogus/],
+    [['/a /b', '--dist', 'd'], /separate argument|its own argument/],
   ])('rejects %j', (flags, message) => {
     expect(() => parseShotArgs(flags)).toThrow(ShotError)
     expect(() => parseShotArgs(flags)).toThrow(message)
@@ -241,6 +242,12 @@ describe('planOut', () => {
     ]) {
       expect(() => planOut(cwd, out), out).toThrow(ShotError)
     }
+  })
+  test('names the project dir when --out escapes it', () => {
+    const cwd = tmp()
+    expect(() => planOut(cwd, '..')).toThrow(
+      `inside the project (${cwd}; in a monorepo, the app dir)`,
+    )
   })
   test('refuses a symlinked target and a symlinked ancestor', () => {
     const cwd = tmp()
@@ -1350,6 +1357,8 @@ describe('finishMeasurement', () => {
       fg: '#aaaaaa',
       bg: '#ffffff',
       fontSize: 16,
+      needs: 4.5,
+      bold: false,
     })
     expect(m.contrast.backdrop).toBeUndefined()
   })
@@ -1606,6 +1615,28 @@ describe('auto anchors', () => {
     }
     expect(tagged).toEqual({ card: 'auto-02', table: 'auto-04' })
   })
+
+  test('tagAutoAnchors falls back to main/section/header/form when no Card, Paper or table qualifies', () => {
+    const tagged: Record<string, string> = {}
+    const el = (name: string, width: number, height: number) => ({
+      getBoundingClientRect: () => ({ width, height }),
+      setAttribute: (_: string, value: string) => void (tagged[name] = value),
+    })
+    const g = globalThis as { document?: unknown }
+    const saved = g.document
+    g.document = {
+      querySelectorAll: (selector: string) =>
+        selector.includes('mantine-Card')
+          ? [el('tiny-card', 50, 50)]
+          : [el('main', 800, 600), el('header', 800, 40), el('form', 400, 300)],
+    }
+    try {
+      tagAutoAnchors()
+    } finally {
+      g.document = saved
+    }
+    expect(tagged).toEqual({ main: 'auto-01', form: 'auto-03' })
+  })
 })
 
 /** A browser whose one page behaves as `page` says; enough of the surface for the real `capture`. */
@@ -1666,6 +1697,42 @@ describe('data trust in capture', () => {
     expect(pages).toHaveLength(4)
     expect(pages.every((s) => s.status === 'error' && s.note === 'GET /api/kpi 401')).toBe(true)
     expect(logs.join('\n')).toContain('GET /api/kpi 401')
+  })
+
+  const textPage = (textOf: (url: string) => string) => {
+    let url = ''
+    return quietPage({
+      goto: (u: string) => {
+        url = u
+        return Promise.resolve()
+      },
+      evaluate: (expression: unknown) =>
+        Promise.resolve(
+          typeof expression === 'string' && expression.includes('data-shot-states')
+            ? { anchors: [], declared: [], content: textOf(url) }
+            : undefined,
+        ),
+    })
+  }
+
+  test('warns when every route renders the same content', async () => {
+    const logs: string[] = []
+    await capture(
+      input(scriptedBrowser(textPage(() => 'Enter PIN')), {
+        routes: ['/a', '/b'],
+        log: (l: string) => void logs.push(l),
+      }),
+    )
+    expect(logs.join('\n')).toContain('every route rendered the same content')
+    expect(logs.join('\n')).toContain('--api')
+  })
+
+  test('stays quiet when routes differ, or when there is only one', async () => {
+    const logs: string[] = []
+    const log = (l: string) => void logs.push(l)
+    await capture(input(scriptedBrowser(textPage((u) => u)), { routes: ['/a', '/b'], log }))
+    await capture(input(scriptedBrowser(textPage(() => 'same')), { routes: ['/a'], log }))
+    expect(logs.join('\n')).not.toContain('same content')
   })
 
   test('a failed localStorage seed is logged by key and fails the page', async () => {

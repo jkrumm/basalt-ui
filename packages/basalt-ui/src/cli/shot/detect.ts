@@ -22,7 +22,7 @@
  *
  * P0 and P1 fail the run (exit 2); P2 and P3 are listed findings that do not (exit 0).
  * Findings run content → layout → style, the order the reviewer reports in.
- * Score = 100 − (25·P0 + 10·P1 + 3·P2 + 1·P3), floored at 0.
+ * Score = 100 − (25·P0 + 10·P1 + 3·P2 + 1·P3), floored at 0; null ("nothing measured") when no anchor resolved.
  */
 import { execFileSync } from 'node:child_process'
 import { existsSync, mkdirSync, readFileSync, renameSync, writeFileSync } from 'node:fs'
@@ -73,7 +73,10 @@ export type HistoryEntry = {
   out: string
   commit?: string
   counts: Record<Severity, number>
-  score: number
+  /** Null when no anchor resolved: nothing was measured, so there is no score. */
+  score: number | null
+  /** Total findings: the score floors at 0, this keeps counting. */
+  findings?: number
 }
 
 const LAYERS: readonly Layer[] = ['content', 'layout', 'style']
@@ -213,7 +216,7 @@ function anchorFindings(a: AnchorMetrics, scale: Scale | undefined): Draft[] {
       severity: 'P0',
       layer: 'content',
       cite: cite('contrast.failures'),
-      defect: `${failures.length} text run${failures.length === 1 ? '' : 's'} below the AA contrast threshold; lowest ${worst.ratio}:1 on "${worst.text}" (${worst.fontSize}px).`,
+      defect: `${failures.length} text run${failures.length === 1 ? '' : 's'} below the AA contrast threshold; lowest ${worst.ratio}:1 on "${worst.text}" (needs ${worst.needs ?? 4.5}:1 at ${worst.fontSize}px ${worst.bold ? 'bold' : 'regular'}).`,
     })
   }
   if (a.contrast.backdrop === 'assumed-white') {
@@ -439,12 +442,12 @@ function nextHistory(
 
 /**
  * Writes `detect.json` and `history.json` through temp files and renames both only after both are
- * written, so a failed write never leaves one without the other. Returns the last scores.
+ * written, so a failed write never leaves one without the other. Returns the last runs of this out dir (other dirs never chain into one trend).
  */
 function persist(
   files: { detectPath: string; report: object; home: string; entry: HistoryEntry },
   log: (line: string) => void,
-): number[] {
+): HistoryEntry[] {
   const { detectPath, report, home, entry } = files
   const historyPath = join(home, 'history.json')
   return io('write detect.json or history.json', () => {
@@ -456,7 +459,7 @@ function persist(
     writeFileSync(`${detectPath}.tmp`, json(report))
     renameSync(`${historyPath}.tmp`, historyPath)
     renameSync(`${detectPath}.tmp`, detectPath)
-    return runs.slice(-TREND_RUNS).map((r) => r.score)
+    return runs.filter((r) => r.out === entry.out).slice(-TREND_RUNS)
   })
 }
 
@@ -490,12 +493,19 @@ export async function detect(
   try {
     let values: { out?: string | undefined; lint?: string | undefined }
     try {
-      values = parseArgs({
+      const parsed = parseArgs({
         args: [...flags],
         options: { out: { type: 'string' }, lint: { type: 'string' } },
-        strict: true,
-      }).values
+        allowPositionals: true,
+      })
+      const [positional] = parsed.positionals
+      if (positional !== undefined)
+        throw new DetectError(
+          `detect takes --out <dir>, not a positional ('${positional}'): basalt-ui shot detect --out ${positional}`,
+        )
+      values = parsed.values
     } catch (error) {
+      if (error instanceof DetectError) throw new DetectError(`${error.message}\n${USAGE_LINE}`)
       throw new DetectError(
         `${error instanceof Error ? error.message : String(error)}\n${USAGE_LINE}`,
       )
@@ -505,7 +515,7 @@ export async function detect(
     const lint = values.lint ? readLint(resolve(cwd, values.lint)) : undefined
     const findings = detectFindings(metrics, lint)
     const counts = countsOf(findings)
-    const score = scoreOf(findings)
+    const score = metrics.anchors.length === 0 ? null : scoreOf(findings)
     const at = (deps.now ?? (() => new Date()))().toISOString()
     const rel = relative(cwd, outDir)
     const out = rel === '' || rel.startsWith('..') || isAbsolute(rel) ? outDir : rel
@@ -515,7 +525,14 @@ export async function detect(
         detectPath: join(outDir, 'detect.json'),
         report: { version: 1, at, out, ...(commit && { commit }), counts, score, findings },
         home: join(cwd, SHOT_HOME),
-        entry: { at, out, ...(commit && { commit }), counts, score },
+        entry: {
+          at,
+          out,
+          ...(commit && { commit }),
+          counts,
+          score,
+          findings: findings.length,
+        },
       },
       log,
     )
@@ -523,10 +540,16 @@ export async function detect(
       .map((s) => `${s} ${counts[s]}`)
       .join(', ')
     log(
-      `[detect] ${findings.length === 0 ? 'no findings' : `${findings.length} findings (${summary})`} · score ${score}`,
+      `[detect] ${findings.length === 0 ? 'no findings' : `${findings.length} findings (${summary})`} · ${score === null ? 'nothing measured (no anchor resolved: not a score)' : `score ${score}`}`,
     )
     for (const line of table(findings)) log(line)
-    log(`[detect] trend ${trend.join(' → ')} · ${relative(cwd, join(outDir, 'detect.json'))}`)
+    const point = (r: HistoryEntry): string => {
+      const n = r.findings === undefined ? '' : ` (${r.findings} findings)`
+      return `${r.score ?? 'nothing measured'}${n}`
+    }
+    log(
+      `[detect] trend ${trend.map(point).join(' → ')} · ${relative(cwd, join(outDir, 'detect.json'))}`,
+    )
     return counts.P0 + counts.P1 > 0 ? 2 : 0
   } catch (error) {
     if (!(error instanceof DetectError)) throw error

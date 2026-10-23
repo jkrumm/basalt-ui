@@ -383,6 +383,7 @@ describe('detect command', () => {
         commit: 'abc1234',
         counts: { P0: 0, P1: 0, P2: 0, P3: 0 },
         score: 100,
+        findings: 0,
       },
     ])
   })
@@ -422,13 +423,59 @@ describe('detect command', () => {
     expect(text).toContain('P1')
   })
 
+  test('names the threshold it applied in the contrast defect', () => {
+    const failures = [
+      { text: '22', ratio: 3.29, fg: '#aaa', bg: '#fff', fontSize: 22, needs: 4.5, bold: false },
+    ]
+    const f = detectFindings(metrics({ anchors: [anchor({ contrast: { min: 3.29, failures } })] }))
+    expect(f.find((x) => x.rule === 'craft-5/contrast')?.defect).toContain(
+      '3.29:1 on "22" (needs 4.5:1 at 22px regular)',
+    )
+  })
+
+  test('no anchor resolved: "nothing measured", a null score, no numeric result', async () => {
+    const { cwd, out } = setup(metrics({ anchors: [] }))
+    const { code, text } = await run(['--out', out], cwd)
+    expect(code).toBe(2)
+    expect(text).toContain('nothing measured')
+    expect(text).not.toContain('score 75')
+    const written = JSON.parse(readFileSync(join(out, 'detect.json'), 'utf8')) as { score: unknown }
+    expect(written.score).toBeNull()
+    expect(text).toContain('trend nothing measured')
+  })
+
+  test('the trend shows the finding count and chains only the same --out dir', async () => {
+    const a = setup(metrics({ anchors: [anchor({ emptyRatio: 0.5 })] }))
+    const outB = join(a.cwd, 'other')
+    mkdirSync(outB)
+    writeFileSync(join(outB, 'metrics.json'), JSON.stringify(metrics({ anchors: [anchor()] })))
+    await run(['--out', a.out], a.cwd, 0)
+    await run(['--out', outB], a.cwd, 1)
+    const again = await run(['--out', a.out], a.cwd, 2)
+    expect(again.text).toContain('trend 90 (1 findings) → 90 (1 findings) ·')
+    expect(again.text).not.toContain('100')
+  })
+
+  test('a positional is refused with the --out form', async () => {
+    const { cwd } = setup()
+    const err = spyOn(console, 'error').mockImplementation(() => undefined)
+    try {
+      expect((await run(['before'], cwd)).code).toBe(1)
+      expect(String(err.mock.calls[0]?.[0])).toContain('--out before')
+    } finally {
+      err.mockRestore()
+    }
+  })
+
   test('history grows per run and prints the last five scores as a trend', async () => {
     const { cwd, out } = setup(metrics({ anchors: [anchor({ emptyRatio: 0.5 })] }))
     let text = ''
     for (let i = 0; i < 6; i++) text = (await run(['--out', out], cwd, i)).text
     const history = JSON.parse(readFileSync(join(cwd, '.basalt/shots/history.json'), 'utf8'))
     expect(history).toHaveLength(6)
-    expect(text).toContain('trend 90 → 90 → 90 → 90 → 90')
+    expect(text).toContain(
+      'trend 90 (1 findings) → 90 (1 findings) → 90 (1 findings) → 90 (1 findings) → 90 (1 findings)',
+    )
     expect(text.match(/→/g)).toHaveLength(4)
   })
 
