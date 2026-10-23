@@ -19,6 +19,7 @@ import {
   managedFiles,
   mergeOxlintExtends,
   normalizeForLedger,
+  OXLINT_IGNORE_FLAG,
   patchPackageJson,
   placementNotices,
   pruneRetiredManagedFiles,
@@ -177,7 +178,7 @@ export function init(cwd: string = process.cwd(), scaffoldFlags: ScaffoldFlags =
   // `basalt-tokens.md` tells the consumer to wire `oxlint . && basalt-ui check-theme` into their
   // lint, and init's own closing message says to run check-theme next — but nothing ever added a
   // script, so the guard stayed manual for exactly as long as someone remembered it.
-  const lintScript = `oxlint . && ${ctx.vars.BASALT_BIN} check-theme`
+  const lintScript = `oxlint ${OXLINT_IGNORE_FLAG} . && ${ctx.vars.BASALT_BIN} check-theme`
   const seededLintScript = patchPackageJson(cwd, (pkg) => {
     const scripts = (pkg['scripts'] ?? {}) as Record<string, unknown>
     if (scripts['lint:basalt'] !== undefined) return false

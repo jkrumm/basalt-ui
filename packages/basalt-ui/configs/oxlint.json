@@ -33,6 +33,7 @@
     "react/set-state-in-effect": "error",
     "no-constant-binary-expression": "error"
   },
+  "ignorePatterns": [".claude/worktrees/**"],
   "overrides": [
     {
       "files": ["**/*.{ts,tsx}"],
