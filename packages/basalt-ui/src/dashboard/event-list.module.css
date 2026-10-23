@@ -2,8 +2,9 @@
  * EventList (docs/waves/design-parity/SPEC.md § 6.7). One row shape for the plain and the virtualised
  * path: nothing here keys on a parent selector, so the seam's wrapper divs change no geometry.
  * Two sizes only: the row size (actor, sentence, body) and the micro size (day header, time, chips).
- * Two lines at every width: line one is the glyph and the sentence at full width; line two leads
- * with the mono time, then the body (it wraps, never truncates), then the chips.
+ * Line one is the glyph and the sentence at full width; line two leads with the mono time, then the
+ * body (it wraps, never truncates); the chips, when a row has any, sit on a line of their own under the
+ * time, so their place never depends on the body.
  */
 .frame {
   inline-size: 100%;
@@ -37,13 +38,6 @@
   margin-block-start: calc(var(--vx-space-stack-lg, 1.5rem) * -1);
   background: linear-gradient(transparent, var(--event-list-bg));
   pointer-events: none;
-}
-
-/* The loaded meta row, mirrored: the note bar, then (timeline) the chip. */
-.skeleton .meta {
-  display: flex;
-  align-items: flex-start;
-  gap: var(--vx-space-stack-xs) var(--vx-space-control-gap);
 }
 
 /* Loading after rows: the skeleton keeps their last height, so the box does not collapse. */
@@ -107,7 +101,8 @@
   grid-template-columns: auto minmax(0, 1fr);
   grid-template-areas:
     'line line'
-    'time meta';
+    'time meta'
+    'chips chips';
   column-gap: var(--vx-space-stack-md);
   padding-block: var(--vx-space-stack-xs);
   font-size: var(--vx-text-sm);
@@ -123,34 +118,23 @@
   grid-template-columns: var(--event-list-lead) auto minmax(0, 1fr);
   grid-template-areas:
     'lead line line'
-    '. time meta';
+    '. time meta'
+    '. chips chips';
 }
 
 /* An untimed row has no time to lead the meta line: the meta takes the whole line. */
 .row[data-untimed] {
   grid-template-areas:
     'line line'
-    'meta meta';
+    'meta meta'
+    'chips chips';
 }
 
 .row[data-lead][data-untimed] {
   grid-template-areas:
     'lead line line'
-    '. meta meta';
-}
-
-/* The chips follow the sentence's last word, not the row's far edge: the sentence's track grows to
-   its content (and shrinks, wrapping, when the chips need the room), the chips' track hugs them. */
-.row[data-chips-only] {
-  grid-template-columns: minmax(0, max-content) auto;
-  grid-template-areas: 'line meta';
-  justify-content: start;
-  align-items: start;
-}
-
-.row[data-lead][data-chips-only] {
-  grid-template-columns: var(--event-list-lead) minmax(0, max-content) auto;
-  grid-template-areas: 'lead line meta';
+    '. meta meta'
+    '. chips chips';
 }
 
 .leading {
@@ -159,6 +143,8 @@
   align-items: center;
   justify-content: center;
   min-height: 1.4em;
+  /* A glyph or avatar initial rides the row size, never a size of its own. */
+  font-size: var(--vx-text-sm);
   color: var(--vx-muted);
 }
 
@@ -217,8 +203,7 @@
   block-size: calc(var(--vx-text-sm) * 1.4);
 }
 
-/* The meta line: the body, then the chips, in one text flow. The body wraps (never truncated) and the
-   chips follow its last word, each chip nowrap, so a long note never leaves the chips a line of their own. */
+/* The meta line: the body wraps (never truncated) beside the time. */
 .meta {
   grid-area: meta;
   min-width: 0;
@@ -230,29 +215,22 @@
   overflow-wrap: anywhere;
 }
 
+/* The chips: one fixed line under the time (the row's third), whatever the body holds. */
 .chips {
-  display: inline-flex;
-  flex-wrap: nowrap;
+  grid-area: chips;
+  display: flex;
+  flex-wrap: wrap;
   align-items: center;
-  vertical-align: baseline;
   gap: var(--vx-space-control-gap);
+  padding-block-start: var(--vx-space-stack-xs);
   font-size: var(--vx-text-micro);
-  white-space: nowrap;
-}
-
-/* A string body's last word and the chips: one unbreakable run, so the chips share the last line with it. */
-.tail {
-  white-space: nowrap;
-}
-
-.body + .chips,
-.tail > .chips {
-  margin-inline-start: var(--vx-space-control-gap);
 }
 
 /* A neutral chip needs a visible surface in light as well: the theme's subtle fill is the page. */
 .chips :global(.mantine-Badge-root) {
   background: var(--event-list-tint);
+  /* A chip is always the micro rung, whatever size the caller's Badge asks for: the list keeps three sizes. */
+  --badge-fz: var(--vx-text-micro);
 }
 
 .earlier {

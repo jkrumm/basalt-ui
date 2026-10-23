@@ -50,8 +50,12 @@ export function SkeletonRows({
         </span>
         <div className={classes.meta}>
           <Skeleton className={classes.skeletonMeta} />
-          {ctx.density === 'timeline' && <Skeleton className={classes.skeletonChip} />}
         </div>
+        {ctx.density === 'timeline' && (
+          <div className={classes.chips}>
+            <Skeleton className={classes.skeletonChip} />
+          </div>
+        )}
       </div>
     </div>
   ))

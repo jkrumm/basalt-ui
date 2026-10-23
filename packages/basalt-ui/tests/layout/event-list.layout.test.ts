@@ -182,7 +182,7 @@ layout('Wave 44 EventList', () => {
         overflow: cs.textOverflow, whiteSpace: cs.whiteSpace, fits: body.scrollWidth <= body.clientWidth + 1,
         height: body.getBoundingClientRect().height, lh, text: body.textContent,
         right: body.getBoundingClientRect().right, rowRight: body.closest('${moduleClass('row')}').getBoundingClientRect().right,
-        chipTop: body.parentElement.querySelector('${moduleClass('chips')}').getBoundingClientRect().top,
+        chipTop: body.closest('${moduleClass('row')}').querySelector('${moduleClass('chips')}').getBoundingClientRect().top,
         bodyBottom: body.getBoundingClientRect().bottom,
       }
     })()`)) as Record<string, string | number | boolean>
@@ -192,25 +192,25 @@ layout('Wave 44 EventList', () => {
     expect(Number(r['height'])).toBeGreaterThan(Number(r['lh']) * 1.5)
     expect(String(r['text'])).toContain('then re-ran every dependent report')
     expect(Number(r['right'])).toBeLessThanOrEqual(Number(r['rowRight']) + 1)
-    // The chips follow the body's last word in the same flow, never on a line of their own.
-    expect(Number(r['chipTop'])).toBeLessThan(Number(r['bodyBottom']) - 1)
+    // The chips have their own line under the note (Wave 50), never after its last word.
+    expect(Number(r['chipTop'])).toBeGreaterThanOrEqual(Number(r['bodyBottom']) - 1)
   })
 
-  test('390: the chips never take a line of their own, whatever the note length', async () => {
+  test('390: the chips start under the note, whatever the note length', async () => {
     const p = await openFixture(spec('wrap-sweep'), PHONE)
     await p.raw.waitForSelector(`${HOST} ${moduleClass('chips')}`)
     const rows = (await p.raw.evaluate(`(() =>
       [...document.querySelectorAll('${HOST} ${moduleClass('chips')}')].map((chips) => {
-        const tail = chips.parentElement
-        const range = document.createRange()
-        range.selectNodeContents(tail.firstChild)
-        const word = range.getBoundingClientRect()
+        const row = chips.closest('${moduleClass('row')}')
+        const body = row.querySelector('${moduleClass('body')}').getBoundingClientRect()
         const c = chips.getBoundingClientRect()
-        return { overlap: Math.min(word.bottom, c.bottom) - Math.max(word.top, c.top), wordHeight: word.height }
-      }))()`)) as { overlap: number; wordHeight: number }[]
+        return { gap: c.top - body.bottom, x: c.left - row.querySelector('time').getBoundingClientRect().left }
+      }))()`)) as { gap: number; x: number }[]
     expect(rows).toHaveLength(40)
-    // The chips share a line with the note's last word: their vertical ranges overlap.
-    for (const r of rows) expect(r.overlap).toBeGreaterThan(Math.min(r.wordHeight, 8) / 2)
+    for (const r of rows) {
+      expect(r.gap).toBeGreaterThanOrEqual(-1)
+      expect(Math.abs(r.x)).toBeLessThanOrEqual(EPS)
+    }
   })
 
   test('a skeleton after loaded rows keeps their height', async () => {
@@ -239,7 +239,7 @@ layout('Wave 44 EventList', () => {
     expect(fade.position).toBe('sticky')
   })
 
-  test('1440: a feed row with a body and two chips is at most 56 px', async () => {
+  test('1440: a feed row with a body and two chips is at most 80 px (line three holds the chips)', async () => {
     const p = await openFixture(spec('plain'), DESKTOP_1440)
     await p.raw.waitForSelector(`${HOST} time`)
     const heights = (await p.raw.evaluate(`(() =>
@@ -248,7 +248,7 @@ layout('Wave 44 EventList', () => {
         return row.getBoundingClientRect().height
       }))()`)) as number[]
     expect(heights.length).toBeGreaterThan(0)
-    for (const h of heights) expect(h).toBeLessThanOrEqual(56)
+    for (const h of heights) expect(h).toBeLessThanOrEqual(80)
   })
 
   test('the actor renders heavier than the sentence (the font really has a 500)', async () => {

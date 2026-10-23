@@ -103,7 +103,7 @@ export type EventListProps = BasaltProps & {
   height?: number | string
   /** Renders row-shaped skeletons. */
   loading?: boolean
-  /** Skeleton rows while loading. Default 5. */
+  /** Skeleton rows while loading. Default: the rows `items` holds now (a refetch, capped at 30), else 5. */
   loadingRows?: number
   /**
    * The empty state, an `EmptyState` in a ring-edged tile that sizes to its content (no void in a
@@ -111,6 +111,9 @@ export type EventListProps = BasaltProps & {
    */
   empty?: { title: string; description?: string; action?: ReactNode }
 }
+
+/** A refetch keeps the loaded row count; a cold load has no count to keep. */
+const skeletonCount = (loaded: number): number => (loaded > 0 ? Math.min(loaded, 30) : 5)
 
 const subscribeNever = (): (() => void) => () => {}
 
@@ -154,7 +157,7 @@ export function EventList({
   earlier,
   height,
   loading = false,
-  loadingRows = 5,
+  loadingRows,
   empty = DEFAULT_EMPTY,
   className,
   style,
@@ -208,7 +211,12 @@ export function EventList({
     content = (
       <div aria-busy="true" className={classes.skeleton}>
         <VisuallyHidden>{`Loading ${label}`}</VisuallyHidden>
-        <SkeletonRows count={loadingRows} ctx={ctx} grouped={grouped} height={height} />
+        <SkeletonRows
+          count={loadingRows ?? skeletonCount(items.length)}
+          ctx={ctx}
+          grouped={grouped}
+          height={height}
+        />
       </div>
     )
   } else if (items.length === 0) {
