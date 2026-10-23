@@ -272,6 +272,98 @@ export default defineConfig({
     expect(log).toContain('run `pnpm install` (init did not), then `pnpm exec vite build`')
   })
 
+  it('a re-run after a failed install says what is left, until it is done', () => {
+    seed(STOCK)
+    writeFixture('vite.config.ts', VITE_CONFIG)
+    capture(() => init(dir, { run: () => false }))
+    const first = readFileSync(resolve(dir, 'vite.config.ts'), 'utf8')
+    const { log } = capture(() => init(dir))
+    expect(log).toContain('run `bun install` (init did not), then `bunx vite build`')
+    expect(readFileSync(resolve(dir, 'vite.config.ts'), 'utf8')).toBe(first)
+    const calls: string[] = []
+    const done = capture(() =>
+      init(dir, {
+        run: (argv) => {
+          calls.push(argv.join(' '))
+          if (argv.includes('install')) {
+            const pkg = JSON.parse(readFileSync(resolve(dir, 'package.json'), 'utf8')) as Record<
+              string,
+              Record<string, string>
+            >
+            for (const name of Object.keys({ ...pkg['dependencies'], ...pkg['devDependencies'] }))
+              writeFixture(`node_modules/${name}/package.json`, '{}')
+          }
+          if (argv.includes('build')) writeFixture('src/routeTree.gen.ts', '')
+          return true
+        },
+      }),
+    )
+    expect(calls).toEqual(['bun install', 'bunx vite build'])
+    expect(done.log).toContain('generated routeTree.gen.ts')
+    expect(capture(() => init(dir)).log).not.toContain('init did not')
+  })
+
+  it('never spawns without an injected runner', () => {
+    seed(STOCK)
+    writeFixture('vite.config.ts', VITE_CONFIG)
+    const { log } = capture(() => init(dir))
+    expect(log).toContain('(init did not)')
+    expect(existsSync(resolve(dir, 'node_modules'))).toBe(false)
+  })
+
+  it('a commented-out router-plugin import does not count as wired', () => {
+    seed(STOCK)
+    writeFixture(
+      'vite.config.ts',
+      `// import { tanstackRouter } from '@tanstack/router-plugin/vite'\n${VITE_CONFIG}`,
+    )
+    capture(() => init(dir))
+    expect(readFileSync(resolve(dir, 'vite.config.ts'), 'utf8')).toMatch(
+      /plugins: \[tanstackRouter\(/,
+    )
+  })
+
+  it('keeps an existing @tanstack/router-plugin pin', () => {
+    writeFixture(
+      'package.json',
+      JSON.stringify({
+        name: 'fixture',
+        dependencies: { react: '^19.0.0', 'react-dom': '^19.0.0' },
+        devDependencies: { '@tanstack/router-plugin': '1.167.0' },
+      }),
+    )
+    writeFixture('index.html', '<script type="module" src="/src/main.tsx"></script>')
+    writeFixture('src/main.tsx', STOCK)
+    writeFixture('vite.config.ts', VITE_CONFIG)
+    capture(() => init(dir))
+    const dev = (
+      JSON.parse(readFileSync(resolve(dir, 'package.json'), 'utf8')) as {
+        devDependencies: Record<string, string>
+      }
+    ).devDependencies
+    expect(dev['@tanstack/router-plugin']).toBe('1.167.0')
+  })
+
+  it('pins a new @tanstack/router-plugin to a caret range, never latest', () => {
+    seed(STOCK)
+    writeFixture('vite.config.ts', VITE_CONFIG)
+    capture(() => init(dir))
+    const fresh = (
+      JSON.parse(readFileSync(resolve(dir, 'package.json'), 'utf8')) as {
+        devDependencies: Record<string, string>
+      }
+    ).devDependencies
+    expect(fresh['@tanstack/router-plugin']).toMatch(/^\^1\.\d+\.\d+$/)
+  })
+
+  it('leaves a vite.config with two plugins arrays alone', () => {
+    seed(STOCK)
+    const two = `export default { plugins: [react()], test: { plugins: [react()] } }\n`
+    writeFixture('vite.config.ts', two)
+    capture(() => init(dir))
+    expect(readFileSync(resolve(dir, 'vite.config.ts'), 'utf8')).toBe(two)
+  })
+
   it('leaves a vite.config of another shape alone and prints the router plugin fix', () => {
     seed(STOCK)
     const custom = `export default { plugins: [somethingElse()] }\n`

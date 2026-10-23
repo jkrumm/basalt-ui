@@ -672,6 +672,9 @@ export function importsAgentsMd(text: string): boolean {
   return text.split(/\r?\n/).some(isAgentsImportLine)
 }
 
+/** Longest an install or first build `init` waits for. */
+const RUN_TIMEOUT_MS = 5 * 60_000
+
 /** Scaffold options. `noMergeLint`: `--no-merge-lint` leaves an existing `.oxlintrc.json` untouched. */
 export type ScaffoldFlags = {
   noMergeLint?: boolean
@@ -1774,7 +1777,13 @@ export function run(argv: string[], cwd: string = process.cwd()): number | Promi
       return init(cwd, {
         noMergeLint: flags.includes('--no-merge-lint'),
         run: (argv, dir) =>
-          spawnSync(argv[0] ?? '', argv.slice(1), { cwd: dir, stdio: 'inherit' }).status === 0,
+          // A timeout kills the child and leaves `status` null, which reads as failure; `shell` resolves `bun.cmd`/`npx.cmd` on Windows.
+          spawnSync(argv[0] ?? '', argv.slice(1), {
+            cwd: dir,
+            stdio: 'inherit',
+            timeout: RUN_TIMEOUT_MS,
+            shell: process.platform === 'win32',
+          }).status === 0,
       })
     case 'sync':
       return sync(

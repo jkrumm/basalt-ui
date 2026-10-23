@@ -10,7 +10,7 @@ import { hasDependency, readIfExists, tokenize } from './source-text'
 /** Relative-import hops (static or dynamic) `callsIn` follows from the entry; a router often lives in a singleton module. */
 const IMPORT_DEPTH = 3
 
-const VITE_CONFIGS = ['ts', 'mts', 'cts', 'js', 'mjs', 'cjs'].map((e) => `vite.config.${e}`)
+export const VITE_CONFIGS = ['ts', 'mts', 'cts', 'js', 'mjs', 'cjs'].map((e) => `vite.config.${e}`)
 /** The first local `<script type="module" src>` in index.html (comments and remote src skipped). */
 function htmlEntry(html: string): string | undefined {
   for (const [, attrs = ''] of html
@@ -29,7 +29,7 @@ function htmlEntry(html: string): string | undefined {
 }
 
 /** True when `src` calls a binding imported from `@tanstack/router-plugin` after its `plugins` key (a textual proxy for "inside the array"). */
-function registersRouterPlugin(src: string): boolean {
+export function registersRouterPlugin(src: string): boolean {
   const { code, inLiteral } = tokenize(src)
   const pluginsAt = [...code.matchAll(/\bplugins\b/g)].find((m) => !inLiteral(m.index))?.index
   if (pluginsAt === undefined) return false
