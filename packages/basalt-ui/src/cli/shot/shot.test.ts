@@ -21,6 +21,8 @@ import {
   hoverAtOf,
   hoverTrigger,
   markVisibleTooltips,
+  clearStrayTooltips,
+  visibleTooltipCount,
   openContext,
   parseHoverAt,
   readScaleInPage,
@@ -707,6 +709,38 @@ describe('tooltip lookup', () => {
     expect(a!.hasAttribute('data-shot-seen')).toBe(true)
     expect(b!.hasAttribute('data-shot-seen')).toBe(false)
     expect(document.getElementById('c')!.hasAttribute('data-shot-seen')).toBe(false)
+  })
+  test('visibleTooltipCount counts only rendered tooltips', () => {
+    document.body.innerHTML = '<i id="a" role="tooltip"></i><i id="b" role="tooltip"></i>'
+    document.getElementById('a')!.getBoundingClientRect = () => ({ width: 5, height: 5 }) as DOMRect
+    document.getElementById('b')!.getBoundingClientRect = () => ({ width: 0, height: 0 }) as DOMRect
+    expect(visibleTooltipCount()).toBe(1)
+  })
+  test('clearStrayTooltips moves the pointer away, then waits for the old tooltip to unmount', async () => {
+    const events: string[] = []
+    const counts = [2, 1, 0]
+    const page = {
+      mouse: { move: (x: number, y: number) => void events.push(`move ${x},${y}`) },
+      evaluate: () => {
+        events.push('count')
+        return Promise.resolve(counts.shift() ?? 0)
+      },
+    }
+    await clearStrayTooltips(page as unknown as Parameters<typeof clearStrayTooltips>[0])
+    expect(events).toEqual(['move 0,0', 'count', 'count', 'count'])
+  })
+  test('clearStrayTooltips gives up on a tooltip that never unmounts', async () => {
+    let polls = 0
+    const page = {
+      mouse: { move: () => Promise.resolve() },
+      evaluate: () => {
+        polls++
+        return Promise.resolve(1)
+      },
+    }
+    await clearStrayTooltips(page as unknown as Parameters<typeof clearStrayTooltips>[0])
+    expect(polls).toBeGreaterThan(1)
+    expect(polls).toBeLessThan(40)
   })
   test('describedByOf reads the first id on the trigger or a descendant', () => {
     document.body.innerHTML =

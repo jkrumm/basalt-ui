@@ -40,6 +40,8 @@ const TAB_PRESSES = 80
 const FOCUS_MARGIN_PX = 8
 const TIP_PROBE_MS = 250
 const TIP_SETTLE_MS = 60
+/** How long a previous anchor's tooltip gets to unmount before the next hover. */
+const TIP_CLEAR_MS = 1_000
 const TIP_SETTLE_READS = 10
 
 export type CaptureInput = {
@@ -550,6 +552,27 @@ export function markVisibleTooltips(): void {
   }
 }
 
+/** Runs in the page: how many tooltips are rendered now (the readouts a hover leaves behind while they animate out). */
+export function visibleTooltipCount(): number {
+  return Array.from(document.querySelectorAll('[role="tooltip"]')).filter((el) => {
+    const rect = el.getBoundingClientRect()
+    return rect.width > 0 && rect.height > 0 && getComputedStyle(el).visibility !== 'hidden'
+  }).length
+}
+
+/**
+ * Moves the pointer off the previous anchor and waits for its tooltip to unmount, so a hover crop
+ * (a union box over the anchor and its tooltip) never holds a fragment of the component above.
+ * Bounded: a tooltip that stays (pinned by the app) is left to `markVisibleTooltips`.
+ */
+export async function clearStrayTooltips(page: PwPage): Promise<void> {
+  await page.mouse.move(0, 0)
+  for (let waited = 0; waited < TIP_CLEAR_MS; waited += TIP_SETTLE_MS) {
+    if ((await page.evaluate(visibleTooltipCount, undefined)) === 0) return
+    await sleep(TIP_SETTLE_MS)
+  }
+}
+
 /** Runs in the page: the first id a trigger names in `aria-describedby`, looking at it and its descendants. */
 export function describedByOf(el: Element | null): string {
   const named = el?.matches('[aria-describedby]') ? el : el?.querySelector('[aria-describedby]')
@@ -633,6 +656,7 @@ async function captureHover(c: Ctx, name: string): Promise<void> {
     await reveal(c, name, 'hover')
     const inner = c.page.locator(`${sel(name)} [data-shot-hover]`).first()
     const target = (await inner.count()) > 0 ? inner : anchor
+    await clearStrayTooltips(c.page)
     await c.page.evaluate(markVisibleTooltips, undefined)
     await hoverTrigger(target)
     const describedBy = idOf(await target.evaluate(describedByOf))
@@ -709,6 +733,7 @@ async function captureTooltip(c: Ctx, name: string): Promise<void> {
     if ((await trigger.count()) === 0) throw new NotDeclared('no [data-shot-tooltip] in the anchor')
     const anchor = anchorOf(c, name)
     await reveal(c, name, 'tooltip')
+    await clearStrayTooltips(c.page)
     await c.page.evaluate(markVisibleTooltips, undefined)
     await hoverTrigger(trigger)
     const describedBy = idOf(await trigger.evaluate(describedByOf))
