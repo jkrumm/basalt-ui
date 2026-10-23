@@ -409,6 +409,7 @@ export type FixtureSpec = {
     | 'empty'
     | 'untimed'
     | 'wrap'
+    | 'wrap-sweep'
     | 'threshold-oldest'
     | 'threshold'
     | 'timeline'

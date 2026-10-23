@@ -117,10 +117,15 @@ export function useScrolledEdge(node: HTMLElement | null): void {
     el.addEventListener('scroll', mark, { passive: true })
     const observer = typeof ResizeObserver === 'undefined' ? null : new ResizeObserver(mark)
     observer?.observe(el)
-    if (el.firstElementChild !== null) observer?.observe(el.firstElementChild)
+    const content = el.firstElementChild
+    if (content !== null) observer?.observe(content)
+    // The content wrapper stays, its children swap (skeleton, plain rows, the windowed seam): re-read then.
+    const swaps = typeof MutationObserver === 'undefined' ? null : new MutationObserver(mark)
+    if (content !== null) swaps?.observe(content, { childList: true })
     return () => {
       el.removeEventListener('scroll', mark)
       observer?.disconnect()
+      swaps?.disconnect()
       el.removeAttribute('data-scrolled')
       el.removeAttribute('data-more')
     }

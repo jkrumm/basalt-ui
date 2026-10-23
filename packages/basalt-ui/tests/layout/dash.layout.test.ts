@@ -67,6 +67,23 @@ layout('Meter / BarList geometry', () => {
     expect(new Set(rows.map((r) => Math.round(r.value.left))).size).toBe(1)
   })
 
+  test('a truncated BarList name ends at least a gap before its value', async () => {
+    const gaps = await p.raw.evaluate(() =>
+      [...document.querySelectorAll('[data-testid="dash-bar-varied-528"] li')].map((li) => {
+        const label = li.querySelector('span')!
+        const range = document.createRange()
+        range.selectNodeContents(label)
+        const box = label.getBoundingClientRect()
+        const pad = Number.parseFloat(getComputedStyle(label).paddingRight)
+        const textRight = Math.min(range.getBoundingClientRect().right, box.right - pad)
+        const value = li.children[1]!.getBoundingClientRect().left
+        return value - textRight
+      }),
+    )
+    expect(gaps).toHaveLength(6)
+    for (const gap of gaps) expect(gap).toBeGreaterThanOrEqual(8)
+  })
+
   // Similar-length names hold the 120px law. Varied names (a short one beside a ~75 character one)
   // are bounded by the label column, which the 14rem cap limits; measured worst gaps are 191px (528)
   // and 216px (1400), asserted with a few px of headroom. The truncated row measures ~12px, the gap.

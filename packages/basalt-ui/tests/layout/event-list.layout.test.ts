@@ -189,6 +189,49 @@ layout('Wave 44 EventList', () => {
     expect(Number(r['chipTop'])).toBeLessThan(Number(r['bodyBottom']) - 1)
   })
 
+  test('390: the chips never take a line of their own, whatever the note length', async () => {
+    const p = await openFixture(spec('wrap-sweep'), PHONE)
+    await p.raw.waitForSelector(`${HOST} ${moduleClass('chips')}`)
+    const rows = (await p.raw.evaluate(`(() =>
+      [...document.querySelectorAll('${HOST} ${moduleClass('chips')}')].map((chips) => {
+        const tail = chips.parentElement
+        const range = document.createRange()
+        range.selectNodeContents(tail.firstChild)
+        const word = range.getBoundingClientRect()
+        const c = chips.getBoundingClientRect()
+        return { overlap: Math.min(word.bottom, c.bottom) - Math.max(word.top, c.top), wordHeight: word.height }
+      }))()`)) as { overlap: number; wordHeight: number }[]
+    expect(rows).toHaveLength(40)
+    // The chips share a line with the note's last word: their vertical ranges overlap.
+    for (const r of rows) expect(r.overlap).toBeGreaterThan(Math.min(r.wordHeight, 8) / 2)
+  })
+
+  test('a skeleton after loaded rows keeps their height', async () => {
+    const p = await openFixture(spec('plain'), DESKTOP_1440)
+    await p.raw.waitForSelector(`${HOST} time`)
+    const height = `(() => (${SCROLLER}).firstElementChild.getBoundingClientRect().height)()`
+    const before = (await p.raw.evaluate(height)) as number
+    await p.raw.evaluate('window.basaltElLoading(true)')
+    await p.raw.waitForTimeout(250)
+    const during = (await p.raw.evaluate(
+      `(() => document.querySelector('${HOST} [aria-busy]').parentElement.getBoundingClientRect().height)()`,
+    )) as number
+    expect(during).toBeGreaterThanOrEqual(before - 1)
+  })
+
+  test('a scroll box with rows below the fold paints the more-below fade', async () => {
+    const p = await openFixture(spec('plain'), DESKTOP_1440)
+    await p.raw.waitForSelector(`${HOST} time`)
+    const fade = (await p.raw.evaluate(`(() => {
+      const el = ${SCROLLER}
+      const after = getComputedStyle(el, '::after')
+      return { more: el.hasAttribute('data-more'), content: after.content, position: after.position }
+    })()`)) as { more: boolean; content: string; position: string }
+    expect(fade.more).toBe(true)
+    expect(fade.content).not.toBe('none')
+    expect(fade.position).toBe('sticky')
+  })
+
   test('1440: a feed row with a body and two chips is at most 56 px', async () => {
     const p = await openFixture(spec('plain'), DESKTOP_1440)
     await p.raw.waitForSelector(`${HOST} time`)

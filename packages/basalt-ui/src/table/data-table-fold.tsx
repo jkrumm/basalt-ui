@@ -452,8 +452,14 @@ export function RowDisclosure<T extends RowData>({
   )
 }
 
-/** The header cell above the toggles: a micro count of what folded, with the names in `title` and
- * for a screen reader (F102 — a hidden column must be announced, not merely reachable). */
+/** "2 more columns: C, D" — the folded columns, counted and named. */
+export function foldedSummary(count: number, label: string): string {
+  return `${count} more ${count === 1 ? 'column' : 'columns'}: ${label}`
+}
+
+/** The header cell above the toggles: a micro count of what folded. The screen-reader span is the one
+ * accessible label (F102 — a hidden column must be announced, not merely reachable); the visible
+ * `+N` is a hidden duplicate whose `title` is the sighted hover hint. */
 export function FoldHeaderLabel({
   count,
   foldedLabel,
@@ -461,13 +467,13 @@ export function FoldHeaderLabel({
   count: number
   foldedLabel: string
 }): ReactNode {
-  const more = `${count} more ${count === 1 ? 'column' : 'columns'}`
+  const summary = foldedSummary(count, foldedLabel)
   return (
-    <span className={classes.foldCount} title={`${more}: ${foldedLabel}`}>
-      <span aria-hidden>+{count}</span>
-      <span className={classes.srOnly}>
-        {more}: {foldedLabel}
+    <span className={classes.foldCount}>
+      <span aria-hidden title={summary}>
+        +{count}
       </span>
+      <span className={classes.srOnly}>{summary}</span>
     </span>
   )
 }
