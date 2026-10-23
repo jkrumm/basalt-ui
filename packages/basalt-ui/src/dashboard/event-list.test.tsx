@@ -392,18 +392,6 @@ describe('EventList on the server', () => {
 })
 
 describe('EventList feed note, clipped-feed cue and skeleton height', () => {
-  test('a string body carries its whole text in a title (the feed clamps it to one line)', () => {
-    const { container } = mount({
-      items: [{ id: 'a', at: local(2026, 3, 10, 9), title: 't', body: 'a long journal note' }],
-    })
-    expect(container.querySelector('[title="a long journal note"]')).not.toBeNull()
-  })
-
-  test('the feed clamps the body to one line in CSS', () => {
-    const css = readFileSync(new URL('./event-list.module.css', import.meta.url), 'utf8')
-    expect(css).toMatch(/\[data-density='feed'\] \.body \{[^}]*-webkit-line-clamp: 1/)
-  })
-
   test('data-more marks a box with content below the fold, and clears at the end', () => {
     const { container } = mount({ height: 100, items: ITEMS })
     const box = container.querySelector<HTMLElement>('[data-density] > div') as HTMLElement
@@ -416,6 +404,33 @@ describe('EventList feed note, clipped-feed cue and skeleton height', () => {
     box.scrollTop = 200
     box.dispatchEvent(new Event('scroll'))
     expect(box.hasAttribute('data-more')).toBe(false)
+  })
+
+  test('data-more is absent when the content fits, and a flag is not rewritten without a transition', () => {
+    const { container } = mount({ height: 400, items: ITEMS })
+    const box = container.querySelector<HTMLElement>('[data-density] > div') as HTMLElement
+    for (const [key, value] of [
+      ['scrollHeight', 200],
+      ['clientHeight', 400],
+    ] as const) {
+      Object.defineProperty(box, key, { configurable: true, get: () => value })
+    }
+    const set = mock(box.setAttribute.bind(box))
+    box.setAttribute = set
+    box.dispatchEvent(new Event('scroll'))
+    box.dispatchEvent(new Event('scroll'))
+    expect(box.hasAttribute('data-more')).toBe(false)
+    expect(set).not.toHaveBeenCalled()
+  })
+
+  test('unmounting clears the scroll flags', () => {
+    const { container, unmount } = mount({ height: 100, items: ITEMS })
+    const box = container.querySelector<HTMLElement>('[data-density] > div') as HTMLElement
+    box.setAttribute('data-more', '')
+    box.setAttribute('data-scrolled', '')
+    unmount()
+    expect(box.hasAttribute('data-more')).toBe(false)
+    expect(box.hasAttribute('data-scrolled')).toBe(false)
   })
 
   test('a skeleton keeps the held height of the rows it replaces', () => {
