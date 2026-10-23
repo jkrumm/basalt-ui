@@ -160,3 +160,10 @@ describe('BarList name/value gap', () => {
     expect(css).toMatch(/\.label \{[^}]*padding-inline-end/)
   })
 })
+
+describe('BarList delta secondary', () => {
+  test('a delta badge takes the row line-height so its baseline sits on the value', () => {
+    const css = readFileSync(new URL('./bar-list.module.css', import.meta.url), 'utf8')
+    expect(css).toMatch(/\.secondary \[data-delta\] \{[^}]*line-height: inherit/)
+  })
+})

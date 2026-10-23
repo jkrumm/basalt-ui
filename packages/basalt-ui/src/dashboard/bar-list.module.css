@@ -239,4 +239,6 @@
  */
 .secondary [data-delta] {
   font-variant-numeric: tabular-nums;
+  /* The row's line box, not the badge's own `line-height: 1`: its baseline then sits on the value's. */
+  line-height: inherit;
 }
