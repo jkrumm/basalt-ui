@@ -175,6 +175,8 @@ layout('Wave 44 EventList', () => {
         overflow: cs.textOverflow, whiteSpace: cs.whiteSpace, fits: body.scrollWidth <= body.clientWidth + 1,
         height: body.getBoundingClientRect().height, lh, text: body.textContent,
         right: body.getBoundingClientRect().right, rowRight: body.closest('${moduleClass('row')}').getBoundingClientRect().right,
+        chipTop: body.parentElement.querySelector('${moduleClass('chips')}').getBoundingClientRect().top,
+        bodyTop: body.getBoundingClientRect().top,
       }
     })()`)) as Record<string, string | number | boolean>
     expect(r['overflow']).not.toBe('ellipsis')
@@ -183,6 +185,8 @@ layout('Wave 44 EventList', () => {
     expect(Number(r['height'])).toBeGreaterThan(Number(r['lh']) * 1.5)
     expect(String(r['text'])).toContain('then re-ran every dependent report')
     expect(Number(r['right'])).toBeLessThanOrEqual(Number(r['rowRight']) + 1)
+    // The chips sit beside the body's first line, never on a line of their own.
+    expect(Number(r['chipTop'])).toBeLessThan(Number(r['bodyTop']) + Number(r['lh']))
   })
 
   test('1440: a feed row with a body and two chips is at most 56 px', async () => {
