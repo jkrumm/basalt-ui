@@ -125,10 +125,19 @@ describe('ChartCard placeholderHeight="content"', () => {
 })
 
 describe('ChartPlaceholder empty default', () => {
-  test('states the cause and a next step', () => {
+  test('states the cause only: no next step the page may not offer', () => {
     const { container } = render(<ChartPlaceholder state={{ empty: true }} />)
     const tile = container.querySelector('[data-basalt-empty-tile]')
     expect(tile?.textContent).toContain('Nothing plotted in this range')
-    expect(tile?.textContent).toContain('Widen the range or check the source.')
+    expect(tile?.textContent).not.toContain('Widen')
+  })
+
+  test('a consumer-supplied next step still shows', () => {
+    const { container } = render(
+      <ChartPlaceholder state={{ empty: 'No runs. Widen the date range.' }} />,
+    )
+    expect(container.querySelector('[data-basalt-empty-tile]')?.textContent).toContain(
+      'Widen the date range.',
+    )
   })
 })
