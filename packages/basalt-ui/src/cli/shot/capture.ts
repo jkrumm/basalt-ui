@@ -576,6 +576,27 @@ export async function clearStrayTooltips(page: PwPage): Promise<void> {
   }
 }
 
+/**
+ * Runs in the page, on the tooltip a hover opened: hides every other visible one (another anchor's
+ * readout still fading or pinned) so the crop holds none, and marks what it hid.
+ */
+export function muteOtherTooltips(open: Element): void {
+  for (const el of Array.from(document.querySelectorAll<HTMLElement>('[role="tooltip"]'))) {
+    const rect = el.getBoundingClientRect()
+    if (el === open || rect.width === 0 || rect.height === 0) continue
+    el.setAttribute('data-shot-muted', el.style.visibility)
+    el.style.setProperty('visibility', 'hidden', 'important')
+  }
+}
+
+/** Runs in the page: puts back exactly what `muteOtherTooltips` marked. */
+export function unmuteTooltips(): void {
+  for (const el of Array.from(document.querySelectorAll<HTMLElement>('[data-shot-muted]'))) {
+    el.style.visibility = el.getAttribute('data-shot-muted') ?? ''
+    el.removeAttribute('data-shot-muted')
+  }
+}
+
 /** Runs in the page: the first id a trigger names in `aria-describedby`, looking at it and its descendants. */
 export function describedByOf(el: Element | null): string {
   const named = el?.matches('[aria-describedby]') ? el : el?.querySelector('[aria-describedby]')
@@ -665,7 +686,13 @@ async function captureHover(c: Ctx, name: string): Promise<void> {
     const describedBy = idOf(await target.evaluate(describedByOf))
     const [box, tip] = [await settledBox(anchor), await openTooltipBox(c, describedBy)]
     if (!box || !tip) return void (await snap(anchor, path))
-    await snapClip(c, path, [anchor, tipOf(c, describedBy)])
+    try {
+      await tipOf(c, describedBy).evaluate(muteOtherTooltips)
+      await snapClip(c, path, [anchor, tipOf(c, describedBy)])
+    } finally {
+      // Best effort: a page that died under the crop must not hide the crop's own error.
+      await c.page.evaluate(unmuteTooltips, undefined).catch(() => undefined)
+    }
   })
   await c.page.mouse.move(0, 0)
 }

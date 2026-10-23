@@ -621,10 +621,11 @@ async function budgets(providerOnlyDist: string): Promise<Budget[]> {
     // 8463 -> 8480 (w44 shot-scrollport): a full-page shot grows only by the page scrollport's hidden height, never a nested scroll box's (cli/shot/capture.ts +17). Consumer: every `basalt-ui shot` user — found on the playground S3 item timeline at 390; argo boards shoot the same harness.
     // 8480 -> 8668 (w48 friction rows 168-179, argo-friction.md): `shot` rejects a whitespace route, names the project in --out errors, auto-anchors fall back to main/section/header/form, `shot detect` prints "nothing measured" and a per-out-dir trend with finding counts, warns when every route renders the same content, names the contrast threshold (cli/shot/ + help.ts +77); `doctor --from <version>` and the stale tokens/fonts sheet warning (cli/doctor*.ts +112); sync's read-only root-template report paid for itself by trimming comments (-1). Consumers: linewatch, rollhook, obsidian, rb (the 2.28 bumps).
     // 8668 -> 8843 (w49 cli, argo-friction rows 186 + W48 P3): `init` wires the router plugin into vite.config, runs the lockfile's install and one vite build for routeTree.gen.ts (cli/init.ts + the injected, time-boxed `run` in index.ts; the pending install/build is read from artifacts so a re-run says what is left, the pm read from the nearest lockfile, `--no-install`, +140); a hover/tooltip crop first clears the previous anchor's tooltip (cli/shot/capture.ts, +24); `no-declared-states` is per anchor (capture.ts + detect.ts, +11). Consumers: every stock-Vite `init` and `shot` user (argo, linewatch, rollhook).
+    // 8843 -> 8870 (w50 table, PR 538): a hover crop mutes every other visible tooltip while it is taken and restores exactly those (cli/shot/capture.ts +27). Consumers: every `basalt-ui shot` user.
     {
       label: 'CLI non-test lines (src/cli/**)',
       value: cliNonTestLines(),
-      ceiling: 8843,
+      ceiling: 8870,
     },
     ...(await providerOnlyRows(providerOnlyDist)),
   ]
