@@ -233,15 +233,16 @@
 }
 
 /*
- * A column of DeltaBadges is a fixed two-track grid: the glyph track, then a figure track at least four
- * tabular digits wide with the figure end-aligned in it. "▲ 9%" and "▲13%" then share their glyph x AND
- * their right edge, whatever the digit count (D33: tabular only in a table-like column, not a hero metric).
+ * A column of DeltaBadges is a start-aligned two-track grid: the glyph track, then the figure. Every
+ * glyph shares one x and sits one fixed gap from its own figure ("▲ 9%" and "▲ 13%" alike); the
+ * figures are ragged on the right. End-aligning them in a fixed-width track kept the right edge but
+ * left a digit-wide hole between a short figure and its glyph (about 8px, Wave 50 S4).
  */
 .secondary [data-delta] {
   display: inline-grid;
   grid-auto-flow: column;
-  grid-template-columns: auto minmax(4ch, auto);
-  justify-items: end;
+  grid-template-columns: auto auto;
+  justify-items: start;
   font-variant-numeric: tabular-nums;
   /* The row's line box, not the badge's own `line-height: 1`: its baseline then sits on the value's. */
   line-height: inherit;
@@ -249,5 +250,5 @@
 
 /* A zero delta has no glyph: its figure is the only track. */
 .secondary [data-delta]:not(:has([data-delta-glyph])) {
-  grid-template-columns: minmax(4ch, auto);
+  grid-template-columns: auto;
 }

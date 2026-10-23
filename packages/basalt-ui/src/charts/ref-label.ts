@@ -124,7 +124,7 @@ export function refLabelPosition(opts: {
 }
 
 /** The gap between a sparkline reference label's box and its line, px. */
-const SPARK_LABEL_GAP = 2
+const SPARK_LABEL_GAP = 4
 /** Air between a sparkline label's box and the data line (stroke and end dot included), px. */
 const SPARK_LINE_AIR = 5
 

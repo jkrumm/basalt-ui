@@ -3,7 +3,7 @@
  * - an EventList row's chips have ONE place, whatever the row's note (row 190);
  * - an EventList uses three font sizes at most (row 191);
  * - a skeleton row keeps the height of a loaded row of the same shape (row 193, list half);
- * - a BarList's delta column is a fixed track: glyphs share an x, figures share a right edge.
+ * - a BarList's delta column is a fixed track: glyphs share an x and sit one fixed gap from their figure.
  */
 import { afterAll, describe, expect, test } from 'bun:test'
 import type { FixtureSpec } from './fixture/spec'
@@ -180,46 +180,20 @@ layout('Wave 50 BarList delta column', () => {
     ['1440', DESKTOP_1440],
     ['390', PHONE],
   ] as const) {
-    test(`${name}: a zero delta (no glyph) ends on the same right edge as the others`, async () => {
-      const p = await openFixture(dash(), viewport)
-      await p.settle()
-      const rights = (await p.raw.evaluate(`(() => {
-        const badges = [...document.querySelectorAll('[data-testid="dash-bar-delta"] [data-delta]')]
-        // A zero delta renders no glyph: drop one row's.
-        badges[2].querySelector('[data-delta-glyph]').remove()
-        return badges.map((b) => {
-          const range = document.createRange()
-          range.selectNodeContents(b.lastChild)
-          return { box: b.getBoundingClientRect().right, fig: range.getBoundingClientRect().right }
-        })
-      })()`)) as { box: number; fig: number }[]
-      const spread = (xs: number[]) => Math.max(...xs) - Math.min(...xs)
-      expect(spread(rights.map((r) => r.box))).toBeLessThanOrEqual(SNAP)
-      expect(spread(rights.map((r) => r.fig))).toBeLessThanOrEqual(SNAP)
-    })
-
-    test(`${name}: every delta shares its glyph x and its right edge, one digit or two`, async () => {
+    test(`${name}: every delta shares its glyph x and its glyph-to-figure gap, one digit or two`, async () => {
       const p = await openFixture(dash(), viewport)
       await p.settle()
       const rows = (await p.raw.evaluate(`(() =>
         [...document.querySelectorAll('[data-testid="dash-bar-delta"] [data-delta]')].map((badge) => {
-          const glyph = badge.querySelector('[data-delta-glyph]')
-          const text = badge.lastChild
+          const glyph = badge.querySelector('[data-delta-glyph]').getBoundingClientRect()
           const range = document.createRange()
-          range.selectNodeContents(text)
-          return {
-            right: badge.getBoundingClientRect().right,
-            figRight: range.getBoundingClientRect().right,
-            glyphLeft: glyph ? glyph.getBoundingClientRect().left : null,
-          }
-        }))()`)) as { right: number; figRight: number; glyphLeft: number | null }[]
+          range.selectNodeContents(badge.lastChild)
+          return { glyphLeft: glyph.left, gap: range.getBoundingClientRect().left - glyph.right }
+        }))()`)) as { glyphLeft: number; gap: number }[]
       expect(rows).toHaveLength(4)
       const spread = (xs: number[]) => Math.max(...xs) - Math.min(...xs)
-      expect(spread(rows.map((r) => r.right))).toBeLessThanOrEqual(SNAP)
-      expect(spread(rows.map((r) => r.figRight))).toBeLessThanOrEqual(SNAP)
-      expect(
-        spread(rows.flatMap((r) => (r.glyphLeft === null ? [] : [r.glyphLeft]))),
-      ).toBeLessThanOrEqual(SNAP)
+      expect(spread(rows.map((r) => r.glyphLeft))).toBeLessThanOrEqual(SNAP)
+      expect(spread(rows.map((r) => r.gap))).toBeLessThanOrEqual(SNAP)
     })
   }
 })
