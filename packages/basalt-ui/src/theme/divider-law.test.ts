@@ -158,6 +158,13 @@ const LEDGER: readonly { file: string; selector: string; kind: Kind; why: string
     why: 'A settings list. The `:not(:last-child)` IS the last-rule drop, written into the selector rather than as a second rule.',
   },
   {
+    file: 'controls/form-layout.module.css',
+    selector:
+      ".group[data-section] > .groupControls[data-direction='column'] > .row:not(:last-child)",
+    kind: 'between-rows',
+    why: "A form section's rows (D54: the same rule as a settings list). The `:not(:last-child)` IS the last-rule drop.",
+  },
+  {
     file: 'content/article-layout.module.css',
     selector: '.header',
     kind: 'prose-typography',
