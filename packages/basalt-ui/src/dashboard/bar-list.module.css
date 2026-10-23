@@ -239,7 +239,11 @@
  * left a digit-wide hole between a short figure and its glyph (about 8px, Wave 50 S4).
  */
 .secondary [data-delta] {
-  display: inline-grid;
+  /* A block that hugs its content and sits on the cell's start, whatever the cell's `text-align`, so
+   * every glyph shares one x. */
+  display: grid;
+  width: max-content;
+  margin-inline-end: auto;
   grid-auto-flow: column;
   grid-template-columns: auto auto;
   justify-items: start;

@@ -1187,7 +1187,7 @@ export function settleInCard(
   const gap = Math.max(0, Number.isFinite(ctx.offset) ? (ctx.offset ?? 10) : 10)
   // The plot's rect: the axis tick labels sit in the margins around it, so a card tooltip stays inside
   // it when it fits (a first-point tooltip would otherwise cover the y ticks and an x tick).
-  const { margin } = ctx.scene
+  const margin = ctx.scene.margin ?? { top: 0, right: 0, bottom: 0, left: 0 }
   const plotTL = toClient({ x: margin.left, y: margin.top })
   const plotBR = toClient({ x: sceneW - margin.right, y: sceneH - margin.bottom })
   const plotFence = !slot && plotBR.x - plotTL.x >= w && plotBR.y - plotTL.y >= h

@@ -195,5 +195,17 @@ layout('Wave 50 BarList delta column', () => {
       expect(spread(rows.map((r) => r.glyphLeft))).toBeLessThanOrEqual(SNAP)
       expect(spread(rows.map((r) => r.gap))).toBeLessThanOrEqual(SNAP)
     })
+
+    test(`${name}: a zero delta (no glyph) starts on the same x as the glyphs`, async () => {
+      const p = await openFixture(dash(), viewport)
+      await p.settle()
+      const lefts = (await p.raw.evaluate(`(() => {
+        const badges = [...document.querySelectorAll('[data-testid="dash-bar-delta"] [data-delta]')]
+        // A zero delta renders no glyph: drop one row's.
+        badges[2].querySelector('[data-delta-glyph]')?.remove()
+        return badges.map((b) => b.getBoundingClientRect().left)
+      })()`)) as number[]
+      expect(Math.max(...lefts) - Math.min(...lefts)).toBeLessThanOrEqual(SNAP)
+    })
   }
 })
