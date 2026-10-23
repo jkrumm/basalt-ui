@@ -64,12 +64,12 @@ export function yRangeWithin(
 }
 
 /**
- * The `dy` that puts a caption's box clear of its line. The engine centres the text on its y, so
- * the box edge sits half a font size from it; add the gap {@link refLabelPosition} reckons with.
+ * The `dy` that puts a caption's box clear of its line. The engine centres the text on its y and
+ * its line box is a little taller than the glyphs, so a full font size off the line leaves the
+ * box half a font size plus its leading clear (the old −5 put the centre ON the dashes).
  */
 export function refLabelDy(position: RefLabelPosition, fontSize: number): number {
-  const offset = fontSize / 2 + LINE_GAP
-  return position.endsWith('above') ? -offset : offset
+  return position.endsWith('above') ? -fontSize : fontSize
 }
 
 export function refLabelPosition(opts: {
@@ -204,13 +204,26 @@ export function referenceLabelPlacement(opts: {
     undefined,
   )
   // Nothing fits (the line peaks on the reference in a short box): keep the box inside the plot
-  // and take the spot whose box covers the least of the line.
-  const clamped = candidates.map((c) => {
-    const top = Math.min(Math.max(c.top, 0), height - boxH)
-    const [from, to] = c.range ?? [Infinity, -Infinity]
-    return { ...c, top, covered: Math.max(0, Math.min(top + boxH, to) - Math.max(top, from)) }
+  // (the top edge last, so a box taller than the plot starts at 0) and take the spot that clears the
+  // reference rule first, then covers the least of the data line. A tie keeps the first of the four.
+  const scored = candidates.map((c) => {
+    const top = Math.max(0, Math.min(c.top, height - boxH))
+    const strikesRule = top < at && top + boxH > at
+    const covered =
+      c.range === null
+        ? 0
+        : Math.max(0, Math.min(top + boxH, c.range[1]) - Math.max(top, c.range[0]))
+    return { ...c, top, strikesRule, covered }
   })
-  const least = clamped.reduce((best, c) => (c.covered < best.covered ? c : best))
+  const least = scored.reduce((best, c) =>
+    c.strikesRule !== best.strikesRule
+      ? c.strikesRule
+        ? best
+        : c
+      : c.covered < best.covered
+        ? c
+        : best,
+  )
   const { side, end, top } = nearest ?? least
   const dy = top + boxH / 2 - at
   return { side, end, dy }

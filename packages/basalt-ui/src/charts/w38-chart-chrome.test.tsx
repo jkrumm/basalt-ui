@@ -1,7 +1,8 @@
 /**
  * Wave 38, the chart chrome: the `Sparkline` readout clears the plotted line and its siblings, an
- * hourly point reads as an hour, a bar tooltip stays under the card's headline, a compact y axis keeps
- * the top tick (and the unit on it), shade-only bars tell themselves apart, and a zero band is skipped.
+ * hourly point reads as an hour, a bar tooltip stays under the card's headline, a compact y axis
+ * keeps a unit its formatter states on a fixed domain's end (and ends on the step when the formatter
+ * is uniform), shade-only bars tell themselves apart, and a zero band is skipped.
  */
 import { readFileSync } from 'node:fs'
 import { afterEach, describe, expect, test } from 'bun:test'
@@ -202,32 +203,41 @@ describe('a bar tooltip stays under the headline (item 4)', () => {
   })
 })
 
-describe('a compact y axis labels only ticks of its step (W49)', () => {
-  const labelled = (domain: [number, number]): number[] => {
+describe('a compact y axis keeps the unit its formatter puts on a fixed domain end (item 5, W49)', () => {
+  const ticksOf = (domain: [number, number], format: (v: number) => string) => {
     const guide = yGuide({
-      cfg: { domain, format: String },
-      axis: { domain, format: String },
+      cfg: { domain, format },
+      axis: { domain, format },
       cls: 'compact',
       side: 'left',
       grid: true,
     })
     const ticks = typeof guide.axis === 'object' ? guide.axis.ticks : undefined
-    // The engine draws the round ticks of a `count` policy on this domain; fixed `values` would be ours.
-    if (!ticks || 'values' in ticks) throw new Error('expected a count policy')
-    return scaleLinear().domain(domain).ticks(ticks.count)
+    if (!ticks) throw new Error('expected ticks')
+    // Fixed `values` are the end tick joining; a `count` policy draws the engine's round ticks.
+    return 'values' in ticks
+      ? { values: ticks.values, format: ticks.format }
+      : { values: scaleLinear().domain(domain).ticks(ticks.count), format: ticks.format }
   }
-  const stepsOf = (ticks: number[]) =>
-    new Set(ticks.slice(1).map((t, i) => t - (ticks[i] as number)))
-  test('weight [69, 77] labels 70 72 74 76: no lone 77 beside a 2-step', () => {
-    expect(labelled([69, 77])).toEqual([70, 72, 74, 76])
+  const unitOnEnd = (v: number): string => (v === 25 ? '25 days' : String(v))
+  test('a unit stated on the end alone keeps the end as the topmost labelled tick', () => {
+    const { values, format } = ticksOf([0, 25], unitOnEnd)
+    expect(values).toEqual([0, 10, 20, 25])
+    expect(format?.(values.at(-1) as number)).toBe('25 days')
   })
-  test('e1RM [60, 220] labels one even step, with no 220 above 200', () => {
-    const ticks = labelled([60, 220])
-    expect(stepsOf(ticks).size).toBe(1)
-    expect(ticks).not.toContain(220)
+  test('a uniform formatter ends on the step: weight 70 72 74 76, no lone 77', () => {
+    expect(ticksOf([69, 77], (v) => `${v} kg`).values).toEqual([70, 72, 74, 76])
   })
-  test('[0, 25] stays on its 10-step; the raw end is not a tick', () => {
-    expect(labelled([0, 25])).toEqual([0, 10, 20])
+  test('e1RM [60, 220] with a uniform unit is one even step, with no 220 above 200', () => {
+    const { values } = ticksOf([60, 220], (v) => `${v} kg`)
+    expect(new Set(values.slice(1).map((t, i) => t - (values[i] as number))).size).toBe(1)
+    expect(values).not.toContain(220)
+  })
+  test('a domain already on a tick and an end just above one are untouched', () => {
+    expect(ticksOf([0, 20], unitOnEnd).values).toEqual([0, 5, 10, 15, 20])
+    expect(ticksOf([0, 21], (v) => (v === 21 ? '21 days' : String(v))).values).toEqual([
+      0, 5, 10, 15, 20,
+    ])
   })
 })
 
