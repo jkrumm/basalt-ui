@@ -8,6 +8,7 @@
  * src/cli/check-theme.test.ts (temp-dir + exit-code contract).
  */
 import { describe, expect, it } from 'bun:test'
+import { readFileSync } from 'node:fs'
 import { pxRem } from '../tokens/core'
 import { SPACE_SCALE } from '../tokens/palette'
 import { CONTAINER_CLASSES } from '../tokens/size-classes'
@@ -302,6 +303,13 @@ describe('raw-spacing', () => {
 
   it('flags p={8} — it equals the xs step and should be the token', () => {
     expect(kinds(find(`<Box p={8} />`))).toContain('raw-spacing')
+  })
+
+  it('names the matching token for every scale step (xs..xl)', () => {
+    const remedy = guardKindRemedy('raw-spacing')
+    for (const [name, px] of Object.entries(SPACE_SCALE)) {
+      expect(remedy).toContain(`${px} → "${name}"`)
+    }
   })
 
   it('does NOT flag p={6} (sub-scale micro-spacing, no token to prefer)', () => {
@@ -692,6 +700,11 @@ describe('card-with-border', () => {
 
   // emailgw r4: a text-lane-only consumer dropped withBorder and kept padding="md", which the
   // oxlint lane then flagged — the remedy names the inset half so the card is fixed once.
+  it('card-inset plugin messages name the older py="xs" px="sm" idiom', () => {
+    const plugin = readFileSync(new URL('../../configs/oxlint-plugin.js', import.meta.url), 'utf8')
+    expect(plugin).toContain('py="xs" px="sm" idiom is off-idiom')
+  })
+
   it('names the card-inset half in its remedy', () => {
     expect(guardKindRemedy('card-with-border')).toContain('basalt/card-inset')
   })

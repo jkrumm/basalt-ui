@@ -601,7 +601,8 @@ export const CARD_INSET_PX = 'md'
 const CARD_INSET_MESSAGE =
   'Card/Paper is off the card idiom — the theme owns the 12/16 inset and radius, so write no ' +
   'p/padding/py/px/radius. Flush whole card: variant="flush"; full-bleed region in a padded card: ' +
-  '<Card.Section>; a deliberate exception: {/* theme-allow card-inset — reason */}. (basalt/card-inset)'
+  '<Card.Section>; a deliberate exception: {/* theme-allow card-inset — reason */}. The older ' +
+  'py="xs" px="sm" idiom is off-idiom too — delete it. (basalt/card-inset)'
 const CARD_INSET_REDUNDANT_MESSAGE =
   'Card/Paper inset is redundant — the theme owns it (12/16, density-scaled); delete ' +
   'py="sm" px="md". (basalt/card-inset)'
