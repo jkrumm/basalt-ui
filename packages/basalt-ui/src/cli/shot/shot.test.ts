@@ -25,6 +25,7 @@ import {
   unmuteTooltips,
   clearStrayTooltips,
   visibleTooltipCount,
+  claimOwnTooltip,
   openContext,
   parseHoverAt,
   readScaleInPage,
@@ -711,6 +712,15 @@ describe('tooltip lookup', () => {
     expect(a!.hasAttribute('data-shot-seen')).toBe(true)
     expect(b!.hasAttribute('data-shot-seen')).toBe(false)
     expect(document.getElementById('c')!.hasAttribute('data-shot-seen')).toBe(false)
+  })
+  test('claimOwnTooltip marks the tooltips outside the trigger, and nothing when the trigger holds none', () => {
+    document.body.innerHTML =
+      '<i id="stray" role="tooltip"></i><div id="t"><i id="own" role="tooltip"></i></div><div id="bare"></div>'
+    claimOwnTooltip(document.getElementById('bare') as Element)
+    expect(document.querySelectorAll('[data-shot-seen]')).toHaveLength(0)
+    claimOwnTooltip(document.getElementById('t') as Element)
+    expect(document.getElementById('stray')!.hasAttribute('data-shot-seen')).toBe(true)
+    expect(document.getElementById('own')!.hasAttribute('data-shot-seen')).toBe(false)
   })
   test('visibleTooltipCount counts only rendered tooltips', () => {
     document.body.innerHTML = '<i id="a" role="tooltip"></i><i id="b" role="tooltip"></i>'

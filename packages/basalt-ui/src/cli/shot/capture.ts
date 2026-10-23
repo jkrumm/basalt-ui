@@ -589,6 +589,13 @@ export function muteOtherTooltips(open: Element): void {
   }
 }
 
+/** Runs in the page, for a trigger with no `aria-describedby`: marks the tooltips outside it as seen, so an earlier chart's stale readout never wins `.first()`. */
+export function claimOwnTooltip(trigger: Element): void {
+  const tips = Array.from(document.querySelectorAll('[role="tooltip"]'))
+  if (tips.some((el) => trigger.contains(el)))
+    for (const el of tips) if (!trigger.contains(el)) el.setAttribute('data-shot-seen', '')
+}
+
 /** Runs in the page: puts back exactly what `muteOtherTooltips` marked. */
 export function unmuteTooltips(): void {
   for (const el of Array.from(document.querySelectorAll<HTMLElement>('[data-shot-muted]'))) {
@@ -684,6 +691,7 @@ async function captureHover(c: Ctx, name: string): Promise<void> {
     await c.page.evaluate(markVisibleTooltips, undefined)
     await hoverTrigger(target)
     const describedBy = idOf(await target.evaluate(describedByOf))
+    if (describedBy === '') await target.evaluate(claimOwnTooltip)
     const [box, tip] = [await settledBox(anchor), await openTooltipBox(c, describedBy)]
     if (!box || !tip) return void (await snap(anchor, path))
     try {
@@ -767,6 +775,7 @@ async function captureTooltip(c: Ctx, name: string): Promise<void> {
     await c.page.evaluate(markVisibleTooltips, undefined)
     await hoverTrigger(trigger)
     const describedBy = idOf(await trigger.evaluate(describedByOf))
+    if (describedBy === '') await trigger.evaluate(claimOwnTooltip)
     const t = await openTooltipBox(c, describedBy, TOOLTIP_TIMEOUT_MS)
     if (!t) throw new Error('no visible [role="tooltip"] after hover')
     const a = await settledBox(anchor)
