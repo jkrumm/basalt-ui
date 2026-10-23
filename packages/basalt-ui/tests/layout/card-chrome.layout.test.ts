@@ -177,10 +177,12 @@ layout('card chrome by container', () => {
   // "Availability"/"Negotiated link speed" shape) folds its subtitle by height, not width, and its
   // merged title row keeps the header to a fifth of the card. Measured before wave 8: 0.335 at this
   // fixture's width/body (subtitle visible, full-size KPI numeral, full header inset).
-  test('a short ChartCard header stays at or under 20% of the card height (wave 8)', async () => {
+  // Wave 52: a short card keeps the 12px header inset (it used to trim to 4px) so its title shares a
+  // baseline with a tall neighbour in the row; the bound moves from 20% to 25% for those 8px.
+  test('a short ChartCard header stays at or under 25% of the card height (wave 8, w52)', async () => {
     const card = await p.box('card', '[data-testid="card-short"] > div')
     const header = await p.box('header', '[data-testid="card-short"] > div > div:first-child')
-    expect(header.box.height / card.box.height).toBeLessThanOrEqual(0.2)
+    expect(header.box.height / card.box.height).toBeLessThanOrEqual(0.25)
   })
 
   // P0-1: `data-basalt-card-short` used to oscillate forever on any card whose unfolded height fell

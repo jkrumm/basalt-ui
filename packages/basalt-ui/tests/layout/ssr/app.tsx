@@ -308,14 +308,7 @@ export function App(): ReactElement {
           </ChartCard>
         </Probe>
         <Probe name="card-short-chart">
-          <ChartCard
-            title="Revenue"
-            subtitle="Short card subtitle"
-            info="Net of refunds"
-            value="$12.4k"
-            delta={4.2}
-            deltaPeriod="vs prior"
-          >
+          <ChartCard title="Revenue" subtitle="Short card subtitle" info="Net of refunds">
             <Lines ariaLabel="Short" data={DATA} x={x} series={[A]} legend={false} height={120} />
           </ChartCard>
         </Probe>

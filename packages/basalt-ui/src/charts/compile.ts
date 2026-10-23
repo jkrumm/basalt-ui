@@ -1102,7 +1102,7 @@ const TIP_CARD_ROOMY = 192
  * `top`, so each write is followed by a settle inside the card (`settleInCard`).
  */
 /** What a card clamp does: `card` a chart tooltip (both axes, the card's width), `slot` a slotted
- * `Bars` chip (flush above its plot), `strip` a `BandStrip`'s (sideways only, as before Wave 39). */
+ * `Bars` chip (flush above its plot), `strip` a `BandStrip`'s (sideways, and below the x tick labels when it opens under the strip). */
 type TipMode = 'card' | 'slot' | 'strip'
 
 const cardPortal = (mode: TipMode): ChartTooltipPortalExtension => ({
@@ -1160,7 +1160,7 @@ export function settleInCard(
     y: surface.top + (p.y / sceneH) * surface.height,
   })
   if (mode === 'strip') {
-    // A `BandStrip`: sideways only, as before; the engine's width and vertical placement stand.
+    // A `BandStrip`: sideways, and clear of the tick labels below; the engine's width stands.
     if (w0 + 2 * TIP_CARD_AIR <= card.width)
       left = Math.min(Math.max(left, card.left + TIP_CARD_AIR), card.right - w0 - TIP_CARD_AIR)
     if (Math.abs(left - Number.parseFloat(tip.style.left)) > 0.5) tip.style.left = `${left}px`
