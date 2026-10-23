@@ -4,11 +4,12 @@ import { IconTrash } from '../../demo/icons'
 import { EmptyState, Section } from 'basalt-ui'
 import { BasaltDataTable, createColumnHelper } from 'basalt-ui/table'
 import { FixedClockTime } from '../FixedClockTime'
+import { fmtDay } from '../fixture-utils'
 import { noop, queryFor } from '../shot-state'
+import { TableCap } from '../table-cap'
 import type { ScenarioProps } from '../shot-state'
 import { CALIPER_GAP, CALIPER_NEXT, READING_DATE, SKINFOLD_ERROR } from './body-data'
 
-const READING = READING_DATE
 const fullDate = (date: Date): string =>
   date.toLocaleDateString('en-GB', {
     day: 'numeric',
@@ -42,12 +43,17 @@ const SKINFOLDS: Skinfold[] = [
   row('2026-08-10T07:30:00Z', 11, 22, 15),
 ]
 
+/** Newest first: the title scopes the table to the dates it lists. */
+const SKINFOLD_TITLE = `Skinfold history, ${fmtDay(SKINFOLDS.at(-1)?.date ?? READING_DATE)}–${fmtDay(SKINFOLDS[0]?.date ?? READING_DATE)}`
+
 const col = createColumnHelper<Skinfold>()
 
 const COLUMNS = [
   col.accessor('date', {
     header: 'Measured',
-    cell: (c) => <FixedClockTime date={c.getValue()} now={READING} full={fullDate(c.getValue())} />,
+    cell: (c) => (
+      <FixedClockTime date={c.getValue()} now={READING_DATE} full={fullDate(c.getValue())} />
+    ),
     meta: { kind: 'relative-time', priority: 1 },
   }),
   col.accessor('chest', { header: 'Chest (mm)', meta: { kind: 'number', priority: 3 } }),
@@ -56,15 +62,12 @@ const COLUMNS = [
   col.accessor('sum', { header: 'Sum (mm)', meta: { kind: 'number', priority: 2 } }),
 ]
 
-/** Five short columns never fill a 1440 card: the table ends where its rows do. */
-const TABLE_MAX_WIDTH = 640
-
 export function BodySkinfoldTable({ shotState }: ScenarioProps) {
   const query = queryFor(shotState, SKINFOLD_ERROR)
   return (
     <Box data-shot="skinfold-history">
-      <Section title="Skinfold history, 10 Aug–19 Oct">
-        <Box maw={TABLE_MAX_WIDTH}>
+      <Section title={SKINFOLD_TITLE}>
+        <TableCap>
           <BasaltDataTable
             data={shotState === 'empty' ? [] : SKINFOLDS}
             emptyState={
@@ -83,7 +86,7 @@ export function BodySkinfoldTable({ shotState }: ScenarioProps) {
             ]}
             {...(query !== undefined && { query })}
           />
-        </Box>
+        </TableCap>
       </Section>
     </Box>
   )

@@ -54,6 +54,7 @@ import {
 import type { HourRow, LatencyBin, Outage } from './ops-data'
 import { FixedClockTime } from './FixedClockTime'
 import { chartStateFor, noop, queryFor, retryCopy } from './shot-state'
+import { TableCap } from './table-cap'
 import type { ScenarioProps } from './shot-state'
 
 const LINE_STATES: BandStripSeries<HourRow>[] = [
@@ -306,15 +307,12 @@ function OpsCharts({ shotState }: ScenarioProps) {
   )
 }
 
-/** The table's width cap: five short columns never fill a 1440 card, so the card ends where the rows do. */
-const TABLE_MAX_WIDTH = 640
-
 function OpsOutages({ shotState }: ScenarioProps) {
   const query = queryFor(shotState, retryCopy('outage log'))
   return (
     <Box data-shot="outages" h="100%">
       <Section title={`Outages, ${WINDOW_LABEL}`}>
-        <Box maw={TABLE_MAX_WIDTH}>
+        <TableCap>
           <BasaltDataTable
             // Rows only at rest: the empty branch needs `data` empty, the others have no rows yet.
             data={shotState === undefined ? OUTAGE_ROWS : NO_OUTAGES}
@@ -330,7 +328,7 @@ function OpsOutages({ shotState }: ScenarioProps) {
               />
             }
           />
-        </Box>
+        </TableCap>
       </Section>
     </Box>
   )

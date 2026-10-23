@@ -4,8 +4,9 @@ import { cleanup, render } from '@testing-library/react'
 import { createElement } from 'react'
 import type { ReactElement } from 'react'
 import { afterEach, describe, expect, it } from 'bun:test'
-import { BODY, INOL_DEFINITION } from './body/body-data'
+import { BODY, INOL_DEFINITION, WEIGHT_HIGH_KG, WEIGHT_LOW_KG } from './body/body-data'
 import { BUDGET_EUR } from './spend-data'
+import { NEEDS_YOU, STUCK } from './agents-data'
 import { fmtEur } from './fixture-utils'
 import { SpendScenario } from './S4Spend'
 import { JOURNAL } from './learning-data'
@@ -27,11 +28,13 @@ describe('S7 body', () => {
   const body = () => mount(createElement(BodyScenario, { shotState }))
 
   it('scopes the weight meter to its 60-day window and keeps the weight as the headline', () => {
-    const meter = text(body(), 'weight-meter-start')
+    const meter = text(body(), 'weight-meter-start').replace(/\s/g, ' ')
     expect(meter).toContain('60-day range')
-    expect(meter).toContain('60-day low')
-    expect(meter).toContain('60-day high')
-    expect(meter).toContain(String(BODY.weightKg))
+    expect(meter).toContain(`60-day low ${WEIGHT_LOW_KG.toFixed(1)} kg`)
+    expect(meter).toContain(`60-day high ${WEIGHT_HIGH_KG.toFixed(1)} kg`)
+    // The cell is captioned as the spread it shows; the latest weigh-in lives in the strip.
+    expect(meter).toContain('Weight spread')
+    expect(WEIGHT_LOW_KG).toBeLessThanOrEqual(BODY.weightKg)
   })
 
   it('names the period of every sparkline and defines INOL once', () => {
@@ -77,16 +80,21 @@ describe('S6 settings', () => {
   })
 })
 
-const page = (ui: ReactElement) => mount(ui).textContent ?? ''
 const body = () => mount(createElement(BodyScenario, { shotState }))
 const countOf = (haystack: string, needle: string): number => haystack.split(needle).length - 1
 
 describe('Wave 50: each figure once per surface', () => {
   it('S3 names the awaiting cell as items and states the queue count once', () => {
-    const c = mount(createElement(AgentsScenario, { shotState: 'error' }))
-    expect(c.textContent).toContain('Could not load awaiting items')
-    const stuck = text(mount(createElement(AgentsScenario, { shotState })), 'stuck-items')
-    expect(stuck).not.toMatch(/by age\s*9\s*items/)
+    const failed = mount(createElement(AgentsScenario, { shotState: 'error' }))
+    expect(failed.textContent).toContain('Could not load awaiting items')
+    cleanup()
+    const c = mount(createElement(AgentsScenario, { shotState }))
+    const cell = text(c, 'strip-needs-you')
+    expect(cell).toContain('Awaiting items')
+    expect(countOf(cell, String(NEEDS_YOU))).toBeGreaterThanOrEqual(1)
+    const stuck = c.querySelector('[data-shot="stuck-items"]')
+    expect(stuck?.querySelectorAll('li').length).toBe(STUCK.length)
+    expect(stuck?.textContent).not.toContain(`${STUCK.length} items`)
   })
 
   it('S3 decision card does not restate the oldest wait', () => {
@@ -94,11 +102,11 @@ describe('Wave 50: each figure once per surface', () => {
     expect(t).not.toMatch(/past the \d+ h warning/)
   })
 
-  it('S4 prints the budget figure on the Budget cell; the tick and the chart line name the cap only', () => {
-    const t = page(createElement(SpendScenario, { shotState }))
-    // The one other hit is the forecast Meter's screen-reader summary, which basalt builds from the tick.
-    expect(countOf(t, fmtEur(BUDGET_EUR))).toBeLessThanOrEqual(2)
-    expect(countOf(t, `Budget ${fmtEur(BUDGET_EUR)}`)).toBeLessThanOrEqual(1)
+  it('S4 prints the budget figure exactly once, on the Budget cell', () => {
+    const c = mount(createElement(SpendScenario, { shotState }))
+    expect(countOf(text(c, 'strip-budget'), fmtEur(BUDGET_EUR))).toBe(1)
+    // Outside that cell only the forecast Meter's screen-reader summary names it, built by basalt from the tick.
+    expect(countOf(c.textContent ?? '', `Budget ${fmtEur(BUDGET_EUR)}`)).toBeLessThanOrEqual(1)
   })
 
   it('S5 uses one month form, a sparkline in every strip cell and no wrapping empty line', () => {
@@ -108,6 +116,7 @@ describe('Wave 50: each figure once per surface', () => {
     expect(journal).toMatch(/\b\d{1,2} Sep\b/)
     expect(c.querySelectorAll('[data-shot="learning-strip"] [data-shot-hover]').length).toBe(4)
     const empty = mount(createElement(LearningScenario, { shotState: 'empty' }))
+    expect(text(empty, 'strip-minutes-30d')).toContain('No practice yet')
     expect(empty.textContent).not.toContain('No practice in the last 30 days')
   })
 
