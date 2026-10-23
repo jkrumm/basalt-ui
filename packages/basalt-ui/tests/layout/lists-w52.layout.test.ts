@@ -51,13 +51,41 @@ layout('Wave 52 EventList', () => {
       const box = el.getBoundingClientRect()
       const hidden = rows.filter((r) => r.getBoundingClientRect().top < box.top + headerH - 1).length
       const total = rows.length
+      // A pseudo-element has no rect: its text is measured with the canvas in its own font, laid at the
+      // end edge of the padded content box.
+      const cs = getComputedStyle(el, '::before')
+      const ctx = document.createElement('canvas').getContext('2d')
+      ctx.font = cs.font
+      const width = ctx.measureText(text.slice(1, -1)).width + (parseFloat(cs.letterSpacing) || 0) * (text.length - 2)
+      const right = box.right - parseFloat(getComputedStyle(el).borderRightWidth) - parseFloat(cs.paddingRight) - (el.offsetWidth - el.clientWidth)
+      const header = el.querySelector('[data-day-header]')
+      const range = document.createRange()
+      range.selectNodeContents(header)
+      const tops = [...range.getClientRects()].map((q) => q.top)
+      // One line: every text rect starts within a half line of the first (spans differ by their baseline).
+      const lines = Math.max(...tops) - Math.min(...tops) < header.getBoundingClientRect().height / 2 ? 1 : 2
+      const headerText = { right: [...range.getClientRects()].reduce((m, q) => Math.max(m, q.right), 0) }
       el.scrollTop = 0
-      return { text, above: Number(above), hidden, total, atTopFirst: rows[0].getBoundingClientRect().top >= box.top }
-    })()`)) as { text: string; above: number; hidden: number; total: number; atTopFirst: boolean }
+      return { text, above: Number(above), hidden, total, atTopFirst: rows[0].getBoundingClientRect().top >= box.top, cue: { left: right - width, right }, box: { right: box.right }, headerText, headerLines: lines }
+    })()`)) as {
+      text: string
+      above: number
+      hidden: number
+      total: number
+      atTopFirst: boolean
+      cue: { left: number; right: number }
+      box: { right: number }
+      headerText: { right: number }
+      headerLines: number
+    }
     expect(r.total).toBe(5)
+    // The cue sits inside the box with air before its edge, and clear of the day header's own text.
+    expect(r.cue.right).toBeLessThanOrEqual(r.box.right - 3)
+    expect(r.cue.left).toBeGreaterThan(r.headerText.right)
+    expect(r.headerLines).toBe(1)
     expect(r.above).toBeGreaterThan(0)
     expect(r.above).toBe(r.hidden)
-    expect(r.text).toContain(`${r.above} earlier`)
+    expect(r.text).toContain(`${r.above} above`)
     // Scrolled to the top the first row is reachable and the top cue is gone; the cue names the rows below.
     expect(r.atTopFirst).toBe(true)
     await p.raw.waitForSelector(`${SCROLL}:not([data-above])`)
@@ -69,7 +97,7 @@ layout('Wave 52 EventList', () => {
     })()`)) as { past: number; attr: number; text: string }
     expect(below.past).toBeGreaterThan(0)
     expect(below.attr).toBe(below.past)
-    expect(below.text).toContain(`${below.past} later`)
+    expect(below.text).toContain(`${below.past} below`)
   })
 
   for (const [name, viewport] of [

@@ -186,7 +186,7 @@ export function rowsOutOfView(el: HTMLElement): { above: number; below: number }
  * Marks the scroll node `data-scrolled` while it is off the top (CSS lifts the sticky day header) and
  * `data-more` while content remains below the fold (CSS paints a bottom fade), so a clipped last row
  * is never silent. `data-above` / `data-below` carry how many rows are out of view each way: CSS names
- * them ("1 earlier" at the top edge, "2 later" at the bottom) so a cut row has a cue, not only a fade.
+ * them ("1 above" at the top edge, "2 below" at the bottom; "earlier" stays the load control's word) so a cut row has a cue, not only a fade.
  */
 export function useScrolledEdge(node: HTMLElement | null): void {
   useEffect(() => {
