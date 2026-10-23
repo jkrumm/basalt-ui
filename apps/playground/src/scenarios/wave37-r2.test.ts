@@ -80,8 +80,10 @@ describe('S2', () => {
     expect(src).toMatch(/data-shot="training-load"[^>]*fills && \{ flex: 1 \}/)
   })
 
-  it('the summary binds its last words, so a status word never wraps alone', () => {
-    expect(text(anchor(training(), 'summary'))).toMatch(/readiness \d+\u00A0is\u00A0\S+\.$/)
+  it('the summary binds its last words, so the month never wraps alone', () => {
+    expect(text(anchor(training(), 'summary'))).toMatch(
+      /\d+\u00A0days\u00A0left\u00A0in\u00A0\S+\.$/,
+    )
   })
 })
 

@@ -40,8 +40,8 @@ describe('S4 spend', () => {
       mount(createElement(SpendScenario, { shotState: undefined })),
       'strip-forecast',
     )
-    // W38 r1: the part captions own the row under the track, so the Budget tick states its figure in its label.
-    expect(tickLabels(cell)).toEqual(['€0', 'Budget €1,500'])
+    // W38 r1: the part captions own the row under the track, so the Budget tick names the cap and the Budget cell states the figure once (W50).
+    expect(tickLabels(cell)).toEqual(['€0', 'Budget'])
     expect(cell?.textContent).toContain('€1,500')
   })
 

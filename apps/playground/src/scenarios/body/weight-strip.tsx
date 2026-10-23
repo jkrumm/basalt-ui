@@ -3,20 +3,26 @@
  * line `strip-footer-weight-goal` rides `under` the Weight cell, which shows its empty reason (a
  * cell in `state` draws no footer of its own), and `empty-row` joins it under `shotState === 'empty'`.
  */
-import { Anchor, Box } from '@mantine/core'
+import { Box } from '@mantine/core'
 import { DeltaBadge, EmptyState, StatGroup } from 'basalt-ui'
 import type { StatStripCell } from 'basalt-ui'
-import { VX } from 'basalt-ui/tokens'
 import { noop } from '../shot-state'
-import { BODY, BODY_PREV, CALIPER_GAP, CALIPER_NEXT, WEIGH_IN_GAP, WEIGHT_ERROR } from './body-data'
+import {
+  BODY,
+  BODY_PREV,
+  CALIPER_GAP,
+  CALIPER_NEXT,
+  GOAL_KG,
+  WEIGH_IN_GAP,
+  WEIGHT_ERROR,
+} from './body-data'
 import type { ScenarioProps } from '../shot-state'
 
-/** A real, inert control: the footer states the next step as something that can be pressed. */
-const GOAL_LINK = (
-  <Anchor component="button" type="button" fz={VX.text.sm} onClick={noop}>
-    Set a goal weight
-  </Anchor>
-)
+/** The goal is drawn on the trend chart, so the footer states the distance to it, not a prompt to set one. */
+const goalFooter = (shotState: ScenarioProps['shotState']) =>
+  shotState === undefined || shotState === 'loading'
+    ? `${(BODY.weightKg - GOAL_KG).toFixed(1)} kg to goal`
+    : `Goal ${GOAL_KG} kg`
 
 export function BodyWeightStrip({ shotState }: ScenarioProps) {
   const loading = shotState === 'loading'
@@ -88,7 +94,7 @@ export function BodyWeightStrip({ shotState }: ScenarioProps) {
         label="Body composition at a glance"
         cols={3}
         cells={cells}
-        footer={[{ key: 'weight-goal', under: 'weight', content: GOAL_LINK }]}
+        footer={[{ key: 'weight-goal', under: 'weight', content: goalFooter(shotState) }]}
       />
       {shotState === 'empty' && (
         <Box data-shot="empty-row">

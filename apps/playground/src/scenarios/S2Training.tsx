@@ -29,6 +29,7 @@ import {
   ACUTE_LOAD,
   CHRONIC_LOAD,
   CONTRIBUTORS,
+  DAYS_ELAPSED,
   DISTANCE_7D_POINTS,
   DISTANCE_CHANGE_PCT,
   DISTANCE_MTD_KM,
@@ -40,6 +41,7 @@ import {
   LOAD_RATIO,
   LOAD_ZONES,
   MONTHS_HIT,
+  MONTH_DAYS,
   MONTH_END_LABEL,
   MONTH_NAME,
   NO_STRENGTH,
@@ -90,8 +92,16 @@ const aheadOrBehind = (gap: number): string =>
 /** One card height for a row pair: the grid cell sets it, the card fills it. */
 const FILL: CSSProperties = { height: '100%' }
 
-/** One sentence per fact, each with its figure (SPEC § 6.9); the status word is bound to its figure with no-break spaces so neither wraps alone at 390. */
-const SUMMARY = `${fmtInt(SESSIONS_MTD)} sessions, against a pace of ${fmtInt(PACE_SESSIONS)} on the ${MONTH_NAME} goal. Load ratio ${fmtRatio(LOAD_RATIO)} is ${loadZoneName(LOAD_RATIO).toLowerCase()}; readiness ${READINESS_SCORE}\u00A0is\u00A0${readinessLevel(READINESS_SCORE).toLowerCase()}.`
+const DAYS_LEFT = MONTH_DAYS - DAYS_ELAPSED
+const ON_PACE = PACE_GAP >= 0 && loadZoneName(LOAD_RATIO) === 'Optimal'
+const READY = readinessLevel(READINESS_SCORE)
+const VERDICT = !ON_PACE
+  ? 'ease off'
+  : READY === 'Good'
+    ? 'train as planned'
+    : 'train, but keep it light'
+/** The one judgement the cards do not state: what pace, load and readiness add up to. Its only figure is the days left, which no card prints; the month binds to it with no-break spaces so it never wraps alone at 390. */
+const SUMMARY = `${VERDICT[0]?.toUpperCase()}${VERDICT.slice(1)} today: ${ON_PACE ? 'pace and load hold' : 'pace or load is off'}, readiness is ${READY.toLowerCase()}, with ${DAYS_LEFT}\u00A0days\u00A0left\u00A0in\u00A0${MONTH_NAME}.`
 
 const SESSION_SEGMENTS = TYPE_MIX.filter((t) => t.count > 0).map((t) => ({
   value: t.count,
@@ -507,30 +517,35 @@ const sessionColumns = (() => {
   ]
 })()
 
+/** Six short columns never fill a 1440 card: the table ends where its rows do. */
+const TABLE_MAX_WIDTH = 720
+
 function TrainingSessions({ shotState }: ScenarioProps) {
   const query = queryFor(shotState, retry())
   const reset = useFilterReset([], shotState === undefined)
   return (
     <Box data-shot="session-log" h="100%">
       <Section title={`Lift log, ${WINDOW_LABEL}`}>
-        <BasaltDataTable
-          key={reset.tableKey}
-          // Rows only at rest: the empty branch needs `data` empty, the others have no rows yet.
-          data={shotState === undefined ? SESSION_ROWS : NO_SESSIONS}
-          columns={sessionColumns}
-          enablePagination
-          facets={[{ columnId: 'exercise', label: 'Exercise', options: EXERCISE_OPTIONS }]}
-          initialSorting={[{ id: 'date', desc: true }]}
-          {...(query !== undefined && { query })}
-          onColumnFiltersChange={reset.onColumnFiltersChange}
-          emptyState={tableEmptyState({
-            noun: 'lifts',
-            total: SESSION_ROWS.length,
-            cause: NO_STRENGTH,
-            filtered: reset.filtered,
-            onClear: reset.clear,
-          })}
-        />
+        <Box maw={TABLE_MAX_WIDTH}>
+          <BasaltDataTable
+            key={reset.tableKey}
+            // Rows only at rest: the empty branch needs `data` empty, the others have no rows yet.
+            data={shotState === undefined ? SESSION_ROWS : NO_SESSIONS}
+            columns={sessionColumns}
+            enablePagination
+            facets={[{ columnId: 'exercise', label: 'Exercise', options: EXERCISE_OPTIONS }]}
+            initialSorting={[{ id: 'date', desc: true }]}
+            {...(query !== undefined && { query })}
+            onColumnFiltersChange={reset.onColumnFiltersChange}
+            emptyState={tableEmptyState({
+              noun: 'lifts',
+              total: SESSION_ROWS.length,
+              cause: NO_STRENGTH,
+              filtered: reset.filtered,
+              onClear: reset.clear,
+            })}
+          />
+        </Box>
       </Section>
     </Box>
   )

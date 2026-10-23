@@ -138,11 +138,10 @@ function QueueStrip({ shotState }: ScenarioProps) {
   const cells: StatStripCell[] = [
     {
       key: 'needs-you',
-      caption: 'Awaiting',
+      caption: 'Awaiting items',
       qualifier: 'your decision',
       info: 'Items waiting on your decision. The dashed line is the 14-day mean.',
       value: fmtInt(NEEDS_YOU),
-      unit: 'items',
       loading,
       ...cellState(WARDEN_EMPTY),
       ...(!hidden && {
@@ -349,7 +348,6 @@ function QueueRow({ shotState }: ScenarioProps) {
           title="Waiting or blocked, by age"
           info={`Items waiting on your decision and items blocked on something else, oldest first. The status marks a wait past the ${WARN_LABEL} warning.`}
           subtitle={`Warden abandons an item at ${ABANDON_LABEL}`}
-          facts={{ value: fmtInt(STUCK.length), unit: 'items' }}
           {...cardStateProps(
             shotState,
             retry(),
@@ -412,15 +410,8 @@ function AgentsDecision({ shotState }: ScenarioProps) {
   return (
     <DecisionCard
       question={`Approve “${title}”?`}
-      facts={[
-        id.toUpperCase(),
-        `${fmtAge(Math.max(0, waitHours - WARN_HOURS))} past the ${WARN_LABEL} warning`,
-      ]}
-      evidence={
-        <Text size="sm">
-          {`The oldest item awaiting you. Warden closes it as abandoned in ${fmtAge(Math.max(0, ABANDON_HOURS - waitHours))}.`}
-        </Text>
-      }
+      facts={[id.toUpperCase(), `Abandoned in ${fmtAge(Math.max(0, ABANDON_HOURS - waitHours))}`]}
+      evidence={<Text size="sm">The oldest item awaiting you.</Text>}
       primary={{ label: 'Approve', keyHint: 'A', onClick: noop }}
       secondary={{ label: 'Reassign', keyHint: 'R', onClick: noop }}
       quiet={{ label: 'Leave', keyHint: 'L', onClick: noop }}

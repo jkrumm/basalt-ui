@@ -6,10 +6,9 @@ import { BasaltDataTable, createColumnHelper } from 'basalt-ui/table'
 import { FixedClockTime } from '../FixedClockTime'
 import { noop, queryFor } from '../shot-state'
 import type { ScenarioProps } from '../shot-state'
-import { CALIPER_GAP, CALIPER_NEXT, SKINFOLD_ERROR } from './body-data'
+import { CALIPER_GAP, CALIPER_NEXT, READING_DATE, SKINFOLD_ERROR } from './body-data'
 
-/** The reading date: the day after the latest measurement, at noon, fixed so the labels never drift. */
-const READING = new Date(Date.UTC(2026, 9, 20, 12))
+const READING = READING_DATE
 const fullDate = (date: Date): string =>
   date.toLocaleDateString('en-GB', {
     day: 'numeric',
@@ -57,27 +56,34 @@ const COLUMNS = [
   col.accessor('sum', { header: 'Sum (mm)', meta: { kind: 'number', priority: 2 } }),
 ]
 
+/** Five short columns never fill a 1440 card: the table ends where its rows do. */
+const TABLE_MAX_WIDTH = 640
+
 export function BodySkinfoldTable({ shotState }: ScenarioProps) {
   const query = queryFor(shotState, SKINFOLD_ERROR)
   return (
     <Box data-shot="skinfold-history">
-      <Section title="Skinfold history">
-        <BasaltDataTable
-          data={shotState === 'empty' ? [] : SKINFOLDS}
-          emptyState={<EmptyState title={CALIPER_GAP} description={CALIPER_NEXT} tier="section" />}
-          columns={COLUMNS}
-          rowLabel={(r) => r.date.toISOString().slice(0, 10)}
-          rowActions={[
-            {
-              key: 'delete',
-              label: 'Delete measurement',
-              icon: <IconTrash />,
-              danger: true,
-              onClick: noop,
-            },
-          ]}
-          {...(query !== undefined && { query })}
-        />
+      <Section title="Skinfold history, 10 Aug–19 Oct">
+        <Box maw={TABLE_MAX_WIDTH}>
+          <BasaltDataTable
+            data={shotState === 'empty' ? [] : SKINFOLDS}
+            emptyState={
+              <EmptyState title={CALIPER_GAP} description={CALIPER_NEXT} tier="section" />
+            }
+            columns={COLUMNS}
+            rowLabel={(r) => r.date.toISOString().slice(0, 10)}
+            rowActions={[
+              {
+                key: 'delete',
+                label: 'Delete measurement',
+                icon: <IconTrash />,
+                danger: true,
+                onClick: noop,
+              },
+            ]}
+            {...(query !== undefined && { query })}
+          />
+        </Box>
       </Section>
     </Box>
   )

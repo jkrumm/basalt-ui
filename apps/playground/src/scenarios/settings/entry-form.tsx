@@ -89,7 +89,7 @@ function EntryFormFields({ invalid }: { invalid: boolean }) {
         </FormRow>
       </FormGroup>
       <FormGroup label="Load" section>
-        <FormRow label="Weight" htmlFor="set-weight" hint="The bar and plates, in kg.">
+        <FormRow label="Weight" htmlFor="set-weight" hint="The bar and plates together.">
           <NumberInput
             id="set-weight"
             hideControls

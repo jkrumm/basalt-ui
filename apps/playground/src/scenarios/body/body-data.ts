@@ -22,3 +22,8 @@ export const NO_E1RM = 'No estimated 1RM in this window. Log a lift to start the
 /** INOL, defined once for every card that shows it. */
 export const INOL_DEFINITION =
   "INOL (Intensity-Number of Lifts) weighs a session's volume by how close the sets are to your max. 0.6 to 1.0 is the productive range."
+
+/** The weight goal: drawn on the trend chart, so no surface asks for one. */
+export const GOAL_KG = 70
+/** The reading date: the weigh-in chart, the strips and the skinfold history all end here. */
+export const READING_DATE = new Date(Date.UTC(2026, 9, 20, 12))

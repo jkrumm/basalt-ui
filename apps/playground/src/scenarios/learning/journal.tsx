@@ -3,7 +3,7 @@ import { EventList } from 'basalt-ui'
 import { VX } from 'basalt-ui/tokens'
 import { useState } from 'react'
 import { ErrorNote } from '../../demo/fixtures/error-note'
-import { KNOT_TITLE, LEARNING_TODAY } from '../learning-data'
+import { KNOT_TITLE, LEARNING_TODAY, fmtLearningDate } from '../learning-data'
 import type { JournalEntry } from '../learning-data'
 import { noop, retryCopy } from '../shot-state'
 import type { ShotState } from '../shot-state'
@@ -28,6 +28,19 @@ const clock = (at: Date): string =>
   at.getMilliseconds() === UNTIMED_MS
     ? ''
     : at.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+
+const WEEKDAYS = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'] as const
+const dayStart = (d: Date): number => new Date(d.getFullYear(), d.getMonth(), d.getDate()).getTime()
+const DAY_MS = 86_400_000
+
+/** One month form on the page: `Today`, `Yesterday`, else `Tue, 13 Oct` like every other date here (the default label spells September "Sept"). */
+const dayLabel = (day: Date, now: Date): string => {
+  const ago = Math.round((dayStart(now) - dayStart(day)) / DAY_MS)
+  if (ago === 0) return 'Today'
+  if (ago === 1) return 'Yesterday'
+  const utc = new Date(Date.UTC(day.getFullYear(), day.getMonth(), day.getDate()))
+  return `${WEEKDAYS[day.getDay()]}, ${fmtLearningDate(utc)}`
+}
 
 const TODAY = new Date(
   LEARNING_TODAY.getUTCFullYear(),
@@ -60,6 +73,7 @@ export function LearningJournal({
     <EventList
       label="Practice journal"
       now={TODAY}
+      dayLabel={dayLabel}
       time={clock}
       loading={shotState === 'loading'}
       loadingRows={Math.min(entries.length, shown)}
