@@ -238,11 +238,8 @@ const printer = ts.createPrinter({ removeComments: true })
 function declBody(decl: ts.TypeAliasDeclaration | ts.InterfaceDeclaration): string[] {
   const source = decl.getSourceFile()
   const text = (n: ts.Node): string =>
-    printer
-      .printNode(ts.EmitHint.Unspecified, n, source)
-      .replace(/\s+/g, ' ')
-      .replace(/; \}/g, ' }')
-      .replace(/; /g, ', ')
+    // Only the printer's own line breaks are joined: a string literal's inner spacing and `; ` are the source's.
+    printer.printNode(ts.EmitHint.Unspecified, n, source).replace(/\s*\n\s*/g, ' ')
   if (ts.isInterfaceDeclaration(decl)) return decl.members.map((m) => text(m).replace(/;$/, ''))
   const body = decl.type
   return ts.isTypeLiteralNode(body)
@@ -347,7 +344,13 @@ export function readOptionTypes(
       }
     }
     const blocks = [...found.values()].map(optionTypeBlock).toSorted()
-    if (blocks.length > 0) out[key] = blocks.slice(0, MAX_OPTION_TYPES)
+    if (blocks.length > 0) {
+      const dropped = blocks.length - MAX_OPTION_TYPES
+      out[key] = [
+        ...blocks.slice(0, MAX_OPTION_TYPES),
+        ...(dropped > 0 ? [`Type: … +${dropped} more option types`] : []),
+      ]
+    }
   }
   return out
 }

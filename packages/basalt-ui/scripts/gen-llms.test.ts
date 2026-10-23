@@ -334,9 +334,15 @@ describe('option types (row 187)', () => {
     expect(out.at(-1)).toBe('}')
   })
 
+  test('a string literal keeps its inner spacing and `; `', () => {
+    expect(optionTypeBlock(decl(`export type S = { sep?: 'a; b  c' }`))).toBe(
+      "Type: S = { sep?: 'a; b  c' }",
+    )
+  })
+
   test('a union alias prints its body on one line', () => {
     expect(optionTypeBlock(decl(`type A = {a: 1}; export type U = A | { b: 2 }`))).toBe(
-      'Type: U = A | { b: 2 }',
+      'Type: U = A | { b: 2; }',
     )
   })
 })

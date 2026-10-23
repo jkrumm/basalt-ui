@@ -324,7 +324,7 @@ Signature: unwrap(response: R): UnwrapResult<R>
 Signature: useBasaltNav(): { currentPath: string; isActive: (href: string, opts?: { exact?: bool…
 Signature: useCoarsePointer(): boolean
 Signature: useSizeClass(): "compact" | "medium" | "expanded"
-Type: AnyNavGroup = NavGroupMeta & { items: ReadonlyArray<AnyNavItem> }
+Type: AnyNavGroup = NavGroupMeta & { items: ReadonlyArray<AnyNavItem>; }
 Type: BarAction = BarActionItem | BarActionMenu | BarActionCustom
 Type: BarListItem = { label: string, value: number, secondary?: ReactNode, key?: string, max?: number, tick?: number, tickLabel?: string }
 Type: BasaltAccountProps = { state: BasaltAccountState, actions?: BasaltAccountActions, showEmail?: boolean }
@@ -346,6 +346,7 @@ Type: GlobalAction = { key: string, node: ReactNode, mobile?: 'bar' | 'more' | '
 Type: MeterSegment = { value: number, label: string, color?: string, tone?: 'muted', forecast?: boolean }
 Type: MeterTick = { at: number, label?: string, caption?: string }
 Type: MeterZone = { from: number, to: number, label: string, tone?: 'muted', short?: string, color?: string }
+Type: … +9 more option types
 OptionalPeers: remark-gfm@^4.0.1, rehype-sanitize@^6.0.0, remend@1.4.0, shiki@^4.5.0, beautiful-mermaid@^1.1.0, @tanstack/react-router-devtools@^1.166.13
 
 ## basalt-ui/charts
@@ -604,7 +605,7 @@ Type: RefLine = {
   axis?: 'left' | 'right' | undefined
   label?: string | undefined
   labelPosition?: RefLabelPosition | undefined
-  legend?: { label: string, mark?: 'line' | 'bar' | undefined } | undefined
+  legend?: { label: string; mark?: 'line' | 'bar' | undefined; } | undefined
 }
 Type: ResponsiveChartHeight = { base: number, regular?: number | undefined, wide?: number | undefined }
 Type: ZoneSpec = {
@@ -612,7 +613,7 @@ Type: ZoneSpec = {
   to: number
   fill: string
   axisSide?: 'left' | 'right' | undefined
-  legend?: { label: string, mark?: 'line' | 'bar' | undefined, color?: string | undefined } | undefined
+  legend?: { label: string; mark?: 'line' | 'bar' | undefined; color?: string | undefined; } | undefined
   edge?: ZoneEdge<'top' | 'bottom'> | undefined
 }
 Install: bun add @tanstack/charts@1.1.0 d3-scale@4.0.2
@@ -709,16 +710,17 @@ Signature: percent(value: Numeric, options: PercentOptions): string
 Signature: relativeTime(value: DateInput, options: RelativeTimeOptions): string
 Signature: time(value: DateInput, options: DateOptions): string
 Signature: weekday(value: string | number | Date, options: WeekdayOptions): string
-Type: BytesOptions = LocaleOption & { digits?: number }
-Type: CompactOptions = LocaleOption & { digits?: number }
-Type: DateOptions = LocaleOption & { format?: 'short' | 'medium' | 'long', timeZone?: string }
-Type: DeltaOptions = LocaleOption & { digits?: number }
-Type: DurationOptions = LocaleOption & { style?: 'clock' | 'compact' | 'long', largest?: 'day' | 'hour' | 'minute' }
-Type: KcalOptions = LocaleOption & { digits?: number }
-Type: KmOptions = LocaleOption & { digits?: number }
+Type: BytesOptions = LocaleOption & { digits?: number; }
+Type: CompactOptions = LocaleOption & { digits?: number; }
+Type: DateOptions = LocaleOption & { format?: 'short' | 'medium' | 'long'; timeZone?: string; }
+Type: DeltaOptions = LocaleOption & { digits?: number; }
+Type: DurationOptions = LocaleOption & { style?: 'clock' | 'compact' | 'long'; largest?: 'day' | 'hour' | 'minute'; }
+Type: KcalOptions = LocaleOption & { digits?: number; }
+Type: KmOptions = LocaleOption & { digits?: number; }
 Type: LocaleOption = { locale?: string | undefined }
-Type: MoneyOptions = LocaleOption & { currency: string, compact?: boolean, digits?: number }
-Type: PercentOptions = LocaleOption & { digits?: number, input?: 'ratio' | 'percent' }
+Type: MoneyOptions = LocaleOption & { currency: string; compact?: boolean; digits?: number; }
+Type: PercentOptions = LocaleOption & { digits?: number; input?: 'ratio' | 'percent'; }
+Type: … +2 more option types
 
 ## basalt-ui/forms
 Import: import { ... } from 'basalt-ui/forms'
@@ -893,9 +895,9 @@ Type: MessageAffordances = {
   readonly timestamp?: 'relative' | 'absolute' | 'none' | undefined
   readonly copy?: boolean | undefined
   readonly onRegenerate?: ((messageId: string) => void) | undefined
-  readonly actions?: ((ctx: { readonly message: ChatMessage<TranscriptPart> }) => ReactNode) | undefined
+  readonly actions?: ((ctx: { readonly message: ChatMessage<TranscriptPart>; }) => ReactNode) | undefined
 }
-Type: ToolCallPart = (Identified & { readonly state: 'input-streaming', readonly input?: unknown }) | (Identified & { readonly state: 'input-available', readonly input: unknown }) | (Identified & { readonly state: 'approval-requested', readonly input: unknown, readonly approval: ToolApproval & { readonly approved?: never, readonly reason…
+Type: ToolCallPart = (Identified & { readonly state: 'input-streaming'; readonly input?: unknown; }) | (Identified & { readonly state: 'input-available'; readonly input: unknown; }) | (Identified & { readonly state: 'approval-requested'; readonly input: unknown; readonly approval: ToolApproval & { readonly approved?: never; readonly reas…
 Type: TranscriptPart = AgentPart | ForeignPart
 Type: VirtualizeOptions = {
   readonly overscan?: number | undefined
