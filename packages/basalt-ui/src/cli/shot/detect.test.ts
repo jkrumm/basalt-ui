@@ -433,6 +433,12 @@ describe('detect command', () => {
     )
   })
 
+  test('a legacy failure without needs/bold derives the threshold and omits the weight', () => {
+    const failures = [{ text: '22', ratio: 3.29, fg: '#aaa', bg: '#fff', fontSize: 22 }]
+    const f = detectFindings(metrics({ anchors: [anchor({ contrast: { min: 3.29, failures } })] }))
+    expect(f.find((x) => x.rule === 'craft-5/contrast')?.defect).toContain('(needs 4.5:1 at 22px).')
+  })
+
   test('no anchor resolved: "nothing measured", a null score, no numeric result', async () => {
     const { cwd, out } = setup(metrics({ anchors: [] }))
     const { code, text } = await run(['--out', out], cwd)

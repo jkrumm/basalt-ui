@@ -29,6 +29,7 @@ import { existsSync, mkdirSync, readFileSync, renameSync, writeFileSync } from '
 import { isAbsolute, join, relative, resolve } from 'node:path'
 import { parseArgs } from 'node:util'
 
+import { contrastThreshold } from './measure'
 import { NO_STATES_NOTE, PAGE_ANCHOR, SHOT_HOME } from './types'
 import type { AnchorMetrics, Scale, ShotMetrics, Sides } from './types'
 
@@ -216,7 +217,7 @@ function anchorFindings(a: AnchorMetrics, scale: Scale | undefined): Draft[] {
       severity: 'P0',
       layer: 'content',
       cite: cite('contrast.failures'),
-      defect: `${failures.length} text run${failures.length === 1 ? '' : 's'} below the AA contrast threshold; lowest ${worst.ratio}:1 on "${worst.text}" (needs ${worst.needs ?? 4.5}:1 at ${worst.fontSize}px ${worst.bold ? 'bold' : 'regular'}).`,
+      defect: `${failures.length} text run${failures.length === 1 ? '' : 's'} below the AA contrast threshold; lowest ${worst.ratio}:1 on "${worst.text}" (needs ${worst.needs ?? contrastThreshold(worst.fontSize, worst.bold ?? false)}:1 at ${worst.fontSize}px${worst.bold === undefined ? '' : worst.bold ? ' bold' : ' regular'}).`,
     })
   }
   if (a.contrast.backdrop === 'assumed-white') {
