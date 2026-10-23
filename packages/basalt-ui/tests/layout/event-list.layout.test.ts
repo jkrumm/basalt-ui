@@ -103,13 +103,20 @@ layout('Wave 44 EventList', () => {
       } | null
       if (before === null) throw new Error('LAYOUT: no visible row before the prepend')
       await p.raw.evaluate(() => window.basaltElPrepend?.(40))
-      const after = (await stable(() =>
+      // The anchor lands a frame or more after the prepend (the seam re-resolves the row by key), and a
+      // starved browser can hold the un-anchored state past a fixed settle window: poll for the anchored
+      // offset instead of trusting two equal reads, and fail only if it never arrives.
+      const read = () =>
         p.raw.evaluate(`(() => {
           const box = ${SCROLLER}
           const t = [...box.querySelectorAll('time')].find((x) => x.dateTime === '${before.id}')
           return t ? t.getBoundingClientRect().top - box.getBoundingClientRect().top : null
-        })()`),
-      )) as number | null
+        })()`) as Promise<number | null>
+      let after = await read()
+      for (let i = 0; i < 40 && Math.abs((after ?? Infinity) - before.offset) > EPS; i++) {
+        await new Promise((r) => setTimeout(r, 100))
+        after = await read()
+      }
       expect(after).not.toBeNull()
       expect(Math.abs((after ?? 0) - before.offset)).toBeLessThanOrEqual(EPS)
     })
