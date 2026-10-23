@@ -10,7 +10,7 @@ import { dirname } from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { contrastRatio } from '../tokens/hct'
 import { INK, RADIUS_STEP, SURFACE } from '../tokens/palette'
-import { tabsVars } from './chrome-vars'
+import { sliderVars, tabsVars } from './chrome-vars'
 import { baseTheme } from './index'
 import controlsClasses from './controls.module.css'
 
@@ -255,4 +255,20 @@ describe('the light badge text clears AA on its own tint, every colour, both sch
       })
     }
   }
+})
+
+describe('Slider fill is ink unless it encodes a status', () => {
+  test.each([undefined, null, ''])('color=%p -> ink', (color) => {
+    expect(sliderVars(theme, { color }).root['--slider-color']).toBe('var(--vx-ink)')
+  })
+  test("an explicit colour keeps Mantine's own fill", () => {
+    expect(sliderVars(theme, { color: 'red' }).root['--slider-color']).toBeUndefined()
+  })
+})
+
+describe('autofill does not recolour a field', () => {
+  test('styles.css paints the field surface over the UA autofill background', () => {
+    const css = readFileSync(new URL('../styles.css', import.meta.url), 'utf8')
+    expect(css).toMatch(/input:-webkit-autofill:focus[\s\S]*?--vx-surface-field\) inset/)
+  })
 })

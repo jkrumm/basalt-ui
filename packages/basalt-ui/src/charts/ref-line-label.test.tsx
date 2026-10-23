@@ -5,7 +5,7 @@ import { createRoot } from 'react-dom/client'
 import { renderToString } from 'react-dom/server'
 import { Bars } from './Bars'
 import { Lines } from './Lines'
-import { referenceLabelPlacement, refLabelPosition } from './ref-label'
+import { referenceLabelPlacement, refLabelDy, refLabelPosition } from './ref-label'
 import type { ChartSeries, RefLine } from './types'
 
 type Row = { t: Date; a: number }
@@ -179,5 +179,41 @@ describe('a sparkline caption slides off a line that starts on its reference (w4
     expect([side, end]).toEqual(['below', 'start'])
     // Nominal is 2 px of gap plus half the box (7.5); the line's 2 px drop in the box's span pushes it further.
     expect(dy).toBeGreaterThan(7.5)
+  })
+})
+
+describe('a caption box clears its line (W49)', () => {
+  test('the centred text is offset by half its font size plus the gap, above and below', () => {
+    for (const fontSize of [10, 11, 13]) {
+      const above = refLabelDy('end-above', fontSize)
+      const below = refLabelDy('start-below', fontSize)
+      expect(above).toBeLessThanOrEqual(-(fontSize / 2))
+      expect(below).toBeGreaterThanOrEqual(fontSize / 2)
+      expect(above).toBe(-below)
+    }
+  })
+})
+
+describe('a sparkline caption stays in the box when the line peaks on its reference (W49)', () => {
+  // The PR strip: 28 px tall, the reference is the series maximum, so the line touches it.
+  const line = [3, 5, 8, 6, 9, 12, 10, 11, 14, 12].map((y, i, all) => ({
+    fx: i / (all.length - 1),
+    y,
+  }))
+  test('the box stays inside the plot and off the line where a spot allows', () => {
+    const { dy } = referenceLabelPlacement({
+      value: 14,
+      domain: [3, 14],
+      height: 28,
+      width: 120,
+      inset: 3,
+      fontSize: 11,
+      label: 'PR',
+      line,
+    })
+    const at = 3 + 22 * (1 - (14 - 3) / (14 - 3))
+    const top = at + dy - 11 / 2
+    expect(top).toBeGreaterThanOrEqual(0)
+    expect(top + 11).toBeLessThanOrEqual(28)
   })
 })

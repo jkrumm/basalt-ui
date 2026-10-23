@@ -153,6 +153,19 @@
     font-size: max(var(--basalt-input-fz-floor, 16px), var(--input-fz, 1rem)) !important;
   }
 
+  /* Browser autofill paints its own yellow/blue over a field, and a focused Select keeps it. The UA
+     background cannot be overridden directly, so the field surface is painted over it with an inset
+     shadow and the long transition holds the UA colour off; text and caret keep the ink. */
+  input:-webkit-autofill,
+  input:-webkit-autofill:hover,
+  input:-webkit-autofill:focus,
+  input:autofill {
+    -webkit-text-fill-color: var(--vx-ink);
+    caret-color: var(--vx-ink);
+    box-shadow: 0 0 0 100vmax var(--vx-surface-field) inset;
+    transition: background-color 600000s 0s;
+  }
+
   /* `data-numeric` — one typographic law, every element. A number read as a MEASUREMENT (a preset
      like `7d`/`30d`, a KPI value, a table cell, a count tag) is mono with tabular figures, so
      digits line up column-wise and a changing value does not reflow its neighbours. Declared here,

@@ -219,10 +219,11 @@
 
 /* The engine focuses the plot's `svg.ts-chart` (tabindex 0), not the `.basalt-chart` wrapper
  * `styles.css` rings, so the UA's `auto` ring paints (a 5px white double ring in dark): the same
- * 2px accent ring at the same offset, which the slotted chip clears (`SLOT_RING_CLEARANCE`). */
+ * 2px accent ring. The ring is INSET: an outer one is clipped by the card body's overflow at the
+ * plot's right and bottom edges (partial edges), an inset one is whole wherever the chart sits. */
 :global(.basalt-chart .ts-chart:focus-visible) {
   outline: 2px solid var(--vx-accent);
-  outline-offset: calc(0.125rem * var(--mantine-scale));
+  outline-offset: calc(-0.125rem * var(--mantine-scale));
 }
 
 /*

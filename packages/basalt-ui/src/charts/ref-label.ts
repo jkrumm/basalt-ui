@@ -63,6 +63,15 @@ export function yRangeWithin(
   return lo <= hi ? [lo, hi] : null
 }
 
+/**
+ * The `dy` that puts a caption's box clear of its line. The engine centres the text on its y, so
+ * the box edge sits half a font size from it; add the gap {@link refLabelPosition} reckons with.
+ */
+export function refLabelDy(position: RefLabelPosition, fontSize: number): number {
+  const offset = fontSize / 2 + LINE_GAP
+  return position.endsWith('above') ? -offset : offset
+}
+
 export function refLabelPosition(opts: {
   /** `RefLine.labelPosition`: wins over everything. */
   pinned: RefLabelPosition | undefined
@@ -182,19 +191,27 @@ export function referenceLabelPlacement(opts: {
         side,
         end,
         top,
+        range,
         shift: Math.abs(top - nominal),
         fits: top >= 0 && top + boxH <= height,
       }
     }),
   )
   const fitting = candidates.filter((c) => c.fits)
-  // The fitting spot that stays nearest the reference (the first of the four on a tie), else the
-  // first: the plot bounds alone decide when nothing fits.
-  const found = fitting.reduce<(typeof candidates)[number] | undefined>(
+  // The fitting spot that stays nearest the reference (the first of the four on a tie).
+  const nearest = fitting.reduce<(typeof candidates)[number] | undefined>(
     (best, c) => (best === undefined || c.shift < best.shift ? c : best),
     undefined,
   )
-  const { side, end, top } = found ?? (candidates[0] as (typeof candidates)[number])
+  // Nothing fits (the line peaks on the reference in a short box): keep the box inside the plot
+  // and take the spot whose box covers the least of the line.
+  const clamped = candidates.map((c) => {
+    const top = Math.min(Math.max(c.top, 0), height - boxH)
+    const [from, to] = c.range ?? [Infinity, -Infinity]
+    return { ...c, top, covered: Math.max(0, Math.min(top + boxH, to) - Math.max(top, from)) }
+  })
+  const least = clamped.reduce((best, c) => (c.covered < best.covered ? c : best))
+  const { side, end, top } = nearest ?? least
   const dy = top + boxH / 2 - at
   return { side, end, dy }
 }

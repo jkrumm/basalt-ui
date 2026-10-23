@@ -11,6 +11,7 @@ import { Bars } from './Bars'
 import { HOSTED, VisualSlotContext } from '../dashboard/visual-slot'
 import { Sparkline } from './Sparkline'
 import { StackedArea } from './StackedArea'
+import { scaleLinear } from '@tanstack/charts/scales/linear'
 import { compileCartesian, yGuide } from './compile'
 import type { ChartSeries } from './types'
 
@@ -201,33 +202,32 @@ describe('a bar tooltip stays under the headline (item 4)', () => {
   })
 })
 
-describe('a compact y axis keeps the top tick of a fixed domain (item 5)', () => {
-  const fmt = (v: number): string => (v === 25 ? '25 days' : String(v))
-  const axis = { domain: [0, 25] as const, format: fmt }
-  const ticksOf = (
-    cls: 'compact' | 'regular',
-    domain: readonly [number, number] | 'auto' | undefined,
-  ) => {
+describe('a compact y axis labels only ticks of its step (W49)', () => {
+  const labelled = (domain: [number, number]): number[] => {
     const guide = yGuide({
-      cfg: { domain, format: fmt },
-      axis: { ...axis, domain: domain === 'auto' || domain === undefined ? axis.domain : domain },
-      cls,
+      cfg: { domain, format: String },
+      axis: { domain, format: String },
+      cls: 'compact',
       side: 'left',
       grid: true,
     })
     const ticks = typeof guide.axis === 'object' ? guide.axis.ticks : undefined
-    return ticks && 'values' in ticks ? ticks.values : null
+    // The engine draws the round ticks of a `count` policy on this domain; fixed `values` would be ours.
+    if (!ticks || 'values' in ticks) throw new Error('expected a count policy')
+    return scaleLinear().domain(domain).ticks(ticks.count)
   }
-  test('[0, 25] at compact ticks 0, 10, 20 and the end (the uneven last step is intended), so the unit on the top tick survives', () => {
-    expect(ticksOf('compact', [0, 25])).toEqual([0, 10, 20, 25])
+  const stepsOf = (ticks: number[]) =>
+    new Set(ticks.slice(1).map((t, i) => t - (ticks[i] as number)))
+  test('weight [69, 77] labels 70 72 74 76: no lone 77 beside a 2-step', () => {
+    expect(labelled([69, 77])).toEqual([70, 72, 74, 76])
   })
-  test('a domain that already ends on a tick, an auto domain and the regular ladder are untouched', () => {
-    expect(ticksOf('compact', [0, 20])).toBeNull()
-    expect(ticksOf('compact', 'auto')).toBeNull()
-    expect(ticksOf('regular', [0, 25])).toBeNull()
+  test('e1RM [60, 220] labels one even step, with no 220 above 200', () => {
+    const ticks = labelled([60, 220])
+    expect(stepsOf(ticks).size).toBe(1)
+    expect(ticks).not.toContain(220)
   })
-  test('an end that sits just above a tick is left (it would crowd the label)', () => {
-    expect(ticksOf('compact', [0, 21])).toBeNull()
+  test('[0, 25] stays on its 10-step; the raw end is not a tick', () => {
+    expect(labelled([0, 25])).toEqual([0, 10, 20])
   })
 })
 

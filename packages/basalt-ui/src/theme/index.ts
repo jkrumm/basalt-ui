@@ -55,6 +55,7 @@ import type {
   Radio,
   RadioCard,
   Select,
+  Slider,
   SegmentedControl,
   Stepper,
   Switch,
@@ -86,7 +87,7 @@ import { CTL_HEIGHT_VARS } from '../tokens/ctl-vars'
 import type { CtlHeightVar } from '../tokens/ctl-vars'
 import { SIZE_CLASS_BREAKPOINTS } from '../tokens/size-classes'
 import type { BasaltFontsConfig } from '../tokens/core'
-import { badgeVars, onColor, onColorFor, inkVars, tabsVars } from './chrome-vars'
+import { badgeVars, onColor, onColorFor, inkVars, sliderVars, tabsVars } from './chrome-vars'
 import cardInsetClasses from './card-inset.module.css'
 import controlsClasses from './controls.module.css'
 import floatingClasses from './floating.module.css'
@@ -1087,6 +1088,8 @@ function buildTheme(data: PaletteData, options: BuildThemeOptions = {}): Mantine
           attributes: { track: HIT_ATTR },
         },
       }),
+      // The bar and thumb fill in ink, not the accent, unless `color=` names a status.
+      Slider: ext<typeof Slider>({ vars: sliderVars }),
       // The tab-list bottom rule (and the inactive-tab hover underline) is a layout separator, not
       // control chrome — it reads the divider token instead of the heavy gray-3/dark-4 line
       // (controls.module.css; custom properties are stripped from `styles` objects). The active tab

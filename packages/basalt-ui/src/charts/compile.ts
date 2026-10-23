@@ -39,7 +39,7 @@ import { cursorDots } from './marks'
 import { bucketTicks, strideEvery } from './ticks'
 import { MAIN_PANE, plotAccess, plotContext } from './plot-context'
 import { claimedLabelBoxes } from './labels'
-import { refLabelPosition } from './ref-label'
+import { refLabelDy, refLabelPosition } from './ref-label'
 import type { LabelBox, RefLabelPoint } from './ref-label'
 import type { PlotSizes } from './plot-context'
 import { resolveContainerClass } from '../tokens/size-classes'
@@ -324,29 +324,6 @@ function wholeStepFormat<T>(
   return (v) => axis.format(v).replace(padded, '$1')
 }
 
-/** A fixed domain's end this near the last round tick (as a share of the tick step) stays unlabelled. */
-const END_TICK_MIN_GAP = 0.4
-
-/**
- * The compact ladder's three ticks can stop short of a fixed domain's end (`[0, 25]` ticks `0 10 20`),
- * and a unit the formatter states on the top tick (`25 days`) goes with it. A fixed domain whose end
- * leaves at least {@link END_TICK_MIN_GAP} of a step above the last tick gets the end as a tick too.
- */
-function withEndTick<T>(
-  cfg: AxisConfig<T> | undefined,
-  axis: YAxis,
-  count: number,
-): { values: readonly number[] } | null {
-  if (!Array.isArray(cfg?.domain) || cfg.scale === 'log' || cfg.nice === true) return null
-  const [lo, hi] = [Math.min(...axis.domain), Math.max(...axis.domain)]
-  const round = scaleLinear().domain([lo, hi]).ticks(count)
-  const last = round.at(-1)
-  const next = round.at(1)
-  const first = round.at(0)
-  if (last === undefined || next === undefined || first === undefined || last >= hi) return null
-  return hi - last >= (next - first) * END_TICK_MIN_GAP ? { values: [...round, hi] } : null
-}
-
 export function yGuide<T>(opts: {
   cfg: AxisConfig<T> | undefined
   axis: YAxis
@@ -359,9 +336,7 @@ export function yGuide<T>(opts: {
   const ticks =
     typeof cfg?.ticks === 'object'
       ? { values: cfg.ticks }
-      : ((cls === 'compact' && cfg?.ticks === undefined
-          ? withEndTick(cfg, axis, ladder.yTicks)
-          : null) ?? { count: typeof cfg?.ticks === 'number' ? cfg.ticks : ladder.yTicks })
+      : { count: typeof cfg?.ticks === 'number' ? cfg.ticks : ladder.yTicks }
   const gridLine = grid ? { grid: GRID_LINE } : {}
   if (cls === 'micro') return { ...gridLine, axis: false }
   const tickFormat = wholeStepFormat(axis, cfg, ticks)
@@ -788,8 +763,6 @@ function underlayMarks<T, X extends ChartX>(
 /** A band's bar spans this share of its half step (`paddingInner` 0.2 leaves 0.8 of the step). */
 const BAR_BODY = 0.8
 const REF_LABEL_DX = 6
-const REF_LABEL_DY_ABOVE = -5
-const REF_LABEL_DY_BELOW = 11
 
 /** What a reference line's caption needs to choose its spot: the plot in px and the data on its axis. */
 type RefLabelContext<T, X extends ChartX> = {
@@ -836,7 +809,7 @@ const refLabelMark = <T, X extends ChartX>(
       fontSize: VX.text.micro,
       anchor: atStart ? 'start' : 'end',
       dx: atStart ? REF_LABEL_DX : -REF_LABEL_DX,
-      dy: position.endsWith('above') ? REF_LABEL_DY_ABOVE : REF_LABEL_DY_BELOW,
+      dy: refLabelDy(position, VX.text.micro),
     }),
   )
 }
