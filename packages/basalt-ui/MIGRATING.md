@@ -1084,8 +1084,8 @@ Nothing to change unless a test asserts the old copy or geometry below.
   ring below.
 - **`EventList`.** The note still wraps, never truncates (D52); where the chips sit is Wave 50's line below. A scroll box shows a bottom fade while rows remain below. A skeleton that replaces
   loaded rows keeps their height.
-- **`BarList`** reserves a gap between a truncated name and its value; the delta aligns with the value. The folded
-  table's "+N" header reads "N more columns: …".
+- **`BarList`** reserves a gap between a truncated name and its value; the delta aligns with the value. The folded table's header text is Wave 50's `+N cols` below; its title and screen-reader text read
+  "N more columns: …".
 - **Charts.** A reference label sits a full font size off its line; the keyboard focus ring is inset so a card's
   overflow cannot clip it (sparklines keep the outer ring); a fixed domain's raw end is a tick only when its label
   carries something the round ticks do not (a unit), so a uniform formatter no longer prints 77 above 76; a sparkline
