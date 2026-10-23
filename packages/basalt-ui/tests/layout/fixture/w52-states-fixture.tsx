@@ -59,7 +59,7 @@ const kg = (v: number): string => `${v.toFixed(1)} kg`
 /** Wave 52: Section loading shape, one empty box, Retry as a control, the start caption's place. */
 export function W52StatesFixture(): ReactElement {
   return (
-    <div style={{ display: 'grid', gap: 16, padding: 16, width: 900 }}>
+    <div style={{ display: 'grid', gap: 16, padding: 16, maxWidth: 900 }}>
       {['bar', 'events', 'meter'].flatMap((kind) =>
         [true, false].map((loaded) => (
           <div
@@ -97,7 +97,7 @@ export function W52StatesFixture(): ReactElement {
               visual: (
                 <Meter
                   label="Current weight within the lowest and highest weigh-in"
-                  value={73.5}
+                  value={75}
                   min={71.8}
                   max={76.2}
                   format={kg}

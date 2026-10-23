@@ -148,9 +148,10 @@ layout('Wave 52 states', () => {
         }
       })
       expect(Math.abs(m.captionLeft - m.trackLeft)).toBeLessThanOrEqual(1)
-      // Where the caption is shorter than the tick's distance from the start, it clears the tick.
-      if (m.tickCentre !== null && m.tickCentre > m.captionRight) {
-        expect(m.captionRight).toBeLessThan(m.tickCentre)
+      // On the wide strip the reading tick is further from the start than the caption is long.
+      if (viewport === DESKTOP_1440) {
+        expect(m.tickCentre).not.toBeNull()
+        expect(m.captionRight).toBeLessThan(m.tickCentre ?? 0)
       }
     },
   )
