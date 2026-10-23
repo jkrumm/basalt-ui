@@ -210,6 +210,10 @@ const HOVER_FIXTURE = `<!doctype html><style>
 const STATEFUL_FIXTURE = `<!doctype html><div data-shot=chart><section data-basalt-chart-card style="height:80px"></section></div>
 <div data-shot=plain style="height:80px"></div>`
 
+/** Two state surfaces, only `own` declaring states: the page declares `empty`, `bare` does not. */
+const PARTIAL_FIXTURE = `<!doctype html><div data-shot=own data-shot-states="empty"><section data-basalt-chart-card style="height:80px"></section></div>
+<div data-shot=bare><section data-basalt-chart-card style="height:80px"></section></div>`
+
 /** A strip cell holding a nested anchor (at rest and empty), and an `empty-row` that renders only under `empty`. */
 const STRIP_FIXTURE = `<!doctype html><body style="margin:0"><script>
   const empty = /shot-state=(empty|loading)/.test(location.search)
@@ -277,9 +281,11 @@ async function shoot(
             ? HOVER_FIXTURE
             : req.url === '/stateful'
               ? STATEFUL_FIXTURE
-              : req.url === '/skeleton'
-                ? SKELETON_FIXTURE
-                : FIXTURE,
+              : req.url?.startsWith('/partial')
+                ? PARTIAL_FIXTURE
+                : req.url === '/skeleton'
+                  ? SKELETON_FIXTURE
+                  : FIXTURE,
     )
   })
   await new Promise<void>((done) => server.listen(0, '127.0.0.1', done))
@@ -343,6 +349,19 @@ describe('real Chrome', () => {
         expect(flag('plain')).toBeUndefined()
       },
       '/stateful',
+    )
+  }, 120_000)
+
+  test('on a page that declares states, only the state surface without its own declaration is marked', async () => {
+    await shoot(
+      ['empty'],
+      async ({ shots }) => {
+        const flag = (name: string) =>
+          shots.find((s) => s.name === name && s.state === 'empty')?.stateful
+        expect(flag('bare')).toBe(true)
+        expect(flag('own')).toBeUndefined()
+      },
+      '/partial',
     )
   }, 120_000)
 
