@@ -230,10 +230,10 @@ function suite(vp: Viewport) {
       })
     })
     expect(r.length).toBe(2)
-    // The glyph leads its badge (no empty slot before it) and the right edges are shared.
+    // The glyph leads its badge (no empty slot before it) and the badges start on one x (Wave 51: the
+    // figures are ragged on the right, so a short one keeps its glyph's gap).
     for (const d of r) expect(d.glyphLeft - d.left).toBeLessThanOrEqual(SNAP)
-    // The column is end-aligned from the wide layout; the compact one stacks start-aligned.
-    if (vp.width >= 480) expect(Math.abs(r[0]!.right - r[1]!.right)).toBeLessThanOrEqual(SNAP)
+    expect(Math.abs(r[0]!.left - r[1]!.left)).toBeLessThanOrEqual(SNAP)
   })
   test('a qualifier never truncates: a long one wraps under the caption; a short one goes under it in a narrow strip cell and a narrow card alike, so siblings agree (Waves 38, 50)', async () => {
     const r = await p.raw.evaluate(() => {
