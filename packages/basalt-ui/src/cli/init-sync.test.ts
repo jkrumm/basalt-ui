@@ -223,6 +223,64 @@ createRoot(document.getElementById('root')!).render(
     expect(log).toMatch(/bun install/)
   })
 
+  const VITE_CONFIG = `import { defineConfig } from 'vite'
+import react from '@vitejs/plugin-react'
+
+export default defineConfig({
+  plugins: [react()],
+})
+`
+
+  it('wires the router plugin before react(), installs, and builds the route tree', () => {
+    seed(STOCK)
+    writeFixture('vite.config.ts', VITE_CONFIG)
+    const calls: string[] = []
+    const { log } = capture(() =>
+      init(dir, {
+        run: (argv) => {
+          calls.push(argv.join(' '))
+          if (argv.includes('build')) writeFixture('src/routeTree.gen.ts', '')
+          return true
+        },
+      }),
+    )
+    const config = readFileSync(resolve(dir, 'vite.config.ts'), 'utf8')
+    expect(config).toContain("import { tanstackRouter } from '@tanstack/router-plugin/vite'")
+    expect(config).toMatch(/plugins: \[tanstackRouter\([^)]*\), react\(\)\]/)
+    const pkg = JSON.parse(readFileSync(resolve(dir, 'package.json'), 'utf8')) as {
+      devDependencies: Record<string, string>
+    }
+    expect(pkg.devDependencies['@tanstack/router-plugin']).toBeDefined()
+    expect(calls).toEqual(['bun install', 'bunx vite build'])
+    expect(log).toContain('generated routeTree.gen.ts')
+  })
+
+  it('follows the lockfile, and names the one command when install fails', () => {
+    seed(STOCK)
+    writeFixture('vite.config.ts', VITE_CONFIG)
+    writeFixture('pnpm-lock.yaml', '')
+    const calls: string[] = []
+    const { log } = capture(() =>
+      init(dir, {
+        run: (argv) => {
+          calls.push(argv.join(' '))
+          return false
+        },
+      }),
+    )
+    expect(calls).toEqual(['pnpm install'])
+    expect(log).toContain('run `pnpm install` (init did not), then `pnpm exec vite build`')
+  })
+
+  it('leaves a vite.config of another shape alone and prints the router plugin fix', () => {
+    seed(STOCK)
+    const custom = `export default { plugins: [somethingElse()] }\n`
+    writeFixture('vite.config.ts', custom)
+    const { log } = capture(() => init(dir))
+    expect(readFileSync(resolve(dir, 'vite.config.ts'), 'utf8')).toBe(custom)
+    expect(log).toContain('router plugin:')
+  })
+
   it('tolerates formatting and the older template without the css import', () => {
     seed(
       STOCK.replace("import './index.css'\n", '').replace(/'/g, '"').replace('./App.tsx', './App'),
