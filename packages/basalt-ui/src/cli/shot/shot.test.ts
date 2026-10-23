@@ -21,6 +21,8 @@ import {
   hoverAtOf,
   hoverTrigger,
   markVisibleTooltips,
+  muteOtherTooltips,
+  unmuteTooltips,
   clearStrayTooltips,
   visibleTooltipCount,
   openContext,
@@ -742,6 +744,27 @@ describe('tooltip lookup', () => {
     expect(polls).toBeGreaterThan(1)
     expect(polls).toBeLessThan(40)
   })
+  test('muteOtherTooltips hides the visible others, and unmuteTooltips restores only those', () => {
+    document.body.innerHTML =
+      '<i id="open" role="tooltip"></i><i id="old" role="tooltip" style="visibility: visible"></i><i id="gone" role="tooltip"></i><i id="app" style="visibility: hidden"></i>'
+    const [open, old, gone, app] = ['open', 'old', 'gone', 'app'].map(
+      (id) => document.getElementById(id) as HTMLElement,
+    )
+    const size = (el: HTMLElement, w: number) =>
+      (el.getBoundingClientRect = () => ({ width: w, height: w }) as DOMRect)
+    size(open!, 10)
+    size(old!, 10)
+    size(gone!, 0)
+    muteOtherTooltips(open!)
+    expect(old!.style.getPropertyValue('visibility')).toBe('hidden')
+    expect(old!.style.getPropertyPriority('visibility')).toBe('important')
+    expect(open!.style.visibility).toBe('')
+    expect(gone!.hasAttribute('data-shot-muted')).toBe(false)
+    unmuteTooltips()
+    expect(old!.style.visibility).toBe('visible')
+    expect(old!.hasAttribute('data-shot-muted')).toBe(false)
+    expect(app!.style.visibility).toBe('hidden')
+  })
   test('describedByOf reads the first id on the trigger or a descendant', () => {
     document.body.innerHTML =
       '<div id="t"><button aria-describedby="x y">i</button></div><p id="p"></p>'
@@ -767,6 +790,7 @@ describe('tooltip lookup', () => {
       const tip: Record<string, unknown> = {
         first: () => tip,
         waitFor: () => Promise.resolve(),
+        evaluate: () => Promise.resolve(undefined),
         // A bare `[role="tooltip"]` finds the foreign one first; the snapshot-aware one finds ours.
         boundingBox: () => Promise.resolve(selector.includes('data-shot-seen') ? TIP : FOREIGN),
       }
@@ -967,7 +991,9 @@ describe('sweepStaleTmp', () => {
 describe('hover and focus crops include an opened tooltip', () => {
   const ANCHOR = { x: 100, y: 100, width: 200, height: 60 }
   const TIP = { x: 120, y: 170, width: 180, height: 40 }
-  const run = async (tooltip: boolean, state: 'hover' | 'focus') => {
+  let unmuted = 0
+  const run = async (tooltip: boolean, state: 'hover' | 'focus', rejectClip = false) => {
+    unmuted = 0
     const clips: unknown[] = []
     let reads = 0
     const element: Record<string, unknown> = {
@@ -984,6 +1010,7 @@ describe('hover and focus crops include an opened tooltip', () => {
     const tip: Record<string, unknown> = {
       first: () => tip,
       waitFor: () => (tooltip ? Promise.resolve() : Promise.reject(new Error('timeout'))),
+      evaluate: () => Promise.resolve(undefined),
       // Grows read by read (an animation) before it settles at TIP: the crop must hold the final size.
       boundingBox: () =>
         Promise.resolve({
@@ -998,19 +1025,23 @@ describe('hover and focus crops include an opened tooltip', () => {
       locator: (selector: string) => (selector.includes('tooltip') ? tip : element),
       screenshot: (o: { clip?: unknown }) => {
         clips.push(o.clip)
-        return Promise.resolve()
+        return rejectClip && o.clip !== undefined
+          ? Promise.reject(new Error('crop failed'))
+          : Promise.resolve()
       },
       setContent: () => Promise.resolve(),
       mouse: { move: () => Promise.resolve() },
       keyboard: { press: () => Promise.resolve() },
       evaluate: (e: unknown) =>
-        typeof e === 'function'
-          ? Promise.resolve({ mantine: { spacing: {}, radius: {}, fontSizes: {} }, vx: {} })
-          : String(e).includes('data-shot-states')
-            ? Promise.resolve({ anchors: ['card'], declared: [] })
-            : String(e).includes('activeElement')
-              ? Promise.resolve(true)
-              : Promise.resolve(undefined),
+        e === unmuteTooltips
+          ? Promise.reject(new Error('page is gone')).finally(() => void unmuted++)
+          : typeof e === 'function'
+            ? Promise.resolve({ mantine: { spacing: {}, radius: {}, fontSizes: {} }, vx: {} })
+            : String(e).includes('data-shot-states')
+              ? Promise.resolve({ anchors: ['card'], declared: [] })
+              : String(e).includes('activeElement')
+                ? Promise.resolve(true)
+                : Promise.resolve(undefined),
     }
     await capture({
       browser: {
@@ -1049,6 +1080,11 @@ describe('hover and focus crops include an opened tooltip', () => {
     const clips = await run(true, 'hover')
     expect(clips.length).toBeGreaterThan(0)
     expect(clips.every(covers)).toBe(true)
+  })
+  test('a failing crop still unmutes, and a dead page cannot mask the crop error', async () => {
+    const clips = await run(true, 'hover', true)
+    expect(clips.length).toBeGreaterThan(0)
+    expect(unmuted).toBeGreaterThan(0)
   })
   test('with no tooltip a focus crop is the anchor alone and a hover crop the element', async () => {
     expect((await run(false, 'focus')).every((c) => !covers(c))).toBe(true)
