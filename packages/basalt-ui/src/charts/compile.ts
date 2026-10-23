@@ -327,8 +327,8 @@ function wholeStepFormat<T>(
 /** A fixed domain's end this near the last round tick (as a share of the tick step) stays unlabelled. */
 const END_TICK_MIN_GAP = 0.4
 
-/** A label without its digits, separators and spaces: the unit or symbol text it carries. */
-const labelShape = (label: string): string => label.replace(/[\d.,\s]/g, '')
+/** A label without its digits (any script), separators and spaces: the unit or symbol text it carries. */
+const labelShape = (label: string): string => label.replace(/[\p{Nd}.,\s]/gu, '')
 
 /**
  * The compact ladder's few ticks can stop short of a fixed domain's end (`[0, 25]` ticks `0 10 20`).

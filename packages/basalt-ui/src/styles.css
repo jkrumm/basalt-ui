@@ -167,6 +167,15 @@
     transition: background-color 600000s 0s;
   }
 
+  /* A Slider's bar and thumb fill in ink, not the accent, unless it encodes a status: an explicit
+     `color=` writes `--slider-color` inline, which outranks this. Mantine's own default sits in
+     `@layer mantine`, so this layer wins. In the dark scheme the thumb is filled with the same var,
+     a light disc with its white border; the drag-value label does not read it. */
+  .mantine-Slider-root,
+  .mantine-RangeSlider-root {
+    --slider-color: var(--vx-ink);
+  }
+
   /* `data-numeric` — one typographic law, every element. A number read as a MEASUREMENT (a preset
      like `7d`/`30d`, a KPI value, a table cell, a count tag) is mono with tabular figures, so
      digits line up column-wise and a changing value does not reflow its neighbours. Declared here,

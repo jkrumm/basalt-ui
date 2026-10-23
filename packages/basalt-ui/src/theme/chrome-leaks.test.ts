@@ -10,7 +10,7 @@ import { dirname } from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { contrastRatio } from '../tokens/hct'
 import { INK, RADIUS_STEP, SURFACE } from '../tokens/palette'
-import { sliderVars, tabsVars } from './chrome-vars'
+import { tabsVars } from './chrome-vars'
 import { baseTheme } from './index'
 import controlsClasses from './controls.module.css'
 
@@ -258,11 +258,11 @@ describe('the light badge text clears AA on its own tint, every colour, both sch
 })
 
 describe('Slider fill is ink unless it encodes a status', () => {
-  test.each([undefined, null, ''])('color=%p -> ink', (color) => {
-    expect(sliderVars(theme, { color }).root['--slider-color']).toBe('var(--vx-ink)')
-  })
-  test("an explicit colour keeps Mantine's own fill", () => {
-    expect(sliderVars(theme, { color: 'red' }).root['--slider-color']).toBeUndefined()
+  test('styles.css points --slider-color at ink for both sliders; an explicit color= is inline', () => {
+    const css = readFileSync(new URL('../styles.css', import.meta.url), 'utf8')
+    expect(css).toMatch(
+      /\.mantine-Slider-root,\s*\.mantine-RangeSlider-root\s*\{\s*--slider-color:\s*var\(--vx-ink\)/,
+    )
   })
 })
 
@@ -273,11 +273,13 @@ describe('autofill does not recolour a field', () => {
     expect(css).not.toContain('input:autofill')
   })
 
-  test('a themed .input re-points --field-depth, since its unlayered box-shadow outranks the layer', () => {
+  test('a themed .input re-points --field-depth over its resting depth, since its unlayered box-shadow outranks the layer', () => {
     const css = readFileSync(new URL('./controls.module.css', import.meta.url), 'utf8')
     expect(css).toMatch(
-      /\.input:-webkit-autofill\s*\{\s*--field-depth:[^;]*--vx-surface-field\) inset/,
+      /\.input:-webkit-autofill\s*\{\s*--field-depth:\s*var\(--field-resting\),\s*0 0 0 100vmax var\(--vx-surface-field\) inset/,
     )
-    expect(css).toMatch(/\[data-variant='default'\]:-webkit-autofill[^}]*--vx-shadow-raised/)
+    expect(css).toMatch(
+      /\[data-variant='default'\]\s*\{\s*--field-resting:\s*var\(--vx-shadow-raised\)/,
+    )
   })
 })
