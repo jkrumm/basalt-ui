@@ -137,7 +137,10 @@
   display: flex;
   align-items: baseline;
   justify-content: space-between;
-  column-gap: var(--vx-space-control-gap, 0.375rem);
+  /* The key keeps a word's air from the span and drops to its own line when the two cannot share one
+   * (a ~160px cell at 390), rather than touching it. */
+  flex-wrap: wrap;
+  column-gap: var(--vx-space-stack-md, 0.75rem);
   margin-block-start: var(--vx-space-stack-xs, 0.25rem);
   font-family: var(--basalt-font-numeral, var(--basalt-font-sans));
   font-variant-numeric: lining-nums;
