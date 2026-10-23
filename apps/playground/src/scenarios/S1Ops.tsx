@@ -155,11 +155,12 @@ function OpsStats({ shotState }: ScenarioProps) {
           title="Latency"
           qualifier="last minute"
           value={fmtMs(LATENCY_NOW_MS)}
-          info="Round-trip time in the last minute. The sparkline shows the last 60 minutes; the change compares with the 7-day median hour."
+          info="Round-trip time in the last minute. The sparkline shows the last 60 minutes; the rows give the 7-day median hour and the slowest minute of the last hour."
           {...(keepsRows && {
-            delta: (LATENCY_NOW_MS / LATENCY_MEDIAN_7D_MS - 1) * 100,
-            deltaPeriod: 'vs 7-day median',
-            deltaPolarity: 'up-bad' as const,
+            breakdown: [
+              { label: 'Median, 7 days', value: fmtMs(LATENCY_MEDIAN_7D_MS) },
+              { label: 'Peak, last hour', value: fmtMs(Math.max(...MINUTE_LATENCY)) },
+            ],
           })}
           {...sharedFor(
             'latency probe',
@@ -182,7 +183,7 @@ function OpsStats({ shotState }: ScenarioProps) {
           info="Share of probe packets with no reply, averaged over the hourly buckets."
           {...(keepsRows && {
             breakdown: [
-              { label: 'Last 7 days', value: fmtLoss(LOSS_7D_PCT) },
+              { label: 'Packet loss, 7 days', value: fmtLoss(LOSS_7D_PCT) },
               { label: 'Uptime, 7 days', value: fmtUptime(UPTIME_PCT) },
             ],
           })}

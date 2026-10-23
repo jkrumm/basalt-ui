@@ -114,7 +114,7 @@ function EntryFormFields({ invalid }: { invalid: boolean }) {
           />
         </FormRow>
       </FormGroup>
-      <FormGroup label="Notes" section>
+      <FormGroup label="Set details" section>
         <FormRow
           label="Warm-up set"
           htmlFor="set-warmup"
