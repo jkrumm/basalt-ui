@@ -46,8 +46,8 @@ function InolSparks({ shotState }: ScenarioProps) {
   return (
     <Box data-shot="inol-sparks">
       <ChartCard
-        title="INOL per lift"
-        info="Intensity-weighted volume per session. The band marks the productive range, 0.6 to 1.0."
+        title="INOL per lift, last 8 sessions"
+        info="INOL (Intensity-Number of Lifts) weighs each session's volume by how close the sets are to your max. The band marks the productive range, 0.6 to 1.0."
         {...cardStateProps(shotState, STRENGTH_ERROR, 'content', NO_INOL)}
       >
         <Stack gap="xs">
@@ -93,6 +93,7 @@ function LiftPrStrip({ shotState }: ScenarioProps) {
     return {
       key: lift.id,
       caption: lift.name,
+      qualifier: `last ${lift.data.length} sessions`,
       value: fmtKg(lift.data.at(-1) ?? 0).replace(' kg', ''),
       unit: 'kg e1RM',
       visual: (

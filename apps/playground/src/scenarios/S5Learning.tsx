@@ -89,7 +89,7 @@ function LearningSummary({ shotState }: ScenarioProps) {
         : 'down from'
   return (
     <PageSummary
-      sentence={`${KNOT_TITLE}: practised ${SESSIONS_LAST_30} times in the last 30 days, ${trend} ${SESSIONS_PRIOR_30}.`}
+      sentence={`Practised ${SESSIONS_LAST_30} times in the last 30 days, ${trend} ${SESSIONS_PRIOR_30} in the 30 days before.`}
     />
   )
 }
@@ -271,7 +271,7 @@ function LearningDecision({ shotState }: ScenarioProps) {
     <DecisionCard
       // The header names the topic and its due date and the strip its dates and mean, so the card
       // states only what the decision adds: the interval it would cut short.
-      question="Review now, or wait for the interval?"
+      question="Next review"
       facts={[`${NEXT_REVIEW_DAYS}-day review interval`]}
       evidence={
         <Text size="sm">

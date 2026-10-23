@@ -17,7 +17,8 @@ export function BodyZoneReadout({ shotState }: ScenarioProps) {
   return (
     <Box data-shot="zone-readout">
       <Section
-        title="INOL zone"
+        title="INOL zone, this week"
+        info="INOL (Intensity-Number of Lifts) weighs session volume by how close the sets are to your max; 0.6 to 1.0 is productive."
         empty={{
           title: INOL_GAP,
           description: INOL_NEXT,
@@ -33,7 +34,7 @@ export function BodyZoneReadout({ shotState }: ScenarioProps) {
               {ZONE.name}
             </Text>
             <Text c="dimmed" fz={VX.text.sm}>
-              {ZONE.lift} · INOL {ZONE.inol.toFixed(2)} this week
+              {ZONE.lift} · INOL {ZONE.inol.toFixed(2)}
             </Text>
           </Group>
         )}
