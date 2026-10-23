@@ -75,7 +75,8 @@ describe('the chart focus ring', () => {
   test('is the focus token, not the UA ring (white in dark)', () => {
     const body = ruleFor('.basalt-chart .ts-chart:focus-visible', chartBoxCss)
     expect(body).toMatch(/outline:\s*2px solid var\(--vx-accent\)/)
-    expect(body).toContain('outline-offset: calc(0.125rem * var(--mantine-scale))')
+    // Inset: an outer ring is clipped by the card body at the plot's right and bottom edges.
+    expect(body).toContain('outline-offset: calc(-0.125rem * var(--mantine-scale))')
   })
 
   test('is the plot svg only, not its descendants, and no dead wrapper rule remains', () => {

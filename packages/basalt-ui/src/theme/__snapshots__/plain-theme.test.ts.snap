@@ -900,6 +900,25 @@ exports[`createBasaltTheme() shape and resolver output default 1`] = `
         "size": "md",
       },
     },
+    "Slider": {
+      "vars": {
+        "fn": 
+"function sliderVars(_theme, props) {
+  return { root: { "--slider-color": hasExplicitColor(props.color) ? void 0 : INK } };
+}"
+,
+        "outputs": [
+          {
+            "probes": 388,
+            "result": "{"root":{"--slider-color":"var(--vx-ink)"}}",
+          },
+          {
+            "probes": 1920,
+            "result": "{"root":{}}",
+          },
+        ],
+      },
+    },
     "Stepper": {
       "vars": {
         "fn": "(theme, props) => ({ root: { "--stepper-icon-color": onColorFor(theme, props) } })",
@@ -2199,6 +2218,25 @@ exports[`createBasaltTheme() shape and resolver output all knobs 1`] = `
     "Select": {
       "defaultProps": {
         "size": "md",
+      },
+    },
+    "Slider": {
+      "vars": {
+        "fn": 
+"function sliderVars(_theme, props) {
+  return { root: { "--slider-color": hasExplicitColor(props.color) ? void 0 : INK } };
+}"
+,
+        "outputs": [
+          {
+            "probes": 388,
+            "result": "{"root":{"--slider-color":"var(--vx-ink)"}}",
+          },
+          {
+            "probes": 1920,
+            "result": "{"root":{}}",
+          },
+        ],
       },
     },
     "Stepper": {
