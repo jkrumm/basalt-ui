@@ -27,7 +27,7 @@
  * committed/forecast keeps the reading plus the forecast caption. The reading is captioned at the
  * committed fill's end and the forecast at the forecast's end, which a tick marks (none when it
  * reaches the track end); the forecast caption drops before it ever sits under the boundary tick.
- * Adjacent categorical parts are separated by a 2px gap, muted ones included; give each part its own
+ * Adjacent categorical parts are separated by a 2px separator, muted ones included; give each part its own
  * series colour (`tone="muted"` is for a tail "other" part — a bar of only muted parts warns once in
  * development).
  *
@@ -64,7 +64,8 @@ import { useContext } from 'react'
 import type { ReactNode } from 'react'
 import type { BasaltProps } from '../common/props'
 import { VX } from '../tokens'
-import { isReading, normalizeSegments, segmentReading, spanOf } from './meter-model'
+import { reportOnce } from '../common/validate'
+import { allPartsMuted, isReading, normalizeSegments, segmentReading, spanOf } from './meter-model'
 import type { MeterSegment, MeterTick, MeterZone } from './meter-model'
 import { MeterBar, MeterEmpty, MeterRing, MeterRingLoading } from './meter-parts'
 import { asText } from './scale'
@@ -228,18 +229,6 @@ function barTone(tone: 'muted' | 'ink' | undefined, plain: boolean): 'muted' | u
   return tone === 'muted' || plain ? 'muted' : undefined
 }
 
-let warnedMuted = false
-/** One dev warning per page load for a categorical bar whose parts are all muted: one slab, however seamed. */
-function warnAllMuted(segments: readonly MeterSegment[]) {
-  if (warnedMuted || process.env.NODE_ENV === 'production') return
-  const parts = segments.filter((s) => s.forecast !== true)
-  if (parts.length < 3 || !parts.every((s) => s.tone === 'muted' && s.color === undefined)) return
-  warnedMuted = true
-  console.warn(
-    '[basalt] Meter: every segment is tone="muted", so the parts read as one slab; give each part its own series colour (muted is for a tail "other" part)',
-  )
-}
-
 export function Meter(props: MeterProps) {
   const { label, min = 0, max = 100, format = asText, className, style } = props
   const row = props.size === 'row'
@@ -259,7 +248,12 @@ export function Meter(props: MeterProps) {
     props.segments === undefined || (loading && props.segments.length === 0)
       ? undefined
       : normalizeSegments(props.segments)
-  if (segments !== undefined) warnAllMuted(segments)
+  if (segments !== undefined && allPartsMuted(segments)) {
+    reportOnce(
+      'Meter',
+      '[basalt] Meter: every segment is tone="muted", so the parts read as one slab; give each part its own series colour (muted is for a tail "other" part)',
+    )
+  }
   const placeholder =
     props.zones !== undefined && props.zones.length > 0 ? min + spanOf(min, max).span / 2 : min
   const reading = loading

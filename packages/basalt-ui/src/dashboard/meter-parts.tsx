@@ -506,8 +506,6 @@ type CaptionItem = {
   align?: 'start' | 'center' | 'end'
   /** Drop rank when the row is too narrow (lowest first); none never drops. */
   drop?: number
-  /** Tried when the primary anchor drops the caption; the caption drops only if this fails too. */
-  alt?: { pct: number; align?: 'start' | 'center' | 'end' }
 }
 
 /** The measurement shared by the marks row and the part list: natural widths, row width, gap step. */
@@ -592,23 +590,13 @@ function CaptionRow({ items }: { items: readonly CaptionItem[] }) {
         ...(item.align !== undefined && { align: item.align }),
         ...(item.drop !== undefined && { drop: item.drop }),
       }))
-      let next = placeCaptionRow(marks, rowWidth, gap)
-      // A caption that dropped at its preferred anchor gets its fallback before it is given up.
-      items.forEach((item, i) => {
-        if (item.alt === undefined || !next?.dropped[i]) return
-        const retry = placeCaptionRow(
-          marks.map((m, j) => (j === i ? { ...m, ...item.alt } : m)),
-          rowWidth,
-          gap,
-        )
-        if (retry !== null && !retry.dropped[i]) next = retry
-      })
+      const next = placeCaptionRow(marks, rowWidth, gap)
       setPlaced((prev) => (samePlacement(prev, next) ? prev : next))
     },
     items
       .map(
         (i) =>
-          `${i.key}@${i.pct ?? i.edge ?? ''}${i.align ?? ''}${i.drop ?? ''}${i.alt?.pct ?? ''}:${typeof i.node === 'string' ? i.node : ''}`,
+          `${i.key}@${i.pct ?? i.edge ?? ''}${i.align ?? ''}${i.drop ?? ''}:${typeof i.node === 'string' ? i.node : ''}`,
       )
       .join('\u0000'),
   )
@@ -962,8 +950,7 @@ const TICK_WIDTH = '2px'
  * reads inside. The marker is the reading itself and stays centred.
  */
 function tickPosition(kind: TickKind, pct: number): CSSProperties {
-  if (pct < 100 || kind === 'marker' || kind === 'boundary' || kind === 'forecastEnd')
-    return { insetInlineStart: `${pct}%` }
+  if (pct < 100 || kind === 'marker' || kind === 'boundary') return { insetInlineStart: `${pct}%` }
   return { insetInlineStart: `calc(100% - ${TICK_WIDTH})`, marginInlineStart: 0 }
 }
 

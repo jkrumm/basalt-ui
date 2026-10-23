@@ -1,13 +1,14 @@
 /**
- * Wave 49 Meter: a visible gap between adjacent parts, the forecast end mark and caption, the caption
+ * Meter parts: the separator between categorical parts, the forecast end mark and caption, the caption
  * gap at narrow widths, and a bar that fills its container.
  */
 import { MantineProvider } from '@mantine/core'
 import { cleanup, render } from '@testing-library/react'
 import { readFileSync } from 'node:fs'
-import { afterEach, describe, expect, test } from 'bun:test'
+import { afterEach, beforeEach, describe, expect, test } from 'bun:test'
 import { Meter } from './meter'
 import type { MeterProps } from './meter'
+import { resetValidatedProps } from '../common/validate'
 import { layoutSegments, modelBar } from './meter-model'
 
 afterEach(cleanup)
@@ -20,7 +21,7 @@ const mount = (props: MeterProps) =>
   )
 const css = readFileSync(new URL('./meter.module.css', import.meta.url), 'utf8')
 
-describe('parts are told apart by a gap', () => {
+describe('parts are told apart by a separator', () => {
   test('every part after a categorical one is seamed, coloured or muted', () => {
     const parts = layoutSegments(
       [
@@ -31,6 +32,17 @@ describe('parts are told apart by a gap', () => {
       100,
     )
     expect(parts.map((p) => p.seam)).toEqual([false, true, true])
+  })
+
+  test('a zero-size part leaves no neighbour for the next one to be separated from', () => {
+    const parts = layoutSegments(
+      [
+        { value: 0, label: 'A', color: 'red' },
+        { value: 20, label: 'B', color: 'blue' },
+      ],
+      100,
+    )
+    expect(parts.map((p) => p.seam)).toEqual([false, false])
   })
 
   test('a forecast part is not seamed: the boundary tick separates it', () => {
@@ -44,24 +56,58 @@ describe('parts are told apart by a gap', () => {
     expect(parts.map((p) => p.seam)).toEqual([false, false])
   })
 
-  test('the seam is a 2px gap, not a hairline', () => {
+  test('the seam is a 2px separator, not a hairline', () => {
     expect(css).toMatch(/\[data-meter-seam\]\s*\{[^}]*border-inline-start:\s*2px solid/)
   })
 })
 
 describe('an all-muted parts bar', () => {
-  test('warns once in development', () => {
-    const calls: unknown[][] = []
-    const original = console.warn
-    console.warn = (...a: unknown[]) => void calls.push(a)
+  const muted = (label: string) => ({ value: 20, label, tone: 'muted' as const })
+  const warnings = () => errors.filter((c) => String(c[0]).includes('one slab')).length
+  let errors: unknown[][] = []
+  let original = console.error
+  beforeEach(() => {
+    resetValidatedProps()
+    errors = []
+    original = console.error
+    console.error = (...a: unknown[]) => void errors.push(a)
+  })
+  afterEach(() => {
+    console.error = original
+  })
+
+  test('warns once for three muted parts, however often it renders', () => {
+    mount({ label: 'P', segments: [muted('A'), muted('B'), muted('C')] })
+    mount({ label: 'P', segments: [muted('A'), muted('B'), muted('C')] })
+    expect(warnings()).toBe(1)
+  })
+  test('two muted parts do not warn', () => {
+    mount({ label: 'P', segments: [muted('A'), muted('B')] })
+    expect(warnings()).toBe(0)
+  })
+  test('three muted parts and one coloured part do not warn', () => {
+    mount({
+      label: 'P',
+      segments: [muted('A'), muted('B'), muted('C'), { value: 20, label: 'D', color: 'red' }],
+    })
+    expect(warnings()).toBe(0)
+  })
+  test('a forecast part is not counted', () => {
+    mount({
+      label: 'P',
+      segments: [muted('A'), muted('B'), { ...muted('C'), forecast: true }],
+    })
+    expect(warnings()).toBe(0)
+  })
+  test('production is silent', () => {
+    const env = process.env.NODE_ENV
+    process.env.NODE_ENV = 'production'
     try {
-      const muted = (label: string) => ({ value: 20, label, tone: 'muted' as const })
-      mount({ label: 'P', segments: [muted('A'), muted('B'), muted('C')] })
       mount({ label: 'P', segments: [muted('A'), muted('B'), muted('C')] })
     } finally {
-      console.warn = original
+      process.env.NODE_ENV = env
     }
-    expect(calls.filter((c) => String(c[0]).includes('one slab')).length).toBe(1)
+    expect(warnings()).toBe(0)
   })
 })
 
