@@ -348,52 +348,52 @@ export function ChartCard({
   const { subtitle, ...rest } = header
   const headerProps = facts === undefined ? header : rest
 
+  const hostBody = <HostTitleContext value={header.title}>{children}</HostTitleContext>
+
   return (
     <ChartCardContext.Provider value>
-      <HostTitleContext value={header.title}>
-        <div
-          ref={ref}
-          data-basalt-chart-card=""
-          className={cx(classNames?.root, className)}
-          style={{ ...cardStyle, ...style }}
-          {...(resolved === 'pending' && { 'aria-busy': 'true' })}
-          {...(short && { 'data-basalt-card-short': '' })}
-        >
-          {hasHeader && (
-            <div data-basalt-chart-header="" className={cx(classes.header, classNames?.header)}>
-              <WidgetHeader
-                tier="widget"
-                {...definedOnly(headerProps)}
-                title={header.title ?? ''}
-                {...(actions !== undefined && {
-                  actions: <span data-basalt-tier="widget">{actions}</span>,
-                })}
-              />
-              {showFacts && <Facts facts={facts} basis={subtitle} stale={stale} />}
-              {skeletonFacts && <FactsSkeleton basis={subtitle !== undefined} />}
-            </div>
-          )}
-          <div
-            {...(classNames?.body !== undefined && { className: classNames.body })}
-            style={bodyClipStyle}
-          >
-            {resolved === null || (resolved === 'pending' && placeholderHeight === 'content')
-              ? children
-              : reserveLegend(
-                  kind?.legend === true,
-                  <ChartPlaceholder
-                    state={state}
-                    {...(pendingHeight !== undefined && { height: pendingHeight })}
-                    {...(noun !== undefined && { noun })}
-                    {...(plotGhost !== undefined && { ghost: plotGhost })}
-                    {...(onRetry !== undefined && { onRetry })}
-                    {...(retrying !== undefined && { retrying })}
-                    action={stateAction}
-                  />,
-                )}
+      <div
+        ref={ref}
+        data-basalt-chart-card=""
+        className={cx(classNames?.root, className)}
+        style={{ ...cardStyle, ...style }}
+        {...(resolved === 'pending' && { 'aria-busy': 'true' })}
+        {...(short && { 'data-basalt-card-short': '' })}
+      >
+        {hasHeader && (
+          <div data-basalt-chart-header="" className={cx(classes.header, classNames?.header)}>
+            <WidgetHeader
+              tier="widget"
+              {...definedOnly(headerProps)}
+              title={header.title ?? ''}
+              {...(actions !== undefined && {
+                actions: <span data-basalt-tier="widget">{actions}</span>,
+              })}
+            />
+            {showFacts && <Facts facts={facts} basis={subtitle} stale={stale} />}
+            {skeletonFacts && <FactsSkeleton basis={subtitle !== undefined} />}
           </div>
+        )}
+        <div
+          {...(classNames?.body !== undefined && { className: classNames.body })}
+          style={bodyClipStyle}
+        >
+          {resolved === null || (resolved === 'pending' && placeholderHeight === 'content')
+            ? hostBody
+            : reserveLegend(
+                kind?.legend === true,
+                <ChartPlaceholder
+                  state={state}
+                  {...(pendingHeight !== undefined && { height: pendingHeight })}
+                  {...(noun !== undefined && { noun })}
+                  {...(plotGhost !== undefined && { ghost: plotGhost })}
+                  {...(onRetry !== undefined && { onRetry })}
+                  {...(retrying !== undefined && { retrying })}
+                  action={stateAction}
+                />,
+              )}
         </div>
-      </HostTitleContext>
+      </div>
     </ChartCardContext.Provider>
   )
 }

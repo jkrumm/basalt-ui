@@ -465,9 +465,11 @@ export function StatCard({
     query === undefined ? (
       breakdownRows
     ) : (
-      <QueryState query={query} tier="section">
-        {breakdownRows}
-      </QueryState>
+      <HostTitleContext value={title}>
+        <QueryState query={query} tier="section">
+          {breakdownRows}
+        </QueryState>
+      </HostTitleContext>
     )
 
   // Built ONLY when ready: the render prop must not run in a pending / failed / empty branch, where
@@ -533,87 +535,85 @@ export function StatCard({
   const footerNode = renderFooterNode({ subtitle, pending, ready })
 
   return (
-    <HostTitleContext value={title}>
-      <Card
-        className={cx(classNames?.root, className)}
-        style={{
-          // The inset is the theme's (`card-inset.module.css`: the `cardInsetY`/`cardInsetX` tokens, 12/16
-          // at level 0, stepping the horizontal one down a rung below `sm`), so it is NOT restated here —
-          // an inline copy would bypass `variant="flush"`.
-          //
-          // `overflow: hidden` clips the full-bleed sparkline to the card's rounded corners. An
-          // element's own `box-shadow` renders outside its border box and is NOT clipped by its own
-          // `overflow`, so the shadow-card ring is unaffected.
-          //
-          // NO `minHeight`: the content states the height (the foot reserves its own), and cards in a
-          // grid row stretch to the tallest.
-          overflow: 'hidden',
-          // Consumers may anchor overlays (badges, menus) to the card, so it stays a positioned box.
-          position: 'relative',
-          // The card's own width drives its chrome (`stat-card.module.css`).
-          containerType: 'inline-size',
-          containerName: 'basalt-card',
-          ...style,
-        }}
-        data-tone={tone}
+    <Card
+      className={cx(classNames?.root, className)}
+      style={{
+        // The inset is the theme's (`card-inset.module.css`: the `cardInsetY`/`cardInsetX` tokens, 12/16
+        // at level 0, stepping the horizontal one down a rung below `sm`), so it is NOT restated here —
+        // an inline copy would bypass `variant="flush"`.
+        //
+        // `overflow: hidden` clips the full-bleed sparkline to the card's rounded corners. An
+        // element's own `box-shadow` renders outside its border box and is NOT clipped by its own
+        // `overflow`, so the shadow-card ring is unaffected.
+        //
+        // NO `minHeight`: the content states the height (the foot reserves its own), and cards in a
+        // grid row stretch to the tallest.
+        overflow: 'hidden',
+        // Consumers may anchor overlays (badges, menus) to the card, so it stays a positioned box.
+        position: 'relative',
+        // The card's own width drives its chrome (`stat-card.module.css`).
+        containerType: 'inline-size',
+        containerName: 'basalt-card',
+        ...style,
+      }}
+      data-tone={tone}
+    >
+      <div
+        className={cx(classes.body, classNames?.body)}
+        data-placement={sparklinePlacement}
+        {...(pending && { 'aria-busy': true })}
       >
-        <div
-          className={cx(classes.body, classNames?.body)}
-          data-placement={sparklinePlacement}
-          {...(pending && { 'aria-busy': true })}
-        >
-          {pending && <VisuallyHidden>{`Loading ${title}`}</VisuallyHidden>}
-          <div className={cx(classes.header, classNames?.header)} data-basalt-header-block>
-            <CaptionRow
-              title={title}
-              {...(icon !== undefined && { icon })}
-              {...(info !== undefined && { info })}
-              {...(qualifier !== undefined && { qualifier })}
-              {...(tone !== undefined && { tone })}
-              {...(actions !== undefined && { actions })}
-            />
-
-            {valueBody}
-
-            {/* INSIDE `.header` for `bleed` ONLY (`right` puts it beside the sparkline in
-              `.metricsRow`, so the header stays the full card width in both placements). */}
-            {bleeds &&
-              (pending
-                ? hasBreakdown && <BreakdownSkeleton rows={breakdownCount} />
-                : ready && breakdownContent)}
-          </div>
-
-          {rightRow && (
-            <div className={classes.metricsRow}>
-              {ready ? (
-                <>
-                  {breakdownContent}
-                  {sparklineSlot}
-                </>
-              ) : (
-                <>
-                  {hasBreakdown && <BreakdownSkeleton rows={breakdownCount} />}
-                  {sparkline !== undefined && (
-                    <div
-                      className={classes.sparklineRight}
-                      style={rightSlotStyle(SPARKLINE_RIGHT_WIDTH, SPARKLINE_HEIGHT)}
-                    >
-                      <VisualSkeleton />
-                    </div>
-                  )}
-                </>
-              )}
-            </div>
-          )}
-
-          <Foot
-            reserve={hasBleedVisual || subtitle !== undefined}
-            visualBand={bleeds}
-            visualNode={visualNode}
-            footerNode={footerNode}
+        {pending && <VisuallyHidden>{`Loading ${title}`}</VisuallyHidden>}
+        <div className={cx(classes.header, classNames?.header)} data-basalt-header-block>
+          <CaptionRow
+            title={title}
+            {...(icon !== undefined && { icon })}
+            {...(info !== undefined && { info })}
+            {...(qualifier !== undefined && { qualifier })}
+            {...(tone !== undefined && { tone })}
+            {...(actions !== undefined && { actions })}
           />
+
+          {valueBody}
+
+          {/* INSIDE `.header` for `bleed` ONLY (`right` puts it beside the sparkline in
+              `.metricsRow`, so the header stays the full card width in both placements). */}
+          {bleeds &&
+            (pending
+              ? hasBreakdown && <BreakdownSkeleton rows={breakdownCount} />
+              : ready && breakdownContent)}
         </div>
-      </Card>
-    </HostTitleContext>
+
+        {rightRow && (
+          <div className={classes.metricsRow}>
+            {ready ? (
+              <>
+                {breakdownContent}
+                {sparklineSlot}
+              </>
+            ) : (
+              <>
+                {hasBreakdown && <BreakdownSkeleton rows={breakdownCount} />}
+                {sparkline !== undefined && (
+                  <div
+                    className={classes.sparklineRight}
+                    style={rightSlotStyle(SPARKLINE_RIGHT_WIDTH, SPARKLINE_HEIGHT)}
+                  >
+                    <VisualSkeleton />
+                  </div>
+                )}
+              </>
+            )}
+          </div>
+        )}
+
+        <Foot
+          reserve={hasBleedVisual || subtitle !== undefined}
+          visualBand={bleeds}
+          visualNode={visualNode}
+          footerNode={footerNode}
+        />
+      </div>
+    </Card>
   )
 }
