@@ -1102,11 +1102,48 @@ Nothing to change unless a test asserts the old copy or geometry below.
 - **Skills.** `/basalt-design` checks four repeated defects before round 1 and shoots each round to a fresh `--out`;
   the parts row says each part takes a series colour; `/basalt-charts` names `other` as the neutral series key.
 
+### The second layer (Wave 50, argo-friction rows 190–197)
+
+Nothing to change unless a test, a selector or a style depends on the old copy or geometry below. Each line names its
+opt-out.
+
+- **`EventList`.** The chips take one fixed place: their own line under the time, at the row's left edge, whatever the
+  note holds (they no longer follow the note's last word; `data-chips-only` and the note/chips nowrap run are gone).
+  A row with chips is about one micro line taller. Chip `Badge`s render at the micro size whatever `size` they ask
+  for, so the list uses two type rungs. `chips={[]}` renders no chips line.
+- **List skeletons.** `EventList` and `BarList` skeletons default to the row count `items` holds while refetching
+  (capped at 30), else 5; pass `loadingRows` to set it. A `DeltaBadge` in a `BarList` secondary is a two-track cell
+  (glyph, then a figure slot of at least four digits), so glyphs and right edges align across rows.
+- **Section error titles.** A `QueryState` inside a titled `Section` defaults its error title to "Could not load
+  <section title>"; `StatCard`, `ChartCard` and the data table set their own title for what they wrap, so a card names
+  itself, not the section around it. `errorTitle` still wins. New optional `Section` prop `loadingHeight` (px): the
+  pending skeleton fills it.
+- **Header scope at 390.** `WidgetHeader`/`Section`/`StatCard` subtitles no longer fold into the info glyph below
+  480px; they wrap under the title (only a card shorter than 280px keeps the fold). No opt-out.
+- **Strips and figures.** A one-cell `StatGroup variant="strip"` is full width whatever `cols` it states (the Meter in
+  a lone cell no longer stops at half the card). The `Meter` reading marker is a panel core in an ink ring, readable on
+  any fill. In a strip cell narrower than 240px the qualifier sits under its caption; a footer `under` a cell keeps the
+  cell's bottom inset.
+- **`Sparkline` `window?: string | false`.** A sparkline in a `StatCard` bleed slot or a strip cell with day-dated data
+  states its window at rest (`1 Oct – 22 Oct`); `window="12 wk"` words it, `window={false}` drops it. A stated window
+  moves a `referenceLabel` out of the plot into that caption row, and a bleed `StatCard` grows by that line.
+- **Data table.** The fold header reads `+N cols` (`+1 col`). A loading table plans its fold from kind floors (`text`
+  4.5rem, a kindless column 8rem; the select and actions columns none), so it folds the same columns as the loaded
+  rows more often. The keyboard focus ring on a folded table is an overlay closed on all four sides.
+- **`Board`.** A column that clips its cards shows the bottom fade cue.
+- **CLI and agent layer.** `llms.txt` expands generic and `Pick`/`Omit` option types (`ChartSeries<T>`,
+  `StatStripCell`, `MeterSegment`, `QueryStateLike<TData>`, …), up to 30 per subpath. A `shot` hover crop hides every
+  other anchor's tooltip while it is taken. `/basalt-design`'s pre-round check has a fifth item: each figure once per
+  surface.
+
 ### Visible without code change
 
 - Error titles, the chart empty copy, the Meter separators/forecast caption/full width, the EventList chip flow and
   fade, the chart ticks, label offset and focus ring, the slider fill: all render differently with no edit.
 - `shot detect` may report `craft-7/no-declared-states` on anchors it passed before.
+- Wave 50: the EventList chips line and two type rungs, list and table skeleton counts and fold floors, named
+  Section errors, visible subtitles at 390, the full-width lone strip cell, the Meter ring marker, the sparkline window
+  caption, the `+N cols` header and the Board fade: all render differently with no edit.
 
 ## 2.28.0
 
