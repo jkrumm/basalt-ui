@@ -1,6 +1,6 @@
 /** `sync` — split out of `src/cli/index.ts` (C2); shared plumbing is imported back from `./index`. */
 import { existsSync } from 'node:fs'
-import { isAbsolute, relative, resolve } from 'node:path'
+import { resolve } from 'node:path'
 
 import { deriveSpacing } from '../tokens/core'
 import { shellConfigError } from './config'
@@ -20,13 +20,13 @@ import {
   normalizeForLedger,
   noteRelocation,
   OXLINT_FILES,
+  placementNotices,
   pruneRetiredManagedFiles,
   readBasaltConfig,
   readIfExists,
   readManifest,
   readSource,
   reconcileRoots,
-  rootToolingReport,
   ruleRootsFor,
   relativePosix,
   renderContext,
@@ -35,6 +35,7 @@ import {
   resolveProjectDir,
   routerSeedPlan,
   rootsNotices,
+  rootToolingStates,
   sha256,
   shippedAssetPath,
   START_APP_NOTE,
@@ -50,19 +51,6 @@ import { findManifestAbove, installRootAbove } from './install-root'
 export function readOxlintPresetPlugins(pkgRoot: string): string[] {
   const plugins = parseJsonc(readSource(pkgRoot, OXLINT_FILES.preset) ?? 'null')?.['plugins']
   return isStringArray(plugins) ? plugins : []
-}
-
-/** The value of `--flag <v>` / `--flag=<v>`, or null. */
-function flagValue(flags: readonly string[], name: string): string | null {
-  const i = flags.findIndex((f) => f === name || f.startsWith(`${name}=`))
-  if (i === -1) return null
-  const f = flags[i] as string
-  return f.includes('=') ? f.slice(name.length + 1) : (flags[i + 1] ?? null)
-}
-
-function isAncestorOrSelf(dir: string, of: string): boolean {
-  const rel = relative(dir, of)
-  return rel === '' || (!rel.startsWith('..') && !isAbsolute(rel))
 }
 
 export type SyncOptions = {
@@ -132,15 +120,6 @@ export function sync(opts: SyncOptions = {}, invocationCwd: string = process.cwd
     return 1
   }
 
-  const rootFlag = flagValue(syncFlags, '--root')
-  const rootDir = rootFlag === null ? null : resolve(cwd, rootFlag)
-  if (rootDir !== null && !isAncestorOrSelf(rootDir, cwd)) {
-    console.error(
-      `✖ basalt-ui sync: --root ${rootFlag} is not this package or one of its ancestors.`,
-    )
-    return 1
-  }
-
   const appError = resolvePlacement(cwd).appError
   if (appError !== null) {
     console.error(`✖ basalt-ui sync: ${appError}`)
@@ -170,13 +149,7 @@ export function sync(opts: SyncOptions = {}, invocationCwd: string = process.cwd
   const rootsState = reconcileRoots(cwd, { write: opts.check !== true })
   const ctx = renderContext(cwd, ruleRootsFor(rootsState), opts.pkgRoot)
   const manifest = readManifest(cwd)
-  const detected = resolvePlacement(cwd)
-  // `--root` states the repo root outright (where detection finds a nested `.git`, say), and is also
-  // the request to PLACE the repo-root templates there instead of only reporting on them.
-  const placement =
-    rootDir === null
-      ? detected
-      : { ...detected, repoRoot: rootDir, isPackageRepoRoot: rootDir === cwd }
+  const placement = resolvePlacement(cwd)
   const { skip: seedSkip, skipped } = routerSeedPlan(cwd, placement.appRel)
   const files = managedFiles(placement, ctx.pkgRoot).filter((f) => !skipped.has(f.dest))
 
@@ -283,14 +256,18 @@ export function sync(opts: SyncOptions = {}, invocationCwd: string = process.cwd
   }
   if (seedSkip === 'start' && (!opts.check || syncFlags.includes('--verbose')))
     console.log(`basalt-ui sync: ${START_APP_NOTE}`)
-  const rootTooling = rootToolingReport(cwd, placement, ctx, {
-    place: rootDir !== null,
-    write: opts.check !== true,
-  })
-  const placementSkips = rootTooling.lines.filter((l) => !l.includes(': in sync'))
-  // `--check` hides the unchanging lines behind `--verbose`, but a drifted/absent template is news.
+  // A skipped root template is compared with the repo root's own file (read-only): only a drifted
+  // or absent one reads as unfinished work.
+  const states = rootToolingStates(cwd, placement, ctx)
+  const notices = placementNotices(cwd, placement)
+  const placementSkips = notices.filter((_, i) => states[i] !== 'in sync')
   if (opts.check !== true || syncFlags.includes('--verbose')) {
-    for (const line of rootTooling.lines) console.log(`basalt-ui sync: ${line}`)
+    states.forEach((st, i) => {
+      const file = i === 0 ? 'lefthook.yml' : 'check.yml'
+      console.log(
+        `basalt-ui sync: ${file} at the repo root: ${st}${st === 'in sync' ? '' : ` — ${notices[i]}`}`,
+      )
+    })
   }
 
   const rootsMessages = rootsNotices(rootsState)
