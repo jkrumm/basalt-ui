@@ -660,3 +660,84 @@ export function subpathPeersCheck(cwd: string, scanned: string[], install: Basal
     }
   })
 }
+
+/**
+ * Emitted `tokens:css` / `fonts:css` sheets whose header version is not the installed one. The
+ * header's second line names the exact invocation, so the fix is that command verbatim: `--check`
+ * is byte-exact and fails after every bump until the sheet is re-emitted.
+ */
+export function staleEmittedSheets(
+  cwd: string,
+  files: readonly string[],
+  installedVersion: string | null,
+): string[] {
+  if (installedVersion === null) return []
+  const out: string[] = []
+  for (const rel of files) {
+    if (!rel.endsWith('.css')) continue
+    const head = (readIfExists(resolve(cwd, rel)) ?? '').split('\n', 2)
+    const m = /^\/\* basalt-ui (\S+) — `(basalt-ui (?:tokens|fonts):css[^`]*)` \*\/$/.exec(
+      head[1]?.trim() ?? '',
+    )
+    if (
+      m === null ||
+      !(head[0] ?? '').includes('@generated basalt-ui') ||
+      m[1] === installedVersion
+    )
+      continue
+    out.push(
+      `emitted-sheets: ${rel} was emitted by ${m[1]}, installed is ${installedVersion} — ` +
+        `\`--check\` fails until it is re-emitted. Fix: \`${m[2]}\``,
+    )
+  }
+  return out
+}
+
+const versionParts = (v: string): number[] => v.split('.').map((n) => Number.parseInt(n, 10) || 0)
+
+/** `a` versus `b` as dotted numbers: negative when `a` is older. */
+function compareVersions(a: string, b: string): number {
+  const [x, y] = [versionParts(a), versionParts(b)]
+  for (let i = 0; i < 3; i++) if ((x[i] ?? 0) !== (y[i] ?? 0)) return (x[i] ?? 0) - (y[i] ?? 0)
+  return 0
+}
+
+const VISIBLE_HEADING = /^#{2,4}\s+Visible without code change/i
+const CONSUMER_VISIBLE = /basalt\/[a-z][\w-]*|--vx-[\w-]+|\berror\b|\bpromoted?\b/i
+const MAX_LINE = 240
+
+/**
+ * The consumer-visible lines of every MIGRATING.md section with `from < version <= to` (`to`
+ * null: no upper bound), newest first as the file is ordered: lines naming a `basalt/*` rule id, a
+ * `--vx-*` token, `error` or `promoted`, plus the whole `Visible without code change` subsection.
+ * Fenced code and table separators are skipped; long table rows are cut.
+ */
+export function migratingSince(markdown: string, from: string, to: string | null): string[] {
+  const out: string[] = []
+  let version: string | null = null
+  let visible = false
+  let fenced = false
+  for (const line of markdown.split('\n')) {
+    const h2 = /^## (\d+\.\d+\.\d+)\b(.*)$/.exec(line)
+    if (h2 !== null || line.startsWith('## ')) {
+      const v = h2?.[1] ?? null
+      version =
+        v !== null && compareVersions(v, from) > 0 && (to === null || compareVersions(v, to) <= 0)
+          ? v
+          : null
+      visible = false
+      fenced = false
+      if (version !== null) out.push(`\n## ${version}${h2?.[2] ?? ''}`)
+      continue
+    }
+    if (version === null) continue
+    if (line.startsWith('```')) fenced = !fenced
+    if (fenced || line.startsWith('```')) continue
+    if (/^#{3,4}\s/.test(line)) visible = VISIBLE_HEADING.test(line)
+    const trimmed = line.trim()
+    if (trimmed === '' || /^\|[-\s|:]+\|$/.test(trimmed)) continue
+    if (!visible && !CONSUMER_VISIBLE.test(line)) continue
+    out.push(trimmed.length > MAX_LINE ? `${trimmed.slice(0, MAX_LINE)}…` : trimmed)
+  }
+  return out
+}

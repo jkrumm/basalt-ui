@@ -27,9 +27,11 @@ import {
   startWiringWarnings,
   droppedSubpathsCheck as droppedSubpathsCheckOn,
   exactPeersCheck,
+  migratingSince,
   oxlintFloorCheck,
   retiredLintRulesCheck,
   seedTsconfigExtends,
+  staleEmittedSheets,
   SUBPATH_REQUIRED_PEERS,
   subpathPeersCheck as subpathPeersCheckOn,
   tsconfigBaseCheck,
@@ -1753,5 +1755,79 @@ describe('doctor — oxlint-floor', () => {
     expect(oxlintFloorCheck(dir)).toBeNull()
     write('node_modules/oxlint/package.json', JSON.stringify({ version: '1.60.0' }))
     expect(oxlintFloorCheck(dir)).toBeNull()
+  })
+})
+
+describe('migratingSince (doctor --from)', () => {
+  const md = [
+    '# Migrating',
+    '## Unreleased — next',
+    '- `basalt/new-rule` is `error`.',
+    '## 2.10.0',
+    '- `basalt/old-rule` is `error`.',
+    '## 2.9.0 — wave',
+    'Prose that names nothing.',
+    '- `--vx-status-bad` moved.',
+    '- `basalt/card-inset` is now `error`.',
+    '```ts',
+    '// basalt/in-fence error',
+    '```',
+    '### Visible without code change',
+    'Badge casing changed.',
+    '### Other',
+    'Not shown.',
+    '## 2.8.0',
+    '- `basalt/too-old` is `error`.',
+  ].join('\n')
+
+  it('keeps only versions after `from` up to the install, newest first', () => {
+    const out = migratingSince(md, '2.8.0', '2.10.0').join('\n')
+    expect(out).toContain('## 2.10.0')
+    expect(out).toContain('## 2.9.0 — wave')
+    expect(out).not.toContain('too-old')
+    expect(out).not.toContain('new-rule')
+    expect(out.indexOf('2.10.0')).toBeLessThan(out.indexOf('2.9.0'))
+  })
+
+  it('filters to rule ids, tokens, error/promoted lines and the visible subsection', () => {
+    const out = migratingSince(md, '2.8.0', '2.10.0')
+    expect(out).toContain('- `--vx-status-bad` moved.')
+    expect(out).toContain('Badge casing changed.')
+    expect(out.join('\n')).not.toMatch(/Prose that names nothing|Not shown|in-fence/)
+  })
+
+  it('stops at the installed version', () => {
+    const out = migratingSince(md, '2.8.0', '2.9.0').join('\n')
+    expect(out).toContain('## 2.9.0')
+    expect(out).not.toContain('2.10.0')
+  })
+
+  it('compares numerically, not lexically', () => {
+    expect(migratingSince(md, '2.9.0', '2.10.0').join('\n')).toContain('## 2.10.0')
+  })
+})
+
+describe('staleEmittedSheets', () => {
+  let dir: string
+  beforeEach(() => {
+    dir = mkdtempSync(join(tmpdir(), 'basalt-sheets-'))
+  })
+  afterEach(() => rmSync(dir, { recursive: true, force: true }))
+  const sheet = (version: string): string =>
+    '/* @generated basalt-ui — do not edit; regenerate with the command on the next line */\n' +
+    `/* basalt-ui ${version} — \`basalt-ui tokens:css --out src/tokens.css\` */\n:root {}\n`
+
+  it('names the recorded invocation for a sheet from another version', () => {
+    writeFileSync(join(dir, 'tokens.css'), sheet('2.27.0'))
+    const out = staleEmittedSheets(dir, ['tokens.css'], '2.28.0')
+    expect(out).toHaveLength(1)
+    expect(out[0]).toContain('Fix: `basalt-ui tokens:css --out src/tokens.css`')
+  })
+
+  it('is silent for a current sheet, a hand-written one, and no install', () => {
+    writeFileSync(join(dir, 'tokens.css'), sheet('2.28.0'))
+    writeFileSync(join(dir, 'app.css'), ':root {}\n')
+    expect(staleEmittedSheets(dir, ['tokens.css', 'app.css'], '2.28.0')).toEqual([])
+    expect(staleEmittedSheets(dir, ['tokens.css'], null)).toEqual([])
   })
 })
