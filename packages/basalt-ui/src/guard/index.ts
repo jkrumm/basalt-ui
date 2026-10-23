@@ -828,6 +828,10 @@ const SUB_16_FONT_SIZE = /font-?[Ss]ize\s*:\s*['"]?(-?\d+(?:\.\d+)?)(?:px)?['"]?
 const DEFAULT_SPACING_STEPS: readonly number[] = Object.values(SPACE_SCALE_LEVEL0).toSorted(
   (a, b) => a - b,
 )
+const SPACING_TOKEN_LIST = Object.entries(SPACE_SCALE_LEVEL0)
+  .map(([name, px]) => `${px} → "${name}"`)
+  .join(', ')
+
 /** Default off-identity Mantine accent families. */
 const DEFAULT_FORBIDDEN_ACCENTS: readonly string[] = ['teal', 'violet', 'grape', 'indigo', 'pink']
 
@@ -2039,7 +2043,7 @@ export const GUARD_RULES = {
     // JSX-prop-shaped (`p={16}`) — CSS has no `=`/`{}` prop syntax; gated off explicitly (see
     // off-identity-accent above for why "never matches today" still gets an explicit gate).
     appliesTo: (relPath) => !relPath.endsWith('.css'),
-    message: 'Use the Mantine spacing prop/token (p/m/gap with xs..xl).',
+    message: `Use the Mantine spacing token, not the number (p/m/gap): ${SPACING_TOKEN_LIST}. A number that equals a step IS that token.`,
   },
   'raw-radius': {
     kind: 'raw-radius',
