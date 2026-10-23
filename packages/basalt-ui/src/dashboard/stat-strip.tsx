@@ -409,7 +409,8 @@ export function StatStrip({
   className,
   style,
 }: StatStripProps) {
-  const desktop = cols ?? Math.min(Math.max(cells.length, 2), 6)
+  // A lone cell is the whole strip: a stated `cols` would leave it one track of an empty grid.
+  const desktop = cells.length === 1 ? 1 : (cols ?? Math.min(Math.max(cells.length, 2), 6))
   // `StatGroup`'s rule: four is 2 + 2 below the full count, never 3 + 1.
   const mid = desktop === 4 ? 2 : Math.min(desktop, 3)
   const keys = new Set(cells.map((cell) => cell.key))

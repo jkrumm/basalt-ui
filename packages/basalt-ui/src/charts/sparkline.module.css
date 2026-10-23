@@ -120,3 +120,39 @@
 .root[data-basalt-readout] [data-ts-key='reference-label'] {
   visibility: hidden;
 }
+
+/* The window caption under a hosted plot: the span on the start edge, the reference's key on the end. */
+.frame {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.caption {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  column-gap: var(--vx-space-control-gap, 0.375rem);
+  margin-block-start: var(--vx-space-stack-xs, 0.25rem);
+  font-family: var(--basalt-font-numeral, var(--basalt-font-sans));
+  font-variant-numeric: lining-nums;
+  font-size: var(--vx-text-micro);
+  line-height: 1.25;
+  color: var(--vx-muted);
+  white-space: nowrap;
+}
+
+/* The reference's key follows the drawn line: a short dash, then its name. */
+.key {
+  display: inline-flex;
+  align-items: center;
+  column-gap: var(--vx-space-stack-xs, 0.25rem);
+  margin-inline-start: auto;
+}
+
+.key::before {
+  content: '';
+  inline-size: 0.75rem;
+  block-size: 1px;
+  background: repeating-linear-gradient(to right, var(--vx-line) 0 3px, transparent 3px 5px);
+}

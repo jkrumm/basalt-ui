@@ -174,7 +174,11 @@
   translate: none;
 }
 
-/* The reading on a zone track: a notch standing proud of the bands, in ink. */
+/*
+ * The reading on a zone track: a notch standing proud of the bands. A panel core in an ink ring, so
+ * one of the two always contrasts with the fill under it: the core on an ink fill, the ring on a
+ * light one (an ink core on an ink track vanished).
+ */
 .marker {
   position: absolute;
   top: -3px;
@@ -182,7 +186,8 @@
   width: 3px;
   margin-inline-start: -1.5px;
   border-radius: var(--vx-radius-fine);
-  background: var(--vx-ink);
+  background: var(--vx-surface-panel);
+  box-shadow: 0 0 0 1.5px var(--vx-ink);
 }
 
 .tick {
