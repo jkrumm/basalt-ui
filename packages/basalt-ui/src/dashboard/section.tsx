@@ -55,7 +55,8 @@ import { CtlSlot } from '../theme'
 import { BarActionSlot } from '../controls/actions'
 import type { SectionActions } from '../controls/actions'
 import { useFilterSurface } from '../controls/filter-context'
-import { QueryState } from './query-state'
+import { HostTitleContext } from '../common/could-not-load'
+import { LoadingState, QueryState } from './query-state'
 import type { QueryEmptyCopy, QueryStateLike } from './query-state'
 import { usePersistedOrLocal } from '../state/persisted-or-local'
 import { PAGE_BAR_HEIGHT_VAR, useInPageBarShell } from '../shell'
@@ -118,6 +119,12 @@ type SectionBaseProps = Omit<
      * without `query`.
      */
     empty?: QueryEmptyCopy
+    /**
+     * The loaded body's height in px. While `query` is pending the loading skeleton fills it, so
+     * the section does not jump when the data lands. Declared, not measured: a first load has no
+     * previous body to measure. Ignored without `query`.
+     */
+    loadingHeight?: number
     /** Rendered in the header row, in its own `CtlSlot` — hidden while the section is collapsed. */
     tabs?: ReactNode
     /** Renders a chevron toggle in the header; the header stays drawn when closed, only `children`
@@ -211,6 +218,7 @@ export function Section({
   actions,
   query,
   empty,
+  loadingHeight,
   tabs,
   collapsible = false,
   persistKey,
@@ -298,41 +306,50 @@ export function Section({
     ) : undefined
 
   return (
-    <div
-      className={cx(classes.root, classNames?.root, className)}
-      data-tier={tier}
-      {...(untitled && ariaLabel !== undefined && { role: 'group', 'aria-label': ariaLabel })}
-      {...(id !== undefined && { id })}
-      {...(rootStyle !== undefined && { style: rootStyle })}
-    >
-      {untitled ? (
-        <div className={cx(classes.tabsRow, classNames?.header)} data-basalt-hit-scope>
-          {headerActions}
-        </div>
-      ) : (
-        <WidgetHeader
-          tier={tier}
-          {...(headerProps as Pick<WidgetHeaderProps, HeaderOnlyKey>)}
-          title={title}
-          {...(classNames?.header !== undefined && { className: classNames.header })}
-          {...(headerActions !== undefined && { actions: headerActions })}
-        />
-      )}
-      {summary !== undefined && <div className={classes.summary}>{summary}</div>}
-      {(open || untitled) && (
-        <div id={bodyId} className={cx(classes.body, classNames?.body)}>
-          {query === undefined ? (
-            children
-          ) : (
-            // `tier="section"` is the compact one: a bare spinner rather than a 64px centred
-            // block, and the error alert without the page-level stack around it. A Section IS the
-            // region, so the state belongs inside its body, never around its header.
-            <QueryState query={query} tier="section" {...(empty !== undefined && { empty })}>
-              {children}
-            </QueryState>
-          )}
-        </div>
-      )}
-    </div>
+    <HostTitleContext value={title}>
+      <div
+        className={cx(classes.root, classNames?.root, className)}
+        data-tier={tier}
+        {...(untitled && ariaLabel !== undefined && { role: 'group', 'aria-label': ariaLabel })}
+        {...(id !== undefined && { id })}
+        {...(rootStyle !== undefined && { style: rootStyle })}
+      >
+        {untitled ? (
+          <div className={cx(classes.tabsRow, classNames?.header)} data-basalt-hit-scope>
+            {headerActions}
+          </div>
+        ) : (
+          <WidgetHeader
+            tier={tier}
+            {...(headerProps as Pick<WidgetHeaderProps, HeaderOnlyKey>)}
+            title={title}
+            {...(classNames?.header !== undefined && { className: classNames.header })}
+            {...(headerActions !== undefined && { actions: headerActions })}
+          />
+        )}
+        {summary !== undefined && <div className={classes.summary}>{summary}</div>}
+        {(open || untitled) && (
+          <div id={bodyId} className={cx(classes.body, classNames?.body)}>
+            {query === undefined ? (
+              children
+            ) : (
+              // `tier="section"` is the compact one: a bare spinner rather than a 64px centred
+              // block, and the error alert without the page-level stack around it. A Section IS the
+              // region, so the state belongs inside its body, never around its header.
+              <QueryState
+                query={query}
+                tier="section"
+                {...(empty !== undefined && { empty })}
+                {...(loadingHeight !== undefined && {
+                  loading: <LoadingState tier="section" style={{ minHeight: loadingHeight }} />,
+                })}
+              >
+                {children}
+              </QueryState>
+            )}
+          </div>
+        )}
+      </div>
+    </HostTitleContext>
   )
 }

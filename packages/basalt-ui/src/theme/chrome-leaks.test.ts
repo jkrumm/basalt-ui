@@ -276,10 +276,24 @@ describe('autofill does not recolour a field', () => {
   test('a themed .input re-points --field-depth over its resting depth, since its unlayered box-shadow outranks the layer', () => {
     const css = readFileSync(new URL('./controls.module.css', import.meta.url), 'utf8')
     expect(css).toMatch(
-      /\.input:-webkit-autofill\s*\{\s*--field-depth:\s*var\(--field-resting\),\s*0 0 0 100vmax var\(--vx-surface-field\) inset/,
+      /\.input:-webkit-autofill:focus-visible\s*\{\s*--field-depth:\s*var\(--field-resting\),\s*0 0 0 100vmax var\(--vx-surface-field\) inset/,
     )
     expect(css).toMatch(
       /\[data-variant='default'\]\s*\{\s*--field-resting:\s*var\(--vx-shadow-raised\)/,
     )
+  })
+})
+
+describe('autofill paints the field surface in every focus state (W49 S6)', () => {
+  const css = readFileSync(new URL('./controls.module.css', import.meta.url), 'utf8')
+  const rule = css.slice(
+    css.indexOf('.input:-webkit-autofill,'),
+    css.indexOf('/* An input cannot host'),
+  )
+
+  test('the autofill rule covers hover, focus and focus-visible, keeping the field depth', () => {
+    for (const state of [':hover', ':focus', ':focus-visible'])
+      expect(rule).toContain(`.input:-webkit-autofill${state}`)
+    expect(rule).toContain('0 0 0 100vmax var(--vx-surface-field) inset')
   })
 })

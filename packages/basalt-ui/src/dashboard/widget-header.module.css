@@ -10,9 +10,8 @@
  * `--mantine-spacing-*` fallbacks.
  *
  * Layout keys on the enclosing card's OWN width (`container: basalt-card`, declared by ChartCard /
- * StatCard / Section — docs/DESIGN-CORE.md § Layout, elevation, shapes), never the viewport: below 480px the subtitle folds
- * into the info glyph (a ChartCard keeps it, wrapped to two lines — wave 43); from 480px (wave 8) `value` + `delta` move onto the title row. Wrapping and
- * shrinking are unconditional. The subtitle ALSO folds (regardless of width) whenever the card's own
+ * StatCard / Section — docs/DESIGN-CORE.md § Layout, elevation, shapes), never the viewport: the subtitle stays visible text at every width (it wraps under the title); from 480px (wave 8) `value` + `delta` move onto the title row. Wrapping and
+ * shrinking are unconditional. The subtitle folds into the info glyph (regardless of width) only when the card's own
  * height is under 280px — see the `[data-basalt-card-short]` block below (wave 8's header-economy
  * law). No enclosing card, no container: the standard layout. Container conditions are px literals
  * of CONTAINER_CLASSES.
@@ -380,35 +379,16 @@
   color: var(--vx-muted);
 }
 
-/* Card narrower than 480px: the subtitle folds into the info glyph (`InfoGlyph`'s `note`, or
- * `.foldGlyph` when there is no `info`) — exactly one of the two shows. */
+/* Card narrower than 480px: the subtitle stays visible text under the title and wraps (a touch
+ * surface has no hover to open a fold glyph). A chart card also clamps it to two lines, then an
+ * ellipsis; the full text stays in the DOM. Only the short-height fold below still moves it. */
 @container basalt-card (max-width: 479.9px) {
-  .subtitle {
-    display: none;
-  }
-
-  .foldGlyph {
-    display: inline-flex;
-  }
-
-  .foldNote {
-    display: block;
-  }
-
-  /* A chart card keeps its subtitle (argo's line/dot key) on its own line at every width: up to two
-   * lines, then an ellipsis; the full text stays in the DOM. StatCard and Section still fold. The
-   * short-height block below out-ranks this (its selector is one class heavier). */
   [data-basalt-chart-header] .subtitle {
     display: -webkit-box;
     -webkit-box-orient: vertical;
     -webkit-line-clamp: 2;
     line-clamp: 2;
     overflow: hidden;
-  }
-
-  [data-basalt-chart-header] .foldGlyph,
-  [data-basalt-chart-header] .foldNote {
-    display: none;
   }
 }
 

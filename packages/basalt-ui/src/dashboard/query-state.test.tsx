@@ -18,6 +18,7 @@ import { describe, expect, test } from 'bun:test'
 import type { ReactNode } from 'react'
 import { renderToStaticMarkup } from 'react-dom/server'
 import { ErrorState, LoadingState, QueryState, resolveQueryBranch } from './query-state'
+import { Section } from './section'
 import type { QueryStateLike } from './query-state'
 
 type Row = { id: number }
@@ -407,5 +408,70 @@ describe('ErrorState title size (SPEC § 6.11)', () => {
   test('sm inside a card or section, md on a page, like the empty tile', () => {
     expect(title('section')).toContain('--text-fz:var(--mantine-font-size-sm)')
     expect(title('page')).toContain('--text-fz:var(--mantine-font-size-md)')
+  })
+})
+
+describe('a Section names its nested QueryState error', () => {
+  const failed = result({ isError: true, error: new Error('down') })
+  const alert = (): string => screen.getByRole('alert').textContent ?? ''
+
+  test('a titled Section around a failing QueryState reads "Could not load <title>"', () => {
+    render(
+      <MantineProvider>
+        <Section title="Practice record">
+          <QueryState query={failed}>{() => null}</QueryState>
+        </Section>
+      </MantineProvider>,
+    )
+    expect(alert()).toContain('Could not load practice record')
+  })
+
+  test('an explicit errorTitle wins over the section title', () => {
+    render(
+      <MantineProvider>
+        <Section title="Practice record">
+          <QueryState query={failed} errorTitle="Could not load sessions">
+            {() => null}
+          </QueryState>
+        </Section>
+      </MantineProvider>,
+    )
+    expect(alert()).toContain('Could not load sessions')
+    expect(alert()).not.toContain('practice record')
+  })
+
+  test('outside any Section the default is the bare "Could not load"', () => {
+    render(
+      <MantineProvider>
+        <QueryState query={failed}>{() => null}</QueryState>
+      </MantineProvider>,
+    )
+    expect(screen.getByText('Could not load')).toBeTruthy()
+  })
+
+  test("a Section's own `query` prop names itself too", () => {
+    render(
+      <MantineProvider>
+        <Section title="KPI trend" query={failed}>
+          <div>body</div>
+        </Section>
+      </MantineProvider>,
+    )
+    expect(alert()).toContain('Could not load KPI trend')
+  })
+
+  test('loadingHeight sets the pending skeleton min-height', () => {
+    const { container } = render(
+      <MantineProvider>
+        <Section
+          title="Practice record"
+          loadingHeight={600}
+          query={result({ fetchStatus: 'fetching' })}
+        >
+          <div>body</div>
+        </Section>
+      </MantineProvider>,
+    )
+    expect(container.querySelector<HTMLElement>('output')?.style.minHeight).toBe('600px')
   })
 })

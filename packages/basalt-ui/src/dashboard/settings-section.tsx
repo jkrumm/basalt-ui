@@ -33,7 +33,7 @@ import type { ReactNode } from 'react'
 import { WidgetHeader } from './widget-header'
 import type { WidgetHeaderTitleProps } from './widget-header'
 import { CtlSlot } from '../theme'
-import { alpha, VX } from '../tokens'
+import { VX } from '../tokens'
 import { cx } from '../common/props'
 import type { BasaltProps, SlotStylesProps } from '../common/props'
 import classes from './settings-section.module.css'
@@ -157,7 +157,9 @@ export function DangerZone({
     <Card
       className={cx(classNames?.root, className)}
       style={{
-        boxShadow: `${VX.shadowCard}, 0 0 0 1px ${alpha(VX.status.bad, 0.25)}`,
+        // The card's depth plus ONE token-derived edge: the status colour mixed into the panel
+        // surface, never an alpha over whatever sits behind it (that read differently per scheme).
+        boxShadow: `${VX.shadowCard}, 0 0 0 1px color-mix(in srgb, ${VX.status.bad} 40%, ${VX.surface.panel})`,
         ...style,
       }}
     >

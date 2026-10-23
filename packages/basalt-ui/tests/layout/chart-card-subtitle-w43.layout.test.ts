@@ -132,13 +132,14 @@ layout('Wave 43 ChartCard subtitle at 390', () => {
     expect(await p.computed(`${root} ${moduleClass('subtitle')}`, 'display')).toBe('none')
   })
 
-  test('a narrow Section keeps the fold: subtitle hidden, glyph shown', async () => {
+  test('a narrow Section keeps its scope visible (W50): subtitle shown, no fold glyph', async () => {
     const m = await measure(host('section'))
-    expect(m.display).toBe('none')
-    expect(m.glyph).toBeGreaterThan(0)
+    expect(m.display).not.toBe('none')
+    expect(m.subtitle.height).toBeGreaterThan(0)
+    expect(m.glyph).toBe(0)
   })
 
-  test('a Section nested in a ChartCard body keeps its own fold; the card header does not', async () => {
+  test('a Section nested in a ChartCard body shows its own subtitle too (W50)', async () => {
     const p = await openFixture(spec, PHONE)
     await p.settle()
     const root = host('nested')
@@ -148,6 +149,6 @@ layout('Wave 43 ChartCard subtitle at 390', () => {
       subtitles,
     )
     expect(outer).not.toBe('none')
-    expect(inner).toBe('none')
+    expect(inner).not.toBe('none')
   })
 })

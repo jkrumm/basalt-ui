@@ -63,8 +63,15 @@ html[data-mantine-color-scheme] .inputWrapper[data-variant='default']:not([data-
 }
 
 /* Browser autofill: the field surface over the UA colour, keeping the variant's resting depth. */
-.input:-webkit-autofill {
+.input:-webkit-autofill,
+.input:-webkit-autofill:hover,
+.input:-webkit-autofill:focus,
+.input:-webkit-autofill:focus-visible {
   --field-depth: var(--field-resting), 0 0 0 100vmax var(--vx-surface-field) inset;
+  /* The UA repaints its highlight on :focus (a Select's input stays focused while its list is open)
+   * and recolours the text; parking the background transition keeps the paint off the field. */
+  -webkit-text-fill-color: var(--vx-ink);
+  transition: background-color 600000s 0s;
 }
 
 /* An input cannot host the `[data-basalt-hit]` ::after overlay, so its touch floor is real height. */

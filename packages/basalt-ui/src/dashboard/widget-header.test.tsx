@@ -219,7 +219,7 @@ test('subtitle renders below the title row', () => {
   expect(screen.getByText('Your public identity.')).toBeDefined()
 })
 
-describe('the subtitle folds into the info glyph in a card under 480px (CSS-only, one shows)', () => {
+describe('the subtitle folds into the info glyph in a short card (CSS-only, one shows)', () => {
   test('subtitle with no info renders a fold glyph whose bubble is the subtitle', () => {
     render(<WidgetHeader tier="widget" title="Uptime" subtitle="Trailing 30 days." />)
     // The fold glyph's aria-label carries the subtitle text — it is otherwise the ONLY accessible
@@ -248,19 +248,13 @@ describe('the subtitle folds into the info glyph in a card under 480px (CSS-only
     expect(trigger).toContain('margin: calc((var(--basalt-info-glyph) - 24px) / 2)')
   })
 
-  test('the container rules hide the visible subtitle and show the fold pieces, and only there', () => {
-    expect(block('.foldGlyph,\n.foldNote')).toContain('display: none')
+  test('a narrow card keeps the subtitle as visible text; only a chart card clamps it', () => {
     const narrow = CSS.slice(CSS.indexOf('@container basalt-card (max-width: 479.9px)'))
-    expect(narrow).toContain('.subtitle {\n    display: none')
-    expect(narrow).toContain('.foldGlyph {\n    display: inline-flex')
-    // the bubble is a top-layer popover still inside the card's subtree: the same rule reveals it
-    expect(narrow).toContain('.foldNote {\n    display: block')
-    // a ChartCard (its header is marked `data-basalt-chart-header`) keeps its subtitle, clamped to two lines, and
-    // hides the fold pieces; the heavier short-card selector below still folds it
-    expect(narrow).toMatch(/\[data-basalt-chart-header\] \.subtitle \{[^}]*-webkit-line-clamp: 2/)
-    expect(narrow).toMatch(
-      /\[data-basalt-chart-header\] \.foldGlyph,\s*\[data-basalt-chart-header\] \.foldNote \{\s*display: none/,
-    )
+    const rule = narrow.slice(0, narrow.indexOf('\n}\n'))
+    expect(rule).not.toContain('.subtitle {\n    display: none')
+    expect(rule).not.toContain('.foldGlyph')
+    expect(rule).not.toContain('.foldNote')
+    expect(rule).toMatch(/\[data-basalt-chart-header\] \.subtitle \{[^}]*-webkit-line-clamp: 2/)
   })
 })
 
