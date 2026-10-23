@@ -100,7 +100,7 @@ describe('an all-muted parts bar', () => {
     expect(warnings()).toBe(0)
   })
   test('production is silent', () => {
-    const env = process.env.NODE_ENV
+    const env = process.env.NODE_ENV ?? 'test'
     process.env.NODE_ENV = 'production'
     try {
       mount({ label: 'P', segments: [muted('A'), muted('B'), muted('C')] })
