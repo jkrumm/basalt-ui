@@ -44,7 +44,7 @@
 /* The count of rows out of view each way (`data-above` / `data-below`, set by `useScrolledEdge`): small mono
    text at the end of the edge, over the sticky header (top) and the fade (bottom). Zero height: no shift. */
 .scroll[data-above]::before {
-  content: '↑ ' attr(data-above) ' earlier';
+  content: '↑ ' attr(data-above) ' above';
   display: block;
   position: sticky;
   inset-block-start: 0;
@@ -53,6 +53,8 @@
   /* Moved, not padded: padding would add height to the content. */
   translate: 0 var(--vx-space-stack-xs);
   text-align: end;
+  /* Inside the box: flush text lost its last glyph edge to the clip at 390. */
+  padding-inline-end: var(--vx-space-stack-xs);
   font-family: var(--basalt-font-mono);
   font-size: var(--vx-text-micro);
   line-height: 1.4;
@@ -62,11 +64,12 @@
 }
 
 .scroll[data-below]::after {
-  content: '↓ ' attr(data-below) ' later';
+  content: '↓ ' attr(data-below) ' below';
   display: flex;
   align-items: flex-end;
   justify-content: flex-end;
   box-sizing: border-box;
+  padding-inline-end: var(--vx-space-stack-xs);
   /* Self-contained, like the fade it shares the pseudo with: sticky and cancelled, so it adds no height. */
   position: sticky;
   inset-block-end: 0;
