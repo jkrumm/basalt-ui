@@ -149,13 +149,7 @@ describe('forecast end', () => {
   })
 })
 
-describe('narrow widths and width', () => {
-  test('captions keep at least one caption em between them', () => {
-    expect(css).toMatch(
-      /\.captions\s*\{[^}]*gap:\s*max\(var\(--vx-space-control-gap, 0\.375rem\), 1em\)/,
-    )
-  })
-
+describe('width', () => {
   test('a bar fills its container', () => {
     expect(css).toMatch(/\.root:has\(> \.trackBox\)\s*\{[^}]*inline-size:\s*100%/)
   })

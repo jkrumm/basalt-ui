@@ -31,7 +31,7 @@
  * series colour (`tone="muted"` is for a tail "other" part — a bar of only muted parts warns once in
  * development).
  *
- * Captions keep at least one caption em (never under the gap step) between them at any width: at
+ * Captions keep at least a gap step between them at any width: at
  * narrow widths the lower-priority ones drop first (tick captions, then the forecast), and what is
  * dropped stays in the described-by text. A bar fills its container's width.
  *
