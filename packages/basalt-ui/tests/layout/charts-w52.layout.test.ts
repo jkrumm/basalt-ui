@@ -109,7 +109,7 @@ layout('Wave 52 chart cards', () => {
     } else {
       // Keyboard path: Tab onto the chart; the focus alone opens the tooltip at its first point.
       // Tab until the chart itself holds focus: a card control (legend toggle, action) can come first.
-      for (let i = 0; i < 12; i += 1) {
+      for (let i = 0; i < 60; i += 1) {
         const inside = await p.raw.evaluate(
           (host) =>
             document.activeElement?.matches(`[data-testid="${host}"] [data-basalt-box] svg`) ===
@@ -121,8 +121,34 @@ layout('Wave 52 chart cards', () => {
       }
       // No further key: the tooltip is placed once, by the focus alone.
     }
-    await p.raw.waitForSelector('.ts-chart-tooltip:not([hidden])')
+    await p.raw.waitForSelector('.ts-chart-tooltip:not([hidden])', { timeout: 5000 })
     await p.settle()
+    // DIAG-TEMP
+    console.log(
+      'DIAG-ROOMY',
+      open,
+      id,
+      JSON.stringify(
+        await p.raw.evaluate((host) => {
+          const tip = document.querySelector('.ts-chart-tooltip:not([hidden])') as HTMLElement
+          const svg = document.querySelector(`[data-testid="${host}"] [data-basalt-box] svg`)
+          const sr = svg?.getBoundingClientRect()
+          const a = document.activeElement
+          return {
+            scrollY: window.scrollY,
+            inner: [window.innerWidth, window.innerHeight],
+            svg: sr && [sr.top, sr.bottom],
+            tip: [tip.getBoundingClientRect().top, tip.getBoundingClientRect().bottom],
+            tipStyle: tip.getAttribute('style'),
+            tipParent: tip.parentElement?.tagName + '.' + tip.parentElement?.className,
+            active: a ? a.tagName + '.' + a.getAttribute('class') : null,
+            scrollers: [...document.querySelectorAll('*')]
+              .filter((e) => e.scrollTop > 0)
+              .map((e) => e.tagName + '.' + e.className + ':' + e.scrollTop),
+          }
+        }, id),
+      ),
+    )
     return p.raw.evaluate((host) => {
       const tip = document.querySelector('.ts-chart-tooltip:not([hidden])')
       const svg = document.querySelector(`[data-testid="${host}"] [data-basalt-box] svg`)
