@@ -46,8 +46,8 @@ Queued behind all of it: Part 2's maturation Waves 20–28.
   `chore/bump-basalt-ui-2.28.0` in `rb/.claude/worktrees/` for the owner (agents never push rb). argo is on 2.27.2 and
   **paused by the owner** (2026-10-22): a major argo overhaul is coming, so argo gets no waves or PRs from here.
   weatherorb is the owner's own, coordinated from weatherorb. shutterflow is out (1.x).
-- No agent is running. Wave 53 is authored and `active` in PLAN but deliberately not spawned: its P2s are not needed
-  for phase 1.
+- **PAUSED 2026-10-24 for the owner's weekly limit (82 %, resets 2026-10-28 17:00).** No agent is running. Wave 55 is
+  authored and `active` in PLAN but not spawned; phase 2 starts after the reset with a fresh mother from this file.
 
 ## In flight (next actions, in order)
 
