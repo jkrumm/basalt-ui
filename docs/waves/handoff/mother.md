@@ -34,52 +34,43 @@ the build, then rendered critique (`basalt-ui shot` rounds scored by an isolated
 
 Queued behind all of it: Part 2's maturation Waves 20–28.
 
-## State (2026-10-17)
+## State (2026-10-24, phase 1 at the owner's sign-off)
 
-- npm latest **2.19.0**. argo is live on 2.19.0, with 10 of 13 pages redesigned (argo Waves 18–21); argo Wave 22 is
-  running (lead `argo-w22`). basalt Wave 35 is running (lead `basalt-ui-w35`). rb is on 2.13.1; obsidian,
-  linewatch and rollhook are on 2.11.1; weatherorb is on 2.14.0 with its UI held.
-- Boards for the owner: `~/Downloads/{basalt,argo}-design-review/` on the MacBook (rsync over `ssh iumac`).
-- agent-gateway was disconnected on 2026-10-17. Independent reviews run as fresh subagents with no shared context.
-- Owner decisions this cycle: Keel is a reference, not the target; the Wave 30 spec was approved; status text is
-  derived per surface; light/outline buttons are ink; no git-history purge of the Keel captures; only argo was
-  upgraded in parallel (the rest wait for phase 2); the dotfiles `frontend-routing.md` rule routes basalt vs
-  `/dataviz` vs plain React.
+- npm latest **2.29.0** (Waves 48–52 plus the CI fix #553). 2.28.0 (Waves 42–47) shipped 2026-10-23.
+- **The phase-1 exit target is met and confirmed** (owner-revised 2026-10-22, after the argo pause): no basalt-owned P1
+  in the fresh-agent expression trial, no P1 in the full playground audit. Trial v6 scored 58 (v3 32 → v4 40 → v5 52 →
+  v6 58): P1 0, P2 4 (basalt 2), P3 13 (basalt 7). Wave 52's audit opened all 67 contact sheets and all 40 Keel
+  captures: S1 93, S2 93, S3 88, S4 93, S5 89, S6 87, S7 87, S8 94, `shot detect` 100. Records:
+  `docs/waves/design-parity/w52/`.
+- Consumers: linewatch, rollhook and obsidian are live on 2.28.0. rb has a local, unpushed branch
+  `chore/bump-basalt-ui-2.28.0` in `rb/.claude/worktrees/` for the owner (agents never push rb). argo is on 2.27.2 and
+  **paused by the owner** (2026-10-22): a major argo overhaul is coming, so argo gets no waves or PRs from here.
+  weatherorb is the owner's own, coordinated from weatherorb. shutterflow is out (1.x).
+- No agent is running. Wave 53 is authored and `active` in PLAN but deliberately not spawned: its P2s are not needed
+  for phase 1.
 
 ## In flight (next actions, in order)
 
-**PARKED 2026-10-19 for the owner's weekly Claude limit (87 %, resets 2026-10-21 18:00 CEST).** No agent is running; every wave is closed and pushed, no
-worktrees are left. Resume after the reset with a fresh mother from this file.
-
-1. Released 2026-10-18/19: 2.22.0 → 2.27.2. 2.24.0 took ~25 min to reach the registry; `release.sh` now polls 60 min and
-   exits 3 ("still propagating, do not release again") instead of failing (#e7eb5573). Both grace ledgers are empty
-   (`series-palette`, `raw-spacing`, `inline-spacing`, `card-inset` promoted to error, each after argo measured 0).
-2. basalt Waves 38 (friction III), 39 (friction IV, r2: S2 99 / S3 98 / S4 98 / components 99) and 40 (friction V, the
-   fitness readout) are done. Wave 41 (friction VI) is done; Wave 42 "Data tables, responsive" is done (2026-10-22, #468–#475, unreleased).
-3. argo Waves 38–44 done; argo is on 2.27.2. **All 14 argo pages pass** the fresh reviewers (2026-10-19): Garmin 95 (w44,
-   after argo's own fix drew one date axis on the ACWR card), Home 97, WalkingPad 100, Reading 94, Hermes 98, Calendar 97,
-   Body comp 96, Usage 95, astro 94/94, m365 94/93, Warden 92, Agents 92, Strength 68 (argo w45, a complete 13-sheet read:
-   every component passes, no P0/P1). Against Keel: close everywhere. argo's PLAN has no active wave; the mother
-   authors each re-score wave before `rd wave` (the gate refuses otherwise).
-   **argo debt to schedule on resume (argo-only, Sonnet):** Strength P2s from w45: the Estimated 1RM dashed companion line has
-   no legend; the scan folds Volume/INOL at 390 (a lost fact); the "Balance" title scope; the accent on the selected timer
-   preset; low-contrast dark Warm-up bars; scan/Log/Timer/Recent and the expanded diagnostics have no shot anchor. Detail:
-   argo `docs/design/strength-tracker.md`, `docs/waves/PLAN.md` § Wave 45.
-4. basalt Wave 41 "argo friction VI" is done and released as 2.27.2 (#461/#463 info bubble below the header block, #462 slot
-   chip and one chart focus ring). Wave 42 "Data tables" is done (#468–#475, unreleased on
-   master). **Next:** basalt Wave 43 "argo upstream rows" (marked `active`). After it: Event list (44), Board and the
-   record page (45), Forms (46), rollout to argo + rb (47), the expression trial (48).
-5. Decided 2026-10-18: warden + agent-gateway get an authored `question` field, recorded as a backlog item in each repo's
-   `docs/BACKLOG.md` for a later structure-and-maturity pass by the owner; argo adds nothing until it ships.
-6. Owner decision queued: SPEC D37 (an errored/empty chart body keeps the loaded height per the SSR contract; the rubric
-   scores it as a void). Default until ruled: SPEC wins, the rubric is told about D37.
-7. Release cadence: release only when a consumer is waiting on the change. A patch that only makes argo re-shoot for
-   nothing waits for the next wave.
-8. Budget practice: basalt waves (component design) on Opus; argo bump/re-score waves on Sonnet. A narrow "friction" wave
-   (one fan-out, one round) costs a few % of the week; a full basalt wave ~10–15 h.
-9. Exit gate (phase 1) unchanged: every argo page passes at 1440/390 in both schemes, no Keel category ahead, the
-   fresh-agent expression trial (Wave 48 after renumbering) passes, the owner signs off. Then the owner decides whether to
-   pause before phase 2 (fresh mother, fleet rollout).
+1. **Owner sign-off on phase 1.** Until then, spawn nothing. Then the owner decides whether to pause before phase 2.
+2. **Owner decisions queued:**
+   - Light-scheme input borders measure about 1.04:1 against the card, below WCAG's 3:1 for component outlines. The
+     change touches every consumer's inputs. Recommendation: raise to 3:1.
+   - SPEC D37: an errored/empty chart body keeps the loaded height. Default until ruled: SPEC wins.
+   - rb: the owner pushes the 2.28.0 branch.
+   - rollhook: an optional Make Release so its dashboard image picks up 2.28.0.
+3. **Wave 53 (queued P2s):** the S3 "↑ N above" cue reading as a second, disagreeing count; the S6 danger-zone ring
+   missing in light; a loading ChartCard showing its real figure; a feed message ellipsised at 390; a fresh app's
+   axis still printing "Sept". Run it after sign-off or fold it into phase 2.
+4. **Phase 2:** a fresh mother; bump linewatch, rollhook, obsidian (and rb via the owner) to 2.29.0; email-gateway's
+   1.x → 2.0 migration; image-gateway (the owner is unsure it still needs a UI: deleting the UI beats migrating it);
+   Part 2 maturation Waves 20–28. argo bumps during its own overhaul.
+5. Release cadence: release only when a consumer is waiting on the change, and only with master CI green on the
+   exact head.
+6. Budget practice (owner-agreed): an Opus lead; Sonnet workers, reviewers and the trial agent (`RD_WAVE_MODEL=sonnet`
+   for `rd fan`; the lead inherits the spawn's model otherwise); at most 3 shot rounds; at most 3–4 parallel workers.
+   A basalt wave costs about 3–8 % of the week this way. Pause at about 90 % of the weekly limit.
+7. Decided 2026-10-18: warden + agent-gateway get an authored `question` field, recorded only as backlog in each repo's
+   `docs/BACKLOG.md`; implementing it needs an owner decision.
 
 ## Consumers and how to reach them
 
@@ -142,6 +133,17 @@ worktrees are left. Resume after the reset with a fresh mother from this file.
   release between its merges.
 - Screenshot live argo yourself with a Playwright script that reads the token from `secrets-run read
   op://common/api/SECRET` through an env var, and never pass the token through a tool argument.
+
+- **The merge train gates on the mini's `make check`, never on Linux CI.** master CI was red for about 15 commits
+  (Waves 51–52): ICU on Linux spells September `Sept` where macOS spells it `Sep`, and the CI job stops at its first
+  red step, hiding the layout failures behind it. A wave's close-out must confirm `gh run list --branch master
+  --workflow CI --limit 1` is green; a test never computes its expected date through the runtime's own `Intl`.
+- `rd fan` workers open DRAFT PRs, and `rd merge` cannot merge a draft (it runs `make check` first, then fails):
+  `gh pr ready` before the train. Six parallel workers starve each other's test suites; cap at 3–4.
+- Never put backticks in an `rd say` message: the sender's shell executes them.
+- A worker that runs `make check` in the background and ends its turn may never resume: brief foreground waits.
+- Close the tabs your fleet opens in other repos (`rd fan --clean <repo>`, `herdr pane close <pane>`); never close a
+  tab you did not open.
 
 ## Spawning a wave lead (template)
 
