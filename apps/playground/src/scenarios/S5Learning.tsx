@@ -152,7 +152,7 @@ function LearningStrip({ shotState }: ScenarioProps) {
       ...spark(
         'Days practised per week, last 12 weeks',
         DAYS_PER_WEEK,
-        (v) => `${fmtInt(v)} days practised`,
+        (v) => `${fmtInt(v)} ${v === 1 ? 'day' : 'days'} practised`,
       ),
     },
     {
