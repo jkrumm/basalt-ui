@@ -2221,24 +2221,78 @@ Every worker runs `typecheck`, `pre` and the full layout suite before reporting.
       (`Sep`, the caption inset, table slack). All fan worktrees and tabs removed (`rd fan --clean`).
       **Next — stopped: Wave 51 closed; orchestrated, nothing spawned.** Wave 52 is `active` for the orchestrator.
 
-## Wave 52 — The trial's P2s, the timeline cue, the fold label <!-- status: active -->
+## Wave 52 — The trial's P2s, the timeline cue, the fold label <!-- status: done -->
 
 Same shape as Wave 51. Budget as Wave 51 (Sonnet workers and reviewers, at most three shot rounds, at most three parallel
 workers, the train run between worker validations, worker PRs marked ready before the train). argo paused; the
 light-scheme input contrast stays the owner's. Every worker runs `typecheck`, `pre` and the full layout suite before
 reporting.
 
-- [ ] Upstream fixes for rows 205–211 (`argo-friction.md`): one `ChartCard` header anatomy with the value beside its
-      title and period (205); a `Section` loading default shaped like its child list (206); the focus tooltip on the
-      hover placement (207, closes 204); a `Section` beside cards (208); one empty-state design across the figures (209);
-      Retry that looks like a control (210); `EventList` row rhythm at a short list (211).
-- [ ] The basalt-owned findings in `design-parity/w51/rounds.md`: the S3 timeline's cut first row gets a cue (P2); the
-      `+N cols` label says what it reveals; the slack column in a wide table; then the P3s. Reproduce each in its W51
-      crop first. The playground-owned list goes to one playground worker.
-- [ ] Expression trial v6 from `scripts/trial-data.ts` and `design-parity/w50/trial-prompt.md` unchanged, a fresh agent
-      and a fresh scorer; report P1/P2/P3 by owner beside the score; compare against v5.
-- [ ] Re-run the full audit, every reviewer opening every sheet and the Keel captures. If gaps remain, append Wave 53 in
-      the same shape. The track closes when a fresh scorer finds nothing worth improving against basalt's rubric.
+- [x] Upstream fixes for rows 205–211 (three Sonnet workers, `rd fan`, agent-gateway `/review` per PR, a crop proving
+      every visual fix before merge, `rd merge`): #549 charts (one `ChartCard` headline anatomy: value, delta and period
+      one fact row under the title; a short card keeps its header inset so a row shares one title baseline; the in-plot
+      tooltip fence per axis, so the first-point focus and hover tooltips clear the ticks; a `BandStrip` tooltip below
+      its tick labels); #548 states (a `Section` over a lone `BarList`/`EventList`/`Meter` loads as that figure's
+      skeleton; `Meter emptyText` the shared `EmptyState` tile; Retry with a ≥ 3:1 border; the `readingAt="start"`
+      caption at the track start; row 208 as catalogue guidance: card a lone figure beside `ChartCard`s); #550 lists
+      (an "↑ N above / ↓ N below" cue in a bounded `EventList` box; an even row gap; the fold header names the first
+      folded column; the table slack rule (SPEC § 6.6 amended); the relative-time tooltip to the right; thin Board
+      rails). No playground card uses the `ChartCard` value hero and no scenario loads a `Section` over a figure, so rows
+      205–209 were proven by fixture crops from the layout harness, the rest by scenario crops beside their W51 crop.
+- [x] The basalt-owned W51 findings went into those PRs (the S3 cue, the fold label, the slack column, the tooltip, the
+      rails; the S1 390 contract-line tick kept as policy; the S2 "Goal 28" label measured with no free spot). The
+      playground-owned list went to one playground worker (#551: the skinfold table's Conditions column, the INOL zoned
+      meter, S1 info copy, the S2 pace labels, S3 awaiting counts and carded history, S4 period once and scoped titles, the
+      S5 journal width, the S6 danger copy).
+- [x] Expression trial v6 ([design-parity/w52/expression-trial-v6.md](design-parity/w52/expression-trial-v6.md)):
+      generator and prompt unchanged, tarball from `68d7d9ee`, fresh headless Sonnet agent, fresh Sonnet scorer: **58**
+      (v5 52). P1 0 (basalt 0, app 0), P2 4 (basalt 2, app 2), P3 13 (basalt 7, app 6); v5 was P1 0, P2 5 (2/3), P3 12
+      (6/6). Rows 205, 207, 209–211 fixed in its crops; 206 and 208 not exercised (every block carded). `€` this time.
+      `dist` look-ups 9 (v5 6). Rows 212–218.
+- [x] Re-run the full audit, every reviewer opening every sheet and the Keel captures
+      ([design-parity/w52/rounds.md](design-parity/w52/rounds.md)): four Sonnet reviewers, 67 of 67 sheets and the 40
+      Keel route captures each. S1 93, S2 93, S3 88, S4 93, S5 89, S6 87, S7 87, S8 94; Keel close on six, holds up on S4 and S8; `shot detect` 100; no P1
+      anywhere. Gaps remain → Wave 53 appended.
+      **Left behind:** #548–#551 on master plus this close-out (MIGRATING `### The trial's P2s, the timeline cue, the
+      fold label (Wave 52, …)` and its `### Visible without code change` line under the single `## Unreleased`,
+      `release-migrating --check` passes; rows 204–211 closed; rows 212–218 open; the trial and audit records; the
+      design-parity SPEC table-slack line). Every merge ran `make check` green in the train (two trains plus one, 0
+      failures). **Phase-1 exit confirmed:** no P1 in the full-coverage audit and no basalt-owned P1 in trial v6. The
+      scores drop against W51 because the full coverage reads strictly; most items are _unscored_ (visible in W51's
+      shots, named only now), so W51's provisional S1–S4 lines were too high. **Release-ready, not released** (owner:
+      report only): `v2.28.0..master` is a minor (two `feat:`s and the `fix:`es of Waves 48–52). Light-scheme input
+      contrast untouched (owner; the S6 reviewer's "inputs with no edge" P2 is held out of the tally). argo paused, no
+      argo PR. **Still open:** the S3 "N above" cue beside "Show earlier (12)" reads as a conflicting count (P2); the S6
+      danger ring missing in light (P2, W50 claimed both); trial rows 212 (a pending `ChartCard` renders its real figure
+      body) and 213 (one `EventList` message ellipsised at 390); the axis still prints `Sept` in a consumer app (row 216,
+      #546 did not reach that path); the fold hint truncated in its 28 px gutter; a short table's right-hand void.
+      Process: the train ran green each time with load ~20; load hit ~128 when one worker's layout suite and another's
+      fixture renders overlapped, so the train waited. `shot` across all eight scenarios takes ~12 min: run it in the
+      background with a poll, not under a 10-minute foreground timeout. A reviewer that skips the Keel captures is sent
+      back on the same agent. All fan worktrees and tabs removed (`rd fan --clean`).
+      **Next — stopped: Wave 52 closed; orchestrated, nothing spawned.** Wave 53 is `active` for the orchestrator.
+
+## Wave 53 — The cue, the danger ring, the pending card body <!-- status: active -->
+
+Same shape as Wave 52. Budget as Wave 52 (Sonnet workers and reviewers, at most three shot rounds, at most three parallel
+workers, the train run between worker validations, worker PRs marked ready before the train, a crop proving each fix
+before merge). argo paused; the light-scheme input contrast stays the owner's. Every worker runs `typecheck`, `pre` and
+the full layout suite before reporting.
+
+- [ ] Upstream fixes for rows 212–218 (`argo-friction.md`): a pending `ChartCard` loads its figure body as that
+      figure's skeleton (212); an `EventList` message wraps, never ellipsised (213); the `PageSummary` period with its
+      headline (214); no leading "·" on a wrapped headline (215); one date form across tooltip, axis and summary, and
+      `Sep` on a consumer's axis (216); the first-point tooltip clears the point's neighbourhood (217); the feed category
+      as a label, day bands that earn their space, a fallback `Meter` segment never the brightest (218).
+- [ ] The basalt-owned findings in `design-parity/w52/rounds.md`: the S3 box cue beside "Show earlier" (P2); the S6
+      danger ring in light (P2); then the P3s (the fold hint in its gutter, a short table's void, table time tooltips,
+      strip empties as the tile, strip caption placement, the S8 `Slider` end labels, one Retry style, …). Reproduce each
+      in its W52 crop first. The playground-owned list goes to one playground worker.
+- [ ] Expression trial v7 from `scripts/trial-data.ts` and `design-parity/w50/trial-prompt.md` unchanged, a fresh agent
+      and a fresh scorer; report P1/P2/P3 by owner beside the score; compare against v6.
+- [ ] Re-run the full audit, every reviewer opening every sheet and the Keel captures (four reviewers, as in Wave 52).
+      If gaps remain, append Wave 54 in the same shape. The track closes when a fresh scorer finds nothing worth
+      improving against basalt's rubric.
       **Left behind:**
 
 # Part 2, continued — queued behind Part 3
