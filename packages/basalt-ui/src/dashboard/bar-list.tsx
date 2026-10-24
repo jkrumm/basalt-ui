@@ -49,7 +49,7 @@
 import { Skeleton, VisuallyHidden } from '@mantine/core'
 import { EmptyState } from './empty-state'
 import { isValidElement } from 'react'
-import { useCardPending } from '../charts/card-pending-context'
+import { markFigureBody, useCardPending } from '../charts/card-pending-context'
 import type { ReactNode } from 'react'
 import { cx, pickDataAttributes } from '../common/props'
 import type { BasaltProps, DataAttributes } from '../common/props'
@@ -255,3 +255,5 @@ export function BarList({
     </div>
   )
 }
+
+markFigureBody(BarList)

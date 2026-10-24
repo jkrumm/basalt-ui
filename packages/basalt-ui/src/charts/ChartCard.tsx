@@ -19,7 +19,7 @@ import type { DeltaPolarity } from '../dashboard/delta-badge'
 import { WidgetHeader } from '../dashboard/widget-header'
 import { VX } from '../tokens'
 import { ChartCardContext } from './card-context'
-import { CardPendingContext } from './card-pending-context'
+import { CardPendingContext, isFigureBody } from './card-pending-context'
 import { BandStrip } from './BandStrip'
 import { Lines } from './Lines'
 import { StackedArea } from './StackedArea'
@@ -181,8 +181,9 @@ type ChartCardBaseProps = BasaltProps &
     /** Body height while a placeholder shows. Default: the chart height law, i.e. exactly the box an
      * unsized chart takes — pass the chart's own `height` when it states one, so a `<Suspense
      * fallback={<ChartCard state={{ pending: true }} …/>}>` reserves the final size.
-     * `'content'` is for a body that is not a chart (a list, a `Meter`): an error or empty state
-     * ends at its content. A pending state renders `children` as they are: a `BarList`, `EventList`
+     * `'content'` is for a body that is not a chart: an error or empty state
+     * ends at its content. A lone `BarList`, `EventList` or `Meter` body needs no `placeholderHeight`,
+     * it takes `'content'` itself (a number still wins). A pending state renders `children` as they are: a `BarList`, `EventList`
      * or `Meter` in the body loads as its own skeleton (a `BarList` or `EventList` at its `loadingRows`), any other body must
      * draw its own loading; a children-less `<Suspense fallback>` should pass a numeric height
      * instead. */
@@ -372,6 +373,15 @@ function bodyKindOf(node: ReactNode): BodyKind | undefined {
   return undefined
 }
 
+/** The body is a `BarList`, `EventList` or `Meter` (found through plain elements): it draws its own shape. */
+function hasFigureBody(node: ReactNode): boolean {
+  return Children.toArray(node).some(
+    (child) =>
+      isValidElement<{ children?: ReactNode }>(child) &&
+      (isFigureBody(child.type) || hasFigureBody(child.props.children)),
+  )
+}
+
 /** The loaded strip's legend row keeps its room under a pending box; other placeholders get no wrapper. */
 function reserveLegend(reserve: boolean, placeholder: ReactElement): ReactElement {
   return reserve ? (
@@ -408,7 +418,15 @@ export function ChartCard({
   const kind = resolved === 'pending' ? bodyKindOf(children) : undefined
   const plotGhost = ghost ?? kind?.ghost
   // `ghost` changes the shape only: the wrapped strip's height still sizes the pending box.
-  const pendingHeight = placeholderHeight ?? kind?.height
+  // A lone figure body needs no `placeholderHeight`: it ends at its content like `'content'`.
+  // A stated height still wins; a chart body is untouched (D37).
+  const figureBody =
+    resolved !== null &&
+    !isChartHeight(placeholderHeight) &&
+    bodyKindOf(children) === undefined &&
+    hasFigureBody(children)
+  const stateHeight = figureBody ? 'content' : placeholderHeight
+  const pendingHeight = stateHeight ?? kind?.height
   // One headline anatomy: the legacy `value`/`delta` hero is drawn as a fact (title, then value, delta
   // and period in one baseline group), never pushed to the far edge of the title row.
   const headline = facts ?? legacyFact(header)
@@ -459,7 +477,7 @@ export function ChartCard({
           {...(classNames?.body !== undefined && { className: classNames.body })}
           style={bodyClipStyle}
         >
-          {resolved === null || (resolved === 'pending' && placeholderHeight === 'content')
+          {resolved === null || (resolved === 'pending' && stateHeight === 'content')
             ? hostBody
             : reserveLegend(
                 kind?.legend === true,

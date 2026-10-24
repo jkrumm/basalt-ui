@@ -37,7 +37,7 @@
 import { Button, VisuallyHidden } from '@mantine/core'
 import { useId, useRef, useState, useSyncExternalStore } from 'react'
 import type { CSSProperties, ReactNode } from 'react'
-import { useCardPending } from '../charts/card-pending-context'
+import { markFigureBody, useCardPending } from '../charts/card-pending-context'
 import { cx, pickDataAttributes } from '../common/props'
 import type { BasaltProps, DataAttributes } from '../common/props'
 import { VirtualRows } from '../common/virtual-rows'
@@ -339,3 +339,5 @@ export function EventList({
     </div>
   )
 }
+
+markFigureBody(EventList)

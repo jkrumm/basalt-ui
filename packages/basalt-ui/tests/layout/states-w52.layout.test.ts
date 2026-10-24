@@ -75,6 +75,35 @@ layout('Wave 52 states', () => {
     },
   )
 
+  test.each(['bar', 'events', 'meter'])(
+    'a ChartCard over a lone %s with no placeholderHeight loads, empties and errors at the figure, not chart height',
+    async (kind) => {
+      const p = await openFixture(specFor('light'), DESKTOP_1440)
+      await p.settle()
+      const r = await p.raw.evaluate((kind) => {
+        const card = (state: string) =>
+          document.querySelector<HTMLElement>(`[data-testid="w54-card-${kind}-${state}"]`)
+        const h = (state: string) => card(state)?.getBoundingClientRect().height ?? 0
+        const pending = card('pending')
+        return {
+          loaded: h('loaded'),
+          pending: h('pending'),
+          empty: h('empty'),
+          error: h('error'),
+          busy: pending?.querySelector('[aria-busy="true"]') !== null,
+          ghost: pending?.querySelector('[aria-label="Loading chart"]') !== null,
+        }
+      }, kind)
+      expect(r.busy).toBe(true)
+      expect(r.ghost).toBe(false)
+      expect(r.loaded).toBeGreaterThan(0)
+      expect(Math.abs(r.pending - r.loaded) / r.loaded).toBeLessThanOrEqual(TOLERANCE)
+      // The default chart box is ~230 px under the header: a figure's empty/error ends well short.
+      expect(r.empty).toBeLessThan(200)
+      expect(r.error).toBeLessThan(220)
+    },
+  )
+
   test('an empty Meter is the BarList empty box: same class geometry, no track stripe', async () => {
     const p = await openFixture(specFor('light'), DESKTOP_1440)
     await p.settle()
