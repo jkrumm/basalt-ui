@@ -2272,27 +2272,58 @@ reporting.
       back on the same agent. All fan worktrees and tabs removed (`rd fan --clean`).
       **Next — stopped: Wave 52 closed; orchestrated, nothing spawned.** Wave 53 is `active` for the orchestrator.
 
-## Wave 53 — The cue, the danger ring, the pending card body <!-- status: active -->
+## Wave 53 — The cue, the danger ring, the pending card body <!-- status: done -->
 
-Same shape as Wave 52. Budget as Wave 52 (Sonnet workers and reviewers, at most three shot rounds, at most three parallel
-workers, the train run between worker validations, worker PRs marked ready before the train, a crop proving each fix
-before merge). argo paused; the light-scheme input contrast stays the owner's. Every worker runs `typecheck`, `pre` and
-the full layout suite before reporting.
+Same shape as Wave 52, run lean (owner, weekly budget at 79 %): Sonnet workers and reviewers, at most two shot rounds,
+at most three parallel workers, worker PRs marked ready before the train, a crop proving each fix before merge, one
+re-audit round on the touched routes only, a trial only if the fixes change guidance. Scope narrowed by the owner to the
+five queued P2s. argo paused; the light-scheme input contrast and D37 stay the owner's.
 
-- [ ] Upstream fixes for rows 212–218 (`argo-friction.md`): a pending `ChartCard` loads its figure body as that
-      figure's skeleton (212); an `EventList` message wraps, never ellipsised (213); the `PageSummary` period with its
-      headline (214); no leading "·" on a wrapped headline (215); one date form across tooltip, axis and summary, and
-      `Sep` on a consumer's axis (216); the first-point tooltip clears the point's neighbourhood (217); the feed category
-      as a label, day bands that earn their space, a fallback `Meter` segment never the brightest (218).
-- [ ] The basalt-owned findings in `design-parity/w52/rounds.md`: the S3 box cue beside "Show earlier" (P2); the S6
-      danger ring in light (P2); then the P3s (the fold hint in its gutter, a short table's void, table time tooltips,
-      strip empties as the tile, strip caption placement, the S8 `Slider` end labels, one Retry style, …). Reproduce each
-      in its W52 crop first. The playground-owned list goes to one playground worker.
-- [ ] Expression trial v7 from `scripts/trial-data.ts` and `design-parity/w50/trial-prompt.md` unchanged, a fresh agent
-      and a fresh scorer; report P1/P2/P3 by owner beside the score; compare against v6.
-- [ ] Re-run the full audit, every reviewer opening every sheet and the Keel captures (four reviewers, as in Wave 52).
-      If gaps remain, append Wave 54 in the same shape. The track closes when a fresh scorer finds nothing worth
-      improving against basalt's rubric.
+- [x] Upstream fixes for the trial P2s (two Sonnet workers, `rd fan`, agent-gateway `/review` per PR, a crop per fix,
+      `rd merge`): #555 charts (row 212: a pending `ChartCard` with `placeholderHeight="content"` renders a `BarList`,
+      `EventList` or `Meter` body as its own skeleton, through an internal Mantine-free pending context the figures read,
+      so `src/charts` imports nothing from `src/dashboard`; row 216 as guidance: the `basalt-charts` rule and the `formatX`
+      JSDoc send a custom date through `date()`, synced into the dogfooded copy); #556 lists (row 213: a feed sentence
+      wraps at every density; the S3 box cue beside "Show earlier" reads `↑ N loaded above`; the S6 danger ring painted
+      above the card's own light ring, which covered it, and mixed at 75 % in light for ≥ 3:1). Rows 214, 215, 217, 218
+      and the W52 P3s were out of the narrowed scope; no playground worker ran.
+- [x] The two basalt-owned W52 audit P2s (S3 cue, S6 danger ring) went into #556, each reproduced in its W52 crop and
+      proved by a W53 crop (`.design-parity/w53/w53-lists/crops/`, `w53-charts/`).
+- [x] Expression trial v7 ([design-parity/w53/expression-trial-v7.md](design-parity/w53/expression-trial-v7.md)), run
+      because #555 changed the shipped rule: tarball from `b94c96e2`, fresh headless Sonnet agent, fresh Sonnet scorer:
+      **~85** (v6 58), provisional (the scorer opened the 5 sheets and 4 page shots only). P1 0; P2 1 (basalt 1); P3 8
+      (4/4). The agent wrote its dates with `date()` (the new rule line); no `Sept`. Rows 212, 213, 216 fixed in its
+      crops; rows 219–222 opened.
+- [x] Re-audit of the touched routes only ([design-parity/w53/rounds.md](design-parity/w53/rounds.md)): S1 93, S3 91,
+      S5 87, S6 93; no P1, nothing new; the S3 cue and S6 ring P2s confirmed fixed; S5 keeps its playground P2. Gaps
+      remain → Wave 54 appended.
+      **Left behind:** #555 and #556 on master plus this close-out (MIGRATING `## Unreleased — the cue, the danger ring,
+      the pending card body (Wave 53)` with its `### Visible without code change`, `release-migrating --check` passes;
+      ledger rows 212, 213, 216 closed, 219–222 opened; the audit and trial records). Both merges ran `make check` green
+      in the train; master CI green on GitHub at `b94c96e2` (run 40071577993). **Release-ready, not released**:
+      `v2.29.0..master` is a patch (`fix:` only). Light-scheme input contrast and D37 untouched; argo paused, no argo
+      PR. **Still open:** row 219 (a pending card with no `placeholderHeight` over a lone figure gets the bar ghost: the
+      worker's named gap, ChartCard cannot see its child's kind without importing it) and 220–222; rows 214, 215, 217,
+      218; the W52 basalt P3 list; the S5 playground P2 and the playground P3 list. Process: a `rd merge` under a 590 s
+      `timeout` was killed mid-`make check` and left an orphaned `make check` in the worktree: run the train in the
+      background and poll it, never under a foreground timeout. The charts worker twice ended a turn with a background
+      layout run; it resumed on the notification. Worker tabs and worktrees removed (`rd fan --clean`).
+      **Next — stopped: Wave 53 closed; orchestrated, nothing spawned.** Wave 54 is `active` for the orchestrator.
+
+## Wave 54 — The figure card's states, the date form, the carried P3s <!-- status: active -->
+
+Same shape as Wave 53. Budget as the owner sets it at spawn time. argo paused; the light-scheme input contrast and D37
+stay the owner's.
+
+- [ ] Upstream fixes for rows 219–222 (`argo-friction.md`): a pending `ChartCard` over a lone `Meter`/`BarList`/
+      `EventList` loads in that figure's shape whatever `placeholderHeight` says (the figure can announce itself through
+      the W53 pending context) (219); an empty or error figure card ends at its content (220); one date form across
+      tooltip, axis and summary (221); a narrow time axis keeps a day anchor (222). Then rows 214, 215, 217, 218.
+- [ ] The basalt-owned P3s in `design-parity/w52/rounds.md` and `design-parity/w53/rounds.md`, each reproduced in its
+      crop first. The playground-owned list (the S5 "Last practised" vs "Today" P2 first) goes to one playground worker.
+- [ ] Expression trial v8 only if the fixes change guidance; the scorer opens every crop, not only the sheets.
+- [ ] Re-audit: the touched routes, or the full audit if the budget allows. If gaps remain, append Wave 55 in the same
+      shape. The track closes when a fresh scorer finds nothing worth improving against basalt's rubric.
       **Left behind:**
 
 # Part 2, continued — queued behind Part 3
