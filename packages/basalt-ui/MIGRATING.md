@@ -1043,7 +1043,15 @@ The `basalt-ui/router-tanstack` subpath is **removed** in 2.x, not moved: an imp
 | `NavItemMeta`, `NavGroupMeta`, `AnyNavItem`, `AnyNavGroup`, `AnyNavLink`, `FlatNavItem`, `NavConfig`, `NavGroupId`, `NavTabId`, `NavIndex`, `UseNavOptions`, `NavBinding`, `NavAnchor`, `NavAnchorProps`, `NavMobilePlacement` | deleted                                                                                                                                                                                                                                                                                                                                                                                                                                                    | no consumer names them; derive with `ComponentProps` / `Parameters` |
 | `useNav`, and `BasaltShell`'s `sections` / `mobileNav` props                                                                                                                                                                   | deleted: pass `nav={NAV}` (plus `badges`, `isActive`, `getScrollElement` — the old `useNav` options) to `BasaltShell`; it resolves the sidebar, the mobile bar and the breadcrumb itself. `mobileNav` tuning moves to `defineNav`'s `mobile`. argo `apps/dashboard/src/routes/__root.tsx`: replace `const nav = useNav(NAV, { badges })` + `{...nav}` with `nav={NAV} badges={…}` (migrates in W12; 1.x consumers stay on their pinned version until then) |
 
-## Unreleased — the cue, the danger ring, the pending card body (Wave 53)
+## Unreleased — the cue, the danger ring, the figure card's states (Waves 53–54)
+
+### The figure card's states (Wave 54, argo-friction rows 219 and 220)
+
+- **`ChartCard` over a lone figure.** A `ChartCard` whose body is a lone `BarList`, `EventList` or `Meter` (no chart
+  beside it) now takes `placeholderHeight="content"` when the prop is omitted: pending draws the figure's own
+  skeleton, not the bar ghost; empty and error end at their content. Opt-out: pass a numeric `placeholderHeight` to
+  keep the chart-height box. A chart body keeps D37 unchanged. This supersedes the Wave 38 table's "leave
+  `placeholderHeight` off" opt-out for a lone figure.
 
 ### The cue, the danger ring, the pending card body (Wave 53, argo-friction rows 212, 213 and 216)
 
@@ -1066,6 +1074,8 @@ names its opt-out.
 
 - Wave 53: pending `ChartCard` figure skeletons, wrapped feed sentences, the `loaded above/below` cue wording and the
   light-scheme danger ring: all render differently with no edit.
+- Wave 54: a `ChartCard` around a lone `BarList`/`EventList`/`Meter` with no `placeholderHeight` loads, empties and
+  errors in the figure's shape.
 
 ## 2.29.0 — the 2.28 bump friction (Wave 48)
 
@@ -1812,10 +1822,10 @@ has no way back; use a `ChartCard` (the catalogue's "distribution as a card's su
 
 No export is removed. `ChartCard`'s `placeholderHeight` gains the value `'content'`; the default is unchanged.
 
-| Before                                                                                                                                                                                        | Now                                                                                                                                                                                                    | Opt-out                                                        |
-| --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ | -------------------------------------------------------------- |
-| A `ChartCard` around a list or a `Meter` showed its error and empty state in a box at the chart height (or your `placeholderHeight` number) — about half void under Retry for a four-row list | With `placeholderHeight="content"` the error and empty state end at their content: one title, the cause, Retry, no void. A pending state leaves `children` in place, so the body draws its own loading | leave `placeholderHeight` off (or a number): D37 keeps the box |
-| A `BarList` loading skeleton was fixed 1.5rem blocks, shorter than the rows it became                                                                                                         | The skeleton is real empty rows with a skeleton over each: it keeps the loaded height in the compact and the wide layout                                                                               | none: it is a layout fix, the rows are the list's own          |
+| Before                                                                                                                                                                                        | Now                                                                                                                                                                                                    | Opt-out                                                                         |
+| --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ | ------------------------------------------------------------------------------- |
+| A `ChartCard` around a list or a `Meter` showed its error and empty state in a box at the chart height (or your `placeholderHeight` number) — about half void under Retry for a four-row list | With `placeholderHeight="content"` the error and empty state end at their content: one title, the cause, Retry, no void. A pending state leaves `children` in place, so the body draws its own loading | a number: D37 keeps the box (Wave 54: off no longer keeps it for a lone figure) |
+| A `BarList` loading skeleton was fixed 1.5rem blocks, shorter than the rows it became                                                                                                         | The skeleton is real empty rows with a skeleton over each: it keeps the loaded height in the compact and the wide layout                                                                               | none: it is a layout fix, the rows are the list's own                           |
 
 A chart body keeps D37 (the loaded height) by default. `BarList`'s own empty line is unchanged.
 
