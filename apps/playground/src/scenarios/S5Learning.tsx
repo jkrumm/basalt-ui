@@ -29,6 +29,7 @@ import { ListRow } from './agents/list-row'
 import { fmtInt } from './fixture-utils'
 import {
   DAYS_PER_WEEK,
+  DAYS_SINCE_LAST,
   FIRST_DATE,
   JOURNAL,
   KNOT_TITLE,
@@ -47,6 +48,7 @@ import {
   SESSIONS_PRIOR_30,
   fmtLearningDay,
   fmtMinutes,
+  fmtSince,
 } from './learning-data'
 import { RecordHeader } from './learning/header'
 import { LearningJournal } from './learning/journal'
@@ -122,6 +124,8 @@ function LearningStrip({ shotState }: ScenarioProps) {
             </Box>
           ),
         }
+  // The journal says "Today" for the latest day, so the card uses the same relative form.
+  const relative = fmtSince(DAYS_SINCE_LAST).replace(/^./, (c) => c.toUpperCase())
   const cells: StatStripCell[] = [
     {
       key: 'sessions',
@@ -141,11 +145,15 @@ function LearningStrip({ shotState }: ScenarioProps) {
     {
       key: 'last-practised',
       caption: 'Last practised',
-      info: `The date of the latest session. A review comes due ${NEXT_REVIEW_DAYS} days after it. The sparkline shows days practised per week, last 12 weeks.`,
-      value: fmtLearningDay(LAST_DATE),
+      info: `Time since the latest session, on ${fmtLearningDay(LAST_DATE)}. A review comes due ${NEXT_REVIEW_DAYS} days after it. The sparkline shows days practised per week, last 12 weeks.`,
+      value: relative,
       loading,
       ...cellState('Nothing practised yet'),
-      ...spark('Days practised per week, last 12 weeks', DAYS_PER_WEEK, (v) => `${fmtInt(v)} days`),
+      ...spark(
+        'Days practised per week, last 12 weeks',
+        DAYS_PER_WEEK,
+        (v) => `${fmtInt(v)} days practised`,
+      ),
     },
     {
       key: 'mean-rating',
