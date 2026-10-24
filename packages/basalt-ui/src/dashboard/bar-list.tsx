@@ -49,6 +49,7 @@
 import { Skeleton, VisuallyHidden } from '@mantine/core'
 import { EmptyState } from './empty-state'
 import { isValidElement } from 'react'
+import { useCardPending } from '../charts/card-pending-context'
 import type { ReactNode } from 'react'
 import { cx, pickDataAttributes } from '../common/props'
 import type { BasaltProps, DataAttributes } from '../common/props'
@@ -129,7 +130,7 @@ export function BarList({
   variant = 'thin',
   accentLeader = false,
   secondaryAlign,
-  loading = false,
+  loading: loadingProp = false,
   loadingRows,
   emptyText = 'No items to compare yet',
   className,
@@ -137,6 +138,8 @@ export function BarList({
   ...rest
 }: BarListProps) {
   const data = pickDataAttributes(rest)
+  const cardPending = useCardPending()
+  const loading = loadingProp || cardPending
   if (loading) {
     // Each row is a real, empty row with a skeleton laid over it, so the list takes the height of
     // the rows it will become in every layout instead of a fixed guess.

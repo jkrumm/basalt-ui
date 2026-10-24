@@ -2,11 +2,12 @@
  * A card's facts render ONLY in the ready state, in every body (a chart, a `placeholderHeight="content"`
  * list, a Meter) and every state: pending shows the facts skeleton, empty and error show neither.
  */
+import { MantineProvider } from '@mantine/core'
 import { render } from '@testing-library/react'
 import { describe, expect, test } from 'bun:test'
-import { Meter } from '../dashboard/meter'
-import { ChartCard } from './ChartCard'
-import type { ChartState } from './types'
+import { Meter } from './meter'
+import { ChartCard } from '../charts/ChartCard'
+import type { ChartState } from '../charts/types'
 
 const STATES: ReadonlyArray<readonly [string, ChartState | undefined]> = [
   ['ready', undefined],
@@ -26,15 +27,17 @@ describe('ChartCard facts gate', () => {
     for (const [name, state] of STATES) {
       test(`${body} body, ${name}: facts ${name === 'ready' ? 'visible' : 'hidden'}, skeleton ${name === 'pending' ? 'shown' : 'absent'}`, () => {
         const { container } = render(
-          <ChartCard
-            title="T"
-            subtitle="Basis"
-            facts={{ value: 'HEADLINE' }}
-            state={state}
-            {...(placeholderHeight !== undefined && { placeholderHeight })}
-          >
-            {children}
-          </ChartCard>,
+          <MantineProvider>
+            <ChartCard
+              title="T"
+              subtitle="Basis"
+              facts={{ value: 'HEADLINE' }}
+              state={state}
+              {...(placeholderHeight !== undefined && { placeholderHeight })}
+            >
+              {children}
+            </ChartCard>
+          </MantineProvider>,
         )
         const ready = name === 'ready'
         expect(container.querySelector('[data-basalt-fact]') !== null).toBe(ready)

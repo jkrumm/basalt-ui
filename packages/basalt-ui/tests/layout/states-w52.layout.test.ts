@@ -52,6 +52,29 @@ layout('Wave 52 states', () => {
     },
   )
 
+  test.each(['bar', 'events', 'meter'])(
+    'a pending ChartCard over a %s loads as that figure, never the real one, at its footprint',
+    async (kind) => {
+      const p = await openFixture(specFor('light'), DESKTOP_1440)
+      await p.settle()
+      const r = await p.raw.evaluate((kind) => {
+        const host = (state: string) =>
+          document.querySelector<HTMLElement>(`[data-testid="w53-card-${kind}-${state}"]`)
+        const loading = host('loading')
+        return {
+          loaded: host('loaded')?.getBoundingClientRect().height ?? 0,
+          loading: loading?.getBoundingClientRect().height ?? 0,
+          busy: loading?.querySelector('[aria-busy="true"]') !== null,
+          real: /project 0|step 0|40/.test(loading?.textContent ?? ''),
+        }
+      }, kind)
+      expect(r.busy).toBe(true)
+      expect(r.real).toBe(false)
+      expect(r.loaded).toBeGreaterThan(0)
+      expect(Math.abs(r.loading - r.loaded) / r.loaded).toBeLessThanOrEqual(TOLERANCE)
+    },
+  )
+
   test('an empty Meter is the BarList empty box: same class geometry, no track stripe', async () => {
     const p = await openFixture(specFor('light'), DESKTOP_1440)
     await p.settle()

@@ -1,4 +1,5 @@
 import type { ReactElement } from 'react'
+import { ChartCard } from '../../../src/charts/ChartCard'
 import { RetryButton } from '../../../src/common/retry-button'
 import { BarList } from '../../../src/dashboard/bar-list'
 import { EventList } from '../../../src/dashboard/event-list'
@@ -69,6 +70,22 @@ export function W52StatesFixture(): ReactElement {
             <Section title="Section" query={result(loaded)}>
               {figure(kind, loaded)}
             </Section>
+          </div>
+        )),
+      )}
+      {['bar', 'events', 'meter'].flatMap((kind) =>
+        [true, false].map((loaded) => (
+          <div
+            key={`card-${kind}-${loaded}`}
+            data-testid={`w53-card-${kind}-${loaded ? 'loaded' : 'loading'}`}
+          >
+            <ChartCard
+              title="Card"
+              placeholderHeight="content"
+              {...(!loaded && { state: { pending: true } })}
+            >
+              {figure(kind, true)}
+            </ChartCard>
           </div>
         )),
       )}
