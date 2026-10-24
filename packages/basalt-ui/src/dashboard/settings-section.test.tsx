@@ -100,13 +100,13 @@ describe('the DangerZone ring is one token-derived treatment, heavier in light',
     expect(danger).not.toMatch(/rgba?\(|#[0-9a-f]{3}/i)
   })
 
-  test('the card layers that ring on shadow-card inline', () => {
+  test('the card paints that ring above shadow-card inline', () => {
     renderWith(
       <DangerZone title="Delete">
         <div>rows</div>
       </DangerZone>,
     )
     const card = screen.getByText('Danger Zone').closest('.mantine-Card-root') as HTMLElement | null
-    expect(card?.style.boxShadow).toBe('var(--vx-shadow-card), 0 0 0 1px var(--danger-ring)')
+    expect(card?.style.boxShadow).toBe('0 0 0 1px var(--danger-ring), var(--vx-shadow-card)')
   })
 })

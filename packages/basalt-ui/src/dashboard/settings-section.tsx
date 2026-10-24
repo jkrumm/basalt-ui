@@ -161,8 +161,9 @@ export function DangerZone({
       {...pickDataAttributes(rest)}
       className={cx(classes.danger, classNames?.root, className)}
       style={{
-        // The card's depth plus ONE edge in the class's scheme-independent ring colour.
-        boxShadow: `${VX.shadowCard}, 0 0 0 1px var(--danger-ring)`,
+        // ONE edge in the class's ring colour, then the card's depth. The ring leads: the first shadow paints on
+        // top, and shadow-card carries its own 1px ring in light that would cover a ring layered after it.
+        boxShadow: `0 0 0 1px var(--danger-ring), ${VX.shadowCard}`,
         ...style,
       }}
     >
