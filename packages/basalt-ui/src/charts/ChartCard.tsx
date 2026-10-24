@@ -21,6 +21,8 @@ import { VX } from '../tokens'
 import { ChartCardContext } from './card-context'
 import { CardPendingContext, isFigureBody } from './card-pending-context'
 import { BandStrip } from './BandStrip'
+import { Bars } from './Bars'
+import { CartesianChart } from './CartesianChart'
 import { Lines } from './Lines'
 import { StackedArea } from './StackedArea'
 import classes from './chart-card.module.css'
@@ -373,13 +375,33 @@ function bodyKindOf(node: ReactNode): BodyKind | undefined {
   return undefined
 }
 
-/** The body is a `BarList`, `EventList` or `Meter` (found through plain elements): it draws its own shape. */
+/** Any chart element in the body: a figure beside one is not a lone figure. */
+const isChartElement = (type: unknown): boolean =>
+  type === Bars ||
+  type === CartesianChart ||
+  type === Lines ||
+  type === StackedArea ||
+  type === BandStrip
+
+/** What the walk found through plain elements: a figure, and whether any chart is among them. */
+function scanBody(node: ReactNode): { figure: boolean; chart: boolean } {
+  let figure = false
+  let chart = false
+  for (const child of Children.toArray(node)) {
+    if (!isValidElement<{ children?: ReactNode }>(child)) continue
+    if (isChartElement(child.type)) chart = true
+    if (isFigureBody(child.type)) figure = true
+    const inner = scanBody(child.props.children)
+    figure ||= inner.figure
+    chart ||= inner.chart
+  }
+  return { figure, chart }
+}
+
+/** The body is a lone `BarList`, `EventList` or `Meter` (through plain elements, no chart beside it): it draws its own shape. */
 function hasFigureBody(node: ReactNode): boolean {
-  return Children.toArray(node).some(
-    (child) =>
-      isValidElement<{ children?: ReactNode }>(child) &&
-      (isFigureBody(child.type) || hasFigureBody(child.props.children)),
-  )
+  const { figure, chart } = scanBody(node)
+  return figure && !chart
 }
 
 /** The loaded strip's legend row keeps its room under a pending box; other placeholders get no wrapper. */
@@ -421,10 +443,7 @@ export function ChartCard({
   // A lone figure body needs no `placeholderHeight`: it ends at its content like `'content'`.
   // A stated height still wins; a chart body is untouched (D37).
   const figureBody =
-    resolved !== null &&
-    !isChartHeight(placeholderHeight) &&
-    bodyKindOf(children) === undefined &&
-    hasFigureBody(children)
+    resolved !== null && !isChartHeight(placeholderHeight) && hasFigureBody(children)
   const stateHeight = figureBody ? 'content' : placeholderHeight
   const pendingHeight = stateHeight ?? kind?.height
   // One headline anatomy: the legacy `value`/`delta` hero is drawn as a fact (title, then value, delta
