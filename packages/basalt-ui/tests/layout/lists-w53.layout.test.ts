@@ -96,7 +96,7 @@ layout('Wave 53 DangerZone ring', () => {
     }
     const card = document.querySelector('[data-testid="w53-danger-host"] > *')
     const shadow = getComputedStyle(card).boxShadow
-    const ring = shadow.split(/,(?![^(]*\\))/).map((s) => s.trim()).findLast((s) => /0px 0px 0px 1px$/.test(s))
+    const ring = shadow.split(/,(?![^(]*\\))/).map((s) => s.trim()).find((s) => /0px 0px 0px 1px$/.test(s))
     const colour = ring.replace(/\\s*0px 0px 0px 1px\\s*/, '').trim()
     return { ring: norm(colour), page: norm(getComputedStyle(document.body).backgroundColor), panel: norm(getComputedStyle(card).backgroundColor), raw: ring }
   })()`
