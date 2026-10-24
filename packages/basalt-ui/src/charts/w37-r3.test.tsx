@@ -51,13 +51,8 @@ describe('daily tooltip header (item 1)', () => {
       {} as never,
     ).title as string
   }
-  const long = new Intl.DateTimeFormat('en-GB', {
-    weekday: 'short',
-    day: 'numeric',
-    month: 'short',
-    year: 'numeric',
-    timeZone: 'UTC',
-  }).format(days[1]?.t)
+  // basalt spells September `Sep` on every ICU, so the header is a literal, not this runtime's `Intl`.
+  const long = 'Wed, 2 Sep 2026'
   const short = (d: Date): string =>
     new Intl.DateTimeFormat('en-GB', { day: 'numeric', month: 'short', timeZone: 'UTC' }).format(d)
 
