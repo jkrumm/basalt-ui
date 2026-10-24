@@ -2310,19 +2310,57 @@ five queued P2s. argo paused; the light-scheme input contrast and D37 stay the o
       layout run; it resumed on the notification. Worker tabs and worktrees removed (`rd fan --clean`).
       **Next — stopped: Wave 53 closed; orchestrated, nothing spawned.** Wave 54 is `active` for the orchestrator.
 
-## Wave 54 — The figure card's states, the date form, the carried P3s <!-- status: active -->
+## Wave 54 — The figure card's states, the date form, the carried P3s <!-- status: done -->
 
-Same shape as Wave 53. Budget as the owner sets it at spawn time. argo paused; the light-scheme input contrast and D37
+Run lean (owner, weekly budget at 81 %, hard stop 90, the last wave this week): Sonnet workers and scorer, at most two
+shot rounds, at most three parallel workers, worker PRs marked ready before the train, a crop proving each fix before
+merge. Owner priority: row 219, then a full-coverage re-score of trial v7, then the carried P3s as budget allows. argo
+paused; the light-scheme input contrast and D37 stay the owner's.
+
+- [x] Upstream fixes, rows 219 and 220 (one Sonnet worker, `rd fan`, agent-gateway `/review`, `rd merge`): #559 — `Meter`,
+      `BarList` and `EventList` mark themselves with a static marker from `src/charts/card-pending-context.ts`, so
+      `ChartCard` sees a lone figure body without importing `src/dashboard`; with no numeric `placeholderHeight` such a
+      body takes `'content'` (pending draws the figure's skeleton, empty and error end at their content). A body with any
+      chart beside the figure (`Bars`, `CartesianChart`, `Lines`, `StackedArea`, `BandStrip`) is untouched; D37 unchanged.
+      Proved by layout-fixture crops (`.design-parity/w54/w54-figure-card/`, 36: three figures × pending/empty/error ×
+      scheme × viewport) beside the v7 trial's `channels`/`products`/`log` loading, empty and error crops. Rows 221, 222,
+      214, 215, 217, 218 not started (budget).
+- [x] Playground-owned S5 list, the P2 first (one Sonnet worker): #558 — "Last practised" reads "Today" like the
+      journal (the date moved into its info), the sparkline readout reads "N days practised" (pluralised), so the card no
+      longer carries a second recency unit. Crop `.design-parity/w54/w54-s5/png/…strip-last-practised…light__desktop__hover.png`
+      beside its W53 crop. The basalt-owned W52/W53 P3 list not started (budget).
+- [x] Trial v7 re-scored at full coverage instead of a trial v8 (no shipped rule changed): a fresh Sonnet
+      `basalt-design-reviewer` opened **111 of 111** shots: **~75** (the provisional ~85 read 9). P1 0; P2 2 (basalt 1,
+      row 219; app 1, new); P3 11 (basalt 4: rows 217, 220, 221, 222; app 7). No new basalt defect; the drop is app copy.
+      Recorded in [design-parity/w53/expression-trial-v7.md](design-parity/w53/expression-trial-v7.md) § Full-coverage
+      re-score. Row 219 is fixed after that trial, so a v8 would score it fixed.
+- [x] Re-audit skipped (budget): the only touched route is S5, proved by the worker's crops; no scorer ran on it.
+      Gaps remain → Wave 55 appended.
+      **Left behind:** #558 and #559 on master plus this close-out (MIGRATING `## Unreleased — the cue, the danger
+      ring, the figure card's states (Waves 53–54)` with a Wave 54 section and its `### Visible without code change`
+      line; the Wave 38 table's "leave `placeholderHeight` off" opt-out amended; `release-migrating --check` passes;
+      ledger rows 219, 220 closed). Both merges ran `make check` green in the train (two trains, 0 failures).
+      **Release-ready, not released**: `v2.29.0..master` is a patch (`fix:` only). Light-scheme input contrast and D37
+      untouched; argo paused, no argo PR. **Still open:** rows 221 (tooltip long date), 222 (no day anchor on a narrow
+      time axis), 214, 215, 217, 218; the basalt W52/W53 P3 list (`design-parity/w53/rounds.md` § Basalt-owned); the
+      remaining playground P3s; trial v7's new app findings are the trial app's, not basalt's. Process: the figure
+      worker's `test:layout` takes ~780–860 s, over a 600 s foreground cap, so it ran it in the background and ended a
+      turn waiting on it (resumed on the notification); brief the next worker to let the train's `make check` own the
+      layout suite. Worker tabs and worktrees removed (`rd fan --clean`).
+      **Next — stopped: owner pause for the weekly limit.** Wave 54 closed; orchestrated, nothing spawned. Wave 55
+      is `active` for the orchestrator.
+
+## Wave 55 — The date form, the axis anchor, the carried P3s <!-- status: active -->
+
+Same shape as Wave 54. Budget as the owner sets it at spawn time. argo paused; the light-scheme input contrast and D37
 stay the owner's.
 
-- [ ] Upstream fixes for rows 219–222 (`argo-friction.md`): a pending `ChartCard` over a lone `Meter`/`BarList`/
-      `EventList` loads in that figure's shape whatever `placeholderHeight` says (the figure can announce itself through
-      the W53 pending context) (219); an empty or error figure card ends at its content (220); one date form across
-      tooltip, axis and summary (221); a narrow time axis keeps a day anchor (222). Then rows 214, 215, 217, 218.
-- [ ] The basalt-owned P3s in `design-parity/w52/rounds.md` and `design-parity/w53/rounds.md`, each reproduced in its
-      crop first. The playground-owned list (the S5 "Last practised" vs "Today" P2 first) goes to one playground worker.
-- [ ] Expression trial v8 only if the fixes change guidance; the scorer opens every crop, not only the sheets.
-- [ ] Re-audit: the touched routes, or the full audit if the budget allows. If gaps remain, append Wave 55 in the same
+- [ ] Upstream fixes for rows 221 (one date form across tooltip, axis and summary) and 222 (a narrow time axis keeps a
+      day anchor), then rows 214, 215, 217, 218 (`argo-friction.md`).
+- [ ] The basalt-owned P3s in `design-parity/w53/rounds.md` § Basalt-owned, each reproduced in its crop first. The
+      remaining playground P3s go to one playground worker.
+- [ ] Expression trial v8 (row 219 fixed since v7); the scorer opens every shot, not only the sheets.
+- [ ] Re-audit: the touched routes, or the full audit if the budget allows. If gaps remain, append Wave 56 in the same
       shape. The track closes when a fresh scorer finds nothing worth improving against basalt's rubric.
       **Left behind:**
 
