@@ -1043,10 +1043,29 @@ The `basalt-ui/router-tanstack` subpath is **removed** in 2.x, not moved: an imp
 | `NavItemMeta`, `NavGroupMeta`, `AnyNavItem`, `AnyNavGroup`, `AnyNavLink`, `FlatNavItem`, `NavConfig`, `NavGroupId`, `NavTabId`, `NavIndex`, `UseNavOptions`, `NavBinding`, `NavAnchor`, `NavAnchorProps`, `NavMobilePlacement` | deleted                                                                                                                                                                                                                                                                                                                                                                                                                                                    | no consumer names them; derive with `ComponentProps` / `Parameters` |
 | `useNav`, and `BasaltShell`'s `sections` / `mobileNav` props                                                                                                                                                                   | deleted: pass `nav={NAV}` (plus `badges`, `isActive`, `getScrollElement` — the old `useNav` options) to `BasaltShell`; it resolves the sidebar, the mobile bar and the breadcrumb itself. `mobileNav` tuning moves to `defineNav`'s `mobile`. argo `apps/dashboard/src/routes/__root.tsx`: replace `const nav = useNav(NAV, { badges })` + `{...nav}` with `nav={NAV} badges={…}` (migrates in W12; 1.x consumers stay on their pinned version until then) |
 
-## Unreleased
+## Unreleased — the cue, the danger ring, the pending card body (Wave 53)
 
-_Nothing yet. Author the next section under this heading as `## Unreleased — <title>`; the
-release renames it and opens a new one here._
+### The cue, the danger ring, the pending card body (Wave 53, argo-friction rows 212, 213 and 216)
+
+Nothing to change unless a test, a selector or a style depends on the old markup, copy or geometry below. Each line
+names its opt-out.
+
+- **`ChartCard` pending body.** A pending `ChartCard` with `placeholderHeight="content"` renders a `BarList`,
+  `EventList` or `Meter` in its body as that figure's own loading skeleton, never the real figure. A child's explicit
+  `loading={false}` no longer overrides the card. Any other body still draws its own loading.
+- **`EventList`.** The `feed` density no longer clamps the actor + sentence line to one ellipsised line: it wraps, so
+  a row with a long sentence is taller than ~52 px. Beside a "Show earlier" control the bounded box's cue reads
+  `↑ N loaded above` / `↓ N loaded below`; without one it stays `↑ N above`.
+- **`DangerZone`.** The red ring paints above the card's own ring, and light mixes it at 75 % (≥ 3:1 against page
+  and panel), so it shows in both schemes.
+- **Charts rule.** On a time x axis omit `formatX`; a custom date text is `date(x, { timeZone: 'UTC' })` from
+  `basalt-ui/format`, never a raw `Intl.DateTimeFormat` (an `en-GB` formatter prints `Sept`, basalt prints `Sep`).
+  Guidance only: `basalt-ui sync` brings the rule line.
+
+### Visible without code change
+
+- Wave 53: pending `ChartCard` figure skeletons, wrapped feed sentences, the `loaded above/below` cue wording and the
+  light-scheme danger ring: all render differently with no edit.
 
 ## 2.29.0 — the 2.28 bump friction (Wave 48)
 
