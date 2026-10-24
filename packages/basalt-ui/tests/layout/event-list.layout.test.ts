@@ -3,7 +3,7 @@
  * - The active day header stays rendered and at the top of the scroller after scrolling, plain and windowed.
  * - Prepending earlier events (oldest-first) keeps the first visible row within a few px, plain and windowed.
  * - At 390 and 1440 the time leads the meta line, under the sentence's start; a long note wraps, never an ellipsis.
- * - At 1440 a long feed sentence clamps to one line.
+ * - A long feed sentence wraps at both sizes (lists-w53).
  */
 import { afterAll, describe, expect, test } from 'bun:test'
 import type { FixtureSpec } from './fixture/spec'
@@ -61,7 +61,13 @@ layout('Wave 44 EventList', () => {
     test(`${mode}: the day header is sticky at the top after scrolling`, async () => {
       const p = await openFixture(spec(mode), DESKTOP_1440)
       await p.raw.waitForSelector(`${HOST} time`)
-      await scrollTo(p, 1500)
+      // Mid-day in the third group, wherever the wrapped rows put it: not on a header hand-off.
+      const top = (await p.raw.evaluate(`(() => {
+        const box = ${SCROLLER}
+        const h = box.querySelectorAll('[data-day-header]')[2]
+        return h ? h.getBoundingClientRect().top - box.getBoundingClientRect().top + box.scrollTop + 150 : 1500
+      })()`)) as number
+      await scrollTo(p, top)
       const r = await stable(() =>
         p.raw.evaluate(`(() => {
           const box = ${SCROLLER}
@@ -154,22 +160,10 @@ layout('Wave 44 EventList', () => {
       for (const r of rows) {
         expect(Math.abs(r.timeLeft - r.lineLeft)).toBeLessThanOrEqual(EPS)
         expect(r.timeTop).toBeGreaterThanOrEqual(r.lineBottom - 1)
-        expect(r.lineHeight).toBeLessThan(r.lh * 1.5)
         expect(r.lineRight).toBeGreaterThanOrEqual(r.rowRight - EPS)
       }
     })
   }
-
-  test('1440: a long sentence clamps to one line in feed', async () => {
-    const p = await openFixture(spec('plain'), DESKTOP_1440)
-    await p.raw.waitForSelector(`${HOST} time`)
-    const r = (await p.raw.evaluate(`(() => {
-      const line = [...document.querySelectorAll('${HOST} ${moduleClass('line')}')].find((l) => l.textContent.includes('rebuilt the nightly'))
-      return { clipped: line.scrollWidth > line.clientWidth, height: line.getBoundingClientRect().height, lh: parseFloat(getComputedStyle(line).lineHeight) }
-    })()`)) as { clipped: boolean; height: number; lh: number }
-    expect(r.clipped).toBe(true)
-    expect(r.height).toBeLessThan(r.lh * 1.5)
-  })
 
   test('390: a long note wraps on the meta line — never an ellipsis, the full text in the box', async () => {
     const p = await openFixture(spec('wrap'), PHONE)

@@ -378,6 +378,8 @@ export type FixtureSpec = {
   w38Legend?: true
   /** Wave 52: a `Section` loading vs loaded per figure, the empty boxes, Retry and the start caption (`w52-*`). */
   w52States?: true
+  /** Wave 53: a `DangerZone` on the page surface (`w53-danger-host`). */
+  w53Danger?: true
   /** Four `ChartCard`s around a `BarList`: loaded, loading, empty, error, each at two widths (`data-testid="list-<state>-<narrow|wide>"`). */
   barListStates?: true
   /** Wave 38: a facts `ChartCard` over a chart and over a `content` list, at rest and pending (`w38-load-<chart|list>-<rest|loading>`). */

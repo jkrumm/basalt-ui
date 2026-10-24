@@ -63,6 +63,11 @@
   pointer-events: none;
 }
 
+/* Beside a "Show earlier (N)" control the count names what it counts, so it cannot read as a second event total. */
+.scroll[data-earlier][data-above]::before {
+  content: '↑ ' attr(data-above) ' loaded above';
+}
+
 .scroll[data-below]::after {
   content: '↓ ' attr(data-below) ' below';
   display: flex;
@@ -81,6 +86,10 @@
   line-height: 1.4;
   white-space: nowrap;
   color: var(--vx-muted);
+}
+
+.scroll[data-earlier][data-below]::after {
+  content: '↓ ' attr(data-below) ' loaded below';
 }
 
 /* Loading after rows: the skeleton keeps their last height, so the box does not collapse. */
@@ -223,14 +232,6 @@
 .line {
   grid-area: line;
   min-width: 0;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
-.row[data-density='timeline'] .line {
-  overflow: visible;
-  white-space: normal;
   overflow-wrap: anywhere;
 }
 

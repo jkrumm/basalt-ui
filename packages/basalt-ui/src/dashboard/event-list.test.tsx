@@ -466,4 +466,21 @@ describe('EventList feed note, clipped-feed cue and skeleton height', () => {
     at({ loading: false, items: [] })
     expect(box.style.getPropertyValue('--event-list-held')).toBe('')
   })
+
+  test('the box is flagged data-earlier only when it is bounded and has a Show earlier control', () => {
+    const flagged = (props: Partial<EventListProps>): boolean => {
+      const { container, unmount } = render(
+        <MantineProvider>
+          <EventList label="Activity" now={NOW} items={ITEMS} {...props} />
+        </MantineProvider>,
+      )
+      const has = container.querySelector('[data-earlier]') !== null
+      unmount()
+      return has
+    }
+    const earlier = { onLoad: () => {} }
+    expect(flagged({ height: 100, earlier })).toBe(true)
+    expect(flagged({ height: 100 })).toBe(false)
+    expect(flagged({ earlier })).toBe(false)
+  })
 })
