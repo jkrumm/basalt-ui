@@ -20,17 +20,6 @@ import type { ChartSeries } from './types'
 beforeEach(() => defineFormat({ locale: 'en-GB' }))
 afterEach(resetFormatDefaults)
 
-// The en-GB date as this runtime's ICU spells it ("Sep" or "Sept"): the contract is the locale's
-// own pattern, not one ICU's abbreviation.
-const gbDate = (at: Date): string =>
-  new Intl.DateTimeFormat('en-GB', {
-    weekday: 'short',
-    day: 'numeric',
-    month: 'short',
-    year: 'numeric',
-    timeZone: 'UTC',
-  }).format(at)
-
 const tint = 'var(--vx-area-top)'
 type Row = { t: Date; a: number | null; b: number; c: number }
 const day = (d: number): Date => new Date(Date.UTC(2026, 8, d))
@@ -240,7 +229,7 @@ describe('Lines', () => {
       xValue: day(2),
     } as ChartPoint
     const content = tooltip.content([point], {} as never)
-    expect(content.title).toBe(gbDate(new Date(Date.UTC(2026, 8, 2))))
+    expect(content.title).toBe('Wed, 2 Sep 2026')
     expect(content.rows.map((r) => r.label)).toEqual(['Alpha', 'Visible'])
   })
 
@@ -455,9 +444,9 @@ describe('tooltip', () => {
   })
 
   test('header: formatHeader wins, then a long UTC date', () => {
-    expect(headerOf({})).toBe(gbDate(new Date(Date.UTC(2026, 8, 2))))
+    expect(headerOf({})).toBe('Wed, 2 Sep 2026')
     // `formatX` shortens the ticks; a day-granular header stays the long date (w37 r3).
-    expect(headerOf({ formatX: () => 'X' })).toBe(gbDate(new Date(Date.UTC(2026, 8, 2))))
+    expect(headerOf({ formatX: () => 'X' })).toBe('Wed, 2 Sep 2026')
     expect(headerOf({ formatX: () => 'X', tooltip: { formatHeader: () => 'H' } })).toBe('H')
     expect(headerOf({ tooltip: { formatHeader: (d: Date) => d.toISOString().slice(0, 4) } })).toBe(
       '2026',
@@ -468,7 +457,7 @@ describe('tooltip', () => {
     const at = new Date(Date.UTC(2026, 8, 2, 13, 5))
     const def = compileCartesian({ ...base, data: [{ ...data[1], t: at } as Row] })
     const datum = { x: at, y: 0, series: 'a', datum: { t: at, a: 1 } }
-    expect(contentOf(def, datum, at).title).toBe(`${gbDate(new Date(Date.UTC(2026, 8, 2)))} 13:05`)
+    expect(contentOf(def, datum, at).title).toBe('Wed, 2 Sep 2026 13:05')
   })
 
   test('a number x with no formatX reads through the axis format', () => {

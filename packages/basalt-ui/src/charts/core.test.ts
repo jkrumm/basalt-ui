@@ -22,17 +22,6 @@ import type { ChartSeries } from './types'
 beforeEach(() => defineFormat({ locale: 'en-GB' }))
 afterEach(resetFormatDefaults)
 
-// The en-GB date as this runtime's ICU spells it ("Sep" or "Sept"): the contract is the locale's
-// own pattern, not one ICU's abbreviation.
-const gbDate = (at: Date): string =>
-  new Intl.DateTimeFormat('en-GB', {
-    weekday: 'short',
-    day: 'numeric',
-    month: 'short',
-    year: 'numeric',
-    timeZone: 'UTC',
-  }).format(at)
-
 type Row = { t: Date; v: number | null }
 const day = (d: number): Date => new Date(Date.UTC(2026, 8, d))
 const rows: Row[] = [1, 2, 3, 4, 5].map((d) => ({ t: day(d), v: d * 10 }))
@@ -491,7 +480,7 @@ describe('scales', () => {
         day(1),
       ),
     )
-    expect(utcHeaderDate(day(1))).toBe(gbDate(new Date(Date.UTC(2026, 8, 1))))
+    expect(utcHeaderDate(day(1))).toBe('Tue, 1 Sep 2026')
   })
 })
 
