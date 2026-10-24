@@ -38,6 +38,7 @@
 import { Button, VisuallyHidden } from '@mantine/core'
 import { useId, useRef, useState, useSyncExternalStore } from 'react'
 import type { CSSProperties, ReactNode } from 'react'
+import { useCardPending } from '../charts/card-pending-context'
 import { cx, pickDataAttributes } from '../common/props'
 import type { BasaltProps, DataAttributes } from '../common/props'
 import { VirtualRows } from '../common/virtual-rows'
@@ -161,7 +162,7 @@ export function EventList({
   order = 'newest-first',
   earlier,
   height,
-  loading = false,
+  loading: loadingProp = false,
   loadingRows,
   empty = DEFAULT_EMPTY,
   className,
@@ -169,6 +170,8 @@ export function EventList({
   ...rest
 }: EventListProps) {
   const clock = useClientClock()
+  const cardPending = useCardPending()
+  const loading = loadingProp || cardPending
   // The scroll node as state, so a windowed list can wait for it (see `VirtualRows` `scrollRoot`).
   const [scrollEl, setScrollEl] = useState<HTMLDivElement | null>(null)
   const labelId = useId()

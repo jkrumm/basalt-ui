@@ -61,6 +61,7 @@
  * <Meter shape="ring" label="Cache hit rate" value={87} max={100} format={(v) => `${v}%`} />
  */
 import { useContext } from 'react'
+import { useCardPending } from '../charts/card-pending-context'
 import type { ReactNode } from 'react'
 import { pickDataAttributes } from '../common/props'
 import type { BasaltProps, DataAttributes } from '../common/props'
@@ -238,10 +239,11 @@ export function Meter(props: MeterProps) {
   const ring = props.shape === 'ring'
   warnInvalidTrack(min, max)
   const host = useContext(VisualSlotContext)
+  const cardPending = useCardPending()
   const hostTone = host?.tone
   const hostColor = hostTone === undefined ? undefined : VX.status[hostTone]
 
-  const loading = props.loading === true || host?.loading === true
+  const loading = props.loading === true || host?.loading === true || cardPending
   if (loading && ring) return <MeterRingLoading label={label} shell={shell} />
 
   // A loading bar is the loaded bar on a placeholder reading (its captions painted as skeleton), so

@@ -19,6 +19,7 @@ import type { DeltaPolarity } from '../dashboard/delta-badge'
 import { WidgetHeader } from '../dashboard/widget-header'
 import { VX } from '../tokens'
 import { ChartCardContext } from './card-context'
+import { CardPendingContext } from './card-pending-context'
 import { BandStrip } from './BandStrip'
 import { Lines } from './Lines'
 import { StackedArea } from './StackedArea'
@@ -181,9 +182,10 @@ type ChartCardBaseProps = BasaltProps &
      * unsized chart takes — pass the chart's own `height` when it states one, so a `<Suspense
      * fallback={<ChartCard state={{ pending: true }} …/>}>` reserves the final size.
      * `'content'` is for a body that is not a chart (a list, a `Meter`): an error or empty state
-     * ends at its content. A pending state renders `children` as they are, so the body must draw
-     * its own loading (`BarList loading`, a loading `Meter`); a children-less `<Suspense
-     * fallback>` should pass a numeric height instead. */
+     * ends at its content. A pending state renders `children` as they are: a `BarList`, `EventList`
+     * or `Meter` in the body loads as its own skeleton (set its `loadingRows`), any other body must
+     * draw its own loading; a children-less `<Suspense fallback>` should pass a numeric height
+     * instead. */
     placeholderHeight?: number | ResponsiveChartHeight | 'content' | undefined
     /** The pending plot's ghost: `'bars'` (default), `'line'` for a line or area chart, or the bar
      * count when the loaded chart's data length is known, `'band'` for a `BandStrip`. Omitted, a
@@ -422,7 +424,11 @@ export function ChartCard({
   const { subtitle, value: _v, delta: _d, deltaPeriod: _p, deltaPolarity: _pol, ...rest } = header
   const headerProps = headline === undefined ? header : rest
 
-  const hostBody = <HostTitleContext value={header.title}>{children}</HostTitleContext>
+  const hostBody = (
+    <HostTitleContext value={header.title}>
+      <CardPendingContext value={resolved === 'pending'}>{children}</CardPendingContext>
+    </HostTitleContext>
+  )
 
   return (
     <ChartCardContext.Provider value>
