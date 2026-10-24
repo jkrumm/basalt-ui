@@ -1169,6 +1169,32 @@ names its opt-out.
 - **CLI.** A `shot` hover crop marks every tooltip outside its own trigger as seen, so a tooltip woken on the way to
   the trigger no longer shows in the crop.
 
+### The trial's P2s, the timeline cue, the fold label (Wave 52, argo-friction rows 205–211)
+
+Nothing to change unless a test, a selector or a style depends on the old markup, copy or geometry below. Each line
+names its opt-out.
+
+- **`ChartCard` headline.** `value`/`delta`/`deltaPeriod` render as one fact row under the title (the `facts`
+  anatomy), no longer at the title row's far right with the period wrapped below; at error/empty the figure hides and
+  pending shows a skeleton, as `facts` does. Prefer `facts`; no prop was removed. A short card (under 280 px) keeps
+  the full 12 px header inset at 480 px and wider, so a row of cards shares one title baseline.
+- **Chart tooltips.** The in-plot fence applies per axis, so the first-point tooltip on hover and keyboard focus stays
+  off the tick labels; a `BandStrip` tooltip opened below the strip starts under its x tick labels.
+- **`Section` loading.** A `Section` with a `query` and no `loadingHeight` over a lone `BarList`, `EventList` or
+  `Meter` loads as that figure's own skeleton (the child's `loadingRows`, default 5). Keep the old skeleton by
+  declaring `loadingHeight`. A wrapped or memoised figure falls back to it.
+- **`Meter` empty.** `emptyText` draws the shared `EmptyState` tile (the `BarList` box) with no track; a blank string
+  is ignored. Omit `emptyText` for the blank track at loaded height. A `readingAt="start"` start caption sits at the
+  track start.
+- **Retry.** The shared Retry button has a visible border (≥ 3:1 against its surface); box size unchanged.
+- **`EventList`.** A bounded box that cuts rows says so: `↑ N above` on the sticky day header and `↓ N below` over the
+  bottom fade. Non-rail rows take an even vertical gap (~3 px taller). The relative-time tooltip opens to the right.
+- **Tables.** The fold header shows the first folded name under `+N cols`. The slack goes to the last data column
+  when it is `text`, `entity` or kindless, else to the last `text` column holding a long cell (> 32 chars), else to a
+  trailing spacer; an `entity` followed by figures no longer takes it, and an all-short `text` column fits its
+  content on one line.
+- **`Board`.** Column scroll thumbs are thin (6 px) and quiet.
+
 ### Visible without code change
 
 - Error titles, the chart empty copy, the Meter separators/forecast caption/full width, the EventList chip flow and
@@ -1180,6 +1206,9 @@ names its opt-out.
 - Wave 51: anchors on composite roots (more crops per page), host-named table errors, the fold-header button and
   popover, table slack, level chart cards, fact tone on the comparison, the BarList delta track, the earlier button,
   the Board mask, `Sep`, the selection tint: all render differently with no edit.
+- Wave 52: the `ChartCard` headline row and short-card inset, chart tooltip fences, `Section` figure skeletons,
+  the `Meter` empty tile, the Retry border, the `EventList` above/below cue and row gap, the fold hint, table slack and
+  the Board rails: all render differently with no edit.
 
 ## 2.28.0
 
