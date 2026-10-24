@@ -33,9 +33,16 @@ describe('ChartCard pending body shaped like its figure', () => {
   })
 
   test('an EventList body loads as its row skeletons', () => {
-    const c = mount(<EventList label="Events" items={[]} loadingRows={9} />)
+    const c = mount(
+      <EventList
+        label="Events"
+        items={[{ id: 'e1', at: new Date(0), actor: 'Ada', title: 'Real event' }]}
+        loadingRows={9}
+      />,
+    )
     expect(c.querySelector('[aria-busy="true"]')).not.toBeNull()
-    expect(c.querySelectorAll('[aria-hidden]').length).toBeGreaterThanOrEqual(9)
+    expect(c.textContent).not.toContain('Real event')
+    expect(c.textContent).toContain('Loading Events')
   })
 
   test('a Meter body loads as the Meter loading tree, not its reading', () => {

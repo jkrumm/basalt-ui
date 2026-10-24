@@ -1,7 +1,7 @@
 /**
  * Set by a pending `ChartCard` around a body it renders as-is (`placeholderHeight="content"`): a
  * `BarList`, `EventList` or `Meter` in that body reads it and draws its own loading skeleton, so a
- * loading card never shows its real figure. Internal and Mantine-free: never exported.
+ * loading card never shows its real figure. Internal (not in the package's public exports) and Mantine-free.
  */
 import { createContext, useContext } from 'react'
 
