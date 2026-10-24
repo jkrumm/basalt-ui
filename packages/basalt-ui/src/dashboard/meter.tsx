@@ -61,7 +61,7 @@
  * <Meter shape="ring" label="Cache hit rate" value={87} max={100} format={(v) => `${v}%`} />
  */
 import { useContext } from 'react'
-import { useCardPending } from '../charts/card-pending-context'
+import { markFigureBody, useCardPending } from '../charts/card-pending-context'
 import type { ReactNode } from 'react'
 import { pickDataAttributes } from '../common/props'
 import type { BasaltProps, DataAttributes } from '../common/props'
@@ -311,3 +311,5 @@ export function Meter(props: MeterProps) {
     />
   )
 }
+
+markFigureBody(Meter)

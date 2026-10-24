@@ -1,4 +1,5 @@
 import type { ReactElement } from 'react'
+import type { ChartState } from '../../../src/charts/types'
 import { ChartCard } from '../../../src/charts/ChartCard'
 import { RetryButton } from '../../../src/common/retry-button'
 import { BarList } from '../../../src/dashboard/bar-list'
@@ -55,6 +56,14 @@ function figure(kind: string, loaded: boolean): ReactElement {
   return <Meter label="Low" value={loaded ? 40 : null} min={0} max={100} />
 }
 
+/** Wave 54: a lone figure in a `ChartCard` with no `placeholderHeight`, at rest and in each state. */
+const W54_STATES: readonly (readonly [string, ChartState | undefined])[] = [
+  ['loaded', undefined],
+  ['pending', { pending: true }],
+  ['empty', { empty: 'Nothing here' }],
+  ['error', { error: new Error('The request failed.') }],
+]
+
 const kg = (v: number): string => `${v.toFixed(1)} kg`
 
 /** Wave 52: Section loading shape, one empty box, Retry as a control, the start caption's place. */
@@ -84,6 +93,15 @@ export function W52StatesFixture(): ReactElement {
               placeholderHeight="content"
               {...(!loaded && { state: { pending: true } })}
             >
+              {figure(kind, true)}
+            </ChartCard>
+          </div>
+        )),
+      )}
+      {['bar', 'events', 'meter'].flatMap((kind) =>
+        W54_STATES.map(([name, state]) => (
+          <div key={`w54-${kind}-${name}`} data-testid={`w54-card-${kind}-${name}`}>
+            <ChartCard title="Card" state={state}>
               {figure(kind, true)}
             </ChartCard>
           </div>
