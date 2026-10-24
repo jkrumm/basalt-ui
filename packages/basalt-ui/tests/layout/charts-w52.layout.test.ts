@@ -118,33 +118,7 @@ layout('Wave 52 chart cards', () => {
       }
       // No further key: the tooltip is placed once, by the focus alone.
     }
-    // DIAG-TEMP
-    if (open === 'focus')
-      console.log(
-        'DIAG-FOCUS',
-        JSON.stringify(
-          await p.raw.evaluate((host) => {
-            const a = document.activeElement
-            const root = document.querySelector(`[data-testid="${host}"]`)
-            return {
-              active: a
-                ? `${a.tagName}.${a.getAttribute('class')}#${a.getAttribute('tabindex')}`
-                : null,
-              inside: root?.contains(a) ?? false,
-              focusables: [...(root?.querySelectorAll('[tabindex]') ?? [])].map(
-                (e) => `${e.tagName}.${e.getAttribute('class')}#${e.getAttribute('tabindex')}`,
-              ),
-              tips: document.querySelectorAll('.ts-chart-tooltip').length,
-              tipHidden: [...document.querySelectorAll('.ts-chart-tooltip')].map((t) =>
-                t.hasAttribute('hidden'),
-              ),
-              focusVisible: a?.matches(':focus-visible'),
-              hasFocus: document.hasFocus(),
-            }
-          }, id),
-        ),
-      )
-    await p.raw.waitForSelector('.ts-chart-tooltip:not([hidden])', { timeout: 3000 })
+    await p.raw.waitForSelector('.ts-chart-tooltip:not([hidden])')
     await p.settle()
     return p.raw.evaluate((host) => {
       const tip = document.querySelector('.ts-chart-tooltip:not([hidden])')
