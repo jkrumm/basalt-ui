@@ -173,9 +173,10 @@ only when the number has no history, target or parts; the reviewer fails a card 
 - Rows: 40 (hold). Cell text `sm` (§ 5).
 - **Cell kinds** via `meta.kind`: `entity` (avatar or glyph + name, never wraps), `status` (status chip,
   § 6.10), `number` and `money` (sans `tabular-nums` per D33, right-aligned, unit in the header, never in the
-  cell), `relative-time` (mono muted, full date in a tooltip below the cell, also on focus), `meter` (§ 6.3
+  cell), `relative-time` (mono muted, full date in a tooltip right of the cell, also on focus), `meter` (§ 6.3
   inline), `text` (the one kind that wraps; every other cell holds one line). Kinded columns size to content; the
-  last `text` column takes the slack, else the last `entity` column (Wave 51), else a trailing spacer (Wave 42).
+  slack goes to the last data column when it is `text`, `entity` or kindless, else to the last `text` column holding
+  a long cell (> 32 chars), else to a trailing spacer (Wave 52); an all-short `text` column fits and holds one line.
 - **Responsive** (§ 9.1): fold by `meta.priority` (exists) → at compact the first column pins (opaque
   background) and the rest scroll horizontally in a keyboard-reachable container → `renderCard` only for
   non-comparable rows. A folded column stays reachable and `aria-colcount`/`aria-colindex` stay correct.
