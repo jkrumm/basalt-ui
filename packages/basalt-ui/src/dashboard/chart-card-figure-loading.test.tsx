@@ -10,6 +10,7 @@ import { BarList } from './bar-list'
 import { EventList } from './event-list'
 import { Meter } from './meter'
 import { ChartCard } from '../charts/ChartCard'
+import { Bars } from '../charts/Bars'
 import { Lines } from '../charts/Lines'
 import type { ChartState } from '../charts/types'
 
@@ -88,6 +89,23 @@ describe('ChartCard pending body shaped like its figure', () => {
       const stated = mount(meter, state, 120)
       expect(figure.querySelector('[data-basalt-box]')).toBeNull()
       expect(stated.querySelector('[data-basalt-box]')).not.toBeNull()
+    })
+
+    test('a Bars body beside a Meter keeps the chart ghost, not the Meter skeleton', () => {
+      const mixed = (
+        <>
+          <Bars
+            ariaLabel="B"
+            data={[{ t: 'a', v: 2 }]}
+            x={(d) => d.t}
+            bars={[{ key: 'v', label: 'V', color: 'var(--vx-line)', getValue: (d) => d.v }]}
+          />
+          {meter}
+        </>
+      )
+      const c = mount(mixed, { pending: true }, null)
+      expect(c.querySelector('[aria-label="Loading chart"]')).not.toBeNull()
+      expect(c.querySelector('[data-meter-loading]')).toBeNull()
     })
 
     test('a Lines body beside a Meter keeps the chart ghost, not the Meter skeleton', () => {
