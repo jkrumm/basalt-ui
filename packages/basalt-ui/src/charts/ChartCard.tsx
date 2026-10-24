@@ -183,7 +183,7 @@ type ChartCardBaseProps = BasaltProps &
      * fallback={<ChartCard state={{ pending: true }} …/>}>` reserves the final size.
      * `'content'` is for a body that is not a chart (a list, a `Meter`): an error or empty state
      * ends at its content. A pending state renders `children` as they are: a `BarList`, `EventList`
-     * or `Meter` in the body loads as its own skeleton (set its `loadingRows`), any other body must
+     * or `Meter` in the body loads as its own skeleton (a `BarList` or `EventList` at its `loadingRows`), any other body must
      * draw its own loading; a children-less `<Suspense fallback>` should pass a numeric height
      * instead. */
     placeholderHeight?: number | ResponsiveChartHeight | 'content' | undefined

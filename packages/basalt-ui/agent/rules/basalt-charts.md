@@ -26,7 +26,7 @@ Every cartesian chart is `CartesianChart` or a kind built on it; props are in th
 - Size is `height` (a number or per container class); the host measures the width. [type ResponsiveChartHeight]
 - A pending, failed or empty query is `state={{ pending, error, empty }}`, never `data ?? []`; a streamed chart's `<Suspense>` fallback is the same chart with `state={{ pending: true }}`, which fills the final box; inside a `ChartCard` the card owns `state` (header kept, body swapped), the kind only when bare. [type ChartState] [type ChartCardProps]
 - Zones, thresholds and reference lines are `zones`, `xZones` and `refLines` data; charts sharing a cursor over different extents pass one `xDomain` (time/number x only; a band or string x ignores it). [type ZoneSpec]
-- Extra tooltip rows are `tooltip.rows` data, never markup; on a time x axis omit `formatX` (ticks and tooltip are written in the page locale), and a custom date text is `date()` from `basalt-ui/format`, never a raw `Intl.DateTimeFormat` or `toLocaleDateString`. [type ChartTooltipConfig] [type CartesianChartProps]
+- Extra tooltip rows are `tooltip.rows` data, never markup; on a time x axis omit `formatX` (ticks and tooltip are written in the page locale), and a custom date text is `date(x, { timeZone: 'UTC' })` from `basalt-ui/format` (the axis reads UTC), never a raw `Intl.DateTimeFormat` or `toLocaleDateString`. [type ChartTooltipConfig] [type CartesianChartProps]
 - Charts share one cursor by default; `cursorGroup` isolates one, `chartCursor(group?)` reads it. [type chartCursor]
 
 ## Boundaries
