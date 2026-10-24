@@ -116,7 +116,7 @@
     },
     "packages/basalt-ui": {
       "name": "basalt-ui",
-      "version": "2.16.0",
+      "version": "2.28.0",
       "bin": {
         "basalt-ui": "./bin/basalt-ui.mjs",
       },
