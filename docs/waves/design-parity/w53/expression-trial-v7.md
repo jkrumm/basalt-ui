@@ -39,3 +39,21 @@ opening) persists.
 
 App-owned: kind and note folded into one title string, a seconds-precision stamp per log row, "12 coffees" passed as
 the facts period, a stretched Products card.
+
+## Full-coverage re-score (Wave 54)
+
+The provisional score above read 9 of 111 shots. A fresh `basalt-design-reviewer` on Sonnet opened **all 111**
+(5 sheets, 4 page shots, 102 state crops) of the same out dir, argo's bar, D37 not scored, the light-scheme input
+contrast held out: **~75** (supersedes ~85; v6 58). Basalt's findings alone read ~88.
+
+| Severity | basalt | app | total |
+| -------- | ------ | --- | ----- |
+| P1       | 0      | 0   | 0     |
+| P2       | 1      | 1   | 2     |
+| P3       | 4      | 7   | 11    |
+
+Basalt-owned: exactly the five above (219 counted once across the channels, products and log cards; 217, 220, 221,
+222); no new basalt defect. App-owned, new: the page headline restates card figures on other bases ("up 22% on the
+prior 30 days" beside the card's "21.4% vs prior 7 days", "€6.3k behind target pace" beside "€8.8k short") (P2); the
+€60k target stated three times on the revenue card; a folded log title wrapping at 390 with "10 %" spaced unlike
+"25%"; "Roastery · October" as breadcrumb, sole nav item and mobile header. The drop from ~85 is app copy only.

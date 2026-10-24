@@ -58,9 +58,14 @@ Queued behind all of it: Part 2's maturation Waves 20–28.
    - SPEC D37: an errored/empty chart body keeps the loaded height. Default until ruled: SPEC wins.
    - rb: the owner pushes the 2.28.0 branch.
    - rollhook: an optional Make Release so its dashboard image picks up 2.28.0.
-3. **Wave 53 (queued P2s):** the S3 "↑ N above" cue reading as a second, disagreeing count; the S6 danger-zone ring
-   missing in light; a loading ChartCard showing its real figure; a feed message ellipsised at 390; a fresh app's
-   axis still printing "Sept". Run it after sign-off or fold it into phase 2.
+3. **Waves 53 and 54: done** (stopped at Wave 54: owner pause for the weekly limit). Landed: W53 #555 (a pending
+   `ChartCard` with `placeholderHeight="content"` loads a figure body as its skeleton; `date()` rule line), #556 (the
+   S3 `↑ N loaded above` cue, every feed sentence wraps, the S6 danger ring in light); W54 #559 (a lone
+   `BarList`/`EventList`/`Meter` body takes `'content'` itself: rows 219, 220), #558 (S5 "Today" recency, playground).
+   Master is **unreleased, fix-only since 2.29.0** (a patch). Trial v7's ~85 was **provisional** (5 sheets and 4 page
+   shots only); a full-coverage re-score (111 of 111 shots) ran in W54 before the pause and reads ~75, the drop all
+   app copy (`design-parity/w53/expression-trial-v7.md`). Carried into Wave 55 (`active`, not spawned): rows 221, 222,
+   214, 215, 217, 218, the basalt W52/W53 P3 list and the remaining playground P3s.
 4. **Phase 2:** a fresh mother; bump linewatch, rollhook, obsidian (and rb via the owner) to 2.29.0; email-gateway's
    1.x → 2.0 migration; image-gateway (the owner is unsure it still needs a UI: deleting the UI beats migrating it);
    Part 2 maturation Waves 20–28. argo bumps during its own overhaul.
