@@ -89,28 +89,6 @@ layout('folded table chrome', () => {
             WIDE,
           )
           await p.quiesce()
-          // DIAG-TEMP
-          console.log(
-            'DIAG',
-            loading,
-            JSON.stringify(
-              await p.raw.evaluate((root) => {
-                const wrap = document.querySelector(
-                  root + ' .mantine-TableScrollContainer-scrollContainer',
-                ) as HTMLElement
-                return {
-                  room: wrap?.clientWidth,
-                  font: getComputedStyle(document.body).fontFamily,
-                  ths: [...document.querySelectorAll(root + ' thead th')].map((th) => [
-                    th.getAttribute('data-basalt-fold-id') ??
-                      th.getAttribute('data-basalt-fixed-id'),
-                    (th as HTMLElement).offsetWidth,
-                    th.textContent,
-                  ]),
-                }
-              }, ROOT),
-            ),
-          )
           return p.raw.evaluate(
             (s) => document.querySelector(s)?.querySelector('button')?.textContent ?? null,
             FOLD_HEADER,
