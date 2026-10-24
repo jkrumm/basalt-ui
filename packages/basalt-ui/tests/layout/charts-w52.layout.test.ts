@@ -108,9 +108,12 @@ layout('Wave 52 chart cards', () => {
       await p.raw.mouse.move(box.x + 2, box.y + box.h / 2)
     } else {
       // Keyboard path: Tab onto the chart; the focus alone opens the tooltip at its first point.
+      // Tab until the chart itself holds focus: a card control (legend toggle, action) can come first.
       for (let i = 0; i < 12; i += 1) {
         const inside = await p.raw.evaluate(
-          (host) => document.activeElement?.closest(`[data-testid="${host}"]`) !== null,
+          (host) =>
+            document.activeElement?.matches(`[data-testid="${host}"] [data-basalt-box] svg`) ===
+            true,
           id,
         )
         if (inside) break
