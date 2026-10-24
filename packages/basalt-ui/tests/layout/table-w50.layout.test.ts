@@ -33,7 +33,7 @@ const CASES = [
   { shape: 'sessions', width: 360 },
   { shape: 'outages', width: 374 },
   { shape: 'outages', width: 350 },
-  { shape: 'outages', width: 330 },
+  { shape: 'outages', width: 320 },
   { shape: 'outages', width: 310 },
 ] as const
 
@@ -74,6 +74,8 @@ layout('folded table chrome', () => {
       expect(header.height).toBeLessThanOrEqual(41)
     })
 
+    // The widths here sit clear of the band where the loaded rows' own
+    // fold flips between font stacks, so a skeleton/rows mismatch here is the planner's, not the font's.
     // Only the outage log: its text column is a short category word, which a 10rem skeleton bar
     // made 176px wide against 55px loaded (+2 vs +1). A skeleton cannot know a column's content, so
     // a shape whose text is long (workouts, sessions) is not held to the same equality.
@@ -125,7 +127,8 @@ layout('folded table chrome', () => {
           ...base,
           w42Responsive: {
             shape: 'outages',
-            width: 374,
+            // Clear of the width where Linux and macOS font metrics flip the loaded rows' own fold.
+            width: 400,
             select: true,
             ...(loading && { loading: true as const }),
           },
