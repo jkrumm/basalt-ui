@@ -160,7 +160,10 @@ layout('Wave 50 EventList chips, type scale and skeleton', () => {
     // A loaded row with a time line and no note or chips (every odd fixture row).
     const loaded = (await p.raw.evaluate(`(() => {
       const row = [...document.querySelectorAll('${HOST} ${moduleClass('row')}')].find(
-        (r) => !r.querySelector('${moduleClass('meta')}') && !r.querySelector('${moduleClass('chips')}'),
+        (r) =>
+          !r.querySelector('${moduleClass('meta')}') &&
+          !r.querySelector('${moduleClass('chips')}') &&
+          r.querySelector('${moduleClass('line')}').getBoundingClientRect().height < 24,
       )
       return row.getBoundingClientRect().height
     })()`)) as number

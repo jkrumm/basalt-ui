@@ -86,13 +86,16 @@ describe('a settings shell keeps three type sizes (Wave 38)', () => {
   })
 })
 
-describe('the DangerZone ring is one token-derived treatment in both schemes', () => {
+describe('the DangerZone ring is one token-derived treatment, heavier in light', () => {
   const css = readFileSync(new URL('./settings-section.module.css', import.meta.url), 'utf8')
 
   test('the class mixes the status token into the panel surface — no alpha over the backdrop', () => {
     const danger = css.slice(css.indexOf('.danger {'))
     expect(danger).toContain(
       'color-mix(in srgb, var(--vx-status-bad) 40%, var(--vx-surface-panel))',
+    )
+    expect(danger).toContain(
+      "html[data-mantine-color-scheme='light'] .danger {\n  --danger-ring: color-mix(in srgb, var(--vx-status-bad) 75%, var(--vx-surface-panel))",
     )
     expect(danger).not.toMatch(/rgba?\(|#[0-9a-f]{3}/i)
   })

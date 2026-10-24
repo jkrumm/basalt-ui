@@ -8,8 +8,7 @@
  * day groups and the `earlier` control land on the right edge. Days are local. Item `id`s are the
  * rows' identity (keys, prepend anchoring): keep them unique and stable.
  *
- * The row is two lines at every width: line one is the glyph and `actor + sentence` (clamped to one line in
- * `feed`, wrapping in `timeline`); line two leads with the time, then the body (it wraps, never
+ * The row is two lines at every width: line one is the glyph and `actor + sentence` (it wraps at every density, never truncates); line two leads with the time, then the body (it wraps, never
  * truncates), then the chips (they follow its last word in the same flow, each chip unbroken). A row with no body or
  * chips still has line two, the time alone; an untimed row's line two is body and chips only.
  *
@@ -81,7 +80,7 @@ export type EventListProps = BasaltProps &
       leading?: ReactNode
       chips?: ReactNode
     }[]
-    /** `feed`: one clamped line, about 52 px a two-line row. `timeline`: a rail, full sentences, body and chips in full. */
+    /** `feed`: compact, about 52 px a two-line row until a sentence wraps. `timeline`: a rail, full sentences, body and chips in full. */
     density?: 'feed' | 'timeline'
     /** The 1 px line through the leading column joining rows within a day group. Default: `density === 'timeline'`. */
     rail?: boolean
@@ -310,6 +309,8 @@ export function EventList({
 
   // The box keeps its height for rows and skeletons; an empty state sizes to its content.
   const boxed = ownScroll && (loading || items.length > 0)
+  // The CSS keys the cue's wording on it: beside the control the count says "loaded".
+  const hasEarlierControl = boxed && control !== null
   // `--event-list-trim` is set by `useRowBoundary`: the box gives up the remainder of a row it would cut.
   const scrollStyle: CSSProperties | undefined = boxed
     ? {
@@ -328,6 +329,7 @@ export function EventList({
       <div
         ref={setScrollEl}
         className={cx(classes.root, boxed && classes.scroll)}
+        {...(hasEarlierControl && { 'data-earlier': '' })}
         style={scrollStyle}
       >
         {/* One wrapper around whatever shows, so its box is the content's box (see useHeldHeight). */}
