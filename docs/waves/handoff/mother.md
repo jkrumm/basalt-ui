@@ -107,7 +107,7 @@ Queued behind all of it: Part 2's maturation Waves 20–28.
 
 - Release only through `make release`, only after master CI is green on the exact head
   (`git checkout -- bun.lock` first). The wrapper polls npm; trust its exit.
-- Every PR gets an independent review (`mcp__agent-gateway__review` with `pr`). After two rounds,
+- Every PR gets an independent review (`/review`, i.e. `agw review --pr N`). After two rounds,
   freeze scope and read the last fix diff yourself. Verify reviewer blockers against the code: one
   claimed "optional peers" that are required.
 - Workers misreport. Check the diff for weakened or deleted tests: a layout fixture was cut from 4 to
