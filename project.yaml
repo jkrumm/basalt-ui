@@ -1,0 +1,13 @@
+# How the factory ships this project (software-factory docs/design.md §9).
+apiVersion: factory/v2
+name: basalt-ui
+deploy:
+  mode: auto # every push to master deploys the site through CI; npm publishing is `make release`, not a deploy
+  targets:
+    - { name: site, host: production, verify: make verify }
+  hold: 30m
+  probes:
+    - { name: site, http: 'https://basalt-ui.com/', expect: 200 }
+ship:
+  - { paths: ['**'], via: pr }
+leads: 1
