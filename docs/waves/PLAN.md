@@ -2350,7 +2350,9 @@ paused; the light-scheme input contrast and D37 stay the owner's.
       **Next — stopped: owner pause for the weekly limit.** Wave 54 closed; orchestrated, nothing spawned. Wave 55
       is `active` for the orchestrator.
 
-## Wave 55 — The date form, the axis anchor, the carried P3s <!-- status: active -->
+## Wave 55 — The date form, the axis anchor, the carried P3s <!-- status: pending -->
+
+**Paused 2026-11-05:** set back from `active` (never spawned; `docs/waves/handoff/mother.md` holds it until the owner signs off on phase 1). Waves retire in the software-factory reset (RS1): when it resumes, its steps become factory Issues (`rd issue`).
 
 Same shape as Wave 54. Budget as the owner sets it at spawn time. argo paused; the light-scheme input contrast and D37
 stay the owner's.
