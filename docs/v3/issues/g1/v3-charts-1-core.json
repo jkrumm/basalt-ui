@@ -1,0 +1,37 @@
+{
+  "why": "The engine bump deletes a 200-line tooltip clamp, the DOM scrape and d3-scale if four spikes pass; core comes before any kind.",
+  "what": "packages/basalt-ui/src/charts/core/** (not bytes.test.ts, probe/**), src/charts/host* (edited in place), defineSeries, chartCursor. Created from 2.x src/charts (compile, ticks, scales, cursor, plot-context, theme, curves, host).",
+  "owns": [
+    "packages/basalt-ui/src/charts/core/{compile,ticks,scales,cursor,plot-context,theme,curves,portal,series}*",
+    "packages/basalt-ui/src/charts/core/*.test.ts*",
+    "packages/basalt-ui/src/charts/host*",
+    "packages/basalt-ui/docs/{chart-cursor,define-series}.md"
+  ],
+  "shared_append_only": [
+    "packages/basalt-ui/src/charts/index.ts",
+    "packages/basalt-ui/scripts/export-surface.json"
+  ],
+  "must_not_touch": [
+    "packages/basalt-ui/src/{ui,cards,controls,table,page,shell,content,ai,router,data,tokens,css,lint}/**, packages/basalt-ui/agent/**",
+    "packages/basalt-ui/src/charts/{parts/**,core/bytes.test.ts,core/probe/**}",
+    "CHANGELOG.md, MIGRATING.md, llms.txt, scripts/check-budgets/**, other areas' migrations files",
+    "every contract.ts and src/core/ports.ts"
+  ],
+  "concept": "charts-cards-kanban#9 S3-S5",
+  "contract": "Frozen: ARCHITECTURE.md, this domain's contract.ts, src/core/ports.ts. Need a change: factory signal, take the reversible default. Read concepts/charts-cards-kanban.md sections 3, 4, 8, 9. ./charts reaches no Base UI; src/charts/host.tsx is the only importer of @tanstack/charts/react. Engine pin tilde 1.5.x. S2 verdict: docs/v3/spikes/charts-s2.md (charts-1a). 2.x src/charts files outside the owned globs stay with their tests; host.tsx is edited in place (retarget any 2.x test it breaks). Invariant 29 = tooltip inside the card, no write when unchanged (concept section 5 pins).",
+  "exemplar": "2.x tests, copied (originals stay), assertions untouched, committed red first: core.test.ts, plot-context.test.tsx, tooltip-settle.test.ts, ticks.test.ts, date-ticks.test.ts, curves.test.ts, engine.test.tsx (src/charts).",
+  "change": "Headless core on the bumped engine; if charts-s2.md says HAND-SVG add the 130-line hand-SVG core there. S3: cardPortal extension create/position/hide/destroy using resolveChartTooltipPlacement and the nearest [data-slot=card] rect (about 40 lines, no observer). S4: plot-context from onRender geometry, scrape deleted. S5: engine scales replace d3-scale in compile, ticks, scales, with an own quantize helper for Heatmap (if S5 fails, d3-scale stays a declared peer; signal). Also defineSeries and chartCursor (module map, client-only, refcount). Over 15 files: split at S5, defineSeries and chartCursor become a second Issue. Rule: none new. Tests: ported suites, one per spike.",
+  "commits": "One PR, separate package and non-package commits (isolated-basalt-ui); conventional, empty scope, no attribution.",
+  "proof": "bun test over src/charts/core, ssr-hydration and ssr-budget ports.",
+  "acceptance": [
+    "the 2.x core tests listed above are ported, were committed red before the implementation, and pass",
+    "S3: the tooltip stays inside the card on both axes in tooltip-settle cases (first and last point); on failure use the engine portal and relax invariant 29 in the PR text",
+    "S4: plot-context cases pass with the DOM scrape deleted (no getBoundingClientRect scrape in src/charts/core)",
+    "S5: SSR and domain tests pass with no d3-scale import under src/charts/core",
+    "grep: @tanstack/charts/react is imported only by src/charts/host.tsx",
+    "make check exits 0",
+    "git diff --name-only lists only owned paths"
+  ],
+  "out_of_scope": "S2 probe (charts-1a), kinds, Sparkline, MiniBars, ChartCard, tooltip surface, legend, Heatmap, BandStrip, codemods, byte ceilings.",
+  "worker_tag": "lead high; may spawn one @implementer tagged [opus: Replaces d3-scale and the tooltip clamp; byte floors decide engine vs hand-SVG core] for the novel file group only"
+}

@@ -1,0 +1,28 @@
+{
+  "why": "The release gate refuses a surface diff with no row, and basalt-app's migrate reference reads rows, so every removed or reshaped chart and card symbol needs one machine row with a one-line fix.",
+  "what": "Area files migrations/areas/{charts,cards}.json and the 1.x chart rows appended to migrations/areas/legacy-1x.json. Data only.",
+  "owns": [
+    "packages/basalt-ui/migrations/areas/{charts,cards}.json",
+    "packages/basalt-ui/migrations/areas/legacy-1x.json"
+  ],
+  "must_not_touch": [
+    "packages/basalt-ui/src/**, scripts/**, MIGRATING.md, llms.txt",
+    "migrations/areas/{ui,tokens,table,controls}.json and other migrations/1.x files",
+    "tools/**",
+    "CHANGELOG.md"
+  ],
+  "concept": "docs/v3/concepts/charts-cards-kanban.md section 10; migration-release.md 3.2 (row schema), 3.3 (migrate --check).",
+  "contract": "Row schema and validator: v3-unhot-migrating-llms. Reader and --check: v3-mig-cli (src/cli/migrate/, read only). This Issue consumes the release surface-diff gate and migrate --check; it ships neither.",
+  "exemplar": "Rows already in migrations/areas/*.json and migrations/1.x/*.json from the Issues named above.",
+  "change": "One row per id, each with id, kind, from, to, verify, and codemod \"charts\" for Yes ids or manual true with a one-line fix text. cards.json: cc-body-chart, cc-pending-loading, cc-height, cc-state-phase, cc-facts-figure, cc-body-datapanel, cc-removed-props, cc-actions, cc-tone-status, cc-expression, cc-other-self-closed, statstrip-statcell, deltabadge-polarity, plus tokens.valueShifts (hero 22 to 30, delta tint, radii, dim bar 34/38%, card ring 9/12%, heights collapse to the classes). charts.json: sf-format, sf-weight, sf-dash, sf-axis, sf-opacity, sf-auto-domain, stacked-area, chart-marks, meter-zones, donut, mirrored-bars, dual-panel, chart-curve, fold-bands. 1.x/charts.json: bars-1x (codemod), tooltip-rows-1x (extraRows, TooltipRow to tooltip.rows, manual), donut-1x (Donut storage to BarList, manual). Ids match v3-charts-7a and 7b exactly. Rule, skill snippet: none.",
+  "commits": "One package commit in one PR: feat: add chart and card migration rows. Conventional, empty scope, no attribution, no breaking footer.",
+  "proof": "make check; the migrate --check pair below.",
+  "acceptance": [
+    "make check exits 0, including the release surface-diff gate (release-migrating.ts --check) and the row validator.",
+    "jq -r '.rows[].id' over migrations/areas/charts.json and cards.json prints exactly the 27 ids above, each once; over migrations/areas/legacy-1x.json exactly bars-1x, tooltip-rows-1x, donut-1x.",
+    "Every row with manual true has a non-empty fix text; every row without it names codemod charts.",
+    "In tools/migrate-v3/charts/fixtures/bars-1x-check, basalt-ui migrate --from 1.40.3 --profile app --check exits 1 in before/ and 0 in after/.",
+    "git diff --name-only origin/master...HEAD lists only paths matching owns."
+  ],
+  "out_of_scope": "Codemods (v3-charts-7a, 7b), the row schema, the migrate CLI, the release gate, generating MIGRATING.md, other areas' rows."
+}

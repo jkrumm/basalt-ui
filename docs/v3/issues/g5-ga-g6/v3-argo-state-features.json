@@ -1,0 +1,32 @@
+{
+  "repo": "argo",
+  "why": "A few framework-bound leaves are imported by lib, the shell and several routes (series, chart-state, usage accounts, the calendar derive and query). They port once, first, so nothing imports a later Issue.",
+  "what": "lib/series, lib/chart-state, usage-tracking/accounts and the calendar derive plus query, with tests, on the v3 token and chart APIs. Per-feature model.ts and types.ts are not here: each route Issue ports its own.",
+  "owns": [
+    "apps/dashboard-v3/src/lib/{series,chart-state}*",
+    "apps/dashboard-v3/src/features/usage-tracking/accounts*",
+    "apps/dashboard-v3/src/features/calendar/derive*",
+    "apps/dashboard-v3/src/lib/queries/calendar*"
+  ],
+  "must_not_touch": [
+    "apps/dashboard/**",
+    "apps/api/**",
+    "packages/shared/** (v3-argo-shared)",
+    "other Issues' dirs under apps/dashboard-v3/src",
+    ".basalt/**"
+  ],
+  "concept": "migration-release#6.3 argo state row",
+  "contract": "Read basalt-ui docs/v3/concepts/migration-release.md 6.1-6.3, argo DESIGN.md and the managed layer (.claude/rules/basalt-v3-*.md, skills basalt-v3-*). The installed basalt-ui is exact 3.0.0-next.N: its docs/recipes and llms.txt are the API truth. Never import apps/dashboard; share through @argo/shared. Order: shared, state-features, state-stores, queries, shell, routes; a later Issue's import is a signal, never a stub. `basalt-ui/tokens` and `./format` do not exist in v3 (ARCHITECTURE.md section 3): accounts.ts and series.ts read tokens through the installed docs.",
+  "exemplar": "Old apps/dashboard/src/{lib/series.ts,lib/chart-state.ts,lib/queries/calendar.ts,features/calendar/derive.ts,features/usage-tracking/accounts.ts} and their tests. v3 chart law: series are discriminated by mark and phase (docs/v3/concepts/charts-cards-kanban.md).",
+  "change": "Copy each file with its test into the same relative path in dashboard-v3 and retarget imports to @argo/shared and the v3 APIs: series definitions for mark and phase, `unwrap` from basalt-ui/data in queries/calendar.ts, a local ScheduleEventData type in place of the @mantine/schedule one, tokens through the v3 route. Rule: the app preset forbids @mantine and basalt-ui/legacy here. Skill snippet: none.",
+  "commits": "Argo ships by push to master: conventional, one concern each, no attribution. Never edit node_modules or basalt-ui; a gap is a `friction:` line in the PR body, worked around in app code.",
+  "proof": "Unit tests only; no rendered surface.",
+  "acceptance": [
+    "`bun --cwd apps/dashboard-v3 test src/lib src/features/calendar src/features/usage-tracking` exits 0",
+    "`bun scripts/check-test-port.ts apps/dashboard/src/lib apps/dashboard-v3/src/lib --only '{series,chart-state}*'` exits 0 for the files owned here (marked `// port:` lines listed in the PR)",
+    "`rg -n '@mantine|createSearchStore|basalt-ui/(tokens|format)' apps/dashboard-v3/src/lib/{series,chart-state}* apps/dashboard-v3/src/lib/queries/calendar* apps/dashboard-v3/src/features/{calendar/derive,usage-tracking/accounts}*` returns no match",
+    "chart-state and series tests assert the same palette and series-identity laws as the old tests",
+    "`make check` exits 0"
+  ],
+  "out_of_scope": "Components, routes, stores, the other queries, CSS."
+}

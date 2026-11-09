@@ -1,0 +1,29 @@
+{
+  "why": "One typed nav declaration drives rail, tab bar, breadcrumb, palette and transition direction; every abandoner re-grew it (decision 5).",
+  "what": "packages/basalt-ui/src/router/{nav/**,index.ts} and tests. Headless L2: react and @tanstack/react-router only. index.ts replaces the skeleton's `export {}` with defineNav; later Issues append their lines.",
+  "owns": ["packages/basalt-ui/src/router/nav/**"],
+  "shared_append_only": ["packages/basalt-ui/src/router/index.ts"],
+  "must_not_touch": [
+    "packages/basalt-ui/{MIGRATING.md,llms.txt,scripts/contract-pins.json,scripts/check-budgets/**,src/*/contract.ts,src/{ui,tokens,lint}/**,agent/**}",
+    "CHANGELOG.md",
+    "other lanes' folders",
+    "packages/basalt-ui/src/{shell,page}/**",
+    "packages/basalt-ui/src/router/{defaults,nav-target,controls}*"
+  ],
+  "concept": "shell-nav-router#8 I2; #3.1; #4",
+  "contract": "concept 3.1 and 4 (invariants 2, 3, 4, 25 to 27, 30), 'Each never' rows 1 and 2; src/router/contract.ts, src/core/ports.ts (LinkComponent, IconComponent). Frozen: never edit contract.ts or contract-pins.json; signal, then take the reversible default.",
+  "exemplar": "Port nearly verbatim, tests first and failing: 2.x src/router-tanstack/{nav.ts (216 lines), nav-stash.ts, nav.test.ts}, src/shell/nav-types.ts (232), src/shell/{nav-identity,nav-prop}.router.test.tsx, src/register.type-guard.test.ts, apps/playground/src/nav.type-guard.tsx.",
+  "change": "New src/router/nav/{define-nav,resolve-active,types,registry}.ts. defineNav({sections, pinned, mobile}) is pure and writes no module global; required id and label; exact and activeWhen per item; desktop and mobile placement; link is linkOptions with a click-time search function; anchors keyed by WeakMap on the item. registry.ts holds the per-router WeakMap (registerNav, navFor) and the transition-direction function from nav order; AppShell registers, routerDefaults reads. Active resolver: most specific item wins, '/' is always exact. Types: badge keys come from item ids, Register unsatisfiable message. Not exported: isActive, useBasaltNav, flattenNav, navGroup. src/router/index.ts exports defineNav. Ships with: guarantee = type rows in src/router/nav/nav.type-guard.test.ts (nav exactness, unsatisfiable Register, unknown badge key, two badges on a row); rule = no lint id (rung 2, type); teach = JSDoc @example on defineNav mirroring 3.1 (the rule bullet is written by v3-shell-i10-rules-rows); test = resolver property test.",
+  "commits": "One PR, separate package and non-package commits (isolated-basalt-ui); conventional, empty scope, no attribution.",
+  "proof": "bun test src/router/nav and tsc on the type-guards; no UI, no shots.",
+  "acceptance": [
+    "Resolver property test (seeded, no new dependency) over generated trees and pathnames: at most one item is active, an exact match beats a prefix, '/' matches only '/'",
+    "Every @ts-expect-error row of src/register.type-guard.test.ts and apps/playground/src/nav.type-guard.tsx has a counterpart in src/router/nav/nav.type-guard.test.ts, and removing a row's offender makes tsc fail",
+    "Ported nav-identity test passes: re-rendering with a new link closure keeps anchor identity (no remount); useRouterState href is the change signal",
+    "Two defineNav calls with different configs give independent resolvers (no module global)",
+    "No import of src/ui, @base-ui/react or @tanstack/react-query under src/router/nav (layering test)",
+    "src/router/index.ts exports defineNav and no name outside the ARCHITECTURE section 3 ./router row",
+    "make check passes"
+  ],
+  "out_of_scope": "Projector, rail, tab bar, NavRuntime (I3), navTarget and routerDefaults (I9), any AppShell prop, migration rows (I10)."
+}

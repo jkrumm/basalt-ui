@@ -1,0 +1,32 @@
+{
+  "why": "basalt-ui.com stayed frozen on the Tailwind and shadcn era through next (DPO 19). The docs site is the named consumer of mdxComponents and the public proof the framework looks and teaches as claimed. The rebuild is three Issues; this is the frame.",
+  "what": "Rebuild the frame of apps/marketing on the published v3: Astro kept, Starlight and the legacy stack replaced, layout with themeScript, home, getting started, the four profiles, the content sync and /llms.txt.",
+  "owns": [
+    "apps/marketing/{package.json,astro.config.mjs,tsconfig.json,components.json}",
+    "apps/marketing/src/{layouts,components,styles}/**",
+    "apps/marketing/src/pages/{index.astro,llms.txt.ts}",
+    "apps/marketing/src/content/docs/{index,getting-started,profiles}*",
+    "apps/marketing/scripts/sync-content.ts"
+  ],
+  "shared_append_only": ["bun.lock"],
+  "must_not_touch": [
+    "packages/basalt-ui/**",
+    ".github/workflows/deploy.yml and apps/marketing/{Dockerfile,nginx.conf} unless the build needs it (then say so)",
+    "root package.json beyond the lockfile",
+    "apps/marketing/src/content/docs/{recipes,tokens,migration}* (the other two marketing Issues)"
+  ],
+  "concept": "DIRECTION#8 DPO 19",
+  "contract": "DIRECTION.md DPO 19 and 12a; ai-mdx.md decision 6 and P9; static-framework-free (themeScript inlined in the layout via Astro set:html; .vx-prose for typography). Depend on the published `basalt-ui` exactly 3.0.0, not workspace:*, so a v3 package build cannot turn the marketing deploy red. Content source: the installed tarball. `packages/basalt-ui/package.json` `files` lists llms.txt and MIGRATING.md but NOT docs/ today: before starting run `ls node_modules/basalt-ui/docs/recipes`; if absent, stop and signal (the fix is a `files` entry plus a patch release, not this Issue).",
+  "exemplar": "apps/playground in this repo for the v3 frame; the shipped docs/recipes/*.md and generated llms.txt as content sources.",
+  "change": "Keep Astro, replace Starlight, shadcn, tremor, recharts and the legacy styles/basalt with `basalt-ui init --profile parts` in apps/marketing. Pages: home, getting started, profiles (tokens, bridge, parts, app). sync-content.ts runs as `prebuild`; /llms.txt is served from the synced file. Delete the superseded pages charts, colors, spacing, typography. Rule: the app preset and stylelint/check-tokens pass. Skill snippet: the managed basalt block.",
+  "commits": "Two commits in one PR: packages/basalt-ui/** apart from everything else (isolated-basalt-ui hook); `make sync-self` output its own non-package commit; conventional, empty scope, plain feat:/fix:/chore:/docs:, no feat! or BREAKING CHANGE, no attribution; rebase-merge. Deploys on push to master through RollHook.",
+  "proof": "Shots of home and getting started at 1800x1200 and 390x844, dark and light, at most 3 rounds, basalt-design reviewer.",
+  "acceptance": [
+    "`bun run --cwd apps/marketing build` (sync-content, astro check, astro build) exits 0",
+    "`apps/marketing/package.json` has no starlight, tremor, recharts, shadcn, tailwind-variants or @tailwindcss/typography (`rg -n` returns no match) and pins basalt-ui to exactly 3.0.0",
+    "`basalt-ui doctor` and `basalt-ui lint` exit 0 in apps/marketing; `tokens:css --check` exits 0 if a token file is committed",
+    "`test -s apps/marketing/dist/llms.txt` and its first line equals the first line of node_modules/basalt-ui/llms.txt",
+    "`gh run list --workflow deploy.yml --branch master --limit 1 --json conclusion,headSha` shows success for the merged sha (the factory does not deploy this repo: deploy mode none), then `make verify` exits 0; before that state it not-run; `curl -fsS https://basalt-ui.com/llms.txt` returns 200"
+  ],
+  "out_of_scope": "Recipe, tokens and migration pages (the next two Issues), changing the package, the deploy pipeline, a blog, SEO plugins."
+}

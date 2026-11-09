@@ -1,0 +1,32 @@
+{
+  "repo": "rollhook",
+  "why": "rollhook imports no basalt JS and hand-bridges 20+ token names onto Tailwind in two apps; its 38 names are a one-shot rewrite. It adopts the generated bridge and the guard.",
+  "what": "apps/dashboard/** and apps/marketing/** in rollhook (package.json, src/styles/{global.css,basalt-tokens.css}, token reads, apps/marketing/public/site.webmanifest), root package.json, bun.lock, .basalt/**. Profile bridge for both, declared with init --root apps/dashboard --root apps/marketing.",
+  "owns": ["apps/dashboard/**", "apps/marketing/**", "package.json", "bun.lock", ".basalt/**"],
+  "must_not_touch": [
+    "internal/**",
+    "cmd/**",
+    "e2e/**",
+    "Dockerfile",
+    "compose.yml",
+    "apps/dashboard/src/api/generated/**",
+    "apps/dashboard/openapi.json"
+  ],
+  "concept": "migration-release#5 G0",
+  "contract": "Read-only in ~/SourceRoot/basalt-ui: docs/v3/concepts/tokens-visual.md sections 4, 9; migration-release.md sections 5, 12; docs/v3/evidence/consumer-rollhook.md. Pin basalt-ui to the exact 3.0.0-next.<N> of floors.G0.next in ~/SourceRoot/basalt-ui/scripts/fleet.json (no caret); unserved on npm means stop and signal (owner row v3-release-g0-next cuts it).",
+  "exemplar": "~/SourceRoot/basalt-ui/packages/basalt-ui/test/fixtures/bridge (target shape).",
+  "change": "1) Pin basalt-ui in both apps. 2) From the repo root, local bin: basalt-ui init --profile bridge --root apps/dashboard --root apps/marketing --tokens-json-out apps/marketing/src/brand/tokens.json (default identity). 3) In both global.css replace the hand @theme inline bridge and the basalt-tokens.css import with @import 'basalt-ui/tailwind.css'; delete both basalt-tokens.css and the tokens scripts. 4) Dashboard is dark-only: data-theme=\"dark\" on html in index.html, no boot script (doctor check 12 accepts a literal data-theme). 5) Fonts: keep Instrument Sans and JetBrains Mono via an app @theme block overriding --font-sans and --font-mono after the bridge import (never a --vx-* declaration); record it in DESIGN.md and the PR. 6) Rewrite the 38 token names with basalt-ui migrate --from 2.29.0 --profile bridge. 7) Marketing site.webmanifest: add apps/marketing/scripts/check-webmanifest.ts (about ten lines) asserting theme_color and background_color equal the dark canvas in src/brand/tokens.json; remove the basalt:theme-allow-file waiver. 8) Per-app check:basalt = basalt-ui doctor && basalt-ui sync --check && basalt-ui lint (marketing adds the webmanifest script); root check:basalt runs both via --filter; check-theme is gone. 9) Lint findings (text-[10px], border-l-[5px], w-[Nch], bg-black/40): fix at source or waive with a reason; over 15 waivers per app: stop and signal with per-rule counts. Land counts with lint --stats --write-budget.",
+  "commits": "Per the rollhook repo: a PR (ship via pr), conventional commits per its AGENTS.md, no attribution. Root install files in their own commit.",
+  "proof": "make check (not e2e); shots as listed.",
+  "acceptance": [
+    "make check exits 0 in the rollhook repo",
+    "bun run check:basalt exits 0 and runs doctor, sync --check and lint for both apps",
+    "rg -n 'basalt-tokens|basalt:theme-allow|check-theme|--vx-(surface|status|fill|accent-fill)' apps .basalt prints nothing",
+    "basalt-ui migrate --from 2.29.0 --profile bridge --check exits 0 in both apps",
+    "Both apps pin the exact floor version; .basalt/budget.json waivers equals the counted waivers",
+    "bun apps/marketing/scripts/check-webmanifest.ts exits 0, and 1 after one hex digit of site.webmanifest is changed",
+    "Before and after shots of the dashboard and the marketing page, 1800x1200 and 390x844; the PR lists value shifts and the font divergence"
+  ],
+  "out_of_scope": "Recharts, virtual list, Go code, e2e, adopting basalt parts.",
+  "owns_widened": "init also writes at the repo root: AGENTS.md block, .claude/**/basalt-*, .claude/settings.json basalt entries, lint presets, the root lint config, formatter ignore."
+}

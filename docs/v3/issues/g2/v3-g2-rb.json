@@ -1,0 +1,43 @@
+{
+  "repo": "rb",
+  "why": "rb is the small proof of shell, nav, page and content: 10 routes, no charts or table, on 2.29.0 with 14 declared-unused peers and 3 in-body-title waivers.",
+  "what": "apps/web/**, package.json, bun.lock, .basalt/**, and what basalt-ui sync rewrites (.claude basalt-* rules and skills, AGENTS.md block, DESIGN.md, lint and format configs, lefthook, check.yml).",
+  "owns": [
+    "apps/web/**",
+    "package.json",
+    "bun.lock",
+    ".basalt/**",
+    ".claude/**",
+    "DESIGN.md",
+    "AGENTS.md",
+    ".oxlintrc.json",
+    ".oxfmtrc.json",
+    "lefthook.yml",
+    ".github/workflows/check.yml"
+  ],
+  "must_not_touch": [
+    "apps/api/**",
+    "backups/**",
+    "scripts/**",
+    "Dockerfile",
+    "docker-compose.yml",
+    ".env*",
+    "any basalt-ui repo file"
+  ],
+  "concept": "migration-release#5 G2, #6, #7, #12; consumer-rb",
+  "contract": "One branch, one PR, over 15 files by design (exception 5): codemod commit first, then manual commits clearing its worklist. Pin basalt-ui exact 3.0.0-next.N, N = floors.G2.next in basalt-ui scripts/fleet.json, never ^. Preconditions, else signal and stop: `npm view basalt-ui@<N> version` resolves and exports FilterSet and ViewTabs from ./controls (else ask for a newer next.N). Profile app, root apps/web/src. The worklist is a report, never an exemption.",
+  "exemplar": "consumer-rb evidence 1 to 3; playground routes {index,settings}.tsx; primitives census.",
+  "change": "1) Pin basalt-ui plus the app peers; delete the 14 declared-unused deps incl. all @mantine/*. 2) basalt-ui init --profile app; basalt() replaces basaltViteConfig and basaltAppPlugin; sync. 3) Codemod commit: bun ~/SourceRoot/basalt-ui/tools/migrate-v3/run.ts layout apps/web --report .basalt/worklist.json, then the same with imports (rename rows). 4) Manual commits: BasaltShell and useNav to AppShell nav (lib/nav.tsx, components/app-shell.tsx); createBasaltRouter to routerDefaults plus a pathless _app layout holding lock-gate.tsx; PageTitle and the 3 in-body-title waivers to PageBar title; back-referrer.ts to PageBar parent; Prose, Callout, TableOfContents to basalt-ui/page (Toc); notifications to notify; Drawer, Modal, Table, Accordion, Progress to ui/*; Rating to a ui/radio-group restyle; PinInput to a local OTPField (eject --adopt src/components/ui/otp-field.tsx --raise \"rb PIN entry\" --reason OTPField, CE2); useViewportSize to container tiers and ui/sheet; symbols absent from v3 (SettingsSection, DangerZone, ThemeToggle and the like) per the rows; Library: createSearchStore to defineControls, FilterSet and ViewTabs from ./controls. Ships with: lint, doctor, sync --check; the 14 web test files plus an expectShellInvariants test.",
+  "commits": "Branch plus PR (rb CI runs on pull_request); conventional commits; codemod commit first; no attribution; leave the PR open for the owner's merge session.",
+  "proof": "basalt-ui shot of all 10 routes at 1800x1200 and 390x844, dark, before and after: local .screenshots/ (gitignored), attached via the img skill's private share; no PNG committed.",
+  "acceptance": [
+    "package.json pins the exact 3.0.0-next.N of floors.G2, no ^ or ~; npm view basalt-ui@<N> version prints N (in the PR)",
+    "grep -rn '@mantine' package.json apps/web bun.lock and grep -rn '!important' apps/web/src return nothing; OTPField is a local eject (reason recorded)",
+    "basalt-ui migrate --from 2.29.0 --profile app --check exits 0 after the imports step",
+    "basalt-ui lint, doctor (checks 1 to 12) and sync --check exit 0; waivers within the per-rule ceiling, each with a reason; no worklist site left",
+    "make check passes with the 14 web test files plus an expectShellInvariants test (expanded, collapsed, 1800x1200 and 390x844) that fails on a seeded offender",
+    "Axe (serious, critical) zero for region, landmark-*, page-has-heading-one on all 10 routes; no class missing from built CSS",
+    ".basalt/manifest.json: profile app, root apps/web/src"
+  ],
+  "out_of_scope": "Merge and make deploy (owner; agents never push rb), apps/api, data tiers, lock-screen redesign."
+}

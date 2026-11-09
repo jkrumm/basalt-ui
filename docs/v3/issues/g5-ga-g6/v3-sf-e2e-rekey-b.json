@@ -1,0 +1,27 @@
+{
+  "repo": "shutterflow",
+  "why": "Second third of the e2e re-key: settings, prefs, account, albums, collections, first-run and pipeline (13 Mantine-keyed files).",
+  "what": "Re-key every Mantine-keyed e2e file under e2e/desktop/{settings,prefs,account,albums,collections,first-run,pipeline} to SLOTS and data-slot selectors, in specs and fixtures. No baseline image changes.",
+  "owns": ["e2e/desktop/{settings,prefs,account,albums,collections,first-run,pipeline}/**"],
+  "must_not_touch": [
+    "apps/**",
+    "e2e/gallery/** (v3-g1-gallery)",
+    "e2e/share/**",
+    "e2e/harness/** and e2e/playwright.config.ts (v3-sf-scaffold)",
+    "e2e/desktop/visual/**/*.png",
+    "the e2e/desktop dirs of the other re-key Issues"
+  ],
+  "concept": "migration-release#6.4 e2e row",
+  "contract": "Read basalt-ui docs/v3/concepts/migration-release.md 6.4, shutterflow docs/decisions/0028-visual-regression-gate.md (no bulk baseline regeneration) and AGENTS.md safety rule 1 (photo inputs are the owner's; never read /Volumes). basalt-ui is pinned exact next.N (the gate's floor, v3-sf-bump in `after`): its docs/recipes and llms.txt are the API truth; never edit package.json or bun.lock. Counts today (grep -il mantine over e2e/desktop, 2026-11-09): 65 .ts files, 53 specs, 30 reference mantine (the concept said 26). `SLOTS` and data-slot come from basalt-ui/testing; no data-shot attributes. Only files that reference mantine change.",
+  "exemplar": "e2e/desktop/visual/invariants.spec.ts after v3-sf-scaffold for the selector style.",
+  "change": "Replace each `.mantine-*`, `[data-mantine-*]` and role-by-Mantine-label selector in the owned specs and fixtures with the data-slot selector the v3 app exposes; fix the scheme key the fixtures write (`basalt:scheme`; Mantine's key only as the legacy read). No test is deleted or fixme'd without a named reason. Rule: the e2e oxlint run stays clean. Skill snippet: none.",
+  "commits": "Shutterflow ships by push to master: conventional, one concern each, no attribution. Never edit node_modules or basalt-ui; a gap is a `friction:` line in the PR body.",
+  "proof": "hygiene.check is false: the factory cannot run `make e2e`. Specs are owner-run at cutover; here they must list and typecheck.",
+  "acceptance": [
+    "`rg -n -i mantine e2e/desktop/{settings,prefs,account,albums,collections,first-run,pipeline} --glob '*.ts' | rg -v 'mantine-color-scheme-value'` returns nothing, and `rg -l mantine-color-scheme-value e2e/desktop` lists at most one file (the legacy-key read)",
+    "`bun run --filter @shutterflow/e2e-desktop typecheck` exits 0",
+    "`bun run --cwd e2e playwright test --list --project desktop --project pipeline` lists the same spec files for these directories as on origin/master",
+    "`git diff --stat origin/master -- e2e/desktop/visual` shows no *.png change"
+  ],
+  "out_of_scope": "Running the suites, regenerating baselines, other directories, gallery and share e2e, app code."
+}

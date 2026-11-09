@@ -1,0 +1,35 @@
+{
+  "repo": "argo",
+  "why": "Once v3 is served and verified, the old app and the sibling machinery are dead weight, and two managed layers still coexist. Deleting is its own PR so a revert restores the old app alone.",
+  "what": "Delete apps/dashboard and retire the sibling machinery. The repo's check, lint and hooks run through the app's own bin until v3-argo-cutover runs init at the root.",
+  "owns": [
+    "apps/dashboard/**",
+    "apps/dashboard-v3/package.json",
+    "package.json",
+    "bun.lock",
+    "Makefile",
+    ".claude/rules/basalt-v3-*.md",
+    ".claude/skills/basalt-v3-*",
+    "AGENTS.md",
+    "scripts/**"
+  ],
+  "must_not_touch": [
+    "apps/api/**",
+    "project.yaml",
+    "drizzle migrations",
+    "apps/dashboard-v3/src/**"
+  ],
+  "concept": "migration-release#6.3 cutover row; 6.1",
+  "contract": "docs/v3/concepts/migration-release.md 6.1 (cutover deletes basalt-v3-* and the hand note, removes `sibling`). Gate: v3-argo-cutover-flip is deployed and `make verify` is green on master. The root `basalt-ui` 2.29.0 install goes with the old app; the root lint line (`oxlint . && basalt-ui check-theme`) runs the app bin from here to the init Issue.",
+  "exemplar": "The diff of v3-argo-scaffold, reversed.",
+  "change": "1. `git rm -r apps/dashboard` in its own commit. 2. Remove root basalt.app, basalt.roots and basalt.exempt, the app's `sibling` key, the basalt-v3-* rules and skills, the AGENTS note; point `lint`, `check` and lefthook at the app's bin (`apps/dashboard-v3/node_modules/.bin/basalt-ui` or the workspace bin) and fold check-v3 into `check`. 3. Remove every @mantine entry and the root basalt-ui dependency from package.json and bun.lock. The directory name apps/dashboard-v3 stays (a rename is a later chore). Rule: the app's `doctor` and `lint` pass. Skill snippet: none.",
+  "commits": "Argo ships by push to master: conventional, one concern each, no attribution. Never edit node_modules or basalt-ui; a gap is a `friction:` line in the PR body, worked around in app code. Deletion of apps/dashboard in its own commit.",
+  "proof": "`make check`; after the factory deploy `make version` equals origin/master and `make verify` exits 0; rollback is `make rollback`.",
+  "acceptance": [
+    "`ls apps/dashboard` fails and `rg -n '@mantine' package.json apps bun.lock` returns no match",
+    "`rg -n 'sibling|basalt\\.app|basalt-v3' package.json apps/dashboard-v3/package.json Makefile AGENTS.md` returns no match and `ls .claude/rules/basalt-v3-*` fails",
+    "`make check` exits 0 on the final head and runs the app's sync --check, doctor, lint, typecheck, build and test",
+    "after the factory deploy `make version` prints origin/master's sha, `make verify` exits 0 and `make verify-pages BASE=http://127.0.0.1:7737` reports PASS for every line of scripts/evidence/routes.txt"
+  ],
+  "out_of_scope": "init at the root (v3-argo-cutover), renaming apps/dashboard-v3, API changes, new features."
+}

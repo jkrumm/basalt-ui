@@ -1,0 +1,38 @@
+{
+  "why": "Console's push-to-refetch policy (roots, debounce tiers, gap handling) is the named consumer; without it a pushed frame refetches everything or nothing.",
+  "what": "packages/basalt-ui/src/data/live/bind-invalidation* (tests colocated). Created here. Named consumer: console (software-factory apps/console); its adoption is a console-repo row, not this Issue.",
+  "owns": [
+    "packages/basalt-ui/src/data/live/bind-invalidation*",
+    "packages/basalt-ui/docs/bind-invalidation.md"
+  ],
+  "shared_append_only": [
+    "packages/basalt-ui/src/data/index.ts",
+    "packages/basalt-ui/scripts/export-surface.json"
+  ],
+  "must_not_touch": [
+    "packages/basalt-ui/src/{ui,cards,charts,table,controls,shell,content,ai,router,tokens,css}/**",
+    "packages/basalt-ui/src/data/{query-client,unwrap,optimistic,window-key,synced}* (state lane; except the one install call in query-client*)",
+    "packages/basalt-ui/agent/** except where owns say",
+    "packages/basalt-ui/src/core/** (reuse debounce from state-1, do not edit it; keep maxWait local if absent)",
+    "packages/basalt-ui/src/data/live/{live-query,poller,connection,freshness}*",
+    "CHANGELOG.md, MIGRATING.md, llms.txt, scripts/check-budgets/**, other areas' migrations files",
+    "every contract.ts and src/core/ports.ts"
+  ],
+  "concept": "live-realtime#10 issue 3",
+  "contract": "Frozen: ARCHITECTURE.md, src/core/ports.ts. Need a change: factory signal, take the reversible default. Read concepts/live-realtime.md sections 3, 4, 5, 7, 10. Layers: channel L1 (react only), live L2 (./data), views L4 prop-fed (no Query in ./page). Adopt-or-delete verdict: KEEP. Console hand-rolls this policy (src/lib/policy.ts, debounce.ts), which the amended rule counts as the consumer; its adoption is a later console row.",
+  "exemplar": "Donors read-only: console test/policy.test.ts and test/debounce.test.ts, src/lib/policy.ts, debounce.ts, live.ts.",
+  "change": "bindInvalidation(client, channel, {roots, map, onGap (default 'all'), aggregates (slower tier, list tier cut first), patch, scheduler}) returning {start()}: idempotent, one channel per QueryClient, mount-scoped (no module start). Debounce tiers with maxWait (L1). Unknown or unparseable frame invalidates all pushed queries, never nothing; a beats event never reaches map (L2). The first greeting joins boot requests with cancelRefetch false; a later greeting, a 410 or a cursorless reconnect is a gap and applies onGap (L3). A pushed query outside roots is a dev error. Rule: none here. Skill: generated docs/bind-invalidation.md with the console wiring. Tests: ported policy and debounce suites plus L1 to L3.",
+  "commits": "One PR, separate package and non-package commits (isolated-basalt-ui); conventional, empty scope, no attribution.",
+  "proof": "bun test with fakeChannel and a fake scheduler.",
+  "acceptance": [
+    "console's policy and debounce test cases are ported and pass against bindInvalidation",
+    "L1: a steady frame stream cannot starve the refetch past maxWait",
+    "L2: an unparseable frame invalidates all pushed queries; a beats event never reaches map",
+    "L3: first greeting does not cancel in-flight boot fetches; a second greeting applies onGap",
+    "calling start() twice leaves one subscription; the returned stop removes it",
+    "the PR body states the adopt-or-delete status and names console as consumer",
+    "make check exits 0",
+    "git diff --name-only lists only owned paths"
+  ],
+  "out_of_scope": "Console adoption, shutterflow's predicate, the channel, liveQuery, lint, any edit to state-1's debounce."
+}

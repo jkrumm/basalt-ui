@@ -1,0 +1,30 @@
+{
+  "why": "Two token-table values wait on measurement: whether the light `secondary` ring reads as a double edge on the warm ramp (S2) and whether the input boundary meets WCAG 2.2 SC 1.4.11 (S3, hairline about 1.3:1, unaudited). Both gate tok-t2-table.",
+  "what": "tools/spikes/token-surfaces/** and docs/v3/spikes/token-surfaces.md. Compute with packages/basalt-ui/src/tokens/hct.ts `contrastRatio` (read only) and the warm-ramp values of docs/v3/concepts/tokens-visual.md section 3 (canvas, inset, card, raised, hairline); the v3 table comes from tok-t2.",
+  "owns": ["tools/spikes/token-surfaces/**", "docs/v3/spikes/token-surfaces.md"],
+  "must_not_touch": [
+    "CHANGELOG.md",
+    "root package.json, bun.lock, .gitignore, .oxlintignore",
+    "docs/v3/{concepts,issues}/**, docs/v3/ARCHITECTURE.md",
+    "other tools/spikes/* folders",
+    "consumer repos (scratch copies live in the OS temp dir)"
+  ],
+  "concept": "docs/v3/concepts/tokens-visual.md section 8 S2 S3",
+  "contract": "docs/v3/concepts/tokens-visual.md section 8 is frozen; a refuted result names the table change, never makes it.",
+  "exemplar": "scripts/evidence/*.ts (one JSON result per run)",
+  "change": "S2, rule fixed before measuring: render `secondary` (raised plus hairline) in the light scheme with and without the ring at 2x scale; take the pixel column across the control's top edge; `edgeSteps` = steps of 0.02 or more in relative luminance within 3 css px. S3: ratio of the input boundary (`--color-input`, the hairline) against each surface it can sit on (canvas, inset, card, raised) in both schemes; `s3.light` and `s3.dark` are the minima, `bySurface` lists all. The 3.00:1 bar is this Issue's conservative reading of SC 1.4.11; the concept did not audit whether a labelled bordered input needs it. A waiver as not applicable is the owner's.",
+  "commits": "One non-package commit `chore: spike token-surfaces harness and verdict`, empty scope, no attribution.",
+  "proof": "Shots at 1800x1200 and 390x844, light and dark, under tools/spikes/token-surfaces/shots/; at most 3 rounds.",
+  "acceptance": [
+    "run.ts JSON has `s2.ringVsSurface`, `s2.ringVsHairline`, `s2.edgeSteps`, `s3.light`, `s3.dark`, `s3.bySurface` (ratios to 2 decimals)",
+    "`bun tools/spikes/token-surfaces/run.ts` exits 0, prints one JSON object with the keys above (0 = harness ran, not hypothesis held)",
+    "docs/v3/spikes/token-surfaces.md has headings Question, Method, Measurements, Verdict, Then, Affects and the `verdict` lines",
+    "`find tools/spikes/token-surfaces -name '*.test.*' -o -name '*.spec.*'` prints nothing",
+    "`git diff --name-only master...HEAD` lists only `owns` paths",
+    "`grep -rnE 'op://|\\.ts\\.net|192\\.168\\.|ghp_' tools/spikes/token-surfaces docs/v3/spikes/token-surfaces.md` prints nothing",
+    "`make check` passes"
+  ],
+  "out_of_scope": "Editing tokens; picking the final colours.",
+  "envelope": "Harness: tools/spikes/<dir>/ has its own package.json (exact pins); bun.lock and node_modules gitignored there (must_not_touch package.json and bun.lock = repo root only). Passes root oxlint; no *.test.* files; Chrome via the playwright-core pattern of packages/basalt-ui/tests/layout/harness.ts; docs/v3 on master before filing; synthetic data only, private repos as counts and hashed ids.",
+  "verdict": "`S2: PASS|REFUTED|owner-eye` (PASS: `edgeSteps` <= 1; REFUTED: >= 2 with both >= 0.04; else owner-eye) and `S3: PASS|REFUTED` (PASS: both >= 3.00; REFUTED then: add a `--vx-input` pair). `Verdict: PASS` iff both PASS, REFUTED if either is, else `PENDING`. On PENDING tok-t2 proceeds with the concept default (ring kept) and the owner decides at v3-verdict-statcard. run.ts `verdict` pass|refuted|pending."
+}

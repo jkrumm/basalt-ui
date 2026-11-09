@@ -1,0 +1,30 @@
+{
+  "why": "docs/v3/concepts/quality-contract.md section 10 Q3: the library ships uncompiled; precompiling `./table` and `./cards` only pays if the compiler gives 25% or more on the path that ships.",
+  "what": "tools/spikes/compile-table/** (own package.json: tsdown 0.23.7, @rolldown/plugin-babel 0.3.1, babel-plugin-react-compiler 1.0.0 with target 19, Vite as the repo pins it) and docs/v3/spikes/compile-table.md. Built on the v3 `./table` from table-t2 (read only). 2.x perf route reference: apps/playground/src/routes/table-perf.tsx.",
+  "owns": ["tools/spikes/compile-table/**", "docs/v3/spikes/compile-table.md"],
+  "must_not_touch": [
+    "CHANGELOG.md",
+    "root package.json, bun.lock, .gitignore, .oxlintignore",
+    "docs/v3/{concepts,issues}/**, docs/v3/ARCHITECTURE.md",
+    "other tools/spikes/* folders",
+    "consumer repos (scratch copies live in the OS temp dir)"
+  ],
+  "concept": "docs/v3/concepts/quality-contract.md section 10 Q3",
+  "contract": "docs/v3/concepts/quality-contract.md decision 6 and section 10 Q3 are frozen; the 10k-in-DOM case stays forbidden in product.",
+  "exemplar": "scripts/evidence/*.ts (one JSON result per run)",
+  "change": "Build `./table` with tsdown plus the compiler preset and without. 10k-row fixture in real Chrome: click sort, wait two animation frames, median of 11 runs after 1 warm-up; record the 1-minute load average before and the spread (max - min) / median of each arm; rerun once if either spread exceeds 20%. `gainPct` = (off - on) / off x 100. Primary: the virtual 10k (the shipping path). Diagnostic only: 10k in the DOM with the dev assertion disabled, labelled the forbidden case. Run the table test suite on the uncompiled lane. Feeds the `compiler.axis` fixtures.",
+  "commits": "One non-package commit `chore: spike compile-table harness and verdict`, empty scope, no attribution.",
+  "proof": "run.ts JSON plus the verdict doc; run twice, attach both outputs.",
+  "acceptance": [
+    "run.ts JSON has `virtual10k.sortMsOn`, `virtual10k.sortMsOff`, `virtual10k.gainPct`, `virtual10k.spreadPct`, `dom10k.gainPct` (diagnostic), `loadAvg1m`, `uncompiledLaneGreen`",
+    "`bun tools/spikes/compile-table/run.ts` exits 0, prints one JSON object with the keys above (0 = harness ran, not hypothesis held)",
+    "docs/v3/spikes/compile-table.md has headings Question, Method, Measurements, Verdict, Then, Affects and the `verdict` lines",
+    "`find tools/spikes/compile-table -name '*.test.*' -o -name '*.spec.*'` prints nothing",
+    "`git diff --name-only master...HEAD` lists only `owns` paths",
+    "`grep -rnE 'op://|\\.ts\\.net|192\\.168\\.|ghp_' tools/spikes/compile-table docs/v3/spikes/compile-table.md` prints nothing",
+    "`make check` passes"
+  ],
+  "out_of_scope": "Changing the package build; consumer compiler guidance.",
+  "envelope": "Harness: tools/spikes/<dir>/ has its own package.json (exact pins); bun.lock and node_modules gitignored there (must_not_touch package.json and bun.lock = repo root only). Passes root oxlint; no *.test.* files; Chrome via the playwright-core pattern of packages/basalt-ui/tests/layout/harness.ts; docs/v3 on master before filing; synthetic data only, private repos as counts and hashed ids.",
+  "verdict": "`Q3: PASS|REFUTED`: PASS only when `virtual10k.gainPct` >= 25 and `uncompiledLaneGreen` (then precompile `./table`, `./cards`, additive); else REFUTED (stay uncompiled). `Verdict:` equals Q3; run.ts `verdict` the same. A spread above 20% after the rerun voids the run: exit 1, no verdict."
+}

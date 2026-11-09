@@ -1,0 +1,22 @@
+{
+  "repo": "argo",
+  "why": "Argo v3 is built route by route as the sibling app on the same API; the astro route is 39 files, so its charts land first as their own Issue. Gated by the G4 freeze.",
+  "what": "The four astro charts (cloud layers, sky panorama, night timeline, monthly budget) with their geometry and domain tests. No route file.",
+  "owns": ["apps/dashboard-v3/src/features/astro-window/charts/**"],
+  "must_not_touch": [
+    "apps/dashboard/**, apps/api/**, packages/shared/**, .basalt/**, apps/dashboard-v3/package.json and bun.lock (v3-argo-bump-g3/g4), other Issues' dirs under apps/dashboard-v3/src"
+  ],
+  "concept": "migration-release#6.3 argo route rows",
+  "contract": "Read basalt-ui docs/v3/concepts/migration-release.md 6.1-6.3, argo DESIGN.md and the managed layer (.claude/rules/basalt-v3-*.md, skills basalt-v3-*). basalt-ui is pinned exact next.N (the gate's floor, v3-argo-bump in `after`): its docs/recipes and llms.txt are the API truth; never edit package.json or bun.lock. Never import apps/dashboard; share through @argo/shared. *.module.css files are not ported (classes replace them). This feature's model.ts, types.ts and tests are ported here.",
+  "exemplar": "Follow apps/dashboard-v3/src/routes/__root.tsx, then the nearest landed route port, and the catalogue in .claude/skills/basalt-v3-design.",
+  "change": "Port charts/{cloud-layers-chart,monthly-budget-chart,night-timeline-chart,sky-panorama}.tsx on chart kinds, series from lib/series (v3-argo-state-features); night-timeline-domain and sky-panorama-geometry and their tests move unchanged apart from imports. Rule: the app preset passes without new waivers. Skill snippet: none; recipes: the installed docs/recipes.",
+  "commits": "Argo ships by push to master: conventional, one concern each, no attribution. Never edit node_modules or basalt-ui; a gap is a `friction:` line in the PR body, worked around in app code.",
+  "proof": "Unit and DOM tests only; the rendered proof is the parent route Issue's board.",
+  "acceptance": [
+    "`make check` exits 0 (runs check-v3: sync --check, doctor, lint, typecheck, build, test)",
+    "`rg -n '@mantine|apps/dashboard/' apps/dashboard-v3/src/features/astro-window/charts/**` returns nothing",
+    "`bun scripts/check-test-port.ts apps/dashboard/src/features/astro-window/charts apps/dashboard-v3/src/features/astro-window/charts` exits 0 and `bun --cwd apps/dashboard-v3 test src/features/astro-window/charts` passes (changed lines carry `// port: <reason>` markers, listed in the PR)",
+    "each chart renders through renderApp at loading, ready and empty without throwing (DOM test; geometry is the parent route's board)"
+  ],
+  "out_of_scope": "Other routes, state and shell code, API changes."
+}

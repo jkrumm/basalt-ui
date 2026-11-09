@@ -1,0 +1,37 @@
+{
+  "why": "Table GA needs one runnable exemplar on the finances shape, the teaching reference, the view-switch recipe and the machine migration rows.",
+  "what": "apps/playground/src/routes/table.tsx. New: view-switch recipe and doc, references/table.md, migrations/areas/table.json, tests/layout/table-exemplar*.",
+  "owns": [
+    "apps/playground/src/routes/table.tsx",
+    "apps/playground/src/recipes/view-switch*",
+    "packages/basalt-ui/docs/recipes/view-switch.md",
+    "packages/basalt-ui/agent/skills/basalt-design/references/table*",
+    "packages/basalt-ui/migrations/areas/table.json",
+    "packages/basalt-ui/tests/layout/table-exemplar*",
+    "packages/basalt-ui/docs/recipes/{saved-views,export}.md",
+    "apps/playground/src/recipes/{saved-views,export}*"
+  ],
+  "must_not_touch": [
+    "packages/basalt-ui/src/**",
+    "other playground routes",
+    "packages/basalt-ui/agent/rules/**",
+    "MIGRATING.md, llms.txt"
+  ],
+  "concept": "data-table#12 T5",
+  "contract": "Read docs/v3/concepts/data-table.md 3 (View mode), 7, 9, 11. Types and parts are frozen; an API gap is a signal plus the reversible default. table.md goes in the references dir v3-sk-7 landed; if v3-sk-6 folded the skill into docs, put it beside them and signal the path.",
+  "exemplar": "apps/playground/src/routes/cards.tsx (route and shot layout), agent/skills/basalt-design/references/stat-tile.md (reference style).",
+  "change": "One concern: GA proof and teach. Route: three named sections, each its own `useDataTable`, state via defineControls and field.composite, phone cards by default. (1) Finances shape: server mode with rowCount, chips, facets, views, selection with BulkBar. (2) Large: client mode, `virtual`, height 'fill', c.select, 10k rows. (3) Grouped: client mode, one declared group with summary.  Recipes: saved-views (ViewStore, 4.8) and export (t.table plus a short CSV), each a region plus at most 15 lines prose; and ViewTabs over field.enum on param `as` driving one useDataTable (cardsBelow 'always'), as `// #region recipe:view-switch` of the compiled recipe file plus at most 15 lines prose (doc at most 60). Reference: mode, kinds and priority, state, phone, selection, the 390 px check, links to docs/data-table.md; `// @check` snippets. Rows: one per line of the concept's section 11 table (BasaltDataTable, createColumnHelper, manual* to mode, initial*/on*Change flagged manual, renderCard manual, c.select, bulkActions to selection, priority to 1|2|3, stickyHeader deleted) plus valueShifts (tiers replace the fold, phone default cards). Rule shipped: primitive-bypass table forms; fixtures raw-table, role-grid, ui-table-sort must exist, else signal.",
+  "commits": "One PR, separate package and non-package commits (isolated-basalt-ui); conventional, empty scope, no attribution; make sync-self its own commit.",
+  "proof": "Shots of /table at 1800x1200 and 390x844, dark and light, at most 3 rounds; the quality matrix reads the routes dir, so the route joins it.",
+  "acceptance": [
+    "make check passes: the playground typecheck compiles the route and recipe; scripts/skill-snippets.test.ts compiles the reference snippets.",
+    "docs/recipes/view-switch.md is at most 60 lines, its region matches the recipe file and `make gen-check` passes.",
+    "migrations/areas/table.json validates against the row schema with one row per line of the concept's section 11 table; `release-migrating --check` passes.",
+    "tests/layout/table-exemplar.layout.test.ts at 390: every column's data is reachable, one fixture each for detail, onRowActivate and neither.",
+    "The quality matrix passes the route at 1800x1200 and 390x844 in both schemes; shot paths in the PR body.",
+    "The primitive-bypass table fixtures fail under the preset, the message naming DataTable.",
+    "`git diff --name-only` lists only owned paths and the sync-self commit.",
+    "docs/recipes/{saved-views,export}.md exist, each at most 60 lines, with make gen-check green"
+  ],
+  "out_of_scope": "Any src change, new kinds, finances edits (v3-g3-finances), other recipes."
+}

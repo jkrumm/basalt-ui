@@ -1,0 +1,32 @@
+{
+  "why": "Agents skip skills and guards when setup is half done. init declares the profile, writes every managed file, seeds the budget and ends in doctor.",
+  "what": "New: packages/basalt-ui/src/cli/init/** and src/cli/presets.ts (presetFiles(manifest): gr-4's oxlint preset for bridge and above, st-6's renderStylelintConfig for every profile), with tests. Outside owns: delete the 2.x src/cli/init.ts (name collision), install-root.ts and the 2.x tests only they import; replace the init dispatch in src/cli/index.ts; point the default presetFiles in src/cli/sync/ at ./presets (one line).",
+  "owns": ["packages/basalt-ui/src/cli/init/**", "packages/basalt-ui/src/cli/presets*"],
+  "must_not_touch": [
+    "CHANGELOG.md",
+    "packages/basalt-ui/{MIGRATING.md,llms.txt}",
+    "packages/basalt-ui/scripts/check-budgets/**",
+    "**/contract.ts",
+    "packages/basalt-ui/src/{ui,shell,charts,tokens}/**",
+    "apps/marketing/**",
+    "packages/basalt-ui/src/lint/{rules,preset*,rule-table*,stylelint}/**",
+    "packages/basalt-ui/src/cli/{doctor,lint}/**",
+    "packages/basalt-ui/agent/**"
+  ],
+  "concept": "skills-agent-layer#10 issue 3",
+  "contract": "docs/v3/concepts/skills-agent-layer.md sections 4.1, 6 (init rewrite), 7; docs/v3/ARCHITECTURE.md sections 2 (manifest, budget.json schema) and 3 (peers). Needs manifest tokens[] and extra (sk-2), renderStylelintConfig (st-6), the oxlint preset (gr-4), doctor (sk-3a).",
+  "exemplar": "src/cli/init.ts and init-sync.test.ts (2.x).",
+  "change": "init --profile tokens|bridge|parts|app [--root <path>]... (all paths relative to the repo root) [--tokens-out <css>] [--tokens-json-out <json>] [--extra <file>] [--accent --neutral --vibrancy --selector]. Profile required, never inferred (exit 1 without); each --root (default .) is declared in manifest.roots with the profile. Writes the manifest with tokens[] entries (out, format, flags = identity flags plus --extra) and extra, and generates each output by running tokens:css (an --extra file must already exist); installs the profile's peers at exact pins with the local package manager (tokens: stylelint, postcss-html; bridge and above add oxlint, @shadcn/lint); patches vite or css only for a recognised shape, else prints the lines; places managed files at the git or workspace root through sync, with .stylelintrc.basalt.json for every profile and .oxlintrc.basalt.json for bridge and above; seeds .basalt/budget.json with seedBudget(profile) from src/cli/budget (v3-sk-3b; counts are landed later by lint --stats --write-budget); formatter ignore; DESIGN.md seed from agent/templates/DESIGN.md.tpl only when no declared root has one; runs doctor last. Steps sit in init/steps.ts; v3-sk-4 adds the hook step. Unflip the .failing invariants naming this Issue. Rule and skill snippet: none. Test: per-profile temp-dir fixtures, package manager injected.",
+  "commits": "One PR, separate package and non-package commits (isolated-basalt-ui); conventional, empty scope, no attribution.",
+  "proof": "Temp-dir fixtures per profile; no network.",
+  "acceptance": [
+    "bun test packages/basalt-ui/src/cli/init exits 0",
+    "init without --profile exits 1; init twice produces no diff; init never invokes bunx; --root twice declares two roots",
+    "On a tokens-profile fixture, init writes .stylelintrc.basalt.json and manifest tokens[]; stylelint with that config reports a seeded .astro offender and ignores the committed tokens file",
+    "A bridge fixture gets both presets; a tokens fixture gets no oxlint preset",
+    "The seeded .basalt/budget.json equals seedBudget(profile) and passes readBudget",
+    "src/cli/init.ts is gone and node packages/basalt-ui/bin/basalt-ui.mjs init --profile bogus exits 1",
+    "make check exits 0"
+  ],
+  "out_of_scope": "Doctor (sk-3a), hook shim and settings.json merge (sk-4), rule and skill text (sk-5, G1), preset generation."
+}

@@ -1,0 +1,37 @@
+{
+  "why": "Eleven argo pages, linewatch and console each hand-roll a pill bar that overflows on phones; a data-driven FilterSet with a measured fold and a Filters (n) sheet replaces them.",
+  "what": "packages/basalt-ui/src/controls/filter-set*. The 2.x filter-set.tsx is rewritten in place and its test retargeted here; filter-pill and filter-sheet stay as donors.",
+  "owns": [
+    "packages/basalt-ui/src/controls/filter-set*",
+    "packages/basalt-ui/docs/filter-set.md",
+    "packages/basalt-ui/src/core/messages/filters.ts",
+    "packages/basalt-ui/tests/layout/{,fixture/}controls-filter-set*"
+  ],
+  "shared_append_only": [
+    "packages/basalt-ui/src/controls/index.ts",
+    "packages/basalt-ui/scripts/export-surface.json"
+  ],
+  "must_not_touch": [
+    "packages/basalt-ui/src/{ui,table,charts,cards,page,shell,content,ai,tokens,css,lint,router}/**, packages/basalt-ui/agent/**",
+    "packages/basalt-ui/src/controls/{view-tabs,globals,form-field,form-row,control-view,spec,filter-slot,control-home,renderers}*",
+    "CHANGELOG.md, MIGRATING.md, llms.txt, scripts/check-budgets/**, other areas' migrations files",
+    "every contract.ts and src/core/ports.ts"
+  ],
+  "concept": "controls-url-state#10 issue 5",
+  "contract": "Frozen: ARCHITECTURE.md, this domain's contract.ts, src/core/ports.ts. Need a change: factory signal, take the reversible default. Read concepts/controls-url-state.md sections 3, 5, 9, 10 and evidence/gap-global-local-control-scope.md section 3 (prototype API). src/core/ports.ts owns ControlHandle and ControlsSlot. Primitives come only as basalt-ui/ui/<name>; date-picker by dynamic import. Strings: useMessages, English defaults in your owned src/core/messages/filters.ts (qa-i2 seeds it). Invariants: section 7 FilterSet row (pill prints the value even at default, off-catalogue value still renders, multi complete equals empty, no nested pills, Filters (n) stable with hidden surfaces).",
+  "exemplar": "2.x donors stay: src/controls/filter-set.tsx, filter-pill.tsx, filter-sheet.tsx and tests. Anatomy: src/controls/{control-view,control-home}* (ctl-4, ctl-4b; read in the tree).",
+  "change": "FilterSet({specs}) default home pill: pills in one nowrap row, +N fold (measured, SSR-clipped row), below @narrow a 'Filters (n)' button opening a row-form sheet; never scroll, never wrap; pill prints the value; census via useActiveCount and a Reset all button; keys controls.moreFilters, showMore. useControlName gives pill name = control name with value as text. Rule: control-home (ctl-8) flags a raw Select as filter. Skill: generated docs/filter-set.md with the spec(...) example. Tests: ported invariants, layout matrix, SSR post-hydrate fold (S3).",
+  "commits": "One PR, separate package and non-package commits (isolated-basalt-ui); conventional, empty scope, no attribution.",
+  "proof": "Layout and axe tests under tests/layout/ on a fixture host (tests/layout/fixture/) at 1440, 768, 390, 320; screenshots of the fixture host taken by the layout test (1800x1200 and 390x844, dark and light, at most 3 rounds) and named in the PR body. Long labels and 8 filters.",
+  "acceptance": [
+    "layout at 1440, 768, 390 and 320 with long labels, 8 filters and 0 filters: no wrap, no horizontal scroll, Filters (n) count stable",
+    "SSR then hydrate: zero recoverable errors and no sibling layout shift after the fold (S3)",
+    "a pill prints the VALUE at its default; an off-catalogue value still renders; an archived option is disabled, not omitted",
+    "a multi selection equal to the full set behaves as empty (argo exercises)",
+    "axe zero serious or critical with the sheet open; 44 px hit floor on coarse",
+    "no nested pill: a folded pill opens as a row (test)",
+    "make check exits 0",
+    "git diff --name-only lists only owned paths"
+  ],
+  "out_of_scope": "ControlView (ctl-4), ViewTabs, FormField, table filter chips (table-t3), saved views."
+}

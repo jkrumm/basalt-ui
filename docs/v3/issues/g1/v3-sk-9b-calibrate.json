@@ -1,0 +1,31 @@
+{
+  "why": "A rubric change must not silently move scores; calibration records six per-seed verdicts against the rubric hash so a change shows as red until re-recorded.",
+  "what": "packages/basalt-ui/scripts/calibrate-record*, docs/calibration/**, apps/playground/src/scenarios/Calibrate*.tsx, tests/agent/calibration*.test.ts. Created here; split from v3-sk-9-reviewer (after it).",
+  "owns": [
+    "packages/basalt-ui/scripts/calibrate-record*",
+    "packages/basalt-ui/docs/calibration/**",
+    "apps/playground/src/scenarios/Calibrate*.tsx",
+    "packages/basalt-ui/tests/agent/calibration*.test.ts"
+  ],
+  "must_not_touch": [
+    "packages/basalt-ui/src/{ui,page,shell,cards,charts,controls,table,content,ai,router,data,tokens,css,lint}/**",
+    "packages/basalt-ui/agent/**",
+    "packages/basalt-ui/src/cli/**",
+    "CHANGELOG.md, MIGRATING.md, llms.txt, scripts/check-budgets/**, other areas' migrations files",
+    "every contract.ts and src/core/ports.ts"
+  ],
+  "concept": "skills-agent-layer#10 issue 9",
+  "contract": "Frozen: ARCHITECTURE.md, this domain's contract.ts, src/core/ports.ts. Need a change: factory signal, take the reversible default. Read concepts/skills-agent-layer.md sections 5, 8, 10. The CLI stays model-free: this Issue ships the tooling and the hash test, not the recording. If the playground reset dropped the six Calibrate*.tsx scenarios, recreate them in the same place.",
+  "exemplar": "2.x apps/playground/src/scenarios/Calibrate*.tsx, src/cli/board-freshness.test.ts.",
+  "change": "scripts/calibrate-record writes docs/calibration/last.json {rubricHash, verdicts[6]} from six reviewer verdict files given on the command line (it calls no model). Six seeded boards (five seeded offenders and CalibrateGood) ported from the 2.x scenarios. Hash test: no last.json reports not-calibrated (skipped, never counted as passed, exit 0); a last.json whose rubricHash differs from agent/reviewer/rubric.md, or with fewer than six per-seed verdicts, is red. Recording the six blind runs is an owner-run step (six reviewer sessions, then calibrate-record), not done by this lead. Rule: none. Skill: none. Tests: hash test, calibrate-record test.",
+  "commits": "One PR; package and non-package (apps/playground) changes in separate commits (isolated-basalt-ui). Conventional, empty scope, no feat!:, no attribution.",
+  "proof": "bun test tests/agent/calibration; the six scenarios compile in the playground typecheck.",
+  "acceptance": [
+    "hash test: with no last.json it reports not-calibrated as skipped (exit 0, not a pass); with a last.json of fewer than six verdicts or a stale rubricHash make check is red",
+    "calibrate-record over six fixture verdict files writes last.json with the current rubric hash and six per-seed verdicts, and calls no model (grep for fetch and an SDK import is empty)",
+    "the six scenarios (one known-good) typecheck in apps/playground and each seeded offender names its expected failure in a comment",
+    "make check exits 0",
+    "git diff --name-only lists only owned paths"
+  ],
+  "out_of_scope": "The rubric and wrapper (sk-9), the six blind runs and the committed last.json (owner-run), shot (sk-10), a model-calling script."
+}

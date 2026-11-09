@@ -1,0 +1,27 @@
+{
+  "repo": "argo",
+  "why": "Argo v3 is built route by route as the sibling app on the same API; this route lands once the layers it imports are frozen, so the owner sees live data on /v3/. G4.",
+  "what": "The Tonight tab and the astro route: components, formulas, types and the route file that mounts the charts (v3-argo-route-astro-charts) and the map page (v3-argo-route-astro-map).",
+  "owns": [
+    "apps/dashboard-v3/src/features/astro-window/{components/{night-anatomy,night-strip,score-card,scout-panel,site-labels,sources-footer,tonight-top,unknown-site-card,verdict-card}*,constants,formulas,index,types}*",
+    "apps/dashboard-v3/src/routes/astro-window.tsx"
+  ],
+  "must_not_touch": [
+    "apps/dashboard/**, apps/api/**, packages/shared/**, .basalt/**, apps/dashboard-v3/package.json and bun.lock (v3-argo-bump-g3/g4), other Issues' dirs under apps/dashboard-v3/src",
+    "apps/dashboard-v3/src/features/astro-window/{charts/**,map-layers*,components/{site-map,map-overlays,map-settings-panel}*} (the two Issues above)"
+  ],
+  "concept": "migration-release#6.3 argo route rows",
+  "contract": "Read basalt-ui docs/v3/concepts/migration-release.md 6.1-6.3, argo DESIGN.md and the managed layer (.claude/rules/basalt-v3-*.md, skills basalt-v3-*). basalt-ui is pinned exact next.N (the gate's floor, v3-argo-bump in `after`): its docs/recipes and llms.txt are the API truth; never edit package.json or bun.lock. Never import apps/dashboard; share through @argo/shared. *.module.css files are not ported (classes replace them). This feature's model.ts, types.ts and tests are ported here.",
+  "exemplar": "Follow apps/dashboard-v3/src/routes/__root.tsx, then the nearest landed route port, and the catalogue in .claude/skills/basalt-v3-design.",
+  "change": "Port the Tonight tab components (verdict-card, score-card, night-strip, night-anatomy, scout-panel, unknown-site-card, sources-footer, tonight-top, site-labels), formulas, constants, types, and the route with `Page fill={{min: 420}}` on the map tab and route-owned search keys (lp, wx, terrain) kept by nav `search` functions; it mounts the charts and map parts. Rule: the app preset passes without new waivers. Skill snippet: none; recipes: the installed docs/recipes.",
+  "commits": "Argo ships by push to master: conventional, one concern each, no attribution. Never edit node_modules or basalt-ui; a gap is a `friction:` line in the PR body, worked around in app code.",
+  "proof": "`make design-shot APP=dashboard-v3 ROUTES=\"/astro-window\"` (1440x900, 390x844) beside the old route's shots from APP=dashboard; basalt-design reviewer on the board; density equal or better; at most 3 rounds.",
+  "acceptance": [
+    "`make check` exits 0 (runs check-v3: sync --check, doctor, lint, typecheck, build, test)",
+    "`rg -n '@mantine|apps/dashboard/' apps/dashboard-v3/src/features/astro-window/** apps/dashboard-v3/src/routes/astro-window.tsx` returns nothing",
+    "`bun scripts/check-test-port.ts apps/dashboard/src/features/astro-window apps/dashboard-v3/src/features/astro-window --only '{formulas,components/site-labels}*'` exits 0 and `bun --cwd apps/dashboard-v3 test src/features/astro-window` passes (changed lines carry `// port: <reason>` markers, listed in the PR)",
+    "`make design-shot APP=dashboard-v3 ROUTES=\"/astro-window\"` writes 1440x900 and 390x844 shots against live data with no horizontal overflow at 390",
+    "`make verify-pages BASE=http://127.0.0.1:7737/v3 ROUTES=/astro-window` (and `/astro-window?tab=forecast`, `/astro-window?tab=map`) reports PASS after the factory deploy (`make version` = pushed sha), else not-run"
+  ],
+  "out_of_scope": "Other routes, state and shell code, API changes."
+}

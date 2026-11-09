@@ -1,0 +1,31 @@
+{
+  "why": "Passes before freeze and ctl-2: argo is the file-route risk, the prototype covers enum, string, multi only (docs/v3/concepts/controls-url-state.md section 9 S1, S8).",
+  "what": "tools/spikes/controls-codegen/** (own package.json: @tanstack/react-router 1.170.46, zod 4.6.7, typescript 6.0.3, exact) and docs/v3/spikes/controls-codegen.md. The 37-test prototype is not in the tree: rebuild it from controls-url-state.md sections 4, 5; throwaway, ctl-2 re-implements `defineControls`. Read argo's finance.tsx route.",
+  "owns": ["tools/spikes/controls-codegen/**", "docs/v3/spikes/controls-codegen.md"],
+  "must_not_touch": [
+    "CHANGELOG.md",
+    "root package.json, bun.lock, .gitignore, .oxlintignore",
+    "docs/v3/{concepts,issues}/**, docs/v3/ARCHITECTURE.md",
+    "other tools/spikes/* folders",
+    "consumer repos (scratch copies live in the OS temp dir)"
+  ],
+  "concept": "docs/v3/concepts/controls-url-state.md section 9 S1 S8",
+  "contract": "docs/v3/concepts/controls-url-state.md sections 4, 5, 9 are frozen; a missing kind is recorded, not added.",
+  "exemplar": "scripts/evidence/*.ts (one JSON result per run)",
+  "change": "Router pinned at 1.170.46, where the 37 tests passed; also run the cases on argo's locked 1.170.38 and record `routerVersionDelta`, never a verdict input. S1: file routes plus codegen, branded validator, `types.input`, `search.middlewares`. S8: `number`, `boolean`, `range` codecs and `toWindow`; `retain` on a layout route across 6 child routes; a full-default `multi`; history masking; the codec matrix under both parse configs (JSON, string-only).",
+  "commits": "One non-package commit `chore: spike controls-codegen harness and verdict`, empty scope, no attribution.",
+  "proof": "run.ts JSON plus the verdict doc; run twice, attach both outputs.",
+  "acceptance": [
+    "`node_modules/.bin/tsc --noEmit -p .` run in the spike folder after `bun install` exits 0, `@ts-expect-error` negatives included",
+    "run.ts JSON has `s1.fileRouteCodegen`, `s8.retainChildrenKept`, `s8.multiFullDefault`, `s8.historyEntries`, `s8.toWindow`, `routerVersionDelta`, and `roundTrip` per codec (number, boolean, range, enum, string, multi) and parse config",
+    "`bun tools/spikes/controls-codegen/run.ts` exits 0, prints one JSON object with the keys above (0 = harness ran, not hypothesis held)",
+    "docs/v3/spikes/controls-codegen.md has headings Question, Method, Measurements, Verdict, Then, Affects and the `verdict` lines",
+    "`find tools/spikes/controls-codegen -name '*.test.*' -o -name '*.spec.*'` prints nothing",
+    "`git diff --name-only master...HEAD` lists only `owns` paths",
+    "`grep -rnE 'op://|\\.ts\\.net|192\\.168\\.|ghp_' tools/spikes/controls-codegen docs/v3/spikes/controls-codegen.md` prints nothing",
+    "`make check` passes"
+  ],
+  "out_of_scope": "defineControls; widgets, FilterSet, views.",
+  "envelope": "Harness: tools/spikes/<dir>/ has its own package.json (exact pins); bun.lock and node_modules gitignored there (must_not_touch package.json and bun.lock = repo root only). Passes root oxlint; no *.test.* files; Chrome via the playwright-core pattern of packages/basalt-ui/tests/layout/harness.ts; docs/v3 on master before filing; synthetic data only, private repos as counts and hashed ids.",
+  "verdict": "`S1: PASS|REFUTED`, `S8: PASS|REFUTED`; `Verdict: PASS` iff both PASS (REFUTED then: amend section 4.x before freeze); run.ts `verdict` the same. S1 PASS = a file-route app type-checks and parses, each `@ts-expect-error` branded-validator negative errors, `types.input` rejects an undeclared key, middlewares run strip, retain. S8 PASS = every codec round-trips under both configs; 6 of 6 children keep retained keys and leaving the layout drops them; a full-default `multi` omits its URL param while an empty selection stays distinct; a replace field adds 0 history entries, a push field 1, even when the stripped default is written; `toWindow` yields preset or from/to"
+}

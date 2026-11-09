@@ -1,0 +1,38 @@
+{
+  "why": "Console 39 viewport-keyed classes, epos 21 dark: forks, 16 bordered cards: class-shaped misuse is the largest recorded defect family and shadcn's own rules do not see it.",
+  "what": "New: packages/basalt-ui/src/lint/rules/class/** (one data module for the family) and packages/basalt-ui/test/fixtures/lint/class/** (one fixture file per id). Eighteen forms: viewport-keyed 3, dark-fork 1, fixed-colour 1, status-fill-as-text 1, raw-scroll 1, tw-off-law 9, app-spacing 2.",
+  "owns": [
+    "packages/basalt-ui/src/lint/rules/class/**",
+    "packages/basalt-ui/test/fixtures/lint/class/**"
+  ],
+  "must_not_touch": [
+    "CHANGELOG.md",
+    "packages/basalt-ui/{MIGRATING.md,llms.txt}",
+    "packages/basalt-ui/scripts/check-budgets/**",
+    "**/contract.ts",
+    "packages/basalt-ui/src/{ui,shell}/**",
+    "apps/marketing/**",
+    "packages/basalt-ui/src/tokens/**",
+    "packages/basalt-ui/src/cli/**",
+    "packages/basalt-ui/agent/**",
+    "packages/basalt-ui/src/lint/rule-table*",
+    "packages/basalt-ui/src/lint/factory*",
+    "packages/basalt-ui/src/lint/rules/structure/**"
+  ],
+  "concept": "guardrails#4",
+  "contract": "docs/v3/concepts/guardrails.md section 4 rows 1-7 (forms, profiles, fix text), section 13, and the app-spacing evidence paragraph. tw-off-law (c) reads src/lint/generated/zone-a.ts from v3-tok-t4-cli, never a hand list.",
+  "exemplar": "The factory and table from v3-gr-1-rule-table; the only edit outside owns is one line in src/lint/index.ts adding this family.",
+  "change": "Define the seven ids with the factory. Profiles: tw-off-law (b, c, h), raw-scroll and app-spacing at parts and above, the rest at bridge and above. The app-spacing padding form is built but off until the F5P spike passes (docs/v3/spikes/allow-padding.md). The JS matchMedia and useMediaQuery form of viewport-keyed is an AST form. Every message names its fix token (@narrow:, Status, ui/scroll-area, a ladder step). Rules shipped: viewport-keyed, dark-fork, fixed-colour, status-fill-as-text, raw-scroll, tw-off-law, app-spacing. Skill snippet: none here; v3-sk-5's rules tag their bullets [lint:<id>]. Test: RuleTester with a valid and an invalid case per form from the fixtures. Input to id (each fixture asserts it): max-md:flex -> viewport-keyed; @max-md:flex -> tw-off-law (e); bg-(--vx-good) -> tw-off-law (c); border-l-4 border-bad -> tw-off-law (c) on border-bad; ['gap-4.5','flex'] -> tw-off-law (a); `bg-${tone}-600` -> tw-off-law (g); dark:bg-card -> dark-fork; bg-black -> fixed-colour; overflow-auto -> raw-scroll; mt-4 -> app-spacing.",
+  "commits": "One PR, separate package and non-package commits (isolated-basalt-ui); conventional, empty scope, no attribution.",
+  "proof": "RuleTester per form; preset smoke is v3-gr-4's.",
+  "acceptance": [
+    "bun test packages/basalt-ui/src/lint/rules/class passes",
+    "Each input in the change's input-to-id table fires exactly its id (RuleTester, one case per row)",
+    "Every form has an invalid and a valid fixture and its message contains the fix token",
+    "The padding form is present in the table with enabled false and a reason naming F5P",
+    "No hand-typed colour list appears in the rule files (grep shows zone-a.ts is the only source)",
+    "make check exits 0"
+  ],
+  "out_of_scope": "Structure rules, preset, waiver codemod, flipping the padding form on, rewriting any consumer class.",
+  "test_layout": "Fixture trees live in packages/basalt-ui/test/fixtures/**, hidden from root lint, fmt and bun test by v3-test-roots; add no ignore lines."
+}

@@ -1,0 +1,31 @@
+{
+  "why": "Skills have the weakest evidence (docs/v3/concepts/skills-agent-layer.md decision 2). Kill rule before sk-6..sk-10: with-skill removing fewer than 3 P1-plus-carried findings against no-skill drops the references into generated docs and rules.",
+  "what": "tools/spikes/thin-skill/** (draft thin basalt-design SKILL.md plus anti-defaults, briefs, rubric.md, hook-stub/, runner) and docs/v3/spikes/thin-skill.md; not agent/skills/**. Runner = one fresh `implementer`-role subagent per run, blind reviewer = `reviewer` role, both spawned by the lead; no headless `claude -p`; no model id in any file.",
+  "owns": ["tools/spikes/thin-skill/**", "docs/v3/spikes/thin-skill.md"],
+  "must_not_touch": [
+    "CHANGELOG.md",
+    "root package.json, bun.lock, .gitignore, .oxlintignore",
+    "docs/v3/{concepts,issues}/**, docs/v3/ARCHITECTURE.md",
+    "other tools/spikes/* folders",
+    "consumer repos (scratch copies live in the OS temp dir)"
+  ],
+  "concept": "docs/v3/concepts/skills-agent-layer.md section 8 S1",
+  "contract": "docs/v3/concepts/skills-agent-layer.md section 8 S1 and decision 13 are frozen: the bar is P1 and carried counts, never a score.",
+  "exemplar": "scripts/evidence/*.ts (one JSON result per run)",
+  "change": "StatCard exemplar in a scratch app. 3 briefs (dashboard, list-detail table, settings form) x 4 cells (skill on/off x hook on/off) = 12 runs, each shot at 1800x1200 and 390x844, at most 3 rounds. sk-4 and sk-9 come later: the hook is a stub (PostToolUse running oxlint on the edited file); the reviewer gets rubric.md, shots and diff, cell ids shuffled by seed. rubric.md first: P1 = clipped, overflowing or overlapping box, nameless control, token or lint violation, wrong or missing data; carried = a P1 of round n-1 still open at round n. `.d.ts` look-up = a transcript tool call on a path ending `.d.ts`. A cell the lead cannot run is `not run: <reason>`, never guessed.",
+  "commits": "One non-package commit `chore: spike thin-skill harness and verdict`, empty scope, no attribution.",
+  "proof": "Shots under tools/spikes/thin-skill/shots/.",
+  "acceptance": [
+    "Doc table: row per brief and cell with P1, carried, `.d.ts` look-ups (or `not run: <reason>`), and mean look-ups against 6",
+    "No numeric 0-100 score is used as a bar anywhere in the doc",
+    "`bun tools/spikes/thin-skill/run.ts` exits 0, prints one JSON object with the keys above (0 = harness ran, not hypothesis held)",
+    "docs/v3/spikes/thin-skill.md has headings Question, Method, Measurements, Verdict, Then, Affects and the `verdict` lines",
+    "`find tools/spikes/thin-skill -name '*.test.*' -o -name '*.spec.*'` prints nothing",
+    "`git diff --name-only master...HEAD` lists only `owns` paths",
+    "`grep -rnE 'op://|\\.ts\\.net|192\\.168\\.|ghp_' tools/spikes/thin-skill docs/v3/spikes/thin-skill.md` prints nothing",
+    "`make check` passes"
+  ],
+  "out_of_scope": "References, frames, reviewer, `shot`; S7 (v3-spike-thin-skill-s7); agent/**.",
+  "envelope": "Harness: tools/spikes/<dir>/ has its own package.json (exact pins); bun.lock and node_modules gitignored there (must_not_touch package.json and bun.lock = repo root only). Passes root oxlint; no *.test.* files; Chrome via the playwright-core pattern of packages/basalt-ui/tests/layout/harness.ts; docs/v3 on master before filing; synthetic data only, private repos as counts and hashed ids.",
+  "verdict": "Not binary: one doc line `Kill: yes`, `Kill: no` or `Kill: pending (not run: <cells>)`; no `Verdict:` line. On the hook-off pair only: kill = sum over the 3 briefs of (no-skill minus with-skill P1+carried) < 3. A missing required cell gives `pending`, never imputed; hook-on cells never drive it. run.ts prints `kill`. Line `Owner: pending` records the owner's taste check of the brief-1 shots; Kill does not wait."
+}

@@ -1,0 +1,31 @@
+{
+  "why": "docs/v3/concepts/migration-release.md section 5 puts a read-only epos bridge probe inside the G0 gate (epos, a committed v3 consumer, rejected basalt over required peers). DPO 16 (docs/v3/DIRECTION.md) deletes `--neutral` and `--selector` at G2 if the probe yields no tenant.",
+  "what": "tools/spikes/epos-bridge-probe/** and docs/v3/spikes/epos-bridge-probe.md. Input: an OS-temp copy of ~/IuRoot/epos-ai-teamchat-athena/ui (no .git, .env*, node_modules, dist), committed nowhere. Install: a `bun pm pack` tarball of packages/basalt-ui at the base commit; no employer registry or credential. If peers cannot resolve from public npm, derive `peersAdded` from the tarball's peerDependencies against the copy's package.json; `frozenInstallRun` false. After tok-t4-cli, sk-3-init-doctor, gr-4-preset; before v3-freeze-g0, which lists it in `after`.",
+  "owns": ["tools/spikes/epos-bridge-probe/**", "docs/v3/spikes/epos-bridge-probe.md"],
+  "must_not_touch": [
+    "CHANGELOG.md",
+    "root package.json, bun.lock, .gitignore, .oxlintignore",
+    "docs/v3/{concepts,issues}/**, docs/v3/ARCHITECTURE.md",
+    "other tools/spikes/* folders",
+    "consumer repos (scratch copies live in the OS temp dir)"
+  ],
+  "concept": "docs/v3/concepts/migration-release.md section 5 G0; docs/v3/DIRECTION.md DPO 16",
+  "contract": "docs/v3/concepts/migration-release.md section 5 (G0) is frozen; the employer repo is never written.",
+  "exemplar": "scripts/evidence/*.ts (one JSON result per run)",
+  "change": "In the copy run `init --profile bridge`, `doctor`, the lint preset and `tokens:css` with a hue-only `--accent` from epos's brand navy. Record `peersAdded`, `doctorExit`, `lintFindingsByRule`, `tenantSets` (distinct brand token sets epos selects; 1 = none) and `navyNeedsFillTone` = true when, in either scheme, the emitted accent fill's tone (hct.ts) is more than 10 points above the navy's, or the fill >= 3.0 gate refuses. Numbers and rule ids only: no employer source, hostnames, tenant or customer names. Not here: other epos probes (`./ai` ai-i6, settings v3-spike-synced, `persisted`, `notify`, `frames()` at G6).",
+  "commits": "One non-package commit `chore: spike epos-bridge-probe harness and verdict`, empty scope, no attribution.",
+  "proof": "run.ts JSON plus the verdict doc; run twice, attach both outputs.",
+  "acceptance": [
+    "run.ts JSON has `peersAdded` (list), `frozenInstallRun`, `doctorExit`, `lintFindingsByRule`, `navyNeedsFillTone`, `tenantSets`",
+    "`git status` in the epos checkout is unchanged before and after, and the doc says so",
+    "`bun tools/spikes/epos-bridge-probe/run.ts` exits 0, prints one JSON object with the keys above (0 = harness ran, not hypothesis held)",
+    "docs/v3/spikes/epos-bridge-probe.md has headings Question, Method, Measurements, Verdict, Then, Affects and the `verdict` lines",
+    "`find tools/spikes/epos-bridge-probe -name '*.test.*' -o -name '*.spec.*'` prints nothing",
+    "`git diff --name-only master...HEAD` lists only `owns` paths",
+    "`grep -rnE 'op://|\\.ts\\.net|192\\.168\\.|ghp_' tools/spikes/epos-bridge-probe docs/v3/spikes/epos-bridge-probe.md` prints nothing",
+    "`make check` passes"
+  ],
+  "out_of_scope": "Employer-repo commits; the G6 migration (owner-started after GA); fixing findings.",
+  "envelope": "Harness: tools/spikes/<dir>/ has its own package.json (exact pins); bun.lock and node_modules gitignored there (must_not_touch package.json and bun.lock = repo root only). Passes root oxlint; no *.test.* files; Chrome via the playwright-core pattern of packages/basalt-ui/tests/layout/harness.ts; docs/v3 on master before filing; synthetic data only, private repos as counts and hashed ids.",
+  "verdict": "Not binary: doc lines `Tenant: yes` (`tenantSets` >= 2) or `Tenant: no`, and `Flags: keep` (Tenant yes: `--neutral`, `--selector` stay) or `Flags: delete-at-G2`; no `Verdict:` line. On delete-at-G2 the orchestrator files the deletion after v3-freeze-g1. run.ts prints `tenant` and `flags`."
+}

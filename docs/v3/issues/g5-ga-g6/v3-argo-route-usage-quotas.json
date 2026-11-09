@@ -1,0 +1,27 @@
+{
+  "repo": "argo",
+  "why": "Argo v3 is built route by route as the sibling app on the same API; the usage route is 60 files, so its quota, over-time and drain parts land first. Gated by the G4 freeze.",
+  "what": "The usage tracking quotas, quota chart, over time, drain, heat, pace, period, rhythm, weekly volume and verdict band with their models and tests. No route file.",
+  "owns": [
+    "apps/dashboard-v3/src/features/usage-tracking/{quotas,quota-chart,over-time,drain,heat,pace,period,rhythm,weekly-volume,verdict-band}*"
+  ],
+  "must_not_touch": [
+    "apps/dashboard/**, apps/api/**, packages/shared/**, .basalt/**, apps/dashboard-v3/package.json and bun.lock (v3-argo-bump-g3/g4), other Issues' dirs under apps/dashboard-v3/src",
+    "apps/dashboard-v3/src/features/usage-tracking/accounts* (v3-argo-state-features)",
+    "apps/dashboard-v3/src/features/usage-tracking/flow-node* (v3-argo-state-stores)"
+  ],
+  "concept": "migration-release#6.3 argo route rows",
+  "contract": "Read basalt-ui docs/v3/concepts/migration-release.md 6.1-6.3, argo DESIGN.md and the managed layer (.claude/rules/basalt-v3-*.md, skills basalt-v3-*). basalt-ui is pinned exact next.N (the gate's floor, v3-argo-bump in `after`): its docs/recipes and llms.txt are the API truth; never edit package.json or bun.lock. Never import apps/dashboard; share through @argo/shared. *.module.css files are not ported (classes replace them). This feature's model.ts, types.ts and tests are ported here.",
+  "exemplar": "Follow apps/dashboard-v3/src/routes/__root.tsx, then the nearest landed route port, and the catalogue in .claude/skills/basalt-v3-design.",
+  "change": "Port the quota cards and quota-chart, over-time, drain-chart with drain-model, heat-model, pace-model, period-model, rhythm, weekly-volume and verdict-band on chart kinds, ChartCard facts and ui/meter; models and their tests unchanged apart from imports. Categorical colour follows ledger rows 232-233 (sibling series are not one hue family; adjacent ramp steps are not distinct in dark mode). Rule: the app preset passes without new waivers. Skill snippet: none; recipes: the installed docs/recipes.",
+  "commits": "Argo ships by push to master: conventional, one concern each, no attribution. Never edit node_modules or basalt-ui; a gap is a `friction:` line in the PR body, worked around in app code.",
+  "proof": "Unit and DOM tests only; the rendered proof is the parent route Issue's board.",
+  "acceptance": [
+    "`make check` exits 0 (runs check-v3: sync --check, doctor, lint, typecheck, build, test)",
+    "`rg -n '@mantine|apps/dashboard/' apps/dashboard-v3/src/features/usage-tracking/{quotas,quota-chart,over-time,drain,heat,pace,period,rhythm,weekly-volume,verdict-band}*` returns nothing",
+    "`bun scripts/check-test-port.ts apps/dashboard/src/features/usage-tracking apps/dashboard-v3/src/features/usage-tracking --only '{quotas,quota-chart,over-time,drain,heat,pace,period,rhythm,weekly-volume,verdict-band}*'` exits 0 and `bun --cwd apps/dashboard-v3 test src/features/usage-tracking` passes (changed lines carry `// port: <reason>` markers, listed in the PR)",
+    "a test over the series each chart draws in dark mode asserts every pair in one chart is at least 0.10 apart in OKLab distance (the owner-rejected pair #38bdf8 and #7dd3fc measures 0.083; ledger rows 232-233)",
+    "each chart renders through renderApp at loading, ready and empty without throwing"
+  ],
+  "out_of_scope": "Other routes, state and shell code, API changes."
+}

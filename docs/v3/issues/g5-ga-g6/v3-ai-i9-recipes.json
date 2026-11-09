@@ -1,0 +1,33 @@
+{
+  "why": "The brief wants AI SDK and external runtimes as first-class wiring and generative UI that stays on-brand. Four compiled recipes make that findable.",
+  "what": "Recipes ai-blocks (six seed blocks), ai-sdk-tools (one show tool), ai-external-runtime (three mappers), ai-card (streamed DataPanel), each a playground region plus short prose, with P11. No exports. Paths are under packages/basalt-ui/ unless they start with apps/.",
+  "owns": [
+    "packages/basalt-ui/docs/recipes/{ai-blocks,ai-sdk-tools,ai-external-runtime,ai-card}.md",
+    "apps/playground/src/recipes/{ai-blocks,ai-sdk-tools,ai-external-runtime,ai-card}*"
+  ],
+  "shared_append_only": ["packages/basalt-ui/agent/skills/basalt-app/references/recipes.md"],
+  "must_not_touch": [
+    "CHANGELOG.md",
+    "{MIGRATING.md,llms.txt} (generated)",
+    "src/**/contract.ts, contract-pins.json, other lanes' folders",
+    "src/** (recipes only)",
+    "apps/playground/src/recipes/chat-thread* (v3-ai-i8)",
+    "package.json and bun.lock (v3-deps-w2 / v3-deps-ai added your pins)"
+  ],
+  "concept": "ai-mdx#8 I9; ai-mdx#7 P11",
+  "contract": "docs/v3/concepts/ai-mdx.md decisions 7-8, rows 6, 11, 14, 15, section 4 (ai-sdk-tools shape), P11; skills-agent-layer 3.16 (region plus at most 15 lines, at most 60 lines each, compiled by the playground typecheck). Server code imports schemas only; validate runs inside Block. Needs Callout (v3-ai-i2), a chart kind (v3-charts-2-kinds), DataTable (v3-table-t5-exemplar), DataPanel (v3-cards-1-statgroup), the rule (v3-ai-i5-lint) and `expectCatalog` (v3-ai-i4): all ancestors.",
+  "exemplar": "v3-ai-i8's chat-thread region; section 4's `stat` block and `show` tool.",
+  "change": "ai-blocks: seeds stat, chart, table, callout, list, layout over StatCard, a chart kind, DataTable, Callout, a list and a layout, each with `sample`, blocks/schemas.ts (name, description, props) and a catalog file adding render, tested by expectCatalog. ai-sdk-tools: `show` tool with a z.discriminatedUnion of the block schemas, a route handler, partView rendering the part through Block via toolRenderers. ai-external-runtime: about 30 lines each mapping TanStack AI 1.3, AG-UI 1.0, assistant-ui ThreadMessageLike to MessagePart. ai-card: useCompletion summary into DataPanel via Markdown streaming, height held. Rule: untrusted-markdown and the useChat sub-check run over all four. Skill snippet: the four regions, indexed in llms.",
+  "commits": "Two commits in one PR: packages/basalt-ui/** apart from everything else (isolated-basalt-ui hook); `make sync-self` output its own non-package commit; conventional, empty scope, no feat! or BREAKING CHANGE, no attribution; rebase-merge.",
+  "proof": "P11 on a mock model with ai 7; `make layout` ai-card (DataPanel loading, streaming, settled within 2 px at 1800x1200 and 390x844); ai-blocks shots, both viewports.",
+  "acceptance": [
+    "`bun run --cwd apps/playground typecheck` compiles all four recipe regions and `bun packages/basalt-ui/scripts/gen-recipes.ts --check` exits 0",
+    "ai-blocks.test.tsx: expectCatalog(catalog) passes for all six seed blocks",
+    "ai-sdk-tools.test.ts: a tool input with href `//h` yields the unavailable text and render is never called; input-streaming renders without throwing and the final part renders the stat block",
+    "ai-external-runtime.test.ts maps one fixture message per runtime to MessagePart and the `satisfies never` switch still compiles",
+    "the ai-card layout test shows heights within 2 px across loading, streaming and settled",
+    "each recipe is at most 60 lines and `rg -n 'streamdown|rehype-raw' apps/playground/src/recipes` returns no match; `make check` exits 0",
+    "`bun test tests/agent/sk-8` passes with one line per added recipe in references/recipes.md"
+  ],
+  "out_of_scope": "Exporting blocks from ./ai, catalog.prompt, jsonSchema, a runtime, which blocks consumers want, epos server code."
+}

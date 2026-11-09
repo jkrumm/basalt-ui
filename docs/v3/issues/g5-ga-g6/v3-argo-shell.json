@@ -1,0 +1,37 @@
+{
+  "repo": "argo",
+  "why": "Every route renders inside the frame.",
+  "what": "The v3 root route, login, app shell, nav, commands, auth gate, error boundary, router, notifications, main.tsx, the upstream decision and schedule-row components and the private finance history module.",
+  "owns": [
+    "apps/dashboard-v3/src/main.tsx",
+    "apps/dashboard-v3/src/routes/{__root,login}.tsx",
+    "apps/dashboard-v3/src/components/app-shell/**",
+    "apps/dashboard-v3/src/components/timer-nav*",
+    "apps/dashboard-v3/src/components/upstream/**",
+    "apps/dashboard-v3/src/lib/{nav,commands,auth-gate,notifications,error-boundary,router,format-locale}*",
+    "apps/dashboard-v3/src/features/finance/lib/private-history.ts",
+    "apps/dashboard-v3/src/features/finance/private-history.test.ts"
+  ],
+  "must_not_touch": [
+    "apps/dashboard/**",
+    "apps/api/**",
+    "packages/shared/** (v3-argo-shared)",
+    "other Issues' dirs under apps/dashboard-v3/src",
+    ".basalt/**"
+  ],
+  "concept": "migration-release#6.3 argo shell row",
+  "contract": "Read basalt-ui docs/v3/concepts/migration-release.md 6.1-6.3, argo DESIGN.md and the managed layer (.claude/rules/basalt-v3-*.md, skills basalt-v3-*). The installed basalt-ui is exact 3.0.0-next.N: its docs/recipes and llms.txt are the API truth. Never import apps/dashboard; share through @argo/shared. Order: shared, state-features, state-stores, queries, shell, routes; an import from a later Issue is a signal, never a stub. Shell law: docs/v3/concepts/shell-nav-router.md (AppShell, defineNav, routerDefaults, RouteError/RouteMissing/RoutePending seeds, ToastHost, OverlayHost). eden, auth, shot-state: state-stores; queries: v3-argo-queries. *.module.css are not ported.",
+  "exemplar": "basalt-ui apps/playground/src/routes/{index,settings}.tsx; old routes/__root.tsx, lib/nav.tsx, lib/commands.tsx.",
+  "change": "Root route with BasaltProvider (locale from @argo/shared APP_LOCALE), AppShell and defineNav (sections, pinned, mobile, badges from use-sidebar-badges and use-sidebar-blocks), router via routerDefaults (basepath /v3, the old 401 handling), login route, auth gate, defineCommands for the palette, notifications over notify, upstream decision-card and schedule-row, timer-nav, main.tsx (replaces the stub), private-history kept in the router config, and lib/format-locale.test.ts (createFormat for the app locale, replacing the dropped defineFormat test). Rule: shell guard rules (primitive-bypass frame check) pass in the app preset. ",
+  "commits": "Argo ships by push to master: conventional, one concern each, no attribution. Never edit node_modules or basalt-ui; a gap is a `friction:` line in the PR body, worked around in app code.",
+  "proof": "`make design-shot APP=dashboard-v3 ROUTES=\"/\"` beside the old shots from APP=dashboard; basalt-design reviewer; 3 rounds max.",
+  "acceptance": [
+    "`make check` exits 0 (runs check-v3: sync --check, doctor, lint, typecheck, build, test)",
+    "`rg -n '@mantine|apps/dashboard/' apps/dashboard-v3/src/routes apps/dashboard-v3/src/components apps/dashboard-v3/src/lib/{nav,commands,auth-gate,notifications,error-boundary,router}*` returns nothing",
+    "`bun scripts/check-test-port.ts apps/dashboard/src/components/upstream apps/dashboard-v3/src/components/upstream` and for commands.test.ts exit 0 (changed lines carry `// port:` markers)",
+    "`make design-shot APP=dashboard-v3 ROUTES=\"/\"` writes 1440x900 and 390x844 shots against live data (the reviewer checks 390 for horizontal overflow; DOM tests cannot)",
+    "`make verify-pages BASE=http://127.0.0.1:7737/v3 ROUTES=/` reports PASS after the factory deploy (else state not-run)",
+    "a DOM test through renderApp: with a valid token `/login` redirects to `/`, with none `/` redirects to login with the redirect search param"
+  ],
+  "out_of_scope": "Any feature route, nav beyond placeholders, API changes."
+}

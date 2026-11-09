@@ -1,0 +1,32 @@
+{
+  "why": "A control outside a home is the highest-friction family (21 waivers) and a literal search on Link re-runs loaders; both need real rule bodies caught at write time.",
+  "what": "Rule bodies in packages/basalt-ui/src/lint/rules/structure/control-home* and router-search*, which v3-gr-3b-structure-rest created as shells and ids, plus fixtures under packages/basalt-ui/test/fixtures/lint/ (the path the index and ARCHITECTURE use).",
+  "owns": [
+    "packages/basalt-ui/src/lint/rules/structure/control-home*",
+    "packages/basalt-ui/src/lint/rules/structure/router-search*",
+    "packages/basalt-ui/test/fixtures/lint/control-home/**",
+    "packages/basalt-ui/test/fixtures/lint/router-search/**"
+  ],
+  "must_not_touch": [
+    "packages/basalt-ui/src/lint/table.ts",
+    "packages/basalt-ui/src/lint/preset*",
+    "packages/basalt-ui/configs/**",
+    "other src/lint/rules/** files",
+    "contract-pins.json, MIGRATING, llms.txt, check-budgets"
+  ],
+  "concept": "controls-url-state#10 issue 8",
+  "contract": "Read docs/v3/concepts/guardrails.md section 4 (rows 10, 11 and the control-home paragraph) and docs/v3/concepts/controls-url-state.md section 9 (predicate). Ids exist already; this adds zero ids. Read docs/v3/spikes/control-home.md: above 5 waivers per app after the shutterflow and argo port means redesign homes, so file a signal instead of widening the rule.",
+  "exemplar": "Follow the finished rules in src/lint/rules/structure/{import-boundary,primitive-bypass}* and test/fixtures/lint/import-bypass/ for rule, message and fixture layout.",
+  "change": "One concern: the two rule bodies. control-home (file-local, wrapper-only): flag a JSX use of ui/select, combobox, segmented, number-field, slider, switch, checkbox or radio-group in app code whose lexical ancestors in that file are none of FormField, FilterSet, ViewTabs, ControlHome, a filterSlot.custom render or a handle-taking composite; same for page-slot and Section/Page body children. Handle-taking composite = a JSX element with an attribute named `handle`, `control` or `field` whose value is a `.field.<name>` member chain or an identifier hoisted from one (resolved at Program:exit). router-search: literal `search=` on Link, `loaderDeps: ({ search }) => search`, `<ViewTransition>` around Outlet, an inline validateSearch reading window, document, localStorage, sessionStorage, Date or Math.random (including Zod .default(() => new Date())). Messages name the fix (ControlHome or filterSlot.custom; field.link(), narrow deps, a pure validator). Ships: rule = these two ids; skill snippet = none; test = RuleTester under oxlint plugins-dev and ESLint plus fixtures run through the hook.",
+  "commits": "One PR, separate package and non-package commits (isolated-basalt-ui); conventional, empty scope, no attribution; make sync-self its own commit.",
+  "proof": "Per form: one seeded offender and one clean file, run through `basalt-ui lint --hook post-edit` with the event JSON on stdin from a subdirectory.",
+  "acceptance": [
+    "make check passes, including RuleTester for both ids under oxlint plugins-dev and ESLint.",
+    "Fixtures body-children and filterSlot-custom-with-useState exit 2 through the hook and the message contains `ControlHome` or `filterSlot.custom`.",
+    "Fixtures handle-bound-composite and FormField-wrapped-select exit 0.",
+    "One failing fixture per router-search form (4), each message naming its fix.",
+    "A file-level `// oxlint-disable control-home` fixture yields a `waiver-needs-reason` finding (rule of v3-gr-3b-structure-rest, not edited here); a line-level directive with a reason is clean.",
+    "`git diff --name-only` shows no change to src/lint/table.ts or the preset and no new rule id."
+  ],
+  "out_of_scope": "New ids, cross-file home inference, hand-rolled filters that import nothing from basalt, the shells themselves (v3-gr-3b-structure-rest)."
+}

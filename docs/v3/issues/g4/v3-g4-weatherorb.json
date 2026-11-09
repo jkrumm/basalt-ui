@@ -1,0 +1,26 @@
+{
+  "repo": "weatherorb",
+  "why": "G4 consumer and the real proof of the /map bar (704 KiB gzip, ADR 0020): weatherorb leaves Mantine (2.26.0) for 3.0.0-next, tokens profile on / (0 JS, 80 KiB bar), parts profile on /map (MapLibre canvas, floating chrome, no shell).",
+  "what": "apps/web only. Not the Python platform, packages/engine, packages/contracts, deploy/ or vendor/.",
+  "owns": ["apps/web/**", "bun.lock"],
+  "must_not_touch": [
+    "packages/**, src/**, deploy/**, vendor/, docs/waves/PLAN.md",
+    "the bar constants in apps/web/src/bundle-bars.test.ts (never raised)",
+    "hand edits to apps/web/.claude/rules/basalt-*.md or the AGENTS.md basalt block"
+  ],
+  "concept": "~/SourceRoot/basalt-ui/docs/v3/concepts/migration-release.md 5 (G4), 7; quality-contract.md 6; guardrails.md (deepRender); evidence/consumer-weatherorb.md.",
+  "contract": "~/SourceRoot/basalt-ui is read only, on master at or after v3-release-g4-cut. Written by other Issues, present at start: docs/v3/spikes/q2-map.md, scripts/fleet.json (floors.G4.next), tools/migrate-v3 (layout, imports, charts, waivers), src/cli/migrate. Pin basalt-ui exactly to 3.0.0-next.<floors.G4.next>, no caret. First run npm view basalt-ui@<N> version; if it fails, stop with a factory signal, never pin an unpublished version.",
+  "exemplar": "The G1 linewatch cutover: find ~/SourceRoot/basalt-ui/docs/v3/issues -name v3-g1-linewatch.json. Same commit shape, one merge.",
+  "change": "One PR on a branch, rebase-merged after /review (granular commits); project.yaml's push shipping governs the deploy, not the branch. Before starting and merging read git log -10 -- apps/web and docs/waves/PLAN.md: first to merge wins, the later rebases; a conflict with another lead's open branch is a signal, never a force. Only the PR head must be green. Commits: (1) codemod output (run.ts layout, imports, charts, waivers; --report .basalt/worklist/<name>.json); (2) pin, init --profile parts, sync, Tailwind and Vite wiring (init), @tanstack/charts to the installed basalt-ui peer range, d3-scale dropped if no longer a peer; (3) Mantine out of 31 files (5 are tests) onto basalt-ui/ui parts; (4) chartCurve (2 files) to series.curve, ChartMarks (3) to CartesianChart.custom, with plot geometry via onRender; (5) tokens profile on /: basalt-free, 0 JS, Providers under the _app layout; (6) drop unused @mantine deps, port basalt.exemptRules and every theme-allow to the v3 waiver form with a reason (/map inline styles: one file-level directive on a manifest.deepRender path), lint script to basalt-ui lint (per migrate --from 2.26.0), baselines. If /map exceeds 704 KiB, one commit per lever in order: native range, checkbox, radio for Slider, Switch, Radio, each a counted primitive-bypass waiver with reason (the fleet row ceiling 8 includes them, else signal); lazy Drawer; then a factory signal, never a raise. Rule: app preset at error. Skills: from sync, unedited. Tests: bundle-bars, map-chrome, timeline stay green.",
+  "commits": "Weatherorb's AGENTS.md convention: type(scope): why, no tickets, no attribution.",
+  "proof": "FORCE=1 make check-ts, then make check, on a fresh build so bundle-bars.test.ts measures dist/client. Post-merge, not a PR line: the factory deploys (hold 30m), make verify exits 0.",
+  "acceptance": [
+    "make check exits 0.",
+    "bun test apps/web/src/bundle-bars.test.ts passes (LANDING_BAR 80 KiB, MAP_BAR 704 KiB, zero landing scripts); its output is pasted in the PR body.",
+    "grep -rn '@mantine' apps/web/package.json apps/web/src prints nothing.",
+    "apps/web/package.json pins basalt-ui to an exact 3.0.0-next.N at or above floors.G4.next; @tanstack/charts and d3-scale match its peerDependencies.",
+    "Re-running each codemod against its .basalt/worklist report at the PR head gives 0 entries; basalt-ui lint --stats shows waivers at or under the row ceiling.",
+    "basalt-ui sync --check and doctor exit 0."
+  ],
+  "out_of_scope": "Map behaviour, engine and API changes, shell, tables, new features, the deploy."
+}

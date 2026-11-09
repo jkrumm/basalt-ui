@@ -1,0 +1,34 @@
+{
+  "why": "MIGRATING.md appears in 386 package commits: parallel leads would conflict on it, and 6,850 migration lines also ship in the tarball. The llms.txt half is v3-unhot-llms.",
+  "what": "Migration rows become one file per area; MIGRATING.md stays committed but is generated from them at release. New: migrations/areas/*.json and the release-time renderer.",
+  "owns": [
+    "packages/basalt-ui/migrations/**",
+    "packages/basalt-ui/MIGRATING.md",
+    "packages/basalt-ui/scripts/release-migrating*"
+  ],
+  "must_not_touch": [
+    "packages/basalt-ui/scripts/check-budgets*",
+    "packages/basalt-ui/src/**",
+    "packages/basalt-ui/llms.txt",
+    "packages/basalt-ui/scripts/gen-llms*",
+    ".releaserc.json",
+    "Makefile",
+    ".github/**",
+    "scripts/release.sh",
+    "CHANGELOG.md"
+  ],
+  "concept": "docs/v3/concepts/migration-release.md#3.2",
+  "contract": "docs/v3/concepts/migration-release.md 3.2 (row schema, valueShifts; a release with a surface diff and no row fails) and 11 (MIGRATING restarts as one 2.x-to-3.0 section generated from rows). Areas: migrations/areas/<area>.json for tokens, ui, router, data, page, shell, cards, controls, table, charts, content, ai, cli, lint, agent. The release step merges them into migrations/<version>.json and supplies from (\">=1.40 <3\"), to and profiles itself. Insufficient contract: factory signal, reversible default, PR body says so.",
+  "exemplar": "release-migrating.ts --check semantics (fails closed) and gen-llms.ts --check.",
+  "change": "(1) Seed each area file `{schema:1, area, rows:[], tokens:{renamed:[], valueShifts:[]}, storage:[], urls:[], attrs:[], rules:[]}`. (2) release-migrating.ts concatenates each key across areas into migrations/<version>.json and renders MIGRATING.md from it: header paragraph (rel-6's stub sentence, verbatim) plus one 2.x-to-3.0 section; the old 2.x content is dropped from master (it stays on v2). MIGRATING.md stays a committed generated file and a semantic-release git asset. (3) Surface diff = `scripts/export-surface.json` and the public `--vx-*` names now versus `git show <previous v* tag>:packages/basalt-ui/scripts/export-surface.json`; any removed or renamed symbol, subpath or name with no row naming it fails the release step. Ships with: that failure (the rule), no skill snippet, tests in the release-migrating tests.",
+  "commits": "One PR, one `chore:` commit touching packages/basalt-ui/ only. Conventional, empty scope, no attribution, never CHANGELOG.md.",
+  "proof": "Two scratch branches editing two different areas files merge with no conflict.",
+  "acceptance": [
+    "ls packages/basalt-ui/migrations/areas lists the 15 area files above, each with the seven seed keys.",
+    "bun packages/basalt-ui/scripts/release-migrating.ts --check exits 0 on the empty areas and non-zero on a seeded malformed area file.",
+    "A test seeds a removed symbol against a fixture previous-tag snapshot with no row and asserts the release step fails; with a row it passes.",
+    "packages/basalt-ui/MIGRATING.md is tracked, generated (a test re-renders it byte-identically from the areas) and `wc -l` is under 200 at landing.",
+    "make check passes including pack-test."
+  ],
+  "out_of_scope": "Writing real rows (each lane), the migrate verb, the 1.x floor rows (mig-rows-1x), export-surface.json."
+}

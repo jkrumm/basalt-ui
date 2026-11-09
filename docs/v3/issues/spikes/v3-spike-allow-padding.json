@@ -1,0 +1,32 @@
+{
+  "why": "The utility allowlist (F5), padding form (F5P) and own lint forms (S2) stay off until measured: denylist plus `app-spacing` stays unless the probes pass (docs/v3/ARCHITECTURE.md section 11 F5; docs/v3/concepts/guardrails.md section 13, E4).",
+  "what": "tools/spikes/allow-padding/** and docs/v3/spikes/allow-padding.md. Read-only scratch copies of console, epos, linewatch, argo. Own forms = the non-bought forms of docs/v3/concepts/guardrails.md section 4 (standalone matchers in one file; nothing lands in src/lint, which gr-1 creates). Allowlist = the closed type, weight and spacing namespaces of docs/v3/concepts/tokens-visual.md section 3. F6, F7: v3-spike-cn-breakpoints.",
+  "owns": ["tools/spikes/allow-padding/**", "docs/v3/spikes/allow-padding.md"],
+  "must_not_touch": [
+    "CHANGELOG.md",
+    "root package.json, bun.lock, .gitignore, .oxlintignore",
+    "docs/v3/{concepts,issues}/**, docs/v3/ARCHITECTURE.md",
+    "other tools/spikes/* folders",
+    "consumer repos (scratch copies live in the OS temp dir)"
+  ],
+  "concept": "docs/v3/ARCHITECTURE.md section 11 F5; docs/v3/concepts/guardrails.md section 13 S2 F5P",
+  "contract": "docs/v3/concepts/guardrails.md sections 13 and 15 (E4) are frozen; E4 flips only by a later amendment from this verdict.",
+  "exemplar": "scripts/evidence/*.ts (one JSON result per run)",
+  "change": "The codemod is not built yet (mig-codemod, wave 2): the harness holds a mapping table of at most 80 lines from Mantine layout props to classes, applied only to the sampled sites, to reproduce its emit (`font-normal`, `text-xl/[1.55]`). F5: apply the allowlist, take a seeded sample (seed 42) of 100 denied sites (all if fewer). F5P: the same for padding. Rubric, fixed before sampling: `genuine need` iff the denied value (px) equals no allowlist or token class and the nearest allowed step is over one rung away; else `no need`; `unclear` counts as need. S2: false positives per own form incl. the array, template and fixed-width forms. `waiversPer300Lines` = genuine-need sites x 300 / scanned TSX lines.",
+  "commits": "One non-package commit `chore: spike allow-padding harness and verdict`, empty scope, no attribution.",
+  "proof": "run.ts JSON plus the verdict doc; run twice, attach both outputs.",
+  "acceptance": [
+    "run.ts JSON has `f5.sampled`, `f5.genuineNeedPct`, `f5.waiversPer300Lines`, the same for `f5p`, and `s2.byForm` (form to false-positive pct)",
+    "Then names which form to narrow or remove first (a form with no hit first)",
+    "Site lists give file and line for repos with `gh repo view --json isPrivate` false, hashed ids for private ones, counts only for epos",
+    "`bun tools/spikes/allow-padding/run.ts` exits 0, prints one JSON object with the keys above (0 = harness ran, not hypothesis held)",
+    "docs/v3/spikes/allow-padding.md has headings Question, Method, Measurements, Verdict, Then, Affects and the `verdict` lines",
+    "`find tools/spikes/allow-padding -name '*.test.*' -o -name '*.spec.*'` prints nothing",
+    "`git diff --name-only master...HEAD` lists only `owns` paths",
+    "`grep -rnE 'op://|\\.ts\\.net|192\\.168\\.|ghp_' tools/spikes/allow-padding docs/v3/spikes/allow-padding.md` prints nothing",
+    "`make check` passes"
+  ],
+  "out_of_scope": "Rule ids, the preset; flipping E4; consumers; the codemod.",
+  "envelope": "Harness: tools/spikes/<dir>/ has its own package.json (exact pins); bun.lock and node_modules gitignored there (must_not_touch package.json and bun.lock = repo root only). Passes root oxlint; no *.test.* files; Chrome via the playwright-core pattern of packages/basalt-ui/tests/layout/harness.ts; docs/v3 on master before filing; synthetic data only, private repos as counts and hashed ids.",
+  "verdict": "Lines `F5: PASS|REFUTED` and `F5P: PASS|REFUTED` (REFUTED above 15% genuine need or above 1 waiver per 300 lines), `S2: PASS|REFUTED` (REFUTED when any form is above 10%, named). `Verdict: PASS` iff all three PASS; run.ts `verdict` the same."
+}

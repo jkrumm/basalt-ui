@@ -1,0 +1,34 @@
+{
+  "why": "The 2,015-line real-Chrome shell suite encodes about 40 measured defects as numbers. Porting it to data-slot selectors first lets the same numbers grade the 2.x oracle, then the v3 frame.",
+  "what": "tests/layout/shell*, tests/layout/fixture/v3/** and two constants in harness/engine.ts. Four 2.x files: shell-chrome (885 lines, 16 tests), mobile-nav (655, 12), page-aside (321, 6), wave37-shell (154, 6); the last three are git-mv'd to shell-* names (glob shell*).",
+  "owns": [
+    "packages/basalt-ui/tests/layout/shell*",
+    "packages/basalt-ui/tests/layout/{mobile-nav,page-aside,wave37-shell}.layout.test.ts",
+    "packages/basalt-ui/tests/layout/fixture/v3/**",
+    "packages/basalt-ui/tests/layout/harness/engine.ts"
+  ],
+  "must_not_touch": [
+    "packages/basalt-ui/tests/layout/harness/** except those constants",
+    "packages/basalt-ui/tests/layout/fixture/{main,fixtures,spec}.*",
+    "packages/basalt-ui/tests/support/**",
+    "packages/basalt-ui/src/**",
+    "apps/**",
+    "CHANGELOG.md",
+    "other lanes' folders"
+  ],
+  "concept": "shell-nav-router#8 I1; #6 Proof row 1",
+  "contract": "Read docs/v3/concepts/shell-nav-router.md section 3.5 (slot names) and 4 (every pinned number). The SLOTS export is qa-i3's, not here.",
+  "exemplar": "Sources: git show v2.29.1:packages/basalt-ui/tests/layout/<file>. Engine: tests/layout/harness/** from v3-layout-harness (FIXTURE_ENTRY and FIXTURE_HTML).",
+  "change": "Rename to shell-chrome, shell-mobile-nav, shell-page-aside, shell-page-kit (.layout.test.ts); swap every selector (.mantine-*, data-basalt-*, module hashes) for a name in new tests/layout/shell-slots.ts: SHELL_SLOTS maps slot to a selector per LAYOUT_TARGET (v2 = 2.x selector, v3 default = [data-slot=...]). shell-target.ts: v2 = git worktree of branch v2 (v3-rel-3, tag v2.29.1) in a temp dir, bun install --frozen-lockfile, then LAYOUT_FIXTURE_ENTRY and LAYOUT_FIXTURE_HTML point at its tests/layout/fixture/{main.tsx,index.html} (its BasaltShell fixture, bundled by the engine); removed in afterAll. engine.ts reads the two env vars, current paths as default (at most 10 lines, listed in the PR). v3 = new fixture/v3/{index.html,main.tsx,registry.ts}: a host with the same window.basaltMountFixture contract and an empty scenario registry; I4, I4b, I5 add scenarios. Each describe declares needs: [slots]; on v3 an absent slot skips the case, printed 'skipped: n (slot)', and it un-skips once the slot exists. No number changes. Ships with: guarantee = the suite (make layout); rule = none; teach = none; test = shell-slots.test.ts holds every slot of concept 3.5.",
+  "commits": "One chore: commit, package paths only. Never edit CHANGELOG.md.",
+  "proof": "LAYOUT_TARGET=v2 run of the four files, output pasted in the PR.",
+  "acceptance": [
+    "LAYOUT_TARGET=v2 bun --config=./packages/basalt-ui/tests/layout/bunfig.toml test --timeout 60000 packages/basalt-ui/tests/layout/shell- passes all 40 cases (16, 12, 6, 6) on the v2 worktree; the path prefix is explicit because 'bun run test:layout shell' only adds a filter to a whole-directory run",
+    "grep -rnE 'mantine-|data-basalt-|moduleClass' packages/basalt-ui/tests/layout/shell*.ts matches only inside shell-slots.ts",
+    "No numeric literal in an assertion differs from the 2.x file outside selector strings; the PR body lists any exception (expected: none)",
+    "The same command with default LAYOUT_TARGET=v3 exits 0 on master with the skip list printed",
+    "shell-slots.test.ts passes and fails when a slot of concept 3.5 is removed from SHELL_SLOTS",
+    "engine.ts differs only in the two constants; no tests/layout/fixture file outside v3/ changed; make check passes"
+  ],
+  "out_of_scope": "Shell code, new assertions (I3 to I6), v3 scenarios (I4, I4b, I5), other harness edits, Mantine removal, print or axe cases (I5)."
+}

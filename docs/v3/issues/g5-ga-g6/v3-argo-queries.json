@@ -1,0 +1,30 @@
+{
+  "repo": "argo",
+  "why": "15 lib/queries files wrap the API with basalt-ui's unwrap and are imported by the shell, the stores and every route. They fork once, after eden and the stores exist.",
+  "what": "The unwrap-bound query files forked into apps/dashboard-v3/src/lib/queries. Query files that import a route-owned feature stay with that route (usage with usage-explore, open-meteo-maps and rainviewer with astro-map; calendar is v3-argo-state-features).",
+  "owns": [
+    "apps/dashboard-v3/src/lib/queries/{activities,astro,daily-metrics,exercises,gym,health,m365,reading,skinfold-log,strength,user-profile,walking-pad,weight-log,workout-draft,workouts}.ts"
+  ],
+  "must_not_touch": [
+    "apps/dashboard/**",
+    "apps/api/**",
+    "packages/shared/** (v3-argo-shared)",
+    "other Issues' dirs under apps/dashboard-v3/src",
+    ".basalt/**",
+    "apps/dashboard-v3/src/lib/queries/{calendar,usage,open-meteo-maps,rainviewer}*"
+  ],
+  "concept": "migration-release#6.3 argo state row",
+  "contract": "Read basalt-ui docs/v3/concepts/migration-release.md 6.1-6.3, argo DESIGN.md and the managed layer (.claude/rules/basalt-v3-*.md, skills basalt-v3-*). The installed basalt-ui is exact 3.0.0-next.N: its docs/recipes and llms.txt are the API truth. Never import apps/dashboard; share through @argo/shared. Order: shared, state-features, state-stores, queries, shell, routes; a later Issue's import is a signal, never a stub. Verified imports: these files import ../eden (v3-argo-state-stores), ../plate-math and draft-writer (@argo/shared), ../gym-profile (stores), `unwrap` from basalt-ui; none imports a route feature.",
+  "exemplar": "Old apps/dashboard/src/lib/queries/*; the installed basalt-ui/data docs for unwrap and makeQueryClient.",
+  "change": "Copy each file, `unwrap` from basalt-ui/data, imports to @argo/shared and the v3 lib files; query keys and return shapes unchanged so route ports stay mechanical. Rule: the app preset data-primitive family passes. Skill snippet: none.",
+  "commits": "Argo ships by push to master: conventional, one concern each, no attribution. Never edit node_modules or basalt-ui; a gap is a `friction:` line in the PR body, worked around in app code.",
+  "proof": "Typecheck and build only; no rendered surface.",
+  "acceptance": [
+    "`bun --cwd apps/dashboard-v3 typecheck` exits 0 with these files present",
+    "`rg -c unwrap apps/dashboard-v3/src/lib/queries` shows every file that wrapped the API in the old tree still does",
+    "`rg -n \"@mantine|apps/dashboard/\" apps/dashboard-v3/src/lib/queries` returns no match",
+    "for each file the exported names equal the old file's (`diff <(rg -o 'export (const|function|type|interface) \\w+' OLD | sort) <(... NEW | sort)` prints nothing)",
+    "`make check` exits 0"
+  ],
+  "out_of_scope": "Routes, stores, calendar, usage and the two astro map queries, changing any query key or shape."
+}

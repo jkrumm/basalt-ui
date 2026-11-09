@@ -1,0 +1,31 @@
+{
+  "why": "docs/v3/ARCHITECTURE.md section 11 F3 can flip DPO 4: if agents on npm-default primitives do clearly worse than with `eject --all`, or need more than 3 ejects per app, `init` runs `eject --all`.",
+  "what": "tools/spikes/f3-eject/** and docs/v3/spikes/f3-eject.md. Briefs: the console StatCard page and a dense table page (console is ~/SourceRoot/software-factory/apps/console, private: copy structure only, synthetic data). Needs eject (prim-p7), the vite gates (prim-p9), StatGroup and the dense-table exemplar. Runner = one fresh `implementer`-role subagent per run, blind reviewer = `reviewer` role with a copy of tools/spikes/thin-skill/rubric.md (read only); no headless `claude -p`; no model id in any file.",
+  "owns": ["tools/spikes/f3-eject/**", "docs/v3/spikes/f3-eject.md"],
+  "must_not_touch": [
+    "CHANGELOG.md",
+    "root package.json, bun.lock, .gitignore, .oxlintignore",
+    "docs/v3/{concepts,issues}/**, docs/v3/ARCHITECTURE.md",
+    "other tools/spikes/* folders",
+    "consumer repos (scratch copies live in the OS temp dir)"
+  ],
+  "concept": "docs/v3/ARCHITECTURE.md section 11 F3; section 4.1",
+  "contract": "docs/v3/ARCHITECTURE.md section 4.1 and section 11 F3 are frozen; a flip of DPO 4 is the owner's.",
+  "exemplar": "scripts/evidence/*.ts (one JSON result per run)",
+  "change": "Same-bar trial, two arms, identical briefs and reviewer: (1) npm default, (2) `eject --all` run in the scratch app first. Unit is counts, not points: P1 plus carried findings per run (rubric.md), at most 3 rounds. Count the `eject` invocations the agent makes in arm 1. Record the G1 numbers now; the G2 count (rb, obsidian) is recorded `pending G2`.",
+  "commits": "One non-package commit `chore: spike f3-eject harness and verdict`, empty scope, no attribution.",
+  "proof": "Shots per arm and brief at 1800x1200 and 390x844 under tools/spikes/f3-eject/shots/, synthetic data; at most 3 rounds.",
+  "acceptance": [
+    "Doc table: P1-plus-carried and eject count per arm and brief, and a `G2 count: pending` line",
+    "run.ts JSON has `arm1`, `arm2` (each `p1PlusCarried`, `ejects` per brief) and `verdict`",
+    "`bun tools/spikes/f3-eject/run.ts` exits 0, prints one JSON object with the keys above (0 = harness ran, not hypothesis held)",
+    "docs/v3/spikes/f3-eject.md has headings Question, Method, Measurements, Verdict, Then, Affects and the `verdict` lines",
+    "`find tools/spikes/f3-eject -name '*.test.*' -o -name '*.spec.*'` prints nothing",
+    "`git diff --name-only master...HEAD` lists only `owns` paths",
+    "`grep -rnE 'op://|\\.ts\\.net|192\\.168\\.|ghp_' tools/spikes/f3-eject docs/v3/spikes/f3-eject.md` prints nothing",
+    "`make check` passes"
+  ],
+  "out_of_scope": "Changing the distribution default; the registry.",
+  "envelope": "Harness: tools/spikes/<dir>/ has its own package.json (exact pins); bun.lock and node_modules gitignored there (must_not_touch package.json and bun.lock = repo root only). Passes root oxlint; no *.test.* files; Chrome via the playwright-core pattern of packages/basalt-ui/tests/layout/harness.ts; docs/v3 on master before filing; synthetic data only, private repos as counts and hashed ids.",
+  "verdict": "`F3: PASS|REFUTED|partial`: REFUTED when arm 1 has 3 or more P1-plus-carried findings above arm 2 (summed over both briefs) or arm 1 ejects exceed 3 per app; `partial` when G1 passes and the G2 count is pending (the expected result); PASS only once G2 is recorded. `Verdict: PASS|REFUTED|PENDING` maps PASS, REFUTED, partial; run.ts `verdict` pass|refuted|pending."
+}

@@ -1,0 +1,37 @@
+{
+  "why": "Argo hand-writes 15 polling sites and per-observer timers multiply requests; one freshness class per query and one timer per hash fixes both.",
+  "what": "packages/basalt-ui/src/data/live/{live-query,poller}*, tests/live/poller/**. Created here (one additive install call in state-2's src/data/query-client*).",
+  "owns": [
+    "packages/basalt-ui/src/data/live/{live-query,poller}*",
+    "packages/basalt-ui/tests/live/poller/**",
+    "packages/basalt-ui/docs/live-query.md",
+    "packages/basalt-ui/src/data/query-client.ts"
+  ],
+  "shared_append_only": [
+    "packages/basalt-ui/src/data/index.ts",
+    "packages/basalt-ui/scripts/export-surface.json"
+  ],
+  "must_not_touch": [
+    "packages/basalt-ui/src/{ui,cards,charts,table,controls,shell,content,ai,router,tokens,css,core,page}/**, packages/basalt-ui/src/data/{unwrap,optimistic,window-key,synced}*, packages/basalt-ui/agent/**",
+    "CHANGELOG.md, MIGRATING.md, llms.txt, scripts/check-budgets/**, other areas' migrations files",
+    "every contract.ts and src/core/ports.ts",
+    "package.json and bun.lock (v3-deps-w2 / v3-deps-ai added your pins)"
+  ],
+  "concept": "live-realtime#10 issue 1",
+  "contract": "Frozen: ARCHITECTURE.md, src/core/ports.ts. Need a change: factory signal, take the reversible default. Read concepts/live-realtime.md sections 3, 4, 5, 7, 10. Layers: channel L1 (react only), live L2 (./data), views L4 prop-fed (no Query in ./page). Read docs/v3/spikes/live-poller.md first (P1): if per-observer cost is at most 1 extra fetch, build liveQuery with function-form refetchInterval and no poller; otherwise build the central poller (about 80 lines).",
+  "exemplar": "2.x src/query-client.ts (defaults); ~/SourceRoot/argo/apps/dashboard/src/lib/queries/gym.ts (cadence, read-only).",
+  "change": "liveQuery(options, freshness) setting staleTime, focus flags, meta.basalt.live, refetchInterval false. Freshness 'static' maps to staleTime Infinity, never the string 'static' (4.6), 'standard' (refetch on focus when stale, 30 s), ticker {every (number or q => number|false), pauseWhileMutating?, background?, external?}, pushed {fallback, safety}. A function every returning false gives 30 s, not 0. Poller skips a tick when hidden (unless background), offline, mutating, errored 401 or 403, or in flight; counts enabled observers only; the least active class wins and dev warns; refetch cancelRefetch false. Dev asserts on a bare QueryClient and staleTime overrides (literal NODE_ENV). Rule: none (live-5 owns the clauses). Skill: generated docs/live-query.md. Tests: P1, P1b, P3, P5.",
+  "commits": "One PR, separate package and non-package commits (isolated-basalt-ui); conventional, empty scope, no attribution.",
+  "proof": "bun test over tests/live/poller, fake scheduler. P3 runs Query 5.107.1 (devDependency) and 5.101.2 (nested tests/live/poller/query-5101/, own package.json and bun.lock, --frozen-lockfile in setup).",
+  "acceptance": [
+    "P1: six observers on one key over 60 s of fake scheduler give the number set by docs/v3/spikes/live-poller.md (poller branch: exactly one fetch per interval; no-poller branch: at most one extra fetch), and the PR names the branch taken",
+    "P1b: hiding the tab and showing it after the clock advances gives one fetch when stale and none when fresh",
+    "P3 matrix on Query 5.107.1 and 5.101.2: invalidate against staleTime 'static' ignores a push, static maps to Infinity and is not ignored; every returning false gives staleTime 30000",
+    "P5: a 401 on a ticker gives at most one request per class interval",
+    "a bare new QueryClient() with a liveQuery throws in dev",
+    "L9, L10 invariants from section 5 are tests in tests/live/poller",
+    "make check exits 0",
+    "git diff --name-only lists only owned paths"
+  ],
+  "out_of_scope": "createChannel, bindInvalidation, ConnectionIndicator, useFreshness, lint clauses, the offline classifier (live-4), argo migration of the 15 sites."
+}

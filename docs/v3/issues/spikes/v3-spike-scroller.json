@@ -1,0 +1,31 @@
+{
+  "why": "docs/v3/concepts/ai-mdx.md section 7 P12 gates freeze: pick one scroll-pinning dependency for streamed chat or fall back to a 40-line hook; the loser stays out of every lockfile.",
+  "what": "tools/spikes/scroller/** (scratch Vite app; own package.json: use-stick-to-bottom 1.1.6, @shadcn/react 0.3.1, react 19.3.0, playwright-core) and docs/v3/spikes/scroller.md. 2.x reference packages/basalt-ui/src/agent/stick-to-bottom.tsx (read only). use-stick-to-bottom is already in packages/basalt-ui/package.json and the root bun.lock for the 2.x agent module: not this Issue's doing.",
+  "owns": ["tools/spikes/scroller/**", "docs/v3/spikes/scroller.md"],
+  "must_not_touch": [
+    "CHANGELOG.md",
+    "root package.json, bun.lock, .gitignore, .oxlintignore",
+    "docs/v3/{concepts,issues}/**, docs/v3/ARCHITECTURE.md",
+    "other tools/spikes/* folders",
+    "consumer repos (scratch copies live in the OS temp dir)"
+  ],
+  "concept": "docs/v3/concepts/ai-mdx.md section 7 P12",
+  "contract": "docs/v3/concepts/ai-mdx.md section 7 P12 is frozen; no existing package.json or lockfile changes.",
+  "exemplar": "scripts/evidence/*.ts (one JSON result per run)",
+  "change": "One fixture, both candidates, under: a 90 s mock stream of growing markdown; a user scroll-up mid-stream; a late image reflow; a soft-keyboard model (390x844 shrunk to 390x484; real iOS unverified). Sample the pixel gap to bottom every 1 s. A candidate `sticks` iff maxGapPx <= 2 while pinned, released on scroll-up (no auto-scroll within 3 s), re-pinned within 1 s of returning within 8 px, reflowGapPx <= 2, keyboardGapPx <= 2. Neither sticks: write the 40-line hook in the verdict as code. Both stick: the smaller gzip of a Bun.build closure wins. Feeds ai-i8.",
+  "commits": "One non-package commit `chore: spike scroller harness and verdict`, empty scope, no attribution.",
+  "proof": "run.ts JSON plus the verdict doc; run twice, attach both outputs.",
+  "acceptance": [
+    "run.ts JSON has per candidate `maxGapPx`, `releasedOnScrollUp`, `repinnedOnReturn`, `reflowGapPx`, `keyboardGapPx`, `gzipBytes`",
+    "`git diff --name-only master...HEAD | grep -E 'lock|package.json'` prints only tools/spikes/scroller/package.json; the losing candidate is in no tracked lockfile this diff touches",
+    "`bun tools/spikes/scroller/run.ts` exits 0, prints one JSON object with the keys above (0 = harness ran, not hypothesis held)",
+    "docs/v3/spikes/scroller.md has headings Question, Method, Measurements, Verdict, Then, Affects and the `verdict` lines",
+    "`find tools/spikes/scroller -name '*.test.*' -o -name '*.spec.*'` prints nothing",
+    "`git diff --name-only master...HEAD` lists only `owns` paths",
+    "`grep -rnE 'op://|\\.ts\\.net|192\\.168\\.|ghp_' tools/spikes/scroller docs/v3/spikes/scroller.md` prints nothing",
+    "`make check` passes"
+  ],
+  "out_of_scope": "A chat component; the thread recipe; VoiceOver on streaming.",
+  "envelope": "Harness: tools/spikes/<dir>/ has its own package.json (exact pins); bun.lock and node_modules gitignored there (must_not_touch package.json and bun.lock = repo root only). Passes root oxlint; no *.test.* files; Chrome via the playwright-core pattern of packages/basalt-ui/tests/layout/harness.ts; docs/v3 on master before filing; synthetic data only, private repos as counts and hashed ids.",
+  "verdict": "Not binary: one doc line `Choice: use-stick-to-bottom`, `Choice: message-scroller` or `Choice: own-hook`; no `Verdict:` line. run.ts prints `choice`."
+}

@@ -1,0 +1,39 @@
+{
+  "why": "One QueryClient law (retry predicate, defaults), a null-safe unwrap, optimistic writes that cannot revert each other, and quantised window keys are copied by argo, linewatch and console today.",
+  "what": "packages/basalt-ui/src/data/query-client*, unwrap*, optimistic*, window-key*. Created here from 2.x src/query-client.ts and src/unwrap.ts.",
+  "owns": [
+    "packages/basalt-ui/src/data/query-client*",
+    "packages/basalt-ui/src/data/unwrap*",
+    "packages/basalt-ui/src/data/optimistic*",
+    "packages/basalt-ui/src/data/window-key*",
+    "packages/basalt-ui/docs/{optimistic,window-key}.md"
+  ],
+  "shared_append_only": [
+    "packages/basalt-ui/src/data/index.ts",
+    "packages/basalt-ui/scripts/export-surface.json"
+  ],
+  "must_not_touch": [
+    "packages/basalt-ui/src/{ui,tokens,css,lint,shell,cards,charts,table,content,ai,page,core,controls,router}/**, packages/basalt-ui/agent/**",
+    "packages/basalt-ui/src/data/synced*",
+    "packages/basalt-ui/src/data/live/**",
+    "CHANGELOG.md, MIGRATING.md, llms.txt, scripts/check-budgets/**, other areas' migrations files",
+    "every contract.ts and src/core/ports.ts"
+  ],
+  "concept": "state-persistence-forms#6",
+  "contract": "Frozen: ARCHITECTURE.md, src/core/ports.ts. Need a change: factory signal, take the reversible default. Read concepts/state-persistence-forms.md sections 5, 6, 9 and ARCHITECTURE sections 1 and 3 (symbol allotment of '.' and './data'). Spikes D, F in section 9 are the optimistic spec; live-realtime#4.3 defines NetworkError.",
+  "exemplar": "2.x donors: src/query-client.ts, src/unwrap.ts and their tests. windowKey donor: ~/SourceRoot/linewatch/web/src/lib/queries.ts (quantiseWindow, sameWindowedQuery, keepAcrossTimeAdvance) and queries.test.ts.",
+  "change": "makeQueryClient(config?) keeping the 2.x defaults (staleTime 30 s, gcTime 5 min, no retry on 4xx except 408/425/429; later reused as the channel's retry predicate). unwrap keeps the null-data throw and throws the NetworkError marker for a fetch TypeError. optimistic({key,scope?,targets:[{queryKey,apply}]}) returns {mutationKey, scope:{id}, onMutate (cancel, snapshot, setQueryData), onError (restore), onSettled (invalidate only when client.isMutating({mutationKey}) === 1)}. windowKey(window,{stepMs}) returns a quantised key plus a gated placeholder. Rule: none new (deprecated-fetch and raw refetchInterval clauses live in data-primitive). Skill: generated docs/optimistic.md and docs/window-key.md with the handlers-on-useMutation example. Tests: copy the 2.x tests (originals stay; imports adapted, assertions untouched), then spikes D and F as tests.",
+  "commits": "One PR, separate package and non-package commits (isolated-basalt-ui); conventional, empty scope, no attribution.",
+  "proof": "bun test over the owned files; Query 5.106+ pinned by the fixture.",
+  "acceptance": [
+    "optimistic tests pass: rollback on error, two overlapping mutations never revert the UI, an unrelated pending mutation does not block the invalidate",
+    "spike F as a test: the invalidate runs when the returned mutationKey is used, and the test that omits it shows isMutating counting every mutation",
+    "retry predicate test: 4xx other than 408, 425, 429 never retries, 5xx retries up to the 2.x maximum",
+    "unwrap throws on null data and throws NetworkError for a fetch TypeError",
+    "windowKey: a rotating [from,to] inside one step keeps the previous data as placeholder; linewatch's ported queries tests pass",
+    "no module-level QueryClient exists (SSR test: two renders do not share a client)",
+    "make check exits 0",
+    "git diff --name-only lists only owned paths"
+  ],
+  "out_of_scope": "createSyncedState (state-3), liveQuery and the poller (live-1), invalidation bindings, notify, any change to src/data/live/**."
+}

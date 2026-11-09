@@ -1,0 +1,37 @@
+{
+  "why": "Agents learn AI wiring from the shipped reference, and the epos catalog probe shows the catalog fits a real server before GA freezes it. Epos is read-only: no employer commit.",
+  "what": "The basalt-design AI reference (ai.md) and the read-only epos catalog probe result (P6). No src changes.",
+  "owns": [
+    "packages/basalt-ui/agent/skills/basalt-design/references/ai.md",
+    "docs/v3/spikes/epos-catalog-probe.md",
+    "tools/spikes/epos-catalog-probe/**"
+  ],
+  "must_not_touch": [
+    "CHANGELOG.md",
+    "packages/basalt-ui/{MIGRATING.md,llms.txt} (generated)",
+    "packages/basalt-ui/src/**/contract.ts",
+    "packages/basalt-ui/scripts/contract-pins.json",
+    "other lanes' folders",
+    "packages/basalt-ui/src/**",
+    "anything under ~/IuRoot/epos-ai-teamchat-athena (read only: no branch, no commit)"
+  ],
+  "concept": "ai-mdx#8 I6; ai-mdx#7 P6",
+  "contract": "docs/v3/concepts/ai-mdx.md rows 1-15, decision 9, P6; skills-agent-layer 3.16. Reference line cap: at most 70 lines per reference file, 600 in total (skills-agent-layer section 1 ceilings; check-budgets agent rows). Skills teach judgement; the API lives in llms.txt, which is generated from docs and is not edited here. All six recipes (chat-thread, ai-blocks, ai-sdk-tools, ai-external-runtime, ai-card, mdx) are ancestors.",
+  "exemplar": "references/states.md and recipes.md in agent/skills/basalt-design/references/ for density.",
+  "change": "Write ai.md: partView vs Markdown, trust tiers (trusted means authored, never model text), the four availability channels in one table, defineBlock and expectCatalog, one index line per recipe (chat-thread, ai-blocks, ai-sdk-tools, ai-external-runtime, ai-card, mdx, ai-approvals-sources, ai-artifacts), deferred channels and when to ask. Keep ai.md at 70 lines or fewer. Run P6 in a scratch copy (tools/spikes/epos-catalog-probe, outside the epos checkout): port epos ui/src/components/show (10 types: stat, chart, table, list, board, diagram, callout, ticket, vega, layout) to defineCatalog, engine at most 250 lines, schema.contract.test.ts unchanged; record the result and the escape-hatch verdict in the spike doc. Rule: check-agent-doc-drift covers ai.md. Skill snippet: ai.md itself.",
+  "commits": "Two commits in one PR: packages/basalt-ui/** apart from everything else (isolated-basalt-ui hook); `make sync-self` output, if any, its own non-package commit; conventional, empty scope, plain feat:/fix:/chore:/docs:, never feat! or a BREAKING CHANGE footer; no attribution; rebase-merge.",
+  "proof": "`make check` doc-drift and tarball-parity gates; counts reported in the spike doc.",
+  "acceptance": [
+    "`make check` exits 0 with the doc-drift gate covering ai.md",
+    "ai.md names all eight recipe files (`rg -o 'chat-thread|ai-blocks|ai-sdk-tools|ai-external-runtime|ai-card|mdx|ai-approvals-sources|ai-artifacts' ai.md | sort -u | wc -l` prints 8), each exists under docs/recipes, and `wc -l` of ai.md is at most 70",
+    "`rg -n 'streamdown' ai.md` matches only a ban statement",
+    "the spike doc states engine line count, whether schema.contract.test.ts passed unchanged, and one verdict: fits, needs $state or actions, or messages cannot carry advice",
+    "`git -C ~/IuRoot/epos-ai-teamchat-athena status --porcelain` is identical before and after"
+  ],
+  "out_of_scope": "Employer-side change, the G6 migration, building the deferred channels, new symbols.",
+  "creates": [
+    "references/ai.md (absent from the 2.x tree)",
+    "docs/v3/spikes/epos-catalog-probe.md",
+    "tools/spikes/epos-catalog-probe/"
+  ]
+}

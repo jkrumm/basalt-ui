@@ -1,0 +1,34 @@
+{
+  "why": "basalt-app is 300 lines of 2.x setup text; v3 needs a thin skill plus a migrate reference (sibling versus one-PR versus in-document) and a findable recipes channel.",
+  "what": "packages/basalt-ui/agent/skills/basalt-app/SKILL.md, agent/skills/basalt-app/references/{migrate,recipes}*. Created or rewritten here; live is live-5, performance and testing are qa-i6; SKILL.md links only references that exist (setup stays in its body, data in docs/<export>.md).",
+  "owns": [
+    "packages/basalt-ui/agent/skills/basalt-app/SKILL.md",
+    "packages/basalt-ui/agent/skills/basalt-app/references/{migrate,recipes}*",
+    "packages/basalt-ui/tests/agent/sk-8*.test.ts"
+  ],
+  "must_not_touch": [
+    "packages/basalt-ui/src/{ui,page,shell,cards,charts,controls,table,content,ai,router,data,tokens,css,lint}/**",
+    "packages/basalt-ui/agent/rules/** and agent/templates/AGENTS-block* (sk-5, closed; the FOLD branch may move tagged bullets)",
+    "packages/basalt-ui/src/cli/{init,sync,doctor,lint,eject}/**, the preset contents",
+    "CHANGELOG.md, MIGRATING.md, llms.txt, scripts/check-budgets/**, other areas' migrations files",
+    "every contract.ts and src/core/ports.ts"
+  ],
+  "concept": "skills-agent-layer#10 issue 8",
+  "contract": "Frozen: ARCHITECTURE.md, this domain's contract.ts, src/core/ports.ts. Need a change: factory signal, take the reversible default. Read concepts/skills-agent-layer.md sections 1, 4.2, 5, 8, 9, 10. Skills teach, rules guarantee: no prohibition lives only in a skill. Recipes channel: packages/basalt-ui/docs/recipes/<name>.md, regions compiled by the playground typecheck (4.5, 15.9). Migrate facts: concepts/migration-release.md sections 6 and 7.",
+  "exemplar": "2.x agent/skills/basalt-app/SKILL.md (300 lines) as the donor to cut.",
+  "change": "SKILL.md at most 150 lines (J, from 300): setup by profile, upgrade, migrate, where each reference lives, local bin never bunx. references/migrate.md: the shape table (in-place, one-PR cutover, sibling app, in-document as refused) with the cost table, migrate --from and --check workflow, valueShifts and storage rows, the rule that a codemod report is a worklist never an exemption. references/recipes.md: one line per file in docs/recipes (use-when, link); this Issue is after cards-3 and live-5, so board, timeline and websocket-transport are listed; a later recipe Issue adds its own one line (owned there). Rule: none new. Skill: these files. Tests: tests/agent/sk-8 asserting recipes.md lists every docs/recipes/*.md.",
+  "commits": "One PR, separate package and non-package commits (isolated-basalt-ui); conventional, empty scope, no attribution; make sync-self its own commit.",
+  "proof": "check-coverage and skill-snippets; recipes index test.",
+  "acceptance": [
+    "agent/skills/basalt-app/SKILL.md is at most 150 lines with frontmatter name and description",
+    "references/migrate.md contains the four coexistence shapes, the migrate --check command and the worklist rule",
+    "tests/agent/sk-8 fails when a docs/recipes/*.md file is missing from references/recipes.md and passes on the tree",
+    "every command in the skill matches a verb in the CLI help (test against basalt-ui --help output)",
+    "every prohibition bullet ends in a [lint:<id>] or [type:<name>] tag or is listed as not guarded in the coverage header (check-coverage exits 0)",
+    "no mention of bunx basalt-ui; sync --check exits 0 after make sync-self (its .claude/** output is its own commit)",
+    "every relative link in SKILL.md resolves to an existing file (test)",
+    "make check exits 0",
+    "git diff --name-only lists only owned paths plus .claude/** from make sync-self (own commit)"
+  ],
+  "out_of_scope": "setup and data references (not shipped in G1), live and performance and testing references (live-5, qa-i6), the generator for docs/recipes, consumer migrations."
+}

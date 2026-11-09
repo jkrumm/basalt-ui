@@ -1,0 +1,26 @@
+{
+  "why": "Docking, claim identity and band measure decide where the aside and the sticky band land; they move headless before any JSX so Page and PageBar are thin.",
+  "what": "packages/basalt-ui/src/page/core/** with tests. No JSX, no class strings, no export (src/page/index.ts is written by I4b and later Issues).",
+  "owns": ["packages/basalt-ui/src/page/core/**"],
+  "must_not_touch": [
+    "packages/basalt-ui/{MIGRATING.md,llms.txt,scripts/contract-pins.json,scripts/check-budgets/**,src/*/contract.ts,src/{ui,tokens,lint}/**,agent/**}",
+    "CHANGELOG.md",
+    "other lanes' folders",
+    "packages/basalt-ui/src/{router,shell}/**",
+    "packages/basalt-ui/src/page/{page*,section*,parts,index*}"
+  ],
+  "concept": "shell-nav-router#8 I3; #4 invariants 9 to 11, 20, 21, 23",
+  "contract": "concept 3.5, 4, 8; read docs/v3/spikes/shell-frame.md (S1, S8 outcomes) before the docking and band code. Frozen: never edit contract.ts or contract-pins.json; signal, then take the reversible default.",
+  "exemplar": "Port tests first from 2.x src/shell/{aside-docking.ts with aside-docking.test.ts (9 tests)}, the claim code in src/shell/{index.tsx,page-bar.tsx,page-aside.tsx} and src/provider/slots.ts. Read, never edit.",
+  "change": "New src/page/core/{docking,claims,bar-measure}.ts: dock 'auto' (docks only when main keeps 720) or 'always'; identity-keyed claims with identity-checked cleanup and no late resurrection; band measure (callback ref, layout effect, height>0 guard, first publish re-aims location.hash). Ships with: guarantee = one dev assertion (rung 8), a second PageBar under one Page, unit-tested; rule = no lint id; teach = JSDoc on the core types (rule bullets: v3-shell-i10-rules-rows); test = the ported suites plus property tests.",
+  "commits": "Package and non-package changes are separate commits in one PR (isolated-basalt-ui); conventional, empty scope, no attribution; never edit CHANGELOG.md.",
+  "proof": "Unit and property tests; layout numbers come from I4's and I5's cases.",
+  "acceptance": [
+    "Docking table equals the executed aside-docking cases at the v2.29.1 tag (9 on master today, count recorded in the PR, may not fall) plus dock 'always' rows at medium and expanded",
+    "Claim lifecycle: mount A then B, unmounting A keeps B; a stale cleanup does not resurrect a folded claim; one kebab count",
+    "A second PageBar under one Page raises the dev assertion once and renders nothing extra; band measure ignores height 0",
+    "Property test: any mount and unmount order of nested claims leaves at most one live claim per region",
+    "No import of src/ui, src/shell or src/router; make check passes"
+  ],
+  "out_of_scope": "Any JSX or CSS, Page, PageBar, PageAside, Section (I4), the shell projector (I3), InnerNav (I7)."
+}

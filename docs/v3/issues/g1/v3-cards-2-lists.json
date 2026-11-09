@@ -1,0 +1,36 @@
+{
+  "why": "Ranked lists and feeds are copied across console, argo and shutterflow with different empty, loading and overflow behaviour.",
+  "what": "packages/basalt-ui/src/cards/{bar-list,event-list}* (tests colocated; layout test and fixture under tests/layout/). Created here from 2.x src/dashboard/{bar-list*,event-list*}, whose originals and tests stay green.",
+  "owns": [
+    "packages/basalt-ui/src/cards/{bar-list,event-list}*",
+    "packages/basalt-ui/tests/layout/{,fixture/}cards-lists*",
+    "packages/basalt-ui/docs/{bar-list,event-list}.md",
+    "packages/basalt-ui/src/core/messages/lists.ts"
+  ],
+  "shared_append_only": [
+    "packages/basalt-ui/src/cards/index.ts",
+    "packages/basalt-ui/scripts/export-surface.json"
+  ],
+  "must_not_touch": [
+    "packages/basalt-ui/src/{controls,table,page,shell,content,ai,router,data,tokens,css,lint}/**, packages/basalt-ui/agent/**, src/ui/** (read-only: card, badge, meter, menu), other src/charts and src/cards files",
+    "CHANGELOG.md, MIGRATING.md, llms.txt, scripts/check-budgets/**, other areas' migrations files",
+    "every contract.ts and src/core/ports.ts"
+  ],
+  "concept": "charts-cards-kanban#10",
+  "contract": "Frozen: ARCHITECTURE.md, this domain's contract.ts, src/core/ports.ts. Need a change: factory signal, take the reversible default. Read concepts/charts-cards-kanban.md sections 3, 4, 6, 8, 9 and ARCHITECTURE sections 1 and 7. ./cards never imports ./charts. Composites take no className, style, color or padding. A type missing from src/cards/contract.ts: signal, declare locally. Register data-slots per concept section 4 as the exemplar did (typed SLOTS). Message keys card.* via useMessages, English defaults in your owned src/core/messages/lists.ts (qa-i2 seeds it).",
+  "exemplar": "2.x donors with tests (stay in place): src/dashboard/bar-list*.tsx, event-list*.tsx, event-list-model.ts, event-list-scroll.ts; tests/layout/bar-list-states.layout.test.ts. Anatomy: src/cards/stat-card*, src/ui/{card,badge,skeleton}*.",
+  "change": "BarList (rows with label, value, bar against max; part-of-whole when max = total; per-row href xor onSelect; replaces Donut; FrameHead and FrameState) and EventList (day groups, 'Show more' paging, no virtualiser, dev assertion above 200 rows, held-row hooks left to the app). Both render through CardBand and CardPhase so phases match the other composites. Rule: none new. Skill: generated docs/bar-list.md and docs/event-list.md with the feed-versus-table sentence. Tests: port the 2.x invariants, phase matrix, dev assertion, axe on the scroller.",
+  "commits": "One PR, separate package and non-package commits (isolated-basalt-ui); conventional, empty scope, no attribution.",
+  "proof": "Layout and axe tests (tests/layout/cards-lists.layout.test.ts) on tests/layout/fixture/cards-lists-fixture.tsx at 1440, 768, 390, 320. No shot here: the visual round is v3-playground-overview.",
+  "acceptance": [
+    "ported 2.x bar-list and event-list tests pass with class assertions replaced by data-slot or role assertions",
+    "phase matrix gives equal heights across ready, loading, stale, error and empty for both lists",
+    "EventList with 201 rows warns once in dev and renders 'Show more' controls, never windowing",
+    "axe scrollable-region-focusable: the list scroller is focusable only while it scrolls",
+    "BarList with max = total renders part-of-whole and a row without href or onSelect has no link role",
+    "typed: className, color on either list fail with @ts-expect-error",
+    "make check exits 0",
+    "git diff --name-only lists only owned paths"
+  ],
+  "out_of_scope": "Virtualisation, DataPanel and StatGroup (cards-1), KanbanCard (cards-3), the row-held-under-menu pattern, argo migration rows."
+}

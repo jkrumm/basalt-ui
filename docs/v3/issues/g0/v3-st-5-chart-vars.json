@@ -1,0 +1,39 @@
+{
+  "why": "Charts and static pages read one set of viz colours. Five categorical, five sequential steps and the neutral roles must be derived and gated, not hand-picked, so a retune cannot ship an unreadable ramp.",
+  "what": "packages/basalt-ui/src/tokens/chart-vars.ts (new) with test. packages/basalt-ui/src/css/chart*.css is optional: create it only if a static page needs a rule the vars cannot carry, otherwise the PR says the glob stays empty. Outside-owns edits: one call site in src/tokens/emit.ts so the Viz values come from chartVars(config), and the regenerated src/css/tokens.css and src/tokens/golden/** (regenerate with their documented commands, never by hand).",
+  "owns": [
+    "packages/basalt-ui/src/tokens/chart-vars*",
+    "packages/basalt-ui/src/css/chart*.css",
+    "packages/basalt-ui/src/css/tokens.css",
+    "packages/basalt-ui/src/tokens/golden/**"
+  ],
+  "must_not_touch": [
+    "CHANGELOG.md",
+    "packages/basalt-ui/MIGRATING.md",
+    "packages/basalt-ui/llms.txt",
+    "packages/basalt-ui/scripts/check-budgets/**",
+    "**/contract.ts",
+    "packages/basalt-ui/src/ui/**",
+    "packages/basalt-ui/src/shell/**",
+    "apps/marketing/**",
+    "packages/basalt-ui/src/tokens/table.ts",
+    "packages/basalt-ui/src/charts/**",
+    "packages/basalt-ui/src/cli/**",
+    "packages/basalt-ui/src/tokens/emit-json*",
+    "packages/basalt-ui/src/css/{generate,typography,prose,fonts,tailwind}*"
+  ],
+  "concept": "static-framework-free#10 issue 5",
+  "contract": "docs/v3/concepts/tokens-visual.md sections 3.2 (Viz row, 14 names) and 8 (S1-S4); docs/v3/concepts/static-framework-free.md section 3 row 10 and falsifier F-S5.",
+  "exemplar": "packages/basalt-ui/src/guard/palette.ts and src/tokens/divider-contrast.test.ts (2.x contrast gates over derived colours); scripts/gen-chart-css.ts shows how the 2.x charts root block is generated.",
+  "change": "chart-vars derives line, dim-bar, grid, crosshair, chart-1..5 and seq-1..5 per scheme from the same config as the rest of tokens.css, and exposes them to emit.ts (st-2's JSON emit reads the same exports). table.ts keeps the 14 Viz NAMES (tok-t2's registry): the row is fed by chart-vars, not replaced, and never edited here. Gates, each failing with gate, surface and ratio: every chart-N and seq-N mark >= 3.0:1 on canvas and inset; dim-bar >= 3.0:1 on inset; seq-1..5 monotonic in lightness per scheme; seq-1 >= 1.3:1 on the dark inset without leaving the accent hue (F-S5); chart-1..5 pairwise distinct under the colour-vision check the 2.x series-palette audit uses. Names are exactly tokens-visual 3.2; no new name. Rule: none (zone A list is v3-tok-t4-cli's). Skill snippet: none. Test: chart-vars.test.ts over the default seed and a hue-268 seed at vibrancy 0, +1, +2.",
+  "commits": "One PR, separate package and non-package commits (isolated-basalt-ui); conventional, empty scope, no attribution.",
+  "proof": "Unit tests; no UI.",
+  "acceptance": [
+    "bun test packages/basalt-ui/src/tokens/chart-vars.test.ts passes for both seeds in light and dark",
+    "A seeded config with seq-1 below 1.3:1 makes the emitter throw naming the gate and ratio",
+    "chart-1..5 and seq-1..5 appear in the emitted CSS and the generated VX types, exactly once each, with the derived values",
+    "The public --vx-* name count does not rise above the 90 ceiling",
+    "make check exits 0"
+  ],
+  "out_of_scope": "Series groups and defineSeries (charts concept), argo's 93 pairs, Tailwind bridge, ramp hexes (internal, hex-identical, never exported)."
+}

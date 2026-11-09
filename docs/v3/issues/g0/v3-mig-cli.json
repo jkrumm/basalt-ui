@@ -1,0 +1,34 @@
+{
+  "why": "A consumer needs one command that says what changes for its own imports and exits non-zero while a removed symbol is still imported. Rows alone are inert; the verb selects them by the app's import census.",
+  "what": "New: packages/basalt-ui/src/cli/migrate/** and packages/basalt-ui/tests/cli/migrate/**. Rows are read from the package dir the CLI runs from: packages/basalt-ui/migrations/areas/*.json (the source tree, including legacy-1x.json) and, when present, the merged migrations/<version>.json a published package ships; a row id in both resolves to the areas file. Outside owns, one edit: replace the rel-7 'not implemented' stub for migrate in src/cli/index.ts with the dispatch to src/cli/migrate.",
+  "owns": ["packages/basalt-ui/src/cli/migrate/**", "packages/basalt-ui/tests/cli/migrate/**"],
+  "must_not_touch": [
+    "CHANGELOG.md",
+    "packages/basalt-ui/{MIGRATING.md,llms.txt}",
+    "packages/basalt-ui/scripts/check-budgets/**",
+    "**/contract.ts",
+    "packages/basalt-ui/src/{ui,shell}/**",
+    "apps/marketing/**",
+    "packages/basalt-ui/migrations/**",
+    "packages/basalt-ui/src/cli/init/**",
+    "packages/basalt-ui/src/cli/sync/**",
+    "tools/**"
+  ],
+  "concept": "migration-release#3.3",
+  "contract": "docs/v3/concepts/migration-release.md sections 3.2 (schema) and 3.3 (CLI); docs/v3/concepts/skills-agent-layer.md sections 4.1 (migrate line) and 6 (invariants 1-5).",
+  "exemplar": "packages/basalt-ui/src/cli/doctor-upgrade.ts (2.x, being dropped: reuse its census idea only) and src/cli/help.test.ts.",
+  "change": "basalt-ui migrate --from <version> --profile <p> [--json] [--check]. It scans the app (ts, tsx, astro, css) for imports from basalt-ui and legacy selectors, selects the rows whose from matches, prints what changes. --json has a stable documented shape including an unmapped list (a census symbol with no row). --check exits 1 on a removed symbol still imported, a legacy [data-mantine-color-scheme] selector, or an unknown storage or url key. --from folds chains: rows A to B and B to C resolve to A to C, so 1.40.3 sees the 2.0 and 3.0 rows at once. Unknown flag, a missing --profile, an unparseable --from and a scan of 0 files each exit 1. No network. Unflip the .failing invariants naming this Issue. Rule: none. Skill snippet: none (the migrate reference is v3-sk-8). Test: row fixtures inline, app trees built in a temp dir.",
+  "commits": "One PR, separate package and non-package commits (isolated-basalt-ui); conventional, empty scope, no attribution.",
+  "proof": "Temp-dir app trees; no consumer repo touched.",
+  "acceptance": [
+    "bun test packages/basalt-ui/tests/cli/migrate exits 0",
+    "A row for an unimported symbol is not printed; a row for an imported one is",
+    "--check exits 0 on a clean tree and 1 with the symbol named when a removed one is imported",
+    "A tree importing a symbol with no row lists it under unmapped in --json",
+    "A two-file chain A to B, B to C resolves for --from A",
+    "Unknown flag, no --profile, bad --from and an empty scan each exit 1",
+    "node packages/basalt-ui/bin/basalt-ui.mjs migrate --bogus exits 1 and migrate --from 2.29.0 --profile bridge --json no longer prints 'not implemented'",
+    "make check exits 0"
+  ],
+  "out_of_scope": "Row content (v3-tok-t5-rows, v3-mig-rows-1x, later area rows), codemods (v3-mig-codemod), writing to the consumer's files."
+}

@@ -1,0 +1,30 @@
+{
+  "why": "docs/v3/concepts/live-realtime.md section 7 P1 decides whether a central poller (about 80 lines) is built at all; it runs before live-1 builds it.",
+  "what": "tools/spikes/live-poller/** (own package.json: @tanstack/query-core at argo's locked version, read argo/bun.lock, plus 5.107.1) and docs/v3/spikes/live-poller.md. Read argo apps/dashboard/src/lib/queries/gym.ts lines 46-52 for the WeightPopover-per-row shape.",
+  "owns": ["tools/spikes/live-poller/**", "docs/v3/spikes/live-poller.md"],
+  "must_not_touch": [
+    "CHANGELOG.md",
+    "root package.json, bun.lock, .gitignore, .oxlintignore",
+    "docs/v3/{concepts,issues}/**, docs/v3/ARCHITECTURE.md",
+    "other tools/spikes/* folders",
+    "consumer repos (scratch copies live in the OS temp dir)"
+  ],
+  "concept": "docs/v3/concepts/live-realtime.md section 7 P1",
+  "contract": "docs/v3/concepts/live-realtime.md section 7 P1 and section 8 L2 are frozen; the fallback is specified there.",
+  "exemplar": "scripts/evidence/*.ts (one JSON result per run)",
+  "change": "Six observers on one query key with `refetchInterval`, fake scheduler, 60 s: arm A per-observer timers, arm B a minimal central poller. `fetchesPerInterval` = fetches started in one interval across all six observers; `extraPerInterval` = that minus 1, a total, not per observer. Decided on argo's locked version (the lowest in the peer range `^5.104.0`); the newest column is informational and a difference goes into Then.",
+  "commits": "One non-package commit `chore: spike live-poller harness and verdict`, empty scope, no attribution.",
+  "proof": "run.ts JSON plus the verdict doc; run twice, attach both outputs.",
+  "acceptance": [
+    "run.ts JSON has, per Query version, `perObserver.fetchesPerInterval`, `perObserver.extraPerInterval`, `central.fetchesPerInterval`, and `poller`",
+    "`bun tools/spikes/live-poller/run.ts` exits 0, prints one JSON object with the keys above (0 = harness ran, not hypothesis held)",
+    "docs/v3/spikes/live-poller.md has headings Question, Method, Measurements, Verdict, Then, Affects and the `verdict` lines",
+    "`find tools/spikes/live-poller -name '*.test.*' -o -name '*.spec.*'` prints nothing",
+    "`git diff --name-only master...HEAD` lists only `owns` paths",
+    "`grep -rnE 'op://|\\.ts\\.net|192\\.168\\.|ghp_' tools/spikes/live-poller docs/v3/spikes/live-poller.md` prints nothing",
+    "`make check` passes"
+  ],
+  "out_of_scope": "Writing the poller or liveQuery; channels; SSE.",
+  "envelope": "Harness: tools/spikes/<dir>/ has its own package.json (exact pins); bun.lock and node_modules gitignored there (must_not_touch package.json and bun.lock = repo root only). Passes root oxlint; no *.test.* files; Chrome via the playwright-core pattern of packages/basalt-ui/tests/layout/harness.ts; docs/v3 on master before filing; synthetic data only, private repos as counts and hashed ids.",
+  "verdict": "Not binary: one doc line `Poller: build` or `Poller: drop`, no `Verdict:` line. `build` iff, on argo's version, arm A `extraPerInterval` > 1 and arm B `fetchesPerInterval` is exactly 1; else `drop` (`liveQuery` returns a function-form `refetchInterval`). run.ts prints `poller`."
+}

@@ -1,0 +1,28 @@
+{
+  "why": "Rail, tab bar and header are projections of one declaration; the 2.x projection is the most-tested logic in the domain and moves headless before any JSX exists.",
+  "what": "packages/basalt-ui/src/shell/core/** with tests. No JSX, no class strings, no export: src/shell/index.ts is v3-shell-i5-frame's, and nothing here is public. The 2.x files stay in place until their importers retire.",
+  "owns": ["packages/basalt-ui/src/shell/core/**"],
+  "must_not_touch": [
+    "packages/basalt-ui/{MIGRATING.md,llms.txt,scripts/contract-pins.json,scripts/check-budgets/**,src/*/contract.ts,src/{ui,tokens,lint}/**,agent/**}",
+    "CHANGELOG.md",
+    "other lanes' folders",
+    "packages/basalt-ui/src/router/**",
+    "packages/basalt-ui/src/shell/{parts,commands,app-shell*,index*}",
+    "packages/basalt-ui/src/page/**"
+  ],
+  "concept": "shell-nav-router#8 I3; #4 invariants 4, 9 to 11, 14, 20, 23",
+  "contract": "concept 3.5, 4, 8; read docs/v3/spikes/shell-frame.md (S6 outcome) before the header-tier code. Frozen: never edit contract.ts or contract-pins.json; signal, then take the reversible default.",
+  "exemplar": "Port tests first from 2.x src/shell: mobile-nav-model.ts (521, projectMobileNav at :440) with mobile-nav-model.test.ts (653 lines), sidebar-block-model.ts, use-size-class.ts is I4b's. Read, never edit, the 2.x originals.",
+  "change": "New src/shell/core/{projector,block-model,header-tiers,nav-runtime}.ts: projector owns rail rows, section fold keyed by section id, blocks (list, progress, custom projecting to phone), NavBadge rollup (count, dot or null; attention is one warn colour), phone rows from projectMobileNav, header priority 1 to 3 as data, NavRuntime as internal interface and test double. Ships with: guarantee = one dev assertion (rung 8), two attention badges lit, unit-tested; rule = no lint id; teach = JSDoc on the core types (rule bullets: v3-shell-i10-rules-rows); test = the ported suite plus property tests.",
+  "commits": "Package and non-package changes are separate commits in one PR (isolated-basalt-ui); conventional, empty scope, no attribution; never edit CHANGELOG.md.",
+  "proof": "Unit and property tests; layout numbers are I1's suite once I5 mounts the frame.",
+  "acceptance": [
+    "Ported projector suite: the executed test count of mobile-nav-model.test.ts at the v2.29.1 tag (recorded in the PR; 29 on master today) does not fall, and all pass",
+    "Property test: for generated nav and coverage at most one phone row is current (never two aria-current)",
+    "Two attention badges lit raise the dev assertion once; the rollup shows one warn colour",
+    "Fold keys are unchanged: slugifyLabel on the 2.x labels matches the golden at src/shell/mobile-nav-model.test.ts line 651 ('  Awaiting Action! ' gives 'awaiting-action'), ported next to block-model",
+    "Header priority data for the S6 cluster (3 badges, 2 actions, job progress) yields the tiers in concept 4 at 1024, 1200 and 1440",
+    "No import of src/ui, src/page or src/router/nav internals; make check passes"
+  ],
+  "out_of_scope": "Any JSX or CSS, docking, claims and bar measure (I3b), Page components (I4), rail and tab bar parts (I5b, I6), commands (I8), navTarget."
+}

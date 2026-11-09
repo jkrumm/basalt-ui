@@ -1,0 +1,31 @@
+{
+  "why": "The docs site is the named consumer of mdxComponents (adopt-or-delete): the recipe and token pages render the shipped recipes through it. Second of three marketing Issues.",
+  "what": "The recipe pages, tokens and colour page and the MDX fixture test, rendered through mdxComponents from basalt-ui/page.",
+  "owns": [
+    "apps/marketing/src/content/docs/{recipes,tokens}*",
+    "apps/marketing/src/components/mdx.tsx",
+    "apps/marketing/src/pages/recipes/**",
+    "apps/marketing/tests/mdx*"
+  ],
+  "must_not_touch": [
+    "packages/basalt-ui/**",
+    ".github/workflows/deploy.yml and apps/marketing/{Dockerfile,nginx.conf} unless the build needs it (then say so)",
+    "root package.json beyond the lockfile",
+    "apps/marketing/{package.json,scripts/**,src/layouts/**} (the frame Issue)",
+    "apps/marketing/src/content/docs/{index,getting-started,profiles,migration}*"
+  ],
+  "concept": "DIRECTION#8 DPO 19",
+  "contract": "DIRECTION.md DPO 19 and 12a; ai-mdx.md decision 6 and P9; static-framework-free (themeScript inlined in the layout via Astro set:html; .vx-prose for typography). Depend on the published `basalt-ui` exactly 3.0.0, not workspace:*, so a v3 package build cannot turn the marketing deploy red. Content source: the installed tarball. `packages/basalt-ui/package.json` `files` lists llms.txt and MIGRATING.md but NOT docs/ today: before starting run `ls node_modules/basalt-ui/docs/recipes`; if absent, stop and signal (the fix is a `files` entry plus a patch release, not this Issue).",
+  "exemplar": "apps/playground in this repo for the v3 frame; the shipped docs/recipes/*.md and generated llms.txt as content sources.",
+  "change": "Recipe pages rendered from the synced docs/recipes through mdxComponents (every entry exercised: h2-h4, a, table, blockquote, Callout, Steps, Step, Tabs, Tab, Figure, Kbd), with client:load island wrappers in src/components/mdx.tsx for Tabs and Steps if Astro does not hydrate them (reversible default); a tokens and colour page. Test: a build-time bun test compiles one MDX fixture with every mdxComponents entry and asserts each key appears in the HTML. Rule: the app preset passes. Skill snippet: none.",
+  "commits": "Two commits in one PR: packages/basalt-ui/** apart from everything else (isolated-basalt-ui hook); `make sync-self` output its own non-package commit; conventional, empty scope, plain feat:/fix:/chore:/docs:, no feat! or BREAKING CHANGE, no attribution; rebase-merge. Deploys on push to master through RollHook.",
+  "proof": "Shots of one recipe page and the tokens page at 1800x1200 and 390x844, dark and light, at most 3 rounds, basalt-design reviewer.",
+  "acceptance": [
+    "`bun run --cwd apps/marketing build` exits 0 and one HTML page exists per synced docs/recipes/*.md",
+    "`rg -n 'mdxComponents' apps/marketing/src` shows the import from basalt-ui/page",
+    "the MDX fixture test asserts all 13 mdxComponents keys render and an `a` with href `//h` is blocked",
+    "`basalt-ui doctor` and `basalt-ui lint` exit 0 in apps/marketing",
+    "`gh run list --workflow deploy.yml --branch master --limit 1 --json conclusion,headSha` shows success for the merged sha (the factory does not deploy this repo: deploy mode none), then `make verify` exits 0; before that state it not-run; `curl -fsS https://basalt-ui.com/recipes/` returns 200"
+  ],
+  "out_of_scope": "The frame, the migration page, changing the package or the deploy pipeline."
+}

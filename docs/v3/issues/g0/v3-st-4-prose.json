@@ -1,0 +1,37 @@
+{
+  "why": "jkrumm's Steps.astro fights prose specificity with !important. Prose must sit at specificity zero so any app rule wins without a fight.",
+  "what": "Source text packages/basalt-ui/src/css/templates/prose.css (new), its generated output src/css/prose.css, and the Chrome layout test packages/basalt-ui/tests/layout/prose.layout.test.ts (new). src/css/generate.ts (v3-tok-t3-css) stays the only writer of the five CSS files; one allowed generate.ts edit: add the read of templates/prose.css if it does not yet exist. The 2.x React prose in src/content is untouched.",
+  "owns": [
+    "packages/basalt-ui/src/css/templates/prose.css",
+    "packages/basalt-ui/src/css/prose.css",
+    "packages/basalt-ui/tests/layout/prose*"
+  ],
+  "must_not_touch": [
+    "CHANGELOG.md",
+    "packages/basalt-ui/MIGRATING.md",
+    "packages/basalt-ui/llms.txt",
+    "packages/basalt-ui/scripts/check-budgets/**",
+    "**/contract.ts",
+    "packages/basalt-ui/src/ui/**",
+    "packages/basalt-ui/src/shell/**",
+    "apps/marketing/**",
+    "packages/basalt-ui/src/tokens/**",
+    "packages/basalt-ui/src/content/**",
+    "packages/basalt-ui/src/css/{typography,fonts,tokens,tailwind}.css",
+    "packages/basalt-ui/src/css/templates/{typography,fonts}.css"
+  ],
+  "concept": "static-framework-free#10 issue 4",
+  "contract": "docs/v3/concepts/static-framework-free.md section 1 row 5, section 8 P1 (spike A), section 10 DPO S2 (h2-h4 only).",
+  "exemplar": "packages/basalt-ui/tests/layout/harness/ (v3-layout-harness moved harness.ts there; ./harness still resolves) and an existing *.layout.test.ts beside it.",
+  "change": ".vx-prose, written in templates/prose.css and generated into prose.css (run bun packages/basalt-ui/src/css/generate.ts, commit the output, never hand-edit it), in @layer basalt.prose, nested in basalt, with every selector inside :where(). Styles h2-h4, p, lists, blockquote, code, pre, table, hr, a from tokens only (measure, rhythm-1..3, text-*, hairline, ink*), no hex, no !important. The test builds a page with the layer order theme, base, basalt, components, utilities and asserts the cascade in Chrome. Rule: none (v3-st-6 stylelint covers app CSS). Skill snippet: none. Test: prose.layout.test.ts.",
+  "commits": "One PR, separate package and non-package commits (isolated-basalt-ui); conventional, empty scope, no attribution.",
+  "proof": "Chrome layout test via the existing harness; no screenshots needed.",
+  "acceptance": [
+    "bun run test:layout runs prose.layout.test.ts and passes in Chrome",
+    "A plain sibling gets 24px top margin; a descendant matched by an unlayered .steps > * (0-1-0) gets 0px",
+    "A utilities-layer .mt-2 beats basalt.prose (8px)",
+    "Parsing prose.css finds no selector with specificity above 0-0-0 and no !important (test), and bun test packages/basalt-ui/src/css passes (committed equals generated)",
+    "make check exits 0"
+  ],
+  "out_of_scope": "h1 styling, Callout and Steps (jkrumm's Issue), React Prose, any layer declaration owned by tailwind.css."
+}

@@ -1,0 +1,37 @@
+{
+  "why": "Skills teach, rules guarantee: every bullet names the lint id or type that holds it, or says it is not guarded. 2.x had six rules (266 lines), one teaching Mantine.",
+  "what": "Rewrite packages/basalt-ui/agent/rules/** to five files (basalt-tokens, basalt-ui (unscoped), basalt-page, basalt-state, basalt-charts; at most 230 lines in total) and agent/templates/AGENTS-block.md.tpl (plus a tokens-profile variant, at most 15 lines). Delete basalt-mantine.md, basalt-batteries.md and basalt-controls.md and retarget every gate naming them, so make check stays green.",
+  "owns": [
+    "packages/basalt-ui/agent/rules/**",
+    "packages/basalt-ui/agent/templates/AGENTS-block*",
+    "packages/basalt-ui/scripts/{check-rule-tags*,check-agent-doc-drift*,check-coverage*,pack-test.sh}",
+    "packages/basalt-ui/tests/drift.test.ts",
+    "packages/basalt-ui/tests/surfaces-coverage.test.ts"
+  ],
+  "must_not_touch": [
+    "CHANGELOG.md",
+    "packages/basalt-ui/{MIGRATING.md,llms.txt}",
+    "packages/basalt-ui/scripts/check-budgets/**",
+    "**/contract.ts",
+    "packages/basalt-ui/src/{ui,shell}/**",
+    "apps/marketing/**",
+    "packages/basalt-ui/src/**",
+    "packages/basalt-ui/agent/skills/**",
+    "packages/basalt-ui/agent/templates/{DESIGN*,hook*}"
+  ],
+  "concept": "skills-agent-layer#10 issue 5",
+  "contract": "docs/v3/concepts/skills-agent-layer.md sections 4.2, 4.4 (block skeleton, at most 55 lines, imports nothing), 6 (Rules row: 33 of 48 [type] bullets survive, 15 re-authored, no visual primitive named, no hex or pixel constants), 9. Tag ids come from src/lint/rule-table.ts; [type:<name>] names that land at G1 or later go in the PR.",
+  "exemplar": "agent/rules/basalt-tokens.md and AGENTS-block.md.tpl (2.x, rewritten).",
+  "change": "Rules: every top-level bullet ends in [lint:<id>] or [type:<name>], or sits under a line 'not guarded:' (bullets until the next heading). basalt-tokens states auto means the data-theme attribute is absent and the basalt:scheme storage key. paths: from declared roots; basalt-ui.md has none. Block: stack line by profile; precedence 'consumer DESIGN.md > the five basalt-* rules > basalt-* skills > shadcn skill > global skills'; read node_modules/basalt-ui/docs/<name>.md before guessing an import; question-to-form table (at most 10 lines); local bin never bunx; never shadcn add a shipped primitive. Gates naming the deleted files: scripts/check-coverage.ts AGENT_LINE_BUDGETS and its test, scripts/pack-test.sh required list, check-agent-doc-drift.ts, tests/drift.test.ts, tests/surfaces-coverage.test.ts. Retarget them onto the five files; never silently disable (the PR names each 2.x check that cannot hold). New scripts/check-rule-tags.ts (+ test), called from check-agent-doc-drift: checks the bullet format, that every [lint:<id>] is a key of RULES in src/lint/rule-table.ts, and that every [type:<name>] is a backticked name in ARCHITECTURE section 1 or an export of src/core/ports.ts or a */contract.ts (else listed in the PR as landing later).",
+  "commits": "One PR, rebase-merged. Conventional commits, empty scope, no attribution. Package paths only. Never edit CHANGELOG.md.",
+  "proof": "grep, wc, the tag check.",
+  "acceptance": [
+    "wc -l agent/rules/*.md totals at most 230 and the directory lists exactly the five files",
+    "bun packages/basalt-ui/scripts/check-rule-tags.ts exits 0; a test seeds an untagged bullet and an unknown lint id (both fail) and a bullet under 'not guarded:' (passes)",
+    "AGENTS-block.md.tpl is at most 55 lines, no @import, no CLAUDE.md mention; the tokens variant at most 15 lines",
+    "rg -i 'mantine|#[0-9a-f]{3,6}\\b|[0-9]+px' on agent/rules and AGENTS-block.md.tpl prints nothing",
+    "rg -l 'basalt-(mantine|batteries|controls)' packages/basalt-ui/{scripts,tests} tests prints nothing (message strings and src comments: listed in the PR)",
+    "make check exits 0"
+  ],
+  "out_of_scope": "Skills and references (G1), the DESIGN.md seed, the hook template, 2.x plugin message strings."
+}

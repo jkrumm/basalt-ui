@@ -1,0 +1,36 @@
+{
+  "repo": "argo",
+  "why": "Argo's chain is hard-wired to one app. The file that picks the served directory (apps/api/src/index.ts through env DASHBOARD_DIR, and the plist template) sat outside the old scaffold's owns, so no Issue could add the /v3/ mount.",
+  "what": "APP= parameter on the scripts, a second served directory on the same API process, and a ROUTES filter for verify-pages. Default behaviour unchanged; no app yet.",
+  "owns": [
+    "scripts/{deploy.sh,dev.sh,verify-pages.ts}",
+    "scripts/design-shot/**",
+    "scripts/evidence/**",
+    "apps/api/src/{index.ts,env.ts,env.test.ts,serve-dashboard.ts,serve-dashboard.test.ts}",
+    "deploy/com.jkrumm.argo.plist.template",
+    "Makefile",
+    "package.json"
+  ],
+  "must_not_touch": [
+    "apps/dashboard/src/**",
+    "apps/api/src/** except the five files named",
+    "project.yaml",
+    "apps/dashboard-v3/** (v3-argo-scaffold)",
+    "scripts/verify.sh and scripts/test/deploy-logic.sh (they name no app dir; edit one assertion only if a test fails, say so)"
+  ],
+  "concept": "migration-release#6.2",
+  "contract": "~/SourceRoot/basalt-ui/docs/v3/concepts/migration-release.md 6.2. Verified in tree: index.ts passes env.DASHBOARD_DIR to createDashboardHandler, env.ts defines it, the plist sets it to __RELEASE_DIR__/apps/dashboard/dist. Decision (reversible default): a new optional env DASHBOARD_V3_DIR (default empty) parsed in env.ts and passed as option `v3Dir`; the plist adds DASHBOARD_V3_DIR=__RELEASE_DIR__/apps/dashboard-v3/dist; DASHBOARD_DIR is untouched. Same origin and auth, no new hostname. v3-argo-cutover-flip removes both.",
+  "exemplar": "scripts/verify-pages.ts already takes BASE: mirror that env style for APP and ROUTES.",
+  "change": "1. APP= (default dashboard) on deploy.sh build_dashboard (build command, dist check, DRY_RUN plan line; builds both apps when apps/dashboard-v3 exists), dev.sh, design-shot index and models-fixture (resolves apps/$APP/src/features/models/__fixtures__/efficiency, fails loudly if missing), evidence index. 2. serve-dashboard: with v3Dir set, /v3/* serves it (SPA fallback to its index.html, /v3/assets/* immutable, traversal refused, /api and the OTLP relay not shadowed); unset means /v3/ is 404. 3. verify-pages: ROUTES (space or comma separated) replaces the routes.txt list when set; finance paths are passed by hand (not in routes.txt: the vault is locked). Rule: none. Skill snippet: none.",
+  "commits": "Argo ships by push to master: conventional, one concern each, no attribution. Never edit node_modules or basalt-ui; a gap is a `friction:` line in the PR body, worked around in app code.",
+  "proof": "`make deploy DRY_RUN=1` plan; `bun test apps/api/src`; after the factory deploy `make version` equals origin/master and `make verify` exits 0.",
+  "acceptance": [
+    "serve-dashboard.test.ts covers: /v3/ serves the v3 dir index with SPA fallback, /v3/assets/* is immutable-cached, a traversal path under /v3/ is refused, /api/* is not shadowed, and with v3Dir unset /v3/ answers 404",
+    "env.test.ts asserts DASHBOARD_V3_DIR defaults to empty and is read when set; `bun test apps/api/src` exits 0",
+    "`rg -n 'apps/dashboard/' scripts/design-shot scripts/evidence scripts/deploy.sh scripts/dev.sh` finds only the APP default",
+    "`make deploy DRY_RUN=1` still plans the apps/dashboard build and its output differs from before only by the APP variable",
+    "`make verify-pages ROUTES=/models` loads exactly one route and prints it; with ROUTES unset it loads every routes.txt line",
+    "`make check` exits 0; after the factory deploy `make version` equals origin/master and `make verify` exits 0 (state not-run until deployed)"
+  ],
+  "out_of_scope": "The dashboard-v3 app, routes, deleting the old app, a new hostname."
+}

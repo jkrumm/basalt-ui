@@ -1,0 +1,30 @@
+{
+  "why": "Series fields, StackedArea, ChartMarks, Meter zones and 1.x Bars props change shape in v3; without codemods argo (G5), weatherorb (G4) and shutterflow (1.x) hand-edit hundreds of sites. This is the series half of the chart codemods.",
+  "what": "Series-side transforms and the flag-only list in tools/migrate-v3/charts/series/, plus one 1.x fixture app for migrate --check. No library code, no rows.",
+  "owns": [
+    "tools/migrate-v3/charts/series/**",
+    "tools/migrate-v3/charts/index.ts",
+    "tools/migrate-v3/charts/fixtures/bars-1x-check/**"
+  ],
+  "must_not_touch": [
+    "packages/**, MIGRATING.md, llms.txt",
+    "tools/migrate-v3/charts/card/**, report.ts, census-assert.ts (v3-charts-7a)",
+    "tools/migrate-v3/run.ts",
+    "tools/migrate-v3/{layout,imports,waivers,controls,ledger}/**",
+    "CHANGELOG.md"
+  ],
+  "concept": "docs/v3/concepts/charts-cards-kanban.md section 10 (the table is the spec) and 4 (series-field table); migration-release.md 7 (the report is a worklist).",
+  "contract": "Use the report shape and row-id rule of v3-charts-7a (tools/migrate-v3/charts/report.ts). Ids are fixed here; v3-charts-7c writes one row per id.",
+  "exemplar": "tools/migrate-v3/charts/card/ (v3-charts-7a): transform layout, cases.ts, report use.",
+  "change": "Register series transforms under the existing `charts` subcommand. Yes rows: sf-format (formatValue to format), sf-weight (strokeWidth and strokeOpacity: under 1.5 to quiet, over 2 to strong, between flagged), sf-dash (dashed to dash), sf-axis (axisSide to axis), sf-opacity (fillOpacity to opacity), stacked-area (StackedArea to Lines with stack, area fade), chart-marks (ChartMarks marks to CartesianChart.custom, wrap), meter-zones ({from,to} to {to}, tone for colour), bars-1x (1.x Bars getX, getValue, positiveBars, chartId, xTicks to x, series mark bar, cursor). Flag-only rows: sf-auto-domain (autoMaxFloor, autoMinCeil, autoPad), statstrip-statcell (StatStrip, WidgetHeader), deltabadge-polarity (a compile error on purpose, never guess up-good), donut, mirrored-bars, dual-panel, chart-curve, fold-bands. Cases in series/cases.ts, one in/out pair per Yes id and one flagged case per flag id, test fails on a missing id. fixtures/bars-1x-check/before imports Bars getX; after is its codemod output. Tests ship failing first. No rule, no skill snippet.",
+  "commits": "One non-package commit in one PR: feat: add series codemods. Conventional, empty scope, no attribution.",
+  "proof": "bun test tools/migrate-v3/charts/series; make check.",
+  "acceptance": [
+    "make check exits 0.",
+    "bun test tools/migrate-v3/charts/series passes, including the every-id-has-a-case check.",
+    "Running the charts subcommand on fixtures/bars-1x-check/before writes a tree equal to fixtures/bars-1x-check/after (diff -r prints nothing).",
+    "Each flag-only id yields a flagged report entry and no rewrite (asserted in the test).",
+    "git diff --name-only origin/master...HEAD lists only paths matching owns."
+  ],
+  "out_of_scope": "ChartCard codemods (v3-charts-7a), rows (v3-charts-7c), migrate --check wiring, the release gate, layout and import codemods."
+}

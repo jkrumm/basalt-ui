@@ -1,0 +1,35 @@
+{
+  "why": "A11y and CVE fixes must reach ejected files without silent overwrite; a formatter or header edit must not turn every seed change into a conflict.",
+  "what": "packages/basalt-ui/src/cli/sync/three-way*, src/cli/doctor/eject*, tests/cli/sync-matrix/**. Created here; sk-2 and sk-3 own the surrounding sync and doctor files; sk-3 ships the doctor check table, and this Issue adds exactly one line registering eject* in src/cli/doctor/checks.ts (owned for that line only).",
+  "owns": [
+    "packages/basalt-ui/src/cli/sync/three-way*",
+    "packages/basalt-ui/src/cli/doctor/eject*",
+    "packages/basalt-ui/tests/cli/sync-matrix/**",
+    "packages/basalt-ui/src/cli/doctor/checks.ts"
+  ],
+  "must_not_touch": [
+    "packages/basalt-ui/src/{ui,tokens,css,lint,page,shell,cards,charts,controls,table,content,ai,router,data,core}/**",
+    "packages/basalt-ui/agent/**",
+    "packages/basalt-ui/src/cli/{init,lint,shot,eject}/**, src/cli/doctor/** except eject* and checks.ts, src/cli/sync/** except three-way*",
+    "CHANGELOG.md, MIGRATING.md, llms.txt, scripts/check-budgets/**, other areas' migrations files",
+    "every contract.ts and src/core/ports.ts"
+  ],
+  "concept": "primitives-distribution#6",
+  "contract": "Frozen: ARCHITECTURE.md, this domain's contract.ts, src/core/ports.ts. Need a change: factory signal, take the reversible default. Read primitives-distribution section 6 (the four sync steps, CE3 formatter rule, doctor eject rows). Hashing stays banned: merge inputs are formatted, nothing formatted is stored or hashed.",
+  "exemplar": "packages/basalt-ui/src/cli/sync/** from v3-sk-2-sync for render-and-compare and exit codes; read in the tree.",
+  "change": "sync on an ejected file: skip origin local and print; skip when seedDigest matches; origin adopted: rewrite base, advance fromVersion and seedDigest, overwrite guard, print the git diff command, stop. Else strip the header line, format local, base and shipped with the project formatter (none resolved: merge raw and say so), run git merge-file --diff3 with labels local, base@<from>, shipped@<to>, write header plus result, advance base, fromVersion and seedDigest even on conflict, overwrite guard, exit 1 on any conflict. --check does steps in temp and writes nothing. Doctor eject rows: missing file, header, guard, base or tsconfig paths row; seedDigest or guard differs from installed (names basalt-ui sync); conflict markers; missing SLOTS entry; ejected or adopted over budget.json; components/ui files absent from the manifest. Rule: none. Skill: doctor output lines name the fix command. Tests: sync.matrix.",
+  "commits": "One PR, separate package and non-package commits (isolated-basalt-ui); conventional, empty scope, no attribution.",
+  "proof": "bun test tests/cli/sync-matrix with a real git binary and oxfmt in the fixture.",
+  "acceptance": [
+    "sync.matrix covers pristine-stale, disjoint, overlapping, structural, reformatted (single-quote seed vs oxfmt copy) and header-adjacent cases with the exit code and output asserted for each",
+    "a second sync run changes nothing (byte-identical tree, exit 0) even after a conflict",
+    "sync --check leaves the tree byte-identical and exits 1 when work exists, 0 when clean",
+    "a conflict still advances base and seedDigest, so a re-run does not stack markers",
+    "an adopted file stays byte-identical across a seed bump and the output names it",
+    "doctor exits 1 with one distinct message per eject row, each seeded in tests/cli/sync-matrix/doctor/",
+    "make check exits 0",
+    "git diff --name-only lists only owned paths"
+  ],
+  "out_of_scope": "Eject creation (p7), the basalt() build gate (p9), agent-file sync (sk-2), generated preset sync, lint ceiling enforcement.",
+  "worker_tag": "lead high; the lead may spawn one @implementer tagged [opus: Conflict semantics of git merge-file against formatted inputs across every upgrade case] for the novel file group only"
+}

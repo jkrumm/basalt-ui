@@ -1,0 +1,18 @@
+{
+  "why": "Parallel fan-out needs leads above 1, and the marketing site must not redeploy (and go red) on every v3 merge. Filed at priority 9 (`factory issue prio`) so it lands before the nine rows released with it.",
+  "what": "Root project.yaml. On master today it is absent; the older draft lives only on branch chore/project-yaml (commit b7bd2a31: deploy mode auto, hold 30m, leads 1). If Phase 0 already landed one, edit it minimally.",
+  "owns": ["project.yaml"],
+  "must_not_touch": [".github/**", "apps/marketing/**", "packages/basalt-ui/**", "REVIEW.md"],
+  "concept": "docs/v3/concepts/migration-release.md#16",
+  "contract": "docs/v3/concepts/migration-release.md section 16 (P0-7), docs/v3/evidence/gap-repo-surface-release-proof.md 2.1 P0-7 and docs/v3/evidence/ext-factory-process.md section 9 Phase 0: ship [{paths:['**'], via: pr}], leads 3, deploy {mode: none} (the marketing site deploys only through the path-scoped deploy.yml from rel-1), no new fields. Insufficient contract: factory signal, reversible default, PR body says so. Frozen contracts are read-only.",
+  "exemplar": "git show b7bd2a31:project.yaml for field shape.",
+  "change": "Create or edit project.yaml: apiVersion, name basalt-ui, ship via pr on **, leads 3, deploy mode none. Keep it field-minimal. Ships with: no lint rule or skill snippet; test = the parse check below.",
+  "commits": "One non-package `chore:` commit. No attribution.",
+  "proof": "parse check; factory project sync is the owner's to run.",
+  "acceptance": [
+    "bun -e \"const y=Bun.YAML.parse(await Bun.file('project.yaml').text()); if(y.leads!==3||y.ship[0].via!=='pr'||y.ship[0].paths[0]!=='**'||y.deploy.mode!=='none') process.exit(1)\" exits 0.",
+    "project.yaml has no deploy.targets and no probes entry.",
+    "git diff --name-only origin/master...HEAD lists only project.yaml."
+  ],
+  "out_of_scope": "REVIEW.md, factory settings, deploy.yml, raising leads beyond 3 (the week-later step to 6)."
+}

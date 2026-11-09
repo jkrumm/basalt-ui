@@ -1,0 +1,39 @@
+{
+  "why": "Argo's chart bucket (54 rows) is mostly missing seams; series become a union by mark and every seam gets a contract test.",
+  "what": "packages/basalt-ui/src/charts/parts/{cartesian,lines,bars}*, src/charts/seams.ts (the registry; identity until charts-2b). Created here. Sibling: v3-charts-2b-seams fills the seams and rewrites the route.",
+  "owns": [
+    "packages/basalt-ui/src/charts/parts/{cartesian,lines,bars}*",
+    "packages/basalt-ui/src/charts/seams.ts",
+    "packages/basalt-ui/docs/cartesian-chart.md",
+    "packages/basalt-ui/tests/layout/{,fixture/}charts-kinds*"
+  ],
+  "shared_append_only": [
+    "packages/basalt-ui/src/charts/index.ts",
+    "packages/basalt-ui/scripts/export-surface.json"
+  ],
+  "must_not_touch": [
+    "packages/basalt-ui/src/{ui,cards,controls,table,page,shell,content,ai,router,data,tokens,css,lint}/**",
+    "packages/basalt-ui/agent/**",
+    "packages/basalt-ui/src/charts/{core,host*}/**",
+    "packages/basalt-ui/src/charts/parts/{sparkline,mini-bars,chart-card,tooltip,legend}*",
+    "CHANGELOG.md, MIGRATING.md, llms.txt, scripts/check-budgets/**, other areas' migrations files",
+    "every contract.ts and src/core/ports.ts"
+  ],
+  "concept": "charts-cards-kanban#10",
+  "contract": "Frozen: ARCHITECTURE.md, this domain's contract.ts, src/core/ports.ts. Need a change: factory signal, take the reversible default. Read concepts/charts-cards-kanban.md sections 3, 4, 8, 9. ./charts reaches no Base UI and src/charts/host.tsx is the only importer of @tanstack/charts/react (import-boundary). Engine pin: tilde 1.5.x. Series table 2.x to v3 in section 4. 2.x src/charts files outside the owned globs stay with their tests; nothing is deleted here.",
+  "exemplar": "2.x src/charts/CartesianChart.tsx, Lines.tsx, Bars.tsx and tests kinds.test.tsx, series-gaps.test.tsx, marks.test.ts, bars-slot.test.tsx (originals stay; copy the tests with assertions untouched).",
+  "change": "CartesianChart, Lines, Bars with Series discriminated by mark (line, bar, dot) and the SeriesBase core (format, weight quiet or strong, dash, legend and tooltip false); seams.ts is the registry CartesianChart calls (identity here). ariaLabel required; summary auto min, max, last; table opt-in up to 200 points; CartesianChart.custom as the only way to build custom marks. Chart selection: selection={{state,key}} (DIRECTION 4.9 Cursor, click: Enter parity, inert on the server). Rule: none new (hand SVG charts are primitive-bypass, engine root import is import-boundary). Skill: generated docs/cartesian-chart.md. Tests: port kinds, series-gaps, marks, bars-slot; one layout and axe test on a fixture.",
+  "commits": "One PR, separate package and non-package commits (isolated-basalt-ui); conventional, empty scope, no attribution.",
+  "proof": "Layout and axe tests (tests/layout/charts-kinds.layout.test.ts) on a fixture at 1440, 768, 390, 320; the route shot is charts-2b.",
+  "acceptance": [
+    "ported kinds, series-gaps, marks and bars-slot tests pass",
+    "a series with tone, color or a numeric strokeWidth fails to type-check; ariaLabel missing fails to type-check",
+    "table opt-in renders a hidden data table for 200 points and none above",
+    "SSR hydrate of Lines and Bars has zero recoverable errors; 5k-point SSR budget test passes",
+    "layout: no horizontal overflow at 320 and axe zero serious or critical on the fixture",
+    "make check exits 0",
+    "git diff --name-only lists only owned paths",
+    "selection={{state,key}} sets the selection on click and on Enter, and SSR renders it inert (test)"
+  ],
+  "out_of_scope": "The consumer seams (charts-2b), Sparkline, MiniBars, ChartCard, tooltip, legend, Heatmap, BandStrip, StackedArea, Donut, MirroredBars, DualPanel, codemods."
+}

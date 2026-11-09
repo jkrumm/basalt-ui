@@ -1,0 +1,37 @@
+{
+  "why": "Popover, Tooltip and Menu must anchor, stack, focus and dismiss correctly; the pill popover, rich hover and Move-to menu all rest on them.",
+  "what": "packages/basalt-ui/src/ui/{popover,tooltip,menu}* (tsx, guards, tests, one grouped layout test and fixture). Created here. Split from v3-prim-p4-overlays.",
+  "owns": [
+    "packages/basalt-ui/src/ui/{popover,tooltip,menu}*",
+    "packages/basalt-ui/docs/{popover,tooltip,menu}.md",
+    "packages/basalt-ui/tests/layout/{,fixture/}ui-popups*"
+  ],
+  "shared_append_only": [
+    "packages/basalt-ui/src/ui/slots.ts",
+    "packages/basalt-ui/src/ui/no-restyle.generated.json",
+    "packages/basalt-ui/scripts/export-surface.json"
+  ],
+  "must_not_touch": [
+    "packages/basalt-ui/src/{page,shell,cards,controls,table,charts,content,ai,router,data,core,tokens,css,lint,cli,vite,testing}/**",
+    "packages/basalt-ui/agent/**",
+    "CHANGELOG.md, MIGRATING.md, llms.txt, scripts/check-budgets/**, other areas' migrations files",
+    "every contract.ts and src/core/ports.ts"
+  ],
+  "concept": "primitives-distribution#13 P4",
+  "contract": "Frozen: ARCHITECTURE.md, this domain's contract.ts, src/core/ports.ts. Need a change: factory signal, take the reversible default. Read concepts/primitives-distribution.md sections 4 (list), 12, 13 and ARCHITECTURE section 7. CE1, CE2. Q4 outcome in docs/v3/spikes/provider.md decides the override path. Strings: internal useMessages hook; none expected here, a needed key is a signal.",
+  "exemplar": "src/ui/button.tsx, button.guard.ts, scripts/gen-ui* (from v3-prim-p1-core, read in the tree): cva table, data-slot per part, guard, SLOTS.",
+  "change": "Popover (openOnHover on the trigger gives rich hover, no extra export), Tooltip (string label), Menu (all parts incl. MenuSub and MenuCheckboxItem, MenuContent anchor element or virtual, finalFocus and closeOnClick names). Always portalled, popups z-50, no z-* prop. Rule: generated no-restyle contract. Skill: generated docs/<name>.md incl. the job-to-part table. Tests: primitive.contract plus one overlay-open layout and axe test for the group.",
+  "commits": "One PR, separate package and non-package commits (isolated-basalt-ui); conventional, empty scope, no attribution.",
+  "proof": "Layout and axe tests in tests/layout/ui-popups.layout.test.ts on tests/layout/fixture/ui-popups-fixture.tsx at 1440, 768, 390, 320. No shot: a primitive has no reference image.",
+  "acceptance": [
+    "primitive.contract passes for popover, tooltip and menu with popups closed (SSR) and open",
+    "axe with each overlay open: zero serious or critical",
+    "closed overlay is not hit-testable (elementFromPoint at its former rect returns the page); Escape closes only the top overlay in a stacked test (a Dialog from p4 holding a Popover)",
+    "Menu opened with anchor={virtual rect} focuses the first item and returns focus on close",
+    "Tooltip content is a string prop (type test) and appears on touch-equivalent focus",
+    "gen-ui check mode exits 0; docs/popover.md, tooltip.md and menu.md exist",
+    "make check exits 0",
+    "git diff --name-only lists only owned paths"
+  ],
+  "out_of_scope": "No consumer migration, no playground route, no eject/sync work, no new variant axes beyond the concept table, no Mantine parity props (classNames, styles, asChild, unstyled). dialog, sheet, toast (p4); OverlayHost (g2 page kit)."
+}

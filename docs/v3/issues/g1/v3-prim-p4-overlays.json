@@ -1,0 +1,38 @@
+{
+  "why": "Dialog, Sheet, Popover, Tooltip, Menu and Toast must stack, focus and dismiss correctly and show catalog strings, not Base UI's hardcoded English.",
+  "what": "packages/basalt-ui/src/ui/{dialog,sheet,toast}* (tsx, guards, tests, one grouped layout test and fixture). Created here; ToastHost and notify are state-5. Sibling: v3-prim-p4b-popups owns popover, tooltip, menu.",
+  "owns": [
+    "packages/basalt-ui/src/ui/{dialog,sheet,toast}*",
+    "packages/basalt-ui/docs/{dialog,sheet,toast}.md",
+    "packages/basalt-ui/tests/layout/{,fixture/}ui-dialogs*",
+    "packages/basalt-ui/src/core/messages/dialogs.ts"
+  ],
+  "shared_append_only": [
+    "packages/basalt-ui/src/ui/slots.ts",
+    "packages/basalt-ui/src/ui/no-restyle.generated.json",
+    "packages/basalt-ui/scripts/export-surface.json"
+  ],
+  "must_not_touch": [
+    "packages/basalt-ui/src/{page,shell,cards,controls,table,charts,content,ai,router,data,core,tokens,css,lint,cli,vite,testing}/**",
+    "packages/basalt-ui/agent/**",
+    "CHANGELOG.md, MIGRATING.md, llms.txt, scripts/check-budgets/**, other areas' migrations files",
+    "every contract.ts and src/core/ports.ts"
+  ],
+  "concept": "primitives-distribution#13 P4",
+  "contract": "Frozen: ARCHITECTURE.md, this domain's contract.ts, src/core/ports.ts. Need a change: factory signal, take the reversible default. Read concepts/primitives-distribution.md sections 4 (list), 12, 13 and ARCHITECTURE section 7. CE1, CE2. Q4 outcome in docs/v3/spikes/provider.md decides the override path. Strings: internal useMessages hook; English defaults in your owned src/core/messages/dialogs.ts (qa-i2 seeds it).",
+  "exemplar": "src/ui/button.tsx, button.guard.ts, scripts/gen-ui* (from v3-prim-p1-core, read in the tree): cva table, data-slot per part, guard, SLOTS.",
+  "change": "Dialog (+AlertDialog, size sm md lg, title required by type), Sheet on Base UI Drawer (placement bottom right auto, max height min(72dvh,560), closed widths 320/360/480/640), Toast parts (tone axis, viewport label and dismiss from catalog keys toast.viewport and toast.dismiss, dialog.close, sheet.close). Always portalled, popups z-50, toast above, no z-* prop. Rule: generated no-restyle contract. Skill: generated docs/<name>.md incl. the job-to-part table. Tests: primitive.contract plus one overlay-open layout and axe test for the group.",
+  "commits": "One PR, separate package and non-package commits (isolated-basalt-ui); conventional, empty scope, no attribution.",
+  "proof": "Layout and axe tests in tests/layout/ui-dialogs.layout.test.ts on tests/layout/fixture/ui-dialogs-fixture.tsx at 1440, 768, 390, 320. No shot: a primitive has no reference image.",
+  "acceptance": [
+    "primitive.contract passes for dialog, sheet and toast with popups closed (SSR) and open",
+    "axe with each overlay open: zero serious or critical, Dialog without DialogTitle fails to type-check",
+    "overriding keys toast.viewport, toast.dismiss, dialog.close, sheet.close changes the rendered aria-labels",
+    "closed overlay is not hit-testable (elementFromPoint at its former rect returns the page)",
+    "a toast viewport renders above an open Dialog (z-order test)",
+    "gen-ui check mode exits 0; docs/dialog.md, sheet.md and toast.md exist",
+    "make check exits 0",
+    "git diff --name-only lists only owned paths"
+  ],
+  "out_of_scope": "No consumer migration, no playground route, no eject/sync work, no new variant axes beyond the concept table, no Mantine parity props (classNames, styles, asChild, unstyled). popover, tooltip, menu (p4b); notify queue and ToastHost (state-5); OverlayHost and defineOverlays (g2 page kit); iOS Drawer device pass (owner M1)."
+}

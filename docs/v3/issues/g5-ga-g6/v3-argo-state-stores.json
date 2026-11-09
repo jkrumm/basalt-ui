@@ -1,0 +1,36 @@
+{
+  "repo": "argo",
+  "why": "Every v3 route reads these stores and the API client; they are framework-bound (createSearchStore, persisted state, externalField, commands, router redirect), so they are rewritten, not moved.",
+  "what": "window-stores (9 stores), timer-store, timer-tick, gym-profile, telemetry, use-field, use-now, eden, auth, shot-state, and byte-identical copies of the seven leaf modules the stores import.",
+  "owns": [
+    "apps/dashboard-v3/src/lib/{window-stores,timer-store,timer-tick,gym-profile,telemetry,use-field,use-now,eden,shot-state}*",
+    "apps/dashboard-v3/src/lib/auth{,.test}.ts",
+    "apps/dashboard-v3/src/features/strength-tracker/components/{timer-core,rest-timer-bus}.ts",
+    "apps/dashboard-v3/src/features/usage-tracking/flow-node*",
+    "apps/dashboard-v3/src/features/finance/lib/months*",
+    "apps/dashboard-v3/src/features/finance/api/types.ts",
+    "apps/dashboard-v3/src/features/models/{model,model.test,api/types}.ts"
+  ],
+  "must_not_touch": [
+    "apps/dashboard/**",
+    "apps/api/**",
+    "packages/shared/** (v3-argo-shared)",
+    "other Issues' dirs under apps/dashboard-v3/src",
+    ".basalt/**"
+  ],
+  "concept": "migration-release#6.3 argo state row",
+  "contract": "Read basalt-ui docs/v3/concepts/migration-release.md 6.1-6.3, argo DESIGN.md and the managed layer (.claude/rules/basalt-v3-*.md, skills basalt-v3-*). The installed basalt-ui is exact 3.0.0-next.N: its docs/recipes and llms.txt are the API truth. Never import apps/dashboard; share through @argo/shared. Order: shared, state-features, state-stores, queries, shell, routes; a later Issue's import is a signal, never a stub. Controls law: concepts/controls-url-state.md (widget state in the URL, URL-field persist removed; decide about 20 fields one by one, in a comment). The seven leaf modules import nothing framework-bound (verified): copy them byte-identical; route Issues must_not_touch them.",
+  "exemplar": "Installed docs/recipes for defineControls and createSyncedState; old tests lib/{window-stores,timer-store,gym-profile,auth,shot-state}.test.ts.",
+  "change": "window-stores.ts: the nine createSearchStore stores (garmin, strength, bodyComp, walking, usage, astro, calendar, fin, models) become defineControls with field codecs; usageStore aliases and finStore's 17 fields keep their URL names. timer-store: zustand stays, `emit` moves to defineCommands, `externalField` to the v3 one. gym-profile: createSyncedState (or the recipe if spike-synced landed as recipe) over the gym settings query. telemetry on the v3 provider event hook. eden, auth, shot-state port with their tests (auth redirects through the v3 router). Rule: the controls family runs over window-stores; no store reads the URL outside defineControls.",
+  "commits": "Argo ships by push to master: conventional, one concern each, no attribution. Never edit node_modules or basalt-ui; a gap is a `friction:` line in the PR body, worked around in app code.",
+  "proof": "Golden URL fixtures: the same query strings decode to the same values in old and new stores for every retained field.",
+  "acceptance": [
+    "`bun --cwd apps/dashboard-v3 test src/lib` exits 0; window-stores.test.ts has one golden URL fixture per store",
+    "`rg -n 'createSearchStore|createPersistedState|from .basalt-ui/(state|commands).' apps/dashboard-v3/src/lib` returns no match",
+    "`bun scripts/check-test-port.ts apps/dashboard/src/lib apps/dashboard-v3/src/lib --only '{timer-store,gym-profile,auth,shot-state}*'` exits 0 for timer-store, gym-profile, auth, shot-state",
+    "`diff` of each of the seven leaf copies against its apps/dashboard original prints nothing",
+    "each of the nine stores has a comment listing which fields stay in the URL and which move to session or device state",
+    "`make check` exits 0"
+  ],
+  "out_of_scope": "Queries, features, routes, the settings sync server contract, the workout draft (stays app code)."
+}

@@ -1,0 +1,28 @@
+{
+  "why": "Docs examples are compiled regions of the playground, so cards, charts and controls need one overview route that also exercises a global range and a bound and an overridden card.",
+  "what": "apps/playground/src/routes/overview.tsx and tests/layout/overview.layout.test.ts (routeTree.gen.ts is gitignored). Created here, within the playground line ceiling set by v3-playground-reset.",
+  "owns": ["apps/playground/src/routes/overview.tsx", "packages/basalt-ui/tests/layout/overview*"],
+  "must_not_touch": [
+    "packages/basalt-ui/src/**, other tests/layout files",
+    "apps/playground/src/routes/* except overview.tsx",
+    "packages/basalt-ui/docs/**",
+    "CHANGELOG.md, MIGRATING.md, llms.txt, scripts/check-budgets/**, other areas' migrations files",
+    "every contract.ts and src/core/ports.ts"
+  ],
+  "concept": "skills-agent-layer#4",
+  "contract": "Read concepts/skills-agent-layer.md 4.5 (regions) and concepts/controls-url-state.md section 6 (exemplar). Consume the public API only: basalt-ui/cards, basalt-ui/charts, basalt-ui/controls, basalt-ui/router.",
+  "exemplar": "apps/playground/src/routes/cards.tsx (landed by v3-exemplar-statcard) for route and scenario layout.",
+  "change": "Route /overview: a global range in the page controls via defineControls, StatGroup strip and StatCard row, two widget cards (one bound to the global, one with an override showing the cue), a ChartCard, a BarList and an EventList in a DataPanel, FilterSet with Filters (n) on phone. Mark regions // #region stat-card, stat-group, chart-card, filter-set, bar-list, data-panel for the generated docs. Rule: none. Skill: the regions. Test: the playground typecheck and a layout test reading the route's data-slots.",
+  "commits": "One PR, separate package and non-package commits (isolated-basalt-ui); conventional, empty scope, no attribution.",
+  "proof": "Real-Chrome layout test via tests/layout harness at 1440, 768, 390, 320; axe serious/critical none; at most 3 shot rounds at 1800x1200 and 390x844, dark and light, against docs/v3/inspo/x-reference.jpg.",
+  "acceptance": [
+    "apps/playground typecheck passes and every region named above compiles",
+    "make gen-check is green: docs/stat-card.md and the other pages embed their region unchanged",
+    "layout at 1800x1200 and 390x844: no horizontal overflow, one card shows the override cue, Filters (n) appears below @narrow",
+    "the quality matrix includes the route and passes when qa-i4 has landed",
+    "the route imports only public basalt-ui subpaths (no relative path into packages/basalt-ui/src)",
+    "make check exits 0",
+    "git diff --name-only lists only owned paths"
+  ],
+  "out_of_scope": "Any package file, other routes, nav changes, new demo data beyond scenario fixtures, shell wiring."
+}

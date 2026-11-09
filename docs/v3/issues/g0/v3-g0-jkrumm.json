@@ -1,0 +1,30 @@
+{
+  "repo": "jkrumm.com",
+  "why": "jkrumm.com hand-ported v1.2.0 colours (50 vars); its accent drifted (#0084d1 against #4374a6). It adopts the tokens profile: shipped CSS, generated hex, no React, no Tailwind.",
+  "what": "src/** (global.css, every component and layout that reads a hand var), package.json, bun.lock, .basalt/**, one Makefile check line. Profile tokens. Prose, boot script and chart colours: v3-g0-jkrumm-prose-boot; lint cleanup: v3-g0-jkrumm-lint; previews: v3-g0-jkrumm-preview.",
+  "owns": ["src/**", "package.json", "bun.lock", ".basalt/**", "Makefile"],
+  "must_not_touch": [
+    "deploy/**",
+    "scripts/**",
+    "public/**",
+    "Dockerfile",
+    "docs/**",
+    "src/content/**"
+  ],
+  "concept": "static-framework-free#10 issue 8",
+  "contract": "Read-only in ~/SourceRoot/basalt-ui: docs/v3/concepts/static-framework-free.md 4.1, 8 (P7), 10 (DPO S1, accent); evidence/consumer-jkrumm-com.md. DPO 5a: ship accent B (its hue, vibrancy +1). Pin basalt-ui to the exact 3.0.0-next.<N> of floors.G0.next in ~/SourceRoot/basalt-ui/scripts/fleet.json (no caret); unserved on npm means stop and signal (owner row v3-release-g0-next cuts it).",
+  "exemplar": "~/SourceRoot/basalt-ui/packages/basalt-ui/test/fixtures/tokens (the tokens page).",
+  "change": "1) Pin basalt-ui (devDependency); from the repo root, local bin: basalt-ui init --profile tokens --tokens-out src/styles/tokens.css --tokens-json-out src/lib/tokens.json --accent '#0084d1' --vibrancy 1 (B). 2) global.css imports basalt-ui/fonts.css, src/styles/tokens.css (unlayered), typography.css, prose.css in the order of static-framework-free 4.1; delete the 50 hand vars (lines 55-201); rewrite every use in src/** by varMap, the old .prose block included. 3) Type rungs (DPO S1), each shift listed in the PR: text-xs 13 and text-sm 14 to --vx-text-sm (13); text-md 16 to text-base (16); text-lg 20 to text-md (15); text-xl 24 to text-lg (18). 4) tokens:check runs tokens:css --check for the css and json outputs at the shipped flags; check:basalt = tokens:check && basalt-ui doctor; lint:basalt = basalt-ui lint (joins check:basalt in the lint Issue). Makefile check gains bun run check:basalt after build.",
+  "commits": "Per jkrumm.com: conventional commits, direct to master (ship via push), no attribution. Root install files (.basalt, AGENTS block, .claude) in their own commit.",
+  "proof": "make check; after the push make verify exits 0 and make version prints the new commit.",
+  "acceptance": [
+    "make check exits 0 and runs check:basalt",
+    "rg -n '^\\s+--(bg|panel|ink-2|muted|faint|divider|accent):' src/styles prints nothing",
+    "tokens:css --check passes for both outputs; basalt-ui doctor exits 0",
+    "The PR lists the type shifts, the chart-1..4 value shifts and per-page <script counts before and after (rg -c '<script' dist --glob '*.html'), none higher",
+    "make verify exits 0 after deploy"
+  ],
+  "out_of_scope": "Content, prose, boot script, chart colours, lint findings beyond the renames, previews, React or Tailwind, deploy config.",
+  "owns_widened": "init also writes at the repo root: AGENTS.md block, .claude/**/basalt-*, .claude/settings.json basalt entries, .stylelintrc.basalt.json, formatter ignore.",
+  "varMap": "Old to --vx-* (no migrate step; jkrumm never had 2.x names): bg>canvas panel>card panel-hover>hover divider,ring>hairline shadow-ring>shadow-card ink,ink-2>ink muted>ink-muted faint>ink-faint accent>brand accent-fill>brand-fill on-accent>on-brand accent-glow>inline color-mix(in srgb, var(--vx-brand) 16%, transparent) status-success,-warning,-error>good,warn,bad chart-1..4>chart-1..4 (values shift: list) w-body,w-med,w-strong>weight-body,-medium,-strong font-display-stretch>font-head-stretch mono,sans,display>font-mono,-sans,-head content-w>measure space-block,-group,-section>the rhythm steps equal to 24,32,96px ease-reveal,dur-hover>ease,dur-fast. Layout vars, --space-row and the Astro font aliases stay app-owned."
+}

@@ -1,0 +1,37 @@
+{
+  "why": "Argo hardcodes Intl calls and the render-phase defineFormat global makes SSR and tests lie; one Format, a typed catalog and provider props fix both within the 5 KB provider cap.",
+  "what": "packages/basalt-ui/src/core/format*, src/core/messages/** (index, use-messages, stubs), src/core/provider-props*, scripts/check-literals*. Created from 2.x src/format (originals and tests stay).",
+  "owns": [
+    "packages/basalt-ui/src/core/{format*,provider-props*,messages/**}",
+    "packages/basalt-ui/scripts/check-literals*",
+    "packages/basalt-ui/docs/use-format.md"
+  ],
+  "shared_append_only": [
+    "packages/basalt-ui/src/index.ts",
+    "packages/basalt-ui/scripts/export-surface.json",
+    "package.json"
+  ],
+  "must_not_touch": [
+    "packages/basalt-ui/src/{ui,page,shell,cards,charts,controls,table,content,ai,router,data,tokens,css,lint,testing}/**",
+    "packages/basalt-ui/src/core/provider.* and src/core/provider/** (spike-provider's)",
+    "CHANGELOG.md, MIGRATING.md, llms.txt, scripts/check-budgets/**, other areas' migrations files",
+    "every contract.ts and src/core/ports.ts"
+  ],
+  "concept": "quality-contract#12 I2",
+  "contract": "Frozen: ARCHITECTURE.md, this domain's contract.ts, src/core/ports.ts. Need a change: factory signal, take the reversible default. Read concepts/quality-contract.md sections 4 to 7, 10, 12. Provider-only chunk hard zeros: cn tables, message tables, Intl caches, the en catalog; useFormat builds createFormat lazily. Spike-provider (docs/v3/spikes/provider.md) sets the ceiling.",
+  "exemplar": "2.x src/format/*.test.ts, src/provider/format-defaults.test.tsx.",
+  "change": "Format (number, percent, money with no default currency, date incl. CalendarDate in UTC, dateTime, time, relative(v, now), duration, plural), createFormat({locale,timeZone|'host'}), useFormat (provider context else en and UTC), CalendarDate, Msg, BasaltMessages (per-area interfaces intersected in messages/index.ts), provider props locale, timeZone, messages (Partial), lang set in an effect. useMessages(area) is internal (messages/use-messages.ts). Seeds one empty stub per area, owned by the Issue that writes its strings: select, dialogs, base, date, cards, lists, kanban, controls, home, filters, table, live, charts (`export const <area> = {} satisfies Partial<BasaltMessages>`); a later area owns its file plus one import line in index.ts. check-literals flags string literals in aria-label, title, placeholder, alt and default string params in src/{ui,cards,page,data,router,core}/** (not core/messages or tests) and any file elsewhere importing core/messages; 2.x directories are skipped until their lane replaces them. Rule: check-literals in pre (no lint id). Skill: generated docs/use-format.md. Tests: format.law, messages.coverage.",
+  "commits": "One PR, separate package and non-package commits (isolated-basalt-ui); conventional, empty scope, no attribution.",
+  "proof": "bun test; the provider-only fixture bundle size from spike-provider's gate.",
+  "acceptance": [
+    "format.law: same output server and client for a fixed locale and zone; a CalendarDate prints the same day under TZ=America/Los_Angeles; no navigator read",
+    "non-finite numbers render an em dash; money without a currency fails to type-check",
+    "messages.coverage: each key is referenced once (vacuous on the stubs), plural covers en and de categories, index.ts intersects exactly the seeded stubs, check-literals exits 0 on the tree",
+    "check-literals exits 1 on a fixture with aria-label, title, placeholder and alt literals",
+    "the provider-only bundle has no message table, Intl cache or cn (spike-provider hard-zero test)",
+    "useFormat without a provider returns en and UTC; render output is unchanged",
+    "make check exits 0",
+    "git diff --name-only lists only owned paths"
+  ],
+  "out_of_scope": "Area strings (each domain Issue), pseudoMessages (qa-i4), the provider chunk, German pack, toFixed lint, RTL."
+}

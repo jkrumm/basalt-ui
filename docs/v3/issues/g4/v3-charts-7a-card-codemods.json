@@ -1,0 +1,30 @@
+{
+  "why": "Argo alone has 75 ChartCard sites and every one needs a rewrite or a flag, or argo (G5) and weatherorb (G4) stall on the 2.x card API. This Issue is the ChartCard half of the chart and card codemods.",
+  "what": "The `charts` subcommand, its report plumbing and the ChartCard transforms (state, height, facts included) in tools/migrate-v3/charts/. No library code, no rows (v3-charts-7c).",
+  "owns": [
+    "tools/migrate-v3/charts/{index,report,census-assert}.ts",
+    "tools/migrate-v3/charts/card/**"
+  ],
+  "shared_append_only": ["tools/migrate-v3/run.ts"],
+  "must_not_touch": [
+    "packages/**, MIGRATING.md, llms.txt",
+    "tools/migrate-v3/{layout,imports,waivers,controls,ledger}/**",
+    "tools/migrate-v3/charts/series/** (v3-charts-7b)",
+    "run.ts beyond the registration line",
+    "CHANGELOG.md"
+  ],
+  "concept": "docs/v3/concepts/charts-cards-kanban.md section 10 (the table is the spec); migration-release.md 3.2 (row schema), 7 (the report is a worklist, never an exemption).",
+  "contract": "Report JSON: {rewritten: {<rowId>: count}, flagged: [{row, file, line, reason}]}. A flagged site is never rewritten. Row ids are fixed here; v3-charts-7c writes one row per id.",
+  "exemplar": "tools/migrate-v3/layout/ and imports/ (v3-mig-codemod): ts-morph transform layout, case pairs, worklist report.",
+  "change": "Add `bun tools/migrate-v3/run.ts charts <app-dir> --report <file>`. Yes rows (rewrite): cc-body-chart (children to the chart box slot, unwrap RefetchDim), cc-pending-loading (titleless pending to phase=\"loading\"), cc-height (to short or auto, flags a partial), cc-state-phase (state and chartStateOf to phase plus empty), cc-facts-figure (one fact to figure). Flag-only rows: cc-body-datapanel (non-chart body), cc-removed-props (placeholderHeight, matchHeight, deltaPeriod, stateAction, ghost, stateNoun, retrying: delete and flag), cc-actions, cc-tone-status (tone plus verdict word), cc-expression (a body or state that is an expression to read), cc-other-self-closed (self-closed ChartCard that is not the pending form). Cases live in card/cases.ts: one in/out pair per Yes id, one flagged case per flag id; the test fails if any id has no case. Tests ship failing first. No rule, no skill snippet.",
+  "commits": "One non-package commit in one PR: feat: add chart card codemods. Conventional, empty scope, no attribution.",
+  "proof": "Scratch run on argo at its commit f5c49ca6 (clean tree, 49 files, 75 sites): tmp=$(mktemp -d); git -C ~/SourceRoot/argo archive f5c49ca6 apps/dashboard/src | tar -x -C $tmp; then the run command with --report $tmp/report.json. Argo is never written.",
+  "acceptance": [
+    "make check exits 0.",
+    "bun test tools/migrate-v3/charts/card passes, including the every-id-has-a-case check.",
+    "bun tools/migrate-v3/charts/census-assert.ts $tmp/report.json exits 0: rewritten cc-body-chart 26 and cc-pending-loading 24, flagged cc-body-datapanel 19, cc-expression 4 and cc-other-self-closed 2, each flagged entry carrying file and line.",
+    "In the same report no flagged row id appears under rewritten.",
+    "git diff --name-only origin/master...HEAD lists only paths matching owns."
+  ],
+  "out_of_scope": "Series, StackedArea, ChartMarks, Meter and 1.x Bars codemods (v3-charts-7b), rows (v3-charts-7c), the release gate, migrate --check, layout and import codemods."
+}

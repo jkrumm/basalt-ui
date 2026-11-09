@@ -1,0 +1,44 @@
+{
+  "why": "control-home drew 21 waivers, rb looped 401 at 1000 req/s from a hand poll, contentTrust defaulted to trusted. These ids close the structure family.",
+  "what": "New: six rule modules under packages/basalt-ui/src/lint/rules/structure/ (the six ids), one fixture file per id in packages/basalt-ui/test/fixtures/lint/structure-rest/, one test file: 11 live forms plus three id-only shells.",
+  "owns": [
+    "packages/basalt-ui/src/lint/rules/structure/colour-literal*",
+    "packages/basalt-ui/src/lint/rules/structure/waiver-needs-reason*",
+    "packages/basalt-ui/src/lint/rules/structure/data-primitive*",
+    "packages/basalt-ui/src/lint/rules/structure/router-search*",
+    "packages/basalt-ui/src/lint/rules/structure/control-home*",
+    "packages/basalt-ui/src/lint/rules/structure/untrusted-markdown*",
+    "packages/basalt-ui/test/fixtures/lint/structure-rest/**"
+  ],
+  "must_not_touch": [
+    "CHANGELOG.md",
+    "packages/basalt-ui/{MIGRATING.md,llms.txt}",
+    "packages/basalt-ui/scripts/check-budgets/**",
+    "**/contract.ts",
+    "packages/basalt-ui/src/{ui,shell}/**",
+    "apps/marketing/**",
+    "packages/basalt-ui/src/tokens/**",
+    "packages/basalt-ui/src/cli/**",
+    "packages/basalt-ui/agent/**",
+    "packages/basalt-ui/src/lint/rule-table*",
+    "packages/basalt-ui/src/lint/factory*",
+    "packages/basalt-ui/src/lint/rules/class/**",
+    "packages/basalt-ui/src/lint/rules/structure/{import-boundary,primitive-bypass}*"
+  ],
+  "concept": "guardrails#4",
+  "contract": "docs/v3/concepts/guardrails.md section 4 rows 10-15 (form counts: colour-literal 1, waiver-needs-reason 2, data-primitive 8, router-search 4, control-home 1, untrusted-markdown 4; the last three are shells here, bodies in v3-ctl-8 and v3-ai-i5), section 6, section 8.",
+  "exemplar": "Factory and table from v3-gr-1-rule-table; one line added to src/lint/index.ts is the only edit outside owns.",
+  "change": "colour-literal: hex and colour functions in TS strings. waiver-needs-reason: no '-- reason'; a file-level directive on any rule but colour-literal, shadcn/no-inline-styles, raw-scroll, or outside the deepRender paths (a rule option). data-primitive: refetchInterval values; new EventSource/WebSocket outside a file importing a type named Transport (ONE form, message names createChannel and the seam); .getReader() loops; deprecated Query fetch calls; new QueryClient outside makeQueryClient; data={x ?? []} on basalt charts; a timer calling invalidate/refetch; raw storage writes outside an adapter. router-search, control-home and untrusted-markdown: register the rule id and a shell that fires nothing, bodies are v3-ctl-8 (control-home waits on v3-spike-control-home) and v3-ai-i5. Profile: parts+, except colour-literal and waiver-needs-reason (bridge+). Skill snippet: none. Test: RuleTester.",
+  "commits": "One PR, rebase-merged. Conventional commits, empty scope, no attribution. Package paths only (isolated-basalt-ui). Never edit CHANGELOG.md.",
+  "proof": "RuleTester per form.",
+  "acceptance": [
+    "bun test packages/basalt-ui/src/lint/rules/structure passes for these six files",
+    "new EventSource fires in a file with no Transport import and does not fire in a file importing the Transport type",
+    "A file-level raw-scroll directive outside the deepRender option fires waiver-needs-reason",
+    "Every live form has valid and invalid fixtures and a fix token in its message",
+    "make check exits 0",
+    "router-search, control-home and untrusted-markdown ids register in the rule table and their shells report no findings; no body is implemented here"
+  ],
+  "out_of_scope": "Other families, the preset, live-recipes lint (v3-live-5), consumer rewrites.",
+  "test_layout": "Fixtures: test/fixtures/** (hidden from lint, fmt, bun test by v3-test-roots)."
+}

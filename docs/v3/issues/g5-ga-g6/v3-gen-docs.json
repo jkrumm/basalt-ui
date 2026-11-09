@@ -1,0 +1,20 @@
+{
+  "why": "DIRECTION 4.12 Prop shapes: one extractor writes docs/<export>.md and enforces JSDoc. Dozens of rows own a generated doc and cite the docs gate, and no Issue built it, so skills would link to nothing.",
+  "what": "New: packages/basalt-ui/scripts/gen-docs.ts and its test with a fixture export. Consumes scripts/docs-format.ts from v3-rel-7-skeleton-cli. src/ui docs stay gen-ui's (v3-prim-p1-gen).",
+  "owns": ["packages/basalt-ui/scripts/gen-docs*", "packages/basalt-ui/tests/fixtures/gen-docs/**"],
+  "shared_append_only": ["Makefile"],
+  "must_not_touch": ["packages/basalt-ui/src/**", "packages/basalt-ui/agent/**", "CHANGELOG.md"],
+  "concept": "skills-agent-layer#3.1; DIRECTION#4.12",
+  "contract": "docs/v3/concepts/skills-agent-layer.md 3.1 and 15.9. Extractor on the TS compiler API via the repo's side-by-side typescript 6; no new dependency; not a ninth CLI verb. Output format is scripts/docs-format.ts. Examples come from playground regions named `// #region example:<export>` when one exists.",
+  "exemplar": "packages/basalt-ui/scripts/gen-llms.ts (generator with --check).",
+  "change": "gen-docs.ts: for every subpath in package.json exports except ./ui/* and the CSS entries, read each value export's public type through the compiler API, render docs/<kebab-name>.md via docs-format, append example regions when present. --check fails on drift and on an export with no JSDoc, naming it (JSDoc required: the DIRECTION row). `make gen-check` runs gen-docs --check then gen-recipes --check (v3-recipes-check) and make check calls it. From here 'make gen-check' in any facts file means make gen-check. Ships with: guarantee = the gate; teach = none; test = fixture exports with and without JSDoc.",
+  "commits": "One PR, separate package and non-package commits (isolated-basalt-ui); conventional, empty scope, no attribution.",
+  "proof": "bun test packages/basalt-ui/scripts/gen-docs.test.ts; make gen-check.",
+  "acceptance": [
+    "bun test packages/basalt-ui/scripts/gen-docs.test.ts passes: a JSDoc-less export fails with its name, a documented one renders",
+    "make gen-check exits 0 on the tree and exits 1 after one byte of a generated doc changes",
+    "make check calls make gen-check (grep -n gen-check Makefile)",
+    "rg -n 'gen-docs' packages/basalt-ui/src/cli finds nothing (no CLI verb)"
+  ],
+  "out_of_scope": "src/ui generated docs, llms-full.txt content changes beyond what gen-llms already does, the docs site."
+}

@@ -1,0 +1,32 @@
+{
+  "why": "DPO 13 (docs/v3/ARCHITECTURE.md section 12): `createSyncedState` freezes only after this passes. Two divergent sync protocols exist (argo gym, epos settings); either they share one core or the symbol ships as a recipe.",
+  "what": "tools/spikes/synced/** and docs/v3/spikes/synced.md. Read-only: argo apps/dashboard/src/lib/queries/gym.ts, lib/gym-profile.ts; ~/IuRoot/epos-ai-teamchat-athena/ui/src/state/settings.ts (in place or an OS-temp copy; transports paraphrased, settings key names only). src/data/synced* is state-3.",
+  "owns": ["tools/spikes/synced/**", "docs/v3/spikes/synced.md"],
+  "must_not_touch": [
+    "CHANGELOG.md",
+    "root package.json, bun.lock, .gitignore, .oxlintignore",
+    "docs/v3/{concepts,issues}/**, docs/v3/ARCHITECTURE.md",
+    "other tools/spikes/* folders",
+    "consumer repos (scratch copies live in the OS temp dir)"
+  ],
+  "concept": "docs/v3/concepts/state-persistence-forms.md section 9 S1; docs/v3/ARCHITECTURE.md section 12 DPO 13",
+  "contract": "docs/v3/concepts/state-persistence-forms.md section 9 S1 is frozen; its two refuted-if branches are the only outcomes.",
+  "exemplar": "scripts/evidence/*.ts (one JSON result per run)",
+  "change": "Write a minimal `createSyncedState` core with an injectable scheduler (about 0.5 d); each flow supplies only a transport: argo gym (null server seeds the mirror once, 5 s poll, `updated_at` LWW), epos settings (per-field `changedAt`). Run the applicable transport cases of state-persistence-forms section 9: poll pauses while saving, serial order, LWW `rev`, per-field `changedAt`, remote ignored while `editing()`, no echo across two tabs, owner switch isolates keys. The core is throwaway. A `coreChanges` entry is a widening only if it adds an optional field to `load` or `save` and the first flow passes unchanged; any other edit (new core method, scheduler semantics, per-flow branch) is a core change.",
+  "commits": "One non-package commit `chore: spike synced harness and verdict`, empty scope, no attribution.",
+  "proof": "run.ts JSON plus the verdict doc; run twice, attach both outputs.",
+  "acceptance": [
+    "run.ts JSON has `argoGym` and `eposSettings` (each `casesPassed`, `casesTotal`), `coreChanges` (each tagged `widening` or `core`) and `decision`",
+    "The doc quotes the evidence line that forced the Decision; no file holds epos source text, hostnames or tenant names",
+    "`bun tools/spikes/synced/run.ts` exits 0, prints one JSON object with the keys above (0 = harness ran, not hypothesis held)",
+    "docs/v3/spikes/synced.md has headings Question, Method, Measurements, Verdict, Then, Affects and the `verdict` lines",
+    "`find tools/spikes/synced -name '*.test.*' -o -name '*.spec.*'` prints nothing",
+    "`git diff --name-only master...HEAD` lists only `owns` paths",
+    "`grep -rnE 'op://|\\.ts\\.net|192\\.168\\.|ghp_' tools/spikes/synced docs/v3/spikes/synced.md` prints nothing",
+    "`make check` passes"
+  ],
+  "out_of_scope": "Production `createSyncedState` in src/data; hide-flush and 64 KiB body cases; UI.",
+  "envelope": "Harness: tools/spikes/<dir>/ has its own package.json (exact pins); bun.lock and node_modules gitignored there (must_not_touch package.json and bun.lock = repo root only). Passes root oxlint; no *.test.* files; Chrome via the playwright-core pattern of packages/basalt-ui/tests/layout/harness.ts; docs/v3 on master before filing; synthetic data only, private repos as counts and hashed ids.",
+  "verdict": "Not binary: exactly one doc line `Decision: symbol` or `Decision: recipe`, no `Verdict:` line. `symbol` iff both flows pass every case with only widenings; else `recipe`. run.ts prints `decision`, not `verdict`.",
+  "worker": "[opus: decides whether two divergent sync protocols share one core or the symbol ships as a recipe]"
+}

@@ -1,0 +1,28 @@
+{
+  "why": "The owner wants a 3.0: the doctrine and gate change on purpose, as two constants, before the first breaking commit. The gate also makes v2 fix-only and master prerelease-only until GA.",
+  "what": "scripts/release.sh version_gate and branch selection, scripts/release.test.ts, master .releaserc.json. One PR to master. Copying release.sh onto v2 is the owner row v3-rel-4b-v2-sync, not this Issue.",
+  "owns": ["scripts/release.sh", "scripts/release.test.ts", ".releaserc.json"],
+  "must_not_touch": [
+    "packages/basalt-ui/**",
+    "commitlint.config.ts",
+    "AGENTS.md",
+    ".github/workflows/**",
+    "the v2 branch"
+  ],
+  "concept": "docs/v3/concepts/migration-release.md#3.1",
+  "contract": "docs/v3/concepts/migration-release.md 3.1 (signature, constants, accept/refuse table), 4.3 (config), 13 (22 docs/v3/evidence/gap-repo-surface-release-proof.md cases plus v2 minor refused plus ga_ready=0 refused). dist_tag_for already exists from rel-1; do not redefine it. Refusal text on a post-GA major names CURRENT_MAJOR and MAINTAINING.md section 'Major lines'. Insufficient contract: factory signal, reversible default, PR body says so. Frozen contracts are read-only.",
+  "exemplar": "rel-1's dist_tag_for table in scripts/release.test.ts.",
+  "change": "readonly CURRENT_MAJOR=3 PREVIOUS_MAJOR=2; version_gate <branch> <bump> <version> <ga_tag_exists> <ga_ready>; BRANCH=\"${LINE:-master}\" allowed master|v2. ga_tag_exists is 1 when `git ls-remote --tags origin v3.0.0` prints a ref, else 0. ga_ready = GA=1 and `bun packages/basalt-ui/scripts/fleet-status.ts --ga` exits 0 (an absent script means 0). Master .releaserc.json branches [\"v2\",{\"name\":\"master\",\"prerelease\":\"next\",\"channel\":\"next\"}]. Rewrite the table-driven tests. Ships with: version_gate table as the rule, no skill snippet.",
+  "commits": "Non-package `ci:` commits, one PR to master. No attribution.",
+  "proof": "bun test scripts/release.test.ts. Reviewed deep. The post-merge dry runs are orchestrator checks (post_merge), not lead acceptance.",
+  "acceptance": [
+    "bun test scripts/release.test.ts passes with a case per row of docs/v3/concepts/migration-release.md 3.1, including v2 minor and 2.0.0 refused, master 2.30.0-next.1 refused, 3.0.0-next.N any bump accepted, 3.0.0 only with bump major and ga_ready=1, post-GA 3.1.0 accepted and 3.0.0 or any major refused, unknown branch, unparsed bump and empty version refused.",
+    "grep -c 'CURRENT_MAJOR=3 PREVIOUS_MAJOR=2' scripts/release.sh prints 1; grep -rn 'only stable 2.x' scripts .github returns nothing.",
+    "jq -c .branches .releaserc.json prints the pre-GA array above.",
+    "A test shows ga_tag_exists is 1 for a stubbed git ls-remote that prints a v3.0.0 ref and 0 for empty output.",
+    "GA=1 with no packages/basalt-ui/scripts/fleet-status.ts yields ga_ready=0 (test).",
+    "git diff --name-only origin/master...HEAD lists only scripts/release.sh, scripts/release.test.ts and .releaserc.json."
+  ],
+  "out_of_scope": "Doctrine prose (rel-5, rel-6), commitlint rules (rel-8), fleet-status itself, the GA runbook, the v2 branch.",
+  "post_merge": "Orchestrator, not the lead (release.sh preflight refuses any worktree but a clean master, and a dry run dispatches a workflow): on a clean master checkout run make release-dry; it must not fail the gate and must name a 3.0.0-next.N prerelease or no release. v2 gets release.sh in v3-rel-4b-v2-sync."
+}

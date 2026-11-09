@@ -1,0 +1,41 @@
+{
+  "why": "Five hand-synced registries drifted in 2.x. One table must generate the ids, preset, coverage block and docs, and one factory must cover every class-shaped syntax.",
+  "what": "New: packages/basalt-ui/src/lint/{rule-table,factory,index}.ts and their tests; index.ts is the single aggregator of rule families. configs/oxlint-plugin.js (2.x) is left alone.",
+  "owns": [
+    "packages/basalt-ui/src/lint/rule-table*",
+    "packages/basalt-ui/src/lint/factory*",
+    "packages/basalt-ui/src/lint/index*"
+  ],
+  "must_not_touch": [
+    "CHANGELOG.md",
+    "packages/basalt-ui/{MIGRATING.md,llms.txt}",
+    "packages/basalt-ui/scripts/check-budgets/**",
+    "**/contract.ts",
+    "packages/basalt-ui/src/{ui,shell}/**",
+    "apps/marketing/**",
+    "packages/basalt-ui/src/tokens/**",
+    "packages/basalt-ui/src/cli/**",
+    "packages/basalt-ui/agent/**",
+    "packages/basalt-ui/src/lint/rules/**",
+    "packages/basalt-ui/src/lint/stylelint/**",
+    "packages/basalt-ui/configs/**",
+    "packages/basalt-ui/test/fixtures/lint/**",
+    "package.json and bun.lock (v3-deps-w2 / v3-deps-ai added your pins)"
+  ],
+  "concept": "guardrails#15 factory",
+  "contract": "docs/v3/concepts/guardrails.md sections 4 (ids), 10 (defineRules sketch), 13, 15. Read docs/v3/spikes/{no-restyle,lint-edges,allow-padding,cn-breakpoints}.md first; where a spike refuted a form, the spike doc wins. The concept names src/lint/table.ts; the index owns rule-table*, so the file is rule-table.ts (flag in PR).",
+  "exemplar": "configs/oxlint-plugin.js and its test (2.x rule anatomy); guardrails section 10 sketch.",
+  "change": "defineRules({ id: { family, profiles, zonesOff, defect, forms: [{ id, pattern, fix, next, fixture }] } }) plus classPatternRule(form) over className, cn(), cva(), object-map values, string arrays, [...].join(' ') and template quasis. The table is the one source for: rule ids (ceiling 18), the preset input (consumed by v3-gr-4), the <!-- basalt:coverage --> block with honest 'not guarded:' lines, docs, and the known-id list used to reject unknown waiver ids. index.ts exports the plugin and a FAMILIES list, one import and one entry per line: v3-gr-2, 3a and 3b each add one line there. Messages name the fix token. No real rules here: a synthetic table proves the machinery. Pins: oxlint 1.93.0 and @shadcn/lint 0.2.5 exact, added by v3-deps-w2; v3-sk-3 init writes them into consumers. Rule: none yet. Skill snippet: none (v3-sk-5 tags bullets with ids from this table). Test: rule-table.test.ts, factory.test.ts.",
+  "commits": "One PR, rebase-merged. Conventional commits, empty scope, no attribution. Package paths only (isolated-basalt-ui); root package.json and bun.lock ride along. Never edit CHANGELOG.md.",
+  "proof": "RuleTester under oxlint plugins-dev and ESLint.",
+  "acceptance": [
+    "bun test packages/basalt-ui/src/lint passes",
+    "A synthetic form runs green under oxlint's plugins-dev RuleTester and ESLint's",
+    "The factory has one invalid case per shape: className, cn(), cva(), object map, array, join, template quasi",
+    "The table test fails on a form with no fix text or fixture path, a duplicate id, or more than 18 ids",
+    "A generated coverage block contains a 'not guarded:' line for a form marked unguarded",
+    "node_modules/.bin/oxlint --version prints 1.93.0 and the root and package pins are exact",
+    "make check exits 0"
+  ],
+  "out_of_scope": "Any real rule or fixture (gr-2, 3a, 3b), the preset (gr-4), the 2.x plugin, ids beyond the 16 planned."
+}

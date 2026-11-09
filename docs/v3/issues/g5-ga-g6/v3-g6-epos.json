@@ -1,0 +1,27 @@
+{
+  "repo": "epos-ai-teamchat-athena",
+  "why": "The owner committed epos teamchat as a v3 consumer after v3 is proven on argo. Epos rejected basalt before over non-optional peers; a frozen install on its own shape must add none.",
+  "what": "Epos ui migration to basalt-ui 3.x on latest: bridge first, then parts (eject --adopt of its base-nova files, the ./ai catalog). Employer repo, employer process.",
+  "owns": ["ui/**"],
+  "must_not_touch": [
+    "anything outside ui/",
+    "api/**, sandbox/**",
+    "the Python server's show schema (sandbox/agent/plugins/show/schema.json)"
+  ],
+  "concept": "migration-release#5 G6; migration-release#13",
+  "contract": "docs/v3/concepts/migration-release.md section 5 G6 and 13, ai-mdx.md section 6 and P6, v3-ai-i6's docs/v3/spikes/epos-catalog-probe.md, v3-spike-epos-bridge-probe. Preconditions: 3.0.0 on latest (v3-ga, owner-run) and argo cut over. Budgets are the repo's own: ui/scripts/check-bundle.mjs holds entry 158,100 B raw, first load 192,500 B gz, Home preload 41,500 B gz today (its 330.8 KB comment is history); none is raised here, and there is no separate ./ai number. Employer repo facts stay in the employer repo.",
+  "exemplar": "docs/v3/spikes/epos-bridge-probe.md and epos-catalog-probe.md (the scratch results), then argo's cutover as the app-profile reference.",
+  "change": "Step 1 bridge: `basalt-ui init --profile bridge` run in ui/ (the managed layer lands under ui/ only: ui/AGENTS.md block, ui/.claude, ui/.basalt; making it visible at the repo root is an employer-side choice, state it in the MR), generated @theme from tokens in ui/src/index.css then `make ui-cn-tables`, stylelint and oxlint presets. Brand: if the bridge probe says navy needs a per-scheme fill tone, leave epos's brand tokens as they are (reversible default) and ship the bridge without remapping it. Step 2 parts: `eject --adopt` of the 39 files in ui/src/components/ui (the ejects ceiling is 3 by default: raise it to 39 once with the named consumer via the CLI's --raise, recorded in ui/.basalt/budget.json), Markdown with contentTrust replacing AnswerMarkdown where it fits, the ./ai catalog over components/show (10 block types) with schema.contract.test.ts unchanged. Epos keeps its two chart engines (echarts, vega), its router, assistant-ui and its Python server; ./charts stays unused. Rule: frozen-install fixture test. Skill snippet: the managed basalt layer init renders.",
+  "commits": "Employer conventions: EP-<n> prefix on branch and commits, MR against main. No attribution.",
+  "proof": "`make ui-check` (typecheck, vitest, build, bundle budget) plus the frozen-install check below.",
+  "acceptance": [
+    "`npm ci` in ui/ exits 0 without --force or --legacy-peer-deps",
+    "ui/package-lock.json diff adds basalt-ui and its non-optional dependencies only, and leaves react, tailwindcss and @base-ui/react entries unchanged (`git diff -U0 ui/package-lock.json`)",
+    "`npm ls basalt-ui` reports no unmet or invalid peer",
+    "`make ui-check` exits 0 (typecheck, vitest, build, check-bundle.mjs and the cn-tables freshness check) with the three bundle budgets above unchanged in ui/scripts/check-bundle.mjs",
+    "ui/src/components/show/schema.contract.test.ts passes unchanged (`git diff --stat` shows it untouched)",
+    "`basalt-ui doctor` exits 0 in ui/, the 39 adopted files are listed in ui/.basalt/manifest.json and ui/.basalt/budget.json records the raise to 39",
+    "`git status --porcelain` outside ui/ lists nothing"
+  ],
+  "out_of_scope": "Server, sandbox, chart engines, replacing assistant-ui, the navy brand question."
+}

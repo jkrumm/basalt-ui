@@ -1,0 +1,28 @@
+{
+  "why": "docs/v3/concepts/quality-contract.md section 10 Q2 is the only proof of the 704 KiB weatherorb /map bar (provider at 5 KB sums to about 696 KiB, +/-15 KiB error). Gate G4.",
+  "what": "docs/v3/spikes/q2-map.md only. The port runs in an OS-temp scratch copy of weatherorb (read-only source, no commit there); commands and numbers go in the doc, no harness is committed. Needs charts-4, the provider spike. Install route: `bun pm pack` tarball of packages/basalt-ui at the base commit (record the SHA), installed into the copy; use a published `3.0.0-next.N` instead only if `npm view basalt-ui dist-tags` shows one built from that layer set. Scope: the first-load closure of `/map` only; stop and record `PENDING (blocked: <layer or file count>)` if it needs edits to more than 40 files, leaving the full port to g4-weatherorb.",
+  "owns": ["docs/v3/spikes/q2-map.md"],
+  "must_not_touch": [
+    "CHANGELOG.md",
+    "root package.json, bun.lock, .gitignore, .oxlintignore",
+    "docs/v3/{concepts,issues}/**, docs/v3/ARCHITECTURE.md",
+    "other tools/spikes/* folders",
+    "consumer repos (scratch copies live in the OS temp dir)"
+  ],
+  "concept": "docs/v3/concepts/quality-contract.md section 10 Q2",
+  "contract": "docs/v3/concepts/quality-contract.md section 6 and section 10 Q2 are frozen; over the bar means levers, never a raise (DPO 18.3).",
+  "exemplar": "The method text of docs/v3/concepts/quality-contract.md section 6.",
+  "change": "Port `/map` and build with Vite 8 by the section 6 method (production build, gzip, per-route closure, `maxScripts`). Record the total against 704 KiB (720,896 B), a per-chunk table, the provider chunk bytes and, if over, the section 6 levers applied in order (native range, checkbox, radio; lazy Drawer) with the bytes each saved. Ships: no rule, no skill snippet; the test is the command list in the doc.",
+  "commits": "One non-package commit `chore: spike q2-map verdict`, empty scope, no attribution.",
+  "proof": "The verdict doc: byte total, margin to 704 KiB, chunk table, exact commands and versions, SHA of the pack.",
+  "acceptance": [
+    "The doc has the byte total, the margin, the chunk table and the exact commands and versions, so the build reproduces",
+    "The doc states weatherorb's `git status` was clean before and after in the source checkout",
+    "docs/v3/spikes/q2-map.md has headings Question, Method, Measurements, Verdict, Then, Affects and the `verdict` lines",
+    "`git diff --name-only master...HEAD` lists only `owns` paths",
+    "`grep -rnE 'op://|\\.ts\\.net|192\\.168\\.|ghp_'  docs/v3/spikes/q2-map.md` prints nothing",
+    "`make check` passes"
+  ],
+  "out_of_scope": "Any weatherorb commit; the real G4 migration; raising the bar.",
+  "verdict": "`Q2: PASS|REFUTED|PENDING`: PASS iff the total is <= 704 KiB after the levers (listed); REFUTED if still over after both; PENDING per Scope. `Verdict:` equals Q2."
+}

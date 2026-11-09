@@ -1,0 +1,41 @@
+{
+  "why": "A wrong regex silently matches nothing and an extends chain is last-writer-wins, so the shipped preset must be generated from the table and every form must be proven to fire through it, not through the plugin directly.",
+  "what": "New: packages/basalt-ui/src/lint/preset.ts, generated preset files under packages/basalt-ui/configs/oxlint* , the generator packages/basalt-ui/scripts/gen-oxlint.ts (existing 2.x generator rewritten), the root .oxlintrc.json (dogfood, via make sync-self) and root tests/oxlint-preset-smoke.test.ts.",
+  "owns": [
+    "packages/basalt-ui/src/lint/preset*",
+    "packages/basalt-ui/configs/oxlint*",
+    "packages/basalt-ui/scripts/gen-oxlint*",
+    "packages/basalt-ui/tests/oxlint-preset*"
+  ],
+  "shared_append_only": [".oxlintrc.json"],
+  "must_not_touch": [
+    "CHANGELOG.md",
+    "packages/basalt-ui/{MIGRATING.md,llms.txt}",
+    "packages/basalt-ui/scripts/check-budgets/**",
+    "**/contract.ts",
+    "packages/basalt-ui/src/{ui,shell}/**",
+    "apps/marketing/**",
+    "packages/basalt-ui/src/tokens/**",
+    "packages/basalt-ui/src/cli/**",
+    "packages/basalt-ui/agent/**",
+    "packages/basalt-ui/src/lint/rules/**",
+    "packages/basalt-ui/src/lint/rule-table*",
+    "packages/basalt-ui/src/lint/stylelint/**"
+  ],
+  "concept": "guardrails#15 factory",
+  "contract": "docs/v3/concepts/guardrails.md section 6 (zones A E S V, profile table, roots), section 9 (pins, dependency stance), section 10 (preset), section 13 (smoke, fixtures). Roots follow manifest.roots (E6).",
+  "exemplar": "packages/basalt-ui/scripts/gen-oxlint.ts, configs/oxlint-basalt.json, root tests/oxlint-preset-sync.test.ts and tests/oxlint-preset-routes.test.ts.",
+  "change": "Generate the oxlint preset from RULES: jsPlugins basalt-ui/lint and @shadcn/lint, settings.shadcn, shadcn/no-restyle contracts (empty list until ui exists, fed by the generator once it does), overrides per root and per zone (E: no-restyle, primitive-bypass, app-spacing off in ejected paths; S: same, repo only; V: class rules off under **/components/ui/** at bridge). Profiles: tokens none; bridge = the five shadcn rules, no-restyle for the app's own components/ui only, ids 1-4, 6 (bridge forms), 14, 15; parts and app = all shadcn, ids 1-15. Exact pins oxlint 1.93.0, @shadcn/lint 0.2.5 written into the file. The smoke test builds a console-shaped temp project from the committed fixtures under test/fixtures/lint/{class,import-bypass,structure-rest}, applies the SHIPPED generated preset and runs oxlint. gen-oxlint --check exits 1 on drift. The root .oxlintrc.json keeps its ignorePatterns as committed (v3-test-roots edited them). The pins are read from package.json (v3-gr-1 owns them), never edited here. Also wire native oxlint jsx-a11y with settings.jsx-a11y.components generated from ui/*, and the oxfmt 0.78.0 sortTailwindcss preset. Rule: none new. Skill snippet: none. Test: tests/oxlint-preset-smoke.test.ts.",
+  "commits": "One PR. Package commit: preset, configs, generator. Non-package commit: .oxlintrc.json via make sync-self and root tests/oxlint-preset*. Conventional, empty scope, no attribution.",
+  "proof": "Preset smoke through the shipped generated file; seeded offender per form.",
+  "acceptance": [
+    "bun packages/basalt-ui/scripts/gen-oxlint.ts --check exits 0, and exits 1 after one byte of the generated preset changes (test)",
+    "bun test tests/oxlint-preset-smoke.test.ts passes: every form in RULES has an invalid fixture that fires through the generated preset, and every valid fixture lints clean at its declared profile",
+    "The tokens profile yields no oxlint preset; bridge contains exactly ids 1-4, 6, 14, 15; parts contains 1-15",
+    "A mixed-root manifest resolves a different profile per file",
+    "The installed oxlint version equals the pin written into the preset",
+    "make check exits 0",
+    "The generated preset sets settings.jsx-a11y.components for every ui/* export (test) and the oxfmt preset enables sortTailwindcss"
+  ],
+  "out_of_scope": "Weakened-config check (v3-gr-5), waiver codemod (v3-gr-6), hook, new rules, stylelint."
+}

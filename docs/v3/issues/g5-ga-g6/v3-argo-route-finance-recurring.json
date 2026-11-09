@@ -1,0 +1,30 @@
+{
+  "repo": "argo",
+  "why": "Argo v3 is built route by route as the sibling app on the same API; the finance route is 39 files, so recurring and tax are their own Issue. G3.",
+  "what": "The finance recurring and tax pages and the recurring modal. Frame, lib and api come from v3-argo-route-finance-tables.",
+  "owns": [
+    "apps/dashboard-v3/src/features/finance/pages/{recurring,tax}*",
+    "apps/dashboard-v3/src/features/finance/components/recurring-modal*",
+    "apps/dashboard-v3/src/routes/finance.{recurring,tax}.tsx"
+  ],
+  "must_not_touch": [
+    "apps/dashboard/**, apps/api/**, packages/shared/**, .basalt/**, apps/dashboard-v3/package.json and bun.lock (v3-argo-bump-g3/g4), other Issues' dirs under apps/dashboard-v3/src",
+    "apps/dashboard-v3/src/features/finance/{lib/months*,api/types.ts} (v3-argo-state-stores)",
+    "apps/dashboard-v3/src/features/finance/{lib/private-history.ts,private-history.test.ts} (v3-argo-shell)",
+    "apps/dashboard-v3/src/features/finance/pages/{recurring,tax}*, components/recurring-modal* (v3-argo-route-finance-recurring)",
+    "apps/dashboard-v3/src/features/finance/{lib,api}/** and the frame (v3-argo-route-finance-tables)"
+  ],
+  "concept": "migration-release#6.3 argo route rows",
+  "contract": "Read basalt-ui docs/v3/concepts/migration-release.md 6.1-6.3, argo DESIGN.md and the managed layer (.claude/rules/basalt-v3-*.md, skills basalt-v3-*). basalt-ui is pinned exact next.N (the gate's floor, v3-argo-bump in `after`): its docs/recipes and llms.txt are the API truth; never edit package.json or bun.lock. Never import apps/dashboard; share through @argo/shared. *.module.css files are not ported (classes replace them). This feature's model.ts, types.ts and tests are ported here.",
+  "exemplar": "Follow apps/dashboard-v3/src/routes/__root.tsx, then the nearest landed route port, and the catalogue in .claude/skills/basalt-v3-design.",
+  "change": "Port the recurring and tax pages onto DataTable with views and phone cards and the recurring modal on ui/dialog; lib and api are already in the tree. Rule: the app preset passes without new waivers. Skill snippet: none; recipes: the installed docs/recipes.",
+  "commits": "Argo ships by push to master: conventional, one concern each, no attribution. Never edit node_modules or basalt-ui; a gap is a `friction:` line in the PR body, worked around in app code.",
+  "proof": "Typecheck and tests; the shots are owner-run (vault).",
+  "acceptance": [
+    "`make check` exits 0 (runs check-v3: sync --check, doctor, lint, typecheck, build, test)",
+    "`rg -n '@mantine|apps/dashboard/' apps/dashboard-v3/src/features/finance/pages/{recurring,tax}* apps/dashboard-v3/src/features/finance/components/recurring-modal* apps/dashboard-v3/src/routes/finance.{recurring,tax}.tsx` returns nothing",
+    "finance needs the unlocked vault: design-shot and verify-pages (ROUTES=/finance/recurring and /finance/tax) are owner-run, not-run",
+    "`bun --cwd apps/dashboard-v3 typecheck` exits 0 and `bun --cwd apps/dashboard-v3 test src/features/finance` passes"
+  ],
+  "out_of_scope": "Other routes, state and shell code, API changes."
+}

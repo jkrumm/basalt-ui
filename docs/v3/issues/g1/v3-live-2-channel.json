@@ -1,0 +1,38 @@
+{
+  "why": "Five apps hand-roll an SSE client; one channel with a Transport seam and a fake removes the copies and the SSR-hostile module-level start.",
+  "what": "packages/basalt-ui/src/core/channel*, src/core/use-now*, src/testing/fake-channel*, tests/live/channel/**. Created here.",
+  "owns": [
+    "packages/basalt-ui/src/core/channel*",
+    "packages/basalt-ui/src/core/use-now*",
+    "packages/basalt-ui/src/testing/fake-channel*",
+    "packages/basalt-ui/tests/live/channel/**",
+    "packages/basalt-ui/docs/create-channel.md"
+  ],
+  "shared_append_only": [
+    "packages/basalt-ui/src/index.ts",
+    "packages/basalt-ui/scripts/export-surface.json"
+  ],
+  "must_not_touch": [
+    "packages/basalt-ui/src/{ui,cards,charts,table,controls,shell,content,ai,router,tokens,css,data,page}/**, packages/basalt-ui/src/testing/** except fake-channel*, packages/basalt-ui/agent/** (except where owns say)",
+    "CHANGELOG.md, MIGRATING.md, llms.txt, scripts/check-budgets/**, other areas' migrations files",
+    "every contract.ts and src/core/ports.ts",
+    "package.json and bun.lock (v3-deps-w2 / v3-deps-ai added your pins)"
+  ],
+  "concept": "live-realtime#10 issue 2",
+  "contract": "Frozen: ARCHITECTURE.md, src/core/ports.ts. Need a change: factory signal, take the reversible default. Read concepts/live-realtime.md sections 3, 4, 5, 7, 10. Layers: channel L1 (react only), live L2 (./data), views L4 prop-fed (no Query in ./page). createChannel and Channel live in '.' (ARCHITECTURE amendment E1): no React, no Query, nothing runs at import. Ceiling: createChannel alone at most 4 KB gz.",
+  "exemplar": "Donors read-only: ~/SourceRoot/software-factory apps/console/src/lib/live.ts, now.ts; ~/SourceRoot/rollhook apps/dashboard/src/lib/sse.ts, sse.test.ts. Fixtures are synthesized from the shapes in concepts/live-realtime.md (URLs, event and frame names), no employer file content.",
+  "change": "createChannel({url|transport, headers (read per connect), resume 'header'|{param}, schema (validates the envelope, failure delivered as ok:false), greeting, beats, end, heartbeatMs 15000, scheduler}). Default transport SSE over fetch with eventsource-parser; Transport seam (AsyncIterable of frame or beat wires; throws {status}). subscribe is refcounted (first opens, last closes after 1 s); frames(signal) pull-based, a reset throws ChannelReset; store is an ExternalStore with a constant server snapshot. 410 delivers reset and restarts without cursor; 401 and 403 are terminal; backoff has jitter, caps at 30 s, resets on first byte; watchdog at 3x byte silence; a 256-id repeat filter; end ends retries. useNow; fakeChannel (emit, setStatus, drop, end). Rule: none (live-5 owns EventSource outside a Transport). Skill: generated docs/create-channel.md. Tests: P0 fixtures, L4, L5, L13, L15.",
+  "commits": "One PR, separate package and non-package commits (isolated-basalt-ui); conventional, empty scope, no attribution.",
+  "proof": "bun test over tests/live/channel on the fetch transport and a test-only native EventSource adapter.",
+  "acceptance": [
+    "P0 fixtures pass on both transports: shutterflow (five named events, named heartbeat, no ids, silent lag), rollhook ([DONE] ends and never reconnects), an end-event and 410 shape (end, 410 gives reset); grep of the fixtures for host, token and personal id is empty",
+    "ported rollhook sse.test cases pass on createChannel and fakeChannel",
+    "401 never retries; backoff caps at 30000 ms, resets on first byte (fake scheduler)",
+    "on visibilitychange the watchdog compares now() with lastByteAt, not a timer (L5 test)",
+    "SSR: importing the module starts no timer or fetch and store.getServerSnapshot is constant",
+    "a size test shows createChannel alone at or under 4 KB gz",
+    "make check exits 0",
+    "git diff --name-only lists only owned paths"
+  ],
+  "out_of_scope": "bindInvalidation, liveQuery, indicator UI, WebSocket adapter (live-5), console or shutterflow migration."
+}

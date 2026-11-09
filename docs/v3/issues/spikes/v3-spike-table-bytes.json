@@ -1,0 +1,30 @@
+{
+  "why": "The `./table` byte rows rest on an engine-only fixture (docs/v3/concepts/data-table.md section 9 S5 and Contract Exception E1); our own code is unmeasured.",
+  "what": "tools/spikes/table-bytes/** and docs/v3/spikes/table-bytes.md. Built on `./table` from table-t2 (read only), on the TanStack Table version packages/basalt-ui pins (9.2.8 today; also 9.3.1 if it differs). Split from v3-spike-table-fit.",
+  "owns": ["tools/spikes/table-bytes/**", "docs/v3/spikes/table-bytes.md"],
+  "must_not_touch": [
+    "CHANGELOG.md",
+    "root package.json, bun.lock, .gitignore, .oxlintignore",
+    "docs/v3/{concepts,issues}/**, docs/v3/ARCHITECTURE.md",
+    "other tools/spikes/* folders",
+    "consumer repos (scratch copies live in the OS temp dir)"
+  ],
+  "concept": "docs/v3/concepts/data-table.md section 9 S5",
+  "contract": "docs/v3/concepts/data-table.md E1 is frozen; check-budgets is not edited here: ceilings are proposed rows in the doc.",
+  "exemplar": "scripts/evidence/*.ts (one JSON result per run)",
+  "change": "Method of docs/v3/concepts/quality-contract.md section 6 (Vite 8, peers bundled, gzipSync, minus base0): (1) the 10-feature engine fixture through `createTableHook`; (2) own code of `./table` excluding `ui/*`; (3) `AppCell` versus direct `cell` at the virtual 10k fixture, sort click to paint, median of 11 runs after 1 warm-up in real Chrome, spread = (max - min) / median, one rerun if above 20%; (4) per-render columns against the E1 rows. Proposed ceiling = measured +5% rounded up to 0.5 KB.",
+  "commits": "One non-package commit `chore: spike table-bytes harness and verdict`, empty scope, no attribution.",
+  "proof": "run.ts JSON plus the verdict doc; run twice, attach both outputs.",
+  "acceptance": [
+    "run.ts JSON has `engineFixtureGz`, `ownCodeGz`, `appCellMs`, `directCellMs`, `appCellVsDirectPct`, `virtual10kMs`, `spreadPct`, `proposedRows`",
+    "`bun tools/spikes/table-bytes/run.ts` exits 0, prints one JSON object with the keys above (0 = harness ran, not hypothesis held)",
+    "docs/v3/spikes/table-bytes.md has headings Question, Method, Measurements, Verdict, Then, Affects and the `verdict` lines",
+    "`find tools/spikes/table-bytes -name '*.test.*' -o -name '*.spec.*'` prints nothing",
+    "`git diff --name-only master...HEAD` lists only `owns` paths",
+    "`grep -rnE 'op://|\\.ts\\.net|192\\.168\\.|ghp_' tools/spikes/table-bytes docs/v3/spikes/table-bytes.md` prints nothing",
+    "`make check` passes"
+  ],
+  "out_of_scope": "Table features; editing budgets; S3, S4.",
+  "envelope": "Harness: tools/spikes/<dir>/ has its own package.json (exact pins); bun.lock and node_modules gitignored there (must_not_touch package.json and bun.lock = repo root only). Passes root oxlint; no *.test.* files; Chrome via the playwright-core pattern of packages/basalt-ui/tests/layout/harness.ts; docs/v3 on master before filing; synthetic data only, private repos as counts and hashed ids.",
+  "verdict": "`S5: PASS|REFUTED`: PASS = own code <= 18.0 KB gz (the J estimate 15-18), AppCell within 10% of direct `cell`, virtual 10k <= 150 ms. REFUTED: direct `cell` stays, and `columnPinning` goes first if own code is over. `Verdict:` equals S5; run.ts `verdict` the same; a spread above 20% after the rerun voids the run (exit 1)."
+}

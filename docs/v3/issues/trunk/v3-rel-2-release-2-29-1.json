@@ -1,0 +1,20 @@
+{
+  "why": "Last 2.x before the cut: ships the unreleased package commits plus the url and charts fixes, and is the only real OIDC plus --tag proof before v2 exists. Reason for the release record: security fix.",
+  "what": "Owner row, no code. The owner runs make release from master; no lead builds, edits or releases.",
+  "owns": ["packages/basalt-ui/CHANGELOG.md"],
+  "must_not_touch": ["**"],
+  "concept": "docs/v3/concepts/migration-release.md#4.1 step 2",
+  "contract": "docs/v3/concepts/migration-release.md 4.1 step 2 and 4.4. Old version_gate still accepts a 2.x patch here, which is why the gate rewrite (rel-4) comes later. Only make release; never dispatch a workflow by hand.",
+  "exemplar": "make release flow in AGENTS.md Release Process (dry run, confirm on the number, registry poll).",
+  "change": "Owner: run make release-dry, confirm it computes 2.29.1 (patch), then make release; a green exit means the registry serves it. Lead, on pick-up: raise a factory Decision (`factory issue ask`) recommending that command pair, with rel-1, fix-url-2x and charts-bump closed as what was checked, then keep the Issue open and waiting. Do not close, and do not report, until the owner has released and every acceptance line is met: a closed Issue releases rel-3 before 2.29.1 exists. After the owner acts, verify read-only. Never run make release or dispatch a workflow.",
+  "commits": "None. semantic-release writes `chore: release 2.29.1 [skip ci]` itself.",
+  "proof": "Publish run log shows the `dist-tag=latest` line from rel-1 and an `npm publish ... --tag latest` command; provenance present.",
+  "acceptance": [
+    "npm view basalt-ui@2.29.1 version prints 2.29.1.",
+    "npm view basalt-ui dist-tags.latest prints 2.29.1.",
+    "git ls-remote --tags origin v2.29.1 returns a ref, and gh release view v2.29.1 exits 0.",
+    "npm view basalt-ui@2.29.1 dist.attestations.url prints a URL (provenance).",
+    "gh run list --workflow publish.yml --limit 5 shows a successful run for v2.29.1, and gh run view <id> --log contains the line `dist-tag=latest` (echoed by rel-1)."
+  ],
+  "out_of_scope": "Any file change, cutting v2 (rel-3), the gate (rel-4), a 3.x release."
+}

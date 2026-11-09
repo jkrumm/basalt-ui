@@ -1,0 +1,26 @@
+{
+  "repo": "argo",
+  "why": "Argo v3 is built route by route as the sibling app on the same API; the strength route is 26 files and 5.3k lines, so the timer, modals, records and table are their own Issue. G4.",
+  "what": "The strength tracker timer card, gym settings and edit-workout modals, recent records and workouts table.",
+  "owns": [
+    "apps/dashboard-v3/src/features/strength-tracker/components/{timer-card,gym-settings-modal,edit-workout-modal,recent-records,workouts-table}*"
+  ],
+  "must_not_touch": [
+    "apps/dashboard/**, apps/api/**, packages/shared/**, .basalt/**, apps/dashboard-v3/package.json and bun.lock (v3-argo-bump-g3/g4), other Issues' dirs under apps/dashboard-v3/src",
+    "apps/dashboard-v3/src/features/strength-tracker/components/{timer-core,rest-timer-bus}.ts (v3-argo-state-stores)",
+    "apps/dashboard-v3/src/features/strength-tracker/components/{workout-form,set-editor,number-pad,weight-popover,reps-popover}* (v3-argo-route-strength-workout)"
+  ],
+  "concept": "migration-release#6.3 argo route rows",
+  "contract": "Read basalt-ui docs/v3/concepts/migration-release.md 6.1-6.3, argo DESIGN.md and the managed layer (.claude/rules/basalt-v3-*.md, skills basalt-v3-*). basalt-ui is pinned exact next.N (the gate's floor, v3-argo-bump in `after`): its docs/recipes and llms.txt are the API truth; never edit package.json or bun.lock. Never import apps/dashboard; share through @argo/shared. *.module.css files are not ported (classes replace them). This feature's model.ts, types.ts and tests are ported here.",
+  "exemplar": "Follow apps/dashboard-v3/src/routes/__root.tsx, then the nearest landed route port, and the catalogue in .claude/skills/basalt-v3-design.",
+  "change": "Port timer-card (timer-core and rest-timer-bus are copied by v3-argo-state-stores), gym-settings-modal and edit-workout-modal on ui/dialog with FormField, recent-records, workouts-table on DataTable. Rule: the app preset passes without new waivers. Skill snippet: none; recipes: the installed docs/recipes.",
+  "commits": "Argo ships by push to master: conventional, one concern each, no attribution. Never edit node_modules or basalt-ui; a gap is a `friction:` line in the PR body, worked around in app code.",
+  "proof": "Unit and DOM tests only; the rendered proof is the parent route Issue's board.",
+  "acceptance": [
+    "`make check` exits 0 (runs check-v3: sync --check, doctor, lint, typecheck, build, test)",
+    "`rg -n '@mantine|apps/dashboard/' apps/dashboard-v3/src/features/strength-tracker/components/{timer-card,gym-settings-modal,edit-workout-modal,recent-records,workouts-table}*` returns nothing",
+    "`bun --cwd apps/dashboard-v3 typecheck` exits 0 and `bun --cwd apps/dashboard-v3 test src/features/strength-tracker` passes",
+    "a DOM test through renderApp: the workouts table renders a fixture of 3 workouts as phone cards below the table breakpoint setting and as rows above it (via the kit's viewport setter if installed, else the `cardsBelow` prop)"
+  ],
+  "out_of_scope": "Other routes, state and shell code, API changes."
+}

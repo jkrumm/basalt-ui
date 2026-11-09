@@ -1,0 +1,19 @@
+{
+  "why": "Owner gate before fan-out: StatCard and the dense table are judged by eye; a rejection changes only the token table.",
+  "what": "Owner row, never built by a lead. The owner records the verdict in docs/v3/verdicts/statcard.md (new dir docs/v3/verdicts/) and, if needed, edits packages/basalt-ui/src/tokens/table.ts.",
+  "owns": ["docs/v3/verdicts/statcard.md", "packages/basalt-ui/src/tokens/table.ts"],
+  "must_not_touch": ["every other file"],
+  "concept": "docs/v3/concepts/tokens-visual.md#8 S1",
+  "contract": "docs/v3/DIRECTION.md section 8 rows 5a accent, 5b primary/checked, 5c dark card/inset/radii, 5d delta/desktop input, 5e fonts/radius knob; docs/v3/concepts/tokens-visual.md 8 S1: refuted means only the token table changes. Viewports 1800x1200 and 390x844, light and dark.",
+  "exemplar": "The two exemplar routes: apps/playground/src/routes/cards.tsx and table.tsx.",
+  "change": "Owner: produce the four shot sets on master with `bun --filter @basalt-ui/playground build && bun apps/playground/scripts/shots.ts /cards /table` (writes .evidence/v3-shots/, gitignored; 1800x1200 and 390x844, light and dark), review them, write one decision per DPO 5a-5e (accepted or changed with the new value), edit table.ts if a value changes and regenerate dependents through tok-t2's emitter test. Lead, on pick-up: raise a factory Decision (`factory issue ask`): the recommendation, the shots command above, and 'all five accepted' versus 'change values' as the options. Keep the Issue open and waiting. Do not close until the owner has answered and every acceptance line is met: closing releases the amendment row and all of wave 2. Verify read-only; never write the verdict file or table.ts.",
+  "commits": "One `docs:` commit for the verdict file; a separate package `chore:` commit for table.ts if it changes. No attribution.",
+  "proof": "Owner's eye; token tests green.",
+  "acceptance": [
+    "docs/v3/verdicts/statcard.md exists with headings 5a, 5b, 5c, 5d and 5e, each containing the word accepted or changed.",
+    "The file names the four reviewed shot sets (1800x1200 and 390x844, light and dark).",
+    "If table.ts changed, git diff --name-only origin/master...HEAD lists no other file under packages/basalt-ui/src and bun test packages/basalt-ui/src/tokens passes.",
+    "make check passes."
+  ],
+  "out_of_scope": "Component or API changes (a rejection is fixed in the token table only), fan-out rows."
+}

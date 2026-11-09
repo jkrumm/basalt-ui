@@ -1,0 +1,32 @@
+{
+  "why": "Section 6 refusals and the epos clarification need the 2.x package gone. rel-7-skeleton kept every 2.x export and peer on purpose; nothing else removes them. 2.x modules import each other (dashboard<->charts, shell<->controls), so the view layer goes in one step.",
+  "what": "Delete the 2.x view layer after G4: src/dashboard/**, the 2.x files in src/{charts,table,controls,shell,content} (v3 dirs and files stay), src/controls-dates/**, their tests, layout fixtures and playground scenarios; root barrel lines and package.json exports keys that point at them.",
+  "owns": [
+    "packages/basalt-ui/src/dashboard/**",
+    "packages/basalt-ui/src/controls-dates/**",
+    "packages/basalt-ui/migrations/areas/removed-2x.json"
+  ],
+  "shared_append_only": [
+    "packages/basalt-ui/src/index.ts",
+    "packages/basalt-ui/package.json",
+    "packages/basalt-ui/scripts/export-surface.json"
+  ],
+  "must_not_touch": [
+    "packages/basalt-ui/src/{provider,commands,agent,theme,theme-lab,guard,forms,common,format,state,tokens}/**",
+    "apps/marketing/**",
+    "consumer repos",
+    "CHANGELOG.md"
+  ],
+  "concept": "DIRECTION#6; migration-release#4.5",
+  "contract": "docs/v3/DIRECTION.md section 6, docs/v3/concepts/migration-release.md 4.5. Identify 2.x files by the tree: a file imports @mantine/* or is only reachable from a dropped 2.x export. Size exception: a pure deletion counts zero authored lines against the 15 files / 1,500 lines rule.",
+  "exemplar": "v3-charts-5-heatmap (the 2.x git mv sources) for what a v3 file is; scripts/check-budgets/areas for the surface budget.",
+  "change": "Delete the paths above; remove 2.x export keys and their package.json entries; drop SURFACES rows and tests that assert them. Add one removed row per deleted 2.x export to migrations/areas/removed-2x.json (the surface diff in release-migrating then passes); createBasaltTheme, theme-lab, PageSidebar, DragRegion, TableCards, IdChip, InfoPopover, useSettle, safeToReload and useFormGuard each get a row when they are exports. Add removed-2x to the release-migrating area list if it holds a fixed list. Ships with: guarantee = release-migrating --check; teach = the rows; test = make check.",
+  "commits": "One PR, separate package and non-package commits (isolated-basalt-ui); conventional, empty scope, no attribution.",
+  "proof": "make check.",
+  "acceptance": [
+    "src/dashboard and src/controls-dates are gone; rg -n \"@mantine\" over the deleted paths' importers in src/{charts,table,controls,shell,content} returns nothing",
+    "bun packages/basalt-ui/scripts/release-migrating.ts --check exits 0 with every deleted symbol named by a row",
+    "make check exits 0"
+  ],
+  "out_of_scope": "Provider and runtime deletion (v3-teardown-runtime), peer set (v3-teardown-peers), renames."
+}

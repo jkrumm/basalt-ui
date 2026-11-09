@@ -1,0 +1,36 @@
+{
+  "why": "An override must show itself and offer reset from one renderer so a page author cannot omit the cue, and every control needs one home, one slot and one kind renderer.",
+  "what": "packages/basalt-ui/src/controls/{control-view,spec,renderers,use-committed-field}*. Created here; 2.x donors in src/controls (multi-select-filter, range-filter) are rewritten, not wrapped. Sibling: v3-ctl-4b-control-home owns ControlHome and filterSlot.",
+  "owns": [
+    "packages/basalt-ui/src/controls/{control-view,spec,renderers,use-committed-field}*",
+    "packages/basalt-ui/docs/control-view.md",
+    "packages/basalt-ui/src/core/messages/controls.ts",
+    "packages/basalt-ui/tests/layout/{,fixture/}controls-view*"
+  ],
+  "shared_append_only": [
+    "packages/basalt-ui/src/controls/index.ts",
+    "packages/basalt-ui/scripts/export-surface.json"
+  ],
+  "must_not_touch": [
+    "packages/basalt-ui/src/{ui,table,charts,cards,page,shell,content,ai,tokens,css,lint,router}/**, packages/basalt-ui/agent/**",
+    "packages/basalt-ui/src/controls/{filter-set,view-tabs,globals,form-field,form-row,control-home,filter-slot}*",
+    "CHANGELOG.md, MIGRATING.md, llms.txt, scripts/check-budgets/**, other areas' migrations files",
+    "every contract.ts and src/core/ports.ts"
+  ],
+  "concept": "controls-url-state#10 issue 4",
+  "contract": "Frozen: ARCHITECTURE.md, this domain's contract.ts, src/core/ports.ts. Need a change: factory signal, take the reversible default. Read concepts/controls-url-state.md sections 3, 5, 9, 10 and evidence/gap-global-local-control-scope.md section 3 (prototype API). src/core/ports.ts owns ControlHandle and ControlsSlot. Primitives come only as basalt-ui/ui/<name>; date-picker by dynamic import. Strings: useMessages, English defaults in your owned src/core/messages/controls.ts (qa-i2 seeds it).",
+  "exemplar": "src/cards/stat-card*, src/ui/{card,badge}*, src/core/phase* (v3-exemplar-statcard; read in the tree).",
+  "change": "ControlView (neutral Lozenge 'Local', title 'Overrides global: x', 'Use global' / 'Reset <label> to global', never colour alone); spec(handle,label,{options?,clearable?,placeholder?,facets?,as?}); one renderer per handle.kind with as hints; use-committed-field (debounce 200 ms, flush on Enter outside IME, blur, clear on mousedown). data-slots override-badge, override-reset. Keys controls.useGlobal, local, overridesGlobal. 2.x donors stay beside the new files. Rule: control-home (rung 5, body in ctl-8); the cue exists only here, so there is no rule for omitting it. Skill: generated docs/control-view.md. Tests: layout, axe, committed-field, type guards.",
+  "commits": "One PR, separate package and non-package commits (isolated-basalt-ui); conventional, empty scope, no attribution.",
+  "proof": "Layout and axe tests under tests/layout/ on a fixture host (tests/layout/fixture/) at 1440, 768, 390, 320; screenshots of the fixture host taken by the layout test (1800x1200 and 390x844, dark and light, at most 3 rounds) and named in the PR body.",
+  "acceptance": [
+    "a global spec in a card slot fails to type-check (@ts-expect-error fixture)",
+    "ControlView with source 'override' shows the cue as text, not colour alone (computed text assertion), and Reset restores the global",
+    "IME-safe Enter, clear on mousedown and flush on unmount tests pass for the string and number renderers",
+    "layout at 1440, 768, 390 and 320 on the fixture: no horizontal overflow, hit floor 44 coarse",
+    "axe zero serious or critical on the fixture",
+    "make check exits 0",
+    "git diff --name-only lists only owned paths"
+  ],
+  "out_of_scope": "ControlHome, filterSlot and ToolbarGroup homes (ctl-4b), FilterSet and the Filters (n) sheet (ctl-5), ViewTabs and globals (ctl-6), FormField (ctl-7), lint bodies (ctl-8), the owner verdict on the cue (v3-verdict-control-cue)."
+}

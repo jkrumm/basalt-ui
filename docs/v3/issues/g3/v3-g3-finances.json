@@ -1,0 +1,27 @@
+{
+  "repo": "finances",
+  "why": "Falsifier at G3: finances removes ROW_LIMIT and its hand URL mapping on the bound and large table rungs; if it cannot, the table contract is wrong, not the app.",
+  "what": "finances/ui (own package: Vite, basalt-ui 2.29.0; 5 BasaltDataTable sites, 11 chart sites on ChartCard, Sparkline, Lines, StackedArea, Bars; BasaltShell, PageBar, SelectFilter, one search store). Managed layer: ui/.basalt.",
+  "owns": ["ui/**"],
+  "must_not_touch": [
+    "src/** (the fin server; ui/src/api/types.ts is its contract, keep shapes)",
+    "deploy/**",
+    "scripts/**",
+    "project.yaml",
+    "any file in basalt-ui"
+  ],
+  "concept": "migration-release#5 G3",
+  "contract": "Cross-project after: basalt-ui:v3-freeze-g3. Pin exactly basalt-ui@3.0.0-next.N, no caret; N = floors.G3.next in scripts/fleet.json of ~/SourceRoot/basalt-ui at tag v<pin>. Precondition: `npm view basalt-ui@<pin> version` succeeds, else file a signal on basalt-ui and stop. Read ~/SourceRoot/basalt-ui/docs/v3/concepts/migration-release.md 5-7, 12 and data-table.md 7; after init node_modules/basalt-ui/docs/data-table.md.",
+  "exemplar": "~/SourceRoot/basalt-ui apps/playground/src/routes/table.tsx (v3-table-t5-exemplar): the server-mode section.",
+  "change": "Codemod: `git clone --branch v<pin> ~/SourceRoot/basalt-ui <scratch>`, `bun install`, never edit it; `bun tools/migrate-v3/run.ts layout`, then `controls`, on the absolute ui path, report outside the repo. Port Mantine layout to classes, BasaltShell to AppShell, PageBar and SelectFilter to filterSlot and spec, the five tables to useDataTable and DataTable with kinds, state to defineControls (field.composite, resetOn), the 11 chart sites by hand to the G1 kinds (chart rows and codemod land at G4; a missing kind prop is a signal on basalt-ui). transactions: delete ROW_LIMIT and the hand manualFiltering and onColumnFiltersChange mapping. The endpoint caps limit at 500 but returns { rows, total } and takes offset, sort, dir, search and filter params: use `mode: { kind: 'server', rowCount: total }`, mapping page to offset and limit, sort to sort and dir, filters and search to those params; `virtual` is optional. Phone: cards by default, every column reachable at 390. Drop all @mantine/*; replace `basalt-ui check-theme` in lint:basalt with what migrate names. Ships with: app preset, managed skills, ui typecheck and lint (no ui tests).",
+  "commits": "Branch basalt-v3-g3, one PR. project.yaml says ship via push: never push partial work to master; `gh pr create`, rebase-merge once green. Order: chore: install pin and `bunx basalt-ui@<pin> init --profile app` in ui/; chore: codemod output, untouched; then manual feat: or fix: commits clearing the worklist, never waiving it. No AI attribution.",
+  "proof": "`basalt-ui shot` of /transactions at 390x844 and 1800x1200, dark and light, on synthetic data only (no demo mode: intercept /api/* with a ui-local fixture; no real vault rows in any shot or PR). After `cd ui && bun run build`: `classes-exist <ui>` and `lint-clean` from the clone. After merge: `make deploy`, `make verify` exit 0.",
+  "acceptance": [
+    "`rg ROW_LIMIT ui/src` and `rg \"manualFiltering|onColumnFiltersChange|manualPagination\" ui/src` find nothing; transactions.tsx calls useDataTable with `kind: 'server'` and `rowCount` from the response total.",
+    "`rg \"@mantine/\" ui/src ui/package.json` finds nothing; ui/package.json pins the exact floors.G3.next version.",
+    "`cd ui && node_modules/.bin/basalt-ui migrate --from 2.29.0 --profile app --check`, `doctor` and `sync --check` exit 0; `lint --stats` waivers are within the fleet.json ceiling.",
+    "`make check` at the root passes, `cd ui && bun run build` succeeds, `classes-exist` and `lint-clean` exit 0.",
+    "One PR from a branch; nothing of it reached master before the merge; `git diff --name-only master` lists only paths under ui/."
+  ],
+  "out_of_scope": "Server changes, new charts or pages, DESIGN.md, basalt-ui fixes (signal), project.yaml."
+}

@@ -1,0 +1,40 @@
+{
+  "repo": "linewatch",
+  "why": "Linewatch is the canary parts consumer: components, rules and setup only, no shell, 31 files on basalt, ~45 on raw Mantine, and a 823 KB main chunk for one Callout.",
+  "what": "linewatch repo (consumer_repo): web/**, package.json, bun.lock, .basalt/** and the managed root files init and sync write. One PR, codemod commit first, then manual commits clearing the worklist; over 15 files by design (migration-release 6, exception 5).",
+  "owns": [
+    "web/**",
+    "package.json",
+    "bun.lock",
+    ".basalt/**",
+    ".claude/{rules,skills}/basalt-*",
+    ".claude/settings.json",
+    "AGENTS.md",
+    ".oxlintrc.basalt.json",
+    ".stylelintrc.basalt.json"
+  ],
+  "must_not_touch": [
+    "any basalt-ui checkout (no hand edits upstream)",
+    "collector/**, src/**, drizzle/**, Dockerfile, docker-compose.yml (the API and collector)",
+    "web/src/lib/{aggregate,kpi,verdicts,api,mock}* (domain code: imports only)"
+  ],
+  "concept": "migration-release#5 G1",
+  "contract": "Read in ~/SourceRoot/basalt-ui: concepts/migration-release.md sections 5 (G1), 6, 7; evidence/consumer-linewatch.md sections 1, 2, 6.5. Pin exact basalt-ui 3.0.0-next.N, N = floors.G1.next in ~/SourceRoot/basalt-ui/scripts/fleet.json; first run `npm view basalt-ui@3.0.0-next.N version`: if empty, stop and file a signal (the release is the owner's make release). Symbols not frozen at G1 (PageBar, Section, EmptyState, Callout, ViewTabs, BandStrip, Heatmap) are never used: build on ui/* or app code and list each in the PR as a re-point at the bump.",
+  "exemplar": "~/SourceRoot/basalt-ui/apps/playground/src/routes/{cards,charts}.tsx and ~/SourceRoot/basalt-ui/packages/basalt-ui/tests/layout/fixture/table-v0* for the v3 shapes.",
+  "change": "Run basalt-ui init --profile parts and migrate --from 2.29.0 --profile parts, then the layout codemod (bun ~/SourceRoot/basalt-ui/tools/migrate-v3/run.ts layout web --report /tmp/linewatch-layout-report.json; the report is an uncommitted worklist) as commit 1. Manifest: web/.basalt/manifest.json (web is the declared root). Then manual commits: StatusBar to StatGroup strip plus StatCell (753 to about 120 lines, keep status-bar.render.test.tsx pins), two hand tables to DataTable (cardsBelow wide; delete table-card-swap.module.css and both minWidths), dashboard-store.ts to defineControls, charts to the v3 kinds and seams, 6 CSS modules to Tailwind @container, drop @mantine/*, shiki, react-markdown. Rule: the generated oxlint preset at app level. Skill: the managed .claude files from sync. Tests: the existing web suite.",
+  "commits": "Linewatch's own convention (AGENTS.md, commitlint); no attribution. Codemod output is its own commit, then manual commits, one merge.",
+  "proof": "make check at the linewatch root; basalt-ui shot at 1800x1200 and 390x844 dark and light, at most 3 reviewer rounds.",
+  "acceptance": [
+    "git diff --name-only master...HEAD lists only owned paths (web/**, package.json, bun.lock, .basalt/**, the managed root files init and sync write)",
+    "make check exits 0 (frozen installs, format, lint, typecheck, root and web tests)",
+    "grep -rE '@mantine|shiki|react-markdown' web/src web/package.json is empty",
+    "web test suite: at least 40 test files, all green, incl. the chart contract tests and status-bar.render.test.tsx",
+    "web/.basalt/manifest.json declares profile parts; doctor and lint exit 0 from the local bin; lint --stats waivers at or under the fleet.json row ceiling",
+    "web/src/lib/{aggregate,kpi,verdicts,api,mock}* differ only in import lines (git diff stat)",
+    "web/src/**/table-card-swap.module.css is deleted and no hand-written minWidth remains on the two tables",
+    "commit subjects pass linewatch's commitlint (its own tool) and the pinned basalt-ui version resolves on npm",
+    "fleet-status --gate G1 shows linewatch green; deploy is make up by the owner, not claimed"
+  ],
+  "out_of_scope": "Backend, collector, Docker, deploy, G2 or G3 symbols, basalt-ui edits, pixel baselines. One Issue by design (exception 5).",
+  "consumer_repo": "linewatch"
+}

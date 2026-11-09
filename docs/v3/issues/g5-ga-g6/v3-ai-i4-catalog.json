@@ -1,0 +1,35 @@
+{
+  "why": "Generative UI is safe only if one validator sits between model output and render. defineBlock, defineCatalog and Block are that trust boundary; expectCatalog gives every consumer catalog one contract test.",
+  "what": "defineBlock, defineCatalog, validate, Block, expectCatalog in ./testing, P5, P7. Seeds are app-owned (v3-ai-i9). Owned paths are under packages/basalt-ui/.",
+  "owns": [
+    "packages/basalt-ui/src/ai/catalog/**",
+    "packages/basalt-ui/src/testing/expect-catalog*",
+    "packages/basalt-ui/src/core/messages/ai.ts",
+    "packages/basalt-ui/tests/layout/ai-block*",
+    "packages/basalt-ui/scripts/check-budgets/areas/ai.ts"
+  ],
+  "shared_append_only": ["packages/basalt-ui/src/ai/index.ts"],
+  "must_not_touch": [
+    "CHANGELOG.md",
+    "{MIGRATING.md,llms.txt} (generated)",
+    "src/**/contract.ts, contract-pins.json, other lanes' folders",
+    "src/{ui,tokens,cards,charts,table,shell,controls,router,data,content}/**",
+    "package.json and bun.lock (v3-deps-w2 / v3-deps-ai added your pins)"
+  ],
+  "concept": "ai-mdx#8 I4; ai-mdx#7 P5, P7",
+  "contract": "Frozen: src/ai/contract.ts (v3-rel-7-contracts, an ancestor), docs/v3/concepts/ai-mdx.md decisions 7, 8, row 11, section 4 and P5, P7. props is a Standard Schema (@standard-schema/spec). prompt(), jsonSchema(), mdxComponents, fences are deferred: do not build them. Needs `./testing` (v3-qa-i3), StatCard and src/core/phase (v3-exemplar-statcard), DataPanel (v3-cards-1-statgroup): all ancestors. Block text goes through the url policy in src/core (v3-ai-i1). A needed contract change: signal, take the reversible default. src/ai imports src/content only; `ai` and `@ai-sdk/react` are test devDependencies, never imported in src.",
+  "exemplar": "Section 4's `stat` block (about 12 lines over StatCard).",
+  "change": "defineBlock({name, description, props, limits?, sample, render, reserve?}), defineCatalog(blocks). validate(x) rejects oversize (default 32 KiB, depth 6) and walks the parsed value sending every href, src, url, link key at any depth through the url policy; errors are model-readable and end in advice. Block({spec, phase, onEvent}) = validate + per-block error boundary + the composite's phase skeleton + quiet 'could not be displayed' (key ai.blockUnavailable, added by this Issue to src/core/messages/ai.ts). expectCatalog(CatalogLike): samples validate and render in every phase; oversize and hostile-URL props fuzzed from each sample. Rule: type-level (`sample` required) plus expectCatalog, the shipped contract test. Skill snippet: JSDoc @example on defineBlock and defineCatalog.",
+  "commits": "Two commits in one PR: packages/basalt-ui/** apart from everything else (isolated-basalt-ui hook); `make sync-self` output its own non-package commit; conventional, empty scope, no feat! or BREAKING CHANGE, no attribution; rebase-merge.",
+  "proof": "`bun test src/ai/catalog src/testing`; `make layout` ai-block-phase.",
+  "acceptance": [
+    "`cd packages/basalt-ui && bun test src/ai/catalog src/testing` exits 0",
+    "validate.test.ts rejects `//h`, `javascript:`, `data:` in href, src, url, link at depth 1 and 5, and a payload over limits.maxBytes",
+    "expectCatalog fails on a seeded catalog that renders a model href unfiltered and passes on the compliant one",
+    "block.test.tsx: a throwing render shows the unavailable text and siblings stay mounted",
+    "ai-block-phase.layout.test.ts: loading and ready heights within 2 px at 1800x1200 and 390x844",
+    "`rg -n 'prompt\\(|jsonSchema\\(' packages/basalt-ui/src/ai` returns no match; `rg -n blockUnavailable packages/basalt-ui/src/core/messages/ai.ts` matches and messages.coverage passes; `make check` exits 0"
+  ],
+  "out_of_scope": "Built-in blocks (v3-ai-i9), catalog.prompt, jsonSchema, valibot or arktype converters, interactivity DSL, json-render.",
+  "worker_tag": "[opus: Schema-driven catalog with URL walk and limits; the validator is the trust boundary for model output]"
+}

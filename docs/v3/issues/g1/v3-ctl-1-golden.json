@@ -1,0 +1,29 @@
+{
+  "why": "URL and storage strings are frozen per major; they must be captured from real apps and the 2.x invariants must fail on the new code before the port starts.",
+  "what": "packages/basalt-ui/src/router/controls/fixtures/**, tests/controls/golden/**. Created here; 2.x donors: src/state/fields.ts, src/router-tanstack/search-store*.ts, src/controls/controls.router.test.tsx.",
+  "owns": [
+    "packages/basalt-ui/src/router/controls/fixtures/**",
+    "packages/basalt-ui/tests/controls/golden/**"
+  ],
+  "must_not_touch": [
+    "packages/basalt-ui/src/{ui,table,charts,cards,page,shell,content,ai,tokens,css,lint,controls}/**, src/router/nav*, src/router/controls/*.ts (all but fixtures/), packages/basalt-ui/agent/**",
+    "CHANGELOG.md, MIGRATING.md, llms.txt, scripts/check-budgets/**, other areas' migrations files",
+    "every contract.ts and src/core/ports.ts"
+  ],
+  "concept": "controls-url-state#10 issue 1",
+  "contract": "Frozen: ARCHITECTURE.md, this domain's contract.ts, src/core/ports.ts. Need a change: factory signal, take the reversible default. Read concepts/controls-url-state.md sections 3, 5, 9, 10 and evidence/gap-global-local-control-scope.md section 3 (prototype API). Invariants: section 7 table; test lines: controls.router.test.tsx 110-146, 166-250, 316, 358-415, 804-870.",
+  "exemplar": "2.x packages/basalt-ui/src/router-tanstack/search-store.test.ts (38 cases) for fixture style.",
+  "change": "(1) Golden fixtures as JSON: argo window-stores.ts URL and basalt:<id> strings (incl. the 17-field finance store, aliases), linewatch dashboard-store.ts, shutterflow Photos and Settings URLs (?rating=1,2&kw=a,b&density=128, ?section=sync), each parse(serialize(s)) = s under both router parse configs (JSON and string-only parseSearchWith). (2) The section 7 invariants as Mantine-free tests against the v3 public shape, committed as bun test.failing so master stays green. defineControls and field do not exist yet (barrel is `export {}`): tests reach them only through tests/controls/golden/api.ts (`import * as barrel from '../../../src/router'`, `export const api = barrel as unknown as ControlsApi`, ControlsApi from `import type` of src/router/contract.ts); a named import of an absent export is a link and tsc error, not a test.failing. ctl2-*.test.ts (reset unsets, thunk fallback, getSnapshot, two fields one param, NUMERIC_RE and Object.hasOwn, no codec spread, explicit undefined, ?item=123) are flipped by ctl-2; ctl3-*.test.ts (no-op write keeps resets, retain-strip order) by ctl-3. Rule: none. Skill: none. Tests: the two sets.",
+  "commits": "One PR, separate package and non-package commits (isolated-basalt-ui); conventional, empty scope, no attribution.",
+  "proof": "bun test over tests/controls/golden. Fixture strings are synthesized from the shapes in ~/SourceRoot/argo/apps/dashboard/src/lib/window-stores.ts, queries/gym.ts, ~/SourceRoot/linewatch/web/src/lib/dashboard-store.ts and shutterflow Photos and Settings routes; no file content is copied.",
+  "acceptance": [
+    "every fixture file round-trips (parse(serialize(s)) = s) under both parse configs in tests/controls/golden",
+    "each section 7 invariant (reset unsets, thunk fallback on a URL field throws, getSnapshot stable, two fields on one param throw, NUMERIC_RE and Object.hasOwn, no codec spread, no-op write keeps resets, retain-strip order, explicit undefined, JSON-parsed ?item=123) has one test.failing test",
+    "fixtures carry the aliases day->24h style cases and the shutterflow RENAMED sync->storage case",
+    "no fixture contains a token, real host or personal id (grep the fixtures for @, http and 100.)",
+    "tsc --noEmit passes over tests/controls/golden: the router barrel is imported only as a namespace, src/router/contract.ts as types",
+    "make check exits 0",
+    "git diff --name-only lists only owned paths"
+  ],
+  "out_of_scope": "Any implementation of defineControls, codecs or middleware (ctl-2, ctl-3), controls UI, migration rows, file-route codegen spike."
+}

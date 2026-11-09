@@ -1,0 +1,29 @@
+{
+  "repo": "shutterflow",
+  "why": "Shutterflow desktop-v3 is built screen by screen next to apps/desktop; photos is 85 files, so viewer and compare are their own Issue. Gated by the G3 forms freeze.",
+  "what": "The photos C (viewer stage with prewarm, compare stage) port: files named in owns and their tests.",
+  "owns": ["apps/desktop-v3/src/features/photos/{viewer,compare}/**"],
+  "must_not_touch": [
+    "apps/desktop/** (stays shippable)",
+    "apps/desktop/src-tauri/**",
+    "crates/**",
+    "e2e/desktop/visual/**/*.png",
+    "other Issues' dirs under apps/desktop-v3/src",
+    "apps/desktop-v3/package.json, bun.lock",
+    "apps/desktop-v3/src/features/photos/{detail,actions,context-menu}/** (v3-sf-photos-b)"
+  ],
+  "concept": "migration-release#6.4",
+  "contract": "Read basalt-ui docs/v3/concepts/migration-release.md 6.4, shutterflow docs/decisions/0028-visual-regression-gate.md (no bulk baseline regeneration) and AGENTS.md safety rule 1 (photo inputs are the owner's; never read /Volumes). basalt-ui is pinned exact next.N (the gate's floor, v3-sf-bump in `after`): its docs/recipes and llms.txt are the API truth; never edit package.json or bun.lock.",
+  "exemplar": "The landed v3-sf-shell frame (apps/desktop-v3/src/shell) and the playground exemplars in the basalt-ui repo; old code under apps/desktop/src/features/.",
+  "change": "Port ViewerStage with prewarm and the compare stage (ZoomStage, ZoomFrame, view-controller, geometry tests unchanged apart from imports); the viewer mounts the detail inspector from v3-sf-photos-b. Rule: the app preset passes without new waivers. Skill snippet: none; recipes: the installed docs/recipes.",
+  "commits": "Shutterflow ships by push to master: conventional, one concern each, no attribution. Never edit node_modules or basalt-ui; a gap is a `friction:` line in the PR body.",
+  "proof": "hygiene.check is false: the factory cannot run `make check` or `make e2e`. Gate: the app's typecheck, test and build; state e2e and visual runs not-run (owner-run at cutover). `make check-changed` runs only without a package.json, bun.lock or Makefile change (else `make check`): state it not-run then.",
+  "acceptance": [
+    "`bun run --filter @shutterflow/desktop-v3 typecheck`, `... test` and `... build` exit 0",
+    "`make check-changed` exits 0 (not-run if package.json, bun.lock or the Makefile changed: `make check` then)",
+    "`rg -n -i '@mantine|@visx|mantine-' apps/desktop-v3/src/features/photos/{viewer,compare}/**` returns no match",
+    "`bun scripts/check-port.ts apps/desktop/src/features/photos/compare apps/desktop-v3/src/features/photos/compare` exits 0 (tests only, imports stripped; any other changed line carries a `// port: <reason>` marker, listed in the PR); the same for photos/viewer",
+    "`bun scripts/check-port.ts --all apps/desktop/src/features/photos/compare apps/desktop-v3/src/features/photos/compare` lists every file that differs beyond imports and the PR explains each"
+  ],
+  "out_of_scope": "Other screens, shell code, apps/desktop, e2e files (v3-sf-e2e-rekey), src-tauri."
+}

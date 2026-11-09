@@ -1,0 +1,34 @@
+{
+  "why": "Reviewer scores moved 63 to 24 on unchanged components and a builder without the Agent tool could skip review silently; rubric, diff mode and calibration make the numbers mean something.",
+  "what": "packages/basalt-ui/agent/reviewer/**. Created here from 2.x agent/agents/basalt-design-reviewer.md (100 lines), moved with git mv to agent/reviewer/; sk-2's sync maps agent/reviewer to .claude/agents (a missing mapping is a signal; sync --check after make sync-self proves it). Sibling: v3-sk-9b-calibrate.",
+  "owns": [
+    "packages/basalt-ui/agent/reviewer/**",
+    "packages/basalt-ui/agent/agents/basalt-design-reviewer.md",
+    "packages/basalt-ui/tests/agent/reviewer*.test.ts"
+  ],
+  "must_not_touch": [
+    "packages/basalt-ui/src/{ui,page,shell,cards,charts,controls,table,content,ai,router,data,tokens,css,lint}/**",
+    "packages/basalt-ui/agent/rules/** and agent/templates/AGENTS-block* (sk-5, closed; the FOLD branch may move tagged bullets)",
+    "packages/basalt-ui/src/cli/{init,sync,doctor,lint,eject}/**, the preset contents",
+    "packages/basalt-ui/src/cli/shot/** (sk-10's), scripts/calibrate-record*, docs/calibration/** (sk-9b)",
+    "CHANGELOG.md, MIGRATING.md, llms.txt, scripts/check-budgets/**, other areas' migrations files",
+    "every contract.ts and src/core/ports.ts"
+  ],
+  "concept": "skills-agent-layer#10 issue 9",
+  "contract": "Frozen: ARCHITECTURE.md, this domain's contract.ts, src/core/ports.ts. Need a change: factory signal, take the reversible default. Read concepts/skills-agent-layer.md sections 1, 4.2, 5, 8, 9, 10. Skills teach, rules guarantee: no prohibition lives only in a skill. Section 5 table: rubric, no-Agent-tool path, diff mode, calibration. A reviewer as a script is rejected: the CLI stays model-free.",
+  "exemplar": "2.x agent/agents/basalt-design-reviewer.md and src/cli/reviewer-agent.test.ts, board-freshness.test.ts.",
+  "change": "rubric.md (tool-neutral): Craft, Expression, Communication items; [measured] items read metrics.json and fail closed on missing metrics.json, zero anchors or absent scale; mobile items keyed on the manifest's declared viewports (n/a, not failed, for desktop-only); sheet-read obligation with a Read: line; DEGRADED banner when the builder reviews inline, which can never close a round. Diff mode: previous last.json in, each finding new, carried or fixed, verdict = severity counts plus 'regression: yes/no', the 0-100 computed and never a gate. basalt-design-reviewer.md wrapper at most 40 lines. No-Agent-tool path: reviewer writes last.json into the out dir named by .basalt/last-shot.json. Rule: none. Skill: the rubric. Tests: rubric-item test, fail-closed fixtures, diff-mode fixtures.",
+  "commits": "One PR, separate package and non-package commits (isolated-basalt-ui); conventional, empty scope, no attribution; make sync-self its own commit.",
+  "proof": "bun test tests/agent/reviewer; make sync-self then sync --check on the repo.",
+  "acceptance": [
+    "wrapper is at most 40 lines and rubric.md contains no tool names (grep 'Agent tool' and 'Task' empty)",
+    "fixtures: missing metrics.json, zero anchors and absent scale each make the reviewer fail closed",
+    "a desktop-only manifest yields n/a for mobile items, not failures (fixture)",
+    "diff mode over two last.json fixtures labels findings new, carried, fixed and prints 'regression: yes' only when a P1 is new or carried",
+    "every rubric item exists in the catalogue the shot detector emits (invariant 34 test)",
+    "agent/agents/basalt-design-reviewer.md is gone and agent/reviewer/basalt-design-reviewer.md exists; sync --check exits 0 after make sync-self (its .claude/** output is its own commit)",
+    "make check exits 0",
+    "git diff --name-only lists only owned paths plus .claude/** from make sync-self (own commit)"
+  ],
+  "out_of_scope": "shot capture (sk-10), Stop-hook round check (sk-4), a model-calling script, calibration (sk-9b), DESIGN.md, argo."
+}

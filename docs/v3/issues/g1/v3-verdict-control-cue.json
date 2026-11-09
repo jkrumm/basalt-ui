@@ -1,0 +1,23 @@
+{
+  "why": "The override cue is the controls concept's one taste call and every card, table and form consumer fans out from it; the owner decides before they start.",
+  "what": "docs/v3/verdicts/control-cue.md only. This is an artifact for the owner's eye: the lead writes the evidence, the owner writes the verdict section.",
+  "owns": ["docs/v3/verdicts/control-cue.md"],
+  "must_not_touch": [
+    "packages/basalt-ui/**",
+    "apps/**",
+    "everything outside docs/v3/verdicts/control-cue.md"
+  ],
+  "concept": "controls-url-state#10 factory",
+  "contract": "Read concepts/controls-url-state.md section 1 item 7 and 4.3; the ControlView (v3-ctl-4-control-view) in the homes of v3-ctl-4b-control-home is the subject. Read the layout outputs and named screenshots of both Issues; start nothing.",
+  "exemplar": "docs/v3/verdicts/statcard.md (landed by v3-verdict-statcard) for artifact layout.",
+  "change": "Write the verdict page: the three states (own, inherited, override) in homes pill, row and inline; how to open each state at 1800x1200 and 390x844, light and dark (the owner starts the playground route); the layout-test numbers and screenshot names from ctl-4 and ctl-4b for each; the open questions (label text, Reset wording, cue placement) each with a recommended default and what changes if the owner picks the alternative. Leave a 'Verdict' heading empty for the owner. Rule, skill snippet, test: none ship.",
+  "commits": "One docs: commit, conventional, empty scope, no attribution. No package files.",
+  "proof": "The page links no file that does not exist in the tree; the shot names match ctl-4 and ctl-4b's output.",
+  "acceptance": [
+    "docs/v3/verdicts/control-cue.md exists with sections States, How to view, Evidence, Open questions, Verdict",
+    "each open question names a default and the single file or token that changes if it flips",
+    "no image or path in the page points outside the repo, no host or secret appears",
+    "the Verdict section is empty, filled only by the owner; the PR changes nothing but this file"
+  ],
+  "out_of_scope": "Changing ControlView, any code, tokens, or deciding the verdict; filing consumer rows."
+}

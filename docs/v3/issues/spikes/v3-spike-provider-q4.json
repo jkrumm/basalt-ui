@@ -1,0 +1,31 @@
+{
+  "why": "Base UI hardcodes the Toast viewport label `Notifications` and the Combobox `Dismiss`; the catalog only works if our wrappers can override both (docs/v3/concepts/quality-contract.md section 10 Q4, P1). Q4 gates G1 before any primitive ships.",
+  "what": "tools/spikes/provider-q4/** (own package.json: @base-ui/react 1.9.0, axe-core and @axe-core/playwright 4.14.0, playwright-core 1.63.0, react and react-dom 19.3.0; axe-core is only a transitive dep of lighthouse today) and docs/v3/spikes/provider-q4.md. No packages/basalt-ui file: the real wrappers belong to prim-p3b (Combobox) and prim-p4 (Toast), which wait on this contract.",
+  "owns": ["tools/spikes/provider-q4/**", "docs/v3/spikes/provider-q4.md"],
+  "must_not_touch": [
+    "CHANGELOG.md",
+    "root package.json, bun.lock, .gitignore, .oxlintignore",
+    "docs/v3/{concepts,issues}/**, docs/v3/ARCHITECTURE.md",
+    "other tools/spikes/* folders",
+    "consumer repos (scratch copies live in the OS temp dir)"
+  ],
+  "concept": "docs/v3/concepts/quality-contract.md section 10 Q4",
+  "contract": "docs/v3/concepts/quality-contract.md section 10 Q4 is frozen; REFUTED records `fork the wrapper part, not the catalog`, never applies it.",
+  "exemplar": "scripts/evidence/*.ts (one JSON result per run)",
+  "change": "Write <=40-line throwaway wrappers over Base UI Toast viewport and Combobox in the spike taking `label` and `dismissLabel` props. Render with non-English overrides, open each overlay, settle, run axe with tags wcag2a, wcag2aa, wcag21aa, wcag22aa. Record the prop names and where the string reaches the DOM (aria-label or text); prim-p3b and prim-p4 adopt them.",
+  "commits": "One non-package commit `chore: spike provider-q4 harness and verdict`, empty scope, no attribution.",
+  "proof": "run.ts JSON plus the verdict doc; run twice, attach both outputs.",
+  "acceptance": [
+    "run.ts JSON has `toastLabelOverridable` and `comboboxDismissOverridable` (true), `defaultEnglishLeaks` (0), `axeSeriousCritical` (0, overlays open)",
+    "The doc names the two wrapper prop names and the DOM attribute each reaches",
+    "`bun tools/spikes/provider-q4/run.ts` exits 0, prints one JSON object with the keys above (0 = harness ran, not hypothesis held)",
+    "docs/v3/spikes/provider-q4.md has headings Question, Method, Measurements, Verdict, Then, Affects and the `verdict` lines",
+    "`find tools/spikes/provider-q4 -name '*.test.*' -o -name '*.spec.*'` prints nothing",
+    "`git diff --name-only master...HEAD` lists only `owns` paths",
+    "`grep -rnE 'op://|\\.ts\\.net|192\\.168\\.|ghp_' tools/spikes/provider-q4 docs/v3/spikes/provider-q4.md` prints nothing",
+    "`make check` passes"
+  ],
+  "out_of_scope": "The real wrappers; the format and messages catalog (qa-i2); other overlays.",
+  "envelope": "Harness: tools/spikes/<dir>/ has its own package.json (exact pins); bun.lock and node_modules gitignored there (must_not_touch package.json and bun.lock = repo root only). Passes root oxlint; no *.test.* files; Chrome via the playwright-core pattern of packages/basalt-ui/tests/layout/harness.ts; docs/v3 on master before filing; synthetic data only, private repos as counts and hashed ids.",
+  "verdict": "`Q4: PASS|REFUTED` (REFUTED if an override is not the accessible name, default English `Notifications` or `Dismiss` stays in the DOM, or axe is serious or critical); `Verdict:` equals the Q4 line. run.ts `verdict` pass|refuted by the same rule."
+}

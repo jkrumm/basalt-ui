@@ -1,0 +1,37 @@
+{
+  "why": "Status, alert, progress and meter feed cards and controls; meter zones and Ring replace argo's verdict meters and RingProgress.",
+  "what": "packages/basalt-ui/src/ui/{status,alert,progress,meter}* (tsx, guards, tests, one grouped layout test and fixture). Created here (Swatch lives in status*, Ring in progress*). Sibling: v3-prim-p5c-bar owns toolbar, virtual-list, num.",
+  "owns": [
+    "packages/basalt-ui/src/ui/{status,alert,progress,meter}*",
+    "packages/basalt-ui/docs/{status,alert,progress,meter}.md",
+    "packages/basalt-ui/tests/layout/{,fixture/}ui-status*"
+  ],
+  "shared_append_only": [
+    "packages/basalt-ui/src/ui/slots.ts",
+    "packages/basalt-ui/src/ui/no-restyle.generated.json",
+    "packages/basalt-ui/scripts/export-surface.json"
+  ],
+  "must_not_touch": [
+    "packages/basalt-ui/src/{page,shell,cards,controls,table,charts,content,ai,router,data,core,tokens,css,lint,cli,vite,testing}/**",
+    "packages/basalt-ui/agent/**",
+    "CHANGELOG.md, MIGRATING.md, llms.txt, scripts/check-budgets/**, other areas' migrations files",
+    "every contract.ts and src/core/ports.ts"
+  ],
+  "concept": "primitives-distribution#13 P5",
+  "contract": "Frozen: ARCHITECTURE.md, this domain's contract.ts, src/core/ports.ts. Need a change: factory signal, take the reversible default. Read concepts/primitives-distribution.md sections 4 (list), 12, 13 and ARCHITECTURE section 7. MeterSpec and MeterZone are types in src/core/ports.ts (frozen): import them. Strings: internal useMessages hook; none expected here, a needed key is a signal.",
+  "exemplar": "src/ui/button.tsx, button.guard.ts, scripts/gen-ui* (from v3-prim-p1-core, read in the tree): cva table, data-slot per part, guard, SLOTS.",
+  "change": "Status and Swatch (Swatch takes a typed VX series colour), Alert (role per tone), Progress and Ring (locale through useFormat, name required by type), Meter (zones with a required label per zone, tinted track, marker, active zone word). Rule: generated no-restyle contract; a Swatch with a raw colour fails types. Skill: generated docs/<name>.md. Tests: primitive.contract plus one layout and axe test for the group.",
+  "commits": "One PR, separate package and non-package commits (isolated-basalt-ui); conventional, empty scope, no attribution.",
+  "proof": "Layout and axe tests in tests/layout/ui-status.layout.test.ts on tests/layout/fixture/ui-status-fixture.tsx at 1440, 768, 390, 320. No shot: a primitive has no reference image.",
+  "acceptance": [
+    "primitive.contract passes for status, alert, progress and meter",
+    "Meter with zones renders the active zone label as text and a zone without label fails to type-check",
+    "Progress and Ring without a name fail to type-check; a Swatch with a raw colour fails to type-check",
+    "Ring renders de-DE percent with a comma (test)",
+    "axe: zero serious or critical on the fixture",
+    "gen-ui check mode exits 0; docs/<name>.md exists for each module",
+    "make check exits 0",
+    "git diff --name-only lists only owned paths"
+  ],
+  "out_of_scope": "No consumer migration, no playground route, no eject/sync work, no new variant axes beyond the concept table, no Mantine parity props (classNames, styles, asChild, unstyled). toolbar, virtual-list, num (p5c); Ring replacements in consumers."
+}

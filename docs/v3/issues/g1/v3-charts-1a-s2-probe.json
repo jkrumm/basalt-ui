@@ -1,0 +1,30 @@
+{
+  "why": "Spike S2 decides whether Sparkline rides the engine or a hand-SVG core; the core port should not start before the bytes are measured.",
+  "what": "packages/basalt-ui/src/charts/core/{bytes.test.ts,probe/**} and docs/v3/spikes/charts-s2.md. Created here.",
+  "owns": [
+    "packages/basalt-ui/src/charts/core/bytes.test.ts",
+    "packages/basalt-ui/src/charts/core/probe/**",
+    "docs/v3/spikes/charts-s2.md"
+  ],
+  "must_not_touch": [
+    "packages/basalt-ui/src/{ui,cards,controls,table,page,shell,content,ai,router,data,tokens,css,lint}/**",
+    "packages/basalt-ui/src/charts/{host*,parts/**}",
+    "packages/basalt-ui/agent/**",
+    "CHANGELOG.md, MIGRATING.md, llms.txt, scripts/check-budgets/**, other areas' migrations files",
+    "every contract.ts and src/core/ports.ts"
+  ],
+  "concept": "charts-cards-kanban#9 S2",
+  "contract": "Frozen: ARCHITECTURE.md, this domain's contract.ts, src/core/ports.ts. Need a change: factory signal, take the reversible default. Read concepts/charts-cards-kanban.md sections 3, 4, 8, 9. ./charts reaches no Base UI and src/charts/host.tsx is the only importer of @tanstack/charts/react (import-boundary). Engine pin: tilde 1.5.x. Spike S2 in section 9; the DPO 11 alternative is the 130-line hand-SVG core.",
+  "exemplar": "2.x src/charts/Sparkline.tsx and host.tsx (read in the tree), the contract's gz method in concepts/quality-contract.md section 6.",
+  "change": "Build probe fixtures (host plus lineY, barY, and a sparkline-shaped probe) on the engine and measure gz with the contract's method. Record the numbers in src/charts/core/bytes.test.ts as asserted values, and write docs/v3/spikes/charts-s2.md with one verdict line: ENGINE if the Sparkline probe is at most 36 KB gz, else HAND-SVG (the 130-line core goes in charts-1 under src/charts/core). Rule: none. Skill: none. Tests: bytes.test.ts.",
+  "commits": "One PR: package commit (bytes.test.ts, probe) then a non-package commit (docs/v3/spikes/charts-s2.md). Conventional, empty scope, no feat!:, no attribution.",
+  "proof": "bun test src/charts/core/bytes.test.ts.",
+  "acceptance": [
+    "bytes.test.ts asserts the measured gz of the three probes and the Sparkline probe verdict at the 36 KB line",
+    "docs/v3/spikes/charts-s2.md exists with the verdict line ENGINE or HAND-SVG and the measured numbers",
+    "no file outside the owned paths changes; src/charts/host.tsx is untouched",
+    "make check exits 0",
+    "git diff --name-only lists only owned paths"
+  ],
+  "out_of_scope": "The core port (charts-1), kinds, Sparkline, MiniBars, ChartCard (charts-2..4), byte ceilings (freeze-g1 seeds them)."
+}

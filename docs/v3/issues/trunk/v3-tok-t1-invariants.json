@@ -1,0 +1,24 @@
+{
+  "why": "Hard-won token laws must be pinned by tests before the table is rewritten, so the port cannot silently flip one (autoMaxFloor flipped for two minors). Each active test is mutation-checked.",
+  "what": "One new test file, packages/basalt-ui/src/tokens/invariants.test.ts, pinning the invariants against the 2.x modules (derive.ts, status-text.ts, hct.ts, ctl-vars.ts, palette.ts, core.ts). No source change, existing tests untouched.",
+  "owns": ["packages/basalt-ui/src/tokens/*.test.ts"],
+  "must_not_touch": [
+    "packages/basalt-ui/src/tokens/*.ts except new test files",
+    "packages/basalt-ui/src/ui/**",
+    "packages/basalt-ui/src/css/**"
+  ],
+  "concept": "docs/v3/concepts/tokens-visual.md#12 T1",
+  "contract": "docs/v3/concepts/tokens-visual.md section 5 'Invariants pinned in a test before the port' (ids d1, d3, d5-d10, d12-d14, d17-d21, d25, d26, d28, d30, d33) and section 12 (T1 precedes T2). The d-ids are defined only in docs/v3/evidence/self-tokens-theme.md section (d) (numbered 1-34): read each law there. Insufficient contract: factory signal, reversible default, PR body says so. Frozen contracts are read-only.",
+  "exemplar": "src/tokens/derive.test.ts and row-surfaces.test.ts for style and imports.",
+  "change": "One test per invariant id, title starting with the id. Laws the 2.x code already implements (fill band Y=.165, clampFillTone, status solver throws when unreachable, faint opaque axis, raised-shadow asymmetry kept, coarse-pointer floor) are active tests; show each fails against a one-line mutation of the law and say so in the PR body. Laws whose v3 form does not exist yet (hairline as ink alpha, Card carries no border, layer statement first, tenant specificity, fonts.css, bridge, check-tokens scan) are test.todo naming the Issue that makes them real (tok-t2, tok-t3, tok-t4). Ships with: these tests are the pin; no lint rule, no skill snippet.",
+  "commits": "One PR; package and non-package changes are separate commits (isolated-basalt-ui hook; root package.json, bun.lock, .oxlintrc.json, tests/ may ride with the package commit). Conventional, empty scope, no attribution, never CHANGELOG.md. A single `test:` commit touching packages/basalt-ui/ only.",
+  "proof": "bun test packages/basalt-ui/src/tokens green; mutations shown red in the PR body.",
+  "acceptance": [
+    "bun test packages/basalt-ui/src/tokens/invariants.test.ts passes (todo cases do not fail).",
+    "grep -cE \"(it|test)(\\.todo)?\\('d[0-9]+\" packages/basalt-ui/src/tokens/invariants.test.ts is at least 21, and each id listed in the contract line appears once.",
+    "Every test.todo title names tok-t2, tok-t3 or tok-t4.",
+    "git diff --name-only origin/master...HEAD lists only invariants.test.ts.",
+    "make check passes."
+  ],
+  "out_of_scope": "Any source change, table.ts, new tokens, deleting calibration references (d31 is a tok-t2 note)."
+}

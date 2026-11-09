@@ -1,0 +1,33 @@
+{
+  "why": "The rail and the header tiers carry the nav: collapse, sections, blocks, account and settings, and one kebab where the header runs out of room.",
+  "what": "packages/basalt-ui/src/shell/parts/{rail,blocks,account,settings}* (rail.tsx replaces I5's stub), header tiers and kebab in parts/header*, tests/layout un-skips and the v3 scenario shell-chrome.",
+  "owns": [
+    "packages/basalt-ui/src/shell/parts/{rail,blocks,account,settings,header}*",
+    "packages/basalt-ui/tests/layout/fixture/v3/scenarios/shell-chrome*"
+  ],
+  "must_not_touch": [
+    "packages/basalt-ui/{MIGRATING.md,llms.txt,scripts/contract-pins.json,scripts/check-budgets/**,src/*/contract.ts,src/{ui,tokens,lint}/**,agent/**}",
+    "CHANGELOG.md",
+    "other lanes' folders",
+    "packages/basalt-ui/src/shell/{core,commands,chrome*,menu-template*,app-shell*,index*,legacy*}",
+    "packages/basalt-ui/src/shell/parts/{grid,a11y,print,mounts}*",
+    "packages/basalt-ui/src/shell/parts/mobile/**",
+    "packages/basalt-ui/src/{page,router}/**",
+    "apps/**"
+  ],
+  "concept": "shell-nav-router#8 I5; #2 rows Rail, Header; #4 invariants 1 to 3, 12, 13",
+  "contract": "concept 2 (Rail, Header), 3.1, 4, 8 (state lanes, keyboard Mod+B is I8); src/shell/contract.ts. Uses I3 rows, ui/{menu,tooltip,collapsible}. Frozen: never edit contract.ts or contract-pins.json; signal, then take the reversible default.",
+  "exemplar": "Port from 2.x src/shell/{app-sidebar.tsx (626), app-sidebar-account.tsx, app-brand.tsx, sidebar-blocks.tsx, sidebar-search.tsx, nav-count-badge.tsx}; layout from I1's shell-chrome and shell-page-kit.",
+  "change": "Rail from I3 rows: collapse via persisted basalt:<storageKey> with data-rail=auto, section fold by id, NavBadge, blocks (list, progress, custom), account and settings menus, search. Header priority tiers 1 to 3 as CSS from I3's data, one kebab, short labels below 1200. Scenario shell-chrome mounts AppShell with the S6 cluster. Un-skip by slots: shell-chrome rail, footer, account and header cases and all 6 of shell-page-kit. Ships with: guarantee = layout cases, stylelint and viewport-keyed clean; rule = none; teach = JSDoc (rule bullets: v3-shell-i10-rules-rows); test = ported sidebar unit suites and the layout cases.",
+  "commits": "Package and non-package changes are separate commits in one PR (isolated-basalt-ui); conventional, empty scope, no attribution; never edit CHANGELOG.md.",
+  "proof": "shell-chrome and shell-page-kit layout on v3 at 1440, 1024 and 390; no shot (the exemplar route is I5c).",
+  "acceptance": [
+    "LAYOUT_TARGET=v3 shell-chrome (16) and shell-page-kit (6) pass with only the slot table changed; the printed skip count for both files is 0",
+    "First nav row has the same top offset expanded and collapsed; a badged row shows a visible dot in the collapsed rail",
+    "Reload keeps the collapsed state under basalt:<storageKey> with the {v, value} envelope (golden basalt:argo-sidebar shape)",
+    "S6 cluster (3 badges, 2 actions, job progress) at 1024, 1200, 1440: short labels below 1200, actions yield first, one kebab, nothing lost",
+    "Ported sidebar and account unit suites: executed counts at the v2.29.1 tag, recorded in the PR, may not fall",
+    "No 'mantine' string under the owned paths; make check passes"
+  ],
+  "out_of_scope": "Frame, grid, skip link, print (I5), tab bar (I6), expectShellInvariants and the playground (I5c), Mod+B and commands (I8)."
+}

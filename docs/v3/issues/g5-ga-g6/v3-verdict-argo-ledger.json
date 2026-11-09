@@ -1,0 +1,22 @@
+{
+  "why": "Moot and accepted dispositions are judgement calls that remove a defect from the acceptance bar; only the owner may close them, and argo cutover waits on this verdict.",
+  "what": "The owner's sign-off file for every `moot` and `accepted` row of the argo friction disposition.",
+  "owns": ["docs/v3/verdicts/argo-ledger.md"],
+  "must_not_touch": [
+    "docs/v3/acceptance/** (change a disposition only by reopening its ledger Issue)",
+    "argo repo"
+  ],
+  "concept": "migration-release#6.5",
+  "contract": "docs/v3/concepts/migration-release.md section 6.5: `moot` needs the deleted subject named; `accepted` needs the owner's or the contract's reason. Input: the four files in docs/v3/acceptance/argo-friction-disposition/ (v3-argo-ledger, -ac, -v, -dt).",
+  "exemplar": "Any earlier owner verdict file under docs/v3/verdicts/ (v3-verdict-statcard) for the table shape.",
+  "change": "Render one table row per moot or accepted ledger row: id, bucket, one-line subject or reason, evidence link (route, test or deleted file), and an owner verdict cell. The owner fills each cell (confirmed, reopened as carried, or reopened with a note). Reopened rows go back to v3-argo-ledger as carried rows with a test. Rule: none. Skill snippet: none.",
+  "commits": "One docs: commit, empty scope, no attribution; docs/** changes are REVIEW.md `none`. Rebase-merge.",
+  "proof": "The owner's eye; nothing runs.",
+  "acceptance": [
+    "`rg -c '^\\| [0-9]+ ' docs/v3/verdicts/argo-ledger.md` equals the count of moot plus accepted rows over the four disposition files (`jq -s '[.[].rows[]|select(.disposition!=\"carried\")]|length' docs/v3/acceptance/argo-friction-disposition/*.json`)",
+    "every row's verdict cell is `confirmed` or `reopened`, none empty, none filled by a worker",
+    "every `reopened` id has disposition `carried` with a test path in its disposition file afterwards (back through the matching ledger Issue)"
+  ],
+  "out_of_scope": "Carried rows, any code, deciding accepted rows on the owner's behalf.",
+  "creates": ["docs/v3/verdicts/argo-ledger.md"]
+}

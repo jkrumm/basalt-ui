@@ -1,0 +1,31 @@
+{
+  "why": "The 2.x table encodes 26 hard-won behaviours; they must be pinned as public-DOM tests and the contract frozen before any v3 table code exists.",
+  "what": "packages/basalt-ui/src/table/contract.ts, contract.type-test.ts, src/table/invariants/**, scripts/contract-pins.json (the table key only). Created here except the pin file (rel-7-contracts).",
+  "owns": [
+    "packages/basalt-ui/src/table/contract{,.type-test}.ts",
+    "packages/basalt-ui/src/table/invariants/**"
+  ],
+  "shared_append_only": ["packages/basalt-ui/scripts/contract-pins.json"],
+  "must_not_touch": [
+    "packages/basalt-ui/src/{ui,controls,charts,cards,page,shell,content,ai,router,data,tokens,css,lint}/** (ui read-only), packages/basalt-ui/agent/**",
+    "packages/basalt-ui/src/table/{core,parts}/**, other contract.ts files and src/core/ports.ts (frozen)",
+    "CHANGELOG.md, MIGRATING.md, llms.txt, scripts/check-budgets/**, other areas' migrations files"
+  ],
+  "concept": "data-table#12 T0",
+  "contract": "Frozen: ARCHITECTURE.md, this domain's contract.ts, src/core/ports.ts. Need a change: factory signal, take the reversible default. Read concepts/data-table.md sections 1, 3 to 6, 8, 9; edge table -> controls only; no composite .d.ts names ui/* (VirtualLike). contract.ts is types only (Priority, CardSlot, FilterModel, TableRequest, TableDisplay, TableState {v:1}, Mode, Selection, View, ViewStore, RowAction, Scrollport, DataTableProps, UseDataTable as in section 4), frozen after this PR.",
+  "exemplar": "2.x tests (stay): src/table/data-table.test.tsx, data-table-responsive.test.tsx, data-table-states.test.tsx, query-branch.test.ts, table-align.type-guard.test.ts; evidence/self-table-data.md invariants I1 to I27.",
+  "change": "(1) contract.ts exactly per the concept sketch. (2) src/table/invariants/{core-model,core-state,parts,toolbar,virtual}.test.tsx: public-DOM tests for I1, I2, I3, I4 and I9 to I23 plus I26, written against the contract types, committed as bun test.failing so master stays green. DataTable, useDataTable and col do not exist yet and the 2.x barrel lacks them: tests reach them only through src/table/invariants/api.ts (`import * as barrel from \"../index\"`, cast to the contract types), never a named runtime import (a missing named export is a link and tsc error). One flipper per invariant: I15 I16 I19 core-model (t1a); I1 I3 I4 I10 I17 I18 core-state (t1b); I2 I9 I11 I12 I13 I14 I20 I21 I23 parts (t2); I22 toolbar (t3); I26 virtual (t4). I5, I7 die; I6, I8 are restated (section 8). (3) contract.type-test.ts with @ts-expect-error for client rowCount, rowCount with cursor, raw column, virtual with height auto, detail with onRowActivate. (4) add the key table/contract.ts to scripts/contract-pins.json (freeze-g1 adds export-list keys beside it and keeps this one). Rule: none. Skill: none yet. Tests: the three sets.",
+  "commits": "One PR, separate package and non-package commits (isolated-basalt-ui); conventional, empty scope, no attribution.",
+  "proof": "bun test over src/table; check-contract-frozen passes with the new pin.",
+  "acceptance": [
+    "src/table/contract.ts matches the concept's section 4 type block and check-contract-frozen passes with the new pin",
+    "each of I1, I2, I3, I4, I9 to I23 and I26 has at least one test marked test.failing in the file of its flipper, the file header lists every ID once with its flipping Issue key (map in change), and each test names the 2.x source line in a comment",
+    "contract.type-test.ts has the five @ts-expect-error cases and tsc exits 0",
+    "no implementation file exists under src/table/core or src/table/parts after this PR",
+    "scripts/contract-pins.json differs only by the table entry",
+    "tsc --noEmit passes over src/table/invariants (api.ts holds the only runtime import of the barrel)",
+    "make check exits 0",
+    "git diff --name-only lists only owned paths"
+  ],
+  "out_of_scope": "Any core, parts or CSS, the ui/table exemplar, URL codec, migration rows, spikes S1 to S6."
+}

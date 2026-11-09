@@ -1,0 +1,36 @@
+{
+  "why": "llms.txt appears in 131 package commits and is hand-merged: parallel leads would conflict on it. It is derived data, so it stops being committed.",
+  "what": "llms.txt is generated at build and release, untracked and gitignored, and no longer a semantic-release git asset. The gen-llms --check gate is replaced by a tarball assertion.",
+  "owns": [
+    "packages/basalt-ui/llms.txt",
+    "packages/basalt-ui/scripts/gen-llms*",
+    "packages/basalt-ui/scripts/pack-test.sh",
+    ".releaserc.json",
+    ".gitignore",
+    "Makefile",
+    ".github/workflows/ci.yml"
+  ],
+  "must_not_touch": [
+    "packages/basalt-ui/migrations/**",
+    "packages/basalt-ui/MIGRATING.md",
+    "packages/basalt-ui/scripts/release-migrating*",
+    "packages/basalt-ui/scripts/check-budgets*",
+    "packages/basalt-ui/src/**",
+    "scripts/release.sh",
+    "CHANGELOG.md"
+  ],
+  "concept": "docs/v3/concepts/migration-release.md#3.2",
+  "contract": "docs/v3/concepts/migration-release.md 3.2 and 11 (hot files). Makefile and ci.yml are edited by other Issues too: touch only the lines that run gen-llms --check, and keep both sides on a rebase conflict. Insufficient contract: factory signal, reversible default, PR body says so.",
+  "exemplar": "gen-llms.ts --check semantics; the prepareCmd in .releaserc.json already runs gen-llms.",
+  "change": "Generate llms.txt in the package build and prepareCmd; `git rm --cached` it and add it to .gitignore; remove it from the @semantic-release/git assets (MIGRATING.md stays an asset). Replace the gen-llms --check lines in the Makefile and ci.yml with a pack-test assertion that the tarball llms.txt names every runtime subpath of package.json exports. If untracking breaks check-agent-doc-drift or pack-test, keep it tracked, keep the check and signal: say in the PR body which of the two you shipped.",
+  "commits": "One PR; package commit (gen-llms, pack-test.sh, git rm --cached) then a non-package `ci:` commit for .releaserc.json, .gitignore, Makefile and ci.yml (deep review). Conventional, empty scope, no attribution.",
+  "proof": "make check green on a tree where llms.txt is not tracked.",
+  "acceptance": [
+    "Shipped path A: git ls-files packages/basalt-ui/llms.txt prints nothing and grep -c 'llms.txt' .releaserc.json prints 0 (MIGRATING.md is still listed there). Or path B, after a signal: the file stays tracked and the PR body says why.",
+    "pack-test fails when a seeded tarball llms.txt lacks a runtime subpath, and passes on the real build (path A).",
+    "grep -n 'gen-llms.*--check' Makefile .github/workflows/ci.yml returns nothing (path A).",
+    "bun test packages/basalt-ui/scripts/gen-llms.test.ts passes.",
+    "make check passes including pack-test."
+  ],
+  "out_of_scope": "Migration rows (v3-unhot-migrating-llms), export-surface.json, llms-full.txt, writing real rows."
+}

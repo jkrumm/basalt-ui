@@ -1,0 +1,39 @@
+{
+  "why": "A bare hook command fails open on a missing bin. One managed shim turns every failure into exit 2 with a fix line.",
+  "what": "New: packages/basalt-ui/src/cli/lint/** (the lint verb), agent/templates/hook.mjs.tpl (managed, at most 40 lines), test/fixtures/hook/** (hidden from root lint, fmt, bun test by v3-test-roots) with its runner tests/cli/hook.test.ts. Outside owns: the lint dispatch in src/cli/index.ts (replacing the rel-7 stub) and one line in init/steps.ts registering the hook step.",
+  "owns": [
+    "packages/basalt-ui/src/cli/lint/**",
+    "packages/basalt-ui/agent/templates/hook*",
+    "packages/basalt-ui/test/fixtures/hook/**",
+    "packages/basalt-ui/tests/cli/hook*"
+  ],
+  "must_not_touch": [
+    "CHANGELOG.md",
+    "packages/basalt-ui/{MIGRATING.md,llms.txt}",
+    "packages/basalt-ui/scripts/check-budgets/**",
+    "**/contract.ts",
+    "packages/basalt-ui/src/{ui,shell}/**",
+    "apps/marketing/**",
+    "packages/basalt-ui/src/{charts,tokens}/**",
+    "packages/basalt-ui/src/lint/{rules/**,preset*,rule-table*}",
+    "packages/basalt-ui/src/cli/{doctor,sync}/**",
+    "packages/basalt-ui/agent/{rules,skills}/**"
+  ],
+  "concept": "skills-agent-layer#10 issue 4",
+  "contract": "docs/v3/concepts/skills-agent-layer.md sections 4.1 (lint), 4.2 (hook entries, settings.json merge), 8 (Hook row); guardrails.md sections 8, 9. Read docs/v3/spikes/{hook-sync,lint-edges}.md; no fingerprint filter is built.",
+  "exemplar": "packages/basalt-ui/src/cli/guard-hook.ts and src/guard/guard-hook.test.ts (2.x hook entry and tests).",
+  "change": "basalt-ui lint [--file p | --changed | --stats [--write-budget]] [--agent] [--hook post-edit|stop|pre-edit]: runs oxlint, stylelint (.stylelintrc.basalt.json) and checkTokens (extraNames from manifest.extra) per root profile; --agent is terse, names the fix, exits 2 on findings; --hook reads the event JSON on stdin and is exempt from the unknown-flag exit 1; exit 1 on a ceiling breach (countBreaches from src/cli/budget, v3-sk-3b). --stats prints per-rule findings, waivers and escapes; --stats --write-budget calls landBudget, the only writer of the counts besides init's seed: consumers never hand-edit .basalt/budget.json. hook.mjs resolves the bin from the manifest's package dir, runs lint --hook, maps every outcome other than 0 or the child's own 2 to exit 2 with a line naming the fix (bun install or basalt-ui doctor). Stop re-checks at most once per session_id. PreToolUse denies only edits to .basalt/**, managed .claude paths, presets, a settings.json write removing a basalt entry, and a managed id added to the consumer lint config. settings.json merge: parse, identify basalt entries by .basalt/hook.mjs in the command, add or replace only those; unparseable JSON prints the entries and writes nothing. Unflip the .failing invariants naming this Issue. Rule, skill snippet: none.",
+  "commits": "One PR, rebase-merged. Conventional commits, empty scope, no attribution. Package paths only (isolated-basalt-ui). Never edit CHANGELOG.md.",
+  "proof": "Hook fixtures run via node .basalt/hook.mjs in scratch repos.",
+  "acceptance": [
+    "bun test packages/basalt-ui/src/cli/lint packages/basalt-ui/tests/cli/hook.test.ts exits 0",
+    "A seeded offender returns exit 2 with a finding at post-edit, also from a package subdirectory cwd",
+    "Stop returns the agent at most once per session_id; a second call exits 0",
+    "A missing bin, a thrown error and an unknown event each exit 2 with a line naming 'bun install' or 'basalt-ui doctor'",
+    "Merge fixtures (shutterflow live-library guard, rb settings.json) keep non-basalt entries byte-identical; unparseable JSON is not written",
+    "hook.mjs is at most 40 lines",
+    "lint exits 1 when counted waivers exceed .basalt/budget.json's; --stats --write-budget updates it via landBudget",
+    "make check exits 0"
+  ],
+  "out_of_scope": "Legacy guard-hook removal (migrate row), doctor check 8 (sk-3a), shot, presets, eject (G1)."
+}

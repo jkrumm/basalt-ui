@@ -1,0 +1,31 @@
+{
+  "why": "Argo's chart bucket (54 rows) is mostly missing seams; every seam gets a contract test citing the consumer case, and the playground route proves them.",
+  "what": "packages/basalt-ui/src/charts/seams/**, src/charts/seams.ts (registration list only), apps/playground/src/routes/charts.tsx (exists in 2.x, rewritten). Created here. Split from v3-charts-2-kinds.",
+  "owns": [
+    "packages/basalt-ui/src/charts/seams/**",
+    "packages/basalt-ui/src/charts/seams.ts",
+    "apps/playground/src/routes/charts.tsx"
+  ],
+  "must_not_touch": [
+    "packages/basalt-ui/src/{ui,cards,controls,table,page,shell,content,ai,router,data,tokens,css,lint}/**",
+    "packages/basalt-ui/agent/**",
+    "packages/basalt-ui/src/charts/{core,host*}/**",
+    "packages/basalt-ui/src/charts/parts/**",
+    "CHANGELOG.md, MIGRATING.md, llms.txt, scripts/check-budgets/**, other areas' migrations files",
+    "every contract.ts and src/core/ports.ts"
+  ],
+  "concept": "charts-cards-kanban#10",
+  "contract": "Frozen: ARCHITECTURE.md, this domain's contract.ts, src/core/ports.ts. Need a change: factory signal, take the reversible default. Read concepts/charts-cards-kanban.md sections 3, 4, 8, 9. ./charts reaches no Base UI and src/charts/host.tsx is the only importer of @tanstack/charts/react (import-boundary). Engine pin: tilde 1.5.x. Seams in section 3 'Consumer seams' (the list is the work). 2.x src/charts files outside the owned globs stay with their tests; nothing is deleted here.",
+  "exemplar": "Seam consumers read-only: ~/SourceRoot/linewatch/web/src and ~/SourceRoot/argo/apps/dashboard/src chart call sites named in the section 3 table.",
+  "change": "One module per seam in src/charts/seams/, registered in seams.ts: format, weight, dash, parent, legend and tooltip false, gaps, note, role, axis, getMarker, y.domain and gutter, x.domain, plot.data, per-datum opacity and fill, lone point drawn, plot.pxToY and pxToX, pixel-extent rule, plot.scales. Rewrite routes/charts.tsx to exercise them. Rule: none. Skill: the charts route regions. Tests: one contract test per seam citing the linewatch or argo case.",
+  "commits": "One PR, separate package and non-package commits (isolated-basalt-ui); conventional, empty scope, no attribution.",
+  "proof": "Seam contract tests (bun test src/charts/seams); the charts route renders at 1800x1200 and 390x844 (shot, at most 3 rounds, dark and light).",
+  "acceptance": [
+    "each seam in section 3 has one contract test whose name cites its consumer case (linewatch or argo)",
+    "apps/playground typechecks and the charts route renders at 1800x1200 and 390x844 with no horizontal overflow",
+    "a seam test fails when its module is removed from the registry in seams.ts (meta-test)",
+    "make check exits 0",
+    "git diff --name-only lists only owned paths"
+  ],
+  "out_of_scope": "CartesianChart, Lines, Bars (charts-2), Sparkline, MiniBars, ChartCard, tooltip, legend, Heatmap, BandStrip, StackedArea, Donut, MirroredBars, DualPanel, codemods."
+}

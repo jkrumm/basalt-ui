@@ -1,0 +1,29 @@
+{
+  "why": "The Chrome layout engine (tests/layout/harness.ts, 1,003 lines, 880 portable) is keyed to Mantine class names; v3 composites are graded on data-slot and the engine must not depend on any composite.",
+  "what": "Move the portable engine into tests/layout/harness/ and keep the 15 Mantine selectors in one legacy module until shell-i1 re-points the 32 selector-bound files.",
+  "owns": [
+    "packages/basalt-ui/tests/layout/harness/**",
+    "packages/basalt-ui/tests/layout/bunfig.toml",
+    "packages/basalt-ui/tests/support/**"
+  ],
+  "must_not_touch": [
+    "packages/basalt-ui/tests/layout/*.layout.test.ts",
+    "packages/basalt-ui/tests/layout/fixture/**",
+    "packages/basalt-ui/src/**"
+  ],
+  "concept": "docs/v3/concepts/migration-release.md#8",
+  "contract": "docs/v3/concepts/migration-release.md section 8 (port order step 4: engine decoupled first, then its 49 files; 880 of 1,003 harness lines portable). The 81 layout tests import `./harness`; a harness/index.ts keeps that specifier valid so no test file changes. Insufficient contract: factory signal, reversible default, PR body says so. Frozen contracts are read-only.",
+  "exemplar": "tests/layout/harness.ts today: exported selectors, browser lifecycle, scrollport helpers.",
+  "change": "git mv harness.ts into harness/ split as engine.ts (browser, server, page lifecycle, geometry helpers), slots.ts (data-slot and data-basalt-* handles), legacy-mantine.ts (the .mantine-* constants), index.ts re-exporting all. Add a harness self-test asserting data-slot helper functions against a tiny static fixture page. Ships with: the self-test as the test, no lint rule or skill snippet.",
+  "commits": "One PR; package and non-package changes are separate commits (isolated-basalt-ui hook; root package.json, bun.lock, .oxlintrc.json, tests/ may ride with the package commit). Conventional, empty scope, no attribution, never CHANGELOG.md.",
+  "proof": "bun run test:layout green with identical test counts before and after.",
+  "acceptance": [
+    "bun run test:layout passes and reports the same number of tests as on origin/master.",
+    "test ! -e packages/basalt-ui/tests/layout/harness.ts and harness/index.ts exists.",
+    "grep -c 'mantine' packages/basalt-ui/tests/layout/harness/engine.ts prints 0; every .mantine-* constant is in legacy-mantine.ts.",
+    "git diff --name-only origin/master...HEAD shows no *.layout.test.ts or fixture file.",
+    "The self-test for the data-slot helpers passes (bun --config=packages/basalt-ui/tests/layout/bunfig.toml test packages/basalt-ui/tests/layout/harness).",
+    "make check passes."
+  ],
+  "out_of_scope": "Re-pointing the 32 selector-bound tests (shell-i1), new fixtures, Tailwind in fixtures."
+}

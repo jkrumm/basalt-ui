@@ -1,0 +1,33 @@
+{
+  "why": "The page kit is what every screen composes around Page: summary line, card grid, query ladder, empty state, overlays and the frame-only size class.",
+  "what": "packages/basalt-ui/src/page/{page-summary,card-grid,query-state,empty-state,overlay-host,define-overlays,use-size-class}* and index.ts with tests, plus tests/layout/page-kit* and its v3 scenario.",
+  "owns": [
+    "packages/basalt-ui/src/page/{page-summary,card-grid,query-state,empty-state,overlay-host,define-overlays,use-size-class}*",
+    "packages/basalt-ui/tests/layout/{page-kit*,fixture/v3/scenarios/page-kit*}"
+  ],
+  "shared_append_only": ["packages/basalt-ui/src/page/index.ts"],
+  "must_not_touch": [
+    "packages/basalt-ui/{MIGRATING.md,llms.txt,scripts/contract-pins.json,scripts/check-budgets/**,src/*/contract.ts,src/{ui,tokens,lint}/**,agent/**}",
+    "CHANGELOG.md",
+    "other lanes' folders",
+    "packages/basalt-ui/src/{router,shell}/**",
+    "packages/basalt-ui/src/page/{page,page-bar,page-aside,section}*"
+  ],
+  "concept": "shell-nav-router#8 page kit owner; ARCHITECTURE#14 ownership, phases and states",
+  "contract": "concept 8 (page kit owner), 3.2; ARCHITECTURE 6 and 14 (Phase, QueryStateLike, Empty filtered, error kind forbidden or not-found); src/page/contract.ts, src/core/ports.ts. Frozen: never edit contract.ts or contract-pins.json; signal, then take the reversible default.",
+  "exemplar": "2.x src/dashboard/{page-summary.tsx (102), query-state.tsx (409), empty-state.tsx (128)}, src/common/query-state-like.ts, src/commands/define-overlays.ts (364, Mantine modals: rewrite), src/shell/use-size-class.ts; CardGrid is new (2.x grids: stat-group.tsx).",
+  "change": "PageSummary (facts line never opens a wrapped line with a middle dot, 2.x wave 37), CardGrid (one closed min prop, no column count, container tiers), QueryState (QueryStateLike ladder; paused without data reads Offline), EmptyState (one line of why, one action; filtered variant), defineOverlays plus OverlayHost on basalt-ui/ui/{dialog,sheet} (unknown key is a compile error; an app defining none ships none), useSizeClass (frame only; first client render equals server). The 7 symbols are exported from src/page/index.ts, appended in file order. Ships with: guarantee = type rows (CardGrid with a column count, unknown overlay key, EmptyState without why) and the viewport-keyed lint passing on these files; teach = JSDoc @example per symbol (rule bullets: v3-shell-i10-rules-rows); test = ported unit suites and tests/layout/page-kit.layout.test.ts for the facts line and CardGrid at 1440 and 390.",
+  "commits": "One PR, separate package and non-package commits (isolated-basalt-ui); conventional, empty scope, no attribution.",
+  "proof": "page-kit layout at 1440 and 390; no shot.",
+  "acceptance": [
+    "Ported query-state, empty-state, page-summary and use-size-class suites: executed counts at the v2.29.1 tag, recorded in the PR, may not fall; all pass",
+    "Layout: at 390 a wrapped facts line never begins with the dot separator and the dot of the line's first fact sits outside the clip",
+    "Layout: CardGrid tracks follow the closed min at 1440, 900 and 390 with no horizontal overflow",
+    "useSizeClass: renderToString and the first hydrate render agree (no mismatch warning), asserted in a test",
+    "OverlayHost mounted with an unknown key fails tsc; src/page/{define-overlays,overlay-host}* import no @mantine and no @base-ui/react",
+    "QueryState with paused-without-data renders the Offline copy; error kind 'forbidden' renders the forbidden copy",
+    "src/page/index.ts exports this Issue's 7 symbols and no name outside the ARCHITECTURE section 3 ./page row",
+    "make check passes"
+  ],
+  "out_of_scope": "ToastHost, RefreshButton and ConnectionIndicator (state and live lanes), Prose, Callout, Toc, ArticleLayout (ai-i2), Page and PageBar (I4), the useSizeClass-based aside form (I4 owns its use)."
+}

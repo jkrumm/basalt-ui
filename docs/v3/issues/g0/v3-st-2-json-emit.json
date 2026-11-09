@@ -1,0 +1,33 @@
+{
+  "why": "Literal hex has five hand copies (shutterflow share palette, rollhook webmanifest waiver, jkrumm theme-color metas, argo SURFACE.bg, email). JSON cannot hold var(), so one generated source replaces them.",
+  "what": "packages/basalt-ui/src/tokens/emit-json.ts (new) with test. Pure emitter; the CLI --format json dispatch and --check are v3-tok-t4-cli's. Needs v3-st-5-chart-vars (chart-N and seq-N values).",
+  "owns": ["packages/basalt-ui/src/tokens/emit-json*"],
+  "must_not_touch": [
+    "CHANGELOG.md",
+    "packages/basalt-ui/MIGRATING.md",
+    "packages/basalt-ui/llms.txt",
+    "packages/basalt-ui/scripts/check-budgets/**",
+    "**/contract.ts",
+    "packages/basalt-ui/src/ui/**",
+    "packages/basalt-ui/src/shell/**",
+    "apps/marketing/**",
+    "packages/basalt-ui/src/tokens/table.ts",
+    "packages/basalt-ui/src/cli/**",
+    "packages/basalt-ui/src/css/**"
+  ],
+  "concept": "static-framework-free#10 issue 2",
+  "contract": "docs/v3/concepts/static-framework-free.md section 3 row 4 and amendment A1 (section 10); docs/v3/concepts/tokens-visual.md section 4 (the --format json line).",
+  "exemplar": "src/tokens/emit-fallback.ts from v3-st-1-emitter (same config in, deterministic string out, same header contract).",
+  "change": "emitJson(config) returns the JSON text { $generated, $provenance, contract: 3, schemes: { light: { <role>: '#hex' }, dark: { ... } } }. Roles are the opaque ones in tokens-visual 3.2 (surfaces, inks, brand, status, plus chart-N and seq-N read from src/tokens/chart-vars, never recomputed). Header fields stand in for the two CSS comment lines. Key order and formatting are fixed so two runs are byte-equal. Values come from the same resolved table the CSS emit reads (hctToHex), never retyped. Decided: alpha mixes (hairline, hover, selected, scrim, -tint) are ABSENT, not flattened: static-framework-free section 3 row 4 and DIRECTION.md's literal-hex row (alpha mixes left open) say opaque roles only; the 'flattened per surface' wording in tokens-visual sections 4 and 3.2 is superseded. Do not add them. Rule: none. Skill snippet: none. Test: emit-json.test.ts.",
+  "commits": "One PR, separate package and non-package commits (isolated-basalt-ui); conventional, empty scope, no attribution.",
+  "proof": "Unit tests; no UI.",
+  "acceptance": [
+    "bun test packages/basalt-ui/src/tokens/emit-json.test.ts passes",
+    "For every role and scheme the JSON hex equals the colour computed from the CSS emit, chart-1..5 and seq-1..5 included",
+    "Two emits of one config are byte-equal",
+    "A different accent changes the brand, brand-fill and on-brand values and nothing in surfaces",
+    "No role named hairline, hover, selected, scrim or ending in -tint is present",
+    "make check exits 0"
+  ],
+  "out_of_scope": "CLI flags and --check wiring (v3-tok-t4-cli); consumers' manifests (consumer Issues)."
+}

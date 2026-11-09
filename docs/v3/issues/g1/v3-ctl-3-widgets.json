@@ -1,0 +1,39 @@
+{
+  "why": "Cards with their own control or a global binding need one precedence rule and a middleware order that retains globals and strips defaults without losing deep links.",
+  "what": "packages/basalt-ui/src/router/controls/{widgets,precedence,middleware,overrides}*. Created here.",
+  "owns": [
+    "packages/basalt-ui/src/router/controls/{widgets,precedence,middleware,overrides}*",
+    "packages/basalt-ui/src/router/controls/define*",
+    "packages/basalt-ui/tests/controls/golden/ctl3-*",
+    "packages/basalt-ui/docs/widgets.md"
+  ],
+  "shared_append_only": [
+    "packages/basalt-ui/src/router/index.ts",
+    "packages/basalt-ui/scripts/export-surface.json"
+  ],
+  "must_not_touch": [
+    "packages/basalt-ui/src/{ui,table,charts,cards,page,shell,content,ai,tokens,css,lint,controls}/**, src/router/nav*, packages/basalt-ui/agent/**",
+    "packages/basalt-ui/src/router/controls/{define,field,codec,brand}* except the two ctl-3 seam functions in define*",
+    "CHANGELOG.md, MIGRATING.md, llms.txt, scripts/check-budgets/**, other areas' migrations files",
+    "every contract.ts and src/core/ports.ts"
+  ],
+  "concept": "controls-url-state#10 issue 3",
+  "contract": "Frozen: ARCHITECTURE.md, this domain's contract.ts, src/core/ports.ts. Need a change: factory signal, take the reversible default. Read concepts/controls-url-state.md sections 3, 5, 9, 10 and evidence/gap-global-local-control-scope.md section 3 (prototype API). Scope model table in section 3: widget state is URL key w.<id>.<field>, scalar kinds only (enum, string, number, boolean), at most 2 fields per widget by type, w. is a reserved prefix.",
+  "exemplar": "evidence/gap-global-local-control-scope.md prototype tests (37, 7 precedence cases); flip ctl3-* in tests/controls/golden.",
+  "change": "defineControls gains retain, widget and middlewares through the two seam functions in define*. widgets on a page store; useSource() returns own, inherited or override; a widget bound to a global (widgets: { latency: { range: globals.field.range } }) inherits, shows the effective value and writes only its own w. key; precedence override > inherited > fallback; an override equal to the global still pins. middlewares [strip, retain] in that order, retain for page stores via retain: keys on a layout route. useOverrides() returns {keys, widgets, clearAll}. A widget handle's isDefault means 'no override'. Rule: none (ctl-8 flags a raw control on a widget handle). Skill: generated docs/widgets.md (where-does-state-live table). Tests: the 7 precedence cases, history replace on widgets, no re-render of a header pill or sibling card (memo), SSR.",
+  "commits": "One PR, separate package and non-package commits (isolated-basalt-ui); conventional, empty scope, no attribution.",
+  "proof": "bun test over src/router/controls with memory history, tsc on the type fixtures.",
+  "acceptance": [
+    "7 precedence cases pass, including deep link with override and global both set honours the override and rewrites nothing",
+    "a global handle used as a widget field and a multi or range widget field fail to type-check (@ts-expect-error fixtures)",
+    "a widget with 3 fields fails to type-check",
+    "clear() unsets a retained key (explicit undefined) and Reset overrides clears every w. key",
+    "SSR hydrate with an overridden widget: zero recoverable errors",
+    "all ctl3-* test.failing from ctl-1 are normal passing tests (or deleted with a reason in the PR body)",
+    "S8: retain on a layout route with six children keeps globals and strips defaults (router memory history)",
+    "make check exits 0",
+    "git diff --name-only lists only owned paths"
+  ],
+  "out_of_scope": "Rendering the cue (ControlView, ctl-4), FilterSet, ViewTabs, rememberOnEntry, saved views.",
+  "worker_tag": "lead high; may spawn one @implementer tagged [opus: Three-level state precedence and retain-delete middleware ordering] for the novel file group only"
+}

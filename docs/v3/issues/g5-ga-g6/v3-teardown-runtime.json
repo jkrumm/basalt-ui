@@ -1,0 +1,38 @@
+{
+  "why": "After the view layer is gone, the 2.x runtime (provider, commands, agent, theme-lab, guard, forms) has no importer. Section 6 refuses all of it; epos rejected basalt over peers it pulls in.",
+  "what": "Delete src/{provider,commands,router-tanstack,agent,theme-lab,guard,forms}/**, src/dev-dock*, src/{telemetry,query-client,register,surfaces,state,unwrap,vite-boot,vite-color-mix}* and src/cli/audit-allows.ts where v3 has replaced them; their package.json export keys, tests and root barrel lines.",
+  "owns": [
+    "packages/basalt-ui/src/provider/**",
+    "packages/basalt-ui/src/commands/**",
+    "packages/basalt-ui/src/router-tanstack/**",
+    "packages/basalt-ui/src/agent/**",
+    "packages/basalt-ui/src/theme-lab/**",
+    "packages/basalt-ui/src/guard/**",
+    "packages/basalt-ui/src/forms/**",
+    "packages/basalt-ui/src/dev-dock*",
+    "packages/basalt-ui/src/cli/audit-allows*"
+  ],
+  "shared_append_only": [
+    "packages/basalt-ui/src/index.ts",
+    "packages/basalt-ui/package.json",
+    "packages/basalt-ui/scripts/export-surface.json",
+    "packages/basalt-ui/migrations/areas/removed-2x.json"
+  ],
+  "must_not_touch": [
+    "packages/basalt-ui/src/{common,theme,format,tokens,core,data,router,page,shell,controls,charts,table}/**",
+    "consumer repos",
+    "CHANGELOG.md"
+  ],
+  "concept": "DIRECTION#6; migration-release#4.5",
+  "contract": "docs/v3/DIRECTION.md section 6, migration-release 4.5. PROVIDER_ONLY_CEILING in check-budgets retires with src/provider (the 2.x row; the v3 provider row is v3-spike-provider's). The same size exception as v3-teardown-views applies.",
+  "exemplar": "v3-teardown-views.",
+  "change": "Delete the paths above, after checking with `rg` that nothing outside them imports them (a miss means v3 still rests on 2.x: signal). Remove the 20,468-byte PROVIDER_ONLY_CEILING row. Remove the export keys and tests. Ships with: guarantee = make check and release-migrating --check; test = make check.",
+  "commits": "One PR, separate package and non-package commits (isolated-basalt-ui); conventional, empty scope, no attribution.",
+  "proof": "make check.",
+  "acceptance": [
+    "All listed directories are gone and rg -n 'from .*(provider|theme-lab|router-tanstack)' packages/basalt-ui/src returns only v3 paths",
+    "PROVIDER_ONLY_CEILING 20468 no longer appears in scripts/check-budgets",
+    "make check and release-migrating --check exit 0"
+  ],
+  "out_of_scope": "Theme, common, format and the peer set (v3-teardown-peers)."
+}

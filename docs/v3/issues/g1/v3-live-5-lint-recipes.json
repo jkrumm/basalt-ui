@@ -1,0 +1,33 @@
+{
+  "why": "Raw refetchInterval, EventSource and timer-driven invalidation bypass the live layer; the fix must be satisfiable, so the WebSocket recipe and teaching text ship with the rule.",
+  "what": "packages/basalt-ui/src/lint/rules/structure/data-primitive-live*, docs/recipes/websocket-transport.md, apps/playground/src/recipes/websocket-transport*, agent/skills/basalt-app/references/live*. Created here; the base rule file data-primitive* is gr-3b's.",
+  "owns": [
+    "packages/basalt-ui/src/lint/rules/structure/data-primitive-live*",
+    "packages/basalt-ui/docs/recipes/websocket-transport.md",
+    "apps/playground/src/recipes/websocket-transport*",
+    "packages/basalt-ui/agent/skills/basalt-app/references/live*",
+    "packages/basalt-ui/tests/agent/live-5*.test.ts",
+    "packages/basalt-ui/src/lint/rule-table.ts"
+  ],
+  "must_not_touch": [
+    "packages/basalt-ui/src/{ui,cards,charts,table,controls,shell,content,ai,router,tokens,css,data,core}/**, src/lint/** except rules/structure/data-primitive-live* and one rule-table.ts line, packages/basalt-ui/agent/** except where owns say",
+    "CHANGELOG.md, MIGRATING.md, llms.txt, scripts/check-budgets/**, other areas' migrations files",
+    "every contract.ts and src/core/ports.ts"
+  ],
+  "concept": "live-realtime#10 issue 5",
+  "contract": "Frozen: ARCHITECTURE.md, src/core/ports.ts. Need a change: factory signal, take the reversible default. Read concepts/live-realtime.md sections 3, 4, 5, 7, 10. Layers: channel L1 (react only), live L2 (./data), views L4 prop-fed (no Query in ./page). Rule id stays data-primitive (no new id). ARCHITECTURE 9 allows new EventSource or new WebSocket only inside a file that implements a Transport; the concept's E3 dropped the WebSocket clause: follow ARCHITECTURE 9 and gr-3b's form.",
+  "exemplar": "packages/basalt-ui/src/lint/rules/structure/data-primitive* and its fixtures from v3-gr-3b-structure-rest.",
+  "change": "Clauses gr-3b does not ship: a refetchIntervalInBackground key and literal staleTime 'static' on a liveQuery argument; message names the fix (liveQuery class). refetchInterval, new EventSource and invalidate timers stay gr-3b's data-primitive forms; this row adds no duplicate. Recipe websocket-transport (P9): adapter of at most 40 lines over a Bun.serve websocket in the test and fakeChannel; reconnect with cursor, 4401 terminal, ping as beats, abort closes the socket. basalt-app live reference: ladder, frame-to-roots table, indicator and age on every live surface, server checklist, cursorless mode, offline semantics, SSR and privacy, settle, reload, persist, multi-tab recipes. Rule: these clauses. Skill: references/live.md. Tests: RuleTester cases, P9.",
+  "commits": "One PR, separate package and non-package commits (isolated-basalt-ui); conventional, empty scope, no attribution; make sync-self its own commit.",
+  "proof": "bun test; playground typecheck compiles the recipe region.",
+  "acceptance": [
+    "RuleTester: each clause has one offender that fails with its fix message and one clean twin that passes",
+    "P9: the adapter is at most 40 lines, a 4401 close never retries and an abort closes the socket",
+    "the recipe region compiles in the playground typecheck; make gen-check is green for the recipe page",
+    "every prohibition in references/live.md carries a [lint:data-primitive] or [type:...] tag or is listed as not guarded (check-coverage passes)",
+    "make sync-self output (.claude/**) is committed on its own and sync --check exits 0 after it",
+    "make check exits 0",
+    "git diff --name-only lists only owned paths plus .claude/** from make sync-self (own commit)"
+  ],
+  "out_of_scope": "The channel, liveQuery, indicator, fixtures P4b and doctor offender seeding (sk rows), migration rows, console, argo."
+}

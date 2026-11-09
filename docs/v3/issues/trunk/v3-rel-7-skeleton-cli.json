@@ -1,0 +1,31 @@
+{
+  "why": "Pre-allocates the CLI dispatcher entries and the docs-format extractor so later CLI and skills lanes stop editing the dispatcher and the extractor's format.",
+  "what": "Three CLI verb stubs in packages/basalt-ui/src/cli and scripts/docs-format.ts with one test. Files new: scripts/docs-format.ts, scripts/docs-format.test.ts, the verb stub tests. Lands after v3-rel-7-skeleton.",
+  "owns": [
+    "packages/basalt-ui/src/cli/index.ts",
+    "packages/basalt-ui/src/cli/verbs-v3*",
+    "packages/basalt-ui/scripts/docs-format*",
+    "packages/basalt-ui/bin/basalt-ui.mjs"
+  ],
+  "must_not_touch": [
+    "packages/basalt-ui/package.json",
+    "packages/basalt-ui/src/{router,data,page,cards,ai,ui,lint,testing,css}/**",
+    "packages/basalt-ui/src/**/contract.ts",
+    ".github/**",
+    "docs/**"
+  ],
+  "concept": "docs/v3/concepts/migration-release.md#4.1 step 7",
+  "contract": "docs/v3/ARCHITECTURE.md 4.3 (eight verbs: init, sync, doctor, eject, migrate, tokens:css, shot, lint; unknown flag exits 1; one resolver) and docs/v3/concepts/skills-agent-layer.md 3.1 (extractor output: frontmatter name, use when, never when, subpath, peers, slots; JSDoc required on every public export). init, sync, doctor, tokens:css and shot exist in 2.x and stay. Insufficient contract: factory signal, reversible default, PR body says so.",
+  "exemplar": "The existing case dispatch in src/cli/index.ts (case 'tokens:css').",
+  "change": "Register eject, migrate and lint as verbs that print 'not implemented in this build' and exit 1; an unknown flag on any verb exits 1. Write scripts/docs-format.ts: types-only extractor output format (the frontmatter above, JSDoc-required rule) as a pure function with one test over a fixture export. Ships with: the verb test and the format test; no lint rule or skill snippet.",
+  "commits": "One PR; one `feat:` commit touching packages/basalt-ui/ only, no BREAKING CHANGE footer and no `!`. No attribution, never CHANGELOG.md.",
+  "proof": "bun test packages/basalt-ui/scripts/docs-format.test.ts and the CLI verb test; make check.",
+  "acceptance": [
+    "node packages/basalt-ui/bin/basalt-ui.mjs eject exits 1 printing 'not implemented'; the same for migrate and lint; any verb with --bogus exits 1.",
+    "init, sync, doctor, tokens:css and shot behave as before (the existing CLI tests pass unchanged).",
+    "docs-format.test.ts passes: a fixture export yields the six frontmatter keys, and an export without JSDoc is reported.",
+    "git diff --name-only origin/master...HEAD lists nothing outside the owned list.",
+    "make check passes."
+  ],
+  "out_of_scope": "Real verb behaviour (later lanes), make gen-check wiring, package.json."
+}

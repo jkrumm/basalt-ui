@@ -1,0 +1,30 @@
+{
+  "why": "Router wiring is plain TanStack options plus one adapter: no wrapper, no brand, and the three route defaults a missing pending component would otherwise silently disable.",
+  "what": "packages/basalt-ui/src/router/{defaults,nav-target}* and agent/templates/{_app*,__root,main,nav}.tpl. The shell migration rows are v3-shell-i10-rules-rows.",
+  "owns": [
+    "packages/basalt-ui/src/router/{defaults,nav-target}*",
+    "packages/basalt-ui/agent/templates/{_app*,__root.tpl,main.tpl,nav.tpl}"
+  ],
+  "shared_append_only": ["packages/basalt-ui/src/router/index.ts"],
+  "must_not_touch": [
+    "packages/basalt-ui/{MIGRATING.md,llms.txt,migrations/**,scripts/contract-pins.json,scripts/check-budgets/**,src/*/contract.ts,src/{ui,tokens,lint}/**}",
+    "CHANGELOG.md",
+    "other lanes' folders",
+    "packages/basalt-ui/agent/templates/{hook*,AGENTS-block*,DESIGN*}",
+    "packages/basalt-ui/src/router/nav/**"
+  ],
+  "concept": "shell-nav-router#8 I9; #3.4; #2 Router wiring",
+  "contract": "concept 3.4 and 2; src/router/contract.ts. Reads navFor and the direction function from I2's registry. Needs I4b (EmptyState) and I5 (AppShell) merged, and v3-sk-3 and v3-sk-5 for doctor check 12 and the skill-snippets harness. Frozen: never edit contract.ts or contract-pins.json; signal, then take the reversible default.",
+  "exemplar": "2.x src/provider/{create-router.tsx (168), router-options.test.tsx (232), route-defaults.tsx, route-transition.ts} and the stale 2.x agent/templates/{__root,main,nav}.tpl (BasaltShell, createBasaltRouter).",
+  "change": "routerDefaults() returns {options, link}: plain TanStack options (preload intent, preload stale 0, pending 300/300, structural sharing, scroll restoration with scrollToTopSelectors on data-scroll-restoration-id, defaultViewTransition types from nav direction), and a LinkComponent adapter holding the one cast. navTarget(linkOptions) returns an opaque NavTarget. Templates _app*, _app-error, _app-missing, _app-pending: pathless _app layout with AppShell, auth gate and Wrap; __root, main, nav rewritten to AppShell, routerDefaults, defineNav; RouteError branches on a structural status (403 forbidden, 401 session path, else crash copy), RouteMissing, RoutePending on EmptyState. Ships with: guarantee = doctor check 12 (three defaults) and router-search lint (lane I); teach = JSDoc @example and the templates (rule bullets: I10); test = defaults and nav-target unit tests plus a scratch-app doctor run.",
+  "commits": "One PR, separate package and non-package commits (isolated-basalt-ui); conventional, empty scope, no attribution.",
+  "proof": "Unit tests and a scratch app seeded from the templates; no UI shots.",
+  "acceptance": [
+    "routerDefaults().options is a plain object (prototype Object.prototype, no brand symbol) accepted by createRouter; a type-guard fixes it",
+    "navTarget result renders through the link adapter with no cast outside the adapter (tsc plus grep 'as never' returns none in src/router)",
+    "doctor check 12, run on a scratch app seeded from the templates, reports defaultPending, defaultError and defaultNotFound set, and fails when one is removed",
+    "The templates type-check against the built dist (skill-snippets harness, // @check); no BasaltShell or createBasaltRouter remains in agent/templates",
+    "src/router/index.ts exports navTarget and routerDefaults beside defineNav and nothing outside the ARCHITECTURE section 3 ./router row; make check passes"
+  ],
+  "out_of_scope": "AppShell registration of nav direction (I5), migration rows (I10), init and doctor code (v3-sk-3), Query ownership (BasaltProvider owns none)."
+}

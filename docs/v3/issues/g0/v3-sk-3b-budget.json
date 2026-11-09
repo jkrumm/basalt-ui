@@ -1,0 +1,31 @@
+{
+  "why": ".basalt/budget.json has no writer or schema in G0, yet lint exits 1 on a ceiling breach read from it, gr-5 diffs it against the base ref and doctor check 11 reads it. With no owner a consumer lead hand-writes the file, which is exactly what a ceiling forbids.",
+  "what": "New: packages/basalt-ui/src/cli/budget/** with tests: the Budget type, seedBudget(profile), readBudget, countBreaches and landBudget. No verb of its own: v3-sk-3 init calls seedBudget, v3-sk-4's lint and v3-sk-3a's doctor call the rest.",
+  "owns": ["packages/basalt-ui/src/cli/budget/**"],
+  "must_not_touch": [
+    "CHANGELOG.md",
+    "packages/basalt-ui/{MIGRATING.md,llms.txt}",
+    "packages/basalt-ui/scripts/check-budgets/**",
+    "**/contract.ts",
+    "packages/basalt-ui/src/{ui,shell}/**",
+    "apps/marketing/**",
+    "packages/basalt-ui/src/cli/{init,sync,doctor,lint,migrate}/**",
+    "packages/basalt-ui/src/lint/**",
+    "packages/basalt-ui/agent/**"
+  ],
+  "concept": "primitives-distribution#CE4",
+  "contract": "docs/v3/ARCHITECTURE.md section 2 (budget.json: ejects, adopted, waivers, escapes, profileFloor, raises[]) and section 3 (ceiling row); concepts/guardrails.md section 9 (consumer budgets: waivers new app 1 per 500 TSX lines, migrated app the landed count, ratchet down only); primitives-distribution.md CE4 (eject --raise is the only raise path and lands at G1).",
+  "exemplar": "packages/basalt-ui/scripts/check-budgets/ratchet.ts (base-ref compare via git show) from v3-unhot-budgets.",
+  "change": "Budget is the ARCHITECTURE section 2 type. seedBudget(profile) returns { ejects: 3, adopted: 0, waivers: 0, escapes: 3, profileFloor: profile, raises: [] }. readBudget refuses a missing field or a wrong type. countBreaches(budget, counts) lists every count above its ceiling. landBudget(counts, baseRef) writes waivers and escapes as the counted values: with no copy of the file at <default-remote-branch> (the migration PR) any value; with a base copy it refuses a value above it, names eject --raise and writes nothing. It never writes ejects, adopted, raises or profileFloor. Rule: none. Skill snippet: none. Test: temp git repos for the base-ref cases.",
+  "commits": "One PR, separate package and non-package commits (isolated-basalt-ui); conventional, empty scope, no attribution.",
+  "proof": "Unit tests over temp git repos.",
+  "acceptance": [
+    "bun test packages/basalt-ui/src/cli/budget exits 0",
+    "seedBudget('bridge') deep-equals the section 2 defaults and readBudget accepts it",
+    "readBudget rejects a missing waivers field and a string ejects",
+    "countBreaches names waivers when the count is 4 against a ceiling of 3",
+    "landBudget with no base copy writes 7; with a base copy of 3 it refuses 7, writes nothing and names eject --raise; with a base copy of 9 it writes 7",
+    "make check exits 0"
+  ],
+  "out_of_scope": "The verbs (init, lint, doctor), eject and --raise (G1), the weakened-config base-ref check (v3-gr-5)."
+}

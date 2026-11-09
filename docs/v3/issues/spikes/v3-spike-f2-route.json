@@ -1,0 +1,31 @@
+{
+  "why": "docs/v3/ARCHITECTURE.md section 11 F2: porting one real argo route against the frozen contract shows whether the contract forbids an edge a real route needs, while amendment is still cheap (gate G1).",
+  "what": "tools/spikes/f2-route/** (own package.json: react and react-dom 19.3.0, typescript 6.0.3, tailwindcss 4.3.5) and docs/v3/spikes/f2-route.md. Default route: argo apps/dashboard/src/routes/strength-tracker.tsx (FilterSet, workouts-table, sparkline-grid-chart); another only if it uses fewer of the five layers. Port into a scratch app with synthetic data, argo untouched. Layers: `./table`, Sparkline, StatGroup, FilterSet, the query client. tsconfig `paths` map `basalt-ui/<subpath>` to packages/basalt-ui/src (alias table: apps/playground/vite.config.ts).",
+  "owns": ["tools/spikes/f2-route/**", "docs/v3/spikes/f2-route.md"],
+  "must_not_touch": [
+    "CHANGELOG.md",
+    "root package.json, bun.lock, .gitignore, .oxlintignore",
+    "docs/v3/{concepts,issues}/**, docs/v3/ARCHITECTURE.md",
+    "other tools/spikes/* folders",
+    "consumer repos (scratch copies live in the OS temp dir)"
+  ],
+  "concept": "docs/v3/ARCHITECTURE.md section 11 F2",
+  "contract": "docs/v3/ARCHITECTURE.md sections 1 and 11 F2 and every contract.ts are frozen; amendments are the orchestrator's.",
+  "exemplar": "scripts/evidence/*.ts (one JSON result per run)",
+  "change": "Port the route using only the frozen public contract: no deep imports, no eject. `edgesForbidden` = every place the port needed something section 1's `app` row or a `Must not` column forbids (found by an import scan against the section 3 subpath list, tsc errors on missing contract surface, and a hand list `needs[]` with file:line). For each, say `amend` or `port` with the smallest shape. `deepImports` = import specifiers outside the published subpaths of section 3.",
+  "commits": "One non-package commit `chore: spike f2-route harness and verdict`, empty scope, no attribution.",
+  "proof": "Port rendered at 1800x1200 and 390x844, light and dark, shots under tools/spikes/f2-route/shots/, synthetic data; at most 3 rounds.",
+  "acceptance": [
+    "`node_modules/.bin/tsc --noEmit -p .` run in the spike folder after `bun install` exits 0",
+    "run.ts JSON has `edgesForbidden` (list), `needs` (list), `deepImports` (0), `ejects` (0)",
+    "`bun tools/spikes/f2-route/run.ts` exits 0, prints one JSON object with the keys above (0 = harness ran, not hypothesis held)",
+    "docs/v3/spikes/f2-route.md has headings Question, Method, Measurements, Verdict, Then, Affects and the `verdict` lines",
+    "`find tools/spikes/f2-route -name '*.test.*' -o -name '*.spec.*'` prints nothing",
+    "`git diff --name-only master...HEAD` lists only `owns` paths",
+    "`grep -rnE 'op://|\\.ts\\.net|192\\.168\\.|ghp_' tools/spikes/f2-route docs/v3/spikes/f2-route.md` prints nothing",
+    "`make check` passes"
+  ],
+  "out_of_scope": "The real argo cutover; fixing contract files; more than one route.",
+  "envelope": "Harness: tools/spikes/<dir>/ has its own package.json (exact pins); bun.lock and node_modules gitignored there (must_not_touch package.json and bun.lock = repo root only). Passes root oxlint; no *.test.* files; Chrome via the playwright-core pattern of packages/basalt-ui/tests/layout/harness.ts; docs/v3 on master before filing; synthetic data only, private repos as counts and hashed ids.",
+  "verdict": "`F2: PASS|REFUTED`: PASS iff tsc exits 0, `edgesForbidden` is empty, `deepImports` and `ejects` are 0; REFUTED then lists one `amend` or `port` line per edge. `Verdict:` equals F2; run.ts `verdict` the same."
+}

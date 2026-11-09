@@ -1,0 +1,34 @@
+{
+  "why": "G4 freezes the ./charts API and the Heatmap and BandStrip byte marginals so weatherorb and image-gateway cut over against a fixed surface.",
+  "what": "Gate files only: charts API budget, two marginals, the G4 fleet floor and rows. No source, consumer repo or release.",
+  "owns": [
+    "scripts/fleet.json",
+    "packages/basalt-ui/scripts/check-budgets/areas/{charts-api,charts-g4}*"
+  ],
+  "shared_append_only": ["packages/basalt-ui/scripts/contract-pins.json"],
+  "must_not_touch": [
+    "packages/basalt-ui/src/**",
+    "check-budgets index.ts, ratchet.ts, other areas files (G1 charts and provider-only rows are read only)",
+    "scripts/release.sh, .releaserc.json, .github/**",
+    "packages/basalt-ui/{MIGRATING.md,llms.txt,migrations/**}",
+    "fleet.json floors G0-G3 and rows not gate G4",
+    "CHANGELOG.md"
+  ],
+  "concept": "migration-release.md 3.3, 4.4, 5 (G4); quality-contract.md 6 (base0; route bars are consumer recipes); ARCHITECTURE.md section 3 (./charts: 10 symbols, +4 KB each for Heatmap and BandStrip).",
+  "contract": "Follow the shape v3-freeze-g1 and v3-freeze-g3 left in check-budgets/areas, fleet.json and contract-pins.json. v3-unhot-budgets owns the ratchet and raise rows, v3-fleet-status the fleet.json schema: read, change none.",
+  "exemplar": "v3-freeze-g3 (its PR): same files, commit split, acceptance style.",
+  "change": "(1) charts-api: ./charts exports exactly CartesianChart, Lines, Bars, Sparkline, MiniBars, Heatmap, BandStrip, ChartCard, defineSeries, chartCursor; an eleventh value export is red. (2) charts-g4: fixtures heatmap-marginal and band-strip-marginal, each = the three-kind fixture freeze-g1 seeded in areas/charts (read its name there) plus the kind, minus the same fixture without it, by the base0 method. Ceiling = measured +5% rounded up to 0.5 KB, at most 4.0 KB (above is an amendment, not a raise). No Sparkline, three-kind or provider-only change: those are freeze-g1's and v3-spike-provider's. (3) contract-pins.json: src/charts/contract.ts is already pinned by v3-rel-7-contracts or freeze-g1; add the key only if absent, never change one. (4) fleet.json: floors.G4 = {next: N, row: charts-frozen}, gaFloor at or above N, N = the integer make release-dry prints at the merge commit, re-read after the last rebase (as freeze-g3); say in the PR body that v3-release-g4-cut reconciles N if another cut lands first. The weatherorb apps/web and image-gateway rows (gate G4) come from v3-fleet-status; create them if absent, set profile parts on both, and waivers ceiling 8 and 6 where null (legacy counts, plus 5 native-input waivers on weatherorb; cutovers ratchet down). Never run make release. Rule: charts-api. Skill snippet: none. Tests: one red case per area file.",
+  "commits": "Two commits in one PR, package first: (1) feat: freeze G4 charts API and bundle marginals; (2) chore: set G4 fleet floor. Conventional, empty scope, no attribution.",
+  "proof": "make check; the seeded red cases.",
+  "acceptance": [
+    "make check exits 0 and check-budgets prints a charts-api row and both marginal rows within ceiling.",
+    "The charts-api test adds an eleventh ./charts value export in a fixture and expects red.",
+    "The charts-g4 test raises a marginal ceiling against a fake base file with no raise row and expects the ratchet to fail.",
+    "Both marginal ceilings are 4.0 KB or less.",
+    "check-contract-frozen exits 0 and contract-pins.json has no changed or removed key against origin/master.",
+    "fleet.json has floors.G4.next above floors.G3.next, floors.G4.row equal to charts-frozen, gaFloor at or above it, and floors.G4.next equals the N make release-dry prints at the PR head.",
+    "fleet-status.ts --gate G4 lists weatherorb apps/web and image-gateway, each with a waivers ceiling.",
+    "git diff --name-only origin/master...HEAD lists only paths matching owns."
+  ],
+  "out_of_scope": "Cutting the release (v3-release-g4-cut), fleet-status --probe, consumer cutovers, route bars, raising a ceiling, editing contract.ts."
+}

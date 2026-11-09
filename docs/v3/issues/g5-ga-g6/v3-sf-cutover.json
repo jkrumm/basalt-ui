@@ -1,0 +1,29 @@
+{
+  "repo": "shutterflow",
+  "why": "Shutterflow's desktop UI becomes v3 only when apps/desktop is replaced by desktop-v3 and the lab machine proves the suites; the factory cannot run them.",
+  "what": "One owner-run PR: replace apps/desktop's UI files with desktop-v3's, delete apps/desktop-v3, remove the UI_APP switch, regenerate only the changed visual baselines and name each.",
+  "owns": [
+    "apps/desktop/**",
+    "apps/desktop-v3/**",
+    "Makefile",
+    "e2e/**",
+    "package.json",
+    "bun.lock"
+  ],
+  "must_not_touch": ["apps/desktop/src-tauri/**", "crates/**", "apps/gallery/**"],
+  "concept": "migration-release#6.4 cutover row",
+  "contract": "docs/v3/concepts/migration-release.md 6.4 and ADR 0028 (docs/decisions/0028-visual-regression-gate.md): no bulk regeneration; `make e2e-visual-update` writes only images that changed, and the commit body names each changed baseline and its valueShifts reason. The owner reviews the image diff. Gate: v3-sf-e2e-rekey, -b and -c merged, v3-g1-gallery done. 34 PNG baselines today (`git ls-files 'e2e/desktop/**/*.png' | wc -l`).",
+  "exemplar": "ADR 0028's baseline-change rule; the 34 PNG baselines under e2e/desktop/visual/baselines.spec.ts-snapshots.",
+  "change": "Replace apps/desktop/{src,index.html,vite config,package.json} with the v3 files and delete apps/desktop-v3; src-tauri untouched; drop UI_APP and keep UI_DIR on apps/desktop/dist; move root basalt-ui pin to the v3 version and run `basalt-ui init --profile app` at the repo root; the fleet.json rows follow in basalt-ui (v3-fleet-cutover-rows). Run on the lab machine: `make check`, `make e2e`, `make e2e-visual-update`, then name each changed image and its valueShifts reason in the commit body. Rule: root doctor and lint pass. Skill snippet: none.",
+  "commits": "Owner session; conventional, empty scope, no attribution; the baseline commit separate with the body naming each image.",
+  "proof": "`make app` boots the replaced UI in the Tauri shell; owner's eye on Photos at 1024x700 and on every changed baseline.",
+  "acceptance": [
+    "`make check` exits 0 on the lab machine",
+    "`make e2e` exits 0 on the lab machine with 53 desktop specs run",
+    "`ls apps/desktop-v3` fails and `rg -n 'UI_APP' Makefile` returns no match",
+    "`git diff --stat origin/master -- apps/desktop/src-tauri crates` is empty",
+    "the baseline commit body lists each changed PNG name with a reason; unchanged images are untouched (`git diff --stat` lists no other PNG); `git show --stat` of it lists the same names",
+    "`rg -n '@mantine' package.json apps/desktop bun.lock` returns no match"
+  ],
+  "out_of_scope": "Gallery, src-tauri, new features, bulk baseline regeneration outside this PR."
+}

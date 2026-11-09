@@ -1,0 +1,38 @@
+{
+  "why": "Key-reading misses cheap bypasses (argo's real config has ignorePatterns, plugins, per-glob overrides). Linewatch disarmed a file by mentioning the token. The proof must be behavioural.",
+  "what": "New: packages/basalt-ui/src/lint/weakened.ts with test and packages/basalt-ui/test/fixtures/lint/weakened/**. A function doctor calls (check 11, v3-sk-3a); this Issue does not edit doctor.",
+  "owns": [
+    "packages/basalt-ui/src/lint/weakened*",
+    "packages/basalt-ui/test/fixtures/lint/weakened/**"
+  ],
+  "must_not_touch": [
+    "CHANGELOG.md",
+    "packages/basalt-ui/{MIGRATING.md,llms.txt}",
+    "packages/basalt-ui/scripts/check-budgets/**",
+    "**/contract.ts",
+    "packages/basalt-ui/src/{ui,shell}/**",
+    "apps/marketing/**",
+    "packages/basalt-ui/src/tokens/**",
+    "packages/basalt-ui/src/cli/**",
+    "packages/basalt-ui/agent/**",
+    "packages/basalt-ui/src/cli/doctor/**",
+    "packages/basalt-ui/src/lint/preset*",
+    "packages/basalt-ui/src/lint/rules/**"
+  ],
+  "concept": "guardrails#7",
+  "contract": "docs/v3/concepts/guardrails.md section 7 ('doctor weakened-guard checks' 1-5 and 'what a local check cannot do'), section 13 (Managed, weakened guard row).",
+  "exemplar": "packages/basalt-ui/src/cli/placement-engine.test.ts (fixture-driven check style) and tests/oxlint-preset-sync.test.ts.",
+  "change": "checkWeakenedConfig({ roots, runLint, baseRef }) returns one result per check. (1) Write a seeded offender into each declared root, run it, remove it in a finally, and it must fire; this catches a dropped extends, emptied jsPlugins, a widened ignorePatterns or .oxlintignore. runLint is injected: default spawns oxlint with the consumer config (v3-sk-4 passes the CLI runner later). (2) extends names the generated preset. (3) no managed id in rules or overrides[*].rules. (4) installed oxlint equals the preset pin. (5) .basalt/budget.json ejects and waivers do not exceed git show <default-remote-branch>:.basalt/budget.json; no base ref returns skipped, never passed. A required check that cannot run is reported skipped (it fails in doctor). Rule: none. Skill snippet: none. Test: weakened.test.ts over the fixture configs.",
+  "commits": "One PR, separate package and non-package commits (isolated-basalt-ui); conventional, empty scope, no attribution.",
+  "proof": "Fixture configs, one per bypass; a temp git repo for the base-ref case.",
+  "acceptance": [
+    "bun test packages/basalt-ui/src/lint/weakened.test.ts passes",
+    "A dropped extends, an emptied jsPlugins, a widened ignorePatterns, an .oxlintignore, a per-glob override turning a basalt rule off, and a wrong oxlint pin each fail with their check named",
+    "A healthy config passes all five",
+    "The seeded offender file is removed even when runLint throws",
+    "With no base ref, check 5 returns skipped, not passed; a raised ceiling against the base ref fails",
+    "make check exits 0"
+  ],
+  "out_of_scope": "The doctor shell and its 12 checks (v3-sk-3a), the lint verb (v3-sk-4), editing any consumer config.",
+  "test_layout": "Fixture trees live in packages/basalt-ui/test/fixtures/**, hidden from root lint, fmt and bun test by v3-test-roots; add no ignore lines."
+}

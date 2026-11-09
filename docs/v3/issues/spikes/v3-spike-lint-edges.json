@@ -1,0 +1,31 @@
+{
+  "why": "The guardrail design leans on edges nobody ran: native directive behaviour, Stop versus PostToolUse, preset wall time, `scanAllStrings`.",
+  "what": "tools/spikes/lint-edges/** (own package.json: oxlint 1.93.0, @shadcn/lint 0.2.5) and docs/v3/spikes/lint-edges.md. No v3 preset exists (gr-4 waits on this): the harness generates a synthetic preset, one JS plugin of 59 regex rules from a data array (one per form of docs/v3/concepts/guardrails.md section 4, at most 150 lines) plus the bought rules.",
+  "owns": ["tools/spikes/lint-edges/**", "docs/v3/spikes/lint-edges.md"],
+  "must_not_touch": [
+    "CHANGELOG.md",
+    "root package.json, bun.lock, .gitignore, .oxlintignore",
+    "docs/v3/{concepts,issues}/**, docs/v3/ARCHITECTURE.md",
+    "other tools/spikes/* folders",
+    "consumer repos (scratch copies live in the OS temp dir)"
+  ],
+  "concept": "docs/v3/concepts/guardrails.md section 13 S4-S8",
+  "contract": "docs/v3/concepts/guardrails.md section 13 S4 to S8 and section 15 (E3) are frozen.",
+  "exemplar": "scripts/evidence/*.ts (one JSON result per run)",
+  "change": "S4: native directive edges: comment-start (I1), `-- reason` on block directives, a rule configured `off`, suppressed-count re-lint for `deepRender` files. S5: does `no-arbitrary-values` flag `bg-(--vx-x)`. S6: `scanAllStrings` on a console copy; noise = findings on strings that are not classes. S7: median of 11 runs (1 warm-up) of the full synthetic preset on one 300-line TSX file. S8: same brief, Stop-only versus PostToolUse plus Stop, 10 seeded offenders, 3 repeats per arm; runner = the `implementer` role, hook = a harness stub; hooks are per session, so a lead that cannot vary them records `not run` plus the exact repro; never headless `claude -p`.",
+  "commits": "One non-package commit `chore: spike lint-edges harness and verdict`, empty scope, no attribution.",
+  "proof": "run.ts JSON plus the verdict doc; run twice, attach both outputs.",
+  "acceptance": [
+    "run.ts JSON has `s4.blockReasonParsed`, `s5.parenFormFlagged`, `s6.arrayFindings`, `s6.noisePct`, `s7.wallMs`, `s8.stopOnlyFindingsKept`, `s8.postPlusStopFindingsKept` (null when not run)",
+    "The doc labels the preset forms synthetic",
+    "`bun tools/spikes/lint-edges/run.ts` exits 0, prints one JSON object with the keys above (0 = harness ran, not hypothesis held)",
+    "docs/v3/spikes/lint-edges.md has headings Question, Method, Measurements, Verdict, Then, Affects and the `verdict` lines",
+    "`find tools/spikes/lint-edges -name '*.test.*' -o -name '*.spec.*'` prints nothing",
+    "`git diff --name-only master...HEAD` lists only `owns` paths",
+    "`grep -rnE 'op://|\\.ts\\.net|192\\.168\\.|ghp_' tools/spikes/lint-edges docs/v3/spikes/lint-edges.md` prints nothing",
+    "`make check` passes"
+  ],
+  "out_of_scope": "The preset generator or any rule; editing E3.",
+  "envelope": "Harness: tools/spikes/<dir>/ has its own package.json (exact pins); bun.lock and node_modules gitignored there (must_not_touch package.json and bun.lock = repo root only). Passes root oxlint; no *.test.* files; Chrome via the playwright-core pattern of packages/basalt-ui/tests/layout/harness.ts; docs/v3 on master before filing; synthetic data only, private repos as counts and hashed ids.",
+  "verdict": "Lines `S4`, `S6`, `S7`, `S8: PASS|REFUTED|not run`, and `S5: recorded (flagged|not flagged)` (never refuted). S4 REFUTED when the reason is not parsed on blocks (E3 per line only); S6 REFUTED when noise exceeds 5% of findings (own factory visiting arrays); S7 REFUTED above 1000 ms; S8 REFUTED when PostToolUse plus Stop does not keep at least 2 fewer offenders (mean) than Stop-only (ship Stop only). `Verdict: PASS` iff S4, S6, S7, S8 are PASS, REFUTED if any is, else `PENDING (not run: S8)`; run.ts `verdict` pass|refuted|pending."
+}

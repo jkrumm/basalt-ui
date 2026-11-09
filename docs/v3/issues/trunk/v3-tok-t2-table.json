@@ -1,0 +1,26 @@
+{
+  "why": "The 2.x palette is 220 names over two files; v3 is one table that emits 74 public names, with contrast guaranteed by gates and a refusal message instead of a silent bad accent.",
+  "what": "New pure modules in src/tokens: table.ts, ramps.ts, gates.ts, emit.ts (+ tests) and the derive.ts changes; the 2.x palette.ts and core.ts stay with their exports and nothing new imports them.",
+  "owns": ["packages/basalt-ui/src/tokens/**"],
+  "must_not_touch": [
+    "packages/basalt-ui/src/ui/**",
+    "packages/basalt-ui/src/css/**",
+    "packages/basalt-ui/src/{page,shell,cards,controls,table,charts,content,ai}/**",
+    "packages/basalt-ui/src/tokens/*.test.ts files from tok-t1 (convert todos only)"
+  ],
+  "concept": "docs/v3/concepts/tokens-visual.md#12 T2",
+  "contract": "docs/v3/concepts/tokens-visual.md 3.1-3.8 (pipeline, 74 names, surfaces, blue, earned colour, density, type, app tokens), 4 (API), docs/v3/ARCHITECTURE.md section 5 (token-to-Tailwind contract, PAIRS). Defaults pending the owner (DPO 5a-5e): accent #2e75b1 vibrancy +1, T19 dark card, radii 14/10/8/5; the verdict row may change only table.ts later. Do not hand-edit a hex; retune derive constants. Results of spike-token-surfaces fix the light ring and input boundary values. Insufficient contract: factory signal, reversible default, PR body says so. Frozen contracts are read-only.",
+  "exemplar": "src/tokens/derive.ts and gates in derive.test.ts; tok-t1 invariants.test.ts todos become real here.",
+  "change": "Build table.ts (surfaces canvas/inset/card/raised/surface, inks, brand, status, viz, shadow, radius, size, type, motion, rhythm, contract 3), ramps.ts and status-text carried, gates.ts (PAIRS across vibrancy, failure names gate, surface, ratio and the fix), emit.ts (deterministic CSS vars, VX types, check-tokens names, zone A denial list, two-line provenance header). Delete the stale calibration reference cited by derive.ts (d31). Ships with: gates.test.ts and emit snapshot as the guarantee; the zone A list feeds tw-off-law later (gr-1); skill text is tok-t4/st rows, none here.",
+  "commits": "One PR; package and non-package changes are separate commits (isolated-basalt-ui hook; root package.json, bun.lock, .oxlintrc.json, tests/ may ride with the package commit). Conventional, empty scope, no attribution, never CHANGELOG.md. `feat:` on the package commit only.",
+  "proof": "bun test packages/basalt-ui/src/tokens; emitted names counted.",
+  "acceptance": [
+    "bun test packages/basalt-ui/src/tokens passes and no tok-t1 test.todo remains for tok-t2.",
+    "A test asserts the emitted public --vx-* name set equals the 74 names of tokens-visual 3.2 and is at most 90.",
+    "gates.test.ts runs PAIRS on the default seed and the jkrumm accent across vibrancy; a failing gate message has the form 'fill-on-inset dark 2.91 < 3.0 for --accent <hex>'.",
+    "Emitting twice yields byte-identical CSS and the output starts with the two-line provenance header (snapshot test).",
+    "grep -rn \"from './palette'\\|from './core'\" packages/basalt-ui/src/tokens/{table,ramps,gates,emit}.ts returns nothing.",
+    "make check passes."
+  ],
+  "out_of_scope": "CSS files and Tailwind bridge (tok-t3), CLI (tok-t4), deleting palette.ts/core.ts, migration rows, any component."
+}

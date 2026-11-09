@@ -1,0 +1,30 @@
+{
+  "why": "guardrails S3: the `control-home` rung needs homes that leave few waivers; above 5 per app the homes are redesigned, not the rule (docs/v3/concepts/guardrails.md section 13; docs/v3/concepts/controls-url-state.md section 9).",
+  "what": "tools/spikes/control-home/** (own package.json: typescript 6.0.3) and docs/v3/spikes/control-home.md. Read-only scratch copies of argo (public) and shutterflow (private). Needs FilterSet and `spec` types from ctl-5; src/lint comes from ctl-8, which waits on this.",
+  "owns": ["tools/spikes/control-home/**", "docs/v3/spikes/control-home.md"],
+  "must_not_touch": [
+    "CHANGELOG.md",
+    "root package.json, bun.lock, .gitignore, .oxlintignore",
+    "docs/v3/{concepts,issues}/**, docs/v3/ARCHITECTURE.md",
+    "other tools/spikes/* folders",
+    "consumer repos (scratch copies live in the OS temp dir)"
+  ],
+  "concept": "docs/v3/concepts/guardrails.md section 13 S3; docs/v3/concepts/controls-url-state.md section 9",
+  "contract": "docs/v3/concepts/guardrails.md section 13 S3 and controls-url-state.md section 9 are frozen.",
+  "exemplar": "scripts/evidence/*.ts (one JSON result per run)",
+  "change": "Standalone AST scan of the predicate in controls-url-state.md section 9: JSX use of select, combobox, segmented, number-field, slider, switch, checkbox or radio-group with no lexical ancestor in the file among the homes. 2.x-to-v3 map (home-map.json): Select, MultiSelect, SegmentedControl, NumberInput, Slider, RangeSlider, Switch, Checkbox, Radio.Group to the primitive names; ancestors FilterSet, SelectFilter, MultiSelectFilter, RangeFilter, NumberFilter to FilterSet; ViewTabs; FormRow, FormGroup, FormSection, SettingsRow to FormField; `filterSlot` custom render; a component taking a field or store handle prop to the handle-bound composite. No 2.x name maps to `ControlHome`. Each residue site is `fits a home` iff its value already lives in a handle or form field, else `waiver` (its value is `useState` or plain props). Fixtures: body children, `filterSlot.custom` with `useState`, a handle-bound composite as `.fixture.txt` through the scan; the fourth (a global spec in a card slot) is a type error: compile it with tsc against ctl-5's types.",
+  "commits": "One non-package commit `chore: spike control-home harness and verdict`, empty scope, no attribution.",
+  "proof": "run.ts JSON plus the verdict doc; run twice, attach both outputs.",
+  "acceptance": [
+    "run.ts JSON has `argo.residue`, `argo.waivers`, `shutterflow.residue`, `shutterflow.waivers` and `fixtures` (four outcomes; the fourth `type-error`)",
+    "`bun tools/spikes/control-home/run.ts` exits 0, prints one JSON object with the keys above (0 = harness ran, not hypothesis held)",
+    "docs/v3/spikes/control-home.md has headings Question, Method, Measurements, Verdict, Then, Affects and the `verdict` lines",
+    "`find tools/spikes/control-home -name '*.test.*' -o -name '*.spec.*'` prints nothing",
+    "`git diff --name-only master...HEAD` lists only `owns` paths",
+    "`grep -rnE 'op://|\\.ts\\.net|192\\.168\\.|ghp_' tools/spikes/control-home docs/v3/spikes/control-home.md` prints nothing",
+    "`make check` passes"
+  ],
+  "out_of_scope": "The lint rule; changing FilterSet; porting either app.",
+  "envelope": "Harness: tools/spikes/<dir>/ has its own package.json (exact pins); bun.lock and node_modules gitignored there (must_not_touch package.json and bun.lock = repo root only). Passes root oxlint; no *.test.* files; Chrome via the playwright-core pattern of packages/basalt-ui/tests/layout/harness.ts; docs/v3 on master before filing; synthetic data only, private repos as counts and hashed ids.",
+  "verdict": "`S3: PASS|REFUTED` (REFUTED when either app has more than 5 waivers: redesign homes); `Verdict:` equals S3; run.ts `verdict` the same. The doc holds a table of residue sites by named home: file and line for argo, hashed ids and counts for shutterflow."
+}

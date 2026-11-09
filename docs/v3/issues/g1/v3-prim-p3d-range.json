@@ -1,0 +1,36 @@
+{
+  "why": "SegmentedControl (36 sites) and Slider (14) are the next most used Mantine controls; indicator, arrow order and committed-value semantics need own markup.",
+  "what": "packages/basalt-ui/src/ui/{slider,segmented}* (tsx, guards, tests, one grouped layout test and fixture). Created here. Split from v3-prim-p3b-select.",
+  "owns": [
+    "packages/basalt-ui/src/ui/{slider,segmented}*",
+    "packages/basalt-ui/docs/{slider,segmented}.md",
+    "packages/basalt-ui/tests/layout/{,fixture/}ui-range*"
+  ],
+  "shared_append_only": [
+    "packages/basalt-ui/src/ui/slots.ts",
+    "packages/basalt-ui/src/ui/no-restyle.generated.json",
+    "packages/basalt-ui/scripts/export-surface.json"
+  ],
+  "must_not_touch": [
+    "packages/basalt-ui/src/{page,shell,cards,controls,table,charts,content,ai,router,data,core,tokens,css,lint,cli,vite,testing}/**",
+    "packages/basalt-ui/agent/**",
+    "CHANGELOG.md, MIGRATING.md, llms.txt, scripts/check-budgets/**, other areas' migrations files",
+    "every contract.ts and src/core/ports.ts"
+  ],
+  "concept": "primitives-distribution#13 P3",
+  "contract": "Frozen: ARCHITECTURE.md, this domain's contract.ts, src/core/ports.ts. Need a change: factory signal, take the reversible default. Read concepts/primitives-distribution.md sections 4 (list), 12, 13 and ARCHITECTURE section 7. CE1 (useFormat). Q4 result in docs/v3/spikes/provider.md decides how Combobox and Toast strings are overridden: follow it. Strings: internal useMessages hook; none expected here, a needed key is a signal.",
+  "exemplar": "src/ui/button.tsx, button.guard.ts, scripts/gen-ui* (from v3-prim-p1-core, read in the tree): cva table, data-slot per part, guard, SLOTS.",
+  "change": "Slider (1 or 2 thumbs, locale through useFormat, commits on onValueCommitted). Segmented and SegmentedItem (options form, CSS-var indicator on single select, arrow order, multiple has no indicator). Rule: generated no-restyle contract per cva table. Skill: generated docs/<name>.md. Tests: primitive.contract plus one layout and axe test for the group.",
+  "commits": "One PR, separate package and non-package commits (isolated-basalt-ui); conventional, empty scope, no attribution.",
+  "proof": "Layout and axe tests in tests/layout/ui-range.layout.test.ts on tests/layout/fixture/ui-range-fixture.tsx at 1440, 768, 390, 320. No shot: a primitive has no reference image.",
+  "acceptance": [
+    "primitive.contract passes for slider and segmented",
+    "Segmented ArrowRight and ArrowLeft move selection in DOM order in a keyboard test; multiple draws no indicator",
+    "Slider onValueChange fires while dragging and onValueCommitted once on release; de-DE renders the value with a comma (test)",
+    "axe: zero serious or critical on the fixture; hit floor 24 fine and 44 coarse in the layout test",
+    "gen-ui check mode exits 0; docs/slider.md and docs/segmented.md exist",
+    "make check exits 0",
+    "git diff --name-only lists only owned paths"
+  ],
+  "out_of_scope": "No consumer migration, no playground route, no eject/sync work, no new variant axes beyond the concept table, no Mantine parity props (classNames, styles, asChild, unstyled). select and combobox (p3b); Toolbar roving across Segmented (p5c)."
+}

@@ -1,0 +1,32 @@
+{
+  "why": "externalField is 4.3's home for page and global memory state and supplies ControlHandle (controls Contract Exception 1). Nothing built it; only argo and shutterflow rows import it. The cross-tab origin flag and the memory and adapter recipes are also unowned.",
+  "what": "New: packages/basalt-ui/src/core/external-field* with tests and golden fixture, the storage origin flag inside src/core/persisted*, docs/recipes/{memory-state,storage-adapter}.md and playground recipes.",
+  "owns": [
+    "packages/basalt-ui/src/core/external-field*",
+    "packages/basalt-ui/docs/external-field.md",
+    "packages/basalt-ui/docs/recipes/{memory-state,storage-adapter}.md",
+    "apps/playground/src/recipes/{memory-state,storage-adapter}*"
+  ],
+  "shared_append_only": [
+    "packages/basalt-ui/src/index.ts",
+    "packages/basalt-ui/scripts/export-surface.json"
+  ],
+  "must_not_touch": [
+    "packages/basalt-ui/src/{ui,tokens,css,lint,shell,cards,charts,table,content,ai,page,data,controls,router}/**",
+    "CHANGELOG.md",
+    "every contract.ts and src/core/ports.ts"
+  ],
+  "concept": "state-persistence-forms#5; state-persistence-forms#9; controls-url-state#1.2",
+  "contract": "ARCHITECTURE sections 1, 3, 47 and 84 ('.' exports externalField; ControlHandle is structural, src/core/ports.ts). concepts/state-persistence-forms.md 5, 9 (cross-tab row, memory row), DIRECTION rows Memory global and Framework-owned preferences. Zustand stays a legal app dependency; its persist stays denied.",
+  "exemplar": "packages/basalt-ui/src/core/persisted* (ExternalStore shape, golden fixtures) from v3-state-1-persisted.",
+  "change": "externalField(store, selector?) returns a ControlHandle over any useSyncExternalStore-compatible store: read, set, subscribe, typed. Origin flag: a storage-event update carries an origin marker and never schedules a write (echo loop test across two tabs, in src/core/persisted* only as this one change). Recipes: memory-state (externalField over a module store) and storage-adapter (the `setStorage` server adapter, with its adapter contract). Rule: none. Teach: the recipes and generated docs/external-field.md. Tests: the golden fixture and echo loop test.",
+  "commits": "One PR, separate package and non-package commits (isolated-basalt-ui); conventional, empty scope, no attribution.",
+  "proof": "bun test packages/basalt-ui/src/core/external-field*; make gen-check.",
+  "acceptance": [
+    "The external-field test binds a plain store and a Zustand-shaped store and both drive a ControlHandle consumer",
+    "A storage event from a second tab updates memory and schedules no write (echo test)",
+    "docs/recipes/{memory-state,storage-adapter}.md exist, each at most 60 lines, and make gen-check passes",
+    "make check exits 0 and git diff --name-only lists only owned and shared paths"
+  ],
+  "out_of_scope": "createSyncedState, notify, useFormDraft, Zustand itself, migration rows."
+}

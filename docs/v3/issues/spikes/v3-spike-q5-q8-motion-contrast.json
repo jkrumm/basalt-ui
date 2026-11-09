@@ -1,0 +1,35 @@
+{
+  "why": "Q5: one global reduced-motion clamp must not break Base UI exit animations. Q8: 3,694 axe `incomplete` colour-contrast nodes have unknown real ratios (docs/v3/concepts/quality-contract.md section 10; docs/v3/evidence/gap-a11y-i18n-print-contract.md).",
+  "what": "tools/spikes/motion-contrast/**, docs/v3/spikes/motion-contrast.md and the Q8 record docs/v3/evidence/q8-contrast-incomplete.md. Uses prim-p4's overlays and qa-i4's matrix (axe-core, @axe-core/playwright 4.14.0 in the spike's package.json). The clamp is a harness constant of at most 6 CSS lines (`animation-duration`, `transition-duration` 0.01ms) under `prefers-reduced-motion: reduce`.",
+  "owns": [
+    "tools/spikes/motion-contrast/**",
+    "docs/v3/spikes/motion-contrast.md",
+    "docs/v3/evidence/q8-contrast-incomplete.md"
+  ],
+  "must_not_touch": [
+    "CHANGELOG.md",
+    "root package.json, bun.lock, .gitignore, .oxlintignore",
+    "docs/v3/{concepts,issues}/**, docs/v3/ARCHITECTURE.md",
+    "other tools/spikes/* folders",
+    "consumer repos (scratch copies live in the OS temp dir)"
+  ],
+  "concept": "docs/v3/concepts/quality-contract.md section 10 Q5 Q8",
+  "contract": "docs/v3/concepts/quality-contract.md section 10 Q5 and Q8 are frozen.",
+  "exemplar": "scripts/evidence/*.ts (one JSON result per run)",
+  "change": "Q5: under `reducedMotion: 'reduce'` with the clamp, open and close dialog, sheet, popover, toast; an exit finishes when `document.getAnimations()` is empty and the element unmounts within 1 s. Q8: for each colour-contrast `incomplete` node of the matrix run (state it if below 3,694), screenshot its rect with its own text made transparent; background = the pixel whose luminance is farthest from the text colour; ratio = contrastRatio(text colour, that pixel). `pass` >= 4.5 (>= 3.0 for large text: 24 css px, or 18.66 bold); `fail` below; `unresolved` when off-screen, zero-sized, over video or canvas, or gradient text. `incompleteCeiling` = the node count x 1.05, rounded up.",
+  "commits": "One non-package commit `chore: spike motion-contrast harness and verdict`, empty scope, no attribution.",
+  "proof": "run.ts JSON plus the verdict doc; run twice, attach both outputs.",
+  "acceptance": [
+    "run.ts JSON has `q5.byPart` (part to `exitFinished`), `q8.population`, `q8.sampled`, `q8.pass`, `q8.fail`, `q8.unresolved`, `q8.incompleteCeiling`",
+    "docs/v3/evidence/q8-contrast-incomplete.md holds the Q8 counts and ceiling",
+    "`bun tools/spikes/motion-contrast/run.ts` exits 0, prints one JSON object with the keys above (0 = harness ran, not hypothesis held)",
+    "docs/v3/spikes/motion-contrast.md has headings Question, Method, Measurements, Verdict, Then, Affects and the `verdict` lines",
+    "`find tools/spikes/motion-contrast -name '*.test.*' -o -name '*.spec.*'` prints nothing",
+    "`git diff --name-only master...HEAD` lists only `owns` paths",
+    "`grep -rnE 'op://|\\.ts\\.net|192\\.168\\.|ghp_' tools/spikes/motion-contrast docs/v3/spikes/motion-contrast.md` prints nothing",
+    "`make check` passes"
+  ],
+  "out_of_scope": "The real clamp; the axe gate; WebKit.",
+  "envelope": "Harness: tools/spikes/<dir>/ has its own package.json (exact pins); bun.lock and node_modules gitignored there (must_not_touch package.json and bun.lock = repo root only). Passes root oxlint; no *.test.* files; Chrome via the playwright-core pattern of packages/basalt-ui/tests/layout/harness.ts; docs/v3 on master before filing; synthetic data only, private repos as counts and hashed ids.",
+  "verdict": "`Q5: PASS|REFUTED` (REFUTED when any exit never finishes: per-part `motion-reduce:` classes) and `Q8: PASS|REFUTED` (PASS = `q8.fail` is 0, so the ceiling on the count stands and coverage stays 'not covered'; REFUTED lists failing nodes for the owning Issues). `Verdict: PASS` iff both PASS; run.ts `verdict` the same."
+}

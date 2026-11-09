@@ -1,0 +1,38 @@
+{
+  "why": "Skeleton, scroll-area, separator and kbd are the quiet structure of every page and carry the skeleton-floor and focusable-scroller invariants; cards and tables wait for ui/skeleton.",
+  "what": "packages/basalt-ui/src/ui/{skeleton,separator,kbd,scroll-area}* (tsx, guards, tests, one grouped layout test and fixture). Created here (Spinner lives in skeleton*). Sibling: v3-prim-p5d-disclose owns tabs, accordion, collapsible.",
+  "owns": [
+    "packages/basalt-ui/src/ui/{skeleton,separator,kbd,scroll-area}*",
+    "packages/basalt-ui/docs/{skeleton,separator,kbd,scroll-area}.md",
+    "packages/basalt-ui/tests/layout/{,fixture/}ui-base*",
+    "packages/basalt-ui/src/core/messages/base.ts"
+  ],
+  "shared_append_only": [
+    "packages/basalt-ui/src/ui/slots.ts",
+    "packages/basalt-ui/src/ui/no-restyle.generated.json",
+    "packages/basalt-ui/scripts/export-surface.json"
+  ],
+  "must_not_touch": [
+    "packages/basalt-ui/src/{page,shell,cards,controls,table,charts,content,ai,router,data,core,tokens,css,lint,cli,vite,testing}/**",
+    "packages/basalt-ui/agent/**",
+    "CHANGELOG.md, MIGRATING.md, llms.txt, scripts/check-budgets/**, other areas' migrations files",
+    "every contract.ts and src/core/ports.ts"
+  ],
+  "concept": "primitives-distribution#13 P5",
+  "contract": "Frozen: ARCHITECTURE.md, this domain's contract.ts, src/core/ports.ts. Need a change: factory signal, take the reversible default. Read concepts/primitives-distribution.md sections 4 (list), 12, 13 and ARCHITECTURE section 7. Carried invariants: section 10 (skeleton floor, scroller focusable only while it scrolls). Strings: internal useMessages hook; English defaults in your owned src/core/messages/base.ts (qa-i2 seeds it).",
+  "exemplar": "src/ui/button.tsx, button.guard.ts, scripts/gen-ui* (from v3-prim-p1-core, read in the tree): cva table, data-slot per part, guard, SLOTS.",
+  "change": "ScrollArea (tabindex 0 only while it scrolls, replaces Mantine ScrollArea), Separator (hairline token, orientation), Skeleton and Spinner (motion-safe, equal height with content; spinner label key spinner.loading), Kbd (mod key per platform). Port the 2.x skeleton-floor test (src/table/skeleton-floor.test.tsx, copy: the 2.x original stays) and keep its assertions. Rule: generated no-restyle contract. Skill: generated docs/<name>.md. Tests: primitive.contract plus one layout and axe test for the group.",
+  "commits": "One PR, separate package and non-package commits (isolated-basalt-ui); conventional, empty scope, no attribution.",
+  "proof": "Layout and axe tests in tests/layout/ui-base.layout.test.ts on tests/layout/fixture/ui-base-fixture.tsx at 1440, 768, 390, 320. No shot: a primitive has no reference image.",
+  "acceptance": [
+    "primitive.contract passes for skeleton, separator, kbd and scroll-area",
+    "skeleton-floor assertions ported and green: a Skeleton box equals the content height it stands for",
+    "ScrollArea: tabindex is absent when content fits and 0 when it scrolls (layout test)",
+    "no CSS animation runs under reducedMotion: reduce for Skeleton and Spinner (getAnimations() empty)",
+    "axe: zero serious or critical on the fixture",
+    "gen-ui check mode exits 0; docs/<name>.md exists for each module",
+    "make check exits 0",
+    "git diff --name-only lists only owned paths"
+  ],
+  "out_of_scope": "No consumer migration, no playground route, no eject/sync work, no new variant axes beyond the concept table, no Mantine parity props (classNames, styles, asChild, unstyled). tabs, accordion, collapsible (p5d); Table primitive (exemplar-dense-table); toolbar, status, meter, progress (p5b, p5c)."
+}

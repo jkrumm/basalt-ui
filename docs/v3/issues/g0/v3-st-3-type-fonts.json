@@ -1,0 +1,41 @@
+{
+  "why": "A static page has no Tailwind utilities, so the seven-rung type ladder, base rules and faces ship as plain CSS, and the pre-paint script and setScheme must agree on every stored-value case (shutterflow cookie, legacy mantine key).",
+  "what": "Template source packages/basalt-ui/src/css/templates/{typography,fonts}.css (new), their generated outputs src/css/{typography,fonts}.css, and the scheme-parity cases. src/css/generate.ts (tok-t3) stays the only writer of the five CSS files and reads each template after the emitted vars; one allowed edit there: add the read of YOUR two templates if absent. themeScript and setScheme are tok-t3's (src/core/scheme*).",
+  "owns": [
+    "packages/basalt-ui/src/css/templates/{typography,fonts}.css",
+    "packages/basalt-ui/src/css/{typography,fonts}.css",
+    "packages/basalt-ui/test/fixtures/scheme-parity/**",
+    "packages/basalt-ui/tests/scheme-parity*",
+    "packages/basalt-ui/tests/typography*"
+  ],
+  "must_not_touch": [
+    "CHANGELOG.md",
+    "packages/basalt-ui/MIGRATING.md",
+    "packages/basalt-ui/llms.txt",
+    "packages/basalt-ui/scripts/check-budgets/**",
+    "**/contract.ts",
+    "packages/basalt-ui/src/ui/**",
+    "packages/basalt-ui/src/shell/**",
+    "apps/marketing/**",
+    "packages/basalt-ui/src/tokens/**",
+    "packages/basalt-ui/src/core/**",
+    "packages/basalt-ui/src/css/{prose,tokens,tailwind}.css",
+    "packages/basalt-ui/src/css/templates/prose.css"
+  ],
+  "concept": "static-framework-free#10 issue 3",
+  "contract": "docs/v3/concepts/static-framework-free.md section 4.1 (entries), section 8 P8 and P9 inputs, section 10 amendment A3; docs/v3/concepts/tokens-visual.md sections 3.7 and 4.",
+  "exemplar": "packages/basalt-ui/src/tokens/build-fonts-css.test.ts (2.x fonts emit test) and src/vite-boot.ts (2.x boot script).",
+  "change": "templates/typography.css: @layer basalt.type, text vars and :where(:root) base only plus the reduced-motion reset, no class selector. templates/fonts.css: @font-face only for @fontsource-variable/{nunito-sans,hubot-sans,jetbrains-mono}, unused weights not imported. Then run bun packages/basalt-ui/src/css/generate.ts and commit the regenerated outputs (never hand-edit them). Parity: test/fixtures/scheme-parity/cases.json is one table (stored value, cookie, legacy mantine-color-scheme-value, OS preference, default, expected data-theme); tests/scheme-parity.test.ts (fast loop, happy-dom) runs it against BOTH themeScript() and setScheme() so they cannot diverge; cases include cookie sf-color-scheme=dark with empty storage, throwing storage, auto meaning attribute absent, late setScheme re-stamp. Rule: none. Skill snippet: none.",
+  "commits": "One PR, separate package and non-package commits (isolated-basalt-ui); conventional, empty scope, no attribution.",
+  "proof": "Fast-loop parity tests; browser P8 and P9 are v3-st-7's.",
+  "acceptance": [
+    "bun test packages/basalt-ui/tests/scheme-parity.test.ts passes: both implementations produce the same data-theme for every case",
+    "bun test packages/basalt-ui/src/css passes (committed typography.css and fonts.css equal the generated output)",
+    "typography.css contains no class selector and no !important outside the reduced-motion block (tests/typography.test.ts)",
+    "fonts.css contains only @font-face rules (test)",
+    "Every rung's size and line height in typography.css equals the token table's value (test)",
+    "make check exits 0"
+  ],
+  "out_of_scope": "themeScript and setScheme implementation, prose.css, any Tailwind file, docs/static-site.md.",
+  "test_layout": "Runners in packages/basalt-ui/tests/**; fixture data in test/fixtures/**, which v3-test-roots hides from root lint, fmt and bun test. Add no ignore lines."
+}

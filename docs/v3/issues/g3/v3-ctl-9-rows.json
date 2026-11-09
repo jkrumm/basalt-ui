@@ -1,0 +1,32 @@
+{
+  "why": "Every removal needs a machine row (the rollhook lesson) and the controls surface is the largest hand-migration for argo, shutterflow, finances and email-gateway.",
+  "what": "packages/basalt-ui/migrations/areas/{controls,state}.json and tools/migrate-v3/controls/**.",
+  "owns": [
+    "packages/basalt-ui/migrations/areas/{controls,state}.json",
+    "tools/migrate-v3/controls/**",
+    "packages/basalt-ui/docs/recipes/remembered-values.md",
+    "apps/playground/src/recipes/remembered-values*"
+  ],
+  "shared_append_only": ["tools/migrate-v3/run.ts"],
+  "must_not_touch": [
+    "packages/basalt-ui/src/**",
+    "packages/basalt-ui/migrations/areas/{ui,shell,table,tokens,charts,cards}.json",
+    "tools/migrate-v3/{layout,imports,waivers,ledger,charts}/**",
+    "packages/basalt-ui/MIGRATING.md"
+  ],
+  "concept": "controls-url-state#10 issue 9",
+  "contract": "Read docs/v3/concepts/controls-url-state.md 9, state-persistence-forms.md 10, migration-release.md 3.2 (row schema), 7 (the report is a worklist, never an exemption). Ancestors: v3-unhot-migrating-llms (schema), v3-mig-codemod (run.ts, report), v3-mig-cli, v3-tok-t5-rows.",
+  "exemplar": "migrations/areas/tokens.json (rows); tools/migrate-v3/layout/** (codemod, fixture, report layout).",
+  "change": "One concern: controls and state migration. controls.json rows: createSearchStore to defineControls (key to id; URL-field persist removed: flag each site, emit the remember-on-entry recipe stub (write docs/recipes/remembered-values.md over navTarget, its four tested cases), storage action read-legacy of the basalt:<key> envelope once, delete if no recipe is adopted); createLocalStore with a URL field likewise; linkSearch by reference to typed Link; `...store.validateSearch(raw)` to extend() and migrating wrappers to aliases; `<FilterSet><SelectFilter/></FilterSet>` to specs with spec(handle, label, { options, clearable, placeholder }); FormSection to Section, FormActions to FormFooter, useFormSubmit to toSubmitErrors, 1.x useFormDraft key read once; DateRangePicker customPicker removed; useBasaltForm, inputProps, fieldKey to TanStack Form (manual). valueShifts: without the recipe a sidebar click opens the default window. Decision: createLocalStore with no URL field (persisted only) goes to `persisted(key, opts).use()`, in state.json: one row per line of the state-persistence-forms 10 table (createPersistedState, usePersistedOrLocal, notify*, storage actions), all manual: true, no codemod here. Codemod `run.ts controls <app-dir> --report <file>` does the mechanical rows (imports, FilterSet to specs, FormSection and FormActions renames) and writes a worklist keyed by reason. Ships: no rule or skill; tests tools/migrate-v3/controls/*.test.ts on pairs modelled on argo window-stores.ts and shutterflow Settings.",
+  "commits": "One PR, separate package and non-package commits (isolated-basalt-ui); conventional, empty scope, no attribution; make sync-self its own commit.",
+  "proof": "Fixtures input to expected, second run a no-op; migrate --check on a fixture importing SelectFilter exits 1 naming the row, 0 after `run.ts controls`.",
+  "acceptance": [
+    "make check passes, `bun test tools/migrate-v3/controls` is green and `run.ts controls` resolves.",
+    "controls.json and state.json validate against the row schema; ids are unique and every non-mechanical row has manual: true.",
+    "Every export of ./controls, ./forms and ./state in `git show v2:packages/basalt-ui/scripts/export-surface.json` that the v3 snapshot lacks has a row in controls.json or state.json (`release-migrating --check`).",
+    "A second codemod run changes no file; a flagged persist site yields a worklist entry with the recipe stub, never a silent deletion.",
+    "`git diff --name-only` lists only owned paths.",
+    "docs/recipes/remembered-values.md exists, its playground region compiles and make gen-check is green"
+  ],
+  "out_of_scope": "Other areas' rows, notify or synced code, running the codemod on a consumer."
+}
