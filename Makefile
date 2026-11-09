@@ -1,5 +1,5 @@
 .DEFAULT_GOAL := help
-.PHONY: help check verify deploy logs pre test layout build evidence compare release release-dry sync-self
+.PHONY: help check verify deploy logs pre test layout build evidence compare release release-dry sync-self merge-guard
 
 help: ## List targets
 	@grep -hE '^[a-z-]+:.*?## ' $(MAKEFILE_LIST) | awk 'BEGIN {FS = ":.*?## "}; {printf "  \033[36m%-14s\033[0m %s\n", $$1, $$2}'
@@ -73,3 +73,7 @@ release: ## Dry run, show the version bump, confirm, then publish to npm
 
 sync-self: ## Install basalt-ui's own shipped rules + skills into this repo's /.claude/ (dogfood)
 	@bun packages/basalt-ui/scripts/sync-self.ts
+
+# A lead runs this right before it merges its pull request: rebased on origin/master, generated files in sync, master's last finished CI run not red.
+merge-guard: ## Refuse unless the branch contains origin/master, generated files are in sync and master's last finished CI run is green
+	@bun scripts/merge-guard.ts
