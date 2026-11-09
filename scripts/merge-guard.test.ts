@@ -62,7 +62,16 @@ describe('evaluate', () => {
     const refusals = evaluate(ports())
     expect(refusals).toHaveLength(1)
     expect(refusals[0]).toContain('does not contain origin/master')
-    git(work, 'rebase', '-q', 'origin/master')
+    git(
+      work,
+      '-c',
+      'user.name=t',
+      '-c',
+      'user.email=t@example.com',
+      'rebase',
+      '-q',
+      'origin/master',
+    )
     expect(evaluate(ports())).toEqual([])
   })
 
