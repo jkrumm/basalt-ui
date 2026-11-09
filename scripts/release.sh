@@ -84,7 +84,7 @@ ci_green() {
     return 1
   fi
   ci=$(gh run list --workflow CI --branch "$branch" --event push --commit "$sha" \
-    --json status,conclusion --jq '.[0] | "\(.status)/\(.conclusion)"' 2>/dev/null) || ci=''
+    --json status,conclusion --jq 'if length == 0 then "" else .[0] | "\(.status)/\(.conclusion)" end' 2>/dev/null) || ci=''
   if [ "$ci" != "completed/success" ]; then
     echo "CI on ${sha:0:8} is '${ci:-no run}' — releases need a green CI on the exact head." >&2
     return 1
@@ -94,6 +94,8 @@ ci_green() {
 # package_commit_present <last_tag> <branch> <package_path>
 # A release needs at least one commit touching the package since the last tag: semantic-release no
 # longer path-filters, so a root-only `feat:` would otherwise cut a version with no package change.
+# It does not judge whether that commit is bump-eligible (a package `docs:` commit plus a root-only
+# `feat:` still passes); the dry run's computed version stays the human's check.
 # Returns 1 with the reason on stderr when `git log <last_tag>..origin/<branch> -- <package_path>`
 # is empty (or cannot be read).
 package_commit_present() {
