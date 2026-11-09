@@ -264,6 +264,17 @@ decision, not a step that follows merging — `release.yml` is `workflow_dispatc
 merged never means published: don't queue a release unasked. Release when there is a reason to —
 a consumer is blocked, a fix is wanted downstream — and say which version went out and why.
 
+## Factory leads (v3)
+
+- PR-only, rebase-merge only (never squash). Run `make merge-guard` before merging.
+- `packages/basalt-ui/**` and non-package changes are separate commits in one PR; `make sync-self` is its own
+  non-package commit. Never edit `CHANGELOG.md`.
+- `make check` builds first; `bun run pre` is the inner loop. A fresh worktree needs `bun install` and a package build.
+- `docs/waves/**` describes the dead wave process: work comes from Issues only.
+- Leads rest on `docs/v3/ARCHITECTURE.md` and `docs/v3/DIRECTION.md`, not `docs/V2-SPEC.md`.
+- v3 is rewritten in place on master and verified with `apps/playground` and `examples/*`, never against pinned
+  consumers.
+
 ## Key Principles
 
 - **Concise over verbose** — less code is better.
