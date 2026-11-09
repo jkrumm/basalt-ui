@@ -10,9 +10,9 @@ name: Deploy
 # packages/basalt-ui/, so marketing changes never produce a version. Gating this
 # on a release would mean the site never updates.
 #
-# Every master push, not just apps/marketing/** — the image also bakes root
-# package.json, bun.lock and tsconfig.json, so a dependency change alters the
-# built site with no marketing diff. Release commits carry [skip ci].
+# Only a push that touches apps/marketing/** (or this workflow) deploys; every
+# other master push leaves the site alone. workflow_dispatch redeploys by hand,
+# for example after a root package.json or bun.lock change the image also bakes.
 #
 # Every deploy also purges basalt-ui.com at Cloudflare's edge, so the year-long
 # edge cache (apps/marketing/nginx.conf) is never stale after a release. The
@@ -22,6 +22,7 @@ name: Deploy
 on:
   push:
     branches: [master]
+    paths: ['apps/marketing/**', '.github/workflows/deploy.yml']
   workflow_dispatch:
 
 permissions:

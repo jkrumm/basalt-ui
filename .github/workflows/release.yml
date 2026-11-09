@@ -42,9 +42,9 @@ jobs:
           PREV_TAG=$(git describe --tags --abbrev=0 2>/dev/null || echo "none")
 
           if [ "${{ inputs.dry_run }}" = "true" ]; then
-            node -r semantic-release-monorepo ./node_modules/.bin/semantic-release --dry-run
+            ./node_modules/.bin/semantic-release --dry-run
           else
-            node -r semantic-release-monorepo ./node_modules/.bin/semantic-release
+            ./node_modules/.bin/semantic-release
           fi
 
           NEW_TAG=$(git describe --tags --abbrev=0 2>/dev/null || echo "none")
@@ -57,4 +57,3 @@ jobs:
           fi
         env:
           GITHUB_TOKEN: ${{ secrets.RELEASE_TOKEN }} # must be PAT — github-actions[bot] has no bypass rights
-          MONOREPO_DIR: packages/basalt-ui
