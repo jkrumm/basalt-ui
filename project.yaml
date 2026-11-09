@@ -1,0 +1,6 @@
+apiVersion: factory/v2
+name: basalt-ui
+ship:
+  - paths: ['**']
+    via: pr
+leads: 1
