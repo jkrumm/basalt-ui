@@ -76,8 +76,12 @@ Remove the attribute entirely to skip preloading (useful for secondary/icon font
 ### 4. Reference in CSS
 
 The API injects a `--font-instrument-sans` CSS variable containing the
-`font-family` value. Basalt UI's `index.css` already maps this to the
-`--font-sans` token via:
+`font-family` value. Basalt UI's `index.css` does not read it: it sets
+`--font-heading` and `--font-body` to Instrument Sans and `--font-mono` to
+JetBrains Mono as literal stacks, and it declares no `--font-sans`.
+
+To use the Fonts API variables, add your own `@theme inline` block that maps
+them to the tokens:
 
 ```css
 @theme inline {
