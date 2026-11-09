@@ -1,5 +1,5 @@
 {
-  "why": "docs/v3/ARCHITECTURE.md section 11 F2: porting one real argo route against the frozen contract shows whether the contract forbids an edge a real route needs, while amendment is still cheap (gate G1).",
+  "why": "docs/v3/ARCHITECTURE.md section 11 F2: porting one real argo route against the frozen contract shows whether the contract forbids an edge a real route needs, while amendment is still cheap (G1 layer).",
   "what": "tools/spikes/f2-route/** (own package.json: react and react-dom 19.3.0, typescript 6.0.3, tailwindcss 4.3.5) and docs/v3/spikes/f2-route.md. Default route: argo apps/dashboard/src/routes/strength-tracker.tsx (FilterSet, workouts-table, sparkline-grid-chart); another only if it uses fewer of the five layers. Port into a scratch app with synthetic data, argo untouched. Layers: `./table`, Sparkline, StatGroup, FilterSet, the query client. tsconfig `paths` map `basalt-ui/<subpath>` to packages/basalt-ui/src (alias table: apps/playground/vite.config.ts).",
   "owns": ["tools/spikes/f2-route/**", "docs/v3/spikes/f2-route.md"],
   "must_not_touch": [

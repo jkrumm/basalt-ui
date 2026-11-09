@@ -1,31 +1,25 @@
 {
-  "why": "3.0.0 may publish only when every fleet package is merged and pinned on v3 and the config is flipped. The proof and the flip are mechanical and belong to a lead; the publish is the owner's (v3-ga).",
-  "what": "GA runbook steps 1 and 2 (migration-release 4.5): prove the fleet, remove the temporary `basalt.sibling` key and its resolver branch, flip master's release config. Nothing is published.",
-  "owns": [
-    ".releaserc.json",
-    "packages/basalt-ui/AGENTS.md",
-    "packages/basalt-ui/src/cli/resolver*",
-    "packages/basalt-ui/test/fixtures/sibling/**"
-  ],
+  "why": "3.0.0 may publish only when master is green end to end: make check, the playground and the example apps. The owner's go is requested from that evidence; nothing here publishes.",
+  "what": "Run the GA checks on master and record their output in docs/v3/verdicts/ga-checks.md. No code change, no release config change (master's .releaserc.json is already `branches: [\"master\"]`).",
+  "owns": ["docs/v3/verdicts/ga-checks.md"],
   "must_not_touch": [
-    "scripts/release.sh and release.test.ts (the gate changes only by a new CURRENT_MAJOR edit)",
+    "scripts/release.sh and release.test.ts",
     ".github/workflows/**",
     "CHANGELOG.md",
-    "consumer repos (bump Issues are v3-bump-*)"
+    "packages/basalt-ui/src/**"
   ],
   "concept": "migration-release#4.5 steps 1-2",
-  "contract": "docs/v3/concepts/migration-release.md sections 3.1, 4.3, 4.5 and exceptions 4, 6. The gate accepts 3.0.0 only with bump major and ga_ready=1 (`GA=1` and `fleet-status --ga` exit 0). The sibling key and its resolver branch were created by v3-cli-sibling; this Issue removes exactly that. Preconditions (ancestors): every G0-G5 gate row, both cutovers, v3-fleet-cutover-rows, the AI recipes and the epos probes.",
-  "exemplar": "The rel-4 gate table in scripts/release.test.ts and the 2.29.1 release record for the wording of the reason.",
-  "change": "1. `bun packages/basalt-ui/scripts/fleet-status.ts --ga` exits 0 (read only; if red, stop and report the rows). 2. A `packages/basalt-ui/` commit removes `basalt.sibling` from the resolver, its fixture and its tests (the undeclared-second-install refusal stays); then a separate `ci:` commit sets master's .releaserc.json branches to [\"master\"]. Rule: release.test.ts gate table stays green. Skill snippet: none.",
-  "commits": "Two commits in one PR: packages/basalt-ui/** apart from everything else (isolated-basalt-ui hook); `make sync-self` output its own non-package commit; conventional, empty scope, plain feat:/fix:/chore:/docs:, no feat! or BREAKING CHANGE, no attribution; rebase-merge. The `ci:` flip is its own commit.",
-  "proof": "fleet-status --ga output attached; `GA=1 make release-dry` after the flip prints 3.0.0 with dist-tag latest.",
+  "contract": "docs/v3/concepts/migration-release.md section 4.5. GA checks are `make check` on master, the playground build and the example apps. No consumer repo is a precondition. The `basalt.sibling` key created by v3-cli-sibling stays: argo and shutterflow need a second install after 3.0.0 is published; it is removed by the held cutover re-cut.",
+  "exemplar": "scripts/release.test.ts gate table for the wording of the reason.",
+  "change": "On a clean origin/master worktree: (1) `make check` (build, pre, layout, pack-test). (2) `bun --filter @basalt-ui/playground build`. (3) For each directory under examples/ that declares `basalt-ui`: `bun install` and `bun run build` there, listing the result. examples/react is pre-v3 and outside the workspace globs today; if it cannot build against the v3 package, say so in the page and in the owner's go request and leave it out of the green claim, not silently. (4) Write docs/v3/verdicts/ga-checks.md with the commit sha, the commands, their exit codes and any example left out. Nothing is published. Rule: none. Skill snippet: none.",
+  "commits": "One docs: commit for the page; conventional, empty scope, no attribution; rebase-merge.",
+  "proof": "ga-checks.md with sha and exit codes.",
   "acceptance": [
-    "`bun packages/basalt-ui/scripts/fleet-status.ts --ga` exits 0",
-    "`jq -c .branches .releaserc.json` prints [\"master\"]",
-    "`rg -n 'sibling' packages/basalt-ui/src/cli` returns no match and `bun test packages/basalt-ui/src/cli` passes, including a test that an undeclared second consumer is still refused",
+    "`make check` exits 0 on the recorded sha, the playground build exits 0, and every examples/* that declares basalt-ui is either green or named as left out with the reason (ga-checks.md)",
+    "`rg -n \"@mantine\" packages/basalt-ui/src` returns nothing and tests/required-peers.test.ts asserts an empty required-peer set",
     "`bun test scripts/release.test.ts` exits 0",
-    "`GA=1 make release-dry` prints 3.0.0 with dist-tag latest (dry run only; without GA=1 it must refuse 3.0.0)",
-    "rg -n \"@mantine\" packages/basalt-ui/src returns nothing and tests/required-peers.test.ts asserts an empty required-peer set"
+    "`git diff --name-only origin/master...HEAD` lists only docs/v3/verdicts/ga-checks.md"
   ],
-  "out_of_scope": "Running make release, npm deprecate or any publish, editing the version gate, consumer bumps, deleting tools/migrate-v3."
+  "out_of_scope": "Running make release, npm deprecate or any publish, editing the version gate, removing basalt.sibling, consumer repos, deleting tools/migrate-v3.",
+  "post_merge": "Orchestrator, on a clean master: `GA=1 make release-dry` prints 3.0.0, and without GA=1 the gate refuses it. Then ask the owner for the first publish; the go is his (v3-ga)."
 }

@@ -1,5 +1,5 @@
 {
-  "why": "The one designated breaking commit: it opens 3.0.0-next.N and pre-allocates every export, barrel and dependency so package.json stops being a shared hot file. CLI verbs and docs-format follow in v3-rel-7-skeleton-cli.",
+  "why": "The one designated breaking commit: its footer makes every dry run from here compute 3.0.0 (the gate refuses it until the owner's GA=1), and it pre-allocates every export, barrel and dependency so package.json stops being a shared hot file. CLI verbs and docs-format follow in v3-rel-7-skeleton-cli.",
   "what": "Additive skeleton in packages/basalt-ui: stub barrels, exports map, dependencies and peers, extended 2.x gates, regenerated llms.txt. 2.x keeps compiling, nothing is deleted. Size l by exception: about 17 files are 1-3 line stubs; under 600 lines or signal.",
   "owns": [
     "packages/basalt-ui/tsup.config.ts",
@@ -36,6 +36,6 @@
     "git log --format=%B origin/master..HEAD | grep -c '^BREAKING CHANGE:' prints 1, no subject contains '!:', no footer line exceeds 100 chars.",
     "git diff --name-only origin/master...HEAD lists nothing under src/cli, no contract.ts and no MIGRATING.md."
   ],
-  "out_of_scope": "CLI verbs, docs-format, deleting 2.x sources, Mantine removal, unhot, contracts, fleet.json, docs slimming.",
-  "post_merge": "Orchestrator, after merge on a clean master: make release-dry prints 3.0.0-next.1."
+  "out_of_scope": "CLI verbs, docs-format, deleting 2.x sources, Mantine removal, unhot, contracts, docs slimming.",
+  "post_merge": "Orchestrator, after merge on a clean master: `make release-dry` computes 3.0.0 and the gate refuses it without GA=1."
 }

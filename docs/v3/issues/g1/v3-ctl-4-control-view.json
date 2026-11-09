@@ -32,5 +32,5 @@
     "make check exits 0",
     "git diff --name-only lists only owned paths"
   ],
-  "out_of_scope": "ControlHome, filterSlot and ToolbarGroup homes (ctl-4b), FilterSet and the Filters (n) sheet (ctl-5), ViewTabs and globals (ctl-6), FormField (ctl-7), lint bodies (ctl-8), the owner verdict on the cue (v3-verdict-control-cue)."
+  "out_of_scope": "ControlHome, filterSlot and ToolbarGroup homes (ctl-4b), FilterSet and the Filters (n) sheet (ctl-5), ViewTabs and globals (ctl-6), FormField (ctl-7), lint bodies (ctl-8), the cue's review artifact (v3-verdict-control-cue)."
 }

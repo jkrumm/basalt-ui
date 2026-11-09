@@ -17,7 +17,7 @@
   "commits": "Package and non-package changes are separate commits in one PR (isolated-basalt-ui); conventional, empty scope, no attribution; never edit CHANGELOG.md.",
   "proof": "Unit and property tests; layout numbers are I1's suite once I5 mounts the frame.",
   "acceptance": [
-    "Ported projector suite: the executed test count of mobile-nav-model.test.ts at the v2.29.1 tag (recorded in the PR; 29 on master today) does not fall, and all pass",
+    "Ported projector suite: the executed test count of mobile-nav-model.test.ts on origin/v2 (recorded in the PR; 29 on master today) does not fall, and all pass",
     "Property test: for generated nav and coverage at most one phone row is current (never two aria-current)",
     "Two attention badges lit raise the dev assertion once; the rollup shows one warn colour",
     "Fold keys are unchanged: slugifyLabel on the 2.x labels matches the golden at src/shell/mobile-nav-model.test.ts line 651 ('  Awaiting Action! ' gives 'awaiting-action'), ported next to block-model",

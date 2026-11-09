@@ -1,6 +1,6 @@
 {
   "why": "Wave-1 spikes can refute signed contract text; fan-out must start from one amended contract, not fifteen local deviations. The lead cannot be raised per Issue, so the hard decisions are made by the tagged worker.",
-  "what": "Fold each spike result and the owner verdict into docs/v3/ARCHITECTURE.md, docs/v3/DIRECTION.md and the concepts, add one section 14 row per outcome, repin changed contract files.",
+  "what": "Fold each spike result into docs/v3/ARCHITECTURE.md, docs/v3/DIRECTION.md and the concepts, add one section 14 row per outcome, repin changed contract files.",
   "owns": [
     "docs/v3/ARCHITECTURE.md",
     "docs/v3/DIRECTION.md",
@@ -12,22 +12,21 @@
   "must_not_touch": [
     "packages/basalt-ui/src/** other than contract files",
     "docs/v3/spikes/**",
-    "docs/v3/verdicts/**",
     "docs/v3/issues/**"
   ],
   "concept": "docs/v3/ARCHITECTURE.md#14",
-  "contract": "docs/v3/ARCHITECTURE.md section 14 row format (Contract amendment | Change | Source, reason) and section 11 falsifiers (each 'refuted if' names the fallback). Inputs: docs/v3/spikes/{no-restyle,provider,synced,thin-skill,scroller,census,allow-padding,cn-breakpoints,lint-edges,hook-sync,controls-codegen,live-poller,token-surfaces,upstream-churn}.md and docs/v3/verdicts/statcard.md. Insufficient contract: factory signal, reversible default, PR body says so. Frozen contracts are read-only.",
+  "contract": "docs/v3/ARCHITECTURE.md section 14 row format (Contract amendment | Change | Source, reason) and section 11 falsifiers (each 'refuted if' names the fallback). Inputs: docs/v3/spikes/{no-restyle,provider,synced,thin-skill,scroller,census,allow-padding,cn-breakpoints,lint-edges,hook-sync,controls-codegen,live-poller,token-surfaces,upstream-churn}.md. Insufficient contract: factory signal, reversible default, PR body says so. Frozen contracts are read-only.",
   "exemplar": "Existing section 14 rows in ARCHITECTURE.md.",
   "change": "For each input write one outcome (confirmed or refuted) in its concept section and one section 14 row; apply each refuted spike's stated fallback to the text; where a contract.ts or ports.ts changes, edit it and recompute its pin with shasum -a 256. Tables use |-| separators. The hard decisions go to a tagged worker: spawn the implementer subagent with `[opus: Decides how each refuted spike changes signed contract text before fan-out; the lead cannot be raised per Issue]` in its description. Ships with: check-contract-frozen as the guarantee (the amendment commit subject is what lets a pin change pass); no skill or lint change here.",
   "commits": "`docs:` commit for docs/v3; a separate package commit with subject `chore: contract amendment <topic>` for contract files and pins (required by check-contract-frozen). No attribution.",
   "proof": "bun packages/basalt-ui/scripts/check-contract-frozen.ts; doc drift.",
   "acceptance": [
-    "Each of the 14 spike files and the verdict file is cited in docs/v3/ARCHITECTURE.md section 14 or in its concept's spike table with confirmed or refuted (grep -c per file name is at least 1).",
+    "Each of the 14 spike files is cited in docs/v3/ARCHITECTURE.md section 14 or in its concept's spike table with confirmed or refuted (grep -c per file name is at least 1).",
     "bun packages/basalt-ui/scripts/check-contract-frozen.ts exits 0 and any changed contract file has a changed pin.",
     "git log origin/master..HEAD --format=%s contains a subject starting 'chore: contract amendment' when a pin changed.",
     "grep -rn '|---' docs/v3/ARCHITECTURE.md docs/v3/DIRECTION.md docs/v3/concepts returns nothing new.",
     "bun packages/basalt-ui/scripts/check-agent-doc-drift.ts exits 0 and make check passes."
   ],
-  "out_of_scope": "Spikes not in this row's after list (table-fit, shell-frame, control-home, q3, q5-q8, f2, f3, epos probe, q2-map), implementation, the owner replies in docs/v3/DIRECTION.md section 8.",
+  "out_of_scope": "Spikes not in this row's after list (table-fit, shell-frame, control-home, q3, q5-q8, f2, f3, epos probe, q2-map), implementation.",
   "worker": "[opus: Decides how each refuted spike changes signed contract text before fan-out; the lead cannot be raised per Issue]"
 }

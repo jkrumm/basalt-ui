@@ -1,25 +1,23 @@
 {
-  "why": "latest moves to 3.0.0 only when every fleet package is merged and pinned on v3. The publish, the deprecate and the announcement are the owner's.",
-  "what": "The owner's part of the GA runbook (migration-release 4.5 steps 3-5): publish 3.0.0, deprecate 2.x, announce, then file the post-publish rows.",
-  "owns": ["packages/basalt-ui/AGENTS.md"],
+  "why": "The first 3.0.0 publish is the owner's go, asked for when the GA checks on master are green. This is the only release row in the plan.",
+  "what": "The owner's runbook: confirm ga-checks.md, publish 3.0.0, npm deprecate, announce; held consumer rows are re-cut after this.",
+  "owns": ["packages/basalt-ui/CHANGELOG.md"],
   "must_not_touch": [
-    "scripts/release.sh and release.test.ts (the gate changes only by a new CURRENT_MAJOR edit)",
+    "scripts/release.sh and release.test.ts",
     ".github/workflows/**",
-    "CHANGELOG.md",
-    "consumer repos (bump Issues are v3-bump-*)"
+    "consumer repos"
   ],
   "concept": "migration-release#4.5",
-  "contract": "docs/v3/concepts/migration-release.md 3.1, 4.5, 4.6. Dist-tags: 3.0.0 on latest, the first post-GA 2.x publish creates latest-2. `npm deprecate` is a login step with 2FA (U: npm lists no OIDC for it). The gate accepts 3.0.0 only with `GA=1` and `fleet-status --ga` exit 0.",
-  "exemplar": "The rel-4 gate table in scripts/release.test.ts and the 2.29.1 release record for the wording of the reason.",
-  "change": "Owner steps in order, after v3-ga-prep merged: see owner_steps. Rule: none. Skill snippet: none. Nothing here is run by an agent.",
-  "commits": "One docs: commit for the AGENTS.md date, empty scope, no attribution.",
+  "contract": "docs/v3/concepts/migration-release.md 3.1, 4.5. 3.0.0 publishes to latest, the only channel, under `GA=1`; the gate accepts it only with bump major and the flag. `npm deprecate` is a login step with 2FA (U: npm lists no OIDC for it).",
+  "exemplar": "scripts/release.test.ts gate table and the 2.29.0 release record for the reason wording.",
+  "change": "Owner steps after v3-ga-prep merged and docs/v3/verdicts/ga-checks.md is green: see owner_steps. Rule: none. Skill snippet: none. Nothing here is run by an agent.",
+  "commits": "None: semantic-release writes its own release commit.",
   "proof": "Registry output attached to the announcement.",
   "acceptance": [
     "owner-run: `GA=1 make release` computes 3.0.0, one confirmation on the number, exit 0 means the registry serves it (exit 3 = still propagating: rerun the poll, never re-release)",
-    "owner-run: `npm view basalt-ui dist-tags.latest` prints 3.0.0 and `npm view basalt-ui@2.29.0 deprecated` prints the message",
-    "owner-run: packages/basalt-ui/AGENTS.md names the 2.x end date as an ISO date (publish date plus 120 days, DPO 3)",
-    "owner-run: the post-publish rows are filed only after the first line above holds"
+    "owner-run: `npm view basalt-ui dist-tags.latest` prints 3.0.0 and `npm view basalt-ui@2.29.0 deprecated` prints the deprecation message",
+    "owner-run: held consumer rows are re-cut against the published 3.0.0 tree only after the first line holds"
   ],
-  "out_of_scope": "Anything an agent can run, editing the version gate, consumer bumps (filed after), deleting tools/migrate-v3.",
-  "owner_steps": "3. `GA=1 make release`: dry run first, one confirmation on 3.0.0, wait for exit 0 (registry serves 3.0.0 on latest; exit 3 = still propagating, rerun the poll, never re-release). 4. `npm deprecate \"basalt-ui@<3\" \"3.0.0 is latest. 2.x is fix-only until <date> via latest-2. Run: basalt-ui migrate --from <version>\"` (interactive). 5. Announce: the 2.x window end (publish date plus 120 days, DPO 3) in packages/basalt-ui/AGENTS.md and the 3.0.0 release notes; then file the v3-bump-* Issues."
+  "out_of_scope": "Anything an agent can run, editing the version gate, consumer migrations (held, re-cut after this), deleting tools/migrate-v3.",
+  "owner_steps": "1. Confirm docs/v3/verdicts/ga-checks.md is green for master's head. 2. `GA=1 make release`: dry run first, one confirmation on 3.0.0, wait for exit 0 (registry serves 3.0.0 on latest; exit 3 = still propagating, rerun the poll, never re-release). 3. `npm deprecate \"basalt-ui@<3\" \"3.0.0 is latest; 2.x stays on npm as published and receives no further releases. Run: basalt-ui migrate --from <version>\"` (interactive). 4. Announce in the 3.0.0 release notes; held consumer rows are re-cut and filed after this."
 }

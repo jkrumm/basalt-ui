@@ -1,20 +1,23 @@
 {
-  "why": "The shell is the first full-screen taste checkpoint; the owner's eye, not a reviewer score, decides before rb and obsidian cut over, and the DEFAULT-PENDING-OWNER shell choices get their answer.",
-  "what": "Owner row. The owner writes docs/v3/verdicts/shell.md after viewing the playground exemplar routes and, if a verdict changes tokens, edits packages/basalt-ui/src/tokens/table.ts. If filed, a lead only verifies the acceptance lines read-only (as v3-verdict-statcard).",
-  "owns": ["docs/v3/verdicts/shell.md", "packages/basalt-ui/src/tokens/table.ts"],
-  "must_not_touch": ["every other file"],
-  "concept": "shell-nav-router#6 Proof (Owner gate); IMPLEMENTATION-PLAN 'Device and owner rows, never filed'",
-  "contract": "Only the token table (src/tokens/table.ts) may change as a result of this verdict; component anatomy is already frozen. A rejection that needs anatomy changes is a new Issue.",
-  "exemplar": "docs/v3/verdicts/statcard.md from v3-verdict-statcard, if present, for format.",
-  "change": "Owner: capture basalt-ui shot rounds of apps/playground/src/routes/{index,settings,shell}.tsx at 1800x1200 and 390x844, dark and light, with the More sheet open at 390, the docked aside at 1800 (shell route) and the native chrome case (/shell?chrome=native-overlay at 1200x800). Write shell.md with: commit sha viewed; per exemplar (index, settings) one line 'verdict: accepted | token-changes: <names> | rejected'; one row per default with 'default | alternative' for: in-flow sticky PageBar band (alt: portal band region, spike S1 result read from docs/v3/spikes/shell-frame.md), own grid AppShell over shadcn Sidebar (DPO 17), fixed aside widths 320, 360, 480, 640, localStorage rail state, macOS overlay first, focus stays on the clicked link on route change, pane navigation resets scroll, AppShell on another router not offered, RTL non-goal (DPO 18).",
-  "commits": "One docs: commit with shell.md; a separate package chore: commit for table.ts if it changes; conventional, empty scope, no attribution.",
-  "proof": "The PNG paths (local, never committed) and the commit sha recorded in the file.",
-  "acceptance": [
-    "docs/v3/verdicts/shell.md exists and names the commit sha it graded",
-    "It contains one 'verdict:' line for each of routes/index.tsx and routes/settings.tsx, and names the shell route and native-chrome shots reviewed",
-    "It contains a default|alternative row for each of the 9 listed choices",
-    "A rejected or token-changes verdict lists the exact tokens or files, so a follow-up Issue can be filed from it",
-    "git diff --name-only origin/master...HEAD lists only docs/v3/verdicts/shell.md and, if tokens changed, packages/basalt-ui/src/tokens/table.ts, and then bun test packages/basalt-ui/src/tokens passes"
+  "why": "The shell is the first full-screen taste checkpoint; the owner reviews the rendered shell later and any token-level change then is a token-table edit. Nothing waits for it.",
+  "what": "docs/v3/verdicts/shell.md, a review page built from the playground exemplar routes. No code or token change; the 'verdict:' lines stay empty for the owner.",
+  "owns": ["docs/v3/verdicts/shell.md"],
+  "must_not_touch": [
+    "packages/basalt-ui/**",
+    "apps/**",
+    "everything outside docs/v3/verdicts/shell.md"
   ],
-  "out_of_scope": "Any code or token edit, device checks (iOS Drawer M1, VoiceOver M6; owner rows, never filed), argo calendar and shutterflow Photos exemplars (G5)."
+  "concept": "shell-nav-router#6 Proof (Owner gate); IMPLEMENTATION-PLAN 'Device and owner rows, never filed'",
+  "contract": "Rendered from playground fixtures. Only the token table (src/tokens/table.ts) may change from a later owner review; component anatomy is already frozen.",
+  "exemplar": "docs/v3/verdicts/statcard.md from v3-verdict-statcard, if present, for format.",
+  "change": "Capture shot rounds of apps/playground/src/routes/{index,settings,shell}.tsx at 1800x1200 and 390x844, dark and light, with the More sheet open at 390, the docked aside at 1800 (shell route) and the native chrome case (/shell?chrome=native-overlay at 1200x800), using the playground shots script (paths outside the repo, commit no images). Write shell.md with: commit sha viewed; per exemplar (index, settings) one empty 'verdict:' line for the owner; one row per default with 'default | alternative' for: in-flow sticky PageBar band (alt: portal band region, spike S1 result read from docs/v3/spikes/shell-frame.md), own grid AppShell over shadcn Sidebar (DPO 17), fixed aside widths 320, 360, 480, 640, localStorage rail state, macOS overlay first, focus stays on the clicked link on route change, pane navigation resets scroll, AppShell on another router not offered, RTL non-goal (DPO 18). Rendered review artifact from playground fixtures; the owner reviews it later and any change is a token-table edit in a follow-up Issue. Closes when the artifact is written; no factory Decision, no wait.",
+  "commits": "One docs: commit with shell.md; conventional, empty scope, no attribution.",
+  "proof": "The shot paths (local, never committed) and the commit sha recorded in the file.",
+  "acceptance": [
+    "docs/v3/verdicts/shell.md exists and names the commit sha it rendered",
+    "It has one empty 'verdict:' line for each of routes/index.tsx and routes/settings.tsx (the lead fills none) and names the shell route and native-chrome shots",
+    "It contains a default|alternative row for each of the 9 listed choices",
+    "git diff --name-only origin/master...HEAD lists only docs/v3/verdicts/shell.md"
+  ],
+  "out_of_scope": "Any code or token edit, deciding a verdict, device checks (iOS Drawer M1, VoiceOver M6; owner rows, never filed), argo calendar and shutterflow Photos exemplars."
 }

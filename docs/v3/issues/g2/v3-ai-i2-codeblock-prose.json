@@ -25,7 +25,7 @@
   "commits": "One PR, separate package and non-package commits (isolated-basalt-ui); conventional, empty scope, no attribution.",
   "proof": "basalt-ui shot of the gallery markdown region at 1800x1200 and 390x844, dark and light; at most 3 rounds.",
   "acceptance": [
-    "Ported toc-click-pin (27), toc-spy (10), code-block, callout and article-layout suites: executed counts at the v2.29.1 tag, recorded in the PR, may not fall; all pass",
+    "Ported toc-click-pin (27), toc-spy (10), code-block, callout and article-layout suites: executed counts on origin/v2, recorded in the PR, may not fall; all pass",
     "Fence registry: keys '__proto__' and 'constructor' never reach a renderer; a throwing renderer leaves the block text visible",
     "ArticleLayout meets ~/SourceRoot/basalt-ui-obsidian/packages/basalt-ui-obsidian/tests/render-note-view.test.tsx (read-only): meta row omitted without description or date, title once",
     "Layout: no horizontal overflow at 390; code scrolls in its own box; axe zero serious and critical on the markdown region",

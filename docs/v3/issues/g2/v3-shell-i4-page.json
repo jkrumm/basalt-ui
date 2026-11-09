@@ -24,7 +24,7 @@
     "Shell-less PageAside is a second column at @wide and a Sheet below; with no PageAside mounted no column or ghost is rendered (layout case)",
     "Cold load of /page#anchor lands the anchor below the band after the first --page-bar-h publish",
     "A second PageBar under one Page, and nested layouts each rendering one, raise the dev assertion in a test",
-    "Ported page-bar and page-aside unit suites: executed counts at the v2.29.1 tag, recorded in the PR, may not fall; type rows fail when each offender is removed",
+    "Ported page-bar and page-aside unit suites: executed counts on origin/v2, recorded in the PR, may not fall; type rows fail when each offender is removed",
     "Rendered Page output contains exactly one h1 in both modes",
     "src/page/index.ts exports this Issue's 4 symbols and no name outside the ARCHITECTURE section 3 ./page row; make check passes"
   ],

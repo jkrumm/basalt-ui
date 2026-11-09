@@ -29,5 +29,5 @@
     "src/testing/index.ts gains exactly one export line; nothing under src/testing is imported by a runtime subpath",
     "make check passes"
   ],
-  "out_of_scope": "Shell parts, native state (I8), InnerNav and the settings route (I7), the owner verdict (v3-verdict-shell), SLOTS (qa-i3)."
+  "out_of_scope": "Shell parts, native state (I8), InnerNav and the settings route (I7), the review artifact (v3-verdict-shell), SLOTS (qa-i3)."
 }

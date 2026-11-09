@@ -22,7 +22,7 @@
   "commits": "One PR, separate package and non-package commits (isolated-basalt-ui); conventional, empty scope, no attribution.",
   "proof": "bun test src/content src/core, incl. an SSR test (renderToString, hydrateRoot).",
   "acceptance": [
-    "P1: ported C1 to C9 tests pass; executed counts of sanitize.test.ts (59), markdown.test.tsx (38), block-split.test.ts (10) at the v2.29.1 tag, recorded in the PR, may not fall; blockSplit property: joined blocks equal the input",
+    "P1: ported C1 to C9 tests pass; executed counts of sanitize.test.ts (59), markdown.test.tsx (38), block-split.test.ts (10) on origin/v2, recorded in the PR, may not fall; blockSplit property: joined blocks equal the input",
     "P2: the 12 payloads of docs/v3/evidence/gap-performance-budgets-and-library-tiebreaks.md 5.2 plus //h, /\\h, /<TAB>/h, leading space, data:, streamdown:incomplete-image give no <img> and no <link rel=preload> through Markdown untrusted, also with sanitize={allowTags:['img']} and a rehypePlugins entry forced past the types",
     "renderToString of settled and streaming Markdown contains the text (no Suspense fallback) and hydrates without a mismatch warning",
     "Inlined obsidian fixtures: the real sanitizer keeps blockquote data-callout, -kind, -title, -fold, data-wikilink, img width and height, input checked, drops data-not-allowed (dashed spelling, via sanitize.allowAttrs)",

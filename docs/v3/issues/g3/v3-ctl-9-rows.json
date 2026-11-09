@@ -23,7 +23,7 @@
   "acceptance": [
     "make check passes, `bun test tools/migrate-v3/controls` is green and `run.ts controls` resolves.",
     "controls.json and state.json validate against the row schema; ids are unique and every non-mechanical row has manual: true.",
-    "Every export of ./controls, ./forms and ./state in `git show v2:packages/basalt-ui/scripts/export-surface.json` that the v3 snapshot lacks has a row in controls.json or state.json (`release-migrating --check`).",
+    "Every export of ./controls, ./forms and ./state in `git show origin/v2:packages/basalt-ui/scripts/export-surface.json` that the v3 snapshot lacks has a row in controls.json or state.json (`release-migrating --check`).",
     "A second codemod run changes no file; a flagged persist site yields a worklist entry with the recipe stub, never a silent deletion.",
     "`git diff --name-only` lists only owned paths.",
     "docs/recipes/remembered-values.md exists, its playground region compiles and make gen-check is green"

@@ -1,5 +1,5 @@
 {
-  "why": "docs/v3/concepts/migration-release.md section 5 puts a read-only epos bridge probe inside the G0 gate (epos, a committed v3 consumer, rejected basalt over required peers). DPO 16 (docs/v3/DIRECTION.md) deletes `--neutral` and `--selector` at G2 if the probe yields no tenant.",
+  "why": "docs/v3/concepts/migration-release.md section 5 puts a read-only epos bridge probe in the G0 layer (epos, a committed v3 consumer, rejected basalt over required peers). DPO 16 (docs/v3/DIRECTION.md) deletes `--neutral` and `--selector` at G2 if the probe yields no tenant.",
   "what": "tools/spikes/epos-bridge-probe/** and docs/v3/spikes/epos-bridge-probe.md. Input: an OS-temp copy of ~/IuRoot/epos-ai-teamchat-athena/ui (no .git, .env*, node_modules, dist), committed nowhere. Install: a `bun pm pack` tarball of packages/basalt-ui at the base commit; no employer registry or credential. If peers cannot resolve from public npm, derive `peersAdded` from the tarball's peerDependencies against the copy's package.json; `frozenInstallRun` false. After tok-t4-cli, sk-3-init-doctor, gr-4-preset; before v3-freeze-g0, which lists it in `after`.",
   "owns": ["tools/spikes/epos-bridge-probe/**", "docs/v3/spikes/epos-bridge-probe.md"],
   "must_not_touch": [

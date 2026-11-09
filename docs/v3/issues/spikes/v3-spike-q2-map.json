@@ -1,6 +1,6 @@
 {
-  "why": "docs/v3/concepts/quality-contract.md section 10 Q2 is the only proof of the 704 KiB weatherorb /map bar (provider at 5 KB sums to about 696 KiB, +/-15 KiB error). Gate G4.",
-  "what": "docs/v3/spikes/q2-map.md only. The port runs in an OS-temp scratch copy of weatherorb (read-only source, no commit there); commands and numbers go in the doc, no harness is committed. Needs charts-4, the provider spike. Install route: `bun pm pack` tarball of packages/basalt-ui at the base commit (record the SHA), installed into the copy; use a published `3.0.0-next.N` instead only if `npm view basalt-ui dist-tags` shows one built from that layer set. Scope: the first-load closure of `/map` only; stop and record `PENDING (blocked: <layer or file count>)` if it needs edits to more than 40 files, leaving the full port to g4-weatherorb.",
+  "why": "docs/v3/concepts/quality-contract.md section 10 Q2 is the only proof of the 704 KiB weatherorb /map bar (provider at 5 KB sums to about 696 KiB, +/-15 KiB error). G4 layer.",
+  "what": "docs/v3/spikes/q2-map.md only. The port runs in an OS-temp scratch copy of weatherorb (read-only source, no commit there); commands and numbers go in the doc, no harness is committed. Needs charts-4, the provider spike. Install route: `bun pm pack` tarball of packages/basalt-ui at the base commit (record the SHA), installed into the copy. Scope: the first-load closure of `/map` only; stop and record `PENDING (blocked: <layer or file count>)` if it needs edits to more than 40 files, leaving the full port to the held weatherorb row.",
   "owns": ["docs/v3/spikes/q2-map.md"],
   "must_not_touch": [
     "CHANGELOG.md",
