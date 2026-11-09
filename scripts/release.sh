@@ -11,7 +11,9 @@
 #   • a preflight (right branch, clean tree, in sync) before anything is dispatched — including
 #     `release-migrating.ts --check`, because `prepareCmd`'s MIGRATING rename runs in the `prepare`
 #     step, which a dry run SKIPS, so nothing else in the pipeline can catch a shape it can't fix;
-#   • a dry run first, ALWAYS, with the computed version read back before the real one is offered;
+#   • a CI-green preflight (`ci_green`: the newest non-release commit's CI run must be completed/success);
+#   • a dry run first, ALWAYS, with the computed version read back before the real one is offered,
+#     and a refusal when no commit since the last tag touches the package (`package_commit_present`);
 #   • the version gate (`version_gate`, tested in scripts/release.test.ts): only stable, non-major 2.x
 #     is releasable — packages/basalt-ui/MAINTAINING.md § The one sanctioned major;
 #   • the C16 grace gate against the COMPUTED version (`packages/basalt-ui/scripts/check-grace.ts`),
@@ -65,6 +67,47 @@ version_gate() {
   return 1
 }
 
+# ci_green <branch>
+# Releases need a green CI on the exact head. `chore: release …` commits carry [skip ci] and never
+# get a run, so the head that counts is the newest NON-release commit on the first-parent line of
+# origin/<branch>. Its push run of `CI` must be completed/success: a missing, running or red run
+# returns 1 with the reason on stderr (2.8.0 shipped on a red master).
+ci_green() {
+  local branch="${1:-}" sha ci
+  [ -n "$branch" ] || {
+    echo "CI preflight: no branch given." >&2
+    return 1
+  }
+  sha=$(git rev-list --first-parent -n1 --invert-grep --grep='^chore: release ' "origin/$branch" 2>/dev/null) || sha=''
+  if [ -z "$sha" ]; then
+    echo "CI preflight: no non-release commit found on origin/$branch." >&2
+    return 1
+  fi
+  ci=$(gh run list --workflow CI --branch "$branch" --event push --commit "$sha" \
+    --json status,conclusion --jq '.[0] | "\(.status)/\(.conclusion)"' 2>/dev/null) || ci=''
+  if [ "$ci" != "completed/success" ]; then
+    echo "CI on ${sha:0:8} is '${ci:-no run}' — releases need a green CI on the exact head." >&2
+    return 1
+  fi
+}
+
+# package_commit_present <last_tag> <branch> <package_path>
+# A release needs at least one commit touching the package since the last tag: semantic-release no
+# longer path-filters, so a root-only `feat:` would otherwise cut a version with no package change.
+# Returns 1 with the reason on stderr when `git log <last_tag>..origin/<branch> -- <package_path>`
+# is empty (or cannot be read).
+package_commit_present() {
+  local last_tag="${1:-}" branch="${2:-}" package_path="${3:-}" log
+  if ! log=$(git log --format=%h "${last_tag:+$last_tag..}origin/$branch" -- "$package_path" 2>/dev/null); then
+    echo "no-package-commit check: cannot read the history of $package_path since ${last_tag:-the beginning}." >&2
+    return 1
+  fi
+  if [ -z "$log" ]; then
+    echo "no commit touches $package_path since ${last_tag:-the beginning}: a release needs a package commit." >&2
+    return 1
+  fi
+}
+
 # Sourced (not run): stop here, before the release flow and before `set -euo pipefail`.
 if [ "${BASH_SOURCE[0]}" != "$0" ]; then
   return 0
@@ -115,6 +158,9 @@ current=$(git rev-parse --abbrev-ref HEAD)
 git fetch origin --quiet
 [ "$(git rev-parse HEAD)" = "$(git rev-parse "origin/$BRANCH")" ] ||
   die "local $BRANCH differs from origin/$BRANCH — push or pull first"
+
+# 2.8.0 shipped on a red master: the head being released must have a green CI run (`ci_green`).
+ci_green "$BRANCH" || die "CI is not green on the head being released (reason above) — fix master, then release."
 
 # MIGRATING's release-time `## Unreleased` → `## <version>` rename runs in `prepareCmd`, and
 # semantic-release SKIPS `prepare` in a dry run — so the dry run below cannot exercise it and a
@@ -221,7 +267,7 @@ release_run() {
 }
 
 # ── What is in it (local, exact, free) ───────────────────────────────────────
-last_tag=$(git describe --tags --abbrev=0 2>/dev/null || echo '')
+last_tag=$(git describe --tags --abbrev=0 --match 'v*' 2>/dev/null || echo '')
 range="${last_tag:+$last_tag..}HEAD"
 echo "── Since ${last_tag:-the beginning}, touching $PACKAGE_PATH ──"
 git log "$range" --format='  %h %s' -- "$PACKAGE_PATH"
@@ -235,6 +281,10 @@ if grep -q "no new version is released" <<<"$log"; then
   echo "No release: nothing since ${last_tag:-the beginning} bumps the version."
   exit 0
 fi
+
+# semantic-release no longer path-filters to the package, so a root-only `feat:` computes a version
+# on its own; refuse unless a commit since the last tag actually touches the package.
+package_commit_present "$last_tag" "$BRANCH" "$PACKAGE_PATH" || die "nothing to release (reason above)."
 
 version=$(grep -oE 'The next release version is [0-9]+\.[0-9]+\.[0-9]+[^ ]*' <<<"$log" |
   head -1 | grep -oE '[0-9]+\.[0-9]+\.[0-9]+[^ ]*')
