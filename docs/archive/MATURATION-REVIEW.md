@@ -6,7 +6,7 @@
 > provenance, not an action list.
 
 > Actionable synthesis of a multi-agent maturation pass over the working tree of
-> `feat/s0-mantine-pivot`. Aligns with [`STATUS.md`](./STATUS.md) — it does not re-open the
+> `feat/s0-mantine-pivot`. Aligns with [`STATUS.md`](../STATUS.md) — it does not re-open the
 > owner-gated finish line (push · PR · npm Trusted Publisher · review · release) or re-propose
 > anything in STATUS.md's "Deferred by design" list. This is the **quality backlog** to burn down
 > before/around that ship sequence, not a new roadmap.
