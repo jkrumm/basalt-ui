@@ -16,7 +16,7 @@
   "commits": "Package and non-package changes are separate commits in one PR (isolated-basalt-ui); conventional, empty scope, no attribution; never edit CHANGELOG.md.",
   "proof": "Unit and property tests; layout numbers come from I4's and I5's cases.",
   "acceptance": [
-    "Docking table equals the executed aside-docking cases at the v2.29.1 tag (9 on master today, count recorded in the PR, may not fall) plus dock 'always' rows at medium and expanded",
+    "Docking table equals the executed aside-docking cases on origin/v2 (9 on master today, count recorded in the PR, may not fall) plus dock 'always' rows at medium and expanded",
     "Claim lifecycle: mount A then B, unmounting A keeps B; a stale cleanup does not resurrect a folded claim; one kebab count",
     "A second PageBar under one Page raises the dev assertion once and renders nothing extra; band measure ignores height 0",
     "Property test: any mount and unmount order of nested claims leaves at most one live claim per region",

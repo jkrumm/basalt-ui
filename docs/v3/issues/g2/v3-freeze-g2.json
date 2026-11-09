@@ -1,10 +1,7 @@
 {
-  "why": "rb and obsidian may start only on frozen layers; the freeze checks the pins, seeds the budgets at measured values and records the next.N that carries the layer, so a later break needs a row.",
-  "what": "scripts/fleet.json (floors.G2 and gaFloor only), the page, shell, content and router budget files, and contract-pins.json. Prepares the cut; does not release.",
-  "owns": [
-    "scripts/fleet.json",
-    "packages/basalt-ui/scripts/check-budgets/{page,shell,content,router}*"
-  ],
+  "why": "The page, shell and content layers must be frozen by pins and measured budgets so a later break needs a row. A freeze step, not a release and not a consumer gate.",
+  "what": "The page, shell, content and router budget files and contract-pins.json. Config only.",
+  "owns": ["packages/basalt-ui/scripts/check-budgets/{page,shell,content,router}*"],
   "shared_append_only": ["packages/basalt-ui/scripts/contract-pins.json"],
   "must_not_touch": [
     "packages/basalt-ui/src/**",
@@ -13,22 +10,18 @@
     "packages/basalt-ui/migrations/**",
     ".releaserc.json",
     "scripts/release.sh",
-    "every consumer repo",
-    "fleet.json consumer rows (repo entries)"
+    "every consumer repo"
   ],
-  "concept": "migration-release#5 G2; #3.3 fleet.json floors; #4.4 next discipline",
-  "contract": "migration-release 3.3 and 4.4: a floor is the next.N carrying the gate's freeze row; gaFloor is the newest next.N that changed a frozen layer. Budgets seed at measured plus 5 percent and ratchet down only; a raise needs a named consumer outside argo. The ai contract is not frozen here (G6). rel-7-contracts pinned every contract.ts at creation; an added pin key passes.",
-  "exemplar": "v3-freeze-g1 and v3-freeze-g0 (same three files, other areas) for the row format.",
-  "change": "Measure with the existing check-budgets runner and seed per-area files: ./page 21 value symbols, ./shell 5, ./content 2 (exact), gzip ceilings for each subpath and the content 60 KB line, shell palette marginal 2.0 KB, largest authored file at most 500 lines over the v3 paths only (src/page/**, src/shell/{core,parts,commands}/**, src/shell/{app-shell,chrome,menu-template}*, src/router/**, src/content/{markdown,sanitize,block-split,code-block,fences,mermaid,headings}*; the 2.x files stay until the GA cleanup). ./router: freeze-g1 seeded it before defineNav, navTarget and routerDefaults landed, so re-seed it here at the measured value plus 5 percent, the raise naming rb and obsidian as consumers. Pins: confirm contract-pins.json holds the sha256 rows for src/{page,shell,router,content}/contract.ts from rel-7-contracts (add a missing key, no contract edit) and pin the value-export lists of ./page, ./shell, ./content. fleet.json: floors.G2 = {next: N, row: 'page-shell-frozen'} and gaFloor = N, where N is what make release-dry prints; no other field. Ships with: guarantee = check-contract-frozen and check-budgets on the new rows; teach = none; test = a seeded edit to src/page/contract.ts in a temp copy fails check-contract-frozen.",
-  "commits": "Package files (budgets, pins) and non-package files (scripts/fleet.json) are two commits in one PR; conventional chore:, empty scope, no attribution. Never run make release; the cut is the owner's make release.",
-  "proof": "make release-dry output and the check-budgets table pasted in the PR.",
+  "concept": "migration-release#5 G2",
+  "contract": "Budgets seed at measured plus 5 percent and ratchet down only; a raise needs a named consumer outside argo. The ai contract is not frozen here (G6). rel-7-contracts pinned every contract.ts at creation; an added pin key passes.",
+  "exemplar": "v3-freeze-g1 and v3-freeze-g0 for the row format.",
+  "change": "Measure with the existing check-budgets runner and seed per-area files: ./page 21 value symbols, ./shell 5, ./content 2 (exact), gzip ceilings for each subpath and the content 60 KB line, shell palette marginal 2.0 KB, largest authored file at most 500 lines over the v3 paths only (src/page/**, src/shell/{core,parts,commands}/**, src/shell/{app-shell,chrome,menu-template}*, src/router/**, src/content/{markdown,sanitize,block-split,code-block,fences,mermaid,headings}*; the 2.x files stay until the GA cleanup). ./router: freeze-g1 seeded it before defineNav, navTarget and routerDefaults landed, so re-seed it here at the measured value plus 5 percent, the raise naming rb and obsidian as consumers. Pins: confirm contract-pins.json holds the sha256 rows for src/{page,shell,router,content}/contract.ts from rel-7-contracts (add a missing key, no contract edit) and pin the value-export lists of ./page, ./shell, ./content. Ships with: guarantee = check-contract-frozen and check-budgets on the new rows; teach = none; test = a seeded edit to src/page/contract.ts in a temp copy fails check-contract-frozen.",
+  "commits": "Package files (budgets, pins) in one conventional chore: commit, empty scope, no attribution.",
+  "proof": "check-budgets table pasted in the PR.",
   "acceptance": [
-    "make release-dry prints 3.0.0-next.N and fleet.json floors.G2.next and gaFloor equal N",
     "check-contract-frozen passes with the pins and fails on a seeded edit of each of src/page/contract.ts, src/shell/contract.ts, src/router/contract.ts and src/content/contract.ts",
     "check-budgets passes on the page, shell, content and router rows; the PR table lists measured and seeded values, the largest-file measure and the router raise with its two consumers",
-    "git diff shows no change to src/**, migrations/** or any fleet.json repo entry; the fleet.json diff is limited to floors.G2 and gaFloor",
-    "bun packages/basalt-ui/scripts/fleet-status.ts --gate G2 lists rb and basalt-ui-obsidian as pending, not erroring",
-    "docs/v3/verdicts/shell.md exists (verdict-shell is closed); make check passes"
+    "git diff shows no change to src/** or migrations/**; make check passes"
   ],
-  "out_of_scope": "Releasing (owner's make release), consumer repos, G3 and later floors, the ai layer, code changes, deleting 2.x shell, dashboard and commands files."
+  "out_of_scope": "Releasing, consumer repos, G3 and later rows, the ai layer, code changes, deleting 2.x shell, dashboard and commands files."
 }

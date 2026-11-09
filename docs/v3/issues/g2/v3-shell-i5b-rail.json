@@ -26,7 +26,7 @@
     "First nav row has the same top offset expanded and collapsed; a badged row shows a visible dot in the collapsed rail",
     "Reload keeps the collapsed state under basalt:<storageKey> with the {v, value} envelope (golden basalt:argo-sidebar shape)",
     "S6 cluster (3 badges, 2 actions, job progress) at 1024, 1200, 1440: short labels below 1200, actions yield first, one kebab, nothing lost",
-    "Ported sidebar and account unit suites: executed counts at the v2.29.1 tag, recorded in the PR, may not fall",
+    "Ported sidebar and account unit suites: executed counts on origin/v2, recorded in the PR, may not fall",
     "No 'mantine' string under the owned paths; make check passes"
   ],
   "out_of_scope": "Frame, grid, skip link, print (I5), tab bar (I6), expectShellInvariants and the playground (I5c), Mod+B and commands (I8)."

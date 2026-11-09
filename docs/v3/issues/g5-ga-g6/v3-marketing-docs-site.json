@@ -1,5 +1,5 @@
 {
-  "why": "basalt-ui.com stayed frozen on the Tailwind and shadcn era through next (DPO 19). The docs site is the named consumer of mdxComponents and the public proof the framework looks and teaches as claimed. The rebuild is three Issues; this is the frame.",
+  "why": "basalt-ui.com stayed frozen on the Tailwind and shadcn era through the rewrite (DPO 19). The docs site is the named consumer of mdxComponents and the public proof the framework looks and teaches as claimed. The rebuild is three Issues; this is the frame.",
   "what": "Rebuild the frame of apps/marketing on the published v3: Astro kept, Starlight and the legacy stack replaced, layout with themeScript, home, getting started, the four profiles, the content sync and /llms.txt.",
   "owns": [
     "apps/marketing/{package.json,astro.config.mjs,tsconfig.json,components.json}",

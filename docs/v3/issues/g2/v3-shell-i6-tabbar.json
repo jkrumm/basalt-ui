@@ -19,7 +19,7 @@
   "proof": "shell-mobile-nav layout at 390x844 and 1024; the shot of the More sheet is I5c's.",
   "acceptance": [
     "LAYOUT_TARGET=v3 shell-mobile-nav: all 12 cases pass and the printed skip count for that file is 0",
-    "Ported app-mobile-nav unit suite: executed count at the v2.29.1 tag (28 on master today), recorded in the PR, may not fall; all pass",
+    "Ported app-mobile-nav unit suite: executed count on origin/v2 (28 on master today), recorded in the PR, may not fall; all pass",
     "More sheet at 390x844 never exceeds min(72dvh,560) and scrolls inside; asserted by a layout case",
     "Tapping the active tab scrolls shell-main to top first; a second tap with no movement does not re-navigate",
     "Every interactive tab-bar element measures at least 44 px (More row 48) under pointer coarse emulation",

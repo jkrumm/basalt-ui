@@ -1,6 +1,6 @@
 {
   "why": "Argo, shutterflow desktop-v3 and the gallery cutover run a second basalt install next to a live one. concept migration-release 6.1 marks the CLI behaviour for that as unbuilt (U), and no G0-G4 Issue builds it: without it argo's root `sync --check` exits 1 on two Vite packages and a lead would hand-write or rename generated files.",
-  "what": "The temporary `basalt.sibling` package key: resolver branch, app-scoped `init --profile app` and `sync`, the basalt-v3-* name prefix, placement skips, fixtures and tests. Removed at GA by v3-ga (it cites this Issue). Paths are under packages/basalt-ui/.",
+  "what": "The temporary `basalt.sibling` package key: resolver branch, app-scoped `init --profile app` and `sync`, the basalt-v3-* name prefix, placement skips, fixtures and tests. Stays in 3.0.0: argo and shutterflow run their second install after publish; removal belongs to the held cutover re-cut. Paths are under packages/basalt-ui/.",
   "owns": [
     "packages/basalt-ui/src/cli/{resolver,init,sync}*",
     "packages/basalt-ui/test/fixtures/sibling/**",
@@ -13,7 +13,7 @@
     "src/lint/**, src/{ui,page,shell,charts,table,controls,router,data,ai,content}/**"
   ],
   "concept": "migration-release#6.1, exception 6",
-  "contract": "docs/v3/concepts/migration-release.md 6.1 (the table is the spec) and exception 6 (temporary, removed at GA), 9.2 (an undeclared second install is still refused). F fixture: a repo root with `\"basalt\": {\"app\": \"apps/x\"}` and a second app `apps/x-v3` declaring `\"basalt\": {\"sibling\": true}`, each with its own basalt-ui copy.",
+  "contract": "docs/v3/concepts/migration-release.md 6.1 (the table is the spec) and exception 6 (temporary), 9.2 (an undeclared second install is still refused). F fixture: a repo root with `\"basalt\": {\"app\": \"apps/x\"}` and a second app `apps/x-v3` declaring `\"basalt\": {\"sibling\": true}`, each with its own basalt-ui copy.",
   "exemplar": "src/cli/sync tests (v3-sk-2) for render-and-compare fixtures; src/cli/init tests (v3-sk-3) for profile output.",
   "change": "Resolver: root `basalt.app` names the root-owned install, an app with `basalt.sibling` is a declared second install, any other second install is refused as before. `init --profile app` run in the app dir writes the app's .basalt/manifest.json, .oxlintrc.json extending the generated preset and AGENTS.md block; its rules go to the repo root as `.claude/rules/basalt-v3-*.md` with the app's rendered `paths:`, its skills as `.claude/skills/basalt-v3-<name>/`; when the repo already holds another sibling's basalt-v3-* files (shutterflow has apps/gallery and apps/desktop-v3) the names become `basalt-v3-<dirname>-*`; below the repo root it skips lefthook and check.yml and says so (two placement skips); it registers no hook at the root. Root `sync` and `sync --check` leave every `basalt-v3-*` name alone (no prune, no drift). The app's own bin `sync --check` and `doctor` exit 0. Rule: none new; the resolver refusal is the guard. Skill snippet: none. Tests: the fixture cases below.",
   "commits": "One PR, separate package and non-package commits (isolated-basalt-ui); conventional, empty scope, no attribution; make sync-self its own commit.",
@@ -28,5 +28,5 @@
     "a second sibling in the same fixture gets `basalt-v3-<dirname>-*` names and neither app's files are overwritten",
     "`make check` exits 0"
   ],
-  "out_of_scope": "Consumer repos, the GA removal (v3-ga), cutover renames, new profiles, hook placement."
+  "out_of_scope": "Consumer repos, its removal, cutover renames, new profiles, hook placement."
 }

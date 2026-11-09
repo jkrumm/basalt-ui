@@ -26,5 +26,5 @@
   ],
   "out_of_scope": "Editing tokens; picking the final colours.",
   "envelope": "Harness: tools/spikes/<dir>/ has its own package.json (exact pins); bun.lock and node_modules gitignored there (must_not_touch package.json and bun.lock = repo root only). Passes root oxlint; no *.test.* files; Chrome via the playwright-core pattern of packages/basalt-ui/tests/layout/harness.ts; docs/v3 on master before filing; synthetic data only, private repos as counts and hashed ids.",
-  "verdict": "`S2: PASS|REFUTED|owner-eye` (PASS: `edgeSteps` <= 1; REFUTED: >= 2 with both >= 0.04; else owner-eye) and `S3: PASS|REFUTED` (PASS: both >= 3.00; REFUTED then: add a `--vx-input` pair). `Verdict: PASS` iff both PASS, REFUTED if either is, else `PENDING`. On PENDING tok-t2 proceeds with the concept default (ring kept) and the owner decides at v3-verdict-statcard. run.ts `verdict` pass|refuted|pending."
+  "verdict": "`S2: PASS|REFUTED|owner-eye` (PASS: `edgeSteps` <= 1; REFUTED: >= 2 with both >= 0.04; else owner-eye) and `S3: PASS|REFUTED` (PASS: both >= 3.00; REFUTED then: add a `--vx-input` pair). `Verdict: PASS` iff both PASS, REFUTED if either is, else `PENDING`. On PENDING tok-t2 proceeds with the concept default (ring kept) and the owner reviews it later on the rendered artifact (v3-verdict-statcard, non-blocking). run.ts `verdict` pass|refuted|pending."
 }

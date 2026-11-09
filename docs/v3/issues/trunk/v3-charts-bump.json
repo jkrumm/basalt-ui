@@ -1,5 +1,5 @@
 {
-  "why": "charts S1: v3 inherits the engine, so the bump lands on 2.x behind the existing chart suite first; a red suite is fixed on 2.x, not in v3. Filed --after v3-rel-1-workflows: both Issues edit bun.lock.",
+  "why": "charts S1: v3 inherits the engine, so the bump lands first behind the existing 2.x chart suite, still on master until teardown; a red suite is fixed there, not in v3. Filed --after v3-rel-1-workflows: both Issues edit bun.lock.",
   "what": "@tanstack/charts 1.1.0 to the exact 1.5.0 (npm dist-tag latest on 2026-11-09; re-check `npm view @tanstack/charts version`, use the exact latest) in the package, playground, pack-test scratch install, the pins stated in prose and the generated llms.txt (its Install line is generated from the peer range); adapt src/charts only where the bump forces it. scripts/check-budgets.ts: a chart size ceiling may only be lowered here; if a row would need raising, file a factory signal naming the row and the delta and stop.",
   "owns": [
     "packages/basalt-ui/src/charts/**",
@@ -20,10 +20,10 @@
     "MIGRATING.md"
   ],
   "concept": "docs/v3/concepts/charts-cards-kanban.md#9 S1",
-  "contract": "docs/v3/concepts/charts-cards-kanban.md section 9 S1: pass = green except pinned engine-markup tests; fail = fix on 2.x first. Law kept: host.tsx is the only @tanstack/charts/react importer (MAINTAINING Layering). Insufficient contract: factory signal, reversible default, PR body says so. Frozen contracts are read-only.",
+  "contract": "docs/v3/concepts/charts-cards-kanban.md section 9 S1: pass = green except pinned engine-markup tests; fail = fix behind the existing 2.x suite first. Law kept: host.tsx is the only @tanstack/charts/react importer (MAINTAINING Layering). Insufficient contract: factory signal, reversible default, PR body says so. Frozen contracts are read-only.",
   "exemplar": "The repo's existing pin sites: package.json lines for peer and dev, pack-test.sh scratch_install line, MAINTAINING.md and AGENTS.md pin sentences.",
   "change": "Bump the exact pin everywhere it is stated, regenerate llms.txt (`bun packages/basalt-ui/scripts/gen-llms.ts`; make check runs gen-llms --check first), run the chart suite, fix what breaks inside src/charts. PR body lists every pinned engine-markup test that changed and why. Ships with: the existing basalt/chart-engine-boundary rule (unchanged), the basalt-charts skill (touch only if an import path changed), tests = the existing 45 chart test files plus every chart layout file (10 charts*.layout.test.ts and chart-card-subtitle-w43).",
-  "commits": "One PR; package commit first (package.json, src/charts, llms.txt, pack-test.sh, check-budgets.ts, MAINTAINING.md; `fix:` so rel-2 can ship it), then a non-package commit (apps/playground/package.json, AGENTS.md, bun.lock). Conventional, empty scope, no attribution, never CHANGELOG.md.",
+  "commits": "One PR; package commit first (package.json, src/charts, llms.txt, pack-test.sh, check-budgets.ts, MAINTAINING.md; `fix:`, it reaches consumers in 3.0.0), then a non-package commit (apps/playground/package.json, AGENTS.md, bun.lock). Conventional, empty scope, no attribution, never CHANGELOG.md.",
   "proof": "bun test packages/basalt-ui/src/charts; bun --config=./packages/basalt-ui/tests/layout/bunfig.toml test --timeout 60000 packages/basalt-ui/tests/layout/chart; pack-test.",
   "acceptance": [
     "grep -rnE '@tanstack/charts.{0,12}1\\.1\\.0' packages/basalt-ui/package.json packages/basalt-ui/llms.txt packages/basalt-ui/scripts/pack-test.sh packages/basalt-ui/MAINTAINING.md AGENTS.md apps/playground/package.json returns nothing, and those places name one identical exact version.",

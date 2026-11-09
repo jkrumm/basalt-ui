@@ -1,5 +1,5 @@
 {
-  "why": "A stray `feat!:` or BREAKING CHANGE footer bricks a release line (a major is only computed by those); after the designated commit they must fail at commit time and in CI.",
+  "why": "A stray `feat!:` or BREAKING CHANGE footer would compute a major past the one the owner authorised; after the designated commit (v3-rel-7-skeleton, the only source of 3.0.0) they must fail at commit time and in CI.",
   "what": "commitlint.config.ts gains a local no-breaking rule; new commitlint.config.test.ts tests it. @commitlint/lint and @commitlint/load are not installed (only cli, config-conventional, types): the test spawns ./node_modules/.bin/commitlint with the message on stdin; add no dependency.",
   "owns": ["commitlint.config.ts", "commitlint.config.test.ts"],
   "must_not_touch": ["packages/basalt-ui/**", ".github/workflows/**", "scripts/release.sh"],
@@ -15,5 +15,5 @@
     "git diff --name-only origin/master...HEAD lists only commitlint.config.ts and commitlint.config.test.ts (no package.json or lockfile change).",
     "No deploy.yml or release.sh change in the PR."
   ],
-  "out_of_scope": "v2 commitlint (rel-3), the revert/releaseRules recovery machinery, a feat/fix-must-touch-package rule."
+  "out_of_scope": "the revert/releaseRules recovery machinery, a feat/fix-must-touch-package rule."
 }

@@ -1,6 +1,6 @@
 {
-  "why": "The owner's taste checkpoint for the table before finances and email-gateway cut over; a table that fails on a phone costs every G3 consumer.",
-  "what": "One file, docs/v3/verdicts/table.md (created by this Issue): a Report the owner marks up afterwards. No code.",
+  "why": "The owner's taste checkpoint for the table, reviewed after the build; a change then is a token-table or token edit. Nothing waits for it.",
+  "what": "One file, docs/v3/verdicts/table.md (created by this Issue): a review page the owner marks up afterwards. No code.",
   "owns": ["docs/v3/verdicts/table.md"],
   "must_not_touch": [
     "packages/**",
@@ -9,9 +9,9 @@
     "docs/v3/concepts/**"
   ],
   "concept": "data-table#9 exemplar",
-  "contract": "Pattern: console-first-look (software-factory docs/plan.yaml). Read docs/v3/concepts/data-table.md sections 1, 6 and 9 (S1, S3, S4). v3-freeze-g3 refuses to start until the Verdict line is filled.",
+  "contract": "Pattern: console-first-look (software-factory docs/plan.yaml). Read docs/v3/concepts/data-table.md sections 1, 6 and 9 (S1, S3, S4).",
   "exemplar": "docs/v3/verdicts/statcard.md (v3-verdict-statcard) for section layout.",
-  "change": "Write the Report with sections Shots, Not built, Questions, Verdict. Shots: apps/playground/src/routes/table.tsx at 1800x1200 and 390x844, dark and light, taken with `basalt-ui shot` into /tmp/basalt-verdict-table/ (outside the repo, commit no images); the Report lists the eight file names. Not built: resize, reorder, shared views, tree, export, number and date operators. S1 VoiceOver result if the owner ran it. Questions, exactly three: phone default `cards` with Select mode and detail sheet; fixed-layout tiers at 1800x1200 against argo's catalog; grouping summary against docs/v3/inspo/x-reference.jpg plus the single c.select editor. Verdict: one empty line `Verdict: ` for the owner (accept, accept with changes or reject). The Issue closes when the Report is written; it does not wait for the owner.",
+  "change": "Write the Report with sections Shots, Not built, Questions, Verdict. Shots: apps/playground/src/routes/table.tsx at 1800x1200 and 390x844, dark and light, taken with `basalt-ui shot` into /tmp/basalt-verdict-table/ (outside the repo, commit no images); the Report lists the eight file names. Not built: resize, reorder, shared views, tree, export, number and date operators. S1 VoiceOver result if the owner ran it. Questions, exactly three: phone default `cards` with Select mode and detail sheet; fixed-layout tiers at 1800x1200 against argo's catalog; grouping summary against docs/v3/inspo/x-reference.jpg plus the single c.select editor. Verdict: one empty line `Verdict: ` for the owner (accept, accept with changes or reject). The Issue closes when the Report is written; no factory Decision, no wait.",
   "commits": "One docs: commit, empty scope, no AI attribution. REVIEW tier none.",
   "proof": "The artifact reads on desktop and phone; only the owner fills the verdict line.",
   "acceptance": [

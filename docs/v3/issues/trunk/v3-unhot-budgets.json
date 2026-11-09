@@ -5,22 +5,17 @@
     "packages/basalt-ui/scripts/check-budgets*",
     "packages/basalt-ui/scripts/check-budgets/**"
   ],
-  "must_not_touch": [
-    "packages/basalt-ui/src/**",
-    "packages/basalt-ui/scripts/fleet-status*",
-    ".github/workflows/**",
-    "apps/**"
-  ],
+  "must_not_touch": ["packages/basalt-ui/src/**", ".github/workflows/**", "apps/**"],
   "concept": "docs/v3/concepts/quality-contract.md#12 I1",
   "contract": "docs/v3/concepts/quality-contract.md section 6 (method, rows), 12 (I1 first, before fan-out) and docs/v3/concepts/migration-release.md 10 (ratchet). Keep scripts/check-budgets.ts and the exports runBudgets and isOwnGraphId so root pre, CI and check-budgets.test.ts keep working. No ceiling is raised; PROVIDER_ONLY keeps its value until spike-provider sets it. Existing rows are keyed by metric, not area, so areas are the lanes that edit them: surface (value symbols non-chart, barrel types, subpaths), charts (chart symbols, chart size rows), provider (PROVIDER_ONLY, dev chunks, embedded, feature chunks, theme-only), agent (rule lines), docs (spec prose), playground (route files), cli (CLI lines), gates (the consumer, peer and surface gate rows). Insufficient contract: factory signal, reversible default, PR body says so.",
   "exemplar": "Existing rows and label order in check-budgets.ts; check-budgets.test.ts for the tested seam.",
-  "change": "Create scripts/check-budgets/{index.ts,ratchet.ts,areas/<area>.ts}; index discovers area files by directory scan (a new lane adds its own file, never edits index); move each existing row whole into its area file with its current ceiling. Ratchet: compare each area file with `git show origin/master:<file>`; a higher ceiling needs a row {ceiling, from, to, consumer, repo} where repo is in scripts/fleet.json rows and is not argo. Fail closed with 'fleet.json missing' only when a raised ceiling needs that lookup (no raise, no failure, so make check passes before fleet.json lands); tests use a fixture. Ships with: the ratchet as the rule, no skill snippet, tests in check-budgets.test.ts.",
+  "change": "Create scripts/check-budgets/{index.ts,ratchet.ts,areas/<area>.ts}; index discovers area files by directory scan (a new lane adds its own file, never edits index); move each existing row whole into its area file with its current ceiling. Ratchet: compare each area file with `git show origin/master:<file>`; a higher ceiling needs a row {ceiling, from, to, consumer, repo} with repo a non-empty name other than argo, named in the PR body; tests use a fixture. Ships with: the ratchet as the rule, no skill snippet, tests in check-budgets.test.ts.",
   "commits": "One PR; package and non-package changes are separate commits (isolated-basalt-ui hook; root package.json, bun.lock, .oxlintrc.json, tests/ may ride with the package commit). Conventional, empty scope, no attribution, never CHANGELOG.md.",
   "proof": "bun run check-budgets output order and values identical before and after the split.",
   "acceptance": [
     "bun run check-budgets prints the same rows, values and ceilings as on origin/master (diff of the two outputs is empty).",
     "scripts/check-budgets.ts is under 60 lines and re-exports runBudgets and isOwnGraphId.",
-    "Tests: a raised ceiling with no row fails; with a row naming a fleet repo passes; a row naming argo fails; a lowered ceiling passes; no base file passes; a raise with no fleet.json fails closed with 'fleet.json missing'.",
+    "Tests: a raised ceiling with no row fails; with a row naming a repo other than argo passes; a row naming argo fails; a lowered ceiling passes; no base file passes.",
     "A test adds areas/zz-fixture.ts to a temp copy and index picks it up with no edit to index.ts or ratchet.ts.",
     "make check passes."
   ],

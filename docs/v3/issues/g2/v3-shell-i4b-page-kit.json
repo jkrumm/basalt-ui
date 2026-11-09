@@ -20,7 +20,7 @@
   "commits": "One PR, separate package and non-package commits (isolated-basalt-ui); conventional, empty scope, no attribution.",
   "proof": "page-kit layout at 1440 and 390; no shot.",
   "acceptance": [
-    "Ported query-state, empty-state, page-summary and use-size-class suites: executed counts at the v2.29.1 tag, recorded in the PR, may not fall; all pass",
+    "Ported query-state, empty-state, page-summary and use-size-class suites: executed counts on origin/v2, recorded in the PR, may not fall; all pass",
     "Layout: at 390 a wrapped facts line never begins with the dot separator and the dot of the line's first fact sits outside the clip",
     "Layout: CardGrid tracks follow the closed min at 1440, 900 and 390 with no horizontal overflow",
     "useSizeClass: renderToString and the first hydrate render agree (no mismatch warning), asserted in a test",
