@@ -1,0 +1,31 @@
+{
+  "why": "Parallel leads need frozen types to build against; a changed contract must fail the build unless an explicit amendment row changes the pin (docs/v3/evidence/ext-factory-process.md section 7).",
+  "what": "src/core/ports.ts (new), the frozen-contract gate and its pins, and the Makefile and ci.yml wiring. No implementation. The domain contract.ts files are the next Issue (v3-rel-7-contract-domains). New files: ports.ts, scripts/check-contract-frozen.ts and .test.ts, scripts/contract-pins.json.",
+  "owns": [
+    "packages/basalt-ui/src/core/ports.ts",
+    "packages/basalt-ui/scripts/check-contract-frozen*",
+    "packages/basalt-ui/scripts/contract-pins.json",
+    "Makefile",
+    ".github/workflows/ci.yml"
+  ],
+  "must_not_touch": [
+    "packages/basalt-ui/src/**/contract.ts",
+    "packages/basalt-ui/src/ui/**",
+    "any implementation file",
+    "Makefile lines other than the check target's new gate line"
+  ],
+  "concept": "docs/v3/ARCHITECTURE.md#7.1",
+  "contract": "docs/v3/ARCHITECTURE.md section 1 (the ports table: use and default per port), 7.1, 8 and section 14 row 'Section 3 ports'. Type bodies: ControlHandle docs/v3/concepts/controls-url-state.md 5; FieldLike, FormLike docs/v3/concepts/state-persistence-forms.md 6; StorageLike, ViewStore docs/v3/concepts/data-table.md 4; ConnectionView, FreshnessView docs/v3/concepts/live-realtime.md 3; Phase, Box, BoxSlot, Delta, Status, MeterSpec, QueryStateLike docs/v3/concepts/charts-cards-kanban.md 4; CatalogLike docs/v3/concepts/ai-mdx.md 4. No sketch for ControlsSlot, DetailHost, PageHost, VirtualLike, IconComponent, LinkComponent: define the structural shape from the table row and state it in the PR body. Insufficient contract: file a factory signal, take the reversible default.",
+  "exemplar": "docs/v3/concepts/charts-cards-kanban.md section 4 sketch of src/core/ports.ts: types only, no value symbols.",
+  "change": "Write ports.ts as a type-only module. check-contract-frozen.ts pins sha256 of each file's bytes in contract-pins.json (start with the ports.ts key): a file differing from its pin fails naming the file; an added pin key passes; a changed or removed key passes only if a commit in origin/master..HEAD has a subject starting `chore: contract amendment`; no pin file on the base passes. Wire it into make check (one new line in the check target) and ci.yml (one new step). Other Issues edit those two files too: touch only your own line and keep both sides on a rebase conflict. Ships with: the gate as the rule, no skill snippet, tests in check-contract-frozen.test.ts.",
+  "commits": "One PR; package commit (ports.ts, script, pins; `feat:`), then a non-package `ci:` commit (Makefile, ci.yml). Conventional, empty scope, no attribution, never CHANGELOG.md.",
+  "proof": "bun test packages/basalt-ui/scripts/check-contract-frozen.test.ts; make check.",
+  "acceptance": [
+    "bun packages/basalt-ui/scripts/check-contract-frozen.ts exits 0 on the PR head.",
+    "check-contract-frozen.test.ts covers: unchanged passes; edited file fails naming it; changed pin without amendment fails; changed pin with amendment subject passes; added key passes; removed key fails; absent base passes.",
+    "grep -E '^export (const|let|var|function|class|enum)' packages/basalt-ui/src/core/ports.ts returns nothing.",
+    "ports.ts exports every type in docs/v3/ARCHITECTURE.md section 1's ports table and section 14's row (Phase, Box, Delta, Status, MeterSpec, QueryStateLike, ControlHandle, FieldLike, FormLike, VirtualLike, ConnectionView, FreshnessView, CatalogLike, ControlsSlot, DetailHost, PageHost, BoxSlot, StorageLike, ViewStore, IconComponent, LinkComponent) and tsc --noEmit passes.",
+    "grep -n 'check-contract-frozen' Makefile .github/workflows/ci.yml matches in both, and make check passes."
+  ],
+  "out_of_scope": "Domain contract files, cards and table contracts, runtime behaviour, a contract-text edit after merge (v3-contract-amendment-spikes)."
+}

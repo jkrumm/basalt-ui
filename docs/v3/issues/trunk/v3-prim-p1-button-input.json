@@ -1,0 +1,27 @@
+{
+  "why": "Every later primitive inherits this base; button and input fix the cva table and part-list convention the generator reads.",
+  "what": "button (with Pressable) and input in src/ui with their guards and tests. New files only. No generator, no SLOTS yet (v3-prim-p1-gen).",
+  "owns": ["packages/basalt-ui/src/ui/{button,input}*"],
+  "must_not_touch": [
+    "packages/basalt-ui/src/tokens/**",
+    "packages/basalt-ui/src/css/**",
+    "packages/basalt-ui/src/{page,shell,cards,controls,table,charts,content,ai}/**",
+    "packages/basalt-ui/src/**/contract.ts",
+    "packages/basalt-ui/scripts/**",
+    "packages/basalt-ui/src/ui/{slots,index}*"
+  ],
+  "concept": "docs/v3/concepts/primitives-distribution.md#13 P1",
+  "contract": "docs/v3/concepts/primitives-distribution.md sections 4, 5, 13 and 2 (CE1-CE7 already applied: L3 may import useFormat; no-restyle denies h-*, min-h-*, size-*, display only, never w-*); docs/v3/ARCHITECTURE.md 7.1, 7.2, 4.2 (guards hand-authored: requires and closed blocks). Base UI polymorphism only via render, never asChild. Insufficient contract: factory signal, reversible default, PR body says so. Frozen contracts are read-only.",
+  "exemplar": "docs/v3/ARCHITECTURE.md 7.1 button sample: cva table, data-slot on every part, className layout-only.",
+  "change": "Write both on @base-ui/react with data-slot on every part, coarse hit floor and the focus ring token. Convention for the generator: each module exports `<name>Variants` (the cva table) and `<name>Parts` (readonly data-slot names). Hand-author button.guard.ts and input.guard.ts (requires + closed). Ships with: @example JSDoc on each export, guard and render tests; the lint rule is gr-1.",
+  "commits": "One PR, one `feat:` commit touching packages/basalt-ui/ only. Conventional, empty scope, no attribution, never CHANGELOG.md.",
+  "proof": "bun test packages/basalt-ui/src/ui; tsc --noEmit.",
+  "acceptance": [
+    "Each module renders with no provider and every part carries data-slot (test), and exports <name>Variants and <name>Parts.",
+    "A guard test with @ts-expect-error fails tsc when a variant that composites call is removed and passes when one is added.",
+    "grep -rn '@mantine' packages/basalt-ui/src/ui returns nothing.",
+    "git diff --name-only origin/master...HEAD lists only src/ui/button* and src/ui/input* files.",
+    "make check passes."
+  ],
+  "out_of_scope": "field, card, the generator, SLOTS, no-restyle data, docs, the lint rule."
+}

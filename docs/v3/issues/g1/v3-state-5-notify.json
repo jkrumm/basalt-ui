@@ -1,0 +1,38 @@
+{
+  "why": "Fifty-plus notification call sites across shutterflow and argo need one intent-to-priority queue that exists before the toast viewport mounts.",
+  "what": "packages/basalt-ui/src/core/notify*, src/page/toast* (ToastHost). Created here; ui/toast parts come from v3-prim-p4-overlays.",
+  "owns": [
+    "packages/basalt-ui/src/core/notify*",
+    "packages/basalt-ui/src/page/toast*",
+    "packages/basalt-ui/docs/notify.md",
+    "packages/basalt-ui/tests/layout/{,fixture/}toast-viewport*"
+  ],
+  "shared_append_only": [
+    "packages/basalt-ui/src/index.ts",
+    "packages/basalt-ui/src/page/index.ts",
+    "packages/basalt-ui/scripts/export-surface.json"
+  ],
+  "must_not_touch": [
+    "packages/basalt-ui/src/{ui,tokens,css,lint,shell,cards,charts,table,content,ai,data}/**, packages/basalt-ui/agent/**",
+    "packages/basalt-ui/src/page/** except toast*",
+    "CHANGELOG.md, MIGRATING.md, llms.txt, scripts/check-budgets/**, other areas' migrations files",
+    "every contract.ts and src/core/ports.ts"
+  ],
+  "concept": "state-persistence-forms#4",
+  "contract": "Frozen: ARCHITECTURE.md, src/core/ports.ts. Need a change: factory signal, take the reversible default. Read concepts/state-persistence-forms.md sections 5, 6, 9 and ARCHITECTURE sections 1 and 3 (symbol allotment of '.' and './data'). notify is a queue in core (no Base UI import); ToastHost in ./page is an explicit child. Provider closure test: BasaltProvider must not pull notify or the toast chunk.",
+  "exemplar": "Queue shape: 2.x src/provider/notifier.ts. Parts: src/ui/toast* (v3-prim-p4-overlays). Layout test style: tests/layout/cards-exemplar*.",
+  "change": "notify(kind, payload) returning an id; kinds error, success, info, warning from BasaltRegister (app-augmentable, entries may carry onShow); payload {message,title?,autoClose?,undo?:{revert,windowMs?=8000}}. Intent to priority: errors persistent, others 5 s, explicit autoClose clamps to at least 5000 (valueShift), 1,500 ms dedup. Queue cap 50 until a host mounts; dev warning after 3 s without a host. ToastHost renders ui/toast with viewport label key toast.viewport and dismiss toast.dismiss; never moves focus. Rule: none new (direct toast.add outside notify is flagged by import-boundary in the lint Issues). Skill: generated docs/notify.md. Tests: intent map, floor, dedup, undo.revert once, queue cap, no-host warning, S5 (notify before the viewport chunk loads is not dropped).",
+  "commits": "One PR, separate package and non-package commits (isolated-basalt-ui); conventional, empty scope, no attribution.",
+  "proof": "bun test plus a layout test (tests/layout/toast-viewport.layout.test.ts on tests/layout/fixture/toast-viewport-fixture.tsx) of the toast viewport at 1800x1200 and 390x844 (print:hidden asserted).",
+  "acceptance": [
+    "intent to priority map test: error persistent, info and success 5 s, explicit autoClose 2000 resolves to 5000",
+    "notify before ToastHost mounts is delivered after mount (S5) and the queue never exceeds 50",
+    "undo.revert runs exactly once; the app's own revert call and the toast action share it",
+    "a duplicate payload within 1,500 ms shows one toast",
+    "the provider-only fixture's bundle contains neither notify nor the toast chunk (provider closure test)",
+    "axe: viewport is a named region, aria-live polite, an error mirrors into role=alert",
+    "make check exits 0",
+    "git diff --name-only lists only owned paths"
+  ],
+  "out_of_scope": "Argo inbox and NotificationBell (recipe over onShow), migration rows for notifyError and friends, ui/toast parts, OverlayHost."
+}

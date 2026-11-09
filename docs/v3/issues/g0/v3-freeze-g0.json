@@ -1,0 +1,31 @@
+{
+  "why": "Consumers pin an exact next.N and a floor is derived from it. G0's layers must be frozen by a measured budget and a recorded floor before three repos build on them, or a later value shift lands silently.",
+  "what": "New: packages/basalt-ui/scripts/check-budgets/areas/tokens.ts (the area file v3-unhot-budgets created; edit it, with its test) and the G0 floor in scripts/fleet.json (root). This Issue does NOT release: the next.N cut is the owner row v3-release-g0-next; the lead only computes N with make release-dry.",
+  "owns": ["scripts/fleet.json", "packages/basalt-ui/scripts/check-budgets/areas/tokens*"],
+  "must_not_touch": [
+    "CHANGELOG.md",
+    "packages/basalt-ui/MIGRATING.md",
+    "packages/basalt-ui/llms.txt",
+    "packages/basalt-ui/src/**",
+    ".releaserc.json",
+    ".github/**",
+    "packages/basalt-ui/scripts/check-budgets/{index,ratchet}*",
+    "packages/basalt-ui/scripts/check-budgets/areas/{ui,cards,charts,data,router,table,page,shell,content}*"
+  ],
+  "concept": "migration-release#5 G0",
+  "contract": "docs/v3/concepts/migration-release.md sections 3.3 (fleet.json shape, floors), 4.4, 5 (G0 row); docs/v3/concepts/tokens-visual.md sections 1 and 13 (budgets).",
+  "exemplar": "The per-area budget files v3-unhot-budgets landed under scripts/check-budgets/, and scripts/fleet.json from v3-fleet-status.",
+  "change": "Run make check and bun run test:layout at head first; both must be green before N is written. Budget, in areas/tokens.ts (the ratchet applies: a retired 2.x tokens row is deleted, never raised): tokens.css at its first complete measured size plus 5 percent, full-scan CSS 12 KB gz fixture ceiling, public --vx-* names exactly the measured count with ceiling 90, tokens profile peers 0; ratchet down only. fleet.json: floors.G0 = { next: N, row: 'tokens-frozen' } where N is the number make release-dry prints for 3.0.0-next.N; the G0 rows' gate field already says G0 (check, do not rewrite). No release may land between the dry run and this PR's merge, so N stays valid: state the dry-run output and the check in the PR body, which also states the reason for the cut. Rule: none. Skill snippet: none. Test: tokens budget tests.",
+  "commits": "One PR, rebase-merged. Commit 1 (package, chore): scripts/check-budgets/areas/tokens*. Commit 2 (non-package, chore): scripts/fleet.json. Conventional, empty scope, no attribution. Never edit CHANGELOG.md.",
+  "proof": "make check, make release-dry (preview only).",
+  "acceptance": [
+    "bun test packages/basalt-ui/scripts/check-budgets passes and a seeded tokens.css 6 percent over its ceiling fails",
+    "A seeded 91st public --vx-* name fails the names budget",
+    "bun packages/basalt-ui/scripts/fleet-status.ts --gate G0 reads floors.G0.next from scripts/fleet.json",
+    "make release-dry prints 3.0.0-next.<N> with N equal to floors.G0.next",
+    "make check exits 0 at head",
+    "No release workflow was dispatched by this Issue",
+    "The PR body shows the make release-dry output and states that no release landed since it was run"
+  ],
+  "out_of_scope": "Publishing (owner row v3-release-g0-next), consumer pins, contract-pins.json (G1 onward), any src change."
+}

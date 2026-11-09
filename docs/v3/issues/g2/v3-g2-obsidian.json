@@ -1,0 +1,42 @@
+{
+  "repo": "basalt-ui-obsidian",
+  "why": "Obsidian is the derivative-package canary: 14 !important and a Mantine-class header selector fight the frame; its Mantine Tree needed 3 patch hooks.",
+  "what": "apps/demo/**, packages/basalt-ui-obsidian/**, .basalt/**, root package.json and bun.lock, and what basalt-ui sync rewrites (managed .claude files, AGENTS.md block, DESIGN.md, lint, format, lefthook, check.yml).",
+  "owns": [
+    "apps/demo/**",
+    "packages/basalt-ui-obsidian/**",
+    ".basalt/**",
+    "package.json",
+    "bun.lock",
+    ".claude/**",
+    "DESIGN.md",
+    "AGENTS.md",
+    ".oxlintrc.json",
+    ".oxfmtrc.json",
+    "lefthook.yml",
+    ".github/workflows/check.yml"
+  ],
+  "must_not_touch": [
+    "packages/obsidian-vault-core/**",
+    "docker-compose.yml",
+    "nginx.conf",
+    "Makefile deploy targets",
+    "any basalt-ui repo file"
+  ],
+  "concept": "migration-release#5 G2, #12; ARCHITECTURE#10; consumer-obsidian",
+  "contract": "One branch, one PR (exception 5); codemod first. Pin basalt-ui exact 3.0.0-next.N (floors.G2.next) for the demo; library peerDependencies take the same exact version. Preconditions, else signal and stop: `npm view basalt-ui@<N> version` resolves; baseline first (261 pass, 1 skip, 28 files). manifest roots: demo app, library parts; authoredContent lists the vault renderer source file. The Tree is app code in src/nav, role=tree on ui/collapsible, not a basalt export.",
+  "exemplar": "consumer-obsidian evidence; playground routes {index,gallery}.tsx; tests/nav-vault-nav.test.tsx and 27 other test files.",
+  "change": "1) Pin, peers (--vx-contract: 3 in the library CSS), drop @mantine/*; init per root; basalt(); sync. 2) Codemod commit: bun ~/SourceRoot/basalt-ui/tools/migrate-v3/run.ts imports (and layout) on apps/demo and packages/basalt-ui-obsidian/src, --report .basalt/worklist.json. 3) Manual: BasaltShell to AppShell, the Tree a rail block kind 'custom' (mobile label Library); compactHeader 'hidden' replaces the header deletion in safe-area.css; mobile-density.css becomes unlayered app CSS on --vx-space-*, no !important; hrefFor and renderLink (as never) to navTarget and the link adapter; createBasaltRouter to routerDefaults; Spotlight to CommandPalette with rank(); Markdown contentTrust='trusted' for vault notes (renderer file on authoredContent), className to a wrapper, sanitizeSchema to sanitize.allowAttrs; ArticleLayout and Callout from basalt-ui/page (no style prop: the 68ch measure moves to a wrapper); Chip, SegmentedControl, TextInput, CloseButton, Loader to ui/*. vault-nav.tsx (759 lines) becomes the app-level Tree; drop the two a11y hooks only if tests still pass.",
+  "commits": "Branch plus PR; conventional commits; codemod commit first; no attribution; leave the PR open for the owner's merge session.",
+  "proof": "basalt-ui shot of the 6 demo routes at 1800x1200 and 390x844, dark and light, before and after, via the img skill's private share; no PNG committed.",
+  "acceptance": [
+    "bun test ends 0 fail, no test removed against the baseline (the one skip may stay, no new skip); no expect() removed, only harness or selector lines change, each listed in the PR",
+    "grep -rnE '@mantine|mantine-|!important|as never' over apps and packages/basalt-ui-obsidian/{src,package.json} (not node_modules, dist) returns nothing",
+    "basalt-ui migrate --check, lint, doctor and sync --check exit 0 for both roots; no worklist site left",
+    "make check passes; library peerDependencies name the pinned basalt-ui, no @mantine; npm view basalt-ui@<N> version prints N",
+    "Tree: one tabindex=0 item, aria-expanded on folders, a folder's accessible name excludes its descendants (nav-vault-nav tests)",
+    "expectShellInvariants (expanded, collapsed) and axe (region, landmark-*, page-has-heading-one) pass on the demo at 1800x1200 and 390x844, the first failing on a seeded offender; the Tree shows in the phone More surface",
+    "The library CSS states --vx-contract: 3"
+  ],
+  "out_of_scope": "Merge and make deploy (owner), obsidian-vault-core, new reader features, npm publish, a Tree export."
+}

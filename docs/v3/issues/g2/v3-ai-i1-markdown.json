@@ -1,0 +1,33 @@
+{
+  "why": "Model and vault text reach the DOM through Markdown; the 2.x startsWith check passes //h, so a parser-based URL policy moves into core first.",
+  "what": "src/content/{markdown,sanitize,block-split,index,legacy}*, src/core/{url,slug}*, tests, migrations/areas/content.json rows.",
+  "owns": [
+    "packages/basalt-ui/src/content/{markdown,sanitize,block-split}*",
+    "packages/basalt-ui/src/content/legacy.ts",
+    "packages/basalt-ui/src/core/{url,slug}*",
+    "packages/basalt-ui/migrations/areas/content.json"
+  ],
+  "shared_append_only": ["packages/basalt-ui/src/content/index.ts"],
+  "must_not_touch": [
+    "packages/basalt-ui/{MIGRATING.md,llms.txt,scripts/contract-pins.json,scripts/check-budgets/**,src/*/contract.ts,src/{ui,tokens,lint}/**,agent/**}",
+    "CHANGELOG.md",
+    "other lanes' folders",
+    "packages/basalt-ui/src/{page,ai}/**",
+    "packages/basalt-ui/migrations/** except areas/content.json"
+  ],
+  "concept": "ai-mdx#8 I1; #4; #5 C1 to C9; #7 P1, P2",
+  "contract": "concept 1, 3, 4, 5, 8, 10 (1, 6); src/content/contract.ts, src/core/ports.ts; migrations/areas/<area>.json is the v3-unhot seed. contract.ts and contract-pins.json are frozen: signal, take the reversible default.",
+  "exemplar": "Port tests first from 2.x src/content/{markdown.tsx (665), sanitize.ts (510), block-split.ts, url-hardening.ts, slug.ts}.",
+  "change": "New src/core/url.ts and slug.ts (L1): reject C0 controls and leading or trailing space; classify with new URL(u,'https://x.invalid'); same-origin, https:, mailto:, tel: pass; untrusted also rejects any backslash; remend sentinels first. sanitize.ts: fixed policy plus additions, runs last, one footnote clobber layer, no mergeSanitizeSchema. Lossless blockSplit. Markdown: contentTrust required; untrusted arm takes images 'none'|'same-origin', no sanitize or rehypePlugins; trusted arm takes sanitize {allowTags, allowAttrs} and rehypePlugins; no className, no Mantine, no React.lazy on the core, no unsanitised fallback; data-slot markdown. Barrel: git mv src/content/index.ts to legacy.ts (2.x exports), re-point importers, new index.ts exports Markdown. Rows in areas/content.json (ids content-<symbol>): contentTrust required (codemod: untrusted unless authored is provable), className to a wrapper, sanitizeSchema to sanitize, valueShifts for blocked images and //host. Ships with: guarantee = required discriminated prop (type rows), fail-closed; rule = ai-i5; teach = JSDoc; test = P1, P2.",
+  "commits": "One PR, separate package and non-package commits (isolated-basalt-ui); conventional, empty scope, no attribution.",
+  "proof": "bun test src/content src/core, incl. an SSR test (renderToString, hydrateRoot).",
+  "acceptance": [
+    "P1: ported C1 to C9 tests pass; executed counts of sanitize.test.ts (59), markdown.test.tsx (38), block-split.test.ts (10) at the v2.29.1 tag, recorded in the PR, may not fall; blockSplit property: joined blocks equal the input",
+    "P2: the 12 payloads of docs/v3/evidence/gap-performance-budgets-and-library-tiebreaks.md 5.2 plus //h, /\\h, /<TAB>/h, leading space, data:, streamdown:incomplete-image give no <img> and no <link rel=preload> through Markdown untrusted, also with sanitize={allowTags:['img']} and a rehypePlugins entry forced past the types",
+    "renderToString of settled and streaming Markdown contains the text (no Suspense fallback) and hydrates without a mismatch warning",
+    "Inlined obsidian fixtures: the real sanitizer keeps blockquote data-callout, -kind, -title, -fold, data-wikilink, img width and height, input checked, drops data-not-allowed (dashed spelling, via sanitize.allowAttrs)",
+    "contentTrust missing or 'bogus' fails closed (type row, runtime); src/core/url* and slug* import nothing from src/content and no peer",
+    "src/content/index.ts exports Markdown only; areas/content.json rows present; make check passes"
+  ],
+  "out_of_scope": "CodeBlock and fences (ai-i2), Prose and friends, partView, the lint rule (ai-i5), byte budget rows (freeze-g2)."
+}

@@ -1,0 +1,29 @@
+{
+  "repo": "argo",
+  "why": "Argo's calendar uses @mantine/schedule MonthView and WeekView, the one real hole in v3 (DPO 10). Read-only week and month are rebuilt on ui primitives so no @mantine package survives.",
+  "what": "The calendar feature and route: agenda, week and month views, summary, query-state, sign-in step on v3. derive and the calendar query are v3-argo-state-features'.",
+  "owns": [
+    "apps/dashboard-v3/src/features/calendar/**",
+    "apps/dashboard-v3/src/routes/calendar.tsx"
+  ],
+  "must_not_touch": [
+    "apps/dashboard/**, apps/api/**, packages/shared/**, .basalt/**, apps/dashboard-v3/package.json and bun.lock (v3-argo-bump-g3/g4), other Issues' dirs under apps/dashboard-v3/src",
+    "calendar/derive* and lib/queries/calendar* (v3-argo-state-features), under apps/dashboard-v3/src/"
+  ],
+  "concept": "migration-release#6.3 argo schedule row; DIRECTION#8 DPO 10",
+  "contract": "Read basalt-ui docs/v3/concepts/migration-release.md 6.1-6.3, argo DESIGN.md and the managed layer (.claude/rules/basalt-v3-*.md, skills basalt-v3-*). basalt-ui is pinned exact next.N (the gate's floor, v3-argo-bump in `after`): its docs/recipes and llms.txt are the API truth; never edit package.json or bun.lock. Never import apps/dashboard; share through @argo/shared. *.module.css files are not ported (classes replace them). This feature's model.ts, types.ts and tests are ported here.",
+  "exemplar": "Old apps/dashboard/src/features/calendar (1,018 lines of .tsx, derive.ts 534 lines with tests).",
+  "change": "Port summary, query-state, sign-in, labels, agenda parts and their tests (derive and lib/queries/calendar are already ported with the local ScheduleEventData type). Build WeekView and MonthView in app code over ui primitives and tokens: day columns, all-day row, time grid with now-line, event blocks by source class, month grid with overflow count; the agenda keeps its sticky column under Page fill. Rule: raw-scroll waiver only on the time-grid scroller with a reason. Skill snippet: none.",
+  "commits": "Argo ships by push to master: conventional, one concern each, no attribution. Never edit node_modules or basalt-ui; a gap is a `friction:` line in the PR body, worked around in app code.",
+  "proof": "`make design-shot APP=dashboard-v3 ROUTES=\"/calendar\"` (1440x900, 390x844) beside the old shots from APP=dashboard; basalt-design reviewer; at most 3 rounds. Week and month at both sizes are the owner's eye gate.",
+  "acceptance": [
+    "`make check` exits 0 (runs check-v3: sync --check, doctor, lint, typecheck, build, test)",
+    "`rg -n '@mantine|apps/dashboard/' apps/dashboard-v3/src/features/calendar apps/dashboard-v3/src/routes/calendar.tsx` returns nothing",
+    "`bun scripts/check-test-port.ts apps/dashboard/src/features/calendar apps/dashboard-v3/src/features/calendar --only '{summary,query-state,sign-in}*'` exits 0 and `bun --cwd apps/dashboard-v3 test src/features/calendar` passes (changed lines carry `// port: <reason>` markers, listed in the PR)",
+    "`make design-shot APP=dashboard-v3 ROUTES=\"/calendar\"` writes 1440x900 and 390x844 shots against live data with no horizontal overflow at 390",
+    "`make verify-pages BASE=http://127.0.0.1:7737/v3 ROUTES=/calendar` reports PASS after the factory deploy (`make version` = pushed sha), else not-run",
+    "`rg -n 'mantine/schedule' apps/dashboard-v3 package.json apps/dashboard-v3/package.json` returns no match",
+    "a DOM test renders WeekView and MonthView from 3 overlapping events and asserts one block per event; the overlap is asserted on the layout function's output (distinct column index and offset for the overlapping pair: derive's, or the new view's pure layout helper), never on DOM boxes (happy-dom has no layout)"
+  ],
+  "out_of_scope": "Editing events, drag, recurrence UI, a schedule subpath in basalt-ui."
+}

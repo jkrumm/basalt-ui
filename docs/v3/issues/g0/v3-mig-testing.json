@@ -1,0 +1,38 @@
+{
+  "why": "429 test files (107,860 lines) are the real regression suite. Without a per-file disposition, ports are skipped or retired by accident, and one shared JSON would conflict across parallel leads.",
+  "what": "New: tools/migrate-v3/ledger/<area>.json (one file per area, non-package), packages/basalt-ui/scripts/check-test-ledger.ts with test, and packages/basalt-ui/src/testing/render-app.tsx with test (a seed). The one edit outside owns is one line wiring the check into the root Makefile check target, as its own non-package commit.",
+  "owns": [
+    "tools/migrate-v3/ledger/**",
+    "packages/basalt-ui/scripts/check-test-ledger*",
+    "packages/basalt-ui/src/testing/render-app*"
+  ],
+  "must_not_touch": [
+    "CHANGELOG.md",
+    "packages/basalt-ui/MIGRATING.md",
+    "packages/basalt-ui/llms.txt",
+    "packages/basalt-ui/scripts/check-budgets/**",
+    "**/contract.ts",
+    "packages/basalt-ui/src/ui/**",
+    "packages/basalt-ui/src/shell/**",
+    "apps/marketing/**",
+    "packages/basalt-ui/src/testing/index*",
+    "packages/basalt-ui/scripts/check-budgets/**",
+    "tools/migrate-v3/layout/**",
+    "tools/migrate-v3/waivers/**"
+  ],
+  "concept": "migration-release#8",
+  "contract": "docs/v3/concepts/migration-release.md section 8 (buckets, port order, 'Ledger, one file per area'), section 9.2.",
+  "exemplar": "packages/basalt-ui/scripts/check-agent-doc-drift.ts and its test (a gate script reading repo files, 2.x).",
+  "change": "Ledger rows: file, area, disposition (port, audit, retire, swap, retarget, rewrite), target path or null, laws (the digest section 3 invariant it pins), status open or closed per area. The file list comes from the 2.x tree (git ls-tree -r on branch v2 filtered to test files; record the command). check-test-ledger unions the area files: every 2.x test file named once, retire cites a kill-list item or a migration row, port and retarget targets must exist once an area is closed, laws names an invariant; --report prints bucket totals for the PR to compare with the section 8 table (115 port, 12 audit, 23 retire, 29 swap, 35 charts retarget, 50 composites retarget, 4 audit and 18 retire in the second block, 62 rewrite, 81 layout) and to explain any difference. renderApp(ui, options?) is a seed: wraps in the v3 provider when it exists, applies the scheme option to data-theme, UTC time zone, cleanup; settled() and the SSR harness are v3-qa-i3's. Rule: none. Skill snippet: none. Test: check-test-ledger.test.ts, render-app.test.tsx.",
+  "commits": "One PR, rebase-merged. Commit 1 (package): check-test-ledger and render-app. Commit 2 (non-package): tools/migrate-v3/ledger/*.json and the one-line Makefile wiring. Conventional, empty scope, no attribution. Never edit CHANGELOG.md.",
+  "proof": "Gate script run plus its tests.",
+  "acceptance": [
+    "bun packages/basalt-ui/scripts/check-test-ledger.ts exits 0 and --report prints per-bucket totals",
+    "The number of ledger rows equals the number of 2.x test files from the recorded git ls-tree command",
+    "A seeded ledger with an unnamed file, an uncited retire, or a missing closed-area target each make the check exit 1 (test)",
+    "bun test packages/basalt-ui/src/testing/render-app.test.tsx passes",
+    "make check exits 0 with the check wired in",
+    "The PR body lists each bucket total next to the section 8 figure"
+  ],
+  "out_of_scope": "Porting any test, settled and the SSR harness, per-area closing, editing check-budgets."
+}

@@ -1,0 +1,23 @@
+{
+  "why": "fleet.json still lists apps/dashboard and apps/desktop-v3 after the cutovers delete them, so `fleet-status --ga` stays red or reads a dead path. Nothing else updates the rows.",
+  "what": "The argo and shutterflow rows of scripts/fleet.json after both cutovers. Nothing else.",
+  "owns": ["scripts/fleet.json", "packages/basalt-ui/scripts/fleet-status.test.ts"],
+  "must_not_touch": [
+    "CHANGELOG.md",
+    "packages/basalt-ui/scripts/fleet-status.ts (v3-fleet-status's code)",
+    "consumer repos"
+  ],
+  "concept": "migration-release#3.3, 5",
+  "contract": "docs/v3/concepts/migration-release.md 3.3 and 5 (rows per package declaring basalt-ui; a row names repo and package only, no host or token). Argo after cutover: one package, apps/dashboard-v3, profile app, no sibling. Shutterflow after cutover: apps/desktop (the v3 files replaced its UI), root pin on v3, apps/desktop-v3 gone, apps/gallery unchanged.",
+  "exemplar": "The existing rows of scripts/fleet.json.",
+  "change": "Remove the argo apps/dashboard row and the shutterflow apps/desktop-v3 row; set the argo and shutterflow rows' `package`, `profile` and `gate` to the post-cutover truth; keep `from` history. Rule: the schema test. Skill snippet: none.",
+  "commits": "One PR, separate package and non-package commits (isolated-basalt-ui); conventional, empty scope, no attribution; make sync-self its own commit.",
+  "proof": "`bun packages/basalt-ui/scripts/fleet-status.ts --gate G5` output attached.",
+  "acceptance": [
+    "`jq '[.rows[]|select(.repo==\"argo\")]|length' scripts/fleet.json` prints 1 and its package is apps/dashboard-v3",
+    "`jq '[.rows[]|select(.repo==\"shutterflow\")|.package]' scripts/fleet.json` lists no apps/desktop-v3 and no deleted path",
+    "`bun packages/basalt-ui/scripts/fleet-status.ts --gate G5` exits 0",
+    "`bun test packages/basalt-ui/scripts/fleet-status.test.ts` and `make check` exit 0"
+  ],
+  "out_of_scope": "Editing fleet-status.ts, floors, the GA floor, consumer repos."
+}

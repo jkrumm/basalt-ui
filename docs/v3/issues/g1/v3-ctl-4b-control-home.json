@@ -1,0 +1,36 @@
+{
+  "why": "Every control needs one home and one slot: presentation (pill, row, inline) derives from the home, never a prop, so a page author cannot pick the wrong one.",
+  "what": "packages/basalt-ui/src/controls/{control-home,filter-slot}*. Created here. Split from v3-ctl-4-control-view, which owns ControlView, spec and the renderers.",
+  "owns": [
+    "packages/basalt-ui/src/controls/{control-home,filter-slot}*",
+    "packages/basalt-ui/docs/control-home.md",
+    "packages/basalt-ui/src/core/messages/home.ts",
+    "packages/basalt-ui/tests/layout/{,fixture/}controls-home*"
+  ],
+  "shared_append_only": [
+    "packages/basalt-ui/src/controls/index.ts",
+    "packages/basalt-ui/scripts/export-surface.json"
+  ],
+  "must_not_touch": [
+    "packages/basalt-ui/src/{ui,table,charts,cards,page,shell,content,ai,tokens,css,lint,router}/**, packages/basalt-ui/agent/**",
+    "packages/basalt-ui/src/controls/{filter-set,view-tabs,globals,form-field,form-row,control-view,spec,renderers,use-committed-field}*",
+    "CHANGELOG.md, MIGRATING.md, llms.txt, scripts/check-budgets/**, other areas' migrations files",
+    "every contract.ts and src/core/ports.ts"
+  ],
+  "concept": "controls-url-state#10 issue 4",
+  "contract": "Frozen: ARCHITECTURE.md, this domain's contract.ts, src/core/ports.ts. Need a change: factory signal, take the reversible default. Read concepts/controls-url-state.md sections 3, 5, 9, 10 and evidence/gap-global-local-control-scope.md section 3 (prototype API). src/core/ports.ts owns ControlHandle and ControlsSlot. Primitives come only as basalt-ui/ui/<name>; date-picker by dynamic import. Strings: useMessages, English defaults in your owned src/core/messages/home.ts (qa-i2 seeds it). ",
+  "exemplar": "src/cards/stat-card*, src/ui/{card,badge}*, src/core/phase* (v3-exemplar-statcard; read in the tree).",
+  "change": "ControlHome home to presentation (pill, row, inline derived from home, never a prop); filterSlot(specs) and filterSlot.custom(handle,label,render) as the counted escape; ToolbarGroup (ui/toolbar) for view-mode and tool homes. data-slots filter-pill, filter-row. Keys controls.filters, resetAll. 2.x donors stay beside the new files. Rule: control-home (rung 5, body in ctl-8). Skill: generated docs/control-home.md. Tests: layout per home, axe, type guards.",
+  "commits": "One PR, separate package and non-package commits (isolated-basalt-ui); conventional, empty scope, no attribution.",
+  "proof": "Layout and axe tests under tests/layout/ on a fixture host (tests/layout/fixture/) at 1440, 768, 390, 320; screenshots of the fixture host taken by the layout test (1800x1200 and 390x844, dark and light, at most 3 rounds) and named in the PR body. Homes pill, row and inline each with a bound and an overriding widget.",
+  "acceptance": [
+    "layout at 1440, 768, 390 and 320: no horizontal overflow with 8 filters and with 0 filters; hit floor 44 coarse",
+    "the override cue renders in pill, row and inline homes and shows text, not colour alone (computed text assertion)",
+    "a folded pill renders the row form, never a nested pill (nested portal is not an outside click)",
+    "filterSlot.custom is counted: a fixture using it appears in the escapes count (test)",
+    "axe zero serious or critical with a pill popover open",
+    "make check exits 0",
+    "git diff --name-only lists only owned paths"
+  ],
+  "out_of_scope": "ControlView, spec, renderers (ctl-4), FilterSet fold and Filters (n) sheet (ctl-5), ViewTabs and globals (ctl-6), lint bodies (ctl-8)."
+}

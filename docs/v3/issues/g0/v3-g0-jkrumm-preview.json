@@ -1,0 +1,27 @@
+{
+  "repo": "jkrumm.com",
+  "why": "The accent is the owner's call (DPO 5a). v3-g0-jkrumm shipped B (vibrancy +1); the owner re-picks by changing --vibrancy, which needs A, B and C side by side first.",
+  "what": "A tracked docs/accent-preview.md and twelve untracked files under out/accent-preview/{A,B,C}/ (gitignored). No source change.",
+  "owns": ["docs/accent-preview.md", "out/accent-preview/**"],
+  "must_not_touch": [
+    "src/**",
+    "scripts/**",
+    "public/**",
+    "deploy/**",
+    "Dockerfile",
+    "package.json"
+  ],
+  "concept": "static-framework-free#10 issue 8",
+  "contract": "Read-only in ~/SourceRoot/basalt-ui: docs/v3/concepts/static-framework-free.md section 10 (accent A is vibrancy 0, B +1, C +2, same hue from #0084d1).",
+  "exemplar": "scripts/shots.ts in this repo: BASE and OUT env, desktop and mobile, light and dark, ?__theme= forcing.",
+  "change": "For each of A, B, C: copy the repo to a mkdtemp directory, regenerate src/styles/tokens.css and src/lib/tokens.json with the init flags of v3-g0-jkrumm but --vibrancy 0, 1, 2, run bun run build there, serve its dist/ with a short-lived static file server (Bun.serve in one command, stopped after capture; no astro dev, no astro preview), and run BASE=<that url> OUT=out/accent-preview/<X> bun scripts/shots.ts / from this repo (4 files per variant). docs/accent-preview.md lists the three paths, the measured fill-on-inset contrast per scheme from tokens.json and the one-line re-pick instruction (change --vibrancy in tokens:check and regenerate). Do not change the shipped accent.",
+  "commits": "Per jkrumm.com: one docs: commit, direct to master (ship via push), no attribution.",
+  "proof": "The twelve files exist; the working tree is otherwise unchanged.",
+  "acceptance": [
+    "Twelve PNG files exist under out/accent-preview/{A,B,C} (two themes, desktop and mobile each)",
+    "docs/accent-preview.md names the three directories and states B is shipped",
+    "git status shows only docs/accent-preview.md changed; src/styles/tokens.css still says vibrancy 1 in its header",
+    "make check exits 0"
+  ],
+  "out_of_scope": "Choosing the accent, any source change, deploy."
+}

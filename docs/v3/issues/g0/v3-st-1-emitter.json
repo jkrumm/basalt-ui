@@ -1,0 +1,40 @@
+{
+  "why": "2.x emits no color-scheme, so native scrollbars and form controls stay light on a dark page, and the OS-dark fallback is a flag. A static page needs auto as a CSS fact: no attribute, the media block applies.",
+  "what": "packages/basalt-ui/src/tokens/emit-fallback.ts (new) with test, packages/basalt-ui/src/tokens/golden/** (new committed golden CSS), and two outside-owns edits: one call site in src/tokens/emit.ts (tok-t2's file) that uses the new module, and the regenerated packages/basalt-ui/src/css/tokens.css.",
+  "owns": [
+    "packages/basalt-ui/src/tokens/emit-fallback*",
+    "packages/basalt-ui/src/tokens/golden/**",
+    "packages/basalt-ui/src/css/tokens.css"
+  ],
+  "must_not_touch": [
+    "CHANGELOG.md",
+    "packages/basalt-ui/MIGRATING.md",
+    "packages/basalt-ui/llms.txt",
+    "packages/basalt-ui/scripts/check-budgets/**",
+    "**/contract.ts",
+    "packages/basalt-ui/src/ui/**",
+    "packages/basalt-ui/src/shell/**",
+    "apps/marketing/**",
+    "packages/basalt-ui/src/tokens/table.ts",
+    "packages/basalt-ui/src/cli/**",
+    "packages/basalt-ui/src/lint/**",
+    "packages/basalt-ui/src/css/{generate,typography,prose,fonts,tailwind}*"
+  ],
+  "concept": "static-framework-free#10 issue 1",
+  "contract": "docs/v3/concepts/static-framework-free.md section 1 rows 8-9, section 8 P4; docs/v3/concepts/tokens-visual.md section 4 (tokens.css shape) and section 8 (shipped gates). Gates come from src/tokens/gates.ts (v3-tok-t2-table); do not reimplement them. emit.ts is tok-t2's: edit only the one call site.",
+  "exemplar": "packages/basalt-ui/tests/palette-css.test.ts (structural invariants over emitted CSS) and src/tokens/build-radius-css.test.ts.",
+  "change": "The emitter pair: every scheme block gains color-scheme. Light: :root, :root[data-theme='light'] { color-scheme: light; ... }. Dark: @media not print { :root[data-theme='dark'] { color-scheme: dark; ... } }. The always-on fallback @media not print { @media (prefers-color-scheme: dark) { :root:not([data-theme]) { color-scheme: dark; ... } } } is generated from the same dark declaration list, never a second copy, and has no flag. A gate failure surfaces as 'fill-on-inset dark 2.91 < 3.0 for --accent <hex>. Raise --vibrancy or pick another hue.' (gate, surface, ratio). Golden files: default seed output and one hue-268 vibrancy +1 output, committed byte-exact. The emit change makes tok-t3's committed tokens.css stale: regenerate it with bun packages/basalt-ui/src/css/generate.ts and commit only tokens.css (generate.ts is the sole writer; never hand-edit). Rule: none. Skill snippet: none (the basalt-tokens rule in v3-sk-5 states auto means the attribute is absent). Test: emit-fallback.test.ts.",
+  "commits": "One PR, separate package and non-package commits (isolated-basalt-ui); conventional, empty scope, no attribution.",
+  "proof": "Byte and structural tests; Chrome-computed colorScheme is v3-st-7's P8.",
+  "acceptance": [
+    "bun test packages/basalt-ui/src/tokens/emit-fallback.test.ts passes and fails on the parent commit (2.x output has no color-scheme)",
+    "Each scheme block of the default emit contains exactly one color-scheme declaration",
+    "The fallback block's declarations are string-equal to the dark block's declarations",
+    "No dark value appears outside @media not print",
+    "A seeded failing accent makes the emitter throw a message containing the gate name, the surface and the ratio",
+    "The two golden files match a fresh emit byte for byte, and the test header names the regenerate command",
+    "bun test packages/basalt-ui/src/css passes (committed tokens.css equals the generated output)",
+    "make check exits 0"
+  ],
+  "out_of_scope": "JSON emit (v3-st-2), prose, typography, fonts, any CLI flag, accent policy (DPO 5a is the owner's verdict)."
+}

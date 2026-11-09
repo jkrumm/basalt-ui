@@ -1,0 +1,30 @@
+{
+  "why": "BRIEF: deleting ./agent is fine only if the AI surface gets stronger. DIRECTION 4.10 claims recipes for approvals, reasoning, citations and sources, and an artifacts recipe over PageAside; no Issue wrote them.",
+  "what": "Two recipes in the playground plus their prose: ai-approvals-sources (approvals, reasoning, sources, inline citations via toolRenderers) and ai-artifacts (PageAside with Markdown, Block, CodeBlock, versions as ui/tabs).",
+  "owns": [
+    "packages/basalt-ui/docs/recipes/{ai-approvals-sources,ai-artifacts}.md",
+    "apps/playground/src/recipes/{ai-approvals-sources,ai-artifacts}*"
+  ],
+  "shared_append_only": ["packages/basalt-ui/agent/skills/basalt-app/references/recipes.md"],
+  "must_not_touch": [
+    "packages/basalt-ui/src/ai/**",
+    "packages/basalt-ui/src/content/**",
+    "packages/basalt-ui/src/page/**",
+    "packages/basalt-ui/package.json",
+    "bun.lock",
+    "CHANGELOG.md"
+  ],
+  "concept": "ai-mdx#2 rows 7, 10; ai-mdx#9",
+  "contract": "docs/v3/concepts/ai-mdx.md 2 rows 7, 10 and 9: recipe only, no symbol. Approve and Deny buttons through toolRenderers on the awaiting-approval view (the approval-response name is unverified against the installed ai types: read the .d.ts first, signal if absent). Artifacts: html and react previews documented, sandbox without allow-same-origin, plus CSP, greppable in the recipe.",
+  "exemplar": "apps/playground/src/recipes/ai-sdk-tools* from v3-ai-i9.",
+  "change": "ai-approvals-sources: Approve and Deny via toolRenderers, reasoning and source parts rendered, inline citations with no favicon fetch. ai-artifacts: PageAside rendering markdown, blocks and code kinds, versions via ui/tabs, the preview contract as a commented snippet with the sandbox attribute. Each recipe at most 60 lines. Rule: untrusted-markdown over both. Skill snippet: the regions; one line each in references/recipes.md. Test: recipe tests plus playground typecheck.",
+  "commits": "One PR, separate package and non-package commits (isolated-basalt-ui); conventional, empty scope, no attribution.",
+  "proof": "make gen-check; bun run --cwd apps/playground typecheck; make check.",
+  "acceptance": [
+    "make gen-check and the playground typecheck compile both recipes",
+    "a test proves a pending approval never resolves without an explicit Approve or Deny",
+    "`rg -n 'allow-same-origin' apps/playground/src/recipes/ai-artifacts*` finds only the documented prohibition",
+    "each recipe is at most 60 lines; make check exits 0"
+  ],
+  "out_of_scope": "New ./ai exports, partView changes, an html sandbox of our own."
+}

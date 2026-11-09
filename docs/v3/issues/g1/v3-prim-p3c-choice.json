@@ -1,0 +1,36 @@
+{
+  "why": "Radio and switch complete the form input family on our own markup; the 16 px coarse floor and hit overlay are shared law.",
+  "what": "packages/basalt-ui/src/ui/{radio-group,switch}* (tsx, guards, tests, one grouped layout test and fixture). Created here. Split from v3-prim-p3a-inputs.",
+  "owns": [
+    "packages/basalt-ui/src/ui/{radio-group,switch}*",
+    "packages/basalt-ui/docs/{radio-group,switch}.md",
+    "packages/basalt-ui/tests/layout/{,fixture/}ui-choice*"
+  ],
+  "shared_append_only": [
+    "packages/basalt-ui/src/ui/slots.ts",
+    "packages/basalt-ui/src/ui/no-restyle.generated.json",
+    "packages/basalt-ui/scripts/export-surface.json"
+  ],
+  "must_not_touch": [
+    "packages/basalt-ui/src/{page,shell,cards,controls,table,charts,content,ai,router,data,core,tokens,css,lint,cli,vite,testing}/**",
+    "packages/basalt-ui/agent/**",
+    "CHANGELOG.md, MIGRATING.md, llms.txt, scripts/check-budgets/**, other areas' migrations files",
+    "every contract.ts and src/core/ports.ts"
+  ],
+  "concept": "primitives-distribution#13 P3",
+  "contract": "Frozen: ARCHITECTURE.md, this domain's contract.ts, src/core/ports.ts. Need a change: factory signal, take the reversible default. Read concepts/primitives-distribution.md sections 4 (list), 12, 13 and ARCHITECTURE section 7. CE1: L3 may import useFormat from the root barrel; with no provider it returns English and UTC. Strings: internal useMessages hook; none expected here, a needed key is a signal.",
+  "exemplar": "src/ui/button.tsx, button.guard.ts, scripts/gen-ui* (from v3-prim-p1-core, read in the tree): cva table, data-slot per part, guard, SLOTS.",
+  "change": "Two modules on Base UI 1.9.0 per the section 4 table: RadioGroup, Radio; Switch. Each part sets data-slot, coarse pointer gives min-h-11, focus ring solid. Rule: the no-restyle contract (deny h-*, min-h-*, size-*, display; width legal, CE5) is generated from each cva table by scripts/gen-ui*, nothing hand-written. Skill: generated docs/<name>.md. Tests: primitive.contract (auto-enlisted) plus one layout and axe test for the group.",
+  "commits": "One PR, separate package and non-package commits (isolated-basalt-ui); conventional, empty scope, no attribution.",
+  "proof": "Layout and axe tests in tests/layout/ui-choice.layout.test.ts on tests/layout/fixture/ui-choice-fixture.tsx at 1440, 768, 390, 320. No shot: a primitive has no reference image.",
+  "acceptance": [
+    "primitive.contract passes for radio-group and switch",
+    "RadioGroup arrow keys move selection in DOM order in a keyboard test; Switch toggles on Space",
+    "layout test: hit target at least 24 px fine and 44 px coarse (including the ::after overlay)",
+    "axe: zero serious or critical on the fixture",
+    "gen-ui check mode exits 0 and docs/radio-group.md and docs/switch.md exist",
+    "make check exits 0",
+    "git diff --name-only lists only owned paths"
+  ],
+  "out_of_scope": "No consumer migration, no playground route, no eject/sync work, no new variant axes beyond the concept table, no Mantine parity props (classNames, styles, asChild, unstyled). textarea, number-field, checkbox (p3a); Select family (p3b); FormField (state-4)."
+}

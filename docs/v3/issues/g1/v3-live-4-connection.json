@@ -1,0 +1,38 @@
+{
+  "why": "Console, linewatch and argo hand-build a freshness chip; offline must mean a classified network failure; every live surface shows age and state.",
+  "what": "packages/basalt-ui/src/data/live/{connection,freshness}*, src/page/{connection-indicator,refresh-button}*. Created here from 2.x src/controls/sync-button.tsx and console lib/connection.ts.",
+  "owns": [
+    "packages/basalt-ui/src/data/live/{connection,freshness}*",
+    "packages/basalt-ui/src/page/{connection-indicator,refresh-button}*",
+    "packages/basalt-ui/docs/{connection-indicator,refresh-button}.md",
+    "packages/basalt-ui/src/core/messages/live.ts",
+    "packages/basalt-ui/tests/layout/{,fixture/}live-connection*"
+  ],
+  "shared_append_only": [
+    "packages/basalt-ui/src/data/index.ts",
+    "packages/basalt-ui/src/page/index.ts",
+    "packages/basalt-ui/scripts/export-surface.json"
+  ],
+  "must_not_touch": [
+    "packages/basalt-ui/src/{ui,cards,charts,table,controls,shell,content,ai,router,tokens,css}/**, packages/basalt-ui/src/data/{unwrap,optimistic,window-key,synced}*, src/data/live/{live-query,poller,bind-invalidation}*, src/page/** except connection-indicator*, refresh-button*, packages/basalt-ui/agent/**",
+    "CHANGELOG.md, MIGRATING.md, llms.txt, scripts/check-budgets/**, other areas' migrations files",
+    "every contract.ts and src/core/ports.ts"
+  ],
+  "concept": "live-realtime#10 issue 4",
+  "contract": "Frozen: ARCHITECTURE.md, src/core/ports.ts. Need a change: factory signal, take the reversible default. Read concepts/live-realtime.md sections 3, 4, 5, 7, 10. Layers: channel L1 (react only), live L2 (./data), views L4 prop-fed (no Query in ./page). Keys live.connected, polling, reconnecting, offline, unauthorized, updated via useMessages; defaults in your owned src/core/messages/live.ts (qa-i2 seeds it). ConnectionView and FreshnessView are ports in src/core/ports.ts: ConnectionIndicator takes connection as a required prop.",
+  "exemplar": "2.x src/controls/sync-button.tsx and ~/SourceRoot/software-factory console lib/connection.ts (donors, read-only). Anatomy: src/cards/stat-card*, src/ui/{status,popover}*.",
+  "change": "useConnection (live, polling or offline; classifier: 3 network failures, 5 s hysteresis, never flips onlineManager; TypeError or NetworkError count; ZodError, 4xx, 5xx, external polls do not). useFreshness(keys?, {source,sourceMaxAge}) with button props. ConnectionIndicator: dot plus word, popover rows stream, last event age, data age; at 390 the word is sr-only and each state has its own glyph (dot, ring, slash), 44 px hit on coarse, polite live region on state change (not the age tick), hidden in print. RefreshButton = SyncButtonProps, prints 'updated <time>' in print. Rule: none here. Skill: generated docs. Tests: P4, P6, classifier, layout, axe.",
+  "commits": "One PR, separate package and non-package commits (isolated-basalt-ui); conventional, empty scope, no attribution.",
+  "proof": "Layout and axe tests (tests/layout/live-connection.layout.test.ts) on tests/layout/fixture/live-connection-fixture.tsx at 1440, 768, 390, 320.",
+  "acceptance": [
+    "classifier: three ZodErrors keep live; three failed external polls keep live; three TypeErrors go offline; a 503 resets the count",
+    "P4: renderToString plus hydrateRoot over useConnection, useFreshness, ConnectionIndicator and a liveQuery page: no server timer or fetch, no mismatch warning",
+    "P6: an equal-data refetch keeps row identity and memoised unchanged rows do not re-render (render counts)",
+    "layout at 390: glyph shape differs per state, the word is sr-only; axe zero serious or critical with the popover open",
+    "RefreshButton keeps the 2.x SyncButton props and tests; print text states the data time",
+    "ConnectionIndicator without the connection prop fails types",
+    "make check exits 0",
+    "git diff --name-only lists only owned paths"
+  ],
+  "out_of_scope": "Poller, liveQuery, channel, lint clauses, fixture-wide P4b assertion, argo SyncButton migration."
+}

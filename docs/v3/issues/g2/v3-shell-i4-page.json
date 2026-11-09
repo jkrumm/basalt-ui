@@ -1,0 +1,32 @@
+{
+  "why": "Page, PageBar, PageAside and Section are the one authoring surface for a screen, in a shell or not; the in-flow sticky band replaces the 2.x portal (decision 3, falsified by spike S1).",
+  "what": "packages/basalt-ui/src/page/{page,page-bar,page-aside,section}.tsx with colocated tests, tests/layout/page-core* and its v3 scenario. Shell-less complete: without PageHost they render inline.",
+  "owns": [
+    "packages/basalt-ui/src/page/{page.*,page-bar*,page-aside*,section*}",
+    "packages/basalt-ui/tests/layout/{page-core*,fixture/v3/scenarios/page-core*}"
+  ],
+  "shared_append_only": ["packages/basalt-ui/src/page/index.ts"],
+  "must_not_touch": [
+    "packages/basalt-ui/{MIGRATING.md,llms.txt,scripts/contract-pins.json,scripts/check-budgets/**,src/*/contract.ts,src/{ui,tokens,lint}/**,agent/**}",
+    "CHANGELOG.md",
+    "other lanes' folders",
+    "packages/basalt-ui/src/{router,shell}/**",
+    "packages/basalt-ui/src/page/{core,parts}/**"
+  ],
+  "concept": "shell-nav-router#8 I4; #3.2; #2 rows Scroll, Sticky band, Aside",
+  "contract": "concept 3.2, 3.5, 4 (band, height, aside rows), 8 (page kit owner, 'Each never'); src/page/contract.ts and src/core/ports.ts (ControlsSlot, DetailHost, PageHost). Uses src/page/core (I3b), useSizeClass (I4b) and basalt-ui/ui/{sheet,scroll-area}. Frozen: never edit contract.ts or contract-pins.json; signal, then take the reversible default.",
+  "exemplar": "Port tests first from 2.x src/shell/page-bar.tsx (598; test 581 lines), page-aside.tsx (433; test 865), src/dashboard/section.tsx (380); layout from tests/layout/section-anchor.layout.test.ts.",
+  "change": "Page (area, fill: boolean or {min}, landmark; publishes --page-bar-h and --page-sticky-top), PageBar (title claims breadcrumb leaf and parent in a shell, names the sr-only h1 and document.title, shell-less is the visible h1; controls, tabs, refresh, actions tuple max 5 with at most one primary, group, kind 'text'; empty band renders nothing), PageAside (title required and aria-label, width 320, 360, 480 or 640, state, dock, mobile 'sheet', DetailHost; shell-less a second column at @wide, Sheet below), Section (controlled, title, controls, offset from --page-sticky-top). Append the 4 symbols to src/page/index.ts. Ships with: guarantee = type rows in page.type-guard.test.tsx (aside without title, 6 actions, 2 primaries) and the viewport-keyed, raw-scroll, primitive-bypass (h1) rules clean on these files; teach = JSDoc @example from 3.2 (rule bullets: v3-shell-i10-rules-rows); test = tests/layout/page-core.layout.test.ts (S1), shell-less scenarios only.",
+  "commits": "One PR, separate package and non-package commits (isolated-basalt-ui); conventional, empty scope, no attribution.",
+  "proof": "page-core layout at 1440 and 390 (S1 cases, shell-less); no shot, the exemplar route is I5.",
+  "acceptance": [
+    "page-core.layout.test.ts: Section header top equals the measured band bottom plus border within 0.5 px, at 1440 and 390, with a table head, an anchor and a restored scroll inside Page",
+    "Shell-less PageAside is a second column at @wide and a Sheet below; with no PageAside mounted no column or ghost is rendered (layout case)",
+    "Cold load of /page#anchor lands the anchor below the band after the first --page-bar-h publish",
+    "A second PageBar under one Page, and nested layouts each rendering one, raise the dev assertion in a test",
+    "Ported page-bar and page-aside unit suites: executed counts at the v2.29.1 tag, recorded in the PR, may not fall; type rows fail when each offender is removed",
+    "Rendered Page output contains exactly one h1 in both modes",
+    "src/page/index.ts exports this Issue's 4 symbols and no name outside the ARCHITECTURE section 3 ./page row; make check passes"
+  ],
+  "out_of_scope": "Rest of the page kit (I4b), InnerNav and SplitPage (I7), the frame, rail and shell-measured docked-seam and unclaimed-aside cases (I5), the phone Filters (n) sheet beyond a stub."
+}

@@ -1,0 +1,30 @@
+{
+  "why": "Package homes of the doctrine must change before the first prerelease; MIGRATING needs an Unreleased 2.x-to-3.0 stub or release-migrating --check fails the preflight.",
+  "what": "packages/basalt-ui/MAINTAINING.md (rename and replace 'The one sanctioned major', plus the 'majors are banned' sentences in the guards and rendering sections), packages/basalt-ui/AGENTS.md (ships in the tarball), packages/basalt-ui/MIGRATING.md stub.",
+  "owns": [
+    "packages/basalt-ui/MAINTAINING.md",
+    "packages/basalt-ui/AGENTS.md",
+    "packages/basalt-ui/MIGRATING.md"
+  ],
+  "must_not_touch": [
+    "AGENTS.md",
+    "scripts/**",
+    "packages/basalt-ui/src/**",
+    "packages/basalt-ui/scripts/**"
+  ],
+  "concept": "docs/v3/concepts/migration-release.md#3.4",
+  "contract": "docs/v3/concepts/migration-release.md 3.4 (the replacement section text, whole; its 'AGENTS.md' means packages/basalt-ui/AGENTS.md, write the full path) and 4.1 step 6. Shipped files never cite docs/ (pkg AGENTS ships). The 2.x window: fix-only until 120 days after 3.0.0 reaches latest; packages/basalt-ui/AGENTS.md is its one home (the date is written there at GA, runbook 4.5 step 5, and quoted in the 3.0.0 release notes). Insufficient contract: factory signal, reversible default, PR body says so. Frozen contracts are read-only.",
+  "exemplar": "Existing sections 'The one sanctioned major' and the 'Upgrading across minors' paragraph of pkg AGENTS.md.",
+  "change": "Replace the MAINTAINING section with '## Major lines' using the 3.4 text (constants in scripts/release.sh, runbook pointer). Reword the two other 'majors are banned' sentences (guards and rendering sections) to point at it. pkg AGENTS: line ~128 'No majors ship here' goes; 'Upgrading across minors' states 3.x is current and 2.x is fix-only to the window above. MIGRATING: replace the 'No majors, by policy' paragraph (intro, line ~45) with a link-free sentence and put the 2.x-to-3.0 stub under the open `## Unreleased` heading; versioned history sections stay untouched, including their 'Majors are banned here' sentence. Ships with: grep gate and release-migrating --check; no lint rule or skill snippet.",
+  "commits": "One `docs:` commit touching packages/basalt-ui/ only. No attribution. Never edit CHANGELOG.md.",
+  "proof": "bun packages/basalt-ui/scripts/release-migrating.ts --check; check-agent-doc-drift.",
+  "acceptance": [
+    "grep -niE 'no majors|majors are banned|never sanctioned|one sanctioned major|banned here' packages/basalt-ui/MAINTAINING.md packages/basalt-ui/AGENTS.md returns nothing; the same grep over `sed '/^## [0-9]/,$d' packages/basalt-ui/MIGRATING.md` (the intro) and over the '## Unreleased' section returns nothing. Versioned sections may keep their history.",
+    "MAINTAINING.md has a '## Major lines' heading and no '## The one sanctioned major'.",
+    "packages/basalt-ui/AGENTS.md contains no 'docs/' path and states the 120-day window once.",
+    "bun packages/basalt-ui/scripts/release-migrating.ts --check exits 0.",
+    "bun packages/basalt-ui/scripts/check-agent-doc-drift.ts exits 0 and make check passes."
+  ],
+  "out_of_scope": "Warn-level guard doctrine, the grace ladder text, root AGENTS.md (rel-5), restarting MIGRATING as generated rows (unhot).",
+  "orchestrator": "After this PR merges the orchestrator, not the lead, updates the auto-memory file never-trigger-releases.md (it still says every major is refused). Not in the repo, not an Issue."
+}

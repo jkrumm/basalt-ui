@@ -1,0 +1,31 @@
+{
+  "repo": "software-factory",
+  "why": "The console takes only tokens:css output and hand-bridges old --vx names onto shadcn classes; it never installed rules, skills or the guard, so 16 bordered cards and a split type scale go unguarded.",
+  "what": "apps/console/** in software-factory (package.json, src/styles/{index.css,series.css,tokens.css}, every src/** --vx-* read) plus the root install in owns_widened. Profile bridge, declared with init --root apps/console; it keeps its own components (components/ui, components/kit).",
+  "owns": ["apps/console/**"],
+  "must_not_touch": [
+    "apps/server/**",
+    "apps/cli/**",
+    "packages/**",
+    "Makefile",
+    "docs/**",
+    "apps/console/src/routeTree.gen.ts"
+  ],
+  "concept": "migration-release#5 G0",
+  "contract": "Read-only in ~/SourceRoot/basalt-ui: docs/v3/concepts/tokens-visual.md sections 4 and 9; migration-release.md sections 5 and 7; guardrails.md section 6; evidence/shadcn-factory-console.md. Pin basalt-ui to the exact 3.0.0-next.<N> of floors.G0.next in ~/SourceRoot/basalt-ui/scripts/fleet.json (no caret); unserved on npm means stop and signal (owner row v3-release-g0-next cuts it).",
+  "exemplar": "~/SourceRoot/basalt-ui/packages/basalt-ui/test/fixtures/bridge (target shape).",
+  "change": "1) Pin basalt-ui. 2) Move series.css into src/basalt.tokens.ts (group series, keys 1..9, the existing { light, dark } hex); the --vx-series-N names and values stay identical. 3) From the repo root, local bin (never bunx): basalt-ui init --profile bridge --root apps/console --extra apps/console/src/basalt.tokens.ts --tokens-out apps/console/src/styles/app-tokens.css (init runs tokens:css for it); delete series.css. 4) In src/styles/index.css replace the hand @theme inline block and the tokens and font imports with @import 'basalt-ui/tailwind.css'; keep the data-theme attribute main.tsx sets. Default identity: delete src/styles/tokens.css, keep scripts tokens and tokens:check (the Makefile calls it), point tokens:check at basalt-ui doctor. 5) Rename every old --vx-* and VX read with basalt-ui migrate --from 2.29.0 --profile bridge (a worklist, not an exemption); --vx-line2 becomes --vx-ink-muted. 6) Lint findings: fix at source, or a one-line waiver with a reason where legitimate; over 150 findings or 25 waivers: stop and signal with per-rule counts. Land the count with basalt-ui lint --stats --write-budget, never by hand. Retarget test/no-raw-colour.test.ts, do not delete it.",
+  "commits": "Per the software-factory repo: a PR (ship via pr), conventional commits per its AGENTS.md, no attribution. Root-level init files in their own commit.",
+  "proof": "make check; shots as listed.",
+  "acceptance": [
+    "make check exits 0 in software-factory",
+    "basalt-ui doctor, sync --check and lint exit 0; every waiver has a reason; .basalt/budget.json waivers equals the counted waivers",
+    "basalt-ui migrate --from 2.29.0 --profile bridge --check exits 0",
+    "rg -n -- '--vx-(surface|status|fill|accent-fill|line2)' apps/console/src prints nothing",
+    "tokens:css --check passes for src/styles/app-tokens.css, and each --vx-series-N of git show HEAD:apps/console/src/styles/series.css appears with the same value in the same scheme block of it (one-liner in the PR)",
+    "package.json pins the exact floor version; manifest declares apps/console as bridge",
+    "Before and after shots of the Flow route and one list route (1800x1200, 390x844, both schemes); the PR lists the value shifts"
+  ],
+  "out_of_scope": "Replacing components/kit with basalt parts (G1+), the StatCard comparison, other apps.",
+  "owns_widened": "init also writes at the repo root: .basalt/** (manifest, budget.json, hook shim), root package.json, the root .oxlintrc.json (extends the generated preset), AGENTS.md block, .claude/**/basalt-*, .claude/settings.json basalt entries, lint presets, formatter ignore. apps/console/DESIGN.md stays; no root seed."
+}

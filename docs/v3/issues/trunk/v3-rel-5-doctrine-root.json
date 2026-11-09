@@ -1,0 +1,20 @@
+{
+  "why": "Root homes of the no-majors doctrine still say a 3.0 is never sanctioned and name semantic-release-monorepo as path-filtering; the flip must be deliberate and the rule must have one home.",
+  "what": "AGENTS.md and the deploy.yml header comment. Statements become one link line each to packages/basalt-ui/MAINTAINING.md 'Major lines' (written by rel-6) and scripts/release.sh constants.",
+  "owns": ["AGENTS.md", ".github/workflows/deploy.yml"],
+  "must_not_touch": ["packages/basalt-ui/**", "scripts/release.sh", "docs/v3/**"],
+  "concept": "docs/v3/concepts/migration-release.md#4.1 step 5",
+  "contract": "docs/v3/concepts/migration-release.md 4.1 step 5, 4.2 (homes), 0 item 2 (one home). Between majors the `feat!:` and BREAKING CHANGE ban is described only by the link; the single designated commit is rel-7. Insufficient contract: factory signal, reversible default, PR body says so. Frozen contracts are read-only.",
+  "exemplar": "AGENTS.md lines that today restate the rule: 'No majors' under Critical Rules, Git Workflow, Release Process, and 'Release: semantic-release-monorepo' in Tech Stack.",
+  "change": "Replace every doctrine restatement in AGENTS.md with a link (Critical Rules, Git Workflow incl. the `feat!:`/BREAKING CHANGE ban and 'Don't raise, propose, or reach for a major', Release Process incl. 'refuses every computed major'); delete the false 'path-filtered' claims and semantic-release-monorepo mentions (3 places); add one sentence: a workspace-set change carries its apps/marketing/Dockerfile COPY edit. In deploy.yml delete the 'path-filtered' comment lines only. Ships with: doctrine drift gated by the grep below, no new lint rule or skill snippet.",
+  "commits": "`docs:` commit for AGENTS.md and a `ci:` commit for deploy.yml, non-package only. No attribution. The auto-memory file never-trigger-releases.md is the orchestrator's (named in rel-6), not touched here.",
+  "proof": "grep below; make check.",
+  "acceptance": [
+    "grep -niE 'no majors|never sanctioned|one sanctioned major|refuses every|any prerelease|semantic-release-monorepo|path-filtered|banned|propose, or reach' AGENTS.md .github/workflows/deploy.yml returns nothing.",
+    "AGENTS.md contains a link to packages/basalt-ui/MAINTAINING.md and the words 'Major lines'.",
+    "grep -c 'Dockerfile' AGENTS.md prints exactly 1, in the one COPY-rule sentence.",
+    "bun packages/basalt-ui/scripts/check-agent-doc-drift.ts exits 0.",
+    "make check passes."
+  ],
+  "out_of_scope": "MAINTAINING, pkg AGENTS, MIGRATING (rel-6), a drift check for doctrine copies, the Dockerfile itself."
+}

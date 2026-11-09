@@ -1,0 +1,35 @@
+{
+  "repo": "argo",
+  "why": "Both apps need one tested copy of argo's framework-free lib logic during the sibling period; moving it first lets the later Issues import it without forking.",
+  "what": "Workspace package packages/shared and the framework-free lib modules that move into it with their tests. No fork, no dashboard-v3 build requirement.",
+  "owns": [
+    "packages/shared/**",
+    "apps/dashboard/src/lib/{plate-math,local-day,format,text,text-breaks,api-base,safe-url,fill-sources,console-url,hyperdx,hyperdx-options}*",
+    "apps/dashboard/src/lib/queries/{activities-window,draft-writer}*",
+    "apps/dashboard/src/**/*.{ts,tsx}",
+    "apps/dashboard/package.json",
+    "apps/dashboard-v3/package.json",
+    "bun.lock"
+  ],
+  "must_not_touch": [
+    "apps/api/**",
+    "apps/dashboard-v3/src/**",
+    "apps/dashboard-v3/.basalt/**",
+    "lib/{eden,auth,shot-state,window-stores,gym-profile}* and the forked queries (later Issues)"
+  ],
+  "concept": "migration-release#6.3 argo-shared row",
+  "contract": "~/SourceRoot/basalt-ui/docs/v3/concepts/migration-release.md 6.3 row 2. Tree facts (2026-11-09): lib/queries has 24 files; 15 import basalt-ui (unwrap) and 2 more import ../eden, so only activities-window and draft-writer move from there. activities-window imports a type from ./daily-metrics: declare WindowParams locally. format.test.ts imports `defineFormat` and `relativeTime` from basalt-ui/format (gone in v3): its `relativeTime` describe stays in apps/dashboard/src/lib/format-locale.test.ts (dies at cutover) and the moved format.test.ts keeps the rest. Reversible default: a module found to import basalt-ui, @mantine, react or eden stays put and the PR says so.",
+  "exemplar": "git mv with unchanged test bodies; the workspace shape of apps/api (package.json name, exports).",
+  "change": "Create @argo/shared (TS source exports, tsconfig extending tsconfig.base.json). git mv the modules above with their tests; retarget old-app imports to @argo/shared so apps/dashboard still builds and tests. Moves in their own commit, import-only edits in another. Rule: the app preset import-boundary (v3-argo-scaffold) keeps dashboard-v3 from importing apps/dashboard. Skill snippet: none; one README line on the sibling-period split.",
+  "commits": "Argo ships by push to master: conventional, one concern each, no attribution. Never edit node_modules or basalt-ui; a gap is a `friction:` line in the PR body, worked around in app code.",
+  "proof": "`git diff -M --stat` shows the moved tests as renames with import-only changes.",
+  "acceptance": [
+    "`bun test packages/shared` exits 0 and `git diff -M` shows each moved test as a rename whose changes are import lines (plus the split format.test.ts)",
+    "`rg -n \"from '(basalt-ui|@mantine|react)\" packages/shared` returns no match",
+    "`bun run --cwd apps/dashboard build` and `bun --cwd apps/dashboard test` exit 0; `make check` exits 0",
+    "`rg -n \"apps/dashboard/\" packages/shared apps/dashboard-v3/package.json` returns no match",
+    "apps/dashboard-v3/src is unchanged (`git diff --stat origin/master -- apps/dashboard-v3/src` is empty)"
+  ],
+  "out_of_scope": "Forking queries, stores, eden, auth, shot-state, any route, API changes.",
+  "creates": ["packages/shared (package @argo/shared; packages/ is empty today)"]
+}

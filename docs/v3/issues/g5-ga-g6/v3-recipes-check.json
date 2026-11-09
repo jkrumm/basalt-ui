@@ -1,0 +1,38 @@
+{
+  "why": "Eight Issues ship recipes and cite a `make gen-check` that no Issue builds, and v3-unhot-migrating-llms removes `gen-llms --check`. Without one checker a recipe drifts from its playground region and nothing fails.",
+  "what": "gen-recipes.ts: the `recipe:` region extractor and its `--check`, plus a test that runs it over the real tree so CI's `bun test` enforces it. No recipe content.",
+  "owns": [
+    "packages/basalt-ui/scripts/gen-recipes*",
+    "packages/basalt-ui/tests/recipes*",
+    "packages/basalt-ui/docs/recipes/.gitkeep"
+  ],
+  "must_not_touch": [
+    "CHANGELOG.md",
+    "packages/basalt-ui/{MIGRATING.md,llms.txt} (generated)",
+    "src/**/contract.ts, contract-pins.json",
+    "other lanes' folders",
+    ".github/**",
+    "Makefile",
+    "apps/playground/**",
+    "agent/**"
+  ],
+  "concept": "skills-agent-layer#3.16, 15.9",
+  "contract": "docs/v3/concepts/skills-agent-layer.md 3.16 and 15.9: `docs/recipes/<name>.md` = frontmatter (name, use when, file) + the `// #region recipe:<name>` of one compiled playground file + at most 15 prose lines; at most 60 lines each; at most 24 files; own budget outside the reference cap. A cut export without its recipe reinstates the export. The compile half is `bun run --cwd apps/playground typecheck` (exists); this Issue builds the drift half. The generated-docs extractor docs-format.ts (v3-rel-7-skeleton) is a different verb: do not touch it.",
+  "exemplar": "packages/basalt-ui/scripts/gen-llms.ts and gen-oxlint.ts for the write-or-`--check` shape; scripts/docs-format.ts for frontmatter parsing.",
+  "change": "gen-recipes.ts: default mode rewrites the code fence of each docs/recipes/<name>.md from its region; `--check` exits 1 and names the file and the reason: region missing or renamed, fence differs from the region, over 60 lines, more than 15 prose lines, frontmatter key missing, a region with no doc, a doc with no region, more than 24 recipes. tests/recipes.drift.test.ts runs the check over the real tree (passes with zero recipes) and the four fixtures. Rule: the script is the rule. Skill snippet: none. Every recipe Issue cites this command wherever it says `make gen-check`.",
+  "commits": "Two commits in one PR: packages/basalt-ui/** apart from everything else (isolated-basalt-ui hook); `make sync-self` output, if any, its own non-package commit; conventional, empty scope, plain feat:/fix:/chore:/docs:, never feat! or a BREAKING CHANGE footer; no attribution; rebase-merge.",
+  "proof": "`bun test packages/basalt-ui/tests/recipes.drift.test.ts`; the fixtures fail for the stated reason each.",
+  "acceptance": [
+    "`bun packages/basalt-ui/scripts/gen-recipes.ts --check` exits 0 on the tree with no recipes and on fixtures/recipes/ok",
+    "it exits 1 on each of drift, long and orphan, and the message names the file and the reason",
+    "`bun test packages/basalt-ui/tests/recipes.drift.test.ts` exits 0 and runs inside root `bun test` (CI's Tests step)",
+    "a recipe whose prose is 16 lines fails; one at exactly 15 passes",
+    "`git diff --name-only origin/master...HEAD` lists only owned paths; `make check` exits 0"
+  ],
+  "out_of_scope": "Writing any recipe, the playground typecheck, generated docs/<export>.md, llms.txt, CI workflow edits.",
+  "creates": [
+    "scripts/gen-recipes.ts + test",
+    "tests/recipes.drift.test.ts",
+    "tests/fixtures/recipes/{ok,drift,long,orphan}/"
+  ]
+}

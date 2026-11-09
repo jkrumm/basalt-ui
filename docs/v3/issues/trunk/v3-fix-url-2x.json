@@ -1,0 +1,27 @@
+{
+  "why": "Live 2.x security bug: `//attacker.example` passes the `/` allowlist (url.startsWith) and is an image exfil channel on every 2.x consumer until fixed.",
+  "what": "packages/basalt-ui/src/content/url-hardening.ts and url-hardening.test.ts on master (still 2.x). Nothing else.",
+  "owns": ["packages/basalt-ui/src/content/url-hardening*"],
+  "must_not_touch": [
+    "packages/basalt-ui/src/content/markdown.tsx",
+    "packages/basalt-ui/src/content/sanitize*",
+    "docs/**",
+    "CHANGELOG.md",
+    "MIGRATING.md"
+  ],
+  "concept": "docs/v3/concepts/ai-mdx.md#8 2.x fix now; docs/v3/concepts/ai-mdx.md#4 URL policy",
+  "contract": "Classification rule: docs/v3/concepts/ai-mdx.md section 4 'URL policy' and section 8 '2.x fix now'. Public shape stays: createUrlTransform options, null return, consumer-configurable prefixes. Insufficient contract: factory signal, reversible default, PR body says so. Frozen contracts are read-only.",
+  "exemplar": "Same file's sentinel cases (test.each over key/url) for fixture style.",
+  "change": "In createUrlTransform, before the prefix check: return null for input with a C0 control or leading/trailing space; for input starting with `/` or `\\`, parse against sentinel origin https://x.invalid and pass only when the resolved origin is the sentinel. resolveRelativeUrl must never return a `//`-prefixed URL. Ships with: no lint rule (untrusted-markdown is ai-i5), no skill snippet (v3), tests = the `//h` family fixtures in url-hardening.test.ts.",
+  "commits": "One `fix:` commit touching packages/basalt-ui/ only, test and fix together; PR body states the fixtures were red on the pre-change code. Do not release: make release is the owner's (rel-2).",
+  "proof": "bun test packages/basalt-ui/src/content, red first. If markdown.tsx still emits an <img> for `//h` through the real sanitizer, signal it; do not edit markdown.tsx.",
+  "acceptance": [
+    "bun test packages/basalt-ui/src/content/url-hardening.test.ts passes, and its new cases fail when url-hardening.ts is reverted (both runs stated).",
+    "For keys href and src with prefixes ['https://','/'], each of `//h`, `/\\h`, `/`+TAB+`/h`, ` //h` (leading space) and `\\\\h` returns null.",
+    "`/a/b`, `#anchor` and `https://example.com/x.png` pass unchanged; both streamdown:incomplete-* sentinels still return null.",
+    "With defaultOrigin set, `//h` is never returned.",
+    "git diff --name-only origin/master...HEAD lists only url-hardening.ts and url-hardening.test.ts.",
+    "make check passes."
+  ],
+  "out_of_scope": "v3 trusted/untrusted arms, contentTrust, rehype-sanitize wiring, markdown.tsx, releasing."
+}

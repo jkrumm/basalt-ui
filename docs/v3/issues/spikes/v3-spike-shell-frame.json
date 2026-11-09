@@ -1,0 +1,30 @@
+{
+  "why": "shell-i3 builds on three unproven geometry claims (docs/v3/concepts/shell-nav-router.md section 6 S1, S6, S8). It runs before the shell exists.",
+  "what": "tools/spikes/shell-frame/** (own package.json: react 19.3.0, tailwindcss, @tailwindcss/cli 4.3.5) and docs/v3/spikes/shell-frame.md. Fixtures: plain React plus Tailwind 4 reproducing only the structure of docs/v3/concepts/shell-nav-router.md sections 3.1, 3.2 (rail, PageBar band, PageAside); no consumer source. Inputs: argo's dense route, astro map, calendar week and month, agenda column; shutterflow's header cluster (3 badges, 2 actions, job progress).",
+  "owns": ["tools/spikes/shell-frame/**", "docs/v3/spikes/shell-frame.md"],
+  "must_not_touch": [
+    "CHANGELOG.md",
+    "root package.json, bun.lock, .gitignore, .oxlintignore",
+    "docs/v3/{concepts,issues}/**, docs/v3/ARCHITECTURE.md",
+    "other tools/spikes/* folders",
+    "consumer repos (scratch copies live in the OS temp dir)"
+  ],
+  "concept": "docs/v3/concepts/shell-nav-router.md section 6 S1 S6 S8",
+  "contract": "docs/v3/concepts/shell-nav-router.md section 6 is frozen; refuted-if actions are recorded, not applied.",
+  "exemplar": "scripts/evidence/*.ts (one JSON result per run)",
+  "change": "S1: sticky band, nested layouts (table head, anchors, aside seam, restored scroll): sample the band's top each frame through a scripted scroll and a restored-scroll reload; `offsetFlicker` = any frame off its sticky offset by more than 0.5 px; `asideSeamPx` = aside header bottom minus band bottom. S6: priority collapse at 1024, 1200, 1440: `itemsLost` (missing from the kebab), `wraps` (cells where the cluster exceeds one row); short labels only below 1200. S8: shutterflow viewer, 320 px aside, `dock=\"always\"` at window 900, 1024, 1200, rail expanded and collapsed (6 cells); `resizeLagMs` = resize until main's width is unchanged for 3 frames.",
+  "commits": "One non-package commit `chore: spike shell-frame harness and verdict`, empty scope, no attribution.",
+  "proof": "Shots at 1800x1200 and 390x844, plus 900, 1024, 1200 per S8 cell, light and dark, under tools/spikes/shell-frame/shots/.",
+  "acceptance": [
+    "run.ts JSON has `s1.offsetFlicker` (false), `s1.asideSeamPx` (<= 1), `s6.itemsLost` (0), `s6.wraps` (0), `s8.mainWidthPxByCell` (6 cells), `s8.resizeLagMs`; a shot exists per S8 cell",
+    "`bun tools/spikes/shell-frame/run.ts` exits 0, prints one JSON object with the keys above (0 = harness ran, not hypothesis held)",
+    "docs/v3/spikes/shell-frame.md has headings Question, Method, Measurements, Verdict, Then, Affects and the `verdict` lines",
+    "`find tools/spikes/shell-frame -name '*.test.*' -o -name '*.spec.*'` prints nothing",
+    "`git diff --name-only master...HEAD` lists only `owns` paths",
+    "`grep -rnE 'op://|\\.ts\\.net|192\\.168\\.|ghp_' tools/spikes/shell-frame docs/v3/spikes/shell-frame.md` prints nothing",
+    "`make check` passes"
+  ],
+  "out_of_scope": "The shell; shutterflow; S2-S5, S7, S9; the second-PageBar dev assertion (shell-i4).",
+  "envelope": "Harness: tools/spikes/<dir>/ has its own package.json (exact pins); bun.lock and node_modules gitignored there (must_not_touch package.json and bun.lock = repo root only). Passes root oxlint; no *.test.* files; Chrome via the playwright-core pattern of packages/basalt-ui/tests/layout/harness.ts; docs/v3 on master before filing; synthetic data only, private repos as counts and hashed ids.",
+  "verdict": "Lines `S1`, `S6`, `S8: PASS|REFUTED`. S1 REFUTED on flicker or seam above 1 px (portal into a band region); S6 on any wrap or lost item (change tier thresholds); S8 when main is under 480 px with the rail collapsed or `resizeLagMs` exceeds 100, a bar fixed before measuring (shutterflow keeps its flex inspector). `Verdict: PASS` iff all PASS; run.ts `verdict` the same."
+}

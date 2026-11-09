@@ -1,0 +1,35 @@
+{
+  "why": "Models produce text and tool parts; apps need one safe, exhaustive renderer before any chat chrome. partView pins untrusted markdown and never throws.",
+  "what": "MessagePart, ToolView, partView, toolView, tests and the P3, P3b Chrome fixtures. No catalog, no recipes. Owned paths are under packages/basalt-ui/.",
+  "owns": [
+    "packages/basalt-ui/src/ai/{part*,tool-view*}",
+    "packages/basalt-ui/src/core/messages/ai.ts",
+    "packages/basalt-ui/tests/layout/ai-part*",
+    "packages/basalt-ui/scripts/check-budgets/areas/ai.ts"
+  ],
+  "shared_append_only": [
+    "packages/basalt-ui/src/ai/index.ts",
+    "packages/basalt-ui/src/core/messages/index.ts"
+  ],
+  "must_not_touch": [
+    "CHANGELOG.md",
+    "{MIGRATING.md,llms.txt} (generated)",
+    "src/**/contract.ts, contract-pins.json, other lanes' folders: src/{ui,tokens,cards,charts,table,shell,controls,router,data,content}/**",
+    "package.json and bun.lock (v3-deps-w2 / v3-deps-ai added your pins)"
+  ],
+  "concept": "ai-mdx#8 I3; ai-mdx#7 P3, P3b, P4",
+  "contract": "Frozen: src/ai/contract.ts (v3-rel-7-contracts, an ancestor), docs/v3/concepts/ai-mdx.md decisions 2, 3, 9, rows 1, 6, section 4, P3, P3b, P4. contentTrust is pinned 'untrusted'. `npm view` ai 7.0.166 and @ai-sdk/react 4.0.170 before pinning. Collapsible is `basalt-ui/ui/collapsible` (v3-prim-p5a-display). A contract change: signal, take the reversible default. src/ai imports src/content only; `ai` and `@ai-sdk/react` are test devDependencies, never src imports.",
+  "exemplar": "src/content/markdown.tsx; v2 src/agent/part-list.tsx.",
+  "change": "MessagePart = structural subset of UIMessage['parts']; ToolView states pending, running, awaiting-approval, done, error, denied. partView per contract.ts: one switch ending `default: return part satisfies never`; text via Markdown untrusted, streaming = !settled; tools via toolView (awaiting shows its label, no buttons; denied is not failed); tool rail folds as 'N steps . 42 s'; reasoning, source-*, data-*, file, step-start get a quiet fallback. Messages: create src/core/messages/ai.ts (AiMessages and the English defaults for ai.toolRunning, ai.toolAwaitingApproval, ai.toolDenied, ai.steps; defaults live with their area) and add the one line to src/core/messages/index.ts that composes AiMessages into BasaltMessages (say so in the PR). v3-ai-i4 adds its key to the same file. Rule: type-level (P4); trust pinning is v3-ai-i5-lint's. Skill snippet: JSDoc @example on partView.",
+  "commits": "Two commits in one PR: packages/basalt-ui/** apart from everything else (isolated-basalt-ui hook); `make sync-self` output its own non-package commit; conventional, empty scope, no feat! or BREAKING CHANGE, no attribution; rebase-merge.",
+  "proof": "`make layout`. P3: gap-perf S1-S9 on a component-owned `useState(() => new Chat({transport}))` host plus S10. P3b: loader-seeded history, last-message-only POST, mid-stream hydrate, 409 rollback by messageId, two threads.",
+  "acceptance": [
+    "`cd packages/basalt-ui && bun test src/ai` exits 0 and `rg -n 'satisfies never' src/ai/part-view.tsx` matches",
+    "part-types.type-guard.test.ts assigns every ai@7.0.166 UIMessage part type (file, step-start, data-*, dynamic-tool) to MessagePart and stops compiling when one is removed",
+    "part-view.test.tsx: `![x](//attacker.example/a.png)` yields no <img>; a malformed wire part does not throw",
+    "ai-part-stream.layout.test.ts: 86 of 86 chars kept under ui/collapsible and CSS-hide, passing in `make layout`",
+    "ai-part-argo.layout.test.ts: the 409 rollback removes exactly the optimistic message and two threads stay separate; on failure the PR says P3b refuted",
+    "`ai` and `@ai-sdk/react` appear only under devDependencies in packages/basalt-ui/package.json; messages.coverage passes with the four ai.* keys; `make check` exits 0"
+  ],
+  "out_of_scope": "Message, Composer (i8), Block and catalog (i4), approval and reasoning recipes, a runtime."
+}

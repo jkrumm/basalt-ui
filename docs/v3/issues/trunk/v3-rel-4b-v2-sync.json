@@ -1,0 +1,18 @@
+{
+  "why": "The gate must also bind the fix-only line, and the factory only recognises ships reachable from the default branch, so the copy onto v2 is an owner or orchestrator step after rel-4 merged.",
+  "what": "Owner or orchestrator row. scripts/release.sh and scripts/release.test.ts from master (after rel-4) land on v2; .releaserc.json stays the v2 one.",
+  "owns": ["scripts/release.sh", "scripts/release.test.ts"],
+  "must_not_touch": ["**"],
+  "concept": "docs/v3/concepts/migration-release.md#4.1 step 4",
+  "contract": "docs/v3/concepts/migration-release.md 4.1 step 4 (same release.sh and test on v2, only .releaserc.json differs), 3.1 (v2 accepts a 2.x patch only), 4.6.",
+  "exemplar": "v3-rel-3-cut-v2: same owner-row shape and read-only acceptance.",
+  "change": "Owner or orchestrator, from a clean clone with admin rights: `git fetch origin && git switch v2 && git checkout origin/master -- scripts/release.sh scripts/release.test.ts && git commit -m 'ci: version gate for the v2 line' && git push origin v2` (a PR with base v2 merged by the owner also works). Then, from a clean v2 checkout: `LINE=v2 scripts/release.sh dry`. It must not compute a minor or major: no releasable commit since v2.29.1 (refusal 'could not read the next version') or a 2.29.N patch are both fine. Lead, on pick-up: raise a factory Decision (`factory issue ask`) with these commands, keep the Issue open and waiting, close only after the owner acted and every acceptance line is met. Verify read-only; never dispatch a workflow.",
+  "commits": "None from a lead. One `ci:` non-package commit on v2.",
+  "proof": "git reads; the dry-run output pasted into the Decision answer.",
+  "acceptance": [
+    "git diff origin/master origin/v2 -- scripts/release.sh scripts/release.test.ts is empty.",
+    "git diff --name-only origin/master origin/v2 -- .releaserc.json scripts .github commitlint.config.ts lists .releaserc.json, commitlint.config.ts and .github/workflows/ci.yml only among release files.",
+    "The owner's answer to the Decision quotes the LINE=v2 dry run and it computed no minor or major."
+  ],
+  "out_of_scope": "Any package change, a 2.x release, master files."
+}

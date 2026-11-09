@@ -1,0 +1,29 @@
+{
+  "why": "G5 exits on argo's friction ledger: the D and T rows (87) each need one disposition. Split from v3-argo-ledger so one lead decides one bucket.",
+  "what": "87 rows of the D and T buckets in docs/v3/acceptance/argo-friction-disposition/dt.json. Paths are in the basalt-ui repo.",
+  "owns": ["docs/v3/acceptance/argo-friction-disposition/dt.json"],
+  "shared_append_only": ["Makefile"],
+  "must_not_touch": [
+    "docs/v3/acceptance/argo-friction.md",
+    "packages/basalt-ui/scripts/check-test-ledger.ts (v3-mig-testing)",
+    "~/SourceRoot/argo and other consumer repos (read only: carried tests are located there)",
+    "CHANGELOG.md",
+    "packages/basalt-ui/scripts/check-test-ledger-argo* (v3-argo-ledger)",
+    "docs/v3/acceptance/argo-friction-disposition/{core,ac,v,dt}.json except dt.json"
+  ],
+  "concept": "migration-release#6.5",
+  "contract": "docs/v3/concepts/migration-release.md 6.5; row shape and checker from v3-argo-ledger (an ancestor). Source: docs/v3/acceptance/argo-friction.md status column. Default: moot where the tooling is deleted (managed check.yml, guard kinds, MIGRATING prose), else carried. Open ids, each needing a non-empty `justification`: 119, 126, 130, 139, 140, 142, 148-151, 153-155, 157, 159, 161, 164, 166, 167, 214, 215, 217, 218, 221-234 (the ones in your bucket).",
+  "exemplar": "docs/v3/acceptance/argo-friction-disposition/core.json (v3-argo-ledger) for the row shape.",
+  "change": "Write one row per id of the bucket from the status column (A, C: ids marked A or C, and so on), with repo and test_repo from the row's first column. A `carried` row names a test that exists now (every route Issue is an ancestor): find it with rg in the consumer repo; if none exists, write the test path of the nearest v3 test or mark the row `accepted` with the contract reason and say so in the PR. Rule: the checker is the rule. Skill snippet: none. Moot and accepted rows are defaults: the owner verdict is v3-verdict-argo-ledger's.",
+  "commits": "One PR, separate package and non-package commits (isolated-basalt-ui); conventional, empty scope, no attribution; make sync-self its own commit.",
+  "proof": "Counts per disposition printed in the PR body.",
+  "acceptance": [
+    "`bun packages/basalt-ui/scripts/check-test-ledger-argo.ts` exits 0 and the row count printed rose by 87",
+    "`--complete` exits 0 (all 234 ids present once) and `make check` now runs it with `--complete`",
+    "`jq '[.rows[].id]|length' docs/v3/acceptance/argo-friction-disposition/dt.json` prints 87 and every id's bucket equals the status column (the PR lists any row whose bucket changed)",
+    "`--argo-root ~/SourceRoot/argo` exits 0: every carried path exists in its test_repo",
+    "every open id of this bucket has a non-empty justification",
+    "`make check` exits 0"
+  ],
+  "out_of_scope": "Other buckets, fixing any argo defect, editing argo-friction.md, the owner verdict."
+}

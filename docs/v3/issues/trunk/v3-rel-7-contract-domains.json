@@ -1,0 +1,28 @@
+{
+  "why": "Parallel lanes in page, shell, controls, charts, content and ai need frozen public types; the pin gate from v3-rel-7-contracts already guards them.",
+  "what": "Six type-only contract.ts files and their pin rows. New files: src/{page,shell,controls,charts,content,ai}/contract.ts. cards and table contracts land with their own Issues; router and data are L2 and have no contract.ts (docs/v3/ARCHITECTURE.md section 2 and 7.1 list eight dirs, not these two).",
+  "owns": [
+    "packages/basalt-ui/src/{page,shell,controls,charts,content,ai}/contract.ts",
+    "packages/basalt-ui/scripts/contract-pins.json"
+  ],
+  "must_not_touch": [
+    "packages/basalt-ui/src/core/ports.ts",
+    "packages/basalt-ui/src/{cards,table}/contract.ts",
+    "packages/basalt-ui/src/ui/**",
+    "any implementation file"
+  ],
+  "concept": "docs/v3/ARCHITECTURE.md#7.1",
+  "contract": "docs/v3/ARCHITECTURE.md 2, 7.1. Source of each file's types: page and shell: docs/v3/concepts/shell-nav-router.md 3; controls: docs/v3/concepts/controls-url-state.md 5 and docs/v3/concepts/state-persistence-forms.md 6 (FormField, useFormDraft props); charts: docs/v3/concepts/charts-cards-kanban.md 4 (the src/charts/contract.ts sketch); content and ai: docs/v3/concepts/ai-mdx.md 4. Shared ports come from src/core/ports.ts, never redeclared. charts, content, controls and shell are 2.x dirs: the contract file is additive and imported by nothing yet. Insufficient contract: factory signal, reversible default, PR body says so.",
+  "exemplar": "src/core/ports.ts from v3-rel-7-contracts (types only) and its pin row in contract-pins.json.",
+  "change": "Write each contract.ts as types only: public props, handles and option shapes the concept section sketches, no value exports. Add one pin row per file with its sha256 (shasum -a 256); an added key passes the gate without an amendment commit. Ships with: the gate as the guarantee; no skill snippet.",
+  "commits": "One PR, one `feat:` commit touching packages/basalt-ui/ only. Conventional, empty scope, no attribution, never CHANGELOG.md.",
+  "proof": "bun packages/basalt-ui/scripts/check-contract-frozen.ts; make check.",
+  "acceptance": [
+    "bun packages/basalt-ui/scripts/check-contract-frozen.ts exits 0 and contract-pins.json has a key for each of the six files.",
+    "grep -E '^export (const|let|var|function|class|enum)' on the six files returns nothing.",
+    "Each file exports the type names its concept section sketches (the lead lists them per file in the PR body) and tsc --noEmit passes.",
+    "git diff --name-only origin/master...HEAD lists only the six contract.ts files and contract-pins.json.",
+    "make check passes with the new files inside the 2.x charts, content, controls and shell dirs (coverage, doc-drift and budget gates tolerate them)."
+  ],
+  "out_of_scope": "cards and table contracts, router and data contracts, implementation, edits to ports.ts."
+}

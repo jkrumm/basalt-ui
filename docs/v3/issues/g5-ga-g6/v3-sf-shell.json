@@ -1,0 +1,38 @@
+{
+  "repo": "shutterflow",
+  "why": "Every desktop screen renders inside the shell; it sets chrome, nav and commands and proves the native overlay title bar survives the move.",
+  "what": "Entry, App, router, AppShell with the native overlay chrome, nav, commands, undo stack, start-fresh flow and the API-health indicator.",
+  "owns": [
+    "apps/desktop-v3/src/{main.tsx,App.tsx}",
+    "apps/desktop-v3/src/app/**",
+    "apps/desktop-v3/src/shell/**",
+    "apps/desktop-v3/src/routes/**",
+    "apps/desktop-v3/src/lib/**",
+    "apps/desktop-v3/src/{useApiHealth,ApiHealthIndicator,health-state}*",
+    "apps/desktop-v3/src/features/**"
+  ],
+  "must_not_touch": [
+    "apps/desktop/** (stays shippable)",
+    "apps/desktop/src-tauri/**",
+    "crates/**",
+    "e2e/desktop/visual/**/*.png",
+    "other Issues' dirs under apps/desktop-v3/src"
+  ],
+  "concept": "migration-release#6.4 shell row",
+  "contract": "Read basalt-ui docs/v3/concepts/migration-release.md 6.4, shutterflow docs/decisions/0028 (no bulk baseline regeneration) and AGENTS.md safety rule 1 (never read /Volumes). The installed basalt-ui is exact 3.0.0-next.N, the G2 floor set by the scaffold: its docs/recipes and llms.txt are the API truth; never edit package.json or bun.lock. Shell law: docs/v3/concepts/shell-nav-router.md (AppShell with chrome native, defineNav, defineCommands, toMenuTemplate, one h1 per screen). Nav order: Photos, Collections, Pipeline, Albums, Activity, Analytics, Library Health. Command ids stay stable.",
+  "exemplar": "apps/desktop/src/shell/*, app/{RootLayout.tsx,router.tsx}.",
+  "change": "Port the app frame onto v3: BasaltProvider and AppShell in native-overlay mode (native-titlebar.css's inset becomes the shell's native chrome), defineNav, defineCommands, toMenuTemplate, undo stack and start-fresh dialogs on ui/dialog, ApiHealthIndicator, health-state, lib (api, events, query-client, ui-prefs, useEvents, useJobs). app/router.tsx keeps the code-route tree and imports each page or route factory from its old path (the 11 imports in apps/desktop/src/app/router.tsx, e.g. createPhotosRoute from features/photos/photos-route, SettingsPage and settingsSearch from features/settings). This Issue creates each of those modules as a PlaceholderPage stub with the same exported name; the screen Issues replace them. Rule: shell guard rules pass in the app preset. Tests: the shell, app and lib tests port with it.",
+  "commits": "Shutterflow ships by push to master: conventional, one concern each, no attribution. Never edit node_modules or basalt-ui; a gap is a `friction:` line in the PR body.",
+  "proof": "hygiene.check is false. Gate: the app's typecheck, test and build; e2e and invariants.spec.ts (footer inset, nav pitch, header 52, no clip) are owner-run: state them not-run.",
+  "acceptance": [
+    "`bun run --filter @shutterflow/desktop-v3 typecheck`, `test` and `build` exit 0",
+    "`make check-changed` exits 0 (not-run if a manifest changed: it then falls back to `make check`)",
+    "`rg -n -i '@mantine|@visx|mantine-' apps/desktop-v3/src/{app,shell,routes,lib,main.tsx,App.tsx}` returns no match",
+    "`bun scripts/check-port.ts apps/desktop/src/lib apps/desktop-v3/src/lib` exits 0 (tests only; changed lines carry `// port:` markers listed in the PR); the same for shell/ and app/",
+    "`bun run --filter @shutterflow/e2e-desktop typecheck` exits 0 with invariants.spec.ts on data-slot",
+    "a DOM test through renderApp asserts the nav items render in the order Photos, Collections, Pipeline, Albums, Activity, Analytics, Library Health, and each route stub renders one h1",
+    "`rg -n 'createPhotosRoute|createTrashRoute|SettingsPage' apps/desktop-v3/src/app/router.tsx` matches and every imported path exists",
+    "the PR body lists which invariants.spec.ts assertions are owner-run (not-run here)"
+  ],
+  "out_of_scope": "Any screen's content, settings, deleting apps/desktop, new nav items."
+}

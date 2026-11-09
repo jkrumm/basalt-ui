@@ -1,0 +1,28 @@
+{
+  "why": "A removed Mantine symbol with no machine row stalls a consumer silently (rollhook, 19 minors) and the release gate fails a surface diff with no row.",
+  "what": "packages/basalt-ui/migrations/areas/ui.json only. Created here (per-area file from v3-unhot-migrating-llms).",
+  "owns": ["packages/basalt-ui/migrations/areas/ui.json"],
+  "must_not_touch": [
+    "packages/basalt-ui/src/{page,shell,cards,controls,table,charts,content,ai,router,data,core,tokens,css,lint,cli,vite,testing}/**",
+    "packages/basalt-ui/agent/**",
+    "packages/basalt-ui/src/**",
+    "CHANGELOG.md, MIGRATING.md, llms.txt, scripts/check-budgets/**, other areas' migrations files",
+    "every contract.ts and src/core/ports.ts"
+  ],
+  "concept": "primitives-distribution#9",
+  "contract": "Row schema and generator: concepts/migration-release.md 3.2 and scripts/release-migrating* (read-only). Mapping source: concepts/primitives-distribution.md section 9 table and its prop table.",
+  "exemplar": "packages/basalt-ui/migrations/areas/tokens.json (landed by v3-tok-t5-rows) for row ids, kinds and valueShifts shape.",
+  "change": "One row per section 9 row: kinds codemod (layout T rows, component= to render, size, data= to options=), map (each remaining tag), manual (useForm and @mantine/form, Rating, Tree, Stepper, ColorInput, WeekView and MonthView). valueShifts for every primitive height and radius read from src/tokens/table.ts at head. Attr row .mantine-Popover-dropdown to popover-content. Storage and urls arrays empty. Rule: none; the release gate release-migrating --check is the rule. Skill: the rows feed basalt-app/references/migrate.md (sk-8). Test: the schema and surface-diff check.",
+  "commits": "Package (packages/basalt-ui/**) and non-package changes are separate commits in one PR (lefthook isolated-basalt-ui). Conventional, empty scope, no feat!: or BREAKING CHANGE, no attribution. Generated files come from make check, never by hand.",
+  "proof": "release-migrating --check and the rows schema test.",
+  "acceptance": [
+    "release-migrating --check exits 0 with ui.json present",
+    "every Mantine symbol named in the section 9 table (113 in the census) has a row id, or is listed under manual with a reason",
+    "each valueShifts 'to' value equals the matching entry in src/tokens/table.ts (a test reads both)",
+    "no row references a primitive outside the 36 modules in ARCHITECTURE section 3 (the concept's 35 predates the virtual-list raise; cite 36 only)",
+    "the file validates against the schema with no unknown keys",
+    "make check exits 0",
+    "git diff --name-only lists only owned paths"
+  ],
+  "out_of_scope": "Codemod implementation (tools/migrate-v3), rows for other areas, MIGRATING.md edits, consumer changes."
+}

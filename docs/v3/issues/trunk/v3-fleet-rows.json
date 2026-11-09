@@ -1,0 +1,20 @@
+{
+  "why": "GA must be mechanical: every fleet package is a row with a gate, a floor and a check, so 'on v3' means merged and pinned. Rows first; the script is v3-fleet-status.",
+  "what": "scripts/fleet.json (new), rows only. One row per package declaring basalt-ui, roots included: shutterflow root, apps/desktop and apps/gallery separate; rollhook two apps; console is software-factory apps/console. Excluded: epos and every ~/IuRoot repo (GitLab, their own process).",
+  "owns": ["scripts/fleet.json"],
+  "must_not_touch": ["scripts/release.sh", "packages/basalt-ui/**", "other repos"],
+  "concept": "docs/v3/concepts/migration-release.md#3.3",
+  "contract": "docs/v3/concepts/migration-release.md 3.3 (JSON shape: floors, gaFloor, rows), 5 (gates G0-G5, G6 excluded), 12 (profiles). Repo names and package paths only: no hosts, no tokens. gaFloor starts null and floors empty (a freeze PR writes them). A top-level \"owner\": \"jkrumm\" is the GitHub owner; a row may override it. Insufficient contract: factory signal, reversible default, PR body says so.",
+  "exemplar": "Row shape { repo, package, profile, gate, from, check, verify, waivers } from 3.3. Read each repo's package paths, check and verify commands from docs/v3/evidence/consumer-*.md and docs/v3/DISCOVERY-DIGEST.md section 1; mark any value you could not confirm there with \"unverified\": true and check read-only with `gh repo view <owner>/<repo>`.",
+  "change": "Write scripts/fleet.json with the rows above and the gate of each repo from docs/v3/concepts/migration-release.md 5. image-gateway has no verify. Ships with: the file; validation arrives with v3-fleet-status.",
+  "commits": "One non-package `chore:` commit. Conventional, empty scope, no attribution.",
+  "proof": "jq parse and the greps below.",
+  "acceptance": [
+    "jq -e . scripts/fleet.json succeeds; every row has repo, package, profile, gate and from.",
+    "grep -E 'https?://|token|secret' scripts/fleet.json returns nothing.",
+    "Every gate G0-G5 appears on at least one row and no row names epos or an IuRoot repo.",
+    "gaFloor is null and floors is empty.",
+    "git diff --name-only origin/master...HEAD lists only scripts/fleet.json."
+  ],
+  "out_of_scope": "The script, writing floors, probing real repos, epos, flipping any gate by hand."
+}

@@ -1,0 +1,46 @@
+{
+  "why": "An owned CSS grid with five areas replaces Mantine AppShell and the 14 !important and 60 :global selectors that fought it.",
+  "what": "src/shell/{app-shell*,index.ts,legacy*,parts/{grid,header,a11y,print,mounts}*}, three stubs, shell-frame layout and scenario. Header is bare start, center, end regions (tiers: I5b).",
+  "owns": [
+    "packages/basalt-ui/src/shell/app-shell*",
+    "packages/basalt-ui/src/shell/legacy*",
+    "packages/basalt-ui/src/shell/parts/grid*",
+    "packages/basalt-ui/src/shell/parts/header*",
+    "packages/basalt-ui/src/shell/parts/a11y*",
+    "packages/basalt-ui/src/shell/parts/print*",
+    "packages/basalt-ui/src/shell/parts/mounts*",
+    "packages/basalt-ui/src/shell/parts/rail.tsx",
+    "packages/basalt-ui/src/shell/parts/mobile/tab-bar.tsx",
+    "packages/basalt-ui/tests/layout/fixture/fixtures.tsx",
+    "packages/basalt-ui/tests/layout/{shell-frame*,fixture/v3/scenarios/shell-frame*}"
+  ],
+  "shared_append_only": [
+    "packages/basalt-ui/src/shell/index.ts",
+    "packages/basalt-ui/src/shell/parts/mobile/index.ts",
+    "packages/basalt-ui/src/index.ts"
+  ],
+  "must_not_touch": [
+    "packages/basalt-ui/{MIGRATING.md,llms.txt,scripts/contract-pins.json,scripts/check-budgets/**,src/*/contract.ts,src/{ui,tokens,lint}/**,agent/**}",
+    "CHANGELOG.md",
+    "other lanes",
+    "packages/basalt-ui/src/shell/{core,commands,chrome*,menu-template*}",
+    "packages/basalt-ui/src/{page,router}/**",
+    "apps/**"
+  ],
+  "concept": "shell-nav-router#8 I5; #1; #2 Frame, Print, a11y",
+  "contract": "concept 1, 2, 3.1, 3.5, 4, 8; src/shell/contract.ts. Uses I2, I3, ui/{menu,tooltip}; shell.* message keys come from v3-qa-i2 (missing: signal). Frozen: never edit contract.ts or contract-pins.json; signal, then take the reversible default.",
+  "exemplar": "2.x src/shell/{index.tsx (658), app-breadcrumbs.tsx, app-header and app-main css}.",
+  "change": "AppShell, 12 props (nav, brand, badges, blocks, globalControls, globalActions, settings, account, search, storageKey, chrome 'web' only, compactHeader): grid header, rail, main, aside, footer in @layer basalt; h-dvh root, document never scrolls; shell-main is the one <main tabindex=-1> scrollport (data-scroll-restoration-id); --shell-header-h, --shell-rail-w, --shell-aside-w, --page-gutter 8, 16, 24; mounts.tsx mounts rail and tab bar from the stubs (bare nav landmarks with their data-slot); skip link, polite announcer on pathname change only, title 'page · brand', print CSS; every part has its 3.5 data-slot. Barrel: git mv src/shell/index.tsx and its test to legacy.tsx (2.x BasaltShell), re-point importers, write index.ts exporting AppShell (v3-rel-7-skeleton allocated the ./shell key). Ships with: guarantee = stylelint selector-disallowed-list, axe; teach = JSDoc (bullets: I10); test = layout, SSR, print.",
+  "commits": "Separate commits for package and non-package paths in one PR (isolated-basalt-ui); conventional, empty scope, no attribution; no CHANGELOG.md edit.",
+  "proof": "shell-frame layout and axe at 1440, 1024, 390; no shot (I5c).",
+  "acceptance": [
+    "LAYOUT_TARGET=v3 shell-page-aside passes with only the slot table changed, no skip",
+    "Docked aside header seam is off the band by at most 1 px; an unclaimed aside is 0 wide with no 1 px ghost",
+    "Document scrollHeight equals clientHeight on every shell-frame scenario; no horizontal overflow at 1440, 1024, 390; one header token height; gutters 8, 16, 24",
+    "Axe (serious and critical) zero for region, landmark-* and page-has-heading-one at both viewports",
+    "renderToString of AppShell contains data-slot shell-rail and shell-tab-bar (stub mounts), hydrates without a mismatch warning; navFor(router) returns the declared nav",
+    "Print fixture with 100 rows prints all pages, not 24 of 80",
+    "src/shell/index.ts exports AppShell only; playground typecheck and 2.x ShellFrame layout tests pass; no 'mantine' in owned src files; make check passes"
+  ],
+  "out_of_scope": "Rail (I5b), tab bar (I6), playground (I5c), commands (I8), defaults (I9), bullets (I10)."
+}

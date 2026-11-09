@@ -1,0 +1,28 @@
+{
+  "repo": "jkrumm.com",
+  "why": "After v3-g0-jkrumm the stylelint preset reports what is left of jkrumm's own broken law: about 62 raw-px sites, 36 hex, 13 viewport queries and the astro findings.",
+  "what": "src/** (CSS, .astro style blocks, inline styles), package.json (check:basalt gains basalt-ui lint), .basalt/budget.json through the CLI. Profile tokens.",
+  "owns": ["src/**", "package.json", ".basalt/**"],
+  "must_not_touch": [
+    "deploy/**",
+    "scripts/**",
+    "public/**",
+    "Dockerfile",
+    "docs/**",
+    "src/content/**"
+  ],
+  "concept": "static-framework-free#10 issue 8",
+  "contract": "Read-only in ~/SourceRoot/basalt-ui: docs/v3/concepts/static-framework-free.md sections 4.2 and 8 (P7, F-S1); docs/v3/concepts/guardrails.md section 8 (waiver form). The varMap of v3-g0-jkrumm already landed.",
+  "exemplar": "The seeded-offender fixtures in ~/SourceRoot/basalt-ui/packages/basalt-ui/test/fixtures/lint/stylelint (what each rule means).",
+  "change": "Run basalt-ui lint and record per-rule counts as BEFORE in the PR. Fix at source: hex to var(--vx-*) or src/lib/tokens.json; raw px spacing and type to --vx-rhythm-*, --vx-text-*; radii and shadows to --vx-radius-*, --vx-shadow-*; viewport queries to container or intrinsic layout; astro findings as reported. The ResumeSheet print sheet keeps its literal colours behind one counted waiver with a reason; optical offsets take a one-line waiver with a reason. If more than 40 waivers would be needed, stop and signal with per-rule counts. Then append basalt-ui lint to check:basalt, remove lint:basalt, and land the count with basalt-ui lint --stats --write-budget (never edit .basalt/budget.json by hand).",
+  "commits": "Per jkrumm.com: conventional commits, direct to master (ship via push), no attribution.",
+  "proof": "make check; after the push make verify exits 0.",
+  "acceptance": [
+    "basalt-ui lint exits 0; before and after counts per rule (hex, raw px, viewport, astro) are in the PR; every waiver has a reason",
+    "make check exits 0 and check:basalt includes basalt-ui lint",
+    "rg -n '#[0-9a-fA-F]{3,8}\\b' src/styles src/components | rg -v 'stylelint-disable' prints only lines inside a waivered block (listed in the PR)",
+    ".basalt/budget.json waivers equals the counted waivers",
+    "make verify exits 0 after deploy"
+  ],
+  "out_of_scope": "Content, tokens, type and boot script (v3-g0-jkrumm), previews, new React or Tailwind, deploy config."
+}

@@ -1,0 +1,33 @@
+{
+  "why": "The index and shell routes are the owner's first full-screen taste checkpoint, and expectShellInvariants is the check both G2 consumers are held to.",
+  "what": "Playground wiring and exemplar routes, two recipes, and the invariants helper in packages/basalt-ui/src/testing.",
+  "owns": [
+    "apps/playground/src/{main.tsx,routes/{index,shell,__root}.tsx,demo/nav-model*}",
+    "packages/basalt-ui/docs/recipes/{add-page,app-shell}.md",
+    "packages/basalt-ui/src/testing/shell-invariants*"
+  ],
+  "shared_append_only": ["packages/basalt-ui/src/testing/index.ts"],
+  "must_not_touch": [
+    "packages/basalt-ui/{MIGRATING.md,llms.txt,scripts/contract-pins.json,scripts/check-budgets/**,src/*/contract.ts,src/{ui,tokens,lint}/**,agent/**}",
+    "CHANGELOG.md",
+    "other lanes' folders",
+    "packages/basalt-ui/src/{shell,page,router}/**",
+    "packages/basalt-ui/src/testing/{settled,dom-shims,slots,render-app,fake-channel,quality}*",
+    "apps/playground/src/routes/{settings,gallery,cards,table}.tsx"
+  ],
+  "concept": "shell-nav-router#8 I5; #6 Proof rows Exemplars, expectShellInvariants; quality-contract#9",
+  "contract": "concept 3.1, 6 (invariants helper: footer inset, nav pitch, header 52, no clip), quality-contract 9 (expectShellInvariants(page, {states})). Route anatomy follows routes/cards.tsx (v3-exemplar-statcard). Frozen: never edit contract.ts or contract-pins.json; signal, then take the reversible default.",
+  "exemplar": "2.x apps/playground/src/routes/__root.tsx and demo/nav-model.tsx; shutterflow's invariants (consumer-shutterflow evidence).",
+  "change": "__root.tsx mounts AppShell (nav from demo/nav-model.tsx via defineNav, brand, badges, blocks, account, settings), routes/index.tsx has regions add-page and app-shell, routes/shell.tsx shows a Page with PageBar and a docked PageAside at 1800 (region page-aside). expectShellInvariants(page, {states: ['expanded','collapsed']}) in src/testing/shell-invariants.ts, typed against a minimal structural page (evaluate, locator, setViewportSize): footer inset, nav pitch, header token height, no clip; I8 adds 'native'. Ships with: guarantee = the helper fails on a seeded offender; teach = the two regions generated into docs/recipes (rule bullets: v3-shell-i10-rules-rows); test = shell-invariants.test.ts on the shell-frame scenario.",
+  "commits": "Package and non-package changes are separate commits in one PR (isolated-basalt-ui); conventional, empty scope, no attribution; never edit CHANGELOG.md.",
+  "proof": "basalt-ui shot of routes/index.tsx at 1800x1200 and 390x844, dark and light, and of routes/shell.tsx at 1800x1200, against docs/v3/inspo/; the 390 index shot with the More sheet open; at most 3 rounds.",
+  "acceptance": [
+    "The playground typecheck passes with AppShell mounted in __root.tsx and no BasaltShell import in apps/playground/src",
+    "expectShellInvariants passes in states expanded and collapsed at 1800x1200 and 390x844 on the index route, and fails (test) on a scenario with a seeded 2 px footer inset offender",
+    "docs/recipes/add-page.md and app-shell.md equal their generated regions (make gen-check passes)",
+    "Axe zero serious and critical for region, landmark-* and page-has-heading-one on index and shell at both viewports",
+    "src/testing/index.ts gains exactly one export line; nothing under src/testing is imported by a runtime subpath",
+    "make check passes"
+  ],
+  "out_of_scope": "Shell parts, native state (I8), InnerNav and the settings route (I7), the owner verdict (v3-verdict-shell), SLOTS (qa-i3)."
+}

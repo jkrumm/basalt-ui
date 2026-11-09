@@ -1,0 +1,38 @@
+{
+  "repo": "argo",
+  "why": "No route can land until a second app builds, tests and installs next to the old one. The chain plumbing is v3-argo-chain; this Issue is the app, its install, its DOM harness and its gate.",
+  "what": "An empty apps/dashboard-v3 (@argo/dashboard-v3) that builds, serves at /v3/ and runs DOM tests; `check-v3`; scripts/check-test-port.ts.",
+  "owns": [
+    "apps/dashboard-v3/{package.json,vite.config*,index.html,tsconfig*,tsr.config.json,bunfig.toml,.env.local.tpl,.basalt/**,.oxlintrc.json,AGENTS.md,test/setup.ts}",
+    "apps/dashboard-v3/src/{main.tsx,vite-env.d.ts}",
+    "scripts/check-test-port*",
+    "Makefile",
+    "package.json",
+    "bun.lock",
+    ".claude/{rules/basalt-v3-*.md,skills/basalt-v3-*}"
+  ],
+  "must_not_touch": [
+    "apps/dashboard/src/**",
+    "apps/api/**",
+    "apps/dashboard-v3/src/** except the two files named",
+    "project.yaml",
+    "scripts/{deploy.sh,dev.sh,verify-pages.ts} (v3-argo-chain)"
+  ],
+  "concept": "migration-release#6.2, 6.1",
+  "contract": "migration-release.md 6.1, 6.2; v3-cli-sibling built the install. package.json declares `\"basalt\": {\"sibling\": true}` and basalt-ui exact 3.0.0-next.N (N = floors.G2.next in basalt-ui scripts/fleet.json); the root package.json gains `\"basalt\": {\"app\": \"apps/dashboard\"}`; root .basalt/ and .oxlintrc.json stay. DOM harness (argo has none): devDependencies happy-dom and @happy-dom/global-registrator at basalt-ui's root pins (`npm view` first); bunfig.toml preloads test/setup.ts, which registers the global and calls basalt-ui/testing `installDomShims` (installed docs/testing.md); tests render through `renderApp`. happy-dom has no layout: geometry is design-shot or the owner, never a DOM test.",
+  "exemplar": "basalt-ui's bunfig.toml and tests/setup/dom.ts; apps/dashboard/{vite.config.ts,tsr.config.json}.",
+  "change": "1. `basalt-ui init --profile app` in the app dir: Vite base /v3/, tsr.config.json (routesDirectory ./src/routes, tree ./src/routeTree.gen.ts), .env.local.tpl and vite-env.d.ts copied, a stub main.tsx. 2. Makefile `check-v3` (app bin sync --check, doctor, lint, typecheck, build, test) called from `check`. 3. scripts/check-test-port.ts <oldDir> <newDir>: pairs each old *.test.ts(x) with its new one (`--only <glob>` narrows both sides to old paths matching it), strips import statements, exits 1 on a missing port or any other differing line unless it carries a `// port: <reason>` marker, prints the marker count. 4. One smoke test through renderApp. Rule: import-boundary bans apps/dashboard. Skill snippet: the generated AGENTS.md block.",
+  "commits": "Argo ships by push to master: conventional, one concern each, no attribution. Never edit node_modules or basalt-ui; a gap is a `friction:` line in the PR body, worked around in app code.",
+  "proof": "`make deploy DRY_RUN=1` plans both builds; after the factory deploy `make version` = origin/master and `make verify` exits 0.",
+  "acceptance": [
+    "`./node_modules/.bin/basalt-ui sync --check` at the repo root exits 0 with both apps present",
+    "`make check` exits 0 and runs the check-v3 steps",
+    "`bun --cwd apps/dashboard-v3 test` exits 0 with a smoke test through renderApp",
+    "`bun test scripts/check-test-port.test.ts` proves: an import-only diff passes, an unmarked changed line fails, a marked one passes and is counted",
+    "`APP=dashboard-v3 make design-shot ROUTES=\"/\"` exits 0 and writes a board",
+    "`make verify-pages BASE=http://127.0.0.1:7737/v3 ROUTES=/` reports PASS after the factory deploy (else state not-run)",
+    "package.json files carry basalt.sibling (app) and basalt.app (root); no `mantine` string in apps/dashboard-v3"
+  ],
+  "out_of_scope": "Routes, stores, the /v3/ mount (v3-argo-chain), deleting the old app.",
+  "creates": ["apps/dashboard-v3/ (@argo/dashboard-v3)", "make check-v3"]
+}

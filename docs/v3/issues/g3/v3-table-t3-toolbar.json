@@ -1,0 +1,35 @@
+{
+  "why": "The bound-table rung (finances) needs search, chips, header and cell filters and personal saved views before table GA.",
+  "what": "New in packages/basalt-ui/src/table/parts/ (t1 and t2 replace the 2.x src/table): toolbar*, chips*, header-menu*, cell-filter*, views*, tests, one layout test.",
+  "owns": [
+    "packages/basalt-ui/src/table/parts/{toolbar,chips,header-menu,cell-filter,views}*",
+    "packages/basalt-ui/tests/layout/table-toolbar*",
+    "packages/basalt-ui/src/core/messages/table.ts",
+    "packages/basalt-ui/docs/data-table.md"
+  ],
+  "shared_append_only": [
+    "packages/basalt-ui/src/table/index.ts",
+    "packages/basalt-ui/scripts/export-surface.json"
+  ],
+  "must_not_touch": [
+    "packages/basalt-ui/src/table/{contract.ts,core/**}",
+    "other src/table/parts/* files",
+    "packages/basalt-ui/src/{ui,controls}/**",
+    "contract-pins.json, MIGRATING, llms.txt, check-budgets"
+  ],
+  "concept": "data-table#12 T3",
+  "contract": "Read docs/v3/concepts/data-table.md 3 (Filters, Saved views), 4, 6 and the frozen src/table/contract.ts. Contract gap: signal, reversible default. Ancestors: v3-prim-p4-overlays (popover, sheet), docs/v3/spikes/table-fit.md; without a recorded S1 (VoiceOver, owner-run) keep explicit roles and say so.",
+  "exemplar": "Follow src/table/parts/{head,body,pager}* (v3-table-t2-parts) for anatomy and data-slot names.",
+  "change": "One concern: filter and view surface of TableToolbar, per concept 3: quick search (250 ms draft, IME-safe), `+ Filter` popover with the kind's editor on ui/popover and ui/combobox, chips, header Menu `Filter...` opening the same editor, `filterOnCell: true` on text, entity, status kinds (the value is a control writing the same f.<col> field, stopPropagation), Display popover, Views menu (apply, save by name, same name overwrites, Reset; ?view=<id> only while state equals the view; store basalt:table-views:<id>, {v,value} envelope; unknown columns pruned). Below 480 px of the table's own container width (the card tier on `table-root`, not the viewport) a `Filters (n)` sheet on ui/sheet. Ships: no new rule, `filterOnCell` on a non-filterable kind is a type error (parts/cell-filter.type-test.ts); JSDoc @example per exported part, references/table.md is v3-table-t5-exemplar's; tests parts/{toolbar,chips,views}.test.tsx plus the layout test.",
+  "commits": "One PR, separate package and non-package commits (isolated-basalt-ui); conventional, empty scope, no attribution; make sync-self its own commit.",
+  "proof": "tests/layout/table-toolbar.layout.test.ts at 1440, 768, 390, 360, 320 with long labels, axe serious and critical clean with popover and sheet open.",
+  "acceptance": [
+    "make check passes and `bun test src/table/parts` is green, tests red first.",
+    "views.test.tsx: dirty diff, unknown-column prune, version bump discards, ?view dropped on first edit, same-name save overwrites; a view round-trips through the T1 codec, including a comma value and a numeric-looking string.",
+    "cell-filter.type-test.ts holds a @ts-expect-error for `filterOnCell: true` on c.money; a cell-filter click never calls onRowActivate and no cell filter renders in the card tier.",
+    "Layout test at container widths 1440, 768, 390, 360, 320: no overflow outside the scroll tier, `Filters (n)` opens a sheet below 480 px, 44 px coarse hit floors.",
+    "`rg \"@tanstack/react-table\" packages/basalt-ui/src/table/parts` finds nothing; check-contract-frozen passes with contract-pins.json unchanged.",
+    "`git diff --name-only` lists only owned paths, the generated docs/data-table.md and the sync-self commit."
+  ],
+  "out_of_scope": "BulkBar, tick column, tri-state header and header Menu sort, hide, reset (v3-table-t3b). Number, date, boolean operators, AND/OR builder, shared views, multi-sort, resize, any URL grammar change."
+}

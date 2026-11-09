@@ -1,0 +1,36 @@
+{
+  "why": "Prose, Callout, Toc and ArticleLayout move to ./page so a Callout-only app needs no markdown peers.",
+  "what": "src/content/{code-block,fences,mermaid,headings}*, src/page/{prose,callout,toc,article-layout}*, gallery markdown region, recipe, rows, layout test.",
+  "owns": [
+    "packages/basalt-ui/src/content/{code-block,fences,mermaid,headings}*",
+    "packages/basalt-ui/src/page/{prose,callout,toc,article-layout}*",
+    "packages/basalt-ui/{docs/recipes/markdown.md,migrations/areas/content.json,tests/layout/content*}",
+    "apps/playground/src/routes/gallery.tsx"
+  ],
+  "shared_append_only": [
+    "packages/basalt-ui/src/content/index.ts",
+    "packages/basalt-ui/src/page/index.ts"
+  ],
+  "must_not_touch": [
+    "packages/basalt-ui/{MIGRATING.md,llms.txt,scripts/contract-pins.json,scripts/check-budgets/**,src/*/contract.ts,src/{ui,tokens,lint}/**,agent/**}",
+    "CHANGELOG.md",
+    "other lanes' folders",
+    "packages/basalt-ui/src/{core,ai}/**",
+    "packages/basalt-ui/src/content/{markdown,sanitize,block-split}*"
+  ],
+  "concept": "ai-mdx#8 I2; #10 exception 1; #5 C10 to C12, C14",
+  "contract": "concept 3, 5, 6, 10 (1, 6), 8; src/content/contract.ts, src/page/contract.ts. src/page imports no src/content and no markdown peer. contract.ts and contract-pins.json are frozen: signal, take the reversible default.",
+  "exemplar": "Port tests first from 2.x src/content/{code-block, fence-block, highlighter, mermaid, heading-components, article-layout, prose, callout, toc, toc-click-pin, toc-spy}. Route: a gallery region, anatomy as routes/cards.tsx.",
+  "change": "CodeBlock without CopyAction (copy on ui/button, key ai.copy), [data-theme] activation; lazy shiki (forgiving) and beautiful-mermaid with the font fix; fence registry: undefined declines, null renders nothing, a throw is contained, own-property language lookup, deterministic settledOnly. Headings with anchors on core slug. Prose on .vx-prose (article 16, 1.7, 72ch; chat 15, 1.55), Callout on ui/alert (kind, title unchanged), Toc (renamed from TableOfContents, click-pin machine ported), ArticleLayout (about 120 lines: meta header, sticky scroll-spy Toc rail, readingProgress prop, no ReadingProgress symbol). Rows appended (ids content-<symbol>): Callout and ArticleLayout path moves (codemod imports), TableOfContents to Toc (rename), GuideLink and GuideDrawer removed; 2.x symbols stay in content/legacy.ts. Ships with: guarantee = no content-to-page edge (layering test); teach = gallery region markdown into docs/recipes/markdown.md, JSDoc; test = C10 to C12, C14 ports, content layout case.",
+  "commits": "One PR, separate package and non-package commits (isolated-basalt-ui); conventional, empty scope, no attribution.",
+  "proof": "basalt-ui shot of the gallery markdown region at 1800x1200 and 390x844, dark and light; at most 3 rounds.",
+  "acceptance": [
+    "Ported toc-click-pin (27), toc-spy (10), code-block, callout and article-layout suites: executed counts at the v2.29.1 tag, recorded in the PR, may not fall; all pass",
+    "Fence registry: keys '__proto__' and 'constructor' never reach a renderer; a throwing renderer leaves the block text visible",
+    "ArticleLayout meets ~/SourceRoot/basalt-ui-obsidian/packages/basalt-ui-obsidian/tests/render-note-view.test.tsx (read-only): meta row omitted without description or date, title once",
+    "Layout: no horizontal overflow at 390; code scrolls in its own box; axe zero serious and critical on the markdown region",
+    "src/page/{prose,callout,toc,article-layout}* import nothing from src/content and no react-markdown, remark-gfm, rehype-sanitize, remend",
+    "src/content/index.ts exports Markdown and CodeBlock only; docs/recipes/markdown.md equals its region; Markdown plus CodeBlock gzip size in the PR; make check passes"
+  ],
+  "out_of_scope": "Markdown core (ai-i1), mdxComponents (ai-i7), partView, catalog, chat recipes, Prose font tokens, a ninth playground route."
+}

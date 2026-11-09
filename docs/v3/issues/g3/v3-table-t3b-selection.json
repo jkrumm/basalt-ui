@@ -1,0 +1,33 @@
+{
+  "why": "DIRECTION 4.7 Selection and bulk: BulkBar, tick column, tri-state header and header Menu sort, hide, reset have no deliverer, and invariant I22 stays failing. v3-table-t3 is at the file and size cap, so this is its sibling.",
+  "what": "New in packages/basalt-ui/src/table/parts/: bulk-bar*, tick-column*, tri-state-header*, column-actions*, tests, and the I22 flip in src/table/invariants/toolbar*.",
+  "owns": [
+    "packages/basalt-ui/src/table/parts/{bulk-bar,tick-column,tri-state-header,column-actions}*",
+    "packages/basalt-ui/src/table/invariants/toolbar*",
+    "packages/basalt-ui/tests/layout/table-selection*"
+  ],
+  "shared_append_only": [
+    "packages/basalt-ui/src/table/index.ts",
+    "packages/basalt-ui/scripts/export-surface.json"
+  ],
+  "must_not_touch": [
+    "packages/basalt-ui/src/table/{contract.ts,core/**}",
+    "packages/basalt-ui/src/table/parts/{toolbar,chips,header-menu,cell-filter,views,virtual,footer,select-cell,group-row}*",
+    "packages/basalt-ui/src/ui/**",
+    "CHANGELOG.md"
+  ],
+  "concept": "data-table#3; data-table#6",
+  "contract": "docs/v3/concepts/data-table.md 3 (Selection, bulk; identity and actions columns cannot hide, pinned columns opaque) and the frozen src/table/contract.ts. v3-table-t1b holds selection state; v3-table-t2 renders row selection. Sort, hide and reset actions extend the header Menu in parts/header-menu* from v3-table-t3 (read only here; add column-actions* it calls).",
+  "exemplar": "packages/basalt-ui/src/table/parts/toolbar* from v3-table-t3.",
+  "change": "BulkBar over selected rows; c.select tick column in cell and tier-appropriate forms; tri-state header checkbox; column-actions* wiring header Menu sort, hide and reset through t1b state; identity column never hideable; identity and actions columns pinned with an opaque cell background. Flip I22 to a normal test. Ships with: no new rule; JSDoc @example per part. Tests: parts/{bulk-bar,tick-column,column-actions}.test.tsx, layout at 1440, 768, 390.",
+  "commits": "One PR, separate package and non-package commits (isolated-basalt-ui); conventional, empty scope, no attribution.",
+  "proof": "bun test packages/basalt-ui/src/table/parts packages/basalt-ui/src/table/invariants/toolbar*; layout; make check.",
+  "acceptance": [
+    "I22 in src/table/invariants/toolbar* is a normal passing test, not test.failing",
+    "bulk-bar.test.tsx: selecting rows shows the count and bulk actions; clearing selection hides it",
+    "tri-state header: none, some and all states, keyboard reachable; tests cover each",
+    "The identity column cannot be hidden and pinned columns paint an opaque background at 1440 and 390 (layout test)",
+    "header Menu sort, hide and reset act on the column through t1b state; make check exits 0"
+  ],
+  "out_of_scope": "Filter surface and Views (v3-table-t3), virtual rows (v3-table-t4), the playground exemplar (v3-table-t5)."
+}

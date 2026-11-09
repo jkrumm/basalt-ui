@@ -1,0 +1,19 @@
+{
+  "why": "DPO 16 deletes --neutral and --selector at G2 unless the epos probe yields a tenant. The probe ends with a Flags line and no Issue acted on it. Filed only if the probe says delete-at-G2.",
+  "what": "Conditional. Delete the --neutral and --selector flags from src/cli/tokens-css and their rows. Filed by the orchestrator after v3-freeze-g1 only when docs/v3/spikes/epos-bridge-probe.md says `Flags: delete-at-G2`; otherwise the Issue is not filed.",
+  "owns": ["packages/basalt-ui/src/cli/tokens-css*", "packages/basalt-ui/test/fixtures/tokens/**"],
+  "shared_append_only": ["packages/basalt-ui/migrations/areas/tokens.json"],
+  "must_not_touch": ["packages/basalt-ui/src/tokens/**", "docs/v3/spikes/**", "CHANGELOG.md"],
+  "concept": "tokens-visual#DPO 16; migration-release#5",
+  "contract": "DIRECTION DPO 16 and concepts/tokens-visual.md: --neutral and --selector deleted at G2 if the probe yields no tenant. Requires the Flags line; absent, signal and stop.",
+  "exemplar": "v3-tok-t4-cli for the tokens:css flag surface.",
+  "change": "Remove the two flags from parser, help, the emitter and tests. Add one removed row per flag to migrations/areas/tokens.json. Ships with: guarantee = the CLI test; teach = the row; test = tests/cli/tokens-css*.",
+  "commits": "One PR, separate package and non-package commits (isolated-basalt-ui); conventional, empty scope, no attribution.",
+  "proof": "bun test packages/basalt-ui/tests/cli; make check.",
+  "acceptance": [
+    "basalt-ui tokens:css --help does not list --neutral or --selector",
+    "release-migrating --check passes with the removed rows",
+    "make check exits 0"
+  ],
+  "out_of_scope": "--accent, --vibrancy, the epos probe, any token value."
+}

@@ -1,0 +1,38 @@
+{
+  "why": "2.x sync compared hashes of normalised text and three-way pruned; both are dropped. v3 renders managed files and compares bytes, and a shipped rule the consumer edited must never be clobbered.",
+  "what": "New: packages/basalt-ui/src/cli/manifest.ts, src/cli/sync/** (renderer, placement engine, block splice), test/fixtures/sync/**. Preset files arrive through a presetFiles(manifest) seam, default empty (v3-sk-3 wires it). Outside owns: delete the 2.x src/cli/sync.ts (name collision) and the 2.x tests importing only it (init-sync.test.ts keeps its init cases for v3-sk-3); replace the sync dispatch in src/cli/index.ts.",
+  "owns": [
+    "packages/basalt-ui/src/cli/manifest*",
+    "packages/basalt-ui/src/cli/sync/**",
+    "packages/basalt-ui/test/fixtures/sync/**"
+  ],
+  "must_not_touch": [
+    "CHANGELOG.md",
+    "packages/basalt-ui/{MIGRATING.md,llms.txt}",
+    "packages/basalt-ui/scripts/check-budgets/**",
+    "**/contract.ts",
+    "packages/basalt-ui/src/{ui,shell}/**",
+    "apps/marketing/**",
+    "packages/basalt-ui/src/{charts,tokens}/**",
+    "packages/basalt-ui/src/lint/{rules/**,preset*,rule-table*}",
+    "packages/basalt-ui/src/cli/{init,doctor,lint}/**",
+    "packages/basalt-ui/agent/**"
+  ],
+  "concept": "skills-agent-layer#10 issue 2",
+  "contract": "docs/v3/concepts/skills-agent-layer.md sections 4.1, 4.2, 6 (placement rows 12-16); docs/v3/concepts/guardrails.md section 7 and E1, E6; docs/v3/ARCHITECTURE.md section 2 (manifest shape). Read docs/v3/spikes/hook-sync.md (created by v3-spike-hook-sync).",
+  "exemplar": "src/cli/sync.ts and src/cli/placement-engine.test.ts (2.x; port the engine; drop three-way prune, normalised hash, legacy hash path).",
+  "change": "Manifest (ARCHITECTURE section 2) plus two optional fields: tokens: [{ out, format: 'css'|'json', flags: string[] }] (committed tokens:css outputs) and extra (the --extra file path). v3-sk-3 init writes them; st-6 reads tokens[].out, sk-4 reads extra, doctor check 10 re-runs them. sync [--check] renders each managed file (.claude/{rules,skills,agents}/basalt-*, the AGENTS block between markers, preset files from the seam) and compares bytes. --check writes nothing and exits 1 on any difference. An edited managed file (digest differs) is left and reported; --force finishes it. A retired name is deleted if untouched, left if edited. A duplicate marker pair errors, an absent one appends, CLAUDE.md is never touched. sync never creates an install and refuses an undeclared second consumer. Rules are placed by declared profile with paths: from declared roots. Unflip the .failing registrations in tests/cli/invariants that name this Issue. Rule: none. Skill snippet: none. Test: fixtures plus engine tests.",
+  "commits": "One PR, separate package and non-package commits (isolated-basalt-ui); conventional, empty scope, no attribution.",
+  "proof": "Fixture trees; zero false drift is the signal.",
+  "acceptance": [
+    "bun test packages/basalt-ui/src/cli/sync packages/basalt-ui/tests/cli/invariants exits 0",
+    "Fixtures single-root, multi-root, shutterflow-style single root, oxfmt-formatted and bun isolated linker show 0 false drift on a second sync --check",
+    "Changing manifest.roots is detected; --check leaves every mtime unchanged",
+    "An edited rule is left and reported, and --force overwrites it; a retired untouched rule is deleted, a retired edited one is left",
+    "A duplicate marker exits 1 with both line numbers; a missing marker appends once",
+    "The manifest round-trips tokens[] and extra; node packages/basalt-ui/bin/basalt-ui.mjs sync --check runs the v3 engine; src/cli/sync.ts is gone",
+    "make check exits 0"
+  ],
+  "out_of_scope": "init, doctor, hook entries and settings.json merge (v3-sk-3, 3a, v3-sk-4), preset content, rule and skill text.",
+  "test_layout": "Fixtures: test/fixtures/sync/** (hidden from lint, fmt, bun test by v3-test-roots)."
+}

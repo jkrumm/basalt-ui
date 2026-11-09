@@ -1,0 +1,35 @@
+{
+  "why": "Runtime bars exist only for the table; route switches and live ticker grids have no measurement, so regressions hide, and consumers need the per-route bar recipe.",
+  "what": "packages/basalt-ui/tests/quality/perf/**, agent/skills/basalt-app/references/{performance,testing}*. Created here.",
+  "owns": [
+    "packages/basalt-ui/tests/quality/perf/**",
+    "packages/basalt-ui/agent/skills/basalt-app/references/{performance,testing}*",
+    "packages/basalt-ui/tests/agent/qa-i6*.test.ts",
+    "scripts/evidence/perf.ts"
+  ],
+  "shared_append_only": ["scripts/evidence/index.ts"],
+  "must_not_touch": [
+    "packages/basalt-ui/src/{ui,page,shell,cards,charts,controls,table,content,ai,router,data,tokens,css,lint}/**",
+    "other areas' src/core/messages/<area>.ts",
+    "packages/basalt-ui/tests/quality/{matrix,ssr,print,webkit}/**",
+    "packages/basalt-ui/src/**",
+    "CHANGELOG.md, MIGRATING.md, llms.txt, scripts/check-budgets/**, other areas' migrations files",
+    "every contract.ts and src/core/ports.ts"
+  ],
+  "concept": "quality-contract#12 I6",
+  "contract": "Frozen: ARCHITECTURE.md, this domain's contract.ts, src/core/ports.ts. Need a change: factory signal, take the reversible default. Read concepts/quality-contract.md sections 4 to 7, 10, 12 (and 8 for carried invariants). Section 6: compiler off, ceilings = first measurement plus 5 percent, a raise needs a consumer outside argo.",
+  "exemplar": "tests/quality/matrix/** (qa-i4) for harness use; argo scripts/evidence/bundle.ts (read-only) for the per-route bar shape.",
+  "change": "Perf lane in make evidence: route switch (one argo-shaped route to another) and a 12-card StatCard grid on a 1 s ticker (data fed by setQueryData on a fake clock). The gate is counted React commits (Profiler onRender calls) per route switch and per tick, never milliseconds (ms are recorded only); first measurement written to tests/quality/perf/budget.json, ceiling = measured plus 5 percent rounded up to a whole commit. References: performance.md (about 30 lines: per-route bars from the static closure of index.html with jsGzipMax, cssGzipMax, maxScripts; the compiler-active recipe grepping for react.memo_cache_sentinel; devtools teaching) and testing.md (the kit rules). Rule: none. Skill: those two references. Tests: the perf lane.",
+  "commits": "One PR; package and non-package commits separate (isolated-basalt-ui). Conventional, empty scope, no feat!:, no attribution. make check generates files; shared registry lines are additive (rebase, regenerate). make sync-self output (.claude/**) is its own non-package commit.",
+  "proof": "make evidence LANES=perf output; check-coverage and skill-snippets for the references.",
+  "acceptance": [
+    "perf lane runs both fixtures compiler off and writes budget.json; a second run passes under the ceiling (commit counts are deterministic, so no retry rule)",
+    "an offender fixture that adds one extra commit per card per tick fails the lane",
+    "performance.md contains the per-route bar recipe and the compiler check, testing.md contains the kit rules; skill-snippets and check-coverage pass",
+    "the perf lane is in make evidence and not in make check",
+    "make sync-self output (.claude/**) is committed on its own and sync --check exits 0 after it",
+    "make check exits 0",
+    "git diff --name-only lists only owned paths plus .claude/** from make sync-self (own commit)"
+  ],
+  "out_of_scope": "A budget verb (refused), table runtime gate (table rows), weatherorb /map build (spike), React Compiler precompile decision."
+}

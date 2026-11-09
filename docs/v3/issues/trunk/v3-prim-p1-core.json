@@ -1,0 +1,32 @@
+{
+  "why": "Completes the P1 base: field and the base Card, so every later row can cite four primitives. Last of the three P1 Issues; dependents wait on this key.",
+  "what": "field and card (the base Card only) in src/ui with guards and tests, then gen-ui regenerates SLOTS, the no-restyle data and docs for all four modules.",
+  "owns": [
+    "packages/basalt-ui/src/ui/{field,card}*",
+    "packages/basalt-ui/src/ui/slots*",
+    "packages/basalt-ui/src/ui/*.generated.*",
+    "packages/basalt-ui/docs/{field,card}.md"
+  ],
+  "must_not_touch": [
+    "packages/basalt-ui/src/tokens/**",
+    "packages/basalt-ui/src/css/**",
+    "packages/basalt-ui/src/{page,shell,cards,controls,table,charts,content,ai}/**",
+    "packages/basalt-ui/src/**/contract.ts",
+    "packages/basalt-ui/scripts/gen-ui*",
+    "packages/basalt-ui/src/ui/{button,input}*"
+  ],
+  "concept": "docs/v3/concepts/primitives-distribution.md#13 P1",
+  "contract": "docs/v3/concepts/primitives-distribution.md sections 4, 5, 13 and 2 (CE1-CE7 already applied: L3 may import useFormat; no-restyle denies h-*, min-h-*, size-*, display only, never w-*); docs/v3/ARCHITECTURE.md 7.1, 7.2, 4.2 (guards hand-authored: requires and closed blocks). Base UI polymorphism only via render, never asChild. Insufficient contract: factory signal, reversible default, PR body says so. Frozen contracts are read-only.",
+  "exemplar": "src/ui/button* and src/ui/input* from v3-prim-p1-button-input; the generator from v3-prim-p1-gen.",
+  "change": "Write field and the base Card on @base-ui/react with data-slot per part, the `<name>Variants` and `<name>Parts` convention, hand-authored guards, @example JSDoc. Run gen-ui to regenerate the generated files and docs/{field,card}.md: never hand-edit them. Ships with: guard and render tests; CardBand, CardPhase, Inset and IconTile belong to the exemplar Issue.",
+  "commits": "One PR, one `feat:` commit touching packages/basalt-ui/ only. Conventional, empty scope, no attribution, never CHANGELOG.md.",
+  "proof": "bun test packages/basalt-ui/src/ui; gen-ui --check; tsc --noEmit.",
+  "acceptance": [
+    "bun packages/basalt-ui/scripts/gen-ui.ts --check exits 0 with the four modules present.",
+    "slots.test.tsx passes and SLOTS lists the data-slots of button, input, field and card.",
+    "Each new module renders with no provider and every part carries data-slot (test); a guard test with @ts-expect-error fails tsc when a called variant is removed.",
+    "grep -rn '@mantine' packages/basalt-ui/src/ui returns nothing.",
+    "make check passes."
+  ],
+  "out_of_scope": "CardBand, CardPhase, Inset, IconTile (exemplar), other primitives (P3-P5), eject, sync, the no-restyle lint rule."
+}

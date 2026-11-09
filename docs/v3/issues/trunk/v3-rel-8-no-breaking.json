@@ -1,0 +1,19 @@
+{
+  "why": "A stray `feat!:` or BREAKING CHANGE footer bricks a release line (a major is only computed by those); after the designated commit they must fail at commit time and in CI.",
+  "what": "commitlint.config.ts gains a local no-breaking rule; new commitlint.config.test.ts tests it. @commitlint/lint and @commitlint/load are not installed (only cli, config-conventional, types): the test spawns ./node_modules/.bin/commitlint with the message on stdin; add no dependency.",
+  "owns": ["commitlint.config.ts", "commitlint.config.test.ts"],
+  "must_not_touch": ["packages/basalt-ui/**", ".github/workflows/**", "scripts/release.sh"],
+  "concept": "docs/v3/concepts/migration-release.md#4.1 step 8",
+  "contract": "docs/v3/concepts/migration-release.md 4.1 step 8, 3.4 (recovery), 13 (commit-analyzer facts), 17 (local plugin, not footer-max-line). Marker forms: `type!:` and a footer line `BREAKING CHANGE:` or `BREAKING-CHANGE:`. Default `Revert \"...\"` messages must still pass. Insufficient contract: factory signal, reversible default, PR body says so. Frozen contracts are read-only.",
+  "exemplar": "Existing rules array in commitlint.config.ts; add `plugins: [{ rules: { 'no-breaking': ... } }]` and the rule at level 2.",
+  "change": "Add the local plugin and enable rule no-breaking. Ships with: the rule itself, no skill snippet, tests in commitlint.config.test.ts that spawn the commitlint CLI (`--config commitlint.config.ts`, message on stdin) and assert the exit code. Lands only after v3-rel-7-skeleton merged (it would refuse that commit).",
+  "commits": "One non-package `ci:` commit. No attribution.",
+  "proof": "bun test commitlint.config.test.ts; ci.yml green; marketing deploy untouched.",
+  "acceptance": [
+    "bun test commitlint.config.test.ts passes: `feat!: x`, `fix(a)!: x`, a body with a `BREAKING CHANGE: x` footer and `BREAKING-CHANGE: x` each exit non-zero; `feat: x`, `fix: x` and `Revert \"feat: x\"` exit 0.",
+    "printf 'feat!: x' | ./node_modules/.bin/commitlint exits non-zero; printf 'feat: x' | ./node_modules/.bin/commitlint exits 0.",
+    "git diff --name-only origin/master...HEAD lists only commitlint.config.ts and commitlint.config.test.ts (no package.json or lockfile change).",
+    "No deploy.yml or release.sh change in the PR."
+  ],
+  "out_of_scope": "v2 commitlint (rel-3), the revert/releaseRules recovery machinery, a feat/fix-must-touch-package rule."
+}

@@ -1,0 +1,35 @@
+{
+  "why": "Skills have the weakest evidence in the stack; the kill rule decides whether a thin method skill ships or its content folds into rules and generated docs.",
+  "what": "packages/basalt-ui/agent/skills/basalt-design/SKILL.md and agent/skills/basalt-design/anti-defaults*. 2.x has agent/skills/basalt-design/{SKILL.md,references/*} to cut down.",
+  "owns": [
+    "packages/basalt-ui/agent/skills/basalt-design/SKILL.md",
+    "packages/basalt-ui/agent/skills/basalt-design/anti-defaults*",
+    "packages/basalt-ui/tests/agent/sk-6*.test.ts",
+    "packages/basalt-ui/agent/rules/**",
+    "packages/basalt-ui/agent/templates/AGENTS-block*"
+  ],
+  "must_not_touch": [
+    "packages/basalt-ui/src/{ui,page,shell,cards,charts,controls,table,content,ai,router,data,tokens,css,lint}/**",
+    "packages/basalt-ui/agent/rules/** and agent/templates/AGENTS-block* (sk-5, closed; the FOLD branch may move tagged bullets)",
+    "packages/basalt-ui/src/cli/{init,sync,doctor,lint,eject}/**, the preset contents",
+    "CHANGELOG.md, MIGRATING.md, llms.txt, scripts/check-budgets/**, other areas' migrations files",
+    "every contract.ts and src/core/ports.ts"
+  ],
+  "concept": "skills-agent-layer#8 S1",
+  "contract": "Frozen: ARCHITECTURE.md, this domain's contract.ts, src/core/ports.ts. Need a change: factory signal, take the reversible default. Read concepts/skills-agent-layer.md sections 1, 4.2, 5, 8, 9, 10. Skills teach, rules guarantee: no prohibition lives only in a skill. Read docs/v3/spikes/thin-skill.md (S1 and S7) first: kill rule = with-skill removes fewer than 3 P1-plus-carried findings against no-skill.",
+  "exemplar": "2.x agent/skills/basalt-design/SKILL.md (29 lines) and references/anti-defaults.md.",
+  "change": "KEEP branch (rule not triggered): one thin SKILL.md (frontmatter name and description, method: concept per screen, encoding, states, copy; links to generated docs/<export>.md, no pasted props) plus an anti-defaults reference, rewritten to the v3 doctrine (tinted delta badge with polarity, sentence-case sans captions, warm neutral, ink-inverted primary, no hue per card). FOLD branch (triggered): delete SKILL.md, move each anti-default into a tagged rules bullet or generated docs, which needs edits to agent/rules/** and the AGENTS block table. Rule: none new; every bullet keeps its tag. Skill: the SKILL.md itself or, folded, the rules bullets. Tests: tests/agent/sk-6 asserting the chosen branch's files and tags.",
+  "commits": "One PR, separate package and non-package commits (isolated-basalt-ui); conventional, empty scope, no attribution; make sync-self its own commit.",
+  "proof": "check-coverage and skill-snippets tests; sync-self then sync --check on the repo.",
+  "acceptance": [
+    "the PR body quotes the S1 and S7 verdict line from docs/v3/spikes/thin-skill.md and names the branch taken",
+    "KEEP: SKILL.md has frontmatter name and description, contains no code block with a props table or interface, and links each export it names to docs/<export>.md",
+    "no file under agent/skills/basalt-design mentions Mantine, a hex literal, or the text 'never a fill' about delta badges (grep)",
+    "every prohibition bullet ends in a [lint:<id>] or [type:<name>] tag or is listed as not guarded in the coverage header (check-coverage exits 0)",
+    "FOLD: agent/skills/basalt-design is absent, every former bullet is found in a tagged rules bullet or docs page, and doctor check 7 text in the AGENTS block table is consistent (sync --check exits 0)",
+    "after make sync-self, .claude/skills and .claude/rules at the repo root match agent/ (sync --check exits 0)",
+    "make check exits 0",
+    "git diff --name-only lists only owned paths plus .claude/** from make sync-self (own commit)"
+  ],
+  "out_of_scope": "References (sk-7), basalt-app (sk-8), reviewer (sk-9), shot (sk-10), running the A/B trial itself (the spike), argo DESIGN.md."
+}

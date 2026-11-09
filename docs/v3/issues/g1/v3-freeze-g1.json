@@ -1,0 +1,32 @@
+{
+  "why": "Consumers pin exact next.N; the G1 layers must be measured, pinned and floored before linewatch and the gallery cut over, so a later break needs a row.",
+  "what": "scripts/fleet.json, packages/basalt-ui/scripts/check-budgets/{ui,cards,charts,data,router,table}*, packages/basalt-ui/scripts/contract-pins.json. Config only; no source change.",
+  "owns": [
+    "scripts/fleet.json",
+    "packages/basalt-ui/scripts/check-budgets/{ui,cards,charts,data,router,table}*"
+  ],
+  "shared_append_only": ["packages/basalt-ui/scripts/contract-pins.json"],
+  "must_not_touch": [
+    "packages/basalt-ui/src/**",
+    "packages/basalt-ui/agent/**",
+    "other gates' check-budgets files (tokens, page, shell, content)",
+    "CHANGELOG.md, MIGRATING.md, llms.txt"
+  ],
+  "concept": "migration-release#5 G1",
+  "contract": "Read concepts/migration-release.md sections 3.3, 4.4, 5 (G1 row). Budget method: quality-contract section 6 (measured gz plus 5 percent, rounded up to 0.5 KB, ratcheted down only). Releases are the owner's make release; no lead runs it.",
+  "exemplar": "v3-freeze-g0's diff (scripts/fleet.json floors.G0, check-budgets/tokens*).",
+  "change": "(1) One formula for every row: ceiling = measured gz of the first complete build plus 5 percent, rounded up to 0.5 KB (quality-contract section 6; charts-1a and charts-3 cite it). Rows: ui (ten-primitive page, 25-part page, per primitive, value exports exact), cards (StatCard no chart; 16 is the informative target), charts (Sparkline and all-three; 32.5, 46.5 and plus 4 are informative targets, not pins), data, router, table (engine fixture re-measured on 10 features plus own code). (2) Extend contract-pins.json with new keys: SLOTS snapshot and value-export lists of ./ui/*, ./cards, ./charts, ./router, ./data, ./table; keep the table/contract.ts key table-t0 wrote. (3) fleet.json: floors.G1 = {next: N, row: 'ui-frozen'} where N is what make release-dry prints, and rows for linewatch (web, parts, G1) and shutterflow (apps/gallery, parts, G1) present. Rule: check-budgets and check-contract-frozen are the rules. Skill: none. Tests: the budget and pin suites.",
+  "commits": "Non-package files (scripts/fleet.json) and package files (check-budgets, contract-pins) in separate commits, conventional, empty scope, chore:, no attribution.",
+  "proof": "make check; fleet-status --probe --next N over the G0 rows.",
+  "acceptance": [
+    "make check passes and check-budgets reads a seeded ceiling for each of ui, cards, charts, data, router, table",
+    "each ceiling equals the first-build measurement plus 5 percent rounded up to 0.5 KB, the one formula (the PR lists measured and seeded values)",
+    "check-contract-frozen fails when one value export of a G1 subpath is added without a pin change (seeded offender)",
+    "make release-dry prints 3.0.0-next.N and scripts/fleet.json floors.G1.next equals that N",
+    "fleet-status --probe --next N is green for the G0 rows, or each red row has a bump Issue named in the PR",
+    "the PR states that the release itself is the owner's make release and was not run",
+    "make check exits 0",
+    "git diff --name-only lists only owned paths"
+  ],
+  "out_of_scope": "Running make release, any package source, consumer changes, other gates' floors, raising any budget. ctl-4, ctl-4b, ctl-5 and live-5 are not pinned (./controls pins at G3)."
+}

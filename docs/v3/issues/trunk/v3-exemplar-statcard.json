@@ -1,0 +1,37 @@
+{
+  "why": "The owner's taste checkpoint: StatCard end to end, built through the full pattern, before any fan-out; every later Issue cites it by path.",
+  "what": "StatCard on the frozen cards contract, the cards route and its layout test (S8). ui/card, ui/badge, phase and S11 come from v3-exemplar-card-ui, the Tailwind and Base UI wiring from v3-exemplar-wiring. New files: cards/contract.ts, cards/stat-card*, cards/cards.type-guard.tsx, cards-exemplar layout test.",
+  "owns": [
+    "packages/basalt-ui/src/cards/contract.ts",
+    "packages/basalt-ui/src/cards/stat-card*",
+    "packages/basalt-ui/src/cards/cards.type-guard.tsx",
+    "apps/playground/src/routes/cards.tsx",
+    "packages/basalt-ui/tests/layout/{cards-exemplar*,fixture/cards-exemplar*,fixture/fixtures.tsx}"
+  ],
+  "shared_append_only": [
+    "packages/basalt-ui/src/cards/index.ts",
+    "packages/basalt-ui/scripts/contract-pins.json"
+  ],
+  "must_not_touch": [
+    "packages/basalt-ui/src/tokens/**",
+    "packages/basalt-ui/src/charts/**",
+    "packages/basalt-ui/src/ui/**",
+    "packages/basalt-ui/src/core/**",
+    "other cards files"
+  ],
+  "concept": "docs/v3/concepts/charts-cards-kanban.md#10",
+  "contract": "docs/v3/concepts/charts-cards-kanban.md 3 (rows 'Signature stat card', 'Shared frame', 'Phases', 'Definition glyph'), 4 (cards/contract.ts: write the whole sketch as types), 8, 9 S8 and S11, 10; docs/v3/BRIEF.md stat card description. ports.ts is frozen: use its Phase, QueryStateLike, Box, Delta, Status. Pin cards/contract.ts as a new key in contract-pins.json. Insufficient contract: factory signal, reversible default, PR body says so. Frozen contracts are read-only.",
+  "exemplar": "ui/card from prim-p1 (guard, SLOTS flow); docs/v3/ARCHITECTURE.md 7.1 StatCard sample.",
+  "change": "Anatomy: header band (icon tile, title, info, subtitle, controls, menu), inset (figure, delta badge, status, sub, chart box 72), footer of at most two facts, one left edge --card-edge, equal height across loading/ready/stale/empty/error, built from the card, badge and phase parts. Register the fixture with one line in fixtures.tsx. Ships with: types-only absence of tone/color/className and the footer cap (cards.type-guard.tsx, @ts-expect-error per row); `// #region stat-card` in routes/cards.tsx as the skill/docs snippet; test cards-exemplar.layout.test.ts at 1800x1200 and 390x844.",
+  "commits": "One PR; package and non-package changes are separate commits (isolated-basalt-ui hook; root package.json, bun.lock, .oxlintrc.json, tests/ may ride with the package commit). Conventional, empty scope, no attribution, never CHANGELOG.md. Package commit(s) first, then a non-package commit (apps/playground wiring and route). `feat:`.",
+  "proof": "Layout geometry at both viewports and schemes; owner views the route.",
+  "acceptance": [
+    "bun run test:layout runs cards-exemplar.layout.test.ts green: card height equal across all five phases, tile, figure and footer label share one x, controls wrap below @regular, no horizontal overflow at 390.",
+    "cards.type-guard.tsx fails tsc if any @ts-expect-error line is removed (tone, color, className, third footer fact, missing polarity).",
+    "contract-pins.json has a cards/contract.ts key and bun packages/basalt-ui/scripts/check-contract-frozen.ts exits 0.",
+    "apps/playground/src/routes/cards.tsx contains `// #region stat-card` and bun --filter @basalt-ui/playground build exits 0.",
+    "After a build, bun apps/playground/scripts/shots.ts /cards writes four PNGs named cards--{light,dark}--{1800x1200,390x844}.png (list them in the PR body).",
+    "grep -rn '@mantine' packages/basalt-ui/src/cards returns nothing, and make check passes."
+  ],
+  "out_of_scope": "StatGroup, StatCell, DataPanel, ChartCard, KanbanCard, charts, global controls, ui/card, ui/badge and phase (v3-exemplar-card-ui), playground wiring, lint rules beyond generated entries."
+}

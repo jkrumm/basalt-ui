@@ -1,0 +1,37 @@
+{
+  "repo": "argo",
+  "why": "Argo's managed layer is still the app-scoped, prefixed one. Running init at the root returns the canonical names and puts rules, skills, hooks, lefthook and check.yml where every other consumer has them.",
+  "what": "`basalt-ui init --profile app` at the repo root on the v3 pin and `sync`: canonical rule and skill names, AGENTS block, lefthook and check.yml. Deploy and verify.",
+  "owns": [
+    "package.json",
+    "bun.lock",
+    ".basalt/**",
+    ".claude/rules/basalt-*",
+    ".claude/skills/basalt-*",
+    "AGENTS.md",
+    "lefthook.yml",
+    ".github/workflows/check.yml",
+    "Makefile",
+    "apps/dashboard-v3/{.basalt/**,.oxlintrc.json,AGENTS.md}"
+  ],
+  "must_not_touch": [
+    "apps/api/**",
+    "apps/dashboard-v3/src/**",
+    "project.yaml",
+    "drizzle migrations"
+  ],
+  "concept": "migration-release#6.3 cutover row; migration-release#6.1",
+  "contract": "docs/v3/concepts/migration-release.md 6.1: `basalt-ui init --profile app` at the root so canonical names return. The root devDependency takes the same exact 3.0.0-next.N as apps/dashboard-v3 (the G4 floor). Gate: v3-argo-cutover-delete is deployed and green. This is the last argo cutover step: v3-ga waits on it.",
+  "exemplar": "The init output of the other app-profile cutovers (rb, finances) for what a root install adds.",
+  "change": "1. Add the root basalt-ui devDependency at the app's exact pin, `bun install`. 2. `./node_modules/.bin/basalt-ui init --profile app` at the root, then `sync`; delete the app-scoped copies it supersedes (apps/dashboard-v3/.basalt, .oxlintrc.json, AGENTS.md block) and the interim app-bin calls in Makefile and lefthook. 3. `doctor` and `lint --stats` before and after: waivers equal or lower. Rule: root `doctor` and `lint` pass. Skill snippet: none. Test: the repo's own check.",
+  "commits": "Argo ships by push to master: conventional, one concern each, no attribution. Never edit node_modules or basalt-ui; a gap is a `friction:` line in the PR body, worked around in app code.",
+  "proof": "`make check`; after the factory deploy `make version` equals origin/master and `make verify` exits 0; `make evidence LABEL=cutover` bundle and lighthouse numbers in the PR body; rollback is `make rollback`.",
+  "acceptance": [
+    "`./node_modules/.bin/basalt-ui sync --check`, `doctor` and `lint` exit 0 at the repo root; `ls .claude/rules/basalt-v3-*` fails and `ls .claude/rules/basalt-*` lists the canonical rules",
+    "`rg -n 'sibling|basalt-v3' package.json apps/dashboard-v3/package.json Makefile AGENTS.md` returns no match",
+    "`make check` exits 0 on the final head",
+    "after the factory deploy `make version` prints origin/master's sha, `make verify` exits 0 and `make verify-pages BASE=http://127.0.0.1:7737` reports PASS for every line of scripts/evidence/routes.txt",
+    "in ~/SourceRoot/basalt-ui, `bun packages/basalt-ui/scripts/check-test-ledger-argo.ts --complete --argo-root ~/SourceRoot/argo` exits 0"
+  ],
+  "out_of_scope": "Renaming apps/dashboard-v3, API changes, new features, restyling."
+}

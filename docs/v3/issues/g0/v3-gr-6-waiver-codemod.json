@@ -1,0 +1,27 @@
+{
+  "why": "63 waivers (shutterflow measured 37, not 39) use the 2.x theme-allow dialect. One dialect, '-- <why>' required, is the only form the v3 lint honours, and an unreasoned waiver must never be invented by a tool.",
+  "what": "New, non-package: tools/migrate-v3/waivers/** (standalone entry, tests, report writer). mig-codemod's run.ts may dispatch to it later; this row does not touch run.ts.",
+  "owns": ["tools/migrate-v3/waivers/**"],
+  "must_not_touch": [
+    "packages/basalt-ui/**",
+    "tools/migrate-v3/layout/**",
+    "tools/migrate-v3/imports/**",
+    "tools/migrate-v3/run.ts",
+    "CHANGELOG.md"
+  ],
+  "concept": "guardrails#8",
+  "contract": "docs/v3/concepts/guardrails.md section 8 (one dialect) and section 6 (deepRender); docs/v3/concepts/migration-release.md section 7 (report is a worklist, never an exemption).",
+  "exemplar": "2.x grammar in packages/basalt-ui/src/guard/types.ts (allowComment, 'theme-allow <rule-id>[, <rule-id>] -- <reason>', theme-allow-file) and real sites in ~/SourceRoot/argo and ~/SourceRoot/shutterflow (read-only).",
+  "change": "bun tools/migrate-v3/waivers/cli.ts <dir...> [--write] --report <file>. Default is dry run. Rewrites a theme-allow site to '// oxlint-disable-next-line basalt/<id> -- <reason>' in TS and TSX, '/* stylelint-disable-next-line <rule> -- <reason> */' in CSS, using a 2.x kind to v3 id map built from GuardKind in src/guard/types.ts and the ids in src/lint/rule-table.ts. A site with no reason, an unknown kind, or a theme-allow-file outside a deepRender candidate goes to the report worklist with the reason, never rewritten and never given an invented reason. Idempotent. The report has per-repo and total counts. Rule: none. Skill snippet: none. Test: fixture-driven *.test.ts beside the tool.",
+  "commits": "One PR, rebase-merged: a single non-package commit (tools/ only), conventional, empty scope, no attribution. Never edit CHANGELOG.md.",
+  "proof": "Fixtures copied from the real sites; then a read-only dry run over ~/SourceRoot/{argo,shutterflow,rb,linewatch,weatherorb} with counts pasted in the PR body next to the digest's 63.",
+  "acceptance": [
+    "bun test tools/migrate-v3/waivers passes",
+    "A line with 'theme-allow raw-breakpoint -- reason' becomes an oxlint-disable-next-line with the mapped basalt id and the same reason",
+    "A waiver without a reason appears in the report worklist and its source line is unchanged",
+    "A second --write run produces no diff",
+    "The dry-run report JSON has per-repo counts and a total, and the PR body states any gap to 63",
+    "make check exits 0 at the repo root"
+  ],
+  "out_of_scope": "Layout and import codemods, editing any consumer repo, the preset, adding or changing a rule."
+}

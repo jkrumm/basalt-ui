@@ -1,0 +1,40 @@
+{
+  "why": "Provider JS <= 5.0 KB gz is a cap (docs/v3/ARCHITECTURE.md sections 0, 1; docs/v3/concepts/quality-contract.md section 6); weatherorb /map's 704 KiB bar needs it. Q1 sets `PROVIDER_ONLY`; Q4 is v3-spike-provider-q4.",
+  "what": "v3 provider skeleton, budget row and closure test in packages/basalt-ui; tools/spikes/provider/** (own package.json: react, react-dom 19.3.0); docs/v3/spikes/provider.md. Post-rel-7, post-unhot tree: read scripts/check-budgets/, src/core/. 2.x src/provider/** and its PROVIDER_ONLY_CEILING stay; the Issue deleting src/provider retires that row.",
+  "owns": [
+    "packages/basalt-ui/src/core/provider*",
+    "packages/basalt-ui/scripts/check-budgets/{areas/,}provider*",
+    "packages/basalt-ui/scripts/fixtures/provider-v3*",
+    "tools/spikes/provider/**",
+    "docs/v3/spikes/provider.md"
+  ],
+  "must_not_touch": [
+    "CHANGELOG.md",
+    "root package.json, bun.lock, .gitignore, .oxlintignore",
+    "docs/v3/{concepts,issues}/**, docs/v3/ARCHITECTURE.md",
+    "other tools/spikes/* folders",
+    "consumer repos (scratch copies live in the OS temp dir)",
+    "packages/basalt-ui/src/{provider/**,index.ts}",
+    "other check-budgets area files"
+  ],
+  "concept": "docs/v3/concepts/quality-contract.md section 10 Q1",
+  "contract": "docs/v3/concepts/quality-contract.md sections 6 and 10 are frozen: above 5.0 KB is a Contract amendment request in the verdict; the cap is never edited.",
+  "exemplar": "scripts/evidence/*.ts (one JSON result per run)",
+  "change": "`BasaltProvider` skeleton in src/core/provider (scheme, locale, lang); the fixture imports `src/core/provider` directly (root `.` still serves the 2.x provider). Add a `provider-v3` row to unhot's provider area file (else `areas/provider.ts`, `{label, ceiling}`): measured +5% rounded up to 0.5 KB, max 5.0, by the section 6 method (Vite 8, peers bundled, gzipSync, minus base0). Tests: `provider.budget` (chunk <= row; no `cn` tables, message tables, Intl caches, `en` catalog) and a closure test (no module matching `persisted` or `@base-ui/react/toast`). Over 5.0: split scheme into a leaf, file an amendment request.",
+  "commits": "Two commits, one PR, `chore:` empty scope, no attribution: (1) package paths; (2) tools and docs (isolated-basalt-ui).",
+  "proof": "run.ts JSON plus the verdict doc; run twice, attach both outputs.",
+  "acceptance": [
+    "`provider.budget` passes and the `provider-v3` row value is <= 5.0 KB gz",
+    "run.ts JSON has `providerGzipBytes`, `rowCeilingBytes`, `bannedInChunk` (empty list)",
+    "A stub `persisted.ts` imported into the fixture turns the closure test red",
+    "`bun tools/spikes/provider/run.ts` exits 0, prints one JSON object with the keys above (0 = harness ran, not hypothesis held)",
+    "docs/v3/spikes/provider.md has headings Question, Method, Measurements, Verdict, Then, Affects and the `verdict` lines",
+    "`find tools/spikes/provider -name '*.test.*' -o -name '*.spec.*'` prints nothing",
+    "`git diff --name-only master...HEAD` lists only `owns` paths",
+    "`grep -rnE 'op://|\\.ts\\.net|192\\.168\\.|ghp_' tools/spikes/provider docs/v3/spikes/provider.md` prints nothing",
+    "`make check` passes"
+  ],
+  "out_of_scope": "Provider features; qa-i2 catalog; switching `.`; Q4; the cap.",
+  "envelope": "Harness: tools/spikes/<dir>/ has its own package.json (exact pins); bun.lock and node_modules gitignored there (must_not_touch package.json and bun.lock = repo root only). Passes root oxlint; no *.test.* files; Chrome via the playwright-core pattern of packages/basalt-ui/tests/layout/harness.ts; docs/v3 on master before filing; synthetic data only, private repos as counts and hashed ids.",
+  "verdict": "`Q1: PASS|REFUTED` (REFUTED above 5.0 KB gz); `Verdict:` equals the Q1 line. run.ts `verdict` pass|refuted by the same rule."
+}

@@ -1,0 +1,37 @@
+{
+  "repo": "email-gateway",
+  "why": "G3 gives email-gateway its first real run of 2.x and v3: its lock says 2.29.0 while the installed tree is 1.36.0, and Wave 20 waited on this very move.",
+  "what": "Root package.json (basalt-ui, lint script calls check-theme) and bun.lock; client/ (Vite, Mantine DataTable in components/DataTable.tsx at 4 sites, hand tables in accounts.tsx, BasaltShell with defineNav, PageBar, ViewTabs, WidgetHeader, createLocalStore); root .oxlintrc.json extends the basalt config; no .basalt/ yet.",
+  "owns": [
+    "client/**",
+    "package.json",
+    "bun.lock",
+    ".basalt/**",
+    ".oxlintrc.json",
+    ".claude/rules/basalt-*",
+    ".claude/skills/basalt-*",
+    "AGENTS.md"
+  ],
+  "must_not_touch": [
+    "src/** (the server)",
+    "Dockerfile unless the build breaks",
+    ".github/**",
+    "project.yaml",
+    "any file in basalt-ui"
+  ],
+  "concept": "migration-release#5 G3",
+  "contract": "Cross-project after: basalt-ui:v3-freeze-g3. Pin exactly basalt-ui@3.0.0-next.N in root and client package.json, no caret; N = floors.G3.next in scripts/fleet.json of ~/SourceRoot/basalt-ui at tag v<pin>. Precondition: `npm view basalt-ui@<pin> version` succeeds, else file a signal on basalt-ui and stop. Read ~/SourceRoot/basalt-ui/docs/v3/concepts/migration-release.md 5-7, 12 (reinstall first, from 2.29.0); after install node_modules/basalt-ui/docs/data-table.md.",
+  "exemplar": "~/SourceRoot/basalt-ui apps/playground/src/routes/table.tsx (defaults section); client/src/components/AppLayout.tsx uses defineNav as intended.",
+  "change": "Step 0, own commit: `bun install --frozen-lockfile` at the root, `make check` on 2.29.0, result in the PR; fix only what is red, as fix: commits. Codemod: `git clone --branch v<pin> ~/SourceRoot/basalt-ui <scratch>`, `bun install`, never edit it; `bun tools/migrate-v3/run.ts layout`, then `controls`, on the absolute client path, report outside the repo. Port BasaltShell to AppShell, DataTable.tsx and accounts.tsx to useDataTable and DataTable (client mode, memory state, phone cards), PageBar and ViewTabs, the inbox and preview stores to defineControls; replace `basalt-ui check-theme` in the root lint script with what `migrate` names and the root .oxlintrc.json extends with the generated preset; drop all @mantine/*. Ships with: app preset, managed skills, root `bun test` plus client typecheck.",
+  "commits": "Step 0 separate. Then branch basalt-v3-g3, one PR. project.yaml says ship via push and every master push deploys: never push partial work; `gh pr create`, rebase-merge once green. Order: chore: pin and `bunx basalt-ui@<pin> init --profile app`; chore: codemod output, untouched; then manual feat: and fix: commits clearing the worklist. No AI attribution.",
+  "proof": "`basalt-ui shot` of inbox, templates and accounts at 390x844 and 1800x1200, dark and light, behind the login on synthetic data only (intercept the API with a client-local fixture); no real mail in any shot or PR. `classes-exist <client>` and `lint-clean` from the clone. After merge CI deploys; wait the 10 min hold, then `make verify` exits 0.",
+  "acceptance": [
+    "The PR body records the step-0 `make check` result on the reinstalled 2.29.0 tree.",
+    "`make check` passes at the root (frozen install, lint, typecheck, bun test), `bun run build` works, `classes-exist` and `lint-clean` exit 0.",
+    "`rg \"@mantine/\" client/src client/package.json package.json` finds nothing; both package.json files pin the exact floors.G3.next version.",
+    "`node_modules/.bin/basalt-ui migrate --from 2.29.0 --profile app --check`, `doctor` and `sync --check` exit 0.",
+    "`rg \"Table.ScrollContainer|<Table\\.\" client/src` finds nothing; the four DataTable.tsx sites use DataTable.",
+    "One PR from a branch; nothing of it reached master before the merge; `git diff --name-only master` lists none of src/, Dockerfile, .github/ or project.yaml."
+  ],
+  "out_of_scope": "Server code, deploy config, new features, fixing basalt-ui (file a signal), Wave 20 work."
+}

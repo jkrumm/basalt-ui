@@ -1,0 +1,31 @@
+{
+  "why": "Hook delivery, render-then-compare `sync` and shadcn skill co-install are the three unproven claims under docs/v3/concepts/skills-agent-layer.md decisions 5, 6 and 13.",
+  "what": "tools/spikes/hook-sync/** and docs/v3/spikes/hook-sync.md. Read: packages/basalt-ui/src/cli/{sync.ts,placement-engine.test.ts}; the v3 `lint --hook`, manifest and renderer come from sk-2 and sk-4, so the harness holds a stub renderer. Skill stand-ins: the 2.x skills in packages/basalt-ui/agent/skills/ and the shadcn skill at a version fixed via /research.",
+  "owns": ["tools/spikes/hook-sync/**", "docs/v3/spikes/hook-sync.md"],
+  "must_not_touch": [
+    "CHANGELOG.md",
+    "root package.json, bun.lock, .gitignore, .oxlintignore",
+    "docs/v3/{concepts,issues}/**, docs/v3/ARCHITECTURE.md",
+    "other tools/spikes/* folders",
+    "consumer repos (scratch copies live in the OS temp dir)"
+  ],
+  "concept": "docs/v3/concepts/skills-agent-layer.md section 8 S2 S5 S6",
+  "contract": "docs/v3/concepts/skills-agent-layer.md section 8 S2, S5, S6 and docs/v3/concepts/guardrails.md section 15 E1 are frozen.",
+  "exemplar": "scripts/evidence/*.ts (one JSON result per run)",
+  "change": "S2: confirm via /research and by running the hook with event JSON on stdin that PostToolUse exit 2 text reaches the model; the shim from a subdirectory cwd and with the bin missing; `stop_hook_active` in the event JSON, or a per-session counter bounding Stop to one block; terse output size. Whether the model acts on it needs a real session: `needs owner run` with the exact repro. S5: stub render-then-compare over a workspace with one and several roots, shutterflow's single root shape, oxfmt and the bun isolated linker, plus a `settings.json` merge. S6: static scan of both skill texts for contradicting instructions (quote under 20 words each), no agent run required.",
+  "commits": "One non-package commit `chore: spike hook-sync harness and verdict`, empty scope, no attribution.",
+  "proof": "run.ts JSON plus the verdict doc; run twice, attach both outputs.",
+  "acceptance": [
+    "run.ts JSON has `s2.exit2Reaches`, `s2.subdirCwdOk`, `s2.binMissingExit`, `s2.stopLoops`, `s5.falseDrift`, `s5.rootsChangeDetected`, `s6.conflicts` (list)",
+    "The S6 section ends with the precedence text as one quotable paragraph",
+    "`bun tools/spikes/hook-sync/run.ts` exits 0, prints one JSON object with the keys above (0 = harness ran, not hypothesis held)",
+    "docs/v3/spikes/hook-sync.md has headings Question, Method, Measurements, Verdict, Then, Affects and the `verdict` lines",
+    "`find tools/spikes/hook-sync -name '*.test.*' -o -name '*.spec.*'` prints nothing",
+    "`git diff --name-only master...HEAD` lists only `owns` paths",
+    "`grep -rnE 'op://|\\.ts\\.net|192\\.168\\.|ghp_' tools/spikes/hook-sync docs/v3/spikes/hook-sync.md` prints nothing",
+    "`make check` passes"
+  ],
+  "out_of_scope": "Implementing sync, init or the hook shim; editing skills.",
+  "envelope": "Harness: tools/spikes/<dir>/ has its own package.json (exact pins); bun.lock and node_modules gitignored there (must_not_touch package.json and bun.lock = repo root only). Passes root oxlint; no *.test.* files; Chrome via the playwright-core pattern of packages/basalt-ui/tests/layout/harness.ts; docs/v3 on master before filing; synthetic data only, private repos as counts and hashed ids.",
+  "verdict": "Lines `S2`, `S5`, `S6: PASS|REFUTED|pending`. S2 REFUTED when Stop loops with the counter in place (drop Stop, keep PostToolUse); pending while the model-acts check needs an owner run. S5 PASS = zero false drift on every shape and a roots change detected, else REFUTED (lean on the E1 digest). S6 PASS = a precedence paragraph covers every listed conflict, REFUTED if a conflict cannot be ordered by one rule. `Verdict: PASS` iff all PASS, REFUTED if any is, else `PENDING`; run.ts `verdict` pass|refuted|pending."
+}

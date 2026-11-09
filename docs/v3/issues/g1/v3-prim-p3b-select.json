@@ -1,0 +1,38 @@
+{
+  "why": "Select and combobox carry the most Mantine call sites (Select 22) and Base UI hardcodes English dismiss strings and has no label for the trigger.",
+  "what": "packages/basalt-ui/src/ui/{select,combobox}* (tsx, guards, tests, one grouped layout test and fixture). Created here. Sibling: v3-prim-p3d-range owns slider and segmented.",
+  "owns": [
+    "packages/basalt-ui/src/ui/{select,combobox}*",
+    "packages/basalt-ui/docs/{select,combobox}.md",
+    "packages/basalt-ui/tests/layout/{,fixture/}ui-select*",
+    "packages/basalt-ui/src/core/messages/select.ts"
+  ],
+  "shared_append_only": [
+    "packages/basalt-ui/src/ui/slots.ts",
+    "packages/basalt-ui/src/ui/no-restyle.generated.json",
+    "packages/basalt-ui/scripts/export-surface.json"
+  ],
+  "must_not_touch": [
+    "packages/basalt-ui/src/{page,shell,cards,controls,table,charts,content,ai,router,data,core,tokens,css,lint,cli,vite,testing}/**",
+    "packages/basalt-ui/agent/**",
+    "CHANGELOG.md, MIGRATING.md, llms.txt, scripts/check-budgets/**, other areas' migrations files",
+    "every contract.ts and src/core/ports.ts"
+  ],
+  "concept": "primitives-distribution#13 P3",
+  "contract": "Frozen: ARCHITECTURE.md, this domain's contract.ts, src/core/ports.ts. Need a change: factory signal, take the reversible default. Read concepts/primitives-distribution.md sections 4 (list), 12, 13 and ARCHITECTURE section 7. CE1 (useFormat). Q4 result in docs/v3/spikes/provider.md decides how Combobox and Toast strings are overridden: follow it. Strings: internal useMessages hook; English defaults in your owned src/core/messages/select.ts (qa-i2 seeds it).",
+  "exemplar": "src/ui/button.tsx, button.guard.ts, scripts/gen-ui* (from v3-prim-p1-core, read in the tree): cva table, data-slot per part, guard, SLOTS.",
+  "change": "Select with SelectTrigger/Value/Content/Item/Group and NativeSelect (options form and parts form are a union; trigger name required by type; NativeSelect: appearance-none, h-ctl, ring, 16 px coarse). Combobox, ComboboxChips, Autocomplete (dismiss string from key combobox.dismiss; no virtualisation here). Rule: generated no-restyle contract per cva table. Skill: generated docs/<name>.md plus the \"which job, which part\" table sentence in docs/select.md. Tests: primitive.contract plus one layout and axe test for the group.",
+  "commits": "One PR, separate package and non-package commits (isolated-basalt-ui); conventional, empty scope, no attribution.",
+  "proof": "Layout and axe tests in tests/layout/ui-select.layout.test.ts on tests/layout/fixture/ui-select-fixture.tsx at 1440, 768, 390, 320. No shot: a primitive has no reference image.",
+  "acceptance": [
+    "primitive.contract passes for select and combobox",
+    "axe with the Select and Combobox popups open: zero serious or critical, and a Select without an accessible name fails to type-check (@ts-expect-error fixture)",
+    "overriding messages key combobox.dismiss changes the rendered dismiss label in a test",
+    "a custom width class on Select at call site lints clean while h-12 on it is denied by the generated contract",
+    "layout test: Select popup never taller than the viewport at 390x844",
+    "gen-ui check mode exits 0; docs/select.md and docs/combobox.md exist",
+    "make check exits 0",
+    "git diff --name-only lists only owned paths"
+  ],
+  "out_of_scope": "No consumer migration, no playground route, no eject/sync work, no new variant axes beyond the concept table, no Mantine parity props (classNames, styles, asChild, unstyled). slider and segmented (p3d); virtualised Combobox (waits for the 5k spike); FilterSet and ControlView (ctl-4, ctl-5)."
+}

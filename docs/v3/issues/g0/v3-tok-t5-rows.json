@@ -1,0 +1,31 @@
+{
+  "why": "A value shift without a row fails release, and rollhook's 38 names plus argo's 135 distinct names must each map somewhere. Rows are the machine input for migrate --check.",
+  "what": "packages/basalt-ui/migrations/areas/tokens.json (the area file v3-unhot-migrating-llms seeded as {schema:1,area,rows:[]}; fill it) and docs/v3/census/tokens-fleet.md (new, non-package). release-migrating merges the area files into migrations/<version>.json at release.",
+  "owns": ["packages/basalt-ui/migrations/areas/tokens.json", "docs/v3/census/tokens-fleet.md"],
+  "must_not_touch": [
+    "CHANGELOG.md",
+    "packages/basalt-ui/{MIGRATING.md,llms.txt}",
+    "packages/basalt-ui/scripts/check-budgets/**",
+    "**/contract.ts",
+    "packages/basalt-ui/src/{ui,shell}/**",
+    "apps/marketing/**",
+    "packages/basalt-ui/src/tokens/**",
+    "packages/basalt-ui/src/cli/**",
+    "tools/**",
+    "packages/basalt-ui/migrations/areas/!(tokens).json"
+  ],
+  "concept": "tokens-visual#12 T5",
+  "contract": "docs/v3/concepts/tokens-visual.md section 9 (the whole table is the row list) and 8 (fleet census); migration-release.md 3.2 (row schema). File level: from '>=2.0 <3', to '3.0.0', profiles tokens, bridge, parts, app.",
+  "exemplar": "The seeded areas/tokens.json and the other areas files from v3-unhot-migrating-llms; scripts/release-migrating.ts --check is the validator (there is no separate schema file). If the areas dir is absent, signal.",
+  "change": "Fill areas/tokens.json. Rows: one per line of the tokens-visual section 9 table (renames, merges, manual, codemod kinds), flag rows tokens:css --only, --selector-attribute, --light-class, --default-scheme, --media-fallback to --selector, attrs [data-mantine-color-scheme] to [data-theme], storage mantine-color-scheme-value read-legacy to basalt:scheme. tokens.valueShifts is mandatory for hue, radius (10 to 14, 6 to 8), display and kpi, line heights (12/13/15/16/18 lose 1.55) and control height, with values read from the landed token table. Census: re-run the fleet scan (every VX.* and --vx-* read in argo, shutterflow, rb, linewatch, weatherorb, rollhook, obsidian; generated sheets, worktrees and docs excluded), record the command in the md header, expect about 135 distinct names and 1,297 reads and explain any gap. Every census name is a row from, an app-owned group, or listed as manual. Rule: none. Skill snippet: none. Test: the mechanical coverage check below plus migrate --check.",
+  "commits": "One PR, rebase-merged. Commit 1 (package): migrations/areas/tokens.json (plus any release-migrating validation edit). Commit 2 (non-package): docs/v3/census/tokens-fleet.md. Conventional, empty scope, no attribution. Never edit CHANGELOG.md or MIGRATING.md.",
+  "proof": "Scratch shallow clone of ~/SourceRoot/rollhook at HEAD; never modify the repo.",
+  "acceptance": [
+    "basalt-ui migrate --from 2.29.0 --profile bridge --json in the rollhook scratch copy lists all 38 rollhook names with a row and 0 without one",
+    "A bun one-liner pasted in the PR shows every name in tokens-fleet.md appears as a row from, an app-owned group or a manual entry",
+    "tokens.valueShifts has an entry for each class listed in change",
+    "bun packages/basalt-ui/scripts/release-migrating.ts --check exits 0 on the filled file and non-zero on a copy with an unknown kind, a row without from or to, or an unknown profile (a test seeds each; if --check does not reject these yet, extend its row validation here: the one allowed edit outside owns, scripts/release-migrating*, with tests)",
+    "make check exits 0"
+  ],
+  "out_of_scope": "Layout and import rows (mig-codemod, later areas), 1.x rows (v3-mig-rows-1x), editing consumers, table.ts values."
+}

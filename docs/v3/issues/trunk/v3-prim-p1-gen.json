@@ -1,0 +1,32 @@
+{
+  "why": "One cva table generates the variant type, the no-restyle contract, the props doc row and SLOTS, so a primitive cannot drift from its guard. Every later primitive inherits it.",
+  "what": "scripts/gen-ui.ts and test, src/ui/slots.ts, src/ui/no-restyle.generated.json, docs/{button,input}.md generated for the two modules from v3-prim-p1-button-input. New files only; packages/basalt-ui/docs/ is a new generated directory.",
+  "owns": [
+    "packages/basalt-ui/scripts/gen-ui*",
+    "packages/basalt-ui/src/ui/slots*",
+    "packages/basalt-ui/src/ui/*.generated.*",
+    "packages/basalt-ui/docs/{button,input}.md"
+  ],
+  "must_not_touch": [
+    "packages/basalt-ui/src/tokens/**",
+    "packages/basalt-ui/src/css/**",
+    "packages/basalt-ui/src/{page,shell,cards,controls,table,charts,content,ai}/**",
+    "packages/basalt-ui/src/**/contract.ts",
+    "packages/basalt-ui/src/ui/{button,input}*"
+  ],
+  "concept": "docs/v3/concepts/primitives-distribution.md#13 P1",
+  "contract": "docs/v3/concepts/primitives-distribution.md sections 4, 5, 13 (the generator) and 2 (CE1-CE7 already applied: L3 may import useFormat; no-restyle denies h-*, min-h-*, size-*, display only, never w-*); docs/v3/ARCHITECTURE.md 7.1, 7.2, 4.2 (guards hand-authored: requires and closed blocks). Base UI polymorphism only via render, never asChild. Insufficient contract: factory signal, reversible default, PR body says so. Frozen contracts are read-only. Result of spike-no-restyle fixes the contract form.",
+  "exemplar": "None: first of its kind. Read packages/basalt-ui/scripts/gen-llms.ts for the --check convention.",
+  "change": "For the generator file group spawn the implementer subagent with `[opus: Generator from one cva table to type, no-restyle contract, docs row and SLOTS; every later primitive inherits it]` in its description; the rest of the Issue stays with you. gen-ui.ts reads each src/ui module's `<name>Variants` and `<name>Parts` and writes SLOTS (src/ui/slots.ts), the no-restyle contract (no-restyle.generated.json; its message names `size`, then eject) and docs/<name>.md; `--check` fails on drift. Ships with: gen-ui.test.ts and src/ui/slots.test.tsx, which enumerates modules from the generated data, never a hand list.",
+  "commits": "One PR, one `feat:` commit touching packages/basalt-ui/ only. Conventional, empty scope, no attribution, never CHANGELOG.md.",
+  "proof": "bun test packages/basalt-ui/scripts/gen-ui.test.ts packages/basalt-ui/src/ui; tsc --noEmit.",
+  "acceptance": [
+    "bun packages/basalt-ui/scripts/gen-ui.ts --check exits 0 and exits non-zero after a variant is added to a cva table without regenerating.",
+    "slots.test.tsx renders every module found in slots.ts and its data-slot set equals the SLOTS entry.",
+    "no-restyle.generated.json denies h-*, min-h-*, size-*, hidden, flex, block, grid, inline-flex and does not deny w-*; its message names `size`.",
+    "docs/button.md and docs/input.md exist with the extractor frontmatter.",
+    "make check passes with the new docs directory (doc-drift, coverage and pack-test tolerate it)."
+  ],
+  "out_of_scope": "field, card, other primitives, eject, sync, the no-restyle lint rule (gr-1), budget changes.",
+  "worker": "[opus: Generator from one cva table to type, no-restyle contract, docs row and SLOTS; every later primitive inherits it]"
+}

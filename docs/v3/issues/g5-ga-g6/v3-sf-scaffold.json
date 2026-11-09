@@ -1,0 +1,39 @@
+{
+  "repo": "shutterflow",
+  "why": "Shutterflow's Tauri shell loads whichever UI dir SHUTTERFLOW_UI_DIR names, so a second UI app needs a Makefile switch, a following e2e harness and a DOM test harness; src-tauri never moves.",
+  "what": "UI_APP switch in the Makefile, the e2e plumbing that follows it, an empty apps/desktop-v3 that builds and runs DOM tests, and scripts/check-port.ts. No feature code.",
+  "owns": [
+    "Makefile",
+    "e2e/harness/**",
+    "e2e/playwright.config.ts",
+    "e2e/desktop/visual/invariants.spec.ts",
+    "apps/desktop-v3/{package.json,vite.config*,index.html,tsconfig*,bunfig.toml,.basalt/**,.oxlintrc.json,AGENTS.md,test/setup.ts}",
+    "apps/desktop-v3/src/main.tsx",
+    "scripts/check-port*",
+    "package.json",
+    "bun.lock",
+    ".claude/{rules/basalt-v3-*.md,skills/basalt-v3-*}"
+  ],
+  "must_not_touch": [
+    "apps/desktop/**",
+    "apps/desktop/src-tauri/**",
+    "crates/**",
+    "e2e/desktop/visual/**/*.png",
+    "apps/gallery/**"
+  ],
+  "concept": "migration-release#6.4",
+  "contract": "Read basalt-ui docs/v3/concepts/migration-release.md 6.4, shutterflow docs/decisions/0028 (no bulk baseline regeneration) and AGENTS.md safety rule 1 (never read /Volumes). Root pin basalt-ui 1.40.3 stays; apps/desktop-v3 declares exact 3.0.0-next.N (floors.G2.next in basalt-ui scripts/fleet.json) with `basalt.sibling` (v3-cli-sibling). DOM harness (desktop has 67 .test.ts, none DOM): devDependencies happy-dom and @happy-dom/global-registrator at basalt-ui's root pins (`npm view` first); bunfig.toml preloads test/setup.ts (registers the global, calls basalt-ui/testing `installDomShims`); tests use `renderApp`. happy-dom has no layout: geometry is e2e or the owner's eye.",
+  "exemplar": "apps/desktop/package.json and vite.config.ts (no @mantine/*, @visx/*).",
+  "change": "Makefile: `UI_APP ?= desktop`, `UI_DIR := $(CURDIR)/apps/$(UI_APP)/dist`, `ui` builds `@shutterflow/$(UI_APP)` plus the gallery. Playwright: with UI_APP not desktop only e2e/desktop/visual/invariants.spec.ts runs (the rest stays Mantine-keyed until the re-key Issues), from the first shell Issue, geometry first, no baseline. Scaffold apps/desktop-v3 (`init --profile app` in the app dir). scripts/check-port.ts <oldDir> <newDir> [--all]: pairs each *.test.ts(x) (every file with --all), strips import statements, exits 1 on any other differing line unless it carries a `// port: <reason>` marker, prints the marker count. One smoke test through renderApp. Rule: the app oxlint preset runs in `make check`'s lint line. Skill snippet: none.",
+  "commits": "Shutterflow ships by push to master: conventional, one concern each, no attribution. Never edit node_modules or basalt-ui; a gap is a `friction:` line in the PR body.",
+  "proof": "hygiene.check is false. Gate: the app's typecheck, test and build. This Issue changes package.json, bun.lock and the Makefile, so `make check-changed` falls back to `make check`: state it not-run.",
+  "acceptance": [
+    "`make -n e2e UI_APP=desktop-v3` shows SHUTTERFLOW_UI_DIR ending in apps/desktop-v3/dist and `make -n e2e` still ends in apps/desktop/dist",
+    "`bun run --filter @shutterflow/desktop-v3 typecheck`, `test` and `build` exit 0",
+    "`bun run --cwd e2e playwright test --list --project visual` with UI_APP=desktop-v3 lists only invariants.spec.ts tests",
+    "`bun test scripts/check-port.test.ts` proves: import-only diff passes, unmarked changed line fails, marked one passes and is counted",
+    "`git diff --stat origin/master -- apps/desktop apps/desktop/src-tauri e2e/desktop/visual` shows no change",
+    "`rg -n mantine apps/desktop-v3` finds nothing; the PR states `make check-changed` not-run"
+  ],
+  "out_of_scope": "Any desktop feature, baselines, src-tauri, the gallery, deleting apps/desktop."
+}

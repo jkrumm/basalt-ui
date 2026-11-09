@@ -1,0 +1,38 @@
+{
+  "why": "Table GA must hold 10k rows, give honest footers, argo's one inline editor and the owner's declared grouping.",
+  "what": "New files under packages/basalt-ui/src/table/parts/ (created by the rewrite): virtual*, footer*, select-cell*, group-row*, their tests, two layout tests.",
+  "owns": [
+    "packages/basalt-ui/src/table/parts/{virtual,footer,select-cell,group-row}*",
+    "packages/basalt-ui/tests/layout/table-{group,virtual}*",
+    "packages/basalt-ui/src/core/messages/table.ts",
+    "packages/basalt-ui/src/table/invariants/virtual*"
+  ],
+  "shared_append_only": [
+    "packages/basalt-ui/src/table/index.ts",
+    "packages/basalt-ui/scripts/export-surface.json"
+  ],
+  "must_not_touch": [
+    "packages/basalt-ui/src/table/contract.ts",
+    "packages/basalt-ui/src/table/core/**",
+    "other src/table/parts/* files",
+    "packages/basalt-ui/src/ui/**",
+    "contract-pins.json, MIGRATING, llms.txt, check-budgets"
+  ],
+  "concept": "data-table#12 T4",
+  "contract": "Read docs/v3/concepts/data-table.md 3 (Virtualization, Footer, Grouping, Inline edit), 6, 9 (S2) and the frozen src/table/contract.ts. VirtualLike is injected from ui/virtual-list (v3-prim-p5c-bar); never import @tanstack/react-virtual.",
+  "exemplar": "Follow src/table/parts/{head,body}* (v3-table-t2-parts) and the t3 parts for anatomy and data-slot names.",
+  "change": "One concern: row-set extensions of the body. virtual: spacer `<tr>` rows, getItemKey row.id, rangeExtractor keeps the focused row, aria-rowcount and aria-rowindex, scrollToIndex(0) on request change. footer: sum, mean, min, max, count on numeric kinds in tfoot; absent in server mode without totals; card tier summary `dl`. select-cell: `c.select` on ui/select or ui/combobox, commit(row, next) is a promise, disabled while pending, card slot `edit` (max 2), Enter and tap never activate the row. group-row: `group: { by, summary? }`, client mode only, collapsible group row with count, fixed row height, collapsed set in display.collapsed, section header above phone cards. Run spike S2 first, Chrome only (10k rows, pinned start, sticky header, focus kept; Firefox and Safari stay open in the PR). Pass: header offset moves at most 1 px between scroll positions. On failure build no fallback grid: signal, and ship the other three parts. Ships: no new rule (contract.type-test.ts already rejects `group` in server mode); JSDoc @example per part; tests parts/{virtual,footer,select-cell,group-row}.test.tsx and the layout files.",
+  "commits": "One PR, separate package and non-package commits (isolated-basalt-ui); conventional, empty scope, no attribution; make sync-self its own commit.",
+  "proof": "tests/layout/table-group.layout.test.ts at 1440, 768, 390; table-virtual.layout.test.ts on a 10k fixture. S2 outcome in the PR body.",
+  "acceptance": [
+    "make check passes and `bun test src/table/parts` is green, tests red first.",
+    "The 10k fixture keeps focus after a scroll and after a sort moves a row to index 0, the header offset moves at most 1 px, under 100 body rows are mounted and aria-rowcount equals the total.",
+    "footer test: server mode without totals renders no footer cell; the client sum equals the filtered rows.",
+    "select-cell test: pending disables the cell, a rejected commit re-enables it, Enter in the control never calls onRowActivate.",
+    "table-group layout at 1440, 768, 390: fixed group row height, collapse hides its rows, no horizontal overflow.",
+    "`rg \"@tanstack/react-virtual\" packages/basalt-ui/src/table` finds nothing; check-contract-frozen passes with contract-pins.json unchanged.",
+    "`git diff --name-only` lists only owned paths, the generated docs/data-table.md and the sync-self commit.",
+    "I26 in src/table/invariants/virtual* is a normal passing test, not test.failing."
+  ],
+  "out_of_scope": "Server grouping, group-by UI, other editors, the playground route, the perf gate, Firefox and Safari runs."
+}

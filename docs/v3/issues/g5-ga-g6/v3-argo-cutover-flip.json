@@ -1,0 +1,34 @@
+{
+  "repo": "argo",
+  "why": "Argo runs on v3 only when the sibling becomes the served app. The flip is configuration only and ships first, alone, so a bad flip rolls back with `make rollback` while the old app still exists.",
+  "what": "Serve and build apps/dashboard-v3 at the root, drop the /v3/ mount and its env, and change the boot script's scheme key. apps/dashboard stays in the tree, unreferenced.",
+  "owns": [
+    "scripts/{deploy.sh,dev.sh,verify-pages.ts}",
+    "scripts/{design-shot,evidence}/**",
+    "apps/api/src/{index.ts,env.ts,env.test.ts,serve-dashboard.ts,serve-dashboard.test.ts}",
+    "deploy/com.jkrumm.argo.plist.template",
+    "Makefile",
+    "apps/dashboard-v3/{vite.config*,index.html}",
+    "apps/dashboard-v3/src/{main.tsx,lib/router*}"
+  ],
+  "must_not_touch": [
+    "apps/dashboard/**",
+    "project.yaml",
+    "drizzle migrations",
+    "apps/api/src/** except the five files named"
+  ],
+  "concept": "migration-release#6.3 cutover row; 6.1",
+  "contract": "docs/v3/concepts/migration-release.md 6.1, 6.2 and the scheme rule (the app owns one key; the cutover PR is where the boot script changes). Precondition (the lead checks it, read only): ~/SourceRoot/basalt-ui/docs/v3/verdicts/argo-ledger.md is on master with no empty or `reopened` verdict cell, and `bun packages/basalt-ui/scripts/check-test-ledger-argo.ts --complete --argo-root ~/SourceRoot/argo` exits 0 there; if not, stop and report. Reversal of v3-argo-chain: each APP default and the /v3/ mount it added is removed or flipped.",
+  "exemplar": "The diff of v3-argo-chain and v3-argo-scaffold, reversed.",
+  "change": "1. APP default dashboard-v3 in Makefile, deploy.sh, dev.sh, design-shot, evidence; the plist's DASHBOARD_DIR points at apps/dashboard-v3/dist and DASHBOARD_V3_DIR, v3Dir and the /v3/ branch are deleted (env.ts, index.ts, serve-dashboard, tests); Vite base `/`, router basepath removed. 2. Scheme: the boot script reads the legacy `mantine-color-scheme-value` once and writes `basalt:scheme`; if the installed theme-script only reads, the app's main.tsx writes it, with a comment. Rule: none. Skill snippet: none.",
+  "commits": "Argo ships by push to master: conventional, one concern each, no attribution. Never edit node_modules or basalt-ui; a gap is a `friction:` line in the PR body, worked around in app code. The flip is one commit; the scheme change another.",
+  "proof": "`make deploy` runs on push; then `make version` equals origin/master and `make verify` exits 0; `make evidence LABEL=cutover` bundle and lighthouse numbers in the PR body; rollback is `make rollback`.",
+  "acceptance": [
+    "`bun test apps/api/src` exits 0 with serve-dashboard.test.ts on the root mount and no /v3/ case",
+    "`rg -n 'DASHBOARD_V3_DIR|v3Dir|/v3' apps/api deploy scripts Makefile apps/dashboard-v3/vite.config.ts apps/dashboard-v3/src/lib` returns no match",
+    "a DOM test of the boot script: with only `mantine-color-scheme-value=dark` set the resolved theme is dark and `basalt:scheme` equals dark afterwards; with both keys set `basalt:scheme` wins",
+    "`make check` exits 0",
+    "after the factory deploy `make version` prints origin/master's sha, `make verify` exits 0 and `make verify-pages BASE=http://127.0.0.1:7737` reports PASS for every line of scripts/evidence/routes.txt"
+  ],
+  "out_of_scope": "Deleting apps/dashboard, init at the root, renaming apps/dashboard-v3, API changes, restyling."
+}

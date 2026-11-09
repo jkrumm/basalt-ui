@@ -1,0 +1,30 @@
+{
+  "why": "Three defaults wait on proof: compiled `cn` versus `clsx` (F6), the dead `sm:` and `lg:` reset (F7), and the zone A colour denial (tokens S4).",
+  "what": "tools/spikes/cn-breakpoints/** (own package.json: tailwindcss 4.3.5) and docs/v3/spikes/cn-breakpoints.md. Read-only scratch copies of console and epos (F6, F7), argo, console, linewatch (S4). Needs the Tailwind 4 entries of tok-t3-css and the breakpoint reset (`md` 840, `xl` 1200, the rest dead: docs/v3/ARCHITECTURE.md section 5). Forms are standalone matchers; nothing lands in src/lint.",
+  "owns": ["tools/spikes/cn-breakpoints/**", "docs/v3/spikes/cn-breakpoints.md"],
+  "must_not_touch": [
+    "CHANGELOG.md",
+    "root package.json, bun.lock, .gitignore, .oxlintignore",
+    "docs/v3/{concepts,issues}/**, docs/v3/ARCHITECTURE.md",
+    "other tools/spikes/* folders",
+    "consumer repos (scratch copies live in the OS temp dir)"
+  ],
+  "concept": "docs/v3/ARCHITECTURE.md section 11 F6 F7; docs/v3/concepts/tokens-visual.md section 8 S4",
+  "contract": "docs/v3/ARCHITECTURE.md section 11 F6, F7 and docs/v3/concepts/tokens-visual.md section 8 S4 are frozen.",
+  "exemplar": "scripts/evidence/*.ts (one JSON result per run)",
+  "change": "F6: list every `cn(...)` call site in console and epos. A conflict beyond `no-restyle`'s reach = a call whose arguments can emit two utilities of one CSS property group and that is not a `className` handed to a bought primitive. Also compile the emit case (`inline-flex` after `hidden`) and read the computed display in Chrome for both class orders. F7: compile the v3 reset; take every `sm:`, `lg:`, `max-` and `min-` use in console and epos plus 10 seeded dead classes; a standalone `no-unknown-classes` matcher flags a class absent from the emitted CSS. S4: probe the `tw-off-law` zone A colour denial over argo, console, linewatch, counting TS colour too (`c={VX.`, `color={VX.`); `waiversPer300Lines` = flagged sites x 300 / scanned lines.",
+  "commits": "One non-package commit `chore: spike cn-breakpoints harness and verdict`, empty scope, no attribution.",
+  "proof": "run.ts JSON plus the verdict doc; run twice, attach both outputs.",
+  "acceptance": [
+    "run.ts JSON has `f6.conflictsBeyondNoRestyle`, `f6.emitCaseDisplay` (both class orders), `f7.deadClassesCaught`, `f7.deadClassesTotal`, `s4.waiversPer300Lines`",
+    "`bun tools/spikes/cn-breakpoints/run.ts` exits 0, prints one JSON object with the keys above (0 = harness ran, not hypothesis held)",
+    "docs/v3/spikes/cn-breakpoints.md has headings Question, Method, Measurements, Verdict, Then, Affects and the `verdict` lines",
+    "`find tools/spikes/cn-breakpoints -name '*.test.*' -o -name '*.spec.*'` prints nothing",
+    "`git diff --name-only master...HEAD` lists only `owns` paths",
+    "`grep -rnE 'op://|\\.ts\\.net|192\\.168\\.|ghp_' tools/spikes/cn-breakpoints docs/v3/spikes/cn-breakpoints.md` prints nothing",
+    "`make check` passes"
+  ],
+  "out_of_scope": "Choosing the `cn` implementation in src; editing tokens.",
+  "envelope": "Harness: tools/spikes/<dir>/ has its own package.json (exact pins); bun.lock and node_modules gitignored there (must_not_touch package.json and bun.lock = repo root only). Passes root oxlint; no *.test.* files; Chrome via the playwright-core pattern of packages/basalt-ui/tests/layout/harness.ts; docs/v3 on master before filing; synthetic data only, private repos as counts and hashed ids.",
+  "verdict": "Lines `F6: PASS|REFUTED` (PASS = `f6.conflictsBeyondNoRestyle` is 0, so `cn` may flip to `clsx`; REFUTED keeps compiled `cn`), `F7: PASS|REFUTED` (PASS = caught equals total, total > 0; REFUTED keeps Tailwind's scale), `S4: PASS|REFUTED` (REFUTED above 1 per 300 lines: re-allow `text-(good|warn|bad)`). `Verdict: PASS` iff all three PASS; run.ts `verdict` the same."
+}

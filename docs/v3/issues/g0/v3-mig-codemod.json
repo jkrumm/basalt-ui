@@ -1,0 +1,28 @@
+{
+  "why": "2,555 of the fleet's 4,310 Mantine tags are layout primitives that convert mechanically, but the first bench found traps (size names colliding, Text resets, line height). This row is the rewrite; v3-mig-bench grades it.",
+  "what": "New, non-package: tools/migrate-v3/layout/**, tools/migrate-v3/imports/**, tools/migrate-v3/run.ts. The prototype was scratch outside the repo (ts-morph text-range edits, about 290 lines); this is a rewrite. Verify the ts-morph version on npm before pinning (root devDependency, exact). The bench, oracle and the four check subcommands are v3-mig-bench's.",
+  "owns": ["tools/migrate-v3/layout/**", "tools/migrate-v3/imports/**"],
+  "shared_append_only": ["tools/migrate-v3/run.ts"],
+  "must_not_touch": [
+    "packages/basalt-ui/**",
+    "CHANGELOG.md",
+    "tools/migrate-v3/waivers/**",
+    "tools/migrate-v3/ledger/**"
+  ],
+  "concept": "migration-release#7",
+  "contract": "docs/v3/concepts/migration-release.md section 7 (scope, the trap table, replacement proof 1-4), section 3.2 (row schema: codemod 'imports', verify 'ast'); docs/v3/evidence/gap-migration-coexistence-and-consumer-testing.md Part 2 and section 2.1 (traps).",
+  "exemplar": "None in tree. Row-driven imports follow packages/basalt-ui/migrations/** as v3-unhot-migrating-llms landed it.",
+  "change": "bun tools/migrate-v3/run.ts layout <app-dir> --report <file> rewrites Stack, Group, Flex, Center, Box, Text, SimpleGrid and their style props to classes, mapping type sizes by px not name (xs xs, sm sm, md md, lg base, xl lg), emitting font-normal for every Text, text-ellipsis for lineClamp, explicit Stack, Group and SimpleGrid defaults, refusing fw=semibold as a latent bug, and never the retired text-xl/[1.55] form. Style props on non-target components (a Button with mt) and responsive props go to the worklist with a reason: the report is a worklist, never an exemption. bun tools/migrate-v3/run.ts imports <app-dir> applies the pure-rename rows (codemod 'imports') from packages/basalt-ui/migrations/areas/*.json. run.ts leaves a dispatch table for bench|valueshifts|classes-exist|lint-clean that v3-mig-bench fills. Rule: none. Skill snippet: none. Test: one fixture per trap.",
+  "commits": "One PR, rebase-merged: one non-package commit (tools/ only), conventional, empty scope, no attribution. Never edit CHANGELOG.md.",
+  "proof": "Dry run on a scratch copy of ~/SourceRoot/rb/apps/web with the report pasted in the PR.",
+  "acceptance": [
+    "bun test tools/migrate-v3/layout tools/migrate-v3/imports passes",
+    "Text size lg maps to text-base and xl to text-lg; every converted Text carries font-normal (fixture)",
+    "fw=\"semibold\" is refused with a latent-bug message and appears in the worklist",
+    "A Button with mt and a responsive prop land in the worklist with reasons, unchanged in source",
+    "imports applies a rename row and leaves an unmapped import alone (fixture)",
+    "A second run over its own output is a no-op",
+    "make check exits 0 at the repo root"
+  ],
+  "out_of_scope": "The bench, oracle and check subcommands (v3-mig-bench), component tags (Button, Card, Table), charts, shell wiring, waiver syntax (v3-gr-6), editing a consumer repo."
+}

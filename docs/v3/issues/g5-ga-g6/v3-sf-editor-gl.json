@@ -1,0 +1,32 @@
+{
+  "repo": "shutterflow",
+  "why": "Shutterflow desktop-v3 is built screen by screen next to apps/desktop; the editor is 25 files, mostly the WebGL renderer and the edit model, which move almost unchanged. They land first as their own Issue.",
+  "what": "The editor GL renderer, edit model, stage and session: copies with import-only changes and their tests.",
+  "owns": [
+    "apps/desktop-v3/src/features/editor/{gl,model,stage}/**",
+    "apps/desktop-v3/src/features/editor/editor-session*"
+  ],
+  "must_not_touch": [
+    "apps/desktop/** (stays shippable)",
+    "apps/desktop/src-tauri/**",
+    "crates/**",
+    "e2e/desktop/visual/**/*.png",
+    "other Issues' dirs under apps/desktop-v3/src",
+    "apps/desktop-v3/package.json, bun.lock",
+    "apps/desktop-v3/src/features/editor/{EditorPanel,EditorSidebar,commands}*, editor.module.css (v3-sf-editor)"
+  ],
+  "concept": "migration-release#6.4",
+  "contract": "Read basalt-ui docs/v3/concepts/migration-release.md 6.4, shutterflow docs/decisions/0028-visual-regression-gate.md (no bulk baseline regeneration) and AGENTS.md safety rule 1 (photo inputs are the owner's; never read /Volumes). basalt-ui is pinned exact next.N (the gate's floor, v3-sf-bump in `after`): its docs/recipes and llms.txt are the API truth; never edit package.json or bun.lock. Editor GL is deepRender: the file-level waiver covers it with a reason, counted.",
+  "exemplar": "The landed v3-sf-shell frame (apps/desktop-v3/src/shell) and the playground exemplars in the basalt-ui repo; old code under apps/desktop/src/features/.",
+  "change": "Copy gl/{affine,orient,renderer,shaders}, model/** (edit-store, geometry-ops, crop-fit, tone, readouts, load-watchdog, use-committed-geometry, source, view, wire), stage/{overlay,Stage.tsx} and editor-session into apps/desktop-v3 with their tests. Only imports change (apps/desktop stays, so these are copies, not renames). Rule: the app preset passes; the GL files carry one file-level deepRender waiver with a reason. Skill snippet: none.",
+  "commits": "Shutterflow ships by push to master: conventional, one concern each, no attribution. Never edit node_modules or basalt-ui; a gap is a `friction:` line in the PR body.",
+  "proof": "hygiene.check is false: the factory cannot run `make check` or `make e2e`. Gate: the app's typecheck, test and build; state e2e and visual runs not-run (owner-run at cutover). `make check-changed` runs only without a package.json, bun.lock or Makefile change (else `make check`): state it not-run then.",
+  "acceptance": [
+    "`bun run --filter @shutterflow/desktop-v3 typecheck`, `... test` and `... build` exit 0",
+    "`make check-changed` exits 0 (not-run if package.json, bun.lock or the Makefile changed: `make check` then)",
+    "`bun scripts/check-port.ts --all apps/desktop/src/features/editor/gl apps/desktop-v3/src/features/editor/gl` exits 0 (import-only differences; any other changed line carries a `// port:` marker listed in the PR); the same for editor/model and editor/stage",
+    "`rg -n -i '@mantine|@visx|mantine-' apps/desktop-v3/src/features/editor/{gl,model,stage}/** apps/desktop-v3/src/features/editor/editor-session*` returns no match",
+    "crop-fit, tone, readouts and load-watchdog tests pass; `rg -c 'deepRender' apps/desktop-v3/src/features/editor/gl` shows one waiver per GL file with a reason"
+  ],
+  "out_of_scope": "Other screens, shell code, apps/desktop, e2e files (v3-sf-e2e-rekey), src-tauri."
+}

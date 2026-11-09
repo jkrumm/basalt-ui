@@ -1,0 +1,33 @@
+{
+  "why": "`release` runs the tagged commit, so the fixed publish workflow must exist before v2 is cut; a prerelease or lower 2.x must never take `latest`; 2.8.0 shipped on a red master.",
+  "what": ".github/workflows/{publish,release,ci,deploy}.yml, scripts/release.sh library half (new dist_tag_for, CI-green preflight, no-package-commit refusal, per-tag await_registry) and scripts/release.test.ts. version_gate, BRANCH and the dispatch flow stay untouched: the old gate must still accept 2.29.1. v3-charts-bump files --after this Issue (shared bun.lock).",
+  "owns": [
+    ".github/workflows/**",
+    "scripts/release.sh",
+    "scripts/release.test.ts",
+    "package.json",
+    "bun.lock"
+  ],
+  "must_not_touch": [
+    ".releaserc.json",
+    "commitlint.config.ts",
+    "packages/basalt-ui/**",
+    "AGENTS.md",
+    "apps/marketing/**"
+  ],
+  "concept": "docs/v3/concepts/migration-release.md#4.1 step 1",
+  "contract": "docs/v3/concepts/migration-release.md 4.1 step 1, 4.3 and docs/v3/evidence/gap-repo-surface-release-proof.md 2.3, 2.5, 2.6 (tag step, preflight query). dist_tag_for <version> <registry_latest>: version is X.Y.Z or X.Y.Z-pre, registry_latest is X.Y.Z or empty, anything else exits 1. Prerelease: next. Empty or version >= registry_latest (sort -V): latest. Else latest-<major>. Insufficient contract: factory signal, reversible default, PR body says so. Frozen contracts are read-only.",
+  "exemplar": "scripts/release.test.ts run() helper (source, never execute).",
+  "change": "(1) dist_tag_for in the library half, sourced by publish.yml: version from package.json, an `echo \"dist-tag=$DIST_TAG\"` line, then `npm publish --access public --tag \"$DIST_TAG\"`; drop the GITHUB_REF_NAME derivation. (2) CI-green preflight: the newest non-release first-parent commit's CI run must be completed/success. After the dry run, refuse when `git log <last v* tag>..origin/master -- packages/basalt-ui` is empty (the dropped path filter's replacement). (3) await_registry polls `npm view --prefer-online basalt-ui@<dist-tag> version`. (4) release.yml: plain ./node_modules/.bin/semantic-release; drop `node -r`, MONOREPO_DIR and semantic-release-monorepo (root package.json, bun.lock). (5) ci.yml: fetch-depth 0 and commitlint over the range: pull_request `--from <base.sha> --to <head.sha>`; push `--from <event.before> --to <sha>`, and for a new-branch push (before is 40 zeros) `--from origin/master --to HEAD`. (6) deploy.yml: push paths ['apps/marketing/**','.github/workflows/deploy.yml'] plus workflow_dispatch; rewrite only the 'Every master push' comment paragraph. Tests in release.test.ts; no lint rule or skill snippet.",
+  "commits": "One PR, `ci:` commits, non-package only (no isolation split). No attribution.",
+  "proof": "bun test scripts/release.test.ts; ci.yml green on the PR. Reviewed deep.",
+  "acceptance": [
+    "bash -c 'source scripts/release.sh; dist_tag_for A B' prints: (3.0.0-next.4 2.29.1) and (3.0.0-next.4 3.0.0) next; (2.29.1 2.29.0), (2.29.1 2.29.1), (2.29.1 '') and (3.0.0 2.29.1) latest; (2.29.2 3.0.0) and (2.29.1 2.30.0) latest-2; (bogus 2.29.1) exits 1.",
+    "bun test scripts/release.test.ts passes: the table above, a stubbed gh refusing a non-success run, the no-package-commit refusal, and every existing version_gate case unchanged.",
+    "grep -n 'GITHUB_REF_NAME' .github/workflows/publish.yml returns nothing; the publish step has an `echo \"dist-tag=` line before `npm publish --access public --tag \"$DIST_TAG\"`, and await_registry's npm view names the dist-tag (grep).",
+    "grep -rnE 'semantic-release-monorepo|node -r|MONOREPO_DIR' .github package.json bun.lock returns nothing; bun install --frozen-lockfile exits 0.",
+    "ci.yml has fetch-depth: 0 and the commitlint --from/--to forms; deploy.yml has the paths filter and workflow_dispatch.",
+    "git diff --name-only origin/master...HEAD shows nothing under packages/basalt-ui/ or .releaserc.json."
+  ],
+  "out_of_scope": "The gate rewrite, BRANCH selection, v2 in ci.yml, doctrine text (rel-5)."
+}

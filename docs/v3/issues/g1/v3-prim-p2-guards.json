@@ -1,0 +1,31 @@
+{
+  "why": "p3-p5 add 30 modules; a composite calling a variant the guard omits must fail tsc before then, and every primitive needs the same render, slot and SSR contract.",
+  "what": "packages/basalt-ui/src/ui/guard-completeness* (script), src/ui/primitive.contract*, tests/ui/contract/**. All created by this Issue; the tree today is 2.x with no src/ui.",
+  "owns": [
+    "packages/basalt-ui/src/ui/guard-completeness*",
+    "packages/basalt-ui/src/ui/primitive.contract*",
+    "packages/basalt-ui/tests/ui/contract/**"
+  ],
+  "shared_append_only": ["Makefile"],
+  "must_not_touch": [
+    "packages/basalt-ui/src/{page,shell,cards,controls,table,charts,content,ai,router,data,core,tokens,css,lint,cli,vite,testing}/**",
+    "packages/basalt-ui/agent/**",
+    "CHANGELOG.md, MIGRATING.md, llms.txt, scripts/check-budgets/**, other areas' migrations files",
+    "every contract.ts and src/core/ports.ts"
+  ],
+  "concept": "primitives-distribution#13 P2",
+  "contract": "Frozen: ARCHITECTURE.md, this domain's contract.ts, src/core/ports.ts. Need a change: factory signal, take the reversible default. Read concepts/primitives-distribution.md sections 4 (list), 12, 13 and ARCHITECTURE section 7. Guard law: ARCHITECTURE 4.2 (requires block, closed block). guard-completeness is a script gate, not a lint id (18-id ceiling).",
+  "exemplar": "src/ui/button.tsx, button.guard.ts, scripts/gen-ui* (from v3-prim-p1-core, read in the tree): cva table, data-slot per part, guard, SLOTS.",
+  "change": "(1) guard-completeness: tsc over the L4 composites with tsconfig paths mapping basalt-ui/ui/<name> to requires-only stubs derived from each src/ui/<name>.guard.ts; fails when a composite calls an axis a guard lacks. Only modules an L4 composite imports must ship a guard. (2) primitive.contract: parametrised over the glob src/ui/*.tsx so p3-p5 modules enlist without edits: renders with no provider, each rendered part has data-slot equal to the kebab-case of its export and listed in SLOTS, renderToString plus hydrateRoot with onRecoverableError counted and a Math.random negative control. Seed with button, input, field, card. Wire both into make check. Rule: none (no new lint id). Skill: none (guard text reaches docs/<name>.md through the p1 generator). Tests: the two suites plus one seeded offender each.",
+  "commits": "One PR: package and non-package changes in separate commits (isolated-basalt-ui). Conventional, empty scope, no feat!:, no attribution. Generated files come from make check, never by hand. The Makefile line is the non-package commit.",
+  "proof": "bun test over tests/ui/contract; make check wiring visible in the Makefile diff.",
+  "acceptance": [
+    "guard-completeness fails on tests/ui/contract/fixtures/composite-calls-missing-axis.tsx and passes on the shipped tree",
+    "primitive.contract fails on tests/ui/contract/fixtures/no-slot.tsx (a part without data-slot) and on a primitive that renders Math.random() (hydrate negative control)",
+    "primitive.contract lists exactly the modules found by glob src/ui/*.tsx, and button, input, field, card all pass it",
+    "make check runs guard-completeness and primitive.contract (grep Makefile)",
+    "make check exits 0",
+    "git diff --name-only lists only owned paths"
+  ],
+  "out_of_scope": "Writing guards for modules no L4 composite imports; new primitives; changing the cva-to-contract generator from p1."
+}

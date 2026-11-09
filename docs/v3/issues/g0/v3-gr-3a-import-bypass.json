@@ -1,0 +1,40 @@
+{
+  "why": "Argo's copy-pasted import ban was silently replaced by extends; cmdk cost +16 KB and 24 packages; 6 of 10 repos hand-roll tables and 5 of 7 apps pin a locale. Both rules close the bypass routes an agent reaches first.",
+  "what": "New: packages/basalt-ui/src/lint/rules/structure/import-boundary.ts and primitive-bypass.ts with tests, and packages/basalt-ui/test/fixtures/lint/import-bypass/** (one fixture file per id). 12 plus 9 forms.",
+  "owns": [
+    "packages/basalt-ui/src/lint/rules/structure/import-boundary*",
+    "packages/basalt-ui/src/lint/rules/structure/primitive-bypass*",
+    "packages/basalt-ui/test/fixtures/lint/import-bypass/**"
+  ],
+  "must_not_touch": [
+    "CHANGELOG.md",
+    "packages/basalt-ui/{MIGRATING.md,llms.txt}",
+    "packages/basalt-ui/scripts/check-budgets/**",
+    "**/contract.ts",
+    "packages/basalt-ui/src/{ui,shell}/**",
+    "apps/marketing/**",
+    "packages/basalt-ui/src/tokens/**",
+    "packages/basalt-ui/src/cli/**",
+    "packages/basalt-ui/agent/**",
+    "packages/basalt-ui/src/lint/rule-table*",
+    "packages/basalt-ui/src/lint/factory*",
+    "packages/basalt-ui/src/lint/rules/class/**",
+    "packages/basalt-ui/src/lint/rules/structure/{colour-literal,waiver-needs-reason,data-primitive,router-search,control-home,untrusted-markdown}*"
+  ],
+  "concept": "guardrails#4",
+  "contract": "docs/v3/concepts/guardrails.md section 4 rows 8 and 9, section 15 clarification (useChat), section 13. The Intl form is gated on Format gaining time and an options bag (S9).",
+  "exemplar": "The factory and table from v3-gr-1-rule-table; the only edit outside owns is one line in src/lint/index.ts.",
+  "change": "import-boundary: @base-ui/react/*, @radix-ui/*, cmdk, sonner, streamdown, tailwind-merge, @visx/*, engine outside the 19-subpath list, direct useReactTable, @/components/ui/* unless ejected, useChat() without a chat option (an unlessCallHas: 'chat' guard), persist and storage-hook libraries outside a StorageLike adapter. Repo-only rows (layer table, single host.tsx importer) are profile repo and ship in no preset. primitive-bypass: raw button input select textarea, typed checkbox or radio input, h1-h6, table, data-mapped marks inside svg, role=table|grid, ui/table rows from a sort/slice chain or a header onClick, a chart kind as DataPanel body root, and new Intl.*Format / toLocale* skipping resolvedOptions. The Intl form is defined with enabled false until src/core/format.ts exports time and an options bag; the test proves it fires when enabled. Profile parts and above. Rules shipped: import-boundary, primitive-bypass. Skill snippet: none. Test: RuleTester per form.",
+  "commits": "One PR, separate package and non-package commits (isolated-basalt-ui); conventional, empty scope, no attribution.",
+  "proof": "RuleTester per form; preset smoke is v3-gr-4's.",
+  "acceptance": [
+    "bun test packages/basalt-ui/src/lint/rules/structure passes for these two files",
+    "useChat() fires and useChat({ chat }) does not",
+    "An import of @/components/ui/button fires unless the path is in the ejected list passed as an option",
+    "Each of the 21 forms has an invalid and a valid fixture and a fix token in its message",
+    "The Intl form is disabled in the table with a reason, and enabled in a test it fires",
+    "make check exits 0"
+  ],
+  "out_of_scope": "The other six structure ids (v3-gr-3b), preset generation, enabling the Intl form, any consumer rewrite.",
+  "test_layout": "Fixture trees live in packages/basalt-ui/test/fixtures/**, hidden from root lint, fmt and bun test by v3-test-roots; add no ignore lines."
+}

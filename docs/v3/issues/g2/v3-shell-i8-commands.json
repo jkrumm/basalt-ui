@@ -1,0 +1,36 @@
+{
+  "why": "Shutterflow got 3 of 5 chrome hooks and built the rest beside basalt; commands, palette and native menu come from one declaration with nav items auto-listed.",
+  "what": "src/shell/{commands/**,chrome*,menu-template*}, shell-native layout and scenario, ?chrome in playground __root.tsx. app-shell.tsx, parts/header.tsx, index.ts: at most 30 lines, listed in the PR.",
+  "owns": [
+    "packages/basalt-ui/src/shell/{commands/**,chrome*,menu-template*}",
+    "packages/basalt-ui/src/shell/app-shell.tsx",
+    "packages/basalt-ui/src/shell/parts/header.tsx",
+    "packages/basalt-ui/src/testing/shell-invariants*",
+    "packages/basalt-ui/tests/layout/{shell-native*,fixture/v3/scenarios/shell-native*}",
+    "apps/playground/src/routes/__root.tsx"
+  ],
+  "shared_append_only": ["packages/basalt-ui/src/shell/index.ts"],
+  "must_not_touch": [
+    "packages/basalt-ui/{MIGRATING.md,llms.txt,scripts/contract-pins.json,scripts/check-budgets/**,src/*/contract.ts,src/{ui,tokens,lint}/**,agent/**}",
+    "CHANGELOG.md",
+    "other lanes' folders",
+    "packages/basalt-ui/src/shell/{core,parts}/** except header.tsx",
+    "packages/basalt-ui/src/{page,router}/**"
+  ],
+  "concept": "shell-nav-router#8 I8; #2 rows Commands, Desktop Tauri; #3.5 chrome",
+  "contract": "concept 2 (Commands, Desktop Tauri), 3.5, 8; src/shell/contract.ts. Palette on ui/dialog plus Autocomplete* from ui/combobox (concept: Autocomplete and rank()); no cmdk, no Radix. Frozen: never edit contract.ts or contract-pins.json; signal, then take the reversible default.",
+  "exemplar": "2.x src/commands/{define-commands.ts, shortcut-format.ts, ShortcutsHelp.tsx, shell-bridge.ts}, src/provider/{hotkeys.ts, spotlight-actions.tsx} with tests.",
+  "change": "defineCommands (area, enabled, listed; own chord matcher; duplicate chord throws at define time; bare Enter or Space on a focused control is never swallowed), every nav item auto-lists, built-in shell.toggle-rail on Mod+B, Mod+1..9 from defineNav order (rail, tab bar, palette: one source), CommandPalette on Mod+K with a rank(query, commands) seam and Escape closing only the top layer, Page area focus scope, toMenuTemplate(COMMANDS, {order}) returning plain JSON whose items dispatch the chord into the webview (accelerator display only), chrome 'native-overlay' (chrome.css: --chrome-lead-inset 80, header 52, shell-header drag region data-tauri-drag-region=deep, app-region drag, interactive children no-drag), useWindowChrome(), and the 'native' state of expectShellInvariants. Ships with: guarantee = duplicate-chord define-time error, the cmdk ban (lane I); teach = JSDoc (rule bullets: v3-shell-i10-rules-rows); test = chord, palette and toMenuTemplate golden tests plus the native layout case.",
+  "commits": "One PR, separate package and non-package commits (isolated-basalt-ui); conventional, empty scope, no attribution.",
+  "proof": "Native layout at 1024x700 and 1200x800; palette shot at 1800x1200 and 390x844, dark and light; at most 3 rounds.",
+  "acceptance": [
+    "Duplicate chord in defineCommands throws at define time (test); Enter and Space on a focused button and input still reach the control (keydown test)",
+    "toMenuTemplate output equals the committed golden JSON for a 6-command fixture",
+    "Palette opens on Mod+K, ranks with a custom rank(), Escape closes the palette first and a nested dialog stays",
+    "shell-native layout: header height 52 and lead inset 80 under chrome native-overlay; drag attribute only on shell-header, none on buttons",
+    "Palette marginal gzip (with minus without) is at most 2.0 KB, both builds in the PR",
+    "expectShellInvariants 'native' passes on shell-native; no cmdk, @radix-ui/*, @mantine/* import in owned paths; src/shell/index.ts exports AppShell plus this Issue's 4 symbols only; make check passes",
+    "Mod+N navigates to the Nth defineNav item; a test proves the keys derive from defineNav order"
+  ],
+  "out_of_scope": "Host (Rust) menu code, traffic-light coordinates, Windows and Linux trail inset, rail markup (I5b), other edits to app-shell and header."
+}

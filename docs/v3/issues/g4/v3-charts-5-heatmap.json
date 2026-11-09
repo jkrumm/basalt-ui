@@ -1,0 +1,32 @@
+{
+  "why": "./charts allocates Heatmap and BandStrip (symbols 7 and 8 of 10) and G4 freezes the charts API, so both must sit on the v3 core first. Consumers: argo time-of-day-chart (Heatmap), linewatch availability-strip and link-speed-strip (BandStrip).",
+  "what": "git mv the 2.x Heatmap and BandStrip files into packages/basalt-ui/src/charts/parts/ and port them to the v3 core. One concern: these two kinds.",
+  "owns": [
+    "packages/basalt-ui/src/charts/parts/{heatmap,band-strip,band-fold,band-legend,heatmap-fill}*",
+    "packages/basalt-ui/src/charts/{Heatmap.tsx,BandStrip.tsx,band-fold*,band-legend.test.tsx,band-strip.test.tsx,heatmap-fill*,donut-heatmap.test.tsx}"
+  ],
+  "shared_append_only": ["packages/basalt-ui/src/charts/index.ts", "packages/basalt-ui/llms.txt"],
+  "must_not_touch": [
+    "packages/basalt-ui/src/charts/{core,host*,contract.ts}",
+    "packages/basalt-ui/src/charts/parts/{cartesian,lines,bars,sparkline,mini-bars,chart-card,tooltip,legend}*",
+    "src/charts/{Donut.tsx,donut.module.css*}: untouched",
+    "packages/basalt-ui/src/cards/**, scripts/** (export-surface.json must not change)",
+    "packages/basalt-ui/{MIGRATING.md,migrations/**,agent/**}, CHANGELOG.md"
+  ],
+  "concept": "docs/v3/concepts/charts-cards-kanban.md sections 5, 9 (S5), 10, 11 (foldBands internal to BandStrip; Donut killed).",
+  "contract": "Props: if src/charts/contract.ts declares HeatmapProps and BandStripProps (grep), import them; else keep the types exported from the parts files and raise a factory signal. Never edit contract.ts. S5 failed iff d3-scale is in packages/basalt-ui/package.json peerDependencies (charts-1-core kept it).",
+  "exemplar": "Sibling kinds in src/charts/parts/ (v3-charts-2-kinds, v3-charts-4-chartcard): layout, SSR box, phase handling, test placement.",
+  "change": "git mv to lowercase targets: Heatmap.tsx to parts/heatmap.tsx, BandStrip.tsx to parts/band-strip.tsx, band-fold, heatmap-fill and their tests (band-strip, band-fold, band-legend, heatmap-fill) beside them, the Heatmap cases of donut-heatmap.test.tsx to parts/heatmap.test.tsx. The Donut cases stay in src/charts/donut.test.tsx (the renamed remainder); a later Issue retires Donut. Retarget to the core and the single host; replace Heatmap's scaleQuantize with the engine-scale quantize unless S5 failed. Absent stays distinct from zero; ariaLabel stays required. Export names are unchanged, so export-surface.json must not change; run gen-llms.ts and commit llms.txt only if --check was red. Rules: import-boundary and series-palette (existing). Skill snippet: the JSDoc @example on each kind (feeds llms.txt); references/charts is v3-sk-7-references. Tests: the five moved test files.",
+  "commits": "One package commit in one PR: feat: add Heatmap and BandStrip parts. Conventional, empty scope, no attribution, no breaking footer.",
+  "proof": "bun test over the moved files and make check; no screenshot round.",
+  "acceptance": [
+    "make check exits 0, with scripts/export-surface.json unchanged.",
+    "bun test over parts/{heatmap,band-strip,band-fold,band-legend}*.test.tsx and parts/heatmap-fill.test.ts passes.",
+    "git ls-files packages/basalt-ui/src/charts | grep -E '(^|/)(Heatmap|BandStrip|band-fold|heatmap-fill)[.]' prints only parts/ paths, and donut-heatmap.test.tsx is gone.",
+    "grep -rln \"@tanstack/charts/react\" packages/basalt-ui/src prints only packages/basalt-ui/src/charts/host.tsx.",
+    "If d3-scale is not in packages/basalt-ui/package.json peerDependencies, grep -rn \"from 'd3-scale'\" packages/basalt-ui/src/charts/parts prints nothing.",
+    "grep -nE '#[0-9a-fA-F]{3,8}' on the non-test parts/heatmap* and parts/band-strip* files prints nothing.",
+    "Heatmap and BandStrip stay exported from src/charts/index.ts; Donut.tsx has no diff."
+  ],
+  "out_of_scope": "Byte ceilings (v3-freeze-g4), migration rows (v3-charts-7*), other kinds, Donut retirement, playground routes."
+}

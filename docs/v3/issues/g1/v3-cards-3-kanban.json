@@ -1,0 +1,38 @@
+{
+  "why": "Console's IssueCard and epos's board block need one card with a mandatory non-drag move path (WCAG 2.5.7); no drag engine.",
+  "what": "packages/basalt-ui/src/cards/kanban*, docs/recipes/{board,timeline}.md, apps/playground/src/recipes/{board,timeline}*. Created here; 2.x src/dashboard/board* is a donor for focus and announcement ideas only.",
+  "owns": [
+    "packages/basalt-ui/src/cards/kanban*",
+    "packages/basalt-ui/docs/{kanban-card,recipes/board,recipes/timeline}.md",
+    "apps/playground/src/recipes/{board,timeline}*",
+    "packages/basalt-ui/tests/layout/{,fixture/}cards-kanban*",
+    "packages/basalt-ui/src/core/messages/kanban.ts"
+  ],
+  "shared_append_only": [
+    "packages/basalt-ui/src/cards/index.ts",
+    "packages/basalt-ui/scripts/export-surface.json"
+  ],
+  "must_not_touch": [
+    "packages/basalt-ui/src/{controls,table,page,shell,content,ai,router,data,tokens,css,lint}/**, packages/basalt-ui/agent/**, src/ui/** (read-only: card, badge, meter, menu), other src/charts and src/cards files",
+    "CHANGELOG.md, MIGRATING.md, llms.txt, scripts/check-budgets/**, other areas' migrations files",
+    "every contract.ts and src/core/ports.ts"
+  ],
+  "concept": "charts-cards-kanban#10",
+  "contract": "Frozen: ARCHITECTURE.md, this domain's contract.ts, src/core/ports.ts. Need a change: factory signal, take the reversible default. Read concepts/charts-cards-kanban.md sections 3, 4, 6, 8, 9 and ARCHITECTURE 1, 7. ./cards never imports ./charts. Composites take no className, style, color or padding. Missing contract type: declare locally, signal. Typed SLOTS as the exemplar. Strings: kanban.* via useMessages, defaults in your owned src/core/messages/kanban.ts (qa-i2 seeds it).",
+  "exemplar": "src/cards/stat-card* (frame, phase), src/ui/menu* (p4b), src/ui/virtual-list* (p5c).",
+  "change": "KanbanCard<C> per the concept type: id, title (line-clamp-2 stretched link), href, age (swaps to the menu on hover and focus, always on coarse), meta 1 or 2 strings, chips up to 4, reason, status (if the column does not name it), menu, required move: 'static' | {column,index,columns,onMove,dragging?}. It loads ui/menu lazily on first intent (E6, S6: ui/menu is +47.3 KB against the 16 KB ceiling). 'Move to' menu: Move up, Move down where index allows, one item per other column; one action is a plain button. Recipes: board (~50 lines; columns, CountBadge, one active column by URL field below @regular, polite kanban.moved, focus restored after remount) and timeline (DataPanel, CSS grid, now line) as compiled playground regions in the md files. Rule: none new. Tests: S9 payload, focus, dev assertion for move 'static' under a draggable ancestor.",
+  "commits": "One PR, separate package and non-package commits (isolated-basalt-ui); conventional, empty scope, no attribution.",
+  "proof": "Layout and axe tests (tests/layout/cards-kanban.layout.test.ts) on a fixture hosting the board recipe region at 1800x1200 and 390x844; at 390 one column.",
+  "acceptance": [
+    "S9: drag drop and each menu path produce deep-equal Move payloads, and focus is restored after the card remounts in a virtualised target column",
+    "a card without move fails to type-check; 5 chips and a fifth meta string fail with @ts-expect-error",
+    "keyboard: 2 tab stops (link, menu); Enter opens the menu with Move up, Move down and the other columns",
+    "S6: first open of the Move to menu by pointer and by Enter keeps focus and keyboard with the chunk delayed; check-dist-layering shows ui/menu outside the KanbanCard initial graph",
+    "layout at 1800x1200 and 390x844: age and menu never overlap, the menu is visible on coarse without hover",
+    "playground typecheck compiles both recipe regions; make gen-check is green for both recipe pages",
+    "dev assertion fires once for move 'static' inside a draggable wrapper",
+    "make check exits 0",
+    "git diff --name-only lists only owned paths"
+  ],
+  "out_of_scope": "Drag engine, Board, WIP limits, swimlanes, timeline component, adoption."
+}

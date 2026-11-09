@@ -1,0 +1,31 @@
+{
+  "why": "Eject has a merge cost only if upstream primitives change more often than monthly (docs/v3/ARCHITECTURE.md section 11 F8). Console and epos history (2 and 12 days) is not evidence; upstream history is.",
+  "what": "tools/spikes/upstream-churn/** and docs/v3/spikes/upstream-churn.md. Upstream sources are cloned into the OS temp dir; find the Base UI and base-nova repos via /research, never from memory. Primitive set = the 36 modules of docs/v3/concepts/primitives-distribution.md section 4, mapped through its `Base UI part` column.",
+  "owns": ["tools/spikes/upstream-churn/**", "docs/v3/spikes/upstream-churn.md"],
+  "must_not_touch": [
+    "CHANGELOG.md",
+    "root package.json, bun.lock, .gitignore, .oxlintignore",
+    "docs/v3/{concepts,issues}/**, docs/v3/ARCHITECTURE.md",
+    "other tools/spikes/* folders",
+    "consumer repos (scratch copies live in the OS temp dir)"
+  ],
+  "concept": "docs/v3/ARCHITECTURE.md section 11 F8",
+  "contract": "docs/v3/ARCHITECTURE.md section 11 F8 and section 4 are frozen.",
+  "exemplar": "scripts/evidence/*.ts (one JSON result per run)",
+  "change": "Cover at least 6 complete calendar months ending at the last complete month before the run (record the date). Two series with their own unit: Base UI = releases whose diff touches the part's source directory; base-nova has no releases, so the unit is commits touching that primitive's file. Classify each change as cosmetic (class strings or tokens only) or API or anatomy. `anatomyChangeCount` counts API or anatomy changes; `changePerMonth` of a primitive = that count / months covered. Feeds prim-p8.",
+  "commits": "One non-package commit `chore: spike upstream-churn harness and verdict`, empty scope, no attribution.",
+  "proof": "run.ts JSON plus the verdict doc; run twice, attach both outputs.",
+  "acceptance": [
+    "run.ts JSON has `monthsCovered` (>= 6), per series and primitive `changeCount`, `anatomyChangeCount`, `changePerMonth`, and per series `medianChangesPerMonth`",
+    "The doc names the upstream repos and the commit range used for each series",
+    "`bun tools/spikes/upstream-churn/run.ts` exits 0, prints one JSON object with the keys above (0 = harness ran, not hypothesis held)",
+    "docs/v3/spikes/upstream-churn.md has headings Question, Method, Measurements, Verdict, Then, Affects and the `verdict` lines",
+    "`find tools/spikes/upstream-churn -name '*.test.*' -o -name '*.spec.*'` prints nothing",
+    "`git diff --name-only master...HEAD` lists only `owns` paths",
+    "`grep -rnE 'op://|\\.ts\\.net|192\\.168\\.|ghp_' tools/spikes/upstream-churn docs/v3/spikes/upstream-churn.md` prints nothing",
+    "`make check` passes"
+  ],
+  "out_of_scope": "Implementing merge or sync; editing ceilings.",
+  "envelope": "Harness: tools/spikes/<dir>/ has its own package.json (exact pins); bun.lock and node_modules gitignored there (must_not_touch package.json and bun.lock = repo root only). Passes root oxlint; no *.test.* files; Chrome via the playwright-core pattern of packages/basalt-ui/tests/layout/harness.ts; docs/v3 on master before filing; synthetic data only, private repos as counts and hashed ids.",
+  "verdict": "`F8: PASS|REFUTED`: REFUTED when the median over primitives of `changePerMonth` exceeds 1.0 in either series (raise merge support). `Verdict:` equals the F8 line; run.ts `verdict` the same."
+}

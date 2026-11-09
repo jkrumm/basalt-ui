@@ -1,0 +1,32 @@
+{
+  "why": "DualPanel is deferred, not refused (E5): argo's momentum chart needs two aligned panes; v3 answers with two CartesianChart instances sharing one cursor and one y.gutter, taught as a recipe. Spike S10 decides if that suffices or DualPanel returns as an 11th symbol.",
+  "what": "One recipe (doc plus compiled playground source), its tests and the S10 result. Read-only model: argo apps/dashboard/src/features/strength-tracker/charts/momentum-chart.tsx; the recipe uses synthetic data of that shape; never edit argo.",
+  "owns": [
+    "packages/basalt-ui/docs/recipes/two-pane.md",
+    "apps/playground/src/recipes/two-pane*",
+    "packages/basalt-ui/tests/layout/two-pane.layout.test.ts",
+    "docs/v3/spikes/two-pane.md"
+  ],
+  "must_not_touch": [
+    "packages/basalt-ui/src/**, scripts/**, agent/**",
+    "other docs/recipes/*.md, other layout tests",
+    "apps/playground/src/routes/**",
+    "the argo repo"
+  ],
+  "concept": "docs/v3/concepts/charts-cards-kanban.md sections 9 (S10), 11, 12 (E5); skills-agent-layer.md 3.16 (recipe = // #region recipe:<name> plus at most 15 prose lines; file at most 60 lines).",
+  "contract": "Public ./charts surface only (src/charts/contract.ts): CartesianChart, Lines, chartCursor, y.gutter, cursor. No DualPanel, no engine import.",
+  "exemplar": "v3-cards-3-kanban's board recipe (docs/recipes/board.md, apps/playground/src/recipes/board*): region markers, prose length; its layout test for the harness.",
+  "change": "apps/playground/src/recipes/two-pane.tsx: a price-style pane over a momentum pane, two CartesianChart instances, one shared cursor key, one y.gutter, inside // #region recipe:two-pane. Two tests. (a) two-pane.test.tsx (bun, happy-dom): both panes receive the same cursor key and y.gutter, a cursor set on pane A is readable on pane B through chartCursor, and the test asserts the recorded verdict: it reads the first line of docs/v3/spikes/two-pane.md, which is 'Verdict: PASS' or 'Verdict: FAIL'; on FAIL it asserts the named limit instead, so make check stays green. (b) two-pane.layout.test.ts (Chrome layout suite, in make check) measures both panes' plot x range at 1440, equal within 1 px (S10 criterion 1); happy-dom has no geometry. The doc body is the region; the spike doc has a verdict per criterion. If S10 fails still write the recipe with the limit named, say in the spike doc to reinstate DualPanel (composeViews plus alignX, one symbol), and raise a factory signal; do not add it. Rules: import-boundary, series-palette (existing). Skill snippet: the recipe region (indexed by v3-sk-8-basalt-app).",
+  "commits": "Two commits in one PR, non-package first: (1) feat: add two-pane recipe and S10 spike (apps/playground, docs/v3/spikes); (2) docs: add two-pane recipe doc and layout test. Conventional, empty scope, no attribution.",
+  "proof": "bun test two-pane.test.tsx; make layout; playground typecheck; no screenshot round.",
+  "acceptance": [
+    "make check exits 0.",
+    "two-pane.layout.test.ts passes: equal plot x ranges in both panes, or on a FAIL verdict the named limit (S10 criterion 1).",
+    "two-pane.test.tsx passes: a cursor set on pane A shows on pane B (criterion 2), and the verdict line is asserted.",
+    "grep -c '' packages/basalt-ui/docs/recipes/two-pane.md prints 60 or less.",
+    "grep -c '#region recipe:two-pane' apps/playground/src/recipes/two-pane.tsx prints 1, and the recipes channel make gen-check (v3-sk-8-basalt-app) passes with the doc body equal to that region.",
+    "grep -n 'DualPanel\\|@tanstack/charts' apps/playground/src/recipes/two-pane.tsx prints nothing.",
+    "docs/v3/spikes/two-pane.md has a ^Verdict: (PASS|FAIL) line and states pass or fail for x alignment, tooltip follow, and whether the plot-size DOM scrape (invariant 15) can retire."
+  ],
+  "out_of_scope": "Deleting the DOM scrape or core code, adding DualPanel, editing argo or contract.ts, other recipes, the recipes index."
+}

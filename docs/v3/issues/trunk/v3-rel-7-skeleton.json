@@ -1,0 +1,41 @@
+{
+  "why": "The one designated breaking commit: it opens 3.0.0-next.N and pre-allocates every export, barrel and dependency so package.json stops being a shared hot file. CLI verbs and docs-format follow in v3-rel-7-skeleton-cli.",
+  "what": "Additive skeleton in packages/basalt-ui: stub barrels, exports map, dependencies and peers, extended 2.x gates, regenerated llms.txt. 2.x keeps compiling, nothing is deleted. Size l by exception: about 17 files are 1-3 line stubs; under 600 lines or signal.",
+  "owns": [
+    "packages/basalt-ui/tsup.config.ts",
+    "packages/basalt-ui/tests/required-peers.test.ts",
+    "packages/basalt-ui/scripts/check-budgets.ts",
+    "packages/basalt-ui/scripts/pack-test.sh",
+    "packages/basalt-ui/src/{router,data,page,cards,ai,lint,testing,css}/**",
+    "packages/basalt-ui/src/ui/index.ts",
+    "packages/basalt-ui/src/surfaces.ts",
+    "bun.lock",
+    ".oxlintrc.json",
+    "tsconfig*.json"
+  ],
+  "must_not_touch": [
+    ".github/**",
+    "scripts/**",
+    ".releaserc.json",
+    "commitlint.config.ts",
+    "AGENTS.md",
+    "docs/**",
+    "apps/**",
+    "packages/basalt-ui/{MIGRATING.md,src/cli/**,src/**/contract.ts,src/core/ports.ts}"
+  ],
+  "concept": "docs/v3/concepts/migration-release.md#4.1 step 7",
+  "contract": "docs/v3/concepts/migration-release.md 4.1 step 7 (contract files: v3-rel-7-contracts), 4.3; docs/v3/ARCHITECTURE.md 2, 3 (twelve runtime subpaths, dependencies). Tooling and CSS subpaths: docs/v3/concepts/{static-framework-free,guardrails,quality-contract}.md. Stubs import no peer. Gap: signal, reversible default.",
+  "exemplar": "None: first of its kind. packages/basalt-ui/scripts/check-budgets.ts shows the 2.x gate this extends.",
+  "change": "(1) Stub `export {}` barrels with a JSDoc naming subpath and peers: src/<name>/index.ts for ./router ./data ./page ./cards ./ai ./lint ./testing and ./ui/* (wildcard entry); a ./shell exports key that points at 2.x src/shell/index.tsx until v3-shell-i5 swaps the barrel; ./stylelint src/lint/stylelint/index.ts; ./theme-script src/css/theme-script.ts; ./{tokens,typography,prose,fonts,tailwind}.css src/css/<name>.css. (2) package.json: add those exports, keep every 2.x key; `dependencies` clsx, class-variance-authority, eventsource-parser (npm view, caret); tailwindcss (exact) and @base-ui/react (tilde) as dev deps and optional peers. (3) Extend the 2.x gates: SURFACES rows, export-surface.json, pack-test subpath loop, required-peers (2.x required set unchanged; new peers must be optional), check-budgets `subpaths` 15 -> 30 (`v3 skeleton` comment; consumers: rollhook for CSS, lint, testing; linewatch for ui, page, cards, data, router; ratchets down as 2.x subpaths retire). (4) `files` gains `docs/` so recipes and docs/<export>.md ship. (5) Regenerate llms.txt: bun packages/basalt-ui/scripts/gen-llms.ts. Build stays tsup.",
+  "commits": "First commit `feat:`, packages/basalt-ui/ only, footer exactly `BREAKING CHANGE: opens the v3 line; each 2.x API retires with a migration row`. No other commit carries `!` or that footer. A root tsconfig change is a separate non-package commit. No attribution.",
+  "proof": "make check; pack-test.",
+  "acceptance": [
+    "make check passes (incl. pack-test and gen-llms --check). Reviewed deep.",
+    "jq '.exports|keys' packages/basalt-ui/package.json contains every subpath in change (1) and every 2.x key it had; every target resolves in the packed tarball (pack-test).",
+    "clsx, class-variance-authority and eventsource-parser are under dependencies; each added peer is optional; the 2.x required-peer set is unchanged.",
+    "git log --format=%B origin/master..HEAD | grep -c '^BREAKING CHANGE:' prints 1, no subject contains '!:', no footer line exceeds 100 chars.",
+    "git diff --name-only origin/master...HEAD lists nothing under src/cli, no contract.ts and no MIGRATING.md."
+  ],
+  "out_of_scope": "CLI verbs, docs-format, deleting 2.x sources, Mantine removal, unhot, contracts, fleet.json, docs slimming.",
+  "post_merge": "Orchestrator, after merge on a clean master: make release-dry prints 3.0.0-next.1."
+}

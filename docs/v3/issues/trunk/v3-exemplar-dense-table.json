@@ -1,0 +1,34 @@
+{
+  "why": "The owner's verdict needs the dense static table next to the StatCard: row height, numerals, hairlines and the compact size decide the data-dense feel before DataTable is built.",
+  "what": "ui/table primitive (Table, TableHeader, TableBody, TableRow, TableHead, TableCell, TableCaption; sizes md, compact) and a static dense route at apps/playground/src/routes/table.tsx. New files: src/ui/table*, tests, docs/table.md.",
+  "owns": [
+    "packages/basalt-ui/src/ui/table*",
+    "packages/basalt-ui/docs/table.md",
+    "apps/playground/src/routes/table.tsx"
+  ],
+  "shared_append_only": [
+    "packages/basalt-ui/src/ui/slots*",
+    "packages/basalt-ui/src/ui/*.generated.*"
+  ],
+  "must_not_touch": [
+    "packages/basalt-ui/src/tokens/**",
+    "packages/basalt-ui/src/table/**",
+    "packages/basalt-ui/src/ui/{button,input,field,card,badge}*",
+    "packages/basalt-ui/scripts/gen-ui*",
+    "apps/playground/src/routes/cards.tsx"
+  ],
+  "concept": "docs/v3/concepts/tokens-visual.md#8 S1",
+  "contract": "docs/v3/concepts/primitives-distribution.md row 23 (table: plain, static, no Base UI part, size md compact), docs/v3/concepts/tokens-visual.md 3.6 and 3.7 (row-h, tabular numerals), 8 S1 (owner's eye at 1800x1200 and 390x844, both schemes, real fonts). The Tailwind and Base UI wiring is v3-exemplar-wiring, ordered before this Issue; if it is not on master anyway, signal and stop. Insufficient contract: factory signal, reversible default, PR body says so.",
+  "exemplar": "ui/card from prim-p1 (guard and SLOTS flow); the route layout style of routes/cards.tsx.",
+  "change": "Write the table primitive with data-slot on each part, hairline row separation, tabular numerals, compact row-h, sticky head as a prop-free CSS default; run gen-ui to regenerate SLOTS, the generated data and docs/table.md (never hand-edit them). The route shows 25 realistic rows (money, status dot with word, dates, ids) at both sizes and a phone-width scroll container. Ships with: `// #region dense-table` in the route, tests table.test.tsx (parts, data-slot, SSR with no provider).",
+  "commits": "One PR; package and non-package changes are separate commits (isolated-basalt-ui hook; root package.json, bun.lock, .oxlintrc.json, tests/ may ride with the package commit). Conventional, empty scope, no attribution, never CHANGELOG.md. Package commit (ui/table), then non-package commit (route).",
+  "proof": "bun test packages/basalt-ui/src/ui/table.test.tsx; playground build.",
+  "acceptance": [
+    "bun test packages/basalt-ui/src/ui/table.test.tsx passes: every part has data-slot, md and compact render, SSR renders with no provider.",
+    "bun packages/basalt-ui/scripts/gen-ui.ts --check exits 0 with the table module present.",
+    "routes/table.tsx contains `// #region dense-table`, a size=\"compact\" and a size=\"md\" table, and bun --filter @basalt-ui/playground build exits 0.",
+    "After a build, bun apps/playground/scripts/shots.ts /table writes four PNGs named table--{light,dark}--{1800x1200,390x844}.png (list them in the PR body).",
+    "grep -rn '@mantine' packages/basalt-ui/src/ui/table* returns nothing, and make check passes."
+  ],
+  "out_of_scope": "DataTable, column kinds, selection, virtual, responsive card transform, the owner verdict."
+}

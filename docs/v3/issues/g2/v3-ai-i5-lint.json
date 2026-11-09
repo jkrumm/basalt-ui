@@ -1,0 +1,30 @@
+{
+  "why": "Required contentTrust is a type, but a literal 'trusted' on model text, rehype-raw or MDX evaluate bypass it; the rule shell from gr-3b gets its body.",
+  "what": "packages/basalt-ui/src/lint/rules/structure/untrusted-markdown* and packages/basalt-ui/test/fixtures/lint/untrusted/**. The rule shell comes from v3-gr-3b (absent: signal). The useChat() without chat form lives in import-boundary (v3-gr-3a): this Issue adds only its fixtures, never edits that rule.",
+  "owns": [
+    "packages/basalt-ui/src/lint/rules/structure/untrusted-markdown*",
+    "packages/basalt-ui/test/fixtures/lint/untrusted/**"
+  ],
+  "must_not_touch": [
+    "packages/basalt-ui/src/lint/rules/structure/import-boundary*",
+    "packages/basalt-ui/src/lint/{rule-table*,preset*}",
+    "packages/basalt-ui/src/content/**",
+    "packages/basalt-ui/agent/**",
+    "CHANGELOG.md",
+    "other lanes' folders"
+  ],
+  "concept": "ai-mdx#8 I5; #7 P10; #10 exception 5; guardrails#4 row 13",
+  "contract": "guardrails#4 row 13 as amended by ai-mdx exception 5: contentTrust='trusted' is an error unless the child is a string literal, an import, or the file matches a glob in manifest authoredContent (a list of source-file globs for files that render authored text; vault notes are runtime data with no path); the old 'file imports basalt-ui/ai' clause is gone. Profile parts and up. One id, one fix message per form.",
+  "exemplar": "The shell and RuleTester setup landed by v3-gr-3b; sibling fixtures test/fixtures/lint/structure-rest/** show the offender and pass layout (test/ here follows ARCHITECTURE section 2; the 2.x tree uses tests/).",
+  "change": "Implement the four forms of basalt/untrusted-markdown: dangerouslySetInnerHTML on a non-literal; rehype-raw; @mdx-js/mdx evaluate or run, and next-mdx-remote with evaluate; contentTrust='trusted' with a non-literal child, in any file, unless literal, import or the file matches an authoredContent glob. Fix message names Markdown contentTrust='untrusted' and the trust tiers. Fixtures: one offender per form and three passes. Ships with: guarantee = the rule itself under the hook; teach = the bullet written by v3-shell-i10-rules-rows; test = RuleTester plus fixtures, including the useChat() fixture pair run through the generated preset.",
+  "commits": "One PR, separate package and non-package commits (isolated-basalt-ui); conventional, empty scope, no attribution.",
+  "proof": "RuleTester and the fixture run through basalt-ui lint.",
+  "acceptance": [
+    "Each of the 4 forms has an offender fixture that fails with id basalt/untrusted-markdown and the shared fix message",
+    "Literal child, imported child and a file matching an authoredContent glob (manifest fixture) pass; a prop-typed child in a file importing only basalt-ui/content fails",
+    "Fixture useChat() without chat fails and useChat({ chat }) passes through the preset; if import-boundary lacks the unlessCallHas 'chat' guard the lead signals and does not edit it",
+    "No 'basalt-ui/ai' import is required for any form to fire",
+    "make check passes"
+  ],
+  "out_of_scope": "import-boundary and its useChat row (gr-3a), the codemod that inserts contentTrust (mig-codemod), partView lint, preset regeneration."
+}

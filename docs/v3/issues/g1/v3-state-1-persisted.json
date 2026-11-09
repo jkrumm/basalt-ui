@@ -1,0 +1,36 @@
+{
+  "why": "Every device-lane value (rail, aside, density, drafts, table views) needs one keyed, SSR-safe store over a pluggable StorageLike, with its stored identity frozen.",
+  "what": "packages/basalt-ui/src/core/persisted*, debounce*, form-dirty* (tests and golden fixtures colocated). Created from the 2.x donors; StorageLike is already in src/core/ports.ts.",
+  "owns": [
+    "packages/basalt-ui/src/core/persisted*",
+    "packages/basalt-ui/src/core/debounce*",
+    "packages/basalt-ui/src/core/form-dirty*",
+    "packages/basalt-ui/docs/persisted.md"
+  ],
+  "shared_append_only": [
+    "packages/basalt-ui/src/index.ts",
+    "packages/basalt-ui/scripts/export-surface.json"
+  ],
+  "must_not_touch": [
+    "packages/basalt-ui/src/{ui,tokens,css,lint,shell,cards,charts,table,content,ai,page,data,controls,router}/**, packages/basalt-ui/agent/**",
+    "CHANGELOG.md, MIGRATING.md, llms.txt, scripts/check-budgets/**, other areas' migrations files",
+    "every contract.ts and src/core/ports.ts"
+  ],
+  "concept": "state-persistence-forms#6",
+  "contract": "Frozen: ARCHITECTURE.md, src/core/ports.ts. Need a change: factory signal, take the reversible default. Read concepts/state-persistence-forms.md sections 5, 6, 9 and ARCHITECTURE sections 1 and 3. Frozen identity: envelope basalt:<id> {v,value}; the raw basalt:scheme key is not touched here.",
+  "exemplar": "2.x donors, read in the tree: src/state/persisted.ts, persisted.test.ts, src/query-client.ts, src/unwrap.ts.",
+  "change": "Keyed persisted<T>(key,{version,initial,schema?,migrate?,storage?}) returning {use,get,set,subscribe,isSet,reset} (ExternalStore shape, cached per namespaced key; a second definition with another version throws in dev), persisted.setStorage(s) once before the first read, persisted.clearOwner(owner) removing basalt:<owner>:* and basalt:form:<owner>:*. StorageLike is sync only. debounce: trailing with flushOnUnmount (and an optional maxWait for live-3). form-dirty: internal isPristine, structural compare to options.defaultValues. Copy 2.x src/state/persisted.test.ts to src/core/persisted.test.ts (original stays), imports and createPersistedState call sites adapted to persisted<T>(key,{...}), assertions untouched; commit it red (inv 1-6, 18-22), then add keyed identity, setStorage, clearOwner cases. Rule: none. Skill: generated docs/persisted.md. Tests: ported suite, SSR (renderToString, hydrateRoot, counted onRecoverableError, negative control, throwing localStorage getter), golden fixtures.",
+  "commits": "One PR, separate package and non-package commits (isolated-basalt-ui); conventional, empty scope, no attribution.",
+  "proof": "bun test over the owned files. Golden fixtures are synthesized from stored shapes (keys, envelopes) in ~/SourceRoot/argo/apps/dashboard/src/lib/window-stores.ts, queries/gym.ts, ~/SourceRoot/linewatch/web/src/lib/dashboard-store.ts and shutterflow; no file content copied.",
+  "acceptance": [
+    "the ported persisted.test.ts passes with every 2.x assertion unchanged (only imports and call sites adapted) and was committed red first (git log shows the test commit first)",
+    "golden fixtures of argo, linewatch and shutterflow keys decode through persisted and re-encode byte-identically; grep of the fixtures for @, http, 100. is empty",
+    "SSR: renderToString plus hydrateRoot give zero recoverable errors, the negative control raises, a throwing localStorage getter does not throw during render",
+    "persisted.setStorage with an in-memory StorageLike routes reads and writes; clearOwner removes only that owner's keys",
+    "the same key defined twice with different versions throws in dev, not under NODE_ENV=production",
+    "src/core imports nothing but react (check-dist-layering passes)",
+    "make check exits 0",
+    "git diff --name-only lists only owned paths"
+  ],
+  "out_of_scope": "createSyncedState, notify, useFormDraft, migration rows (adopt-unenveloped, read-legacy), URL-field persist removal, argo raw timer keys."
+}

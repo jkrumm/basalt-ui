@@ -1,0 +1,28 @@
+{
+  "repo": "shutterflow",
+  "why": "The gallery imports Mantine in 13 files for provider, theme and tokens only; moving it first proves the 1.x floor rows on a small app without touching the desktop app.",
+  "what": "shutterflow repo (consumer_repo): apps/gallery/**, e2e/gallery/**. App-scoped install: apps/gallery pins basalt-ui 3.0.0-next.N while the root stays on 1.40.3 until desktop cuts over. N is floors.G1.next in ~/SourceRoot/basalt-ui/scripts/fleet.json; before starting run `npm view basalt-ui@3.0.0-next.N version`: if it prints nothing, stop and file a signal (the release is the owner's make release).",
+  "owns": ["apps/gallery/**", "e2e/gallery/**", "bun.lock"],
+  "must_not_touch": [
+    "apps/desktop/**, apps/share/**, apps/key-broker/**, apps/origin-gateway/**, root package.json and Makefile, src-tauri",
+    "any basalt-ui checkout (no hand edits upstream)"
+  ],
+  "concept": "migration-release#6.4",
+  "contract": "Read in the basalt-ui checkout (~/SourceRoot/basalt-ui): concepts/migration-release.md sections 6.1 and 6.4; migrations/1.x rows from v3-mig-rows-1x. Declare \"basalt\": {\"sibling\": true} in apps/gallery/package.json; own .basalt/manifest.json in apps/gallery. share-deploy.yml ships it on push.",
+  "exemplar": "~/SourceRoot/basalt-ui/packages/basalt-ui/test/fixtures (the parts-profile and linewatch-shaped fixtures) and ~/SourceRoot/basalt-ui/apps/playground.",
+  "change": "Run basalt-ui migrate --from 1.40.3 --profile parts in apps/gallery, then replace @mantine/core and hooks (provider, theme, tokens in 13 files) with BasaltProvider, tokens.css and ui/* primitives. Re-key e2e/gallery/sharing-ux.spec.ts from --mantine-color-red-5 to the v3 token. Rule: generated oxlint preset scoped to apps/gallery. Skill: none (root managed layer untouched). Tests: the gallery bun tests and the e2e spec.",
+  "commits": "Shutterflow's convention: conventional with scope (feat(gallery): ...), no attribution.",
+  "proof": "Gate (hygiene.check is false): bun run --filter @shutterflow/gallery typecheck, test and build, plus make check-changed; make verify proves the share deploy after merge.",
+  "acceptance": [
+    "git diff --name-only origin/master...HEAD lists only apps/gallery/**, e2e/gallery/** and bun.lock",
+    "bun run --filter @shutterflow/gallery typecheck, test and build exit 0",
+    "make check-changed exits 0 and prints the gallery package as selected",
+    "grep -rn '@mantine' apps/gallery/src apps/gallery/package.json is empty and the root package.json still pins basalt-ui 1.40.3",
+    "basalt-ui sync --check, doctor and lint exit 0 from apps/gallery's local bin; waivers at or under the fleet.json row ceiling",
+    "grep -rni mantine e2e/gallery is empty and the repo's e2e typecheck passes; running the spec needs the lab machine (v3-sf-cutover), which the PR states rather than claims",
+    "git log --format=%s origin/master..HEAD matches ^(feat|fix|chore|refactor|test)\\(gallery\\): (shutterflow's scoped convention)",
+    "make verify passes after the merge deployed"
+  ],
+  "out_of_scope": "apps/desktop, root basalt-ui pin, Makefile and src-tauri, baselines regeneration for desktop, G2 symbols.",
+  "consumer_repo": "shutterflow"
+}

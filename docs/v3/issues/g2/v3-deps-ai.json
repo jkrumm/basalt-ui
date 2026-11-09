@@ -1,0 +1,18 @@
+{
+  "why": "The AI lane Issues each added dev dependencies to package.json and bun.lock in parallel. One Issue adds them before the lane fans out.",
+  "what": "packages/basalt-ui/package.json, apps/playground/package.json and bun.lock: dev dependencies for the AI recipes and MDX, plus the spike's scroller.",
+  "owns": ["packages/basalt-ui/package.json", "apps/playground/package.json", "bun.lock"],
+  "must_not_touch": ["packages/basalt-ui/src/**", "apps/playground/src/**", "CHANGELOG.md"],
+  "concept": "ai-mdx#2; ai-mdx#11 P12",
+  "contract": "docs/v3/concepts/ai-mdx.md 2 (devDependencies, never src imports: ai, @ai-sdk/react) and docs/v3/spikes/scroller.md (P12 winner). Versions from the concept, confirmed with npm view.",
+  "exemplar": "v3-deps-w2.",
+  "change": "packages/basalt-ui devDependencies: ai 7.0.166, @ai-sdk/react 4.0.170, zod 4.6.7. apps/playground devDependencies: ai, @ai-sdk/react, zod (same versions), @mdx-js/mdx, and the scroller the spike chose. bun install. v3-ai-i3, i4, i7, i8, i9 and i10 use these pins and do not edit these files. Ships with: no rule; test = make check.",
+  "commits": "One chore commit for the package.json files and bun.lock; conventional, empty scope, no attribution.",
+  "proof": "bun install --frozen-lockfile; make check.",
+  "acceptance": [
+    "jq -r '.devDependencies.ai, .devDependencies[\"@ai-sdk/react\"]' packages/basalt-ui/package.json prints the concept's two versions",
+    "rg -n \"from 'ai'|@ai-sdk/react\" packages/basalt-ui/src finds nothing",
+    "bun install --frozen-lockfile and make check exit 0"
+  ],
+  "out_of_scope": "Any source change; the recipes themselves."
+}

@@ -1,0 +1,34 @@
+{
+  "why": "The 2.x CLI invariants were each paid for by a defect (a skipped check read as passed, a bunx shim, a zero-file scan). They must be pinned as tests before the v3 CLI is built so the rewrite cannot quietly lose one.",
+  "what": "New: packages/basalt-ui/tests/cli/invariants/** (tests only). Ports of src/cli/{help,toolchain-wiring,placement-engine,tarball-parity,reviewer-agent,shipped-versions}.test.ts and scripts/skill-snippets.test.ts, re-specified against the rel-7 CLI skeleton (originals may be on branch v2).",
+  "owns": ["packages/basalt-ui/tests/cli/invariants/**"],
+  "must_not_touch": [
+    "CHANGELOG.md",
+    "packages/basalt-ui/{MIGRATING.md,llms.txt}",
+    "packages/basalt-ui/scripts/check-budgets/**",
+    "**/contract.ts",
+    "packages/basalt-ui/src/{ui,shell}/**",
+    "apps/marketing/**",
+    "packages/basalt-ui/src/charts/**",
+    "packages/basalt-ui/src/lint/rules/**",
+    "packages/basalt-ui/src/lint/preset*",
+    "packages/basalt-ui/src/lint/rule-table*",
+    "packages/basalt-ui/src/tokens/**",
+    "packages/basalt-ui/src/cli/**",
+    "packages/basalt-ui/agent/**"
+  ],
+  "concept": "skills-agent-layer#10 issue 1",
+  "contract": "docs/v3/concepts/skills-agent-layer.md section 6 (invariants table; 25-27 are lint tests carried by the gr rows, 9-11 and 21-24 dropped on purpose) and section 8 (Invariants row). Verbs and flags: src/cli/index.ts as the skeleton left it.",
+  "exemplar": "packages/basalt-ui/src/cli/placement-engine.test.ts and src/cli/help.test.ts (2.x invariant test style).",
+  "change": "One test per carried invariant; every title starts 'inv <N>:' (N from section 6). Discipline : 1 unknown flag exits 1 and --help mutates nothing; 2 a skipped check is not a pass; 3 one project resolver (BASALT_CWD, cwd, declared roots); 4 a scan proves more than 0 files; 5 profile declared, never inferred; 6 local bin, never bunx except init; 7 bin named like the package; 8 sync never creates an install. Placement: 12 block splice (duplicate markers error, absent appends); 13 block never CLAUDE.md; 14 skills and rules at the git or workspace root, named in the block; 15 paths: from declared roots; 16 tarball parity. Teaching loop (reviewer-agent and shot tests): 31 fresh --out; 32 scale includes the app's steps; 33 sheet-read; 34 rubric items exist; 35 every state anchor declares or is excluded; 39 one calibrated bar; 40 pre-round five-defect list. Two unnumbered carried guards: 'inv x-versions:' (shipped versions) and 'inv x-snippets:' (snippets compile). Tests the skeleton cannot yet pass are it.failing with 'flips in: <key>': 1,4 v3-sk-4-hook-shim; 2 v3-sk-3a-doctor; 3,8,12-16 v3-sk-2-sync; 5,6,7 v3-sk-3-init-doctor; 31-33,35 v3-sk-10-shot; 34,39,40 v3-sk-9-reviewer; x-versions, x-snippets v3-sk-5-rules. The owner removes .failing in its own change. Verify it.failing exists in Bun 1.4.3. Rule: none. Skill snippet: none.",
+  "commits": "One PR, separate package and non-package commits (isolated-basalt-ui); conventional, empty scope, no attribution.",
+  "proof": "bun test of the folder exits 0 with the failing registrations counted.",
+  "acceptance": [
+    "bun test packages/basalt-ui/tests/cli/invariants exits 0",
+    "For each N in 1-8, 12-16, 31-35, 39, 40 a test title starts 'inv N:', plus 'inv x-versions:' and 'inv x-snippets:' (an rg loop pasted in the PR)",
+    "Every it.failing carries a 'flips in:' comment naming a key that exists in docs/v3/issues/index.json and is one of the owners above (grep proves it)",
+    "The PR body lists, per invariant, passing now versus registered failing",
+    "make check exits 0"
+  ],
+  "out_of_scope": "Implementing any invariant, the dropped ones (three-way prune, normalised hash, grace ladder), editing src/cli."
+}

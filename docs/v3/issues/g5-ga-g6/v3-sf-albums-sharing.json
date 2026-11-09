@@ -1,0 +1,32 @@
+{
+  "repo": "shutterflow",
+  "why": "Shutterflow desktop-v3 is built screen by screen next to apps/desktop; albums is 31 files and 6.0k lines, so share cards, shares and publish status are their own Issue. Gated by the G3 forms freeze.",
+  "what": "The album sharing parts: share card, shares section, publish status, sharing model and cloud events.",
+  "owns": [
+    "apps/desktop-v3/src/features/albums/{ShareCard,SharesSection,PublishStatus,sharing-model,cloud-events}*"
+  ],
+  "must_not_touch": [
+    "apps/desktop/** (stays shippable)",
+    "apps/desktop/src-tauri/**",
+    "crates/**",
+    "e2e/desktop/visual/**/*.png",
+    "other Issues' dirs under apps/desktop-v3/src",
+    "apps/desktop-v3/package.json, bun.lock",
+    "apps/desktop-v3/src/features/albums/stats/** (v3-sf-albums-stats)",
+    "apps/desktop-v3/src/features/albums/** except {ShareCard,SharesSection,PublishStatus,sharing-model,cloud-events}* (the other albums Issues)"
+  ],
+  "concept": "migration-release#6.4",
+  "contract": "Read basalt-ui docs/v3/concepts/migration-release.md 6.4, shutterflow docs/decisions/0028-visual-regression-gate.md (no bulk baseline regeneration) and AGENTS.md safety rule 1 (photo inputs are the owner's; never read /Volumes). basalt-ui is pinned exact next.N (the gate's floor, v3-sf-bump in `after`): its docs/recipes and llms.txt are the API truth; never edit package.json or bun.lock.",
+  "exemplar": "The landed v3-sf-shell frame (apps/desktop-v3/src/shell) and the playground exemplars in the basalt-ui repo; old code under apps/desktop/src/features/.",
+  "change": "Port ShareCard and SharesSection (shares nested inside an album, not a top-level item), PublishStatus, cloud-events; sharing-model and its test move unchanged apart from imports. Share-link copy uses notify; destructive actions confirm through ui/dialog. Rule: the app preset passes without new waivers. Skill snippet: none; recipes: the installed docs/recipes.",
+  "commits": "Shutterflow ships by push to master: conventional, one concern each, no attribution. Never edit node_modules or basalt-ui; a gap is a `friction:` line in the PR body.",
+  "proof": "hygiene.check is false: the factory cannot run `make check` or `make e2e`. Gate: the app's typecheck, test and build; state e2e and visual runs not-run (owner-run at cutover). `make check-changed` runs only without a package.json, bun.lock or Makefile change (else `make check`): state it not-run then.",
+  "acceptance": [
+    "`bun run --filter @shutterflow/desktop-v3 typecheck`, `... test` and `... build` exit 0",
+    "`make check-changed` exits 0 (not-run if package.json, bun.lock or the Makefile changed: `make check` then)",
+    "`rg -n -i '@mantine|@visx|mantine-' apps/desktop-v3/src/features/albums/{ShareCard,SharesSection,PublishStatus,sharing-model,cloud-events}*` returns no match",
+    "`bun scripts/check-port.ts apps/desktop/src/features/albums apps/desktop-v3/src/features/albums --only 'sharing-model*'` exits 0 (tests only; changed lines carry `// port:` markers)",
+    "a DOM test through renderApp: copying a share link calls notify once and a revoke asks for confirmation before it calls the API"
+  ],
+  "out_of_scope": "Other screens, shell code, apps/desktop, e2e files (v3-sf-e2e-rekey), src-tauri."
+}

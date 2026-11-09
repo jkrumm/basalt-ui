@@ -1,0 +1,30 @@
+{
+  "why": "shutterflow (1.40.3, three packages) and image-gateway (1.41.0) skip 2.x. Their rows fold the 2.0 and 3.0 steps so each regenerates baselines once. This is a floor for those two repos, not a general 1.x migrator.",
+  "what": "New: packages/basalt-ui/migrations/areas/legacy-1x.json, ONE area file (area 'legacy-1x', file-level from '>=1.40 <2', to '3.0.0', profiles all) in the shape v3-unhot-migrating-llms landed, merged by release-migrating like the other areas. If that script holds a fixed area list, add legacy-1x there (the one allowed edit outside owns, with its test; the unhot '15 area files' check then reads 16). Census input, read-only: ts, tsx and css imports of basalt-ui in ~/SourceRoot/shutterflow (root, apps/desktop, apps/gallery; its own census says 67 symbols) and ~/SourceRoot/image-gateway (app).",
+  "owns": ["packages/basalt-ui/migrations/areas/legacy-1x.json"],
+  "must_not_touch": [
+    "CHANGELOG.md",
+    "packages/basalt-ui/{MIGRATING.md,llms.txt}",
+    "packages/basalt-ui/scripts/check-budgets/**",
+    "**/contract.ts",
+    "packages/basalt-ui/src/{ui,shell}/**",
+    "apps/marketing/**",
+    "packages/basalt-ui/src/**",
+    "tools/**",
+    "packages/basalt-ui/migrations/areas/!(legacy-1x).json"
+  ],
+  "concept": "migration-release#3.2",
+  "contract": "docs/v3/concepts/migration-release.md section 3.2 (from keeps a 1.x floor, symbols those two repos import only) and section 12 (1.x direct row). Destinations come from docs/v3/ARCHITECTURE.md section 3 (published subpaths and value symbols).",
+  "exemplar": "packages/basalt-ui/migrations/areas/tokens.json from v3-tok-t5-rows (row shape and validator).",
+  "change": "One row per distinct basalt-ui symbol the two repos import: kind rename, merge, removed (with the recipe or replacement named) or manual, codemod 'imports' where the mapping is a pure rename, verify 'ast'. The file's from range is the 1.x floor. Record the census command and symbol counts in the PR body. Rule: none. Skill snippet: none. Test: the mechanical coverage run below.",
+  "commits": "One PR, separate package and non-package commits (isolated-basalt-ui); conventional, empty scope, no attribution.",
+  "proof": "Scratch shallow clones of the two repos; never modify them.",
+  "acceptance": [
+    "basalt-ui migrate --from 1.40.3 --profile app --json in a scratch copy of shutterflow reports an empty unmapped list",
+    "The same with --from 1.41.0 in a scratch copy of image-gateway reports an empty unmapped list",
+    "--check still exits 1 in both (the apps are not migrated yet); the PR body states the removed-symbol counts",
+    "Every row validates: bun packages/basalt-ui/scripts/release-migrating.ts --check exits 0",
+    "make check exits 0"
+  ],
+  "out_of_scope": "Token rows, 2.x-only rows for other repos, codemod execution, editing either consumer."
+}

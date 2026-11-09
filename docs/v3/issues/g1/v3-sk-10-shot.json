@@ -1,0 +1,30 @@
+{
+  "why": "shot reads Mantine selectors and hard-coded viewports; it must read public data-slots and declared viewports, stay a floor and shrink under 1,800 lines.",
+  "what": "packages/basalt-ui/src/cli/shot/**. Exists in 2.x (3,047 non-test lines in board.ts, capture.ts, detect.ts, measure.ts, playwright.ts, real-data.ts, serve.ts, index.ts, types.ts) and is re-pointed in place here.",
+  "owns": ["packages/basalt-ui/src/cli/shot/**"],
+  "must_not_touch": [
+    "packages/basalt-ui/src/{ui,page,shell,cards,charts,controls,table,content,ai,router,data,tokens,css,lint}/**",
+    "packages/basalt-ui/agent/rules/** and agent/templates/AGENTS-block* (sk-5, closed; the FOLD branch may move tagged bullets)",
+    "packages/basalt-ui/src/cli/{init,sync,doctor,lint,eject}/**, the preset contents",
+    "packages/basalt-ui/agent/**",
+    "CHANGELOG.md, MIGRATING.md, llms.txt, scripts/check-budgets/**, other areas' migrations files",
+    "every contract.ts and src/core/ports.ts"
+  ],
+  "concept": "skills-agent-layer#10 issue 10",
+  "contract": "Frozen: ARCHITECTURE.md, this domain's contract.ts, src/core/ports.ts. Need a change: factory signal, take the reversible default. Read concepts/skills-agent-layer.md sections 1, 4.2, 5, 8, 9, 10. Skills teach, rules guarantee: no prohibition lives only in a skill. Section 5 shot and detect rows; S4. shot serves a built bundle, never a dev server.",
+  "exemplar": "2.x src/cli/shot/*.test.ts (shot, detect, harness, capture-hidden-scroll) to port first.",
+  "change": "Anchors from typed SLOTS (stat-card, chart-card, data-table, section, card, board) with optional data-shot, data-shot-states, data-shot-absent on app wrappers. States probe: reload with ?shot-state=<phase> for anchors that declare data-phase; states-ignored fires when the crop equals the ready crop. detect stays a floor: scale membership, font sizes at most 3, empty ratio, overlap, hit floor, document overflow, state crop identical; contrast leaves (axe owns it). Scale reader from --vx-* and the resolved @theme, scheme seeded via data-theme, viewports from the manifest, fresh --out per round, .basalt/last-shot.json written (out dir, round). Real-data proxy and --auto-anchors stay on notice. Delete first: the Mantine scale reader and selectors (capture.ts readScaleInPage and groupScale, the mantine branches in board.ts) and the contrast leaves in detect.ts, measure.ts and types.ts (axe owns contrast); then whatever the S4 run proves unused, never real-data.ts or --auto-anchors (kept on notice). If still above 1,800 lines, signal; the cap is not raised. Rule: none. Skill: generated docs/shot.md. Tests: ported suites plus S4.",
+  "commits": "One PR, separate package and non-package commits (isolated-basalt-ui); conventional, empty scope, no attribution.",
+  "proof": "bun test src/cli/shot; S4 run on the playground exemplar routes and the six seeded boards from v3-sk-9b-calibrate (this Issue is after it); argo only through the F2 spike's port, recorded as deferred if absent.",
+  "acceptance": [
+    "wc -l over src/cli/shot non-test files is at most 1,800",
+    "grep -ri mantine src/cli/shot is empty and detect has no contrast check",
+    "ported shot, detect, harness and hidden-scroll tests pass",
+    "S4: shot on the playground finds the slot anchors with no consumer attribute; a seeded board whose loading crop equals its ready crop reports states-ignored",
+    "a desktop-only manifest captures no mobile viewport and does not fail",
+    "the six seeds from sk-9b keep their expected failures under shot (this Issue is after sk-9b); the argo leg is recorded deferred when the F2 port is absent",
+    "make check exits 0",
+    "git diff --name-only lists only owned paths"
+  ],
+  "out_of_scope": "Reviewer, Stop-hook, hook shim, argo v3 app (not built yet), a quality score, new CLI verbs."
+}

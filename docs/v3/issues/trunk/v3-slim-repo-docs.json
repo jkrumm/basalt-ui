@@ -1,0 +1,44 @@
+{
+  "why": "Superseded specs and 126 wave files tell agents the Mantine story; git history is the archive (docs/v3/BRIEF.md). The friction ledger feeds the argo disposition acceptance.",
+  "what": "Delete the listed docs on master (v2 and history keep them), move argo-friction.md, retarget AGENTS.md citations and the precedence chain, remove the gate and the Makefile and .gitignore paths that read deleted files. New dir: docs/v3/acceptance/.",
+  "owns": [
+    "docs/waves/**",
+    "docs/archive/**",
+    "docs/MANTINE-THEMING.md",
+    "docs/FRAMEWORK-FREE.md",
+    "docs/ASIDE-SPEC.md",
+    "docs/CONTROLS-SPEC.md",
+    "docs/STATUS.md",
+    "docs/MATURATION-LEDGER.md",
+    "docs/V2-SPEC.md",
+    "docs/v3/acceptance/**",
+    "AGENTS.md",
+    "Makefile",
+    ".gitignore",
+    "scripts/check-chart-inventory*",
+    "scripts/evidence/paths.ts"
+  ],
+  "must_not_touch": [
+    "docs/DESIGN-CORE.md",
+    "docs/v3/ARCHITECTURE.md",
+    "docs/v3/concepts/**",
+    "packages/basalt-ui/**",
+    "scripts/evidence/** except paths.ts and index.ts",
+    ".claude/**"
+  ],
+  "concept": "docs/v3/concepts/migration-release.md#11",
+  "contract": "docs/v3/concepts/migration-release.md section 11 (what moves and dies). git mv docs/waves/argo-friction.md docs/v3/acceptance/argo-friction.md. Precedence chain in AGENTS.md (a judgement made here, keeping today's top tiers): shipped rules in /.claude/rules/ > packages/basalt-ui/MAINTAINING.md > AGENTS.md > docs/v3/ARCHITECTURE.md and its concepts > docs/DESIGN-CORE.md; drop the V2-SPEC clause. DESIGN-CORE.md is rewritten by the orchestrator at the v3 cut (docs/v3/concepts/tokens-visual.md lists the lines); no Issue owns it and this row leaves it alone. Insufficient contract: factory signal, reversible default, PR body says so.",
+  "exemplar": "AGENTS.md 'Precedence (this repo)' and 'Working Instructions' sections are the citations to retarget.",
+  "change": "Delete and move as listed. scripts/check-chart-inventory.ts and its test read docs/waves/v2-chart-inventory.md and run in make check: delete both and the Makefile line. `make evidence` and `make compare` write into docs/waves/{evidence,design-parity}: keep both targets, retarget the Makefile comments (lines ~55, ~63), the summary dir in scripts/evidence/index.ts and PARITY_DIR in scripts/evidence/paths.ts to gitignored .evidence/ and .design-parity/ paths, and fix the .gitignore comments; run bun test scripts/evidence and signal if a test needs more files than that. Retarget AGENTS.md citations. Ships with: no rule, no skill snippet; the proof is make check green without the deleted files. Add one line to AGENTS.md lead facts: paths in a facts file's `shared_append_only` are shared aggregators; edit only your own lines; on a rebase conflict keep both sides or re-run the named generator (export-surface --update, gen-ui, bun install); an Issue without the path never edits it.",
+  "commits": "Non-package only: one `docs:` commit for the deletions and AGENTS.md, one `chore:` for the check-chart-inventory, Makefile, .gitignore and scripts/evidence edits. No attribution.",
+  "proof": "make check; reviewed none (docs) but the Makefile and script removal is read in the diff.",
+  "acceptance": [
+    "git ls-files docs | grep -vE '^docs/(v3/|DESIGN-CORE.md)' returns nothing.",
+    "docs/v3/acceptance/argo-friction.md exists and docs/waves/argo-friction.md does not.",
+    "grep -nE 'docs/(waves|archive|V2-SPEC|STATUS|MATURATION-LEDGER|CONTROLS-SPEC|ASIDE-SPEC|MANTINE-THEMING|FRAMEWORK-FREE)' AGENTS.md Makefile .gitignore scripts/evidence/paths.ts scripts/evidence/index.ts returns nothing.",
+    "test ! -e scripts/check-chart-inventory.ts, Makefile has no check-chart-inventory, and make -n evidence LABEL=x prints a command.",
+    "bun test scripts/evidence passes and make check passes.",
+    "grep -c shared_append_only AGENTS.md is at least 1"
+  ],
+  "out_of_scope": "Rewriting DESIGN-CORE.md, README links, comments in packages/** and scripts/evidence/** that cite deleted paths, deleting .claude/**."
+}

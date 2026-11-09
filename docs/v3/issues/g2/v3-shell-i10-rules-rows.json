@@ -1,0 +1,31 @@
+{
+  "why": "Every g2 Issue teaches through rule bullets and drops 2.x symbols but must not edit agent/rules or the shell rows; sk-5 wants every bullet to end in a lint id or type name, so one late Issue writes them against ids that now exist.",
+  "what": "packages/basalt-ui/agent/rules/basalt-page.md (bullets for nav, page, page kit, frame, rail, tab bar, inner nav, commands, router defaults, Markdown, Prose) and migrations/areas/shell.json.",
+  "owns": [
+    "packages/basalt-ui/agent/rules/basalt-page.md",
+    "packages/basalt-ui/migrations/areas/shell.json"
+  ],
+  "must_not_touch": [
+    "packages/basalt-ui/agent/rules/{basalt-tokens,basalt-ui,basalt-state,basalt-charts}.md",
+    "packages/basalt-ui/agent/templates/**",
+    "packages/basalt-ui/src/**",
+    "packages/basalt-ui/migrations/** except areas/shell.json",
+    "CHANGELOG.md",
+    "other lanes' folders"
+  ],
+  "concept": "skills-agent-layer#4.2, #6 Rules row; shell-nav-router#8 migration rows; migration-release#3.2",
+  "contract": "skills-agent-layer 4.2 and 6 (bullets end in [lint:<id>] or [type:<name>], an unguarded one sits under 'not guarded:', no hex or pixel constants, 230 lines across five files); shell-nav-router 8 ('Each never' and 'Migration rows' tables); migrations/areas/<area>.json is the seed v3-unhot-migrating-llms landed; ids from src/lint/rule-table.ts.",
+  "exemplar": "basalt-page.md as v3-sk-5-rules wrote it; the JSDoc @example blocks of the merged g2 Issues are the source text; migrations/areas/tokens.json for the row format.",
+  "change": "Append one bullet per 'never' row a merged g2 Issue guards (nav exactness, one PageBar, aside title and action tuple, in-body h1 [lint:primitive-bypass], viewport class [lint:viewport-keyed], raw scroller [lint:raw-scroll], CardGrid closed min, InnerNav replace field, app CSS on data-slot, duplicate chord, literal search link [lint:router-search], contentTrust on model text [lint:untrusted-markdown]); merge bullets to stay in the line budget. shell.json gets the 15 rows of the concept 8 table, ids shell-r01 to shell-r15 in table order. A C row of kind rename is codemod 'imports' (run by tools/migrate-v3/run.ts imports); a C row of kind replace or removed (PageTitle, toggleSidebar, basalt.shell:false) is written manual:true and noted in the PR as a deviation from concept 8; the behavior row needs no edit.",
+  "commits": "Separate commits for package and non-package paths in one PR (isolated-basalt-ui); conventional, empty scope, no attribution; no CHANGELOG.md edit.",
+  "proof": "rg, wc and the id-diff output pasted in the PR.",
+  "acceptance": [
+    "wc -l packages/basalt-ui/agent/rules/*.md totals at most 230 and the directory still lists exactly five files",
+    "rg -n '^- ' packages/basalt-ui/agent/rules | rg -v '\\[(lint|type):[a-z0-9-]+\\]\\s*$' | rg -v 'not guarded' prints nothing; every [lint:<id>] is a key of RULES in src/lint/rule-table.ts (bun -e pasted)",
+    "rg -i 'mantine|#[0-9a-f]{3,6}\\b|[0-9]+px' packages/basalt-ui/agent/rules prints nothing",
+    "shell.json has as many rows as the concept 8 table (15), ids shell-r01..shell-r15 unique; a script diffing them against the table is pasted in the PR",
+    "bun packages/basalt-ui/scripts/release-migrating.ts --check passes; every codemod:'imports' row is kind rename; basalt-ui migrate --check on a fixture importing BasaltShell names it",
+    "make check passes (check-agent-doc-drift included)"
+  ],
+  "out_of_scope": "The other four rule files and the AGENTS block (v3-sk-5), skills, any source change, other areas' rows."
+}

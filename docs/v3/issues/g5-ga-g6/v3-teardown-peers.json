@@ -1,0 +1,34 @@
+{
+  "why": "BRIEF: epos rejected basalt over non-optional peers, and ARCHITECTURE 148 promises zero required peers. Until this Issue the skeleton's 2.x required set stands, so v3-g6-epos's frozen install cannot pass.",
+  "what": "Delete the last 2.x modules (src/{common,theme,format,state}/** and any 2.x root files left), remove @mantine/* and every other peer no longer imported, set peerDependenciesMeta so all remaining peers are optional, and assert it.",
+  "owns": [
+    "packages/basalt-ui/src/common/**",
+    "packages/basalt-ui/src/theme/**",
+    "packages/basalt-ui/src/format/**",
+    "packages/basalt-ui/src/state/**",
+    "packages/basalt-ui/tests/required-peers.test.ts"
+  ],
+  "shared_append_only": [
+    "packages/basalt-ui/package.json",
+    "bun.lock",
+    "packages/basalt-ui/migrations/areas/removed-2x.json"
+  ],
+  "must_not_touch": [
+    "packages/basalt-ui/src/{core,data,router,page,shell,controls,charts,table,ui,tokens,css,lint,cli,ai,content,cards}/**",
+    "consumer repos",
+    "CHANGELOG.md"
+  ],
+  "concept": "ARCHITECTURE#5 Peers; DIRECTION#5",
+  "contract": "docs/v3/ARCHITECTURE.md Peers paragraph (zero required, all optional, five conditions) and DIRECTION row Peers. `required-peers` is the existing test: it now asserts an empty required set. check-budgets subpaths ratchets down to the v3 count.",
+  "exemplar": "tests/required-peers.test.ts as it stands; v3-teardown-views for deletion scope.",
+  "change": "Delete the paths above, then rewrite tests/required-peers.test.ts to assert no peer lacks an optional flag. Remove @mantine/* from peers and devDependencies. Update SURFACES, pack-test and check-budgets for the v3 subpath count. Ships with: guarantee = required-peers and check-budgets; test = make check, pack-test.",
+  "commits": "One PR, separate package and non-package commits (isolated-basalt-ui); conventional, empty scope, no attribution.",
+  "proof": "bun test packages/basalt-ui/tests/required-peers.test.ts; pack-test; make check.",
+  "acceptance": [
+    "rg -n \"@mantine\" packages/basalt-ui/src returns nothing",
+    "bun test packages/basalt-ui/tests/required-peers.test.ts asserts an empty required-peer set and passes",
+    "rg -c '\"@mantine/' packages/basalt-ui/package.json prints 0",
+    "make check exits 0 including pack-test"
+  ],
+  "out_of_scope": "Consumer peer changes (their bumps), GA prep, the docs site."
+}

@@ -1,0 +1,19 @@
+{
+  "why": "Fixture trees with deliberate offenders or byte-exact files fail root bun run lint, fmt:check and bun test (bunfig preloads happy-dom for every test and ignores only tests/layout). Ten parallel leads would each add ignore lines and conflict, so one Issue owns the three edits.",
+  "what": "Root bunfig.toml, .oxlintrc.json (ignorePatterns) and .oxfmtignore. One glob covers every fixture root: packages/basalt-ui/test/fixtures/**.",
+  "owns": ["bunfig.toml", ".oxlintrc.json", ".oxfmtignore"],
+  "must_not_touch": ["packages/**", "tests/**", "Makefile", ".github/**", "CHANGELOG.md"],
+  "concept": "migration-release#8",
+  "contract": "AGENTS.md Validate. The repo's runners live in tests/ (plural); v3-tok-t3-css creates test/fixtures (singular, ARCHITECTURE section 2) for fixture trees. Both stay, with one law: runners in tests/** or co-located under src/**; fixture trees only in test/fixtures/**; every test that needs real Chrome or a packed install lives in tests/layout/** (own bunfig without happy-dom, run by make layout).",
+  "exemplar": "The existing tests/layout/** pathIgnorePatterns line in bunfig.toml and the tests/fixtures/** line in .oxlintrc.json ignorePatterns.",
+  "change": "bunfig.toml: add **/test/fixtures/** to pathIgnorePatterns beside **/tests/layout/**. .oxlintrc.json: add packages/basalt-ui/test/fixtures/** to ignorePatterns, keeping the rest. .oxfmtignore: add packages/basalt-ui/test/fixtures/** with a comment saying fixtures are byte-exact. Rule: none. Skill snippet: none. Test: the probe below.",
+  "commits": "One PR, rebase-merged, one non-package commit `chore:` (all three files are root files), empty scope, no attribution.",
+  "proof": "A throwaway probe folder, deleted before the commit.",
+  "acceptance": [
+    "With a throwaway packages/basalt-ui/test/fixtures/_probe/bad.test.ts present (a var, a debugger statement, an unformatted line, a top-level throw), bun run lint and bun run fmt:check exit 0 and bun test lists no test from that folder",
+    "bun run test:layout still resolves its own bunfig and runs unchanged",
+    "git diff --name-only origin/master...HEAD lists exactly the three owned files and no probe file",
+    "make check exits 0"
+  ],
+  "out_of_scope": "Creating fixtures, moving any existing test, the generated root .oxlintrc.json rewrite (v3-gr-4)."
+}

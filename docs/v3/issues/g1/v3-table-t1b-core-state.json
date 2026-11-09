@@ -1,0 +1,36 @@
+{
+  "why": "Table state is one serialisable value whose URL grammar is frozen per major, plus the filter, selection and keyboard behaviour consumers rely on.",
+  "what": "packages/basalt-ui/src/table/core/{state,codec,filters,selection,keyboard}*. Created here.",
+  "owns": [
+    "packages/basalt-ui/src/table/core/{state,codec,filters,selection,keyboard}*",
+    "packages/basalt-ui/src/table/invariants/core-state*"
+  ],
+  "shared_append_only": [
+    "packages/basalt-ui/src/table/index.ts",
+    "packages/basalt-ui/scripts/export-surface.json"
+  ],
+  "must_not_touch": [
+    "packages/basalt-ui/src/{ui,controls,charts,cards,page,shell,content,ai,router,data,tokens,css,lint}/** (ui read-only), packages/basalt-ui/agent/**",
+    "packages/basalt-ui/src/table/contract*, src/table/invariants/** except core-state*, src/table/core/{features,kinds,plan}*, src/table/parts/**",
+    "CHANGELOG.md, MIGRATING.md, llms.txt, scripts/check-budgets/**, other areas' migrations files",
+    "every contract.ts and src/core/ports.ts"
+  ],
+  "concept": "data-table#12 T1",
+  "contract": "Frozen: ARCHITECTURE.md, this domain's contract.ts, src/core/ports.ts. Need a change: factory signal, take the reversible default. Read concepts/data-table.md sections 1, 3 to 6, 8, 9. Edge: table -> controls only; no composite .d.ts names ui/* (VirtualLike port). State lanes and URL grammar v1 in section 6 (view, q, f.<col>, sort, page, size, prefix). Properties normalise, never reject; defaults absent.",
+  "exemplar": "Flip I1, I3, I4, I10, I17, I18 in src/table/invariants/core-state* (t0); donors (stay): 2.x src/table/data-table-state.ts, query-branch.ts.",
+  "change": "state: TableState {v:1, request{q,filters,sort,page,pageSize}, display{visibility,collapsed}} bound through a handle (memory handle without a router), request is the query key so display toggles never refetch, resetOn clears selection and writes page 1 (skipped at mount), mode client or server {rowCount|cursor}. codec: field.composite grammar with comma escaping, one sort, 1-based page, prefix for a second table, out-of-range page corrects only once the count is known. filters: constructFilterFn with autoRemove, exact string match, dev throw on unknown id, text and enum. selection: ids or all-matching with excluded, getRowId required. keyboard: roving controller on the row set (Up, Down, Home, End, PgUp, PgDn, Enter only, Space toggles when selectable, / focuses search, Esc clears). Rule: none new. Tests: URL property test, golden URL fixtures, selection union, keyboard unit tests through public DOM.",
+  "commits": "One PR, separate package and non-package commits (isolated-basalt-ui); conventional, empty scope, no attribution.",
+  "proof": "bun test over src/table/core with fast-check style generated states.",
+  "acceptance": [
+    "property test: parse(serialize(s)) = s over generated states incl. dates, commas, numeric-looking strings and empty sets; tablecn #1257, #1268 and the Bazza Date case are named fixtures",
+    "?page=3 with the count pending keeps page 3 and never prints 'of 0' (I1 test green)",
+    "a resetOn change on page 3 produces one write to page 1; at mount it writes nothing",
+    "selection tests: ids survive sort, page and refetch by getRowId; all-matching carries excluded ids; a missing getRowId fails types",
+    "keyboard: Enter on a nested control does not activate the row; Space never activates; / focuses the table search only",
+    "t0 tests I1, I3, I4, I10, I17, I18 in invariants/core-state* are normal passing tests",
+    "make check exits 0",
+    "git diff --name-only lists only owned paths"
+  ],
+  "out_of_scope": "Features, kinds, plan (t1a), parts and CSS (t2), saved views (t3), grouping, footer totals.",
+  "worker_tag": "lead high; may spawn one @implementer tagged [opus: URL grammar v1 and roving keyboard controller with golden fixtures] for the novel file group only"
+}

@@ -1,0 +1,25 @@
+{
+  "why": "v3-gr-3a ships the primitive-bypass Intl form disabled until src/core/format.ts exports time and an options bag; no Issue turned it on, so 4.1's Intl guarantee never activates.",
+  "what": "Enable the Intl form in packages/basalt-ui/src/lint/rules/structure/primitive-bypass* and its fixtures.",
+  "owns": [
+    "packages/basalt-ui/src/lint/rules/structure/primitive-bypass*",
+    "packages/basalt-ui/test/fixtures/lint/import-bypass/intl*"
+  ],
+  "must_not_touch": [
+    "packages/basalt-ui/src/core/**",
+    "packages/basalt-ui/src/lint/{rule-table*,preset*}",
+    "CHANGELOG.md"
+  ],
+  "concept": "guardrails#4 row 9; quality-contract#10",
+  "contract": "docs/v3/concepts/guardrails.md section 4 (Intl form of primitive-bypass) and v3-gr-3a's disabled seam. Enabled once v3-qa-i2-format exports time and the options bag.",
+  "exemplar": "The disabled Intl form in the primitive-bypass rule from v3-gr-3a.",
+  "change": "Flip the form's enabled flag; add an offender and clean fixture for new Intl.*Format and toLocale* skipping useFormat. Rule: primitive-bypass. Skill snippet: none. Test: RuleTester.",
+  "commits": "One PR, separate package and non-package commits (isolated-basalt-ui); conventional, empty scope, no attribution.",
+  "proof": "bun test packages/basalt-ui/src/lint/rules/structure; make check.",
+  "acceptance": [
+    "A fixture calling new Intl.DateTimeFormat() outside useFormat fails primitive-bypass and names useFormat",
+    "The Intl form's enabled flag is true and bun test for primitive-bypass passes",
+    "make check exits 0"
+  ],
+  "out_of_scope": "New forms, the preset, format.ts."
+}

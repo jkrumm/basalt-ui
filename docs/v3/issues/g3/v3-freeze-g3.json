@@ -1,0 +1,29 @@
+{
+  "why": "G3 consumers (finances, email-gateway) pin the next.N that carries table GA, controls, forms and overlays; a frozen layer is only free if the floor, the pins and the byte seeds say so.",
+  "what": "scripts/fleet.json, packages/basalt-ui/scripts/contract-pins.json and the area budget files check-budgets/areas/{controls,table}* beside it (layout of v3-unhot-budgets). Forms fold into ./controls and overlays are ui parts seeded at G1: no forms or overlays file.",
+  "owns": [
+    "scripts/fleet.json",
+    "packages/basalt-ui/scripts/check-budgets/areas/{controls,table}*"
+  ],
+  "shared_append_only": ["packages/basalt-ui/scripts/contract-pins.json"],
+  "must_not_touch": [
+    "packages/basalt-ui/src/**",
+    "packages/basalt-ui/agent/**",
+    "packages/basalt-ui/scripts/check-budgets/areas/{ui,cards,charts,data,router,page,shell,content,tokens}*",
+    "fleet.json rows other than the G3 rows of finances and email-gateway; other floors"
+  ],
+  "concept": "migration-release#5 G3",
+  "contract": "Read docs/v3/concepts/migration-release.md 3.3, 4.4, 5 (G3), quality-contract.md 6 (budget method, ratchet), ARCHITECTURE.md 3. Precondition: docs/v3/verdicts/table.md has a Verdict line of accept or accept with changes, else file a signal and stop (the verdict row can close unfilled). This Issue never releases: the cut is the owner's `make release`.",
+  "exemplar": "Follow the merged v3-freeze-g1 and v3-freeze-g2 PRs.",
+  "change": "One concern: freeze G3. fleet.json: floors.G3 = { next: N, row: 'g3-frozen' } and gaFloor = N, where N = the last published 3.0.0-next.* (`npm view basalt-ui dist-tags.next`) plus 1, a prediction (`make release-dry` cannot run on this branch: release.sh needs master at origin/master); the PR says so and the owner's cut confirms it. If the cut prints another number, a one-line follow-up PR fixes floors.G3.next before any consumer starts. Add rows with gate G3 only if missing: finances (package ui), email-gateway (packages . and client), profile app, from 2.29.0, verify `make verify`. contract-pins.json (schema of v3-rel-7-contracts: key to sha256 of file bytes): src/controls/contract.ts and src/table/contract.ts are pinned already and must still match; add keys for the ./controls and ./table GA value-export lists, named as v3-freeze-g1 named its own; edit no existing key. Budgets: seed controls (own code, first complete build) at measured +5%, rounded up to 0.5 KB, down only. Re-seed table (own code, engine fixture on the 10 features) the same way: this replaces G1's seed measured on v0 parts, so record one ratchet row { ceiling, from, to, consumer: finances, repo: finances }. Hard zeros stay; no other raise. Ships: the check-contract-frozen and check-budgets gates; no skill snippet; their suites plus the new seeds.",
+  "commits": "One PR. Package files (check-budgets, pins) and non-package files (scripts/fleet.json) are separate commits, package first (isolated-basalt-ui); `make sync-self` output is its own commit. Conventional, empty scope, no AI attribution; never edit CHANGELOG.md, MIGRATING.md, llms.txt.",
+  "proof": "`make check`; `check-budgets --report` and the `npm view` output behind N in the PR body.",
+  "acceptance": [
+    "make check passes, including check-contract-frozen and check-budgets.",
+    "fleet.json parses; floors.G3.next and gaFloor equal the last published next.N plus 1 (predicted, said so in the PR); the finances and email-gateway rows exist with gate G3.",
+    "Every hash in contract-pins.json equals the sha256 of its file at HEAD; `git diff` on it shows only added keys, or nothing.",
+    "check-budgets has a ceiling for controls and for table (own code and engine fixture), each at most measured +5% rounded to 0.5 KB; the table re-seed carries its ratchet row.",
+    "`git diff --name-only` lists only owned paths and `git log` shows no release commit."
+  ],
+  "out_of_scope": "Cutting next.N (owner, make release), G1 and G2 layers, consumer bumps, raising any other ceiling."
+}

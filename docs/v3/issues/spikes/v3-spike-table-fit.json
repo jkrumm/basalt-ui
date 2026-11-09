@@ -1,0 +1,30 @@
+{
+  "why": "The data table is the headline item: fixed layout tiers and derived phone cards replace argo's hand layouts, and the owner accepts them before freeze (docs/v3/concepts/data-table.md section 9 S3, S4).",
+  "what": "tools/spikes/table-fit/** and docs/v3/spikes/table-fit.md. Built on the `./table` parts of table-t2 (packages/basalt-ui/src/table, read only). Read argo's ledger, text-heavy and numeric tables, `catalog-table` (14 columns), `sparkline-grid-chart`, the 8 `renderCard` sites (BookingRow, CatalogCard, slots-list, spending, net-worth, recurring x3) and the `tax` queue; reproduce their column kinds, widths and text lengths with synthetic rows (argo's rows are personal data).",
+  "owns": ["tools/spikes/table-fit/**", "docs/v3/spikes/table-fit.md"],
+  "must_not_touch": [
+    "CHANGELOG.md",
+    "root package.json, bun.lock, .gitignore, .oxlintignore",
+    "docs/v3/{concepts,issues}/**, docs/v3/ARCHITECTURE.md",
+    "other tools/spikes/* folders",
+    "consumer repos (scratch copies live in the OS temp dir)"
+  ],
+  "concept": "docs/v3/concepts/data-table.md section 9 S3 S4",
+  "contract": "docs/v3/concepts/data-table.md sections 5, 9, 13 (E1) are frozen; a last-resort typed box slot is an amendment request only. S5 bytes are v3-spike-table-bytes.",
+  "exemplar": "scripts/evidence/*.ts (one JSON result per run)",
+  "change": "S3: kind widths against today's auto layout at 500, 800, 1000, 1200, 1800 px, plus `spark`; assert in Chrome that no non-`scroll` cell has scrollWidth above clientWidth. S4: port the 8 `renderCard` sites and the `tax` queue to derived cards (expected: 6 fit title, value, meta, `edit`; catalog and slots-list keep a meta run and move the rest to the sheet).",
+  "commits": "One non-package commit `chore: spike table-fit harness and verdict`, empty scope, no attribution.",
+  "proof": "Shots per table and card site at 1800x1200 and 390x844 (S3 also 500, 800, 1000, 1200), dark and light, under tools/spikes/table-fit/shots/, synthetic rows, each <= 250 KB; at most 3 rounds.",
+  "acceptance": [
+    "run.ts JSON has `s3.overflowOutsideScroll` (0 required), `s4.fitCount` (of 9 sites) and `s4.needsSlot` (site names)",
+    "`bun tools/spikes/table-fit/run.ts` exits 0, prints one JSON object with the keys above (0 = harness ran, not hypothesis held)",
+    "docs/v3/spikes/table-fit.md has headings Question, Method, Measurements, Verdict, Then, Affects and the `verdict` lines",
+    "`find tools/spikes/table-fit -name '*.test.*' -o -name '*.spec.*'` prints nothing",
+    "`git diff --name-only master...HEAD` lists only `owns` paths",
+    "`grep -rnE 'op://|\\.ts\\.net|192\\.168\\.|ghp_' tools/spikes/table-fit docs/v3/spikes/table-fit.md` prints nothing",
+    "`make check` passes"
+  ],
+  "out_of_scope": "Table features; the contract slots; editing argo; bytes and perf.",
+  "envelope": "Harness: tools/spikes/<dir>/ has its own package.json (exact pins); bun.lock and node_modules gitignored there (must_not_touch package.json and bun.lock = repo root only). Passes root oxlint; no *.test.* files; Chrome via the playwright-core pattern of packages/basalt-ui/tests/layout/harness.ts; docs/v3 on master before filing; synthetic data only, private repos as counts and hashed ids.",
+  "verdict": "Lines `S3: PASS|REFUTED` and `S4: PASS|REFUTED` (machine) plus `Owner S3: pending` and `Owner S4: pending`: the owner accepts at 1800x1200 and 390x844, never self-accepted; v3-verdict-table carries it with these shots. S3 REFUTED on any `overflowOutsideScroll` above 0 (then a `content` width option on text and entity). S4 REFUTED when a site needs a named slot (listed). `Verdict: PASS` iff both PASS; run.ts `verdict` the same."
+}

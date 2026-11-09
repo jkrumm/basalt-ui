@@ -1,0 +1,30 @@
+{
+  "why": "Twelve later spikes can refute contract text after fan-out started, and their results had no owner. This is the second amendment, after the later spikes close.",
+  "what": "Fold each later spike result into docs/v3/ARCHITECTURE.md, docs/v3/DIRECTION.md and the concepts; repin any changed contract file.",
+  "owns": [
+    "docs/v3/ARCHITECTURE.md",
+    "docs/v3/DIRECTION.md",
+    "docs/v3/concepts/**",
+    "packages/basalt-ui/src/*/contract.ts",
+    "packages/basalt-ui/src/core/ports.ts",
+    "packages/basalt-ui/scripts/contract-pins.json"
+  ],
+  "must_not_touch": [
+    "packages/basalt-ui/src/** other than contract files",
+    "docs/v3/spikes/**",
+    "docs/v3/issues/**"
+  ],
+  "concept": "ARCHITECTURE#14",
+  "contract": "ARCHITECTURE section 14 row format and section 11 falsifiers. Inputs: docs/v3/spikes/{table-fit,table-bytes,q3-compile-table,q5-q8-motion-contrast,shell-frame,control-home,f2-route,f3-eject,epos-bridge-probe,q2-map,thin-skill-s7,provider-q4}.md. Same process as v3-contract-amendment-spikes.",
+  "exemplar": "v3-contract-amendment-spikes.",
+  "change": "For each input write the outcome (confirmed or refuted) in its concept section plus one section 14 row; apply each refuted spike's stated fallback; a changed contract.ts or ports.ts is repinned. Epos probe outcome also updates DIRECTION DPO 16 text. The hard decisions go to a tagged worker with `[opus: Decides how each refuted later spike changes signed contract text; the lead cannot be raised per Issue]` in its description. Ships with: guarantee = check-contract-frozen; no skill or lint change.",
+  "commits": "`docs:` commit for docs/v3; a separate package commit with subject `chore: contract amendment <topic>` for contract files and pins. No attribution.",
+  "proof": "bun packages/basalt-ui/scripts/check-contract-frozen.ts; doc drift.",
+  "acceptance": [
+    "Each of the 12 spike docs is cited in ARCHITECTURE section 14 or its concept's spike table with confirmed or refuted",
+    "check-contract-frozen exits 0 and any changed contract file has a changed pin",
+    "make check exits 0"
+  ],
+  "out_of_scope": "New spikes, code changes beyond the contract files, consumer repos.",
+  "worker": "[opus: Decides how each refuted later spike changes signed contract text; the lead cannot be raised per Issue]"
+}

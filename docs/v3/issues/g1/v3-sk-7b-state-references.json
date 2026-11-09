@@ -1,0 +1,25 @@
+{
+  "why": "v3-sk-7 only writes references kept by S1, so forms, controls and page and shell state have no teaching in the agent layer, while the master table claims them. The reference is the teach column for those rows.",
+  "what": "New: packages/basalt-ui/agent/skills/basalt-design/references/{state,forms,controls}.md, each linking generated docs and exemplar regions rather than restating props.",
+  "owns": [
+    "packages/basalt-ui/agent/skills/basalt-design/references/{state,forms,controls}.md",
+    "packages/basalt-ui/tests/agent/sk-7b*.test.ts"
+  ],
+  "must_not_touch": [
+    "packages/basalt-ui/agent/skills/basalt-design/references/{concept,encoding,states,copy,charts,cards}*",
+    "packages/basalt-ui/src/**",
+    "CHANGELOG.md"
+  ],
+  "concept": "skills-agent-layer#4.2; state-persistence-forms#9; controls-url-state#9",
+  "contract": "docs/v3/concepts/skills-agent-layer.md 4.2 (references link, never restate props). Rows: state-persistence-forms 5 and 9, controls-url-state 4.3, 4.5, 4.8, DIRECTION 4.3.",
+  "exemplar": "agent/skills/basalt-design/references/charts.md from v3-sk-7.",
+  "change": "state.md: page state, global memory via externalField, persisted vs URL; forms.md: TanStack Form ownership, schema on onDynamic with the onDynamicAsync delta, FormField vs FormRow, drafts; controls.md: homes, FilterSet, ViewTabs, control-home waivers. Each file at most 70 lines, cites docs/<export>.md and playground regions, no prop lists. Rule: none. Teach: these files. Test: tests/agent/sk-7b checks length and that each cited doc exists.",
+  "commits": "One PR, non-package commits only unless an agent/** file ships; conventional, empty scope, no attribution, make sync-self as its own commit.",
+  "proof": "bun test packages/basalt-ui/tests/agent/sk-7b*; make check.",
+  "acceptance": [
+    "bun test packages/basalt-ui/tests/agent/sk-7b* passes: each file is at most 70 lines and each cited docs/<export>.md exists",
+    "forms.md names onDynamic, onDynamicAsync and useBlocker; controls.md names ControlHome and FilterSet",
+    "make check exits 0"
+  ],
+  "out_of_scope": "Recipes (their owning Issues), skill routing changes in SKILL.md (v3-sk-6)."
+}

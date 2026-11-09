@@ -1,0 +1,36 @@
+{
+  "why": "Linewatch's 753-line StatusBar and argo's 13 strips need one dense stat bar; 19 argo panels need the card frame around non-chart bodies.",
+  "what": "packages/basalt-ui/src/cards/{stat-group,stat-cell,data-panel}*, tests/layout/cards-group*. Created here.",
+  "owns": [
+    "packages/basalt-ui/src/cards/{stat-group,stat-cell,data-panel}*",
+    "packages/basalt-ui/tests/layout/{,fixture/}cards-group*",
+    "packages/basalt-ui/docs/{stat-group,stat-cell,data-panel}.md",
+    "packages/basalt-ui/src/core/messages/cards.ts"
+  ],
+  "shared_append_only": [
+    "packages/basalt-ui/src/cards/index.ts",
+    "packages/basalt-ui/scripts/export-surface.json"
+  ],
+  "must_not_touch": [
+    "packages/basalt-ui/src/{controls,table,page,shell,content,ai,router,data,tokens,css,lint}/**, packages/basalt-ui/agent/**, src/ui/** (read-only: card, badge, meter, menu), other src/charts and src/cards files",
+    "CHANGELOG.md, MIGRATING.md, llms.txt, scripts/check-budgets/**, other areas' migrations files",
+    "every contract.ts and src/core/ports.ts"
+  ],
+  "concept": "charts-cards-kanban#10",
+  "contract": "Frozen: ARCHITECTURE.md, this domain's contract.ts, src/core/ports.ts. Need a change: factory signal, take the reversible default. Read concepts/charts-cards-kanban.md sections 3, 4, 6, 8, 9 and ARCHITECTURE sections 1 and 7. ./cards never imports ./charts. Composites take no className, style, color or padding. A type missing from src/cards/contract.ts: declare locally and signal. Typed SLOTS per concept section 4 as the exemplar. Message keys card.* via useMessages, English defaults in your owned src/core/messages/cards.ts (qa-i2 seeds it).",
+  "exemplar": "src/cards/stat-card*, src/ui/{card,badge}*, src/core/phase* (v3-exemplar-statcard; read in the tree).",
+  "change": "StatGroup variant 'strip' (shared subgrid tracks: caption 16, figure 32, meter 20+14, chart 28, rows 20, foot 16; unused tracks collapse; skeleton draws the declared shape) and 'cards' (grid-rows-subgrid aligns bands; below @regular a snap row w-72, focusable while it scrolls). StatCell (qualifier, info, value, unit, delta, status, sub, srText, meter MeterSpec, chart BoxSlot 28, rows up to 4, FrameState, href xor onSelect). DataPanel (FrameHead, controls and toolbar ControlsSlot, menu BoxSlot, legend, required skeleton {rows}|{height}, body BoxSlot, overflow clip), all through resolvePhase and CardPhase. Rule: none new. Skill: generated docs/stat-{group,cell}.md, data-panel.md. Tests: phase matrix, one-left-edge, cards.type-guard.tsx, dev-assertions.test.tsx, layout.",
+  "commits": "One PR, separate package and non-package commits (isolated-basalt-ui); conventional, empty scope, no attribution.",
+  "proof": "Layout and axe tests (tests/layout/cards-group*) on tests/layout/fixture/cards-group-fixture.tsx at 1440, 768, 390, 320: six 230 px cells incl. argo's recovery cell. No shot (the visual round is v3-playground-overview).",
+  "acceptance": [
+    "phase matrix: ready, loading, stale, error, empty give equal heights for StatCell and DataPanel, incl. a throwing body slot and both error kinds",
+    "layout: a strip of 6 cells at 230 px aligns every track across cells; a loading cell has its final height",
+    "one left edge across band, figure and footer label; no horizontal overflow at 320",
+    "cards.type-guard.tsx: className, color, tone on StatCell, DataPanel without skeleton, 5 rows, a non-StatCell StatGroup child each fail (@ts-expect-error)",
+    "dev-assertions.test.tsx: over 2 inline controls, over 4 rows, nesting depth over 2 each warn once (literal NODE_ENV gate)",
+    "snap row is focusable only while it scrolls; axe zero serious or critical per state; body slot is not called in loading, error or empty",
+    "make check exits 0",
+    "git diff --name-only lists only owned paths"
+  ],
+  "out_of_scope": "StatCard, BarList, EventList, KanbanCard, charts, lint rule bodies, migration rows (charts-7), the overview route."
+}

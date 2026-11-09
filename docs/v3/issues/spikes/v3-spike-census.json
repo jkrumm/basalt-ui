@@ -1,0 +1,31 @@
+{
+  "why": "docs/v3/ARCHITECTURE.md section 11 F1 and F4 gate the freeze of section 3 (symbols) and section 10 (refusals): a refused export with 3 or more hand-rolled copies is reinstated first.",
+  "what": "tools/spikes/census/** and docs/v3/spikes/census.md. Read-only: 12 consumers under ~/SourceRoot (argo, rb, linewatch, shutterflow, weatherorb, finances, email-gateway, image-gateway, rollhook, basalt-ui-obsidian, jkrumm.com, software-factory/apps/console) plus ~/IuRoot/epos-ai-teamchat-athena/ui as counts only (a 13th).",
+  "owns": ["tools/spikes/census/**", "docs/v3/spikes/census.md"],
+  "must_not_touch": [
+    "CHANGELOG.md",
+    "root package.json, bun.lock, .gitignore, .oxlintignore",
+    "docs/v3/{concepts,issues}/**, docs/v3/ARCHITECTURE.md",
+    "other tools/spikes/* folders",
+    "consumer repos (scratch copies live in the OS temp dir)"
+  ],
+  "concept": "docs/v3/ARCHITECTURE.md section 11 F1 F4",
+  "contract": "docs/v3/ARCHITECTURE.md sections 3, 10, 11 are frozen; the orchestrator amends from this verdict.",
+  "exemplar": "scripts/evidence/*.ts (one JSON result per run)",
+  "change": "F1: map to section 3 plus the extras `PageSummary`, `StatStripCell`, `EventList`, `EmptyState`, overlays, `createColumnHelper`, `CONTAINER_KEYS`, `alpha` (mapping.json). Signature = a `Signature:` entry of argo's installed node_modules/basalt-ui/llms.txt that apps/dashboard (incl. vite.config.ts) imports: 81 of 124 (docs/v3/evidence/consumer-argo.md 1.3). Tag = a JSX element imported from `@mantine/*` that is not Stack, Group, Flex, Center, Box, Text or SimpleGrid: fleet 4,310 - 2,555 = 1,755 (docs/v3/evidence/gap-migration-coexistence-and-consumer-testing.md); fleet-wide; re-measure per app by TypeScript AST. Unmapped = no section 3 symbol, rung or primitives-distribution.md section 9 row. `symbolSumAfterExtras` = 91 + extras without a section 3 row. F4: per refusal of section 10, `copies` = distinct modules re-implementing it outside basalt-ui (signatures fixed in refusals.json first) and `repos`; plus hand-rolled optimistic updates (docs/v3/concepts/state-persistence-forms.md section 9 S4). Counts and names only.",
+  "commits": "One non-package commit `chore: spike census harness and verdict`, empty scope, no attribution.",
+  "proof": "run.ts JSON plus the verdict doc; run twice, attach both outputs.",
+  "acceptance": [
+    "run.ts JSON has `f1.total`, `f1.unmapped`, `f1.symbolSumAfterExtras`, `f1.argo.signatures`, `f1.tags.byApp`, `f4.byRefusal` (name to {copies, repos}), `f4.optimisticCopies`",
+    "Doc gives each number with its extraction command",
+    "`bun tools/spikes/census/run.ts` exits 0, prints one JSON object with the keys above (0 = harness ran, not hypothesis held)",
+    "docs/v3/spikes/census.md has headings Question, Method, Measurements, Verdict, Then, Affects and the `verdict` lines",
+    "`find tools/spikes/census -name '*.test.*' -o -name '*.spec.*'` prints nothing",
+    "`git diff --name-only master...HEAD` lists only `owns` paths",
+    "`grep -rnE 'op://|\\.ts\\.net|192\\.168\\.|ghp_' tools/spikes/census docs/v3/spikes/census.md` prints nothing",
+    "`make check` passes"
+  ],
+  "out_of_scope": "Editing ARCHITECTURE; changing consumers.",
+  "envelope": "Harness: tools/spikes/<dir>/ has its own package.json (exact pins); bun.lock and node_modules gitignored there (must_not_touch package.json and bun.lock = repo root only). Passes root oxlint; no *.test.* files; Chrome via the playwright-core pattern of packages/basalt-ui/tests/layout/harness.ts; docs/v3 on master before filing; synthetic data only, private repos as counts and hashed ids.",
+  "verdict": "Lines `F1: PASS|REFUTED` (REFUTED when unmapped > 10% of total or `symbolSumAfterExtras` > 100), `F4: PASS|REFUTED` (REFUTED when a refusal has >= 3 copies: listed under Then as `reinstate before freeze`, else `none`), `Optimistic: keep|drop` (>= 2 copies keep, 0-1 drop; 2 keeps by default, additive). `Verdict: PASS` iff F1 and F4 PASS; run.ts `verdict` the same."
+}

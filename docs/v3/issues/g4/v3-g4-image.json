@@ -1,0 +1,42 @@
+{
+  "repo": "image-gateway",
+  "why": "G4 consumer on the 1.x line (basalt-ui 1.41.0, Mantine). The ImageGen Tauri studio has no shell or charts: it proves the smallest parts profile and the direct 1.x jump (migrate --from 1.41.0).",
+  "what": "app/ plus the root manifest and basalt-managed files. Not app/src-tauri, shared/ or the owner's ~/Pictures/ImageGen library.",
+  "owns": [
+    "app/**",
+    "package.json",
+    "bun.lock",
+    ".basalt/**",
+    "AGENTS.md",
+    ".claude/**",
+    "DESIGN.md",
+    ".oxlintrc.json",
+    ".oxfmtrc.json",
+    "lefthook.yml",
+    ".github/workflows/check.yml"
+  ],
+  "must_not_touch": [
+    "app/src-tauri/**",
+    "shared/**, gateway/**, docs/research/**",
+    "hand edits to sync-managed files",
+    "Makefile targets app, app-run, configure",
+    "app/src-tauri/**"
+  ],
+  "concept": "~/SourceRoot/basalt-ui/docs/v3/concepts/migration-release.md 3.2, 5 (G4), 7; evidence/consumer-small-apps.md.",
+  "contract": "~/SourceRoot/basalt-ui is read only, on master at or after v3-release-g4-cut. Present at start (written by other Issues): scripts/fleet.json, tools/migrate-v3, src/cli/migrate. Pin basalt-ui exactly to 3.0.0-next.<floors.G4.next> in BOTH package.json and app/package.json, no caret. First run npm view basalt-ui@<N> version; if it fails, stop with a factory signal, never pin an unpublished version.",
+  "exemplar": "The G1 linewatch cutover (find ~/SourceRoot/basalt-ui/docs/v3/issues -name v3-g1-linewatch.json): same shape; one PR though the repo is direct-to-master.",
+  "change": "One PR, merged by the factory (rebase, granular commits). No project.yaml, no deploy proof (the owner installs the app). Only the PR head must be green. Commits: (1) codemod output (run.ts layout, imports, waivers; --report .basalt/worklist/<name>.json); (2) pin, init --profile parts, sync, and the Tailwind dependency, Vite plugin and CSS entry init writes; (3) Mantine out of 28 files onto ui parts, Tailwind classes for the 44 style= sites, the App.tsx SegmentedControl onto the segmented part; (4) 23 notification calls to notify plus one ToastHost; drop ModalsProvider, Notifications and the @mantine style imports in main.tsx; (5) lib/settings.ts keeps loadStoredSettings and storeSettings, the file stays the store of record, useSettings moves to persisted as a cache the file hydrates; EmptyState from ./page, FormRow from ./controls, money to useFormat().money (check installed exports); (6) frame stays hand-built, no ./shell; AGENTS.md prose; check:theme to the v3 lint step, check:sync kept; the 6 theme-allow waivers to the v3 form with reasons (the canvas colour ones in MaskCanvas.tsx and Refine.tsx stay). SSE in lib/gateway.ts and queue.ts stays app-owned. Rule: app preset at error; waiver ceiling 6. Tests: the ~300 bun tests stay green, plus app/src/App.test.tsx rendering App under BasaltProvider, no Mantine provider, with @tauri-apps/* and the lib/library and lib/settings loaders stubbed (mock.module).",
+  "commits": "Conventional commits, no ticket prefixes, no attribution. Public repo: no hostnames or tokens.",
+  "proof": "make check and the app build. No-shell is proved by grep and App.test.tsx; the app is never run; no make verify exists.",
+  "acceptance": [
+    "make check exits 0.",
+    "grep -rn '@mantine' app/src app/package.json package.json prints nothing.",
+    "package.json and app/package.json pin basalt-ui to the same exact 3.0.0-next.N at or above floors.G4.next.",
+    "git diff --stat origin/master -- app/src-tauri shared prints nothing.",
+    "grep -rn 'basalt-ui/shell' app/src prints nothing; app/src/App.test.tsx exists and passes.",
+    "bun run --filter @image-gateway/app build exits 0.",
+    "basalt-ui sync --check and doctor exit 0; each codemod re-run against its .basalt/worklist report gives 0 entries; lint --stats waivers are at or under the row ceiling.",
+    "basalt-ui migrate --from 1.41.0 --profile parts --check exits 0."
+  ],
+  "out_of_scope": "Generation behaviour, settings file format, Library virtualization, Tauri config, building the app."
+}

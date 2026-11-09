@@ -1,0 +1,39 @@
+{
+  "why": "Owning a primitive is the reason to leave Mantine; eject is the only way a consumer takes a file, so a wrong merge base corrupts consumer code.",
+  "what": "packages/basalt-ui/src/cli/eject/**, test/fixtures/eject/**, src/cli/merge/** (helpers p8 imports: git merge-file wrapper, header strip, formatter resolve). The manifest reader from v3-sk-2-sync is read-only.",
+  "owns": [
+    "packages/basalt-ui/src/cli/eject/**",
+    "packages/basalt-ui/src/cli/merge/**",
+    "packages/basalt-ui/test/fixtures/eject/**",
+    "packages/basalt-ui/docs/eject.md"
+  ],
+  "shared_append_only": [
+    "packages/basalt-ui/src/cli/index.ts",
+    "packages/basalt-ui/scripts/export-surface.json"
+  ],
+  "must_not_touch": [
+    "packages/basalt-ui/src/{ui,tokens,css,lint,page,shell,cards,charts,controls,table,content,ai,router,data,core}/**",
+    "packages/basalt-ui/agent/**",
+    "packages/basalt-ui/src/cli/{init,doctor,lint,shot,sync}/**, src/cli/manifest* (read-only)",
+    "CHANGELOG.md, MIGRATING.md, llms.txt, scripts/check-budgets/**, other areas' migrations files",
+    "every contract.ts and src/core/ports.ts"
+  ],
+  "concept": "ARCHITECTURE#4.2; primitives-distribution#6",
+  "contract": "Frozen: ARCHITECTURE.md, this domain's contract.ts, src/core/ports.ts. Need a change: factory signal, take the reversible default. Read ARCHITECTURE 4.2, primitives-distribution sections 5, 6, 7, 13 (CE2, CE4) and the section 5 manifest and budget.json sketch. A missing ejected row type in src/cli/manifest* lives in src/cli/eject/ledger*.",
+  "exemplar": "2.x src/cli/index.ts verb wiring and init-sync.test.ts (unknown flag exits 1).",
+  "change": "Register eject in src/cli/index.ts (one line, replacing the rel-7 stub). Verb eject <name> --reason; --all; --adopt <path>; --undo; --raise '<named consumer>'; --app <root> (required when basalt.roots has 2+; else exit 1 listing roots). eject writes <root>/components/ui/<name>.tsx with header '// basalt:ejected <name>@<v> <why>', the .guard.ts, .basalt/base/<root-dashed>/<name>.tsx, a manifest.ejected row {path, fromVersion, seedDigest, reason, origin}, and a tsconfig paths row for basalt-ui/ui/<name> (JSONC-preserving, else exit 1 printing the line). seedDigest = sha256 of seed plus guard read from the tarball. Exits 1 without basalt() in that app. --adopt takes only <root>/components/ui/** files present on the merge base; a new local file needs --raise and gets origin 'local' (no base, no guard). --undo refuses uncommitted changes. budget.json changes only through --raise; eject --all without --raise exits 1. Rule: none. Skill: docs/eject.md from --help. Tests: eject.e2e, eject.roots, adopt.e2e.",
+  "commits": "One PR, separate package and non-package commits (isolated-basalt-ui); conventional, empty scope, no attribution.",
+  "proof": "bun test over test/fixtures/eject: linewatch-, argo-, two-app shutterflow- and console-shaped fixtures built inside it.",
+  "acceptance": [
+    "eject.e2e: eject button, edit it; tsc, build and SSR pass and an npm composite imports the local file; --undo restores the tree byte-for-byte",
+    "eject.roots: eject without --app exits 1 listing roots on the two-app fixture; alias, paths and ceiling stay per root",
+    "adopt.e2e: a file outside <root>/components/ui exits 1; adopted gets origin 'adopted' with base = seed; a new local file without --raise exits 1",
+    "eject --all without --raise exits 1 and budget.json is byte-identical",
+    "an unknown flag exits 1; a second eject of the same name exits 1, writing nothing",
+    "seedDigest equals the digest of the tarball seed plus guard",
+    "make check exits 0",
+    "git diff --name-only lists only owned paths"
+  ],
+  "out_of_scope": "sync merge and doctor matrix (p8), basalt() resolver (p9), lint ceilings, composite ejection, public registry.",
+  "worker_tag": "lead high; may spawn one @implementer tagged [opus: Three-way eject lifecycle under one specifier; a wrong merge base corrupts consumer files] for the novel file group only"
+}

@@ -1,0 +1,32 @@
+{
+  "repo": "shutterflow",
+  "why": "Shutterflow desktop-v3 is built screen by screen next to apps/desktop; gated by the G3 freeze and the toolbar primitive.",
+  "what": "The photos A (route, grid, filmstrip, filters, state) port: files named in owns and their tests.",
+  "owns": [
+    "apps/desktop-v3/src/features/photos/{PhotosRoute,photos-route}*",
+    "apps/desktop-v3/src/features/photos/{grid,filmstrip,filters,state,view}/**"
+  ],
+  "must_not_touch": [
+    "apps/desktop/** (stays shippable)",
+    "apps/desktop/src-tauri/**",
+    "crates/**",
+    "e2e/desktop/visual/**/*.png",
+    "other Issues' dirs under apps/desktop-v3/src",
+    "apps/desktop-v3/package.json, bun.lock"
+  ],
+  "concept": "migration-release#6.4",
+  "contract": "Read basalt-ui docs/v3/concepts/migration-release.md 6.4, shutterflow docs/decisions/0028-visual-regression-gate.md (no bulk baseline regeneration) and AGENTS.md safety rule 1 (photo inputs are the owner's; never read /Volumes). basalt-ui is pinned exact next.N (the gate's floor, v3-sf-bump in `after`): its docs/recipes and llms.txt are the API truth; never edit package.json or bun.lock. Replace the shell's stub features/photos/photos-route (exported createPhotosRoute). Toolbar law: shell-nav-router S9.",
+  "exemplar": "The landed v3-sf-shell frame (apps/desktop-v3/src/shell) and the playground exemplars in the basalt-ui repo; old code under apps/desktop/src/features/.",
+  "change": "Port the Photos route: ContactSheet grid and layout.ts (internal scroll restoration, virtualisation stay app code; one raw-scroll waiver on the grid file with a written reason), filmstrip, filters (Funnel, RefineBar), view modes, and the session store (photos-state, photos-store, photos-url, hydrate) store-primary with externalField handles and the app-owned URL mirror (250 ms trailing replace write, router echo suppressed, DPO 14.7). Header uses ui/toolbar through ToolbarGroup (homes view-mode and tool) on `Page fill`, no PageBar: the G5 toolbar exemplar at 1024x700 and spike S9 (arrow keys cross a Select trigger, Segmented and a Button; popups do not trap roving focus). Rule: the app preset passes without new waivers. Skill snippet: none; recipes: the installed docs/recipes.",
+  "commits": "Shutterflow ships by push to master: conventional, one concern each, no attribution. Never edit node_modules or basalt-ui; a gap is a `friction:` line in the PR body.",
+  "proof": "hygiene.check is false: the factory cannot run `make check` or `make e2e`. Gate: the app's typecheck, test and build; state e2e and visual runs not-run (owner-run at cutover). The owner's eye gate: Photos at 1024x700 (owner-run).",
+  "acceptance": [
+    "`bun run --filter @shutterflow/desktop-v3 typecheck`, `... test` and `... build` exit 0",
+    "`make check-changed` exits 0 (not-run if package.json, bun.lock or the Makefile changed: `make check` then)",
+    "`rg -n -i '@mantine|@visx|mantine-' apps/desktop-v3/src/features/photos/{PhotosRoute,photos-route}* apps/desktop-v3/src/features/photos/{grid,filmstrip,filters,state,view}/**` returns no match",
+    "`bun scripts/check-port.ts apps/desktop/src/features/photos apps/desktop-v3/src/features/photos` exits 0 (tests only, imports stripped; any other changed line carries a `// port: <reason>` marker, listed in the PR)",
+    "a test covers photos-state reducer, photos-url round trip and hydrate echo suppression, ported unchanged",
+    "a DOM test asserts the toolbar group renders a Select trigger, a Segmented control and a Button as one roving group (one tabindex=0 item, ArrowRight moves it in that order); real focus across popups (S9) is owner-run in Chrome and the PR states the fallback taken (plain role=group) if refuted"
+  ],
+  "out_of_scope": "Other screens, shell code, apps/desktop, e2e files (v3-sf-e2e-rekey), src-tauri."
+}

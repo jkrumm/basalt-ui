@@ -1,0 +1,32 @@
+{
+  "why": "Both exemplars render through Tailwind v4 and Base UI; the wiring is its own Issue so neither exemplar waits on the other, and the verdict can be shot reproducibly.",
+  "what": "Playground and layout-fixture wiring only, plus the shots script. New files: apps/playground/scripts/shots.ts and shots.test.ts, a Tailwind entry for the layout fixture.",
+  "owns": [
+    "apps/playground/vite.config.ts",
+    "apps/playground/src/index.css",
+    "apps/playground/scripts/shots*",
+    "packages/basalt-ui/tests/layout/fixture/{index.html,main.tsx,tailwind*}",
+    "bun.lock"
+  ],
+  "must_not_touch": [
+    "packages/basalt-ui/src/**",
+    "apps/playground/src/routes/**",
+    "packages/basalt-ui/tests/layout/harness/**",
+    "packages/basalt-ui/tests/layout/*.layout.test.ts"
+  ],
+  "concept": "docs/v3/concepts/charts-cards-kanban.md#10",
+  "contract": "docs/v3/ARCHITECTURE.md 2 (consumer wiring: `@import 'basalt-ui/tailwind.css'`, vite plugins) and 4.3; tok-t3's tailwind.css and tokens.css are the entries (stubs exist from the skeleton). The 2.x routes keep compiling: Mantine stays until each lane retires it. Insufficient contract: factory signal, reversible default, PR body says so.",
+  "exemplar": "apps/playground/vite.config.ts and packages/basalt-ui/tests/layout/fixture/index.html as they are.",
+  "change": "Playground: add tailwindcss, @tailwindcss/vite and @base-ui/react (versions as in packages/basalt-ui/package.json), register the plugin in vite.config.ts, add `@import 'basalt-ui/tailwind.css'` in src/index.css imported from main.tsx. Layout fixture (built by Bun.build, not Vite): serve a Tailwind-compiled stylesheet from fixture/index.html (precompiled with the Tailwind CLI before the build, or a bun plugin; record the choice). shots.ts <route>...: after a playground build, serve dist, open Chrome (browser lifecycle from tests/layout/harness/engine.ts) and write .evidence/v3-shots/<route-slug>--<light|dark>--<1800x1200|390x844>.png, setting localStorage `basalt:scheme` before load. shots.test.ts covers file naming and arguments.",
+  "commits": "One PR; package commit (fixture files) then a non-package commit (apps/playground, bun.lock). Conventional, empty scope, no attribution, never CHANGELOG.md.",
+  "proof": "playground build; layout suite count unchanged; shots run.",
+  "acceptance": [
+    "bun --filter @basalt-ui/playground build exits 0 and the built CSS defines a --vx- custom property from tokens.css.",
+    "bun --filter @basalt-ui/playground typecheck exits 0 and the existing playground tests pass.",
+    "bun test apps/playground/scripts/shots.test.ts passes.",
+    "bun run test:layout reports the same number of tests as on origin/master.",
+    "After a build, bun apps/playground/scripts/shots.ts / writes four PNGs named root--{light,dark}--{1800x1200,390x844}.png (list them in the PR body).",
+    "make check passes."
+  ],
+  "out_of_scope": "Any component or route, token changes, re-skinning, the exemplar Issues."
+}

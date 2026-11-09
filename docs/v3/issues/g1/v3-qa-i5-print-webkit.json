@@ -1,0 +1,34 @@
+{
+  "why": "Print was broken (24 of 80 rows printed, dark ink) and iOS engine bugs were only found by owners; both lanes run in make evidence, not make check.",
+  "what": "packages/basalt-ui/tests/quality/print/**, tests/quality/webkit/**. Created here.",
+  "owns": [
+    "packages/basalt-ui/tests/quality/print/**",
+    "packages/basalt-ui/tests/quality/webkit/**",
+    "scripts/evidence/{print,webkit}.ts"
+  ],
+  "shared_append_only": ["scripts/evidence/index.ts"],
+  "must_not_touch": [
+    "packages/basalt-ui/src/{ui,page,shell,cards,charts,controls,table,content,ai,router,data,tokens,css,lint}/**",
+    "other areas' src/core/messages/<area>.ts",
+    "packages/basalt-ui/tests/quality/{matrix,ssr,perf}/**",
+    "packages/basalt-ui/src/testing/**",
+    "CHANGELOG.md, MIGRATING.md, llms.txt, scripts/check-budgets/**, other areas' migrations files",
+    "every contract.ts and src/core/ports.ts"
+  ],
+  "concept": "quality-contract#12 I5",
+  "contract": "Frozen: ARCHITECTURE.md, this domain's contract.ts, src/core/ports.ts. Need a change: factory signal, take the reversible default. Read concepts/quality-contract.md sections 4 to 7, 10, 12 (and 8 for carried invariants). Section 4 print row, Q6, decision 11: WebKit lanes catch engine bugs only; VoiceOver and device checks are owner tasks.",
+  "exemplar": "tests/quality/matrix/** from v3-qa-i4-matrix (cells, offenders, PageLike).",
+  "change": "Print: emulateMedia print plus page.pdf A4, page count from the PDF bytes (count matches of /Type\\s*\\/Page(?!s), no poppler), scrollport scrollHeight equals clientHeight, ink contrast, one print cell per playground route, offender fixtures. WebKit: Playwright WebKit iPhone and desktop descriptors on Linux running a layout subset and axe over the same routes; the first run is recorded and engine bugs are filed as fallbacks. Both attach to make evidence only. Rule: none. Skill: none. Tests: the two lanes with offenders.",
+  "commits": "One PR; package and non-package commits separate (isolated-basalt-ui). Conventional, empty scope, no feat!:, no attribution. make check generates files; shared registry lines are additive (rebase, regenerate). scripts/evidence/** is a non-package commit.",
+  "proof": "make evidence LANES=print,webkit output for both lanes.",
+  "acceptance": [
+    "print lane fails on a seeded fixture whose card is split across pages and passes on the exemplar route",
+    "page count is read from PDF bytes with no external binary (grep for pdftotext and poppler is empty)",
+    "WebKit lane runs the layout subset and axe at an iPhone and a desktop descriptor and its first-run result is written to the PR body",
+    "neither lane is part of make check (Makefile grep) and both are part of make evidence",
+    "an offender fixture fails each lane's assertion",
+    "make check exits 0",
+    "git diff --name-only lists only owned paths"
+  ],
+  "out_of_scope": "The 100-row table print case (needs the table route, later), real iPhone and VoiceOver checks M1 to M6, Tauri WKWebView."
+}

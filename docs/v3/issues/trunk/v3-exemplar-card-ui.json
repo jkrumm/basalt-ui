@@ -1,0 +1,36 @@
+{
+  "why": "The owner's taste checkpoint builds on the full card pattern: the rest of ui/card, ui/badge, the phase model and the native popover info, before StatCard.",
+  "what": "Rest of ui/card (CardBand, CardPhase, Inset, IconTile), ui/badge (Lozenge, CountBadge, DeltaBadge), resolvePhase and PhaseBoundary, the native popover info (S11). New files: ui/badge*, core/phase*, the layout test.",
+  "owns": [
+    "packages/basalt-ui/src/ui/{card,badge}*",
+    "packages/basalt-ui/src/core/phase*",
+    "packages/basalt-ui/docs/{card,badge}.md",
+    "packages/basalt-ui/tests/layout/{card-info*,fixture/card-info*,fixture/fixtures.tsx}"
+  ],
+  "shared_append_only": [
+    "packages/basalt-ui/src/ui/slots*",
+    "packages/basalt-ui/src/ui/*.generated.*"
+  ],
+  "must_not_touch": [
+    "packages/basalt-ui/src/tokens/**",
+    "packages/basalt-ui/src/charts/**",
+    "packages/basalt-ui/src/cards/**",
+    "packages/basalt-ui/src/ui/{button,input,field,table}*",
+    "packages/basalt-ui/src/core/ports.ts",
+    "packages/basalt-ui/scripts/gen-ui*"
+  ],
+  "concept": "docs/v3/concepts/charts-cards-kanban.md#10",
+  "contract": "docs/v3/concepts/charts-cards-kanban.md 3 (rows 'Shared frame', 'Phases', 'Definition glyph'), 9 S11, 10 and docs/v3/concepts/primitives-distribution.md 4 (card, badge). ports.ts is frozen: use its Phase, QueryStateLike, Box, Delta, Status. Insufficient contract: factory signal, reversible default, PR body says so.",
+  "exemplar": "ui/card base from v3-prim-p1-core (guard, SLOTS flow); docs/v3/ARCHITECTURE.md 7.1.",
+  "change": "Add the card parts and badge with data-slot, hand-authored guards and @example JSDoc; run gen-ui to regenerate (never hand-edit generated files). PhaseBoundary catches a throwing box slot, renders the error arm, neighbours keep rendering, Retry resets. `info` is a native popover (popover attribute, popovertarget on the trigger). Register the info fixture with one line in fixtures.tsx. Ships with: phase.test.tsx and card-info.layout.test.ts.",
+  "commits": "One PR, one `feat:` commit touching packages/basalt-ui/ only. Conventional, empty scope, no attribution, never CHANGELOG.md.",
+  "proof": "bun test packages/basalt-ui/src/core packages/basalt-ui/src/ui; the layout test in Chrome.",
+  "acceptance": [
+    "bun test packages/basalt-ui/src/core/phase.test.tsx passes, including a throwing box slot: the error arm renders, a sibling card still renders, Retry resets.",
+    "card-info.layout.test.ts (S11) passes in Chrome: the trigger opens the popover (:popover-open) by pointer, Enter and Space; Escape closes it; a click outside closes it (light dismiss); focus returns to the trigger; the popover stays inside the viewport at 390x844.",
+    "bun packages/basalt-ui/scripts/gen-ui.ts --check exits 0 with card and badge present.",
+    "grep -rn '@mantine' packages/basalt-ui/src/ui packages/basalt-ui/src/core/phase* returns nothing.",
+    "make check passes."
+  ],
+  "out_of_scope": "StatCard and the cards contract (v3-exemplar-statcard), StatGroup, DataPanel, charts, the route."
+}

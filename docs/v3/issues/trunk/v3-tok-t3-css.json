@@ -1,0 +1,31 @@
+{
+  "why": "Consumers at every depth read the same generated CSS; the base layer, scheme and class-merge helper must exist before primitives can be styled.",
+  "what": "Generated CSS entries, the scheme module with the boot script, compiled cn, and the tokens and bridge fixtures. New files: src/css/generate.ts (and its test), src/core/scheme.ts, src/core/cn.ts, and the new directory packages/basalt-ui/test/fixtures/ (docs/v3/ARCHITECTURE.md section 2 names `test/fixtures/{tokens,bridge,...}`; the existing tests/ keeps the 2.x unit and layout suites).",
+  "owns": [
+    "packages/basalt-ui/src/css/**",
+    "packages/basalt-ui/src/core/scheme*",
+    "packages/basalt-ui/src/core/cn*",
+    "packages/basalt-ui/test/fixtures/{tokens,bridge}/**"
+  ],
+  "must_not_touch": [
+    "packages/basalt-ui/src/tokens/**",
+    "packages/basalt-ui/src/ui/**",
+    "packages/basalt-ui/src/index.ts",
+    "packages/basalt-ui/package.json"
+  ],
+  "concept": "docs/v3/concepts/tokens-visual.md#12 T3",
+  "contract": "docs/v3/concepts/tokens-visual.md 4 (tokens.css, tailwind.css, layer order, dark in `not print`, density), 7 (basalt:scheme raw string, legacy mantine-color-scheme-value read, cookie second, acts only when data-theme absent), docs/v3/ARCHITECTURE.md section 3 (cn 9 KB, tailwind-merge a hard zero) and 14. Stubs for src/css/*.css and the ./theme-script target come from rel-7-skeleton: read package.json exports for the exact paths. Insufficient contract: factory signal, reversible default, PR body says so. Frozen contracts are read-only.",
+  "exemplar": "docs/v3/concepts/tokens-visual.md 4 CSS blocks verbatim; 2.x src/tokens/ctl-vars.ts for density values.",
+  "change": "src/css/generate.ts renders tokens.css, typography.css, prose.css (.vx-prose), fonts.css, tailwind.css from tok-t2 emit; a test asserts committed files equal the output. scheme.ts: setScheme, boot script for ./theme-script with themeScript({cookie}). cn.ts: clsx plus a conflict table compiled from @theme, one function so F6 can flip to clsx. Fixtures: tokens (static HTML, no React, no Tailwind) and bridge (Tailwind 4 build). Wiring cn and setScheme into the root barrel waits for the provider row. Ships with: bridge-drift test (every target emitted, resets after the definition wipe, --color-accent is hover not blue, coarse input 16) as the rule; skill snippet none (st rows); tests as listed.",
+  "commits": "One PR; package and non-package changes are separate commits (isolated-basalt-ui hook; root package.json, bun.lock, .oxlintrc.json, tests/ may ride with the package commit). Conventional, empty scope, no attribution, never CHANGELOG.md. `feat:` package commit only.",
+  "proof": "bun test packages/basalt-ui/src/css packages/basalt-ui/src/core packages/basalt-ui/test/fixtures.",
+  "acceptance": [
+    "bun test packages/basalt-ui/src/css passes, including committed-equals-generated for the five CSS files.",
+    "scheme tests cover a golden fixture: basalt:scheme key read, legacy mantine-color-scheme-value read, cookie read, write only the new key, no action when data-theme is already set.",
+    "cn tests: `text-display` and `text-red-500` both survive; `hidden` then `inline-flex` keeps the last; packages/basalt-ui/package.json has no tailwind-merge.",
+    "tokens fixture CSS contains no '@import \"tailwindcss\"' and its HTML has no <script> besides the boot script; bridge fixture builds and its CSS defines h-ctl, size-ctl, min-h-row.",
+    "git diff --name-only origin/master...HEAD touches nothing under src/tokens or src/ui.",
+    "make check passes."
+  ],
+  "out_of_scope": "tokens:css CLI and stylelint (tok-t4), migration rows (tok-t5), provider, one-look fixture, font dependency class."
+}

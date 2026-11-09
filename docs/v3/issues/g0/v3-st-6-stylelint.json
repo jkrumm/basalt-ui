@@ -1,0 +1,38 @@
+{
+  "why": "jkrumm's CSS has 62 raw-px sites, 36 hex and 13 viewport queries against its own written law; a preset makes the law an error on .css, .astro style blocks and .mdx.",
+  "what": "New: packages/basalt-ui/src/lint/stylelint/** (preset, config renderer, tests), configs/stylelint*, test/fixtures/lint/stylelint/**.",
+  "owns": [
+    "packages/basalt-ui/src/lint/stylelint/**",
+    "packages/basalt-ui/configs/stylelint*",
+    "packages/basalt-ui/test/fixtures/lint/stylelint/**"
+  ],
+  "must_not_touch": [
+    "CHANGELOG.md",
+    "packages/basalt-ui/{MIGRATING.md,llms.txt}",
+    "packages/basalt-ui/scripts/check-budgets/**",
+    "**/contract.ts",
+    "packages/basalt-ui/src/{ui,shell}/**",
+    "apps/marketing/**",
+    "packages/basalt-ui/src/lint/rule-table*",
+    "packages/basalt-ui/src/lint/rules/**",
+    "packages/basalt-ui/src/tokens/**",
+    "packages/basalt-ui/src/cli/**",
+    "package.json and bun.lock (v3-deps-w2 / v3-deps-ai added your pins)"
+  ],
+  "concept": "static-framework-free#10 issue 6",
+  "contract": "docs/v3/concepts/static-framework-free.md section 4.2 (rule table), 8 (P6, P7, F-S1); docs/v3/concepts/guardrails.md sections 5 and 6.",
+  "exemplar": "packages/basalt-ui/scripts/gen-oxlint.ts and configs/oxlint-plugin.test.ts (2.x generated preset, seeded fixtures per rule).",
+  "change": "Pins: stylelint 18.0.0 and postcss-html, added by v3-deps-w2; v3-sk-3's init writes them into a consumer. Preset: one generated config exported as basalt-ui/stylelint (the exports entry rel-7 allocated): exactly the ten core rules of static-framework-free 4.2 plus colour-as-decoration (status, brand, chart, seq roles and -tint barred from background*, border*, outline*, box-shadow; text, fill, stroke legal), the three report-*-disables options and postcss-html for .astro/.mdx style blocks. renderStylelintConfig({ ignoreFiles }) in src/lint/stylelint/render.ts returns the text of .stylelintrc.basalt.json; v3-sk-3 feeds it the manifest's tokens[].out paths (a field v3-sk-2 adds) through the presetFiles seam, so this row only reads the manifest type. Waiver form: stylelint-disable-next-line rule -- reason. Inline style= is check-tokens' job. Test: a seeded offender per bypass plus clean fixtures.",
+  "commits": "One PR, separate package and non-package commits (isolated-basalt-ui); conventional, empty scope, no attribution.",
+  "proof": "Stylelint Node API with the SHIPPED config; run it read-only over ~/SourceRoot/jkrumm.com/src and put per-rule counts in the PR (F-S1: over 15 percent legitimate means per-glob exemptions, never rule removal).",
+  "acceptance": [
+    "bun test packages/basalt-ui/src/lint/stylelint passes",
+    "Each seeded offender fires its rule: named colour, rgb(), oklch(), color-mix(in srgb, red ...), light-dark(), rem and calc() padding, raw border-radius, a --vx-brand declaration, a coloured border-left, background var(--vx-good-tint), !important, a viewport @media, [data-slot]",
+    "Clean fixtures yield 0 warnings: color-mix(in srgb, var(--vx-good) 10%, transparent), color: var(--vx-brand), fill: var(--vx-chart-1)",
+    "A <style> block in an .astro fixture is linted; a scan of 0 files fails",
+    "renderStylelintConfig with tokens[].out = src/styles/tokens.css lists it in ignoreFiles, and a hex inside that file is then not reported",
+    "make check exits 0"
+  ],
+  "out_of_scope": "doctor wiring (v3-sk-3a), the lint verb (v3-sk-4), oxlint rules, check-tokens, any consumer file.",
+  "test_layout": "Fixtures live in packages/basalt-ui/test/fixtures/**, hidden from root lint, fmt and bun test by v3-test-roots; runners in tests/** or src/**. Add no ignore lines."
+}

@@ -1,0 +1,24 @@
+{
+  "why": "Six wave 2 Issues each added their own dependency pin, so bun.lock and package.json sat in parallel owns and collided on rebase. One Issue per wave adds the pins up front; everything else stays off those files.",
+  "what": "Root package.json, packages/basalt-ui/package.json and bun.lock only: the wave 2 pins below, verified with npm view.",
+  "owns": ["package.json", "packages/basalt-ui/package.json", "bun.lock"],
+  "must_not_touch": [
+    "packages/basalt-ui/src/**",
+    "packages/basalt-ui/agent/**",
+    "apps/**",
+    "CHANGELOG.md"
+  ],
+  "concept": "guardrails#9; live-realtime#10; primitives-distribution#13; quality-contract#10",
+  "contract": "docs/v3/ARCHITECTURE.md 3 (zero required peers, everything optional unless ARCHITECTURE says regular). Versions come from the concept and DIRECTION rows, confirmed with npm view; a newer patch than named here is fine, record it in the PR.",
+  "exemplar": "v3-charts-bump (a pin change across package.json, bun.lock and consumers of the version string).",
+  "change": "Add exact pins: oxlint 1.93.0 (root devDependency); @shadcn/lint 0.2.5, stylelint 18.0.0 and postcss-html (each packages/basalt-ui devDependency and optional peer, peerDependenciesMeta optional); @tanstack/react-query 5.107.1 and react-day-picker 10.0.2 (devDependency plus optional peer); @axe-core/playwright 4.14.x (optional peer, devDependency). Run bun install; never hand-edit bun.lock. Owns no behaviour: v3-gr-1, v3-st-6, v3-live-1, v3-live-2, v3-prim-p6 and v3-qa-i4 use these pins and do not edit these files. A later wave's bumps go to its own deps Issue. Ships with: no rule; test = make check and pack-test still pass.",
+  "commits": "One chore commit for the two package.json files and bun.lock; conventional, empty scope, no attribution.",
+  "proof": "bun install --frozen-lockfile; make check.",
+  "acceptance": [
+    "jq -r '.devDependencies.oxlint' package.json prints 1.93.0",
+    "jq -r '.peerDependenciesMeta[\"@shadcn/lint\"].optional, .peerDependenciesMeta.stylelint.optional, .peerDependenciesMeta[\"@axe-core/playwright\"].optional' packages/basalt-ui/package.json prints true three times",
+    "bun install --frozen-lockfile exits 0",
+    "make check exits 0; pack-test still shows zero required peers added"
+  ],
+  "out_of_scope": "Any source change, ai and MDX dev dependencies (v3-deps-ai), dropping 2.x peers (v3-teardown-peers)."
+}

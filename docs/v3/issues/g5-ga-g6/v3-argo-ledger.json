@@ -1,0 +1,29 @@
+{
+  "why": "G5 exits on argo's friction ledger: each of the 234 rows needs one disposition so no 2.x defect is silently dropped or credited to the Mantine move. One lead cannot decide 234 rows: the ledger is four Issues, this one (checker, wiring, M and unbucketed rows) and one per remaining bucket.",
+  "what": "The checker, its wiring and the first rows: M (13) and the unbucketed 68, 73, 75 in docs/v3/acceptance/argo-friction-disposition/core.json (basalt-ui repo).",
+  "owns": [
+    "docs/v3/acceptance/argo-friction-disposition/core.json",
+    "packages/basalt-ui/scripts/check-test-ledger-argo*",
+    "packages/basalt-ui/scripts/fleet-status*"
+  ],
+  "shared_append_only": ["Makefile"],
+  "must_not_touch": [
+    "docs/v3/acceptance/argo-friction.md",
+    "packages/basalt-ui/scripts/check-test-ledger.ts (v3-mig-testing)",
+    "~/SourceRoot/argo and other consumer repos (read only: carried tests are located there)",
+    "CHANGELOG.md"
+  ],
+  "concept": "migration-release#6.5",
+  "contract": "docs/v3/concepts/migration-release.md 6.5. Source: docs/v3/acceptance/argo-friction.md (moved there by v3-slim-repo-docs, an ancestor). Bucket truth is that file's status column; consumer-argo.md counts (A 40, V 35, D 47) are an older tally: print the difference in the PR; the file wins. About 105 of the 234 rows come from other consumers (linewatch 40, weatherorb 32, rb 12, ...): a `carried` row names its test in `test_repo`. Defaults: M moot (subject gone; row 173 half: re-check). Open ids, each needing a non-empty `justification`: 119, 126, 130, 139, 140, 142, 148-151, 153-155, 157, 159, 161, 164, 166, 167, 214, 215, 217, 218, 221-234 (the ones in your bucket).",
+  "exemplar": "tools/migrate-v3/ledger/*.json and scripts/check-test-ledger.ts (v3-mig-testing).",
+  "change": "Row shape: {id, repo (the consumer the row came from), bucket, disposition: carried|moot|accepted, test? and test_repo? (default argo; basalt-ui for a basalt-ui test), rule? (a lint rule id), subject? (moot), reason? (accepted), justification? (open ids)}. check-test-ledger-argo reads the directory: ids unique, 1-234; carried needs test or rule; moot a subject; accepted a reason; an open id a justification. `--complete` also requires every id 1-234 present (names the missing ones). `--argo-root <dir>` and `--repo-root <repo>=<dir>` check each carried test path in its test_repo exists and each rule id is in the lint registry; without flags only the schema is checked. Wire the schema check into `make check` and the root check into `fleet-status --probe` for the argo row. Write core.json: M rows and 68, 73, 75. Rule: the script. Skill snippet: none. Moot and accepted rows are defaults; the owner verdict is v3-verdict-argo-ledger's.",
+  "commits": "One PR, separate package and non-package commits (isolated-basalt-ui); conventional, empty scope, no attribution; make sync-self its own commit.",
+  "proof": "Counts per disposition and bucket in the PR.",
+  "acceptance": [
+    "`bun packages/basalt-ui/scripts/check-test-ledger-argo.ts` exits 0 and prints 16 rows; `--complete` exits 1 and names the missing ids (this Issue lands before the other three)",
+    "seeded copies fail: a duplicate id, an id 235, a carried row without test or rule, a moot row without subject, an accepted row without reason, an open id without justification",
+    "`--argo-root ~/SourceRoot/argo` fails on a carried argo test path that does not exist (no pending state: every route Issue is an ancestor)",
+    "`make check` runs the schema check; `fleet-status.ts --probe` for the argo row runs the root check (stubbed in its test)"
+  ],
+  "out_of_scope": "Other buckets, fixing any argo defect, editing argo-friction.md, the owner verdict."
+}

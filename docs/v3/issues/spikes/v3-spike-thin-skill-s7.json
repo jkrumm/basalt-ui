@@ -1,0 +1,31 @@
+{
+  "why": "Until activation outside trial conditions passes (docs/v3/concepts/skills-agent-layer.md section 8 S7), nothing claims friction rows 135 and 224 are fixed.",
+  "what": "tools/spikes/thin-skill-s7/** (owner runbook, fixture copy of argo's workspace layout without consumer source, recorder) and docs/v3/spikes/thin-skill-s7.md. Reads the draft skill from tools/spikes/thin-skill/ (read only; needs v3-spike-thin-skill).",
+  "owns": ["tools/spikes/thin-skill-s7/**", "docs/v3/spikes/thin-skill-s7.md"],
+  "must_not_touch": [
+    "CHANGELOG.md",
+    "root package.json, bun.lock, .gitignore, .oxlintignore",
+    "docs/v3/{concepts,issues}/**, docs/v3/ARCHITECTURE.md",
+    "other tools/spikes/* folders",
+    "consumer repos (scratch copies live in the OS temp dir)"
+  ],
+  "concept": "docs/v3/concepts/skills-agent-layer.md section 8 S7",
+  "contract": "docs/v3/concepts/skills-agent-layer.md section 8 S7 is frozen; never headless `claude -p`; no model id in any file.",
+  "exemplar": "scripts/evidence/*.ts (one JSON result per run)",
+  "change": "One brief, four cells: (a) a session at the workspace root of the fixture layout; (b) a session started in apps/<app>; (c) an `implementer` without the Agent tool; (d) a fresh session asked to design a page with no src file read. The lead can run only (c), as the `implementer` role. (a), (b), (d) need a session started from a given cwd: ship the exact repro and a recorder; those cells stay `needs owner run` until the owner supplies the transcript summary. Record per cell: skill activated, reviewer activated (yes, no or not run) and, for (d), whether it found the table.",
+  "commits": "One non-package commit `chore: spike thin-skill-s7 harness and verdict`, empty scope, no attribution.",
+  "proof": "run.ts JSON plus the verdict doc; run twice, attach both outputs.",
+  "acceptance": [
+    "Doc table: one row per cell with `skill activated` and `reviewer activated` as yes, no or not run, and the exact owner repro for each pending cell",
+    "run.ts JSON has `s7` and `cells` (cell to yes|no|not run)",
+    "`bun tools/spikes/thin-skill-s7/run.ts` exits 0, prints one JSON object with the keys above (0 = harness ran, not hypothesis held)",
+    "docs/v3/spikes/thin-skill-s7.md has headings Question, Method, Measurements, Verdict, Then, Affects and the `verdict` lines",
+    "`find tools/spikes/thin-skill-s7 -name '*.test.*' -o -name '*.spec.*'` prints nothing",
+    "`git diff --name-only master...HEAD` lists only `owns` paths",
+    "`grep -rnE 'op://|\\.ts\\.net|192\\.168\\.|ghp_' tools/spikes/thin-skill-s7 docs/v3/spikes/thin-skill-s7.md` prints nothing",
+    "`make check` passes"
+  ],
+  "out_of_scope": "The S1 trial; building skills; edits to agent/**.",
+  "envelope": "Harness: tools/spikes/<dir>/ has its own package.json (exact pins); bun.lock and node_modules gitignored there (must_not_touch package.json and bun.lock = repo root only). Passes root oxlint; no *.test.* files; Chrome via the playwright-core pattern of packages/basalt-ui/tests/layout/harness.ts; docs/v3 on master before filing; synthetic data only, private repos as counts and hashed ids.",
+  "verdict": "Not binary: one doc line `S7: PASS`, `S7: REFUTED` or `S7: pending (needs owner run: <cells>)`; no `Verdict:` line. REFUTED when a run cell among (a)-(c) skips the skill or the reviewer, or (d) misses the table (then: move the content into the block, or route review to the factory lane). PASS only when all four ran and none refuted. run.ts prints `s7`."
+}

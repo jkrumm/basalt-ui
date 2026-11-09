@@ -1,0 +1,32 @@
+{
+  "why": "doctor must fail, never skip silently, on every wiring gap that disarms the guards: preset, hook, budget, weakened config, tokens, boot script.",
+  "what": "New: packages/basalt-ui/src/cli/doctor/** with co-located tests (twelve checks grouped into a few modules; over 15 files means signal). Outside owns: delete the 2.x src/cli/doctor.ts, doctor-upgrade.ts and their tests (tests/doctor.test.ts, doctor-upgrade.test.ts), and replace the doctor dispatch in src/cli/index.ts. Test trees are built in a temp dir by a helper inside doctor/ (manifest plus files; no init).",
+  "owns": ["packages/basalt-ui/src/cli/doctor/**"],
+  "must_not_touch": [
+    "CHANGELOG.md",
+    "packages/basalt-ui/{MIGRATING.md,llms.txt}",
+    "packages/basalt-ui/scripts/check-budgets/**",
+    "**/contract.ts",
+    "packages/basalt-ui/src/{ui,shell,charts,tokens}/**",
+    "apps/marketing/**",
+    "packages/basalt-ui/src/lint/{rules,preset*,rule-table*,stylelint}/**",
+    "packages/basalt-ui/src/cli/{init,sync,lint}/**",
+    "packages/basalt-ui/agent/**"
+  ],
+  "concept": "skills-agent-layer#10 issue 3",
+  "contract": "docs/v3/concepts/skills-agent-layer.md sections 4.3 (the twelve checks), 7; docs/v3/concepts/guardrails.md section 7. Check 11 calls checkWeakenedConfig from src/lint/weakened (v3-gr-5).",
+  "exemplar": "packages/basalt-ui/src/cli/doctor.ts and tests/doctor.test.ts (2.x).",
+  "change": "doctor runs checks 1-12 (section 4.3), each pass, fail or SKIPPED; SKIPPED exits non-zero. Check 4 (preset applied) includes .stylelintrc.basalt.json; 5 also needs stylelint to scan more than 0 css or astro files; 9 covers .stylelintrc.basalt.json; 10 runs tokens:css <flags> --out <out> --check for every manifest tokens[] entry; 11 reads .basalt/budget.json through readBudget and countBreaches (src/cli/budget, v3-sk-3b) and calls checkWeakenedConfig. Check 8 is black-box: it reads the registered hook command from settings.json, runs it and expects a seeded-offender finding from a subdirectory cwd; its tests use a stub hook.mjs fixture (the real shim is v3-sk-4's). Check 3 includes ai-major-parity (ai and @ai-sdk/react on one major); a doctor check verifies settings.jsx-a11y.components covers every ui/* export. Check 12: defaultErrorComponent, defaultNotFoundComponent and defaultPendingComponent for profile app, Register, autoCodeSplitting, notify without ToastHost, html lang, legacy [data-mantine-color-scheme], and a boot script, which is NOT required when <html> carries a literal data-theme (a hard-coded dark-only app). Prints where docs/ and llms.txt resolve. Unflip the .failing invariants naming this Issue. Rule: none. Skill snippet: none. Test: one failing and one passing case per check.",
+  "commits": "One PR, separate package and non-package commits (isolated-basalt-ui); conventional, empty scope, no attribution.",
+  "proof": "Temp-dir fixtures per profile.",
+  "acceptance": [
+    "bun test packages/basalt-ui/src/cli/doctor exits 0",
+    "Each of the 12 checks has one failing and one passing case; a check that cannot run exits non-zero as SKIPPED",
+    "Check 12 fails on a profile app tree missing any of the three route defaults and passes with them; a tree with a literal data-theme on <html> and no boot script passes the boot-script item",
+    "Check 10 fails when a tokens[] output has drifted by one byte",
+    "src/cli/doctor.ts is gone and basalt-ui doctor runs the v3 checks",
+    "make check exits 0",
+    "Check 3 fails when ai and @ai-sdk/react differ by major; the jsx-a11y map check fails when one ui/* export is missing"
+  ],
+  "out_of_scope": "init (v3-sk-3), the hook shim and settings.json merge (v3-sk-4), rule and skill text, the weakened-config function itself (v3-gr-5), 2.x doctor --from."
+}

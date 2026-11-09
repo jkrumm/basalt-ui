@@ -1,0 +1,39 @@
+{
+  "why": "'tokens needs no React, no Tailwind, 0 peers' and 'a static page and an argo page read the same five atoms' are claims until a frozen-install fixture and a one-look comparison prove them.",
+  "what": "Extends packages/basalt-ui/test/fixtures/tokens/** (fixture data created by v3-tok-t3-css) and adds the Chrome and frozen-install tests under packages/basalt-ui/tests/layout/one-look/** (new).",
+  "owns": [
+    "packages/basalt-ui/test/fixtures/tokens/**",
+    "packages/basalt-ui/tests/layout/one-look/**",
+    "packages/basalt-ui/docs/static-site.md"
+  ],
+  "must_not_touch": [
+    "CHANGELOG.md",
+    "packages/basalt-ui/{MIGRATING.md,llms.txt}",
+    "packages/basalt-ui/scripts/check-budgets/**",
+    "**/contract.ts",
+    "packages/basalt-ui/src/{ui,shell}/**",
+    "apps/marketing/**",
+    "packages/basalt-ui/src/tokens/**",
+    "packages/basalt-ui/src/css/**",
+    "packages/basalt-ui/src/lint/**",
+    "packages/basalt-ui/test/fixtures/bridge/**"
+  ],
+  "concept": "static-framework-free#10 issue 7",
+  "contract": "docs/v3/concepts/static-framework-free.md section 8 (P5-P9, U row) and section 10 DPO S1 and S4; docs/v3/concepts/tokens-visual.md section 8.",
+  "exemplar": "packages/basalt-ui/scripts/pack-test.sh ('tokens-only install is light') and tests/layout/harness/ (v3-layout-harness; ./harness still resolves).",
+  "change": "1) tokens install (runner tests/layout/one-look/tokens-install.layout.test.ts): pack the tarball, frozen-install it in a temp dir, assert exactly basalt-ui, clsx, cva, eventsource-parser and the three fonts with 0 peer warnings, zero JS files in the CSS graph, CSS bytes under a ceiling recorded as measured +5 percent, and a no-bundler HTML page importing the four entries; then run init's installer step for profile tokens and assert the only added top-level packages are the optional peers it writes (stylelint, postcss-html; transitive deps not counted). 2) one-look harness: render the tokens page and the bridge page, compare computed styles of the five atoms (surface roles, ink ramp, type ladder, radii, ring plus shadow) in both schemes. 3) P8 in Chrome: no attribute plus OS dark paints dark; an emulated OS flip re-resolves live; getComputedStyle(...).colorScheme is light or dark, never normal; themeScript default 'dark' with empty storage stamps dark whatever the OS says. 4) P9: cookie sf-color-scheme=dark with empty storage, late setScheme after a simulated bootUiPrefs, raw legacy key, throwing storage. 5) forced-colors and print emulation (no dark block under print). 6) docs/static-site.md (static-framework-free 4.1, DPO S3): install, the four CSS entries, tokens:css --out, copying the themeScript literal. Firefox and Safari are not run; the test header records them as unverified. Rule: none. Skill snippet: none.",
+  "commits": "One PR, separate package and non-package commits (isolated-basalt-ui); conventional, empty scope, no attribution.",
+  "proof": "bun test plus the Chrome harness; screenshots not required.",
+  "acceptance": [
+    "bun run test:layout runs tests/layout/one-look and passes in Chrome",
+    "The bare frozen install resolves exactly basalt-ui, clsx, cva, eventsource-parser and the three font packages, with 0 peer warnings; the init step adds only stylelint and postcss-html",
+    "The tokens page and the bridge page agree on every one-look atom in light and dark",
+    "The P8 cases pass in Chrome",
+    "The P9 cases pass, including the throwing-storage case",
+    "Printing emulation shows light values only",
+    "make check exits 0",
+    "docs/static-site.md exists and names the four CSS entries and tokens:css --out"
+  ],
+  "out_of_scope": "The zero-script Astro build (maxScripts 0, weatherorb / at G4), Firefox and Safari, the check-budgets wiring.",
+  "test_layout": "Every Chrome-driven or packed-install test lives in tests/layout/** (own bunfig without happy-dom, which breaks fetch; run by bun run test:layout), never in the fast unit loop. Fixture trees stay in test/fixtures/** (hidden from root lint and fmt by v3-test-roots)."
+}

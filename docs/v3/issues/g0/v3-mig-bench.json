@@ -1,0 +1,24 @@
+{
+  "why": "The first bench's 375/375 fidelity claim is void once the scales change. The layout codemod must be graded by four checks, not trusted.",
+  "what": "New, non-package: tools/migrate-v3/bench/** (bench, oracle generator, three more check subcommands, the committed oracle). One allowed edit outside owns: fill the dispatch table in tools/migrate-v3/run.ts (v3-mig-codemod's) with bench, valueshifts, classes-exist and lint-clean. If the subcommands plus oracle exceed 15 files or 1,500 lines, signal.",
+  "owns": ["tools/migrate-v3/bench/**"],
+  "must_not_touch": [
+    "packages/basalt-ui/**",
+    "CHANGELOG.md",
+    "tools/migrate-v3/{layout,imports,waivers,ledger}/**"
+  ],
+  "concept": "migration-release#7",
+  "contract": "docs/v3/concepts/migration-release.md section 7 (replacement proof 1-4), 3.2 (valueShifts); docs/v3/evidence/gap-migration-coexistence-and-consumer-testing.md Part 2 and section 2.1 (traps).",
+  "exemplar": "None in tree; packages/basalt-ui/tests/layout/harness/ for headless Chrome.",
+  "change": "bun tools/migrate-v3/run.ts bench: a 375-signature oracle (exact geometry and font-size) at 700, 1100 and 1300 px in headless Chrome. The oracle is generated once by tools/migrate-v3/bench/make-oracle.ts, which installs @mantine/core at the version in this repo's bun.lock into a mkdtemp directory outside the tree, measures, and commits the result compactly as tools/migrate-v3/bench/oracle.json. valueshifts: line-height and radius differences between before and after equal the tokens.valueShifts rows in migrations/areas/tokens.json, nothing else. classes-exist: every class the codemod emitted exists in the app's built CSS. lint-clean: runs basalt-ui lint on the output, any finding fails. Inline fixtures stand in for the rows and the lint verb in tests. Rule: none. Skill snippet: none.",
+  "commits": "One PR, rebase-merged: one non-package commit (tools/ only), conventional, empty scope, no attribution. Never edit CHANGELOG.md.",
+  "proof": "bench runs in headless Chrome; no consumer repo touched.",
+  "acceptance": [
+    "bun test tools/migrate-v3/bench passes",
+    "bun tools/migrate-v3/run.ts bench exits 0 and prints the signature count and 0 geometry mismatches against the committed oracle",
+    "valueshifts and classes-exist each have a failing and a passing fixture",
+    "lint-clean fails on a fixture with one finding and passes on a clean one",
+    "make check exits 0 at the repo root"
+  ],
+  "out_of_scope": "The codemod itself (v3-mig-codemod), editing a consumer, regenerating the oracle on every run."
+}

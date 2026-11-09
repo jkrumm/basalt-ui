@@ -1,0 +1,34 @@
+{
+  "why": "MDX sites (jkrumm.com, docs) need one component map that renders the same look and blocks //h links, without pulling the markdown peers.",
+  "what": "packages/basalt-ui/src/page/mdx*, docs/recipes/mdx.md, apps/playground/src/{recipes,scenarios}/mdx* and the two P9 tests.",
+  "owns": [
+    "packages/basalt-ui/src/page/mdx*",
+    "packages/basalt-ui/docs/recipes/mdx.md",
+    "apps/playground/src/{recipes,scenarios}/mdx*",
+    "packages/basalt-ui/tests/layout/mdx-tokens*"
+  ],
+  "shared_append_only": ["packages/basalt-ui/src/page/index.ts"],
+  "must_not_touch": [
+    "packages/basalt-ui/{MIGRATING.md,llms.txt,scripts/contract-pins.json,scripts/check-budgets/**,src/*/contract.ts,src/{ui,tokens,lint}/**,agent/**}",
+    "CHANGELOG.md",
+    "other lanes' folders",
+    "packages/basalt-ui/src/content/**",
+    "packages/basalt-ui/src/core/url*",
+    "packages/basalt-ui/src/page/{prose,callout,toc,article-layout}*",
+    "package.json and bun.lock (v3-deps-w2 / v3-deps-ai added your pins)"
+  ],
+  "concept": "ai-mdx#8 I7; #3 row 5 MDX; #7 P9; #10 exception 6",
+  "contract": "concept 3 (row 5), 4 (mdxComponents), 7 (P9); src/page/contract.ts. Entries sit on ui/alert, ui/tabs, ui/kbd and src/core/url; no ./content import. Frozen: never edit contract.ts or contract-pins.json; a needed change is a factory signal, then the reversible default.",
+  "exemplar": "No 2.x equivalent. Recipe format: docs/recipes/<name>.md is a // #region recipe:mdx of the compiled playground file plus at most 15 lines of prose (skills concept 3.16).",
+  "change": "mdxComponents: MDXComponents with 13 keys: h2, h3, h4 (anchors), a (url policy), table, blockquote (ui/alert), Callout (src/page/callout), Steps ({children}, an ol), Step ({title: string, children}, an li), Tabs ({defaultValue?, children}, ui/tabs), Tab ({value, label, children}), Figure ({caption?, children}), Kbd ({children}, ui/kbd); the pre: CodeBlock adapter is 3 lines in the recipe, not in the map. Recipe mdx.md and apps/playground/src/recipes/mdx.tsx compiled by the playground typecheck. P9 tokens half: the same MDX rendered as plain elements under .vx-prose only, no React map. Ships with: guarantee = a blocked //h link in the map and the untrusted-markdown rule forbidding mdx evaluate; teach = the recipe (bullets: v3-shell-i10-rules-rows); test = P9 both halves. The shot route is the playground scenario /scenarios/mdx. MDX is compiled with @mdx-js/mdx compile (devDependency of the playground only), the output written to a temp module and imported; never evaluate.",
+  "commits": "One PR, separate package and non-package commits (isolated-basalt-ui); conventional, empty scope, no attribution.",
+  "proof": "basalt-ui shot of /scenarios/mdx at 1800x1200 and 390x844, light and dark; at most 2 rounds.",
+  "acceptance": [
+    "P9 parts: a real MDX compile of a fixture using all 13 keys renders; the a entry with href '//h' emits no href; axe zero serious and critical",
+    "P9 tokens: in real Chrome the plain-element MDX page under .vx-prose has body 16px, line-height 1.7 and measure 72ch, equal to Prose article (tests/layout/mdx-tokens.layout.test.ts)",
+    "docs/recipes/mdx.md equals its generated region plus at most 15 prose lines (make gen-check passes)",
+    "src/page/mdx* imports no src/content and no react-markdown",
+    "bun pm ls shows @mdx-js/mdx only under apps/playground; src/page/index.ts gains mdxComponents only; make check passes"
+  ],
+  "out_of_scope": "Compiling MDX for consumers, jkrumm.com wiring (G0 row), Markdown, ai recipes, evaluate-based runtimes."
+}

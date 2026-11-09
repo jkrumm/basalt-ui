@@ -1,0 +1,39 @@
+{
+  "why": "ChartCard is the StatCard frame for charts; the tooltip must stay inside it and a failed series must read unavailable without redrawing the phase.",
+  "what": "packages/basalt-ui/src/charts/parts/{chart-card,tooltip,legend}*. Created here from 2.x ChartCard.tsx, legend.tsx and their tests.",
+  "owns": [
+    "packages/basalt-ui/src/charts/parts/{chart-card,tooltip,legend}*",
+    "packages/basalt-ui/tests/layout/{,fixture/}charts-card*",
+    "packages/basalt-ui/docs/chart-card.md",
+    "packages/basalt-ui/src/core/messages/charts.ts"
+  ],
+  "shared_append_only": [
+    "packages/basalt-ui/src/charts/index.ts",
+    "packages/basalt-ui/scripts/export-surface.json"
+  ],
+  "must_not_touch": [
+    "packages/basalt-ui/src/{ui,cards,controls,table,page,shell,content,ai,router,data,tokens,css,lint}/**, packages/basalt-ui/agent/**",
+    "packages/basalt-ui/src/charts/{core,host*}/**",
+    "packages/basalt-ui/src/charts/parts/{cartesian,lines,bars,sparkline,mini-bars}*",
+    "apps/playground/**",
+    "CHANGELOG.md, MIGRATING.md, llms.txt, scripts/check-budgets/**, other areas' migrations files",
+    "every contract.ts and src/core/ports.ts"
+  ],
+  "concept": "charts-cards-kanban#10",
+  "contract": "Frozen: ARCHITECTURE.md, this domain's contract.ts, src/core/ports.ts. Need a change: factory signal, take the reversible default. Read concepts/charts-cards-kanban.md sections 3, 4, 8, 9. ./charts reaches no Base UI and src/charts/host.tsx is the only importer of @tanstack/charts/react (import-boundary). Engine pin: tilde 1.5.x. check-dist-layering: the ChartCard closure has no @base-ui/react (card, skeleton, badge only). Strings: key charts.unavailable via useMessages, English default in your owned src/core/messages/charts.ts (qa-i2 seeds it). 2.x src/charts files outside the owned globs stay with their tests; nothing is deleted here.",
+  "exemplar": "src/cards/stat-card*, src/ui/{card,badge,skeleton}*, src/core/phase*. 2.x donors (stay): src/charts/ChartCard.tsx, chart-card-*.test.tsx, tooltip-legend-marks.test.tsx, quiet-tooltip.test.ts, w38-legend.test.tsx.",
+  "change": "ChartCard (figure {value,unit,delta,period,status}, footer FootFacts, controls, menu BoxSlot, height auto, short or fill as container classes, chart BoxSlot; second arm phase 'loading' without chart as the Suspense fallback), the tooltip surface (raised, rows as data with solid, dashed, dot, line swatches, one short date form, card-bounded via the core portal, showDelay 150 and hideDelay 100, click pins unless selection set), and the legend drawn by the chart so it is in server HTML, with series.failed reading unavailable and drawing nothing. Rule: none new. Skill: generated docs/chart-card.md. Tests: ported chart-card, tooltip and legend suites; phase matrix; slot at 2x height.",
+  "commits": "One PR, separate package and non-package commits (isolated-basalt-ui); conventional, empty scope, no attribution.",
+  "proof": "Layout and axe tests (tests/layout/charts-card*) on tests/layout/fixture/charts-card-fixture.tsx at 1440, 768, 390, 320. No shot here: the visual round is v3-playground-overview.",
+  "acceptance": [
+    "phase matrix: ChartCard heights equal across ready, loading, stale, error, empty; the chart slot is not called outside ready and stale",
+    "a chart slot rendered at 2x height inside the fixed clipping box does not move the card (layout)",
+    "tooltip stays inside the card on both axes and never covers first-point ticks (rows 204, 207, 217 cases ported)",
+    "series.failed shows 'unavailable' in the legend, draws nothing, and the phase stays ready",
+    "ported chart-card, tooltip-legend-marks and legend suites pass; SSR HTML contains the legend",
+    "check-dist-layering reports no @base-ui/react in the ChartCard closure",
+    "make check exits 0",
+    "git diff --name-only lists only owned paths"
+  ],
+  "out_of_scope": "CartesianChart kinds (charts-2), Sparkline (charts-3), Heatmap, BandStrip, two-pane recipe, codemods, DataPanel."
+}

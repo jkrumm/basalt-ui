@@ -1,0 +1,32 @@
+{
+  "repo": "jkrumm.com",
+  "why": "Prose specificity forced !important in Steps and Callout, and three scheme writers (boot script, ThemeToggle, __theme) diverge on key and value. Both end here, on the shipped prose and the one boot-script law.",
+  "what": "src/styles/global.css (the .prose block), layouts/BaseLayout.astro, components/{chrome/ThemeToggle.astro,seo/BaseHead.astro,content/**}, utils/chart-palette.ts. Profile tokens; v3-g0-jkrumm has landed the tokens.",
+  "owns": ["src/**"],
+  "must_not_touch": [
+    "deploy/**",
+    "scripts/**",
+    "public/**",
+    "Dockerfile",
+    "docs/**",
+    "src/content/**",
+    "package.json",
+    "bun.lock",
+    ".basalt/**"
+  ],
+  "concept": "static-framework-free#10 issue 8",
+  "contract": "Read-only in ~/SourceRoot/basalt-ui: docs/v3/concepts/static-framework-free.md 3 (rows 2, 4, 8), 4.1, 8 (P8, P9, F-S2), 10 (DPO S2, S4); evidence/consumer-jkrumm-com.md.",
+  "exemplar": "~/SourceRoot/basalt-ui/packages/basalt-ui/test/fixtures/tokens (head script and metas).",
+  "change": "1) Replace the .prose block (global.css 486-667) with .vx-prose; Callout and Steps need zero !important (F-S2). 2) BaseLayout's inline head script becomes ONE inline tag: themeScript({ key: 'basalt:scheme', default: 'auto' }) plus the existing html.js class, the ?__theme= override (scripts/shots.ts needs it) and the astro:after-swap re-apply. 3) ThemeToggle follows the same law as the boot script: key basalt:scheme, raw light|dark|auto, auto removes data-theme, storage in try/catch, no style.colorScheme write; window.__theme goes or wraps this one writer. jk-theme is dropped (stored choices reset once: say so in the PR). 4) theme-color: two static metas with media from src/lib/tokens.json canvas (BaseHead and BaseLayout). 5) chart-palette.ts reads tokens.json or var(), no literal hex. Count <script tags per page in dist/*.html before and after: none may rise (themeScript replaces the old inline script 1:1).",
+  "commits": "Per jkrumm.com: conventional commits, direct to master (ship via push), no attribution.",
+  "proof": "make check; after the push make verify exits 0.",
+  "acceptance": [
+    "make check exits 0",
+    "rg -n '!important' src/components/content prints nothing",
+    "rg -n 'jk-theme|style\\.colorScheme|#[0-9a-fA-F]{6}' src/layouts src/components/chrome src/utils/chart-palette.ts prints nothing",
+    "One inline head script remains in BaseLayout; per-page <script counts before and after are in the PR, none higher",
+    "In a built page, toggling to dark writes basalt:scheme=dark and data-theme=dark; toggling to auto removes the attribute (headless Chrome, static file server, no dev server)",
+    "make verify exits 0 after deploy"
+  ],
+  "out_of_scope": "Tokens and type (v3-g0-jkrumm), lint findings, previews, content, React or Tailwind."
+}

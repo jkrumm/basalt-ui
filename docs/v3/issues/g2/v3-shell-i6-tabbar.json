@@ -1,0 +1,29 @@
+{
+  "why": "Phone is a permanent bottom tab bar with a More surface, no mobile sidebar; the 864-line 2.x component is split into bar, surface and retap on projector rows.",
+  "what": "packages/basalt-ui/src/shell/parts/mobile/** with colocated unit tests; it replaces I5's stubs and keeps their TabBar export. Rows come from I3, never recomputed here.",
+  "owns": ["packages/basalt-ui/src/shell/parts/mobile/**"],
+  "must_not_touch": [
+    "packages/basalt-ui/{MIGRATING.md,llms.txt,scripts/contract-pins.json,scripts/check-budgets/**,src/*/contract.ts,src/{ui,tokens,lint}/**,agent/**}",
+    "CHANGELOG.md",
+    "other lanes' folders",
+    "packages/basalt-ui/src/shell/{core,app-shell*}",
+    "packages/basalt-ui/src/shell/parts/{grid,header,rail,a11y,print,mounts}*",
+    "packages/basalt-ui/src/page/**",
+    "packages/basalt-ui/src/router/**"
+  ],
+  "concept": "shell-nav-router#8 I6; #4 Phone invariants 14 to 19; #2 row Phone transformation",
+  "contract": "concept 2 (Phone), 4 (Phone rows), 8 (state lanes, keyboard); src/shell/contract.ts. Uses ui/sheet by specifier; the tab bar slot is shell-tab-bar. Frozen: never edit contract.ts or contract-pins.json; signal, then take the reversible default.",
+  "exemplar": "Port from 2.x src/shell/app-mobile-nav.tsx (864; test 900 lines, 28 tests) and app-mobile-nav.module.css; layout is tests/layout/shell-mobile-nav.layout.test.ts (12 cases, ported by I1).",
+  "change": "New src/shell/parts/mobile/{tab-bar,more-surface,retap}.tsx plus index. The More and filter surfaces are ui/sheet (no Menu and no @base-ui/react import: ui/menu has no collisionAvoidance pass-through, so a Menu need is a signal, spike S5 stays open); exclusivity by coverage (never two aria-current); max-height min(72dvh,560) with inner scroll and contain; retap scrolls first and suppresses only if moved; one rAF between the More surface closing and the filter sheet opening; hit floors 44, 44, 48 and a neutral pill behind the active icon; the bar owns the one bottom safe-area inset; last pixel sits above the bar. Short label is 10 chars or fewer by type. Ships with: guarantee = layout floors and exclusivity plus the hit-floor check (44 coarse, 24 fine); rule = no lint id; teach = JSDoc on the part props (rule bullets: v3-shell-i10-rules-rows); test = ported RTL suite and the 12 layout cases.",
+  "commits": "One PR, separate package and non-package commits (isolated-basalt-ui); conventional, empty scope, no attribution.",
+  "proof": "shell-mobile-nav layout at 390x844 and 1024; the shot of the More sheet is I5c's.",
+  "acceptance": [
+    "LAYOUT_TARGET=v3 shell-mobile-nav: all 12 cases pass and the printed skip count for that file is 0",
+    "Ported app-mobile-nav unit suite: executed count at the v2.29.1 tag (28 on master today), recorded in the PR, may not fall; all pass",
+    "More sheet at 390x844 never exceeds min(72dvh,560) and scrolls inside; asserted by a layout case",
+    "Tapping the active tab scrolls shell-main to top first; a second tap with no movement does not re-navigate",
+    "Every interactive tab-bar element measures at least 44 px (More row 48) under pointer coarse emulation",
+    "No 'mantine' or '@base-ui' string under src/shell/parts/mobile; make check passes"
+  ],
+  "out_of_scope": "Row computation (I3), the PageBar Filters (n) trigger, rail and header (I5b), playground and shots (I5c), iOS device checks M1 and S3 (owner rows, never filed), commands."
+}

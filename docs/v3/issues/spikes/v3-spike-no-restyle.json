@@ -1,0 +1,31 @@
+{
+  "why": "docs/v3/ARCHITECTURE.md section 4.1 (npm-default primitives, specifier `basalt-ui/ui/<name>`) holds only if `no-restyle` fires on that specifier. The basis is a source read of @shadcn/lint 0.2.5, never run; an earlier scratch run produced no findings.",
+  "what": "tools/spikes/no-restyle/** (scratch oxlint project, stub `basalt-ui` package exporting `ui/button`) and docs/v3/spikes/no-restyle.md. No packages/basalt-ui file: src/ui and src/lint come from prim-p1 and gr-1, which wait on this.",
+  "owns": ["tools/spikes/no-restyle/**", "docs/v3/spikes/no-restyle.md"],
+  "must_not_touch": [
+    "CHANGELOG.md",
+    "root package.json, bun.lock, .gitignore, .oxlintignore",
+    "docs/v3/{concepts,issues}/**, docs/v3/ARCHITECTURE.md",
+    "other tools/spikes/* folders",
+    "consumer repos (scratch copies live in the OS temp dir)"
+  ],
+  "concept": "docs/v3/concepts/guardrails.md section 13 S1; docs/v3/ARCHITECTURE.md section 4.1",
+  "contract": "docs/v3/ARCHITECTURE.md section 4.1 and docs/v3/concepts/guardrails.md section 13 S1 are frozen; REFUTED records its 'then' action, never applies it.",
+  "exemplar": "scripts/evidence/*.ts (one JSON result per run)",
+  "change": "Run the bought `no-restyle` (@shadcn/lint 0.2.5, oxlint 1.93.0 as guardrails.md section 4 targets; the earlier 1.90.0 run found nothing) with `componentImports` on `import { Button } from 'basalt-ui/ui/button'` carrying a `className` restyle, three ways: npm specifier via the spike's node_modules; a tsconfig `paths` eject mapping the same specifier to a local file; a valid file. Fixtures are *.fixture.txt that run.ts copies to an OS temp dir as .tsx. Positive control: a rule known to fire on the same file (seed `typescript/no-explicit-any`). If the npm specifier fails, record whether `settings.shadcn.ui` fixes it and the size of an own specifier-keyed rule (about 60 lines, not built). Feeds v3-gr-1-rule-table, v3-prim-p1-core.",
+  "commits": "One non-package commit `chore: spike no-restyle harness and verdict`, empty scope, no attribution.",
+  "proof": "run.ts JSON plus the verdict doc; run twice, attach both outputs.",
+  "acceptance": [
+    "run.ts JSON has `npmSpecifier`, `pathsEject`, `valid`, `positiveControl`, each `fired` or `silent`, plus the deny text",
+    "Then states whether Contract 4.1 holds and, when REFUTED, names `settings.shadcn.ui` or the own-rule size",
+    "`bun tools/spikes/no-restyle/run.ts` exits 0, prints one JSON object with the keys above (0 = harness ran, not hypothesis held)",
+    "docs/v3/spikes/no-restyle.md has headings Question, Method, Measurements, Verdict, Then, Affects and the `verdict` lines",
+    "`find tools/spikes/no-restyle -name '*.test.*' -o -name '*.spec.*'` prints nothing",
+    "`git diff --name-only master...HEAD` lists only `owns` paths",
+    "`grep -rnE 'op://|\\.ts\\.net|192\\.168\\.|ghp_' tools/spikes/no-restyle docs/v3/spikes/no-restyle.md` prints nothing",
+    "`make check` passes"
+  ],
+  "out_of_scope": "The real `no-restyle` entry in src/lint; editing contract 4.1; any registry.",
+  "envelope": "Harness: tools/spikes/<dir>/ has its own package.json (exact pins); bun.lock and node_modules gitignored there (must_not_touch package.json and bun.lock = repo root only). Passes root oxlint; no *.test.* files; Chrome via the playwright-core pattern of packages/basalt-ui/tests/layout/harness.ts; docs/v3 on master before filing; synthetic data only, private repos as counts and hashed ids.",
+  "verdict": "`Verdict: PASS` only when `npmSpecifier` and `pathsEject` are `fired` with the deny message recorded and `valid` is `silent`; else `Verdict: REFUTED`; run.ts `verdict` pass|refuted by the same rule. A `silent` `positiveControl` voids the run: exit 1, no verdict."
+}
