@@ -82,6 +82,7 @@ jobs:
           fi
           echo "==> driving $("$CHROME" --version)"
           bun run test:layout
+          bun run test:layout:harness
 
       - name: Theme guard (dogfood check-theme on basalt's own src)
         working-directory: packages/basalt-ui
