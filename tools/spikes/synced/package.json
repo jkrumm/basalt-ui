@@ -1,0 +1,12 @@
+{
+  "name": "@basalt-ui/spike-synced",
+  "private": true,
+  "description": "Spike 620: can one createSyncedState core serve argo's gym flow and epos's settings flow with only a transport each (S1). Throwaway harness, no tests.",
+  "type": "module",
+  "scripts": {
+    "run": "bun run.ts"
+  },
+  "dependencies": {
+    "playwright-core": "1.63.0"
+  }
+}
