@@ -4,7 +4,7 @@ import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { spawnSync } from 'node:child_process'
 import type { CiRun, GuardPorts } from './merge-guard'
-import { evaluate, masterRed, realPorts } from './merge-guard'
+import { evaluate, headNotGreen, realPorts } from './merge-guard'
 
 const green: CiRun = {
   status: 'completed',
@@ -12,6 +12,7 @@ const green: CiRun = {
   url: 'https://example.com/green',
 }
 const red: CiRun = { status: 'completed', conclusion: 'failure', url: 'https://example.com/red' }
+const cancelled: CiRun = { ...red, conclusion: 'cancelled' }
 const running: CiRun = { status: 'in_progress', conclusion: '', url: 'https://example.com/running' }
 
 let root: string
@@ -80,27 +81,38 @@ describe('evaluate', () => {
     expect(refusals[0]).toContain('generated files are stale')
   })
 
-  test('refuses on a seeded red run', () => {
+  test('refuses when the PR CI run for HEAD is red', () => {
     const refusals = evaluate(ports({ ciRuns: () => [red, green] }))
     expect(refusals).toHaveLength(1)
     expect(refusals[0]).toContain('failure')
+  })
+
+  test('refuses while the PR CI run for HEAD is in progress', () => {
+    expect(evaluate(ports({ ciRuns: () => [running, green] }))[0]).toContain('still in_progress')
+  })
+
+  test('refuses when HEAD has no PR CI run', () => {
+    expect(evaluate(ports({ ciRuns: () => [] }))[0]).toContain('no PR CI run for HEAD')
   })
 
   test('refuses when the runs cannot be read', () => {
     expect(evaluate(ports({ ciRuns: () => null }))[0]).toContain('cannot be read')
   })
 
-  test('does not refuse while the latest run is in progress', () => {
-    expect(evaluate(ports({ ciRuns: () => [running, green] }))).toEqual([])
+  test('asks for the runs of the exact HEAD commit', () => {
+    const asked: string[] = []
+    evaluate(ports({ ciRuns: (sha) => (asked.push(sha), [green]) }))
+    expect(asked).toEqual([realPorts(work).git(['rev-parse', 'HEAD']) ?? ''])
   })
 })
 
-describe('masterRed', () => {
-  test('an in-progress run is skipped, the last finished red one still refuses', () => {
-    expect(masterRed([running, red])).toContain('failure')
+describe('headNotGreen', () => {
+  test('a cancelled run is skipped for the run before it', () => {
+    expect(headNotGreen('abc', [cancelled, green])).toBeNull()
+    expect(headNotGreen('abc', [cancelled, red])).toContain('failure')
   })
 
-  test('cancelled runs are skipped', () => {
-    expect(masterRed([{ ...red, conclusion: 'cancelled' }, green])).toBeNull()
+  test('only cancelled runs count as no run', () => {
+    expect(headNotGreen('abc', [cancelled])).toContain('no PR CI run')
   })
 })

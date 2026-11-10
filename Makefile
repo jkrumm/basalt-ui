@@ -78,5 +78,5 @@ sync-self: ## Install basalt-ui's own shipped rules + skills into this repo's /.
 	@bun packages/basalt-ui/scripts/sync-self.ts
 
 # A lead runs this right before it merges its pull request: rebased on origin/master, generated files in sync, master's last finished CI run not red.
-merge-guard: ## Refuse unless the branch contains origin/master, generated files are in sync and master's last finished CI run is green
+merge-guard: ## Refuse unless the branch contains origin/master, generated files are in sync and PR CI is green for HEAD
 	@bun scripts/merge-guard.ts
