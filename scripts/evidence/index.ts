@@ -1,7 +1,7 @@
 /* oxlint-disable no-console -- CLI entry point: progress and failures go to the terminal */
 /**
  * `make evidence` — build (or take) a playground dist, serve it, run every lane, write
- * `.evidence/<label>/<lane>.json` (gitignored) and the committed `docs/waves/evidence/w2/<label>.md`.
+ * `.evidence/<label>/<lane>.json` (gitignored) and the summary `.evidence/summaries/<label>.md` (gitignored).
  *
  *   bun scripts/evidence/index.ts --label <label> [--dist <dir>] [--routes <file>]
  *                               [--lanes a,b]   (default: all)
@@ -203,7 +203,7 @@ async function main(): Promise<number> {
     server.stop()
   }
 
-  const summaryDir = join(ROOT, 'docs/waves/evidence/w2')
+  const summaryDir = join(ROOT, '.evidence/summaries')
   await mkdir(summaryDir, { recursive: true })
   // A subset run must never overwrite the full `<label>.md`: it lands beside it as `<label>.<a+b>.md`.
   const partial = lanes.length < LANES.length

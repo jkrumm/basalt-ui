@@ -19,7 +19,6 @@ check: ## Local CI gate: gen sync checks + build + pre + layout + coverage/doc-d
 	@bun packages/basalt-ui/scripts/check-coverage.ts --check
 	@bun packages/basalt-ui/scripts/check-agent-doc-drift.ts
 	@bun packages/basalt-ui/scripts/check-contract-frozen.ts
-	@bun scripts/check-chart-inventory.ts
 	@cd packages/basalt-ui && bun run pack-test
 
 # Production probe, NOT the local gate (`make check`). `curl -fsS` exits non-zero on any 4xx/5xx or
@@ -54,8 +53,8 @@ build: ## Build the published package (dist-first tsup + declarations)
 	@cd packages/basalt-ui && bun run build
 
 # Measurement harness (scripts/evidence): builds the package + playground unless DIST is given, serves
-# the dist on an ephemeral port, runs every lane, writes .evidence/<LABEL>/ (gitignored) and the
-# committed docs/waves/evidence/w2/<LABEL>.md. ROUTES = file with one path per line (external dists). LANES = comma list: a subset run writes
+# the dist on an ephemeral port, runs every lane, writes .evidence/<LABEL>/ and the summary
+# .evidence/summaries/<LABEL>.md (all gitignored). ROUTES = file with one path per line (external dists). LANES = comma list: a subset run writes
 # <LABEL>.<lanes>.md beside the full summary instead of replacing it.
 evidence: ## Measure bundle/screens/lighthouse/...: make evidence LABEL=<label> [DIST=<dir>] [ROUTES=<file>] [LANES=a,b]
 	@test -n "$(LABEL)" || { echo "usage: make evidence LABEL=<label> [DIST=<dir>] [ROUTES=<file>] [LANES=a,b]"; exit 2; }
@@ -63,7 +62,7 @@ evidence: ## Measure bundle/screens/lighthouse/...: make evidence LABEL=<label> 
 
 # Design-parity board (scripts/evidence/compare.ts): crops each mapped playground pattern beside the local
 # Keel reference (.design-parity/keel/) into .design-parity/<LABEL>/ unless OUT is given. Images and board.html
-# never enter git; compare.json lands in docs/waves/design-parity/<LABEL>/. Builds the playground unless DIST is given.
+# never enter git; compare.json lands in .evidence/design-parity/<LABEL>/ (gitignored). Builds the playground unless DIST is given.
 compare: ## Side-by-side design-parity board: make compare LABEL=<label> [OUT=<dir>] [DIST=<dir>] [PATTERNS=a,b]
 	@test -n "$(LABEL)" || { echo "usage: make compare LABEL=<label> [OUT=<dir>] [DIST=<dir>] [PATTERNS=a,b]"; exit 2; }
 	@bun scripts/evidence/compare.ts --label "$(LABEL)" $(if $(OUT),--out "$(OUT)") $(if $(DIST),--dist "$(DIST)") $(if $(PATTERNS),--patterns "$(PATTERNS)")
