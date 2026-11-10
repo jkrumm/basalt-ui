@@ -6,6 +6,7 @@
 import { readFileSync } from 'node:fs'
 import { join } from 'node:path'
 
+import { readShards } from '../export-surface-shards.mjs'
 import type { Manifest, Surface } from '../surface-gates'
 
 export const PKG_ROOT = join(import.meta.dir, '..', '..')
@@ -85,7 +86,7 @@ export function totalLines(paths: readonly string[]): number {
 }
 
 export function readSurface(): Surface {
-  return JSON.parse(readFileSync(join(PKG_ROOT, 'scripts/export-surface.json'), 'utf8')) as Surface
+  return readShards(join(PKG_ROOT, 'scripts/export-surface'))
 }
 
 export function readManifest(): Manifest {

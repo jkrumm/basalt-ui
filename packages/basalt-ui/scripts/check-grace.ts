@@ -21,7 +21,7 @@
  * with the tests: `since` before `promote`, ledger ↔ shipped-preset severity, a written `why`, and a
  * live deprecation row dated at least one minor out.
  *
- * "Still ships" reads `scripts/export-surface.json` — the snapshot `make check` pins to the built
+ * "Still ships" reads the `scripts/export-surface/` shards — the snapshot `make check` pins to the built
  * dist — for an import row. A prop row has no snapshot to read, so it counts as shipped until the
  * row says `removed: true`; a `removed` import row that is still in the snapshot is refused too.
  *
@@ -29,9 +29,9 @@
  *
  * Usage: bun packages/basalt-ui/scripts/check-grace.ts <version>
  */
-import { readFileSync } from 'node:fs'
 import { resolve } from 'node:path'
 // oxlint-disable-next-line -- the plugin is plain JS; the ledgers are named exports beside it
+import { readShards } from './export-surface-shards.mjs'
 import { PLUGIN_RULE_GRACE } from '../configs/oxlint-plugin.js'
 import { GRACE_PERIOD_KINDS } from '../src/guard/index'
 
@@ -43,7 +43,7 @@ type DeprecationRow = {
   removeIn: string
   removed?: true
 }
-/** Published subpath (`.`, `./tokens`, …) → value export names, as `export-surface.json` holds. */
+/** Published subpath (`.`, `./tokens`, …) → value export names, as the export-surface shards hold. */
 type ExportSurface = Record<string, readonly string[]>
 
 /** Numeric per-component compare, so `1.9.0 < 1.10.0` — a string compare gets that backwards. */
@@ -114,9 +114,7 @@ function main(): void {
   }
   // 2.0.0 ships no deprecations (V2-SPEC § 3): the ledger is gone, the check stays for the first 2.x one.
   const deprecations: readonly DeprecationRow[] = []
-  const surface = JSON.parse(
-    readFileSync(resolve(import.meta.dirname, 'export-surface.json'), 'utf8'),
-  ) as ExportSurface
+  const surface: ExportSurface = readShards(resolve(import.meta.dirname, 'export-surface'))
   const blockers = findReleaseBlockers({ version, grace, deprecations, surface })
 
   if (blockers.length > 0) {

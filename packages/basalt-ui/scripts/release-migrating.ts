@@ -15,6 +15,7 @@
 import { createHash } from 'node:crypto'
 import { existsSync, readdirSync, readFileSync, writeFileSync } from 'node:fs'
 import { join } from 'node:path'
+import { parseShards, readShards } from './export-surface-shards.mjs'
 
 const defaultRoot = join(import.meta.dirname, '..', '..', '..')
 const root = process.env.RELEASE_MIGRATING_ROOT ?? defaultRoot
@@ -358,13 +359,29 @@ export function previousTag(rootDir: string, version: string): string | undefine
   return listing.split('\n').find((tag) => /^v\d+\.\d+\.\d+$/.test(tag) && tag !== `v${version}`)
 }
 
-const SURFACE_PATH = 'packages/basalt-ui/scripts/export-surface.json'
+const SURFACE_DIR = 'packages/basalt-ui/scripts/export-surface'
+/** The pre-shard single-file snapshot, still what a tag from before the shard split carries. */
+const LEGACY_SURFACE_PATH = 'packages/basalt-ui/scripts/export-surface.json'
 const VX_PATH = 'packages/basalt-ui/src/guard/vx-names.ts'
 
+/** The surface a tag shipped: its shards, or the single-file snapshot of a pre-shard tag. */
+function surfaceAtTag(rootDir: string, tag: string): Surface {
+  const listing = git(rootDir, ['ls-tree', '--name-only', tag, `${SURFACE_DIR}/`])
+  const files = listing
+    .split('\n')
+    .filter((path) => path.endsWith('.json'))
+    .map((path): [string, string] => [
+      path.slice(SURFACE_DIR.length + 1),
+      git(rootDir, ['show', `${tag}:${path}`]),
+    ])
+  if (files.length > 0) return parseShards(files)
+  return JSON.parse(git(rootDir, ['show', `${tag}:${LEGACY_SURFACE_PATH}`])) as Surface
+}
+
 function runGate(rootDir: string, tag: string, merged: Content): void {
-  const prevSurface = JSON.parse(git(rootDir, ['show', `${tag}:${SURFACE_PATH}`])) as Surface
+  const prevSurface = surfaceAtTag(rootDir, tag)
   const prevVx = parseVxNames(git(rootDir, ['show', `${tag}:${VX_PATH}`]))
-  const nowSurface = JSON.parse(readFileSync(join(rootDir, SURFACE_PATH), 'utf8')) as Surface
+  const nowSurface: Surface = readShards(join(rootDir, SURFACE_DIR))
   const nowVx = parseVxNames(readFileSync(join(rootDir, VX_PATH), 'utf8'))
   const uncovered = findUncovered(prevSurface, nowSurface, prevVx, nowVx, merged)
   if (uncovered.length > 0) {

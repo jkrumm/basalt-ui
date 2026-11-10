@@ -2,6 +2,7 @@ import { describe, expect, test } from 'bun:test'
 import { readFileSync } from 'node:fs'
 import { join } from 'node:path'
 import ts from 'typescript'
+import { readShards } from './export-surface-shards.mjs'
 import { generateLlmsTxt, outPath } from './gen-llms'
 import {
   MAX_LITERAL_MAP_KEYS,
@@ -17,9 +18,7 @@ import {
 } from './llms-signatures'
 
 const text = generateLlmsTxt()
-const surface = JSON.parse(
-  readFileSync(join(import.meta.dir, 'export-surface.json'), 'utf8'),
-) as Record<string, string[]>
+const surface = readShards(join(import.meta.dir, 'export-surface'))
 
 /** The `Signature:` names listed under one `## basalt-ui/<sub>` heading. */
 function signatureNames(subpath: string): string[] {
