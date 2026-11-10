@@ -1,0 +1,2794 @@
+{
+  "spike": "allow-padding (623)",
+  "seed": 42,
+  "assumptions": [
+    "weight-body/medium/strong = 400/500/600 (font-normal/medium/semibold); other weights denied.",
+    "Mantine emit is applied to ALL candidate sites (denial depends on the emitted class); the sample is drawn from the denied ones.",
+    "Arbitrary text sizes: [Nem] = N*16 px; %, vh, vw, calc/clamp/min/max and other [length:..] are unclear (px null, counts as need); colours, var(..) and [length:var(..)] text-[..] (token references) are ignored.",
+    "Spacing: fractions (w-1/2) and any spacing class with a /modifier are outside the namespace; keyword values are outside; arbitrary [..] and (--x) are denied, including on max-w/max-h.",
+    "F5P counts every padding class token with a numeric, px, arbitrary or (--x) value as a padding-form site, allowed steps included; the rubric then judges its px.",
+    "Negative spacing is judged on its magnitude.",
+    "offStepPct = share of sampled sites whose reason is not equals-allowed.",
+    "Mantine candidate props apply to every JSX element; Mantine string values without a unit are read as px.",
+    "S2 runs on source text only (Mantine emitted classes are not part of S2); hex-like strings such as \"#add\" count as colour literals unless a stated FP predicate applies.",
+    "Measured forms: 54 of the 59 the concept books (5 not measurable standalone)."
+  ],
+  "rubric": "A denied site is \"genuine need\" iff its px value equals NO allowed value and the nearest allowed step is MORE than one rung away; otherwise \"no need\"; px = null (\"unclear\") counts as need. Allowed values: spacing = multiples of 4 plus 2,6,10,14; type {11,12,13,15,16,18,30}; weight {400,500,600}. For v not allowed: lo/hi = adjacent allowed neighbours, dist = distance to the nearer one, rung = hi-lo of those neighbours. Inside the ladder dist <= rung/2 so it is never over one rung (no need). Beyond an end of a bounded ladder (type <11 or >30, weight <400 or >600): rung = gap of the two outermost steps on that side (type low 11->12 = 1, type high 18->30 = 12, weight 100 both ends); need iff dist > rung. Spacing is unbounded above and floors at 0. Reason per site: equals-allowed | within-rung | beyond-end | unclear.",
+  "repos": {
+    "console": {
+      "visibility": "public",
+      "head": "257c5e5"
+    },
+    "epos": {
+      "visibility": "counts-only"
+    },
+    "linewatch": {
+      "visibility": "public",
+      "head": "055ebdf"
+    },
+    "argo": {
+      "visibility": "public",
+      "head": "f5c49ca6"
+    }
+  },
+  "scanned": {
+    "console": {
+      "files": 97,
+      "tsxFiles": 64,
+      "tsxLines": 7903
+    },
+    "epos": {
+      "files": 532,
+      "tsxFiles": 291,
+      "tsxLines": 37990
+    },
+    "linewatch": {
+      "files": 55,
+      "tsxFiles": 26,
+      "tsxLines": 6446
+    },
+    "argo": {
+      "files": 326,
+      "tsxFiles": 167,
+      "tsxLines": 26975
+    }
+  },
+  "f5": {
+    "deniedTotal": 323,
+    "sampled": 100,
+    "genuineNeed": 34,
+    "genuineNeedPct": 34,
+    "waiversPer300Lines": 0.42,
+    "offStepPct": 89,
+    "reasons": {
+      "equals-allowed": 11,
+      "within-rung": 49,
+      "beyond-end": 8,
+      "unclear": 32
+    },
+    "byRepo": {
+      "console": {
+        "deniedTotal": 40,
+        "sampled": 11,
+        "genuineNeed": 5
+      },
+      "epos": {
+        "deniedTotal": 195,
+        "sampled": 61,
+        "genuineNeed": 10
+      },
+      "linewatch": {
+        "deniedTotal": 15,
+        "sampled": 3,
+        "genuineNeed": 2
+      },
+      "argo": {
+        "deniedTotal": 73,
+        "sampled": 25,
+        "genuineNeed": 17
+      }
+    },
+    "sites": [
+      {
+        "repo": "console",
+        "file": "apps/console/src/components/issue/overview.tsx",
+        "line": 241,
+        "class": "max-w-[75ch]",
+        "px": null,
+        "verdict": "need",
+        "reason": "unclear"
+      },
+      {
+        "repo": "argo",
+        "file": "apps/dashboard/src/features/strength-tracker/components/set-editor.tsx",
+        "line": 371,
+        "class": "w-6.5",
+        "px": 26,
+        "verdict": "no need",
+        "reason": "within-rung"
+      },
+      {
+        "repo": "console",
+        "file": "apps/console/src/components/issue/evidence.tsx",
+        "line": 29,
+        "class": "max-w-[75ch]",
+        "px": null,
+        "verdict": "need",
+        "reason": "unclear"
+      },
+      {
+        "repo": "console",
+        "file": "apps/console/src/components/issue/header.tsx",
+        "line": 34,
+        "class": "max-w-[75ch]",
+        "px": null,
+        "verdict": "need",
+        "reason": "unclear"
+      },
+      {
+        "repo": "argo",
+        "file": "apps/dashboard/src/features/strength-tracker/hero-stats.tsx",
+        "line": 128,
+        "class": "h-[100%]",
+        "px": null,
+        "verdict": "need",
+        "reason": "unclear"
+      },
+      {
+        "repo": "argo",
+        "file": "apps/dashboard/src/features/reading/book-parts.tsx",
+        "line": 14,
+        "class": "h-[dynamic]",
+        "px": null,
+        "verdict": "need",
+        "reason": "unclear"
+      },
+      {
+        "repo": "linewatch",
+        "file": "web/src/components/coverage-callout.tsx",
+        "line": 81,
+        "class": "w-[100%]",
+        "px": null,
+        "verdict": "need",
+        "reason": "unclear"
+      },
+      {
+        "repo": "console",
+        "file": "apps/console/src/components/issue/overview.tsx",
+        "line": 181,
+        "class": "max-w-[75ch]",
+        "px": null,
+        "verdict": "need",
+        "reason": "unclear"
+      },
+      {
+        "repo": "argo",
+        "file": "apps/dashboard/src/features/models/catalog-table.tsx",
+        "line": 51,
+        "class": "font-bold",
+        "px": 700,
+        "verdict": "no need",
+        "reason": "beyond-end"
+      },
+      {
+        "repo": "console",
+        "file": "apps/console/src/components/issue/checkpoints.tsx",
+        "line": 123,
+        "class": "max-w-[75ch]",
+        "px": null,
+        "verdict": "need",
+        "reason": "unclear"
+      },
+      {
+        "repo": "argo",
+        "file": "apps/dashboard/src/features/calendar/agenda-parts.tsx",
+        "line": 314,
+        "class": "gap-[dynamic]",
+        "px": null,
+        "verdict": "need",
+        "reason": "unclear"
+      },
+      {
+        "repo": "console",
+        "file": "apps/console/src/routes/artifacts.$id.tsx",
+        "line": 84,
+        "class": "lg:min-h-[40rem]",
+        "px": 640,
+        "verdict": "no need",
+        "reason": "equals-allowed"
+      },
+      {
+        "repo": "argo",
+        "file": "apps/dashboard/src/features/strength-tracker/components/set-editor.tsx",
+        "line": 195,
+        "class": "w-6.5",
+        "px": 26,
+        "verdict": "no need",
+        "reason": "within-rung"
+      },
+      {
+        "repo": "console",
+        "file": "apps/console/src/components/needs/since-band.tsx",
+        "line": 49,
+        "class": "text-2xl",
+        "px": 24,
+        "verdict": "no need",
+        "reason": "within-rung"
+      },
+      {
+        "repo": "argo",
+        "file": "apps/dashboard/src/features/strength-tracker/components/timer-card.tsx",
+        "line": 157,
+        "class": "w-[100%]",
+        "px": null,
+        "verdict": "need",
+        "reason": "unclear"
+      },
+      {
+        "repo": "linewatch",
+        "file": "web/src/components/vantage-card.tsx",
+        "line": 71,
+        "class": "h-22.5",
+        "px": 90,
+        "verdict": "no need",
+        "reason": "within-rung"
+      },
+      {
+        "repo": "argo",
+        "file": "apps/dashboard/src/features/astro-window/components/site-map.tsx",
+        "line": 1171,
+        "class": "w-[dynamic]",
+        "px": null,
+        "verdict": "need",
+        "reason": "unclear"
+      },
+      {
+        "repo": "console",
+        "file": "apps/console/src/components/strip/counts.tsx",
+        "line": 34,
+        "class": "text-[13px]",
+        "px": 13,
+        "verdict": "no need",
+        "reason": "equals-allowed"
+      },
+      {
+        "repo": "argo",
+        "file": "apps/dashboard/src/features/strength-tracker/overview.tsx",
+        "line": 146,
+        "class": "text-md/[1.35]",
+        "px": 15,
+        "verdict": "no need",
+        "reason": "equals-allowed"
+      },
+      {
+        "repo": "console",
+        "file": "apps/console/src/routes/flow.tsx",
+        "line": 258,
+        "class": "min-h-[28rem]",
+        "px": 448,
+        "verdict": "no need",
+        "reason": "equals-allowed"
+      },
+      {
+        "repo": "argo",
+        "file": "apps/dashboard/src/features/usage-tracking/split-lists.tsx",
+        "line": 313,
+        "class": "w-[dynamic]",
+        "px": null,
+        "verdict": "need",
+        "reason": "unclear"
+      },
+      {
+        "repo": "console",
+        "file": "apps/console/src/components/kit/chart-frame.tsx",
+        "line": 46,
+        "class": "text-[13px]",
+        "px": 13,
+        "verdict": "no need",
+        "reason": "equals-allowed"
+      },
+      {
+        "repo": "argo",
+        "file": "apps/dashboard/src/features/strength-tracker/components/gym-settings-modal.tsx",
+        "line": 477,
+        "class": "w-37.5",
+        "px": 150,
+        "verdict": "no need",
+        "reason": "within-rung"
+      },
+      {
+        "repo": "argo",
+        "file": "apps/dashboard/src/features/astro-window/components/scout-panel.tsx",
+        "line": 70,
+        "class": "w-[fit-content]",
+        "px": null,
+        "verdict": "need",
+        "reason": "unclear"
+      },
+      {
+        "repo": "argo",
+        "file": "apps/dashboard/src/features/m365-explorer/strip.tsx",
+        "line": 55,
+        "class": "h-5.5",
+        "px": 22,
+        "verdict": "no need",
+        "reason": "within-rung"
+      },
+      {
+        "repo": "argo",
+        "file": "apps/dashboard/src/features/strength-tracker/components/timer-card.tsx",
+        "line": 492,
+        "class": "w-52.5",
+        "px": 210,
+        "verdict": "no need",
+        "reason": "within-rung"
+      },
+      {
+        "repo": "argo",
+        "file": "apps/dashboard/src/features/usage-tracking/flow-parts.tsx",
+        "line": 145,
+        "class": "h-[dynamic]",
+        "px": null,
+        "verdict": "need",
+        "reason": "unclear"
+      },
+      {
+        "repo": "argo",
+        "file": "apps/dashboard/src/components/upstream/decision-card.tsx",
+        "line": 162,
+        "class": "w-[fit-content]",
+        "px": null,
+        "verdict": "need",
+        "reason": "unclear"
+      },
+      {
+        "repo": "argo",
+        "file": "apps/dashboard/src/features/m365-explorer/source-list.tsx",
+        "line": 217,
+        "class": "w-[60%]",
+        "px": null,
+        "verdict": "need",
+        "reason": "unclear"
+      },
+      {
+        "repo": "console",
+        "file": "apps/console/src/components/kit/step-rail.tsx",
+        "line": 62,
+        "class": "w-[5.5rem]",
+        "px": 88,
+        "verdict": "no need",
+        "reason": "equals-allowed"
+      },
+      {
+        "repo": "argo",
+        "file": "apps/dashboard/src/features/strength-tracker/charts/alignment-matrix-chart.tsx",
+        "line": 127,
+        "class": "text-xs/[1.2]",
+        "px": 12,
+        "verdict": "no need",
+        "reason": "equals-allowed"
+      },
+      {
+        "repo": "argo",
+        "file": "apps/dashboard/src/features/astro-window/components/site-map.tsx",
+        "line": 1112,
+        "class": "max-w-[100%]",
+        "px": null,
+        "verdict": "need",
+        "reason": "unclear"
+      },
+      {
+        "repo": "argo",
+        "file": "apps/dashboard/src/features/calendar/agenda-parts.tsx",
+        "line": 202,
+        "class": "gap-[dynamic]",
+        "px": null,
+        "verdict": "need",
+        "reason": "unclear"
+      },
+      {
+        "repo": "argo",
+        "file": "apps/dashboard/src/features/reading/book-parts.tsx",
+        "line": 23,
+        "class": "w-[dynamic]",
+        "px": null,
+        "verdict": "need",
+        "reason": "unclear"
+      },
+      {
+        "repo": "argo",
+        "file": "apps/dashboard/src/features/astro-window/components/site-map.tsx",
+        "line": 1289,
+        "class": "w-[dynamic]",
+        "px": null,
+        "verdict": "need",
+        "reason": "unclear"
+      },
+      {
+        "repo": "linewatch",
+        "file": "web/src/components/status-bar.tsx",
+        "line": 739,
+        "class": "text-[dynamic]",
+        "px": null,
+        "verdict": "need",
+        "reason": "unclear"
+      },
+      {
+        "repo": "argo",
+        "file": "apps/dashboard/src/routes/m365-explorer.tsx",
+        "line": 21,
+        "class": "min-h-[60vh]",
+        "px": null,
+        "verdict": "need",
+        "reason": "unclear"
+      },
+      {
+        "repo": "argo",
+        "file": "apps/dashboard/src/features/astro-window/components/site-map.tsx",
+        "line": 1245,
+        "class": "w-[dynamic]",
+        "px": null,
+        "verdict": "need",
+        "reason": "unclear"
+      },
+      {
+        "repo": "argo",
+        "file": "apps/dashboard/src/features/calendar/agenda-view.tsx",
+        "line": 135,
+        "class": "gap-[dynamic]",
+        "px": null,
+        "verdict": "need",
+        "reason": "unclear"
+      }
+    ]
+  },
+  "f5p": {
+    "deniedTotal": 1437,
+    "sampled": 100,
+    "genuineNeed": 1,
+    "genuineNeedPct": 1,
+    "waiversPer300Lines": 0.05,
+    "offStepPct": 1,
+    "reasons": {
+      "equals-allowed": 99,
+      "within-rung": 0,
+      "beyond-end": 0,
+      "unclear": 1
+    },
+    "byRepo": {
+      "console": {
+        "deniedTotal": 159,
+        "sampled": 12,
+        "genuineNeed": 1
+      },
+      "epos": {
+        "deniedTotal": 1237,
+        "sampled": 88,
+        "genuineNeed": 0
+      },
+      "linewatch": {
+        "deniedTotal": 15,
+        "sampled": 0,
+        "genuineNeed": 0
+      },
+      "argo": {
+        "deniedTotal": 26,
+        "sampled": 0,
+        "genuineNeed": 0
+      }
+    },
+    "sites": [
+      {
+        "repo": "console",
+        "file": "apps/console/src/components/artifact-panel.tsx",
+        "line": 84,
+        "class": "p-3",
+        "px": 12,
+        "verdict": "no need",
+        "reason": "equals-allowed"
+      },
+      {
+        "repo": "console",
+        "file": "apps/console/src/routes/kit.tsx",
+        "line": 73,
+        "class": "px-4",
+        "px": 16,
+        "verdict": "no need",
+        "reason": "equals-allowed"
+      },
+      {
+        "repo": "console",
+        "file": "apps/console/src/routes/flow.tsx",
+        "line": 147,
+        "class": "px-2.5",
+        "px": 10,
+        "verdict": "no need",
+        "reason": "equals-allowed"
+      },
+      {
+        "repo": "console",
+        "file": "apps/console/src/routes/flow.tsx",
+        "line": 277,
+        "class": "pb-1",
+        "px": 4,
+        "verdict": "no need",
+        "reason": "equals-allowed"
+      },
+      {
+        "repo": "console",
+        "file": "apps/console/src/routes/artifacts.$id.tsx",
+        "line": 80,
+        "class": "md:py-6",
+        "px": 24,
+        "verdict": "no need",
+        "reason": "equals-allowed"
+      },
+      {
+        "repo": "console",
+        "file": "apps/console/src/components/shell.tsx",
+        "line": 61,
+        "class": "pb-[env(safe-area-inset-bottom)]",
+        "px": null,
+        "verdict": "need",
+        "reason": "unclear"
+      },
+      {
+        "repo": "console",
+        "file": "apps/console/src/routes/improve.tsx",
+        "line": 360,
+        "class": "px-4",
+        "px": 16,
+        "verdict": "no need",
+        "reason": "equals-allowed"
+      },
+      {
+        "repo": "console",
+        "file": "apps/console/src/routes/flow.tsx",
+        "line": 288,
+        "class": "px-3",
+        "px": 12,
+        "verdict": "no need",
+        "reason": "equals-allowed"
+      },
+      {
+        "repo": "console",
+        "file": "apps/console/src/routes/flow.tsx",
+        "line": 243,
+        "class": "px-1",
+        "px": 4,
+        "verdict": "no need",
+        "reason": "equals-allowed"
+      },
+      {
+        "repo": "console",
+        "file": "apps/console/src/components/chain/schedule.tsx",
+        "line": 197,
+        "class": "p-3",
+        "px": 12,
+        "verdict": "no need",
+        "reason": "equals-allowed"
+      },
+      {
+        "repo": "console",
+        "file": "apps/console/src/routes/kit.tsx",
+        "line": 73,
+        "class": "md:py-8",
+        "px": 32,
+        "verdict": "no need",
+        "reason": "equals-allowed"
+      },
+      {
+        "repo": "console",
+        "file": "apps/console/src/components/palette.tsx",
+        "line": 238,
+        "class": "px-2",
+        "px": 8,
+        "verdict": "no need",
+        "reason": "equals-allowed"
+      }
+    ]
+  },
+  "s2": {
+    "measuredForms": 54,
+    "bookedForms": 59,
+    "notMeasured": [
+      {
+        "form": "import-boundary/engine-outside-subpath-list",
+        "reason": "needs the 19-subpath list"
+      },
+      {
+        "form": "control-home",
+        "reason": "needs provenance"
+      },
+      {
+        "form": "primitive-bypass/ui-table-rows-from-sort-slice",
+        "reason": "needs data flow"
+      },
+      {
+        "form": "primitive-bypass/chart-root-of-DataPanel",
+        "reason": "needs data flow"
+      },
+      {
+        "form": "data-primitive/deprecated-query-fetch-set",
+        "reason": "set not enumerated in the concept"
+      }
+    ],
+    "byForm": {
+      "viewport-keyed/prefix": 0,
+      "viewport-keyed/arbitrary": 0,
+      "viewport-keyed/js": 71.4,
+      "dark-fork/dark": 0,
+      "fixed-colour/black-white": null,
+      "status-fill-as-text/text-on-fill": null,
+      "raw-scroll/overflow": 0,
+      "tw-off-law/off-ladder": 0,
+      "tw-off-law/surface-recipe": 0,
+      "tw-off-law/colour": 0,
+      "tw-off-law/alpha-premixed": 0,
+      "tw-off-law/container-tier": 0,
+      "tw-off-law/important": 28.9,
+      "tw-off-law/template": 98.7,
+      "tw-off-law/fixed-width": 0,
+      "tw-off-law/alpha-on-text": null,
+      "app-spacing/space-xy": 0,
+      "app-spacing/margin": 0.2,
+      "import-boundary/base-ui": 0,
+      "import-boundary/radix": null,
+      "import-boundary/cmdk": 0,
+      "import-boundary/sonner": null,
+      "import-boundary/streamdown": null,
+      "import-boundary/tailwind-merge": 0,
+      "import-boundary/visx": null,
+      "import-boundary/use-react-table": null,
+      "import-boundary/ui-alias": 0,
+      "import-boundary/use-chat": null,
+      "import-boundary/persist": 0,
+      "primitive-bypass/raw-control": 0.7,
+      "primitive-bypass/input-choice": 0,
+      "primitive-bypass/heading": 0,
+      "primitive-bypass/table": 0,
+      "primitive-bypass/svg-marks": 0,
+      "primitive-bypass/intl": 0,
+      "primitive-bypass/role-table": null,
+      "router-search/link-search": 0,
+      "router-search/loader-deps": 0,
+      "router-search/view-transition": null,
+      "router-search/validate-search": null,
+      "data-primitive/refetch-interval": 0,
+      "data-primitive/raw-stream": 0,
+      "data-primitive/get-reader": 0,
+      "data-primitive/new-query-client": 0,
+      "data-primitive/chart-fallback": null,
+      "data-primitive/timer-invalidate": 0,
+      "data-primitive/raw-storage-write": 0,
+      "untrusted-markdown/inner-html": null,
+      "untrusted-markdown/rehype-raw": null,
+      "untrusted-markdown/mdx-evaluate": null,
+      "untrusted-markdown/trusted": null,
+      "colour-literal/literal": 0,
+      "waiver-needs-reason/no-reason": 0,
+      "waiver-needs-reason/file-level": null
+    },
+    "noHitForms": [
+      "data-primitive/chart-fallback",
+      "fixed-colour/black-white",
+      "import-boundary/radix",
+      "import-boundary/sonner",
+      "import-boundary/streamdown",
+      "import-boundary/use-chat",
+      "import-boundary/use-react-table",
+      "import-boundary/visx",
+      "primitive-bypass/role-table",
+      "router-search/validate-search",
+      "router-search/view-transition",
+      "status-fill-as-text/text-on-fill",
+      "tw-off-law/alpha-on-text",
+      "untrusted-markdown/inner-html",
+      "untrusted-markdown/mdx-evaluate",
+      "untrusted-markdown/rehype-raw",
+      "untrusted-markdown/trusted",
+      "waiver-needs-reason/file-level"
+    ],
+    "overTenPct": ["tw-off-law/important", "tw-off-law/template", "viewport-keyed/js"],
+    "verdict": "REFUTED",
+    "forms": {
+      "viewport-keyed/prefix": {
+        "hits": 178,
+        "falsePositives": 0,
+        "pct": 0,
+        "oracle": "class-context",
+        "byRepo": {
+          "console": {
+            "hits": 68,
+            "falsePositives": 0
+          },
+          "epos": {
+            "hits": 110,
+            "falsePositives": 0
+          },
+          "linewatch": {
+            "hits": 0,
+            "falsePositives": 0
+          },
+          "argo": {
+            "hits": 0,
+            "falsePositives": 0
+          }
+        },
+        "sites": [
+          {
+            "repo": "console",
+            "file": "apps/console/src/components/artifact-content.tsx",
+            "line": 183,
+            "falsePositive": false
+          },
+          {
+            "repo": "console",
+            "file": "apps/console/src/components/artifact-content.tsx",
+            "line": 183,
+            "falsePositive": false
+          },
+          {
+            "repo": "console",
+            "file": "apps/console/src/components/chain/graph.tsx",
+            "line": 207,
+            "falsePositive": false
+          },
+          {
+            "repo": "console",
+            "file": "apps/console/src/components/chain/graph.tsx",
+            "line": 286,
+            "falsePositive": false
+          },
+          {
+            "repo": "console",
+            "file": "apps/console/src/components/issue/overview.tsx",
+            "line": 60,
+            "falsePositive": false
+          }
+        ]
+      },
+      "viewport-keyed/arbitrary": {
+        "hits": 321,
+        "falsePositives": 0,
+        "pct": 0,
+        "oracle": "class-context",
+        "byRepo": {
+          "console": {
+            "hits": 20,
+            "falsePositives": 0
+          },
+          "epos": {
+            "hits": 301,
+            "falsePositives": 0
+          },
+          "linewatch": {
+            "hits": 0,
+            "falsePositives": 0
+          },
+          "argo": {
+            "hits": 0,
+            "falsePositives": 0
+          }
+        },
+        "sites": [
+          {
+            "repo": "console",
+            "file": "apps/console/src/components/issue/aside.tsx",
+            "line": 57,
+            "falsePositive": false
+          },
+          {
+            "repo": "console",
+            "file": "apps/console/src/components/issue/header.tsx",
+            "line": 52,
+            "falsePositive": false
+          },
+          {
+            "repo": "console",
+            "file": "apps/console/src/components/issue/header.tsx",
+            "line": 52,
+            "falsePositive": false
+          },
+          {
+            "repo": "console",
+            "file": "apps/console/src/components/issue/overview.tsx",
+            "line": 60,
+            "falsePositive": false
+          },
+          {
+            "repo": "console",
+            "file": "apps/console/src/components/kit/issue-row.tsx",
+            "line": 34,
+            "falsePositive": false
+          }
+        ]
+      },
+      "viewport-keyed/js": {
+        "hits": 28,
+        "falsePositives": 20,
+        "pct": 71.4,
+        "oracle": "predicate",
+        "byRepo": {
+          "console": {
+            "hits": 7,
+            "falsePositives": 4
+          },
+          "epos": {
+            "hits": 21,
+            "falsePositives": 16
+          },
+          "linewatch": {
+            "hits": 0,
+            "falsePositives": 0
+          },
+          "argo": {
+            "hits": 0,
+            "falsePositives": 0
+          }
+        },
+        "sites": [
+          {
+            "repo": "console",
+            "file": "apps/console/src/lib/media.ts",
+            "line": 7,
+            "falsePositive": true
+          },
+          {
+            "repo": "console",
+            "file": "apps/console/src/lib/media.ts",
+            "line": 11,
+            "falsePositive": true
+          },
+          {
+            "repo": "console",
+            "file": "apps/console/src/lib/theme.ts",
+            "line": 16,
+            "falsePositive": true
+          },
+          {
+            "repo": "console",
+            "file": "apps/console/src/lib/theme.ts",
+            "line": 22,
+            "falsePositive": true
+          },
+          {
+            "repo": "console",
+            "file": "apps/console/src/components/needs/since-band.tsx",
+            "line": 116,
+            "falsePositive": false
+          },
+          {
+            "repo": "console",
+            "file": "apps/console/src/routes/artifacts.$id.tsx",
+            "line": 36,
+            "falsePositive": false
+          },
+          {
+            "repo": "console",
+            "file": "apps/console/src/routes/flow.tsx",
+            "line": 156,
+            "falsePositive": false
+          }
+        ]
+      },
+      "dark-fork/dark": {
+        "hits": 17,
+        "falsePositives": 0,
+        "pct": 0,
+        "oracle": "class-context",
+        "byRepo": {
+          "console": {
+            "hits": 0,
+            "falsePositives": 0
+          },
+          "epos": {
+            "hits": 17,
+            "falsePositives": 0
+          },
+          "linewatch": {
+            "hits": 0,
+            "falsePositives": 0
+          },
+          "argo": {
+            "hits": 0,
+            "falsePositives": 0
+          }
+        },
+        "sites": []
+      },
+      "fixed-colour/black-white": {
+        "hits": 0,
+        "falsePositives": 0,
+        "pct": null,
+        "oracle": "class-context",
+        "byRepo": {
+          "console": {
+            "hits": 0,
+            "falsePositives": 0
+          },
+          "epos": {
+            "hits": 0,
+            "falsePositives": 0
+          },
+          "linewatch": {
+            "hits": 0,
+            "falsePositives": 0
+          },
+          "argo": {
+            "hits": 0,
+            "falsePositives": 0
+          }
+        },
+        "sites": []
+      },
+      "status-fill-as-text/text-on-fill": {
+        "hits": 0,
+        "falsePositives": 0,
+        "pct": null,
+        "oracle": "class-context",
+        "byRepo": {
+          "console": {
+            "hits": 0,
+            "falsePositives": 0
+          },
+          "epos": {
+            "hits": 0,
+            "falsePositives": 0
+          },
+          "linewatch": {
+            "hits": 0,
+            "falsePositives": 0
+          },
+          "argo": {
+            "hits": 0,
+            "falsePositives": 0
+          }
+        },
+        "sites": []
+      },
+      "raw-scroll/overflow": {
+        "hits": 63,
+        "falsePositives": 0,
+        "pct": 0,
+        "oracle": "class-context",
+        "byRepo": {
+          "console": {
+            "hits": 12,
+            "falsePositives": 0
+          },
+          "epos": {
+            "hits": 51,
+            "falsePositives": 0
+          },
+          "linewatch": {
+            "hits": 0,
+            "falsePositives": 0
+          },
+          "argo": {
+            "hits": 0,
+            "falsePositives": 0
+          }
+        },
+        "sites": [
+          {
+            "repo": "console",
+            "file": "apps/console/src/components/chain/schedule.tsx",
+            "line": 116,
+            "falsePositive": false
+          },
+          {
+            "repo": "console",
+            "file": "apps/console/src/components/flow/list.tsx",
+            "line": 36,
+            "falsePositive": false
+          },
+          {
+            "repo": "console",
+            "file": "apps/console/src/components/shell.tsx",
+            "line": 129,
+            "falsePositive": false
+          },
+          {
+            "repo": "console",
+            "file": "apps/console/src/components/sidebar.tsx",
+            "line": 259,
+            "falsePositive": false
+          },
+          {
+            "repo": "console",
+            "file": "apps/console/src/components/status-strip.tsx",
+            "line": 20,
+            "falsePositive": false
+          }
+        ]
+      },
+      "tw-off-law/off-ladder": {
+        "hits": 57,
+        "falsePositives": 0,
+        "pct": 0,
+        "oracle": "class-context",
+        "byRepo": {
+          "console": {
+            "hits": 0,
+            "falsePositives": 0
+          },
+          "epos": {
+            "hits": 57,
+            "falsePositives": 0
+          },
+          "linewatch": {
+            "hits": 0,
+            "falsePositives": 0
+          },
+          "argo": {
+            "hits": 0,
+            "falsePositives": 0
+          }
+        },
+        "sites": []
+      },
+      "tw-off-law/surface-recipe": {
+        "hits": 15,
+        "falsePositives": 0,
+        "pct": 0,
+        "oracle": "class-context",
+        "byRepo": {
+          "console": {
+            "hits": 10,
+            "falsePositives": 0
+          },
+          "epos": {
+            "hits": 5,
+            "falsePositives": 0
+          },
+          "linewatch": {
+            "hits": 0,
+            "falsePositives": 0
+          },
+          "argo": {
+            "hits": 0,
+            "falsePositives": 0
+          }
+        },
+        "sites": [
+          {
+            "repo": "console",
+            "file": "apps/console/src/components/chain/graph.tsx",
+            "line": 207,
+            "falsePositive": false
+          },
+          {
+            "repo": "console",
+            "file": "apps/console/src/components/chain/schedule.tsx",
+            "line": 43,
+            "falsePositive": false
+          },
+          {
+            "repo": "console",
+            "file": "apps/console/src/components/kit/issue-card.tsx",
+            "line": 53,
+            "falsePositive": false
+          },
+          {
+            "repo": "console",
+            "file": "apps/console/src/components/kit/stat-card.tsx",
+            "line": 143,
+            "falsePositive": false
+          },
+          {
+            "repo": "console",
+            "file": "apps/console/src/components/needs/card.tsx",
+            "line": 71,
+            "falsePositive": false
+          }
+        ]
+      },
+      "tw-off-law/colour": {
+        "hits": 288,
+        "falsePositives": 0,
+        "pct": 0,
+        "oracle": "class-context",
+        "byRepo": {
+          "console": {
+            "hits": 38,
+            "falsePositives": 0
+          },
+          "epos": {
+            "hits": 250,
+            "falsePositives": 0
+          },
+          "linewatch": {
+            "hits": 0,
+            "falsePositives": 0
+          },
+          "argo": {
+            "hits": 0,
+            "falsePositives": 0
+          }
+        },
+        "sites": [
+          {
+            "repo": "console",
+            "file": "apps/console/src/components/artifact-panel.tsx",
+            "line": 32,
+            "falsePositive": false
+          },
+          {
+            "repo": "console",
+            "file": "apps/console/src/components/issue/checkpoints.tsx",
+            "line": 99,
+            "falsePositive": false
+          },
+          {
+            "repo": "console",
+            "file": "apps/console/src/components/issue/evidence.tsx",
+            "line": 64,
+            "falsePositive": false
+          },
+          {
+            "repo": "console",
+            "file": "apps/console/src/components/issue/overview.tsx",
+            "line": 190,
+            "falsePositive": false
+          },
+          {
+            "repo": "console",
+            "file": "apps/console/src/components/issue/project-chip.tsx",
+            "line": 9,
+            "falsePositive": false
+          }
+        ]
+      },
+      "tw-off-law/alpha-premixed": {
+        "hits": 1,
+        "falsePositives": 0,
+        "pct": 0,
+        "oracle": "class-context",
+        "byRepo": {
+          "console": {
+            "hits": 0,
+            "falsePositives": 0
+          },
+          "epos": {
+            "hits": 1,
+            "falsePositives": 0
+          },
+          "linewatch": {
+            "hits": 0,
+            "falsePositives": 0
+          },
+          "argo": {
+            "hits": 0,
+            "falsePositives": 0
+          }
+        },
+        "sites": []
+      },
+      "tw-off-law/container-tier": {
+        "hits": 13,
+        "falsePositives": 0,
+        "pct": 0,
+        "oracle": "class-context",
+        "byRepo": {
+          "console": {
+            "hits": 0,
+            "falsePositives": 0
+          },
+          "epos": {
+            "hits": 13,
+            "falsePositives": 0
+          },
+          "linewatch": {
+            "hits": 0,
+            "falsePositives": 0
+          },
+          "argo": {
+            "hits": 0,
+            "falsePositives": 0
+          }
+        },
+        "sites": []
+      },
+      "tw-off-law/important": {
+        "hits": 38,
+        "falsePositives": 11,
+        "pct": 28.9,
+        "oracle": "class-context",
+        "byRepo": {
+          "console": {
+            "hits": 0,
+            "falsePositives": 0
+          },
+          "epos": {
+            "hits": 38,
+            "falsePositives": 11
+          },
+          "linewatch": {
+            "hits": 0,
+            "falsePositives": 0
+          },
+          "argo": {
+            "hits": 0,
+            "falsePositives": 0
+          }
+        },
+        "sites": []
+      },
+      "tw-off-law/template": {
+        "hits": 75,
+        "falsePositives": 74,
+        "pct": 98.7,
+        "oracle": "class-context",
+        "byRepo": {
+          "console": {
+            "hits": 24,
+            "falsePositives": 24
+          },
+          "epos": {
+            "hits": 13,
+            "falsePositives": 12
+          },
+          "linewatch": {
+            "hits": 4,
+            "falsePositives": 4
+          },
+          "argo": {
+            "hits": 34,
+            "falsePositives": 34
+          }
+        },
+        "sites": [
+          {
+            "repo": "argo",
+            "file": "apps/dashboard/src/features/astro-window/components/map-overlays.ts",
+            "line": 67,
+            "falsePositive": true
+          },
+          {
+            "repo": "argo",
+            "file": "apps/dashboard/src/features/astro-window/components/map-overlays.ts",
+            "line": 68,
+            "falsePositive": true
+          },
+          {
+            "repo": "argo",
+            "file": "apps/dashboard/src/features/astro-window/components/map-overlays.ts",
+            "line": 74,
+            "falsePositive": true
+          },
+          {
+            "repo": "argo",
+            "file": "apps/dashboard/src/features/astro-window/components/map-overlays.ts",
+            "line": 165,
+            "falsePositive": true
+          },
+          {
+            "repo": "argo",
+            "file": "apps/dashboard/src/features/astro-window/components/map-overlays.ts",
+            "line": 175,
+            "falsePositive": true
+          },
+          {
+            "repo": "argo",
+            "file": "apps/dashboard/src/features/astro-window/components/map-overlays.ts",
+            "line": 183,
+            "falsePositive": true
+          },
+          {
+            "repo": "argo",
+            "file": "apps/dashboard/src/features/astro-window/components/map-overlays.ts",
+            "line": 200,
+            "falsePositive": true
+          },
+          {
+            "repo": "argo",
+            "file": "apps/dashboard/src/features/astro-window/components/map-overlays.ts",
+            "line": 210,
+            "falsePositive": true
+          },
+          {
+            "repo": "argo",
+            "file": "apps/dashboard/src/features/astro-window/components/site-map.tsx",
+            "line": 1080,
+            "falsePositive": true
+          },
+          {
+            "repo": "argo",
+            "file": "apps/dashboard/src/features/models/__fixtures__/efficiency.ts",
+            "line": 524,
+            "falsePositive": true
+          },
+          {
+            "repo": "argo",
+            "file": "apps/dashboard/src/features/models/efficiency-scatter.tsx",
+            "line": 263,
+            "falsePositive": true
+          },
+          {
+            "repo": "argo",
+            "file": "apps/dashboard/src/features/models/efficiency-scatter.tsx",
+            "line": 327,
+            "falsePositive": true
+          },
+          {
+            "repo": "argo",
+            "file": "apps/dashboard/src/features/models/efficiency-scatter.tsx",
+            "line": 355,
+            "falsePositive": true
+          },
+          {
+            "repo": "argo",
+            "file": "apps/dashboard/src/features/models/efficiency-scatter.tsx",
+            "line": 360,
+            "falsePositive": true
+          },
+          {
+            "repo": "argo",
+            "file": "apps/dashboard/src/features/models/efficiency-scatter.tsx",
+            "line": 413,
+            "falsePositive": true
+          }
+        ]
+      },
+      "tw-off-law/fixed-width": {
+        "hits": 3,
+        "falsePositives": 0,
+        "pct": 0,
+        "oracle": "class-context",
+        "byRepo": {
+          "console": {
+            "hits": 3,
+            "falsePositives": 0
+          },
+          "epos": {
+            "hits": 0,
+            "falsePositives": 0
+          },
+          "linewatch": {
+            "hits": 0,
+            "falsePositives": 0
+          },
+          "argo": {
+            "hits": 0,
+            "falsePositives": 0
+          }
+        },
+        "sites": [
+          {
+            "repo": "console",
+            "file": "apps/console/src/components/chain/schedule.tsx",
+            "line": 117,
+            "falsePositive": false
+          },
+          {
+            "repo": "console",
+            "file": "apps/console/src/components/kit/issue-row.tsx",
+            "line": 45,
+            "falsePositive": false
+          },
+          {
+            "repo": "console",
+            "file": "apps/console/src/components/strip/host.tsx",
+            "line": 20,
+            "falsePositive": false
+          }
+        ]
+      },
+      "tw-off-law/alpha-on-text": {
+        "hits": 0,
+        "falsePositives": 0,
+        "pct": null,
+        "oracle": "class-context",
+        "byRepo": {
+          "console": {
+            "hits": 0,
+            "falsePositives": 0
+          },
+          "epos": {
+            "hits": 0,
+            "falsePositives": 0
+          },
+          "linewatch": {
+            "hits": 0,
+            "falsePositives": 0
+          },
+          "argo": {
+            "hits": 0,
+            "falsePositives": 0
+          }
+        },
+        "sites": []
+      },
+      "app-spacing/space-xy": {
+        "hits": 1,
+        "falsePositives": 0,
+        "pct": 0,
+        "oracle": "class-context",
+        "byRepo": {
+          "console": {
+            "hits": 0,
+            "falsePositives": 0
+          },
+          "epos": {
+            "hits": 1,
+            "falsePositives": 0
+          },
+          "linewatch": {
+            "hits": 0,
+            "falsePositives": 0
+          },
+          "argo": {
+            "hits": 0,
+            "falsePositives": 0
+          }
+        },
+        "sites": []
+      },
+      "app-spacing/margin": {
+        "hits": 1070,
+        "falsePositives": 2,
+        "pct": 0.2,
+        "oracle": "class-context",
+        "byRepo": {
+          "console": {
+            "hits": 49,
+            "falsePositives": 0
+          },
+          "epos": {
+            "hits": 1019,
+            "falsePositives": 0
+          },
+          "linewatch": {
+            "hits": 0,
+            "falsePositives": 0
+          },
+          "argo": {
+            "hits": 2,
+            "falsePositives": 2
+          }
+        },
+        "sites": [
+          {
+            "repo": "argo",
+            "file": "apps/dashboard/src/lib/window-stores.ts",
+            "line": 173,
+            "falsePositive": true
+          },
+          {
+            "repo": "argo",
+            "file": "apps/dashboard/src/lib/window-stores.ts",
+            "line": 235,
+            "falsePositive": true
+          },
+          {
+            "repo": "console",
+            "file": "apps/console/src/components/chain/schedule.tsx",
+            "line": 109,
+            "falsePositive": false
+          },
+          {
+            "repo": "console",
+            "file": "apps/console/src/components/issue/evidence.tsx",
+            "line": 35,
+            "falsePositive": false
+          },
+          {
+            "repo": "console",
+            "file": "apps/console/src/components/issue/evidence.tsx",
+            "line": 64,
+            "falsePositive": false
+          },
+          {
+            "repo": "console",
+            "file": "apps/console/src/components/issue/evidence.tsx",
+            "line": 64,
+            "falsePositive": false
+          },
+          {
+            "repo": "console",
+            "file": "apps/console/src/components/issue/header.tsx",
+            "line": 52,
+            "falsePositive": false
+          }
+        ]
+      },
+      "import-boundary/base-ui": {
+        "hits": 5,
+        "falsePositives": 0,
+        "pct": 0,
+        "oracle": "predicate",
+        "byRepo": {
+          "console": {
+            "hits": 2,
+            "falsePositives": 0
+          },
+          "epos": {
+            "hits": 3,
+            "falsePositives": 0
+          },
+          "linewatch": {
+            "hits": 0,
+            "falsePositives": 0
+          },
+          "argo": {
+            "hits": 0,
+            "falsePositives": 0
+          }
+        },
+        "sites": [
+          {
+            "repo": "console",
+            "file": "apps/console/src/components/kit/info-hint.tsx",
+            "line": 2,
+            "falsePositive": false
+          },
+          {
+            "repo": "console",
+            "file": "apps/console/src/components/kit/menu-button.tsx",
+            "line": 1,
+            "falsePositive": false
+          }
+        ]
+      },
+      "import-boundary/radix": {
+        "hits": 0,
+        "falsePositives": 0,
+        "pct": null,
+        "oracle": "predicate",
+        "byRepo": {
+          "console": {
+            "hits": 0,
+            "falsePositives": 0
+          },
+          "epos": {
+            "hits": 0,
+            "falsePositives": 0
+          },
+          "linewatch": {
+            "hits": 0,
+            "falsePositives": 0
+          },
+          "argo": {
+            "hits": 0,
+            "falsePositives": 0
+          }
+        },
+        "sites": []
+      },
+      "import-boundary/cmdk": {
+        "hits": 1,
+        "falsePositives": 0,
+        "pct": 0,
+        "oracle": "predicate",
+        "byRepo": {
+          "console": {
+            "hits": 0,
+            "falsePositives": 0
+          },
+          "epos": {
+            "hits": 1,
+            "falsePositives": 0
+          },
+          "linewatch": {
+            "hits": 0,
+            "falsePositives": 0
+          },
+          "argo": {
+            "hits": 0,
+            "falsePositives": 0
+          }
+        },
+        "sites": []
+      },
+      "import-boundary/sonner": {
+        "hits": 0,
+        "falsePositives": 0,
+        "pct": null,
+        "oracle": "predicate",
+        "byRepo": {
+          "console": {
+            "hits": 0,
+            "falsePositives": 0
+          },
+          "epos": {
+            "hits": 0,
+            "falsePositives": 0
+          },
+          "linewatch": {
+            "hits": 0,
+            "falsePositives": 0
+          },
+          "argo": {
+            "hits": 0,
+            "falsePositives": 0
+          }
+        },
+        "sites": []
+      },
+      "import-boundary/streamdown": {
+        "hits": 0,
+        "falsePositives": 0,
+        "pct": null,
+        "oracle": "predicate",
+        "byRepo": {
+          "console": {
+            "hits": 0,
+            "falsePositives": 0
+          },
+          "epos": {
+            "hits": 0,
+            "falsePositives": 0
+          },
+          "linewatch": {
+            "hits": 0,
+            "falsePositives": 0
+          },
+          "argo": {
+            "hits": 0,
+            "falsePositives": 0
+          }
+        },
+        "sites": []
+      },
+      "import-boundary/tailwind-merge": {
+        "hits": 1,
+        "falsePositives": 0,
+        "pct": 0,
+        "oracle": "predicate",
+        "byRepo": {
+          "console": {
+            "hits": 1,
+            "falsePositives": 0
+          },
+          "epos": {
+            "hits": 0,
+            "falsePositives": 0
+          },
+          "linewatch": {
+            "hits": 0,
+            "falsePositives": 0
+          },
+          "argo": {
+            "hits": 0,
+            "falsePositives": 0
+          }
+        },
+        "sites": [
+          {
+            "repo": "console",
+            "file": "apps/console/src/lib/utils.ts",
+            "line": 2,
+            "falsePositive": false
+          }
+        ]
+      },
+      "import-boundary/visx": {
+        "hits": 0,
+        "falsePositives": 0,
+        "pct": null,
+        "oracle": "predicate",
+        "byRepo": {
+          "console": {
+            "hits": 0,
+            "falsePositives": 0
+          },
+          "epos": {
+            "hits": 0,
+            "falsePositives": 0
+          },
+          "linewatch": {
+            "hits": 0,
+            "falsePositives": 0
+          },
+          "argo": {
+            "hits": 0,
+            "falsePositives": 0
+          }
+        },
+        "sites": []
+      },
+      "import-boundary/use-react-table": {
+        "hits": 0,
+        "falsePositives": 0,
+        "pct": null,
+        "oracle": "syntactic",
+        "byRepo": {
+          "console": {
+            "hits": 0,
+            "falsePositives": 0
+          },
+          "epos": {
+            "hits": 0,
+            "falsePositives": 0
+          },
+          "linewatch": {
+            "hits": 0,
+            "falsePositives": 0
+          },
+          "argo": {
+            "hits": 0,
+            "falsePositives": 0
+          }
+        },
+        "sites": []
+      },
+      "import-boundary/ui-alias": {
+        "hits": 19,
+        "falsePositives": 0,
+        "pct": 0,
+        "oracle": "syntactic",
+        "byRepo": {
+          "console": {
+            "hits": 19,
+            "falsePositives": 0
+          },
+          "epos": {
+            "hits": 0,
+            "falsePositives": 0
+          },
+          "linewatch": {
+            "hits": 0,
+            "falsePositives": 0
+          },
+          "argo": {
+            "hits": 0,
+            "falsePositives": 0
+          }
+        },
+        "sites": [
+          {
+            "repo": "console",
+            "file": "apps/console/src/components/artifact-panel.tsx",
+            "line": 5,
+            "falsePositive": false
+          },
+          {
+            "repo": "console",
+            "file": "apps/console/src/components/artifact-panel.tsx",
+            "line": 6,
+            "falsePositive": false
+          },
+          {
+            "repo": "console",
+            "file": "apps/console/src/components/kit/kind-badge.tsx",
+            "line": 2,
+            "falsePositive": false
+          },
+          {
+            "repo": "console",
+            "file": "apps/console/src/components/needs/bodies.tsx",
+            "line": 5,
+            "falsePositive": false
+          },
+          {
+            "repo": "console",
+            "file": "apps/console/src/components/needs/bodies.tsx",
+            "line": 6,
+            "falsePositive": false
+          }
+        ]
+      },
+      "import-boundary/use-chat": {
+        "hits": 0,
+        "falsePositives": 0,
+        "pct": null,
+        "oracle": "syntactic",
+        "byRepo": {
+          "console": {
+            "hits": 0,
+            "falsePositives": 0
+          },
+          "epos": {
+            "hits": 0,
+            "falsePositives": 0
+          },
+          "linewatch": {
+            "hits": 0,
+            "falsePositives": 0
+          },
+          "argo": {
+            "hits": 0,
+            "falsePositives": 0
+          }
+        },
+        "sites": []
+      },
+      "import-boundary/persist": {
+        "hits": 1,
+        "falsePositives": 0,
+        "pct": 0,
+        "oracle": "syntactic",
+        "byRepo": {
+          "console": {
+            "hits": 0,
+            "falsePositives": 0
+          },
+          "epos": {
+            "hits": 0,
+            "falsePositives": 0
+          },
+          "linewatch": {
+            "hits": 0,
+            "falsePositives": 0
+          },
+          "argo": {
+            "hits": 1,
+            "falsePositives": 0
+          }
+        },
+        "sites": [
+          {
+            "repo": "argo",
+            "file": "apps/dashboard/src/lib/auth.ts",
+            "line": 3,
+            "falsePositive": false
+          }
+        ]
+      },
+      "primitive-bypass/raw-control": {
+        "hits": 134,
+        "falsePositives": 1,
+        "pct": 0.7,
+        "oracle": "predicate",
+        "byRepo": {
+          "console": {
+            "hits": 12,
+            "falsePositives": 0
+          },
+          "epos": {
+            "hits": 106,
+            "falsePositives": 1
+          },
+          "linewatch": {
+            "hits": 0,
+            "falsePositives": 0
+          },
+          "argo": {
+            "hits": 16,
+            "falsePositives": 0
+          }
+        },
+        "sites": [
+          {
+            "repo": "argo",
+            "file": "apps/dashboard/src/features/astro-window/components/night-strip.tsx",
+            "line": 117,
+            "falsePositive": false
+          },
+          {
+            "repo": "argo",
+            "file": "apps/dashboard/src/features/strength-tracker/components/number-pad.tsx",
+            "line": 108,
+            "falsePositive": false
+          },
+          {
+            "repo": "argo",
+            "file": "apps/dashboard/src/features/strength-tracker/components/number-pad.tsx",
+            "line": 121,
+            "falsePositive": false
+          },
+          {
+            "repo": "argo",
+            "file": "apps/dashboard/src/features/strength-tracker/components/number-pad.tsx",
+            "line": 132,
+            "falsePositive": false
+          },
+          {
+            "repo": "argo",
+            "file": "apps/dashboard/src/features/strength-tracker/components/number-pad.tsx",
+            "line": 140,
+            "falsePositive": false
+          }
+        ]
+      },
+      "primitive-bypass/input-choice": {
+        "hits": 8,
+        "falsePositives": 0,
+        "pct": 0,
+        "oracle": "syntactic",
+        "byRepo": {
+          "console": {
+            "hits": 0,
+            "falsePositives": 0
+          },
+          "epos": {
+            "hits": 8,
+            "falsePositives": 0
+          },
+          "linewatch": {
+            "hits": 0,
+            "falsePositives": 0
+          },
+          "argo": {
+            "hits": 0,
+            "falsePositives": 0
+          }
+        },
+        "sites": []
+      },
+      "primitive-bypass/heading": {
+        "hits": 151,
+        "falsePositives": 0,
+        "pct": 0,
+        "oracle": "syntactic",
+        "byRepo": {
+          "console": {
+            "hits": 27,
+            "falsePositives": 0
+          },
+          "epos": {
+            "hits": 118,
+            "falsePositives": 0
+          },
+          "linewatch": {
+            "hits": 0,
+            "falsePositives": 0
+          },
+          "argo": {
+            "hits": 6,
+            "falsePositives": 0
+          }
+        },
+        "sites": [
+          {
+            "repo": "argo",
+            "file": "apps/dashboard/src/features/m365-explorer/feed-pane.tsx",
+            "line": 24,
+            "falsePositive": false
+          },
+          {
+            "repo": "argo",
+            "file": "apps/dashboard/src/features/m365-explorer/labeled-pane.tsx",
+            "line": 33,
+            "falsePositive": false
+          },
+          {
+            "repo": "argo",
+            "file": "apps/dashboard/src/features/m365-explorer/labeled-pane.tsx",
+            "line": 59,
+            "falsePositive": false
+          },
+          {
+            "repo": "argo",
+            "file": "apps/dashboard/src/features/m365-explorer/record-pane.tsx",
+            "line": 59,
+            "falsePositive": false
+          },
+          {
+            "repo": "argo",
+            "file": "apps/dashboard/src/features/m365-explorer/source-list.tsx",
+            "line": 133,
+            "falsePositive": false
+          }
+        ]
+      },
+      "primitive-bypass/table": {
+        "hits": 15,
+        "falsePositives": 0,
+        "pct": 0,
+        "oracle": "syntactic",
+        "byRepo": {
+          "console": {
+            "hits": 4,
+            "falsePositives": 0
+          },
+          "epos": {
+            "hits": 11,
+            "falsePositives": 0
+          },
+          "linewatch": {
+            "hits": 0,
+            "falsePositives": 0
+          },
+          "argo": {
+            "hits": 0,
+            "falsePositives": 0
+          }
+        },
+        "sites": [
+          {
+            "repo": "console",
+            "file": "apps/console/src/components/chain/schedule.tsx",
+            "line": 217,
+            "falsePositive": false
+          },
+          {
+            "repo": "console",
+            "file": "apps/console/src/components/kit/chart-frame.tsx",
+            "line": 171,
+            "falsePositive": false
+          },
+          {
+            "repo": "console",
+            "file": "apps/console/src/components/strip/host-detail.tsx",
+            "line": 86,
+            "falsePositive": false
+          },
+          {
+            "repo": "console",
+            "file": "apps/console/src/routes/improve.tsx",
+            "line": 343,
+            "falsePositive": false
+          }
+        ]
+      },
+      "primitive-bypass/svg-marks": {
+        "hits": 8,
+        "falsePositives": 0,
+        "pct": 0,
+        "oracle": "syntactic",
+        "byRepo": {
+          "console": {
+            "hits": 4,
+            "falsePositives": 0
+          },
+          "epos": {
+            "hits": 4,
+            "falsePositives": 0
+          },
+          "linewatch": {
+            "hits": 0,
+            "falsePositives": 0
+          },
+          "argo": {
+            "hits": 0,
+            "falsePositives": 0
+          }
+        },
+        "sites": [
+          {
+            "repo": "console",
+            "file": "apps/console/src/components/kit/mini-bars.tsx",
+            "line": 56,
+            "falsePositive": false
+          },
+          {
+            "repo": "console",
+            "file": "apps/console/src/components/kit/sparkline.tsx",
+            "line": 95,
+            "falsePositive": false
+          },
+          {
+            "repo": "console",
+            "file": "apps/console/src/components/kit/stacked-bars.tsx",
+            "line": 86,
+            "falsePositive": false
+          },
+          {
+            "repo": "console",
+            "file": "apps/console/src/components/kit/time-chart.tsx",
+            "line": 92,
+            "falsePositive": false
+          }
+        ]
+      },
+      "primitive-bypass/intl": {
+        "hits": 134,
+        "falsePositives": 0,
+        "pct": 0,
+        "oracle": "syntactic",
+        "byRepo": {
+          "console": {
+            "hits": 25,
+            "falsePositives": 0
+          },
+          "epos": {
+            "hits": 67,
+            "falsePositives": 0
+          },
+          "linewatch": {
+            "hits": 4,
+            "falsePositives": 0
+          },
+          "argo": {
+            "hits": 38,
+            "falsePositives": 0
+          }
+        },
+        "sites": [
+          {
+            "repo": "argo",
+            "file": "apps/dashboard/src/features/astro-window/components/site-map.tsx",
+            "line": 905,
+            "falsePositive": false
+          },
+          {
+            "repo": "argo",
+            "file": "apps/dashboard/src/features/astro-window/components/site-map.tsx",
+            "line": 911,
+            "falsePositive": false
+          },
+          {
+            "repo": "argo",
+            "file": "apps/dashboard/src/features/astro-window/components/site-map.tsx",
+            "line": 920,
+            "falsePositive": false
+          },
+          {
+            "repo": "argo",
+            "file": "apps/dashboard/src/features/astro-window/formulas.ts",
+            "line": 61,
+            "falsePositive": false
+          },
+          {
+            "repo": "argo",
+            "file": "apps/dashboard/src/features/calendar/derive.ts",
+            "line": 48,
+            "falsePositive": false
+          }
+        ]
+      },
+      "primitive-bypass/role-table": {
+        "hits": 0,
+        "falsePositives": 0,
+        "pct": null,
+        "oracle": "syntactic",
+        "byRepo": {
+          "console": {
+            "hits": 0,
+            "falsePositives": 0
+          },
+          "epos": {
+            "hits": 0,
+            "falsePositives": 0
+          },
+          "linewatch": {
+            "hits": 0,
+            "falsePositives": 0
+          },
+          "argo": {
+            "hits": 0,
+            "falsePositives": 0
+          }
+        },
+        "sites": []
+      },
+      "router-search/link-search": {
+        "hits": 25,
+        "falsePositives": 0,
+        "pct": 0,
+        "oracle": "syntactic",
+        "byRepo": {
+          "console": {
+            "hits": 23,
+            "falsePositives": 0
+          },
+          "epos": {
+            "hits": 0,
+            "falsePositives": 0
+          },
+          "linewatch": {
+            "hits": 0,
+            "falsePositives": 0
+          },
+          "argo": {
+            "hits": 2,
+            "falsePositives": 0
+          }
+        },
+        "sites": [
+          {
+            "repo": "argo",
+            "file": "apps/dashboard/src/features/finance/pages/spending.tsx",
+            "line": 124,
+            "falsePositive": false
+          },
+          {
+            "repo": "argo",
+            "file": "apps/dashboard/src/features/finance/pages/this-month.tsx",
+            "line": 470,
+            "falsePositive": false
+          },
+          {
+            "repo": "console",
+            "file": "apps/console/src/components/flow/card.tsx",
+            "line": 15,
+            "falsePositive": false
+          },
+          {
+            "repo": "console",
+            "file": "apps/console/src/components/issue/checkpoints.tsx",
+            "line": 63,
+            "falsePositive": false
+          },
+          {
+            "repo": "console",
+            "file": "apps/console/src/components/issue/header.tsx",
+            "line": 38,
+            "falsePositive": false
+          }
+        ]
+      },
+      "router-search/loader-deps": {
+        "hits": 4,
+        "falsePositives": 0,
+        "pct": 0,
+        "oracle": "syntactic",
+        "byRepo": {
+          "console": {
+            "hits": 0,
+            "falsePositives": 0
+          },
+          "epos": {
+            "hits": 0,
+            "falsePositives": 0
+          },
+          "linewatch": {
+            "hits": 0,
+            "falsePositives": 0
+          },
+          "argo": {
+            "hits": 4,
+            "falsePositives": 0
+          }
+        },
+        "sites": [
+          {
+            "repo": "argo",
+            "file": "apps/dashboard/src/routes/body-composition.tsx",
+            "line": 20,
+            "falsePositive": false
+          },
+          {
+            "repo": "argo",
+            "file": "apps/dashboard/src/routes/garmin-health.tsx",
+            "line": 36,
+            "falsePositive": false
+          },
+          {
+            "repo": "argo",
+            "file": "apps/dashboard/src/routes/strength-tracker.tsx",
+            "line": 53,
+            "falsePositive": false
+          },
+          {
+            "repo": "argo",
+            "file": "apps/dashboard/src/routes/walking-pad.tsx",
+            "line": 27,
+            "falsePositive": false
+          }
+        ]
+      },
+      "router-search/view-transition": {
+        "hits": 0,
+        "falsePositives": 0,
+        "pct": null,
+        "oracle": "syntactic",
+        "byRepo": {
+          "console": {
+            "hits": 0,
+            "falsePositives": 0
+          },
+          "epos": {
+            "hits": 0,
+            "falsePositives": 0
+          },
+          "linewatch": {
+            "hits": 0,
+            "falsePositives": 0
+          },
+          "argo": {
+            "hits": 0,
+            "falsePositives": 0
+          }
+        },
+        "sites": []
+      },
+      "router-search/validate-search": {
+        "hits": 0,
+        "falsePositives": 0,
+        "pct": null,
+        "oracle": "syntactic",
+        "byRepo": {
+          "console": {
+            "hits": 0,
+            "falsePositives": 0
+          },
+          "epos": {
+            "hits": 0,
+            "falsePositives": 0
+          },
+          "linewatch": {
+            "hits": 0,
+            "falsePositives": 0
+          },
+          "argo": {
+            "hits": 0,
+            "falsePositives": 0
+          }
+        },
+        "sites": []
+      },
+      "data-primitive/refetch-interval": {
+        "hits": 34,
+        "falsePositives": 0,
+        "pct": 0,
+        "oracle": "syntactic",
+        "byRepo": {
+          "console": {
+            "hits": 14,
+            "falsePositives": 0
+          },
+          "epos": {
+            "hits": 0,
+            "falsePositives": 0
+          },
+          "linewatch": {
+            "hits": 2,
+            "falsePositives": 0
+          },
+          "argo": {
+            "hits": 18,
+            "falsePositives": 0
+          }
+        },
+        "sites": [
+          {
+            "repo": "argo",
+            "file": "apps/dashboard/src/features/finance/api/status.ts",
+            "line": 64,
+            "falsePositive": false
+          },
+          {
+            "repo": "argo",
+            "file": "apps/dashboard/src/features/finance/lib/vault.ts",
+            "line": 75,
+            "falsePositive": false
+          },
+          {
+            "repo": "argo",
+            "file": "apps/dashboard/src/features/garmin-health/use-garmin-sync.ts",
+            "line": 47,
+            "falsePositive": false
+          },
+          {
+            "repo": "argo",
+            "file": "apps/dashboard/src/features/usage-tracking/quotas-section.tsx",
+            "line": 84,
+            "falsePositive": false
+          },
+          {
+            "repo": "argo",
+            "file": "apps/dashboard/src/features/usage-tracking/quotas-section.tsx",
+            "line": 85,
+            "falsePositive": false
+          }
+        ]
+      },
+      "data-primitive/raw-stream": {
+        "hits": 1,
+        "falsePositives": 0,
+        "pct": 0,
+        "oracle": "syntactic",
+        "byRepo": {
+          "console": {
+            "hits": 1,
+            "falsePositives": 0
+          },
+          "epos": {
+            "hits": 0,
+            "falsePositives": 0
+          },
+          "linewatch": {
+            "hits": 0,
+            "falsePositives": 0
+          },
+          "argo": {
+            "hits": 0,
+            "falsePositives": 0
+          }
+        },
+        "sites": [
+          {
+            "repo": "console",
+            "file": "apps/console/src/lib/live.ts",
+            "line": 104,
+            "falsePositive": false
+          }
+        ]
+      },
+      "data-primitive/get-reader": {
+        "hits": 1,
+        "falsePositives": 0,
+        "pct": 0,
+        "oracle": "syntactic",
+        "byRepo": {
+          "console": {
+            "hits": 0,
+            "falsePositives": 0
+          },
+          "epos": {
+            "hits": 1,
+            "falsePositives": 0
+          },
+          "linewatch": {
+            "hits": 0,
+            "falsePositives": 0
+          },
+          "argo": {
+            "hits": 0,
+            "falsePositives": 0
+          }
+        },
+        "sites": []
+      },
+      "data-primitive/new-query-client": {
+        "hits": 1,
+        "falsePositives": 0,
+        "pct": 0,
+        "oracle": "syntactic",
+        "byRepo": {
+          "console": {
+            "hits": 1,
+            "falsePositives": 0
+          },
+          "epos": {
+            "hits": 0,
+            "falsePositives": 0
+          },
+          "linewatch": {
+            "hits": 0,
+            "falsePositives": 0
+          },
+          "argo": {
+            "hits": 0,
+            "falsePositives": 0
+          }
+        },
+        "sites": [
+          {
+            "repo": "console",
+            "file": "apps/console/src/lib/queries.ts",
+            "line": 33,
+            "falsePositive": false
+          }
+        ]
+      },
+      "data-primitive/chart-fallback": {
+        "hits": 0,
+        "falsePositives": 0,
+        "pct": null,
+        "oracle": "syntactic",
+        "byRepo": {
+          "console": {
+            "hits": 0,
+            "falsePositives": 0
+          },
+          "epos": {
+            "hits": 0,
+            "falsePositives": 0
+          },
+          "linewatch": {
+            "hits": 0,
+            "falsePositives": 0
+          },
+          "argo": {
+            "hits": 0,
+            "falsePositives": 0
+          }
+        },
+        "sites": []
+      },
+      "data-primitive/timer-invalidate": {
+        "hits": 1,
+        "falsePositives": 0,
+        "pct": 0,
+        "oracle": "syntactic",
+        "byRepo": {
+          "console": {
+            "hits": 0,
+            "falsePositives": 0
+          },
+          "epos": {
+            "hits": 0,
+            "falsePositives": 0
+          },
+          "linewatch": {
+            "hits": 0,
+            "falsePositives": 0
+          },
+          "argo": {
+            "hits": 1,
+            "falsePositives": 0
+          }
+        },
+        "sites": [
+          {
+            "repo": "argo",
+            "file": "apps/dashboard/src/features/finance/api/mutations.ts",
+            "line": 45,
+            "falsePositive": false
+          }
+        ]
+      },
+      "data-primitive/raw-storage-write": {
+        "hits": 32,
+        "falsePositives": 0,
+        "pct": 0,
+        "oracle": "predicate",
+        "byRepo": {
+          "console": {
+            "hits": 3,
+            "falsePositives": 0
+          },
+          "epos": {
+            "hits": 26,
+            "falsePositives": 0
+          },
+          "linewatch": {
+            "hits": 0,
+            "falsePositives": 0
+          },
+          "argo": {
+            "hits": 3,
+            "falsePositives": 0
+          }
+        },
+        "sites": [
+          {
+            "repo": "argo",
+            "file": "apps/dashboard/src/features/strength-tracker/components/timer-core.ts",
+            "line": 62,
+            "falsePositive": false
+          },
+          {
+            "repo": "argo",
+            "file": "apps/dashboard/src/features/walking-pad/achievements-toast.tsx",
+            "line": 72,
+            "falsePositive": false
+          },
+          {
+            "repo": "argo",
+            "file": "apps/dashboard/src/features/walking-pad/achievements-toast.tsx",
+            "line": 91,
+            "falsePositive": false
+          },
+          {
+            "repo": "console",
+            "file": "apps/console/src/components/sidebar.tsx",
+            "line": 46,
+            "falsePositive": false
+          },
+          {
+            "repo": "console",
+            "file": "apps/console/src/lib/theme.ts",
+            "line": 26,
+            "falsePositive": false
+          }
+        ]
+      },
+      "untrusted-markdown/inner-html": {
+        "hits": 0,
+        "falsePositives": 0,
+        "pct": null,
+        "oracle": "syntactic",
+        "byRepo": {
+          "console": {
+            "hits": 0,
+            "falsePositives": 0
+          },
+          "epos": {
+            "hits": 0,
+            "falsePositives": 0
+          },
+          "linewatch": {
+            "hits": 0,
+            "falsePositives": 0
+          },
+          "argo": {
+            "hits": 0,
+            "falsePositives": 0
+          }
+        },
+        "sites": []
+      },
+      "untrusted-markdown/rehype-raw": {
+        "hits": 0,
+        "falsePositives": 0,
+        "pct": null,
+        "oracle": "syntactic",
+        "byRepo": {
+          "console": {
+            "hits": 0,
+            "falsePositives": 0
+          },
+          "epos": {
+            "hits": 0,
+            "falsePositives": 0
+          },
+          "linewatch": {
+            "hits": 0,
+            "falsePositives": 0
+          },
+          "argo": {
+            "hits": 0,
+            "falsePositives": 0
+          }
+        },
+        "sites": []
+      },
+      "untrusted-markdown/mdx-evaluate": {
+        "hits": 0,
+        "falsePositives": 0,
+        "pct": null,
+        "oracle": "syntactic",
+        "byRepo": {
+          "console": {
+            "hits": 0,
+            "falsePositives": 0
+          },
+          "epos": {
+            "hits": 0,
+            "falsePositives": 0
+          },
+          "linewatch": {
+            "hits": 0,
+            "falsePositives": 0
+          },
+          "argo": {
+            "hits": 0,
+            "falsePositives": 0
+          }
+        },
+        "sites": []
+      },
+      "untrusted-markdown/trusted": {
+        "hits": 0,
+        "falsePositives": 0,
+        "pct": null,
+        "oracle": "syntactic",
+        "byRepo": {
+          "console": {
+            "hits": 0,
+            "falsePositives": 0
+          },
+          "epos": {
+            "hits": 0,
+            "falsePositives": 0
+          },
+          "linewatch": {
+            "hits": 0,
+            "falsePositives": 0
+          },
+          "argo": {
+            "hits": 0,
+            "falsePositives": 0
+          }
+        },
+        "sites": []
+      },
+      "colour-literal/literal": {
+        "hits": 30,
+        "falsePositives": 0,
+        "pct": 0,
+        "oracle": "predicate",
+        "byRepo": {
+          "console": {
+            "hits": 7,
+            "falsePositives": 0
+          },
+          "epos": {
+            "hits": 16,
+            "falsePositives": 0
+          },
+          "linewatch": {
+            "hits": 0,
+            "falsePositives": 0
+          },
+          "argo": {
+            "hits": 7,
+            "falsePositives": 0
+          }
+        },
+        "sites": [
+          {
+            "repo": "argo",
+            "file": "apps/dashboard/src/features/astro-window/charts/sky-panorama.tsx",
+            "line": 146,
+            "falsePositive": false
+          },
+          {
+            "repo": "argo",
+            "file": "apps/dashboard/src/features/astro-window/charts/sky-panorama.tsx",
+            "line": 363,
+            "falsePositive": false
+          },
+          {
+            "repo": "argo",
+            "file": "apps/dashboard/src/features/astro-window/components/night-anatomy.tsx",
+            "line": 33,
+            "falsePositive": false
+          },
+          {
+            "repo": "argo",
+            "file": "apps/dashboard/src/lib/series.ts",
+            "line": 287,
+            "falsePositive": false
+          },
+          {
+            "repo": "argo",
+            "file": "apps/dashboard/src/lib/series.ts",
+            "line": 288,
+            "falsePositive": false
+          }
+        ]
+      },
+      "waiver-needs-reason/no-reason": {
+        "hits": 3,
+        "falsePositives": 0,
+        "pct": 0,
+        "oracle": "syntactic",
+        "byRepo": {
+          "console": {
+            "hits": 0,
+            "falsePositives": 0
+          },
+          "epos": {
+            "hits": 0,
+            "falsePositives": 0
+          },
+          "linewatch": {
+            "hits": 0,
+            "falsePositives": 0
+          },
+          "argo": {
+            "hits": 3,
+            "falsePositives": 0
+          }
+        },
+        "sites": [
+          {
+            "repo": "argo",
+            "file": "apps/dashboard/src/features/astro-window/components/site-map.tsx",
+            "line": 313,
+            "falsePositive": false
+          },
+          {
+            "repo": "argo",
+            "file": "apps/dashboard/src/features/astro-window/components/site-map.tsx",
+            "line": 322,
+            "falsePositive": false
+          },
+          {
+            "repo": "argo",
+            "file": "apps/dashboard/src/features/home/today-page.tsx",
+            "line": 135,
+            "falsePositive": false
+          }
+        ]
+      },
+      "waiver-needs-reason/file-level": {
+        "hits": 0,
+        "falsePositives": 0,
+        "pct": null,
+        "oracle": "syntactic",
+        "byRepo": {
+          "console": {
+            "hits": 0,
+            "falsePositives": 0
+          },
+          "epos": {
+            "hits": 0,
+            "falsePositives": 0
+          },
+          "linewatch": {
+            "hits": 0,
+            "falsePositives": 0
+          },
+          "argo": {
+            "hits": 0,
+            "falsePositives": 0
+          }
+        },
+        "sites": []
+      }
+    }
+  },
+  "verdict": {
+    "f5": "REFUTED",
+    "f5p": "PASS",
+    "s2": "REFUTED",
+    "overall": "REFUTED"
+  }
+}

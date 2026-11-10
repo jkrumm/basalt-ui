@@ -1,0 +1,12 @@
+{
+  "name": "@basalt-ui/spike-allow-padding",
+  "private": true,
+  "description": "Spike 623: how often the type/weight/spacing allowlist and the padding form force a genuine waiver, and the false-positive rate of 54 lint forms, measured on real consumer code. Throwaway harness, no tests.",
+  "type": "module",
+  "scripts": {
+    "run": "bun run.ts"
+  },
+  "dependencies": {
+    "typescript": "6.0.3"
+  }
+}
