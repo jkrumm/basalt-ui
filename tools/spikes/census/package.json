@@ -1,0 +1,12 @@
+{
+  "name": "@basalt-ui/spike-census",
+  "private": true,
+  "description": "Spike 622: fleet census of exports and hand-rolled copies against the v3 refusal list (F1, F4). Static AST scan, read-only, no tests.",
+  "type": "module",
+  "scripts": {
+    "run": "bun run.ts"
+  },
+  "dependencies": {
+    "typescript": "6.0.3"
+  }
+}

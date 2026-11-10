@@ -1,0 +1,60 @@
+{
+  "$comment": "Manual classification of signature hits (read in source, 2026-11-10). Only rejections are listed; every other hit stands as a confirmed copy. Keys are module ids (sha1 of repo:path, first 8 hex), never paths. Written after the first run and applied by run.ts; the first-run (pre-review) counts are `signatureHits` in the output.",
+  "notCopy": [
+    {
+      "refusal": "agent-runtime",
+      "id": "a57635f6",
+      "why": "third-party chat data schemas, not an AI chat runtime"
+    },
+    {
+      "refusal": "agent-runtime",
+      "id": "ef09a312",
+      "why": "list of third-party chat data, not an AI chat UI"
+    },
+    {
+      "refusal": "board-drag-schedule",
+      "id": "dc9d61de",
+      "why": "per-row daily bar chart that is named Timeline, not a timeline pane"
+    },
+    {
+      "refusal": "realtime-transports",
+      "id": "e608adfb",
+      "why": "Chrome DevTools Protocol client, not an app realtime transport"
+    },
+    {
+      "refusal": "realtime-transports",
+      "id": "05778990",
+      "why": "Chrome DevTools Protocol client in a dev script"
+    },
+    {
+      "refusal": "realtime-transports",
+      "id": "8b32d1ad",
+      "why": "Chrome DevTools Protocol client in a dev script"
+    },
+    {
+      "refusal": "realtime-transports",
+      "id": "76a9e5ab",
+      "why": "Chrome DevTools Protocol client in a dev script"
+    },
+    {
+      "refusal": "realtime-transports",
+      "id": "6409a2f9",
+      "why": "Chrome DevTools Protocol client in a dev script"
+    },
+    {
+      "refusal": "state-nav-palette-toast-markdown-hotkeys",
+      "id": "8f2352a8",
+      "why": "lazy alias of the palette module counted separately in the same repo"
+    },
+    {
+      "refusal": "chart-kinds",
+      "id": "8cf49362",
+      "why": "a local variable named bucketOther in a CLI, not a fold function"
+    },
+    {
+      "refusal": "chart-kinds",
+      "id": "cc8c11d5",
+      "why": "stacked bars, which is not one of the refused kinds"
+    }
+  ]
+}

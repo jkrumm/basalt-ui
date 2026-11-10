@@ -1,0 +1,404 @@
+{
+  "$comment": "F4 signatures, fixed before any count was taken. One entry per row of ARCHITECTURE.md section 10, in table order. A module (one source file) is a COPY of an item when every predicate in its `all` holds. `role: copy` items count toward `copies`; `role: lib` items only report `libModules` (a consumer using an off-the-shelf equivalent is demand evidence, not a re-implementation). Predicates over one parsed module: import{from,names?} (static, dynamic, require), decl{re} (declared function, class or variable name, any depth; type aliases and interfaces implement nothing and are not decls), call{re} (callee text, `new X` included), ident{re} (any identifier token, property names too), jsxAttr{re}, path{re} (repo-relative path, any file type), dep{re} (package.json dependency name). `any` = at least one of `of`. Test, spec, e2e, d.ts, generated and vendored files are not scanned.",
+  "optimistic": {
+    "$comment": "state-persistence-forms.md section 9 S4: hand-rolled optimistic updates outside basalt-ui.",
+    "items": [
+      {
+        "id": "rq-onmutate-cache-write",
+        "role": "copy",
+        "all": [{ "ident": "^onMutate$" }, { "call": "(^|\\.)setQueryData$" }]
+      },
+      {
+        "id": "named-optimistic",
+        "role": "copy",
+        "all": [{ "decl": "^(optimistic\\w*|\\w*Optimistic\\w*)$" }]
+      }
+    ]
+  },
+  "refusals": [
+    {
+      "id": "agent-runtime",
+      "refused": "./agent runtime, chat UI parts, chatFor",
+      "items": [
+        {
+          "id": "own-chat-hook-with-stream-reader",
+          "role": "copy",
+          "all": [
+            { "decl": "^use(Chat|Agent|Assistant|Conversation)\\w*$" },
+            {
+              "any": [
+                { "call": "(^|\\.)getReader$" },
+                { "call": "^EventSource$" },
+                { "import": { "from": "^eventsource-parser" } }
+              ]
+            }
+          ]
+        },
+        {
+          "id": "own-chat-ui-part",
+          "role": "copy",
+          "all": [
+            {
+              "decl": "^(Chat\\w*|Message(List|Thread|Bubble|Stream)|Assistant(Message|Bubble|Panel)|Conversation(View|Panel|Thread))$"
+            }
+          ]
+        },
+        {
+          "id": "sdk-usechat",
+          "role": "lib",
+          "all": [{ "import": { "from": "^(ai|@ai-sdk/react)$", "names": ["useChat"] } }]
+        }
+      ]
+    },
+    {
+      "id": "board-drag-schedule",
+      "refused": "Board, drag engine, Timeline, Week/Month schedule",
+      "items": [
+        {
+          "id": "html5-drag-and-drop",
+          "role": "copy",
+          "all": [{ "jsxAttr": "^onDragStart$" }, { "jsxAttr": "^onDrop$" }]
+        },
+        {
+          "id": "pointer-capture-drag",
+          "role": "copy",
+          "all": [
+            { "call": "(^|\\.)setPointerCapture$" },
+            { "ident": "^(isDragging|dragging|dragState|dragOffset)$" }
+          ]
+        },
+        {
+          "id": "own-board",
+          "role": "copy",
+          "all": [{ "decl": "^(Kanban\\w*|Board|BoardColumn|BoardLane)$" }]
+        },
+        {
+          "id": "own-timeline-or-schedule",
+          "role": "copy",
+          "all": [
+            {
+              "decl": "^(Timeline|WeekView|MonthView|WeekSchedule|MonthSchedule|Schedule|CalendarGrid|Gantt\\w*)$"
+            }
+          ]
+        },
+        {
+          "id": "dnd-library",
+          "role": "lib",
+          "all": [
+            {
+              "import": {
+                "from": "^(@dnd-kit/|react-dnd|@hello-pangea/dnd|react-beautiful-dnd|@atlaskit/pragmatic-drag-and-drop|sortablejs|dragula)"
+              }
+            }
+          ]
+        },
+        {
+          "id": "mantine-schedule",
+          "role": "lib",
+          "all": [{ "import": { "from": "^@mantine/schedule" } }]
+        }
+      ]
+    },
+    {
+      "id": "tree-stepper",
+      "refused": "Tree, Stepper",
+      "items": [
+        {
+          "id": "own-tree-or-stepper",
+          "role": "copy",
+          "all": [{ "decl": "^(Tree|TreeView|TreeNode|FileTree|Stepper|Steps)$" }]
+        },
+        {
+          "id": "mantine-tree-stepper",
+          "role": "lib",
+          "all": [
+            { "import": { "from": "^@mantine/core$", "names": ["Tree", "useTree", "Stepper"] } }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "runtime-theming",
+      "refused": "Theme-lab, createBasaltTheme, runtime derive",
+      "items": [
+        {
+          "id": "own-palette-or-theme-builder",
+          "role": "copy",
+          "all": [
+            {
+              "decl": "^(createTheme|buildTheme|makeTheme|derivePalette|generatePalette|buildPalette|createPalette|deriveTheme|generateTheme)\\w*$"
+            }
+          ]
+        },
+        {
+          "id": "colour-library",
+          "role": "lib",
+          "all": [
+            {
+              "import": {
+                "from": "^(@material/material-color-utilities|culori|chroma-js|colord|color2k|tinycolor2)$"
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "cli-verbs",
+      "refused": "budget, docs, add verbs; route bars as a tool",
+      "items": [
+        {
+          "id": "own-budget-script",
+          "role": "copy",
+          "all": [
+            {
+              "path": "(^|/)(scripts?|tools|bin)/[^/]*(budget|bundle-?size|size-?limit|route-?bars?)[^/]*\\.(m|c)?[tj]s$"
+            }
+          ]
+        },
+        {
+          "id": "own-docs-generator-script",
+          "role": "copy",
+          "all": [
+            {
+              "path": "(^|/)(scripts?|tools|bin)/[^/]*(gen|build|make|sync)-?(docs?|llms)[^/]*\\.(m|c)?[tj]s$"
+            }
+          ]
+        },
+        {
+          "id": "own-component-scaffolder",
+          "role": "copy",
+          "all": [
+            {
+              "path": "(^|/)(scripts?|tools|bin)/[^/]*(add|new|scaffold)-?(component|part|ui|page)[^/]*\\.(m|c)?[tj]s$"
+            }
+          ]
+        },
+        {
+          "id": "size-budget-dependency",
+          "role": "lib",
+          "all": [{ "dep": "^(size-limit|@size-limit/.+|bundlewatch|bundlesize2?)$" }]
+        }
+      ]
+    },
+    {
+      "id": "form-hook-and-peer",
+      "refused": "useBasaltForm, @tanstack/react-form peer",
+      "items": [
+        {
+          "id": "own-form-hook-over-useform",
+          "role": "copy",
+          "all": [
+            { "decl": "^use[A-Z]\\w*Form\\w*$" },
+            { "any": [{ "call": "(^|\\.)useForm$" }, { "call": "(^|\\.)createFormHook$" }] }
+          ]
+        },
+        {
+          "id": "tanstack-form",
+          "role": "lib",
+          "all": [{ "import": { "from": "^@tanstack/(react-)?form" } }]
+        }
+      ]
+    },
+    {
+      "id": "state-nav-palette-toast-markdown-hotkeys",
+      "refused": "Zustand, nuqs, cmdk, sonner, streamdown, @tanstack/react-hotkeys",
+      "items": [
+        {
+          "id": "own-store",
+          "role": "copy",
+          "all": [
+            { "call": "(^|\\.)useSyncExternalStore$" },
+            { "decl": "^(create\\w*Store|use\\w*Store)$" }
+          ]
+        },
+        {
+          "id": "own-url-state-hook",
+          "role": "copy",
+          "all": [
+            { "ident": "^URLSearchParams$" },
+            { "call": "(^|\\.)(replaceState|pushState)$" },
+            { "decl": "^use[A-Z]\\w*$" }
+          ]
+        },
+        {
+          "id": "own-command-palette",
+          "role": "copy",
+          "all": [{ "decl": "^(CommandPalette|CommandMenu|CommandBar|CommandK)$" }]
+        },
+        {
+          "id": "own-toast",
+          "role": "copy",
+          "all": [
+            { "decl": "^(ToastHost|ToastProvider|Toaster|ToastContainer|useToasts?|showToast)$" }
+          ]
+        },
+        {
+          "id": "own-streaming-markdown",
+          "role": "copy",
+          "all": [{ "decl": "^(Streaming|Stream)Markdown\\w*$|^MarkdownStream\\w*$" }]
+        },
+        {
+          "id": "own-hotkeys-hook",
+          "role": "copy",
+          "all": [
+            { "decl": "^use(Hotkeys?|Shortcuts?|KeyboardShortcuts?|KeyPress|Keybindings?)\\w*$" },
+            { "call": "(^|\\.)addEventListener$" }
+          ]
+        },
+        {
+          "id": "refused-library",
+          "role": "lib",
+          "all": [
+            {
+              "import": {
+                "from": "^(zustand|nuqs|cmdk|sonner|streamdown|@tanstack/react-hotkeys)(/|$)"
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "chart-kinds",
+      "refused": "Chart kinds Donut, MirroredBars, StackedArea, foldBands, chartCurve",
+      "items": [
+        {
+          "id": "own-donut-or-pie",
+          "role": "copy",
+          "all": [{ "decl": "^(Donut\\w*|Pie|PieChart|RingChart)$" }]
+        },
+        {
+          "id": "own-d3-arc-donut",
+          "role": "copy",
+          "all": [{ "import": { "from": "^d3-shape$", "names": ["arc", "pie"] } }]
+        },
+        {
+          "id": "own-mirrored-or-stacked",
+          "role": "copy",
+          "all": [{ "decl": "^(MirroredBars\\w*|StackedArea\\w*|StackedBars\\w*)$" }]
+        },
+        {
+          "id": "own-fold-bands",
+          "role": "copy",
+          "all": [{ "decl": "^(foldBands|foldSmall\\w*|groupOther\\w*|bucketOther\\w*)$" }]
+        },
+        {
+          "id": "own-curve-factory",
+          "role": "copy",
+          "all": [
+            { "import": { "from": "^d3-shape$" } },
+            { "ident": "^curve(Monotone|Catmull|Basis|Natural|Step|Cardinal)\\w*$" }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "dropped-before-ship",
+      "refused": "PageSidebar, DragRegion, TableCards, IdChip, InfoPopover, useSettle, safeToReload, useFormGuard",
+      "items": [
+        {
+          "id": "own-named-part",
+          "role": "copy",
+          "all": [
+            {
+              "decl": "^(PageSidebar|DragRegion|TableCards|IdChip|InfoPopover|useSettle|safeToReload|useFormGuard)$"
+            }
+          ]
+        },
+        {
+          "id": "tauri-drag-region",
+          "role": "copy",
+          "all": [{ "jsxAttr": "^data-tauri-drag-region$" }]
+        },
+        {
+          "id": "own-unsaved-guard",
+          "role": "copy",
+          "all": [{ "call": "(^|\\.)useBlocker$" }, { "ident": "^beforeunload$|^onbeforeunload$" }]
+        }
+      ]
+    },
+    {
+      "id": "styled-parts-for-shell-and-controls",
+      "refused": "Exported styled parts for shell and controls",
+      "applicable": false,
+      "items": []
+    },
+    {
+      "id": "realtime-transports",
+      "refused": "WebSocket client, streamedQuery wrapper, TanStack DB, BroadcastChannel",
+      "items": [
+        {
+          "id": "own-websocket-client",
+          "role": "copy",
+          "all": [{ "call": "^WebSocket$" }]
+        },
+        {
+          "id": "own-broadcast-channel",
+          "role": "copy",
+          "all": [{ "call": "^BroadcastChannel$" }]
+        },
+        {
+          "id": "streamed-query-or-db",
+          "role": "lib",
+          "all": [
+            {
+              "any": [
+                {
+                  "import": {
+                    "from": "^@tanstack/(react-)?query$",
+                    "names": ["experimental_streamedQuery", "streamedQuery"]
+                  }
+                },
+                { "import": { "from": "^@tanstack/(react-)?db" } }
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "guards-registry-mcp-rtl-i18n",
+      "refused": "Regex guard, grace ladder, audit-allows, warn level; public @basalt registry, MCP server, RTL, translation tooling",
+      "items": [
+        {
+          "id": "own-regex-guard-script",
+          "role": "copy",
+          "all": [
+            {
+              "path": "(^|/)(scripts?|tools|bin)/[^/]*(check|guard|lint|audit)[^/]*\\.(m|c)?[tj]s$"
+            },
+            { "any": [{ "call": "(^|\\.)(matchAll|match|test)$" }, { "call": "^RegExp$" }] },
+            { "any": [{ "call": "(^|\\.)(readFileSync|readFile)$" }, { "call": "^Bun\\.file$" }] }
+          ]
+        },
+        {
+          "id": "own-audit-allows",
+          "role": "copy",
+          "all": [{ "path": "(^|/)[^/]*audit-?allows?[^/]*$" }]
+        },
+        {
+          "id": "mcp-sdk-server",
+          "role": "lib",
+          "all": [{ "import": { "from": "^(@modelcontextprotocol/sdk|fastmcp)(/|$)" } }]
+        },
+        {
+          "id": "own-rtl-handling",
+          "role": "copy",
+          "all": [{ "ident": "^(isRtl|isRTL|rtl|useDirection)$" }]
+        },
+        {
+          "id": "translation-library",
+          "role": "lib",
+          "all": [
+            {
+              "import": {
+                "from": "^(i18next|react-i18next|react-intl|@lingui/|next-intl|@formatjs/)"
+              }
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

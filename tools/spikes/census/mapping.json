@@ -1,0 +1,229 @@
+{
+  "$comment": "F1 mapping. A name is MAPPED when (a) it is a section 3 symbol of ARCHITECTURE.md (exact, harness-derived), (b) an entry below points at a section 3 symbol, tooling export, rung/recipe or dropped-with-instead row and its anchor string is present in the cited contract doc (harness-verified, cite paths are relative to docs/v3), or (c) it is one of the F1 extras. Anything else is UNMAPPED. `judgement: true` marks an entry whose cite does not name the 2.x symbol itself. Entries are written from docs/v3/{ARCHITECTURE.md,concepts/*.md} only; evidence docs are never a cite.",
+  "extras": [
+    "PageSummary",
+    "StatStripCell",
+    "EventList",
+    "EmptyState",
+    "overlays",
+    "createColumnHelper",
+    "CONTAINER_KEYS",
+    "alpha"
+  ],
+  "sigs": {
+    "basaltAppPlugin": {
+      "kind": "tooling",
+      "to": "basalt()",
+      "cite": "ARCHITECTURE.md",
+      "anchor": "`basalt()` absorbs `basaltAppPlugin`"
+    },
+    "BasaltDataTable": {
+      "kind": "symbol",
+      "to": "DataTable",
+      "cite": "concepts/data-table.md",
+      "anchor": "| `BasaltDataTable`"
+    },
+    "BasaltShell": {
+      "kind": "symbol",
+      "to": "AppShell",
+      "cite": "concepts/shell-nav-router.md",
+      "anchor": "`BasaltShell` + `useNav(NAV)` spread"
+    },
+    "BP": {
+      "kind": "replace",
+      "to": "defineSeries data form",
+      "cite": "concepts/tokens-visual.md",
+      "anchor": "the `BP` and `p()` exports"
+    },
+    "p": {
+      "kind": "replace",
+      "to": "defineSeries data form",
+      "cite": "concepts/tokens-visual.md",
+      "anchor": "the `BP` and `p()` exports"
+    },
+    "createBasaltRouter": {
+      "kind": "symbol",
+      "to": "routerDefaults",
+      "cite": "concepts/shell-nav-router.md",
+      "anchor": "| `createBasaltRouter`, `basaltRouterOptions`"
+    },
+    "createBasaltTheme": {
+      "kind": "replace",
+      "to": "tokens:css (build time)",
+      "cite": "ARCHITECTURE.md",
+      "anchor": "Theme-lab, `createBasaltTheme`, runtime derive"
+    },
+    "createLocalStore": {
+      "kind": "symbol",
+      "to": "persisted",
+      "cite": "concepts/state-persistence-forms.md",
+      "anchor": "`createLocalStore` with no URL field"
+    },
+    "createPersistedState": {
+      "kind": "symbol",
+      "to": "persisted",
+      "cite": "concepts/state-persistence-forms.md",
+      "anchor": "`createPersistedState(...)` factories"
+    },
+    "createSearchStore": {
+      "kind": "symbol",
+      "to": "defineControls",
+      "cite": "concepts/controls-url-state.md",
+      "anchor": "`createSearchStore`, and `createLocalStore` where it has a URL field"
+    },
+    "DateRangePicker": {
+      "kind": "ui",
+      "to": "ui/date-picker",
+      "cite": "concepts/primitives-distribution.md",
+      "anchor": "`DatePicker`, `DateRangePicker`"
+    },
+    "DualPanel": {
+      "kind": "replace",
+      "to": "two CartesianChart with one cursor",
+      "cite": "concepts/charts-cards-kanban.md",
+      "anchor": "`DualPanel` (argo 1)"
+    },
+    "emit": {
+      "kind": "symbol",
+      "to": "notify",
+      "cite": "concepts/state-persistence-forms.md",
+      "anchor": "argo `emit(kind, payload, {title, autoClose})`"
+    },
+    "fieldKey": {
+      "kind": "drop",
+      "to": "FieldLike structural typing",
+      "cite": "concepts/state-persistence-forms.md",
+      "anchor": "`useBasaltForm`, `inputProps`, `fieldKey`"
+    },
+    "inputProps": {
+      "kind": "drop",
+      "to": "FieldLike structural typing",
+      "cite": "concepts/state-persistence-forms.md",
+      "anchor": "`useBasaltForm`, `inputProps`, `fieldKey`"
+    },
+    "useBasaltForm": {
+      "kind": "drop",
+      "to": "FieldLike structural typing",
+      "cite": "ARCHITECTURE.md",
+      "anchor": "`useBasaltForm`, `@tanstack/react-form` peer"
+    },
+    "MultiSelectFilter": {
+      "kind": "symbol",
+      "to": "FilterSet",
+      "cite": "concepts/controls-url-state.md",
+      "anchor": "**Filter kinds are not exports.**"
+    },
+    "SelectFilter": {
+      "kind": "symbol",
+      "to": "FilterSet",
+      "cite": "concepts/controls-url-state.md",
+      "anchor": "**Filter kinds are not exports.**"
+    },
+    "ToggleFilter": {
+      "kind": "symbol",
+      "to": "FilterSet",
+      "cite": "concepts/controls-url-state.md",
+      "anchor": "**Filter kinds are not exports.**"
+    },
+    "NumberFilter": {
+      "kind": "symbol",
+      "to": "FilterSet",
+      "cite": "concepts/controls-url-state.md",
+      "anchor": "| `SearchFilter`, `NumberFilter`, `RangeFilter`"
+    },
+    "RangeFilter": {
+      "kind": "symbol",
+      "to": "FilterSet",
+      "cite": "concepts/controls-url-state.md",
+      "anchor": "| `SearchFilter`, `NumberFilter`, `RangeFilter`"
+    },
+    "SearchFilter": {
+      "kind": "symbol",
+      "to": "FilterSet",
+      "cite": "concepts/controls-url-state.md",
+      "anchor": "| `SearchFilter`, `NumberFilter`, `RangeFilter`"
+    },
+    "navGroup": {
+      "kind": "drop",
+      "to": "defineNav",
+      "cite": "concepts/shell-nav-router.md",
+      "anchor": "`useBasaltNav`, `navGroup`, `flattenNav`"
+    },
+    "NotificationBell": {
+      "kind": "replace",
+      "to": "recipe over notify",
+      "cite": "concepts/state-persistence-forms.md",
+      "anchor": "`NotificationBell` becomes a recipe"
+    },
+    "PageTitle": {
+      "kind": "replace",
+      "to": "PageBar title",
+      "cite": "concepts/shell-nav-router.md",
+      "anchor": "| `PageTitle`, `toggleSidebar()`"
+    },
+    "toggleSidebar": {
+      "kind": "replace",
+      "to": "command shell.toggle-rail",
+      "cite": "concepts/shell-nav-router.md",
+      "anchor": "| `PageTitle`, `toggleSidebar()`"
+    },
+    "setColorScheme": {
+      "kind": "symbol",
+      "to": "setScheme",
+      "cite": "concepts/state-persistence-forms.md",
+      "anchor": "`setScheme` (core, raw string key",
+      "judgement": true
+    },
+    "SettingsRow": {
+      "kind": "symbol",
+      "to": "FormField",
+      "cite": "concepts/controls-url-state.md",
+      "anchor": "| `FormRow`, `PanelRow`, `SettingsRow`"
+    },
+    "StackedArea": {
+      "kind": "replace",
+      "to": "Lines with an area option",
+      "cite": "concepts/charts-cards-kanban.md",
+      "anchor": "| `StackedArea` (5 files)"
+    },
+    "StatusDot": {
+      "kind": "ui",
+      "to": "ui/status",
+      "cite": "concepts/primitives-distribution.md",
+      "anchor": "`Status`, `Swatch`",
+      "judgement": true
+    },
+    "ThemeToggle": {
+      "kind": "replace",
+      "to": "scheme module (setScheme)",
+      "cite": "concepts/tokens-visual.md",
+      "anchor": "`ThemeToggle` to ~60-line scheme module"
+    },
+    "SyncButton": {
+      "kind": "symbol",
+      "to": "RefreshButton",
+      "cite": "concepts/live-realtime.md",
+      "anchor": "`SyncButton` (law C12) becomes `RefreshButton`"
+    },
+    "WidgetHeader": {
+      "kind": "replace",
+      "to": "CardBand / StatCell",
+      "cite": "concepts/charts-cards-kanban.md",
+      "anchor": "`StatStripCell` (14 files); `WidgetHeader`"
+    }
+  },
+  "families": {
+    "format": {
+      "kind": "symbol",
+      "to": "useFormat",
+      "cite": "concepts/quality-contract.md",
+      "anchor": "`basalt-ui/format#<fn>` -> `useFormat()`/`createFormat`"
+    }
+  },
+  "tagAliases": {
+    "ModalsProvider": {
+      "to": "@mantine/modals",
+      "note": "the row names the package, not the provider component"
+    }
+  }
+}
