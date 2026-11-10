@@ -8,8 +8,12 @@ on:
 permissions:
   contents: read
 
+# The workflow stays ci.yml and its run-level conclusion stays the single result `make merge-guard` reads
+# (`gh run list --workflow ci.yml`): the parallel jobs below only cut wall time, and the final `ci` job
+# fails unless every one of them passed.
 jobs:
-  ci:
+  # Static gates, build, typecheck, theme/coverage/budget gates and the pack test.
+  checks:
     runs-on: ubuntu-latest
 
     steps:
@@ -18,17 +22,8 @@ jobs:
         with:
           fetch-depth: 0 # commitlint reads the pushed range
 
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: '24'
-
-      - name: Setup Bun
-        uses: oven-sh/setup-bun@v2
-        # Built-in caching keyed on bun.lock
-
-      - name: Install dependencies
-        run: bun install --frozen-lockfile
+      - name: Setup
+        uses: ./.github/actions/setup
 
       - name: Commitlint (pushed range)
         env:
@@ -65,25 +60,6 @@ jobs:
       - name: Typecheck
         run: bun run typecheck
 
-      - name: Tests
-        run: bun test
-
-      - name: Layout tests (real Chrome geometry)
-        run: |
-          # playwright-core's channel:'chrome' table resolves /opt/google/chrome/chrome on linux,
-          # which is exactly what ubuntu-latest's Chrome .deb installs. Fail here with a readable
-          # message rather than 40 lines down as an opaque launch error.
-          CHROME=/opt/google/chrome/chrome
-          if [ ! -x "$CHROME" ]; then
-            echo "FAILED: no Chrome at $CHROME — playwright-core has nothing to launch."
-            echo "        The runner image changed. Either restore Chrome, or switch this suite to"
-            echo "        'bunx playwright-core install --only-shell chromium' and drop the channel."
-            exit 1
-          fi
-          echo "==> driving $("$CHROME" --version)"
-          bun run test:layout
-          bun run test:layout:harness
-
       - name: Theme guard (dogfood check-theme on basalt's own src)
         working-directory: packages/basalt-ui
         run: bun ./bin/basalt-ui.mjs check-theme
@@ -106,3 +82,80 @@ jobs:
 
       - name: Pack test (dist resolution gate)
         run: bun --filter basalt-ui pack-test
+
+  # The unit suite (happy-dom). Builds first, as the sequential job did.
+  unit:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup
+        uses: ./.github/actions/setup
+
+      - name: Build package
+        run: bun --filter basalt-ui build
+
+      - name: Tests
+        run: bun test
+
+  # The layout suite (real Chrome geometry), split by file across four jobs. `bun test --shard=i/N`
+  # partitions the test files, so the shards together run exactly the files one run would; each prints
+  # "Ran X tests across Y files", and X must sum to the unsharded count.
+  layout:
+    name: layout (${{ matrix.shard }}/4)
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        shard: [1, 2, 3, 4]
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup
+        uses: ./.github/actions/setup
+
+      - name: Build package
+        run: bun --filter basalt-ui build
+
+      - name: Layout tests (real Chrome geometry)
+        env:
+          SHARD: ${{ matrix.shard }}/4
+        run: |
+          # playwright-core's channel:'chrome' table resolves /opt/google/chrome/chrome on linux,
+          # which is exactly what ubuntu-latest's Chrome .deb installs. Fail here with a readable
+          # message rather than 40 lines down as an opaque launch error.
+          CHROME=/opt/google/chrome/chrome
+          if [ ! -x "$CHROME" ]; then
+            echo "FAILED: no Chrome at $CHROME — playwright-core has nothing to launch."
+            echo "        The runner image changed. Either restore Chrome, or switch this suite to"
+            echo "        'bunx playwright-core install --only-shell chromium' and drop the channel."
+            exit 1
+          fi
+          echo "==> driving $("$CHROME" --version)"
+          bun run test:layout --shard="$SHARD"
+
+      - name: Layout harness self-test
+        # One small file, not shardable: run it on the first shard only.
+        if: matrix.shard == 1
+        run: bun run test:layout:harness
+
+  # The one result: needs every job above and fails unless each succeeded (a skipped or cancelled need is a
+  # failure too), so a green ci.yml run still means everything passed.
+  ci:
+    if: always()
+    needs: [checks, unit, layout]
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Fail unless every job succeeded
+        if: needs.checks.result != 'success' || needs.unit.result != 'success' || needs.layout.result != 'success'
+        run: |
+          echo "checks=${{ needs.checks.result }} unit=${{ needs.unit.result }} layout=${{ needs.layout.result }}"
+          exit 1
+
+      - name: Every job succeeded
+        run: echo "checks, unit and all layout shards passed"
