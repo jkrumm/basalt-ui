@@ -3543,8 +3543,8 @@ describe('basalt/raw-breakpoint', () => {
     expect(rules).not.toContain('raw-breakpoint')
   })
 
-  // The recipe's px keys are CONTAINER_CLASSES written out by hand in two places — the plugin
-  // (plain JS, cannot import TS source) and MIGRATING's rule entry. Retuning a class must fail here.
+  // The recipe's px keys are CONTAINER_CLASSES written out by hand in the plugin (plain JS, cannot
+  // import TS source). Retuning a class must fail here.
   describe('recipe px literals ↔ CONTAINER_CLASSES', () => {
     const boundaries = new Set<number>(Object.values(CONTAINER_CLASSES).filter((px) => px > 0))
     const pxLiterals = (text: string) => [...text.matchAll(/(\d+)px/g)].map((m) => Number(m[1]))
@@ -3553,17 +3553,6 @@ describe('basalt/raw-breakpoint', () => {
       const found = pxLiterals(RAW_BREAKPOINT_RECIPE as string)
       expect(found.length).toBeGreaterThan(0)
       for (const px of found) expect([px, boundaries.has(px)]).toEqual([px, true])
-    })
-
-    it("every px value and the class table in MIGRATING's raw-breakpoint entry match", () => {
-      const migrating = readFileSync(resolve(import.meta.dir, '../MIGRATING.md'), 'utf8')
-      const start = migrating.indexOf('### `basalt/raw-breakpoint`')
-      expect(start).toBeGreaterThan(-1)
-      const end = migrating.indexOf('\n### ', start + 1)
-      const section = migrating.slice(start, end === -1 ? undefined : end)
-      for (const px of pxLiterals(section)) expect([px, boundaries.has(px)]).toEqual([px, true])
-      const { compact, regular, wide } = CONTAINER_CLASSES
-      expect(section).toContain(`compact ${compact} · regular ${regular} · wide ${wide}`)
     })
   })
 

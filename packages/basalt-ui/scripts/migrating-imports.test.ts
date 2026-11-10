@@ -108,8 +108,9 @@ function migratingClaims(): Claim[] {
   }
 
   const cutoff = text.indexOf(OLDEST_CHECKED_PROSE_SECTION)
-  if (cutoff === -1)
-    throw new Error(`MIGRATING.md lost its ${OLDEST_CHECKED_PROSE_SECTION} section`)
+  // MIGRATING.md is generated from migrations/areas and carries no per-release sections: the fenced
+  // imports above are still checked, the prose cut-off has nothing to anchor to.
+  if (cutoff === -1) return claims
   const nextSection = text.indexOf('\n## ', cutoff + 1)
   const checkedProse = text.slice(0, nextSection === -1 ? text.length : nextSection)
   for (const m of checkedProse.matchAll(PROSE_CLAIM)) {
