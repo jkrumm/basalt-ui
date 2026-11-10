@@ -32,7 +32,7 @@ G1..G13 are cited below, not restated. Extends `docs/CONTROLS-SPEC.md`; laws C1�
   panel beats a CSS twin**, so the query is read through `useSyncExternalStore` — the one hook
   whose server snapshot React honours during both `renderToString` and hydration, so SSR, the
   hydration pass and the first client paint agree on which single node exists. Two consequences are
-  pinned by `packages/basalt-ui/tests/layout/page-aside.layout.test.ts` in real Chrome: exactly one
+  pinned by `packages/basalt-ui/tests/layout/shell-page-aside.layout.test.ts` in real Chrome: exactly one
   LIVE child subtree at 1440 and at 390, and exactly one MOUNT of it at each. The second half is
   why the in-flow branch inside a shell waits one commit — `PageBar` publishes its row-2 claim from
   a layout effect, so the pre-claim pass used to render the wave-1 in-flow form, mount the aside's
