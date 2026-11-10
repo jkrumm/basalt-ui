@@ -518,7 +518,7 @@ describe('basalt/chart-host-single', () => {
 
 /**
  * Every `@tanstack/charts` subpath that is deliberately NOT importable outside basalt, classified
- * against 1.1.0's `exports` ('' is the bare root). A new engine subpath is in neither this list nor
+ * against 1.5.0's `exports` ('' is the bare root). A new engine subpath is in neither this list nor
  * the allowlist, so the test below fails until someone decides which it is.
  */
 const BANNED_ENGINE_SUBPATHS: readonly string[] = [
@@ -554,12 +554,14 @@ const BANNED_ENGINE_SUBPATHS: readonly string[] = [
   'interaction/handle',
   'interaction/signal',
   'interaction/zoom',
+  'layers',
   'legend',
   'lit',
   'mark/composite',
   'mark/scale-values',
   'motion',
   'motion/definition',
+  'motion/lite',
   'network/force',
   'network/sankey',
   'octane',

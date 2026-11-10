@@ -86,7 +86,7 @@ props extend and `src/surfaces.ts` stays the SSOT for real subpaths.
 ## Layering: Mantine-coupled vs Mantine-free
 
 - `src/charts/**` and `src/tokens/**` import zero `@mantine/*`. The chart engine is
-  `@tanstack/charts` `1.1.0` (+ `d3-scale` `4.0.2`, exact optional peers, subpath-required for
+  `@tanstack/charts` `1.5.0` (+ `d3-scale` `4.0.2`, exact optional peers, subpath-required for
   `./charts`); `@visx/*` is banned everywhere. `src/charts/**` imports only `@tanstack/charts/*`,
   `d3-scale`, `react`, `../tokens`, `../format` and `../common`. Three independent oxlint plugin
   rules enforce it: `basalt/chart-engine-boundary` ships in the consumer preset too (`@visx/*`
