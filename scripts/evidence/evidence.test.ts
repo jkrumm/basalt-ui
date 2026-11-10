@@ -275,12 +275,12 @@ describe('keyboard lane (pure parts)', () => {
 
 describe('selectLanes', () => {
   it('runs every lane when unset', () => {
-    expect(selectLanes(undefined)).toContain('table-perf')
+    expect(selectLanes(undefined)).toContain('bundle')
     expect(selectLanes(undefined).length).toBeGreaterThan(5)
   })
 
   it('keeps the fixed lane order whatever order was asked for', () => {
-    expect(selectLanes('table-perf,bundle')).toEqual(['bundle', 'table-perf'])
+    expect(selectLanes('keyboard,bundle')).toEqual(['bundle', 'keyboard'])
   })
 
   it('treats an empty or comma-only value as all lanes and ignores blank tokens', () => {
