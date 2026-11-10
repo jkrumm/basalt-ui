@@ -22,6 +22,8 @@ export function areaFiles(dir: string): string[] {
 
 /** Every row of every area, in print order. A repeated `id` is a bug in the lane that added it. */
 async function loadRows(files: readonly string[]): Promise<RowDef[]> {
+  // No areas would print "all 0 budgets within ceiling" and pass: refuse instead.
+  if (files.length === 0) throw new Error('check-budgets: no area files found')
   const rows: RowDef[] = []
   for (const file of files) {
     const area = (await import(pathToFileURL(file).href)) as AreaModule
