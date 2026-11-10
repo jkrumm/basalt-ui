@@ -274,6 +274,9 @@ a consumer is blocked, a fix is wanted downstream — and say which version went
 - Leads rest on `docs/v3/ARCHITECTURE.md` and `docs/v3/DIRECTION.md`, not `docs/V2-SPEC.md`.
 - v3 is rewritten in place on master and verified with `apps/playground` and `examples/*`, never against pinned
   consumers.
+- A plan row whose facts are only `brief: <path>` (and an optional `note`): that file on master is your complete
+  brief. Read it first, ship by stating each of its `acceptance` lines met or not met, and where it conflicts with
+  `docs/v3/ARCHITECTURE.md`, the architecture wins and the PR says so.
 
 ## Key Principles
 
