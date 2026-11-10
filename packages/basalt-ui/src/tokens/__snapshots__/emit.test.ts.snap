@@ -1,0 +1,421 @@
+// Bun Snapshot v1, https://bun.sh/docs/test/snapshots
+
+exports[`emitTokensCss snapshot: the whole default sheet 1`] = `
+"/* @generated basalt-ui — do not edit; regenerate with the command on the next line */
+/* basalt-ui 3.0.0 — \`basalt-ui tokens:css\` */
+:root,
+:root[data-theme='light'] {
+  color-scheme: light;
+  --vx-canvas: #f8f4f1;
+  --vx-inset: #fefcfb;
+  --vx-card: #ece9e6;
+  --vx-raised: #ffffff;
+  --vx-hover: color-mix(in srgb, var(--vx-ink) 5%, transparent);
+  --vx-selected: color-mix(in srgb, var(--vx-ink) 7.5%, transparent);
+  --vx-scrim: color-mix(in srgb, var(--vx-ink) 45%, transparent);
+  --vx-hairline: color-mix(in srgb, var(--vx-ink) 12%, transparent);
+  --vx-input: color-mix(in srgb, var(--vx-ink) 52%, transparent);
+  --vx-ink: #262321;
+  --vx-ink-muted: #5c5956;
+  --vx-ink-faint: #6b6865;
+  --vx-brand: #206da8;
+  --vx-brand-fill: #2e75b1;
+  --vx-on-brand: #ffffff;
+  --vx-good: #226b40;
+  --vx-warn: #855400;
+  --vx-bad: #a83434;
+  --vx-info: #05629c;
+  --vx-tint-pct: 12%;
+  --vx-line: #7a7674;
+  --vx-dim-bar: #a9a5a2;
+  --vx-grid: color-mix(in srgb, var(--vx-ink) 10%, transparent);
+  --vx-crosshair: color-mix(in srgb, var(--vx-ink) 40%, transparent);
+  --vx-chart-1: #2e75b1;
+  --vx-chart-2: #a06324;
+  --vx-chart-3: #277e75;
+  --vx-chart-4: #a650a5;
+  --vx-chart-5: #338034;
+  --vx-seq-1: #d6e3f8;
+  --vx-seq-2: #abc3e4;
+  --vx-seq-3: #7fa3d0;
+  --vx-seq-4: #5384b9;
+  --vx-seq-5: #1567a2;
+  --vx-shadow-card: 0 1px 2px color-mix(in srgb, var(--vx-ink) 5%, transparent);
+  --vx-shadow-raised: 0 1px 2px rgba(28, 25, 23, 0.1);
+  --vx-shadow-overlay: 0 8px 24px rgba(28, 25, 23, 0.1);
+}
+@media not print {
+  :root[data-theme='dark'] {
+    color-scheme: dark;
+    --vx-canvas: #23201d;
+    --vx-inset: #282522;
+    --vx-card: #312e2b;
+    --vx-raised: #3c3835;
+    --vx-hover: color-mix(in srgb, var(--vx-ink) 7%, transparent);
+    --vx-selected: color-mix(in srgb, var(--vx-ink) 9%, transparent);
+    --vx-scrim: color-mix(in srgb, #000000 60%, transparent);
+    --vx-hairline: color-mix(in srgb, var(--vx-ink) 9%, transparent);
+    --vx-input: color-mix(in srgb, var(--vx-ink) 44%, transparent);
+    --vx-ink: #efeae6;
+    --vx-ink-muted: #b4b0ac;
+    --vx-ink-faint: #999592;
+    --vx-brand: #99c4fa;
+    --vx-brand-fill: #2e75b1;
+    --vx-on-brand: #ffffff;
+    --vx-good: #65d38d;
+    --vx-warn: #f4b149;
+    --vx-bad: #ffa89f;
+    --vx-info: #99c4fa;
+    --vx-tint-pct: 16%;
+    --vx-line: #999593;
+    --vx-dim-bar: #5c5956;
+    --vx-grid: color-mix(in srgb, var(--vx-ink) 10%, transparent);
+    --vx-crosshair: color-mix(in srgb, var(--vx-ink) 40%, transparent);
+    --vx-chart-1: #2e75b1;
+    --vx-chart-2: #a06324;
+    --vx-chart-3: #277e75;
+    --vx-chart-4: #a650a5;
+    --vx-chart-5: #338034;
+    --vx-seq-1: #374353;
+    --vx-seq-2: #445b78;
+    --vx-seq-3: #557aa4;
+    --vx-seq-4: #6f9ed5;
+    --vx-seq-5: #92c5ff;
+    --vx-shadow-card: none;
+    --vx-shadow-raised: 0 1px 2px rgba(0, 0, 0, 0.35), inset 0 0 0 1px color-mix(in srgb, #ffffff 8%, transparent);
+    --vx-shadow-overlay: 0 8px 24px rgba(0, 0, 0, 0.5);
+  }
+}
+@media not print {
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme]) {
+      color-scheme: dark;
+      --vx-canvas: #23201d;
+      --vx-inset: #282522;
+      --vx-card: #312e2b;
+      --vx-raised: #3c3835;
+      --vx-hover: color-mix(in srgb, var(--vx-ink) 7%, transparent);
+      --vx-selected: color-mix(in srgb, var(--vx-ink) 9%, transparent);
+      --vx-scrim: color-mix(in srgb, #000000 60%, transparent);
+      --vx-hairline: color-mix(in srgb, var(--vx-ink) 9%, transparent);
+      --vx-input: color-mix(in srgb, var(--vx-ink) 44%, transparent);
+      --vx-ink: #efeae6;
+      --vx-ink-muted: #b4b0ac;
+      --vx-ink-faint: #999592;
+      --vx-brand: #99c4fa;
+      --vx-brand-fill: #2e75b1;
+      --vx-on-brand: #ffffff;
+      --vx-good: #65d38d;
+      --vx-warn: #f4b149;
+      --vx-bad: #ffa89f;
+      --vx-info: #99c4fa;
+      --vx-tint-pct: 16%;
+      --vx-line: #999593;
+      --vx-dim-bar: #5c5956;
+      --vx-grid: color-mix(in srgb, var(--vx-ink) 10%, transparent);
+      --vx-crosshair: color-mix(in srgb, var(--vx-ink) 40%, transparent);
+      --vx-chart-1: #2e75b1;
+      --vx-chart-2: #a06324;
+      --vx-chart-3: #277e75;
+      --vx-chart-4: #a650a5;
+      --vx-chart-5: #338034;
+      --vx-seq-1: #374353;
+      --vx-seq-2: #445b78;
+      --vx-seq-3: #557aa4;
+      --vx-seq-4: #6f9ed5;
+      --vx-seq-5: #92c5ff;
+      --vx-shadow-card: none;
+      --vx-shadow-raised: 0 1px 2px rgba(0, 0, 0, 0.35), inset 0 0 0 1px color-mix(in srgb, #ffffff 8%, transparent);
+      --vx-shadow-overlay: 0 8px 24px rgba(0, 0, 0, 0.5);
+    }
+  }
+}
+:root {
+  --vx-surface: var(--vx-canvas);
+  --vx-radius-card: 14px;
+  --vx-radius-inset: 10px;
+  --vx-radius-ctrl: 8px;
+  --vx-radius-chip: 5px;
+  --vx-icon: 1rem;
+  --vx-font-sans: 'Nunito Sans Variable', ui-sans-serif, system-ui, -apple-system, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+  --vx-font-head: 'Head Digits', 'Hubot Sans Variable', ui-sans-serif, system-ui, -apple-system, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+  --vx-font-mono: 'JetBrains Mono Variable', ui-monospace, 'SF Mono', Menlo, monospace;
+  --vx-font-head-stretch: 88%;
+  --vx-weight-body: 400;
+  --vx-weight-medium: 500;
+  --vx-weight-strong: 600;
+  --vx-text-micro: 0.6875rem;
+  --vx-text-micro-lh: 1rem;
+  --vx-text-xs: 0.75rem;
+  --vx-text-xs-lh: 1rem;
+  --vx-text-sm: 0.8125rem;
+  --vx-text-sm-lh: 1.25rem;
+  --vx-text-md: 0.9375rem;
+  --vx-text-md-lh: 1.25rem;
+  --vx-text-base: 1rem;
+  --vx-text-base-lh: 1.5rem;
+  --vx-text-lg: 1.125rem;
+  --vx-text-lg-lh: 1.5rem;
+  --vx-text-display: 1.875rem;
+  --vx-text-display-lh: 1;
+  --vx-dur-fast: 150ms;
+  --vx-dur-base: 250ms;
+  --vx-ease: cubic-bezier(0.4, 0, 0.2, 1);
+  --vx-measure: 68ch;
+  --vx-rhythm-1: 0.75em;
+  --vx-rhythm-2: 1.25em;
+  --vx-rhythm-3: 2em;
+  --vx-contract: 3;
+  --vx-hit: 1.5rem;
+}
+:root,
+[data-density='dense'] {
+  --vx-ctl-h: 1.75rem;
+  --vx-row-h: 2rem;
+}
+[data-density='normal'] {
+  --vx-ctl-h: 2rem;
+  --vx-row-h: 2.5rem;
+}
+[data-density='comfortable'] {
+  --vx-ctl-h: 2.5rem;
+  --vx-row-h: 3rem;
+}
+@media (pointer: coarse) {
+  :root:not([data-density]),
+  [data-density='dense'],
+  [data-density='normal'] {
+    --vx-row-h: 2.75rem;
+  }
+  :root {
+    --vx-hit: 2.75rem;
+  }
+}
+"
+`;
+
+exports[`VX types, names, zone A snapshot: VX types 1`] = `
+"/* @generated basalt-ui — do not edit; regenerate with the command on the next line */
+/* basalt-ui 3.0.0 — \`basalt-ui tokens:css\` */
+export const VX = {
+  canvas: 'var(--vx-canvas)',
+  inset: 'var(--vx-inset)',
+  card: 'var(--vx-card)',
+  raised: 'var(--vx-raised)',
+  surface: 'var(--vx-surface)',
+  hover: 'var(--vx-hover)',
+  selected: 'var(--vx-selected)',
+  scrim: 'var(--vx-scrim)',
+  hairline: 'var(--vx-hairline)',
+  input: 'var(--vx-input)',
+  ink: 'var(--vx-ink)',
+  inkMuted: 'var(--vx-ink-muted)',
+  inkFaint: 'var(--vx-ink-faint)',
+  brand: 'var(--vx-brand)',
+  brandFill: 'var(--vx-brand-fill)',
+  onBrand: 'var(--vx-on-brand)',
+  good: 'var(--vx-good)',
+  warn: 'var(--vx-warn)',
+  bad: 'var(--vx-bad)',
+  info: 'var(--vx-info)',
+  tintPct: 'var(--vx-tint-pct)',
+  line: 'var(--vx-line)',
+  dimBar: 'var(--vx-dim-bar)',
+  grid: 'var(--vx-grid)',
+  crosshair: 'var(--vx-crosshair)',
+  chart1: 'var(--vx-chart-1)',
+  chart2: 'var(--vx-chart-2)',
+  chart3: 'var(--vx-chart-3)',
+  chart4: 'var(--vx-chart-4)',
+  chart5: 'var(--vx-chart-5)',
+  seq1: 'var(--vx-seq-1)',
+  seq2: 'var(--vx-seq-2)',
+  seq3: 'var(--vx-seq-3)',
+  seq4: 'var(--vx-seq-4)',
+  seq5: 'var(--vx-seq-5)',
+  shadowCard: 'var(--vx-shadow-card)',
+  shadowRaised: 'var(--vx-shadow-raised)',
+  shadowOverlay: 'var(--vx-shadow-overlay)',
+  radiusCard: 'var(--vx-radius-card)',
+  radiusInset: 'var(--vx-radius-inset)',
+  radiusCtrl: 'var(--vx-radius-ctrl)',
+  radiusChip: 'var(--vx-radius-chip)',
+  ctlH: 'var(--vx-ctl-h)',
+  rowH: 'var(--vx-row-h)',
+  icon: 'var(--vx-icon)',
+  hit: 'var(--vx-hit)',
+  fontSans: 'var(--vx-font-sans)',
+  fontHead: 'var(--vx-font-head)',
+  fontMono: 'var(--vx-font-mono)',
+  fontHeadStretch: 'var(--vx-font-head-stretch)',
+  weightBody: 'var(--vx-weight-body)',
+  weightMedium: 'var(--vx-weight-medium)',
+  weightStrong: 'var(--vx-weight-strong)',
+  textMicro: 'var(--vx-text-micro)',
+  textMicroLh: 'var(--vx-text-micro-lh)',
+  textXs: 'var(--vx-text-xs)',
+  textXsLh: 'var(--vx-text-xs-lh)',
+  textSm: 'var(--vx-text-sm)',
+  textSmLh: 'var(--vx-text-sm-lh)',
+  textMd: 'var(--vx-text-md)',
+  textMdLh: 'var(--vx-text-md-lh)',
+  textBase: 'var(--vx-text-base)',
+  textBaseLh: 'var(--vx-text-base-lh)',
+  textLg: 'var(--vx-text-lg)',
+  textLgLh: 'var(--vx-text-lg-lh)',
+  textDisplay: 'var(--vx-text-display)',
+  textDisplayLh: 'var(--vx-text-display-lh)',
+  durFast: 'var(--vx-dur-fast)',
+  durBase: 'var(--vx-dur-base)',
+  ease: 'var(--vx-ease)',
+  measure: 'var(--vx-measure)',
+  rhythm1: 'var(--vx-rhythm-1)',
+  rhythm2: 'var(--vx-rhythm-2)',
+  rhythm3: 'var(--vx-rhythm-3)',
+  contract: 'var(--vx-contract)',
+} as const
+
+export type VxKey = keyof typeof VX
+
+export type VxVar =
+  | '--vx-canvas'
+  | '--vx-inset'
+  | '--vx-card'
+  | '--vx-raised'
+  | '--vx-surface'
+  | '--vx-hover'
+  | '--vx-selected'
+  | '--vx-scrim'
+  | '--vx-hairline'
+  | '--vx-input'
+  | '--vx-ink'
+  | '--vx-ink-muted'
+  | '--vx-ink-faint'
+  | '--vx-brand'
+  | '--vx-brand-fill'
+  | '--vx-on-brand'
+  | '--vx-good'
+  | '--vx-warn'
+  | '--vx-bad'
+  | '--vx-info'
+  | '--vx-tint-pct'
+  | '--vx-line'
+  | '--vx-dim-bar'
+  | '--vx-grid'
+  | '--vx-crosshair'
+  | '--vx-chart-1'
+  | '--vx-chart-2'
+  | '--vx-chart-3'
+  | '--vx-chart-4'
+  | '--vx-chart-5'
+  | '--vx-seq-1'
+  | '--vx-seq-2'
+  | '--vx-seq-3'
+  | '--vx-seq-4'
+  | '--vx-seq-5'
+  | '--vx-shadow-card'
+  | '--vx-shadow-raised'
+  | '--vx-shadow-overlay'
+  | '--vx-radius-card'
+  | '--vx-radius-inset'
+  | '--vx-radius-ctrl'
+  | '--vx-radius-chip'
+  | '--vx-ctl-h'
+  | '--vx-row-h'
+  | '--vx-icon'
+  | '--vx-hit'
+  | '--vx-font-sans'
+  | '--vx-font-head'
+  | '--vx-font-mono'
+  | '--vx-font-head-stretch'
+  | '--vx-weight-body'
+  | '--vx-weight-medium'
+  | '--vx-weight-strong'
+  | '--vx-text-micro'
+  | '--vx-text-micro-lh'
+  | '--vx-text-xs'
+  | '--vx-text-xs-lh'
+  | '--vx-text-sm'
+  | '--vx-text-sm-lh'
+  | '--vx-text-md'
+  | '--vx-text-md-lh'
+  | '--vx-text-base'
+  | '--vx-text-base-lh'
+  | '--vx-text-lg'
+  | '--vx-text-lg-lh'
+  | '--vx-text-display'
+  | '--vx-text-display-lh'
+  | '--vx-dur-fast'
+  | '--vx-dur-base'
+  | '--vx-ease'
+  | '--vx-measure'
+  | '--vx-rhythm-1'
+  | '--vx-rhythm-2'
+  | '--vx-rhythm-3'
+  | '--vx-contract'
+"
+`;
+
+exports[`VX types, names, zone A snapshot: zone A denial 1`] = `
+{
+  "allowedCurrent": [
+    "fill-current",
+    "stroke-current",
+    "text-current",
+  ],
+  "deniedOutright": [
+    "bg-current",
+    "border-current",
+    "ring-current",
+    "outline-current",
+    "divide-current",
+    "from-",
+    "via-",
+    "to-current",
+  ],
+  "names": [
+    "brand",
+    "ring",
+    "brand-fill",
+    "on-brand",
+    "good",
+    "good-tint",
+    "warn",
+    "warn-tint",
+    "bad",
+    "bad-tint",
+    "destructive",
+    "destructive-tint",
+    "info",
+    "info-tint",
+    "line",
+    "chart-1",
+    "chart-2",
+    "chart-3",
+    "chart-4",
+    "chart-5",
+    "seq-1",
+    "seq-2",
+    "seq-3",
+    "seq-4",
+    "seq-5",
+  ],
+  "prefixes": [
+    "bg",
+    "border",
+    "ring",
+    "outline",
+    "divide",
+    "from",
+    "via",
+    "to",
+    "fill",
+    "stroke",
+    "decoration",
+    "shadow",
+    "accent",
+    "caret",
+    "text",
+  ],
+}
+`;

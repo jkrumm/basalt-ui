@@ -20,8 +20,18 @@ import { join } from 'node:path'
 import { normalizeColorFunctions, tokensCss } from '../cli/tokens-css'
 import { GENERATED_HEADER_LINE, REMOVED_VX_NAMES } from '../guard'
 import { buildPaletteCss, seriesTokens, VX } from './core'
-import { DEFAULT_DERIVE_CONFIG, deriveTokens } from './derive'
-import type { DeriveConfig, FillFamily, SurfaceKey } from './derive'
+import {
+  DEFAULT_DERIVE_CONFIG,
+  DEFAULT_DERIVE_V3_CONFIG,
+  deriveTokens,
+  deriveV3,
+  INK_MIX_PCT,
+  statusBackgrounds,
+} from './derive'
+import type { DeriveConfig, DeriveV3Config, FillFamily, SurfaceKey } from './derive'
+import { emitTokensCss } from './emit'
+import { PAIRS } from './gates'
+import { FOREGROUND_PAIRS } from './table'
 import { contrastRatio, relativeLuminance } from './hct'
 import { buildPaletteData, SHADOW } from './palette'
 import { deriveStatusHexes, STATUS_TEXT_SURFACES } from './status-text'
@@ -49,6 +59,22 @@ function* surfaceGrid(): Generator<DeriveConfig> {
     for (const neutral of NEUTRALS)
       for (const level of LEVELS)
         yield { ...DEFAULT_DERIVE_CONFIG, accent, neutral, lightLevel: level, darkLevel: level }
+}
+
+const V3_NEUTRALS: readonly DeriveV3Config['neutral'][] = ['warm', 'neutral', 'cool']
+const V3_VIBRANCY = [-5, 0, 5] as const
+
+/** Every v3 config on the grid: seeds x neutrals x vibrancy. */
+function* v3Grid(): Generator<DeriveV3Config> {
+  for (const accent of SEEDS)
+    for (const neutral of V3_NEUTRALS)
+      for (const vibrancy of V3_VIBRANCY) yield { accent, neutral, vibrancy }
+}
+
+/** Specificity (b column only: the emitted selectors carry no ids and no elements) of one selector. */
+function specificity(selector: string): number {
+  const flat = selector.replaceAll(/:not\(|\)/g, ' ')
+  return (flat.match(/\[[^\]]+\]/g)?.length ?? 0) + (flat.match(/:root/g)?.length ?? 0)
 }
 
 const FILL_FAMILIES = Object.keys(deriveTokens(DEFAULT_DERIVE_CONFIG).fill) as FillFamily[]
@@ -83,7 +109,23 @@ describe('token invariants (docs/v3/evidence/self-tokens-theme.md §d)', () => {
       }
   })
 
-  test.todo('v3 fill clamp: tests every allowed surface, tint surfaces included (tok-t2)', pending)
+  test('v3 fill: the brand fill clears 3:1 on every allowed surface (canvas, inset) and its label 4.5:1, over the whole grid', () => {
+    for (const config of v3Grid()) {
+      const { colors } = deriveV3(config)
+      for (const side of SIDES) {
+        for (const surface of ['canvas', 'inset'] as const) {
+          expect(
+            contrastRatio(colors['brand-fill'][side], colors[surface][side]),
+          ).toBeGreaterThanOrEqual(3)
+        }
+        expect(
+          contrastRatio(colors['on-brand'][side], colors['brand-fill'][side]),
+        ).toBeGreaterThanOrEqual(4.5)
+      }
+    }
+    // The card is deliberately not an allowed surface: T19 puts the fill at 2.76 there.
+    expect(PAIRS.some((row) => row.gate === 'fill-on-card')).toBe(false)
+  })
 
   test('d5 status solver: every status solid clears 4.5:1 on every text surface, and an unreachable tone throws', () => {
     for (const config of surfaceGrid()) {
@@ -105,7 +147,34 @@ describe('token invariants (docs/v3/evidence/self-tokens-theme.md §d)', () => {
     expect(() => deriveStatusHexes(surfaces)).toThrow(/no light good tone reaches 4\.5:1/)
   })
 
-  test.todo('v3 status solver: the grid includes selected and hover (tok-t2)', pending)
+  test('v3 status solver: the grid includes selected, hover and the ink own tint, and every ink clears 4.5:1 on all of them', () => {
+    for (const config of v3Grid()) {
+      const { colors } = deriveV3(config)
+      for (const side of SIDES) {
+        const surfaces = {
+          canvas: colors.canvas[side],
+          inset: colors.inset[side],
+          card: colors.card[side],
+          raised: colors.raised[side],
+        }
+        for (const tone of ['good', 'warn', 'bad', 'info'] as const) {
+          const backgrounds = statusBackgrounds({
+            side,
+            surfaces,
+            ink: colors.ink[side],
+            tone: colors[tone][side],
+          })
+          const labels = backgrounds.map((b) => b.surface)
+          expect(labels).toEqual(
+            expect.arrayContaining(['hover-card', 'selected-inset', 'tint-card']),
+          )
+          for (const bg of backgrounds) {
+            expect(contrastRatio(colors[tone][side], bg.hex)).toBeGreaterThanOrEqual(4.5)
+          }
+        }
+      }
+    }
+  })
 
   test('d6 faint opaque axis: axis is the derived opaque faint ink, 4.5:1 on every text surface', () => {
     for (const config of surfaceGrid()) {
@@ -142,7 +211,23 @@ describe('token invariants (docs/v3/evidence/self-tokens-theme.md §d)', () => {
     }
   })
 
-  test.todo('v3 hairline: --hairline is an ink alpha and feeds the ring once (tok-t2)', pending)
+  test('v3 hairline: --hairline is an ink alpha (12% light, 9% dark) and the ring is drawn once, by Card::after', () => {
+    const css = emitTokensCss({ version: '3.0.0' })
+    expect(css).toContain(
+      `--vx-hairline: color-mix(in srgb, var(--vx-ink) ${INK_MIX_PCT.hairline.light}%, transparent);`,
+    )
+    expect(css).toContain(
+      `--vx-hairline: color-mix(in srgb, var(--vx-ink) ${INK_MIX_PCT.hairline.dark}%, transparent);`,
+    )
+    // No shadow role embeds the hairline or an outset 1px ring: a second ring is a second edge (d8).
+    expect(css).not.toMatch(/--vx-shadow-[a-z]+:[^;]*var\(--vx-hairline\)/)
+    for (const [, value] of css.matchAll(/--vx-shadow-card: ([^;]+);/g)) {
+      expect(value).not.toMatch(/0 0 0 1px/)
+    }
+    // The input boundary is a deliberate heavier line, never a scaled hairline (S3).
+    expect(INK_MIX_PCT.input.light).toBeGreaterThan(INK_MIX_PCT.hairline.light * 3)
+    expect(INK_MIX_PCT.input.dark).toBeGreaterThan(INK_MIX_PCT.hairline.dark * 3)
+  })
 
   test('d8 one edge per surface: the card ring lives inside the card shadow and the control shadow draws none', () => {
     expect(SHADOW.card.light).toContain('0 0 0 1px var(--vx-surface-hairline)')
@@ -178,7 +263,29 @@ describe('token invariants (docs/v3/evidence/self-tokens-theme.md §d)', () => {
     expect(legacy).not.toContain(':root[')
   })
 
-  test.todo('v3 tenant: an override at 0-3-0 beats the default at 0-2-0 (tok-t2)', pending)
+  test('v3 tenant: an override at 0-3-0 beats the default at 0-2-0', () => {
+    const preludes = (css: string): string[] =>
+      [...css.replaceAll(/\/\*[\s\S]*?\*\//g, '').matchAll(/([^{}]+)\{/g)]
+        .map((m) => m[1]!.trim())
+        .filter((prelude) => !prelude.startsWith('@'))
+        .flatMap((prelude) => prelude.split(','))
+        .map((selector) => selector.trim())
+    const base = emitTokensCss({ version: '3.0.0' })
+    const defaults = [...base.matchAll(/([^{}]+)\{\s*color-scheme/g)].flatMap((m) =>
+      m[1]!.split(',').map((selector) => selector.trim()),
+    )
+    expect(Math.max(...defaults.map(specificity))).toBe(2)
+
+    const tenant = emitTokensCss({
+      version: '3.0.0',
+      selector: ":root[data-tenant='t2']",
+      config: { accent: '#0f8a7e' },
+    })
+    const selectors = preludes(tenant)
+    expect(selectors.length).toBeGreaterThanOrEqual(4)
+    for (const selector of selectors) expect(specificity(selector)).toBe(3)
+    expect(() => emitTokensCss({ version: '3.0.0', selector: '.tenant' })).toThrow(/:root\[/)
+  })
 
   test.todo('d12 layer statement first: no basalt rule is unlayered (tok-t3)', pending)
 
@@ -314,7 +421,20 @@ describe('token invariants (docs/v3/evidence/self-tokens-theme.md §d)', () => {
     )
   })
 
-  test.todo('v3 foreground: every PAIRS *-foreground clears its fill (tok-t2)', pending)
+  test('v3 foreground: every PAIRS *-foreground clears its fill, both schemes, over the grid', () => {
+    const foregroundGates = PAIRS.filter((row) => row.foreground)
+    expect(foregroundGates.map((row) => row.gate)).toEqual([
+      'on-brand-on-fill',
+      'primary-foreground-on-primary',
+    ])
+    expect(FOREGROUND_PAIRS).toHaveLength(foregroundGates.length)
+    for (const config of v3Grid()) {
+      const derived = deriveV3(config)
+      for (const row of foregroundGates)
+        for (const side of SIDES) expect(row.measure(derived, side)).toBeGreaterThanOrEqual(row.min)
+    }
+    expect(deriveV3(DEFAULT_DERIVE_V3_CONFIG).colors['on-brand'].light).toBe('#ffffff')
+  })
 
   test.todo('bridge: shadcn aliases cover every semantic token, no dark: branch (tok-t3)', pending)
 
