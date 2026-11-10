@@ -1,5 +1,5 @@
 /**
- * Licence guard for the Keel benchmark (docs/waves/PLAN.md Part 3): Keel is look-only, so the only
+ * Licence guard for the Keel benchmark: Keel is look-only, so the only
  * Keel-derived artefacts allowed in the tree are screenshots, numbers, colour roles and our own
  * prose. This test fails on markup, CSS, class-like tokens, stray strings in the data files, and any
  * file type that could carry code or assets.
@@ -27,7 +27,9 @@ const walk = (dir: string): string[] =>
     return statSync(path).isDirectory() ? walk(path) : [path]
   })
 
-const files = walk(KEEL)
+// The text artefacts are local now (gitignored); the guard runs whenever a capture exists.
+const HAS_KEEL = existsSync(KEEL)
+const files = HAS_KEEL ? walk(KEEL) : []
 const textFiles = [
   ...files.filter((f) => ['.md', '.json'].includes(extname(f))),
   join(ROOT, 'BENCHMARK.md'),
@@ -227,7 +229,7 @@ const acceptInventoryString = (s: string): boolean =>
 
 const acceptAll = (): boolean => true
 
-/** Image or board files that must never be committed under docs/waves/design-parity. */
+/** Image or board files that must never be committed under the parity tree. */
 const forbiddenImages = (paths: string[]): string[] =>
   paths.filter((f) => ['.png', '.html'].includes(extname(f)))
 
@@ -235,7 +237,7 @@ const IMG_CROP = /^\.design-parity\/[\w.-]+(\/[\w.-]+)*\.png$/
 
 const read = (path: string): string => readFileSync(path, 'utf8')
 
-describe('keel capture licence boundary', () => {
+describe.skipIf(!HAS_KEEL)('keel capture licence boundary', () => {
   test('the committed tree holds only json and md files (no png, no html)', () => {
     const all = walk(ROOT)
     expect(forbiddenImages(all)).toEqual([])

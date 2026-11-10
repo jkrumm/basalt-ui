@@ -30,10 +30,10 @@ pnpm-debug.log*
 lerna-debug.log*
 bun-debug.log*
 
-# Evidence harness output (the summary md under docs/waves/evidence is committed)
+# Evidence harness output: lane json, summaries (.evidence/summaries) and design-parity text (.evidence/design-parity)
 .evidence/
 
-# Design-parity images + boards (public repo, unlicensed benchmark): the text artefacts stay in docs/waves/design-parity
+# Design-parity images + boards (public repo, unlicensed benchmark): never committed
 .design-parity/
 
 # Testing
