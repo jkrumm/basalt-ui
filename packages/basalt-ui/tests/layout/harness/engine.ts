@@ -134,8 +134,12 @@ export type LayoutPage = {
 
 // ── Build + serve + launch ────────────────────────────────────────────────────────────────────
 
-const FIXTURE_ENTRY = new URL('../fixture/main.tsx', import.meta.url).pathname
-const FIXTURE_HTML = new URL('../fixture/index.html', import.meta.url).pathname
+// Read at module load: `shell-target.ts` sets these before this module evaluates, to point the
+// suite at the 2.x oracle checkout or the v3 fixture. Unset, they fall back to this tree's fixture.
+const FIXTURE_ENTRY =
+  process.env['LAYOUT_FIXTURE_ENTRY'] ?? new URL('../fixture/main.tsx', import.meta.url).pathname
+const FIXTURE_HTML =
+  process.env['LAYOUT_FIXTURE_HTML'] ?? new URL('../fixture/index.html', import.meta.url).pathname
 
 let browser: Browser | null = null
 /** The Chrome process behind `browser` — owned so teardown can end it, not merely ask it to. */
