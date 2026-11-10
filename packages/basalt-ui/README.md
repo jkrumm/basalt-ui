@@ -419,7 +419,7 @@ bun add @tanstack/charts d3-scale
 ```
 
 `./charts` is Mantine-free (see [Mantine-free boundary](#mantine-free-boundary) above) but not
-dependency-free: it needs `@tanstack/charts` and `d3-scale`, both pinned exact (`1.1.0` and
+dependency-free: it needs `@tanstack/charts` and `d3-scale`, both pinned exact (`1.5.0` and
 `4.0.2`). They ship as optional peers, not bundled dependencies, so a `./tokens`-only consumer never
 installs them. visx is gone: no dependency, peer or re-export.
 
