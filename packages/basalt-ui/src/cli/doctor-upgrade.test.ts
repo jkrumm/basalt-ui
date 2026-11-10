@@ -1606,21 +1606,23 @@ describe('doctor — subpath-peers', () => {
   it('fails with a bun add fix when an imported subpath lacks its peers', () => {
     write(
       'node_modules/basalt-ui/package.json',
-      JSON.stringify({ peerDependencies: { shiki: '^4.5.0', 'react-markdown': '^10.1.0' } }),
+      JSON.stringify({
+        peerDependencies: { 'rehype-sanitize': '^6.0.0', 'react-markdown': '^10.1.0' },
+      }),
     )
     write('node_modules/react-markdown/package.json', '{"version":"10.1.0"}')
     write('src/a.tsx', "import { Markdown } from 'basalt-ui/content'\n")
     const problem = text(run())
-    expect(problem).toContain('shiki for basalt-ui/content (src/a.tsx)')
-    expect(problem).toContain('@shikijs/langs')
+    expect(problem).toContain('rehype-sanitize for basalt-ui/content (src/a.tsx)')
+    expect(problem).toContain('remark-gfm')
     expect(problem).not.toContain('react-markdown for')
-    expect(problem).toContain('`bun add shiki@^4.5.0 @shikijs/langs @shikijs/themes`')
+    expect(problem).toContain('`bun add remark-gfm rehype-sanitize@^6.0.0 remend`')
   })
 
   it('passes once the peers resolve, and ignores subpaths the app does not import', () => {
     write('node_modules/basalt-ui/package.json', '{}')
     write('src/a.tsx', "import { Markdown } from 'basalt-ui/content'\nimport 'basalt-ui/state'\n")
-    expect(text(run())).toContain('shiki')
+    expect(text(run())).toContain('rehype-sanitize')
     for (const peer of SUBPATH_REQUIRED_PEERS['content'] ?? []) {
       write(`node_modules/${peer}/package.json`, '{"version":"1.0.0"}')
     }

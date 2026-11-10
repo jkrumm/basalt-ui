@@ -246,7 +246,7 @@ export const MINIMAL_PROPS: Record<string, Record<string, unknown>> = {
 
   /* --- content ------------------------------------------------------------- */
   Prose: { children: TEXT },
-  Markdown: { children: '# Hello' },
+  Markdown: { children: '# Hello', contentTrust: 'untrusted' },
   CodeBlock: { code: 'const a = 1', language: 'ts' },
   Callout: { children: TEXT },
   ArticleCard: { title: 'Iso' },
@@ -340,6 +340,7 @@ export const NO_CLASSNAME: Record<string, 'provider' | 'svg' | 'portal' | 'gap'>
   // gap — renders a real box and drops the class.
   DateRangePicker: 'gap',
   DeltaBadge: 'gap',
+  Markdown: 'gap', // by design: the root is data-slot="markdown"; styling goes on a wrapper
 }
 
 /**

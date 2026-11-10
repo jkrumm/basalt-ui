@@ -627,7 +627,7 @@ export const SUBPATH_REQUIRED_PEERS: Readonly<Record<string, readonly string[]>>
   agent: ['ai', '@ai-sdk/provider', 'motion'],
   charts: ['@tanstack/charts', 'd3-scale'],
   commands: ['@tanstack/react-hotkeys'],
-  content: ['react-markdown', 'shiki', '@shikijs/langs', '@shikijs/themes'],
+  content: ['react-markdown', 'remark-gfm', 'rehype-sanitize', 'remend'],
   'controls-dates': ['@mantine/dates', 'dayjs'],
   forms: ['@mantine/form'],
   table: ['@tanstack/react-table'],

@@ -1,8 +1,148 @@
 {
   "schema": 1,
   "area": "content",
-  "rows": [],
-  "tokens": { "renamed": [], "valueShifts": [] },
+  "rows": [
+    {
+      "id": "content-contentTrust",
+      "kind": "required-prop",
+      "from": "basalt-ui/content#Markdown",
+      "to": "<Markdown contentTrust=\"untrusted\" | \"trusted\">",
+      "profiles": ["app"],
+      "codemod": "content-trust: inserts untrusted unless the child is provably authored (a string literal, an import, an allowlisted path), then trusted and listed for review",
+      "verify": "tsc: a Markdown without contentTrust is a type error; at runtime a missing or unknown value renders as untrusted"
+    },
+    {
+      "id": "content-className",
+      "kind": "removed-prop",
+      "from": "basalt-ui/content#Markdown.className",
+      "to": "a wrapper element around Markdown (the root is data-slot=\"markdown\")",
+      "profiles": ["app"],
+      "manual": true
+    },
+    {
+      "id": "content-sanitizeSchema",
+      "kind": "renamed-prop",
+      "from": "basalt-ui/content#Markdown.sanitizeSchema",
+      "to": "sanitize={{ allowTags, allowAttrs }} on contentTrust=\"trusted\" only",
+      "profiles": ["app"],
+      "manual": true,
+      "note": "an attributes map becomes allowAttrs; the untrusted arm accepts neither sanitize nor rehypePlugins"
+    },
+    {
+      "id": "content-mergeSanitizeSchema",
+      "kind": "removed",
+      "from": "basalt-ui/content#mergeSanitizeSchema",
+      "to": "sanitize={{ allowTags, allowAttrs }}",
+      "profiles": ["app"],
+      "manual": true
+    },
+    {
+      "id": "content-SanitizeSchemaExtension",
+      "kind": "removed",
+      "from": "basalt-ui/content#SanitizeSchemaExtension",
+      "to": "Markdown prop type sanitize",
+      "profiles": ["app"],
+      "manual": true
+    },
+    {
+      "id": "content-SanitizeSchemaInput",
+      "kind": "removed",
+      "from": "basalt-ui/content#SanitizeSchemaInput",
+      "profiles": ["app"],
+      "manual": true
+    },
+    {
+      "id": "content-allowedLinkPrefixes",
+      "kind": "removed-prop",
+      "from": "basalt-ui/content#Markdown.allowedLinkPrefixes",
+      "to": "the fixed url policy: same-origin, https:, mailto:, tel:",
+      "profiles": ["app"],
+      "manual": true
+    },
+    {
+      "id": "content-allowedImagePrefixes",
+      "kind": "renamed-prop",
+      "from": "basalt-ui/content#Markdown.allowedImagePrefixes",
+      "to": "images=\"none\" | \"same-origin\" on contentTrust=\"untrusted\"",
+      "profiles": ["app"],
+      "manual": true
+    },
+    {
+      "id": "content-defaultOrigin",
+      "kind": "removed-prop",
+      "from": "basalt-ui/content#Markdown.defaultOrigin",
+      "profiles": ["app"],
+      "manual": true
+    },
+    {
+      "id": "content-Callout",
+      "kind": "moved",
+      "from": "basalt-ui/content#Callout",
+      "to": "basalt-ui/page#Callout",
+      "profiles": ["app"],
+      "codemod": "rewrites the import path; kind and title are unchanged"
+    },
+    {
+      "id": "content-Prose",
+      "kind": "moved",
+      "from": "basalt-ui/content#Prose",
+      "to": "basalt-ui/page#Prose",
+      "profiles": ["app"],
+      "codemod": "rewrites the import path"
+    },
+    {
+      "id": "content-ArticleLayout",
+      "kind": "moved",
+      "from": "basalt-ui/content#ArticleLayout",
+      "to": "basalt-ui/page#ArticleLayout",
+      "profiles": ["app"],
+      "codemod": "rewrites the import path; meta, toc and readingProgress are kept"
+    },
+    {
+      "id": "content-TableOfContents",
+      "kind": "renamed",
+      "from": "basalt-ui/content#TableOfContents",
+      "to": "basalt-ui/page#Toc",
+      "profiles": ["app"],
+      "codemod": "renames the symbol and rewrites the import path"
+    },
+    {
+      "id": "content-GuideLink",
+      "kind": "removed",
+      "from": "basalt-ui/content#GuideLink",
+      "to": "a recipe on ui/sheet",
+      "profiles": ["app"],
+      "manual": true
+    },
+    {
+      "id": "content-settledOnly",
+      "kind": "removed",
+      "from": "basalt-ui/content#settledOnly",
+      "profiles": ["app"],
+      "manual": true,
+      "note": "fence renderers return with CodeBlock and the fence registry"
+    }
+  ],
+  "tokens": {
+    "renamed": [],
+    "valueShifts": [
+      {
+        "token": "Markdown image, contentTrust=\"untrusted\"",
+        "from": "rendered <img> for same-origin sources",
+        "to": "alt text only (images=\"none\" is the default)"
+      },
+      {
+        "token": "Markdown link or image to //host or /\\host",
+        "from": "kept as same-origin",
+        "to": "blocked, rendered without a destination"
+      },
+      {
+        "token": "Markdown with a missing peer",
+        "from": "unsanitised plain-text fallback",
+        "to": "removed: the peers are required and imported statically"
+      }
+    ]
+  },
   "storage": [],
   "urls": [],
   "attrs": [],

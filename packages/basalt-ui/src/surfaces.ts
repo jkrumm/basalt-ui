@@ -302,6 +302,10 @@ export const SURFACES = {
       'remend',
       'shiki',
       'beautiful-mermaid',
+      'react-markdown',
+      'remark-gfm',
+      'rehype-sanitize',
+      'remend',
       '@tanstack/react-router-devtools',
     ],
     forbiddenImports: [], // the no-charts/tokens-reexport invariant is comment-only today; Phase-4 plugin
@@ -465,7 +469,7 @@ export const SURFACES = {
     guardKinds: [],
     pluginRules: [],
     description:
-      'Prose (article/chat typography), Callout, TableOfContents (given a containerRef it collects the id-bearing h2/h3 under that one container — levels changes which — on mount and on every DOM childList change, so it reads the slug ids `Markdown` gives every heading; `Prose` sets no ids and an explicit items list replaces collection), Markdown (react-markdown + remark-gfm, optional peers; `streaming` is a rendering mode ONLY — `contentTrust` is the independent security input, and any surface rendering agent/model output must pin `contentTrust="untrusted"`, the sole input to the image-origin allowlist; `fenceRenderers` extends fenced-block rendering — settledOnly/FenceRenderer/FenceRenderers; `sanitizeSchema` is an additions-only SanitizeSchemaExtension merged over the default via mergeSanitizeSchema; shiki code blocks, beautiful-mermaid diagrams and the remend streaming repair load lazily from optional peers), ArticleLayout (docs-page frame), GuideLink (contextual-help link) — the content/prose surface',
+      'Markdown (react-markdown + remark-gfm + rehype-sanitize + remend, all required peers, every import static so server, client and hydrate render the same tree; `contentTrust` is REQUIRED and independent of `streaming`, which is a rendering mode only — render agent or model output with `contentTrust="untrusted"`: no `<img>` (alt text; `images="same-origin"` admits relative srcs), links limited to same-origin, https:, mailto: and tel:, and no `sanitize` or `rehypePlugins`; `contentTrust="trusted"` takes `sanitize` ({ allowTags, allowAttrs } additions over a fixed policy that runs last) and `rehypePlugins`; a missing or unknown `contentTrust` renders as untrusted) — the content surface',
     optionalPeers: [
       'shiki',
       '@shikijs/langs',

@@ -72,4 +72,34 @@ Trailing paragraph.
     const blocks = blockSplit(input)
     expect(blocks).toEqual(['> line one\n> line two\n\n', 'After.\n'])
   })
+
+  test('join invariant holds over seeded generated inputs', () => {
+    const pieces = [
+      'a',
+      ' ',
+      '\n',
+      '\n\n',
+      '```',
+      '~~~',
+      '- ',
+      '1. ',
+      '  ',
+      '> ',
+      '| x |',
+      '\t',
+      '\r\n',
+      '# h',
+    ]
+    let seed = 42
+    const next = () => {
+      seed = (Math.imul(seed, 1664525) + 1013904223) | 0
+      return (seed >>> 0) / 4294967296
+    }
+    for (let i = 0; i < 2000; i++) {
+      let input = ''
+      const n = Math.floor(next() * 40)
+      for (let j = 0; j < n; j++) input += pieces[Math.floor(next() * pieces.length)]
+      expect(blockSplit(input).join('')).toBe(input)
+    }
+  })
 })

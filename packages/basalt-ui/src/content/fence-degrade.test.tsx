@@ -13,7 +13,7 @@ import { MantineProvider } from '@mantine/core'
 import { render, screen, waitFor } from '@testing-library/react'
 import { afterEach, beforeEach, describe, expect, mock, spyOn, test } from 'bun:test'
 import { CodeBlock } from './code-block'
-import { Markdown } from './markdown'
+import { Markdown } from './legacy-markdown'
 
 /** MermaidDiagram's wrapper — `CodeBlock`'s copy icon is an `<svg>` too, so `svg` alone proves nothing. */
 const DIAGRAM = '[role="img"] svg'

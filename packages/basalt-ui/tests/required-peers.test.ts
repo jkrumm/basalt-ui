@@ -158,8 +158,10 @@ describe('remend root-entry requirement (F2) — resolved, now a regression guar
   const violations = files
     .filter((file) => STATIC_REMEND_IMPORT_RE.test(stripComments(readFileSync(file, 'utf8'))))
     .map((file) => file.slice(pkgRoot.length + 1))
+    // `./content` lists remend as a subpath-required peer (V2-SPEC section 1): its one static importer.
+    .filter((file) => file !== 'src/content/markdown.tsx')
 
-  it('no src/** file statically imports remend — that would hard-require an optional peer at the root entry again', () => {
+  it('no src/** file except content/markdown.tsx statically imports remend — that would hard-require an optional peer at the root entry again', () => {
     expect(violations).toEqual([])
   })
 })
