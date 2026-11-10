@@ -1,4 +1,5 @@
 import 'basalt-ui/styles.css'
+import './index.css'
 // `@mantine/dates` is basalt's one OPTIONAL peer (only `basalt-ui/controls-dates` needs it), so
 // `basalt-ui/styles.css` does not carry it. Import it AFTER, so core precedes dates inside
 // `@layer mantine`.
