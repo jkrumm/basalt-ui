@@ -1,0 +1,36 @@
+{
+  "why": "About 48 Issues append to the single scripts/export-surface.json, so parallel leads collide on it and every rebase hand-merges one JSON file. One shard per subpath turns that into disjoint files.",
+  "what": "Replace packages/basalt-ui/scripts/export-surface.json with one generated file per published JS subpath under scripts/export-surface/, make export-surface.mjs read and write them, and point the four readers at one helper. No export changes.",
+  "owns": [
+    "packages/basalt-ui/scripts/export-surface*",
+    "packages/basalt-ui/scripts/export-surface/**"
+  ],
+  "shared_append_only": [
+    "packages/basalt-ui/scripts/check-budgets.ts (one line)",
+    "packages/basalt-ui/scripts/check-grace.ts (one line)",
+    "packages/basalt-ui/scripts/check-agent-doc-drift.ts (two lines)",
+    "packages/basalt-ui/scripts/gen-llms.test.ts (one line)"
+  ],
+  "must_not_touch": [
+    "CHANGELOG.md",
+    "packages/basalt-ui/{MIGRATING.md,llms.txt}",
+    "packages/basalt-ui/src/**",
+    "packages/basalt-ui/scripts/check-budgets/**",
+    "scripts/release.sh",
+    "packages/basalt-ui/scripts/pack-test.sh",
+    "**/contract.ts"
+  ],
+  "concept": "docs/v3/concepts/migration-release.md#4.1 step 7",
+  "contract": "The snapshot semantics of scripts/export-surface.mjs stay: Object.keys() of the built dist entry per subpath, sorted, without default; --base <dir> imports an installed package (pack-test); --update rewrites. v3-rel-7-skeleton added the v3 subpaths to the single file; later Issues run --update and commit their own shard only.",
+  "exemplar": "scripts/export-surface.mjs (2.x) and its callers: check-budgets.ts, check-grace.ts, check-agent-doc-drift.ts, gen-llms.test.ts.",
+  "change": "(1) scripts/export-surface/<name>.json holds one subpath's sorted names as a JSON array; <name> is the subpath without './', '.' as index and '/' as '__'. (2) scripts/export-surface-shards.mjs (+ .d.mts for TS readers) exports shardName(subpath), readShards(dir) returning the old Record<subpath, names[]> shape, and diffShards(expected, actual). (3) export-surface.mjs: the default mode fails on a missing, extra or differing name in any shard, on a subpath without a shard and on a shard without a subpath, naming the shard file; --update rewrites only drifted shards and deletes orphans. (4) The four readers call readShards instead of reading the JSON. (5) Delete export-surface.json; the first --update writes the shards from the current build, keys identical to today. Rule: none. Skill snippet: none. Test: scripts/export-surface.test.ts on a temp dir.",
+  "commits": "One PR, package paths only, conventional, empty scope, no attribution; the shard files are generated in the same commit as the script.",
+  "proof": "make check; the test prints the shard count.",
+  "acceptance": [
+    "make check exits 0 and readShards(dir) deep-equals the old export-surface.json from master",
+    "a test that edits one name in one shard makes diffShards and the check fail naming that shard; an orphan shard and a subpath without a shard fail the same way",
+    "`export-surface.mjs --update` after the edit restores it and touches no other shard file (git status)",
+    "pack-test's `--base` run still passes, and no file under packages/basalt-ui/scripts or in the tree reads export-surface.json (rg prints nothing except docs and history)"
+  ],
+  "out_of_scope": "Any export change, release.sh and pack-test.sh edits, the Issues that still list export-surface.json as shared (they run --update and commit their shard), docs."
+}

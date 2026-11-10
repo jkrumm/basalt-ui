@@ -1,0 +1,30 @@
+{
+  "why": "A typo in a --vx-* name resolves to nothing any linter sees (bg-(--vx-typo)), and the class-family rule needs one generated list of valid names.",
+  "what": "The name registry: packages/basalt-ui/src/lint/check-tokens.ts (+ test) and src/lint/generated/zone-a.ts (new, generated). The tokens:css command, --extra and --format json are v3-tok-t4-cli's.",
+  "owns": ["packages/basalt-ui/src/lint/check-tokens*", "packages/basalt-ui/src/lint/generated/**"],
+  "must_not_touch": [
+    "CHANGELOG.md",
+    "packages/basalt-ui/{MIGRATING.md,llms.txt}",
+    "packages/basalt-ui/scripts/check-budgets/**",
+    "**/contract.ts",
+    "packages/basalt-ui/src/{ui,shell}/**",
+    "apps/marketing/**",
+    "packages/basalt-ui/src/tokens/**",
+    "packages/basalt-ui/src/css/**",
+    "packages/basalt-ui/agent/**",
+    "packages/basalt-ui/src/cli/**",
+    "packages/basalt-ui/src/lint/{stylelint/**,rule-table*}"
+  ],
+  "concept": "tokens-visual#12 T4",
+  "contract": "docs/v3/concepts/tokens-visual.md section 3.8 (extra names), section 8 (gates), section 13 (amendments).",
+  "exemplar": "src/cli/check-theme.ts and its test for scan-and-report shape; src/tokens/table.ts is the read-only token table zone-a is generated from.",
+  "change": "1) checkTokens({ files, extraNames }) scans .css .tsx .astro .mdx for --vx-* and bg-(--vx-*) spellings against the package names plus extraNames; 0 scanned files fails. Reading the manifest's extra field is v3-sk-4's lint verb. 2) src/lint/generated/zone-a.ts is generated from the token table (brand brand-fill on-brand good warn bad info destructive ring line chart-N seq-N, each -tint) plus deniedCurrent (bg border ring outline divide from via to; fill stroke text stay allowed); no rule reads it here (v3-gr-2 does). Rule: none. Skill snippet: none (v3-sk-5). Test: check-tokens.test.ts and a zone-a drift test.",
+  "commits": "One PR, separate package and non-package commits (isolated-basalt-ui); conventional, empty scope, no attribution.",
+  "proof": "Unit tests; no UI.",
+  "acceptance": [
+    "bun test packages/basalt-ui/src/lint/check-tokens.test.ts passes: --vx-usage-hrv passed in extraNames passes, --vx-usage-x and bg-(--vx-typo) fail, 0 scanned files exits non-zero",
+    "src/lint/generated/zone-a.ts equals regenerated output (drift test); a probe fixture covers destructive, ring and line as names and bg-current as a deniedCurrent entry",
+    "make check exits 0"
+  ],
+  "out_of_scope": "The tokens:css command, --extra emit, JSON emit (v3-tok-t4-cli); stylelint preset; rules reading zone-a (v3-gr-2); migration rows."
+}

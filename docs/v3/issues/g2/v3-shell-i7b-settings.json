@@ -1,0 +1,25 @@
+{
+  "why": "Inner sidebars are page primitives on one DOM: shutterflow hand-built 11 sections and argo m365-explorer another; Back must walk sections and items must be real links.",
+  "what": "The settings exemplar route apps/playground/src/routes/settings.tsx and the inner-nav recipe, built on InnerNav and SplitPage from v3-shell-i7a-innernav.",
+  "owns": [
+    "packages/basalt-ui/docs/recipes/inner-nav.md",
+    "apps/playground/src/routes/settings.tsx"
+  ],
+  "must_not_touch": [
+    "packages/basalt-ui/{MIGRATING.md,llms.txt,scripts/contract-pins.json,scripts/check-budgets/**,src/*/contract.ts,src/{ui,tokens,lint}/**,agent/**}",
+    "CHANGELOG.md",
+    "other lanes' folders",
+    "packages/basalt-ui/src/{router,shell,controls,page}/**"
+  ],
+  "concept": "shell-nav-router#8 I7; #3.3; decision 8; ARCHITECTURE#14 conflict InnerNav below @narrow",
+  "contract": "concept 3.3, 4, 8 ('Each never' row 4); src/page/contract.ts, src/core/ports.ts (ControlHandle, ControlsSlot, LinkComponent, DetailHost). Never import src/router/controls or src/controls: type against ControlHandle and a test-local structural PushField double (value, set, isSet, link); the real binding is v3-ctl-6. Frozen: never edit contract.ts or contract-pins.json; signal, then take the reversible default.",
+  "exemplar": "routes/cards.tsx for route anatomy; hand copies to read: shutterflow's 11-section settings and argo m365-explorer (consumer-shutterflow, consumer-argo evidence).",
+  "change": "Playground routes/settings.tsx with region inner-nav, generated into docs/recipes/inner-nav.md, inside the AppShell of I5c. Teach = the region (rule bullets: v3-shell-i10-rules-rows). No package source change.",
+  "commits": "One PR, separate package and non-package commits (isolated-basalt-ui); conventional, empty scope, no attribution.",
+  "proof": "basalt-ui shot of routes/settings.tsx at 1800x1200 and 390x844, dark and light, inside the AppShell of I5c; at most 3 rounds.",
+  "acceptance": [
+    "Axe zero serious and critical on the settings route; docs/recipes/inner-nav.md equals its region (make gen-check)",
+    "The route imports InnerNav and SplitPage from the package barrel only; make check passes"
+  ],
+  "out_of_scope": "InnerNav and SplitPage source (v3-shell-i7a-innernav), ViewTabs, field codegen (v3-ctl-6), the aside (I4), shutterflow settings migration."
+}

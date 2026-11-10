@@ -34,6 +34,5 @@
     "make check exits 0",
     "git diff --name-only lists only owned paths"
   ],
-  "out_of_scope": "Rendering the cue (ControlView, ctl-4), FilterSet, ViewTabs, rememberOnEntry, saved views.",
-  "worker_tag": "lead high; may spawn one @implementer tagged [opus: Three-level state precedence and retain-delete middleware ordering] for the novel file group only"
+  "out_of_scope": "Rendering the cue (ControlView, ctl-4), FilterSet, ViewTabs, rememberOnEntry, saved views."
 }

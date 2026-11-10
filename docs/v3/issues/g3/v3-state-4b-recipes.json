@@ -1,0 +1,29 @@
+{
+  "why": "Forms stay the consumer's TanStack Form plus thin basalt parts; shutterflow's FormSection and useFormSubmit sites and argo's drafts need one tested replacement.",
+  "what": "Five recipes with playground files; routes settings.tsx (2.x, rewritten) and run-edit.tsx (new). The modules are v3-state-4a-controls. Over 12 files: stop after the recipes and signal.",
+  "owns": [
+    "packages/basalt-ui/docs/recipes/{field-array,file-drop}.md",
+    "apps/playground/src/recipes/{field-array,file-drop}*",
+    "apps/playground/src/routes/{settings,run-edit}.tsx",
+    "packages/basalt-ui/docs/recipes/{form-guard,optimistic,dependent-validation}.md",
+    "apps/playground/src/recipes/{form-guard,optimistic,dependent-validation}*"
+  ],
+  "must_not_touch": [
+    "packages/basalt-ui/src/controls/**",
+    "packages/basalt-ui/src/{core,data,ui}/**",
+    "other routes",
+    "contract-pins.json, MIGRATING, llms.txt, check-budgets"
+  ],
+  "concept": "state-persistence-forms#6",
+  "contract": "Read docs/v3/concepts/state-persistence-forms.md 6, 9 (spikes A to G, S2), 12. Import from v3-state-4a-controls (useFormDraft, toSubmitErrors, FormFooter), FormField (v3-ctl-7), optimistic (v3-state-2), createSyncedState (v3-state-3); the settings route layout is v3-shell-i7b's.",
+  "exemplar": "apps/playground/src/routes/cards.tsx (route and shot layout).",
+  "change": "Recipes field-array, file-drop, form-guard (the 4-line useBlocker, concept 4.5), optimistic and dependent-validation (onDynamic with the onDynamicAsync delta): a `// #region` of the compiled recipe file plus at most 15 lines prose. Routes: settings (synced preferences, useBlocker guard, `<fieldset disabled>`; extends the i7b route), run-edit (draft, optimistic, FormFooter on a Zod 4 form with an async server error and a lazy tab: S2). Ships: no rule; recipe regions. Tests: playground typecheck over both routes and recipes.",
+  "commits": "One PR, separate package and non-package commits (isolated-basalt-ui); conventional, empty scope, no attribution; make sync-self its own commit.",
+  "proof": "Shots of both routes at 1800x1200 and 390x844, dark and light, at most 3 rounds.",
+  "acceptance": [
+    "make check passes, including the playground typecheck over both routes and recipes.",
+    "Each of the five recipe docs is at most 60 lines and `make gen-check` passes.",
+    "`git diff --name-only` lists only owned paths."
+  ],
+  "out_of_scope": "The draft, submit and FormFooter modules (v3-state-4a-controls); keyed-map synced draft, argo's workout draft, FormField, FormRow, notify, S6 (G5)."
+}

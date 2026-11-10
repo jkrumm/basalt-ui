@@ -36,5 +36,5 @@
     "bun test packages/basalt-ui/src/css passes (committed tokens.css equals the generated output)",
     "make check exits 0"
   ],
-  "out_of_scope": "JSON emit (v3-st-2), prose, typography, fonts, any CLI flag, accent policy (DPO 5a is the owner's verdict)."
+  "out_of_scope": "JSON emit (v3-tok-t4-cli), prose, typography, fonts, any CLI flag, accent policy (DPO 5a is the owner's verdict)."
 }
