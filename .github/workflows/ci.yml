@@ -98,6 +98,9 @@ jobs:
       - name: Agent doc drift check (removed-API guard on agent/**)
         run: bun packages/basalt-ui/scripts/check-agent-doc-drift.ts
 
+      - name: Contract frozen check (pinned contract files)
+        run: bun packages/basalt-ui/scripts/check-contract-frozen.ts
+
       - name: Budgets gate (symbols, subpaths, rule lines, spec prose, routes, CLI lines)
         run: bun packages/basalt-ui/scripts/check-budgets.ts
 
