@@ -1,0 +1,13 @@
+{
+  "name": "@basalt-ui/spike-live-poller",
+  "private": true,
+  "description": "Spike 627: central poller versus per-observer refetchInterval timers, six observers on one query key (live-realtime.md section 7 P1). Throwaway harness, no tests.",
+  "type": "module",
+  "scripts": {
+    "run": "bun run.ts"
+  },
+  "dependencies": {
+    "query-core-argo": "npm:@tanstack/query-core@5.104.1",
+    "query-core-newest": "npm:@tanstack/query-core@5.107.1"
+  }
+}
