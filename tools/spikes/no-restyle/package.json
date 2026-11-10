@@ -1,0 +1,13 @@
+{
+  "name": "@basalt-ui/spike-no-restyle",
+  "private": true,
+  "description": "Scratch harness: does @shadcn/lint no-restyle fire on the basalt-ui/ui/* npm specifier? Run: bun run.ts",
+  "type": "module",
+  "dependencies": {
+    "@shadcn/lint": "0.2.5",
+    "@typescript-eslint/parser": "8.72.1",
+    "basalt-ui": "file:./stub/basalt-ui",
+    "eslint": "10.14.0",
+    "oxlint": "1.93.0"
+  }
+}
