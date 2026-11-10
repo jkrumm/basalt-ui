@@ -88,7 +88,7 @@ surface and `@visx/*` (§ 9.8). Ground truth: `docs/V2-SPEC.md` § 9.
 - **Monorepo**: Bun workspaces (`packages/*`, `apps/*`)
 - **UI**: Mantine v9 (`@mantine/core` + `@mantine/hooks` `^9.3`)
 - **React**: 19 (peer)
-- **Charts**: `@tanstack/charts` 1.1.0 + `d3-scale` 4.0.2 (exact optional peers of `./charts`)
+- **Charts**: `@tanstack/charts` 1.5.0 + `d3-scale` 4.0.2 (exact optional peers of `./charts`)
 - **Lint/format**: oxlint + oxfmt
 - **Type-check**: tsc (strict)
 - **Git**: conventional commits enforced via commitlint; lefthook pre-commit hooks
