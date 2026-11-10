@@ -28,7 +28,6 @@ const LANES = [
   'chat-profile',
   'chat-turn-trace',
   'keyboard',
-  'table-perf',
   'otel',
   'transitions',
   'ssr',
