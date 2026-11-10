@@ -1,0 +1,84 @@
+{
+  "harness": {
+    "chrome": "157.0.8103.40",
+    "viewport": "390x844",
+    "keyboardViewport": "390x484",
+    "streamSeconds": 90,
+    "pinTolerancePx": 2
+  },
+  "candidates": {
+    "use-stick-to-bottom": {
+      "maxGapPx": 1203,
+      "releasedOnScrollUp": true,
+      "repinnedOnReturn": false,
+      "reflowGapPx": 5,
+      "keyboardGapPx": 25,
+      "gzipBytes": 2197,
+      "sticks": false,
+      "detail": {
+        "pinnedSamples": 77,
+        "releaseDriftPx": 0,
+        "releaseGapPx": 912,
+        "returnGapPx": 6,
+        "repinGapPx": 3,
+        "reflowPeakGapPx": 40,
+        "keyboardPeakGapPx": 385,
+        "gapSamples": [
+          1, 3, 17, 17, 18, 2, 31, 17, 2, 37, 17, 37, 3, 2, 26, 13, 24, 18, 3, 4, 748, 853, 912,
+          1003, 5, 2, 17, 4, 32, 26, 1, 25, 10, 22, 13, 5, 25, 3, 16, 9, 25, 6, 18, 18, 10, 25, 8,
+          5, 25, 3, 24, 17, 3, 5, 3, 9, 5, 8, 2, 2, 2, 2, 13, 7, 9, 2, 24, 4, 26, 0, 66, 111, 156,
+          201, 254, 344, 411, 464, 509, 554, 640, 718, 805, 850, 895, 917, 1015, 1060, 1158, 1203
+        ]
+      }
+    },
+    "message-scroller": {
+      "maxGapPx": 31,
+      "releasedOnScrollUp": true,
+      "repinnedOnReturn": true,
+      "reflowGapPx": 0,
+      "keyboardGapPx": 23,
+      "gzipBytes": 6415,
+      "sticks": false,
+      "detail": {
+        "pinnedSamples": 79,
+        "releaseDriftPx": 0,
+        "releaseGapPx": 943,
+        "returnGapPx": 6,
+        "repinGapPx": 0,
+        "reflowPeakGapPx": 23,
+        "keyboardPeakGapPx": 383,
+        "gapSamples": [
+          0, 0, 0, 0, 0, 22, 0, 0, 0, 0, 0, 0, 0, 0, 23, 0, 0, 0, 0, 0, 745, 831, 909, 1000, 0, 0,
+          0, 0, 22, 23, 0, 23, 0, 20, 0, 0, 23, 0, 0, 0, 23, 0, 0, 0, 19, 20, 0, 0, 0, 23, 0, 0, 0,
+          0, 0, 0, 0, 0, 31, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 3, 22, 0, 0, 0, 19, 20,
+          0, 23, 0, 23, 0, 23, 0, 0
+        ]
+      }
+    },
+    "own-hook": {
+      "maxGapPx": 0,
+      "releasedOnScrollUp": true,
+      "repinnedOnReturn": true,
+      "reflowGapPx": 0,
+      "keyboardGapPx": 0,
+      "gzipBytes": 541,
+      "sticks": true,
+      "detail": {
+        "pinnedSamples": 78,
+        "releaseDriftPx": 0,
+        "releaseGapPx": 943,
+        "returnGapPx": 6,
+        "repinGapPx": 0,
+        "reflowPeakGapPx": 221,
+        "keyboardPeakGapPx": 360,
+        "gapSamples": [
+          0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 745, 850, 909, 1000, 0, 0, 0,
+          0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+          0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+          0, 0, 0
+        ]
+      }
+    }
+  },
+  "choice": "own-hook"
+}
