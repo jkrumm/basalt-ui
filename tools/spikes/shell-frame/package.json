@@ -1,0 +1,20 @@
+{
+  "name": "@basalt-ui/spike-shell-frame",
+  "private": true,
+  "description": "Spike shell-frame (shell-nav-router section 6: S1, S6, S8): sticky band on nested layouts, header priority collapse, docked inspector at 900-1200. Throwaway harness, no tests.",
+  "type": "module",
+  "scripts": {
+    "run": "bun run.ts"
+  },
+  "dependencies": {
+    "@tailwindcss/cli": "4.3.5",
+    "playwright-core": "1.63.0",
+    "react": "19.3.0",
+    "react-dom": "19.3.0",
+    "tailwindcss": "4.3.5"
+  },
+  "devDependencies": {
+    "@types/react": "19.3.0",
+    "@types/react-dom": "19.3.0"
+  }
+}

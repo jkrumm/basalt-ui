@@ -1,0 +1,71 @@
+@import 'tailwindcss';
+@source './app.tsx';
+
+:root {
+  --bg: #fafafa;
+  --surface: #ffffff;
+  --inset: #f4f4f5;
+  --line: #e4e4e7;
+  --fg: #18181b;
+  --muted: #71717a;
+  --accent: #0284c7;
+  --warn: #b45309;
+  --header-h: 48px;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --bg: #09090b;
+    --surface: #18181b;
+    --inset: #27272a;
+    --line: #3f3f46;
+    --fg: #fafafa;
+    --muted: #a1a1aa;
+    --accent: #38bdf8;
+    --warn: #f59e0b;
+  }
+}
+
+@theme inline {
+  --color-bg: var(--bg);
+  --color-surface: var(--surface);
+  --color-inset: var(--inset);
+  --color-line: var(--line);
+  --color-fg: var(--fg);
+  --color-muted: var(--muted);
+  --color-accent: var(--accent);
+  --color-warn: var(--warn);
+}
+
+html,
+body {
+  margin: 0;
+  background: var(--bg);
+  color: var(--fg);
+  font:
+    13px/1.45 ui-sans-serif,
+    system-ui,
+    sans-serif;
+}
+
+/* Header priority tiers: CSS only, on the header container (shell-nav-router section 3.1).
+   Fixed before measuring: priority 3 yields below 1280, priority 2 below 1100, priority 1 never. */
+[data-slot='shell-header'] {
+  container: header / inline-size;
+}
+[data-slot='shell-kebab'] {
+  display: none;
+}
+@container header (max-width: 1279.98px) {
+  [data-item][data-priority='3'] {
+    display: none;
+  }
+  [data-slot='shell-kebab'] {
+    display: inline-flex;
+  }
+}
+@container header (max-width: 1099.98px) {
+  [data-item][data-priority='2'] {
+    display: none;
+  }
+}
