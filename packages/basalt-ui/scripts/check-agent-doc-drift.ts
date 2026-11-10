@@ -238,7 +238,7 @@ export const REMOVED_APIS: Readonly<Record<string, string>> = {
   useTooltipStyles: 'the `tooltip` prop (ChartTooltipConfig)',
   BarsAxisConfig: 'AxisConfig',
   ZonedLineTooltipLabel: 'tooltip.rows',
-  // ── 2.0 chart layer (docs/V2-SPEC.md § 9; the full fate table is MIGRATING.md § 2.0) ──
+  // ── 2.0 chart layer (docs/V2-SPEC.md § 9; the full fate table is MIGRATING.md § 2.x to 3.0) ──
   // Kinds folded into `Lines` / `Sparkline`. The deleted kinds that W5 may rebuild under their own
   // name (StackedArea, DualPanel, MirroredBars, BandStrip, Donut, Heatmap) are NOT denylisted: the
   // docs name them as "not shipped", and an entry here would ban that sentence and the return.
