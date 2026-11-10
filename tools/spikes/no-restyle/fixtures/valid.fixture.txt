@@ -1,0 +1,9 @@
+import { Button } from 'basalt-ui/ui/button'
+
+export const probe: any = 1
+
+export const Plain = () => (
+  <Button variant="outline" className="w-full">
+    Save
+  </Button>
+)

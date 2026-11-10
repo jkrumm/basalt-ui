@@ -1,0 +1,10 @@
+[install]
+# The harness pins oxlint 1.93.0 (guardrails.md section 4); it was published under the global
+# 3-day cooldown, so only oxlint and its platform bindings are exempt here.
+minimumReleaseAgeExcludes = [
+  "oxlint",
+  "@oxlint/binding-darwin-arm64",
+  "@oxlint/binding-darwin-x64",
+  "@oxlint/binding-linux-x64-gnu",
+  "@oxlint/binding-linux-arm64-gnu",
+]

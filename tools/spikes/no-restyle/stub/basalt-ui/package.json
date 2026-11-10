@@ -1,0 +1,8 @@
+{
+  "name": "basalt-ui",
+  "version": "0.0.0-spike",
+  "type": "module",
+  "exports": {
+    "./ui/button": "./ui/button.js"
+  }
+}
