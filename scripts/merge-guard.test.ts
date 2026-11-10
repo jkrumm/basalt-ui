@@ -91,6 +91,28 @@ describe('evaluate', () => {
     expect(evaluate(ports({ masterRuns: () => [red] }))).toEqual([])
   })
 
+  test('a rename on master counts its old path as changed', () => {
+    git(work, 'checkout', '-q', 'master')
+    git(work, 'mv', 'feature', 'renamed')
+    git(work, '-c', 'user.name=t', '-c', 'user.email=t@example.com', 'commit', '-qm', 'rename')
+    git(work, 'push', '-q', 'origin', 'master')
+    git(work, 'checkout', '-q', 'feature')
+    commit('feature', 'branch edit')
+    expect(evaluate(ports())[0]).toContain('master moved on files this branch changes (feature)')
+    git(work, 'reset', '-q', '--hard', 'origin/master')
+  })
+
+  test('refuses when git cannot list the changed files', () => {
+    const real = realPorts(work)
+    const failingDiff = (args: string[]) => (args[0] === 'diff' ? null : real.git(args))
+    git(work, 'checkout', '-q', 'master')
+    commit('other')
+    git(work, 'push', '-q', 'origin', 'master')
+    git(work, 'checkout', '-q', 'feature')
+    expect(evaluate(ports({ git: failingDiff }))[0]).toContain('cannot be listed')
+    git(work, 'reset', '-q', '--hard', 'origin/master')
+  })
+
   test('refuses on stale generated files', () => {
     const refusals = evaluate(ports({ staleGenerated: () => ['bun gen-llms.ts --check'] }))
     expect(refusals[0]).toContain('generated files are stale')
