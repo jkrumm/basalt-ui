@@ -323,7 +323,7 @@ deleted rather than silently surviving into the next real skew.
 
 The theme lab and the dev dock are mounted by `BasaltProvider` in dev only; `basalt-ui tokens:css`
 emits the prebuilt `--vx-*` stylesheet. Every dropped 1.x subpath and its new home:
-[`MIGRATING.md`](./MIGRATING.md) § 2.0.0.
+[`MIGRATING.md`](./MIGRATING.md) § 2.x to 3.0.
 
 ---
 
@@ -454,7 +454,7 @@ import { VX } from 'basalt-ui/tokens'
 Shipped kinds are that same composition, pre-wired: `Lines` (n series, `area`, `thresholds`, zones,
 reference lines, `y2`) and `Bars` (stacked, grouped or normalised, ± bars, overlay lines), plus `StackedArea`,
 `DualPanel`, `MirroredBars`, `BandStrip`, `Donut`, `Heatmap` and `Sparkline`. The
-[`MIGRATING.md`](./MIGRATING.md) § 2.0.0 Charts table maps every 1.x chart export.
+[`MIGRATING.md`](./MIGRATING.md) § 2.x to 3.0 lists every removed or renamed chart export.
 
 Charts share a cursor with no provider (`cursorGroup="…"` isolates one; `chartCursor(group?)` reads
 it for app code), and only the chart under the pointer or keyboard focus shows a tooltip

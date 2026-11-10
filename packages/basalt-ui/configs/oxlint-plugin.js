@@ -3732,7 +3732,7 @@ export const RAW_BREAKPOINT_RECIPE =
   'type="container" breakpoints={CONTAINER_GRID_BREAKPOINTS}> (basalt-ui/tokens), with Grid.Col ' +
   'span={{ base: 12, sm: 6 }} keyed through that map; a Flex direction swap becomes that SimpleGrid (equal ' +
   'columns), a wrapping Group, or a CSS-module @container basalt-grid rule. useSizeClass() is for ' +
-  'shell chrome only. Recipes: basalt-ui MIGRATING.md § basalt/raw-breakpoint.'
+  'shell chrome only. Recipes: basalt-ui MIGRATING.md § 2.x to 3.0 (basalt/raw-breakpoint).'
 
 const RAW_BREAKPOINT_RESPONSIVE_PROP_MESSAGE =
   'Responsive-object prop keyed on theme breakpoints — those are viewport widths. ' +
