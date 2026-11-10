@@ -1305,6 +1305,11 @@ Layer: build-tooling
 Import: import { ... } from 'basalt-ui/theme-script'
 Description: v3 pre-paint color-scheme script (stub), frozen per major
 Layer: build-tooling
+Signature: themeScript(options: ThemeScriptOptions): string
+  key?: string
+  attribute?: string
+  default?: Scheme
+  cookie?: string
 
 ## basalt-ui/tokens.css
 Asset: basalt-ui/tokens.css
