@@ -1,0 +1,9 @@
+{
+  "name": "@basalt-ui/spike-hook-sync",
+  "private": true,
+  "description": "Spike 625: hook delivery semantics (S2), render-then-compare sync (S5) and shadcn skill co-install (S6). Throwaway harness, no tests, no dependencies.",
+  "type": "module",
+  "scripts": {
+    "run": "bun run.ts"
+  }
+}
