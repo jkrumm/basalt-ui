@@ -35,7 +35,6 @@ export interface GuardPorts {
 /** The generation sync checks `make check` runs first. */
 export const GENERATION_CHECKS: readonly (readonly string[])[] = [
   ['packages/basalt-ui/scripts/gen-oxlint.ts', '--check'],
-  ['packages/basalt-ui/scripts/gen-llms.ts', '--check'],
 ]
 
 /**

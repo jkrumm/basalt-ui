@@ -16,7 +16,6 @@
         "assets": [
           "packages/basalt-ui/CHANGELOG.md",
           "packages/basalt-ui/package.json",
-          "packages/basalt-ui/llms.txt",
           "packages/basalt-ui/MIGRATING.md",
           "packages/basalt-ui/migrations/*.json"
         ],

@@ -114,7 +114,7 @@ describe('evaluate', () => {
   })
 
   test('refuses on stale generated files', () => {
-    const refusals = evaluate(ports({ staleGenerated: () => ['bun gen-llms.ts --check'] }))
+    const refusals = evaluate(ports({ staleGenerated: () => ['bun gen-oxlint.ts --check'] }))
     expect(refusals[0]).toContain('generated files are stale')
   })
 
