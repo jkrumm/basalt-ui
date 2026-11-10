@@ -6,9 +6,8 @@ name: Deploy
 # No secrets in CI. RollHook authorizes by reading the rollhook.allowed_repos
 # label off the running container (see vps/apps/basalt-ui-marketing/compose.yml).
 #
-# Deliberately decoupled from Make Release: semantic-release is path-filtered to
-# packages/basalt-ui/, so marketing changes never produce a version. Gating this
-# on a release would mean the site never updates.
+# Deliberately decoupled from Make Release: gating this on a release would mean
+# the site never updates.
 #
 # Only a push that touches apps/marketing/** (or this workflow) deploys; every
 # other master push leaves the site alone. workflow_dispatch redeploys by hand,
