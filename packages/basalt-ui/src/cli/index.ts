@@ -30,6 +30,7 @@ import { COMMAND_OPTIONS, USAGE, unknownFlag } from './help'
 import { init } from './init'
 import { shot } from './shot'
 import { sync } from './sync'
+import { runV3Stub } from './verbs-v3'
 import type { BasaltInstall } from './basalt-install'
 import {
   CODE_ROUTED_NOTE,
@@ -1807,6 +1808,10 @@ export function run(argv: string[], cwd: string = process.cwd()): number | Promi
       return fontsCss(flags, cwd)
     case 'shot':
       return shot(flags, cwd)
+    case 'eject':
+    case 'migrate':
+    case 'lint':
+      return runV3Stub(cmd, flags)
     default:
       // Named, not just implied by a usage dump: a full-screen help block with no error line reads
       // like the command ran and chose to print help. Reported by a consumer who passed
