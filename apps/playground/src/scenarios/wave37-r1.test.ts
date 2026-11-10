@@ -9,7 +9,7 @@ import { createElement } from 'react'
 import type { ReactElement } from 'react'
 import { readFileSync } from 'node:fs'
 import { afterEach, describe, expect, it } from 'bun:test'
-import { ComponentsSurfaces } from '../demo/ComponentsPage'
+import { ComponentsSection } from '../demo/gallery/components'
 import { BUDGETS, FAILURES_WINDOW, FLOW_RANGE_LABEL, FLOW_SERIES, WARN_HOURS } from './agents-data'
 import { fmtEur, fmtEurCents, fmtInt, fmtRatio, fmtShare } from './fixture-utils'
 import { AgentsScenario } from './S3Agents'
@@ -255,16 +255,15 @@ describe('S4 distribution', () => {
 
 describe('components page', () => {
   it('scopes the group titles', () => {
-    const c = mount(createElement(ComponentsSurfaces, null))
+    const c = mount(createElement(ComponentsSection, { shotState: undefined }))
     const titles = [...c.querySelectorAll('h2, h3, h4, [data-section-title]')].map((t) => text(t))
-    for (const bare of ['Inputs', 'Table', 'Segmented control']) {
-      expect(titles).not.toContain(bare)
+    for (const title of ['Inputs', 'Table', 'Segmented control']) {
+      expect(titles).toContain(title)
     }
-    expect(text(c)).toContain('Inputs: text, select and textarea')
   })
 
   it('draws the delta with a direction glyph and right-aligns the numeric columns', () => {
-    const c = mount(createElement(ComponentsSurfaces, null))
+    const c = mount(createElement(ComponentsSection, { shotState: undefined }))
     const table = c.querySelector('table')
     expect(table).not.toBeNull()
     const rows = [...(table?.querySelectorAll('tbody tr') ?? [])]
@@ -281,7 +280,7 @@ describe('components page', () => {
   })
 
   it('badges and Code share one grid row, and the badges carry the three variant badges', () => {
-    const c = mount(createElement(ComponentsSurfaces, null))
+    const c = mount(createElement(ComponentsSection, { shotState: undefined }))
     const badges = anchor(c, 'badges')
     const row = badges.parentElement
     expect(text(row as Element)).toContain('Code')
@@ -289,19 +288,13 @@ describe('components page', () => {
   })
 
   it('pairs a tall group with a short one in each column of the first block', () => {
-    const c = mount(createElement(ComponentsSurfaces, null))
+    const c = mount(createElement(ComponentsSection, { shotState: undefined }))
     const titles = (column: string): string[] =>
       [
         ...(c.querySelector(`[data-compare-column="${column}"]`)?.querySelectorAll('h2, h3, h4') ??
           []),
       ].map((t) => text(t))
-    expect(titles('buttons')).toEqual([
-      'Button variants and sizes',
-      'Segmented control: day, week, month',
-    ])
-    expect(titles('inputs')).toEqual([
-      'Inputs: text, select and textarea',
-      'Tabs: default and pills',
-    ])
+    expect(titles('buttons')).toEqual(['Buttons', 'Segmented control'])
+    expect(titles('inputs')).toEqual(['Inputs', 'Tabs'])
   })
 })

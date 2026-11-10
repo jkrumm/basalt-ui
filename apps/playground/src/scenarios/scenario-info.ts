@@ -1,13 +1,12 @@
 /**
  * The scenarios a human opens: nav entries and the index page. Component-free on purpose — the
- * shell chunk imports this, and must not pull every scenario with it. Calibration probes are absent
- * (their ids are neutral so a defect is not readable from the route); a scenario added to the
+ * shell chunk imports this, and must not pull every scenario with it. A scenario added to the
  * registry needs an entry here, which `scenarios.test.ts` enforces.
  */
 import type { ScenarioKey } from './registry'
 
 export type ScenarioInfo = {
-  id: Exclude<ScenarioKey, `probe-${number}`>
+  id: ScenarioKey
   title: string
   blurb: string
 }
@@ -55,5 +54,10 @@ export const SCENARIO_INFO: readonly ScenarioInfo[] = [
     id: 's8-map',
     title: 'Sky map',
     blurb: 'Where is the sky clear tonight? A forecast raster on a map with its key.',
+  },
+  {
+    id: 'agent-stream',
+    title: 'Agent stream',
+    blurb: 'A replayed chat reply: reasoning, markdown, code, a diagram and a tool call.',
   },
 ]

@@ -31,7 +31,7 @@ declare const __APP_VERSION__: string
  * Live per-destination badges. Static here, so it is hoisted: the shell's nav memo deps include this
  * object, and a fresh literal per render would defeat it. A real app memoizes its query result.
  */
-const navBadges = { dashboard: 4 }
+const navBadges = { cards: 4 }
 
 /**
  * `globalActions` is DECLARED DATA (`GlobalAction[]`), so basalt owns the mobile projection: the

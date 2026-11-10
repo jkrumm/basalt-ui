@@ -17,38 +17,6 @@
 import { Link, linkOptions, redirect } from '@tanstack/react-router'
 import { defineNav, navGroup, navTarget } from 'basalt-ui'
 
-// `/dashboard`'s store validates SEVEN fields (`demo/dashboard-range-store.ts` — the page bar's
-// four plus the aside's three), and `validateSearch` returns every one of them resolved, so
-// TanStack type-requires all seven on any link into it. Hoisted `as const` so the literals do not
-// widen (see the row-8 trap below) and the keys are stated once rather than once per row.
-//
-// This fixture is also the one place the store's field set is spelled out by hand, deliberately: a
-// field added there and not here fails THIS file, which is the point — the guard is that a link
-// into a store-backed route carries the store's whole shape. Real call sites pass
-// `dashboardFilters.linkSearch` by reference (law C10) and never restate a key.
-const DASH_SEARCH = {
-  range: '7d',
-  compare: 'none',
-  currency: 'USD',
-  channels: [],
-  scale: 'linear',
-  smoothing: 0,
-  bands: false,
-} as const
-
-// The charts route's store has two fields; the same hand-spelled-shape rule applies.
-const CHARTS_SEARCH = { tab: 'linked', buckets: '288' } as const
-
-// The charts row, pinned: a link into the route carries the store's whole shape, and a value
-// outside a field's options is a compile error.
-export const chartsLink = linkOptions({ to: '/charts', search: CHARTS_SEARCH })
-
-// @ts-expect-error `/charts` has a required search shape — a bare link is a compile error
-export const chartsBare = linkOptions({ to: '/charts' })
-
-// @ts-expect-error 'nope' is not one of the `tab` field's options
-export const chartsBadTab = linkOptions({ to: '/charts', search: { tab: 'nope', buckets: '288' } })
-
 // ── the definition under test ────────────────────────────────────────────────────────────────────
 
 export const NAV = defineNav({
@@ -56,47 +24,39 @@ export const NAV = defineNav({
     navGroup({ id: 'main', label: 'Main' }, [
       { id: 'home', label: 'Home', mobile: 'tab', link: linkOptions({ to: '/' }) },
       {
-        id: 'dash',
-        label: 'Dashboard',
-        short: 'Dash',
+        id: 'gal',
+        label: 'Gallery',
+        short: 'Gal',
         mobile: 'tab',
-        link: linkOptions({ to: '/dashboard', search: DASH_SEARCH }),
+        link: linkOptions({ to: '/gallery' }),
         children: [
           {
-            id: 'sessions',
-            label: 'Revenue',
-            link: linkOptions({ to: '/dashboard/revenue', search: DASH_SEARCH }),
+            id: 'cards',
+            label: 'Cards',
+            link: linkOptions({ to: '/cards' }),
             // A GRANDCHILD — two levels below the group. Both halves of the contract are checked
             // against it: it is `Exact`-checked like any other item (row 4b), and it is present in
             // the id union `navTarget` takes (row 11).
             children: [
-              {
-                id: 'session-detail',
-                label: 'Detail',
-                link: linkOptions({ to: '/charts', search: CHARTS_SEARCH }),
-              },
+              { id: 'table-detail', label: 'Detail', link: linkOptions({ to: '/table' }) },
             ],
           },
         ],
       },
     ]),
     navGroup({ id: 'lab', label: 'Lab', mobile: { tab: true } }, [
-      {
-        id: 'charts',
-        label: 'Charts',
-        link: linkOptions({ to: '/charts', search: CHARTS_SEARCH }),
-      },
+      { id: 'shell', label: 'Shell', link: linkOptions({ to: '/shell' }) },
     ]),
   ],
-  mobile: { tabs: ['dash', 'lab'], maxTabs: 4 },
+  mobile: { tabs: ['gal', 'lab'], maxTabs: 4 },
 })
 
 // ── 1. per-index literal precision, through two nesting levels ───────────────────────────────────
 // A widened `string` here would mean the whole contract is inferring through the CONSTRAINT rather
 // than the argument, which is the failure mode every row below is downstream of.
 
-export const dashTo: '/dashboard' = NAV.groups[0].items[1].link.to
-export const sessionsTo: '/dashboard/revenue' = NAV.groups[0].items[1].children[0].link.to
+export const galTo: '/gallery' = NAV.groups[0].items[1].link.to
+export const cardsTo: '/cards' = NAV.groups[0].items[1].children[0].link.to
 export const groupId: 'lab' = NAV.groups[1].id
 
 // ── 2. a route path that does not exist ──────────────────────────────────────────────────────────
@@ -149,14 +109,14 @@ export const unknownChildKey = defineNav({
       {
         id: 'x',
         label: 'X',
-        link: linkOptions({ to: '/dashboard', search: DASH_SEARCH }),
+        link: linkOptions({ to: '/gallery' }),
         children: [
           {
             id: 'y',
             label: 'Y',
             // @ts-expect-error 'colour' is not a NavItemMeta key — the recursion types it `never` too
             colour: 'red',
-            link: linkOptions({ to: '/charts', search: CHARTS_SEARCH }),
+            link: linkOptions({ to: '/cards' }),
           },
         ],
       },
@@ -173,7 +133,7 @@ export const badChildPath = defineNav({
       {
         id: 'x',
         label: 'X',
-        link: linkOptions({ to: '/dashboard', search: DASH_SEARCH }),
+        link: linkOptions({ to: '/gallery' }),
         children: [
           // @ts-expect-error '/nope' is not a registered route path, at any depth
           { id: 'y', label: 'Y', link: linkOptions({ to: '/nope' }) },
@@ -205,82 +165,28 @@ export const unknownGroupKey = defineNav({
   ],
 })
 
-// ── 7. a route whose search params are required ──────────────────────────────────────────────────
-// `/dashboard` runs `validateSearch`, so TanStack marks `search` required on the link options.
-// The limit this row used to carry is GONE, and the change is worth stating: a hand-written
-// `validateSearch(search: Record<string, unknown>)` type-required the search OBJECT but none of its
-// KEYS, so `search: {}` compiled and a nav target forgetting `range` was a runtime concern only.
-// `createSearchStore.validateSearch` returns every field RESOLVED, so each one is now type-required
-// too — `search: { range: '7d' }` alone is a compile error naming the three fields it dropped.
-
-export const missingSearch = defineNav({
-  groups: [
-    navGroup({ id: 'g', label: 'G' }, [
-      // @ts-expect-error `/dashboard` requires `search` — MakeRequiredSearchParams
-      { id: 'x', label: 'X', link: linkOptions({ to: '/dashboard' }) },
-    ]),
-  ],
-})
-
 // ── 8. the search thunk ──────────────────────────────────────────────────────────────────────────
 // A function form is accepted where a search object is (`ParamsReducerFn`), and re-evaluates at
-// click time rather than at module scope — which is what a "last 7 days" target needs.
+// click time rather than at module scope. `/gallery` validates the `shot-state` search param.
 
 export const searchThunk = defineNav({
   groups: [
     navGroup({ id: 'g', label: 'G' }, [
       {
-        id: 'threads',
-        label: 'Threads',
-        link: linkOptions({ to: '/agent', search: () => ({ thread: 'latest' }) }),
+        id: 'gallery',
+        label: 'Gallery',
+        link: linkOptions({ to: '/gallery', search: () => ({ 'shot-state': 'empty' }) }),
       },
     ]),
   ],
 })
 
-// The spec's "compiles WITHOUT `as const`" is the interesting half of this row, and it holds even
-// for a LITERAL-UNION search param (`range: '1d' | '7d' | '30d'`): `linkOptions`' `const` type
-// parameter keeps `'7d'` literal because the nav item's `link` field types `search` as `unknown`
-// and so never forces a widening.
-export const searchThunkLiteralUnion = defineNav({
-  groups: [
-    navGroup({ id: 'g', label: 'G' }, [
-      {
-        id: 'dash',
-        label: 'Dashboard',
-        link: linkOptions({
-          to: '/dashboard',
-          // Spelled INLINE, never `...DASH_SEARCH`: that const is `as const`, so spreading it would
-          // make this row pass without ever exercising the contextual typing it exists to pin.
-          search: () => ({
-            range: '7d',
-            compare: 'none',
-            currency: 'USD',
-            channels: [],
-            scale: 'linear',
-            smoothing: 0,
-            bands: false,
-          }),
-        }),
-      },
-    ]),
-  ],
-})
-
-// The trap that survives, and the reason the row above is worth pinning rather than assuming: the
-// same thunk hoisted into a STANDALONE `linkOptions` call has no such contextual type, its return
-// widens to `{ range: string }`, and it is rejected. Inline it in the nav item, or write `as const`.
-const widenedSearch = () => ({
-  range: '7d',
-  compare: 'none',
-  currency: 'USD',
-  channels: [],
-  scale: 'linear',
-  smoothing: 0,
-  bands: false,
-})
-// @ts-expect-error a standalone thunk's `range` widens to `string` and misses the preset union
-export const hoistedThunk = linkOptions({ to: '/dashboard', search: widenedSearch })
+// The trap that survives: the same thunk hoisted into a STANDALONE `linkOptions` call has no
+// contextual type, its return widens to `{ 'shot-state': string }`, and it is rejected. Inline it
+// in the nav item, or write `as const`.
+const widenedSearch = () => ({ 'shot-state': 'empty' })
+// @ts-expect-error a standalone thunk's `shot-state` widens to `string` and misses the union
+export const hoistedThunk = linkOptions({ to: '/gallery', search: widenedSearch })
 
 // ── 9. a bar tab naming an id that does not exist ────────────────────────────────────────────────
 // `tabs` validates against the item-id union UNIONED with the group-id union, which is why
@@ -309,19 +215,15 @@ export const noTabs = defineNav({
 // The annotation is the assertion: it would fail if `NavIndex` collapsed to the whole union, which
 // is exactly what the `Extract<…, { id: K }>['link']` form (deliberately not used) does.
 
-export const dashTarget: { readonly to: '/dashboard'; readonly search: typeof DASH_SEARCH } =
-  navTarget(NAV, 'dash')
+export const galTarget: { readonly to: '/gallery' } = navTarget(NAV, 'gal')
 
 // A nested child is addressable by id too — `AllItemsOf` walks `children` to ARBITRARY depth, so
 // the id union matches what `findById` / `flattenNav` already resolve at runtime. A one-level walk
 // used to make a grandchild a compile error against an id the runtime finds perfectly well; the row
 // below is the grandchild case, and it is the pin on that agreement.
-export const sessionsTarget: {
-  readonly to: '/dashboard/revenue'
-  readonly search: typeof DASH_SEARCH
-} = navTarget(NAV, 'sessions')
+export const cardsTarget: { readonly to: '/cards' } = navTarget(NAV, 'cards')
 
-export const sessionDetailTarget: { readonly to: '/charts' } = navTarget(NAV, 'session-detail')
+export const tableDetailTarget: { readonly to: '/table' } = navTarget(NAV, 'table-detail')
 
 // ── 12. `navTarget` with an id that is not in the definition ─────────────────────────────────────
 
@@ -332,7 +234,7 @@ export const missingTarget = navTarget(NAV, 'zzz')
 // This is the row that collapses a consumer's index redirect and its command palette onto the same
 // definition the sidebar renders from.
 
-export const dashRedirect = () => redirect(navTarget(NAV, 'dash'))
+export const galRedirect = () => redirect(navTarget(NAV, 'gal'))
 
 // ── 14. the target spreads into `<Link>` with no cast ────────────────────────────────────────────
 // The file is `.tsx` rather than the `.ts` its siblings use for exactly this row: `createElement(
@@ -340,8 +242,8 @@ export const dashRedirect = () => redirect(navTarget(NAV, 'dash'))
 // while accepting `{ to: '/nope' }`, i.e. it is precisely backwards. Only JSX instantiates
 // `LinkComponent`'s generics the way a consumer's call site does.
 
-export const dashLink = () => <Link {...navTarget(NAV, 'dash')}>Dashboard</Link>
-export const itemLink = () => <Link {...NAV.groups[0].items[1].link}>Dashboard</Link>
+export const galLink = () => <Link {...navTarget(NAV, 'gal')}>Gallery</Link>
+export const itemLink = () => <Link {...NAV.groups[0].items[1].link}>Gallery</Link>
 
 // PROVES: the nav definition's `to`/`search` ride the router's own validator with per-item literal
 // precision AT EVERY DEPTH, and every metadata typo — a bad path, a missing label, a foreign key on

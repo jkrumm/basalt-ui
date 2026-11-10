@@ -7,7 +7,7 @@ import { createElement } from 'react'
 import type { ReactElement } from 'react'
 import { readdirSync, readFileSync } from 'node:fs'
 import { afterEach, describe, expect, it } from 'bun:test'
-import { ComponentsSurfaces } from '../demo/ComponentsPage'
+import { ComponentsSection } from '../demo/gallery/components'
 import { STUCK } from './agents-data'
 import { fmtEurCompact, fmtRatio } from './fixture-utils'
 import { LOAD_RATIO, READINESS_SCORE } from './training-data'
@@ -158,7 +158,7 @@ describe('components buttons specimen', () => {
   const FONT_SIZES_PER_ANCHOR = 3
 
   it('splits the buttons into anchors and drops no button', () => {
-    const c = mount(createElement(ComponentsSurfaces, null))
+    const c = mount(createElement(ComponentsSection, { shotState: undefined }))
     expect(anchor(c, 'buttons')).toBeNull()
     const anchors = [...c.querySelectorAll('[data-shot^="buttons-"]')]
     expect(anchors.length).toBeGreaterThanOrEqual(3)
@@ -182,7 +182,7 @@ describe('components buttons specimen', () => {
   })
 
   it('keeps at most three Button sizes in one anchor', () => {
-    const c = mount(createElement(ComponentsSurfaces, null))
+    const c = mount(createElement(ComponentsSection, { shotState: undefined }))
     for (const a of c.querySelectorAll('[data-shot^="buttons-"]')) {
       const sizes = new Set(
         [...a.querySelectorAll('button')].map((b) => b.getAttribute('data-size') ?? 'default'),

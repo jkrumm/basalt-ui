@@ -23,9 +23,8 @@ describe('validateShotSearch', () => {
 })
 
 describe('SCENARIO_INFO', () => {
-  it('describes every registered scenario except the calibration probes, and nothing else', () => {
-    const human = SCENARIO_NAMES.filter((n) => !n.startsWith('probe-'))
-    expect(SCENARIO_INFO.map((s): string => s.id).toSorted()).toEqual(human.toSorted())
+  it('describes every registered scenario, and nothing else', () => {
+    expect(SCENARIO_INFO.map((s): string => s.id).toSorted()).toEqual(SCENARIO_NAMES.toSorted())
     expect(SCENARIO_INFO.every((s) => s.title !== '' && s.blurb !== '')).toBe(true)
   })
 })
@@ -35,19 +34,12 @@ describe('findScenario', () => {
     for (const name of SCENARIO_NAMES) expect(findScenario(name)).toBeDefined()
   })
 
-  it('registers S1–S4 and the six calibration seeds', () => {
+  it('registers S1–S4 and the agent stream', () => {
     expect(SCENARIO_NAMES).toContain('s1-ops')
     expect(SCENARIO_NAMES).toContain('s2-training')
     expect(SCENARIO_NAMES).toContain('s3-agents')
     expect(SCENARIO_NAMES).toContain('s4-spend')
-    expect(SCENARIO_NAMES.filter((n) => n.startsWith('probe-')).toSorted()).toEqual([
-      'probe-1',
-      'probe-2',
-      'probe-3',
-      'probe-4',
-      'probe-5',
-      'probe-6',
-    ])
+    expect(SCENARIO_NAMES).toContain('agent-stream')
   })
 
   it.each(['constructor', 'toString', '__proto__', 'hasOwnProperty', 'nope'])(

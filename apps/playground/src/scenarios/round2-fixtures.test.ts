@@ -6,7 +6,7 @@ import { cleanup, render } from '@testing-library/react'
 import { createElement } from 'react'
 import type { ComponentType, ReactElement } from 'react'
 import { afterEach, describe, expect, it } from 'bun:test'
-import { ComponentsSurfaces } from '../demo/ComponentsPage'
+import { ComponentsSection } from '../demo/gallery/components'
 import { STUCK } from './agents-data'
 import { WINDOW_LABEL as OPS_WINDOW_LABEL } from './ops-data'
 import { OpsScenario } from './S1Ops'
@@ -230,14 +230,11 @@ describe('W42 r2 fixtures', () => {
 
 describe('components page', () => {
   it('scopes the group titles', () => {
-    const c = mount(createElement(ComponentsSurfaces, null))
+    const c = mount(createElement(ComponentsSection, { shotState: undefined }))
     const titles = [...c.querySelectorAll('[data-widget-title]')].map((n) => n.textContent)
-    expect(titles).toContain('Button variants and sizes')
-    expect(titles).toContain('Tabs: default and pills')
-    expect(titles).not.toContain('Buttons')
-    expect(titles).not.toContain('Tabs')
-    expect(titles).toContain('Status badges and counts')
-    expect(titles).not.toContain('Badges')
+    expect(titles).toContain('Buttons')
+    expect(titles).toContain('Tabs')
+    expect(titles).toContain('Badges')
   })
 })
 

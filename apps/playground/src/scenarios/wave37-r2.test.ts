@@ -8,7 +8,7 @@ import { createElement } from 'react'
 import type { ReactElement } from 'react'
 import { readFileSync } from 'node:fs'
 import { afterEach, describe, expect, it } from 'bun:test'
-import { ComponentsSurfaces } from '../demo/ComponentsPage'
+import { ComponentsSection } from '../demo/gallery/components'
 import {
   BUDGETS,
   FLOW,
@@ -58,8 +58,8 @@ const agents = (shotState?: ShotState) => mount(createElement(AgentsScenario, { 
 const spend = (shotState?: ShotState) => mount(createElement(SpendScenario, { shotState }))
 const rowOf = (el: Element | undefined) => el?.closest('[class*="SimpleGrid"]')
 const tableAt = (state: ShotState) =>
-  anchor(mount(createElement(ComponentsSurfaces, { shotState: state })), 'table')
-const components = () => mount(createElement(ComponentsSurfaces, null))
+  anchor(mount(createElement(ComponentsSection, { shotState: state })), 'table')
+const components = () => mount(createElement(ComponentsSection, { shotState: undefined }))
 
 describe('S2', () => {
   it('the goal card leads with the pace verdict; "17 of 28" lives in the Meter label only', () => {
@@ -253,7 +253,7 @@ describe('components page', () => {
 
   it('the table anchor renders skeleton rows while loading, and no figures', () => {
     const el = tableAt('loading')
-    expect(el.querySelectorAll('tbody tr')).toHaveLength(4)
+    expect(el.querySelectorAll('tbody tr')).toHaveLength(3)
     expect(el.querySelectorAll('.mantine-Skeleton-root').length).toBeGreaterThan(0)
     expect(text(el)).not.toContain('12,480')
   })
@@ -266,10 +266,9 @@ describe('components page', () => {
 
   it('scopes every group title', () => {
     const titles = [...components().querySelectorAll('h2, h3, h4')].map((t) => text(t))
-    for (const bare of ['Accordion', 'Code', 'Toggles', 'Empty state', 'Dropdown surfaces']) {
-      expect(titles).not.toContain(bare)
+    for (const title of ['Accordion', 'Code', 'Toggles', 'Empty state']) {
+      expect(titles).toContain(title)
     }
-    expect(titles).toContain('Toggles: switch, checkbox and radio')
   })
 
   // W38 r1: the period moved from every row label into the column headers, where it prints once.
@@ -285,7 +284,7 @@ describe('components page', () => {
   })
 
   it('the dropdown surfaces card reserves the room its open Menu and Popover need', () => {
-    expect(source('../demo/ComponentsPage.tsx')).toMatch(/mih=\{\d+\}/)
+    expect(source('../demo/gallery/components.tsx')).toMatch(/mih=\{\d+\}/)
   })
 
   it('pairs Toggles with the Empty state instead of leaving it alone in its row', () => {

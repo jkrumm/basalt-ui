@@ -11,67 +11,58 @@
  * Consumed by `routes/__root.tsx` (sidebar + mobile bar). It imports NOTHING from `routes/` or `routeTree.gen`, so either side can read it without
  * a cycle.
  *
- * Shrunk from ~45 destinations to 14 (consolidation wave C3, audit E §7): every route this file
- * once linked to that got merged into another page as a TAB is gone from here too — the tab lives
- * inside the destination it merged into, not as a second nav row pointing at the same URL.
+ * Seven destinations (issue 616): home, the gallery, cards, table, shell, settings, and the
+ * scenarios group built from `SCENARIO_INFO`.
  */
 import { Text } from '@mantine/core'
 import { linkOptions } from '@tanstack/react-router'
 import type { SidebarBlock } from 'basalt-ui'
 import { defineNav, navGroup } from 'basalt-ui'
 import { SCENARIO_INFO } from '../scenarios/scenario-info'
-import { cbbiFilters } from './cbbi/cbbi-store'
-import { chartViews } from './charts-store'
-import { dashboardFilters } from './dashboard-range-store'
-import {
-  IconActivity,
-  IconBattery,
-  IconBook,
-  IconChart,
-  IconComponents,
-  IconDashboard,
-  IconSettings,
-  IconSparkle,
-} from './icons'
+import { IconActivity, IconChart, IconComponents, IconDashboard, IconSettings } from './icons'
 
 export const NAV = defineNav({
   groups: [
     navGroup({ id: 'overview', label: 'Overview', icon: <IconDashboard /> }, [
       {
-        id: 'dashboard',
-        label: 'Dashboard',
-        short: 'Home',
+        id: 'home',
+        label: 'Home',
+        icon: <IconDashboard />,
+        link: linkOptions({ to: '/' }),
+      },
+      {
+        id: 'gallery',
+        label: 'Gallery',
+        mobile: 'tab',
+        icon: <IconComponents />,
+        link: linkOptions({ to: '/gallery' }),
+      },
+      // Four `mobile: 'tab'` fill the bar: `MOBILE_MAX_TABS_DEFAULT` is 5 INCLUDING the More slot,
+      // and the shell always needs More here (account row + sidebar blocks), so four is the ceiling.
+      {
+        id: 'cards',
+        label: 'Cards',
+        mobile: 'tab',
+        icon: <IconChart />,
+        link: linkOptions({ to: '/cards' }),
+      },
+      {
+        id: 'table',
+        label: 'Table',
+        mobile: 'tab',
+        icon: <IconActivity />,
+        link: linkOptions({ to: '/table' }),
+      },
+      {
+        id: 'shell',
+        label: 'Shell',
         mobile: 'tab',
         icon: <IconDashboard />,
-        // Law C10 — the store's OWN reader, passed BY REFERENCE and set per destination so only
-        // the /dashboard sub-tree inherits the filter and every other link below stays clean.
-        link: linkOptions({ to: '/dashboard', search: dashboardFilters.linkSearch }),
-        // The ONE nested proof left (audit E §7) — `/dashboard/sessions` and `/dashboard/traffic`
-        // were identical `SubPage` stubs and are gone.
-        children: [
-          {
-            id: 'dashboard-revenue',
-            label: 'Revenue',
-            link: linkOptions({ to: '/dashboard/revenue', search: dashboardFilters.linkSearch }),
-          },
-        ],
+        link: linkOptions({ to: '/shell' }),
       },
     ]),
 
-    // The one group that is not a framework surface: a whole page built ON basalt rather than a
-    // demonstration OF one piece of it. `cbbi` is the evidence page for a future right-hand aside,
-    // so it links with its own store's reader (C10) like every other store-backed destination.
-    navGroup({ id: 'examples', label: 'Examples', icon: <IconChart /> }, [
-      {
-        id: 'cbbi',
-        label: 'CBBI (live data)',
-        short: 'CBBI',
-        icon: <IconChart />,
-        link: linkOptions({ to: '/cbbi', search: cbbiFilters.linkSearch }),
-      },
-    ]),
-
-    // One entry per human-facing scenario in the registry (calibration probes stay out).
+    // One entry per scenario in the registry.
     navGroup(
       { id: 'scenarios', label: 'Scenarios', icon: <IconDashboard />, collapsible: true },
       SCENARIO_INFO.map(({ id, title }) => ({
@@ -81,62 +72,6 @@ export const NAV = defineNav({
         link: linkOptions({ to: '/scenarios/$name', params: { name: id } }),
       })),
     ),
-
-    navGroup(
-      { id: 'charts', label: 'Charts & components', icon: <IconChart />, collapsible: true },
-      [
-        {
-          id: 'charts-page',
-          label: 'Charts',
-          mobile: 'tab',
-          icon: <IconChart />,
-          link: linkOptions({ to: '/charts', search: chartViews.linkSearch }),
-        },
-        {
-          id: 'components',
-          label: 'Components',
-          // The FOURTH and last `mobile: 'tab'`, which fills the bar: `MOBILE_MAX_TABS_DEFAULT` is
-          // 5 INCLUDING the More slot, and the shell always needs More here (the account row and
-          // the sidebar blocks feed `extraMoreRows`), so four is the ceiling — a fifth would be
-          // dropped back into More with a dev warning naming it.
-          //
-          // Components rather than `cbbi`, `agent` or `settings`, on reach: it is the catalogue
-          // someone judging a component framework opens repeatedly, while `/cbbi` and `/agent` are
-          // each read once and `/settings` is already reachable from the account menu. It also
-          // pairs with `/charts` — the two members of this group are then the two tabs, so the
-          // phone bar mirrors a sidebar group instead of scattering it.
-          mobile: 'tab',
-          // A 72px slot: "Components" would ellipsize, and the short label is the only thing the
-          // bar prints under the icon.
-          short: 'UI',
-          icon: <IconComponents />,
-          link: linkOptions({ to: '/components' }),
-        },
-      ],
-    ),
-
-    navGroup(
-      { id: 'batteries', label: 'Batteries', icon: <IconBattery />, mobile: { tab: true } },
-      [
-        { id: 'data', label: 'Data', icon: <IconActivity />, link: linkOptions({ to: '/data' }) },
-        {
-          id: 'forms',
-          label: 'Forms',
-          icon: <IconComponents />,
-          link: linkOptions({ to: '/forms' }),
-        },
-        {
-          id: 'content',
-          label: 'Content',
-          icon: <IconBook />,
-          link: linkOptions({ to: '/content' }),
-        },
-      ],
-    ),
-
-    navGroup({ id: 'agent', label: 'Agent', icon: <IconSparkle /> }, [
-      { id: 'agent', label: 'Agent', icon: <IconSparkle />, link: linkOptions({ to: '/agent' }) },
-    ]),
 
     navGroup({ id: 'system', label: 'System', icon: <IconSettings /> }, [
       {

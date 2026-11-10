@@ -7,7 +7,7 @@ import { cleanup, render } from '@testing-library/react'
 import { createElement } from 'react'
 import type { ReactElement } from 'react'
 import { afterEach, describe, expect, it } from 'bun:test'
-import { ComponentsSurfaces } from '../demo/ComponentsPage'
+import { ComponentsSection } from '../demo/gallery/components'
 import { TrainingScenario } from './S2Training'
 
 afterEach(cleanup)
@@ -17,23 +17,12 @@ const anchor = (c: HTMLElement, name: string) =>
   c.querySelector<HTMLElement>(`[data-shot="${name}"]`)
 
 describe('buttons-sections specimen', () => {
-  it('carries left and right sections at xs/sm/md in default and filled', () => {
-    const c = mount(createElement(ComponentsSurfaces, null))
+  it('carries a left and a right section', () => {
+    const c = mount(createElement(ComponentsSection, { shotState: undefined }))
     const buttons = [...(anchor(c, 'buttons-sections')?.querySelectorAll('button') ?? [])]
     expect(buttons.length).toBeGreaterThan(0)
-    const sizes = new Set(buttons.map((b) => b.getAttribute('data-size')))
-    expect([...sizes].toSorted()).toEqual(['md', 'sm', 'xs'])
-    const variants = new Set(buttons.map((b) => b.getAttribute('data-variant')))
-    expect([...variants].toSorted()).toEqual(['default', 'filled'])
-    for (const size of sizes) {
-      for (const variant of variants) {
-        const cell = buttons.filter(
-          (b) => b.getAttribute('data-size') === size && b.getAttribute('data-variant') === variant,
-        )
-        expect(cell.some((b) => b.querySelector('[data-position="left"]') !== null)).toBe(true)
-        expect(cell.some((b) => b.querySelector('[data-position="right"]') !== null)).toBe(true)
-      }
-    }
+    expect(buttons.some((b) => b.querySelector('[data-position="left"]') !== null)).toBe(true)
+    expect(buttons.some((b) => b.querySelector('[data-position="right"]') !== null)).toBe(true)
   })
 })
 

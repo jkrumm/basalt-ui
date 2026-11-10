@@ -1,17 +1,10 @@
 /**
  * The scenario registry: `$name` → fixture. The route stays thin; a new scenario is one entry here.
- * S1–S6 are SPEC § 2 (S6 settings and entry is the forms pattern); S7 and S8 are Wave 43's argo upstream rows. `probe-1`…`probe-6` are the reviewer's calibration boards (SPEC § 8.5): five
- * seeded with exactly one defect each and one known-good; the ids are neutral so the defect is not
- * readable from the route (the map lives in calibration.md). A Map, so `/scenarios/constructor` is
+ * S1–S6 are SPEC § 2 (S6 settings and entry is the forms pattern); S7 and S8 are Wave 43's argo upstream rows. `agent-stream` is the replayed chat reply. A Map, so `/scenarios/constructor` is
  * unknown rather than an inherited `Object` member.
  */
 import type { ReactElement } from 'react'
-import { CalibrateAccentTab } from './CalibrateAccentTab'
-import { CalibrateBannedSubtitle } from './CalibrateBannedSubtitle'
-import { CalibrateDeltaFill } from './CalibrateDeltaFill'
-import { CalibrateEmptyHalf } from './CalibrateEmptyHalf'
-import { CalibrateGood } from './CalibrateGood'
-import { CalibrateRepeatedAxis } from './CalibrateRepeatedAxis'
+import { AgentStreamDemo } from '../demo/AgentStreamDemo'
 import { OpsScenario } from './S1Ops'
 import { TrainingScenario } from './S2Training'
 import { AgentsScenario } from './S3Agents'
@@ -31,15 +24,10 @@ const RENDERERS = {
   's6-settings': (p) => <SettingsScenario {...p} />,
   's7-body': (p) => <BodyScenario {...p} />,
   's8-map': (p) => <MapScenario {...p} />,
-  'probe-3': () => <CalibrateGood />,
-  'probe-5': () => <CalibrateDeltaFill />,
-  'probe-6': () => <CalibrateEmptyHalf />,
-  'probe-1': () => <CalibrateRepeatedAxis />,
-  'probe-4': () => <CalibrateAccentTab />,
-  'probe-2': () => <CalibrateBannedSubtitle />,
+  'agent-stream': () => <AgentStreamDemo />,
 } satisfies Record<string, (props: ScenarioProps) => ReactElement>
 
-/** Every registered id; `scenario-info.ts` types its human-facing subset against this. */
+/** Every registered id; `scenario-info.ts` types its entries against this. */
 export type ScenarioKey = keyof typeof RENDERERS
 
 const SCENARIOS = new Map<string, (props: ScenarioProps) => ReactElement>(Object.entries(RENDERERS))
