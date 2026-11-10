@@ -1,16 +1,17 @@
 /**
- * "One accent color in -> calculated palette out" derivation engine — ported from the
- * `apps/playground/src/poc/derive.ts` proof of concept (browser-validated and calibration-checked
- * there; see that file's history for the reproduction table this derivation was scored against).
- * Every constant below (tones, chromas, hue offsets, hover deltas) is a calibrated law, not a taste
- * call — do not re-tune without re-running that calibration.
+ * "One accent color in -> calculated palette out" derivation engine. Every constant below (tones,
+ * chromas, hue offsets, hover deltas) is a law pinned by a test in this folder, not a taste call:
+ * change one together with the test that pins it.
  *
- * `palette.ts` derives the shipped default palette from `deriveTokens(DEFAULT_DERIVE_CONFIG)` at
- * module load. Retuning the shipped identity means editing `DEFAULT_DERIVE_CONFIG` or the
- * constants below, never hand-editing a hex in `palette.ts`.
+ * Two derivations live here. `deriveTokens` is the 2.x palette: `palette.ts` derives the shipped
+ * default from `deriveTokens(DEFAULT_DERIVE_CONFIG)` at module load, and retuning that identity
+ * means editing `DEFAULT_DERIVE_CONFIG` or the constants below, never a hex in `palette.ts`.
+ * `deriveV3` (bottom of the file) is the v3 palette that `table.ts` reads: one seed hue, one
+ * vibrancy step, four surfaces, three inks, and a refusal in `gates.ts` instead of a silent bad
+ * accent. Nothing in the v3 half imports `palette.ts` or `core.ts`.
  */
 import { contrastRatio, hctToHex, hexToHct, yToTone } from './hct'
-import { deriveStatusHexes } from './status-text'
+import { deriveStatusHexes, solveStatusV3, STATUS_HUE, STATUS_STOP } from './status-text'
 import type { ColorPair } from './core'
 
 export type DeriveConfig = {
@@ -316,7 +317,7 @@ const ROW_INK_MIX: Record<RowSurfaceKey, Record<Side, number>> = {
 }
 
 /** `a` toward `b` by `t` per sRGB channel — the hex twin of `color-mix(in srgb, b t%, a)`. */
-function mixHex(a: string, b: string, t: number): string {
+export function mixHex(a: string, b: string, t: number): string {
   const channel = (hex: string, i: number): number =>
     Number.parseInt(hex.slice(1 + 2 * i, 3 + 2 * i), 16)
   const out = [0, 1, 2].map((i) => Math.round(channel(a, i) * (1 - t) + channel(b, i) * t))
@@ -502,4 +503,309 @@ export function deriveTokensRaw(
     ink,
     status,
   }
+}
+
+// ══ v3 ═══════════════════════════════════════════════════════════════════════════════════════════
+// docs/v3/concepts/tokens-visual.md 3.3-3.5. The seed contributes its HUE only; the fill sits in the
+// Y=.165 band (white label 4.89:1), so contrast is a property of the construction and `gates.ts`
+// proves it instead of the knobs clamping it. There is no brightness knob: positive steps drop the
+// label under 4.5 and negative ones clamp to one value (3.4).
+
+/** The v3 neutral presets; the table's warm ramp is `warm`. */
+export type NeutralV3 = 'warm' | 'neutral' | 'cool'
+
+export type DeriveV3Config = {
+  /** Seed hex. Contributes the hue and nothing else. */
+  accent: string
+  neutral: NeutralV3
+  /** -5..5, 0 = the shipped centre (the 2.x `+1`). Scales every derived chroma by `1.2^level`. */
+  vibrancy: number
+}
+
+/** `#2e75b1`, warm, centre vibrancy: the shipped identity (DPO 5a, pending the owner). */
+export const DEFAULT_DERIVE_V3_CONFIG: DeriveV3Config = {
+  accent: '#2e75b1',
+  neutral: 'warm',
+  vibrancy: 0,
+}
+
+export const VIBRANCY_RANGE_V3 = { min: -5, max: 5 } as const
+
+/** The v3 colour roles the table lists with a `{ light, dark }` pair. */
+export const COLOR_NAMES_V3 = [
+  'canvas',
+  'inset',
+  'card',
+  'raised',
+  'ink',
+  'ink-muted',
+  'ink-faint',
+  'brand',
+  'brand-fill',
+  'on-brand',
+  'good',
+  'warn',
+  'bad',
+  'info',
+  'line',
+  'dim-bar',
+  'chart-1',
+  'chart-2',
+  'chart-3',
+  'chart-4',
+  'chart-5',
+  'seq-1',
+  'seq-2',
+  'seq-3',
+  'seq-4',
+  'seq-5',
+] as const
+export type ColorNameV3 = (typeof COLOR_NAMES_V3)[number]
+
+export type DerivedV3 = {
+  /** The seed, lower-cased: what a gate failure names. */
+  accent: string
+  colors: Record<ColorNameV3, ColorPair>
+}
+
+/** Ink share of every pre-mixed alpha role, per scheme (`color-mix(in srgb, ink N%, transparent)`).
+ * `input` is a deliberate heavier line, not a scaled hairline: the S3 spike measured the hairline
+ * at 1.19:1 light and 1.24:1 dark against a 3.00:1 bar (docs/v3/spikes/token-surfaces.md). */
+export const INK_MIX_PCT = {
+  hairline: { light: 12, dark: 9 },
+  hover: { light: 5, dark: 7 },
+  selected: { light: 7.5, dark: 9 },
+  input: { light: 52, dark: 44 },
+  grid: { light: 10, dark: 10 },
+  crosshair: { light: 40, dark: 40 },
+  scrim: { light: 45, dark: 60 },
+} as const satisfies Record<string, Record<Side, number>>
+
+/** Status tint share, per scheme: 16% dark, 12% light (3.5). */
+export const TINT_PCT = { light: 12, dark: 16 } as const satisfies Record<Side, number>
+
+const NEUTRAL_V3: Record<NeutralV3, { hue: number; chromaScale: number }> = {
+  warm: { hue: 70, chromaScale: 1 },
+  neutral: { hue: 70, chromaScale: 0 },
+  cool: { hue: 260, chromaScale: 1.6 },
+}
+
+// Surface and ink tones (HCT). Light inset/raised sit above the canvas, the card below it; dark
+// steps up from the canvas: card 19 is the T19 default of DPO 5b (T18.5 would put the fill at
+// exactly 3.00 on card; the step must stay >= .03 OKLCH L).
+const SURFACE_TONE_V3: Record<Side, Record<'canvas' | 'inset' | 'card' | 'raised', number>> = {
+  light: { canvas: 96.5, inset: 99.2, card: 92.5, raised: 100 },
+  dark: { canvas: 12.5, inset: 15, card: 19, raised: 24 },
+}
+// Warm-ramp chroma per scheme; the near-white light roles carry less because the gamut narrows.
+const SURFACE_CHROMA_V3: Record<Side, Record<'canvas' | 'inset' | 'card' | 'raised', number>> = {
+  light: { canvas: 2, inset: 0.9, card: 2, raised: 0 },
+  dark: { canvas: 2.6, inset: 2.6, card: 2.6, raised: 2.6 },
+}
+// Not pure white: T93 keeps the warm image and avoids halation on 13px rows. Faint is the axis ink,
+// opaque, and is not gated on `raised` (3.91 there).
+const INK_TONE_V3: Record<Side, Record<'ink' | 'ink-muted' | 'ink-faint', number>> = {
+  light: { ink: 14, 'ink-muted': 38, 'ink-faint': 44 },
+  dark: { ink: 93, 'ink-muted': 72, 'ink-faint': 62 },
+}
+
+// Brand: `fillChroma` is the chroma the shipped hue 268 fill (`#2e75b1`) is measured at; the dark
+// ink is the same hue pulled back off the fill's saturation, as in 2.x (36 x .864).
+const BRAND_FILL_CHROMA = 38.2
+const BRAND_INK_DARK_TONE = 78
+const BRAND_INK_DARK_CHROMA = 31.14
+// The brand ink walks off its start until it clears this on canvas, inset and card; a hair over the
+// 4.5 gate so a 0.1-tone step never lands on the line.
+const BRAND_INK_SOLVE_MIN = 4.55
+const BRAND_INK_TONE_STEP = 0.1
+const INFO_LIGHT_STOP_TONE = 40
+
+// Viz: chart-2..5 are the 2.x fills for orange, teal, grape and green, re-lit in the fill band so
+// every mark clears 3:1 on canvas and inset; chart-1 is the brand fill. Sequential steps share the
+// seed hue and run light-to-dark by value in light, dark-to-light in dark.
+const CHART_FAMILIES = ['orange', 'teal', 'grape', 'green'] as const satisfies readonly FillFamily[]
+const SEQ_TONE: Record<Side, readonly number[]> = {
+  light: [90, 78, 66, 54, 42],
+  dark: [28, 38, 50, 64, 78],
+}
+const SEQ_CHROMA_SHARE = [0.3, 0.5, 0.7, 0.85, 1] as const
+const LINE_TONE: Record<Side, number> = { light: 50, dark: 62 }
+// Dim bars sit under the "now" mark: >= 2.0 on inset, quieter than the data line.
+const DIM_BAR_TONE: Record<Side, number> = { light: 68, dark: 38 }
+const VIZ_CHROMA_V3 = 2
+// The 2.x fill chroma was scaled by the old vibrancy centre (x.864); chart-N keep that scale.
+const CHART_CHROMA_SCALE = 0.864
+
+function clampVibrancy(level: number): number {
+  return Number.isFinite(level) ? clamp(level, VIBRANCY_RANGE_V3.min, VIBRANCY_RANGE_V3.max) : 0
+}
+
+export type TextSurfaceV3 = 'canvas' | 'inset' | 'card' | 'raised'
+const TEXT_SURFACES_V3: readonly TextSurfaceV3[] = ['canvas', 'inset', 'card', 'raised']
+
+/** Names of every background a v3 status ink is painted on, in `statusBackgrounds` order. A
+ * literal on purpose: a computed module-level constant is a side effect the provider bundle keeps. */
+export const STATUS_BACKGROUND_LABELS: readonly string[] = [
+  'canvas',
+  'inset',
+  'card',
+  'raised',
+  'hover-canvas',
+  'selected-canvas',
+  'hover-inset',
+  'selected-inset',
+  'hover-card',
+  'selected-card',
+  'tint-canvas',
+  'tint-inset',
+  'tint-card',
+  'tint-raised',
+]
+
+/**
+ * Every background a v3 status ink is painted on, for one scheme: the four surfaces, the row
+ * hover and selected mixes over canvas/inset/card, and (for `tone`, the candidate ink) its own
+ * tint over each surface. One definition, shared by the solver here and the PAIRS in `gates.ts`,
+ * labelled so a gate failure names the surface.
+ */
+export function statusBackgrounds(args: {
+  side: Side
+  surfaces: Record<TextSurfaceV3, string>
+  ink: string
+  tone: string
+}): { surface: string; hex: string }[] {
+  const { side, surfaces, ink, tone } = args
+  const list = TEXT_SURFACES_V3.map((s) => ({ surface: s as string, hex: surfaces[s] }))
+  for (const s of ['canvas', 'inset', 'card'] as const) {
+    list.push({
+      surface: `hover-${s}`,
+      hex: mixHex(surfaces[s], ink, INK_MIX_PCT.hover[side] / 100),
+    })
+    list.push({
+      surface: `selected-${s}`,
+      hex: mixHex(surfaces[s], ink, INK_MIX_PCT.selected[side] / 100),
+    })
+  }
+  for (const s of TEXT_SURFACES_V3) {
+    list.push({ surface: `tint-${s}`, hex: mixHex(surfaces[s], tone, TINT_PCT[side] / 100) })
+  }
+  return list
+}
+
+/**
+ * Derive the v3 palette. Pure and deterministic; it never validates contrast (that is
+ * `checkGates`), but its solved roles (brand ink, status inks) throw when no tone can reach their
+ * floor on a surface set.
+ * @throws Error on a malformed `accent`, or when a solved role cannot reach its floor.
+ */
+export function deriveV3(config: DeriveV3Config = DEFAULT_DERIVE_V3_CONFIG): DerivedV3 {
+  assertValidAccentHex(config.accent)
+  const seed = hexToHct(config.accent)
+  const neutral = NEUTRAL_V3[config.neutral]
+  const mult = 1.2 ** clampVibrancy(config.vibrancy)
+  const bandTone = yToTone(FILL_LUMINANCE)
+  const fillChroma = BRAND_FILL_CHROMA * mult
+
+  const pair = (make: (side: Side) => string): ColorPair => ({
+    light: make('light'),
+    dark: make('dark'),
+  })
+
+  const colors = {} as Record<ColorNameV3, ColorPair>
+  for (const key of ['canvas', 'inset', 'card', 'raised'] as const) {
+    colors[key] = pair((side) =>
+      hctToHex({
+        hue: neutral.hue,
+        chroma: SURFACE_CHROMA_V3[side][key] * neutral.chromaScale,
+        tone: SURFACE_TONE_V3[side][key],
+      }),
+    )
+  }
+  for (const key of ['ink', 'ink-muted', 'ink-faint'] as const) {
+    colors[key] = pair((side) =>
+      hctToHex({
+        hue: neutral.hue,
+        chroma: SURFACE_CHROMA_V3[side].canvas * neutral.chromaScale,
+        tone: INK_TONE_V3[side][key],
+      }),
+    )
+  }
+
+  const fill = hctToHex({ hue: seed.hue, chroma: fillChroma, tone: bandTone })
+  colors['brand-fill'] = { light: fill, dark: fill }
+  colors['on-brand'] = { light: '#ffffff', dark: '#ffffff' }
+  colors.brand = pair((side) => {
+    const dark = side === 'dark'
+    const chroma = dark ? BRAND_INK_DARK_CHROMA * mult : fillChroma
+    const step = dark ? BRAND_INK_TONE_STEP : -BRAND_INK_TONE_STEP
+    const backgrounds = [colors.canvas[side], colors.inset[side], colors.card[side]]
+    for (let tone = dark ? BRAND_INK_DARK_TONE : bandTone; tone >= 0 && tone <= 100; tone += step) {
+      const hex = hctToHex({ hue: seed.hue, chroma, tone })
+      if (backgrounds.every((bg) => contrastRatio(hex, bg) >= BRAND_INK_SOLVE_MIN)) return hex
+    }
+    throw new Error(`brand ink: no ${side} tone reaches ${BRAND_INK_SOLVE_MIN}:1 on every surface`)
+  })
+
+  const stops = {
+    ...STATUS_STOP,
+    info: {
+      light: { tone: INFO_LIGHT_STOP_TONE, chroma: fillChroma },
+      dark: { tone: BRAND_INK_DARK_TONE, chroma: BRAND_INK_DARK_CHROMA * mult },
+    },
+  }
+  for (const key of ['good', 'warn', 'bad', 'info'] as const) {
+    const hue = key === 'info' ? seed.hue : STATUS_HUE[key]
+    colors[key] = pair((side) =>
+      solveStatusV3({
+        label: key,
+        side,
+        hue,
+        stop: stops[key][side],
+        backgroundsOf: (tone) =>
+          statusBackgrounds({
+            side,
+            tone,
+            ink: colors.ink[side],
+            surfaces: {
+              canvas: colors.canvas[side],
+              inset: colors.inset[side],
+              card: colors.card[side],
+              raised: colors.raised[side],
+            },
+          }).map((b) => b.hex),
+      }),
+    )
+  }
+
+  colors.line = pair((side) =>
+    hctToHex({
+      hue: neutral.hue,
+      chroma: VIZ_CHROMA_V3 * neutral.chromaScale,
+      tone: LINE_TONE[side],
+    }),
+  )
+  colors['dim-bar'] = pair((side) =>
+    hctToHex({
+      hue: neutral.hue,
+      chroma: VIZ_CHROMA_V3 * neutral.chromaScale,
+      tone: DIM_BAR_TONE[side],
+    }),
+  )
+  colors['chart-1'] = colors['brand-fill']
+  CHART_FAMILIES.forEach((family, i) => {
+    const hex = hctToHex({
+      hue: FILL_HUE[family],
+      chroma:
+        clamp(FILL_CHROMA[family], FILL_CHROMA_MIN, FILL_CHROMA_MAX) * CHART_CHROMA_SCALE * mult,
+      tone: bandTone,
+    })
+    colors[`chart-${i + 2}` as ColorNameV3] = { light: hex, dark: hex }
+  })
+  SEQ_CHROMA_SHARE.forEach((share, i) => {
+    colors[`seq-${i + 1}` as ColorNameV3] = pair((side) =>
+      hctToHex({ hue: seed.hue, chroma: fillChroma * share, tone: SEQ_TONE[side][i]! }),
+    )
+  })
+
+  return { accent: config.accent.toLowerCase(), colors }
 }

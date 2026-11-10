@@ -85,3 +85,38 @@ export function deriveStatusHexes(
   }
   return status
 }
+
+// ── v3: tint-aware solve ─────────────────────────────────────────────────────────────────────────
+// v3 status text is one word per tone (`--vx-good`), painted on every surface, on the row mixes AND
+// on its own tint, so the background list is a function of the candidate: the tint is the candidate
+// mixed into the surface. The walk is the 2.x one (light darkens, dark lightens, hue kept).
+
+/** A v3 status tone: the three calibrated hues plus `info`, which shares the brand hue. */
+export type StatusToneV3 = StatusKey | 'info'
+
+/**
+ * Walk `stop` along the side's lightness axis to the first hex that clears `min` on every
+ * background `backgroundsOf(candidate)` names. `label` only words the error.
+ * @throws Error when the axis runs out before any tone clears.
+ */
+export function solveStatusV3(args: {
+  label: string
+  side: Side
+  hue: number
+  stop: Stop
+  min?: number
+  backgroundsOf: (candidate: string) => readonly string[]
+}): string {
+  const { label, side, hue, stop, min = STATUS_TEXT_CONTRAST_MIN, backgroundsOf } = args
+  const direction = side === 'light' ? -1 : 1
+  const maxSteps = Math.floor((side === 'light' ? stop.tone : 100 - stop.tone) / STATUS_TONE_STEP)
+  for (let step = 0; step <= maxSteps; step++) {
+    const hex = hctToHex({
+      hue,
+      chroma: stop.chroma,
+      tone: stop.tone + direction * step * STATUS_TONE_STEP,
+    })
+    if (backgroundsOf(hex).every((bg) => contrastRatio(hex, bg) >= min)) return hex
+  }
+  throw new Error(`status text: no ${side} ${label} tone reaches ${min}:1 on every surface`)
+}
