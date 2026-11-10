@@ -15,8 +15,8 @@ CSS theme into the Mantine framework above. The old `./css` and `./starlight` Ta
 ## Precedence (this repo)
 
 Shipped rules in `/.claude/rules/` (when dogfooded) > `packages/basalt-ui/MAINTAINING.md` > this file >
-`docs/*.md`. When two disagree, fix the lower one to match, or update both deliberately. For 2.0
-work, `docs/V2-SPEC.md` is the ground truth and wins over the 1.x specs (plan: `docs/waves/PLAN.md`).
+`docs/v3/ARCHITECTURE.md` and its concepts > `docs/DESIGN-CORE.md`. When two disagree, fix the lower one
+to match, or update both deliberately.
 The consumer-side chain is a different stack, stated in its own terms by
 `packages/basalt-ui/agent/templates/AGENTS-block.md.tpl` (`consumer DESIGN.md > the six shipped
 basalt-* rules > basalt-* skills`) — don't conflate the two. Two global-skill over­rides apply
@@ -27,11 +27,10 @@ overridden by restraint, and the global `visx-charts.md` rule is superseded by t
 ## Working Instructions
 
 The full S0→S5 argo extraction is **implemented and on `master`** — `packages/basalt-ui/src/**` is
-real code, not stubs (see `packages/basalt-ui/MAINTAINING.md`'s Status section). `docs/STATUS.md` is the
-live single-source-of-truth for current state. Do what is explicitly requested — don't
+real code, not stubs (see `packages/basalt-ui/MAINTAINING.md`'s Status section). Do what is explicitly requested — don't
 autonomously execute large roadmap phases.
 
-## Consolidation doctrine (2026-09, `docs/MATURATION-LEDGER.md` § Consolidation)
+## Consolidation doctrine (2026-09)
 
 - **Adopt-or-delete.** A public export needs a consumer outside `apps/playground` by the next
   minor after it ships, or it's on-notice in `MIGRATING.md`.
@@ -74,7 +73,7 @@ autonomously execute large roadmap phases.
 
 Every cartesian chart composes **`CartesianChart`** (the kinds are `CartesianChart` with fixed marks).
 Engine `@tanstack/charts` behind one host; `basalt/chart-engine-boundary` bans the rest of the engine
-surface and `@visx/*` (§ 9.8). Ground truth: `docs/V2-SPEC.md` § 9.
+surface and `@visx/*`. Ground truth: `docs/v3/ARCHITECTURE.md`.
 
 ## Mantine-Free Boundary
 
@@ -101,7 +100,6 @@ basalt-ui/
 ├── packages/basalt-ui/    # the ONLY published package (npm: basalt-ui)
 ├── apps/playground/        # @basalt-ui/playground — workspace:* consumer, everyday iteration surface
 ├── apps/marketing/         # basalt-ui.com — CONTENT-FROZEN until rebuilt on Mantine post-migration
-├── docs/archive/BLUEPRINT.md  # the 5-stage argo-extraction plan (superseded, do not execute)
 └── AGENTS.md               # you are here — the only agent file (no CLAUDE.md anywhere: it would suppress this one)
 ```
 
@@ -272,8 +270,11 @@ a consumer is blocked, a fix is wanted downstream — and say which version went
 - `packages/basalt-ui/**` and non-package changes are separate commits in one PR; `make sync-self` is its own
   non-package commit. Never edit `CHANGELOG.md`.
 - `make check` builds first; `bun run pre` is the inner loop. A fresh worktree needs `bun install` and a package build.
-- `docs/waves/**` describes the dead wave process: work comes from Issues only.
-- Leads rest on `docs/v3/ARCHITECTURE.md` and `docs/v3/DIRECTION.md`, not `docs/V2-SPEC.md`.
+- The wave process is retired: work comes from Issues and `docs/plan.yaml` only. Leads rest on
+  `docs/v3/ARCHITECTURE.md` and `docs/v3/DIRECTION.md`; superseded specs live in git history and on `v2`.
+- Paths in a facts file's `shared_append_only` are shared aggregators: edit only your own lines; on a rebase
+  conflict keep both sides or re-run the named generator (`export-surface --update`, `gen-ui`, `bun install`);
+  an Issue without the path never edits it.
 - v3 is rewritten in place on master and verified with `apps/playground` and `examples/*`, never against pinned
   consumers.
 - A plan row whose facts are only `brief: <path>` (and an optional `note`): that file on master is your complete
