@@ -1,9 +1,8 @@
 import { describe, expect, test } from 'bun:test'
-import { readFileSync } from 'node:fs'
 import { join } from 'node:path'
 import ts from 'typescript'
 import { readShards } from './export-surface-shards.mjs'
-import { generateLlmsTxt, outPath } from './gen-llms'
+import { generateLlmsTxt } from './gen-llms'
 import {
   MAX_LITERAL_MAP_KEYS,
   MAX_OPTION_TYPES,
@@ -96,10 +95,6 @@ describe('gen-llms signatures', () => {
   test('inline unions print exactly as they always did (no checker-order drift)', () => {
     expect(text).toContain('  settingsMenu?: "auto" | "flat" | "menu"')
     expect(text).toContain('  sparklinePlacement?: "bleed" | "right"')
-  })
-
-  test('the committed llms.txt is in sync', () => {
-    expect(readFileSync(outPath, 'utf8')).toBe(text)
   })
 })
 

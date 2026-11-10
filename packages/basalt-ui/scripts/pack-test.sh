@@ -78,6 +78,13 @@ if grep -qE '^package/(src|dist)/.*\.test\.(ts|tsx|d\.ts)(\.map)?$' "$LISTFILE";
 fi
 echo "tarball contents OK"
 
+echo "==> llms.txt names every export (generated at build, untracked: the tarball copy is the artifact)"
+LLMS_DIR=$(mktemp -d)
+tar -xzOf "$TGZ" package/llms.txt >"$LLMS_DIR/llms.txt"
+tar -xzOf "$TGZ" package/package.json >"$LLMS_DIR/package.json"
+node scripts/gen-llms-assert.mjs "$LLMS_DIR/llms.txt" "$LLMS_DIR/package.json"
+rm -rf "$LLMS_DIR"
+
 echo "==> tarball parity (every CLI-read source ships in the artifact)"
 node scripts/check-tarball-parity.mjs "$LISTFILE"
 

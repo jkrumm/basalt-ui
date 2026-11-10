@@ -1,7 +1,7 @@
 /**
  * One-line signatures for every public VALUE export of a published subpath, read from the SOURCE
- * entry through the TypeScript checker. Not from `dist/*.d.ts`: `gen-llms --check` runs before the
- * build (Makefile, ci.yml), and the declaration emit is the same checker over the same source.
+ * entry through the TypeScript checker. Not from `dist/*.d.ts`: the generator needs no prior
+ * declaration emit, and that emit is the same checker over the same source.
  */
 import { existsSync } from 'node:fs'
 import { join } from 'node:path'

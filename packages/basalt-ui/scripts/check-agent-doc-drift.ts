@@ -58,6 +58,7 @@ import { existsSync, readdirSync, readFileSync } from 'node:fs'
 import { join, relative } from 'node:path'
 
 import { readShards } from './export-surface-shards.mjs'
+import { generateLlmsTxt } from './gen-llms'
 import { REPO_LOCAL_RULES } from './check-coverage'
 import * as pluginModule from '../configs/oxlint-plugin.js'
 import { SURFACES } from '../src/surfaces'
@@ -1028,10 +1029,8 @@ function main(): void {
     })),
   )
   const gFailures = checkG(findAgentFiles())
-  const hFailures = checkLlmsNames(
-    readFileSync(join(pkgRoot, 'llms.txt'), 'utf8'),
-    collectPublishedBySubpath(),
-  )
+  // llms.txt is generated, not committed: check what the build would write, never a stale file.
+  const hFailures = checkLlmsNames(generateLlmsTxt(), collectPublishedBySubpath())
   const iFailures = checkI(collectPublishedBySubpath())
   const selfFailures = [
     ...checkDenylistIsGenuinelyRemoved(validNames),

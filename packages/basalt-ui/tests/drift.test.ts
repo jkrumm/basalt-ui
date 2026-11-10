@@ -12,7 +12,6 @@ import { tmpdir } from 'node:os'
 import { join, resolve } from 'node:path'
 import { afterAll, describe, expect, it } from 'bun:test'
 
-import { generateLlmsTxt, outPath } from '../scripts/gen-llms'
 import { SURFACES } from '../src/surfaces'
 import type { SurfaceSpec } from '../src/surfaces'
 
@@ -78,51 +77,6 @@ describe('agents-sync', () => {
       expect(row?.purpose).toBe(e.purpose)
     }
   })
-})
-
-// ── llms-sync — committed llms.txt matches gen-llms.ts output ────────────────────────────────────
-
-describe('llms-sync', () => {
-  // Builds a TS program for the signatures and the `## Types` glossary — seconds, not milliseconds,
-  // so it gets an explicit timeout like the spawned runs below rather than bun's 5 s default.
-  it('committed llms.txt matches gen-llms.ts output', () => {
-    const committed = readFileSync(outPath, 'utf8')
-    const generated = generateLlmsTxt()
-    expect(generated).toBe(committed)
-  }, 30_000)
-})
-
-// ── gen-llms --check drift gate — exercises the --check flag itself, not just the diff ───────────
-
-describe('gen-llms --check drift gate', () => {
-  const SCRIPT_PATH = join(PKG_ROOT, 'scripts/gen-llms.ts')
-
-  // A full gen-llms run (TS program + glossary) in a subprocess: same 30 s as the mutation case.
-  it('exits 0 when the committed llms.txt is in sync', () => {
-    const result = Bun.spawnSync(['bun', SCRIPT_PATH, '--check'])
-    expect(result.exitCode).toBe(0)
-  }, 30_000)
-
-  it('exits non-zero and reports drift when llms.txt is mutated, then restores byte-exact', () => {
-    const original = readFileSync(outPath, 'utf8')
-    try {
-      writeFileSync(outPath, `${original}\nSTALE DRIFT MARKER\n`, 'utf8')
-
-      const result = Bun.spawnSync(['bun', SCRIPT_PATH, '--check'])
-      const stderr = result.stderr.toString()
-
-      expect(result.exitCode).not.toBe(0)
-      expect(stderr).toContain('out of sync')
-    } finally {
-      writeFileSync(outPath, original, 'utf8')
-    }
-
-    // Restoration must be byte-exact — re-run --check against the restored file to prove it.
-    expect(readFileSync(outPath, 'utf8')).toBe(original)
-    const restoredCheck = Bun.spawnSync(['bun', SCRIPT_PATH, '--check'])
-    expect(restoredCheck.exitCode).toBe(0)
-    // Two gen-llms runs (~2.3s each: each builds a TS program) overrun bun's 5s default under load.
-  }, 30_000)
 })
 
 // ── jsdoc-specifiers — every basalt-ui import specifier mentioned in a comment is real ────────────

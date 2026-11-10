@@ -24,6 +24,7 @@ import {
 } from './check-agent-doc-drift'
 import * as pluginModule from '../configs/oxlint-plugin.js'
 import { coverageBlock } from './check-coverage'
+import { generateLlmsTxt } from './gen-llms'
 import type { TagSources } from './check-agent-doc-drift'
 
 const fence = '```'
@@ -245,10 +246,9 @@ describe('checkLlmsNames', () => {
     expect(checkLlmsNames(text, published)).toHaveLength(2)
   })
 
-  test('accepts the real shipped llms.txt', () => {
-    const text = readFileSync(join(import.meta.dir, '..', 'llms.txt'), 'utf8')
-    expect(checkLlmsNames(text, collectPublishedBySubpath())).toEqual([])
-  })
+  test('accepts the generated llms.txt', () => {
+    expect(checkLlmsNames(generateLlmsTxt(), collectPublishedBySubpath())).toEqual([])
+  }, 30_000)
 })
 
 describe('leadingDocComment', () => {

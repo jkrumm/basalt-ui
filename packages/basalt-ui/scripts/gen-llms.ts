@@ -3,12 +3,16 @@
  * The file is machine-readable for AI agents: package purpose, then one entry per published
  * subpath with import specifier, description, layer, and optional peers.
  *
+ * The output is derived data: untracked and gitignored, written by the package build and by the
+ * release `prepareCmd`. `scripts/gen-llms-assert.mjs` (run by pack-test) asserts the packed copy
+ * names every `exports` subpath.
+ *
  * Usage: bun packages/basalt-ui/scripts/gen-llms.ts
- *        bun packages/basalt-ui/scripts/gen-llms.ts --check  (CI drift gate)
  */
 import { readFileSync, writeFileSync } from 'node:fs'
 import { join } from 'node:path'
 import { SURFACES } from '../src/surfaces'
+import { UNLISTED_SUBPATHS } from './gen-llms-assert.mjs'
 import { readOptionTypes, readSignatures, readTypeGlossary } from './llms-signatures'
 import { SUBPATH_REQUIRED_PEERS } from './surface-gates'
 
@@ -86,7 +90,8 @@ for (const [key, spec] of Object.entries(SURFACES)) {
   if (!publishedExportKeys.has(key)) continue
   // `./shell` aliases the 2.x shell barrel the root already documents; its row would repeat those
   // signatures (and the primitive constants print as method bags). It gets a row when v3 swaps it.
-  if (key === './shell') continue
+  // The tarball assertion exempts the same keys (UNLISTED_SUBPATHS).
+  if (UNLISTED_SUBPATHS.includes(key)) continue
 
   const isAsset = spec.layer === 'non-js-asset'
   // For ./configs/* the importSpec uses the glob form; others strip the leading './'
@@ -205,22 +210,7 @@ export function generateLlmsTxt(): string {
 }
 
 function main(): void {
-  const args = process.argv.slice(2)
-  const checkMode = args.includes('--check')
-  const content = generateLlmsTxt()
-
-  if (checkMode) {
-    const committed = readFileSync(outPath, 'utf8')
-    if (content !== committed) {
-      console.error('✖ gen-llms --check: packages/basalt-ui/llms.txt is out of sync.')
-      console.error('  Run: bun packages/basalt-ui/scripts/gen-llms.ts')
-      process.exit(1)
-    }
-    console.log('✓ gen-llms --check: llms.txt is in sync with SURFACES.')
-    return
-  }
-
-  writeFileSync(outPath, content, 'utf8')
+  writeFileSync(outPath, generateLlmsTxt(), 'utf8')
   console.log(`wrote ${outPath}`)
 }
 
