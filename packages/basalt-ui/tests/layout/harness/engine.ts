@@ -18,107 +18,23 @@ import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { chromium } from 'playwright-core'
 import type { Browser, BrowserServer, Page } from 'playwright-core'
-import type { FixtureSpec } from './fixture/spec'
+import type { FixtureSpec } from '../fixture/spec'
+import { MAIN } from './slots'
 
-// ── Selectors ─────────────────────────────────────────────────────────────────────────────────
-
-/**
- * Mantine's static class names (`mantine-<Component>-<selector>`). Already relied on inside
- * `app-mobile-nav.module.css`, so this is not new coupling. A Mantine rename fails as an explicit
- * `LAYOUT: no element matched …` rather than as a silent pass — the right failure mode, but it
- * does mean a Mantine major touches this block.
- */
-export const BAR = 'nav[aria-label="Primary"]'
-export const BAR_SLOTS = `${BAR} > *`
-export const SHEET = '.mantine-Drawer-content'
-/**
- * SCOPED to the drawer ON PURPOSE. The desktop sidebar is still mounted (merely hidden) below the
- * `sm` breakpoint: measured, a 7-row sheet yields 7 rows scoped and **15** unscoped. An unscoped
- * row query silently measures sidebar rows and every touch-target assertion goes vacuous.
- */
-export const SHEET_ROWS = `${SHEET} .mantine-NavLink-root`
-export const SHEET_BODY = `${SHEET} .mantine-ScrollArea-viewport`
-export const MENU = '.mantine-Menu-dropdown'
-/**
- * The ACTIVE PILL. It is the slot's icon span — the pill is that span's own background, which is
- * why an icon-less consumer used to get a 24x4px dash instead of an indicator. `> span` is a
- * direct child, so it never matches the nested unread dot, and the label renders as a `<p>`.
- */
-export const ACTIVE_PILL = `${BAR} [data-active] > span`
-/** The glyph inside the active pill — the bar normalizes it to the icon-size token. */
-export const ACTIVE_PILL_ICON = `${ACTIVE_PILL} > svg`
-export const CONTENT_END = '[data-testid="content-end"]'
-/** `AppShell.Main` — THE scrollport since `shell/app-main.module.css`, by its own declared handle
- * rather than by a Mantine class, because that attribute is the thing consumers are promised. */
-export const MAIN = '[data-basalt-scrollport]'
+// ── Overlay census registry ───────────────────────────────────────────────────────────────────
 
 /**
- * A CSS-MODULE class, by the local name it is authored under.
- *
- * `Bun.build` compiles `*.module.css` to `<local>_<per-file hash>` (VERIFIED in the fixture's own
- * bundle: `.bar_Gdyk4Q`, `.menuDropdown_7QmWJg`), and the hash tracks the file's CONTENTS — it moves
- * every time the module is edited, so it can never be written down here.
- *
- * The match is ANCHORED (`^` for a sole class, `" "` for one in a list) rather than a bare
- * `[class*="bar_"]`, which also matches a `.sidebar_…` or a `.toolbar_…` that does not exist today
- * and would be found by the wrong test on the day it does.
- *
- * ALWAYS SCOPE IT to a Mantine static class or a `data-basalt-*` handle. Local names repeat across
- * modules by design: `.lead` is declared by BOTH `shell/app-header.module.css` (the breadcrumb side
- * of the header row, floored at `min-width: 96px`) and `shell/page-bar.module.css` (row 1's own
- * lead, `min-width: 0`), and `.bar` by three modules. An unscoped match resolves to whichever
- * happens to come first in document order, which is how a geometry assertion goes quietly vacuous.
+ * The selectors `census()` counts. The engine knows only the framework-neutral one; a selector that
+ * belongs to a component library is REGISTERED by the module that owns that library's names, so the
+ * engine never has to import a composite to count its overlays.
  */
-export function moduleClass(local: string): string {
-  return `:is([class^="${local}_"],[class*=" ${local}_"])`
+const overlaySelectors: string[] = ['[role="dialog"]']
+
+export function registerOverlaySelectors(...selectors: readonly string[]): void {
+  for (const selector of selectors) {
+    if (!overlaySelectors.includes(selector)) overlaySelectors.push(selector)
+  }
 }
-
-/**
- * `AppShell.Header` — the header BAND, one `appShellHeaderHeight` row at every viewport (law C14).
- * Its own inline padding is the responsive page gutter, the same pair `AppShell` gets.
- */
-export const HEADER = '.mantine-AppShell-header'
-/** The header's single row: `[brand zone] [breadcrumb] ···· [page bar row 1] | [globals]`. */
-export const HEADER_ROW = `${HEADER} > ${moduleClass('bar')}`
-/** The ELASTIC side of that row — the breadcrumb wrapper, and the only side that may ellipsize. */
-export const HEADER_LEAD = `${HEADER_ROW} > ${moduleClass('lead')}`
-/** `PageBar` row 1's portal target — the RIGID side. Descendant, not child: it is a child today. */
-export const HEADER_PAGE_BAR = `${HEADER_ROW} ${moduleClass('pageBar')}`
-/** The shell's own trailing action cluster. A DESCENDANT — `CtlSlot` sits between it and the row
- * as a `display: contents` Box, so it is a grandchild in the DOM and a flex item in layout. */
-export const HEADER_GLOBAL = `${HEADER_ROW} ${moduleClass('global')}`
-
-/** `AppShell.Navbar` — the desktop sidebar's region. Mounted (merely hidden) below `sm`. */
-export const NAVBAR = '.mantine-AppShell-navbar'
-/** The sidebar's nav SCROLLPORT — a Mantine `ScrollArea` viewport, not the navbar itself. */
-export const NAV_VIEWPORT = `${NAVBAR} .mantine-ScrollArea-viewport`
-/** Nav rows, SCOPED to that viewport so the footer's own rows never count as nav rows. */
-export const NAV_ROWS = `${NAV_VIEWPORT} .mantine-NavLink-root`
-/** The shell's page-bar band — the in-flow strip between the header and Main's scrollport. */
-export const MAIN_BAND = `.mantine-AppShell-root > ${moduleClass('band')}`
-/** `AppShell.Aside` — the right-hand region a route claims with `PageAside`. */
-export const ASIDE_REGION = 'aside.mantine-AppShell-aside'
-
-/** The header's leading zone — the brand name plus the collapse toggle, `--app-shell-navbar-offset` wide. */
-export const HEADER_ZONE = `${HEADER_ROW} > ${moduleClass('zone')}`
-/** The collapse toggle, whichever way it currently points. */
-export const COLLAPSE_TOGGLE = `${HEADER_ZONE} button[aria-label$=" sidebar"]`
-
-/** The sidebar's pinned footer region — settings rows plus the account row. */
-export const SIDEBAR_FOOTER = `${NAVBAR} ${moduleClass('footer')}`
-
-/** A bar slot by accessible name — `aria-label={slot.label}` on both link and surface tabs. */
-export function tab(label: string): string {
-  return `${BAR} [aria-label="${label}"]`
-}
-
-const OVERLAY_SELECTORS = [
-  '.mantine-Drawer-root',
-  '.mantine-Modal-root',
-  '.mantine-Menu-dropdown',
-  '.mantine-Popover-dropdown',
-  '[role="dialog"]',
-] as const
 
 // ── Types ─────────────────────────────────────────────────────────────────────────────────────
 
@@ -218,8 +134,8 @@ export type LayoutPage = {
 
 // ── Build + serve + launch ────────────────────────────────────────────────────────────────────
 
-const FIXTURE_ENTRY = new URL('./fixture/main.tsx', import.meta.url).pathname
-const FIXTURE_HTML = new URL('./fixture/index.html', import.meta.url).pathname
+const FIXTURE_ENTRY = new URL('../fixture/main.tsx', import.meta.url).pathname
+const FIXTURE_HTML = new URL('../fixture/index.html', import.meta.url).pathname
 
 let browser: Browser | null = null
 /** The Chrome process behind `browser` — owned so teardown can end it, not merely ask it to. */
@@ -514,6 +430,40 @@ export async function openFixture(
   /** `fine` drops touch emulation, so `(pointer: fine)` matches — the dense control tier lives there. */
   pointer: 'coarse' | 'fine' = 'coarse',
 ): Promise<LayoutPage> {
+  const api = await openPage({ documentPath, viewport, reducedMotion, pointer, mounted: true })
+  await api.remount(spec)
+  return api
+}
+
+/**
+ * A page for a STATIC document served by {@link serveDocument} — no fixture bundle is mounted, so
+ * `remount` throws. This is what lets the engine measure a document with no composite on it, which
+ * is how the harness tests its own helpers.
+ */
+export function openDocument(html: string, viewport: Viewport = PHONE): Promise<LayoutPage> {
+  return openPage({
+    documentPath: serveDocument(html),
+    viewport,
+    reducedMotion: 'reduce',
+    pointer: 'coarse',
+    mounted: false,
+  })
+}
+
+async function openPage({
+  documentPath,
+  viewport,
+  reducedMotion,
+  pointer,
+  mounted,
+}: {
+  readonly documentPath: string
+  readonly viewport: Viewport
+  readonly reducedMotion: 'reduce' | 'no-preference'
+  readonly pointer: 'coarse' | 'fine'
+  /** Whether the page is the fixture, which exposes `basaltMountFixture`. */
+  readonly mounted: boolean
+}): Promise<LayoutPage> {
   // Named here, once, rather than as N identical ERR_CONNECTION_REFUSED stack traces further down.
   // `server` is checked as well as `browser`: a torn-down or abandoned boot leaves nothing
   // listening, and Playwright would blame the network for what is a harness lifecycle bug.
@@ -543,14 +493,16 @@ export async function openFixture(
   await page.goto(origin + documentPath)
   // NOT `waitForSelector('[data-…="ready"]')` — Playwright's default `state: 'visible'` never
   // resolves for <html>, which cost a 30 s timeout the first time. Wait on the actual precondition.
-  await page
-    .waitForFunction(() => typeof window.basaltMountFixture === 'function')
-    .catch(() => {
-      throw new Error(
-        'FAILED: the layout fixture never booted.\npage errors: ' +
-          `${pageErrors.map(String).join(' | ') || '(none)'}`,
-      )
-    })
+  if (mounted) {
+    await page
+      .waitForFunction(() => typeof window.basaltMountFixture === 'function')
+      .catch(() => {
+        throw new Error(
+          'FAILED: the layout fixture never booted.\npage errors: ' +
+            `${pageErrors.map(String).join(' | ') || '(none)'}`,
+        )
+      })
+  }
 
   const settle = () =>
     page.evaluate(
@@ -579,7 +531,7 @@ export async function openFixture(
       if (!found) {
         throw new Error(
           `LAYOUT: no element matched \`${selector}\` — the component did not render it, or a ` +
-            'Mantine upgrade renamed the static class.',
+            'dependency upgrade renamed the class or attribute the selector is keyed to.',
         )
       }
       return { name, box: found as Box }
@@ -654,7 +606,7 @@ export async function openFixture(
           counts: Object.fromEntries(sels.map((s) => [s, document.querySelectorAll(s).length])),
           bodyOverflow: getComputedStyle(document.body).overflow,
         }),
-        [...OVERLAY_SELECTORS],
+        [...overlaySelectors],
       ),
     navigations: () => page.evaluate(() => [...window.basaltNavigations]),
     async tap(selector) {
@@ -708,6 +660,8 @@ export async function openFixture(
         timeoutMs,
       ),
     async remount(next) {
+      if (!mounted)
+        throw new Error('LAYOUT: remount() needs a fixture page; this is a static document.')
       await page.evaluate((s) => window.basaltMountFixture(s as FixtureSpec), next)
       await settle()
     },
@@ -726,7 +680,6 @@ export async function openFixture(
     }),
   }
 
-  await api.remount(spec)
   return api
 }
 
