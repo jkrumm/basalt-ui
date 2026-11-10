@@ -15,6 +15,7 @@ check: ## Local CI gate: gen sync checks + build + pre + layout + coverage/doc-d
 	@cd packages/basalt-ui && bun run build
 	@bun run pre
 	@bun run test:layout
+	@bun run test:layout:harness
 	@bun packages/basalt-ui/scripts/check-coverage.ts --check
 	@bun packages/basalt-ui/scripts/check-agent-doc-drift.ts
 	@bun scripts/check-chart-inventory.ts
@@ -46,6 +47,7 @@ test: ## Run the test suite
 
 layout: ## Run the layout regression suite (real CSS geometry, headless Chrome)
 	@bun run test:layout
+	@bun run test:layout:harness
 
 build: ## Build the published package (dist-first tsup + declarations)
 	@cd packages/basalt-ui && bun run build
