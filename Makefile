@@ -18,6 +18,7 @@ check: ## Local CI gate: gen sync checks + build + pre + layout + coverage/doc-d
 	@bun run test:layout:harness
 	@bun packages/basalt-ui/scripts/check-coverage.ts --check
 	@bun packages/basalt-ui/scripts/check-agent-doc-drift.ts
+	@bun packages/basalt-ui/scripts/check-contract-frozen.ts
 	@bun scripts/check-chart-inventory.ts
 	@cd packages/basalt-ui && bun run pack-test
 
