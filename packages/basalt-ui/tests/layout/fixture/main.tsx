@@ -9,7 +9,9 @@
  * hand-authored DOM approximation reproduces the class chain and loses exactly that — which is why
  * an ad-hoc probe page is not what we commit.
  */
+import './tailwind-layers.css'
 import '../../../src/styles.css'
+import './tailwind.generated.css'
 import { createRootRoute } from '@tanstack/react-router'
 import { createRoot } from 'react-dom/client'
 import type { Root } from 'react-dom/client'

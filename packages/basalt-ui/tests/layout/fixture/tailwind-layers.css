@@ -1,0 +1,8 @@
+/*
+ * First stylesheet the fixture imports: it fixes the cascade-layer order BEFORE `styles.css` and the
+ * compiled Tailwind sheet each declare their own. Layer order is first-declared-wins, so without
+ * this `mantine, basalt` (from `styles.css`) would come first and Tailwind's `theme` (the token
+ * definitions) would sit ABOVE `basalt`. `theme` goes lowest, Mantine above it, `basalt` above
+ * Mantine: the order a 2.x consumer adopting Tailwind declares.
+ */
+@layer theme, base, mantine, basalt, components, utilities;
