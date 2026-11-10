@@ -29,5 +29,6 @@
     "contentTrust missing or 'bogus' fails closed (type row, runtime); src/core/url* and slug* import nothing from src/content and no peer",
     "src/content/index.ts exports Markdown only; areas/content.json rows present; make check passes"
   ],
-  "out_of_scope": "CodeBlock and fences (ai-i2), Prose and friends, partView, the lint rule (ai-i5), byte budget rows (freeze-g2)."
+  "out_of_scope": "CodeBlock and fences (ai-i2), Prose and friends, partView, the lint rule (ai-i5), byte budget rows (freeze-g2).",
+  "worker_tag": "lead high; may spawn one @implementer tagged [opus: Sanitizer and URL trust boundary for model text] for the novel file group only"
 }

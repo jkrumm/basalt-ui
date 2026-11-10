@@ -12,7 +12,7 @@
   ],
   "concept": "migration-release#5 G1",
   "contract": "Read concepts/migration-release.md section 5 (G1 row). Budget method: quality-contract section 6 (measured gz plus 5 percent, rounded up to 0.5 KB, ratcheted down only). No lead ever runs a release.",
-  "exemplar": "v3-freeze-g0's diff (check-budgets/tokens*).",
+  "exemplar": "check-budgets/areas/tokens.ts on master (v3-unhot-budgets layout; v3-freeze-g0 seeded it).",
   "change": "(1) One formula for every row: ceiling = measured gz of the first complete build plus 5 percent, rounded up to 0.5 KB (quality-contract section 6; charts-1a and charts-3 cite it). Rows: ui (ten-primitive page, 25-part page, per primitive, value exports exact), cards (StatCard no chart; 16 is the informative target), charts (Sparkline and all-three; 32.5, 46.5 and plus 4 are informative targets, not pins), data, router, table (engine fixture re-measured on 10 features plus own code). (2) Extend contract-pins.json with new keys: SLOTS snapshot and value-export lists of ./ui/*, ./cards, ./charts, ./router, ./data, ./table; keep the table/contract.ts key table-t0 wrote. Rule: check-budgets and check-contract-frozen are the rules. Skill: none. Tests: the budget and pin suites.",
   "commits": "Package commit (check-budgets, contract-pins), conventional, empty scope, chore:, no attribution.",
   "proof": "make check.",

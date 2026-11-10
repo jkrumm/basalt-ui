@@ -1,17 +1,15 @@
 {
-  "why": "Linewatch's two tables need rendering, tiers, pager and phases before toolbar, views and virtual.",
-  "what": "src/table/parts/{head,body,tiers,pager,phases,data-table}*, use-data-table*, table.css, tests/layout/table-v0*. 2.x src/table/data-table* (BasaltDataTable) stays, so DataTable lives at parts/data-table.tsx (amends the concept path).",
+  "why": "Linewatch's two tables need tiers and a pager on the same DOM before toolbar, views and virtual; the table spikes measure the finished parts.",
+  "what": "src/table/parts/{tiers,pager}*, src/table/table.css and tests/layout/table-v0*, composed into DataTable (v3-table-t2a-parts) by editing parts/data-table*.",
   "owns": [
-    "packages/basalt-ui/src/table/parts/{head,body,tiers,pager,phases,data-table}*",
-    "packages/basalt-ui/src/table/{use-data-table*,table.css}",
-    "packages/basalt-ui/tests/layout/{,fixture/}table-v0*",
-    "packages/basalt-ui/src/table/invariants/parts*",
-    "packages/basalt-ui/docs/data-table.md",
-    "packages/basalt-ui/src/core/messages/table.ts"
+    "packages/basalt-ui/src/table/parts/{tiers,pager}*",
+    "packages/basalt-ui/src/table/table.css",
+    "packages/basalt-ui/tests/layout/{,fixture/}table-v0*"
   ],
   "shared_append_only": [
     "packages/basalt-ui/src/table/index.ts",
-    "packages/basalt-ui/scripts/export-surface.json"
+    "packages/basalt-ui/scripts/export-surface.json",
+    "packages/basalt-ui/src/table/parts/data-table*"
   ],
   "must_not_touch": [
     "packages/basalt-ui/src/{ui,controls,charts,cards,page,shell,content,ai,router,data,tokens,css,lint}/** (ui read-only), packages/basalt-ui/agent/**",
@@ -21,8 +19,8 @@
   ],
   "concept": "data-table#12 T2",
   "contract": "Frozen: ARCHITECTURE.md, this domain's contract.ts, src/core/ports.ts. Need a change: factory signal, take the reversible default. Read concepts/data-table.md sections 1, 3 to 6, 8, 9; edge table -> controls only; no composite .d.ts names ui/* (VirtualLike). One DOM, no measured fold, no second card tree. Strings: table.* via useMessages, English defaults in your owned src/core/messages/table.ts (qa-i2 seeds it). Skeleton rows: ui/skeleton (p5a).",
-  "exemplar": "src/ui/{card,badge,skeleton}*, src/cards/stat-card*, src/core/phase*; 2.x layout tests (stay) tests/layout/data-table.layout.test.ts.",
-  "change": "useDataTable wrapping the engine; DataTable from head, body (row activation XOR detail via onRowActivate), TablePager (current size always an option, range label hidden not removed) and phases (data-phase on table-root: ready, loading, error, empty, stale; skeleton rows by kind width, error row inside tbody with Retry, header and pager stay) with PhaseBoundary. Tiers as container queries in @layer basalt in src/table/table.css: full, reduced (priority 3 hidden, table-expand), card (cardsBelow regular, wide or always; thead visually hidden), scroll. Native table, explicit roles, aria-colcount, aria-colindex, aria-sort, named scroller. Over 15 files: stop after head, body, phases; signal; tiers and pager become v3-table-t2b-tiers. Rule: none new. Skill: generated docs/data-table.md. Tests: layout, SSR, axe.",
+  "exemplar": "src/table/parts/{head,body,phases}* (v3-table-t2a-parts); 2.x layout tests (stay) tests/layout/data-table.layout.test.ts.",
+  "change": "TablePager (current size always an option, range label hidden not removed). Tiers as container queries in @layer basalt in src/table/table.css: full, reduced (priority 3 hidden, table-expand), card (cardsBelow regular, wide or always; thead visually hidden), scroll. Compose both into DataTable with one small edit of parts/data-table*. One DOM, no measured fold, no second card tree. Rule: none new. Skill: none. Tests: layout and axe per tier, SSR per tier.",
   "commits": "One PR, separate package and non-package commits (isolated-basalt-ui); conventional, empty scope, no attribution.",
   "proof": "Layout and axe tests (tests/layout/table-v0*) on tests/layout/fixture/table-v0-fixture.tsx at 1440, 768, 390, 360, 320; 8 and 14 columns; 0 rows; loading; error. No shot.",
   "acceptance": [
@@ -30,10 +28,10 @@
     "every column reachable at 390 via table-expand, detail or activation (one fixture each)",
     "SSR: server HTML equals the hydrated tree, zero recoverable errors, at full, reduced and card tiers",
     "axe zero serious or critical per tier",
-    "t0 tests I2, I9, I11, I12, I13, I14, I20, I21, I23 in invariants/parts* are normal passing tests; I22 and I26 stay failing for t3 and t4",
+    "every t0 test listed for t2a (I2, I9, I11 to I14, I20, I21, I23) passes; I22 and I26 stay failing for t3 and t4",
     "the card tier is the same DOM (slot snapshot: no second tree)",
     "make check exits 0",
-    "git diff --name-only lists only owned paths"
+    "git diff --name-only lists only owned paths and the one edit of parts/data-table*"
   ],
   "out_of_scope": "Toolbar, chips, header menu, views (t3), virtual, footer, c.select, grouping (t4), exemplar, skill (t5), spikes S1, S5."
 }

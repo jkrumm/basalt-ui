@@ -1,0 +1,29 @@
+{
+  "why": "Forms stay the consumer's TanStack Form plus thin basalt parts; shutterflow's FormSection and useFormSubmit sites and argo's drafts need one tested replacement.",
+  "what": "New in src/controls/: draft*, submit*, form-footer* with tests. The recipes and routes (settings.tsx, run-edit.tsx) are v3-state-4b-recipes. Over 8 files: stop after the modules and signal.",
+  "owns": ["packages/basalt-ui/src/controls/{draft,submit,form-footer}*"],
+  "shared_append_only": [
+    "packages/basalt-ui/src/controls/index.ts",
+    "packages/basalt-ui/scripts/export-surface.json"
+  ],
+  "must_not_touch": [
+    "packages/basalt-ui/src/controls/{form-field,form-row,filter-set,control-view,view-tabs}*",
+    "packages/basalt-ui/src/{core,data,ui}/**",
+    "other routes",
+    "contract-pins.json, MIGRATING, llms.txt, check-budgets"
+  ],
+  "concept": "state-persistence-forms#6",
+  "contract": "Read docs/v3/concepts/state-persistence-forms.md 6, 9 (spikes A to G, S2), 12. FieldLike and FormLike are in src/core/ports.ts. Ancestors, import never copy: FormField (v3-ctl-7), optimistic (v3-state-2), createSyncedState (v3-state-3), isPristine in src/core/form-dirty (v3-state-1).",
+  "exemplar": "src/controls/form-field* (v3-ctl-7) for module anatomy and tests; src/core/persisted* for the storage-key shape.",
+  "change": "One concern: the form modules, as concept 6 sketches them. useFormDraft(form, { key, version, schema, owner }): restore once with reset(draft, { keepDefaultValues: true }), trailing 500 ms autosave, flush on hide, key deleted when isPristine(form) (never isDefaultValue), the restore's own notification ignored, clear() after submit, key basalt:form:<owner>:<key> (owner null: basalt:form:<key>), version bump discards, a 1.x basalt:form:<key> read once. toSubmitErrors(save) via unwrap; FormFooter({ form, actions }): max 5 actions, one primary, disabled on !canSubmit, aria-busy on isSubmitting. Ships: no rule; JSDoc @example; tests src/controls/{draft,submit,form-footer}.test.tsx.",
+  "commits": "One PR, separate package and non-package commits (isolated-basalt-ui); conventional, empty scope, no attribution; make sync-self its own commit.",
+  "proof": "Unit and SSR tests; no UI.",
+  "acceptance": [
+    "make check passes.",
+    "draft.test.tsx: reload restores, submit clears, clearOwner clears, version bump discards, owner-null key shape, 1.x key read once, File or password rejected, a never-mounted field survives the autosave tick, array rows restore in order, S2 holds.",
+    "SSR test for useFormDraft (hydrateRoot, onRecoverableError counted, throwing localStorage getter, negative control) passes.",
+    "submit.test.tsx: a thrown ApiError becomes field and form errors, cleared by the next change; form-footer.test.tsx: 6 actions or 2 primaries are @ts-expect-error, aria-busy tracks isSubmitting.",
+    "`git diff --name-only` lists only owned paths, the generated packages/basalt-ui/docs/{use-form-draft,form-footer}.md, and the sync-self commit."
+  ],
+  "out_of_scope": "Recipes and the settings and run-edit routes (v3-state-4b-recipes); keyed-map synced draft, argo's workout draft, FormField, FormRow, notify, S6 (G5)."
+}

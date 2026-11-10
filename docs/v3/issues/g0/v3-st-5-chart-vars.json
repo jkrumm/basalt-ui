@@ -25,7 +25,7 @@
   "concept": "static-framework-free#10 issue 5",
   "contract": "docs/v3/concepts/tokens-visual.md sections 3.2 (Viz row, 14 names) and 8 (S1-S4); docs/v3/concepts/static-framework-free.md section 3 row 10 and falsifier F-S5.",
   "exemplar": "packages/basalt-ui/src/guard/palette.ts and src/tokens/divider-contrast.test.ts (2.x contrast gates over derived colours); scripts/gen-chart-css.ts shows how the 2.x charts root block is generated.",
-  "change": "chart-vars derives line, dim-bar, grid, crosshair, chart-1..5 and seq-1..5 per scheme from the same config as the rest of tokens.css, and exposes them to emit.ts (st-2's JSON emit reads the same exports). table.ts keeps the 14 Viz NAMES (tok-t2's registry): the row is fed by chart-vars, not replaced, and never edited here. Gates, each failing with gate, surface and ratio: every chart-N and seq-N mark >= 3.0:1 on canvas and inset; dim-bar >= 3.0:1 on inset; seq-1..5 monotonic in lightness per scheme; seq-1 >= 1.3:1 on the dark inset without leaving the accent hue (F-S5); chart-1..5 pairwise distinct under the colour-vision check the 2.x series-palette audit uses. Names are exactly tokens-visual 3.2; no new name. Rule: none (zone A list is v3-tok-t4-cli's). Skill snippet: none. Test: chart-vars.test.ts over the default seed and a hue-268 seed at vibrancy 0, +1, +2.",
+  "change": "chart-vars derives line, dim-bar, grid, crosshair, chart-1..5 and seq-1..5 per scheme from the same config as the rest of tokens.css, and exposes them to emit.ts (the JSON emit of v3-tok-t4-cli reads the same exports). table.ts keeps the 14 Viz NAMES (tok-t2's registry): the row is fed by chart-vars, not replaced, and never edited here. Gates, each failing with gate, surface and ratio: every chart-N and seq-N mark >= 3.0:1 on canvas and inset; dim-bar >= 3.0:1 on inset; seq-1..5 monotonic in lightness per scheme; seq-1 >= 1.3:1 on the dark inset without leaving the accent hue (F-S5); chart-1..5 pairwise distinct under the colour-vision check the 2.x series-palette audit uses. Names are exactly tokens-visual 3.2; no new name. Rule: none (zone A list is v3-tok-t4-cli's). Skill snippet: none. Test: chart-vars.test.ts over the default seed and a hue-268 seed at vibrancy 0, +1, +2.",
   "commits": "One PR, separate package and non-package commits (isolated-basalt-ui); conventional, empty scope, no attribution.",
   "proof": "Unit tests; no UI.",
   "acceptance": [
@@ -35,5 +35,6 @@
     "The public --vx-* name count does not rise above the 90 ceiling",
     "make check exits 0"
   ],
-  "out_of_scope": "Series groups and defineSeries (charts concept), argo's 93 pairs, Tailwind bridge, ramp hexes (internal, hex-identical, never exported)."
+  "out_of_scope": "Series groups and defineSeries (charts concept), argo's 93 pairs, Tailwind bridge, ramp hexes (internal, hex-identical, never exported).",
+  "worker_tag": "lead high; may spawn one @implementer tagged [opus: Contrast-constrained derivation of chart and sequential ramps with no donor to copy] for the novel file group only"
 }

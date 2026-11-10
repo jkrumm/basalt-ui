@@ -1,37 +1,34 @@
 {
-  "why": "Argo, rb and weatherorb need app-owned tokens through one seam, mail and manifests need a generated hex source, and a typo in a --vx-* name resolves to nothing that any linter sees (bg-(--vx-typo)).",
-  "what": "The tokens:css command surface and the name registry: packages/basalt-ui/src/cli/tokens-css.ts (+ test), packages/basalt-ui/src/lint/check-tokens.ts (+ test), packages/basalt-ui/src/lint/generated/zone-a.ts (new, generated). Emitters stay in src/tokens (T2, st-1, st-2).",
-  "owns": [
-    "packages/basalt-ui/src/cli/tokens-css*",
-    "packages/basalt-ui/src/lint/check-tokens*",
-    "packages/basalt-ui/src/lint/generated/**"
-  ],
+  "why": "Argo, rb and weatherorb need app-owned tokens through one seam, and literal hex has five hand copies (share palette, webmanifest, theme-color metas, SURFACE.bg, email): one generated JSON source replaces them.",
+  "what": "packages/basalt-ui/src/cli/tokens-css.ts (+ test) and src/tokens/emit-json.ts (new, + test). Needs v3-st-5-chart-vars (chart-N and seq-N values). check-tokens and zone-a are v3-tok-t4a-names'.",
+  "owns": ["packages/basalt-ui/src/cli/tokens-css*", "packages/basalt-ui/src/tokens/emit-json*"],
   "must_not_touch": [
     "CHANGELOG.md",
     "packages/basalt-ui/{MIGRATING.md,llms.txt}",
-    "packages/basalt-ui/scripts/check-budgets/**",
     "**/contract.ts",
     "packages/basalt-ui/src/{ui,shell}/**",
     "apps/marketing/**",
-    "packages/basalt-ui/src/tokens/**",
     "packages/basalt-ui/src/css/**",
     "packages/basalt-ui/src/lint/stylelint/**",
     "packages/basalt-ui/src/lint/rule-table*",
-    "packages/basalt-ui/agent/**"
+    "packages/basalt-ui/agent/**",
+    "packages/basalt-ui/scripts/check-budgets/**",
+    "packages/basalt-ui/src/tokens/!(emit-json*)",
+    "packages/basalt-ui/src/lint/**"
   ],
   "concept": "tokens-visual#12 T4",
-  "contract": "docs/v3/concepts/tokens-visual.md section 3.8 (--extra), section 4 (flags), section 8 (gates), section 13 (amendments); docs/v3/concepts/static-framework-free.md section 4.2. The json branch calls emitJson from v3-st-2-json-emit (this row is after it).",
-  "exemplar": "packages/basalt-ui/src/cli/tokens-css.ts (2.x flag parsing, emitGeneratedCss --check) and its test.",
-  "change": "1) Flags: --accent --neutral --vibrancy --selector --extra <file> --format css|json --out --check. Each 2.x flag (--only --selector-attribute --selector-class --light-class --dark-value --light-value --default-scheme --media-fallback) exits 1 naming --selector. No --radius/--density/--brightness. 2) --extra src/basalt.tokens.ts (import-free default export { series, vars }, loaded under Bun) emits --vx-<group>-<key> pairs per scheme, vars once on :root, a sibling .d.ts augmenting BasaltRegister; --check is byte-exact on both. Exit 1 on a group colliding with a package name, or a vars value reading a --vx-* outside package names plus file names (message names the nearest valid name). 3) --format json calls emitJson. 4) checkTokens({ files, extraNames }) scans .css .tsx .astro .mdx for --vx-* and bg-(--vx-*) spellings against package names plus extraNames; 0 scanned files fails. Reading the manifest's extra field is v3-sk-4's lint verb. 5) src/lint/generated/zone-a.ts is generated from the token table (brand brand-fill on-brand good warn bad info destructive ring line chart-N seq-N, each -tint) plus deniedCurrent (bg border ring outline divide from via to; fill stroke text stay allowed); no rule reads it here (v3-gr-2 does). Rule: none. Skill snippet: none (v3-sk-5). Test: the two co-located test files.",
+  "contract": "docs/v3/concepts/tokens-visual.md section 3.8 (--extra), section 4 (flags, the --format json line); docs/v3/concepts/static-framework-free.md section 3 row 4, section 4.2, amendment A1 (section 10).",
+  "exemplar": "src/cli/tokens-css.ts (2.x flag parsing, emitGeneratedCss --check) and its test; src/tokens/emit-fallback.ts from v3-st-1-emitter (config in, deterministic string out).",
+  "change": "1) Flags: --accent --neutral --vibrancy --selector --extra <file> --format css|json --out --check. Each 2.x flag (--only --selector-attribute --selector-class --light-class --dark-value --light-value --default-scheme --media-fallback) exits 1 naming --selector. No --radius/--density/--brightness. 2) --extra src/basalt.tokens.ts (import-free default export { series, vars }, loaded under Bun) emits --vx-<group>-<key> pairs per scheme, vars once on :root, a sibling .d.ts augmenting BasaltRegister; --check is byte-exact on both. Exit 1 on a group colliding with a package name, or a vars value reading a --vx-* outside package names plus file names (message names the nearest valid name). 3) emitJson(config) returns { $generated, $provenance, contract: 3, schemes: { light: { <role>: '#hex' }, dark: {...} } }: the opaque roles of tokens-visual 3.2 plus chart-N and seq-N read from src/tokens/chart-vars, values from the same resolved table the CSS emit reads (hctToHex), fixed key order so two runs are byte-equal. Alpha mixes (hairline, hover, selected, scrim, -tint) are ABSENT, not flattened (static-framework-free section 3 row 4 wins). --format json calls it; --check is byte-exact. Rule: none. Skill snippet: none. Test: tokens-css.test.ts, emit-json.test.ts.",
   "commits": "One PR, separate package and non-package commits (isolated-basalt-ui); conventional, empty scope, no attribution.",
   "proof": "Unit tests; no UI.",
   "acceptance": [
     "bun test packages/basalt-ui/src/cli/tokens-css.test.ts passes, with a case per removed 2.x flag exiting 1",
     "--extra emits per-scheme pairs, vars once on :root and a .d.ts; one changed byte in either file makes --check exit 1",
     "A colliding group exits 1; --vx-good-solid exits 1 with --vx-good in the message",
-    "bun test packages/basalt-ui/src/lint/check-tokens.test.ts passes: --vx-usage-hrv passed in extraNames passes, --vx-usage-x and bg-(--vx-typo) fail, 0 scanned files exits non-zero",
-    "src/lint/generated/zone-a.ts equals regenerated output (drift test); a probe fixture covers destructive, ring and line as names and bg-current as a deniedCurrent entry",
+    "bun test packages/basalt-ui/src/tokens/emit-json.test.ts passes: every role and scheme equals the CSS emit colour, chart-1..5 and seq-1..5 included; two emits are byte-equal; another accent changes brand, brand-fill and on-brand only",
+    "No role named hairline, hover, selected, scrim or ending in -tint is in the JSON",
     "make check exits 0"
   ],
-  "out_of_scope": "Radius, density, brightness flags; stylelint preset; Tailwind bridge; migration rows; fonts:css (deleted)."
+  "out_of_scope": "Radius, density, brightness flags; check-tokens and zone-a (v3-tok-t4a-names); stylelint preset; Tailwind bridge; migration rows; consumers' manifests."
 }

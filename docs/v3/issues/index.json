@@ -151,6 +151,33 @@
     "prio": 0
   },
   {
+    "key": "v3-shard-export-surface",
+    "repo": "basalt-ui",
+    "title": "Export surface as one generated shard per subpath, with its check",
+    "group": "trunk",
+    "wave": 1,
+    "after": ["v3-rel-7-skeleton"],
+    "owns": [
+      "packages/basalt-ui/scripts/export-surface*",
+      "packages/basalt-ui/scripts/export-surface/**"
+    ],
+    "shared": [
+      "packages/basalt-ui/scripts/{check-budgets,check-grace}.ts",
+      "packages/basalt-ui/scripts/check-agent-doc-drift.ts",
+      "packages/basalt-ui/scripts/gen-llms.test.ts"
+    ],
+    "lane": "M",
+    "seat": "lead",
+    "effort": "high",
+    "opus": null,
+    "kind": "chore",
+    "size": "s",
+    "consumerGate": null,
+    "concept": "docs/v3/concepts/migration-release.md#4.1 step 7",
+    "filing": "factory",
+    "prio": 0
+  },
+  {
     "key": "v3-rel-7-contracts",
     "repo": "basalt-ui",
     "title": "Contract gate: ports, check-contract-frozen, pins",
@@ -1135,7 +1162,7 @@
     "lane": "A",
     "seat": "lead",
     "effort": "high",
-    "opus": null,
+    "opus": "Contrast-constrained derivation of chart and sequential ramps with no donor to copy",
     "kind": "feature",
     "size": "s",
     "consumerGate": null,
@@ -1144,13 +1171,16 @@
     "prio": 0
   },
   {
-    "key": "v3-st-2-json-emit",
+    "key": "v3-tok-t4a-names",
     "repo": "basalt-ui",
-    "title": "JSON token emit with byte-exact --check for mail, manifest and theme-color",
+    "title": "check-tokens and the generated zone A list",
     "group": "g0",
     "wave": 2,
-    "after": ["v3-st-1-emitter", "v3-st-5-chart-vars"],
-    "owns": ["packages/basalt-ui/src/tokens/emit-json*"],
+    "after": ["v3-tok-t3-css"],
+    "owns": [
+      "packages/basalt-ui/src/lint/check-tokens*",
+      "packages/basalt-ui/src/lint/generated/**"
+    ],
     "shared": [],
     "lane": "A",
     "seat": "lead",
@@ -1159,22 +1189,18 @@
     "kind": "feature",
     "size": "s",
     "consumerGate": null,
-    "concept": "static-framework-free#10 issue 2",
+    "concept": "tokens-visual#12 T4",
     "filing": "factory",
     "prio": 0
   },
   {
     "key": "v3-tok-t4-cli",
     "repo": "basalt-ui",
-    "title": "tokens:css CLI with --extra and --format json, check-tokens, generated zone A list",
+    "title": "tokens:css CLI with --extra and --format json, and the JSON token emitter",
     "group": "g0",
     "wave": 2,
-    "after": ["v3-tok-t3-css", "v3-st-2-json-emit"],
-    "owns": [
-      "packages/basalt-ui/src/cli/tokens-css*",
-      "packages/basalt-ui/src/lint/check-tokens*",
-      "packages/basalt-ui/src/lint/generated/**"
-    ],
+    "after": ["v3-tok-t3-css", "v3-st-1-emitter", "v3-st-5-chart-vars"],
+    "owns": ["packages/basalt-ui/src/cli/tokens-css*", "packages/basalt-ui/src/tokens/emit-json*"],
     "shared": [],
     "lane": "A",
     "seat": "lead",
@@ -1193,7 +1219,7 @@
     "title": "Hide package fixture roots from test, lint and format scanners",
     "group": "g0",
     "wave": 2,
-    "after": ["v3-tok-t3-css", "v3-contract-amendment-spikes"],
+    "after": ["v3-tok-t3-css"],
     "owns": ["bunfig.toml", ".oxlintrc.json", ".oxfmtignore"],
     "shared": [],
     "lane": "K",
@@ -1263,7 +1289,7 @@
     "title": "Port CLI invariants failing first",
     "group": "g0",
     "wave": 2,
-    "after": ["v3-rel-7-skeleton", "v3-rel-7-skeleton-cli", "v3-contract-amendment-spikes"],
+    "after": ["v3-rel-7-skeleton", "v3-rel-7-skeleton-cli"],
     "owns": ["packages/basalt-ui/tests/cli/invariants/**"],
     "shared": [],
     "lane": "J",
@@ -1307,7 +1333,7 @@
     "title": "Wave 2 dependency pins in one PR",
     "group": "g0",
     "wave": 2,
-    "after": ["v3-rel-7-skeleton", "v3-exemplar-wiring", "v3-contract-amendment-spikes"],
+    "after": ["v3-rel-7-skeleton", "v3-exemplar-wiring"],
     "owns": ["package.json", "packages/basalt-ui/package.json", "bun.lock"],
     "shared": [],
     "lane": "M",
@@ -1352,7 +1378,6 @@
     "group": "g0",
     "wave": 2,
     "after": [
-      "v3-st-2-json-emit",
       "v3-st-3-type-fonts",
       "v3-st-4-prose",
       "v3-st-5-chart-vars",
@@ -1454,7 +1479,7 @@
     "title": "Class-rule family: viewport-keyed, dark-fork, fixed-colour, status-fill-as-text, raw-scroll, tw-off-law, app-spacing",
     "group": "g0",
     "wave": 2,
-    "after": ["v3-gr-1-rule-table", "v3-tok-t4-cli"],
+    "after": ["v3-gr-1-rule-table", "v3-tok-t4a-names"],
     "owns": [
       "packages/basalt-ui/src/lint/rules/class/**",
       "packages/basalt-ui/test/fixtures/lint/class/**"
@@ -1670,7 +1695,7 @@
     "title": "Hook shim, lint --hook, settings.json merge, seeded offender from a subdirectory",
     "group": "g0",
     "wave": 2,
-    "after": ["v3-sk-3-init-doctor", "v3-st-6-stylelint", "v3-tok-t4-cli", "v3-sk-3b-budget"],
+    "after": ["v3-sk-3-init-doctor", "v3-st-6-stylelint", "v3-sk-3b-budget", "v3-tok-t4a-names"],
     "owns": [
       "packages/basalt-ui/src/cli/lint/**",
       "packages/basalt-ui/agent/templates/hook*",
@@ -1695,7 +1720,12 @@
     "title": "Five shipped rules and the block table",
     "group": "g0",
     "wave": 2,
-    "after": ["v3-sk-3-init-doctor", "v3-unhot-llms"],
+    "after": [
+      "v3-unhot-llms",
+      "v3-gr-2-class-family",
+      "v3-gr-3a-import-bypass",
+      "v3-gr-3b-structure-rest"
+    ],
     "owns": [
       "packages/basalt-ui/agent/rules/**",
       "packages/basalt-ui/agent/templates/AGENTS-block*",
@@ -1721,7 +1751,7 @@
     "title": "Layout and imports codemod",
     "group": "g0",
     "wave": 2,
-    "after": ["v3-rel-7-skeleton", "v3-tok-t2-table", "v3-contract-amendment-spikes"],
+    "after": ["v3-rel-7-skeleton", "v3-tok-t2-table"],
     "owns": ["tools/migrate-v3/layout/**", "tools/migrate-v3/imports/**"],
     "shared": ["tools/migrate-v3/run.ts"],
     "lane": "M",
@@ -1761,7 +1791,7 @@
     "title": "Test ledgers per area, check-test-ledger, renderApp seed",
     "group": "g0",
     "wave": 2,
-    "after": ["v3-rel-7-skeleton", "v3-tok-t2-table", "v3-contract-amendment-spikes"],
+    "after": ["v3-rel-7-skeleton", "v3-tok-t2-table"],
     "owns": [
       "tools/migrate-v3/ledger/**",
       "packages/basalt-ui/scripts/check-test-ledger*",
@@ -1805,7 +1835,7 @@
     "title": "Guard completeness and primitive.contract suite",
     "group": "g1",
     "wave": 2,
-    "after": ["v3-prim-p1-core", "v3-contract-amendment-spikes"],
+    "after": ["v3-prim-p1-core"],
     "owns": [
       "packages/basalt-ui/src/ui/guard-completeness*",
       "packages/basalt-ui/src/ui/primitive.contract*",
@@ -2153,7 +2183,7 @@
     "title": "basalt() Vite plugin: peer and seed gates, aliases, sources.css, HMR on ejected files (F9)",
     "group": "g1",
     "wave": 2,
-    "after": ["v3-prim-p7-eject"],
+    "after": ["v3-prim-p7-eject", "v3-contract-amendment-spikes"],
     "owns": [
       "packages/basalt-ui/src/vite/**",
       "packages/basalt-ui/test/fixtures/vite/**",
@@ -2335,7 +2365,7 @@
     "title": "Keyed persisted over StorageLike with golden fixtures and statics",
     "group": "g1",
     "wave": 2,
-    "after": ["v3-rel-7-skeleton", "v3-contract-amendment-spikes"],
+    "after": ["v3-rel-7-skeleton"],
     "owns": [
       "packages/basalt-ui/src/core/persisted*",
       "packages/basalt-ui/src/core/debounce*",
@@ -2536,7 +2566,7 @@
     "lane": "D",
     "seat": "lead",
     "effort": "high",
-    "opus": "Three-level state precedence and retain-delete middleware ordering",
+    "opus": null,
     "kind": "feature",
     "size": "m",
     "consumerGate": null,
@@ -2942,12 +2972,7 @@
     "title": "Table pinned invariants and contract.ts",
     "group": "g1",
     "wave": 2,
-    "after": [
-      "v3-exemplar-statcard",
-      "v3-exemplar-dense-table",
-      "v3-prim-p3a-inputs",
-      "v3-prim-p3b-select"
-    ],
+    "after": ["v3-exemplar-statcard", "v3-exemplar-dense-table", "v3-contract-amendment-spikes"],
     "owns": [
       "packages/basalt-ui/src/table/contract{,.type-test}.ts",
       "packages/basalt-ui/src/table/invariants/**"
@@ -3008,7 +3033,7 @@
     "lane": "F",
     "seat": "lead",
     "effort": "high",
-    "opus": "URL grammar v1 and roving keyboard controller with golden fixtures",
+    "opus": null,
     "kind": "feature",
     "size": "m",
     "consumerGate": null,
@@ -3017,16 +3042,15 @@
     "prio": 0
   },
   {
-    "key": "v3-table-t2-parts",
+    "key": "v3-table-t2a-parts",
     "repo": "basalt-ui",
-    "title": "Table parts for G1 v0: head, body, tiers, pager, phases",
+    "title": "Table parts A: head, body, phases, DataTable, useDataTable",
     "group": "g1",
     "wave": 2,
     "after": ["v3-table-t1b-core-state", "v3-qa-i2-format", "v3-prim-p5a-display"],
     "owns": [
-      "packages/basalt-ui/src/table/parts/{head,body,tiers,pager,phases,data-table}*",
-      "packages/basalt-ui/src/table/{use-data-table*,table.css}",
-      "packages/basalt-ui/tests/layout/{,fixture/}table-v0*",
+      "packages/basalt-ui/src/table/parts/{head,body,phases,data-table}*",
+      "packages/basalt-ui/src/table/use-data-table*",
       "packages/basalt-ui/src/table/invariants/parts*",
       "packages/basalt-ui/docs/data-table.md",
       "packages/basalt-ui/src/core/messages/table.ts"
@@ -3047,12 +3071,39 @@
     "prio": 0
   },
   {
+    "key": "v3-table-t2b-tiers",
+    "repo": "basalt-ui",
+    "title": "Table parts B: tiers, pager, table.css, v0 layout test",
+    "group": "g1",
+    "wave": 2,
+    "after": ["v3-table-t2a-parts"],
+    "owns": [
+      "packages/basalt-ui/src/table/parts/{tiers,pager}*",
+      "packages/basalt-ui/src/table/table.css",
+      "packages/basalt-ui/tests/layout/{,fixture/}table-v0*"
+    ],
+    "shared": [
+      "packages/basalt-ui/src/table/index.ts",
+      "packages/basalt-ui/scripts/export-surface.json"
+    ],
+    "lane": "F",
+    "seat": "lead",
+    "effort": "high",
+    "opus": null,
+    "kind": "feature",
+    "size": "s",
+    "consumerGate": null,
+    "concept": "data-table#12 T2",
+    "filing": "factory",
+    "prio": 0
+  },
+  {
     "key": "v3-spike-table-fit",
     "repo": "basalt-ui",
     "title": "Spike: table bytes, fixed layout tiers, argo renderCard sites; owner accepts tiers at 1800x1200",
     "group": "spikes",
     "wave": 2,
-    "after": ["v3-table-t2-parts"],
+    "after": ["v3-table-t2b-tiers"],
     "owns": ["tools/spikes/table-fit/**", "docs/v3/spikes/table-fit.md"],
     "shared": [],
     "lane": "F",
@@ -3072,7 +3123,7 @@
     "title": "Spike: React Compiler over ./table on a 10k fixture",
     "group": "spikes",
     "wave": 2,
-    "after": ["v3-table-t2-parts"],
+    "after": ["v3-table-t2b-tiers"],
     "owns": ["tools/spikes/compile-table/**", "docs/v3/spikes/compile-table.md"],
     "shared": [],
     "lane": "K",
@@ -3526,11 +3577,11 @@
     "group": "spikes",
     "wave": 2,
     "after": [
-      "v3-table-t2-parts",
       "v3-charts-3-sparkline",
       "v3-cards-1-statgroup",
       "v3-ctl-5-filterset",
-      "v3-state-2-query-client"
+      "v3-state-2-query-client",
+      "v3-table-t2b-tiers"
     ],
     "owns": ["tools/spikes/f2-route/**", "docs/v3/spikes/f2-route.md"],
     "shared": [],
@@ -3620,7 +3671,7 @@
     "title": "Spike S5: DataTable own-code bytes and AppCell ceiling",
     "group": "spikes",
     "wave": 2,
-    "after": ["v3-table-t2-parts"],
+    "after": ["v3-table-t2b-tiers"],
     "owns": ["tools/spikes/table-bytes/**", "docs/v3/spikes/table-bytes.md"],
     "shared": [],
     "lane": "F",
@@ -3650,7 +3701,7 @@
     "owns": [
       "packages/basalt-ui/src/cli/{resolver,init,sync}*",
       "packages/basalt-ui/test/fixtures/sibling/**",
-      "packages/basalt-ui/agent/templates/**"
+      "packages/basalt-ui/agent/templates/AGENTS-block*"
     ],
     "shared": [],
     "lane": "J",
@@ -3736,7 +3787,7 @@
     "title": "Port the shell layout suite to data-slot, same numbers grade 2.x",
     "group": "g2",
     "wave": 2,
-    "after": ["v3-layout-harness", "v3-contract-amendment-spikes"],
+    "after": ["v3-layout-harness"],
     "owns": [
       "packages/basalt-ui/tests/layout/shell*",
       "packages/basalt-ui/tests/layout/{mobile-nav,page-aside,wave37-shell}.layout.test.ts",
@@ -3801,7 +3852,7 @@
     "title": "Url policy into core, sanitize, blockSplit, Markdown with P1 and P2",
     "group": "g2",
     "wave": 2,
-    "after": ["v3-rel-7-skeleton", "v3-unhot-migrating-llms", "v3-contract-amendment-spikes"],
+    "after": ["v3-rel-7-skeleton", "v3-unhot-migrating-llms"],
     "owns": [
       "packages/basalt-ui/src/content/{markdown,sanitize,block-split}*",
       "packages/basalt-ui/src/content/legacy.ts",
@@ -3812,7 +3863,7 @@
     "lane": "H",
     "seat": "lead",
     "effort": "high",
-    "opus": null,
+    "opus": "Sanitizer and URL trust boundary for model text",
     "kind": "feature",
     "size": "m",
     "consumerGate": null,
@@ -4297,16 +4348,13 @@
     "group": "g1",
     "wave": 3,
     "after": [
-      "v3-freeze-g0",
       "v3-prim-p3a-inputs",
       "v3-prim-p3b-select",
       "v3-prim-p4-overlays",
       "v3-prim-p5a-display",
       "v3-prim-p5b-display",
       "v3-prim-p6-date-picker",
-      "v3-prim-p8-sync-matrix",
       "v3-prim-p9-vite-gates",
-      "v3-prim-rows",
       "v3-cards-1-statgroup",
       "v3-cards-2-lists",
       "v3-cards-3-kanban",
@@ -4318,16 +4366,9 @@
       "v3-ctl-3-widgets",
       "v3-live-3-bind-invalidation",
       "v3-live-4-connection",
-      "v3-table-t2-parts",
       "v3-spike-table-fit",
       "v3-qa-i2-format",
       "v3-qa-i4-matrix",
-      "v3-mig-rows-1x",
-      "v3-mig-codemod",
-      "v3-sk-7-references",
-      "v3-sk-8-basalt-app",
-      "v3-sk-9-reviewer",
-      "v3-sk-10-shot",
       "v3-spike-f2-route",
       "v3-spike-f3-eject",
       "v3-prim-p3c-choice",
@@ -4336,15 +4377,11 @@
       "v3-prim-p5c-bar",
       "v3-prim-p5d-disclose",
       "v3-charts-2b-seams",
-      "v3-sk-9b-calibrate",
-      "v3-mig-bench",
       "v3-spike-table-bytes",
       "v3-spike-q3-compile-table",
       "v3-spike-q5-q8-motion-contrast",
-      "v3-cli-sibling",
       "v3-state-1b-external-field",
-      "v3-gr-intl-enable",
-      "v3-sk-7b-state-references"
+      "v3-table-t2b-tiers"
     ],
     "owns": ["packages/basalt-ui/scripts/check-budgets/{ui,cards,charts,data,router,table}*"],
     "shared": ["packages/basalt-ui/scripts/contract-pins.json"],
@@ -4391,7 +4428,7 @@
     "lane": "G",
     "seat": "lead",
     "effort": "high",
-    "opus": "Claim lifecycle across nested layouts and the docking state machine at every shell tier",
+    "opus": null,
     "kind": "feature",
     "size": "m",
     "consumerGate": null,
@@ -4405,7 +4442,7 @@
     "title": "Page kit: PageSummary, CardGrid, QueryState, EmptyState, OverlayHost, defineOverlays, useSizeClass",
     "group": "g2",
     "wave": 3,
-    "after": ["v3-shell-i3b-page-core", "v3-prim-p4-overlays", "v3-prim-p5b-display"],
+    "after": ["v3-prim-p4-overlays", "v3-prim-p5b-display", "v3-shell-i1-layout"],
     "owns": [
       "packages/basalt-ui/src/page/{page-summary,card-grid,query-state,empty-state,overlay-host,define-overlays,use-size-class}*",
       "packages/basalt-ui/tests/layout/{page-kit*,fixture/v3/scenarios/page-kit*}"
@@ -4560,17 +4597,13 @@
     "prio": 0
   },
   {
-    "key": "v3-shell-i7-innernav",
+    "key": "v3-shell-i7a-innernav",
     "repo": "basalt-ui",
-    "title": "InnerNav and SplitPage on one DOM below @narrow",
+    "title": "InnerNav and SplitPage page parts",
     "group": "g2",
     "wave": 3,
-    "after": ["v3-shell-i4-page", "v3-shell-i5c-exemplar", "v3-playground-reset"],
-    "owns": [
-      "packages/basalt-ui/src/page/parts/{inner-nav,split-page}*",
-      "packages/basalt-ui/docs/recipes/inner-nav.md",
-      "apps/playground/src/routes/settings.tsx"
-    ],
+    "after": ["v3-shell-i4-page"],
+    "owns": ["packages/basalt-ui/src/page/parts/{inner-nav,split-page}*"],
     "shared": ["packages/basalt-ui/src/page/index.ts"],
     "lane": "G",
     "seat": "lead",
@@ -4578,6 +4611,29 @@
     "opus": null,
     "kind": "feature",
     "size": "m",
+    "consumerGate": null,
+    "concept": "shell-nav-router#8 I7; #3.3; decision 8; ARCHITECTURE#14 conflict InnerNav below @narrow",
+    "filing": "factory",
+    "prio": 0
+  },
+  {
+    "key": "v3-shell-i7b-settings",
+    "repo": "basalt-ui",
+    "title": "Settings exemplar route and the inner-nav recipe",
+    "group": "g2",
+    "wave": 3,
+    "after": ["v3-shell-i7a-innernav", "v3-shell-i5c-exemplar", "v3-playground-reset"],
+    "owns": [
+      "packages/basalt-ui/docs/recipes/inner-nav.md",
+      "apps/playground/src/routes/settings.tsx"
+    ],
+    "shared": [],
+    "lane": "G",
+    "seat": "lead",
+    "effort": "high",
+    "opus": null,
+    "kind": "feature",
+    "size": "s",
     "consumerGate": null,
     "concept": "shell-nav-router#8 I7; #3.3; decision 8; ARCHITECTURE#14 conflict InnerNav below @narrow",
     "filing": "factory",
@@ -4621,8 +4677,7 @@
       "v3-shell-i4b-page-kit",
       "v3-shell-i5-frame",
       "v3-sk-3-init-doctor",
-      "v3-sk-5-rules",
-      "v3-cli-sibling"
+      "v3-sk-5-rules"
     ],
     "owns": [
       "packages/basalt-ui/src/router/{defaults,nav-target}*",
@@ -4649,8 +4704,8 @@
     "after": [
       "v3-shell-i5c-exemplar",
       "v3-shell-i6-tabbar",
-      "v3-shell-i7-innernav",
-      "v3-shell-i8-commands"
+      "v3-shell-i8-commands",
+      "v3-shell-i7b-settings"
     ],
     "owns": ["docs/v3/verdicts/shell.md"],
     "shared": [],
@@ -4682,12 +4737,12 @@
       "v3-shell-i4b-page-kit",
       "v3-shell-i5b-rail",
       "v3-shell-i6-tabbar",
-      "v3-shell-i7-innernav",
       "v3-shell-i8-commands",
       "v3-shell-i9-router-defaults",
       "v3-ai-i2-codeblock-prose",
       "v3-ai-i7-mdx",
-      "v3-sk-6-thin-skill-fold"
+      "v3-sk-6-thin-skill-fold",
+      "v3-shell-i7b-settings"
     ],
     "owns": [
       "packages/basalt-ui/agent/rules/basalt-page.md",
@@ -4711,7 +4766,7 @@
     "title": "Delete --neutral and --selector when the epos probe yields no tenant",
     "group": "g2",
     "wave": 3,
-    "after": ["v3-spike-epos-bridge-probe", "v3-freeze-g1"],
+    "after": ["v3-spike-epos-bridge-probe", "v3-freeze-g1", "v3-st-7-tokens-fixture"],
     "owns": [
       "packages/basalt-ui/src/cli/tokens-css*",
       "packages/basalt-ui/test/fixtures/tokens/**"
@@ -4735,18 +4790,16 @@
     "group": "g2",
     "wave": 3,
     "after": [
-      "v3-shell-i10-rules-rows",
       "v3-shell-i9-router-defaults",
       "v3-shell-i8-commands",
-      "v3-shell-i7-innernav",
       "v3-shell-i6-tabbar",
       "v3-shell-i5c-exemplar",
       "v3-shell-i4b-page-kit",
       "v3-ai-i2-codeblock-prose",
-      "v3-ai-i5-lint",
       "v3-ai-i7-mdx",
       "v3-freeze-g1",
-      "v3-flags-delete-g2"
+      "v3-flags-delete-g2",
+      "v3-shell-i7b-settings"
     ],
     "owns": ["packages/basalt-ui/scripts/check-budgets/{page,shell,content,router}*"],
     "shared": ["packages/basalt-ui/scripts/contract-pins.json"],
@@ -4768,11 +4821,11 @@
     "group": "g3",
     "wave": 3,
     "after": [
-      "v3-table-t2-parts",
       "v3-spike-table-fit",
       "v3-ctl-4-control-view",
       "v3-ctl-4b-control-home",
-      "v3-prim-p4-overlays"
+      "v3-prim-p4-overlays",
+      "v3-table-t2a-parts"
     ],
     "owns": [
       "packages/basalt-ui/src/table/parts/{toolbar,chips,header-menu,cell-filter,views}*",
@@ -4815,7 +4868,7 @@
     "lane": "F",
     "seat": "lead",
     "effort": "high",
-    "opus": null,
+    "opus": "Virtualization with roving focus, sticky header and group rows",
     "kind": "feature",
     "size": "m",
     "consumerGate": null,
@@ -4831,10 +4884,10 @@
     "wave": 3,
     "after": [
       "v3-ctl-4-control-view",
-      "v3-shell-i7-innernav",
       "v3-ctl-4b-control-home",
       "v3-shell-i5-frame",
-      "v3-playground-overview"
+      "v3-playground-overview",
+      "v3-shell-i7a-innernav"
     ],
     "owns": [
       "packages/basalt-ui/src/controls/{view-tabs,globals}*",
@@ -4940,33 +4993,54 @@
     "prio": 0
   },
   {
-    "key": "v3-state-4-forms",
+    "key": "v3-state-4a-controls",
     "repo": "basalt-ui",
-    "title": "FormFooter, toSubmitErrors, useFormDraft, field-array and file-drop recipes, settings and run-edit routes",
+    "title": "Form draft, submit helper and FormFooter in controls",
     "group": "g3",
     "wave": 3,
     "after": [
-      "v3-prim-p3a-inputs",
-      "v3-prim-p3b-select",
-      "v3-ctl-4-control-view",
       "v3-ctl-7-formfield",
       "v3-state-1-persisted",
       "v3-state-2-query-client",
-      "v3-state-3-synced",
-      "v3-shell-i7-innernav"
+      "v3-state-3-synced"
+    ],
+    "owns": ["packages/basalt-ui/src/controls/{draft,submit,form-footer}*"],
+    "shared": [
+      "packages/basalt-ui/src/controls/index.ts",
+      "packages/basalt-ui/scripts/export-surface.json"
+    ],
+    "lane": "C",
+    "seat": "lead",
+    "effort": "high",
+    "opus": null,
+    "kind": "feature",
+    "size": "s",
+    "consumerGate": null,
+    "concept": "state-persistence-forms#6",
+    "filing": "factory",
+    "prio": 0
+  },
+  {
+    "key": "v3-state-4b-recipes",
+    "repo": "basalt-ui",
+    "title": "Form recipes and the settings and run-edit routes",
+    "group": "g3",
+    "wave": 3,
+    "after": [
+      "v3-state-4a-controls",
+      "v3-shell-i7b-settings",
+      "v3-prim-p3a-inputs",
+      "v3-prim-p3b-select",
+      "v3-ctl-4-control-view"
     ],
     "owns": [
-      "packages/basalt-ui/src/controls/{draft,submit,form-footer}*",
       "packages/basalt-ui/docs/recipes/{field-array,file-drop}.md",
       "apps/playground/src/recipes/{field-array,file-drop}*",
       "apps/playground/src/routes/{settings,run-edit}.tsx",
       "packages/basalt-ui/docs/recipes/{form-guard,optimistic,dependent-validation}.md",
       "apps/playground/src/recipes/{form-guard,optimistic,dependent-validation}*"
     ],
-    "shared": [
-      "packages/basalt-ui/src/controls/index.ts",
-      "packages/basalt-ui/scripts/export-surface.json"
-    ],
+    "shared": [],
     "lane": "C",
     "seat": "lead",
     "effort": "high",
@@ -5018,14 +5092,11 @@
     "group": "g3",
     "wave": 3,
     "after": [
-      "v3-table-t5-exemplar",
-      "v3-state-4-forms",
       "v3-ctl-6-viewtabs",
       "v3-ctl-7-formfield",
-      "v3-ctl-8-lint",
-      "v3-ctl-9-rows",
-      "v3-freeze-g2",
-      "v3-table-t3b-selection"
+      "v3-table-t3b-selection",
+      "v3-freeze-g1",
+      "v3-state-4a-controls"
     ],
     "owns": ["packages/basalt-ui/scripts/check-budgets/areas/{controls,table}*"],
     "shared": ["packages/basalt-ui/scripts/contract-pins.json"],
@@ -5093,11 +5164,11 @@
       "v3-ai-i7-mdx",
       "v3-ai-i5-lint",
       "v3-charts-2-kinds",
-      "v3-table-t5-exemplar",
       "v3-cards-1-statgroup",
       "v3-recipes-check",
       "v3-sk-8-basalt-app",
-      "v3-deps-ai"
+      "v3-deps-ai",
+      "v3-table-t2a-parts"
     ],
     "owns": [
       "packages/basalt-ui/docs/recipes/{ai-blocks,ai-sdk-tools,ai-external-runtime,ai-card}.md",
@@ -5178,11 +5249,6 @@
     "wave": 4,
     "after": [
       "v3-charts-5-heatmap",
-      "v3-charts-6-two-pane",
-      "v3-charts-7a-card-codemods",
-      "v3-charts-7b-series-codemods",
-      "v3-charts-7c-rows",
-      "v3-spike-q2-map",
       "v3-freeze-g3",
       "v3-rel-7-skeleton",
       "v3-contract-amendment-late"
@@ -5206,7 +5272,7 @@
     "title": "Delete the 2.x view layer: dashboard, charts, table, controls, shell, content",
     "group": "g5-ga-g6",
     "wave": 4,
-    "after": ["v3-freeze-g4", "v3-ai-i6-reference", "v3-ai-i10-recipes"],
+    "after": ["v3-freeze-g4"],
     "owns": [
       "packages/basalt-ui/src/dashboard/**",
       "packages/basalt-ui/src/controls-dates/**",
@@ -5307,7 +5373,23 @@
       "v3-ai-i9-recipes",
       "v3-spike-epos-bridge-probe",
       "v3-cli-sibling",
-      "v3-teardown-peers"
+      "v3-teardown-peers",
+      "v3-shell-i10-rules-rows",
+      "v3-ai-i5-lint",
+      "v3-ai-i10-recipes",
+      "v3-charts-6-two-pane",
+      "v3-charts-7c-rows",
+      "v3-table-t5-exemplar",
+      "v3-ctl-8-lint",
+      "v3-ctl-9-rows",
+      "v3-freeze-g2",
+      "v3-freeze-g0",
+      "v3-prim-p8-sync-matrix",
+      "v3-prim-rows",
+      "v3-mig-bench",
+      "v3-gr-intl-enable",
+      "v3-sk-7b-state-references",
+      "v3-state-4b-recipes"
     ],
     "owns": ["docs/v3/verdicts/ga-checks.md"],
     "shared": [],

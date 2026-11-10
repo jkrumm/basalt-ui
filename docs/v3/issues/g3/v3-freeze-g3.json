@@ -10,7 +10,7 @@
   ],
   "concept": "migration-release#5 G3",
   "contract": "Read docs/v3/concepts/migration-release.md 5 (G3), quality-contract.md 6 (budget method, ratchet), ARCHITECTURE.md 3.",
-  "exemplar": "Follow the merged v3-freeze-g1 and v3-freeze-g2 PRs.",
+  "exemplar": "Follow the merged v3-freeze-g1 PR.",
   "change": "One concern: freeze G3. contract-pins.json (schema of v3-rel-7-contracts: key to sha256 of file bytes): src/controls/contract.ts and src/table/contract.ts are pinned already and must still match; add keys for the ./controls and ./table GA value-export lists, named as v3-freeze-g1 named its own; edit no existing key. Budgets: seed controls (own code, first complete build) at measured +5%, rounded up to 0.5 KB, down only. Re-seed table (own code, engine fixture on the 10 features) the same way: this replaces G1's seed measured on v0 parts, so record one ratchet row { ceiling, from, to, consumer: finances, repo: finances }. Hard zeros stay; no other raise. Ships: the check-contract-frozen and check-budgets gates; no skill snippet; their suites plus the new seeds.",
   "commits": "One PR. Package files (check-budgets, pins), conventional, empty scope, no AI attribution; never edit CHANGELOG.md, MIGRATING.md, llms.txt. `make sync-self` output, if any, is its own commit.",
   "proof": "`make check`; `check-budgets --report` in the PR body.",

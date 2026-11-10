@@ -4,7 +4,7 @@
   "owns": [
     "packages/basalt-ui/src/cli/{resolver,init,sync}*",
     "packages/basalt-ui/test/fixtures/sibling/**",
-    "packages/basalt-ui/agent/templates/**"
+    "packages/basalt-ui/agent/templates/AGENTS-block*"
   ],
   "must_not_touch": [
     "CHANGELOG.md",

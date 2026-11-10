@@ -30,5 +30,5 @@
     "form-layout.tsx and panel-row.tsx are gone; `rg \"@mantine/|@tanstack/react-form\" src/controls/form-*` finds nothing.",
     "`git diff --name-only` lists only owned paths, the generated packages/basalt-ui/docs/form-field.md, and the sync-self commit."
   ],
-  "out_of_scope": "FormFooter, toSubmitErrors, useFormDraft (v3-state-4-forms), Section, migration rows (v3-ctl-9-rows)."
+  "out_of_scope": "FormFooter, toSubmitErrors, useFormDraft (v3-state-4a-controls), Section, migration rows (v3-ctl-9-rows)."
 }

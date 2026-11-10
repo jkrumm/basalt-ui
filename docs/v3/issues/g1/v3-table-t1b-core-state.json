@@ -31,6 +31,5 @@
     "make check exits 0",
     "git diff --name-only lists only owned paths"
   ],
-  "out_of_scope": "Features, kinds, plan (t1a), parts and CSS (t2), saved views (t3), grouping, footer totals.",
-  "worker_tag": "lead high; may spawn one @implementer tagged [opus: URL grammar v1 and roving keyboard controller with golden fixtures] for the novel file group only"
+  "out_of_scope": "Features, kinds, plan (t1a), parts and CSS (t2), saved views (t3), grouping, footer totals."
 }
