@@ -243,7 +243,7 @@ const button = cva(
     variants: {
       variant: {
         primary: 'bg-primary text-primary-foreground',
-        secondary: 'bg-secondary shadow-hairline',
+        secondary: 'bg-secondary shadow-raised',
         ghost: '',
       },
       size: { md: '', icon: 'size-ctl' },
