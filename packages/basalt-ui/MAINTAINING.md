@@ -382,9 +382,9 @@ tsconfig means no alias, never a crash.
 ## Guards — shipping a stricter one
 
 **A change that makes the guard reject code it previously accepted ships `warn` for one minor, then
-promotes to `error`.** The justification is specific: majors are banned here, so a consumer has no
-semver channel telling them enforcement tightened, and the guard is the one part of basalt that can
-hard-fail their build.
+promotes to `error`.** The justification is specific: between majors (see [Major lines](#major-lines)) a
+consumer has no semver channel telling them enforcement tightened, and the guard is the one part of
+basalt that can hard-fail their build.
 
 - Mechanically: a `{ since, promote, why }` entry in `GRACE_PERIOD_KINDS` (guard kinds,
   `src/guard/index.ts`) or `PLUGIN_RULE_GRACE` (oxlint rules, exported beside the plugin in
@@ -465,7 +465,8 @@ promotion state there, never from prose here.** Five things about it that are no
 
 ## Shipping a rendering change — what a minor may move
 
-Majors are banned, so the version number can never warn a consumer their charts will look different.
+Between majors (see [Major lines](#major-lines)) the version number can never warn a consumer their
+charts will look different.
 
 - **A change that moves rendering for EVERY chart ships as an opt-in prop defaulted to the OLD
   behaviour.** `AxisConfig.nice` is the reference case.
@@ -508,18 +509,17 @@ Code cannot load rules or skills from `node_modules`, which is the only reason a
   tokens-only kind COUNT is checked against `TOKENS_ONLY_DISABLED_KINDS` across every doc in the
   repo, because that number was stated by hand in eight of them and shipped stale.
 
-## The one sanctioned major
+## Major lines
 
-2.0.0 shipped 2026-10-14 as the single sanctioned major (owner decision 2026-10-13). No-majors
-holds again with no exception, and a 3.0 is never sanctioned. The doctrine's home is here; AGENTS.md
-links.
-
-- **`scripts/release.sh` enforces it** (`version_gate`, `scripts/release.test.ts`): a computed
-  version is releasable only if it is a stable 2.x and the bump is not `major`. Every major, any
-  1.x and any prerelease or build-metadata version dies. It judges the computed version, not the
-  commit.
-- **A nominal break ships as a plain `feat:`** with a `MIGRATING.md` entry; `feat!:` and
-  `BREAKING CHANGE:` stay banned. `.releaserc.json` stays `["master"]`.
+A major exists only when `CURRENT_MAJOR` in `scripts/release.sh` is raised with the owner's reason
+in the commit, following the release runbook in the repo root `AGENTS.md` (§ Release Process). Between
+majors commitlint refuses `feat!:` and `BREAKING CHANGE:`; a change that breaks a public shape ships
+as a `feat:` plus a row in `migrations/`, and a value change ships a `valueShifts` row. Only the
+current line is maintained; 2.x stays on npm as published and receives no further releases. If a
+breaking footer reaches master after the designated commit: `git revert <sha>` with the default
+message, then re-apply as a plain commit. The analyzer drops reverted commits. If the revert is
+impossible, land a one-release `releaseRules` override (`{"breaking":true,"release":"minor"}`) in a
+`ci:` commit and remove it in the next one.
 
 ## Development guidelines
 

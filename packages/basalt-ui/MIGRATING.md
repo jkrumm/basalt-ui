@@ -42,9 +42,9 @@ their top finding independently: a reader cannot tell which minor introduced whi
 claim not to be between them. One of them shipped a real defect through the gap. Restored to
 per-minor sections below; keep it that way.
 
-**No majors, by policy.** A rename or a removal ships as a plain `feat:` on the 1.x line, so a minor
-bump can require code changes. Skipping several at once is the expensive case — read every section
-between your version and the target.
+A rename or a removal ships as a plain `feat:` between majors, so a minor bump can require code
+changes. Skipping several at once is the expensive case — read every section between your version
+and the target.
 
 > Reading the CHANGELOG: minors and majors are `#` (h1), patches are `##` (h2). Grepping for
 > `## [1.` finds only the patches.
@@ -1044,6 +1044,12 @@ The `basalt-ui/router-tanstack` subpath is **removed** in 2.x, not moved: an imp
 | `useNav`, and `BasaltShell`'s `sections` / `mobileNav` props                                                                                                                                                                   | deleted: pass `nav={NAV}` (plus `badges`, `isActive`, `getScrollElement` — the old `useNav` options) to `BasaltShell`; it resolves the sidebar, the mobile bar and the breadcrumb itself. `mobileNav` tuning moves to `defineNav`'s `mobile`. argo `apps/dashboard/src/routes/__root.tsx`: replace `const nav = useNav(NAV, { badges })` + `{...nav}` with `nav={NAV} badges={…}` (migrates in W12; 1.x consumers stay on their pinned version until then) |
 
 ## Unreleased — the cue, the danger ring, the figure card's states (Waves 53–54)
+
+### 2.x to 3.0
+
+3.0 is a rewrite of the styling and component layer, and 2.x consumers migrate when they choose: 2.x
+stays on npm as published and a pin keeps working. The rows (renames, removals, token and storage
+changes) land here with the 3.0 commits; until they do, stay on your 2.x pin.
 
 ### The figure card's states (Wave 54, argo-friction rows 219 and 220)
 

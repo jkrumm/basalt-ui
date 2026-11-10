@@ -8,7 +8,7 @@ Toolchain: Bun runtime, oxlint + oxfmt, conventional commits (empty scope), `mas
 
 ## Subpath ownership
 
-2.0 ships 15 subpaths (`docs/V2-SPEC.md` § 1 is the contract; per-symbol verdicts in `docs/waves/v2-surface.md`).
+The package ships 15 subpaths (the table below is the contract).
 Everything else is internal: `./guard`, `./theme-lab`, `./data/virtual`, `./tokens.css`, `./llms.txt`
 and `./package.json` are **not exports** (`llms.txt` still ships in the tarball as a file;
 `basalt-ui tokens:css` emits the token stylesheet).
@@ -125,5 +125,6 @@ and optional peer packages.
 ## Upgrading across minors
 
 `CHANGELOG.md` lists every release; `MIGRATING.md` lists what **broke** — removed and renamed
-exports per minor, with the replacement. No majors ship here, so a minor bump can require code
-changes. Read `MIGRATING.md` before jumping more than one minor.
+exports per minor, with the replacement. 3.x is the current line; 2.x stays on npm as published and
+receives no further releases, so a consumer on 2.x stays on its pin until it migrates. A minor bump
+can still require code changes. Read `MIGRATING.md` before jumping more than one minor.
