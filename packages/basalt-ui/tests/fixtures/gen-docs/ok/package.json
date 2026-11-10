@@ -1,0 +1,15 @@
+{
+  "name": "fixture-ui",
+  "private": true,
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    },
+    "./extras": {
+      "types": "./dist/extras/index.d.ts",
+      "import": "./dist/extras/index.js"
+    },
+    "./styles.css": "./dist/styles.css"
+  }
+}
