@@ -56,8 +56,9 @@ export function headNotGreen(sha: string, runs: CiRun[] | null): string | null {
 
 const REBASE = 'git fetch origin master && git rebase origin/master, push, and wait for PR CI'
 
-const changed = (ports: GuardPorts, from: string, to: string): string[] =>
-  (ports.git(['diff', '--name-only', from, to]) ?? '').split('\n').filter(Boolean)
+/** The paths changed between two commits, a rename as both its paths; null when git fails. */
+const changed = (ports: GuardPorts, from: string, to: string): string[] | null =>
+  ports.git(['diff', '--name-only', '--no-renames', from, to])?.split('\n').filter(Boolean) ?? null
 
 /** Why a branch behind origin/master may not merge as it is, or null when it may (or is not behind). */
 export function behindMaster(ports: GuardPorts): string | null {
@@ -66,8 +67,11 @@ export function behindMaster(ports: GuardPorts): string | null {
   if (ports.git(['merge-base', '--is-ancestor', 'origin/master', 'HEAD']) !== null) return null
   const base = ports.git(['merge-base', 'origin/master', 'HEAD'])
   if (base === null) return `this branch shares no history with origin/master: ${REBASE}`
-  const mine = new Set(changed(ports, base, 'HEAD'))
-  const shared = changed(ports, base, 'origin/master').filter((path) => mine.has(path))
+  const mine = changed(ports, base, 'HEAD')
+  const theirs = changed(ports, base, 'origin/master')
+  if (mine === null || theirs === null)
+    return `the changed files since ${base.slice(0, 12)} cannot be listed (git diff failed): ${REBASE}`
+  const shared = theirs.filter((path) => mine.includes(path))
   if (shared.length > 0)
     return `master moved on files this branch changes (${shared.slice(0, 5).join(', ')}): ${REBASE}`
   const runs = ports.masterRuns()
