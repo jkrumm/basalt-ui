@@ -1,11 +1,4 @@
-/**
- * The one number-formatting module the playground shares (audit E §3/§7): `money`/`pct`/`ratio`/
- * `fmtMonthTick`/`deltaPct` used to be defined once inside `demo/cbbi/cbbi-data.ts` and copied by
- * hand wherever another page needed the same shape (`dashboard/revenue.tsx`'s local `fmtMoney`,
- * `dashboard/sessions.tsx`'s local `fmtInt`, before both were retired). basalt ships no `./format`
- * subpath yet (a later consolidation wave), so this stays local until it does —
- * `cbbi-data.ts` re-exports these so its own nine consumers see no import change.
- */
+/** The number-formatting helpers the playground fixtures share. */
 
 /** `0.4077` → `41%`. The index is read as a percentage everywhere it is stated. */
 export function pct(value: number): string {

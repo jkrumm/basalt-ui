@@ -3,8 +3,8 @@
  *
  * `defineCommands`'s own contract is "call it once — the app's single command registry; the last
  * call wins" (see its JSDoc in basalt-ui/commands). Imported eagerly by main.tsx so every command
- * below is registered at boot, before any route mounts, which is what keeps `ShortcutsHelp` (the
- * `/settings` Shortcuts card reads this same registry) populated on every route.
+ * below is registered at boot, before any route mounts, so Spotlight and the hotkeys see them on
+ * every route.
  */
 import { spotlight } from '@mantine/spotlight'
 import { defineCommands, setColorScheme } from 'basalt-ui/commands'
