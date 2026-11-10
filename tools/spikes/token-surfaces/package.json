@@ -1,0 +1,12 @@
+{
+  "name": "@basalt-ui/spike-token-surfaces",
+  "private": true,
+  "description": "Spike 618: light-control ring on the warm ramp (S2) and input boundary against WCAG 1.4.11 (S3). Throwaway harness, no tests.",
+  "type": "module",
+  "scripts": {
+    "run": "bun run.ts"
+  },
+  "dependencies": {
+    "playwright-core": "1.63.0"
+  }
+}
