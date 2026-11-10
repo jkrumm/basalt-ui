@@ -62,24 +62,6 @@ export function IconSettings() {
   )
 }
 
-export function IconCopy() {
-  return (
-    <Glyph size={16}>
-      <path d="M8 8m0 2a2 2 0 0 1 2 -2h8a2 2 0 0 1 2 2v8a2 2 0 0 1 -2 2h-8a2 2 0 0 1 -2 -2z" />
-      <path d="M16 8V6a2 2 0 0 0 -2 -2H6a2 2 0 0 0 -2 2v8a2 2 0 0 0 2 2h2" />
-    </Glyph>
-  )
-}
-
-export function IconReset() {
-  return (
-    <Glyph size={16}>
-      <path d="M20 11a8.1 8.1 0 0 0 -15.5 -2m-.5 -4v4h4" />
-      <path d="M4 13a8.1 8.1 0 0 0 15.5 2m.5 4v-4h-4" />
-    </Glyph>
-  )
-}
-
 export function IconComponents() {
   return (
     <Glyph>
@@ -99,28 +81,11 @@ export function IconSparkle() {
   )
 }
 
-export function IconUser() {
-  return (
-    <Glyph size={16}>
-      <path d="M12 12m-4 0a4 4 0 1 0 8 0a4 4 0 1 0 -8 0" />
-      <path d="M6 21v-2a4 4 0 0 1 4 -4h4a4 4 0 0 1 4 4v2" />
-    </Glyph>
-  )
-}
-
 export function IconSend() {
   return (
     <Glyph size={16}>
       <path d="M10 14l11 -11" />
       <path d="M21 3l-6.5 18a.55 .55 0 0 1 -1 0l-3.5 -7l-7 -3.5a.55 .55 0 0 1 0 -1z" />
-    </Glyph>
-  )
-}
-
-export function IconStop() {
-  return (
-    <Glyph size={16}>
-      <path d="M5 5m0 2a2 2 0 0 1 2 -2h10a2 2 0 0 1 2 2v10a2 2 0 0 1 -2 2h-10a2 2 0 0 1 -2 -2z" />
     </Glyph>
   )
 }
@@ -147,135 +112,12 @@ export function IconPalette() {
   )
 }
 
-/**
- * The currency filter's glyph — a coin, not a bare `$`.
- *
- * A `$` inside a circle is a CURRENCY mark; the `$` alone (which this drew, as a stroked path at
- * 18px) reads as a dollar AMOUNT with its number missing, and it sat on the text baseline rather
- * than centred in the pill's 16px icon box. 16px, like every other control-tier icon.
- */
-export function IconCurrency() {
-  return (
-    <Glyph size={16}>
-      <path d="M12 12m-9 0a9 9 0 1 0 18 0a9 9 0 1 0 -18 0" />
-      <path d="M14.5 9h-3.75a1.75 1.75 0 0 0 0 3.5h2.5a1.75 1.75 0 0 1 0 3.5H9.5" />
-      <path d="M12 7v10" />
-    </Glyph>
-  )
-}
-
-/** The dashboard's `Save as report` primary. */
-export function IconReport() {
-  return (
-    <Glyph size={16}>
-      <path d="M14 3v4a1 1 0 0 0 1 1h4" />
-      <path d="M5 8v-3a2 2 0 0 1 2 -2h7l5 5v11a2 2 0 0 1 -2 2h-10a2 2 0 0 1 -2 -2v-2" />
-      <path d="M3 12h9" />
-      <path d="M9 15l3 -3l-3 -3" />
-    </Glyph>
-  )
-}
-
-/** The `Top pages` section's export action. */
-export function IconExport() {
-  return (
-    <Glyph size={16}>
-      <path d="M12 15V3" />
-      <path d="M8 7l4 -4l4 4" />
-      <path d="M4 17v2a2 2 0 0 0 2 2h12a2 2 0 0 0 2 -2v-2" />
-    </Glyph>
-  )
-}
-
 /** Search glyph for the header search trigger. */
 export function IconSearch() {
   return (
     <Glyph size={16}>
       <path d="M10 10m-6 0a6 6 0 1 0 12 0a6 6 0 1 0 -12 0" />
       <path d="M20 20l-4.35 -4.35" />
-    </Glyph>
-  )
-}
-
-/** Horizontal ellipsis for ghost "more actions" menus (KPI cards, chart card headers). */
-export function IconDots() {
-  return (
-    <Glyph size={16}>
-      <path d="M5 12m-1 0a1 1 0 1 0 2 0a1 1 0 1 0 -2 0" />
-      <path d="M12 12m-1 0a1 1 0 1 0 2 0a1 1 0 1 0 -2 0" />
-      <path d="M19 12m-1 0a1 1 0 1 0 2 0a1 1 0 1 0 -2 0" />
-    </Glyph>
-  )
-}
-
-/** Paperclip glyph for an "attach file" affordance. */
-export function IconPaperclip() {
-  return (
-    <Glyph size={16}>
-      <path d="M15 7l-6.5 6.5a1.5 1.5 0 0 0 3 3l6.5 -6.5a3 3 0 0 0 -6 -6l-6.5 6.5a4.5 4.5 0 0 0 9 9l6.5 -6.5" />
-    </Glyph>
-  )
-}
-
-/** Microphone glyph for a "simulate voice input" affordance. */
-export function IconMic() {
-  return (
-    <Glyph size={16}>
-      <path d="M9 2m0 3a3 3 0 0 1 3 -3h0a3 3 0 0 1 3 3v5a3 3 0 0 1 -3 3h0a3 3 0 0 1 -3 -3z" />
-      <path d="M5 10a7 7 0 0 0 14 0" />
-      <path d="M8 21h8" />
-      <path d="M12 17v4" />
-    </Glyph>
-  )
-}
-
-/** Subtle wifi icon for the online-status indicator. */
-export function IconWifi() {
-  return (
-    <Glyph size={18}>
-      <path d="M12 18h.01" />
-      <path d="M9.172 15.172a4 4 0 0 1 5.656 0" />
-      <path d="M6.343 12.343a8 8 0 0 1 11.314 0" />
-      <path d="M3.515 9.515c4.686 -4.687 12.284 -4.687 16.97 0" />
-    </Glyph>
-  )
-}
-
-/** Battery glyph for the "Batteries" nav section — the one section that owns a mobile bar slot. */
-export function IconBattery() {
-  return (
-    <Glyph>
-      <path d="M3 8m0 2a2 2 0 0 1 2 -2h11a2 2 0 0 1 2 2v4a2 2 0 0 1 -2 2h-11a2 2 0 0 1 -2 -2z" />
-      <path d="M21 11v2" />
-      <path d="M7 11v2" />
-      <path d="M11 11v2" />
-    </Glyph>
-  )
-}
-
-/** Open-book glyph for the "Content" nav section (prose, markdown, guides). */
-export function IconBook() {
-  return (
-    <Glyph>
-      <path d="M3 19a9 9 0 0 1 9 0a9 9 0 0 1 9 0" />
-      <path d="M3 6a9 9 0 0 1 9 0a9 9 0 0 1 9 0" />
-      <path d="M3 6v13" />
-      <path d="M12 6v13" />
-      <path d="M21 6v13" />
-    </Glyph>
-  )
-}
-
-/**
- * The period stepper's two arrows (`DashboardPage`'s `filtersEnd` `ControlGroup`). Deliberately
- * declared at the Glyph default (18px) rather than 16 like `IconUser`: basalt's `IconSlot` restates
- * every icon's box at the tier's own size, so a consumer's icon set may be as inconsistent as real
- * icon sets are and the controls still line up.
- */
-export function IconChevronLeft() {
-  return (
-    <Glyph>
-      <path d="M15 6l-6 6l6 6" />
     </Glyph>
   )
 }
