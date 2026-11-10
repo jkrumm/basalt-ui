@@ -28,6 +28,7 @@
   "flattenNav",
   "navGroup",
   "navTarget",
+  "persisted",
   "scrollParentOf",
   "unwrap",
   "useBasaltNav",
