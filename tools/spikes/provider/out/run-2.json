@@ -1,0 +1,21 @@
+{
+  "providerGzipBytes": 298,
+  "rowCeilingBytes": 500,
+  "bannedInChunk": [],
+  "verdict": "pass",
+  "detail": {
+    "capBytes": 5000,
+    "fixtureGzipBytes": 77032,
+    "base0GzipBytes": 76734,
+    "chunkCount": 1,
+    "withinRow": true,
+    "reactVersion": "19.3.0",
+    "browser": {
+      "ran": true,
+      "fixture": { "lang": "de-DE", "dataTheme": "dark", "stored": "dark", "errors": [] },
+      "control": { "lang": "en", "dataTheme": null, "stored": null, "errors": [] },
+      "held": true,
+      "detectorWorks": true
+    }
+  }
+}

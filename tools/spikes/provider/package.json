@@ -1,0 +1,18 @@
+{
+  "name": "@basalt-ui/spike-provider",
+  "private": true,
+  "description": "Spike Q1: the v3 BasaltProvider skeleton (scheme, locale, lang) under the 5.0 KB gz cap. Throwaway harness, no tests.",
+  "type": "module",
+  "scripts": {
+    "run": "bun run.ts"
+  },
+  "dependencies": {
+    "playwright-core": "1.63.0",
+    "react": "19.3.0",
+    "react-dom": "19.3.0"
+  },
+  "devDependencies": {
+    "@types/react": "19.2.0",
+    "@types/react-dom": "19.2.0"
+  }
+}
