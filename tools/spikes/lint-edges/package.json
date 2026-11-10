@@ -1,0 +1,14 @@
+{
+  "name": "@basalt-ui/spike-lint-edges",
+  "private": true,
+  "description": "Spike 624: native oxlint directive edges (S4), no-arbitrary-values on the paren form (S5), scanAllStrings noise (S6), full synthetic preset wall time (S7), Stop versus PostToolUse apparatus (S8). Throwaway harness, no tests.",
+  "type": "module",
+  "scripts": {
+    "run": "bun run.ts"
+  },
+  "dependencies": {
+    "@shadcn/lint": "0.2.5",
+    "oxlint": "1.93.0",
+    "tailwindcss": "4.3.5"
+  }
+}
