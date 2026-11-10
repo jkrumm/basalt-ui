@@ -7,7 +7,7 @@
 version: 1
 rows:
   - key: v3-spike-token-surfaces
-    issue: 573
+    issue: 618
   - key: v3-exemplar-dense-table
     issue: 583
   - key: v3-tok-t2-table
@@ -19,17 +19,17 @@ rows:
   - key: v3-prim-p1-gen
     issue: 578
   - key: v3-tok-t1-invariants
-    issue: 572
+    issue: 617
   - key: v3-slim-repo-docs
     issue: 566
   - key: v3-prim-p1-button-input
     issue: 577
   - key: v3-recipes-check
-    issue: 600
+    issue: 630
   - key: v3-rel-8-no-breaking
     issue: 565
   - key: v3-spike-census
-    issue: 589
+    issue: 622
   - key: v3-exemplar-wiring
     issue: 580
   - key: v3-charts-bump
@@ -41,15 +41,15 @@ rows:
   - key: v3-gen-docs
     issue: 601
   - key: v3-spike-hook-sync
-    issue: 593
+    issue: 625
   - key: v3-spike-scroller
-    issue: 588
+    issue: 621
   - key: v3-spike-allow-padding
-    issue: 590
+    issue: 623
   - key: v3-spike-upstream-churn
-    issue: 596
+    issue: 628
   - key: v3-spike-lint-edges
-    issue: 592
+    issue: 624
   - key: v3-spike-thin-skill
     issue: 587
   - key: v3-verdict-statcard
@@ -57,31 +57,31 @@ rows:
   - key: v3-rel-6-doctrine-pkg
     issue: 562
   - key: v3-project-yaml-fanout
-    issue: 567
+    issue: 613
   - key: v3-prim-p1-core
     issue: 579
   - key: v3-playground-reset
-    issue: 571
+    issue: 616
   - key: v3-spike-no-restyle
-    issue: 576
+    issue: 619
   - key: v3-tok-t3-css
     issue: 575
   - key: v3-spike-controls-codegen
-    issue: 594
+    issue: 626
   - key: v3-rel-7-contracts
     issue: 564
   - key: v3-rel-1-workflows
     issue: 558
   - key: v3-unhot-migrating-llms
-    issue: 568
+    issue: 614
   - key: v3-rel-7-skeleton-cli
     issue: 599
   - key: v3-spike-provider
     issue: 585
   - key: v3-spike-provider-q4
-    issue: 598
+    issue: 629
   - key: v3-spike-synced
-    issue: 586
+    issue: 620
   - key: v3-unhot-budgets
     issue: 569
   - key: v3-exemplar-statcard
@@ -89,11 +89,11 @@ rows:
   - key: v3-rel-5-doctrine-root
     issue: 561
   - key: v3-layout-harness
-    issue: 570
+    issue: 615
   - key: v3-unhot-llms
     issue: 602
   - key: v3-spike-live-poller
-    issue: 595
+    issue: 627
   - key: v3-exemplar-card-ui
     issue: 581
   - key: v3-contract-amendment-spikes
