@@ -41,21 +41,6 @@ const FONT_PACKAGES = [
   '@fontsource-variable/jetbrains-mono/wght.css',
 ] as const
 
-const fallbackFace = (
-  family: string,
-  local: string,
-  m: { size: number; ascent: number; descent: number },
-): string =>
-  rule(
-    '@font-face',
-    decl('font-family', `'${family}'`) +
-      decl('src', `local('${local}')`) +
-      decl('size-adjust', `${m.size}%`) +
-      decl('ascent-override', `${m.ascent}%`) +
-      decl('descent-override', `${m.descent}%`) +
-      decl('line-gap-override', '0%'),
-  )
-
 function fontsCss(): string {
   const imports = FONT_PACKAGES.map((pkg) => `@import '${pkg}';\n`).join('')
   const headDigits = rule(
@@ -70,20 +55,7 @@ function fontsCss(): string {
       ) +
       decl('unicode-range', 'U+0030-0039'),
   )
-  return (
-    headerWaiving('raw-font-family') +
-    imports +
-    '\n' +
-    fallbackFace('Nunito Sans Fallback', 'Arial', { size: 101, ascent: 100, descent: 35 }) +
-    fallbackFace('Hubot Sans Fallback', 'Arial', { size: 96, ascent: 101, descent: 28 }) +
-    fallbackFace('JetBrains Mono Fallback', 'Courier New', {
-      size: 100,
-      ascent: 102,
-      descent: 30,
-    }) +
-    '\n' +
-    headDigits
-  )
+  return headerWaiving('raw-font-family') + imports + '\n' + headDigits
 }
 
 // ── typography.css ──────────────────────────────────────────────────────────────────────────────

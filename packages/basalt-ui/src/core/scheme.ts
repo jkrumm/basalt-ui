@@ -9,6 +9,7 @@ export type Scheme = 'light' | 'dark' | 'auto'
 const COOKIE_MAX_AGE = 31536000
 
 let declaredCookie: string | undefined
+let declaredKey = SCHEME_KEY
 
 export function parseScheme(raw: unknown): Scheme | undefined {
   return raw === 'light' || raw === 'dark' || raw === 'auto' ? raw : undefined
@@ -50,21 +51,22 @@ function apply(value: Scheme): void {
 }
 
 /**
- * `setScheme('dark' | 'light' | 'auto')` applies, stores `basalt:scheme` and mirrors the declared
- * cookie. `setScheme()` re-reads storage and applies, overriding any attribute: call it after an
+ * `setScheme('dark' | 'light' | 'auto')` applies, stores the declared key (default `basalt:scheme`)
+ * and mirrors the declared cookie. `setScheme()` re-reads storage and applies, overriding any attribute: call it after an
  * async restore (same-tab localStorage writes fire no storage event).
  */
-export function setScheme(value?: Scheme, options: { cookie?: string } = {}): void {
+export function setScheme(value?: Scheme, options: { cookie?: string; key?: string } = {}): void {
   if (typeof document === 'undefined') return
   if (options.cookie) declaredCookie = options.cookie
+  if (options.key) declaredKey = options.key
   if (value === undefined) {
-    const stored = readScheme({ cookie: declaredCookie })
+    const stored = readScheme({ key: declaredKey, cookie: declaredCookie })
     if (stored) apply(stored)
     return
   }
   apply(value)
   try {
-    localStorage.setItem(SCHEME_KEY, value)
+    localStorage.setItem(declaredKey, value)
   } catch {
     // storage unavailable: the attribute is still applied for this page
   }

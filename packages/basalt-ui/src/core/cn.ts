@@ -56,8 +56,10 @@ OVERRIDES['overscroll'] = ['overscroll-x', 'overscroll-y']
 OVERRIDES['scale'] = ['scale-x', 'scale-y']
 OVERRIDES['truncate'] = ['overflow', 'overflow-x', 'overflow-y', 'text-overflow', 'whitespace']
 OVERRIDES['flex'] = ['grow', 'shrink', 'basis']
-OVERRIDES['place'] = ['justify-items', 'items', 'justify-self', 'self']
 OVERRIDES['place-content'] = ['justify', 'content']
+OVERRIDES['border-spacing'] = ['border-spacing-x', 'border-spacing-y']
+OVERRIDES['touch'] = ['touch-pan-x', 'touch-pan-y', 'touch-pinch-zoom']
+OVERRIDES['break-normal'] = ['word-break', 'overflow-wrap']
 
 /** Whole-class names: group -> the bare utilities that set it. */
 const EXACT: Record<string, string> = {}
@@ -166,21 +168,30 @@ for (const name of [
   'end',
 ])
   rule(name, always(name))
-for (const name of ['gap', 'gap-x', 'gap-y', 'space-x', 'space-y', 'w', 'h', 'size', 'min-w'])
-  rule(name, always(name))
+for (const name of ['gap', 'gap-x', 'gap-y', 'w', 'h', 'size', 'min-w']) rule(name, always(name))
 for (const name of ['min-h', 'max-w', 'max-h', 'z', 'order', 'aspect', 'columns', 'basis'])
   rule(name, always(name))
-for (const name of ['opacity', 'cursor', 'pointer-events', 'select', 'resize', 'touch', 'delay'])
+for (const name of ['opacity', 'cursor', 'pointer-events', 'select', 'resize', 'delay'])
   rule(name, always(name))
 for (const name of ['appearance', 'animate', 'will-change', 'whitespace', 'line-clamp', 'indent'])
   rule(name, always(name))
-for (const name of ['items', 'justify-items', 'justify-self', 'self', 'content', 'place-items'])
+for (const name of ['items', 'justify-items', 'justify-self', 'self', 'place-items'])
   rule(name, always(name))
-for (const name of ['place-self', 'place-content', 'auto-cols', 'auto-rows', 'grid-flow', 'list'])
+for (const name of ['place-self', 'place-content', 'auto-cols', 'auto-rows', 'grid-flow'])
   rule(name, always(name))
 for (const name of ['leading', 'tracking', 'hyphens', 'align', 'underline-offset', 'translate-x'])
   rule(name, always(name))
-for (const name of ['translate-y', 'rotate', 'blur', 'backdrop-blur', 'object-position'])
+for (const name of [
+  'translate-y',
+  'translate-z',
+  'rotate',
+  'rotate-x',
+  'rotate-y',
+  'rotate-z',
+  'blur',
+  'backdrop-blur',
+  'object-position',
+])
   rule(name, always(name))
 rule('justify', always('justify'))
 rule('scale', always('scale'))
@@ -206,10 +217,34 @@ rule('row-start', always('row-start'))
 rule('row-end', always('row-end'))
 rule('col', always('col'))
 rule('row', always('row'))
-rule('break', always('break'))
+rule('border-spacing', always('border-spacing'))
+rule('border-spacing-x', always('border-spacing-x'))
+rule('border-spacing-y', always('border-spacing-y'))
+rule('wrap', always('overflow-wrap'))
+rule('break', (rest) => {
+  const phase = /^(after|before|inside)-/.exec(rest)
+  if (phase) return `break-${phase[1]}`
+  if (rest === 'words') return 'overflow-wrap'
+  return rest === 'normal' ? 'break-normal' : 'word-break'
+})
+rule('touch', (rest) => {
+  if (/^pan-(?:x|left|right)$/.test(rest)) return 'touch-pan-x'
+  if (/^pan-(?:y|up|down)$/.test(rest)) return 'touch-pan-y'
+  return rest === 'pinch-zoom' ? 'touch-pinch-zoom' : 'touch'
+})
+rule('list', (rest) => {
+  if (rest === 'inside' || rest === 'outside') return 'list-position'
+  return rest.startsWith('image-') ? 'list-image' : 'list'
+})
+rule('content', (rest) => (/^(?:none|\[|\()/.test(rest) ? 'content-text' : 'content'))
+for (const axis of ['x', 'y'])
+  rule(`space-${axis}`, (rest) => (rest === 'reverse' ? `space-${axis}-reverse` : `space-${axis}`))
+rule('font-stretch', always('font-stretch'))
 rule('duration', named('duration', THEME.durations))
 rule('ease', named('ease', THEME.eases))
-rule('transition', always('transition'))
+rule('transition', (rest) =>
+  rest === 'discrete' || rest === 'normal' ? 'transition-behavior' : 'transition',
+)
 rule('font', (rest) => {
   if (THEME.fonts.has(rest)) return 'font-family'
   return arbitraryKind(rest) === 'family-name' ? 'font-family' : 'font-weight'
@@ -261,6 +296,18 @@ rule('shadow', (rest) => {
   if (!rest.startsWith('[')) return 'shadow-color'
   return /^\[(?:color:|#|rgb|hsl|oklch|var\()/.test(rest) ? 'shadow-color' : 'shadow'
 })
+const INSET_SHADOW_SIZE = /^(?:|2xs|xs|sm|md|lg|none)$/
+rule('inset-shadow', (rest) => {
+  if (INSET_SHADOW_SIZE.test(rest)) return 'inset-shadow'
+  if (!rest.startsWith('[')) return 'inset-shadow-color'
+  return /^\[(?:color:|#|rgb|hsl|oklch|var\()/.test(rest) ? 'inset-shadow-color' : 'inset-shadow'
+})
+rule('inset-ring', (rest) => (isWidth(rest) ? 'inset-ring' : 'inset-ring-color'))
+rule('text-shadow', (rest) => {
+  if (INSET_SHADOW_SIZE.test(rest)) return 'text-shadow'
+  if (!rest.startsWith('[')) return 'text-shadow-color'
+  return /^\[(?:color:|#|rgb|hsl|oklch|var\()/.test(rest) ? 'text-shadow-color' : 'text-shadow'
+})
 rule('ring', (rest) => {
   if (rest === 'inset') return 'ring-inset'
   return isWidth(rest) ? 'ring' : 'ring-color'
@@ -279,6 +326,7 @@ rule('fill', (rest) => (isColor(rest) ? 'fill' : undefined))
 rule('accent', (rest) => (isColor(rest) ? 'accent' : undefined))
 rule('caret', (rest) => (isColor(rest) ? 'caret' : undefined))
 rule('decoration', (rest) => {
+  if (rest === 'clone' || rest === 'slice') return 'box-decoration'
   if (/^(?:solid|double|dotted|dashed|wavy)$/.test(rest)) return 'decoration-style'
   if (STRICT_NUMBER.test(rest) || rest === 'auto' || rest === 'from-font') return 'decoration-width'
   return 'decoration-color'

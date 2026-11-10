@@ -75,6 +75,6 @@ describe('generateCss', () => {
     expect(fonts).toContain("font-family: 'Head Digits'")
     expect(fonts).toContain('unicode-range: U+0030-0039')
     expect(fonts).toContain("@import '@fontsource-variable/hubot-sans/wdth.css'")
-    expect(fonts).toContain('size-adjust')
+    expect(fonts).not.toContain('Fallback')
   })
 })
