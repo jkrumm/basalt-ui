@@ -194,7 +194,7 @@ export function retiredLintRulesCheck(cwd: string, install: BasaltInstall): Chec
     if (gone.length === 0) return null
     const named = gone.map((r) => `basalt/${r} (${RETIRED_FIX[r] ?? 'retired; delete the entry'})`)
     return {
-      fail: `${id}: .oxlintrc.json sets rules the installed plugin does not register: ${named.join('; ')}. Fix: delete each entry (MIGRATING.md § 2.0).`,
+      fail: `${id}: .oxlintrc.json sets rules the installed plugin does not register: ${named.join('; ')}. Fix: delete each entry (MIGRATING.md § 2.x to 3.0).`,
     }
   })
 }
@@ -283,7 +283,7 @@ export function droppedSubpathsCheck(
       const fix = DROPPED_FIXES.get(sub)
       return fix === undefined ? [] : [`basalt-ui/${sub}: ${fix}`]
     })
-    fixes.push("see MIGRATING.md § 2.0 for each subpath's replacement")
+    fixes.push("see MIGRATING.md § 2.x to 3.0 for each subpath's replacement")
     return { fail: `${id}: ${hits.slice(0, 10).join('; ')}${more}. Fix: ${fixes.join('; ')}.` }
   })
 }

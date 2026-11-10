@@ -323,7 +323,7 @@ describe('doctor — dropped-subpaths', () => {
     }
     expect(problem).not.toContain('basalt-ui/state')
     expect(problem).not.toContain('basalt-ui/styles.css')
-    expect(problem).toContain('MIGRATING.md § 2.0')
+    expect(problem).toContain('MIGRATING.md § 2.x to 3.0')
   })
 
   it('flags CSS @import forms of a dropped subpath and names the tokens:css fix', () => {
