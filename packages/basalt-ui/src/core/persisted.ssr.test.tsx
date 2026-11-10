@@ -35,6 +35,12 @@ async function hydrate(
   return { errors, container }
 }
 
+/** Reads storage straight in render: the server and the first client render disagree. */
+function Naive() {
+  const raw = localStorage.getItem('basalt:ssr-control')
+  return <span>{raw === null ? 'server' : 'client'}</span>
+}
+
 describe('persisted — SSR', () => {
   test('renderToString outputs the initial value although storage holds another', () => {
     const p = persisted('ssr-initial', { version: 1, initial: 'initial' })
@@ -59,10 +65,6 @@ describe('persisted — SSR', () => {
   })
 
   test('negative control: reading localStorage in render raises recoverable errors', async () => {
-    function Naive() {
-      const raw = localStorage.getItem('basalt:ssr-control')
-      return <span>{raw === null ? 'server' : 'client'}</span>
-    }
     const html = renderToString(<Naive />)
     expect(html).toContain('server')
     stored('ssr-control', 'stored')

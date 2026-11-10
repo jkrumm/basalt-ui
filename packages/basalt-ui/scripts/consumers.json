@@ -102,6 +102,7 @@
   "p": "argo:apps/dashboard/src/lib/series.ts",
   "parseAgentPart": "argo:apps/dashboard/src/features/hermes-chat/threads-store.ts",
   "percent": "argo:apps/dashboard/src/features/astro-window/formulas.ts",
+  "persisted": "argo:apps/dashboard/src/lib/window-stores.ts",
   "relativeTime": "argo:apps/dashboard/src/features/warden/stale-banner.tsx",
   "scrollParentOf": "rb:apps/web/src/features/knot-detail/page.tsx",
   "seriesTokens": "argo:apps/dashboard/src/lib/series.ts",

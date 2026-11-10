@@ -19,7 +19,7 @@ type Golden = {
   decoded: unknown
 }
 
-const cases: readonly Golden[] = golden as Golden[]
+const cases = golden as Golden[]
 
 function memory(seed: Record<string, string> = {}): StorageLike & { data: Map<string, string> } {
   const data = new Map(Object.entries(seed))
