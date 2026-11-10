@@ -320,6 +320,7 @@ Signature: navGroup(meta: Exact<M, NavGroupMeta>, items: NavItemsInput<T>): M & 
   defaultCollapsed?: boolean
   mobile?: false | NavSectionMobile
 Signature: navTarget(config: C, id: K): NavIndex<C["groups"]>[K]
+Signature: persisted(key: string, o: PersistedOptions<T>): Persisted<T>
 Signature: scrollParentOf(el: Element | null): HTMLElement | null
 Signature: unwrap(response: R): UnwrapResult<R>
 Signature: useBasaltNav(): { currentPath: string; isActive: (href: string, opts?: { exact?: bool…
@@ -353,6 +354,13 @@ Type: NavConfig<G extends ReadonlyArray<AnyNavGroup>, T extends ReadonlyArray<Na
 }
 Type: NavSectionMobile = { tab?: true, label?: string, icon?: ReactNode }
 Type: PageBarActions = [ PrimaryBarAction ] | [ PrimaryBarAction, MoreBarAction ] | [ PrimaryBarAction, MoreBarAction, MoreBarAction ] | [ PrimaryBarAction, MoreBarAction, MoreBarAction, MoreBarAction ] | [ PrimaryBarAction, MoreBarAction, MoreBarAction, MoreBarAction, MoreBarAction ]
+Type: PersistedOptions<T> = {
+  version: number
+  initial: T
+  schema?: PersistedSchema<T>
+  migrate?: (old: unknown, from: number) => T
+  storage?: StorageLike
+}
 Type: QueryEmptyCopy = { title: string, description?: string, icon?: ReactNode, action?: ReactNode }
 Type: QueryStateLike<TData> = {
   data: TData | undefined
