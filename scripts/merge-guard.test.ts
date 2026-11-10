@@ -23,8 +23,8 @@ const git = (cwd: string, ...args: string[]): void => {
   if (out.status !== 0) throw new Error(`git ${args.join(' ')}: ${out.stderr}`)
 }
 
-const commit = (name: string): void => {
-  writeFileSync(join(work, name), name)
+const commit = (name: string, body: string = name): void => {
+  writeFileSync(join(work, name), body)
   git(work, 'add', name)
   git(work, '-c', 'user.name=t', '-c', 'user.email=t@example.com', 'commit', '-qm', name)
 }
@@ -32,6 +32,7 @@ const commit = (name: string): void => {
 const ports = (over: Partial<GuardPorts> = {}): GuardPorts => ({
   ...realPorts(work),
   ciRuns: () => [green],
+  masterRuns: () => [green],
   staleGenerated: () => [],
   ...over,
 })
@@ -55,14 +56,26 @@ describe('evaluate', () => {
     expect(evaluate(ports())).toEqual([])
   })
 
-  test('refuses when the branch does not contain origin/master', () => {
+  test('a branch behind master on other files clears while master is green, refuses while it is red', () => {
     git(work, 'checkout', '-q', 'master')
     commit('moved')
     git(work, 'push', '-q', 'origin', 'master')
     git(work, 'checkout', '-q', 'feature')
+    expect(evaluate(ports())).toEqual([])
+    const refusals = evaluate(ports({ masterRuns: () => [running, red] }))
+    expect(refusals).toHaveLength(1)
+    expect(refusals[0]).toContain("master's last finished CI run is failure")
+    expect(evaluate(ports({ masterRuns: () => null }))[0]).toContain('is unknown')
+  })
+
+  test('refuses when master moved on a file this branch changes, clears after the rebase', () => {
+    git(work, 'checkout', '-q', 'master')
+    commit('feature', 'master edit')
+    git(work, 'push', '-q', 'origin', 'master')
+    git(work, 'checkout', '-q', 'feature')
     const refusals = evaluate(ports())
     expect(refusals).toHaveLength(1)
-    expect(refusals[0]).toContain('does not contain origin/master')
+    expect(refusals[0]).toContain('master moved on files this branch changes (feature)')
     git(
       work,
       '-c',
@@ -71,9 +84,11 @@ describe('evaluate', () => {
       'user.email=t@example.com',
       'rebase',
       '-q',
+      '-X',
+      'theirs',
       'origin/master',
     )
-    expect(evaluate(ports())).toEqual([])
+    expect(evaluate(ports({ masterRuns: () => [red] }))).toEqual([])
   })
 
   test('refuses on stale generated files', () => {
