@@ -1,5 +1,7 @@
 apiVersion: factory/v2
 name: basalt-ui
+deploy:
+  mode: none
 ship:
   - paths: ['**']
     via: pr
