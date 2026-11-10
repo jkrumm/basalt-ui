@@ -6,7 +6,6 @@
 import { readFileSync } from 'node:fs'
 import { join } from 'node:path'
 
-import { readShards } from '../export-surface-shards.mjs'
 import type { Manifest, Surface } from '../surface-gates'
 
 export const PKG_ROOT = join(import.meta.dir, '..', '..')
@@ -86,7 +85,11 @@ export function totalLines(paths: readonly string[]): number {
 }
 
 export function readSurface(): Surface {
-  return readShards(join(PKG_ROOT, 'scripts/export-surface'))
+  // Required on first read, through a variable so the bundler does not resolve it at load: the
+  // area-discovery test runs a copy of this file with no sibling helper, and no area there reads it.
+  const helper = '../export-surface-shards.mjs'
+  const shards = require(helper) as typeof import('../export-surface-shards.mjs')
+  return shards.readShards(join(PKG_ROOT, 'scripts/export-surface'))
 }
 
 export function readManifest(): Manifest {
