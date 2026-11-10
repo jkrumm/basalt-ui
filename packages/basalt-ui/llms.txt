@@ -389,7 +389,7 @@ Type: StatStripCell = {
   … +4 more
 }
 Type: StatStripFooterEntry = { key: string, content: ReactNode, under?: string, shotAbsent?: readonly StatStripShotState[] }
-OptionalPeers: remark-gfm@^4.0.1, rehype-sanitize@^6.0.0, remend@1.4.0, shiki@^4.5.0, beautiful-mermaid@^1.1.0, @tanstack/react-router-devtools@^1.166.13
+OptionalPeers: remark-gfm@^4.0.1, rehype-sanitize@^6.0.0, remend@1.4.0, shiki@^4.5.0, beautiful-mermaid@^1.1.0, react-markdown@^10.1.0, remark-gfm@^4.0.1, rehype-sanitize@^6.0.0, remend@1.4.0, @tanstack/react-router-devtools@^1.166.13
 
 ## basalt-ui/charts
 Import: import { ... } from 'basalt-ui/charts'
@@ -1066,90 +1066,22 @@ OptionalPeers: use-stick-to-bottom@^1.1.6, @tanstack/react-virtual@>=3.14.0 <4
 
 ## basalt-ui/content
 Import: import { ... } from 'basalt-ui/content'
-Description: Prose (article/chat typography), Callout, TableOfContents (given a containerRef it collects the id-bearing h2/h3 under that one container — levels changes which — on mount and on every DOM childList change, so it reads the slug ids `Markdown` gives every heading; `Prose` sets no ids and an explicit items list replaces collection), Markdown (react-markdown + remark-gfm, optional peers; `streaming` is a rendering mode ONLY — `contentTrust` is the independent security input, and any surface rendering agent/model output must pin `contentTrust="untrusted"`, the sole input to the image-origin allowlist; `fenceRenderers` extends fenced-block rendering — settledOnly/FenceRenderer/FenceRenderers; `sanitizeSchema` is an additions-only SanitizeSchemaExtension merged over the default via mergeSanitizeSchema; shiki code blocks, beautiful-mermaid diagrams and the remend streaming repair load lazily from optional peers), ArticleLayout (docs-page frame), GuideLink (contextual-help link) — the content/prose surface
+Description: Markdown (react-markdown + remark-gfm + rehype-sanitize + remend, all required peers, every import static so server, client and hydrate render the same tree; `contentTrust` is REQUIRED and independent of `streaming`, which is a rendering mode only — render agent or model output with `contentTrust="untrusted"`: no `<img>` (alt text; `images="same-origin"` admits relative srcs), links limited to same-origin, https:, mailto: and tel:, and no `sanitize` or `rehypePlugins`; `contentTrust="trusted"` takes `sanitize` ({ allowTags, allowAttrs } additions over a fixed policy that runs last) and `rehypePlugins`; a missing or unknown `contentTrust` renders as untrusted) — the content surface
 Layer: mantine-coupled
 Rule: basalt-batteries
-Signature: ArticleLayout(props: ArticleLayoutProps): JSX.Element
-  children: ReactNode
-  meta?: ArticleLayoutMeta
-  toc?: boolean
-  readingProgress?: boolean
-  prev?: ArticleNavTarget
-  next?: ArticleNavTarget
-  renderLink?: (target: ArticleNavTarget, node: ReactNode) => ReactNode
-  density?: ProseDensity
-  locale?: string
-  className?: string
-  style?: CSSProperties
-Signature: Callout(props: CalloutProps): JSX.Element
-  className?: string
-  style?: CSSProperties
-  kind?: CalloutKind
-  title?: string
-  icon?: ReactNode
-  children: ReactNode
-Signature: GuideLink(props: GuideLinkProps): JSX.Element
-  className?: string
-  style?: CSSProperties
-  label?: string
-  title: string
-  children?: ReactNode
-  markdown?: string
-  fullPageHref?: string
-  renderLink?: (target: ArticleNavTarget, node: ReactNode) => ReactNode
-  iconOnly?: boolean
 Signature: Markdown(props: MarkdownProps): JSX.Element
+  one of: contentTrust="untrusted" | contentTrust="trusted"
   children: string
-  density?: ProseDensity
-  measure?: boolean
   streaming?: boolean
-  contentTrust?: MarkdownContentTrust
   components?: Components
-  fenceRenderers?: Readonly<Record<string, FenceRenderer>>
-  sanitizeSchema?: SanitizeSchemaExtension
-  allowedLinkPrefixes?: readonly string[]
-  allowedImagePrefixes?: readonly string[]
-  defaultOrigin?: string
-  remarkPlugins?: readonly unknown[]
-  rehypePlugins?: readonly unknown[]
-  className?: string
-  style?: CSSProperties
-Signature: Prose(props: ProseProps): JSX.Element
-  density?: ProseDensity
-  measure?: boolean
-  children: ReactNode
-  className?: string
-  style?: CSSProperties
-Signature: TableOfContents(props: TableOfContentsProps): JSX.Element | null
-  items?: TocItem[]
-  containerRef?: RefObject<HTMLElement | null>
-  levels?: readonly [number, number]
-  title?: string
-  onNavigate?: (id: string) => void
-  className?: string
-Signature: mergeSanitizeSchema(base: SanitizeSchemaInput, extensions: readonly (SanitizeSchemaExtension | undefined)[]): SanitizeSchema
-  allowComments?: boolean | null
-  allowDoctypes?: boolean | null
-  ancestors?: Readonly<Record<string, readonly string[]>> | null
-  attributes?: Readonly<Record<string, readonly SanitizePropertyDefinition…
-  clobber?: readonly string[] | null
-  clobberPrefix?: string | null
-  protocols?: Readonly<Record<string, readonly string[] | null | undefine…
-  required?: Readonly<Record<string, Readonly<Record<string, unknown>>>>…
-  strip?: readonly string[] | null
-  tagNames?: readonly string[] | null
-Signature: settledOnly(render: FenceRenderer): FenceRenderer
-Type: ArticleLayoutMeta = { readonly title: string, readonly description?: string, readonly date?: string, readonly readingTime?: number }
-Type: ArticleNavTarget = { readonly label: string, readonly href: string, readonly description?: string }
-Type: SanitizeSchemaExtension = {
-  readonly tagNames?: readonly string[]
-  readonly attributes?: Readonly<Record<string, readonly SanitizePropertyDefinition[]>>
-  readonly protocols?: Readonly<Record<string, readonly string[]>>
-  readonly clobberPrefix?: string
-}
-Type: TocItem = { readonly id: string, readonly label: string, readonly level: number }
-Install: bun add react-markdown@^10.1.0
-OptionalPeers: shiki@^4.5.0, @shikijs/langs@^4.5.0, @shikijs/themes@^4.5.0, beautiful-mermaid@^1.1.0, remark-gfm@^4.0.1, rehype-sanitize@^6.0.0, remend@1.4.0
+  remarkPlugins?: PluggableList
+  contentTrust: "untrusted" | "trusted"
+  images?: "none" | "same-origin"  [with contentTrust="untrusted"]
+  sanitize?: SanitizeAdditions  [with contentTrust="trusted"]
+  rehypePlugins?: PluggableList  [with contentTrust="trusted"]
+Type: SanitizeAdditions = { allowTags?: string[], allowAttrs?: Record<string, string[]> }
+Install: bun add react-markdown@^10.1.0 remark-gfm@^4.0.1 rehype-sanitize@^6.0.0 remend@1.4.0
+OptionalPeers: shiki@^4.5.0, @shikijs/langs@^4.5.0, @shikijs/themes@^4.5.0, beautiful-mermaid@^1.1.0
 
 ## basalt-ui/controls
 Import: import { ... } from 'basalt-ui/controls'
@@ -1404,7 +1336,6 @@ Layer: non-js-asset
 
 ## Types
 Description: literal unions the signatures above name (members in declaration order)
-type CalloutKind = 'info' | 'good' | 'warn' | 'bad'
 type ChartCardSlot = 'root' | 'header' | 'body'
 type CursorResolution = 'exact' | 'nearest' | 'leading'
 type CurveName = 'monotone' | 'linear' | 'step' | 'stepAfter' | 'stepBefore'

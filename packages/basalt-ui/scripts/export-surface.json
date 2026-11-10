@@ -126,16 +126,7 @@
     "toAgentError",
     "useAgentThreadRuns"
   ],
-  "./content": [
-    "ArticleLayout",
-    "Callout",
-    "GuideLink",
-    "Markdown",
-    "Prose",
-    "TableOfContents",
-    "mergeSanitizeSchema",
-    "settledOnly"
-  ],
+  "./content": ["Markdown"],
   "./vite": ["basaltAppPlugin", "basaltViteConfig"],
   "./router": [],
   "./data": [],

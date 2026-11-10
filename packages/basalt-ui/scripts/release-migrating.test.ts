@@ -62,6 +62,13 @@ function scratch(): string {
   mkdirSync(join(pkg, 'scripts'), { recursive: true })
   mkdirSync(join(pkg, 'src/guard'), { recursive: true })
   cpSync(join(PKG, 'migrations'), join(pkg, 'migrations'), { recursive: true })
+  // Lanes add real rows to the area files; the scratch repo starts from the empty seeds.
+  for (const area of AREAS) {
+    writeFileSync(
+      join(pkg, 'migrations/areas', `${area}.json`),
+      `${JSON.stringify(seed(area), null, 2)}\n`,
+    )
+  }
   cpSync(join(PKG, 'MIGRATING.md'), join(pkg, 'MIGRATING.md'))
   writeFileSync(
     join(pkg, 'scripts/export-surface.json'),
@@ -98,11 +105,10 @@ const writeArea = (dir: string, area: string, value: unknown) =>
 const ROW: Row = { id: 'gone', kind: 'removed', from: 'basalt-ui#Gone' }
 
 describe('area files', () => {
-  test('15 seeded area files, in order, each exactly the seed', () => {
+  test('15 area files, in order, each valid', () => {
     expect(AREAS).toHaveLength(15)
     const areas = loadAreas(REAL_ROOT)
     expect(areas.map((a) => a.area)).toEqual([...AREAS])
-    for (const a of areas) expect(a).toEqual(seed(a.area))
   })
 })
 

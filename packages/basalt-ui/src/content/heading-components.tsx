@@ -24,7 +24,7 @@
 import type { JSX, ReactNode } from 'react'
 import { isValidElement } from 'react'
 import type { Components, ExtraProps } from 'react-markdown'
-import type { SlugTracker } from './slug'
+import type { SlugTracker } from '../core/slug'
 import { HeadingAnchor } from './heading-anchor'
 
 type HeadingLevel = 1 | 2 | 3 | 4 | 5 | 6

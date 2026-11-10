@@ -906,8 +906,6 @@ export function checkLlmsNames(
  */
 export const CHECK_I_NON_EXPORTS: ReadonlySet<string> = new Set([
   'basalt-ui/commands:BasaltProvider', // the root provider that mounts the bus
-  'basalt-ui/content:CodeBlock', // internal
-  'basalt-ui/content:MermaidDiagram', // internal
   'basalt-ui/format:Intl', // the platform API the formatters wrap
   'basalt-ui/vite:BASALT_LOCAL', // an env var
   'basalt-ui/vite:__APP_VERSION__', // a define the preset injects
@@ -921,10 +919,10 @@ export const CHECK_I_NON_EXPORTS: ReadonlySet<string> = new Set([
   'basalt-ui/forms:key', // the React `key` prop
   'basalt-ui/format:locale', // an option of the formatters
   'basalt-ui/agent:ai', // the Vercel `ai` package
-  'basalt-ui/content:fenceRenderers', // a prop of Markdown
   'basalt-ui/content:streaming', // a prop of Markdown
   'basalt-ui/content:contentTrust', // a prop of Markdown
-  'basalt-ui/content:sanitizeSchema', // a prop of Markdown
+  'basalt-ui/content:sanitize', // a prop of Markdown
+  'basalt-ui/content:rehypePlugins', // a prop of Markdown
 ])
 
 const BACKTICK_IDENT_RE = /`([A-Za-z_$][\w$]*)(?:\(\))?`/g

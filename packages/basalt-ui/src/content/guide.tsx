@@ -22,7 +22,7 @@ import type { BasaltProps } from '../common/props'
 import { cx } from '../common/props'
 import classes from './guide.module.css'
 import type { ArticleNavTarget } from './article-layout'
-import { Markdown } from './markdown'
+import { Markdown } from './legacy-markdown'
 import { Prose } from './prose'
 
 function defaultRenderLink(target: ArticleNavTarget, node: ReactNode): ReactNode {

@@ -75,7 +75,7 @@ export const SUBPATH_REQUIRED_PEERS: Readonly<Record<string, readonly string[]>>
   './table': ['@tanstack/react-table'],
   './forms': ['@mantine/form'],
   './controls-dates': ['@mantine/dates', 'dayjs'],
-  './content': ['react-markdown'],
+  './content': ['react-markdown', 'remark-gfm', 'rehype-sanitize', 'remend'],
   './vite': ['vite'],
   [CHART_SUBPATH]: ['@tanstack/charts', 'd3-scale'],
 }

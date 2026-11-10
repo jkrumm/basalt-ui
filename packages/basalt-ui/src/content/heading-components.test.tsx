@@ -12,7 +12,7 @@ import { MantineProvider } from '@mantine/core'
 import { render, screen } from '@testing-library/react'
 import { describe, expect, test } from 'bun:test'
 import { createHeadingComponents } from './heading-components'
-import { SlugTracker } from './slug'
+import { SlugTracker } from '../core/slug'
 
 function renderHeading(ui: React.ReactElement) {
   return render(<MantineProvider>{ui}</MantineProvider>)

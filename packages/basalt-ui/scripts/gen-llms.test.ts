@@ -91,7 +91,7 @@ describe('gen-llms signatures', () => {
 
   test('the glossary spells out a named literal union, in declaration order (row 78 a)', () => {
     const glossary = text.split('\n## Types\n')[1] ?? ''
-    expect(glossary).toContain("type CalloutKind = 'info' | 'good' | 'warn' | 'bad'")
+    expect(glossary).toContain("type ChartCardSlot = 'root' | 'header' | 'body'")
   })
 
   test('inline unions print exactly as they always did (no checker-order drift)', () => {
