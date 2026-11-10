@@ -67,7 +67,12 @@ export {
   type PageSummaryProps,
 } from './dashboard'
 export { unwrap } from './unwrap'
-export { persisted, type Persisted } from './core/persisted'
+export {
+  persisted,
+  type Persisted,
+  type PersistedOptions,
+  type PersistedSchema,
+} from './core/persisted'
 
 // The one augmentable seam: `declare module 'basalt-ui' { interface BasaltRegister { … } }` only
 // merges when the entry exports the interface. `v2-surface.md` marks it `delete` (no consumer
