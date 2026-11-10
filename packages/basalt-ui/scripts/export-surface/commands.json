@@ -1,0 +1,11 @@
+[
+  "NotificationBell",
+  "ShortcutsHelp",
+  "defineCommands",
+  "defineNotifications",
+  "defineOverlays",
+  "emit",
+  "overlays",
+  "setColorScheme",
+  "toggleSidebar"
+]

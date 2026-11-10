@@ -1,0 +1,16 @@
+[
+  "BandStrip",
+  "Bars",
+  "CartesianChart",
+  "ChartCard",
+  "Donut",
+  "DualPanel",
+  "Heatmap",
+  "Lines",
+  "MirroredBars",
+  "Sparkline",
+  "StackedArea",
+  "chartCursor",
+  "chartCurve",
+  "foldBands"
+]

@@ -1,0 +1,10 @@
+[
+  "ArticleLayout",
+  "Callout",
+  "GuideLink",
+  "Markdown",
+  "Prose",
+  "TableOfContents",
+  "mergeSanitizeSchema",
+  "settledOnly"
+]

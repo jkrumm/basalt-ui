@@ -11,7 +11,7 @@
 import { existsSync, readFileSync } from 'node:fs'
 import { dirname, join, resolve } from 'node:path'
 
-/** A `Record<subpath, exported names>` — the shape of `scripts/export-surface.json`. */
+/** A `Record<subpath, exported names>` — the shape of `scripts/export-surface/*.json`. */
 export type Surface = Readonly<Record<string, readonly string[]>>
 
 /** The chart layer's subpath (§ 9): its symbols are budgeted apart from the non-chart ones. */
@@ -30,7 +30,7 @@ export function duplicateSymbols(surface: Surface): string[] {
 
 /**
  * Public VALUE symbols with no `consumers.json` entry, plus entries naming none. The
- * snapshot (`export-surface.json`) lists runtime exports only, so `consumers.json` is value-only
+ * snapshot (`export-surface/*.json`) lists runtime exports only, so `consumers.json` is value-only
  * too: a type name in it is stale. Types are gated by the "barrel type exports" budget instead.
  */
 export function consumerViolations(

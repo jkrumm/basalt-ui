@@ -14,6 +14,7 @@ import {
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { afterAll, describe, expect, test } from 'bun:test'
+import { serializeShard, shardFile } from './export-surface-shards.mjs'
 
 import {
   AREAS,
@@ -54,6 +55,15 @@ function sh(cwd: string, ...args: string[]): void {
 const vxSource = (names: string[]) =>
   `export const N = [\n${names.map((n) => `  '${n}',`).join('\n')}\n]\n`
 
+/** One shard file per subpath, as `export-surface.mjs --update` writes them. */
+function writeSurface(pkg: string, surface: Record<string, string[]>): void {
+  const dir = join(pkg, 'scripts/export-surface')
+  mkdirSync(dir, { recursive: true })
+  for (const [subpath, names] of Object.entries(surface)) {
+    writeFileSync(join(dir, shardFile(subpath)), serializeShard(names))
+  }
+}
+
 /** A scratch git repo with the minimal tree, committed and tagged v2.29.0. */
 function scratch(): string {
   const dir = mkdtempSync(join(tmpdir(), 'release-migrating-'))
@@ -70,10 +80,7 @@ function scratch(): string {
     )
   }
   cpSync(join(PKG, 'MIGRATING.md'), join(pkg, 'MIGRATING.md'))
-  writeFileSync(
-    join(pkg, 'scripts/export-surface.json'),
-    JSON.stringify({ '.': ['Keep', 'Gone'], './charts': ['Chart'] }, null, 2),
-  )
+  writeSurface(pkg, { '.': ['Keep', 'Gone'], './charts': ['Chart'] })
   writeFileSync(join(pkg, 'src/guard/vx-names.ts'), vxSource(['--vx-a', '--vx-b']))
   sh(dir, 'git', 'init', '-q', '-b', 'master')
   sh(dir, 'git', 'config', 'user.email', 't@example.com')
@@ -227,10 +234,7 @@ describe('release step', () => {
     const dir = scratch()
     const pkg = join(dir, 'packages/basalt-ui')
     const before = readFileSync(join(pkg, 'MIGRATING.md'), 'utf8')
-    writeFileSync(
-      join(pkg, 'scripts/export-surface.json'),
-      JSON.stringify({ '.': ['Keep'], './charts': ['Chart'] }),
-    )
+    writeSurface(pkg, { '.': ['Keep'], './charts': ['Chart'] })
 
     const blocked = run(dir, '3.0.0')
     expect(blocked.code).not.toBe(0)

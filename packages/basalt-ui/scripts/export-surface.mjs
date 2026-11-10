@@ -1,11 +1,14 @@
 /**
  * Export-surface snapshot — imports the BUILT dist/ entry of every published JS subpath and
- * compares `Object.keys()` (sorted) against scripts/export-surface.json. Catches a named export
+ * compares `Object.keys()` (sorted) against the shards in scripts/export-surface/ (one JSON file per
+ * subpath, see export-surface-shards.mjs). Catches a named export
  * that exists in a source module but was dropped by a barrel (BP/p at 1.0.0) — publint/attw
  * validate the export MAP, not named-export completeness, so they cannot catch this class.
  *
  * Modes:
- *   --update            rewrite the snapshot from the current build (run `bun run build` first)
+ *   --update            rewrite the drifted shards (and delete orphans) from the current build (run
+ *                       `bun run build` first); shards that already match are not touched
+ *   --shards <dir>      shard directory (default: this repo's scripts/export-surface)
  *   --base <dir>        package root whose dist/ to import (default: this repo's package;
  *                       pack-test passes the scratch consumer's node_modules/basalt-ui)
  *
@@ -13,17 +16,22 @@
  * Entries are imported as direct file URLs, so resolution is independent of cwd and of the
  * importing script's own node_modules chain.
  */
-import { readFileSync, writeFileSync } from 'node:fs'
+import { mkdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs'
 import { resolve } from 'node:path'
 import { fileURLToPath, pathToFileURL } from 'node:url'
+import { diffShards, readShards, serializeShard, shardFile } from './export-surface-shards.mjs'
 
 const OWN_PKG_ROOT = fileURLToPath(new URL('../', import.meta.url))
-const SNAPSHOT_PATH = resolve(OWN_PKG_ROOT, 'scripts/export-surface.json')
 
 const args = process.argv.slice(2)
 const update = args.includes('--update')
 const baseFlag = args.indexOf('--base')
 const baseDir = baseFlag !== -1 ? resolve(args[baseFlag + 1]) : OWN_PKG_ROOT
+const shardsFlag = args.indexOf('--shards')
+const shardsDir =
+  shardsFlag !== -1
+    ? resolve(args[shardsFlag + 1])
+    : resolve(OWN_PKG_ROOT, 'scripts/export-surface')
 
 const exportsMap = JSON.parse(readFileSync(resolve(baseDir, 'package.json'), 'utf8')).exports
 /**
@@ -45,21 +53,24 @@ for (const subpath of subpaths) {
     .toSorted()
 }
 
-if (update) {
-  writeFileSync(SNAPSHOT_PATH, `${JSON.stringify(actual, null, 2)}\n`)
-  console.log(`export-surface snapshot updated (${subpaths.length} subpaths) → ${SNAPSHOT_PATH}`)
-  process.exit(0)
-}
+const expected = readShards(shardsDir)
+const failures = diffShards(expected, actual)
 
-const expected = JSON.parse(readFileSync(SNAPSHOT_PATH, 'utf8'))
-const failures = []
-for (const subpath of new Set([...Object.keys(expected), ...Object.keys(actual)])) {
-  const want = expected[subpath] ?? []
-  const got = actual[subpath] ?? []
-  const missing = want.filter((k) => !got.includes(k))
-  const added = got.filter((k) => !want.includes(k))
-  if (missing.length > 0) failures.push(`${subpath}: missing exports: ${missing.join(', ')}`)
-  if (added.length > 0) failures.push(`${subpath}: unsnapshotted exports: ${added.join(', ')}`)
+if (update) {
+  mkdirSync(shardsDir, { recursive: true })
+  const drifted = new Set(failures.map((f) => f.slice('export-surface/'.length, f.indexOf(': '))))
+  for (const subpath of Object.keys(actual)) {
+    if (drifted.has(shardFile(subpath))) {
+      writeFileSync(resolve(shardsDir, shardFile(subpath)), serializeShard(actual[subpath]))
+    }
+  }
+  for (const subpath of Object.keys(expected)) {
+    if (!(subpath in actual)) rmSync(resolve(shardsDir, shardFile(subpath)))
+  }
+  console.log(
+    `export-surface shards updated (${drifted.size} of ${subpaths.length} rewritten or removed) → ${shardsDir}`,
+  )
+  process.exit(0)
 }
 
 if (failures.length > 0) {
@@ -70,4 +81,4 @@ if (failures.length > 0) {
   )
   process.exit(1)
 }
-console.log(`export-surface snapshot OK (${subpaths.length} subpaths)`)
+console.log(`export-surface snapshot OK (${subpaths.length} shards)`)

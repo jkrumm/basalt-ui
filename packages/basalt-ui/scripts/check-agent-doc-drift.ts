@@ -10,7 +10,7 @@
  * Check A — bolded-backtick claim, no list to maintain. The docs use `**\`Name\`**` when naming a
  * shipped primitive to compose (`**\`AxisBottomDate\`**` in basalt-charts.md). Every such
  * single-identifier claim is asserted against the real export surface: value exports from
- * `scripts/export-surface.json`, unioned with type exports collected from the `index.ts` barrels
+ * `scripts/export-surface/*.json`, unioned with type exports collected from the `index.ts` barrels
  * under `src/**` (the JSON snapshot only tracks values — see `export-surface.mjs`). A small allowlist
  * covers the same bold-backtick form used for a literal token VALUE rather than an export name
  * (`**\`blue\`**`, `**\`sm\`**`) — each entry documents why it isn't a drift finding.
@@ -48,7 +48,7 @@
  * hand; each must be a published export, so a rename fails the gate instead of shipping stale.
  *
  * Repo-local only: `scripts/` is absent from package.json's `files`, so this reads
- * non-shipped state (`scripts/export-surface.json`) and must not be reachable from a consumer's
+ * non-shipped state (`scripts/export-surface/*.json`) and must not be reachable from a consumer's
  * `node_modules/basalt-ui` — unlike `check-coverage`, it does not belong behind the shipped CLI.
  * It runs as its own CI step instead, right after the coverage check.
  *
@@ -57,6 +57,7 @@
 import { existsSync, readdirSync, readFileSync } from 'node:fs'
 import { join, relative } from 'node:path'
 
+import { readShards } from './export-surface-shards.mjs'
 import { REPO_LOCAL_RULES } from './check-coverage'
 import * as pluginModule from '../configs/oxlint-plugin.js'
 import { SURFACES } from '../src/surfaces'
@@ -64,12 +65,10 @@ import { GUARD_RULES, TOKENS_ONLY_DISABLED_KINDS } from '../src/guard/index'
 
 const pkgRoot = join(import.meta.dirname, '..')
 
-// ── valid names: value exports (export-surface.json) ∪ type exports (src/**/index.ts barrels) ─────
+// ── valid names: value exports (export-surface shards) ∪ type exports (src/**/index.ts barrels) ─────
 
 function collectValueExports(): Set<string> {
-  const snapshot = JSON.parse(
-    readFileSync(join(pkgRoot, 'scripts/export-surface.json'), 'utf8'),
-  ) as Record<string, string[]>
+  const snapshot = readShards(join(pkgRoot, 'scripts/export-surface'))
   const names = new Set<string>()
   for (const list of Object.values(snapshot)) {
     for (const name of list) names.add(name)
@@ -143,14 +142,12 @@ export function resolveSubpathEntry(target: ExportsManifest[string]): string | u
 
 /**
  * The PUBLISHED surface per subpath (`basalt-ui`, `basalt-ui/charts`, …): value exports
- * (`export-surface.json`) plus the type names exported by the source entry of that `package.json`
+ * (`export-surface/*.json`) plus the type names exported by the source entry of that `package.json`
  * `exports` subpath — the same reading `check-budgets`' `barrelTypeExports` uses. A type exported
  * only from an internal barrel is not importable by a consumer, so a `[type X]` tag may not cite it.
  */
 export function collectPublishedBySubpath(): Map<string, Set<string>> {
-  const values = JSON.parse(
-    readFileSync(join(pkgRoot, 'scripts/export-surface.json'), 'utf8'),
-  ) as Record<string, string[]>
+  const values = readShards(join(pkgRoot, 'scripts/export-surface'))
   const bySubpath = new Map<string, Set<string>>()
   for (const [subpath, target] of Object.entries(readExportsManifest())) {
     const names = new Set(values[subpath] ?? [])
@@ -1046,7 +1043,7 @@ function main(): void {
     ...aFailures.map(
       (f) =>
         `${f.file}:${f.line}: '**\`${f.name}\`**' claims '${f.name}' is a shipped export, but it ` +
-        `is not in the export surface (scripts/export-surface.json + src/**/index.ts type barrels)`,
+        `is not in the export surface (scripts/export-surface/*.json + src/**/index.ts type barrels)`,
     ),
     ...bFailures.map(
       (f) =>
