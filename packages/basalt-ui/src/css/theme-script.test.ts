@@ -142,20 +142,23 @@ describe('themeScript behavior', () => {
 })
 
 describe('themeScript and readScheme agree on edge rows', () => {
-  test('duplicate cookie names: the first match wins in both', () => {
-    const own = Object.getOwnPropertyDescriptor(document, 'cookie')
-    Object.defineProperty(document, 'cookie', {
-      configurable: true,
-      get: () => 'sf=dark; sf=light',
-    })
-    try {
-      expect(readScheme({ cookie: 'sf' })).toBe('dark')
-      expect(run({ cookie: 'sf' })).toBe('dark')
-    } finally {
-      if (own) Object.defineProperty(document, 'cookie', own)
-      else delete (document as unknown as { cookie?: string }).cookie
-    }
-  })
+  test.each([
+    ['sf=dark; sf=light', 'dark'],
+    ['sf=; sf=dark', 'dark'],
+  ] as const)(
+    'duplicate cookie names (%s): the first non-empty match wins in both',
+    (jar, want) => {
+      const own = Object.getOwnPropertyDescriptor(document, 'cookie')
+      Object.defineProperty(document, 'cookie', { configurable: true, get: () => jar })
+      try {
+        expect(readScheme({ cookie: 'sf' })).toBe(want)
+        expect(run({ cookie: 'sf' })).toBe(want)
+      } finally {
+        if (own) Object.defineProperty(document, 'cookie', own)
+        else delete (document as unknown as { cookie?: string }).cookie
+      }
+    },
+  )
 
   test('a custom key written by setScheme is read back by the script and readScheme', () => {
     try {

@@ -26,7 +26,8 @@ function readStorage(key: string): Scheme | undefined {
 function readCookie(name: string): Scheme | undefined {
   try {
     for (const part of document.cookie.split(/;\s*/)) {
-      if (part.startsWith(`${name}=`)) return parseScheme(part.slice(name.length + 1))
+      const raw = part.startsWith(`${name}=`) ? part.slice(name.length + 1) : ''
+      if (raw) return parseScheme(raw) // first non-empty match, as the boot script reads it
     }
   } catch {
     return undefined
