@@ -153,7 +153,9 @@ artifact resolves.
 
 `make check` is the local equivalent of CI (`.github/workflows/ci.yml`): it runs the generation sync
 checks, builds first, then `pre` (fmt:check + lint + typecheck + check-theme + check-budgets + unit
-tests), the layout suite, the coverage and agent-doc-drift gates, and the pack-test. It exits
+tests), the layout suite, the coverage and agent-doc-drift gates, and the pack-test. CI runs the same gates as parallel jobs (checks, unit, the layout suite sharded four ways with
+`bun test --shard`) behind one final `ci` job, so the run-level result `make merge-guard` reads still means
+everything passed. `make check` runs them in sequence and is unchanged. It exits
 non-zero on the first failure and writes only gitignored output (`dist/`, `*.tgz`). `pre` alone is
 the fast inner loop.
 
