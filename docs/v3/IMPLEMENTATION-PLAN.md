@@ -2,7 +2,7 @@
 
 Date 2026-11-09, revised same day ([PLAN-REVISION](PLAN-REVISION.md)). Authorises no release. Run after [PHASE-0](PHASE-0.md).
 
-**v3 ships as 204 basalt-ui Issues in six waves, filed wave by wave from `docs/v3/issues/index.json`, rewritten in place on master as 3.0; 74 held rows for consumers wait in `wave: "post-3.0"`.** One gate holds the build: the pilot chain (`rel-1` to `rel-7`) and the contract amendment that folds 15 spike results into the signed text. The owner's four decisions are made; verdict rows build non-blocking review artifacts. The one release is `v3-ga`, the owner's go when `make check`, `apps/playground` and `examples/*` are green. The DAG is acyclic, every concurrent same-repo pair owns disjoint paths, and `bun /tmp/v3-validate-issues.ts` exits 0 against this tree.
+**v3 ships as 204 basalt-ui Issues in six waves, run from `docs/plan.yaml` (design record: `docs/v3/issues/index.json`), rewritten in place on master as 3.0; 74 held rows for consumers wait in `wave: "post-3.0"`.** One gate holds the build: the pilot chain (`rel-1` to `rel-7`) and the contract amendment that folds 15 spike results into the signed text. The owner's four decisions are made; verdict rows build non-blocking review artifacts. The one release is `v3-ga`, the owner's go when `make check`, `apps/playground` and `examples/*` are green. The DAG is acyclic, every concurrent same-repo pair owns disjoint paths, and `bun /tmp/v3-validate-issues.ts` exits 0 against this tree.
 
 **Rule: held rows are re-cut before filing.** A held row (`held: true`, `wave: "post-3.0"`) is re-written against the published 3.0.0 tree before it is filed. Its facts still say `next.N`, `fleet-status`, and floors: stale by design until the re-cut. No held row files until `npm view basalt-ui version` prints 3.0.0.
 
@@ -131,32 +131,13 @@ Sizes follow `ext-factory`: at most 15 files and 1,500 lines per Issue, one lead
 
 ## Filing recipe
 
-File wave by wave from `docs/v3/issues/index.json`, in index order (it is topologically sorted within each wave; held rows come last and do not file). Never file ahead of a closed previous wave: re-planning (next section) edits the rows after it. Held rows file only after `v3-ga` and their re-cut.
+`docs/plan.yaml` is what runs. The factory files a row as an Issue when its `after` rows are done; `factory project show basalt-ui` shows each row's state. Rows for the 46 Issues already filed are adopted (`key` + `issue`). `docs/v3/issues/` stays the design record, and `plan.yaml` wins on conflict. "Wave" only describes depth in the `after` graph; it is not a filing step.
 
-For each row with `filing: factory` in the current wave:
-
-```bash
-# ISSUES=docs/v3/issues; KEY, REPO, TITLE, GROUP from the row
-# Resolve each key in the row's "after" to its returned Issue id; skip closed ids and owner-run keys.
-ids=()              # ids of open Issues the row waits for
-for dep in "${after[@]}"; do
-  [[ "${filing[$dep]}" == owner-run ]] && continue   # the orchestrator waits for it instead (see below)
-  out=$(rd issue "${repo[$dep]}" "${title[$dep]}" --facts @"$ISSUES/${group[$dep]}/$dep.json" --key "$dep")
-  id=$(echo "$out" | sed -n 's/.*"id": *\([0-9]*\).*/\1/p')   # rd prints the factory's answer; take the Issue id from it
-  # --key is the idempotency: a replay returns the stored Issue and ignores --after.
-  ids+=("$id")
-done
-rd issue "$REPO" "$TITLE" --facts @"$ISSUES/$GROUP/$KEY.json" --key "$KEY" $(printf -- '--after %s ' "${ids[@]}")
-```
-
-Rules that keep the recipe honest:
-
-- **`--after` refuses a closed Issue id.** Drop dep ids that report closed, or filing fails for the wrong reason. Keep the replay that produced the id; it is idempotent.
-- **`filing` in the index decides the path.** `factory`: this loop. `owner-run` (`v3-ga`, and held `v3-verdict-argo-ledger`, `v3-sf-cutover`, `v3-g6-epos`): never filed; the orchestrator holds every row after one until the owner confirms it done, then drops the key. `owner-filed` (`v3-marketing-docs-site`, held `v3-argo-cutover-flip`): filed by the owner, `after: []`, after `npm view basalt-ui dist-tags.latest` prints `3.0.0`. `conditional` (`v3-flags-delete-g2`): filed only when `docs/v3/spikes/epos-bridge-probe.md` says `Flags: delete-at-G2`. Verdict rows file normally and close when the artifact exists; no factory Decision, no wait.
-- **Priority.** After filing, `factory issue prio <id> 9` for every row with `prio: 9` (`v3-project-yaml-fanout`, exemplar rows, unhot rows).
-- **Cross-repo edges.** Every held consumer row is re-cut after `v3-ga`; none files while 3.0.0 is unpublished.
+- **Facts.** The server refuses a plan file over 64 KiB, so a normal row's facts are only `brief: <path>` of its file under `docs/v3/issues/` on master; `AGENTS.md` ("Factory leads (v3)") tells the lead how to read it. `v3-freeze-g2` also carries a `note` about the conditional `v3-flags-delete-g2`.
+- **Not in `plan.yaml`.** Held rows are re-cut and added after 3.0.0 is published. Owner-run rows (`v3-ga`, the held verdict and cutover rows) are never filed. `v3-flags-delete-g2` (only when `docs/v3/spikes/epos-bridge-probe.md` says `Flags: delete-at-G2`) and `v3-marketing-docs-site` with its dependents `v3-marketing-recipes` and `v3-marketing-migration` (owner-filed once `npm view basalt-ui dist-tags.latest` prints `3.0.0`) are added by hand.
+- **Contract amendment.** `v3-contract-amendment-spikes` (adopted Issue 603) may edit later `plan.yaml` rows whose facts its amendment invalidates.
+- **Priority.** `factory issue prio <id> 9` for filed rows with `prio: 9` in the index (`v3-project-yaml-fanout`, exemplar rows, unhot rows).
 - **The owner's go.** `v3-ga` files for nobody: when `v3-ga-prep` merges, the orchestrator asks the owner for the first publish, with `docs/v3/verdicts/ga-checks.md` as the evidence.
-- **Wave check.** `rd issues` lists every key once for the wave; `factory queue order` shows the wave's root rows first. A key that fails filing stops the wave: fix the facts, re-run the validator, resume; `--key` makes the replay safe.
 
 ## Shared aggregator files
 

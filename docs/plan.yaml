@@ -1,0 +1,1428 @@
+# The v3 plan, run by the factory (docs/plan.md in software-factory). Adopted rows (key + issue) are the Issues already filed by hand;
+# the others are filed by the server when their `after` rows are done. docs/v3/issues/ is the design record; this file wins on conflict.
+# Not in this file: held rows (consumer migrations; re-cut and added after 3.0.0 is published), owner-run rows (v3-ga and the held
+# verdict/cutover rows), v3-flags-delete-g2 (conditional on a spike verdict) and v3-marketing-docs-site with its dependents
+# v3-marketing-recipes and v3-marketing-migration (owner-filed after 3.0.0). See docs/v3/PLAN-REVISION.md.
+# A row's facts are the path of its file under docs/v3/issues/, the single source on master (the server caps this file at 64 KiB).
+version: 1
+rows:
+  - key: v3-spike-token-surfaces
+    issue: 573
+  - key: v3-exemplar-dense-table
+    issue: 583
+  - key: v3-tok-t2-table
+    issue: 574
+  - key: v3-spike-cn-breakpoints
+    issue: 591
+  - key: v3-rel-4-version-gate
+    issue: 560
+  - key: v3-prim-p1-gen
+    issue: 578
+  - key: v3-tok-t1-invariants
+    issue: 572
+  - key: v3-slim-repo-docs
+    issue: 566
+  - key: v3-prim-p1-button-input
+    issue: 577
+  - key: v3-recipes-check
+    issue: 600
+  - key: v3-rel-8-no-breaking
+    issue: 565
+  - key: v3-spike-census
+    issue: 589
+  - key: v3-exemplar-wiring
+    issue: 580
+  - key: v3-charts-bump
+    issue: 609
+  - key: v3-rel-7-skeleton
+    issue: 563
+  - key: v3-rel-7-contract-domains
+    issue: 597
+  - key: v3-gen-docs
+    issue: 601
+  - key: v3-spike-hook-sync
+    issue: 593
+  - key: v3-spike-scroller
+    issue: 588
+  - key: v3-spike-allow-padding
+    issue: 590
+  - key: v3-spike-upstream-churn
+    issue: 596
+  - key: v3-spike-lint-edges
+    issue: 592
+  - key: v3-spike-thin-skill
+    issue: 587
+  - key: v3-verdict-statcard
+    issue: 584
+  - key: v3-rel-6-doctrine-pkg
+    issue: 562
+  - key: v3-project-yaml-fanout
+    issue: 567
+  - key: v3-prim-p1-core
+    issue: 579
+  - key: v3-playground-reset
+    issue: 571
+  - key: v3-spike-no-restyle
+    issue: 576
+  - key: v3-tok-t3-css
+    issue: 575
+  - key: v3-spike-controls-codegen
+    issue: 594
+  - key: v3-rel-7-contracts
+    issue: 564
+  - key: v3-rel-1-workflows
+    issue: 558
+  - key: v3-unhot-migrating-llms
+    issue: 568
+  - key: v3-rel-7-skeleton-cli
+    issue: 599
+  - key: v3-spike-provider
+    issue: 585
+  - key: v3-spike-provider-q4
+    issue: 598
+  - key: v3-spike-synced
+    issue: 586
+  - key: v3-unhot-budgets
+    issue: 569
+  - key: v3-exemplar-statcard
+    issue: 582
+  - key: v3-rel-5-doctrine-root
+    issue: 561
+  - key: v3-layout-harness
+    issue: 570
+  - key: v3-unhot-llms
+    issue: 602
+  - key: v3-spike-live-poller
+    issue: 595
+  - key: v3-exemplar-card-ui
+    issue: 581
+  - key: v3-contract-amendment-spikes
+    issue: 603
+  - key: v3-st-1-emitter
+    title: 'Static emitter pair: color-scheme, always-on OS fallback, gates, golden files'
+    repo: basalt-ui
+    kind: feature
+    after: [v3-tok-t3-css, v3-contract-amendment-spikes]
+    facts: { 'brief': 'docs/v3/issues/g0/v3-st-1-emitter.json' }
+  - key: v3-st-5-chart-vars
+    title: 'Chart and sequential ramp vars with gates'
+    repo: basalt-ui
+    kind: feature
+    after: [v3-st-1-emitter]
+    facts: { 'brief': 'docs/v3/issues/g0/v3-st-5-chart-vars.json' }
+  - key: v3-st-2-json-emit
+    title: 'JSON token emit with byte-exact --check for mail, manifest and theme-color'
+    repo: basalt-ui
+    kind: feature
+    after: [v3-st-1-emitter, v3-st-5-chart-vars]
+    facts: { 'brief': 'docs/v3/issues/g0/v3-st-2-json-emit.json' }
+  - key: v3-tok-t4-cli
+    title: 'tokens:css CLI with --extra and --format json, check-tokens, generated zone A list'
+    repo: basalt-ui
+    kind: feature
+    after: [v3-tok-t3-css, v3-st-2-json-emit]
+    facts: { 'brief': 'docs/v3/issues/g0/v3-tok-t4-cli.json' }
+  - key: v3-test-roots
+    title: 'Hide package fixture roots from test, lint and format scanners'
+    repo: basalt-ui
+    kind: chore
+    after: [v3-tok-t3-css, v3-contract-amendment-spikes]
+    facts: { 'brief': 'docs/v3/issues/g0/v3-test-roots.json' }
+  - key: v3-st-3-type-fonts
+    title: 'typography.css, fonts.css, theme-script parity fixtures'
+    repo: basalt-ui
+    kind: feature
+    after: [v3-st-1-emitter, v3-test-roots]
+    facts: { 'brief': 'docs/v3/issues/g0/v3-st-3-type-fonts.json' }
+  - key: v3-st-4-prose
+    title: 'prose.css in :where() with a Chrome specificity and layer test'
+    repo: basalt-ui
+    kind: feature
+    after: [v3-st-1-emitter, v3-layout-harness]
+    facts: { 'brief': 'docs/v3/issues/g0/v3-st-4-prose.json' }
+  - key: v3-sk-1-cli-invariants
+    title: 'Port CLI invariants failing first'
+    repo: basalt-ui
+    kind: chore
+    after: [v3-rel-7-skeleton, v3-rel-7-skeleton-cli, v3-contract-amendment-spikes]
+    facts: { 'brief': 'docs/v3/issues/g0/v3-sk-1-cli-invariants.json' }
+  - key: v3-sk-2-sync
+    title: 'Manifest with roots and managed, render-and-compare sync, block splice'
+    repo: basalt-ui
+    kind: feature
+    after: [v3-sk-1-cli-invariants, v3-spike-hook-sync, v3-test-roots]
+    facts: { 'brief': 'docs/v3/issues/g0/v3-sk-2-sync.json' }
+  - key: v3-deps-w2
+    title: 'Wave 2 dependency pins in one PR'
+    repo: basalt-ui
+    kind: chore
+    after: [v3-rel-7-skeleton, v3-exemplar-wiring, v3-contract-amendment-spikes]
+    facts: { 'brief': 'docs/v3/issues/g0/v3-deps-w2.json' }
+  - key: v3-st-6-stylelint
+    title: 'Stylelint preset, ten rules, seeded offenders'
+    repo: basalt-ui
+    kind: feature
+    after: [v3-st-1-emitter, v3-sk-2-sync, v3-deps-w2]
+    facts: { 'brief': 'docs/v3/issues/g0/v3-st-6-stylelint.json' }
+  - key: v3-st-7-tokens-fixture
+    title: 'tokens fixture, one-look harness, P8 and P9 budgets'
+    repo: basalt-ui
+    kind: feature
+    after:
+      [
+        v3-st-2-json-emit,
+        v3-st-3-type-fonts,
+        v3-st-4-prose,
+        v3-st-5-chart-vars,
+        v3-st-6-stylelint,
+        v3-tok-t4-cli,
+        v3-layout-harness,
+      ]
+    facts: { 'brief': 'docs/v3/issues/g0/v3-st-7-tokens-fixture.json' }
+  - key: v3-mig-cli
+    title: 'basalt-ui migrate verb: rows selected by import census, --json, --check'
+    repo: basalt-ui
+    kind: feature
+    after: [v3-sk-1-cli-invariants, v3-unhot-migrating-llms]
+    facts: { 'brief': 'docs/v3/issues/g0/v3-mig-cli.json' }
+  - key: v3-tok-t5-rows
+    title: 'Token migration rows, valueShifts, fleet token census'
+    repo: basalt-ui
+    kind: chore
+    after: [v3-tok-t4-cli, v3-st-7-tokens-fixture, v3-mig-cli]
+    facts: { 'brief': 'docs/v3/issues/g0/v3-tok-t5-rows.json' }
+  - key: v3-gr-1-rule-table
+    title: 'Guardrail rule table and classPatternRule factory, one table generating ids, preset, coverage, docs'
+    repo: basalt-ui
+    kind: feature
+    after:
+      [
+        v3-spike-no-restyle,
+        v3-spike-lint-edges,
+        v3-spike-allow-padding,
+        v3-spike-cn-breakpoints,
+        v3-test-roots,
+        v3-deps-w2,
+      ]
+    facts: { 'brief': 'docs/v3/issues/g0/v3-gr-1-rule-table.json' }
+  - key: v3-gr-2-class-family
+    title: 'Class-rule family: viewport-keyed, dark-fork, fixed-colour, status-fill-as-text, raw-scroll, tw-off-law, app-spacing'
+    repo: basalt-ui
+    kind: feature
+    after: [v3-gr-1-rule-table, v3-tok-t4-cli]
+    facts: { 'brief': 'docs/v3/issues/g0/v3-gr-2-class-family.json' }
+  - key: v3-gr-3a-import-bypass
+    title: 'Structure rules: import-boundary and primitive-bypass'
+    repo: basalt-ui
+    kind: feature
+    after: [v3-gr-1-rule-table]
+    facts: { 'brief': 'docs/v3/issues/g0/v3-gr-3a-import-bypass.json' }
+  - key: v3-gr-3b-structure-rest
+    title: 'Structure rules: colour-literal, waiver-needs-reason, data-primitive with the Transport form, router-search, control-home, untrusted-markdown shells'
+    repo: basalt-ui
+    kind: feature
+    after: [v3-gr-1-rule-table]
+    facts: { 'brief': 'docs/v3/issues/g0/v3-gr-3b-structure-rest.json' }
+  - key: v3-gr-4-preset
+    title: 'Generated oxlint preset and smoke test on the console fixture'
+    repo: basalt-ui
+    kind: feature
+    after: [v3-gr-2-class-family, v3-gr-3a-import-bypass, v3-gr-3b-structure-rest]
+    facts: { 'brief': 'docs/v3/issues/g0/v3-gr-4-preset.json' }
+  - key: v3-gr-5-weakened-config
+    title: 'Weakened-config check doctor calls: seeded offender per root'
+    repo: basalt-ui
+    kind: feature
+    after: [v3-gr-4-preset]
+    facts: { 'brief': 'docs/v3/issues/g0/v3-gr-5-weakened-config.json' }
+  - key: v3-gr-6-waiver-codemod
+    title: 'Waiver codemod for the 63 regex-dialect sites'
+    repo: basalt-ui
+    kind: chore
+    after: [v3-gr-4-preset]
+    facts: { 'brief': 'docs/v3/issues/g0/v3-gr-6-waiver-codemod.json' }
+  - key: v3-sk-3b-budget
+    title: 'Budget module: seed, read, count breaches, land'
+    repo: basalt-ui
+    kind: feature
+    after: [v3-sk-2-sync]
+    facts: { 'brief': 'docs/v3/issues/g0/v3-sk-3b-budget.json' }
+  - key: v3-sk-3a-doctor
+    title: 'doctor 1-12 on the v3 manifest'
+    repo: basalt-ui
+    kind: feature
+    after:
+      [
+        v3-sk-2-sync,
+        v3-sk-3b-budget,
+        v3-gr-4-preset,
+        v3-gr-5-weakened-config,
+        v3-st-6-stylelint,
+        v3-tok-t4-cli,
+      ]
+    facts: { 'brief': 'docs/v3/issues/g0/v3-sk-3a-doctor.json' }
+  - key: v3-sk-3-init-doctor
+    title: 'basalt-ui init on the v3 manifest'
+    repo: basalt-ui
+    kind: feature
+    after: [v3-sk-2-sync, v3-sk-3a-doctor, v3-sk-3b-budget, v3-st-6-stylelint, v3-gr-4-preset]
+    facts: { 'brief': 'docs/v3/issues/g0/v3-sk-3-init-doctor.json' }
+  - key: v3-sk-4-hook-shim
+    title: 'Hook shim, lint --hook, settings.json merge, seeded offender from a subdirectory'
+    repo: basalt-ui
+    kind: feature
+    after: [v3-sk-3-init-doctor, v3-st-6-stylelint, v3-tok-t4-cli, v3-sk-3b-budget]
+    facts: { 'brief': 'docs/v3/issues/g0/v3-sk-4-hook-shim.json' }
+  - key: v3-sk-5-rules
+    title: 'Five shipped rules and the block table'
+    repo: basalt-ui
+    kind: feature
+    after: [v3-sk-3-init-doctor, v3-unhot-llms]
+    facts: { 'brief': 'docs/v3/issues/g0/v3-sk-5-rules.json' }
+  - key: v3-mig-codemod
+    title: 'Layout and imports codemod'
+    repo: basalt-ui
+    kind: chore
+    after: [v3-rel-7-skeleton, v3-tok-t2-table, v3-contract-amendment-spikes]
+    facts: { 'brief': 'docs/v3/issues/g0/v3-mig-codemod.json' }
+  - key: v3-mig-rows-1x
+    title: 'Migration rows for the 1.x floor: shutterflow and image-gateway symbols only'
+    repo: basalt-ui
+    kind: chore
+    after: [v3-mig-cli, v3-tok-t2-table, v3-tok-t5-rows]
+    facts: { 'brief': 'docs/v3/issues/g0/v3-mig-rows-1x.json' }
+  - key: v3-mig-testing
+    title: 'Test ledgers per area, check-test-ledger, renderApp seed'
+    repo: basalt-ui
+    kind: chore
+    after: [v3-rel-7-skeleton, v3-tok-t2-table, v3-contract-amendment-spikes]
+    facts: { 'brief': 'docs/v3/issues/g0/v3-mig-testing.json' }
+  - key: v3-spike-epos-bridge-probe
+    title: 'Epos read-only bridge probe from a scratch copy, no employer commit, tenant verdict for DPO 16'
+    repo: basalt-ui
+    kind: chore
+    after: [v3-tok-t4-cli, v3-sk-3-init-doctor, v3-gr-4-preset]
+    facts: { 'brief': 'docs/v3/issues/spikes/v3-spike-epos-bridge-probe.json' }
+  - key: v3-prim-p2-guards
+    title: 'Guard completeness and primitive.contract suite'
+    repo: basalt-ui
+    kind: feature
+    after: [v3-prim-p1-core, v3-contract-amendment-spikes]
+    facts: { 'brief': 'docs/v3/issues/g1/v3-prim-p2-guards.json' }
+  - key: v3-qa-i2-format
+    title: 'format.ts, provider props, message index, check-literals'
+    repo: basalt-ui
+    kind: feature
+    after: [v3-spike-provider, v3-contract-amendment-spikes]
+    facts: { 'brief': 'docs/v3/issues/g1/v3-qa-i2-format.json' }
+  - key: v3-prim-p3a-inputs
+    title: 'Form primitives A: textarea, number-field, checkbox, radio-group, switch'
+    repo: basalt-ui
+    kind: feature
+    after:
+      [
+        v3-prim-p2-guards,
+        v3-exemplar-statcard,
+        v3-exemplar-dense-table,
+        v3-spike-provider,
+        v3-spike-provider-q4,
+        v3-qa-i2-format,
+      ]
+    facts: { 'brief': 'docs/v3/issues/g1/v3-prim-p3a-inputs.json' }
+  - key: v3-prim-p3b-select
+    title: 'Form primitives B: select, combobox, slider, segmented'
+    repo: basalt-ui
+    kind: feature
+    after:
+      [
+        v3-prim-p2-guards,
+        v3-exemplar-statcard,
+        v3-exemplar-dense-table,
+        v3-spike-provider,
+        v3-spike-provider-q4,
+        v3-qa-i2-format,
+      ]
+    facts: { 'brief': 'docs/v3/issues/g1/v3-prim-p3b-select.json' }
+  - key: v3-prim-p4-overlays
+    title: 'Overlay primitives: dialog, sheet, popover, tooltip, menu, toast'
+    repo: basalt-ui
+    kind: feature
+    after:
+      [
+        v3-prim-p2-guards,
+        v3-exemplar-statcard,
+        v3-exemplar-dense-table,
+        v3-spike-provider,
+        v3-spike-provider-q4,
+        v3-qa-i2-format,
+      ]
+    facts: { 'brief': 'docs/v3/issues/g1/v3-prim-p4-overlays.json' }
+  - key: v3-prim-p5a-display
+    title: 'Display primitives A: tabs, accordion, collapsible, scroll-area, separator, skeleton, kbd'
+    repo: basalt-ui
+    kind: feature
+    after: [v3-prim-p2-guards, v3-exemplar-statcard, v3-exemplar-dense-table, v3-qa-i2-format]
+    facts: { 'brief': 'docs/v3/issues/g1/v3-prim-p5a-display.json' }
+  - key: v3-prim-p5b-display
+    title: 'Display primitives B: status, alert, progress with Ring, meter zones, toolbar, num, virtual-list'
+    repo: basalt-ui
+    kind: feature
+    after: [v3-prim-p2-guards, v3-exemplar-statcard, v3-exemplar-dense-table, v3-qa-i2-format]
+    facts: { 'brief': 'docs/v3/issues/g1/v3-prim-p5b-display.json' }
+  - key: v3-prim-p4b-popups
+    title: 'Primitives popover, tooltip and menu'
+    repo: basalt-ui
+    kind: feature
+    after: [v3-prim-p2-guards, v3-exemplar-statcard, v3-exemplar-dense-table, v3-prim-p4-overlays]
+    facts: { 'brief': 'docs/v3/issues/g1/v3-prim-p4b-popups.json' }
+  - key: v3-prim-p6-date-picker
+    title: 'date-picker on react-day-picker, zone-less ISO, tested west of UTC'
+    repo: basalt-ui
+    kind: feature
+    after: [v3-prim-p3a-inputs, v3-prim-p3b-select, v3-prim-p4b-popups, v3-qa-i2-format, v3-deps-w2]
+    facts: { 'brief': 'docs/v3/issues/g1/v3-prim-p6-date-picker.json' }
+  - key: v3-prim-p7-eject
+    title: 'eject, --adopt, --undo, --raise with seed digests and base copies'
+    repo: basalt-ui
+    kind: feature
+    after: [v3-prim-p1-core, v3-sk-2-sync]
+    facts: { 'brief': 'docs/v3/issues/g1/v3-prim-p7-eject.json' }
+  - key: v3-prim-p8-sync-matrix
+    title: 'Three-way sync for ejected files and the doctor eject matrix'
+    repo: basalt-ui
+    kind: feature
+    after: [v3-prim-p7-eject, v3-sk-3-init-doctor, v3-spike-upstream-churn]
+    facts: { 'brief': 'docs/v3/issues/g1/v3-prim-p8-sync-matrix.json' }
+  - key: v3-prim-p9-vite-gates
+    title: 'basalt() Vite plugin: peer and seed gates, aliases, sources.css, HMR on ejected files (F9)'
+    repo: basalt-ui
+    kind: feature
+    after: [v3-prim-p7-eject]
+    facts: { 'brief': 'docs/v3/issues/g1/v3-prim-p9-vite-gates.json' }
+  - key: v3-prim-p3c-choice
+    title: 'Primitives radio-group and switch'
+    repo: basalt-ui
+    kind: feature
+    after: [v3-prim-p2-guards, v3-exemplar-statcard, v3-exemplar-dense-table]
+    facts: { 'brief': 'docs/v3/issues/g1/v3-prim-p3c-choice.json' }
+  - key: v3-prim-p3d-range
+    title: 'Primitives slider and segmented'
+    repo: basalt-ui
+    kind: feature
+    after: [v3-prim-p2-guards, v3-exemplar-statcard, v3-exemplar-dense-table, v3-qa-i2-format]
+    facts: { 'brief': 'docs/v3/issues/g1/v3-prim-p3d-range.json' }
+  - key: v3-prim-p5c-bar
+    title: 'Primitives toolbar, virtual-list and num'
+    repo: basalt-ui
+    kind: feature
+    after:
+      [
+        v3-prim-p2-guards,
+        v3-exemplar-statcard,
+        v3-exemplar-dense-table,
+        v3-qa-i2-format,
+        v3-prim-p3b-select,
+        v3-prim-p3d-range,
+      ]
+    facts: { 'brief': 'docs/v3/issues/g1/v3-prim-p5c-bar.json' }
+  - key: v3-prim-p5d-disclose
+    title: 'Primitives tabs, accordion and collapsible'
+    repo: basalt-ui
+    kind: feature
+    after: [v3-prim-p2-guards, v3-exemplar-statcard, v3-exemplar-dense-table]
+    facts: { 'brief': 'docs/v3/issues/g1/v3-prim-p5d-disclose.json' }
+  - key: v3-prim-rows
+    title: 'Mantine-to-ui migration rows and component mapping table'
+    repo: basalt-ui
+    kind: chore
+    after:
+      [
+        v3-prim-p3a-inputs,
+        v3-prim-p3b-select,
+        v3-prim-p4-overlays,
+        v3-prim-p5a-display,
+        v3-prim-p5b-display,
+        v3-prim-p6-date-picker,
+        v3-prim-p3c-choice,
+        v3-prim-p3d-range,
+        v3-prim-p4b-popups,
+        v3-prim-p5c-bar,
+        v3-prim-p5d-disclose,
+        v3-unhot-migrating-llms,
+      ]
+    facts: { 'brief': 'docs/v3/issues/g1/v3-prim-rows.json' }
+  - key: v3-state-1-persisted
+    title: 'Keyed persisted over StorageLike with golden fixtures and statics'
+    repo: basalt-ui
+    kind: feature
+    after: [v3-rel-7-skeleton, v3-contract-amendment-spikes]
+    facts: { 'brief': 'docs/v3/issues/g1/v3-state-1-persisted.json' }
+  - key: v3-state-2-query-client
+    title: 'makeQueryClient, unwrap, optimistic, windowKey'
+    repo: basalt-ui
+    kind: feature
+    after: [v3-state-1-persisted]
+    facts: { 'brief': 'docs/v3/issues/g1/v3-state-2-query-client.json' }
+  - key: v3-live-1-query
+    title: 'liveQuery freshness classes and central poller, shaped by the spike result'
+    repo: basalt-ui
+    kind: feature
+    after: [v3-spike-live-poller, v3-state-2-query-client, v3-deps-w2]
+    facts: { 'brief': 'docs/v3/issues/g1/v3-live-1-query.json' }
+  - key: v3-state-3-synced
+    title: 'createSyncedState and its transport contract suite, shaped by the spike result'
+    repo: basalt-ui
+    kind: feature
+    after: [v3-spike-synced, v3-state-2-query-client, v3-live-1-query]
+    facts: { 'brief': 'docs/v3/issues/g1/v3-state-3-synced.json' }
+  - key: v3-state-5-notify
+    title: 'notify queue in core and ToastHost in page'
+    repo: basalt-ui
+    kind: feature
+    after: [v3-prim-p4-overlays]
+    facts: { 'brief': 'docs/v3/issues/g1/v3-state-5-notify.json' }
+  - key: v3-ctl-1-golden
+    title: 'URL codec golden fixtures and 2.x control invariants failing first'
+    repo: basalt-ui
+    kind: chore
+    after: [v3-rel-7-skeleton, v3-contract-amendment-spikes]
+    facts: { 'brief': 'docs/v3/issues/g1/v3-ctl-1-golden.json' }
+  - key: v3-ctl-2-define-controls
+    title: 'defineControls, field codecs, branded validator'
+    repo: basalt-ui
+    kind: feature
+    after: [v3-ctl-1-golden, v3-spike-controls-codegen]
+    facts: { 'brief': 'docs/v3/issues/g1/v3-ctl-2-define-controls.json' }
+  - key: v3-ctl-3-widgets
+    title: 'Widget scope, precedence, middleware order, useOverrides'
+    repo: basalt-ui
+    kind: feature
+    after: [v3-ctl-2-define-controls]
+    facts: { 'brief': 'docs/v3/issues/g1/v3-ctl-3-widgets.json' }
+  - key: v3-state-1b-external-field
+    title: 'externalField, cross-tab origin flag, memory and adapter recipes'
+    repo: basalt-ui
+    kind: feature
+    after: [v3-state-1-persisted, v3-playground-reset]
+    facts: { 'brief': 'docs/v3/issues/g1/v3-state-1b-external-field.json' }
+  - key: v3-ctl-4-control-view
+    title: 'ControlView, spec, filterSlot, ControlHome, kind renderers, ToolbarGroup homes'
+    repo: basalt-ui
+    kind: feature
+    after:
+      [
+        v3-ctl-3-widgets,
+        v3-prim-p3a-inputs,
+        v3-prim-p3b-select,
+        v3-qa-i2-format,
+        v3-prim-p4b-popups,
+        v3-state-1b-external-field,
+      ]
+    facts: { 'brief': 'docs/v3/issues/g1/v3-ctl-4-control-view.json' }
+  - key: v3-ctl-4b-control-home
+    title: 'ControlHome and filterSlot.custom'
+    repo: basalt-ui
+    kind: feature
+    after: [v3-ctl-4-control-view, v3-prim-p4b-popups, v3-prim-p5c-bar, v3-qa-i2-format]
+    facts: { 'brief': 'docs/v3/issues/g1/v3-ctl-4b-control-home.json' }
+  - key: v3-verdict-control-cue
+    title: 'Review artifact: the override cue in ControlView (non-blocking)'
+    repo: basalt-ui
+    kind: chore
+    after: [v3-ctl-4b-control-home]
+    facts: { 'brief': 'docs/v3/issues/g1/v3-verdict-control-cue.json' }
+  - key: v3-ctl-5-filterset
+    title: 'FilterSet fold, census, Filters (n) sheet'
+    repo: basalt-ui
+    kind: feature
+    after:
+      [
+        v3-ctl-3-widgets,
+        v3-prim-p3a-inputs,
+        v3-prim-p3b-select,
+        v3-prim-p5b-display,
+        v3-qa-i2-format,
+        v3-ctl-4b-control-home,
+        v3-prim-p4-overlays,
+      ]
+    facts: { 'brief': 'docs/v3/issues/g1/v3-ctl-5-filterset.json' }
+  - key: v3-cards-1-statgroup
+    title: 'StatGroup, StatCell, DataPanel'
+    repo: basalt-ui
+    kind: feature
+    after:
+      [
+        v3-exemplar-statcard,
+        v3-exemplar-dense-table,
+        v3-prim-p5b-display,
+        v3-qa-i2-format,
+        v3-prim-p5a-display,
+      ]
+    facts: { 'brief': 'docs/v3/issues/g1/v3-cards-1-statgroup.json' }
+  - key: v3-cards-2-lists
+    title: 'BarList and EventList'
+    repo: basalt-ui
+    kind: feature
+    after: [v3-exemplar-statcard, v3-exemplar-dense-table, v3-qa-i2-format, v3-prim-p5a-display]
+    facts: { 'brief': 'docs/v3/issues/g1/v3-cards-2-lists.json' }
+  - key: v3-cards-3-kanban
+    title: 'KanbanCard, board and timeline recipes, S9'
+    repo: basalt-ui
+    kind: feature
+    after:
+      [
+        v3-exemplar-statcard,
+        v3-exemplar-dense-table,
+        v3-prim-p4-overlays,
+        v3-qa-i2-format,
+        v3-prim-p4b-popups,
+        v3-prim-p5c-bar,
+      ]
+    facts: { 'brief': 'docs/v3/issues/g1/v3-cards-3-kanban.json' }
+  - key: v3-charts-1a-s2-probe
+    title: 'Chart core spike S2: engine byte probe'
+    repo: basalt-ui
+    kind: chore
+    after:
+      [v3-charts-bump, v3-exemplar-statcard, v3-exemplar-dense-table, v3-contract-amendment-spikes]
+    facts: { 'brief': 'docs/v3/issues/g1/v3-charts-1a-s2-probe.json' }
+  - key: v3-charts-1-core
+    title: 'Charts core on the bumped engine: S2 floors, S3 tooltip portal, S4 onRender geometry, S5 engine scales'
+    repo: basalt-ui
+    kind: feature
+    after: [v3-charts-bump, v3-exemplar-statcard, v3-exemplar-dense-table, v3-charts-1a-s2-probe]
+    facts: { 'brief': 'docs/v3/issues/g1/v3-charts-1-core.json' }
+  - key: v3-charts-2-kinds
+    title: 'CartesianChart, Lines, Bars and consumer seams with contract tests'
+    repo: basalt-ui
+    kind: feature
+    after: [v3-charts-1-core]
+    facts: { 'brief': 'docs/v3/issues/g1/v3-charts-2-kinds.json' }
+  - key: v3-charts-3-sparkline
+    title: 'Sparkline and MiniBars inside the byte ceiling'
+    repo: basalt-ui
+    kind: feature
+    after: [v3-charts-1-core]
+    facts: { 'brief': 'docs/v3/issues/g1/v3-charts-3-sparkline.json' }
+  - key: v3-charts-4-chartcard
+    title: 'ChartCard, tooltip surface, failed-series legend'
+    repo: basalt-ui
+    kind: feature
+    after: [v3-charts-1-core, v3-qa-i2-format, v3-prim-p5a-display]
+    facts: { 'brief': 'docs/v3/issues/g1/v3-charts-4-chartcard.json' }
+  - key: v3-table-t0-invariants
+    title: 'Table pinned invariants and contract.ts'
+    repo: basalt-ui
+    kind: chore
+    after: [v3-exemplar-statcard, v3-exemplar-dense-table, v3-prim-p3a-inputs, v3-prim-p3b-select]
+    facts: { 'brief': 'docs/v3/issues/g1/v3-table-t0-invariants.json' }
+  - key: v3-table-t1a-core-model
+    title: 'Table core A: feature set, kinds, column plan'
+    repo: basalt-ui
+    kind: feature
+    after: [v3-table-t0-invariants]
+    facts: { 'brief': 'docs/v3/issues/g1/v3-table-t1a-core-model.json' }
+  - key: v3-table-t1b-core-state
+    title: 'Table core B: state, URL codec, filters, selection, keyboard'
+    repo: basalt-ui
+    kind: feature
+    after: [v3-table-t1a-core-model]
+    facts: { 'brief': 'docs/v3/issues/g1/v3-table-t1b-core-state.json' }
+  - key: v3-table-t2-parts
+    title: 'Table parts for G1 v0: head, body, tiers, pager, phases'
+    repo: basalt-ui
+    kind: feature
+    after: [v3-table-t1b-core-state, v3-qa-i2-format, v3-prim-p5a-display]
+    facts: { 'brief': 'docs/v3/issues/g1/v3-table-t2-parts.json' }
+  - key: v3-spike-table-fit
+    title: 'Spike: table bytes, fixed layout tiers, argo renderCard sites; owner accepts tiers at 1800x1200'
+    repo: basalt-ui
+    kind: chore
+    after: [v3-table-t2-parts]
+    facts: { 'brief': 'docs/v3/issues/spikes/v3-spike-table-fit.json' }
+  - key: v3-spike-q3-compile-table
+    title: 'Spike: React Compiler over ./table on a 10k fixture'
+    repo: basalt-ui
+    kind: chore
+    after: [v3-table-t2-parts]
+    facts: { 'brief': 'docs/v3/issues/spikes/v3-spike-q3-compile-table.json' }
+  - key: v3-live-2-channel
+    title: 'createChannel, Transport, ported SSE tests, fakeChannel, useNow'
+    repo: basalt-ui
+    kind: feature
+    after: [v3-rel-7-skeleton, v3-deps-w2]
+    facts: { 'brief': 'docs/v3/issues/g1/v3-live-2-channel.json' }
+  - key: v3-live-3-bind-invalidation
+    title: 'bindInvalidation with debounce tiers, adopt-or-delete: console is the named consumer'
+    repo: basalt-ui
+    kind: feature
+    after: [v3-live-1-query, v3-live-2-channel]
+    facts: { 'brief': 'docs/v3/issues/g1/v3-live-3-bind-invalidation.json' }
+  - key: v3-live-4-connection
+    title: 'useConnection, useFreshness, ConnectionIndicator, RefreshButton'
+    repo: basalt-ui
+    kind: feature
+    after:
+      [v3-live-1-query, v3-live-2-channel, v3-prim-p5b-display, v3-qa-i2-format, v3-prim-p4b-popups]
+    facts: { 'brief': 'docs/v3/issues/g1/v3-live-4-connection.json' }
+  - key: v3-live-5-lint-recipes
+    title: 'data-primitive live clauses, websocket-transport recipe, basalt-app live section, P9'
+    repo: basalt-ui
+    kind: feature
+    after: [v3-live-1-query, v3-live-2-channel, v3-gr-3b-structure-rest, v3-playground-reset]
+    facts: { 'brief': 'docs/v3/issues/g1/v3-live-5-lint-recipes.json' }
+  - key: v3-qa-i3-testing
+    title: './testing kit and internal SSR harness'
+    repo: basalt-ui
+    kind: feature
+    after:
+      [
+        v3-spike-provider,
+        v3-mig-testing,
+        v3-prim-p3b-select,
+        v3-prim-p4-overlays,
+        v3-prim-p4b-popups,
+        v3-prim-p5d-disclose,
+      ]
+    facts: { 'brief': 'docs/v3/issues/g1/v3-qa-i3-testing.json' }
+  - key: v3-qa-i4-matrix
+    title: 'Quality matrix, quality exports, seeded offenders on the exemplar'
+    repo: basalt-ui
+    kind: feature
+    after: [v3-exemplar-statcard, v3-qa-i3-testing, v3-qa-i2-format, v3-state-5-notify, v3-deps-w2]
+    facts: { 'brief': 'docs/v3/issues/g1/v3-qa-i4-matrix.json' }
+  - key: v3-qa-i5-print-webkit
+    title: 'Print and WebKit lanes, Q6 first run'
+    repo: basalt-ui
+    kind: feature
+    after: [v3-qa-i4-matrix]
+    facts: { 'brief': 'docs/v3/issues/g1/v3-qa-i5-print-webkit.json' }
+  - key: v3-qa-i6-recipes-perf
+    title: 'Route-switch and ticker perf fixtures, devtools teach, performance and testing references'
+    repo: basalt-ui
+    kind: feature
+    after: [v3-qa-i4-matrix]
+    facts: { 'brief': 'docs/v3/issues/g1/v3-qa-i6-recipes-perf.json' }
+  - key: v3-spike-q5-q8-motion-contrast
+    title: 'Spike: reduced-motion clamp against Base UI exits; contrast incomplete nodes sampled'
+    repo: basalt-ui
+    kind: chore
+    after: [v3-prim-p4-overlays, v3-qa-i4-matrix]
+    facts: { 'brief': 'docs/v3/issues/spikes/v3-spike-q5-q8-motion-contrast.json' }
+  - key: v3-sk-6-thin-skill-fold
+    title: 'Thin skill or fold into docs, per the kill rule result'
+    repo: basalt-ui
+    kind: feature
+    after: [v3-spike-thin-skill, v3-sk-5-rules]
+    facts: { 'brief': 'docs/v3/issues/g1/v3-sk-6-thin-skill-fold.json' }
+  - key: v3-sk-7-references
+    title: 'basalt-design references, DESIGN.md seed, argo migrate rows, only what S1 kept'
+    repo: basalt-ui
+    kind: feature
+    after: [v3-sk-6-thin-skill-fold]
+    facts: { 'brief': 'docs/v3/issues/g1/v3-sk-7-references.json' }
+  - key: v3-sk-8-basalt-app
+    title: 'basalt-app skill, migrate reference, recipes channel'
+    repo: basalt-ui
+    kind: feature
+    after: [v3-sk-6-thin-skill-fold, v3-cards-3-kanban, v3-live-5-lint-recipes]
+    facts: { 'brief': 'docs/v3/issues/g1/v3-sk-8-basalt-app.json' }
+  - key: v3-sk-9-reviewer
+    title: 'Reviewer rubric, diff mode, no-Agent-tool path, six seeded boards, hash test'
+    repo: basalt-ui
+    kind: feature
+    after: [v3-spike-thin-skill, v3-sk-5-rules]
+    facts: { 'brief': 'docs/v3/issues/g1/v3-sk-9-reviewer.json' }
+  - key: v3-sk-9b-calibrate
+    title: 'Reviewer calibration scenarios and hash test'
+    repo: basalt-ui
+    kind: feature
+    after: [v3-sk-9-reviewer]
+    facts: { 'brief': 'docs/v3/issues/g1/v3-sk-9b-calibrate.json' }
+  - key: v3-sk-10-shot
+    title: 'shot on data-slot, detect floor, manifest viewports, S4 on playground and argo'
+    repo: basalt-ui
+    kind: feature
+    after: [v3-spike-thin-skill, v3-sk-5-rules, v3-sk-9b-calibrate]
+    facts: { 'brief': 'docs/v3/issues/g1/v3-sk-10-shot.json' }
+  - key: v3-playground-overview
+    title: 'Assemble the playground overview route over cards, charts and controls'
+    repo: basalt-ui
+    kind: feature
+    after:
+      [
+        v3-cards-1-statgroup,
+        v3-cards-2-lists,
+        v3-charts-3-sparkline,
+        v3-charts-4-chartcard,
+        v3-ctl-5-filterset,
+      ]
+    facts: { 'brief': 'docs/v3/issues/g1/v3-playground-overview.json' }
+  - key: v3-spike-f2-route
+    title: 'Spike: one argo dashboard route ported against contract stubs; amend the contract or add a port if an edge breaks'
+    repo: basalt-ui
+    kind: chore
+    after:
+      [
+        v3-table-t2-parts,
+        v3-charts-3-sparkline,
+        v3-cards-1-statgroup,
+        v3-ctl-5-filterset,
+        v3-state-2-query-client,
+      ]
+    facts: { 'brief': 'docs/v3/issues/spikes/v3-spike-f2-route.json' }
+  - key: v3-spike-f3-eject
+    title: 'Spike: same-bar agent trial, npm default versus eject --all, count ejects'
+    repo: basalt-ui
+    kind: chore
+    after: [v3-prim-p7-eject, v3-prim-p9-vite-gates, v3-cards-1-statgroup, v3-exemplar-dense-table]
+    facts: { 'brief': 'docs/v3/issues/spikes/v3-spike-f3-eject.json' }
+  - key: v3-charts-2b-seams
+    title: 'Chart seams registry and playground charts route'
+    repo: basalt-ui
+    kind: feature
+    after: [v3-charts-2-kinds]
+    facts: { 'brief': 'docs/v3/issues/g1/v3-charts-2b-seams.json' }
+  - key: v3-mig-bench
+    title: 'Migration bench, oracle and check subcommands'
+    repo: basalt-ui
+    kind: chore
+    after: [v3-mig-codemod, v3-tok-t5-rows, v3-sk-4-hook-shim, v3-layout-harness]
+    facts: { 'brief': 'docs/v3/issues/g0/v3-mig-bench.json' }
+  - key: v3-spike-table-bytes
+    title: 'Spike S5: DataTable own-code bytes and AppCell ceiling'
+    repo: basalt-ui
+    kind: chore
+    after: [v3-table-t2-parts]
+    facts: { 'brief': 'docs/v3/issues/spikes/v3-spike-table-bytes.json' }
+  - key: v3-cli-sibling
+    title: 'basalt.sibling key: app-scoped init and sync, name prefix'
+    repo: basalt-ui
+    kind: feature
+    after:
+      [
+        v3-sk-3-init-doctor,
+        v3-sk-5-rules,
+        v3-sk-8-basalt-app,
+        v3-sk-4-hook-shim,
+        v3-sk-7-references,
+      ]
+    facts: { 'brief': 'docs/v3/issues/g5-ga-g6/v3-cli-sibling.json' }
+  - key: v3-gr-intl-enable
+    title: 'Enable the primitive-bypass Intl form'
+    repo: basalt-ui
+    kind: feature
+    after: [v3-gr-3a-import-bypass, v3-qa-i2-format]
+    facts: { 'brief': 'docs/v3/issues/g1/v3-gr-intl-enable.json' }
+  - key: v3-sk-7b-state-references
+    title: 'References for state, forms and controls'
+    repo: basalt-ui
+    kind: feature
+    after: [v3-sk-7-references, v3-state-1b-external-field]
+    facts: { 'brief': 'docs/v3/issues/g1/v3-sk-7b-state-references.json' }
+  - key: v3-spike-thin-skill-s7
+    title: 'Spike S7: thin skill trial cells a, b and d'
+    repo: basalt-ui
+    kind: chore
+    after: [v3-spike-thin-skill, v3-contract-amendment-spikes]
+    facts: { 'brief': 'docs/v3/issues/spikes/v3-spike-thin-skill-s7.json' }
+  - key: v3-shell-i1-layout
+    title: 'Port the shell layout suite to data-slot, same numbers grade 2.x'
+    repo: basalt-ui
+    kind: chore
+    after: [v3-layout-harness, v3-contract-amendment-spikes]
+    facts: { 'brief': 'docs/v3/issues/g2/v3-shell-i1-layout.json' }
+  - key: v3-spike-shell-frame
+    title: 'Spike: sticky band on nested layouts, header priority collapse, docked inspector at 900-1200'
+    repo: basalt-ui
+    kind: chore
+    after: [v3-shell-i1-layout]
+    facts: { 'brief': 'docs/v3/issues/spikes/v3-spike-shell-frame.json' }
+  - key: v3-shell-i2-nav-core
+    title: 'Nav core and types: defineNav, linkOptions, active resolver'
+    repo: basalt-ui
+    kind: feature
+    after: [v3-shell-i1-layout]
+    facts: { 'brief': 'docs/v3/issues/g2/v3-shell-i2-nav-core.json' }
+  - key: v3-ai-i1-markdown
+    title: 'Url policy into core, sanitize, blockSplit, Markdown with P1 and P2'
+    repo: basalt-ui
+    kind: feature
+    after: [v3-rel-7-skeleton, v3-unhot-migrating-llms, v3-contract-amendment-spikes]
+    facts: { 'brief': 'docs/v3/issues/g2/v3-ai-i1-markdown.json' }
+  - key: v3-ai-i2-codeblock-prose
+    title: 'CodeBlock, fences, mermaid; Prose, Callout, Toc, ArticleLayout; content route'
+    repo: basalt-ui
+    kind: feature
+    after: [v3-ai-i1-markdown, v3-prim-p5a-display, v3-prim-p5b-display, v3-playground-reset]
+    facts: { 'brief': 'docs/v3/issues/g2/v3-ai-i2-codeblock-prose.json' }
+  - key: v3-deps-ai
+    title: 'AI and MDX dev dependencies in one PR'
+    repo: basalt-ui
+    kind: chore
+    after: [v3-spike-scroller, v3-playground-reset, v3-exemplar-wiring, v3-deps-w2]
+    facts: { 'brief': 'docs/v3/issues/g2/v3-deps-ai.json' }
+  - key: v3-ai-i7-mdx
+    title: 'mdxComponents, mdx recipe, P9'
+    repo: basalt-ui
+    kind: feature
+    after: [v3-ai-i2-codeblock-prose, v3-deps-ai]
+    facts: { 'brief': 'docs/v3/issues/g2/v3-ai-i7-mdx.json' }
+  - key: v3-ai-i5-lint
+    title: 'untrusted-markdown body and useChat sub-check with P10 fixtures'
+    repo: basalt-ui
+    kind: feature
+    after: [v3-ai-i1-markdown, v3-gr-3b-structure-rest]
+    facts: { 'brief': 'docs/v3/issues/g2/v3-ai-i5-lint.json' }
+  - key: v3-ctl-7-formfield
+    title: 'FormField and FormRow'
+    repo: basalt-ui
+    kind: feature
+    after: [v3-ctl-5-filterset, v3-gr-3b-structure-rest, v3-ctl-4-control-view]
+    facts: { 'brief': 'docs/v3/issues/g3/v3-ctl-7-formfield.json' }
+  - key: v3-spike-control-home
+    title: 'Spike: control-home residue after a shutterflow and argo port'
+    repo: basalt-ui
+    kind: chore
+    after: [v3-ctl-5-filterset]
+    facts: { 'brief': 'docs/v3/issues/spikes/v3-spike-control-home.json' }
+  - key: v3-ctl-9-rows
+    title: 'Controls migration rows and codemod'
+    repo: basalt-ui
+    kind: chore
+    after:
+      [
+        v3-ctl-5-filterset,
+        v3-gr-3b-structure-rest,
+        v3-unhot-migrating-llms,
+        v3-mig-codemod,
+        v3-mig-cli,
+        v3-tok-t5-rows,
+      ]
+    facts: { 'brief': 'docs/v3/issues/g3/v3-ctl-9-rows.json' }
+  - key: v3-charts-5-heatmap
+    title: 'Heatmap and BandStrip'
+    repo: basalt-ui
+    kind: feature
+    after: [v3-charts-1-core, v3-charts-2-kinds, v3-charts-4-chartcard, v3-unhot-migrating-llms]
+    facts: { 'brief': 'docs/v3/issues/g4/v3-charts-5-heatmap.json' }
+  - key: v3-charts-6-two-pane
+    title: 'Two-pane recipe and S10 on argo momentum chart'
+    repo: basalt-ui
+    kind: feature
+    after:
+      [
+        v3-charts-2-kinds,
+        v3-cards-3-kanban,
+        v3-sk-8-basalt-app,
+        v3-layout-harness,
+        v3-playground-reset,
+      ]
+    facts: { 'brief': 'docs/v3/issues/g4/v3-charts-6-two-pane.json' }
+  - key: v3-spike-q2-map
+    title: 'Spike: real weatherorb /map build against 704 KiB from a read-only scratch copy'
+    repo: basalt-ui
+    kind: chore
+    after: [v3-charts-4-chartcard, v3-spike-provider]
+    facts: { 'brief': 'docs/v3/issues/spikes/v3-spike-q2-map.json' }
+  - key: v3-charts-7a-card-codemods
+    title: 'Chart codemods: ChartCard transforms and report'
+    repo: basalt-ui
+    kind: chore
+    after: [v3-mig-codemod, v3-charts-2-kinds, v3-charts-4-chartcard]
+    facts: { 'brief': 'docs/v3/issues/g4/v3-charts-7a-card-codemods.json' }
+  - key: v3-charts-7b-series-codemods
+    title: 'Chart codemods: series transforms and 1.x fixture'
+    repo: basalt-ui
+    kind: chore
+    after: [v3-charts-7a-card-codemods, v3-charts-3-sparkline]
+    facts: { 'brief': 'docs/v3/issues/g4/v3-charts-7b-series-codemods.json' }
+  - key: v3-charts-7c-rows
+    title: 'Chart and card migration rows'
+    repo: basalt-ui
+    kind: chore
+    after:
+      [
+        v3-charts-7a-card-codemods,
+        v3-charts-7b-series-codemods,
+        v3-mig-cli,
+        v3-mig-rows-1x,
+        v3-unhot-migrating-llms,
+        v3-cards-1-statgroup,
+        v3-cards-2-lists,
+        v3-cards-3-kanban,
+      ]
+    facts: { 'brief': 'docs/v3/issues/g4/v3-charts-7c-rows.json' }
+  - key: v3-ai-i3-partview
+    title: 'partView, toolView, message parts with P3, P3b and P4'
+    repo: basalt-ui
+    kind: feature
+    after:
+      [
+        v3-ai-i1-markdown,
+        v3-rel-7-contracts,
+        v3-unhot-budgets,
+        v3-prim-p5a-display,
+        v3-qa-i2-format,
+        v3-layout-harness,
+        v3-deps-ai,
+      ]
+    facts: { 'brief': 'docs/v3/issues/g5-ga-g6/v3-ai-i3-partview.json' }
+  - key: v3-ai-i4-catalog
+    title: 'Generative catalog, expectCatalog, P5 and P7'
+    repo: basalt-ui
+    kind: feature
+    after:
+      [
+        v3-ai-i3-partview,
+        v3-rel-7-contracts,
+        v3-unhot-budgets,
+        v3-exemplar-statcard,
+        v3-cards-1-statgroup,
+        v3-qa-i3-testing,
+        v3-deps-ai,
+      ]
+    facts: { 'brief': 'docs/v3/issues/g5-ga-g6/v3-ai-i4-catalog.json' }
+  - key: v3-ai-i8-chat-recipe
+    title: 'chat-thread recipe and thread fixture, scroller from the spike'
+    repo: basalt-ui
+    kind: feature
+    after:
+      [
+        v3-ai-i3-partview,
+        v3-spike-scroller,
+        v3-prim-p3a-inputs,
+        v3-prim-p5a-display,
+        v3-prim-p5b-display,
+        v3-gr-4-preset,
+        v3-ai-i5-lint,
+        v3-recipes-check,
+        v3-sk-8-basalt-app,
+        v3-playground-reset,
+        v3-deps-ai,
+      ]
+    facts: { 'brief': 'docs/v3/issues/g5-ga-g6/v3-ai-i8-chat-recipe.json' }
+  - key: v3-freeze-g0
+    title: 'Freeze G0 layers: tokens budgets, no release'
+    repo: basalt-ui
+    kind: chore
+    after:
+      [
+        v3-tok-t5-rows,
+        v3-st-7-tokens-fixture,
+        v3-gr-5-weakened-config,
+        v3-gr-6-waiver-codemod,
+        v3-sk-4-hook-shim,
+        v3-sk-5-rules,
+        v3-rel-7-skeleton,
+        v3-spike-epos-bridge-probe,
+        v3-unhot-budgets,
+      ]
+    facts: { 'brief': 'docs/v3/issues/g0/v3-freeze-g0.json' }
+  - key: v3-freeze-g1
+    title: 'Freeze G1 layers: ui, cards, charts kinds, router and data state API, table v0 budgets and pins'
+    repo: basalt-ui
+    kind: chore
+    after:
+      [
+        v3-freeze-g0,
+        v3-prim-p3a-inputs,
+        v3-prim-p3b-select,
+        v3-prim-p4-overlays,
+        v3-prim-p5a-display,
+        v3-prim-p5b-display,
+        v3-prim-p6-date-picker,
+        v3-prim-p8-sync-matrix,
+        v3-prim-p9-vite-gates,
+        v3-prim-rows,
+        v3-cards-1-statgroup,
+        v3-cards-2-lists,
+        v3-cards-3-kanban,
+        v3-charts-2-kinds,
+        v3-charts-3-sparkline,
+        v3-charts-4-chartcard,
+        v3-state-3-synced,
+        v3-state-5-notify,
+        v3-ctl-3-widgets,
+        v3-live-3-bind-invalidation,
+        v3-live-4-connection,
+        v3-table-t2-parts,
+        v3-spike-table-fit,
+        v3-qa-i2-format,
+        v3-qa-i4-matrix,
+        v3-mig-rows-1x,
+        v3-mig-codemod,
+        v3-sk-7-references,
+        v3-sk-8-basalt-app,
+        v3-sk-9-reviewer,
+        v3-sk-10-shot,
+        v3-spike-f2-route,
+        v3-spike-f3-eject,
+        v3-prim-p3c-choice,
+        v3-prim-p3d-range,
+        v3-prim-p4b-popups,
+        v3-prim-p5c-bar,
+        v3-prim-p5d-disclose,
+        v3-charts-2b-seams,
+        v3-sk-9b-calibrate,
+        v3-mig-bench,
+        v3-spike-table-bytes,
+        v3-spike-q3-compile-table,
+        v3-spike-q5-q8-motion-contrast,
+        v3-cli-sibling,
+        v3-state-1b-external-field,
+        v3-gr-intl-enable,
+        v3-sk-7b-state-references,
+      ]
+    facts: { 'brief': 'docs/v3/issues/g1/v3-freeze-g1.json' }
+  - key: v3-shell-i3-projector
+    title: 'Projector, rail blocks, docking, page claims'
+    repo: basalt-ui
+    kind: feature
+    after: [v3-shell-i2-nav-core, v3-spike-shell-frame]
+    facts: { 'brief': 'docs/v3/issues/g2/v3-shell-i3-projector.json' }
+  - key: v3-shell-i3b-page-core
+    title: 'Page core: claims and docking'
+    repo: basalt-ui
+    kind: feature
+    after: [v3-shell-i2-nav-core, v3-spike-shell-frame]
+    facts: { 'brief': 'docs/v3/issues/g2/v3-shell-i3b-page-core.json' }
+  - key: v3-shell-i4b-page-kit
+    title: 'Page kit: PageSummary, CardGrid, QueryState, EmptyState, OverlayHost, defineOverlays, useSizeClass'
+    repo: basalt-ui
+    kind: feature
+    after: [v3-shell-i3b-page-core, v3-prim-p4-overlays, v3-prim-p5b-display]
+    facts: { 'brief': 'docs/v3/issues/g2/v3-shell-i4b-page-kit.json' }
+  - key: v3-shell-i4-page
+    title: 'Page, PageBar, PageAside, Section'
+    repo: basalt-ui
+    kind: feature
+    after:
+      [
+        v3-shell-i3b-page-core,
+        v3-prim-p4-overlays,
+        v3-prim-p5a-display,
+        v3-prim-p5b-display,
+        v3-shell-i4b-page-kit,
+      ]
+    facts: { 'brief': 'docs/v3/issues/g2/v3-shell-i4-page.json' }
+  - key: v3-shell-i5-frame
+    title: 'AppShell grid, header tiers, rail, landmarks and print; index exemplar route'
+    repo: basalt-ui
+    kind: feature
+    after: [v3-shell-i4-page, v3-shell-i3-projector, v3-prim-p4-overlays, v3-qa-i2-format]
+    facts: { 'brief': 'docs/v3/issues/g2/v3-shell-i5-frame.json' }
+  - key: v3-shell-i6-tabbar
+    title: 'Phone tab bar, More surface, retap order, hit floors'
+    repo: basalt-ui
+    kind: feature
+    after: [v3-shell-i5-frame, v3-prim-p4-overlays, v3-qa-i2-format]
+    facts: { 'brief': 'docs/v3/issues/g2/v3-shell-i6-tabbar.json' }
+  - key: v3-shell-i5b-rail
+    title: 'Rail, header tiers, blocks and account'
+    repo: basalt-ui
+    kind: feature
+    after: [v3-shell-i5-frame, v3-prim-p4b-popups]
+    facts: { 'brief': 'docs/v3/issues/g2/v3-shell-i5b-rail.json' }
+  - key: v3-shell-i5c-exemplar
+    title: 'Playground shell exemplars, recipes and expectShellInvariants'
+    repo: basalt-ui
+    kind: feature
+    after: [v3-shell-i5b-rail, v3-shell-i6-tabbar, v3-playground-reset]
+    facts: { 'brief': 'docs/v3/issues/g2/v3-shell-i5c-exemplar.json' }
+  - key: v3-shell-i7-innernav
+    title: 'InnerNav and SplitPage on one DOM below @narrow'
+    repo: basalt-ui
+    kind: feature
+    after: [v3-shell-i4-page, v3-shell-i5c-exemplar, v3-playground-reset]
+    facts: { 'brief': 'docs/v3/issues/g2/v3-shell-i7-innernav.json' }
+  - key: v3-shell-i8-commands
+    title: 'Native chrome overlay, toMenuTemplate, defineCommands, CommandPalette'
+    repo: basalt-ui
+    kind: feature
+    after: [v3-shell-i5c-exemplar, v3-prim-p3b-select]
+    facts: { 'brief': 'docs/v3/issues/g2/v3-shell-i8-commands.json' }
+  - key: v3-shell-i9-router-defaults
+    title: 'routerDefaults, navTarget, _app template, seeded RouteError, RouteMissing, RoutePending, shell rows'
+    repo: basalt-ui
+    kind: feature
+    after:
+      [
+        v3-shell-i2-nav-core,
+        v3-shell-i4b-page-kit,
+        v3-shell-i5-frame,
+        v3-sk-3-init-doctor,
+        v3-sk-5-rules,
+        v3-cli-sibling,
+      ]
+    facts: { 'brief': 'docs/v3/issues/g2/v3-shell-i9-router-defaults.json' }
+  - key: v3-verdict-shell
+    title: 'Review artifact: shell exemplars at 1800x1200 and 390x844 (non-blocking)'
+    repo: basalt-ui
+    kind: chore
+    after: [v3-shell-i5c-exemplar, v3-shell-i6-tabbar, v3-shell-i7-innernav, v3-shell-i8-commands]
+    facts: { 'brief': 'docs/v3/issues/g2/v3-verdict-shell.json' }
+  - key: v3-shell-i10-rules-rows
+    title: 'basalt-page rule bullets and shell migration rows'
+    repo: basalt-ui
+    kind: chore
+    after:
+      [
+        v3-sk-5-rules,
+        v3-mig-cli,
+        v3-unhot-migrating-llms,
+        v3-shell-i2-nav-core,
+        v3-shell-i3-projector,
+        v3-shell-i3b-page-core,
+        v3-shell-i4-page,
+        v3-shell-i4b-page-kit,
+        v3-shell-i5b-rail,
+        v3-shell-i6-tabbar,
+        v3-shell-i7-innernav,
+        v3-shell-i8-commands,
+        v3-shell-i9-router-defaults,
+        v3-ai-i2-codeblock-prose,
+        v3-ai-i7-mdx,
+        v3-sk-6-thin-skill-fold,
+      ]
+    facts: { 'brief': 'docs/v3/issues/g2/v3-shell-i10-rules-rows.json' }
+  - key: v3-freeze-g2
+    title: 'Freeze G2 layers: page, shell, nav, content budgets and pins'
+    repo: basalt-ui
+    kind: chore
+    after:
+      [
+        v3-shell-i10-rules-rows,
+        v3-shell-i9-router-defaults,
+        v3-shell-i8-commands,
+        v3-shell-i7-innernav,
+        v3-shell-i6-tabbar,
+        v3-shell-i5c-exemplar,
+        v3-shell-i4b-page-kit,
+        v3-ai-i2-codeblock-prose,
+        v3-ai-i5-lint,
+        v3-ai-i7-mdx,
+        v3-freeze-g1,
+      ]
+    facts:
+      {
+        'brief': 'docs/v3/issues/g2/v3-freeze-g2.json',
+        'note': 'v3-flags-delete-g2 is conditional and not in this plan; if docs/v3 shows it ran, merge it first.',
+      }
+  - key: v3-table-t3-toolbar
+    title: 'Table toolbar, chips, header and cell filter, views'
+    repo: basalt-ui
+    kind: feature
+    after:
+      [
+        v3-table-t2-parts,
+        v3-spike-table-fit,
+        v3-ctl-4-control-view,
+        v3-ctl-4b-control-home,
+        v3-prim-p4-overlays,
+      ]
+    facts: { 'brief': 'docs/v3/issues/g3/v3-table-t3-toolbar.json' }
+  - key: v3-table-t4-virtual
+    title: 'Table virtual rows, footer, c.select, declared grouping'
+    repo: basalt-ui
+    kind: feature
+    after: [v3-table-t3-toolbar, v3-prim-p5c-bar]
+    facts: { 'brief': 'docs/v3/issues/g3/v3-table-t4-virtual.json' }
+  - key: v3-ctl-6-viewtabs
+    title: 'ViewTabs, InnerNav binding, global controls wiring'
+    repo: basalt-ui
+    kind: feature
+    after:
+      [
+        v3-ctl-4-control-view,
+        v3-shell-i7-innernav,
+        v3-ctl-4b-control-home,
+        v3-shell-i5-frame,
+        v3-playground-overview,
+      ]
+    facts: { 'brief': 'docs/v3/issues/g3/v3-ctl-6-viewtabs.json' }
+  - key: v3-table-t3b-selection
+    title: 'BulkBar, tick column, tri-state header, header Menu actions'
+    repo: basalt-ui
+    kind: feature
+    after: [v3-table-t3-toolbar, v3-prim-p4b-popups]
+    facts: { 'brief': 'docs/v3/issues/g3/v3-table-t3b-selection.json' }
+  - key: v3-table-t5-exemplar
+    title: 'Table exemplar route, reference skill, view-switch recipe, rows, GA on finances shape'
+    repo: basalt-ui
+    kind: feature
+    after:
+      [
+        v3-table-t4-virtual,
+        v3-ctl-6-viewtabs,
+        v3-qa-i4-matrix,
+        v3-sk-10-shot,
+        v3-sk-7-references,
+        v3-table-t3b-selection,
+        v3-unhot-migrating-llms,
+      ]
+    facts: { 'brief': 'docs/v3/issues/g3/v3-table-t5-exemplar.json' }
+  - key: v3-verdict-table
+    title: 'Review artifact: table exemplar on phone and desktop (non-blocking)'
+    repo: basalt-ui
+    kind: chore
+    after: [v3-table-t5-exemplar]
+    facts: { 'brief': 'docs/v3/issues/g3/v3-verdict-table.json' }
+  - key: v3-state-4-forms
+    title: 'FormFooter, toSubmitErrors, useFormDraft, field-array and file-drop recipes, settings and run-edit routes'
+    repo: basalt-ui
+    kind: feature
+    after:
+      [
+        v3-prim-p3a-inputs,
+        v3-prim-p3b-select,
+        v3-ctl-4-control-view,
+        v3-ctl-7-formfield,
+        v3-state-1-persisted,
+        v3-state-2-query-client,
+        v3-state-3-synced,
+        v3-shell-i7-innernav,
+      ]
+    facts: { 'brief': 'docs/v3/issues/g3/v3-state-4-forms.json' }
+  - key: v3-ctl-8-lint
+    title: 'control-home and router-search rule bodies with fixtures through the hook'
+    repo: basalt-ui
+    kind: feature
+    after:
+      [
+        v3-ctl-5-filterset,
+        v3-gr-3b-structure-rest,
+        v3-spike-control-home,
+        v3-sk-4-hook-shim,
+        v3-gr-4-preset,
+        v3-ctl-6-viewtabs,
+        v3-ctl-7-formfield,
+      ]
+    facts: { 'brief': 'docs/v3/issues/g3/v3-ctl-8-lint.json' }
+  - key: v3-freeze-g3
+    title: 'Freeze G3 pins and budgets'
+    repo: basalt-ui
+    kind: chore
+    after:
+      [
+        v3-table-t5-exemplar,
+        v3-state-4-forms,
+        v3-ctl-6-viewtabs,
+        v3-ctl-7-formfield,
+        v3-ctl-8-lint,
+        v3-ctl-9-rows,
+        v3-freeze-g2,
+        v3-table-t3b-selection,
+      ]
+    facts: { 'brief': 'docs/v3/issues/g3/v3-freeze-g3.json' }
+  - key: v3-contract-amendment-late
+    title: 'Fold the later spike results into the contract'
+    repo: basalt-ui
+    kind: chore
+    after:
+      [
+        v3-spike-table-fit,
+        v3-spike-table-bytes,
+        v3-spike-q3-compile-table,
+        v3-spike-q5-q8-motion-contrast,
+        v3-spike-shell-frame,
+        v3-spike-control-home,
+        v3-spike-f2-route,
+        v3-spike-f3-eject,
+        v3-spike-epos-bridge-probe,
+        v3-spike-q2-map,
+        v3-spike-thin-skill-s7,
+        v3-spike-provider-q4,
+        v3-contract-amendment-spikes,
+      ]
+    facts: { 'brief': 'docs/v3/issues/trunk/v3-contract-amendment-late.json' }
+  - key: v3-ai-i9-recipes
+    title: 'ai-blocks, ai-sdk-tools, ai-external-runtime, ai-card recipes with P11'
+    repo: basalt-ui
+    kind: feature
+    after:
+      [
+        v3-ai-i4-catalog,
+        v3-ai-i8-chat-recipe,
+        v3-ai-i7-mdx,
+        v3-ai-i5-lint,
+        v3-charts-2-kinds,
+        v3-table-t5-exemplar,
+        v3-cards-1-statgroup,
+        v3-recipes-check,
+        v3-sk-8-basalt-app,
+        v3-deps-ai,
+      ]
+    facts: { 'brief': 'docs/v3/issues/g5-ga-g6/v3-ai-i9-recipes.json' }
+  - key: v3-ai-i10-recipes
+    title: 'Recipes: approvals, reasoning, sources, citations, artifacts'
+    repo: basalt-ui
+    kind: feature
+    after: [v3-ai-i4-catalog, v3-shell-i4-page, v3-deps-ai]
+    facts: { 'brief': 'docs/v3/issues/g5-ga-g6/v3-ai-i10-recipes.json' }
+  - key: v3-ai-i6-reference
+    title: 'AI reference, llms rows, epos read-only catalog probe P6'
+    repo: basalt-ui
+    kind: feature
+    after:
+      [
+        v3-ai-i4-catalog,
+        v3-ai-i7-mdx,
+        v3-ai-i8-chat-recipe,
+        v3-ai-i9-recipes,
+        v3-sk-7-references,
+        v3-sk-8-basalt-app,
+        v3-ai-i10-recipes,
+      ]
+    facts: { 'brief': 'docs/v3/issues/g5-ga-g6/v3-ai-i6-reference.json' }
+  - key: v3-freeze-g4
+    title: 'Freeze G4 layers: charts API and bundle marginals'
+    repo: basalt-ui
+    kind: chore
+    after:
+      [
+        v3-charts-5-heatmap,
+        v3-charts-6-two-pane,
+        v3-charts-7a-card-codemods,
+        v3-charts-7b-series-codemods,
+        v3-charts-7c-rows,
+        v3-spike-q2-map,
+        v3-freeze-g3,
+        v3-rel-7-skeleton,
+        v3-contract-amendment-late,
+      ]
+    facts: { 'brief': 'docs/v3/issues/g4/v3-freeze-g4.json' }
+  - key: v3-teardown-views
+    title: 'Delete the 2.x view layer: dashboard, charts, table, controls, shell, content'
+    repo: basalt-ui
+    kind: chore
+    after: [v3-freeze-g4, v3-ai-i6-reference, v3-ai-i10-recipes]
+    facts: { 'brief': 'docs/v3/issues/g5-ga-g6/v3-teardown-views.json' }
+  - key: v3-teardown-runtime
+    title: 'Delete the 2.x runtime: provider, commands, agent, theme-lab, guard, forms'
+    repo: basalt-ui
+    kind: chore
+    after: [v3-teardown-views]
+    facts: { 'brief': 'docs/v3/issues/g5-ga-g6/v3-teardown-runtime.json' }
+  - key: v3-teardown-peers
+    title: 'Delete the last 2.x modules and bring required peers to zero'
+    repo: basalt-ui
+    kind: chore
+    after: [v3-teardown-runtime]
+    facts: { 'brief': 'docs/v3/issues/g5-ga-g6/v3-teardown-peers.json' }
+  - key: v3-ga-prep
+    title: "GA prep: make check, playground and examples/* green, recorded for the owner's go; nothing published"
+    repo: basalt-ui
+    kind: chore
+    after:
+      [
+        v3-freeze-g4,
+        v3-ai-i4-catalog,
+        v3-ai-i6-reference,
+        v3-ai-i8-chat-recipe,
+        v3-ai-i9-recipes,
+        v3-spike-epos-bridge-probe,
+        v3-cli-sibling,
+        v3-teardown-peers,
+      ]
+    facts: { 'brief': 'docs/v3/issues/g5-ga-g6/v3-ga-prep.json' }
