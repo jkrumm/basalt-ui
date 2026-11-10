@@ -1,0 +1,16 @@
+/*
+ * The layout fixture's Tailwind v4 entry. `tailwind-precompile.ts` compiles it with the Tailwind CLI
+ * into `tailwind.generated.css` (gitignored), which `main.tsx` imports so `Bun.build` bundles the
+ * compiled sheet into the `main.css` that `index.html` links. The fixture is built by `Bun.build`,
+ * which cannot run Tailwind itself, hence the precompile.
+ *
+ * `../../../src/css/tailwind.css` is the source of what consumers import as
+ * `basalt-ui/tailwind.css` (it ships as `dist/css/tailwind.css`); the fixture reads source, like the
+ * rest of it.
+ *
+ * `source(none)` turns off automatic source detection (it would scan the whole repo, and a
+ * `text-[length:var(...)]` in a doc comment under `src/` compiles to invalid CSS). Utilities are
+ * scanned from this directory only, where the fixture components live.
+ */
+@import '../../../src/css/tailwind.css' source(none);
+@source './';
