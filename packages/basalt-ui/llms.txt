@@ -716,7 +716,7 @@ Type: ZoneSpec = {
   legend?: { label: string; mark?: 'line' | 'bar' | undefined; color?: string | undefined; } | undefined
   edge?: ZoneEdge<'top' | 'bottom'> | undefined
 }
-Install: bun add @tanstack/charts@1.1.0 d3-scale@4.0.2
+Install: bun add @tanstack/charts@1.5.0 d3-scale@4.0.2
 
 ## basalt-ui/tokens
 Import: import { ... } from 'basalt-ui/tokens'

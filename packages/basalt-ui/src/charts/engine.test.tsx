@@ -100,10 +100,10 @@ function manifestOf(specifier: string): { version: string; dependencies?: Record
 
 test('version compat: the engine pin, and the d3-scale the engine depends on', () => {
   const engine = manifestOf('@tanstack/charts')
-  expect(engine.version).toBe('1.1.0')
+  expect(engine.version).toBe('1.5.0')
   expect(manifestOf('d3-scale').version).toBe(engine.dependencies?.['d3-scale'] ?? 'missing')
   const pkg = JSON.parse(readFileSync(join(import.meta.dir, '../../package.json'), 'utf8'))
-  expect(pkg.peerDependencies['@tanstack/charts']).toBe('1.1.0')
+  expect(pkg.peerDependencies['@tanstack/charts']).toBe('1.5.0')
   expect(pkg.peerDependencies['d3-scale']).toBe('4.0.2')
 })
 

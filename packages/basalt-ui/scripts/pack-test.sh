@@ -390,7 +390,7 @@ SCRATCH2=$(mktemp -d)
 cd "$SCRATCH2"
 echo '{ "name": "scratch-free", "private": true, "type": "module" }' >package.json
 # The chart layer's two subpath-required peers (docs/V2-SPEC.md § 9) and React — nothing else.
-scratch_install "$ABS_TGZ" react react-dom "@tanstack/charts@1.1.0" "d3-scale@4.0.2"
+scratch_install "$ABS_TGZ" react react-dom "@tanstack/charts@1.5.0" "d3-scale@4.0.2"
 cat >free.mjs <<'JS'
 import { createElement } from 'react'
 import { renderToStaticMarkup } from 'react-dom/server'
