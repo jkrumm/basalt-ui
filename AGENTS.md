@@ -92,7 +92,7 @@ surface and `@visx/*` (§ 9.8). Ground truth: `docs/V2-SPEC.md` § 9.
 - **Lint/format**: oxlint + oxfmt
 - **Type-check**: tsc (strict)
 - **Git**: conventional commits enforced via commitlint; lefthook pre-commit hooks
-- **Release**: semantic-release-monorepo + npm provenance
+- **Release**: semantic-release via `make release` + npm provenance
 
 ## Structure
 
@@ -192,8 +192,10 @@ publishing is NOT a deploy — it is the release process (`make release`, below)
 - **The layout suite needs Chrome.** It runs in CI and `make check`, never in `pre`.
 - **`apps/marketing/AGENTS.md` describes the pre-Mantine (Tailwind/Biome) era** and is stale; the
   root + package conventions here are authoritative.
-- **No majors** — 2.0.0 was the one exception and has shipped:
-  `packages/basalt-ui/MAINTAINING.md` § The one sanctioned major.
+- **Major lines** (what may ship as a major, and the commit footers that follow): see
+  `packages/basalt-ui/MAINTAINING.md` § Major lines; the constants live in `scripts/release.sh`.
+- **A workspace-set change carries its `apps/marketing/Dockerfile` COPY edit** — the image copies each
+  workspace's `package.json` by name.
 
 ## Git Workflow
 
@@ -218,17 +220,12 @@ fails a mixed staging set.
 
 **Commit type discipline (affects npm versioning):**
 
-- `feat:` / `fix:` — triggers minor/patch release **only when the commit touches
-  `packages/basalt-ui/`** (path-filtered).
+- `feat:` / `fix:` — minor/patch release when published.
 - `ci:` — CI/CD, lefthook, workflow changes; never triggers a release.
 - `chore:` / `docs:` / `refactor:` — no release.
 
-**No majors — 2.0.0 was the one exception and has shipped**
-(`packages/basalt-ui/MAINTAINING.md` § The one sanctioned major).
-
-**`feat!:` and `BREAKING CHANGE:` footers are banned**: a nominal
-breaking change ships as a plain `feat:` with a `packages/basalt-ui/MIGRATING.md` entry and its
-opt-out in the commit body, never in the version number. Don't raise, propose, or reach for a major.
+Which commit footers (`feat!:`, `BREAKING CHANGE:`) are allowed, and when a breaking change may
+bump a major: `packages/basalt-ui/MAINTAINING.md` § Major lines; constants in `scripts/release.sh`.
 
 ## Release Process
 
@@ -237,10 +234,12 @@ make release-dry   # preview only — prints last-tag → next-version and the b
 make release       # dry run, show the bump, confirm, publish, wait for npm
 ```
 
+One channel: `master` publishes to npm `latest`. The `v2` branch is a read-only reference with no
+release config.
+
 `scripts/release.sh` is the front door to two workflows, and replaces neither. **Make Release**
-(`workflow_dispatch`) runs `semantic-release-monorepo` — it analyzes only commits touching
-`packages/basalt-ui/`, computes the version, tags, and creates the GitHub release, using a PAT that
-bypasses branch protection. **Publish to npm** fires on `release: published` and is the one holding
+(`workflow_dispatch`) runs semantic-release — it computes the version from the commits, tags, and
+creates the GitHub release, using a PAT that bypasses branch protection. **Publish to npm** fires on `release: published` and is the one holding
 the OIDC identity that pushes to the registry **with provenance**.
 
 The wrapper adds what a bare dispatch can't: a preflight (on `master`, clean tree, in sync, and
@@ -254,9 +253,8 @@ to anything. It now retries (`--prefer-online`, so a cached metadata document ca
 to 3600 s, `die`s on an unexpected version, and exits 3 ("still propagating", not a failure) when the
 registry still serves the previous version at the deadline: 2.24.0 took ~25 min to be served.
 
-`YES=1 make release` skips only the prompt. **The wrapper's version gate refuses every computed major, any 1.x
-and any prerelease** (`MAINTAINING.md` § The one sanctioned major); rewrite a stray
-`feat!:`/`BREAKING CHANGE:` footer as a plain `feat:` and release again.
+`YES=1 make release` skips only the prompt. The wrapper's version gate is described in
+`packages/basalt-ui/MAINTAINING.md` § Major lines; its constants live in `scripts/release.sh`.
 
 **Releasing is allowed — through `make release`, and only there.** No per-release permission is
 needed; the wrapper is itself the gate. Never dispatch the workflow by hand. Releasing is a
