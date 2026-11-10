@@ -22,32 +22,20 @@
  * TIER a control resolves to is `theme/spacing.test.ts`'s; which token carries which number is
  * `tokens/palette.ts`'s. This file only asks whether the boxes landed where those say they should.
  */
-import { afterAll, describe, test } from 'bun:test'
+import { describeShell, acquireShellTarget } from './shell-target'
+import { afterAll } from 'bun:test'
+import { S } from './shell-slots'
 import { SPACE, SPACE_STEP } from '../../src/tokens/palette'
 import { SIZE_CLASSES } from '../../src/tokens/size-classes'
 import type { FixtureSpec } from './fixture/spec'
 import type { LayoutPage, Named, Viewport } from './harness'
 import {
   CLOSE_BUDGET_MS,
-  COLLAPSE_TOGGLE,
   DESKTOP_1440,
-  HEADER,
-  HEADER_GLOBAL,
-  HEADER_LEAD,
-  HEADER_PAGE_BAR,
-  HEADER_ROW,
-  HEADER_ZONE,
   LAPTOP_900,
   LAPTOP_1024,
-  MAIN,
-  MAIN_BAND,
-  ASIDE_REGION,
-  NAVBAR,
-  NAV_ROWS,
-  NAV_VIEWPORT,
   PHONE,
   PHONE_SMALL,
-  SIDEBAR_FOOTER,
   TABLET_768,
   closeLayoutSuite,
   expectFullyInside,
@@ -57,8 +45,8 @@ import {
   openFixture,
 } from './harness'
 
+acquireShellTarget()
 const ready = await initLayoutSuite()
-const layout = ready ? describe : describe.skip
 
 /**
  * A page whose header row carries everything a real one does: a long active destination (so the
@@ -172,12 +160,12 @@ function rightOfLead(row: Named, lead: Named): Named {
  * pinned to the rail — a lead inset legitimately widens it).
  */
 async function collapseSidebar(p: LayoutPage): Promise<void> {
-  await p.raw.click(COLLAPSE_TOGGLE)
+  await p.raw.click(S('shell-rail-toggle'))
   await p.raw.waitForFunction(
     ([navbar, rail]) =>
       Math.abs((document.querySelector(navbar)?.getBoundingClientRect().width ?? 0) - rail) < 0.5 &&
       document.getAnimations().every((a) => a.playState !== 'running'),
-    [NAVBAR, SPACE_STEP.appShellNavbarRailWidth] as const,
+    [S('shell-rail'), SPACE_STEP.appShellNavbarRailWidth] as const,
   )
   await p.settle()
 }
@@ -228,658 +216,682 @@ const UNLABELLED: FixtureSpec = {
   sidebar: { account: true, settings: 2 },
 }
 
-layout('shell chrome — the header row, the gutter, the sidebar footer', () => {
-  afterAll(closeLayoutSuite, CLOSE_BUDGET_MS)
+describeShell(
+  ready,
+  'shell chrome — the header row, the gutter, the sidebar footer',
+  [
+    'shell-aside',
+    'shell-band',
+    'shell-brand-zone',
+    'shell-breadcrumb',
+    'shell-header',
+    'shell-header-row',
+    'shell-lead',
+    'shell-main',
+    'shell-page-bar-host',
+    'shell-rail',
+    'shell-rail-dot',
+    'shell-rail-footer',
+    'shell-rail-row',
+    'shell-rail-row-icon',
+    'shell-rail-toggle',
+    'shell-rail-viewport',
+    'shell-trail',
+  ],
+  (test) => {
+    afterAll(closeLayoutSuite, CLOSE_BUDGET_MS)
 
-  /**
-   * THE HEADER ROW FITS ITS BAND, at every width — including the 768–1024 band nothing sampled.
-   *
-   * Two failures, deliberately separate, because the row can break in two directions and only one
-   * of them is visible from the outside.
-   *
-   * OUTWARD: the row's items overflow to the RIGHT (`.bar` is a plain `flex-start` row), so the
-   * globals leave the band. That is the shape the page-level overflow guard also catches, one
-   * region up, and it is asserted here so the failure names the header instead of the document.
-   *
-   * INWARD: the controls overflow LEFTWARD out of `.pageBar`, because that box is
-   * `justify-content: flex-end` and a flex container overflows towards its start. That one is
-   * INVISIBLE to every document-width reading — nothing gets wider, the sync button simply paints
-   * on top of the page title (MEASURED once, in Chrome: title 119.7–197.1, sync button 158.3–188.3).
-   * `.pageBar` is `flex: 0 0 auto` with no `min-width: 0` beneath it precisely so this cannot
-   * happen; this is the assertion that says so.
-   */
-  for (const viewport of SWEEP) {
-    test(`the header row fits its band (${viewport.width}px, ${viewport.name})`, async () => {
-      const p = await openFixture(HEADER_PAGE, viewport)
-      await p.settle()
-
-      const row = await p.box('header row', HEADER_ROW)
-      const lead = await p.box('crumb side', HEADER_LEAD)
-      const pageBar = await p.box('page actions', HEADER_PAGE_BAR)
-      const globals = await p.box('globals', HEADER_GLOBAL)
-
-      for (const slot of [lead, pageBar, globals]) {
-        expectFullyInside(
-          slot,
-          row,
-          'every slot of the header row stays inside the row — the row does not fold, so a row ' +
-            'that does not fit spills its LAST item out of the band instead of shrinking',
-          viewport,
-        )
-      }
-
-      const bounds = rightOfLead(row, lead)
-      for (const box of await p.boxes(`${HEADER_PAGE_BAR} > *`)) {
-        expectFullyInside(
-          { name: 'row-1 content', box },
-          bounds,
-          "row 1's controls may never paint over the breadcrumb — `.pageBar` is " +
-            '`justify-content: flex-end`, so content it cannot fit overflows LEFTWARD and nothing ' +
-            'about the page gets wider when it does',
-          viewport,
-        )
-      }
-    })
-  }
-
-  /**
-   * THE BREADCRUMB FLOOR — `.lead` is the row's one elastic side, and it must never be elastic to
-   * nothing.
-   *
-   * `min-width` was `0` until this round, which made the breadcrumb the row's entire shock absorber:
-   * it absorbed itself out of existence and the row overflowed anyway, because `.pageBar` and
-   * `.global` beside it are both rigid. The fold bought nothing and cost the reader the one word
-   * saying where they are.
-   *
-   * The floor is READ OFF THE ELEMENT rather than written down here. That is not laziness about the
-   * number: 96px is a TYPOGRAPHIC argument (~13 characters at `VX.text.lg` / `font-stretch: 88%`),
-   * it lives in one place with the paragraph that justifies it, and a second copy in a test file is
-   * a copy that goes stale silently. What this asserts is the invariant the number serves — the
-   * fold ran BEFORE the title got crushed — at every width, whatever the floor is set to.
-   *
-   * The active destination is deliberately long ("Study progress overview"), so the crumb wants far
-   * more than the floor everywhere and the floor is genuinely the binding constraint. On a phone it
-   * is expected NOT to bind at all (the row there is the crumb plus ~66px of globals and ~26px of
-   * gaps) — that half of the sweep is the control, and it is worth running: it is what would catch
-   * the floor becoming binding on a phone, where the ancestors are already hidden and there is
-   * nothing left to give.
-   */
-  for (const viewport of SWEEP) {
-    test(`the crumb never falls under its floor (${viewport.width}px, ${viewport.name})`, async () => {
-      const p = await openFixture(HEADER_PAGE, viewport)
-      await p.settle()
-
-      const floor = await computedPx(p, HEADER_LEAD, 'min-width')
-      const lead = await p.box('crumb side', HEADER_LEAD)
-      if (lead.box.width >= floor - 0.5) return
-
-      const row = await p.box('header row', HEADER_ROW)
-      const pageBar = await p.box('page actions', HEADER_PAGE_BAR)
-      throw new Error(
-        '\nLAYOUT INVARIANT VIOLATED — the breadcrumb absorbed the whole row again\n\n' +
-          `  crumb side  w=${lead.box.width.toFixed(1)} (floor ${floor.toFixed(1)})\n` +
-          `  page actions w=${pageBar.box.width.toFixed(1)}\n` +
-          `  header row   w=${row.box.width.toFixed(1)}\n` +
-          `  viewport ${viewport.width}x${viewport.height} (${viewport.name})\n\n` +
-          '  expected: the row folds (`planBarFold`: icons, then More)' +
-          'BEFORE `.lead` goes under its own `min-width`\n',
-      )
-    })
-  }
-
-  /**
-   * THE RESPONSIVE PAGE GUTTER — one number, three boxes, one step.
-   *
-   * THE DECISION, since the brief asked for it explicitly: the expected values are READ FROM THE
-   * TOKEN TABLE (`SPACE_STEP.appShellInset` / `.appShellInsetMobile`), not hardcoded here.
-   *
-   * Hardcoding 20 and 8 would make this file fail on a deliberate retune, and that failure would be
-   * NOISE — `theme/spacing.test.ts` already pins both literals by value, beside the var names they
-   * emit, which is the right home for "the token is 20". A second copy buys no coverage and makes
-   * one intended change red in two places, which is how a test earns a reputation for being
-   * something you edit rather than something you believe.
-   *
-   * What is asserted instead is the part no value test can see, and the part that actually broke
-   * here: that the number REACHES the box, that all three boxes get the SAME one, and that the pair
-   * really is a pair. `expectPairIsResponsive` below is what keeps this from being unfalsifiable —
-   * a "responsive" gutter whose two halves collapsed to one value would satisfy every reading below
-   * and is a real regression, so it is checked directly rather than implied.
-   *
-   * The two props take DIFFERENT roads through Mantine — `AppShell padding` through
-   * `assign-padding-variables.mjs`, `AppShell.Header px` through `parse-style-props.mjs` — and only
-   * agree because both resolve `sm` from `theme.breakpoints`. That is exactly the kind of agreement
-   * that holds until a Mantine minor, and exactly what a real browser is for.
-   */
-  test('the mobile and desktop gutters are a genuine pair', () => {
-    const mobile = SPACE_STEP.appShellInsetMobile
-    const desktop = SPACE_STEP.appShellInset
-    if (mobile < desktop) return
-    throw new Error(
-      'LAYOUT: the page gutter is declared as a responsive pair, and the pair collapsed — ' +
-        `appShellInsetMobile = ${mobile}, appShellInset = ${desktop}. Every assertion below would ` +
-        'still pass with one value at both widths, which is why this is checked on its own.',
-    )
-  })
-
-  for (const [viewport, expected] of [
-    [{ name: 'one px under sm', width: SM_PX - 1, height: 720 }, SPACE_STEP.appShellInsetMobile],
-    [{ name: 'sm exactly', width: SM_PX, height: 720 }, SPACE_STEP.appShellInset],
-    // The expanded class widens the gutter (SPEC D7 trial): `md` is the expanded floor.
-    [
-      { name: 'one px under expanded', width: SIZE_CLASSES.expanded - 1, height: 720 },
-      SPACE_STEP.appShellInset,
-    ],
-    [
-      { name: 'expanded exactly', width: SIZE_CLASSES.expanded, height: 720 },
-      SPACE_STEP.appShellInsetExpanded,
-    ],
-  ] as const satisfies readonly (readonly [Viewport, number])[]) {
-    test(`the gutter is ${expected}px at ${viewport.width}px (${viewport.name})`, async () => {
-      const p = await openFixture(HEADER_PAGE, viewport)
-      await p.settle()
-
-      await expectInlinePadding(
-        p,
-        'AppShell.Main',
-        MAIN,
-        expected,
-        'the page gutter steps at `theme.breakpoints.sm` and nowhere else — below it the phone ' +
-          "gets 10px more line width a side, at and above it the page's first column lands on " +
-          "the sidebar nav icon column's x across the seam",
-      )
-      await expectInlinePadding(
-        p,
-        'AppShell.Header',
-        HEADER,
-        expected,
-        'the header takes the SAME gutter as Main by a different Mantine road (a Box style prop, ' +
-          "not the shell padding var) — the breadcrumb's left edge and the globals' right edge " +
-          "land on the card column's edges only while the two agree",
-      )
-    })
-  }
-
-  /**
-   * THE GUTTER IS SPLIT BY AXIS — inline is the responsive pair, block is a rung of the stack scale.
-   *
-   * `.main`'s padding is not a shorthand of one value: inline tracks `--app-shell-padding` (an
-   * ALIGNMENT constraint — the header's breadcrumb and globals land on the same edges), block is
-   * breathing room under the band's divider and nothing aligns to it. Phone: 12 (`stack-md`), from
-   * `sm` up one rung down, `stack-sm` — 8. The numbers are read from the token table so a retune
-   * moves the test with it; what is pinned is WHICH rung each width uses and that the inline half
-   * is the gutter at the same time.
-   */
-  for (const [viewport, inline, block] of [
-    [
-      { name: 'one px under sm', width: SM_PX - 1, height: 720 },
-      SPACE_STEP.appShellInsetMobile,
-      SPACE.stackMd,
-    ],
-    [{ name: 'sm exactly', width: SM_PX, height: 720 }, SPACE_STEP.appShellInset, SPACE.stackSm],
-  ] as const satisfies readonly (readonly [Viewport, number, number])[]) {
-    test(`Main's inner box starts ${inline}px from the seam and ${block}px under the header (${viewport.name})`, async () => {
-      const p = await openFixture(HEADER_PAGE, viewport)
-      await p.settle()
-      const blockActual = await computedPx(p, MAIN, 'padding-top')
-      const inlineActual = await computedPx(p, MAIN, 'padding-left')
-      if (Math.abs(blockActual - block) <= 0.5 && Math.abs(inlineActual - inline) <= 0.5) return
-      throw new Error(
-        `LAYOUT: Main's inset is ${inlineActual.toFixed(1)}px inline / ${blockActual.toFixed(1)}px ` +
-          `block at ${viewport.width}px; expected ${inline} / ${block}`,
-      )
-    })
-  }
-
-  /**
-   * THE HEADER LINES UP WITH THE COLUMNS BELOW IT, expanded and in the rail.
-   *
-   * Two alignments, deliberately separate because they are different numbers: the brand MARK sits
-   * on the sidebar's nav-icon column (`.root` inset + NavLink inset — 20, NOT the page gutter),
-   * and the breadcrumb sits on Main's content edge (seam + page gutter). The first used to hold
-   * only because the gutter was also 20.
-   */
-  for (const collapsed of [false, true]) {
-    test(`the brand and the breadcrumb land on their columns (${collapsed ? 'rail' : 'expanded'})`, async () => {
-      const p = await openFixture(HEADER_PAGE, DESKTOP_1440)
-      await p.settle()
-      if (collapsed) await collapseSidebar(p)
-
-      const main = await p.box('main', MAIN)
-      const crumb = await p.box('breadcrumb', `${HEADER_LEAD} > *`)
-      const expectedCrumb = main.box.left + SPACE_STEP.appShellInsetExpanded
-      if (Math.abs(crumb.box.left - expectedCrumb) > 0.5) {
-        throw new Error(
-          `LAYOUT: the breadcrumb starts at x=${crumb.box.left.toFixed(1)}, Main's content edge is ` +
-            `x=${expectedCrumb.toFixed(1)}`,
-        )
-      }
-      if (collapsed) return
-
-      const brand = await p.box('brand', `${HEADER_ZONE} > :first-child`)
-      const [icon] = await p.boxes(`${NAV_ROWS} .mantine-NavLink-section`)
-      if (!icon) throw new Error('LAYOUT: no nav icon rendered — the fixture is wrong')
-      if (Math.abs(brand.box.left - icon.left) > 0.5) {
-        throw new Error(
-          `LAYOUT: the brand starts at x=${brand.box.left.toFixed(1)}, the nav icon column at ` +
-            `x=${icon.left.toFixed(1)}`,
-        )
-      }
-    })
-  }
-
-  /**
-   * THE SIDEBAR FOOTER OWNS ITS OWN AIR.
-   *
-   * The footer's rows used to stack FLUSH on the scroll region above them and on each other — the
-   * `Stack` wrapping them is `gap={0}`, so with no rule of its own the region had no rhythm at all.
-   * What landed is SPACE, not a seam: `.footer` opens with one `sidebarRegionGap`, and the rows
-   * inside it run on the NAV's own 1px pitch (owner feedback, shutterflow round 3: the sidebar bottom
-   * must read as one list — an earlier `stack-sm` gap between Settings and the account row put the
-   * footer on a 42px pitch against the nav's 33). A `--vx-divider` hairline on `.footer` was the obvious alternative and
-   * `app-sidebar.module.css` rejects it in as many words — the boundary is already carried by that
-   * padding and by the account row's own inset, so a rule there would answer a question nobody
-   * asked (and would put the module into `theme/divider-law.test.ts`'s hairline inventory for it).
-   *
-   * That is why this asserts a GAP and not "a gap or a border": which of the two forms shipped is
-   * not an implementation detail the sidebar is free to swap later, it is a decision with an
-   * argument attached. If a later round paints a seam anyway, this failing is the correct outcome
-   * and that argument is the thing to answer.
-   *
-   * The floors are read from the token table for the same reason the gutter's are — `tokens/
-   * palette.ts` carries the numbers and the argument for them, and a copy here would go stale on a
-   * density retune while looking authoritative.
-   */
-  test('the footer reads as its own region, not as more rows', async () => {
-    const p = await openFixture(
-      { ...HEADER_PAGE, sidebar: { account: true, settings: 2 } },
-      LAPTOP_1024,
-    )
-    await p.settle()
-
-    const footer = await p.box('footer', SIDEBAR_FOOTER)
-    const children = await p.boxes(`${SIDEBAR_FOOTER} > *`)
-    const [first, second] = children
-    if (!first || !second) {
-      throw new Error(
-        `LAYOUT: the sidebar footer rendered ${children.length} child(ren) — this invariant needs ` +
-          'the settings rows AND the account row, so the gap between them is measurable at all.',
-      )
-    }
-
-    expectGapAtLeast(
-      footer,
-      { name: 'first footer row', box: first },
-      'top',
-      SPACE_STEP.sidebarRegionGap - 0.5,
-      'the footer must open with a full region gap — it is the seam between the scrolling nav and ' +
-        'the pinned cluster, and with `gap: 0` on the Stack around it there is nothing else to draw it',
-      p.viewport,
-    )
-
-    expectSeparatedBy(
-      { name: 'settings rows', box: first },
-      { name: 'account row', box: second },
-      0.5,
-      'the footer rows keep the nav list\'s 1px pitch — they separate, never flush (the "cramped ' +
-        'footer", what `gap={0}` gives you unstyled), but they do not take the region gap',
-      p.viewport,
-    )
-  })
-
-  /**
-   * THE LAST NAV ROW IS NEVER CLIPPED MID-ROW.
-   *
-   * An overflowing nav column with only the inline inset cut its last row flush against the
-   * viewport's bottom edge, which reads as a list that is CLIPPED rather than one that scrolls —
-   * the reader has no signal that scrolling would help. `.navViewport`'s `padding-block-end` is the
-   * scroll END-STOP that fixes it, and it is one `sidebarRegionGap`, the same number the column
-   * opens with at its other end — and the same height as the mask that fades the viewport's bottom
-   * edge, which is why the last row lands FULLY OPAQUE: at the scroll end the end-stop's empty air
-   * is what sits in the fade band. This measures that pairing; a mask taller than the end-stop
-   * would dim a real row here and read as the clipping it exists to replace.
-   *
-   * Scrolled to the END on purpose: at rest the last row is off-screen and every reading below is
-   * vacuously true. The nav viewport is scrolled directly through `raw` rather than through
-   * `scrollToEnd()`, which resolves `AppShell.Main` — the shell's scrollport is a different element
-   * and scrolling it would leave the sidebar exactly where it was.
-   *
-   * `LAPTOP_1024` is 640px tall against ~24 nav rows, so the column genuinely overflows. If a later
-   * round makes the rows short enough to fit, this fails loudly on the row count rather than going
-   * green on a list that never scrolled.
-   */
-  test('the nav scroll region stops on a whole row, not through one', async () => {
-    const p = await openFixture(
-      {
-        sections: Array.from({ length: 3 }, (_, s) => ({
-          label: `Section ${s + 1}`,
-          items: Array.from({ length: 8 }, (_, i) => ({
-            key: `s${s}i${i}`,
-            label: `Destination ${s + 1}.${i + 1}`,
-            ...(s === 0 && i === 0 ? { active: true as const } : {}),
-          })),
-        })),
-        sidebar: { account: true },
-      },
-      LAPTOP_1024,
-    )
-    await p.settle()
-
-    const scroll = await p.scroll(NAV_VIEWPORT)
-    if (scroll.scrollHeight <= scroll.clientHeight + 1) {
-      throw new Error(
-        `LAYOUT: the nav column did not overflow (scrollHeight ${scroll.scrollHeight}, ` +
-          `clientHeight ${scroll.clientHeight}) — this invariant is about a column that SCROLLS, ` +
-          'and it just measured one that fits. Add rows or shorten the viewport.',
-      )
-    }
-
-    await p.raw.evaluate((selector) => {
-      document.querySelector(selector)?.scrollTo({ top: 1e7, behavior: 'instant' })
-    }, NAV_VIEWPORT)
-    await p.settle()
-
-    const viewport = await p.box('nav viewport', NAV_VIEWPORT)
-    const rows = await p.boxes(NAV_ROWS)
-    const last = rows.at(-1)
-    if (!last) throw new Error('LAYOUT: the sidebar rendered no nav rows — the fixture is wrong')
-    const lastRow = { name: 'last nav row', box: last }
-
-    expectFullyInside(
-      lastRow,
-      viewport,
-      'scrolled to the end, the last nav row must be WHOLE inside the scrollport — a row cut by ' +
-        'the viewport edge reads as a clipped list, not as one that has more below',
-      p.viewport,
-    )
-    expectGapAtLeast(
-      viewport,
-      lastRow,
-      'bottom',
-      SPACE_STEP.sidebarRegionGap - 0.5,
-      'the scroll END-STOP is a full region gap of air under the last row — the same number the ' +
-        "column opens with at the other end, so both of the nav region's edges read the same",
-      p.viewport,
-    )
-  })
-  /**
-   * THE FOOTER'S BOTTOM INSET EQUALS THE COLUMN'S SIDE INSET — expanded and in the rail.
-   *
-   * `.footer` carried `padding-top` only, so the last row (settings link / account row) sat FLUSH
-   * on the navbar's bottom edge against a 10px gap at its sides. One `rowInsetX` below the last row
-   * closes it, and it is the footer's own edge, so the rail cannot double it.
-   */
-  for (const collapsed of [false, true]) {
-    test(`the last footer row clears the navbar bottom by the side inset (${collapsed ? 'rail' : 'expanded'})`, async () => {
-      const p = await openFixture(UNLABELLED, DESKTOP_1440)
-      await p.settle()
-      if (collapsed) await collapseSidebar(p)
-
-      const navbar = await p.box('navbar', NAVBAR)
-      const rows = await p.boxes(`${SIDEBAR_FOOTER} > *`)
-      const last = rows.at(-1)
-      if (!last) throw new Error('LAYOUT: the footer rendered no rows — the fixture is wrong')
-
-      const gap = navbar.box.bottom - last.bottom
-      if (Math.abs(gap - SPACE.rowInsetX) <= 0.5) return
-      throw new Error(
-        '\nLAYOUT INVARIANT VIOLATED — the sidebar footer must end one side inset above the navbar ' +
-          'bottom\n\n' +
-          `  navbar.bottom − last footer row.bottom = ${gap.toFixed(1)}px\n` +
-          `  expected: ${SPACE.rowInsetX}px (the column's horizontal inset)\n` +
-          `  viewport ${p.viewport.width}x${p.viewport.height} (${p.viewport.name})\n`,
-      )
-    })
-  }
-
-  /**
-   * THE FIRST NAV ROW SITS AT THE SAME y EXPANDED AND IN THE RAIL.
-   *
-   * Expanded, an unlabelled first section's band is zero-height and contributes only its
-   * `margin-bottom` (`sidebarSectionLabelGap`); the rail's rule zeroed that margin, so the first
-   * icon landed flush on the navbar top, a gap higher than the same row expanded. The rail now
-   * keeps the FIRST band's margin only — the equal-offset contract, and the non-vacuous half: the
-   * offset is asserted to be the token, not merely "the same".
-   */
-  /**
-   * RAIL BADGES — the rail hides a row's right section (where its count badge lives), so a badged
-   * row carries a dot on its ICON instead. The dot has to be visible (not `display: none`) and sit
-   * on the icon's top-end corner, inside the row — in the primary group and the non-primary one.
-   */
-  test('a badged nav row shows a visible dot on its icon in the rail', async () => {
-    const p = await openFixture(BADGED_RAIL, DESKTOP_1440)
-    await p.settle()
-    await collapseSidebar(p)
-
-    for (const label of ['Calendar', 'M365']) {
-      const row = `${NAVBAR} a[aria-label^="${label}"]`
-      const dot = `${row} [data-basalt-rail-dot]`
-      const display = await p.computed(dot, 'display')
-      if (display === 'none') throw new Error(`LAYOUT: the ${label} rail dot is display: none`)
-      const rowBox = (await p.box(`${label} row`, row)).box
-      const dotBox = (await p.box(`${label} dot`, dot)).box
-      const [icon] = await p.boxes(`${row} .mantine-NavLink-section`)
-      if (!icon) throw new Error(`LAYOUT: ${label} has no icon section`)
-      const insideRow =
-        dotBox.width > 0 &&
-        dotBox.left >= rowBox.left &&
-        dotBox.right <= rowBox.right &&
-        dotBox.top >= rowBox.top
-      const onIconCorner =
-        Math.abs(dotBox.right - icon.right) <= 6 && Math.abs(dotBox.top - icon.top) <= 6
-      if (insideRow && onIconCorner) continue
-      throw new Error(
-        `LAYOUT: the ${label} rail dot is misplaced — dot ${JSON.stringify(dotBox)}, ` +
-          `icon ${JSON.stringify(icon)}, row ${JSON.stringify(rowBox)}`,
-      )
-    }
-  })
-
-  test('the first nav row has the same top offset expanded and collapsed', async () => {
-    const p = await openFixture(UNLABELLED, DESKTOP_1440)
-    await p.settle()
-
-    const offset = async (): Promise<number> => {
-      const navbar = await p.box('navbar', NAVBAR)
-      const [first] = await p.boxes(NAV_ROWS)
-      if (!first) throw new Error('LAYOUT: the sidebar rendered no nav rows — the fixture is wrong')
-      return first.top - navbar.box.top
-    }
-
-    const expanded = await offset()
-    await collapseSidebar(p)
-    const rail = await offset()
-
-    if (
-      Math.abs(expanded - rail) <= 0.5 &&
-      Math.abs(rail - SPACE_STEP.sidebarSectionLabelGap) <= 0.5
-    )
-      return
-    throw new Error(
-      '\nLAYOUT INVARIANT VIOLATED — the first nav row moved when the sidebar collapsed\n\n' +
-        `  first row top offset expanded = ${expanded.toFixed(1)}px, rail = ${rail.toFixed(1)}px\n` +
-        `  expected: both = ${SPACE_STEP.sidebarSectionLabelGap}px (sidebarSectionLabelGap)\n`,
-    )
-  })
-
-  /**
-   * THE RAIL'S SECTION SEAM IS UNCHANGED — only the FIRST band keeps a margin.
-   *
-   * Un-zeroing every band's `margin-bottom` in the rail would also have widened the seam between
-   * sections by the label gap (`sectionGap` + 6), for a label that is not there. The rail's
-   * icon-to-icon distance across a seam is `sectionGap` alone, as before.
-   */
-  test('the rail does not widen the gap between sections', async () => {
-    const p = await openFixture(
-      {
-        sections: [
-          { label: '', items: [{ key: 'a', label: 'One', active: true }] },
-          { label: '', items: [{ key: 'b', label: 'Two' }] },
-        ],
-      },
-      DESKTOP_1440,
-    )
-    await p.settle()
-    await collapseSidebar(p)
-
-    const [one, two] = await p.boxes(NAV_ROWS)
-    if (!one || !two) throw new Error('LAYOUT: expected two nav rows — the fixture is wrong')
-    const seam = two.top - one.bottom
-    if (Math.abs(seam - SPACE_STEP.sidebarSectionGap) <= 0.5) return
-    throw new Error(
-      '\nLAYOUT INVARIANT VIOLATED — the gap between two rail sections moved\n\n' +
-        `  seam = ${seam.toFixed(1)}px, expected ${SPACE_STEP.sidebarSectionGap}px (sidebarSectionGap)\n`,
-    )
-  })
-
-  /**
-   * `--basalt-shell-lead-inset` — the opt-in native title-bar leading inset.
-   *
-   * UNSET is the contract's default and must be byte-identical to before: the zone is the navbar
-   * offset wide (256 / 48), the rail's toggle is centred on the 48px rail, the expanded zone
-   * starts its content at the page gutter. SET to a macOS traffic-light span (70px), the content
-   * moves right of it in both forms and the rail grows just enough to hold inset + toggle, so the
-   * toggle is never clipped by the zone's `overflow: hidden`.
-   */
-  test('with the inset unset the zone is exactly as it was', async () => {
-    const p = await openFixture(UNLABELLED, DESKTOP_1440)
-    await p.settle()
-
-    const zone = await p.box('zone', HEADER_ZONE)
-    const expandedPadding = await computedPx(p, HEADER_ZONE, 'padding-left')
-    if (
-      Math.abs(zone.box.width - SPACE_STEP.appShellNavbarWidth) > 0.5 ||
-      Math.abs(expandedPadding - 2 * SPACE.rowInsetX) > 0.5
-    ) {
-      throw new Error(
-        `LAYOUT: expanded zone is ${zone.box.width}px wide with ${expandedPadding}px inline-start ` +
-          `padding; expected ${SPACE_STEP.appShellNavbarWidth} / ${2 * SPACE.rowInsetX}`,
-      )
-    }
-
-    await collapseSidebar(p)
-    const rail = await p.box('rail zone', HEADER_ZONE)
-    const toggle = await p.box('toggle', COLLAPSE_TOGGLE)
-    const railPadding = await computedPx(p, HEADER_ZONE, 'padding-left')
-    const centre = toggle.box.left + toggle.box.width / 2
-    if (
-      Math.abs(rail.box.width - SPACE_STEP.appShellNavbarRailWidth) > 0.5 ||
-      railPadding !== 0 ||
-      Math.abs(centre - (rail.box.left + rail.box.width / 2)) > 0.5
-    ) {
-      throw new Error(
-        `LAYOUT: rail zone is ${rail.box.width}px wide, padding-left ${railPadding}px, toggle ` +
-          `centre ${centre.toFixed(1)} vs zone centre ${(rail.box.left + rail.box.width / 2).toFixed(1)}; ` +
-          'expected the 48px rail with a centred toggle and no padding',
-      )
-    }
-  })
-
-  const TRAFFIC_LIGHTS_PX = 70
-
-  test('a lead inset pushes the expanded brand clear of the traffic lights', async () => {
-    const p = await openFixture(UNLABELLED, DESKTOP_1440)
-    await p.settle()
-    await setLeadInset(p, `${TRAFFIC_LIGHTS_PX}px`)
-
-    const zone = await p.box('zone', HEADER_ZONE)
-    const toggle = await p.box('toggle', COLLAPSE_TOGGLE)
-    const brand = await p.box('brand', `${HEADER_ZONE} > :first-child`)
-    expectFullyInside(toggle, zone, 'the toggle stays inside the zone', p.viewport)
-    if (
-      Math.abs(zone.box.width - SPACE_STEP.appShellNavbarWidth) > 0.5 ||
-      brand.box.left < zone.box.left + TRAFFIC_LIGHTS_PX - 0.5
-    ) {
-      throw new Error(
-        `LAYOUT: expanded zone ${zone.box.width}px wide (expected the 256px navbar offset), ` +
-          `brand content starts at ${(brand.box.left - zone.box.left).toFixed(1)}px — it must ` +
-          `start at or right of the ${TRAFFIC_LIGHTS_PX}px inset`,
-      )
-    }
-  })
-
-  test('a lead inset keeps the rail toggle right of the traffic lights, unclipped', async () => {
-    const p = await openFixture(UNLABELLED, DESKTOP_1440)
-    await p.settle()
-    await setLeadInset(p, `${TRAFFIC_LIGHTS_PX}px`)
-    await collapseSidebar(p)
-
-    const zone = await p.box('rail zone', HEADER_ZONE)
-    const toggle = await p.box('toggle', COLLAPSE_TOGGLE)
-    expectFullyInside(
-      toggle,
-      zone,
-      'the rail zone grows to hold inset + toggle — a 48px rail would clip the toggle under ' +
-        '`overflow: hidden`',
-      p.viewport,
-    )
-    if (toggle.box.left >= zone.box.left + TRAFFIC_LIGHTS_PX - 0.5) return
-    throw new Error(
-      `LAYOUT: rail toggle starts ${(toggle.box.left - zone.box.left).toFixed(1)}px into the zone, ` +
-        `under the ${TRAFFIC_LIGHTS_PX}px traffic-light span`,
-    )
-  })
-  /**
-   * `BasaltShell headerHeight` — ONE deliberate header height, expanded and in the rail.
-   *
-   * Default (prop omitted) is the token, unchanged. Overridden to a native unified-toolbar 52, the
-   * header, the navbar's and aside's top, the page-bar band and Main all follow it — they derive
-   * from the same Mantine var, so this measures that nothing kept a copy of 44 — and the row's
-   * content (brand, toggle, breadcrumb) stays vertically centred in it.
-   */
-  const ASIDE_HEADER_SPEC: FixtureSpec = { ...HEADER_PAGE, aside: { title: 'Inspector' } }
-  for (const [headerHeight, label] of [
-    [undefined, 'default'],
-    [52, '52px override'],
-  ] as const) {
-    const expected = headerHeight ?? SPACE_STEP.appShellHeaderHeight
-    for (const collapsed of [false, true]) {
-      test(`the header is ${expected}px and everything under it starts there (${label}, ${collapsed ? 'rail' : 'expanded'})`, async () => {
-        const p = await openFixture(
-          { ...ASIDE_HEADER_SPEC, ...(headerHeight !== undefined && { headerHeight }) },
-          DESKTOP_1440,
-        )
+    /**
+     * THE HEADER ROW FITS ITS BAND, at every width — including the 768–1024 band nothing sampled.
+     *
+     * Two failures, deliberately separate, because the row can break in two directions and only one
+     * of them is visible from the outside.
+     *
+     * OUTWARD: the row's items overflow to the RIGHT (`.bar` is a plain `flex-start` row), so the
+     * globals leave the band. That is the shape the page-level overflow guard also catches, one
+     * region up, and it is asserted here so the failure names the header instead of the document.
+     *
+     * INWARD: the controls overflow LEFTWARD out of `.pageBar`, because that box is
+     * `justify-content: flex-end` and a flex container overflows towards its start. That one is
+     * INVISIBLE to every document-width reading — nothing gets wider, the sync button simply paints
+     * on top of the page title (MEASURED once, in Chrome: title 119.7–197.1, sync button 158.3–188.3).
+     * `.pageBar` is `flex: 0 0 auto` with no `min-width: 0` beneath it precisely so this cannot
+     * happen; this is the assertion that says so.
+     */
+    for (const viewport of SWEEP) {
+      test(`the header row fits its band (${viewport.width}px, ${viewport.name})`, async () => {
+        const p = await openFixture(HEADER_PAGE, viewport)
         await p.settle()
-        if (collapsed) await collapseSidebar(p)
 
-        const header = await p.box('header', HEADER)
-        const navbar = await p.box('navbar', NAVBAR)
-        const band = await p.box('page-bar band', MAIN_BAND)
-        const aside = await p.box('aside', ASIDE_REGION)
-        const main = await p.box('main', MAIN)
-        const row = await p.box('header row', HEADER_ROW)
+        const row = await p.box('header row', S('shell-header-row'))
+        const lead = await p.box('crumb side', S('shell-lead'))
+        const pageBar = await p.box('page actions', S('shell-page-bar-host'))
+        const globals = await p.box('globals', S('shell-trail'))
 
-        const tops = [
-          ['header height', header.box.height],
-          ['navbar top', navbar.box.top],
-          ['page-bar band top', band.box.top],
-          ['aside top', aside.box.top],
-        ] as const
-        for (const [name, value] of tops) {
-          if (Math.abs(value - expected) <= 0.5) continue
-          throw new Error(
-            `LAYOUT: ${name} = ${value.toFixed(1)}px, expected ${expected}px (${label}) — something ` +
-              'under the header kept its own copy of the header height',
+        for (const slot of [lead, pageBar, globals]) {
+          expectFullyInside(
+            slot,
+            row,
+            'every slot of the header row stays inside the row — the row does not fold, so a row ' +
+              'that does not fit spills its LAST item out of the band instead of shrinking',
+            viewport,
           )
         }
-        if (Math.abs(main.box.top - band.box.bottom) > 0.5) {
-          throw new Error('LAYOUT: Main does not start at the band bottom — the column is broken')
-        }
 
-        const rowCentre = row.box.top + row.box.height / 2
-        for (const [name, selector] of [
-          ['brand zone', HEADER_ZONE],
-          ['collapse toggle', COLLAPSE_TOGGLE],
-          ['breadcrumb', HEADER_LEAD],
-        ] as const) {
-          const box = (await p.box(name, selector)).box
-          const centre = box.top + box.height / 2
-          if (Math.abs(centre - rowCentre) <= 1) continue
-          throw new Error(
-            `LAYOUT: ${name} centre y=${centre.toFixed(1)} is off the header row centre ` +
-              `y=${rowCentre.toFixed(1)} (${label})`,
+        const bounds = rightOfLead(row, lead)
+        for (const box of await p.boxes(`${S('shell-page-bar-host')} > *`)) {
+          expectFullyInside(
+            { name: 'row-1 content', box },
+            bounds,
+            "row 1's controls may never paint over the breadcrumb — `.pageBar` is " +
+              '`justify-content: flex-end`, so content it cannot fit overflows LEFTWARD and nothing ' +
+              'about the page gets wider when it does',
+            viewport,
           )
         }
       })
     }
-  }
-})
+
+    /**
+     * THE BREADCRUMB FLOOR — `.lead` is the row's one elastic side, and it must never be elastic to
+     * nothing.
+     *
+     * `min-width` was `0` until this round, which made the breadcrumb the row's entire shock absorber:
+     * it absorbed itself out of existence and the row overflowed anyway, because `.pageBar` and
+     * `.global` beside it are both rigid. The fold bought nothing and cost the reader the one word
+     * saying where they are.
+     *
+     * The floor is READ OFF THE ELEMENT rather than written down here. That is not laziness about the
+     * number: 96px is a TYPOGRAPHIC argument (~13 characters at `VX.text.lg` / `font-stretch: 88%`),
+     * it lives in one place with the paragraph that justifies it, and a second copy in a test file is
+     * a copy that goes stale silently. What this asserts is the invariant the number serves — the
+     * fold ran BEFORE the title got crushed — at every width, whatever the floor is set to.
+     *
+     * The active destination is deliberately long ("Study progress overview"), so the crumb wants far
+     * more than the floor everywhere and the floor is genuinely the binding constraint. On a phone it
+     * is expected NOT to bind at all (the row there is the crumb plus ~66px of globals and ~26px of
+     * gaps) — that half of the sweep is the control, and it is worth running: it is what would catch
+     * the floor becoming binding on a phone, where the ancestors are already hidden and there is
+     * nothing left to give.
+     */
+    for (const viewport of SWEEP) {
+      test(`the crumb never falls under its floor (${viewport.width}px, ${viewport.name})`, async () => {
+        const p = await openFixture(HEADER_PAGE, viewport)
+        await p.settle()
+
+        const floor = await computedPx(p, S('shell-lead'), 'min-width')
+        const lead = await p.box('crumb side', S('shell-lead'))
+        if (lead.box.width >= floor - 0.5) return
+
+        const row = await p.box('header row', S('shell-header-row'))
+        const pageBar = await p.box('page actions', S('shell-page-bar-host'))
+        throw new Error(
+          '\nLAYOUT INVARIANT VIOLATED — the breadcrumb absorbed the whole row again\n\n' +
+            `  crumb side  w=${lead.box.width.toFixed(1)} (floor ${floor.toFixed(1)})\n` +
+            `  page actions w=${pageBar.box.width.toFixed(1)}\n` +
+            `  header row   w=${row.box.width.toFixed(1)}\n` +
+            `  viewport ${viewport.width}x${viewport.height} (${viewport.name})\n\n` +
+            '  expected: the row folds (`planBarFold`: icons, then More)' +
+            'BEFORE `.lead` goes under its own `min-width`\n',
+        )
+      })
+    }
+
+    /**
+     * THE RESPONSIVE PAGE GUTTER — one number, three boxes, one step.
+     *
+     * THE DECISION, since the brief asked for it explicitly: the expected values are READ FROM THE
+     * TOKEN TABLE (`SPACE_STEP.appShellInset` / `.appShellInsetMobile`), not hardcoded here.
+     *
+     * Hardcoding 20 and 8 would make this file fail on a deliberate retune, and that failure would be
+     * NOISE — `theme/spacing.test.ts` already pins both literals by value, beside the var names they
+     * emit, which is the right home for "the token is 20". A second copy buys no coverage and makes
+     * one intended change red in two places, which is how a test earns a reputation for being
+     * something you edit rather than something you believe.
+     *
+     * What is asserted instead is the part no value test can see, and the part that actually broke
+     * here: that the number REACHES the box, that all three boxes get the SAME one, and that the pair
+     * really is a pair. `expectPairIsResponsive` below is what keeps this from being unfalsifiable —
+     * a "responsive" gutter whose two halves collapsed to one value would satisfy every reading below
+     * and is a real regression, so it is checked directly rather than implied.
+     *
+     * The two props take DIFFERENT roads through Mantine — `AppShell padding` through
+     * `assign-padding-variables.mjs`, `AppShell.Header px` through `parse-style-props.mjs` — and only
+     * agree because both resolve `sm` from `theme.breakpoints`. That is exactly the kind of agreement
+     * that holds until a Mantine minor, and exactly what a real browser is for.
+     */
+    test('the mobile and desktop gutters are a genuine pair', () => {
+      const mobile = SPACE_STEP.appShellInsetMobile
+      const desktop = SPACE_STEP.appShellInset
+      if (mobile < desktop) return
+      throw new Error(
+        'LAYOUT: the page gutter is declared as a responsive pair, and the pair collapsed — ' +
+          `appShellInsetMobile = ${mobile}, appShellInset = ${desktop}. Every assertion below would ` +
+          'still pass with one value at both widths, which is why this is checked on its own.',
+      )
+    })
+
+    for (const [viewport, expected] of [
+      [{ name: 'one px under sm', width: SM_PX - 1, height: 720 }, SPACE_STEP.appShellInsetMobile],
+      [{ name: 'sm exactly', width: SM_PX, height: 720 }, SPACE_STEP.appShellInset],
+      // The expanded class widens the gutter (SPEC D7 trial): `md` is the expanded floor.
+      [
+        { name: 'one px under expanded', width: SIZE_CLASSES.expanded - 1, height: 720 },
+        SPACE_STEP.appShellInset,
+      ],
+      [
+        { name: 'expanded exactly', width: SIZE_CLASSES.expanded, height: 720 },
+        SPACE_STEP.appShellInsetExpanded,
+      ],
+    ] as const satisfies readonly (readonly [Viewport, number])[]) {
+      test(`the gutter is ${expected}px at ${viewport.width}px (${viewport.name})`, async () => {
+        const p = await openFixture(HEADER_PAGE, viewport)
+        await p.settle()
+
+        await expectInlinePadding(
+          p,
+          'AppShell.Main',
+          S('shell-main'),
+          expected,
+          'the page gutter steps at `theme.breakpoints.sm` and nowhere else — below it the phone ' +
+            "gets 10px more line width a side, at and above it the page's first column lands on " +
+            "the sidebar nav icon column's x across the seam",
+        )
+        await expectInlinePadding(
+          p,
+          'AppShell.Header',
+          S('shell-header'),
+          expected,
+          'the header takes the SAME gutter as Main by a different Mantine road (a Box style prop, ' +
+            "not the shell padding var) — the breadcrumb's left edge and the globals' right edge " +
+            "land on the card column's edges only while the two agree",
+        )
+      })
+    }
+
+    /**
+     * THE GUTTER IS SPLIT BY AXIS — inline is the responsive pair, block is a rung of the stack scale.
+     *
+     * `.main`'s padding is not a shorthand of one value: inline tracks `--app-shell-padding` (an
+     * ALIGNMENT constraint — the header's breadcrumb and globals land on the same edges), block is
+     * breathing room under the band's divider and nothing aligns to it. Phone: 12 (`stack-md`), from
+     * `sm` up one rung down, `stack-sm` — 8. The numbers are read from the token table so a retune
+     * moves the test with it; what is pinned is WHICH rung each width uses and that the inline half
+     * is the gutter at the same time.
+     */
+    for (const [viewport, inline, block] of [
+      [
+        { name: 'one px under sm', width: SM_PX - 1, height: 720 },
+        SPACE_STEP.appShellInsetMobile,
+        SPACE.stackMd,
+      ],
+      [{ name: 'sm exactly', width: SM_PX, height: 720 }, SPACE_STEP.appShellInset, SPACE.stackSm],
+    ] as const satisfies readonly (readonly [Viewport, number, number])[]) {
+      test(`Main's inner box starts ${inline}px from the seam and ${block}px under the header (${viewport.name})`, async () => {
+        const p = await openFixture(HEADER_PAGE, viewport)
+        await p.settle()
+        const blockActual = await computedPx(p, S('shell-main'), 'padding-top')
+        const inlineActual = await computedPx(p, S('shell-main'), 'padding-left')
+        if (Math.abs(blockActual - block) <= 0.5 && Math.abs(inlineActual - inline) <= 0.5) return
+        throw new Error(
+          `LAYOUT: Main's inset is ${inlineActual.toFixed(1)}px inline / ${blockActual.toFixed(1)}px ` +
+            `block at ${viewport.width}px; expected ${inline} / ${block}`,
+        )
+      })
+    }
+
+    /**
+     * THE HEADER LINES UP WITH THE COLUMNS BELOW IT, expanded and in the rail.
+     *
+     * Two alignments, deliberately separate because they are different numbers: the brand MARK sits
+     * on the sidebar's nav-icon column (`.root` inset + NavLink inset — 20, NOT the page gutter),
+     * and the breadcrumb sits on Main's content edge (seam + page gutter). The first used to hold
+     * only because the gutter was also 20.
+     */
+    for (const collapsed of [false, true]) {
+      test(`the brand and the breadcrumb land on their columns (${collapsed ? 'rail' : 'expanded'})`, async () => {
+        const p = await openFixture(HEADER_PAGE, DESKTOP_1440)
+        await p.settle()
+        if (collapsed) await collapseSidebar(p)
+
+        const main = await p.box('main', S('shell-main'))
+        const crumb = await p.box('breadcrumb', S('shell-breadcrumb'))
+        const expectedCrumb = main.box.left + SPACE_STEP.appShellInsetExpanded
+        if (Math.abs(crumb.box.left - expectedCrumb) > 0.5) {
+          throw new Error(
+            `LAYOUT: the breadcrumb starts at x=${crumb.box.left.toFixed(1)}, Main's content edge is ` +
+              `x=${expectedCrumb.toFixed(1)}`,
+          )
+        }
+        if (collapsed) return
+
+        const brand = await p.box('brand', `${S('shell-brand-zone')} > :first-child`)
+        const [icon] = await p.boxes(`${S('shell-rail-row')} ${S('shell-rail-row-icon')}`)
+        if (!icon) throw new Error('LAYOUT: no nav icon rendered — the fixture is wrong')
+        if (Math.abs(brand.box.left - icon.left) > 0.5) {
+          throw new Error(
+            `LAYOUT: the brand starts at x=${brand.box.left.toFixed(1)}, the nav icon column at ` +
+              `x=${icon.left.toFixed(1)}`,
+          )
+        }
+      })
+    }
+
+    /**
+     * THE SIDEBAR FOOTER OWNS ITS OWN AIR.
+     *
+     * The footer's rows used to stack FLUSH on the scroll region above them and on each other — the
+     * `Stack` wrapping them is `gap={0}`, so with no rule of its own the region had no rhythm at all.
+     * What landed is SPACE, not a seam: `.footer` opens with one `sidebarRegionGap`, and the rows
+     * inside it run on the NAV's own 1px pitch (owner feedback, shutterflow round 3: the sidebar bottom
+     * must read as one list — an earlier `stack-sm` gap between Settings and the account row put the
+     * footer on a 42px pitch against the nav's 33). A `--vx-divider` hairline on `.footer` was the obvious alternative and
+     * `app-sidebar.module.css` rejects it in as many words — the boundary is already carried by that
+     * padding and by the account row's own inset, so a rule there would answer a question nobody
+     * asked (and would put the module into `theme/divider-law.test.ts`'s hairline inventory for it).
+     *
+     * That is why this asserts a GAP and not "a gap or a border": which of the two forms shipped is
+     * not an implementation detail the sidebar is free to swap later, it is a decision with an
+     * argument attached. If a later round paints a seam anyway, this failing is the correct outcome
+     * and that argument is the thing to answer.
+     *
+     * The floors are read from the token table for the same reason the gutter's are — `tokens/
+     * palette.ts` carries the numbers and the argument for them, and a copy here would go stale on a
+     * density retune while looking authoritative.
+     */
+    test('the footer reads as its own region, not as more rows', async () => {
+      const p = await openFixture(
+        { ...HEADER_PAGE, sidebar: { account: true, settings: 2 } },
+        LAPTOP_1024,
+      )
+      await p.settle()
+
+      const footer = await p.box('footer', S('shell-rail-footer'))
+      const children = await p.boxes(`${S('shell-rail-footer')} > *`)
+      const [first, second] = children
+      if (!first || !second) {
+        throw new Error(
+          `LAYOUT: the sidebar footer rendered ${children.length} child(ren) — this invariant needs ` +
+            'the settings rows AND the account row, so the gap between them is measurable at all.',
+        )
+      }
+
+      expectGapAtLeast(
+        footer,
+        { name: 'first footer row', box: first },
+        'top',
+        SPACE_STEP.sidebarRegionGap - 0.5,
+        'the footer must open with a full region gap — it is the seam between the scrolling nav and ' +
+          'the pinned cluster, and with `gap: 0` on the Stack around it there is nothing else to draw it',
+        p.viewport,
+      )
+
+      expectSeparatedBy(
+        { name: 'settings rows', box: first },
+        { name: 'account row', box: second },
+        0.5,
+        'the footer rows keep the nav list\'s 1px pitch — they separate, never flush (the "cramped ' +
+          'footer", what `gap={0}` gives you unstyled), but they do not take the region gap',
+        p.viewport,
+      )
+    })
+
+    /**
+     * THE LAST NAV ROW IS NEVER CLIPPED MID-ROW.
+     *
+     * An overflowing nav column with only the inline inset cut its last row flush against the
+     * viewport's bottom edge, which reads as a list that is CLIPPED rather than one that scrolls —
+     * the reader has no signal that scrolling would help. `.navViewport`'s `padding-block-end` is the
+     * scroll END-STOP that fixes it, and it is one `sidebarRegionGap`, the same number the column
+     * opens with at its other end — and the same height as the mask that fades the viewport's bottom
+     * edge, which is why the last row lands FULLY OPAQUE: at the scroll end the end-stop's empty air
+     * is what sits in the fade band. This measures that pairing; a mask taller than the end-stop
+     * would dim a real row here and read as the clipping it exists to replace.
+     *
+     * Scrolled to the END on purpose: at rest the last row is off-screen and every reading below is
+     * vacuously true. The nav viewport is scrolled directly through `raw` rather than through
+     * `scrollToEnd()`, which resolves `AppShell.Main` — the shell's scrollport is a different element
+     * and scrolling it would leave the sidebar exactly where it was.
+     *
+     * `LAPTOP_1024` is 640px tall against ~24 nav rows, so the column genuinely overflows. If a later
+     * round makes the rows short enough to fit, this fails loudly on the row count rather than going
+     * green on a list that never scrolled.
+     */
+    test('the nav scroll region stops on a whole row, not through one', async () => {
+      const p = await openFixture(
+        {
+          sections: Array.from({ length: 3 }, (_, s) => ({
+            label: `Section ${s + 1}`,
+            items: Array.from({ length: 8 }, (_, i) => ({
+              key: `s${s}i${i}`,
+              label: `Destination ${s + 1}.${i + 1}`,
+              ...(s === 0 && i === 0 ? { active: true as const } : {}),
+            })),
+          })),
+          sidebar: { account: true },
+        },
+        LAPTOP_1024,
+      )
+      await p.settle()
+
+      const scroll = await p.scroll(S('shell-rail-viewport'))
+      if (scroll.scrollHeight <= scroll.clientHeight + 1) {
+        throw new Error(
+          `LAYOUT: the nav column did not overflow (scrollHeight ${scroll.scrollHeight}, ` +
+            `clientHeight ${scroll.clientHeight}) — this invariant is about a column that SCROLLS, ` +
+            'and it just measured one that fits. Add rows or shorten the viewport.',
+        )
+      }
+
+      await p.raw.evaluate((selector) => {
+        document.querySelector(selector)?.scrollTo({ top: 1e7, behavior: 'instant' })
+      }, S('shell-rail-viewport'))
+      await p.settle()
+
+      const viewport = await p.box('nav viewport', S('shell-rail-viewport'))
+      const rows = await p.boxes(S('shell-rail-row'))
+      const last = rows.at(-1)
+      if (!last) throw new Error('LAYOUT: the sidebar rendered no nav rows — the fixture is wrong')
+      const lastRow = { name: 'last nav row', box: last }
+
+      expectFullyInside(
+        lastRow,
+        viewport,
+        'scrolled to the end, the last nav row must be WHOLE inside the scrollport — a row cut by ' +
+          'the viewport edge reads as a clipped list, not as one that has more below',
+        p.viewport,
+      )
+      expectGapAtLeast(
+        viewport,
+        lastRow,
+        'bottom',
+        SPACE_STEP.sidebarRegionGap - 0.5,
+        'the scroll END-STOP is a full region gap of air under the last row — the same number the ' +
+          "column opens with at the other end, so both of the nav region's edges read the same",
+        p.viewport,
+      )
+    })
+    /**
+     * THE FOOTER'S BOTTOM INSET EQUALS THE COLUMN'S SIDE INSET — expanded and in the rail.
+     *
+     * `.footer` carried `padding-top` only, so the last row (settings link / account row) sat FLUSH
+     * on the navbar's bottom edge against a 10px gap at its sides. One `rowInsetX` below the last row
+     * closes it, and it is the footer's own edge, so the rail cannot double it.
+     */
+    for (const collapsed of [false, true]) {
+      test(`the last footer row clears the navbar bottom by the side inset (${collapsed ? 'rail' : 'expanded'})`, async () => {
+        const p = await openFixture(UNLABELLED, DESKTOP_1440)
+        await p.settle()
+        if (collapsed) await collapseSidebar(p)
+
+        const navbar = await p.box('navbar', S('shell-rail'))
+        const rows = await p.boxes(`${S('shell-rail-footer')} > *`)
+        const last = rows.at(-1)
+        if (!last) throw new Error('LAYOUT: the footer rendered no rows — the fixture is wrong')
+
+        const gap = navbar.box.bottom - last.bottom
+        if (Math.abs(gap - SPACE.rowInsetX) <= 0.5) return
+        throw new Error(
+          '\nLAYOUT INVARIANT VIOLATED — the sidebar footer must end one side inset above the navbar ' +
+            'bottom\n\n' +
+            `  navbar.bottom − last footer row.bottom = ${gap.toFixed(1)}px\n` +
+            `  expected: ${SPACE.rowInsetX}px (the column's horizontal inset)\n` +
+            `  viewport ${p.viewport.width}x${p.viewport.height} (${p.viewport.name})\n`,
+        )
+      })
+    }
+
+    /**
+     * THE FIRST NAV ROW SITS AT THE SAME y EXPANDED AND IN THE RAIL.
+     *
+     * Expanded, an unlabelled first section's band is zero-height and contributes only its
+     * `margin-bottom` (`sidebarSectionLabelGap`); the rail's rule zeroed that margin, so the first
+     * icon landed flush on the navbar top, a gap higher than the same row expanded. The rail now
+     * keeps the FIRST band's margin only — the equal-offset contract, and the non-vacuous half: the
+     * offset is asserted to be the token, not merely "the same".
+     */
+    /**
+     * RAIL BADGES — the rail hides a row's right section (where its count badge lives), so a badged
+     * row carries a dot on its ICON instead. The dot has to be visible (not `display: none`) and sit
+     * on the icon's top-end corner, inside the row — in the primary group and the non-primary one.
+     */
+    test('a badged nav row shows a visible dot on its icon in the rail', async () => {
+      const p = await openFixture(BADGED_RAIL, DESKTOP_1440)
+      await p.settle()
+      await collapseSidebar(p)
+
+      for (const label of ['Calendar', 'M365']) {
+        const row = `${S('shell-rail')} a[aria-label^="${label}"]`
+        const dot = `${row} ${S('shell-rail-dot')}`
+        const display = await p.computed(dot, 'display')
+        if (display === 'none') throw new Error(`LAYOUT: the ${label} rail dot is display: none`)
+        const rowBox = (await p.box(`${label} row`, row)).box
+        const dotBox = (await p.box(`${label} dot`, dot)).box
+        const [icon] = await p.boxes(`${row} ${S('shell-rail-row-icon')}`)
+        if (!icon) throw new Error(`LAYOUT: ${label} has no icon section`)
+        const insideRow =
+          dotBox.width > 0 &&
+          dotBox.left >= rowBox.left &&
+          dotBox.right <= rowBox.right &&
+          dotBox.top >= rowBox.top
+        const onIconCorner =
+          Math.abs(dotBox.right - icon.right) <= 6 && Math.abs(dotBox.top - icon.top) <= 6
+        if (insideRow && onIconCorner) continue
+        throw new Error(
+          `LAYOUT: the ${label} rail dot is misplaced — dot ${JSON.stringify(dotBox)}, ` +
+            `icon ${JSON.stringify(icon)}, row ${JSON.stringify(rowBox)}`,
+        )
+      }
+    })
+
+    test('the first nav row has the same top offset expanded and collapsed', async () => {
+      const p = await openFixture(UNLABELLED, DESKTOP_1440)
+      await p.settle()
+
+      const offset = async (): Promise<number> => {
+        const navbar = await p.box('navbar', S('shell-rail'))
+        const [first] = await p.boxes(S('shell-rail-row'))
+        if (!first)
+          throw new Error('LAYOUT: the sidebar rendered no nav rows — the fixture is wrong')
+        return first.top - navbar.box.top
+      }
+
+      const expanded = await offset()
+      await collapseSidebar(p)
+      const rail = await offset()
+
+      if (
+        Math.abs(expanded - rail) <= 0.5 &&
+        Math.abs(rail - SPACE_STEP.sidebarSectionLabelGap) <= 0.5
+      )
+        return
+      throw new Error(
+        '\nLAYOUT INVARIANT VIOLATED — the first nav row moved when the sidebar collapsed\n\n' +
+          `  first row top offset expanded = ${expanded.toFixed(1)}px, rail = ${rail.toFixed(1)}px\n` +
+          `  expected: both = ${SPACE_STEP.sidebarSectionLabelGap}px (sidebarSectionLabelGap)\n`,
+      )
+    })
+
+    /**
+     * THE RAIL'S SECTION SEAM IS UNCHANGED — only the FIRST band keeps a margin.
+     *
+     * Un-zeroing every band's `margin-bottom` in the rail would also have widened the seam between
+     * sections by the label gap (`sectionGap` + 6), for a label that is not there. The rail's
+     * icon-to-icon distance across a seam is `sectionGap` alone, as before.
+     */
+    test('the rail does not widen the gap between sections', async () => {
+      const p = await openFixture(
+        {
+          sections: [
+            { label: '', items: [{ key: 'a', label: 'One', active: true }] },
+            { label: '', items: [{ key: 'b', label: 'Two' }] },
+          ],
+        },
+        DESKTOP_1440,
+      )
+      await p.settle()
+      await collapseSidebar(p)
+
+      const [one, two] = await p.boxes(S('shell-rail-row'))
+      if (!one || !two) throw new Error('LAYOUT: expected two nav rows — the fixture is wrong')
+      const seam = two.top - one.bottom
+      if (Math.abs(seam - SPACE_STEP.sidebarSectionGap) <= 0.5) return
+      throw new Error(
+        '\nLAYOUT INVARIANT VIOLATED — the gap between two rail sections moved\n\n' +
+          `  seam = ${seam.toFixed(1)}px, expected ${SPACE_STEP.sidebarSectionGap}px (sidebarSectionGap)\n`,
+      )
+    })
+
+    /**
+     * `--basalt-shell-lead-inset` — the opt-in native title-bar leading inset.
+     *
+     * UNSET is the contract's default and must be byte-identical to before: the zone is the navbar
+     * offset wide (256 / 48), the rail's toggle is centred on the 48px rail, the expanded zone
+     * starts its content at the page gutter. SET to a macOS traffic-light span (70px), the content
+     * moves right of it in both forms and the rail grows just enough to hold inset + toggle, so the
+     * toggle is never clipped by the zone's `overflow: hidden`.
+     */
+    test('with the inset unset the zone is exactly as it was', async () => {
+      const p = await openFixture(UNLABELLED, DESKTOP_1440)
+      await p.settle()
+
+      const zone = await p.box('zone', S('shell-brand-zone'))
+      const expandedPadding = await computedPx(p, S('shell-brand-zone'), 'padding-left')
+      if (
+        Math.abs(zone.box.width - SPACE_STEP.appShellNavbarWidth) > 0.5 ||
+        Math.abs(expandedPadding - 2 * SPACE.rowInsetX) > 0.5
+      ) {
+        throw new Error(
+          `LAYOUT: expanded zone is ${zone.box.width}px wide with ${expandedPadding}px inline-start ` +
+            `padding; expected ${SPACE_STEP.appShellNavbarWidth} / ${2 * SPACE.rowInsetX}`,
+        )
+      }
+
+      await collapseSidebar(p)
+      const rail = await p.box('rail zone', S('shell-brand-zone'))
+      const toggle = await p.box('toggle', S('shell-rail-toggle'))
+      const railPadding = await computedPx(p, S('shell-brand-zone'), 'padding-left')
+      const centre = toggle.box.left + toggle.box.width / 2
+      if (
+        Math.abs(rail.box.width - SPACE_STEP.appShellNavbarRailWidth) > 0.5 ||
+        railPadding !== 0 ||
+        Math.abs(centre - (rail.box.left + rail.box.width / 2)) > 0.5
+      ) {
+        throw new Error(
+          `LAYOUT: rail zone is ${rail.box.width}px wide, padding-left ${railPadding}px, toggle ` +
+            `centre ${centre.toFixed(1)} vs zone centre ${(rail.box.left + rail.box.width / 2).toFixed(1)}; ` +
+            'expected the 48px rail with a centred toggle and no padding',
+        )
+      }
+    })
+
+    const TRAFFIC_LIGHTS_PX = 70
+
+    test('a lead inset pushes the expanded brand clear of the traffic lights', async () => {
+      const p = await openFixture(UNLABELLED, DESKTOP_1440)
+      await p.settle()
+      await setLeadInset(p, `${TRAFFIC_LIGHTS_PX}px`)
+
+      const zone = await p.box('zone', S('shell-brand-zone'))
+      const toggle = await p.box('toggle', S('shell-rail-toggle'))
+      const brand = await p.box('brand', `${S('shell-brand-zone')} > :first-child`)
+      expectFullyInside(toggle, zone, 'the toggle stays inside the zone', p.viewport)
+      if (
+        Math.abs(zone.box.width - SPACE_STEP.appShellNavbarWidth) > 0.5 ||
+        brand.box.left < zone.box.left + TRAFFIC_LIGHTS_PX - 0.5
+      ) {
+        throw new Error(
+          `LAYOUT: expanded zone ${zone.box.width}px wide (expected the 256px navbar offset), ` +
+            `brand content starts at ${(brand.box.left - zone.box.left).toFixed(1)}px — it must ` +
+            `start at or right of the ${TRAFFIC_LIGHTS_PX}px inset`,
+        )
+      }
+    })
+
+    test('a lead inset keeps the rail toggle right of the traffic lights, unclipped', async () => {
+      const p = await openFixture(UNLABELLED, DESKTOP_1440)
+      await p.settle()
+      await setLeadInset(p, `${TRAFFIC_LIGHTS_PX}px`)
+      await collapseSidebar(p)
+
+      const zone = await p.box('rail zone', S('shell-brand-zone'))
+      const toggle = await p.box('toggle', S('shell-rail-toggle'))
+      expectFullyInside(
+        toggle,
+        zone,
+        'the rail zone grows to hold inset + toggle — a 48px rail would clip the toggle under ' +
+          '`overflow: hidden`',
+        p.viewport,
+      )
+      if (toggle.box.left >= zone.box.left + TRAFFIC_LIGHTS_PX - 0.5) return
+      throw new Error(
+        `LAYOUT: rail toggle starts ${(toggle.box.left - zone.box.left).toFixed(1)}px into the zone, ` +
+          `under the ${TRAFFIC_LIGHTS_PX}px traffic-light span`,
+      )
+    })
+    /**
+     * `BasaltShell headerHeight` — ONE deliberate header height, expanded and in the rail.
+     *
+     * Default (prop omitted) is the token, unchanged. Overridden to a native unified-toolbar 52, the
+     * header, the navbar's and aside's top, the page-bar band and Main all follow it — they derive
+     * from the same Mantine var, so this measures that nothing kept a copy of 44 — and the row's
+     * content (brand, toggle, breadcrumb) stays vertically centred in it.
+     */
+    const ASIDE_HEADER_SPEC: FixtureSpec = { ...HEADER_PAGE, aside: { title: 'Inspector' } }
+    for (const [headerHeight, label] of [
+      [undefined, 'default'],
+      [52, '52px override'],
+    ] as const) {
+      const expected = headerHeight ?? SPACE_STEP.appShellHeaderHeight
+      for (const collapsed of [false, true]) {
+        test(`the header is ${expected}px and everything under it starts there (${label}, ${collapsed ? 'rail' : 'expanded'})`, async () => {
+          const p = await openFixture(
+            { ...ASIDE_HEADER_SPEC, ...(headerHeight !== undefined && { headerHeight }) },
+            DESKTOP_1440,
+          )
+          await p.settle()
+          if (collapsed) await collapseSidebar(p)
+
+          const header = await p.box('header', S('shell-header'))
+          const navbar = await p.box('navbar', S('shell-rail'))
+          const band = await p.box('page-bar band', S('shell-band'))
+          const aside = await p.box('aside', S('shell-aside'))
+          const main = await p.box('main', S('shell-main'))
+          const row = await p.box('header row', S('shell-header-row'))
+
+          const tops = [
+            ['header height', header.box.height],
+            ['navbar top', navbar.box.top],
+            ['page-bar band top', band.box.top],
+            ['aside top', aside.box.top],
+          ] as const
+          for (const [name, value] of tops) {
+            if (Math.abs(value - expected) <= 0.5) continue
+            throw new Error(
+              `LAYOUT: ${name} = ${value.toFixed(1)}px, expected ${expected}px (${label}) — something ` +
+                'under the header kept its own copy of the header height',
+            )
+          }
+          if (Math.abs(main.box.top - band.box.bottom) > 0.5) {
+            throw new Error('LAYOUT: Main does not start at the band bottom — the column is broken')
+          }
+
+          const rowCentre = row.box.top + row.box.height / 2
+          for (const [name, selector] of [
+            ['brand zone', S('shell-brand-zone')],
+            ['collapse toggle', S('shell-rail-toggle')],
+            ['breadcrumb', S('shell-lead')],
+          ] as const) {
+            const box = (await p.box(name, selector)).box
+            const centre = box.top + box.height / 2
+            if (Math.abs(centre - rowCentre) <= 1) continue
+            throw new Error(
+              `LAYOUT: ${name} centre y=${centre.toFixed(1)} is off the header row centre ` +
+                `y=${rowCentre.toFixed(1)} (${label})`,
+            )
+          }
+        })
+      }
+    }
+  },
+)
