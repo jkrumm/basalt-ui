@@ -140,3 +140,36 @@ describe('themeScript behavior', () => {
     expect(run({ default: 'purple' as Scheme })).toBeNull()
   })
 })
+
+describe('themeScript and readScheme agree on edge rows', () => {
+  test('duplicate cookie names: the first match wins in both', () => {
+    const own = Object.getOwnPropertyDescriptor(document, 'cookie')
+    Object.defineProperty(document, 'cookie', {
+      configurable: true,
+      get: () => 'sf=dark; sf=light',
+    })
+    try {
+      expect(readScheme({ cookie: 'sf' })).toBe('dark')
+      expect(run({ cookie: 'sf' })).toBe('dark')
+    } finally {
+      if (own) Object.defineProperty(document, 'cookie', own)
+      else delete (document as unknown as { cookie?: string }).cookie
+    }
+  })
+
+  test('a custom key written by setScheme is read back by the script and readScheme', () => {
+    try {
+      setScheme('dark', { key: 'app:scheme' })
+      expect(localStorage.getItem('app:scheme')).toBe('dark')
+      expect(localStorage.getItem(SCHEME_KEY)).toBeNull()
+      expect(readScheme({ key: 'app:scheme' })).toBe('dark')
+      root().removeAttribute('data-theme')
+      expect(run({ key: 'app:scheme' })).toBe('dark')
+      localStorage.setItem('app:scheme', 'light')
+      setScheme()
+      expect(root().getAttribute('data-theme')).toBe('light')
+    } finally {
+      setScheme(undefined, { key: SCHEME_KEY })
+    }
+  })
+})

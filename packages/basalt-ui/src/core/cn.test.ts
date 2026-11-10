@@ -109,6 +109,71 @@ describe('cn: conflicts', () => {
   })
 })
 
+const survives = (...classes: string[]): void => {
+  expect(cn(...classes)).toBe(classes.join(' '))
+  expect(cn(...classes.toReversed())).toBe(classes.toReversed().join(' '))
+}
+
+describe('cn: one prefix, several CSS properties', () => {
+  test('list style type, position and image', () => {
+    survives('list-disc', 'list-inside')
+    survives('list-disc', 'list-image-none')
+    survives('list-inside', 'list-image-[url(/a.png)]')
+    expect(cn('list-disc', 'list-decimal')).toBe('list-decimal')
+    expect(cn('list-inside', 'list-outside')).toBe('list-outside')
+  })
+
+  test('break and wrap utilities', () => {
+    survives('break-words', 'break-all')
+    survives('break-after-page', 'break-before-page', 'break-inside-avoid')
+    survives('break-all', 'wrap-anywhere')
+    expect(cn('break-all', 'break-keep')).toBe('break-keep')
+    expect(cn('wrap-normal', 'wrap-anywhere')).toBe('wrap-anywhere')
+    expect(cn('break-words', 'wrap-anywhere')).toBe('wrap-anywhere')
+    expect(cn('break-all', 'break-words', 'break-normal')).toBe('break-normal')
+  })
+
+  test('touch action groups', () => {
+    survives('touch-pan-x', 'touch-pinch-zoom')
+    survives('touch-pan-x', 'touch-pan-y')
+    expect(cn('touch-pan-x', 'touch-pan-left')).toBe('touch-pan-left')
+    expect(cn('touch-auto', 'touch-none')).toBe('touch-none')
+    expect(cn('touch-pan-x', 'touch-none')).toBe('touch-none')
+  })
+
+  test('inset vs inset-shadow and inset-ring', () => {
+    survives('inset-0', 'inset-shadow-sm', 'inset-ring-1')
+    survives('inset-shadow-sm', 'inset-shadow-red-500')
+    survives('inset-ring-1', 'inset-ring-red-500')
+    expect(cn('inset-shadow-sm', 'inset-shadow-lg')).toBe('inset-shadow-lg')
+    expect(cn('inset-ring-1', 'inset-ring-2')).toBe('inset-ring-2')
+  })
+
+  test('font weight, family and stretch', () => {
+    survives('font-bold', 'font-stretch-condensed')
+    expect(cn('font-stretch-condensed', 'font-stretch-expanded')).toBe('font-stretch-expanded')
+  })
+
+  test('border-spacing is its own group', () => {
+    survives('border-line', 'border-spacing-2')
+    survives('border-2', 'border-spacing-x-2')
+    expect(cn('border-spacing-x-2', 'border-spacing-4')).toBe('border-spacing-4')
+    expect(cn('border-spacing-4', 'border-spacing-x-2')).toBe('border-spacing-4 border-spacing-x-2')
+    expect(cn('border-spacing-y-1', 'border-spacing-y-2')).toBe('border-spacing-y-2')
+  })
+
+  test('rotate axes, space reverse, transition behavior, content, decoration, text shadow', () => {
+    survives('rotate-45', 'rotate-x-12')
+    survives('rotate-x-12', 'rotate-y-12')
+    survives('space-x-2', 'space-x-reverse')
+    survives('transition-colors', 'transition-discrete')
+    survives('content-center', 'content-["x"]')
+    survives('decoration-red-500', 'decoration-clone')
+    survives('text-red-500', 'text-shadow-sm')
+    survives('text-shadow-sm', 'text-shadow-red-500')
+  })
+})
+
 describe('cn-theme', () => {
   test('committed cn-theme.ts equals generator output', () => {
     expect(readFileSync(new URL('./cn-theme.ts', import.meta.url), 'utf8')).toBe(generate())

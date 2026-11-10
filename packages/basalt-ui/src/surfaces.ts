@@ -646,7 +646,7 @@ export const SURFACES = {
   './theme-script': {
     kind: 'tooling',
     layer: 'build-tooling',
-    description: 'v3 pre-paint color-scheme script (stub), frozen per major',
+    description: 'v3 pre-paint color-scheme script, frozen per major',
     forbiddenImports: [],
   },
 

@@ -1303,7 +1303,7 @@ Layer: build-tooling
 
 ## basalt-ui/theme-script
 Import: import { ... } from 'basalt-ui/theme-script'
-Description: v3 pre-paint color-scheme script (stub), frozen per major
+Description: v3 pre-paint color-scheme script, frozen per major
 Layer: build-tooling
 Signature: themeScript(options: ThemeScriptOptions): string
   key?: string

@@ -28,7 +28,7 @@ export function themeScript(options: ThemeScriptOptions = {}): string {
     `function t(f){try{var x=f();if(x==="light"||x==="dark"||x==="auto")return x}catch(e){}}`,
     `function s(k){return t(function(){return localStorage.getItem(k)})}`,
     `v=s(${key})||s(${legacy})||t(function(){return c&&document.cookie.split(/;\\s*/).reduce(function(r,p){`,
-    `return p.indexOf(c+"=")===0?p.slice(c.length+1):r},"")})||${fallback}`,
+    `return r||(p.indexOf(c+"=")===0?p.slice(c.length+1):r)},"")})||${fallback}`,
     `if(v==="light"||v==="dark")d.setAttribute(a,v)})()`,
   ].join('\n')
 }
