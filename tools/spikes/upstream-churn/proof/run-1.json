@@ -1,0 +1,1548 @@
+{
+  "verdict": "F8: PASS",
+  "rule": "REFUTED when the median over primitives of changePerMonth (anatomyChangeCount / monthsCovered) exceeds 1 in either series",
+  "runDate": "2026-11-10",
+  "asOf": "2026-11-10",
+  "monthsCovered": 10,
+  "window": { "start": "2026-01-01", "endExclusive": "2026-11-01", "lastMonth": "2026-10" },
+  "series": {
+    "baseUi": {
+      "repo": "https://github.com/mui/base-ui",
+      "unit": "a stable release whose diff against the previous stable release touches the part directory (test, docs and story files excluded)",
+      "classification": "anatomy = exported declarations, rendered tags, data-/aria-/role keys or CSS-variable names of the part differ between the two tags; cosmetic = implementation only",
+      "range": {
+        "from": { "tag": "v1.0.0", "sha": "8319606c8b93366f83a1eb45c0970d106b7fa802" },
+        "to": { "tag": "v1.9.0", "sha": "ad7ecda5296b0295b41a51ecb01fce6204acd099" },
+        "releases": [
+          {
+            "tag": "v1.1.0",
+            "sha": "033199c38f99caa728dbaaf4ea3ef4189d0ed993",
+            "date": "2026-01-15"
+          },
+          {
+            "tag": "v1.2.0",
+            "sha": "ba51298273a2d9afc3fe3858b3939bf7cf734e43",
+            "date": "2026-02-12"
+          },
+          {
+            "tag": "v1.3.0",
+            "sha": "a819c345da8e59029f044fe4c73b91cc992de467",
+            "date": "2026-03-12"
+          },
+          {
+            "tag": "v1.4.0",
+            "sha": "d1bb4701cb7c5ffda03ad9733822503b7a2e537e",
+            "date": "2026-04-13"
+          },
+          {
+            "tag": "v1.4.1",
+            "sha": "be88b61924974b43e7340020e4ffe95698584cda",
+            "date": "2026-04-20"
+          },
+          {
+            "tag": "v1.5.0",
+            "sha": "2fdf1b06f2b8b25bf86124bf6c8810a6aa2352a8",
+            "date": "2026-05-19"
+          },
+          {
+            "tag": "v1.6.0",
+            "sha": "b34551d644f2e58ebf8fc1050d949f6654ceca6c",
+            "date": "2026-06-18"
+          },
+          {
+            "tag": "v1.7.0",
+            "sha": "254f4744f0a241c20697b9eeab33402f4469a081",
+            "date": "2026-08-04"
+          },
+          {
+            "tag": "v1.8.0",
+            "sha": "47b40521eab921c2756bf9bdb0b0f07fbfdb8c8c",
+            "date": "2026-09-04"
+          },
+          {
+            "tag": "v1.9.0",
+            "sha": "ad7ecda5296b0295b41a51ecb01fce6204acd099",
+            "date": "2026-10-09"
+          }
+        ]
+      },
+      "monthsCovered": 10,
+      "releasesPerMonth": 1,
+      "primitiveCount": 25,
+      "medianChangesPerMonth": 0.6,
+      "medianAllChangesPerMonth": 1,
+      "maxChangesPerMonth": 0.9,
+      "primitives": [
+        {
+          "id": "button",
+          "sources": ["packages/react/src/button"],
+          "changeCount": 7,
+          "anatomyChangeCount": 2,
+          "cosmeticChangeCount": 5,
+          "changePerMonth": 0.2,
+          "allChangesPerMonth": 0.7,
+          "events": [
+            { "at": "v1.1.0", "date": "2026-01-15", "kind": "anatomy" },
+            { "at": "v1.2.0", "date": "2026-02-12", "kind": "cosmetic" },
+            { "at": "v1.3.0", "date": "2026-03-12", "kind": "cosmetic" },
+            { "at": "v1.4.0", "date": "2026-04-13", "kind": "cosmetic" },
+            { "at": "v1.4.1", "date": "2026-04-20", "kind": "cosmetic" },
+            { "at": "v1.8.0", "date": "2026-09-04", "kind": "cosmetic" },
+            { "at": "v1.9.0", "date": "2026-10-09", "kind": "anatomy" }
+          ]
+        },
+        {
+          "id": "input",
+          "sources": ["packages/react/src/input"],
+          "changeCount": 6,
+          "anatomyChangeCount": 3,
+          "cosmeticChangeCount": 3,
+          "changePerMonth": 0.3,
+          "allChangesPerMonth": 0.6,
+          "events": [
+            { "at": "v1.2.0", "date": "2026-02-12", "kind": "cosmetic" },
+            { "at": "v1.3.0", "date": "2026-03-12", "kind": "anatomy" },
+            { "at": "v1.4.0", "date": "2026-04-13", "kind": "anatomy" },
+            { "at": "v1.4.1", "date": "2026-04-20", "kind": "cosmetic" },
+            { "at": "v1.8.0", "date": "2026-09-04", "kind": "cosmetic" },
+            { "at": "v1.9.0", "date": "2026-10-09", "kind": "anatomy" }
+          ]
+        },
+        {
+          "id": "number-field",
+          "sources": ["packages/react/src/number-field"],
+          "changeCount": 10,
+          "anatomyChangeCount": 7,
+          "cosmeticChangeCount": 3,
+          "changePerMonth": 0.7,
+          "allChangesPerMonth": 1,
+          "events": [
+            { "at": "v1.1.0", "date": "2026-01-15", "kind": "anatomy" },
+            { "at": "v1.2.0", "date": "2026-02-12", "kind": "anatomy" },
+            { "at": "v1.3.0", "date": "2026-03-12", "kind": "anatomy" },
+            { "at": "v1.4.0", "date": "2026-04-13", "kind": "anatomy" },
+            { "at": "v1.4.1", "date": "2026-04-20", "kind": "cosmetic" },
+            { "at": "v1.5.0", "date": "2026-05-19", "kind": "cosmetic" },
+            { "at": "v1.6.0", "date": "2026-06-18", "kind": "anatomy" },
+            { "at": "v1.7.0", "date": "2026-08-04", "kind": "anatomy" },
+            { "at": "v1.8.0", "date": "2026-09-04", "kind": "cosmetic" },
+            { "at": "v1.9.0", "date": "2026-10-09", "kind": "anatomy" }
+          ]
+        },
+        {
+          "id": "select",
+          "sources": ["packages/react/src/select"],
+          "changeCount": 10,
+          "anatomyChangeCount": 8,
+          "cosmeticChangeCount": 2,
+          "changePerMonth": 0.8,
+          "allChangesPerMonth": 1,
+          "events": [
+            { "at": "v1.1.0", "date": "2026-01-15", "kind": "anatomy" },
+            { "at": "v1.2.0", "date": "2026-02-12", "kind": "anatomy" },
+            { "at": "v1.3.0", "date": "2026-03-12", "kind": "anatomy" },
+            { "at": "v1.4.0", "date": "2026-04-13", "kind": "anatomy" },
+            { "at": "v1.4.1", "date": "2026-04-20", "kind": "cosmetic" },
+            { "at": "v1.5.0", "date": "2026-05-19", "kind": "anatomy" },
+            { "at": "v1.6.0", "date": "2026-06-18", "kind": "cosmetic" },
+            { "at": "v1.7.0", "date": "2026-08-04", "kind": "anatomy" },
+            { "at": "v1.8.0", "date": "2026-09-04", "kind": "anatomy" },
+            { "at": "v1.9.0", "date": "2026-10-09", "kind": "anatomy" }
+          ]
+        },
+        {
+          "id": "combobox",
+          "sources": ["packages/react/src/combobox", "packages/react/src/autocomplete"],
+          "changeCount": 10,
+          "anatomyChangeCount": 9,
+          "cosmeticChangeCount": 1,
+          "changePerMonth": 0.9,
+          "allChangesPerMonth": 1,
+          "events": [
+            { "at": "v1.1.0", "date": "2026-01-15", "kind": "anatomy" },
+            { "at": "v1.2.0", "date": "2026-02-12", "kind": "anatomy" },
+            { "at": "v1.3.0", "date": "2026-03-12", "kind": "anatomy" },
+            { "at": "v1.4.0", "date": "2026-04-13", "kind": "anatomy" },
+            { "at": "v1.4.1", "date": "2026-04-20", "kind": "cosmetic" },
+            { "at": "v1.5.0", "date": "2026-05-19", "kind": "anatomy" },
+            { "at": "v1.6.0", "date": "2026-06-18", "kind": "anatomy" },
+            { "at": "v1.7.0", "date": "2026-08-04", "kind": "anatomy" },
+            { "at": "v1.8.0", "date": "2026-09-04", "kind": "anatomy" },
+            { "at": "v1.9.0", "date": "2026-10-09", "kind": "anatomy" }
+          ]
+        },
+        {
+          "id": "checkbox",
+          "sources": ["packages/react/src/checkbox", "packages/react/src/checkbox-group"],
+          "changeCount": 10,
+          "anatomyChangeCount": 5,
+          "cosmeticChangeCount": 5,
+          "changePerMonth": 0.5,
+          "allChangesPerMonth": 1,
+          "events": [
+            { "at": "v1.1.0", "date": "2026-01-15", "kind": "anatomy" },
+            { "at": "v1.2.0", "date": "2026-02-12", "kind": "anatomy" },
+            { "at": "v1.3.0", "date": "2026-03-12", "kind": "anatomy" },
+            { "at": "v1.4.0", "date": "2026-04-13", "kind": "anatomy" },
+            { "at": "v1.4.1", "date": "2026-04-20", "kind": "cosmetic" },
+            { "at": "v1.5.0", "date": "2026-05-19", "kind": "cosmetic" },
+            { "at": "v1.6.0", "date": "2026-06-18", "kind": "cosmetic" },
+            { "at": "v1.7.0", "date": "2026-08-04", "kind": "cosmetic" },
+            { "at": "v1.8.0", "date": "2026-09-04", "kind": "cosmetic" },
+            { "at": "v1.9.0", "date": "2026-10-09", "kind": "anatomy" }
+          ]
+        },
+        {
+          "id": "radio-group",
+          "sources": ["packages/react/src/radio", "packages/react/src/radio-group"],
+          "changeCount": 10,
+          "anatomyChangeCount": 7,
+          "cosmeticChangeCount": 3,
+          "changePerMonth": 0.7,
+          "allChangesPerMonth": 1,
+          "events": [
+            { "at": "v1.1.0", "date": "2026-01-15", "kind": "anatomy" },
+            { "at": "v1.2.0", "date": "2026-02-12", "kind": "anatomy" },
+            { "at": "v1.3.0", "date": "2026-03-12", "kind": "anatomy" },
+            { "at": "v1.4.0", "date": "2026-04-13", "kind": "anatomy" },
+            { "at": "v1.4.1", "date": "2026-04-20", "kind": "cosmetic" },
+            { "at": "v1.5.0", "date": "2026-05-19", "kind": "cosmetic" },
+            { "at": "v1.6.0", "date": "2026-06-18", "kind": "anatomy" },
+            { "at": "v1.7.0", "date": "2026-08-04", "kind": "anatomy" },
+            { "at": "v1.8.0", "date": "2026-09-04", "kind": "cosmetic" },
+            { "at": "v1.9.0", "date": "2026-10-09", "kind": "anatomy" }
+          ]
+        },
+        {
+          "id": "switch",
+          "sources": ["packages/react/src/switch"],
+          "changeCount": 10,
+          "anatomyChangeCount": 5,
+          "cosmeticChangeCount": 5,
+          "changePerMonth": 0.5,
+          "allChangesPerMonth": 1,
+          "events": [
+            { "at": "v1.1.0", "date": "2026-01-15", "kind": "anatomy" },
+            { "at": "v1.2.0", "date": "2026-02-12", "kind": "anatomy" },
+            { "at": "v1.3.0", "date": "2026-03-12", "kind": "anatomy" },
+            { "at": "v1.4.0", "date": "2026-04-13", "kind": "anatomy" },
+            { "at": "v1.4.1", "date": "2026-04-20", "kind": "cosmetic" },
+            { "at": "v1.5.0", "date": "2026-05-19", "kind": "cosmetic" },
+            { "at": "v1.6.0", "date": "2026-06-18", "kind": "cosmetic" },
+            { "at": "v1.7.0", "date": "2026-08-04", "kind": "cosmetic" },
+            { "at": "v1.8.0", "date": "2026-09-04", "kind": "cosmetic" },
+            { "at": "v1.9.0", "date": "2026-10-09", "kind": "anatomy" }
+          ]
+        },
+        {
+          "id": "slider",
+          "sources": ["packages/react/src/slider"],
+          "changeCount": 10,
+          "anatomyChangeCount": 8,
+          "cosmeticChangeCount": 2,
+          "changePerMonth": 0.8,
+          "allChangesPerMonth": 1,
+          "events": [
+            { "at": "v1.1.0", "date": "2026-01-15", "kind": "anatomy" },
+            { "at": "v1.2.0", "date": "2026-02-12", "kind": "anatomy" },
+            { "at": "v1.3.0", "date": "2026-03-12", "kind": "anatomy" },
+            { "at": "v1.4.0", "date": "2026-04-13", "kind": "anatomy" },
+            { "at": "v1.4.1", "date": "2026-04-20", "kind": "cosmetic" },
+            { "at": "v1.5.0", "date": "2026-05-19", "kind": "cosmetic" },
+            { "at": "v1.6.0", "date": "2026-06-18", "kind": "anatomy" },
+            { "at": "v1.7.0", "date": "2026-08-04", "kind": "anatomy" },
+            { "at": "v1.8.0", "date": "2026-09-04", "kind": "anatomy" },
+            { "at": "v1.9.0", "date": "2026-10-09", "kind": "anatomy" }
+          ]
+        },
+        {
+          "id": "segmented",
+          "sources": ["packages/react/src/toggle-group", "packages/react/src/toggle"],
+          "changeCount": 9,
+          "anatomyChangeCount": 4,
+          "cosmeticChangeCount": 5,
+          "changePerMonth": 0.4,
+          "allChangesPerMonth": 0.9,
+          "events": [
+            { "at": "v1.2.0", "date": "2026-02-12", "kind": "anatomy" },
+            { "at": "v1.3.0", "date": "2026-03-12", "kind": "anatomy" },
+            { "at": "v1.4.0", "date": "2026-04-13", "kind": "cosmetic" },
+            { "at": "v1.4.1", "date": "2026-04-20", "kind": "cosmetic" },
+            { "at": "v1.5.0", "date": "2026-05-19", "kind": "cosmetic" },
+            { "at": "v1.6.0", "date": "2026-06-18", "kind": "anatomy" },
+            { "at": "v1.7.0", "date": "2026-08-04", "kind": "cosmetic" },
+            { "at": "v1.8.0", "date": "2026-09-04", "kind": "cosmetic" },
+            { "at": "v1.9.0", "date": "2026-10-09", "kind": "anatomy" }
+          ]
+        },
+        {
+          "id": "field",
+          "sources": [
+            "packages/react/src/field",
+            "packages/react/src/fieldset",
+            "packages/react/src/form"
+          ],
+          "changeCount": 10,
+          "anatomyChangeCount": 6,
+          "cosmeticChangeCount": 4,
+          "changePerMonth": 0.6,
+          "allChangesPerMonth": 1,
+          "events": [
+            { "at": "v1.1.0", "date": "2026-01-15", "kind": "anatomy" },
+            { "at": "v1.2.0", "date": "2026-02-12", "kind": "anatomy" },
+            { "at": "v1.3.0", "date": "2026-03-12", "kind": "anatomy" },
+            { "at": "v1.4.0", "date": "2026-04-13", "kind": "cosmetic" },
+            { "at": "v1.4.1", "date": "2026-04-20", "kind": "cosmetic" },
+            { "at": "v1.5.0", "date": "2026-05-19", "kind": "cosmetic" },
+            { "at": "v1.6.0", "date": "2026-06-18", "kind": "cosmetic" },
+            { "at": "v1.7.0", "date": "2026-08-04", "kind": "anatomy" },
+            { "at": "v1.8.0", "date": "2026-09-04", "kind": "anatomy" },
+            { "at": "v1.9.0", "date": "2026-10-09", "kind": "anatomy" }
+          ]
+        },
+        {
+          "id": "dialog",
+          "sources": ["packages/react/src/dialog", "packages/react/src/alert-dialog"],
+          "changeCount": 10,
+          "anatomyChangeCount": 8,
+          "cosmeticChangeCount": 2,
+          "changePerMonth": 0.8,
+          "allChangesPerMonth": 1,
+          "events": [
+            { "at": "v1.1.0", "date": "2026-01-15", "kind": "anatomy" },
+            { "at": "v1.2.0", "date": "2026-02-12", "kind": "anatomy" },
+            { "at": "v1.3.0", "date": "2026-03-12", "kind": "anatomy" },
+            { "at": "v1.4.0", "date": "2026-04-13", "kind": "anatomy" },
+            { "at": "v1.4.1", "date": "2026-04-20", "kind": "cosmetic" },
+            { "at": "v1.5.0", "date": "2026-05-19", "kind": "anatomy" },
+            { "at": "v1.6.0", "date": "2026-06-18", "kind": "cosmetic" },
+            { "at": "v1.7.0", "date": "2026-08-04", "kind": "anatomy" },
+            { "at": "v1.8.0", "date": "2026-09-04", "kind": "anatomy" },
+            { "at": "v1.9.0", "date": "2026-10-09", "kind": "anatomy" }
+          ]
+        },
+        {
+          "id": "sheet",
+          "sources": ["packages/react/src/drawer"],
+          "changeCount": 9,
+          "anatomyChangeCount": 7,
+          "cosmeticChangeCount": 2,
+          "changePerMonth": 0.7,
+          "allChangesPerMonth": 0.9,
+          "events": [
+            { "at": "v1.2.0", "date": "2026-02-12", "kind": "anatomy" },
+            { "at": "v1.3.0", "date": "2026-03-12", "kind": "anatomy" },
+            { "at": "v1.4.0", "date": "2026-04-13", "kind": "anatomy" },
+            { "at": "v1.4.1", "date": "2026-04-20", "kind": "cosmetic" },
+            { "at": "v1.5.0", "date": "2026-05-19", "kind": "cosmetic" },
+            { "at": "v1.6.0", "date": "2026-06-18", "kind": "anatomy" },
+            { "at": "v1.7.0", "date": "2026-08-04", "kind": "anatomy" },
+            { "at": "v1.8.0", "date": "2026-09-04", "kind": "anatomy" },
+            { "at": "v1.9.0", "date": "2026-10-09", "kind": "anatomy" }
+          ]
+        },
+        {
+          "id": "popover",
+          "sources": ["packages/react/src/popover"],
+          "changeCount": 10,
+          "anatomyChangeCount": 7,
+          "cosmeticChangeCount": 3,
+          "changePerMonth": 0.7,
+          "allChangesPerMonth": 1,
+          "events": [
+            { "at": "v1.1.0", "date": "2026-01-15", "kind": "cosmetic" },
+            { "at": "v1.2.0", "date": "2026-02-12", "kind": "anatomy" },
+            { "at": "v1.3.0", "date": "2026-03-12", "kind": "anatomy" },
+            { "at": "v1.4.0", "date": "2026-04-13", "kind": "cosmetic" },
+            { "at": "v1.4.1", "date": "2026-04-20", "kind": "cosmetic" },
+            { "at": "v1.5.0", "date": "2026-05-19", "kind": "anatomy" },
+            { "at": "v1.6.0", "date": "2026-06-18", "kind": "anatomy" },
+            { "at": "v1.7.0", "date": "2026-08-04", "kind": "anatomy" },
+            { "at": "v1.8.0", "date": "2026-09-04", "kind": "anatomy" },
+            { "at": "v1.9.0", "date": "2026-10-09", "kind": "anatomy" }
+          ]
+        },
+        {
+          "id": "tooltip",
+          "sources": ["packages/react/src/tooltip"],
+          "changeCount": 10,
+          "anatomyChangeCount": 8,
+          "cosmeticChangeCount": 2,
+          "changePerMonth": 0.8,
+          "allChangesPerMonth": 1,
+          "events": [
+            { "at": "v1.1.0", "date": "2026-01-15", "kind": "anatomy" },
+            { "at": "v1.2.0", "date": "2026-02-12", "kind": "anatomy" },
+            { "at": "v1.3.0", "date": "2026-03-12", "kind": "anatomy" },
+            { "at": "v1.4.0", "date": "2026-04-13", "kind": "anatomy" },
+            { "at": "v1.4.1", "date": "2026-04-20", "kind": "cosmetic" },
+            { "at": "v1.5.0", "date": "2026-05-19", "kind": "anatomy" },
+            { "at": "v1.6.0", "date": "2026-06-18", "kind": "anatomy" },
+            { "at": "v1.7.0", "date": "2026-08-04", "kind": "anatomy" },
+            { "at": "v1.8.0", "date": "2026-09-04", "kind": "cosmetic" },
+            { "at": "v1.9.0", "date": "2026-10-09", "kind": "anatomy" }
+          ]
+        },
+        {
+          "id": "menu",
+          "sources": ["packages/react/src/menu"],
+          "changeCount": 10,
+          "anatomyChangeCount": 8,
+          "cosmeticChangeCount": 2,
+          "changePerMonth": 0.8,
+          "allChangesPerMonth": 1,
+          "events": [
+            { "at": "v1.1.0", "date": "2026-01-15", "kind": "anatomy" },
+            { "at": "v1.2.0", "date": "2026-02-12", "kind": "anatomy" },
+            { "at": "v1.3.0", "date": "2026-03-12", "kind": "anatomy" },
+            { "at": "v1.4.0", "date": "2026-04-13", "kind": "cosmetic" },
+            { "at": "v1.4.1", "date": "2026-04-20", "kind": "cosmetic" },
+            { "at": "v1.5.0", "date": "2026-05-19", "kind": "anatomy" },
+            { "at": "v1.6.0", "date": "2026-06-18", "kind": "anatomy" },
+            { "at": "v1.7.0", "date": "2026-08-04", "kind": "anatomy" },
+            { "at": "v1.8.0", "date": "2026-09-04", "kind": "anatomy" },
+            { "at": "v1.9.0", "date": "2026-10-09", "kind": "anatomy" }
+          ]
+        },
+        {
+          "id": "toast",
+          "sources": ["packages/react/src/toast"],
+          "changeCount": 10,
+          "anatomyChangeCount": 7,
+          "cosmeticChangeCount": 3,
+          "changePerMonth": 0.7,
+          "allChangesPerMonth": 1,
+          "events": [
+            { "at": "v1.1.0", "date": "2026-01-15", "kind": "cosmetic" },
+            { "at": "v1.2.0", "date": "2026-02-12", "kind": "anatomy" },
+            { "at": "v1.3.0", "date": "2026-03-12", "kind": "anatomy" },
+            { "at": "v1.4.0", "date": "2026-04-13", "kind": "anatomy" },
+            { "at": "v1.4.1", "date": "2026-04-20", "kind": "cosmetic" },
+            { "at": "v1.5.0", "date": "2026-05-19", "kind": "anatomy" },
+            { "at": "v1.6.0", "date": "2026-06-18", "kind": "cosmetic" },
+            { "at": "v1.7.0", "date": "2026-08-04", "kind": "anatomy" },
+            { "at": "v1.8.0", "date": "2026-09-04", "kind": "anatomy" },
+            { "at": "v1.9.0", "date": "2026-10-09", "kind": "anatomy" }
+          ]
+        },
+        {
+          "id": "tabs",
+          "sources": ["packages/react/src/tabs"],
+          "changeCount": 10,
+          "anatomyChangeCount": 7,
+          "cosmeticChangeCount": 3,
+          "changePerMonth": 0.7,
+          "allChangesPerMonth": 1,
+          "events": [
+            { "at": "v1.1.0", "date": "2026-01-15", "kind": "cosmetic" },
+            { "at": "v1.2.0", "date": "2026-02-12", "kind": "anatomy" },
+            { "at": "v1.3.0", "date": "2026-03-12", "kind": "anatomy" },
+            { "at": "v1.4.0", "date": "2026-04-13", "kind": "cosmetic" },
+            { "at": "v1.4.1", "date": "2026-04-20", "kind": "cosmetic" },
+            { "at": "v1.5.0", "date": "2026-05-19", "kind": "anatomy" },
+            { "at": "v1.6.0", "date": "2026-06-18", "kind": "anatomy" },
+            { "at": "v1.7.0", "date": "2026-08-04", "kind": "anatomy" },
+            { "at": "v1.8.0", "date": "2026-09-04", "kind": "anatomy" },
+            { "at": "v1.9.0", "date": "2026-10-09", "kind": "anatomy" }
+          ]
+        },
+        {
+          "id": "accordion",
+          "sources": ["packages/react/src/accordion"],
+          "changeCount": 10,
+          "anatomyChangeCount": 4,
+          "cosmeticChangeCount": 6,
+          "changePerMonth": 0.4,
+          "allChangesPerMonth": 1,
+          "events": [
+            { "at": "v1.1.0", "date": "2026-01-15", "kind": "cosmetic" },
+            { "at": "v1.2.0", "date": "2026-02-12", "kind": "anatomy" },
+            { "at": "v1.3.0", "date": "2026-03-12", "kind": "anatomy" },
+            { "at": "v1.4.0", "date": "2026-04-13", "kind": "cosmetic" },
+            { "at": "v1.4.1", "date": "2026-04-20", "kind": "cosmetic" },
+            { "at": "v1.5.0", "date": "2026-05-19", "kind": "anatomy" },
+            { "at": "v1.6.0", "date": "2026-06-18", "kind": "cosmetic" },
+            { "at": "v1.7.0", "date": "2026-08-04", "kind": "cosmetic" },
+            { "at": "v1.8.0", "date": "2026-09-04", "kind": "cosmetic" },
+            { "at": "v1.9.0", "date": "2026-10-09", "kind": "anatomy" }
+          ]
+        },
+        {
+          "id": "collapsible",
+          "sources": ["packages/react/src/collapsible"],
+          "changeCount": 10,
+          "anatomyChangeCount": 4,
+          "cosmeticChangeCount": 6,
+          "changePerMonth": 0.4,
+          "allChangesPerMonth": 1,
+          "events": [
+            { "at": "v1.1.0", "date": "2026-01-15", "kind": "cosmetic" },
+            { "at": "v1.2.0", "date": "2026-02-12", "kind": "anatomy" },
+            { "at": "v1.3.0", "date": "2026-03-12", "kind": "anatomy" },
+            { "at": "v1.4.0", "date": "2026-04-13", "kind": "cosmetic" },
+            { "at": "v1.4.1", "date": "2026-04-20", "kind": "cosmetic" },
+            { "at": "v1.5.0", "date": "2026-05-19", "kind": "anatomy" },
+            { "at": "v1.6.0", "date": "2026-06-18", "kind": "cosmetic" },
+            { "at": "v1.7.0", "date": "2026-08-04", "kind": "cosmetic" },
+            { "at": "v1.8.0", "date": "2026-09-04", "kind": "cosmetic" },
+            { "at": "v1.9.0", "date": "2026-10-09", "kind": "anatomy" }
+          ]
+        },
+        {
+          "id": "scroll-area",
+          "sources": ["packages/react/src/scroll-area"],
+          "changeCount": 10,
+          "anatomyChangeCount": 6,
+          "cosmeticChangeCount": 4,
+          "changePerMonth": 0.6,
+          "allChangesPerMonth": 1,
+          "events": [
+            { "at": "v1.1.0", "date": "2026-01-15", "kind": "anatomy" },
+            { "at": "v1.2.0", "date": "2026-02-12", "kind": "anatomy" },
+            { "at": "v1.3.0", "date": "2026-03-12", "kind": "anatomy" },
+            { "at": "v1.4.0", "date": "2026-04-13", "kind": "cosmetic" },
+            { "at": "v1.4.1", "date": "2026-04-20", "kind": "cosmetic" },
+            { "at": "v1.5.0", "date": "2026-05-19", "kind": "cosmetic" },
+            { "at": "v1.6.0", "date": "2026-06-18", "kind": "anatomy" },
+            { "at": "v1.7.0", "date": "2026-08-04", "kind": "cosmetic" },
+            { "at": "v1.8.0", "date": "2026-09-04", "kind": "anatomy" },
+            { "at": "v1.9.0", "date": "2026-10-09", "kind": "anatomy" }
+          ]
+        },
+        {
+          "id": "separator",
+          "sources": ["packages/react/src/separator"],
+          "changeCount": 6,
+          "anatomyChangeCount": 3,
+          "cosmeticChangeCount": 3,
+          "changePerMonth": 0.3,
+          "allChangesPerMonth": 0.6,
+          "events": [
+            { "at": "v1.2.0", "date": "2026-02-12", "kind": "cosmetic" },
+            { "at": "v1.3.0", "date": "2026-03-12", "kind": "anatomy" },
+            { "at": "v1.4.0", "date": "2026-04-13", "kind": "anatomy" },
+            { "at": "v1.4.1", "date": "2026-04-20", "kind": "cosmetic" },
+            { "at": "v1.8.0", "date": "2026-09-04", "kind": "cosmetic" },
+            { "at": "v1.9.0", "date": "2026-10-09", "kind": "anatomy" }
+          ]
+        },
+        {
+          "id": "progress",
+          "sources": ["packages/react/src/progress"],
+          "changeCount": 8,
+          "anatomyChangeCount": 4,
+          "cosmeticChangeCount": 4,
+          "changePerMonth": 0.4,
+          "allChangesPerMonth": 0.8,
+          "events": [
+            { "at": "v1.2.0", "date": "2026-02-12", "kind": "anatomy" },
+            { "at": "v1.3.0", "date": "2026-03-12", "kind": "anatomy" },
+            { "at": "v1.4.0", "date": "2026-04-13", "kind": "cosmetic" },
+            { "at": "v1.4.1", "date": "2026-04-20", "kind": "cosmetic" },
+            { "at": "v1.5.0", "date": "2026-05-19", "kind": "cosmetic" },
+            { "at": "v1.7.0", "date": "2026-08-04", "kind": "anatomy" },
+            { "at": "v1.8.0", "date": "2026-09-04", "kind": "cosmetic" },
+            { "at": "v1.9.0", "date": "2026-10-09", "kind": "anatomy" }
+          ]
+        },
+        {
+          "id": "meter",
+          "sources": ["packages/react/src/meter"],
+          "changeCount": 9,
+          "anatomyChangeCount": 2,
+          "cosmeticChangeCount": 7,
+          "changePerMonth": 0.2,
+          "allChangesPerMonth": 0.9,
+          "events": [
+            { "at": "v1.2.0", "date": "2026-02-12", "kind": "anatomy" },
+            { "at": "v1.3.0", "date": "2026-03-12", "kind": "anatomy" },
+            { "at": "v1.4.0", "date": "2026-04-13", "kind": "cosmetic" },
+            { "at": "v1.4.1", "date": "2026-04-20", "kind": "cosmetic" },
+            { "at": "v1.5.0", "date": "2026-05-19", "kind": "cosmetic" },
+            { "at": "v1.6.0", "date": "2026-06-18", "kind": "cosmetic" },
+            { "at": "v1.7.0", "date": "2026-08-04", "kind": "cosmetic" },
+            { "at": "v1.8.0", "date": "2026-09-04", "kind": "cosmetic" },
+            { "at": "v1.9.0", "date": "2026-10-09", "kind": "cosmetic" }
+          ]
+        },
+        {
+          "id": "toolbar",
+          "sources": ["packages/react/src/toolbar"],
+          "changeCount": 10,
+          "anatomyChangeCount": 5,
+          "cosmeticChangeCount": 5,
+          "changePerMonth": 0.5,
+          "allChangesPerMonth": 1,
+          "events": [
+            { "at": "v1.1.0", "date": "2026-01-15", "kind": "cosmetic" },
+            { "at": "v1.2.0", "date": "2026-02-12", "kind": "cosmetic" },
+            { "at": "v1.3.0", "date": "2026-03-12", "kind": "anatomy" },
+            { "at": "v1.4.0", "date": "2026-04-13", "kind": "cosmetic" },
+            { "at": "v1.4.1", "date": "2026-04-20", "kind": "anatomy" },
+            { "at": "v1.5.0", "date": "2026-05-19", "kind": "cosmetic" },
+            { "at": "v1.6.0", "date": "2026-06-18", "kind": "anatomy" },
+            { "at": "v1.7.0", "date": "2026-08-04", "kind": "anatomy" },
+            { "at": "v1.8.0", "date": "2026-09-04", "kind": "cosmetic" },
+            { "at": "v1.9.0", "date": "2026-10-09", "kind": "anatomy" }
+          ]
+        }
+      ]
+    },
+    "baseNova": {
+      "repo": "https://github.com/shadcn-ui/ui",
+      "unit": "a non-merge commit on main that touches the primitive file under apps/v4/registry/bases/base/ui (creation commits are reported, not counted)",
+      "classification": "cosmetic = the file differs from its parent only in class strings (cn/cva/clsx args, className values), comments, formatting or directives; anything else is anatomy",
+      "range": {
+        "branch": "origin/main",
+        "from": { "sha": "ccafdaf7c6f6747a24f54e84436b42ec42f01779" },
+        "to": { "sha": "c0d63c339d6cd2fc26135590a54cf1f362269451" }
+      },
+      "monthsCovered": 10,
+      "styleFile": { "path": "apps/v4/registry/styles/style-nova.css", "commitsInWindow": 32 },
+      "primitiveCount": 30,
+      "medianChangesPerMonth": 0.1,
+      "medianAllChangesPerMonth": 0.3,
+      "maxChangesPerMonth": 0.4,
+      "excludingBulk": {
+        "bulkCommits": [
+          { "at": "f31ed819", "modules": 14, "subject": "style: run format on all components" },
+          {
+            "at": "c257f688",
+            "modules": 29,
+            "subject": "feat(registry): migrate registry, templates and CLI to cn (#11758)"
+          },
+          {
+            "at": "66d24007",
+            "modules": 10,
+            "subject": "feat(icons): the icons we all love and adore - remixicon (#9156)"
+          }
+        ],
+        "primitiveCount": 30,
+        "medianChangesPerMonth": 0,
+        "medianAllChangesPerMonth": 0.15,
+        "maxChangesPerMonth": 0.2
+      },
+      "primitives": [
+        {
+          "id": "button",
+          "sources": ["apps/v4/registry/bases/base/ui/button.tsx"],
+          "changeCount": 4,
+          "anatomyChangeCount": 1,
+          "cosmeticChangeCount": 3,
+          "changePerMonth": 0.1,
+          "allChangesPerMonth": 0.4,
+          "events": [
+            {
+              "at": "b6d845f8",
+              "date": "2026-01-05",
+              "kind": "cosmetic",
+              "subject": "fix(base-ui): resolve pagination example and button client boundary issues (#9207)"
+            },
+            {
+              "at": "f31ed819",
+              "date": "2026-03-02",
+              "kind": "cosmetic",
+              "subject": "style: run format on all components"
+            },
+            {
+              "at": "4f421aba",
+              "date": "2026-03-25",
+              "kind": "cosmetic",
+              "subject": "fix: remove unnecessary Base UI use client"
+            },
+            {
+              "at": "c257f688",
+              "date": "2026-09-04",
+              "kind": "anatomy",
+              "subject": "feat(registry): migrate registry, templates and CLI to cn (#11758)"
+            }
+          ]
+        },
+        {
+          "id": "input",
+          "sources": [
+            "apps/v4/registry/bases/base/ui/input.tsx",
+            "apps/v4/registry/bases/base/ui/input-group.tsx"
+          ],
+          "changeCount": 2,
+          "anatomyChangeCount": 1,
+          "cosmeticChangeCount": 1,
+          "changePerMonth": 0.1,
+          "allChangesPerMonth": 0.2,
+          "events": [
+            {
+              "at": "f31ed819",
+              "date": "2026-03-02",
+              "kind": "cosmetic",
+              "subject": "style: run format on all components"
+            },
+            {
+              "at": "c257f688",
+              "date": "2026-09-04",
+              "kind": "anatomy",
+              "subject": "feat(registry): migrate registry, templates and CLI to cn (#11758)"
+            }
+          ]
+        },
+        {
+          "id": "textarea",
+          "sources": ["apps/v4/registry/bases/base/ui/textarea.tsx"],
+          "changeCount": 2,
+          "anatomyChangeCount": 1,
+          "cosmeticChangeCount": 1,
+          "changePerMonth": 0.1,
+          "allChangesPerMonth": 0.2,
+          "events": [
+            {
+              "at": "f31ed819",
+              "date": "2026-03-02",
+              "kind": "cosmetic",
+              "subject": "style: run format on all components"
+            },
+            {
+              "at": "c257f688",
+              "date": "2026-09-04",
+              "kind": "anatomy",
+              "subject": "feat(registry): migrate registry, templates and CLI to cn (#11758)"
+            }
+          ]
+        },
+        {
+          "id": "select",
+          "sources": [
+            "apps/v4/registry/bases/base/ui/select.tsx",
+            "apps/v4/registry/bases/base/ui/native-select.tsx"
+          ],
+          "changeCount": 6,
+          "anatomyChangeCount": 4,
+          "cosmeticChangeCount": 2,
+          "changePerMonth": 0.4,
+          "allChangesPerMonth": 0.6,
+          "events": [
+            {
+              "at": "66d24007",
+              "date": "2026-01-16",
+              "kind": "anatomy",
+              "subject": "feat(icons): the icons we all love and adore - remixicon (#9156)"
+            },
+            {
+              "at": "a4ee5483",
+              "date": "2026-01-23",
+              "kind": "anatomy",
+              "subject": "feat: add inline-start and inline-end support for base-ui (#9430)"
+            },
+            {
+              "at": "dba86053",
+              "date": "2026-02-03",
+              "kind": "cosmetic",
+              "subject": "fix: canonical classes in base"
+            },
+            { "at": "49616d2e", "date": "2026-03-10", "kind": "cosmetic", "subject": "fix" },
+            {
+              "at": "a7c3300d",
+              "date": "2026-03-31",
+              "kind": "anatomy",
+              "subject": "fix(native-select): use system colors for option and optgroup"
+            },
+            {
+              "at": "c257f688",
+              "date": "2026-09-04",
+              "kind": "anatomy",
+              "subject": "feat(registry): migrate registry, templates and CLI to cn (#11758)"
+            }
+          ]
+        },
+        {
+          "id": "combobox",
+          "sources": ["apps/v4/registry/bases/base/ui/combobox.tsx"],
+          "changeCount": 5,
+          "anatomyChangeCount": 2,
+          "cosmeticChangeCount": 3,
+          "changePerMonth": 0.2,
+          "allChangesPerMonth": 0.5,
+          "events": [
+            {
+              "at": "66d24007",
+              "date": "2026-01-16",
+              "kind": "anatomy",
+              "subject": "feat(icons): the icons we all love and adore - remixicon (#9156)"
+            },
+            {
+              "at": "a4ee5483",
+              "date": "2026-01-23",
+              "kind": "cosmetic",
+              "subject": "feat: add inline-start and inline-end support for base-ui (#9430)"
+            },
+            {
+              "at": "dba86053",
+              "date": "2026-02-03",
+              "kind": "cosmetic",
+              "subject": "fix: canonical classes in base"
+            },
+            { "at": "49616d2e", "date": "2026-03-10", "kind": "cosmetic", "subject": "fix" },
+            {
+              "at": "c257f688",
+              "date": "2026-09-04",
+              "kind": "anatomy",
+              "subject": "feat(registry): migrate registry, templates and CLI to cn (#11758)"
+            }
+          ]
+        },
+        {
+          "id": "checkbox",
+          "sources": ["apps/v4/registry/bases/base/ui/checkbox.tsx"],
+          "changeCount": 2,
+          "anatomyChangeCount": 2,
+          "cosmeticChangeCount": 0,
+          "changePerMonth": 0.2,
+          "allChangesPerMonth": 0.2,
+          "events": [
+            {
+              "at": "66d24007",
+              "date": "2026-01-16",
+              "kind": "anatomy",
+              "subject": "feat(icons): the icons we all love and adore - remixicon (#9156)"
+            },
+            {
+              "at": "c257f688",
+              "date": "2026-09-04",
+              "kind": "anatomy",
+              "subject": "feat(registry): migrate registry, templates and CLI to cn (#11758)"
+            }
+          ]
+        },
+        {
+          "id": "radio-group",
+          "sources": ["apps/v4/registry/bases/base/ui/radio-group.tsx"],
+          "changeCount": 3,
+          "anatomyChangeCount": 3,
+          "cosmeticChangeCount": 0,
+          "changePerMonth": 0.3,
+          "allChangesPerMonth": 0.3,
+          "events": [
+            {
+              "at": "66d24007",
+              "date": "2026-01-16",
+              "kind": "anatomy",
+              "subject": "feat(icons): the icons we all love and adore - remixicon (#9156)"
+            },
+            {
+              "at": "9e6765f4",
+              "date": "2026-02-19",
+              "kind": "anatomy",
+              "subject": "feat: update style of radio groups"
+            },
+            {
+              "at": "c257f688",
+              "date": "2026-09-04",
+              "kind": "anatomy",
+              "subject": "feat(registry): migrate registry, templates and CLI to cn (#11758)"
+            }
+          ]
+        },
+        {
+          "id": "switch",
+          "sources": ["apps/v4/registry/bases/base/ui/switch.tsx"],
+          "changeCount": 1,
+          "anatomyChangeCount": 1,
+          "cosmeticChangeCount": 0,
+          "changePerMonth": 0.1,
+          "allChangesPerMonth": 0.1,
+          "events": [
+            {
+              "at": "c257f688",
+              "date": "2026-09-04",
+              "kind": "anatomy",
+              "subject": "feat(registry): migrate registry, templates and CLI to cn (#11758)"
+            }
+          ]
+        },
+        {
+          "id": "slider",
+          "sources": ["apps/v4/registry/bases/base/ui/slider.tsx"],
+          "changeCount": 3,
+          "anatomyChangeCount": 3,
+          "cosmeticChangeCount": 0,
+          "changePerMonth": 0.3,
+          "allChangesPerMonth": 0.3,
+          "events": [
+            {
+              "at": "47c47eae",
+              "date": "2026-01-20",
+              "kind": "anatomy",
+              "subject": "feat: add docs for base-ui components (#9304)"
+            },
+            {
+              "at": "4f421aba",
+              "date": "2026-03-25",
+              "kind": "anatomy",
+              "subject": "fix: remove unnecessary Base UI use client"
+            },
+            {
+              "at": "c257f688",
+              "date": "2026-09-04",
+              "kind": "anatomy",
+              "subject": "feat(registry): migrate registry, templates and CLI to cn (#11758)"
+            }
+          ]
+        },
+        {
+          "id": "segmented",
+          "sources": [
+            "apps/v4/registry/bases/base/ui/toggle-group.tsx",
+            "apps/v4/registry/bases/base/ui/toggle.tsx"
+          ],
+          "changeCount": 4,
+          "anatomyChangeCount": 2,
+          "cosmeticChangeCount": 2,
+          "changePerMonth": 0.2,
+          "allChangesPerMonth": 0.4,
+          "events": [
+            {
+              "at": "dba86053",
+              "date": "2026-02-03",
+              "kind": "cosmetic",
+              "subject": "fix: canonical classes in base"
+            },
+            {
+              "at": "f31ed819",
+              "date": "2026-03-02",
+              "kind": "cosmetic",
+              "subject": "style: run format on all components"
+            },
+            {
+              "at": "c9930b7f",
+              "date": "2026-05-17",
+              "kind": "anatomy",
+              "subject": "fix(toggle-group): update default spacing (#10681)"
+            },
+            {
+              "at": "c257f688",
+              "date": "2026-09-04",
+              "kind": "anatomy",
+              "subject": "feat(registry): migrate registry, templates and CLI to cn (#11758)"
+            }
+          ]
+        },
+        {
+          "id": "field",
+          "sources": ["apps/v4/registry/bases/base/ui/field.tsx"],
+          "changeCount": 4,
+          "anatomyChangeCount": 1,
+          "cosmeticChangeCount": 3,
+          "changePerMonth": 0.1,
+          "allChangesPerMonth": 0.4,
+          "events": [
+            {
+              "at": "dba86053",
+              "date": "2026-02-03",
+              "kind": "cosmetic",
+              "subject": "fix: canonical classes in base"
+            },
+            {
+              "at": "f31ed819",
+              "date": "2026-03-02",
+              "kind": "cosmetic",
+              "subject": "style: run format on all components"
+            },
+            { "at": "2f571000", "date": "2026-04-09", "kind": "cosmetic", "subject": "feat: init" },
+            {
+              "at": "c257f688",
+              "date": "2026-09-04",
+              "kind": "anatomy",
+              "subject": "feat(registry): migrate registry, templates and CLI to cn (#11758)"
+            }
+          ]
+        },
+        {
+          "id": "dialog",
+          "sources": [
+            "apps/v4/registry/bases/base/ui/dialog.tsx",
+            "apps/v4/registry/bases/base/ui/alert-dialog.tsx"
+          ],
+          "changeCount": 3,
+          "anatomyChangeCount": 2,
+          "cosmeticChangeCount": 1,
+          "changePerMonth": 0.2,
+          "allChangesPerMonth": 0.3,
+          "events": [
+            {
+              "at": "66d24007",
+              "date": "2026-01-16",
+              "kind": "anatomy",
+              "subject": "feat(icons): the icons we all love and adore - remixicon (#9156)"
+            },
+            {
+              "at": "687f0981",
+              "date": "2026-03-19",
+              "kind": "cosmetic",
+              "subject": "feat: chartColor and fontHeading (#10115)"
+            },
+            {
+              "at": "c257f688",
+              "date": "2026-09-04",
+              "kind": "anatomy",
+              "subject": "feat(registry): migrate registry, templates and CLI to cn (#11758)"
+            }
+          ]
+        },
+        {
+          "id": "sheet",
+          "sources": [
+            "apps/v4/registry/bases/base/ui/sheet.tsx",
+            "apps/v4/registry/bases/base/ui/drawer.tsx"
+          ],
+          "changeCount": 6,
+          "anatomyChangeCount": 3,
+          "cosmeticChangeCount": 3,
+          "changePerMonth": 0.3,
+          "allChangesPerMonth": 0.6,
+          "events": [
+            {
+              "at": "66d24007",
+              "date": "2026-01-16",
+              "kind": "anatomy",
+              "subject": "feat(icons): the icons we all love and adore - remixicon (#9156)"
+            },
+            {
+              "at": "a0125420",
+              "date": "2026-02-03",
+              "kind": "cosmetic",
+              "subject": "fix: duplicate classes"
+            },
+            {
+              "at": "1bd5f3d7",
+              "date": "2026-03-10",
+              "kind": "cosmetic",
+              "subject": "fix: animations for sheets and navigation-menu"
+            },
+            {
+              "at": "687f0981",
+              "date": "2026-03-19",
+              "kind": "cosmetic",
+              "subject": "feat: chartColor and fontHeading (#10115)"
+            },
+            {
+              "at": "34223a84",
+              "date": "2026-07-02",
+              "kind": "anatomy",
+              "subject": "refactor(base-drawer): migrate base drawer to @base-ui/react/drawer (#10430)"
+            },
+            {
+              "at": "c257f688",
+              "date": "2026-09-04",
+              "kind": "anatomy",
+              "subject": "feat(registry): migrate registry, templates and CLI to cn (#11758)"
+            }
+          ]
+        },
+        {
+          "id": "popover",
+          "sources": ["apps/v4/registry/bases/base/ui/popover.tsx"],
+          "changeCount": 4,
+          "anatomyChangeCount": 1,
+          "cosmeticChangeCount": 3,
+          "changePerMonth": 0.1,
+          "allChangesPerMonth": 0.4,
+          "events": [
+            {
+              "at": "a4ee5483",
+              "date": "2026-01-23",
+              "kind": "cosmetic",
+              "subject": "feat: add inline-start and inline-end support for base-ui (#9430)"
+            },
+            {
+              "at": "687f0981",
+              "date": "2026-03-19",
+              "kind": "cosmetic",
+              "subject": "feat: chartColor and fontHeading (#10115)"
+            },
+            { "at": "a7d77e0c", "date": "2026-04-16", "kind": "cosmetic", "subject": "fix" },
+            {
+              "at": "c257f688",
+              "date": "2026-09-04",
+              "kind": "anatomy",
+              "subject": "feat(registry): migrate registry, templates and CLI to cn (#11758)"
+            }
+          ]
+        },
+        {
+          "id": "tooltip",
+          "sources": ["apps/v4/registry/bases/base/ui/tooltip.tsx"],
+          "changeCount": 4,
+          "anatomyChangeCount": 2,
+          "cosmeticChangeCount": 2,
+          "changePerMonth": 0.2,
+          "allChangesPerMonth": 0.4,
+          "events": [
+            {
+              "at": "a4ee5483",
+              "date": "2026-01-23",
+              "kind": "cosmetic",
+              "subject": "feat: add inline-start and inline-end support for base-ui (#9430)"
+            },
+            {
+              "at": "630323ad",
+              "date": "2026-02-04",
+              "kind": "anatomy",
+              "subject": "feat: update TooltipProvider handling"
+            },
+            {
+              "at": "f31ed819",
+              "date": "2026-03-02",
+              "kind": "cosmetic",
+              "subject": "style: run format on all components"
+            },
+            {
+              "at": "c257f688",
+              "date": "2026-09-04",
+              "kind": "anatomy",
+              "subject": "feat(registry): migrate registry, templates and CLI to cn (#11758)"
+            }
+          ]
+        },
+        {
+          "id": "menu",
+          "sources": ["apps/v4/registry/bases/base/ui/dropdown-menu.tsx"],
+          "changeCount": 8,
+          "anatomyChangeCount": 3,
+          "cosmeticChangeCount": 5,
+          "changePerMonth": 0.3,
+          "allChangesPerMonth": 0.8,
+          "events": [
+            {
+              "at": "66d24007",
+              "date": "2026-01-16",
+              "kind": "anatomy",
+              "subject": "feat(icons): the icons we all love and adore - remixicon (#9156)"
+            },
+            {
+              "at": "47c47eae",
+              "date": "2026-01-20",
+              "kind": "cosmetic",
+              "subject": "feat: add docs for base-ui components (#9304)"
+            },
+            {
+              "at": "a4ee5483",
+              "date": "2026-01-23",
+              "kind": "cosmetic",
+              "subject": "feat: add inline-start and inline-end support for base-ui (#9430)"
+            },
+            {
+              "at": "38de7fdd",
+              "date": "2026-01-30",
+              "kind": "cosmetic",
+              "subject": "feat: rtl (#9498)"
+            },
+            {
+              "at": "dba86053",
+              "date": "2026-02-03",
+              "kind": "anatomy",
+              "subject": "fix: canonical classes in base"
+            },
+            {
+              "at": "f31ed819",
+              "date": "2026-03-02",
+              "kind": "cosmetic",
+              "subject": "style: run format on all components"
+            },
+            { "at": "49616d2e", "date": "2026-03-10", "kind": "cosmetic", "subject": "fix" },
+            {
+              "at": "c257f688",
+              "date": "2026-09-04",
+              "kind": "anatomy",
+              "subject": "feat(registry): migrate registry, templates and CLI to cn (#11758)"
+            }
+          ]
+        },
+        {
+          "id": "toast",
+          "sources": ["apps/v4/registry/bases/base/ui/toast.tsx"],
+          "changeCount": 1,
+          "anatomyChangeCount": 1,
+          "cosmeticChangeCount": 0,
+          "changePerMonth": 0.1,
+          "allChangesPerMonth": 0.1,
+          "events": [
+            {
+              "at": "c257f688",
+              "date": "2026-09-04",
+              "kind": "anatomy",
+              "subject": "feat(registry): migrate registry, templates and CLI to cn (#11758)"
+            }
+          ],
+          "createdInWindow": ["toast.tsx@6cd3f4c6"]
+        },
+        {
+          "id": "tabs",
+          "sources": ["apps/v4/registry/bases/base/ui/tabs.tsx"],
+          "changeCount": 4,
+          "anatomyChangeCount": 1,
+          "cosmeticChangeCount": 3,
+          "changePerMonth": 0.1,
+          "allChangesPerMonth": 0.4,
+          "events": [
+            {
+              "at": "47c47eae",
+              "date": "2026-01-20",
+              "kind": "cosmetic",
+              "subject": "feat: add docs for base-ui components (#9304)"
+            },
+            {
+              "at": "dba86053",
+              "date": "2026-02-03",
+              "kind": "cosmetic",
+              "subject": "fix: canonical classes in base"
+            },
+            {
+              "at": "f31ed819",
+              "date": "2026-03-02",
+              "kind": "cosmetic",
+              "subject": "style: run format on all components"
+            },
+            {
+              "at": "c257f688",
+              "date": "2026-09-04",
+              "kind": "anatomy",
+              "subject": "feat(registry): migrate registry, templates and CLI to cn (#11758)"
+            }
+          ]
+        },
+        {
+          "id": "accordion",
+          "sources": ["apps/v4/registry/bases/base/ui/accordion.tsx"],
+          "changeCount": 5,
+          "anatomyChangeCount": 2,
+          "cosmeticChangeCount": 3,
+          "changePerMonth": 0.2,
+          "allChangesPerMonth": 0.5,
+          "events": [
+            {
+              "at": "66d24007",
+              "date": "2026-01-16",
+              "kind": "anatomy",
+              "subject": "feat(icons): the icons we all love and adore - remixicon (#9156)"
+            },
+            {
+              "at": "ae895787",
+              "date": "2026-02-17",
+              "kind": "cosmetic",
+              "subject": "fix: aria-disabled for accordion for base-ui"
+            },
+            {
+              "at": "f31ed819",
+              "date": "2026-03-02",
+              "kind": "cosmetic",
+              "subject": "style: run format on all components"
+            },
+            {
+              "at": "4f421aba",
+              "date": "2026-03-25",
+              "kind": "cosmetic",
+              "subject": "fix: remove unnecessary Base UI use client"
+            },
+            {
+              "at": "c257f688",
+              "date": "2026-09-04",
+              "kind": "anatomy",
+              "subject": "feat(registry): migrate registry, templates and CLI to cn (#11758)"
+            }
+          ]
+        },
+        {
+          "id": "collapsible",
+          "sources": ["apps/v4/registry/bases/base/ui/collapsible.tsx"],
+          "changeCount": 0,
+          "anatomyChangeCount": 0,
+          "cosmeticChangeCount": 0,
+          "changePerMonth": 0,
+          "allChangesPerMonth": 0,
+          "events": []
+        },
+        {
+          "id": "card",
+          "sources": ["apps/v4/registry/bases/base/ui/card.tsx"],
+          "changeCount": 2,
+          "anatomyChangeCount": 1,
+          "cosmeticChangeCount": 1,
+          "changePerMonth": 0.1,
+          "allChangesPerMonth": 0.2,
+          "events": [
+            {
+              "at": "687f0981",
+              "date": "2026-03-19",
+              "kind": "cosmetic",
+              "subject": "feat: chartColor and fontHeading (#10115)"
+            },
+            {
+              "at": "c257f688",
+              "date": "2026-09-04",
+              "kind": "anatomy",
+              "subject": "feat(registry): migrate registry, templates and CLI to cn (#11758)"
+            }
+          ]
+        },
+        {
+          "id": "table",
+          "sources": ["apps/v4/registry/bases/base/ui/table.tsx"],
+          "changeCount": 2,
+          "anatomyChangeCount": 1,
+          "cosmeticChangeCount": 1,
+          "changePerMonth": 0.1,
+          "allChangesPerMonth": 0.2,
+          "events": [
+            {
+              "at": "44c09a19",
+              "date": "2026-03-31",
+              "kind": "cosmetic",
+              "subject": "feat: luma (#10246)"
+            },
+            {
+              "at": "c257f688",
+              "date": "2026-09-04",
+              "kind": "anatomy",
+              "subject": "feat(registry): migrate registry, templates and CLI to cn (#11758)"
+            }
+          ]
+        },
+        {
+          "id": "scroll-area",
+          "sources": ["apps/v4/registry/bases/base/ui/scroll-area.tsx"],
+          "changeCount": 2,
+          "anatomyChangeCount": 1,
+          "cosmeticChangeCount": 1,
+          "changePerMonth": 0.1,
+          "allChangesPerMonth": 0.2,
+          "events": [
+            {
+              "at": "f31ed819",
+              "date": "2026-03-02",
+              "kind": "cosmetic",
+              "subject": "style: run format on all components"
+            },
+            {
+              "at": "c257f688",
+              "date": "2026-09-04",
+              "kind": "anatomy",
+              "subject": "feat(registry): migrate registry, templates and CLI to cn (#11758)"
+            }
+          ]
+        },
+        {
+          "id": "separator",
+          "sources": ["apps/v4/registry/bases/base/ui/separator.tsx"],
+          "changeCount": 3,
+          "anatomyChangeCount": 1,
+          "cosmeticChangeCount": 2,
+          "changePerMonth": 0.1,
+          "allChangesPerMonth": 0.3,
+          "events": [
+            {
+              "at": "dba86053",
+              "date": "2026-02-03",
+              "kind": "cosmetic",
+              "subject": "fix: canonical classes in base"
+            },
+            {
+              "at": "f31ed819",
+              "date": "2026-03-02",
+              "kind": "cosmetic",
+              "subject": "style: run format on all components"
+            },
+            {
+              "at": "c257f688",
+              "date": "2026-09-04",
+              "kind": "anatomy",
+              "subject": "feat(registry): migrate registry, templates and CLI to cn (#11758)"
+            }
+          ]
+        },
+        {
+          "id": "skeleton",
+          "sources": [
+            "apps/v4/registry/bases/base/ui/skeleton.tsx",
+            "apps/v4/registry/bases/base/ui/spinner.tsx"
+          ],
+          "changeCount": 3,
+          "anatomyChangeCount": 3,
+          "cosmeticChangeCount": 0,
+          "changePerMonth": 0.3,
+          "allChangesPerMonth": 0.3,
+          "events": [
+            {
+              "at": "66d24007",
+              "date": "2026-01-16",
+              "kind": "anatomy",
+              "subject": "feat(icons): the icons we all love and adore - remixicon (#9156)"
+            },
+            {
+              "at": "6ec11771",
+              "date": "2026-06-16",
+              "kind": "anatomy",
+              "subject": "feat: add data-slot to spinner"
+            },
+            {
+              "at": "c257f688",
+              "date": "2026-09-04",
+              "kind": "anatomy",
+              "subject": "feat(registry): migrate registry, templates and CLI to cn (#11758)"
+            }
+          ]
+        },
+        {
+          "id": "badge",
+          "sources": ["apps/v4/registry/bases/base/ui/badge.tsx"],
+          "changeCount": 4,
+          "anatomyChangeCount": 2,
+          "cosmeticChangeCount": 2,
+          "changePerMonth": 0.2,
+          "allChangesPerMonth": 0.4,
+          "events": [
+            {
+              "at": "47c47eae",
+              "date": "2026-01-20",
+              "kind": "cosmetic",
+              "subject": "feat: add docs for base-ui components (#9304)"
+            },
+            {
+              "at": "b8688551",
+              "date": "2026-02-16",
+              "kind": "anatomy",
+              "subject": "fix: move className in badgeVariants"
+            },
+            {
+              "at": "f31ed819",
+              "date": "2026-03-02",
+              "kind": "cosmetic",
+              "subject": "style: run format on all components"
+            },
+            {
+              "at": "c257f688",
+              "date": "2026-09-04",
+              "kind": "anatomy",
+              "subject": "feat(registry): migrate registry, templates and CLI to cn (#11758)"
+            }
+          ]
+        },
+        {
+          "id": "alert",
+          "sources": ["apps/v4/registry/bases/base/ui/alert.tsx"],
+          "changeCount": 4,
+          "anatomyChangeCount": 1,
+          "cosmeticChangeCount": 3,
+          "changePerMonth": 0.1,
+          "allChangesPerMonth": 0.4,
+          "events": [
+            {
+              "at": "f31ed819",
+              "date": "2026-03-02",
+              "kind": "cosmetic",
+              "subject": "style: run format on all components"
+            },
+            {
+              "at": "687f0981",
+              "date": "2026-03-19",
+              "kind": "cosmetic",
+              "subject": "feat: chartColor and fontHeading (#10115)"
+            },
+            { "at": "a7d77e0c", "date": "2026-04-16", "kind": "cosmetic", "subject": "fix" },
+            {
+              "at": "c257f688",
+              "date": "2026-09-04",
+              "kind": "anatomy",
+              "subject": "feat(registry): migrate registry, templates and CLI to cn (#11758)"
+            }
+          ]
+        },
+        {
+          "id": "kbd",
+          "sources": ["apps/v4/registry/bases/base/ui/kbd.tsx"],
+          "changeCount": 1,
+          "anatomyChangeCount": 1,
+          "cosmeticChangeCount": 0,
+          "changePerMonth": 0.1,
+          "allChangesPerMonth": 0.1,
+          "events": [
+            {
+              "at": "c257f688",
+              "date": "2026-09-04",
+              "kind": "anatomy",
+              "subject": "feat(registry): migrate registry, templates and CLI to cn (#11758)"
+            }
+          ]
+        },
+        {
+          "id": "progress",
+          "sources": ["apps/v4/registry/bases/base/ui/progress.tsx"],
+          "changeCount": 1,
+          "anatomyChangeCount": 1,
+          "cosmeticChangeCount": 0,
+          "changePerMonth": 0.1,
+          "allChangesPerMonth": 0.1,
+          "events": [
+            {
+              "at": "c257f688",
+              "date": "2026-09-04",
+              "kind": "anatomy",
+              "subject": "feat(registry): migrate registry, templates and CLI to cn (#11758)"
+            }
+          ]
+        },
+        {
+          "id": "date-picker",
+          "sources": ["apps/v4/registry/bases/base/ui/calendar.tsx"],
+          "changeCount": 8,
+          "anatomyChangeCount": 4,
+          "cosmeticChangeCount": 4,
+          "changePerMonth": 0.4,
+          "allChangesPerMonth": 0.8,
+          "events": [
+            {
+              "at": "5b3ba49a",
+              "date": "2026-01-14",
+              "kind": "cosmetic",
+              "subject": "fix(calendar): fix typo 'elative' to 'relative' in range_start classname (#9292)"
+            },
+            {
+              "at": "66d24007",
+              "date": "2026-01-16",
+              "kind": "anatomy",
+              "subject": "feat(icons): the icons we all love and adore - remixicon (#9156)"
+            },
+            {
+              "at": "38de7fdd",
+              "date": "2026-01-30",
+              "kind": "anatomy",
+              "subject": "feat: rtl (#9498)"
+            },
+            {
+              "at": "dba86053",
+              "date": "2026-02-03",
+              "kind": "cosmetic",
+              "subject": "fix: canonical classes in base"
+            },
+            {
+              "at": "f31ed819",
+              "date": "2026-03-02",
+              "kind": "cosmetic",
+              "subject": "style: run format on all components"
+            },
+            { "at": "a7d77e0c", "date": "2026-04-16", "kind": "cosmetic", "subject": "fix" },
+            {
+              "at": "3ffd3e1c",
+              "date": "2026-06-19",
+              "kind": "anatomy",
+              "subject": "fix(registry): update calendar month grid (#10644)"
+            },
+            {
+              "at": "c257f688",
+              "date": "2026-09-04",
+              "kind": "anatomy",
+              "subject": "feat(registry): migrate registry, templates and CLI to cn (#11758)"
+            }
+          ]
+        }
+      ]
+    }
+  }
+}

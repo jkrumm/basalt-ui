@@ -1,0 +1,12 @@
+{
+  "name": "@basalt-ui/spike-upstream-churn",
+  "private": true,
+  "description": "Spike 628 (ARCHITECTURE.md section 11 F8): replay upstream Base UI releases and shadcn base-nova commits to size merge support. Throwaway harness, no tests.",
+  "type": "module",
+  "scripts": {
+    "run": "bun run.ts"
+  },
+  "dependencies": {
+    "typescript": "6.0.3"
+  }
+}
