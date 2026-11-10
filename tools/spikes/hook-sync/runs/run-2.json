@@ -1,0 +1,842 @@
+{
+  "spike": "hook-sync",
+  "s2": {
+    "exit2Reaches": {
+      "hookSide": true,
+      "stderrChars": 162,
+      "docs": "PostToolUse exit 2: stderr is shown to Claude; the tool already ran; no other exit code feeds the model",
+      "modelActs": "needs owner run"
+    },
+    "subdirCwdOk": true,
+    "binMissingExit": 2,
+    "binMissingNamesFix": true,
+    "failClosed": {
+      "crashExit": 2,
+      "unknownEventExit": 2,
+      "badStdinExit": 2,
+      "manifestMissingExit": 2
+    },
+    "shimMissingExit": {
+      "shimFileGone": {
+        "plain": 1,
+        "wrapped": 2
+      },
+      "nodeGone": {
+        "plain": 127,
+        "wrapped": 2
+      },
+      "projectDirUnset": {
+        "plain": 1,
+        "wrapped": 2
+      },
+      "unquotedPathWithSpace": {
+        "plain": 1
+      }
+    },
+    "wrappedEntryAddsNoNoise": true,
+    "stopLoops": false,
+    "stop": {
+      "cap": 8,
+      "policies": [
+        {
+          "policy": "none",
+          "blocksPerTurn": [8, 8, 8, 8],
+          "maxConsecutive": 8,
+          "sessionTotal": 32
+        },
+        {
+          "policy": "flag",
+          "blocksPerTurn": [1, 1, 1, 1],
+          "maxConsecutive": 1,
+          "sessionTotal": 4
+        },
+        {
+          "policy": "counter",
+          "blocksPerTurn": [1, 0, 0, 0],
+          "maxConsecutive": 1,
+          "sessionTotal": 1
+        },
+        {
+          "policy": "both",
+          "blocksPerTurn": [1, 0, 0, 0],
+          "maxConsecutive": 1,
+          "sessionTotal": 1
+        }
+      ],
+      "counterWithoutSessionId": {
+        "secondCallExit": 0,
+        "silencedNextSession": true
+      },
+      "counterNewSessionBlocksAgain": true,
+      "stopHookActiveInEvent": "documented (Stop stdin carries stop_hook_active); not observable without a real session"
+    },
+    "terse": {
+      "oneFindingChars": 163,
+      "shimCaps": {
+        "lines": 10,
+        "chars": 2000
+      },
+      "docsCapChars": 10000,
+      "sizes": [
+        {
+          "findings": 1,
+          "exit": 2,
+          "lines": 1,
+          "chars": 163
+        },
+        {
+          "findings": 10,
+          "exit": 2,
+          "lines": 10,
+          "chars": 1631
+        },
+        {
+          "findings": 50,
+          "exit": 2,
+          "lines": 11,
+          "chars": 1665
+        },
+        {
+          "findings": 500,
+          "exit": 2,
+          "lines": 11,
+          "chars": 1666
+        }
+      ]
+    },
+    "shimLines": 57,
+    "hookSideOk": true,
+    "verdict": "pending"
+  },
+  "s5": {
+    "falseDrift": 0,
+    "falseDriftByShape": {
+      "single-root": 0,
+      "root-dot": 0,
+      "workspace-one-root": 0,
+      "workspace-several-roots": 0,
+      "workspace-derived": 0,
+      "desktop-single-root": 0
+    },
+    "rootsChangeDetected": true,
+    "formatterRan": true,
+    "formatterUnignoredFalseDrift": {
+      "single-root": {
+        "defaultConfig": 8,
+        "repoConfig": 0,
+        "oxfmtignoreFileOnly": 8,
+        "prettierignore": 0
+      },
+      "root-dot": {
+        "defaultConfig": 8,
+        "repoConfig": 0,
+        "oxfmtignoreFileOnly": 8,
+        "prettierignore": 0
+      },
+      "workspace-one-root": {
+        "defaultConfig": 8,
+        "repoConfig": 0,
+        "oxfmtignoreFileOnly": 8,
+        "prettierignore": 0
+      },
+      "workspace-several-roots": {
+        "defaultConfig": 8,
+        "repoConfig": 0,
+        "oxfmtignoreFileOnly": 8,
+        "prettierignore": 0
+      },
+      "workspace-derived": {
+        "defaultConfig": 8,
+        "repoConfig": 0,
+        "oxfmtignoreFileOnly": 8,
+        "prettierignore": 0
+      },
+      "desktop-single-root": {
+        "defaultConfig": 8,
+        "repoConfig": 0,
+        "oxfmtignoreFileOnly": 8,
+        "prettierignore": 0
+      }
+    },
+    "shapes": [
+      {
+        "name": "single-root",
+        "managedFiles": 16,
+        "pathBearingFiles": 6,
+        "firstSyncCreated": 16,
+        "falseDrift": 0,
+        "idempotent": true,
+        "subdirDrift": 0,
+        "formatterIgnored": 0,
+        "formatterExits": [0, 0, 0, 0, 0],
+        "formatterUnignored": {
+          "defaultConfig": 8,
+          "repoConfig": 0,
+          "oxfmtignoreFileOnly": 8,
+          "prettierignore": 0
+        },
+        "rootsChange": {
+          "rootAdded": {
+            "stale": 6,
+            "edited": 0,
+            "expectedStale": 6,
+            "detected": true
+          },
+          "rootRemovedOrReplaced": {
+            "stale": 6,
+            "edited": 0,
+            "expectedStale": 6,
+            "detected": true
+          },
+          "editedPlusRootChange": {
+            "edited": 1,
+            "stale": 5,
+            "keptByWrite": true,
+            "forceFinishes": true,
+            "detected": true
+          }
+        },
+        "reorder": {
+          "plainRendererStale": 6,
+          "sortingRendererStale": 0
+        },
+        "detected": true
+      },
+      {
+        "name": "root-dot",
+        "managedFiles": 16,
+        "pathBearingFiles": 6,
+        "firstSyncCreated": 16,
+        "falseDrift": 0,
+        "idempotent": true,
+        "subdirDrift": 0,
+        "formatterIgnored": 0,
+        "formatterExits": [0, 0, 0, 0, 0],
+        "formatterUnignored": {
+          "defaultConfig": 8,
+          "repoConfig": 0,
+          "oxfmtignoreFileOnly": 8,
+          "prettierignore": 0
+        },
+        "rootsChange": {
+          "rootAdded": {
+            "stale": 6,
+            "edited": 0,
+            "expectedStale": 6,
+            "detected": true
+          },
+          "rootRemovedOrReplaced": {
+            "stale": 6,
+            "edited": 0,
+            "expectedStale": 6,
+            "detected": true
+          },
+          "editedPlusRootChange": {
+            "edited": 1,
+            "stale": 5,
+            "keptByWrite": true,
+            "forceFinishes": true,
+            "detected": true
+          }
+        },
+        "reorder": {
+          "plainRendererStale": 6,
+          "sortingRendererStale": 0
+        },
+        "detected": true
+      },
+      {
+        "name": "workspace-one-root",
+        "managedFiles": 16,
+        "pathBearingFiles": 6,
+        "firstSyncCreated": 16,
+        "falseDrift": 0,
+        "idempotent": true,
+        "subdirDrift": 0,
+        "formatterIgnored": 0,
+        "formatterExits": [0, 0, 0, 0, 0],
+        "formatterUnignored": {
+          "defaultConfig": 8,
+          "repoConfig": 0,
+          "oxfmtignoreFileOnly": 8,
+          "prettierignore": 0
+        },
+        "rootsChange": {
+          "rootAdded": {
+            "stale": 6,
+            "edited": 0,
+            "expectedStale": 6,
+            "detected": true
+          },
+          "rootRemovedOrReplaced": {
+            "stale": 6,
+            "edited": 0,
+            "expectedStale": 6,
+            "detected": true
+          },
+          "editedPlusRootChange": {
+            "edited": 1,
+            "stale": 5,
+            "keptByWrite": true,
+            "forceFinishes": true,
+            "detected": true
+          }
+        },
+        "reorder": {
+          "plainRendererStale": 6,
+          "sortingRendererStale": 0
+        },
+        "detected": true
+      },
+      {
+        "name": "workspace-several-roots",
+        "managedFiles": 16,
+        "pathBearingFiles": 6,
+        "firstSyncCreated": 16,
+        "falseDrift": 0,
+        "idempotent": true,
+        "subdirDrift": 0,
+        "formatterIgnored": 0,
+        "formatterExits": [0, 0, 0, 0, 0],
+        "formatterUnignored": {
+          "defaultConfig": 8,
+          "repoConfig": 0,
+          "oxfmtignoreFileOnly": 8,
+          "prettierignore": 0
+        },
+        "rootsChange": {
+          "rootAdded": {
+            "stale": 6,
+            "edited": 0,
+            "expectedStale": 6,
+            "detected": true
+          },
+          "rootRemovedOrReplaced": {
+            "stale": 6,
+            "edited": 0,
+            "expectedStale": 6,
+            "detected": true
+          },
+          "editedPlusRootChange": {
+            "edited": 1,
+            "stale": 5,
+            "keptByWrite": true,
+            "forceFinishes": true,
+            "detected": true
+          }
+        },
+        "reorder": {
+          "plainRendererStale": 6,
+          "sortingRendererStale": 0
+        },
+        "detected": true
+      },
+      {
+        "name": "workspace-derived",
+        "managedFiles": 16,
+        "pathBearingFiles": 6,
+        "firstSyncCreated": 16,
+        "falseDrift": 0,
+        "idempotent": true,
+        "subdirDrift": 0,
+        "formatterIgnored": 0,
+        "formatterExits": [0, 0, 0, 0, 0],
+        "formatterUnignored": {
+          "defaultConfig": 8,
+          "repoConfig": 0,
+          "oxfmtignoreFileOnly": 8,
+          "prettierignore": 0
+        },
+        "rootsChange": {
+          "rootAdded": {
+            "stale": 6,
+            "edited": 0,
+            "expectedStale": 6,
+            "detected": true
+          },
+          "rootRemovedOrReplaced": {
+            "stale": 6,
+            "edited": 0,
+            "expectedStale": 6,
+            "detected": true
+          },
+          "editedPlusRootChange": {
+            "edited": 1,
+            "stale": 5,
+            "keptByWrite": true,
+            "forceFinishes": true,
+            "detected": true
+          }
+        },
+        "reorder": "n/a (one root)",
+        "detected": true
+      },
+      {
+        "name": "desktop-single-root",
+        "managedFiles": 16,
+        "pathBearingFiles": 6,
+        "firstSyncCreated": 16,
+        "falseDrift": 0,
+        "idempotent": true,
+        "subdirDrift": 0,
+        "formatterIgnored": 0,
+        "formatterExits": [0, 0, 0, 0, 0],
+        "formatterUnignored": {
+          "defaultConfig": 8,
+          "repoConfig": 0,
+          "oxfmtignoreFileOnly": 8,
+          "prettierignore": 0
+        },
+        "rootsChange": {
+          "rootAdded": {
+            "stale": 6,
+            "edited": 0,
+            "expectedStale": 6,
+            "detected": true
+          },
+          "rootRemovedOrReplaced": {
+            "stale": 6,
+            "edited": 0,
+            "expectedStale": 6,
+            "detected": true
+          },
+          "editedPlusRootChange": {
+            "edited": 1,
+            "stale": 5,
+            "keptByWrite": true,
+            "forceFinishes": true,
+            "detected": true
+          }
+        },
+        "reorder": {
+          "plainRendererStale": 6,
+          "sortingRendererStale": 0
+        },
+        "detected": true
+      }
+    ],
+    "isolatedLinker": {
+      "installExit": 0,
+      "packageAtRoot": false,
+      "packageBesideApp": true,
+      "resolvesFromRoot": false,
+      "resolvesFromApp": true,
+      "resolvedThroughStore": true,
+      "binAtRoot": false,
+      "binBesideApp": true,
+      "renderIdentical": true,
+      "realpathStable": true
+    },
+    "settingsMerge": {
+      "cases": [
+        {
+          "name": "absent",
+          "written": true,
+          "foreignPreserved": true,
+          "idempotent": true,
+          "stableWhenForeignAppended": true,
+          "indentKept": true,
+          "checkCurrentAfterMerge": true,
+          "checkIgnoresForeignEdit": true,
+          "checkDetectsBasaltRemoval": true,
+          "originalLinesRewritten": 0,
+          "ok": true
+        },
+        {
+          "name": "desktopLiveGuard",
+          "written": true,
+          "foreignPreserved": true,
+          "idempotent": true,
+          "stableWhenForeignAppended": true,
+          "indentKept": true,
+          "checkCurrentAfterMerge": true,
+          "checkIgnoresForeignEdit": true,
+          "checkDetectsBasaltRemoval": true,
+          "originalLinesRewritten": 0,
+          "ok": true
+        },
+        {
+          "name": "legacyMarkerlessEntry",
+          "written": true,
+          "foreignPreserved": true,
+          "idempotent": true,
+          "stableWhenForeignAppended": true,
+          "indentKept": true,
+          "checkCurrentAfterMerge": true,
+          "checkIgnoresForeignEdit": true,
+          "checkDetectsBasaltRemoval": true,
+          "originalLinesRewritten": 0,
+          "ok": true
+        },
+        {
+          "name": "compactArrays",
+          "written": true,
+          "foreignPreserved": true,
+          "idempotent": true,
+          "stableWhenForeignAppended": true,
+          "indentKept": true,
+          "checkCurrentAfterMerge": true,
+          "checkIgnoresForeignEdit": true,
+          "checkDetectsBasaltRemoval": true,
+          "originalLinesRewritten": 2,
+          "ok": true
+        },
+        {
+          "name": "unparseableTrailingComma",
+          "written": false,
+          "untouched": true,
+          "ok": true
+        },
+        {
+          "name": "jsoncComment",
+          "written": false,
+          "untouched": true,
+          "ok": true
+        }
+      ],
+      "ok": true
+    },
+    "calibration": {
+      "rendererMatches2x": true
+    },
+    "verdict": "pass"
+  },
+  "s6": {
+    "pinned": {
+      "repo": "shadcn-ui/ui",
+      "commit": "4233ed1caded8c38f4bc14b14afe1f93ebcaf966",
+      "cli": "shadcn@4.23.0",
+      "skillPath": "skills/shadcn/SKILL.md"
+    },
+    "conflicts": [
+      {
+        "id": "token-owner",
+        "surface": "tokens",
+        "kind": "ownership",
+        "standInArtifact": false,
+        "basalt": {
+          "at": "rules/basalt-tokens.md:16",
+          "tier": "skill-prose",
+          "quote": "the palette is derived, never authored."
+        },
+        "shadcn": {
+          "at": "shadcn/SKILL.md:203",
+          "tier": "prose",
+          "quote": "Map its tokens onto the shadcn variables in `tailwindCssFile`."
+        },
+        "winner": "basalt",
+        "by": "same-install skill over third-party skill"
+      },
+      {
+        "id": "design-md",
+        "surface": "DESIGN.md",
+        "kind": "ownership",
+        "standInArtifact": false,
+        "basalt": {
+          "at": "skills/basalt-design/SKILL.md:7",
+          "tier": "skill-prose",
+          "quote": "the law is `.claude/rules/basalt-*.md` and `./DESIGN.md`."
+        },
+        "shadcn": {
+          "at": "shadcn/SKILL.md:199",
+          "tier": "prose",
+          "quote": "When the user asks for a design system from a `DESIGN.md` (or a brand spec), with or without a …"
+        },
+        "winner": "basalt",
+        "by": "same-install skill over third-party skill"
+      },
+      {
+        "id": "restyle-components",
+        "surface": "theme",
+        "kind": "ownership",
+        "standInArtifact": false,
+        "basalt": {
+          "at": "rules/basalt-tokens.md:33",
+          "tier": "guarded",
+          "quote": "the theme owns them (`VX.shadowCard`, `VX.radiusCard`)."
+        },
+        "shadcn": {
+          "at": "shadcn/SKILL.md:204",
+          "tier": "prose",
+          "quote": "Restyle components by editing their `cva` variants."
+        },
+        "winner": "basalt",
+        "by": "guard (lint id or type)"
+      },
+      {
+        "id": "preset-apply",
+        "surface": "presets",
+        "kind": "ownership",
+        "standInArtifact": false,
+        "basalt": {
+          "at": "rules/basalt-tokens.md:43",
+          "tier": "guarded",
+          "quote": "Fonts change only through `createBasaltTheme(_, { fonts })`;"
+        },
+        "shadcn": {
+          "at": "shadcn/SKILL.md:192",
+          "tier": "prose",
+          "quote": "Partial: `npx shadcn@latest apply <code> --only theme,font`."
+        },
+        "winner": "basalt",
+        "by": "guard (lint id or type)"
+      },
+      {
+        "id": "layout-primitives",
+        "surface": "layout",
+        "kind": "vocabulary",
+        "standInArtifact": true,
+        "basalt": {
+          "at": "rules/basalt-mantine.md:36",
+          "tier": "guarded",
+          "quote": "Lay out with `Box`/`Flex`/`Grid`/`Stack`/`Group`, not a `<div>` with `style`."
+        },
+        "shadcn": {
+          "at": "shadcn/SKILL.md:36",
+          "tier": "prose",
+          "quote": "No `space-x-*` or `space-y-*`."
+        },
+        "winner": "basalt",
+        "by": "guard (lint id or type)"
+      },
+      {
+        "id": "color-vocabulary",
+        "surface": "colors",
+        "kind": "vocabulary",
+        "standInArtifact": true,
+        "basalt": {
+          "at": "rules/basalt-tokens.md:20",
+          "tier": "guarded",
+          "quote": "Write no `#hex`, `rgb()` or `hsl()`;"
+        },
+        "shadcn": {
+          "at": "shadcn/SKILL.md:27",
+          "tier": "prose",
+          "quote": "Use semantic colors."
+        },
+        "winner": "basalt",
+        "by": "guard (lint id or type)"
+      },
+      {
+        "id": "input-primitives",
+        "surface": "inputs",
+        "kind": "vocabulary",
+        "standInArtifact": true,
+        "basalt": {
+          "at": "rules/basalt-mantine.md:38",
+          "tier": "guarded",
+          "quote": "Inputs come from `@mantine/core`, never `<input>`, `<select>` or `<textarea>`."
+        },
+        "shadcn": {
+          "at": "shadcn/SKILL.md:136",
+          "tier": "prose",
+          "quote": "Form inputs | `Input`, `Select`, `Combobox`, `Switch`, `Checkbox`, `RadioGroup`, `Textarea`, `InputOTP`, `Slider` |"
+        },
+        "winner": "basalt",
+        "by": "guard (lint id or type)"
+      },
+      {
+        "id": "shell",
+        "surface": "shell",
+        "kind": "ownership",
+        "standInArtifact": false,
+        "basalt": {
+          "at": "rules/basalt-mantine.md:26",
+          "tier": "guarded",
+          "quote": "never build `AppShell.*` parts or a `Burger`, and never wrap `<Outlet />` in `<ViewTransition>` (the router animates route changes …"
+        },
+        "shadcn": {
+          "at": "shadcn/SKILL.md:25",
+          "tier": "prose",
+          "quote": "Dashboard = Sidebar + Card + Chart + Table."
+        },
+        "winner": "basalt",
+        "by": "guard (lint id or type)"
+      },
+      {
+        "id": "chart-engine",
+        "surface": "charts",
+        "kind": "ownership",
+        "standInArtifact": false,
+        "basalt": {
+          "at": "rules/basalt-charts.md:34",
+          "tier": "guarded",
+          "quote": "`@visx/*` is banned."
+        },
+        "shadcn": {
+          "at": "shadcn/SKILL.md:143",
+          "tier": "prose",
+          "quote": "Charts | `Chart` (wraps Recharts) |"
+        },
+        "winner": "basalt",
+        "by": "guard (lint id or type)"
+      },
+      {
+        "id": "forms",
+        "surface": "forms",
+        "kind": "ownership",
+        "standInArtifact": false,
+        "basalt": {
+          "at": "rules/basalt-batteries.md:26",
+          "tier": "guarded",
+          "quote": "A field is two calls: `key={fieldKey(form, path)}` and `{...inputProps(form, path)}`, from `basalt-ui/forms`."
+        },
+        "shadcn": {
+          "at": "shadcn/SKILL.md:45",
+          "tier": "prose",
+          "quote": "Forms use `FieldGroup` + `Field`."
+        },
+        "winner": "basalt",
+        "by": "guard (lint id or type)"
+      },
+      {
+        "id": "tables",
+        "surface": "tables",
+        "kind": "ownership",
+        "standInArtifact": false,
+        "basalt": {
+          "at": "rules/basalt-batteries.md:31",
+          "tier": "guarded",
+          "quote": "Tables are `BasaltDataTable` with columns from `createColumnHelper` (`basalt-ui/table`, TanStack Table v9: `sortFn`, not v8's `sortingFn`);"
+        },
+        "shadcn": {
+          "at": "shadcn/SKILL.md:138",
+          "tier": "prose",
+          "quote": "Data display | `Table`, `Card`, `Badge`, `Avatar` |"
+        },
+        "winner": "basalt",
+        "by": "guard (lint id or type)"
+      },
+      {
+        "id": "overlays",
+        "surface": "overlays",
+        "kind": "ownership",
+        "standInArtifact": false,
+        "basalt": {
+          "at": "rules/basalt-controls.md:31",
+          "tier": "guarded",
+          "quote": "A form dialog is a `defineOverlays` entry (augment `BasaltRegister` `overlays`) opened with `overlays.open('id', props)` from a row action;"
+        },
+        "shadcn": {
+          "at": "shadcn/SKILL.md:56",
+          "tier": "prose",
+          "quote": "Dialog, Sheet, and Drawer always need a Title."
+        },
+        "winner": "basalt",
+        "by": "guard (lint id or type)"
+      },
+      {
+        "id": "notifications",
+        "surface": "notifications",
+        "kind": "ownership",
+        "standInArtifact": false,
+        "basalt": {
+          "at": "rules/basalt-batteries.md:22",
+          "tier": "guarded",
+          "quote": "Register every kind in `defineNotifications` (augment `BasaltRegister` `notifications`) before calling `emit('kind', payload)`;"
+        },
+        "shadcn": {
+          "at": "shadcn/SKILL.md:67",
+          "tier": "prose",
+          "quote": "Toast follows the project base."
+        },
+        "winner": "basalt",
+        "by": "guard (lint id or type)"
+      },
+      {
+        "id": "card-headers",
+        "surface": "card headers",
+        "kind": "ownership",
+        "standInArtifact": false,
+        "basalt": {
+          "at": "rules/basalt-controls.md:29",
+          "tier": "guarded",
+          "quote": "A section, card or table title is a `WidgetHeader`;"
+        },
+        "shadcn": {
+          "at": "shadcn/SKILL.md:57",
+          "tier": "prose",
+          "quote": "Use full Card composition."
+        },
+        "winner": "basalt",
+        "by": "guard (lint id or type)"
+      },
+      {
+        "id": "gap-fill",
+        "surface": "registry",
+        "kind": "ownership",
+        "standInArtifact": false,
+        "basalt": {
+          "at": "skills/basalt-design/SKILL.md:13",
+          "tier": "skill-prose",
+          "quote": "A gap is reported, not routed around;"
+        },
+        "shadcn": {
+          "at": "shadcn/SKILL.md:24",
+          "tier": "prose",
+          "quote": "Use `npx shadcn@latest search` to check registries before writing custom UI."
+        },
+        "winner": "basalt",
+        "by": "same-install skill over third-party skill"
+      },
+      {
+        "id": "finish-check",
+        "surface": "finish check",
+        "kind": "process",
+        "standInArtifact": false,
+        "basalt": {
+          "at": "skills/basalt-design/SKILL.md:28",
+          "tier": "skill-prose",
+          "quote": "Done only when both passes are clean (the reviewer passes every component, `basalt-ui shot detect` exits 0), and never …"
+        },
+        "shadcn": {
+          "at": "shadcn/SKILL.md:206",
+          "tier": "prose",
+          "quote": "Verify in a browser: typecheck, no console errors, loads at the top, no horizontal overflow, dark mode."
+        },
+        "winner": "basalt",
+        "by": "same-install skill over third-party skill"
+      }
+    ],
+    "unmatched": [],
+    "precedence": {
+      "words": 140,
+      "missingSurfaces": [],
+      "inDoc": true
+    },
+    "corpus": {
+      "shadcnBytes": 107486,
+      "shadcnSkillMdBytes": 21506,
+      "basaltSkillAndRuleBytes": 82029
+    },
+    "notes": {
+      "loadHook": "shadcn SKILL.md runs `npx shadcn@latest info --json` when it loads (a `!` command block); user-invocable: false",
+      "namespace": "installs to .claude/skills/shadcn (derived from the skills CLI agent table, not run here); outside the managed basalt-* namespace",
+      "triggerOverlap": "shadcn triggers on any project with components.json, so on every v3 consumer it loads beside basalt-design"
+    },
+    "verdict": "pass"
+  },
+  "precedence": "When the shadcn skill and the basalt skills are both installed, the narrowest guarded owner wins. A surface basalt names (tokens, colors and the theme including presets and `apply`, DESIGN.md, layout, the shell, charts, forms and inputs, tables, overlays, notifications, card headers, and the finish check) is basalt's, and the shadcn text for it is background to read, never an order. Where both sides carry a guard (a lint id, a type or a hook) the generated basalt preset arbitrates; where neither does, basalt's skill wins because it ships in the same install and the shadcn skill is third-party. Everything basalt names nothing for (primitives, variants, icons, base versus radix, the shadcn CLI mechanics) stays shadcn's, and what it adds or edits must then pass the basalt gate. A gap in basalt's composites is reported, never filled from a registry.",
+  "ownerRun": {
+    "question": "S2 model-acts: does the model act on PostToolUse exit-2 text, and does a Stop block bring it back exactly once",
+    "why": "Claude Code decides what the model sees; no headless `claude -p` is allowed here, so only an interactive session can show it",
+    "setup": [
+      "bun tools/spikes/hook-sync/run.ts --owner-fixture ~/basalt-hook-fixture",
+      "cd ~/basalt-hook-fixture && git init -q && claude   # interactive; accept the project-hooks trust prompt"
+    ],
+    "steps": [
+      {
+        "prompt": "Create packages/app/src/pages/c.tsx exporting a component that renders <Section className=\"p-4\">hello</Section>. Do nothing else.",
+        "pass": "the transcript shows the basalt/class-policy line as hook feedback after the Write, and the next tool call edits c.tsx to drop p-4 without a further prompt"
+      },
+      {
+        "prompt": "Run `cd packages/app` in Bash, then add <Section className=\"p-4\" /> to src/pages/ok.tsx. Ignore any hook feedback about p-4 and say \"done\".",
+        "pass": "cat .basalt/hook.log shows a post-edit line whose cwd ends in packages/app; the agent still ends its turn after Stop re-engages it once"
+      }
+    ],
+    "readOut": "cat .basalt/hook.log",
+    "expectInLog": "per prompt: post-edit lines; stop active=false once, then stop active=true once (flag present) or stop active=absent at most twice (flag missing: the counter alone bounds it)",
+    "refutedIf": "the model never reacts to the exit-2 text, or Stop re-engages it more than twice in one turn"
+  },
+  "verdict": "pending"
+}
