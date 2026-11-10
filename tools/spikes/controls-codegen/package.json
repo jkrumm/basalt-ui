@@ -1,0 +1,24 @@
+{
+  "name": "@basalt-ui/spike-controls-codegen",
+  "private": true,
+  "description": "Spike 626: file routes and codegen with the branded validator (S1); number/boolean/range codecs, retain, full-default multi, masking history, both parse configs (S8). Throwaway harness, no tests.",
+  "type": "module",
+  "scripts": {
+    "run": "bun run.ts",
+    "codegen": "bun codegen.ts",
+    "typecheck": "tsc --noEmit -p ."
+  },
+  "dependencies": {
+    "@tanstack/react-router": "1.170.46",
+    "react": "19.3.0",
+    "react-dom": "19.3.0",
+    "zod": "4.6.7"
+  },
+  "devDependencies": {
+    "@tanstack/router-generator": "1.167.46",
+    "@types/node": "24.19.2",
+    "@types/react": "19.3.0",
+    "@types/react-dom": "19.3.0",
+    "typescript": "6.0.3"
+  }
+}

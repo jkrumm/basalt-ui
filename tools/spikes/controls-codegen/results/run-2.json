@@ -1,0 +1,407 @@
+{
+  "spike": 626,
+  "harness": {
+    "bun": "1.4.4",
+    "node": "26.3.0"
+  },
+  "versions": {
+    "reactRouter": "1.170.46",
+    "routerCore": "1.171.39",
+    "history": "1.162.5",
+    "routerGenerator": "1.167.46"
+  },
+  "s1": {
+    "fileRouteCodegen": {
+      "routeCount": 11,
+      "routeIds": [
+        "/",
+        "/finance",
+        "/finance/",
+        "/finance/net-worth",
+        "/finance/recurring",
+        "/finance/spending",
+        "/finance/tax",
+        "/finance/transactions",
+        "/garmin-health",
+        "/gym",
+        "/wrapped",
+        "__root__"
+      ],
+      "treeMatchesCommitted": true,
+      "treeAugmentsFileRoutesByPath": true,
+      "brandedRoutes": 7,
+      "brandsSurvive": true,
+      "middlewaresMounted": true,
+      "unbrandedByDesign": "/wrapped",
+      "tsc": {
+        "exit": 0,
+        "errors": 0,
+        "negatives": 17
+      }
+    },
+    "brandRefusal": {
+      "ownRoute": "allowed",
+      "layoutRunsStoreForInheritingChild": "allowed",
+      "childWithOwnValidator": "allowed",
+      "handWrapperRoute": "refused",
+      "otherPagesStore": "refused",
+      "globalFromAnywhere": "allowed",
+      "pass": true
+    },
+    "crossStoreOwnership": {
+      "pageVsPage": "allowed",
+      "pageTakesGlobalParam": "throws",
+      "twoFieldsOneParam": "throws",
+      "reservedPrefix": "throws"
+    },
+    "ssrRender": {
+      "ok": true,
+      "usesValuesUnderFileRoute": true,
+      "controlWithoutParamsLacksValues": true
+    }
+  },
+  "s8": {
+    "retainChildrenKept": {
+      "json": {
+        "kept": 6,
+        "of": 6,
+        "nonRetainedDropped": 6,
+        "leavingDrops": 6,
+        "validatorOn": {
+          "layoutOnly": 3,
+          "repeatedOnChild": 3
+        },
+        "failures": []
+      },
+      "stringOnly": {
+        "kept": 6,
+        "of": 6,
+        "nonRetainedDropped": 6,
+        "leavingDrops": 6,
+        "validatorOn": {
+          "layoutOnly": 3,
+          "repeatedOnChild": 3
+        },
+        "failures": []
+      }
+    },
+    "retainTraps": {
+      "json": {
+        "explicitDefaultBeatsRetained": true,
+        "clearUnsets": true,
+        "deleteKeepsRetained": true,
+        "strippedDefaults": true,
+        "validatedComplete": true
+      },
+      "stringOnly": {
+        "explicitDefaultBeatsRetained": true,
+        "clearUnsets": true,
+        "deleteKeepsRetained": true,
+        "strippedDefaults": true,
+        "validatedComplete": true
+      }
+    },
+    "multiFullDefault": {
+      "json": {
+        "fullOmitted": true,
+        "fullDecodesToFull": true,
+        "emptyWritten": true,
+        "emptyHref": "/gym?exercises=%5B%5D",
+        "emptyStaysEmpty": true,
+        "absentIsFull": true,
+        "emptyDistinctFromFull": true,
+        "contrast": {
+          "emptyDefaultOmitted": true,
+          "completeWritten": true
+        }
+      },
+      "stringOnly": {
+        "fullOmitted": true,
+        "fullDecodesToFull": true,
+        "emptyWritten": true,
+        "emptyHref": "/gym?exercises=",
+        "emptyStaysEmpty": true,
+        "absentIsFull": true,
+        "emptyDistinctFromFull": true,
+        "contrast": {
+          "emptyDefaultOmitted": true,
+          "completeWritten": true
+        }
+      }
+    },
+    "historyEntries": {
+      "json": {
+        "replaceField": {
+          "entries": 0,
+          "pushes": 0,
+          "replaces": 1
+        },
+        "replaceToStrippedDefault": {
+          "entries": 0,
+          "pushes": 0,
+          "replaces": 1
+        },
+        "pushField": {
+          "entries": 1,
+          "pushes": 1,
+          "replaces": 0
+        },
+        "pushSameValue": {
+          "entries": 0,
+          "pushes": 0,
+          "replaces": 0
+        },
+        "pushToStrippedDefault": {
+          "entries": 1,
+          "pushes": 1,
+          "replaces": 0
+        },
+        "pushDefaultWhileDefault": {
+          "entries": 0,
+          "pushes": 0,
+          "replaces": 0
+        },
+        "backWalks": true,
+        "pass": true
+      },
+      "stringOnly": {
+        "replaceField": {
+          "entries": 0,
+          "pushes": 0,
+          "replaces": 1
+        },
+        "replaceToStrippedDefault": {
+          "entries": 0,
+          "pushes": 0,
+          "replaces": 1
+        },
+        "pushField": {
+          "entries": 1,
+          "pushes": 1,
+          "replaces": 0
+        },
+        "pushSameValue": {
+          "entries": 0,
+          "pushes": 0,
+          "replaces": 0
+        },
+        "pushToStrippedDefault": {
+          "entries": 1,
+          "pushes": 1,
+          "replaces": 0
+        },
+        "pushDefaultWhileDefault": {
+          "entries": 0,
+          "pushes": 0,
+          "replaces": 0
+        },
+        "backWalks": true,
+        "pass": true
+      },
+      "masked": {
+        "replaceField": {
+          "entries": 0,
+          "pushes": 0,
+          "replaces": 1
+        },
+        "replaceToStrippedDefault": {
+          "entries": 0,
+          "pushes": 0,
+          "replaces": 1
+        },
+        "pushField": {
+          "entries": 1,
+          "pushes": 1,
+          "replaces": 0
+        },
+        "pushSameValue": {
+          "entries": 1,
+          "pushes": 1,
+          "replaces": 0
+        },
+        "pushToStrippedDefault": {
+          "entries": 1,
+          "pushes": 1,
+          "replaces": 0
+        },
+        "pushDefaultWhileDefault": {
+          "entries": 0,
+          "pushes": 0,
+          "replaces": 0
+        },
+        "backWalks": true,
+        "pass": true
+      }
+    },
+    "maskingHistory": {
+      "json": {
+        "routerSees": true,
+        "controlReads": true,
+        "addressBarHidden": true,
+        "reloadRestores": true,
+        "sharedStartsClean": true,
+        "backRestores": true,
+        "pass": true
+      },
+      "stringOnly": {
+        "routerSees": true,
+        "controlReads": true,
+        "addressBarHidden": true,
+        "reloadRestores": true,
+        "sharedStartsClean": true,
+        "backRestores": true,
+        "pass": true
+      }
+    },
+    "toWindow": {
+      "json": {
+        "cases": 8,
+        "failures": [],
+        "customWrite": true,
+        "presetWrite": true,
+        "halfPairWritesNothing": true,
+        "pass": true
+      },
+      "stringOnly": {
+        "cases": 8,
+        "failures": [],
+        "customWrite": true,
+        "presetWrite": true,
+        "halfPairWritesNothing": true,
+        "pass": true
+      }
+    },
+    "foreignForms": {
+      "json": {
+        "cases": 24,
+        "ok": true,
+        "failures": []
+      },
+      "stringOnly": {
+        "cases": 24,
+        "ok": true,
+        "failures": []
+      }
+    }
+  },
+  "roundTrip": {
+    "number": {
+      "json": {
+        "cases": 5,
+        "ok": true,
+        "failures": []
+      },
+      "stringOnly": {
+        "cases": 5,
+        "ok": true,
+        "failures": []
+      }
+    },
+    "boolean": {
+      "json": {
+        "cases": 4,
+        "ok": true,
+        "failures": []
+      },
+      "stringOnly": {
+        "cases": 4,
+        "ok": true,
+        "failures": []
+      }
+    },
+    "range": {
+      "json": {
+        "cases": 5,
+        "ok": true,
+        "failures": []
+      },
+      "stringOnly": {
+        "cases": 5,
+        "ok": true,
+        "failures": []
+      }
+    },
+    "enum": {
+      "json": {
+        "cases": 9,
+        "ok": true,
+        "failures": []
+      },
+      "stringOnly": {
+        "cases": 9,
+        "ok": true,
+        "failures": []
+      }
+    },
+    "string": {
+      "json": {
+        "cases": 18,
+        "ok": true,
+        "failures": []
+      },
+      "stringOnly": {
+        "cases": 18,
+        "ok": true,
+        "failures": []
+      }
+    },
+    "multi": {
+      "json": {
+        "cases": 13,
+        "ok": true,
+        "failures": []
+      },
+      "stringOnly": {
+        "cases": 13,
+        "ok": true,
+        "failures": []
+      }
+    }
+  },
+  "routerVersionDelta": {
+    "status": "ran",
+    "pinned": {
+      "reactRouter": "1.170.46",
+      "routerCore": "1.171.39"
+    },
+    "locked": {
+      "reactRouter": "1.170.38",
+      "routerCore": "1.171.39"
+    },
+    "tscExit": {
+      "pinned": 0,
+      "locked": 0
+    },
+    "verdictInput": false,
+    "identical": true,
+    "differences": []
+  },
+  "verdict": {
+    "s1": "PASS",
+    "s8": "PASS",
+    "verdict": "PASS",
+    "failed": [],
+    "criteria": {
+      "s1": {
+        "file-route app type-checks, @ts-expect-error negatives included": true,
+        "codegen output equals the committed route tree": true,
+        "tree augments FileRoutesByPath": true,
+        "brand survives codegen on every route that declares a validator": true,
+        "search.middlewares reach the route options": true,
+        "a write from a route that does not run the store is refused": true,
+        "file-route app parses (SSR render reads values under a file route)": true,
+        "middleware strip runs (defaults stripped, validated search complete)": true,
+        "middleware retain runs (explicit default beats retained, clear unsets)": true
+      },
+      "s8": {
+        "every codec round-trips under both parse configs": true,
+        "6 of 6 children keep retained keys (both configs)": true,
+        "leaving the layout drops them (6 of 6, both configs)": true,
+        "a full-default multi omits its param and an empty selection stays distinct": true,
+        "replace adds 0 history entries, push 1, also for a stripped default": true,
+        "masking history: router reads real search, address bar hides it, reload restores": true,
+        "toWindow yields preset or from/to": true
+      }
+    }
+  }
+}
