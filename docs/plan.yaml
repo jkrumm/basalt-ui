@@ -4,6 +4,7 @@
 # verdict/cutover rows), v3-flags-delete-g2 (conditional on a spike verdict) and v3-marketing-docs-site with its dependents
 # v3-marketing-recipes and v3-marketing-migration (owner-filed after 3.0.0). See docs/v3/PLAN-REVISION.md.
 # A row's facts are the path of its file under docs/v3/issues/, the single source on master (the server caps this file at 64 KiB).
+# A row's seat: opus high where index.json names an `opus` reason, sonnet medium for size s; no seat is the lead row (sonnet high).
 version: 1
 rows:
   - key: v3-spike-token-surfaces
@@ -102,24 +103,28 @@ rows:
     title: 'Export surface as one generated shard per subpath, with its check'
     repo: basalt-ui
     kind: chore
+    seat: { tier: sonnet, effort: medium }
     after: [v3-rel-7-skeleton]
     facts: { 'brief': 'docs/v3/issues/trunk/v3-shard-export-surface.json' }
   - key: v3-st-1-emitter
     title: 'Static emitter pair: color-scheme, always-on OS fallback, gates, golden files'
     repo: basalt-ui
     kind: feature
+    seat: { tier: sonnet, effort: medium }
     after: [v3-tok-t3-css, v3-contract-amendment-spikes]
     facts: { 'brief': 'docs/v3/issues/g0/v3-st-1-emitter.json' }
   - key: v3-st-5-chart-vars
     title: 'Chart and sequential ramp vars with gates'
     repo: basalt-ui
     kind: feature
+    seat: { tier: opus, effort: high }
     after: [v3-st-1-emitter]
     facts: { 'brief': 'docs/v3/issues/g0/v3-st-5-chart-vars.json' }
   - key: v3-tok-t4a-names
     title: 'check-tokens and the generated zone A list'
     repo: basalt-ui
     kind: feature
+    seat: { tier: sonnet, effort: medium }
     after: [v3-tok-t3-css]
     facts: { 'brief': 'docs/v3/issues/g0/v3-tok-t4a-names.json' }
   - key: v3-tok-t4-cli
@@ -132,24 +137,28 @@ rows:
     title: 'Hide package fixture roots from test, lint and format scanners'
     repo: basalt-ui
     kind: chore
+    seat: { tier: sonnet, effort: medium }
     after: [v3-tok-t3-css]
     facts: { 'brief': 'docs/v3/issues/g0/v3-test-roots.json' }
   - key: v3-st-3-type-fonts
     title: 'typography.css, fonts.css, theme-script parity fixtures'
     repo: basalt-ui
     kind: feature
+    seat: { tier: sonnet, effort: medium }
     after: [v3-st-1-emitter, v3-test-roots]
     facts: { 'brief': 'docs/v3/issues/g0/v3-st-3-type-fonts.json' }
   - key: v3-st-4-prose
     title: 'prose.css in :where() with a Chrome specificity and layer test'
     repo: basalt-ui
     kind: feature
+    seat: { tier: sonnet, effort: medium }
     after: [v3-st-1-emitter, v3-layout-harness]
     facts: { 'brief': 'docs/v3/issues/g0/v3-st-4-prose.json' }
   - key: v3-sk-1-cli-invariants
     title: 'Port CLI invariants failing first'
     repo: basalt-ui
     kind: chore
+    seat: { tier: sonnet, effort: medium }
     after: [v3-rel-7-skeleton, v3-rel-7-skeleton-cli]
     facts: { 'brief': 'docs/v3/issues/g0/v3-sk-1-cli-invariants.json' }
   - key: v3-sk-2-sync
@@ -162,6 +171,7 @@ rows:
     title: 'Wave 2 dependency pins in one PR'
     repo: basalt-ui
     kind: chore
+    seat: { tier: sonnet, effort: medium }
     after: [v3-rel-7-skeleton, v3-exemplar-wiring]
     facts: { 'brief': 'docs/v3/issues/g0/v3-deps-w2.json' }
   - key: v3-st-6-stylelint
@@ -200,6 +210,7 @@ rows:
     title: 'Guardrail rule table and classPatternRule factory, one table generating ids, preset, coverage, docs'
     repo: basalt-ui
     kind: feature
+    seat: { tier: opus, effort: high }
     after:
       [
         v3-spike-no-restyle,
@@ -238,12 +249,14 @@ rows:
     title: 'Weakened-config check doctor calls: seeded offender per root'
     repo: basalt-ui
     kind: feature
+    seat: { tier: sonnet, effort: medium }
     after: [v3-gr-4-preset]
     facts: { 'brief': 'docs/v3/issues/g0/v3-gr-5-weakened-config.json' }
   - key: v3-gr-6-waiver-codemod
     title: 'Waiver codemod for the 63 regex-dialect sites'
     repo: basalt-ui
     kind: chore
+    seat: { tier: sonnet, effort: medium }
     after: [v3-gr-4-preset]
     facts: { 'brief': 'docs/v3/issues/g0/v3-gr-6-waiver-codemod.json' }
   - key: v3-sk-3b-budget
@@ -306,12 +319,14 @@ rows:
     title: 'Epos read-only bridge probe from a scratch copy, no employer commit, tenant verdict for DPO 16'
     repo: basalt-ui
     kind: chore
+    seat: { tier: sonnet, effort: medium }
     after: [v3-tok-t4-cli, v3-sk-3-init-doctor, v3-gr-4-preset]
     facts: { 'brief': 'docs/v3/issues/spikes/v3-spike-epos-bridge-probe.json' }
   - key: v3-prim-p2-guards
     title: 'Guard completeness and primitive.contract suite'
     repo: basalt-ui
     kind: feature
+    seat: { tier: sonnet, effort: medium }
     after: [v3-prim-p1-core]
     facts: { 'brief': 'docs/v3/issues/g1/v3-prim-p2-guards.json' }
   - key: v3-qa-i2-format
@@ -390,18 +405,21 @@ rows:
     title: 'eject, --adopt, --undo, --raise with seed digests and base copies'
     repo: basalt-ui
     kind: feature
+    seat: { tier: opus, effort: high }
     after: [v3-prim-p1-core, v3-sk-2-sync]
     facts: { 'brief': 'docs/v3/issues/g1/v3-prim-p7-eject.json' }
   - key: v3-prim-p8-sync-matrix
     title: 'Three-way sync for ejected files and the doctor eject matrix'
     repo: basalt-ui
     kind: feature
+    seat: { tier: opus, effort: high }
     after: [v3-prim-p7-eject, v3-sk-3-init-doctor, v3-spike-upstream-churn]
     facts: { 'brief': 'docs/v3/issues/g1/v3-prim-p8-sync-matrix.json' }
   - key: v3-prim-p9-vite-gates
     title: 'basalt() Vite plugin: peer and seed gates, aliases, sources.css, HMR on ejected files (F9)'
     repo: basalt-ui
     kind: feature
+    seat: { tier: opus, effort: high }
     after: [v3-prim-p7-eject, v3-contract-amendment-spikes]
     facts: { 'brief': 'docs/v3/issues/g1/v3-prim-p9-vite-gates.json' }
   - key: v3-prim-p3c-choice
@@ -478,24 +496,28 @@ rows:
     title: 'createSyncedState and its transport contract suite, shaped by the spike result'
     repo: basalt-ui
     kind: feature
+    seat: { tier: opus, effort: high }
     after: [v3-spike-synced, v3-state-2-query-client, v3-live-1-query]
     facts: { 'brief': 'docs/v3/issues/g1/v3-state-3-synced.json' }
   - key: v3-state-5-notify
     title: 'notify queue in core and ToastHost in page'
     repo: basalt-ui
     kind: feature
+    seat: { tier: sonnet, effort: medium }
     after: [v3-prim-p4-overlays]
     facts: { 'brief': 'docs/v3/issues/g1/v3-state-5-notify.json' }
   - key: v3-ctl-1-golden
     title: 'URL codec golden fixtures and 2.x control invariants failing first'
     repo: basalt-ui
     kind: chore
+    seat: { tier: sonnet, effort: medium }
     after: [v3-rel-7-skeleton, v3-contract-amendment-spikes]
     facts: { 'brief': 'docs/v3/issues/g1/v3-ctl-1-golden.json' }
   - key: v3-ctl-2-define-controls
     title: 'defineControls, field codecs, branded validator'
     repo: basalt-ui
     kind: feature
+    seat: { tier: opus, effort: high }
     after: [v3-ctl-1-golden, v3-spike-controls-codegen]
     facts: { 'brief': 'docs/v3/issues/g1/v3-ctl-2-define-controls.json' }
   - key: v3-ctl-3-widgets
@@ -534,6 +556,7 @@ rows:
     title: 'Review artifact: the override cue in ControlView (non-blocking)'
     repo: basalt-ui
     kind: chore
+    seat: { tier: sonnet, effort: medium }
     after: [v3-ctl-4b-control-home]
     facts: { 'brief': 'docs/v3/issues/g1/v3-verdict-control-cue.json' }
   - key: v3-ctl-5-filterset
@@ -588,6 +611,7 @@ rows:
     title: 'Chart core spike S2: engine byte probe'
     repo: basalt-ui
     kind: chore
+    seat: { tier: sonnet, effort: medium }
     after:
       [v3-charts-bump, v3-exemplar-statcard, v3-exemplar-dense-table, v3-contract-amendment-spikes]
     facts: { 'brief': 'docs/v3/issues/g1/v3-charts-1a-s2-probe.json' }
@@ -595,6 +619,7 @@ rows:
     title: 'Charts core on the bumped engine: S2 floors, S3 tooltip portal, S4 onRender geometry, S5 engine scales'
     repo: basalt-ui
     kind: feature
+    seat: { tier: opus, effort: high }
     after: [v3-charts-bump, v3-exemplar-statcard, v3-exemplar-dense-table, v3-charts-1a-s2-probe]
     facts: { 'brief': 'docs/v3/issues/g1/v3-charts-1-core.json' }
   - key: v3-charts-2-kinds
@@ -619,12 +644,14 @@ rows:
     title: 'Table pinned invariants and contract.ts'
     repo: basalt-ui
     kind: chore
+    seat: { tier: sonnet, effort: medium }
     after: [v3-exemplar-statcard, v3-exemplar-dense-table, v3-contract-amendment-spikes]
     facts: { 'brief': 'docs/v3/issues/g1/v3-table-t0-invariants.json' }
   - key: v3-table-t1a-core-model
     title: 'Table core A: feature set, kinds, column plan'
     repo: basalt-ui
     kind: feature
+    seat: { tier: opus, effort: high }
     after: [v3-table-t0-invariants]
     facts: { 'brief': 'docs/v3/issues/g1/v3-table-t1a-core-model.json' }
   - key: v3-table-t1b-core-state
@@ -643,6 +670,7 @@ rows:
     title: 'Table parts B: tiers, pager, table.css, v0 layout test'
     repo: basalt-ui
     kind: feature
+    seat: { tier: sonnet, effort: medium }
     after: [v3-table-t2a-parts]
     facts: { 'brief': 'docs/v3/issues/g1/v3-table-t2b-tiers.json' }
   - key: v3-spike-table-fit
@@ -655,6 +683,7 @@ rows:
     title: 'Spike: React Compiler over ./table on a 10k fixture'
     repo: basalt-ui
     kind: chore
+    seat: { tier: sonnet, effort: medium }
     after: [v3-table-t2b-tiers]
     facts: { 'brief': 'docs/v3/issues/spikes/v3-spike-q3-compile-table.json' }
   - key: v3-live-2-channel
@@ -667,6 +696,7 @@ rows:
     title: 'bindInvalidation with debounce tiers, adopt-or-delete: console is the named consumer'
     repo: basalt-ui
     kind: feature
+    seat: { tier: sonnet, effort: medium }
     after: [v3-live-1-query, v3-live-2-channel]
     facts: { 'brief': 'docs/v3/issues/g1/v3-live-3-bind-invalidation.json' }
   - key: v3-live-4-connection
@@ -706,6 +736,7 @@ rows:
     title: 'Print and WebKit lanes, Q6 first run'
     repo: basalt-ui
     kind: feature
+    seat: { tier: sonnet, effort: medium }
     after: [v3-qa-i4-matrix]
     facts: { 'brief': 'docs/v3/issues/g1/v3-qa-i5-print-webkit.json' }
   - key: v3-qa-i6-recipes-perf
@@ -718,12 +749,14 @@ rows:
     title: 'Spike: reduced-motion clamp against Base UI exits; contrast incomplete nodes sampled'
     repo: basalt-ui
     kind: chore
+    seat: { tier: sonnet, effort: medium }
     after: [v3-prim-p4-overlays, v3-qa-i4-matrix]
     facts: { 'brief': 'docs/v3/issues/spikes/v3-spike-q5-q8-motion-contrast.json' }
   - key: v3-sk-6-thin-skill-fold
     title: 'Thin skill or fold into docs, per the kill rule result'
     repo: basalt-ui
     kind: feature
+    seat: { tier: sonnet, effort: medium }
     after: [v3-spike-thin-skill, v3-sk-5-rules]
     facts: { 'brief': 'docs/v3/issues/g1/v3-sk-6-thin-skill-fold.json' }
   - key: v3-sk-7-references
@@ -748,6 +781,7 @@ rows:
     title: 'Reviewer calibration scenarios and hash test'
     repo: basalt-ui
     kind: feature
+    seat: { tier: sonnet, effort: medium }
     after: [v3-sk-9-reviewer]
     facts: { 'brief': 'docs/v3/issues/g1/v3-sk-9b-calibrate.json' }
   - key: v3-sk-10-shot
@@ -760,6 +794,7 @@ rows:
     title: 'Assemble the playground overview route over cards, charts and controls'
     repo: basalt-ui
     kind: feature
+    seat: { tier: sonnet, effort: medium }
     after:
       [
         v3-cards-1-statgroup,
@@ -804,6 +839,7 @@ rows:
     title: 'Spike S5: DataTable own-code bytes and AppCell ceiling'
     repo: basalt-ui
     kind: chore
+    seat: { tier: sonnet, effort: medium }
     after: [v3-table-t2b-tiers]
     facts: { 'brief': 'docs/v3/issues/spikes/v3-spike-table-bytes.json' }
   - key: v3-cli-sibling
@@ -823,18 +859,21 @@ rows:
     title: 'Enable the primitive-bypass Intl form'
     repo: basalt-ui
     kind: feature
+    seat: { tier: sonnet, effort: medium }
     after: [v3-gr-3a-import-bypass, v3-qa-i2-format]
     facts: { 'brief': 'docs/v3/issues/g1/v3-gr-intl-enable.json' }
   - key: v3-sk-7b-state-references
     title: 'References for state, forms and controls'
     repo: basalt-ui
     kind: feature
+    seat: { tier: sonnet, effort: medium }
     after: [v3-sk-7-references, v3-state-1b-external-field]
     facts: { 'brief': 'docs/v3/issues/g1/v3-sk-7b-state-references.json' }
   - key: v3-spike-thin-skill-s7
     title: 'Spike S7: thin skill trial cells a, b and d'
     repo: basalt-ui
     kind: chore
+    seat: { tier: sonnet, effort: medium }
     after: [v3-spike-thin-skill, v3-contract-amendment-spikes]
     facts: { 'brief': 'docs/v3/issues/spikes/v3-spike-thin-skill-s7.json' }
   - key: v3-shell-i1-layout
@@ -853,12 +892,14 @@ rows:
     title: 'Nav core and types: defineNav, linkOptions, active resolver'
     repo: basalt-ui
     kind: feature
+    seat: { tier: opus, effort: high }
     after: [v3-shell-i1-layout]
     facts: { 'brief': 'docs/v3/issues/g2/v3-shell-i2-nav-core.json' }
   - key: v3-ai-i1-markdown
     title: 'Url policy into core, sanitize, blockSplit, Markdown with P1 and P2'
     repo: basalt-ui
     kind: feature
+    seat: { tier: opus, effort: high }
     after: [v3-rel-7-skeleton, v3-unhot-migrating-llms]
     facts: { 'brief': 'docs/v3/issues/g2/v3-ai-i1-markdown.json' }
   - key: v3-ai-i2-codeblock-prose
@@ -871,18 +912,21 @@ rows:
     title: 'AI and MDX dev dependencies in one PR'
     repo: basalt-ui
     kind: chore
+    seat: { tier: sonnet, effort: medium }
     after: [v3-spike-scroller, v3-playground-reset, v3-exemplar-wiring, v3-deps-w2]
     facts: { 'brief': 'docs/v3/issues/g2/v3-deps-ai.json' }
   - key: v3-ai-i7-mdx
     title: 'mdxComponents, mdx recipe, P9'
     repo: basalt-ui
     kind: feature
+    seat: { tier: sonnet, effort: medium }
     after: [v3-ai-i2-codeblock-prose, v3-deps-ai]
     facts: { 'brief': 'docs/v3/issues/g2/v3-ai-i7-mdx.json' }
   - key: v3-ai-i5-lint
     title: 'untrusted-markdown body and useChat sub-check with P10 fixtures'
     repo: basalt-ui
     kind: feature
+    seat: { tier: sonnet, effort: medium }
     after: [v3-ai-i1-markdown, v3-gr-3b-structure-rest]
     facts: { 'brief': 'docs/v3/issues/g2/v3-ai-i5-lint.json' }
   - key: v3-ctl-7-formfield
@@ -895,6 +939,7 @@ rows:
     title: 'Spike: control-home residue after a shutterflow and argo port'
     repo: basalt-ui
     kind: chore
+    seat: { tier: sonnet, effort: medium }
     after: [v3-ctl-5-filterset]
     facts: { 'brief': 'docs/v3/issues/spikes/v3-spike-control-home.json' }
   - key: v3-ctl-9-rows
@@ -921,6 +966,7 @@ rows:
     title: 'Two-pane recipe and S10 on argo momentum chart'
     repo: basalt-ui
     kind: feature
+    seat: { tier: sonnet, effort: medium }
     after:
       [
         v3-charts-2-kinds,
@@ -952,6 +998,7 @@ rows:
     title: 'Chart and card migration rows'
     repo: basalt-ui
     kind: chore
+    seat: { tier: sonnet, effort: medium }
     after:
       [
         v3-charts-7a-card-codemods,
@@ -983,6 +1030,7 @@ rows:
     title: 'Generative catalog, expectCatalog, P5 and P7'
     repo: basalt-ui
     kind: feature
+    seat: { tier: opus, effort: high }
     after:
       [
         v3-ai-i3-partview,
@@ -1017,6 +1065,7 @@ rows:
     title: 'Freeze G0 layers: tokens budgets, no release'
     repo: basalt-ui
     kind: chore
+    seat: { tier: sonnet, effort: medium }
     after:
       [
         v3-tok-t5-rows,
@@ -1034,6 +1083,7 @@ rows:
     title: 'Freeze G1 layers: ui, cards, charts kinds, router and data state API, table v0 budgets and pins'
     repo: basalt-ui
     kind: chore
+    seat: { tier: sonnet, effort: medium }
     after:
       [
         v3-prim-p6-date-picker,
@@ -1057,6 +1107,7 @@ rows:
     title: 'Projector, rail blocks, docking, page claims'
     repo: basalt-ui
     kind: feature
+    seat: { tier: opus, effort: high }
     after: [v3-shell-i2-nav-core, v3-spike-shell-frame]
     facts: { 'brief': 'docs/v3/issues/g2/v3-shell-i3-projector.json' }
   - key: v3-shell-i3b-page-core
@@ -1118,6 +1169,7 @@ rows:
     title: 'Settings exemplar route and the inner-nav recipe'
     repo: basalt-ui
     kind: feature
+    seat: { tier: sonnet, effort: medium }
     after: [v3-shell-i7a-innernav, v3-shell-i5c-exemplar, v3-playground-reset]
     facts: { 'brief': 'docs/v3/issues/g2/v3-shell-i7b-settings.json' }
   - key: v3-shell-i8-commands
@@ -1143,6 +1195,7 @@ rows:
     title: 'Review artifact: shell exemplars at 1800x1200 and 390x844 (non-blocking)'
     repo: basalt-ui
     kind: chore
+    seat: { tier: sonnet, effort: medium }
     after: [v3-shell-i5c-exemplar, v3-shell-i6-tabbar, v3-shell-i8-commands, v3-shell-i7b-settings]
     facts: { 'brief': 'docs/v3/issues/g2/v3-verdict-shell.json' }
   - key: v3-shell-i10-rules-rows
@@ -1173,6 +1226,7 @@ rows:
     title: 'Freeze G2 layers: page, shell, nav, content budgets and pins'
     repo: basalt-ui
     kind: chore
+    seat: { tier: sonnet, effort: medium }
     after:
       [
         v3-shell-i9-router-defaults,
@@ -1207,6 +1261,7 @@ rows:
     title: 'Table virtual rows, footer, c.select, declared grouping'
     repo: basalt-ui
     kind: feature
+    seat: { tier: opus, effort: high }
     after: [v3-table-t3-toolbar, v3-prim-p5c-bar]
     facts: { 'brief': 'docs/v3/issues/g3/v3-table-t4-virtual.json' }
   - key: v3-ctl-6-viewtabs
@@ -1247,12 +1302,14 @@ rows:
     title: 'Review artifact: table exemplar on phone and desktop (non-blocking)'
     repo: basalt-ui
     kind: chore
+    seat: { tier: sonnet, effort: medium }
     after: [v3-table-t5-exemplar]
     facts: { 'brief': 'docs/v3/issues/g3/v3-verdict-table.json' }
   - key: v3-state-4a-controls
     title: 'Form draft, submit helper and FormFooter in controls'
     repo: basalt-ui
     kind: feature
+    seat: { tier: sonnet, effort: medium }
     after: [v3-ctl-7-formfield, v3-state-1-persisted, v3-state-2-query-client, v3-state-3-synced]
     facts: { 'brief': 'docs/v3/issues/g3/v3-state-4a-controls.json' }
   - key: v3-state-4b-recipes
@@ -1287,6 +1344,7 @@ rows:
     title: 'Freeze G3 pins and budgets'
     repo: basalt-ui
     kind: chore
+    seat: { tier: sonnet, effort: medium }
     after:
       [
         v3-ctl-6-viewtabs,
@@ -1300,6 +1358,7 @@ rows:
     title: 'Fold the later spike results into the contract'
     repo: basalt-ui
     kind: chore
+    seat: { tier: opus, effort: high }
     after:
       [
         v3-spike-table-fit,
@@ -1339,6 +1398,7 @@ rows:
     title: 'Recipes: approvals, reasoning, sources, citations, artifacts'
     repo: basalt-ui
     kind: feature
+    seat: { tier: sonnet, effort: medium }
     after: [v3-ai-i4-catalog, v3-shell-i4-page, v3-deps-ai]
     facts: { 'brief': 'docs/v3/issues/g5-ga-g6/v3-ai-i10-recipes.json' }
   - key: v3-ai-i6-reference
@@ -1360,6 +1420,7 @@ rows:
     title: 'Freeze G4 layers: charts API and bundle marginals'
     repo: basalt-ui
     kind: chore
+    seat: { tier: sonnet, effort: medium }
     after: [v3-charts-5-heatmap, v3-freeze-g3, v3-rel-7-skeleton, v3-contract-amendment-late]
     facts: { 'brief': 'docs/v3/issues/g4/v3-freeze-g4.json' }
   - key: v3-teardown-views
