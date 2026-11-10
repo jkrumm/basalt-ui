@@ -1,0 +1,704 @@
+{
+  "harness": {
+    "name": "census",
+    "typescript": "6.0.3"
+  },
+  "scan": {
+    "repos": {
+      "argo": {
+        "sourceFiles": 510,
+        "parsed": 510,
+        "parseErrors": 0,
+        "head": "f5c49ca6"
+      },
+      "console": {
+        "sourceFiles": 112,
+        "parsed": 112,
+        "parseErrors": 0,
+        "head": "257c5e5"
+      },
+      "email-gateway": {
+        "sourceFiles": 127,
+        "parsed": 127,
+        "parseErrors": 0,
+        "head": "bbd365d"
+      },
+      "finances": {
+        "sourceFiles": 150,
+        "parsed": 150,
+        "parseErrors": 0,
+        "head": "3028518"
+      },
+      "image-gateway": {
+        "sourceFiles": 73,
+        "parsed": 73,
+        "parseErrors": 0,
+        "head": "acb77e5"
+      },
+      "jkrumm-com": {
+        "sourceFiles": 29,
+        "parsed": 29,
+        "parseErrors": 0,
+        "head": "b6ec0b4"
+      },
+      "linewatch": {
+        "sourceFiles": 118,
+        "parsed": 118,
+        "parseErrors": 0,
+        "head": "055ebdf"
+      },
+      "obsidian": {
+        "sourceFiles": 67,
+        "parsed": 67,
+        "parseErrors": 0,
+        "head": "ca44a6f"
+      },
+      "rb": {
+        "sourceFiles": 149,
+        "parsed": 149,
+        "parseErrors": 0,
+        "head": "7709870"
+      },
+      "rollhook": {
+        "sourceFiles": 44,
+        "parsed": 44,
+        "parseErrors": 0,
+        "head": "b394ffe"
+      },
+      "shutterflow": {
+        "sourceFiles": 762,
+        "parsed": 762,
+        "parseErrors": 0,
+        "head": "9c2d9e3"
+      },
+      "weatherorb": {
+        "sourceFiles": 189,
+        "parsed": 189,
+        "parseErrors": 0,
+        "head": "0ac45853"
+      }
+    },
+    "epos": {
+      "available": true,
+      "sourceFiles": 570
+    }
+  },
+  "f1": {
+    "total": 1838,
+    "unmapped": 6,
+    "unmappedShare": 0.0033,
+    "distinct": {
+      "total": 153,
+      "unmapped": 6,
+      "share": 0.0392
+    },
+    "signaturesOnly": {
+      "used": 81,
+      "kept": 32,
+      "mapped": 43,
+      "unmapped": 6,
+      "share": 0.0741
+    },
+    "argo": {
+      "signatures": 81,
+      "documented": 124,
+      "llmsVersion": "2.29.0",
+      "kept": 32,
+      "mapped": 43,
+      "unmapped": 6,
+      "byKind": {
+        "drop": 4,
+        "extra": 3,
+        "replace": 10,
+        "symbol": 23,
+        "tooling": 1,
+        "ui": 2
+      },
+      "unmappedNames": [
+        "CONTAINER_GRID_BREAKPOINTS",
+        "SettingsSection",
+        "ShortcutsHelp",
+        "basaltViteConfig",
+        "defineNotifications",
+        "groupTokens"
+      ],
+      "judgement": ["StatusDot", "setColorScheme"],
+      "citeFailures": [],
+      "usedNames": [
+        "BP",
+        "BarList",
+        "Bars",
+        "BasaltDataTable",
+        "BasaltProvider",
+        "BasaltShell",
+        "CONTAINER_GRID_BREAKPOINTS",
+        "CONTAINER_KEYS",
+        "Callout",
+        "CartesianChart",
+        "ChartCard",
+        "DateRangePicker",
+        "DeltaBadge",
+        "DualPanel",
+        "EmptyState",
+        "EventList",
+        "FilterSet",
+        "Heatmap",
+        "Lines",
+        "Meter",
+        "MultiSelectFilter",
+        "NotificationBell",
+        "NumberFilter",
+        "PageAside",
+        "PageBar",
+        "PageSummary",
+        "PageTitle",
+        "RangeFilter",
+        "SearchFilter",
+        "Section",
+        "SelectFilter",
+        "SettingsRow",
+        "SettingsSection",
+        "ShortcutsHelp",
+        "Sparkline",
+        "StackedArea",
+        "StatCard",
+        "StatGroup",
+        "StatusDot",
+        "SyncButton",
+        "ThemeToggle",
+        "ToggleFilter",
+        "VX",
+        "ViewTabs",
+        "WidgetHeader",
+        "alpha",
+        "basaltAppPlugin",
+        "basaltViteConfig",
+        "createBasaltRouter",
+        "createBasaltTheme",
+        "createColumnHelper",
+        "createLocalStore",
+        "createPersistedState",
+        "createSearchStore",
+        "date",
+        "defineCommands",
+        "defineFormat",
+        "defineNav",
+        "defineNotifications",
+        "defineOverlays",
+        "defineSeries",
+        "durationClock",
+        "emit",
+        "externalField",
+        "field",
+        "fieldKey",
+        "groupTokens",
+        "inputProps",
+        "money",
+        "navGroup",
+        "navTarget",
+        "overlays",
+        "p",
+        "percent",
+        "relativeTime",
+        "setColorScheme",
+        "toggleSidebar",
+        "unwrap",
+        "useBasaltForm",
+        "useSizeClass",
+        "weekday"
+      ]
+    },
+    "section3": {
+      "tableSymbols": 91,
+      "declaredSum": 91,
+      "sumMatches": true,
+      "primitiveNames": 44
+    },
+    "extras": [
+      {
+        "name": "PageSummary",
+        "inSection3": true,
+        "argoFiles": 12
+      },
+      {
+        "name": "StatStripCell",
+        "inSection3": false,
+        "argoFiles": 13
+      },
+      {
+        "name": "EventList",
+        "inSection3": true,
+        "argoFiles": 1
+      },
+      {
+        "name": "EmptyState",
+        "inSection3": true,
+        "argoFiles": 7
+      },
+      {
+        "name": "overlays",
+        "inSection3": false,
+        "argoFiles": 10
+      },
+      {
+        "name": "createColumnHelper",
+        "inSection3": false,
+        "argoFiles": 10
+      },
+      {
+        "name": "CONTAINER_KEYS",
+        "inSection3": false,
+        "argoFiles": 7
+      },
+      {
+        "name": "alpha",
+        "inSection3": true,
+        "argoFiles": 22
+      }
+    ],
+    "symbolSumAfterExtras": 95,
+    "symbolSumIfUnmappedAlsoAdded": 101,
+    "tags": {
+      "total": 4312,
+      "layout": 2555,
+      "component": 1757,
+      "unmapped": 0,
+      "evidence9": {
+        "total": 4312,
+        "component": 1757
+      },
+      "unmappedNames": [],
+      "distinctComponentNames": 72,
+      "distinctUnmapped": 0,
+      "noAnswerNames": ["@mantine/schedule", "MonthView", "WeekView"],
+      "documented": {
+        "total": 4310,
+        "component": 1755
+      },
+      "epos": {
+        "files": 0,
+        "total": 0,
+        "layout": 0,
+        "component": 0
+      },
+      "byApp": {
+        "argo": {
+          "files": 117,
+          "total": 1129,
+          "layout": 787,
+          "component": 342,
+          "unmapped": 0
+        },
+        "console": {
+          "files": 0,
+          "total": 0,
+          "layout": 0,
+          "component": 0,
+          "unmapped": 0
+        },
+        "email-gateway": {
+          "files": 9,
+          "total": 164,
+          "layout": 62,
+          "component": 102,
+          "unmapped": 0
+        },
+        "finances": {
+          "files": 12,
+          "total": 30,
+          "layout": 30,
+          "component": 0,
+          "unmapped": 0
+        },
+        "image-gateway": {
+          "files": 27,
+          "total": 377,
+          "layout": 187,
+          "component": 190,
+          "unmapped": 0
+        },
+        "jkrumm-com": {
+          "files": 0,
+          "total": 0,
+          "layout": 0,
+          "component": 0,
+          "unmapped": 0
+        },
+        "linewatch": {
+          "files": 16,
+          "total": 232,
+          "layout": 150,
+          "component": 82,
+          "unmapped": 0
+        },
+        "obsidian": {
+          "files": 11,
+          "total": 29,
+          "layout": 20,
+          "component": 9,
+          "unmapped": 0
+        },
+        "rb": {
+          "files": 18,
+          "total": 558,
+          "layout": 326,
+          "component": 232,
+          "unmapped": 0
+        },
+        "rollhook": {
+          "files": 0,
+          "total": 0,
+          "layout": 0,
+          "component": 0,
+          "unmapped": 0
+        },
+        "shutterflow": {
+          "files": 118,
+          "total": 1433,
+          "layout": 758,
+          "component": 675,
+          "unmapped": 0
+        },
+        "weatherorb": {
+          "files": 25,
+          "total": 360,
+          "layout": 235,
+          "component": 125,
+          "unmapped": 0
+        }
+      }
+    }
+  },
+  "f4": {
+    "byRefusal": {
+      "agent-runtime": {
+        "signatureHits": 2,
+        "copies": 0,
+        "repos": 0,
+        "repoIds": [],
+        "perItem": {
+          "own-chat-hook-with-stream-reader": {
+            "copies": 0,
+            "repos": 0
+          },
+          "own-chat-ui-part": {
+            "copies": 0,
+            "repos": 0
+          },
+          "sdk-usechat": {
+            "copies": 0,
+            "repos": 0
+          }
+        },
+        "libModules": 0,
+        "ids": []
+      },
+      "board-drag-schedule": {
+        "signatureHits": 4,
+        "copies": 3,
+        "repos": 2,
+        "repoIds": ["console", "weatherorb"],
+        "perItem": {
+          "dnd-library": {
+            "copies": 0,
+            "repos": 0
+          },
+          "html5-drag-and-drop": {
+            "copies": 1,
+            "repos": 1
+          },
+          "mantine-schedule": {
+            "copies": 4,
+            "repos": 1
+          },
+          "own-board": {
+            "copies": 0,
+            "repos": 0
+          },
+          "own-timeline-or-schedule": {
+            "copies": 1,
+            "repos": 1
+          },
+          "pointer-capture-drag": {
+            "copies": 1,
+            "repos": 1
+          }
+        },
+        "libModules": 4,
+        "ids": ["74c8aac0", "d8ca5100", "da28c2fb"]
+      },
+      "chart-kinds": {
+        "signatureHits": 2,
+        "copies": 0,
+        "repos": 0,
+        "repoIds": [],
+        "perItem": {
+          "own-curve-factory": {
+            "copies": 0,
+            "repos": 0
+          },
+          "own-d3-arc-donut": {
+            "copies": 0,
+            "repos": 0
+          },
+          "own-donut-or-pie": {
+            "copies": 0,
+            "repos": 0
+          },
+          "own-fold-bands": {
+            "copies": 0,
+            "repos": 0
+          },
+          "own-mirrored-or-stacked": {
+            "copies": 0,
+            "repos": 0
+          }
+        },
+        "libModules": 0,
+        "ids": []
+      },
+      "cli-verbs": {
+        "signatureHits": 0,
+        "copies": 0,
+        "repos": 0,
+        "repoIds": [],
+        "perItem": {
+          "own-budget-script": {
+            "copies": 0,
+            "repos": 0
+          },
+          "own-component-scaffolder": {
+            "copies": 0,
+            "repos": 0
+          },
+          "own-docs-generator-script": {
+            "copies": 0,
+            "repos": 0
+          },
+          "size-budget-dependency": {
+            "copies": 0,
+            "repos": 0
+          }
+        },
+        "libModules": 0,
+        "ids": []
+      },
+      "dropped-before-ship": {
+        "signatureHits": 2,
+        "copies": 2,
+        "repos": 1,
+        "repoIds": ["console"],
+        "perItem": {
+          "own-named-part": {
+            "copies": 2,
+            "repos": 1
+          },
+          "own-unsaved-guard": {
+            "copies": 0,
+            "repos": 0
+          },
+          "tauri-drag-region": {
+            "copies": 0,
+            "repos": 0
+          }
+        },
+        "libModules": 0,
+        "ids": ["31206fd5", "e344a52c"]
+      },
+      "form-hook-and-peer": {
+        "signatureHits": 0,
+        "copies": 0,
+        "repos": 0,
+        "repoIds": [],
+        "perItem": {
+          "own-form-hook-over-useform": {
+            "copies": 0,
+            "repos": 0
+          },
+          "tanstack-form": {
+            "copies": 0,
+            "repos": 0
+          }
+        },
+        "libModules": 0,
+        "ids": []
+      },
+      "guards-registry-mcp-rtl-i18n": {
+        "signatureHits": 0,
+        "copies": 0,
+        "repos": 0,
+        "repoIds": [],
+        "perItem": {
+          "mcp-sdk-server": {
+            "copies": 2,
+            "repos": 1
+          },
+          "own-audit-allows": {
+            "copies": 0,
+            "repos": 0
+          },
+          "own-regex-guard-script": {
+            "copies": 0,
+            "repos": 0
+          },
+          "own-rtl-handling": {
+            "copies": 0,
+            "repos": 0
+          },
+          "translation-library": {
+            "copies": 0,
+            "repos": 0
+          }
+        },
+        "libModules": 2,
+        "ids": []
+      },
+      "realtime-transports": {
+        "signatureHits": 5,
+        "copies": 0,
+        "repos": 0,
+        "repoIds": [],
+        "perItem": {
+          "own-broadcast-channel": {
+            "copies": 0,
+            "repos": 0
+          },
+          "own-websocket-client": {
+            "copies": 0,
+            "repos": 0
+          },
+          "streamed-query-or-db": {
+            "copies": 0,
+            "repos": 0
+          }
+        },
+        "libModules": 0,
+        "ids": []
+      },
+      "runtime-theming": {
+        "signatureHits": 0,
+        "copies": 0,
+        "repos": 0,
+        "repoIds": [],
+        "perItem": {
+          "colour-library": {
+            "copies": 0,
+            "repos": 0
+          },
+          "own-palette-or-theme-builder": {
+            "copies": 0,
+            "repos": 0
+          }
+        },
+        "libModules": 0,
+        "ids": []
+      },
+      "state-nav-palette-toast-markdown-hotkeys": {
+        "signatureHits": 3,
+        "copies": 2,
+        "repos": 2,
+        "repoIds": ["console", "shutterflow"],
+        "perItem": {
+          "own-command-palette": {
+            "copies": 1,
+            "repos": 1
+          },
+          "own-hotkeys-hook": {
+            "copies": 0,
+            "repos": 0
+          },
+          "own-store": {
+            "copies": 0,
+            "repos": 0
+          },
+          "own-streaming-markdown": {
+            "copies": 0,
+            "repos": 0
+          },
+          "own-toast": {
+            "copies": 1,
+            "repos": 1
+          },
+          "own-url-state-hook": {
+            "copies": 0,
+            "repos": 0
+          },
+          "refused-library": {
+            "copies": 5,
+            "repos": 2
+          }
+        },
+        "libModules": 5,
+        "ids": ["d9e199d5", "ee0d27e0"]
+      },
+      "styled-parts-for-shell-and-controls": {
+        "applicable": false,
+        "copies": 0,
+        "repos": 0
+      },
+      "tree-stepper": {
+        "signatureHits": 0,
+        "copies": 0,
+        "repos": 0,
+        "repoIds": [],
+        "perItem": {
+          "mantine-tree-stepper": {
+            "copies": 2,
+            "repos": 2
+          },
+          "own-tree-or-stepper": {
+            "copies": 0,
+            "repos": 0
+          }
+        },
+        "libModules": 2,
+        "ids": []
+      }
+    },
+    "optimisticCopies": 3,
+    "optimistic": {
+      "signatureHits": 3,
+      "copies": 3,
+      "repos": 2,
+      "repoIds": ["argo", "rb"],
+      "perItem": {
+        "named-optimistic": {
+          "copies": 0,
+          "repos": 0
+        },
+        "rq-onmutate-cache-write": {
+          "copies": 3,
+          "repos": 2
+        }
+      },
+      "ids": ["06925d49", "1be1b957", "76c2b822"]
+    },
+    "epos": {
+      "available": true,
+      "byRefusal": {
+        "agent-runtime": 10,
+        "board-drag-schedule": 3,
+        "chart-kinds": 1,
+        "cli-verbs": 0,
+        "dropped-before-ship": 0,
+        "form-hook-and-peer": 0,
+        "guards-registry-mcp-rtl-i18n": 1,
+        "realtime-transports": 0,
+        "runtime-theming": 0,
+        "state-nav-palette-toast-markdown-hotkeys": 5,
+        "styled-parts-for-shell-and-controls": 0,
+        "tree-stepper": 1
+      },
+      "optimisticCopies": 1
+    },
+    "watch": ["agent-runtime", "state-nav-palette-toast-markdown-hotkeys"],
+    "reinstate": ["board-drag-schedule"]
+  },
+  "verdictLines": {
+    "F1": "PASS",
+    "F4": "REFUTED",
+    "Optimistic": "keep",
+    "Verdict": "REFUTED"
+  },
+  "verdict": "REFUTED"
+}
