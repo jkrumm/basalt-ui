@@ -9,8 +9,9 @@
 # to that pair, not a third path. What it adds:
 #
 #   • a preflight (right branch, clean tree, in sync) before anything is dispatched — including
-#     `release-migrating.ts --check`, because `prepareCmd`'s MIGRATING rename runs in the `prepare`
-#     step, which a dry run SKIPS, so nothing else in the pipeline can catch a shape it can't fix;
+#     `release-migrating.ts --check`, because `prepareCmd`'s MIGRATING generation runs in the
+#     `prepare` step, which a dry run SKIPS, so nothing else in the pipeline can catch a bad
+#     migration row or an unmapped removal;
 #   • a CI-green preflight (`ci_green`: the newest non-release commit's CI run must be completed/success);
 #   • a dry run first, ALWAYS, with the computed version read back before the real one is offered,
 #     and a refusal when no commit since the last tag touches the package (`package_commit_present`);
@@ -199,13 +200,14 @@ git fetch origin --quiet
 # 2.8.0 shipped on a red master: the head being released must have a green CI run (`ci_green`).
 ci_green "$BRANCH" || die "CI is not green on the head being released (reason above) — fix master, then release."
 
-# MIGRATING's release-time `## Unreleased` → `## <version>` rename runs in `prepareCmd`, and
-# semantic-release SKIPS `prepare` in a dry run — so the dry run below cannot exercise it and a
-# broken shape would only surface in the published tarball. That is exactly how four releases
-# shipped a stale heading. `--check` runs the same transform here, against the same file, before
-# anything is dispatched.
+# MIGRATING.md is generated at release time: `prepareCmd` merges `migrations/areas/*.json` into
+# `migrations/<version>.json` and renders the file, and semantic-release SKIPS `prepare` in a dry
+# run — so the dry run below cannot exercise it and a bad row would only surface in the published
+# tarball. `--check` runs the same validation here, before anything is dispatched: every area file
+# parses strictly, and the surface-diff gate finds no removed or renamed public symbol, subpath or
+# `--vx-*` name that no row names.
 bun "$PACKAGE_PATH/scripts/release-migrating.ts" --check ||
-  die "MIGRATING.md is not in a shape the release-time rename can rewrite — fix it, then release."
+  die "migration ledger check failed (reason above) — fix migrations/areas/*.json (add the row for the removed or renamed name), then release."
 
 # check-grace below decides "does this deprecated export still ship" from the committed
 # `export-surface.json`, so a stale snapshot would let it wave through an export that is still in
