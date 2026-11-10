@@ -389,7 +389,7 @@ Type: StatStripCell = {
   … +4 more
 }
 Type: StatStripFooterEntry = { key: string, content: ReactNode, under?: string, shotAbsent?: readonly StatStripShotState[] }
-OptionalPeers: remark-gfm@^4.0.1, rehype-sanitize@^6.0.0, remend@1.4.0, shiki@^4.5.0, beautiful-mermaid@^1.1.0, react-markdown@^10.1.0, remark-gfm@^4.0.1, rehype-sanitize@^6.0.0, remend@1.4.0, @tanstack/react-router-devtools@^1.166.13
+OptionalPeers: remark-gfm@^4.0.1, rehype-sanitize@^6.0.0, remend@1.4.0, shiki@^4.5.0, beautiful-mermaid@^1.1.0, @tanstack/react-router-devtools@^1.166.13
 
 ## basalt-ui/charts
 Import: import { ... } from 'basalt-ui/charts'

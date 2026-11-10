@@ -30,11 +30,11 @@ missing one surfaces as an unresolved import at build time, not as an install wa
 also needs `@types/react @types/react-dom` (dev) and a standard Vite `vite-env.d.ts`. Exact
 versions: `peerDependencies` in `package.json`.
 
-| Class            | Peers                                                                                                                                                                                                                                                                                                     | Rule                                                                                                     |
-| ---------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------- |
-| Required         | `react`, `react-dom`, `@mantine/{core,hooks,modals,notifications,spotlight}`, `@tanstack/react-router`, `@tanstack/react-query`, the three `@fontsource-variable/*`                                                                                                                                       | every consumer; `.` or `./styles.css` imports or names it                                                |
-| Subpath-required | `./charts`: `@tanstack/charts`, `d3-scale` · `./commands`: `@tanstack/react-hotkeys` · `./agent`: `ai`, `@ai-sdk/provider`, `motion` · `./table`: `@tanstack/react-table` · `./forms`: `@mantine/form` · `./controls-dates`: `@mantine/dates`, `dayjs` · `./content`: `react-markdown` · `./vite`: `vite` | needed only by consumers of that subpath; declared `optional` in `peerDependenciesMeta`                  |
-| Optional         | `remend`, `shiki`, `@shikijs/*`, `beautiful-mermaid`, `remark-gfm`, `rehype-sanitize`, `@tanstack/react-query-devtools`, `@tanstack/react-router-devtools`, `vite-plugin-pwa`                                                                                                                             | reached through `import()` only; absent, the feature degrades (dev devtools panels, plain-text markdown) |
+| Class            | Peers                                                                                                                                                                                                                                                                                                                                                | Rule                                                                                                     |
+| ---------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------- |
+| Required         | `react`, `react-dom`, `@mantine/{core,hooks,modals,notifications,spotlight}`, `@tanstack/react-router`, `@tanstack/react-query`, the three `@fontsource-variable/*`                                                                                                                                                                                  | every consumer; `.` or `./styles.css` imports or names it                                                |
+| Subpath-required | `./charts`: `@tanstack/charts`, `d3-scale` · `./commands`: `@tanstack/react-hotkeys` · `./agent`: `ai`, `@ai-sdk/provider`, `motion` · `./table`: `@tanstack/react-table` · `./forms`: `@mantine/form` · `./controls-dates`: `@mantine/dates`, `dayjs` · `./content`: `react-markdown`, `remark-gfm`, `rehype-sanitize`, `remend` · `./vite`: `vite` | needed only by consumers of that subpath; declared `optional` in `peerDependenciesMeta`                  |
+| Optional         | `remend`, `shiki`, `@shikijs/*`, `beautiful-mermaid`, `remark-gfm`, `rehype-sanitize`, `@tanstack/react-query-devtools`, `@tanstack/react-router-devtools`, `vite-plugin-pwa`                                                                                                                                                                        | reached through `import()` only; absent, the feature degrades (dev devtools panels, plain-text markdown) |
 
 **No React?** `./tokens` imports no `@mantine/*`, and the token system is consumable with no package
 at all:
@@ -316,7 +316,7 @@ deleted rather than silently surviving into the next real skew.
 | `./format`         | `Intl`-backed, React-free formatting: `integer`, `money`, `percent`, `durationClock`, `relativeTime`, `weekday`, `km`, `kcal`                                                                                                                                           |
 | `./commands`       | `defineCommands`, `defineOverlays`, `overlays`, `setColorScheme`, `toggleSidebar`, `ShortcutsHelp`, `defineNotifications`, `emit`, `NotificationBell`                                                                                                                   |
 | `./agent`          | Streaming-chat runtime (`aiSdkTransport`, `useAgentThreadRuns`, `parseAgentPart`) and its Mantine chat UI (`ThreadFeed`, `ThreadFeedRow`, `Composer`, `ToolChip`)                                                                                                       |
-| `./content`        | `Prose`, `Markdown`, `Callout`, `TableOfContents`, `ArticleLayout`, `GuideLink`                                                                                                                                                                                         |
+| `./content`        | `Markdown` (required `contentTrust`; the untrusted arm renders no images)                                                                                                                                                                                               |
 | `./vite`           | `basaltViteConfig(opts)` preset, `basaltAppPlugin(opts)` PWA head / manifest / icons                                                                                                                                                                                    |
 | `./styles.css`     | The one stylesheet: `@layer basalt` base styles, iOS input floor, fonts                                                                                                                                                                                                 |
 | `./configs/*`      | Raw toolchain presets — oxlint, oxfmt, tsconfig (base/react-app/node), lefthook                                                                                                                                                                                         |
@@ -567,40 +567,33 @@ longer. Column defs cost more than JSX rows when every cell is bespoke. Adopt th
 they actually buy — the `type="native"` footgun, alignment stated once instead of on both `th` and
 `td`, and sorting/filtering/pagination owned by basalt — not for a line count.
 
-### `./content` — prose + markdown
+### `./content` — markdown
 
-````bash
-bun add react-markdown remark-gfm     # Markdown
-bun add remend                        # `Markdown`'s streaming-tail repair — optional, lazy dynamic import
-bun add rehype-sanitize               # `Markdown`'s sanitize pass — optional, lazy dynamic import
-bun add shiki                         # CodeBlock / fenced-code highlighting (brings @shikijs/langs, @shikijs/themes as optional peers)
-bun add beautiful-mermaid             # MermaidDiagram / ```mermaid fences
-````
+```bash
+bun add react-markdown remark-gfm rehype-sanitize remend
+```
 
-Every peer here is lazy: `Markdown` reaches all of them through a dynamic `import()`, so
-`basalt-ui/content` resolves and renders with none of them installed. Absence degrades gracefully
-— never a crash: without `react-markdown`/`remark-gfm`, markdown falls back to plain text; without
-`remend`, the streaming tail renders unrepaired; without `rehype-sanitize`, the sanitize pass is
-skipped (dev-warned once); without `shiki`, fences fall back to plain mono; without
-`beautiful-mermaid`, mermaid fences render nothing. `Markdown` is the package's **only** markdown
+All four are required by `basalt-ui/content` and imported statically: the first server render, the
+client render and the hydrate produce the same sanitized tree, and a missing peer is an install
+error, never a degraded or unsanitized render. `Markdown` is the package's **only** markdown
 renderer — it backs long-form content and AI chat alike:
 
 ```tsx
-import { Markdown, Prose, CodeBlock, TableOfContents } from 'basalt-ui/content'
+import { Markdown } from 'basalt-ui/content'
 
-// Long-form: 72ch measure, article typography, heading anchors + slug dedup.
-<Markdown>{article.body}</Markdown>
+// Model or third-party text: no images (alt text only), links limited to same-origin, https:,
+// mailto: and tel:, and neither `sanitize` nor `rehypePlugins` is accepted.
+<Markdown contentTrust="untrusted" streaming>{part.text}</Markdown>
 
-// AI output: chat density, block-split + memoized, `remend`-repaired in-flight tail. Model-generated
-// text is untrusted regardless of whether it has finished streaming — pin `contentTrust` explicitly.
-<Markdown streaming density="chat" contentTrust="untrusted">{part.text}</Markdown>
+// Text you author: opt in to extra tags/attributes (additions to a fixed policy that runs last).
+<Markdown contentTrust="trusted" sanitize={{ allowTags: ['details'] }}>{note}</Markdown>
 ```
 
-`streaming` is a rendering mode only — it says the text is still arriving, not who wrote it. The
-security input is the separate `contentTrust` prop (`'trusted' | 'untrusted'`), the sole driver of
-the `allowedImagePrefixes` default: same-origin-only when untrusted, since LLM-authored markdown can
-otherwise exfiltrate via a remote image URL. Any surface rendering agent/model output must pin
-`contentTrust="untrusted"` explicitly. Full doctrine: `agent/rules/basalt-content.md`.
+`contentTrust` is required and has no default. `streaming` is a rendering mode only — it says the
+text is still arriving, not who wrote it; a finished agent message is settled and still untrusted.
+A missing or unknown `contentTrust` renders as untrusted. `images="same-origin"` on the untrusted
+arm admits relative image sources. Styling goes on a wrapper element: the root is
+`data-slot="markdown"` and takes no `className`.
 
 ### `./agent` — streaming-chat layer
 

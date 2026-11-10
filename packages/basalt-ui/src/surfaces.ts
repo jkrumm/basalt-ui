@@ -302,10 +302,6 @@ export const SURFACES = {
       'remend',
       'shiki',
       'beautiful-mermaid',
-      'react-markdown',
-      'remark-gfm',
-      'rehype-sanitize',
-      'remend',
       '@tanstack/react-router-devtools',
     ],
     forbiddenImports: [], // the no-charts/tokens-reexport invariant is comment-only today; Phase-4 plugin
