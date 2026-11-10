@@ -84,6 +84,9 @@ const rows: Row[] = []
 for (const [key, spec] of Object.entries(SURFACES)) {
   if (key.startsWith('#')) continue
   if (!publishedExportKeys.has(key)) continue
+  // `./shell` aliases the 2.x shell barrel the root already documents; its row would repeat those
+  // signatures (and the primitive constants print as method bags). It gets a row when v3 swaps it.
+  if (key === './shell') continue
 
   const isAsset = spec.layer === 'non-js-asset'
   // For ./configs/* the importSpec uses the glob form; others strip the leading './'

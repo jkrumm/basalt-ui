@@ -1314,6 +1314,84 @@ Signature: field: { enum, multi, range, number, boolean, string }
 Type: ExternalStore<T> = { get: () => T, set: (next: T) => void, subscribe: (onChange: () => void) => () => void }
 Type: StandardSchemaV1<Input = unknown, Output = Input> = { readonly '~standard': StandardSchemaV1.Props<Input, Output> }
 
+## basalt-ui/router
+Import: import { ... } from 'basalt-ui/router'
+Description: v3 router bridge (stub) — nav, controls and search-state defaults on TanStack Router
+Layer: headless
+
+## basalt-ui/data
+Import: import { ... } from 'basalt-ui/data'
+Description: v3 data layer (stub) — query client, unwrap, optimistic and live queries on TanStack Query
+Layer: headless
+
+## basalt-ui/page
+Import: import { ... } from 'basalt-ui/page'
+Description: v3 page composites (stub) — Page, PageBar, Section, QueryState, overlays
+Layer: headless
+
+## basalt-ui/cards
+Import: import { ... } from 'basalt-ui/cards'
+Description: v3 card composites (stub) — StatCard, StatGroup, BarList, EventList
+Layer: headless
+
+## basalt-ui/ai
+Import: import { ... } from 'basalt-ui/ai'
+Description: v3 AI-chat part views (stub) — partView, defineBlock, defineCatalog
+Layer: headless
+OptionalPeers: react-markdown@^10.1.0, remark-gfm@^4.0.1, rehype-sanitize@^6.0.0, remend@1.4.0
+
+## basalt-ui/ui/*
+Import: import { ... } from 'basalt-ui/ui/*'
+Description: v3 primitives (stub) — one module per primitive on Base UI, wildcard entry
+Layer: headless
+OptionalPeers: @base-ui/react@~1.9.0
+
+## basalt-ui/lint
+Import: import { ... } from 'basalt-ui/lint'
+Description: v3 oxlint plugin (stub) — tooling, no app bundle
+Layer: build-tooling
+
+## basalt-ui/stylelint
+Import: import { ... } from 'basalt-ui/stylelint'
+Description: v3 stylelint preset (stub) — tooling, no app bundle
+Layer: build-tooling
+
+## basalt-ui/testing
+Import: import { ... } from 'basalt-ui/testing'
+Description: v3 test harness (stub) — renderApp, settled, quality; tooling, no app bundle
+Layer: build-tooling
+
+## basalt-ui/theme-script
+Import: import { ... } from 'basalt-ui/theme-script'
+Description: v3 pre-paint color-scheme script (stub), frozen per major
+Layer: build-tooling
+
+## basalt-ui/tokens.css
+Asset: basalt-ui/tokens.css
+Description: v3 token layer (stub) — CSS custom properties, frozen per major
+Layer: non-js-asset
+
+## basalt-ui/typography.css
+Asset: basalt-ui/typography.css
+Description: v3 type scale (stub), frozen per major
+Layer: non-js-asset
+
+## basalt-ui/prose.css
+Asset: basalt-ui/prose.css
+Description: v3 prose styles (stub), frozen per major
+Layer: non-js-asset
+
+## basalt-ui/fonts.css
+Asset: basalt-ui/fonts.css
+Description: v3 font faces (stub), frozen per major
+Layer: non-js-asset
+
+## basalt-ui/tailwind.css
+Asset: basalt-ui/tailwind.css
+Description: v3 Tailwind 4 theme bridge (stub), frozen per major
+Layer: non-js-asset
+OptionalPeers: tailwindcss@4.3.5
+
 ## basalt-ui/styles.css
 Asset: basalt-ui/styles.css
 Description: Mandatory CSS import (after the Mantine styles.layer.css bundles) — @layer basalt base styles, iOS input safety net, font stack
@@ -1330,4 +1408,7 @@ type CalloutKind = 'info' | 'good' | 'warn' | 'bad'
 type ChartCardSlot = 'root' | 'header' | 'body'
 type CursorResolution = 'exact' | 'nearest' | 'leading'
 type CurveName = 'monotone' | 'linear' | 'step' | 'stepAfter' | 'stepBefore'
+type PageAsideSlot = 'root' | 'header' | 'body'
+type PageBarSlot = 'root' | 'row1' | 'row2'
+type PageTitleSlot = 'root' | 'title' | 'subtitle'
 type Tone = 'good' | 'warn' | 'bad'
