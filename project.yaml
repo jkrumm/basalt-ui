@@ -3,4 +3,4 @@ name: basalt-ui
 ship:
   - paths: ['**']
     via: pr
-leads: 3
+leads: 4
