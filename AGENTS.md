@@ -68,7 +68,7 @@ autonomously execute large roadmap phases.
   `./query`'s exports move to `.`/`./state`, `./connectivity` folds into `./provider`, `./data`
   folds into `./data` (table + virtual-list) staying but the barrel narrows. `./controls-dates`
   STAYS separate (inlining it would pull `@mantine/dates` into `./controls`). Full symbol-level
-  mapping: `packages/basalt-ui/MIGRATING.md` § 1.29.0 § Consolidation.
+  mapping: `packages/basalt-ui/MIGRATING.md` § 2.x to 3.0.
 
 ## Charts
 

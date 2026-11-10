@@ -24,7 +24,7 @@ Scaffold the repo doctrine (Claude Code rules + skills, `AGENTS.md` block, `DESI
 bunx basalt-ui init
 ```
 
-**Quick start, the 15-subpath export table, token system, and adapter batteries (upgrading from 1.x: `MIGRATING.md` § 2.0.0):** see the
+**Quick start, the 15-subpath export table, token system, and adapter batteries (upgrading from 2.x: `MIGRATING.md` § 2.x to 3.0):** see the
 [package README](./packages/basalt-ui/README.md).
 
 Not a React app? The token system works without one — no React, no Mantine, no bundler:
