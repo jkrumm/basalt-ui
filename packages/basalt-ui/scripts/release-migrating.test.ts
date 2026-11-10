@@ -65,7 +65,7 @@ function writeSurface(pkg: string, surface: Record<string, string[]>): void {
 }
 
 /** A scratch git repo with the minimal tree, committed and tagged v2.29.0. */
-function scratch(): string {
+function scratch(legacySurface = false): string {
   const dir = mkdtempSync(join(tmpdir(), 'release-migrating-'))
   scratches.push(dir)
   const pkg = join(dir, 'packages/basalt-ui')
@@ -80,7 +80,13 @@ function scratch(): string {
     )
   }
   cpSync(join(PKG, 'MIGRATING.md'), join(pkg, 'MIGRATING.md'))
-  writeSurface(pkg, { '.': ['Keep', 'Gone'], './charts': ['Chart'] })
+  const taggedSurface = { '.': ['Keep', 'Gone'], './charts': ['Chart'] }
+  if (legacySurface) {
+    // A tag from before the shard split carries the single-file snapshot.
+    writeFileSync(join(pkg, 'scripts/export-surface.json'), JSON.stringify(taggedSurface))
+  } else {
+    writeSurface(pkg, taggedSurface)
+  }
   writeFileSync(join(pkg, 'src/guard/vx-names.ts'), vxSource(['--vx-a', '--vx-b']))
   sh(dir, 'git', 'init', '-q', '-b', 'master')
   sh(dir, 'git', 'config', 'user.email', 't@example.com')
@@ -230,6 +236,14 @@ describe('findUncovered', () => {
 })
 
 describe('release step', () => {
+  test('a previous tag with the legacy single-file snapshot still feeds the gate', () => {
+    const dir = scratch(true)
+    writeSurface(join(dir, 'packages/basalt-ui'), { '.': ['Keep'], './charts': ['Chart'] })
+    const blocked = run(dir, '3.0.0')
+    expect(blocked.code).not.toBe(0)
+    expect(blocked.out).toContain('basalt-ui#Gone')
+  })
+
   test('gate blocks without writing; a row lets it through', () => {
     const dir = scratch()
     const pkg = join(dir, 'packages/basalt-ui')
