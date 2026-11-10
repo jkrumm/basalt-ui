@@ -1,1 +1,157 @@
-/* basalt-ui/tailwind.css — v3 skeleton stub */
+/* @generated basalt-ui — do not edit; regenerate with the command on the next line */
+/* basalt-ui 3.0.0 — `bun packages/basalt-ui/src/css/generate.ts` */
+/* theme-allow-file unknown-vx-token — v3 sheet generated from the token table */
+@layer theme, base, basalt, components, utilities;
+@import 'tailwindcss';
+@import './tokens.css' layer(theme);
+@import './fonts.css';
+@custom-variant dark (&:where([data-theme='dark'], [data-theme='dark'] *));
+@theme {
+  --color-*: initial;
+  --shadow-*: initial;
+  --radius-*: initial;
+  --text-*: initial;
+  --breakpoint-*: initial;
+}
+@theme inline {
+  --color-background: var(--vx-canvas);
+  --color-inset: var(--vx-inset);
+  --color-card: var(--vx-card);
+  --color-popover: var(--vx-raised);
+  --color-surface: var(--vx-surface);
+  --color-accent: var(--vx-hover);
+  --color-selected: var(--vx-selected);
+  --color-scrim: var(--vx-scrim);
+  --color-border: var(--vx-hairline);
+  --color-input: var(--vx-input);
+  --color-foreground: var(--vx-ink);
+  --color-muted-foreground: var(--vx-ink-muted);
+  --color-faint: var(--vx-ink-faint);
+  --color-brand: var(--vx-brand);
+  --color-ring: var(--vx-brand);
+  --color-brand-fill: var(--vx-brand-fill);
+  --color-on-brand: var(--vx-on-brand);
+  --color-good: var(--vx-good);
+  --color-good-tint: color-mix(in srgb, var(--vx-good) var(--vx-tint-pct), transparent);
+  --color-warn: var(--vx-warn);
+  --color-warn-tint: color-mix(in srgb, var(--vx-warn) var(--vx-tint-pct), transparent);
+  --color-bad: var(--vx-bad);
+  --color-bad-tint: color-mix(in srgb, var(--vx-bad) var(--vx-tint-pct), transparent);
+  --color-destructive: var(--vx-bad);
+  --color-destructive-tint: color-mix(in srgb, var(--vx-bad) var(--vx-tint-pct), transparent);
+  --color-info: var(--vx-info);
+  --color-info-tint: color-mix(in srgb, var(--vx-info) var(--vx-tint-pct), transparent);
+  --color-line: var(--vx-line);
+  --color-dim-bar: var(--vx-dim-bar);
+  --color-grid: var(--vx-grid);
+  --color-crosshair: var(--vx-crosshair);
+  --color-chart-1: var(--vx-chart-1);
+  --color-chart-2: var(--vx-chart-2);
+  --color-chart-3: var(--vx-chart-3);
+  --color-chart-4: var(--vx-chart-4);
+  --color-chart-5: var(--vx-chart-5);
+  --color-seq-1: var(--vx-seq-1);
+  --color-seq-2: var(--vx-seq-2);
+  --color-seq-3: var(--vx-seq-3);
+  --color-seq-4: var(--vx-seq-4);
+  --color-seq-5: var(--vx-seq-5);
+  --color-primary: var(--vx-ink);
+  --color-primary-foreground: var(--vx-canvas);
+  --color-secondary: var(--vx-raised);
+  --color-muted: var(--vx-card);
+}
+@theme {
+  --spacing: 0.25rem;
+  --breakpoint-md: 840px;
+  --breakpoint-xl: 1200px;
+  --container-narrow: 15rem;
+  --container-regular: 30rem;
+  --container-wide: 50rem;
+}
+@theme inline {
+  --shadow-card: var(--vx-shadow-card);
+  --shadow-raised: var(--vx-shadow-raised);
+  --shadow-overlay: var(--vx-shadow-overlay);
+  --radius-card: var(--vx-radius-card);
+  --radius-inset: var(--vx-radius-inset);
+  --radius-ctrl: var(--vx-radius-ctrl);
+  --radius-chip: var(--vx-radius-chip);
+  --font-sans: var(--vx-font-sans);
+  --font-head: var(--vx-font-head);
+  --font-mono: var(--vx-font-mono);
+  --font-weight-normal: var(--vx-weight-body);
+  --font-weight-medium: var(--vx-weight-medium);
+  --font-weight-semibold: var(--vx-weight-strong);
+  --text-micro: var(--vx-text-micro);
+  --text-micro--line-height: var(--vx-text-micro-lh);
+  --text-xs: var(--vx-text-xs);
+  --text-xs--line-height: var(--vx-text-xs-lh);
+  --text-sm: var(--vx-text-sm);
+  --text-sm--line-height: var(--vx-text-sm-lh);
+  --text-md: var(--vx-text-md);
+  --text-md--line-height: var(--vx-text-md-lh);
+  --text-base: var(--vx-text-base);
+  --text-base--line-height: var(--vx-text-base-lh);
+  --text-lg: var(--vx-text-lg);
+  --text-lg--line-height: var(--vx-text-lg-lh);
+  --text-display: var(--vx-text-display);
+  --text-display--line-height: var(--vx-text-display-lh);
+  --ease-standard: var(--vx-ease);
+}
+@utility h-ctl {
+  height: var(--vx-ctl-h);
+}
+@utility size-ctl {
+  width: var(--vx-ctl-h);
+  height: var(--vx-ctl-h);
+}
+@utility min-h-row {
+  min-height: var(--vx-row-h);
+}
+@utility size-icon {
+  width: var(--vx-icon);
+  height: var(--vx-icon);
+}
+@utility focus-ring {
+  &:focus-visible {
+    outline: 2px solid var(--vx-brand);
+    outline-offset: 2px;
+  }
+}
+@utility link {
+  color: var(--vx-brand);
+  text-underline-offset: 2px;
+}
+@layer basalt {
+  [data-surface='canvas'] {
+    --vx-surface: var(--vx-canvas);
+  }
+  [data-surface='card'] {
+    --vx-surface: var(--vx-card);
+  }
+  [data-surface='inset'] {
+    --vx-surface: var(--vx-inset);
+  }
+  [data-surface='raised'] {
+    --vx-surface: var(--vx-raised);
+  }
+  @media (forced-colors: active) {
+    [data-surface] {
+      border: 1px solid CanvasText;
+    }
+  }
+  input:-webkit-autofill,
+  textarea:-webkit-autofill,
+  select:-webkit-autofill {
+    -webkit-box-shadow: 0 0 0 100vh var(--vx-surface) inset;
+    -webkit-text-fill-color: var(--vx-ink);
+    caret-color: var(--vx-ink);
+  }
+  @media (pointer: coarse) {
+    input,
+    select,
+    textarea {
+      font-size: max(16px, 1em) !important;
+    }
+  }
+}

@@ -1,1 +1,57 @@
-/* basalt-ui/typography.css — v3 skeleton stub */
+/* @generated basalt-ui — do not edit; regenerate with the command on the next line */
+/* basalt-ui 3.0.0 — `bun packages/basalt-ui/src/css/generate.ts` */
+/* theme-allow-file unknown-vx-token — v3 sheet generated from the token table */
+@layer basalt.type {
+  :where(:root) {
+    font-family: var(--vx-font-sans);
+    font-size: var(--vx-text-base);
+    line-height: var(--vx-text-base-lh);
+    font-weight: var(--vx-weight-body);
+    color: var(--vx-ink);
+    background-color: var(--vx-canvas);
+    -webkit-font-smoothing: antialiased;
+    -webkit-text-size-adjust: 100%;
+    text-size-adjust: 100%;
+  }
+  :where(code, kbd, samp, pre) {
+    font-family: var(--vx-font-mono);
+    font-variant-ligatures: none;
+  }
+  :where([data-numeric]) {
+    font-family: var(--vx-font-mono);
+    font-variant-ligatures: none;
+    font-variant-numeric: tabular-nums;
+  }
+  :where(.vx-hairline) {
+    box-shadow: inset 0 0 0 1px var(--vx-hairline);
+  }
+  :where(a, button, input, select, textarea, summary, [tabindex]):focus-visible {
+    outline: 2px solid var(--vx-brand);
+    outline-offset: 2px;
+  }
+  @media (prefers-reduced-motion: reduce) {
+    :where(:root) {
+      --vx-dur-fast: 0ms !important;
+      --vx-dur-base: 0ms !important;
+    }
+    *,
+    ::before,
+    ::after {
+      animation-duration: 0.01ms !important;
+      animation-iteration-count: 1 !important;
+      transition-duration: 0.01ms !important;
+      scroll-behavior: auto !important;
+    }
+  }
+  @media (forced-colors: active) {
+    :where(.vx-hairline) {
+      border: 1px solid CanvasText;
+    }
+  }
+  @media print {
+    :where(:root) {
+      color: var(--vx-ink);
+      background: none;
+    }
+  }
+}

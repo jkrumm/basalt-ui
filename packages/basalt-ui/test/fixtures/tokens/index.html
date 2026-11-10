@@ -1,0 +1,33 @@
+<!doctype html>
+<html data-density="dense" lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <title>Tokens fixture</title>
+    <link rel="stylesheet" href="../../../src/css/tokens.css" />
+    <link rel="stylesheet" href="../../../src/css/typography.css" />
+    <link rel="stylesheet" href="../../../src/css/prose.css" />
+    <link rel="stylesheet" href="../../../src/css/fonts.css" />
+    <link rel="stylesheet" href="./app.css" />
+    <!-- prettier-ignore -->
+    <script>(function(){var d=document.documentElement,a="data-theme",c=null,v;if(d.hasAttribute(a))return
+function t(f){try{var x=f();if(x==="light"||x==="dark"||x==="auto")return x}catch(e){}}
+function s(k){return t(function(){return localStorage.getItem(k)})}
+v=s("basalt:scheme")||s("mantine-color-scheme-value")||t(function(){return c&&document.cookie.split(/;\s*/).reduce(function(r,p){
+return p.indexOf(c+"=")===0?p.slice(c.length+1):r},"")})||"auto"
+if(v==="light"||v==="dark")d.setAttribute(a,v)})()</script>
+  </head>
+  <body>
+    <div class="canvas">
+      <section class="card">
+        <article class="vx-prose">
+          <h2>Tokens only</h2>
+          <p>A static page: plain CSS, one boot script, no bundler.</p>
+          <ul>
+            <li>Surfaces are <code>--vx-*</code> variables.</li>
+          </ul>
+        </article>
+      </section>
+      <div class="inset">Inset block</div>
+    </div>
+  </body>
+</html>

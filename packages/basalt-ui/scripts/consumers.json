@@ -107,6 +107,7 @@
   "scrollParentOf": "rb:apps/web/src/features/knot-detail/page.tsx",
   "seriesTokens": "argo:apps/dashboard/src/lib/series.ts",
   "setColorScheme": "argo:apps/dashboard/src/lib/commands.tsx",
+  "themeScript": "jkrumm.com:src/layouts/BaseLayout.astro",
   "time": "linewatch:web/src/lib/format.ts",
   "toAgentError": "argo:apps/dashboard/src/features/hermes-chat/hermes-transport.ts",
   "toggleSidebar": "argo:apps/dashboard/src/lib/commands.tsx",
