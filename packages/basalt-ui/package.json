@@ -182,7 +182,7 @@
     "provenance": true
   },
   "scripts": {
-    "build": "tsup && tsc -p tsconfig.build.json --emitDeclarationOnly --declarationMap && bun scripts/gen-chart-css.ts --check && bun scripts/copy-assets.mjs && bun scripts/fix-esm-extensions.mjs",
+    "build": "tsup && tsc -p tsconfig.build.json --emitDeclarationOnly --declarationMap && bun scripts/gen-chart-css.ts --check && bun scripts/copy-assets.mjs && bun scripts/fix-esm-extensions.mjs && bun scripts/gen-llms.ts",
     "typecheck": "tsc --noEmit",
     "check-budgets": "bun scripts/check-budgets.ts",
     "test": "cd ../.. && bun test packages/basalt-ui",
