@@ -11,7 +11,6 @@ help: ## List targets
 # dist"). `pack-test` rebuilds anyway; the point of the first build is what `pre` reads.
 check: ## Local CI gate: gen sync checks + build + pre + layout + coverage/doc-drift + pack-test
 	@bun packages/basalt-ui/scripts/gen-oxlint.ts --check
-	@bun packages/basalt-ui/scripts/gen-llms.ts --check
 	@$(MAKE) --no-print-directory gen-check
 	@cd packages/basalt-ui && bun run build
 	@bun run pre

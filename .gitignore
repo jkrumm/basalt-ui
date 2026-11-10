@@ -101,3 +101,6 @@ __pycache__/
 .claude/settings.local.json
 .claude/plans/
 .claude/e2e-shots/
+
+# Generated at build and release (scripts/gen-llms.ts); the tarball carries it, git does not
+packages/basalt-ui/llms.txt
