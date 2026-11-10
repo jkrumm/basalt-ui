@@ -441,7 +441,7 @@ argo paths are relative to `apps/dashboard/` (argo @ `95d63d6`). Mantine 9.7.1 o
 
 ## 9. Charts
 
-Engine: `@tanstack/charts` **1.1.0** and `d3-scale` **4.0.2**, exact optional peers of `./charts`
+Engine: `@tanstack/charts` **1.5.0** and `d3-scale` **4.0.2**, exact optional peers of `./charts`
 (bun's isolated linker hides TanStack's own `d3-scale`). visx is gone: no dependency, peer or
 re-export. Evidence: `spike/w1-charts` @ `f74f671`, `docs/waves/evidence/w1/charts.md`. Inventory
 (59 production charts) and the 1.x → 2.0 symbol map: `docs/waves/v2-chart-inventory.md`.
