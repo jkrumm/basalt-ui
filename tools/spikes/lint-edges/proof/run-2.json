@@ -1,0 +1,115 @@
+{
+  "verdict": "pending",
+  "s4": {
+    "verdict": "PASS",
+    "blockReasonParsed": true,
+    "blockNextLineWithReasonSuppresses": true,
+    "blockRegionWithReasonSuppresses": true,
+    "reasonTextNotTakenAsRuleId": true,
+    "enableEndsRegion": true,
+    "lineReasonSuppresses": true,
+    "trailingLineDirectiveSuppresses": true,
+    "commentStart": { "lineMentionDoesNotDisable": true, "blockMentionDoesNotDisable": true },
+    "ruleConfiguredOff": { "directiveReportedUnused": true },
+    "unknownId": { "directiveReportedUnused": true },
+    "deadDirectiveReportedUnused": true,
+    "unusedReportNeedsFlag": true,
+    "pluginReadsReason": { "reportedLines": [21], "onlyTheDirectiveWithoutReason": true },
+    "deepRender": {
+      "noIgnoreDirectivesFlag": true,
+      "findingsWithDirective": 0,
+      "suppressedCountByRelint": 4,
+      "expectedSuppressed": 4,
+      "otherRuleStillFires": true
+    }
+  },
+  "s5": {
+    "verdict": "recorded (not flagged)",
+    "parenFormFlagged": false,
+    "textParenFlagged": false,
+    "widthParenFlagged": false,
+    "bracketVarFlagged": true,
+    "bracketHexFlagged": true,
+    "bracketLengthFlagged": true,
+    "cleanFlagged": false,
+    "byClass": {
+      "bg-(--vx-x)": [],
+      "text-(--vx-x)": [],
+      "w-(--vx-w)": [],
+      "bg-[var(--vx-x)]": ["shadcn/no-arbitrary-values"],
+      "bg-[#fff]": ["shadcn/no-arbitrary-values"],
+      "p-[13px]": ["shadcn/no-arbitrary-values"],
+      "bg-background p-4": []
+    }
+  },
+  "s6": {
+    "verdict": "PASS",
+    "files": 109,
+    "findingsOff": 111,
+    "findingsOn": 122,
+    "addedByScanAllStrings": 11,
+    "arrayFindings": 0,
+    "arrayFindingsIncludingNonClass": 0,
+    "noiseFindings": 1,
+    "noisePct": 0.8,
+    "noisePctOfAdded": 9.1,
+    "noiseByParent": { "VariableDeclarator": 1 },
+    "classShapedByParent": { "Property": 10 },
+    "addedByRule": { "shadcn/no-arbitrary-values": 11 },
+    "noiseSampleIds": ["819f7baa"],
+    "seeded": {
+      "array": { "off": 0, "on": 2 },
+      "joined": { "off": 0, "on": 1 },
+      "objectMap": { "off": 0, "on": 1 },
+      "template": { "off": 0, "on": 0 },
+      "nonClassStrings": { "off": 0, "on": 1 },
+      "cnArrayArg": { "off": 1, "on": 1 }
+    },
+    "classifier": "every whitespace token, variants and !/- stripped, starts with a Tailwind utility head"
+  },
+  "s7": {
+    "verdict": "PASS",
+    "wallMs": 198.2,
+    "findings": 108,
+    "fileLines": 300,
+    "basaltRules": 59,
+    "boughtRules": 6,
+    "pluginLines": 88,
+    "runsPerLevel": 11,
+    "warmUps": 1,
+    "levels": {
+      "bare": { "medianMs": 77.7, "minMs": 75.8, "maxMs": 83.2, "findings": 0 },
+      "basalt": { "medianMs": 122.9, "minMs": 119.3, "maxMs": 130.7, "findings": 5 },
+      "shadcn": { "medianMs": 189.3, "minMs": 184.1, "maxMs": 198.3, "findings": 103 },
+      "full": { "medianMs": 198.2, "minMs": 191.2, "maxMs": 202.6, "findings": 108 }
+    }
+  },
+  "s8": {
+    "verdict": "not run",
+    "reason": "hooks are per session; a lead cannot vary them for a subagent, and headless `claude -p` is banned",
+    "stopOnlyFindingsKept": null,
+    "postPlusStopFindingsKept": null,
+    "apparatusSelfCheck": {
+      "seedsFiring": 10,
+      "postToolUseExit": 2,
+      "stopExit": 2,
+      "stopActiveExit": 0,
+      "postToolUseExitWhenClean": 0,
+      "keptAfterOneFix": 9
+    },
+    "repro": [
+      "for arm in stop-only post-plus-stop; for rep in 1 2 3:",
+      "bun tools/spikes/lint-edges/s8.ts prepare /tmp/lint-edges-s8/<arm>-<rep> <arm>",
+      "start an interactive Claude Code session in that dir as the implementer role (claude --agent implementer), paste BRIEF.md, let it finish and stop",
+      "bun tools/spikes/lint-edges/s8.ts score /tmp/lint-edges-s8/<arm>-<rep>   # kept = seeded offenders still present, of 10",
+      "mean kept over the 3 repeats per arm; REFUTED when post-plus-stop does not keep at least 2 fewer (mean) than stop-only"
+    ]
+  },
+  "inputs": {
+    "synthetic": true,
+    "oxlint": "1.93.0",
+    "shadcnLint": "0.2.5",
+    "tailwindcss": "4.3.5",
+    "presetRules": 65
+  }
+}
