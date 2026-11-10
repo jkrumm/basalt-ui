@@ -2,7 +2,7 @@
  * `persisted` — the keyed contract: frozen stored identity, per-key caching, pluggable storage,
  * and `clearOwner`.
  */
-import { act, renderHook } from '@testing-library/react'
+import { act, cleanup, renderHook } from '@testing-library/react'
 import { afterEach, beforeEach, describe, expect, test } from 'bun:test'
 import type { StorageLike } from './ports'
 import { persisted } from './persisted'
@@ -47,7 +47,10 @@ function restoreDefault(): void {
 }
 
 beforeEach(() => localStorage.clear())
-afterEach(restoreDefault)
+afterEach(() => {
+  cleanup()
+  restoreDefault()
+})
 
 describe('persisted — keyed identity', () => {
   test('the raw key and envelope bytes are frozen', () => {

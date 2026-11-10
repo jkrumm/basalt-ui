@@ -1,0 +1,117 @@
+[
+  {
+    "id": "argo-garmin-window",
+    "source": "argo",
+    "key": "garmin-health:window",
+    "version": 1,
+    "raw": "{\"v\":1,\"value\":{\"window\":\"3m\"}}",
+    "decoded": {
+      "window": "3m"
+    }
+  },
+  {
+    "id": "argo-strength-window",
+    "source": "argo",
+    "key": "strength-tracker:window",
+    "version": 1,
+    "raw": "{\"v\":1,\"value\":{\"window\":\"custom\",\"from\":\"2026-01-05\",\"to\":\"2026-02-02\",\"exercises\":[\"bench_press\",\"squat\"]}}",
+    "decoded": {
+      "window": "custom",
+      "from": "2026-01-05",
+      "to": "2026-02-02",
+      "exercises": ["bench_press", "squat"]
+    }
+  },
+  {
+    "id": "argo-body-composition-window",
+    "source": "argo",
+    "key": "body-composition:window",
+    "version": 1,
+    "raw": "{\"v\":1,\"value\":{\"window\":\"90d\"}}",
+    "decoded": {
+      "window": "90d"
+    }
+  },
+  {
+    "id": "argo-walking-pad-metrics",
+    "source": "argo",
+    "key": "walking-pad",
+    "version": 1,
+    "raw": "{\"v\":1,\"value\":{\"window\":\"30d\",\"metrics\":[\"distance\",\"steps\"]}}",
+    "decoded": {
+      "window": "30d",
+      "metrics": ["distance", "steps"]
+    }
+  },
+  {
+    "id": "argo-usage-tracking",
+    "source": "argo",
+    "key": "usage-tracking",
+    "version": 1,
+    "raw": "{\"v\":1,\"value\":{\"view\":\"flow\",\"range\":\"30d\",\"grain\":\"week\",\"workspace\":[\"work\"],\"lens\":\"cost\"}}",
+    "decoded": {
+      "view": "flow",
+      "range": "30d",
+      "grain": "week",
+      "workspace": ["work"],
+      "lens": "cost"
+    }
+  },
+  {
+    "id": "argo-calendar",
+    "source": "argo",
+    "key": "calendar",
+    "version": 1,
+    "raw": "{\"v\":1,\"value\":{\"view\":\"week\"}}",
+    "decoded": {
+      "view": "week"
+    }
+  },
+  {
+    "id": "argo-finance-empty",
+    "source": "argo",
+    "key": "finance",
+    "version": 1,
+    "raw": "{\"v\":1,\"value\":{}}",
+    "decoded": {}
+  },
+  {
+    "id": "argo-models",
+    "source": "argo",
+    "key": "models",
+    "version": 1,
+    "raw": "{\"v\":1,\"value\":{\"creator\":[\"alpha\",\"beta\"]}}",
+    "decoded": {
+      "creator": ["alpha", "beta"]
+    }
+  },
+  {
+    "id": "linewatch-dashboard",
+    "source": "linewatch",
+    "key": "dashboard",
+    "version": 1,
+    "raw": "{\"v\":1,\"value\":{\"range\":\"7d\",\"compact\":true}}",
+    "decoded": {
+      "range": "7d",
+      "compact": true
+    }
+  },
+  {
+    "id": "shutterflow-activity",
+    "source": "shutterflow",
+    "key": "activity",
+    "version": 1,
+    "raw": "{\"v\":1,\"value\":{\"range\":\"12m\"}}",
+    "decoded": {
+      "range": "12m"
+    }
+  },
+  {
+    "id": "shutterflow-grid-stats-flag",
+    "source": "shutterflow",
+    "key": "photos-grid-stats",
+    "version": 1,
+    "raw": "{\"v\":1,\"value\":true}",
+    "decoded": true
+  }
+]
