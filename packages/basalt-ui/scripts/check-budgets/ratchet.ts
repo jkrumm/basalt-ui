@@ -56,7 +56,10 @@ function raiseProblem(raises: readonly Raise[], id: string, from: number, to: nu
   return null
 }
 
-/** One line per raised ceiling that no valid raise row covers. */
+/**
+ * One line per raised ceiling that no valid raise row covers. Rows join on `id` across every area
+ * file, so a row moved between areas keeps its history; a row under a new id is a new row.
+ */
 export async function ratchetViolations({
   files,
   readBase,
@@ -64,13 +67,16 @@ export async function ratchetViolations({
   files: readonly string[]
   readBase: ReadBase
 }): Promise<string[]> {
-  const violations: string[] = []
+  const baseCeilings = new Map<string, number>()
   for (const file of files) {
     const source = readBase(file)
     if (source === null) continue
+    for (const row of (await loadBase(file, source)).rows) baseCeilings.set(row.id, row.ceiling)
+  }
+
+  const violations: string[] = []
+  for (const file of files) {
     const current = (await import(pathToFileURL(file).href)) as AreaModule
-    const base = await loadBase(file, source)
-    const baseCeilings = new Map(base.rows.map((row) => [row.id, row.ceiling]))
     for (const row of current.rows) {
       const from = baseCeilings.get(row.id)
       if (from === undefined || row.ceiling <= from) continue

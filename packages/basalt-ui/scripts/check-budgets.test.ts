@@ -273,6 +273,18 @@ describe('ratchet', () => {
     expect(await ratchet(fixtureArea(100) + extra, fixtureArea(100))).toEqual([])
   })
 
+  test('a row moved to another area file keeps its base ceiling', async () => {
+    const dir = mkdtempSync(join(scratch, 'move-'))
+    const from = join(dir, 'old.ts')
+    const to = join(dir, 'new.ts')
+    writeFileSync(from, 'export const rows = []\n')
+    writeFileSync(to, fixtureArea(120))
+    const readBase = (file: string) => (file === from ? fixtureArea(100) : null)
+    const [violation, ...rest] = await ratchetViolations({ files: [from, to], readBase })
+    expect(rest).toEqual([])
+    expect(violation).toContain('new/r: ceiling 100 → 120')
+  })
+
   test('the real area files load as their own base, imports resolved', async () => {
     const files = areaFiles(REAL_AREAS)
     expect(files.length).toBeGreaterThan(0)
@@ -327,5 +339,16 @@ describe('area discovery', () => {
 
     writeFileSync(join(dir, 'c.ts'), `export const rows = [${row('early', 30)}]\n`)
     await expect(run([])).rejects.toThrow('defined twice')
+  })
+
+  test('a directory with no area files fails instead of passing empty', async () => {
+    const dir = mkdtempSync(join(scratch, 'empty-'))
+    const run = runBudgets({
+      reportOnly: false,
+      areasDir: dir,
+      readBase: () => null,
+      log: () => {},
+    })
+    await expect(run).rejects.toThrow('no area files')
   })
 })
