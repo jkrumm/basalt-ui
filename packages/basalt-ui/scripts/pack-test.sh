@@ -21,7 +21,7 @@ echo "==> publint"
 bunx publint --strict "$TGZ"
 
 echo "==> attw (are-the-types-wrong)"
-bunx attw "$TGZ" --profile esm-only --ignore-rules cjs-resolves-to-esm named-exports --exclude-entrypoints ./styles.css
+bunx attw "$TGZ" --profile esm-only --ignore-rules cjs-resolves-to-esm named-exports --exclude-entrypoints ./styles.css ./tokens.css ./typography.css ./prose.css ./fonts.css ./tailwind.css
 
 echo "==> assert tarball contents"
 # Assert against a FILE, never `echo "$LIST" | grep -q`. Under this script's `set -o pipefail`,
@@ -47,6 +47,9 @@ for f in \
   dist/vite.js dist/vite.d.ts \
   dist/cli/index.js dist/styles.css \
   dist/shell/index.js \
+  dist/router/index.js dist/data/index.js dist/page/index.js dist/cards/index.js dist/ai/index.js \
+  dist/lint/index.js dist/lint/stylelint/index.js dist/testing/index.js dist/ui/index.js dist/css/theme-script.js \
+  dist/css/tokens.css dist/css/typography.css dist/css/prose.css dist/css/fonts.css dist/css/tailwind.css \
   dist/shell/app-sidebar.module.css dist/shell/app-mobile-nav.module.css dist/shell/app-header.module.css \
   dist/controls/index.js dist/controls/index.d.ts dist/controls/controls.module.css \
   dist/controls-dates/index.js dist/controls-dates/index.d.ts \
@@ -154,6 +157,23 @@ const subpaths = [
   'basalt-ui/content',
   'basalt-ui/vite',
   'basalt-ui/styles.css',
+  // v3 skeleton: the stub barrels, the 2.x shell alias, and the CSS entries (frozen per major)
+  'basalt-ui/router',
+  'basalt-ui/data',
+  'basalt-ui/page',
+  'basalt-ui/cards',
+  'basalt-ui/ai',
+  'basalt-ui/lint',
+  'basalt-ui/stylelint',
+  'basalt-ui/testing',
+  'basalt-ui/theme-script',
+  'basalt-ui/shell',
+  'basalt-ui/ui/index',
+  'basalt-ui/tokens.css',
+  'basalt-ui/typography.css',
+  'basalt-ui/prose.css',
+  'basalt-ui/fonts.css',
+  'basalt-ui/tailwind.css',
 ]
 for (const s of subpaths) {
   const url = import.meta.resolve(s)
@@ -537,6 +557,16 @@ const own = {
   'basalt-ui/state': [],
   'basalt-ui/format': [],
   'basalt-ui/tokens': [],
+  // v3 skeleton stubs import no peer, so they must load in both phases
+  'basalt-ui/router': [],
+  'basalt-ui/data': [],
+  'basalt-ui/page': [],
+  'basalt-ui/cards': [],
+  'basalt-ui/ai': [],
+  'basalt-ui/lint': [],
+  'basalt-ui/stylelint': [],
+  'basalt-ui/testing': [],
+  'basalt-ui/theme-script': [],
 }
 const phase = process.argv[2]
 let failed = false

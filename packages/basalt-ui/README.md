@@ -301,7 +301,7 @@ deleted rather than silently surviving into the next real skew.
 
 ## Subpath exports
 
-15 subpaths. One import path per symbol; named exports only — no default exports.
+15 subpaths from 2.x plus the v3 skeleton stubs. One import path per symbol (`./shell` aliases the 2.x shell barrel until v3 swaps it); named exports only — no default exports.
 
 | Subpath            | Purpose                                                                                                                                                                                                                                                                 |
 | ------------------ | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |

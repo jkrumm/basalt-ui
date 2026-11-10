@@ -48,6 +48,7 @@ function subpathEntries(): Map<string, string> {
     if (value.types === undefined) continue
     if (typeof value.types !== 'string')
       throw new Error(`package.json#exports["${key}"].types is not a string`)
+    if (value.types.includes('*')) continue // wildcard (`./ui/*`): no single entry
     const stem = value.types.replace(/^\.\/dist\//, 'src/').replace(/\.d\.ts$/, '')
     const file = [`${stem}.ts`, `${stem}.tsx`].map((f) => join(PKG, f)).find((f) => existsSync(f))
     if (!file) throw new Error(`no src entry for ${key} (${value.types})`)

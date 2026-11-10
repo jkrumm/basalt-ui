@@ -27,7 +27,12 @@
     "import/no-default-export": "error",
     "import/consistent-type-specifier-style": "error",
     "react/hook-use-state": "warn",
-    "react/no-unstable-nested-components": ["warn", { "allowAsProps": true }],
+    "react/no-unstable-nested-components": [
+      "warn",
+      {
+        "allowAsProps": true
+      }
+    ],
     "basalt/no-raw-font-size": "error",
     "basalt/raw-size-literal": "error",
     "basalt/card-inset": "error",
@@ -194,6 +199,162 @@
               {
                 "group": ["@mantine/*"],
                 "message": "state must be Mantine-free — no Mantine imports allowed."
+              }
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "files": ["packages/basalt-ui/src/router/**"],
+      "rules": {
+        "no-restricted-imports": [
+          "error",
+          {
+            "paths": [
+              {
+                "name": "@mantine/core",
+                "message": "router must be Mantine-free — no Mantine imports allowed."
+              },
+              {
+                "name": "@mantine/hooks",
+                "message": "router must be Mantine-free — no Mantine imports allowed."
+              }
+            ],
+            "patterns": [
+              {
+                "group": ["@mantine/*"],
+                "message": "router must be Mantine-free — no Mantine imports allowed."
+              }
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "files": ["packages/basalt-ui/src/data/**"],
+      "rules": {
+        "no-restricted-imports": [
+          "error",
+          {
+            "paths": [
+              {
+                "name": "@mantine/core",
+                "message": "data must be Mantine-free — no Mantine imports allowed."
+              },
+              {
+                "name": "@mantine/hooks",
+                "message": "data must be Mantine-free — no Mantine imports allowed."
+              }
+            ],
+            "patterns": [
+              {
+                "group": ["@mantine/*"],
+                "message": "data must be Mantine-free — no Mantine imports allowed."
+              }
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "files": ["packages/basalt-ui/src/page/**"],
+      "rules": {
+        "no-restricted-imports": [
+          "error",
+          {
+            "paths": [
+              {
+                "name": "@mantine/core",
+                "message": "page must be Mantine-free — no Mantine imports allowed."
+              },
+              {
+                "name": "@mantine/hooks",
+                "message": "page must be Mantine-free — no Mantine imports allowed."
+              }
+            ],
+            "patterns": [
+              {
+                "group": ["@mantine/*"],
+                "message": "page must be Mantine-free — no Mantine imports allowed."
+              }
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "files": ["packages/basalt-ui/src/cards/**"],
+      "rules": {
+        "no-restricted-imports": [
+          "error",
+          {
+            "paths": [
+              {
+                "name": "@mantine/core",
+                "message": "cards must be Mantine-free — no Mantine imports allowed."
+              },
+              {
+                "name": "@mantine/hooks",
+                "message": "cards must be Mantine-free — no Mantine imports allowed."
+              }
+            ],
+            "patterns": [
+              {
+                "group": ["@mantine/*"],
+                "message": "cards must be Mantine-free — no Mantine imports allowed."
+              }
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "files": ["packages/basalt-ui/src/ai/**"],
+      "rules": {
+        "no-restricted-imports": [
+          "error",
+          {
+            "paths": [
+              {
+                "name": "@mantine/core",
+                "message": "ai must be Mantine-free — no Mantine imports allowed."
+              },
+              {
+                "name": "@mantine/hooks",
+                "message": "ai must be Mantine-free — no Mantine imports allowed."
+              }
+            ],
+            "patterns": [
+              {
+                "group": ["@mantine/*"],
+                "message": "ai must be Mantine-free — no Mantine imports allowed."
+              }
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "files": ["packages/basalt-ui/src/ui/**"],
+      "rules": {
+        "no-restricted-imports": [
+          "error",
+          {
+            "paths": [
+              {
+                "name": "@mantine/core",
+                "message": "ui/* must be Mantine-free — no Mantine imports allowed."
+              },
+              {
+                "name": "@mantine/hooks",
+                "message": "ui/* must be Mantine-free — no Mantine imports allowed."
+              }
+            ],
+            "patterns": [
+              {
+                "group": ["@mantine/*"],
+                "message": "ui/* must be Mantine-free — no Mantine imports allowed."
               }
             ]
           }

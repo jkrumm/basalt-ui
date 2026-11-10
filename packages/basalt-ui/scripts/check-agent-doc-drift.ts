@@ -984,6 +984,9 @@ export function checkI(
 ): CheckIFailure[] {
   const failures: CheckIFailure[] = []
   for (const [subpath, target] of Object.entries(readExportsManifest())) {
+    // `./shell` aliases the 2.x shell barrel the root already re-exports (and Check I reads there);
+    // it gets its own surface when the v3 shell swaps the barrel.
+    if (subpath === './shell') continue
     const spec = subpathSpec(subpath)
     const names = published.get(spec)
     const entry = resolveSubpathEntry(target)

@@ -35,6 +35,12 @@ const REQUIRED_PEERS = [
   'react-dom',
 ]
 
+/** Peers the v3 skeleton added; none may join the required set. */
+const V3_OPTIONAL_PEERS = ['@base-ui/react', 'tailwindcss']
+
+/** Runtime dependencies the v3 skeleton added (the barrel rule allows `.` no peer but react). */
+const V3_DEPENDENCIES = ['class-variance-authority', 'clsx', 'eventsource-parser']
+
 const REMEND_BLOCK_COMMENT_RE = /\/\*[\s\S]*?\*\//g
 const REMEND_LINE_COMMENT_RE = /\/\/.*$/gm
 
@@ -63,10 +69,30 @@ describe('peer declarations', () => {
     })
   }
 
+  // v3 skeleton (docs/v3/ARCHITECTURE.md § 3): every added peer is optional, so the 2.x required set
+  // above cannot grow by accident.
+  for (const peer of V3_OPTIONAL_PEERS) {
+    it(`'${peer}' (v3 skeleton) is declared and optional`, () => {
+      expect(peer in peerDeps).toBe(true)
+      expect(peerMeta[peer]?.optional).toBe(true)
+    })
+  }
+
   it('exactly the section 1 required set is non-optional', () => {
     const nonOptional = Object.keys(peerDeps).filter((peer) => peerMeta[peer]?.optional !== true)
     expect(nonOptional.sort()).toEqual([...REQUIRED_PEERS].sort())
   })
+})
+
+describe('runtime dependencies', () => {
+  const pkg = JSON.parse(readFileSync(join(pkgRoot, 'package.json'), 'utf8')) as {
+    dependencies?: Record<string, string>
+  }
+  for (const dep of V3_DEPENDENCIES) {
+    it(`'${dep}' is a regular dependency`, () => {
+      expect(pkg.dependencies?.[dep]).toBeDefined()
+    })
+  }
 })
 
 describe('remend root-entry requirement (F2) — resolved, now a regression guard', () => {

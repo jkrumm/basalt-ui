@@ -26,9 +26,13 @@ const baseFlag = args.indexOf('--base')
 const baseDir = baseFlag !== -1 ? resolve(args[baseFlag + 1]) : OWN_PKG_ROOT
 
 const exportsMap = JSON.parse(readFileSync(resolve(baseDir, 'package.json'), 'utf8')).exports
-/** Every published JS subpath — non-JS assets have no named exports to snapshot. */
+/**
+ * Every published JS subpath — non-JS assets (`.css`, `./configs/*`) and wildcard entries have no
+ * named exports to snapshot. `./shell` is an alias of the 2.x shell barrel the root re-exports until
+ * the v3 shell swaps it, so snapshotting it would list every shell symbol under two subpaths.
+ */
 const subpaths = Object.keys(exportsMap).filter(
-  (k) => !k.startsWith('./configs') && k !== './styles.css',
+  (k) => !k.startsWith('./configs') && !k.endsWith('.css') && !k.includes('*') && k !== './shell',
 )
 
 const actual = {}

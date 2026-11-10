@@ -230,7 +230,7 @@ const MANTINE_BANS = [
 
 /**
  * The one hard source for the enforcement seam. Keys split into two kinds:
- * - JS-subpath keys (., ./charts, ./tokens, ./controls, ./controls-dates, ./forms, ./state, ./table, ./format, ./commands, ./agent, ./content, ./vite) — real package.json exports (the 15-subpath map of docs/V2-SPEC.md §1, with ./styles.css and ./configs/* as the non-JS assets).
+ * - JS-subpath keys (., ./charts, ./tokens, ./controls, ./controls-dates, ./forms, ./state, ./table, ./format, ./commands, ./agent, ./content, ./vite, plus the v3 skeleton stubs ./router, ./data, ./page, ./cards, ./ai, ./ui/*, ./shell, ./lint, ./stylelint, ./testing, ./theme-script) — real package.json exports (the 15-subpath map of docs/V2-SPEC.md §1, with ./styles.css, ./configs/* and the v3 CSS entries as the non-JS assets).
  * - #-prefixed synthetic keys (#app) — the synthetic global app-wide ban layer. The #-prefix
  *   guarantees it is never mistaken for an export path.
  *
@@ -572,7 +572,116 @@ export const SURFACES = {
     forbiddenImports: [...MANTINE_BANS],
   },
 
+  // ── v3 skeleton (additive stubs; each row is filled by its owning v3 Issue) ──────────────────
+  './router': {
+    kind: 'tooling',
+    layer: 'headless',
+    description:
+      'v3 router bridge (stub) — nav, controls and search-state defaults on TanStack Router',
+    globs: { shipped: [], repo: ['packages/basalt-ui/src/router/**'] },
+    forbiddenImports: [...MANTINE_BANS],
+  },
+  './data': {
+    kind: 'tooling',
+    layer: 'headless',
+    description:
+      'v3 data layer (stub) — query client, unwrap, optimistic and live queries on TanStack Query',
+    globs: { shipped: [], repo: ['packages/basalt-ui/src/data/**'] },
+    forbiddenImports: [...MANTINE_BANS],
+  },
+  './page': {
+    kind: 'tooling',
+    layer: 'headless',
+    description: 'v3 page composites (stub) — Page, PageBar, Section, QueryState, overlays',
+    globs: { shipped: [], repo: ['packages/basalt-ui/src/page/**'] },
+    forbiddenImports: [...MANTINE_BANS],
+  },
+  './cards': {
+    kind: 'tooling',
+    layer: 'headless',
+    description: 'v3 card composites (stub) — StatCard, StatGroup, BarList, EventList',
+    globs: { shipped: [], repo: ['packages/basalt-ui/src/cards/**'] },
+    forbiddenImports: [...MANTINE_BANS],
+  },
+  './ai': {
+    kind: 'tooling',
+    layer: 'headless',
+    description: 'v3 AI-chat part views (stub) — partView, defineBlock, defineCatalog',
+    optionalPeers: ['react-markdown', 'remark-gfm', 'rehype-sanitize', 'remend'],
+    globs: { shipped: [], repo: ['packages/basalt-ui/src/ai/**'] },
+    forbiddenImports: [...MANTINE_BANS],
+  },
+  './ui/*': {
+    kind: 'tooling',
+    layer: 'headless',
+    description: 'v3 primitives (stub) — one module per primitive on Base UI, wildcard entry',
+    optionalPeers: ['@base-ui/react'],
+    globs: { shipped: [], repo: ['packages/basalt-ui/src/ui/**'] },
+    forbiddenImports: [...MANTINE_BANS],
+  },
+  './shell': {
+    kind: 'tooling',
+    layer: 'mantine-coupled',
+    description: 'App shell — points at the 2.x shell barrel until the v3 shell swaps it',
+    forbiddenImports: [],
+  },
+  './lint': {
+    kind: 'tooling',
+    layer: 'build-tooling',
+    description: 'v3 oxlint plugin (stub) — tooling, no app bundle',
+    forbiddenImports: [],
+  },
+  './stylelint': {
+    kind: 'tooling',
+    layer: 'build-tooling',
+    description: 'v3 stylelint preset (stub) — tooling, no app bundle',
+    forbiddenImports: [],
+  },
+  './testing': {
+    kind: 'tooling',
+    layer: 'build-tooling',
+    description: 'v3 test harness (stub) — renderApp, settled, quality; tooling, no app bundle',
+    forbiddenImports: [],
+  },
+  './theme-script': {
+    kind: 'tooling',
+    layer: 'build-tooling',
+    description: 'v3 pre-paint color-scheme script (stub), frozen per major',
+    forbiddenImports: [],
+  },
+
   // ── Non-JS published assets (ToolingSpec; not JS subpaths — check-coverage exempts these) ─────
+  './tokens.css': {
+    kind: 'tooling',
+    layer: 'non-js-asset',
+    description: 'v3 token layer (stub) — CSS custom properties, frozen per major',
+    forbiddenImports: [],
+  },
+  './typography.css': {
+    kind: 'tooling',
+    layer: 'non-js-asset',
+    description: 'v3 type scale (stub), frozen per major',
+    forbiddenImports: [],
+  },
+  './prose.css': {
+    kind: 'tooling',
+    layer: 'non-js-asset',
+    description: 'v3 prose styles (stub), frozen per major',
+    forbiddenImports: [],
+  },
+  './fonts.css': {
+    kind: 'tooling',
+    layer: 'non-js-asset',
+    description: 'v3 font faces (stub), frozen per major',
+    forbiddenImports: [],
+  },
+  './tailwind.css': {
+    kind: 'tooling',
+    layer: 'non-js-asset',
+    description: 'v3 Tailwind 4 theme bridge (stub), frozen per major',
+    optionalPeers: ['tailwindcss'],
+    forbiddenImports: [],
+  },
   './styles.css': {
     kind: 'tooling',
     layer: 'non-js-asset',

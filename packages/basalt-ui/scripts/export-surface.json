@@ -136,5 +136,14 @@
     "mergeSanitizeSchema",
     "settledOnly"
   ],
-  "./vite": ["basaltAppPlugin", "basaltViteConfig"]
+  "./vite": ["basaltAppPlugin", "basaltViteConfig"],
+  "./router": [],
+  "./data": [],
+  "./page": [],
+  "./cards": [],
+  "./ai": [],
+  "./lint": [],
+  "./testing": [],
+  "./stylelint": [],
+  "./theme-script": []
 }

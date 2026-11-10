@@ -35,7 +35,7 @@ Named exports only — **no default exports**. Files `kebab-case`, components `P
 | `./styles.css`     | —        | `@layer basalt` base styles, the iOS input floor, the font stack — mandatory import                                                                                                                                                                                                                                                                                      |
 | `./configs/*`      | —        | raw toolchain presets (real paths — `extends` needs them)                                                                                                                                                                                                                                                                                                                |
 
-**2.0:** 15 published subpaths (V2-SPEC § 1); `./guard`, `./theme-lab`, `./data/virtual`, `./tokens.css`,
+**2.0:** 15 published subpaths (V2-SPEC § 1), plus the v3 skeleton stubs added since (31 export keys; `./shell` aliases the 2.x shell barrel, `./tokens.css` is a v3 stub); `./guard`, `./theme-lab`, `./data/virtual`,
 `./llms.txt` and `./package.json` are no longer exports. **C1 (1.29.0):** `./query`, `./connectivity` and bare `./data` were dropped — 26 published subpaths
 → 20. `section/` + `widget-header/` merged into `src/dashboard/` (internal only, no subpath
 change); `utils/`+`motion/`+`query/error-message` merged into `src/common/`. Full symbol mapping:
