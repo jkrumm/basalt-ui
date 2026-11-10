@@ -39,7 +39,7 @@ Named exports only — **no default exports**. Files `kebab-case`, components `P
 `./llms.txt` and `./package.json` are no longer exports. **C1 (1.29.0):** `./query`, `./connectivity` and bare `./data` were dropped — 26 published subpaths
 → 20. `section/` + `widget-header/` merged into `src/dashboard/` (internal only, no subpath
 change); `utils/`+`motion/`+`query/error-message` merged into `src/common/`. Full symbol mapping:
-`MIGRATING.md` § 1.29.0 § Consolidation.
+`MIGRATING.md` § 2.x to 3.0.
 
 `src/surfaces.ts` is the SSOT behind that table, `llms.txt`, `AGENTS.md`, the oxlint boundary globs
 and the doctrine triad; `check-coverage` and `tests/{surfaces-coverage,agents-sync,llms-sync}.test.ts`

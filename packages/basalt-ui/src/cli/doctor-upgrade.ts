@@ -699,7 +699,7 @@ const VISIBLE_HEADING = /^#{2,4}\s+Visible without code change/i
 const CONSUMER_VISIBLE = /basalt\/[a-z][\w-]*|--vx-[\w-]+|\berror\b|\bpromoted?\b/i
 
 /**
- * The consumer-visible lines of every MIGRATING.md section with `from < version <= to` (`to`
+ * The consumer-visible lines of every MIGRATING.md section (`## x.y.z`, or the generated `## 2.x to 3.0`, which counts as 3.0.0) with `from < version <= to` (`to`
  * null: no upper bound), newest first as the file is ordered: lines naming a `basalt/*` rule id, a
  * `--vx-*` token, `error` or `promoted`, plus the whole `Visible without code change` subsection.
  * Fenced code and table separators are skipped; only long table rows are cut, never a bullet.
@@ -710,16 +710,16 @@ export function migratingSince(markdown: string, from: string, to: string | null
   let visible = false
   let fenced = false
   for (const line of markdown.split('\n')) {
-    const h2 = /^## (\d+\.\d+\.\d+)\b(.*)$/.exec(line)
+    const h2 = /^## (?:\d+\.x to )?(\d+\.\d+)(\.\d+)?\b/.exec(line)
     if (h2 !== null || line.startsWith('## ')) {
-      const v = h2?.[1] ?? null
+      const v = h2 === null ? null : `${h2[1]}${h2[2] ?? '.0'}`
       version =
         v !== null && compareVersions(v, from) > 0 && (to === null || compareVersions(v, to) <= 0)
           ? v
           : null
       visible = false
       fenced = false
-      if (version !== null) out.push(`\n## ${version}${h2?.[2] ?? ''}`)
+      if (version !== null) out.push(`\n${line.trimEnd()}`)
       continue
     }
     if (version === null) continue

@@ -1805,6 +1805,27 @@ describe('migratingSince (doctor --from)', () => {
   it('compares numerically, not lexically', () => {
     expect(migratingSince(md, '2.9.0', '2.10.0').join('\n')).toContain('## 2.10.0')
   })
+
+  describe('the generated `## 2.x to 3.0` range section', () => {
+    const range = [
+      '# Migrating basalt-ui',
+      '## 2.x to 3.0',
+      '### Lint rules',
+      '- `basalt/old-rule` → `basalt/new-rule` (error)',
+    ].join('\n')
+
+    it('applies to a 2.x consumer once the install reaches 3.0', () => {
+      const out = migratingSince(range, '2.40.0', '3.0.0').join('\n')
+      expect(out).toContain('## 2.x to 3.0')
+      expect(out).toContain('basalt/new-rule')
+      expect(migratingSince(range, '2.40.0', '3.2.1').join('\n')).toContain('## 2.x to 3.0')
+    })
+
+    it('stays silent while the install is still on 2.x, or the consumer is already on 3.x', () => {
+      expect(migratingSince(range, '2.40.0', '2.41.0')).toEqual([])
+      expect(migratingSince(range, '3.0.0', '3.1.0')).toEqual([])
+    })
+  })
 })
 
 describe('staleEmittedSheets', () => {
