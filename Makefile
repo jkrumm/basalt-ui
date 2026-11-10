@@ -1,5 +1,5 @@
 .DEFAULT_GOAL := help
-.PHONY: help check verify deploy logs pre test layout build evidence compare release release-dry sync-self merge-guard
+.PHONY: help check gen-check verify deploy logs pre test layout build evidence compare release release-dry sync-self merge-guard
 
 help: ## List targets
 	@grep -hE '^[a-z-]+:.*?## ' $(MAKEFILE_LIST) | awk 'BEGIN {FS = ":.*?## "}; {printf "  \033[36m%-14s\033[0m %s\n", $$1, $$2}'
@@ -12,6 +12,7 @@ help: ## List targets
 check: ## Local CI gate: gen sync checks + build + pre + layout + coverage/doc-drift + pack-test
 	@bun packages/basalt-ui/scripts/gen-oxlint.ts --check
 	@bun packages/basalt-ui/scripts/gen-llms.ts --check
+	@$(MAKE) --no-print-directory gen-check
 	@cd packages/basalt-ui && bun run build
 	@bun run pre
 	@bun run test:layout
@@ -79,3 +80,7 @@ sync-self: ## Install basalt-ui's own shipped rules + skills into this repo's /.
 # A lead runs this right before it merges its pull request: PR CI green for the exact HEAD, generated files in sync, master not moved under it.
 merge-guard: ## Refuse unless PR CI is green for HEAD, generated files are in sync and master did not move under the branch
 	@bun scripts/merge-guard.ts
+
+gen-check: ## Generated docs in sync: gen-docs --check (JSDoc gate), then gen-recipes --check
+	@bun packages/basalt-ui/scripts/gen-docs.ts --check
+	@bun packages/basalt-ui/scripts/gen-recipes.ts --check
