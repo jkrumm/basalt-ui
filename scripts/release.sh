@@ -14,8 +14,9 @@
 #   • a CI-green preflight (`ci_green`: the newest non-release commit's CI run must be completed/success);
 #   • a dry run first, ALWAYS, with the computed version read back before the real one is offered,
 #     and a refusal when no commit since the last tag touches the package (`package_commit_present`);
-#   • the version gate (`version_gate`, tested in scripts/release.test.ts): only stable, non-major 2.x
-#     is releasable — packages/basalt-ui/MAINTAINING.md § The one sanctioned major;
+#   • the version gate (`version_gate`, tested in scripts/release.test.ts): before GA only the
+#     owner-flagged first 3.0.0 is releasable (`GA=1`), after it only non-major 3.x —
+#     packages/basalt-ui/MAINTAINING.md § Major lines;
 #   • the C16 grace gate against the COMPUTED version (`packages/basalt-ui/scripts/check-grace.ts`),
 #     which is the only place it can fire before the release instead of one minor after it — grace
 #     entries and deprecation `removeIn` dates alike, behind a build + export-surface check so its
@@ -26,19 +27,39 @@
 # Usage:  scripts/release.sh dry     — dry run only, print the verdict, change nothing
 #         scripts/release.sh         — dry run, confirm, publish
 #         YES=1 scripts/release.sh   — same without the prompt (non-interactive callers)
+#         GA=1 scripts/release.sh    — the owner's go for the first 3.0.0; no other release needs it
 
 # ── Library half: the version rule ─────────────────────────────────
 # Sourcing this file (scripts/release.test.ts) defines the functions below and returns before
 # `set -euo pipefail`, so it never changes the caller's shell options or releases anything.
 
-# version_gate <bump> <version>
-# Fails closed on an unparsed bump or an empty version. A computed version is releasable only if it
-# is a stable 2.x above 2.0.0 AND the bump is not `major`: every major (a second 2.0.0, any 3.x), a recomputed 2.0.0 on any bump, any 1.x and any
-# prerelease/build-metadata version returns 1 with the reason on stderr. It judges the computed
-# VERSION and bump, not the commit, and reads nothing from the registry.
+# The one statement of the doctrine. A new major is one edit here plus packages/basalt-ui/MAINTAINING.md
+# § Major lines.
+readonly CURRENT_MAJOR=3
+
+# ga_tag_exists
+# Prints 1 when origin carries the v<CURRENT_MAJOR>.0.0 tag (the major is GA), else 0. A remote that
+# cannot be read prints nothing and returns 1: the gate must not guess which side of GA it is on.
+ga_tag_exists() {
+  local refs
+  if ! refs=$(git ls-remote --tags origin "v${CURRENT_MAJOR}.0.0" 2>/dev/null); then
+    echo "version gate: cannot read the tags on origin — cannot tell whether v${CURRENT_MAJOR}.0.0 shipped." >&2
+    return 1
+  fi
+  if [ -n "$refs" ]; then echo 1; else echo 0; fi
+}
+
+# version_gate <bump> <version> <ga_tag_exists 0|1> <ga_flag 0|1>
+# ga_flag is 1 only when the owner set GA=1. Master-only: no line, no branch.
+#   no v3.0.0 tag: accepts only <CURRENT_MAJOR>.0.0 with bump major and ga_flag=1 (the owner's go);
+#                  refuses every other version — any 2.x, any prerelease, 3.0.0 without the flag.
+#   v3.0.0 tag:    accepts ^3.N.N$ that is not a major and not 3.0.0; refuses any major until
+#                  CURRENT_MAJOR changes.
+# Fails closed on an unparsed bump, an empty version or a ga argument that is not 0|1. It judges the
+# computed VERSION and bump, not the commit, and reads nothing from the registry.
 version_gate() {
-  local bump="${1:-}" version="${2:-}"
-  local stable_2x='^2\.[0-9]+\.[0-9]+$'
+  local bump="${1:-}" version="${2:-}" ga_tag="${3:-}" ga_flag="${4:-}"
+  local stable_line="^${CURRENT_MAJOR}\.[0-9]+\.[0-9]+\$" first="${CURRENT_MAJOR}.0.0"
 
   case "$bump" in
     major | minor | patch) ;;
@@ -51,19 +72,33 @@ version_gate() {
     echo "version gate: no computed version." >&2
     return 1
   fi
+  if { [ "$ga_tag" != 0 ] && [ "$ga_tag" != 1 ]; } || { [ "$ga_flag" != 0 ] && [ "$ga_flag" != 1 ]; }; then
+    echo "version gate: ga_tag_exists '$ga_tag' and ga_flag '$ga_flag' must each be 0 or 1 — cannot judge v$version." >&2
+    return 1
+  fi
+
+  if [ "$ga_tag" = 0 ]; then
+    if [ "$version" = "$first" ] && [ "$bump" = major ]; then
+      [ "$ga_flag" = 1 ] && return 0
+      echo "v$first is the first publish of the major and needs the owner's go: re-run with GA=1." >&2
+      return 1
+    fi
+    echo "before GA only v$first (major, GA=1) is releasable: computed v$version ($bump) is refused. The first publish is the owner's go." >&2
+    return 1
+  fi
 
   if [ "$bump" = major ]; then
-    echo "no majors: computed v$version is a major bump — 2.0.0 was the one exception and has shipped. Rewrite feat!:/BREAKING CHANGE as a plain feat: and add a MIGRATING.md row." >&2
+    echo "no majors: computed v$version is a major bump and v${CURRENT_MAJOR}.0.0 has shipped. Ship a break as a plain feat: with a migration row; a new major is packages/basalt-ui/MAINTAINING.md § Major lines." >&2
     return 1
   fi
-  if [ "$version" = "2.0.0" ]; then
-    echo "v2.0.0 has shipped; a recomputed 2.0.0 means the release tags are out of sync with the registry." >&2
+  if [ "$version" = "$first" ]; then
+    echo "v$first has shipped; a recomputed $first means the release tags are out of sync with the registry." >&2
     return 1
   fi
-  if [[ "$version" =~ $stable_2x ]]; then
+  if [[ "$version" =~ $stable_line ]]; then
     return 0
   fi
-  echo "only stable 2.x is releasable: computed v$version ($bump) is a 1.x, a prerelease or build-metadata version." >&2
+  echo "only stable ${CURRENT_MAJOR}.x is releasable: computed v$version ($bump) is another line, a prerelease or build-metadata version." >&2
   return 1
 }
 
@@ -297,7 +332,10 @@ bump=$(grep -oE 'Analysis of [0-9]+ commits complete: [a-z]+ release' <<<"$log" 
 echo
 echo "  ${last_tag:-none} → v$version  (${bump:-unknown})"
 
-version_gate "$bump" "$version" || die "v$version is not releasable (reason above)."
+ga_tag=$(ga_tag_exists) || die "cannot tell whether v${CURRENT_MAJOR}.0.0 shipped (reason above)."
+ga_flag=0
+[ "${GA:-}" != "1" ] || ga_flag=1
+version_gate "$bump" "$version" "$ga_tag" "$ga_flag" || die "v$version is not releasable (reason above)."
 
 # ── The C16 grace gate, against the version about to be cut ──────────────────
 # The test-time gate reads package.json, i.e. the version already PUBLISHED, so it can only go red
