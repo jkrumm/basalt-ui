@@ -4,7 +4,7 @@
 import { join } from 'node:path'
 
 import { PKG_ROOT, totalLines, walkFiles } from '../lib'
-import type { RowDef } from '../lib'
+import type { Raise, RowDef } from '../lib'
 
 export const rows: readonly RowDef[] = [
   // 4000 -> 4250: the AGENTS.md block move + the doctor checks (the CLAUDE.md migration was removed in 2.0).
@@ -41,14 +41,25 @@ export const rows: readonly RowDef[] = [
   // 8668 -> 8843 (w49 cli, argo-friction rows 186 + W48 P3): `init` wires the router plugin into vite.config, runs the lockfile's install and one vite build for routeTree.gen.ts (cli/init.ts + the injected, time-boxed `run` in index.ts; the pending install/build is read from artifacts so a re-run says what is left, the pm read from the nearest lockfile, `--no-install`, +140); a hover/tooltip crop first clears the previous anchor's tooltip (cli/shot/capture.ts, +24); `no-declared-states` is per anchor (capture.ts + detect.ts, +11). Consumers: every stock-Vite `init` and `shot` user (argo, linewatch, rollhook).
   // 8843 -> 8870 (w50 table, PR 538): a hover crop mutes every other visible tooltip while it is taken and restores exactly those (cli/shot/capture.ts +27). Consumers: every `basalt-ui shot` user.
   // 8870 -> 8879 (w51 shot): a hover/tooltip crop with no `aria-describedby` claims the readout inside its own trigger, so an earlier chart's stale one never wins `.first()` (cli/shot/capture.ts +9). Consumers: every `basalt-ui shot` user.
+  // 8879 -> 8923 (v3 verb stubs): `eject`, `migrate` and `lint` registered as not-implemented verbs (cli/verbs-v3.ts +39, the dispatcher case +5). Consumer: shutterflow and image-gateway, whose direct 1.x jump runs `migrate --from`.
   {
     id: 'cli-lines',
     order: 110,
     label: 'CLI non-test lines (src/cli/**)',
-    ceiling: 8879,
+    ceiling: 8923,
     measure: () =>
       totalLines(
         walkFiles(join(PKG_ROOT, 'src/cli'), /\.tsx?$/).filter((p) => !/\.test\.tsx?$/.test(p)),
       ),
+  },
+]
+
+export const raises: readonly Raise[] = [
+  {
+    ceiling: 'cli-lines',
+    from: 8879,
+    to: 8923,
+    consumer: '`migrate --from` on a direct 1.x jump',
+    repo: 'shutterflow',
   },
 ]
