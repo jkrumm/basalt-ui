@@ -264,7 +264,8 @@ a consumer is blocked, a fix is wanted downstream — and say which version went
 
 ## Factory leads (v3)
 
-- PR-only, rebase-merge only (never squash). Run `make merge-guard` before merging.
+- PR-only, rebase-merge only (never squash). Merge only when `make merge-guard` is clear: the branch contains
+  `origin/master` and PR CI is green for that exact head. Local `make check` does not replace PR CI.
 - `packages/basalt-ui/**` and non-package changes are separate commits in one PR; `make sync-self` is its own
   non-package commit. Never edit `CHANGELOG.md`.
 - `make check` builds first; `bun run pre` is the inner loop. A fresh worktree needs `bun install` and a package build.
