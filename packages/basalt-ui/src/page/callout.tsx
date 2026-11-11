@@ -1,5 +1,7 @@
 import type { ReactElement, ReactNode } from 'react'
 import { cn } from '../core/cn'
+import { page } from '../core/messages/page'
+import { useMessages } from '../core/messages/use-messages'
 import { Alert } from '../ui/alert'
 
 /** One of the four callout kinds; each maps onto the `Alert` tone of the same name. */
@@ -12,14 +14,6 @@ export type CalloutProps = {
   /** Layout only (`my-6`). */
   className?: string
   children: ReactNode
-}
-
-// The kind as a word for assistive tech, so a title-less callout is never tint-only.
-const KIND_WORD: Record<CalloutKind, string> = {
-  info: 'Info',
-  good: 'Success',
-  warn: 'Warning',
-  bad: 'Error',
 }
 
 /**
@@ -36,6 +30,13 @@ const KIND_WORD: Record<CalloutKind, string> = {
  * </Callout>
  */
 export function Callout({ kind = 'info', title, className, children }: CalloutProps): ReactElement {
+  const t = useMessages(page)
+  const kindWord = {
+    info: t('page.kindInfo'),
+    good: t('page.kindGood'),
+    warn: t('page.kindWarn'),
+    bad: t('page.kindBad'),
+  }[kind]
   return (
     <Alert
       tone={kind}
@@ -44,7 +45,7 @@ export function Callout({ kind = 'info', title, className, children }: CalloutPr
     >
       {title === undefined && (
         <span className="sr-only" data-callout-kind-word="">
-          {KIND_WORD[kind]}
+          {kindWord}
         </span>
       )}
       {children}
