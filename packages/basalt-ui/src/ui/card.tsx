@@ -1,7 +1,7 @@
 import { useRender } from '@base-ui/react/use-render'
 import { cva } from 'class-variance-authority'
 import type { VariantProps } from 'class-variance-authority'
-import { useId } from 'react'
+import { isValidElement, useId } from 'react'
 import type { ComponentProps, ReactElement, ReactNode } from 'react'
 import { cn } from '../core/cn'
 import { resolvePhase } from '../core/phase'
@@ -10,14 +10,15 @@ import { PhaseBoundary } from '../core/phase-boundary'
 import type { Box, BoxSlot, IconComponent } from '../core/ports'
 
 /**
- * The `Card` cva table: the ringed card surface. `flush` drops the padding so a band or an inset
- * region can run edge to edge.
+ * The `Card` cva table: the ringed card surface. `flush` drops the padding so a band sits on the
+ * shell and an `Inset` takes the gutter. The gutter is the radius difference (card 14 minus inset
+ * 10), so the inset corner is concentric with the card's by construction.
  *
  * @example
  * cardVariants({ flush: true }) // class string for a non-`Card` element
  */
 export const cardVariants = cva(
-  'flex flex-col overflow-clip rounded-card bg-card text-foreground shadow-card [--card-edge:1rem] @max-narrow:[--card-edge:0.75rem]',
+  'flex flex-col overflow-clip rounded-card bg-card text-foreground shadow-card [--card-edge:1rem] @max-narrow:[--card-edge:0.75rem] [--card-gutter:calc(var(--radius-card)_-_var(--radius-inset))]',
   {
     variants: {
       flush: {
@@ -75,8 +76,10 @@ type PartProps<E extends 'div' | 'span'> = Omit<ComponentProps<E>, 'className'> 
 }
 
 /**
- * A recessed region of a card. It owns the shared left edge (`--card-edge`) and takes the inset
- * surface role.
+ * A recessed region of a flush card: one surface step down, inside the card's gutter
+ * (`--card-gutter`, 4 px), with the concentric inset radius, so the shell shows as a frame around
+ * it. Its content still starts on the shared left edge (`--card-edge`) the bands use. The last
+ * inset of a card keeps the gutter below it too.
  *
  * @example
  * <Card flush><CardBand title="Shipped" /><Inset>…</Inset></Card>
@@ -87,7 +90,10 @@ export function Inset({ className, ...props }: PartProps<'div'>): ReactElement {
       {...props}
       data-slot="inset"
       data-surface="inset"
-      className={cn('bg-inset px-(--card-edge) py-3', className)}
+      className={cn(
+        'mx-(--card-gutter) rounded-inset bg-inset px-[calc(var(--card-edge)_-_var(--card-gutter))] py-3 first:mt-(--card-gutter) last:mb-(--card-gutter)',
+        className,
+      )}
     />
   )
 }
@@ -105,7 +111,7 @@ export function IconTile({ className, ...props }: PartProps<'span'>): ReactEleme
       {...props}
       data-slot="icon-tile"
       className={cn(
-        'inline-flex size-7 shrink-0 items-center justify-center rounded-ctrl bg-selected text-muted-foreground',
+        'inline-flex size-8 shrink-0 items-center justify-center rounded-ctrl bg-selected text-muted-foreground',
         className,
       )}
     />
@@ -287,6 +293,7 @@ function EmptyArm({ empty }: { empty: Empty }): ReactElement {
 }
 
 function Skeleton({ shape }: { shape: CardPhaseProps['skeleton'] }): ReactElement {
+  if (isValidElement(shape)) return shape
   const bar = 'animate-pulse rounded-chip bg-foreground/10 motion-reduce:animate-none'
   if (shape !== undefined && 'rows' in shape) {
     return (
@@ -313,8 +320,11 @@ function Slot({ body, box }: { body: ReactNode | BoxSlot; box: Box }): ReactNode
 export type CardPhaseProps = FrameState & {
   /** The box height the body gets and every other phase holds; `fill` takes the card's remainder. */
   height?: number | 'fill'
-  /** The loading shape, at the final box. Default: one block filling the box. */
-  skeleton?: { rows: number } | { height: number }
+  /**
+   * The loading shape, at the final box. Default: one block filling the box. An element draws a
+   * composite's own anatomy (the stat card's figure, sub line and chart).
+   */
+  skeleton?: { rows: number } | { height: number } | ReactElement
   /**
    * The body. A box slot is called with the box only in `ready` and `stale`, so a loading, error or
    * empty card never runs it.
