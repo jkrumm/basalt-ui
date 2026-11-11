@@ -9,7 +9,7 @@ import { join } from 'node:path'
 import { CHART_SUBPATH } from '../../surface-gates'
 import type { Manifest, Surface } from '../../surface-gates'
 import { PKG_ROOT, Unmeasured, readManifest, readSurface } from '../lib'
-import type { RowDef } from '../lib'
+import type { Raise, RowDef } from '../lib'
 
 /** Value exports of every subpath except `./charts`, which is budgeted apart. */
 function nonChartSymbols(surface: Surface): number {
@@ -57,7 +57,7 @@ export const rows: readonly RowDef[] = [
     order: 10,
     label: 'public value symbols, non-chart (export-surface shards)',
     // 2.0 target 92.
-    ceiling: 110, // W45: `Board` (argo warden board prototype, SPEC § 6.8); W44: `EventList` (argo narratives-section + home activity feed prototype, warden item timeline; rb journal; linewatch transition timeline; SPEC § 6.7); W37: `PageSummary` (argo components/upstream/page-summary.tsx, SPEC § 6.9; UPSTREAM Waves 24-26); 2.19 (W35): `StatusDot`, `StatusVerdict` (argo warden/agents status chips; status is a dot plus a word, D28); 2.18 (W34): `Meter` (argo reading card, warden dispatch budget, usage cache hit; rb course + ingest; linewatch link vs ceiling; ledger rows 143–145, 152, 158), `BarList` (argo top projects, weatherorb factor bars; rows 146, 160); 2.14: `date`/`time`/`dateTime`/`duration` (rb + linewatch format.ts, argo walking-pad; consumer-05); `bytes`/`compact`/`delta`/`defineFormat` (linewatch + rb format.ts, argo sparkline; maturation-v2 consumer-05); 2.13: `basaltRouterOptions` (weatherorb `getRouter()`, maturation-v2 provider-01); 2.6: `externalField` (argo timer-card.tsx, row 39); was 93 for `toAgentError` (row 18)
+    ceiling: 111, // v3 state-1b: root `externalField` (the 2.x `./state` one stays until the state subpath retires); W45: `Board` (argo warden board prototype, SPEC § 6.8); W44: `EventList` (argo narratives-section + home activity feed prototype, warden item timeline; rb journal; linewatch transition timeline; SPEC § 6.7); W37: `PageSummary` (argo components/upstream/page-summary.tsx, SPEC § 6.9; UPSTREAM Waves 24-26); 2.19 (W35): `StatusDot`, `StatusVerdict` (argo warden/agents status chips; status is a dot plus a word, D28); 2.18 (W34): `Meter` (argo reading card, warden dispatch budget, usage cache hit; rb course + ingest; linewatch link vs ceiling; ledger rows 143–145, 152, 158), `BarList` (argo top projects, weatherorb factor bars; rows 146, 160); 2.14: `date`/`time`/`dateTime`/`duration` (rb + linewatch format.ts, argo walking-pad; consumer-05); `bytes`/`compact`/`delta`/`defineFormat` (linewatch + rb format.ts, argo sparkline; maturation-v2 consumer-05); 2.13: `basaltRouterOptions` (weatherorb `getRouter()`, maturation-v2 provider-01); 2.6: `externalField` (argo timer-card.tsx, row 39); was 93 for `toAgentError` (row 18)
     measure: () => nonChartSymbols(readSurface()),
   },
   {
@@ -75,5 +75,15 @@ export const rows: readonly RowDef[] = [
     // 2.0 target 15.
     ceiling: 31, // v3 skeleton: 15 (2.x) + 16 additive entries (see docs/v3/ARCHITECTURE.md § 3); consumers: rollhook for CSS, lint, testing; linewatch for ui, page, cards, data, router; ratchets down as 2.x subpaths retire
     measure: () => Object.keys(readManifest().exports ?? {}).length,
+  },
+]
+
+export const raises: readonly Raise[] = [
+  {
+    ceiling: 'non-chart-symbols',
+    from: 110,
+    to: 111,
+    consumer: 'root `externalField`, the ControlHandle bridge for the shutterflow memory store',
+    repo: 'shutterflow',
   },
 ]
