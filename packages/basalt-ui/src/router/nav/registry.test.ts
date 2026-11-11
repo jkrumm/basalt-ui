@@ -1,7 +1,7 @@
 import { describe, expect, test } from 'bun:test'
 import { navDirection, navFor, registerNav } from './registry'
 import { resolveActive } from './resolve-active'
-import { defineNav } from './nav-test-utils'
+import { defineNav } from '../../../tests/support/router-nav'
 
 const A = defineNav({
   sections: [
