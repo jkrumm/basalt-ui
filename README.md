@@ -30,7 +30,7 @@ bunx basalt-ui init
 Not a React app? The token system works without one — no React, no Mantine, no bundler:
 
 ```bash
-bunx basalt-ui tokens:css --selector-attribute data-theme --only core --out src/tokens.css
+bunx basalt-ui tokens:css --out src/tokens.css
 ```
 
 See [Framework-free token consumption](./docs/FRAMEWORK-FREE.md).
