@@ -11,6 +11,9 @@
 import { act, cleanup, render } from '@testing-library/react'
 import { Field as BaseField } from '@base-ui/react/field'
 import { Fieldset as BaseFieldset } from '@base-ui/react/fieldset'
+import { Accordion as BaseAccordion } from '@base-ui/react/accordion'
+import { Collapsible as BaseCollapsible } from '@base-ui/react/collapsible'
+import { Tabs as BaseTabs } from '@base-ui/react/tabs'
 import { readdirSync } from 'node:fs'
 import { createElement } from 'react'
 import type { ComponentType, ReactElement, ReactNode } from 'react'
@@ -46,6 +49,7 @@ const PARENTS: Record<string, ComponentType<{ children?: ReactNode }>> = {
   'field-description': (p) => createElement(BaseField.Root, p),
   'field-error': (p) => createElement(BaseField.Root, p),
   'fieldset-legend': (p) => createElement(BaseFieldset.Root, p),
+  ...disclosureAncestry(),
   ...tableAncestry({
     'table-header': ['table'],
     'table-body': ['table'],
@@ -54,6 +58,32 @@ const PARENTS: Record<string, ComponentType<{ children?: ReactNode }>> = {
     'table-head': ['table', 'thead', 'tr'],
     'table-cell': ['table', 'tbody', 'tr'],
   }),
+}
+
+/**
+ * The Base UI roots a disclosure part needs, open on the part's own item so a panel renders:
+ * a tab and its panel under `Tabs.Root` on value `a`, an accordion item and its panel under an
+ * `Accordion.Root` with item `a` open, a collapsible trigger and panel under an open root.
+ */
+export function disclosureAncestry(): Record<string, ComponentType<{ children?: ReactNode }>> {
+  const tabs = (p: { children?: ReactNode }): ReactElement =>
+    createElement(BaseTabs.Root, { defaultValue: 'a' }, p.children)
+  const accordion = (p: { children?: ReactNode }): ReactElement =>
+    createElement(BaseAccordion.Root, { defaultValue: ['a'] }, p.children)
+  const item = (p: { children?: ReactNode }): ReactElement =>
+    accordion({ children: createElement(BaseAccordion.Item, { value: 'a' }, p.children) })
+  const collapsible = (p: { children?: ReactNode }): ReactElement =>
+    createElement(BaseCollapsible.Root, { defaultOpen: true }, p.children)
+  return {
+    'tabs-list': tabs,
+    'tabs-trigger': (p) => tabs({ children: createElement(BaseTabs.List, null, p.children) }),
+    'tabs-content': tabs,
+    'accordion-item': accordion,
+    'accordion-trigger': item,
+    'accordion-content': item,
+    'collapsible-trigger': collapsible,
+    'collapsible-content': collapsible,
+  }
 }
 
 /** Parts whose element holds no text: they render without the `x` child. */
@@ -80,6 +110,8 @@ const PART_PROPS: Record<string, Record<string, unknown>> = {
   'card-info': { label: 'About' },
   'count-badge': { count: 1 },
   'delta-badge': { value: 1, polarity: 'neutral' },
+  'tabs-trigger': { value: 'a' },
+  'tabs-content': { value: 'a' },
 }
 
 const componentEntries = (exports: Record<string, unknown>): [string, PartComponent][] =>
