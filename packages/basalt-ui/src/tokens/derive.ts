@@ -525,11 +525,13 @@ export type DeriveV3Config = {
   vibrancy: number
 }
 
-/** The 2.x identity: `#0077bd`, zinc, default vibrancy (owner review 2026-11-11). */
+/** The 2.x identity: `#0077bd`, zinc, default vibrancy (owner review 2026-11-11). Literals, not
+ * reads of {@link DEFAULT_DERIVE_CONFIG}: a module-level property read survives tree-shaking and
+ * lands in the 2.x provider bundle. `anchor-2x.test.ts` pins the two equal. */
 export const DEFAULT_DERIVE_V3_CONFIG: DeriveV3Config = {
-  accent: DEFAULT_DERIVE_CONFIG.accent,
-  neutral: DEFAULT_DERIVE_CONFIG.neutral,
-  vibrancy: DEFAULT_DERIVE_CONFIG.vibrancy,
+  accent: '#0077bd',
+  neutral: 'zinc',
+  vibrancy: 0,
 }
 
 /**
