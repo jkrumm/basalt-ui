@@ -1,6 +1,7 @@
 /* @generated basalt-ui — do not edit; regenerate with the command on the next line */
 /* basalt-ui 3.0.0 — `bun packages/basalt-ui/src/css/generate.ts` */
 /* theme-allow-file inline-spacing, unknown-vx-token — v3 sheet generated from the token table */
+/* theme-allow-file inline-spacing, unknown-vx-token — v3 sheet generated from the token table */
 @layer basalt.prose {
   :where(.vx-prose) {
     max-inline-size: var(--vx-measure);

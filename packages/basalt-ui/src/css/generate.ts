@@ -35,7 +35,7 @@ const rule = (selector: string, body: string): string => `${selector} {\n${body}
 
 // ── fonts.css, typography.css ───────────────────────────────────────────────────────────────────
 
-const template = (name: 'fonts' | 'typography'): string =>
+const template = (name: 'fonts' | 'typography' | 'prose'): string =>
   readFileSync(join(import.meta.dir, 'templates', `${name}.css`), 'utf8')
 
 const fontsCss = (): string => headerWaiving('raw-font-family') + template('fonts')
@@ -52,11 +52,7 @@ function typographyCss(): string {
 
 // ── prose.css ───────────────────────────────────────────────────────────────────────────────────
 
-/** The prose rules are written as CSS in `templates/prose.css`; the generator only adds the provenance header (the check-theme waiver lives in the template). */
-function proseCss(): string {
-  const template = readFileSync(join(import.meta.dir, 'templates', 'prose.css'), 'utf8')
-  return `${provenanceHeader(CONTRACT_VERSION, COMMAND)}${template}`
-}
+const proseCss = (): string => headerWaiving('inline-spacing, unknown-vx-token') + template('prose')
 
 // ── tailwind.css ────────────────────────────────────────────────────────────────────────────────
 
