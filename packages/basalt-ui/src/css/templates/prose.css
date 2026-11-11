@@ -1,0 +1,194 @@
+@layer basalt.prose {
+  :where(.vx-prose) {
+    max-inline-size: var(--vx-measure);
+    font-size: var(--vx-text-base);
+    line-height: var(--vx-text-base-lh);
+    text-wrap: pretty;
+    overflow-wrap: break-word;
+  }
+  :where(.vx-prose > :first-child) {
+    margin-block-start: 0;
+  }
+  :where(.vx-prose > :last-child) {
+    margin-block-end: 0;
+  }
+  :where(.vx-prose :is(p, ul, ol, dl, blockquote, pre, figure, table, hr, details)) {
+    margin-block: var(--vx-rhythm-2) 0;
+  }
+  :where(.vx-prose :is(h2, h3, h4)) {
+    font-family: var(--vx-font-head);
+    font-stretch: var(--vx-font-head-stretch);
+    font-weight: var(--vx-weight-strong);
+    text-wrap: balance;
+    margin-block: var(--vx-rhythm-3) var(--vx-rhythm-1);
+    scroll-margin-block-start: var(--vx-rhythm-3);
+  }
+  :where(.vx-prose h2) {
+    font-size: 1.625rem;
+    line-height: 1.2;
+    letter-spacing: -0.01em;
+  }
+  :where(.vx-prose h3) {
+    font-size: 1.3125rem;
+    line-height: 1.25;
+  }
+  :where(.vx-prose h4) {
+    font-size: var(--vx-text-lg);
+    line-height: var(--vx-text-lg-lh);
+    margin-block-start: var(--vx-rhythm-2);
+  }
+  :where(.vx-prose :is(h2, h3, h4) + :is(p, ul, ol, blockquote, pre, figure, table)) {
+    margin-block-start: var(--vx-rhythm-1);
+  }
+  :where(.vx-prose a) {
+    color: var(--vx-brand);
+    text-decoration-line: underline;
+    text-decoration-thickness: 1px;
+    text-underline-offset: 2px;
+  }
+  :where(.vx-prose a:hover) {
+    text-decoration-thickness: 2px;
+  }
+  :where(.vx-prose :is(strong, b, th)) {
+    font-weight: var(--vx-weight-strong);
+  }
+  :where(.vx-prose :is(ul, ol)) {
+    padding-inline-start: 1.5em;
+  }
+  :where(.vx-prose ul) {
+    list-style-type: disc;
+  }
+  :where(.vx-prose ol) {
+    list-style-type: decimal;
+  }
+  :where(.vx-prose li) {
+    margin-block-start: var(--vx-rhythm-1);
+  }
+  :where(.vx-prose li::marker) {
+    color: var(--vx-ink-muted);
+  }
+  :where(.vx-prose li > :is(ul, ol)) {
+    margin-block-start: var(--vx-rhythm-1);
+  }
+  :where(.vx-prose dt) {
+    font-weight: var(--vx-weight-strong);
+    margin-block-start: var(--vx-rhythm-1);
+  }
+  :where(.vx-prose dd) {
+    margin-inline-start: 1.5em;
+    color: var(--vx-ink-muted);
+  }
+  :where(.vx-prose blockquote) {
+    margin-inline: 0;
+    padding-inline-start: 1em;
+    border-inline-start: 2px solid var(--vx-hairline);
+    color: var(--vx-ink-muted);
+  }
+  :where(.vx-prose blockquote > :first-child) {
+    margin-block-start: 0;
+  }
+  :where(.vx-prose hr) {
+    border: 0;
+    border-block-start: 1px solid var(--vx-hairline);
+    margin-block: var(--vx-rhythm-3);
+  }
+  :where(.vx-prose table) {
+    inline-size: 100%;
+    border-collapse: collapse;
+    font-size: var(--vx-text-sm);
+    line-height: var(--vx-text-sm-lh);
+  }
+  :where(.vx-prose :is(th, td)) {
+    padding: 0.5em 0.75em;
+    text-align: start;
+    border-block-end: 1px solid var(--vx-hairline);
+    font-variant-numeric: tabular-nums;
+  }
+  :where(.vx-prose thead th) {
+    color: var(--vx-ink-muted);
+    background-color: var(--vx-card);
+  }
+  :where(.vx-prose :is(code, kbd, samp)) {
+    font-size: 0.875em;
+    padding: 0.125em 0.375em;
+    border-radius: var(--vx-radius-chip);
+    background-color: var(--vx-card);
+    box-shadow: inset 0 0 0 1px var(--vx-hairline);
+  }
+  :where(.vx-prose pre) {
+    overflow-x: auto;
+    padding: 1em;
+    font-size: var(--vx-text-sm);
+    line-height: var(--vx-text-sm-lh);
+    border-radius: var(--vx-radius-inset);
+    background-color: var(--vx-inset);
+    box-shadow: inset 0 0 0 1px var(--vx-hairline);
+    tab-size: 2;
+  }
+  :where(.vx-prose pre code) {
+    padding: 0;
+    font-size: inherit;
+    background: none;
+    box-shadow: none;
+  }
+  :where(.vx-prose :is(img, video, svg)) {
+    max-inline-size: 100%;
+    block-size: auto;
+  }
+  :where(.vx-prose figure) {
+    margin-inline: 0;
+  }
+  :where(.vx-prose figcaption) {
+    margin-block-start: var(--vx-rhythm-1);
+    font-size: var(--vx-text-xs);
+    line-height: var(--vx-text-xs-lh);
+    color: var(--vx-ink-muted);
+  }
+  :where(.vx-prose sup) {
+    line-height: 0;
+  }
+  :where(.vx-prose :is([data-footnote-ref], [data-footnote-backref])) {
+    text-decoration-line: none;
+  }
+  :where(.vx-prose :is(.footnotes, [data-footnotes])) {
+    margin-block-start: var(--vx-rhythm-3);
+    padding-block-start: var(--vx-rhythm-2);
+    border-block-start: 1px solid var(--vx-hairline);
+    font-size: var(--vx-text-sm);
+    line-height: var(--vx-text-sm-lh);
+    color: var(--vx-ink-muted);
+  }
+  :where(.vx-prose :is(.footnotes, [data-footnotes]) :is(ol, p)) {
+    margin-block-start: var(--vx-rhythm-1);
+  }
+  :where(.vx-prose mark) {
+    background-color: var(--vx-selected);
+    color: inherit;
+  }
+  :where(.vx-prose summary) {
+    cursor: pointer;
+    font-weight: var(--vx-weight-medium);
+  }
+  @media (forced-colors: active) {
+    :where(.vx-prose :is(code, kbd, samp, pre)) {
+      border: 1px solid CanvasText;
+    }
+    :where(.vx-prose a) {
+      color: LinkText;
+    }
+  }
+  @media print {
+    :where(.vx-prose) {
+      max-inline-size: none;
+    }
+    :where(.vx-prose a) {
+      color: inherit;
+    }
+    :where(.vx-prose :is(pre, blockquote, figure, tr)) {
+      break-inside: avoid;
+    }
+    :where(.vx-prose :is(h2, h3, h4)) {
+      break-after: avoid;
+    }
+  }
+}
