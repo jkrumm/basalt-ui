@@ -77,8 +77,11 @@ export function parseManifest(text: string): ManifestRead {
   if (!isRecord(ejected) || !Object.values(ejected).every(isRecord)) {
     return bad('`ejected` must map a name to an object')
   }
-  if (!isRecord(managed) || !Object.values(managed).every((d) => typeof d === 'string')) {
-    return bad('`managed` must map a path to a sha256 string')
+  if (
+    !isRecord(managed) ||
+    !Object.entries(managed).every(([path, d]) => isRelative(path) && typeof d === 'string')
+  ) {
+    return bad('`managed` must map a relative path to a sha256 string')
   }
   if (!Array.isArray(tokens) || !tokens.every(isTokenOutput)) {
     return bad('`tokens` must be an array of { out, format: "css" | "json", flags: string[] }')

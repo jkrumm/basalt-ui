@@ -5,7 +5,6 @@
  * `sync` recorded (the render moved, nobody edited), `edited` otherwise: never clobbered without
  * `--force` (invariant 24, guardrails E1). A generated file has no local content worth keeping.
  */
-import { createHash } from 'node:crypto'
 import {
   existsSync,
   mkdirSync,
@@ -15,8 +14,9 @@ import {
   rmdirSync,
   writeFileSync,
 } from 'node:fs'
-import { dirname, resolve } from 'node:path'
+import { dirname, relative, resolve } from 'node:path'
 
+import { sha256 } from '../index'
 import type { Manifest } from '../manifest'
 import { scanBlock, spliceBlock } from './block'
 import type { Unit } from './render'
@@ -31,9 +31,6 @@ export type Plan = {
   retired: Retired[]
   block: { state: Exclude<State, 'edited'>; text: string } | { error: string }
 }
-
-export const sha256 = (text: string): string =>
-  createHash('sha256').update(text, 'utf8').digest('hex')
 
 const readText = (root: string, path: string): string | null => {
   try {
@@ -91,15 +88,22 @@ export function differences(plan: Plan): string[] {
 
 export type Applied = { written: number; removed: number; left: string[]; manifest: Manifest }
 
+/** The absolute path of `path` under `root`; a path that resolves outside it is refused. */
+function within(root: string, path: string): string {
+  const abs = resolve(root, path)
+  if (relative(root, abs).startsWith('..')) throw new Error(`${path} resolves outside ${root}`)
+  return abs
+}
+
 function put(root: string, path: string, content: string): void {
-  mkdirSync(dirname(resolve(root, path)), { recursive: true })
-  writeFileSync(resolve(root, path), content)
+  mkdirSync(dirname(within(root, path)), { recursive: true })
+  writeFileSync(within(root, path), content)
 }
 
 /** Removes a file, then each parent directory it leaves empty, up to (not including) `root`. */
 function remove(root: string, path: string): void {
-  rmSync(resolve(root, path), { force: true })
-  for (let dir = dirname(resolve(root, path)); dir !== root; dir = dirname(dir)) {
+  rmSync(within(root, path), { force: true })
+  for (let dir = dirname(within(root, path)); dir !== resolve(root); dir = dirname(dir)) {
     if (!existsSync(dir) || readdirSync(dir).length > 0) return
     rmdirSync(dir)
   }
