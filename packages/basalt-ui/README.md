@@ -167,17 +167,18 @@ import { BasaltShell, PageBar } from 'basalt-ui'
 ```ts
 // vite.config.ts
 import react from '@vitejs/plugin-react'
-import { basaltAppPlugin, basaltViteConfig } from 'basalt-ui/vite'
+import { basalt, basaltViteConfig } from 'basalt-ui/vite'
 import { defineConfig } from 'vite'
 
 export default defineConfig({
   ...basaltViteConfig({ port: 5173, apiTarget: 'http://localhost:3000' }),
-  plugins: [react(), ...basaltAppPlugin({ name: 'MyApp', description: '…' })],
+  plugins: [react(), basalt({ app: { name: 'MyApp', description: '…' } })],
 })
 ```
 
-`basaltViteConfig` stays config-only (no `plugins`, by contract); `basaltAppPlugin` is the plugin
-half — see the `./vite` adapter battery under [Adapter batteries](#adapter-batteries) below.
+`basaltViteConfig` stays config-only (no `plugins`, by contract); `basalt()` is the plugin half
+(build gates, eject aliases, `.basalt/sources.css`, the head) and replaces 2.x `basaltAppPlugin` —
+see `docs/vite.md` and the `./vite` adapter battery under [Adapter batteries](#adapter-batteries).
 
 > **Local consumption (sibling checkouts).** Developing against an unpublished / `file:`-linked
 > basalt-ui from a sibling repo? Build `dist/` first — `bunx basalt-ui` always resolves
@@ -317,7 +318,7 @@ deleted rather than silently surviving into the next real skew.
 | `./commands`       | `defineCommands`, `defineOverlays`, `overlays`, `setColorScheme`, `toggleSidebar`, `ShortcutsHelp`, `defineNotifications`, `emit`, `NotificationBell`                                                                                                                   |
 | `./agent`          | Streaming-chat runtime (`aiSdkTransport`, `useAgentThreadRuns`, `parseAgentPart`) and its Mantine chat UI (`ThreadFeed`, `ThreadFeedRow`, `Composer`, `ToolChip`)                                                                                                       |
 | `./content`        | `Markdown` (required `contentTrust`; the untrusted arm renders no images)                                                                                                                                                                                               |
-| `./vite`           | `basaltViteConfig(opts)` preset, `basaltAppPlugin(opts)` PWA head / manifest / icons                                                                                                                                                                                    |
+| `./vite`           | `basaltViteConfig(opts)` preset, `basalt(opts)` build gates, sources.css, head / manifest                                                                                                                                                                               |
 | `./styles.css`     | The one stylesheet: `@layer basalt` base styles, iOS input floor, fonts                                                                                                                                                                                                 |
 | `./configs/*`      | Raw toolchain presets — oxlint, oxfmt, tsconfig (base/react-app/node), lefthook                                                                                                                                                                                         |
 
@@ -618,16 +619,15 @@ ships no markdown renderer — pass `./content`'s `Markdown` where a part needs 
 
 ### `./vite` — PWA / head metadata (optional peer)
 
-`basaltAppPlugin` (see [Wire the runtime](#wire-the-runtime) above) needs no install by default —
-its `serviceWorker` option is the only part with an optional peer, and it's `false` unless you opt
-in:
+`basalt()` (see [Wire the runtime](#wire-the-runtime) above) needs no install by default — its
+`app.serviceWorker` option is the only part with an optional peer, and it's off unless you opt in:
 
 ```bash
 bun add -D vite-plugin-pwa workbox-build workbox-window   # only if serviceWorker is enabled
 ```
 
 Without the peer installed, `serviceWorker: true` degrades to a one-line console warning (no
-service worker, no crash) — everything else (theme-color meta, anti-FOUC background,
+service worker, no crash) — everything else (theme-color meta, the pre-paint theme script,
 `site.webmanifest`, favicon/apple-touch-icon links, OG/Twitter defaults) works with zero extra
 dependencies.
 

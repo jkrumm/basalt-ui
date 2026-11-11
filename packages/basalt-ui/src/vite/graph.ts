@@ -15,7 +15,8 @@ const SPECIFIER = /(?:\bfrom\s*|\bimport\s*\(\s*|\bimport\s+)(['"])(basalt-ui(?:
 /** A relative or published sibling import inside a primitive. */
 const SIBLING =
   /(?:\bfrom\s*|\bimport\s*\(\s*|\bimport\s+)(['"])(?:\.\/|basalt-ui\/ui\/)([a-z0-9-]+)(?:\.js)?\1/g
-const PRIMITIVE_SPEC = /(['"])basalt-ui\/ui\/([a-z0-9-]+)\1/g
+/** A composite's primitive import: the published specifier, or a relative path into `ui/`. */
+const PRIMITIVE_SPEC = /(['"])(?:basalt-ui\/ui\/|(?:\.\.\/)+ui\/)([a-z0-9-]+)(?:\.js)?\1/g
 
 const SOURCE_FILE = /\.(?:[cm]?[jt]sx?)$/
 const SKIP_DIRS = new Set([
@@ -145,12 +146,14 @@ export function packageGraph(pkgRoot: string): PackageGraph {
     }
     siblings.set(name, [...found].toSorted())
   }
+  const allotted = new Set(ALLOTMENT.primitives)
   const composites = new Map<string, string[]>()
   for (const dir of ALLOTMENT.composites) {
     const found = new Set<string>()
-    for (const file of walk(join(pkgRoot, 'src', dir), [], SKIP_DIRS)) {
+    const src = join(pkgRoot, 'src', dir)
+    for (const file of walk(existsSync(src) ? src : join(pkgRoot, 'dist', dir), [], SKIP_DIRS)) {
       for (const [, , name] of readFileSync(file, 'utf8').matchAll(PRIMITIVE_SPEC)) {
-        if (name !== undefined) found.add(name)
+        if (name !== undefined && allotted.has(name)) found.add(name)
       }
     }
     composites.set(dir, [...found].toSorted())
