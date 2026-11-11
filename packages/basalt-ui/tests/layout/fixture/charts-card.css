@@ -1,0 +1,8 @@
+/*
+ * The `charts-card` fixture's Tailwind v4 entry, compiled WITH preflight like `charts-kinds.css`.
+ * `charts-card.layout.test.ts` compiles it into a temp directory.
+ */
+@import '../../../src/css/tailwind.css' source(none);
+@source './charts-card-fixture.tsx';
+@source '../../../src/charts/parts';
+@source '../../../src/ui/badge.tsx';

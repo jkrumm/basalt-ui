@@ -1,6 +1,8 @@
 import type { BasaltMessages } from './index'
 
-/** Replace with the area's keys when its Issue writes the strings. */
-export type ChartsMessages = Record<never, never>
+/** The strings `./charts` prints itself; `charts.unavailable` is the note a failed series' legend entry reads. */
+export type ChartsMessages = Record<'charts.unavailable', string>
 
-export const charts = {} satisfies Partial<BasaltMessages>
+export const charts = {
+  'charts.unavailable': 'unavailable',
+} satisfies Partial<BasaltMessages>
