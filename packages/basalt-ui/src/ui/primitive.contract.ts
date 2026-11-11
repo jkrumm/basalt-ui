@@ -17,16 +17,19 @@ import { Collapsible as BaseCollapsible } from '@base-ui/react/collapsible'
 import { Dialog as BaseDialog } from '@base-ui/react/dialog'
 import { Drawer as BaseDrawer } from '@base-ui/react/drawer'
 import { Toast as BaseToast } from '@base-ui/react/toast'
+import { Menu as BaseMenu } from '@base-ui/react/menu'
+import { Popover as BasePopover } from '@base-ui/react/popover'
 import { Autocomplete as BaseAutocomplete } from '@base-ui/react/autocomplete'
 import { Combobox as BaseCombobox } from '@base-ui/react/combobox'
 import { Select as BaseSelect } from '@base-ui/react/select'
 import { Tabs as BaseTabs } from '@base-ui/react/tabs'
 import { readdirSync } from 'node:fs'
-import { createElement } from 'react'
+import { cloneElement, createElement } from 'react'
 import type { ComponentType, ReactElement, ReactNode } from 'react'
 import { hydrateRoot } from 'react-dom/client'
 import { renderToString } from 'react-dom/server'
 import { AutocompleteContent, ComboboxContent } from './combobox'
+import { MenuContent, MenuRadioGroup } from './menu'
 import { SelectContent } from './select'
 
 type PartComponent = ComponentType<Record<string, unknown>>
@@ -82,7 +85,9 @@ export function disclosureAncestry(): Record<string, ComponentType<{ children?: 
   const accordion = (p: { children?: ReactNode }): ReactElement =>
     createElement(BaseAccordion.Root, { defaultValue: ['a'] }, p.children)
   const item = (p: { children?: ReactNode }): ReactElement =>
-    accordion({ children: createElement(BaseAccordion.Item, { value: 'a' }, p.children) })
+    accordion({
+      children: createElement(BaseAccordion.Item, { value: 'a' }, p.children),
+    })
   const collapsible = (p: { children?: ReactNode }): ReactElement =>
     createElement(BaseCollapsible.Root, { defaultOpen: true }, p.children)
   return {
@@ -117,6 +122,7 @@ export function overlayAncestry(
       children: createElement(BaseToast.Root, { toast: { id: 'a', title: 't' } }, p.children),
     })
   return {
+    ...popupAncestry(open),
     'dialog-trigger': dialog,
     'dialog-content': dialog,
     'dialog-title': dialog,
@@ -136,8 +142,40 @@ export function overlayAncestry(
   }
 }
 
+/**
+ * The Base UI roots a popup part needs: a popover or menu root, open when `open`, and for a menu row
+ * the portalled menu popup it lives in. A tooltip is its own root, so its wrapper sets `defaultOpen`
+ * and a trigger child on the element it wraps.
+ */
+export function popupAncestry(
+  open: boolean,
+): Record<string, ComponentType<{ children?: ReactNode }>> {
+  type Wrap = ComponentType<{ children?: ReactNode }>
+  const popover: Wrap = (p) => createElement(BasePopover.Root, { defaultOpen: open }, p.children)
+  const menu: Wrap = (p) => createElement(BaseMenu.Root, { defaultOpen: open }, p.children)
+  const inMenu: Wrap = (p) => menu({ children: createElement(MenuContent, null, p.children) })
+  return {
+    'popover-trigger': popover,
+    'popover-content': popover,
+    tooltip: (p) =>
+      cloneElement(p.children as ReactElement<Record<string, unknown>>, {
+        defaultOpen: open,
+        children: createElement('button', null, 'x'),
+      }),
+    'menu-trigger': menu,
+    'menu-content': menu,
+    'menu-item': inMenu,
+    'menu-group': inMenu,
+    'menu-checkbox-item': inMenu,
+    'menu-radio-group': inMenu,
+    'menu-radio-item': (p) => inMenu({ children: createElement(MenuRadioGroup, null, p.children) }),
+    'menu-sub': inMenu,
+    'menu-separator': inMenu,
+  }
+}
+
 /** Roots that render no element of their own: they carry no slot and are not listed in `SLOTS`. */
-export const ROOTLESS = new Set(['dialog', 'alert-dialog', 'sheet'])
+export const ROOTLESS = new Set(['dialog', 'alert-dialog', 'sheet', 'popover', 'menu'])
 
 /**
  * The Base UI roots a picker part needs. A popup part renders inside an open root (the popup is
@@ -166,16 +204,20 @@ export function pickerAncestry(): Record<string, ComponentType<{ children?: Reac
       combobox({ children: createElement(ComboboxContent, null, p.children) }),
     'combobox-chips': multiple,
     'combobox-chip': (p) =>
-      multiple({ children: createElement(BaseCombobox.Chips, null, p.children) }),
+      multiple({
+        children: createElement(BaseCombobox.Chips, null, p.children),
+      }),
     'autocomplete-input': autocomplete,
     'autocomplete-content': autocomplete,
     'autocomplete-item': (p) =>
-      autocomplete({ children: createElement(AutocompleteContent, null, p.children) }),
+      autocomplete({
+        children: createElement(AutocompleteContent, null, p.children),
+      }),
   }
 }
 
 /** Parts whose element holds no text: they render without the `x` child. */
-const NO_TEXT = new Set(['table', 'table-header', 'table-body', 'table-row'])
+const NO_TEXT = new Set(['table', 'table-header', 'table-body', 'table-row', 'tooltip'])
 
 /** Wrappers that give a table part the native elements HTML requires around it. */
 function tableAncestry(
@@ -201,6 +243,10 @@ const PART_PROPS: Record<string, Record<string, unknown>> = {
   'tabs-trigger': { value: 'a' },
   'tabs-content': { value: 'a' },
   toast: { toast: { id: 'a', title: 't' } },
+  tooltip: { label: 'x' },
+  'menu-group': { label: 'x' },
+  'menu-sub': { label: 'x' },
+  'menu-radio-item': { value: 'a' },
 }
 
 const componentEntries = (exports: Record<string, unknown>): [string, PartComponent][] =>
@@ -228,11 +274,17 @@ function partElement(
  */
 function renderPart(Part: PartComponent, slot: string): { container: HTMLElement; bare: boolean } {
   try {
-    return { container: render(partElement(Part, slot, false)).baseElement, bare: false }
+    return {
+      container: render(partElement(Part, slot, false)).baseElement,
+      bare: false,
+    }
   } catch (error) {
     if (!(error instanceof Error) || !error.message.includes('void element')) throw error
     cleanup()
-    return { container: render(partElement(Part, slot, true)).baseElement, bare: true }
+    return {
+      container: render(partElement(Part, slot, true)).baseElement,
+      bare: true,
+    }
   }
 }
 
@@ -244,7 +296,9 @@ export async function hydrationErrors(element: () => ReactElement): Promise<numb
   let errors = 0
   let root: ReturnType<typeof hydrateRoot> | undefined
   await act(async () => {
-    root = hydrateRoot(container, element(), { onRecoverableError: () => (errors += 1) })
+    root = hydrateRoot(container, element(), {
+      onRecoverableError: () => (errors += 1),
+    })
   })
   await act(async () => root?.unmount())
   container.remove()

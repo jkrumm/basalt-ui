@@ -66,6 +66,10 @@ const PART_PROPS: Record<string, Record<string, unknown>> = {
   'tabs-trigger': { value: 'a' },
   'tabs-content': { value: 'a' },
   toast: { toast: { id: 'a', title: 't' } },
+  tooltip: { label: 'x' },
+  'menu-group': { label: 'x' },
+  'menu-sub': { label: 'x' },
+  'menu-radio-item': { value: 'a' },
 }
 
 /** With children `x`; a part on a void element (`<input>`) refuses children, so it renders bare. */

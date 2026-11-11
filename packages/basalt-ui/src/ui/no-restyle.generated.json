@@ -209,6 +209,22 @@
       "message": "Kbd owns its height and display: eject it (basalt-ui eject kbd) to change them."
     },
     {
+      "module": "menu",
+      "part": "menu-content",
+      "pattern": "^MenuContent$",
+      "allow": ["layout"],
+      "deny": ["h-*", "min-h-*", "size-*", "hidden", "flex", "block", "grid", "inline-flex"],
+      "message": "MenuContent owns its height and display: eject it (basalt-ui eject menu) to change them."
+    },
+    {
+      "module": "menu",
+      "part": "menu-item",
+      "pattern": "^MenuItem$",
+      "allow": ["layout"],
+      "deny": ["h-*", "min-h-*", "size-*", "hidden", "flex", "block", "grid", "inline-flex"],
+      "message": "MenuItem owns its height and display: eject it (basalt-ui eject menu) to change them."
+    },
+    {
       "module": "meter",
       "part": "meter",
       "pattern": "^Meter$",
@@ -223,6 +239,14 @@
       "allow": ["layout"],
       "deny": ["h-*", "min-h-*", "size-*", "hidden", "flex", "block", "grid", "inline-flex"],
       "message": "NumberField owns its height and display: use size (md, sm), or eject it (basalt-ui eject number-field)."
+    },
+    {
+      "module": "popover",
+      "part": "popover-content",
+      "pattern": "^PopoverContent$",
+      "allow": ["layout"],
+      "deny": ["h-*", "min-h-*", "size-*", "hidden", "flex", "block", "grid", "inline-flex"],
+      "message": "PopoverContent owns its height and display: eject it (basalt-ui eject popover) to change them."
     },
     {
       "module": "progress",
@@ -423,6 +447,14 @@
       "allow": ["layout"],
       "deny": ["h-*", "min-h-*", "size-*", "hidden", "flex", "block", "grid", "inline-flex"],
       "message": "Toast owns its height and display: eject it (basalt-ui eject toast) to change them."
+    },
+    {
+      "module": "tooltip",
+      "part": "tooltip",
+      "pattern": "^Tooltip$",
+      "allow": ["layout"],
+      "deny": ["h-*", "min-h-*", "size-*", "hidden", "flex", "block", "grid", "inline-flex"],
+      "message": "Tooltip owns its height and display: eject it (basalt-ui eject tooltip) to change them."
     }
   ]
 }

@@ -42,8 +42,20 @@ export const SLOTS = {
   ],
   input: ['input'],
   kbd: ['kbd'],
+  menu: [
+    'menu-trigger',
+    'menu-content',
+    'menu-item',
+    'menu-group',
+    'menu-checkbox-item',
+    'menu-radio-group',
+    'menu-radio-item',
+    'menu-sub',
+    'menu-separator',
+  ],
   meter: ['meter'],
   'number-field': ['number-field'],
+  popover: ['popover-trigger', 'popover-content'],
   progress: ['progress', 'ring'],
   'radio-group': ['radio-group', 'radio'],
   'scroll-area': ['scroll-area'],
@@ -75,6 +87,7 @@ export const SLOTS = {
   tabs: ['tabs', 'tabs-list', 'tabs-trigger', 'tabs-content'],
   textarea: ['textarea'],
   toast: ['toast-viewport', 'toast', 'toast-title', 'toast-description', 'toast-close'],
+  tooltip: ['tooltip'],
 } as const
 
 /** A `basalt-ui/ui/*` module name. */
