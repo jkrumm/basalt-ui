@@ -507,30 +507,55 @@ export function deriveTokensRaw(
 }
 
 // ══ v3 ═══════════════════════════════════════════════════════════════════════════════════════════
-// docs/v3/concepts/tokens-visual.md 3.3-3.5. The seed contributes its HUE only; the fill sits in the
-// Y=.165 band (white label 4.89:1), so contrast is a property of the construction and `gates.ts`
-// proves it instead of the knobs clamping it. There is no brightness knob: positive steps drop the
-// label under 4.5 and negative ones clamp to one value (3.4).
+// docs/v3/concepts/tokens-visual.md 3.3-3.5, re-anchored on the 2.x palette after the owner review of
+// 2026-11-11: the v3 roles are the 2.x derivation (`deriveTokens` at the 2.x defaults) mapped onto
+// the v3 names, so a v3 page and a 2.x shell are one family. Only the roles 2.x never had are solved
+// here (the brand ink and every status ink walk to their floor on the v3 backgrounds), and
+// `gates.ts` proves the result instead of the knobs clamping it. There is no brightness knob:
+// positive steps drop the label under 4.5 and negative ones clamp to one value (3.4).
 
-/** The v3 neutral presets; the table's warm ramp is `warm`. */
-export type NeutralV3 = 'warm' | 'neutral' | 'cool'
+/** The v3 neutral presets: the 2.x families. `stone` is the opt-in warm ramp. */
+export type NeutralV3 = DeriveConfig['neutral']
 
 export type DeriveV3Config = {
   /** Seed hex. Contributes the hue and nothing else. */
   accent: string
   neutral: NeutralV3
-  /** -5..5, 0 = the shipped centre (the 2.x `+1`). Scales every derived chroma by `1.2^level`. */
+  /** -4..5 ({@link VIBRANCY_RANGE_V3}), 0 = the 2.x default. Scales the accent and categorical chroma as 2.x `vibrancy` does. */
   vibrancy: number
 }
 
-/** `#2e75b1`, warm, centre vibrancy: the shipped identity (DPO 5a, pending the owner). */
+/** The 2.x identity: `#0077bd`, zinc, default vibrancy (owner review 2026-11-11). */
 export const DEFAULT_DERIVE_V3_CONFIG: DeriveV3Config = {
-  accent: '#2e75b1',
-  neutral: 'warm',
-  vibrancy: 0,
+  accent: DEFAULT_DERIVE_CONFIG.accent,
+  neutral: DEFAULT_DERIVE_CONFIG.neutral,
+  vibrancy: DEFAULT_DERIVE_CONFIG.vibrancy,
 }
 
-export const VIBRANCY_RANGE_V3 = { min: -5, max: 5 } as const
+/**
+ * Which 2.x surface stop each v3 surface is. Canvas is the 2.x page, so the shell and a v3 page
+ * share one ground; inset is the 2.x field (white in light, recessed in dark: the reading surface);
+ * card is the 2.x subtle band, the one 2.x stop that steps .03 OKLCH L off the field in both schemes
+ * (`panel` sits .014 light / .016 dark from it, under the read threshold of 3.3); raised is the 2.x
+ * elevated control surface.
+ */
+export const SURFACE_FROM_2X = {
+  canvas: 'bg',
+  inset: 'field',
+  card: 'subtle',
+  raised: 'elevated',
+} as const satisfies Record<string, Exclude<SurfaceKey, RowSurfaceKey>>
+
+/** Which 2.x ink each v3 ink is: `ink2` folds into `ink`, as the table's `from` lists say. */
+export const INK_FROM_2X = {
+  ink: 'ink',
+  'ink-muted': 'muted',
+  'ink-faint': 'faint',
+} as const satisfies Record<string, InkKey>
+
+/** The 2.x range less its bottom step: at -5 (x0.29) the categorical series no longer separate
+ * under protanopia and deuteranopia (`chart-N-cvd-*`), so the emitter would refuse the default seed. */
+export const VIBRANCY_RANGE_V3 = { min: -4, max: 5 } as const
 
 /** The v3 colour roles the table lists with a `{ light, dark }` pair. */
 export const COLOR_NAMES_V3 = [
@@ -570,10 +595,12 @@ export type DerivedV3 = {
 }
 
 /** Ink share of every pre-mixed alpha role, per scheme (`color-mix(in srgb, ink N%, transparent)`).
- * `input` is a deliberate heavier line, not a scaled hairline: the S3 spike measured the hairline
- * at 1.19:1 light and 1.24:1 dark against a 3.00:1 bar (docs/v3/spikes/token-surfaces.md). */
+ * `hairline` is the 2.x divider (ink 9% light; 8% white dark, which 9% of the 2.x dark ink matches
+ * on the 2.x page); `hover` and `selected` are the 2.x `ROW_INK_MIX`. `input` is a deliberate
+ * heavier line, not a scaled hairline: the S3 spike measured the hairline at 1.19:1 light and
+ * 1.24:1 dark against a 3.00:1 bar (docs/v3/spikes/token-surfaces.md). */
 export const INK_MIX_PCT = {
-  hairline: { light: 12, dark: 9 },
+  hairline: { light: 9, dark: 9 },
   hover: { light: 5, dark: 7 },
   selected: { light: 7.5, dark: 9 },
   input: { light: 52, dark: 44 },
@@ -585,38 +612,9 @@ export const INK_MIX_PCT = {
 /** Status tint share, per scheme: 16% dark, 12% light (3.5). */
 export const TINT_PCT = { light: 12, dark: 16 } as const satisfies Record<Side, number>
 
-const NEUTRAL_V3: Record<NeutralV3, { hue: number; chromaScale: number }> = {
-  warm: { hue: 70, chromaScale: 1 },
-  neutral: { hue: 70, chromaScale: 0 },
-  cool: { hue: 260, chromaScale: 1.6 },
-}
-
-// Surface and ink tones (HCT). Light inset/raised sit above the canvas, the card below it; dark
-// steps up from the canvas: card 19 is the T19 default of DPO 5b (T18.5 would put the fill at
-// exactly 3.00 on card; the step must stay >= .03 OKLCH L).
-const SURFACE_TONE_V3: Record<Side, Record<'canvas' | 'inset' | 'card' | 'raised', number>> = {
-  light: { canvas: 96.5, inset: 99.2, card: 92.5, raised: 100 },
-  dark: { canvas: 12.5, inset: 15, card: 19, raised: 24 },
-}
-// Warm-ramp chroma per scheme; the near-white light roles carry less because the gamut narrows.
-const SURFACE_CHROMA_V3: Record<Side, Record<'canvas' | 'inset' | 'card' | 'raised', number>> = {
-  light: { canvas: 2, inset: 0.9, card: 2, raised: 0 },
-  dark: { canvas: 2.6, inset: 2.6, card: 2.6, raised: 2.6 },
-}
-// Not pure white: T93 keeps the warm image and avoids halation on 13px rows. Faint is the axis ink,
-// opaque, and is not gated on `raised` (3.91 there).
-const INK_TONE_V3: Record<Side, Record<'ink' | 'ink-muted' | 'ink-faint', number>> = {
-  light: { ink: 14, 'ink-muted': 38, 'ink-faint': 44 },
-  dark: { ink: 93, 'ink-muted': 72, 'ink-faint': 62 },
-}
-
-// Brand: `fillChroma` is the chroma the shipped hue 268 fill (`#2e75b1`) is measured at; the dark
-// ink is the same hue pulled back off the fill's saturation, as in 2.x (36 x .864).
-const BRAND_FILL_CHROMA = 38.2
-const BRAND_INK_DARK_TONE = 78
-const BRAND_INK_DARK_CHROMA = 31.14
-// The brand ink walks off its start until it clears this on canvas, inset and card; a hair over the
-// 4.5 gate so a 0.1-tone step never lands on the line.
+// The brand ink starts at the 2.x accent ink (the fill tone in light, T78 in dark) and walks off it
+// until it clears this on canvas, inset and card; a hair over the 4.5 gate so a 0.1-tone step never
+// lands on the line. The 2.x light accent ink measures 4.36 on the 2.x page, under the v3 gate.
 const BRAND_INK_SOLVE_MIN = 4.55
 const BRAND_INK_TONE_STEP = 0.1
 const INFO_LIGHT_STOP_TONE = 40
@@ -685,11 +683,19 @@ export function statusBackgrounds(args: {
  */
 export function deriveV3(config: DeriveV3Config = DEFAULT_DERIVE_V3_CONFIG): DerivedV3 {
   assertValidAccentHex(config.accent)
+  const vibrancy = clampVibrancy(config.vibrancy)
+  const base = deriveTokens({
+    ...DEFAULT_DERIVE_CONFIG,
+    accent: config.accent,
+    neutral: config.neutral,
+    vibrancy,
+  })
   const seed = hexToHct(config.accent)
-  const neutral = NEUTRAL_V3[config.neutral]
-  const mult = 1.2 ** clampVibrancy(config.vibrancy)
+  const mult = vibrancyChromaMult(vibrancy)
   const bandTone = yToTone(FILL_LUMINANCE)
-  const fillChroma = BRAND_FILL_CHROMA * mult
+  // The 2.x fill chroma (`deriveTokensRaw`), restated rather than shared so the 2.x provider
+  // bundle stays byte-identical: the seq ramp and the light brand ink start from it.
+  const fillChroma = Math.max(seed.chroma, 40) * mult
 
   const pair = (make: (side: Side) => string): ColorPair => ({
     light: make('light'),
@@ -697,34 +703,23 @@ export function deriveV3(config: DeriveV3Config = DEFAULT_DERIVE_V3_CONFIG): Der
   })
 
   const colors = {} as Record<ColorNameV3, ColorPair>
-  for (const key of ['canvas', 'inset', 'card', 'raised'] as const) {
-    colors[key] = pair((side) =>
-      hctToHex({
-        hue: neutral.hue,
-        chroma: SURFACE_CHROMA_V3[side][key] * neutral.chromaScale,
-        tone: SURFACE_TONE_V3[side][key],
-      }),
-    )
-  }
-  for (const key of ['ink', 'ink-muted', 'ink-faint'] as const) {
-    colors[key] = pair((side) =>
-      hctToHex({
-        hue: neutral.hue,
-        chroma: SURFACE_CHROMA_V3[side].canvas * neutral.chromaScale,
-        tone: INK_TONE_V3[side][key],
-      }),
-    )
-  }
+  for (const [key, from] of Object.entries(SURFACE_FROM_2X))
+    colors[key as keyof typeof SURFACE_FROM_2X] = base.surface[from]
+  for (const [key, from] of Object.entries(INK_FROM_2X))
+    colors[key as keyof typeof INK_FROM_2X] = base.ink[from]
 
-  const fill = hctToHex({ hue: seed.hue, chroma: fillChroma, tone: bandTone })
-  colors['brand-fill'] = { light: fill, dark: fill }
-  colors['on-brand'] = { light: '#ffffff', dark: '#ffffff' }
+  colors['brand-fill'] = base.accentFill
+  colors['on-brand'] = base.onAccent
   colors.brand = pair((side) => {
     const dark = side === 'dark'
-    const chroma = dark ? BRAND_INK_DARK_CHROMA * mult : fillChroma
+    const chroma = dark ? ACCENT_INK_DARK_CHROMA * mult : fillChroma
     const step = dark ? BRAND_INK_TONE_STEP : -BRAND_INK_TONE_STEP
     const backgrounds = [colors.canvas[side], colors.inset[side], colors.card[side]]
-    for (let tone = dark ? BRAND_INK_DARK_TONE : bandTone; tone >= 0 && tone <= 100; tone += step) {
+    for (
+      let tone = dark ? ACCENT_INK_DARK_TONE : bandTone;
+      tone >= 0 && tone <= 100;
+      tone += step
+    ) {
       const hex = hctToHex({ hue: seed.hue, chroma, tone })
       if (backgrounds.every((bg) => contrastRatio(hex, bg) >= BRAND_INK_SOLVE_MIN)) return hex
     }
@@ -735,7 +730,7 @@ export function deriveV3(config: DeriveV3Config = DEFAULT_DERIVE_V3_CONFIG): Der
     ...STATUS_STOP,
     info: {
       light: { tone: INFO_LIGHT_STOP_TONE, chroma: fillChroma },
-      dark: { tone: BRAND_INK_DARK_TONE, chroma: BRAND_INK_DARK_CHROMA * mult },
+      dark: { tone: ACCENT_INK_DARK_TONE, chroma: ACCENT_INK_DARK_CHROMA * mult },
     },
   }
   for (const key of ['good', 'warn', 'bad', 'info'] as const) {
@@ -769,7 +764,7 @@ export function deriveV3(config: DeriveV3Config = DEFAULT_DERIVE_V3_CONFIG): Der
       fillChroma,
       bandTone,
       mult,
-      neutral,
+      neutral: NEUTRAL_PRESETS[config.neutral],
       brandFill: colors['brand-fill'],
       surfaces: {
         light: { canvas: colors.canvas.light, inset: colors.inset.light },

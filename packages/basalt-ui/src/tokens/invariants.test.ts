@@ -61,8 +61,8 @@ function* surfaceGrid(): Generator<DeriveConfig> {
         yield { ...DEFAULT_DERIVE_CONFIG, accent, neutral, lightLevel: level, darkLevel: level }
 }
 
-const V3_NEUTRALS: readonly DeriveV3Config['neutral'][] = ['warm', 'neutral', 'cool']
-const V3_VIBRANCY = [-5, 0, 5] as const
+const V3_NEUTRALS: readonly DeriveV3Config['neutral'][] = ['zinc', 'neutral', 'stone', 'slate']
+const V3_VIBRANCY = [-4, 0, 5] as const
 
 /** Every v3 config on the grid: seeds x neutrals x vibrancy. */
 function* v3Grid(): Generator<DeriveV3Config> {
@@ -123,7 +123,7 @@ describe('token invariants (docs/v3/evidence/self-tokens-theme.md §d)', () => {
         ).toBeGreaterThanOrEqual(4.5)
       }
     }
-    // The card is deliberately not an allowed surface: T19 puts the fill at 2.76 there.
+    // The card is deliberately not an allowed surface: the dark card puts the fill at 2.61 there.
     expect(PAIRS.some((row) => row.gate === 'fill-on-card')).toBe(false)
   })
 
@@ -211,7 +211,7 @@ describe('token invariants (docs/v3/evidence/self-tokens-theme.md §d)', () => {
     }
   })
 
-  test('v3 hairline: --hairline is an ink alpha (12% light, 9% dark) and the ring is drawn once, by Card::after', () => {
+  test('v3 hairline: --hairline is an ink alpha (the 2.x divider, 9% both schemes) and the ring is drawn once, by Card::after', () => {
     const css = emitTokensCss({ version: '3.0.0' })
     expect(css).toContain(
       `--vx-hairline: color-mix(in srgb, var(--vx-ink) ${INK_MIX_PCT.hairline.light}%, transparent);`,

@@ -28,7 +28,7 @@ describe('PAIRS', () => {
   for (const accent of [DEFAULT_DERIVE_V3_CONFIG.accent, JKRUMM_ACCENT]) {
     test(`every gate passes for ${accent} at every vibrancy`, () => {
       for (const vibrancy of VIBRANCY) {
-        const derived = deriveV3({ accent, neutral: 'warm', vibrancy })
+        const derived = deriveV3({ accent, neutral: DEFAULT_DERIVE_V3_CONFIG.neutral, vibrancy })
         expect(checkGates(derived).map((f) => f.message)).toEqual([])
       }
     })
@@ -43,30 +43,32 @@ describe('PAIRS', () => {
     expect(names).toContain('input-on-raised')
   })
 
-  test('the measured numbers are the concept ones (3.4): fill 3.31/3.12 dark, brand ink 4.55 on the light card', () => {
+  test('the measured numbers on the 2.x anchor: fill 3.04 on the dark page, brand ink 4.57 on the light page', () => {
     const { colors } = deriveV3()
     const ratio = (fg: string, bg: string, side: 'light' | 'dark'): number =>
       contrastRatio(
         colors[fg as keyof typeof colors][side],
         colors[bg as keyof typeof colors][side],
       )
-    expect(ratio('brand-fill', 'canvas', 'dark')).toBeCloseTo(3.31, 2)
-    expect(ratio('brand-fill', 'inset', 'dark')).toBeCloseTo(3.12, 2)
-    // The fill on a dark card is 2.76 BY DESIGN (T19): blue never fills on card, so it is no pair.
-    expect(ratio('brand-fill', 'card', 'dark')).toBeCloseTo(2.76, 2)
-    expect(ratio('brand', 'card', 'light')).toBeCloseTo(4.55, 2)
-    expect(ratio('brand', 'canvas', 'dark')).toBeCloseTo(8.98, 2)
-    expect(ratio('ink-faint', 'raised', 'dark')).toBeCloseTo(3.91, 2)
-    expect(ratio('on-brand', 'brand-fill', 'light')).toBeCloseTo(4.89, 2)
+    // Dark inset is the 2.x field, which is the 2.x page: one value, one ratio.
+    expect(ratio('brand-fill', 'canvas', 'dark')).toBeCloseTo(3.04, 2)
+    expect(ratio('brand-fill', 'inset', 'dark')).toBeCloseTo(3.04, 2)
+    // The fill on a dark card is 2.61 BY DESIGN: blue never fills on card, so it is no pair.
+    expect(ratio('brand-fill', 'card', 'dark')).toBeCloseTo(2.61, 2)
+    expect(ratio('brand', 'canvas', 'light')).toBeCloseTo(4.57, 2)
+    expect(ratio('brand', 'canvas', 'dark')).toBeCloseTo(8.23, 2)
+    expect(ratio('ink-faint', 'raised', 'dark')).toBeCloseTo(4.87, 2)
+    expect(ratio('on-brand', 'brand-fill', 'light')).toBeCloseTo(4.9, 2)
   })
 
-  test('the card steps away from the inset by more than .03 OKLCH L in both schemes (.037 dark, .056 light)', () => {
+  test('the card steps away from the inset by more than .03 OKLCH L in both schemes (.044 dark, .032 light)', () => {
     const { colors } = deriveV3()
     const step = (side: 'light' | 'dark'): number =>
       Math.abs(hexToOklab(colors.inset[side]).L - hexToOklab(colors.card[side]).L)
     expect(step('dark')).toBeGreaterThan(0.03)
-    expect(step('dark')).toBeCloseTo(0.037, 2)
-    expect(step('light')).toBeCloseTo(0.056, 2)
+    expect(step('light')).toBeGreaterThan(0.03)
+    expect(step('dark')).toBeCloseTo(0.044, 3)
+    expect(step('light')).toBeCloseTo(0.032, 3)
   })
 
   test('the input boundary reaches 3:1 on every surface, which the hairline (1.19 / 1.24) did not', () => {
@@ -81,11 +83,13 @@ describe('PAIRS', () => {
 
   test('the seed contributes its hue only: the fill hue is the seed hue at any seed chroma', () => {
     const hue = (hex: string): number => hexToHct(hex).hue
-    const a = deriveV3({ ...DEFAULT_DERIVE_V3_CONFIG, accent: '#2e75b1' }).colors['brand-fill']
+    const a = deriveV3({ ...DEFAULT_DERIVE_V3_CONFIG, accent: '#0077bd' }).colors['brand-fill']
       .light
     const b = deriveV3({ ...DEFAULT_DERIVE_V3_CONFIG, accent: '#0084d1' }).colors['brand-fill']
       .light
-    expect(a).toBe('#2e75b1')
+    // `#0077bd` is the 2.x seed; its fill is the 2.x accent fill.
+    expect(a).toBe('#4374a6')
+    expect(Math.abs(hue(a) - hue('#0077bd'))).toBeLessThan(1)
     expect(Math.abs(hue(a) - hue(b))).toBeLessThan(1)
   })
 })
@@ -122,7 +126,7 @@ describe('failure messages', () => {
     const fill = messages.filter((m) => m.startsWith('fill-on-inset'))
     expect(fill).toHaveLength(1)
     expect(fill[0]).toMatch(
-      /^fill-on-inset dark \d\.\d\d < 3\.0 for --accent #2e75b1\. Raise --vibrancy or pick another hue\.$/,
+      /^fill-on-inset dark \d\.\d\d < 3\.0 for --accent #0077bd\. Raise --vibrancy or pick another hue\.$/,
     )
   })
 

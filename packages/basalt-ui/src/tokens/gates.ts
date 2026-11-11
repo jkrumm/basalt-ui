@@ -79,13 +79,14 @@ function buildPairs(): PairRow[] {
   const rows: PairRow[] = []
   const text: readonly Surface[] = ['canvas', 'inset', 'card']
 
-  // Inks and brand ink >= 4.5 on canvas, inset, card; faint is excluded from raised (3.91).
+  // Inks and brand ink >= 4.5 on canvas, inset, card; faint is not gated on raised (a control
+  // surface, not a text one).
   for (const fg of ['ink', 'ink-muted', 'ink-faint', 'brand'] as const)
     for (const bg of text) rows.push(contrast(fg, bg, 4.5, FIX_NEUTRAL))
   for (const fg of ['ink', 'ink-muted'] as const)
     rows.push(contrast(fg, 'raised', 4.5, FIX_NEUTRAL))
 
-  // The fill is legal on canvas and inset only: on card it is 2.76 by design (T19), so it is not a pair.
+  // The fill is legal on canvas and inset only: on the dark card it is 2.61 by design, so it is not a pair.
   for (const bg of ['canvas', 'inset'] as const) rows.push(contrast('brand-fill', bg, 3, FIX_FILL))
 
   // Foreground is a paired token (d33): the label is measured against the fill it sits on.
