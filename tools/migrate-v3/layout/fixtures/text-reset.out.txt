@@ -1,0 +1,10 @@
+export function A({ name }: { name: string }) {
+  return (
+    <div>
+      <span className="font-normal text-md">inline</span>
+      <p className="truncate font-normal text-md" onClick={() => name}>truncated</p>
+      <p className="line-clamp-2 text-ellipsis font-normal text-md">clamped</p>
+      <p className="text-sm font-bold">bold</p>
+    </div>
+  )
+}

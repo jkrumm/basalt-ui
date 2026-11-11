@@ -1,0 +1,13 @@
+import { Box, Center, Flex } from '@mantine/core'
+import { Button } from '@mantine/core'
+
+export function A({ wide }: { wide: boolean }) {
+  return (
+    <Flex direction="column" gap="md" p={16} mt={-8} w="100%">
+      <Center h={40} className={wide ? 'a' : 'b'}>
+        <Box component="section" mx="auto" maw={320} />
+      </Center>
+      <Flex columnGap="xs" rowGap={12} justify={wide ? 'center' : 'flex-start'} />
+    </Flex>
+  )
+}

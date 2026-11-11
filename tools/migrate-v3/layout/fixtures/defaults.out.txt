@@ -1,0 +1,11 @@
+export function A() {
+  return (
+    <div className="flex flex-col gap-4">
+      <div className="flex gap-4 items-center flex-wrap">one</div>
+      <div className="grid grid-cols-1 gap-4">two</div>
+      <div className="flex flex-col gap-2 items-center extra">three</div>
+      <div className="flex gap-5 items-center flex-nowrap justify-between">four</div>
+      <div className="grid grid-cols-3 gap-x-3 gap-y-6">five</div>
+    </div>
+  )
+}

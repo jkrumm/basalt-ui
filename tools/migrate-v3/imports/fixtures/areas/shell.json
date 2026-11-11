@@ -1,0 +1,56 @@
+{
+  "schema": 1,
+  "area": "shell",
+  "rows": [
+    {
+      "id": "shell-rename",
+      "kind": "rename",
+      "from": "basalt-ui#BasaltShell",
+      "to": "basalt-ui/shell#AppShell",
+      "profiles": ["app"],
+      "codemod": "imports",
+      "verify": "ast",
+      "manual": false
+    },
+    {
+      "id": "hook-move",
+      "kind": "rename",
+      "from": "basalt-ui#useThing",
+      "to": "basalt-ui/hooks#useThing",
+      "profiles": ["app"],
+      "codemod": "imports",
+      "verify": "ast",
+      "manual": false
+    },
+    {
+      "id": "agent-only",
+      "kind": "required-prop",
+      "from": "basalt-ui/content#Markdown",
+      "to": "<Markdown contentTrust>",
+      "profiles": ["app"],
+      "codemod": "content-trust: inserts untrusted",
+      "verify": "tsc",
+      "manual": false
+    },
+    {
+      "id": "manual-row",
+      "kind": "rename",
+      "from": "basalt-ui#Old",
+      "to": "basalt-ui/new#New",
+      "profiles": ["app"],
+      "codemod": "imports",
+      "verify": "ast",
+      "manual": true
+    },
+    {
+      "id": "malformed",
+      "kind": "rename",
+      "from": "basalt-ui",
+      "to": "basalt-ui/x#Y",
+      "profiles": ["app"],
+      "codemod": "imports",
+      "verify": "ast",
+      "manual": false
+    }
+  ]
+}

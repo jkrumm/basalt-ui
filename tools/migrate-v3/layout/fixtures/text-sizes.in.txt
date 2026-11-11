@@ -1,0 +1,14 @@
+import { Text } from '@mantine/core'
+
+export function A() {
+  return (
+    <>
+      <Text>default</Text>
+      <Text size="xs">xs</Text>
+      <Text size="sm">sm</Text>
+      <Text size="md">md</Text>
+      <Text size="lg">lg</Text>
+      <Text fz="xl">xl</Text>
+    </>
+  )
+}

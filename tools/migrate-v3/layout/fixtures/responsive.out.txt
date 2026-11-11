@@ -1,0 +1,11 @@
+import { Stack } from '@mantine/core'
+
+export function A() {
+  return (
+    <>
+      <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-4">grid</div>
+      <div className="flex flex-col gap-4 md:gap-2">stack</div>
+      <Stack gap={{ base: 'xs', md: 'lg' }}>md has no v3 twin</Stack>
+    </>
+  )
+}

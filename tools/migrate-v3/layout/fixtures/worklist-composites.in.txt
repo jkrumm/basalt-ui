@@ -1,0 +1,14 @@
+import { Button, Grid, Text } from '@mantine/core'
+
+export function A() {
+  return (
+    <>
+      <Button mt="sm">save</Button>
+      <Button w={{ base: 100, sm: 200 }}>wide</Button>
+      <Grid.Col span={{ base: 12, md: 6 }} />
+      <Button size="xs">fine</Button>
+      <Text c="dimmed" fz="md">colour</Text>
+      <Text fz={14} {...rest}>arbitrary</Text>
+    </>
+  )
+}
