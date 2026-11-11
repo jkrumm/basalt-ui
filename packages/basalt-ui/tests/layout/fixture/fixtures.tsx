@@ -84,6 +84,7 @@ import type {
   ItemSpec,
   TableSpec,
 } from './spec'
+import { CardInfoFixture } from './card-info-fixture'
 import { InfoHeaderFixture } from './info-header-fixture'
 import { InfoRingFixture } from './info-ring-fixture'
 import { BarListStatesFixture } from './bar-list-states-fixture'
@@ -3101,6 +3102,7 @@ export function ShellFixture({ spec }: { spec: FixtureSpec }): ReactElement {
       {spec.cardInset && <CardInsetFixture />}
       {spec.cards && <CardsFixture spec={spec.cards} />}
       {spec.dash && <DashFixture />}
+      {spec.cardInfo && <CardInfoFixture />}
       {spec.infoRing && <InfoRingFixture />}
       {spec.infoHeader && <InfoHeaderFixture />}
       {spec.retryParity && <RetryParityFixture />}

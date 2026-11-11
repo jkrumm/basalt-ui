@@ -3,8 +3,9 @@
 
 /** Every `data-slot` each `basalt-ui/ui/*` module renders, keyed by module name. */
 export const SLOTS = {
+  badge: ['lozenge', 'count-badge', 'delta-badge'],
   button: ['button', 'pressable'],
-  card: ['card'],
+  card: ['card', 'card-band', 'card-info', 'icon-tile', 'inset', 'card-phase'],
   field: [
     'field',
     'field-label',

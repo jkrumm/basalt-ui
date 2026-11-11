@@ -32,7 +32,12 @@ const PARENTS: Record<string, ComponentType<{ children?: ReactNode }>> = {
 }
 
 /** Props a part needs to render at all: `FieldError` shows only on a failed validity or `match`. */
-const PART_PROPS: Record<string, Record<string, unknown>> = { 'field-error': { match: true } }
+const PART_PROPS: Record<string, Record<string, unknown>> = {
+  'field-error': { match: true },
+  'card-info': { label: 'About' },
+  'count-badge': { count: 1 },
+  'delta-badge': { value: 1, polarity: 'neutral' },
+}
 
 /** With children `x`; a part on a void element (`<input>`) refuses children, so it renders bare. */
 function renderPart(Part: Part, name: string): RenderResult {
