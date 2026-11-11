@@ -31,3 +31,4 @@ packages/basalt-ui/src/tokens/golden/**
 packages/basalt-ui/docs/dialog.md
 packages/basalt-ui/docs/select.md
 packages/basalt-ui/docs/combobox.md
+packages/basalt-ui/docs/menu.md
