@@ -7,14 +7,14 @@ import { join } from 'node:path'
 
 import { consumerViolations, duplicateSymbols, peerClassViolations } from '../../surface-gates'
 import { PKG_ROOT, Unmeasured, gate, readManifest, readSurface } from '../lib'
-import type { RowDef } from '../lib'
+import type { Raise, RowDef } from '../lib'
 
 export const rows: readonly RowDef[] = [
   {
     id: 'duplicate-symbols',
     order: 60,
     label: 'symbols under more than one subpath (one import path per symbol)',
-    ceiling: 0,
+    ceiling: 1, // v3 ctl-2: `field` (./router, ./state) until the 2.x state subpath retires
     measure: () => gate(duplicateSymbols(readSurface())),
   },
   {
@@ -41,5 +41,16 @@ export const rows: readonly RowDef[] = [
       }
       return gate(peerClassViolations(PKG_ROOT, readManifest()))
     },
+  },
+]
+
+export const raises: readonly Raise[] = [
+  {
+    ceiling: 'duplicate-symbols',
+    from: 0,
+    to: 1,
+    consumer:
+      '`field` from `./router` (v3 defineControls) while linewatch dashboard-store.ts still imports the 2.x `./state` `field` for createSearchStore; drops back to 0 when ./state retires',
+    repo: 'linewatch',
   },
 ]

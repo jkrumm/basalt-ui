@@ -1,28 +1,49 @@
 /**
- * 2.x store invariants (concept 7), pinned against the v3 shape and committed failing: master
- * stays green until ctl-2 lands `defineControls` and flips each case to a plain `test`.
+ * 2.x store invariants (concept 7), pinned against the v3 shape by ctl-1 and flipped by ctl-2.
  * Donors: src/state/fields.ts, src/router-tanstack/search-store.test.ts, controls.router.test.tsx.
  */
-import { describe, expect, test } from 'bun:test'
+import { beforeEach, describe, expect, test } from 'bun:test'
+import { resetControlsOwnersForTests } from '../../../src/router/controls/define'
 import { api, handle, validated } from './api'
 
 const { defineControls, field } = api
 
+beforeEach(resetControlsOwnersForTests)
+
 describe('field invariants (ctl-2)', () => {
-  test.failing('a thunk fallback on a URL field throws at definition', () => {
+  test('a thunk fallback on a URL field throws at definition', () => {
     expect(() =>
       defineControls({ id: 'thunk', scope: 'page', fields: { q: field.string(() => 'x') } }),
     ).toThrow(/thunk|fallback/i)
   })
 
-  test.failing('two stores owning one param throw at definition', () => {
-    defineControls({ id: 'one', scope: 'page', fields: { tab: field.enum(['a', 'b'], 'a') } })
+  // Spike S8 amendment (docs/v3/spikes/controls-codegen.md): page stores may share a param on
+  // different routes (argo's `window`, `from`, `to`); the throw holds when one of them is global.
+  test('two stores owning one param throw at definition', () => {
+    defineControls({ id: 'one', scope: 'global', fields: { owned: field.enum(['a', 'b'], 'a') } })
     expect(() =>
-      defineControls({ id: 'two', scope: 'page', fields: { tab: field.enum(['a', 'b'], 'a') } }),
-    ).toThrow()
+      defineControls({ id: 'two', scope: 'page', fields: { owned: field.enum(['a', 'b'], 'a') } }),
+    ).toThrow(/already owned by "one"/)
+    defineControls({ id: 'p1', scope: 'page', fields: { shared: field.enum(['a', 'b'], 'a') } })
+    expect(() =>
+      defineControls({ id: 'p2', scope: 'page', fields: { shared: field.enum(['a', 'b'], 'a') } }),
+    ).not.toThrow()
   })
 
-  test.failing('enum membership and aliases use Object.hasOwn, never the prototype chain', () => {
+  test('two fields of one store on one param throw at definition', () => {
+    expect(() =>
+      defineControls({
+        id: 'twin',
+        scope: 'page',
+        fields: {
+          from: field.string(''),
+          window: field.range({ presets: ['7d'], fallback: '7d' }),
+        },
+      }),
+    ).toThrow(/two fields own the param "from"/)
+  })
+
+  test('enum membership and aliases use Object.hasOwn, never the prototype chain', () => {
     const store = defineControls({
       id: 'proto',
       scope: 'page',
@@ -34,7 +55,7 @@ describe('field invariants (ctl-2)', () => {
     expect(validated(store, { range: 'day' }, 'range')).toBe('24h')
   })
 
-  test.failing('NUMERIC_RE accepts plain integers and rejects look-alikes', () => {
+  test('NUMERIC_RE accepts plain integers and rejects look-alikes', () => {
     const store = defineControls({
       id: 'num',
       scope: 'page',
@@ -47,7 +68,7 @@ describe('field invariants (ctl-2)', () => {
     }
   })
 
-  test.failing('a JSON-parsed ?item=123 reaches a string field as the string "123"', () => {
+  test('a JSON-parsed ?item=123 reaches a string field as the string "123"', () => {
     const store = defineControls({
       id: 'item',
       scope: 'page',
@@ -56,7 +77,7 @@ describe('field invariants (ctl-2)', () => {
     expect(validated(store, { item: 123 }, 'item')).toBe('123')
   })
 
-  test.failing('a codec is passed by reference, never spread into a copy', () => {
+  test('a codec is passed by reference, never spread into a copy', () => {
     const spec = field.enum(['a', 'b'], 'a')
     const store = defineControls({ id: 'codec', scope: 'page', fields: { tab: spec } })
     const { codec } = handle(store, 'tab')

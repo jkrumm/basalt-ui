@@ -77,6 +77,7 @@
   "date": "rb:apps/web/src/lib/format.ts",
   "dateTime": "linewatch:web/src/lib/format.ts",
   "defineCommands": "argo:apps/dashboard/src/lib/commands.tsx",
+  "defineControls": "linewatch:web/src/lib/dashboard-store.ts",
   "defineFormat": "rb:apps/web/src/lib/format.ts",
   "defineNav": "argo:apps/dashboard/src/lib/nav.tsx",
   "defineNotifications": "argo:apps/dashboard/src/lib/notifications.ts",
