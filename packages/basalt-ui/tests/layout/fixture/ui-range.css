@@ -1,0 +1,9 @@
+/*
+ * The `ui-range` fixture's Tailwind v4 entry, compiled WITH preflight and the font faces like
+ * `ui-select.css`: the slider and segmented control are measured the way a Tailwind consumer renders
+ * them. `ui-range.layout.test.ts` compiles it into a temp directory; nothing generated lands in the repo.
+ */
+@import '../../../src/css/tailwind.css' source(none);
+@source './ui-range-fixture.tsx';
+@source '../../../src/ui/slider.tsx';
+@source '../../../src/ui/segmented.tsx';
