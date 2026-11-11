@@ -26,7 +26,11 @@ import remarkGfm from 'remark-gfm'
 import remend from 'remend'
 import { safeRelativeUrl, safeUrl } from '../core/url'
 import type { UrlTrust } from '../core/url'
+import { SlugTracker } from '../core/slug'
 import { blockSplit } from './block-split'
+import type { FenceRenderers } from './contract'
+import { FenceSettled, createFencePre } from './fences'
+import { HeadingSlugs, createHeadingComponents } from './headings'
 import { createSanitizeSchema } from './sanitize'
 import type { SanitizeAdditions } from './sanitize'
 
@@ -37,6 +41,7 @@ type PluginList = RemarkPlugins & RehypePlugins
 type MarkdownBase = {
   children: string
   streaming?: boolean
+  fenceRenderers?: FenceRenderers
   components?: Components
   remarkPlugins?: RemarkPlugins
 }
@@ -102,9 +107,10 @@ function buildUrlTransform(trust: UrlTrust, images: 'none' | 'same-origin'): Url
 }
 
 const UNTRUSTED_SCHEMA = createSanitizeSchema()
+const HEADINGS = createHeadingComponents()
 
 function usePipeline(props: MarkdownProps): Pipeline {
-  const { components, remarkPlugins } = props
+  const { components, remarkPlugins, fenceRenderers } = props
   const trusted = props.contentTrust === 'trusted'
   const images = !trusted && props.images === 'same-origin' ? 'same-origin' : 'none'
   const sanitize = trusted ? props.sanitize : undefined
@@ -120,24 +126,41 @@ function usePipeline(props: MarkdownProps): Pipeline {
       components: {
         a: LinkRenderer,
         img: trusted || images === 'same-origin' ? ImageRenderer : AltText,
+        ...HEADINGS,
+        pre: createFencePre(fenceRenderers),
         ...components,
       },
       urlTransform: buildUrlTransform(trusted ? 'trusted' : 'untrusted', images),
     }),
-    [trusted, images, sanitize, rehypePlugins, remarkPlugins, components],
+    [trusted, images, sanitize, rehypePlugins, remarkPlugins, components, fenceRenderers],
   )
 }
 
-function Block({ text, pipeline }: { text: string; pipeline: Pipeline }) {
+// `settled` is false only for the tail of a streaming message: fences there show as code. Each
+// rendered block mints its own slug tracker, so heading ids dedupe within a block (a streamed
+// message repeating a heading text across blocks repeats the id; the cost of a stable settled block).
+function Block({
+  text,
+  pipeline,
+  settled = true,
+}: {
+  text: string
+  pipeline: Pipeline
+  settled?: boolean
+}) {
   return (
-    <ReactMarkdown
-      remarkPlugins={pipeline.remarkPlugins}
-      rehypePlugins={pipeline.rehypePlugins}
-      components={pipeline.components}
-      urlTransform={pipeline.urlTransform}
-    >
-      {text}
-    </ReactMarkdown>
+    <HeadingSlugs value={new SlugTracker()}>
+      <FenceSettled value={settled}>
+        <ReactMarkdown
+          remarkPlugins={pipeline.remarkPlugins}
+          rehypePlugins={pipeline.rehypePlugins}
+          components={pipeline.components}
+          urlTransform={pipeline.urlTransform}
+        >
+          {text}
+        </ReactMarkdown>
+      </FenceSettled>
+    </HeadingSlugs>
   )
 }
 
@@ -150,7 +173,7 @@ function StreamingBody({ text, pipeline }: { text: string; pipeline: Pipeline })
   // is a safe key.
   return blocks.map((block, index) =>
     index === lastIndex ? (
-      <Block key={index} text={remend(block)} pipeline={pipeline} />
+      <Block key={index} text={remend(block)} pipeline={pipeline} settled={false} />
     ) : (
       <SettledBlock key={index} text={block} pipeline={pipeline} />
     ),

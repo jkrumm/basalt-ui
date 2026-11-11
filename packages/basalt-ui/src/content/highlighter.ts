@@ -13,7 +13,7 @@
  */
 import type { HighlighterCore, LanguageInput } from 'shiki'
 
-const THEME_LIGHT = 'github-light'
+const THEME_LIGHT = 'github-light-default'
 const THEME_DARK = 'github-dark'
 
 /**
@@ -83,7 +83,7 @@ async function loadHighlighter(): Promise<HighlighterCore | null> {
     import('shiki/engine/javascript'),
   ])
   return createHighlighterCore({
-    themes: [import('@shikijs/themes/github-light'), import('@shikijs/themes/github-dark')],
+    themes: [import('@shikijs/themes/github-light-default'), import('@shikijs/themes/github-dark')],
     langs: [],
     engine: createJavaScriptRegexEngine({ forgiving: true }),
   })

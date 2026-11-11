@@ -12,7 +12,7 @@
 import { MantineProvider } from '@mantine/core'
 import { render, screen, waitFor } from '@testing-library/react'
 import { afterEach, beforeEach, describe, expect, mock, spyOn, test } from 'bun:test'
-import { CodeBlock } from './code-block'
+import { CodeBlock } from './legacy-code-block'
 import { Markdown } from './legacy-markdown'
 
 /** MermaidDiagram's wrapper — `CodeBlock`'s copy icon is an `<svg>` too, so `svg` alone proves nothing. */
@@ -165,8 +165,8 @@ describe('mermaid degrade', () => {
     }))
     try {
       const { MermaidDiagram } = (await import(
-        freshSpecifier('./mermaid', 'no-mermaid')
-      )) as typeof import('./mermaid')
+        freshSpecifier('./legacy-mermaid', 'no-mermaid')
+      )) as typeof import('./legacy-mermaid')
       const { container } = render(
         <MantineProvider>
           <MermaidDiagram code={'graph TD\n  A --> B'} />

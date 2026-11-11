@@ -132,7 +132,9 @@ export const SUBPATH_REQUIRED_PEERS: Readonly<Record<string, readonly string[]>>
   './cards': ['@base-ui/react'],
   './page': ['@base-ui/react'],
   './controls-dates': ['@mantine/dates', 'dayjs'],
-  './content': ['react-markdown', 'remark-gfm', 'rehype-sanitize', 'remend'],
+  // `CodeBlock` renders `ui/button`, which wraps Base UI; the page parts render `ui/alert` and `ui/popover`.
+  './content': ['react-markdown', 'remark-gfm', 'rehype-sanitize', 'remend', '@base-ui/react'],
+  './page': ['@base-ui/react'],
   './vite': ['vite'],
   [CHART_SUBPATH]: ['@tanstack/charts', 'd3-scale'],
 }

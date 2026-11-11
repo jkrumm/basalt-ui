@@ -201,7 +201,7 @@ const LEDGER: readonly { file: string; selector: string; kind: Kind; why: string
     why: "The `article` prose variant's section rule — a long-form document convention, scoped to that variant and never applied to app chrome.",
   },
   {
-    file: 'content/code-block.module.css',
+    file: 'content/legacy-code-block.module.css',
     selector: '.header',
     kind: 'prose-typography',
     why: "A code block's filename/language bar. The block is a quoted artifact inside a document, and the bar is its frame's top row rather than a section heading.",
