@@ -1,0 +1,524 @@
+{
+  "tool": {
+    "tailwindcss": "4.3.5",
+    "playwright": "1.63.0",
+    "typescript": "6.0.3"
+  },
+  "repos": {
+    "argo": {
+      "visibility": "public",
+      "head": "f5c49ca6",
+      "files": 326,
+      "lines": 49335
+    },
+    "console": {
+      "visibility": "public",
+      "head": "04474ba",
+      "files": 108,
+      "lines": 12825
+    },
+    "epos": {
+      "visibility": "counts-only",
+      "head": null,
+      "files": 566,
+      "lines": 61671
+    },
+    "linewatch": {
+      "visibility": "public",
+      "head": "055ebdf",
+      "files": 55,
+      "lines": 10944
+    }
+  },
+  "f6": {
+    "conflictsBeyondNoRestyle": 31,
+    "callSites": 460,
+    "callsWithConflict": 33,
+    "coveredByNoRestyle": 2,
+    "beyondInBoughtPrimitiveSource": 8,
+    "beyondViaCva": 13,
+    "beyondStatic": 18,
+    "openCalls": 59,
+    "passThroughCalls": 192,
+    "emitCaseDisplay": {
+      "hidden inline-flex": "inline-flex",
+      "inline-flex hidden": "inline-flex"
+    },
+    "emitCaseFlexHiddenDisplay": {
+      "flex hidden": "none",
+      "hidden flex": "none"
+    },
+    "emitCase": {
+      "orders": ["hidden inline-flex", "inline-flex hidden"],
+      "classOrderChangesDisplay": false,
+      "stylesheetOrder": ["hidden", "inline-flex"],
+      "flexHiddenStylesheetOrder": ["flex", "hidden"],
+      "clsx": "hidden inline-flex",
+      "compiledCn": "inline-flex"
+    },
+    "byRepo": {
+      "console": {
+        "sites": 112,
+        "inUiFiles": 32,
+        "withConflict": 12,
+        "coveredByNoRestyle": 1,
+        "beyondNoRestyle": 11,
+        "beyondInUiFiles": 3,
+        "beyondViaCva": 4,
+        "beyondStatic": 7,
+        "openCalls": 10,
+        "passThroughCalls": 60,
+        "refs": [
+          {
+            "file": "apps/console/src/components/chain/schedule.tsx",
+            "line": 141
+          },
+          {
+            "file": "apps/console/src/components/chain/schedule.tsx",
+            "line": 200
+          },
+          {
+            "file": "apps/console/src/components/sidebar.tsx",
+            "line": 181
+          },
+          {
+            "file": "apps/console/src/components/sidebar.tsx",
+            "line": 207
+          },
+          {
+            "file": "apps/console/src/components/sidebar.tsx",
+            "line": 240
+          },
+          {
+            "file": "apps/console/src/components/sidebar.tsx",
+            "line": 258
+          },
+          {
+            "file": "apps/console/src/components/sidebar.tsx",
+            "line": 271
+          },
+          {
+            "file": "apps/console/src/components/ui/badge.tsx",
+            "line": 36
+          },
+          {
+            "file": "apps/console/src/components/ui/button.tsx",
+            "line": 46
+          },
+          {
+            "file": "apps/console/src/components/ui/input-group.tsx",
+            "line": 51
+          },
+          {
+            "file": "apps/console/src/routes/improve.tsx",
+            "line": 109
+          }
+        ]
+      },
+      "epos": {
+        "sites": 348,
+        "inUiFiles": 83,
+        "withConflict": 21,
+        "coveredByNoRestyle": 1,
+        "beyondNoRestyle": 20,
+        "beyondInUiFiles": 5,
+        "beyondViaCva": 9,
+        "beyondStatic": 11,
+        "openCalls": 49,
+        "passThroughCalls": 132,
+        "refs": []
+      }
+    }
+  },
+  "f7": {
+    "deadClassesCaught": 89,
+    "deadClassesTotal": 89,
+    "falsePositives": 0,
+    "missed": 0,
+    "realUses": 1229,
+    "realUniqueClasses": 375,
+    "realDeadClasses": 82,
+    "realDeadOccurrences": 154,
+    "usesByKind": {
+      "sm": 62,
+      "lg": 46,
+      "max-variant": 228,
+      "min-variant": 129,
+      "max-utility": 184,
+      "min-utility": 618
+    },
+    "deadUsesByKind": {
+      "sm": 62,
+      "lg": 46,
+      "max-variant": 30,
+      "min-variant": 1,
+      "max-utility": 22,
+      "min-utility": 10
+    },
+    "seeded": {
+      "dead": 10,
+      "deadVerified": 10,
+      "deadCaught": 10,
+      "live": 10,
+      "liveVerified": 10,
+      "liveFlagged": 0,
+      "chromeSilentDead": 10,
+      "chromeEffectLive": 10,
+      "defaultScaleEffectDead": 10,
+      "deadUnderDefaultScale": 0
+    },
+    "byRepo": {
+      "console": {
+        "uses": 182,
+        "uniqueClasses": 76,
+        "deadOccurrences": 42,
+        "deadRefs": [
+          {
+            "file": "apps/console/src/components/artifact-content.tsx",
+            "line": 183
+          },
+          {
+            "file": "apps/console/src/components/artifact-content.tsx",
+            "line": 183
+          },
+          {
+            "file": "apps/console/src/components/issue/overview.tsx",
+            "line": 144
+          },
+          {
+            "file": "apps/console/src/components/issue/skeleton.tsx",
+            "line": 13
+          },
+          {
+            "file": "apps/console/src/components/page.tsx",
+            "line": 28
+          },
+          {
+            "file": "apps/console/src/components/page.tsx",
+            "line": 28
+          },
+          {
+            "file": "apps/console/src/components/page.tsx",
+            "line": 31
+          },
+          {
+            "file": "apps/console/src/components/palette.tsx",
+            "line": 213
+          },
+          {
+            "file": "apps/console/src/components/ui/dialog.tsx",
+            "line": 53
+          },
+          {
+            "file": "apps/console/src/components/ui/dialog.tsx",
+            "line": 89
+          },
+          {
+            "file": "apps/console/src/components/ui/dialog.tsx",
+            "line": 89
+          },
+          {
+            "file": "apps/console/src/routes/artifacts.$id.tsx",
+            "line": 84
+          },
+          {
+            "file": "apps/console/src/routes/artifacts.$id.tsx",
+            "line": 84
+          },
+          {
+            "file": "apps/console/src/routes/artifacts.$id.tsx",
+            "line": 84
+          },
+          {
+            "file": "apps/console/src/routes/artifacts.$id.tsx",
+            "line": 85
+          },
+          {
+            "file": "apps/console/src/routes/artifacts.$id.tsx",
+            "line": 86
+          },
+          {
+            "file": "apps/console/src/routes/artifacts.$id.tsx",
+            "line": 87
+          },
+          {
+            "file": "apps/console/src/routes/artifacts.$id.tsx",
+            "line": 90
+          },
+          {
+            "file": "apps/console/src/routes/artifacts.$id.tsx",
+            "line": 92
+          },
+          {
+            "file": "apps/console/src/routes/artifacts.$id.tsx",
+            "line": 93
+          }
+        ]
+      },
+      "epos": {
+        "uses": 1047,
+        "uniqueClasses": 321,
+        "deadOccurrences": 112,
+        "deadRefs": []
+      }
+    }
+  },
+  "s4": {
+    "waiversPer300Lines": 0.286,
+    "flaggedSites": 69,
+    "classSites": 36,
+    "tsColour": 33,
+    "tsColourHueOnly": 24,
+    "waiversPer300LinesHueOnly": 0.249,
+    "scannedLines": 72389,
+    "scannedTsxLines": 41693,
+    "waiversPer300LinesLiteralPatternOnly": 0.265,
+    "denialList": {
+      "names": 25,
+      "prefixes": 15
+    },
+    "byRepo": {
+      "argo": {
+        "scannedFiles": 326,
+        "scannedLines": 49335,
+        "scannedTsxLines": 26975,
+        "classSites": 0,
+        "classSitesStrict": 0,
+        "tsColourLiteral": 19,
+        "tsColour": 24,
+        "tsColourHue": 19,
+        "flagged": 24,
+        "refs": [
+          {
+            "file": "apps/dashboard/src/components/upstream/decision-card.tsx",
+            "line": 227
+          },
+          {
+            "file": "apps/dashboard/src/features/astro-window/charts/sky-panorama.tsx",
+            "line": 549
+          },
+          {
+            "file": "apps/dashboard/src/features/astro-window/charts/sky-panorama.tsx",
+            "line": 570
+          },
+          {
+            "file": "apps/dashboard/src/features/astro-window/components/site-map.tsx",
+            "line": 1046
+          },
+          {
+            "file": "apps/dashboard/src/features/astro-window/components/sources-footer.tsx",
+            "line": 34
+          },
+          {
+            "file": "apps/dashboard/src/features/astro-window/components/sources-footer.tsx",
+            "line": 42
+          },
+          {
+            "file": "apps/dashboard/src/features/body-composition/components/body-composition-page.tsx",
+            "line": 103
+          },
+          {
+            "file": "apps/dashboard/src/features/finance/pages/this-month.tsx",
+            "line": 477
+          },
+          {
+            "file": "apps/dashboard/src/features/garmin-health/strip-cells.tsx",
+            "line": 313
+          },
+          {
+            "file": "apps/dashboard/src/features/m365-explorer/message-row.tsx",
+            "line": 27
+          },
+          {
+            "file": "apps/dashboard/src/features/strength-tracker/charts/relative-progression-chart.tsx",
+            "line": 70
+          },
+          {
+            "file": "apps/dashboard/src/features/strength-tracker/charts/sparkline-grid-chart.tsx",
+            "line": 63
+          },
+          {
+            "file": "apps/dashboard/src/features/strength-tracker/components/recent-records.tsx",
+            "line": 65
+          },
+          {
+            "file": "apps/dashboard/src/features/strength-tracker/components/workout-form.tsx",
+            "line": 513
+          },
+          {
+            "file": "apps/dashboard/src/features/strength-tracker/components/workout-form.tsx",
+            "line": 605
+          },
+          {
+            "file": "apps/dashboard/src/features/strength-tracker/overview.tsx",
+            "line": 300
+          },
+          {
+            "file": "apps/dashboard/src/features/usage-tracking/athena-section.tsx",
+            "line": 88
+          },
+          {
+            "file": "apps/dashboard/src/features/usage-tracking/quotas-section.tsx",
+            "line": 121
+          },
+          {
+            "file": "apps/dashboard/src/features/usage-tracking/router-column.tsx",
+            "line": 124
+          },
+          {
+            "file": "apps/dashboard/src/features/usage-tracking/router-column.tsx",
+            "line": 133
+          }
+        ]
+      },
+      "console": {
+        "scannedFiles": 98,
+        "scannedLines": 12110,
+        "scannedTsxLines": 8272,
+        "classSites": 36,
+        "classSitesStrict": 36,
+        "tsColourLiteral": 0,
+        "tsColour": 0,
+        "tsColourHue": 0,
+        "flagged": 36,
+        "refs": [
+          {
+            "file": "apps/console/src/components/artifact-panel.tsx",
+            "line": 32
+          },
+          {
+            "file": "apps/console/src/components/issue/checkpoints.tsx",
+            "line": 99
+          },
+          {
+            "file": "apps/console/src/components/issue/evidence.tsx",
+            "line": 64
+          },
+          {
+            "file": "apps/console/src/components/issue/overview.tsx",
+            "line": 190
+          },
+          {
+            "file": "apps/console/src/components/issue/project-chip.tsx",
+            "line": 9
+          },
+          {
+            "file": "apps/console/src/components/issue/source-link.tsx",
+            "line": 12
+          },
+          {
+            "file": "apps/console/src/components/kit/chart-frame.tsx",
+            "line": 152
+          },
+          {
+            "file": "apps/console/src/components/kit/fold.tsx",
+            "line": 34
+          },
+          {
+            "file": "apps/console/src/components/kit/info-hint.tsx",
+            "line": 26
+          },
+          {
+            "file": "apps/console/src/components/kit/issue-parts.tsx",
+            "line": 84
+          },
+          {
+            "file": "apps/console/src/components/kit/menu-button.tsx",
+            "line": 21
+          },
+          {
+            "file": "apps/console/src/components/kit/menu-button.tsx",
+            "line": 47
+          },
+          {
+            "file": "apps/console/src/components/kit/meter.tsx",
+            "line": 73
+          },
+          {
+            "file": "apps/console/src/components/kit/since-row.tsx",
+            "line": 86
+          },
+          {
+            "file": "apps/console/src/components/kit/step-rail.tsx",
+            "line": 41
+          },
+          {
+            "file": "apps/console/src/components/kit/step-rail.tsx",
+            "line": 52
+          },
+          {
+            "file": "apps/console/src/components/kit/step-rail.tsx",
+            "line": 65
+          },
+          {
+            "file": "apps/console/src/components/needs/bodies.tsx",
+            "line": 55
+          },
+          {
+            "file": "apps/console/src/components/needs/card.tsx",
+            "line": 10
+          },
+          {
+            "file": "apps/console/src/components/needs/card.tsx",
+            "line": 23
+          }
+        ]
+      },
+      "linewatch": {
+        "scannedFiles": 55,
+        "scannedLines": 10944,
+        "scannedTsxLines": 6446,
+        "classSites": 0,
+        "classSitesStrict": 0,
+        "tsColourLiteral": 9,
+        "tsColour": 9,
+        "tsColourHue": 5,
+        "flagged": 9,
+        "refs": [
+          {
+            "file": "web/src/charts/availability-heatmap.tsx",
+            "line": 177
+          },
+          {
+            "file": "web/src/charts/speed-heatmap.tsx",
+            "line": 258
+          },
+          {
+            "file": "web/src/components/coverage-callout.tsx",
+            "line": 83
+          },
+          {
+            "file": "web/src/components/live-chip.tsx",
+            "line": 79
+          },
+          {
+            "file": "web/src/components/server-change-note.tsx",
+            "line": 82
+          },
+          {
+            "file": "web/src/components/status-bar.tsx",
+            "line": 414
+          },
+          {
+            "file": "web/src/components/status-bar.tsx",
+            "line": 650
+          },
+          {
+            "file": "web/src/components/verdict-panel.tsx",
+            "line": 160
+          },
+          {
+            "file": "web/src/components/verdict-panel.tsx",
+            "line": 293
+          }
+        ]
+      }
+    }
+  },
+  "verdicts": {
+    "F6": "REFUTED",
+    "F7": "PASS",
+    "S4": "PASS"
+  },
+  "verdict": "REFUTED"
+}
