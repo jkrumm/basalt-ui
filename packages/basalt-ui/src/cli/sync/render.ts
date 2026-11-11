@@ -11,6 +11,7 @@
 import { existsSync, readdirSync, readFileSync } from 'node:fs'
 import { join, relative, resolve, sep } from 'node:path'
 
+import { renderRulePaths } from '../index'
 import type { Manifest } from '../manifest'
 
 /** A file `sync` places. `generated` files are overwritten; the rest are digest-guarded. */
@@ -20,24 +21,12 @@ export type PresetFiles = (manifest: Manifest) => Unit[]
 /** The seam v3-sk-3 fills: no preset content ships with the sync engine. */
 export const noPresetFiles: PresetFiles = () => []
 
-const FRONT_MATTER = /^---\n[\s\S]*?\n---\n/
-const PATHS_LIST = /^paths:\n(?: {2}- .*\n)+/m
-
 /** Rule roots: every declared non-`tokens` root, sorted so a reorder is no drift; `src` if none. */
 export function ruleRoots(manifest: Manifest): string[] {
   const roots = Object.entries(manifest.roots)
     .filter(([, profile]) => profile !== 'tokens')
     .map(([root]) => root.replace(/^(?:\.\/)+/, '').replace(/\/+$/, '') || '.')
   return roots.length > 0 ? [...new Set(roots)].toSorted() : ['src']
-}
-
-/** A rule's front-matter `paths:` rewritten from `roots` (`'<root>/**'`, `'**'` for `.`). */
-export function renderRulePaths(text: string, roots: readonly string[]): string {
-  const front = FRONT_MATTER.exec(text)?.[0]
-  if (front === undefined || !/^paths:/m.test(front)) return text
-  if (!PATHS_LIST.test(front)) throw new Error('rule `paths:` is not a list of `  - …` items')
-  const items = roots.map((r) => `  - '${(r === '.' ? '**' : `${r}/**`).replaceAll("'", "''")}'`)
-  return front.replace(PATHS_LIST, () => `paths:\n${items.join('\n')}\n`) + text.slice(front.length)
 }
 
 /** Files under `dir`, relative and POSIX, sorted; a `basalt-` name at the top, no dot-segments. */

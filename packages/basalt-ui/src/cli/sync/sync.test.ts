@@ -417,6 +417,7 @@ describe('the manifest', () => {
     ['a bad profile', '{"profile":"shiny"}'],
     ['an absolute root', '{"profile":"app","roots":{"/etc":"app"}}'],
     ['a root that leaves the install', '{"profile":"app","roots":{"../x":"app"}}'],
+    ['a managed key that leaves the install', '{"profile":"app","managed":{"../../x.txt":"abc"}}'],
     ['a root with a bad profile', '{"profile":"app","roots":{"src":"nope"}}'],
     ['malformed tokens', '{"profile":"app","tokens":[{"out":"a.css","format":"scss","flags":[]}]}'],
     ['a non-string extra', '{"profile":"app","extra":3}'],
