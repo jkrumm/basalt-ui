@@ -9,7 +9,7 @@
 import { readFileSync, writeFileSync } from 'node:fs'
 import { join } from 'node:path'
 import { emitTokensCss, provenanceHeader } from '../tokens/emit'
-import { bridgeEntries } from '../tokens/table'
+import { bridgeEntries, resolveTokens } from '../tokens/table'
 
 export type CssFileName =
   | 'tokens.css'
@@ -33,94 +33,21 @@ const headerWaiving = (ids: string): string =>
 const decl = (name: string, value: string): string => `  ${name}: ${value};\n`
 const rule = (selector: string, body: string): string => `${selector} {\n${body}}\n`
 
-// ── fonts.css ───────────────────────────────────────────────────────────────────────────────────
+// ── fonts.css, typography.css ───────────────────────────────────────────────────────────────────
 
-const FONT_PACKAGES = [
-  '@fontsource-variable/nunito-sans/wght.css',
-  '@fontsource-variable/hubot-sans/wdth.css',
-  '@fontsource-variable/jetbrains-mono/wght.css',
-] as const
+const template = (name: 'fonts' | 'typography'): string =>
+  readFileSync(join(import.meta.dir, 'templates', `${name}.css`), 'utf8')
 
-function fontsCss(): string {
-  const imports = FONT_PACKAGES.map((pkg) => `@import '${pkg}';\n`).join('')
-  const headDigits = rule(
-    '@font-face',
-    decl('font-family', "'Head Digits'") +
-      decl('font-style', 'normal') +
-      decl('font-display', 'swap') +
-      decl('font-weight', '200 1000') +
-      decl(
-        'src',
-        "url('@fontsource-variable/nunito-sans/files/nunito-sans-latin-wght-normal.woff2')\n    format('woff2-variations')",
-      ) +
-      decl('unicode-range', 'U+0030-0039'),
-  )
-  return headerWaiving('raw-font-family') + imports + '\n' + headDigits
-}
+const fontsCss = (): string => headerWaiving('raw-font-family') + template('fonts')
 
-// ── typography.css ──────────────────────────────────────────────────────────────────────────────
-
+/** The seven rungs' size and line height, straight from the table, then the static base. */
 function typographyCss(): string {
-  const base = rule(
-    ':where(:root)',
-    decl('font-family', 'var(--vx-font-sans)') +
-      decl('font-size', 'var(--vx-text-base)') +
-      decl('line-height', 'var(--vx-text-base-lh)') +
-      decl('font-weight', 'var(--vx-weight-body)') +
-      decl('color', 'var(--vx-ink)') +
-      decl('background-color', 'var(--vx-canvas)') +
-      decl('-webkit-font-smoothing', 'antialiased') +
-      decl('-webkit-text-size-adjust', '100%') +
-      decl('text-size-adjust', '100%'),
-  )
-  const mono = rule(
-    ':where(code, kbd, samp, pre)',
-    decl('font-family', 'var(--vx-font-mono)') + decl('font-variant-ligatures', 'none'),
-  )
-  const numeric = rule(
-    ':where([data-numeric])',
-    decl('font-family', 'var(--vx-font-mono)') +
-      decl('font-variant-ligatures', 'none') +
-      decl('font-variant-numeric', 'tabular-nums'),
-  )
-  const hairline = rule(
-    ':where(.vx-hairline)',
-    decl('box-shadow', 'inset 0 0 0 1px var(--vx-hairline)'),
-  )
-  const focus = rule(
-    ':where(a, button, input, select, textarea, summary, [tabindex]):focus-visible',
-    decl('outline', '2px solid var(--vx-brand)') + decl('outline-offset', '2px'),
-  )
-  const reduced =
-    '@media (prefers-reduced-motion: reduce) {\n' +
-    '  :where(:root) {\n' +
-    '    --vx-dur-fast: 0ms !important;\n' +
-    '    --vx-dur-base: 0ms !important;\n' +
-    '  }\n' +
-    '  *,\n  ::before,\n  ::after {\n' +
-    '    animation-duration: 0.01ms !important;\n' +
-    '    animation-iteration-count: 1 !important;\n' +
-    '    transition-duration: 0.01ms !important;\n' +
-    '    scroll-behavior: auto !important;\n' +
-    '  }\n' +
-    '}\n'
-  const forced =
-    '@media (forced-colors: active) {\n' +
-    '  :where(.vx-hairline) {\n' +
-    '    border: 1px solid CanvasText;\n' +
-    '  }\n' +
-    '}\n'
-  const print =
-    '@media print {\n' +
-    '  :where(:root) {\n' +
-    '    color: var(--vx-ink);\n' +
-    '    background: none;\n' +
-    '  }\n' +
-    '}\n'
-  const layered = [base, mono, numeric, hairline, focus, reduced, forced, print]
+  const vars = resolveTokens()
+    .filter(({ def }) => def.family === 'type' && def.name.startsWith('text-'))
+    .map(({ def, value }) => decl(`--vx-${def.name}`, String(value)))
     .join('')
-    .replace(/^(?=.)/gm, '  ')
-  return `${headerWaiving('unknown-vx-token')}@layer basalt.type {\n${layered}}\n`
+  const scale = `@layer basalt.type {\n${rule(':where(:root)', vars).replace(/^(?=.)/gm, '  ')}}\n`
+  return headerWaiving('unknown-vx-token') + scale + template('typography')
 }
 
 // ── prose.css ───────────────────────────────────────────────────────────────────────────────────
