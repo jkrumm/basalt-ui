@@ -1,0 +1,28 @@
+{
+  "contracts": [
+    {
+      "module": "button",
+      "part": "button",
+      "pattern": "^Button$",
+      "allow": ["layout"],
+      "deny": ["h-*", "min-h-*", "size-*", "hidden", "flex", "block", "grid", "inline-flex"],
+      "message": "Button owns its height and display: use size (md, sm, icon, icon-sm), or eject it (basalt-ui eject button)."
+    },
+    {
+      "module": "button",
+      "part": "pressable",
+      "pattern": "^Pressable$",
+      "allow": ["layout"],
+      "deny": ["h-*", "min-h-*", "size-*", "hidden", "flex", "block", "grid", "inline-flex"],
+      "message": "Pressable owns its height and display: use size (none, row, chip), or eject it (basalt-ui eject button)."
+    },
+    {
+      "module": "input",
+      "part": "input",
+      "pattern": "^Input$",
+      "allow": ["layout"],
+      "deny": ["h-*", "min-h-*", "size-*", "hidden", "flex", "block", "grid", "inline-flex"],
+      "message": "Input owns its height and display: use size (md, sm), or eject it (basalt-ui eject input)."
+    }
+  ]
+}
