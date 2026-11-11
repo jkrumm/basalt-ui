@@ -30,6 +30,7 @@
   "flattenNav",
   "navGroup",
   "navTarget",
+  "notify",
   "persisted",
   "scrollParentOf",
   "unwrap",

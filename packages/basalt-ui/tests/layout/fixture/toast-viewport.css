@@ -1,0 +1,9 @@
+/*
+ * The toast-viewport fixture's Tailwind v4 entry, compiled WITH preflight like `ui-dialogs.css`.
+ * `toast-viewport.layout.test.ts` compiles it into a temp directory; nothing generated lands in the repo.
+ */
+@import '../../../src/css/tailwind.css' source(none);
+@source './toast-viewport-fixture.tsx';
+@source '../../../src/page/toast-host.tsx';
+@source '../../../src/ui/toast.tsx';
+@source '../../../src/ui/button.tsx';
