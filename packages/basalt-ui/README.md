@@ -40,7 +40,7 @@ versions: `peerDependencies` in `package.json`.
 at all:
 
 ```bash
-bunx basalt-ui tokens:css --selector-attribute data-theme --only core --out src/tokens.css
+bunx basalt-ui tokens:css --out src/tokens.css
 ```
 
 See [`docs/FRAMEWORK-FREE.md`](https://github.com/jkrumm/basalt-ui/blob/master/docs/FRAMEWORK-FREE.md)
