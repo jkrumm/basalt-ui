@@ -9,9 +9,11 @@ slots: [stat-card, stat-chart, stat-figure, stat-sub]
 
 # StatCard
 
-The signature stat card: a header band, an inset with the figure, its verdict, a sub line and a
-chart box, and a footer of at most two facts, all on one left edge (`--card-edge`). It owns its
-height at every phase; `chart` is called only in `ready` and `stale`, in a fixed box.
+The signature stat card: one shell holding a header and a footer of at most two facts, and an
+inset one surface step down inside a 4 px gutter with the figure, its delta pill and verdict, a
+sub line and a chart box, all on one left edge (`--card-edge`). It owns its height at every
+phase, and its loading skeleton draws the same rows; `chart` is called only in `ready` and
+`stale`, in a fixed box.
 
 ## Signature
 

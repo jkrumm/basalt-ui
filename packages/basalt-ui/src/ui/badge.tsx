@@ -48,14 +48,15 @@ export const countBadgeVariants = cva(
 )
 
 /**
- * The `DeltaBadge` cva table. `tone` is the verdict, resolved from `polarity` and the direction of
- * the value, never passed in.
+ * The `DeltaBadge` cva table: a 24 px pill. `tone` is the verdict, resolved from `polarity` and the
+ * direction of the value, never passed in; the text is the tone's own ink on its tint, gated at
+ * 4.5:1 (`badge.contrast.test.ts` names the measured ratios).
  *
  * @example
  * deltaBadgeVariants({ tone: 'bad' })
  */
 export const deltaBadgeVariants = cva(
-  'inline-flex h-5 shrink-0 items-center gap-1 rounded-chip px-1.5 text-xs font-medium whitespace-nowrap tabular-nums',
+  'inline-flex h-6 shrink-0 items-center gap-1 rounded-full px-2 text-xs font-medium whitespace-nowrap tabular-nums',
   {
     variants: {
       tone: {
@@ -144,10 +145,11 @@ function verdictOf(direction: Direction, polarity: DeltaPolarity): 'good' | 'bad
   return rising === (polarity === 'up-good') ? 'good' : 'bad'
 }
 
+/** Up-right, down-right and a minus: the arrow names the direction, the tint the verdict. */
 const GLYPH: Record<Direction, string> = {
-  up: 'M4 9.5 8 5.5l4 4',
-  down: 'M4 6.5 8 10.5l4-4',
-  zero: 'M4.5 8h7',
+  up: 'M4.5 11.5 11.5 4.5M5.5 4.5h6v6',
+  down: 'M4.5 4.5 11.5 11.5M11.5 5.5v6h-6',
+  zero: 'M4 8h8',
 }
 
 const DIRECTION_WORD: Record<Direction, string> = {
@@ -190,11 +192,11 @@ export function DeltaBadge({
       data-tone={tone}
       className={cn(deltaBadgeVariants({ tone }), className)}
     >
-      <svg viewBox="0 0 16 16" className="size-3" fill="none" aria-hidden="true">
+      <svg viewBox="0 0 16 16" className="size-3.5 shrink-0" fill="none" aria-hidden="true">
         <path
           d={GLYPH[direction]}
           stroke="currentColor"
-          strokeWidth="1.75"
+          strokeWidth="2"
           strokeLinecap="round"
           strokeLinejoin="round"
         />

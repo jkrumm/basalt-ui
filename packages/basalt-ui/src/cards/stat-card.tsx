@@ -4,7 +4,7 @@ import type { Box } from '../core/ports'
 import { DeltaBadge } from '../ui/badge'
 import { Card, CardPhase, Inset } from '../ui/card'
 import type { StatCardProps } from './contract'
-import { StatFooter, StatHead, StatusMark, formatValue } from './stat-card-parts'
+import { StatFooter, StatHead, StatSkeleton, StatusMark, formatValue } from './stat-card-parts'
 
 /** The chart box: plot 56 plus the 16 px label row. The slot draws inside it and cannot grow it. */
 const CHART_HEIGHT = 72
@@ -25,9 +25,11 @@ const bodyHeight = (hasSub: boolean, hasChart: boolean): string =>
   BODY_HEIGHT[hasChart ? (hasSub ? 'both' : 'chart') : hasSub ? 'sub' : 'plain']
 
 /**
- * The signature stat card: a header band, an inset with the figure, its verdict, a sub line and a
- * chart box, and a footer of at most two facts, all on one left edge (`--card-edge`). It owns its
- * height at every phase; `chart` is called only in `ready` and `stale`, in a fixed box.
+ * The signature stat card: one shell holding a header and a footer of at most two facts, and an
+ * inset one surface step down inside a 4 px gutter with the figure, its delta pill and verdict, a
+ * sub line and a chart box, all on one left edge (`--card-edge`). It owns its height at every
+ * phase, and its loading skeleton draws the same rows; `chart` is called only in `ready` and
+ * `stale`, in a fixed box.
  *
  * @useWhen a page shows one headline figure with its change, verdict and trend as a card
  * @neverWhen the content is a list of rows (use a row list) or a chart with a legend (use a chart card)
@@ -63,7 +65,12 @@ export function StatCard(props: StatCardProps): ReactElement {
           menu={menu}
         />
         <Inset className={cn('flex flex-col', bodyHeight(sub !== undefined, chart !== undefined))}>
-          <CardPhase phase={phase} empty={empty} className="flex flex-1 flex-col">
+          <CardPhase
+            phase={phase}
+            empty={empty}
+            skeleton={<StatSkeleton sub={sub !== undefined} chart={chart !== undefined} />}
+            className="flex flex-1 flex-col"
+          >
             {(box: Box) => (
               <>
                 <div data-slot="stat-figure" className="flex h-9 shrink-0 items-center gap-2">

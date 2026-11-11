@@ -37,7 +37,10 @@ export function StatusMark({ status }: { status: Status }): ReactElement {
   )
 }
 
-/** The footer band: at most two facts as a definition list on the card's left edge. */
+/**
+ * The footer on the shell: at most two facts, a muted label and a semibold value each, spread
+ * across the width from the card's left edge.
+ */
 export function StatFooter({ facts }: { facts: FootFacts | undefined }): ReactElement | null {
   const shown: Fact[] = []
   for (const fact of facts ?? []) if (fact) shown.push(fact)
@@ -45,12 +48,12 @@ export function StatFooter({ facts }: { facts: FootFacts | undefined }): ReactEl
   return (
     <dl
       data-slot="stat-footer"
-      className="m-0 flex h-9 items-center gap-4 px-(--card-edge) text-xs"
+      className="m-0 flex h-10 items-center justify-between gap-4 px-(--card-edge) text-sm"
     >
       {shown.map((fact) => (
-        <div key={fact.label} className="flex min-w-0 items-baseline gap-1.5">
-          <dt className="text-muted-foreground">{fact.label}</dt>
-          <dd className="m-0 font-medium text-foreground tabular-nums">
+        <div key={fact.label} className="flex min-w-0 items-baseline gap-2">
+          <dt className="truncate text-muted-foreground">{fact.label}</dt>
+          <dd className="m-0 text-md font-semibold text-foreground tabular-nums">
             {typeof fact.value === 'number' ? NUMBER.format(fact.value) : fact.value}
           </dd>
         </div>
@@ -86,7 +89,7 @@ export function StatMenu({
         data-slot="stat-menu"
         popoverTarget={id}
         style={{ anchorName: anchor }}
-        className="relative z-10 inline-flex size-6 shrink-0 cursor-pointer items-center justify-center rounded-full border-0 bg-transparent p-0 text-muted-foreground hover:bg-accent hover:text-foreground focus-ring after:absolute after:inset-0 pointer-coarse:after:-inset-2.5"
+        className="relative z-10 inline-flex size-7 shrink-0 cursor-pointer items-center justify-center rounded-ctrl border-0 bg-secondary p-0 text-muted-foreground shadow-raised hover:text-foreground focus-ring after:absolute after:inset-0 pointer-coarse:after:-inset-2"
       >
         <svg viewBox="0 0 16 16" className="size-icon" fill="currentColor" aria-hidden="true">
           <circle cx="3.5" cy="8" r="1.25" />
@@ -135,9 +138,9 @@ export type StatHeadProps = {
 }
 
 /**
- * The header band: icon tile, title, definition glyph, subtitle, controls and menu on the card's
- * left edge. Below `@regular` the controls wrap to a second row of the band; they are rendered
- * once, so a bound control is never a CSS twin of itself.
+ * The header on the shell: a 32 px icon tile, a semibold title, the definition glyph, a muted
+ * subtitle, controls and the menu, on the card's left edge. Below `@regular` the controls wrap to a
+ * second row; they are rendered once, so a bound control is never a CSS twin of itself.
  */
 export function StatHead({
   title,
@@ -150,7 +153,7 @@ export function StatHead({
   return (
     <div
       data-slot="card-band"
-      className="flex min-w-0 flex-wrap items-center gap-x-2 gap-y-2 px-(--card-edge) py-3"
+      className="flex min-w-0 flex-wrap items-center gap-x-3 gap-y-2 px-(--card-edge) pt-3 pb-2"
     >
       {Icon !== undefined && (
         <IconTile>
@@ -158,9 +161,13 @@ export function StatHead({
         </IconTile>
       )}
       <div className="min-w-0 flex-1">
-        <div className="flex h-6 min-w-0 items-center gap-1">
-          <p className="truncate text-sm font-semibold text-foreground">{title}</p>
-          {info !== undefined && <CardInfo label={`About ${title}`}>{info}</CardInfo>}
+        <div className="flex h-5 min-w-0 items-center gap-1">
+          <p className="truncate text-md font-semibold tracking-tight text-foreground">{title}</p>
+          {info !== undefined && (
+            <CardInfo label={`About ${title}`} className="-my-0.5">
+              {info}
+            </CardInfo>
+          )}
         </div>
         {subtitle !== undefined && (
           <p className="truncate text-xs text-muted-foreground">{subtitle}</p>
@@ -175,6 +182,38 @@ export function StatHead({
         </div>
       )}
       {menu !== undefined && <StatMenu actions={menu} label={`Actions for ${title}`} />}
+    </div>
+  )
+}
+
+const BAR = 'animate-pulse rounded-chip bg-foreground/10 motion-reduce:animate-none'
+
+/**
+ * The loading anatomy, in the rows the ready card draws: a figure and its pill, a sub line, and a
+ * plot over its label row. Every row has the ready row's height, so the card never moves.
+ */
+export function StatSkeleton({ sub, chart }: { sub: boolean; chart: boolean }): ReactElement {
+  return (
+    <div data-slot="stat-skeleton" aria-hidden="true" className="flex h-full flex-col">
+      <div className="flex h-9 shrink-0 items-center gap-2">
+        <div className={cn(BAR, 'h-7 w-24')} />
+        <div className={cn(BAR, 'h-6 w-14 rounded-full')} />
+      </div>
+      {sub && (
+        <div className="flex h-5 shrink-0 items-center @max-narrow:hidden">
+          <div className={cn(BAR, 'h-3 w-40 max-w-full')} />
+        </div>
+      )}
+      {chart && (
+        <div className="mt-2 flex h-18 shrink-0 flex-col gap-1">
+          <div className={cn(BAR, 'flex-1')} />
+          <div className="flex h-3 shrink-0 justify-between">
+            <div className={cn(BAR, 'w-10')} />
+            <div className={cn(BAR, 'w-10')} />
+            <div className={cn(BAR, 'w-10')} />
+          </div>
+        </div>
+      )}
     </div>
   )
 }
