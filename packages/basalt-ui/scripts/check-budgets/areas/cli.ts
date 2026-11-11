@@ -42,11 +42,12 @@ export const rows: readonly RowDef[] = [
   // 8843 -> 8870 (w50 table, PR 538): a hover crop mutes every other visible tooltip while it is taken and restores exactly those (cli/shot/capture.ts +27). Consumers: every `basalt-ui shot` user.
   // 8870 -> 8879 (w51 shot): a hover/tooltip crop with no `aria-describedby` claims the readout inside its own trigger, so an earlier chart's stale one never wins `.first()` (cli/shot/capture.ts +9). Consumers: every `basalt-ui shot` user.
   // 8879 -> 8923 (v3 verb stubs): `eject`, `migrate` and `lint` registered as not-implemented verbs (cli/verbs-v3.ts +39, the dispatcher case +5). Consumer: shutterflow and image-gateway, whose direct 1.x jump runs `migrate --from`.
+  // 8923 -> 9691 (v3-mig-cli): `basalt-ui migrate` (cli/migrate/: row reader and chain fold, import census, report and `--check`, +763) replaces the stub case. Consumer: shutterflow and image-gateway, whose direct 1.x jump runs `migrate --from`.
   {
     id: 'cli-lines',
     order: 110,
     label: 'CLI non-test lines (src/cli/**)',
-    ceiling: 8923,
+    ceiling: 9691,
     measure: () =>
       totalLines(
         walkFiles(join(PKG_ROOT, 'src/cli'), /\.tsx?$/).filter((p) => !/\.test\.tsx?$/.test(p)),
@@ -59,6 +60,13 @@ export const raises: readonly Raise[] = [
     ceiling: 'cli-lines',
     from: 8879,
     to: 8923,
+    consumer: '`migrate --from` on a direct 1.x jump',
+    repo: 'shutterflow',
+  },
+  {
+    ceiling: 'cli-lines',
+    from: 8923,
+    to: 9691,
     consumer: '`migrate --from` on a direct 1.x jump',
     repo: 'shutterflow',
   },
