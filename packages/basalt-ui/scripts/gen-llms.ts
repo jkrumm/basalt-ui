@@ -155,7 +155,7 @@ const ENTRY_POINTS: readonly (readonly [string, readonly string[]])[] = [
   ['basalt-ui/charts', ['CartesianChart', 'Lines', 'Bars', 'ChartCard']],
   ['basalt-ui/controls', ['FilterSet', 'ViewTabs', 'RangeFilter', 'SelectFilter']],
   ['basalt-ui/state', ['createSearchStore', 'createPersistedState']],
-  ['basalt-ui/vite', ['basaltViteConfig', 'basaltAppPlugin']],
+  ['basalt-ui/vite', ['basalt', 'basaltViteConfig']],
 ]
 
 // ── Emit llms.txt ─────────────────────────────────────────────────────────────

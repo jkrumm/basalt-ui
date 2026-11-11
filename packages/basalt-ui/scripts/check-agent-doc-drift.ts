@@ -905,12 +905,6 @@ export function checkLlmsNames(
 export const CHECK_I_NON_EXPORTS: ReadonlySet<string> = new Set([
   'basalt-ui/commands:BasaltProvider', // the root provider that mounts the bus
   'basalt-ui/format:Intl', // the platform API the formatters wrap
-  'basalt-ui/vite:BASALT_LOCAL', // an env var
-  'basalt-ui/vite:__APP_VERSION__', // a define the preset injects
-  'basalt-ui/vite:allowedHosts', // Vite server option
-  'basalt-ui/vite:strictPort', // Vite server option
-  'basalt-ui/vite:plugins', // Vite config key
-  'basalt-ui/vite:warnIfUnenforced', // internal check the preset runs
   'basalt-ui/charts:marks', // prose: the marks a chart kind fixes
   'basalt-ui/controls:ctl', // the size tier
   'basalt-ui/controls:options', // a prop of NumberFilter

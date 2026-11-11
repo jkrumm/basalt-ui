@@ -378,7 +378,7 @@ export const SURFACES = {
     kind: 'tooling',
     layer: 'build-tooling',
     description:
-      'basaltViteConfig(opts) — Vite preset for basalt-ui consumer apps; basaltAppPlugin(opts) — PWA head, manifest, and icon metadata derived from the token palette',
+      'basalt(opts) — v3 plugin: peer and seed build gates, eject aliases, `.basalt/sources.css`, theme script, theme-color and manifest; basaltViteConfig(opts) — 2.x Vite preset',
     optionalPeers: ['vite-plugin-pwa'],
     forbiddenImports: [],
   },
