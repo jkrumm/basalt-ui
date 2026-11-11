@@ -178,6 +178,17 @@ describe('eject.e2e (linewatch)', () => {
     expect(snapshot(fx.dir)).toEqual(before)
   })
 
+  it('exits 1 naming cn when the installed root entry does not export it, writing nothing', () => {
+    const fx = makeConsumer('linewatch')
+    // The 2.x root barrel today: no `cn` on `.`, so an ejected button could not compile.
+    writeFileSync(join(fx.pkg, 'src/index.ts'), 'export const notCn = 1\n')
+    const before = snapshot(fx.dir)
+    const result = run(fx, ['button', '--reason', 'r'])
+    expect(result.code).toBe(1)
+    expect(result.log).toContain("button imports cn from 'basalt-ui'")
+    expect(snapshot(fx.dir)).toEqual(before)
+  })
+
   it('exits 1 without basalt() in the app, writing nothing', () => {
     const fx = makeConsumer('linewatch')
     writeFileSync(join(fx.dir, 'vite.config.mjs'), 'export default { plugins: [] }\n')
