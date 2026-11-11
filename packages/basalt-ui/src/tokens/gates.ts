@@ -7,6 +7,7 @@
  * Gates read the derived hex, not the CSS: an alpha role is composited over its surface with the
  * same per-channel mix `color-mix(in srgb, ink N%, transparent)` paints.
  */
+import { chartPairs } from './chart-vars'
 import { INK_MIX_PCT, mixHex, STATUS_BACKGROUND_LABELS, statusBackgrounds } from './derive'
 import type { ColorNameV3, DerivedV3 } from './derive'
 import { contrastRatio } from './hct'
@@ -45,7 +46,6 @@ export type GateFailure = {
 
 const FIX_FILL = 'Raise --vibrancy or pick another hue.'
 const FIX_NEUTRAL = 'Pick another --neutral.'
-const FIX_TABLE = 'The ramp is table data: edit the tone or share in derive.ts.'
 
 const SHORT: Partial<Record<ColorNameV3, string>> = {
   'brand-fill': 'fill',
@@ -135,16 +135,6 @@ function buildPairs(): PairRow[] {
       },
     })
 
-  // Viz: data line and chart marks on canvas and inset, dim bar quieter but >= 2.0 on inset.
-  for (const bg of ['canvas', 'inset'] as const) {
-    rows.push(contrast('line', bg, 3, FIX_TABLE))
-    for (const n of [1, 2, 3, 4, 5] as const) rows.push(contrast(`chart-${n}`, bg, 3, FIX_FILL))
-  }
-  rows.push(contrast('dim-bar', 'inset', 2, FIX_TABLE))
-  // seq-1 must stay visible on the dark inset without leaving the accent hue (light seq-1 is the
-  // pale end of the ramp by design and is not a pair).
-  rows.push({ ...contrast('seq-1', 'inset', 1.3, FIX_TABLE), only: 'dark' })
-
   // Card vs inset step >= .03 OKLCH L: the surface law reads against the parent (3.3).
   rows.push({
     gate: 'card-step',
@@ -157,8 +147,8 @@ function buildPairs(): PairRow[] {
   return rows
 }
 
-/** Every gate, once. A row applies to both schemes. */
-export const PAIRS: readonly PairRow[] = buildPairs()
+/** Every gate, once, the Viz rows from `chart-vars.ts` last. A row applies to both schemes. */
+export const PAIRS: readonly PairRow[] = [...buildPairs(), ...chartPairs()]
 
 function format(value: number, digits: number): string {
   const scale = 10 ** digits
@@ -170,26 +160,12 @@ function failureMessage(row: PairRow, scheme: GateScheme, value: number, accent:
   return `${row.gate} ${scheme} ${format(value, row.digits)} < ${row.min.toFixed(row.digits === 3 ? 3 : 1)} for --accent ${accent}. ${row.fix}`
 }
 
-/** Seq ramps must read in order: lightness falls with value in light and rises in dark. */
+/** Ink must lead the canvas in the scheme's direction: dark text on light, light on dark. */
 function polarityFailures(derived: DerivedV3): GateFailure[] {
   const failures: GateFailure[] = []
   for (const scheme of SCHEMES) {
     const sign = scheme === 'light' ? -1 : 1
     const l = (name: ColorNameV3): number => hexToOklab(hex(derived, name, scheme)).L
-    for (let n = 1; n < 5; n++) {
-      const step = sign * (l(`seq-${n + 1}` as ColorNameV3) - l(`seq-${n}` as ColorNameV3))
-      if (step > 0) continue
-      const message = `seq-monotonic ${scheme} seq-${n} to seq-${n + 1} ${step.toFixed(3)} <= 0 for --accent ${derived.accent}. ${FIX_TABLE}`
-      failures.push({
-        gate: 'seq-monotonic',
-        scheme,
-        surface: `seq-${n}`,
-        value: step,
-        min: 0,
-        message,
-      })
-    }
-    // Ink must lead the canvas in the scheme's direction: dark text on light, light on dark.
     const lead = sign * (l('ink') - l('canvas'))
     if (lead <= 0) {
       const message = `polarity ${scheme} ink ${lead.toFixed(3)} <= 0 for --accent ${derived.accent}. ${FIX_NEUTRAL}`
