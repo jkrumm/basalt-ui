@@ -1,3 +1,6 @@
-/** `basalt-ui/data` — v3 skeleton stub. Peers: `@tanstack/react-query` (optional). */
+/** `basalt-ui/data` — v3 data layer. Peers: `@tanstack/react-query` (optional). */
 
-export {}
+export { makeQueryClient } from './query-client'
+export { optimistic } from './optimistic'
+export { unwrap } from './unwrap'
+export { windowKey } from './window-key'

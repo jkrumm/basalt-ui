@@ -95,9 +95,11 @@
   "integer": "argo:apps/dashboard/src/features/walking-pad/live-card.tsx",
   "kcal": "argo:apps/dashboard/src/features/walking-pad/live-card.tsx",
   "km": "argo:apps/dashboard/src/features/walking-pad/live-card.tsx",
+  "makeQueryClient": "argo:apps/dashboard/src/lib/router.ts",
   "money": "image-gateway:app/src/App.tsx",
   "navGroup": "argo:apps/dashboard/src/lib/nav.tsx",
   "navTarget": "argo:apps/dashboard/src/routes/index.tsx",
+  "optimistic": "argo:apps/dashboard/src/lib/queries/gym.ts",
   "overlays": "argo:apps/dashboard/src/lib/commands.tsx",
   "p": "argo:apps/dashboard/src/lib/series.ts",
   "parseAgentPart": "argo:apps/dashboard/src/features/hermes-chat/threads-store.ts",
@@ -117,5 +119,6 @@
   "useBasaltNav": "basalt-ui-obsidian:apps/demo/src/routes/__root.tsx",
   "useCoarsePointer": "rb:apps/web/src/components/lock-screen.tsx",
   "useSizeClass": "argo:apps/dashboard/src/routes/strength-tracker.tsx",
-  "weekday": "argo:apps/dashboard/src/features/astro-window/formulas.ts"
+  "weekday": "argo:apps/dashboard/src/features/astro-window/formulas.ts",
+  "windowKey": "linewatch:web/src/lib/queries.ts"
 }
