@@ -1,6 +1,14 @@
 {
   "contracts": [
     {
+      "module": "alert",
+      "part": "alert",
+      "pattern": "^Alert$",
+      "allow": ["layout"],
+      "deny": ["h-*", "min-h-*", "size-*", "hidden", "flex", "block", "grid", "inline-flex"],
+      "message": "Alert owns its height and display: eject it (basalt-ui eject alert) to change them."
+    },
+    {
       "module": "badge",
       "part": "lozenge",
       "pattern": "^Lozenge$",
@@ -121,12 +129,36 @@
       "message": "Kbd owns its height and display: eject it (basalt-ui eject kbd) to change them."
     },
     {
+      "module": "meter",
+      "part": "meter",
+      "pattern": "^Meter$",
+      "allow": ["layout"],
+      "deny": ["h-*", "min-h-*", "size-*", "hidden", "flex", "block", "grid", "inline-flex"],
+      "message": "Meter owns its height and display: eject it (basalt-ui eject meter) to change them."
+    },
+    {
       "module": "number-field",
       "part": "number-field",
       "pattern": "^NumberField$",
       "allow": ["layout"],
       "deny": ["h-*", "min-h-*", "size-*", "hidden", "flex", "block", "grid", "inline-flex"],
       "message": "NumberField owns its height and display: use size (md, sm), or eject it (basalt-ui eject number-field)."
+    },
+    {
+      "module": "progress",
+      "part": "progress",
+      "pattern": "^Progress$",
+      "allow": ["layout"],
+      "deny": ["h-*", "min-h-*", "size-*", "hidden", "flex", "block", "grid", "inline-flex"],
+      "message": "Progress owns its height and display: eject it (basalt-ui eject progress) to change them."
+    },
+    {
+      "module": "progress",
+      "part": "ring",
+      "pattern": "^Ring$",
+      "allow": ["layout"],
+      "deny": ["h-*", "min-h-*", "size-*", "hidden", "flex", "block", "grid", "inline-flex"],
+      "message": "Ring owns its height and display: eject it (basalt-ui eject progress) to change them."
     },
     {
       "module": "radio-group",
@@ -183,6 +215,22 @@
       "allow": ["layout"],
       "deny": ["h-*", "min-h-*", "size-*", "hidden", "flex", "block", "grid", "inline-flex"],
       "message": "Spinner owns its height and display: eject it (basalt-ui eject skeleton) to change them."
+    },
+    {
+      "module": "status",
+      "part": "status",
+      "pattern": "^Status$",
+      "allow": ["layout"],
+      "deny": ["h-*", "min-h-*", "size-*", "hidden", "flex", "block", "grid", "inline-flex"],
+      "message": "Status owns its height and display: eject it (basalt-ui eject status) to change them."
+    },
+    {
+      "module": "status",
+      "part": "swatch",
+      "pattern": "^Swatch$",
+      "allow": ["layout"],
+      "deny": ["h-*", "min-h-*", "size-*", "hidden", "flex", "block", "grid", "inline-flex"],
+      "message": "Swatch owns its height and display: eject it (basalt-ui eject status) to change them."
     },
     {
       "module": "switch",

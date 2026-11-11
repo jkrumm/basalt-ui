@@ -1,0 +1,11 @@
+/*
+ * The `ui-status` fixture's Tailwind v4 entry. Like `ui-inputs.css` it is compiled WITH preflight
+ * and the font faces, because the primitives are measured the way a Tailwind consumer renders them.
+ * `ui-status.layout.test.ts` compiles it into a temp directory; nothing generated lands in the repo.
+ */
+@import '../../../src/css/tailwind.css' source(none);
+@source './ui-status-fixture.tsx';
+@source '../../../src/ui/status.tsx';
+@source '../../../src/ui/alert.tsx';
+@source '../../../src/ui/progress.tsx';
+@source '../../../src/ui/meter.tsx';
