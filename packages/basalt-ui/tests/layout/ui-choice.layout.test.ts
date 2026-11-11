@@ -12,9 +12,9 @@
  * served beside the shared fixture, so no shared fixture file carries a line for this suite.
  */
 import { afterAll, beforeAll, describe, expect, test } from 'bun:test'
-import { mkdtempSync, readFileSync, realpathSync, rmSync } from 'node:fs'
+import { mkdtempSync, readFileSync, rmSync } from 'node:fs'
 import { tmpdir } from 'node:os'
-import { dirname, join } from 'node:path'
+import { join } from 'node:path'
 import type { FixtureSpec } from './fixture/spec'
 import {
   CLOSE_BUDGET_MS,
@@ -79,9 +79,7 @@ beforeAll(async () => {
       `<body><div id="root"></div><script type="module">${inlineScript(js)}</script></body></html>`,
   )
 
-  // axe-core is a transitive dependency (through lighthouse); resolve it from there.
-  const lighthouse = realpathSync(Bun.resolveSync('lighthouse/package.json', import.meta.dirname))
-  axeSource = readFileSync(Bun.resolveSync('axe-core/axe.min.js', dirname(lighthouse)), 'utf8')
+  axeSource = readFileSync(join(REPO_ROOT, 'node_modules', 'axe-core', 'axe.min.js'), 'utf8')
 })
 
 afterAll(() => {
