@@ -12,8 +12,14 @@ import type { ChartValue } from '@tanstack/charts/types/core'
 import { useEffect, useMemo } from 'react'
 import type { CSSProperties, ReactElement } from 'react'
 import type { CartesianDefinition } from './compile'
-import { MAIN_PANE, measuredPlots, readsPlot, recordPlots, watchPlotReads } from './plot-context'
-import type { PlotSize, PlotSizes } from './plot-context'
+import {
+  measuredPlots,
+  plotSizesOf,
+  readsPlot,
+  recordPlots,
+  watchPlotReads,
+} from './core/plot-context'
+import type { PlotSizes } from './core/plot-context'
 import { ChartBox } from './box'
 import type { ChartBoxHeight } from './box'
 import { INITIAL_WIDTH } from './sizing'
@@ -72,7 +78,7 @@ export function ChartEngine({
     () =>
       onPlot &&
       ((context) => {
-        const sizes = measurePlots(context)
+        const sizes = plotSizesOf(context.scene)
         recordPlots(definition, sizes)
         if (readsPlot(definition)) onPlot(sizes)
       }),
@@ -96,27 +102,3 @@ export function ChartEngine({
 /** Scopes the engine's SVG resource ids per chart instance (`useId` output carries colons). */
 export const idPrefixOf = (id: string, prefix = 'chart'): string =>
   `basalt-${prefix}-${id.replaceAll(/[^\w-]/g, '')}`
-
-type RenderContext = Parameters<NonNullable<EngineProps['onRender']>>[0]
-
-const sizeOf = (width: number, height: number): PlotSize => ({ width, height })
-
-/**
- * The laid-out plot area of each pane. A single chart is the scene's own `chart` bounds. A composed
- * chart's panes are laid out inside the engine's view composition and not exposed on the scene, so
- * each pane's plot is the rect of its marks clip (`<owner>:<pane>:marks:clip-defs`), which the
- * rung's `clip: true` makes the plot exactly.
- */
-function measurePlots({ scene, svg }: RenderContext): PlotSizes {
-  const views = svg.querySelectorAll('g.ts-chart__view')
-  if (views.length === 0) return { [MAIN_PANE]: sizeOf(scene.chart.width, scene.chart.height) }
-  const sizes: Record<string, PlotSize> = {}
-  for (const view of views) {
-    const base = view.getAttribute('data-ts-key')?.replace(/view$/, '')
-    const clip = base && view.querySelector(`[data-ts-key="${base}marks:clip-defs"] rect`)
-    const pane = base?.split(':').at(-2)
-    if (!pane || !clip) continue
-    sizes[pane] = sizeOf(Number(clip.getAttribute('width')), Number(clip.getAttribute('height')))
-  }
-  return sizes
-}
