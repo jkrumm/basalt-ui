@@ -6,6 +6,7 @@ import { afterEach, describe, expect, test } from 'bun:test'
 import { Field as BaseField } from '@base-ui/react/field'
 import { Fieldset as BaseFieldset } from '@base-ui/react/fieldset'
 import type { ComponentType, ReactNode } from 'react'
+import { disclosureAncestry } from './primitive.contract'
 import { SLOTS } from './slots'
 
 afterEach(cleanup)
@@ -51,6 +52,7 @@ const PARENTS: Record<string, ComponentType<{ children?: ReactNode }>> = {
     </table>
   ),
   'table-caption': (p) => <table {...p} />,
+  ...disclosureAncestry(),
 }
 
 /** Props a part needs to render at all: `FieldError` shows only on a failed validity or `match`. */
@@ -59,6 +61,8 @@ const PART_PROPS: Record<string, Record<string, unknown>> = {
   'card-info': { label: 'About' },
   'count-badge': { count: 1 },
   'delta-badge': { value: 1, polarity: 'neutral' },
+  'tabs-trigger': { value: 'a' },
+  'tabs-content': { value: 'a' },
 }
 
 /** With children `x`; a part on a void element (`<input>`) refuses children, so it renders bare. */

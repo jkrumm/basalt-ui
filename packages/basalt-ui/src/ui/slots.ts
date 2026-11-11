@@ -3,9 +3,11 @@
 
 /** Every `data-slot` each `basalt-ui/ui/*` module renders, keyed by module name. */
 export const SLOTS = {
+  accordion: ['accordion', 'accordion-item', 'accordion-trigger', 'accordion-content'],
   badge: ['lozenge', 'count-badge', 'delta-badge'],
   button: ['button', 'pressable'],
   card: ['card', 'card-band', 'card-info', 'icon-tile', 'inset', 'card-phase'],
+  collapsible: ['collapsible', 'collapsible-trigger', 'collapsible-content'],
   field: [
     'field',
     'field-label',
@@ -25,6 +27,7 @@ export const SLOTS = {
     'table-cell',
     'table-caption',
   ],
+  tabs: ['tabs', 'tabs-list', 'tabs-trigger', 'tabs-content'],
 } as const
 
 /** A `basalt-ui/ui/*` module name. */
