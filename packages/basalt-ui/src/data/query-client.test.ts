@@ -2,7 +2,8 @@
  * `unwrap` — its runtime branches (a `Promise` of the envelope, or the already-resolved envelope
  * itself, one generic signature since 1.29.1 — see `unwrap.type-guard.test.ts` for the
  * compile-time proof) and the null/undefined absence guard (C5 consolidation: `undefined` joined
- * `null`). `makeQueryClient` is covered in `provider/create-router.test.ts`.
+ * `null`), and `makeQueryClient`: the retry predicate and the defaults. Copied from the 2.x
+ * `src/query-client.test.ts`, which stays with its module until the root barrel retires.
  */
 import { describe, expect, test } from 'bun:test'
 import { makeQueryClient } from './query-client'
