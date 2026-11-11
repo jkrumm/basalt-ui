@@ -43,8 +43,13 @@ export function collectVxNames(): string[] {
   add(buildPaletteCss(), DECLARATION)
   for (const rel of new Glob('src/**/*.{ts,tsx,css}').scanSync(ROOT)) {
     // `src/css/` is the v3 sheet set: its names are judged by the v3 `check-tokens`, never fed to
-    // this 2.x allowlist.
-    if (rel.startsWith('src/guard/') || rel.startsWith('src/css/') || /\.test\.tsx?$/.test(rel)) {
+    // this 2.x allowlist; `src/tokens/golden/` is the same v3 output pinned byte for byte.
+    if (
+      rel.startsWith('src/guard/') ||
+      rel.startsWith('src/css/') ||
+      rel.startsWith('src/tokens/golden/') ||
+      /\.test\.tsx?$/.test(rel)
+    ) {
       continue
     }
     const text = readFileSync(resolve(ROOT, rel), 'utf8')
