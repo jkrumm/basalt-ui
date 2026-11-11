@@ -79,8 +79,13 @@ prints on the card and on the box as `data-phase`.
 ## Legend and tooltip
 
 The legend is drawn by the chart, in its own markup, so it is in the server HTML. A series with
-`failed: true` keeps its legend entry, which reads `charts.unavailable` (English `unavailable`, an
-app overrides it through the provider's `messages`), draws nothing in the plot, and leaves the phase
-on `ready`. The tooltip is the engine's, placed by the card portal inside the card on both axes and
-off the first point's tick labels; its rows are data with a `solid`, `dashed`, `dot` or `line` swatch.
-A click pins the tooltip unless the chart has a `selection`.
+`failed: true` keeps its legend entry, which reads `unavailable`, draws nothing in the plot, and
+leaves the phase on `ready`. The standalone `Legend` (`src/charts/parts/legend.tsx`) reads that word
+from the message `charts.unavailable`, so an app can override it through the provider's `messages`;
+`CartesianChart` still prints the English default until it reads the key too.
+
+The tooltip is the engine's, placed by the card portal inside the card on both axes and off the first
+point's tick labels. `src/charts/parts/tooltip.ts` holds the v3 definition of its rows (a `solid`,
+`dashed`, `dot` or `line` swatch), the one short date form, the 150 ms show and 100 ms hide delays and
+the rule that a click pins unless the chart has a `selection`. The chart compiler does not call it
+yet; until it does, those delays and the swatch shapes are not live.
