@@ -135,11 +135,12 @@ export type LayoutPage = {
 
 // ── Build + serve + launch ────────────────────────────────────────────────────────────────────
 
-// Read at module load: `shell-target.ts` sets these before this module evaluates, to point the
-// suite at the 2.x oracle checkout or the v3 fixture. Unset, they fall back to this tree's fixture.
-const FIXTURE_ENTRY =
+// Read when a suite boots, not at module load: `shell-target.ts` sets these per shell file to point
+// the suite at the 2.x oracle checkout or the v3 fixture, and a whole-directory run shares this
+// module across files. Unset, they fall back to this tree's fixture.
+const fixtureEntry = (): string =>
   process.env['LAYOUT_FIXTURE_ENTRY'] ?? new URL('../fixture/main.tsx', import.meta.url).pathname
-const FIXTURE_HTML =
+const fixtureHtmlPath = (): string =>
   process.env['LAYOUT_FIXTURE_HTML'] ?? new URL('../fixture/index.html', import.meta.url).pathname
 
 let browser: Browser | null = null
@@ -168,7 +169,7 @@ export function serveDocument(html: string): string {
 
 /** The fixture shell verbatim — the base a probe document mutates. */
 export function fixtureHtml(): Promise<string> {
-  return Bun.file(FIXTURE_HTML).text()
+  return Bun.file(fixtureHtmlPath()).text()
 }
 
 /**
@@ -221,7 +222,7 @@ async function closeTestContexts(): Promise<void> {
 
 async function buildFixture(dir: string): Promise<void> {
   const build = await Bun.build({
-    entrypoints: [FIXTURE_ENTRY],
+    entrypoints: [fixtureEntry()],
     outdir: dir,
     naming: '[name].[ext]',
     target: 'browser',
@@ -294,7 +295,7 @@ async function bootLayoutSuite(gen: number): Promise<boolean> {
   const bundled = performance.now()
 
   phase = 'serving the fixture'
-  const html = await Bun.file(FIXTURE_HTML).text()
+  const html = await Bun.file(fixtureHtmlPath()).text()
   const local = Bun.serve({
     port: 0, // ephemeral — parallel bun test files never collide
     async fetch(request) {

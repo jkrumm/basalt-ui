@@ -8,9 +8,9 @@
  *   `acquireShellTarget()`, which re-creates the worktree if needed and removes it in that file's
  *   `afterAll`, so nothing leaks.
  *
- * MUST BE THE FIRST IMPORT of every shell test file. `harness/engine.ts` reads
- * `LAYOUT_FIXTURE_ENTRY` / `LAYOUT_FIXTURE_HTML` once, at module load; this module sets them
- * synchronously, so it has to evaluate before `./harness` does.
+ * MUST BE THE FIRST IMPORT of every shell test file, and every such file calls `acquireShellTarget()`
+ * before `initLayoutSuite()`. `harness/engine.ts` reads `LAYOUT_FIXTURE_ENTRY` / `LAYOUT_FIXTURE_HTML`
+ * when a suite boots (v2: this module also sets them at evaluation).
  *
  * RUN v2 WITH AN EXPLICIT `shell-` PATH PREFIX, e.g.
  *   LAYOUT_TARGET=v2 bun --config=./packages/basalt-ui/tests/layout/bunfig.toml test --timeout 60000 \
@@ -75,14 +75,23 @@ function setupV2(): void {
   process.env['LAYOUT_FIXTURE_HTML'] = html
 }
 
+/**
+ * Points the engine at the v3 fixture for ONE file. The engine reads the two variables when it boots
+ * a suite, and every layout file boots its own, so the variables are set per file and cleared in
+ * that file's `afterAll`: a whole-directory run (`test:layout`) keeps every non-shell file on the
+ * default fixture, whichever file bun loads first.
+ */
 function setupV3(): void {
   const fixture = new URL('./fixture/v3/', import.meta.url).pathname
-  process.env['LAYOUT_FIXTURE_ENTRY'] ??= `${fixture}main.tsx`
-  process.env['LAYOUT_FIXTURE_HTML'] ??= `${fixture}index.html`
+  process.env['LAYOUT_FIXTURE_ENTRY'] = `${fixture}main.tsx`
+  process.env['LAYOUT_FIXTURE_HTML'] = `${fixture}index.html`
+  afterAll(() => {
+    delete process.env['LAYOUT_FIXTURE_ENTRY']
+    delete process.env['LAYOUT_FIXTURE_HTML']
+  })
 }
 
 if (LAYOUT_TARGET === 'v2') setupV2()
-else setupV3()
 
 /**
  * Call once per shell test file, before `initLayoutSuite()`. Bun evaluates this module once for all
@@ -91,7 +100,10 @@ else setupV3()
  * `bun test` does not reliably fire `process.on('exit')`, so the hook is the cleanup, not a backup.
  */
 export function acquireShellTarget(): void {
-  if (LAYOUT_TARGET !== 'v2') return
+  if (LAYOUT_TARGET !== 'v2') {
+    setupV3()
+    return
+  }
   setupV2()
   afterAll(releaseShellTarget)
 }
