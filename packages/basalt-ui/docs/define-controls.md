@@ -22,14 +22,19 @@ unsets (explicit `undefined`), `link(v)` spreads into a typed `Link`; `resets` u
 params in the same navigate. Defaults stay out of the URL while the validated search is
 complete. A global's params are exclusive (a second store naming one throws at definition), a
 page store refuses a write from a route that does not run it, and a global mounted below the
-root throws in development.
+root throws in development. `retain: [keys]` on a page store keeps those params across the
+subtree of the layout route that mounts it; `widgets: { card: { field: handle } }` binds a card to a
+scalar handle (a global or page field): it inherits the value and writes only its own
+`w.<card>.<field>` key (`store.widget`, `store.useOverrides()`; see `docs/widgets.md`).
 
 ## Signature
 
 ```ts
-defineControls<const Id extends string, const Scp extends Scope, const F extends Record<string, AnyFieldSpec>>(config: DefineControlsConfig<Id, Scp, F>): Controls<Id, Scp, F>
+defineControls<const Id extends string, const Scp extends Scope, const F extends Record<string, AnyFieldSpec>, const W extends WidgetsInput = {}>(config: DefineControlsConfig<Id, Scp, F, W>): Controls<Id, Scp, F, W>
   id: Id
   scope: Scp
   fields: F
   resets?: readonly string[]
+  retain?: readonly string[]
+  widgets?: W & ValidWidgets<W>
 ```
