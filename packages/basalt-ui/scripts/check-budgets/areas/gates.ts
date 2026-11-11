@@ -14,7 +14,7 @@ export const rows: readonly RowDef[] = [
     id: 'duplicate-symbols',
     order: 60,
     label: 'symbols under more than one subpath (one import path per symbol)',
-    ceiling: 1, // v3 ctl-2: `field` (./router, ./state) until the 2.x state subpath retires
+    ceiling: 2, // v3 page-kit: `defineOverlays` (./commands, ./page) until the 2.x commands subpath retires; v3 ctl-2: `field` (./router, ./state) until the 2.x state subpath retires
     measure: () => gate(duplicateSymbols(readSurface())),
   },
   {
@@ -52,5 +52,13 @@ export const raises: readonly Raise[] = [
     consumer:
       '`field` from `./router` (v3 defineControls) while linewatch dashboard-store.ts still imports the 2.x `./state` `field` for createSearchStore; drops back to 0 when ./state retires',
     repo: 'linewatch',
+  },
+  {
+    ceiling: 'duplicate-symbols',
+    from: 1,
+    to: 2,
+    consumer:
+      '`defineOverlays` from `./page` (the typed overlay registry on `ui/dialog`) while shutterflow shell/overlays.tsx (5 entries) still imports the 2.x `./commands` one; drops back when ./commands retires',
+    repo: 'shutterflow',
   },
 ]
