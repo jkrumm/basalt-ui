@@ -49,6 +49,22 @@
       "message": "Card owns its height and display: eject it (basalt-ui eject card) to change them."
     },
     {
+      "module": "checkbox",
+      "part": "checkbox-group",
+      "pattern": "^CheckboxGroup$",
+      "allow": ["layout"],
+      "deny": ["h-*", "min-h-*", "size-*", "hidden", "flex", "block", "grid", "inline-flex"],
+      "message": "CheckboxGroup owns its height and display: eject it (basalt-ui eject checkbox) to change them."
+    },
+    {
+      "module": "checkbox",
+      "part": "checkbox",
+      "pattern": "^Checkbox$",
+      "allow": ["layout"],
+      "deny": ["h-*", "min-h-*", "size-*", "hidden", "flex", "block", "grid", "inline-flex"],
+      "message": "Checkbox owns its height and display: eject it (basalt-ui eject checkbox) to change them."
+    },
+    {
       "module": "field",
       "part": "field",
       "pattern": "^Field$",
@@ -79,6 +95,14 @@
       "allow": ["layout"],
       "deny": ["h-*", "min-h-*", "size-*", "hidden", "flex", "block", "grid", "inline-flex"],
       "message": "Input owns its height and display: use size (md, sm), or eject it (basalt-ui eject input)."
+    },
+    {
+      "module": "number-field",
+      "part": "number-field",
+      "pattern": "^NumberField$",
+      "allow": ["layout"],
+      "deny": ["h-*", "min-h-*", "size-*", "hidden", "flex", "block", "grid", "inline-flex"],
+      "message": "NumberField owns its height and display: use size (md, sm), or eject it (basalt-ui eject number-field)."
     },
     {
       "module": "radio-group",
@@ -119,6 +143,14 @@
       "allow": ["layout"],
       "deny": ["h-*", "min-h-*", "size-*", "hidden", "flex", "block", "grid", "inline-flex"],
       "message": "Tabs owns its height and display: use size (md, sm), or eject it (basalt-ui eject tabs)."
+    },
+    {
+      "module": "textarea",
+      "part": "textarea",
+      "pattern": "^Textarea$",
+      "allow": ["layout"],
+      "deny": ["h-*", "min-h-*", "size-*", "hidden", "flex", "block", "grid", "inline-flex"],
+      "message": "Textarea owns its height and display: eject it (basalt-ui eject textarea) to change them."
     }
   ]
 }

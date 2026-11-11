@@ -7,6 +7,7 @@ export const SLOTS = {
   badge: ['lozenge', 'count-badge', 'delta-badge'],
   button: ['button', 'pressable'],
   card: ['card', 'card-band', 'card-info', 'icon-tile', 'inset', 'card-phase'],
+  checkbox: ['checkbox-group', 'checkbox'],
   collapsible: ['collapsible', 'collapsible-trigger', 'collapsible-content'],
   field: [
     'field',
@@ -18,6 +19,7 @@ export const SLOTS = {
     'form',
   ],
   input: ['input'],
+  'number-field': ['number-field'],
   'radio-group': ['radio-group', 'radio'],
   switch: ['switch'],
   table: [
@@ -30,6 +32,7 @@ export const SLOTS = {
     'table-caption',
   ],
   tabs: ['tabs', 'tabs-list', 'tabs-trigger', 'tabs-content'],
+  textarea: ['textarea'],
 } as const
 
 /** A `basalt-ui/ui/*` module name. */
