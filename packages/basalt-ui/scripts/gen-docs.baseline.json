@@ -129,6 +129,5 @@
   "basalt-ui/tokens#groupTokens",
   "basalt-ui/tokens#p",
   "basalt-ui/tokens#seriesTokens",
-  "basalt-ui/vite#basaltAppPlugin",
   "basalt-ui/vite#basaltViteConfig"
 ]

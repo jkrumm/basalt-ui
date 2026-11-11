@@ -1,7 +1,18 @@
 {
   "schema": 1,
   "area": "cli",
-  "rows": [],
+  "rows": [
+    {
+      "id": "vite-basaltAppPlugin",
+      "kind": "replace",
+      "from": "basalt-ui/vite#basaltAppPlugin",
+      "to": "basalt({ app: { name, icons, seo, manifest, serviceWorker } }) from basalt-ui/vite",
+      "profiles": ["parts", "app"],
+      "manual": true,
+      "note": "basalt() absorbs the head plugin: the theme script replaces the anti-FOUC style and the bootScript, colorScheme and backgroundColor paint options; icons take only the explicit list (the six-file default and { dir } are gone); themeColor moves to the top level",
+      "verify": "vite build: index.html carries the theme script once, no <style>, and site.webmanifest when app is set"
+    }
+  ],
   "tokens": { "renamed": [], "valueShifts": [] },
   "storage": [],
   "urls": [],
