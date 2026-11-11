@@ -1,0 +1,8 @@
+{
+  "name": "dashboard",
+  "private": true,
+  "type": "module",
+  "dependencies": {
+    "basalt-ui": "*"
+  }
+}
