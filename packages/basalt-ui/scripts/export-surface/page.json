@@ -1,9 +1,13 @@
 [
+  "ArticleLayout",
+  "Callout",
   "CardGrid",
   "EmptyState",
   "OverlayHost",
   "PageSummary",
+  "Prose",
   "QueryState",
+  "Toc",
   "defineOverlays",
   "useSizeClass"
 ]

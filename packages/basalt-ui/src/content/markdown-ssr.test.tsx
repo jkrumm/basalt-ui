@@ -20,7 +20,7 @@ describe('renderToString', () => {
       </Markdown>,
     )
 
-    expect(out).toContain('<h1>Heading</h1>')
+    expect(out).toMatch(/<h1 id="heading"[^>]*>Heading<a href="#heading"/)
     expect(out).toContain('<strong>bold</strong>')
     expect(out).toContain('href="https://example.com"')
     expect(out).toContain('<li>two</li>')

@@ -1,78 +1,55 @@
-/**
- * MermaidDiagram — beautiful-mermaid (OPTIONAL PEER), `--vx-*` themed, streaming-safe
- * (docs/CONTENT-SPEC.md §2 decision 4).
- *
- * Lazy dynamic `import('beautiful-mermaid')` behind a module-level singleton promise, mirroring
- * the `./highlighter` optional-peer pattern: no unhandled rejection, no crash. Without the peer
- * installed — or on a mermaid parse error with no previously-rendered diagram — it degrades to a
- * plain `CodeBlock language="mermaid"` (or the `fallback` prop, if supplied).
- *
- * Theming passes `var(--vx-*)` strings straight through as the render options: the emitted SVG
- * references those custom properties via presentation attributes, so a Mantine scheme flip is
- * pure CSS — the SVG never needs to be re-rendered on a color-scheme change.
- *
- * Supported diagram types: flowchart, state, sequence, class, ER, XY chart. Full-grammar `mermaid`
- * stays a consumer escape hatch (`agent/rules/basalt-content.md`).
- *
- * @example
- * import { MermaidDiagram } from 'basalt-ui/content'
- *
- * <MermaidDiagram code={'graph TD\n  A --> B'} />
- */
-import type { CSSProperties, ReactNode } from 'react'
 import { useEffect, useMemo, useState } from 'react'
-import { CodeBlock } from './code-block'
-import classes from './mermaid.module.css'
-import { sanitizeMermaidFonts } from './mermaid-sanitize'
-
-// Import the type only — erased at runtime (verbatimModuleSyntax safe). `beautiful-mermaid` is a
-// devDependency purely so this type resolves; the runtime import below is fully dynamic.
+import type { ReactElement } from 'react'
 import type { RenderOptions } from 'beautiful-mermaid'
+import { CodeBlock } from './code-block'
+import { sanitizeMermaidFonts } from './mermaid-sanitize'
 
 type MermaidModule = {
   renderMermaidSVG: (text: string, options?: RenderOptions) => string
 }
 
 /**
- * Static theme mapping onto the `--vx-*` token layer — every value is a `var(--vx-*)` string, so
- * this object never changes across renders/schemes and can live at module scope.
+ * The diagram's colours as `var(--vx-*)` strings: the SVG references the custom properties through
+ * presentation attributes, so a scheme flip is pure CSS and never re-renders the diagram.
  */
 export const MERMAID_THEME_OPTIONS: RenderOptions = {
-  bg: 'var(--vx-surface-panel)',
+  bg: 'var(--vx-card)',
   fg: 'var(--vx-ink)',
   line: 'var(--vx-line)',
-  accent: 'var(--vx-accent)',
-  muted: 'var(--vx-muted)',
-  surface: 'var(--vx-surface-panel)',
-  border: 'var(--vx-surface-border)',
-  font: 'var(--basalt-font-sans)',
+  accent: 'var(--vx-brand)',
+  // theme-allow unknown-vx-token — a v3 token (css/tokens.css); the guard's name list is 2.x
+  muted: 'var(--vx-ink-muted)',
+  surface: 'var(--vx-card)',
+  border: 'var(--vx-hairline)',
+  font: 'var(--vx-font-sans)',
   transparent: true,
 }
 
 let modulePromise: Promise<MermaidModule | null> | null = null
 
-/** Module-level singleton — resolves once; every caller shares the same load attempt. */
-function loadMermaidModule(): Promise<MermaidModule | null> {
+/** Module-level singleton: every caller shares one load attempt; a missing peer resolves null. */
+function loadMermaid(): Promise<MermaidModule | null> {
   modulePromise ??= import('beautiful-mermaid').catch(() => null)
   return modulePromise
 }
 
-export type MermaidDiagramProps = {
-  /** Raw mermaid source (the fence body, without the surrounding ``` marks). */
-  readonly code: string
-  readonly className?: string
-  readonly style?: CSSProperties
-  /** Rendered instead of the default `CodeBlock language="mermaid"` degrade. */
-  readonly fallback?: ReactNode
-}
-
-export function MermaidDiagram({ code, className, style, fallback }: MermaidDiagramProps) {
+/**
+ * A mermaid diagram rendered by beautiful-mermaid (flowchart, state, sequence, class, ER, XY).
+ * The module loads on first use. Until it loads, when it is missing, and when the source does not
+ * parse with nothing rendered before, the block shows as code; a parse error after a good render
+ * keeps the last good diagram. The font imports beautiful-mermaid writes into the SVG are removed
+ * (`sanitizeMermaidFonts`), so the page makes no request to a font host.
+ *
+ * @example
+ * <MermaidDiagram code={'graph TD\n  A --> B'} />
+ */
+export function MermaidDiagram({ code }: { code: string }): ReactElement {
   const [mod, setMod] = useState<MermaidModule | null | undefined>(undefined)
   const [lastGood, setLastGood] = useState<string | null>(null)
 
   useEffect(() => {
     let cancelled = false
-    loadMermaidModule().then((loaded) => {
+    void loadMermaid().then((loaded) => {
       if (!cancelled) setMod(loaded)
       return undefined
     })
@@ -81,10 +58,7 @@ export function MermaidDiagram({ code, className, style, fallback }: MermaidDiag
     }
   }, [])
 
-  // Pure and synchronous once `mod` is resolved — parse errors keep the last successfully
-  // rendered SVG (docs/CONTENT-SPEC.md §2 decision 4) instead of blanking a settled diagram.
-  // Three states: `null` = module not resolved yet, `undefined` = this `code` failed to parse (show
-  // the last good SVG), `string` = fresh SVG.
+  // `null`: module not resolved; `undefined`: this source failed to parse; string: fresh SVG.
   const rendered = useMemo(() => {
     if (!mod) return null
     try {
@@ -96,31 +70,16 @@ export function MermaidDiagram({ code, className, style, fallback }: MermaidDiag
   if (typeof rendered === 'string' && rendered !== lastGood) setLastGood(rendered)
   const html = rendered === undefined ? lastGood : rendered
 
-  if (html === null) {
-    return (
-      fallback ?? (
-        <CodeBlock
-          language="mermaid"
-          code={code}
-          {...(className !== undefined && { className })}
-          {...(style !== undefined && { style })}
-        />
-      )
-    )
-  }
-
-  const firstLine = code.split('\n')[0]?.trim() || 'Diagram'
-  const containerClass = [classes.container, className].filter(Boolean).join(' ')
+  if (html === null) return <CodeBlock lang="mermaid" code={code} />
 
   return (
     <div
-      className={containerClass}
-      // a real <img> can't host inline SVG markup — `role="img"` on the wrapping div is the
-      // standard WAI-ARIA pattern for this.
+      data-slot="mermaid"
+      // a wrapper div is the standard way to give inline SVG markup an image role
       // oxlint-disable-next-line jsx-a11y/prefer-tag-over-role
       role="img"
-      aria-label={firstLine}
-      {...(style !== undefined && { style })}
+      aria-label={code.split('\n')[0]?.trim() || 'Diagram'}
+      className="overflow-x-auto rounded-inset bg-card p-3 ring-1 ring-border ring-inset in-[.vx-prose]:mt-(--vx-rhythm-2) [&_svg]:mx-auto [&_svg]:h-auto [&_svg]:max-w-full"
       dangerouslySetInnerHTML={{ __html: html }}
     />
   )

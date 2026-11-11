@@ -6,7 +6,7 @@
  *  - the final streamed output equals rendering the complete text in one go;
  *  - settled blocks are not re-rendered while the tail grows.
  */
-import { act, render } from '@testing-library/react'
+import { act, render, waitFor } from '@testing-library/react'
 import { describe, expect, test } from 'bun:test'
 import { Markdown } from './markdown'
 
@@ -112,7 +112,8 @@ describe('streaming matrix: every prefix is safe', () => {
         expect(container.querySelector('h1')).not.toBeNull()
 
         const reference = render(ui(COMPLETE_REPLY, false))
-        expect(flat(container)).toBe(flat(reference.container))
+        // The fence highlights asynchronously (shiki loads on first use): equal once both settle.
+        await waitFor(() => expect(flat(container)).toBe(flat(reference.container)))
       },
       60_000,
     )

@@ -32,7 +32,7 @@ import type { DataTableFacet } from '../../../src/table/data-table'
 import type { BasaltColumnDef } from '../../../src/table/table-features'
 import { EmptyState } from '../../../src/dashboard/empty-state'
 import { Callout, Prose } from '../../../src/content/legacy'
-import { CodeBlock } from '../../../src/content/code-block'
+import { CodeBlock } from '../../../src/content/legacy-code-block'
 import {
   ActionIcon,
   Alert,

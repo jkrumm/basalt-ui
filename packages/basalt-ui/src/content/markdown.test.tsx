@@ -63,10 +63,11 @@ describe('Markdown — rendering', () => {
     expect(out).toContain('disabled=""')
   })
 
-  test('fences are plain pre/code', () => {
+  test('fences render through CodeBlock, the source in a pre and code', () => {
     const out = html(<Markdown contentTrust="untrusted">{'```ts\nconst a = 1\n```'}</Markdown>)
 
-    expect(out).toContain('<pre><code class="language-ts">const a = 1\n</code></pre>')
+    expect(out).toContain('data-slot="code-block" data-lang="ts"')
+    expect(out).toContain('<code>const a = 1</code>')
   })
 
   test('renders a settled empty string', () => {

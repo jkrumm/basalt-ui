@@ -22,6 +22,8 @@ const AREAS = [
   'table',
   'live',
   'charts',
+  'ai',
+  'page',
 ]
 
 /** An area whose keys carry component prefixes (`dialog.close`, `combobox.dismiss`) rather than the area's own name. */

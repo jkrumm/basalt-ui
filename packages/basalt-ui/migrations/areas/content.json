@@ -115,12 +115,72 @@
       "manual": true
     },
     {
+      "id": "content-GuideDrawer",
+      "kind": "removed",
+      "from": "basalt-ui/content#GuideDrawer",
+      "to": "a recipe on ui/sheet",
+      "profiles": ["app"],
+      "manual": true
+    },
+    {
+      "id": "content-CalloutKind",
+      "kind": "removed",
+      "from": "basalt-ui/content#CalloutKind",
+      "to": "ComponentProps<typeof Callout>['kind']",
+      "profiles": ["app"],
+      "manual": true,
+      "note": "the type is not exported from basalt-ui/page (the type-barrel ceiling is a freeze-g2 row)"
+    },
+    {
+      "id": "content-TocItem",
+      "kind": "removed",
+      "from": "basalt-ui/content#TocItem",
+      "to": "NonNullable<ComponentProps<typeof Toc>['items']>[number]",
+      "profiles": ["app"],
+      "manual": true,
+      "note": "the type is not exported from basalt-ui/page (the type-barrel ceiling is a freeze-g2 row)"
+    },
+    {
+      "id": "content-ArticleLayoutMeta",
+      "kind": "removed",
+      "from": "basalt-ui/content#ArticleLayoutMeta",
+      "to": "NonNullable<ComponentProps<typeof ArticleLayout>['meta']>",
+      "profiles": ["app"],
+      "manual": true,
+      "note": "the type is not exported from basalt-ui/page (the type-barrel ceiling is a freeze-g2 row)"
+    },
+    {
+      "id": "content-FenceRenderer",
+      "kind": "removed",
+      "from": "basalt-ui/content#FenceRenderer",
+      "to": "the value type of Markdown fenceRenderers: ({ code, lang, settled }) => ReactNode",
+      "profiles": ["app"],
+      "manual": true,
+      "note": "the context loses meta and title and language is now lang; undefined declines, null renders nothing, a throw leaves the code on screen"
+    },
+    {
+      "id": "content-Callout-icon",
+      "kind": "removed-prop",
+      "from": "basalt-ui/content#Callout.icon",
+      "profiles": ["app"],
+      "manual": true,
+      "note": "the glyph follows kind (ui/alert)"
+    },
+    {
+      "id": "content-page-style",
+      "kind": "removed-prop",
+      "from": "basalt-ui/content#Prose.style, Callout.style, ArticleLayout.style",
+      "to": "className on the part, or a wrapper element",
+      "profiles": ["app"],
+      "manual": true
+    },
+    {
       "id": "content-settledOnly",
       "kind": "removed",
       "from": "basalt-ui/content#settledOnly",
       "profiles": ["app"],
       "manual": true,
-      "note": "fence renderers return with CodeBlock and the fence registry"
+      "note": "settledOnly is internal; a fenceRenderers entry reads settled from its argument (false only for the streaming tail)"
     }
   ],
   "tokens": {

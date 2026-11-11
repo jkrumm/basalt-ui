@@ -1,0 +1,13 @@
+/*
+ * The `content` fixture's Tailwind v4 entry: compiled WITH preflight, like a Tailwind consumer, plus
+ * the `.vx-prose` sheet. `content.layout.test.ts` compiles it into a temp directory; nothing
+ * generated lands in the repo.
+ */
+@import '../../../src/css/tailwind.css' source(none);
+@import '../../../src/css/prose.css';
+@source './content-fixture.tsx';
+@source '../../../src/content';
+@source '../../../src/page';
+@source '../../../src/ui/alert.tsx';
+@source '../../../src/ui/button.tsx';
+@source '../../../src/ui/popover.tsx';

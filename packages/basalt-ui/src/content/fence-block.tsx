@@ -32,9 +32,9 @@
 import { Component, useRef } from 'react'
 import type { ReactNode } from 'react'
 import type { Element } from 'hast'
-import { CodeBlock } from './code-block'
+import { CodeBlock } from './legacy-code-block'
 import { extractFenceInfo } from './markdown-hast'
-import { MermaidDiagram } from './mermaid'
+import { MermaidDiagram } from './legacy-mermaid'
 
 // ── Public registry types ─────────────────────────────────────────────────────────────────────
 

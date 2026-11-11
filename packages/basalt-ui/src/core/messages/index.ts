@@ -10,6 +10,8 @@
  * Nothing imports this file at runtime except `use-messages` and tests: the provider chunk only
  * sees the erased type.
  */
+import { ai } from './ai'
+import type { AiMessages } from './ai'
 import { base } from './base'
 import type { BaseMessages } from './base'
 import { cards } from './cards'
@@ -32,6 +34,8 @@ import { lists } from './lists'
 import type { ListsMessages } from './lists'
 import { live } from './live'
 import type { LiveMessages } from './live'
+import { page } from './page'
+import type { PageMessages } from './page'
 import { select } from './select'
 import type { SelectMessages } from './select'
 import { table } from './table'
@@ -49,7 +53,9 @@ export type BasaltMessages = SelectMessages &
   FiltersMessages &
   TableMessages &
   LiveMessages &
-  ChartsMessages
+  ChartsMessages &
+  AiMessages &
+  PageMessages
 
 /** The English defaults of every area, merged. Typed as the full interface: a missing key is a type error. */
 export const en: BasaltMessages = {
@@ -66,4 +72,6 @@ export const en: BasaltMessages = {
   ...table,
   ...live,
   ...charts,
+  ...ai,
+  ...page,
 }

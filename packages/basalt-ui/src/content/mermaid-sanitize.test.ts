@@ -157,7 +157,7 @@ describe('sanitizeMermaidFonts', () => {
       const out = sanitizeMermaidFonts(raw)
       expect(out).not.toContain('@import')
       expect(out).not.toContain('googleapis')
-      expect(out).toContain('font-family: var(--basalt-font-sans), system-ui')
+      expect(out).toContain('font-family: var(--vx-font-sans), system-ui')
       expect(out).not.toMatch(/font-family\s*:\s*['"]var\(/)
       expect(warn).not.toHaveBeenCalled()
     } finally {
