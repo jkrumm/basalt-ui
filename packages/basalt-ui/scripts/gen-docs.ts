@@ -221,15 +221,21 @@ function extractOne(
   // TRANSITIONAL: a baselined legacy root export is a shadow. A non-root (v3) export of the same
   // name takes the doc file; the legacy one stays undocumented and baselined.
   const takesOver = taken !== undefined && acc.legacy.has(kebab(name)) && at.key !== '.'
-  if (taken !== undefined && !takesOver) {
+  // A baselined legacy export that meets a name already documented (a v3 root export that reuses a
+  // 2.x subpath name) is recorded without claiming the doc file: its JSDoc gap keeps it undocumented
+  // and baselined, so it is not a clash to fix.
+  const shadowed = taken !== undefined && !takesOver && acc.baseline.has(`${at.subpath}#${name}`)
+  if (taken !== undefined && !takesOver && !shadowed) {
     acc.problems.push(
       `${name} (${at.subpath}): docs/${kebab(name)}.md is already taken by ${taken}`,
     )
     return
   }
-  acc.names.set(kebab(name), `${name} (${at.subpath})`)
-  if (at.key === '.' && acc.baseline.has(`${at.subpath}#${name}`)) acc.legacy.add(kebab(name))
-  else acc.legacy.delete(kebab(name))
+  if (!shadowed) {
+    acc.names.set(kebab(name), `${name} (${at.subpath})`)
+    if (at.key === '.' && acc.baseline.has(`${at.subpath}#${name}`)) acc.legacy.add(kebab(name))
+    else acc.legacy.delete(kebab(name))
+  }
   const decl = symbol.valueDeclaration ?? symbol.declarations?.[0] ?? at.source
   acc.out.push({
     info: {
