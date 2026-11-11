@@ -4,7 +4,7 @@
  * the block's text visible, the streaming tail shows its fences as code without a copy button, and
  * headings carry deduplicated ids and an anchor.
  */
-import { cleanup, render, screen } from '@testing-library/react'
+import { cleanup, render, screen, waitFor } from '@testing-library/react'
 import { afterEach, beforeEach, describe, expect, spyOn, test } from 'bun:test'
 import { Markdown } from './markdown'
 import type { FenceRenderers } from './contract'
@@ -107,5 +107,17 @@ describe('Markdown — headings', () => {
       </Markdown>,
     )
     expect(screen.getByRole('heading', { level: 2 }).id).toBe('')
+  })
+})
+
+describe('Markdown — mermaid fences from a model', () => {
+  test('an injection in a node label leaves no executable markup', async () => {
+    const { container } = render(
+      <Markdown contentTrust="untrusted">
+        {'~~~mermaid\ngraph TD\n  A["<img src=x onerror=alert(1)>"] --> B\n~~~'}
+      </Markdown>,
+    )
+    await waitFor(() => expect(container.querySelector('[data-slot="mermaid"] svg')).not.toBeNull())
+    expect(container.querySelector('svg script, svg img, [onerror], [onload]')).toBeNull()
   })
 })
