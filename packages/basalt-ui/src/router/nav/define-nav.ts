@@ -18,6 +18,11 @@ import type {
 } from './types'
 
 /**
+ * Declares the whole navigation (sections, pinned items, mobile tuning) as one typed, pure config.
+ *
+ * @useWhen an app declares its rail, tab bar, breadcrumb and palette destinations once, at module scope
+ * @neverWhen the destinations are one-off links with no shared nav (use a plain Link)
+ *
  * @example
  * ```ts
  * // src/lib/nav.ts, module scope: anchor identity keys on these objects
