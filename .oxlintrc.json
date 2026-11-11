@@ -68,6 +68,7 @@
     "apps/marketing/**",
     "examples/**",
     "tests/fixtures/**",
+    "packages/basalt-ui/test/fixtures/**",
     "**/*.module.css.d.ts"
   ],
   "overrides": [
