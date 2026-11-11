@@ -60,7 +60,8 @@ closed stroke scale.
 
 `selection={{ selected, onSelect }}` makes a click and the Enter key on a point propose that datum to
 `onSelect`; a click on the blank plot proposes `null` while something is selected. The selected datum
-is ringed. The server render draws the ring and attaches no handler.
+is ringed at its own value, so on stacked or normalized `Bars` the ring does not follow the segment.
+The server render draws the ring and attaches no handler.
 
 ## Custom marks
 
@@ -71,4 +72,5 @@ returns engine marks from the allowed `@tanstack/charts/*` subpaths. They draw a
 ## Not yet applied
 
 `y.domain` as an object or function and `y.gutter` are in the type and read by the consumer seams of
-`v3-charts-2b-seams` (`src/charts/seams.ts`); until then only a `[min, max]` tuple applies.
+`v3-charts-2b-seams` (`src/charts/seams.ts`); until then only a `[min, max]` tuple applies. A bar series' `stack` key and `Marker.label` are in the
+type and not read: every bar of a chart stacks by the chart's `layout`, and a marker draws its dot only.

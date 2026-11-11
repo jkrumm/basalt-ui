@@ -31,6 +31,10 @@ describe('summary', () => {
   test('reports an empty series as no data, never a number', () => {
     expect(autoSummary({ data: [], series: [v] })).toBe('Volume: no data')
   })
+  test('a series past the argument-spread limit still summarizes', () => {
+    const big = rowsOf(200_000)
+    expect(autoSummary({ data: big, series: [v] })).toBe('Volume: min 1, max 200k, last 200k')
+  })
   test('a given summary wins and renders hidden but in the tree', () => {
     const html = renderToString(
       <CartesianChart
@@ -150,6 +154,27 @@ describe('marks', () => {
       />,
     )
     expect(host.querySelectorAll('g[data-ts-key="d"] circle').length).toBe(5)
+  })
+})
+
+describe('legend naming', () => {
+  const dots: Series<Row> = {
+    mark: 'dot',
+    key: 'd',
+    label: 'Spikes',
+    color: pair('accent'),
+    y: (d) => d.v,
+  }
+  const hideWide = (series: Series<Row>[]): boolean =>
+    renderToString(
+      <CartesianChart ariaLabel="V" data={rowsOf(4)} x={x} series={series} />,
+    ).includes('data-hide-wide')
+
+  test('lines alone hand the legend to end labels at the wide class', () => {
+    expect(hideWide([v, { ...v, key: 'w', label: 'Other' }])).toBe(true)
+  })
+  test('a dot series keeps the legend: end labels never name it', () => {
+    expect(hideWide([v, dots])).toBe(false)
   })
 })
 
