@@ -1,6 +1,6 @@
 import { Drawer as BaseDrawer } from '@base-ui/react/drawer'
 import { cva } from 'class-variance-authority'
-import { createContext, useContext, useEffect, useState } from 'react'
+import { createContext, useContext, useSyncExternalStore } from 'react'
 import type { ReactElement, ReactNode } from 'react'
 import { cn } from '../core/cn'
 import { dialogs } from '../core/messages/dialogs'
@@ -10,7 +10,7 @@ import { buttonVariants } from './button'
 type Placement = 'bottom' | 'right' | 'auto'
 type Swipe = 'down' | 'right'
 
-/** The `auto` flip: bottom below this width, right from it (the `md` breakpoint, 840 px). */
+/** The `auto` flip: bottom below this width, right from it (the `md` breakpoint, 840 px; pinned to `SIZE_CLASSES.medium` by sheet.test.tsx). */
 const WIDE = '(min-width: 840px)'
 
 const PlacementContext = createContext<Placement>('auto')
@@ -60,17 +60,22 @@ export type SheetContentProps = Layout<Omit<BaseDrawer.Popup.Props, 'title'>> & 
 export type SheetTitleProps = Layout<BaseDrawer.Title.Props>
 export type SheetCloseProps = Layout<BaseDrawer.Close.Props>
 
-const swipeOf = (placement: Placement): Swipe => {
-  if (placement === 'bottom') return 'down'
-  if (placement === 'right') return 'right'
-  // theme-allow raw-breakpoint — the one viewport read a primitive makes: the swipe axis, at open
-  return window.matchMedia(WIDE).matches ? 'right' : 'down'
+/** The `auto` width flip as an external store: the server and the hydration pass read `false`. */
+const subscribeWide = (notify: () => void): (() => void) => {
+  // theme-allow raw-breakpoint — the one viewport read a primitive makes: the swipe axis
+  const query = window.matchMedia(WIDE)
+  query.addEventListener('change', notify)
+  return () => query.removeEventListener('change', notify)
 }
+// theme-allow raw-breakpoint — the same swipe-axis read
+const readWide = (): boolean => window.matchMedia(WIDE).matches
+const serverWide = (): boolean => false
 
 /**
  * A panel beside the page on Base UI Drawer: edit a record without leaving it. `placement="auto"`
- * moves it with CSS; the swipe-to-dismiss axis is read once when it opens, so server and client
- * markup never differ. Open state stays with the caller or the trigger. Works with no provider.
+ * moves it with CSS; the swipe-to-dismiss axis follows the same width from a media query that
+ * reads as narrow on the server and during hydration, so server and client markup never differ.
+ * Open state stays with the caller or the trigger. Works with no provider.
  *
  * @useWhen a record is edited or inspected beside the page and the page behind stays in view (modal decision: `Dialog`)
  * @neverWhen the question is a yes or no (use `Dialog`, or `AlertDialog` for a destructive confirm)
@@ -81,34 +86,12 @@ const swipeOf = (placement: Placement): Swipe => {
  *   <SheetContent title="Edit record">Form</SheetContent>
  * </Sheet>
  */
-export function Sheet({
-  placement = 'auto',
-  onOpenChange,
-  open,
-  defaultOpen,
-  ...props
-}: SheetProps): ReactElement {
-  const [swipe, setSwipe] = useState<Swipe>(placement === 'right' ? 'right' : 'down')
-  const startsOpen = open ?? defaultOpen ?? false
-
-  // A sheet that is open from the first paint has had no open event to read the width on.
-  useEffect(() => {
-    if (startsOpen) setSwipe(swipeOf(placement))
-    // oxlint-disable-next-line react/exhaustive-deps -- once on mount; later opens read in onOpenChange
-  }, [])
-
+export function Sheet({ placement = 'auto', ...props }: SheetProps): ReactElement {
+  const wide = useSyncExternalStore(subscribeWide, readWide, serverWide)
+  const swipe: Swipe = placement === 'right' || (placement === 'auto' && wide) ? 'right' : 'down'
   return (
     <PlacementContext value={placement}>
-      <BaseDrawer.Root
-        {...props}
-        {...(open === undefined ? {} : { open })}
-        {...(defaultOpen === undefined ? {} : { defaultOpen })}
-        swipeDirection={swipe}
-        onOpenChange={(next, details) => {
-          if (next) setSwipe(swipeOf(placement))
-          onOpenChange?.(next, details)
-        }}
-      />
+      <BaseDrawer.Root {...props} swipeDirection={swipe} />
     </PlacementContext>
   )
 }
