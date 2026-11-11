@@ -251,7 +251,7 @@ export function ComponentsSection({ shotState }: { shotState: ShotState | undefi
         </Block>
         <Block title="Menu and popover">
           <Group gap="sm" align="flex-start" mih={200}>
-            <Menu defaultOpened position="bottom-start" withinPortal={false}>
+            <Menu position="bottom-start" withinPortal={false}>
               <Menu.Target>
                 <Button variant="default">Menu</Button>
               </Menu.Target>
@@ -261,7 +261,7 @@ export function ComponentsSection({ shotState }: { shotState: ShotState | undefi
                 <Menu.Item color="red">Delete</Menu.Item>
               </Menu.Dropdown>
             </Menu>
-            <Popover defaultOpened position="bottom-start" withArrow withinPortal={false}>
+            <Popover position="bottom-start" withArrow withinPortal={false}>
               <Popover.Target>
                 <Button variant="default">Popover</Button>
               </Popover.Target>

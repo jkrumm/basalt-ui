@@ -1,0 +1,11 @@
+/* Cascade order for the playground, LOW to HIGH. Imported before every other stylesheet so it is the
+ * first `@layer` statement the browser sees and the order is fixed whatever order the bundler emits
+ * the rest in.
+ *
+ * `basalt-ui/styles.css` declares `mantine, basalt` and `basalt-ui/tailwind.css` declares
+ * `theme, base, basalt, components, utilities`; merged in import order that puts Tailwind's `base`
+ * (preflight) ABOVE `mantine`, so preflight's resets (`button { background: transparent }`,
+ * `table { border-collapse }`, `* { margin: 0 }` ...) beat the 2.x Mantine components the gallery
+ * still renders. `base` goes below `mantine` so Mantine wins; `basalt`, `components` and
+ * `utilities` keep their order above it. Drop `mantine` here when the gallery is off Mantine. */
+@layer theme, base, mantine, basalt, components, utilities;
