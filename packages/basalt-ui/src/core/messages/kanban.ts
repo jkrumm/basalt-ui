@@ -1,0 +1,6 @@
+import type { BasaltMessages } from './index'
+
+/** Replace with the area's keys when its Issue writes the strings. */
+export type KanbanMessages = Record<never, never>
+
+export const kanban = {} satisfies Partial<BasaltMessages>

@@ -80,6 +80,8 @@ export {
   type StateStore,
 } from './core/external-field'
 export type { ControlHandle, StorageLike } from './core/ports'
+export { createFormat, useFormat } from './core/format'
+export type { BasaltMessages, CalendarDate, Format, Msg } from './core/format'
 
 // The one augmentable seam: `declare module 'basalt-ui' { interface BasaltRegister { … } }` only
 // merges when the entry exports the interface. `v2-surface.md` marks it `delete` (no consumer
