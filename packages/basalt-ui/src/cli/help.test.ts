@@ -134,7 +134,7 @@ describe('run() --version and the unknown-flag gate', () => {
 
   it('a value-taking flag does not make its VALUE look like an unknown flag', () => {
     const out = resolve(dir, 'tokens.css')
-    const { code } = capture(() => run(['tokens:css', '--out', out, '--only', 'core'], dir))
+    const { code } = capture(() => run(['tokens:css', '--out', out, '--accent', '#0f8a7e'], dir))
     expect(code).toBe(0)
   })
 

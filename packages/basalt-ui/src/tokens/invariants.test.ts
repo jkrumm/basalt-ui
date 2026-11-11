@@ -394,10 +394,10 @@ describe('token invariants (docs/v3/evidence/self-tokens-theme.md §d)', () => {
     )
     const dir = mkdtempSync(join(tmpdir(), 'basalt-invariants-'))
     try {
-      expect(tokensCss(['--only', 'core', '--out', 'tokens.css'], dir)).toBe(0)
+      expect(tokensCss(['--out', 'tokens.css'], dir)).toBe(0)
       const [line1, line2] = readFileSync(join(dir, 'tokens.css'), 'utf8').split('\n')
       expect(line1).toBe(GENERATED_HEADER_LINE)
-      expect(line2).toMatch(/^\/\* basalt-ui \S+ — `basalt-ui tokens:css --only core\b[^`]*` \*\/$/)
+      expect(line2).toMatch(/^\/\* basalt-ui \S+ — `basalt-ui tokens:css --out tokens\.css` \*\/$/)
     } finally {
       rmSync(dir, { recursive: true, force: true })
     }

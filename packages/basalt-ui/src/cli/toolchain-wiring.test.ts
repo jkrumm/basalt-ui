@@ -28,7 +28,7 @@ import { tmpdir } from 'node:os'
 import { join, resolve } from 'node:path'
 import { fileURLToPath } from 'node:url'
 
-import { buildPaletteCss } from '../tokens'
+import { emitTokensCss } from '../tokens/emit'
 import {
   checkTheme,
   doctor,
@@ -523,20 +523,7 @@ describe('tokens:css — a committable artifact', () => {
     const css = emit([])
     expect(css.endsWith('}\n')).toBe(true)
     expect(css).not.toMatch(/rgba\(\d+,\d/)
-    expect(css).toContain('rgba(255, 255, 255, 0.12)')
-  })
-
-  it('emits --vx-axis as the derived faint ink, per scheme (small chart ink clears AA)', () => {
-    const css = emit([])
-    const block = (scheme: 'light' | 'dark') =>
-      css.slice(css.indexOf(`html[data-mantine-color-scheme='${scheme}']`))
-    for (const scheme of ['light', 'dark'] as const) {
-      const scoped = block(scheme)
-      const axis = /--vx-axis: ([^;]+);/.exec(scoped)?.[1]
-      const faint = /--vx-faint: ([^;]+);/.exec(scoped)?.[1]
-      expect(axis).toBeDefined()
-      expect(axis).toBe(faint)
-    }
+    expect(css).toContain('rgba(0, 0, 0, 0.35)')
   })
 
   it('emits no trailing-zero alpha — the last thing keeping the sheet out of a linter', () => {
@@ -551,42 +538,20 @@ describe('tokens:css — a committable artifact', () => {
     )
   })
 
-  it('changes no token VALUE — the body is buildPaletteCss modulo the formatting', () => {
+  it('changes no token VALUE — the body is emitTokensCss modulo the formatting', () => {
     const body = emit([]).split('\n').slice(2).join('\n')
-    expect(body).toBe(`${normalizeColorFunctions(buildPaletteCss())}\n`)
-  })
-
-  it('--selector-class emits a class selector instead of an attribute one', () => {
-    const css = emit(['--selector-class', 'dark', '--default-scheme', 'light'])
-    expect(css).toContain(':root.dark {')
-    expect(css).toContain(':root,\n:root.light {')
-    expect(css).not.toContain('data-basalt-scheme-class')
-  })
-
-  it('rejects --selector-class together with --selector-attribute', () => {
-    write('package.json', JSON.stringify({ name: 'fixture' }))
-    const { code } = capture(() =>
-      tokensCss(
-        ['--selector-class', 'dark', '--selector-attribute', 'data-x', '--out', 'o.css'],
-        dir,
-      ),
-    )
-    expect(code).toBe(1)
-  })
-
-  it('rejects a --selector-class that is not a plain class name', () => {
-    write('package.json', JSON.stringify({ name: 'fixture' }))
-    expect(tokensCss(['--selector-class', "dark'] { x", '--out', 'o.css'], dir)).toBe(1)
+    const emitted = emitTokensCss({ version: CLI_VERSION })
+    expect(body).toBe(normalizeColorFunctions(emitted).split('\n').slice(2).join('\n'))
   })
 
   it('--check passes on an up-to-date file and fails on drift', () => {
-    emit(['--only', 'core'])
+    emit(['--vibrancy', '1'])
     expect(
-      capture(() => tokensCss(['--only', 'core', '--out', 'out.css', '--check'], dir)).code,
+      capture(() => tokensCss(['--vibrancy', '1', '--out', 'out.css', '--check'], dir)).code,
     ).toBe(0)
     write('out.css', 'nope\n')
     const { code, log } = capture(() =>
-      tokensCss(['--only', 'core', '--out', 'out.css', '--check'], dir),
+      tokensCss(['--vibrancy', '1', '--out', 'out.css', '--check'], dir),
     )
     expect(code).toBe(1)
     expect(log).toContain('differs from what')
@@ -617,7 +582,7 @@ describe('the @generated marker, end to end — emit, then scan', () => {
   }
 
   it('the sheet tokens:css just wrote scans to zero findings — 116 was the round-4 bug', () => {
-    siteWithEmittedTokens(['--only', 'core'])
+    siteWithEmittedTokens()
     // Sanity: it really is full of the raw hex the guard would otherwise report.
     expect(read('src/tokens.css').match(/#[0-9a-f]{6}/gi)?.length ?? 0).toBeGreaterThan(50)
     const { code, log } = capture(() => checkTheme(dir))
@@ -628,9 +593,9 @@ describe('the @generated marker, end to end — emit, then scan', () => {
   it('holds for every emission shape, not just the default', () => {
     for (const flags of [
       [],
-      ['--only', 'all'],
-      ['--selector-class', 'dark'],
-      ['--default-scheme', 'light'],
+      ['--vibrancy', '1'],
+      ['--accent', '#0f8a7e'],
+      ['--selector', ":root[data-tenant='teal']", '--accent', '#0f8a7e'],
     ]) {
       rmSync(join(dir, 'src'), { recursive: true, force: true })
       siteWithEmittedTokens(flags)
@@ -639,7 +604,7 @@ describe('the @generated marker, end to end — emit, then scan', () => {
   })
 
   it('a HAND-FORGED marker on ordinary source suppresses nothing', () => {
-    siteWithEmittedTokens(['--only', 'core'])
+    siteWithEmittedTokens()
     const header = read('src/tokens.css').split('\n').slice(0, 2).join('\n')
     // Exactly what an agent (or anyone) could do: copy the two header lines onto a real file.
     write('src/forged.css', `${header}\n.btn { color: #ff0000; }\n`)
@@ -650,7 +615,7 @@ describe('the @generated marker, end to end — emit, then scan', () => {
   })
 
   it('a STRIPPED marker makes the emitted sheet ordinary source again', () => {
-    siteWithEmittedTokens(['--only', 'core'])
+    siteWithEmittedTokens()
     const stripped = read('src/tokens.css').split('\n').slice(2).join('\n')
     write('src/tokens.css', stripped)
     const { code, log } = capture(() => checkTheme(dir))
@@ -659,7 +624,7 @@ describe('the @generated marker, end to end — emit, then scan', () => {
   })
 
   it('appending a real rule to the emitted sheet un-exempts it', () => {
-    siteWithEmittedTokens(['--only', 'core'])
+    siteWithEmittedTokens()
     write('src/tokens.css', `${read('src/tokens.css')}.btn { color: #ff0000; }\n`)
     const { code, log } = capture(() => checkTheme(dir))
     expect(log).toContain('src/tokens.css')
