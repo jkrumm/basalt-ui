@@ -1,0 +1,99 @@
+/** `Bars` in a visual slot (ported from the 2.x suite; Wave 38): no axes, grid, margin or legend; outside a slot nothing moves. */
+import { afterEach, describe, expect, test } from 'bun:test'
+import { act } from 'react'
+import { createRoot } from 'react-dom/client'
+import { HOSTED, VisualSlotContext } from '../../dashboard/visual-slot'
+import { compileCartesian } from '../core/compile'
+import type { SeriesColor } from '../contract'
+import type { ChartSeries } from '../types'
+import { Bars } from './bars'
+
+const pair = (v: string): SeriesColor => ({ light: `var(--vx-${v})`, dark: `var(--vx-${v})` })
+type Bin = { bin: string; n: number }
+const data: Bin[] = ['<20', '20–30', '30–40', '40–50', '50+'].map((bin, i) => ({ bin, n: i + 1 }))
+const series: ChartSeries<Bin>[] = [
+  { key: 'n', label: 'Books', color: 'var(--vx-accent)', getValue: (d) => d.n, mark: 'bar' },
+]
+const spec = (bare: boolean, extra: readonly ChartSeries<Bin>[] = []) =>
+  compileCartesian<Bin, string>({
+    chartId: 'x',
+    data,
+    x: (d) => d.bin,
+    series: [...series, ...extra],
+    ...(extra.length > 0 && { y2: {} }),
+    marks: () => [],
+    band: true,
+    ...(bare && { bare }),
+  }).chart({ width: 160, height: 22, defaultTheme: {} as never })
+
+describe('compile: bare', () => {
+  test('both axes are off, there is no grid and no margin', () => {
+    const s = spec(true)
+    expect(s.scales['x']?.axis).toBe(false)
+    expect(s.scales['y']?.axis).toBe(false)
+    expect(s.scales['y']).not.toHaveProperty('grid')
+    expect(s.margin).toBe(0)
+    expect(s.guides).toBe(false)
+  })
+  test('a right-axis series keeps its scale, undrawn', () => {
+    const right: ChartSeries<Bin> = {
+      key: 'r',
+      label: 'Rate',
+      color: 'var(--vx-line)',
+      getValue: (d) => d.n * 2,
+      mark: 'line',
+      axis: 'right',
+    }
+    const s = spec(true, [right])
+    expect(s.scales['y2']?.axis).toBe(false)
+    expect(spec(true).scales['y2']).toBeUndefined()
+  })
+  test('without bare the axes, the y grid and the engine margin stay', () => {
+    const s = spec(false)
+    expect(s.scales['x']?.axis).not.toBe(false)
+    expect(s.scales['y']).toHaveProperty('grid')
+    expect(s).not.toHaveProperty('margin')
+  })
+})
+
+let root: ReturnType<typeof createRoot> | undefined
+afterEach(() => {
+  act(() => root?.unmount())
+  root = undefined
+  document.body.innerHTML = ''
+})
+async function mount(slot: boolean): Promise<HTMLElement> {
+  const el = document.createElement('div')
+  document.body.append(el)
+  root = createRoot(el)
+  const bars = (
+    <Bars
+      ariaLabel="Pace"
+      data={data}
+      x={{ value: (d) => d.bin }}
+      height={22}
+      series={[
+        { mark: 'bar', key: 'n', label: 'Books', color: pair('accent'), y: (d) => d.n },
+        { mark: 'bar', key: 'm', label: 'Other', color: pair('line'), y: (d) => d.n },
+      ]}
+    />
+  )
+  await act(async () => {
+    root?.render(
+      slot ? <VisualSlotContext.Provider value={HOSTED}>{bars}</VisualSlotContext.Provider> : bars,
+    )
+  })
+  return el
+}
+
+describe('Bars reads the visual slot', () => {
+  test('in a slot: no tick text, no legend', async () => {
+    const el = await mount(true)
+    expect(el.querySelectorAll('svg text')).toHaveLength(0)
+    expect(el.querySelector('[data-basalt-chart-legend]')).toBeNull()
+  })
+  test('outside a slot: the legend of a two-series chart is unchanged', async () => {
+    const el = await mount(false)
+    expect(el.querySelector('[data-basalt-chart-legend]')).not.toBeNull()
+  })
+})
