@@ -1,0 +1,9 @@
+{
+  "name": "@basalt-ui/spike-thin-skill-s7",
+  "private": true,
+  "description": "Spike thin-skill-s7 (skills-agent-layer section 8 S7): skill and reviewer activation outside trial conditions. Throwaway harness, no tests, no dependencies.",
+  "type": "module",
+  "scripts": {
+    "run": "bun run.ts"
+  }
+}

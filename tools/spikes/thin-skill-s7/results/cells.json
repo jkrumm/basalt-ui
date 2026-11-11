@@ -1,0 +1,20 @@
+{
+  "a": {
+    "skill": "not run",
+    "reviewer": "not run"
+  },
+  "b": {
+    "skill": "not run",
+    "reviewer": "not run"
+  },
+  "c": {
+    "skill": "yes",
+    "reviewer": "no",
+    "note": "implementer, no Agent tool: Skill basalt-design called; stated 'reviewer not run' per the AGENTS block (no shot existed, brief wrote no source); skill resolved from the parent session, not the fixture copy"
+  },
+  "d": {
+    "skill": "not run",
+    "reviewer": "not run",
+    "table": "not run"
+  }
+}
