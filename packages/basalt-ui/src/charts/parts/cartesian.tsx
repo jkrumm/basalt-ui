@@ -98,11 +98,20 @@ const finite = (v: number | null): v is number => v !== null && Number.isFinite(
 export function autoSummary<D>(props: Pick<CartesianChartProps<D>, 'data' | 'series'>): string {
   const first = props.series.find((s) => s.failed !== true)
   if (first === undefined) return ''
-  const values = props.data.map(first.y).filter(finite)
-  if (values.length === 0) return `${first.label}: no data`
+  // A loop, not `Math.min(...values)`: a spread of a large series overflows the argument limit.
+  let min = Number.POSITIVE_INFINITY
+  let max = Number.NEGATIVE_INFINITY
+  let last: number | undefined
+  for (const d of props.data) {
+    const v = first.y(d)
+    if (!finite(v)) continue
+    if (v < min) min = v
+    if (v > max) max = v
+    last = v
+  }
+  if (last === undefined) return `${first.label}: no data`
   const fmt = (v: number): string => first.format?.(v, props.data[0] as D) ?? defaultNumberFormat(v)
-  const last = props.data.findLast((d) => finite(first.y(d)))
-  return `${first.label}: min ${fmt(Math.min(...values))}, max ${fmt(Math.max(...values))}, last ${fmt(first.y(last as D) as number)}`
+  return `${first.label}: min ${fmt(min)}, max ${fmt(max)}, last ${fmt(last)}`
 }
 
 const xLabel = (v: ChartX): string => (v instanceof Date ? v.toISOString().slice(0, 10) : String(v))
@@ -205,16 +214,44 @@ export function CartesianPlot<D>(props: CartesianChartProps<D> & PlotOptions): R
   })
 
   const hasBars = stable.series.some((s) => s.mark === 'bar')
-  const spec = useMemo(
+  const base = useMemo(
     () => applySeams(toEngineSpec({ ...stable, ariaLabel } as CartesianChartProps<D>), stable),
     [stable, ariaLabel],
   )
+  // Bar shades are part of the series, so the legend swatch wears what the plot draws: the shade of
+  // same-coloured bars, else the per-datum `opacity` sampled on the first row, else the default.
+  const opacityOf = useMemo(
+    () =>
+      new Map(
+        stable.series.flatMap((s) =>
+          s.mark === 'bar' && s.opacity ? [[s.key, s.opacity] as const] : [],
+        ),
+      ),
+    [stable.series],
+  )
+  const spec = useMemo(() => {
+    const bars = shadeBars(
+      base.series.filter((s, i) => stable.series[i]?.mark === 'bar'),
+      opacityOf.size > 0,
+    )
+    const sample = base.data[0]
+    const shaded = new Map(
+      bars.map((b) => {
+        const first = sample === undefined ? undefined : opacityOf.get(b.key)?.(sample)
+        return [b.key, first === undefined ? b : { ...b, fillOpacity: first }] as const
+      }),
+    )
+    return { ...base, series: base.series.map((s) => shaded.get(s.key) ?? s) }
+  }, [base, stable.series, opacityOf])
 
   // ── the legend gives way to end labels only when they WILL draw for every line ─────────────────
   const lineSeries = spec.series.filter((s, i) => stable.series[i]?.mark === 'line')
   const labelled = lineSeries.filter((s) => s.role !== 'reference')
   const namedByLabels =
-    !hasBars && spec.y2 === undefined && spec.series.every((s) => s.role !== 'reference')
+    !hasBars &&
+    stable.series.every((s) => s.mark === 'line') &&
+    spec.y2 === undefined &&
+    spec.series.every((s) => s.role !== 'reference')
   const effective: LinesNaming = namedByLabels ? stable.naming : 'legend'
   const placeable = labelled.every((s) => lastIsPlaceable(spec.data, spec.x, spec.xDomain, s))
   const labelsOnly = effective === 'endLabels'
@@ -236,22 +273,13 @@ export function CartesianPlot<D>(props: CartesianChartProps<D> & PlotOptions): R
       const out: ChartMarks[number][] = []
       const barKeys = byMark('bar')
       if (barKeys.size > 0) {
-        const perDatum = stable.series.filter((s) => s.mark === 'bar' && s.opacity !== undefined)
-        const opacity = new Map(
-          perDatum.flatMap((s) =>
-            s.mark === 'bar' && s.opacity ? [[s.key, s.opacity] as const] : [],
-          ),
-        )
-        const bars = shadeBars(
-          spec.series.filter((s) => barKeys.has(s.key)),
-          opacity.size > 0,
-        )
+        const bars = spec.series.filter((s) => barKeys.has(s.key))
         out.push(
           ...barMarks(ctx, {
             bars,
             layout: stable.layout,
-            ...(opacity.size > 0 && {
-              opacityOf: (d: D, key: string) => opacity.get(key)?.(d),
+            ...(opacityOf.size > 0 && {
+              opacityOf: (d: D, key: string) => opacityOf.get(key)?.(d),
             }),
             emptyTicks: stable.bare && floorIsZero(spec.y?.domain),
           }),
@@ -309,7 +337,7 @@ export function CartesianPlot<D>(props: CartesianChartProps<D> & PlotOptions): R
       }
       return out
     },
-    [stable, spec, effective, controller, indexOf],
+    [stable, spec, effective, controller, indexOf, opacityOf],
   )
 
   const width = measured || INITIAL_WIDTH

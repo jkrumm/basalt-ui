@@ -42,19 +42,6 @@ export function shadeBars<D>(
 const paint = (color: string, opacity: number): string =>
   opacity >= 1 ? color : `color-mix(in srgb, ${color} ${Math.round(opacity * 100)}%, transparent)`
 
-let warnedLogStack = false
-
-/** A stack sums bar heights and a log axis has no additive zero to sum from: dev throws, production
- * logs once and draws what it can. Lines-only and grouped charts are fine. */
-export function guardLogStack(layout: BarLayout, onLog: boolean): void {
-  if (!onLog || layout === 'grouped') return
-  const message = `Bars: ${layout} bars cannot use a log axis; use layout: 'grouped'`
-  if (process.env.NODE_ENV !== 'production') throw new Error(message)
-  // oxlint-disable-next-line no-console -- the production leg of a dev-only throw
-  if (!warnedLogStack) console.error(message)
-  warnedLogStack = true
-}
-
 /**
  * A slotted chart has no axes to name the hovered bin, and an empty bin has no bar to light. Each bin
  * whose stack sums to zero gets a baseline mark (a half-dot on the plot's floor), hidden until that x
