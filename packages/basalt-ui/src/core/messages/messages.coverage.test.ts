@@ -24,8 +24,11 @@ const AREAS = [
   'charts',
 ]
 
-/** An area whose keys carry component prefixes (`dialog.close`) rather than the area's own name. */
-const PREFIXES: Record<string, string[]> = { dialogs: ['dialog', 'sheet', 'toast'] }
+/** An area whose keys carry component prefixes (`dialog.close`, `combobox.dismiss`) rather than the area's own name. */
+const PREFIXES: Record<string, string[]> = {
+  dialogs: ['dialog', 'sheet', 'toast'],
+  select: ['combobox'],
+}
 
 const areaFiles = readdirSync(MESSAGES)
   .filter((name) => name.endsWith('.ts') && !name.endsWith('.test.ts'))

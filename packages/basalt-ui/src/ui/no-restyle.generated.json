@@ -73,6 +73,86 @@
       "message": "Checkbox owns its height and display: eject it (basalt-ui eject checkbox) to change them."
     },
     {
+      "module": "combobox",
+      "part": "combobox",
+      "pattern": "^Combobox$",
+      "allow": ["layout"],
+      "deny": ["h-*", "min-h-*", "size-*", "hidden", "flex", "block", "grid", "inline-flex"],
+      "message": "Combobox owns its height and display: eject it (basalt-ui eject combobox) to change them."
+    },
+    {
+      "module": "combobox",
+      "part": "combobox-input",
+      "pattern": "^ComboboxInput$",
+      "allow": ["layout"],
+      "deny": ["h-*", "min-h-*", "size-*", "hidden", "flex", "block", "grid", "inline-flex"],
+      "message": "ComboboxInput owns its height and display: use size (md, sm), or eject it (basalt-ui eject combobox)."
+    },
+    {
+      "module": "combobox",
+      "part": "combobox-content",
+      "pattern": "^ComboboxContent$",
+      "allow": ["layout"],
+      "deny": ["h-*", "min-h-*", "size-*", "hidden", "flex", "block", "grid", "inline-flex"],
+      "message": "ComboboxContent owns its height and display: eject it (basalt-ui eject combobox) to change them."
+    },
+    {
+      "module": "combobox",
+      "part": "combobox-item",
+      "pattern": "^ComboboxItem$",
+      "allow": ["layout"],
+      "deny": ["h-*", "min-h-*", "size-*", "hidden", "flex", "block", "grid", "inline-flex"],
+      "message": "ComboboxItem owns its height and display: eject it (basalt-ui eject combobox) to change them."
+    },
+    {
+      "module": "combobox",
+      "part": "combobox-chips",
+      "pattern": "^ComboboxChips$",
+      "allow": ["layout"],
+      "deny": ["h-*", "min-h-*", "size-*", "hidden", "flex", "block", "grid", "inline-flex"],
+      "message": "ComboboxChips owns its height and display: use size (md, sm), or eject it (basalt-ui eject combobox)."
+    },
+    {
+      "module": "combobox",
+      "part": "combobox-chip",
+      "pattern": "^ComboboxChip$",
+      "allow": ["layout"],
+      "deny": ["h-*", "min-h-*", "size-*", "hidden", "flex", "block", "grid", "inline-flex"],
+      "message": "ComboboxChip owns its height and display: eject it (basalt-ui eject combobox) to change them."
+    },
+    {
+      "module": "combobox",
+      "part": "autocomplete",
+      "pattern": "^Autocomplete$",
+      "allow": ["layout"],
+      "deny": ["h-*", "min-h-*", "size-*", "hidden", "flex", "block", "grid", "inline-flex"],
+      "message": "Autocomplete owns its height and display: eject it (basalt-ui eject combobox) to change them."
+    },
+    {
+      "module": "combobox",
+      "part": "autocomplete-input",
+      "pattern": "^AutocompleteInput$",
+      "allow": ["layout"],
+      "deny": ["h-*", "min-h-*", "size-*", "hidden", "flex", "block", "grid", "inline-flex"],
+      "message": "AutocompleteInput owns its height and display: use size (md, sm), or eject it (basalt-ui eject combobox)."
+    },
+    {
+      "module": "combobox",
+      "part": "autocomplete-content",
+      "pattern": "^AutocompleteContent$",
+      "allow": ["layout"],
+      "deny": ["h-*", "min-h-*", "size-*", "hidden", "flex", "block", "grid", "inline-flex"],
+      "message": "AutocompleteContent owns its height and display: eject it (basalt-ui eject combobox) to change them."
+    },
+    {
+      "module": "combobox",
+      "part": "autocomplete-item",
+      "pattern": "^AutocompleteItem$",
+      "allow": ["layout"],
+      "deny": ["h-*", "min-h-*", "size-*", "hidden", "flex", "block", "grid", "inline-flex"],
+      "message": "AutocompleteItem owns its height and display: eject it (basalt-ui eject combobox) to change them."
+    },
+    {
       "module": "dialog",
       "part": "dialog-content",
       "pattern": "^DialogContent$",
@@ -183,6 +263,46 @@
       "allow": ["layout"],
       "deny": ["h-*", "min-h-*", "size-*", "hidden", "flex", "block", "grid", "inline-flex"],
       "message": "ScrollArea owns its height and display: eject it (basalt-ui eject scroll-area) to change them."
+    },
+    {
+      "module": "select",
+      "part": "select",
+      "pattern": "^Select$",
+      "allow": ["layout"],
+      "deny": ["h-*", "min-h-*", "size-*", "hidden", "flex", "block", "grid", "inline-flex"],
+      "message": "Select owns its height and display: eject it (basalt-ui eject select) to change them."
+    },
+    {
+      "module": "select",
+      "part": "select-trigger",
+      "pattern": "^SelectTrigger$",
+      "allow": ["layout"],
+      "deny": ["h-*", "min-h-*", "size-*", "hidden", "flex", "block", "grid", "inline-flex"],
+      "message": "SelectTrigger owns its height and display: use size (md, sm), or eject it (basalt-ui eject select)."
+    },
+    {
+      "module": "select",
+      "part": "select-content",
+      "pattern": "^SelectContent$",
+      "allow": ["layout"],
+      "deny": ["h-*", "min-h-*", "size-*", "hidden", "flex", "block", "grid", "inline-flex"],
+      "message": "SelectContent owns its height and display: eject it (basalt-ui eject select) to change them."
+    },
+    {
+      "module": "select",
+      "part": "select-item",
+      "pattern": "^SelectItem$",
+      "allow": ["layout"],
+      "deny": ["h-*", "min-h-*", "size-*", "hidden", "flex", "block", "grid", "inline-flex"],
+      "message": "SelectItem owns its height and display: eject it (basalt-ui eject select) to change them."
+    },
+    {
+      "module": "select",
+      "part": "native-select",
+      "pattern": "^NativeSelect$",
+      "allow": ["layout"],
+      "deny": ["h-*", "min-h-*", "size-*", "hidden", "flex", "block", "grid", "inline-flex"],
+      "message": "NativeSelect owns its height and display: use size (md, sm), or eject it (basalt-ui eject select)."
     },
     {
       "module": "separator",

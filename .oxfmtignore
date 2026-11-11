@@ -29,3 +29,5 @@ packages/basalt-ui/src/tokens/golden/**
 # Generated ui docs whose `slots:` line is wider than the print width; oxfmt wraps it and gen-ui
 # --check then reads the file as drifted. Owned by `gen-ui`, never by oxfmt.
 packages/basalt-ui/docs/dialog.md
+packages/basalt-ui/docs/select.md
+packages/basalt-ui/docs/combobox.md
