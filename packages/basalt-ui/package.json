@@ -183,7 +183,7 @@
   },
   "scripts": {
     "build": "tsup && tsc -p tsconfig.build.json --emitDeclarationOnly --declarationMap && bun scripts/gen-chart-css.ts --check && bun scripts/copy-assets.mjs && bun scripts/fix-esm-extensions.mjs && bun scripts/gen-llms.ts",
-    "typecheck": "tsc --noEmit",
+    "typecheck": "tsc --noEmit && tsc --noEmit -p tsconfig.nav-guard.json",
     "check-budgets": "bun scripts/check-budgets.ts",
     "test": "cd ../.. && bun test packages/basalt-ui",
     "pack-test": "bash scripts/pack-test.sh",
