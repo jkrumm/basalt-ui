@@ -17,12 +17,17 @@ import { Collapsible as BaseCollapsible } from '@base-ui/react/collapsible'
 import { Dialog as BaseDialog } from '@base-ui/react/dialog'
 import { Drawer as BaseDrawer } from '@base-ui/react/drawer'
 import { Toast as BaseToast } from '@base-ui/react/toast'
+import { Autocomplete as BaseAutocomplete } from '@base-ui/react/autocomplete'
+import { Combobox as BaseCombobox } from '@base-ui/react/combobox'
+import { Select as BaseSelect } from '@base-ui/react/select'
 import { Tabs as BaseTabs } from '@base-ui/react/tabs'
 import { readdirSync } from 'node:fs'
 import { createElement } from 'react'
 import type { ComponentType, ReactElement, ReactNode } from 'react'
 import { hydrateRoot } from 'react-dom/client'
 import { renderToString } from 'react-dom/server'
+import { AutocompleteContent, ComboboxContent } from './combobox'
+import { SelectContent } from './select'
 
 type PartComponent = ComponentType<Record<string, unknown>>
 
@@ -55,6 +60,7 @@ const PARENTS: Record<string, ComponentType<{ children?: ReactNode }>> = {
   'fieldset-legend': (p) => createElement(BaseFieldset.Root, p),
   ...disclosureAncestry(),
   ...overlayAncestry(true),
+  ...pickerAncestry(),
   ...tableAncestry({
     'table-header': ['table'],
     'table-body': ['table'],
@@ -133,6 +139,41 @@ export function overlayAncestry(
 /** Roots that render no element of their own: they carry no slot and are not listed in `SLOTS`. */
 export const ROOTLESS = new Set(['dialog', 'alert-dialog', 'sheet'])
 
+/**
+ * The Base UI roots a picker part needs. A popup part renders inside an open root (the popup is
+ * portalled, so the checker reads `baseElement`): a select trigger, value and group under a root,
+ * a select content under an open root, an item under that root's own content; the same for the
+ * combobox and autocomplete, and a chip under a `multiple` combobox.
+ */
+export function pickerAncestry(): Record<string, ComponentType<{ children?: ReactNode }>> {
+  type Wrap = ComponentType<{ children?: ReactNode }>
+  const select: Wrap = (p) => createElement(BaseSelect.Root, { defaultValue: 'a' }, p.children)
+  const openSelect: Wrap = (p) => createElement(BaseSelect.Root, { defaultOpen: true }, p.children)
+  const combobox: Wrap = (p) => createElement(BaseCombobox.Root, { defaultOpen: true }, p.children)
+  const multiple: Wrap = (p) =>
+    createElement(BaseCombobox.Root, { multiple: true, defaultOpen: true }, p.children)
+  const autocomplete: Wrap = (p) =>
+    createElement(BaseAutocomplete.Root, { defaultOpen: true }, p.children)
+  return {
+    'select-trigger': select,
+    'select-value': select,
+    'select-group': openSelect,
+    'select-content': openSelect,
+    'select-item': (p) => openSelect({ children: createElement(SelectContent, null, p.children) }),
+    'combobox-input': combobox,
+    'combobox-content': combobox,
+    'combobox-item': (p) =>
+      combobox({ children: createElement(ComboboxContent, null, p.children) }),
+    'combobox-chips': multiple,
+    'combobox-chip': (p) =>
+      multiple({ children: createElement(BaseCombobox.Chips, null, p.children) }),
+    'autocomplete-input': autocomplete,
+    'autocomplete-content': autocomplete,
+    'autocomplete-item': (p) =>
+      autocomplete({ children: createElement(AutocompleteContent, null, p.children) }),
+  }
+}
+
 /** Parts whose element holds no text: they render without the `x` child. */
 const NO_TEXT = new Set(['table', 'table-header', 'table-body', 'table-row'])
 
@@ -181,14 +222,17 @@ function partElement(
   return Parent === undefined ? node : createElement(Parent, null, node)
 }
 
-/** A part on a void element (`<input>`) refuses children, so it renders bare. */
+/**
+ * A part on a void element (`<input>`) refuses children, so it renders bare. The returned element
+ * is the document body, so a portalled popup is found too.
+ */
 function renderPart(Part: PartComponent, slot: string): { container: HTMLElement; bare: boolean } {
   try {
-    return { container: render(partElement(Part, slot, false)).container, bare: false }
+    return { container: render(partElement(Part, slot, false)).baseElement, bare: false }
   } catch (error) {
     if (!(error instanceof Error) || !error.message.includes('void element')) throw error
     cleanup()
-    return { container: render(partElement(Part, slot, true)).container, bare: true }
+    return { container: render(partElement(Part, slot, true)).baseElement, bare: true }
   }
 }
 

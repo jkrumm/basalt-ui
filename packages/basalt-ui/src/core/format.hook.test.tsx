@@ -62,10 +62,14 @@ describe('useFormat', () => {
 })
 
 describe('useMessages', () => {
+  // Real areas now carry keys, so a made-up area no longer passes the weak-type check unaided.
   const area = {
     ...base,
     'x.hello': 'Hello',
     'x.range': (f: Format, from: number, to: number) => `${f.number(from)}-${f.number(to)}`,
+  } as unknown as Partial<BasaltMessages> & {
+    'x.hello': string
+    'x.range': (f: Format, from: number, to: number) => string
   }
 
   function Messages({ out }: { out: (t: ReturnType<typeof useMessages<typeof area>>) => string }) {
