@@ -5,8 +5,9 @@ export const EJECT_HELP = `Usage: basalt-ui eject <name> --reason "<why>" [--app
        basalt-ui eject --adopt <path> --reason "<why>" [--raise "<named consumer>"]
        basalt-ui eject <name> --undo [--app <root>]
 
-Takes ownership of one primitive. The import specifier never changes: basalt() aliases
-basalt-ui/ui/<name> to the local file, so npm composites follow it.
+Takes ownership of one primitive. The import specifier never changes: the v3 basalt() from
+basalt-ui/vite aliases basalt-ui/ui/<name> to the local file from the manifest, so npm composites
+follow it, and the paths row does the same for tsc. Until that basalt() ships, only tsc follows.
 
 eject <name> writes:
   <root>/components/ui/<name>.tsx        the seed, line 1: // basalt:ejected <name>@<version> <why>

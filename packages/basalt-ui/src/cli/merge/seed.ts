@@ -90,6 +90,60 @@ export function ejectedSource(seed: string): { text: string } | { error: string 
 }
 
 /** The guard placed beside an ejected file: the `requires` half only, imports moved like the seed's. */
+const IDENT = /^[A-Za-z_$][\w$]*$/
+
+/** The value and type names the installed package's `.` entry exports; empty when it cannot be read. */
+function rootExports(pkgRoot: string): Set<string> {
+  const pkgPath = join(pkgRoot, 'package.json')
+  if (!existsSync(pkgPath)) return new Set()
+  const entry = (JSON.parse(readFileSync(pkgPath, 'utf8')) as { exports?: Record<string, unknown> })
+    .exports?.['.']
+  const target =
+    typeof entry === 'string'
+      ? entry
+      : ((entry as Record<string, unknown> | undefined)?.['import'] ??
+        (entry as Record<string, unknown> | undefined)?.['default'])
+  const file = typeof target === 'string' ? join(pkgRoot, target) : null
+  if (file === null || !existsSync(file)) return new Set()
+  const source = readFileSync(file, 'utf8')
+  const names = new Set<string>()
+  for (const [, list] of source.matchAll(/export\s+(?:type\s+)?\{([^}]*)\}/g)) {
+    for (const item of (list ?? '').split(',')) {
+      const name =
+        item
+          .trim()
+          .split(/\s+as\s+/)
+          .at(-1)
+          ?.replace(/^type\s+/, '') ?? ''
+      if (IDENT.test(name)) names.add(name)
+    }
+  }
+  const declared =
+    /export\s+(?:declare\s+)?(?:async\s+)?(?:function\*?|const|let|class|type|interface)\s+([A-Za-z_$][\w$]*)/g
+  for (const [, name] of source.matchAll(declared)) if (name !== undefined) names.add(name)
+  return names
+}
+
+/**
+ * The names an ejected file imports from `basalt-ui` that the installed package's root entry does
+ * not export. Non-empty means the file would not compile: eject refuses rather than write it.
+ */
+export function missingRootExports(pkgRoot: string, text: string): string[] {
+  const wanted = [...text.matchAll(/import\s+(?:type\s+)?\{([^}]*)\}\s*from\s*['"]basalt-ui['"]/g)]
+    .flatMap(([, list]) => (list ?? '').split(','))
+    .map(
+      (item) =>
+        item
+          .trim()
+          .replace(/^type\s+/, '')
+          .split(/\s+as\s+/)[0] ?? '',
+    )
+    .filter((name) => IDENT.test(name))
+  if (wanted.length === 0) return []
+  const exported = rootExports(pkgRoot)
+  return wanted.filter((name) => !exported.has(name))
+}
+
 export function ejectedGuard(guard: string, name: string): { text: string } | { error: string } {
   const lines = guard.split('\n')
   const closed = lines.findIndex((line) => line.trim() === GUARD_CLOSED)
