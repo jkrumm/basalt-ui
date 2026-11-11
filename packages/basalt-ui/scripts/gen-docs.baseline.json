@@ -53,7 +53,6 @@
   "basalt-ui/charts#MirroredBars",
   "basalt-ui/charts#Sparkline",
   "basalt-ui/charts#StackedArea",
-  "basalt-ui/charts#chartCursor",
   "basalt-ui/charts#chartCurve",
   "basalt-ui/charts#foldBands",
   "basalt-ui/commands#NotificationBell",

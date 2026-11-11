@@ -19,7 +19,7 @@ import {
   watchPlotReads,
 } from './plot-context'
 import type { PlotSizes } from './plot-context'
-import { chartCursor } from '../cursor'
+import { chartCursor } from './cursor'
 import type { ChartSeries, PlotContext } from '../types'
 
 type Row = { t: Date; v: number }
