@@ -31,7 +31,8 @@ export default mergeConfig(
     resolve: {
       alias: [
         { find: /^basalt-ui\/tailwind\.css$/, replacement: css('tailwind.css') },
-        { find: /^basalt-ui\/tokens\.css$/, replacement: css('tokens.css') },
+        // The query survives the rewrite: `?inline` is how `demo/v3-tokens.ts` reads the sheet.
+        { find: /^basalt-ui\/tokens\.css(\?inline)?$/, replacement: `${css('tokens.css')}$1` },
       ],
     },
     // tanstackRouter must precede the React plugin — it generates `src/routeTree.gen.ts` from the
