@@ -1,0 +1,10 @@
+/*
+ * The `charts-sparkline` fixture's Tailwind v4 entry, compiled WITH preflight like `ui-range.css`:
+ * `Sparkline` and `MiniBars` are measured the way a Tailwind consumer renders them, inside a real
+ * `StatCard` chart box. `charts-sparkline.layout.test.ts` compiles it into a temp directory.
+ */
+@import '../../../src/css/tailwind.css' source(none);
+@source './charts-sparkline-fixture.tsx';
+@source '../../../src/charts/parts';
+@source '../../../src/cards';
+@source '../../../src/ui';
