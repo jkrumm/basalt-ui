@@ -168,6 +168,16 @@ describe('eject.e2e (linewatch)', () => {
     expect(snapshot(fx.dir)).toEqual(before)
   })
 
+  it('--all over the full shipped set names every blocked seed at once, writing nothing', () => {
+    const fx = makeConsumer('linewatch')
+    const before = snapshot(fx.dir)
+    const all = run(fx, ['--all', '--reason', 'shape C', '--raise', 'F3 flipped'])
+    expect(all.code).toBe(1)
+    expect(all.log).toContain('badge imports')
+    expect(all.log).toContain('card imports')
+    expect(snapshot(fx.dir)).toEqual(before)
+  })
+
   it('exits 1 without basalt() in the app, writing nothing', () => {
     const fx = makeConsumer('linewatch')
     writeFileSync(join(fx.dir, 'vite.config.mjs'), 'export default { plugins: [] }\n')

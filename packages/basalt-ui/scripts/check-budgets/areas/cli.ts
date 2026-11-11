@@ -44,12 +44,12 @@ export const rows: readonly RowDef[] = [
   // 8879 -> 8923 (v3 verb stubs): `eject`, `migrate` and `lint` registered as not-implemented verbs (cli/verbs-v3.ts +39, the dispatcher case +5). Consumer: shutterflow and image-gateway, whose direct 1.x jump runs `migrate --from`.
   // 8923 -> 9691 (v3-mig-cli): `basalt-ui migrate` (cli/migrate/: row reader and chain fold, import census, report and `--check`, +763) replaces the stub case. Consumer: shutterflow and image-gateway, whose direct 1.x jump runs `migrate --from`.
   // 9691 -> 9836 (v3 sync, v3-sk-2-sync): the manifest reader/writer (cli/manifest.ts) and the render-and-compare engine with its block splice (cli/sync/, +512) replace the 2.x cli/sync.ts (-342); the 2.x ledger engine in index.ts stays until v3-sk-3 rewrites `init`, the only caller left (+145 net). Consumer: rollhook (the first G0 `bridge` install).
-  // 9836 -> 11062 (v3-prim-p7-eject): `basalt-ui eject` with `--all`, `--adopt`, `--undo`, `--raise` (cli/eject/: flag parse, root and app resolution, the JSONC paths writer, the ledger row and budget raise, +965) and the merge helpers `sync` imports (cli/merge/: header, seed digest and import rewrite, `git merge-file` wrapper, formatter resolve, +251) replace the stub case (+1 net in index.ts and verbs-v3.ts; totalLines counts each new file one line longer than wc). Consumer: console (`--adopt` of its base-nova files) and rb (`--adopt --raise` for the PIN entry).
+  // 9836 -> 11076 (v3-prim-p7-eject): `basalt-ui eject` with `--all`, `--adopt`, `--undo`, `--raise` (cli/eject/: flag parse, root and app resolution, the JSONC paths writer, the ledger row and budget raise, +979) and the merge helpers `sync` imports (cli/merge/: header, seed digest and import rewrite, `git merge-file` wrapper, formatter resolve, +251) replace the stub case (+1 net in index.ts and verbs-v3.ts; totalLines counts each new file one line longer than wc). Consumer: console (`--adopt` of its base-nova files) and rb (`--adopt --raise` for the PIN entry).
   {
     id: 'cli-lines',
     order: 110,
     label: 'CLI non-test lines (src/cli/**)',
-    ceiling: 11062,
+    ceiling: 11076,
     measure: () =>
       totalLines(
         walkFiles(join(PKG_ROOT, 'src/cli'), /\.tsx?$/).filter((p) => !/\.test\.tsx?$/.test(p)),
@@ -82,7 +82,7 @@ export const raises: readonly Raise[] = [
   {
     ceiling: 'cli-lines',
     from: 9836,
-    to: 11062,
+    to: 11076,
     consumer: '`eject --adopt` of the base-nova files on a G1 `parts` install',
     repo: 'console',
   },

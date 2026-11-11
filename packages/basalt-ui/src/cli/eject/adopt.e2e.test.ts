@@ -111,15 +111,18 @@ describe('adopt.e2e (console)', () => {
     })
   })
 
-  it('a shipped name created on the branch is not on the merge base: --raise or exit 1', () => {
+  it('a shipped name created on the branch exits 1 with or without --raise, writing nothing', () => {
     const fx = makeConsumer('console', { git: true })
     writeFileSync(join(fx.dir, 'src/components/ui/input.tsx'), 'export const Input = null\n')
     commitAll(fx.dir, 'new input on the branch')
     const before = snapshot(fx.dir)
-    const refused = run(fx, ['--adopt', 'src/components/ui/input.tsx', '--reason', 'r'])
-    expect(refused.code).toBe(1)
-    expect(refused.log).toContain('merge base')
-    expect(snapshot(fx.dir)).toEqual(before)
+    for (const extra of [[], ['--raise', 'console login']]) {
+      const refused = run(fx, ['--adopt', 'src/components/ui/input.tsx', '--reason', 'r', ...extra])
+      expect(refused.code).toBe(1)
+      expect(refused.log).toContain('merge base')
+      expect(refused.log).toContain('basalt-ui eject input')
+      expect(snapshot(fx.dir)).toEqual(before)
+    }
   })
 
   it('an adopted file is not ejected again, and a plain eject over it is refused', () => {
