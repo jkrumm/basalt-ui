@@ -211,6 +211,23 @@ describe('--check', () => {
     expect(capture(() => migrate([...FLAGS, '--check'], clean, p)).code).toBe(0)
   })
 
+  it('a removed prop is read inside the component tag, not anywhere in the file', () => {
+    const p = pkgWith({
+      'areas/a.json': rowsFile({
+        rows: [{ id: 'cn', kind: 'removed-prop', from: 'basalt-ui#Md.className' }],
+      }),
+    })
+    const other = tree(tmp(), {
+      'a.tsx':
+        "import { Md } from 'basalt-ui'\nconst x = <div className=\"a\"><Md /></div>\nconst y = { className: 'b' }\n",
+    })
+    expect(capture(() => migrate([...FLAGS, '--check'], other, p)).code).toBe(0)
+    const aliased = tree(tmp(), {
+      'a.tsx': 'import { Md as $Md } from \'basalt-ui\'\nconst x = <$Md\n  className="a"\n/>\n',
+    })
+    expect(capture(() => migrate([...FLAGS, '--check'], aliased, p)).code).toBe(1)
+  })
+
   it('fails on a legacy [data-mantine-color-scheme] selector with no row at all', () => {
     const app = tree(tmp(), { 'a.css': ':root[data-mantine-color-scheme="dark"] { color: red }\n' })
     const r = capture(() => migrate([...FLAGS, '--check'], app, pkg()))
