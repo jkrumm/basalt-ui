@@ -1,0 +1,190 @@
+{
+  "area": "cli",
+  "status": "open",
+  "rows": [
+    {
+      "file": "packages/basalt-ui/src/cli/board-freshness.test.ts",
+      "area": "cli",
+      "class": "ab",
+      "disposition": "port",
+      "target": "packages/basalt-ui/src/cli/board-freshness.test.ts",
+      "laws": ["CLI, agent layer"]
+    },
+    {
+      "file": "packages/basalt-ui/src/cli/check-theme.test.ts",
+      "area": "cli",
+      "class": "def",
+      "disposition": "rewrite",
+      "target": "packages/basalt-ui/src/cli/check-theme.test.ts",
+      "laws": ["CLI, agent layer"]
+    },
+    {
+      "file": "packages/basalt-ui/src/cli/design-references.test.ts",
+      "area": "cli",
+      "class": "ab",
+      "disposition": "port",
+      "target": "packages/basalt-ui/src/cli/design-references.test.ts",
+      "laws": ["CLI, agent layer"]
+    },
+    {
+      "file": "packages/basalt-ui/src/cli/doctor-upgrade.test.ts",
+      "area": "cli",
+      "class": "c",
+      "disposition": "swap",
+      "target": "packages/basalt-ui/src/cli/doctor-upgrade.test.ts",
+      "laws": ["CLI, agent layer"]
+    },
+    {
+      "file": "packages/basalt-ui/src/cli/help.test.ts",
+      "area": "cli",
+      "class": "ab",
+      "disposition": "port",
+      "target": "packages/basalt-ui/src/cli/help.test.ts",
+      "laws": ["CLI, agent layer"]
+    },
+    {
+      "file": "packages/basalt-ui/src/cli/init-sync.test.ts",
+      "area": "cli",
+      "class": "c",
+      "disposition": "swap",
+      "target": "packages/basalt-ui/src/cli/init-sync.test.ts",
+      "laws": ["CLI, agent layer"]
+    },
+    {
+      "file": "packages/basalt-ui/src/cli/leaf-modules.test.ts",
+      "area": "cli",
+      "class": "ab",
+      "disposition": "port",
+      "target": "packages/basalt-ui/src/cli/leaf-modules.test.ts",
+      "laws": ["CLI, agent layer"]
+    },
+    {
+      "file": "packages/basalt-ui/src/cli/monorepo-app.test.ts",
+      "area": "cli",
+      "class": "ab",
+      "disposition": "port",
+      "target": "packages/basalt-ui/src/cli/monorepo-app.test.ts",
+      "laws": ["CLI, agent layer"]
+    },
+    {
+      "file": "packages/basalt-ui/src/cli/placement-engine.test.ts",
+      "area": "cli",
+      "class": "ab",
+      "disposition": "port",
+      "target": "packages/basalt-ui/src/cli/placement-engine.test.ts",
+      "laws": ["CLI, agent layer"]
+    },
+    {
+      "file": "packages/basalt-ui/src/cli/reviewer-agent.test.ts",
+      "area": "cli",
+      "class": "ab",
+      "disposition": "port",
+      "target": "packages/basalt-ui/src/cli/reviewer-agent.test.ts",
+      "laws": ["CLI, agent layer"]
+    },
+    {
+      "file": "packages/basalt-ui/src/cli/router-wiring.test.ts",
+      "area": "cli",
+      "class": "ab",
+      "disposition": "port",
+      "target": "packages/basalt-ui/src/cli/router-wiring.test.ts",
+      "laws": ["CLI, agent layer"]
+    },
+    {
+      "file": "packages/basalt-ui/src/cli/shipped-versions.test.ts",
+      "area": "cli",
+      "class": "ab",
+      "disposition": "port",
+      "target": "packages/basalt-ui/src/cli/shipped-versions.test.ts",
+      "laws": ["CLI, agent layer"]
+    },
+    {
+      "file": "packages/basalt-ui/src/cli/shot/capture-hidden-scroll.test.ts",
+      "area": "cli",
+      "class": "ab",
+      "disposition": "port",
+      "target": "packages/basalt-ui/src/cli/shot/capture-hidden-scroll.test.ts",
+      "laws": ["CLI, agent layer"]
+    },
+    {
+      "file": "packages/basalt-ui/src/cli/shot/detect.test.ts",
+      "area": "cli",
+      "class": "ab",
+      "disposition": "port",
+      "target": "packages/basalt-ui/src/cli/shot/detect.test.ts",
+      "laws": ["CLI, agent layer"]
+    },
+    {
+      "file": "packages/basalt-ui/src/cli/shot/harness.test.ts",
+      "area": "cli",
+      "class": "ab",
+      "disposition": "port",
+      "target": "packages/basalt-ui/src/cli/shot/harness.test.ts",
+      "laws": ["CLI, agent layer"]
+    },
+    {
+      "file": "packages/basalt-ui/src/cli/shot/shot.test.ts",
+      "area": "cli",
+      "class": "def",
+      "disposition": "rewrite",
+      "target": "packages/basalt-ui/src/cli/shot/shot.test.ts",
+      "laws": ["CLI, agent layer"]
+    },
+    {
+      "file": "packages/basalt-ui/src/cli/skill-references.test.ts",
+      "area": "cli",
+      "class": "c",
+      "disposition": "swap",
+      "target": "packages/basalt-ui/src/cli/skill-references.test.ts",
+      "laws": ["CLI, agent layer"]
+    },
+    {
+      "file": "packages/basalt-ui/src/cli/tarball-parity.test.ts",
+      "area": "cli",
+      "class": "ab",
+      "disposition": "port",
+      "target": "packages/basalt-ui/src/cli/tarball-parity.test.ts",
+      "laws": ["CLI, agent layer"]
+    },
+    {
+      "file": "packages/basalt-ui/src/cli/template-format.test.ts",
+      "area": "cli",
+      "class": "ab",
+      "disposition": "port",
+      "target": "packages/basalt-ui/src/cli/template-format.test.ts",
+      "laws": ["CLI, agent layer"]
+    },
+    {
+      "file": "packages/basalt-ui/src/cli/template-ledger.test.ts",
+      "area": "cli",
+      "class": "ab",
+      "disposition": "port",
+      "target": "packages/basalt-ui/src/cli/template-ledger.test.ts",
+      "laws": ["CLI, agent layer"]
+    },
+    {
+      "file": "packages/basalt-ui/src/cli/tokens-css.test.ts",
+      "area": "cli",
+      "class": "ab",
+      "disposition": "port",
+      "target": "packages/basalt-ui/src/cli/tokens-css.test.ts",
+      "laws": ["CLI, agent layer"]
+    },
+    {
+      "file": "packages/basalt-ui/src/cli/toolchain-wiring.test.ts",
+      "area": "cli",
+      "class": "def",
+      "disposition": "rewrite",
+      "target": "packages/basalt-ui/src/cli/toolchain-wiring.test.ts",
+      "laws": ["CLI, agent layer"]
+    },
+    {
+      "file": "packages/basalt-ui/src/cli/waiver-audit.test.ts",
+      "area": "cli",
+      "class": "def",
+      "disposition": "rewrite",
+      "target": "packages/basalt-ui/src/cli/waiver-audit.test.ts",
+      "laws": ["CLI, agent layer"]
+    }
+  ]
+}

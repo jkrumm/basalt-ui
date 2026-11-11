@@ -1,0 +1,78 @@
+{
+  "area": "tests",
+  "status": "open",
+  "rows": [
+    {
+      "file": "packages/basalt-ui/tests/app-plugin-html.test.ts",
+      "area": "tests",
+      "class": "ab",
+      "disposition": "port",
+      "target": "packages/basalt-ui/tests/app-plugin-html.test.ts",
+      "laws": ["CLI, agent layer"]
+    },
+    {
+      "file": "packages/basalt-ui/tests/barrel-surface.test.ts",
+      "area": "tests",
+      "class": "ab",
+      "disposition": "port",
+      "target": "packages/basalt-ui/tests/barrel-surface.test.ts",
+      "laws": ["CLI, agent layer"]
+    },
+    {
+      "file": "packages/basalt-ui/tests/doctor.test.ts",
+      "area": "tests",
+      "class": "ab",
+      "disposition": "port",
+      "target": "packages/basalt-ui/tests/doctor.test.ts",
+      "laws": ["CLI, agent layer"]
+    },
+    {
+      "file": "packages/basalt-ui/tests/drift.test.ts",
+      "area": "tests",
+      "class": "ab",
+      "disposition": "port",
+      "target": "packages/basalt-ui/tests/drift.test.ts",
+      "laws": ["CLI, agent layer"]
+    },
+    {
+      "file": "packages/basalt-ui/tests/isomorphic/isomorphic.test.tsx",
+      "area": "tests",
+      "class": "c",
+      "disposition": "swap",
+      "target": "packages/basalt-ui/tests/isomorphic.test.tsx",
+      "laws": ["Runtime"]
+    },
+    {
+      "file": "packages/basalt-ui/tests/palette-css.test.ts",
+      "area": "tests",
+      "class": "def",
+      "disposition": "rewrite",
+      "target": "packages/basalt-ui/tests/palette-css.test.ts",
+      "laws": ["CSS cascade"]
+    },
+    {
+      "file": "packages/basalt-ui/tests/required-peers.test.ts",
+      "area": "tests",
+      "class": "ab",
+      "disposition": "port",
+      "target": "packages/basalt-ui/tests/required-peers.test.ts",
+      "laws": ["CLI, agent layer"]
+    },
+    {
+      "file": "packages/basalt-ui/tests/styles-css.test.ts",
+      "area": "tests",
+      "class": "def",
+      "disposition": "rewrite",
+      "target": "packages/basalt-ui/tests/styles-css.test.ts",
+      "laws": ["CSS cascade"]
+    },
+    {
+      "file": "packages/basalt-ui/tests/theme-css-gate.test.ts",
+      "area": "tests",
+      "class": "def",
+      "disposition": "rewrite",
+      "target": "packages/basalt-ui/tests/theme-css-gate.test.ts",
+      "laws": ["CSS cascade"]
+    }
+  ]
+}

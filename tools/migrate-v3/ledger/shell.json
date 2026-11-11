@@ -1,0 +1,198 @@
+{
+  "area": "shell",
+  "status": "open",
+  "rows": [
+    {
+      "file": "packages/basalt-ui/src/commands/confirm.test.tsx",
+      "area": "shell",
+      "class": "c",
+      "disposition": "swap",
+      "target": "packages/basalt-ui/src/shell/confirm.test.tsx",
+      "laws": ["Controls"]
+    },
+    {
+      "file": "packages/basalt-ui/src/commands/notifications/center.test.tsx",
+      "area": "shell",
+      "class": "ab",
+      "disposition": "port",
+      "target": "packages/basalt-ui/src/shell/center.test.tsx",
+      "laws": ["Controls"]
+    },
+    {
+      "file": "packages/basalt-ui/src/commands/notifications/define-notifications.type-guard.test.ts",
+      "area": "shell",
+      "class": "ab",
+      "disposition": "port",
+      "target": "packages/basalt-ui/src/shell/define-notifications.type-guard.test.ts",
+      "laws": ["Controls"]
+    },
+    {
+      "file": "packages/basalt-ui/src/commands/notifications/notify.test.tsx",
+      "area": "shell",
+      "class": "ab",
+      "disposition": "port",
+      "target": "packages/basalt-ui/src/shell/notify.test.tsx",
+      "laws": ["Controls"]
+    },
+    {
+      "file": "packages/basalt-ui/src/commands/shell-bridge.test.ts",
+      "area": "shell",
+      "class": "ab",
+      "disposition": "port",
+      "target": "packages/basalt-ui/src/shell/shell-bridge.test.ts",
+      "laws": ["Controls"]
+    },
+    {
+      "file": "packages/basalt-ui/src/commands/shortcut-format.test.ts",
+      "area": "shell",
+      "class": "ab",
+      "disposition": "port",
+      "target": "packages/basalt-ui/src/shell/shortcut-format.test.ts",
+      "laws": ["Controls"]
+    },
+    {
+      "file": "packages/basalt-ui/src/shell/app-brand.module.css.test.ts",
+      "area": "shell",
+      "class": "def",
+      "disposition": "rewrite",
+      "target": "packages/basalt-ui/src/shell/app-brand.module.css.test.ts",
+      "laws": ["Shell, scroll"]
+    },
+    {
+      "file": "packages/basalt-ui/src/shell/app-brand.test.tsx",
+      "area": "shell",
+      "class": "def",
+      "disposition": "rewrite",
+      "target": "packages/basalt-ui/src/shell/app-brand.test.tsx",
+      "laws": ["Shell, scroll"]
+    },
+    {
+      "file": "packages/basalt-ui/src/shell/app-breadcrumbs.test.tsx",
+      "area": "shell",
+      "class": "c",
+      "disposition": "retarget",
+      "target": "packages/basalt-ui/src/shell/app-breadcrumbs.test.tsx",
+      "laws": ["Nav, links"]
+    },
+    {
+      "file": "packages/basalt-ui/src/shell/app-mobile-nav.test.tsx",
+      "area": "shell",
+      "class": "def",
+      "disposition": "rewrite",
+      "target": "packages/basalt-ui/src/shell/app-mobile-nav.test.tsx",
+      "laws": ["Shell, aside and mobile"]
+    },
+    {
+      "file": "packages/basalt-ui/src/shell/app-sidebar-account.test.tsx",
+      "area": "shell",
+      "class": "c",
+      "disposition": "retarget",
+      "target": "packages/basalt-ui/src/shell/app-sidebar-account.test.tsx",
+      "laws": ["Shell, scroll"]
+    },
+    {
+      "file": "packages/basalt-ui/src/shell/app-sidebar.module.css.test.ts",
+      "area": "shell",
+      "class": "def",
+      "disposition": "rewrite",
+      "target": "packages/basalt-ui/src/shell/app-sidebar.module.css.test.ts",
+      "laws": ["Shell, scroll"]
+    },
+    {
+      "file": "packages/basalt-ui/src/shell/app-sidebar.test.tsx",
+      "area": "shell",
+      "class": "def",
+      "disposition": "rewrite",
+      "target": "packages/basalt-ui/src/shell/app-sidebar.test.tsx",
+      "laws": ["Shell, scroll"]
+    },
+    {
+      "file": "packages/basalt-ui/src/shell/aside-docking.test.ts",
+      "area": "shell",
+      "class": "ab",
+      "disposition": "port",
+      "target": "packages/basalt-ui/src/shell/aside-docking.test.ts",
+      "laws": ["Shell, aside and mobile"]
+    },
+    {
+      "file": "packages/basalt-ui/src/shell/index.test.tsx",
+      "area": "shell",
+      "class": "def",
+      "disposition": "rewrite",
+      "target": "packages/basalt-ui/src/shell/index.test.tsx",
+      "laws": ["Shell, scroll"]
+    },
+    {
+      "file": "packages/basalt-ui/src/shell/mobile-nav-model.test.ts",
+      "area": "shell",
+      "class": "ab",
+      "disposition": "port",
+      "target": "packages/basalt-ui/src/shell/mobile-nav-model.test.ts",
+      "laws": ["Shell, aside and mobile"]
+    },
+    {
+      "file": "packages/basalt-ui/src/shell/nav-glyph.test.tsx",
+      "area": "shell",
+      "class": "ab",
+      "disposition": "port",
+      "target": "packages/basalt-ui/src/shell/nav-glyph.test.tsx",
+      "laws": ["Nav, links"]
+    },
+    {
+      "file": "packages/basalt-ui/src/shell/nav-identity.router.test.tsx",
+      "area": "shell",
+      "class": "c",
+      "disposition": "retarget",
+      "target": "packages/basalt-ui/src/shell/nav-identity.router.test.tsx",
+      "laws": ["Nav, links"]
+    },
+    {
+      "file": "packages/basalt-ui/src/shell/nav-prop.router.test.tsx",
+      "area": "shell",
+      "class": "c",
+      "disposition": "retarget",
+      "target": "packages/basalt-ui/src/shell/nav-prop.router.test.tsx",
+      "laws": ["Nav, links"]
+    },
+    {
+      "file": "packages/basalt-ui/src/shell/page-aside.module.css.test.ts",
+      "area": "shell",
+      "class": "def",
+      "disposition": "rewrite",
+      "target": "packages/basalt-ui/src/shell/page-aside.module.css.test.ts",
+      "laws": ["Shell, aside and mobile"]
+    },
+    {
+      "file": "packages/basalt-ui/src/shell/page-aside.test.tsx",
+      "area": "shell",
+      "class": "def",
+      "disposition": "rewrite",
+      "target": "packages/basalt-ui/src/shell/page-aside.test.tsx",
+      "laws": ["Shell, aside and mobile"]
+    },
+    {
+      "file": "packages/basalt-ui/src/shell/page-bar.test.tsx",
+      "area": "shell",
+      "class": "def",
+      "disposition": "rewrite",
+      "target": "packages/basalt-ui/src/shell/page-bar.test.tsx",
+      "laws": ["Shell, scroll"]
+    },
+    {
+      "file": "packages/basalt-ui/src/shell/page-title.test.tsx",
+      "area": "shell",
+      "class": "c",
+      "disposition": "retarget",
+      "target": "packages/basalt-ui/src/shell/page-title.test.tsx",
+      "laws": ["Shell, scroll"]
+    },
+    {
+      "file": "packages/basalt-ui/src/shell/use-size-class.test.tsx",
+      "area": "shell",
+      "class": "c",
+      "disposition": "retarget",
+      "target": "packages/basalt-ui/src/shell/use-size-class.test.tsx",
+      "laws": ["Shell, aside and mobile"]
+    }
+  ]
+}

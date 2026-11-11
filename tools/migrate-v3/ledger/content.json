@@ -1,0 +1,166 @@
+{
+  "area": "content",
+  "status": "open",
+  "rows": [
+    {
+      "file": "packages/basalt-ui/src/content/article-layout.breakpoint.test.ts",
+      "area": "content",
+      "class": "ab",
+      "disposition": "port",
+      "target": "packages/basalt-ui/src/content/article-layout.breakpoint.test.ts",
+      "laws": ["Markdown"]
+    },
+    {
+      "file": "packages/basalt-ui/src/content/article-layout.test.tsx",
+      "area": "content",
+      "class": "c",
+      "disposition": "swap",
+      "target": "packages/basalt-ui/src/content/article-layout.test.tsx",
+      "laws": ["Markdown"]
+    },
+    {
+      "file": "packages/basalt-ui/src/content/article-model.test.ts",
+      "area": "content",
+      "class": "ab",
+      "disposition": "port",
+      "target": "packages/basalt-ui/src/content/article-model.test.ts",
+      "laws": ["Markdown"]
+    },
+    {
+      "file": "packages/basalt-ui/src/content/block-split.test.ts",
+      "area": "content",
+      "class": "ab",
+      "disposition": "port",
+      "target": "packages/basalt-ui/src/content/block-split.test.ts",
+      "laws": ["Markdown"]
+    },
+    {
+      "file": "packages/basalt-ui/src/content/callout.test.tsx",
+      "area": "content",
+      "class": "c",
+      "disposition": "swap",
+      "target": "packages/basalt-ui/src/content/callout.test.tsx",
+      "laws": ["Markdown"]
+    },
+    {
+      "file": "packages/basalt-ui/src/content/code-block.test.tsx",
+      "area": "content",
+      "class": "c",
+      "disposition": "swap",
+      "target": "packages/basalt-ui/src/content/code-block.test.tsx",
+      "laws": ["Markdown"]
+    },
+    {
+      "file": "packages/basalt-ui/src/content/fence-degrade.test.tsx",
+      "area": "content",
+      "class": "c",
+      "disposition": "swap",
+      "target": "packages/basalt-ui/src/content/fence-degrade.test.tsx",
+      "laws": ["Markdown"]
+    },
+    {
+      "file": "packages/basalt-ui/src/content/heading-components.test.tsx",
+      "area": "content",
+      "class": "c",
+      "disposition": "swap",
+      "target": "packages/basalt-ui/src/content/heading-components.test.tsx",
+      "laws": ["Markdown"]
+    },
+    {
+      "file": "packages/basalt-ui/src/content/markdown-streaming.test.tsx",
+      "area": "content",
+      "class": "c",
+      "disposition": "swap",
+      "target": "packages/basalt-ui/src/content/markdown-streaming.test.tsx",
+      "laws": ["Markdown"]
+    },
+    {
+      "file": "packages/basalt-ui/src/content/markdown.test.tsx",
+      "area": "content",
+      "class": "c",
+      "disposition": "swap",
+      "target": "packages/basalt-ui/src/content/markdown.test.tsx",
+      "laws": ["Markdown"]
+    },
+    {
+      "file": "packages/basalt-ui/src/content/mermaid-sanitize.test.ts",
+      "area": "content",
+      "class": "ab",
+      "disposition": "port",
+      "target": "packages/basalt-ui/src/content/mermaid-sanitize.test.ts",
+      "laws": ["Markdown"]
+    },
+    {
+      "file": "packages/basalt-ui/src/content/mermaid.test.tsx",
+      "area": "content",
+      "class": "c",
+      "disposition": "swap",
+      "target": "packages/basalt-ui/src/content/mermaid.test.tsx",
+      "laws": ["Markdown"]
+    },
+    {
+      "file": "packages/basalt-ui/src/content/prose.module.css.test.ts",
+      "area": "content",
+      "class": "def",
+      "disposition": "rewrite",
+      "target": "packages/basalt-ui/src/content/prose.module.css.test.ts",
+      "laws": ["Markdown"]
+    },
+    {
+      "file": "packages/basalt-ui/src/content/reading-progress.test.tsx",
+      "area": "content",
+      "class": "c",
+      "disposition": "swap",
+      "target": "packages/basalt-ui/src/content/reading-progress.test.tsx",
+      "laws": ["Markdown"]
+    },
+    {
+      "file": "packages/basalt-ui/src/content/sanitize.test.ts",
+      "area": "content",
+      "class": "ab",
+      "disposition": "port",
+      "target": "packages/basalt-ui/src/content/sanitize.test.ts",
+      "laws": ["Markdown"]
+    },
+    {
+      "file": "packages/basalt-ui/src/content/slug.test.ts",
+      "area": "content",
+      "class": "ab",
+      "disposition": "port",
+      "target": "packages/basalt-ui/src/content/slug.test.ts",
+      "laws": ["Markdown"]
+    },
+    {
+      "file": "packages/basalt-ui/src/content/toc-click-pin.test.ts",
+      "area": "content",
+      "class": "ab",
+      "disposition": "port",
+      "target": "packages/basalt-ui/src/content/toc-click-pin.test.ts",
+      "laws": ["Markdown"]
+    },
+    {
+      "file": "packages/basalt-ui/src/content/toc-spy.test.ts",
+      "area": "content",
+      "class": "ab",
+      "disposition": "port",
+      "target": "packages/basalt-ui/src/content/toc-spy.test.ts",
+      "laws": ["Markdown"]
+    },
+    {
+      "file": "packages/basalt-ui/src/content/toc.test.tsx",
+      "area": "content",
+      "class": "c",
+      "disposition": "swap",
+      "target": "packages/basalt-ui/src/content/toc.test.tsx",
+      "laws": ["Markdown"]
+    },
+    {
+      "file": "packages/basalt-ui/src/content/url-hardening.test.ts",
+      "area": "content",
+      "class": "ab",
+      "disposition": "port",
+      "target": "packages/basalt-ui/src/content/url-hardening.test.ts",
+      "laws": ["Markdown"]
+    }
+  ]
+}

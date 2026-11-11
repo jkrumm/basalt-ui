@@ -1,0 +1,22 @@
+{
+  "area": "lint",
+  "status": "open",
+  "rows": [
+    {
+      "file": "packages/basalt-ui/configs/card-inset.test.ts",
+      "area": "lint",
+      "class": "def",
+      "disposition": "rewrite",
+      "target": "packages/basalt-ui/src/lint/card-inset.test.ts",
+      "laws": ["Lint mechanics"]
+    },
+    {
+      "file": "packages/basalt-ui/configs/oxlint-plugin.test.ts",
+      "area": "lint",
+      "class": "def",
+      "disposition": "rewrite",
+      "target": "packages/basalt-ui/src/lint/oxlint-plugin.test.ts",
+      "laws": ["Lint mechanics"]
+    }
+  ]
+}

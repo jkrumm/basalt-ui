@@ -1,0 +1,79 @@
+{
+  "area": "scripts",
+  "status": "open",
+  "rows": [
+    {
+      "file": "packages/basalt-ui/scripts/check-agent-doc-drift.test.ts",
+      "area": "scripts",
+      "class": "ab",
+      "disposition": "port",
+      "target": "packages/basalt-ui/scripts/check-agent-doc-drift.test.ts",
+      "laws": ["Lessons, process"]
+    },
+    {
+      "file": "packages/basalt-ui/scripts/check-budgets.test.ts",
+      "area": "scripts",
+      "class": "ab",
+      "disposition": "port",
+      "target": "packages/basalt-ui/scripts/check-budgets.test.ts",
+      "laws": ["Lessons, process"]
+    },
+    {
+      "file": "packages/basalt-ui/scripts/check-coverage.test.ts",
+      "area": "scripts",
+      "class": "ab",
+      "disposition": "port",
+      "target": "packages/basalt-ui/scripts/check-coverage.test.ts",
+      "laws": ["Lessons, process"]
+    },
+    {
+      "file": "packages/basalt-ui/scripts/check-grace.test.ts",
+      "area": "scripts",
+      "class": "ab",
+      "disposition": "retire",
+      "target": null,
+      "laws": [],
+      "cites": "kill-list: Grace ladder"
+    },
+    {
+      "file": "packages/basalt-ui/scripts/check-theme-css.test.ts",
+      "area": "scripts",
+      "class": "def",
+      "disposition": "rewrite",
+      "target": "packages/basalt-ui/scripts/check-theme-css.test.ts",
+      "laws": ["CLI, agent layer"]
+    },
+    {
+      "file": "packages/basalt-ui/scripts/gen-llms.test.ts",
+      "area": "scripts",
+      "class": "ab",
+      "disposition": "port",
+      "target": "packages/basalt-ui/scripts/gen-llms.test.ts",
+      "laws": ["Lessons, process"]
+    },
+    {
+      "file": "packages/basalt-ui/scripts/migrating-imports.test.ts",
+      "area": "scripts",
+      "class": "ab",
+      "disposition": "port",
+      "target": "packages/basalt-ui/scripts/migrating-imports.test.ts",
+      "laws": ["Lessons, process"]
+    },
+    {
+      "file": "packages/basalt-ui/scripts/skill-snippets.test.ts",
+      "area": "scripts",
+      "class": "c",
+      "disposition": "swap",
+      "target": "packages/basalt-ui/scripts/skill-snippets.test.ts",
+      "laws": ["CLI, agent layer"]
+    },
+    {
+      "file": "packages/basalt-ui/scripts/surface-gates.test.ts",
+      "area": "scripts",
+      "class": "ab",
+      "disposition": "port",
+      "target": "packages/basalt-ui/scripts/surface-gates.test.ts",
+      "laws": ["Lessons, process"]
+    }
+  ]
+}

@@ -1,0 +1,46 @@
+{
+  "area": "router",
+  "status": "open",
+  "rows": [
+    {
+      "file": "packages/basalt-ui/src/router-tanstack/index.router.test.tsx",
+      "area": "router",
+      "class": "c",
+      "disposition": "swap",
+      "target": "packages/basalt-ui/src/router/index.router.test.tsx",
+      "laws": ["Nav, links"]
+    },
+    {
+      "file": "packages/basalt-ui/src/router-tanstack/nav.test.ts",
+      "area": "router",
+      "class": "ab",
+      "disposition": "port",
+      "target": "packages/basalt-ui/src/router/nav.test.ts",
+      "laws": ["Nav, links"]
+    },
+    {
+      "file": "packages/basalt-ui/src/router-tanstack/search-store.router.test.tsx",
+      "area": "router",
+      "class": "c",
+      "disposition": "swap",
+      "target": "packages/basalt-ui/src/router/search-store.router.test.tsx",
+      "laws": ["Router traps"]
+    },
+    {
+      "file": "packages/basalt-ui/src/router-tanstack/search-store.test.ts",
+      "area": "router",
+      "class": "ab",
+      "disposition": "port",
+      "target": "packages/basalt-ui/src/router/search-store.test.ts",
+      "laws": ["Router traps"]
+    },
+    {
+      "file": "packages/basalt-ui/src/router-tanstack/use-nav.test.tsx",
+      "area": "router",
+      "class": "c",
+      "disposition": "swap",
+      "target": "packages/basalt-ui/src/router/use-nav.test.tsx",
+      "laws": ["Nav, links"]
+    }
+  ]
+}

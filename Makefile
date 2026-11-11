@@ -19,6 +19,7 @@ check: ## Local CI gate: gen sync checks + build + pre + layout + coverage/doc-d
 	@bun packages/basalt-ui/scripts/check-coverage.ts --check
 	@bun packages/basalt-ui/scripts/check-agent-doc-drift.ts
 	@bun packages/basalt-ui/scripts/check-contract-frozen.ts
+	@bun packages/basalt-ui/scripts/check-test-ledger.ts
 	@cd packages/basalt-ui && bun run pack-test
 
 # Production probe, NOT the local gate (`make check`). `curl -fsS` exits non-zero on any 4xx/5xx or

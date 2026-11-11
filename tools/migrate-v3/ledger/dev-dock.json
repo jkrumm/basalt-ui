@@ -1,0 +1,33 @@
+{
+  "area": "dev-dock",
+  "status": "open",
+  "rows": [
+    {
+      "file": "packages/basalt-ui/src/controls-dates/date-range-picker.test.tsx",
+      "area": "dev-dock",
+      "class": "c",
+      "disposition": "retire",
+      "target": null,
+      "laws": [],
+      "cites": "migration-row: basalt-ui/controls-dates"
+    },
+    {
+      "file": "packages/basalt-ui/src/dev-dock.test.tsx",
+      "area": "dev-dock",
+      "class": "c",
+      "disposition": "retire",
+      "target": null,
+      "laws": [],
+      "cites": "migration-row: DevDock"
+    },
+    {
+      "file": "packages/basalt-ui/src/dev-dock.type-guard.test.ts",
+      "area": "dev-dock",
+      "class": "ab",
+      "disposition": "retire",
+      "target": null,
+      "laws": [],
+      "cites": "migration-row: DevDock"
+    }
+  ]
+}

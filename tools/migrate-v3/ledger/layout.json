@@ -1,0 +1,654 @@
+{
+  "area": "layout",
+  "status": "open",
+  "rows": [
+    {
+      "file": "packages/basalt-ui/tests/layout/agent.layout.test.ts",
+      "area": "layout",
+      "class": "layout",
+      "disposition": "port",
+      "target": "packages/basalt-ui/tests/layout/agent.layout.test.ts",
+      "laws": ["CSS cascade"]
+    },
+    {
+      "file": "packages/basalt-ui/tests/layout/badge-chrome.layout.test.ts",
+      "area": "layout",
+      "class": "layout",
+      "disposition": "retarget",
+      "target": "packages/basalt-ui/tests/layout/badge-chrome.layout.test.ts",
+      "laws": ["Tokens"]
+    },
+    {
+      "file": "packages/basalt-ui/tests/layout/bar-list-states.layout.test.ts",
+      "area": "layout",
+      "class": "layout",
+      "disposition": "port",
+      "target": "packages/basalt-ui/tests/layout/bar-list-states.layout.test.ts",
+      "laws": ["CSS cascade"]
+    },
+    {
+      "file": "packages/basalt-ui/tests/layout/board-w50.layout.test.ts",
+      "area": "layout",
+      "class": "layout",
+      "disposition": "retarget",
+      "target": "packages/basalt-ui/tests/layout/board-w50.layout.test.ts",
+      "laws": ["CSS cascade"]
+    },
+    {
+      "file": "packages/basalt-ui/tests/layout/board.layout.test.ts",
+      "area": "layout",
+      "class": "layout",
+      "disposition": "retarget",
+      "target": "packages/basalt-ui/tests/layout/board.layout.test.ts",
+      "laws": ["CSS cascade"]
+    },
+    {
+      "file": "packages/basalt-ui/tests/layout/boot-color-scheme.layout.test.ts",
+      "area": "layout",
+      "class": "layout",
+      "disposition": "port",
+      "target": "packages/basalt-ui/tests/layout/boot-color-scheme.layout.test.ts",
+      "laws": ["Runtime"]
+    },
+    {
+      "file": "packages/basalt-ui/tests/layout/boot-stored-scheme.layout.test.ts",
+      "area": "layout",
+      "class": "layout",
+      "disposition": "port",
+      "target": "packages/basalt-ui/tests/layout/boot-stored-scheme.layout.test.ts",
+      "laws": ["Runtime"]
+    },
+    {
+      "file": "packages/basalt-ui/tests/layout/button-section.layout.test.ts",
+      "area": "layout",
+      "class": "layout",
+      "disposition": "port",
+      "target": "packages/basalt-ui/tests/layout/button-section.layout.test.ts",
+      "laws": ["CSS cascade"]
+    },
+    {
+      "file": "packages/basalt-ui/tests/layout/card-chrome.layout.test.ts",
+      "area": "layout",
+      "class": "layout",
+      "disposition": "retarget",
+      "target": "packages/basalt-ui/tests/layout/card-chrome.layout.test.ts",
+      "laws": ["Tokens"]
+    },
+    {
+      "file": "packages/basalt-ui/tests/layout/card-inset.layout.test.ts",
+      "area": "layout",
+      "class": "layout",
+      "disposition": "retarget",
+      "target": "packages/basalt-ui/tests/layout/card-inset.layout.test.ts",
+      "laws": ["Tokens"]
+    },
+    {
+      "file": "packages/basalt-ui/tests/layout/card-overlay-radius-w43.layout.test.ts",
+      "area": "layout",
+      "class": "layout",
+      "disposition": "port",
+      "target": "packages/basalt-ui/tests/layout/card-overlay-radius-w43.layout.test.ts",
+      "laws": ["Tokens"]
+    },
+    {
+      "file": "packages/basalt-ui/tests/layout/chart-card-subtitle-w43.layout.test.ts",
+      "area": "layout",
+      "class": "layout",
+      "disposition": "retarget",
+      "target": "packages/basalt-ui/tests/layout/chart-card-subtitle-w43.layout.test.ts",
+      "laws": ["Charts, render"]
+    },
+    {
+      "file": "packages/basalt-ui/tests/layout/charts-states-w46.layout.test.ts",
+      "area": "layout",
+      "class": "layout",
+      "disposition": "port",
+      "target": "packages/basalt-ui/tests/layout/charts-states-w46.layout.test.ts",
+      "laws": ["Charts, render"]
+    },
+    {
+      "file": "packages/basalt-ui/tests/layout/charts-w38-bars-slot.layout.test.ts",
+      "area": "layout",
+      "class": "layout",
+      "disposition": "port",
+      "target": "packages/basalt-ui/tests/layout/charts-w38-bars-slot.layout.test.ts",
+      "laws": ["Charts, render"]
+    },
+    {
+      "file": "packages/basalt-ui/tests/layout/charts-w38-legend.layout.test.ts",
+      "area": "layout",
+      "class": "layout",
+      "disposition": "port",
+      "target": "packages/basalt-ui/tests/layout/charts-w38-legend.layout.test.ts",
+      "laws": ["Charts, render"]
+    },
+    {
+      "file": "packages/basalt-ui/tests/layout/charts-w38-loading.layout.test.ts",
+      "area": "layout",
+      "class": "layout",
+      "disposition": "port",
+      "target": "packages/basalt-ui/tests/layout/charts-w38-loading.layout.test.ts",
+      "laws": ["Charts, render"]
+    },
+    {
+      "file": "packages/basalt-ui/tests/layout/charts-w38-readout2.layout.test.ts",
+      "area": "layout",
+      "class": "layout",
+      "disposition": "port",
+      "target": "packages/basalt-ui/tests/layout/charts-w38-readout2.layout.test.ts",
+      "laws": ["Charts, render"]
+    },
+    {
+      "file": "packages/basalt-ui/tests/layout/charts-w39-readout.layout.test.ts",
+      "area": "layout",
+      "class": "layout",
+      "disposition": "port",
+      "target": "packages/basalt-ui/tests/layout/charts-w39-readout.layout.test.ts",
+      "laws": ["Charts, render"]
+    },
+    {
+      "file": "packages/basalt-ui/tests/layout/charts-w41-chip.layout.test.ts",
+      "area": "layout",
+      "class": "layout",
+      "disposition": "port",
+      "target": "packages/basalt-ui/tests/layout/charts-w41-chip.layout.test.ts",
+      "laws": ["Charts, render"]
+    },
+    {
+      "file": "packages/basalt-ui/tests/layout/charts-w43-lines.layout.test.ts",
+      "area": "layout",
+      "class": "layout",
+      "disposition": "port",
+      "target": "packages/basalt-ui/tests/layout/charts-w43-lines.layout.test.ts",
+      "laws": ["Charts, render"]
+    },
+    {
+      "file": "packages/basalt-ui/tests/layout/charts-w52.layout.test.ts",
+      "area": "layout",
+      "class": "layout",
+      "disposition": "port",
+      "target": "packages/basalt-ui/tests/layout/charts-w52.layout.test.ts",
+      "laws": ["Charts, render"]
+    },
+    {
+      "file": "packages/basalt-ui/tests/layout/charts.layout.test.ts",
+      "area": "layout",
+      "class": "layout",
+      "disposition": "retarget",
+      "target": "packages/basalt-ui/tests/layout/charts.layout.test.ts",
+      "laws": ["Charts, render"]
+    },
+    {
+      "file": "packages/basalt-ui/tests/layout/chrome-w37.layout.test.ts",
+      "area": "layout",
+      "class": "layout",
+      "disposition": "port",
+      "target": "packages/basalt-ui/tests/layout/chrome-w37.layout.test.ts",
+      "laws": ["Tokens"]
+    },
+    {
+      "file": "packages/basalt-ui/tests/layout/chrome-w46.layout.test.ts",
+      "area": "layout",
+      "class": "layout",
+      "disposition": "port",
+      "target": "packages/basalt-ui/tests/layout/chrome-w46.layout.test.ts",
+      "laws": ["Tokens"]
+    },
+    {
+      "file": "packages/basalt-ui/tests/layout/code-block-copy.layout.test.ts",
+      "area": "layout",
+      "class": "layout",
+      "disposition": "retarget",
+      "target": "packages/basalt-ui/tests/layout/code-block-copy.layout.test.ts",
+      "laws": ["CSS cascade"]
+    },
+    {
+      "file": "packages/basalt-ui/tests/layout/dash.layout.test.ts",
+      "area": "layout",
+      "class": "layout",
+      "disposition": "retarget",
+      "target": "packages/basalt-ui/tests/layout/dash.layout.test.ts",
+      "laws": ["CSS cascade"]
+    },
+    {
+      "file": "packages/basalt-ui/tests/layout/data-table-danger-w43.layout.test.ts",
+      "area": "layout",
+      "class": "layout",
+      "disposition": "port",
+      "target": "packages/basalt-ui/tests/layout/data-table-danger-w43.layout.test.ts",
+      "laws": ["Table honesty"]
+    },
+    {
+      "file": "packages/basalt-ui/tests/layout/data-table-toolbar-w42.layout.test.ts",
+      "area": "layout",
+      "class": "layout",
+      "disposition": "retarget",
+      "target": "packages/basalt-ui/tests/layout/data-table-toolbar-w42.layout.test.ts",
+      "laws": ["Table honesty"]
+    },
+    {
+      "file": "packages/basalt-ui/tests/layout/data-table.layout.test.ts",
+      "area": "layout",
+      "class": "layout",
+      "disposition": "retarget",
+      "target": "packages/basalt-ui/tests/layout/data-table.layout.test.ts",
+      "laws": ["Table honesty"]
+    },
+    {
+      "file": "packages/basalt-ui/tests/layout/event-list.layout.test.ts",
+      "area": "layout",
+      "class": "layout",
+      "disposition": "retarget",
+      "target": "packages/basalt-ui/tests/layout/event-list.layout.test.ts",
+      "laws": ["CSS cascade"]
+    },
+    {
+      "file": "packages/basalt-ui/tests/layout/facts-gate-w38.layout.test.ts",
+      "area": "layout",
+      "class": "layout",
+      "disposition": "port",
+      "target": "packages/basalt-ui/tests/layout/facts-gate-w38.layout.test.ts",
+      "laws": ["CSS cascade"]
+    },
+    {
+      "file": "packages/basalt-ui/tests/layout/figures-w50.layout.test.ts",
+      "area": "layout",
+      "class": "layout",
+      "disposition": "retarget",
+      "target": "packages/basalt-ui/tests/layout/figures-w50.layout.test.ts",
+      "laws": ["CSS cascade"]
+    },
+    {
+      "file": "packages/basalt-ui/tests/layout/form-row.layout.test.ts",
+      "area": "layout",
+      "class": "layout",
+      "disposition": "port",
+      "target": "packages/basalt-ui/tests/layout/form-row.layout.test.ts",
+      "laws": ["CSS cascade"]
+    },
+    {
+      "file": "packages/basalt-ui/tests/layout/forms-w46.layout.test.ts",
+      "area": "layout",
+      "class": "layout",
+      "disposition": "retarget",
+      "target": "packages/basalt-ui/tests/layout/forms-w46.layout.test.ts",
+      "laws": ["CSS cascade"]
+    },
+    {
+      "file": "packages/basalt-ui/tests/layout/head-digits.layout.test.ts",
+      "area": "layout",
+      "class": "layout",
+      "disposition": "port",
+      "target": "packages/basalt-ui/tests/layout/head-digits.layout.test.ts",
+      "laws": ["Tokens"]
+    },
+    {
+      "file": "packages/basalt-ui/tests/layout/hit-floor.layout.test.ts",
+      "area": "layout",
+      "class": "layout",
+      "disposition": "retarget",
+      "target": "packages/basalt-ui/tests/layout/hit-floor.layout.test.ts",
+      "laws": ["Tokens"]
+    },
+    {
+      "file": "packages/basalt-ui/tests/layout/hit-overlap.layout.test.ts",
+      "area": "layout",
+      "class": "layout",
+      "disposition": "port",
+      "target": "packages/basalt-ui/tests/layout/hit-overlap.layout.test.ts",
+      "laws": ["Tokens"]
+    },
+    {
+      "file": "packages/basalt-ui/tests/layout/info-bubble-header.layout.test.ts",
+      "area": "layout",
+      "class": "layout",
+      "disposition": "port",
+      "target": "packages/basalt-ui/tests/layout/info-bubble-header.layout.test.ts",
+      "laws": ["CSS cascade"]
+    },
+    {
+      "file": "packages/basalt-ui/tests/layout/info-focus-ring.layout.test.ts",
+      "area": "layout",
+      "class": "layout",
+      "disposition": "port",
+      "target": "packages/basalt-ui/tests/layout/info-focus-ring.layout.test.ts",
+      "laws": ["Tokens"]
+    },
+    {
+      "file": "packages/basalt-ui/tests/layout/lists-chrome-r2.layout.test.ts",
+      "area": "layout",
+      "class": "layout",
+      "disposition": "port",
+      "target": "packages/basalt-ui/tests/layout/lists-chrome-r2.layout.test.ts",
+      "laws": ["Tokens"]
+    },
+    {
+      "file": "packages/basalt-ui/tests/layout/lists-w50.layout.test.ts",
+      "area": "layout",
+      "class": "layout",
+      "disposition": "retarget",
+      "target": "packages/basalt-ui/tests/layout/lists-w50.layout.test.ts",
+      "laws": ["CSS cascade"]
+    },
+    {
+      "file": "packages/basalt-ui/tests/layout/lists-w52.layout.test.ts",
+      "area": "layout",
+      "class": "layout",
+      "disposition": "retarget",
+      "target": "packages/basalt-ui/tests/layout/lists-w52.layout.test.ts",
+      "laws": ["CSS cascade"]
+    },
+    {
+      "file": "packages/basalt-ui/tests/layout/lists-w53.layout.test.ts",
+      "area": "layout",
+      "class": "layout",
+      "disposition": "retarget",
+      "target": "packages/basalt-ui/tests/layout/lists-w53.layout.test.ts",
+      "laws": ["CSS cascade"]
+    },
+    {
+      "file": "packages/basalt-ui/tests/layout/main-content-h-w43.layout.test.ts",
+      "area": "layout",
+      "class": "layout",
+      "disposition": "port",
+      "target": "packages/basalt-ui/tests/layout/main-content-h-w43.layout.test.ts",
+      "laws": ["Shell, scroll"]
+    },
+    {
+      "file": "packages/basalt-ui/tests/layout/map-w43.layout.test.ts",
+      "area": "layout",
+      "class": "layout",
+      "disposition": "port",
+      "target": "packages/basalt-ui/tests/layout/map-w43.layout.test.ts",
+      "laws": ["CSS cascade"]
+    },
+    {
+      "file": "packages/basalt-ui/tests/layout/meter-captions-w38.layout.test.ts",
+      "area": "layout",
+      "class": "layout",
+      "disposition": "port",
+      "target": "packages/basalt-ui/tests/layout/meter-captions-w38.layout.test.ts",
+      "laws": ["CSS cascade"]
+    },
+    {
+      "file": "packages/basalt-ui/tests/layout/meter-empties-w38.layout.test.ts",
+      "area": "layout",
+      "class": "layout",
+      "disposition": "port",
+      "target": "packages/basalt-ui/tests/layout/meter-empties-w38.layout.test.ts",
+      "laws": ["CSS cascade"]
+    },
+    {
+      "file": "packages/basalt-ui/tests/layout/meter-labels-w39.layout.test.ts",
+      "area": "layout",
+      "class": "layout",
+      "disposition": "port",
+      "target": "packages/basalt-ui/tests/layout/meter-labels-w39.layout.test.ts",
+      "laws": ["CSS cascade"]
+    },
+    {
+      "file": "packages/basalt-ui/tests/layout/meter-marks.layout.test.ts",
+      "area": "layout",
+      "class": "layout",
+      "disposition": "port",
+      "target": "packages/basalt-ui/tests/layout/meter-marks.layout.test.ts",
+      "laws": ["CSS cascade"]
+    },
+    {
+      "file": "packages/basalt-ui/tests/layout/meter-start-w43.layout.test.ts",
+      "area": "layout",
+      "class": "layout",
+      "disposition": "port",
+      "target": "packages/basalt-ui/tests/layout/meter-start-w43.layout.test.ts",
+      "laws": ["CSS cascade"]
+    },
+    {
+      "file": "packages/basalt-ui/tests/layout/meter-zones-w38.layout.test.ts",
+      "area": "layout",
+      "class": "layout",
+      "disposition": "port",
+      "target": "packages/basalt-ui/tests/layout/meter-zones-w38.layout.test.ts",
+      "laws": ["CSS cascade"]
+    },
+    {
+      "file": "packages/basalt-ui/tests/layout/meter-zones.layout.test.ts",
+      "area": "layout",
+      "class": "layout",
+      "disposition": "port",
+      "target": "packages/basalt-ui/tests/layout/meter-zones.layout.test.ts",
+      "laws": ["CSS cascade"]
+    },
+    {
+      "file": "packages/basalt-ui/tests/layout/mobile-nav.layout.test.ts",
+      "area": "layout",
+      "class": "layout",
+      "disposition": "retarget",
+      "target": "packages/basalt-ui/tests/layout/mobile-nav.layout.test.ts",
+      "laws": ["Shell, aside and mobile"]
+    },
+    {
+      "file": "packages/basalt-ui/tests/layout/modal-sheet.layout.test.ts",
+      "area": "layout",
+      "class": "layout",
+      "disposition": "retarget",
+      "target": "packages/basalt-ui/tests/layout/modal-sheet.layout.test.ts",
+      "laws": ["CSS cascade"]
+    },
+    {
+      "file": "packages/basalt-ui/tests/layout/nested-radius.layout.test.ts",
+      "area": "layout",
+      "class": "layout",
+      "disposition": "retarget",
+      "target": "packages/basalt-ui/tests/layout/nested-radius.layout.test.ts",
+      "laws": ["Tokens"]
+    },
+    {
+      "file": "packages/basalt-ui/tests/layout/no-horizontal-overflow.layout.test.ts",
+      "area": "layout",
+      "class": "layout",
+      "disposition": "port",
+      "target": "packages/basalt-ui/tests/layout/no-horizontal-overflow.layout.test.ts",
+      "laws": ["CSS cascade"]
+    },
+    {
+      "file": "packages/basalt-ui/tests/layout/page-aside.layout.test.ts",
+      "area": "layout",
+      "class": "layout",
+      "disposition": "retarget",
+      "target": "packages/basalt-ui/tests/layout/page-aside.layout.test.ts",
+      "laws": ["Shell, aside and mobile"]
+    },
+    {
+      "file": "packages/basalt-ui/tests/layout/page-summary-aside.layout.test.ts",
+      "area": "layout",
+      "class": "layout",
+      "disposition": "port",
+      "target": "packages/basalt-ui/tests/layout/page-summary-aside.layout.test.ts",
+      "laws": ["Shell, aside and mobile"]
+    },
+    {
+      "file": "packages/basalt-ui/tests/layout/retry-parity.layout.test.ts",
+      "area": "layout",
+      "class": "layout",
+      "disposition": "port",
+      "target": "packages/basalt-ui/tests/layout/retry-parity.layout.test.ts",
+      "laws": ["CSS cascade"]
+    },
+    {
+      "file": "packages/basalt-ui/tests/layout/section-anchor.layout.test.ts",
+      "area": "layout",
+      "class": "layout",
+      "disposition": "retarget",
+      "target": "packages/basalt-ui/tests/layout/section-anchor.layout.test.ts",
+      "laws": ["CSS cascade"]
+    },
+    {
+      "file": "packages/basalt-ui/tests/layout/shell-chrome.layout.test.ts",
+      "area": "layout",
+      "class": "layout",
+      "disposition": "retarget",
+      "target": "packages/basalt-ui/tests/layout/shell-chrome.layout.test.ts",
+      "laws": ["Shell, scroll"]
+    },
+    {
+      "file": "packages/basalt-ui/tests/layout/sparkline-w43.layout.test.ts",
+      "area": "layout",
+      "class": "layout",
+      "disposition": "port",
+      "target": "packages/basalt-ui/tests/layout/sparkline-w43.layout.test.ts",
+      "laws": ["Charts, render"]
+    },
+    {
+      "file": "packages/basalt-ui/tests/layout/ssr-contract.layout.test.ts",
+      "area": "layout",
+      "class": "layout",
+      "disposition": "port",
+      "target": "packages/basalt-ui/tests/layout/ssr-contract.layout.test.ts",
+      "laws": ["Runtime"]
+    },
+    {
+      "file": "packages/basalt-ui/tests/layout/stat-w37.layout.test.ts",
+      "area": "layout",
+      "class": "layout",
+      "disposition": "retarget",
+      "target": "packages/basalt-ui/tests/layout/stat-w37.layout.test.ts",
+      "laws": ["CSS cascade"]
+    },
+    {
+      "file": "packages/basalt-ui/tests/layout/states-w46.layout.test.ts",
+      "area": "layout",
+      "class": "layout",
+      "disposition": "retarget",
+      "target": "packages/basalt-ui/tests/layout/states-w46.layout.test.ts",
+      "laws": ["CSS cascade"]
+    },
+    {
+      "file": "packages/basalt-ui/tests/layout/states-w50.layout.test.ts",
+      "area": "layout",
+      "class": "layout",
+      "disposition": "port",
+      "target": "packages/basalt-ui/tests/layout/states-w50.layout.test.ts",
+      "laws": ["CSS cascade"]
+    },
+    {
+      "file": "packages/basalt-ui/tests/layout/states-w52.layout.test.ts",
+      "area": "layout",
+      "class": "layout",
+      "disposition": "port",
+      "target": "packages/basalt-ui/tests/layout/states-w52.layout.test.ts",
+      "laws": ["CSS cascade"]
+    },
+    {
+      "file": "packages/basalt-ui/tests/layout/strip-align.layout.test.ts",
+      "area": "layout",
+      "class": "layout",
+      "disposition": "retarget",
+      "target": "packages/basalt-ui/tests/layout/strip-align.layout.test.ts",
+      "laws": ["CSS cascade"]
+    },
+    {
+      "file": "packages/basalt-ui/tests/layout/strip-anatomy-w39.layout.test.ts",
+      "area": "layout",
+      "class": "layout",
+      "disposition": "port",
+      "target": "packages/basalt-ui/tests/layout/strip-anatomy-w39.layout.test.ts",
+      "laws": ["CSS cascade"]
+    },
+    {
+      "file": "packages/basalt-ui/tests/layout/strip-footer-w43.layout.test.ts",
+      "area": "layout",
+      "class": "layout",
+      "disposition": "port",
+      "target": "packages/basalt-ui/tests/layout/strip-footer-w43.layout.test.ts",
+      "laws": ["CSS cascade"]
+    },
+    {
+      "file": "packages/basalt-ui/tests/layout/strip-footers-w38.layout.test.ts",
+      "area": "layout",
+      "class": "layout",
+      "disposition": "port",
+      "target": "packages/basalt-ui/tests/layout/strip-footers-w38.layout.test.ts",
+      "laws": ["CSS cascade"]
+    },
+    {
+      "file": "packages/basalt-ui/tests/layout/strip-meter-loading-w38.layout.test.ts",
+      "area": "layout",
+      "class": "layout",
+      "disposition": "retarget",
+      "target": "packages/basalt-ui/tests/layout/strip-meter-loading-w38.layout.test.ts",
+      "laws": ["CSS cascade"]
+    },
+    {
+      "file": "packages/basalt-ui/tests/layout/table-kinds-w42.layout.test.ts",
+      "area": "layout",
+      "class": "layout",
+      "disposition": "port",
+      "target": "packages/basalt-ui/tests/layout/table-kinds-w42.layout.test.ts",
+      "laws": ["Table honesty"]
+    },
+    {
+      "file": "packages/basalt-ui/tests/layout/table-responsive-w42.layout.test.ts",
+      "area": "layout",
+      "class": "layout",
+      "disposition": "retarget",
+      "target": "packages/basalt-ui/tests/layout/table-responsive-w42.layout.test.ts",
+      "laws": ["Table honesty"]
+    },
+    {
+      "file": "packages/basalt-ui/tests/layout/table-states-w42.layout.test.ts",
+      "area": "layout",
+      "class": "layout",
+      "disposition": "retarget",
+      "target": "packages/basalt-ui/tests/layout/table-states-w42.layout.test.ts",
+      "laws": ["Table honesty"]
+    },
+    {
+      "file": "packages/basalt-ui/tests/layout/table-w50.layout.test.ts",
+      "area": "layout",
+      "class": "layout",
+      "disposition": "retarget",
+      "target": "packages/basalt-ui/tests/layout/table-w50.layout.test.ts",
+      "laws": ["Table honesty"]
+    },
+    {
+      "file": "packages/basalt-ui/tests/layout/toc-spy.layout.test.ts",
+      "area": "layout",
+      "class": "layout",
+      "disposition": "port",
+      "target": "packages/basalt-ui/tests/layout/toc-spy.layout.test.ts",
+      "laws": ["CSS cascade"]
+    },
+    {
+      "file": "packages/basalt-ui/tests/layout/virtual-rows.layout.test.ts",
+      "area": "layout",
+      "class": "layout",
+      "disposition": "port",
+      "target": "packages/basalt-ui/tests/layout/virtual-rows.layout.test.ts",
+      "laws": ["CSS cascade"]
+    },
+    {
+      "file": "packages/basalt-ui/tests/layout/w38-strength.layout.test.ts",
+      "area": "layout",
+      "class": "layout",
+      "disposition": "port",
+      "target": "packages/basalt-ui/tests/layout/w38-strength.layout.test.ts",
+      "laws": ["CSS cascade"]
+    },
+    {
+      "file": "packages/basalt-ui/tests/layout/w38-subtitle.layout.test.ts",
+      "area": "layout",
+      "class": "layout",
+      "disposition": "port",
+      "target": "packages/basalt-ui/tests/layout/w38-subtitle.layout.test.ts",
+      "laws": ["CSS cascade"]
+    },
+    {
+      "file": "packages/basalt-ui/tests/layout/wave37-shell.layout.test.ts",
+      "area": "layout",
+      "class": "layout",
+      "disposition": "retarget",
+      "target": "packages/basalt-ui/tests/layout/wave37-shell.layout.test.ts",
+      "laws": ["Shell, scroll"]
+    }
+  ]
+}

@@ -1,0 +1,51 @@
+{
+  "area": "guard",
+  "status": "open",
+  "rows": [
+    {
+      "file": "packages/basalt-ui/src/guard/check-source.test.ts",
+      "area": "guard",
+      "class": "ab",
+      "disposition": "retire",
+      "target": null,
+      "laws": [],
+      "cites": "migration-row: basalt-ui/guard"
+    },
+    {
+      "file": "packages/basalt-ui/src/guard/grace.test.ts",
+      "area": "guard",
+      "class": "ab",
+      "disposition": "retire",
+      "target": null,
+      "laws": [],
+      "cites": "kill-list: Grace ladder"
+    },
+    {
+      "file": "packages/basalt-ui/src/guard/guard-hook.test.ts",
+      "area": "guard",
+      "class": "ab",
+      "disposition": "retire",
+      "target": null,
+      "laws": [],
+      "cites": "migration-row: basalt-ui/guard"
+    },
+    {
+      "file": "packages/basalt-ui/src/guard/palette.test.ts",
+      "area": "guard",
+      "class": "ab",
+      "disposition": "retire",
+      "target": null,
+      "laws": [],
+      "cites": "migration-row: basalt-ui/guard"
+    },
+    {
+      "file": "packages/basalt-ui/src/guard/vx-names.test.ts",
+      "area": "guard",
+      "class": "ab",
+      "disposition": "retire",
+      "target": null,
+      "laws": [],
+      "cites": "migration-row: basalt-ui/guard"
+    }
+  ]
+}

@@ -1,0 +1,382 @@
+{
+  "area": "core",
+  "status": "open",
+  "rows": [
+    {
+      "file": "packages/basalt-ui/src/common/boundary.test.ts",
+      "area": "core",
+      "class": "ab",
+      "disposition": "port",
+      "target": "packages/basalt-ui/src/core/boundary.test.ts",
+      "laws": ["Runtime"]
+    },
+    {
+      "file": "packages/basalt-ui/src/common/could-not-load.test.tsx",
+      "area": "core",
+      "class": "c",
+      "disposition": "swap",
+      "target": "packages/basalt-ui/src/core/could-not-load.test.tsx",
+      "laws": ["Runtime"]
+    },
+    {
+      "file": "packages/basalt-ui/src/common/dev-gate.test.ts",
+      "area": "core",
+      "class": "ab",
+      "disposition": "port",
+      "target": "packages/basalt-ui/src/core/dev-gate.test.ts",
+      "laws": ["Runtime"]
+    },
+    {
+      "file": "packages/basalt-ui/src/common/empty-copy.test.ts",
+      "area": "core",
+      "class": "ab",
+      "disposition": "port",
+      "target": "packages/basalt-ui/src/core/empty-copy.test.ts",
+      "laws": ["Runtime"]
+    },
+    {
+      "file": "packages/basalt-ui/src/common/errors-message.test.ts",
+      "area": "core",
+      "class": "ab",
+      "disposition": "port",
+      "target": "packages/basalt-ui/src/core/errors-message.test.ts",
+      "laws": ["Runtime"]
+    },
+    {
+      "file": "packages/basalt-ui/src/common/props.test.ts",
+      "area": "core",
+      "class": "ab",
+      "disposition": "port",
+      "target": "packages/basalt-ui/src/core/props.test.ts",
+      "laws": ["Runtime"]
+    },
+    {
+      "file": "packages/basalt-ui/src/common/refs.test.tsx",
+      "area": "core",
+      "class": "c",
+      "disposition": "swap",
+      "target": "packages/basalt-ui/src/core/refs.test.tsx",
+      "laws": ["Runtime"]
+    },
+    {
+      "file": "packages/basalt-ui/src/common/scroll-parent.test.ts",
+      "area": "core",
+      "class": "ab",
+      "disposition": "port",
+      "target": "packages/basalt-ui/src/core/scroll-parent.test.ts",
+      "laws": ["Runtime"]
+    },
+    {
+      "file": "packages/basalt-ui/src/common/use-measured-widths.test.ts",
+      "area": "core",
+      "class": "c",
+      "disposition": "swap",
+      "target": "packages/basalt-ui/src/core/use-measured-widths.test.ts",
+      "laws": ["Runtime"]
+    },
+    {
+      "file": "packages/basalt-ui/src/common/use-media-query.test.tsx",
+      "area": "core",
+      "class": "c",
+      "disposition": "swap",
+      "target": "packages/basalt-ui/src/core/use-media-query.test.tsx",
+      "laws": ["Runtime"]
+    },
+    {
+      "file": "packages/basalt-ui/src/common/validate.test.tsx",
+      "area": "core",
+      "class": "c",
+      "disposition": "swap",
+      "target": "packages/basalt-ui/src/core/validate.test.tsx",
+      "laws": ["Forms, guards"]
+    },
+    {
+      "file": "packages/basalt-ui/src/common/virtual-rows.test.tsx",
+      "area": "core",
+      "class": "c",
+      "disposition": "swap",
+      "target": "packages/basalt-ui/src/core/virtual-rows.test.tsx",
+      "laws": ["Runtime"]
+    },
+    {
+      "file": "packages/basalt-ui/src/composites-data-attrs.test.tsx",
+      "area": "core",
+      "class": "def",
+      "disposition": "rewrite",
+      "target": "packages/basalt-ui/src/core/composites-data-attrs.test.tsx",
+      "laws": ["Runtime"]
+    },
+    {
+      "file": "packages/basalt-ui/src/format/date.test.ts",
+      "area": "core",
+      "class": "ab",
+      "disposition": "port",
+      "target": "packages/basalt-ui/src/core/date.test.ts",
+      "laws": ["Locale, format"]
+    },
+    {
+      "file": "packages/basalt-ui/src/format/index.test.ts",
+      "area": "core",
+      "class": "ab",
+      "disposition": "port",
+      "target": "packages/basalt-ui/src/core/index.test.ts",
+      "laws": ["Locale, format"]
+    },
+    {
+      "file": "packages/basalt-ui/src/format/measure.test.ts",
+      "area": "core",
+      "class": "ab",
+      "disposition": "port",
+      "target": "packages/basalt-ui/src/core/measure.test.ts",
+      "laws": ["Locale, format"]
+    },
+    {
+      "file": "packages/basalt-ui/src/format/number.test.ts",
+      "area": "core",
+      "class": "ab",
+      "disposition": "port",
+      "target": "packages/basalt-ui/src/core/number.test.ts",
+      "laws": ["Locale, format"]
+    },
+    {
+      "file": "packages/basalt-ui/src/format/shared.test.ts",
+      "area": "core",
+      "class": "ab",
+      "disposition": "port",
+      "target": "packages/basalt-ui/src/core/shared.test.ts",
+      "laws": ["Locale, format"]
+    },
+    {
+      "file": "packages/basalt-ui/src/forms/create-form.test.tsx",
+      "area": "core",
+      "class": "c",
+      "disposition": "retarget",
+      "target": "packages/basalt-ui/src/core/create-form.test.tsx",
+      "laws": ["Forms, guards"]
+    },
+    {
+      "file": "packages/basalt-ui/src/forms/field.test.tsx",
+      "area": "core",
+      "class": "def",
+      "disposition": "rewrite",
+      "target": "packages/basalt-ui/src/core/field.test.tsx",
+      "laws": ["Forms, guards"]
+    },
+    {
+      "file": "packages/basalt-ui/src/forms/form-state.test.tsx",
+      "area": "core",
+      "class": "c",
+      "disposition": "retarget",
+      "target": "packages/basalt-ui/src/core/form-state.test.tsx",
+      "laws": ["Forms, guards"]
+    },
+    {
+      "file": "packages/basalt-ui/src/provider/create-router.test.tsx",
+      "area": "core",
+      "class": "c",
+      "disposition": "retarget",
+      "target": "packages/basalt-ui/src/core/create-router.test.tsx",
+      "laws": ["Router traps"]
+    },
+    {
+      "file": "packages/basalt-ui/src/provider/format-defaults.test.tsx",
+      "area": "core",
+      "class": "c",
+      "disposition": "retarget",
+      "target": "packages/basalt-ui/src/core/format-defaults.test.tsx",
+      "laws": ["Locale, format"]
+    },
+    {
+      "file": "packages/basalt-ui/src/provider/host.test.tsx",
+      "area": "core",
+      "class": "c",
+      "disposition": "retarget",
+      "target": "packages/basalt-ui/src/core/host.test.tsx",
+      "laws": ["Runtime"]
+    },
+    {
+      "file": "packages/basalt-ui/src/provider/hotkeys-dispatch.test.tsx",
+      "area": "core",
+      "class": "c",
+      "disposition": "retarget",
+      "target": "packages/basalt-ui/src/core/hotkeys-dispatch.test.tsx",
+      "laws": ["Runtime"]
+    },
+    {
+      "file": "packages/basalt-ui/src/provider/hotkeys.type-guard.test.ts",
+      "area": "core",
+      "class": "ab",
+      "disposition": "port",
+      "target": "packages/basalt-ui/src/core/hotkeys.type-guard.test.ts",
+      "laws": ["Runtime"]
+    },
+    {
+      "file": "packages/basalt-ui/src/provider/index.test.tsx",
+      "area": "core",
+      "class": "c",
+      "disposition": "retarget",
+      "target": "packages/basalt-ui/src/core/index.test.tsx",
+      "laws": ["Runtime"]
+    },
+    {
+      "file": "packages/basalt-ui/src/provider/index.type-guard.test.ts",
+      "area": "core",
+      "class": "ab",
+      "disposition": "port",
+      "target": "packages/basalt-ui/src/core/index.type-guard.test.ts",
+      "laws": ["Runtime"]
+    },
+    {
+      "file": "packages/basalt-ui/src/provider/lab-theme.test.ts",
+      "area": "core",
+      "class": "ab",
+      "disposition": "port",
+      "target": "packages/basalt-ui/src/core/lab-theme.test.ts",
+      "laws": ["Locale, format"]
+    },
+    {
+      "file": "packages/basalt-ui/src/provider/modals-rerender.test.tsx",
+      "area": "core",
+      "class": "c",
+      "disposition": "retarget",
+      "target": "packages/basalt-ui/src/core/modals-rerender.test.tsx",
+      "laws": ["Runtime"]
+    },
+    {
+      "file": "packages/basalt-ui/src/provider/route-defaults.test.tsx",
+      "area": "core",
+      "class": "c",
+      "disposition": "retarget",
+      "target": "packages/basalt-ui/src/core/route-defaults.test.tsx",
+      "laws": ["Router traps"]
+    },
+    {
+      "file": "packages/basalt-ui/src/provider/route-transition.test.ts",
+      "area": "core",
+      "class": "c",
+      "disposition": "retarget",
+      "target": "packages/basalt-ui/src/core/route-transition.test.ts",
+      "laws": ["Router traps"]
+    },
+    {
+      "file": "packages/basalt-ui/src/provider/router-options.test.tsx",
+      "area": "core",
+      "class": "c",
+      "disposition": "retarget",
+      "target": "packages/basalt-ui/src/core/router-options.test.tsx",
+      "laws": ["Router traps"]
+    },
+    {
+      "file": "packages/basalt-ui/src/provider/slots.test.tsx",
+      "area": "core",
+      "class": "def",
+      "disposition": "rewrite",
+      "target": "packages/basalt-ui/src/core/slots.test.tsx",
+      "laws": ["Runtime"]
+    },
+    {
+      "file": "packages/basalt-ui/src/provider/spotlight-actions.test.tsx",
+      "area": "core",
+      "class": "ab",
+      "disposition": "port",
+      "target": "packages/basalt-ui/src/core/spotlight-actions.test.tsx",
+      "laws": ["Runtime"]
+    },
+    {
+      "file": "packages/basalt-ui/src/query-client.test.ts",
+      "area": "core",
+      "class": "ab",
+      "disposition": "port",
+      "target": "packages/basalt-ui/src/core/query-client.test.ts",
+      "laws": ["Runtime"]
+    },
+    {
+      "file": "packages/basalt-ui/src/register.type-guard.test.ts",
+      "area": "core",
+      "class": "ab",
+      "disposition": "port",
+      "target": "packages/basalt-ui/src/core/register.type-guard.test.ts",
+      "laws": ["Runtime"]
+    },
+    {
+      "file": "packages/basalt-ui/src/state.type-guard.test.ts",
+      "area": "core",
+      "class": "ab",
+      "disposition": "port",
+      "target": "packages/basalt-ui/src/core/state.type-guard.test.ts",
+      "laws": ["Runtime"]
+    },
+    {
+      "file": "packages/basalt-ui/src/state/external-field.test.tsx",
+      "area": "core",
+      "class": "c",
+      "disposition": "swap",
+      "target": "packages/basalt-ui/src/router/external-field.test.tsx",
+      "laws": ["Stores"]
+    },
+    {
+      "file": "packages/basalt-ui/src/state/fields.test.tsx",
+      "area": "core",
+      "class": "c",
+      "disposition": "swap",
+      "target": "packages/basalt-ui/src/router/fields.test.tsx",
+      "laws": ["Stores"]
+    },
+    {
+      "file": "packages/basalt-ui/src/state/persisted.test.ts",
+      "area": "core",
+      "class": "c",
+      "disposition": "swap",
+      "target": "packages/basalt-ui/src/core/persisted.test.ts",
+      "laws": ["Stores"]
+    },
+    {
+      "file": "packages/basalt-ui/src/status-exports.type-guard.test.ts",
+      "area": "core",
+      "class": "ab",
+      "disposition": "port",
+      "target": "packages/basalt-ui/src/core/status-exports.type-guard.test.ts",
+      "laws": ["Runtime"]
+    },
+    {
+      "file": "packages/basalt-ui/src/surfaces.type-guard.test.ts",
+      "area": "core",
+      "class": "ab",
+      "disposition": "port",
+      "target": "packages/basalt-ui/src/core/surfaces.type-guard.test.ts",
+      "laws": ["Runtime"]
+    },
+    {
+      "file": "packages/basalt-ui/src/telemetry.consumer.type-guard.test.ts",
+      "area": "core",
+      "class": "ab",
+      "disposition": "port",
+      "target": "packages/basalt-ui/src/core/telemetry.consumer.type-guard.test.ts",
+      "laws": ["Runtime"]
+    },
+    {
+      "file": "packages/basalt-ui/src/telemetry.test.tsx",
+      "area": "core",
+      "class": "c",
+      "disposition": "swap",
+      "target": "packages/basalt-ui/src/core/telemetry.test.tsx",
+      "laws": ["Runtime"]
+    },
+    {
+      "file": "packages/basalt-ui/src/telemetry.type-guard.test.ts",
+      "area": "core",
+      "class": "ab",
+      "disposition": "port",
+      "target": "packages/basalt-ui/src/core/telemetry.type-guard.test.ts",
+      "laws": ["Runtime"]
+    },
+    {
+      "file": "packages/basalt-ui/src/unwrap.type-guard.test.ts",
+      "area": "core",
+      "class": "ab",
+      "disposition": "port",
+      "target": "packages/basalt-ui/src/core/unwrap.type-guard.test.ts",
+      "laws": ["Runtime"]
+    }
+  ]
+}
