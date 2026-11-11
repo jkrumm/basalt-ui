@@ -73,6 +73,7 @@ export {
   type PersistedOptions,
   type PersistedSchema,
 } from './core/persisted'
+export { notify, type NotificationPayload } from './core/notify'
 export {
   externalField,
   type PlainStore,
