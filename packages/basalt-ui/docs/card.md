@@ -4,7 +4,7 @@ use when: ''
 never when: ''
 subpath: basalt-ui/ui/card
 peers: ['@base-ui/react']
-slots: [card]
+slots: [card, card-band, card-info, icon-tile, inset, card-phase]
 ---
 
 # Card
@@ -21,3 +21,8 @@ Part `card`.
 ## Slots
 
 - `card`
+- `card-band`
+- `card-info`
+- `icon-tile`
+- `inset`
+- `card-phase`

@@ -1,6 +1,30 @@
 {
   "contracts": [
     {
+      "module": "badge",
+      "part": "lozenge",
+      "pattern": "^Lozenge$",
+      "allow": ["layout"],
+      "deny": ["h-*", "min-h-*", "size-*", "hidden", "flex", "block", "grid", "inline-flex"],
+      "message": "Lozenge owns its height and display: eject it (basalt-ui eject badge) to change them."
+    },
+    {
+      "module": "badge",
+      "part": "count-badge",
+      "pattern": "^CountBadge$",
+      "allow": ["layout"],
+      "deny": ["h-*", "min-h-*", "size-*", "hidden", "flex", "block", "grid", "inline-flex"],
+      "message": "CountBadge owns its height and display: eject it (basalt-ui eject badge) to change them."
+    },
+    {
+      "module": "badge",
+      "part": "delta-badge",
+      "pattern": "^DeltaBadge$",
+      "allow": ["layout"],
+      "deny": ["h-*", "min-h-*", "size-*", "hidden", "flex", "block", "grid", "inline-flex"],
+      "message": "DeltaBadge owns its height and display: eject it (basalt-ui eject badge) to change them."
+    },
+    {
       "module": "button",
       "part": "button",
       "pattern": "^Button$",
