@@ -15,6 +15,8 @@
     "tests",
     "src/**/*.test.ts",
     "src/**/*.test.tsx",
-    "src/**/*.type-guard.tsx"
+    "src/**/*.type-guard.tsx",
+    "src/**/*.type-test.ts",
+    "src/table/invariants"
   ]
 }
