@@ -1,0 +1,14 @@
+{
+  "profile": "app",
+  "version": "3.0.0-fixture",
+  "roots": {
+    "apps/desktop/src": "app",
+    "apps/gallery/src": "parts"
+  },
+  "ejected": {},
+  "managed": {},
+  "deepRender": [],
+  "authoredContent": [],
+  "viewports": [],
+  "tokens": []
+}

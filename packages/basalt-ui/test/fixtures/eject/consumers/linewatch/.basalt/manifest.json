@@ -1,0 +1,13 @@
+{
+  "profile": "parts",
+  "version": "3.0.0-fixture",
+  "roots": {
+    "src": "parts"
+  },
+  "ejected": {},
+  "managed": {},
+  "deepRender": [],
+  "authoredContent": [],
+  "viewports": [],
+  "tokens": []
+}

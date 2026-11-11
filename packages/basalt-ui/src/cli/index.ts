@@ -25,6 +25,7 @@ import type { GuardConfig, GuardKind, GuardSeverity } from '../guard'
 import { AGENT_NAMES, RULE_NAMES, SKILL_NAMES } from '../surfaces'
 import { checkTheme } from './check-theme'
 import { doctor } from './doctor'
+import { eject } from './eject'
 import { guardHook } from './guard-hook'
 import { COMMAND_OPTIONS, USAGE, unknownFlag } from './help'
 import { init } from './init'
@@ -1751,6 +1752,7 @@ export function run(argv: string[], cwd: string = process.cwd()): number | Promi
     case 'migrate':
       return migrate(flags, cwd, packageRoot())
     case 'eject':
+      return eject(flags, cwd)
     case 'lint':
       return runV3Stub(cmd, flags)
     default:

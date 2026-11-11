@@ -1,0 +1,13 @@
+{
+  "profile": "app",
+  "version": "3.0.0-fixture",
+  "roots": {
+    "apps/dashboard/src": "app"
+  },
+  "ejected": {},
+  "managed": {},
+  "deepRender": [],
+  "authoredContent": [],
+  "viewports": [],
+  "tokens": []
+}

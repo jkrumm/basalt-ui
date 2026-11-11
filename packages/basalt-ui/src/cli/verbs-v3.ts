@@ -1,13 +1,12 @@
 /**
- * `eject` and `lint`: registered before they are built (ARCHITECTURE 4.3), so the lanes
+ * `lint`: registered before they are built (ARCHITECTURE 4.3), so the lanes
  * that build them edit these handlers and never `index.ts`. Each exits 1 saying so: a stub that
  * exited 0 would read as a passing gate. The flag schema is the contract's own.
  */
 import { parseArgs } from 'node:util'
 
-/** The flags each stubbed verb will accept (ARCHITECTURE 4.3; `eject --all` from the update path). */
+/** The flags each stubbed verb will accept (ARCHITECTURE 4.3). */
 export const V3_VERB_OPTIONS = {
-  eject: { all: { type: 'boolean' } },
   lint: {
     file: { type: 'string', multiple: true },
     agent: { type: 'boolean' },

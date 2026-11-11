@@ -1,0 +1,10 @@
+{
+  "name": "argo",
+  "private": true,
+  "workspaces": [
+    "apps/*"
+  ],
+  "dependencies": {
+    "basalt-ui": "3.0.0-fixture"
+  }
+}
