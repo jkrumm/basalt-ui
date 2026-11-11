@@ -1,0 +1,190 @@
+{
+  "area": "controls",
+  "status": "open",
+  "rows": [
+    {
+      "file": "packages/basalt-ui/src/controls/actions-tuple.type-guard.test.ts",
+      "area": "controls",
+      "class": "ab",
+      "disposition": "port",
+      "target": "packages/basalt-ui/src/controls/actions-tuple.type-guard.test.ts",
+      "laws": ["Controls"]
+    },
+    {
+      "file": "packages/basalt-ui/src/controls/actions.test.tsx",
+      "area": "controls",
+      "class": "def",
+      "disposition": "rewrite",
+      "target": "packages/basalt-ui/src/controls/actions.test.tsx",
+      "laws": ["Controls"]
+    },
+    {
+      "file": "packages/basalt-ui/src/controls/actions.type-guard.test.ts",
+      "area": "controls",
+      "class": "ab",
+      "disposition": "port",
+      "target": "packages/basalt-ui/src/controls/actions.type-guard.test.ts",
+      "laws": ["Controls"]
+    },
+    {
+      "file": "packages/basalt-ui/src/controls/common-props.test.tsx",
+      "area": "controls",
+      "class": "c",
+      "disposition": "retarget",
+      "target": "packages/basalt-ui/src/controls/common-props.test.tsx",
+      "laws": ["Controls"]
+    },
+    {
+      "file": "packages/basalt-ui/src/controls/control-group.test.tsx",
+      "area": "controls",
+      "class": "c",
+      "disposition": "retarget",
+      "target": "packages/basalt-ui/src/controls/control-group.test.tsx",
+      "laws": ["Controls"]
+    },
+    {
+      "file": "packages/basalt-ui/src/controls/control-name.test.tsx",
+      "area": "controls",
+      "class": "c",
+      "disposition": "retarget",
+      "target": "packages/basalt-ui/src/controls/control-name.test.tsx",
+      "laws": ["Controls"]
+    },
+    {
+      "file": "packages/basalt-ui/src/controls/controls-geometry.test.ts",
+      "area": "controls",
+      "class": "ab",
+      "disposition": "port",
+      "target": "packages/basalt-ui/src/controls/controls-geometry.test.ts",
+      "laws": ["Controls"]
+    },
+    {
+      "file": "packages/basalt-ui/src/controls/controls.router.test.tsx",
+      "area": "controls",
+      "class": "def",
+      "disposition": "rewrite",
+      "target": "packages/basalt-ui/src/controls/controls.router.test.tsx",
+      "laws": ["Controls"]
+    },
+    {
+      "file": "packages/basalt-ui/src/controls/disabled.test.tsx",
+      "area": "controls",
+      "class": "c",
+      "disposition": "retarget",
+      "target": "packages/basalt-ui/src/controls/disabled.test.tsx",
+      "laws": ["Controls"]
+    },
+    {
+      "file": "packages/basalt-ui/src/controls/external-field.test.tsx",
+      "area": "controls",
+      "class": "c",
+      "disposition": "retarget",
+      "target": "packages/basalt-ui/src/controls/external-field.test.tsx",
+      "laws": ["Controls"]
+    },
+    {
+      "file": "packages/basalt-ui/src/controls/filter-pill.test.tsx",
+      "area": "controls",
+      "class": "def",
+      "disposition": "rewrite",
+      "target": "packages/basalt-ui/src/controls/filter-pill.test.tsx",
+      "laws": ["Controls"]
+    },
+    {
+      "file": "packages/basalt-ui/src/controls/filter-set.test.tsx",
+      "area": "controls",
+      "class": "def",
+      "disposition": "rewrite",
+      "target": "packages/basalt-ui/src/controls/filter-set.test.tsx",
+      "laws": ["Controls"]
+    },
+    {
+      "file": "packages/basalt-ui/src/controls/filters.type-guard.test.ts",
+      "area": "controls",
+      "class": "ab",
+      "disposition": "port",
+      "target": "packages/basalt-ui/src/controls/filters.type-guard.test.ts",
+      "laws": ["Controls"]
+    },
+    {
+      "file": "packages/basalt-ui/src/controls/form-layout.test.tsx",
+      "area": "controls",
+      "class": "c",
+      "disposition": "retarget",
+      "target": "packages/basalt-ui/src/controls/form-layout.test.tsx",
+      "laws": ["Controls"]
+    },
+    {
+      "file": "packages/basalt-ui/src/controls/multi-select-filter.test.tsx",
+      "area": "controls",
+      "class": "c",
+      "disposition": "retarget",
+      "target": "packages/basalt-ui/src/controls/multi-select-filter.test.tsx",
+      "laws": ["Controls"]
+    },
+    {
+      "file": "packages/basalt-ui/src/controls/panel-row.test.tsx",
+      "area": "controls",
+      "class": "c",
+      "disposition": "retarget",
+      "target": "packages/basalt-ui/src/controls/panel-row.test.tsx",
+      "laws": ["Controls"]
+    },
+    {
+      "file": "packages/basalt-ui/src/controls/peer-boundary.test.ts",
+      "area": "controls",
+      "class": "ab",
+      "disposition": "port",
+      "target": "packages/basalt-ui/src/controls/peer-boundary.test.ts",
+      "laws": ["Controls"]
+    },
+    {
+      "file": "packages/basalt-ui/src/controls/props-contract.test.tsx",
+      "area": "controls",
+      "class": "ab",
+      "disposition": "port",
+      "target": "packages/basalt-ui/src/controls/props-contract.test.tsx",
+      "laws": ["Controls"]
+    },
+    {
+      "file": "packages/basalt-ui/src/controls/range-filter.type-guard.test.tsx",
+      "area": "controls",
+      "class": "c",
+      "disposition": "retarget",
+      "target": "packages/basalt-ui/src/controls/range-filter.type-guard.test.tsx",
+      "laws": ["Controls"]
+    },
+    {
+      "file": "packages/basalt-ui/src/controls/search-filter.test.tsx",
+      "area": "controls",
+      "class": "def",
+      "disposition": "rewrite",
+      "target": "packages/basalt-ui/src/controls/search-filter.test.tsx",
+      "laws": ["Controls"]
+    },
+    {
+      "file": "packages/basalt-ui/src/controls/select-filter.test.tsx",
+      "area": "controls",
+      "class": "def",
+      "disposition": "rewrite",
+      "target": "packages/basalt-ui/src/controls/select-filter.test.tsx",
+      "laws": ["Controls"]
+    },
+    {
+      "file": "packages/basalt-ui/src/controls/sync-button.test.tsx",
+      "area": "controls",
+      "class": "def",
+      "disposition": "rewrite",
+      "target": "packages/basalt-ui/src/controls/sync-button.test.tsx",
+      "laws": ["Controls"]
+    },
+    {
+      "file": "packages/basalt-ui/src/controls/toggle-filter.test.tsx",
+      "area": "controls",
+      "class": "c",
+      "disposition": "retarget",
+      "target": "packages/basalt-ui/src/controls/toggle-filter.test.tsx",
+      "laws": ["Controls"]
+    }
+  ]
+}

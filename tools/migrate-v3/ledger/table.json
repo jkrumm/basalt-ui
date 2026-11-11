@@ -1,0 +1,102 @@
+{
+  "area": "table",
+  "status": "open",
+  "rows": [
+    {
+      "file": "packages/basalt-ui/src/table/cell-kinds.test.tsx",
+      "area": "table",
+      "class": "def",
+      "disposition": "rewrite",
+      "target": "packages/basalt-ui/src/table/cell-kinds.test.tsx",
+      "laws": ["Table honesty"]
+    },
+    {
+      "file": "packages/basalt-ui/src/table/data-table-containment.test.tsx",
+      "area": "table",
+      "class": "def",
+      "disposition": "rewrite",
+      "target": "packages/basalt-ui/src/table/data-table-containment.test.tsx",
+      "laws": ["Table a11y, behaviour"]
+    },
+    {
+      "file": "packages/basalt-ui/src/table/data-table-responsive.test.tsx",
+      "area": "table",
+      "class": "def",
+      "disposition": "rewrite",
+      "target": "packages/basalt-ui/src/table/data-table-responsive.test.tsx",
+      "laws": ["Table a11y, behaviour"]
+    },
+    {
+      "file": "packages/basalt-ui/src/table/data-table-ssr.test.tsx",
+      "area": "table",
+      "class": "c",
+      "disposition": "retarget",
+      "target": "packages/basalt-ui/src/table/data-table-ssr.test.tsx",
+      "laws": ["Table a11y, behaviour"]
+    },
+    {
+      "file": "packages/basalt-ui/src/table/data-table-states.test.tsx",
+      "area": "table",
+      "class": "def",
+      "disposition": "rewrite",
+      "target": "packages/basalt-ui/src/table/data-table-states.test.tsx",
+      "laws": ["Table honesty"]
+    },
+    {
+      "file": "packages/basalt-ui/src/table/data-table-toolbar.test.tsx",
+      "area": "table",
+      "class": "c",
+      "disposition": "retarget",
+      "target": "packages/basalt-ui/src/table/data-table-toolbar.test.tsx",
+      "laws": ["Table honesty"]
+    },
+    {
+      "file": "packages/basalt-ui/src/table/data-table.test.tsx",
+      "area": "table",
+      "class": "def",
+      "disposition": "rewrite",
+      "target": "packages/basalt-ui/src/table/data-table.test.tsx",
+      "laws": ["Table honesty"]
+    },
+    {
+      "file": "packages/basalt-ui/src/table/fold-header-label.test.tsx",
+      "area": "table",
+      "class": "c",
+      "disposition": "retarget",
+      "target": "packages/basalt-ui/src/table/fold-header-label.test.tsx",
+      "laws": ["Table a11y, behaviour"]
+    },
+    {
+      "file": "packages/basalt-ui/src/table/query-branch.test.ts",
+      "area": "table",
+      "class": "ab",
+      "disposition": "port",
+      "target": "packages/basalt-ui/src/table/query-branch.test.ts",
+      "laws": ["Table honesty"]
+    },
+    {
+      "file": "packages/basalt-ui/src/table/skeleton-floor.test.tsx",
+      "area": "table",
+      "class": "c",
+      "disposition": "retarget",
+      "target": "packages/basalt-ui/src/table/skeleton-floor.test.tsx",
+      "laws": ["Table honesty"]
+    },
+    {
+      "file": "packages/basalt-ui/src/table/table-align.type-guard.test.ts",
+      "area": "table",
+      "class": "ab",
+      "disposition": "port",
+      "target": "packages/basalt-ui/src/table/table-align.type-guard.test.ts",
+      "laws": ["Table honesty"]
+    },
+    {
+      "file": "packages/basalt-ui/src/table/table-v9.test.tsx",
+      "area": "table",
+      "class": "c",
+      "disposition": "retarget",
+      "target": "packages/basalt-ui/src/table/table-v9.test.tsx",
+      "laws": ["Table a11y, behaviour"]
+    }
+  ]
+}

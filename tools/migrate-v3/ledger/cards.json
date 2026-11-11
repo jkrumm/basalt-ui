@@ -1,0 +1,310 @@
+{
+  "area": "cards",
+  "status": "open",
+  "rows": [
+    {
+      "file": "packages/basalt-ui/src/dashboard/bar-list-rows.test.tsx",
+      "area": "cards",
+      "class": "c",
+      "disposition": "retarget",
+      "target": "packages/basalt-ui/src/cards/bar-list-rows.test.tsx",
+      "laws": ["Table honesty"]
+    },
+    {
+      "file": "packages/basalt-ui/src/dashboard/bar-list.test.tsx",
+      "area": "cards",
+      "class": "c",
+      "disposition": "retarget",
+      "target": "packages/basalt-ui/src/cards/bar-list.test.tsx",
+      "laws": ["Table honesty"]
+    },
+    {
+      "file": "packages/basalt-ui/src/dashboard/board.test.tsx",
+      "area": "cards",
+      "class": "def",
+      "disposition": "rewrite",
+      "target": "packages/basalt-ui/src/cards/board.test.tsx",
+      "laws": ["Table honesty"]
+    },
+    {
+      "file": "packages/basalt-ui/src/dashboard/chart-card-facts-gate.test.tsx",
+      "area": "cards",
+      "class": "c",
+      "disposition": "retarget",
+      "target": "packages/basalt-ui/src/cards/chart-card-facts-gate.test.tsx",
+      "laws": ["Table honesty"]
+    },
+    {
+      "file": "packages/basalt-ui/src/dashboard/chart-card-figure-loading.test.tsx",
+      "area": "cards",
+      "class": "c",
+      "disposition": "retarget",
+      "target": "packages/basalt-ui/src/cards/chart-card-figure-loading.test.tsx",
+      "laws": ["Table honesty"]
+    },
+    {
+      "file": "packages/basalt-ui/src/dashboard/delta-badge.test.tsx",
+      "area": "cards",
+      "class": "c",
+      "disposition": "retarget",
+      "target": "packages/basalt-ui/src/cards/delta-badge.test.tsx",
+      "laws": ["Table honesty"]
+    },
+    {
+      "file": "packages/basalt-ui/src/dashboard/empty-state.test.tsx",
+      "area": "cards",
+      "class": "ab",
+      "disposition": "port",
+      "target": "packages/basalt-ui/src/cards/empty-state.test.tsx",
+      "laws": ["Table honesty"]
+    },
+    {
+      "file": "packages/basalt-ui/src/dashboard/event-list-model.test.ts",
+      "area": "cards",
+      "class": "ab",
+      "disposition": "port",
+      "target": "packages/basalt-ui/src/cards/event-list-model.test.ts",
+      "laws": ["Table honesty"]
+    },
+    {
+      "file": "packages/basalt-ui/src/dashboard/event-list-scroll.test.tsx",
+      "area": "cards",
+      "class": "c",
+      "disposition": "retarget",
+      "target": "packages/basalt-ui/src/cards/event-list-scroll.test.tsx",
+      "laws": ["Table honesty"]
+    },
+    {
+      "file": "packages/basalt-ui/src/dashboard/event-list.test.tsx",
+      "area": "cards",
+      "class": "def",
+      "disposition": "rewrite",
+      "target": "packages/basalt-ui/src/cards/event-list.test.tsx",
+      "laws": ["Table honesty"]
+    },
+    {
+      "file": "packages/basalt-ui/src/dashboard/meter-model.test.ts",
+      "area": "cards",
+      "class": "ab",
+      "disposition": "port",
+      "target": "packages/basalt-ui/src/cards/meter-model.test.ts",
+      "laws": ["Charts, data law"]
+    },
+    {
+      "file": "packages/basalt-ui/src/dashboard/meter-parts-captions.test.tsx",
+      "area": "cards",
+      "class": "c",
+      "disposition": "retarget",
+      "target": "packages/basalt-ui/src/cards/meter-parts-captions.test.tsx",
+      "laws": ["Charts, data law"]
+    },
+    {
+      "file": "packages/basalt-ui/src/dashboard/meter-props.test.tsx",
+      "area": "cards",
+      "class": "c",
+      "disposition": "retarget",
+      "target": "packages/basalt-ui/src/cards/meter-props.test.tsx",
+      "laws": ["Charts, data law"]
+    },
+    {
+      "file": "packages/basalt-ui/src/dashboard/meter-reading.test.tsx",
+      "area": "cards",
+      "class": "def",
+      "disposition": "rewrite",
+      "target": "packages/basalt-ui/src/cards/meter-reading.test.tsx",
+      "laws": ["Charts, data law"]
+    },
+    {
+      "file": "packages/basalt-ui/src/dashboard/meter-w37.test.tsx",
+      "area": "cards",
+      "class": "c",
+      "disposition": "retarget",
+      "target": "packages/basalt-ui/src/cards/meter-w37.test.tsx",
+      "laws": ["Charts, data law"]
+    },
+    {
+      "file": "packages/basalt-ui/src/dashboard/meter-w38.test.ts",
+      "area": "cards",
+      "class": "ab",
+      "disposition": "port",
+      "target": "packages/basalt-ui/src/cards/meter-w38.test.ts",
+      "laws": ["Charts, data law"]
+    },
+    {
+      "file": "packages/basalt-ui/src/dashboard/meter.test.tsx",
+      "area": "cards",
+      "class": "c",
+      "disposition": "retarget",
+      "target": "packages/basalt-ui/src/cards/meter.test.tsx",
+      "laws": ["Charts, data law"]
+    },
+    {
+      "file": "packages/basalt-ui/src/dashboard/page-summary.test.tsx",
+      "area": "cards",
+      "class": "c",
+      "disposition": "retarget",
+      "target": "packages/basalt-ui/src/page/page-summary.test.tsx",
+      "laws": ["Table honesty"]
+    },
+    {
+      "file": "packages/basalt-ui/src/dashboard/query-state.test.tsx",
+      "area": "cards",
+      "class": "def",
+      "disposition": "rewrite",
+      "target": "packages/basalt-ui/src/core/query-state.test.tsx",
+      "laws": ["Runtime"]
+    },
+    {
+      "file": "packages/basalt-ui/src/dashboard/retry-parity.test.tsx",
+      "area": "cards",
+      "class": "c",
+      "disposition": "retarget",
+      "target": "packages/basalt-ui/src/core/retry-parity.test.tsx",
+      "laws": ["Runtime"]
+    },
+    {
+      "file": "packages/basalt-ui/src/dashboard/section-loading-w52.test.tsx",
+      "area": "cards",
+      "class": "def",
+      "disposition": "rewrite",
+      "target": "packages/basalt-ui/src/page/section-loading-w52.test.tsx",
+      "laws": ["Runtime"]
+    },
+    {
+      "file": "packages/basalt-ui/src/dashboard/section.test.tsx",
+      "area": "cards",
+      "class": "def",
+      "disposition": "rewrite",
+      "target": "packages/basalt-ui/src/page/section.test.tsx",
+      "laws": ["Table honesty"]
+    },
+    {
+      "file": "packages/basalt-ui/src/dashboard/section.type-guard.test.tsx",
+      "area": "cards",
+      "class": "ab",
+      "disposition": "port",
+      "target": "packages/basalt-ui/src/page/section.type-guard.test.tsx",
+      "laws": ["Table honesty"]
+    },
+    {
+      "file": "packages/basalt-ui/src/dashboard/settings-row-preference.test.tsx",
+      "area": "cards",
+      "class": "c",
+      "disposition": "retarget",
+      "target": "packages/basalt-ui/src/page/settings-row-preference.test.tsx",
+      "laws": ["Table honesty"]
+    },
+    {
+      "file": "packages/basalt-ui/src/dashboard/settings-section.test.tsx",
+      "area": "cards",
+      "class": "c",
+      "disposition": "retarget",
+      "target": "packages/basalt-ui/src/page/settings-section.test.tsx",
+      "laws": ["Table honesty"]
+    },
+    {
+      "file": "packages/basalt-ui/src/dashboard/sparkline-slots.test.tsx",
+      "area": "cards",
+      "class": "c",
+      "disposition": "retarget",
+      "target": "packages/basalt-ui/src/cards/sparkline-slots.test.tsx",
+      "laws": ["Table honesty"]
+    },
+    {
+      "file": "packages/basalt-ui/src/dashboard/stat-card-props.test.ts",
+      "area": "cards",
+      "class": "ab",
+      "disposition": "port",
+      "target": "packages/basalt-ui/src/cards/stat-card-props.test.ts",
+      "laws": ["Table honesty"]
+    },
+    {
+      "file": "packages/basalt-ui/src/dashboard/stat-card-query.test.tsx",
+      "area": "cards",
+      "class": "def",
+      "disposition": "rewrite",
+      "target": "packages/basalt-ui/src/cards/stat-card-query.test.tsx",
+      "laws": ["Table honesty"]
+    },
+    {
+      "file": "packages/basalt-ui/src/dashboard/stat-card.test.tsx",
+      "area": "cards",
+      "class": "def",
+      "disposition": "rewrite",
+      "target": "packages/basalt-ui/src/cards/stat-card.test.tsx",
+      "laws": ["Table honesty"]
+    },
+    {
+      "file": "packages/basalt-ui/src/dashboard/stat-group.test.ts",
+      "area": "cards",
+      "class": "ab",
+      "disposition": "port",
+      "target": "packages/basalt-ui/src/cards/stat-group.test.ts",
+      "laws": ["Table honesty"]
+    },
+    {
+      "file": "packages/basalt-ui/src/dashboard/stat-strip-shot-absent.test.tsx",
+      "area": "cards",
+      "class": "c",
+      "disposition": "retarget",
+      "target": "packages/basalt-ui/src/cards/stat-strip-shot-absent.test.tsx",
+      "laws": ["Table honesty"]
+    },
+    {
+      "file": "packages/basalt-ui/src/dashboard/stat-strip-state.test.tsx",
+      "area": "cards",
+      "class": "c",
+      "disposition": "retarget",
+      "target": "packages/basalt-ui/src/cards/stat-strip-state.test.tsx",
+      "laws": ["Table honesty"]
+    },
+    {
+      "file": "packages/basalt-ui/src/dashboard/stat-strip.test.tsx",
+      "area": "cards",
+      "class": "def",
+      "disposition": "rewrite",
+      "target": "packages/basalt-ui/src/cards/stat-strip.test.tsx",
+      "laws": ["Table honesty"]
+    },
+    {
+      "file": "packages/basalt-ui/src/dashboard/status-edge.test.ts",
+      "area": "cards",
+      "class": "ab",
+      "disposition": "port",
+      "target": "packages/basalt-ui/src/cards/status-edge.test.ts",
+      "laws": ["Charts, data law"]
+    },
+    {
+      "file": "packages/basalt-ui/src/dashboard/typography-law.test.ts",
+      "area": "cards",
+      "class": "ab",
+      "disposition": "port",
+      "target": "packages/basalt-ui/src/cards/typography-law.test.ts",
+      "laws": ["Charts, data law"]
+    },
+    {
+      "file": "packages/basalt-ui/src/dashboard/widget-header-no-mantine.test.ts",
+      "area": "cards",
+      "class": "ab",
+      "disposition": "port",
+      "target": "packages/basalt-ui/src/cards/widget-header-no-mantine.test.ts",
+      "laws": ["Table honesty"]
+    },
+    {
+      "file": "packages/basalt-ui/src/dashboard/widget-header-slices.test.ts",
+      "area": "cards",
+      "class": "ab",
+      "disposition": "port",
+      "target": "packages/basalt-ui/src/cards/widget-header-slices.test.ts",
+      "laws": ["Table honesty"]
+    },
+    {
+      "file": "packages/basalt-ui/src/dashboard/widget-header.test.tsx",
+      "area": "cards",
+      "class": "c",
+      "disposition": "retarget",
+      "target": "packages/basalt-ui/src/cards/widget-header.test.tsx",
+      "laws": ["Table honesty"]
+    }
+  ]
+}

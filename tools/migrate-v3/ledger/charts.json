@@ -1,0 +1,366 @@
+{
+  "area": "charts",
+  "status": "open",
+  "rows": [
+    {
+      "file": "packages/basalt-ui/src/charts/band-fold.test.tsx",
+      "area": "charts",
+      "class": "c",
+      "disposition": "retarget",
+      "target": "packages/basalt-ui/src/charts/band-fold.test.tsx",
+      "laws": ["Charts, data law"]
+    },
+    {
+      "file": "packages/basalt-ui/src/charts/band-legend.test.tsx",
+      "area": "charts",
+      "class": "c",
+      "disposition": "retarget",
+      "target": "packages/basalt-ui/src/charts/band-legend.test.tsx",
+      "laws": ["Charts, render"]
+    },
+    {
+      "file": "packages/basalt-ui/src/charts/band-strip.test.tsx",
+      "area": "charts",
+      "class": "c",
+      "disposition": "retarget",
+      "target": "packages/basalt-ui/src/charts/band-strip.test.tsx",
+      "laws": ["Charts, render"]
+    },
+    {
+      "file": "packages/basalt-ui/src/charts/bars-legend-shades.test.tsx",
+      "area": "charts",
+      "class": "c",
+      "disposition": "retarget",
+      "target": "packages/basalt-ui/src/charts/bars-legend-shades.test.tsx",
+      "laws": ["Charts, render"]
+    },
+    {
+      "file": "packages/basalt-ui/src/charts/bars-slot.test.tsx",
+      "area": "charts",
+      "class": "c",
+      "disposition": "retarget",
+      "target": "packages/basalt-ui/src/charts/bars-slot.test.tsx",
+      "laws": ["Charts, render"]
+    },
+    {
+      "file": "packages/basalt-ui/src/charts/chart-card-facts.test.tsx",
+      "area": "charts",
+      "class": "c",
+      "disposition": "retarget",
+      "target": "packages/basalt-ui/src/charts/chart-card-facts.test.tsx",
+      "laws": ["Charts, render"]
+    },
+    {
+      "file": "packages/basalt-ui/src/charts/chart-card-legacy-hero.test.tsx",
+      "area": "charts",
+      "class": "c",
+      "disposition": "retarget",
+      "target": "packages/basalt-ui/src/charts/chart-card-legacy-hero.test.tsx",
+      "laws": ["Charts, render"]
+    },
+    {
+      "file": "packages/basalt-ui/src/charts/chart-card-short.test.tsx",
+      "area": "charts",
+      "class": "c",
+      "disposition": "retarget",
+      "target": "packages/basalt-ui/src/charts/chart-card-short.test.tsx",
+      "laws": ["Charts, render"]
+    },
+    {
+      "file": "packages/basalt-ui/src/charts/chart-cards-w37.test.tsx",
+      "area": "charts",
+      "class": "c",
+      "disposition": "retarget",
+      "target": "packages/basalt-ui/src/charts/chart-cards-w37.test.tsx",
+      "laws": ["Charts, render"]
+    },
+    {
+      "file": "packages/basalt-ui/src/charts/chart-chrome.test.tsx",
+      "area": "charts",
+      "class": "c",
+      "disposition": "retarget",
+      "target": "packages/basalt-ui/src/charts/chart-chrome.test.tsx",
+      "laws": ["Charts, render"]
+    },
+    {
+      "file": "packages/basalt-ui/src/charts/core.test.ts",
+      "area": "charts",
+      "class": "c",
+      "disposition": "retarget",
+      "target": "packages/basalt-ui/src/charts/core.test.ts",
+      "laws": ["Charts, data law"]
+    },
+    {
+      "file": "packages/basalt-ui/src/charts/curves.test.ts",
+      "area": "charts",
+      "class": "ab",
+      "disposition": "port",
+      "target": "packages/basalt-ui/src/charts/curves.test.ts",
+      "laws": ["Charts, data law"]
+    },
+    {
+      "file": "packages/basalt-ui/src/charts/date-ticks.test.ts",
+      "area": "charts",
+      "class": "ab",
+      "disposition": "port",
+      "target": "packages/basalt-ui/src/charts/date-ticks.test.ts",
+      "laws": ["Charts, data law"]
+    },
+    {
+      "file": "packages/basalt-ui/src/charts/donut-heatmap.test.tsx",
+      "area": "charts",
+      "class": "c",
+      "disposition": "retarget",
+      "target": "packages/basalt-ui/src/charts/donut-heatmap.test.tsx",
+      "laws": ["Charts, render"]
+    },
+    {
+      "file": "packages/basalt-ui/src/charts/engine.test.tsx",
+      "area": "charts",
+      "class": "c",
+      "disposition": "retarget",
+      "target": "packages/basalt-ui/src/charts/engine.test.tsx",
+      "laws": ["Charts, data law"]
+    },
+    {
+      "file": "packages/basalt-ui/src/charts/heatmap-fill.test.ts",
+      "area": "charts",
+      "class": "ab",
+      "disposition": "port",
+      "target": "packages/basalt-ui/src/charts/heatmap-fill.test.ts",
+      "laws": ["Charts, data law"]
+    },
+    {
+      "file": "packages/basalt-ui/src/charts/kinds.test.tsx",
+      "area": "charts",
+      "class": "c",
+      "disposition": "retarget",
+      "target": "packages/basalt-ui/src/charts/kinds.test.tsx",
+      "laws": ["Charts, data law"]
+    },
+    {
+      "file": "packages/basalt-ui/src/charts/labels.test.tsx",
+      "area": "charts",
+      "class": "c",
+      "disposition": "retarget",
+      "target": "packages/basalt-ui/src/charts/labels.test.tsx",
+      "laws": ["Charts, render"]
+    },
+    {
+      "file": "packages/basalt-ui/src/charts/marks.test.ts",
+      "area": "charts",
+      "class": "ab",
+      "disposition": "port",
+      "target": "packages/basalt-ui/src/charts/marks.test.ts",
+      "laws": ["Charts, data law"]
+    },
+    {
+      "file": "packages/basalt-ui/src/charts/optional-undefined.type-guard.test.tsx",
+      "area": "charts",
+      "class": "ab",
+      "disposition": "port",
+      "target": "packages/basalt-ui/src/charts/optional-undefined.type-guard.test.tsx",
+      "laws": ["Charts, data law"]
+    },
+    {
+      "file": "packages/basalt-ui/src/charts/panels.test.tsx",
+      "area": "charts",
+      "class": "c",
+      "disposition": "retarget",
+      "target": "packages/basalt-ui/src/charts/panels.test.tsx",
+      "laws": ["Charts, data law"]
+    },
+    {
+      "file": "packages/basalt-ui/src/charts/plot-context.test.tsx",
+      "area": "charts",
+      "class": "c",
+      "disposition": "retarget",
+      "target": "packages/basalt-ui/src/charts/plot-context.test.tsx",
+      "laws": ["Charts, data law"]
+    },
+    {
+      "file": "packages/basalt-ui/src/charts/quiet-tooltip.test.ts",
+      "area": "charts",
+      "class": "ab",
+      "disposition": "port",
+      "target": "packages/basalt-ui/src/charts/quiet-tooltip.test.ts",
+      "laws": ["Charts, render"]
+    },
+    {
+      "file": "packages/basalt-ui/src/charts/ref-line-label.test.tsx",
+      "area": "charts",
+      "class": "c",
+      "disposition": "retarget",
+      "target": "packages/basalt-ui/src/charts/ref-line-label.test.tsx",
+      "laws": ["Charts, render"]
+    },
+    {
+      "file": "packages/basalt-ui/src/charts/series-gaps.test.tsx",
+      "area": "charts",
+      "class": "c",
+      "disposition": "retarget",
+      "target": "packages/basalt-ui/src/charts/series-gaps.test.tsx",
+      "laws": ["Charts, data law"]
+    },
+    {
+      "file": "packages/basalt-ui/src/charts/sparkline-band.test.tsx",
+      "area": "charts",
+      "class": "c",
+      "disposition": "retarget",
+      "target": "packages/basalt-ui/src/charts/sparkline-band.test.tsx",
+      "laws": ["Charts, render"]
+    },
+    {
+      "file": "packages/basalt-ui/src/charts/sparkline-reference.test.tsx",
+      "area": "charts",
+      "class": "c",
+      "disposition": "retarget",
+      "target": "packages/basalt-ui/src/charts/sparkline-reference.test.tsx",
+      "laws": ["Charts, render"]
+    },
+    {
+      "file": "packages/basalt-ui/src/charts/sparkline-window.test.tsx",
+      "area": "charts",
+      "class": "c",
+      "disposition": "retarget",
+      "target": "packages/basalt-ui/src/charts/sparkline-window.test.tsx",
+      "laws": ["Charts, render"]
+    },
+    {
+      "file": "packages/basalt-ui/src/charts/sparkline.test.tsx",
+      "area": "charts",
+      "class": "c",
+      "disposition": "retarget",
+      "target": "packages/basalt-ui/src/charts/sparkline.test.tsx",
+      "laws": ["Charts, render"]
+    },
+    {
+      "file": "packages/basalt-ui/src/charts/ssr-budget.test.tsx",
+      "area": "charts",
+      "class": "c",
+      "disposition": "retarget",
+      "target": "packages/basalt-ui/src/charts/ssr-budget.test.tsx",
+      "laws": ["Charts, render"]
+    },
+    {
+      "file": "packages/basalt-ui/src/charts/ssr-hydration.test.tsx",
+      "area": "charts",
+      "class": "c",
+      "disposition": "retarget",
+      "target": "packages/basalt-ui/src/charts/ssr-hydration.test.tsx",
+      "laws": ["Charts, render"]
+    },
+    {
+      "file": "packages/basalt-ui/src/charts/stacked-sparkline.test.tsx",
+      "area": "charts",
+      "class": "c",
+      "disposition": "retarget",
+      "target": "packages/basalt-ui/src/charts/stacked-sparkline.test.tsx",
+      "laws": ["Charts, render"]
+    },
+    {
+      "file": "packages/basalt-ui/src/charts/stacked-sparkline.type-guard.test.tsx",
+      "area": "charts",
+      "class": "ab",
+      "disposition": "port",
+      "target": "packages/basalt-ui/src/charts/stacked-sparkline.type-guard.test.tsx",
+      "laws": ["Charts, render"]
+    },
+    {
+      "file": "packages/basalt-ui/src/charts/state-w46.test.tsx",
+      "area": "charts",
+      "class": "c",
+      "disposition": "retarget",
+      "target": "packages/basalt-ui/src/charts/state-w46.test.tsx",
+      "laws": ["Charts, data law"]
+    },
+    {
+      "file": "packages/basalt-ui/src/charts/state.test.tsx",
+      "area": "charts",
+      "class": "c",
+      "disposition": "retarget",
+      "target": "packages/basalt-ui/src/charts/state.test.tsx",
+      "laws": ["Charts, data law"]
+    },
+    {
+      "file": "packages/basalt-ui/src/charts/tick-font.test.tsx",
+      "area": "charts",
+      "class": "c",
+      "disposition": "retarget",
+      "target": "packages/basalt-ui/src/charts/tick-font.test.tsx",
+      "laws": ["Charts, render"]
+    },
+    {
+      "file": "packages/basalt-ui/src/charts/ticks.test.ts",
+      "area": "charts",
+      "class": "ab",
+      "disposition": "port",
+      "target": "packages/basalt-ui/src/charts/ticks.test.ts",
+      "laws": ["Charts, data law"]
+    },
+    {
+      "file": "packages/basalt-ui/src/charts/tooltip-legend-marks.test.tsx",
+      "area": "charts",
+      "class": "c",
+      "disposition": "retarget",
+      "target": "packages/basalt-ui/src/charts/tooltip-legend-marks.test.tsx",
+      "laws": ["Charts, data law"]
+    },
+    {
+      "file": "packages/basalt-ui/src/charts/tooltip-settle.test.ts",
+      "area": "charts",
+      "class": "ab",
+      "disposition": "port",
+      "target": "packages/basalt-ui/src/charts/tooltip-settle.test.ts",
+      "laws": ["Charts, render"]
+    },
+    {
+      "file": "packages/basalt-ui/src/charts/w37-r2.test.tsx",
+      "area": "charts",
+      "class": "c",
+      "disposition": "retarget",
+      "target": "packages/basalt-ui/src/charts/w37-r2.test.tsx",
+      "laws": ["Charts, render"]
+    },
+    {
+      "file": "packages/basalt-ui/src/charts/w37-r3.test.tsx",
+      "area": "charts",
+      "class": "c",
+      "disposition": "retarget",
+      "target": "packages/basalt-ui/src/charts/w37-r3.test.tsx",
+      "laws": ["Charts, render"]
+    },
+    {
+      "file": "packages/basalt-ui/src/charts/w38-chart-chrome.test.tsx",
+      "area": "charts",
+      "class": "c",
+      "disposition": "retarget",
+      "target": "packages/basalt-ui/src/charts/w38-chart-chrome.test.tsx",
+      "laws": ["Charts, render"]
+    },
+    {
+      "file": "packages/basalt-ui/src/charts/w38-legend.test.tsx",
+      "area": "charts",
+      "class": "c",
+      "disposition": "retarget",
+      "target": "packages/basalt-ui/src/charts/w38-legend.test.tsx",
+      "laws": ["Charts, render"]
+    },
+    {
+      "file": "packages/basalt-ui/src/charts/w38-readout2.test.ts",
+      "area": "charts",
+      "class": "ab",
+      "disposition": "port",
+      "target": "packages/basalt-ui/src/charts/w38-readout2.test.ts",
+      "laws": ["Charts, render"]
+    },
+    {
+      "file": "packages/basalt-ui/src/charts/zone-gradient.test.tsx",
+      "area": "charts",
+      "class": "c",
+      "disposition": "retarget",
+      "target": "packages/basalt-ui/src/charts/zone-gradient.test.tsx",
+      "laws": ["Charts, render"]
+    }
+  ]
+}

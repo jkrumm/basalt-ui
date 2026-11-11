@@ -1,0 +1,266 @@
+{
+  "area": "theme",
+  "status": "open",
+  "rows": [
+    {
+      "file": "packages/basalt-ui/src/theme-lab/boot.test.ts",
+      "area": "theme",
+      "class": "ab",
+      "disposition": "retire",
+      "target": null,
+      "laws": [],
+      "cites": "migration-row: theme-lab"
+    },
+    {
+      "file": "packages/basalt-ui/src/theme-lab/derive-controls.test.ts",
+      "area": "theme",
+      "class": "ab",
+      "disposition": "retire",
+      "target": null,
+      "laws": [],
+      "cites": "migration-row: theme-lab"
+    },
+    {
+      "file": "packages/basalt-ui/src/theme-lab/derive-state.test.ts",
+      "area": "theme",
+      "class": "ab",
+      "disposition": "retire",
+      "target": null,
+      "laws": [],
+      "cites": "migration-row: theme-lab"
+    },
+    {
+      "file": "packages/basalt-ui/src/theme-lab/theme-lab.test.ts",
+      "area": "theme",
+      "class": "ab",
+      "disposition": "retire",
+      "target": null,
+      "laws": [],
+      "cites": "migration-row: theme-lab"
+    },
+    {
+      "file": "packages/basalt-ui/src/theme/badge-default.test.tsx",
+      "area": "theme",
+      "class": "c",
+      "disposition": "audit",
+      "target": null,
+      "laws": ["Tokens"]
+    },
+    {
+      "file": "packages/basalt-ui/src/theme/card-inset-default.test.tsx",
+      "area": "theme",
+      "class": "def",
+      "disposition": "rewrite",
+      "target": "packages/basalt-ui/src/core/card-inset-default.test.tsx",
+      "laws": ["Tokens"]
+    },
+    {
+      "file": "packages/basalt-ui/src/theme/chrome-leaks.test.ts",
+      "area": "theme",
+      "class": "def",
+      "disposition": "rewrite",
+      "target": "packages/basalt-ui/src/core/chrome-leaks.test.ts",
+      "laws": ["Tokens"]
+    },
+    {
+      "file": "packages/basalt-ui/src/theme/chrome-w35.test.tsx",
+      "area": "theme",
+      "class": "def",
+      "disposition": "rewrite",
+      "target": "packages/basalt-ui/src/core/chrome-w35.test.tsx",
+      "laws": ["Tokens"]
+    },
+    {
+      "file": "packages/basalt-ui/src/theme/chrome-w37.test.tsx",
+      "area": "theme",
+      "class": "def",
+      "disposition": "rewrite",
+      "target": "packages/basalt-ui/src/core/chrome-w37.test.tsx",
+      "laws": ["Tokens"]
+    },
+    {
+      "file": "packages/basalt-ui/src/theme/contrast.test.ts",
+      "area": "theme",
+      "class": "ab",
+      "disposition": "audit",
+      "target": null,
+      "laws": ["Tokens"]
+    },
+    {
+      "file": "packages/basalt-ui/src/theme/ctl-theme.test.tsx",
+      "area": "theme",
+      "class": "c",
+      "disposition": "audit",
+      "target": null,
+      "laws": ["Tokens"]
+    },
+    {
+      "file": "packages/basalt-ui/src/theme/ctl-vars.test.ts",
+      "area": "theme",
+      "class": "ab",
+      "disposition": "audit",
+      "target": null,
+      "laws": ["Tokens"]
+    },
+    {
+      "file": "packages/basalt-ui/src/theme/density-option.test.ts",
+      "area": "theme",
+      "class": "ab",
+      "disposition": "audit",
+      "target": null,
+      "laws": ["Tokens"]
+    },
+    {
+      "file": "packages/basalt-ui/src/theme/density-relations.test.ts",
+      "area": "theme",
+      "class": "def",
+      "disposition": "rewrite",
+      "target": "packages/basalt-ui/src/core/density-relations.test.ts",
+      "laws": ["Tokens"]
+    },
+    {
+      "file": "packages/basalt-ui/src/theme/derive-theme.test.ts",
+      "area": "theme",
+      "class": "ab",
+      "disposition": "audit",
+      "target": null,
+      "laws": ["Tokens"]
+    },
+    {
+      "file": "packages/basalt-ui/src/theme/divider-law.test.ts",
+      "area": "theme",
+      "class": "def",
+      "disposition": "rewrite",
+      "target": "packages/basalt-ui/src/core/divider-law.test.ts",
+      "laws": ["Tokens"]
+    },
+    {
+      "file": "packages/basalt-ui/src/theme/extend.type-guard.test.ts",
+      "area": "theme",
+      "class": "ab",
+      "disposition": "audit",
+      "target": null,
+      "laws": ["Tokens"]
+    },
+    {
+      "file": "packages/basalt-ui/src/theme/fonts-option.test.ts",
+      "area": "theme",
+      "class": "ab",
+      "disposition": "audit",
+      "target": null,
+      "laws": ["Tokens"]
+    },
+    {
+      "file": "packages/basalt-ui/src/theme/hit-adopters.test.tsx",
+      "area": "theme",
+      "class": "c",
+      "disposition": "audit",
+      "target": null,
+      "laws": ["Tokens"]
+    },
+    {
+      "file": "packages/basalt-ui/src/theme/icon-slot.test.tsx",
+      "area": "theme",
+      "class": "c",
+      "disposition": "audit",
+      "target": null,
+      "laws": ["Tokens"]
+    },
+    {
+      "file": "packages/basalt-ui/src/theme/options.type-guard.test.ts",
+      "area": "theme",
+      "class": "ab",
+      "disposition": "audit",
+      "target": null,
+      "laws": ["Tokens"]
+    },
+    {
+      "file": "packages/basalt-ui/src/theme/plain-theme.test.ts",
+      "area": "theme",
+      "class": "ab",
+      "disposition": "audit",
+      "target": null,
+      "laws": ["Tokens"]
+    },
+    {
+      "file": "packages/basalt-ui/src/theme/radius-option.test.ts",
+      "area": "theme",
+      "class": "ab",
+      "disposition": "audit",
+      "target": null,
+      "laws": ["Tokens"]
+    },
+    {
+      "file": "packages/basalt-ui/src/theme/radius.test.ts",
+      "area": "theme",
+      "class": "def",
+      "disposition": "rewrite",
+      "target": "packages/basalt-ui/src/core/radius.test.ts",
+      "laws": ["Tokens"]
+    },
+    {
+      "file": "packages/basalt-ui/src/theme/reduced-motion.test.ts",
+      "area": "theme",
+      "class": "ab",
+      "disposition": "audit",
+      "target": null,
+      "laws": ["Tokens"]
+    },
+    {
+      "file": "packages/basalt-ui/src/theme/shell-seams.test.ts",
+      "area": "theme",
+      "class": "def",
+      "disposition": "rewrite",
+      "target": "packages/basalt-ui/src/core/shell-seams.test.ts",
+      "laws": ["Tokens"]
+    },
+    {
+      "file": "packages/basalt-ui/src/theme/spacing.test.ts",
+      "area": "theme",
+      "class": "def",
+      "disposition": "rewrite",
+      "target": "packages/basalt-ui/src/core/spacing.test.ts",
+      "laws": ["Tokens"]
+    },
+    {
+      "file": "packages/basalt-ui/src/theme/status-dot.test.tsx",
+      "area": "theme",
+      "class": "def",
+      "disposition": "rewrite",
+      "target": "packages/basalt-ui/src/core/status-dot.test.tsx",
+      "laws": ["Tokens"]
+    },
+    {
+      "file": "packages/basalt-ui/src/theme/status-passthrough.test.tsx",
+      "area": "theme",
+      "class": "ab",
+      "disposition": "audit",
+      "target": null,
+      "laws": ["Tokens"]
+    },
+    {
+      "file": "packages/basalt-ui/src/theme/status-verdict.test.ts",
+      "area": "theme",
+      "class": "def",
+      "disposition": "rewrite",
+      "target": "packages/basalt-ui/src/core/status-verdict.test.ts",
+      "laws": ["Tokens"]
+    },
+    {
+      "file": "packages/basalt-ui/src/theme/typography-law.test.ts",
+      "area": "theme",
+      "class": "def",
+      "disposition": "rewrite",
+      "target": "packages/basalt-ui/src/core/typography-law.test.ts",
+      "laws": ["Tokens"]
+    },
+    {
+      "file": "packages/basalt-ui/src/theme/use-basalt-spacing.test.tsx",
+      "area": "theme",
+      "class": "ab",
+      "disposition": "audit",
+      "target": null,
+      "laws": ["Tokens"]
+    }
+  ]
+}

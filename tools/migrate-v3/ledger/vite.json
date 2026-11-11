@@ -1,0 +1,54 @@
+{
+  "area": "vite",
+  "status": "open",
+  "rows": [
+    {
+      "file": "packages/basalt-ui/src/styles.floor.test.ts",
+      "area": "vite",
+      "class": "def",
+      "disposition": "rewrite",
+      "target": "packages/basalt-ui/src/core/styles.floor.test.ts",
+      "laws": ["CSS cascade"]
+    },
+    {
+      "file": "packages/basalt-ui/src/styles.notifications.test.ts",
+      "area": "vite",
+      "class": "def",
+      "disposition": "rewrite",
+      "target": "packages/basalt-ui/src/core/styles.notifications.test.ts",
+      "laws": ["CSS cascade"]
+    },
+    {
+      "file": "packages/basalt-ui/src/styles.reduced-motion.test.ts",
+      "area": "vite",
+      "class": "def",
+      "disposition": "rewrite",
+      "target": "packages/basalt-ui/src/core/styles.reduced-motion.test.ts",
+      "laws": ["CSS cascade"]
+    },
+    {
+      "file": "packages/basalt-ui/src/vite-boot.test.ts",
+      "area": "vite",
+      "class": "def",
+      "disposition": "rewrite",
+      "target": "packages/basalt-ui/src/core/vite-boot.test.ts",
+      "laws": ["CSS cascade"]
+    },
+    {
+      "file": "packages/basalt-ui/src/vite-color-mix.test.ts",
+      "area": "vite",
+      "class": "def",
+      "disposition": "rewrite",
+      "target": "packages/basalt-ui/src/core/vite-color-mix.test.ts",
+      "laws": ["CSS cascade"]
+    },
+    {
+      "file": "packages/basalt-ui/src/vite.test.ts",
+      "area": "vite",
+      "class": "def",
+      "disposition": "rewrite",
+      "target": "packages/basalt-ui/src/core/vite.test.ts",
+      "laws": ["CSS cascade"]
+    }
+  ]
+}

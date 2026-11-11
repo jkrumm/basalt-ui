@@ -1,0 +1,267 @@
+{
+  "area": "agent",
+  "status": "open",
+  "rows": [
+    {
+      "file": "packages/basalt-ui/src/agent/ai-sdk-transport.errors.test.ts",
+      "area": "agent",
+      "class": "ab",
+      "disposition": "retire",
+      "target": null,
+      "laws": [],
+      "cites": "migration-row: basalt-ui/agent"
+    },
+    {
+      "file": "packages/basalt-ui/src/agent/ai-sdk-transport.test.ts",
+      "area": "agent",
+      "class": "ab",
+      "disposition": "retire",
+      "target": null,
+      "laws": [],
+      "cites": "migration-row: basalt-ui/agent"
+    },
+    {
+      "file": "packages/basalt-ui/src/agent/chat-turn-trace.test.tsx",
+      "area": "agent",
+      "class": "c",
+      "disposition": "retire",
+      "target": null,
+      "laws": [],
+      "cites": "migration-row: basalt-ui/agent"
+    },
+    {
+      "file": "packages/basalt-ui/src/agent/chat/composer-paste.test.tsx",
+      "area": "agent",
+      "class": "c",
+      "disposition": "retire",
+      "target": null,
+      "laws": [],
+      "cites": "migration-row: basalt-ui/agent"
+    },
+    {
+      "file": "packages/basalt-ui/src/agent/chat/composer.test.tsx",
+      "area": "agent",
+      "class": "c",
+      "disposition": "retire",
+      "target": null,
+      "laws": [],
+      "cites": "migration-row: basalt-ui/agent"
+    },
+    {
+      "file": "packages/basalt-ui/src/agent/chat/relative-timestamps.test.tsx",
+      "area": "agent",
+      "class": "c",
+      "disposition": "retire",
+      "target": null,
+      "laws": [],
+      "cites": "migration-row: basalt-ui/agent"
+    },
+    {
+      "file": "packages/basalt-ui/src/agent/chat/thread-feed-row.test.tsx",
+      "area": "agent",
+      "class": "c",
+      "disposition": "retire",
+      "target": null,
+      "laws": [],
+      "cites": "migration-row: basalt-ui/agent"
+    },
+    {
+      "file": "packages/basalt-ui/src/agent/chat/thread-feed.test.tsx",
+      "area": "agent",
+      "class": "c",
+      "disposition": "retire",
+      "target": null,
+      "laws": [],
+      "cites": "migration-row: basalt-ui/agent"
+    },
+    {
+      "file": "packages/basalt-ui/src/agent/chat/thread-message.test.tsx",
+      "area": "agent",
+      "class": "c",
+      "disposition": "retire",
+      "target": null,
+      "laws": [],
+      "cites": "migration-row: basalt-ui/agent"
+    },
+    {
+      "file": "packages/basalt-ui/src/agent/chat/tool-chip.stability.test.tsx",
+      "area": "agent",
+      "class": "c",
+      "disposition": "retire",
+      "target": null,
+      "laws": [],
+      "cites": "migration-row: basalt-ui/agent"
+    },
+    {
+      "file": "packages/basalt-ui/src/agent/chat/tool-chip.test.tsx",
+      "area": "agent",
+      "class": "c",
+      "disposition": "retire",
+      "target": null,
+      "laws": [],
+      "cites": "migration-row: basalt-ui/agent"
+    },
+    {
+      "file": "packages/basalt-ui/src/agent/chat/use-keyboard-inset.test.tsx",
+      "area": "agent",
+      "class": "c",
+      "disposition": "retire",
+      "target": null,
+      "laws": [],
+      "cites": "migration-row: basalt-ui/agent"
+    },
+    {
+      "file": "packages/basalt-ui/src/agent/chat/virtualize.type-guard.test.ts",
+      "area": "agent",
+      "class": "ab",
+      "disposition": "retire",
+      "target": null,
+      "laws": [],
+      "cites": "migration-row: basalt-ui/agent"
+    },
+    {
+      "file": "packages/basalt-ui/src/agent/coalesce.test.ts",
+      "area": "agent",
+      "class": "ab",
+      "disposition": "retire",
+      "target": null,
+      "laws": [],
+      "cites": "migration-row: basalt-ui/agent"
+    },
+    {
+      "file": "packages/basalt-ui/src/agent/foreign.test.ts",
+      "area": "agent",
+      "class": "ab",
+      "disposition": "retire",
+      "target": null,
+      "laws": [],
+      "cites": "migration-row: basalt-ui/agent"
+    },
+    {
+      "file": "packages/basalt-ui/src/agent/id.test.ts",
+      "area": "agent",
+      "class": "ab",
+      "disposition": "retire",
+      "target": null,
+      "laws": [],
+      "cites": "migration-row: basalt-ui/agent"
+    },
+    {
+      "file": "packages/basalt-ui/src/agent/index.type-guard.test.ts",
+      "area": "agent",
+      "class": "ab",
+      "disposition": "retire",
+      "target": null,
+      "laws": [],
+      "cites": "migration-row: basalt-ui/agent"
+    },
+    {
+      "file": "packages/basalt-ui/src/agent/merge.test.ts",
+      "area": "agent",
+      "class": "ab",
+      "disposition": "retire",
+      "target": null,
+      "laws": [],
+      "cites": "migration-row: basalt-ui/agent"
+    },
+    {
+      "file": "packages/basalt-ui/src/agent/part-list.test.tsx",
+      "area": "agent",
+      "class": "c",
+      "disposition": "retire",
+      "target": null,
+      "laws": [],
+      "cites": "migration-row: basalt-ui/agent"
+    },
+    {
+      "file": "packages/basalt-ui/src/agent/parts.test.ts",
+      "area": "agent",
+      "class": "ab",
+      "disposition": "retire",
+      "target": null,
+      "laws": [],
+      "cites": "migration-row: basalt-ui/agent"
+    },
+    {
+      "file": "packages/basalt-ui/src/agent/run-committer.test.ts",
+      "area": "agent",
+      "class": "ab",
+      "disposition": "retire",
+      "target": null,
+      "laws": [],
+      "cites": "migration-row: basalt-ui/agent"
+    },
+    {
+      "file": "packages/basalt-ui/src/agent/run-records.test.ts",
+      "area": "agent",
+      "class": "ab",
+      "disposition": "retire",
+      "target": null,
+      "laws": [],
+      "cites": "migration-row: basalt-ui/agent"
+    },
+    {
+      "file": "packages/basalt-ui/src/agent/thread.test.ts",
+      "area": "agent",
+      "class": "ab",
+      "disposition": "retire",
+      "target": null,
+      "laws": [],
+      "cites": "migration-row: basalt-ui/agent"
+    },
+    {
+      "file": "packages/basalt-ui/src/agent/transport.test.ts",
+      "area": "agent",
+      "class": "ab",
+      "disposition": "retire",
+      "target": null,
+      "laws": [],
+      "cites": "migration-row: basalt-ui/agent"
+    },
+    {
+      "file": "packages/basalt-ui/src/agent/use-agent-thread-runs.foreign.test.tsx",
+      "area": "agent",
+      "class": "c",
+      "disposition": "retire",
+      "target": null,
+      "laws": [],
+      "cites": "migration-row: basalt-ui/agent"
+    },
+    {
+      "file": "packages/basalt-ui/src/agent/use-agent-thread-runs.resume.test.tsx",
+      "area": "agent",
+      "class": "c",
+      "disposition": "retire",
+      "target": null,
+      "laws": [],
+      "cites": "migration-row: basalt-ui/agent"
+    },
+    {
+      "file": "packages/basalt-ui/src/agent/use-agent-thread-runs.runtime.test.tsx",
+      "area": "agent",
+      "class": "c",
+      "disposition": "retire",
+      "target": null,
+      "laws": [],
+      "cites": "migration-row: basalt-ui/agent"
+    },
+    {
+      "file": "packages/basalt-ui/src/agent/use-agent-thread-runs.test.tsx",
+      "area": "agent",
+      "class": "c",
+      "disposition": "retire",
+      "target": null,
+      "laws": [],
+      "cites": "migration-row: basalt-ui/agent"
+    },
+    {
+      "file": "packages/basalt-ui/src/agent/use-agent-thread-runs.wedge.test.tsx",
+      "area": "agent",
+      "class": "c",
+      "disposition": "retire",
+      "target": null,
+      "laws": [],
+      "cites": "migration-row: basalt-ui/agent"
+    }
+  ]
+}
