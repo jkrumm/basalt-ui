@@ -25,6 +25,7 @@
   "createBasaltRouter",
   "createBasaltTheme",
   "defineNav",
+  "externalField",
   "flattenNav",
   "navGroup",
   "navTarget",

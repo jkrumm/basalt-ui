@@ -31,6 +31,11 @@ describe('duplicateSymbols', () => {
       'A (./a, ./b)',
     ])
   })
+  test('a baselined 2.x subpath home is a shadow of a v3 root name', () => {
+    const surface = { '.': ['A'], './state': ['A'] }
+    expect(duplicateSymbols(surface, new Set(), new Set(['basalt-ui/state#A']))).toEqual([])
+    expect(duplicateSymbols(surface, new Set(), new Set())).toEqual(['A (., ./state)'])
+  })
   test('green when every name has one home', () => {
     expect(duplicateSymbols({ '.': ['A'], './state': ['B'] })).toEqual([])
   })

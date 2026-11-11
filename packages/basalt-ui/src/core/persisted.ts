@@ -43,6 +43,12 @@ export type Persisted<T> = {
   isSet(): boolean
   /** Removes the key from storage and returns the store to `initial`. */
   reset(): void
+  /**
+   * `'storage'` while listeners run for a change that arrived from another writer (a `storage` event
+   * or a backend `subscribe` callback), else `'local'`. A `set` or `reset` made in that window is a
+   * reaction to the incoming value, so it is dropped instead of written back.
+   */
+  origin(): 'local' | 'storage'
 }
 
 type Envelope = { v: number; value: unknown }
@@ -66,6 +72,9 @@ const entries = new Map<string, Entry>()
  * key drops the entry.
  */
 const unpersisted = new Map<string, { value: unknown }>()
+
+/** Namespaced keys whose listeners are being notified of a storage-origin change right now. */
+const inbound = new Set<string>()
 
 let globalStorage: StorageLike | null = null
 
@@ -131,7 +140,13 @@ function notify(entry: Entry): void {
 /** A storage event or `subscribe` callback for this key: another writer is newer than any override. */
 function wake(entry: Entry): void {
   unpersisted.delete(entry.nsKey)
-  notify(entry)
+  const nested = inbound.has(entry.nsKey)
+  inbound.add(entry.nsKey)
+  try {
+    notify(entry)
+  } finally {
+    if (!nested) inbound.delete(entry.nsKey)
+  }
 }
 
 /** Connects the key's channel to the backend's change signal. At most one connection per key. */
@@ -245,6 +260,8 @@ function define<T>(key: string, o: PersistedOptions<T>): Persisted<T> {
   }
 
   const set = (n: T | ((p: T) => T)): void => {
+    // Origin flag: a write made while another writer's change is being delivered would echo it back.
+    if (inbound.has(nsKey)) return
     const next = typeof n === 'function' ? (n as (p: T) => T)(get()) : n
     try {
       const envelope: Envelope = { v: o.version, value: next }
@@ -257,6 +274,7 @@ function define<T>(key: string, o: PersistedOptions<T>): Persisted<T> {
   }
 
   const reset = (): void => {
+    if (inbound.has(nsKey)) return
     unpersisted.delete(nsKey)
     try {
       backendOf(entry).removeItem(nsKey)
@@ -287,6 +305,7 @@ function define<T>(key: string, o: PersistedOptions<T>): Persisted<T> {
     subscribe,
     isSet,
     reset,
+    origin: () => (inbound.has(nsKey) ? 'storage' : 'local'),
   }
   ;(entry as { api: Persisted<unknown> }).api = api as Persisted<unknown>
   entries.set(nsKey, entry)

@@ -1,0 +1,34 @@
+[
+  {
+    "id": "enum-with-options",
+    "key": "timer-mode",
+    "kind": "enum",
+    "fallback": "rest",
+    "options": [
+      { "value": "rest", "label": "Rest timer" },
+      { "value": "interval", "label": "Interval timer" }
+    ],
+    "handle": {
+      "key": "timer-mode",
+      "kind": "enum",
+      "options": [
+        { "value": "rest", "label": "Rest timer" },
+        { "value": "interval", "label": "Interval timer" }
+      ],
+      "isDefault": true,
+      "members": ["clear", "isDefault", "key", "kind", "options", "use", "useSource"]
+    }
+  },
+  {
+    "id": "string-without-options",
+    "key": "selection",
+    "kind": "string",
+    "fallback": "none",
+    "handle": {
+      "key": "selection",
+      "kind": "string",
+      "isDefault": true,
+      "members": ["clear", "isDefault", "key", "kind", "use", "useSource"]
+    }
+  }
+]

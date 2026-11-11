@@ -73,6 +73,13 @@ export {
   type PersistedOptions,
   type PersistedSchema,
 } from './core/persisted'
+export {
+  externalField,
+  type PlainStore,
+  type StateFieldOptions,
+  type StateStore,
+} from './core/external-field'
+export type { ControlHandle, StorageLike } from './core/ports'
 
 // The one augmentable seam: `declare module 'basalt-ui' { interface BasaltRegister { … } }` only
 // merges when the entry exports the interface. `v2-surface.md` marks it `delete` (no consumer

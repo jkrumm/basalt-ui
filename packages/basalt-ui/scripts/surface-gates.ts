@@ -18,6 +18,19 @@ export type Surface = Readonly<Record<string, readonly string[]>>
 export const CHART_SUBPATH = './charts'
 
 let realLegacy: ReadonlySet<string> | undefined
+let realLegacyHomes: ReadonlySet<string> | undefined
+
+/** Non-root exports that predate the docs gate, as `basalt-ui/<sub>#<name>`. */
+function legacyHomeKeys(): ReadonlySet<string> {
+  realLegacyHomes ??= new Set(
+    (
+      JSON.parse(
+        readFileSync(join(import.meta.dirname, 'gen-docs.baseline.json'), 'utf8'),
+      ) as string[]
+    ).filter((key) => !key.startsWith('basalt-ui#')),
+  )
+  return realLegacyHomes
+}
 
 /** Root exports that predate the docs gate (`gen-docs.baseline.json`, `basalt-ui#<name>`). */
 function legacyRootNames(): ReadonlySet<string> {
@@ -38,10 +51,13 @@ function legacyRootNames(): ReadonlySet<string> {
  *
  * TRANSITIONAL: a root (`.`) name in `legacy` (default: the gen-docs baseline) is a shadow of the
  * 2.x surface and does not count as a second home when another subpath exports the same name.
+ * The mirror case holds too: a non-root home in `legacyHomes` (`basalt-ui/state#externalField`)
+ * is the 2.x shadow of a v3 root name and does not count against it.
  */
 export function duplicateSymbols(
   surface: Surface,
   legacy: ReadonlySet<string> = legacyRootNames(),
+  legacyHomes: ReadonlySet<string> = legacyHomeKeys(),
 ): string[] {
   const homes = new Map<string, string[]>()
   for (const [subpath, names] of Object.entries(surface)) {
@@ -52,6 +68,11 @@ export function duplicateSymbols(
       homes.set(
         name,
         paths.filter((p) => p !== '.'),
+      )
+    } else if (paths.length > 1 && paths.includes('.')) {
+      homes.set(
+        name,
+        paths.filter((p) => p === '.' || !legacyHomes.has(`basalt-ui${p.slice(1)}#${name}`)),
       )
     }
   }
