@@ -3,6 +3,8 @@ import type { RenderResult } from '@testing-library/react'
 import { readdirSync, readFileSync } from 'node:fs'
 import { join } from 'node:path'
 import { afterEach, describe, expect, test } from 'bun:test'
+import { Field as BaseField } from '@base-ui/react/field'
+import { Fieldset as BaseFieldset } from '@base-ui/react/fieldset'
 import type { ComponentType, ReactNode } from 'react'
 import { SLOTS } from './slots'
 
@@ -18,14 +20,33 @@ const camel = (name: string): string => pascal(name).replace(/^./, (c) => c.toLo
 
 type Part = ComponentType<{ children?: ReactNode }>
 
+/**
+ * A part that Base UI refuses outside its parent renders inside that parent's unstyled Base UI
+ * root, which carries no `data-slot` of its own, so only the part's slot is counted.
+ */
+const PARENTS: Record<string, ComponentType<{ children?: ReactNode }>> = {
+  'field-label': (p) => <BaseField.Root {...p} />,
+  'field-description': (p) => <BaseField.Root {...p} />,
+  'field-error': (p) => <BaseField.Root {...p} />,
+  'fieldset-legend': (p) => <BaseFieldset.Root {...p} />,
+}
+
+/** Props a part needs to render at all: `FieldError` shows only on a failed validity or `match`. */
+const PART_PROPS: Record<string, Record<string, unknown>> = { 'field-error': { match: true } }
+
 /** With children `x`; a part on a void element (`<input>`) refuses children, so it renders bare. */
-function renderPart(Part: Part): RenderResult {
+function renderPart(Part: Part, name: string): RenderResult {
+  const Parent = PARENTS[name]
+  const props = PART_PROPS[name] ?? {}
+  const Rendered = Part as ComponentType<Record<string, unknown>>
+  const wrap = (node: ReactNode): ReactNode =>
+    Parent === undefined ? node : <Parent>{node}</Parent>
   try {
-    return render(<Part>x</Part>)
+    return render(wrap(<Rendered {...props}>x</Rendered>))
   } catch (error) {
     if (!(error instanceof Error) || !error.message.includes('void element')) throw error
     cleanup()
-    return render(<Part />)
+    return render(wrap(<Rendered {...props} />))
   }
 }
 
@@ -44,7 +65,6 @@ describe('SLOTS', () => {
     expect(Object.keys(SLOTS).toSorted()).toEqual(onDisk)
   })
 
-  // A compound part that needs its parent to render will need a later convention here.
   for (const [module, parts] of Object.entries(SLOTS)) {
     test(`${module}: rendering each part yields exactly its data-slot set`, async () => {
       const exports = (await import(`./${module}`)) as Record<string, unknown>
@@ -52,7 +72,7 @@ describe('SLOTS', () => {
       for (const part of parts) {
         const Part = exports[pascal(part)] as Part
         expect(Part).toBeDefined()
-        const { container, unmount } = renderPart(Part)
+        const { container, unmount } = renderPart(Part, part)
         for (const el of container.querySelectorAll('[data-slot]')) {
           seen.add(el.getAttribute('data-slot') ?? '')
         }

@@ -17,6 +17,38 @@
       "message": "Pressable owns its height and display: use size (none, row, chip), or eject it (basalt-ui eject button)."
     },
     {
+      "module": "card",
+      "part": "card",
+      "pattern": "^Card$",
+      "allow": ["layout"],
+      "deny": ["h-*", "min-h-*", "size-*", "hidden", "flex", "block", "grid", "inline-flex"],
+      "message": "Card owns its height and display: eject it (basalt-ui eject card) to change them."
+    },
+    {
+      "module": "field",
+      "part": "field",
+      "pattern": "^Field$",
+      "allow": ["layout"],
+      "deny": ["h-*", "min-h-*", "size-*", "hidden", "flex", "block", "grid", "inline-flex"],
+      "message": "Field owns its height and display: eject it (basalt-ui eject field) to change them."
+    },
+    {
+      "module": "field",
+      "part": "fieldset",
+      "pattern": "^Fieldset$",
+      "allow": ["layout"],
+      "deny": ["h-*", "min-h-*", "size-*", "hidden", "flex", "block", "grid", "inline-flex"],
+      "message": "Fieldset owns its height and display: eject it (basalt-ui eject field) to change them."
+    },
+    {
+      "module": "field",
+      "part": "form",
+      "pattern": "^Form$",
+      "allow": ["layout"],
+      "deny": ["h-*", "min-h-*", "size-*", "hidden", "flex", "block", "grid", "inline-flex"],
+      "message": "Form owns its height and display: eject it (basalt-ui eject field) to change them."
+    },
+    {
       "module": "input",
       "part": "input",
       "pattern": "^Input$",

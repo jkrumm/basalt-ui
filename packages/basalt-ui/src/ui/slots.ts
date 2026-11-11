@@ -4,6 +4,16 @@
 /** Every `data-slot` each `basalt-ui/ui/*` module renders, keyed by module name. */
 export const SLOTS = {
   button: ['button', 'pressable'],
+  card: ['card'],
+  field: [
+    'field',
+    'field-label',
+    'field-description',
+    'field-error',
+    'fieldset',
+    'fieldset-legend',
+    'form',
+  ],
   input: ['input'],
 } as const
 
