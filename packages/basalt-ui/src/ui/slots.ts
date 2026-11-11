@@ -47,6 +47,7 @@ export const SLOTS = {
   progress: ['progress', 'ring'],
   'radio-group': ['radio-group', 'radio'],
   'scroll-area': ['scroll-area'],
+  segmented: ['segmented', 'segmented-item'],
   select: [
     'select',
     'select-trigger',
@@ -59,6 +60,7 @@ export const SLOTS = {
   separator: ['separator'],
   sheet: ['sheet-trigger', 'sheet-content', 'sheet-title', 'sheet-close'],
   skeleton: ['skeleton', 'spinner'],
+  slider: ['slider'],
   status: ['status', 'swatch'],
   switch: ['switch'],
   table: [

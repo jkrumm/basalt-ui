@@ -265,6 +265,22 @@
       "message": "ScrollArea owns its height and display: eject it (basalt-ui eject scroll-area) to change them."
     },
     {
+      "module": "segmented",
+      "part": "segmented",
+      "pattern": "^Segmented$",
+      "allow": ["layout"],
+      "deny": ["h-*", "min-h-*", "size-*", "hidden", "flex", "block", "grid", "inline-flex"],
+      "message": "Segmented owns its height and display: use size (md, sm), or eject it (basalt-ui eject segmented)."
+    },
+    {
+      "module": "segmented",
+      "part": "segmented-item",
+      "pattern": "^SegmentedItem$",
+      "allow": ["layout"],
+      "deny": ["h-*", "min-h-*", "size-*", "hidden", "flex", "block", "grid", "inline-flex"],
+      "message": "SegmentedItem owns its height and display: use size (md, sm), or eject it (basalt-ui eject segmented)."
+    },
+    {
       "module": "select",
       "part": "select",
       "pattern": "^Select$",
@@ -335,6 +351,14 @@
       "allow": ["layout"],
       "deny": ["h-*", "min-h-*", "size-*", "hidden", "flex", "block", "grid", "inline-flex"],
       "message": "Spinner owns its height and display: eject it (basalt-ui eject skeleton) to change them."
+    },
+    {
+      "module": "slider",
+      "part": "slider",
+      "pattern": "^Slider$",
+      "allow": ["layout"],
+      "deny": ["h-*", "min-h-*", "size-*", "hidden", "flex", "block", "grid", "inline-flex"],
+      "message": "Slider owns its height and display: eject it (basalt-ui eject slider) to change them."
     },
     {
       "module": "status",
