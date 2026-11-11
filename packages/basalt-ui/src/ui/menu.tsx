@@ -52,7 +52,7 @@ export type MenuPlacement = Pick<
 
 export type MenuProps = BaseMenu.Root.Props
 export type MenuTriggerProps = Layout<BaseMenu.Trigger.Props>
-export type MenuContentProps = Layout<BaseMenu.Popup.Props> &
+export type MenuContentProps = Layout<Omit<BaseMenu.Popup.Props, 'ref'>> &
   MenuPlacement & {
     /** Where the popup renders. Default `document.body`. */
     container?: BaseMenu.Portal.Props['container']
