@@ -46,6 +46,32 @@ const PARENTS: Record<string, ComponentType<{ children?: ReactNode }>> = {
   'field-description': (p) => createElement(BaseField.Root, p),
   'field-error': (p) => createElement(BaseField.Root, p),
   'fieldset-legend': (p) => createElement(BaseFieldset.Root, p),
+  ...tableAncestry({
+    'table-header': ['table'],
+    'table-body': ['table'],
+    'table-caption': ['table'],
+    'table-row': ['table', 'tbody'],
+    'table-head': ['table', 'thead', 'tr'],
+    'table-cell': ['table', 'tbody', 'tr'],
+  }),
+}
+
+/** Parts whose element holds no text: they render without the `x` child. */
+const NO_TEXT = new Set(['table', 'table-header', 'table-body', 'table-row'])
+
+/** Wrappers that give a table part the native elements HTML requires around it. */
+function tableAncestry(
+  chains: Record<string, string[]>,
+): Record<string, ComponentType<{ children?: ReactNode }>> {
+  return Object.fromEntries(
+    Object.entries(chains).map(([slot, tags]) => [
+      slot,
+      (p: { children?: ReactNode }) =>
+        tags
+          .toReversed()
+          .reduce<ReactNode>((inner, tag) => createElement(tag, null, inner), p.children),
+    ]),
+  )
 }
 
 /** Props a part needs to render at all. Keyed by slot; an unlisted part renders with none. */
@@ -64,7 +90,8 @@ const componentEntries = (exports: Record<string, unknown>): [string, PartCompon
 /** One part as an element: children `x`, wrapped in its parent when Base UI needs one. */
 function partElement(Part: PartComponent, slot: string, bare: boolean): ReactElement {
   const props = PART_PROPS[slot] ?? {}
-  const node = bare ? createElement(Part, props) : createElement(Part, props, 'x')
+  const node =
+    bare || NO_TEXT.has(slot) ? createElement(Part, props) : createElement(Part, props, 'x')
   const Parent = PARENTS[slot]
   return Parent === undefined ? node : createElement(Parent, null, node)
 }
