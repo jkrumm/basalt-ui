@@ -20,6 +20,8 @@ describe('quantize', () => {
   test('clamps outside the domain', () => {
     expect(q(-5)).toBe('a')
     expect(q(50)).toBe('e')
+    expect(q(Infinity)).toBe('e')
+    expect(q(-Infinity)).toBe('a')
   })
 
   test('a flat domain maps every value to the first bucket', () => {

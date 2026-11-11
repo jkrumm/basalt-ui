@@ -89,13 +89,19 @@ export function yScaleFor<T>(
   cfg: AxisConfig<T> | undefined,
   domain: readonly [number, number],
 ): LinearScale {
+  if (cfg?.scale === 'log' && process.env.NODE_ENV !== 'production' && !warnedLog) {
+    warnedLog = true
+    console.warn("[basalt] y scale 'log' is retired; the axis draws linear")
+  }
   const linear = scaleLinear().domain([domain[0], domain[1]])
   return cfg?.nice ? linear.nice() : linear
 }
 
+let warnedLog = false
+
 /**
  * `domain` split into equal buckets, one per `range` value, clamped at both ends: Heatmap's fill
- * steps, the one d3 scale the engine does not ship. A flat or non-finite domain maps to the first.
+ * steps, the one d3 scale the engine does not ship. A flat domain or a NaN maps to the first.
  */
 export function quantize<R>(
   domain: readonly [number, number],
@@ -105,7 +111,8 @@ export function quantize<R>(
   const last = range.length - 1
   const span = hi - lo
   return (value) => {
-    if (!(span > 0) || !Number.isFinite(value)) return range[0]
+    if (!(span > 0) || Number.isNaN(value)) return range[0]
+    // ±Infinity clamps to the ends like any value past the domain.
     const i = Math.floor(((value - lo) / span) * range.length)
     return range[Math.min(Math.max(i, 0), last)] as R
   }

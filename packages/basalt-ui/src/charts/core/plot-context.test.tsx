@@ -13,6 +13,7 @@ import {
   MAIN_PANE,
   PLOT_EPSILON_PX,
   plotAccess,
+  plotSizesOf,
   readsPlot,
   samePlots,
   watchPlotReads,
@@ -235,5 +236,39 @@ describe('rendered', () => {
     const first = builds
     await act(settle)
     expect(builds).toBe(first)
+  })
+})
+
+describe('onRender geometry (S4)', () => {
+  const group = (key: string, children: unknown[] = [], extra: object = {}) => ({
+    kind: 'group',
+    key,
+    children,
+    ...extra,
+  })
+
+  test('a single chart is the scene chart bounds', () => {
+    const scene = { chart: { x: 40, y: 10, width: 320, height: 150 }, nodes: [group('marks')] }
+    expect(plotSizesOf(scene as never)).toEqual(sized({ width: 320, height: 150 }))
+  })
+
+  test('a composed chart reads each pane off its marks clip, not the view cell', () => {
+    const pane = (id: string, width: number, height: number) =>
+      group(
+        `owner:${id}:view`,
+        [
+          group(`owner:${id}:axes`),
+          group(`owner:${id}:marks`, [], { clip: { x: 30, y: 4, width, height } }),
+        ],
+        { className: 'ts-chart__view', clip: { x: 0, y: 0, width: 400, height: 120 } },
+      )
+    const scene = {
+      chart: { x: 0, y: 0, width: 400, height: 240 },
+      nodes: [group('owner', [pane('top', 360, 90), pane('bottom', 360, 70)])],
+    }
+    expect(plotSizesOf(scene as never)).toEqual({
+      top: { width: 360, height: 90 },
+      bottom: { width: 360, height: 70 },
+    })
   })
 })
