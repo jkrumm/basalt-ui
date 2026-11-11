@@ -1,0 +1,12 @@
+/*
+ * The `ui-dialogs` fixture's Tailwind v4 entry. Unlike `tailwind.css` it is compiled WITH preflight
+ * and the font faces, because the primitives are measured the way a Tailwind consumer renders them.
+ * `ui-dialogs.layout.test.ts` compiles it into a temp directory; nothing generated lands in the repo.
+ */
+@import '../../../src/css/tailwind.css' source(none);
+@source './ui-dialogs-fixture.tsx';
+@source '../../../src/ui/dialog.tsx';
+@source '../../../src/ui/sheet.tsx';
+@source '../../../src/ui/toast.tsx';
+@source '../../../src/ui/button.tsx';
+@source '../../../src/ui/input.tsx';

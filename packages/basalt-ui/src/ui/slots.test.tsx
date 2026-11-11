@@ -6,7 +6,7 @@ import { afterEach, describe, expect, test } from 'bun:test'
 import { Field as BaseField } from '@base-ui/react/field'
 import { Fieldset as BaseFieldset } from '@base-ui/react/fieldset'
 import type { ComponentType, ReactNode } from 'react'
-import { disclosureAncestry } from './primitive.contract'
+import { disclosureAncestry, overlayAncestry } from './primitive.contract'
 import { SLOTS } from './slots'
 
 afterEach(cleanup)
@@ -53,6 +53,7 @@ const PARENTS: Record<string, ComponentType<{ children?: ReactNode }>> = {
   ),
   'table-caption': (p) => <table {...p} />,
   ...disclosureAncestry(),
+  ...overlayAncestry(true),
 }
 
 /** Props a part needs to render at all: `FieldError` shows only on a failed validity or `match`. */
@@ -63,6 +64,7 @@ const PART_PROPS: Record<string, Record<string, unknown>> = {
   'delta-badge': { value: 1, polarity: 'neutral' },
   'tabs-trigger': { value: 'a' },
   'tabs-content': { value: 'a' },
+  toast: { toast: { id: 'a', title: 't' } },
 }
 
 /** With children `x`; a part on a void element (`<input>`) refuses children, so it renders bare. */
@@ -104,7 +106,8 @@ describe('SLOTS', () => {
         const Part = exports[pascal(part)] as Part
         expect(Part).toBeDefined()
         const { container, unmount } = renderPart(Part, part)
-        for (const el of container.querySelectorAll('[data-slot]')) {
+        // A popup is portalled out of the container, so the lookup spans the document.
+        for (const el of container.ownerDocument.querySelectorAll('[data-slot]')) {
           seen.add(el.getAttribute('data-slot') ?? '')
         }
         unmount()

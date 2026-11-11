@@ -9,6 +9,15 @@ export const SLOTS = {
   card: ['card', 'card-band', 'card-info', 'icon-tile', 'inset', 'card-phase'],
   checkbox: ['checkbox-group', 'checkbox'],
   collapsible: ['collapsible', 'collapsible-trigger', 'collapsible-content'],
+  dialog: [
+    'dialog-trigger',
+    'dialog-content',
+    'dialog-title',
+    'dialog-description',
+    'dialog-close',
+    'alert-dialog-trigger',
+    'alert-dialog-content',
+  ],
   field: [
     'field',
     'field-label',
@@ -24,6 +33,7 @@ export const SLOTS = {
   'radio-group': ['radio-group', 'radio'],
   'scroll-area': ['scroll-area'],
   separator: ['separator'],
+  sheet: ['sheet-trigger', 'sheet-content', 'sheet-title', 'sheet-close'],
   skeleton: ['skeleton', 'spinner'],
   switch: ['switch'],
   table: [
@@ -37,6 +47,7 @@ export const SLOTS = {
   ],
   tabs: ['tabs', 'tabs-list', 'tabs-trigger', 'tabs-content'],
   textarea: ['textarea'],
+  toast: ['toast-viewport', 'toast', 'toast-title', 'toast-description', 'toast-close'],
 } as const
 
 /** A `basalt-ui/ui/*` module name. */

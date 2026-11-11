@@ -24,6 +24,9 @@ const AREAS = [
   'charts',
 ]
 
+/** An area whose keys carry component prefixes (`dialog.close`) rather than the area's own name. */
+const PREFIXES: Record<string, string[]> = { dialogs: ['dialog', 'sheet', 'toast'] }
+
 const areaFiles = readdirSync(MESSAGES)
   .filter((name) => name.endsWith('.ts') && !name.endsWith('.test.ts'))
   .map((name) => name.slice(0, -3))
@@ -58,7 +61,8 @@ describe('messages.coverage', () => {
     for (const area of areaFiles) {
       const source = readFileSync(join(MESSAGES, `${area}.ts`), 'utf8')
       for (const [, key] of source.matchAll(/^\s*'([\w.-]+)':/gm)) {
-        expect(key?.startsWith(`${area}.`)).toBe(true)
+        const owned = [area, ...(PREFIXES[area] ?? [])]
+        expect(owned.some((prefix) => key?.startsWith(`${prefix}.`))).toBe(true)
         expect(seen.has(key ?? '')).toBe(false)
         seen.add(key ?? '')
       }
