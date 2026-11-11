@@ -3,6 +3,25 @@
 /* theme-allow-file unknown-vx-token — v3 sheet generated from the token table */
 @layer basalt.type {
   :where(:root) {
+    --vx-text-micro: 0.6875rem;
+    --vx-text-micro-lh: 1rem;
+    --vx-text-xs: 0.75rem;
+    --vx-text-xs-lh: 1rem;
+    --vx-text-sm: 0.8125rem;
+    --vx-text-sm-lh: 1.25rem;
+    --vx-text-md: 0.9375rem;
+    --vx-text-md-lh: 1.25rem;
+    --vx-text-base: 1rem;
+    --vx-text-base-lh: 1.5rem;
+    --vx-text-lg: 1.125rem;
+    --vx-text-lg-lh: 1.5rem;
+    --vx-text-display: 1.875rem;
+    --vx-text-display-lh: 1;
+  }
+}
+/* theme-allow-file unknown-vx-token — v3 names are not in the 2.x allowlist the guard reads */
+@layer basalt.type {
+  :where(:root) {
     font-family: var(--vx-font-sans);
     font-size: var(--vx-text-base);
     line-height: var(--vx-text-base-lh);
@@ -21,9 +40,6 @@
     font-family: var(--vx-font-mono);
     font-variant-ligatures: none;
     font-variant-numeric: tabular-nums;
-  }
-  :where(.vx-hairline) {
-    box-shadow: inset 0 0 0 1px var(--vx-hairline);
   }
   :where(a, button, input, select, textarea, summary, [tabindex]):focus-visible {
     outline: 2px solid var(--vx-brand);
@@ -44,8 +60,8 @@
     }
   }
   @media (forced-colors: active) {
-    :where(.vx-hairline) {
-      border: 1px solid CanvasText;
+    :where(a, button, input, select, textarea, summary, [tabindex]):focus-visible {
+      outline-color: Highlight;
     }
   }
   @media print {

@@ -1,0 +1,40 @@
+{
+  "cookieName": "sf-color-scheme",
+  "note": "One table for themeScript() and setScheme(). stored = basalt:scheme, legacy = mantine-color-scheme-value, cookie = sf-color-scheme, os = prefers-color-scheme (never stamps: auto leaves the attribute absent), default = themeScript default (setScheme() takes it as its value when nothing is stored), expected = data-theme (null = absent). storage 'throws' makes every localStorage access throw. attribute = data-theme already present when the script runs (late re-stamp); expectedScript overrides expected for the script, which never overwrites.",
+  "cases": [
+    { "name": "stored dark", "stored": "dark", "expected": "dark" },
+    { "name": "stored light", "stored": "light", "expected": "light" },
+    { "name": "stored auto stamps nothing", "stored": "auto", "default": "dark", "expected": null },
+    { "name": "stored auto beats cookie", "stored": "auto", "cookie": "dark", "expected": null },
+    { "name": "legacy mantine key", "legacy": "dark", "expected": "dark" },
+    { "name": "stored beats legacy", "stored": "light", "legacy": "dark", "expected": "light" },
+    { "name": "invalid stored falls to legacy", "stored": "bogus", "legacy": "dark", "expected": "dark" },
+    { "name": "legacy auto stamps nothing", "legacy": "auto", "cookie": "dark", "expected": null },
+    { "name": "shutterflow cookie with empty storage", "cookie": "dark", "expected": "dark" },
+    { "name": "storage beats cookie", "legacy": "light", "cookie": "dark", "expected": "light" },
+    { "name": "invalid everywhere ignored", "stored": "x", "legacy": "{}", "cookie": "y", "expected": null },
+    { "name": "default light", "default": "light", "expected": "light" },
+    { "name": "default dark", "default": "dark", "expected": "dark" },
+    { "name": "default auto", "default": "auto", "expected": null },
+    { "name": "nothing set", "expected": null },
+    { "name": "OS dark does not stamp", "os": "dark", "expected": null },
+    { "name": "OS light does not beat stored dark", "os": "light", "stored": "dark", "expected": "dark" },
+    { "name": "throwing storage reads the cookie", "storage": "throws", "cookie": "dark", "expected": "dark" },
+    { "name": "throwing storage falls to default", "storage": "throws", "default": "light", "expected": "light" },
+    { "name": "throwing storage, nothing else", "storage": "throws", "expected": null },
+    {
+      "name": "late re-stamp: script keeps an existing attribute, setScheme() re-reads storage",
+      "attribute": "light",
+      "stored": "dark",
+      "expectedScript": "light",
+      "expected": "dark"
+    },
+    {
+      "name": "late re-stamp to auto removes the attribute",
+      "attribute": "dark",
+      "stored": "auto",
+      "expectedScript": "dark",
+      "expected": null
+    }
+  ]
+}

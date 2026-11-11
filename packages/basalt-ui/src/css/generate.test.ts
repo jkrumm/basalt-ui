@@ -74,7 +74,8 @@ describe('generateCss', () => {
     const fonts = generated['fonts.css']
     expect(fonts).toContain("font-family: 'Head Digits'")
     expect(fonts).toContain('unicode-range: U+0030-0039')
-    expect(fonts).toContain("@import '@fontsource-variable/hubot-sans/wdth.css'")
+    expect(fonts).toContain("font-family: 'Hubot Sans Variable'")
+    expect(fonts).not.toContain('@import')
     expect(fonts).not.toContain('Fallback')
   })
 })
