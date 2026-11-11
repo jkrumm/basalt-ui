@@ -10,8 +10,9 @@ slots: [sheet-trigger, sheet-content, sheet-title, sheet-close]
 # Sheet
 
 A panel beside the page on Base UI Drawer: edit a record without leaving it. `placement="auto"`
-moves it with CSS; the swipe-to-dismiss axis is read once when it opens, so server and client
-markup never differ. Open state stays with the caller or the trigger. Works with no provider.
+moves it with CSS; the swipe-to-dismiss axis follows the same width from a media query that
+reads as narrow on the server and during hydration, so server and client markup never differ.
+Open state stays with the caller or the trigger. Works with no provider.
 
 ## `sheetContentVariants`
 
