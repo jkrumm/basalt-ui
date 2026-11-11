@@ -81,6 +81,30 @@
       "message": "Input owns its height and display: use size (md, sm), or eject it (basalt-ui eject input)."
     },
     {
+      "module": "radio-group",
+      "part": "radio-group",
+      "pattern": "^RadioGroup$",
+      "allow": ["layout"],
+      "deny": ["h-*", "min-h-*", "size-*", "hidden", "flex", "block", "grid", "inline-flex"],
+      "message": "RadioGroup owns its height and display: eject it (basalt-ui eject radio-group) to change them."
+    },
+    {
+      "module": "radio-group",
+      "part": "radio",
+      "pattern": "^Radio$",
+      "allow": ["layout"],
+      "deny": ["h-*", "min-h-*", "size-*", "hidden", "flex", "block", "grid", "inline-flex"],
+      "message": "Radio owns its height and display: eject it (basalt-ui eject radio-group) to change them."
+    },
+    {
+      "module": "switch",
+      "part": "switch",
+      "pattern": "^Switch$",
+      "allow": ["layout"],
+      "deny": ["h-*", "min-h-*", "size-*", "hidden", "flex", "block", "grid", "inline-flex"],
+      "message": "Switch owns its height and display: eject it (basalt-ui eject switch) to change them."
+    },
+    {
       "module": "table",
       "part": "table",
       "pattern": "^Table$",

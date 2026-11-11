@@ -18,6 +18,8 @@ export const SLOTS = {
     'form',
   ],
   input: ['input'],
+  'radio-group': ['radio-group', 'radio'],
+  switch: ['switch'],
   table: [
     'table',
     'table-header',
