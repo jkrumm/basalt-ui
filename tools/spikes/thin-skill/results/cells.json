@@ -1,0 +1,454 @@
+{
+  "seed": 587,
+  "cells": {
+    "dashboard.noskill.nohook": {
+      "status": "run",
+      "rounds": [
+        {
+          "round": 1,
+          "opaque": "p31",
+          "p1": 2,
+          "carried": 0,
+          "findings": [
+            {
+              "id": "lint-prefer-img-role",
+              "class": "lint",
+              "viewports": ["desktop", "mobile"],
+              "where": "Sparkline svg in the Shipped card (src/App.tsx:43)",
+              "evidence": "lint.txt: 'Prefer `img` over `role` attribute `img`. [Error/jsx-a11y(prefer-tag-over-role)]'. The diff has <svg role=\"img\" aria-label=...>."
+            },
+            {
+              "id": "inline-style-sparkline-height",
+              "class": "token",
+              "viewports": ["desktop", "mobile"],
+              "where": "Sparkline svg in the Shipped card (src/App.tsx:48)",
+              "evidence": "The diff has style={{ height: typeof height === 'number' ? height - 16 : h }}, an inline style that sets size. lint.txt also reports it as 'no-inline-style: write no inline style; use theme utilities [Error/thin(no-inline-style)]'."
+            }
+          ],
+          "previous": []
+        },
+        {
+          "round": 2,
+          "opaque": "p02",
+          "p1": 0,
+          "carried": 0,
+          "findings": [],
+          "previous": [
+            {
+              "id": "lint-prefer-img-role",
+              "status": "fixed"
+            },
+            {
+              "id": "inline-style-sparkline-height",
+              "status": "fixed"
+            }
+          ]
+        }
+      ],
+      "lookups": 6,
+      "docReads": 0
+    },
+    "dashboard.noskill.hook": {
+      "status": "run",
+      "rounds": [
+        {
+          "round": 1,
+          "opaque": "p21",
+          "p1": 0,
+          "carried": 0,
+          "findings": [],
+          "previous": []
+        }
+      ],
+      "lookups": 8,
+      "docReads": 0
+    },
+    "dashboard.skill.nohook": {
+      "status": "run",
+      "rounds": [
+        {
+          "round": 1,
+          "opaque": "p26",
+          "p1": 2,
+          "carried": 0,
+          "findings": [
+            {
+              "id": "review-time-value-truncated",
+              "class": "clipped",
+              "viewports": ["desktop"],
+              "where": "Review time StatCard, headline value",
+              "evidence": "At 1800px the value reads '5....' with an ellipsis. The figure 5.4 and the unit 'h median' are cut off, so the only distinguishing part of the value is lost. At 390px it shows '5.4 h median' in full."
+            },
+            {
+              "id": "lint-prefer-tag-over-role-img",
+              "class": "lint",
+              "viewports": ["desktop", "mobile"],
+              "where": "src/App.tsx:55, TrendLine svg with role=\"img\"",
+              "evidence": "lint.txt: 'src/App.tsx:55:7: Prefer `img` over `role` attribute `img`. [Error/jsx-a11y(prefer-tag-over-role)]'"
+            }
+          ],
+          "previous": []
+        },
+        {
+          "round": 2,
+          "opaque": "p13",
+          "p1": 0,
+          "carried": 0,
+          "findings": [],
+          "previous": [
+            {
+              "id": "review-time-value-truncated",
+              "status": "fixed"
+            },
+            {
+              "id": "lint-prefer-tag-over-role-img",
+              "status": "fixed"
+            }
+          ]
+        }
+      ],
+      "lookups": 6,
+      "docReads": 0
+    },
+    "dashboard.skill.hook": {
+      "status": "run",
+      "rounds": [
+        {
+          "round": 1,
+          "opaque": "p36",
+          "p1": 1,
+          "carried": 0,
+          "findings": [
+            {
+              "id": "review-time-value-truncated",
+              "class": "clipped",
+              "viewports": ["desktop"],
+              "where": "Review time stat card, headline value",
+              "evidence": "The value '5.4 h' renders as '5....' beside the '-18% vs last week' chip and 'On track' status. The ellipsis removes the '.4' and the 'h' unit, which is the part that carries the figure. At mobile the same card shows '5.4 h' in full."
+            }
+          ],
+          "previous": []
+        },
+        {
+          "round": 2,
+          "opaque": "p35",
+          "p1": 0,
+          "carried": 0,
+          "findings": [],
+          "previous": [
+            {
+              "id": "review-time-value-truncated",
+              "status": "fixed"
+            }
+          ]
+        }
+      ],
+      "lookups": 4,
+      "docReads": 0
+    },
+    "list-detail.noskill.nohook": {
+      "status": "run",
+      "rounds": [
+        {
+          "round": 1,
+          "opaque": "p19",
+          "p1": 2,
+          "carried": 0,
+          "findings": [
+            {
+              "id": "arbitrary-variant-selected-row",
+              "class": "token",
+              "viewports": ["desktop", "mobile"],
+              "where": "PrList table row, TableRow className (App.tsx, diff line 133)",
+              "evidence": "className=\"cursor-pointer data-[selected=true]:bg-selected\" uses an arbitrary-value variant. lint.txt reports no-arbitrary-value at src/App.tsx:128:29."
+            },
+            {
+              "id": "arbitrary-grid-cols-layout",
+              "class": "token",
+              "viewports": ["desktop", "mobile"],
+              "where": "App root layout wrapper around PrList and PrDetail (App.tsx, diff line 224)",
+              "evidence": "className uses lg:grid-cols-[minmax(0,2fr)_minmax(0,1fr)], an arbitrary-value utility. lint.txt reports no-arbitrary-value at src/App.tsx:218:22. In the desktop shot the list and detail are stacked, not side by side."
+            }
+          ],
+          "previous": []
+        },
+        {
+          "round": 2,
+          "opaque": "p27",
+          "p1": 1,
+          "carried": 0,
+          "findings": [
+            {
+              "id": "mobile-table-columns-clipped",
+              "class": "clipped",
+              "viewports": ["mobile"],
+              "where": "Pull requests table, Age and Changes columns",
+              "evidence": "At 390px the table sits in an overflow-x-auto box. The Age header is cut to 'Ag', the Age values are cut at the card edge, and the whole Changes column (+412 -87 and the rest) is not visible. The Title column is squeezed to about 80px, so titles wrap over 3 to 4 lines. Nothing signals that the table scrolls sideways."
+            }
+          ],
+          "previous": [
+            {
+              "id": "arbitrary-variant-selected-row",
+              "status": "fixed"
+            },
+            {
+              "id": "arbitrary-grid-cols-layout",
+              "status": "fixed"
+            }
+          ]
+        },
+        {
+          "round": 3,
+          "opaque": "p03",
+          "p1": 0,
+          "carried": 0,
+          "findings": [],
+          "previous": [
+            {
+              "id": "mobile-table-columns-clipped",
+              "status": "fixed"
+            }
+          ]
+        }
+      ],
+      "lookups": 6,
+      "docReads": 0
+    },
+    "list-detail.noskill.hook": {
+      "status": "run",
+      "rounds": [
+        {
+          "round": 1,
+          "opaque": "p05",
+          "p1": 1,
+          "carried": 0,
+          "findings": [
+            {
+              "id": "mobile-table-columns-cut-off",
+              "class": "clipped",
+              "viewports": ["mobile"],
+              "where": "Pull request list table, columns Author, State, Age and Changes",
+              "evidence": "At 390 the table card shows only the # and Title columns. The Title text runs right up to the card edge, and the Author, State, Age and Changes columns are cut off at that edge. The wrapper is overflow-x-auto (diff.patch line 90) but nothing in the shot shows it scrolls, so a reviewer scanning the list sees no PR state, age or size."
+            }
+          ],
+          "previous": []
+        },
+        {
+          "round": 2,
+          "opaque": "p07",
+          "p1": 0,
+          "carried": 1,
+          "findings": [],
+          "previous": [
+            {
+              "id": "mobile-table-columns-cut-off",
+              "status": "open"
+            }
+          ]
+        },
+        {
+          "round": 3,
+          "opaque": "p25",
+          "p1": 0,
+          "carried": 1,
+          "findings": [],
+          "previous": [
+            {
+              "id": "mobile-table-columns-cut-off",
+              "status": "open"
+            }
+          ]
+        }
+      ],
+      "lookups": 8,
+      "docReads": 0
+    },
+    "list-detail.skill.nohook": {
+      "status": "run",
+      "rounds": [
+        {
+          "round": 1,
+          "opaque": "p01",
+          "p1": 1,
+          "carried": 0,
+          "findings": [
+            {
+              "id": "pr-table-columns-clipped",
+              "class": "clipped",
+              "viewports": ["desktop", "mobile"],
+              "where": "Open pull requests table, right-hand columns",
+              "evidence": "Desktop: only #, Title and Author show, and the table is cut at the card edge, so State, Age and Changes are not visible without scrolling the overflow-x-auto wrapper. Mobile: the Title column is cut mid-word ('with backo', 'payout request', 'dispute view') and State, Age and Changes are off-screen. At both viewports the brief's Age and Changes values (6 d, +412 -87 and so on) cannot be seen."
+            }
+          ],
+          "previous": []
+        },
+        {
+          "round": 2,
+          "opaque": "p12",
+          "p1": 0,
+          "carried": 1,
+          "findings": [],
+          "previous": [
+            {
+              "id": "pr-table-columns-clipped",
+              "status": "open"
+            }
+          ]
+        },
+        {
+          "round": 3,
+          "opaque": "p10",
+          "p1": 0,
+          "carried": 0,
+          "findings": [],
+          "previous": [
+            {
+              "id": "pr-table-columns-clipped",
+              "status": "fixed"
+            }
+          ]
+        }
+      ],
+      "lookups": 6,
+      "docReads": 0
+    },
+    "list-detail.skill.hook": {
+      "status": "run",
+      "rounds": [
+        {
+          "round": 1,
+          "opaque": "p24",
+          "p1": 1,
+          "carried": 0,
+          "findings": [
+            {
+              "id": "mobile-table-columns-cut-off",
+              "class": "clipped",
+              "viewports": ["mobile"],
+              "where": "PR list table, columns after Title",
+              "evidence": "At 390 the table shows only the # and Title columns. Author, State, Age and Changes are cut at the card edge inside the overflow-x-auto wrapper (diff.patch line 89), with no visible sign that more columns exist. Every row's author, state, age and +/- counts are unreadable without scrolling sideways."
+            }
+          ],
+          "previous": []
+        },
+        {
+          "round": 2,
+          "opaque": "p30",
+          "p1": 1,
+          "carried": 0,
+          "findings": [
+            {
+              "id": "pr-number-column-invisible",
+              "class": "data",
+              "viewports": ["desktop", "mobile"],
+              "where": "PR list table, # column (all nine rows, 4821 to 4865)",
+              "evidence": "The PR numbers render in a pale tint almost the same as the card background and are barely readable in both shots. The row identifier is effectively missing, so a reviewer can't tell which number to select. The cause is the button's `text-accent` class at diff.patch line 112. The numbers only show up faintly as ghost text."
+            }
+          ],
+          "previous": [
+            {
+              "id": "mobile-table-columns-cut-off",
+              "status": "fixed"
+            }
+          ]
+        },
+        {
+          "round": 3,
+          "opaque": "p22",
+          "p1": 0,
+          "carried": 0,
+          "findings": [],
+          "previous": [
+            {
+              "id": "pr-number-column-invisible",
+              "status": "fixed"
+            }
+          ]
+        }
+      ],
+      "lookups": 6,
+      "docReads": 2
+    },
+    "settings.noskill.nohook": {
+      "status": "run",
+      "rounds": [
+        {
+          "round": 1,
+          "opaque": "p28",
+          "p1": 1,
+          "carried": 0,
+          "findings": [
+            {
+              "id": "arbitrary-max-width-fields",
+              "class": "token",
+              "viewports": ["desktop", "mobile"],
+              "where": "All five Field components (Workspace name, URL slug, Contact email, Deploy webhook URL, Digest recipients), src/App.tsx lines 36, 43, 50, 62 and 69",
+              "evidence": "Each Field has className=\"w-full max-w-[480px]\", an arbitrary-value utility. lint.txt reports no-arbitrary-value at App.tsx 30, 37, 44, 56 and 63. These are one root cause, so I count it once as token and add no separate lint finding."
+            }
+          ],
+          "previous": []
+        },
+        {
+          "round": 2,
+          "opaque": "p04",
+          "p1": 0,
+          "carried": 0,
+          "findings": [],
+          "previous": [
+            {
+              "id": "arbitrary-max-width-fields",
+              "status": "fixed"
+            }
+          ]
+        }
+      ],
+      "lookups": 4,
+      "docReads": 0
+    },
+    "settings.noskill.hook": {
+      "status": "run",
+      "rounds": [
+        {
+          "round": 1,
+          "opaque": "p17",
+          "p1": 0,
+          "carried": 0,
+          "findings": [],
+          "previous": []
+        }
+      ],
+      "lookups": 4,
+      "docReads": 0
+    },
+    "settings.skill.nohook": {
+      "status": "run",
+      "rounds": [
+        {
+          "round": 1,
+          "opaque": "p23",
+          "p1": 0,
+          "carried": 0,
+          "findings": [],
+          "previous": []
+        }
+      ],
+      "lookups": 6,
+      "docReads": 2
+    },
+    "settings.skill.hook": {
+      "status": "run",
+      "rounds": [
+        {
+          "round": 1,
+          "opaque": "p15",
+          "p1": 0,
+          "carried": 0,
+          "findings": [],
+          "previous": []
+        }
+      ],
+      "lookups": 4,
+      "docReads": 0
+    }
+  }
+}

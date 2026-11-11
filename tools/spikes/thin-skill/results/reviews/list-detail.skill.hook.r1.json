@@ -1,0 +1,12 @@
+{
+  "findings": [
+    {
+      "id": "mobile-table-columns-cut-off",
+      "class": "clipped",
+      "viewports": ["mobile"],
+      "where": "PR list table, columns after Title",
+      "evidence": "At 390 the table shows only the # and Title columns. Author, State, Age and Changes are cut at the card edge inside the overflow-x-auto wrapper (diff.patch line 89), with no visible sign that more columns exist. Every row's author, state, age and +/- counts are unreadable without scrolling sideways."
+    }
+  ],
+  "previous": []
+}

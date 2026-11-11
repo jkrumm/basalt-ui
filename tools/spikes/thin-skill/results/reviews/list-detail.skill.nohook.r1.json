@@ -1,0 +1,12 @@
+{
+  "findings": [
+    {
+      "id": "pr-table-columns-clipped",
+      "class": "clipped",
+      "viewports": ["desktop", "mobile"],
+      "where": "Open pull requests table, right-hand columns",
+      "evidence": "Desktop: only #, Title and Author show, and the table is cut at the card edge, so State, Age and Changes are not visible without scrolling the overflow-x-auto wrapper. Mobile: the Title column is cut mid-word ('with backo', 'payout request', 'dispute view') and State, Age and Changes are off-screen. At both viewports the brief's Age and Changes values (6 d, +412 -87 and so on) cannot be seen."
+    }
+  ],
+  "previous": []
+}

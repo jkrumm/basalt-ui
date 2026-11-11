@@ -1,0 +1,7 @@
+{
+  "findings": [],
+  "previous": [
+    { "id": "lint-prefer-img-role", "status": "fixed" },
+    { "id": "inline-style-sparkline-height", "status": "fixed" }
+  ]
+}

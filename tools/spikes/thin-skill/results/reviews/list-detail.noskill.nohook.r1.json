@@ -1,0 +1,19 @@
+{
+  "findings": [
+    {
+      "id": "arbitrary-variant-selected-row",
+      "class": "token",
+      "viewports": ["desktop", "mobile"],
+      "where": "PrList table row, TableRow className (App.tsx, diff line 133)",
+      "evidence": "className=\"cursor-pointer data-[selected=true]:bg-selected\" uses an arbitrary-value variant. lint.txt reports no-arbitrary-value at src/App.tsx:128:29."
+    },
+    {
+      "id": "arbitrary-grid-cols-layout",
+      "class": "token",
+      "viewports": ["desktop", "mobile"],
+      "where": "App root layout wrapper around PrList and PrDetail (App.tsx, diff line 224)",
+      "evidence": "className uses lg:grid-cols-[minmax(0,2fr)_minmax(0,1fr)], an arbitrary-value utility. lint.txt reports no-arbitrary-value at src/App.tsx:218:22. In the desktop shot the list and detail are stacked, not side by side."
+    }
+  ],
+  "previous": []
+}

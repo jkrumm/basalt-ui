@@ -1,0 +1,19 @@
+{
+  "findings": [
+    {
+      "id": "review-time-value-truncated",
+      "class": "clipped",
+      "viewports": ["desktop"],
+      "where": "Review time StatCard, headline value",
+      "evidence": "At 1800px the value reads '5....' with an ellipsis. The figure 5.4 and the unit 'h median' are cut off, so the only distinguishing part of the value is lost. At 390px it shows '5.4 h median' in full."
+    },
+    {
+      "id": "lint-prefer-tag-over-role-img",
+      "class": "lint",
+      "viewports": ["desktop", "mobile"],
+      "where": "src/App.tsx:55, TrendLine svg with role=\"img\"",
+      "evidence": "lint.txt: 'src/App.tsx:55:7: Prefer `img` over `role` attribute `img`. [Error/jsx-a11y(prefer-tag-over-role)]'"
+    }
+  ],
+  "previous": []
+}

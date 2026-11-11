@@ -1,0 +1,12 @@
+{
+  "findings": [
+    {
+      "id": "review-time-value-truncated",
+      "class": "clipped",
+      "viewports": ["desktop"],
+      "where": "Review time stat card, headline value",
+      "evidence": "The value '5.4 h' renders as '5....' beside the '-18% vs last week' chip and 'On track' status. The ellipsis removes the '.4' and the 'h' unit, which is the part that carries the figure. At mobile the same card shows '5.4 h' in full."
+    }
+  ],
+  "previous": []
+}

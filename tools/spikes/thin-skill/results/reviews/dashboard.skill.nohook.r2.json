@@ -1,0 +1,7 @@
+{
+  "findings": [],
+  "previous": [
+    { "id": "review-time-value-truncated", "status": "fixed" },
+    { "id": "lint-prefer-tag-over-role-img", "status": "fixed" }
+  ]
+}

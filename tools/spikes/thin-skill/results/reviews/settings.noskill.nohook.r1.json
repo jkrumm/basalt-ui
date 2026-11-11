@@ -1,0 +1,12 @@
+{
+  "findings": [
+    {
+      "id": "arbitrary-max-width-fields",
+      "class": "token",
+      "viewports": ["desktop", "mobile"],
+      "where": "All five Field components (Workspace name, URL slug, Contact email, Deploy webhook URL, Digest recipients), src/App.tsx lines 36, 43, 50, 62 and 69",
+      "evidence": "Each Field has className=\"w-full max-w-[480px]\", an arbitrary-value utility. lint.txt reports no-arbitrary-value at App.tsx 30, 37, 44, 56 and 63. These are one root cause, so I count it once as token and add no separate lint finding."
+    }
+  ],
+  "previous": []
+}

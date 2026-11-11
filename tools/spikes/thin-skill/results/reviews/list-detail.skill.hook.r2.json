@@ -1,0 +1,12 @@
+{
+  "findings": [
+    {
+      "id": "pr-number-column-invisible",
+      "class": "data",
+      "viewports": ["desktop", "mobile"],
+      "where": "PR list table, # column (all nine rows, 4821 to 4865)",
+      "evidence": "The PR numbers render in a pale tint almost the same as the card background and are barely readable in both shots. The row identifier is effectively missing, so a reviewer can't tell which number to select. The cause is the button's `text-accent` class at diff.patch line 112. The numbers only show up faintly as ghost text."
+    }
+  ],
+  "previous": [{ "id": "mobile-table-columns-cut-off", "status": "fixed" }]
+}
