@@ -1,6 +1,9 @@
 import { cleanup, render } from '@testing-library/react'
 import { afterEach, describe, expect, test } from 'bun:test'
+import { readFileSync } from 'node:fs'
+import { join } from 'node:path'
 import { IntlScope } from '../core/provider-props'
+import { SIZE_CLASSES } from '../tokens/size-classes'
 import { Sheet, SheetClose, SheetContent, SheetTrigger, sheetParts } from './sheet'
 
 afterEach(cleanup)
@@ -66,5 +69,45 @@ describe('sheet module', () => {
     )
     const closes = [...document.querySelectorAll('[data-slot="sheet-close"]')]
     expect(closes.map((c) => c.getAttribute('aria-label'))).toEqual(['Schließen', null])
+  })
+
+  test('the auto flip width is the medium size class', () => {
+    const source = readFileSync(join(import.meta.dirname, 'sheet.tsx'), 'utf8')
+    expect(source).toContain(`(min-width: ${SIZE_CLASSES.medium}px)`)
+  })
+
+  test('the swipe axis follows placement and, for auto, the width', () => {
+    const original = window.matchMedia
+    const wide = (matches: boolean): void => {
+      window.matchMedia = ((query: string) => ({
+        matches,
+        media: query,
+        addEventListener: () => {},
+        removeEventListener: () => {},
+      })) as unknown as typeof window.matchMedia
+    }
+    const swipeOf = (placement: 'bottom' | 'right' | 'auto'): string | null => {
+      cleanup()
+      render(
+        <Sheet defaultOpen placement={placement}>
+          <SheetContent title="Edit">Form</SheetContent>
+        </Sheet>,
+      )
+      return (
+        document
+          .querySelector('[data-slot="sheet-content"]')
+          ?.getAttribute('data-swipe-direction') ?? null
+      )
+    }
+    try {
+      wide(true)
+      expect(swipeOf('auto')).toBe('right')
+      expect(swipeOf('bottom')).toBe('down')
+      wide(false)
+      expect(swipeOf('auto')).toBe('down')
+      expect(swipeOf('right')).toBe('right')
+    } finally {
+      window.matchMedia = original
+    }
   })
 })

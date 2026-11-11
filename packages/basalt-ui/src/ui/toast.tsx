@@ -63,8 +63,9 @@ export type ToastCloseProps = Layout<BaseToast.Close.Props>
 
 /**
  * The live region that holds the toasts, portalled to the page edge above every popup. Named by
- * the `toast.viewport` message. It reads a Base UI toast manager, so it renders inside the
- * `ToastHost` that owns one; apps queue toasts with `notify` and never call the manager.
+ * the `toast.viewport` message. It reads a Base UI toast manager, so it renders inside a Base UI
+ * `Toast.Provider`; the app-level `ToastHost` that owns the provider and feeds the queue lands with
+ * `notify`.
  *
  * @example
  * <ToastViewport>{toasts.map((toast) => <Toast key={toast.id} toast={toast}>...</Toast>)}</ToastViewport>
