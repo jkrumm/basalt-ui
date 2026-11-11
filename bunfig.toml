@@ -4,4 +4,4 @@ preload = ["./tests/setup/dom.ts"]
 # preload (which breaks fetch) or inside the fast unit loop. Excluding it HERE rather than in a
 # script covers every entry point at once: bare `bun test`, `make test`, `bun --filter basalt-ui
 # test`, and CI's Tests step. `make layout` opts back in via its own bunfig.
-pathIgnorePatterns = ["**/tests/layout/**"]
+pathIgnorePatterns = ["**/tests/layout/**", "**/test/fixtures/**"]
