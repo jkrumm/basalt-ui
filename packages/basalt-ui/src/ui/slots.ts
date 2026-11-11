@@ -19,8 +19,12 @@ export const SLOTS = {
     'form',
   ],
   input: ['input'],
+  kbd: ['kbd'],
   'number-field': ['number-field'],
   'radio-group': ['radio-group', 'radio'],
+  'scroll-area': ['scroll-area'],
+  separator: ['separator'],
+  skeleton: ['skeleton', 'spinner'],
   switch: ['switch'],
   table: [
     'table',

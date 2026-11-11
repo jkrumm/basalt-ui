@@ -97,6 +97,14 @@
       "message": "Input owns its height and display: use size (md, sm), or eject it (basalt-ui eject input)."
     },
     {
+      "module": "kbd",
+      "part": "kbd",
+      "pattern": "^Kbd$",
+      "allow": ["layout"],
+      "deny": ["h-*", "min-h-*", "size-*", "hidden", "flex", "block", "grid", "inline-flex"],
+      "message": "Kbd owns its height and display: eject it (basalt-ui eject kbd) to change them."
+    },
+    {
       "module": "number-field",
       "part": "number-field",
       "pattern": "^NumberField$",
@@ -119,6 +127,38 @@
       "allow": ["layout"],
       "deny": ["h-*", "min-h-*", "size-*", "hidden", "flex", "block", "grid", "inline-flex"],
       "message": "Radio owns its height and display: eject it (basalt-ui eject radio-group) to change them."
+    },
+    {
+      "module": "scroll-area",
+      "part": "scroll-area",
+      "pattern": "^ScrollArea$",
+      "allow": ["layout"],
+      "deny": ["h-*", "min-h-*", "size-*", "hidden", "flex", "block", "grid", "inline-flex"],
+      "message": "ScrollArea owns its height and display: eject it (basalt-ui eject scroll-area) to change them."
+    },
+    {
+      "module": "separator",
+      "part": "separator",
+      "pattern": "^Separator$",
+      "allow": ["layout"],
+      "deny": ["h-*", "min-h-*", "size-*", "hidden", "flex", "block", "grid", "inline-flex"],
+      "message": "Separator owns its height and display: eject it (basalt-ui eject separator) to change them."
+    },
+    {
+      "module": "skeleton",
+      "part": "skeleton",
+      "pattern": "^Skeleton$",
+      "allow": ["layout"],
+      "deny": ["h-*", "min-h-*", "size-*", "hidden", "flex", "block", "grid", "inline-flex"],
+      "message": "Skeleton owns its height and display: eject it (basalt-ui eject skeleton) to change them."
+    },
+    {
+      "module": "skeleton",
+      "part": "spinner",
+      "pattern": "^Spinner$",
+      "allow": ["layout"],
+      "deny": ["h-*", "min-h-*", "size-*", "hidden", "flex", "block", "grid", "inline-flex"],
+      "message": "Spinner owns its height and display: eject it (basalt-ui eject skeleton) to change them."
     },
     {
       "module": "switch",

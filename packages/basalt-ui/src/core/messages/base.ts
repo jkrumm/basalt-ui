@@ -1,6 +1,8 @@
 import type { BasaltMessages } from './index'
 
-/** Replace with the area's keys when its Issue writes the strings. */
-export type BaseMessages = Record<never, never>
+/** The strings the shared primitives (`basalt-ui/ui/*`) print themselves; `base.spinner.loading` names a `Spinner`. */
+export type BaseMessages = Record<'base.spinner.loading', string>
 
-export const base = {} satisfies Partial<BasaltMessages>
+export const base = {
+  'base.spinner.loading': 'Loading',
+} satisfies Partial<BasaltMessages>
