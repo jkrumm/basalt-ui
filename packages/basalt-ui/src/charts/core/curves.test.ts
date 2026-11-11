@@ -57,12 +57,12 @@ describe('chartCurve', () => {
   })
 })
 
-describe('public barrel', () => {
-  test('chartCurve is exported for CartesianChart marks, and caches per name', async () => {
-    const barrel = await import('./index')
-    expect(barrel.chartCurve).toBe(chartCurve)
-    expect(barrel.chartCurve('monotone')).toBe(barrel.chartCurve('monotone'))
-    expect(barrel.chartCurve('monotone')).not.toBe(barrel.chartCurve('linear'))
+// The 2.x "public barrel" case is not ported: v3 drops the public `chartCurve` (concept section 11,
+// replaced by `series.curve`), so the core's copy is internal. Its per-name cache is pinned here.
+describe('curve cache', () => {
+  test('caches per name', () => {
+    expect(chartCurve('monotone')).toBe(chartCurve('monotone'))
+    expect(chartCurve('monotone')).not.toBe(chartCurve('linear'))
   })
 })
 
