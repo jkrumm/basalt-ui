@@ -1,0 +1,6 @@
+{
+  "profile": "parts",
+  "version": "3.0.0",
+  "roots": { "apps/web/src": "app", "apps/admin/src": "parts", "packages/ui/src": "parts" },
+  "managed": {}
+}

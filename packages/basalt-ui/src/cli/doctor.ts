@@ -53,8 +53,7 @@ import {
   unknownConfigKeysCheck,
 } from './doctor-upgrade'
 import type { Check } from './doctor-upgrade'
-import { findManifestAbove, installRootAbove } from './install-root'
-import { parentInstallAdvice } from './sync'
+import { findManifestAbove, installRootAbove, parentInstallAdvice } from './install-root'
 
 /** `sameFile`, but doctor never crashes: a path that cannot be inspected is "not provably the same". */
 function isSameFile(a: string, b: string): boolean {

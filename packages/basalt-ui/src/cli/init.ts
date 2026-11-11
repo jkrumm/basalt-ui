@@ -44,7 +44,7 @@ import {
   VITE_CONFIGS,
 } from './router-wiring'
 import { readPackageJson, tokenize } from './source-text'
-import { readOxlintPresetPlugins } from './sync'
+import { readOxlintPresetPlugins } from './install-root'
 
 /**
  * What a consumer LOSES by `init` keeping a file it already had — the half the aggregate

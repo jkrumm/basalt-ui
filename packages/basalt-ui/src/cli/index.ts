@@ -1050,29 +1050,6 @@ export function placementNotices(cwd: string, placement: PlacementFlags): string
   return out
 }
 
-/** The two repo-root templates vs the repo root's own files, read-only: 'in sync' | 'drifted' | 'absent'. */
-export function rootToolingStates(cwd: string, p: PlacementFlags, ctx: RenderContext): string[] {
-  if (p.isPackageRepoRoot) return []
-  const pkg = relativePosix(p.repoRoot, cwd).replace(/^\.\//, '')
-  const preset = shippedAssetPath(findBasaltInstall(cwd), p.repoRoot, 'configs/lefthook.yml')
-  const ci = fillTemplate(readSource(ctx.pkgRoot, 'configs/check.yml') ?? '', ctx.vars)
-  const steps = ci
-    .split('\n')
-    .map((l) => l.trim())
-    .filter((l) => l.startsWith('- run:'))
-  const state = (file: string, ok: (text: string) => boolean): string => {
-    const text = readIfExists(resolve(p.repoRoot, file))
-    return text === null ? 'absent' : ok(text) ? 'in sync' : 'drifted'
-  }
-  return [
-    state(
-      'lefthook.yml',
-      (t) => t.includes(preset.replace(/^\.\//, '')) && t.split(`root: '${pkg}/'`).length > 3,
-    ),
-    state('.github/workflows/check.yml', (t) => steps.every((l) => t.includes(l))),
-  ]
-}
-
 export type Manifest = {
   version: 1
   /** The basalt-ui version that last wrote this manifest — `doctor`'s one reconciliation axis. */
@@ -1256,8 +1233,6 @@ export function unitState(file: ManagedFile, cwd: string, ctx: RenderContext): U
   return { current: onDisk, desired }
 }
 
-type Classification = 'unchanged' | 'drifted' | 'missing' | 'current'
-
 /**
  * Normalize a managed unit's rendered bytes for the ledger comparison: blank the per-release version
  * in a marker's begin line, trim trailing whitespace per line and collapse blank-line runs. A
@@ -1276,8 +1251,7 @@ export function normalizeForLedger(text: string): string {
 /**
  * Write a managed unit to disk (whole file, or marker-spliced region). Returns the unit's hash —
  * `sha256(normalizeForLedger(desired))`, NOT the raw bytes: the normalized hash is what lets one
- * manifest entry survive a downstream formatter and a cross-version template change (`classify`'s
- * path 2 is the reader).
+ * manifest entry survive a downstream formatter and a cross-version template change.
  */
 export function writeUnit(file: ManagedFile, cwd: string, desired: string): string {
   const destAbs = resolve(cwd, file.dest)
@@ -1288,38 +1262,6 @@ export function writeUnit(file: ManagedFile, cwd: string, desired: string): stri
     writeFileEnsuringDir(destAbs, desired)
   }
   return sha256(normalizeForLedger(desired))
-}
-
-/**
- * Classify a managed file against the manifest for a sync run:
- * - missing  : absent on disk → recreate.
- * - current  : on disk == desired → nothing to do.
- * - unchanged: on disk matches a KNOWN-SHIPPED rendering (raw manifest hash, normalized manifest
- *              hash, or — with or without a manifest entry — normalized == normalized desired,
- *              the format-only difference a formatter pass leaves) → safe overwrite.
- * - drifted  : matches none of them (a real local edit) → skip unless --force.
- */
-export function classify(state: UnitState, manifestHash: string | undefined): Classification {
-  if (state.current === null) return 'missing'
-  if (state.desired !== null && state.current === state.desired) return 'current'
-  const currentHash = sha256(state.current)
-  if (currentHash === manifestHash) return 'unchanged'
-  if (sha256(normalizeForLedger(state.current)) === manifestHash) return 'unchanged'
-  if (
-    state.desired !== null &&
-    normalizeForLedger(state.current) === normalizeForLedger(state.desired)
-  ) {
-    return 'unchanged'
-  }
-  return 'drifted'
-}
-
-export function diffSummary(file: ManagedFile, state: UnitState): string {
-  const cur = state.current ?? ''
-  const des = state.desired ?? ''
-  const curLines = cur.split('\n').length
-  const desLines = des.split('\n').length
-  return `  ~ ${file.dest} (local: ${curLines} lines, shipped: ${desLines} lines) — locally edited, skipped (use --force to overwrite)`
 }
 
 /** Build the render context for a run from the package root + consumer cwd/config. */
@@ -1793,10 +1735,7 @@ export function run(argv: string[], cwd: string = process.cwd()): number | Promi
             }),
       })
     case 'sync':
-      return sync(
-        { force: flags.includes('--force'), check: flags.includes('--check'), flags },
-        cwd,
-      )
+      return sync({ force: flags.includes('--force'), check: flags.includes('--check') }, cwd)
     case 'check-theme':
       return checkTheme(cwd, flags)
     case 'doctor':

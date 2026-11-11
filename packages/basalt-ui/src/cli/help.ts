@@ -23,9 +23,6 @@ export const COMMAND_OPTIONS: Record<
   sync: {
     force: { type: 'boolean' },
     check: { type: 'boolean' },
-    verbose: { type: 'boolean' },
-    'tokens-only': { type: 'boolean' },
-    framework: { type: 'boolean' },
   },
   'check-theme': {
     'audit-allows': { type: 'boolean' },
@@ -84,7 +81,7 @@ export function unknownFlag(cmd: string, flags: readonly string[]): string | nul
 /** The one usage string — printed by `basalt help` / `--help` / `-h` AND the unknown-command fallback. */
 export const USAGE =
   'Usage: basalt-ui <--version | init [--no-merge-lint] [--no-install] |\n' +
-  '                  sync [--force] [--check] [--verbose] [--tokens-only|--framework] |\n' +
+  '                  sync [--check] [--force] |\n' +
   '                  check-theme [--audit-allows] |\n' +
   '                  doctor [--tokens-only|--framework|--from <x.y.z>] | guard-hook | tokens:css | fonts:css |\n' +
   '                  shot <route…> | shot detect | help>\n\n' +
@@ -144,12 +141,14 @@ export const USAGE =
   '  Checks THIS project only: the manifest exists, the oxlint preset is wired, the pre-commit\n' +
   '  hook runs check-theme (via `lefthook dump`), and the ai package major is consistent within\n' +
   '  this package.json. Profile is DECLARED, same as check-theme — never inferred.\n\n' +
-  'sync [--force] [--check] [--verbose] [--tokens-only|--framework]\n' +
-  '  Refreshes an EXISTING install; it never creates one (that is init). A tokens-only consumer\n' +
-  '  has no scaffold to reconcile, so sync reports n/a and exits 0 there — as doctor does.\n' +
-  '  --check prints the permanent placement skips as a COUNT; --verbose spells them out again.\n\n' +
+  'sync [--check] [--force]\n' +
+  '  Renders every managed file (.claude/{rules,skills,agents}/basalt-*, the AGENTS.md block, the\n' +
+  '  preset files) and compares bytes; it refreshes an EXISTING install and never creates one (that\n' +
+  '  is init). --check writes nothing and exits 1 on any difference. A managed file you edited is\n' +
+  '  left and reported; --force overwrites it. A retired file is deleted if untouched, else left.\n\n' +
   'check-theme / doctor / sync all resolve their project the same way: BASALT_CWD, else the\n' +
-  'invocation cwd — nothing inferred, nothing ascended or descended into.\n' +
+  'invocation cwd — nothing inferred, nothing descended into (sync alone looks UP for the manifest\n' +
+  'that declares the directory).\n' +
   '--tokens-only and --framework are alternatives; passing both is an error.\n\n' +
   'Every subcommand accepts --help / -h to print this message and exit without running.\n' +
   '--version / -v prints the resolved package version and exits 0 — the one command that proves\n' +
