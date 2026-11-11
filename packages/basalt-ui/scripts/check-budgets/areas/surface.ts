@@ -57,7 +57,7 @@ export const rows: readonly RowDef[] = [
     order: 10,
     label: 'public value symbols, non-chart (export-surface shards)',
     // 2.0 target 92.
-    ceiling: 117, // v3 table-t1a: `col` from `./table` (linewatch outage-table.tsx, the G1 DataTable consumer; the 2.x `createColumnHelper` stays until BasaltDataTable retires); v3 ctl-2: `defineControls`, `field` from `./router` (linewatch dashboard-store.ts, argo window-stores.ts; the 2.x `./state` `field` stays until the state subpath retires); v3 qa-i2: `createFormat`, `useFormat` (rb + linewatch format.ts model modules; the 2.x `./format` functions stay until the format subpath retires); v3 cards-1: `StatCard` from `./cards` (linewatch StatusBar, console; the 2.x root `StatCard` retires with the dashboard barrel); v3 state-1b: root `externalField` (the 2.x `./state` one stays until the state subpath retires); W45: `Board` (argo warden board prototype, SPEC § 6.8); W44: `EventList` (argo narratives-section + home activity feed prototype, warden item timeline; rb journal; linewatch transition timeline; SPEC § 6.7); W37: `PageSummary` (argo components/upstream/page-summary.tsx, SPEC § 6.9; UPSTREAM Waves 24-26); 2.19 (W35): `StatusDot`, `StatusVerdict` (argo warden/agents status chips; status is a dot plus a word, D28); 2.18 (W34): `Meter` (argo reading card, warden dispatch budget, usage cache hit; rb course + ingest; linewatch link vs ceiling; ledger rows 143–145, 152, 158), `BarList` (argo top projects, weatherorb factor bars; rows 146, 160); 2.14: `date`/`time`/`dateTime`/`duration` (rb + linewatch format.ts, argo walking-pad; consumer-05); `bytes`/`compact`/`delta`/`defineFormat` (linewatch + rb format.ts, argo sparkline; maturation-v2 consumer-05); 2.13: `basaltRouterOptions` (weatherorb `getRouter()`, maturation-v2 provider-01); 2.6: `externalField` (argo timer-card.tsx, row 39); was 93 for `toAgentError` (row 18)
+    ceiling: 119, // v3 cards-2: `BarList`, `EventList` from `./cards` (the ranked list and activity feed shutterflow and linewatch hand-roll; the 2.x root ones retire with the dashboard barrel); v3 table-t1a: `col` from `./table` (linewatch outage-table.tsx, the G1 DataTable consumer; the 2.x `createColumnHelper` stays until BasaltDataTable retires); v3 ctl-2: `defineControls`, `field` from `./router` (linewatch dashboard-store.ts, argo window-stores.ts; the 2.x `./state` `field` stays until the state subpath retires); v3 qa-i2: `createFormat`, `useFormat` (rb + linewatch format.ts model modules; the 2.x `./format` functions stay until the format subpath retires); v3 cards-1: `StatCard` from `./cards` (linewatch StatusBar, console; the 2.x root `StatCard` retires with the dashboard barrel); v3 state-1b: root `externalField` (the 2.x `./state` one stays until the state subpath retires); W45: `Board` (argo warden board prototype, SPEC § 6.8); W44: `EventList` (argo narratives-section + home activity feed prototype, warden item timeline; rb journal; linewatch transition timeline; SPEC § 6.7); W37: `PageSummary` (argo components/upstream/page-summary.tsx, SPEC § 6.9; UPSTREAM Waves 24-26); 2.19 (W35): `StatusDot`, `StatusVerdict` (argo warden/agents status chips; status is a dot plus a word, D28); 2.18 (W34): `Meter` (argo reading card, warden dispatch budget, usage cache hit; rb course + ingest; linewatch link vs ceiling; ledger rows 143–145, 152, 158), `BarList` (argo top projects, weatherorb factor bars; rows 146, 160); 2.14: `date`/`time`/`dateTime`/`duration` (rb + linewatch format.ts, argo walking-pad; consumer-05); `bytes`/`compact`/`delta`/`defineFormat` (linewatch + rb format.ts, argo sparkline; maturation-v2 consumer-05); 2.13: `basaltRouterOptions` (weatherorb `getRouter()`, maturation-v2 provider-01); 2.6: `externalField` (argo timer-card.tsx, row 39); was 93 for `toAgentError` (row 18)
     measure: () => nonChartSymbols(readSurface()),
   },
   {
@@ -65,7 +65,7 @@ export const rows: readonly RowDef[] = [
     order: 30,
     label: 'barrel type exports, non-chart (src entries)',
     // 2.0 target 60.
-    ceiling: 81, // v3 ctl-2: `Controls`, `FieldHandle`, `SearchOf`, `RangeValue` from `./router` (linewatch types its dashboard query params and range window off them); v3 qa-i2: `BasaltMessages`, `CalendarDate`, `Format`, `Msg` (apps type their message overrides and zone-less dates off them); v3 cards-1: `StatCardProps` from `./cards`; W45: `BoardProps` (card and column shapes stay inline: `BoardProps['columns'][number]`); W44: `EventListProps` (argo/rb/linewatch read the item shape off `EventListProps['items'][number]`; it stays inline); W37: `PageSummaryProps`; 2.19 (W35): `MeterSegment`, `MeterZone`, `MeterTick` (argo types its zone/segment helpers off them, UPSTREAM § basalt friction); 2.19 (W35): `StatusDotProps`, `StatusVerdictProps` (the two status primitives); `StatStripCell`, `StatStripRow` (argo strip prototypes: garmin-health, agents, warden stat-strip.tsx; rows 147, 156); 2.18 (W34): `MeterProps`, `BarListProps` (the two W34 primitives; segment/item shapes stay inline)
+    ceiling: 83, // v3 cards-2: `BarListProps`, `EventListProps` from `./cards`; v3 ctl-2: `Controls`, `FieldHandle`, `SearchOf`, `RangeValue` from `./router` (linewatch types its dashboard query params and range window off them); v3 qa-i2: `BasaltMessages`, `CalendarDate`, `Format`, `Msg` (apps type their message overrides and zone-less dates off them); v3 cards-1: `StatCardProps` from `./cards`; W45: `BoardProps` (card and column shapes stay inline: `BoardProps['columns'][number]`); W44: `EventListProps` (argo/rb/linewatch read the item shape off `EventListProps['items'][number]`; it stays inline); W37: `PageSummaryProps`; 2.19 (W35): `MeterSegment`, `MeterZone`, `MeterTick` (argo types its zone/segment helpers off them, UPSTREAM § basalt friction); 2.19 (W35): `StatusDotProps`, `StatusVerdictProps` (the two status primitives); `StatStripCell`, `StatStripRow` (argo strip prototypes: garmin-health, agents, warden stat-strip.tsx; rows 147, 156); 2.18 (W34): `MeterProps`, `BarListProps` (the two W34 primitives; segment/item shapes stay inline)
     measure: () => barrelTypeExports(readManifest()),
   },
   {
@@ -138,5 +138,21 @@ export const raises: readonly Raise[] = [
     consumer:
       '`Controls`, `FieldHandle`, `SearchOf`, `RangeValue`: linewatch types its dashboard query params and range window off them',
     repo: 'linewatch',
+  },
+  {
+    ceiling: 'non-chart-symbols',
+    from: 117,
+    to: 119,
+    consumer:
+      '`BarList` and `EventList` from `./cards`, the ranked list and activity feed that shutterflow and linewatch each copy',
+    repo: 'shutterflow',
+  },
+  {
+    ceiling: 'barrel-types',
+    from: 81,
+    to: 83,
+    consumer:
+      '`BarListProps` and `EventListProps` from `./cards`: shutterflow types its list rows and event items off them',
+    repo: 'shutterflow',
   },
 ]

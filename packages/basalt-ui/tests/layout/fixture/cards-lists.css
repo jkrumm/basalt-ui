@@ -1,0 +1,9 @@
+/*
+ * The `cards-lists` fixture's Tailwind v4 entry: compiled WITH preflight, the way a Tailwind
+ * consumer renders the two list cards. `cards-lists.layout.test.ts` compiles it into a temp
+ * directory; nothing generated lands in the repo.
+ */
+@import '../../../src/css/tailwind.css' source(none);
+@source './cards-lists-fixture.tsx';
+@source '../../../src/ui';
+@source '../../../src/cards';
