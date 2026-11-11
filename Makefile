@@ -4,6 +4,11 @@
 help: ## List targets
 	@grep -hE '^[a-z-]+:.*?## ' $(MAKEFILE_LIST) | awk 'BEGIN {FS = ":.*?## "}; {printf "  \033[36m%-14s\033[0m %s\n", $$1, $$2}'
 
+# The browser steps run in one of the host's test slots when `factory` is installed, so two leads' layout
+# runs never overlap (each is a Chrome tree on a shared 32 GB host); without it (CI) the bare command. It
+# fails open: a server that is down or a full house runs the suite anyway.
+SLOT = $(if $(shell command -v factory 2>/dev/null),factory slot run --name "$(notdir $(CURDIR)) layout" --,)
+
 # The local gate: the validation CI runs (.github/workflows/ci.yml), all in one target. Builds FIRST
 # on purpose — `bun run pre` runs `check-theme`, and the playground's typecheck resolves
 # `basalt-ui/*` through the package's `exports` — both read `dist`, not the working tree, so a gate
@@ -14,8 +19,7 @@ check: ## Local CI gate: gen sync checks + build + pre + layout + coverage/doc-d
 	@$(MAKE) --no-print-directory gen-check
 	@cd packages/basalt-ui && bun run build
 	@bun run pre
-	@bun run test:layout
-	@bun run test:layout:harness
+	@$(SLOT) sh -c 'bun run test:layout && bun run test:layout:harness'
 	@bun packages/basalt-ui/scripts/check-coverage.ts --check
 	@bun packages/basalt-ui/scripts/check-agent-doc-drift.ts
 	@bun packages/basalt-ui/scripts/check-contract-frozen.ts
@@ -47,8 +51,7 @@ test: ## Run the test suite
 	@bun test
 
 layout: ## Run the layout regression suite (real CSS geometry, headless Chrome)
-	@bun run test:layout
-	@bun run test:layout:harness
+	@$(SLOT) sh -c 'bun run test:layout && bun run test:layout:harness'
 
 build: ## Build the published package (dist-first tsup + declarations)
 	@cd packages/basalt-ui && bun run build

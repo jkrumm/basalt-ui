@@ -190,6 +190,10 @@ publishing is NOT a deploy — it is the release process (`make release`, below)
 - **`make verify` probes production; `make check` is the local gate.** They are not interchangeable:
   `verify` makes a network call and does not run the tests.
 - **The layout suite needs Chrome.** It runs in CI and `make check`, never in `pre`.
+- **The layout suite is a memory budget.** The harness closes each test's browser context in `afterEach`
+  (a page from `beforeAll` lives until the file's browser closes); before that, one run held 13 GB of
+  Chrome. `make check` and `make layout` run it through `factory slot run` when `factory` is installed, so two
+  leads' browser steps never overlap, and `project.yaml` declares a `browser` lane for rows that add browser work.
 - **`apps/marketing/AGENTS.md` describes the pre-Mantine (Tailwind/Biome) era** and is stale; the
   root + package conventions here are authoritative.
 - **Major lines** (what may ship as a major, and the commit footers that follow): see
