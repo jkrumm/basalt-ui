@@ -52,10 +52,10 @@ function typographyCss(): string {
 
 // ── prose.css ───────────────────────────────────────────────────────────────────────────────────
 
-/** The prose rules are written as CSS in `templates/prose.css`; the generator only adds the header. */
+/** The prose rules are written as CSS in `templates/prose.css`; the generator only adds the provenance header (the check-theme waiver lives in the template). */
 function proseCss(): string {
   const template = readFileSync(join(import.meta.dir, 'templates', 'prose.css'), 'utf8')
-  return `${headerWaiving('inline-spacing, unknown-vx-token')}${template}`
+  return `${provenanceHeader(CONTRACT_VERSION, COMMAND)}${template}`
 }
 
 // ── tailwind.css ────────────────────────────────────────────────────────────────────────────────
