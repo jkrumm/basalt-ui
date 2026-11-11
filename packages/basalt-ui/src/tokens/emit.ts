@@ -10,6 +10,8 @@
  */
 import { DEFAULT_DERIVE_V3_CONFIG, deriveV3 } from './derive'
 import type { DerivedV3, DeriveV3Config } from './derive'
+import { block, schemeBlocks } from './emit-fallback'
+import type { Decl } from './emit-fallback'
 import { assertGates } from './gates'
 import { bridgeEntries, COARSE, DENSITY, isPair, resolveTokens, TOKENS } from './table'
 import type { ResolvedToken, SchemePair } from './table'
@@ -43,23 +45,11 @@ export type EmitOptions = {
 }
 
 type Side = 'light' | 'dark'
-type Decl = readonly [name: string, value: string]
 
 const SCALAR_EXCLUDED = new Set<string>(Object.keys(DENSITY.dense).concat(['hit']))
 // Built, not quoted: `scripts/gen-vx-names.ts` reads every quoted custom-property name in shipped source into
 // the 2.x allowlist, and these v3 names must not enter it.
 const vxDecl = (name: string, value: string): Decl => [`--vx-${name}`, value]
-const indent = (depth: number): string => '  '.repeat(depth)
-
-function block(selector: string, decls: readonly Decl[], depth = 0): string {
-  const pad = indent(depth)
-  const lines = decls.map(([name, value]) => `${pad}  ${name}: ${value};`)
-  const head = selector
-    .split('\n')
-    .map((line) => pad + line)
-    .join('\n')
-  return `${head} {\n${lines.join('\n')}\n${pad}}\n`
-}
 
 const decls = (tokens: readonly ResolvedToken[], side: Side): Decl[] =>
   tokens.flatMap(({ def, value }): Decl[] =>
@@ -75,13 +65,7 @@ function colorBlocks(
     ...(scheme ? ([['color-scheme', side]] as Decl[]) : []),
     ...decls(tokens, side),
   ]
-  return (
-    block(selectors.light, withScheme('light')) +
-    // Dark sits in `not print`, so a printed page is light with zero extra bytes.
-    `@media not print {\n${block(selectors.dark, withScheme('dark'), 1)}}\n` +
-    // `auto` is the attribute's absence; the media block always ships.
-    `@media not print {\n  @media (prefers-color-scheme: dark) {\n${block(selectors.auto, withScheme('dark'), 2)}  }\n}\n`
-  )
+  return schemeBlocks(selectors, withScheme('light'), withScheme('dark'))
 }
 
 function scalarBlocks(tokens: readonly ResolvedToken[]): string {

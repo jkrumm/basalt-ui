@@ -1,0 +1,190 @@
+/* @generated basalt-ui — do not edit; regenerate with the command on the next line */
+/* basalt-ui 3.0.0 — `basalt-ui tokens:css` */
+:root,
+:root[data-theme='light'] {
+  color-scheme: light;
+  --vx-canvas: #f8f4f1;
+  --vx-inset: #fefcfb;
+  --vx-card: #ece9e6;
+  --vx-raised: #ffffff;
+  --vx-hover: color-mix(in srgb, var(--vx-ink) 5%, transparent);
+  --vx-selected: color-mix(in srgb, var(--vx-ink) 7.5%, transparent);
+  --vx-scrim: color-mix(in srgb, var(--vx-ink) 45%, transparent);
+  --vx-hairline: color-mix(in srgb, var(--vx-ink) 12%, transparent);
+  --vx-input: color-mix(in srgb, var(--vx-ink) 52%, transparent);
+  --vx-ink: #262321;
+  --vx-ink-muted: #5c5956;
+  --vx-ink-faint: #6b6865;
+  --vx-brand: #006cb4;
+  --vx-brand-fill: #0175be;
+  --vx-on-brand: #ffffff;
+  --vx-good: #226b40;
+  --vx-warn: #855400;
+  --vx-bad: #a83434;
+  --vx-info: #0060a5;
+  --vx-tint-pct: 12%;
+  --vx-line: #7a7674;
+  --vx-dim-bar: #a9a5a2;
+  --vx-grid: color-mix(in srgb, var(--vx-ink) 10%, transparent);
+  --vx-crosshair: color-mix(in srgb, var(--vx-ink) 40%, transparent);
+  --vx-chart-1: #0175be;
+  --vx-chart-2: #a6600c;
+  --vx-chart-3: #008075;
+  --vx-chart-4: #af45b0;
+  --vx-chart-5: #188325;
+  --vx-seq-1: #d5e3fc;
+  --vx-seq-2: #a8c3eb;
+  --vx-seq-3: #79a3da;
+  --vx-seq-4: #4884c4;
+  --vx-seq-5: #0067af;
+  --vx-shadow-card: 0 1px 2px color-mix(in srgb, var(--vx-ink) 5%, transparent);
+  --vx-shadow-raised: 0 1px 2px rgba(28, 25, 23, 0.1);
+  --vx-shadow-overlay: 0 8px 24px rgba(28, 25, 23, 0.1);
+}
+@media not print {
+  :root[data-theme='dark'] {
+    color-scheme: dark;
+    --vx-canvas: #23201d;
+    --vx-inset: #282522;
+    --vx-card: #312e2b;
+    --vx-raised: #3c3835;
+    --vx-hover: color-mix(in srgb, var(--vx-ink) 7%, transparent);
+    --vx-selected: color-mix(in srgb, var(--vx-ink) 9%, transparent);
+    --vx-scrim: color-mix(in srgb, #000000 60%, transparent);
+    --vx-hairline: color-mix(in srgb, var(--vx-ink) 9%, transparent);
+    --vx-input: color-mix(in srgb, var(--vx-ink) 44%, transparent);
+    --vx-ink: #efeae6;
+    --vx-ink-muted: #b4b0ac;
+    --vx-ink-faint: #999592;
+    --vx-brand: #96c4ff;
+    --vx-brand-fill: #0175be;
+    --vx-on-brand: #ffffff;
+    --vx-good: #65d38d;
+    --vx-warn: #f4b149;
+    --vx-bad: #ffa89f;
+    --vx-info: #96c4ff;
+    --vx-tint-pct: 16%;
+    --vx-line: #999593;
+    --vx-dim-bar: #5c5956;
+    --vx-grid: color-mix(in srgb, var(--vx-ink) 10%, transparent);
+    --vx-crosshair: color-mix(in srgb, var(--vx-ink) 40%, transparent);
+    --vx-chart-1: #0175be;
+    --vx-chart-2: #a6600c;
+    --vx-chart-3: #008075;
+    --vx-chart-4: #af45b0;
+    --vx-chart-5: #188325;
+    --vx-seq-1: #354357;
+    --vx-seq-2: #3f5b7e;
+    --vx-seq-3: #4d7aad;
+    --vx-seq-4: #669ee0;
+    --vx-seq-5: #96c4ff;
+    --vx-shadow-card: none;
+    --vx-shadow-raised: 0 1px 2px rgba(0, 0, 0, 0.35), inset 0 0 0 1px color-mix(in srgb, #ffffff 8%, transparent);
+    --vx-shadow-overlay: 0 8px 24px rgba(0, 0, 0, 0.5);
+  }
+}
+@media not print {
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme]) {
+      color-scheme: dark;
+      --vx-canvas: #23201d;
+      --vx-inset: #282522;
+      --vx-card: #312e2b;
+      --vx-raised: #3c3835;
+      --vx-hover: color-mix(in srgb, var(--vx-ink) 7%, transparent);
+      --vx-selected: color-mix(in srgb, var(--vx-ink) 9%, transparent);
+      --vx-scrim: color-mix(in srgb, #000000 60%, transparent);
+      --vx-hairline: color-mix(in srgb, var(--vx-ink) 9%, transparent);
+      --vx-input: color-mix(in srgb, var(--vx-ink) 44%, transparent);
+      --vx-ink: #efeae6;
+      --vx-ink-muted: #b4b0ac;
+      --vx-ink-faint: #999592;
+      --vx-brand: #96c4ff;
+      --vx-brand-fill: #0175be;
+      --vx-on-brand: #ffffff;
+      --vx-good: #65d38d;
+      --vx-warn: #f4b149;
+      --vx-bad: #ffa89f;
+      --vx-info: #96c4ff;
+      --vx-tint-pct: 16%;
+      --vx-line: #999593;
+      --vx-dim-bar: #5c5956;
+      --vx-grid: color-mix(in srgb, var(--vx-ink) 10%, transparent);
+      --vx-crosshair: color-mix(in srgb, var(--vx-ink) 40%, transparent);
+      --vx-chart-1: #0175be;
+      --vx-chart-2: #a6600c;
+      --vx-chart-3: #008075;
+      --vx-chart-4: #af45b0;
+      --vx-chart-5: #188325;
+      --vx-seq-1: #354357;
+      --vx-seq-2: #3f5b7e;
+      --vx-seq-3: #4d7aad;
+      --vx-seq-4: #669ee0;
+      --vx-seq-5: #96c4ff;
+      --vx-shadow-card: none;
+      --vx-shadow-raised: 0 1px 2px rgba(0, 0, 0, 0.35), inset 0 0 0 1px color-mix(in srgb, #ffffff 8%, transparent);
+      --vx-shadow-overlay: 0 8px 24px rgba(0, 0, 0, 0.5);
+    }
+  }
+}
+:root {
+  --vx-surface: var(--vx-canvas);
+  --vx-radius-card: 14px;
+  --vx-radius-inset: 10px;
+  --vx-radius-ctrl: 8px;
+  --vx-radius-chip: 5px;
+  --vx-icon: 1rem;
+  --vx-font-sans: 'Nunito Sans Variable', ui-sans-serif, system-ui, -apple-system, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+  --vx-font-head: 'Head Digits', 'Hubot Sans Variable', ui-sans-serif, system-ui, -apple-system, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+  --vx-font-mono: 'JetBrains Mono Variable', ui-monospace, 'SF Mono', Menlo, monospace;
+  --vx-font-head-stretch: 88%;
+  --vx-weight-body: 400;
+  --vx-weight-medium: 500;
+  --vx-weight-strong: 600;
+  --vx-text-micro: 0.6875rem;
+  --vx-text-micro-lh: 1rem;
+  --vx-text-xs: 0.75rem;
+  --vx-text-xs-lh: 1rem;
+  --vx-text-sm: 0.8125rem;
+  --vx-text-sm-lh: 1.25rem;
+  --vx-text-md: 0.9375rem;
+  --vx-text-md-lh: 1.25rem;
+  --vx-text-base: 1rem;
+  --vx-text-base-lh: 1.5rem;
+  --vx-text-lg: 1.125rem;
+  --vx-text-lg-lh: 1.5rem;
+  --vx-text-display: 1.875rem;
+  --vx-text-display-lh: 1;
+  --vx-dur-fast: 150ms;
+  --vx-dur-base: 250ms;
+  --vx-ease: cubic-bezier(0.4, 0, 0.2, 1);
+  --vx-measure: 68ch;
+  --vx-rhythm-1: 0.75em;
+  --vx-rhythm-2: 1.25em;
+  --vx-rhythm-3: 2em;
+  --vx-contract: 3;
+  --vx-hit: 1.5rem;
+}
+:root,
+[data-density='dense'] {
+  --vx-ctl-h: 1.75rem;
+  --vx-row-h: 2rem;
+}
+[data-density='normal'] {
+  --vx-ctl-h: 2rem;
+  --vx-row-h: 2.5rem;
+}
+[data-density='comfortable'] {
+  --vx-ctl-h: 2.5rem;
+  --vx-row-h: 3rem;
+}
+@media (pointer: coarse) {
+  :root:not([data-density]),
+  [data-density='dense'],
+  [data-density='normal'] {
+    --vx-row-h: 2.75rem;
+  }
+  :root {
+    --vx-hit: 2.75rem;
+  }
+}
