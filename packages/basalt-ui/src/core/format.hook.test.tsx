@@ -5,6 +5,7 @@ import type { Format } from './format'
 import { BasaltProvider } from './provider'
 import { IntlScope } from './provider-props'
 import type { BasaltMessages } from './messages'
+import { base } from './messages/base'
 import { useMessages } from './messages/use-messages'
 
 afterEach(cleanup)
@@ -62,6 +63,7 @@ describe('useFormat', () => {
 
 describe('useMessages', () => {
   const area = {
+    ...base,
     'x.hello': 'Hello',
     'x.range': (f: Format, from: number, to: number) => `${f.number(from)}-${f.number(to)}`,
   }
