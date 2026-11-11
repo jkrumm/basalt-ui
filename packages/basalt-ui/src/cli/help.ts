@@ -38,6 +38,15 @@ export const COMMAND_OPTIONS: Record<
   'tokens:css': {
     out: { type: 'string' },
     check: { type: 'boolean' },
+    accent: { type: 'string' },
+    neutral: { type: 'string' },
+    vibrancy: { type: 'string' },
+    selector: { type: 'string' },
+    extra: { type: 'string' },
+    format: { type: 'string' },
+    // The 2.x flags stay PARSEABLE so `tokensCss` can exit 1 naming `--selector`, their successor,
+    // rather than the generic unrecognized-flag line.
+    only: { type: 'string' },
     'selector-attribute': { type: 'string' },
     'selector-class': { type: 'string' },
     'light-class': { type: 'string' },
@@ -45,7 +54,6 @@ export const COMMAND_OPTIONS: Record<
     'light-value': { type: 'string' },
     'default-scheme': { type: 'string' },
     'media-fallback': { type: 'boolean' },
-    only: { type: 'string' },
   },
   'fonts:css': { out: { type: 'string' }, check: { type: 'boolean' } },
   shot: {
@@ -90,12 +98,14 @@ export const USAGE =
   '  `basalt.exemptRules` entry, with what each one still suppresses — proved by re-running the\n' +
   '  guard with that one waiver neutralized, not by reading its text. Exits 1 on a waiver that\n' +
   '  suppresses nothing (dead), which is what makes it usable as a CI gate.\n\n' +
-  'tokens:css [--out <path>] [--check] [--selector-attribute <attr> | --selector-class <class>]\n' +
-  '           [--light-class <class>] [--dark-value <v>] [--light-value <v>]\n' +
-  '           [--default-scheme <dark|light|none>] [--media-fallback] [--only <core|all>]\n' +
+  'tokens:css [--accent <#hex>] [--neutral <zinc|neutral|stone|slate>] [--vibrancy <-4..5>]\n' +
+  '           [--selector <:root[attr]>] [--extra <file>] [--format <css|json>] [--out <path>] [--check]\n' +
   '  Emit the --vx-* stylesheet (stdout unless --out). Defaults emit the stock identity; commit the output as your tokens file.\n' +
-  '  --selector-class emits `:root.dark` instead of an attribute selector (the Tailwind convention).\n' +
-  '  --check writes nothing and exits 1 when --out differs from what would be emitted (a CI gate).\n' +
+  '  --format json emits the resolved #hex per opaque role and scheme, for manifests, theme-color metas and email.\n' +
+  '  --selector scopes a tenant sheet (only the roles that differ from the default) to a `:root[…]` selector.\n' +
+  '  --extra emits your app-owned tokens (src/basalt.tokens.ts) to --out, plus a sibling <out>.d.ts.\n' +
+  '  --check writes nothing and exits 1 when --out (and the .d.ts) differ from what would be emitted (a CI gate).\n' +
+  '  Negative values take the = form: --vibrancy=-2.\n' +
   '\n' +
   'fonts:css [--out <path>] [--check]\n' +
   '  Emit the shipped --basalt-font-* stacks as plain CSS — the typeface half of the token layer,\n' +

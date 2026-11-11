@@ -7,8 +7,12 @@ import { mkdirSync, writeFileSync } from 'node:fs'
 import { dirname, isAbsolute, relative, resolve } from 'node:path'
 
 import { GENERATED_HEADER_LINE } from '../guard'
-import { buildPaletteCss } from '../tokens'
+import { VIBRANCY_RANGE_V3 } from '../tokens/derive'
+import type { DeriveV3Config, NeutralV3 } from '../tokens/derive'
+import { emitTokensCss } from '../tokens/emit'
+import { emitJsonText } from '../tokens/emit-json'
 import { packageRoot, readFrameworkVersion, readIfExists, readSource } from './index'
+import { emitExtra, loadExtra } from './tokens-css-extra'
 
 /** Read the value that follows a `--flag` in an argv slice; `undefined` when absent or terminal. */
 function flagValue(flags: string[], name: string): string | undefined {
@@ -50,9 +54,6 @@ function normalizeCssNumber(arg: string): string {
   if (!/^\d+\.\d+$/.test(arg)) return arg
   return arg.replace(/\.?0+$/, '')
 }
-
-/** A scheme-class emission uses this sentinel attribute, then rewrites it to a class selector. */
-const SCHEME_CLASS_SENTINEL = 'data-basalt-scheme-class'
 
 /**
  * Write (or drift-check) a generated stylesheet. `--check` makes no writes and exits 1 when the
@@ -103,82 +104,184 @@ function emitGeneratedCss(content: string, flags: string[], cwd: string, command
   return 0
 }
 
+/** The 2.x flags the v3 command no longer has: each one exits 1 and names `--selector`, its successor. */
+const REMOVED_FLAGS = [
+  '--only',
+  '--selector-attribute',
+  '--selector-class',
+  '--light-class',
+  '--dark-value',
+  '--light-value',
+  '--default-scheme',
+  '--media-fallback',
+] as const
+
+const VALUE_FLAGS = [
+  '--accent',
+  '--neutral',
+  '--vibrancy',
+  '--selector',
+  '--extra',
+  '--format',
+  '--out',
+] as const
+const BOOLEAN_FLAGS = ['--check'] as const
+
+const NEUTRALS: readonly NeutralV3[] = ['zinc', 'neutral', 'stone', 'slate']
+
+/** The first reason the flag list is not a legal invocation, or null. */
+function flagError(flags: readonly string[]): string | null {
+  for (const flag of flags) {
+    if (!flag.startsWith('--')) continue
+    if ((REMOVED_FLAGS as readonly string[]).includes(flag)) {
+      return (
+        `${flag} is gone: v3 has one scheme contract (data-theme, with the OS fallback always emitted). ` +
+        'Scope a sheet with --selector ":root[<attr>]" (a tenant sheet of the differing roles) instead.'
+      )
+    }
+    if (
+      !(VALUE_FLAGS as readonly string[]).includes(flag) &&
+      !(BOOLEAN_FLAGS as readonly string[]).includes(flag)
+    ) {
+      return `unrecognized flag '${flag}'. Accepted: ${[...VALUE_FLAGS, ...BOOLEAN_FLAGS].join(' ')}`
+    }
+  }
+  for (const flag of VALUE_FLAGS) {
+    if (flags.includes(flag) && flagValue([...flags], flag) === undefined) {
+      return `${flag} needs a value`
+    }
+  }
+  return null
+}
+
+/** `--accent`, `--neutral`, `--vibrancy` as a derive config, or the reason they are not one. */
+function readConfig(flags: string[]): { config: Partial<DeriveV3Config> } | { error: string } {
+  const config: Partial<DeriveV3Config> = {}
+  const accent = flagValue(flags, '--accent')
+  if (accent !== undefined) {
+    if (!/^#[0-9a-fA-F]{6}$/.test(accent))
+      return { error: `--accent must be a #rrggbb hex (got '${accent}')` }
+    config.accent = accent.toLowerCase()
+  }
+  const neutral = flagValue(flags, '--neutral')
+  if (neutral !== undefined) {
+    if (!NEUTRALS.includes(neutral as NeutralV3)) {
+      return { error: `--neutral must be one of ${NEUTRALS.join(', ')} (got '${neutral}')` }
+    }
+    config.neutral = neutral as NeutralV3
+  }
+  const vibrancy = flagValue(flags, '--vibrancy')
+  if (vibrancy !== undefined) {
+    const level = Number(vibrancy)
+    const { min, max } = VIBRANCY_RANGE_V3
+    if (!Number.isInteger(level) || level < min || level > max) {
+      return { error: `--vibrancy must be an integer ${min}..${max} (got '${vibrancy}')` }
+    }
+    config.vibrancy = level
+  }
+  return { config }
+}
+
+/** `tokens:css <flags minus --check>`: the invocation line 2 of the header (and `$provenance`) records. */
+function invocationOf(flags: string[]): string {
+  const shown = flags.filter((f) => f !== '--check')
+  return shown.length === 0 ? 'basalt-ui tokens:css' : `basalt-ui tokens:css ${shown.join(' ')}`
+}
+
+/** `--extra`: the app sheet to `--out` and its `.d.ts` beside it, both gated by `--check`. */
+function extraOutput(flags: string[], cwd: string, version: string): number {
+  const file = flagValue(flags, '--extra') as string
+  const out = flagValue(flags, '--out')
+  if (out === undefined) {
+    console.error(
+      'tokens:css --extra needs --out <path>: the sheet and its .d.ts are two files, so there is no stdout form.',
+    )
+    return 1
+  }
+  const clash = ['--accent', '--neutral', '--vibrancy', '--selector', '--format'].find((f) =>
+    flags.includes(f),
+  )
+  if (clash !== undefined) {
+    console.error(
+      `tokens:css --extra emits the app-owned sheet only; ${clash} belongs to the basalt-ui sheet — run it without --extra.`,
+    )
+    return 1
+  }
+  const abs = isAbsolute(file) ? file : resolve(cwd, file)
+  const loaded = loadExtra(abs)
+  if (!loaded.ok) {
+    console.error(`tokens:css --extra: ${loaded.error}`)
+    return 1
+  }
+  const header = generatedHeader(version, 'tokens:css', flags)
+  const result = emitExtra(loaded.data, file, header)
+  if (!result.ok) {
+    console.error(`✖ tokens:css --extra: ${result.error}`)
+    return 1
+  }
+  const check = flags.includes('--check') ? ['--check'] : []
+  const css = emitGeneratedCss(result.css, flags, cwd, 'tokens:css')
+  // Both files are always reported: a drifted .d.ts must not hide behind a clean sheet.
+  const dts = emitGeneratedCss(result.dts, ['--out', `${out}.d.ts`, ...check], cwd, 'tokens:css')
+  return css === 0 && dts === 0 ? 0 : 1
+}
+
 /**
- * tokens:css — emit the `--vx-*` stylesheet, optionally retargeted, for a static site that installs
- * nothing (`bunx basalt-ui tokens:css --selector-attribute data-theme --out src/tokens.css`). Token
- * VALUES come from `buildPaletteCss`, so the CLI and the API cannot disagree; the CLI adds only file
- * framing for a committed artifact: the `@generated` header, a trailing newline, `rgba()` spacing.
+ * tokens:css — emit the `--vx-*` stylesheet (or, with `--format json`, the resolved hex per opaque
+ * role) for an app that installs nothing: `bunx basalt-ui tokens:css --accent #0f8a7e --out
+ * src/tokens.css`. The values come from the v3 emitters (`emitTokensCss`, `emitJsonText`), so the
+ * CLI and the API cannot disagree; the CLI adds file framing only: the provenance header already
+ * written by the emitter, and `rgba()` spacing a formatter would otherwise rewrite.
+ *
+ * - `--accent --neutral --vibrancy` retune the identity; a config that fails a gate exits 1 with
+ *   the gate, the scheme and the ratio.
+ * - `--selector ":root[<attr>]"` emits a tenant sheet: only the roles that differ from the default.
+ * - `--extra <file>` emits the app-owned tokens instead (see `./tokens-css-extra`).
+ * - `--check` writes nothing and exits 1 on any byte of drift in what `--out` names.
  */
-export function tokensCss(flags: string[], cwd: string = process.cwd()): number {
-  const attribute = flagValue(flags, '--selector-attribute')
-  const schemeClass = flagValue(flags, '--selector-class')
-  const lightClass = flagValue(flags, '--light-class')
-  const darkValue = flagValue(flags, '--dark-value')
-  const lightValue = flagValue(flags, '--light-value')
-  const defaultScheme = flagValue(flags, '--default-scheme')
-
-  const only = flagValue(flags, '--only')
-
-  if (defaultScheme !== undefined && !['dark', 'light', 'none'].includes(defaultScheme)) {
-    console.error(
-      `tokens:css: --default-scheme must be dark, light or none (got '${defaultScheme}')`,
-    )
+export function tokensCss(argv: string[], cwd: string = process.cwd()): number {
+  // `--vibrancy=-2`: the `=` form is the only way a negative number gets past `parseArgs`.
+  const flags = argv.flatMap((a) =>
+    /^--[a-z-]+=/.test(a) ? [a.slice(0, a.indexOf('=')), a.slice(a.indexOf('=') + 1)] : [a],
+  )
+  const bad = flagError(flags)
+  if (bad !== null) {
+    console.error(`tokens:css: ${bad}`)
     return 1
   }
-  if (only !== undefined && !['core', 'all'].includes(only)) {
-    console.error(`tokens:css: --only must be core or all (got '${only}')`)
-    return 1
-  }
-  if (schemeClass !== undefined && attribute !== undefined) {
-    console.error(
-      'tokens:css: --selector-class and --selector-attribute are alternatives — pass one.',
-    )
-    return 1
-  }
-  if (schemeClass !== undefined && /[^\w-]/.test(schemeClass)) {
-    console.error(
-      `tokens:css: --selector-class must be a plain CSS class name (got '${schemeClass}')`,
-    )
-    return 1
-  }
-  if (lightClass !== undefined && /[^\w-]/.test(lightClass)) {
-    console.error(`tokens:css: --light-class must be a plain CSS class name (got '${lightClass}')`)
-    return 1
-  }
-
-  // A class selector is Tailwind's universal dark convention (`<html class="dark">`) and was
-  // reachable before only by parking dark on the bare `:root` via --default-scheme. `buildPaletteCss`
-  // emits attribute selectors, so the class form is produced by emitting against a sentinel
-  // attribute this CLI chose itself and rewriting exactly those selectors — a rewrite of strings
-  // the command generated deterministically, never of a token value.
-  const resolvedDarkValue = schemeClass !== undefined ? schemeClass : darkValue
-  const resolvedLightValue = schemeClass !== undefined ? (lightClass ?? 'light') : lightValue
-  const resolvedAttribute = schemeClass !== undefined ? SCHEME_CLASS_SENTINEL : attribute
-
-  const scheme = {
-    ...(resolvedAttribute === undefined ? {} : { attribute: resolvedAttribute }),
-    ...(resolvedDarkValue === undefined ? {} : { darkValue: resolvedDarkValue }),
-    ...(resolvedLightValue === undefined ? {} : { lightValue: resolvedLightValue }),
-  }
-
-  let css = buildPaletteCss({
-    ...(Object.keys(scheme).length === 0 ? {} : { scheme }),
-    ...(defaultScheme === undefined
-      ? {}
-      : { defaultScheme: defaultScheme as 'dark' | 'light' | 'none' }),
-    ...(flags.includes('--media-fallback') ? { mediaFallback: true } : {}),
-    ...(only === undefined ? {} : { only: only as 'core' | 'all' }),
-  })
-
-  if (schemeClass !== undefined) {
-    css = css.replace(
-      new RegExp(`\\[${SCHEME_CLASS_SENTINEL}='([\\w-]+)'\\]`, 'g'),
-      (_match, value: string) => `.${value}`,
-    )
-  }
-
   const version = readFrameworkVersion(packageRoot())
-  const content = `${generatedHeader(version, 'tokens:css', flags)}${normalizeColorFunctions(css)}\n`
+  if (flags.includes('--extra')) return extraOutput(flags, cwd, version)
+
+  const format = flagValue(flags, '--format') ?? 'css'
+  if (format !== 'css' && format !== 'json') {
+    console.error(`tokens:css: --format must be css or json (got '${format}')`)
+    return 1
+  }
+  const read = readConfig(flags)
+  if ('error' in read) {
+    console.error(`tokens:css: ${read.error}`)
+    return 1
+  }
+  const selector = flagValue(flags, '--selector')
+  if (selector !== undefined && format === 'json') {
+    console.error('tokens:css: --selector scopes a stylesheet; the JSON has no selectors.')
+    return 1
+  }
+
+  const options = {
+    version,
+    command: invocationOf(flags),
+    ...(Object.keys(read.config).length === 0 ? {} : { config: read.config }),
+    ...(selector === undefined ? {} : { selector }),
+  }
+  let content: string
+  try {
+    content =
+      format === 'json' ? emitJsonText(options) : normalizeColorFunctions(emitTokensCss(options))
+  } catch (err) {
+    console.error(`✖ tokens:css: ${err instanceof Error ? err.message : String(err)}`)
+    return 1
+  }
   return emitGeneratedCss(content, flags, cwd, 'tokens:css')
 }
 
