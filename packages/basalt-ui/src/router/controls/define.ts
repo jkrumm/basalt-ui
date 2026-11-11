@@ -24,10 +24,21 @@ import type {
   RangeSpec,
   RangeWindow,
 } from './field'
+import { orderMiddlewares } from './middleware'
+import { attachWidgets, resetWidgetOwnersForTests } from './widgets'
+import type {
+  Overrides,
+  StoreIo,
+  ValidWidgets,
+  WidgetHandles,
+  WidgetSearch,
+  WidgetStore,
+  WidgetsInput,
+} from './widgets'
 
 // ---------------------------------------------------------------------------- type plumbing
 
-type UnionToIntersection<U> = (U extends unknown ? (arg: U) => void : never) extends (
+export type UnionToIntersection<U> = (U extends unknown ? (arg: U) => void : never) extends (
   arg: infer I,
 ) => void
   ? I
@@ -115,7 +126,7 @@ export type HandleOf<Key extends string, X> =
       ? FieldHandle<V, K, ParamsOf<Key, X>>
       : never
 
-export type DefineControlsConfig<Id extends string, Scp extends Scope, F> = {
+export type DefineControlsConfig<Id extends string, Scp extends Scope, F, W = {}> = {
   /** App-unique; the device lane stores under `basalt:<id>`. */
   readonly id: Id
   /** `global` mounts on the root route only; `page` on a page or a layout route. */
@@ -127,22 +138,46 @@ export type DefineControlsConfig<Id extends string, Scp extends Scope, F> = {
    * narrowed filter lands on the first page and Back restores both together.
    */
   readonly resets?: readonly string[]
+  /**
+   * Page stores only: URL params kept across navigations inside the subtree of the layout route
+   * that mounts the store, and dropped on leaving it. A global retains all of its params.
+   */
+  readonly retain?: readonly string[]
+  /**
+   * Page stores only: cards bound to a scalar handle (a global or a page field). A widget inherits
+   * the handle's value and writes only its own `w.<widget>.<field>` key; at most two fields each.
+   */
+  readonly widgets?: W & ValidWidgets<W>
 }
 
-export type Controls<Id extends string, Scp extends Scope, F> = {
+export type Controls<Id extends string, Scp extends Scope, F, W = {}> = {
   readonly id: Id
   readonly scope: Scp
   /** Every URL param the store owns. */
   readonly keys: readonly string[]
   /** `createRoute({ validateSearch })`: branded, partial `types.input`, complete output. */
-  readonly validateSearch: ControlsValidator<Id, Scp, Partial<SearchOf<F>>, SearchOf<F>>
+  readonly validateSearch: ControlsValidator<
+    Id,
+    Scp,
+    Partial<SearchOf<F>> & WidgetSearch<W>,
+    SearchOf<F> & WidgetSearch<W>
+  >
   /** The store's params plus a foreign Standard Schema's; keeps the brand. */
   extend<I, O>(
     schema: StandardSchemaV1<I, O>,
-  ): ControlsValidator<Id, Scp, Partial<SearchOf<F>> & I, SearchOf<F> & O>
+  ): ControlsValidator<
+    Id,
+    Scp,
+    Partial<SearchOf<F>> & WidgetSearch<W> & I,
+    SearchOf<F> & WidgetSearch<W> & O
+  >
   /** `search: { middlewares }` on the route that mounts the store. */
   readonly middlewares: AnyMiddleware[]
   readonly field: { readonly [K in keyof F & string]: HandleOf<K, F[K]> }
+  /** One handle per widget field, by widget id then field. */
+  readonly widget: WidgetHandles<W>
+  /** The live `w.` keys, their widgets and the reset (`Reset overrides`). */
+  useOverrides(): Overrides
   /** The store's URL params, resolved; stable while they do not change. */
   useValues(): SearchOf<F>
   /** How many fields differ from their fallback: the `n` of `Filters (n)`. */
@@ -163,7 +198,7 @@ type Navigate = (options: {
 type LooseRoute = { id: string; options: { validateSearch?: unknown } }
 
 /** The router surface the store reads; typed loosely because a store serves every router. */
-type LooseRouter = {
+export type LooseRouter = {
   navigate: Navigate
   state: { matches: readonly { routeId: string }[]; location: { search: unknown } }
   routesById: Record<string, LooseRoute | undefined>
@@ -247,6 +282,7 @@ function claimParams(id: string, scope: Scope, params: readonly string[]): void 
  */
 export function resetControlsOwnersForTests(): void {
   owners.clear()
+  resetWidgetOwnersForTests()
 }
 
 function assertNoUrlThunk(id: string, fields: Record<string, AnyFieldSpec>): void {
@@ -323,16 +359,19 @@ type SeamContext = {
   readonly scope: Scope
   readonly keys: readonly string[]
   readonly defaults: Raw
+  readonly retain: readonly string[] | undefined
+  readonly widgets: WidgetsInput | undefined
+  readonly io: StoreIo
 }
 
-// ctl-3 seam: `[strip, retain]` and the widget middlewares are mounted here. ctl-2 passes strip only.
-function mountMiddlewares(base: AnyMiddleware[], _ctx: SeamContext): AnyMiddleware[] {
-  return base
+/** The middleware array of a store: `[strip, retain]` in that order (`./middleware`). */
+function mountMiddlewares(strip: AnyMiddleware, ctx: SeamContext): AnyMiddleware[] {
+  return orderMiddlewares(strip, ctx)
 }
 
-// ctl-3 seam: `retain`, `widget` and `useOverrides` attach to the finished store here.
-function extendStore<S>(store: S, _ctx: SeamContext): S {
-  return store
+/** `widget` and `useOverrides` attach to the finished store, and its validator learns the `w.` keys. */
+function extendStore(store: WidgetStore, ctx: SeamContext): WidgetStore {
+  return attachWidgets(store, ctx)
 }
 
 // --------------------------------------------------------------------------- defineControls
@@ -353,7 +392,10 @@ type Entry = { name: string; spec: AnyFieldSpec; codec: Codec<unknown>; params: 
  * params in the same navigate. Defaults stay out of the URL while the validated search is
  * complete. A global's params are exclusive (a second store naming one throws at definition), a
  * page store refuses a write from a route that does not run it, and a global mounted below the
- * root throws in development.
+ * root throws in development. `retain: [keys]` on a page store keeps those params across the
+ * subtree of the layout route that mounts it; `widgets: { card: { field: handle } }` binds a card to a
+ * scalar handle (a global or page field): it inherits the value and writes only its own
+ * `w.<card>.<field>` key (`store.widget`, `store.useOverrides()`; see `docs/widgets.md`).
  *
  * @useWhen a page or the whole app has filters, tabs, a range or pagination that belong in the URL or on the device
  * @neverWhen the state is the draft of a form (use a form) or owned by another store (use externalField)
@@ -386,7 +428,8 @@ export function defineControls<
   const Id extends string,
   const Scp extends Scope,
   const F extends Record<string, AnyFieldSpec>,
->(config: DefineControlsConfig<Id, Scp, F>): Controls<Id, Scp, F> {
+  const W extends WidgetsInput = {},
+>(config: DefineControlsConfig<Id, Scp, F, W>): Controls<Id, Scp, F, W> {
   const { id, scope, fields } = config
   assertNoUrlThunk(id, fields)
 
@@ -419,8 +462,6 @@ export function defineControls<
   }
 
   const defaults = parse({})
-  const ctx: SeamContext = { id, scope, keys, defaults }
-
   type Search = SearchOf<F>
   const validateSearch = brandedValidator<Id, Scp, Partial<Search>, Search>(
     { id, scope },
@@ -459,7 +500,12 @@ export function defineControls<
   }
 
   /** Every URL write: explicit `undefined` unsets (a `delete` would leave a retained key in place). */
-  const commit = (router: LooseRouter, patch: Raw, history: History): void => {
+  const commit = (
+    router: LooseRouter,
+    patch: Raw,
+    history: History,
+    resets: Raw = resetPatch,
+  ): void => {
     assertGlobalsOnRoot(router)
     if (scope === 'page' && !runsStore(router, id)) {
       throw new Error(
@@ -469,7 +515,7 @@ export function defineControls<
     }
     const result = router.navigate({
       to: '.',
-      search: (prev) => ({ ...prev, ...resetPatch, ...patch }),
+      search: (prev) => ({ ...prev, ...resets, ...patch }),
       replace: history !== 'push',
       resetScroll: false,
     })
@@ -500,6 +546,8 @@ export function defineControls<
         value,
         (next) => {
           if (spec.kind === 'range' && !writableRange(next as RangeValue)) return
+          // A write of the live value is a no-op: it must not fire `resets` (page back to 1).
+          if (codec.equals(next, readUrl(entry, asRecord(router.state.location.search)))) return
           commit(router, codec.encode(name, next), history)
         },
       ]
@@ -597,19 +645,51 @@ export function defineControls<
 
   const strip = stripSearchParams(defaults as never) as unknown as AnyMiddleware
 
-  const store: Controls<Id, Scp, F> = {
+  const io: StoreIo = {
+    useRouter: () => {
+      const router = useLooseRouter()
+      useLend(router)
+      return router
+    },
+    useSelect: (select, structuralSharing) =>
+      useSelectedSearch({ strict: false, select, structuralSharing }),
+    write: (router, patch) => commit(router, patch, 'replace', {}),
+    unset: (names) => {
+      for (const router of mounts.keys()) {
+        // Judged where the reader is now: a router that does not run this page store is left alone.
+        if (!runsStore(router, id)) continue
+        commit(router, Object.fromEntries(names.map((name) => [name, undefined])), 'replace', {})
+      }
+    },
+    currentSearch: () => {
+      const [router] = mounts.keys()
+      return router ? asRecord(router.state.location.search) : {}
+    },
+    liveSearch: (router) => asRecord(router.state.location.search),
+  }
+  const ctx: SeamContext = {
+    id,
+    scope,
+    keys,
+    defaults,
+    retain: config.retain,
+    widgets: config.widgets as WidgetsInput | undefined,
+    io,
+  }
+
+  const store = {
     id,
     scope,
     keys,
     validateSearch,
-    extend: (schema) => extendValidator(validateSearch, schema),
-    middlewares: mountMiddlewares([strip], ctx),
+    extend: (schema: StandardSchemaV1<unknown, unknown>) => extendValidator(validateSearch, schema),
+    middlewares: mountMiddlewares(strip, ctx),
     field: field as Controls<Id, Scp, F>['field'],
     useValues,
     useActiveCount,
     useReset,
   }
-  return extendStore(store, ctx)
+  return extendStore(store as unknown as WidgetStore, ctx) as unknown as Controls<Id, Scp, F, W>
 }
 
 // ---------------------------------------------------------------------------------- range
