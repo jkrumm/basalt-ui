@@ -125,7 +125,8 @@ export const REQUIRED_PEERS: readonly string[] = [
 export const SUBPATH_REQUIRED_PEERS: Readonly<Record<string, readonly string[]>> = {
   './commands': ['@tanstack/react-hotkeys'],
   './agent': ['ai', '@ai-sdk/provider', 'motion'],
-  './table': ['@tanstack/react-table'],
+  // The `meter` kind renders `ui/meter`, which wraps Base UI `Meter`; the v3 parts add more `ui/*`.
+  './table': ['@tanstack/react-table', '@base-ui/react'],
   './forms': ['@mantine/form'],
   // `ui/card` imports Base UI `useRender`, so `StatCard` reaches it; the concept (charts-cards-kanban 3, 'Shared frame') wants no Base UI import there. Remove this row when `ui/card` drops it.
   './cards': ['@base-ui/react'],
