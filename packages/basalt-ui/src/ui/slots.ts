@@ -4,6 +4,7 @@
 /** Every `data-slot` each `basalt-ui/ui/*` module renders, keyed by module name. */
 export const SLOTS = {
   accordion: ['accordion', 'accordion-item', 'accordion-trigger', 'accordion-content'],
+  alert: ['alert'],
   badge: ['lozenge', 'count-badge', 'delta-badge'],
   button: ['button', 'pressable'],
   card: ['card', 'card-band', 'card-info', 'icon-tile', 'inset', 'card-phase'],
@@ -29,12 +30,15 @@ export const SLOTS = {
   ],
   input: ['input'],
   kbd: ['kbd'],
+  meter: ['meter'],
   'number-field': ['number-field'],
+  progress: ['progress', 'ring'],
   'radio-group': ['radio-group', 'radio'],
   'scroll-area': ['scroll-area'],
   separator: ['separator'],
   sheet: ['sheet-trigger', 'sheet-content', 'sheet-title', 'sheet-close'],
   skeleton: ['skeleton', 'spinner'],
+  status: ['status', 'swatch'],
   switch: ['switch'],
   table: [
     'table',
