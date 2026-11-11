@@ -310,11 +310,7 @@ function wholeStepFormat<T>(
 ): (v: number) => string {
   const [lo, hi] = [Math.min(...axis.domain), Math.max(...axis.domain)]
   const values =
-    'values' in ticks
-      ? ticks.values
-      : cfg?.scale === 'log'
-        ? []
-        : scaleLinear().domain([lo, hi]).ticks(ticks.count)
+    'values' in ticks ? ticks.values : scaleLinear().domain([lo, hi]).ticks(ticks.count)
   if (values.length === 0 || !values.every(Number.isInteger)) return axis.format
   const padded = zeroFraction(decimalSeparator())
   return (v) => axis.format(v).replace(padded, '$1')
@@ -338,7 +334,7 @@ function withEndTick<T>(
   axis: YAxis,
   count: number,
 ): { values: readonly number[] } | null {
-  if (!Array.isArray(cfg?.domain) || cfg.scale === 'log' || cfg.nice === true) return null
+  if (!Array.isArray(cfg?.domain) || cfg.nice === true) return null
   const [lo, hi] = [Math.min(...axis.domain), Math.max(...axis.domain)]
   const round = scaleLinear().domain([lo, hi]).ticks(count)
   const [first, next, last] = [round.at(0), round.at(1), round.at(-1)]
@@ -522,20 +518,6 @@ export function zoneAreaGradient(
   return { id: areaGradientId(index), x1: 0, y1: 0, x2: 0, y2: 1, stops }
 }
 
-let warnedLogZones = false
-
-/** Zone stops are placed linearly in value; a log axis would put them in the wrong place (V2-SPEC
- * § 9.9 precedent): dev throws, production logs once and keeps the series-colour fade. */
-function guardLogZones(onLog: boolean): boolean {
-  if (!onLog) return false
-  const message = "area: 'zones' cannot use a log axis; use area: true"
-  if (process.env.NODE_ENV !== 'production') throw new Error(message)
-  // oxlint-disable-next-line no-console -- the production leg of a dev-only throw
-  if (!warnedLogZones) console.error(message)
-  warnedLogZones = true
-  return true
-}
-
 /** The gradient resource for a series' `area` fill: zones, a colour ref, or the series colour. */
 function seriesAreaGradient<T, X extends ChartX>(
   s: ChartSeries<T>,
@@ -549,8 +531,6 @@ function seriesAreaGradient<T, X extends ChartX>(
   )
   if (s.area !== 'zones') return plain
   const side = axes.onRight(s) ? 'right' : 'left'
-  const axisConfig = side === 'right' ? input.y2 : input.y
-  if (guardLogZones(axisConfig?.scale === 'log')) return plain
   const zones = (input.zones ?? []).filter((z) => axes.scaleId(z.axisSide) === axes.scaleId(side))
   return (
     zoneAreaGradient(

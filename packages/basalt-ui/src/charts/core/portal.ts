@@ -67,6 +67,8 @@ function create(mode: TipMode): ChartTooltipPortalExtension['create'] {
       container.append(element)
     } else container.ownerDocument.body.append(element)
     Object.assign(element.style, { position: 'fixed', margin: '0', right: 'auto', bottom: 'auto' })
+    // The one-line chip's look (`chart-box.module.css`) hangs on this marker.
+    if (mode === 'slot') element.dataset['basaltSlot'] = ''
     let listening = false
     const listen = (on: boolean): void => {
       if (on === listening) return
@@ -106,6 +108,7 @@ function create(mode: TipMode): ChartTooltipPortalExtension['create'] {
       destroy() {
         hide()
         element.removeAttribute('popover')
+        delete element.dataset['basaltSlot']
         element.remove()
       },
     }

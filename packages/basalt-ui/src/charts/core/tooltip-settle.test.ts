@@ -27,8 +27,9 @@ function setup(opts: { hidden?: boolean; height?: number; mode?: TipMode } = {})
   host.append(surface)
   card.append(host)
   document.body.append(card)
+  const scheduled = { count: 0 }
   const portal = cardPortal(opts.mode).create(
-    { container: host, element: tip, schedulePosition: () => {} },
+    { container: host, element: tip, schedulePosition: () => (scheduled.count += 1) },
     {},
   )
   if (opts.hidden) tip.hidden = true
@@ -44,7 +45,7 @@ function setup(opts: { hidden?: boolean; height?: number; mode?: TipMode } = {})
     ...ctx,
     anchor: { x, y },
   })
-  return { card, tip, ctx, at, writes, portal }
+  return { card, tip, ctx, at, writes, portal, scheduled }
 }
 
 const left = (tip: HTMLElement): number => Number.parseFloat(tip.style.left)
@@ -95,27 +96,27 @@ describe('cardPortal', () => {
 
   test('an unmeasured tooltip is not written', () => {
     const { tip, ctx, writes, portal } = setup({ height: 0 })
-    const before = tip.style.left + tip.style.top
     portal.position(ctx)
-    expect(writes.takeRecords().filter(() => tip.style.left + tip.style.top !== before)).toEqual([])
+    expect(writes.takeRecords()).toHaveLength(0)
     expect(tip.style.left).toBe('')
     expect(tip.style.top).toBe('')
   })
 
-  test('a hidden tooltip is not written by a scroll reposition', () => {
-    const { tip, ctx, writes, portal } = setup()
+  test('a shown tooltip asks the engine to place again on scroll; a hidden one does not', () => {
+    const { tip, ctx, portal, scheduled } = setup()
     portal.position(ctx)
+    window.dispatchEvent(new Event('scroll'))
+    window.dispatchEvent(new Event('resize'))
+    expect(scheduled.count).toBe(2)
     portal.hide()
     expect(tip.hidden).toBe(true)
-    writes.takeRecords()
-    const before = tip.style.cssText
     window.dispatchEvent(new Event('scroll'))
-    expect(writes.takeRecords()).toHaveLength(0)
-    expect(tip.style.cssText).toBe(before)
+    expect(scheduled.count).toBe(2)
   })
 
-  test('a slot tooltip stays above the anchor, never flipped below it', () => {
+  test('a slot tooltip is the marked chip and stays above the anchor, never flipped below it', () => {
     const { tip, ctx, portal } = setup({ mode: 'slot' })
+    expect(tip.dataset['basaltSlot']).toBe('')
     portal.position({ ...ctx, placement: ['top'], offset: 0 })
     expect(tip.dataset['placement']).toBe('top')
     // 120 - 60 is above the card top (100): held inside the card, not pushed below the anchor.
@@ -133,9 +134,11 @@ describe('cardPortal', () => {
   })
 
   test('destroy detaches the element and its listeners', () => {
-    const { tip, ctx, portal } = setup()
+    const { tip, ctx, portal, scheduled } = setup()
     portal.position(ctx)
     portal.destroy()
     expect(tip.isConnected).toBe(false)
+    window.dispatchEvent(new Event('scroll'))
+    expect(scheduled.count).toBe(0)
   })
 })
