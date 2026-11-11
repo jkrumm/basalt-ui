@@ -1,0 +1,5 @@
+{
+  // Project references: the app config carries the options, so paths land there.
+  "files": [],
+  "references": [{ "path": "./tsconfig.app.json" }]
+}

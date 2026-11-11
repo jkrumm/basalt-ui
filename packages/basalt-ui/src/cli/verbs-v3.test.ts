@@ -1,5 +1,5 @@
 /**
- * `eject`, `migrate` and `lint` are registered before they are built: each says so and exits 1, and
+ * `lint` is registered before they are built: each says so and exits 1, and
  * any verb rejects an unknown flag with exit 1.
  */
 import { describe, expect, it } from 'bun:test'
@@ -27,7 +27,7 @@ function capture(argv: string[]): { code: number; log: string } {
 }
 
 describe('v3 verb stubs', () => {
-  for (const verb of ['eject', 'lint']) {
+  for (const verb of ['lint']) {
     it(`${verb} prints "not implemented" and exits 1`, () => {
       const { code, log } = capture([verb])
       expect(code).toBe(1)

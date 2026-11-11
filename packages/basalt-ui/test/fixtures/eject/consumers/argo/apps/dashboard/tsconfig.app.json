@@ -1,0 +1,10 @@
+{
+  "extends": "../../tsconfig.base.json",
+  "compilerOptions": {
+    "composite": true,
+    "jsx": "react-jsx",
+    // the dashboard's own alias; an eject row goes beside it
+    "paths": { "@/*": ["./src/*"] }
+  },
+  "include": ["src"]
+}

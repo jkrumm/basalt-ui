@@ -1,0 +1,8 @@
+{
+  "name": "console",
+  "private": true,
+  "type": "module",
+  "dependencies": {
+    "basalt-ui": "3.0.0-fixture"
+  }
+}

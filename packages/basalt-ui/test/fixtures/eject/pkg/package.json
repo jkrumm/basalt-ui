@@ -1,0 +1,11 @@
+{
+  "name": "basalt-ui",
+  "version": "3.0.0-fixture",
+  "type": "module",
+  "exports": {
+    ".": "./src/index.ts",
+    "./ui/*": "./src/ui/*.tsx",
+    "./composite": "./src/composite.tsx",
+    "./vite": "./src/vite.mjs"
+  }
+}
