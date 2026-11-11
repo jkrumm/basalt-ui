@@ -1,0 +1,8 @@
+{
+  "note": "Resolved outcomes the v3 codecs must produce for the alias and renamed cases. Read by the ctl2 invariant tests, not by the round-trip suite.",
+  "aliases": [
+    { "store": "usage-tracking", "field": "range", "from": "day", "to": "24h" },
+    { "store": "dashboard", "field": "range", "from": "day", "to": "24h" },
+    { "store": "settings", "field": "section", "from": "sync", "to": "storage", "renamed": true }
+  ]
+}

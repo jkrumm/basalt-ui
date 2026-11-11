@@ -1,0 +1,20 @@
+{
+  "source": "linewatch web dashboard-store.ts (shapes only, synthesized)",
+  "stores": [
+    {
+      "id": "dashboard",
+      "fields": { "range": "range", "minDuration": "number", "compact": "boolean" },
+      "aliases": { "range": { "day": "24h" } },
+      "urls": [
+        { "label": "bare", "url": "" },
+        { "label": "range preset", "url": "range=7d" },
+        { "label": "numeric filter", "url": "range=24h&minDuration=300" },
+        { "label": "alias day", "url": "range=day" }
+      ],
+      "storage": {
+        "key": "basalt:dashboard",
+        "raw": "{\"v\":1,\"value\":{\"range\":\"7d\",\"compact\":true}}"
+      }
+    }
+  ]
+}
