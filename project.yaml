@@ -6,3 +6,9 @@ ship:
   - paths: ['**']
     via: pr
 leads: 4
+# The layout suite is a Chrome tree. Its context-per-test close keeps one run near 2.5 GB resident; a row that
+# adds browser work files itself `lane: browser`, so at most two such leads run at once.
+lanes:
+  browser:
+    leads: 2
+    memory: 3GiB
