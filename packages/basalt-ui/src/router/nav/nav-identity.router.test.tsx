@@ -18,7 +18,7 @@ import {
 } from '@tanstack/react-router'
 import { navAnchor } from './anchor'
 import { useActiveNav } from './use-active-nav'
-import { defineNav } from './nav-test-utils'
+import { defineNav } from '../../../tests/support/router-nav'
 import type { AnyNavConfig, AnyNavItem } from './types'
 
 const item = (id: string, to: string, extra: Partial<AnyNavItem> = {}): AnyNavItem => ({
