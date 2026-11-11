@@ -1,4 +1,7 @@
 @import 'basalt-ui/tokens.css';
 @import 'basalt-ui/tailwind.css';
+@import 'basalt-ui/prose.css';
 @source '../../../packages/basalt-ui/src/ui';
 @source '../../../packages/basalt-ui/src/cards';
+@source '../../../packages/basalt-ui/src/content';
+@source '../../../packages/basalt-ui/src/page';
