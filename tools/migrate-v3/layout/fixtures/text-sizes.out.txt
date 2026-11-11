@@ -1,0 +1,12 @@
+export function A() {
+  return (
+    <>
+      <p className="font-normal text-md">default</p>
+      <p className="font-normal text-xs">xs</p>
+      <p className="font-normal text-sm">sm</p>
+      <p className="font-normal text-md">md</p>
+      <p className="font-normal text-base">lg</p>
+      <p className="font-normal text-lg">xl</p>
+    </>
+  )
+}

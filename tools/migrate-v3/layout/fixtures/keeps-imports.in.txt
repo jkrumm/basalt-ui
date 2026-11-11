@@ -1,0 +1,7 @@
+import { Group, Text, type MantineTheme } from '@mantine/core'
+
+const Wrapper = Text
+
+export function A() {
+  return <Group>{Wrapper.name}</Group>
+}

@@ -1,0 +1,13 @@
+import { Group, SimpleGrid, Stack } from '@mantine/core'
+
+export function A() {
+  return (
+    <Stack>
+      <Group>one</Group>
+      <SimpleGrid>two</SimpleGrid>
+      <Stack gap="xs" align="center" className="extra">three</Stack>
+      <Group gap="lg" justify="space-between" wrap="nowrap">four</Group>
+      <SimpleGrid cols={3} spacing="sm" verticalSpacing="xl">five</SimpleGrid>
+    </Stack>
+  )
+}

@@ -1,0 +1,13 @@
+import { Button } from '@mantine/core'
+import { cn } from '@/lib/utils'
+
+export function A({ wide }: { wide: boolean }) {
+  return (
+    <div className="flex flex-col gap-4 p-4 -mt-2 w-full">
+      <div className={cn("flex items-center justify-center h-10", wide ? 'a' : 'b')}>
+        <section className="mx-auto max-w-80" />
+      </div>
+      <div className={cn("flex gap-x-2 gap-y-3", wide ? "justify-center" : "justify-start")} />
+    </div>
+  )
+}

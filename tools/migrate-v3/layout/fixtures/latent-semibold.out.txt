@@ -1,0 +1,5 @@
+import { Text } from '@mantine/core'
+
+export function A() {
+  return <Text fw="semibold">label</Text>
+}

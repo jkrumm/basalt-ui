@@ -1,0 +1,11 @@
+import { SimpleGrid, Stack } from '@mantine/core'
+
+export function A() {
+  return (
+    <>
+      <SimpleGrid cols={{ base: 1, sm: 2, lg: 4 }}>grid</SimpleGrid>
+      <Stack gap={{ sm: 'xs' }}>stack</Stack>
+      <Stack gap={{ base: 'xs', md: 'lg' }}>md has no v3 twin</Stack>
+    </>
+  )
+}

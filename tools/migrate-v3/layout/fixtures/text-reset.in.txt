@@ -1,0 +1,12 @@
+import { Text } from '@mantine/core'
+
+export function A({ name }: { name: string }) {
+  return (
+    <div>
+      <Text span>inline</Text>
+      <Text truncate onClick={() => name}>truncated</Text>
+      <Text lineClamp={2}>clamped</Text>
+      <Text fw={700} size="sm">bold</Text>
+    </div>
+  )
+}
