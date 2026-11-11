@@ -29,6 +29,28 @@ const PARENTS: Record<string, ComponentType<{ children?: ReactNode }>> = {
   'field-description': (p) => <BaseField.Root {...p} />,
   'field-error': (p) => <BaseField.Root {...p} />,
   'fieldset-legend': (p) => <BaseFieldset.Root {...p} />,
+  'table-header': (p) => <table {...p} />,
+  'table-body': (p) => <table {...p} />,
+  'table-row': (p) => (
+    <table>
+      <tbody {...p} />
+    </table>
+  ),
+  'table-head': (p) => (
+    <table>
+      <thead>
+        <tr {...p} />
+      </thead>
+    </table>
+  ),
+  'table-cell': (p) => (
+    <table>
+      <tbody>
+        <tr {...p} />
+      </tbody>
+    </table>
+  ),
+  'table-caption': (p) => <table {...p} />,
 }
 
 /** Props a part needs to render at all: `FieldError` shows only on a failed validity or `match`. */
