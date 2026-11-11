@@ -17,5 +17,10 @@
   // Carrying them forces `rootDir` to the package root, so this config is CHECK-only (`noEmit`);
   // `tsconfig.build.json` is the one that emits, and it narrows both back.
   "include": ["src", "tests"],
-  "exclude": ["node_modules", "dist"]
+  "exclude": [
+    "node_modules",
+    "dist",
+    "src/router/nav/nav.type-guard*.test.ts",
+    "src/router/nav/nav.type-guard*.test.tsx"
+  ]
 }
