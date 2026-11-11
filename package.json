@@ -19,12 +19,13 @@
     "test:layout": "bun --config=./packages/basalt-ui/tests/layout/bunfig.toml test --timeout 60000 .layout.test.ts",
     "test:layout:harness": "bun --config=./packages/basalt-ui/tests/layout/bunfig.toml test --timeout 60000 packages/basalt-ui/tests/layout/harness",
     "check-theme": "cd packages/basalt-ui && bun bin/basalt-ui.mjs check-theme && cd ../../apps/playground && bun ../../packages/basalt-ui/bin/basalt-ui.mjs check-theme",
-    "pre": "bun run fmt:check && bun run lint && bun run typecheck && bun run check-theme && bun run check-budgets && bun test",
+    "pre": "bun run fmt:check && bun run lint && bun run typecheck && bun run check-theme && bun run check-budgets && bun run check-literals && bun test",
     "prepare": "lefthook install",
     "hooks:install": "lefthook install",
     "hooks:uninstall": "lefthook uninstall",
     "evidence": "bun scripts/evidence/index.ts",
-    "check-budgets": "cd packages/basalt-ui && bun scripts/check-budgets.ts"
+    "check-budgets": "cd packages/basalt-ui && bun scripts/check-budgets.ts",
+    "check-literals": "bun packages/basalt-ui/scripts/check-literals.ts"
   },
   "devDependencies": {
     "@commitlint/cli": "^21.2.4",

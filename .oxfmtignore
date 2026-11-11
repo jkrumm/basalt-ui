@@ -17,6 +17,8 @@ packages/basalt-ui/src/css/tokens.css
 # A generated root-export doc carries the root's long `peers:` line; oxfmt wraps it and gen-docs
 # --check then reads the file as drifted. Owned by `gen-docs`, never by oxfmt.
 packages/basalt-ui/docs/external-field.md
+packages/basalt-ui/docs/create-format.md
+packages/basalt-ui/docs/use-format.md
 
 # Package fixture trees are byte-exact (deliberate offenders, golden files); never formatted.
 packages/basalt-ui/test/fixtures/**
