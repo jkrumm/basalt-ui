@@ -1,1 +1,2 @@
 @import 'basalt-ui/tailwind.css';
+@source '../../../packages/basalt-ui/src/ui';
