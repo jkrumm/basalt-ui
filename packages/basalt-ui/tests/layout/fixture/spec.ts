@@ -374,6 +374,8 @@ export type FixtureSpec = {
   infoHeader?: true
   /** `ui/card` info probes: a card at each viewport edge, a stretched-link card, an outside target (`card-info-*`). */
   cardInfo?: true
+  /** `StatCard` exemplar probes: one card per phase, controls around `@regular`, a greedy chart slot, a stretched link (`cx-*`). */
+  cardsExemplar?: true
   /** A Mantine `Button size="xs" variant="default"` beside the shared `RetryButton` (`data-testid="retry-mantine"` / `"retry-shared"`). */
   retryParity?: true
   /** Wave 38: zone-keyed charts at a 340px card (`w38-*`) and a strip-cell sparkline at 150px (`w38-strip`). */

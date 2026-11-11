@@ -568,7 +568,6 @@ const own = {
   'basalt-ui/router': [],
   'basalt-ui/data': [],
   'basalt-ui/page': [],
-  'basalt-ui/cards': [],
   'basalt-ui/ai': [],
   'basalt-ui/lint': [],
   'basalt-ui/stylelint': [],

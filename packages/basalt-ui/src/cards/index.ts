@@ -1,3 +1,4 @@
-/** `basalt-ui/cards` — v3 skeleton stub. Peers: react. */
+/** `basalt-ui/cards` — the card composites (`StatCard` so far). Peers: react, `@base-ui/react` (via `ui/card`). */
 
-export {}
+export { StatCard } from './stat-card'
+export type { StatCardProps } from './contract'

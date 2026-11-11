@@ -26,7 +26,12 @@ import { defineConfig } from 'tsup'
  * behind the pack-test.
  */
 export default defineConfig({
-  entry: ['src/**/*.{ts,tsx}', '!src/**/*.d.ts', '!src/**/*.test.{ts,tsx}'],
+  entry: [
+    'src/**/*.{ts,tsx}',
+    '!src/**/*.d.ts',
+    '!src/**/*.test.{ts,tsx}',
+    '!src/**/*.type-guard.tsx',
+  ],
   format: ['esm'],
   bundle: false,
   splitting: false,
