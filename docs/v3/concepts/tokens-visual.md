@@ -66,12 +66,14 @@ Tailwind-only aliases: `primary`/`primary-foreground` = ink/canvas; `secondary` 
 
 ### 3.3 Surfaces and nesting
 
-| Role   | Dark T, hex    | Light T, hex   | Use                                     |
-| ------ | -------------- | -------------- | --------------------------------------- |
-| canvas | 12.5 `#23201d` | 96.5 `#f8f4f1` | Page, table head                        |
-| inset  | 15 `#282522`   | 99.2 `#fefcfb` | The reading surface: data, rows, charts |
-| card   | 19 `#312e2b`   | 92.5 `#ece9e6` | Ringed frame, header and footer bands   |
-| raised | 24 `#3c3835`   | 100 `#ffffff`  | Controls, tiles, popovers, chips        |
+**Re-anchored 2026-11-11 (owner review, Issue 820).** The warm ramp below this note is superseded: every surface and ink is the 2.x zinc derivation (`deriveTokens(DEFAULT_DERIVE_CONFIG)`) under a v3 name, `SURFACE_FROM_2X` and `INK_FROM_2X` in `derive.ts`, and `anchor-2x.test.ts` pins it. Warmth is the opt-in `neutral: 'stone'`. The measured numbers in 3.3 and 3.4 are the pre-review ones; the test holds the current ones.
+
+| Role   | 2.x stop   | Dark T, hex    | Light T, hex   | Use                                     |
+| ------ | ---------- | -------------- | -------------- | --------------------------------------- |
+| canvas | `bg`       | 15.7 `#27272a` | 95.6 `#f2f2f5` | Page, table head                        |
+| inset  | `field`    | 15.7 `#27272a` | 100 `#ffffff`  | The reading surface: data, rows, charts |
+| card   | `subtle`   | 20.9 `#323235` | 96.3 `#f4f4f8` | Ringed frame, header and footer bands   |
+| raised | `elevated` | 23.6 `#38383b` | 100 `#ffffff`  | Controls, tiles, popovers, chips        |
 
 ```
 canvas
@@ -96,7 +98,7 @@ Inks: ink T93/T14, muted T72/T38, faint T62/T44. Faint is excluded from raised (
 
 |           | Value                                                                                                   | Measured (F, gap-token 5, 6)                                                                                                   |
 | --------- | ------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------ |
-| Fill      | `#2e75b1`, tone pinned in fill band, HCT 268/38.2/47.6                                                  | White label 4.89; dark 3.31 canvas, 3.12 inset, **2.76 card**, 2.37 raised; light 4.47/4.78/4.04/4.89                          |
+| Fill      | Was `#2e75b1`; since 2026-11-11 the 2.x accent fill `#4374a6` (seed `#0077bd`)                          | White label 4.89; dark 3.31 canvas, 3.12 inset, **2.76 card**, 2.37 raised; light 4.47/4.78/4.04/4.89                          |
 | Brand ink | Dark `#99c4fa`; light `#216da8` (T44.4, same hue and chroma, solved here with `hctToHex`, not the fill) | Dark 8.98/8.44/7.47/6.43, light 5.03/5.38/**4.55**/5.50 on canvas/inset/card/raised. The fill as light text was 4.47/4.78/4.04 |
 | Primary   | ink on canvas                                                                                           | 11.3 to 15.3 on every surface, no constraint                                                                                   |
 
