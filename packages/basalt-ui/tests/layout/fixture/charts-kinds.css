@@ -1,0 +1,6 @@
+/*
+ * The `charts-kinds` fixture's Tailwind v4 entry, compiled with preflight and the font faces like
+ * `ui-range.css`. `charts-kinds.layout.test.ts` compiles it into a temp directory.
+ */
+@import '../../../src/css/tailwind.css' source(none);
+@source './charts-kinds-fixture.tsx';
