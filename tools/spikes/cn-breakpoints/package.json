@@ -1,0 +1,16 @@
+{
+  "name": "@basalt-ui/spike-cn-breakpoints",
+  "private": true,
+  "description": "Spike cn-breakpoints (ARCHITECTURE section 11 F6, F7; tokens-visual section 8 S4): compiled cn versus clsx, the dead sm:/lg: reset, the zone A colour denial over consumers. Throwaway harness, no tests.",
+  "type": "module",
+  "scripts": {
+    "run": "bun run.ts"
+  },
+  "dependencies": {
+    "@tailwindcss/cli": "4.3.5",
+    "clsx": "2.1.1",
+    "playwright-core": "1.63.0",
+    "tailwindcss": "4.3.5",
+    "typescript": "6.0.3"
+  }
+}
