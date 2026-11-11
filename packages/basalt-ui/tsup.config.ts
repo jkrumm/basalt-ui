@@ -31,6 +31,8 @@ export default defineConfig({
     '!src/**/*.d.ts',
     '!src/**/*.test.{ts,tsx}',
     '!src/**/*.type-guard.tsx',
+    '!src/**/*.type-test.ts',
+    '!src/table/invariants/**',
   ],
   format: ['esm'],
   bundle: false,
