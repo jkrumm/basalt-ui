@@ -428,7 +428,7 @@ export const SURFACES = {
     pluginRules: [],
     description:
       'BasaltDataTable and createColumnHelper: a data table over TanStack Table v9, rendered with Mantine',
-    optionalPeers: ['@tanstack/react-table'],
+    optionalPeers: ['@tanstack/react-table', '@base-ui/react'],
     forbiddenImports: [],
   },
   './agent': {

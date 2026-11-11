@@ -630,7 +630,7 @@ export const SUBPATH_REQUIRED_PEERS: Readonly<Record<string, readonly string[]>>
   content: ['react-markdown', 'remark-gfm', 'rehype-sanitize', 'remend'],
   'controls-dates': ['@mantine/dates', 'dayjs'],
   forms: ['@mantine/form'],
-  table: ['@tanstack/react-table'],
+  table: ['@tanstack/react-table', '@base-ui/react'],
 }
 
 /**
