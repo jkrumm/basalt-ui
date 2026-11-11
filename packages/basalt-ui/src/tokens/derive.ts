@@ -10,6 +10,7 @@
  * vibrancy step, four surfaces, three inks, and a refusal in `gates.ts` instead of a silent bad
  * accent. Nothing in the v3 half imports `palette.ts` or `core.ts`.
  */
+import { deriveChartVars } from './chart-vars'
 import { contrastRatio, hctToHex, hexToHct, yToTone } from './hct'
 import { deriveStatusHexes, solveStatusV3, STATUS_HUE, STATUS_STOP } from './status-text'
 import type { ColorPair } from './core'
@@ -620,22 +621,6 @@ const BRAND_INK_SOLVE_MIN = 4.55
 const BRAND_INK_TONE_STEP = 0.1
 const INFO_LIGHT_STOP_TONE = 40
 
-// Viz: chart-2..5 are the 2.x fills for orange, teal, grape and green, re-lit in the fill band so
-// every mark clears 3:1 on canvas and inset; chart-1 is the brand fill. Sequential steps share the
-// seed hue and run light-to-dark by value in light, dark-to-light in dark.
-const CHART_FAMILIES = ['orange', 'teal', 'grape', 'green'] as const satisfies readonly FillFamily[]
-const SEQ_TONE: Record<Side, readonly number[]> = {
-  light: [90, 78, 66, 54, 42],
-  dark: [28, 38, 50, 64, 78],
-}
-const SEQ_CHROMA_SHARE = [0.3, 0.5, 0.7, 0.85, 1] as const
-const LINE_TONE: Record<Side, number> = { light: 50, dark: 62 }
-// Dim bars sit under the "now" mark: >= 2.0 on inset, quieter than the data line.
-const DIM_BAR_TONE: Record<Side, number> = { light: 68, dark: 38 }
-const VIZ_CHROMA_V3 = 2
-// The 2.x fill chroma was scaled by the old vibrancy centre (x.864); chart-N keep that scale.
-const CHART_CHROMA_SCALE = 0.864
-
 function clampVibrancy(level: number): number {
   return Number.isFinite(level) ? clamp(level, VIBRANCY_RANGE_V3.min, VIBRANCY_RANGE_V3.max) : 0
 }
@@ -777,35 +762,25 @@ export function deriveV3(config: DeriveV3Config = DEFAULT_DERIVE_V3_CONFIG): Der
     )
   }
 
-  colors.line = pair((side) =>
-    hctToHex({
-      hue: neutral.hue,
-      chroma: VIZ_CHROMA_V3 * neutral.chromaScale,
-      tone: LINE_TONE[side],
+  Object.assign(
+    colors,
+    deriveChartVars({
+      hue: seed.hue,
+      fillChroma,
+      bandTone,
+      mult,
+      neutral,
+      brandFill: colors['brand-fill'],
+      surfaces: {
+        light: { canvas: colors.canvas.light, inset: colors.inset.light },
+        dark: { canvas: colors.canvas.dark, inset: colors.inset.dark },
+      },
+      fill: (family) => ({
+        hue: FILL_HUE[family],
+        chroma: clamp(FILL_CHROMA[family], FILL_CHROMA_MIN, FILL_CHROMA_MAX),
+      }),
     }),
   )
-  colors['dim-bar'] = pair((side) =>
-    hctToHex({
-      hue: neutral.hue,
-      chroma: VIZ_CHROMA_V3 * neutral.chromaScale,
-      tone: DIM_BAR_TONE[side],
-    }),
-  )
-  colors['chart-1'] = colors['brand-fill']
-  CHART_FAMILIES.forEach((family, i) => {
-    const hex = hctToHex({
-      hue: FILL_HUE[family],
-      chroma:
-        clamp(FILL_CHROMA[family], FILL_CHROMA_MIN, FILL_CHROMA_MAX) * CHART_CHROMA_SCALE * mult,
-      tone: bandTone,
-    })
-    colors[`chart-${i + 2}` as ColorNameV3] = { light: hex, dark: hex }
-  })
-  SEQ_CHROMA_SHARE.forEach((share, i) => {
-    colors[`seq-${i + 1}` as ColorNameV3] = pair((side) =>
-      hctToHex({ hue: seed.hue, chroma: fillChroma * share, tone: SEQ_TONE[side][i]! }),
-    )
-  })
 
   return { accent: config.accent.toLowerCase(), colors }
 }
