@@ -1,0 +1,26 @@
+{
+  "source": "shutterflow Photos and Settings routes (shapes only, synthesized)",
+  "stores": [
+    {
+      "id": "photos",
+      "fields": { "rating": "multi", "kw": "multi", "density": "number" },
+      "urls": [
+        { "label": "bare", "url": "" },
+        { "label": "rating and keywords", "url": "rating=1,2&kw=a,b&density=128" },
+        { "label": "single rating decodes as a number", "url": "rating=1" }
+      ],
+      "storage": null
+    },
+    {
+      "id": "settings",
+      "fields": { "section": "enum" },
+      "aliases": { "section": { "sync": "storage" } },
+      "urls": [
+        { "label": "default section absent", "url": "" },
+        { "label": "section", "url": "section=library" },
+        { "label": "renamed sync resolves to storage", "url": "section=sync" }
+      ],
+      "storage": null
+    }
+  ]
+}

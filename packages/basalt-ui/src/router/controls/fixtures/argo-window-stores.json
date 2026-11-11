@@ -1,0 +1,76 @@
+{
+  "source": "argo window-stores.ts and queries/gym.ts (shapes only, synthesized)",
+  "stores": [
+    {
+      "id": "usage-tracking",
+      "fields": {
+        "view": "enum",
+        "node": "string",
+        "range": "enum",
+        "grain": "enum",
+        "workspace": "multi",
+        "payer": "multi",
+        "subsView": "enum"
+      },
+      "aliases": { "range": { "day": "24h", "week": "7d" } },
+      "urls": [
+        { "label": "bare", "url": "" },
+        { "label": "range and grain", "url": "range=30d&grain=week" },
+        { "label": "multi comma list", "url": "workspace=work,private&payer=self" },
+        { "label": "selected node", "url": "view=flow&node=demand:review" },
+        { "label": "alias day", "url": "range=day" }
+      ],
+      "storage": {
+        "key": "basalt:usage-tracking",
+        "raw": "{\"v\":1,\"value\":{\"range\":\"30d\",\"grain\":\"week\",\"workspace\":[\"work\"]}}"
+      }
+    },
+    {
+      "id": "finance",
+      "fields": {
+        "month": "enum",
+        "from": "enum",
+        "to": "enum",
+        "category": "string",
+        "merchant": "string",
+        "search": "string",
+        "account": "string",
+        "tag": "string",
+        "amount": "enum",
+        "uncategorized": "boolean",
+        "untagged": "boolean",
+        "sort": "enum",
+        "dir": "enum",
+        "page": "number",
+        "size": "enum",
+        "year": "enum",
+        "focus": "string"
+      },
+      "urls": [
+        { "label": "bare", "url": "" },
+        { "label": "month and band", "url": "month=2026-03&amount=out-100" },
+        { "label": "booleans", "url": "uncategorized=true&untagged=false" },
+        { "label": "paging and sort", "url": "page=3&size=100&sort=amount&dir=asc" },
+        {
+          "label": "all seventeen",
+          "url": "month=2026-02&from=2025-03&to=2026-02&category=groceries&merchant=market&search=milk&account=checking&tag=weekly&amount=in&uncategorized=true&untagged=true&sort=merchant&dir=asc&page=2&size=25&year=2026&focus=row-4"
+        }
+      ],
+      "storage": null
+    },
+    {
+      "id": "strength",
+      "fields": { "exercises": "multi", "muscles": "multi", "range": "range" },
+      "urls": [
+        { "label": "full default multi omitted", "url": "" },
+        { "label": "empty selection stays distinct", "url": "exercises=" },
+        { "label": "subset", "url": "exercises=squat,deadlift&muscles=legs" },
+        { "label": "custom range", "url": "range=custom&from=2026-01-01&to=2026-02-01" }
+      ],
+      "storage": {
+        "key": "basalt:strength",
+        "raw": "{\"v\":1,\"value\":{\"exercises\":[\"squat\"],\"range\":\"90d\"}}"
+      }
+    }
+  ]
+}
