@@ -127,6 +127,8 @@ export const SUBPATH_REQUIRED_PEERS: Readonly<Record<string, readonly string[]>>
   './agent': ['ai', '@ai-sdk/provider', 'motion'],
   './table': ['@tanstack/react-table'],
   './forms': ['@mantine/form'],
+  // `ui/card` imports Base UI `useRender`, so `StatCard` reaches it; the concept (charts-cards-kanban 3, 'Shared frame') wants no Base UI import there. Remove this row when `ui/card` drops it.
+  './cards': ['@base-ui/react'],
   './controls-dates': ['@mantine/dates', 'dayjs'],
   './content': ['react-markdown', 'remark-gfm', 'rehype-sanitize', 'remend'],
   './vite': ['vite'],

@@ -9,5 +9,12 @@
     "rootDir": "src",
     "noEmit": false
   },
-  "exclude": ["node_modules", "dist", "tests", "src/**/*.test.ts", "src/**/*.test.tsx"]
+  "exclude": [
+    "node_modules",
+    "dist",
+    "tests",
+    "src/**/*.test.ts",
+    "src/**/*.test.tsx",
+    "src/**/*.type-guard.tsx"
+  ]
 }
