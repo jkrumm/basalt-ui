@@ -84,7 +84,7 @@ describe('emitTokensCss', () => {
     const poisoned = { ...derived, colors: { ...derived.colors, 'brand-fill': weak } }
     expect(() => emitDerived(poisoned, OPTIONS)).toThrow(GateError)
     expect(() => emitDerived(poisoned, OPTIONS)).toThrow(
-      /fill-on-inset dark \d\.\d\d < 3\.0 for --accent #2e75b1/,
+      /fill-on-inset dark \d\.\d\d < 3\.0 for --accent #0077bd/,
     )
   })
 })

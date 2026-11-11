@@ -147,7 +147,7 @@ export const TOKENS: readonly TokenDef[] = [
   {
     name: 'hairline',
     family: 'line',
-    role: 'The ring and every seam: an ink alpha (12% light, 9% dark), never a hex',
+    role: 'The ring and every seam: an ink alpha (9%, the 2.x divider), never a hex',
     value: inkMix('hairline'),
     tw: ['--color-border'],
     from: ['surface-border', 'surface-hairline', 'divider', 'tooltip-border'],
@@ -179,7 +179,7 @@ export const TOKENS: readonly TokenDef[] = [
   {
     name: 'ink-faint',
     family: 'ink',
-    role: 'Tertiary text and the opaque chart axis; excluded from raised (3.91)',
+    role: 'Tertiary text and the opaque chart axis; not gated on raised',
     value: color('ink-faint'),
     tw: ['--color-faint'],
     from: ['faint', 'axis', 'axis-stroke'],

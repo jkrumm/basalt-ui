@@ -214,7 +214,7 @@ describe('emit', () => {
     const failure = (error as GateError).failures.find((f) => f.gate === 'seq-1-on-inset')
     expect(failure).toMatchObject({ scheme: 'dark', surface: 'inset', min: SEQ_PALE_MIN })
     expect((error as Error).message).toMatch(
-      /^seq-1-on-inset dark 1\.00 < 1\.3 for --accent #2e75b1\. The ramp is table data/m,
+      /^seq-1-on-inset dark 1\.00 < 1\.3 for --accent #0077bd\. The ramp is table data/m,
     )
   })
 })

@@ -75,8 +75,6 @@ const CHART_FAMILY_ORDER = [
   'pink',
   'lime',
 ] as const satisfies readonly FillFamily[]
-// The 2.x fill chroma was scaled by the old vibrancy centre (x.864); chart-N keep that scale.
-const CHART_CHROMA_SCALE = 0.864
 // Tone offsets off the fill band, nearest first: a series moves only as far as separation needs.
 const CHART_TONE_OFFSETS: readonly number[] = [
   0, 2, -2, 4, -4, 6, -6, 8, -8, 10, -10, 12, -12, 14, -14, 16, -16, 18, -18, 20, -20, 22, -22, 24,
@@ -90,7 +88,6 @@ const SEQ_TONE: Record<Side, readonly number[]> = {
 const SEQ_CHROMA_SHARE = [0.3, 0.5, 0.7, 0.85, 1] as const
 const LINE_TONE: Record<Side, number> = { light: 50, dark: 62 }
 const DIM_BAR_TONE: Record<Side, number> = { light: 68, dark: 38 }
-const VIZ_CHROMA = 2
 
 /** What the Viz roles are derived from: `deriveV3`'s seed, already resolved. */
 export type ChartSeed = {
@@ -100,10 +97,10 @@ export type ChartSeed = {
   fillChroma: number
   /** The fill band tone (white label at 4.5:1). */
   bandTone: number
-  /** `1.2^vibrancy`. */
+  /** The 2.x vibrancy chroma multiplier (`0.72 x 1.2^vibrancy`): chart-2..5 are the 2.x fills. */
   mult: number
-  /** The neutral ramp's hue and chroma scale: `line` and `dim-bar` are neutral. */
-  neutral: { hue: number; chromaScale: number }
+  /** The 2.x neutral preset's hue and chroma: `line` and `dim-bar` are neutral. */
+  neutral: { hue: number; chroma: number }
   /** `chart-1`. */
   brandFill: ColorPair
   /** The surfaces a mark is gated on. */
@@ -139,7 +136,7 @@ function relight(
     for (const offset of CHART_TONE_OFFSETS) {
       const hex = hctToHex({
         hue,
-        chroma: chroma * CHART_CHROMA_SCALE * seed.mult,
+        chroma: chroma * seed.mult,
         tone: seed.bandTone + offset,
       })
       if (Math.min(contrastRatio(hex, canvas), contrastRatio(hex, inset)) < CHART_MARK_MIN) continue
@@ -189,7 +186,7 @@ export function deriveChartVars(seed: ChartSeed): Record<VizColorName, ColorPair
     dark: make('dark'),
   })
   const neutral = (tone: number): string =>
-    hctToHex({ hue: seed.neutral.hue, chroma: VIZ_CHROMA * seed.neutral.chromaScale, tone })
+    hctToHex({ hue: seed.neutral.hue, chroma: seed.neutral.chroma, tone })
 
   const out = {} as Record<VizColorName, ColorPair>
   out.line = pair((side) => neutral(LINE_TONE[side]))
