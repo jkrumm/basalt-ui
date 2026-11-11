@@ -298,6 +298,15 @@ function planEject(ctx: Context, args: Args): Plan {
   const writes: Write[] = []
   const ejected = { ...ctx.manifest.ejected }
   const paths: { name: string; file: string }[] = []
+  // Every seed with an import no published specifier exports, named in one refusal.
+  const blocked = names.flatMap((name) => {
+    const seed = readSeed(ctx.pkgRoot, name)
+    const source = seed === null ? null : ejectedSource(seed.seed)
+    return source !== null && 'error' in source ? [`${name} ${source.error}`] : []
+  })
+  if (blocked.length > 0) {
+    refuse(`cannot eject; the seed of ${blocked.join('; ')}. Nothing was written.`)
+  }
   for (const name of names) {
     const seed =
       readSeed(ctx.pkgRoot, name) ??
@@ -379,9 +388,11 @@ function planAdopt(ctx: Context, args: Args): Plan {
       `no shipped primitive is named ${name}: ${rel} is new local code and needs --raise "<named consumer>" (origin "local").`,
     )
   }
-  if (seed !== null && !onBase && args.raise === undefined) {
+  // A shipped name never becomes `origin: 'local'` (CE2), and a file created on this branch shares
+  // no history to adopt: `eject <name>` is the way to own that primitive.
+  if (seed !== null && !onBase) {
     refuse(
-      `${rel} is not on the merge base (git): a file created on this branch needs --raise "<named consumer>".`,
+      `${rel} is not on the merge base (git): a file created on this branch under a shipped name cannot be adopted, with or without --raise. Delete it and run \`basalt-ui eject ${name}\`.`,
     )
   }
   const origin = seed === null ? 'local' : 'adopted'
