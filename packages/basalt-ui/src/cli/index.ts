@@ -28,6 +28,7 @@ import { doctor } from './doctor'
 import { guardHook } from './guard-hook'
 import { COMMAND_OPTIONS, USAGE, unknownFlag } from './help'
 import { init } from './init'
+import { migrate } from './migrate'
 import { shot } from './shot'
 import { sync } from './sync'
 import { runV3Stub } from './verbs-v3'
@@ -1808,8 +1809,9 @@ export function run(argv: string[], cwd: string = process.cwd()): number | Promi
       return fontsCss(flags, cwd)
     case 'shot':
       return shot(flags, cwd)
-    case 'eject':
     case 'migrate':
+      return migrate(flags, cwd, packageRoot())
+    case 'eject':
     case 'lint':
       return runV3Stub(cmd, flags)
     default:

@@ -27,7 +27,7 @@ function capture(argv: string[]): { code: number; log: string } {
 }
 
 describe('v3 verb stubs', () => {
-  for (const verb of ['eject', 'migrate', 'lint']) {
+  for (const verb of ['eject', 'lint']) {
     it(`${verb} prints "not implemented" and exits 1`, () => {
       const { code, log } = capture([verb])
       expect(code).toBe(1)
@@ -43,9 +43,6 @@ describe('v3 verb stubs', () => {
   }
 
   it('accepts the contract flags before reporting not implemented', () => {
-    expect(capture(['migrate', '--from', '2.0.0', '--profile', 'full', '--json']).log).toContain(
-      'not implemented',
-    )
     expect(capture(['lint', '--file', 'a.ts', '--file', 'b.ts', '--hook', 'pre']).log).toContain(
       'not implemented',
     )
