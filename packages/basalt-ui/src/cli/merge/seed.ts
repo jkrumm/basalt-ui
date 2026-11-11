@@ -89,7 +89,6 @@ export function ejectedSource(seed: string): { text: string } | { error: string 
   return rewriteImports(seed, null)
 }
 
-/** The guard placed beside an ejected file: the `requires` half only, imports moved like the seed's. */
 const IDENT = /^[A-Za-z_$][\w$]*$/
 
 /** The value and type names the installed package's `.` entry exports; empty when it cannot be read. */
@@ -144,6 +143,7 @@ export function missingRootExports(pkgRoot: string, text: string): string[] {
   return wanted.filter((name) => !exported.has(name))
 }
 
+/** The guard placed beside an ejected file: the `requires` half only, imports moved like the seed's. */
 export function ejectedGuard(guard: string, name: string): { text: string } | { error: string } {
   const lines = guard.split('\n')
   const closed = lines.findIndex((line) => line.trim() === GUARD_CLOSED)
