@@ -20,3 +20,6 @@ packages/basalt-ui/docs/external-field.md
 
 # Package fixture trees are byte-exact (deliberate offenders, golden files); never formatted.
 packages/basalt-ui/test/fixtures/**
+
+# Golden emit sheets are byte-exact (src/tokens/emit-fallback.test.ts); oxfmt would rewrite the pinned bytes.
+packages/basalt-ui/src/tokens/golden/**
