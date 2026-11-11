@@ -1,9 +1,13 @@
 /** Router-backed 2.x invariants (concept 7): reset, snapshot stability, explicit undefined. */
-import { describe, expect, test, spyOn } from 'bun:test'
+import { beforeEach, describe, expect, test, spyOn } from 'bun:test'
+import { useRouterState } from '@tanstack/react-router'
+import { resetControlsOwnersForTests } from '../../../src/router/controls/define'
 import { api, handle } from './api'
 import { mountRouter } from './harness'
 
 const { defineControls, field } = api
+
+beforeEach(resetControlsOwnersForTests)
 
 const globals = () =>
   defineControls({
@@ -13,13 +17,15 @@ const globals = () =>
   })
 
 describe('handle invariants (ctl-2)', () => {
-  test.failing('clear() unsets the param; it never writes the fallback', async () => {
+  test('clear() unsets the param; it never writes the fallback', async () => {
     const store = globals()
     let clear = () => {}
     const { router, href } = await mountRouter({
       root: store,
       url: '/a?range=7d',
+      // A mounted reader lends the router to `clear()`, which runs from an event handler.
       probe: () => {
+        handle(store, 'range').use()
         clear = handle(store, 'range').clear
       },
     })
@@ -29,13 +35,14 @@ describe('handle invariants (ctl-2)', () => {
     expect(href()).not.toContain('range')
   })
 
-  test.failing('clear() navigates with an explicit undefined, never a deleted key', async () => {
+  test('clear() navigates with an explicit undefined, never a deleted key', async () => {
     const store = globals()
     let clear = () => {}
     const { router } = await mountRouter({
       root: store,
       url: '/a?range=7d',
       probe: () => {
+        handle(store, 'range').use()
         clear = handle(store, 'range').clear
       },
     })
@@ -50,17 +57,16 @@ describe('handle invariants (ctl-2)', () => {
     expect(next['keep']).toBe(1)
   })
 
-  test.failing('useValues() keeps a stable snapshot across unrelated re-renders', async () => {
+  test('useValues() keeps a stable snapshot across unrelated re-renders', async () => {
     const store = globals()
     const seen: unknown[] = []
     const error = spyOn(console, 'error').mockImplementation(() => {})
-    const { go } = await mountRouter({
-      root: store,
-      url: '/a?range=7d',
-      probe: () => {
-        seen.push(store.useValues())
-      },
-    })
+    // `useValues()` alone does not re-render on an unrelated param; the href read forces one.
+    const useProbe = (): void => {
+      useRouterState({ select: (s) => s.location.href })
+      seen.push(store.useValues())
+    }
+    const { go } = await mountRouter({ root: store, url: '/a?range=7d', probe: useProbe })
     await go('/a', { range: '7d', other: 'x' })
     expect(seen.length).toBeGreaterThan(1)
     expect(new Set(seen).size).toBe(1)

@@ -97,6 +97,7 @@
   "basalt-ui/forms#fieldKey",
   "basalt-ui/forms#inputProps",
   "basalt-ui/forms#useBasaltForm",
+  "basalt-ui/router#field",
   "basalt-ui/shell#AppBreadcrumbs",
   "basalt-ui/shell#AppSidebar",
   "basalt-ui/shell#MOBILE_MAX_TABS_DEFAULT",
