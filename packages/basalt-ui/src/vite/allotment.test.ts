@@ -1,10 +1,11 @@
 import { describe, expect, it } from 'bun:test'
 import { readFileSync } from 'node:fs'
+import { fileURLToPath } from 'node:url'
 
 import { ALLOTMENT } from './allotment.gen'
 import { ARCHITECTURE, parseAllotment } from './allotment'
 import { VITE_DOC_PATH, renderViteDoc } from './doc'
-import { closureOf, requiredPeers, subpathOf } from './graph'
+import { closureOf, packageGraph, requiredPeers, subpathOf } from './graph'
 import type { PackageGraph } from './graph'
 
 describe('allotment.gen.ts', () => {
@@ -54,6 +55,14 @@ describe('closure', () => {
     expect(peers.get('@tanstack/react-table')).toBe('basalt-ui/table')
     expect(peers.get('@base-ui/react')).toBe('basalt-ui/ui/date-picker')
     expect(peers.has('shiki')).toBe(false)
+  })
+
+  it('reads composite -> primitive edges from this package, relative spelling included', () => {
+    const real = packageGraph(fileURLToPath(new URL('../..', import.meta.url)))
+    // src/cards/stat-card.tsx imports '../ui/card'; src/ui/dialog.tsx imports './button'.
+    expect(real.composites.get('cards')).toContain('card')
+    expect(real.siblings.get('dialog')).toContain('button')
+    expect(closureOf(['cards'], real).subpaths).toContain('ui')
   })
 
   it('tracks only runtime subpaths', () => {
