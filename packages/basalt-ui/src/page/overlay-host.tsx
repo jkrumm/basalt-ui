@@ -14,7 +14,7 @@ import type {
 export type OverlayHostProps<T extends OverlayMap> = {
   /** The registry `defineOverlays` returned. */
   overlays: OverlayRegistry<T>
-  /** An overlay open from the first client render, e.g. from a deep link. A key the registry lacks is a compile error. */
+  /** An overlay opened right after the first commit (never during server render or hydration), e.g. from a deep link. A key the registry lacks is a compile error. */
   defaultOpen?: OverlayCall<T>
 }
 
