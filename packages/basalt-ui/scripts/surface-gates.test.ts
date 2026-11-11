@@ -17,6 +17,20 @@ describe('duplicateSymbols', () => {
     const surface = { '.': ['A', 'B'], './state': ['B', 'C'], './format': ['D'] }
     expect(duplicateSymbols(surface)).toEqual(['B (., ./state)'])
   })
+  test('a legacy root name shadowed by a subpath is not a second home', () => {
+    const surface = { '.': ['A', 'B'], './router': ['A'] }
+    expect(duplicateSymbols(surface, new Set(['A']))).toEqual([])
+  })
+  test('two non-legacy homes still fail, and a legacy name with no v3 home is irrelevant', () => {
+    const surface = { '.': ['A', 'B'], './router': ['A'], './state': ['B'] }
+    expect(duplicateSymbols(surface, new Set(['B']))).toEqual(['A (., ./router)'])
+    expect(duplicateSymbols({ '.': ['A'] }, new Set(['A']))).toEqual([])
+  })
+  test('a legacy name under two non-root subpaths still fails', () => {
+    expect(duplicateSymbols({ './a': ['A'], './b': ['A'] }, new Set(['A']))).toEqual([
+      'A (./a, ./b)',
+    ])
+  })
   test('green when every name has one home', () => {
     expect(duplicateSymbols({ '.': ['A'], './state': ['B'] })).toEqual([])
   })

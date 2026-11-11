@@ -132,6 +132,29 @@ describe('an export without JSDoc', () => {
   })
 })
 
+describe('a v3 export shadowing a baselined legacy root export', () => {
+  test('takes the doc file; the legacy one stays undocumented and baselined', () => {
+    const roots = fixtureRoots(join(FIXTURES, 'shadow'))
+    const { docs, problems, undocumented } = generate(roots)
+    expect(problems).toEqual([])
+    expect(docs.get('legacy.md')).toContain('subpath: fixture-ui/v3\n')
+    expect(undocumented).toEqual(['fixture-ui#Legacy'])
+  })
+
+  test('a plain run keeps the legacy baseline entry and --check is green', () => {
+    const dir = copyFixture('shadow')
+    writeDocs(fixtureRoots(dir))
+    expect(readBaseline(fixtureRoots(dir))).toEqual(['fixture-ui#Legacy'])
+    expect(checkDocs(fixtureRoots(dir))).toEqual([])
+  })
+
+  test('without the baseline entry the clash still fails', () => {
+    const dir = copyFixture('shadow')
+    writeFileSync(join(dir, 'gen-docs.baseline.json'), '[]\n')
+    expect(checkDocs(fixtureRoots(dir)).join('\n')).toContain('docs/legacy.md is already taken')
+  })
+})
+
 describe('--check', () => {
   test('is green after a write, and fails by file after one byte of a doc changes', () => {
     const dir = copyFixture('ok')

@@ -17,11 +17,43 @@ export type Surface = Readonly<Record<string, readonly string[]>>
 /** The chart layer's subpath (§ 9): its symbols are budgeted apart from the non-chart ones. */
 export const CHART_SUBPATH = './charts'
 
-/** Names exported from more than one subpath, as `name (./a, ./b)`. */
-export function duplicateSymbols(surface: Surface): string[] {
+let realLegacy: ReadonlySet<string> | undefined
+
+/** Root exports that predate the docs gate (`gen-docs.baseline.json`, `basalt-ui#<name>`). */
+function legacyRootNames(): ReadonlySet<string> {
+  realLegacy ??= new Set(
+    (
+      JSON.parse(
+        readFileSync(join(import.meta.dirname, 'gen-docs.baseline.json'), 'utf8'),
+      ) as string[]
+    )
+      .filter((key) => key.startsWith('basalt-ui#'))
+      .map((key) => key.slice('basalt-ui#'.length)),
+  )
+  return realLegacy
+}
+
+/**
+ * Names exported from more than one subpath, as `name (./a, ./b)`.
+ *
+ * TRANSITIONAL: a root (`.`) name in `legacy` (default: the gen-docs baseline) is a shadow of the
+ * 2.x surface and does not count as a second home when another subpath exports the same name.
+ */
+export function duplicateSymbols(
+  surface: Surface,
+  legacy: ReadonlySet<string> = legacyRootNames(),
+): string[] {
   const homes = new Map<string, string[]>()
   for (const [subpath, names] of Object.entries(surface)) {
     for (const name of names) homes.set(name, [...(homes.get(name) ?? []), subpath])
+  }
+  for (const [name, paths] of homes) {
+    if (paths.length > 1 && paths.includes('.') && legacy.has(name)) {
+      homes.set(
+        name,
+        paths.filter((p) => p !== '.'),
+      )
+    }
   }
   return [...homes]
     .filter(([, paths]) => paths.length > 1)

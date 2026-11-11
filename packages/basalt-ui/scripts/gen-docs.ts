@@ -202,6 +202,10 @@ type Collected = {
   problems: string[]
   seen: Set<ts.Symbol>
   names: Map<string, string>
+  /** Doc file names claimed by a baselined legacy root export, which a v3 subpath may take over. */
+  legacy: Set<string>
+  /** `<subpath>#<name>` baseline keys. */
+  baseline: ReadonlySet<string>
 }
 
 /** Records one export, or notes a problem when its doc file name is taken. */
@@ -214,13 +218,18 @@ function extractOne(
 ): void {
   const { name, symbol } = value
   const taken = acc.names.get(kebab(name))
-  if (taken !== undefined) {
+  // TRANSITIONAL: a baselined legacy root export is a shadow. A non-root (v3) export of the same
+  // name takes the doc file; the legacy one stays undocumented and baselined.
+  const takesOver = taken !== undefined && acc.legacy.has(kebab(name)) && at.key !== '.'
+  if (taken !== undefined && !takesOver) {
     acc.problems.push(
       `${name} (${at.subpath}): docs/${kebab(name)}.md is already taken by ${taken}`,
     )
     return
   }
   acc.names.set(kebab(name), `${name} (${at.subpath})`)
+  if (at.key === '.' && acc.baseline.has(`${at.subpath}#${name}`)) acc.legacy.add(kebab(name))
+  else acc.legacy.delete(kebab(name))
   const decl = symbol.valueDeclaration ?? symbol.declarations?.[0] ?? at.source
   acc.out.push({
     info: {
@@ -245,7 +254,14 @@ function extractExports(roots: GenRoots): { exports: Extracted[]; problems: stri
   const pkgName = (
     JSON.parse(readFileSync(join(roots.pkgRoot, 'package.json'), 'utf8')) as { name: string }
   ).name
-  const acc: Collected = { out: [], problems: [], seen: new Set(), names: new Map() }
+  const acc: Collected = {
+    out: [],
+    problems: [],
+    seen: new Set(),
+    names: new Map(),
+    legacy: new Set(),
+    baseline: new Set(readBaseline(roots)),
+  }
 
   for (const { key, file } of entries) {
     const source = program.getSourceFile(file)
