@@ -1,0 +1,7 @@
+{
+  "profile": "app",
+  "version": "3.0.0",
+  "roots": { "apps/desktop/src": "app", "apps/gallery/src": "parts", "apps/share/src": "tokens" },
+  "managed": {},
+  "deepRender": ["apps/desktop/src/features/editor/stage/overlay.ts"]
+}

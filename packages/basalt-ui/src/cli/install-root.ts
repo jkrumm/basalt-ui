@@ -2,8 +2,33 @@
 import { existsSync, realpathSync } from 'node:fs'
 import { resolve } from 'node:path'
 
-import { MANIFEST_PATH, findBasaltInstall, resolveAppDir } from './index'
-import { hasDependency } from './source-text'
+import {
+  MANIFEST_PATH,
+  OXLINT_FILES,
+  findBasaltInstall,
+  isStringArray,
+  readSource,
+  relativePosix,
+  resolveAppDir,
+} from './index'
+import { hasDependency, parseJsonc } from './source-text'
+
+/** The oxlint plugins the shipped preset switches on — read from the preset, never restated. */
+export function readOxlintPresetPlugins(pkgRoot: string): string[] {
+  const plugins = parseJsonc(readSource(pkgRoot, OXLINT_FILES.preset) ?? 'null')?.['plugins']
+  return isStringArray(plugins) ? plugins : []
+}
+
+/**
+ * The sentence `doctor` prints when the cwd carries no install but an ancestor does (a package
+ * under a configured repo); one text, so no verb prescribes a second `init`.
+ */
+export function parentInstallAdvice(cwd: string, parent: string, verb: string): string {
+  return (
+    `This repo's install is at ${relativePosix(cwd, parent)} (${parent}) — run ${verb} there, ` +
+    'or set BASALT_CWD to it.'
+  )
+}
 
 /** The nearest ANCESTOR of `dir` (exclusive) carrying a basalt manifest, or null. */
 export function findManifestAbove(dir: string): string | null {

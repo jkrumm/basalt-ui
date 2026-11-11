@@ -1,0 +1,8 @@
+{
+  "profile": "app",
+  "version": "3.0.0",
+  "roots": { "src": "app" },
+  "managed": {},
+  "tokens": [{ "out": "src/tokens.css", "format": "css", "flags": ["--extra", "src/basalt.tokens.ts"] }],
+  "extra": "src/basalt.tokens.ts"
+}

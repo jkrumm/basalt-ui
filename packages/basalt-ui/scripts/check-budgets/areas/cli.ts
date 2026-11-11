@@ -43,11 +43,12 @@ export const rows: readonly RowDef[] = [
   // 8870 -> 8879 (w51 shot): a hover/tooltip crop with no `aria-describedby` claims the readout inside its own trigger, so an earlier chart's stale one never wins `.first()` (cli/shot/capture.ts +9). Consumers: every `basalt-ui shot` user.
   // 8879 -> 8923 (v3 verb stubs): `eject`, `migrate` and `lint` registered as not-implemented verbs (cli/verbs-v3.ts +39, the dispatcher case +5). Consumer: shutterflow and image-gateway, whose direct 1.x jump runs `migrate --from`.
   // 8923 -> 9691 (v3-mig-cli): `basalt-ui migrate` (cli/migrate/: row reader and chain fold, import census, report and `--check`, +763) replaces the stub case. Consumer: shutterflow and image-gateway, whose direct 1.x jump runs `migrate --from`.
+  // 9691 -> 9842 (v3 sync, v3-sk-2-sync): the manifest reader/writer (cli/manifest.ts) and the render-and-compare engine with its block splice (cli/sync/, +512) replace the 2.x cli/sync.ts (-342); the 2.x ledger engine in index.ts stays until v3-sk-3 rewrites `init`, the only caller left (+151 net). Consumer: rollhook (the first G0 `bridge` install).
   {
     id: 'cli-lines',
     order: 110,
     label: 'CLI non-test lines (src/cli/**)',
-    ceiling: 9691,
+    ceiling: 9842,
     measure: () =>
       totalLines(
         walkFiles(join(PKG_ROOT, 'src/cli'), /\.tsx?$/).filter((p) => !/\.test\.tsx?$/.test(p)),
@@ -69,5 +70,12 @@ export const raises: readonly Raise[] = [
     to: 9691,
     consumer: '`migrate --from` on a direct 1.x jump',
     repo: 'shutterflow',
+  },
+  {
+    ceiling: 'cli-lines',
+    from: 9691,
+    to: 9842,
+    consumer: '`sync --check` render-and-compare on a G0 `bridge` install',
+    repo: 'rollhook',
   },
 ]

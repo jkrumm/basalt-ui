@@ -19,7 +19,6 @@ import {
   existsSync,
   mkdirSync,
   mkdtempSync,
-  readdirSync,
   readFileSync,
   rmSync,
   symlinkSync,
@@ -38,7 +37,6 @@ import {
   MANIFEST_PATH,
   mergeOxlintExtends,
   normalizeColorFunctions,
-  sync,
   tokensCss,
 } from './index.ts'
 
@@ -913,64 +911,6 @@ describe('doctor — ai-major-parity within one package.json', () => {
   })
 })
 
-describe('sync — basalt.roots is drift, and sync is the drift command', () => {
-  it('backfills the inferred roots when the key was never written', () => {
-    write('package.json', JSON.stringify({ name: 'fixture' }))
-    write('src/app.tsx', 'export const App = () => null\n')
-    capture(() => init(dir))
-    // Undo init's write to reproduce a repo scaffolded before roots existed, then upgrade.
-    write('package.json', JSON.stringify({ name: 'fixture' }))
-    const { log } = capture(() => sync({}, dir))
-    expect(log).toContain('"roots": ["src"]')
-    expect((readPkg()['basalt'] as { roots: string[] }).roots).toEqual(['src'])
-  })
-
-  it('never overwrites a declared roots — it names what the declaration does not cover', () => {
-    write(
-      'package.json',
-      JSON.stringify({
-        name: 'root',
-        workspaces: ['packages/*'],
-        basalt: { roots: ['packages/web/src'] },
-      }),
-    )
-    write(MANIFEST_PATH, JSON.stringify({ version: 1, files: {} }))
-    write(
-      'packages/web/package.json',
-      JSON.stringify({ name: 'web', dependencies: { 'basalt-ui': '*' } }),
-    )
-    write('packages/web/src/app.tsx', 'export const App = () => null\n')
-    write(
-      'packages/api/package.json',
-      JSON.stringify({ name: 'api', dependencies: { 'basalt-ui': '*' } }),
-    )
-    write('packages/api/src/server.ts', 'export const server = null\n')
-    const { log } = capture(() => sync({}, dir))
-    expect((readPkg()['basalt'] as { roots: string[] }).roots).toEqual(['packages/web/src'])
-    expect(log).toContain('keeping your "basalt.roots"')
-    expect(log).toContain('packages/api/src')
-  })
-
-  it('--check writes nothing, but still says the key is missing', () => {
-    write('package.json', JSON.stringify({ name: 'fixture' }))
-    write(MANIFEST_PATH, JSON.stringify({ version: 1, files: {} }))
-    write('src/app.tsx', 'export const App = () => null\n')
-    const { log } = capture(() => sync({ check: true }, dir))
-    expect(readPkg()['basalt']).toBeUndefined()
-    expect(log).toContain('"basalt.roots" is not set')
-  })
-
-  it('warns when dump resolves and no pre-commit command runs check-theme', () => {
-    write('package.json', JSON.stringify({ name: 'fixture', basalt: { roots: ['src'] } }))
-    write(MANIFEST_PATH, JSON.stringify({ version: 1, files: {} }))
-    write('src/app.tsx', 'export const App = () => null\n')
-    enableRealLefthook()
-    write('lefthook.yml', 'pre-commit:\n  commands:\n    mine:\n      run: echo hi\n')
-    const { log } = capture(() => sync({}, dir))
-    expect(log).toContain('no pre-commit command runs check-theme')
-  })
-})
-
 describe('init — the seeded lefthook.yml pins the guard to the local bin', () => {
   it('renders a BASALT_BIN env override, the one key an extends target cannot eat', () => {
     write('package.json', JSON.stringify({ name: 'fixture' }))
@@ -1031,110 +971,6 @@ describe('the shipped lefthook preset — a monorepo consumer must not have to p
   })
 })
 
-// ── sync must never silently behave as init ───────────────────────────────────────────────────
-//
-// Found independently in argo and rb. Run from `apps/dashboard` — the package that actually
-// depends on basalt-ui — `sync` printed `0 updated, 20 recreated`, wrote a second `basalt` key into
-// that package.json, and scaffolded a complete competing install (`.basalt/`, `.oxlintrc.json`,
-// `.oxfmtrc.json`, `DESIGN.md`, 13 rules, 3 skills, and in rb's case a `src/routes/__root.tsx`
-// into an app that hand-writes its router) beside the real one at the repo root. Nothing warned.
-// Both consumers reverted it by hand.
-
-/** A workspace whose basalt install lives at the ROOT, with an app package below it. */
-function installAtRoot(): void {
-  write(
-    'package.json',
-    JSON.stringify({
-      name: 'root',
-      workspaces: ['apps/*'],
-      basalt: { roots: ['apps/dashboard/src'] },
-    }),
-  )
-  write(MANIFEST_PATH, JSON.stringify({ version: 1, files: {}, basaltVersion: CLI_VERSION }))
-  write(
-    'apps/dashboard/package.json',
-    JSON.stringify({ name: 'dashboard', dependencies: { 'basalt-ui': '*' } }),
-  )
-  write('apps/dashboard/src/app.tsx', 'export const App = () => null\n')
-  write(
-    'apps/dashboard/src/main.tsx',
-    "import { createBasaltRouter } from 'basalt-ui'\nexport const router = createBasaltRouter({ routeTree })\n",
-  )
-  write('apps/tools/package.json', JSON.stringify({ name: 'tools' }))
-  write(
-    'node_modules/basalt-ui/package.json',
-    JSON.stringify({ name: 'basalt-ui', version: CLI_VERSION }),
-  )
-}
-
-describe('sync — a scaffold is init’s decision, never a drift refresh’s', () => {
-  it('refuses from a sub-package that does not depend on basalt-ui and points at the install above', () => {
-    installAtRoot()
-    const { code, log } = capture(() => sync({}, join(dir, 'apps/tools')))
-    expect(code).toBe(1)
-    expect(log).toContain('refusing to scaffold')
-    expect(log).toContain("This repo's install is at ../..")
-  })
-
-  it('syncs the install above from a dependent sub-package and writes nothing into it', () => {
-    installAtRoot()
-    const { code, log } = capture(() => sync({}, join(dir, 'apps/dashboard')))
-    expect(code).toBe(0)
-    expect(log).toContain('syncing there')
-    for (const f of [
-      '.basalt',
-      '.claude',
-      'AGENTS.md',
-      'DESIGN.md',
-      '.oxlintrc.json',
-      '.oxfmtrc.json',
-      'src/routes/__root.tsx',
-    ])
-      expect([f, existsSync(join(dir, 'apps/dashboard', f))]).toEqual([f, false])
-    for (const f of [
-      '.basalt',
-      '.claude',
-      'AGENTS.md',
-      'DESIGN.md',
-      '.oxlintrc.json',
-      '.oxfmtrc.json',
-    ])
-      expect(existsSync(join(dir, f))).toBe(true)
-    // The `basalt.roots` backfill is half the damage: a second config site means check-theme
-    // silently scans a different tree depending on which directory it was invoked from.
-    expect(JSON.parse(read('apps/dashboard/package.json'))['basalt']).toBeUndefined()
-    expect(readdirSync(join(dir, 'apps/dashboard')).toSorted()).toEqual(['package.json', 'src'])
-  })
-
-  it('refuses in a repo that was never a consumer, and names init as the command that is', () => {
-    write('package.json', JSON.stringify({ name: 'fixture' }))
-    const { code, log } = capture(() => sync({}, dir))
-    expect(code).toBe(1)
-    expect(log).toContain('No manifest exists at any ancestor either')
-    expect(log).toContain('basalt-ui init')
-  })
-
-  it('says created, not recreated, for a file the ledger never recorded', () => {
-    // `0 updated, 20 recreated` described a scaffold as a refresh. "Recreated" means the ledger
-    // placed it once and it went missing; a file basalt never wrote here is CREATED.
-    write('package.json', JSON.stringify({ name: 'fixture', basalt: { roots: ['src'] } }))
-    write('src/app.tsx', 'export const App = () => null\n')
-    write(MANIFEST_PATH, JSON.stringify({ version: 1, files: {} }))
-    const { log } = capture(() => sync({}, dir))
-    expect(log).toMatch(/0 updated, \d+ created, 0 recreated/)
-  })
-
-  it('says recreated for a managed file the ledger recorded and someone deleted', () => {
-    write('package.json', JSON.stringify({ name: 'fixture', basalt: { roots: ['src'] } }))
-    write('src/app.tsx', 'export const App = () => null\n')
-    capture(() => init(dir))
-    const placed = '.claude/rules/basalt-tokens.md'
-    rmSync(join(dir, placed))
-    const { log } = capture(() => sync({}, dir))
-    expect(log).toContain('1 recreated')
-  })
-})
-
 // ── doctor's exit status, pinned per outcome ──────────────────────────────────────────────────
 
 describe('doctor — exit status per outcome, not per printed string', () => {
@@ -1190,47 +1026,6 @@ describe('doctor — exit status per outcome, not per printed string', () => {
   it('contradictory profile flags exit 1', () => {
     healthyFixture()
     expect(capture(() => doctor(dir, ['--tokens-only', '--framework'])).code).toBe(1)
-  })
-})
-
-describe('sync — tokens-only is a pass, not a refusal', () => {
-  function tokensOnly(): void {
-    write(
-      'package.json',
-      JSON.stringify({ name: 'marketing', basalt: { roots: ['src'], profile: 'tokens-only' } }),
-    )
-    write('src/app.ts', 'export const c = 1\n')
-  }
-
-  it('reports n/a and exits 0, mirroring doctor’s manifest row', () => {
-    tokensOnly()
-    const { code, log } = capture(() => sync({}, dir))
-    expect(code).toBe(0)
-    expect(log).toContain('n/a — a tokens-only consumer has no scaffold to reconcile')
-    expect(log).not.toContain('basalt-ui init')
-  })
-
-  it('is wirable into CI: --check exits 0 instead of failing on a scaffold it must not have', () => {
-    tokensOnly()
-    expect(capture(() => sync({ check: true, flags: [] }, dir)).code).toBe(0)
-  })
-
-  it('writes nothing — no manifest, no DESIGN.md, no basalt.roots backfill', () => {
-    tokensOnly()
-    capture(() => sync({}, dir))
-    expect(readdirSync(dir).toSorted()).toEqual(['package.json', 'src'])
-  })
-
-  it('--framework forces the full profile back on', () => {
-    tokensOnly()
-    const { code, log } = capture(() => sync({ flags: ['--framework'] }, dir))
-    expect(code).toBe(1)
-    expect(log).toContain('refusing to scaffold')
-  })
-
-  it('contradictory profile flags exit 1, exactly as they do for check-theme and doctor', () => {
-    tokensOnly()
-    expect(capture(() => sync({ flags: ['--tokens-only', '--framework'] }, dir)).code).toBe(1)
   })
 })
 

@@ -7,7 +7,6 @@ import {
   existsSync,
   mkdirSync,
   mkdtempSync,
-  readdirSync,
   readFileSync,
   rmSync,
   writeFileSync,
@@ -38,15 +37,7 @@ import {
   unknownConfigKeysCheck,
 } from './doctor-upgrade'
 import type { Check } from './doctor-upgrade'
-import {
-  init,
-  MANIFEST_PATH,
-  mergeOxlintExtends,
-  normalizeForLedger,
-  scannableFiles,
-  sha256,
-  sync,
-} from './index'
+import { init, MANIFEST_PATH, mergeOxlintExtends, scannableFiles } from './index'
 import { parseJsonc } from './source-text'
 
 const PKG_ROOT = fileURLToPath(new URL('../../', import.meta.url))
@@ -604,72 +595,6 @@ describe('doctor — output', () => {
     const failures = log.split('\n').filter((l) => l.includes('✖'))
     expect(failures.length).toBeGreaterThan(0)
     for (const line of failures) expect(line).toMatch(/Fix:|[Rr]un `|Add "extends"|Repoint/)
-  })
-})
-
-describe('sync — carries a 1.41 install to the installed release', () => {
-  // Strictly below the installed release, so the version assertions cannot pass vacuously.
-  const [major = 0, minor = 0] = PKG_VERSION.split('.').map(Number)
-  const OLD = minor > 0 ? `${major}.${minor - 1}.0` : `${major - 1}.99.0`
-  const old = (dest: string): string => `# ${dest} as shipped at ${OLD}\n`
-
-  it('updates untouched files, reports the edited one, rewrites the block, moves basaltVersion', () => {
-    write('package.json', JSON.stringify({ name: 'fixture' }))
-    capture(() => init(dir))
-    const manifest = JSON.parse(read(MANIFEST_PATH)) as {
-      basaltVersion: string
-      files: Record<string, string>
-    }
-    const tracked = Object.keys(manifest.files).filter((d) => /^\.claude\/(rules|skills)\//.test(d))
-    expect(tracked.filter((d) => d.startsWith('.claude/rules/'))).toHaveLength(6)
-    // Every file under the shipped agent/skills tree is placed: each skill's SKILL.md and its references.
-    const shipped = readdirSync(join(PKG_ROOT, 'agent/skills'), {
-      recursive: true,
-      encoding: 'utf8',
-    })
-      .filter((f) => f.endsWith('.md'))
-      .map((f) => `.claude/skills/${f}`)
-    expect(shipped.filter((f) => f.endsWith('/SKILL.md'))).toHaveLength(3)
-    expect(shipped).toContain('.claude/skills/basalt-design/references/catalogue.md')
-    expect(tracked.filter((d) => d.startsWith('.claude/skills/')).toSorted()).toEqual(
-      shipped.toSorted(),
-    )
-
-    // Rewind to 1.41: old bytes on disk, ledger holding the hash of those bytes.
-    for (const dest of tracked) {
-      write(dest, old(dest))
-      manifest.files[dest] = sha256(normalizeForLedger(old(dest)))
-    }
-    const edited = tracked[0] as string
-    write(edited, `${old(edited)}my own rule\n`)
-    const oldBlock = `<!-- basalt:begin ${OLD} -->\n## Basalt ${OLD}\n<!-- basalt:end -->`
-    write('AGENTS.md', `# App\n\n${oldBlock}\n\nMine.\n`)
-    manifest.files['AGENTS.md'] = sha256(normalizeForLedger(oldBlock))
-    manifest.basaltVersion = OLD
-    write(MANIFEST_PATH, JSON.stringify(manifest))
-
-    const check = capture(() => sync({ check: true }, dir))
-    expect(check.code).toBe(1)
-    expect(OLD).not.toBe(PKG_VERSION)
-
-    const { code, log } = capture(() => sync({}, dir))
-    expect(code).toBe(0)
-    for (const dest of tracked.filter((d) => d !== edited)) expect(read(dest)).not.toContain(OLD)
-    expect(read(edited)).toBe(`${old(edited)}my own rule\n`)
-    expect(log).toContain(edited)
-    const agents = read('AGENTS.md')
-    expect(agents).toContain(`<!-- basalt:begin ${PKG_VERSION} -->`)
-    expect(agents).not.toContain(`## Basalt ${OLD}`)
-    expect(agents).toContain('# App')
-    expect(agents).toContain('Mine.')
-    expect((JSON.parse(read(MANIFEST_PATH)) as { basaltVersion: string }).basaltVersion).toBe(
-      PKG_VERSION,
-    )
-
-    // The edited rule stays drifted until the consumer reconciles it; --force is that reconciliation.
-    expect(capture(() => sync({ check: true }, dir)).code).toBe(1)
-    capture(() => sync({ force: true }, dir))
-    expect(capture(() => sync({ check: true }, dir)).code).toBe(0)
   })
 })
 

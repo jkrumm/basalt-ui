@@ -47,11 +47,18 @@ describe('CLI discipline', () => {
     expect(code).not.toBe(0)
   })
 
-  // flips in: v3-sk-2-sync (one resolver behind every verb)
-  it.failing('inv 3: BASALT_CWD, else cwd, resolves the project for every verb alike', async () => {
+  it('inv 3: BASALT_CWD, else cwd, resolves the project for sync', async () => {
     const dir = makeRepo({ src: '' })
     const elsewhere = makeRepo()
-    for (const argv of [['sync', '--check'], ['doctor'], ['lint', '--stats']]) {
+    const { log } = await cli(['sync', '--check'], elsewhere, { BASALT_CWD: dir })
+    expect(log).toContain(`BASALT_CWD relocated from ${elsewhere} to ${dir}`)
+  })
+
+  // flips in: v3-sk-3a-doctor (doctor) and v3-sk-4-hook-shim (lint): the same resolver, every verb
+  it.failing('inv 3b: BASALT_CWD resolves the project for doctor and lint alike', async () => {
+    const dir = makeRepo({ src: '' })
+    const elsewhere = makeRepo()
+    for (const argv of [['doctor'], ['lint', '--stats']]) {
       const { log } = await cli(argv, elsewhere, { BASALT_CWD: dir })
       expect(log).toContain(`BASALT_CWD relocated from ${elsewhere} to ${dir}`)
     }
@@ -120,19 +127,15 @@ describe('CLI discipline', () => {
     },
   )
 
-  // flips in: v3-sk-2-sync (v3 refusal names `init --profile` and leaves the tree alone)
-  it.failing(
-    'inv 8: sync never creates an install: it refuses, names init, and writes nothing',
-    async () => {
-      const dir = makeRepo()
-      write(dir, 'AGENTS.md', '# host\n')
-      const before = snapshot(dir)
-      for (const argv of [['sync'], ['sync', '--check']]) {
-        const { code, log } = await cli(argv, dir)
-        expect(code).toBe(1)
-        expect(log).toContain('basalt-ui init --profile')
-      }
-      expect(snapshot(dir)).toEqual(before)
-    },
-  )
+  it('inv 8: sync never creates an install: it refuses, names init, and writes nothing', async () => {
+    const dir = makeRepo()
+    write(dir, 'AGENTS.md', '# host\n')
+    const before = snapshot(dir)
+    for (const argv of [['sync'], ['sync', '--check']]) {
+      const { code, log } = await cli(argv, dir)
+      expect(code).toBe(1)
+      expect(log).toContain('basalt-ui init --profile')
+    }
+    expect(snapshot(dir)).toEqual(before)
+  })
 })
