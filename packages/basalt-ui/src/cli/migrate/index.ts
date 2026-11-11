@@ -86,17 +86,21 @@ function rowApplies(profile: Profile, profiles: readonly string[] | undefined): 
   return profiles === undefined || profiles.includes(profile)
 }
 
+const escapeRe = (text: string): string => text.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
+
+/**
+ * Whether an importing file still writes the removed member: for a prop row, the attribute inside
+ * the component's own opening tag; for a compound member, `Local.member`.
+ */
 function memberStillUsed(census: Census, key: string, member: string, kind: string): boolean {
-  const attr = new RegExp(String.raw`\b${member}\s*[=:]`)
+  const name = escapeRe(member)
   for (const [file, local] of census.importers.get(key) ?? []) {
     const text = census.text.get(file) ?? ''
-    if (
-      REMOVING_PROP.has(kind)
-        ? attr.test(text)
-        : new RegExp(String.raw`\b${local}\.${member}\b`).test(text)
-    ) {
-      return true
-    }
+    const at = escapeRe(local)
+    const pattern = REMOVING_PROP.has(kind)
+      ? new RegExp(`<${at}(?![\\w$])[^>]*(?<![\\w$-])${name}\\s*=`)
+      : new RegExp(`(?<![\\w$])${at}\\.${name}(?![\\w$])`)
+    if (pattern.test(text)) return true
   }
   return false
 }
