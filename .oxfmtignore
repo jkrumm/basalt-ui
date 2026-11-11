@@ -20,6 +20,7 @@ packages/basalt-ui/docs/external-field.md
 packages/basalt-ui/docs/create-format.md
 packages/basalt-ui/docs/use-format.md
 packages/basalt-ui/docs/code-block.md
+packages/basalt-ui/docs/notify.md
 
 # Package fixture trees are byte-exact (deliberate offenders, golden files); never formatted.
 packages/basalt-ui/test/fixtures/**
