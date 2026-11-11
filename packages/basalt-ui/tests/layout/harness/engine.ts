@@ -16,8 +16,9 @@
 import { mkdtemp, rm } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
+import { afterEach, beforeEach } from 'bun:test'
 import { chromium } from 'playwright-core'
-import type { Browser, BrowserServer, Page } from 'playwright-core'
+import type { Browser, BrowserContext, BrowserServer, Page } from 'playwright-core'
 import type { FixtureSpec } from '../fixture/spec'
 import { MAIN } from './slots'
 
@@ -200,6 +201,24 @@ let phase: BootPhase = 'bundling the fixture'
  */
 let generation = 0
 
+/**
+ * Per-test page lifetime. Every `openFixture` makes a browser context, and a context is a renderer
+ * process plus its raster memory: nothing used to close them, so a file with 43 `openFixture` calls
+ * held 43 live contexts (MEASURED: 13.1 GB over 152 processes for `charts.layout.test.ts`). A page
+ * opened while a test is running (`beforeEach`..`afterEach`, which includes a describe's own
+ * `beforeEach`) belongs to that test and is closed when it ends; a page opened in `beforeAll`
+ * outlives the tests that share it and is reclaimed with the browser in {@link closeLayoutSuite}.
+ */
+let testScoped = false
+const testContexts: BrowserContext[] = []
+
+async function closeTestContexts(): Promise<void> {
+  testScoped = false
+  const contexts = testContexts.splice(0)
+  // A test may have closed its own context already (`toc-spy` does); closing twice is not an error.
+  await Promise.all(contexts.map((context) => context.close().catch(() => {})))
+}
+
 async function buildFixture(dir: string): Promise<void> {
   const build = await Bun.build({
     entrypoints: [FIXTURE_ENTRY],
@@ -374,6 +393,10 @@ async function bootLayoutSuite(gen: number): Promise<boolean> {
  * from minified vendor code.
  */
 export async function initLayoutSuite(): Promise<boolean> {
+  beforeEach(() => {
+    testScoped = true
+  })
+  afterEach(closeTestContexts)
   const gen = ++generation
   const boot = bootLayoutSuite(gen)
   // The race owns the outcome; a rejection arriving after the watchdog must not crash the process.
@@ -490,6 +513,7 @@ async function openPage({
     // that needs the real smooth scroll — the TOC click — passes `'no-preference'` and waits itself.
     reducedMotion,
   })
+  if (testScoped) testContexts.push(context)
   const page = await context.newPage()
   const pageErrors: Error[] = []
   page.on('pageerror', (error) => pageErrors.push(error))
