@@ -76,7 +76,10 @@ export function renderApp(ui: ReactElement, options: RenderAppOptions = {}): Ren
   pinUtc()
   if (options.scheme !== undefined) applyScheme(options.scheme)
   const result = render(
-    <BasaltProvider {...(options.locale === undefined ? {} : { locale: options.locale })}>
+    <BasaltProvider
+      {...(options.scheme === undefined ? {} : { scheme: options.scheme })}
+      {...(options.locale === undefined ? {} : { locale: options.locale })}
+    >
       {ui}
     </BasaltProvider>,
   )

@@ -12,6 +12,10 @@ function Probe() {
   return <p data-testid="probe">{locale}</p>
 }
 
+function SchemeProbe() {
+  return <p data-testid="scheme">{useProviderContext().scheme}</p>
+}
+
 describe('renderApp', () => {
   test('renders inside the provider with the default locale', () => {
     renderApp(<Probe />)
@@ -26,6 +30,11 @@ describe('renderApp', () => {
   test('applies the scheme option to data-theme before any assertion', () => {
     renderApp(<Probe />, { scheme: 'dark' })
     expect(document.documentElement.getAttribute('data-theme')).toBe('dark')
+  })
+
+  test('the provider context sees the scheme option', () => {
+    renderApp(<SchemeProbe />, { scheme: 'dark' })
+    expect(screen.getByTestId('scheme').textContent).toBe('dark')
   })
 
   test('scheme auto removes the attribute', () => {
