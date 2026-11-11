@@ -75,6 +75,7 @@ describe('CodeBlock — the copy button', () => {
     fireEvent.click(button)
     await waitFor(() => expect(written).toEqual(['bun add basalt-ui']))
     await waitFor(() => expect(button.hasAttribute('data-copied')).toBe(true))
+    expect(getByRole('status').textContent).toBe('Copied')
   })
 
   test('a failing clipboard leaves the block unchanged and does not throw', async () => {
