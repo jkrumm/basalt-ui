@@ -57,7 +57,8 @@ export interface FormattedDoc {
 /** One line, quoted unless it is a plain YAML word: `@`, `:`, `,`, `]` and spaces all force quotes. */
 function scalar(value: string): string {
   const flat = value.replace(/\s+/g, ' ').trim()
-  return /^[\w][\w./-]*$/.test(flat) ? flat : JSON.stringify(flat)
+  // Single quotes, the form oxfmt writes, so the formatter never rewrites a generated doc.
+  return /^[\w][\w./-]*$/.test(flat) ? flat : `'${flat.replaceAll("'", "''")}'`
 }
 
 const list = (items: readonly string[]): string => `[${items.map(scalar).join(', ')}]`

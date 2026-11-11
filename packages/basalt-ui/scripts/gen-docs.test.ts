@@ -58,8 +58,8 @@ describe('a documented export', () => {
     expect(problems).toEqual([])
     const doc = docs.get('stat-card.md')!
     expect(doc.startsWith('---\nname: StatCard\n')).toBe(true)
-    expect(doc).toContain('use when: "a page shows a single number"\n')
-    expect(doc).toContain('never when: "the number needs a chart"\n')
+    expect(doc).toContain("use when: 'a page shows a single number'\n")
+    expect(doc).toContain("never when: 'the number needs a chart'\n")
     expect(doc).toContain('subpath: fixture-ui\n')
     expect(doc).toContain('peers: []\n')
     expect(doc).toContain('slots: [stat-card]\n')
