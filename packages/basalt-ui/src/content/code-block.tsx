@@ -71,6 +71,7 @@ function CopyButton({ code }: { code: string }): ReactElement {
       >
         <CopyGlyph copied={copied} />
       </Button>
+      <output className="sr-only">{copied ? t('ai.copied') : ''}</output>
     </div>
   )
 }
