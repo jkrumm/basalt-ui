@@ -1,0 +1,19 @@
+{
+  "$schema": "../node_modules/oxlint/configuration_schema.json",
+  "plugins": ["react", "typescript", "jsx-a11y"],
+  "jsPlugins": ["./plugin.js"],
+  "categories": { "correctness": "error" },
+  "rules": {
+    "typescript/no-explicit-any": "error",
+    "react/jsx-key": "error",
+    "jsx-a11y/label-has-associated-control": "error",
+    "jsx-a11y/anchor-has-content": "error",
+    "jsx-a11y/aria-props": "error",
+    "jsx-a11y/alt-text": "error",
+    "jsx-a11y/no-autofocus": "error",
+    "thin/no-raw-color": "error",
+    "thin/no-arbitrary-value": "error",
+    "thin/no-palette-class": "error",
+    "thin/no-inline-style": "error"
+  }
+}

@@ -1,0 +1,9 @@
+{
+  "name": "scratch-app",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "build": "bun __SHARED__/build.ts .",
+    "typecheck": "__SHARED__/node_modules/.bin/tsc --noEmit -p ."
+  }
+}

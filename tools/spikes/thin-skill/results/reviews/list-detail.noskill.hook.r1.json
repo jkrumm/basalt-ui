@@ -1,0 +1,12 @@
+{
+  "findings": [
+    {
+      "id": "mobile-table-columns-cut-off",
+      "class": "clipped",
+      "viewports": ["mobile"],
+      "where": "Pull request list table, columns Author, State, Age and Changes",
+      "evidence": "At 390 the table card shows only the # and Title columns. The Title text runs right up to the card edge, and the Author, State, Age and Changes columns are cut off at that edge. The wrapper is overflow-x-auto (diff.patch line 90) but nothing in the shot shows it scrolls, so a reviewer scanning the list sees no PR state, age or size."
+    }
+  ],
+  "previous": []
+}

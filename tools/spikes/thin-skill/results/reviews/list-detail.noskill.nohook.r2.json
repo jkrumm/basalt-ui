@@ -1,0 +1,15 @@
+{
+  "findings": [
+    {
+      "id": "mobile-table-columns-clipped",
+      "class": "clipped",
+      "viewports": ["mobile"],
+      "where": "Pull requests table, Age and Changes columns",
+      "evidence": "At 390px the table sits in an overflow-x-auto box. The Age header is cut to 'Ag', the Age values are cut at the card edge, and the whole Changes column (+412 -87 and the rest) is not visible. The Title column is squeezed to about 80px, so titles wrap over 3 to 4 lines. Nothing signals that the table scrolls sideways."
+    }
+  ],
+  "previous": [
+    { "id": "arbitrary-variant-selected-row", "status": "fixed" },
+    { "id": "arbitrary-grid-cols-layout", "status": "fixed" }
+  ]
+}

@@ -1,0 +1,19 @@
+{
+  "findings": [
+    {
+      "id": "lint-prefer-img-role",
+      "class": "lint",
+      "viewports": ["desktop", "mobile"],
+      "where": "Sparkline svg in the Shipped card (src/App.tsx:43)",
+      "evidence": "lint.txt: 'Prefer `img` over `role` attribute `img`. [Error/jsx-a11y(prefer-tag-over-role)]'. The diff has <svg role=\"img\" aria-label=...>."
+    },
+    {
+      "id": "inline-style-sparkline-height",
+      "class": "token",
+      "viewports": ["desktop", "mobile"],
+      "where": "Sparkline svg in the Shipped card (src/App.tsx:48)",
+      "evidence": "The diff has style={{ height: typeof height === 'number' ? height - 16 : h }}, an inline style that sets size. lint.txt also reports it as 'no-inline-style: write no inline style; use theme utilities [Error/thin(no-inline-style)]'."
+    }
+  ],
+  "previous": []
+}
