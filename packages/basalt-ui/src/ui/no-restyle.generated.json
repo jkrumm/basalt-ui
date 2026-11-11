@@ -65,6 +65,22 @@
       "message": "Checkbox owns its height and display: eject it (basalt-ui eject checkbox) to change them."
     },
     {
+      "module": "dialog",
+      "part": "dialog-content",
+      "pattern": "^DialogContent$",
+      "allow": ["layout"],
+      "deny": ["h-*", "min-h-*", "size-*", "hidden", "flex", "block", "grid", "inline-flex"],
+      "message": "DialogContent owns its height and display: use size (sm, md, lg), or eject it (basalt-ui eject dialog)."
+    },
+    {
+      "module": "dialog",
+      "part": "alert-dialog-content",
+      "pattern": "^AlertDialogContent$",
+      "allow": ["layout"],
+      "deny": ["h-*", "min-h-*", "size-*", "hidden", "flex", "block", "grid", "inline-flex"],
+      "message": "AlertDialogContent owns its height and display: eject it (basalt-ui eject dialog) to change them."
+    },
+    {
       "module": "field",
       "part": "field",
       "pattern": "^Field$",
@@ -145,6 +161,14 @@
       "message": "Separator owns its height and display: eject it (basalt-ui eject separator) to change them."
     },
     {
+      "module": "sheet",
+      "part": "sheet-content",
+      "pattern": "^SheetContent$",
+      "allow": ["layout"],
+      "deny": ["h-*", "min-h-*", "size-*", "hidden", "flex", "block", "grid", "inline-flex"],
+      "message": "SheetContent owns its height and display: eject it (basalt-ui eject sheet) to change them."
+    },
+    {
       "module": "skeleton",
       "part": "skeleton",
       "pattern": "^Skeleton$",
@@ -191,6 +215,22 @@
       "allow": ["layout"],
       "deny": ["h-*", "min-h-*", "size-*", "hidden", "flex", "block", "grid", "inline-flex"],
       "message": "Textarea owns its height and display: eject it (basalt-ui eject textarea) to change them."
+    },
+    {
+      "module": "toast",
+      "part": "toast-viewport",
+      "pattern": "^ToastViewport$",
+      "allow": ["layout"],
+      "deny": ["h-*", "min-h-*", "size-*", "hidden", "flex", "block", "grid", "inline-flex"],
+      "message": "ToastViewport owns its height and display: eject it (basalt-ui eject toast) to change them."
+    },
+    {
+      "module": "toast",
+      "part": "toast",
+      "pattern": "^Toast$",
+      "allow": ["layout"],
+      "deny": ["h-*", "min-h-*", "size-*", "hidden", "flex", "block", "grid", "inline-flex"],
+      "message": "Toast owns its height and display: eject it (basalt-ui eject toast) to change them."
     }
   ]
 }

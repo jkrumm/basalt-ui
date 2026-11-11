@@ -12,7 +12,11 @@ import { act, cleanup, render } from '@testing-library/react'
 import { Field as BaseField } from '@base-ui/react/field'
 import { Fieldset as BaseFieldset } from '@base-ui/react/fieldset'
 import { Accordion as BaseAccordion } from '@base-ui/react/accordion'
+import { AlertDialog as BaseAlertDialog } from '@base-ui/react/alert-dialog'
 import { Collapsible as BaseCollapsible } from '@base-ui/react/collapsible'
+import { Dialog as BaseDialog } from '@base-ui/react/dialog'
+import { Drawer as BaseDrawer } from '@base-ui/react/drawer'
+import { Toast as BaseToast } from '@base-ui/react/toast'
 import { Tabs as BaseTabs } from '@base-ui/react/tabs'
 import { readdirSync } from 'node:fs'
 import { createElement } from 'react'
@@ -50,6 +54,7 @@ const PARENTS: Record<string, ComponentType<{ children?: ReactNode }>> = {
   'field-error': (p) => createElement(BaseField.Root, p),
   'fieldset-legend': (p) => createElement(BaseFieldset.Root, p),
   ...disclosureAncestry(),
+  ...overlayAncestry(true),
   ...tableAncestry({
     'table-header': ['table'],
     'table-body': ['table'],
@@ -86,6 +91,48 @@ export function disclosureAncestry(): Record<string, ComponentType<{ children?: 
   }
 }
 
+/**
+ * The Base UI roots an overlay part needs. `open` renders the popup (portalled to `document.body`);
+ * closed it renders no element, which is the state the SSR/hydration check also covers.
+ */
+export function overlayAncestry(
+  open: boolean,
+): Record<string, ComponentType<{ children?: ReactNode }>> {
+  const dialog = (p: { children?: ReactNode }): ReactElement =>
+    createElement(BaseDialog.Root, { defaultOpen: open }, p.children)
+  const alert = (p: { children?: ReactNode }): ReactElement =>
+    createElement(BaseAlertDialog.Root, { defaultOpen: open }, p.children)
+  const drawer = (p: { children?: ReactNode }): ReactElement =>
+    createElement(BaseDrawer.Root, { defaultOpen: open }, p.children)
+  const toastProvider = (p: { children?: ReactNode }): ReactElement =>
+    createElement(BaseToast.Provider, null, p.children)
+  const toast = (p: { children?: ReactNode }): ReactElement =>
+    toastProvider({
+      children: createElement(BaseToast.Root, { toast: { id: 'a', title: 't' } }, p.children),
+    })
+  return {
+    'dialog-trigger': dialog,
+    'dialog-content': dialog,
+    'dialog-title': dialog,
+    'dialog-description': dialog,
+    'dialog-close': dialog,
+    'alert-dialog-trigger': alert,
+    'alert-dialog-content': alert,
+    'sheet-trigger': drawer,
+    'sheet-content': drawer,
+    'sheet-title': drawer,
+    'sheet-close': drawer,
+    'toast-viewport': toastProvider,
+    toast: toastProvider,
+    'toast-title': toast,
+    'toast-description': toast,
+    'toast-close': toast,
+  }
+}
+
+/** Roots that render no element of their own: they carry no slot and are not listed in `SLOTS`. */
+export const ROOTLESS = new Set(['dialog', 'alert-dialog', 'sheet'])
+
 /** Parts whose element holds no text: they render without the `x` child. */
 const NO_TEXT = new Set(['table', 'table-header', 'table-body', 'table-row'])
 
@@ -112,6 +159,7 @@ const PART_PROPS: Record<string, Record<string, unknown>> = {
   'delta-badge': { value: 1, polarity: 'neutral' },
   'tabs-trigger': { value: 'a' },
   'tabs-content': { value: 'a' },
+  toast: { toast: { id: 'a', title: 't' } },
 }
 
 const componentEntries = (exports: Record<string, unknown>): [string, PartComponent][] =>
@@ -120,11 +168,16 @@ const componentEntries = (exports: Record<string, unknown>): [string, PartCompon
   )
 
 /** One part as an element: children `x`, wrapped in its parent when Base UI needs one. */
-function partElement(Part: PartComponent, slot: string, bare: boolean): ReactElement {
+function partElement(
+  Part: PartComponent,
+  slot: string,
+  bare: boolean,
+  closed = false,
+): ReactElement {
   const props = PART_PROPS[slot] ?? {}
   const node =
     bare || NO_TEXT.has(slot) ? createElement(Part, props) : createElement(Part, props, 'x')
-  const Parent = PARENTS[slot]
+  const Parent = closed ? (overlayAncestry(false)[slot] ?? PARENTS[slot]) : PARENTS[slot]
   return Parent === undefined ? node : createElement(Parent, null, node)
 }
 
@@ -165,15 +218,24 @@ export async function checkPrimitive(mod: PrimitiveModule): Promise<string[]> {
     const label = `${mod.name}.${exportName}`
     try {
       const { container, bare } = renderPart(Part, slot)
-      if (container.querySelector(`[data-slot="${slot}"]`) === null) {
-        violations.push(`${label}: renders no element with data-slot="${slot}"`)
-      }
-      if (mod.slots !== undefined && !mod.slots.includes(slot)) {
-        violations.push(`${label}: data-slot "${slot}" is not listed in SLOTS.${mod.name}`)
+      // A popup is portalled out of the container, so the lookup spans the document.
+      const rendered = container.ownerDocument.querySelector(`[data-slot="${slot}"]`)
+      if (!ROOTLESS.has(slot)) {
+        if (rendered === null)
+          violations.push(`${label}: renders no element with data-slot="${slot}"`)
+        if (mod.slots !== undefined && !mod.slots.includes(slot)) {
+          violations.push(`${label}: data-slot "${slot}" is not listed in SLOTS.${mod.name}`)
+        }
       }
       cleanup()
       const errors = await hydrationErrors(() => partElement(Part, slot, bare))
       if (errors > 0) violations.push(`${label}: ${errors} recoverable hydration error(s)`)
+      if (slot in overlayAncestry(false)) {
+        const closedErrors = await hydrationErrors(() => partElement(Part, slot, bare, true))
+        if (closedErrors > 0) {
+          violations.push(`${label}: ${closedErrors} recoverable hydration error(s) closed`)
+        }
+      }
     } catch (error) {
       cleanup()
       violations.push(`${label}: ${error instanceof Error ? error.message : String(error)}`)
