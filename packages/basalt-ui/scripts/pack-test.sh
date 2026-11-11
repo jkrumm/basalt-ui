@@ -567,7 +567,6 @@ const own = {
   // v3 skeleton stubs import no peer, so they must load in both phases
   'basalt-ui/router': [],
   'basalt-ui/data': [],
-  'basalt-ui/page': [],
   'basalt-ui/ai': [],
   'basalt-ui/lint': [],
   'basalt-ui/stylelint': [],

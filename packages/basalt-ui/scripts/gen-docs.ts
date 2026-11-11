@@ -202,7 +202,7 @@ type Collected = {
   problems: string[]
   seen: Set<ts.Symbol>
   names: Map<string, string>
-  /** Doc file names claimed by a baselined legacy root export, which a v3 subpath may take over. */
+  /** Doc file names claimed by a baselined legacy export (any subpath), which a later v3 subpath may take over. */
   legacy: Set<string>
   /** `<subpath>#<name>` baseline keys. */
   baseline: ReadonlySet<string>
@@ -218,8 +218,9 @@ function extractOne(
 ): void {
   const { name, symbol } = value
   const taken = acc.names.get(kebab(name))
-  // TRANSITIONAL: a baselined legacy root export is a shadow. A non-root (v3) export of the same
-  // name takes the doc file; the legacy one stays undocumented and baselined.
+  // TRANSITIONAL: a baselined legacy export is a shadow (a root export, or a 2.x subpath one such as
+  // `./commands`). A non-root (v3) export of the same name takes the doc file; the legacy one stays
+  // undocumented and baselined.
   const takesOver = taken !== undefined && acc.legacy.has(kebab(name)) && at.key !== '.'
   // A baselined legacy export that meets a name already documented (a v3 root export that reuses a
   // 2.x subpath name) is recorded without claiming the doc file: its JSDoc gap keeps it undocumented
@@ -233,7 +234,7 @@ function extractOne(
   }
   if (!shadowed) {
     acc.names.set(kebab(name), `${name} (${at.subpath})`)
-    if (at.key === '.' && acc.baseline.has(`${at.subpath}#${name}`)) acc.legacy.add(kebab(name))
+    if (acc.baseline.has(`${at.subpath}#${name}`)) acc.legacy.add(kebab(name))
     else acc.legacy.delete(kebab(name))
   }
   const decl = symbol.valueDeclaration ?? symbol.declarations?.[0] ?? at.source
