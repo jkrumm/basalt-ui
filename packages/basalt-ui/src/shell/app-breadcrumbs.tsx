@@ -20,8 +20,8 @@ import classes from './app-header.module.css'
 /** Parent/section crumbs — faint. */
 const crumbStyle: CSSProperties = { fontSize: VX.text.md, color: 'var(--vx-faint)' }
 
-/** `/` separators — in the "line" (strong border) color. */
-const separatorStyle: CSSProperties = { fontSize: VX.text.md, color: 'var(--vx-surface-border)' }
+/** `/` separators — the crumb color; `--vx-surface-border` is near the light canvas, so they vanished. */
+const separatorStyle: CSSProperties = { fontSize: VX.text.md, color: 'var(--vx-faint)' }
 
 /** The active page — head font at 88% stretch, weight 550, ink. */
 const currentStyle: CSSProperties = {
