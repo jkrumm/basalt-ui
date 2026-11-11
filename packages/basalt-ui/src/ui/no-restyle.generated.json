@@ -79,6 +79,14 @@
       "allow": ["layout"],
       "deny": ["h-*", "min-h-*", "size-*", "hidden", "flex", "block", "grid", "inline-flex"],
       "message": "Input owns its height and display: use size (md, sm), or eject it (basalt-ui eject input)."
+    },
+    {
+      "module": "table",
+      "part": "table",
+      "pattern": "^Table$",
+      "allow": ["layout"],
+      "deny": ["h-*", "min-h-*", "size-*", "hidden", "flex", "block", "grid", "inline-flex"],
+      "message": "Table owns its height and display: use size (md, compact), or eject it (basalt-ui eject table)."
     }
   ]
 }

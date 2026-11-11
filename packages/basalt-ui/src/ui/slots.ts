@@ -16,6 +16,15 @@ export const SLOTS = {
     'form',
   ],
   input: ['input'],
+  table: [
+    'table',
+    'table-header',
+    'table-body',
+    'table-row',
+    'table-head',
+    'table-cell',
+    'table-caption',
+  ],
 } as const
 
 /** A `basalt-ui/ui/*` module name. */
