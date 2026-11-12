@@ -207,20 +207,23 @@ export function judgeShell(g: ShellGeometry, tolerance = 1): string[] {
     broken.push(`rail bottom ${round(rail.bottom)} is below the window ${g.viewport.height}`)
   }
 
-  const [first, second] = g.navRows
+  const [first] = g.navRows
   if (first === undefined) {
     broken.push('the rail has no nav rows')
     return broken
   }
   const padding = first.box.left - rail.left
-  const pitch = second === undefined ? NaN : second.box.top - first.box.top
   const height = first.box.bottom - first.box.top
 
-  // Nav rows are evenly spaced, except across a section boundary (a larger step).
+  // The pitch is the smallest step between consecutive rows: a section boundary only ever adds a
+  // gap, so the first two rows may sit in different sections. A step within a quarter of the pitch
+  // is a step inside one section and must equal it; a larger step crosses a boundary.
   const steps = g.navRows.slice(1).map((row, i) => row.box.top - (g.navRows[i]?.box.top ?? NaN))
+  const pitch = steps.length === 0 ? NaN : Math.min(...steps)
   for (const [i, step] of steps.entries()) {
-    if (step < pitch - tolerance)
-      broken.push(`nav step ${i + 1} (${round(step)}) is under the pitch ${round(pitch)}`)
+    if (step < pitch * 1.25 && Math.abs(step - pitch) > tolerance) {
+      broken.push(`nav step ${i + 1} (${round(step)}) is off the pitch ${round(pitch)}`)
+    }
   }
 
   for (const row of g.footerRows) {
@@ -274,7 +277,7 @@ async function stableReading(page: ShellInvariantsPage): Promise<ShellGeometry> 
 /**
  * Asserts the frame's geometry rules in each requested rail state at the page's current viewport:
  * footer rows inside the rail with a bottom inset of at least its horizontal padding, on the nav's
- * row height and pitch; nav rows no closer than the pitch; one header height equal to `--shell-header-h`; nothing clipped or past the window;
+ * row height and pitch; nav rows evenly spaced within a section; one header height equal to `--shell-header-h`; nothing clipped or past the window;
  * the document never scrolling. On a phone the rail is absent and the tab bar stands in. Throws one
  * error listing every broken rule.
  *

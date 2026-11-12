@@ -48,9 +48,25 @@ describe('judgeShell', () => {
     expect(broken).toContain('"Export" clipped')
   })
 
+  test('a section of one row before a labelled section does not skew the pitch', () => {
+    const g = healthy()
+    g.navRows = [
+      { box: box(54, 86) },
+      { box: box(110, 142) },
+      { box: box(143, 175) },
+      { box: box(176, 208) },
+    ]
+    expect(judgeShell(g)).toEqual([])
+  })
+
+  test('an uneven step inside a section breaks', () => {
+    const g = healthy()
+    g.navRows = [{ box: box(54, 86) }, { box: box(87, 119) }, { box: box(123, 155) }]
+    expect(judgeShell(g).join('\n')).toContain('nav step 2 (36) is off the pitch 33')
+  })
+
   test('an uneven nav step and a footer on another pitch break', () => {
     const g = healthy()
-    g.navRows = [{ box: box(54, 86) }, { box: box(87, 119) }, { box: box(125, 157) }]
     g.footerRows = [
       { name: 'Settings', box: box(1125, 1157) },
       { name: 'Account menu', box: box(1167, 1190) },
