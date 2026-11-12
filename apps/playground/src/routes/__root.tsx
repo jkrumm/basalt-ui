@@ -33,6 +33,13 @@ const BLOCKS: Blocks = [
 
 const noop = (): void => {}
 
+/** `?chrome=native-overlay` shows the desktop window chrome in the browser: a 52 header with the lead strip and drag region. */
+const CHROME: NonNullable<ShellProps['chrome']> =
+  typeof window !== 'undefined' &&
+  new URLSearchParams(window.location.search).get('chrome') === 'native-overlay'
+    ? 'native-overlay'
+    : 'web'
+
 function accountOf(scenario: UserScenario, setScenario: (next: UserScenario) => void): Account {
   if (scenario.auth === 'loading') return { status: 'loading' }
   if (scenario.auth === 'signed-out') {
@@ -75,6 +82,7 @@ function RootLayout() {
         ],
       }}
       account={accountOf(scenario, setScenario)}
+      chrome={CHROME}
     >
       <Outlet />
     </AppShell>
