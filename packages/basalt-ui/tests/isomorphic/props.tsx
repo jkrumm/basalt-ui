@@ -192,6 +192,8 @@ export const MINIMAL_PROPS: Record<string, Record<string, unknown>> = {
       'Smoke',
     ),
   },
+  // v3 ctl-4b: a home with nothing to host draws nothing, so the smoke render needs no router
+  ControlHome: { home: 'aside' },
   SelectFilter: { field: store.field.currency, label: 'Currency', options: OPTIONS },
   MultiSelectFilter: { field: store.field.channels, label: 'Channels', options: MULTI_OPTIONS },
   CompareFilter: { field: store.field.compare, label: 'Compare' },
@@ -360,6 +362,7 @@ export const NO_CLASSNAME: Record<string, 'provider' | 'svg' | 'portal' | 'gap'>
   DeltaBadge: 'gap',
   CodeBlock: 'gap', // by design: the props are frozen (lang, code, settled); styling goes on a wrapper
   Markdown: 'gap', // by design: the root is data-slot="markdown"; styling goes on a wrapper
+  ControlHome: 'gap', // by design: the home decides the look of its controls; there is no className or variant
 }
 
 /**
