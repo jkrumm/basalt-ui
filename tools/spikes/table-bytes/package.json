@@ -1,0 +1,17 @@
+{
+  "name": "@basalt-ui/spike-table-bytes",
+  "private": true,
+  "description": "Spike S5: ./table own-code bytes, AppCell against direct cell at a virtual 10k fixture, per-render columns. Throwaway harness, no tests.",
+  "type": "module",
+  "scripts": {
+    "run": "bun run.ts"
+  },
+  "dependencies": {
+    "playwright-core": "1.63.0",
+    "table-931": "npm:@tanstack/react-table@9.3.1",
+    "vite": "8.3.4"
+  },
+  "overrides": {
+    "rolldown": "1.2.13"
+  }
+}

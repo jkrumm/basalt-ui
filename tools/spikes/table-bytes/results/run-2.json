@@ -1,0 +1,36 @@
+{
+  "tanstackTable": {
+    "pinned": "9.2.8",
+    "compared": "9.3.1"
+  },
+  "engineFixtureGz": 23177,
+  "engineFixtureGz931": 23206,
+  "ownCodeGz": 13501,
+  "ownCodeGz931": 13542,
+  "tableTotalGz": 100986,
+  "appCellMs": 22.3,
+  "directCellMs": 22.3,
+  "appCellVsDirectPct": 0,
+  "virtual10kMs": 22.3,
+  "perRenderColumnsMs": 23,
+  "perRenderColumnsVsStablePct": 3.14,
+  "spreadPct": 16.14,
+  "spreadPctByArm": {
+    "direct": 16.14,
+    "app": 13.45,
+    "perRender": 13.91
+  },
+  "proposedRows": {
+    "engineFixtureBytes": 24500,
+    "ownCodeBytes": 14500
+  },
+  "samples": {
+    "direct": [24.1, 23.7, 21.5, 21.8, 22.3, 22.3, 21.3, 20.9, 24.5, 20.9, 22.3],
+    "app": [24.2, 22.3, 23.9, 22, 23.6, 22.2, 22, 23.2, 23.2, 21.2, 21.2],
+    "perRender": [24.2, 22.8, 22.7, 23.9, 22.9, 21.8, 23, 24.1, 23.9, 25, 22.9]
+  },
+  "loadAvg1m": 19.22,
+  "rerun": false,
+  "chrome": "157.0.8103.51",
+  "verdict": "S5: PASS"
+}
