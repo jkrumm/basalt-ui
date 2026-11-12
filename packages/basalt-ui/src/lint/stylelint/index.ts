@@ -6,7 +6,6 @@
 import { stylelintConfig } from './render'
 
 export { renderStylelintConfig } from './render'
-export type { RenderOptions } from './render'
 
 // oxlint-disable-next-line import/no-default-export -- stylelint reads the default export of an `extends` module
 export default stylelintConfig()
