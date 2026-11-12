@@ -22,6 +22,12 @@ pre-commit:
           exit 1
         fi
 
+    # The factory reads docs/plan.yaml from master and files no row while it fails this check
+    # (2026-11-12: a 22-key `after` stalled the whole plan). Offline; skipped where the CLI is absent.
+    plan-check:
+      glob: 'docs/plan.yaml'
+      run: command -v factory >/dev/null 2>&1 || exit 0; git show :docs/plan.yaml | factory plan check -
+
     check-theme:
       glob: 'packages/basalt-ui/src/**'
       # Run inside the package so its own `basalt` config (roots: ["src"] + framework-internal
