@@ -111,7 +111,7 @@ describe('parts invariants', () => {
   })
 
   // 2.x: data-table.tsx:1993-2020,2160-2180
-  test.failing('I21 an out-of-range page states no range; page size is always an option', () => {
+  test('I21 an out-of-range page states no range; page size is always an option', () => {
     const { container } = renderTable({
       pager: 'pages',
       state: {

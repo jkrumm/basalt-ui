@@ -55,6 +55,11 @@ export type TableModel<T> = {
   /** Rows matching the request, `undefined` while unknown. */
   count: number | undefined
   pager: 'pages' | 'more' | 'none'
+  /** What a narrow table becomes (default `cards`) and the width it does so below. */
+  phone: 'cards' | 'scroll'
+  cardsBelow: 'regular' | 'wide' | 'always'
+  /** Present on a cursor table: the pager's `Load more` reads it. */
+  cursor: { hasNext: boolean; fetchNext(): void } | undefined
   state: TableStateApi
   selection: SelectionApi<T> | undefined
   activation: Activation<T>
@@ -230,6 +235,9 @@ export function useDataTable<T>(options: UseDataTable<T>): DataTableInstance<T> 
     phase,
     count: server ? countOf(mode) : matching,
     pager,
+    phone: options.phone ?? 'cards',
+    cardsBelow: options.cardsBelow ?? 'regular',
+    cursor: server && 'cursor' in mode ? mode.cursor : undefined,
     state,
     selection: options.selection === undefined ? undefined : selection,
     activation,

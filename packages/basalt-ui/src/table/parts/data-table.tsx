@@ -14,6 +14,8 @@ import type { DataTableProps } from '../contract'
 import { TableCaption, Table } from '../../ui/table'
 import { DataTableBody } from './body'
 import { DataTableHead, visibleColumns } from './head'
+import { TablePager } from './pager'
+import { scrollMinWidth, tierAttributesOf } from './tiers'
 import { modelOf } from '../use-data-table'
 import type { TableModel } from '../use-data-table'
 
@@ -29,6 +31,7 @@ function Columns<T>({ model }: { model: TableModel<T> }): ReactElement {
             key={spec.id}
             {...(!flexible && { style: { width: `${planned.widthPx}px` } })}
             data-flex={flexible ? '' : undefined}
+            data-priority={planned.priority === null ? undefined : String(planned.priority)}
           />
         )
       })}
@@ -55,7 +58,7 @@ function scrollportStyle(height: DataTableProps<unknown>['height']): CSSProperti
  */
 export function DataTable<T>({ table, detail, height = 'auto' }: DataTableProps<T>): ReactElement {
   const model = modelOf(table)
-  const scrolls = typeof height === 'object' || height === 'fill'
+  const scrolls = typeof height === 'object' || height === 'fill' || model.phone === 'scroll'
   const focusable = model.activation.kind !== 'none' || model.selection !== undefined
   const columns = visibleColumns(model.specs, model.plan.columns).length
   const colcount = columns + (model.selection === undefined ? 0 : 1)
@@ -67,17 +70,23 @@ export function DataTable<T>({ table, detail, height = 'auto' }: DataTableProps<
       data-phase={phase.tag}
       data-contained=""
       data-full-at={model.plan.fullAt ?? undefined}
+      {...tierAttributesOf(model)}
       data-refresh-failed={phase.tag === 'stale' && phase.refreshFailed ? '' : undefined}
       className="flex max-w-full min-w-0 flex-col"
     >
+      {/* theme-allow hidden-inline-style — the scrollport height and the scroll tier's min width are per-table values */}
       <div
         data-slot="table-scroller"
         role="region"
         aria-label={model.label}
         // oxlint-disable-next-line jsx-a11y/no-noninteractive-tabindex -- a scrolling region must be keyboard reachable (axe scrollable-region-focusable)
         tabIndex={scrolls && !focusable ? 0 : undefined}
-        style={scrollportStyle(height)}
-        className={scrolls ? 'min-h-0 flex-1 overflow-auto overscroll-contain' : 'overflow-x-clip'}
+        style={{ ...scrollportStyle(height), ...scrollMinWidth(model) }}
+        className={
+          typeof height === 'object' || height === 'fill'
+            ? 'min-h-0 flex-1 overflow-auto overscroll-contain'
+            : undefined
+        }
       >
         <Table
           role="table"
@@ -91,6 +100,7 @@ export function DataTable<T>({ table, detail, height = 'auto' }: DataTableProps<
           <DataTableBody table={table} {...(detail !== undefined && { detail })} />
         </Table>
       </div>
+      <TablePager table={table} />
     </div>
   )
 }

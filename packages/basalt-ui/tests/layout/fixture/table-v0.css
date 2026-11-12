@@ -1,0 +1,9 @@
+/*
+ * The `table-v0` fixture's Tailwind v4 entry: compiled WITH preflight, the way a Tailwind consumer
+ * renders the table. `table-v0.layout.test.ts` compiles it into a temp directory; the tier sheet
+ * `src/table/table.css` is inlined beside it by the test.
+ */
+@import '../../../src/css/tailwind.css' source(none);
+@source './table-v0-fixture.tsx';
+@source '../../../src/ui';
+@source '../../../src/table';

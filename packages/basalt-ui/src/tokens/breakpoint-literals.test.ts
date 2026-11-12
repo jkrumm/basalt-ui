@@ -47,6 +47,10 @@ const OWN_CONTAINER_LITERALS = new Set([
   '599.9px',
   '1199.9px',
   '1200px',
+  // table.css: the `data-full-at` steps (1000, 1440, 1800; 800 and 1200 are above)
+  '999.9px',
+  '1439.9px',
+  '1799.9px',
 ])
 
 function containerConditions(css: string): { name: string; literals: string[] }[] {
