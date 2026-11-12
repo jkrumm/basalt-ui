@@ -1,0 +1,12 @@
+{
+  "findings": [
+    {
+      "id": "summary-merged-count-wrong",
+      "class": "data",
+      "viewports": ["desktop", "mobile"],
+      "where": "Page summary line under the title",
+      "evidence": "The line reads '12 of 16 issues merged', but the brief's table has 11 Merged rows (ISS-4821, 4818, 4814, 4809, 4806, 4804, 4798, 4795, 4790, 4787, 4783) and 5 that are not merged (4820, 4815, 4811, 4801, 4792). The hardcoded string is at diff.patch line 57."
+    }
+  ],
+  "previous": []
+}

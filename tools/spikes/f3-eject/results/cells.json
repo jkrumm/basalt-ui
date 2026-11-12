@@ -1,0 +1,140 @@
+{
+  "seed": 841,
+  "cells": {
+    "table.eject": {
+      "status": "run",
+      "rounds": [
+        {
+          "round": 1,
+          "opaque": "p06",
+          "p1": 1,
+          "carried": 0,
+          "findings": [
+            {
+              "id": "summary-merged-count-wrong",
+              "class": "data",
+              "viewports": ["desktop", "mobile"],
+              "where": "Page summary line under the title",
+              "evidence": "The line reads '12 of 16 issues merged', but the brief's table has 11 Merged rows (ISS-4821, 4818, 4814, 4809, 4806, 4804, 4798, 4795, 4790, 4787, 4783) and 5 that are not merged (4820, 4815, 4811, 4801, 4792). The hardcoded string is at diff.patch line 57."
+            }
+          ],
+          "previous": []
+        },
+        {
+          "round": 2,
+          "opaque": "p01",
+          "p1": 0,
+          "carried": 0,
+          "findings": [],
+          "previous": [
+            {
+              "id": "summary-merged-count-wrong",
+              "status": "fixed"
+            }
+          ]
+        }
+      ],
+      "ejects": {
+        "invocations": 0,
+        "succeeded": 0,
+        "primitives": []
+      }
+    },
+    "table.npm": {
+      "status": "run",
+      "rounds": [
+        {
+          "round": 1,
+          "opaque": "p02",
+          "p1": 0,
+          "carried": 0,
+          "findings": [],
+          "previous": []
+        }
+      ],
+      "ejects": {
+        "invocations": 0,
+        "succeeded": 0,
+        "primitives": []
+      }
+    },
+    "statcards.npm": {
+      "status": "run",
+      "rounds": [
+        {
+          "round": 1,
+          "opaque": "p10",
+          "p1": 1,
+          "carried": 0,
+          "findings": [
+            {
+              "id": "issues-merged-trend-missing-day-labels",
+              "class": "data",
+              "viewports": ["desktop", "mobile"],
+              "where": "Issues merged cell in the headline band, 7-bar per-day trend",
+              "evidence": "brief.md asks for the trend with labels Mon to Sun. diff.patch passes labels={false} to Trend for Issues merged (App.tsx line 34). In both shots the bars under 212 have no Mon..Sun labels, while the Spend trend shows them."
+            }
+          ],
+          "previous": []
+        },
+        {
+          "round": 2,
+          "opaque": "p03",
+          "p1": 0,
+          "carried": 0,
+          "findings": [],
+          "previous": [
+            {
+              "id": "issues-merged-trend-missing-day-labels",
+              "status": "fixed"
+            }
+          ]
+        }
+      ],
+      "ejects": {
+        "invocations": 0,
+        "succeeded": 0,
+        "primitives": []
+      }
+    },
+    "statcards.eject": {
+      "status": "run",
+      "rounds": [
+        {
+          "round": 1,
+          "opaque": "p04",
+          "p1": 1,
+          "carried": 0,
+          "findings": [
+            {
+              "id": "band-not-stacked-mobile-clipped",
+              "class": "overflow",
+              "viewports": ["mobile"],
+              "where": "Delivery headline figures band, below the Issues merged cell",
+              "evidence": "At 390 the four stat cells sit side by side and do not stack as the brief asks. The Issues merged cell fills the viewport width, and the Median lead time cell starts at x≈313 and runs off the right edge. Its value is cut to '6....', its label to 'Median le', its sub line to 'Fastest w', and the unit and delta are not visible. The Failed deploys and Queue depth cells are not visible at all."
+            }
+          ],
+          "previous": []
+        },
+        {
+          "round": 2,
+          "opaque": "p05",
+          "p1": 0,
+          "carried": 0,
+          "findings": [],
+          "previous": [
+            {
+              "id": "band-not-stacked-mobile-clipped",
+              "status": "fixed"
+            }
+          ]
+        }
+      ],
+      "ejects": {
+        "invocations": 0,
+        "succeeded": 0,
+        "primitives": []
+      }
+    }
+  }
+}

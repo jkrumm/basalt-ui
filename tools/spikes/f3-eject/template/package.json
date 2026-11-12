@@ -1,0 +1,14 @@
+{
+  "name": "scratch-app",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "build": "vite build",
+    "typecheck": "tsc --noEmit -p ."
+  },
+  "dependencies": {
+    "basalt-ui": "3.0.0-spike",
+    "react": "19.3.0",
+    "react-dom": "19.3.0"
+  }
+}

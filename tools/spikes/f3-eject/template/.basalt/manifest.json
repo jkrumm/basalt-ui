@@ -1,0 +1,11 @@
+{
+  "profile": "parts",
+  "version": "3.0.0-spike",
+  "roots": { "src": "parts" },
+  "ejected": {},
+  "managed": {},
+  "deepRender": [],
+  "authoredContent": [],
+  "viewports": [],
+  "tokens": []
+}

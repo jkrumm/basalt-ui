@@ -1,0 +1,12 @@
+{
+  "findings": [
+    {
+      "id": "band-not-stacked-mobile-clipped",
+      "class": "overflow",
+      "viewports": ["mobile"],
+      "where": "Delivery headline figures band, below the Issues merged cell",
+      "evidence": "At 390 the four stat cells sit side by side and do not stack as the brief asks. The Issues merged cell fills the viewport width, and the Median lead time cell starts at x≈313 and runs off the right edge. Its value is cut to '6....', its label to 'Median le', its sub line to 'Fastest w', and the unit and delta are not visible. The Failed deploys and Queue depth cells are not visible at all."
+    }
+  ],
+  "previous": []
+}
