@@ -1,0 +1,43 @@
+<!doctype html>
+<html lang="en" data-theme="light">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>offender: forced-colors</title>
+    <style>
+      body {
+        margin: 0;
+        font:
+          16px/1.4 system-ui,
+          sans-serif;
+        color: #111;
+        background: #fff;
+      }
+      main {
+        padding: 16px;
+      }
+      button,
+      a {
+        font: inherit;
+      }
+      button:focus-visible,
+      a:focus-visible {
+        outline: 2px solid #1d4ed8;
+        outline-offset: 2px;
+      }
+      [data-slot='card'] {
+        box-shadow: 0 0 0 1px #555;
+        border: 0;
+        width: 200px;
+        height: 80px;
+        margin-top: 12px;
+      }
+    </style>
+  </head>
+  <body>
+    <main>
+      <h1>forced-colors</h1>
+      <div data-slot="card"></div>
+    </main>
+  </body>
+</html>

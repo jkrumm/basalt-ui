@@ -1,0 +1,50 @@
+<!doctype html>
+<html lang="en" data-theme="light">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>offender: axe-overlay</title>
+    <style>
+      body {
+        margin: 0;
+        font:
+          16px/1.4 system-ui,
+          sans-serif;
+        color: #111;
+        background: #fff;
+      }
+      main {
+        padding: 16px;
+      }
+      button,
+      a {
+        font: inherit;
+      }
+      button:focus-visible,
+      a:focus-visible {
+        outline: 2px solid #1d4ed8;
+        outline-offset: 2px;
+      }
+      [role='dialog'] {
+        border: 1px solid #555;
+        padding: 12px;
+        margin-top: 12px;
+      }
+    </style>
+  </head>
+  <body>
+    <main>
+      <h1>axe-overlay</h1>
+      <button
+        type="button"
+        data-slot="dialog-trigger"
+        onclick="document.getElementById('d').hidden = false"
+      >
+        Open
+      </button>
+      <div id="d" role="dialog" aria-label="Seeded dialog" hidden>
+        <button type="button"></button>
+      </div>
+    </main>
+  </body>
+</html>

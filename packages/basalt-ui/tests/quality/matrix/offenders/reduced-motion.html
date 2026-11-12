@@ -1,0 +1,47 @@
+<!doctype html>
+<html lang="en" data-theme="light">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>offender: reduced-motion</title>
+    <style>
+      body {
+        margin: 0;
+        font:
+          16px/1.4 system-ui,
+          sans-serif;
+        color: #111;
+        background: #fff;
+      }
+      main {
+        padding: 16px;
+      }
+      button,
+      a {
+        font: inherit;
+      }
+      button:focus-visible,
+      a:focus-visible {
+        outline: 2px solid #1d4ed8;
+        outline-offset: 2px;
+      }
+      @keyframes spin {
+        to {
+          transform: rotate(1turn);
+        }
+      }
+      .spin {
+        width: 24px;
+        height: 24px;
+        background: #1d4ed8;
+        animation: spin 1s linear infinite;
+      }
+    </style>
+  </head>
+  <body>
+    <main>
+      <h1>reduced-motion</h1>
+      <div class="spin" aria-hidden="true"></div>
+    </main>
+  </body>
+</html>
