@@ -234,4 +234,12 @@ describe('folded collapsible sections on the rail', () => {
     expect(screen.getByRole('heading', { name: 'Plain' })).toBeTruthy()
     expect(screen.queryByRole('button', { name: /Plain/ })).toBeNull()
   })
+  test('an unlabelled collapsible section is never folded: it has no header to unfold it', async () => {
+    const nav = navOf(
+      section('bare', [item('a', 'Alpha')], { collapsible: true, defaultCollapsed: true }),
+    )
+    await renderRail(props(nav))
+    const rows = document.querySelector('[data-slot="shell-rail-section-rows"]')
+    expect(rows?.getAttribute('data-folded')).toBe('false')
+  })
 })

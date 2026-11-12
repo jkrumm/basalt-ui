@@ -11,10 +11,10 @@
 import { useSyncExternalStore } from 'react'
 import { persisted } from '../../core/persisted'
 import type { Persisted } from '../../core/persisted'
-import { sectionFoldKey } from '../core/block-model'
+import { FOLD_VERSION, sectionFoldKey } from '../core/block-model'
 
 const storeOf = (id: string): Persisted<boolean> =>
-  persisted<boolean>(sectionFoldKey(id), { version: 1, initial: false })
+  persisted<boolean>(sectionFoldKey(id), { version: FOLD_VERSION, initial: false })
 
 /** Writes one section's fold. */
 export function setSectionFold(id: string, folded: boolean): void {

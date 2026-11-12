@@ -88,12 +88,17 @@ function Header({
 }
 
 export function RailSectionView({
-  section,
+  section: declared,
   first,
 }: {
   section: RailSection
   first: boolean
 }): ReactElement {
+  // An unlabelled section has no header, so nothing could ever unfold it: it is never folded.
+  const section: RailSection =
+    declared.label === '' && declared.collapsible
+      ? { ...declared, collapsible: false, folded: false }
+      : declared
   const rowsId = useId()
   const rows = (
     <div
