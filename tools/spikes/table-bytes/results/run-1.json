@@ -1,0 +1,36 @@
+{
+  "tanstackTable": {
+    "pinned": "9.2.8",
+    "compared": "9.3.1"
+  },
+  "engineFixtureGz": 23177,
+  "engineFixtureGz931": 23206,
+  "ownCodeGz": 13501,
+  "ownCodeGz931": 13542,
+  "tableTotalGz": 100986,
+  "appCellMs": 24.1,
+  "directCellMs": 21.9,
+  "appCellVsDirectPct": 10.05,
+  "virtual10kMs": 21.9,
+  "perRenderColumnsMs": 23.1,
+  "perRenderColumnsVsStablePct": 5.48,
+  "spreadPct": 16.6,
+  "spreadPctByArm": {
+    "direct": 14.16,
+    "app": 16.6,
+    "perRender": 13.42
+  },
+  "proposedRows": {
+    "engineFixtureBytes": 24500,
+    "ownCodeBytes": 14500
+  },
+  "samples": {
+    "direct": [22.5, 22.8, 24.2, 21.9, 21.1, 22.1, 21.5, 21.2, 21.6, 21.8, 22.1],
+    "app": [23.4, 24.2, 24.8, 25, 21.1, 21, 24.8, 24.1, 21.8, 21.4, 24.4],
+    "perRender": [24.7, 24.2, 23.4, 23.4, 22, 21.8, 24, 21.6, 22.6, 23.1, 23]
+  },
+  "loadAvg1m": 17.2,
+  "rerun": true,
+  "chrome": "157.0.8103.51",
+  "verdict": "S5: REFUTED"
+}
