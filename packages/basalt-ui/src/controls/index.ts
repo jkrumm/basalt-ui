@@ -19,3 +19,8 @@ export { ToggleFilter } from './toggle-filter'
 export { ViewTabs } from './view-tabs'
 export type { FilterOption } from './filter-base'
 export { FormRow, FormGroup } from './form-layout'
+
+// v3 control-view: the cue and the reset live in `ControlView` alone; `spec` is the data a home renders.
+export { ControlView } from './control-view'
+export { spec } from './spec'
+export type { FilterSpec } from './contract'
