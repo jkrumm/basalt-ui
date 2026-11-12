@@ -1,0 +1,22 @@
+{
+  "why": "The first hour in a new app decides whether v3 is adopted: init, the vite plugin, the provider, the router defaults, the tokens and the shipped skills have to get an app to its first page without the author reading the package source. The export surface is the API every later hour runs against. The owner asked for repeated improvement cycles on wiring and the API, and docs/v3/CYCLES.md is the protocol.",
+  "what": "Cycle 1 of the wiring and API-surface area: a fresh app from the packed tarball, and a consistency read of the export surface. Protocol: docs/v3/CYCLES.md.",
+  "owns": [
+    "docs/v3/cycles/wiring-1.md",
+    "docs/v3/issues/cycles/**",
+    "docs/plan.yaml (append rows only)"
+  ],
+  "must_not_touch": ["packages/basalt-ui/**", "apps/**", "examples/**", "docs/v3/ARCHITECTURE.md"],
+  "change": "(1) Fresh app: pack the package (bun pm pack), and in a scratch dir outside the repo create a Vite plus TanStack Router app. Run basalt-ui init, then follow only what ships (the AGENTS block, the placed rules and skills, llms.txt) to a two-page app with the shell, one StatCard and one table. Log every step, every error with its text, every place you had to read packages/basalt-ui/src, the files and lines written by hand, and what doctor reports at the end. (2) Export surface: read the export-surface snapshot and the public types across ui/*, cards/*, page/*, charts/*, controls and state. Judge naming (one verb per concept, one prop name per role), prop conventions (phase, empty, size, slots), default and required props, and duplicated or near-duplicate exports. Count: steps to the first render; hand-written lines; src reads; doctor findings; inconsistencies by kind.",
+  "commits": "One docs: commit with the findings and the plan rows. The scratch app is never committed.",
+  "proof": "docs/v3/cycles/wiring-1.md with the sha, the step log, the numbers and the findings table.",
+  "acceptance": [
+    "docs/v3/cycles/wiring-1.md exists, names the master sha, and has a numbered step log from an empty dir to the second page rendering",
+    "Each step names whether shipped material told the author what to do, and if not, names the finding",
+    "The export-surface part names each inconsistency with the exports it involves",
+    "Every P1 has its own plan row with a brief; the P2s are grouped one row per class; or the file states convergence",
+    "If the cycle did not converge, a v3-cycle-wiring-2 row exists after every fix row",
+    "git diff --name-only origin/master...HEAD lists only docs/"
+  ],
+  "out_of_scope": "Fixing any finding in this PR; Next.js or Astro hosts; publishing anything."
+}

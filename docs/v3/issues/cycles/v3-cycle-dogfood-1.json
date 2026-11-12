@@ -1,0 +1,23 @@
+{
+  "why": "The factory console is the reference the owner holds v3 against: its StatCard is the accepted card anatomy, and its pages are what an app built on basalt should look like. The area cycles test one piece each; this one tests whether v3 rebuilds a real app slice at the console's quality. Protocol: docs/v3/CYCLES.md.",
+  "what": "Cycle 1 of the dogfood area: rebuild one console page slice on v3 in the playground, compare it with the console, log, file.",
+  "owns": [
+    "docs/v3/cycles/dogfood-1.md",
+    "docs/v3/issues/cycles/**",
+    "docs/plan.yaml (append rows only)",
+    "apps/playground/src/** (the cycle build only: new files plus nav registration)"
+  ],
+  "must_not_touch": ["packages/basalt-ui/**", "docs/v3/ARCHITECTURE.md", "docs/v3/DIRECTION.md"],
+  "change": "Read the console's overview page and its kit (software-factory apps/console/src, read-only; components/kit/stat-card.tsx is the card reference), and the four cards at the top of docs/v3/inspo/herdr-paste-1794228224613846000.png. Rebuild the overview slice in the playground on v3 with the console's fixture shapes: the stat row, one chart card, the issue table with its filters, and the aside. Shoot it at 1800x1200 and 390x844 in light and dark. Compare it region by region with the console's code and the inspo: spacing, type sizes and weights, surface steps, contrast, density, and the states (loading, empty, error, stale). Count: lines in the v3 slice against the console's lines for the same slice; escape hatches; regions that look worse than the console, each with the reason.",
+  "commits": "Playground build in its own commit (feat:), findings and plan rows in a docs: commit. No package commit.",
+  "proof": "docs/v3/cycles/dogfood-1.md with the sha, the shot paths, a region-by-region comparison table and the findings table.",
+  "acceptance": [
+    "docs/v3/cycles/dogfood-1.md exists, names the master sha and the console commit read, and has the region-by-region table",
+    "The slice renders in the playground and imports basalt-ui only through published subpaths",
+    "Every region rated worse than the console is a finding with evidence",
+    "Every P1 has its own plan row with a brief; the P2s are grouped one row per class; or the file states convergence",
+    "If the cycle did not converge, a v3-cycle-dogfood-2 row exists after every fix row",
+    "git diff --name-only origin/master...HEAD lists nothing under packages/basalt-ui/"
+  ],
+  "out_of_scope": "Fixing any finding in this PR; editing the console; console pages outside the overview."
+}
