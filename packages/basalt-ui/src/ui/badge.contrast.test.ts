@@ -21,7 +21,7 @@ type Tone = 'good' | 'bad' | 'neutral'
 const MEASURED: Record<Scheme, Record<Surface, Record<Tone, number>>> = {
   light: {
     inset: { good: 5.004, bad: 4.979, neutral: 6.772 },
-    card: { good: 4.584, bad: 4.59, neutral: 6.194 },
+    card: { good: 4.831, bad: 4.806, neutral: 6.486 },
   },
   dark: {
     inset: { good: 5.643, bad: 5.608, neutral: 7.907 },
