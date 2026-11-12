@@ -1,4 +1,5 @@
 [
+  "ControlHome",
   "ControlView",
   "FilterSet",
   "FormGroup",
@@ -11,5 +12,6 @@
   "SyncButton",
   "ToggleFilter",
   "ViewTabs",
+  "filterSlot",
   "spec"
 ]
