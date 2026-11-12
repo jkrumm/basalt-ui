@@ -40,3 +40,7 @@ packages/basalt-ui/docs/menu.md
 # The shipped stylelint preset is `renderStylelintConfig()` output byte for byte (src/lint/stylelint/stylelint.test.ts
 # pins committed == rendered), the same bytes a consumer's `sync` writes; oxfmt would re-wrap its arrays.
 packages/basalt-ui/configs/stylelint.basalt.json
+
+# The signature block of a generated doc for an object export prints its key tree (`quality: { a, b }`);
+# oxfmt reads that as a labelled block and rewrites it to `;(a, b)`, which gen-docs --check reads as drift.
+packages/basalt-ui/docs/quality.md
