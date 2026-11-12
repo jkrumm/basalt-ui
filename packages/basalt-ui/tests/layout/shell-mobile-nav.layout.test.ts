@@ -14,7 +14,7 @@
  */
 import { describeShell, acquireShellTarget } from './shell-target'
 import { afterAll } from 'bun:test'
-import { S } from './shell-slots'
+import { LAYOUT_TARGET, S } from './shell-slots'
 import type { FixtureSpec } from './fixture/spec'
 import {
   ACTIVE_PILL,
@@ -89,7 +89,6 @@ describeShell(
     'shell-sheet',
     'shell-sheet-rows',
     'shell-sheet-body',
-    'shell-sheet-track',
     'shell-menu',
     'shell-tab-bar',
     'shell-footer',
@@ -425,6 +424,29 @@ describeShell(
     })
 
     /**
+     * HIT FLOORS under pointer coarse (the harness default): every interactive element of the bar
+     * measures 44 px on both axes, and every row of an open surface 48 px tall. Selected by tag, not
+     * by slot, so an interactive element the bar grows later is measured too.
+     */
+    test('every interactive tab-bar element clears 44 px and every surface row 48 px (coarse)', async () => {
+      const p = await openFixture(sheetSpec(7))
+      const controls = await p.boxes(`${S('shell-tab-bar')} :is(a, button)`)
+      if (controls.length === 0) throw new Error('LAYOUT: the bar rendered no interactive element')
+      for (const [i, box] of controls.entries()) {
+        const named = { name: `bar control ${i}`, box }
+        expectHeightAtLeast(named, 44, 'a bar control keeps the 44 px touch floor')
+        if (box.width < 44) {
+          throw new Error(`LAYOUT: bar control ${i} is ${box.width}px wide; the floor is 44px`)
+        }
+      }
+      await p.tap(tab('Library'))
+      await p.waitFor(S('shell-sheet'))
+      for (const [i, box] of (await p.boxes(S('shell-sheet-rows'))).entries()) {
+        expectHeightAtLeast({ name: `surface row ${i}`, box }, 48, 'a surface row is 48 px')
+      }
+    })
+
+    /**
      * INVARIANT 9B — THE MORE SURFACE IS A POPOVER AT A ROW COUNT THAT USED TO RAISE THE DOOR.
      *
      * Eleven overflow rows is the playground's own More slot, and under `menuMax` 6 it opened a
@@ -596,6 +618,25 @@ describeShell(
         vertical.push([`density ${density}`, (pill.box.height - glyph.box.height) / 2])
       }
 
+      if (LAYOUT_TARGET === 'v3') {
+        // v3's law: density moves controls and rows, never tiles, gaps or icons (concept tokens-visual
+        // 9), so the pill is one shape at every level.
+        for (const [axis, insets] of [
+          ['horizontal', horizontal],
+          ['vertical', vertical],
+        ] as const) {
+          const first = insets[0]?.[1] ?? 0
+          for (const [name, inset] of insets) {
+            if (Math.abs(inset - first) > 0.5) {
+              throw new Error(
+                `LAYOUT: the pill ${axis} inset is ${inset} at ${name} and ${first} at the first ` +
+                  'level; density must not move the pill',
+              )
+            }
+          }
+        }
+        return
+      }
       expectStrictlyIncreasing(
         'pill horizontal inset',
         horizontal,
@@ -650,6 +691,24 @@ describeShell(
       await p.raw.mouse.move(sheet.box.right - 4, sheet.box.top + 200)
       await p.raw.waitForTimeout(150)
 
+      if (LAYOUT_TARGET === 'v3') {
+        // v3's scroller is native: the browser reserves the scrollbar's own gutter, so the check is
+        // that no row reaches into it.
+        const body = await p.box('sheet body', S('shell-sheet-body'))
+        const scrollbarWidth = await p.raw.evaluate((selector) => {
+          const el = document.querySelector(selector)
+          return el === null ? -1 : el.getBoundingClientRect().width - el.clientWidth
+        }, S('shell-sheet-body'))
+        const reaching = (await p.boxes(S('shell-sheet-rows'))).filter(
+          (row) => row.right > body.box.right - scrollbarWidth + 0.5,
+        )
+        if (reaching.length > 0) {
+          throw new Error(
+            `LAYOUT: ${reaching.length} row(s) reach into the ${scrollbarWidth}px scrollbar gutter.`,
+          )
+        }
+        return
+      }
       const track = await p.box('vertical scrollbar track', S('shell-sheet-track'))
       const scrolledRows = await p.boxes(S('shell-sheet-rows'))
       const overlapping = scrolledRows.filter(
