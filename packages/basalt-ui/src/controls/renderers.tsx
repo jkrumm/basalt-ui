@@ -29,6 +29,7 @@ import { Slider } from '../ui/slider'
 import { Switch } from '../ui/switch'
 import type { FilterSpec } from './contract'
 import { useCommittedField } from './use-committed-field'
+import type { CommittedField } from './use-committed-field'
 
 export type ControlSize = 'sm' | 'md'
 
@@ -62,10 +63,10 @@ const boundsOf = <T,>(handle: ControlHandle<T>): Bounds =>
 
 function ClearButton({
   label,
-  mouseDown,
+  clear,
 }: {
   label: string
-  mouseDown(event: React.MouseEvent): void
+  clear: CommittedField<never>['clearProps']
 }): ReactElement {
   return (
     <Button
@@ -73,7 +74,8 @@ function ClearButton({
       size="icon"
       aria-label={label}
       data-control-clear=""
-      onMouseDown={mouseDown}
+      onMouseDown={clear.onMouseDown}
+      onClick={clear.onClick}
     >
       <svg viewBox="0 0 16 16" className="size-3" fill="none" aria-hidden="true">
         <path
@@ -202,7 +204,7 @@ function StringRenderer({
         {...(spec.placeholder !== undefined && { placeholder: spec.placeholder })}
       />
       {spec.clearable === true && field.draft !== '' && (
-        <ClearButton label={t('controls.clear')} mouseDown={field.clearProps.onMouseDown} />
+        <ClearButton label={t('controls.clear')} clear={field.clearProps} />
       )}
     </div>
   )
@@ -249,9 +251,12 @@ function NumberRenderer({
         aria-label={spec.label}
         size={size}
         value={field.draft}
+        // `int` is refused by the codec, not rounded: a typed 1.5 would never land and the draft
+        // would keep showing it over the stored value, so the input rounds it before it is a draft.
         onValueChange={(next) => {
-          field.change(next)
+          field.change(next !== null && bounds.int === true ? Math.round(next) : next)
         }}
+        {...(bounds.int === true && { format: { maximumFractionDigits: 0 } })}
         {...(bounds.min !== undefined && { min: bounds.min })}
         {...(bounds.max !== undefined && { max: bounds.max })}
         {...(bounds.step !== undefined && { step: bounds.step })}
@@ -259,7 +264,7 @@ function NumberRenderer({
         {...field.inputProps}
       />
       {spec.clearable === true && field.draft !== null && (
-        <ClearButton label={t('controls.clear')} mouseDown={field.clearProps.onMouseDown} />
+        <ClearButton label={t('controls.clear')} clear={field.clearProps} />
       )}
     </div>
   )
@@ -298,6 +303,14 @@ function RangeRenderer({
     from: value.from ?? '',
     to: value.to ?? '',
   })
+  // A change that did not come from here (a link, back) replaces the local pick and days; our own
+  // write lands as the same preset and days, so it changes nothing on screen.
+  const [seen, setSeen] = useState(value)
+  if (seen.preset !== value.preset || seen.from !== value.from || seen.to !== value.to) {
+    setSeen(value)
+    setPicked(null)
+    setDays({ from: value.from ?? '', to: value.to ?? '' })
+  }
   const preset = picked ?? value.preset
   const pick = (next: string): void => {
     if (next === 'custom') {

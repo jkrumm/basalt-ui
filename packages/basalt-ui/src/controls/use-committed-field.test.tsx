@@ -138,3 +138,35 @@ describe('an outside change', () => {
     expect(input.value).toBe('typing')
   })
 })
+
+describe('the clear button from the keyboard', () => {
+  test('a keyboard click (detail 0) clears; a pointer click after mousedown does not clear twice', () => {
+    const handle = memoryHandle<string>('q', '', { kind: 'string' })
+    const { container, getByLabelText } = render(
+      <ControlView spec={spec(handle, 'Field', { clearable: true })} />,
+    )
+    type(getByLabelText('Field') as HTMLInputElement, 'abc')
+    const clear = container.querySelector<HTMLElement>('[data-control-clear]')!
+    fireEvent.click(clear, { detail: 0 })
+    expect(handle.writes).toEqual([''])
+    type(getByLabelText('Field') as HTMLInputElement, 'xyz')
+    const again = container.querySelector<HTMLElement>('[data-control-clear]')!
+    fireEvent.mouseDown(again)
+    fireEvent.click(again, { detail: 1 })
+    expect(handle.writes).toEqual(['', ''])
+  })
+})
+
+describe('an integer number field', () => {
+  test('rounds a typed decimal before it is a draft, so the codec never refuses it', () => {
+    const handle = memoryHandle<number>('n', 5, {
+      kind: 'number',
+      bounds: { min: 0, max: 100, int: true },
+    })
+    const { getByLabelText } = render(<ControlView spec={spec(handle, 'Count')} />)
+    const input = getByLabelText('Count') as HTMLInputElement
+    type(input, '1.5')
+    fireEvent.keyDown(input, { key: 'Enter' })
+    expect(handle.writes).toEqual([2])
+  })
+})
