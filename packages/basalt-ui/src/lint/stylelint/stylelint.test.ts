@@ -10,7 +10,8 @@ import { tmpdir } from 'node:os'
 import { basename, join, resolve } from 'node:path'
 import stylelint from 'stylelint'
 import { SHIPPED_CONFIG } from './gen'
-import preset, { renderStylelintConfig, stylelintConfig } from './index'
+import preset from './index'
+import { renderStylelintConfig, stylelintConfig } from './render'
 
 const PKG = resolve(import.meta.dirname, '..', '..', '..')
 const FIXTURES = join(PKG, 'test', 'fixtures', 'lint', 'stylelint')
