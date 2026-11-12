@@ -19,3 +19,5 @@
 @source '../../../src/page';
 @source '../../../src/shell/parts';
 @source '../../../src/shell/app-shell.tsx';
+@source '../../../src/shell/chrome.tsx';
+@source '../../../src/shell/commands';

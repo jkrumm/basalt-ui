@@ -12,8 +12,10 @@ slots: []
 Asserts the frame's geometry rules in each requested rail state at the page's current viewport:
 footer rows inside the rail with a bottom inset of at least its horizontal padding, on the nav's
 row height and pitch; nav rows evenly spaced within a section; one header height equal to `--shell-header-h`; nothing clipped or past the window;
-the document never scrolling. On a phone the rail is absent and the tab bar stands in. Throws one
-error listing every broken rule.
+the document never scrolling. On a phone the rail is absent and the tab bar stands in. The `native`
+state also holds the window chrome: a 52 px header whose first 80 px stay free, one deep drag
+region on the header alone and every control in it `no-drag`. Throws one error listing every
+broken rule.
 
 ## Signature
 

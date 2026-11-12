@@ -1,5 +1,5 @@
 import { describe, expect, test } from 'bun:test'
-import { judgeShell } from './shell-invariants'
+import { judgeNative, judgeShell } from './shell-invariants'
 import type { ShellGeometry } from './shell-invariants'
 
 const box = (top: number, bottom: number, left = 6, right = 233) => ({ top, bottom, left, right })
@@ -21,7 +21,24 @@ function healthy(): ShellGeometry {
     ],
     tabBar: null,
     clipped: [],
+    native: null,
   }
+}
+
+/** A healthy native-overlay frame: 52 header, an 80 strip, one deep region, no-drag controls. */
+function nativeFrame(): ShellGeometry {
+  const g = healthy()
+  g.headerToken = 52
+  g.header = { top: 0, bottom: 52, left: 0, right: 1800 }
+  g.native = {
+    dragRegions: [{ slot: 'shell-header', value: 'deep' }],
+    headerAppRegion: 'drag',
+    leadInset: 80,
+    titlebar: { top: 0, bottom: 52, left: 0, right: 80 },
+    leadContentLeft: 80,
+    interactive: [{ name: 'Collapse sidebar', appRegion: 'no-drag' }],
+  }
+  return g
 }
 
 describe('judgeShell', () => {
@@ -74,5 +91,45 @@ describe('judgeShell', () => {
     const broken = judgeShell(g).join('\n')
     expect(broken).toContain('footer rows pitch')
     expect(broken).toContain('Account menu" height 23')
+  })
+})
+
+describe('judgeNative', () => {
+  test('a healthy native frame breaks nothing', () => {
+    expect(judgeNative(nativeFrame())).toEqual([])
+    expect(judgeShell(nativeFrame())).toEqual([])
+  })
+
+  test('a web page is named as not native', () => {
+    expect(judgeNative(healthy()).join('\n')).toContain('not under chrome="native-overlay"')
+  })
+
+  test('a 48 header, a short inset and content inside the strip each break', () => {
+    const g = nativeFrame()
+    g.header = { top: 0, bottom: 48, left: 0, right: 1800 }
+    if (g.native) {
+      g.native.leadInset = 40
+      g.native.titlebar = { top: 0, bottom: 48, left: 0, right: 40 }
+      g.native.leadContentLeft = 40
+    }
+    const broken = judgeNative(g).join('\n')
+    expect(broken).toContain('native header height 48')
+    expect(broken).toContain('--chrome-lead-inset 40')
+    expect(broken).toContain('titlebar strip is 40 wide')
+    expect(broken).toContain('inside the 80 px lead inset')
+  })
+
+  test('a drag attribute on a button or a second region breaks, so does a draggable control', () => {
+    const g = nativeFrame()
+    if (g.native) {
+      g.native.dragRegions = [
+        { slot: 'shell-header', value: 'deep' },
+        { slot: 'button', value: '' },
+      ]
+      g.native.interactive = [{ name: 'Act', appRegion: 'drag' }]
+    }
+    const broken = judgeNative(g).join('\n')
+    expect(broken).toContain('shell-header alone as "deep", found: shell-header="deep", button=""')
+    expect(broken).toContain('header control "Act" is app-region "drag", not no-drag')
   })
 })

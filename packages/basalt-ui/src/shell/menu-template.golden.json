@@ -1,0 +1,52 @@
+[
+  {
+    "type": "item",
+    "id": "file.new",
+    "label": "New run",
+    "chord": "Mod+N",
+    "accelerator": "CmdOrCtrl+N",
+    "enabled": true
+  },
+  {
+    "type": "item",
+    "id": "file.save",
+    "label": "Save",
+    "chord": "Mod+S",
+    "accelerator": "CmdOrCtrl+S",
+    "enabled": true
+  },
+  {
+    "type": "item",
+    "id": "file.export",
+    "label": "Export…",
+    "chord": "Mod+Shift+E",
+    "accelerator": "CmdOrCtrl+Shift+E",
+    "enabled": true
+  },
+  { "type": "separator" },
+  {
+    "type": "item",
+    "id": "edit.undo",
+    "label": "Undo",
+    "chord": "Mod+Z",
+    "accelerator": "CmdOrCtrl+Z",
+    "enabled": false
+  },
+  { "type": "separator" },
+  {
+    "type": "item",
+    "id": "view.zoom-in",
+    "label": "Zoom in",
+    "chord": "Mod+=",
+    "accelerator": "CmdOrCtrl+=",
+    "enabled": true
+  },
+  {
+    "type": "item",
+    "id": "shell.toggle-rail",
+    "label": "Toggle sidebar",
+    "chord": "Mod+B",
+    "accelerator": "CmdOrCtrl+B",
+    "enabled": true
+  }
+]
