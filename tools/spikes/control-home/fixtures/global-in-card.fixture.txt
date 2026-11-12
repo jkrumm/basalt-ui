@@ -1,0 +1,23 @@
+// A global spec in a card slot is a type error (ctl-5: FilterSpec<T, Scope>). Compiled by tsc against the package src.
+import { defineControls, field } from '@SRC/router'
+import type { FilterSpec } from '@SRC/controls/contract'
+import { spec } from '@SRC/controls/spec'
+
+const globals = defineControls({
+  id: 'globals',
+  scope: 'global',
+  fields: { range: field.enum(['24h', '7d'], '24h') },
+})
+
+const overview = defineControls({
+  id: 'overview',
+  scope: 'page',
+  fields: { tab: field.enum(['all', 'errors'], 'all') },
+  widgets: { latency: { range: globals.field.range } },
+})
+
+// oxlint-disable-next-line typescript/no-explicit-any -- a list of specs of different T
+type CardSlot = readonly FilterSpec<any, 'widget'>[]
+
+export const valid: CardSlot = [spec(overview.widget.latency.range, 'Range')]
+export const invalid: CardSlot = [spec(globals.field.range, 'Range')] // EXPECT-ERROR

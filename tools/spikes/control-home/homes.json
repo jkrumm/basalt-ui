@@ -1,0 +1,41 @@
+{
+  "note": "Hand assignment of each waiver component to the v3 home it would take. argo by component name; shutterflow (private) by hashId('c:' + component).",
+  "components": {
+    "argo": {
+      "PanoramaLoaded": "tool",
+      "MapLayerSections": "side-panel",
+      "OpacitySlider": "side-panel",
+      "LpRangeSlider": "side-panel",
+      "WeatherChoice": "side-panel",
+      "TimeScrubber": "tool",
+      "GoalPopover": "overlay",
+      "WeightPopover": "overlay",
+      "BulkModal": "form-row",
+      "EditForm": "form-row",
+      "GymSettingsForm": "form-row",
+      "WorkoutForm": "form-row",
+      "CategoryPicker": "tool",
+      "TagPicker": "tool",
+      "RestTimerPanel": "tool"
+    },
+    "shutterflow": {
+      "cd0465b7": "form-row",
+      "cb0de520": "form-row",
+      "13f165ac": "form-row",
+      "fa8595c1": "form-row",
+      "574fb650": "side-panel",
+      "c4330724": "form-row",
+      "d8eb59a0": "overlay",
+      "bb39dbb9": "form-row",
+      "0b70f610": "aside",
+      "197178f5": "tool",
+      "eba8b5b8": "side-panel",
+      "d50d3f77": "form-row",
+      "fa6af425": "form-row",
+      "98290e31": "tool",
+      "3a5c52aa": "form-row",
+      "c0ec74c4": "form-row",
+      "5461eadd": "form-row"
+    }
+  }
+}

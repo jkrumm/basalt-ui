@@ -1,0 +1,6 @@
+// A composite that takes a field handle: the control's value is the handle's, the file is clean.
+import { Switch } from 'basalt-ui/ui/switch'
+
+export function PublicSwitch({ field }: { field: { state: { value: boolean }; handleChange(v: boolean): void } }) {
+  return <Switch checked={field.state.value} onCheckedChange={field.handleChange} />
+}

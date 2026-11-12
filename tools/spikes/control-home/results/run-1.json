@@ -1,0 +1,740 @@
+{
+  "spike": "control-home",
+  "ceiling": 5,
+  "targets": {
+    "argo": {
+      "visibility": "public",
+      "dirs": ["apps/dashboard/src"],
+      "head": "f5c49ca6"
+    },
+    "shutterflow": {
+      "visibility": "private",
+      "dirs": ["apps/desktop/src", "apps/gallery/src"]
+    }
+  },
+  "argo": {
+    "files": 167,
+    "controls": 38,
+    "inHome": 0,
+    "residue": 38,
+    "fitsHome": 8,
+    "waivers": 30,
+    "waiverFiles": 11,
+    "waiverComponents": 15,
+    "bySource": {
+      "state": 8,
+      "props": 22,
+      "form": 2,
+      "handle": 6
+    },
+    "waiversByHome": {
+      "FormField": 0,
+      "form-row": 9,
+      "handle-bound composite": 0,
+      "overlay": 4,
+      "side-panel": 12,
+      "tool": 5
+    },
+    "unassigned": 0,
+    "sites": [
+      {
+        "file": "apps/dashboard/src/features/astro-window/charts/sky-panorama.tsx",
+        "line": 535,
+        "component": "PanoramaLoaded",
+        "tag": "Slider",
+        "primitive": "slider",
+        "source": "state",
+        "verdict": "waiver",
+        "home": "tool"
+      },
+      {
+        "file": "apps/dashboard/src/features/astro-window/components/map-settings-panel.tsx",
+        "line": 194,
+        "component": "MapLayerSections",
+        "tag": "Radio.Group",
+        "primitive": "radio-group",
+        "source": "props",
+        "verdict": "waiver",
+        "home": "side-panel"
+      },
+      {
+        "file": "apps/dashboard/src/features/astro-window/components/map-settings-panel.tsx",
+        "line": 225,
+        "component": "MapLayerSections",
+        "tag": "Radio.Group",
+        "primitive": "radio-group",
+        "source": "props",
+        "verdict": "waiver",
+        "home": "side-panel"
+      },
+      {
+        "file": "apps/dashboard/src/features/astro-window/components/map-settings-panel.tsx",
+        "line": 268,
+        "component": "MapLayerSections",
+        "tag": "SegmentedControl",
+        "primitive": "segmented",
+        "source": "props",
+        "verdict": "waiver",
+        "home": "side-panel"
+      },
+      {
+        "file": "apps/dashboard/src/features/astro-window/components/map-settings-panel.tsx",
+        "line": 303,
+        "component": "MapLayerSections",
+        "tag": "Checkbox",
+        "primitive": "checkbox",
+        "source": "props",
+        "verdict": "waiver",
+        "home": "side-panel"
+      },
+      {
+        "file": "apps/dashboard/src/features/astro-window/components/map-settings-panel.tsx",
+        "line": 311,
+        "component": "MapLayerSections",
+        "tag": "SegmentedControl",
+        "primitive": "segmented",
+        "source": "props",
+        "verdict": "waiver",
+        "home": "side-panel"
+      },
+      {
+        "file": "apps/dashboard/src/features/astro-window/components/map-settings-panel.tsx",
+        "line": 335,
+        "component": "MapLayerSections",
+        "tag": "Checkbox",
+        "primitive": "checkbox",
+        "source": "props",
+        "verdict": "waiver",
+        "home": "side-panel"
+      },
+      {
+        "file": "apps/dashboard/src/features/astro-window/components/map-settings-panel.tsx",
+        "line": 341,
+        "component": "MapLayerSections",
+        "tag": "Checkbox",
+        "primitive": "checkbox",
+        "source": "props",
+        "verdict": "waiver",
+        "home": "side-panel"
+      },
+      {
+        "file": "apps/dashboard/src/features/astro-window/components/map-settings-panel.tsx",
+        "line": 347,
+        "component": "MapLayerSections",
+        "tag": "Checkbox",
+        "primitive": "checkbox",
+        "source": "props",
+        "verdict": "waiver",
+        "home": "side-panel"
+      },
+      {
+        "file": "apps/dashboard/src/features/astro-window/components/map-settings-panel.tsx",
+        "line": 392,
+        "component": "MapLayerSections",
+        "tag": "Radio.Group",
+        "primitive": "radio-group",
+        "source": "props",
+        "verdict": "waiver",
+        "home": "side-panel"
+      },
+      {
+        "file": "apps/dashboard/src/features/astro-window/components/map-settings-panel.tsx",
+        "line": 453,
+        "component": "WeatherChoice",
+        "tag": "Radio.Group",
+        "primitive": "radio-group",
+        "source": "props",
+        "verdict": "waiver",
+        "home": "side-panel"
+      },
+      {
+        "file": "apps/dashboard/src/features/astro-window/components/map-settings-panel.tsx",
+        "line": 509,
+        "component": "OpacitySlider",
+        "tag": "Slider",
+        "primitive": "slider",
+        "source": "state",
+        "verdict": "waiver",
+        "home": "side-panel"
+      },
+      {
+        "file": "apps/dashboard/src/features/astro-window/components/map-settings-panel.tsx",
+        "line": 550,
+        "component": "LpRangeSlider",
+        "tag": "RangeSlider",
+        "primitive": "slider",
+        "source": "state",
+        "verdict": "waiver",
+        "home": "side-panel"
+      },
+      {
+        "file": "apps/dashboard/src/features/astro-window/components/site-map.tsx",
+        "line": 1004,
+        "component": "TimeScrubber",
+        "tag": "Slider",
+        "primitive": "slider",
+        "source": "props",
+        "verdict": "waiver",
+        "home": "tool"
+      },
+      {
+        "file": "apps/dashboard/src/features/body-composition/components/goal-popover.tsx",
+        "line": 43,
+        "component": "GoalPopover",
+        "tag": "NumberInput",
+        "primitive": "number-field",
+        "source": "state",
+        "verdict": "waiver",
+        "home": "overlay"
+      },
+      {
+        "file": "apps/dashboard/src/features/body-composition/components/skinfold-log-modal.tsx",
+        "line": 75,
+        "component": "SkinfoldLogForm",
+        "tag": "NumberInput",
+        "primitive": "number-field",
+        "source": "form",
+        "verdict": "fits a home",
+        "home": "FormField"
+      },
+      {
+        "file": "apps/dashboard/src/features/body-composition/components/weight-log-modal.tsx",
+        "line": 58,
+        "component": "WeightLogForm",
+        "tag": "NumberInput",
+        "primitive": "number-field",
+        "source": "form",
+        "verdict": "fits a home",
+        "home": "FormField"
+      },
+      {
+        "file": "apps/dashboard/src/features/finance/components/bulk-modal.tsx",
+        "line": 81,
+        "component": "BulkModal",
+        "tag": "Select",
+        "primitive": "select",
+        "source": "state",
+        "verdict": "waiver",
+        "home": "form-row"
+      },
+      {
+        "file": "apps/dashboard/src/features/finance/components/pickers.tsx",
+        "line": 26,
+        "component": "CategoryPicker",
+        "tag": "Select",
+        "primitive": "select",
+        "source": "props",
+        "verdict": "waiver",
+        "home": "tool"
+      },
+      {
+        "file": "apps/dashboard/src/features/finance/components/pickers.tsx",
+        "line": 57,
+        "component": "TagPicker",
+        "tag": "Select",
+        "primitive": "select",
+        "source": "props",
+        "verdict": "waiver",
+        "home": "tool"
+      },
+      {
+        "file": "apps/dashboard/src/features/strength-tracker/components/edit-workout-modal.tsx",
+        "line": 94,
+        "component": "EditForm",
+        "tag": "Select",
+        "primitive": "select",
+        "source": "state",
+        "verdict": "waiver",
+        "home": "form-row"
+      },
+      {
+        "file": "apps/dashboard/src/features/strength-tracker/components/gym-settings-modal.tsx",
+        "line": 221,
+        "component": "GymSettingsForm",
+        "tag": "Select",
+        "primitive": "select",
+        "source": "props",
+        "verdict": "waiver",
+        "home": "form-row"
+      },
+      {
+        "file": "apps/dashboard/src/features/strength-tracker/components/gym-settings-modal.tsx",
+        "line": 330,
+        "component": "GymSettingsForm",
+        "tag": "NumberInput",
+        "primitive": "number-field",
+        "source": "props",
+        "verdict": "waiver",
+        "home": "form-row"
+      },
+      {
+        "file": "apps/dashboard/src/features/strength-tracker/components/gym-settings-modal.tsx",
+        "line": 339,
+        "component": "GymSettingsForm",
+        "tag": "NumberInput",
+        "primitive": "number-field",
+        "source": "props",
+        "verdict": "waiver",
+        "home": "form-row"
+      },
+      {
+        "file": "apps/dashboard/src/features/strength-tracker/components/gym-settings-modal.tsx",
+        "line": 402,
+        "component": "GymSettingsForm",
+        "tag": "NumberInput",
+        "primitive": "number-field",
+        "source": "props",
+        "verdict": "waiver",
+        "home": "form-row"
+      },
+      {
+        "file": "apps/dashboard/src/features/strength-tracker/components/gym-settings-modal.tsx",
+        "line": 466,
+        "component": "GymSettingsForm",
+        "tag": "SegmentedControl",
+        "primitive": "segmented",
+        "source": "props",
+        "verdict": "waiver",
+        "home": "form-row"
+      },
+      {
+        "file": "apps/dashboard/src/features/strength-tracker/components/gym-settings-modal.tsx",
+        "line": 475,
+        "component": "GymSettingsForm",
+        "tag": "Select",
+        "primitive": "select",
+        "source": "props",
+        "verdict": "waiver",
+        "home": "form-row"
+      },
+      {
+        "file": "apps/dashboard/src/features/strength-tracker/components/timer-card.tsx",
+        "line": 219,
+        "component": "RestTimerPanel",
+        "tag": "NumberInput",
+        "primitive": "number-field",
+        "source": "props",
+        "verdict": "waiver",
+        "home": "tool"
+      },
+      {
+        "file": "apps/dashboard/src/features/strength-tracker/components/timer-card.tsx",
+        "line": 256,
+        "component": "RestTimerPanel",
+        "tag": "Slider",
+        "primitive": "slider",
+        "source": "handle",
+        "verdict": "fits a home",
+        "home": "handle-bound composite"
+      },
+      {
+        "file": "apps/dashboard/src/features/strength-tracker/components/timer-card.tsx",
+        "line": 446,
+        "component": "IntervalTimerPanel",
+        "tag": "NumberInput",
+        "primitive": "number-field",
+        "source": "handle",
+        "verdict": "fits a home",
+        "home": "handle-bound composite"
+      },
+      {
+        "file": "apps/dashboard/src/features/strength-tracker/components/timer-card.tsx",
+        "line": 455,
+        "component": "IntervalTimerPanel",
+        "tag": "NumberInput",
+        "primitive": "number-field",
+        "source": "handle",
+        "verdict": "fits a home",
+        "home": "handle-bound composite"
+      },
+      {
+        "file": "apps/dashboard/src/features/strength-tracker/components/timer-card.tsx",
+        "line": 464,
+        "component": "IntervalTimerPanel",
+        "tag": "NumberInput",
+        "primitive": "number-field",
+        "source": "handle",
+        "verdict": "fits a home",
+        "home": "handle-bound composite"
+      },
+      {
+        "file": "apps/dashboard/src/features/strength-tracker/components/timer-card.tsx",
+        "line": 496,
+        "component": "IntervalTimerPanel",
+        "tag": "Slider",
+        "primitive": "slider",
+        "source": "handle",
+        "verdict": "fits a home",
+        "home": "handle-bound composite"
+      },
+      {
+        "file": "apps/dashboard/src/features/strength-tracker/components/weight-popover.tsx",
+        "line": 285,
+        "component": "WeightPopover",
+        "tag": "SegmentedControl",
+        "primitive": "segmented",
+        "source": "state",
+        "verdict": "waiver",
+        "home": "overlay"
+      },
+      {
+        "file": "apps/dashboard/src/features/strength-tracker/components/weight-popover.tsx",
+        "line": 338,
+        "component": "WeightPopover",
+        "tag": "SegmentedControl",
+        "primitive": "segmented",
+        "source": "props",
+        "verdict": "waiver",
+        "home": "overlay"
+      },
+      {
+        "file": "apps/dashboard/src/features/strength-tracker/components/weight-popover.tsx",
+        "line": 345,
+        "component": "WeightPopover",
+        "tag": "Select",
+        "primitive": "select",
+        "source": "props",
+        "verdict": "waiver",
+        "home": "overlay"
+      },
+      {
+        "file": "apps/dashboard/src/features/strength-tracker/components/workout-form.tsx",
+        "line": 520,
+        "component": "WorkoutForm",
+        "tag": "Select",
+        "primitive": "select",
+        "source": "state",
+        "verdict": "waiver",
+        "home": "form-row"
+      },
+      {
+        "file": "apps/dashboard/src/features/walking-pad/target-popover.tsx",
+        "line": 23,
+        "component": "TargetPopover",
+        "tag": "NumberInput",
+        "primitive": "number-field",
+        "source": "handle",
+        "verdict": "fits a home",
+        "home": "handle-bound composite"
+      }
+    ]
+  },
+  "shutterflow": {
+    "files": 145,
+    "controls": 48,
+    "inHome": 17,
+    "residue": 31,
+    "fitsHome": 5,
+    "waivers": 26,
+    "waiverFiles": 15,
+    "waiverComponents": 17,
+    "bySource": {
+      "props": 14,
+      "state": 10,
+      "none": 2,
+      "handle": 3,
+      "form": 2
+    },
+    "waiversByHome": {
+      "FormField": 0,
+      "aside": 6,
+      "form-row": 13,
+      "handle-bound composite": 0,
+      "overlay": 1,
+      "side-panel": 4,
+      "tool": 2
+    },
+    "unassigned": 0,
+    "sites": [
+      {
+        "id": "00ac3fe3",
+        "fileId": "a4dd0e55",
+        "tag": "Slider",
+        "primitive": "slider",
+        "source": "props",
+        "verdict": "waiver",
+        "home": "aside"
+      },
+      {
+        "id": "08496d74",
+        "fileId": "60cda722",
+        "tag": "SegmentedControl",
+        "primitive": "segmented",
+        "source": "state",
+        "verdict": "waiver",
+        "home": "form-row"
+      },
+      {
+        "id": "0a789a2b",
+        "fileId": "140d07cb",
+        "tag": "SegmentedControl",
+        "primitive": "segmented",
+        "source": "none",
+        "verdict": "waiver",
+        "home": "side-panel"
+      },
+      {
+        "id": "2a58ee0d",
+        "fileId": "a4dd0e55",
+        "tag": "Slider",
+        "primitive": "slider",
+        "source": "props",
+        "verdict": "waiver",
+        "home": "aside"
+      },
+      {
+        "id": "33cf6a21",
+        "fileId": "968d790c",
+        "tag": "Checkbox",
+        "primitive": "checkbox",
+        "source": "props",
+        "verdict": "waiver",
+        "home": "side-panel"
+      },
+      {
+        "id": "37e944a3",
+        "fileId": "bb67f85a",
+        "tag": "SegmentedControl",
+        "primitive": "segmented",
+        "source": "handle",
+        "verdict": "fits a home",
+        "home": "handle-bound composite"
+      },
+      {
+        "id": "40ffdcf0",
+        "fileId": "1e4243fd",
+        "tag": "Switch",
+        "primitive": "switch",
+        "source": "props",
+        "verdict": "waiver",
+        "home": "form-row"
+      },
+      {
+        "id": "4677a34e",
+        "fileId": "54f1c9ef",
+        "tag": "Switch",
+        "primitive": "switch",
+        "source": "props",
+        "verdict": "waiver",
+        "home": "form-row"
+      },
+      {
+        "id": "4725ac22",
+        "fileId": "968d790c",
+        "tag": "Checkbox",
+        "primitive": "checkbox",
+        "source": "props",
+        "verdict": "waiver",
+        "home": "side-panel"
+      },
+      {
+        "id": "52e1e7cf",
+        "fileId": "c23b5644",
+        "tag": "Checkbox",
+        "primitive": "checkbox",
+        "source": "props",
+        "verdict": "waiver",
+        "home": "tool"
+      },
+      {
+        "id": "57bb62d3",
+        "fileId": "ea3a5b86",
+        "tag": "Select",
+        "primitive": "select",
+        "source": "state",
+        "verdict": "waiver",
+        "home": "form-row"
+      },
+      {
+        "id": "67de6b34",
+        "fileId": "a4dd0e55",
+        "tag": "Slider",
+        "primitive": "slider",
+        "source": "props",
+        "verdict": "waiver",
+        "home": "aside"
+      },
+      {
+        "id": "6932f3b2",
+        "fileId": "5bb6e4fe",
+        "tag": "Radio.Group",
+        "primitive": "radio-group",
+        "source": "form",
+        "verdict": "fits a home",
+        "home": "FormField"
+      },
+      {
+        "id": "6ad7a7fe",
+        "fileId": "a4dd0e55",
+        "tag": "Slider",
+        "primitive": "slider",
+        "source": "props",
+        "verdict": "waiver",
+        "home": "aside"
+      },
+      {
+        "id": "7ec60750",
+        "fileId": "e486fb3e",
+        "tag": "SegmentedControl",
+        "primitive": "segmented",
+        "source": "state",
+        "verdict": "waiver",
+        "home": "form-row"
+      },
+      {
+        "id": "81111da7",
+        "fileId": "a4dd0e55",
+        "tag": "Slider",
+        "primitive": "slider",
+        "source": "props",
+        "verdict": "waiver",
+        "home": "aside"
+      },
+      {
+        "id": "8628b67f",
+        "fileId": "67fa1af9",
+        "tag": "Radio.Group",
+        "primitive": "radio-group",
+        "source": "state",
+        "verdict": "waiver",
+        "home": "form-row"
+      },
+      {
+        "id": "876de97f",
+        "fileId": "54f1c9ef",
+        "tag": "Switch",
+        "primitive": "switch",
+        "source": "props",
+        "verdict": "waiver",
+        "home": "form-row"
+      },
+      {
+        "id": "a95acd58",
+        "fileId": "baa446a3",
+        "tag": "SegmentedControl",
+        "primitive": "segmented",
+        "source": "handle",
+        "verdict": "fits a home",
+        "home": "handle-bound composite"
+      },
+      {
+        "id": "aa5f8a0c",
+        "fileId": "04ae9718",
+        "tag": "Radio.Group",
+        "primitive": "radio-group",
+        "source": "state",
+        "verdict": "waiver",
+        "home": "form-row"
+      },
+      {
+        "id": "bb2ebf4b",
+        "fileId": "f98d5d36",
+        "tag": "SegmentedControl",
+        "primitive": "segmented",
+        "source": "state",
+        "verdict": "waiver",
+        "home": "overlay"
+      },
+      {
+        "id": "c3694d9e",
+        "fileId": "4b1e6bf2",
+        "tag": "Radio.Group",
+        "primitive": "radio-group",
+        "source": "form",
+        "verdict": "fits a home",
+        "home": "FormField"
+      },
+      {
+        "id": "c593cb86",
+        "fileId": "67fa1af9",
+        "tag": "SegmentedControl",
+        "primitive": "segmented",
+        "source": "state",
+        "verdict": "waiver",
+        "home": "form-row"
+      },
+      {
+        "id": "cddeb222",
+        "fileId": "968d790c",
+        "tag": "Select",
+        "primitive": "select",
+        "source": "props",
+        "verdict": "waiver",
+        "home": "side-panel"
+      },
+      {
+        "id": "e5e8a696",
+        "fileId": "e486fb3e",
+        "tag": "Radio.Group",
+        "primitive": "radio-group",
+        "source": "state",
+        "verdict": "waiver",
+        "home": "form-row"
+      },
+      {
+        "id": "eaea3854",
+        "fileId": "83331d88",
+        "tag": "Radio.Group",
+        "primitive": "radio-group",
+        "source": "state",
+        "verdict": "waiver",
+        "home": "form-row"
+      },
+      {
+        "id": "eece72e0",
+        "fileId": "54f1c9ef",
+        "tag": "Select",
+        "primitive": "select",
+        "source": "props",
+        "verdict": "waiver",
+        "home": "form-row"
+      },
+      {
+        "id": "f341d0e0",
+        "fileId": "31daaf04",
+        "tag": "Checkbox",
+        "primitive": "checkbox",
+        "source": "state",
+        "verdict": "waiver",
+        "home": "form-row"
+      },
+      {
+        "id": "f3c8694d",
+        "fileId": "db2086a1",
+        "tag": "Combobox",
+        "primitive": "combobox",
+        "source": "none",
+        "verdict": "waiver",
+        "home": "tool"
+      },
+      {
+        "id": "f4550678",
+        "fileId": "baa446a3",
+        "tag": "Switch",
+        "primitive": "switch",
+        "source": "handle",
+        "verdict": "fits a home",
+        "home": "handle-bound composite"
+      },
+      {
+        "id": "fc568655",
+        "fileId": "a4dd0e55",
+        "tag": "Slider",
+        "primitive": "slider",
+        "source": "props",
+        "verdict": "waiver",
+        "home": "aside"
+      }
+    ]
+  },
+  "fixtures": {
+    "bodyChildren": "flagged",
+    "filterSlotCustomUseState": "flagged",
+    "handleBoundComposite": "clean",
+    "globalSpecInCardSlot": "type-error"
+  },
+  "fixtureDetail": {
+    "globalSpecInCardSlot": ["L23 TS2322"]
+  },
+  "verdict": "S3: REFUTED"
+}

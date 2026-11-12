@@ -1,0 +1,40 @@
+{
+  "note": "2.x to v3 names of controls-url-state.md section 9. No 2.x name maps to ControlHome: a wrapper-only home is new code.",
+  "controls": {
+    "Select": "select",
+    "MultiSelect": "combobox",
+    "SegmentedControl": "segmented",
+    "NumberInput": "number-field",
+    "Slider": "slider",
+    "RangeSlider": "slider",
+    "Switch": "switch",
+    "Checkbox": "checkbox",
+    "Radio.Group": "radio-group"
+  },
+  "controlsV3": {
+    "Select": "select",
+    "Combobox": "combobox",
+    "Segmented": "segmented",
+    "NumberField": "number-field",
+    "Slider": "slider",
+    "Switch": "switch",
+    "Checkbox": "checkbox",
+    "RadioGroup": "radio-group"
+  },
+  "homes": {
+    "FilterSet": "FilterSet",
+    "SelectFilter": "FilterSet",
+    "MultiSelectFilter": "FilterSet",
+    "RangeFilter": "FilterSet",
+    "NumberFilter": "FilterSet",
+    "ViewTabs": "ViewTabs",
+    "FormRow": "FormField",
+    "FormGroup": "FormField",
+    "FormSection": "FormField",
+    "SettingsRow": "FormField",
+    "FormField": "FormField",
+    "ControlHome": "ControlHome"
+  },
+  "customRender": "filterSlot.custom",
+  "handleProps": ["field", "store", "handle", "fields"]
+}
