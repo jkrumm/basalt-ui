@@ -1,0 +1,6 @@
+# The jsdom lane of the testing kit. The root bunfig registers happy-dom into every `bun test`
+# process; a jsdom run must not have it, so the run is `bun --config=<this> test <files>`
+# (`bun test -c` parses as a test-name filter). Paths are relative to the repo root, like the root
+# bunfig's own preload.
+[test]
+preload = ["./packages/basalt-ui/tests/quality/ssr/jsdom-env.ts"]

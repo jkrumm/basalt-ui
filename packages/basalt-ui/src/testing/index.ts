@@ -1,3 +1,5 @@
-/** `basalt-ui/testing` — v3 skeleton stub (tooling, no app bundle). Peers: none. */
+/** `basalt-ui/testing`: tooling for test files, never in an app bundle. Peers: none. */
 
-export {}
+export { installDomShims } from './dom-shims'
+export { settled } from './settled'
+export { SLOTS } from './slots'
