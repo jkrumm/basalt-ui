@@ -1,4 +1,5 @@
 [
+  "ControlView",
   "FilterSet",
   "FormGroup",
   "FormRow",
@@ -9,5 +10,6 @@
   "SelectFilter",
   "SyncButton",
   "ToggleFilter",
-  "ViewTabs"
+  "ViewTabs",
+  "spec"
 ]
