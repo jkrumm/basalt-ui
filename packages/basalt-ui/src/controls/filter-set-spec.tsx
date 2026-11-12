@@ -197,7 +197,7 @@ function PillSet({
           {specs.map((spec, index) => (
             <div
               key={spec.handle.key}
-              data-slot="filter-pill"
+              data-slot="filter-set-pill"
               data-fold-key={spec.handle.key}
               hidden={index >= visible}
               className="max-w-full min-w-0 shrink-0"
