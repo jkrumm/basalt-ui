@@ -1,4 +1,4 @@
-import { afterAll, describe, expect, test } from 'bun:test'
+import { afterAll, describe, expect, setDefaultTimeout, test } from 'bun:test'
 import {
   cpSync,
   existsSync,
@@ -19,6 +19,10 @@ import {
   REAL_ROOTS,
   writeDocs,
 } from './gen-docs'
+
+// Every check here compiles subpaths through the TypeScript API; the whole tree takes about 5.5 s on an
+// idle host, which is over bun's 5 s default.
+setDefaultTimeout(60_000)
 
 const FIXTURES = join(import.meta.dirname, '..', 'tests', 'fixtures', 'gen-docs')
 const scratch: string[] = []
