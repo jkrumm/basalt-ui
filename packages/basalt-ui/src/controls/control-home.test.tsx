@@ -155,6 +155,9 @@ describe('filterSlot.custom', () => {
     )
     expect(getByTestId('mine').textContent).toBe('7d')
     expect(container.querySelector('[data-slot="override-badge"]')?.textContent).toBe('Local')
+    expect(container.querySelector<HTMLElement>('[data-slot="override-badge"]')?.title).toBe(
+      'Overrides global: Last 24 h',
+    )
     fireEvent.click(getByRole('button', { name: 'Reset Range to global' }))
     expect(handle.clears.count).toBe(1)
     expect(container.querySelector('[data-slot="override-badge"]')).toBeNull()

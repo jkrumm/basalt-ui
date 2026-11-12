@@ -18,6 +18,7 @@ import { Lozenge } from '../ui/badge'
 import { buttonVariants } from '../ui/button'
 import type { ControlPresentation, FilterSpec } from './contract'
 import { ControlPresentationContext, ControlView } from './control-view'
+import { describeValue } from './renderers'
 import type { ControlSize } from './renderers'
 
 /** The name a counted escape carries; `lint --stats` and `countEscapes` count slots by it. */
@@ -94,7 +95,10 @@ function CustomView<T>({
   const { source, inherited } = handle.useSource()
   const overrides = source === 'override'
   const row = presentation === 'row'
-  const title = t('home.overridesGlobal', inherited === undefined ? '' : String(inherited))
+  const title = t(
+    'home.overridesGlobal',
+    describeValue({ handle, label, scope: 'page' } satisfies FilterSpec<T>, inherited),
+  )
   const input = render({
     value,
     set,
