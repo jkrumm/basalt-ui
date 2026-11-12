@@ -10,6 +10,7 @@ import type { FixtureSpec } from '../spec'
 import { innerNavScenario } from './scenarios/inner-nav'
 import { pageCoreScenario } from './scenarios/page-core'
 import { pageKitScenario } from './scenarios/page-kit'
+import { shellChromeScenario } from './scenarios/shell-chrome'
 import { shellFrameScenario } from './scenarios/shell-frame'
 import { shellMobileScenario } from './scenarios/shell-mobile'
 
@@ -30,6 +31,7 @@ export const SCENARIOS: Readonly<Record<string, Scenario>> = {
   'inner-nav': innerNavScenario,
   'shell-frame': shellFrameScenario,
   'shell-mobile': shellMobileScenario,
+  'shell-chrome': shellChromeScenario,
 }
 
 /** Every slot some registered scenario provides. */
