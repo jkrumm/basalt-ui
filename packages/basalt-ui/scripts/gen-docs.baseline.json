@@ -65,7 +65,6 @@
   "basalt-ui/commands#setColorScheme",
   "basalt-ui/commands#toggleSidebar",
   "basalt-ui/content#Markdown",
-  "basalt-ui/controls#FilterSet",
   "basalt-ui/controls#FormGroup",
   "basalt-ui/controls#FormRow",
   "basalt-ui/controls#MultiSelectFilter",
