@@ -1,0 +1,142 @@
+[
+  {
+    "id": "n1",
+    "file": "src/contract-gaps.ts",
+    "line": 12,
+    "anchor": "export function asControl",
+    "need": "spec() over a multi or range handle does not type-check: ControlHandle<T>.options is { value: T }[] but the handle lists members (FieldHandle.options is FieldOption<Member<V>>[]); same for SpecOptions.options, so argo's runtime option catalogue on a multi cannot be typed either (strength-tracker.tsx:86,87,122)",
+    "forbidden": "contract surface missing: core/ports.ts ControlHandle.options and controls/contract.ts FilterOption/SpecOptions name T where the handle holds a member; the port needed a cast",
+    "decision": "amend",
+    "shape": "ports.ts: options?: readonly { value: OptionOf<T>; label: string }[] with type OptionOf<T> = T extends readonly (infer M)[] ? M : T extends { preset: infer P } ? P : T; controls/contract.ts: FilterOption<OptionOf<T>> in SpecOptions. Types only, 0 symbols."
+  },
+  {
+    "id": "n2",
+    "file": "src/contract-gaps.ts",
+    "line": 4,
+    "anchor": "type Handle<V> = Parameters<typeof spec<V>>[0]",
+    "need": "the port had to name ControlHandle<V> and no published specifier carries the port types; derived from spec's last overload instead of importing basalt-ui/core/ports",
+    "forbidden": "app row: dist internals (core/ports is not a section 3 subpath)",
+    "decision": "amend",
+    "shape": "section 3, row `.`: add 'and the types of src/core/ports.ts' (export type only; symbols are value exports, so the count stays 95). No new subpath."
+  },
+  {
+    "id": "n3",
+    "file": "src/app.css",
+    "line": 10,
+    "anchor": "table/table.css",
+    "need": "the table tier sheet (container queries: reduced, card, scroll) has no published specifier, so without it a table at 390 is crushed, overlapping columns; the port imported src/table/table.css by relative path",
+    "forbidden": "app row: dist internals; section 3 CSS list (tokens, typography, prose, fonts, tailwind, theme-script) has no table sheet and tailwind.css does not import it",
+    "decision": "amend",
+    "shape": "section 3 CSS entries: add ./table.css (frozen per major, an app that imports ./table imports it; the 12 KB full-scan fixture gains it only when the table is used). Alternative: tailwind.css @imports it and the fixture re-measures."
+  },
+  {
+    "id": "n4",
+    "file": "src/app.css",
+    "line": 21,
+    "anchor": "--table-row-h: auto;",
+    "need": "defect, not a contract edge: in the card tier table.css says height:auto on a row but the row's h-(--table-row-h) utility sits in a higher layer and wins, so cards are 32 px tall and overlap at 390; the port patched it with app CSS; already recorded in docs/v3/spikes/table-fit.md (S3)",
+    "forbidden": null,
+    "decision": "none",
+    "shape": "table.css card tier sets --table-row-h: auto on the row; no contract change"
+  },
+  {
+    "id": "n5",
+    "file": "src/strength-tracker.tsx",
+    "line": 118,
+    "anchor": "<Collapsible defaultOpen={false}>",
+    "need": "two collapsible Sections with a summary line (argo: collapsible, defaultOpen=false, summary): SectionProps has only title, controls, children, so the port wraps Section in ui/collapsible and the trigger is detached from the heading",
+    "forbidden": "contract surface missing: page/contract.ts SectionProps (the page-kit row of section 8 asks for a controlled Section)",
+    "decision": "amend",
+    "shape": "SectionProps: collapsible?: { defaultOpen?: boolean; state?: ControlHandle<boolean> } and summary?: string; the heading becomes the trigger. Types plus one prop, 0 symbols."
+  },
+  {
+    "id": "n6",
+    "file": "src/workouts-table.tsx",
+    "line": 83,
+    "anchor": "key: 'delete'",
+    "need": "RowAction has no danger flag (argo marks Delete danger and loading); the port keeps the label and lets the confirm overlay carry the danger",
+    "forbidden": null,
+    "decision": "none",
+    "shape": "optional later: RowAction.danger?: true"
+  },
+  {
+    "id": "n7",
+    "file": "src/sparkline-grid.tsx",
+    "line": 49,
+    "anchor": "vel: r.stale ? null : r.vel",
+    "need": "argo's trend cell prints 'no session in 28 d' for a stale lift; col.delta draws an absent value as a dash and has no reason text",
+    "forbidden": null,
+    "decision": "none",
+    "shape": "dash with no reason; a c.custom would carry the text and is a counted escape"
+  },
+  {
+    "id": "n8",
+    "file": "src/strength-tracker.tsx",
+    "line": 59,
+    "anchor": "const tabOptions",
+    "need": "argo's phone-only Train tab (ViewTabs only: 'sm-down', one mount, CSS swap) has no field in the contract: FieldOption and ViewTabsProps carry no viewport; the port filters the option catalogue by useSizeClass(), a JS read the server renders as compact",
+    "forbidden": null,
+    "decision": "none",
+    "shape": "in-contract port via SpecOptions.options; the CSS-only swap (law C9) is given up for this one tab"
+  },
+  {
+    "id": "n9",
+    "file": "src/strength-tracker.tsx",
+    "line": 74,
+    "anchor": "as: 'segmented'",
+    "need": "PageBar.tabs takes a ControlsSlot and ViewTabs({ handle }) is a component, so no contract path puts ViewTabs in the tab slot; the port uses filterSlot([spec(handle, 'View', { as: 'segmented' })]), where as is an untyped string",
+    "forbidden": null,
+    "decision": "none",
+    "shape": "doc line in the controls concept; optional later: type FilterSpec.as as a union"
+  },
+  {
+    "id": "n10",
+    "file": "src/workouts-table.tsx",
+    "line": 102,
+    "anchor": "height=\"fill\"",
+    "need": "DataPanel holds the body at the height skeleton declares in every phase, so a 32-row table in it must scroll inside the box (DataTable height fill) and its pager-free full-page growth is gone; the first render without it clipped 9 of 32 rows silently",
+    "forbidden": null,
+    "decision": "none",
+    "shape": "declare skeleton { height } and DataTable height fill together"
+  },
+  {
+    "id": "n11",
+    "file": "src/strength-tracker.tsx",
+    "line": 105,
+    "anchor": "<PageAside title=\"Training\"",
+    "need": "argo's 8/4 main-plus-rail grid is an asymmetric split that CardGrid refuses; the port hosts the rail in PageAside, which is the inspector region of the shell, for a logger and timer",
+    "forbidden": null,
+    "decision": "none",
+    "shape": "in-contract: PageAside (dock) on wide, the Train tab on a phone"
+  },
+  {
+    "id": "n12",
+    "file": "src/strength-tracker.tsx",
+    "line": 81,
+    "anchor": "kind: 'controls-slot'",
+    "need": "argo puts FilterSet (the +N fold, the phone's Filters (n) sheet) in PageBar's filters slot; PageBar.controls takes a ControlsSlot, filterSlot(specs) draws one pill per spec with no fold, and FilterSet returns an element, so no contract path puts a FilterSet in a PageBar; the port builds the slot object by hand",
+    "forbidden": "contract surface missing: ports.ts calls ControlsSlot the opaque product of filterSlot(specs), and composites never read the specs; a hand-built slot is the only way to reach FilterSet's fold from PageBar",
+    "decision": "amend",
+    "shape": "no new symbol: filterSlot(specs) renders SpecFilterSet when its host home is page-bar or section-header (pill homes), so the fold and the sheet apply by construction; FilterSet stays for homes the app lays out itself."
+  },
+  {
+    "id": "n13",
+    "file": "src/strength-tracker.tsx",
+    "line": 73,
+    "anchor": "tabs={",
+    "need": "defect, not a contract edge: with the folding FilterSet in PageBar controls, the band (title, three-segment tab strip, Filters button) does not wrap at 390 and the page scrolls sideways: scrollWidth 435 against 390 on both tabs, light and dark (shots/r5); with pill rows from filterSlot the same band wrapped and fit",
+    "forbidden": null,
+    "decision": "none",
+    "shape": "page-bar.tsx lets the controls cell wrap onto its own row below @regular; no contract change"
+  },
+  {
+    "id": "n14",
+    "file": "src/strength-tracker.tsx",
+    "line": 73,
+    "anchor": "tabs={",
+    "need": "defect, not a contract edge: the folding FilterSet in PageBar collapses to its Filters button at 1800x1200 as well and the button overlaps the PageAside heading (shots/r5/charts.desktop.*.png, history.desktop.dark.png)",
+    "forbidden": null,
+    "decision": "none",
+    "shape": "page-bar.tsx: the fold measures the bar, not the controls cell; no contract change"
+  }
+]

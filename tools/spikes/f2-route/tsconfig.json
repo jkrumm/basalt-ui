@@ -1,0 +1,22 @@
+{
+  "extends": "../../../tsconfig.base.json",
+  "compilerOptions": {
+    "jsx": "react-jsx",
+    "lib": ["ES2023", "DOM", "DOM.Iterable"],
+    "types": ["bun", "vite/client"],
+    "allowImportingTsExtensions": true,
+    "paths": {
+      "basalt-ui": ["./stubs/root.ts"],
+      "basalt-ui/charts": ["./stubs/charts.tsx"],
+      "basalt-ui/ui/*": ["../../../packages/basalt-ui/src/ui/*"],
+      "basalt-ui/router": ["../../../packages/basalt-ui/src/router"],
+      "basalt-ui/data": ["../../../packages/basalt-ui/src/data"],
+      "basalt-ui/page": ["../../../packages/basalt-ui/src/page"],
+      "basalt-ui/cards": ["../../../packages/basalt-ui/src/cards"],
+      "basalt-ui/controls": ["./stubs/controls.ts"],
+      "basalt-ui/table": ["./stubs/table.ts"],
+      "*": ["./node_modules/@types/*", "./node_modules/*"]
+    }
+  },
+  "include": ["src", "stubs", "run.ts", "vite.config.ts"]
+}
