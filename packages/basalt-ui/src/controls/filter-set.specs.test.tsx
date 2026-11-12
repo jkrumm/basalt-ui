@@ -40,7 +40,7 @@ const regions = () =>
   )
 
 const pills = (container: HTMLElement) =>
-  [...container.querySelectorAll<HTMLElement>('[data-slot="filter-pill"] button')].map((b) => ({
+  [...container.querySelectorAll<HTMLElement>('[data-slot="filter-set-pill"] button')].map((b) => ({
     text: b.textContent,
     name: b.getAttribute('aria-label'),
   }))
@@ -133,7 +133,7 @@ describe('FilterSet specs', () => {
         <FilterSet specs={[env(), regions()]} />
       </ControlHome>,
     )
-    expect(container.querySelectorAll('[data-slot="filter-pill"] button')).toHaveLength(0)
+    expect(container.querySelectorAll('[data-slot="filter-set-pill"] button')).toHaveLength(0)
     const views = container.querySelectorAll('[data-slot="control-view"]')
     expect(views).toHaveLength(2)
     expect([...views].every((v) => v.getAttribute('data-presentation') === 'row')).toBe(true)

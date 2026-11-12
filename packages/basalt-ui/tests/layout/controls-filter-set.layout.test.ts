@@ -197,7 +197,9 @@ layout('FilterSet', () => {
         const page = await open(viewport)
         const pills = await page.raw.evaluate(() =>
           [
-            ...document.querySelectorAll('[data-testid="fs-8"] [data-slot="filter-pill"] button'),
+            ...document.querySelectorAll(
+              '[data-testid="fs-8"] [data-slot="filter-set-pill"] button',
+            ),
           ].map((b) => [b.textContent, b.getAttribute('aria-label')]),
         )
         expect(pills).toEqual([
@@ -225,8 +227,9 @@ layout('FilterSet', () => {
           const inside = await page.raw.evaluate(() => {
             const popup = document.querySelector('[data-slot="sheet-content"]')!
             return {
-              pills: popup.querySelectorAll('[data-presentation="pill"], [data-slot="filter-pill"]')
-                .length,
+              pills: popup.querySelectorAll(
+                '[data-presentation="pill"], [data-slot="filter-set-pill"]',
+              ).length,
               rows: popup.querySelectorAll('[data-slot="control-view"][data-presentation="row"]')
                 .length,
               reset: popup.querySelector<HTMLButtonElement>('[data-slot="filter-reset"]')?.disabled,
@@ -239,8 +242,9 @@ layout('FilterSet', () => {
           const inside = await page.raw.evaluate(() => {
             const popup = document.querySelector('[data-slot="popover-content"]')!
             return {
-              pills: popup.querySelectorAll('[data-presentation="pill"], [data-slot="filter-pill"]')
-                .length,
+              pills: popup.querySelectorAll(
+                '[data-presentation="pill"], [data-slot="filter-set-pill"]',
+              ).length,
               rows: popup.querySelectorAll('[data-slot="control-view"][data-presentation="row"]')
                 .length,
             }
@@ -265,16 +269,14 @@ layout('FilterSet', () => {
 
       test('Reset all returns every active filter to its default', async () => {
         const page = await open(viewport)
-        const frame = '[data-testid="fs-8"]'
-        if (await showsSheet(page, 'fs-8')) {
+        // The 560 px frame folds on a desktop and a tablet, so Reset all is reachable there too.
+        const frame = '[data-testid="fs-w560"]'
+        if (await showsSheet(page, 'fs-w560')) {
           await page.raw.click(`${frame} [data-slot="filter-count"]`)
           await page.raw.waitForSelector('[data-slot="sheet-content"] [data-slot="filter-reset"]')
           await page.raw.click('[data-slot="sheet-content"] [data-slot="filter-reset"]')
         } else {
-          // Desktop: the fold panel holds Reset all when something folded; otherwise every pill is
-          // reachable and the census is judged through the sheet markup that stays in the DOM.
-          const fold = await page.count(`${frame} [data-fold-trigger]`)
-          if (fold === 0) return
+          expect(await page.count(`${frame} [data-fold-trigger]`)).toBe(1)
           await page.raw.click(`${frame} [data-fold-trigger]`)
           await page.raw.waitForSelector('[data-slot="filter-fold"] [data-slot="filter-reset"]')
           await page.raw.click('[data-slot="filter-fold"] [data-slot="filter-reset"]')
@@ -307,8 +309,9 @@ layout('FilterSet', () => {
         const inside = await page.raw.evaluate(() => {
           const fold = document.querySelector('[data-slot="filter-fold"]')!
           return {
-            pills: fold.querySelectorAll('[data-presentation="pill"], [data-slot="filter-pill"]')
-              .length,
+            pills: fold.querySelectorAll(
+              '[data-presentation="pill"], [data-slot="filter-set-pill"]',
+            ).length,
             rows: fold.querySelectorAll('[data-slot="control-view"][data-presentation="row"]')
               .length,
           }
@@ -362,7 +365,7 @@ layout('FilterSet', () => {
             await page.raw.click(`${frame} [data-slot="filter-count"]`)
             await page.raw.waitForSelector('[data-slot="sheet-content"] [data-slot="control-view"]')
           } else {
-            await page.raw.click(`${frame} [data-slot="filter-pill"] button >> nth=0`)
+            await page.raw.click(`${frame} [data-slot="filter-set-pill"] button >> nth=0`)
             await page.raw.waitForSelector(
               '[data-slot="popover-content"] [data-slot="control-view"]',
             )
@@ -396,7 +399,7 @@ layout('FilterSet', () => {
         const aside = await page.raw.evaluate(() => {
           const frame = document.querySelector('[data-testid="fs-aside"]')!
           return {
-            pills: frame.querySelectorAll('[data-slot="filter-pill"] button').length,
+            pills: frame.querySelectorAll('[data-slot="filter-set-pill"] button').length,
             rows: frame.querySelectorAll('[data-slot="control-view"][data-presentation="row"]')
               .length,
           }
