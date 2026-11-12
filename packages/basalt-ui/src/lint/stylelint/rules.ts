@@ -31,7 +31,7 @@ const DECORATIVE_ROLE =
   'var\\(\\s*--vx-(?:(?:good|warn|bad|info|brand|chart|seq)(?:-[a-z0-9-]+)?|[a-z0-9-]*-tint)\\s*[,)]'
 
 export const SPACING_PROPERTIES =
-  '/^(?:padding|margin)(?:-[a-z]+)*$|^(?:row-|column-)?gap$|^font-size$/'
+  '/^(?:scroll-)?(?:padding|margin)(?:-[a-z]+)*$|^(?:grid-)?(?:row-|column-)?gap$|^font(?:-size)?$/'
 export const SHAPE_PROPERTIES =
   '/^(?:border(?:-[a-z]+)*-radius|box-shadow|line-height|letter-spacing)$/'
 export const DECORATION_PROPERTIES =

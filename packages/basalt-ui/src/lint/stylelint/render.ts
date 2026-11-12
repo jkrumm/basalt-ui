@@ -36,7 +36,7 @@ export function stylelintConfig({ ignoreFiles = [] }: RenderOptions = {}): Style
 
 /**
  * The text of `.stylelintrc.basalt.json`: the closed stylelint preset with `ignoreFiles` listing the
- * generated token sheets. `sync` writes it and `sync --check` compares bytes.
+ * generated token sheets. v3-sk-3 feeds it to `sync` through the presetFiles seam.
  */
 export function renderStylelintConfig(options: RenderOptions = {}): string {
   return `${JSON.stringify(stylelintConfig(options), null, 2)}\n`
