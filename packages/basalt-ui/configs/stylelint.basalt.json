@@ -33,7 +33,7 @@
       "/.*/": [
         "/color-mix\\((?!\\s*in\\s+[a-z0-9-]+(?:\\s+(?:shorter|longer|increasing|decreasing)\\s+hue)?\\s*,\\s*(?:var\\(--vx-[a-z0-9-]+\\)|transparent)(?:\\s+[\\d.]+%)?\\s*,\\s*(?:var\\(--vx-[a-z0-9-]+\\)|transparent)(?:\\s+[\\d.]+%)?\\s*\\))/i"
       ],
-      "/^(?:padding|margin)(?:-[a-z]+)*$|^(?:row-|column-)?gap$|^font-size$/": [
+      "/^(?:scroll-)?(?:padding|margin)(?:-[a-z]+)*$|^(?:grid-)?(?:row-|column-)?gap$|^font(?:-size)?$/": [
         "/(?<![\\w])[+-]?(?:\\d*\\.)?\\d+(?:px|rem|em|ex|ch|lh|rlh|cap|ic|vw|vh|vmin|vmax|vi|vb|[sld]v[whib]|[sld]vmin|[sld]vmax|cq[whib]|cqmin|cqmax|pt|pc|cm|mm|q|in)\\b/i",
         "/\\bcalc\\(/i"
       ],
