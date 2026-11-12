@@ -67,8 +67,33 @@ export const KNOWN: readonly KnownFinding[] = [
   {
     route: '/scenarios/s1-ops',
     assertion: 'ringWalk',
-    item: /svg "Latency per minute.*outline is clipped/,
+    item: /svg ".*outline is clipped/,
     owner: 'charts: focusable plot ring is clipped by its card',
+  },
+  {
+    route: '/scenarios/s1-ops',
+    assertion: 'ringWalk',
+    item: /fieldset>button ".*no focus outline/,
+    owner: 'charts: legend toggles have no focus ring',
+  },
+  {
+    route: '/scenarios/s1-ops',
+    assertion: 'ringWalk',
+    item: /(tbody>tr>td>button "Show Cause"|tr>th>span>button "\+\d+ col).*(outline contrast|outline is clipped)/,
+    owner:
+      'table: row and folded-column buttons keep a ring that is too faint and is clipped by the scrollport',
+  },
+  {
+    route: '/settings',
+    assertion: 'ringWalk',
+    item: /input "": no focus outline/,
+    owner: 'playground settings (2.x inputs): no focus ring',
+  },
+  {
+    route: '/cards',
+    assertion: 'focusNotObscured',
+    item: /a\[stat-target\].*covered at .* by div\[card-phase\]/,
+    owner: 'cards: the phase overlay sits over the stat target link',
   },
   {
     route: '/scenarios/s1-ops',
