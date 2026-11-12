@@ -7,6 +7,7 @@
  * v3 shell add scenarios (and their slots) as they land.
  */
 import type { FixtureSpec } from '../spec'
+import { pageCoreScenario } from './scenarios/page-core'
 import { pageKitScenario } from './scenarios/page-kit'
 
 export type ShellSlotName = string
@@ -22,6 +23,7 @@ export interface Scenario {
 
 export const SCENARIOS: Readonly<Record<string, Scenario>> = {
   'page-kit': pageKitScenario,
+  'page-core': pageCoreScenario,
 }
 
 /** Every slot some registered scenario provides. */
