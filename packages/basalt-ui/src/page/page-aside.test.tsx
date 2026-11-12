@@ -686,6 +686,47 @@ describe('PageAside extra rows', () => {
     expect(props.dock).toBe('auto')
   })
 
+  test('closing a detail on an unbound aside returns to its own content and keeps it open', () => {
+    setWidth(WIDE)
+    const seen: { host: DetailHost | null } = { host: null }
+    function Reader({ onRead }: { onRead: (host: DetailHost | null) => void }) {
+      onRead(useContext(DetailHostContext))
+      return null
+    }
+    render(
+      <Page>
+        <Reader onRead={(h) => (seen.host = h)} />
+        <PageAside title="A">own</PageAside>
+      </Page>,
+    )
+    act(() => seen.host!.show({ title: 'Run 7', body: () => <p>seven</p> }))
+    fireEvent.click(screen.getByRole('button', { name: 'Close panel' }))
+    expect(screen.getByLabelText('A').textContent).toContain('own')
+    expect(aside()).not.toBeNull()
+  })
+
+  test('closing a detail on an open bound aside keeps the aside open', () => {
+    setWidth(WIDE)
+    const { bound, sets } = handle(true)
+    const seen: { host: DetailHost | null } = { host: null }
+    function Reader({ onRead }: { onRead: (host: DetailHost | null) => void }) {
+      onRead(useContext(DetailHostContext))
+      return null
+    }
+    render(
+      <Page>
+        <Reader onRead={(h) => (seen.host = h)} />
+        <PageAside title="A" state={bound}>
+          own
+        </PageAside>
+      </Page>,
+    )
+    act(() => seen.host!.show({ title: 'Run 7', body: () => <p>seven</p> }))
+    fireEvent.click(screen.getByRole('button', { name: 'Close panel' }))
+    expect(sets).toEqual([])
+    expect(screen.getByLabelText('A').textContent).toContain('own')
+  })
+
   test('an aside outside a Page has no close button and no sheet trigger', () => {
     render(<PageAside title="Loose">x</PageAside>)
     expect(screen.queryByRole('button')).toBeNull()

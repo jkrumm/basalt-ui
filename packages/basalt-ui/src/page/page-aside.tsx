@@ -1,6 +1,7 @@
 import { useContext, useId, useRef, useState, useSyncExternalStore } from 'react'
 import type { CSSProperties, ReactElement, ReactNode } from 'react'
 import { createPortal } from 'react-dom'
+import { useIsomorphicLayoutEffect } from '../common/isomorphic-layout-effect'
 import { page } from '../core/messages/page'
 import { useMessages } from '../core/messages/use-messages'
 import { Button } from '../ui/button'
@@ -8,7 +9,7 @@ import { ScrollArea } from '../ui/scroll-area'
 import { Sheet, SheetContent, SheetTrigger } from '../ui/sheet'
 import type { PageAsideProps } from './contract'
 import type { ClaimHandle } from './core/claims'
-import { PageContext, PageHostContext, useIsoLayoutEffect } from './page'
+import { PageContext, PageHostContext } from './page'
 
 /** The default aside width in px; 320, 360, 480 and 640 are the sanctioned widths. */
 export const DEFAULT_ASIDE_WIDTH = 360
@@ -114,7 +115,7 @@ function AsideView({
   const isOpen = detail !== null || (open ?? wide)
   const owns = snapshot?.owner === undefined || snapshot.owner.id === id
 
-  useIsoLayoutEffect(() => {
+  useIsomorphicLayoutEffect(() => {
     if (context === null) return undefined
     const claim = context.asides.claim(id, false)
     handle.current = claim
@@ -124,20 +125,21 @@ function AsideView({
     }
   }, [context, id])
 
-  useIsoLayoutEffect(() => {
+  useIsomorphicLayoutEffect(() => {
     handle.current?.update(!isOpen)
   }, [isOpen])
 
   const hideDetail = context?.hideDetail
+  // Closing a shown detail returns to the aside's own content; it never closes the aside itself.
   const close = (): void => {
-    hideDetail?.()
-    onOpenChange(false)
+    if (detail !== null) hideDetail?.()
+    else onOpenChange(false)
   }
   const shownTitle = detail?.title ?? title
   const body: ReactNode = detail === null ? children : detail.body(DETAIL_BOX)
   const closes = detail !== null || closable ? close : undefined
 
-  useIsoLayoutEffect(() => {
+  useIsomorphicLayoutEffect(() => {
     if (host === null || !owns || !isOpen) return undefined
     return host.claim(
       'aside',
