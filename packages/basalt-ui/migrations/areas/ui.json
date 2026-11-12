@@ -1,10 +1,963 @@
 {
   "schema": 1,
   "area": "ui",
-  "rows": [],
-  "tokens": { "renamed": [], "valueShifts": [] },
+  "rows": [
+    {
+      "profiles": ["parts", "app"],
+      "id": "mantine-Text",
+      "kind": "codemod",
+      "from": "@mantine/core#Text",
+      "to": "<p> or <span> with a type-step class (text-xs .. text-lg, mapped by px), weight and ink token classes",
+      "codemod": "layout: tools/migrate-v3/layout rewrites the tag and its style props to classes",
+      "verify": "tsc, then the codemod worklist: anything it cannot convert is listed by reason, never dropped"
+    },
+    {
+      "profiles": ["parts", "app"],
+      "id": "mantine-Stack",
+      "kind": "codemod",
+      "from": "@mantine/core#Stack",
+      "to": "<div className=\"flex flex-col gap-*\">",
+      "codemod": "layout: tools/migrate-v3/layout rewrites the tag and its style props to classes",
+      "verify": "tsc, then the codemod worklist: anything it cannot convert is listed by reason, never dropped"
+    },
+    {
+      "profiles": ["parts", "app"],
+      "id": "mantine-Group",
+      "kind": "codemod",
+      "from": "@mantine/core#Group",
+      "to": "<div className=\"flex items-center gap-*\"> (wrap, justify and align props map to classes)",
+      "codemod": "layout: tools/migrate-v3/layout rewrites the tag and its style props to classes",
+      "verify": "tsc, then the codemod worklist: anything it cannot convert is listed by reason, never dropped"
+    },
+    {
+      "profiles": ["parts", "app"],
+      "id": "mantine-Box",
+      "kind": "codemod",
+      "from": "@mantine/core#Box",
+      "to": "<div> (or the `component=` element via `render`) with the style props as classes",
+      "codemod": "layout: tools/migrate-v3/layout rewrites the tag and its style props to classes",
+      "verify": "tsc, then the codemod worklist: anything it cannot convert is listed by reason, never dropped"
+    },
+    {
+      "profiles": ["parts", "app"],
+      "id": "mantine-SimpleGrid",
+      "kind": "codemod",
+      "from": "@mantine/core#SimpleGrid",
+      "to": "<div className=\"grid grid-cols-* gap-*\"> (responsive cols map to container variants)",
+      "codemod": "layout: tools/migrate-v3/layout rewrites the tag and its style props to classes",
+      "verify": "tsc, then the codemod worklist: anything it cannot convert is listed by reason, never dropped"
+    },
+    {
+      "profiles": ["parts", "app"],
+      "id": "mantine-Center",
+      "kind": "codemod",
+      "from": "@mantine/core#Center",
+      "to": "<div className=\"flex items-center justify-center\">",
+      "codemod": "layout: tools/migrate-v3/layout rewrites the tag and its style props to classes",
+      "verify": "tsc, then the codemod worklist: anything it cannot convert is listed by reason, never dropped"
+    },
+    {
+      "profiles": ["parts", "app"],
+      "id": "mantine-Flex",
+      "kind": "codemod",
+      "from": "@mantine/core#Flex",
+      "to": "<div className=\"flex ...\"> (direction, align, justify, gap, wrap map to classes)",
+      "codemod": "layout: tools/migrate-v3/layout rewrites the tag and its style props to classes",
+      "verify": "tsc, then the codemod worklist: anything it cannot convert is listed by reason, never dropped"
+    },
+    {
+      "profiles": ["parts", "app"],
+      "id": "mantine-Title",
+      "kind": "map",
+      "from": "@mantine/core#Title",
+      "to": "<h1> .. <h6> with `font-head` and a type-step class"
+    },
+    {
+      "profiles": ["parts", "app"],
+      "id": "mantine-Container",
+      "kind": "map",
+      "from": "@mantine/core#Container",
+      "to": "<div> with `mx-auto` and a max-width class"
+    },
+    {
+      "profiles": ["parts", "app"],
+      "id": "mantine-Grid",
+      "kind": "map",
+      "from": "@mantine/core#Grid",
+      "to": "<div className=\"grid grid-cols-12 gap-*\"> with `col-span-*` on the children"
+    },
+    {
+      "profiles": ["parts", "app"],
+      "id": "mantine-List",
+      "kind": "map",
+      "from": "@mantine/core#List",
+      "to": "<ul> or <ol> with list-style classes"
+    },
+    {
+      "profiles": ["parts", "app"],
+      "id": "mantine-Code",
+      "kind": "map",
+      "from": "@mantine/core#Code",
+      "to": "<code> with `font-mono`; code blocks are CodeBlock from basalt-ui/content"
+    },
+    {
+      "profiles": ["parts", "app"],
+      "id": "mantine-Anchor",
+      "kind": "map",
+      "from": "@mantine/core#Anchor",
+      "to": "<a>, or the Router `Link` for in-app targets"
+    },
+    {
+      "profiles": ["parts", "app"],
+      "id": "mantine-VisuallyHidden",
+      "kind": "map",
+      "from": "@mantine/core#VisuallyHidden",
+      "to": "`sr-only` on the element"
+    },
+    {
+      "profiles": ["parts", "app"],
+      "id": "mantine-Image",
+      "kind": "map",
+      "from": "@mantine/core#Image",
+      "to": "<img> with width, height and `object-*` classes"
+    },
+    {
+      "profiles": ["parts", "app"],
+      "id": "mantine-AspectRatio",
+      "kind": "map",
+      "from": "@mantine/core#AspectRatio",
+      "to": "`aspect-*` on the wrapper"
+    },
+    {
+      "profiles": ["parts", "app"],
+      "id": "mantine-Blockquote",
+      "kind": "map",
+      "from": "@mantine/core#Blockquote",
+      "to": "Prose from basalt-ui/page, which styles <blockquote>"
+    },
+    {
+      "profiles": ["parts", "app"],
+      "id": "mantine-Button",
+      "kind": "map",
+      "from": "@mantine/core#Button",
+      "to": "basalt-ui/ui/button#Button",
+      "note": "variant primary | secondary | ghost | danger; size md | sm | icon | icon-sm; size and `mih={24}` per the primitives-distribution section 4 ladder (xs 30, sm 36, md 42 become md; compact-xs, compact-sm and mih 24 become sm)"
+    },
+    {
+      "profiles": ["parts", "app"],
+      "id": "mantine-ActionIcon",
+      "kind": "map",
+      "from": "@mantine/core#ActionIcon",
+      "to": "basalt-ui/ui/button#Button size=\"icon\" | size=\"icon-sm\"",
+      "note": "md 28, lg 34, size 28 and size 40 become icon; xs 18, sm 22 and size 24 become icon-sm; the aria-label is required by type"
+    },
+    {
+      "profiles": ["parts", "app"],
+      "id": "mantine-CloseButton",
+      "kind": "map",
+      "from": "@mantine/core#CloseButton",
+      "to": "basalt-ui/ui/button#Button size=\"icon-sm\" variant=\"ghost\"",
+      "note": "names itself from the catalog, so an aria-label is not passed"
+    },
+    {
+      "profiles": ["parts", "app"],
+      "id": "mantine-UnstyledButton",
+      "kind": "map",
+      "from": "@mantine/core#UnstyledButton",
+      "to": "basalt-ui/ui/button#Pressable",
+      "note": "CSS-module rows and chips become size=\"row\" and size=\"chip\"; a row of mixed content keeps size=\"none\""
+    },
+    {
+      "profiles": ["parts", "app"],
+      "id": "mantine-CopyButton",
+      "kind": "map",
+      "from": "@mantine/core#CopyButton",
+      "to": "basalt-ui/ui/button#CopyButton"
+    },
+    {
+      "profiles": ["parts", "app"],
+      "id": "mantine-useClipboard",
+      "kind": "map",
+      "from": "@mantine/hooks#useClipboard",
+      "to": "basalt-ui/ui/button#CopyButton",
+      "note": "the hook only fed a copy button; CopyButton carries the insecure-context fallback"
+    },
+    {
+      "profiles": ["parts", "app"],
+      "id": "mantine-PasswordInput",
+      "kind": "map",
+      "from": "@mantine/core#PasswordInput",
+      "to": "basalt-ui/ui/input#PasswordInput"
+    },
+    {
+      "profiles": ["parts", "app"],
+      "id": "mantine-Badge",
+      "kind": "map",
+      "from": "@mantine/core#Badge",
+      "to": "basalt-ui/ui/badge#Lozenge | CountBadge | DeltaBadge",
+      "note": "a status label is Lozenge, a number CountBadge, a signed change DeltaBadge (polarity required)"
+    },
+    {
+      "profiles": ["parts", "app"],
+      "id": "mantine-ThemeIcon",
+      "kind": "map",
+      "from": "@mantine/core#ThemeIcon",
+      "to": "basalt-ui/ui/card#IconTile"
+    },
+    {
+      "profiles": ["parts", "app"],
+      "id": "mantine-Indicator",
+      "kind": "map",
+      "from": "@mantine/core#Indicator",
+      "to": "basalt-ui/ui/badge#CountBadge",
+      "note": "a dot is a positioned CountBadge"
+    },
+    {
+      "profiles": ["parts", "app"],
+      "id": "mantine-Pill",
+      "kind": "map",
+      "from": "@mantine/core#Pill",
+      "to": "basalt-ui/ui/badge#Lozenge"
+    },
+    {
+      "profiles": ["parts", "app"],
+      "id": "mantine-Card",
+      "kind": "map",
+      "from": "@mantine/core#Card",
+      "to": "basalt-ui/ui/card#Card",
+      "note": "Card.Section becomes Inset or CardBand"
+    },
+    {
+      "profiles": ["parts", "app"],
+      "id": "mantine-Paper",
+      "kind": "map",
+      "from": "@mantine/core#Paper",
+      "to": "basalt-ui/ui/card#Card"
+    },
+    {
+      "profiles": ["parts", "app"],
+      "id": "mantine-Alert",
+      "kind": "map",
+      "from": "@mantine/core#Alert",
+      "to": "basalt-ui/ui/alert#Alert",
+      "note": "color becomes tone"
+    },
+    {
+      "profiles": ["parts", "app"],
+      "id": "mantine-Divider",
+      "kind": "map",
+      "from": "@mantine/core#Divider",
+      "to": "basalt-ui/ui/separator#Separator"
+    },
+    {
+      "profiles": ["parts", "app"],
+      "id": "mantine-Kbd",
+      "kind": "map",
+      "from": "@mantine/core#Kbd",
+      "to": "basalt-ui/ui/kbd#Kbd"
+    },
+    {
+      "profiles": ["parts", "app"],
+      "id": "mantine-Skeleton",
+      "kind": "map",
+      "from": "@mantine/core#Skeleton",
+      "to": "basalt-ui/ui/skeleton#Skeleton"
+    },
+    {
+      "profiles": ["parts", "app"],
+      "id": "mantine-Loader",
+      "kind": "map",
+      "from": "@mantine/core#Loader",
+      "to": "basalt-ui/ui/skeleton#Spinner"
+    },
+    {
+      "profiles": ["parts", "app"],
+      "id": "mantine-ColorSwatch",
+      "kind": "map",
+      "from": "@mantine/core#ColorSwatch",
+      "to": "basalt-ui/ui/status#Swatch",
+      "note": "takes a typed VX series colour; no inline style"
+    },
+    {
+      "profiles": ["parts", "app"],
+      "id": "mantine-TextInput",
+      "kind": "map",
+      "from": "@mantine/core#TextInput",
+      "to": "basalt-ui/ui/input#Input",
+      "note": "label and error move to Field, FieldLabel, FieldError; leftSection and rightSection become InputGroup and InputAddon"
+    },
+    {
+      "profiles": ["parts", "app"],
+      "id": "mantine-Textarea",
+      "kind": "map",
+      "from": "@mantine/core#Textarea",
+      "to": "basalt-ui/ui/textarea#Textarea",
+      "note": "autosize becomes fixed rows until `field-sizing` is checked"
+    },
+    {
+      "profiles": ["parts", "app"],
+      "id": "mantine-Input",
+      "kind": "map",
+      "from": "@mantine/core#Input",
+      "to": "basalt-ui/ui/input#Input"
+    },
+    {
+      "profiles": ["parts", "app"],
+      "id": "mantine-NumberInput",
+      "kind": "map",
+      "from": "@mantine/core#NumberInput",
+      "to": "basalt-ui/ui/number-field#NumberField",
+      "note": "Mantine separators become Intl options through `locale`"
+    },
+    {
+      "profiles": ["parts", "app"],
+      "id": "mantine-Select",
+      "kind": "codemod",
+      "from": "@mantine/core#Select",
+      "to": "basalt-ui/ui/select#Select",
+      "codemod": "options: `data=` becomes `options=`, value expression untouched; `allowDeselect={false}` is deleted (the new default); `onChange` becomes `onValueChange`",
+      "verify": "tsc: `data` is not a prop of Select"
+    },
+    {
+      "profiles": ["parts", "app"],
+      "id": "mantine-NativeSelect",
+      "kind": "codemod",
+      "from": "@mantine/core#NativeSelect",
+      "to": "basalt-ui/ui/select#NativeSelect",
+      "codemod": "options: `data=` becomes `options=`, value expression untouched",
+      "verify": "tsc: `data` is not a prop of NativeSelect"
+    },
+    {
+      "profiles": ["parts", "app"],
+      "id": "mantine-Combobox",
+      "kind": "map",
+      "from": "@mantine/core#Combobox",
+      "to": "basalt-ui/ui/combobox#Combobox*"
+    },
+    {
+      "profiles": ["parts", "app"],
+      "id": "mantine-useCombobox",
+      "kind": "map",
+      "from": "@mantine/core#useCombobox",
+      "to": "basalt-ui/ui/combobox#Combobox*",
+      "note": "the store hook goes: open state and filtering belong to the Base UI part"
+    },
+    {
+      "profiles": ["parts", "app"],
+      "id": "mantine-Autocomplete",
+      "kind": "map",
+      "from": "@mantine/core#Autocomplete",
+      "to": "basalt-ui/ui/combobox#Autocomplete*"
+    },
+    {
+      "profiles": ["parts", "app"],
+      "id": "mantine-TagsInput",
+      "kind": "map",
+      "from": "@mantine/core#TagsInput",
+      "to": "basalt-ui/ui/combobox#ComboboxChips | ComboboxChip"
+    },
+    {
+      "profiles": ["parts", "app"],
+      "id": "mantine-PillsInput",
+      "kind": "map",
+      "from": "@mantine/core#PillsInput",
+      "to": "basalt-ui/ui/combobox#ComboboxChips | ComboboxChip"
+    },
+    {
+      "profiles": ["parts", "app"],
+      "id": "mantine-Checkbox",
+      "kind": "map",
+      "from": "@mantine/core#Checkbox",
+      "to": "basalt-ui/ui/checkbox#Checkbox | CheckboxGroup",
+      "note": "the root renders a span: selection tests must not assume a button"
+    },
+    {
+      "profiles": ["parts", "app"],
+      "id": "mantine-Radio",
+      "kind": "map",
+      "from": "@mantine/core#Radio",
+      "to": "basalt-ui/ui/radio-group#RadioGroup | Radio"
+    },
+    {
+      "profiles": ["parts", "app"],
+      "id": "mantine-Switch",
+      "kind": "map",
+      "from": "@mantine/core#Switch",
+      "to": "basalt-ui/ui/switch#Switch"
+    },
+    {
+      "profiles": ["parts", "app"],
+      "id": "mantine-Slider",
+      "kind": "map",
+      "from": "@mantine/core#Slider",
+      "to": "basalt-ui/ui/slider#Slider"
+    },
+    {
+      "profiles": ["parts", "app"],
+      "id": "mantine-RangeSlider",
+      "kind": "map",
+      "from": "@mantine/core#RangeSlider",
+      "to": "basalt-ui/ui/slider#Slider",
+      "note": "two thumbs: pass a two-value array"
+    },
+    {
+      "profiles": ["parts", "app"],
+      "id": "mantine-Tabs",
+      "kind": "map",
+      "from": "@mantine/core#Tabs",
+      "to": "basalt-ui/ui/tabs#Tabs | TabsList | TabsTrigger | TabsContent"
+    },
+    {
+      "profiles": ["parts", "app"],
+      "id": "mantine-Accordion",
+      "kind": "map",
+      "from": "@mantine/core#Accordion",
+      "to": "basalt-ui/ui/accordion#Accordion | AccordionItem | AccordionTrigger | AccordionContent"
+    },
+    {
+      "profiles": ["parts", "app"],
+      "id": "mantine-Collapse",
+      "kind": "map",
+      "from": "@mantine/core#Collapse",
+      "to": "basalt-ui/ui/collapsible#Collapsible | CollapsibleTrigger | CollapsibleContent",
+      "note": "`keepMounted` where Mantine kept the children mounted"
+    },
+    {
+      "profiles": ["parts", "app"],
+      "id": "mantine-ScrollArea",
+      "kind": "map",
+      "from": "@mantine/core#ScrollArea",
+      "to": "basalt-ui/ui/scroll-area#ScrollArea"
+    },
+    {
+      "profiles": ["parts", "app"],
+      "id": "mantine-SegmentedControl",
+      "kind": "codemod",
+      "from": "@mantine/core#SegmentedControl",
+      "to": "basalt-ui/ui/segmented#Segmented",
+      "codemod": "options: `data=` becomes `options=`, value expression untouched; `onChange` becomes `onValueChange`",
+      "verify": "tsc: `data` is not a prop of Segmented"
+    },
+    {
+      "profiles": ["parts", "app"],
+      "id": "mantine-Chip",
+      "kind": "map",
+      "from": "@mantine/core#Chip",
+      "to": "basalt-ui/ui/segmented#Segmented multiple"
+    },
+    {
+      "profiles": ["parts", "app"],
+      "id": "mantine-Menu",
+      "kind": "map",
+      "from": "@mantine/core#Menu",
+      "to": "basalt-ui/ui/menu#Menu | MenuTrigger | MenuContent | MenuItem",
+      "note": "`returnFocus` becomes `finalFocus`, `closeOnItemClick` becomes `closeOnClick`; a pointer menu uses `MenuContent anchor`"
+    },
+    {
+      "profiles": ["parts", "app"],
+      "id": "mantine-Tooltip",
+      "kind": "map",
+      "from": "@mantine/core#Tooltip",
+      "to": "basalt-ui/ui/tooltip#Tooltip",
+      "note": "`label` is a string; rich hover content is `PopoverTrigger openOnHover`"
+    },
+    {
+      "profiles": ["parts", "app"],
+      "id": "mantine-Popover",
+      "kind": "map",
+      "from": "@mantine/core#Popover",
+      "to": "basalt-ui/ui/popover#Popover | PopoverTrigger | PopoverContent"
+    },
+    {
+      "profiles": ["parts", "app"],
+      "id": "mantine-Modal",
+      "kind": "map",
+      "from": "@mantine/core#Modal",
+      "to": "basalt-ui/ui/dialog#Dialog | DialogContent | DialogTitle",
+      "note": "a title is required by type; `ensureModalsMount` and `closeGeneration` are deleted"
+    },
+    {
+      "profiles": ["parts", "app"],
+      "id": "mantine-modals",
+      "kind": "map",
+      "from": "@mantine/modals",
+      "to": "basalt-ui/page#OverlayHost | defineOverlays"
+    },
+    {
+      "profiles": ["parts", "app"],
+      "id": "mantine-FocusTrap",
+      "kind": "map",
+      "from": "@mantine/core#FocusTrap",
+      "to": "basalt-ui/ui/dialog#DialogContent",
+      "note": "Base UI dialogs trap focus themselves (modal=\"trap-focus\")"
+    },
+    {
+      "profiles": ["parts", "app"],
+      "id": "mantine-Drawer",
+      "kind": "map",
+      "from": "@mantine/core#Drawer",
+      "to": "basalt-ui/ui/sheet#Sheet | SheetContent | SheetTitle",
+      "note": "a `useViewportSize` flip dies with placement=\"auto\""
+    },
+    {
+      "profiles": ["parts", "app"],
+      "id": "mantine-Table",
+      "kind": "map",
+      "from": "@mantine/core#Table",
+      "to": "basalt-ui/ui/table#Table for a static table; basalt-ui/table#DataTable otherwise"
+    },
+    {
+      "profiles": ["parts", "app"],
+      "id": "mantine-Pagination",
+      "kind": "map",
+      "from": "@mantine/core#Pagination",
+      "to": "basalt-ui/table#TablePager"
+    },
+    {
+      "profiles": ["parts", "app"],
+      "id": "mantine-Progress",
+      "kind": "map",
+      "from": "@mantine/core#Progress",
+      "to": "basalt-ui/ui/progress#Progress"
+    },
+    {
+      "profiles": ["parts", "app"],
+      "id": "mantine-RingProgress",
+      "kind": "map",
+      "from": "@mantine/core#RingProgress",
+      "to": "basalt-ui/ui/progress#Ring"
+    },
+    {
+      "profiles": ["parts", "app"],
+      "id": "mantine-DatePicker",
+      "kind": "map",
+      "from": "@mantine/dates#DatePicker",
+      "to": "basalt-ui/ui/date-picker#DatePicker | DateRangePicker"
+    },
+    {
+      "profiles": ["parts", "app"],
+      "id": "mantine-DateInput",
+      "kind": "map",
+      "from": "@mantine/dates#DateInput",
+      "to": "basalt-ui/ui/date-picker#DatePicker"
+    },
+    {
+      "profiles": ["parts", "app"],
+      "id": "mantine-notifications",
+      "kind": "map",
+      "from": "@mantine/notifications#notifications",
+      "to": "basalt-ui#notify"
+    },
+    {
+      "profiles": ["parts", "app"],
+      "id": "mantine-Notifications",
+      "kind": "map",
+      "from": "@mantine/notifications#Notifications",
+      "to": "basalt-ui/page#ToastHost"
+    },
+    {
+      "profiles": ["parts", "app"],
+      "id": "mantine-Spotlight",
+      "kind": "map",
+      "from": "@mantine/spotlight#Spotlight",
+      "to": "basalt-ui/shell#CommandPalette",
+      "note": "an external ranking seam is kept"
+    },
+    {
+      "profiles": ["parts", "app"],
+      "id": "mantine-createSpotlight",
+      "kind": "map",
+      "from": "@mantine/spotlight#createSpotlight",
+      "to": "basalt-ui/shell#defineCommands"
+    },
+    {
+      "profiles": ["parts", "app"],
+      "id": "mantine-AppShell",
+      "kind": "map",
+      "from": "@mantine/core#AppShell",
+      "to": "basalt-ui/shell#AppShell"
+    },
+    {
+      "profiles": ["parts", "app"],
+      "id": "mantine-NavLink",
+      "kind": "map",
+      "from": "@mantine/core#NavLink",
+      "to": "basalt-ui/router#defineNav",
+      "note": "nav items are declared, the shell renders them"
+    },
+    {
+      "profiles": ["parts", "app"],
+      "id": "mantine-useForm",
+      "kind": "manual",
+      "from": "@mantine/form#useForm",
+      "to": "the consumer's TanStack Form via FieldLike, per field",
+      "manual": true,
+      "note": "no codemod: a form is rewritten per field (sizing in state-persistence-forms)"
+    },
+    {
+      "profiles": ["parts", "app"],
+      "id": "mantine-schemaResolver",
+      "kind": "manual",
+      "from": "@mantine/form#schemaResolver",
+      "to": "the consumer's TanStack Form validators",
+      "manual": true,
+      "note": "goes with useForm; no codemod"
+    },
+    {
+      "profiles": ["parts", "app"],
+      "id": "mantine-form",
+      "kind": "manual",
+      "from": "@mantine/form",
+      "to": "the consumer's TanStack Form via FieldLike",
+      "manual": true,
+      "note": "the package leaves with useForm and schemaResolver; no codemod"
+    },
+    {
+      "profiles": ["parts", "app"],
+      "id": "mantine-Rating",
+      "kind": "manual",
+      "from": "@mantine/core#Rating",
+      "to": "basalt-ui/ui/radio-group#RadioGroup | Radio restyled",
+      "manual": true,
+      "note": "refused as a primitive: restyle a radio group as the stars"
+    },
+    {
+      "profiles": ["parts", "app"],
+      "id": "mantine-Tree",
+      "kind": "manual",
+      "from": "@mantine/core#Tree",
+      "manual": true,
+      "note": "refused (contract 10): the consumer owns it; obsidian keeps its own tree and its 260 tests are the acceptance"
+    },
+    {
+      "profiles": ["parts", "app"],
+      "id": "mantine-useTree",
+      "kind": "manual",
+      "from": "@mantine/core#useTree",
+      "manual": true,
+      "note": "goes with Tree (contract 10); app code"
+    },
+    {
+      "profiles": ["parts", "app"],
+      "id": "mantine-Stepper",
+      "kind": "manual",
+      "from": "@mantine/core#Stepper",
+      "manual": true,
+      "note": "refused (contract 10): app code on ui/* parts"
+    },
+    {
+      "profiles": ["parts", "app"],
+      "id": "mantine-ColorInput",
+      "kind": "manual",
+      "from": "@mantine/core#ColorInput",
+      "manual": true,
+      "note": "dies with the theme lab; no replacement"
+    },
+    {
+      "profiles": ["parts", "app"],
+      "id": "mantine-WeekView",
+      "kind": "manual",
+      "from": "@mantine/schedule#WeekView",
+      "manual": true,
+      "note": "no answer in basalt (CE6, DPO 10): the consumer writes a read-only week view on ui/* in app code, or keeps @mantine/schedule in a scoped MantineProvider"
+    },
+    {
+      "profiles": ["parts", "app"],
+      "id": "mantine-MonthView",
+      "kind": "manual",
+      "from": "@mantine/schedule#MonthView",
+      "manual": true,
+      "note": "no answer in basalt (CE6, DPO 10): see mantine-WeekView"
+    },
+    {
+      "profiles": ["parts", "app"],
+      "id": "mantine-FileButton",
+      "kind": "map",
+      "from": "@mantine/core#FileButton",
+      "to": "basalt-ui/ui/button#Button nativeButton={false} render={<label />}",
+      "note": "docs/recipes/file-drop.md; there is no upload primitive"
+    },
+    {
+      "profiles": ["parts", "app"],
+      "id": "mantine-Avatar",
+      "kind": "map",
+      "from": "@mantine/core#Avatar",
+      "to": "<img> with `rounded-full`"
+    },
+    {
+      "profiles": ["parts", "app"],
+      "id": "mantine-PinInput",
+      "kind": "map",
+      "from": "@mantine/core#PinInput",
+      "to": "a local OTPField in app code on Input",
+      "note": "otp-field is not wrapped on purpose (CE2)"
+    },
+    {
+      "profiles": ["parts", "app"],
+      "id": "mantine-MantineProvider",
+      "kind": "map",
+      "from": "@mantine/core#MantineProvider",
+      "to": "basalt-ui#BasaltProvider",
+      "note": "dies with the Mantine theme layer"
+    },
+    {
+      "profiles": ["parts", "app"],
+      "id": "mantine-MantineThemeProvider",
+      "kind": "map",
+      "from": "@mantine/core#MantineThemeProvider",
+      "to": "basalt-ui#BasaltProvider",
+      "note": "dies with the Mantine theme layer"
+    },
+    {
+      "profiles": ["parts", "app"],
+      "id": "mantine-createTheme",
+      "kind": "map",
+      "from": "@mantine/core#createTheme",
+      "to": "basalt-ui tokens (`--vx-*`); there is no theme object",
+      "note": "dies with the Mantine theme layer"
+    },
+    {
+      "profiles": ["parts", "app"],
+      "id": "mantine-mergeThemeOverrides",
+      "kind": "map",
+      "from": "@mantine/core#mergeThemeOverrides",
+      "to": "basalt-ui tokens (`--vx-*`); there is no theme object",
+      "note": "dies with the Mantine theme layer"
+    },
+    {
+      "profiles": ["parts", "app"],
+      "id": "mantine-defaultVariantColorsResolver",
+      "kind": "map",
+      "from": "@mantine/core#defaultVariantColorsResolver",
+      "to": "the tone axis of the part",
+      "note": "dies with the Mantine theme layer"
+    },
+    {
+      "profiles": ["parts", "app"],
+      "id": "mantine-getPrimaryShade",
+      "kind": "map",
+      "from": "@mantine/core#getPrimaryShade",
+      "to": "the `brand` token",
+      "note": "dies with the Mantine theme layer"
+    },
+    {
+      "profiles": ["parts", "app"],
+      "id": "mantine-rem",
+      "kind": "map",
+      "from": "@mantine/core#rem",
+      "to": "rem units in the class; `--mantine-scale` references re-derive",
+      "note": "dies with the Mantine theme layer"
+    },
+    {
+      "profiles": ["parts", "app"],
+      "id": "mantine-useMantineTheme",
+      "kind": "map",
+      "from": "@mantine/core#useMantineTheme",
+      "to": "the `VX` token map from basalt-ui",
+      "note": "dies with the Mantine theme layer"
+    },
+    {
+      "profiles": ["parts", "app"],
+      "id": "mantine-useMantineColorScheme",
+      "kind": "map",
+      "from": "@mantine/core#useMantineColorScheme",
+      "to": "basalt-ui#setScheme",
+      "note": "dies with the Mantine theme layer"
+    },
+    {
+      "profiles": ["parts", "app"],
+      "id": "mantine-useComputedColorScheme",
+      "kind": "map",
+      "from": "@mantine/core#useComputedColorScheme",
+      "to": "`data-theme` on the root",
+      "note": "dies with the Mantine theme layer"
+    },
+    {
+      "profiles": ["parts", "app"],
+      "id": "mantine-useDisclosure",
+      "kind": "map",
+      "from": "@mantine/hooks#useDisclosure",
+      "to": "useState"
+    },
+    {
+      "profiles": ["parts", "app"],
+      "id": "mantine-useHover",
+      "kind": "map",
+      "from": "@mantine/hooks#useHover",
+      "to": "`group-hover` / `hover:` classes"
+    },
+    {
+      "profiles": ["parts", "app"],
+      "id": "mantine-useFocusWithin",
+      "kind": "map",
+      "from": "@mantine/hooks#useFocusWithin",
+      "to": "`group-focus-within` / `focus-within:` classes"
+    },
+    {
+      "profiles": ["parts", "app"],
+      "id": "mantine-useMergedRef",
+      "kind": "map",
+      "from": "@mantine/hooks#useMergedRef",
+      "to": "React 19 ref callbacks"
+    },
+    {
+      "profiles": ["parts", "app"],
+      "id": "mantine-useReducedMotion",
+      "kind": "map",
+      "from": "@mantine/hooks#useReducedMotion",
+      "to": "`motion-safe:` classes"
+    },
+    {
+      "profiles": ["parts", "app"],
+      "id": "mantine-Transition",
+      "kind": "map",
+      "from": "@mantine/core#Transition",
+      "to": "`data-starting-style` and `data-ending-style` transitions on the element"
+    },
+    {
+      "profiles": ["parts", "app"],
+      "id": "mantine-useElementSize",
+      "kind": "map",
+      "from": "@mantine/hooks#useElementSize",
+      "to": "container queries (`@container`, `@narrow:`, `@wide:`)"
+    },
+    {
+      "profiles": ["parts", "app"],
+      "id": "mantine-useViewportSize",
+      "kind": "map",
+      "from": "@mantine/hooks#useViewportSize",
+      "to": "container queries; `useSizeClass` from basalt-ui/page for chrome"
+    },
+    {
+      "profiles": ["parts", "app"],
+      "id": "mantine-useMediaQuery",
+      "kind": "map",
+      "from": "@mantine/hooks#useMediaQuery",
+      "to": "container queries; `useSizeClass` from basalt-ui/page for chrome"
+    },
+    {
+      "profiles": ["parts", "app"],
+      "id": "mantine-useDebouncedCallback",
+      "kind": "map",
+      "from": "@mantine/hooks#useDebouncedCallback",
+      "to": "a private debounce in the controls, flushed on unmount"
+    },
+    {
+      "profiles": ["parts", "app"],
+      "id": "mantine-useDebouncedValue",
+      "kind": "map",
+      "from": "@mantine/hooks#useDebouncedValue",
+      "to": "a private debounce in the controls, flushed on unmount"
+    },
+    {
+      "profiles": ["parts", "app"],
+      "id": "mantine-useLocalStorage",
+      "kind": "map",
+      "from": "@mantine/hooks#useLocalStorage",
+      "to": "basalt-ui#persisted"
+    },
+    {
+      "profiles": ["parts", "app"],
+      "id": "mantine-useDocumentVisibility",
+      "kind": "map",
+      "from": "@mantine/hooks#useDocumentVisibility",
+      "to": "a five-line recipe on `visibilitychange`"
+    },
+    {
+      "profiles": ["parts", "app"],
+      "id": "mantine-prop-component",
+      "kind": "codemod",
+      "from": "@mantine/core#*.component",
+      "to": "`render={<el />}` on the part",
+      "codemod": "render: `component=\"a\"` becomes `render={<a />}`, the other props stay on the part"
+    },
+    {
+      "profiles": ["parts", "app"],
+      "id": "mantine-prop-size",
+      "kind": "codemod",
+      "from": "@mantine/core#Button.size | ActionIcon.size",
+      "to": "size md | sm | icon | icon-sm",
+      "codemod": "size: Button xs/sm/md and ActionIcon sizes map onto the primitives-distribution section 4 ladder; `mih={24}` becomes size=\"sm\""
+    },
+    {
+      "profiles": ["parts", "app"],
+      "id": "mantine-prop-data",
+      "kind": "codemod",
+      "from": "@mantine/core#*.data",
+      "to": "`options=` on Select, NativeSelect, Segmented",
+      "codemod": "options: `data=` becomes `options=`, value expression untouched; `allowDeselect={false}` is deleted; `onChange` becomes `onValueChange`"
+    },
+    {
+      "profiles": ["parts", "app"],
+      "id": "mantine-prop-style",
+      "kind": "codemod",
+      "from": "@mantine/core#*.styleProps",
+      "to": "Tailwind classes on the element",
+      "codemod": "layout: padding and margin props are denied in app code; the rest map to classes",
+      "note": "argo carries roughly 1,500 style props"
+    },
+    {
+      "profiles": ["parts", "app"],
+      "id": "mantine-prop-width",
+      "kind": "map",
+      "from": "@mantine/core#*.fullWidth | w",
+      "to": "`w-full`, `w-*`, `flex-1` at the call site"
+    },
+    {
+      "profiles": ["parts", "app"],
+      "id": "mantine-prop-classNames",
+      "kind": "map",
+      "from": "@mantine/core#*.classNames | styles",
+      "to": "absent on purpose; `data-slot` for tests only",
+      "note": "a part is restyled by ejecting it, not by a styles prop"
+    },
+    {
+      "profiles": ["parts", "app"],
+      "id": "mantine-prop-breakpoints",
+      "kind": "map",
+      "from": "@mantine/core#*.visibleFrom | hiddenFrom",
+      "to": "container tiers; `md:` for chrome only"
+    },
+    {
+      "profiles": ["parts", "app"],
+      "id": "mantine-prop-portal",
+      "kind": "map",
+      "from": "@mantine/core#*.withinPortal | zIndex",
+      "to": "always portalled; popups `z-50`, toast above, order by portal; no `z-*` prop"
+    }
+  ],
+  "tokens": {
+    "renamed": [],
+    "valueShifts": [
+      {
+        "token": "--vx-ctl-h",
+        "from": "2.625rem",
+        "to": "1.75rem"
+      },
+      {
+        "token": "--vx-radius-card",
+        "from": "10px",
+        "to": "14px"
+      },
+      {
+        "token": "--vx-radius-inset",
+        "from": "11px",
+        "to": "10px"
+      },
+      {
+        "token": "--vx-radius-ctrl",
+        "from": "6px",
+        "to": "8px"
+      }
+    ]
+  },
   "storage": [],
   "urls": [],
-  "attrs": [],
+  "attrs": [
+    {
+      "from": ".mantine-Popover-dropdown",
+      "to": "[data-slot=\"popover-content\"]"
+    }
+  ],
   "rules": []
 }
