@@ -270,7 +270,8 @@ a consumer is blocked, a fix is wanted downstream — and say which version went
 
 - PR-only, rebase-merge only (never squash). Merge only when `make merge-guard` is clear: PR CI is green for that
   exact head, and a branch behind `origin/master` shares no changed file with master's new commits while master is
-  green; otherwise rebase, push and wait for PR CI. Local `make check` does not replace PR CI.
+  green; otherwise rebase, push and wait for PR CI (`MERGE_GUARD_ARGS=--wait make merge-guard` polls the head's CI
+  first, 45 min by default, `--wait-minutes <n>`). Local `make check` does not replace PR CI.
 - `packages/basalt-ui/**` and non-package changes are separate commits in one PR; `make sync-self` is its own
   non-package commit. Never edit `CHANGELOG.md`.
 - `make check` builds first; `bun run pre` is the inner loop. A fresh worktree needs `bun install` and a package build.

@@ -4,7 +4,7 @@ import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { spawnSync } from 'node:child_process'
 import type { CiRun, GuardPorts } from './merge-guard'
-import { evaluate, headNotGreen, realPorts } from './merge-guard'
+import { awaitHead, evaluate, headNotGreen, realPorts } from './merge-guard'
 
 const green: CiRun = {
   status: 'completed',
@@ -151,5 +151,48 @@ describe('headNotGreen', () => {
 
   test('only cancelled runs count as no run', () => {
     expect(headNotGreen('abc', [cancelled])).toContain('no PR CI run')
+  })
+})
+
+describe('awaitHead', () => {
+  const clock = (): {
+    now(): number
+    sleep(ms: number): Promise<void>
+    log(line: string): void
+    lines: string[]
+  } => {
+    let t = 0
+    const lines: string[] = []
+    return {
+      now: () => t,
+      sleep: async (ms) => void (t += ms),
+      log: (line) => void lines.push(line),
+      lines,
+    }
+  }
+
+  test('polls until the newest non-cancelled run completes', async () => {
+    const answers = [[], [running], [running], [cancelled, green]]
+    let calls = 0
+    const c = clock()
+    await awaitHead(ports({ ciRuns: () => answers[calls++] ?? [green] }), { minutes: 10, ...c })
+    expect(calls).toBe(4)
+    expect(c.lines).toHaveLength(2)
+  })
+
+  test('returns at the deadline while the run is still going', async () => {
+    let calls = 0
+    await awaitHead(ports({ ciRuns: () => (calls++, [running]) }), {
+      minutes: 1,
+      intervalMs: 30_000,
+      ...clock(),
+    })
+    expect(calls).toBe(3)
+  })
+
+  test('returns at once when the runs cannot be read', async () => {
+    let calls = 0
+    await awaitHead(ports({ ciRuns: () => (calls++, null) }), { minutes: 10, ...clock() })
+    expect(calls).toBe(1)
   })
 })
