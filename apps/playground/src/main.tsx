@@ -8,10 +8,10 @@ import '@mantine/dates/styles.layer.css'
 import { BasaltProvider, createBasaltRouter } from 'basalt-ui'
 import { StrictMode } from 'react'
 import { createRoot } from 'react-dom/client'
-// Side-effect import: registers the app's command registry (`defineCommands`) and the nav
-// definition (`defineNav`) before the provider mounts, so Spotlight and the hotkeys see them at boot.
+// Side-effect import: registers the app's command registry (`defineCommands`) before the provider
+// mounts, so Spotlight and the hotkeys see it at boot. The nav (`defineNav`) is pure data that
+// `AppShell` registers itself.
 import './demo/commands'
-import './demo/nav-model'
 import { PAGE_FORMAT } from './demo/page-format'
 import { demoPaletteGroups } from './demo/series'
 import { routeTree } from './routeTree.gen'
