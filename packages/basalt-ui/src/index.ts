@@ -81,6 +81,18 @@ export {
   type StateStore,
 } from './core/external-field'
 export type { ControlHandle, StorageLike } from './core/ports'
+export { createChannel } from './core/channel'
+export type {
+  Channel,
+  ChannelOptions,
+  ChannelState,
+  Delivered,
+  Envelope,
+  Scheduler,
+  Transport,
+  Wire,
+} from './core/channel'
+export { useNow } from './core/use-now'
 export { createFormat, useFormat } from './core/format'
 export type { BasaltMessages, CalendarDate, Format, Msg } from './core/format'
 

@@ -24,6 +24,7 @@
   "basaltRouterOptions",
   "createBasaltRouter",
   "createBasaltTheme",
+  "createChannel",
   "createFormat",
   "defineNav",
   "externalField",
@@ -37,5 +38,6 @@
   "useBasaltNav",
   "useCoarsePointer",
   "useFormat",
+  "useNow",
   "useSizeClass"
 ]
