@@ -5,7 +5,7 @@
   color-scheme: light;
   --vx-canvas: #f2f2f5;
   --vx-inset: #ffffff;
-  --vx-card: #f4f4f8;
+  --vx-card: #fafafd;
   --vx-raised: #ffffff;
   --vx-hover: color-mix(in srgb, var(--vx-ink) 5%, transparent);
   --vx-selected: color-mix(in srgb, var(--vx-ink) 7.5%, transparent);

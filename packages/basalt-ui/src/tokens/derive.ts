@@ -534,19 +534,21 @@ export const DEFAULT_DERIVE_V3_CONFIG: DeriveV3Config = {
   vibrancy: 0,
 }
 
+type SurfaceStop2x = Exclude<SurfaceKey, RowSurfaceKey>
+
 /**
- * Which 2.x surface stop each v3 surface is. Canvas is the 2.x page, so the shell and a v3 page
- * share one ground; inset is the 2.x field (white in light, recessed in dark: the reading surface);
- * card is the 2.x subtle band, the one 2.x stop that steps .03 OKLCH L off the field in both schemes
- * (`panel` sits .014 light / .016 dark from it, under the read threshold of 3.3); raised is the 2.x
- * elevated control surface.
+ * Which 2.x surface stop each v3 surface is, per scheme. Canvas is the 2.x page, so the shell and a
+ * v3 page share one ground; inset is the 2.x field (white in light, recessed in dark: the reading
+ * surface); raised is the 2.x elevated control surface. The card shell is the 2.x panel in light,
+ * the surface the factory console raises its cards on (1.07:1 on the canvas; the subtle band sat
+ * 1.02:1 on it, so a light card read as the page), and the 2.x subtle band in dark (DPO 5c).
  */
 export const SURFACE_FROM_2X = {
-  canvas: 'bg',
-  inset: 'field',
-  card: 'subtle',
-  raised: 'elevated',
-} as const satisfies Record<string, Exclude<SurfaceKey, RowSurfaceKey>>
+  canvas: { light: 'bg', dark: 'bg' },
+  inset: { light: 'field', dark: 'field' },
+  card: { light: 'panel', dark: 'subtle' },
+  raised: { light: 'elevated', dark: 'elevated' },
+} as const satisfies Record<string, Record<Side, SurfaceStop2x>>
 
 /** Which 2.x ink each v3 ink is: `ink2` folds into `ink`, as the table's `from` lists say. */
 export const INK_FROM_2X = {
@@ -706,7 +708,10 @@ export function deriveV3(config: DeriveV3Config = DEFAULT_DERIVE_V3_CONFIG): Der
 
   const colors = {} as Record<ColorNameV3, ColorPair>
   for (const [key, from] of Object.entries(SURFACE_FROM_2X))
-    colors[key as keyof typeof SURFACE_FROM_2X] = base.surface[from]
+    colors[key as keyof typeof SURFACE_FROM_2X] = {
+      light: base.surface[from.light].light,
+      dark: base.surface[from.dark].dark,
+    }
   for (const [key, from] of Object.entries(INK_FROM_2X))
     colors[key as keyof typeof INK_FROM_2X] = base.ink[from]
 

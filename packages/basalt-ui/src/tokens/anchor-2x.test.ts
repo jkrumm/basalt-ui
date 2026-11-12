@@ -41,9 +41,21 @@ describe('every v3 role is its 2.x counterpart', () => {
 
   test('surfaces and inks are the 2.x stops, in both schemes', () => {
     for (const [role, from] of Object.entries(SURFACE_FROM_2X))
-      expect(v3[role as TextSurface]).toEqual(x2.surface[from])
+      for (const side of SIDES)
+        expect(v3[role as TextSurface][side]).toBe(x2.surface[from[side]][side])
     for (const [role, from] of Object.entries(INK_FROM_2X))
       expect(v3[role as keyof typeof INK_FROM_2X]).toEqual(x2.ink[from])
+  })
+
+  test('the light card shell steps off the canvas as far as the console card does (1.07:1)', () => {
+    // The factory console raises its cards as the 2.x panel on the 2.x page. The subtle band the
+    // light shell was before measured 1.01:1, so a card read as the page.
+    const console = contrastRatio(x2.surface.panel.light, x2.surface.bg.light)
+    const shell = contrastRatio(v3.card.light, v3.canvas.light)
+    expect(floor2(console)).toBe(1.07)
+    expect(shell).toBeGreaterThanOrEqual(console)
+    // The inset stays a distinct step inside the shell.
+    expect(floor2(contrastRatio(v3.inset.light, v3.card.light))).toBe(1.04)
   })
 
   test('the brand fill and its label are the 2.x accent fill and on-accent', () => {
@@ -70,7 +82,10 @@ describe('text contrast is at least the 2.x pair and never under 4.5:1', () => {
       for (const [role, from] of Object.entries(INK_FROM_2X))
         for (const bg of TEXT) {
           const now = contrastRatio(v3[role as keyof typeof INK_FROM_2X][side], v3[bg][side])
-          const then = contrastRatio(x2.ink[from][side], x2.surface[SURFACE_FROM_2X[bg]][side])
+          const then = contrastRatio(
+            x2.ink[from][side],
+            x2.surface[SURFACE_FROM_2X[bg][side]][side],
+          )
           expect(now).toBeGreaterThanOrEqual(then)
           expect(now).toBeGreaterThanOrEqual(4.5)
         }
@@ -79,7 +94,7 @@ describe('text contrast is at least the 2.x pair and never under 4.5:1', () => {
   test('status inks on canvas, card and inset, and the brand ink against the 2.x accent ink', () => {
     for (const side of SIDES)
       for (const bg of TEXT) {
-        const surface2x = x2.surface[SURFACE_FROM_2X[bg]][side]
+        const surface2x = x2.surface[SURFACE_FROM_2X[bg][side]][side]
         for (const tone of TONES) {
           const now = contrastRatio(v3[tone][side], v3[bg][side])
           expect(now).toBeGreaterThanOrEqual(contrastRatio(x2.status[tone][side], surface2x))
@@ -103,17 +118,17 @@ describe('text contrast is at least the 2.x pair and never under 4.5:1', () => {
   // Measured on the default config, floored to two decimals: [canvas, card, inset].
   const MEASURED: Record<Side, Record<string, readonly number[]>> = {
     light: {
-      ink: [13.5, 13.75, 15.08],
-      'ink-muted': [6.96, 7.09, 7.78],
-      brand: [4.56, 4.65, 5.1],
-      good: [5.3, 5.4, 5.92],
-      'good-tint': [4.52, 4.58, 5],
-      warn: [5.3, 5.4, 5.92],
-      'warn-tint': [4.51, 4.57, 4.99],
-      bad: [5.35, 5.45, 5.98],
-      'bad-tint': [4.5, 4.59, 4.97],
-      info: [5.81, 5.92, 6.49],
-      'info-tint': [4.92, 4.99, 5.45],
+      ink: [13.5, 14.48, 15.08],
+      'ink-muted': [6.96, 7.47, 7.78],
+      brand: [4.56, 4.89, 5.1],
+      good: [5.3, 5.68, 5.92],
+      'good-tint': [4.52, 4.83, 5],
+      warn: [5.3, 5.68, 5.92],
+      'warn-tint': [4.51, 4.82, 4.99],
+      bad: [5.35, 5.74, 5.98],
+      'bad-tint': [4.5, 4.8, 4.97],
+      info: [5.81, 6.23, 6.49],
+      'info-tint': [4.92, 5.26, 5.45],
     },
     dark: {
       ink: [11.85, 10.17, 11.85],
