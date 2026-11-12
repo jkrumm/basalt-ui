@@ -26,6 +26,23 @@
     table-layout: fixed;
   }
 
+  /* pinned and tick cells are opaque in every row state: the canvas, with the row's own tint (hover,
+     selected) layered over it, so a cell that scrolls under a pin never shows through. The head
+     cells keep their surface (a utility on `th`). */
+  [data-slot='table-cell']:is([data-pin], [data-kind='tick']) {
+    background-color: var(--color-background);
+    background-image: linear-gradient(var(--row-tint, transparent), var(--row-tint, transparent));
+  }
+  [data-slot='table-row']:hover > [data-slot='table-cell'] {
+    --row-tint: var(--color-accent);
+  }
+  [data-slot='table-row'][data-selected] > [data-slot='table-cell'] {
+    --row-tint: var(--vx-surface-row-selected);
+  }
+  [data-slot='table-row'][data-selected] {
+    background-color: var(--vx-surface-row-selected);
+  }
+
   /* reduced: priority 3 leaves below data-full-at; a sum above 1800 has no data-full-at */
   [data-slot='table-root']:not([data-full-at]) :is([data-priority='3']) {
     display: none;
@@ -84,6 +101,7 @@
     }
     [data-slot='table-root'][data-below='480'][data-phone='cards'] [data-slot='table-cell'] {
       display: block;
+      background: none;
       grid-column: 1 / -1;
       min-width: 0;
       padding: 0;
@@ -106,8 +124,8 @@
       grid-row: 1;
     }
     [data-slot='table-root'][data-below='480'][data-phone='cards']
-      [data-slot='table-cell'][data-kind='select'] {
-      grid-column: 2;
+      [data-slot='table-cell'][data-kind='tick'] {
+      grid-column: 1;
       grid-row: 1;
     }
     [data-slot='table-root'][data-below='480'][data-phone='cards']
@@ -119,11 +137,28 @@
     }
     [data-slot='table-root'][data-below='480'][data-phone='scroll']
       [data-slot='table']
-      [data-identity] {
+      :is([data-pin], [data-kind='tick']) {
       position: sticky;
-      inset-inline-start: 0;
       z-index: 1;
-      background: var(--color-background);
+    }
+    [data-slot='table-root'][data-below='480'][data-phone='scroll']
+      [data-slot='table']
+      [data-kind='tick'] {
+      inset-inline-start: 0;
+    }
+    [data-slot='table-root'][data-below='480'][data-phone='scroll']
+      [data-slot='table']
+      [data-pin='start'] {
+      inset-inline-start: var(--table-pin-start, 0);
+    }
+    [data-slot='table-root'][data-below='480'][data-phone='scroll']
+      [data-slot='table']
+      [data-pin='end'] {
+      inset-inline-end: 0;
+    }
+    [data-slot='table-root'][data-below='480'][data-phone='scroll']
+      [data-slot='table-head']:is([data-pin], [data-kind='tick']) {
+      z-index: 20 !important;
     }
   }
   @container table (max-width: 799.9px) {
@@ -153,6 +188,7 @@
     }
     [data-slot='table-root'][data-below='800'][data-phone='cards'] [data-slot='table-cell'] {
       display: block;
+      background: none;
       grid-column: 1 / -1;
       min-width: 0;
       padding: 0;
@@ -175,8 +211,8 @@
       grid-row: 1;
     }
     [data-slot='table-root'][data-below='800'][data-phone='cards']
-      [data-slot='table-cell'][data-kind='select'] {
-      grid-column: 2;
+      [data-slot='table-cell'][data-kind='tick'] {
+      grid-column: 1;
       grid-row: 1;
     }
     [data-slot='table-root'][data-below='800'][data-phone='cards']
@@ -188,11 +224,28 @@
     }
     [data-slot='table-root'][data-below='800'][data-phone='scroll']
       [data-slot='table']
-      [data-identity] {
+      :is([data-pin], [data-kind='tick']) {
       position: sticky;
-      inset-inline-start: 0;
       z-index: 1;
-      background: var(--color-background);
+    }
+    [data-slot='table-root'][data-below='800'][data-phone='scroll']
+      [data-slot='table']
+      [data-kind='tick'] {
+      inset-inline-start: 0;
+    }
+    [data-slot='table-root'][data-below='800'][data-phone='scroll']
+      [data-slot='table']
+      [data-pin='start'] {
+      inset-inline-start: var(--table-pin-start, 0);
+    }
+    [data-slot='table-root'][data-below='800'][data-phone='scroll']
+      [data-slot='table']
+      [data-pin='end'] {
+      inset-inline-end: 0;
+    }
+    [data-slot='table-root'][data-below='800'][data-phone='scroll']
+      [data-slot='table-head']:is([data-pin], [data-kind='tick']) {
+      z-index: 20 !important;
     }
   }
   @container table (width >= 0px) {
@@ -222,6 +275,7 @@
     }
     [data-slot='table-root'][data-below='always'][data-phone='cards'] [data-slot='table-cell'] {
       display: block;
+      background: none;
       grid-column: 1 / -1;
       min-width: 0;
       padding: 0;
@@ -244,8 +298,8 @@
       grid-row: 1;
     }
     [data-slot='table-root'][data-below='always'][data-phone='cards']
-      [data-slot='table-cell'][data-kind='select'] {
-      grid-column: 2;
+      [data-slot='table-cell'][data-kind='tick'] {
+      grid-column: 1;
       grid-row: 1;
     }
     [data-slot='table-root'][data-below='always'][data-phone='cards']

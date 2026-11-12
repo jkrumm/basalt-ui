@@ -128,7 +128,8 @@ describe('axe', () => {
 describe('geometry across phases', () => {
   const shape = (container: HTMLElement) => ({
     colgroup: container.querySelector('colgroup')?.outerHTML,
-    head: container.querySelector('thead')?.outerHTML,
+    // Generated ids differ per mount; the markup around them is what must not move.
+    head: container.querySelector('thead')?.outerHTML.replaceAll(/id="[^"]*"/g, 'id'),
     table: container.querySelector('table')?.className,
     colcount: container.querySelector('table')?.getAttribute('aria-colcount'),
     fullAt: container.querySelector('[data-slot="table-root"]')?.getAttribute('data-full-at'),

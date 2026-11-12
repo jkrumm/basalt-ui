@@ -14,6 +14,7 @@ import { cn } from '../../core/cn'
 import type { DataTableProps } from '../contract'
 import { TableCaption, Table } from '../../ui/table'
 import { DataTableBody } from './body'
+import { BulkBar } from './bulk-bar'
 import { DataTableFooter, hasFooter } from './footer'
 import { VirtualTable } from './virtual'
 import { DataTableHead, visibleColumns } from './head'
@@ -93,6 +94,7 @@ export function DataTable<T>({
           height === 'fill' && 'h-full min-h-0 flex-1',
         )}
       >
+        <BulkBar table={table} />
         {/* theme-allow hidden-inline-style — the scrollport height and the scroll tier's min width are per-table values */}
         <div
           data-slot="table-scroller"
@@ -130,6 +132,7 @@ export function DataTable<T>({
       data-refresh-failed={phase.tag === 'stale' && phase.refreshFailed ? '' : undefined}
       className="flex max-w-full min-w-0 flex-col"
     >
+      <BulkBar table={table} />
       {/* theme-allow hidden-inline-style — the scrollport height and the scroll tier's min width are per-table values */}
       <div
         data-slot="table-scroller"

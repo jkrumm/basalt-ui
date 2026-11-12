@@ -38,6 +38,13 @@ export type TableMessages = Record<
   | 'table.opContains'
   | 'table.opAnyOf'
   | 'table.headerFilter'
+  | 'table.bulk'
+  | 'table.bulkClear'
+  | 'table.sortAsc'
+  | 'table.sortDesc'
+  | 'table.sortClear'
+  | 'table.hideColumn'
+  | 'table.resetColumn'
   | 'table.views'
   | 'table.viewSave'
   | 'table.viewName'
@@ -51,11 +58,14 @@ export type TableMessages = Record<
   | 'table.aggCount',
   string
 > &
-  Record<'table.groupRows', (f: Format, count: number) => string> &
+  Record<
+    'table.groupRows' | 'table.selectedCount' | 'table.allMatching' | 'table.selectAllMatching',
+    (f: Format, count: number) => string
+  > &
   Record<'table.rowRange', (f: Format, from: number, to: number, total: number) => string> &
   Record<'table.filters', (f: Format, count: number) => string> &
   Record<
-    'table.chipRemove' | 'table.headerMenu' | 'table.viewRemove',
+    'table.chipRemove' | 'table.headerMenu' | 'table.columnActions' | 'table.viewRemove',
     (f: Format, name: string) => string
   > &
   Record<'table.cellFilter', (f: Format, header: string, value: string) => string>
@@ -94,6 +104,13 @@ export const table = {
   'table.opContains': 'contains',
   'table.opAnyOf': 'is',
   'table.headerFilter': 'Filter...',
+  'table.bulk': 'Bulk actions',
+  'table.bulkClear': 'Clear selection',
+  'table.sortAsc': 'Sort ascending',
+  'table.sortDesc': 'Sort descending',
+  'table.sortClear': 'Clear sort',
+  'table.hideColumn': 'Hide column',
+  'table.resetColumn': 'Reset column',
   'table.views': 'Views',
   'table.viewSave': 'Save view',
   'table.viewName': 'View name',
@@ -106,9 +123,13 @@ export const table = {
   'table.aggMax': 'Max',
   'table.aggCount': 'Count',
   'table.groupRows': (f, count) => (count === 1 ? '1 row' : `${f.number(count)} rows`),
+  'table.selectedCount': (f, count) => `${f.number(count)} selected`,
+  'table.allMatching': (f, count) => `All ${f.number(count)} rows selected`,
+  'table.selectAllMatching': (f, count) => `Select all ${f.number(count)} rows`,
   'table.filters': (f, count) => (count > 0 ? `Filters (${f.number(count)})` : 'Filters'),
   'table.chipRemove': (_f, subject) => `Remove filter ${subject}`,
   'table.headerMenu': (_f, header) => `${header} column menu`,
+  'table.columnActions': (_f, header) => `${header} column actions`,
   'table.viewRemove': (_f, name) => `Delete view ${name}`,
   'table.cellFilter': (_f, header, value) => `Filter ${header} by ${value}`,
 } satisfies Partial<BasaltMessages>
