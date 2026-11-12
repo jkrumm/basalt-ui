@@ -13,21 +13,21 @@ import {
   createRouter,
 } from '@tanstack/react-router'
 import { createRoot } from 'react-dom/client'
-import { OverviewRoute, globals, overview } from '../../../../apps/playground/src/routes/overview'
+import { Route as OverviewFileRoute } from '../../../../apps/playground/src/routes/overview'
+
+const Overview = OverviewFileRoute.options.component
 
 const root = createRootRoute({
-  validateSearch: globals.validateSearch,
-  search: { middlewares: globals.middlewares },
   component: () => <Outlet />,
 })
 const page = createRoute({
   getParentRoute: () => root,
   path: '/overview',
-  validateSearch: overview.validateSearch,
-  search: { middlewares: overview.middlewares },
+  validateSearch: OverviewFileRoute.options.validateSearch,
+  search: OverviewFileRoute.options.search,
   component: () => (
     <main lang="en" className="p-4 text-foreground">
-      <OverviewRoute />
+      <Overview />
     </main>
   ),
 })
