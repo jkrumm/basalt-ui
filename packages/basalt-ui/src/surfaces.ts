@@ -630,7 +630,8 @@ export const SURFACES = {
   './shell': {
     kind: 'tooling',
     layer: 'mantine-coupled',
-    description: 'App shell — points at the 2.x shell barrel until the v3 shell swaps it',
+    description:
+      'App shell — AppShell, the CSS-grid frame: header, rail, one scrollport, aside and phone tab bar from one defineNav',
     forbiddenImports: [],
   },
   './lint': {
