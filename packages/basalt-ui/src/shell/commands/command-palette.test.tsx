@@ -182,6 +182,25 @@ describe('chords', () => {
   })
 })
 
+describe('chord scope', () => {
+  test('an area command beats a global one on the same chord, in either declaration order', async () => {
+    const global = mock(() => {})
+    const local = mock(() => {})
+    await mountShell({
+      area: 'runs',
+      body: <button type="button">inside</button>,
+      commands: defineCommands({
+        everywhere: { label: 'Everywhere', chord: 'Mod+J', run: global },
+        here: { label: 'Here', chord: 'Mod+J', area: 'runs', run: local },
+      }),
+    })
+    screen.getByText('inside').focus()
+    press('j', { mod: true })
+    expect(local).toHaveBeenCalledTimes(1)
+    expect(global).toHaveBeenCalledTimes(0)
+  })
+})
+
 describe('shell commands', () => {
   test('Mod+2 goes to the second defineNav item', async () => {
     const router = await mountShell({ commands: defineCommands({}) })
@@ -323,5 +342,46 @@ describe('palette', () => {
     await screen.findByLabelText('Search commands')
     press('Escape')
     expect(seen).toEqual([false])
+  })
+
+  test('a controlling parent reopening it starts from an empty query', async () => {
+    function Host(): ReactElement {
+      const [open, setOpen] = useState(true)
+      return (
+        <>
+          <button type="button" onClick={() => setOpen(true)}>
+            search
+          </button>
+          <button type="button" onClick={() => setOpen(false)}>
+            hide
+          </button>
+          <CommandPalette commands={COMMANDS} open={open} onOpenChange={setOpen} />
+        </>
+      )
+    }
+    const root = createRootRoute({
+      component: () => (
+        <AppShell nav={NAV} brand={{ name: 'Basalt' }}>
+          <Host />
+        </AppShell>
+      ),
+    })
+    const router = createRouter({
+      routeTree: root.addChildren([]),
+      history: createMemoryHistory({ initialEntries: ['/'] }),
+    })
+    await router.load()
+    render(<RouterProvider router={router} />)
+    const input = await screen.findByLabelText('Search commands')
+    fireEvent.change(input, { target: { value: 'dep' } })
+    await waitFor(() => expect(labels()).toEqual(['Deploy now']))
+    act(() => {
+      fireEvent.click(screen.getByText('hide'))
+    })
+    act(() => {
+      fireEvent.click(screen.getByText('search'))
+    })
+    await waitFor(() => expect(labels().length).toBeGreaterThan(1))
+    expect((screen.getByLabelText('Search commands') as HTMLInputElement).value).toBe('')
   })
 })

@@ -31,6 +31,11 @@ function Probe(): ReactElement {
   return <span data-testid="probe">{`${chrome}:${leadInset}`}</span>
 }
 
+function HeaderProbe(): ReactElement {
+  const { chrome, leadInset } = useWindowChrome()
+  return <span data-testid="header-probe">{`${chrome}:${leadInset}`}</span>
+}
+
 async function mountShell(chrome: ShellChrome | undefined) {
   const root = createRootRoute({
     component: () => (
@@ -38,6 +43,7 @@ async function mountShell(chrome: ShellChrome | undefined) {
         nav={NAV}
         brand={{ name: 'Basalt' }}
         {...(chrome !== undefined && { chrome })}
+        globalControls={{ render: () => <HeaderProbe /> }}
         globalActions={[
           { kind: 'button', id: 'a', label: 'Act', icon: () => <svg />, onClick: () => {} },
         ]}
@@ -73,6 +79,13 @@ describe('chrome native-overlay', () => {
   test('useWindowChrome reads the chrome and the lead inset', async () => {
     await mountShell('native-overlay')
     expect(document.querySelector('[data-testid="probe"]')?.textContent).toBe('native-overlay:80')
+  })
+
+  test('useWindowChrome reads the same chrome from a component in the header', async () => {
+    await mountShell('native-overlay')
+    expect(document.querySelector('[data-testid="header-probe"]')?.textContent).toBe(
+      'native-overlay:80',
+    )
   })
 })
 

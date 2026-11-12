@@ -43,6 +43,13 @@ const ACCELERATOR_KEYS: Readonly<Record<string, string>> = {
   arrowdown: 'Down',
   arrowleft: 'Left',
   arrowright: 'Right',
+  tab: 'Tab',
+  backspace: 'Backspace',
+  delete: 'Delete',
+  home: 'Home',
+  end: 'End',
+  pageup: 'PageUp',
+  pagedown: 'PageDown',
 }
 
 function accelerator(chord: string): string {
@@ -50,6 +57,7 @@ function accelerator(chord: string): string {
     .split('+')
     .map((part) => {
       const lower = part.trim().toLowerCase()
+      if (/^f\d{1,2}$/.test(lower)) return lower.toUpperCase()
       return ACCELERATOR_KEYS[lower] ?? (lower.length === 1 ? lower.toUpperCase() : part.trim())
     })
     .join('+')

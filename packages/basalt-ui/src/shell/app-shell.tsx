@@ -2,7 +2,6 @@ import { useRouter, useRouterState } from '@tanstack/react-router'
 import { useMemo, useState, useSyncExternalStore } from 'react'
 import type { ReactElement, ReactNode } from 'react'
 import { useIsomorphicLayoutEffect } from '../common/isomorphic-layout-effect'
-import { PageHostContext } from '../page/page'
 import { useSizeClass } from '../page/use-size-class'
 import { registerNav } from '../router/nav/registry'
 import { flattenNavEntries, resolveActive } from '../router/nav/resolve-active'
@@ -10,7 +9,7 @@ import type { AnyNavConfig } from '../router/nav/types'
 import { Button } from '../ui/button'
 import { Sheet, SheetContent, SheetTrigger } from '../ui/sheet'
 import { createShellHost, useClaim } from './app-shell-host'
-import { ChromeProvider, useChromeRoot } from './chrome'
+import { ChromeHost, useChromeRoot } from './chrome'
 import type { AppShellProps } from './contract'
 import { createNavRuntime } from './core/nav-runtime'
 import type { CoreNavConfig } from './core/types'
@@ -134,7 +133,7 @@ export function AppShell<Id extends string = string>({
     (activeLabel === undefined ? null : <span data-slot="page-breadcrumb-leaf">{activeLabel}</span>)
 
   return (
-    <PageHostContext value={shellHost.host}>
+    <ChromeHost chrome={chrome} host={shellHost.host}>
       <RailControlProvider value={rail}>
         <ShellGrid
           rootRef={attachRoot}
@@ -165,9 +164,7 @@ export function AppShell<Id extends string = string>({
             account={account}
             search={search}
           />
-          <ShellMain>
-            <ChromeProvider chrome={chrome}>{children}</ChromeProvider>
-          </ShellMain>
+          <ShellMain>{children}</ShellMain>
           <AsideRegion claim={claim} model={model} />
           <TabBarMount
             runtime={runtime}
@@ -179,6 +176,6 @@ export function AppShell<Id extends string = string>({
           />
         </ShellGrid>
       </RailControlProvider>
-    </PageHostContext>
+    </ChromeHost>
   )
 }

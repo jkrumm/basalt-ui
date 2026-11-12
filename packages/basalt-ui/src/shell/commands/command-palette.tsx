@@ -1,6 +1,7 @@
 import { useRouter } from '@tanstack/react-router'
 import { useContext, useEffect, useMemo, useState } from 'react'
 import type { ReactElement } from 'react'
+import { useIsomorphicLayoutEffect } from '../../common/isomorphic-layout-effect'
 import { navFor } from '../../router/nav/registry'
 import {
   Autocomplete,
@@ -77,13 +78,16 @@ export function CommandPalette({
 
   const setOpen = (next: boolean): void => {
     if (next === open) return
-    if (next) {
-      setArea(currentArea())
-      setQuery('')
-    }
     setOwn(next)
     onOpenChange?.(next)
   }
+
+  // Every opening starts clean, whoever flips `open`: the chord, a row, or a controlling parent.
+  useIsomorphicLayoutEffect(() => {
+    if (!open) return
+    setArea(currentArea())
+    setQuery('')
+  }, [open])
 
   const nav = navFor(router)
   const navItems = useMemo(() => (nav === undefined ? [] : navCommands(nav)), [nav])
@@ -122,6 +126,7 @@ export function CommandPalette({
     const onKeyDown = (event: KeyboardEvent): void => {
       if (event.defaultPrevented || event.isComposing || event.repeat) return
       const scope = currentArea()
+      let hit: PaletteItem | undefined
       for (const item of runnable) {
         const { parsed } = item
         if (parsed === undefined || !matchesChord(event, parsed, apple)) continue
@@ -129,10 +134,12 @@ export function CommandPalette({
         if (open && item.id !== SHELL_PALETTE) continue
         if (item.area !== undefined && item.area !== scope) continue
         if (item.enabled?.() === false || !mayFireOn(parsed, event.target)) continue
-        event.preventDefault()
-        void item.run()
-        return
+        // An area command beats a global one on the same chord, whichever was declared first.
+        if (hit === undefined || (hit.area === undefined && item.area !== undefined)) hit = item
       }
+      if (hit === undefined) return
+      event.preventDefault()
+      void hit.run()
     }
     window.addEventListener('keydown', onKeyDown)
     return () => window.removeEventListener('keydown', onKeyDown)
