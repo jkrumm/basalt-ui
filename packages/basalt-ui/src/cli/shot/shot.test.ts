@@ -62,6 +62,10 @@ const tmp = (): string => {
   return d
 }
 afterEach(() => dirs.splice(0).forEach((d) => rmSync(d, { recursive: true, force: true })))
+// the happy-dom document is shared with every later file in the run: leave it empty
+afterEach(() => {
+  if (typeof document !== 'undefined') document.body.innerHTML = ''
+})
 
 /** Captures `console.error` for the duration of `fn`. */
 async function errors<T>(fn: () => Promise<T>): Promise<{ result: T; lines: string[] }> {
