@@ -1,5 +1,6 @@
 // Entry point of the v3 consumer migration tools: `bun tools/migrate-v3/run.ts <command> <app-dir> ...`.
 // One row per command; rows below the marker are appended by the Issues that own them.
+import { chartsCommand } from './charts/index.ts'
 import { importsCommand } from './imports/index.ts'
 import { layoutCommand } from './layout/index.ts'
 
@@ -15,6 +16,7 @@ const owned =
 const commands: Record<string, Command> = {
   layout: layoutCommand,
   imports: importsCommand,
+  charts: chartsCommand,
   // v3-mig-bench fills these four.
   bench: owned('bench'),
   valueshifts: owned('valueshifts'),
