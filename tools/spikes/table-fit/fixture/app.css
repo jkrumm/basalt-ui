@@ -1,0 +1,9 @@
+/*
+ * The table-fit fixture's Tailwind v4 entry: compiled WITH preflight, the way a Tailwind consumer
+ * renders the table. run.ts compiles it, inlines the shipped tier sheet (src/table/table.css) and
+ * the spike sheet (spike.css) beside it.
+ */
+@import '../../../../packages/basalt-ui/src/css/tailwind.css' source(none);
+@source './app.tsx';
+@source '../../../../packages/basalt-ui/src/ui';
+@source '../../../../packages/basalt-ui/src/table';
