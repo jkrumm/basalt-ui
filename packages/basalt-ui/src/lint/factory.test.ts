@@ -16,7 +16,6 @@ import plugin from './index'
 
 RuleTester.describe = describe
 RuleTester.it = it
-RuleTester.itOnly = it.only
 
 describe('ESLint RuleTester', () => {
   const tester = new RuleTester({
