@@ -5,7 +5,7 @@
  *
  * Runtime imports: `react` only.
  */
-import { useSyncExternalStore } from 'react'
+import { useCallback, useSyncExternalStore } from 'react'
 
 type Ticker = {
   now: number
@@ -52,7 +52,8 @@ function subscribeTo(ms: number, onChange: () => void): () => void {
  * @neverWhen the value is a deadline you can compute once; or for animation (use CSS, not a timer).
  */
 export function useNow(ms: number): number {
-  const subscribe = (onChange: () => void) => subscribeTo(ms, onChange)
+  // stable per `ms`: a new function each render would resubscribe, tear the ticker down and re-read the clock
+  const subscribe = useCallback((onChange: () => void) => subscribeTo(ms, onChange), [ms])
   const read = () => tickerFor(ms).now
   return useSyncExternalStore(subscribe, read, read)
 }

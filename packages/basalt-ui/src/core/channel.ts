@@ -145,7 +145,6 @@ export function createChannel<F = Envelope>(o: ChannelOptions<F>): Channel<F> {
   const sched = o.scheduler ?? defaultScheduler
   const silenceMs = 3 * (o.heartbeatMs ?? 15_000)
   const beats = new Set(o.beats)
-  const seen = new Set<string>()
 
   // ---- store ------------------------------------------------------------------------------
   let state: ChannelState = IDLE
@@ -187,6 +186,8 @@ export function createChannel<F = Envelope>(o: ChannelOptions<F>): Channel<F> {
   async function drive(run: Run<F>): Promise<Outcome> {
     const { signal } = run
     let cursor: string | undefined
+    // per run: a second run (a frames() beside the hub, a restart) must see replayed ids again
+    const seen = new Set<string>()
     let st: ChannelState = { status: 'connecting', attempt: 0 }
     let published = 0
     let lastByteAt = sched.now()
