@@ -19,11 +19,7 @@ import type { DataTableInstance } from '../../src/table/contract'
 type Row = { id: string; payee: string; note: string; state: string; amount: number }
 
 const LONG_PAYEE = 'Counterparty Holdings International Limited (Registered Office)'
-const STATES = [
-  'Awaiting counterparty confirmation',
-  'Settled and reconciled',
-  'Disputed by the customer',
-] as const
+const STATES = ['Awaiting', 'Settled', 'Disputed'] as const
 
 const ROWS: Row[] = Array.from({ length: 8 }, (_, i) => ({
   id: `r${i}`,

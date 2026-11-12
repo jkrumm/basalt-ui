@@ -145,18 +145,12 @@ layout('TableToolbar', () => {
         expect(outside).toEqual([])
       })
 
-      // Only the toolbar probe: `tt-cell` carries one more kind column, and the column plan is `table-v0`'s to hold.
-      test('the table under the toolbar does not overflow its scroller (long labels included)', async () => {
+      test('the tables do not overflow their scrollers (long labels included)', async () => {
         const page = await open(viewport)
         const wide = await page.raw.evaluate(() =>
-          [
-            ...document.querySelectorAll<HTMLElement>(
-              '[data-testid="tt-main"] [data-slot="table-scroller"]',
-            ),
-          ].flatMap((el) =>
-            el.scrollWidth > el.clientWidth + 1
-              ? [`tt-main: ${el.scrollWidth} > ${el.clientWidth}`]
-              : [],
+          [...document.querySelectorAll<HTMLElement>('[data-slot="table-scroller"]')].flatMap(
+            (el) =>
+              el.scrollWidth > el.clientWidth + 1 ? [`${el.scrollWidth} > ${el.clientWidth}`] : [],
           ),
         )
         expect(wide).toEqual([])
