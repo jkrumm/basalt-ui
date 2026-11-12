@@ -11,7 +11,9 @@
  * after a merge that never waited for its own CI, and the guard then refused the fix). A branch behind a green master
  * by commits on other files merges without another 17 min CI round; requiring a rebase there made every lead re-run
  * CI after each landing.
- * Exit 0 when clear, 1 on a refusal (the reasons on stderr), 2 on a usage error.
+ * `--wait` first polls the head's PR CI until its newest non-cancelled run has finished (`--wait-minutes <n>`, default
+ * 45), so a lead can run the guard right after pushing. Exit 0 when clear, 1 on a refusal (the reasons on stderr), 2 on
+ * a usage error.
  */
 import { spawnSync } from 'node:child_process'
 
@@ -51,6 +53,35 @@ export function headNotGreen(sha: string, runs: CiRun[] | null): string | null {
     return `PR CI for HEAD ${sha.slice(0, 12)} is still ${last.status} (${last.url}): wait for it`
   if (last.conclusion === 'success') return null
   return `PR CI for HEAD ${sha.slice(0, 12)} is ${last.conclusion} (${last.url}): fix it, push, wait for green`
+}
+
+export interface WaitOptions {
+  minutes: number
+  intervalMs?: number
+  sleep(ms: number): Promise<void>
+  now(): number
+  log(line: string): void
+}
+
+/** Polls the head's CI until its newest non-cancelled run is completed, the runs are unreadable, or the time is up. */
+export async function awaitHead(ports: GuardPorts, options: WaitOptions): Promise<void> {
+  const sha = ports.git(['rev-parse', 'HEAD'])
+  if (sha === null) return
+  const interval = options.intervalMs ?? 30_000
+  const deadline = options.now() + options.minutes * 60_000
+  let previous = ''
+  for (;;) {
+    const runs = ports.ciRuns(sha)
+    if (runs === null) return
+    const last = runs.find((run) => run.conclusion !== 'cancelled')
+    if (last?.status === 'completed') return
+    const state = last ? `${last.status} (${last.url})` : 'no run yet'
+    if (state !== previous)
+      options.log(`merge-guard: waiting for CI on ${sha.slice(0, 7)}: ${state}`)
+    previous = state
+    if (options.now() + interval > deadline) return
+    await options.sleep(interval)
+  }
 }
 
 const REBASE = 'git fetch origin master && git rebase origin/master, push, and wait for PR CI'
@@ -165,13 +196,35 @@ export function realPorts(cwd: string = process.cwd()): GuardPorts {
 
 if (import.meta.main) {
   const args = process.argv.slice(2)
-  const unknown = args.filter((a) => a !== '--no-fetch')
+  const flags = ['--no-fetch', '--wait']
+  let waitMinutes = 45
+  const rest: string[] = []
+  for (let i = 0; i < args.length; i++) {
+    if (args[i] !== '--wait-minutes') {
+      rest.push(args[i] as string)
+      continue
+    }
+    const value = args[++i] ?? ''
+    if (!/^[1-9]\d*$/.test(value)) {
+      console.error('merge-guard: --wait-minutes needs a positive integer')
+      process.exit(2)
+    }
+    waitMinutes = Number(value)
+  }
+  const unknown = rest.filter((a) => !flags.includes(a))
   if (unknown.length > 0) {
     console.error(`merge-guard: unknown argument ${unknown[0]}`)
     process.exit(2)
   }
   const ports = realPorts()
-  if (!args.includes('--no-fetch')) ports.git(['fetch', '--quiet', 'origin', 'master'])
+  if (!rest.includes('--no-fetch')) ports.git(['fetch', '--quiet', 'origin', 'master'])
+  if (rest.includes('--wait'))
+    await awaitHead(ports, {
+      minutes: waitMinutes,
+      sleep: (ms) => new Promise((resolve) => setTimeout(resolve, ms)),
+      now: () => Date.now(),
+      log: (line) => console.error(line),
+    })
   const refusals = evaluate(ports)
   if (refusals.length > 0) {
     for (const reason of refusals) console.error(`merge-guard: refused: ${reason}`)

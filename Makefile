@@ -83,8 +83,8 @@ sync-self: ## Install basalt-ui's own shipped rules + skills into this repo's /.
 	@bun packages/basalt-ui/scripts/sync-self.ts
 
 # A lead runs this right before it merges its pull request: PR CI green for the exact HEAD, generated files in sync, master not moved under it.
-merge-guard: ## Refuse unless PR CI is green for HEAD, generated files are in sync and master did not move under the branch
-	@bun scripts/merge-guard.ts
+merge-guard: ## Refuse unless PR CI is green for HEAD, generated files are in sync and master did not move under the branch (MERGE_GUARD_ARGS=--wait waits for the head's CI first)
+	@bun scripts/merge-guard.ts $(MERGE_GUARD_ARGS)
 
 gen-check: ## Generated docs in sync: gen-docs --check (JSDoc gate), then gen-recipes --check
 	@bun packages/basalt-ui/scripts/gen-docs.ts --check
