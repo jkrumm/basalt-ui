@@ -1,5 +1,6 @@
 import { useCallback, useContext, useId, useState, useSyncExternalStore } from 'react'
 import type { ReactElement, ReactNode } from 'react'
+import { useIsomorphicLayoutEffect } from '../common/isomorphic-layout-effect'
 import { cn } from '../core/cn'
 import { page } from '../core/messages/page'
 import { useMessages } from '../core/messages/use-messages'
@@ -8,7 +9,7 @@ import { Menu, MenuContent, MenuItem, MenuTrigger } from '../ui/menu'
 import { devAssertOnce, createBarClaims } from './core/claims'
 import { observeBarHeight, publishBarHeight } from './core/bar-measure'
 import type { PageAction, PageBarProps, PageButtonAction, PageTextAction } from './contract'
-import { PageContext, PageHostContext, useIsoLayoutEffect } from './page'
+import { PageContext, PageHostContext } from './page'
 
 type Parent = NonNullable<PageBarProps['parent']>
 
@@ -279,17 +280,17 @@ export function PageBar({
   const list = actions?.filter((action) => action !== undefined) ?? []
   const primaries = list.filter((action) => 'primary' in action && action.primary === true).length
 
-  useIsoLayoutEffect(() => {
+  useIsomorphicLayoutEffect(() => {
     const handle = store.claim(id, undefined)
     return handle.release
   }, [store, id])
 
-  useIsoLayoutEffect(() => {
+  useIsomorphicLayoutEffect(() => {
     if (list.length > 5 || primaries > 1) warn()
   }, [list.length, primaries, warn])
 
   // The title is the shell's: the breadcrumb leaf and the document title. Only the owner claims.
-  useIsoLayoutEffect(() => {
+  useIsomorphicLayoutEffect(() => {
     if (host === null || !owns || title === undefined) return undefined
     const releaseCrumb = host.claim('breadcrumb', <PageCrumb title={title} parent={parent} />, id)
     const releaseTitle = host.claim('title', title, id)
@@ -302,14 +303,14 @@ export function PageBar({
     }
   }, [host, owns, id, title, parent])
 
-  useIsoLayoutEffect(() => {
+  useIsomorphicLayoutEffect(() => {
     if (host === null || !owns || list.length === 0) return undefined
     return host.claim('actions', <PageActions actions={list} />, `${id}:actions`)
     // `list` is rebuilt per render, `actions` is the caller's value.
   }, [host, owns, id, actions])
 
   // Publish the band height onto Page before paint, then on every resize. A zero reading is refused.
-  useIsoLayoutEffect(() => {
+  useIsomorphicLayoutEffect(() => {
     if (node === null) return undefined
     const stop = observeBarHeight(node, publishTarget(node))
     if (host === null) return stop

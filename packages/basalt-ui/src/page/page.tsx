@@ -2,8 +2,6 @@ import {
   createContext,
   useCallback,
   useContext,
-  useEffect,
-  useLayoutEffect,
   useMemo,
   useState,
   useSyncExternalStore,
@@ -46,8 +44,6 @@ export const PageHostContext = createContext<PageHost | null>(null)
  * consumer (`DataTable detail`, `SplitPage`) falls back to its own sheet. Internal.
  */
 export const DetailHostContext = createContext<DetailHost | null>(null)
-
-export const useIsoLayoutEffect = typeof document === 'undefined' ? useEffect : useLayoutEffect
 
 /** The `wide` container tier is 50rem (`--container-wide`); a `rem` is the root font size. */
 const WIDE_REM = 50
