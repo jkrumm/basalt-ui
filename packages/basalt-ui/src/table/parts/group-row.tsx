@@ -67,8 +67,9 @@ export function GroupRow<T>({
   const group = model.group
   const columns = visibleColumns(model.specs, model.plan.columns)
   const offset = model.selection === undefined ? 1 : 2
-  const originals = item.rows.map((row) => row.original)
-  const first = item.rows[0]?.original
+  // Count, reduce and summary read every matching row of the group, not only this page.
+  const { members } = item
+  const first = members[0]
   const drawn =
     item.value === '' || first === undefined ? (
       <Absent />
@@ -114,7 +115,7 @@ export function GroupRow<T>({
                     data-slot="table-group-count"
                     className="shrink-0 font-normal text-muted-foreground"
                   >
-                    {t('table.groupRows', item.rows.length)}
+                    {t('table.groupRows', members.length)}
                   </span>
                 </Pressable>
                 {group?.summary !== undefined && (
@@ -122,12 +123,12 @@ export function GroupRow<T>({
                     data-slot="table-group-summary"
                     className="flex min-w-0 flex-1 items-center"
                   >
-                    {group.summary(originals, { height: env.box.height, phase: env.box.phase })}
+                    {group.summary(members, { height: env.box.height, phase: env.box.phase })}
                   </span>
                 )}
               </span>
             ) : footer === undefined ? null : (
-              drawAggregate(spec, footerValue(spec, { kind: 'client', rows: originals }), env)
+              drawAggregate(spec, footerValue(spec, { kind: 'client', rows: members }), env)
             )}
           </TableCell>
         )

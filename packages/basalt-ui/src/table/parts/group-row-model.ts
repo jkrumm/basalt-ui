@@ -15,7 +15,10 @@ export type BodyItem<T> =
       key: string
       /** The group's value as the column renders it, `''` for rows without one. */
       value: string
+      /** The group's rows on this page, the ones the body draws under it. */
       rows: readonly BodyRow<T>[]
+      /** Every row matching the request in the group (all pages): what its count, reduce and summary read. */
+      members: readonly T[]
       collapsed: boolean
     }
 
@@ -35,21 +38,36 @@ export function bodyItems<T>(
   rows: readonly BodyRow<T>[],
   by: KindSpec<T> | undefined,
   collapsed: readonly string[] | undefined,
+  matched: readonly T[] = rows.map((row) => row.original),
 ): BodyItem<T>[] {
   if (by === undefined) return rows.map((row) => ({ type: 'row', key: row.id, row }))
+  const members = new Map<string, T[]>()
+  for (const original of matched) {
+    const value = groupValue(by.value(original))
+    const list = members.get(value)
+    if (list === undefined) members.set(value, [original])
+    else list.push(original)
+  }
   const groups = new Map<string, BodyRow<T>[]>()
   for (const row of rows) {
     const value = groupValue(by.value(row.original))
-    const members = groups.get(value)
-    if (members === undefined) groups.set(value, [row])
-    else members.push(row)
+    const page = groups.get(value)
+    if (page === undefined) groups.set(value, [row])
+    else page.push(row)
   }
   const closed = new Set(collapsed ?? [])
   const items: BodyItem<T>[] = []
-  for (const [value, members] of groups) {
+  for (const [value, page] of groups) {
     const shut = closed.has(value)
-    items.push({ type: 'group', key: groupKey(value), value, rows: members, collapsed: shut })
-    if (!shut) for (const row of members) items.push({ type: 'row', key: row.id, row })
+    items.push({
+      type: 'group',
+      key: groupKey(value),
+      value,
+      rows: page,
+      members: members.get(value) ?? page.map((row) => row.original),
+      collapsed: shut,
+    })
+    if (!shut) for (const row of page) items.push({ type: 'row', key: row.id, row })
   }
   return items
 }

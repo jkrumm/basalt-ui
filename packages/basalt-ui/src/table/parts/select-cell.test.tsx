@@ -117,6 +117,21 @@ describe('SelectCell', () => {
     expect(isDisabled(trigger('Category of Rent'))).toBe(false)
   })
 
+  test('a commit that throws before it returns re-enables the cell', async () => {
+    render(
+      <Subject
+        commit={() => {
+          throw new Error('invalid')
+        }}
+      />,
+    )
+    await choose('Category of Rent', 'Food')
+    await act(async () => {
+      await Promise.resolve()
+    })
+    expect(isDisabled(trigger('Category of Rent'))).toBe(false)
+  })
+
   test('Enter and a tap in the control never call onRowActivate', async () => {
     const onRowActivate = mock(() => undefined)
     const commit = mock((_row: Row, _next: string) => Promise.resolve())

@@ -18,13 +18,14 @@ import type { FixtureSpec } from './fixture/spec'
 import {
   CLOSE_BUDGET_MS,
   DESKTOP_1440,
+  PHONE,
   closeLayoutSuite,
   expectNoHorizontalOverflow,
   initLayoutSuite,
   openFixture,
   serveDocument,
 } from './harness'
-import type { LayoutPage } from './harness'
+import type { LayoutPage, Viewport } from './harness'
 
 const ready = await initLayoutSuite()
 const layout = ready ? describe : describe.skip
@@ -87,8 +88,8 @@ async function frames(page: LayoutPage): Promise<void> {
   await page.settle()
 }
 
-async function open(): Promise<LayoutPage> {
-  const page = await openFixture(EMPTY_SPEC, DESKTOP_1440, documentPath, 'reduce', 'fine')
+async function open(viewport: Viewport = DESKTOP_1440): Promise<LayoutPage> {
+  const page = await openFixture(EMPTY_SPEC, viewport, documentPath, 'reduce', 'fine')
   await page.raw.waitForSelector(`${PORT} tbody tr[role="row"]`)
   await frames(page)
   return page
@@ -194,5 +195,39 @@ layout('DataTable virtual (S2, Chrome)', () => {
     await page.raw.keyboard.press('ArrowDown')
     await frames(page)
     expect((await probe(page)).focused).toBe('Booking 09998')
+  })
+})
+
+layout('DataTable virtual at 390 (Chrome)', () => {
+  test('narrow, the window stays a table: one row height, a steady head, no cards', async () => {
+    const page = await open(PHONE)
+    const tier = await page.raw.evaluate((sel) => {
+      const port = document.querySelector<HTMLElement>(sel)!
+      const root = port.closest('[data-slot="table-root"]')!
+      return {
+        phone: root.getAttribute('data-phone'),
+        head: port.querySelector('thead')!.getBoundingClientRect().height,
+      }
+    }, PORT)
+    expect(tier.phone).toBe('scroll')
+    // The card tier hides the head visually; a windowed table keeps it.
+    expect(tier.head).toBeGreaterThan(1)
+    const offsets: number[] = []
+    for (const top of [0, 5_000, 250_000, -1]) {
+      await scrollTo(page, top)
+      const p = await probe(page)
+      offsets.push(p.headOffset)
+      expect(p.mounted).toBeLessThan(100)
+      const heights = await page.raw.evaluate(
+        (sel) =>
+          [...document.querySelectorAll<HTMLElement>(`${sel} tbody tr[role="row"]`)].map(
+            (tr) => Math.round(tr.getBoundingClientRect().height * 10) / 10,
+          ),
+        PORT,
+      )
+      for (const h of heights) expect(Math.abs(h - heights[0]!)).toBeLessThanOrEqual(0.5)
+    }
+    expect(Math.max(...offsets) - Math.min(...offsets)).toBeLessThanOrEqual(1)
+    expectNoHorizontalOverflow(await page.horizontalOverflow(), 'the virtual table', PHONE)
   })
 })

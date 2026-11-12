@@ -83,10 +83,13 @@ export function DataTable<T>({
         data-virtual=""
         data-full-at={model.plan.fullAt ?? undefined}
         {...tierAttributesOf(model)}
+        // One row size holds the window exact: a windowed table never projects to cards (a card
+        // is as tall as its content) and its cells hold one line; narrow, it scrolls sideways.
+        data-phone="scroll"
         data-refresh-failed={phase.tag === 'stale' && phase.refreshFailed ? '' : undefined}
         // A windowed body needs a bounded port: a `fill` table takes the height of its parent.
         className={cn(
-          'flex max-w-full min-w-0 flex-col',
+          'flex max-w-full min-w-0 flex-col [&_[data-slot=table-cell]]:whitespace-nowrap',
           height === 'fill' && 'h-full min-h-0 flex-1',
         )}
       >
@@ -106,7 +109,7 @@ export function DataTable<T>({
                 <DataTableHead table={table} />
               </>
             }
-            footer={<DataTableFooter table={table} />}
+            footer={<DataTableFooter table={table} rowIndex={model.items.length + 2} />}
             footerShown={footerShown}
             colcount={colcount}
             tabStop={!focusable}

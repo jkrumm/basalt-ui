@@ -198,7 +198,7 @@ export function useDataTable<T>(options: UseDataTable<T>): DataTableInstance<T> 
   if (!server && matching !== clientCount) setClientCount(matching)
 
   const group = groupOf(options.group, specs, server)
-  const items = bodyItems(rows, group?.spec, display.collapsed)
+  const items = bodyItems(rows, group?.spec, display.collapsed, matched)
 
   const filtering = request.q !== '' || request.filters.length > 0
   const settled = options.data !== undefined

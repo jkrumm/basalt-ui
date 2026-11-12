@@ -9,8 +9,9 @@
  *   moves it keeps the same node, so focus stays (S2, Chrome).
  * - `aria-rowcount` counts every row of the table (head, body, foot); each mounted row carries its
  *   `aria-rowindex`, so a reader hears "row 4,812 of 10,002" in a window of 30.
- * - One row size: read from the first mounted row and re-read when the table resizes (the card
- *   tier is taller). A group row has the same height, so grouping keeps the window exact.
+ * - One row size: read from the first mounted row and re-read when the table resizes. It is exact
+ *   because every row is one line: `DataTable` keeps a windowed table out of the card tier (it
+ *   scrolls sideways when narrow) and its cells do not wrap, and a group row has the row height.
  * - A request change (sort, filter, search, page) scrolls back to the first row.
  *
  * The port's own `<table>` and `<tbody>` take no props, so the table attributes the tiers and

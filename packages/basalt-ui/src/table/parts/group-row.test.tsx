@@ -198,6 +198,34 @@ describe('GroupRow', () => {
     )
   })
 
+  const PAGED_ID = `g-paged-${Math.random()}`
+  test('under a client pager a group counts and reduces every matching row, not the page', () => {
+    const paged = { ...STATE, request: { ...STATE.request, pageSize: 2 } }
+    function Paged(): ReactElement {
+      const c = col<Row>()
+      const t = useDataTable<Row>({
+        id: PAGED_ID,
+        label: 'Rooms',
+        columns: [c.entity('room'), c.text('floor'), c.number('done', { footer: 'sum' })],
+        data: ROWS,
+        getRowId: (r) => r.id,
+        mode: { kind: 'client' },
+        pager: 'pages',
+        state: handleOf(paged),
+        group: { by: 'floor' },
+      })
+      return <DataTable table={t} />
+    }
+    const { container } = render(<Paged />)
+    // Page 1 holds Kitchen and Hall; Floor 2 has three rooms in all, Floor 1 two.
+    expect(dataRows(container)).toEqual(['Kitchen', 'Hall'])
+    const [floor2, floor1] = groupRows(container)
+    expect(floor2?.textContent).toContain('3 rows')
+    expect(floor2?.querySelector('[data-kind="number"]')?.textContent).toBe('11')
+    expect(floor1?.textContent).toContain('2 rows')
+    expect(floor1?.querySelector('[data-kind="number"]')?.textContent).toBe('4')
+  })
+
   test('an unknown group column throws naming it', () => {
     function Bad(): ReactElement {
       const c = col<Row>()

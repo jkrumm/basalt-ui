@@ -30,10 +30,13 @@ export type SelectCellProps<T> = {
 
 const stop = (event: SyntheticEvent): void => event.stopPropagation()
 
-/** Waits for a commit either way: the app's mutation reports its own failure, the cell only needs to be usable again. */
-async function settle(result: unknown): Promise<void> {
+/**
+ * Runs a commit and waits for it either way, a synchronous throw included: the app's mutation
+ * reports its own failure, the cell only needs to be usable again.
+ */
+async function settle(run: () => unknown): Promise<void> {
   try {
-    await result
+    await run()
   } catch {
     // Reported by the mutation that rejected (its `onError`, its toast); the cell only re-enables.
   }
@@ -55,7 +58,7 @@ export function SelectCell<T>({ row, value, edit, tabbable }: SelectCellProps<T>
   const commit = (next: string | null): void => {
     if (next === null || next === value) return
     setPending(true)
-    void settle(edit.commit(row, next)).then(() => setPending(false))
+    void settle(() => edit.commit(row, next)).then(() => setPending(false))
   }
 
   const tabIndex = tabbable ? undefined : -1
