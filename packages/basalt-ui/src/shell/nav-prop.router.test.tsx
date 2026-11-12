@@ -21,7 +21,7 @@ import type { BasaltAccountProps } from './account-types'
 import type { SidebarBlock } from './nav-types'
 import { navGroup } from '../router-tanstack/nav'
 import { defineNav } from '../../tests/support/nav-test-utils'
-import { BasaltShell } from './index'
+import { BasaltShell } from './legacy'
 
 const NAV = defineNav({
   groups: [

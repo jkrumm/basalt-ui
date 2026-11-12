@@ -39,7 +39,7 @@ import type {
   SidebarProgressBlock,
 } from './nav-types'
 import type { BasaltAccountProps } from './account-types'
-import type { SettingsMenuItem } from './index'
+import type { SettingsMenuItem } from './legacy'
 import { NavCountBadge } from './nav-count-badge'
 import { hasIcon, initialGlyph } from './nav-glyph'
 import { SidebarBlockToneDot } from './sidebar-blocks'

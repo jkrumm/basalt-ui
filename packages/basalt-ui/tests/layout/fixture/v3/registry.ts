@@ -10,6 +10,7 @@ import type { FixtureSpec } from '../spec'
 import { innerNavScenario } from './scenarios/inner-nav'
 import { pageCoreScenario } from './scenarios/page-core'
 import { pageKitScenario } from './scenarios/page-kit'
+import { shellFrameScenario } from './scenarios/shell-frame'
 
 export type ShellSlotName = string
 
@@ -26,6 +27,7 @@ export const SCENARIOS: Readonly<Record<string, Scenario>> = {
   'page-kit': pageKitScenario,
   'page-core': pageCoreScenario,
   'inner-nav': innerNavScenario,
+  'shell-frame': shellFrameScenario,
 }
 
 /** Every slot some registered scenario provides. */

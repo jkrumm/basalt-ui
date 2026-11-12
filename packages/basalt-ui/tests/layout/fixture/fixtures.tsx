@@ -58,7 +58,7 @@ import {
   StatGroup,
   StatusVerdict,
 } from '../../../src/index'
-import { ShellFrame } from '../../../src/shell'
+import { ShellFrame } from '../../../src/shell/legacy'
 import { VX } from '../../../src/tokens'
 import type { SettingsMenuItem } from '../../../src/index'
 import type { GlobalAction } from '../../../src/controls'
