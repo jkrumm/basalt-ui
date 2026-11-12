@@ -16,7 +16,7 @@ tab bar, all projections of one `nav` declaration. It owns the markup (a CSS gri
 ## Signature
 
 ```ts
-AppShell<Id extends string = string>({ nav, brand, badges, blocks, globalControls, globalActions, settings, account, search, storageKey, compactHeader, children, }: AppShellProps<Id>): ReactElement
+AppShell<Id extends string = string>({ nav, brand, badges, blocks, globalControls, globalActions, settings, account, search, storageKey, compactHeader, chrome, children, }: AppShellProps<Id>): ReactElement
   nav: NavConfig
   brand: ShellBrand
   badges?: Partial<Record<Id, NavBadge>>

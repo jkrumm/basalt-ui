@@ -19,7 +19,8 @@ import { cn } from '../../core/cn'
 import type { ControlsSlot } from '../../core/ports'
 import { Button } from '../../ui/button'
 import { Popover, PopoverContent, PopoverTrigger } from '../../ui/popover'
-import type { GlobalAction, ShellBox, ShellBrand, SizeClass } from '../contract'
+import { NATIVE_BRAND, NATIVE_HEADER, Titlebar } from '../chrome'
+import type { GlobalAction, ShellBox, ShellBrand, ShellChrome, SizeClass } from '../contract'
 import { headerPriority } from '../core/header-tiers'
 import { useRailControl } from './grid'
 import { HeaderKebab, kebabTiers } from './header-kebab'
@@ -39,6 +40,8 @@ export type HeaderProps = {
   /** The compact-screen trigger of a claimed aside. */
   asideTrigger: ReactNode
   sizeClass: SizeClass
+  /** `native-overlay` makes the header the window's drag region. */
+  chrome?: ShellChrome
 }
 
 /**
@@ -46,7 +49,7 @@ export type HeaderProps = {
  * rail's collapse toggle lives here: expanded it sits at the zone's end, collapsed it is the zone's
  * only content, centred on the rail.
  */
-function Brand({ brand }: { brand: ShellBrand }): ReactElement {
+function Brand({ brand, native }: { brand: ShellBrand; native: boolean }): ReactElement {
   const Logo = brand.logo
   const rail = useRailControl()
   const label = rail.collapsed ? 'Expand sidebar' : 'Collapse sidebar'
@@ -58,6 +61,7 @@ function Brand({ brand }: { brand: ShellBrand }): ReactElement {
         // Collapsed: the zone is the rail's width and holds the toggle alone, centred.
         'group-data-[rail=collapsed]/shell:md:justify-center group-data-[rail=collapsed]/shell:md:p-0',
         'group-data-[rail=auto]/shell:md:max-xl:justify-center group-data-[rail=auto]/shell:md:max-xl:p-0',
+        native && NATIVE_BRAND,
       )}
     >
       {Logo !== undefined ? (
@@ -195,14 +199,18 @@ export function Header({
   globalActions,
   asideTrigger,
   sizeClass,
+  chrome,
 }: HeaderProps): ReactElement {
+  const native = chrome === 'native-overlay'
   const rowRef = useRef<HTMLDivElement>(null)
   const box: ShellBox = { height: HEADER_BOX_HEIGHT, sizeClass }
   const tiers = kebabTiers(globalActions)
   return (
     <header
       data-slot="shell-header"
+      data-tauri-drag-region={native ? 'deep' : undefined}
       className={cn(
+        native && NATIVE_HEADER,
         'flex min-w-0 items-center border-b border-border bg-background [grid-area:header]',
         'group-data-[compact-header=hidden]/shell:max-md:hidden',
         PRINT_OFF,
@@ -219,7 +227,8 @@ export function Header({
           data-slot="shell-lead"
           className="flex min-w-[calc(var(--shell-rail-w)+6rem)] flex-1 items-center"
         >
-          <Brand brand={brand} />
+          {native && <Titlebar />}
+          <Brand brand={brand} native={native} />
           <div
             data-slot="shell-breadcrumb"
             className="ms-(--shell-gutter) flex min-w-0 items-center gap-2 text-sm text-muted-foreground [&>*]:min-w-0 [&>*]:truncate [&>[data-slot=page-breadcrumb-leaf]]:font-medium [&>[data-slot=page-breadcrumb-leaf]]:text-foreground [&>[data-slot=page-breadcrumb-parent]]:after:ms-2 [&>[data-slot=page-breadcrumb-parent]]:after:text-faint [&>[data-slot=page-breadcrumb-parent]]:after:content-['/']"

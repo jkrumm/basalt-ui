@@ -5,3 +5,7 @@
  */
 
 export { AppShell } from './app-shell'
+export { defineCommands } from './commands/define-commands'
+export { CommandPalette } from './commands/command-palette'
+export { toMenuTemplate } from './menu-template'
+export { useWindowChrome } from './chrome'

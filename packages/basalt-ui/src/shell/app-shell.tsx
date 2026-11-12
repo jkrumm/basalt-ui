@@ -10,6 +10,7 @@ import type { AnyNavConfig } from '../router/nav/types'
 import { Button } from '../ui/button'
 import { Sheet, SheetContent, SheetTrigger } from '../ui/sheet'
 import { createShellHost, useClaim } from './app-shell-host'
+import { ChromeProvider, useChromeRoot } from './chrome'
 import type { AppShellProps } from './contract'
 import { createNavRuntime } from './core/nav-runtime'
 import type { CoreNavConfig } from './core/types'
@@ -83,6 +84,7 @@ export function AppShell<Id extends string = string>({
   search,
   storageKey = DEFAULT_STORAGE_KEY,
   compactHeader = 'show',
+  chrome = 'web',
   children,
 }: AppShellProps<Id>): ReactElement {
   const router = useRouter()
@@ -106,6 +108,7 @@ export function AppShell<Id extends string = string>({
   const active = useSyncExternalStore(runtime.subscribe, runtime.getState, runtime.getState)
 
   const [shellHost] = useState(createShellHost)
+  const attachRoot = useChromeRoot(shellHost.attachRoot, chrome)
   const breadcrumb = useClaim(shellHost.regions.breadcrumb)
   const actions = useClaim(shellHost.regions.actions)
   const titleClaim = useClaim(shellHost.regions.title)
@@ -134,7 +137,7 @@ export function AppShell<Id extends string = string>({
     <PageHostContext value={shellHost.host}>
       <RailControlProvider value={rail}>
         <ShellGrid
-          rootRef={shellHost.attachRoot}
+          rootRef={attachRoot}
           rail={rail.state}
           compactHeader={compactHeader}
           asideWidth={model.width}
@@ -151,6 +154,7 @@ export function AppShell<Id extends string = string>({
               claim !== undefined && sizeClass === 'compact' ? <AsideSheet claim={claim} /> : null
             }
             sizeClass={sizeClass}
+            chrome={chrome}
           />
           <RailMount
             runtime={runtime}
@@ -161,7 +165,9 @@ export function AppShell<Id extends string = string>({
             account={account}
             search={search}
           />
-          <ShellMain>{children}</ShellMain>
+          <ShellMain>
+            <ChromeProvider chrome={chrome}>{children}</ChromeProvider>
+          </ShellMain>
           <AsideRegion claim={claim} model={model} />
           <TabBarMount
             runtime={runtime}
