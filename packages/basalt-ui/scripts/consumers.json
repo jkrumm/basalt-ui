@@ -153,5 +153,6 @@
   "SLOTS": "shutterflow:e2e/desktop/a11y/keyboard.spec.ts",
   "expectShellInvariants": "shutterflow:e2e/desktop/visual/invariants.spec.ts",
   "installDomShims": "shutterflow:apps/desktop/src/features/photos/grid/ContactSheet.tsx",
-  "settled": "shutterflow:apps/desktop/src/features/photos/grid/ContactSheet.tsx"
+  "settled": "shutterflow:apps/desktop/src/features/photos/grid/ContactSheet.tsx",
+  "quality": "shutterflow:e2e/desktop/a11y/keyboard.spec.ts"
 }

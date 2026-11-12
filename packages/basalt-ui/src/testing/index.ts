@@ -5,12 +5,3 @@ export { settled } from './settled'
 export { SLOTS } from './slots'
 export { expectShellInvariants } from './shell-invariants'
 export { quality } from './quality'
-export type {
-  AxeOptions,
-  AxeReport,
-  OverflowOptions,
-  OverlayKind,
-  PageLike,
-  Scheme as QualityScheme,
-  WalkOptions,
-} from './quality'
