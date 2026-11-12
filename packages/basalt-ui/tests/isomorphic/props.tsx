@@ -26,6 +26,8 @@ import { lineY } from '@tanstack/charts/line'
 import type { ChartSeries } from '../../src/charts'
 import { DateRangePicker } from '../../src/controls-dates'
 import { defineCommands } from '../../src/commands'
+import { memoryHandle } from '../../src/controls/control-view.handles'
+import { spec } from '../../src/controls/spec'
 
 /* ----------------------------------------------------------------- fixtures */
 
@@ -177,6 +179,19 @@ export const MINIMAL_PROPS: Record<string, Record<string, unknown>> = {
   },
 
   /* --- controls ------------------------------------------------------------ */
+  // v3 ctl-4: a spec over an in-memory handle, so the smoke render needs no router
+  ControlView: {
+    spec: spec(
+      memoryHandle('smoke', 'a', {
+        kind: 'enum',
+        options: [
+          { value: 'a', label: 'A' },
+          { value: 'b', label: 'B' },
+        ],
+      }),
+      'Smoke',
+    ),
+  },
   SelectFilter: { field: store.field.currency, label: 'Currency', options: OPTIONS },
   MultiSelectFilter: { field: store.field.channels, label: 'Channels', options: MULTI_OPTIONS },
   CompareFilter: { field: store.field.compare, label: 'Compare' },

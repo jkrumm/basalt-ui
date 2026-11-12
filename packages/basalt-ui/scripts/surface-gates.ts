@@ -131,6 +131,8 @@ export const SUBPATH_REQUIRED_PEERS: Readonly<Record<string, readonly string[]>>
   // `ui/card` imports Base UI `useRender`, so `StatCard` reaches it; the concept (charts-cards-kanban 3, 'Shared frame') wants no Base UI import there. Remove this row when `ui/card` drops it.
   './cards': ['@base-ui/react'],
   './page': ['@base-ui/react'],
+  // v3 ctl-4: `ControlView` and its renderers draw `ui/select`, `ui/combobox`, `ui/segmented`, `ui/number-field` and `ui/switch`, which wrap Base UI; the 2.x Mantine tier in this subpath stays beside them until it retires.
+  './controls': ['@base-ui/react'],
   './controls-dates': ['@mantine/dates', 'dayjs'],
   // `CodeBlock` renders `ui/button`, which wraps Base UI; `./page` (above) takes the same peer for `ui/alert`, `ui/popover`, `ui/dialog` and `ui/sheet`.
   './content': ['react-markdown', 'remark-gfm', 'rehype-sanitize', 'remend', '@base-ui/react'],

@@ -438,7 +438,8 @@ echo "==> controls without @mantine/dates (the optional peer only ./controls-dat
 SCRATCH5=$(mktemp -d)
 cd "$SCRATCH5"
 echo '{ "name": "scratch-no-dates", "private": true, "type": "module" }' >package.json
-scratch_install "$ABS_TGZ" react react-dom @mantine/core @mantine/hooks
+# v3 ctl-4: `./controls` now draws `ui/*` (Base UI), the one peer its subpath-required list adds.
+scratch_install "$ABS_TGZ" react react-dom @mantine/core @mantine/hooks @base-ui/react
 if [ -d node_modules/@mantine/dates ]; then
   echo "FAILED: @mantine/dates ended up in a scratch install that never requested it — test setup is broken, not a package defect"
   exit 1
@@ -560,7 +561,6 @@ cat >peers.mjs <<'JS'
 // the peer-free subpaths are listed here so they are still imported.
 const own = {
   ...JSON.parse(process.env.OWN_PEERS),
-  'basalt-ui/controls': [],
   'basalt-ui/state': [],
   'basalt-ui/format': [],
   'basalt-ui/tokens': [],
