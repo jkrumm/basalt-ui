@@ -1,0 +1,29 @@
+{
+  "virtual10k": {
+    "sortMsOn": 28.3,
+    "sortMsOff": 28.8,
+    "gainPct": 1.74,
+    "spreadPct": 78.45,
+    "spreadPctOn": 78.45,
+    "spreadPctOff": 57.99,
+    "samplesOn": [28.2, 35.1, 48, 27.1, 30.5, 25.8, 33.3, 26.3, 28.3, 29.8, 27.8],
+    "samplesOff": [28.3, 28.8, 26.8, 28, 27.1, 27.7, 29.5, 32.6, 43.5, 42.5, 36]
+  },
+  "dom10k": {
+    "diagnostic": "forbidden case, not a gate",
+    "sortMsOn": 753.3,
+    "sortMsOff": 1065.2,
+    "gainPct": 29.28,
+    "spreadPctOn": 15.41,
+    "spreadPctOff": 28.76,
+    "samplesOn": [757.6, 761.5, 771.1, 722.8, 707, 814, 757.7, 728.8, 697.9, 753.3, 712.4],
+    "samplesOff": [
+      1016.9, 1065.2, 951, 978.7, 1257.4, 1049.9, 1193.3, 1012.4, 1212.2, 1065.6, 1217.5
+    ]
+  },
+  "loadAvg1m": 43.56,
+  "uncompiledLaneGreen": true,
+  "rerun": true,
+  "chrome": "157.0.8103.51",
+  "voided": true
+}
