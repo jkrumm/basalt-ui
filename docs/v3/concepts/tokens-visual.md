@@ -66,14 +66,14 @@ Tailwind-only aliases: `primary`/`primary-foreground` = ink/canvas; `secondary` 
 
 ### 3.3 Surfaces and nesting
 
-**Re-anchored 2026-11-11 (owner review, Issue 820).** The warm ramp below this note is superseded: every surface and ink is the 2.x zinc derivation (`deriveTokens(DEFAULT_DERIVE_CONFIG)`) under a v3 name, `SURFACE_FROM_2X` and `INK_FROM_2X` in `derive.ts`, and `anchor-2x.test.ts` pins it. Warmth is the opt-in `neutral: 'stone'`. The measured numbers in 3.3 and 3.4 are the pre-review ones; the test holds the current ones.
+**Re-anchored 2026-11-11 (owner review, Issue 820).** The warm ramp below this note is superseded: every surface and ink is the 2.x zinc derivation (`deriveTokens(DEFAULT_DERIVE_CONFIG)`) under a v3 name, `SURFACE_FROM_2X` and `INK_FROM_2X` in `derive.ts`, and `anchor-2x.test.ts` pins it. Warmth is the opt-in `neutral: 'stone'`. The measured numbers in 3.3 and 3.4 are the pre-review ones; the test holds the current ones. **Light card, 2026-11-12 (Issue 863, owner verdict on the Spec):** the light shell is the 2.x `panel`, 1.07:1 on the canvas like the factory console's card (the `subtle` band was 1.02:1 and read as the page); the white inset sits .014 L inside it, so the `card-step` gate holds .03 in dark and .014 in light.
 
-| Role   | 2.x stop   | Dark T, hex    | Light T, hex   | Use                                     |
-| ------ | ---------- | -------------- | -------------- | --------------------------------------- |
-| canvas | `bg`       | 15.7 `#27272a` | 95.6 `#f2f2f5` | Page, table head                        |
-| inset  | `field`    | 15.7 `#27272a` | 100 `#ffffff`  | The reading surface: data, rows, charts |
-| card   | `subtle`   | 20.9 `#323235` | 96.3 `#f4f4f8` | Ringed frame, header and footer bands   |
-| raised | `elevated` | 23.6 `#38383b` | 100 `#ffffff`  | Controls, tiles, popovers, chips        |
+| Role   | 2.x stop                     | Dark T, hex    | Light T, hex   | Use                                     |
+| ------ | ---------------------------- | -------------- | -------------- | --------------------------------------- |
+| canvas | `bg`                         | 15.7 `#27272a` | 95.6 `#f2f2f5` | Page, table head                        |
+| inset  | `field`                      | 15.7 `#27272a` | 100 `#ffffff`  | The reading surface: data, rows, charts |
+| card   | `subtle` dark, `panel` light | 20.9 `#323235` | 98.3 `#fafafd` | Ringed frame, header and footer bands   |
+| raised | `elevated`                   | 23.6 `#38383b` | 100 `#ffffff`  | Controls, tiles, popovers, chips        |
 
 ```
 canvas
