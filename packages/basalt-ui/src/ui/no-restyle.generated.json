@@ -233,6 +233,14 @@
       "message": "Meter owns its height and display: eject it (basalt-ui eject meter) to change them."
     },
     {
+      "module": "num",
+      "part": "num",
+      "pattern": "^Num$",
+      "allow": ["layout"],
+      "deny": ["h-*", "min-h-*", "size-*", "hidden", "flex", "block", "grid", "inline-flex"],
+      "message": "Num owns its height and display: eject it (basalt-ui eject num) to change them."
+    },
+    {
       "module": "number-field",
       "part": "number-field",
       "pattern": "^NumberField$",
@@ -449,12 +457,44 @@
       "message": "Toast owns its height and display: eject it (basalt-ui eject toast) to change them."
     },
     {
+      "module": "toolbar",
+      "part": "toolbar",
+      "pattern": "^Toolbar$",
+      "allow": ["layout"],
+      "deny": ["h-*", "min-h-*", "size-*", "hidden", "flex", "block", "grid", "inline-flex"],
+      "message": "Toolbar owns its height and display: eject it (basalt-ui eject toolbar) to change them."
+    },
+    {
+      "module": "toolbar",
+      "part": "toolbar-group",
+      "pattern": "^ToolbarGroup$",
+      "allow": ["layout"],
+      "deny": ["h-*", "min-h-*", "size-*", "hidden", "flex", "block", "grid", "inline-flex"],
+      "message": "ToolbarGroup owns its height and display: eject it (basalt-ui eject toolbar) to change them."
+    },
+    {
+      "module": "toolbar",
+      "part": "toolbar-separator",
+      "pattern": "^ToolbarSeparator$",
+      "allow": ["layout"],
+      "deny": ["h-*", "min-h-*", "size-*", "hidden", "flex", "block", "grid", "inline-flex"],
+      "message": "ToolbarSeparator owns its height and display: eject it (basalt-ui eject toolbar) to change them."
+    },
+    {
       "module": "tooltip",
       "part": "tooltip",
       "pattern": "^Tooltip$",
       "allow": ["layout"],
       "deny": ["h-*", "min-h-*", "size-*", "hidden", "flex", "block", "grid", "inline-flex"],
       "message": "Tooltip owns its height and display: eject it (basalt-ui eject tooltip) to change them."
+    },
+    {
+      "module": "virtual-list",
+      "part": "virtual-list",
+      "pattern": "^VirtualList$",
+      "allow": ["layout"],
+      "deny": ["h-*", "min-h-*", "size-*", "hidden", "flex", "block", "grid", "inline-flex"],
+      "message": "VirtualList owns its height and display: eject it (basalt-ui eject virtual-list) to change them."
     }
   ]
 }

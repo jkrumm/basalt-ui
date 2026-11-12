@@ -54,6 +54,7 @@ export const SLOTS = {
     'menu-separator',
   ],
   meter: ['meter'],
+  num: ['num'],
   'number-field': ['number-field'],
   popover: ['popover-trigger', 'popover-content'],
   progress: ['progress', 'ring'],
@@ -87,7 +88,9 @@ export const SLOTS = {
   tabs: ['tabs', 'tabs-list', 'tabs-trigger', 'tabs-content'],
   textarea: ['textarea'],
   toast: ['toast-viewport', 'toast', 'toast-title', 'toast-description', 'toast-close'],
+  toolbar: ['toolbar', 'toolbar-group', 'toolbar-button', 'toolbar-separator'],
   tooltip: ['tooltip'],
+  'virtual-list': ['virtual-list'],
 } as const
 
 /** A `basalt-ui/ui/*` module name. */

@@ -6,7 +6,12 @@ import { afterEach, describe, expect, test } from 'bun:test'
 import { Field as BaseField } from '@base-ui/react/field'
 import { Fieldset as BaseFieldset } from '@base-ui/react/fieldset'
 import type { ComponentType, ReactNode } from 'react'
-import { disclosureAncestry, overlayAncestry, pickerAncestry } from './primitive.contract'
+import {
+  disclosureAncestry,
+  overlayAncestry,
+  pickerAncestry,
+  toolbarAncestry,
+} from './primitive.contract'
 import { SLOTS } from './slots'
 
 afterEach(cleanup)
@@ -55,6 +60,7 @@ const PARENTS: Record<string, ComponentType<{ children?: ReactNode }>> = {
   ...disclosureAncestry(),
   ...overlayAncestry(true),
   ...pickerAncestry(),
+  ...toolbarAncestry(),
 }
 
 /** Props a part needs to render at all: `FieldError` shows only on a failed validity or `match`. */

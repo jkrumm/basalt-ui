@@ -23,6 +23,7 @@ import { Autocomplete as BaseAutocomplete } from '@base-ui/react/autocomplete'
 import { Combobox as BaseCombobox } from '@base-ui/react/combobox'
 import { Select as BaseSelect } from '@base-ui/react/select'
 import { Tabs as BaseTabs } from '@base-ui/react/tabs'
+import { Toolbar as BaseToolbar } from '@base-ui/react/toolbar'
 import { readdirSync } from 'node:fs'
 import { cloneElement, createElement } from 'react'
 import type { ComponentType, ReactElement, ReactNode } from 'react'
@@ -64,6 +65,7 @@ const PARENTS: Record<string, ComponentType<{ children?: ReactNode }>> = {
   ...disclosureAncestry(),
   ...overlayAncestry(true),
   ...pickerAncestry(),
+  ...toolbarAncestry(),
   ...tableAncestry({
     'table-header': ['table'],
     'table-body': ['table'],
@@ -174,6 +176,12 @@ export function popupAncestry(
   }
 }
 
+/** The Base UI `Toolbar.Root` every toolbar part throws without. */
+export function toolbarAncestry(): Record<string, ComponentType<{ children?: ReactNode }>> {
+  const root = (p: { children?: ReactNode }): ReactElement => createElement(BaseToolbar.Root, p)
+  return { 'toolbar-group': root, 'toolbar-button': root, 'toolbar-separator': root }
+}
+
 /** Roots that render no element of their own: they carry no slot and are not listed in `SLOTS`. */
 export const ROOTLESS = new Set(['dialog', 'alert-dialog', 'sheet', 'popover', 'menu'])
 
@@ -247,6 +255,8 @@ const PART_PROPS: Record<string, Record<string, unknown>> = {
   'menu-group': { label: 'x' },
   'menu-sub': { label: 'x' },
   'menu-radio-item': { value: 'a' },
+  num: { value: 1 },
+  'virtual-list': { count: 0, estimateSize: () => 32, getItemKey: (i: number) => i },
 }
 
 const componentEntries = (exports: Record<string, unknown>): [string, PartComponent][] =>
