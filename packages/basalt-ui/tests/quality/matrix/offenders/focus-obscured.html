@@ -1,0 +1,53 @@
+<!doctype html>
+<html lang="en" data-theme="light">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>offender: focus-obscured</title>
+    <style>
+      body {
+        margin: 0;
+        font:
+          16px/1.4 system-ui,
+          sans-serif;
+        color: #111;
+        background: #fff;
+      }
+      main {
+        padding: 16px;
+      }
+      button,
+      a {
+        font: inherit;
+      }
+      button:focus-visible,
+      a:focus-visible {
+        outline: 2px solid #1d4ed8;
+        outline-offset: 2px;
+      }
+      .bar {
+        position: fixed;
+        z-index: 10;
+        top: 0;
+        left: 0;
+        right: 0;
+        height: 120px;
+        background: #ddd;
+      }
+      .under {
+        position: absolute;
+        top: 24px;
+        left: 16px;
+        min-width: 48px;
+        min-height: 48px;
+      }
+    </style>
+  </head>
+  <body>
+    <main>
+      <h1>focus-obscured</h1>
+      <div class="bar" aria-hidden="true"></div>
+      <button type="button" class="under">Hidden under the bar</button>
+    </main>
+  </body>
+</html>

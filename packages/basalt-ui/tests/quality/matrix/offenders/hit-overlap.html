@@ -1,0 +1,53 @@
+<!doctype html>
+<html lang="en" data-theme="light">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>offender: hit-overlap</title>
+    <style>
+      body {
+        margin: 0;
+        font:
+          16px/1.4 system-ui,
+          sans-serif;
+        color: #111;
+        background: #fff;
+      }
+      main {
+        padding: 16px;
+      }
+      button,
+      a {
+        font: inherit;
+      }
+      button:focus-visible,
+      a:focus-visible {
+        outline: 2px solid #1d4ed8;
+        outline-offset: 2px;
+      }
+      [data-basalt-hit] {
+        position: relative;
+        width: 24px;
+        height: 24px;
+        padding: 0;
+        margin: 0 4px 0 0;
+      }
+      [data-basalt-hit]::after {
+        content: '';
+        position: absolute;
+        left: 50%;
+        top: 50%;
+        width: 44px;
+        height: 44px;
+        transform: translate(-50%, -50%);
+      }
+    </style>
+  </head>
+  <body>
+    <main>
+      <h1>hit-overlap</h1>
+      <button type="button" data-basalt-hit aria-label="A"></button
+      ><button type="button" data-basalt-hit aria-label="B"></button>
+    </main>
+  </body>
+</html>

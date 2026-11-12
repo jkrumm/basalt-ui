@@ -1,0 +1,5 @@
+# The browser lane of the quality matrix. The root bunfig registers happy-dom into every `bun test`
+# process, which replaces `fetch` and breaks against Bun.serve; this run has no DOM preload. Reached
+# via `bun --config=<this> test <files>` (`bun test -c` parses as a test-name filter). The matrix
+# files skip themselves unless BASALT_MATRIX is `sampled` or `full`, so the root run never reaches Chrome.
+[test]
