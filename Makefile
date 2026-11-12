@@ -1,5 +1,5 @@
 .DEFAULT_GOAL := help
-.PHONY: help check gen-check verify deploy logs pre test layout build evidence compare release release-dry sync-self merge-guard
+.PHONY: help check gen-check verify deploy logs pre test layout build evidence compare release release-dry sync-self merge-guard quality-matrix
 
 help: ## List targets
 	@grep -hE '^[a-z-]+:.*?## ' $(MAKEFILE_LIST) | awk 'BEGIN {FS = ":.*?## "}; {printf "  \033[36m%-14s\033[0m %s\n", $$1, $$2}'
@@ -21,6 +21,7 @@ check: ## Local CI gate: gen sync checks + build + pre + playground build + layo
 	@bun run pre
 	@bun --filter @basalt-ui/playground build
 	@$(SLOT) sh -c 'bun run test:layout && bun run test:layout:harness'
+	@$(MAKE) --no-print-directory quality-matrix
 	@bun packages/basalt-ui/scripts/check-coverage.ts --check
 	@bun packages/basalt-ui/scripts/check-agent-doc-drift.ts
 	@bun packages/basalt-ui/scripts/check-contract-frozen.ts
@@ -66,6 +67,15 @@ build: ## Build the published package (dist-first tsup + declarations)
 evidence: ## Measure bundle/screens/lighthouse/...: make evidence LABEL=<label> [DIST=<dir>] [ROUTES=<file>] [LANES=a,b]
 	@test -n "$(LABEL)" || { echo "usage: make evidence LABEL=<label> [DIST=<dir>] [ROUTES=<file>] [LANES=a,b]"; exit 2; }
 	@bun scripts/evidence/index.ts --label "$(LABEL)" $(if $(DIST),--dist "$(DIST)") $(if $(ROUTES),--routes "$(ROUTES)") $(if $(LANES),--lanes "$(LANES)")
+	@$(if $(if $(LANES),$(findstring quality,$(LANES)),x),$(MAKE) --no-print-directory quality-matrix QUALITY_MATRIX=full)
+
+# The quality matrix (quality-contract section 4; packages/basalt-ui/tests/quality/matrix): every
+# playground route in real Chrome against the seeded offenders. QUALITY_MATRIX=sampled is what `make
+# check` runs (1800 light en + 390 dark pseudo-locale per route); `make evidence` runs `full` (x both
+# schemes) unless LANES excludes `quality`. Needs the built package and playground deps, like `check`.
+QUALITY_MATRIX ?= sampled
+quality-matrix: ## Quality matrix in real Chrome: make quality-matrix [QUALITY_MATRIX=sampled|full]
+	@$(SLOT) sh -c 'BASALT_MATRIX=$(QUALITY_MATRIX) bun --config=./packages/basalt-ui/tests/quality/matrix/bunfig.toml test --timeout 180000 packages/basalt-ui/tests/quality/matrix'
 
 # Design-parity board (scripts/evidence/compare.ts): crops each mapped playground pattern beside the local
 # Keel reference (.design-parity/keel/) into .design-parity/<LABEL>/ unless OUT is given. Images and board.html
