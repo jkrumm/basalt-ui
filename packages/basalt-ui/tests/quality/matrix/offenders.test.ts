@@ -70,6 +70,12 @@ const CASES: Case[] = [
     fails: /clipped by div/,
   },
   {
+    assertion: 'ringWalk (same-named stops)',
+    offender: 'ring-duplicate',
+    run: (p) => quality.ringWalk(like(p)),
+    fails: /no focus outline/,
+  },
+  {
     assertion: 'focusNotObscured',
     offender: 'focus-obscured',
     run: (p) => quality.focusNotObscured(like(p)),

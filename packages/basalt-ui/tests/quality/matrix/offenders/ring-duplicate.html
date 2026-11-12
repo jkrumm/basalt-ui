@@ -1,0 +1,38 @@
+<!doctype html>
+<html lang="en" data-theme="light">
+  <head>
+    <meta charset="utf-8" />
+    <title>offender: ring-duplicate</title>
+    <style>
+      body {
+        margin: 0;
+        font:
+          16px/1.4 system-ui,
+          sans-serif;
+        color: #111;
+        background: #fff;
+      }
+      button {
+        min-width: 48px;
+        min-height: 48px;
+        margin: 8px;
+      }
+      button:focus-visible {
+        outline: 2px solid #1d4ed8;
+        outline-offset: 2px;
+      }
+      button.bad:focus-visible {
+        outline: none;
+      }
+    </style>
+  </head>
+  <body>
+    <main>
+      <h1>ring-duplicate</h1>
+      <!-- Three buttons share one name and one ancestry; only the last has no ring. -->
+      <button type="button">Edit</button>
+      <button type="button">Edit</button>
+      <button type="button" class="bad">Edit</button>
+    </main>
+  </body>
+</html>

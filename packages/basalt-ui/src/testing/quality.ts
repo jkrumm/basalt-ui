@@ -331,40 +331,52 @@ async function tabWalk(
   inspect: (el: Element) => string[],
 ): Promise<{ stops: number; problems: string[] }> {
   const problems: string[] = []
-  const seen = new Set<string>()
   let stops = 0
   await run(page, () => {
+    document
+      .querySelectorAll('[data-quality-seen]')
+      .forEach((e) => e.removeAttribute('data-quality-seen'))
     ;(document.activeElement as HTMLElement | null)?.blur()
     window.scrollTo(0, 0)
   })
-  for (let i = 0; i < max; i++) {
-    await page.keyboard.press('Tab')
-    const stop = await run(
-      page,
-      async (fnSource: string) => {
-        // A focus ring fades in; read it once the transition ended, not mid-fade.
-        await Promise.race([
-          Promise.all(document.getAnimations().map((a) => a.finished.catch(() => undefined))),
-          new Promise((done) => setTimeout(done, 400)),
-        ])
-        const el = document.activeElement
-        if (el === null || el === document.body) return null
-        const path: string[] = []
-        for (let n: Element | null = el; n !== null && path.length < 4; n = n.parentElement) {
-          const slot = n.getAttribute('data-slot')
-          path.unshift(n.tagName.toLowerCase() + (slot ? `[${slot}]` : ''))
-        }
-        const name = `${path.join('>')} "${(el.getAttribute('aria-label') ?? el.textContent ?? '').trim().slice(0, 24)}"`
-        const fn = new Function(`return (${fnSource})`)() as (e: Element) => string[]
-        return { name, problems: fn(el) } satisfies Stop
-      },
-      inspect.toString(),
+  try {
+    for (let i = 0; i < max; i++) {
+      await page.keyboard.press('Tab')
+      const stop = await run(
+        page,
+        async (fnSource: string) => {
+          // A focus ring fades in; read it once the transition ended, not mid-fade.
+          await Promise.race([
+            Promise.all(document.getAnimations().map((a) => a.finished.catch(() => undefined))),
+            new Promise((done) => setTimeout(done, 400)),
+          ])
+          const el = document.activeElement
+          if (el === null || el === document.body) return null
+          // The walk has cycled when Tab lands on an element it already visited: identity, not name.
+          if (el.hasAttribute('data-quality-seen')) return 'cycled' as const
+          el.setAttribute('data-quality-seen', '')
+          const path: string[] = []
+          for (let n: Element | null = el; n !== null && path.length < 4; n = n.parentElement) {
+            const slot = n.getAttribute('data-slot')
+            path.unshift(n.tagName.toLowerCase() + (slot ? `[${slot}]` : ''))
+          }
+          const name = `${path.join('>')} "${(el.getAttribute('aria-label') ?? el.textContent ?? '').trim().slice(0, 24)}"`
+          const fn = new Function(`return (${fnSource})`)() as (e: Element) => string[]
+          return { name, problems: fn(el) } satisfies Stop
+        },
+        inspect.toString(),
+      )
+      if (stop === null) continue
+      if (stop === 'cycled') break
+      stops++
+      for (const p of stop.problems) problems.push(`${stop.name}: ${p}`)
+    }
+  } finally {
+    await run(page, () =>
+      document
+        .querySelectorAll('[data-quality-seen]')
+        .forEach((e) => e.removeAttribute('data-quality-seen')),
     )
-    if (stop === null) continue
-    if (seen.has(stop.name)) break
-    seen.add(stop.name)
-    stops++
-    for (const p of stop.problems) problems.push(`${stop.name}: ${p}`)
   }
   return { stops, problems }
 }
