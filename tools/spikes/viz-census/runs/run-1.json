@@ -1,0 +1,639 @@
+{
+  "harness": {
+    "name": "viz-census",
+    "typescript": "6.0.3"
+  },
+  "scan": {
+    "repos": {
+      "argo": {
+        "sourceFiles": 510,
+        "candidates": 68,
+        "head": "f5c49ca6"
+      },
+      "console": {
+        "sourceFiles": 125,
+        "candidates": 7,
+        "head": "0d4ee99d"
+      },
+      "email-gateway": {
+        "sourceFiles": 127,
+        "candidates": 0,
+        "head": "5a65b8d"
+      },
+      "finances": {
+        "sourceFiles": 150,
+        "candidates": 9,
+        "head": "3028518"
+      },
+      "image-gateway": {
+        "sourceFiles": 73,
+        "candidates": 3,
+        "head": "acb77e5"
+      },
+      "jkrumm-com": {
+        "sourceFiles": 29,
+        "candidates": 0,
+        "head": "b6ec0b4"
+      },
+      "linewatch": {
+        "sourceFiles": 118,
+        "candidates": 9,
+        "head": "055ebdf"
+      },
+      "obsidian": {
+        "sourceFiles": 67,
+        "candidates": 1,
+        "head": "ca44a6f"
+      },
+      "rb": {
+        "sourceFiles": 149,
+        "candidates": 9,
+        "head": "7709870"
+      },
+      "rollhook": {
+        "sourceFiles": 44,
+        "candidates": 2,
+        "head": "b394ffe"
+      },
+      "shutterflow": {
+        "sourceFiles": 762,
+        "candidates": 20,
+        "head": "9c2d9e3"
+      },
+      "weatherorb": {
+        "sourceFiles": 194,
+        "candidates": 12,
+        "head": "292d08aa"
+      }
+    },
+    "candidates": 140,
+    "bySignature": {
+      "canvas": 16,
+      "cells": 37,
+      "kit": 38,
+      "library": 65,
+      "svg": 8
+    }
+  },
+  "review": {
+    "confirmed": 101,
+    "rejected": 39,
+    "problems": []
+  },
+  "total": 101,
+  "byRepo": {
+    "argo": 62,
+    "console": 6,
+    "finances": 8,
+    "linewatch": 9,
+    "rb": 4,
+    "rollhook": 1,
+    "shutterflow": 6,
+    "weatherorb": 5
+  },
+  "bySubstrate": {
+    "canvas": 1,
+    "cartesian-compose": 7,
+    "hand-html": 17,
+    "hand-svg": 4,
+    "kind": 67,
+    "library": 5
+  },
+  "byV3": {
+    "CartesianChart": 10,
+    "CartesianChart.custom": 4,
+    "kind": 57,
+    "none": 7,
+    "primitive": 23
+  },
+  "lines": {
+    "total": 23100,
+    "median": 161,
+    "medianBySubstrate": {
+      "canvas": 285,
+      "cartesian-compose": 550,
+      "hand-html": 155,
+      "hand-svg": 139.5,
+      "kind": 153,
+      "library": 193
+    },
+    "medianByV3": {
+      "CartesianChart": 173,
+      "CartesianChart.custom": 613,
+      "kind": 152,
+      "none": 285,
+      "primitive": 165
+    }
+  },
+  "v1": {
+    "share": 0.1089,
+    "modules": 11,
+    "repos": 4,
+    "repoList": ["argo", "console", "rb", "weatherorb"],
+    "byRepo": {
+      "argo": 5,
+      "console": 1,
+      "rb": 2,
+      "weatherorb": 3
+    },
+    "byForm": {
+      "colour ramp scale": 1,
+      "geo map layer": 1,
+      "interval lanes": 1,
+      "matrix grid": 1,
+      "multi-row time-series": 1,
+      "scatter": 1,
+      "small-multiple cells": 1,
+      "time-series lines": 2,
+      "unit dots": 2
+    },
+    "byWay": {
+      "CartesianChart.custom": 4,
+      "none": 7
+    }
+  },
+  "v2": {
+    "byForm": {
+      "angular panorama": {
+        "copies": 1,
+        "repos": 1,
+        "notKind": {
+          "copies": 1,
+          "repos": 1
+        },
+        "unshipped": {
+          "copies": 1,
+          "repos": 1
+        },
+        "covered": false
+      },
+      "bar list": {
+        "copies": 13,
+        "repos": 5,
+        "notKind": {
+          "copies": 13,
+          "repos": 5
+        },
+        "unshipped": {
+          "copies": 0,
+          "repos": 0
+        },
+        "covered": true
+      },
+      "bars over time": {
+        "copies": 9,
+        "repos": 3,
+        "notKind": {
+          "copies": 0,
+          "repos": 0
+        },
+        "unshipped": {
+          "copies": 0,
+          "repos": 0
+        },
+        "covered": true
+      },
+      "calendar heat grid": {
+        "copies": 1,
+        "repos": 1,
+        "notKind": {
+          "copies": 0,
+          "repos": 0
+        },
+        "unshipped": {
+          "copies": 0,
+          "repos": 0
+        },
+        "covered": true
+      },
+      "colour ramp scale": {
+        "copies": 2,
+        "repos": 2,
+        "notKind": {
+          "copies": 2,
+          "repos": 2
+        },
+        "unshipped": {
+          "copies": 1,
+          "repos": 1
+        },
+        "covered": true
+      },
+      "dual-pane chart": {
+        "copies": 2,
+        "repos": 1,
+        "notKind": {
+          "copies": 2,
+          "repos": 1
+        },
+        "unshipped": {
+          "copies": 2,
+          "repos": 1
+        },
+        "covered": false
+      },
+      "geo map layer": {
+        "copies": 1,
+        "repos": 1,
+        "notKind": {
+          "copies": 1,
+          "repos": 1
+        },
+        "unshipped": {
+          "copies": 1,
+          "repos": 1
+        },
+        "covered": false
+      },
+      "histogram": {
+        "copies": 4,
+        "repos": 2,
+        "notKind": {
+          "copies": 1,
+          "repos": 1
+        },
+        "unshipped": {
+          "copies": 1,
+          "repos": 1
+        },
+        "covered": true
+      },
+      "hour-by-day heat grid": {
+        "copies": 3,
+        "repos": 2,
+        "notKind": {
+          "copies": 0,
+          "repos": 0
+        },
+        "unshipped": {
+          "copies": 0,
+          "repos": 0
+        },
+        "covered": true
+      },
+      "interval lanes": {
+        "copies": 1,
+        "repos": 1,
+        "notKind": {
+          "copies": 1,
+          "repos": 1
+        },
+        "unshipped": {
+          "copies": 1,
+          "repos": 1
+        },
+        "covered": false
+      },
+      "matrix grid": {
+        "copies": 1,
+        "repos": 1,
+        "notKind": {
+          "copies": 1,
+          "repos": 1
+        },
+        "unshipped": {
+          "copies": 1,
+          "repos": 1
+        },
+        "covered": false
+      },
+      "meter": {
+        "copies": 7,
+        "repos": 3,
+        "notKind": {
+          "copies": 7,
+          "repos": 3
+        },
+        "unshipped": {
+          "copies": 0,
+          "repos": 0
+        },
+        "covered": true
+      },
+      "mini bars": {
+        "copies": 1,
+        "repos": 1,
+        "notKind": {
+          "copies": 0,
+          "repos": 0
+        },
+        "unshipped": {
+          "copies": 0,
+          "repos": 0
+        },
+        "covered": true
+      },
+      "mirrored bars over time": {
+        "copies": 1,
+        "repos": 1,
+        "notKind": {
+          "copies": 1,
+          "repos": 1
+        },
+        "unshipped": {
+          "copies": 1,
+          "repos": 1
+        },
+        "covered": false
+      },
+      "multi-row time-series": {
+        "copies": 1,
+        "repos": 1,
+        "notKind": {
+          "copies": 1,
+          "repos": 1
+        },
+        "unshipped": {
+          "copies": 1,
+          "repos": 1
+        },
+        "covered": false
+      },
+      "part-to-whole bar": {
+        "copies": 2,
+        "repos": 1,
+        "notKind": {
+          "copies": 2,
+          "repos": 1
+        },
+        "unshipped": {
+          "copies": 0,
+          "repos": 0
+        },
+        "covered": true
+      },
+      "scatter": {
+        "copies": 1,
+        "repos": 1,
+        "notKind": {
+          "copies": 1,
+          "repos": 1
+        },
+        "unshipped": {
+          "copies": 1,
+          "repos": 1
+        },
+        "covered": false
+      },
+      "small-multiple cells": {
+        "copies": 1,
+        "repos": 1,
+        "notKind": {
+          "copies": 1,
+          "repos": 1
+        },
+        "unshipped": {
+          "copies": 1,
+          "repos": 1
+        },
+        "covered": false
+      },
+      "sparkline": {
+        "copies": 9,
+        "repos": 5,
+        "notKind": {
+          "copies": 1,
+          "repos": 1
+        },
+        "unshipped": {
+          "copies": 1,
+          "repos": 1
+        },
+        "covered": true
+      },
+      "stacked areas over time": {
+        "copies": 3,
+        "repos": 2,
+        "notKind": {
+          "copies": 0,
+          "repos": 0
+        },
+        "unshipped": {
+          "copies": 0,
+          "repos": 0
+        },
+        "covered": true
+      },
+      "stacked bars over time": {
+        "copies": 10,
+        "repos": 4,
+        "notKind": {
+          "copies": 0,
+          "repos": 0
+        },
+        "unshipped": {
+          "copies": 0,
+          "repos": 0
+        },
+        "covered": true
+      },
+      "status timeline strip": {
+        "copies": 3,
+        "repos": 2,
+        "notKind": {
+          "copies": 0,
+          "repos": 0
+        },
+        "unshipped": {
+          "copies": 0,
+          "repos": 0
+        },
+        "covered": true
+      },
+      "time-axis strip": {
+        "copies": 2,
+        "repos": 2,
+        "notKind": {
+          "copies": 2,
+          "repos": 2
+        },
+        "unshipped": {
+          "copies": 2,
+          "repos": 2
+        },
+        "covered": false
+      },
+      "time-series lines": {
+        "copies": 20,
+        "repos": 4,
+        "notKind": {
+          "copies": 4,
+          "repos": 3
+        },
+        "unshipped": {
+          "copies": 4,
+          "repos": 3
+        },
+        "covered": true
+      },
+      "unit dots": {
+        "copies": 2,
+        "repos": 1,
+        "notKind": {
+          "copies": 2,
+          "repos": 1
+        },
+        "unshipped": {
+          "copies": 2,
+          "repos": 1
+        },
+        "covered": false
+      }
+    },
+    "forms": ["bar list", "meter", "time-series lines"],
+    "annotations": {
+      "exemptPrimitive": ["time-series lines"],
+      "exemptCovered": []
+    }
+  },
+  "v3": {
+    "byHelper": {
+      "scale": {
+        "copies": 15,
+        "repos": 5,
+        "handDrawnOnly": {
+          "copies": 12,
+          "repos": 5
+        }
+      },
+      "ticks": {
+        "copies": 9,
+        "repos": 4,
+        "handDrawnOnly": {
+          "copies": 4,
+          "repos": 3
+        }
+      },
+      "polar-arc": {
+        "copies": 1,
+        "repos": 1,
+        "handDrawnOnly": {
+          "copies": 1,
+          "repos": 1
+        }
+      },
+      "packing": {
+        "copies": 7,
+        "repos": 2,
+        "handDrawnOnly": {
+          "copies": 2,
+          "repos": 2
+        }
+      },
+      "measure-width": {
+        "copies": 4,
+        "repos": 4,
+        "handDrawnOnly": {
+          "copies": 4,
+          "repos": 4
+        }
+      },
+      "label-fit": {
+        "copies": 4,
+        "repos": 4,
+        "handDrawnOnly": {
+          "copies": 4,
+          "repos": 4
+        }
+      },
+      "hit-focus": {
+        "copies": 2,
+        "repos": 2,
+        "handDrawnOnly": {
+          "copies": 2,
+          "repos": 2
+        }
+      },
+      "tooltip": {
+        "copies": 1,
+        "repos": 1,
+        "handDrawnOnly": {
+          "copies": 1,
+          "repos": 1
+        }
+      }
+    },
+    "helpers": ["scale", "ticks", "packing", "measure-width", "label-fit"],
+    "handDrawnOnly": ["scale", "ticks", "measure-width", "label-fit"]
+  },
+  "v4": {
+    "byDevice": {
+      "d01-metaphor": {
+        "present": 2,
+        "applicable": 100,
+        "share": 0.02
+      },
+      "d02-hero-readout": {
+        "present": 1,
+        "applicable": 16,
+        "share": 0.0625
+      },
+      "d03-delta-baseline": {
+        "present": 20,
+        "applicable": 36,
+        "share": 0.5556
+      },
+      "d04-colour-budget": {
+        "present": 68,
+        "applicable": 101,
+        "share": 0.6733
+      },
+      "d05-quantized": {
+        "present": 6,
+        "applicable": 13,
+        "share": 0.4615
+      },
+      "d06-threshold-geometry": {
+        "present": 34,
+        "applicable": 49,
+        "share": 0.6939
+      },
+      "d07-pre-annotation": {
+        "present": 28,
+        "applicable": 62,
+        "share": 0.4516
+      },
+      "d08-direct-labels": {
+        "present": 13,
+        "applicable": 56,
+        "share": 0.2321
+      },
+      "d09-live-cues": {
+        "present": 13,
+        "applicable": 22,
+        "share": 0.5909
+      },
+      "d10-dim-focus": {
+        "present": 3,
+        "applicable": 42,
+        "share": 0.0714
+      },
+      "d11-keyboard": {
+        "present": 54,
+        "applicable": 66,
+        "share": 0.8182
+      },
+      "d12-anatomy": {
+        "present": 32,
+        "applicable": 64,
+        "share": 0.5
+      }
+    },
+    "devices": ["d01-metaphor", "d02-hero-readout", "d08-direct-labels", "d10-dim-focus"]
+  },
+  "epos": {
+    "available": true,
+    "sourceFiles": 590,
+    "candidates": 27,
+    "bySignature": {
+      "cells": 20,
+      "svg": 11
+    }
+  },
+  "verdictLines": {
+    "V1": "V1 seam: CONFIRMED",
+    "V2": "V2 kinds: bar list, meter, time-series lines",
+    "V3": "V3 helpers: scale, ticks, packing, measure-width, label-fit",
+    "V4": "V4 devices: d01-metaphor, d02-hero-readout, d08-direct-labels, d10-dim-focus"
+  }
+}

@@ -1,0 +1,2160 @@
+{
+  "$comment": "Manual review of every signature candidate (read in source, 2026-11-12). Keys are module ids (sha1 of repo:path, first 8 hex), never paths. `rejected`: not a visualization module, with a generic reason. `confirmed`: classified by the module's most demanding visualization; `forms` is the closed list fixed after the first pass. Rules: docs/v3/spikes/viz-census.md, Method.",
+  "forms": [
+    "angular panorama",
+    "bar list",
+    "bars over time",
+    "calendar heat grid",
+    "colour ramp scale",
+    "dual-pane chart",
+    "geo map layer",
+    "histogram",
+    "hour-by-day heat grid",
+    "interval lanes",
+    "matrix grid",
+    "meter",
+    "mini bars",
+    "mirrored bars over time",
+    "multi-row time-series",
+    "part-to-whole bar",
+    "scatter",
+    "small-multiple cells",
+    "sparkline",
+    "stacked areas over time",
+    "stacked bars over time",
+    "status timeline strip",
+    "time-axis strip",
+    "time-series lines",
+    "unit dots"
+  ],
+  "rejected": [
+    {
+      "id": "070711a7",
+      "why": "image/mask editor canvas"
+    },
+    {
+      "id": "105e3cd9",
+      "why": "spike: WebGL photo preview stage with drag handling"
+    },
+    {
+      "id": "14ea013f",
+      "why": "transient download-preparation progress bar (operation feedback)"
+    },
+    {
+      "id": "166e0ad6",
+      "why": "photo renderer canvas with click markers"
+    },
+    {
+      "id": "197e972e",
+      "why": "spike: engine feature-detection probe harness"
+    },
+    {
+      "id": "1be1b957",
+      "why": "image gallery grid with spanning tiles (layout); no data-mapped marks"
+    },
+    {
+      "id": "1fbbd9a3",
+      "why": "imperative crop-frame overlay for an image editor (handles, scrim, grids)"
+    },
+    {
+      "id": "21117a84",
+      "why": "pure frame: grid that hands rows to another module which draws the marks"
+    },
+    {
+      "id": "2e9f354e",
+      "why": "search palette list, not a data mark"
+    },
+    {
+      "id": "33d0f4c6",
+      "why": "tile decode primitives (offscreen canvas for decoding, no rendering of data marks)"
+    },
+    {
+      "id": "39d7654e",
+      "why": "layout mechanics (virtual list of cards)"
+    },
+    {
+      "id": "3c988efd",
+      "why": "image decode/encode DOM adapter, no visualization"
+    },
+    {
+      "id": "415ae1a9",
+      "why": "windowed thumbnail filmstrip (virtual list / layout mechanics)"
+    },
+    {
+      "id": "4e4b4275",
+      "why": "form editor for entering rows; no data visualization"
+    },
+    {
+      "id": "54e1847b",
+      "why": "dev script: pixel verification probe"
+    },
+    {
+      "id": "56a2bb5f",
+      "why": "transient scan progress bar (operation feedback)"
+    },
+    {
+      "id": "68f5147d",
+      "why": "spike: engine pixel probe harness"
+    },
+    {
+      "id": "69bdffe8",
+      "why": "horizontal card rail with sized images (layout)"
+    },
+    {
+      "id": "6c41ea5a",
+      "why": "PIN entry dots and keypad (input UI, not a data reading)"
+    },
+    {
+      "id": "7004f417",
+      "why": "fullscreen image viewer with thumbnail strip (layout mechanics)"
+    },
+    {
+      "id": "75b5b9a1",
+      "why": "map host component that mounts the engine map and measures frame timings; the map layer is drawn elsewhere"
+    },
+    {
+      "id": "822e88bc",
+      "why": "log line list with a severity dot per row (text list, not a visualization)"
+    },
+    {
+      "id": "84aba34c",
+      "why": "dev benchmark script"
+    },
+    {
+      "id": "892c737c",
+      "why": "place search combobox with a result list (input UI)"
+    },
+    {
+      "id": "93e440c9",
+      "why": "plain list of records with a colour dot per row; no data-mapped mark"
+    },
+    {
+      "id": "9a5e3c68",
+      "why": "transient countdown timer (progress ring and phase bar) that is UI feedback, not a data reading"
+    },
+    {
+      "id": "a47a9925",
+      "why": "layout mechanics (virtual list)"
+    },
+    {
+      "id": "b9540035",
+      "why": "static diagram: decision-tree layout with connector lines, positions do not encode data values"
+    },
+    {
+      "id": "bc9a90d7",
+      "why": "transient operation progress bar (UI feedback for a write run), not a data reading"
+    },
+    {
+      "id": "cd07ccdd",
+      "why": "photo editor canvas stage with crop frame"
+    },
+    {
+      "id": "d27b71bb",
+      "why": "transient indexing progress bar (operation feedback)"
+    },
+    {
+      "id": "da483708",
+      "why": "WebGL photo renderer"
+    },
+    {
+      "id": "dcd53eac",
+      "why": "forecast tab shell: text readout grid with legend swatches; charts live in other modules"
+    },
+    {
+      "id": "de0486bd",
+      "why": "dev script: shader compile check page"
+    },
+    {
+      "id": "e7504697",
+      "why": "transient reindex operation progress bar; rest is stat cards and text"
+    },
+    {
+      "id": "e90a4764",
+      "why": "vendored minified cache file of a third-party library"
+    },
+    {
+      "id": "e954481f",
+      "why": "spike: WebGL photo renderer"
+    },
+    {
+      "id": "f4eacab8",
+      "why": "context menu with rating and label pickers (menu UI)"
+    },
+    {
+      "id": "fae0af4b",
+      "why": "single progress bar for a batch job (transient operation progress) plus stat tiles and text"
+    }
+  ],
+  "confirmed": [
+    {
+      "id": "01ceccbc",
+      "form": "bar list",
+      "substrate": "hand-html",
+      "v3": "primitive",
+      "helpers": [],
+      "devices": {
+        "present": ["d03-delta-baseline", "d04-colour-budget", "d08-direct-labels"],
+        "applicable": [
+          "d01-metaphor",
+          "d03-delta-baseline",
+          "d04-colour-budget",
+          "d08-direct-labels",
+          "d09-live-cues"
+        ]
+      },
+      "note": "CSS-variable-driven fill and average tick per row with a signed delta caption; partial month switches the caption wording only."
+    },
+    {
+      "id": "06925d49",
+      "form": "unit dots",
+      "substrate": "hand-html",
+      "v3": "none",
+      "helpers": [],
+      "devices": {
+        "present": ["d04-colour-budget", "d05-quantized"],
+        "applicable": ["d01-metaphor", "d04-colour-budget", "d05-quantized"]
+      },
+      "note": "Five-slot filled/empty pips for a 1-5 rating on grid cards, same shape as another list module; the rest is a card grid with image tiles."
+    },
+    {
+      "id": "082f6f96",
+      "form": "meter",
+      "substrate": "library",
+      "v3": "primitive",
+      "helpers": [],
+      "devices": {
+        "present": ["d05-quantized"],
+        "applicable": [
+          "d01-metaphor",
+          "d03-delta-baseline",
+          "d04-colour-budget",
+          "d05-quantized",
+          "d06-threshold-geometry"
+        ]
+      },
+      "note": "Third-party progress bars on an admin job monitor: one overall bar plus labelled per-category and coverage meters with 'x / y' captions; the rest is stat tiles and a table. Borderline against operation progress."
+    },
+    {
+      "id": "0a103d8b",
+      "form": "stacked bars over time",
+      "substrate": "kind",
+      "v3": "kind",
+      "helpers": [],
+      "devices": {
+        "present": ["d09-live-cues", "d11-keyboard"],
+        "applicable": [
+          "d01-metaphor",
+          "d04-colour-budget",
+          "d08-direct-labels",
+          "d09-live-cues",
+          "d10-dim-focus",
+          "d11-keyboard",
+          "d12-anatomy"
+        ]
+      },
+      "note": "Weekly stacked bars by group with the running week drawn lighter through a per-datum opacity."
+    },
+    {
+      "id": "0b47c84f",
+      "form": "hour-by-day heat grid",
+      "substrate": "kind",
+      "v3": "kind",
+      "helpers": ["packing", "ticks"],
+      "devices": {
+        "present": ["d04-colour-budget"],
+        "applicable": [
+          "d01-metaphor",
+          "d04-colour-budget",
+          "d06-threshold-geometry",
+          "d07-pre-annotation",
+          "d12-anatomy"
+        ]
+      },
+      "note": "Absent cells are flat neutral with a tooltip; own cell binning by local day and hour; fixed absolute intensity domain."
+    },
+    {
+      "id": "10c82461",
+      "form": "angular panorama",
+      "substrate": "cartesian-compose",
+      "v3": "CartesianChart",
+      "helpers": ["ticks"],
+      "devices": {
+        "present": [
+          "d01-metaphor",
+          "d02-hero-readout",
+          "d03-delta-baseline",
+          "d04-colour-budget",
+          "d06-threshold-geometry",
+          "d11-keyboard",
+          "d12-anatomy"
+        ],
+        "applicable": [
+          "d01-metaphor",
+          "d02-hero-readout",
+          "d03-delta-baseline",
+          "d04-colour-budget",
+          "d06-threshold-geometry",
+          "d07-pre-annotation",
+          "d08-direct-labels",
+          "d10-dim-focus",
+          "d11-keyboard",
+          "d12-anatomy"
+        ]
+      },
+      "note": "Terrain silhouette, brightness-field cells, three body tracks and a gate line on custom marks, with a scrub slider driving a readout row."
+    },
+    {
+      "id": "115697e1",
+      "form": "meter",
+      "substrate": "library",
+      "v3": "primitive",
+      "helpers": [],
+      "devices": {
+        "present": ["d04-colour-budget", "d05-quantized"],
+        "applicable": ["d01-metaphor", "d04-colour-budget", "d05-quantized"]
+      },
+      "note": "Third-party progress bar per card showing done share of a count, with an 'x of n' caption; one hue."
+    },
+    {
+      "id": "1172a5ef",
+      "form": "time-series lines",
+      "substrate": "cartesian-compose",
+      "v3": "CartesianChart",
+      "helpers": [],
+      "devices": {
+        "present": ["d09-live-cues", "d11-keyboard"],
+        "applicable": [
+          "d01-metaphor",
+          "d04-colour-budget",
+          "d07-pre-annotation",
+          "d08-direct-labels",
+          "d09-live-cues",
+          "d10-dim-focus",
+          "d11-keyboard"
+        ]
+      },
+      "note": "Per-account share-left lines with dash cues, a now rule and per-line reset ticks on the baseline; legend turned off and no direct labels."
+    },
+    {
+      "id": "1298e60a",
+      "form": "meter",
+      "substrate": "kind",
+      "v3": "primitive",
+      "helpers": [],
+      "devices": {
+        "present": ["d06-threshold-geometry", "d12-anatomy"],
+        "applicable": [
+          "d01-metaphor",
+          "d04-colour-budget",
+          "d06-threshold-geometry",
+          "d07-pre-annotation",
+          "d08-direct-labels",
+          "d12-anatomy"
+        ]
+      },
+      "note": "Segmented single-bar split with a tick marking the limit, overspend runs past it; also a ranked bar list and a data table."
+    },
+    {
+      "id": "175277d7",
+      "form": "bars over time",
+      "substrate": "kind",
+      "v3": "kind",
+      "helpers": [],
+      "devices": {
+        "present": ["d04-colour-budget", "d11-keyboard", "d12-anatomy"],
+        "applicable": [
+          "d01-metaphor",
+          "d04-colour-budget",
+          "d08-direct-labels",
+          "d11-keyboard",
+          "d12-anatomy"
+        ]
+      },
+      "note": "Monthly bars in one card; also a ranked bar list in the other card."
+    },
+    {
+      "id": "1fb90dfb",
+      "form": "meter",
+      "substrate": "kind",
+      "v3": "primitive",
+      "helpers": [],
+      "devices": {
+        "present": [
+          "d03-delta-baseline",
+          "d04-colour-budget",
+          "d06-threshold-geometry",
+          "d07-pre-annotation"
+        ],
+        "applicable": [
+          "d01-metaphor",
+          "d03-delta-baseline",
+          "d04-colour-budget",
+          "d06-threshold-geometry",
+          "d07-pre-annotation"
+        ]
+      },
+      "note": "Strip cells holding a goal-progress meter, a no-goal range marker meter, a zoned rate meter, and per-site sparklines with latest point emphasised and delta badges."
+    },
+    {
+      "id": "23c4c885",
+      "form": "stacked bars over time",
+      "substrate": "kind",
+      "v3": "kind",
+      "helpers": [],
+      "devices": {
+        "present": ["d11-keyboard", "d12-anatomy"],
+        "applicable": [
+          "d01-metaphor",
+          "d04-colour-budget",
+          "d08-direct-labels",
+          "d10-dim-focus",
+          "d11-keyboard",
+          "d12-anatomy"
+        ]
+      },
+      "note": "Daily minutes stacked by activity type with many categorical hues and a custom tooltip listing sessions."
+    },
+    {
+      "id": "254075e2",
+      "form": "sparkline",
+      "substrate": "kind",
+      "v3": "kind",
+      "helpers": [],
+      "devices": {
+        "present": ["d03-delta-baseline"],
+        "applicable": [
+          "d01-metaphor",
+          "d03-delta-baseline",
+          "d04-colour-budget",
+          "d07-pre-annotation"
+        ]
+      },
+      "note": "A small terrain profile sparkline inside a drawer, next to rows of values with delta badges against a compared site."
+    },
+    {
+      "id": "29bf9b80",
+      "form": "bar list",
+      "substrate": "kind",
+      "v3": "primitive",
+      "helpers": [],
+      "devices": {
+        "present": ["d04-colour-budget", "d08-direct-labels", "d12-anatomy"],
+        "applicable": ["d01-metaphor", "d04-colour-budget", "d08-direct-labels", "d12-anatomy"]
+      },
+      "note": "Upcoming charges as a ranked list inside a card with a total and count fact."
+    },
+    {
+      "id": "2bbe8560",
+      "form": "multi-row time-series",
+      "substrate": "cartesian-compose",
+      "v3": "CartesianChart.custom",
+      "helpers": ["label-fit"],
+      "devices": {
+        "present": ["d06-threshold-geometry", "d11-keyboard"],
+        "applicable": [
+          "d02-hero-readout",
+          "d04-colour-budget",
+          "d06-threshold-geometry",
+          "d07-pre-annotation",
+          "d08-direct-labels",
+          "d09-live-cues",
+          "d10-dim-focus",
+          "d11-keyboard",
+          "d12-anatomy"
+        ]
+      },
+      "note": "Four stacked cartesian rows on a shared cursor: model lines, run-split percentile band, palette-coloured segments, bars with whiskers and rotated arrows thinned by plot width; categorical hues identify models."
+    },
+    {
+      "id": "2bc4bb54",
+      "form": "bar list",
+      "substrate": "kind",
+      "v3": "primitive",
+      "helpers": [],
+      "devices": {
+        "present": ["d04-colour-budget", "d08-direct-labels"],
+        "applicable": ["d01-metaphor", "d04-colour-budget", "d08-direct-labels"]
+      },
+      "note": "Genre counts as a ranked bar list beside a non-visual list of items."
+    },
+    {
+      "id": "2c194b2e",
+      "form": "time-series lines",
+      "substrate": "kind",
+      "v3": "kind",
+      "helpers": [],
+      "devices": {
+        "present": ["d04-colour-budget", "d11-keyboard"],
+        "applicable": [
+          "d01-metaphor",
+          "d03-delta-baseline",
+          "d04-colour-budget",
+          "d08-direct-labels",
+          "d10-dim-focus",
+          "d11-keyboard",
+          "d12-anatomy"
+        ]
+      },
+      "note": "Three latency lines (one solid, two dashed) over a fixed window domain in a card without facts."
+    },
+    {
+      "id": "2d16edc4",
+      "form": "bars over time",
+      "substrate": "kind",
+      "v3": "kind",
+      "helpers": [],
+      "devices": {
+        "present": [
+          "d04-colour-budget",
+          "d06-threshold-geometry",
+          "d09-live-cues",
+          "d11-keyboard",
+          "d12-anatomy"
+        ],
+        "applicable": [
+          "d01-metaphor",
+          "d03-delta-baseline",
+          "d04-colour-budget",
+          "d06-threshold-geometry",
+          "d07-pre-annotation",
+          "d09-live-cues",
+          "d11-keyboard",
+          "d12-anatomy"
+        ]
+      },
+      "note": "Weekly bars with the running week in an accent hue and a labelled dashed target line; tabs switch to daily bars with a mean line and a pace line chart."
+    },
+    {
+      "id": "304e1e01",
+      "form": "histogram",
+      "substrate": "kind",
+      "v3": "kind",
+      "helpers": ["ticks"],
+      "devices": {
+        "present": ["d04-colour-budget", "d11-keyboard", "d12-anatomy"],
+        "applicable": [
+          "d01-metaphor",
+          "d04-colour-budget",
+          "d05-quantized",
+          "d07-pre-annotation",
+          "d11-keyboard",
+          "d12-anatomy"
+        ]
+      },
+      "note": "Single-series count histogram over distance buckets with a hand-stepped label stride that always keeps the overflow bucket label; headline fact above."
+    },
+    {
+      "id": "311191e0",
+      "form": "bars over time",
+      "substrate": "hand-html",
+      "v3": "kind",
+      "helpers": [],
+      "devices": {
+        "present": ["d04-colour-budget", "d11-keyboard"],
+        "applicable": [
+          "d01-metaphor",
+          "d04-colour-budget",
+          "d05-quantized",
+          "d07-pre-annotation",
+          "d11-keyboard",
+          "d12-anatomy"
+        ]
+      },
+      "note": "Views-over-time bar chart with extra tooltip rows; also holds hand-built share meter rows and a segmented part-to-whole bar with a count legend."
+    },
+    {
+      "id": "31e099e6",
+      "form": "sparkline",
+      "substrate": "kind",
+      "v3": "kind",
+      "helpers": [],
+      "devices": {
+        "present": ["d03-delta-baseline", "d04-colour-budget"],
+        "applicable": [
+          "d01-metaphor",
+          "d02-hero-readout",
+          "d03-delta-baseline",
+          "d04-colour-budget",
+          "d07-pre-annotation"
+        ]
+      },
+      "note": "Row of stat cards each with a bar sparkline and a delta against the previous equal-length period."
+    },
+    {
+      "id": "33973c89",
+      "form": "time-series lines",
+      "substrate": "cartesian-compose",
+      "v3": "CartesianChart.custom",
+      "helpers": ["label-fit"],
+      "devices": {
+        "present": [
+          "d04-colour-budget",
+          "d07-pre-annotation",
+          "d08-direct-labels",
+          "d09-live-cues",
+          "d11-keyboard"
+        ],
+        "applicable": [
+          "d01-metaphor",
+          "d03-delta-baseline",
+          "d04-colour-budget",
+          "d06-threshold-geometry",
+          "d07-pre-annotation",
+          "d08-direct-labels",
+          "d09-live-cues",
+          "d11-keyboard"
+        ]
+      },
+      "note": "Recorded, projected and even-pace lines with a now rule and dot, labelled jumps and a run-out marker; label placement and thinning decided by app code from plot width (collision helper lives in a sibling module)."
+    },
+    {
+      "id": "363f97c7",
+      "form": "stacked areas over time",
+      "substrate": "kind",
+      "v3": "kind",
+      "helpers": ["ticks"],
+      "devices": {
+        "present": ["d03-delta-baseline", "d11-keyboard", "d12-anatomy"],
+        "applicable": [
+          "d01-metaphor",
+          "d03-delta-baseline",
+          "d04-colour-budget",
+          "d07-pre-annotation",
+          "d08-direct-labels",
+          "d10-dim-focus",
+          "d11-keyboard",
+          "d12-anatomy"
+        ]
+      },
+      "note": "Also a multi-series total/split line chart and a single-series history line chart; per-account stack uses many categorical hues; hand-picked first/middle/last ticks on the history chart."
+    },
+    {
+      "id": "3ae7f4bb",
+      "form": "time-series lines",
+      "substrate": "kind",
+      "v3": "kind",
+      "helpers": [],
+      "devices": {
+        "present": ["d06-threshold-geometry", "d11-keyboard"],
+        "applicable": [
+          "d01-metaphor",
+          "d03-delta-baseline",
+          "d04-colour-budget",
+          "d06-threshold-geometry",
+          "d07-pre-annotation",
+          "d08-direct-labels",
+          "d10-dim-focus",
+          "d11-keyboard",
+          "d12-anatomy"
+        ]
+      },
+      "note": "Ratio lines per category over four status zones with threshold lines and a labelled parity line; categories take distinct hues."
+    },
+    {
+      "id": "3ef6c3fb",
+      "form": "geo map layer",
+      "substrate": "library",
+      "v3": "none",
+      "helpers": ["scale"],
+      "devices": {
+        "present": ["d01-metaphor", "d07-pre-annotation", "d08-direct-labels"],
+        "applicable": [
+          "d01-metaphor",
+          "d04-colour-budget",
+          "d06-threshold-geometry",
+          "d07-pre-annotation",
+          "d08-direct-labels",
+          "d09-live-cues",
+          "d10-dim-focus",
+          "d11-keyboard"
+        ]
+      },
+      "note": "Interactive map with a data-coloured raster overlay, site markers with collision-placed names, a time scrubber, and legends including a gradient ramp rebuilt from a remapped window."
+    },
+    {
+      "id": "4110d74f",
+      "form": "bar list",
+      "substrate": "kind",
+      "v3": "primitive",
+      "helpers": [],
+      "devices": {
+        "present": ["d04-colour-budget", "d08-direct-labels"],
+        "applicable": ["d01-metaphor", "d04-colour-budget", "d08-direct-labels", "d12-anatomy"]
+      },
+      "note": "Scored factors as bars with a trailing share caption."
+    },
+    {
+      "id": "4454de31",
+      "form": "stacked bars over time",
+      "substrate": "kind",
+      "v3": "kind",
+      "helpers": [],
+      "devices": {
+        "present": [
+          "d06-threshold-geometry",
+          "d07-pre-annotation",
+          "d09-live-cues",
+          "d11-keyboard",
+          "d12-anatomy"
+        ],
+        "applicable": [
+          "d01-metaphor",
+          "d03-delta-baseline",
+          "d04-colour-budget",
+          "d06-threshold-geometry",
+          "d07-pre-annotation",
+          "d08-direct-labels",
+          "d09-live-cues",
+          "d10-dim-focus",
+          "d11-keyboard",
+          "d12-anatomy"
+        ]
+      },
+      "note": "Also holds forecast lines with dashed projections, stat-strip sparklines (line and bar) and a single-value meter; per-category shaded bands are the reason for the CartesianChart verdict."
+    },
+    {
+      "id": "4778dd0d",
+      "form": "meter",
+      "substrate": "kind",
+      "v3": "primitive",
+      "helpers": [],
+      "devices": {
+        "present": ["d04-colour-budget"],
+        "applicable": ["d01-metaphor", "d04-colour-budget"]
+      },
+      "note": "Per-item progress meter on a card with a facts line."
+    },
+    {
+      "id": "4d7be692",
+      "form": "bar list",
+      "substrate": "kind",
+      "v3": "primitive",
+      "helpers": [],
+      "devices": {
+        "present": ["d04-colour-budget", "d08-direct-labels", "d12-anatomy"],
+        "applicable": [
+          "d01-metaphor",
+          "d03-delta-baseline",
+          "d04-colour-budget",
+          "d06-threshold-geometry",
+          "d08-direct-labels",
+          "d12-anatomy"
+        ]
+      },
+      "note": "Ranked bar list in a card with a facts row; also a single-value meter against a limit in a stat strip."
+    },
+    {
+      "id": "520fdffa",
+      "form": "histogram",
+      "substrate": "kind",
+      "v3": "kind",
+      "helpers": [],
+      "devices": {
+        "present": ["d03-delta-baseline", "d04-colour-budget", "d11-keyboard"],
+        "applicable": [
+          "d01-metaphor",
+          "d02-hero-readout",
+          "d03-delta-baseline",
+          "d04-colour-budget",
+          "d07-pre-annotation",
+          "d08-direct-labels",
+          "d09-live-cues",
+          "d10-dim-focus",
+          "d11-keyboard",
+          "d12-anatomy"
+        ]
+      },
+      "note": "Stacked and grouped bars over time in chart cards, plus stat cards with delta and bar sparkline; the calendar heat grid is a separate module."
+    },
+    {
+      "id": "5255a3be",
+      "form": "small-multiple cells",
+      "substrate": "hand-html",
+      "v3": "none",
+      "helpers": [],
+      "devices": {
+        "present": ["d06-threshold-geometry", "d07-pre-annotation", "d11-keyboard"],
+        "applicable": [
+          "d01-metaphor",
+          "d03-delta-baseline",
+          "d04-colour-budget",
+          "d06-threshold-geometry",
+          "d07-pre-annotation",
+          "d10-dim-focus",
+          "d11-keyboard"
+        ]
+      },
+      "note": "One selectable cell per night with a computed bar fill and a tick, a best-night marker, scroll-snap and an off-screen count."
+    },
+    {
+      "id": "53926e7d",
+      "form": "meter",
+      "substrate": "kind",
+      "v3": "primitive",
+      "helpers": [],
+      "devices": {
+        "present": [
+          "d03-delta-baseline",
+          "d04-colour-budget",
+          "d06-threshold-geometry",
+          "d07-pre-annotation"
+        ],
+        "applicable": [
+          "d01-metaphor",
+          "d03-delta-baseline",
+          "d04-colour-budget",
+          "d06-threshold-geometry",
+          "d07-pre-annotation",
+          "d12-anatomy"
+        ]
+      },
+      "note": "One zoned meter per row with a target band highlighted and a status word with distance from the band beneath."
+    },
+    {
+      "id": "59724444",
+      "form": "stacked bars over time",
+      "substrate": "library",
+      "v3": "kind",
+      "helpers": [],
+      "devices": {
+        "present": ["d04-colour-budget"],
+        "applicable": [
+          "d01-metaphor",
+          "d04-colour-budget",
+          "d06-threshold-geometry",
+          "d08-direct-labels",
+          "d10-dim-focus",
+          "d11-keyboard",
+          "d12-anatomy"
+        ]
+      },
+      "note": "Two-series stacked daily bars from a third-party chart library with mouse-only tooltip and click selection that fades bars."
+    },
+    {
+      "id": "5b52cf2e",
+      "form": "bar list",
+      "substrate": "kind",
+      "v3": "primitive",
+      "helpers": [],
+      "devices": {
+        "present": ["d04-colour-budget", "d08-direct-labels", "d12-anatomy"],
+        "applicable": ["d01-metaphor", "d04-colour-budget", "d08-direct-labels", "d12-anatomy"]
+      },
+      "note": "Two ranked bar lists in cards, one with a facts row."
+    },
+    {
+      "id": "5b6d3655",
+      "form": "bars over time",
+      "substrate": "kind",
+      "v3": "kind",
+      "helpers": [],
+      "devices": {
+        "present": ["d04-colour-budget", "d11-keyboard", "d12-anatomy"],
+        "applicable": [
+          "d01-metaphor",
+          "d03-delta-baseline",
+          "d04-colour-budget",
+          "d06-threshold-geometry",
+          "d07-pre-annotation",
+          "d11-keyboard",
+          "d12-anatomy"
+        ]
+      },
+      "note": "Single neutral series with a dashed target reference line."
+    },
+    {
+      "id": "5f8b385a",
+      "form": "time-series lines",
+      "substrate": "hand-svg",
+      "v3": "kind",
+      "helpers": ["scale"],
+      "devices": {
+        "present": [
+          "d04-colour-budget",
+          "d06-threshold-geometry",
+          "d07-pre-annotation",
+          "d11-keyboard"
+        ],
+        "applicable": [
+          "d01-metaphor",
+          "d02-hero-readout",
+          "d04-colour-budget",
+          "d06-threshold-geometry",
+          "d07-pre-annotation",
+          "d08-direct-labels",
+          "d10-dim-focus",
+          "d11-keyboard"
+        ]
+      },
+      "note": "Lines with optional area, dashed reference, crosshair and dots; exposes an active-index callback so a headline figure beside it can follow."
+    },
+    {
+      "id": "6699ef0d",
+      "form": "matrix grid",
+      "substrate": "hand-html",
+      "v3": "none",
+      "helpers": [],
+      "devices": {
+        "present": ["d04-colour-budget", "d07-pre-annotation"],
+        "applicable": [
+          "d01-metaphor",
+          "d04-colour-budget",
+          "d05-quantized",
+          "d07-pre-annotation",
+          "d11-keyboard",
+          "d12-anatomy"
+        ]
+      },
+      "note": "Small categorical grid of verdict text cells tinted by state with a count badge and an outlined current cell; cells carry words, not a value ramp."
+    },
+    {
+      "id": "6925dade",
+      "form": "part-to-whole bar",
+      "substrate": "hand-html",
+      "v3": "primitive",
+      "helpers": [],
+      "devices": {
+        "present": [],
+        "applicable": ["d01-metaphor", "d04-colour-budget", "d08-direct-labels"]
+      },
+      "note": "Flex segments sized by value on one shared scale plus a swatch legend; colours are supplied by callers; equivalent to a segmented meter."
+    },
+    {
+      "id": "6a8ccedd",
+      "form": "histogram",
+      "substrate": "hand-html",
+      "v3": "CartesianChart",
+      "helpers": ["scale"],
+      "devices": {
+        "present": ["d04-colour-budget", "d07-pre-annotation"],
+        "applicable": [
+          "d01-metaphor",
+          "d04-colour-budget",
+          "d05-quantized",
+          "d07-pre-annotation",
+          "d11-keyboard"
+        ]
+      },
+      "note": "Strip of cells: hand-built bar histogram with a mean tick placed by a computed offset, plus a segmented shelf meter and a small bars chart from the kit."
+    },
+    {
+      "id": "6b80b1f9",
+      "form": "status timeline strip",
+      "substrate": "hand-html",
+      "v3": "kind",
+      "helpers": [],
+      "devices": {
+        "present": [
+          "d03-delta-baseline",
+          "d04-colour-budget",
+          "d05-quantized",
+          "d06-threshold-geometry",
+          "d09-live-cues"
+        ],
+        "applicable": [
+          "d01-metaphor",
+          "d02-hero-readout",
+          "d03-delta-baseline",
+          "d04-colour-budget",
+          "d05-quantized",
+          "d06-threshold-geometry",
+          "d09-live-cues",
+          "d11-keyboard"
+        ]
+      },
+      "note": "Stat strip with seven day ticks (done, rest, upcoming, today), a target meter with a target tick and headroom, a sparkline and signed deltas against the prior period."
+    },
+    {
+      "id": "6cc02b8b",
+      "form": "sparkline",
+      "substrate": "kind",
+      "v3": "kind",
+      "helpers": [],
+      "devices": {
+        "present": ["d03-delta-baseline", "d04-colour-budget", "d12-anatomy"],
+        "applicable": [
+          "d01-metaphor",
+          "d02-hero-readout",
+          "d03-delta-baseline",
+          "d04-colour-budget",
+          "d06-threshold-geometry",
+          "d07-pre-annotation",
+          "d12-anatomy"
+        ]
+      },
+      "note": "Stat cells each with a headline value, a signed delta against the previous period and a small bar or line sparkline; a tone rail marks the problem cell."
+    },
+    {
+      "id": "74d1eba9",
+      "form": "time-series lines",
+      "substrate": "kind",
+      "v3": "kind",
+      "helpers": [],
+      "devices": {
+        "present": ["d04-colour-budget", "d06-threshold-geometry", "d11-keyboard"],
+        "applicable": [
+          "d01-metaphor",
+          "d03-delta-baseline",
+          "d04-colour-budget",
+          "d06-threshold-geometry",
+          "d08-direct-labels",
+          "d10-dim-focus",
+          "d11-keyboard",
+          "d12-anatomy"
+        ]
+      },
+      "note": "Two run series with labelled dashed reference lines for capacity limits, one-point-per-run."
+    },
+    {
+      "id": "76c47e2f",
+      "form": "sparkline",
+      "substrate": "kind",
+      "v3": "kind",
+      "helpers": [],
+      "devices": {
+        "present": ["d03-delta-baseline", "d04-colour-budget", "d07-pre-annotation"],
+        "applicable": [
+          "d01-metaphor",
+          "d03-delta-baseline",
+          "d04-colour-budget",
+          "d07-pre-annotation",
+          "d11-keyboard"
+        ]
+      },
+      "note": "Per-row sparkline inside a data table column, last point emphasised; the table also shows a signed delta against a typical value."
+    },
+    {
+      "id": "7732afd3",
+      "form": "sparkline",
+      "substrate": "kind",
+      "v3": "kind",
+      "helpers": [],
+      "devices": {
+        "present": [
+          "d03-delta-baseline",
+          "d04-colour-budget",
+          "d06-threshold-geometry",
+          "d07-pre-annotation",
+          "d11-keyboard"
+        ],
+        "applicable": [
+          "d01-metaphor",
+          "d03-delta-baseline",
+          "d04-colour-budget",
+          "d06-threshold-geometry",
+          "d07-pre-annotation",
+          "d11-keyboard"
+        ]
+      },
+      "note": "Strip cells with sparkline rows (latest point emphasised, focus readout labels, delta badges), a zoned ratio meter, a score meter and thin ranked bar lists."
+    },
+    {
+      "id": "776782ca",
+      "form": "stacked bars over time",
+      "substrate": "kind",
+      "v3": "kind",
+      "helpers": [],
+      "devices": {
+        "present": ["d06-threshold-geometry", "d07-pre-annotation", "d11-keyboard"],
+        "applicable": [
+          "d01-metaphor",
+          "d04-colour-budget",
+          "d06-threshold-geometry",
+          "d07-pre-annotation",
+          "d08-direct-labels",
+          "d09-live-cues",
+          "d10-dim-focus",
+          "d11-keyboard",
+          "d12-anatomy"
+        ]
+      },
+      "note": "Stacked weekly bars with per-datum opacity, a dashed average line overlay and labelled landmark threshold lines."
+    },
+    {
+      "id": "78231710",
+      "form": "time-series lines",
+      "substrate": "kind",
+      "v3": "kind",
+      "helpers": [],
+      "devices": {
+        "present": ["d06-threshold-geometry", "d11-keyboard", "d12-anatomy"],
+        "applicable": [
+          "d01-metaphor",
+          "d04-colour-budget",
+          "d06-threshold-geometry",
+          "d07-pre-annotation",
+          "d08-direct-labels",
+          "d10-dim-focus",
+          "d11-keyboard",
+          "d12-anatomy"
+        ]
+      },
+      "note": "Three altitude tracks with dark-period bands, a highlighted window zone and a gate reference line; chart is paired with another sharing the cursor."
+    },
+    {
+      "id": "788352b0",
+      "form": "unit dots",
+      "substrate": "hand-html",
+      "v3": "none",
+      "helpers": [],
+      "devices": {
+        "present": ["d04-colour-budget", "d05-quantized"],
+        "applicable": ["d01-metaphor", "d04-colour-budget", "d05-quantized"]
+      },
+      "note": "Five-slot filled/empty pips for a 1-5 rating on list rows; neutral colours, empty slots visible. Rest of the module is a list."
+    },
+    {
+      "id": "79447959",
+      "form": "histogram",
+      "substrate": "library",
+      "v3": "kind",
+      "helpers": [],
+      "devices": {
+        "present": ["d04-colour-budget", "d11-keyboard"],
+        "applicable": [
+          "d01-metaphor",
+          "d02-hero-readout",
+          "d04-colour-budget",
+          "d05-quantized",
+          "d07-pre-annotation",
+          "d11-keyboard",
+          "d12-anatomy"
+        ]
+      },
+      "note": "Single-series count histograms in chart cards; also a part-to-whole donut, a ranked bar list built on third-party progress bars, and stat cards."
+    },
+    {
+      "id": "7c53624e",
+      "form": "time-series lines",
+      "substrate": "kind",
+      "v3": "kind",
+      "helpers": [],
+      "devices": {
+        "present": ["d03-delta-baseline", "d07-pre-annotation", "d11-keyboard"],
+        "applicable": [
+          "d01-metaphor",
+          "d02-hero-readout",
+          "d03-delta-baseline",
+          "d04-colour-budget",
+          "d07-pre-annotation",
+          "d08-direct-labels",
+          "d10-dim-focus",
+          "d11-keyboard",
+          "d12-anatomy"
+        ]
+      },
+      "note": "Percent change per category from a window-start baseline drawn as a dashed zero line; header shows the leader's signed change."
+    },
+    {
+      "id": "7e5a6aab",
+      "form": "time-series lines",
+      "substrate": "kind",
+      "v3": "kind",
+      "helpers": [],
+      "devices": {
+        "present": ["d04-colour-budget", "d06-threshold-geometry", "d11-keyboard", "d12-anatomy"],
+        "applicable": [
+          "d01-metaphor",
+          "d04-colour-budget",
+          "d06-threshold-geometry",
+          "d07-pre-annotation",
+          "d08-direct-labels",
+          "d11-keyboard",
+          "d12-anatomy"
+        ]
+      },
+      "note": "Two lines with a hard-stop zone gradient area under the first, dashed boundary lines and legend-labelled zones."
+    },
+    {
+      "id": "814734a0",
+      "form": "colour ramp scale",
+      "substrate": "canvas",
+      "v3": "none",
+      "helpers": ["scale"],
+      "devices": {
+        "present": [],
+        "applicable": ["d01-metaphor", "d04-colour-budget"]
+      },
+      "note": "Canvas strip painted from the shader lookup table with ticks placed through the same non-linear transfer; also palette swatch chips and a small svg glyph key."
+    },
+    {
+      "id": "81fcc675",
+      "form": "sparkline",
+      "substrate": "hand-svg",
+      "v3": "CartesianChart",
+      "helpers": ["scale"],
+      "devices": {
+        "present": [
+          "d04-colour-budget",
+          "d06-threshold-geometry",
+          "d07-pre-annotation",
+          "d09-live-cues",
+          "d11-keyboard"
+        ],
+        "applicable": [
+          "d01-metaphor",
+          "d03-delta-baseline",
+          "d04-colour-budget",
+          "d06-threshold-geometry",
+          "d07-pre-annotation",
+          "d09-live-cues",
+          "d11-keyboard"
+        ]
+      },
+      "note": "Line and area with gaps, dashed projected tail, dashed target line or range band, crosshair and a latest-point dot."
+    },
+    {
+      "id": "830b5dd4",
+      "form": "calendar heat grid",
+      "substrate": "hand-html",
+      "v3": "kind",
+      "helpers": ["label-fit", "measure-width", "scale", "ticks"],
+      "devices": {
+        "present": ["d04-colour-budget", "d05-quantized"],
+        "applicable": [
+          "d01-metaphor",
+          "d04-colour-budget",
+          "d05-quantized",
+          "d07-pre-annotation",
+          "d09-live-cues"
+        ]
+      },
+      "note": "CSS grid of day cells with log-scaled single-hue intensity, month labels placed on first columns and skipped on collision; native title tooltip only."
+    },
+    {
+      "id": "85bc2048",
+      "form": "bar list",
+      "substrate": "kind",
+      "v3": "primitive",
+      "helpers": [],
+      "devices": {
+        "present": [],
+        "applicable": ["d01-metaphor", "d04-colour-budget", "d08-direct-labels", "d12-anatomy"]
+      },
+      "note": "Two ranked bar lists with secondary text per row, plus a stacked share bar and legend from a shared hand-built component."
+    },
+    {
+      "id": "871216ca",
+      "form": "time-series lines",
+      "substrate": "kind",
+      "v3": "kind",
+      "helpers": [],
+      "devices": {
+        "present": ["d08-direct-labels", "d11-keyboard", "d12-anatomy"],
+        "applicable": [
+          "d01-metaphor",
+          "d02-hero-readout",
+          "d04-colour-budget",
+          "d08-direct-labels",
+          "d10-dim-focus",
+          "d11-keyboard",
+          "d12-anatomy"
+        ]
+      },
+      "note": "Three layered series on a shared time axis, paired with a second chart sharing the cursor."
+    },
+    {
+      "id": "8841203c",
+      "form": "stacked bars over time",
+      "substrate": "kind",
+      "v3": "kind",
+      "helpers": [],
+      "devices": {
+        "present": ["d04-colour-budget", "d11-keyboard"],
+        "applicable": [
+          "d01-metaphor",
+          "d04-colour-budget",
+          "d07-pre-annotation",
+          "d08-direct-labels",
+          "d10-dim-focus",
+          "d11-keyboard",
+          "d12-anatomy"
+        ]
+      },
+      "note": "Two stacked daily bar charts (one with neutral greys for expected causes and status hues for the problem) plus two ranked bar lists."
+    },
+    {
+      "id": "8a2c4a3f",
+      "form": "bar list",
+      "substrate": "kind",
+      "v3": "primitive",
+      "helpers": [],
+      "devices": {
+        "present": ["d12-anatomy"],
+        "applicable": [
+          "d01-metaphor",
+          "d04-colour-budget",
+          "d08-direct-labels",
+          "d11-keyboard",
+          "d12-anatomy"
+        ]
+      },
+      "note": "Ranked bar lists plus selectable rows with a thin stacked split bar (shared hand-built component) and a legend; cards carry a headline fact."
+    },
+    {
+      "id": "8d0abc9c",
+      "form": "bar list",
+      "substrate": "hand-html",
+      "v3": "primitive",
+      "helpers": [],
+      "devices": {
+        "present": ["d04-colour-budget"],
+        "applicable": [
+          "d01-metaphor",
+          "d04-colour-budget",
+          "d06-threshold-geometry",
+          "d07-pre-annotation"
+        ]
+      },
+      "note": "Labelled 0-1 factor meter rows with a dashed empty track for missing values and the weight printed beside; also a large score headline and verdict-coloured chips."
+    },
+    {
+      "id": "8dab80f1",
+      "form": "stacked bars over time",
+      "substrate": "kind",
+      "v3": "kind",
+      "helpers": [],
+      "devices": {
+        "present": ["d06-threshold-geometry", "d11-keyboard", "d12-anatomy"],
+        "applicable": [
+          "d01-metaphor",
+          "d03-delta-baseline",
+          "d04-colour-budget",
+          "d06-threshold-geometry",
+          "d08-direct-labels",
+          "d10-dim-focus",
+          "d11-keyboard",
+          "d12-anatomy"
+        ]
+      },
+      "note": "Signed stacked bars per group with a net line overlay, zero reference line, inside a card with a facts row."
+    },
+    {
+      "id": "9340cc2f",
+      "form": "time-series lines",
+      "substrate": "kind",
+      "v3": "kind",
+      "helpers": [],
+      "devices": {
+        "present": [
+          "d03-delta-baseline",
+          "d06-threshold-geometry",
+          "d07-pre-annotation",
+          "d11-keyboard"
+        ],
+        "applicable": [
+          "d01-metaphor",
+          "d02-hero-readout",
+          "d03-delta-baseline",
+          "d04-colour-budget",
+          "d06-threshold-geometry",
+          "d07-pre-annotation",
+          "d08-direct-labels",
+          "d10-dim-focus",
+          "d11-keyboard",
+          "d12-anatomy"
+        ]
+      },
+      "note": "Three standardised-score lines clamped to a fixed range, a normal band and a labelled zero baseline; header shows latest signed score per line; custom tooltip rows."
+    },
+    {
+      "id": "a25acf29",
+      "form": "time-series lines",
+      "substrate": "kind",
+      "v3": "kind",
+      "helpers": ["scale"],
+      "devices": {
+        "present": ["d04-colour-budget", "d11-keyboard", "d12-anatomy"],
+        "applicable": [
+          "d01-metaphor",
+          "d03-delta-baseline",
+          "d04-colour-budget",
+          "d06-threshold-geometry",
+          "d07-pre-annotation",
+          "d11-keyboard",
+          "d12-anatomy"
+        ]
+      },
+      "note": "Weight line with point markers, a dashed rolling-mean overlay and an optional goal reference line; own padded y domain."
+    },
+    {
+      "id": "a808d86f",
+      "form": "mini bars",
+      "substrate": "hand-svg",
+      "v3": "kind",
+      "helpers": ["scale"],
+      "devices": {
+        "present": ["d04-colour-budget", "d07-pre-annotation", "d10-dim-focus", "d11-keyboard"],
+        "applicable": [
+          "d01-metaphor",
+          "d04-colour-budget",
+          "d07-pre-annotation",
+          "d10-dim-focus",
+          "d11-keyboard"
+        ]
+      },
+      "note": "Tiny bar series with one accent bar, rounded data ends and a per-bar tooltip through a shared chart frame."
+    },
+    {
+      "id": "afe712fb",
+      "form": "time-series lines",
+      "substrate": "cartesian-compose",
+      "v3": "CartesianChart",
+      "helpers": ["packing", "scale"],
+      "devices": {
+        "present": ["d04-colour-budget", "d06-threshold-geometry", "d11-keyboard"],
+        "applicable": [
+          "d01-metaphor",
+          "d04-colour-budget",
+          "d06-threshold-geometry",
+          "d07-pre-annotation",
+          "d08-direct-labels",
+          "d10-dim-focus",
+          "d11-keyboard",
+          "d12-anatomy"
+        ]
+      },
+      "note": "Median line with percentile band, max envelope, loss-coloured dots, rect rails for unmeasured, fully-down and outage spans, optional overlay line."
+    },
+    {
+      "id": "b07c296d",
+      "form": "time-series lines",
+      "substrate": "cartesian-compose",
+      "v3": "CartesianChart.custom",
+      "helpers": ["scale"],
+      "devices": {
+        "present": ["d04-colour-budget", "d06-threshold-geometry", "d11-keyboard"],
+        "applicable": [
+          "d01-metaphor",
+          "d04-colour-budget",
+          "d06-threshold-geometry",
+          "d07-pre-annotation",
+          "d08-direct-labels",
+          "d09-live-cues",
+          "d10-dim-focus",
+          "d11-keyboard",
+          "d12-anatomy"
+        ]
+      },
+      "note": "Small cartesian charts with night/day zones, reference lines, a dual axis, uncertainty bands, stepped-run line segmentation and rotated direction ticks coloured by state."
+    },
+    {
+      "id": "b25db6a2",
+      "form": "time-axis strip",
+      "substrate": "hand-html",
+      "v3": "CartesianChart",
+      "helpers": [],
+      "devices": {
+        "present": ["d04-colour-budget", "d07-pre-annotation", "d09-live-cues"],
+        "applicable": ["d01-metaphor", "d04-colour-budget", "d07-pre-annotation", "d09-live-cues"]
+      },
+      "note": "Instant ticks positioned along a day axis with the next item and a now mark highlighted; position fractions come from another module."
+    },
+    {
+      "id": "b7238131",
+      "form": "dual-pane chart",
+      "substrate": "kind",
+      "v3": "CartesianChart",
+      "helpers": [],
+      "devices": {
+        "present": ["d04-colour-budget", "d07-pre-annotation", "d11-keyboard"],
+        "applicable": [
+          "d01-metaphor",
+          "d02-hero-readout",
+          "d04-colour-budget",
+          "d07-pre-annotation",
+          "d08-direct-labels",
+          "d10-dim-focus",
+          "d11-keyboard",
+          "d12-anatomy"
+        ]
+      },
+      "note": "Trend lines over a signed rate histogram with positive and negative hues; header shows the latest rate with a direction arrow."
+    },
+    {
+      "id": "b99072b3",
+      "form": "time-series lines",
+      "substrate": "kind",
+      "v3": "kind",
+      "helpers": ["ticks"],
+      "devices": {
+        "present": [
+          "d03-delta-baseline",
+          "d04-colour-budget",
+          "d06-threshold-geometry",
+          "d09-live-cues",
+          "d11-keyboard",
+          "d12-anatomy"
+        ],
+        "applicable": [
+          "d01-metaphor",
+          "d03-delta-baseline",
+          "d04-colour-budget",
+          "d06-threshold-geometry",
+          "d07-pre-annotation",
+          "d08-direct-labels",
+          "d09-live-cues",
+          "d10-dim-focus",
+          "d11-keyboard",
+          "d12-anatomy"
+        ]
+      },
+      "note": "Cumulative lines with a shaded future-days zone, dashed projection and income reference line; also a segmented forecast meter, ranked bar list, bars with a highlighted month and a ranked bar list with average ticks."
+    },
+    {
+      "id": "be02a1cb",
+      "form": "hour-by-day heat grid",
+      "substrate": "kind",
+      "v3": "kind",
+      "helpers": [],
+      "devices": {
+        "present": ["d04-colour-budget", "d11-keyboard", "d12-anatomy"],
+        "applicable": [
+          "d01-metaphor",
+          "d04-colour-budget",
+          "d05-quantized",
+          "d07-pre-annotation",
+          "d11-keyboard",
+          "d12-anatomy"
+        ]
+      },
+      "note": "Weekday by hour counts as one-hue heat cells with a legend and a busiest-cell fact; timezone shift done in a sibling module."
+    },
+    {
+      "id": "c02cfcc3",
+      "form": "status timeline strip",
+      "substrate": "kind",
+      "v3": "kind",
+      "helpers": ["packing"],
+      "devices": {
+        "present": ["d04-colour-budget"],
+        "applicable": [
+          "d01-metaphor",
+          "d04-colour-budget",
+          "d06-threshold-geometry",
+          "d09-live-cues"
+        ]
+      },
+      "note": "Four-state bands with a loss intensity ramp and a hand-written fold that merges adjacent buckets taking the worst value."
+    },
+    {
+      "id": "c075dca5",
+      "form": "stacked bars over time",
+      "substrate": "kind",
+      "v3": "kind",
+      "helpers": [],
+      "devices": {
+        "present": ["d06-threshold-geometry", "d11-keyboard", "d12-anatomy"],
+        "applicable": [
+          "d01-metaphor",
+          "d04-colour-budget",
+          "d06-threshold-geometry",
+          "d07-pre-annotation",
+          "d08-direct-labels",
+          "d10-dim-focus",
+          "d11-keyboard",
+          "d12-anatomy"
+        ]
+      },
+      "note": "Four stage series, one plotted below zero, with a target band; categorical stage hues."
+    },
+    {
+      "id": "c0e82842",
+      "form": "bars over time",
+      "substrate": "kind",
+      "v3": "kind",
+      "helpers": [],
+      "devices": {
+        "present": ["d04-colour-budget", "d11-keyboard", "d12-anatomy"],
+        "applicable": [
+          "d01-metaphor",
+          "d04-colour-budget",
+          "d10-dim-focus",
+          "d11-keyboard",
+          "d12-anatomy"
+        ]
+      },
+      "note": "Monthly bars for one tag, plus a ranked bar list of tag sums; the rest is a work queue."
+    },
+    {
+      "id": "c238f2ba",
+      "form": "bars over time",
+      "substrate": "kind",
+      "v3": "kind",
+      "helpers": [],
+      "devices": {
+        "present": ["d03-delta-baseline", "d04-colour-budget", "d11-keyboard", "d12-anatomy"],
+        "applicable": [
+          "d01-metaphor",
+          "d03-delta-baseline",
+          "d04-colour-budget",
+          "d06-threshold-geometry",
+          "d09-live-cues",
+          "d10-dim-focus",
+          "d11-keyboard",
+          "d12-anatomy"
+        ]
+      },
+      "note": "Monthly bars with a dashed average reference line; also a ranked bar list and per-row bar sparklines inside a table."
+    },
+    {
+      "id": "c6570ae9",
+      "form": "sparkline",
+      "substrate": "kind",
+      "v3": "kind",
+      "helpers": [],
+      "devices": {
+        "present": [
+          "d03-delta-baseline",
+          "d04-colour-budget",
+          "d06-threshold-geometry",
+          "d07-pre-annotation"
+        ],
+        "applicable": [
+          "d01-metaphor",
+          "d02-hero-readout",
+          "d03-delta-baseline",
+          "d04-colour-budget",
+          "d06-threshold-geometry",
+          "d07-pre-annotation",
+          "d11-keyboard"
+        ]
+      },
+      "note": "Stat strip cells with a sparkline against a dashed record reference and a signed period delta; also two zoned meters for readiness-style scores."
+    },
+    {
+      "id": "c6f8d955",
+      "form": "mirrored bars over time",
+      "substrate": "kind",
+      "v3": "CartesianChart",
+      "helpers": ["packing"],
+      "devices": {
+        "present": ["d04-colour-budget", "d09-live-cues", "d11-keyboard"],
+        "applicable": [
+          "d01-metaphor",
+          "d03-delta-baseline",
+          "d04-colour-budget",
+          "d06-threshold-geometry",
+          "d08-direct-labels",
+          "d09-live-cues",
+          "d10-dim-focus",
+          "d11-keyboard"
+        ]
+      },
+      "note": "Two panes mirrored around a baseline with independent scales, partial buckets dimmed, absent share painted, hand-written fold."
+    },
+    {
+      "id": "c74c9dc5",
+      "form": "sparkline",
+      "substrate": "kind",
+      "v3": "kind",
+      "helpers": [],
+      "devices": {
+        "present": ["d04-colour-budget", "d07-pre-annotation"],
+        "applicable": [
+          "d01-metaphor",
+          "d04-colour-budget",
+          "d07-pre-annotation",
+          "d11-keyboard",
+          "d12-anatomy"
+        ]
+      },
+      "note": "Small line and bar sparklines with the latest value as text, inside table rows; last point emphasised."
+    },
+    {
+      "id": "c8c87a63",
+      "form": "stacked areas over time",
+      "substrate": "kind",
+      "v3": "kind",
+      "helpers": [],
+      "devices": {
+        "present": ["d03-delta-baseline", "d11-keyboard", "d12-anatomy"],
+        "applicable": [
+          "d01-metaphor",
+          "d03-delta-baseline",
+          "d04-colour-budget",
+          "d08-direct-labels",
+          "d10-dim-focus",
+          "d11-keyboard",
+          "d12-anatomy"
+        ]
+      },
+      "note": "Stacked area per category plus a multi-series line chart in a sibling card, one with a signed since-baseline delta in its facts."
+    },
+    {
+      "id": "cc8c11d5",
+      "form": "stacked bars over time",
+      "substrate": "hand-svg",
+      "v3": "kind",
+      "helpers": ["packing", "scale"],
+      "devices": {
+        "present": ["d10-dim-focus", "d11-keyboard"],
+        "applicable": [
+          "d01-metaphor",
+          "d04-colour-budget",
+          "d05-quantized",
+          "d08-direct-labels",
+          "d10-dim-focus",
+          "d11-keyboard",
+          "d12-anatomy"
+        ]
+      },
+      "note": "Stacked segments per bar with gaps, categorical series colours, a legend row with per-series totals; hidden data table."
+    },
+    {
+      "id": "cdbf4e0a",
+      "form": "part-to-whole bar",
+      "substrate": "kind",
+      "v3": "primitive",
+      "helpers": [],
+      "devices": {
+        "present": ["d04-colour-budget", "d08-direct-labels"],
+        "applicable": ["d01-metaphor", "d04-colour-budget", "d08-direct-labels"]
+      },
+      "note": "Two part-to-whole segmented meters in neutral shades stepping by rank."
+    },
+    {
+      "id": "ce5f0456",
+      "form": "bars over time",
+      "substrate": "kind",
+      "v3": "kind",
+      "helpers": [],
+      "devices": {
+        "present": ["d04-colour-budget", "d11-keyboard", "d12-anatomy"],
+        "applicable": [
+          "d01-metaphor",
+          "d04-colour-budget",
+          "d07-pre-annotation",
+          "d08-direct-labels",
+          "d10-dim-focus",
+          "d11-keyboard",
+          "d12-anatomy"
+        ]
+      },
+      "note": "Three grouped bar series per month; the peak month is stated only in the card header."
+    },
+    {
+      "id": "d0f4f4df",
+      "form": "bar list",
+      "substrate": "hand-html",
+      "v3": "primitive",
+      "helpers": [],
+      "devices": {
+        "present": ["d04-colour-budget", "d07-pre-annotation", "d08-direct-labels"],
+        "applicable": [
+          "d01-metaphor",
+          "d04-colour-budget",
+          "d07-pre-annotation",
+          "d08-direct-labels"
+        ]
+      },
+      "note": "Rows with a duration bar scaled to the longest, failed step in the problem colour with its detail line; essentially a bar list in sequence order."
+    },
+    {
+      "id": "d347567b",
+      "form": "dual-pane chart",
+      "substrate": "kind",
+      "v3": "CartesianChart",
+      "helpers": ["ticks"],
+      "devices": {
+        "present": ["d04-colour-budget", "d06-threshold-geometry", "d11-keyboard", "d12-anatomy"],
+        "applicable": [
+          "d01-metaphor",
+          "d04-colour-budget",
+          "d06-threshold-geometry",
+          "d07-pre-annotation",
+          "d08-direct-labels",
+          "d11-keyboard",
+          "d12-anatomy"
+        ]
+      },
+      "note": "Ratio line over coloured zone bands and thresholds, stacked above a thin signed-bars strip on a shared x domain."
+    },
+    {
+      "id": "d3f041da",
+      "form": "time-series lines",
+      "substrate": "kind",
+      "v3": "kind",
+      "helpers": [],
+      "devices": {
+        "present": [
+          "d04-colour-budget",
+          "d06-threshold-geometry",
+          "d07-pre-annotation",
+          "d11-keyboard"
+        ],
+        "applicable": [
+          "d01-metaphor",
+          "d02-hero-readout",
+          "d04-colour-budget",
+          "d06-threshold-geometry",
+          "d07-pre-annotation",
+          "d08-direct-labels",
+          "d10-dim-focus",
+          "d11-keyboard",
+          "d12-anatomy"
+        ]
+      },
+      "note": "Per-point markers coloured by zone, a moving-average line, zone fills and threshold lines; header shows the latest value with its zone."
+    },
+    {
+      "id": "d5fdd36f",
+      "form": "time-series lines",
+      "substrate": "kind",
+      "v3": "kind",
+      "helpers": [],
+      "devices": {
+        "present": ["d04-colour-budget", "d06-threshold-geometry", "d11-keyboard", "d12-anatomy"],
+        "applicable": [
+          "d01-metaphor",
+          "d04-colour-budget",
+          "d06-threshold-geometry",
+          "d07-pre-annotation",
+          "d11-keyboard",
+          "d12-anatomy"
+        ]
+      },
+      "note": "Single neutral line over three labelled verdict zones with a zone row in the tooltip."
+    },
+    {
+      "id": "d644355f",
+      "form": "colour ramp scale",
+      "substrate": "hand-html",
+      "v3": "primitive",
+      "helpers": ["scale"],
+      "devices": {
+        "present": ["d06-threshold-geometry"],
+        "applicable": [
+          "d01-metaphor",
+          "d03-delta-baseline",
+          "d04-colour-budget",
+          "d06-threshold-geometry"
+        ]
+      },
+      "note": "Strip of five readings; four use a kit meter against a target, the ramp track is hand-built from gradient stops (a zoned meter approximates it)."
+    },
+    {
+      "id": "d8ca5100",
+      "form": "time-axis strip",
+      "substrate": "hand-html",
+      "v3": "CartesianChart",
+      "helpers": ["hit-focus", "measure-width", "scale"],
+      "devices": {
+        "present": [
+          "d04-colour-budget",
+          "d06-threshold-geometry",
+          "d07-pre-annotation",
+          "d09-live-cues"
+        ],
+        "applicable": [
+          "d01-metaphor",
+          "d04-colour-budget",
+          "d06-threshold-geometry",
+          "d07-pre-annotation",
+          "d09-live-cues",
+          "d11-keyboard"
+        ]
+      },
+      "note": "Draggable scrubber rail: percent-positioned band, ticks whose stride comes from a measured label width, a now line and a thumb. A scrubber more than a chart, so the v3 mapping is a judgement call."
+    },
+    {
+      "id": "d92b7111",
+      "form": "bar list",
+      "substrate": "kind",
+      "v3": "primitive",
+      "helpers": [],
+      "devices": {
+        "present": ["d04-colour-budget"],
+        "applicable": ["d01-metaphor", "d04-colour-budget", "d12-anatomy"]
+      },
+      "note": "Single thin ranked list of spend by producer; the sibling card is text only."
+    },
+    {
+      "id": "d9486ecb",
+      "form": "time-series lines",
+      "substrate": "kind",
+      "v3": "kind",
+      "helpers": ["scale"],
+      "devices": {
+        "present": ["d11-keyboard", "d12-anatomy"],
+        "applicable": [
+          "d01-metaphor",
+          "d03-delta-baseline",
+          "d04-colour-budget",
+          "d08-direct-labels",
+          "d10-dim-focus",
+          "d11-keyboard",
+          "d12-anatomy"
+        ]
+      },
+      "note": "Per-site lines with point markers plus a dashed average line; own padded y domain."
+    },
+    {
+      "id": "da28c2fb",
+      "form": "interval lanes",
+      "substrate": "hand-html",
+      "v3": "none",
+      "helpers": ["label-fit", "measure-width", "ticks"],
+      "devices": {
+        "present": [
+          "d04-colour-budget",
+          "d06-threshold-geometry",
+          "d07-pre-annotation",
+          "d08-direct-labels",
+          "d09-live-cues"
+        ],
+        "applicable": [
+          "d01-metaphor",
+          "d04-colour-budget",
+          "d06-threshold-geometry",
+          "d07-pre-annotation",
+          "d08-direct-labels",
+          "d09-live-cues"
+        ]
+      },
+      "note": "Cards are placed on a time axis from now by computed position and lane, with a break cell for items past the horizon and a hidden table; HTML cards, not drawn marks."
+    },
+    {
+      "id": "db4adfea",
+      "form": "bar list",
+      "substrate": "kind",
+      "v3": "primitive",
+      "helpers": [],
+      "devices": {
+        "present": ["d07-pre-annotation", "d12-anatomy"],
+        "applicable": [
+          "d01-metaphor",
+          "d04-colour-budget",
+          "d07-pre-annotation",
+          "d08-direct-labels",
+          "d11-keyboard",
+          "d12-anatomy"
+        ]
+      },
+      "note": "Three ranked bar lists (one with a fixed 0-100 max) plus a stacked share bar with legend from a shared hand-built component; status text callouts under the lists."
+    },
+    {
+      "id": "dc9d61de",
+      "form": "stacked bars over time",
+      "substrate": "kind",
+      "v3": "kind",
+      "helpers": [],
+      "devices": {
+        "present": ["d03-delta-baseline", "d11-keyboard"],
+        "applicable": [
+          "d01-metaphor",
+          "d03-delta-baseline",
+          "d04-colour-budget",
+          "d08-direct-labels",
+          "d10-dim-focus",
+          "d11-keyboard",
+          "d12-anatomy"
+        ]
+      },
+      "note": "Expandable ranked rows, each with a split segmented meter, a period-change badge and a bar sparkline; the open row shows daily stacked bars by group."
+    },
+    {
+      "id": "e2076653",
+      "form": "bars over time",
+      "substrate": "kind",
+      "v3": "kind",
+      "helpers": [],
+      "devices": {
+        "present": ["d11-keyboard", "d12-anatomy"],
+        "applicable": [
+          "d01-metaphor",
+          "d04-colour-budget",
+          "d07-pre-annotation",
+          "d08-direct-labels",
+          "d10-dim-focus",
+          "d11-keyboard",
+          "d12-anatomy"
+        ]
+      },
+      "note": "Positive and negative bars on one axis with a net line overlay; sign carried by both side and hue."
+    },
+    {
+      "id": "e3200fcb",
+      "form": "meter",
+      "substrate": "kind",
+      "v3": "primitive",
+      "helpers": [],
+      "devices": {
+        "present": ["d04-colour-budget", "d06-threshold-geometry"],
+        "applicable": ["d01-metaphor", "d04-colour-budget", "d06-threshold-geometry"]
+      },
+      "note": "One meter per day against a target tick (warn tone when over) plus a segmented two-part split meter; the rest of the file is list rows and skeletons."
+    },
+    {
+      "id": "e932cb90",
+      "form": "hour-by-day heat grid",
+      "substrate": "kind",
+      "v3": "kind",
+      "helpers": ["packing"],
+      "devices": {
+        "present": ["d03-delta-baseline", "d04-colour-budget"],
+        "applicable": [
+          "d01-metaphor",
+          "d03-delta-baseline",
+          "d04-colour-budget",
+          "d06-threshold-geometry",
+          "d12-anatomy"
+        ]
+      },
+      "note": "Cell value is percent below the best hour; failed and absent cells have their own states; hand-written hourly binning and cell merge."
+    },
+    {
+      "id": "e9c275d1",
+      "form": "bar list",
+      "substrate": "hand-html",
+      "v3": "primitive",
+      "helpers": [],
+      "devices": {
+        "present": ["d04-colour-budget"],
+        "applicable": ["d01-metaphor", "d04-colour-budget", "d12-anatomy"]
+      },
+      "note": "Rows with a thin share-of-total bar each and counts as text; expired rows dim."
+    },
+    {
+      "id": "ec06f805",
+      "form": "time-series lines",
+      "substrate": "kind",
+      "v3": "kind",
+      "helpers": [],
+      "devices": {
+        "present": ["d07-pre-annotation", "d11-keyboard"],
+        "applicable": [
+          "d01-metaphor",
+          "d04-colour-budget",
+          "d07-pre-annotation",
+          "d08-direct-labels",
+          "d10-dim-focus",
+          "d11-keyboard",
+          "d12-anatomy"
+        ]
+      },
+      "note": "One line per category with a dashed average each and enlarged markers on record points; categories take distinct hues."
+    },
+    {
+      "id": "f030aad6",
+      "form": "sparkline",
+      "substrate": "kind",
+      "v3": "kind",
+      "helpers": [],
+      "devices": {
+        "present": ["d04-colour-budget", "d06-threshold-geometry", "d07-pre-annotation"],
+        "applicable": [
+          "d01-metaphor",
+          "d04-colour-budget",
+          "d06-threshold-geometry",
+          "d07-pre-annotation"
+        ]
+      },
+      "note": "Strip cells with a score meter plus trend sparkline (latest emphasised) and a zoned ratio meter; the day axis comes from another module."
+    },
+    {
+      "id": "f7656446",
+      "form": "time-series lines",
+      "substrate": "kind",
+      "v3": "kind",
+      "helpers": [],
+      "devices": {
+        "present": ["d04-colour-budget", "d06-threshold-geometry", "d11-keyboard"],
+        "applicable": [
+          "d01-metaphor",
+          "d04-colour-budget",
+          "d06-threshold-geometry",
+          "d07-pre-annotation",
+          "d08-direct-labels",
+          "d11-keyboard",
+          "d12-anatomy"
+        ]
+      },
+      "note": "Neutral daily and smoothed lines over three score zones with threshold lines; tooltip carries the zone and its drivers."
+    },
+    {
+      "id": "f771fa9b",
+      "form": "bars over time",
+      "substrate": "kind",
+      "v3": "kind",
+      "helpers": [],
+      "devices": {
+        "present": ["d04-colour-budget", "d11-keyboard", "d12-anatomy"],
+        "applicable": [
+          "d01-metaphor",
+          "d02-hero-readout",
+          "d04-colour-budget",
+          "d07-pre-annotation",
+          "d10-dim-focus",
+          "d11-keyboard",
+          "d12-anatomy"
+        ]
+      },
+      "note": "Two side-by-side single-series bar charts (hour of day, weekday) in one card with a busiest-slot fact."
+    },
+    {
+      "id": "fdb99e37",
+      "form": "scatter",
+      "substrate": "cartesian-compose",
+      "v3": "CartesianChart.custom",
+      "helpers": ["hit-focus", "measure-width", "polar-arc", "scale", "ticks", "tooltip"],
+      "devices": {
+        "present": [
+          "d06-threshold-geometry",
+          "d07-pre-annotation",
+          "d08-direct-labels",
+          "d10-dim-focus"
+        ],
+        "applicable": [
+          "d01-metaphor",
+          "d04-colour-budget",
+          "d06-threshold-geometry",
+          "d07-pre-annotation",
+          "d08-direct-labels",
+          "d10-dim-focus",
+          "d11-keyboard",
+          "d12-anatomy"
+        ]
+      },
+      "note": "Log-x scatter on engine marks with joined ladders, a frontier line, a quadrant band, ring glyphs drawn from pixel offsets, persistent collision-placed labels and a hand-positioned tooltip with pointer nearest-point tracking."
+    },
+    {
+      "id": "fe34db13",
+      "form": "stacked areas over time",
+      "substrate": "kind",
+      "v3": "kind",
+      "helpers": [],
+      "devices": {
+        "present": ["d09-live-cues", "d11-keyboard"],
+        "applicable": [
+          "d01-metaphor",
+          "d04-colour-budget",
+          "d07-pre-annotation",
+          "d08-direct-labels",
+          "d09-live-cues",
+          "d10-dim-focus",
+          "d11-keyboard",
+          "d12-anatomy"
+        ]
+      },
+      "note": "Stacked series by group with the running bucket shaded as partial; legend names the series; categorical palette."
+    },
+    {
+      "id": "ff12ba72",
+      "form": "status timeline strip",
+      "substrate": "kind",
+      "v3": "kind",
+      "helpers": ["packing"],
+      "devices": {
+        "present": ["d04-colour-budget"],
+        "applicable": [
+          "d01-metaphor",
+          "d02-hero-readout",
+          "d04-colour-budget",
+          "d06-threshold-geometry"
+        ]
+      },
+      "note": "Band strip with intensity by value, transition markers and a hand-written state fold; a headline sentence sits above it."
+    }
+  ]
+}
