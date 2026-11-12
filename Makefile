@@ -60,13 +60,19 @@ layout: ## Run the layout regression suite (real CSS geometry, headless Chrome)
 build: ## Build the published package (dist-first tsup + declarations)
 	@cd packages/basalt-ui && bun run build
 
+# `quality` is a lane of `make evidence` that scripts/evidence does not know: it is taken out of LANES
+# before the script sees it, and the script is skipped when `quality` was the only lane asked for.
+comma := ,
+space := $(subst ,, )
+EVIDENCE_LANES = $(subst $(space),$(comma),$(strip $(filter-out quality,$(subst $(comma),$(space),$(LANES)))))
+
 # Measurement harness (scripts/evidence): builds the package + playground unless DIST is given, serves
 # the dist on an ephemeral port, runs every lane, writes .evidence/<LABEL>/ and the summary
 # .evidence/summaries/<LABEL>.md (all gitignored). ROUTES = file with one path per line (external dists). LANES = comma list: a subset run writes
 # <LABEL>.<lanes>.md beside the full summary instead of replacing it.
 evidence: ## Measure bundle/screens/lighthouse/...: make evidence LABEL=<label> [DIST=<dir>] [ROUTES=<file>] [LANES=a,b]
 	@test -n "$(LABEL)" || { echo "usage: make evidence LABEL=<label> [DIST=<dir>] [ROUTES=<file>] [LANES=a,b]"; exit 2; }
-	@bun scripts/evidence/index.ts --label "$(LABEL)" $(if $(DIST),--dist "$(DIST)") $(if $(ROUTES),--routes "$(ROUTES)") $(if $(LANES),--lanes "$(LANES)")
+	@$(if $(or $(if $(LANES),,x),$(EVIDENCE_LANES)),bun scripts/evidence/index.ts --label "$(LABEL)" $(if $(DIST),--dist "$(DIST)") $(if $(ROUTES),--routes "$(ROUTES)") $(if $(EVIDENCE_LANES),--lanes "$(EVIDENCE_LANES)"))
 	@$(if $(if $(LANES),$(findstring quality,$(LANES)),x),$(MAKE) --no-print-directory quality-matrix QUALITY_MATRIX=full)
 
 # The quality matrix (quality-contract section 4; packages/basalt-ui/tests/quality/matrix): every
