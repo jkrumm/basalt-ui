@@ -17,6 +17,7 @@
     "src/**/*.test.tsx",
     "src/**/*.type-guard.tsx",
     "src/**/*.type-test.ts",
+    "src/**/*.cases.ts",
     "src/table/invariants"
   ]
 }
