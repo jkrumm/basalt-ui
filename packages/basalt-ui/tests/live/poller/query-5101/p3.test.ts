@@ -1,6 +1,8 @@
 /**
  * P3 on Query 5.101.2, argo's locked version. This directory is its own package (package.json and
  * bun.lock): setup installs it with `--frozen-lockfile`, then the core is imported from it. The
+ * import is dynamic because the package does not exist until that install has run; the install
+ * needs the network, as the repo's own `bun install` does.
  */
 import { p3Matrix } from '../support/p3-matrix'
 import type { Core } from '../support/harness'
