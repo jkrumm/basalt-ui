@@ -15,7 +15,9 @@ import { table } from '../core/messages/table'
 import { resolvePhase } from '../core/phase'
 import type { Empty, ResolvedPhase } from '../core/phase'
 import type { Box, DetailHost } from '../core/ports'
-import type { DataTableInstance, KindColumn, UseDataTable } from './contract'
+import type { DataTableInstance, KindColumn, Totals, UseDataTable } from './contract'
+import { bodyItems, toggled } from './parts/group-row-model'
+import type { BodyItem } from './parts/group-row-model'
 import { tableEngine } from './core/features'
 import { constructFilterFn, toColumnFilters } from './core/filters'
 import { useRowKeyboard } from './core/keyboard'
@@ -51,6 +53,16 @@ export type TableModel<T> = {
   specs: readonly KindSpec<T>[]
   plan: TablePlan
   rows: readonly ModelRow<T>[]
+  /** What the body draws in order: the rows, or group rows with the rows of open groups. */
+  items: readonly BodyItem<T>[]
+  /** The declared grouping (client mode only); `summary` is the group row's box slot. */
+  group: { spec: KindSpec<T>; summary?: (rows: readonly T[], box: Box) => ReactNode } | undefined
+  toggleGroup(value: string): void
+  server: boolean
+  /** Client: every row matching the request (all pages), what the footer reduces. */
+  matched: readonly T[]
+  /** Server: the footer values the server computed for this request. */
+  totals: Totals | undefined
   phase: ResolvedPhase
   /** Rows matching the request, `undefined` while unknown. */
   count: number | undefined
@@ -177,10 +189,16 @@ export function useDataTable<T>(options: UseDataTable<T>): DataTableInstance<T> 
       id: row.id,
       original: row.original as T,
     }))
-  const matching = server
-    ? undefined
-    : (engine.getPrePaginatedRowModel() as { rows: unknown[] }).rows.length
+  const matched: readonly T[] = server
+    ? rows.map((row) => row.original)
+    : (engine.getPrePaginatedRowModel() as { rows: { original: unknown }[] }).rows.map(
+        (row) => row.original as T,
+      )
+  const matching = server ? undefined : matched.length
   if (!server && matching !== clientCount) setClientCount(matching)
+
+  const group = groupOf(options.group, specs, server)
+  const items = bodyItems(rows, group?.spec, display.collapsed)
 
   const filtering = request.q !== '' || request.filters.length > 0
   const settled = options.data !== undefined
@@ -220,7 +238,7 @@ export function useDataTable<T>(options: UseDataTable<T>): DataTableInstance<T> 
     }
   }
   const keyboard = useRowKeyboard({
-    rowIds: rows.map((row) => row.id),
+    rowIds: items.flatMap((item) => (item.type === 'row' ? [item.row.id] : [])),
     onActivate: activation.kind === 'none' ? undefined : activate,
     onToggle: options.selection === undefined ? undefined : selection.toggle,
     onClear: options.selection === undefined ? undefined : selection.clear,
@@ -232,6 +250,14 @@ export function useDataTable<T>(options: UseDataTable<T>): DataTableInstance<T> 
     specs,
     plan,
     rows,
+    items,
+    group,
+    toggleGroup(value) {
+      state.setDisplay({ collapsed: toggled(display.collapsed, value) })
+    },
+    server,
+    matched,
+    totals: mode.kind === 'server' && 'totals' in mode ? mode.totals : undefined,
     phase,
     count: server ? countOf(mode) : matching,
     pager,
@@ -260,6 +286,25 @@ export function useDataTable<T>(options: UseDataTable<T>): DataTableInstance<T> 
     },
   }
   return { __brand: 'DataTableInstance', [MODEL]: model } as Built<T>
+}
+
+/**
+ * The declared grouping resolved against the columns. A server table never groups (the type
+ * already refuses it; grouping needs every row); an unknown column throws naming it.
+ */
+function groupOf<T>(
+  group: UseDataTable<T>['group'],
+  specs: readonly KindSpec<T>[],
+  server: boolean,
+): TableModel<T>['group'] {
+  if (group === undefined || server) return undefined
+  const spec = specs.find((s) => s.id === group.by)
+  if (spec === undefined) {
+    throw new Error(
+      `basalt-ui/table: group.by "${group.by}" is not a column; use one of ${specs.map((s) => s.id).join(', ')}`,
+    )
+  }
+  return { spec, ...(group.summary !== undefined && { summary: group.summary }) }
 }
 
 /** The plan, recomputed only when a column's shape or the visibility changes (one dev warning each). */

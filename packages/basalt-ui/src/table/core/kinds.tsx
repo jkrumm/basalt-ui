@@ -28,7 +28,16 @@ import {
   isAbsent,
 } from './kinds-cells'
 import { KIND_DEFAULTS, KIND_SPEC } from './kinds-spec'
-import type { Align, BuiltColumn, CellEnv, KindName, KindSpec, SelectEdit } from './kinds-spec'
+import type {
+  Aggregate,
+  Align,
+  BuiltColumn,
+  CellEnv,
+  FooterSpec,
+  KindName,
+  KindSpec,
+  SelectEdit,
+} from './kinds-spec'
 
 export { checkSchema } from './kinds-codec'
 export type { CodecKind, CodecOptions, TableSchema } from './kinds-codec'
@@ -64,8 +73,10 @@ export type EntityOptions<T> = CommonOptions & {
   filter?: 'text'
 }
 export type TextOptions = CommonOptions & { filter?: 'text' }
-export type NumberOptions = CommonOptions & { unit?: string; digits?: number }
-export type MoneyOptions = CommonOptions & { currency: string }
+/** A numeric kind's footer: client mode reduces the filtered rows, server mode reads `totals`. */
+export type FooterOption = { footer?: Aggregate }
+export type NumberOptions = CommonOptions & FooterOption & { unit?: string; digits?: number }
+export type MoneyOptions = CommonOptions & FooterOption & { currency: string }
 export type DateOptions = CommonOptions & { style?: DateStyle }
 export type StatusOptions = CommonOptions & {
   options: readonly string[]
@@ -126,8 +137,8 @@ const OPTION_KEYS: Readonly<
 > = {
   entity: { allowed: [...COMMON, 'href', 'icon', 'sub', 'filter'], required: [] },
   text: { allowed: [...COMMON, 'filter'], required: [] },
-  number: { allowed: [...COMMON, 'unit', 'digits'], required: [] },
-  money: { allowed: [...COMMON, 'currency'], required: ['currency'] },
+  number: { allowed: [...COMMON, 'unit', 'digits', 'footer'], required: [] },
+  money: { allowed: [...COMMON, 'currency', 'footer'], required: ['currency'] },
   date: { allowed: [...COMMON, 'style'], required: [] },
   relativeTime: { allowed: COMMON, required: [] },
   status: { allowed: [...COMMON, 'options', 'tone', 'filter'], required: ['options'] },
@@ -168,6 +179,15 @@ const OPTION_VALUES: Readonly<Record<string, readonly unknown[]>> = {
   polarity: ['up-good', 'up-bad', 'neutral'],
   align: ['start', 'end', 'center'],
   style: ['short', 'long', 'month', 'weekday'],
+  footer: ['sum', 'mean', 'min', 'max', 'count'],
+}
+
+/** The footer spec of a numeric kind, or nothing when the column declares no `footer`. */
+function footerOf<T>(
+  fn: Aggregate | undefined,
+  draw: FooterSpec['draw'],
+): { spec?: Partial<KindSpec<T>> } {
+  return fn === undefined ? {} : { spec: { footer: { fn, draw } } }
 }
 
 const FILTER_VALUES: Partial<Record<KindName, readonly string[]>> = {
@@ -347,7 +367,10 @@ export function col<T>(): Col<T> {
         o,
         (v, _row, env) =>
           typeof v === 'number' ? formatNumber(env.format, v, o?.digits) : String(v),
-        { header: (h) => withUnit(h, o?.unit) },
+        {
+          header: (h) => withUnit(h, o?.unit),
+          ...footerOf<T>(o?.footer, (v, env) => formatNumber(env.format, v, o?.digits)),
+        },
       ),
     money: (key, o) =>
       keyed<T>(
@@ -356,7 +379,10 @@ export function col<T>(): Col<T> {
         o,
         (v, _row, env) =>
           typeof v === 'number' ? formatMoney(env.format, v, o.currency) : String(v),
-        { header: (h) => withUnit(h, o?.currency) },
+        {
+          header: (h) => withUnit(h, o?.currency),
+          ...footerOf<T>(o?.footer, (v, env) => formatMoney(env.format, v, o.currency)),
+        },
       ),
     date: (key, o) =>
       keyed<T>('date', key, o, (v, _row, env) => (

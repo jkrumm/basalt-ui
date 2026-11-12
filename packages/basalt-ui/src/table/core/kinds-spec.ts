@@ -62,6 +62,15 @@ export type SelectEdit<T> = {
   commit: (row: T, value: string) => unknown
 }
 
+/** The reduce a numeric column's footer and group rows print (concept section 3, Footer). */
+export type Aggregate = 'sum' | 'mean' | 'min' | 'max' | 'count'
+
+/** A numeric column's footer: the reduce and how its result reads in this kind. */
+export type FooterSpec = {
+  fn: Aggregate
+  draw: (value: number, env: CellEnv) => ReactNode
+}
+
 /** Everything a kind decides for one column, resolved once when the column is built. */
 export type KindSpec<T> = {
   id: string
@@ -90,6 +99,8 @@ export type KindSpec<T> = {
   actions?: readonly RowAction<T>[]
   /** `select`: the in-place edit. */
   edit?: SelectEdit<T>
+  /** `number`, `money`: the footer reduce. */
+  footer?: FooterSpec
 }
 
 /** Per-kind defaults, the section 5 table. Options may override `priority` and the first `card`. */

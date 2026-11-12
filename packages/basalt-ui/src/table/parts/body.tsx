@@ -22,7 +22,10 @@ import type { CellEnv, KindSpec } from '../core/kinds-spec'
 import { modelOf } from '../use-data-table'
 import type { ModelRow, TableModel } from '../use-data-table'
 import { alignProps, tierAttributes, useActionsLabel, visibleColumns } from './head'
+import { GroupRow } from './group-row'
+import type { BodyItem } from './group-row-model'
 import { EmptyRow, ErrorRow, LoadingRows } from './phases'
+import { SelectCell } from './select-cell'
 
 /** The height a `spark` draws in; the table owns the box at every phase. */
 const BOX_HEIGHT = 24
@@ -70,62 +73,120 @@ function RowActions<T>({
   )
 }
 
-function content<T>(spec: KindSpec<T>, row: T, env: CellEnv): ReactNode {
+function content<T>(spec: KindSpec<T>, row: T, env: CellEnv, tabbable: boolean): ReactNode {
   if (spec.kind === 'actions') return <RowActions row={row} actions={spec.actions ?? []} />
+  if (spec.kind === 'select' && spec.edit !== undefined) {
+    const value = spec.value(row)
+    return (
+      <SelectCell
+        row={row}
+        value={value === null || value === undefined ? '' : String(value)}
+        edit={spec.edit}
+        tabbable={tabbable}
+      />
+    )
+  }
   return spec.render?.(row, env) ?? null
 }
 
-function Rows<T>({ model }: { model: TableModel<T> }): ReactElement {
-  const t = useMessages(table)
-  const { selection, keyboard, phase } = model
-  const columns = visibleColumns(model.specs, model.plan.columns)
-  const offset = selection === undefined ? 1 : 2
-  const env: CellEnv = {
+/** What a body cell receives besides the row; one value per render of the body. */
+export function cellEnvOf<T>(model: TableModel<T>): CellEnv {
+  return {
     format: model.format,
     now: model.now,
-    box: { height: BOX_HEIGHT, phase: phase.tag === 'stale' ? 'stale' : 'ready' },
+    box: { height: BOX_HEIGHT, phase: model.phase.tag === 'stale' ? 'stale' : 'ready' },
   }
+}
+
+/**
+ * One data row: the tick, then a cell per visible column. The plain body and the virtual window
+ * both draw rows through it, so a row is the same markup in either.
+ */
+export function DataRow<T>({
+  model,
+  row,
+  env,
+  rowIndex,
+}: {
+  model: TableModel<T>
+  row: ModelRow<T>
+  env: CellEnv
+  /** `aria-rowindex` in a virtual window, where the mounted rows are not all the rows. */
+  rowIndex?: number
+}): ReactElement {
+  const t = useMessages(table)
+  const { selection, keyboard } = model
+  const columns = visibleColumns(model.specs, model.plan.columns)
+  const offset = selection === undefined ? 1 : 2
+  const ticked = selection?.isSelected(row.id) === true
+  const rowProps = keyboard.rowProps(row.id)
+  // Controls in a row are tab stops only in the roving stop; a table without one leaves them all.
+  const tabbable = rowProps.tabIndex !== -1
   return (
-    <>
-      {model.rows.map((row: ModelRow<T>) => {
-        const ticked = selection?.isSelected(row.id) === true
+    <TableRow
+      role="row"
+      data-selected={ticked ? '' : undefined}
+      {...(rowIndex !== undefined && { 'aria-rowindex': rowIndex })}
+      {...rowProps}
+    >
+      {selection !== undefined && (
+        <TableCell role="cell" aria-colindex={1} data-kind="select">
+          <span data-slot="table-select">
+            <Checkbox
+              aria-label={t('table.selectRow')}
+              checked={ticked}
+              onCheckedChange={() => selection.toggle(row.id)}
+            />
+          </span>
+        </TableCell>
+      )}
+      {columns.map(({ spec, planned }, index) => {
+        const { numeric, className } = alignProps(spec)
         return (
-          <TableRow
-            key={row.id}
-            role="row"
-            data-selected={ticked ? '' : undefined}
-            {...keyboard.rowProps(row.id)}
+          <TableCell
+            key={spec.id}
+            role="cell"
+            aria-colindex={index + offset}
+            {...cellAttributes(spec)}
+            {...tierAttributes(planned)}
+            numeric={numeric}
+            className={spec.wrap ? `${className ?? ''} whitespace-normal` : className}
           >
-            {selection !== undefined && (
-              <TableCell role="cell" aria-colindex={1} data-kind="select">
-                <span data-slot="table-select">
-                  <Checkbox
-                    aria-label={t('table.selectRow')}
-                    checked={ticked}
-                    onCheckedChange={() => selection.toggle(row.id)}
-                  />
-                </span>
-              </TableCell>
-            )}
-            {columns.map(({ spec, planned }, index) => {
-              const { numeric, className } = alignProps(spec)
-              return (
-                <TableCell
-                  key={spec.id}
-                  role="cell"
-                  aria-colindex={index + offset}
-                  {...cellAttributes(spec)}
-                  {...tierAttributes(planned)}
-                  numeric={numeric}
-                  className={spec.wrap ? `${className ?? ''} whitespace-normal` : className}
-                >
-                  {content(spec, row.original, env)}
-                </TableCell>
-              )
-            })}
-          </TableRow>
+            {content(spec, row.original, env, tabbable)}
+          </TableCell>
         )
       })}
+    </TableRow>
+  )
+}
+
+/** One body item: a data row, or the group row of a declared grouping. */
+export function BodyItemRow<T>({
+  model,
+  item,
+  env,
+  rowIndex,
+}: {
+  model: TableModel<T>
+  item: BodyItem<T>
+  env: CellEnv
+  rowIndex?: number
+}): ReactElement {
+  const index = rowIndex === undefined ? {} : { rowIndex }
+  return item.type === 'group' ? (
+    <GroupRow model={model} item={item} env={env} {...index} />
+  ) : (
+    <DataRow model={model} row={item.row} env={env} {...index} />
+  )
+}
+
+function Rows<T>({ model }: { model: TableModel<T> }): ReactElement {
+  const env = cellEnvOf(model)
+  return (
+    <>
+      {model.items.map((item) => (
+        <BodyItemRow key={item.key} model={model} item={item} env={env} />
+      ))}
     </>
   )
 }
