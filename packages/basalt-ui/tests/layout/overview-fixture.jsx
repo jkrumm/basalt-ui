@@ -1,6 +1,7 @@
 /**
  * The `overview` fixture (docs/v3/issues/g1/v3-playground-overview.json): the playground overview
- * route's own component, mounted in a memory router whose root route runs the global store. The URL
+ * route's own component, mounted in a memory router whose root route does not mount the global store
+ * (the bound card shows the global's fallback). The URL
  * overrides the `errors` card's range, so the page shows one bound and one overridden card. The
  * harness is told to "mount" it by a no-op `window.basaltMountFixture`.
  */
