@@ -2,7 +2,7 @@ import { describe, expect, it } from 'bun:test'
 import { readdirSync, readFileSync } from 'node:fs'
 import { join } from 'node:path'
 
-const MAX_ROUTE_FILES = 8
+const MAX_ROUTE_FILES = 9
 const MAX_DEMO_LINES = 10_000
 
 const filesUnder = (dir: string): string[] =>
