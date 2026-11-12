@@ -344,6 +344,19 @@ describe('frames on the wire', () => {
     off()
   })
 
+  test('the repeat filter is per run: a frames() beside a subscriber sees the same ids', async () => {
+    const { transport, conns } = controlled((c) => c.frame('m', '1', 'same'))
+    const channel = createChannel({ transport, scheduler: fakeScheduler() })
+    const { got, off } = collect(channel)
+    const it = channel.frames()[Symbol.asyncIterator]()
+    const first = await it.next()
+    expect(first.value).toMatchObject({ id: 'same' })
+    expect(got.filter((d) => d.kind === 'frame')).toHaveLength(1)
+    expect(conns).toHaveLength(2)
+    await it.return?.()
+    off()
+  })
+
   test('greeting sets live; before it the channel is still connecting', async () => {
     const { transport, conns } = controlled()
     const channel = createChannel({ transport, scheduler: fakeScheduler(), greeting: 'hello' })

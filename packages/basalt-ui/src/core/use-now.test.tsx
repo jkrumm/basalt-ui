@@ -19,6 +19,16 @@ describe('useNow', () => {
     expect(result.current).toBe(1_003_000)
   })
 
+  test('a re-render keeps the subscription: no teardown, no new timer', () => {
+    const setInterval = jest.spyOn(globalThis, 'setInterval')
+    const clearInterval = jest.spyOn(globalThis, 'clearInterval')
+    const { rerender } = renderHook(() => useNow(1_000))
+    rerender()
+    rerender()
+    expect(setInterval).toHaveBeenCalledTimes(1)
+    expect(clearInterval).not.toHaveBeenCalled()
+  })
+
   test('two hooks on one period share one timer; the last unmount clears it', () => {
     const setInterval = jest.spyOn(globalThis, 'setInterval')
     const clearInterval = jest.spyOn(globalThis, 'clearInterval')
