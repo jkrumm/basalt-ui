@@ -1,0 +1,64 @@
+{
+  "reportDescriptionlessDisables": true,
+  "reportInvalidScopeDisables": true,
+  "reportNeedlessDisables": true,
+  "overrides": [
+    {
+      "files": [
+        "**/*.astro",
+        "**/*.mdx",
+        "**/*.html"
+      ],
+      "customSyntax": "postcss-html"
+    }
+  ],
+  "ignoreFiles": [],
+  "rules": {
+    "color-no-hex": true,
+    "color-named": "never",
+    "function-disallowed-list": [
+      "rgb",
+      "rgba",
+      "hsl",
+      "hsla",
+      "hwb",
+      "lab",
+      "lch",
+      "oklab",
+      "oklch",
+      "color",
+      "light-dark"
+    ],
+    "declaration-property-value-disallowed-list": {
+      "/.*/": [
+        "/color-mix\\((?!\\s*in\\s+[a-z0-9-]+(?:\\s+(?:shorter|longer|increasing|decreasing)\\s+hue)?\\s*,\\s*(?:var\\(--vx-[a-z0-9-]+\\)|transparent)(?:\\s+[\\d.]+%)?\\s*,\\s*(?:var\\(--vx-[a-z0-9-]+\\)|transparent)(?:\\s+[\\d.]+%)?\\s*\\))/i"
+      ],
+      "/^(?:padding|margin)(?:-[a-z]+)*$|^(?:row-|column-)?gap$|^font-size$/": [
+        "/(?<![\\w])[+-]?(?:\\d*\\.)?\\d+(?:px|rem|em|ex|ch|lh|rlh|cap|ic|vw|vh|vmin|vmax|vi|vb|[sld]v[whib]|[sld]vmin|[sld]vmax|cq[whib]|cqmin|cqmax|pt|pc|cm|mm|q|in)\\b/i",
+        "/\\bcalc\\(/i"
+      ],
+      "/^(?:background(?:-[a-z]+)*|border(?:-[a-z]+)*|outline(?:-[a-z]+)*|box-shadow)$/": [
+        "/var\\(\\s*--vx-(?:(?:good|warn|bad|info|brand|chart|seq)(?:-[a-z0-9-]+)?|[a-z0-9-]*-tint)\\s*[,)]/i"
+      ]
+    },
+    "declaration-property-value-allowed-list": {
+      "/^(?:border(?:-[a-z]+)*-radius|box-shadow|line-height|letter-spacing)$/": [
+        "/^(?:var\\(--vx-[a-z0-9-]+\\)|0|none|inherit)(?:\\s*[,\\s]\\s*(?:var\\(--vx-[a-z0-9-]+\\)|0|none|inherit))*$/i"
+      ]
+    },
+    "property-disallowed-list": [
+      "/^--vx-/"
+    ],
+    "declaration-no-important": true,
+    "media-feature-name-disallowed-list": [
+      "/^(?:min-|max-)?(?:width|height|aspect-ratio|device-[a-z-]+)$/"
+    ],
+    "selector-disallowed-list": [
+      "/\\[\\s*data-slot/",
+      "/\\.mantine-/"
+    ],
+    "at-rule-disallowed-list": [
+      "utility"
+    ]
+  }
+}
