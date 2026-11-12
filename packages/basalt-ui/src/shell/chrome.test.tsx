@@ -43,7 +43,7 @@ async function mountShell(chrome: ShellChrome | undefined) {
         nav={NAV}
         brand={{ name: 'Basalt' }}
         {...(chrome !== undefined && { chrome })}
-        globalControls={{ render: () => <HeaderProbe /> }}
+        globalControls={{ kind: 'controls-slot', count: 1, render: () => <HeaderProbe /> }}
         globalActions={[
           { kind: 'button', id: 'a', label: 'Act', icon: () => <svg />, onClick: () => {} },
         ]}
