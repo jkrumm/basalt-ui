@@ -20,8 +20,8 @@ import { FilterSet, ToggleFilter } from '../controls'
 import { useFilterSurface } from '../controls/filter-context'
 import { Section } from '../dashboard'
 import { createLocalStore, field } from '../state'
-import { ShellFrame, PageAside, PageBar } from './index'
-import type { PageAsideProps, SidebarSection } from './index'
+import { ShellFrame, PageAside, PageBar } from './legacy'
+import type { PageAsideProps, SidebarSection } from './legacy'
 
 const BRAND = { name: 'Argo' }
 const ONE_SECTION: SidebarSection[] = [

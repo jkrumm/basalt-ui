@@ -37,7 +37,7 @@ export {
   type ShellBaseProps,
   type SidebarBlock,
   type SettingsMenuItem,
-} from './shell'
+} from './shell/legacy'
 export {
   WidgetHeader,
   DeltaBadge,

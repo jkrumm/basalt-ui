@@ -17,3 +17,5 @@
 @source '../../../src/ui';
 @source '../../../src/cards';
 @source '../../../src/page';
+@source '../../../src/shell/parts';
+@source '../../../src/shell/app-shell.tsx';

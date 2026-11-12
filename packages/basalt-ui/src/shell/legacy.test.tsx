@@ -14,9 +14,9 @@ import { baseTheme } from '../theme'
 import { pxRem } from '../tokens/core'
 import { SPACE_STEP } from '../tokens/palette'
 import { PageAside } from './page-aside'
-import { ShellFrame, PageBar } from './index'
+import { ShellFrame, PageBar } from './legacy'
 import { toggleSidebar } from '../commands/shell-bridge'
-import type { BasaltAccountProps, SidebarBlock, SidebarSection } from './index'
+import type { BasaltAccountProps, SidebarBlock, SidebarSection } from './legacy'
 
 const BRAND = { name: 'Argo' }
 let restoreMatchMedia: (() => void) | null = null
@@ -802,8 +802,8 @@ describe('BasaltShell region seams', () => {
 
   // The guard against the suppression creeping back — the only `withBorder` in the shell is the
   // aside's claim-bound one.
-  test('index.tsx never suppresses a region border except the unclaimed aside', () => {
-    const source = readFileSync(join(import.meta.dir, 'index.tsx'), 'utf8')
+  test('legacy.tsx never suppresses a region border except the unclaimed aside', () => {
+    const source = readFileSync(join(import.meta.dir, 'legacy.tsx'), 'utf8')
     expect(source.match(/withBorder/g)).toHaveLength(1)
     expect(source).toContain('withBorder={aside.claimed}')
   })

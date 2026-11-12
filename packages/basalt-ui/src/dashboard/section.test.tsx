@@ -15,7 +15,7 @@ import { resetValidatedProps } from '../common/validate'
 import { FilterSetScope } from '../controls/filter-context'
 import { ViewTabs } from '../controls'
 import { createLocalStore, field } from '../state'
-import { PageBar, ShellFrame } from '../shell'
+import { PageBar, ShellFrame } from '../shell/legacy'
 import { Section } from './section'
 import type { SectionProps } from './section'
 

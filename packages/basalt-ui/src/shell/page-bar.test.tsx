@@ -18,10 +18,10 @@ import { dirname, resolve } from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { useEffect, useState } from 'react'
 import type { ReactNode } from 'react'
-import { ShellFrame, PageBar, useInPageBarShell } from './index'
+import { ShellFrame, PageBar, useInPageBarShell } from './legacy'
 import { PageAside } from './page-aside'
 import { Section } from '../dashboard'
-import type { SidebarSection } from './index'
+import type { SidebarSection } from './legacy'
 
 const BRAND = { name: 'Argo' }
 const ONE_SECTION: SidebarSection[] = [
