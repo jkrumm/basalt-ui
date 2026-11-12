@@ -51,14 +51,16 @@ function Rollup({ section }: { section: RailSection }): ReactElement | null {
 function Header({
   section,
   rowsId,
+  labelId,
 }: {
   section: RailSection
   rowsId: string
+  labelId: string
 }): ReactElement | null {
   if (section.label === '') return null
   if (!section.collapsible) {
     return (
-      <h2 data-slot="shell-rail-section-label" className={LABEL}>
+      <h2 id={labelId} data-slot="shell-rail-section-label" className={LABEL}>
         {section.label}
       </h2>
     )
@@ -66,6 +68,7 @@ function Header({
   const cue = section.folded && section.containsActive
   return (
     <CollapsibleTrigger
+      id={labelId}
       data-slot="shell-rail-section-label"
       aria-controls={rowsId}
       {...(cue && { 'data-contains-active': '' })}
@@ -100,6 +103,7 @@ export function RailSectionView({
       ? { ...declared, collapsible: false, folded: false }
       : declared
   const rowsId = useId()
+  const labelId = useId()
   const rows = (
     <div
       id={rowsId}
@@ -117,7 +121,8 @@ export function RailSectionView({
     <section
       data-slot="shell-rail-section"
       data-section={section.id}
-      aria-label={section.label === '' ? undefined : section.label}
+      // Named by its heading, never by an `aria-label` (see `rail-rows.tsx`: no repeated destination names).
+      aria-labelledby={section.label === '' ? undefined : labelId}
       className={className}
     >
       {section.collapsible ? (
@@ -125,12 +130,12 @@ export function RailSectionView({
           open={!section.folded}
           onOpenChange={(open) => setSectionFold(section.id, !open)}
         >
-          <Header section={section} rowsId={rowsId} />
+          <Header section={section} rowsId={rowsId} labelId={labelId} />
           {rows}
         </Collapsible>
       ) : (
         <>
-          <Header section={section} rowsId={rowsId} />
+          <Header section={section} rowsId={rowsId} labelId={labelId} />
           {rows}
         </>
       )}

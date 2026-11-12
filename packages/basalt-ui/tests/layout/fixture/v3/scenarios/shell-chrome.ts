@@ -4,7 +4,7 @@
  * It mounts `AppShell` from the 2.x nav-shape spec (`sections`, `sidebar`, `bar`, `globals`,
  * `aside`) so `shell-chrome.layout.test.ts` runs unchanged against the v3 rail and header, and
  * provides the slots those parts stamp. It matches a spec that carries one of those fields, or a
- * bare `sections` spec (the rail's own seam case). The render lives in `shell-chrome-mount.tsx`,
+ * bare `sections` spec of unlabelled sections (the rail's own seam case). The render lives in `shell-chrome-mount.tsx`,
  * loaded on mount.
  */
 import type { FixtureSpec } from '../../spec'
@@ -36,7 +36,8 @@ export const shellChromeScenario: Scenario = {
   ],
   matches: (spec: FixtureSpec) =>
     OWN_FIELDS.some((field) => (spec as Record<string, unknown>)[field] !== undefined) ||
-    Object.keys(spec).every((key) => key === 'sections'),
+    (Object.keys(spec).every((key) => key === 'sections') &&
+      spec.sections.every((section) => section.label === '')),
   async mount(spec, container) {
     const { mount } = await import('./shell-chrome-mount')
     await mount(spec, container)

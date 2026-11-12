@@ -133,7 +133,10 @@ function RowBody({
     ...rest,
     'data-slot': 'shell-rail-row',
     'data-depth': row.depth,
-    'aria-label': name,
+    // Only a count changes the name; otherwise the visible label is the name. A row never repeats
+    // a destination's label as `aria-label`: the phone tab bar is a second `Primary` landmark and
+    // a name-keyed query (`nav[aria-label=Primary] [aria-label=Library]`) must find its tab alone.
+    ...(countOf(row.badge) !== undefined && { 'aria-label': name }),
     className: cn(ROW, className),
   }
   if (row.disabled) {

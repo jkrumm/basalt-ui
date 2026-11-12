@@ -3,7 +3,7 @@
  * links, active versus ancestor, the icon-less fallback, badges and the collapsed dot, and child
  * rows named by their label.
  */
-import { cleanup, fireEvent, screen, waitFor } from '@testing-library/react'
+import { cleanup, fireEvent, screen, waitFor, within } from '@testing-library/react'
 import { afterEach, describe, expect, test } from 'bun:test'
 import { createNavRuntimeDouble } from '../core/nav-runtime'
 import { projectRail } from '../core/projector'
@@ -104,7 +104,7 @@ describe('an icon-less item survives the collapsed rail', () => {
 
   test('a disabled icon-less row is inert, named, and still has its glyph', async () => {
     await renderRows(rowOf([item('soon', 'Soon', { disabled: true })]))
-    const row = screen.getByLabelText('Soon')
+    const row = screen.getByText('Soon').closest('[data-slot="shell-rail-row"]')!
     expect(row.tagName).toBe('SPAN')
     expect(row.getAttribute('aria-disabled')).toBe('true')
     expect(row.querySelector('[data-nav-glyph]')?.getAttribute('data-nav-glyph')).toBe('S')
@@ -201,7 +201,7 @@ describe('child rows are named by their visible label', () => {
     expect(enabled.closest('[data-slot="shell-rail-children"]')).not.toBeNull()
     expect(enabled.querySelector('[data-nav-glyph]')?.getAttribute('data-nav-glyph')).toBe('E')
 
-    const disabled = screen.getByLabelText('disabled kid')
+    const disabled = screen.getByText('disabled kid').closest('[data-slot="shell-rail-row"]')!
     expect(disabled.getAttribute('aria-disabled')).toBe('true')
     expect(disabled.querySelector('[data-nav-glyph]')?.getAttribute('aria-hidden')).toBe('true')
   })
@@ -217,10 +217,12 @@ describe('child rows are named by their visible label', () => {
     )
     const popover = document.querySelector('[data-slot="popover-content"]')!
     expect(popover.getAttribute('aria-label')).toBe('Parent')
-    expect(popover.querySelector('[aria-label="enabled kid"]')).not.toBeNull()
+    expect(within(popover as HTMLElement).getByRole('link', { name: 'enabled kid' })).toBeTruthy()
     expect(
-      popover
-        .querySelector('[aria-label="disabled kid"] [data-nav-glyph]')
+      within(popover as HTMLElement)
+        .getByText('disabled kid')
+        .closest('[data-slot="shell-rail-row"]')
+        ?.querySelector('[data-nav-glyph]')
         ?.getAttribute('data-nav-glyph'),
     ).toBe('D')
   })

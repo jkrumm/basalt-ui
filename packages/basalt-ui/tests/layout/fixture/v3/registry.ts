@@ -30,8 +30,9 @@ export const SCENARIOS: Readonly<Record<string, Scenario>> = {
   'page-core': pageCoreScenario,
   'inner-nav': innerNavScenario,
   'shell-frame': shellFrameScenario,
-  'shell-mobile': shellMobileScenario,
+  // Before shell-mobile: that scenario claims every spec with sections, this one a narrower set.
   'shell-chrome': shellChromeScenario,
+  'shell-mobile': shellMobileScenario,
 }
 
 /** Every slot some registered scenario provides. */
