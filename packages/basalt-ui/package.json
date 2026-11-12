@@ -319,9 +319,6 @@
     "@tanstack/react-hotkeys": {
       "optional": true
     },
-    "@tanstack/react-query": {
-      "optional": true
-    },
     "@tanstack/react-query-devtools": {
       "optional": true
     },
