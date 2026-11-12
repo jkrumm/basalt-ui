@@ -39,8 +39,11 @@ export type CommittedField<T> = {
     onCompositionStart(event: CompositionEvent): void
     onCompositionEnd(event: CompositionEvent): void
   }
-  /** Spread on the clear button. Commits on mousedown and keeps focus in the input. */
-  clearProps: { onMouseDown(event: MouseEvent): void }
+  /**
+   * Spread on the clear button. A pointer commits on mousedown and keeps focus in the input; a
+   * keyboard or assistive-technology activation has no mousedown, so its click (detail 0) clears.
+   */
+  clearProps: { onMouseDown(event: MouseEvent): void; onClick(event: MouseEvent): void }
 }
 
 /** True while an IME composition owns the key: the flag, the event's own, or the legacy 229. */
@@ -76,6 +79,12 @@ export function useCommittedField<T>({
     committer.flush()
   }
 
+  const clearNow = (): void => {
+    committer.cancel()
+    setEdit(null)
+    onCommit(empty)
+  }
+
   return {
     draft: edit === null ? value : edit.draft,
     change,
@@ -97,9 +106,10 @@ export function useCommittedField<T>({
     clearProps: {
       onMouseDown(event) {
         event.preventDefault()
-        committer.cancel()
-        setEdit(null)
-        onCommit(empty)
+        clearNow()
+      },
+      onClick(event) {
+        if (event.detail === 0) clearNow()
       },
     },
   }

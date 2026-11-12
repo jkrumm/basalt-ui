@@ -202,3 +202,34 @@ describe('one renderer per kind', () => {
     expect(handle.writes, 'an inverted range is not written').toHaveLength(1)
   })
 })
+
+describe('a range changed from outside while mounted', () => {
+  test('replaces the picked custom and its days with the stored value', () => {
+    const handle = memoryHandle(
+      'range',
+      { preset: 'custom', from: '2026-01-01', to: '2026-01-31' } as {
+        preset: string
+        from?: string
+        to?: string
+      },
+      {
+        kind: 'range',
+        options: [
+          { value: '7d', label: '7 days' },
+          { value: 'custom', label: 'Custom' },
+        ] as never,
+      },
+    )
+    const { container, getByLabelText } = show(<ControlView spec={spec(handle, 'Range')} />)
+    expect((getByLabelText('Range: from') as HTMLInputElement).value).toBe('2026-01-01')
+    act(() => {
+      handle.put({ preset: '7d' })
+    })
+    expect(container.querySelector('[data-slot="range-days"]')).toBeNull()
+    act(() => {
+      handle.put({ preset: 'custom', from: '2026-03-01', to: '2026-03-31' })
+    })
+    expect((getByLabelText('Range: from') as HTMLInputElement).value).toBe('2026-03-01')
+    expect((getByLabelText('Range: to') as HTMLInputElement).value).toBe('2026-03-31')
+  })
+})
