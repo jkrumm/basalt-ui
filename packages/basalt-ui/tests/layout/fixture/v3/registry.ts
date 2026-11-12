@@ -7,6 +7,7 @@
  * v3 shell add scenarios (and their slots) as they land.
  */
 import type { FixtureSpec } from '../spec'
+import { innerNavScenario } from './scenarios/inner-nav'
 import { pageCoreScenario } from './scenarios/page-core'
 import { pageKitScenario } from './scenarios/page-kit'
 
@@ -24,6 +25,7 @@ export interface Scenario {
 export const SCENARIOS: Readonly<Record<string, Scenario>> = {
   'page-kit': pageKitScenario,
   'page-core': pageCoreScenario,
+  'inner-nav': innerNavScenario,
 }
 
 /** Every slot some registered scenario provides. */
