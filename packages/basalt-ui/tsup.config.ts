@@ -32,6 +32,8 @@ export default defineConfig({
     '!src/**/*.test.{ts,tsx}',
     '!src/**/*.type-guard.tsx',
     '!src/**/*.type-test.ts',
+    // Shared test cases (e.g. one RuleTester suite run by two hosts): test-only, never shipped.
+    '!src/**/*.cases.ts',
     '!src/table/invariants/**',
   ],
   format: ['esm'],
