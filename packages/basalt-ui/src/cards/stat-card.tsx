@@ -1,13 +1,18 @@
 import type { ReactElement } from 'react'
 import { cn } from '../core/cn'
-import { cards } from '../core/messages/cards'
-import { useMessages } from '../core/messages/use-messages'
 import { resolvePhase } from '../core/phase'
 import type { Box } from '../core/ports'
 import { DeltaBadge } from '../ui/badge'
 import { Card, CardPhase, Inset } from '../ui/card'
 import type { StatCardProps } from './contract'
-import { StatFooter, StatHead, StatSkeleton, StatusMark, formatValue } from './stat-card-parts'
+import {
+  StatFooter,
+  StatHead,
+  StatSkeleton,
+  StatusMark,
+  formatValue,
+  useStaleText,
+} from './stat-card-parts'
 
 /** The chart box: plot 56 plus the 16 px label row. The slot draws inside it and cannot grow it. */
 const CHART_HEIGHT = 72
@@ -56,10 +61,9 @@ export function StatCard(props: StatCardProps): ReactElement {
   const { title, value, unit, delta, status, sub, chart, footer, href, onSelect } = props
   const { phase, empty, subtitle, icon, info, controls, menu } = props
   const figure = formatValue(value)
-  const t = useMessages(cards)
   const resolved = resolvePhase({ phase, empty })
   const stale = resolved.tag === 'stale' ? resolved : null
-  const staleText = stale?.refreshFailed ? t('cards.refreshFailed') : t('cards.updating')
+  const staleText = useStaleText(stale?.refreshFailed === true)
   return (
     <div data-slot="stat-card" className="@container min-w-0">
       <Card flush className="relative">
