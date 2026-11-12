@@ -23,10 +23,35 @@ export type TableMessages = Record<
   | 'table.pageSize'
   | 'table.loadMore'
   | 'table.rowRangeNone'
-  | 'table.rowRangeUnknown',
+  | 'table.rowRangeUnknown'
+  | 'table.search'
+  | 'table.filterAdd'
+  | 'table.filterColumn'
+  | 'table.filterBack'
+  | 'table.filtersTitle'
+  | 'table.filtersClear'
+  | 'table.filterValue'
+  | 'table.filterOptions'
+  | 'table.filterNoOptions'
+  | 'table.display'
+  | 'table.chips'
+  | 'table.opContains'
+  | 'table.opAnyOf'
+  | 'table.headerFilter'
+  | 'table.views'
+  | 'table.viewSave'
+  | 'table.viewName'
+  | 'table.viewReset'
+  | 'table.viewEmpty',
   string
 > &
-  Record<'table.rowRange', (f: Format, from: number, to: number, total: number) => string>
+  Record<'table.rowRange', (f: Format, from: number, to: number, total: number) => string> &
+  Record<'table.filters', (f: Format, count: number) => string> &
+  Record<
+    'table.chipRemove' | 'table.headerMenu' | 'table.viewRemove',
+    (f: Format, name: string) => string
+  > &
+  Record<'table.cellFilter', (f: Format, header: string, value: string) => string>
 
 export const table = {
   'table.selectRow': 'Select row',
@@ -48,4 +73,28 @@ export const table = {
   'table.rowRangeUnknown': 'Rows shown',
   'table.rowRange': (f, from, to, total) =>
     `${f.number(from)}–${f.number(to)} of ${f.number(total)}`,
+  'table.search': 'Search rows',
+  'table.filterAdd': '+ Filter',
+  'table.filterColumn': 'Filter by column',
+  'table.filterBack': 'Back',
+  'table.filtersTitle': 'Filters',
+  'table.filtersClear': 'Clear all filters',
+  'table.filterValue': 'Contains',
+  'table.filterOptions': 'Is any of',
+  'table.filterNoOptions': 'No matching value',
+  'table.display': 'Display',
+  'table.chips': 'Active filters',
+  'table.opContains': 'contains',
+  'table.opAnyOf': 'is',
+  'table.headerFilter': 'Filter...',
+  'table.views': 'Views',
+  'table.viewSave': 'Save view',
+  'table.viewName': 'View name',
+  'table.viewReset': 'Reset',
+  'table.viewEmpty': 'No saved views',
+  'table.filters': (f, count) => (count > 0 ? `Filters (${f.number(count)})` : 'Filters'),
+  'table.chipRemove': (_f, subject) => `Remove filter ${subject}`,
+  'table.headerMenu': (_f, header) => `${header} column menu`,
+  'table.viewRemove': (_f, name) => `Delete view ${name}`,
+  'table.cellFilter': (_f, header, value) => `Filter ${header} by ${value}`,
 } satisfies Partial<BasaltMessages>
