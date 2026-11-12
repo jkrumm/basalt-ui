@@ -24,3 +24,7 @@ export { FormRow, FormGroup } from './form-layout'
 export { ControlView } from './control-view'
 export { spec } from './spec'
 export type { FilterSpec } from './contract'
+
+// v3 control-home: the home decides the presentation; `filterSlot` is the typed channel into it.
+export { ControlHome } from './control-home'
+export { filterSlot } from './filter-slot'
