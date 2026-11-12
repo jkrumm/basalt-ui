@@ -1,0 +1,12 @@
+{
+  "findings": [
+    {
+      "id": "issues-merged-trend-missing-day-labels",
+      "class": "data",
+      "viewports": ["desktop", "mobile"],
+      "where": "Issues merged cell in the headline band, 7-bar per-day trend",
+      "evidence": "brief.md asks for the trend with labels Mon to Sun. diff.patch passes labels={false} to Trend for Issues merged (App.tsx line 34). In both shots the bars under 212 have no Mon..Sun labels, while the Spend trend shows them."
+    }
+  ],
+  "previous": []
+}
