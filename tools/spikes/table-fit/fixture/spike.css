@@ -1,0 +1,197 @@
+/*
+ * Spike-only presentation, unlayered so it wins over the shipped `basalt.table` layer.
+ *
+ * auto:   `?layout=auto` is today's layout: the browser sizes columns from content, the plan's
+ *         <col> widths are ignored.
+ * cards:  `?cards=spike` writes the card projection of data-table concept sections 5 and 6 on the
+ *         real DOM (title/value, subtitle/badge, one clamped labelled meta run, edit rows, kebab,
+ *         detail and hidden not shown), because table.css at this commit only stacks cells. The
+ *         places come from `core/plan.ts`; app.tsx puts them on the cells as `data-place`.
+ */
+[data-spike-layout='auto'] [data-slot='table-scroller'] [data-slot='table'] {
+  table-layout: auto;
+}
+[data-spike-layout='auto'] [data-slot='table'] colgroup {
+  display: none;
+}
+
+[data-spike-sub='block'] [data-slot='table-entity-sub'] {
+  display: block;
+}
+
+[data-spike-run] {
+  display: none;
+}
+
+@container table (max-width: 479.9px) {
+  [data-spike-cards][data-below='480'] [data-slot='table-row'] {
+    height: auto;
+    grid-template-columns: minmax(0, 1fr) auto auto;
+    grid-template-areas:
+      'title value actions'
+      'subtitle badge actions'
+      'meta meta meta';
+    column-gap: 12px;
+    row-gap: 2px;
+  }
+  [data-spike-cards][data-below='480'] [data-slot='table-cell'] {
+    padding: 0;
+  }
+  [data-spike-cards][data-below='480'] [data-slot='table-cell'][data-place='title'] {
+    grid-area: title;
+  }
+  [data-spike-cards][data-below='480'] [data-slot='table-entity-sub'] {
+    display: block;
+    font-size: 0.75rem;
+    line-height: 1rem;
+  }
+  [data-spike-cards][data-below='480'] [data-slot='table-cell'][data-place='value'] {
+    grid-area: value;
+    text-align: end;
+    font-weight: 500;
+  }
+  [data-spike-cards][data-below='480'] [data-slot='table-cell'][data-place='subtitle'] {
+    grid-area: subtitle;
+  }
+  [data-spike-cards][data-below='480'] [data-slot='table-cell'][data-place='badge'] {
+    grid-area: badge;
+    justify-self: end;
+  }
+  [data-spike-cards][data-below='480'] [data-slot='table-cell'][data-kind='actions'] {
+    grid-area: actions;
+  }
+  /* stand-in for the select control the parts do not render yet: a bordered 44 px box */
+  [data-spike-cards][data-below='480'] [data-slot='table-cell'][data-place='edit'] {
+    grid-area: auto;
+    grid-column: 1 / -1;
+    margin-top: 6px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    min-height: 44px;
+    padding: 0 12px;
+    border: 1px solid var(--vx-input);
+    border-radius: 6px;
+    font-size: 0.8125rem;
+  }
+  [data-spike-cards][data-below='480'] [data-slot='table-cell'][data-place='edit']::after {
+    content: '▾';
+    color: var(--vx-ink-muted);
+  }
+  [data-spike-cards][data-below='480']
+    :is(
+      [data-slot='table-cell'][data-place='detail'],
+      [data-slot='table-cell'][data-place='hidden'],
+      [data-slot='table-cell'][data-place='meta'],
+      [data-slot='table-cell'][data-kind='select']:not([data-place])
+    ) {
+    display: none;
+  }
+  [data-spike-cards][data-below='480'] [data-spike-run] {
+    display: -webkit-box;
+    grid-area: meta;
+    -webkit-box-orient: vertical;
+    -webkit-line-clamp: 2;
+    overflow: hidden;
+    font-size: 0.75rem;
+    line-height: 1rem;
+    color: var(--vx-ink-muted);
+    padding: 0;
+  }
+  [data-spike-cards][data-below='480'] [data-place='subtitle'] {
+    display: -webkit-box;
+    -webkit-box-orient: vertical;
+    -webkit-line-clamp: 2;
+    overflow: hidden;
+    font-size: 0.75rem;
+    color: var(--vx-ink-muted);
+  }
+}
+@container table (max-width: 799.9px) {
+  [data-spike-cards][data-below='800'] [data-slot='table-row'] {
+    height: auto;
+    grid-template-columns: minmax(0, 1fr) auto auto;
+    grid-template-areas:
+      'title value actions'
+      'subtitle badge actions'
+      'meta meta meta';
+    column-gap: 12px;
+    row-gap: 2px;
+  }
+  [data-spike-cards][data-below='800'] [data-slot='table-cell'] {
+    padding: 0;
+  }
+  [data-spike-cards][data-below='800'] [data-slot='table-cell'][data-place='title'] {
+    grid-area: title;
+  }
+  [data-spike-cards][data-below='800'] [data-slot='table-entity-sub'] {
+    display: block;
+    font-size: 0.75rem;
+    line-height: 1rem;
+  }
+  [data-spike-cards][data-below='800'] [data-slot='table-cell'][data-place='value'] {
+    grid-area: value;
+    text-align: end;
+    font-weight: 500;
+  }
+  [data-spike-cards][data-below='800'] [data-slot='table-cell'][data-place='subtitle'] {
+    grid-area: subtitle;
+  }
+  [data-spike-cards][data-below='800'] [data-slot='table-cell'][data-place='badge'] {
+    grid-area: badge;
+    justify-self: end;
+  }
+  [data-spike-cards][data-below='800'] [data-slot='table-cell'][data-kind='actions'] {
+    grid-area: actions;
+  }
+  /* stand-in for the select control the parts do not render yet: a bordered 44 px box */
+  [data-spike-cards][data-below='800'] [data-slot='table-cell'][data-place='edit'] {
+    grid-area: auto;
+    grid-column: 1 / -1;
+    margin-top: 6px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    min-height: 44px;
+    padding: 0 12px;
+    border: 1px solid var(--vx-input);
+    border-radius: 6px;
+    font-size: 0.8125rem;
+  }
+  [data-spike-cards][data-below='800'] [data-slot='table-cell'][data-place='edit']::after {
+    content: '▾';
+    color: var(--vx-ink-muted);
+  }
+  [data-spike-cards][data-below='800']
+    :is(
+      [data-slot='table-cell'][data-place='detail'],
+      [data-slot='table-cell'][data-place='hidden'],
+      [data-slot='table-cell'][data-place='meta'],
+      [data-slot='table-cell'][data-kind='select']:not([data-place])
+    ) {
+    display: none;
+  }
+  [data-spike-cards][data-below='800'] [data-spike-run] {
+    display: -webkit-box;
+    grid-area: meta;
+    -webkit-box-orient: vertical;
+    -webkit-line-clamp: 2;
+    overflow: hidden;
+    font-size: 0.75rem;
+    line-height: 1rem;
+    color: var(--vx-ink-muted);
+    padding: 0;
+  }
+  [data-spike-cards][data-below='800'] [data-place='subtitle'] {
+    display: -webkit-box;
+    -webkit-box-orient: vertical;
+    -webkit-line-clamp: 2;
+    overflow: hidden;
+    font-size: 0.75rem;
+    color: var(--vx-ink-muted);
+  }
+}
+
+body {
+  padding: 16px;
+}

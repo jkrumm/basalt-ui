@@ -1,0 +1,12 @@
+{
+  "name": "@basalt-ui/spike-table-fit",
+  "private": true,
+  "description": "Spike table-fit (data-table concept section 9, S3 and S4): kind widths against auto layout, and argo's renderCard sites on derived cards. Throwaway harness, no tests.",
+  "type": "module",
+  "scripts": {
+    "run": "bun run.ts"
+  },
+  "dependencies": {
+    "playwright-core": "1.63.0"
+  }
+}

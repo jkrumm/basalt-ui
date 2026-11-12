@@ -1,0 +1,3917 @@
+{
+  "harness": {
+    "chrome": "157.0.8103.51",
+    "date": "2026-11-12T09:37:41.472Z",
+    "chPx": 8,
+    "cellPadPx": 24
+  },
+  "s3": {
+    "overflowOutsideScroll": 71,
+    "overflowByCause": {
+      "name": 20,
+      "sub-line": 38,
+      "header": 5,
+      "spark": 8
+    },
+    "stackedSubLine": {
+      "overflowCells": 35,
+      "byCause": {
+        "name": 16,
+        "sub-line": 6,
+        "header": 5,
+        "spark": 8
+      }
+    },
+    "shippedCardTier390": [
+      {
+        "site": "ledger",
+        "tier": "card",
+        "rows": {
+          "min": 32,
+          "max": 32
+        },
+        "rowsTallerThanTheirHeight": 12,
+        "overflowCells": 0
+      },
+      {
+        "site": "slots-list",
+        "tier": "card",
+        "rows": {
+          "min": 32,
+          "max": 32
+        },
+        "rowsTallerThanTheirHeight": 10,
+        "overflowCells": 0
+      },
+      {
+        "site": "net-worth",
+        "tier": "card",
+        "rows": {
+          "min": 32,
+          "max": 32
+        },
+        "rowsTallerThanTheirHeight": 9,
+        "overflowCells": 0
+      },
+      {
+        "site": "catalog",
+        "tier": "card",
+        "rows": {
+          "min": 32,
+          "max": 32
+        },
+        "rowsTallerThanTheirHeight": 12,
+        "overflowCells": 0
+      },
+      {
+        "site": "spark-grid",
+        "tier": "card",
+        "rows": {
+          "min": 32,
+          "max": 32
+        },
+        "rowsTallerThanTheirHeight": 8,
+        "overflowCells": 0
+      }
+    ],
+    "overflowByColumn": {
+      "ledger/Merchant/body": 20,
+      "slots-list/Slot/body": 27,
+      "net-worth/Position/body": 8,
+      "catalog/Model/body": 3,
+      "spark-grid/Trend, 28 d (%/mo)/head": 5,
+      "spark-grid/INOL, last 15 sessions/body": 8
+    },
+    "overflowCells": [
+      {
+        "site": "ledger",
+        "width": 800,
+        "column": "Merchant",
+        "kind": "entity",
+        "cause": "name",
+        "part": "body",
+        "scrollWidth": 611,
+        "clientWidth": 172,
+        "text": "Brotkorb Baeckerei am WallKreditkarte · Dauerauf"
+      },
+      {
+        "site": "ledger",
+        "width": 800,
+        "column": "Merchant",
+        "kind": "entity",
+        "cause": "name",
+        "part": "body",
+        "scrollWidth": 774,
+        "clientWidth": 172,
+        "text": "Stadtwerke Elbtal EnergieHaushalt · Erstattung z"
+      },
+      {
+        "site": "ledger",
+        "width": 800,
+        "column": "Merchant",
+        "kind": "entity",
+        "cause": "name",
+        "part": "body",
+        "scrollWidth": 373,
+        "clientWidth": 172,
+        "text": "Kleinfeld Versicherungen AGHaushalt · Sammeluebe"
+      },
+      {
+        "site": "ledger",
+        "width": 800,
+        "column": "Merchant",
+        "kind": "entity",
+        "cause": "name",
+        "part": "body",
+        "scrollWidth": 572,
+        "clientWidth": 172,
+        "text": "Mobilfunk Rheinland GmbH & Co. KGGirokonto · SEP"
+      },
+      {
+        "site": "ledger",
+        "width": 800,
+        "column": "Merchant",
+        "kind": "entity",
+        "cause": "sub-line",
+        "part": "body",
+        "scrollWidth": 186,
+        "clientWidth": 172,
+        "text": "Tannenhof ApothekeHaushalt"
+      },
+      {
+        "site": "ledger",
+        "width": 800,
+        "column": "Merchant",
+        "kind": "entity",
+        "cause": "sub-line",
+        "part": "body",
+        "scrollWidth": 202,
+        "clientWidth": 172,
+        "text": "Quellwasser GetraenkeHaushalt"
+      },
+      {
+        "site": "ledger",
+        "width": 800,
+        "column": "Merchant",
+        "kind": "entity",
+        "cause": "sub-line",
+        "part": "body",
+        "scrollWidth": 306,
+        "clientWidth": 172,
+        "text": "Fahrrad OstwindGirokonto · Rechnung 2026-0412"
+      },
+      {
+        "site": "ledger",
+        "width": 800,
+        "column": "Merchant",
+        "kind": "entity",
+        "cause": "name",
+        "part": "body",
+        "scrollWidth": 493,
+        "clientWidth": 172,
+        "text": "Lindenblatt BuchhandlungKreditkarte · Kartenzahl"
+      },
+      {
+        "site": "ledger",
+        "width": 800,
+        "column": "Merchant",
+        "kind": "entity",
+        "cause": "sub-line",
+        "part": "body",
+        "scrollWidth": 296,
+        "clientWidth": 172,
+        "text": "Kaffeehaus Zum AnkerKreditkarte · Jahresbeitrag"
+      },
+      {
+        "site": "ledger",
+        "width": 800,
+        "column": "Merchant",
+        "kind": "entity",
+        "cause": "name",
+        "part": "body",
+        "scrollWidth": 248,
+        "clientWidth": 172,
+        "text": "Gartenfreunde Suedstadt e.V.Kreditkarte"
+      },
+      {
+        "site": "ledger",
+        "width": 800,
+        "column": "Merchant",
+        "kind": "entity",
+        "cause": "name",
+        "part": "body",
+        "scrollWidth": 597,
+        "clientWidth": 172,
+        "text": "Verkehrsverbund MittellandHaushalt · Dauerauftra"
+      },
+      {
+        "site": "ledger",
+        "width": 1000,
+        "column": "Merchant",
+        "kind": "entity",
+        "cause": "sub-line",
+        "part": "body",
+        "scrollWidth": 611,
+        "clientWidth": 372,
+        "text": "Brotkorb Baeckerei am WallKreditkarte · Dauerauf"
+      },
+      {
+        "site": "ledger",
+        "width": 1000,
+        "column": "Merchant",
+        "kind": "entity",
+        "cause": "sub-line",
+        "part": "body",
+        "scrollWidth": 774,
+        "clientWidth": 372,
+        "text": "Stadtwerke Elbtal EnergieHaushalt · Erstattung z"
+      },
+      {
+        "site": "ledger",
+        "width": 1000,
+        "column": "Merchant",
+        "kind": "entity",
+        "cause": "sub-line",
+        "part": "body",
+        "scrollWidth": 373,
+        "clientWidth": 372,
+        "text": "Kleinfeld Versicherungen AGHaushalt · Sammeluebe"
+      },
+      {
+        "site": "ledger",
+        "width": 1000,
+        "column": "Merchant",
+        "kind": "entity",
+        "cause": "sub-line",
+        "part": "body",
+        "scrollWidth": 572,
+        "clientWidth": 372,
+        "text": "Mobilfunk Rheinland GmbH & Co. KGGirokonto · SEP"
+      },
+      {
+        "site": "ledger",
+        "width": 1000,
+        "column": "Merchant",
+        "kind": "entity",
+        "cause": "sub-line",
+        "part": "body",
+        "scrollWidth": 493,
+        "clientWidth": 372,
+        "text": "Lindenblatt BuchhandlungKreditkarte · Kartenzahl"
+      },
+      {
+        "site": "ledger",
+        "width": 1000,
+        "column": "Merchant",
+        "kind": "entity",
+        "cause": "sub-line",
+        "part": "body",
+        "scrollWidth": 597,
+        "clientWidth": 372,
+        "text": "Verkehrsverbund MittellandHaushalt · Dauerauftra"
+      },
+      {
+        "site": "ledger",
+        "width": 1200,
+        "column": "Merchant",
+        "kind": "entity",
+        "cause": "sub-line",
+        "part": "body",
+        "scrollWidth": 611,
+        "clientWidth": 572,
+        "text": "Brotkorb Baeckerei am WallKreditkarte · Dauerauf"
+      },
+      {
+        "site": "ledger",
+        "width": 1200,
+        "column": "Merchant",
+        "kind": "entity",
+        "cause": "sub-line",
+        "part": "body",
+        "scrollWidth": 774,
+        "clientWidth": 572,
+        "text": "Stadtwerke Elbtal EnergieHaushalt · Erstattung z"
+      },
+      {
+        "site": "ledger",
+        "width": 1200,
+        "column": "Merchant",
+        "kind": "entity",
+        "cause": "sub-line",
+        "part": "body",
+        "scrollWidth": 597,
+        "clientWidth": 572,
+        "text": "Verkehrsverbund MittellandHaushalt · Dauerauftra"
+      },
+      {
+        "site": "slots-list",
+        "width": 500,
+        "column": "Slot",
+        "kind": "entity",
+        "cause": "name",
+        "part": "body",
+        "scrollWidth": 245,
+        "clientWidth": 167,
+        "text": "Claude Sonnet 4.5 (high)1 route · billed"
+      },
+      {
+        "site": "slots-list",
+        "width": 500,
+        "column": "Slot",
+        "kind": "entity",
+        "cause": "name",
+        "part": "body",
+        "scrollWidth": 363,
+        "clientWidth": 167,
+        "text": "anthropic/claude-haiku-4-5-202510012 routes · Ma"
+      },
+      {
+        "site": "slots-list",
+        "width": 500,
+        "column": "Slot",
+        "kind": "entity",
+        "cause": "name",
+        "part": "body",
+        "scrollWidth": 283,
+        "clientWidth": 167,
+        "text": "GPT-5.2 Codex (medium)3 routes · Max quota"
+      },
+      {
+        "site": "slots-list",
+        "width": 500,
+        "column": "Slot",
+        "kind": "entity",
+        "cause": "sub-line",
+        "part": "body",
+        "scrollWidth": 187,
+        "clientWidth": 167,
+        "text": "Gemini 3 Flash1 route · billed"
+      },
+      {
+        "site": "slots-list",
+        "width": 500,
+        "column": "Slot",
+        "kind": "entity",
+        "cause": "sub-line",
+        "part": "body",
+        "scrollWidth": 233,
+        "clientWidth": 167,
+        "text": "Kimi K2 Thinking2 routes · Max quota"
+      },
+      {
+        "site": "slots-list",
+        "width": 500,
+        "column": "Slot",
+        "kind": "entity",
+        "cause": "name",
+        "part": "body",
+        "scrollWidth": 625,
+        "clientWidth": 167,
+        "text": "deepseek/deepseek-v3.2-speciale-reasoner3 routes"
+      },
+      {
+        "site": "slots-list",
+        "width": 500,
+        "column": "Slot",
+        "kind": "entity",
+        "cause": "name",
+        "part": "body",
+        "scrollWidth": 254,
+        "clientWidth": 167,
+        "text": "Qwen3 Coder 480B A35B1 route · billed"
+      },
+      {
+        "site": "slots-list",
+        "width": 500,
+        "column": "Slot",
+        "kind": "entity",
+        "cause": "sub-line",
+        "part": "body",
+        "scrollWidth": 255,
+        "clientWidth": 167,
+        "text": "gpt-oss-120B (high)2 routes · Max quota"
+      },
+      {
+        "site": "slots-list",
+        "width": 500,
+        "column": "Slot",
+        "kind": "entity",
+        "cause": "name",
+        "part": "body",
+        "scrollWidth": 280,
+        "clientWidth": 167,
+        "text": "Claude Sonnet 4.5 (high)3 routes · Max quota"
+      },
+      {
+        "site": "slots-list",
+        "width": 500,
+        "column": "Slot",
+        "kind": "entity",
+        "cause": "name",
+        "part": "body",
+        "scrollWidth": 327,
+        "clientWidth": 167,
+        "text": "anthropic/claude-haiku-4-5-202510011 route · bil"
+      },
+      {
+        "site": "slots-list",
+        "width": 800,
+        "column": "Slot",
+        "kind": "entity",
+        "cause": "sub-line",
+        "part": "body",
+        "scrollWidth": 363,
+        "clientWidth": 267,
+        "text": "anthropic/claude-haiku-4-5-202510012 routes · Ma"
+      },
+      {
+        "site": "slots-list",
+        "width": 800,
+        "column": "Slot",
+        "kind": "entity",
+        "cause": "sub-line",
+        "part": "body",
+        "scrollWidth": 283,
+        "clientWidth": 267,
+        "text": "GPT-5.2 Codex (medium)3 routes · Max quota"
+      },
+      {
+        "site": "slots-list",
+        "width": 800,
+        "column": "Slot",
+        "kind": "entity",
+        "cause": "name",
+        "part": "body",
+        "scrollWidth": 625,
+        "clientWidth": 267,
+        "text": "deepseek/deepseek-v3.2-speciale-reasoner3 routes"
+      },
+      {
+        "site": "slots-list",
+        "width": 800,
+        "column": "Slot",
+        "kind": "entity",
+        "cause": "sub-line",
+        "part": "body",
+        "scrollWidth": 280,
+        "clientWidth": 267,
+        "text": "Claude Sonnet 4.5 (high)3 routes · Max quota"
+      },
+      {
+        "site": "slots-list",
+        "width": 800,
+        "column": "Slot",
+        "kind": "entity",
+        "cause": "sub-line",
+        "part": "body",
+        "scrollWidth": 327,
+        "clientWidth": 267,
+        "text": "anthropic/claude-haiku-4-5-202510011 route · bil"
+      },
+      {
+        "site": "slots-list",
+        "width": 1000,
+        "column": "Slot",
+        "kind": "entity",
+        "cause": "sub-line",
+        "part": "body",
+        "scrollWidth": 363,
+        "clientWidth": 333,
+        "text": "anthropic/claude-haiku-4-5-202510012 routes · Ma"
+      },
+      {
+        "site": "slots-list",
+        "width": 1000,
+        "column": "Slot",
+        "kind": "entity",
+        "cause": "sub-line",
+        "part": "body",
+        "scrollWidth": 625,
+        "clientWidth": 333,
+        "text": "deepseek/deepseek-v3.2-speciale-reasoner3 routes"
+      },
+      {
+        "site": "slots-list",
+        "width": 1200,
+        "column": "Slot",
+        "kind": "entity",
+        "cause": "sub-line",
+        "part": "body",
+        "scrollWidth": 245,
+        "clientWidth": 221,
+        "text": "Claude Sonnet 4.5 (high)1 route · billed"
+      },
+      {
+        "site": "slots-list",
+        "width": 1200,
+        "column": "Slot",
+        "kind": "entity",
+        "cause": "name",
+        "part": "body",
+        "scrollWidth": 363,
+        "clientWidth": 221,
+        "text": "anthropic/claude-haiku-4-5-202510012 routes · Ma"
+      },
+      {
+        "site": "slots-list",
+        "width": 1200,
+        "column": "Slot",
+        "kind": "entity",
+        "cause": "sub-line",
+        "part": "body",
+        "scrollWidth": 283,
+        "clientWidth": 221,
+        "text": "GPT-5.2 Codex (medium)3 routes · Max quota"
+      },
+      {
+        "site": "slots-list",
+        "width": 1200,
+        "column": "Slot",
+        "kind": "entity",
+        "cause": "sub-line",
+        "part": "body",
+        "scrollWidth": 233,
+        "clientWidth": 221,
+        "text": "Kimi K2 Thinking2 routes · Max quota"
+      },
+      {
+        "site": "slots-list",
+        "width": 1200,
+        "column": "Slot",
+        "kind": "entity",
+        "cause": "name",
+        "part": "body",
+        "scrollWidth": 625,
+        "clientWidth": 221,
+        "text": "deepseek/deepseek-v3.2-speciale-reasoner3 routes"
+      },
+      {
+        "site": "slots-list",
+        "width": 1200,
+        "column": "Slot",
+        "kind": "entity",
+        "cause": "sub-line",
+        "part": "body",
+        "scrollWidth": 254,
+        "clientWidth": 221,
+        "text": "Qwen3 Coder 480B A35B1 route · billed"
+      },
+      {
+        "site": "slots-list",
+        "width": 1200,
+        "column": "Slot",
+        "kind": "entity",
+        "cause": "sub-line",
+        "part": "body",
+        "scrollWidth": 255,
+        "clientWidth": 221,
+        "text": "gpt-oss-120B (high)2 routes · Max quota"
+      },
+      {
+        "site": "slots-list",
+        "width": 1200,
+        "column": "Slot",
+        "kind": "entity",
+        "cause": "sub-line",
+        "part": "body",
+        "scrollWidth": 280,
+        "clientWidth": 221,
+        "text": "Claude Sonnet 4.5 (high)3 routes · Max quota"
+      },
+      {
+        "site": "slots-list",
+        "width": 1200,
+        "column": "Slot",
+        "kind": "entity",
+        "cause": "name",
+        "part": "body",
+        "scrollWidth": 327,
+        "clientWidth": 221,
+        "text": "anthropic/claude-haiku-4-5-202510011 route · bil"
+      },
+      {
+        "site": "slots-list",
+        "width": 1800,
+        "column": "Slot",
+        "kind": "entity",
+        "cause": "sub-line",
+        "part": "body",
+        "scrollWidth": 625,
+        "clientWidth": 421,
+        "text": "deepseek/deepseek-v3.2-speciale-reasoner3 routes"
+      },
+      {
+        "site": "net-worth",
+        "width": 800,
+        "column": "Position",
+        "kind": "entity",
+        "cause": "sub-line",
+        "part": "body",
+        "scrollWidth": 271,
+        "clientWidth": 232,
+        "text": "Staatsanleihen Europa 1-3JXX5107783146"
+      },
+      {
+        "site": "net-worth",
+        "width": 800,
+        "column": "Position",
+        "kind": "entity",
+        "cause": "sub-line",
+        "part": "body",
+        "scrollWidth": 271,
+        "clientWidth": 232,
+        "text": "Staatsanleihen Europa 1-3JXX4526082739"
+      },
+      {
+        "site": "net-worth",
+        "width": 800,
+        "column": "Position",
+        "kind": "entity",
+        "cause": "sub-line",
+        "part": "body",
+        "scrollWidth": 238,
+        "clientWidth": 232,
+        "text": "Nordwind Energie AGXX4143648604"
+      },
+      {
+        "site": "net-worth",
+        "width": 800,
+        "column": "Position",
+        "kind": "entity",
+        "cause": "sub-line",
+        "part": "body",
+        "scrollWidth": 277,
+        "clientWidth": 232,
+        "text": "Schwellenlaender Index ETFXX4352654996"
+      },
+      {
+        "site": "net-worth",
+        "width": 800,
+        "column": "Position",
+        "kind": "entity",
+        "cause": "sub-line",
+        "part": "body",
+        "scrollWidth": 277,
+        "clientWidth": 232,
+        "text": "Schwellenlaender Index ETFXX5781612160"
+      },
+      {
+        "site": "net-worth",
+        "width": 800,
+        "column": "Position",
+        "kind": "entity",
+        "cause": "name",
+        "part": "body",
+        "scrollWidth": 317,
+        "clientWidth": 232,
+        "text": "Weltportfolio Aktien ThesaurierendXX5831166862"
+      },
+      {
+        "site": "net-worth",
+        "width": 800,
+        "column": "Position",
+        "kind": "entity",
+        "cause": "sub-line",
+        "part": "body",
+        "scrollWidth": 277,
+        "clientWidth": 232,
+        "text": "Schwellenlaender Index ETFXX5803998738"
+      },
+      {
+        "site": "net-worth",
+        "width": 800,
+        "column": "Position",
+        "kind": "entity",
+        "cause": "sub-line",
+        "part": "body",
+        "scrollWidth": 277,
+        "clientWidth": 232,
+        "text": "Schwellenlaender Index ETFXX3226569688"
+      },
+      {
+        "site": "catalog",
+        "width": 1800,
+        "column": "Model",
+        "kind": "entity",
+        "cause": "sub-line",
+        "part": "body",
+        "scrollWidth": 227,
+        "clientWidth": 192,
+        "text": "DeepSeek V3.2 Specialesuperseded"
+      },
+      {
+        "site": "catalog",
+        "width": 1800,
+        "column": "Model",
+        "kind": "entity",
+        "cause": "name",
+        "part": "body",
+        "scrollWidth": 214,
+        "clientWidth": 192,
+        "text": "Qwen3 235B A22B Instruct 2507"
+      },
+      {
+        "site": "catalog",
+        "width": 1800,
+        "column": "Model",
+        "kind": "entity",
+        "cause": "sub-line",
+        "part": "body",
+        "scrollWidth": 215,
+        "clientWidth": 192,
+        "text": "Grok 4 Fast Reasoningsuperseded"
+      },
+      {
+        "site": "spark-grid",
+        "width": 500,
+        "column": "Trend, 28 d (%/mo)",
+        "kind": "delta",
+        "cause": "header",
+        "part": "head",
+        "scrollWidth": 127,
+        "clientWidth": 104,
+        "text": "Trend, 28 d (%/mo)"
+      },
+      {
+        "site": "spark-grid",
+        "width": 800,
+        "column": "Trend, 28 d (%/mo)",
+        "kind": "delta",
+        "cause": "header",
+        "part": "head",
+        "scrollWidth": 127,
+        "clientWidth": 104,
+        "text": "Trend, 28 d (%/mo)"
+      },
+      {
+        "site": "spark-grid",
+        "width": 800,
+        "column": "INOL, last 15 sessions",
+        "kind": "spark",
+        "cause": "spark",
+        "part": "body",
+        "scrollWidth": 186,
+        "clientWidth": 184,
+        "text": "1.59 Excessive"
+      },
+      {
+        "site": "spark-grid",
+        "width": 800,
+        "column": "INOL, last 15 sessions",
+        "kind": "spark",
+        "cause": "spark",
+        "part": "body",
+        "scrollWidth": 186,
+        "clientWidth": 184,
+        "text": "1.86 Excessive"
+      },
+      {
+        "site": "spark-grid",
+        "width": 1000,
+        "column": "Trend, 28 d (%/mo)",
+        "kind": "delta",
+        "cause": "header",
+        "part": "head",
+        "scrollWidth": 127,
+        "clientWidth": 104,
+        "text": "Trend, 28 d (%/mo)"
+      },
+      {
+        "site": "spark-grid",
+        "width": 1000,
+        "column": "INOL, last 15 sessions",
+        "kind": "spark",
+        "cause": "spark",
+        "part": "body",
+        "scrollWidth": 186,
+        "clientWidth": 184,
+        "text": "1.59 Excessive"
+      },
+      {
+        "site": "spark-grid",
+        "width": 1000,
+        "column": "INOL, last 15 sessions",
+        "kind": "spark",
+        "cause": "spark",
+        "part": "body",
+        "scrollWidth": 186,
+        "clientWidth": 184,
+        "text": "1.86 Excessive"
+      },
+      {
+        "site": "spark-grid",
+        "width": 1200,
+        "column": "Trend, 28 d (%/mo)",
+        "kind": "delta",
+        "cause": "header",
+        "part": "head",
+        "scrollWidth": 127,
+        "clientWidth": 104,
+        "text": "Trend, 28 d (%/mo)"
+      },
+      {
+        "site": "spark-grid",
+        "width": 1200,
+        "column": "INOL, last 15 sessions",
+        "kind": "spark",
+        "cause": "spark",
+        "part": "body",
+        "scrollWidth": 186,
+        "clientWidth": 184,
+        "text": "1.59 Excessive"
+      },
+      {
+        "site": "spark-grid",
+        "width": 1200,
+        "column": "INOL, last 15 sessions",
+        "kind": "spark",
+        "cause": "spark",
+        "part": "body",
+        "scrollWidth": 186,
+        "clientWidth": 184,
+        "text": "1.86 Excessive"
+      },
+      {
+        "site": "spark-grid",
+        "width": 1800,
+        "column": "Trend, 28 d (%/mo)",
+        "kind": "delta",
+        "cause": "header",
+        "part": "head",
+        "scrollWidth": 127,
+        "clientWidth": 104,
+        "text": "Trend, 28 d (%/mo)"
+      },
+      {
+        "site": "spark-grid",
+        "width": 1800,
+        "column": "INOL, last 15 sessions",
+        "kind": "spark",
+        "cause": "spark",
+        "part": "body",
+        "scrollWidth": 186,
+        "clientWidth": 184,
+        "text": "1.59 Excessive"
+      },
+      {
+        "site": "spark-grid",
+        "width": 1800,
+        "column": "INOL, last 15 sessions",
+        "kind": "spark",
+        "cause": "spark",
+        "part": "body",
+        "scrollWidth": 186,
+        "clientWidth": 184,
+        "text": "1.86 Excessive"
+      }
+    ],
+    "kinds": [
+      {
+        "kind": "select",
+        "planWidthPx": 152,
+        "maxBodyNeedPx": 109,
+        "maxHeadNeedPx": 76,
+        "samples": 12
+      },
+      {
+        "kind": "date",
+        "planWidthPx": 120,
+        "maxBodyNeedPx": 109,
+        "maxHeadNeedPx": 86,
+        "samples": 9
+      },
+      {
+        "kind": "entity",
+        "planWidthPx": 168,
+        "maxBodyNeedPx": 786,
+        "maxHeadNeedPx": 88,
+        "samples": 22
+      },
+      {
+        "kind": "money",
+        "planWidthPx": 120,
+        "maxBodyNeedPx": 93,
+        "maxHeadNeedPx": 125,
+        "samples": 20
+      },
+      {
+        "kind": "actions",
+        "planWidthPx": 44,
+        "maxBodyNeedPx": 52,
+        "maxHeadNeedPx": 69,
+        "samples": 4
+      },
+      {
+        "kind": "text",
+        "planWidthPx": 152,
+        "maxBodyNeedPx": 400,
+        "maxHeadNeedPx": 140,
+        "samples": 12
+      },
+      {
+        "kind": "number",
+        "planWidthPx": 104,
+        "maxBodyNeedPx": 93,
+        "maxHeadNeedPx": 108,
+        "samples": 31
+      },
+      {
+        "kind": "status",
+        "planWidthPx": 120,
+        "maxBodyNeedPx": 86,
+        "maxHeadNeedPx": 67,
+        "samples": 4
+      },
+      {
+        "kind": "delta",
+        "planWidthPx": 104,
+        "maxBodyNeedPx": 144,
+        "maxHeadNeedPx": 140,
+        "samples": 5
+      },
+      {
+        "kind": "spark",
+        "planWidthPx": 184,
+        "maxBodyNeedPx": 202,
+        "maxHeadNeedPx": 192,
+        "samples": 9
+      }
+    ],
+    "tables": [
+      {
+        "site": "ledger",
+        "width": 500,
+        "plan": {
+          "fullAt": 800,
+          "reducedFrom": 800,
+          "demoted": ["amount"],
+          "warnings": [
+            "basalt-ui/table: more than two priority-1 columns; amount demoted to 2 by declaration order"
+          ]
+        },
+        "fixed": {
+          "tier": "card",
+          "fullAt": "800",
+          "below": "800",
+          "visible": ["", "Date", "Merchant", "Category", "Amount (EUR)", "Actions"],
+          "hidden": ["Tax tag"],
+          "overflowCells": 0,
+          "tableWidth": 500,
+          "scrollerWidth": 500,
+          "scrollerScrollWidth": 500,
+          "columns": []
+        },
+        "auto": {
+          "tier": "card",
+          "visible": ["", "Date", "Merchant", "Category", "Amount (EUR)", "Actions"],
+          "tableWidth": 500,
+          "scrollerWidth": 500,
+          "clippedPx": 0,
+          "columns": []
+        }
+      },
+      {
+        "site": "ledger",
+        "width": 800,
+        "plan": {
+          "fullAt": 800,
+          "reducedFrom": 800,
+          "demoted": ["amount"],
+          "warnings": [
+            "basalt-ui/table: more than two priority-1 columns; amount demoted to 2 by declaration order"
+          ]
+        },
+        "fixed": {
+          "tier": "full",
+          "fullAt": "800",
+          "below": "800",
+          "visible": ["", "Date", "Merchant", "Category", "Tax tag", "Amount (EUR)", "Actions"],
+          "hidden": [],
+          "overflowCells": 11,
+          "tableWidth": 800,
+          "scrollerWidth": 800,
+          "scrollerScrollWidth": 934,
+          "columns": [
+            {
+              "column": "",
+              "kind": "select",
+              "fixedPx": 40,
+              "headNeedPx": 76,
+              "bodyNeedPx": 44
+            },
+            {
+              "column": "Date",
+              "kind": "date",
+              "fixedPx": 120,
+              "headNeedPx": 63,
+              "bodyNeedPx": 103
+            },
+            {
+              "column": "Merchant",
+              "kind": "entity",
+              "fixedPx": 172,
+              "headNeedPx": 88,
+              "bodyNeedPx": 786
+            },
+            {
+              "column": "Category",
+              "kind": "select",
+              "fixedPx": 152,
+              "headNeedPx": 74,
+              "bodyNeedPx": 109
+            },
+            {
+              "column": "Tax tag",
+              "kind": "select",
+              "fixedPx": 152,
+              "headNeedPx": 65,
+              "bodyNeedPx": 78
+            },
+            {
+              "column": "Amount (EUR)",
+              "kind": "money",
+              "fixedPx": 120,
+              "headNeedPx": 115,
+              "bodyNeedPx": 83
+            },
+            {
+              "column": "Actions",
+              "kind": "actions",
+              "fixedPx": 44,
+              "headNeedPx": 69,
+              "bodyNeedPx": 52
+            }
+          ]
+        },
+        "auto": {
+          "tier": "full",
+          "visible": ["", "Date", "Merchant", "Category", "Tax tag", "Amount (EUR)", "Actions"],
+          "tableWidth": 1284.1,
+          "scrollerWidth": 800,
+          "clippedPx": 484,
+          "columns": [
+            {
+              "column": "",
+              "autoPx": 44
+            },
+            {
+              "column": "Date",
+              "autoPx": 102.2
+            },
+            {
+              "column": "Merchant",
+              "autoPx": 785.6
+            },
+            {
+              "column": "Category",
+              "autoPx": 108.4
+            },
+            {
+              "column": "Tax tag",
+              "autoPx": 77.3
+            },
+            {
+              "column": "Amount (EUR)",
+              "autoPx": 114.6
+            },
+            {
+              "column": "Actions",
+              "autoPx": 52
+            }
+          ]
+        }
+      },
+      {
+        "site": "ledger",
+        "width": 1000,
+        "plan": {
+          "fullAt": 800,
+          "reducedFrom": 800,
+          "demoted": ["amount"],
+          "warnings": [
+            "basalt-ui/table: more than two priority-1 columns; amount demoted to 2 by declaration order"
+          ]
+        },
+        "fixed": {
+          "tier": "full",
+          "fullAt": "800",
+          "below": "800",
+          "visible": ["", "Date", "Merchant", "Category", "Tax tag", "Amount (EUR)", "Actions"],
+          "hidden": [],
+          "overflowCells": 6,
+          "tableWidth": 1000,
+          "scrollerWidth": 1000,
+          "scrollerScrollWidth": 1000,
+          "columns": [
+            {
+              "column": "",
+              "kind": "select",
+              "fixedPx": 40,
+              "headNeedPx": 76,
+              "bodyNeedPx": 44
+            },
+            {
+              "column": "Date",
+              "kind": "date",
+              "fixedPx": 120,
+              "headNeedPx": 63,
+              "bodyNeedPx": 103
+            },
+            {
+              "column": "Merchant",
+              "kind": "entity",
+              "fixedPx": 372,
+              "headNeedPx": 88,
+              "bodyNeedPx": 786
+            },
+            {
+              "column": "Category",
+              "kind": "select",
+              "fixedPx": 152,
+              "headNeedPx": 74,
+              "bodyNeedPx": 109
+            },
+            {
+              "column": "Tax tag",
+              "kind": "select",
+              "fixedPx": 152,
+              "headNeedPx": 65,
+              "bodyNeedPx": 78
+            },
+            {
+              "column": "Amount (EUR)",
+              "kind": "money",
+              "fixedPx": 120,
+              "headNeedPx": 115,
+              "bodyNeedPx": 83
+            },
+            {
+              "column": "Actions",
+              "kind": "actions",
+              "fixedPx": 44,
+              "headNeedPx": 69,
+              "bodyNeedPx": 52
+            }
+          ]
+        },
+        "auto": {
+          "tier": "full",
+          "visible": ["", "Date", "Merchant", "Category", "Tax tag", "Amount (EUR)", "Actions"],
+          "tableWidth": 1284.1,
+          "scrollerWidth": 1000,
+          "clippedPx": 284,
+          "columns": [
+            {
+              "column": "",
+              "autoPx": 44
+            },
+            {
+              "column": "Date",
+              "autoPx": 102.2
+            },
+            {
+              "column": "Merchant",
+              "autoPx": 785.6
+            },
+            {
+              "column": "Category",
+              "autoPx": 108.4
+            },
+            {
+              "column": "Tax tag",
+              "autoPx": 77.3
+            },
+            {
+              "column": "Amount (EUR)",
+              "autoPx": 114.6
+            },
+            {
+              "column": "Actions",
+              "autoPx": 52
+            }
+          ]
+        }
+      },
+      {
+        "site": "ledger",
+        "width": 1200,
+        "plan": {
+          "fullAt": 800,
+          "reducedFrom": 800,
+          "demoted": ["amount"],
+          "warnings": [
+            "basalt-ui/table: more than two priority-1 columns; amount demoted to 2 by declaration order"
+          ]
+        },
+        "fixed": {
+          "tier": "full",
+          "fullAt": "800",
+          "below": "800",
+          "visible": ["", "Date", "Merchant", "Category", "Tax tag", "Amount (EUR)", "Actions"],
+          "hidden": [],
+          "overflowCells": 3,
+          "tableWidth": 1200,
+          "scrollerWidth": 1200,
+          "scrollerScrollWidth": 1200,
+          "columns": [
+            {
+              "column": "",
+              "kind": "select",
+              "fixedPx": 40,
+              "headNeedPx": 76,
+              "bodyNeedPx": 44
+            },
+            {
+              "column": "Date",
+              "kind": "date",
+              "fixedPx": 120,
+              "headNeedPx": 63,
+              "bodyNeedPx": 103
+            },
+            {
+              "column": "Merchant",
+              "kind": "entity",
+              "fixedPx": 572,
+              "headNeedPx": 88,
+              "bodyNeedPx": 786
+            },
+            {
+              "column": "Category",
+              "kind": "select",
+              "fixedPx": 152,
+              "headNeedPx": 74,
+              "bodyNeedPx": 109
+            },
+            {
+              "column": "Tax tag",
+              "kind": "select",
+              "fixedPx": 152,
+              "headNeedPx": 65,
+              "bodyNeedPx": 78
+            },
+            {
+              "column": "Amount (EUR)",
+              "kind": "money",
+              "fixedPx": 120,
+              "headNeedPx": 115,
+              "bodyNeedPx": 83
+            },
+            {
+              "column": "Actions",
+              "kind": "actions",
+              "fixedPx": 44,
+              "headNeedPx": 69,
+              "bodyNeedPx": 52
+            }
+          ]
+        },
+        "auto": {
+          "tier": "full",
+          "visible": ["", "Date", "Merchant", "Category", "Tax tag", "Amount (EUR)", "Actions"],
+          "tableWidth": 1284.1,
+          "scrollerWidth": 1200,
+          "clippedPx": 84,
+          "columns": [
+            {
+              "column": "",
+              "autoPx": 44
+            },
+            {
+              "column": "Date",
+              "autoPx": 102.2
+            },
+            {
+              "column": "Merchant",
+              "autoPx": 785.6
+            },
+            {
+              "column": "Category",
+              "autoPx": 108.4
+            },
+            {
+              "column": "Tax tag",
+              "autoPx": 77.3
+            },
+            {
+              "column": "Amount (EUR)",
+              "autoPx": 114.6
+            },
+            {
+              "column": "Actions",
+              "autoPx": 52
+            }
+          ]
+        }
+      },
+      {
+        "site": "ledger",
+        "width": 1800,
+        "plan": {
+          "fullAt": 800,
+          "reducedFrom": 800,
+          "demoted": ["amount"],
+          "warnings": [
+            "basalt-ui/table: more than two priority-1 columns; amount demoted to 2 by declaration order"
+          ]
+        },
+        "fixed": {
+          "tier": "full",
+          "fullAt": "800",
+          "below": "800",
+          "visible": ["", "Date", "Merchant", "Category", "Tax tag", "Amount (EUR)", "Actions"],
+          "hidden": [],
+          "overflowCells": 0,
+          "tableWidth": 1800,
+          "scrollerWidth": 1800,
+          "scrollerScrollWidth": 1800,
+          "columns": [
+            {
+              "column": "",
+              "kind": "select",
+              "fixedPx": 40,
+              "headNeedPx": 76,
+              "bodyNeedPx": 44
+            },
+            {
+              "column": "Date",
+              "kind": "date",
+              "fixedPx": 120,
+              "headNeedPx": 63,
+              "bodyNeedPx": 103
+            },
+            {
+              "column": "Merchant",
+              "kind": "entity",
+              "fixedPx": 1172,
+              "headNeedPx": 88,
+              "bodyNeedPx": 786
+            },
+            {
+              "column": "Category",
+              "kind": "select",
+              "fixedPx": 152,
+              "headNeedPx": 74,
+              "bodyNeedPx": 109
+            },
+            {
+              "column": "Tax tag",
+              "kind": "select",
+              "fixedPx": 152,
+              "headNeedPx": 65,
+              "bodyNeedPx": 78
+            },
+            {
+              "column": "Amount (EUR)",
+              "kind": "money",
+              "fixedPx": 120,
+              "headNeedPx": 115,
+              "bodyNeedPx": 83
+            },
+            {
+              "column": "Actions",
+              "kind": "actions",
+              "fixedPx": 44,
+              "headNeedPx": 69,
+              "bodyNeedPx": 52
+            }
+          ]
+        },
+        "auto": {
+          "tier": "full",
+          "visible": ["", "Date", "Merchant", "Category", "Tax tag", "Amount (EUR)", "Actions"],
+          "tableWidth": 1800,
+          "scrollerWidth": 1800,
+          "clippedPx": 0,
+          "columns": [
+            {
+              "column": "",
+              "autoPx": 44
+            },
+            {
+              "column": "Date",
+              "autoPx": 144.7
+            },
+            {
+              "column": "Merchant",
+              "autoPx": 1112.4
+            },
+            {
+              "column": "Category",
+              "autoPx": 153.5
+            },
+            {
+              "column": "Tax tag",
+              "autoPx": 109.5
+            },
+            {
+              "column": "Amount (EUR)",
+              "autoPx": 162.3
+            },
+            {
+              "column": "Actions",
+              "autoPx": 73.7
+            }
+          ]
+        }
+      },
+      {
+        "site": "slots-list",
+        "width": 500,
+        "plan": {
+          "fullAt": 1200,
+          "reducedFrom": 480,
+          "demoted": [],
+          "warnings": []
+        },
+        "fixed": {
+          "tier": "reduced",
+          "fullAt": "1200",
+          "below": "480",
+          "visible": ["Slot", "Leanest on Max", "Leanest anywhere"],
+          "hidden": ["Intel.", "Index", "$ / task (USD)", "≈ Time (s)", "≈ Tokens"],
+          "overflowCells": 10,
+          "tableWidth": 500,
+          "scrollerWidth": 500,
+          "scrollerScrollWidth": 625,
+          "columns": [
+            {
+              "column": "Slot",
+              "kind": "entity",
+              "fixedPx": 166.7,
+              "headNeedPx": 62,
+              "bodyNeedPx": 637
+            },
+            {
+              "column": "Leanest on Max",
+              "kind": "text",
+              "fixedPx": 166.7,
+              "headNeedPx": 122,
+              "bodyNeedPx": 164
+            },
+            {
+              "column": "Leanest anywhere",
+              "kind": "text",
+              "fixedPx": 166.7,
+              "headNeedPx": 140,
+              "bodyNeedPx": 166
+            }
+          ]
+        },
+        "auto": {
+          "tier": "reduced",
+          "visible": ["Slot", "Leanest on Max", "Leanest anywhere"],
+          "tableWidth": 897.6,
+          "scrollerWidth": 500,
+          "clippedPx": 398,
+          "columns": [
+            {
+              "column": "Slot",
+              "autoPx": 636.5
+            },
+            {
+              "column": "Leanest on Max",
+              "autoPx": 121.5
+            },
+            {
+              "column": "Leanest anywhere",
+              "autoPx": 139.5
+            }
+          ]
+        }
+      },
+      {
+        "site": "slots-list",
+        "width": 800,
+        "plan": {
+          "fullAt": 1200,
+          "reducedFrom": 480,
+          "demoted": [],
+          "warnings": []
+        },
+        "fixed": {
+          "tier": "reduced",
+          "fullAt": "1200",
+          "below": "480",
+          "visible": ["Slot", "Leanest on Max", "Leanest anywhere"],
+          "hidden": ["Intel.", "Index", "$ / task (USD)", "≈ Time (s)", "≈ Tokens"],
+          "overflowCells": 5,
+          "tableWidth": 800,
+          "scrollerWidth": 800,
+          "scrollerScrollWidth": 800,
+          "columns": [
+            {
+              "column": "Slot",
+              "kind": "entity",
+              "fixedPx": 266.7,
+              "headNeedPx": 62,
+              "bodyNeedPx": 637
+            },
+            {
+              "column": "Leanest on Max",
+              "kind": "text",
+              "fixedPx": 266.7,
+              "headNeedPx": 122,
+              "bodyNeedPx": 257
+            },
+            {
+              "column": "Leanest anywhere",
+              "kind": "text",
+              "fixedPx": 266.7,
+              "headNeedPx": 140,
+              "bodyNeedPx": 261
+            }
+          ]
+        },
+        "auto": {
+          "tier": "reduced",
+          "visible": ["Slot", "Leanest on Max", "Leanest anywhere"],
+          "tableWidth": 897.6,
+          "scrollerWidth": 800,
+          "clippedPx": 98,
+          "columns": [
+            {
+              "column": "Slot",
+              "autoPx": 636.5
+            },
+            {
+              "column": "Leanest on Max",
+              "autoPx": 121.5
+            },
+            {
+              "column": "Leanest anywhere",
+              "autoPx": 139.5
+            }
+          ]
+        }
+      },
+      {
+        "site": "slots-list",
+        "width": 1000,
+        "plan": {
+          "fullAt": 1200,
+          "reducedFrom": 480,
+          "demoted": [],
+          "warnings": []
+        },
+        "fixed": {
+          "tier": "reduced",
+          "fullAt": "1200",
+          "below": "480",
+          "visible": ["Slot", "Leanest on Max", "Leanest anywhere"],
+          "hidden": ["Intel.", "Index", "$ / task (USD)", "≈ Time (s)", "≈ Tokens"],
+          "overflowCells": 2,
+          "tableWidth": 1000,
+          "scrollerWidth": 1000,
+          "scrollerScrollWidth": 1000,
+          "columns": [
+            {
+              "column": "Slot",
+              "kind": "entity",
+              "fixedPx": 333.3,
+              "headNeedPx": 62,
+              "bodyNeedPx": 637
+            },
+            {
+              "column": "Leanest on Max",
+              "kind": "text",
+              "fixedPx": 333.3,
+              "headNeedPx": 122,
+              "bodyNeedPx": 333
+            },
+            {
+              "column": "Leanest anywhere",
+              "kind": "text",
+              "fixedPx": 333.3,
+              "headNeedPx": 140,
+              "bodyNeedPx": 333
+            }
+          ]
+        },
+        "auto": {
+          "tier": "reduced",
+          "visible": ["Slot", "Leanest on Max", "Leanest anywhere"],
+          "tableWidth": 1000,
+          "scrollerWidth": 1000,
+          "clippedPx": 0,
+          "columns": [
+            {
+              "column": "Slot",
+              "autoPx": 636.5
+            },
+            {
+              "column": "Leanest on Max",
+              "autoPx": 174.1
+            },
+            {
+              "column": "Leanest anywhere",
+              "autoPx": 189.4
+            }
+          ]
+        }
+      },
+      {
+        "site": "slots-list",
+        "width": 1200,
+        "plan": {
+          "fullAt": 1200,
+          "reducedFrom": 480,
+          "demoted": [],
+          "warnings": []
+        },
+        "fixed": {
+          "tier": "full",
+          "fullAt": "1200",
+          "below": "480",
+          "visible": [
+            "Slot",
+            "Intel.",
+            "Index",
+            "$ / task (USD)",
+            "≈ Time (s)",
+            "≈ Tokens",
+            "Leanest on Max",
+            "Leanest anywhere"
+          ],
+          "hidden": [],
+          "overflowCells": 9,
+          "tableWidth": 1200,
+          "scrollerWidth": 1200,
+          "scrollerScrollWidth": 1200,
+          "columns": [
+            {
+              "column": "Slot",
+              "kind": "entity",
+              "fixedPx": 221.3,
+              "headNeedPx": 62,
+              "bodyNeedPx": 637
+            },
+            {
+              "column": "Intel.",
+              "kind": "number",
+              "fixedPx": 104,
+              "headNeedPx": 64,
+              "bodyNeedPx": 51
+            },
+            {
+              "column": "Index",
+              "kind": "number",
+              "fixedPx": 104,
+              "headNeedPx": 66,
+              "bodyNeedPx": 51
+            },
+            {
+              "column": "$ / task (USD)",
+              "kind": "money",
+              "fixedPx": 120,
+              "headNeedPx": 112,
+              "bodyNeedPx": 59
+            },
+            {
+              "column": "≈ Time (s)",
+              "kind": "number",
+              "fixedPx": 104,
+              "headNeedPx": 91,
+              "bodyNeedPx": 59
+            },
+            {
+              "column": "≈ Tokens",
+              "kind": "number",
+              "fixedPx": 104,
+              "headNeedPx": 85,
+              "bodyNeedPx": 74
+            },
+            {
+              "column": "Leanest on Max",
+              "kind": "text",
+              "fixedPx": 221.3,
+              "headNeedPx": 122,
+              "bodyNeedPx": 219
+            },
+            {
+              "column": "Leanest anywhere",
+              "kind": "text",
+              "fixedPx": 221.3,
+              "headNeedPx": 140,
+              "bodyNeedPx": 219
+            }
+          ]
+        },
+        "auto": {
+          "tier": "full",
+          "visible": [
+            "Slot",
+            "Intel.",
+            "Index",
+            "$ / task (USD)",
+            "≈ Time (s)",
+            "≈ Tokens",
+            "Leanest on Max",
+            "Leanest anywhere"
+          ],
+          "tableWidth": 1313.5,
+          "scrollerWidth": 1200,
+          "clippedPx": 114,
+          "columns": [
+            {
+              "column": "Slot",
+              "autoPx": 636.5
+            },
+            {
+              "column": "Intel.",
+              "autoPx": 63.2
+            },
+            {
+              "column": "Index",
+              "autoPx": 65.8
+            },
+            {
+              "column": "$ / task (USD)",
+              "autoPx": 111.5
+            },
+            {
+              "column": "≈ Time (s)",
+              "autoPx": 90.5
+            },
+            {
+              "column": "≈ Tokens",
+              "autoPx": 85
+            },
+            {
+              "column": "Leanest on Max",
+              "autoPx": 121.5
+            },
+            {
+              "column": "Leanest anywhere",
+              "autoPx": 139.5
+            }
+          ]
+        }
+      },
+      {
+        "site": "slots-list",
+        "width": 1800,
+        "plan": {
+          "fullAt": 1200,
+          "reducedFrom": 480,
+          "demoted": [],
+          "warnings": []
+        },
+        "fixed": {
+          "tier": "full",
+          "fullAt": "1200",
+          "below": "480",
+          "visible": [
+            "Slot",
+            "Intel.",
+            "Index",
+            "$ / task (USD)",
+            "≈ Time (s)",
+            "≈ Tokens",
+            "Leanest on Max",
+            "Leanest anywhere"
+          ],
+          "hidden": [],
+          "overflowCells": 1,
+          "tableWidth": 1800,
+          "scrollerWidth": 1800,
+          "scrollerScrollWidth": 1800,
+          "columns": [
+            {
+              "column": "Slot",
+              "kind": "entity",
+              "fixedPx": 421.3,
+              "headNeedPx": 62,
+              "bodyNeedPx": 637
+            },
+            {
+              "column": "Intel.",
+              "kind": "number",
+              "fixedPx": 104,
+              "headNeedPx": 64,
+              "bodyNeedPx": 51
+            },
+            {
+              "column": "Index",
+              "kind": "number",
+              "fixedPx": 104,
+              "headNeedPx": 66,
+              "bodyNeedPx": 51
+            },
+            {
+              "column": "$ / task (USD)",
+              "kind": "money",
+              "fixedPx": 120,
+              "headNeedPx": 112,
+              "bodyNeedPx": 59
+            },
+            {
+              "column": "≈ Time (s)",
+              "kind": "number",
+              "fixedPx": 104,
+              "headNeedPx": 91,
+              "bodyNeedPx": 59
+            },
+            {
+              "column": "≈ Tokens",
+              "kind": "number",
+              "fixedPx": 104,
+              "headNeedPx": 85,
+              "bodyNeedPx": 74
+            },
+            {
+              "column": "Leanest on Max",
+              "kind": "text",
+              "fixedPx": 421.3,
+              "headNeedPx": 122,
+              "bodyNeedPx": 396
+            },
+            {
+              "column": "Leanest anywhere",
+              "kind": "text",
+              "fixedPx": 421.3,
+              "headNeedPx": 140,
+              "bodyNeedPx": 400
+            }
+          ]
+        },
+        "auto": {
+          "tier": "full",
+          "visible": [
+            "Slot",
+            "Intel.",
+            "Index",
+            "$ / task (USD)",
+            "≈ Time (s)",
+            "≈ Tokens",
+            "Leanest on Max",
+            "Leanest anywhere"
+          ],
+          "tableWidth": 1800,
+          "scrollerWidth": 1800,
+          "clippedPx": 0,
+          "columns": [
+            {
+              "column": "Slot",
+              "autoPx": 636.5
+            },
+            {
+              "column": "Intel.",
+              "autoPx": 63.2
+            },
+            {
+              "column": "Index",
+              "autoPx": 65.8
+            },
+            {
+              "column": "$ / task (USD)",
+              "autoPx": 111.5
+            },
+            {
+              "column": "≈ Time (s)",
+              "autoPx": 90.5
+            },
+            {
+              "column": "≈ Tokens",
+              "autoPx": 85
+            },
+            {
+              "column": "Leanest on Max",
+              "autoPx": 371.2
+            },
+            {
+              "column": "Leanest anywhere",
+              "autoPx": 376.4
+            }
+          ]
+        }
+      },
+      {
+        "site": "net-worth",
+        "width": 500,
+        "plan": {
+          "fullAt": 800,
+          "reducedFrom": 800,
+          "demoted": [],
+          "warnings": []
+        },
+        "fixed": {
+          "tier": "card",
+          "fullAt": "800",
+          "below": "800",
+          "visible": ["Position", "Price (EUR)", "Value (EUR)", "Share (%)"],
+          "hidden": ["Units", "As of"],
+          "overflowCells": 0,
+          "tableWidth": 500,
+          "scrollerWidth": 500,
+          "scrollerScrollWidth": 500,
+          "columns": []
+        },
+        "auto": {
+          "tier": "card",
+          "visible": ["Position", "Price (EUR)", "Value (EUR)", "Share (%)"],
+          "tableWidth": 500,
+          "scrollerWidth": 500,
+          "clippedPx": 0,
+          "columns": []
+        }
+      },
+      {
+        "site": "net-worth",
+        "width": 800,
+        "plan": {
+          "fullAt": 800,
+          "reducedFrom": 800,
+          "demoted": [],
+          "warnings": []
+        },
+        "fixed": {
+          "tier": "full",
+          "fullAt": "800",
+          "below": "800",
+          "visible": ["Position", "Units", "Price (EUR)", "Value (EUR)", "Share (%)", "As of"],
+          "hidden": [],
+          "overflowCells": 8,
+          "tableWidth": 800,
+          "scrollerWidth": 800,
+          "scrollerScrollWidth": 800,
+          "columns": [
+            {
+              "column": "Position",
+              "kind": "entity",
+              "fixedPx": 232,
+              "headNeedPx": 84,
+              "bodyNeedPx": 330
+            },
+            {
+              "column": "Units",
+              "kind": "number",
+              "fixedPx": 104,
+              "headNeedPx": 65,
+              "bodyNeedPx": 93
+            },
+            {
+              "column": "Price (EUR)",
+              "kind": "money",
+              "fixedPx": 120,
+              "headNeedPx": 98,
+              "bodyNeedPx": 66
+            },
+            {
+              "column": "Value (EUR)",
+              "kind": "money",
+              "fixedPx": 120,
+              "headNeedPx": 102,
+              "bodyNeedPx": 93
+            },
+            {
+              "column": "Share (%)",
+              "kind": "number",
+              "fixedPx": 104,
+              "headNeedPx": 90,
+              "bodyNeedPx": 51
+            },
+            {
+              "column": "As of",
+              "kind": "date",
+              "fixedPx": 120,
+              "headNeedPx": 69,
+              "bodyNeedPx": 109
+            }
+          ]
+        },
+        "auto": {
+          "tier": "full",
+          "visible": ["Position", "Units", "Price (EUR)", "Value (EUR)", "Share (%)", "As of"],
+          "tableWidth": 819.4,
+          "scrollerWidth": 800,
+          "clippedPx": 19,
+          "columns": [
+            {
+              "column": "Position",
+              "autoPx": 329.5
+            },
+            {
+              "column": "Units",
+              "autoPx": 92.3
+            },
+            {
+              "column": "Price (EUR)",
+              "autoPx": 97.5
+            },
+            {
+              "column": "Value (EUR)",
+              "autoPx": 101.7
+            },
+            {
+              "column": "Share (%)",
+              "autoPx": 89.6
+            },
+            {
+              "column": "As of",
+              "autoPx": 108.9
+            }
+          ]
+        }
+      },
+      {
+        "site": "net-worth",
+        "width": 1000,
+        "plan": {
+          "fullAt": 800,
+          "reducedFrom": 800,
+          "demoted": [],
+          "warnings": []
+        },
+        "fixed": {
+          "tier": "full",
+          "fullAt": "800",
+          "below": "800",
+          "visible": ["Position", "Units", "Price (EUR)", "Value (EUR)", "Share (%)", "As of"],
+          "hidden": [],
+          "overflowCells": 0,
+          "tableWidth": 1000,
+          "scrollerWidth": 1000,
+          "scrollerScrollWidth": 1000,
+          "columns": [
+            {
+              "column": "Position",
+              "kind": "entity",
+              "fixedPx": 432,
+              "headNeedPx": 84,
+              "bodyNeedPx": 330
+            },
+            {
+              "column": "Units",
+              "kind": "number",
+              "fixedPx": 104,
+              "headNeedPx": 65,
+              "bodyNeedPx": 93
+            },
+            {
+              "column": "Price (EUR)",
+              "kind": "money",
+              "fixedPx": 120,
+              "headNeedPx": 98,
+              "bodyNeedPx": 66
+            },
+            {
+              "column": "Value (EUR)",
+              "kind": "money",
+              "fixedPx": 120,
+              "headNeedPx": 102,
+              "bodyNeedPx": 93
+            },
+            {
+              "column": "Share (%)",
+              "kind": "number",
+              "fixedPx": 104,
+              "headNeedPx": 90,
+              "bodyNeedPx": 51
+            },
+            {
+              "column": "As of",
+              "kind": "date",
+              "fixedPx": 120,
+              "headNeedPx": 69,
+              "bodyNeedPx": 109
+            }
+          ]
+        },
+        "auto": {
+          "tier": "full",
+          "visible": ["Position", "Units", "Price (EUR)", "Value (EUR)", "Share (%)", "As of"],
+          "tableWidth": 1000,
+          "scrollerWidth": 1000,
+          "clippedPx": 0,
+          "columns": [
+            {
+              "column": "Position",
+              "autoPx": 402.1
+            },
+            {
+              "column": "Units",
+              "autoPx": 112.7
+            },
+            {
+              "column": "Price (EUR)",
+              "autoPx": 119
+            },
+            {
+              "column": "Value (EUR)",
+              "autoPx": 124.1
+            },
+            {
+              "column": "Share (%)",
+              "autoPx": 109.3
+            },
+            {
+              "column": "As of",
+              "autoPx": 132.9
+            }
+          ]
+        }
+      },
+      {
+        "site": "net-worth",
+        "width": 1200,
+        "plan": {
+          "fullAt": 800,
+          "reducedFrom": 800,
+          "demoted": [],
+          "warnings": []
+        },
+        "fixed": {
+          "tier": "full",
+          "fullAt": "800",
+          "below": "800",
+          "visible": ["Position", "Units", "Price (EUR)", "Value (EUR)", "Share (%)", "As of"],
+          "hidden": [],
+          "overflowCells": 0,
+          "tableWidth": 1200,
+          "scrollerWidth": 1200,
+          "scrollerScrollWidth": 1200,
+          "columns": [
+            {
+              "column": "Position",
+              "kind": "entity",
+              "fixedPx": 632,
+              "headNeedPx": 84,
+              "bodyNeedPx": 330
+            },
+            {
+              "column": "Units",
+              "kind": "number",
+              "fixedPx": 104,
+              "headNeedPx": 65,
+              "bodyNeedPx": 93
+            },
+            {
+              "column": "Price (EUR)",
+              "kind": "money",
+              "fixedPx": 120,
+              "headNeedPx": 98,
+              "bodyNeedPx": 66
+            },
+            {
+              "column": "Value (EUR)",
+              "kind": "money",
+              "fixedPx": 120,
+              "headNeedPx": 102,
+              "bodyNeedPx": 93
+            },
+            {
+              "column": "Share (%)",
+              "kind": "number",
+              "fixedPx": 104,
+              "headNeedPx": 90,
+              "bodyNeedPx": 51
+            },
+            {
+              "column": "As of",
+              "kind": "date",
+              "fixedPx": 120,
+              "headNeedPx": 69,
+              "bodyNeedPx": 109
+            }
+          ]
+        },
+        "auto": {
+          "tier": "full",
+          "visible": ["Position", "Units", "Price (EUR)", "Value (EUR)", "Share (%)", "As of"],
+          "tableWidth": 1200,
+          "scrollerWidth": 1200,
+          "clippedPx": 0,
+          "columns": [
+            {
+              "column": "Position",
+              "autoPx": 482.5
+            },
+            {
+              "column": "Units",
+              "autoPx": 135.2
+            },
+            {
+              "column": "Price (EUR)",
+              "autoPx": 142.7
+            },
+            {
+              "column": "Value (EUR)",
+              "autoPx": 148.9
+            },
+            {
+              "column": "Share (%)",
+              "autoPx": 131.2
+            },
+            {
+              "column": "As of",
+              "autoPx": 159.5
+            }
+          ]
+        }
+      },
+      {
+        "site": "net-worth",
+        "width": 1800,
+        "plan": {
+          "fullAt": 800,
+          "reducedFrom": 800,
+          "demoted": [],
+          "warnings": []
+        },
+        "fixed": {
+          "tier": "full",
+          "fullAt": "800",
+          "below": "800",
+          "visible": ["Position", "Units", "Price (EUR)", "Value (EUR)", "Share (%)", "As of"],
+          "hidden": [],
+          "overflowCells": 0,
+          "tableWidth": 1800,
+          "scrollerWidth": 1800,
+          "scrollerScrollWidth": 1800,
+          "columns": [
+            {
+              "column": "Position",
+              "kind": "entity",
+              "fixedPx": 1232,
+              "headNeedPx": 84,
+              "bodyNeedPx": 330
+            },
+            {
+              "column": "Units",
+              "kind": "number",
+              "fixedPx": 104,
+              "headNeedPx": 65,
+              "bodyNeedPx": 93
+            },
+            {
+              "column": "Price (EUR)",
+              "kind": "money",
+              "fixedPx": 120,
+              "headNeedPx": 98,
+              "bodyNeedPx": 66
+            },
+            {
+              "column": "Value (EUR)",
+              "kind": "money",
+              "fixedPx": 120,
+              "headNeedPx": 102,
+              "bodyNeedPx": 93
+            },
+            {
+              "column": "Share (%)",
+              "kind": "number",
+              "fixedPx": 104,
+              "headNeedPx": 90,
+              "bodyNeedPx": 51
+            },
+            {
+              "column": "As of",
+              "kind": "date",
+              "fixedPx": 120,
+              "headNeedPx": 69,
+              "bodyNeedPx": 109
+            }
+          ]
+        },
+        "auto": {
+          "tier": "full",
+          "visible": ["Position", "Units", "Price (EUR)", "Value (EUR)", "Share (%)", "As of"],
+          "tableWidth": 1800,
+          "scrollerWidth": 1800,
+          "clippedPx": 0,
+          "columns": [
+            {
+              "column": "Position",
+              "autoPx": 723.8
+            },
+            {
+              "column": "Units",
+              "autoPx": 202.9
+            },
+            {
+              "column": "Price (EUR)",
+              "autoPx": 214.1
+            },
+            {
+              "column": "Value (EUR)",
+              "autoPx": 223.3
+            },
+            {
+              "column": "Share (%)",
+              "autoPx": 196.8
+            },
+            {
+              "column": "As of",
+              "autoPx": 239.2
+            }
+          ]
+        }
+      },
+      {
+        "site": "catalog",
+        "width": 500,
+        "plan": {
+          "fullAt": 1800,
+          "reducedFrom": 800,
+          "demoted": [],
+          "warnings": []
+        },
+        "fixed": {
+          "tier": "card",
+          "fullAt": "1800",
+          "below": "800",
+          "visible": ["Model", "Intel.", "Effort", "Index", "$ / task (USD)", "Routes"],
+          "hidden": [
+            "Creator",
+            "Released",
+            "≈ Time (s)",
+            "≈ Tokens",
+            "Speed (tok/s)",
+            "$ in /1M (USD)",
+            "$ out /1M (USD)",
+            "IU"
+          ],
+          "overflowCells": 0,
+          "tableWidth": 500,
+          "scrollerWidth": 500,
+          "scrollerScrollWidth": 500,
+          "columns": []
+        },
+        "auto": {
+          "tier": "card",
+          "visible": ["Model", "Intel.", "Effort", "Index", "$ / task (USD)", "Routes"],
+          "tableWidth": 500,
+          "scrollerWidth": 500,
+          "clippedPx": 0,
+          "columns": []
+        }
+      },
+      {
+        "site": "catalog",
+        "width": 800,
+        "plan": {
+          "fullAt": 1800,
+          "reducedFrom": 800,
+          "demoted": [],
+          "warnings": []
+        },
+        "fixed": {
+          "tier": "reduced",
+          "fullAt": "1800",
+          "below": "800",
+          "visible": ["Model", "Intel.", "Effort", "Index", "$ / task (USD)", "Routes"],
+          "hidden": [
+            "Creator",
+            "Released",
+            "≈ Time (s)",
+            "≈ Tokens",
+            "Speed (tok/s)",
+            "$ in /1M (USD)",
+            "$ out /1M (USD)",
+            "IU"
+          ],
+          "overflowCells": 0,
+          "tableWidth": 800,
+          "scrollerWidth": 800,
+          "scrollerScrollWidth": 800,
+          "columns": [
+            {
+              "column": "Model",
+              "kind": "entity",
+              "fixedPx": 248,
+              "headNeedPx": 75,
+              "bodyNeedPx": 239
+            },
+            {
+              "column": "Intel.",
+              "kind": "number",
+              "fixedPx": 104,
+              "headNeedPx": 64,
+              "bodyNeedPx": 51
+            },
+            {
+              "column": "Effort",
+              "kind": "status",
+              "fixedPx": 120,
+              "headNeedPx": 67,
+              "bodyNeedPx": 86
+            },
+            {
+              "column": "Index",
+              "kind": "number",
+              "fixedPx": 104,
+              "headNeedPx": 66,
+              "bodyNeedPx": 51
+            },
+            {
+              "column": "$ / task (USD)",
+              "kind": "money",
+              "fixedPx": 120,
+              "headNeedPx": 112,
+              "bodyNeedPx": 59
+            },
+            {
+              "column": "Routes",
+              "kind": "number",
+              "fixedPx": 104,
+              "headNeedPx": 78,
+              "bodyNeedPx": 36
+            }
+          ]
+        },
+        "auto": {
+          "tier": "reduced",
+          "visible": ["Model", "Intel.", "Effort", "Index", "$ / task (USD)", "Routes"],
+          "tableWidth": 800,
+          "scrollerWidth": 800,
+          "clippedPx": 0,
+          "columns": [
+            {
+              "column": "Model",
+              "autoPx": 297.3
+            },
+            {
+              "column": "Intel.",
+              "autoPx": 78.7
+            },
+            {
+              "column": "Effort",
+              "autoPx": 106
+            },
+            {
+              "column": "Index",
+              "autoPx": 82
+            },
+            {
+              "column": "$ / task (USD)",
+              "autoPx": 139
+            },
+            {
+              "column": "Routes",
+              "autoPx": 97.1
+            }
+          ]
+        }
+      },
+      {
+        "site": "catalog",
+        "width": 1000,
+        "plan": {
+          "fullAt": 1800,
+          "reducedFrom": 800,
+          "demoted": [],
+          "warnings": []
+        },
+        "fixed": {
+          "tier": "reduced",
+          "fullAt": "1800",
+          "below": "800",
+          "visible": ["Model", "Intel.", "Effort", "Index", "$ / task (USD)", "Routes"],
+          "hidden": [
+            "Creator",
+            "Released",
+            "≈ Time (s)",
+            "≈ Tokens",
+            "Speed (tok/s)",
+            "$ in /1M (USD)",
+            "$ out /1M (USD)",
+            "IU"
+          ],
+          "overflowCells": 0,
+          "tableWidth": 1000,
+          "scrollerWidth": 1000,
+          "scrollerScrollWidth": 1000,
+          "columns": [
+            {
+              "column": "Model",
+              "kind": "entity",
+              "fixedPx": 448,
+              "headNeedPx": 75,
+              "bodyNeedPx": 239
+            },
+            {
+              "column": "Intel.",
+              "kind": "number",
+              "fixedPx": 104,
+              "headNeedPx": 64,
+              "bodyNeedPx": 51
+            },
+            {
+              "column": "Effort",
+              "kind": "status",
+              "fixedPx": 120,
+              "headNeedPx": 67,
+              "bodyNeedPx": 86
+            },
+            {
+              "column": "Index",
+              "kind": "number",
+              "fixedPx": 104,
+              "headNeedPx": 66,
+              "bodyNeedPx": 51
+            },
+            {
+              "column": "$ / task (USD)",
+              "kind": "money",
+              "fixedPx": 120,
+              "headNeedPx": 112,
+              "bodyNeedPx": 59
+            },
+            {
+              "column": "Routes",
+              "kind": "number",
+              "fixedPx": 104,
+              "headNeedPx": 78,
+              "bodyNeedPx": 36
+            }
+          ]
+        },
+        "auto": {
+          "tier": "reduced",
+          "visible": ["Model", "Intel.", "Effort", "Index", "$ / task (USD)", "Routes"],
+          "tableWidth": 1000,
+          "scrollerWidth": 1000,
+          "clippedPx": 0,
+          "columns": [
+            {
+              "column": "Model",
+              "autoPx": 371.6
+            },
+            {
+              "column": "Intel.",
+              "autoPx": 98.4
+            },
+            {
+              "column": "Effort",
+              "autoPx": 132.5
+            },
+            {
+              "column": "Index",
+              "autoPx": 102.5
+            },
+            {
+              "column": "$ / task (USD)",
+              "autoPx": 173.7
+            },
+            {
+              "column": "Routes",
+              "autoPx": 121.4
+            }
+          ]
+        }
+      },
+      {
+        "site": "catalog",
+        "width": 1200,
+        "plan": {
+          "fullAt": 1800,
+          "reducedFrom": 800,
+          "demoted": [],
+          "warnings": []
+        },
+        "fixed": {
+          "tier": "reduced",
+          "fullAt": "1800",
+          "below": "800",
+          "visible": ["Model", "Intel.", "Effort", "Index", "$ / task (USD)", "Routes"],
+          "hidden": [
+            "Creator",
+            "Released",
+            "≈ Time (s)",
+            "≈ Tokens",
+            "Speed (tok/s)",
+            "$ in /1M (USD)",
+            "$ out /1M (USD)",
+            "IU"
+          ],
+          "overflowCells": 0,
+          "tableWidth": 1200,
+          "scrollerWidth": 1200,
+          "scrollerScrollWidth": 1200,
+          "columns": [
+            {
+              "column": "Model",
+              "kind": "entity",
+              "fixedPx": 648,
+              "headNeedPx": 75,
+              "bodyNeedPx": 239
+            },
+            {
+              "column": "Intel.",
+              "kind": "number",
+              "fixedPx": 104,
+              "headNeedPx": 64,
+              "bodyNeedPx": 51
+            },
+            {
+              "column": "Effort",
+              "kind": "status",
+              "fixedPx": 120,
+              "headNeedPx": 67,
+              "bodyNeedPx": 86
+            },
+            {
+              "column": "Index",
+              "kind": "number",
+              "fixedPx": 104,
+              "headNeedPx": 66,
+              "bodyNeedPx": 51
+            },
+            {
+              "column": "$ / task (USD)",
+              "kind": "money",
+              "fixedPx": 120,
+              "headNeedPx": 112,
+              "bodyNeedPx": 59
+            },
+            {
+              "column": "Routes",
+              "kind": "number",
+              "fixedPx": 104,
+              "headNeedPx": 78,
+              "bodyNeedPx": 36
+            }
+          ]
+        },
+        "auto": {
+          "tier": "reduced",
+          "visible": ["Model", "Intel.", "Effort", "Index", "$ / task (USD)", "Routes"],
+          "tableWidth": 1200,
+          "scrollerWidth": 1200,
+          "clippedPx": 0,
+          "columns": [
+            {
+              "column": "Model",
+              "autoPx": 445.9
+            },
+            {
+              "column": "Intel.",
+              "autoPx": 118.1
+            },
+            {
+              "column": "Effort",
+              "autoPx": 159
+            },
+            {
+              "column": "Index",
+              "autoPx": 122.9
+            },
+            {
+              "column": "$ / task (USD)",
+              "autoPx": 208.4
+            },
+            {
+              "column": "Routes",
+              "autoPx": 145.6
+            }
+          ]
+        }
+      },
+      {
+        "site": "catalog",
+        "width": 1800,
+        "plan": {
+          "fullAt": 1800,
+          "reducedFrom": 800,
+          "demoted": [],
+          "warnings": []
+        },
+        "fixed": {
+          "tier": "full",
+          "fullAt": "1800",
+          "below": "800",
+          "visible": [
+            "Model",
+            "Intel.",
+            "Effort",
+            "Creator",
+            "Released",
+            "Index",
+            "$ / task (USD)",
+            "≈ Time (s)",
+            "≈ Tokens",
+            "Speed (tok/s)",
+            "$ in /1M (USD)",
+            "$ out /1M (USD)",
+            "IU",
+            "Routes"
+          ],
+          "hidden": [],
+          "overflowCells": 3,
+          "tableWidth": 1800,
+          "scrollerWidth": 1800,
+          "scrollerScrollWidth": 1800,
+          "columns": [
+            {
+              "column": "Model",
+              "kind": "entity",
+              "fixedPx": 192,
+              "headNeedPx": 75,
+              "bodyNeedPx": 239
+            },
+            {
+              "column": "Intel.",
+              "kind": "number",
+              "fixedPx": 104,
+              "headNeedPx": 64,
+              "bodyNeedPx": 51
+            },
+            {
+              "column": "Effort",
+              "kind": "status",
+              "fixedPx": 120,
+              "headNeedPx": 67,
+              "bodyNeedPx": 86
+            },
+            {
+              "column": "Creator",
+              "kind": "text",
+              "fixedPx": 192,
+              "headNeedPx": 77,
+              "bodyNeedPx": 99
+            },
+            {
+              "column": "Released",
+              "kind": "date",
+              "fixedPx": 120,
+              "headNeedPx": 86,
+              "bodyNeedPx": 106
+            },
+            {
+              "column": "Index",
+              "kind": "number",
+              "fixedPx": 104,
+              "headNeedPx": 66,
+              "bodyNeedPx": 51
+            },
+            {
+              "column": "$ / task (USD)",
+              "kind": "money",
+              "fixedPx": 120,
+              "headNeedPx": 112,
+              "bodyNeedPx": 59
+            },
+            {
+              "column": "≈ Time (s)",
+              "kind": "number",
+              "fixedPx": 104,
+              "headNeedPx": 91,
+              "bodyNeedPx": 59
+            },
+            {
+              "column": "≈ Tokens",
+              "kind": "number",
+              "fixedPx": 104,
+              "headNeedPx": 85,
+              "bodyNeedPx": 74
+            },
+            {
+              "column": "Speed (tok/s)",
+              "kind": "number",
+              "fixedPx": 104,
+              "headNeedPx": 108,
+              "bodyNeedPx": 48
+            },
+            {
+              "column": "$ in /1M (USD)",
+              "kind": "money",
+              "fixedPx": 120,
+              "headNeedPx": 117,
+              "bodyNeedPx": 59
+            },
+            {
+              "column": "$ out /1M (USD)",
+              "kind": "money",
+              "fixedPx": 120,
+              "headNeedPx": 125,
+              "bodyNeedPx": 59
+            },
+            {
+              "column": "IU",
+              "kind": "text",
+              "fixedPx": 192,
+              "headNeedPx": 48,
+              "bodyNeedPx": 153
+            },
+            {
+              "column": "Routes",
+              "kind": "number",
+              "fixedPx": 104,
+              "headNeedPx": 78,
+              "bodyNeedPx": 36
+            }
+          ]
+        },
+        "auto": {
+          "tier": "full",
+          "visible": [
+            "Model",
+            "Intel.",
+            "Effort",
+            "Creator",
+            "Released",
+            "Index",
+            "$ / task (USD)",
+            "≈ Time (s)",
+            "≈ Tokens",
+            "Speed (tok/s)",
+            "$ in /1M (USD)",
+            "$ out /1M (USD)",
+            "IU",
+            "Routes"
+          ],
+          "tableWidth": 1800,
+          "scrollerWidth": 1800,
+          "clippedPx": 0,
+          "columns": [
+            {
+              "column": "Model",
+              "autoPx": 275.1
+            },
+            {
+              "column": "Intel.",
+              "autoPx": 72.8
+            },
+            {
+              "column": "Effort",
+              "autoPx": 98.1
+            },
+            {
+              "column": "Creator",
+              "autoPx": 113.5
+            },
+            {
+              "column": "Released",
+              "autoPx": 121.2
+            },
+            {
+              "column": "Index",
+              "autoPx": 75.8
+            },
+            {
+              "column": "$ / task (USD)",
+              "autoPx": 128.6
+            },
+            {
+              "column": "≈ Time (s)",
+              "autoPx": 104.3
+            },
+            {
+              "column": "≈ Tokens",
+              "autoPx": 97.9
+            },
+            {
+              "column": "Speed (tok/s)",
+              "autoPx": 123.5
+            },
+            {
+              "column": "$ in /1M (USD)",
+              "autoPx": 133.9
+            },
+            {
+              "column": "$ out /1M (USD)",
+              "autoPx": 143.2
+            },
+            {
+              "column": "IU",
+              "autoPx": 222.1
+            },
+            {
+              "column": "Routes",
+              "autoPx": 89.9
+            }
+          ]
+        }
+      },
+      {
+        "site": "spark-grid",
+        "width": 500,
+        "plan": {
+          "fullAt": 800,
+          "reducedFrom": 480,
+          "demoted": [],
+          "warnings": []
+        },
+        "fixed": {
+          "tier": "reduced",
+          "fullAt": "800",
+          "below": "480",
+          "visible": ["Exercise", "Trend, 28 d (%/mo)", "Volume, last 10 training weeks"],
+          "hidden": ["INOL, last 15 sessions"],
+          "overflowCells": 1,
+          "tableWidth": 500,
+          "scrollerWidth": 500,
+          "scrollerScrollWidth": 500,
+          "columns": [
+            {
+              "column": "Exercise",
+              "kind": "entity",
+              "fixedPx": 212,
+              "headNeedPx": 85,
+              "bodyNeedPx": 203
+            },
+            {
+              "column": "Trend, 28 d (%/mo)",
+              "kind": "delta",
+              "fixedPx": 104,
+              "headNeedPx": 140,
+              "bodyNeedPx": 144
+            },
+            {
+              "column": "Volume, last 10 training weeks",
+              "kind": "spark",
+              "fixedPx": 184,
+              "headNeedPx": 192,
+              "bodyNeedPx": 184
+            }
+          ]
+        },
+        "auto": {
+          "tier": "reduced",
+          "visible": ["Exercise", "Trend, 28 d (%/mo)", "Volume, last 10 training weeks"],
+          "tableWidth": 533,
+          "scrollerWidth": 500,
+          "clippedPx": 33,
+          "columns": [
+            {
+              "column": "Exercise",
+              "autoPx": 202.4
+            },
+            {
+              "column": "Trend, 28 d (%/mo)",
+              "autoPx": 139.3
+            },
+            {
+              "column": "Volume, last 10 training weeks",
+              "autoPx": 191.4
+            }
+          ]
+        }
+      },
+      {
+        "site": "spark-grid",
+        "width": 800,
+        "plan": {
+          "fullAt": 800,
+          "reducedFrom": 480,
+          "demoted": [],
+          "warnings": []
+        },
+        "fixed": {
+          "tier": "full",
+          "fullAt": "800",
+          "below": "480",
+          "visible": [
+            "Exercise",
+            "Trend, 28 d (%/mo)",
+            "Volume, last 10 training weeks",
+            "INOL, last 15 sessions"
+          ],
+          "hidden": [],
+          "overflowCells": 3,
+          "tableWidth": 800,
+          "scrollerWidth": 800,
+          "scrollerScrollWidth": 802,
+          "columns": [
+            {
+              "column": "Exercise",
+              "kind": "entity",
+              "fixedPx": 328,
+              "headNeedPx": 85,
+              "bodyNeedPx": 203
+            },
+            {
+              "column": "Trend, 28 d (%/mo)",
+              "kind": "delta",
+              "fixedPx": 104,
+              "headNeedPx": 140,
+              "bodyNeedPx": 144
+            },
+            {
+              "column": "Volume, last 10 training weeks",
+              "kind": "spark",
+              "fixedPx": 184,
+              "headNeedPx": 192,
+              "bodyNeedPx": 184
+            },
+            {
+              "column": "INOL, last 15 sessions",
+              "kind": "spark",
+              "fixedPx": 184,
+              "headNeedPx": 149,
+              "bodyNeedPx": 202
+            }
+          ]
+        },
+        "auto": {
+          "tier": "full",
+          "visible": [
+            "Exercise",
+            "Trend, 28 d (%/mo)",
+            "Volume, last 10 training weeks",
+            "INOL, last 15 sessions"
+          ],
+          "tableWidth": 800,
+          "scrollerWidth": 800,
+          "clippedPx": 0,
+          "columns": [
+            {
+              "column": "Exercise",
+              "autoPx": 220.3
+            },
+            {
+              "column": "Trend, 28 d (%/mo)",
+              "autoPx": 151.7
+            },
+            {
+              "column": "Volume, last 10 training weeks",
+              "autoPx": 208.3
+            },
+            {
+              "column": "INOL, last 15 sessions",
+              "autoPx": 219.7
+            }
+          ]
+        }
+      },
+      {
+        "site": "spark-grid",
+        "width": 1000,
+        "plan": {
+          "fullAt": 800,
+          "reducedFrom": 480,
+          "demoted": [],
+          "warnings": []
+        },
+        "fixed": {
+          "tier": "full",
+          "fullAt": "800",
+          "below": "480",
+          "visible": [
+            "Exercise",
+            "Trend, 28 d (%/mo)",
+            "Volume, last 10 training weeks",
+            "INOL, last 15 sessions"
+          ],
+          "hidden": [],
+          "overflowCells": 3,
+          "tableWidth": 1000,
+          "scrollerWidth": 1000,
+          "scrollerScrollWidth": 1002,
+          "columns": [
+            {
+              "column": "Exercise",
+              "kind": "entity",
+              "fixedPx": 528,
+              "headNeedPx": 85,
+              "bodyNeedPx": 203
+            },
+            {
+              "column": "Trend, 28 d (%/mo)",
+              "kind": "delta",
+              "fixedPx": 104,
+              "headNeedPx": 140,
+              "bodyNeedPx": 144
+            },
+            {
+              "column": "Volume, last 10 training weeks",
+              "kind": "spark",
+              "fixedPx": 184,
+              "headNeedPx": 192,
+              "bodyNeedPx": 184
+            },
+            {
+              "column": "INOL, last 15 sessions",
+              "kind": "spark",
+              "fixedPx": 184,
+              "headNeedPx": 149,
+              "bodyNeedPx": 202
+            }
+          ]
+        },
+        "auto": {
+          "tier": "full",
+          "visible": [
+            "Exercise",
+            "Trend, 28 d (%/mo)",
+            "Volume, last 10 training weeks",
+            "INOL, last 15 sessions"
+          ],
+          "tableWidth": 1000,
+          "scrollerWidth": 1000,
+          "clippedPx": 0,
+          "columns": [
+            {
+              "column": "Exercise",
+              "autoPx": 275.4
+            },
+            {
+              "column": "Trend, 28 d (%/mo)",
+              "autoPx": 189.6
+            },
+            {
+              "column": "Volume, last 10 training weeks",
+              "autoPx": 260.4
+            },
+            {
+              "column": "INOL, last 15 sessions",
+              "autoPx": 274.6
+            }
+          ]
+        }
+      },
+      {
+        "site": "spark-grid",
+        "width": 1200,
+        "plan": {
+          "fullAt": 800,
+          "reducedFrom": 480,
+          "demoted": [],
+          "warnings": []
+        },
+        "fixed": {
+          "tier": "full",
+          "fullAt": "800",
+          "below": "480",
+          "visible": [
+            "Exercise",
+            "Trend, 28 d (%/mo)",
+            "Volume, last 10 training weeks",
+            "INOL, last 15 sessions"
+          ],
+          "hidden": [],
+          "overflowCells": 3,
+          "tableWidth": 1200,
+          "scrollerWidth": 1200,
+          "scrollerScrollWidth": 1202,
+          "columns": [
+            {
+              "column": "Exercise",
+              "kind": "entity",
+              "fixedPx": 728,
+              "headNeedPx": 85,
+              "bodyNeedPx": 203
+            },
+            {
+              "column": "Trend, 28 d (%/mo)",
+              "kind": "delta",
+              "fixedPx": 104,
+              "headNeedPx": 140,
+              "bodyNeedPx": 144
+            },
+            {
+              "column": "Volume, last 10 training weeks",
+              "kind": "spark",
+              "fixedPx": 184,
+              "headNeedPx": 192,
+              "bodyNeedPx": 184
+            },
+            {
+              "column": "INOL, last 15 sessions",
+              "kind": "spark",
+              "fixedPx": 184,
+              "headNeedPx": 149,
+              "bodyNeedPx": 202
+            }
+          ]
+        },
+        "auto": {
+          "tier": "full",
+          "visible": [
+            "Exercise",
+            "Trend, 28 d (%/mo)",
+            "Volume, last 10 training weeks",
+            "INOL, last 15 sessions"
+          ],
+          "tableWidth": 1200,
+          "scrollerWidth": 1200,
+          "clippedPx": 0,
+          "columns": [
+            {
+              "column": "Exercise",
+              "autoPx": 330.4
+            },
+            {
+              "column": "Trend, 28 d (%/mo)",
+              "autoPx": 227.5
+            },
+            {
+              "column": "Volume, last 10 training weeks",
+              "autoPx": 312.5
+            },
+            {
+              "column": "INOL, last 15 sessions",
+              "autoPx": 329.6
+            }
+          ]
+        }
+      },
+      {
+        "site": "spark-grid",
+        "width": 1800,
+        "plan": {
+          "fullAt": 800,
+          "reducedFrom": 480,
+          "demoted": [],
+          "warnings": []
+        },
+        "fixed": {
+          "tier": "full",
+          "fullAt": "800",
+          "below": "480",
+          "visible": [
+            "Exercise",
+            "Trend, 28 d (%/mo)",
+            "Volume, last 10 training weeks",
+            "INOL, last 15 sessions"
+          ],
+          "hidden": [],
+          "overflowCells": 3,
+          "tableWidth": 1800,
+          "scrollerWidth": 1800,
+          "scrollerScrollWidth": 1802,
+          "columns": [
+            {
+              "column": "Exercise",
+              "kind": "entity",
+              "fixedPx": 1328,
+              "headNeedPx": 85,
+              "bodyNeedPx": 203
+            },
+            {
+              "column": "Trend, 28 d (%/mo)",
+              "kind": "delta",
+              "fixedPx": 104,
+              "headNeedPx": 140,
+              "bodyNeedPx": 144
+            },
+            {
+              "column": "Volume, last 10 training weeks",
+              "kind": "spark",
+              "fixedPx": 184,
+              "headNeedPx": 192,
+              "bodyNeedPx": 184
+            },
+            {
+              "column": "INOL, last 15 sessions",
+              "kind": "spark",
+              "fixedPx": 184,
+              "headNeedPx": 149,
+              "bodyNeedPx": 202
+            }
+          ]
+        },
+        "auto": {
+          "tier": "full",
+          "visible": [
+            "Exercise",
+            "Trend, 28 d (%/mo)",
+            "Volume, last 10 training weeks",
+            "INOL, last 15 sessions"
+          ],
+          "tableWidth": 1800,
+          "scrollerWidth": 1800,
+          "clippedPx": 0,
+          "columns": [
+            {
+              "column": "Exercise",
+              "autoPx": 495.7
+            },
+            {
+              "column": "Trend, 28 d (%/mo)",
+              "autoPx": 341.2
+            },
+            {
+              "column": "Volume, last 10 training weeks",
+              "autoPx": 468.7
+            },
+            {
+              "column": "INOL, last 15 sessions",
+              "autoPx": 494.4
+            }
+          ]
+        }
+      }
+    ],
+    "verdict": "REFUTED"
+  },
+  "s4": {
+    "sites": 9,
+    "fitCount": 6,
+    "fit": [
+      "ledger",
+      "spending",
+      "net-worth",
+      "recurring-subscriptions",
+      "recurring-bills",
+      "recurring-apart"
+    ],
+    "needsSlot": ["tax"],
+    "toSheet": ["catalog", "slots-list"],
+    "reordered": ["net-worth", "recurring-subscriptions", "recurring-bills"],
+    "detail": [
+      {
+        "site": "ledger",
+        "argo": "transactions + BookingRow",
+        "status": "fit",
+        "columnOrder": "argo",
+        "displacedInArgoOrder": [],
+        "places": {
+          "booked_on": "meta",
+          "merchant": "title",
+          "category": "edit",
+          "tax_tag": "edit",
+          "amount": "value",
+          "actions": "kebab"
+        },
+        "slot": [],
+        "toSheet": [],
+        "stillDisplaced": [],
+        "truncated": [],
+        "cardOverflowCells": 0,
+        "overflowCells": [],
+        "rowHeights": {
+          "min": 184,
+          "max": 216
+        },
+        "demoted": ["amount"],
+        "reducedFrom": 800,
+        "fullAt": 800,
+        "warnings": [
+          "basalt-ui/table: more than two priority-1 columns; amount demoted to 2 by declaration order"
+        ],
+        "needs": [
+          {
+            "label": "booking name",
+            "result": "ok",
+            "places": ["title"]
+          },
+          {
+            "label": "signed amount",
+            "result": "ok",
+            "places": ["value"]
+          },
+          {
+            "label": "date",
+            "result": "ok",
+            "places": ["meta"]
+          },
+          {
+            "label": "purpose (entity sub line)",
+            "result": "ok",
+            "places": ["title"]
+          },
+          {
+            "label": "category select",
+            "result": "ok",
+            "places": ["edit"]
+          },
+          {
+            "label": "tax tag select",
+            "result": "ok",
+            "places": ["edit"]
+          }
+        ]
+      },
+      {
+        "site": "catalog",
+        "argo": "catalog-table + CatalogCard",
+        "status": "sheet",
+        "columnOrder": "argo",
+        "displacedInArgoOrder": [],
+        "places": {
+          "model": "title",
+          "intelligence": "value",
+          "effort": "badge",
+          "creator": "subtitle",
+          "released": "meta",
+          "index": "meta",
+          "cost": "meta",
+          "time": "meta",
+          "tokens": "meta",
+          "speed": "meta",
+          "priceIn": "detail",
+          "priceOut": "detail",
+          "iu": "detail",
+          "routes": "detail"
+        },
+        "slot": [],
+        "toSheet": ["price in", "price out", "IU access", "routes"],
+        "stillDisplaced": [],
+        "truncated": [],
+        "cardOverflowCells": 0,
+        "overflowCells": [],
+        "rowHeights": {
+          "min": 84,
+          "max": 116
+        },
+        "demoted": [],
+        "reducedFrom": 800,
+        "fullAt": 1800,
+        "warnings": [],
+        "needs": [
+          {
+            "label": "model name (and superseded)",
+            "result": "ok",
+            "places": ["title"]
+          },
+          {
+            "label": "effort",
+            "result": "ok",
+            "places": ["badge"]
+          },
+          {
+            "label": "creator",
+            "result": "ok",
+            "places": ["subtitle"]
+          },
+          {
+            "label": "intelligence",
+            "result": "ok",
+            "places": ["value"]
+          },
+          {
+            "label": "index",
+            "result": "ok",
+            "places": ["meta"]
+          },
+          {
+            "label": "$ / task",
+            "result": "ok",
+            "places": ["meta"]
+          },
+          {
+            "label": "time",
+            "result": "ok",
+            "places": ["meta"]
+          },
+          {
+            "label": "tokens",
+            "result": "ok",
+            "places": ["meta"]
+          },
+          {
+            "label": "price in",
+            "result": "sheet",
+            "places": ["detail"]
+          },
+          {
+            "label": "price out",
+            "result": "sheet",
+            "places": ["detail"]
+          },
+          {
+            "label": "IU access",
+            "result": "sheet",
+            "places": ["detail"]
+          },
+          {
+            "label": "routes",
+            "result": "sheet",
+            "places": ["detail"]
+          }
+        ]
+      },
+      {
+        "site": "slots-list",
+        "argo": "slots-list",
+        "status": "sheet",
+        "columnOrder": "argo",
+        "displacedInArgoOrder": [],
+        "places": {
+          "name": "title",
+          "intelligence": "value",
+          "index": "meta",
+          "cost": "meta",
+          "time": "meta",
+          "tokens": "meta",
+          "onMax": "subtitle",
+          "anywhere": "meta"
+        },
+        "slot": [],
+        "toSheet": [],
+        "stillDisplaced": [],
+        "truncated": [
+          {
+            "part": "meta-run",
+            "rows": 6
+          }
+        ],
+        "cardOverflowCells": 0,
+        "overflowCells": [],
+        "rowHeights": {
+          "min": 116,
+          "max": 136
+        },
+        "demoted": [],
+        "reducedFrom": 480,
+        "fullAt": 1200,
+        "warnings": [],
+        "needs": [
+          {
+            "label": "slot name, route count, billing and reason",
+            "result": "ok",
+            "places": ["title"]
+          },
+          {
+            "label": "intelligence",
+            "result": "ok",
+            "places": ["value"]
+          },
+          {
+            "label": "index",
+            "result": "ok",
+            "places": ["meta"]
+          },
+          {
+            "label": "$ / task",
+            "result": "ok",
+            "places": ["meta"]
+          },
+          {
+            "label": "time",
+            "result": "ok",
+            "places": ["meta"]
+          },
+          {
+            "label": "tokens",
+            "result": "ok",
+            "places": ["meta"]
+          },
+          {
+            "label": "Leanest on Max (name and measures)",
+            "result": "ok",
+            "places": ["subtitle"]
+          },
+          {
+            "label": "Leanest anywhere (name and measures)",
+            "result": "ok",
+            "places": ["meta"]
+          }
+        ]
+      },
+      {
+        "site": "spending",
+        "argo": "spending",
+        "status": "fit",
+        "columnOrder": "argo",
+        "displacedInArgoOrder": [],
+        "places": {
+          "category": "title",
+          "total": "value",
+          "perMonth": "meta",
+          "change": "meta",
+          "trend": "detail"
+        },
+        "slot": [],
+        "toSheet": [],
+        "stillDisplaced": [],
+        "truncated": [],
+        "cardOverflowCells": 0,
+        "overflowCells": [],
+        "rowHeights": {
+          "min": 64,
+          "max": 80
+        },
+        "demoted": ["change"],
+        "reducedFrom": 800,
+        "fullAt": 800,
+        "warnings": [
+          "basalt-ui/table: more than two priority-1 columns; change demoted to 2 by declaration order"
+        ],
+        "needs": [
+          {
+            "label": "category",
+            "result": "ok",
+            "places": ["title"]
+          },
+          {
+            "label": "total",
+            "result": "ok",
+            "places": ["value"]
+          },
+          {
+            "label": "per month",
+            "result": "ok",
+            "places": ["meta"]
+          },
+          {
+            "label": "change",
+            "result": "ok",
+            "places": ["meta"]
+          }
+        ]
+      },
+      {
+        "site": "net-worth",
+        "argo": "net-worth positions",
+        "status": "fit",
+        "columnOrder": "reordered",
+        "displacedInArgoOrder": ["value"],
+        "places": {
+          "name": "title",
+          "value": "value",
+          "quantity": "meta",
+          "price": "meta",
+          "share": "meta",
+          "as_of": "meta"
+        },
+        "slot": [],
+        "toSheet": [],
+        "stillDisplaced": [],
+        "truncated": [],
+        "cardOverflowCells": 0,
+        "overflowCells": [],
+        "rowHeights": {
+          "min": 96,
+          "max": 96
+        },
+        "demoted": [],
+        "reducedFrom": 800,
+        "fullAt": 800,
+        "warnings": [],
+        "needs": [
+          {
+            "label": "position name",
+            "result": "ok",
+            "places": ["title"]
+          },
+          {
+            "label": "value",
+            "result": "ok",
+            "places": ["value"]
+          },
+          {
+            "label": "units",
+            "result": "ok",
+            "places": ["meta"]
+          },
+          {
+            "label": "share of the depot",
+            "result": "ok",
+            "places": ["meta"]
+          }
+        ]
+      },
+      {
+        "site": "recurring-subscriptions",
+        "argo": "recurring (Subscriptions)",
+        "status": "fit",
+        "columnOrder": "reordered",
+        "displacedInArgoOrder": ["per month"],
+        "places": {
+          "merchant": "title",
+          "monthly": "value",
+          "cadence": "subtitle",
+          "charge": "meta",
+          "next": "meta"
+        },
+        "slot": [],
+        "toSheet": [],
+        "stillDisplaced": [],
+        "truncated": [],
+        "cardOverflowCells": 0,
+        "overflowCells": [],
+        "rowHeights": {
+          "min": 100,
+          "max": 120
+        },
+        "demoted": [],
+        "reducedFrom": 800,
+        "fullAt": 800,
+        "warnings": [],
+        "needs": [
+          {
+            "label": "payee",
+            "result": "ok",
+            "places": ["title"]
+          },
+          {
+            "label": "per month",
+            "result": "ok",
+            "places": ["value"]
+          },
+          {
+            "label": "seat and category (entity sub line)",
+            "result": "ok",
+            "places": ["title"]
+          },
+          {
+            "label": "per charge and cadence",
+            "result": "ok",
+            "places": ["meta", "subtitle"]
+          },
+          {
+            "label": "next charge",
+            "result": "ok",
+            "places": ["meta"]
+          }
+        ]
+      },
+      {
+        "site": "recurring-bills",
+        "argo": "recurring (Bills)",
+        "status": "fit",
+        "columnOrder": "reordered",
+        "displacedInArgoOrder": ["per month"],
+        "places": {
+          "merchant": "title",
+          "monthly": "value",
+          "cadence": "subtitle",
+          "charge": "meta",
+          "next": "meta"
+        },
+        "slot": [],
+        "toSheet": [],
+        "stillDisplaced": [],
+        "truncated": [],
+        "cardOverflowCells": 0,
+        "overflowCells": [],
+        "rowHeights": {
+          "min": 100,
+          "max": 120
+        },
+        "demoted": [],
+        "reducedFrom": 800,
+        "fullAt": 800,
+        "warnings": [],
+        "needs": [
+          {
+            "label": "payee",
+            "result": "ok",
+            "places": ["title"]
+          },
+          {
+            "label": "per month",
+            "result": "ok",
+            "places": ["value"]
+          },
+          {
+            "label": "seat and category (entity sub line)",
+            "result": "ok",
+            "places": ["title"]
+          },
+          {
+            "label": "per charge and cadence",
+            "result": "ok",
+            "places": ["meta", "subtitle"]
+          },
+          {
+            "label": "next charge",
+            "result": "ok",
+            "places": ["meta"]
+          }
+        ]
+      },
+      {
+        "site": "recurring-apart",
+        "argo": "recurring (Stopped and left out)",
+        "status": "fit",
+        "columnOrder": "argo",
+        "displacedInArgoOrder": [],
+        "places": {
+          "merchant": "title",
+          "state": "subtitle",
+          "monthly": "value",
+          "cadence": "meta",
+          "charge": "meta",
+          "next": "meta"
+        },
+        "slot": [],
+        "toSheet": [],
+        "stillDisplaced": [],
+        "truncated": [],
+        "cardOverflowCells": 0,
+        "overflowCells": [],
+        "rowHeights": {
+          "min": 100,
+          "max": 116
+        },
+        "demoted": [],
+        "reducedFrom": 480,
+        "fullAt": 1000,
+        "warnings": [],
+        "needs": [
+          {
+            "label": "payee",
+            "result": "ok",
+            "places": ["title"]
+          },
+          {
+            "label": "per month",
+            "result": "ok",
+            "places": ["value"]
+          },
+          {
+            "label": "seat and category (entity sub line)",
+            "result": "ok",
+            "places": ["title"]
+          },
+          {
+            "label": "per charge and cadence",
+            "result": "ok",
+            "places": ["meta", "meta"]
+          },
+          {
+            "label": "next charge",
+            "result": "ok",
+            "places": ["meta"]
+          },
+          {
+            "label": "stopped / left out state",
+            "result": "ok",
+            "places": ["subtitle"]
+          }
+        ]
+      },
+      {
+        "site": "tax",
+        "argo": "tax queue (QueueRow, not a DataTable in argo)",
+        "status": "slot",
+        "columnOrder": "argo",
+        "displacedInArgoOrder": [],
+        "places": {
+          "merchant": "title",
+          "amount": "value",
+          "booked_on": "meta",
+          "category": "subtitle",
+          "purpose": "meta",
+          "tax_tag": "edit",
+          "actions": "kebab"
+        },
+        "slot": ["four one-tap tag buttons (business, tax, donation, private)"],
+        "toSheet": [],
+        "stillDisplaced": [],
+        "truncated": [
+          {
+            "part": "meta-run",
+            "rows": 1
+          }
+        ],
+        "cardOverflowCells": 0,
+        "overflowCells": [],
+        "rowHeights": {
+          "min": 136,
+          "max": 152
+        },
+        "demoted": [],
+        "reducedFrom": 800,
+        "fullAt": 1000,
+        "warnings": [],
+        "needs": [
+          {
+            "label": "booking name",
+            "result": "ok",
+            "places": ["title"]
+          },
+          {
+            "label": "signed amount",
+            "result": "ok",
+            "places": ["value"]
+          },
+          {
+            "label": "date",
+            "result": "ok",
+            "places": ["meta"]
+          },
+          {
+            "label": "category",
+            "result": "ok",
+            "places": ["subtitle"]
+          },
+          {
+            "label": "purpose",
+            "result": "ok",
+            "places": ["meta"]
+          },
+          {
+            "label": "four one-tap tag buttons (business, tax, donation, private)",
+            "result": "slot",
+            "places": []
+          },
+          {
+            "label": "rarer-tags select",
+            "result": "ok",
+            "places": ["edit"]
+          },
+          {
+            "label": "Same merchant button (kebab action)",
+            "result": "ok",
+            "places": ["kebab"]
+          }
+        ]
+      }
+    ],
+    "verdict": "REFUTED"
+  },
+  "shots": {
+    "count": 96,
+    "maxBytes": 132454,
+    "totalBytes": 6746061,
+    "oversize": []
+  },
+  "consoleErrors": [],
+  "ownerS3": "pending",
+  "ownerS4": "pending",
+  "verdict": "REFUTED"
+}
