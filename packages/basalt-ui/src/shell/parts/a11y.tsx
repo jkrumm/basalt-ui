@@ -70,8 +70,16 @@ export function useRouteAnnouncement(pathname: string): string {
   useEffect(() => {
     if (seen.current === pathname) return undefined
     seen.current = pathname
-    const frame = requestAnimationFrame(() => setMessage(document.title))
-    return () => cancelAnimationFrame(frame)
+    // Cleared first: two pages that compose the same title must still change the region's text.
+    let second = 0
+    const first = requestAnimationFrame(() => {
+      setMessage('')
+      second = requestAnimationFrame(() => setMessage(document.title))
+    })
+    return () => {
+      cancelAnimationFrame(first)
+      cancelAnimationFrame(second)
+    }
   }, [pathname])
   return message
 }

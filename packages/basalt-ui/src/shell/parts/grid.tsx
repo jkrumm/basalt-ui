@@ -21,6 +21,7 @@
  */
 import { createContext, useContext, useEffect, useMemo, useSyncExternalStore } from 'react'
 import type { CSSProperties, ReactElement, ReactNode } from 'react'
+import { useMediaQuery } from '../../common/use-media-query'
 import { cn } from '../../core/cn'
 import { persisted } from '../../core/persisted'
 import { asideDockQuery, resolveAsideDocking } from '../../page/core/docking'
@@ -97,21 +98,6 @@ export function useRailControl(): RailControl {
 }
 
 // ---- Media -------------------------------------------------------------------------------------
-
-// theme-allow raw-breakpoint — the aside dock rule's one viewport read; its query is `asideDockQuery`
-const list = (query: string): MediaQueryList => window.matchMedia(query)
-
-function useMatches(query: string): boolean {
-  return useSyncExternalStore(
-    (notify) => {
-      const media = list(query)
-      media.addEventListener('change', notify)
-      return () => media.removeEventListener('change', notify)
-    },
-    () => list(query).matches,
-    () => false,
-  )
-}
 
 /** The document never scrolls and never rubber-bands: `Main` is the scrollport. */
 export function useDocumentFrame(): void {
@@ -247,8 +233,9 @@ export function useAsideModel(
   rail: RailState,
 ): AsideModel {
   const width = claim?.width ?? DEFAULT_ASIDE_WIDTH
-  const room = useMatches(
+  const room = useMediaQuery(
     asideDockQuery({ navbarWidth: railWidth(sizeClass, rail), asideWidth: width }),
+    false,
   )
   return resolveAsideDocking({
     claimed: claim !== undefined && sizeClass !== 'compact',

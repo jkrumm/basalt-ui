@@ -85,13 +85,7 @@ function GlobalActionView({
   const glyph = <Icon className="size-icon" aria-hidden />
   if (action.kind === 'button') {
     return (
-      <Button
-        data-slot="shell-action"
-        variant="ghost"
-        size="icon"
-        aria-label={action.label}
-        onClick={action.onClick}
-      >
+      <Button variant="ghost" size="icon" aria-label={action.label} onClick={action.onClick}>
         {glyph}
       </Button>
     )
@@ -100,7 +94,6 @@ function GlobalActionView({
   return (
     <Popover>
       <PopoverTrigger
-        data-slot="shell-action"
         render={
           <Button
             variant="ghost"
