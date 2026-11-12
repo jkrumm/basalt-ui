@@ -24,7 +24,8 @@
  */
 import { describeShell, acquireShellTarget } from './shell-target'
 import { afterAll } from 'bun:test'
-import { S } from './shell-slots'
+import { LAYOUT_TARGET, S, SHELL_GEOMETRY } from './shell-slots'
+import type { ShellSlot } from './shell-slots'
 import { SPACE, SPACE_STEP } from '../../src/tokens/palette'
 import { SIZE_CLASSES } from '../../src/tokens/size-classes'
 import type { FixtureSpec } from './fixture/spec'
@@ -165,7 +166,7 @@ async function collapseSidebar(p: LayoutPage): Promise<void> {
     ([navbar, rail]) =>
       Math.abs((document.querySelector(navbar)?.getBoundingClientRect().width ?? 0) - rail) < 0.5 &&
       document.getAnimations().every((a) => a.playState !== 'running'),
-    [S('shell-rail'), SPACE_STEP.appShellNavbarRailWidth] as const,
+    [S('shell-rail'), SHELL_GEOMETRY.railCollapsed] as const,
   )
   await p.settle()
 }
@@ -216,12 +217,27 @@ const UNLABELLED: FixtureSpec = {
   sidebar: { account: true, settings: 2 },
 }
 
+/**
+ * v3 measures the page-bar band by its own slot (`page-bar`, in-flow under the header), where 2.x had
+ * a band element of the shell's (`shell-band`).
+ */
+const BAND: ShellSlot = LAYOUT_TARGET === 'v3' ? 'page-bar' : 'shell-band'
+
+/**
+ * Cases that grade a 2.x-only road and are not registered on v3: the shell's padding on `Main` and
+ * the header (v3's gutter lives on `Page` and is pinned by `shell-frame`: 8, 16, 24 beside the 240,
+ * 64, 0 rail), the `headerHeight` prop and `--basalt-shell-lead-inset` (both retired by concept
+ * section 7; `chrome="native-overlay"` replaces them in v3-shell-i8-commands). Registering nothing,
+ * not a skip, keeps the printed skip count honest.
+ */
+const V2_ONLY = LAYOUT_TARGET === 'v2'
+
 describeShell(
   ready,
   'shell chrome — the header row, the gutter, the sidebar footer',
   [
     'shell-aside',
-    'shell-band',
+    BAND,
     'shell-brand-zone',
     'shell-breadcrumb',
     'shell-header',
@@ -337,107 +353,116 @@ describeShell(
       })
     }
 
-    /**
-     * THE RESPONSIVE PAGE GUTTER — one number, three boxes, one step.
-     *
-     * THE DECISION, since the brief asked for it explicitly: the expected values are READ FROM THE
-     * TOKEN TABLE (`SPACE_STEP.appShellInset` / `.appShellInsetMobile`), not hardcoded here.
-     *
-     * Hardcoding 20 and 8 would make this file fail on a deliberate retune, and that failure would be
-     * NOISE — `theme/spacing.test.ts` already pins both literals by value, beside the var names they
-     * emit, which is the right home for "the token is 20". A second copy buys no coverage and makes
-     * one intended change red in two places, which is how a test earns a reputation for being
-     * something you edit rather than something you believe.
-     *
-     * What is asserted instead is the part no value test can see, and the part that actually broke
-     * here: that the number REACHES the box, that all three boxes get the SAME one, and that the pair
-     * really is a pair. `expectPairIsResponsive` below is what keeps this from being unfalsifiable —
-     * a "responsive" gutter whose two halves collapsed to one value would satisfy every reading below
-     * and is a real regression, so it is checked directly rather than implied.
-     *
-     * The two props take DIFFERENT roads through Mantine — `AppShell padding` through
-     * `assign-padding-variables.mjs`, `AppShell.Header px` through `parse-style-props.mjs` — and only
-     * agree because both resolve `sm` from `theme.breakpoints`. That is exactly the kind of agreement
-     * that holds until a Mantine minor, and exactly what a real browser is for.
-     */
-    test('the mobile and desktop gutters are a genuine pair', () => {
-      const mobile = SPACE_STEP.appShellInsetMobile
-      const desktop = SPACE_STEP.appShellInset
-      if (mobile < desktop) return
-      throw new Error(
-        'LAYOUT: the page gutter is declared as a responsive pair, and the pair collapsed — ' +
-          `appShellInsetMobile = ${mobile}, appShellInset = ${desktop}. Every assertion below would ` +
-          'still pass with one value at both widths, which is why this is checked on its own.',
-      )
-    })
-
-    for (const [viewport, expected] of [
-      [{ name: 'one px under sm', width: SM_PX - 1, height: 720 }, SPACE_STEP.appShellInsetMobile],
-      [{ name: 'sm exactly', width: SM_PX, height: 720 }, SPACE_STEP.appShellInset],
-      // The expanded class widens the gutter (SPEC D7 trial): `md` is the expanded floor.
-      [
-        { name: 'one px under expanded', width: SIZE_CLASSES.expanded - 1, height: 720 },
-        SPACE_STEP.appShellInset,
-      ],
-      [
-        { name: 'expanded exactly', width: SIZE_CLASSES.expanded, height: 720 },
-        SPACE_STEP.appShellInsetExpanded,
-      ],
-    ] as const satisfies readonly (readonly [Viewport, number])[]) {
-      test(`the gutter is ${expected}px at ${viewport.width}px (${viewport.name})`, async () => {
-        const p = await openFixture(HEADER_PAGE, viewport)
-        await p.settle()
-
-        await expectInlinePadding(
-          p,
-          'AppShell.Main',
-          S('shell-main'),
-          expected,
-          'the page gutter steps at `theme.breakpoints.sm` and nowhere else — below it the phone ' +
-            "gets 10px more line width a side, at and above it the page's first column lands on " +
-            "the sidebar nav icon column's x across the seam",
-        )
-        await expectInlinePadding(
-          p,
-          'AppShell.Header',
-          S('shell-header'),
-          expected,
-          'the header takes the SAME gutter as Main by a different Mantine road (a Box style prop, ' +
-            "not the shell padding var) — the breadcrumb's left edge and the globals' right edge " +
-            "land on the card column's edges only while the two agree",
-        )
-      })
-    }
-
-    /**
-     * THE GUTTER IS SPLIT BY AXIS — inline is the responsive pair, block is a rung of the stack scale.
-     *
-     * `.main`'s padding is not a shorthand of one value: inline tracks `--app-shell-padding` (an
-     * ALIGNMENT constraint — the header's breadcrumb and globals land on the same edges), block is
-     * breathing room under the band's divider and nothing aligns to it. Phone: 12 (`stack-md`), from
-     * `sm` up one rung down, `stack-sm` — 8. The numbers are read from the token table so a retune
-     * moves the test with it; what is pinned is WHICH rung each width uses and that the inline half
-     * is the gutter at the same time.
-     */
-    for (const [viewport, inline, block] of [
-      [
-        { name: 'one px under sm', width: SM_PX - 1, height: 720 },
-        SPACE_STEP.appShellInsetMobile,
-        SPACE.stackMd,
-      ],
-      [{ name: 'sm exactly', width: SM_PX, height: 720 }, SPACE_STEP.appShellInset, SPACE.stackSm],
-    ] as const satisfies readonly (readonly [Viewport, number, number])[]) {
-      test(`Main's inner box starts ${inline}px from the seam and ${block}px under the header (${viewport.name})`, async () => {
-        const p = await openFixture(HEADER_PAGE, viewport)
-        await p.settle()
-        const blockActual = await computedPx(p, S('shell-main'), 'padding-top')
-        const inlineActual = await computedPx(p, S('shell-main'), 'padding-left')
-        if (Math.abs(blockActual - block) <= 0.5 && Math.abs(inlineActual - inline) <= 0.5) return
+    if (V2_ONLY) {
+      /**
+       * THE RESPONSIVE PAGE GUTTER — one number, three boxes, one step.
+       *
+       * THE DECISION, since the brief asked for it explicitly: the expected values are READ FROM THE
+       * TOKEN TABLE (`SPACE_STEP.appShellInset` / `.appShellInsetMobile`), not hardcoded here.
+       *
+       * Hardcoding 20 and 8 would make this file fail on a deliberate retune, and that failure would be
+       * NOISE — `theme/spacing.test.ts` already pins both literals by value, beside the var names they
+       * emit, which is the right home for "the token is 20". A second copy buys no coverage and makes
+       * one intended change red in two places, which is how a test earns a reputation for being
+       * something you edit rather than something you believe.
+       *
+       * What is asserted instead is the part no value test can see, and the part that actually broke
+       * here: that the number REACHES the box, that all three boxes get the SAME one, and that the pair
+       * really is a pair. `expectPairIsResponsive` below is what keeps this from being unfalsifiable —
+       * a "responsive" gutter whose two halves collapsed to one value would satisfy every reading below
+       * and is a real regression, so it is checked directly rather than implied.
+       *
+       * The two props take DIFFERENT roads through Mantine — `AppShell padding` through
+       * `assign-padding-variables.mjs`, `AppShell.Header px` through `parse-style-props.mjs` — and only
+       * agree because both resolve `sm` from `theme.breakpoints`. That is exactly the kind of agreement
+       * that holds until a Mantine minor, and exactly what a real browser is for.
+       */
+      test('the mobile and desktop gutters are a genuine pair', () => {
+        const mobile = SPACE_STEP.appShellInsetMobile
+        const desktop = SPACE_STEP.appShellInset
+        if (mobile < desktop) return
         throw new Error(
-          `LAYOUT: Main's inset is ${inlineActual.toFixed(1)}px inline / ${blockActual.toFixed(1)}px ` +
-            `block at ${viewport.width}px; expected ${inline} / ${block}`,
+          'LAYOUT: the page gutter is declared as a responsive pair, and the pair collapsed — ' +
+            `appShellInsetMobile = ${mobile}, appShellInset = ${desktop}. Every assertion below would ` +
+            'still pass with one value at both widths, which is why this is checked on its own.',
         )
       })
+
+      for (const [viewport, expected] of [
+        [
+          { name: 'one px under sm', width: SM_PX - 1, height: 720 },
+          SPACE_STEP.appShellInsetMobile,
+        ],
+        [{ name: 'sm exactly', width: SM_PX, height: 720 }, SPACE_STEP.appShellInset],
+        // The expanded class widens the gutter (SPEC D7 trial): `md` is the expanded floor.
+        [
+          { name: 'one px under expanded', width: SIZE_CLASSES.expanded - 1, height: 720 },
+          SPACE_STEP.appShellInset,
+        ],
+        [
+          { name: 'expanded exactly', width: SIZE_CLASSES.expanded, height: 720 },
+          SPACE_STEP.appShellInsetExpanded,
+        ],
+      ] as const satisfies readonly (readonly [Viewport, number])[]) {
+        test(`the gutter is ${expected}px at ${viewport.width}px (${viewport.name})`, async () => {
+          const p = await openFixture(HEADER_PAGE, viewport)
+          await p.settle()
+
+          await expectInlinePadding(
+            p,
+            'AppShell.Main',
+            S('shell-main'),
+            expected,
+            'the page gutter steps at `theme.breakpoints.sm` and nowhere else — below it the phone ' +
+              "gets 10px more line width a side, at and above it the page's first column lands on " +
+              "the sidebar nav icon column's x across the seam",
+          )
+          await expectInlinePadding(
+            p,
+            'AppShell.Header',
+            S('shell-header'),
+            expected,
+            'the header takes the SAME gutter as Main by a different Mantine road (a Box style prop, ' +
+              "not the shell padding var) — the breadcrumb's left edge and the globals' right edge " +
+              "land on the card column's edges only while the two agree",
+          )
+        })
+      }
+
+      /**
+       * THE GUTTER IS SPLIT BY AXIS — inline is the responsive pair, block is a rung of the stack scale.
+       *
+       * `.main`'s padding is not a shorthand of one value: inline tracks `--app-shell-padding` (an
+       * ALIGNMENT constraint — the header's breadcrumb and globals land on the same edges), block is
+       * breathing room under the band's divider and nothing aligns to it. Phone: 12 (`stack-md`), from
+       * `sm` up one rung down, `stack-sm` — 8. The numbers are read from the token table so a retune
+       * moves the test with it; what is pinned is WHICH rung each width uses and that the inline half
+       * is the gutter at the same time.
+       */
+      for (const [viewport, inline, block] of [
+        [
+          { name: 'one px under sm', width: SM_PX - 1, height: 720 },
+          SPACE_STEP.appShellInsetMobile,
+          SPACE.stackMd,
+        ],
+        [
+          { name: 'sm exactly', width: SM_PX, height: 720 },
+          SPACE_STEP.appShellInset,
+          SPACE.stackSm,
+        ],
+      ] as const satisfies readonly (readonly [Viewport, number, number])[]) {
+        test(`Main's inner box starts ${inline}px from the seam and ${block}px under the header (${viewport.name})`, async () => {
+          const p = await openFixture(HEADER_PAGE, viewport)
+          await p.settle()
+          const blockActual = await computedPx(p, S('shell-main'), 'padding-top')
+          const inlineActual = await computedPx(p, S('shell-main'), 'padding-left')
+          if (Math.abs(blockActual - block) <= 0.5 && Math.abs(inlineActual - inline) <= 0.5) return
+          throw new Error(
+            `LAYOUT: Main's inset is ${inlineActual.toFixed(1)}px inline / ${blockActual.toFixed(1)}px ` +
+              `block at ${viewport.width}px; expected ${inline} / ${block}`,
+          )
+        })
+      }
     }
 
     /**
@@ -758,12 +783,12 @@ describeShell(
       const zone = await p.box('zone', S('shell-brand-zone'))
       const expandedPadding = await computedPx(p, S('shell-brand-zone'), 'padding-left')
       if (
-        Math.abs(zone.box.width - SPACE_STEP.appShellNavbarWidth) > 0.5 ||
-        Math.abs(expandedPadding - 2 * SPACE.rowInsetX) > 0.5
+        Math.abs(zone.box.width - SHELL_GEOMETRY.railExpanded) > 0.5 ||
+        Math.abs(expandedPadding - SHELL_GEOMETRY.brandInsetExpanded) > 0.5
       ) {
         throw new Error(
           `LAYOUT: expanded zone is ${zone.box.width}px wide with ${expandedPadding}px inline-start ` +
-            `padding; expected ${SPACE_STEP.appShellNavbarWidth} / ${2 * SPACE.rowInsetX}`,
+            `padding; expected ${SHELL_GEOMETRY.railExpanded} / ${SHELL_GEOMETRY.brandInsetExpanded}`,
         )
       }
 
@@ -773,62 +798,65 @@ describeShell(
       const railPadding = await computedPx(p, S('shell-brand-zone'), 'padding-left')
       const centre = toggle.box.left + toggle.box.width / 2
       if (
-        Math.abs(rail.box.width - SPACE_STEP.appShellNavbarRailWidth) > 0.5 ||
+        Math.abs(rail.box.width - SHELL_GEOMETRY.railCollapsed) > 0.5 ||
         railPadding !== 0 ||
         Math.abs(centre - (rail.box.left + rail.box.width / 2)) > 0.5
       ) {
         throw new Error(
           `LAYOUT: rail zone is ${rail.box.width}px wide, padding-left ${railPadding}px, toggle ` +
             `centre ${centre.toFixed(1)} vs zone centre ${(rail.box.left + rail.box.width / 2).toFixed(1)}; ` +
-            'expected the 48px rail with a centred toggle and no padding',
+            `expected the ${SHELL_GEOMETRY.railCollapsed}px rail with a centred toggle and no padding`,
         )
       }
     })
 
-    const TRAFFIC_LIGHTS_PX = 70
+    if (V2_ONLY) {
+      const TRAFFIC_LIGHTS_PX = 70
 
-    test('a lead inset pushes the expanded brand clear of the traffic lights', async () => {
-      const p = await openFixture(UNLABELLED, DESKTOP_1440)
-      await p.settle()
-      await setLeadInset(p, `${TRAFFIC_LIGHTS_PX}px`)
+      test('a lead inset pushes the expanded brand clear of the traffic lights', async () => {
+        const p = await openFixture(UNLABELLED, DESKTOP_1440)
+        await p.settle()
+        await setLeadInset(p, `${TRAFFIC_LIGHTS_PX}px`)
 
-      const zone = await p.box('zone', S('shell-brand-zone'))
-      const toggle = await p.box('toggle', S('shell-rail-toggle'))
-      const brand = await p.box('brand', `${S('shell-brand-zone')} > :first-child`)
-      expectFullyInside(toggle, zone, 'the toggle stays inside the zone', p.viewport)
-      if (
-        Math.abs(zone.box.width - SPACE_STEP.appShellNavbarWidth) > 0.5 ||
-        brand.box.left < zone.box.left + TRAFFIC_LIGHTS_PX - 0.5
-      ) {
+        const zone = await p.box('zone', S('shell-brand-zone'))
+        const toggle = await p.box('toggle', S('shell-rail-toggle'))
+        const brand = await p.box('brand', `${S('shell-brand-zone')} > :first-child`)
+        expectFullyInside(toggle, zone, 'the toggle stays inside the zone', p.viewport)
+        if (
+          Math.abs(zone.box.width - SPACE_STEP.appShellNavbarWidth) > 0.5 ||
+          brand.box.left < zone.box.left + TRAFFIC_LIGHTS_PX - 0.5
+        ) {
+          throw new Error(
+            `LAYOUT: expanded zone ${zone.box.width}px wide (expected the 256px navbar offset), ` +
+              `brand content starts at ${(brand.box.left - zone.box.left).toFixed(1)}px — it must ` +
+              `start at or right of the ${TRAFFIC_LIGHTS_PX}px inset`,
+          )
+        }
+      })
+
+      test('a lead inset keeps the rail toggle right of the traffic lights, unclipped', async () => {
+        const p = await openFixture(UNLABELLED, DESKTOP_1440)
+        await p.settle()
+        await setLeadInset(p, `${TRAFFIC_LIGHTS_PX}px`)
+        await collapseSidebar(p)
+
+        const zone = await p.box('rail zone', S('shell-brand-zone'))
+        const toggle = await p.box('toggle', S('shell-rail-toggle'))
+        expectFullyInside(
+          toggle,
+          zone,
+          'the rail zone grows to hold inset + toggle — a 48px rail would clip the toggle under ' +
+            '`overflow: hidden`',
+          p.viewport,
+        )
+        if (toggle.box.left >= zone.box.left + TRAFFIC_LIGHTS_PX - 0.5) return
         throw new Error(
-          `LAYOUT: expanded zone ${zone.box.width}px wide (expected the 256px navbar offset), ` +
-            `brand content starts at ${(brand.box.left - zone.box.left).toFixed(1)}px — it must ` +
-            `start at or right of the ${TRAFFIC_LIGHTS_PX}px inset`,
+          `LAYOUT: rail toggle starts ${(toggle.box.left - zone.box.left).toFixed(1)}px into the zone, ` +
+            `under the ${TRAFFIC_LIGHTS_PX}px traffic-light span`,
         )
-      }
-    })
+      })
+    }
 
-    test('a lead inset keeps the rail toggle right of the traffic lights, unclipped', async () => {
-      const p = await openFixture(UNLABELLED, DESKTOP_1440)
-      await p.settle()
-      await setLeadInset(p, `${TRAFFIC_LIGHTS_PX}px`)
-      await collapseSidebar(p)
-
-      const zone = await p.box('rail zone', S('shell-brand-zone'))
-      const toggle = await p.box('toggle', S('shell-rail-toggle'))
-      expectFullyInside(
-        toggle,
-        zone,
-        'the rail zone grows to hold inset + toggle — a 48px rail would clip the toggle under ' +
-          '`overflow: hidden`',
-        p.viewport,
-      )
-      if (toggle.box.left >= zone.box.left + TRAFFIC_LIGHTS_PX - 0.5) return
-      throw new Error(
-        `LAYOUT: rail toggle starts ${(toggle.box.left - zone.box.left).toFixed(1)}px into the zone, ` +
-          `under the ${TRAFFIC_LIGHTS_PX}px traffic-light span`,
-      )
-    })
     /**
      * `BasaltShell headerHeight` — ONE deliberate header height, expanded and in the rail.
      *
@@ -838,11 +866,13 @@ describeShell(
      * content (brand, toggle, breadcrumb) stays vertically centred in it.
      */
     const ASIDE_HEADER_SPEC: FixtureSpec = { ...HEADER_PAGE, aside: { title: 'Inspector' } }
-    for (const [headerHeight, label] of [
-      [undefined, 'default'],
-      [52, '52px override'],
-    ] as const) {
-      const expected = headerHeight ?? SPACE_STEP.appShellHeaderHeight
+    for (const [headerHeight, label] of V2_ONLY
+      ? ([
+          [undefined, 'default'],
+          [52, '52px override'],
+        ] as const)
+      : ([[undefined, 'default']] as const)) {
+      const expected = headerHeight ?? SHELL_GEOMETRY.headerHeight
       for (const collapsed of [false, true]) {
         test(`the header is ${expected}px and everything under it starts there (${label}, ${collapsed ? 'rail' : 'expanded'})`, async () => {
           const p = await openFixture(
@@ -854,7 +884,7 @@ describeShell(
 
           const header = await p.box('header', S('shell-header'))
           const navbar = await p.box('navbar', S('shell-rail'))
-          const band = await p.box('page-bar band', S('shell-band'))
+          const band = await p.box('page-bar band', S(BAND))
           const aside = await p.box('aside', S('shell-aside'))
           const main = await p.box('main', S('shell-main'))
           const row = await p.box('header row', S('shell-header-row'))
@@ -872,7 +902,7 @@ describeShell(
                 'under the header kept its own copy of the header height',
             )
           }
-          if (Math.abs(main.box.top - band.box.bottom) > 0.5) {
+          if (V2_ONLY && Math.abs(main.box.top - band.box.bottom) > 0.5) {
             throw new Error('LAYOUT: Main does not start at the band bottom — the column is broken')
           }
 

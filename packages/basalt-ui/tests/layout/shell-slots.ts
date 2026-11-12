@@ -10,6 +10,7 @@
  * This is the ONLY shell-test file that may spell a library class, a `data-basalt-*` handle or a
  * CSS-module class — when the 2.x oracle is retired, the `v2` column goes and nothing else changes.
  */
+import { SPACE_STEP } from '../../src/tokens/palette'
 import { moduleClass, slot } from './harness/slots'
 
 export type LayoutTarget = 'v2' | 'v3'
@@ -57,6 +58,7 @@ export const SHELL_SLOTS = {
   'shell-tab-bar': entry('shell-tab-bar', 'nav[aria-label="Primary"]'),
 
   // Provisional v3 names not pinned by concept 3.5: later Issues confirm them.
+  'shell-kebab': entry('shell-kebab', null),
   'shell-header-row': entry('shell-header-row', HEADER_ROW),
   'shell-brand-zone': entry('shell-brand-zone', HEADER_ZONE),
   'shell-rail-toggle': entry('shell-rail-toggle', `${HEADER_ZONE} button[aria-label$=" sidebar"]`),
@@ -99,3 +101,22 @@ export function shellSelector(name: ShellSlot): string {
 }
 
 export const S = shellSelector
+
+/**
+ * The frame numbers that differ between the two targets (px). Everything else the shell suite pins
+ * (row pitch, section seams, footer air, gutters 8/16/24) is the same number on both, read from
+ * `SPACE`/`SPACE_STEP` by the test itself.
+ *
+ * - 2.x: header 44, navbar 256 / rail 48, brand inset 20 (`rowInsetX` twice).
+ * - v3 (concept 3.5, `shell/parts/grid.tsx`): header 48, rail 240 / 64, brand inset 16 (the rail's
+ *   6 px padding plus the row's 10 px inset, so the brand mark sits on the nav icon column).
+ */
+export const SHELL_GEOMETRY =
+  LAYOUT_TARGET === 'v2'
+    ? {
+        headerHeight: SPACE_STEP.appShellHeaderHeight,
+        railExpanded: SPACE_STEP.appShellNavbarWidth,
+        railCollapsed: SPACE_STEP.appShellNavbarRailWidth,
+        brandInsetExpanded: 20,
+      }
+    : { headerHeight: 48, railExpanded: 240, railCollapsed: 64, brandInsetExpanded: 16 }
