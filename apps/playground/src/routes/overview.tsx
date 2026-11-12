@@ -166,5 +166,3 @@ export const Route = createFileRoute('/overview')({
   search: { middlewares: overview.middlewares },
   component: OverviewRoute,
 })
-
-export { OverviewRoute, overview, globals }
