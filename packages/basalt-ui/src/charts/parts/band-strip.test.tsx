@@ -6,9 +6,9 @@ import { afterEach, describe, expect, test } from 'bun:test'
 import { act } from 'react'
 import { createRoot } from 'react-dom/client'
 import { renderToString } from 'react-dom/server'
-import { alpha, VX } from '../tokens'
-import { BandStrip } from './BandStrip'
-import type { BandSpan, BandStripProps, BandStripSeries } from './BandStrip'
+import { alpha, VX } from '../../tokens'
+import { BandStrip } from './band-strip'
+import type { BandSpan, BandStripProps, BandStripSeries } from './band-strip'
 
 type Slot = { t: string; s: string; loss?: number; a?: number }
 const slots = (n: number, state: (i: number) => string = () => 'up'): Slot[] =>

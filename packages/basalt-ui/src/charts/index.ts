@@ -16,10 +16,10 @@ export {
   type BandStripSeries,
   type BandSpan,
   type BandFold,
-} from './BandStrip'
-export { foldBands } from './band-fold'
+} from './parts/band-strip'
+export { foldBands } from './parts/band-fold'
 export { Donut, type DonutProps, type DonutDatum } from './Donut'
-export { Heatmap, type HeatmapProps, type HeatmapState } from './Heatmap'
+export { Heatmap, type HeatmapProps, type HeatmapState } from './parts/heatmap'
 export { DualPanel, type DualPanelProps, type DualPanelLine, type DualPanelBar } from './DualPanel'
 export {
   MirroredBars,

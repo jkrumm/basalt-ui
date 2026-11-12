@@ -26,7 +26,7 @@ import { barMark, emphasis } from './marks'
 import { PanelRung, paneX, paneY, rowsOf } from './panel'
 import type { PaneBuilder, PanelInput, PanelPlan } from './panel'
 import { xScaleFor } from './scales'
-import { foldBands, resolveNamedState } from './band-fold'
+import { foldBands, resolveNamedState } from './parts/band-fold'
 import { rowX } from './types'
 import type { CartesianChartProps, ChartSeries, ChartX, PlotRow } from './types'
 

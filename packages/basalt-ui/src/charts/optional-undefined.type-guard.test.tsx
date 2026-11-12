@@ -5,12 +5,12 @@
  * none, so a new optional without `| undefined` is a compile error in this file.
  */
 import { expect, test } from 'bun:test'
-import type { BandSpan, BandStripProps, BandStripSeries, BandFold } from './BandStrip'
+import type { BandSpan, BandStripProps, BandStripSeries, BandFold } from './parts/band-strip'
 import type { BarsBar, BarsLine, BarsProps } from './Bars'
 import type { ChartCardProps } from './ChartCard'
 import type { DonutProps } from './Donut'
 import type { DualPanelBar, DualPanelLine, DualPanelProps } from './DualPanel'
-import type { HeatmapProps } from './Heatmap'
+import type { HeatmapProps } from './parts/heatmap'
 import type { MirroredBarPane, MirroredBarsProps, MirroredBarsSeries } from './MirroredBars'
 import type { SparklineProps } from './Sparkline'
 import type { StackedAreaBand, StackedAreaProps } from './StackedArea'

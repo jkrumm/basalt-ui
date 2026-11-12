@@ -1,6 +1,6 @@
-import { oneOf } from '../common/errors'
-import { VX } from '../tokens'
-import type { ChartSeries } from './types'
+import { oneOf } from '../../common/errors'
+import { VX } from '../../tokens'
+import type { ChartSeries } from '../types'
 
 /**
  * The fields a named state carries wherever one is declared (`BandStrip`'s `states`, `Heatmap`'s):

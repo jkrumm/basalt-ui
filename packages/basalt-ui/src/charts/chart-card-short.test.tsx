@@ -8,7 +8,7 @@ import { act, render } from '@testing-library/react'
 import { afterEach, beforeEach, describe, expect, test } from 'bun:test'
 import type { ReactElement } from 'react'
 import { ChartCard } from './ChartCard'
-import { Heatmap } from './Heatmap'
+import { Heatmap } from './parts/heatmap'
 import { Lines } from './Lines'
 
 type Entry = {
