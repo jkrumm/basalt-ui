@@ -1,0 +1,9 @@
+/*
+ * The `table-selection` fixture's Tailwind v4 entry, compiled WITH preflight the way a Tailwind
+ * consumer renders the table. `table-selection.layout.test.ts` compiles it into a temp directory
+ * and inlines the tier sheet `src/table/table.css` beside it.
+ */
+@import '../../src/css/tailwind.css' source(none);
+@source './table-selection-fixture.tsx';
+@source '../../src/ui';
+@source '../../src/table';

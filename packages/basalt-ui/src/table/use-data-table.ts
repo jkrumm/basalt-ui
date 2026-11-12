@@ -15,7 +15,7 @@ import { table } from '../core/messages/table'
 import { resolvePhase } from '../core/phase'
 import type { Empty, ResolvedPhase } from '../core/phase'
 import type { Box, DetailHost } from '../core/ports'
-import type { DataTableInstance, KindColumn, Totals, UseDataTable } from './contract'
+import type { BulkAction, DataTableInstance, KindColumn, Totals, UseDataTable } from './contract'
 import { bodyItems, toggled } from './parts/group-row-model'
 import type { BodyItem } from './parts/group-row-model'
 import { tableEngine } from './core/features'
@@ -74,6 +74,8 @@ export type TableModel<T> = {
   cursor: { hasNext: boolean; fetchNext(): void } | undefined
   state: TableStateApi
   selection: SelectionApi<T> | undefined
+  /** The bulk bar's inputs: the declared actions, the all-matching opt-in and the loaded rows. */
+  bulk: { actions: readonly BulkAction<T>[]; selectAll: boolean; data: readonly T[] } | undefined
   activation: Activation<T>
   keyboard: RowKeyboard
   /** The parts hand the detail host here; an activation shows into the latest one. */
@@ -266,6 +268,14 @@ export function useDataTable<T>(options: UseDataTable<T>): DataTableInstance<T> 
     cursor: server && 'cursor' in mode ? mode.cursor : undefined,
     state,
     selection: options.selection === undefined ? undefined : selection,
+    bulk:
+      options.selection === undefined
+        ? undefined
+        : {
+            actions: options.selection.bulk,
+            selectAll: options.selection.selectAll === true,
+            data,
+          },
     activation,
     keyboard,
     setHost(next) {

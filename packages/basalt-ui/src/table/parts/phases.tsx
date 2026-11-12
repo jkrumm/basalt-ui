@@ -13,6 +13,7 @@ import { Button } from '../../ui/button'
 import { Skeleton } from '../../ui/skeleton'
 import { TableCell, TableRow } from '../../ui/table'
 import type { TableModel } from '../use-data-table'
+import { TickSkeleton } from './tick-column'
 import { alignProps, tierAttributes, visibleColumns } from './head'
 
 /** Skeleton rows of a loading table; the real page size would make a 100-row table a wall. */
@@ -45,11 +46,7 @@ export function LoadingRows<T>({ model }: { model: TableModel<T> }): ReactElemen
     <>
       {Array.from({ length: SKELETON_ROWS }, (_, row) => (
         <TableRow key={row} role="row" data-slot="table-row" data-skeleton="">
-          {model.selection !== undefined && (
-            <TableCell role="cell" aria-colindex={1} data-kind="select">
-              <Skeleton className="size-4" />
-            </TableCell>
-          )}
+          {model.selection !== undefined && <TickSkeleton />}
           {columns.map(({ spec, planned }, index) => {
             const { numeric, className } = alignProps(spec)
             return (

@@ -34,5 +34,9 @@ export function scrollMinWidth<T>(model: TableModel<T>): CSSProperties {
     (sum, column) => (column.visible && column.priority !== 3 ? sum + column.widthPx : sum),
     selectPx,
   )
-  return { ['--table-min-scroll' as string]: `${px}px` }
+  return {
+    ['--table-min-scroll' as string]: `${px}px`,
+    // A start-pinned column rides beside the tick column when there is one.
+    ['--table-pin-start' as string]: `${selectPx}px`,
+  }
 }

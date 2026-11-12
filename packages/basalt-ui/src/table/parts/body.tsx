@@ -9,11 +9,8 @@
 import { useEffect } from 'react'
 import type { ReactElement, ReactNode } from 'react'
 import { PhaseBoundary } from '../../core/phase-boundary'
-import { useMessages } from '../../core/messages/use-messages'
-import { table } from '../../core/messages/table'
 import type { DetailHost } from '../../core/ports'
 import { Button } from '../../ui/button'
-import { Checkbox } from '../../ui/checkbox'
 import { Menu, MenuContent, MenuItem, MenuTrigger } from '../../ui/menu'
 import { TableBody, TableCell, TableRow } from '../../ui/table'
 import type { DataTableInstance, RowAction } from '../contract'
@@ -26,6 +23,7 @@ import { GroupRow } from './group-row'
 import type { BodyItem } from './group-row-model'
 import { EmptyRow, ErrorRow, LoadingRows } from './phases'
 import { SelectCell } from './select-cell'
+import { TickCell } from './tick-column'
 
 /** The height a `spark` draws in; the table owns the box at every phase. */
 const BOX_HEIGHT = 24
@@ -114,7 +112,6 @@ export function DataRow<T>({
   /** `aria-rowindex` in a virtual window, where the mounted rows are not all the rows. */
   rowIndex?: number
 }): ReactElement {
-  const t = useMessages(table)
   const { selection, keyboard } = model
   const columns = visibleColumns(model.specs, model.plan.columns)
   const offset = selection === undefined ? 1 : 2
@@ -129,17 +126,7 @@ export function DataRow<T>({
       {...(rowIndex !== undefined && { 'aria-rowindex': rowIndex })}
       {...rowProps}
     >
-      {selection !== undefined && (
-        <TableCell role="cell" aria-colindex={1} data-kind="select">
-          <span data-slot="table-select">
-            <Checkbox
-              aria-label={t('table.selectRow')}
-              checked={ticked}
-              onCheckedChange={() => selection.toggle(row.id)}
-            />
-          </span>
-        </TableCell>
-      )}
+      {selection !== undefined && <TickCell selection={selection} id={row.id} ticked={ticked} />}
       {columns.map(({ spec, planned }, index) => {
         const { numeric, className } = alignProps(spec)
         return (

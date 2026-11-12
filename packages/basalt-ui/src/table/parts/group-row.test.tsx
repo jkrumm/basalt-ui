@@ -3,7 +3,7 @@
  * count, collapse hides the group's rows and writes `display.collapsed`, a footer column reduces
  * per group, `summary` gets the group's rows in a box, and the row keyboard skips collapsed rows.
  */
-import { act, cleanup, fireEvent, render, screen } from '@testing-library/react'
+import { act, cleanup, fireEvent, render, screen, within } from '@testing-library/react'
 import { afterEach, describe, expect, mock, test } from 'bun:test'
 import { useState } from 'react'
 import type { ReactElement, ReactNode } from 'react'
@@ -160,7 +160,11 @@ describe('GroupRow', () => {
     first.unmount()
     const { container } = render(<Subject id={id} />)
     expect(dataRows(container)).toEqual(['Kitchen', 'Bath', 'Study'])
-    expect(screen.getAllByRole('button', { expanded: false })).toHaveLength(1)
+    expect(
+      within(container.querySelector('tbody') as HTMLElement).getAllByRole('button', {
+        expanded: false,
+      }),
+    ).toHaveLength(1)
   })
 
   test('summary renders in a box with the group rows', () => {

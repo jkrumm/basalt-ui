@@ -9,7 +9,6 @@ import type { ReactElement } from 'react'
 import { cn } from '../../core/cn'
 import { useMessages } from '../../core/messages/use-messages'
 import { table } from '../../core/messages/table'
-import { Checkbox } from '../../ui/checkbox'
 import { Pressable } from '../../ui/button'
 import { TableHead, TableHeader, TableRow } from '../../ui/table'
 import type { DataTableInstance } from '../contract'
@@ -18,6 +17,8 @@ import type { KindSpec } from '../core/kinds-spec'
 import type { PlannedColumn } from '../core/plan'
 import { modelOf } from '../use-data-table'
 import type { SortDirection } from '../use-data-table'
+import { ColumnActionsMenu } from './column-actions'
+import { TriStateHeader } from './tri-state-header'
 
 /** The accessible name of the row-actions column and of each row's trigger. */
 export function useActionsLabel(): string {
@@ -96,33 +97,13 @@ export function DataTableHead<T>({
   table: DataTableInstance<T>
 }): ReactElement {
   const model = modelOf(instance)
-  const t = useMessages(table)
   const actionsLabel = useActionsLabel()
-  const { selection, rows } = model
-  const ids = rows.map((row) => row.id)
-  const ticked = ids.filter((id) => selection?.isSelected(id)).length
-  const offset = selection === undefined ? 1 : 2
+  const offset = model.selection === undefined ? 1 : 2
 
   return (
     <TableHeader role="rowgroup">
       <TableRow role="row">
-        {selection !== undefined && (
-          <TableHead
-            role="columnheader"
-            aria-colindex={1}
-            data-slot="table-head"
-            data-kind="select"
-            className="w-10"
-          >
-            <Checkbox
-              aria-label={t('table.selectAll')}
-              checked={ids.length > 0 && ticked === ids.length}
-              indeterminate={ticked > 0 && ticked < ids.length}
-              disabled={ids.length === 0}
-              onCheckedChange={() => selection.togglePage(ids)}
-            />
-          </TableHead>
-        )}
+        <TriStateHeader model={model} />
         {visibleColumns(model.specs, model.plan.columns).map(({ spec, planned }, index) => {
           const direction = model.sortOf(spec.id)
           const sortable = spec.sort !== null
@@ -136,24 +117,37 @@ export function DataTableHead<T>({
               {...cellAttributes(spec)}
               {...tierAttributes(planned)}
               numeric={numeric}
-              className={className}
+              className={cn('group/head', className)}
             >
               {spec.kind === 'actions' ? (
                 <span className="sr-only">{spec.header === '' ? actionsLabel : spec.header}</span>
-              ) : sortable ? (
-                <Pressable
-                  data-slot="table-sort"
-                  className={cn(
-                    'group/sort inline-flex items-center gap-1',
-                    numeric && 'flex-row-reverse',
-                  )}
-                  onClick={() => model.toggleSort(spec.id)}
-                >
-                  <span>{spec.header}</span>
-                  <SortMark direction={direction} />
-                </Pressable>
               ) : (
-                spec.header
+                <>
+                  {sortable ? (
+                    <Pressable
+                      data-slot="table-sort"
+                      className={cn(
+                        'group/sort inline-flex items-center gap-1',
+                        numeric && 'flex-row-reverse',
+                      )}
+                      onClick={() => model.toggleSort(spec.id)}
+                    >
+                      <span>{spec.header}</span>
+                      <SortMark direction={direction} />
+                    </Pressable>
+                  ) : (
+                    spec.header
+                  )}
+                  {/* out of flow: the menu never widens a header past its planned column */}
+                  <ColumnActionsMenu
+                    table={instance}
+                    column={spec.id}
+                    className={cn(
+                      'absolute top-1/2 -translate-y-1/2 opacity-0 group-hover/head:opacity-100 focus-visible:opacity-100 data-popup-open:opacity-100 pointer-coarse:opacity-100',
+                      numeric ? 'start-0.5' : 'end-0.5',
+                    )}
+                  />
+                </>
               )}
             </TableHead>
           )
