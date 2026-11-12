@@ -1,0 +1,11 @@
+// A filterSlot.custom render whose control keeps its value in useState, not the handle: no handle, flagged.
+import { useState } from 'react'
+import { filterSlot } from 'basalt-ui/controls'
+import { Slider } from 'basalt-ui/ui/slider'
+
+export function slot(handle: never) {
+  return filterSlot.custom(handle, 'Opacity', () => {
+    const [opacity, setOpacity] = useState(0.5)
+    return <Slider value={opacity} onValueChange={setOpacity} />
+  })
+}
