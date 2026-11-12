@@ -1,0 +1,41 @@
+{
+  "name": "@basalt-ui/spike-f2-route",
+  "private": true,
+  "description": "Spike f2-route (ARCHITECTURE section 11 F2): one argo dashboard route ported against the frozen contract. Throwaway harness, no tests.",
+  "type": "module",
+  "scripts": {
+    "run": "bun run.ts",
+    "typecheck": "tsc --noEmit -p ."
+  },
+  "dependencies": {
+    "@base-ui/react": "1.9.0",
+    "@fontsource-variable/hubot-sans": "5.3.0",
+    "@fontsource-variable/jetbrains-mono": "5.3.0",
+    "@fontsource-variable/nunito-sans": "5.3.0",
+    "@tailwindcss/vite": "4.3.5",
+    "@tanstack/charts": "1.5.0",
+    "@tanstack/react-query": "5.107.1",
+    "@tanstack/react-router": "1.170.46",
+    "@tanstack/react-table": "9.2.8",
+    "@tanstack/react-virtual": "3.14.14",
+    "@vitejs/plugin-react": "6.1.1",
+    "class-variance-authority": "0.7.1",
+    "clsx": "2.1.1",
+    "d3-scale": "4.0.2",
+    "eventsource-parser": "4.1.3",
+    "playwright-core": "1.63.0",
+    "react": "19.3.0",
+    "react-day-picker": "10.0.2",
+    "react-dom": "19.3.0",
+    "tailwindcss": "4.3.5",
+    "typescript": "6.0.3",
+    "vite": "8.3.5"
+  },
+  "devDependencies": {
+    "@types/bun": "1.3.1",
+    "@types/d3-scale": "4.0.9",
+    "@types/node": "24.10.1",
+    "@types/react": "19.3.0",
+    "@types/react-dom": "19.3.0"
+  }
+}

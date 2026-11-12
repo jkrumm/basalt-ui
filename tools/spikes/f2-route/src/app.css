@@ -1,0 +1,23 @@
+@import 'basalt-ui/tokens.css';
+@import 'basalt-ui/tailwind.css' source(none);
+@source '../../../../packages/basalt-ui/src/ui';
+@source '../../../../packages/basalt-ui/src/cards';
+@source '../../../../packages/basalt-ui/src/page';
+@source '../../../../packages/basalt-ui/src/table';
+@source '../../../../packages/basalt-ui/src/controls';
+@source '../stubs';
+/* NEED n3: the table tier sheet has no published specifier; this relative path is the deep import. */
+@import '../../../../packages/basalt-ui/src/table/table.css';
+@source '.';
+
+/*
+ * NEED n4: in the card tier the sheet above says `height: auto` on a row, but the row's own
+ * `h-(--table-row-h)` utility sits in a higher layer and wins, so every card is 32 px tall and the
+ * cards overlap at 390. Zeroing the custom property on the row is the one app-side patch; it is a
+ * restyle of a library part, which the contract forbids an app.
+ */
+@container table (max-width: 799.9px) {
+  [data-slot='table-root'][data-phone='cards'] [data-slot='table-row'] {
+    --table-row-h: auto;
+  }
+}
