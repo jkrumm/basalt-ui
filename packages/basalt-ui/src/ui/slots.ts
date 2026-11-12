@@ -22,6 +22,7 @@ export const SLOTS = {
     'autocomplete-content',
     'autocomplete-item',
   ],
+  'date-picker': ['date-picker', 'date-range-picker'],
   dialog: [
     'dialog-trigger',
     'dialog-content',

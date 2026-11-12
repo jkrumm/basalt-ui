@@ -3,7 +3,7 @@
 // fails on any @mantine/* or @visx/* import reachable from them, holds the ./charts graph to its
 // docs/V2-SPEC.md § 9.8 import set (the engine's subpaths, d3-scale, react), and asserts the root
 // barrel (dist/index.js) never RE-EXPORTS the ./charts or ./tokens entry.
-import { existsSync, readFileSync } from 'node:fs'
+import { existsSync, readdirSync, readFileSync } from 'node:fs'
 import { dirname, resolve } from 'node:path'
 
 const DIST = resolve(process.cwd(), 'dist')
@@ -36,8 +36,24 @@ for (const [src, want] of sample) {
 // All relative + bare specifiers in a JS module (from '…' | import('…') | import '…').
 const specifiers = (file) => matchSpecifiers(readFileSync(file, 'utf8'))
 
+// The STATIC ones only: `from '…'` and `import '…'`, never `import('…')`. A dynamic import is a lazy
+// edge, so it is not part of what a consumer's bundle loads up front.
+const STATIC_SPECIFIER = /(?<![\w$.'"])(?:from\b\s*|import\b\s*(?!\())['"]([^'"]+)['"]/g
+const staticSpecifiers = (file) =>
+  [...readFileSync(file, 'utf8').matchAll(STATIC_SPECIFIER)].map((m) => m[1])
+for (const [src, want] of [
+  [`import { a } from "./a.js"`, ['./a.js']],
+  [`import "./side.js"`, ['./side.js']],
+  [`const m = await import("react-day-picker")`, []],
+  [`export * from '../b.js'`, ['../b.js']],
+]) {
+  if (JSON.stringify([...src.matchAll(STATIC_SPECIFIER)].map((m) => m[1])) !== JSON.stringify(want))
+    throw new Error(`check-dist-layering static self-check failed on: ${src}`)
+}
+
 // Transitive graph over relative specifiers; collects the bare (external) specifiers reached.
-function walkGraph(entry) {
+// `staticOnly` follows and reports static imports only.
+function walkGraph(entry, { staticOnly = false } = {}) {
   const seen = new Set()
   const bare = new Set()
   const stack = [entry]
@@ -45,7 +61,7 @@ function walkGraph(entry) {
     const file = stack.pop()
     if (seen.has(file)) continue
     seen.add(file)
-    for (const spec of specifiers(file)) {
+    for (const spec of staticOnly ? staticSpecifiers(file) : specifiers(file)) {
       if (spec.startsWith('./') || spec.startsWith('../')) {
         const target = resolve(dirname(file), spec)
         if (existsSync(target)) stack.push(target)
@@ -115,6 +131,50 @@ for (const { rel, onlyBare } of subpaths) {
       )
     }
   }
+}
+
+// `react-day-picker` is an optional peer of `ui/date-picker` ALONE (docs/v3/ARCHITECTURE.md section 3).
+// No other published entry may load it up front: every export of package.json except `./ui/*` is
+// walked over its static imports (a dynamic `import()` is the lazy edge `./controls` may use), and
+// `dist/ui/date-picker.js` must still reach it, so this check cannot pass by walking the wrong files.
+{
+  const PEER = 'react-day-picker'
+  const exportsMap = JSON.parse(readFileSync(resolve(DIST, '..', 'package.json'), 'utf8')).exports
+  const entries = new Set()
+  for (const [key, value] of Object.entries(exportsMap)) {
+    const target = typeof value === 'object' && value !== null ? value.import : undefined
+    if (key === './ui/*' || typeof target !== 'string' || !target.endsWith('.js')) continue
+    if (!target.includes('*')) {
+      entries.add(resolve(DIST, '..', target))
+      continue
+    }
+    const dir = resolve(DIST, '..', target.slice(0, target.lastIndexOf('/')))
+    if (existsSync(dir))
+      for (const f of readdirSync(dir)) if (f.endsWith('.js')) entries.add(resolve(dir, f))
+  }
+  entries.add(resolve(DIST, 'index.js'))
+  let eagerFailed = false
+  let reached = 0
+  for (const entry of entries) {
+    if (!existsSync(entry)) continue
+    const { bare } = walkGraph(entry, { staticOnly: true })
+    reached += 1
+    if ([...bare].some((spec) => spec === PEER || spec.startsWith(`${PEER}/`))) {
+      fail(
+        `${entry.slice(DIST.length + 1)} eagerly reaches ${PEER}, an optional peer of ui/date-picker alone`,
+      )
+      eagerFailed = true
+    }
+  }
+  const picker = resolve(DIST, 'ui/date-picker.js')
+  if (!existsSync(picker)) {
+    fail('missing dist entry: ui/date-picker.js')
+  } else if (![...walkGraph(picker, { staticOnly: true }).bare].includes(PEER)) {
+    fail(`ui/date-picker.js no longer reaches ${PEER}: the eager check above proves nothing`)
+    eagerFailed = true
+  }
+  if (!eagerFailed)
+    console.log(`optional peer OK: ${PEER} is in no eager graph (${reached} entries)`)
 }
 
 // Root-barrel re-export guard.

@@ -153,6 +153,14 @@
       "message": "AutocompleteItem owns its height and display: eject it (basalt-ui eject combobox) to change them."
     },
     {
+      "module": "date-picker",
+      "part": "date-picker",
+      "pattern": "^DatePicker$",
+      "allow": ["layout"],
+      "deny": ["h-*", "min-h-*", "size-*", "hidden", "flex", "block", "grid", "inline-flex"],
+      "message": "DatePicker owns its height and display: eject it (basalt-ui eject date-picker) to change them."
+    },
+    {
       "module": "dialog",
       "part": "dialog-content",
       "pattern": "^DialogContent$",

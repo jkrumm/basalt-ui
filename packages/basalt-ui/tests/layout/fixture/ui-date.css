@@ -1,0 +1,9 @@
+/*
+ * The `ui-date` fixture's Tailwind v4 entry. Unlike `tailwind.css` it is compiled WITH preflight
+ * and the font faces, because the primitives are measured the way a Tailwind consumer renders them.
+ * `ui-date.layout.test.ts` compiles it into a temp directory; nothing generated lands in the repo.
+ */
+@import '../../../src/css/tailwind.css' source(none);
+@source './ui-date-fixture.tsx';
+@source '../../../src/ui/date-picker.tsx';
+@source '../../../src/ui/popover.tsx';
