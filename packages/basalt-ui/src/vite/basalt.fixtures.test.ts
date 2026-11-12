@@ -124,6 +124,7 @@ describe('eject config', () => {
     )
     expect(seen.noExternal).toEqual(['basalt-ui'])
     expect(seen.exclude).toContain('basalt-ui/cards')
+    expect(seen.exclude).toContain('basalt-ui/core/cn')
     expect(seen.exclude).toContain('basalt-ui/page')
 
     await build(config(app, { build: { ssr: 'src/entry-server.tsx', outDir: 'dist-ssr' } }))

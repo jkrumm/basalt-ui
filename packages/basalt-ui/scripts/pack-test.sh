@@ -219,6 +219,48 @@ for (const name of ['StatusDot', 'StatusVerdict']) {
 }
 console.log('smoke: basalt-ui status exports OK')
 
+// eject (docs/v3/ARCHITECTURE.md 4.1): a seed's `../core/*` and `../tokens` imports are published
+// subpaths, and no compiled file reaches a primitive by a relative path an alias cannot follow.
+{
+  const { existsSync, readdirSync, statSync } = await import('node:fs')
+  const { fileURLToPath } = await import('node:url')
+  const pkgDir = new URL('./node_modules/basalt-ui/', import.meta.url)
+  const seedDir = new URL('src/ui/', pkgDir)
+  const seeds = readdirSync(seedDir)
+    .filter((f) => f.endsWith('.tsx') && !f.endsWith('.test.tsx'))
+    .map((f) => f.slice(0, -'.tsx'.length))
+  const wanted = new Set()
+  for (const name of seeds) {
+    const text = readFileSync(new URL(`${name}.tsx`, seedDir), 'utf8')
+    for (const [, spec] of text.matchAll(/from\s+['"]\.\.\/(core\/[\w/-]+|tokens)['"]/g)) {
+      wanted.add(spec === 'tokens' ? 'basalt-ui/tokens' : `basalt-ui/${spec}`)
+    }
+  }
+  for (const spec of wanted) {
+    const url = import.meta.resolve(spec)
+    if (!existsSync(fileURLToPath(url))) throw new Error(`eject specifier does not resolve: ${spec}`)
+  }
+  // fix-esm-extensions has run: a surviving relative reach into a seed ends in `.js`
+  const names = seeds.join('|')
+  const viaUi = new RegExp(`from\\s*['"]\\.\\./ui/(?:${names})(?:\\.js)?['"]`)
+  const sibling = new RegExp(`from\\s*['"]\\./(?:${names})(?:\\.js)?['"]`)
+  const stale = []
+  const walk = (dir) => {
+    for (const entry of readdirSync(dir)) {
+      const p = `${dir}/${entry}`
+      if (statSync(p).isDirectory()) walk(p)
+      else if (/\.(js|d\.ts)$/.test(p)) {
+        const text = readFileSync(p, 'utf8')
+        const inUi = dir.endsWith('/dist/ui')
+        if (viaUi.test(text) || (inUi && sibling.test(text))) stale.push(p)
+      }
+    }
+  }
+  walk(fileURLToPath(new URL('dist', pkgDir)))
+  if (stale.length > 0) throw new Error(`relative primitive imports left in dist: ${stale.slice(0, 5).join(', ')}`)
+  console.log(`smoke: eject specifiers OK (${wanted.size} core/tokens paths, ${seeds.length} seeds)`)
+}
+
 console.log(`scratch resolution OK (${subpaths.length} subpaths)`)
 JS
 # `./agent` ships the Mantine chat UI, whose CSS-module imports plain Node cannot load.

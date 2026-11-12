@@ -137,6 +137,22 @@ describe('peerClassViolations', () => {
     expect(v.some((m) => m.startsWith('./sib') && m.includes('remend'))).toBe(false)
   })
 
+  test('a primitive reached by its published name is followed into dist', () => {
+    // The build rewrites `../ui/card` to `basalt-ui/ui/card`; the walk must still reach its peers.
+    write('dist/comp/index.js', "export { C } from 'basalt-ui/ui/prim'\n")
+    write('dist/comp/index.d.ts', "export type { C } from 'basalt-ui/ui/prim'\n")
+    write('dist/ui/prim.js', "import 'remend'\nexport const C = 1\n")
+    write('dist/ui/prim.d.ts', 'export type C = number\n')
+    const v = peerClassViolations(root, {
+      exports: { './comp': entry('./dist/comp/index.js', './dist/comp/index.d.ts') },
+      peerDependencies: peers,
+      peerDependenciesMeta: meta,
+    })
+    expect(v).toContain(
+      './comp imports the optional peer remend without it being subpath-required for ./comp',
+    )
+  })
+
   test('a required peer marked optional fails', () => {
     const v = peerClassViolations(root, {
       exports: {},

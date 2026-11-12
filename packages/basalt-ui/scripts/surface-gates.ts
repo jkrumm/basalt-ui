@@ -157,6 +157,8 @@ export const DEFERRED_PEER_GAPS: {
   tolerated: {},
 }
 
+const SELF_PREFIX = 'basalt-ui/ui/'
+
 /** The bare package a specifier names: `@scope/pkg/deep` → `@scope/pkg`, `pkg/deep` → `pkg`. */
 export function packageOf(specifier: string): string {
   const [first = '', second] = specifier.split('/')
@@ -200,6 +202,16 @@ export function reachFromEntry(entryJs: string, entryDts: string): Reach {
       for (const spec of specifiers(readFileSync(file, 'utf8'), dynamic)) {
         if (spec.startsWith('.')) {
           const next = resolveRelative(file, spec, exts)
+          if (next) stack.push(next)
+        } else if (spec.startsWith(SELF_PREFIX)) {
+          // A primitive reached by its published name (the build rewrites
+          // `../ui/card` to `basalt-ui/ui/card`): the same dist file, so the walk follows it.
+          const dist = file.slice(0, file.lastIndexOf('/dist/') + '/dist'.length)
+          const next = resolveRelative(
+            join(dist, 'x.js'),
+            `./ui/${spec.slice(SELF_PREFIX.length)}`,
+            exts,
+          )
           if (next) stack.push(next)
         } else if (!spec.startsWith('node:')) {
           into.add(packageOf(spec))
