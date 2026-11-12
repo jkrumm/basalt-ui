@@ -1421,7 +1421,14 @@ rows:
     repo: basalt-ui
     kind: chore
     seat: { tier: sonnet, effort: medium }
-    after: [v3-charts-5-heatmap, v3-freeze-g3, v3-rel-7-skeleton, v3-contract-amendment-late]
+    after:
+      [
+        v3-charts-5-heatmap,
+        v3-freeze-g3,
+        v3-rel-7-skeleton,
+        v3-contract-amendment-late,
+        v3-cycle-expression-1,
+      ]
     facts: { 'brief': 'docs/v3/issues/g4/v3-freeze-g4.json' }
   - key: v3-teardown-views
     title: 'Delete the 2.x view layer: dashboard, charts, table, controls, shell, content'
@@ -1539,3 +1546,10 @@ rows:
     seat: { tier: opus, effort: high }
     after: [v3-cycle-shell-1, v3-cycle-state-1, v3-playground-overview, v3-table-t3b-selection]
     facts: { 'brief': 'docs/v3/issues/cycles/v3-cycle-dogfood-1.json' }
+  - key: v3-cycle-expression-1
+    title: 'Improvement cycle 1: expression, six one-shot visualization trials scored against references'
+    repo: basalt-ui
+    kind: chore
+    seat: { tier: opus, effort: high }
+    after: [v3-playground-overview]
+    facts: { 'brief': 'docs/v3/issues/cycles/v3-cycle-expression-1.json' }
