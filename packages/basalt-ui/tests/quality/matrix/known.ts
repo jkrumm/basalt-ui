@@ -16,6 +16,48 @@ export interface KnownFinding {
 }
 
 export const KNOWN: readonly KnownFinding[] = [
+  // /gallery is the 2.x Mantine specimen page (Pagination, SegmentedControl, raw inputs). It carries
+  // dozens of findings of the legacy components and goes with the legacy barrel, so it is listed by
+  // assertion, not by item.
+  ...(['axe', 'ringWalk', 'forcedColors', 'fit', 'hitFloor', 'hitOverlap'] as const).map(
+    (assertion): KnownFinding => ({
+      route: '/gallery',
+      assertion,
+      item: /./,
+      owner: 'playground gallery (2.x Mantine specimens): retires with the legacy barrel',
+    }),
+  ),
+  {
+    route: '/overview',
+    assertion: 'axe',
+    item: /^color-contrast \(serious\)/,
+    owner: 'overview: the fact value text contrast',
+  },
+  {
+    route: '/overview',
+    assertion: 'ringWalk',
+    item: /(select-trigger\] "Range"|filter-set-pill|button\[button\] "Filters").*outline is clipped/,
+    owner:
+      'controls: the range select, filter pills and Filters button rings are clipped by the page bar',
+  },
+  {
+    route: '/overview',
+    assertion: 'ringWalk',
+    item: /button "More information": no focus outline/,
+    owner: 'cards: info button has no focus ring',
+  },
+  {
+    route: '/overview',
+    assertion: 'forcedColors',
+    item: /^\[button\] button/,
+    owner: 'ui: buttons whose frame is a shadow only (filter pills, Filters)',
+  },
+  {
+    route: '/overview',
+    assertion: 'focusNotObscured',
+    item: /select-trigger\] "Range": covered at .* by div\[stat-controls\]/,
+    owner: 'cards: the stat controls overlay covers the range select on the phone',
+  },
   {
     route: '*',
     assertion: 'ringWalk',
@@ -51,12 +93,6 @@ export const KNOWN: readonly KnownFinding[] = [
     assertion: 'ringWalk',
     item: /fieldset>button ".*no focus outline/,
     owner: 'charts: legend toggles have no focus ring',
-  },
-  {
-    route: '/gallery',
-    assertion: 'axe',
-    item: /^color-contrast \(serious\)/,
-    owner: 'playground gallery (2.x components): text contrast',
   },
   {
     route: '/scenarios/s1-ops',
