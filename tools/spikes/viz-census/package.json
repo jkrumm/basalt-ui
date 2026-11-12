@@ -1,0 +1,12 @@
+{
+  "name": "@basalt-ui/spike-viz-census",
+  "private": true,
+  "description": "Spike v3-spike-viz-census: what the fleet draws, how much of it v3 expresses, which geometry it writes by hand (V1-V4 of docs/v3/EXPRESSION.md). Static AST scan, read-only, no tests.",
+  "type": "module",
+  "scripts": {
+    "run": "bun run.ts"
+  },
+  "dependencies": {
+    "typescript": "6.0.3"
+  }
+}

@@ -1,0 +1,103 @@
+{
+  "$comment": "Fixed before the first measuring run (2026-11-12). A module (one source file) is a candidate when any signature below fires; candidates are then read and confirmed or rejected in review.json. Changing a signature after a run needs a line in docs/v3/spikes/viz-census.md, Method.",
+  "library": {
+    "$comment": "Signature 1: a JSX element whose root identifier is imported from one of these packages (prefix match on the module specifier). `frames` are wrappers that draw no data-mapped mark; a module whose only library tags are frames does not fire.",
+    "packages": [
+      "basalt-ui/charts",
+      "@tanstack/charts",
+      "@visx/",
+      "recharts",
+      "@mantine/charts",
+      "chart.js",
+      "react-chartjs-2",
+      "echarts",
+      "echarts-for-react",
+      "@nivo/",
+      "victory",
+      "uplot",
+      "uplot-react",
+      "lightweight-charts",
+      "@observablehq/plot",
+      "apexcharts",
+      "react-apexcharts",
+      "highcharts",
+      "highcharts-react-official",
+      "plotly.js",
+      "react-plotly.js",
+      "@unovis/",
+      "@ant-design/charts",
+      "@tremor/react"
+    ],
+    "frames": {
+      "basalt-ui/charts": ["ChartCard"],
+      "@visx/responsive": ["*"],
+      "@visx/tooltip": ["*"]
+    }
+  },
+  "kit": {
+    "$comment": "Signature 1, kit and component-library marks: a JSX element with one of these export names imported from the listed package family. basalt-ui means `basalt-ui` and every `basalt-ui/*` subpath.",
+    "basalt-ui": ["BarList", "Meter", "Ring", "Progress", "MiniBars"],
+    "@mantine/core": ["RingProgress", "Progress", "SemiCircleProgress"]
+  },
+  "svg": {
+    "$comment": "Signature 2: an intrinsic <svg> element whose subtree contains a `.map`/`.flatMap`/`Array.from` callback, or a descendant (not the <svg> itself) with a geometry attribute bound to a non-literal expression. Also an imperative SVG (`createElementNS` call).",
+    "geometryAttributes": [
+      "d",
+      "points",
+      "x",
+      "y",
+      "x1",
+      "x2",
+      "y1",
+      "y2",
+      "cx",
+      "cy",
+      "r",
+      "rx",
+      "ry",
+      "width",
+      "height",
+      "transform",
+      "strokeDasharray",
+      "strokeDashoffset",
+      "pathLength"
+    ],
+    "imperativeCalls": ["createElementNS"]
+  },
+  "canvas": {
+    "$comment": "Signature 2, canvas: an intrinsic <canvas> element, or a `getContext` call.",
+    "calls": ["getContext"]
+  },
+  "cells": {
+    "$comment": "Signature 3: a JSX element (intrinsic or component) whose `style` object has one of `styleKeys` (or a `--custom-property` key), or which has one of `sizeProps`, bound to a non-literal expression, and either (a) sits inside a `.map`/`.flatMap`/`Array.from` callback, or (b) the value is a template literal or string concatenation that contains `%`.",
+    "styleKeys": [
+      "width",
+      "height",
+      "minWidth",
+      "maxWidth",
+      "minHeight",
+      "maxHeight",
+      "flex",
+      "flexGrow",
+      "flexBasis",
+      "background",
+      "backgroundColor",
+      "opacity",
+      "gridColumn",
+      "gridColumnStart",
+      "gridColumnEnd",
+      "gridRow",
+      "gridRowStart",
+      "gridRowEnd",
+      "gridTemplateColumns",
+      "left",
+      "right",
+      "top",
+      "bottom",
+      "insetInlineStart",
+      "transform"
+    ],
+    "sizeProps": ["w", "h", "bg", "flex", "span"]
+  },
+  "mapCallees": ["map", "flatMap", "Array.from"]
+}
