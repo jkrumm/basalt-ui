@@ -10,9 +10,12 @@
  */
 /* oxlint-disable jsx-a11y/prefer-tag-over-role -- explicit roles keep the table a table under CSS projection (concept section 6, Roselli) */
 import type { CSSProperties, ReactElement } from 'react'
+import { cn } from '../../core/cn'
 import type { DataTableProps } from '../contract'
 import { TableCaption, Table } from '../../ui/table'
 import { DataTableBody } from './body'
+import { DataTableFooter, hasFooter } from './footer'
+import { VirtualTable } from './virtual'
 import { DataTableHead, visibleColumns } from './head'
 import { TablePager } from './pager'
 import { scrollMinWidth, tierAttributesOf } from './tiers'
@@ -56,13 +59,63 @@ function scrollportStyle(height: DataTableProps<unknown>['height']): CSSProperti
  * @example
  * <DataTable table={t} detail={asideHost} height="fill" />
  */
-export function DataTable<T>({ table, detail, height = 'auto' }: DataTableProps<T>): ReactElement {
+export function DataTable<T>({
+  table,
+  detail,
+  height = 'auto',
+  virtual,
+}: DataTableProps<T>): ReactElement {
   const model = modelOf(table)
   const scrolls = typeof height === 'object' || height === 'fill' || model.phone === 'scroll'
   const focusable = model.activation.kind !== 'none' || model.selection !== undefined
   const columns = visibleColumns(model.specs, model.plan.columns).length
   const colcount = columns + (model.selection === undefined ? 0 : 1)
   const { phase } = model
+  const footerShown = hasFooter(model) && phase.tag === 'ready'
+  const windowed = virtual !== undefined && (phase.tag === 'ready' || phase.tag === 'stale')
+
+  if (windowed) {
+    return (
+      <div
+        data-slot="table-root"
+        data-phase={phase.tag}
+        data-contained=""
+        data-virtual=""
+        data-full-at={model.plan.fullAt ?? undefined}
+        {...tierAttributesOf(model)}
+        data-refresh-failed={phase.tag === 'stale' && phase.refreshFailed ? '' : undefined}
+        // A windowed body needs a bounded port: a `fill` table takes the height of its parent.
+        className={cn(
+          'flex max-w-full min-w-0 flex-col',
+          height === 'fill' && 'h-full min-h-0 flex-1',
+        )}
+      >
+        {/* theme-allow hidden-inline-style — the scrollport height and the scroll tier's min width are per-table values */}
+        <div
+          data-slot="table-scroller"
+          style={{ ...scrollportStyle(height), ...scrollMinWidth(model) }}
+          className="flex min-h-0 flex-1 flex-col"
+        >
+          <VirtualTable
+            model={model}
+            virtual={virtual}
+            detail={detail}
+            head={
+              <>
+                <Columns model={model} />
+                <DataTableHead table={table} />
+              </>
+            }
+            footer={<DataTableFooter table={table} />}
+            footerShown={footerShown}
+            colcount={colcount}
+            tabStop={!focusable}
+          />
+        </div>
+        <TablePager table={table} />
+      </div>
+    )
+  }
 
   return (
     <div
@@ -98,6 +151,7 @@ export function DataTable<T>({ table, detail, height = 'auto' }: DataTableProps<
           <Columns model={model} />
           <DataTableHead table={table} />
           <DataTableBody table={table} {...(detail !== undefined && { detail })} />
+          <DataTableFooter table={table} />
         </Table>
       </div>
       <TablePager table={table} />

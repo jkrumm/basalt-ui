@@ -14,7 +14,7 @@ The data table: head, body and the phase arms of one `useDataTable` instance.
 ## Signature
 
 ```ts
-DataTable<T>({ table, detail, height }: DataTableProps<T>): ReactElement
+DataTable<T>({ table, detail, height, virtual, }: DataTableProps<T>): ReactElement
   table: DataTableInstance<T>
   detail?: DetailHost
   height?: "auto" | Scrollport | Scrollport

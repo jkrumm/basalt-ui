@@ -42,9 +42,16 @@ export type TableMessages = Record<
   | 'table.viewSave'
   | 'table.viewName'
   | 'table.viewReset'
-  | 'table.viewEmpty',
+  | 'table.viewEmpty'
+  | 'table.footer'
+  | 'table.aggSum'
+  | 'table.aggMean'
+  | 'table.aggMin'
+  | 'table.aggMax'
+  | 'table.aggCount',
   string
 > &
+  Record<'table.groupRows', (f: Format, count: number) => string> &
   Record<'table.rowRange', (f: Format, from: number, to: number, total: number) => string> &
   Record<'table.filters', (f: Format, count: number) => string> &
   Record<
@@ -92,6 +99,13 @@ export const table = {
   'table.viewName': 'View name',
   'table.viewReset': 'Reset',
   'table.viewEmpty': 'No saved views',
+  'table.footer': 'Summary',
+  'table.aggSum': 'Sum',
+  'table.aggMean': 'Average',
+  'table.aggMin': 'Min',
+  'table.aggMax': 'Max',
+  'table.aggCount': 'Count',
+  'table.groupRows': (f, count) => (count === 1 ? '1 row' : `${f.number(count)} rows`),
   'table.filters': (f, count) => (count > 0 ? `Filters (${f.number(count)})` : 'Filters'),
   'table.chipRemove': (_f, subject) => `Remove filter ${subject}`,
   'table.headerMenu': (_f, header) => `${header} column menu`,
