@@ -11,6 +11,7 @@ import { innerNavScenario } from './scenarios/inner-nav'
 import { pageCoreScenario } from './scenarios/page-core'
 import { pageKitScenario } from './scenarios/page-kit'
 import { shellFrameScenario } from './scenarios/shell-frame'
+import { shellMobileScenario } from './scenarios/shell-mobile'
 
 export type ShellSlotName = string
 
@@ -28,6 +29,7 @@ export const SCENARIOS: Readonly<Record<string, Scenario>> = {
   'page-core': pageCoreScenario,
   'inner-nav': innerNavScenario,
   'shell-frame': shellFrameScenario,
+  'shell-mobile': shellMobileScenario,
 }
 
 /** Every slot some registered scenario provides. */
