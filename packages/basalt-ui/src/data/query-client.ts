@@ -5,12 +5,13 @@
  */
 import { QueryClient } from '@tanstack/react-query'
 import type { QueryClientConfig } from '@tanstack/react-query'
+import { installLiveRuntime } from './live/live-query-runtime'
 
 const MAX_RETRIES = 2
 /** The 4xx that are transient: request timeout, too early, too many requests. */
 const TRANSIENT_4XX: ReadonlySet<number> = new Set([408, 425, 429])
 
-const statusOf = (error: unknown): number | undefined => {
+export const statusOf = (error: unknown): number | undefined => {
   if (typeof error !== 'object' || error === null || !('status' in error)) return undefined
   return typeof error.status === 'number' ? error.status : undefined
 }
@@ -47,11 +48,13 @@ const BASALT_QUERY_DEFAULTS = {
  * ```
  */
 export function makeQueryClient(config?: QueryClientConfig): QueryClient {
-  return new QueryClient({
+  const client = new QueryClient({
     ...config,
     defaultOptions: {
       ...config?.defaultOptions,
       queries: { ...BASALT_QUERY_DEFAULTS, ...config?.defaultOptions?.queries },
     },
   })
+  installLiveRuntime(client)
+  return client
 }
