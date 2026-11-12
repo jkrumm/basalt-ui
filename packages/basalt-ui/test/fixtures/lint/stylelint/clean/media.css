@@ -1,0 +1,2 @@
+@media (prefers-reduced-motion: reduce) { .a { gap: 0; } }
+@media (hover: hover) { .a { color: var(--vx-brand); } }
