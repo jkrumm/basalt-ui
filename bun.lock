@@ -231,7 +231,6 @@
         "@shikijs/themes",
         "@tanstack/charts",
         "@tanstack/react-hotkeys",
-        "@tanstack/react-query",
         "@tanstack/react-query-devtools",
         "@tanstack/react-router-devtools",
         "@tanstack/react-table",
