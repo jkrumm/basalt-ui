@@ -104,9 +104,7 @@ describe('the rail DOM contract', () => {
     const nav: CoreNavConfig = { ...HOME_NAV, pinned: [item('help', 'Help')] }
     await renderRail(props(nav))
     const footer = document.querySelector('[data-slot="shell-rail-footer"]')!
-    expect(footer.querySelector('[data-slot="shell-rail-row"]')?.getAttribute('aria-label')).toBe(
-      'Help',
-    )
+    expect(footer.querySelector('[data-slot="shell-rail-row"]')?.textContent).toContain('Help')
     expect(footer.className).toContain('pt-3')
     expect(footer.className).toContain('pb-2.5')
   })

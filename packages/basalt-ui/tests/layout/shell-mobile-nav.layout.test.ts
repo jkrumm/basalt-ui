@@ -19,7 +19,6 @@ import type { FixtureSpec } from './fixture/spec'
 import {
   ACTIVE_PILL,
   ACTIVE_PILL_ICON,
-  BAR_SLOTS,
   CONTENT_END,
   PHONE,
   PHONE_SMALL,
@@ -394,7 +393,9 @@ describeShell(
           'the AppShell.Footer box mobileNavBarHeight sizes keeps its OWN 49px floor — the pixel ' +
             'the border-top seam claims back from .bar',
         )
-        const slots = await p.boxes(BAR_SLOTS)
+        // Scoped by slot: the desktop rail is a second `nav[aria-label="Primary"]` (hidden here), and
+        // its children are not bar slots. On 2.x the slot selector is the same `nav[aria-label="Primary"]`.
+        const slots = await p.boxes(`${S('shell-tab-bar')} > *`)
         for (const [i, box] of slots.entries()) {
           expectHeightAtLeast(
             { name: `slot ${i} @density ${density}`, box },
