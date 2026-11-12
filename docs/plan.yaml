@@ -1464,8 +1464,6 @@ rows:
         v3-gr-intl-enable,
         v3-sk-7b-state-references,
         v3-state-4b-recipes,
-        v3-cycle-shell-1,
-        v3-cycle-state-1,
         v3-cycle-lint-1,
         v3-cycle-wiring-1,
         v3-cycle-dogfood-1,
