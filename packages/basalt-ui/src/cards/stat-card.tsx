@@ -1,5 +1,8 @@
 import type { ReactElement } from 'react'
 import { cn } from '../core/cn'
+import { cards } from '../core/messages/cards'
+import { useMessages } from '../core/messages/use-messages'
+import { resolvePhase } from '../core/phase'
 import type { Box } from '../core/ports'
 import { DeltaBadge } from '../ui/badge'
 import { Card, CardPhase, Inset } from '../ui/card'
@@ -10,15 +13,16 @@ import { StatFooter, StatHead, StatSkeleton, StatusMark, formatValue } from './s
 const CHART_HEIGHT = 72
 
 /**
- * The inset is one fixed height per anatomy, so a loading, empty or error card is exactly as tall
- * as a ready one. Content is figure row 36, sub row 20, chart box 72 and an 8 px gap, never under
- * 96 (the phase arms' floor), plus the inset's 24 px of padding.
+ * The inset is exactly as tall as its anatomy, so a loading, empty or error card is as tall as a
+ * ready one and nothing leaves an empty band under the figure: figure row 36, sub row 20 (hidden
+ * below `@narrow`, and its height with it), an 8 px gap and the chart box 72, plus the inset's 24 px
+ * of padding. With no chart the phase arms are one row, so they fit a box one figure row tall.
  */
 const BODY_HEIGHT = {
-  plain: 'h-30',
+  plain: 'h-15',
+  sub: 'h-20 @max-narrow:h-15',
   chart: 'h-35',
-  sub: 'h-30',
-  both: 'h-40',
+  both: 'h-40 @max-narrow:h-35',
 } as const
 
 const bodyHeight = (hasSub: boolean, hasChart: boolean): string =>
@@ -27,9 +31,10 @@ const bodyHeight = (hasSub: boolean, hasChart: boolean): string =>
 /**
  * The signature stat card: one shell holding a header and a footer of at most two facts, and an
  * inset one surface step down inside a 4 px gutter with the figure, its delta pill and verdict, a
- * sub line and a chart box, all on one left edge (`--card-edge`). It owns its height at every
- * phase, and its loading skeleton draws the same rows; `chart` is called only in `ready` and
- * `stale`, in a fixed box.
+ * sub line and a chart box, all on one left edge (`--card-edge`). The inset is as tall as the rows
+ * the card declares, the same at every phase, and its loading skeleton draws those rows; `chart`
+ * is called only in `ready` and `stale`, in a fixed box. A stale card says so at the end of the
+ * figure row.
  *
  * @useWhen a page shows one headline figure with its change, verdict and trend as a card
  * @neverWhen the content is a list of rows (use a row list) or a chart with a legend (use a chart card)
@@ -51,6 +56,10 @@ export function StatCard(props: StatCardProps): ReactElement {
   const { title, value, unit, delta, status, sub, chart, footer, href, onSelect } = props
   const { phase, empty, subtitle, icon, info, controls, menu } = props
   const figure = formatValue(value)
+  const t = useMessages(cards)
+  const resolved = resolvePhase({ phase, empty })
+  const stale = resolved.tag === 'stale' ? resolved : null
+  const staleText = stale?.refreshFailed ? t('cards.refreshFailed') : t('cards.updating')
   return (
     <div data-slot="stat-card" className="@container min-w-0">
       <Card flush className="relative">
@@ -69,6 +78,8 @@ export function StatCard(props: StatCardProps): ReactElement {
             phase={phase}
             empty={empty}
             skeleton={<StatSkeleton sub={sub !== undefined} chart={chart !== undefined} />}
+            arms={chart === undefined ? 'line' : 'stack'}
+            staleLine="body"
             className="flex flex-1 flex-col"
           >
             {(box: Box) => (
@@ -89,11 +100,20 @@ export function StatCard(props: StatCardProps): ReactElement {
                     <DeltaBadge value={delta.value} polarity={delta.polarity} {...labelOf(delta)} />
                   )}
                   {status !== undefined && <StatusMark status={status} />}
+                  {stale !== null && (
+                    <output
+                      data-slot="stat-stale"
+                      title={staleText}
+                      className="ml-auto min-w-0 shrink-[4] truncate text-xs text-muted-foreground"
+                    >
+                      {staleText}
+                    </output>
+                  )}
                 </div>
                 {sub !== undefined && (
                   <p
                     data-slot="stat-sub"
-                    className="h-5 shrink-0 truncate text-sm text-muted-foreground @max-narrow:hidden"
+                    className="m-0 h-5 shrink-0 truncate text-sm text-muted-foreground @max-narrow:hidden"
                   >
                     {sub}
                   </p>

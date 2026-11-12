@@ -4,16 +4,17 @@ use when: 'a page shows one headline figure with its change, verdict and trend a
 never when: 'the content is a list of rows (use a row list) or a chart with a legend (use a chart card)'
 subpath: basalt-ui/cards
 peers: ['@base-ui/react']
-slots: [stat-card, stat-chart, stat-figure, stat-sub]
+slots: [stat-card, stat-chart, stat-figure, stat-stale, stat-sub]
 ---
 
 # StatCard
 
 The signature stat card: one shell holding a header and a footer of at most two facts, and an
 inset one surface step down inside a 4 px gutter with the figure, its delta pill and verdict, a
-sub line and a chart box, all on one left edge (`--card-edge`). It owns its height at every
-phase, and its loading skeleton draws the same rows; `chart` is called only in `ready` and
-`stale`, in a fixed box.
+sub line and a chart box, all on one left edge (`--card-edge`). The inset is as tall as the rows
+the card declares, the same at every phase, and its loading skeleton draws those rows; `chart`
+is called only in `ready` and `stale`, in a fixed box. A stale card says so at the end of the
+figure row.
 
 ## Signature
 
