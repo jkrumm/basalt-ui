@@ -38,6 +38,3 @@ packages/basalt-ui/docs/menu.md
 # The shipped stylelint preset is `renderStylelintConfig()` output byte for byte (src/lint/stylelint/stylelint.test.ts
 # pins committed == rendered), the same bytes a consumer's `sync` writes; oxfmt would re-wrap its arrays.
 packages/basalt-ui/configs/stylelint.basalt.json
-
-# Generated from renderStylelintConfig's JSDoc; owned by `gen-docs`, never by oxfmt.
-packages/basalt-ui/docs/render-stylelint-config.md
