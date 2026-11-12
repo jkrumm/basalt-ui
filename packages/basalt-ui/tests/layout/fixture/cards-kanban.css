@@ -1,0 +1,10 @@
+/*
+ * The `cards-kanban` fixture's Tailwind v4 entry: compiled WITH preflight, the way a Tailwind
+ * consumer renders the board recipe. `cards-kanban.layout.test.ts` compiles it into a temp
+ * directory; nothing generated lands in the repo.
+ */
+@import '../../../src/css/tailwind.css' source(none);
+@source './cards-kanban-fixture.tsx';
+@source '../../../src/ui';
+@source '../../../src/cards';
+@source '../../../../../apps/playground/src/recipes';

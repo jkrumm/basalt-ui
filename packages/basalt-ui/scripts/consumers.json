@@ -30,6 +30,7 @@
   "FormGroup": "image-gateway:app/src/views/Create.tsx",
   "FormRow": "argo:apps/dashboard/src/features/m365-explorer/explorer-page.tsx",
   "Heatmap": "argo:apps/dashboard/src/features/walking-pad/charts/time-of-day-chart.tsx",
+  "KanbanCard": "software-factory:apps/console/src/components/flow/card.tsx",
   "Lines": "argo:apps/dashboard/src/features/usage-tracking/charts/cache-hit-ratio.tsx",
   "Markdown": "argo:apps/dashboard/src/features/hermes-chat/markdown-part.tsx",
   "Meter": "argo:apps/dashboard/src/features/usage-tracking/charts/cache-hit-ratio.tsx",
