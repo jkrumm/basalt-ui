@@ -4,13 +4,14 @@ A build row proves that its piece works. A cycle proves that the pieces work tog
 
 ## Areas
 
-| Area                       | Key                    | Asks                                                                                                                       |
-| -------------------------- | ---------------------- | -------------------------------------------------------------------------------------------------------------------------- |
-| AppShell and page kit      | `v3-cycle-shell-<n>`   | Can an app lay out its pages, navigation, aside and phone chrome without reaching past the kit?                            |
-| State, stores and controls | `v3-cycle-state-<n>`   | Does each filter, tab, form and live query bind to one store field without glue code?                                      |
-| Lint and guards            | `v3-cycle-lint-<n>`    | Does each rule catch the mistake it names, and stay silent on correct code?                                                |
-| Wiring and API surface     | `v3-cycle-wiring-<n>`  | Does a fresh app get from `basalt-ui init` to a first page by following only what ships? Is the export surface consistent? |
-| Dogfood                    | `v3-cycle-dogfood-<n>` | Can v3 rebuild a slice of the factory console, the reference app, at the console's quality?                                |
+| Area                       | Key                       | Asks                                                                                                                                                |
+| -------------------------- | ------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------- |
+| AppShell and page kit      | `v3-cycle-shell-<n>`      | Can an app lay out its pages, navigation, aside and phone chrome without reaching past the kit?                                                     |
+| State, stores and controls | `v3-cycle-state-<n>`      | Does each filter, tab, form and live query bind to one store field without glue code?                                                               |
+| Lint and guards            | `v3-cycle-lint-<n>`       | Does each rule catch the mistake it names, and stay silent on correct code?                                                                         |
+| Wiring and API surface     | `v3-cycle-wiring-<n>`     | Does a fresh app get from `basalt-ui init` to a first page by following only what ships? Is the export surface consistent?                          |
+| Dogfood                    | `v3-cycle-dogfood-<n>`    | Can v3 rebuild a slice of the factory console, the reference app, at the console's quality?                                                         |
+| Expression                 | `v3-cycle-expression-<n>` | Does an agent with only the shipped skills and kit build a visualization that fits its case on the first try? Own protocol: `docs/v3/EXPRESSION.md` |
 
 ## Protocol
 
