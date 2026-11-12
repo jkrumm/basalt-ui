@@ -55,4 +55,16 @@ describe('toMenuTemplate', () => {
       'no command "nope"',
     )
   })
+
+  test('named keys become the accelerator names a host expects', () => {
+    const set = defineCommands({
+      up: { label: 'Up', chord: 'Mod+pageup', run },
+      f5: { label: 'Reload', chord: 'f5', run },
+      del: { label: 'Delete', chord: 'Mod+Backspace', run },
+    })
+    const accelerators = toMenuTemplate(set, { order: ['up', 'f5', 'del'] }).flatMap((item) =>
+      item.type === 'item' ? [item.accelerator] : [],
+    )
+    expect(accelerators).toEqual(['CmdOrCtrl+PageUp', 'F5', 'CmdOrCtrl+Backspace'])
+  })
 })

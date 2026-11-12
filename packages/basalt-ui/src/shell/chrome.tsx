@@ -8,6 +8,8 @@
  */
 import { createContext, useCallback, useContext } from 'react'
 import type { ReactElement, ReactNode } from 'react'
+import type { PageHost } from '../core/ports'
+import { PageHostContext } from '../page/page'
 import type { ShellChrome, WindowChrome } from './contract'
 
 /** The header's height under `native-overlay`, in px. */
@@ -25,14 +27,24 @@ export function windowChrome(chrome: ShellChrome): WindowChrome {
   return chrome === 'native-overlay' ? NATIVE : WEB
 }
 
-export function ChromeProvider({
+/**
+ * The shell's outermost provider: the page host, and the chrome every part of the shell reads, the
+ * header's controls and actions included.
+ */
+export function ChromeHost({
   chrome,
+  host,
   children,
 }: {
   chrome: ShellChrome
+  host: PageHost
   children: ReactNode
 }): ReactElement {
-  return <ChromeContext value={windowChrome(chrome)}>{children}</ChromeContext>
+  return (
+    <PageHostContext value={host}>
+      <ChromeContext value={windowChrome(chrome)}>{children}</ChromeContext>
+    </PageHostContext>
+  )
 }
 
 /**
