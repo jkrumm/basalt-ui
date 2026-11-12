@@ -1,1 +1,1 @@
-["BasaltDataTable", "col", "createColumnHelper"]
+["BasaltDataTable", "DataTable", "col", "createColumnHelper", "useDataTable"]

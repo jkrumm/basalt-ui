@@ -312,6 +312,9 @@ export const SKIP: Record<string, string> = {
   BasaltProvider:
     'F-SKIP-1 — the harness wrapper IS a BasaltProvider, and a second nested instance is the ' +
     'documented single-mount violation the provider warns about. Covered by provider/index.test.tsx.',
+  DataTable:
+    'v3-table-t2a — its only prop is an instance made by the `useDataTable` hook, which a plain props ' +
+    'map cannot build. Covered by table/parts/data-table.test.tsx (SSR hydration and axe at the full tier).',
 }
 
 /* --------------------------------------------------------- expected defects */
