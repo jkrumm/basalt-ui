@@ -1551,5 +1551,11 @@ rows:
     repo: basalt-ui
     kind: chore
     seat: { tier: opus, effort: high }
-    after: [v3-playground-overview]
+    after: [v3-playground-overview, v3-spike-viz-census]
     facts: { 'brief': 'docs/v3/issues/cycles/v3-cycle-expression-1.json' }
+  - key: v3-spike-viz-census
+    title: 'Spike: what the fleet draws, how much of it v3 expresses, which geometry it writes by hand'
+    repo: basalt-ui
+    kind: chore
+    seat: { tier: opus, effort: high }
+    facts: { 'brief': 'docs/v3/issues/spikes/v3-spike-viz-census.json' }

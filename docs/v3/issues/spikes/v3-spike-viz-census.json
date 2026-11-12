@@ -1,0 +1,34 @@
+{
+  "why": "docs/v3/EXPRESSION.md states three hypotheses about why an agent needs several rounds for a fitting visualization. The benchmark (TuffUI) shows what is possible; it does not show what the fleet needs. Before 3.0 freezes the charts contract and no major may follow, the demand side must be counted: what consumers draw today, how much of it v3 can express, and which geometry they write by hand.",
+  "what": "tools/spikes/viz-census/** and docs/v3/spikes/viz-census.md, plus native cases appended to docs/v3/expression/cases.md. Read-only: the 12 consumers of the fleet census (docs/v3/spikes/census.md, Method) plus the Epos teamchat ui as counts only.",
+  "owns": [
+    "tools/spikes/viz-census/**",
+    "docs/v3/spikes/viz-census.md",
+    "docs/v3/expression/cases.md (append `n` rows only)"
+  ],
+  "must_not_touch": [
+    "CHANGELOG.md",
+    "root package.json, bun.lock, .gitignore, .oxlintignore",
+    "docs/v3/{concepts,issues}/**, docs/v3/ARCHITECTURE.md, docs/v3/EXPRESSION.md, docs/v3/expression/{rubric,references}.md",
+    "other tools/spikes/* folders",
+    "consumer repos (scratch copies live in the OS temp dir)"
+  ],
+  "concept": "docs/v3/EXPRESSION.md § Hypothesis the cycles test and § Thresholds",
+  "exemplar": "tools/spikes/census/** and docs/v3/spikes/census.md: the same scan scope, scratch copies, hashed ids for private repos, review.json for rejected and classified hits, two byte-identical runs",
+  "change": "(1) Find every visualization module in the fleet by TypeScript AST: a module that renders data-mapped marks. Signatures, fixed in signatures.json before measuring: a JSX element from basalt-ui/charts, @visx/*, recharts, @tanstack/charts or another chart library; an `<svg>` or `<canvas>` whose children or attributes are computed from a mapped array; an HTML grid or flex row of cells whose size, fill or count is computed from data (meters, bar lists, heat cells). Icons, logos and static illustrations are rejected in review.json. (2) Classify each confirmed module in review.json, by reading it: `form` (free text, then normalised to a closed list you fix after the first pass), `substrate` (kind, cartesian-compose, hand-svg, hand-html, canvas, library), `v3` (the lowest way v3 on master can express it: kind, CartesianChart with engine marks, CartesianChart.custom, a cards or ui primitive such as Meter, Ring or BarList, or none), `helpers` (hand-written geometry present: scale, ticks, polar-arc, packing, measure-width, label-fit, hit-focus, tooltip), `devices` (which of the twelve devices of docs/v3/evidence/ext-tuffui-devices.md it shows), `lines`. (3) Report V1 to V4 as below. (4) Append to docs/v3/expression/cases.md at least six `n` cases drawn from confirmed modules whose `v3` is `none` or `CartesianChart.custom`, across at least three repos, in the bank's form: a viewer, a question, the data shape; no chart form, no repo-private names or values. Public repos list file and line; Epos is counts only.",
+  "commits": "One non-package commit `chore: spike viz census harness and verdict`, empty scope, no attribution.",
+  "proof": "run.ts JSON plus the verdict doc; run twice, attach both outputs.",
+  "acceptance": [
+    "run.ts JSON has `total`, `byRepo`, `bySubstrate`, `byV3`, `v1.share`, `v1.repos`, `v2.byForm` (form to {copies, repos}), `v3.byHelper` (helper to {copies, repos}), `v4.byDevice` (device to {present, applicable})",
+    "`bun tools/spikes/viz-census/run.ts` exits 0 and prints one JSON object with the keys above (0 means the harness ran, not that a hypothesis held)",
+    "docs/v3/spikes/viz-census.md has headings Question, Method, Measurements, Verdict, Then, Affects and the `verdict` lines",
+    "docs/v3/expression/cases.md gained at least six `n` rows from at least three repos and no other change",
+    "`find tools/spikes/viz-census -name '*.test.*' -o -name '*.spec.*'` prints nothing",
+    "`git diff --name-only master...HEAD` lists only `owns` paths",
+    "`grep -rnE 'op://|\\.ts\\.net|192\\.168\\.|ghp_' tools/spikes/viz-census docs/v3/spikes/viz-census.md` prints nothing",
+    "`make check` passes"
+  ],
+  "out_of_scope": "Editing ARCHITECTURE or EXPRESSION; changing consumers; building any helper; judging visual quality from screenshots (the cycles do that).",
+  "envelope": "Harness: tools/spikes/viz-census/ has its own package.json (exact pins); bun.lock and node_modules gitignored there. Passes root oxlint; no *.test.* files; synthetic data only, private repos as counts and hashed ids.",
+  "verdict": "Lines, with the thresholds of docs/v3/EXPRESSION.md § Thresholds: `V1 seam: CONFIRMED|OPEN|REFUTED` (share of modules whose `v3` is `none` or `CartesianChart.custom`; CONFIRMED at 20% or more, or such a module in 3 or more repos; REFUTED under 10% and under 3 repos). `V2 kinds: <form list>|none` (a form with 3 or more copies in 2 or more repos whose `v3` is not `kind`: listed under Then as `kind candidate, Rule of Three`). `V3 helpers: <helper list>|none` (a helper with 3 or more copies in 2 or more repos: the seam's first cut). `V4 devices: <device list>` (devices present in under 25% of the modules where they apply: the skill's priorities)."
+}
