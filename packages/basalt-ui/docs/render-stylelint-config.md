@@ -1,7 +1,7 @@
 ---
 name: renderStylelintConfig
-use when: "a tool writes the consumer's stylelint config and must list the generated token sheets in `ignoreFiles`"
-never when: "an app only extends the preset (`extends: ['basalt-ui/stylelint']`) and has no generated sheet to ignore"
+use when: 'a tool writes the consumer''s stylelint config and must list the generated token sheets in `ignoreFiles`'
+never when: 'an app only extends the preset (`extends: [''basalt-ui/stylelint'']`) and has no generated sheet to ignore'
 subpath: basalt-ui/stylelint
 peers: []
 slots: []
