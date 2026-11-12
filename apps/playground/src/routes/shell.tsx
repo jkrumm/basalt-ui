@@ -1,44 +1,47 @@
-import { List, Stack, Text } from '@mantine/core'
 import { createFileRoute } from '@tanstack/react-router'
-import { PageAside, Section } from 'basalt-ui'
+import { Page, PageAside, PageBar, Section } from 'basalt-ui/page'
+
+// #region page-aside
+// A docked aside: a page claims the shell's right region, which opens at the full-width size class
+// and becomes a sheet opened from the header on a phone.
+function AsideBody() {
+  return (
+    <PageAside title="Display" dock="always" width={320}>
+      <p className="m-0 text-sm text-muted-foreground">The aside is a fourth shell region.</p>
+    </PageAside>
+  )
+}
+// #endregion
 
 /**
- * The shell demo: the navigation, its mobile projection and the aside region. The page body
- * explains what to look at; the real subjects are the sidebar, the bottom bar and `PageAside`.
+ * The shell demo: a page bar with an action, and a docked `PageAside`. The navigation, the rail and
+ * the tab bar are the subject; the body says what to look at.
  */
 function ShellRoute() {
   return (
-    <Stack gap="lg">
-      <Section
-        title="Navigation"
-        subtitle="One typed definition (demo/nav-model.tsx) feeds the sidebar, the bottom bar and the breadcrumb."
-      >
-        <List size="sm" spacing="xs">
-          <List.Item>Four destinations are `mobile: 'tab'`; the rest fold into More.</List.Item>
-          <List.Item>The Cards entry carries a count badge: a dot on the phone slot.</List.Item>
-          <List.Item>The Scenarios group is built from the scenario registry.</List.Item>
-        </List>
+    <Page area="shell">
+      <PageBar
+        title="Shell"
+        actions={[{ id: 'tour', label: 'Take a tour', primary: true, onClick: () => undefined }]}
+      />
+      <Section title="Navigation">
+        <ul className="m-0 flex list-none flex-col gap-1.5 p-0 text-sm text-muted-foreground">
+          <li>
+            One typed definition (demo/nav-model.tsx) feeds the rail, the tab bar and the
+            breadcrumb.
+          </li>
+          <li>Four destinations are mobile tabs; the rest fold into More.</li>
+          <li>The Cards entry carries a count badge.</li>
+          <li>The Scenarios section is built from the scenario registry.</li>
+        </ul>
       </Section>
-      <Section
-        title="Sidebar blocks and global actions"
-        subtitle="Declared once, projected onto the sidebar, the rail and the mobile More sheet."
-      >
-        <Text size="sm">
-          The Awaiting action list collapses to a count and opens as one nested More-sheet row. The
-          notification bell stays in the header bar; the theme toggle folds into the kebab menu.
-        </Text>
+      <Section title="Rail footer">
+        <p className="m-0 text-sm text-muted-foreground">
+          Settings and the account menu sit in the footer; the progress block pins above them.
+        </p>
       </Section>
-      <PageAside title="Display" persistKey="shell">
-        <Section
-          title="Aside"
-          info="From sm up this is the right-hand region; below sm it projects into the page."
-        >
-          <Text size="sm" c="dimmed">
-            The aside is a fourth shell region, not a control home.
-          </Text>
-        </Section>
-      </PageAside>
-    </Stack>
+      <AsideBody />
+    </Page>
   )
 }
 
