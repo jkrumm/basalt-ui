@@ -11,7 +11,7 @@ import { DeltaBadge } from '../ui/badge'
 import { CardInfo, cardVariants } from '../ui/card'
 import { Meter } from '../ui/meter'
 import type { CardTarget, StatCellProps as ContractProps, StatRow } from './contract'
-import { StatusMark, formatValue } from './stat-card-parts'
+import { StatusMark, formatValue, useStaleText } from './stat-card-parts'
 import { MAX_ROWS, StatGroupContext, useAboutLabel, warnOnce } from './stat-group-shared'
 
 /**
@@ -87,9 +87,9 @@ export function StatCell(props: StatCellProps): ReactElement {
   const { label, qualifier, info, value, unit, delta, status, sub, srText, meter, chart } = props
   const { href, onSelect, phase, empty } = props
   const variant = useContext(StatGroupContext)
-  const t = useMessages(cards)
   const about = useAboutLabel()
   const resolved = resolvePhase({ phase, empty })
+  const staleText = useStaleText(resolved.tag === 'stale' && resolved.refreshFailed)
   const rows = rowsOf(props.rows)
   const figure = formatValue(value ?? null)
   const hidden = srText === undefined ? undefined : true
@@ -171,11 +171,7 @@ export function StatCell(props: StatCellProps): ReactElement {
           )}
         </div>
       )}
-      {resolved.tag === 'stale' && (
-        <output className="sr-only">
-          {resolved.refreshFailed ? t('cards.refreshFailed') : t('cards.updating')}
-        </output>
-      )}
+      {resolved.tag === 'stale' && <output className="sr-only">{staleText}</output>}
     </>
   )
   const common = {

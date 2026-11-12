@@ -1,6 +1,8 @@
 import { useId } from 'react'
 import type { ReactElement } from 'react'
 import { cn } from '../core/cn'
+import { cards } from '../core/messages/cards'
+import { useMessages } from '../core/messages/use-messages'
 import type { ControlsSlot, IconComponent, Status } from '../core/ports'
 import { CardInfo, IconTile } from '../ui/card'
 import type { Fact, FootFacts, MenuAction } from './contract'
@@ -12,6 +14,12 @@ export function formatValue(value: number | string | null): string | null {
   if (value === null) return null
   if (typeof value === 'string') return value
   return Number.isFinite(value) ? NUMBER.format(value) : null
+}
+
+/** The stale line a stat card or cell prints: still updating, or a refetch that failed. */
+export function useStaleText(refreshFailed: boolean): string {
+  const t = useMessages(cards)
+  return refreshFailed ? t('cards.refreshFailed') : t('cards.updating')
 }
 
 const DOT: Record<Status['tone'], string> = {
