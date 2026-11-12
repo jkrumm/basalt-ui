@@ -11,7 +11,7 @@ slots: []
 
 Asserts the frame's geometry rules in each requested rail state at the page's current viewport:
 footer rows inside the rail with a bottom inset of at least its horizontal padding, on the nav's
-row height and pitch; nav rows no closer than the pitch; one header height equal to `--shell-header-h`; nothing clipped or past the window;
+row height and pitch; nav rows evenly spaced within a section; one header height equal to `--shell-header-h`; nothing clipped or past the window;
 the document never scrolling. On a phone the rail is absent and the tab bar stands in. Throws one
 error listing every broken rule.
 
