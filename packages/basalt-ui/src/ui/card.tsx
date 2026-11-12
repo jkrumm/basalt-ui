@@ -229,7 +229,7 @@ export function CardBand({
 // ── Phase ────────────────────────────────────────────────────────────────────────────────────────
 
 const ACTION =
-  'relative inline-flex h-6 cursor-pointer items-center rounded-ctrl bg-secondary px-2 text-xs font-medium text-foreground shadow-raised hover:bg-accent focus-ring after:absolute after:inset-x-0 after:top-1/2 after:h-full after:-translate-y-1/2 pointer-coarse:after:min-h-11'
+  'relative inline-flex h-6 shrink-0 cursor-pointer items-center rounded-ctrl bg-secondary px-2 text-xs font-medium text-foreground shadow-raised hover:bg-accent focus-ring after:absolute after:inset-x-0 after:top-1/2 after:h-full after:-translate-y-1/2 pointer-coarse:after:min-h-11'
 
 const ERROR_TEXT: Record<ErrorKind | 'default', string> = {
   forbidden: 'You do not have access to this.',
@@ -237,26 +237,39 @@ const ERROR_TEXT: Record<ErrorKind | 'default', string> = {
   default: 'Could not load this.',
 }
 
+/** `stack` centres an arm in a box at least 96 px tall; `line` draws it as one row on the edge. */
+type Arms = 'stack' | 'line'
+
+const ARM: Record<Arms, string> = {
+  stack:
+    'flex h-full min-h-24 flex-col items-center justify-center gap-2 px-(--card-edge) py-3 text-center',
+  line: 'flex h-full min-w-0 items-center gap-2',
+}
+
 function ErrorArm({
   kind,
   message,
   retry,
   caught = false,
+  arms = 'stack',
 }: {
   kind?: ErrorKind | undefined
   message?: string | undefined
   retry?: (() => void) | undefined
   caught?: boolean
+  arms?: Arms
 }): ReactElement {
+  const detail = message !== undefined && kind === undefined ? message : undefined
   return (
-    <div
-      role="alert"
-      data-phase={caught ? 'error' : undefined}
-      className="flex h-full min-h-24 flex-col items-center justify-center gap-2 px-(--card-edge) py-3 text-center"
-    >
-      <p className="text-sm text-foreground">{ERROR_TEXT[kind ?? 'default']}</p>
-      {message !== undefined && kind === undefined && (
-        <p className="text-xs text-muted-foreground">{message}</p>
+    <div role="alert" data-phase={caught ? 'error' : undefined} className={ARM[arms]}>
+      <p
+        className={cn('text-sm text-foreground', arms === 'line' && 'm-0 min-w-0 truncate')}
+        title={arms === 'line' ? detail : undefined}
+      >
+        {ERROR_TEXT[kind ?? 'default']}
+      </p>
+      {detail !== undefined && arms === 'stack' && (
+        <p className="text-xs text-muted-foreground">{detail}</p>
       )}
       {retry !== undefined && (
         <button type="button" className={ACTION} onClick={retry}>
@@ -267,11 +280,16 @@ function ErrorArm({
   )
 }
 
-function EmptyArm({ empty }: { empty: Empty }): ReactElement {
+function EmptyArm({ empty, arms }: { empty: Empty; arms: Arms }): ReactElement {
   const { cause, action, filtered } = empty
   return (
-    <div className="flex h-full min-h-24 flex-col items-center justify-center gap-2 px-(--card-edge) py-3 text-center">
-      <p className="text-sm text-muted-foreground">{cause}</p>
+    <div className={ARM[arms]}>
+      <p
+        className={cn('text-sm text-muted-foreground', arms === 'line' && 'm-0 min-w-0 truncate')}
+        title={arms === 'line' ? cause : undefined}
+      >
+        {cause}
+      </p>
       {filtered !== undefined ? (
         <button type="button" className={ACTION} onClick={filtered.reset}>
           Clear filters
@@ -330,6 +348,16 @@ export type CardPhaseProps = FrameState & {
    * empty card never runs it.
    */
   children: ReactNode | BoxSlot
+  /**
+   * How the empty and error arms sit: `stack` (default) centres them in a box at least 96 px tall;
+   * `line` draws each as one row on the card's left edge, for a box as short as one figure row.
+   */
+  arms?: Arms
+  /**
+   * `corner` (default) draws the stale line over the body's top-right corner; `body` leaves it to
+   * the body, which places it in its own flow (the stat card's figure row).
+   */
+  staleLine?: 'corner' | 'body'
   className?: string
 }
 
@@ -349,10 +377,13 @@ export function CardPhase({
   height = 'fill',
   skeleton,
   children,
+  arms = 'stack',
+  staleLine = 'corner',
   className,
 }: CardPhaseProps): ReactElement {
   const resolved = resolvePhase({ phase, empty })
   const box: Box = { height, phase: resolved.tag === 'stale' ? 'stale' : 'ready' }
+  const fill = arms === 'stack' ? 'min-h-24 flex-1' : 'flex-1'
   return (
     <div
       data-slot="card-phase"
@@ -361,21 +392,26 @@ export function CardPhase({
       style={typeof height === 'number' ? { height } : undefined}
       className={cn(
         'relative min-w-0',
-        height === 'fill' ? 'min-h-24 flex-1' : 'shrink-0 overflow-clip',
+        height === 'fill' ? fill : 'shrink-0 overflow-clip',
         className,
       )}
     >
       {resolved.tag === 'loading' && <Skeleton shape={skeleton} />}
       {resolved.tag === 'error' && (
-        <ErrorArm kind={resolved.kind} message={resolved.message} retry={resolved.retry} />
+        <ErrorArm
+          kind={resolved.kind}
+          message={resolved.message}
+          retry={resolved.retry}
+          arms={arms}
+        />
       )}
-      {resolved.tag === 'empty' && <EmptyArm empty={resolved.empty} />}
+      {resolved.tag === 'empty' && <EmptyArm empty={resolved.empty} arms={arms} />}
       {resolved.body && (
         <>
-          <PhaseBoundary fallback={({ reset }) => <ErrorArm retry={reset} caught />}>
+          <PhaseBoundary fallback={({ reset }) => <ErrorArm retry={reset} caught arms={arms} />}>
             <Slot body={children} box={box} />
           </PhaseBoundary>
-          {resolved.tag === 'stale' && (
+          {resolved.tag === 'stale' && staleLine === 'corner' && (
             <output className="absolute top-0 right-(--card-edge) rounded-chip bg-card px-1.5 text-micro text-muted-foreground">
               {resolved.refreshFailed ? 'Could not refresh. Showing earlier data.' : 'Updating'}
             </output>

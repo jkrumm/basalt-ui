@@ -25,6 +25,15 @@ afterAll(closeLayoutSuite, CLOSE_BUDGET_MS)
 const DESKTOP: Viewport = { name: 'desktop 1800', width: 1800, height: 1200 }
 const VIEWPORTS: Viewport[] = [DESKTOP, PHONE]
 const PHASES = ['ready', 'loading', 'stale', 'empty', 'error'] as const
+const ANATOMIES = ['plain', 'sub', 'chart', 'both'] as const
+
+/** The row the ready inset ends on, per anatomy. */
+const LAST_ROW: Record<(typeof ANATOMIES)[number], string> = {
+  plain: '[data-slot="stat-figure"]',
+  sub: '[data-slot="stat-sub"]',
+  chart: '[data-slot="stat-chart"]',
+  both: '[data-slot="stat-chart"]',
+}
 
 const specOf = (colorScheme: 'light' | 'dark'): FixtureSpec => ({
   sections: [
@@ -68,6 +77,67 @@ layout('StatCard exemplar', () => {
               Math.abs(height - first),
               `${phase} is ${height}px, ready is ${first}px`,
             ).toBeLessThanOrEqual(0.5)
+          }
+        })
+
+        test('each anatomy holds one height across all five phases', async () => {
+          const page = await open(viewport, scheme)
+          for (const anatomy of ANATOMIES) {
+            const ready = await page.box(
+              'ready',
+              within(`cx-${anatomy}-ready`, '[data-slot="card"]'),
+            )
+            for (const phase of PHASES) {
+              const { box } = await page.box(
+                phase,
+                within(`cx-${anatomy}-${phase}`, '[data-slot="card"]'),
+              )
+              expect(
+                Math.abs(box.height - ready.box.height),
+                `${anatomy} ${phase} is ${box.height}px, ready is ${ready.box.height}px`,
+              ).toBeLessThanOrEqual(0.5)
+            }
+          }
+        })
+
+        test('the inset ends at its last row: no empty band under the figure', async () => {
+          const page = await open(viewport, scheme)
+          for (const anatomy of ANATOMIES) {
+            const id = `cx-${anatomy}-ready`
+            const inset = await page.box('inset', within(id, '[data-slot="inset"]'))
+            const padding = Number.parseFloat(
+              await page.computed(within(id, '[data-slot="inset"]'), 'padding-bottom'),
+            )
+            const last = await page.box('last row', within(id, LAST_ROW[anatomy]))
+            expect(
+              Math.abs(inset.box.bottom - padding - last.box.bottom),
+              `${anatomy}: inset content ends at ${inset.box.bottom - padding}, last row at ${last.box.bottom}`,
+            ).toBeLessThanOrEqual(0.5)
+          }
+        })
+
+        test('the stale marker sits in the figure row, and nothing in the inset is absolute', async () => {
+          const page = await open(viewport, scheme)
+          for (const anatomy of ANATOMIES) {
+            const id = `cx-${anatomy}-stale`
+            expect(
+              await page.count(within(id, '[data-slot="stat-figure"] [data-slot="stat-stale"]')),
+            ).toBe(1)
+            const absolute = await page.raw.evaluate(
+              (sel) =>
+                [...document.querySelectorAll(`${sel} *`)].filter((el) => {
+                  // A 1 px clipped `sr-only` label is not layout; anything visible is.
+                  const { width, height } = el.getBoundingClientRect()
+                  return getComputedStyle(el).position === 'absolute' && width > 1 && height > 1
+                }).length,
+              within(id, '[data-slot="inset"]'),
+            )
+            expect(absolute, `${anatomy}: absolutely positioned elements in the inset`).toBe(0)
+            const figure = await page.box('figure row', within(id, '[data-slot="stat-figure"]'))
+            const marker = await page.box('stale', within(id, '[data-slot="stat-stale"]'))
+            expect(marker.box.top).toBeGreaterThanOrEqual(figure.box.top - 0.5)
+            expect(marker.box.bottom).toBeLessThanOrEqual(figure.box.bottom + 0.5)
+            expect(marker.box.right).toBeLessThanOrEqual(figure.box.right + 0.5)
           }
         })
 

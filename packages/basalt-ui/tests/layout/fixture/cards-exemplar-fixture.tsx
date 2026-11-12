@@ -51,9 +51,32 @@ const FULL = {
   ),
 } satisfies StatCardProps
 
+const { sub: _sub, chart: _chart, ...PLAIN } = FULL
+
+/** The four anatomies: which of the sub line and the chart box a card declares. */
+const ANATOMIES = {
+  plain: PLAIN,
+  sub: { ...PLAIN, sub: FULL.sub },
+  chart: { ...PLAIN, chart: FULL.chart },
+  both: FULL,
+} satisfies Record<string, StatCardProps>
+
+const PHASED: Record<string, Partial<StatCardProps>> = {
+  ready: {},
+  loading: { phase: 'loading' },
+  // A failed refetch: the data stays, with the long "Could not refresh" line.
+  stale: { phase: { isPending: false, isError: true, isRefetchError: true, error: null } },
+  empty: {
+    empty: { cause: 'No merges in this range', action: { label: 'Widen range', href: '#r' } },
+  },
+  error: { phase: { tag: 'error', retry: () => undefined } },
+}
+
 /**
  * `cards-exemplar` probes (docs/v3/concepts/charts-cards-kanban.md S8), each in a `data-testid` box:
  * - `cx-<ready|loading|stale|empty|error>`: one card in each phase, same props;
+ * - `cx-<anatomy>-<phase>`: every anatomy (`plain`, `sub`, `chart`, `both`) in every phase, the
+ *   stale one with the long refresh-failed line;
  * - `cx-narrow`, `cx-wide`: controls at 360 px (wraps) and 560 px (inline), around `@regular`;
  * - `cx-greedy`: a chart slot that ignores `box.height` and asks for twice the box;
  * - `cx-link`: a stretched-link card, the focus-ring probe;
@@ -80,6 +103,18 @@ export function CardsExemplarFixture(): ReactElement {
           <StatCard {...FULL} phase={{ tag: 'error', retry: () => undefined }} />
         </div>
       </div>
+      {Object.entries(ANATOMIES).map(([anatomy, props]) => (
+        <div
+          key={anatomy}
+          className="grid grid-cols-[repeat(auto-fill,minmax(min(100%,22rem),1fr))] items-start gap-4"
+        >
+          {Object.entries(PHASED).map(([phase, phased]) => (
+            <div key={phase} data-testid={`cx-${anatomy}-${phase}`}>
+              <StatCard {...props} {...phased} />
+            </div>
+          ))}
+        </div>
+      ))}
       <div data-testid="cx-narrow" className="w-90 max-w-full">
         <StatCard {...FULL} />
       </div>
