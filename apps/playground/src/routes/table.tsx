@@ -8,6 +8,7 @@ import {
   TableHeader,
   TableRow,
 } from 'basalt-ui/ui/table'
+import { useV3Tokens } from '../demo/v3-tokens'
 
 type Status = 'paid' | 'pending' | 'failed' | 'refunded'
 
@@ -263,6 +264,7 @@ function Frame({
 }
 
 function TableRoute() {
+  useV3Tokens()
   return (
     <div className="flex flex-col gap-8 p-4">
       <Frame
