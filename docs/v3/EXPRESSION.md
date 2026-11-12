@@ -29,6 +29,20 @@ Three changes close most of the gap. Cycle 1 measures before any of them is buil
 2. **A geometry seam in the kit.** Scales, polar and arc math, quantizing, label packing, measured width, and one focus-and-readout primitive for hand-drawn marks. That is rung 4 of the bending ladder (headless core plus an app composite). `primitive-bypass` then denies data-mapped SVG outside the seam instead of all of it.
 3. **Exemplars as source, not kinds.** A bespoke visualization stays app code or a recipe. The Rule of Three and the symbol ceilings stand. Nothing here asks for a `LapTimer` export.
 
+## Thresholds
+
+Fixed before anything is measured, as in `docs/v3/spikes/`. The demand side comes from the fleet (`v3-spike-viz-census`, verdict in `docs/v3/spikes/viz-census.md`), the supply side from cycle 1.
+
+| Hypothesis   | Confirmed when                                                                                                                                              | Killed when                                                                                                 |
+| ------------ | ----------------------------------------------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------- |
+| 1, method    | `skill` findings, with the `planned` ones a skill row owns, are half or more of the points lost in round 0, and repair rounds lift the median by 15 or more | Repair rounds lift the median by under 5: the builder knew what to do and could not                         |
+| 2, seam      | Census V1 is CONFIRMED, or three of six builds hand-write an `<svg>`, or the median glue is 80 lines or more                                                | Census V1 is REFUTED and no build that scored 80 hand-wrote geometry                                        |
+| 3, exemplars | Census V2 is `none`                                                                                                                                         | Census V2 names a form: that form is a kind candidate under the Rule of Three, and the rest stays exemplars |
+
+A result between the two columns leaves the hypothesis open for the next cycle. The cycle file says which side each number fell on.
+
+## Doctrine
+
 Changes 2 and 3 touch `ARCHITECTURE.md` § 7.3 and § 8 and the frozen `charts/contract.ts`. A cycle never edits those. It files a row with `checkpoint: spec`, and the owner rules on the Spec.
 
 ## The loop
@@ -93,4 +107,8 @@ Until then each cycle adds `v3-cycle-expression-<n+1>` after its fix rows. Each 
 
 ## Gate
 
-`v3-freeze-g4` waits for cycle 1. Freezing the charts API before the first trial says whether a geometry seam is needed would freeze the wrong contract. A cycle that files a row amending `charts/contract.ts` adds that row to the freeze's `after`. Convergence does not gate 3.0: the track runs past GA.
+3.0 is the last chance to change the charts contract: consumers are held until it is published, and no major may follow it. So the structural part of this track gates 3.0, and the rest does not.
+
+- `v3-freeze-g4` waits for cycle 1, and through it so do the teardown and `v3-ga-prep`.
+- A fix row of class `primitive` or `doctrine` joins the `after` of `v3-freeze-g4`. So does the next cycle, as long as the current one has such a P1 open.
+- Once a cycle reports no open `primitive` or `doctrine` P1, later cycles leave the freeze alone. Skill, rubric and case findings ship in minors, and convergence may come after GA.
