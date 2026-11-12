@@ -1,0 +1,13 @@
+/*
+ * The `overview` layout test's Tailwind v4 entry: compiled WITH preflight, the way a Tailwind consumer
+ * renders the playground overview route. `overview.layout.test.ts` compiles it into a temp directory;
+ * nothing generated lands in the repo.
+ */
+@import '../../src/css/tailwind.css' source(none);
+@source '../../../../apps/playground/src/routes/overview.tsx';
+@source '../../src/ui';
+@source '../../src/cards';
+@source '../../src/controls';
+@source '../../src/page';
+@source '../../src/charts';
+@source '../../src/core';
