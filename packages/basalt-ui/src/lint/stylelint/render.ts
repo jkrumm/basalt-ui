@@ -34,7 +34,13 @@ export function stylelintConfig({ ignoreFiles = [] }: RenderOptions = {}): Style
   }
 }
 
-/** The text of `.stylelintrc.basalt.json`; `sync` writes it, `sync --check` compares bytes. */
+/**
+ * The text of `.stylelintrc.basalt.json`: the closed stylelint preset with `ignoreFiles` listing the
+ * generated token sheets. `sync` writes it and `sync --check` compares bytes.
+ *
+ * @useWhen a tool writes the consumer's stylelint config and must list the generated token sheets in `ignoreFiles`
+ * @neverWhen an app only extends the preset (`extends: ['basalt-ui/stylelint']`) and has no generated sheet to ignore
+ */
 export function renderStylelintConfig(options: RenderOptions = {}): string {
   return `${JSON.stringify(stylelintConfig(options), null, 2)}\n`
 }
