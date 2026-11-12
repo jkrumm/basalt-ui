@@ -14,11 +14,12 @@ SLOT = $(if $(shell command -v factory 2>/dev/null),factory slot run --name "$(n
 # `basalt-ui/*` through the package's `exports` — both read `dist`, not the working tree, so a gate
 # that built last would grade the previous build (packages/basalt-ui/MAINTAINING.md, "a gate reading
 # dist"). `pack-test` rebuilds anyway; the point of the first build is what `pre` reads.
-check: ## Local CI gate: gen sync checks + build + pre + layout + coverage/doc-drift + pack-test
+check: ## Local CI gate: gen sync checks + build + pre + playground build + layout + coverage/doc-drift + pack-test
 	@bun packages/basalt-ui/scripts/gen-oxlint.ts --check
 	@$(MAKE) --no-print-directory gen-check
 	@cd packages/basalt-ui && bun run build
 	@bun run pre
+	@bun --filter @basalt-ui/playground build
 	@$(SLOT) sh -c 'bun run test:layout && bun run test:layout:harness'
 	@bun packages/basalt-ui/scripts/check-coverage.ts --check
 	@bun packages/basalt-ui/scripts/check-agent-doc-drift.ts

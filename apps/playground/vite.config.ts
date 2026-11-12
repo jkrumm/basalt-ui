@@ -31,6 +31,7 @@ export default mergeConfig(
     resolve: {
       alias: [
         { find: /^basalt-ui\/tailwind\.css$/, replacement: css('tailwind.css') },
+        { find: /^basalt-ui\/prose\.css$/, replacement: css('prose.css') },
         // The query survives the rewrite: `?inline` is how `demo/v3-tokens.ts` reads the sheet.
         { find: /^basalt-ui\/tokens\.css(\?inline)?$/, replacement: `${css('tokens.css')}$1` },
       ],
