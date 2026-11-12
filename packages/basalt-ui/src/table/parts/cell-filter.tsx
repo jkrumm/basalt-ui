@@ -82,7 +82,6 @@ export function CellFilter<T>({
           event.stopPropagation()
           toggle()
         }}
-        onKeyDown={(event) => event.stopPropagation()}
       >
         {content}
       </Pressable>
