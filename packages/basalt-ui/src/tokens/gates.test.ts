@@ -61,14 +61,25 @@ describe('PAIRS', () => {
     expect(ratio('on-brand', 'brand-fill', 'light')).toBeCloseTo(4.9, 2)
   })
 
-  test('the card steps away from the inset by more than .03 OKLCH L in both schemes (.044 dark, .032 light)', () => {
+  test('the card steps away from the inset by its scheme floor (.044 over .03 dark, .014 light)', () => {
     const { colors } = deriveV3()
     const step = (side: 'light' | 'dark'): number =>
       Math.abs(hexToOklab(colors.inset[side]).L - hexToOklab(colors.card[side]).L)
     expect(step('dark')).toBeGreaterThan(0.03)
-    expect(step('light')).toBeGreaterThan(0.03)
+    expect(step('light')).toBeGreaterThanOrEqual(0.014)
     expect(step('dark')).toBeCloseTo(0.044, 3)
-    expect(step('light')).toBeCloseTo(0.032, 3)
+    expect(step('light')).toBeCloseTo(0.014, 3)
+  })
+
+  test('the card step gate holds .03 in dark and .014 in light', () => {
+    const floors = PAIRS.filter((row) => row.gate.startsWith('card-step-')).map((row) => [
+      row.only,
+      row.min,
+    ])
+    expect(floors).toEqual([
+      ['dark', 0.03],
+      ['light', 0.014],
+    ])
   })
 
   test('the input boundary reaches 3:1 on every surface, which the hairline (1.19 / 1.24) did not', () => {

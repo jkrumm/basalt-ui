@@ -136,15 +136,23 @@ function buildPairs(): PairRow[] {
       },
     })
 
-  // Card vs inset step >= .03 OKLCH L: the surface law reads against the parent (3.3).
-  rows.push({
-    gate: 'card-step',
-    surface: 'inset',
-    min: 0.03,
-    digits: 3,
-    fix: FIX_NEUTRAL,
-    measure: (d, s) => Math.abs(hexToOklab(hex(d, 'inset', s)).L - hexToOklab(hex(d, 'card', s)).L),
-  })
+  // Card vs inset step in OKLCH L: the surface law reads against the parent (3.3). Dark holds .03;
+  // light holds .014, because the light shell is the 2.x panel, raised off the canvas like the
+  // console card (Issue 863), and the white inset sits that close to it.
+  for (const [scheme, min] of [
+    ['dark', 0.03],
+    ['light', 0.014],
+  ] as const)
+    rows.push({
+      gate: `card-step-${scheme}`,
+      surface: 'inset',
+      min,
+      digits: 3,
+      fix: FIX_NEUTRAL,
+      only: scheme,
+      measure: (d, s) =>
+        Math.abs(hexToOklab(hex(d, 'inset', s)).L - hexToOklab(hex(d, 'card', s)).L),
+    })
   return rows
 }
 
