@@ -73,12 +73,20 @@ export const rows: readonly RowDef[] = [
     order: 40,
     label: 'published subpaths (package.json exports)',
     // 2.0 target 15.
-    ceiling: 31, // v3 skeleton: 15 (2.x) + 16 additive entries (see docs/v3/ARCHITECTURE.md § 3); consumers: rollhook for CSS, lint, testing; linewatch for ui, page, cards, data, router; ratchets down as 2.x subpaths retire
+    ceiling: 32, // v3 eject: `./core/*`, the module paths an ejected seed imports (Issue 849); v3 skeleton: 15 (2.x) + 16 additive entries (see docs/v3/ARCHITECTURE.md § 3); consumers: rollhook for CSS, lint, testing; linewatch for ui, page, cards, data, router; ratchets down as 2.x subpaths retire
     measure: () => Object.keys(readManifest().exports ?? {}).length,
   },
 ]
 
 export const raises: readonly Raise[] = [
+  {
+    ceiling: 'subpaths',
+    from: 31,
+    to: 32,
+    consumer:
+      '`./core/*`, the modules an ejected seed imports (`basalt-ui/core/cn`, `/format`, `/ports`); rb and obsidian are the G2 eject pilots',
+    repo: 'rb',
+  },
   {
     ceiling: 'non-chart-symbols',
     from: 116,

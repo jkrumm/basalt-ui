@@ -16,7 +16,7 @@ eject <name> writes:
   .basalt/manifest.json                  ejected["<root>#<name>"] = { path, fromVersion, seedDigest, reason, origin: "seed" }
   <app>/tsconfig.app.json (or tsconfig.json)  compilerOptions.paths "basalt-ui/ui/<name>" -> the local file
 seedDigest is the sha256 of the shipped seed plus its guard, read from the installed package.
-Seed imports of ./<sibling> become basalt-ui/ui/<sibling> and ../core/cn becomes basalt-ui.
+Seed imports of ./<sibling> become basalt-ui/ui/<sibling>, ../core/<path> basalt-ui/core/<path> and ../tokens basalt-ui/tokens.
 
 --app <root>      Required when the manifest declares 2+ roots; names one of them.
 --raise "<who>"   Appends a raises row to .basalt/budget.json naming the consumer and lifts the

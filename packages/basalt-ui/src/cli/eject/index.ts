@@ -22,7 +22,7 @@ import { findManifestAbove } from '../install-root'
 import { MANIFEST_PATH, readManifest, writeManifest } from '../manifest'
 import type { Manifest } from '../manifest'
 import { ejectHeader, stripHeader, withHeader } from '../merge/header'
-import { ejectedGuard, ejectedSource, missingRootExports, readSeed, seedNames } from '../merge/seed'
+import { ejectedGuard, ejectedSource, readSeed, seedNames } from '../merge/seed'
 import { tokenize } from '../source-text'
 import { isClean, onMergeBase } from './git'
 import { EJECT_HELP } from './help'
@@ -303,13 +303,7 @@ function planEject(ctx: Context, args: Args): Plan {
     const seed = readSeed(ctx.pkgRoot, name)
     const source = seed === null ? null : ejectedSource(seed.seed)
     if (source === null) return []
-    if ('error' in source) return [`${name} ${source.error}`]
-    const missing = missingRootExports(ctx.pkgRoot, source.text)
-    return missing.length === 0
-      ? []
-      : [
-          `${name} imports ${missing.join(', ')} from 'basalt-ui', which the installed basalt-ui@${ctx.version} does not export from '.'`,
-        ]
+    return 'error' in source ? [`${name} ${source.error}`] : []
   })
   if (blocked.length > 0) {
     refuse(`cannot eject; the seed of ${blocked.join('; ')}. Nothing was written.`)

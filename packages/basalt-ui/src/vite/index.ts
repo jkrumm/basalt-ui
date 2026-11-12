@@ -14,6 +14,7 @@
  * `basalt()` replaces the 2.x head plugin on this entry (src/vite.ts keeps the 2.x source); the
  * 2.x `basaltViteConfig` stays exported until its migration row retires it.
  */
+import { existsSync, readFileSync } from 'node:fs'
 import { relative, resolve } from 'node:path'
 import type { Plugin, PluginOption, UserConfig } from 'vite'
 
@@ -44,6 +45,27 @@ type BasaltOptions = HeadOptions & {
 /** The `basalt-ui` specifier of each composite subpath: what the dep optimizer must not pre-bundle. */
 const COMPOSITE_SPECIFIERS = ALLOTMENT.composites.map((dir) => `basalt-ui/${dir}`)
 
+/** The package paths an ejected file reaches by name: core, tokens and the other primitives. */
+const OWN_SPECIFIER =
+  /['"](basalt-ui\/(?:core\/[a-z0-9-]+(?:\/[a-z0-9-]+)*|tokens|ui\/[a-z0-9-]+))['"]/g
+
+/**
+ * What the dep optimizer must leave alone for the ejected files: they import `basalt-ui/core/*`,
+ * `basalt-ui/tokens` and sibling primitives by name, and a pre-bundled copy of any of them would be
+ * a second instance beside the one the npm composites load from `node_modules` (a second
+ * `IntlScope` context). Vite skips optimization only for an exact id here, so each one is listed.
+ */
+function ejectedSpecifiers(ejected: AppEjects['ejected']): string[] {
+  const found = new Set<string>()
+  for (const { file } of ejected) {
+    if (!existsSync(file)) continue
+    for (const [, spec] of readFileSync(file, 'utf8').matchAll(OWN_SPECIFIER)) {
+      if (spec !== undefined) found.add(spec)
+    }
+  }
+  return [...found].toSorted()
+}
+
 const escape = (s: string): string => s.replace(/[.*+?^${}()|[\]\\/]/g, '\\$&')
 
 /** What `basalt()` adds to the config for the app's ejects; nothing at all when there are none. */
@@ -57,7 +79,7 @@ function ejectConfig(ejects: AppEjects): UserConfig | null {
       })),
     },
     ssr: { noExternal: ['basalt-ui'] },
-    optimizeDeps: { exclude: [...COMPOSITE_SPECIFIERS] },
+    optimizeDeps: { exclude: [...COMPOSITE_SPECIFIERS, ...ejectedSpecifiers(ejects.ejected)] },
   }
 }
 

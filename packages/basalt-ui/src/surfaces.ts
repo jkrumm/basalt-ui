@@ -230,7 +230,7 @@ const MANTINE_BANS = [
 
 /**
  * The one hard source for the enforcement seam. Keys split into two kinds:
- * - JS-subpath keys (., ./charts, ./tokens, ./controls, ./controls-dates, ./forms, ./state, ./table, ./format, ./commands, ./agent, ./content, ./vite, plus the v3 skeleton stubs ./router, ./data, ./page, ./cards, ./ai, ./ui/*, ./shell, ./lint, ./stylelint, ./testing, ./theme-script) — real package.json exports (the 15-subpath map of docs/V2-SPEC.md §1, with ./styles.css, ./configs/* and the v3 CSS entries as the non-JS assets).
+ * - JS-subpath keys (., ./charts, ./tokens, ./controls, ./controls-dates, ./forms, ./state, ./table, ./format, ./commands, ./agent, ./content, ./vite, plus the v3 skeleton stubs ./router, ./data, ./page, ./cards, ./ai, ./ui/*, ./core/*, ./shell, ./lint, ./stylelint, ./testing, ./theme-script) — real package.json exports (the 15-subpath map of docs/V2-SPEC.md §1, with ./styles.css, ./configs/* and the v3 CSS entries as the non-JS assets).
  * - #-prefixed synthetic keys (#app) — the synthetic global app-wide ban layer. The #-prefix
  *   guarantees it is never mistaken for an export path.
  *
@@ -617,6 +617,14 @@ export const SURFACES = {
     description: 'v3 primitives (stub) — one module per primitive on Base UI, wildcard entry',
     optionalPeers: ['@base-ui/react'],
     globs: { shipped: [], repo: ['packages/basalt-ui/src/ui/**'] },
+    forbiddenImports: [...MANTINE_BANS],
+  },
+  './core/*': {
+    kind: 'tooling',
+    layer: 'headless',
+    description:
+      'v3 core modules (cn, format, messages, phase, ports) — the paths an ejected primitive imports; wildcard entry',
+    globs: { shipped: [], repo: ['packages/basalt-ui/src/core/**'] },
     forbiddenImports: [...MANTINE_BANS],
   },
   './shell': {

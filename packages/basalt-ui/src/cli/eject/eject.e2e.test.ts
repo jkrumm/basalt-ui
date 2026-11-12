@@ -20,7 +20,7 @@ import {
   snapshot,
 } from '../../../test/fixtures/eject/harness'
 import { parseManifest } from '../manifest'
-import { ejectedSource, readSeed, seedDigest } from '../merge/seed'
+import { ejectedSource, readSeed, seedDigest, seedNames } from '../merge/seed'
 
 afterEach(cleanup)
 
@@ -44,7 +44,7 @@ describe('eject.e2e (linewatch)', () => {
     expect(local.split('\n')[0]).toBe(
       '// basalt:ejected button@3.0.0-fixture status bar needs a pill size',
     )
-    expect(local).toContain("from 'basalt-ui'")
+    expect(local).toContain("from 'basalt-ui/core/cn'")
     expect(local).not.toContain('../core/cn')
     const guard = read(fx.dir, 'src/components/ui/button.guard.ts')
     expect(guard).toContain('export const requires')
@@ -159,34 +159,37 @@ describe('eject.e2e (linewatch)', () => {
     })
   })
 
+  it('a seed importing core and tokens ejects with the published specifiers', () => {
+    const fx = makeConsumer('linewatch', { seeds: ['card', 'status'] })
+    const result = run(fx, ['card', '--reason', 'r'])
+    expect(result.code).toBe(0)
+    const local = read(fx.dir, 'src/components/ui/card.tsx')
+    expect(local).toContain("from 'basalt-ui/core/phase'")
+    expect(local).toContain("from 'basalt-ui/core/phase-boundary'")
+    expect(local).not.toContain("'../core/")
+    expect(run(fx, ['status', '--reason', 'r']).code).toBe(0)
+    expect(read(fx.dir, 'src/components/ui/status.tsx')).toContain("from 'basalt-ui/tokens'")
+  })
+
   it('a seed importing a package path with no published specifier exits 1, writing nothing', () => {
     const fx = makeConsumer('linewatch', { seeds: ['card'] })
+    writeFileSync(
+      join(fx.pkg, 'src/ui/card.tsx'),
+      "import { x } from '../common/x'\nexport const card = x\n",
+    )
     const before = snapshot(fx.dir)
     const card = run(fx, ['card', '--reason', 'r'])
     expect(card.code).toBe(1)
-    expect(card.log).toContain("'../core/phase'")
+    expect(card.log).toContain("'../common/x'")
     expect(snapshot(fx.dir)).toEqual(before)
   })
 
-  it('--all over the full shipped set names every blocked seed at once, writing nothing', () => {
+  it('--all over the full shipped set ejects every seed, none refused', () => {
     const fx = makeConsumer('linewatch')
-    const before = snapshot(fx.dir)
     const all = run(fx, ['--all', '--reason', 'shape C', '--raise', 'F3 flipped'])
-    expect(all.code).toBe(1)
-    expect(all.log).toContain('badge imports')
-    expect(all.log).toContain('card imports')
-    expect(snapshot(fx.dir)).toEqual(before)
-  })
-
-  it('exits 1 naming cn when the installed root entry does not export it, writing nothing', () => {
-    const fx = makeConsumer('linewatch')
-    // The 2.x root barrel today: no `cn` on `.`, so an ejected button could not compile.
-    writeFileSync(join(fx.pkg, 'src/index.ts'), 'export const notCn = 1\n')
-    const before = snapshot(fx.dir)
-    const result = run(fx, ['button', '--reason', 'r'])
-    expect(result.code).toBe(1)
-    expect(result.log).toContain("button imports cn from 'basalt-ui'")
-    expect(snapshot(fx.dir)).toEqual(before)
+    expect(all.log).not.toContain('which no published specifier exports')
+    expect(all.code).toBe(0)
+    expect(Object.keys(manifestOf(fx.dir).ejected)).toHaveLength(seedNames(fx.pkg).length)
   })
 
   it('exits 1 without basalt() in the app, writing nothing', () => {

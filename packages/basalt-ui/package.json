@@ -64,6 +64,11 @@
       "import": "./dist/tokens/index.js",
       "default": "./dist/tokens/index.js"
     },
+    "./core/*": {
+      "types": "./dist/core/*.d.ts",
+      "import": "./dist/core/*.js",
+      "default": "./dist/core/*.js"
+    },
     "./controls": {
       "types": "./dist/controls/index.d.ts",
       "import": "./dist/controls/index.js",
@@ -182,7 +187,7 @@
     "provenance": true
   },
   "scripts": {
-    "build": "tsup && tsc -p tsconfig.build.json --emitDeclarationOnly --declarationMap && bun scripts/gen-chart-css.ts --check && bun scripts/copy-assets.mjs && bun scripts/fix-esm-extensions.mjs && bun scripts/gen-llms.ts",
+    "build": "tsup && tsc -p tsconfig.build.json --emitDeclarationOnly --declarationMap && bun scripts/gen-chart-css.ts --check && bun scripts/copy-assets.mjs && bun scripts/rewrite-ui-specifiers.mjs && bun scripts/fix-esm-extensions.mjs && bun scripts/gen-llms.ts",
     "typecheck": "tsc --noEmit && tsc --noEmit -p tsconfig.nav-guard.json",
     "check-budgets": "bun scripts/check-budgets.ts",
     "test": "cd ../.. && bun test packages/basalt-ui",

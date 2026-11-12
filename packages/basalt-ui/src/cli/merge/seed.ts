@@ -8,7 +8,7 @@
  *   existing variant without the seed changing.
  * - `ejectedSource` is what a consumer receives (header aside), and what the merge base holds:
  *   the seed with its package-relative imports moved to the published specifiers, since a seed
- *   inside the package cannot import itself by name. The rewrite is a fixed table, applied the same
+ *   inside the package cannot import itself by name. The rewrite is a fixed rule, applied the same
  *   way to the base at eject and to the shipped side at `sync`, so it never shows up as a change.
  * - `ejectedGuard` drops the `closed` half (`@ts-expect-error` proofs), which stays in the repo.
  */
@@ -21,8 +21,19 @@ export const SEED_DIR = 'src/ui'
 const NAME = /^[a-z][a-z0-9]*(?:-[a-z0-9]+)*$/
 const GUARD_CLOSED = '// basalt:guard closed'
 
-/** Package-relative imports a seed may use and the published specifier each becomes. */
-const CORE_SPECIFIERS: Readonly<Record<string, string>> = { '../core/cn': 'basalt-ui' }
+/**
+ * Package-relative imports a seed may use and the published specifier each becomes: `../core/<path>`
+ * is `basalt-ui/core/<path>` (the `./core/*` export) and `../tokens` is `basalt-ui/tokens`. Both
+ * resolve to the files npm composites import relatively, so there is one module instance.
+ */
+const CORE_IMPORT = /^\.\.\/core\/([a-z0-9-]+(?:\/[a-z0-9-]+)*)$/
+const TOKENS_IMPORT = '../tokens'
+
+function publishedSpecifier(spec: string): string | undefined {
+  const core = CORE_IMPORT.exec(spec)?.[1]
+  if (core !== undefined) return `basalt-ui/core/${core}`
+  return spec === TOKENS_IMPORT ? 'basalt-ui/tokens' : undefined
+}
 
 /** `from '<spec>'`, `import '<spec>'` and `export … from '<spec>'` with a relative specifier. */
 const RELATIVE_IMPORT = /(\bfrom\s+|\bimport\s+)(['"])(\.\.?\/[^'"]+)\2/g
@@ -69,7 +80,7 @@ function rewriteImports(text: string, self: string | null): { text: string } | {
   const out = text.replace(RELATIVE_IMPORT, (whole, lead: string, quote: string, spec: string) => {
     const sibling = /^\.\/([a-z0-9-]+)$/.exec(spec)?.[1]
     if (sibling !== undefined && sibling === self) return whole
-    const target = sibling === undefined ? CORE_SPECIFIERS[spec] : `basalt-ui/ui/${sibling}`
+    const target = sibling === undefined ? publishedSpecifier(spec) : `basalt-ui/ui/${sibling}`
     if (target === undefined) {
       unmapped.push(spec)
       return whole
@@ -87,60 +98,6 @@ function rewriteImports(text: string, self: string | null): { text: string } | {
 /** The file a consumer owns after eject, without its header; also the merge base. */
 export function ejectedSource(seed: string): { text: string } | { error: string } {
   return rewriteImports(seed, null)
-}
-
-const IDENT = /^[A-Za-z_$][\w$]*$/
-
-/** The value and type names the installed package's `.` entry exports; empty when it cannot be read. */
-function rootExports(pkgRoot: string): Set<string> {
-  const pkgPath = join(pkgRoot, 'package.json')
-  if (!existsSync(pkgPath)) return new Set()
-  const entry = (JSON.parse(readFileSync(pkgPath, 'utf8')) as { exports?: Record<string, unknown> })
-    .exports?.['.']
-  const target =
-    typeof entry === 'string'
-      ? entry
-      : ((entry as Record<string, unknown> | undefined)?.['import'] ??
-        (entry as Record<string, unknown> | undefined)?.['default'])
-  const file = typeof target === 'string' ? join(pkgRoot, target) : null
-  if (file === null || !existsSync(file)) return new Set()
-  const source = readFileSync(file, 'utf8')
-  const names = new Set<string>()
-  for (const [, list] of source.matchAll(/export\s+(?:type\s+)?\{([^}]*)\}/g)) {
-    for (const item of (list ?? '').split(',')) {
-      const name =
-        item
-          .trim()
-          .split(/\s+as\s+/)
-          .at(-1)
-          ?.replace(/^type\s+/, '') ?? ''
-      if (IDENT.test(name)) names.add(name)
-    }
-  }
-  const declared =
-    /export\s+(?:declare\s+)?(?:async\s+)?(?:function\*?|const|let|class|type|interface)\s+([A-Za-z_$][\w$]*)/g
-  for (const [, name] of source.matchAll(declared)) if (name !== undefined) names.add(name)
-  return names
-}
-
-/**
- * The names an ejected file imports from `basalt-ui` that the installed package's root entry does
- * not export. Non-empty means the file would not compile: eject refuses rather than write it.
- */
-export function missingRootExports(pkgRoot: string, text: string): string[] {
-  const wanted = [...text.matchAll(/import\s+(?:type\s+)?\{([^}]*)\}\s*from\s*['"]basalt-ui['"]/g)]
-    .flatMap(([, list]) => (list ?? '').split(','))
-    .map(
-      (item) =>
-        item
-          .trim()
-          .replace(/^type\s+/, '')
-          .split(/\s+as\s+/)[0] ?? '',
-    )
-    .filter((name) => IDENT.test(name))
-  if (wanted.length === 0) return []
-  const exported = rootExports(pkgRoot)
-  return wanted.filter((name) => !exported.has(name))
 }
 
 /** The guard placed beside an ejected file: the `requires` half only, imports moved like the seed's. */
