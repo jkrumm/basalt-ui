@@ -165,6 +165,8 @@ describe('virtual body', () => {
     const { container } = render(<WithFooter />)
     expect(container.querySelector('table')?.getAttribute('aria-rowcount')).toBe('10002')
     expect(container.querySelector('tfoot dd')?.textContent).toBe('49,995,000')
+    // The foot sits before the body in the DOM; its index says it is the last row.
+    expect(container.querySelector('tfoot tr')?.getAttribute('aria-rowindex')).toBe('10002')
   })
 
   test('group rows are items of the window with their own row index', () => {
@@ -177,6 +179,13 @@ describe('virtual body', () => {
     const first = container.querySelector('tbody tr[data-group]')
     expect(first?.getAttribute('aria-rowindex')).toBe('2')
     expect(container.querySelector('table')?.getAttribute('aria-rowcount')).toBe('10004')
+  })
+
+  test('a windowed table never projects to cards and its cells hold one line', () => {
+    const { container } = render(<Subject virtual={VirtualList} />)
+    const root = container.querySelector('[data-slot="table-root"]')
+    expect(root?.getAttribute('data-phone')).toBe('scroll')
+    expect(root?.className).toContain('[&_[data-slot=table-cell]]:whitespace-nowrap')
   })
 
   test('a loading table draws the plain body, not the window', () => {

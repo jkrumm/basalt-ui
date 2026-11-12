@@ -67,8 +67,11 @@ export function hasFooter<T>(model: TableModel<T>): boolean {
  */
 export function DataTableFooter<T>({
   table: instance,
+  rowIndex,
 }: {
   table: DataTableInstance<T>
+  /** `aria-rowindex` in a virtual window, where the foot is not after every body row in the DOM. */
+  rowIndex?: number
 }): ReactElement | null {
   const model = modelOf(instance)
   const t = useMessages(table)
@@ -90,7 +93,11 @@ export function DataTableFooter<T>({
 
   return (
     <tfoot data-slot="table-footer" className="font-medium">
-      <TableRow role="row" data-footer="">
+      <TableRow
+        role="row"
+        data-footer=""
+        {...(rowIndex !== undefined && { 'aria-rowindex': rowIndex })}
+      >
         {model.selection !== undefined && <TableCell role="cell" aria-colindex={1} />}
         {cells.map(({ spec, planned, value, shown }, index) => {
           const { numeric, className } = alignProps(spec)
