@@ -3,3 +3,4 @@
 export { installDomShims } from './dom-shims'
 export { settled } from './settled'
 export { SLOTS } from './slots'
+export { expectShellInvariants } from './shell-invariants'
