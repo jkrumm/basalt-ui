@@ -1,0 +1,23 @@
+{
+  "why": "A rule earns its place by catching the mistake an agent actually makes, and by staying silent on correct code. In 2.x some rules fired on valid code and taught agents to write waivers, while others missed the real mistake. The owner asked for repeated improvement cycles on the lint rules, and docs/v3/CYCLES.md is the protocol.",
+  "what": "Cycle 1 of the lint and guards area: measure the shipped rules (generated oxlint preset, stylelint preset, check-theme, doctor's weakened-config check) for misses and false alarms, log, file. Protocol: docs/v3/CYCLES.md.",
+  "owns": [
+    "docs/v3/cycles/lint-1.md",
+    "docs/v3/issues/cycles/**",
+    "docs/plan.yaml (append rows only)",
+    "docs/v3/cycles/lint-1/fixtures/** (the seeded offenders as .tsx.txt and .css.txt, so the repo's own lint, format and typecheck never see them; the run copies them into a scratch app outside the repo)"
+  ],
+  "must_not_touch": ["packages/basalt-ui/**", "apps/**", "docs/v3/ARCHITECTURE.md"],
+  "change": "(1) False alarms: run every shipped preset over apps/playground and examples/*, the code we call correct, and judge each finding as true or false with a reason. (2) Misses: write a seeded-offender app in docs/v3/cycles/lint-1/fixtures/ that makes each mistake the rule table names, the way an agent writes it rather than the way the rule's own fixture writes it. Use at least two phrasings per rule; draw them from the 2.x friction rows in docs/ and the v3 concepts. Run the presets and record what was caught. (3) Messages: for each rule that fired, judge whether its message alone tells an agent the fix. Count: rules; false alarms per rule; misses per rule; messages without a fix; waivers in playground and examples, each with whether it is justified.",
+  "commits": "One docs: commit with the findings, the fixtures and the plan rows. No package commit.",
+  "proof": "docs/v3/cycles/lint-1.md with the sha, one row per rule (fired correctly, false alarms, misses, message ok), and the findings table.",
+  "acceptance": [
+    "docs/v3/cycles/lint-1.md exists, names the master sha, and has a per-rule table covering every rule in the generated rule table",
+    "Every rule has at least two seeded phrasings in the fixtures, each marked caught or missed",
+    "Every false alarm and miss is a finding with evidence (the command and the matched line)",
+    "Every P1 has its own plan row with a brief; the P2s are grouped one row per class; or the file states convergence",
+    "If the cycle did not converge, a v3-cycle-lint-2 row exists after every fix row",
+    "git diff --name-only origin/master...HEAD lists nothing under packages/basalt-ui/ or apps/"
+  ],
+  "out_of_scope": "Changing any rule, preset or waiver in this PR; rules for pinned 2.x consumers."
+}

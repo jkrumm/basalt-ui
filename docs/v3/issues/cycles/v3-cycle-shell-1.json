@@ -1,0 +1,23 @@
+{
+  "why": "The shell rows each prove their own piece. Nobody has yet built a multi-page app on AppShell, the page kit (Page, PageBar, PageAside, Section, InnerNav, SplitPage) and the phone chrome together. The owner asked for repeated improvement cycles on the shell, and docs/v3/CYCLES.md is the protocol.",
+  "what": "Cycle 1 of the AppShell and page-kit area: build, measure, log, file. Protocol: docs/v3/CYCLES.md, which this brief only specialises.",
+  "owns": [
+    "docs/v3/cycles/shell-1.md",
+    "docs/v3/issues/cycles/**",
+    "docs/plan.yaml (append rows only)",
+    "apps/playground/src/** (the cycle build only: new files plus nav registration)"
+  ],
+  "must_not_touch": ["packages/basalt-ui/**", "docs/v3/ARCHITECTURE.md", "docs/v3/DIRECTION.md"],
+  "change": "Build a three-page app in the playground on the v3 shell with fixture data: (1) an overview with a PageBar (title, two actions, one filter), a stat row and a chart card; (2) a list page with a SplitPage master-detail and a PageAside inspector that opens from a row; (3) a settings page with InnerNav. Navigation comes from one nav definition: a phone tab bar with a More sheet, breadcrumbs, and a command palette entry per page. Exercise the phone (390x844), the docked aside (1800x1200), the collapsed rail, route errors, pending and missing states, and a keyboard-only pass through every page. Count: lines of layout glue the app wrote (wrappers, hand-built containers, calc() heights); escape hatches; places where the app had to know a shell internal (a CSS var, a data-slot, a z-index); keyboard traps and focus losses.",
+  "commits": "Playground build in its own commit (feat:), findings and plan rows in a docs: commit. No package commit.",
+  "proof": "docs/v3/cycles/shell-1.md with the sha, the numbers, the shot paths and the findings table.",
+  "acceptance": [
+    "docs/v3/cycles/shell-1.md exists, names the master sha, and has every field from CYCLES.md step 5 for each finding",
+    "The three pages render in the playground and import basalt-ui only through published subpaths",
+    "Every workaround in the build carries a `cycle-shell-1:` comment naming its finding id",
+    "Every P1 has its own plan row with a brief; the P2s are grouped one row per class; or the file states convergence",
+    "If the cycle did not converge, a v3-cycle-shell-2 row exists after every fix row",
+    "git diff --name-only origin/master...HEAD lists nothing under packages/basalt-ui/"
+  ],
+  "out_of_scope": "Fixing any finding in this PR; device checks on real iOS hardware; the native-chrome overlay beyond one render."
+}

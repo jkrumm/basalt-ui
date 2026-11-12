@@ -1464,5 +1464,80 @@ rows:
         v3-gr-intl-enable,
         v3-sk-7b-state-references,
         v3-state-4b-recipes,
+        v3-cycle-shell-1,
+        v3-cycle-state-1,
+        v3-cycle-lint-1,
+        v3-cycle-wiring-1,
+        v3-cycle-dogfood-1,
       ]
     facts: { 'brief': 'docs/v3/issues/g5-ga-g6/v3-ga-prep.json' }
+  - key: v3-cycle-shell-1
+    title: 'Improvement cycle 1: AppShell and page kit, built as a three-page app'
+    repo: basalt-ui
+    kind: chore
+    seat: { tier: opus, effort: high }
+    after:
+      [
+        v3-shell-i5c-exemplar,
+        v3-shell-i6-tabbar,
+        v3-shell-i8-commands,
+        v3-shell-i7b-settings,
+        v3-shell-i9-router-defaults,
+      ]
+    facts: { 'brief': 'docs/v3/issues/cycles/v3-cycle-shell-1.json' }
+  - key: v3-cycle-state-1
+    title: 'Improvement cycle 1: state, stores and controls, built as one data page'
+    repo: basalt-ui
+    kind: chore
+    seat: { tier: opus, effort: high }
+    after:
+      [
+        v3-state-4a-controls,
+        v3-state-4b-recipes,
+        v3-ctl-5-filterset,
+        v3-ctl-6-viewtabs,
+        v3-ctl-7-formfield,
+        v3-live-3-bind-invalidation,
+        v3-live-4-connection,
+      ]
+    facts: { 'brief': 'docs/v3/issues/cycles/v3-cycle-state-1.json' }
+  - key: v3-cycle-lint-1
+    title: 'Improvement cycle 1: lint and guards, misses and false alarms per rule'
+    repo: basalt-ui
+    kind: chore
+    seat: { tier: opus, effort: high }
+    after:
+      [
+        v3-gr-1-rule-table,
+        v3-gr-2-class-family,
+        v3-gr-3b-structure-rest,
+        v3-gr-4-preset,
+        v3-gr-5-weakened-config,
+        v3-gr-6-waiver-codemod,
+        v3-ctl-8-lint,
+        v3-ai-i5-lint,
+        v3-live-5-lint-recipes,
+        v3-st-6-stylelint,
+      ]
+    facts: { 'brief': 'docs/v3/issues/cycles/v3-cycle-lint-1.json' }
+  - key: v3-cycle-wiring-1
+    title: 'Improvement cycle 1: wiring from init to a first page, and the export surface'
+    repo: basalt-ui
+    kind: chore
+    seat: { tier: opus, effort: high }
+    after:
+      [
+        v3-sk-3-init-doctor,
+        v3-sk-8-basalt-app,
+        v3-cli-sibling,
+        v3-gr-4-preset,
+        v3-shell-i9-router-defaults,
+      ]
+    facts: { 'brief': 'docs/v3/issues/cycles/v3-cycle-wiring-1.json' }
+  - key: v3-cycle-dogfood-1
+    title: 'Improvement cycle 1: rebuild the factory console overview slice on v3'
+    repo: basalt-ui
+    kind: chore
+    seat: { tier: opus, effort: high }
+    after: [v3-cycle-shell-1, v3-cycle-state-1, v3-playground-overview, v3-table-t3b-selection]
+    facts: { 'brief': 'docs/v3/issues/cycles/v3-cycle-dogfood-1.json' }
