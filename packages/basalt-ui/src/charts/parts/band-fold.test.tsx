@@ -1,7 +1,7 @@
 /** `foldBands` through the public barrel: the grouping `BandStrip` and `MirroredBars` run. */
 import { describe, expect, test } from 'bun:test'
 import { renderToString } from 'react-dom/server'
-import { BandStrip, foldBands } from './index'
+import { BandStrip, foldBands } from '../index'
 
 type Slot = { t: string; s: string }
 const slots = (n: number): Slot[] =>

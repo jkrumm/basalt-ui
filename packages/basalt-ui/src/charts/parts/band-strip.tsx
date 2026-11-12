@@ -15,12 +15,16 @@ import { barY } from '@tanstack/charts/bar'
 import { decorative } from '@tanstack/charts/mark/decorative'
 import { rect } from '@tanstack/charts/rect'
 import { text } from '@tanstack/charts/text'
-import { useCallback, useMemo } from 'react'
+import { useCallback, useMemo, useState } from 'react'
 import type { ReactElement } from 'react'
-import { oneOf, requiredProp } from '../common/errors'
-import { NON_FINITE } from '../format/shared'
-import { VX, alpha } from '../tokens'
-import { CartesianRung } from './CartesianChart'
+import { oneOf, requiredProp } from '../../common/errors'
+import { NON_FINITE } from '../../format/shared'
+import { VX, alpha } from '../../tokens'
+import { ChartShell } from '../CartesianChart'
+import type { ShellContext } from '../CartesianChart'
+// The 2.x compile, not `core/compile`: the core's strip portal does not yet keep a tooltip opened
+// below the strip clear of the x tick labels (`charts-w52` layout test); a signal tracks it.
+import { compileCartesian } from '../compile'
 import {
   BAND_GLYPH_MIN_PX,
   NOTCH_PX,
@@ -30,8 +34,8 @@ import {
   toneOf,
 } from './band-fold'
 import type { Group, NamedChartState } from './band-fold'
-import { emphasis } from './marks'
-import { rowX } from './types'
+import { emphasis } from '../marks'
+import { rowX } from '../types'
 import type {
   AxisConfig,
   CartesianChartProps,
@@ -40,7 +44,7 @@ import type {
   ChartX,
   PlotContext,
   PlotRow,
-} from './types'
+} from '../types'
 
 /** A state a strip can draw. A band has no number to plot, so `formatValue` reads the datum. */
 export type BandStripSeries<T> = NamedChartState & {
@@ -104,6 +108,17 @@ export type BandStripProps<T, X extends ChartX = ChartX, K extends string = stri
    * hatch: it reads as "no data" by hue and by sitting at the band's right edge, not as zero.
    */
   absentState?: K | undefined
+}
+
+/** The previous object while every field is `Object.is`-equal: a one-dependency memo key. */
+function useShallowStable<V extends Record<string, unknown>>(next: V): V {
+  const [kept, setKept] = useState(next)
+  const same = [...new Set([...Object.keys(kept), ...Object.keys(next)])].every((k) =>
+    Object.is(kept[k], next[k]),
+  )
+  // Render-phase setState: React re-renders at once with `kept` replaced, no effect, no stale frame.
+  if (!same) setKept(next)
+  return same ? kept : next
 }
 
 const DEFAULT_MIN_BAND_PX = 3
@@ -504,17 +519,37 @@ export function BandStrip<T, X extends ChartX = ChartX, K extends string = strin
     }
   }, [tooltip, absentKey, getBand, states])
 
+  const { ariaLabel, legend, height, state: chartState, className, style, ...spec } = rest
+  const stable = useShallowStable({
+    ...spec,
+    series,
+    marks,
+    cursorResolution,
+    tooltip: tooltipWithPrimary,
+  })
+  const compile = useCallback(
+    (ctx: ShellContext) =>
+      compileCartesian<T, X>({
+        ...stable,
+        ...ctx,
+        band: true,
+        tooltipBelow: true,
+        y: STRIP_AXIS,
+        xZones: ZX_ANCHOR,
+      }),
+    [stable],
+  )
+
   return (
-    <CartesianRung
-      {...rest}
+    <ChartShell
       series={series}
-      marks={marks}
-      band
-      tooltipBelow
-      y={STRIP_AXIS}
-      xZones={ZX_ANCHOR}
-      cursorResolution={cursorResolution}
-      {...(tooltipWithPrimary !== undefined && { tooltip: tooltipWithPrimary })}
+      compile={compile}
+      ariaLabel={ariaLabel}
+      {...(legend !== undefined && { legend })}
+      {...(height !== undefined && { height })}
+      {...(chartState !== undefined && { state: chartState })}
+      {...(className !== undefined && { className })}
+      {...(style !== undefined && { style })}
     />
   )
 }

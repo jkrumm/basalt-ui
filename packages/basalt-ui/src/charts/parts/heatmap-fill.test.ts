@@ -4,8 +4,8 @@
  * real surfaces and measures CIE76 ΔE*ab, a metric independent of the alpha arithmetic.
  */
 import { describe, expect, test } from 'bun:test'
-import { deltaE76 } from '../tokens/hct'
-import { buildPaletteData } from '../tokens/palette'
+import { deltaE76 } from '../../tokens/hct'
+import { buildPaletteData } from '../../tokens/palette'
 import { ABSENT_OPACITY, RAMP_FLOOR, RAMP_OPACITIES } from './heatmap-fill'
 
 /** The stated minimum: every ramp step vs the absent fill, ΔE*ab. */

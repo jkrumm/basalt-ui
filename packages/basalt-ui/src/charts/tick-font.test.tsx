@@ -11,11 +11,11 @@ import type { ReactElement } from 'react'
 import { createRoot } from 'react-dom/client'
 import { renderToString } from 'react-dom/server'
 import { VX } from '../tokens'
-import { BandStrip } from './BandStrip'
+import { BandStrip } from './parts/band-strip'
 import { Bars } from './Bars'
 import { compileCartesian } from './compile'
 import { Donut } from './Donut'
-import { Heatmap } from './Heatmap'
+import { Heatmap } from './parts/heatmap'
 import { Lines } from './Lines'
 
 const days = [1, 2, 3].map((d) => ({ t: new Date(Date.UTC(2026, 9, d)), v: d * 10 }))

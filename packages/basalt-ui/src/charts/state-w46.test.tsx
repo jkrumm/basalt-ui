@@ -2,7 +2,7 @@
 import { cleanup, render } from '@testing-library/react'
 import { afterEach, describe, expect, test } from 'bun:test'
 import { Bars } from './Bars'
-import { BandStrip } from './BandStrip'
+import { BandStrip } from './parts/band-strip'
 import { ChartCard } from './ChartCard'
 import { Lines } from './Lines'
 import { StackedArea } from './StackedArea'
