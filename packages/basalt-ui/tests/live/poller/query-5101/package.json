@@ -1,0 +1,9 @@
+{
+  "name": "live-poller-query-5101",
+  "private": true,
+  "description": "Query 5.101.2, argo's locked version: the P3 matrix of live-realtime.md section 7 runs against it as well as against the devDependency 5.107.1.",
+  "type": "module",
+  "dependencies": {
+    "@tanstack/query-core": "5.101.2"
+  }
+}
