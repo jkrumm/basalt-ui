@@ -1,0 +1,9 @@
+/*
+ * The `controls-filter-set` fixture's Tailwind v4 entry: compiled WITH preflight, the way a Tailwind
+ * consumer renders a `FilterSet`. `controls-filter-set.layout.test.ts` compiles it into a temp
+ * directory; nothing generated lands in the repo.
+ */
+@import '../../../src/css/tailwind.css' source(none);
+@source './controls-filter-set-probe.tsx';
+@source '../../../src/ui';
+@source '../../../src/controls';
