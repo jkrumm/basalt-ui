@@ -13,8 +13,9 @@
  *   I21  footer: page size always an option, no range for an out-of-range page   t2
  *   I23  row actions: a stable array, state via disabled(row)/loading(row)       t2
  */
-import { cleanup, fireEvent, screen } from '@testing-library/react'
+import { act, cleanup, fireEvent, screen } from '@testing-library/react'
 import { afterEach, describe, expect, mock, test } from 'bun:test'
+import { settled } from '../../testing/settled'
 import { api } from './api'
 import { renderTable, ROWS } from './harness'
 import type { Row } from './harness'
@@ -23,29 +24,41 @@ afterEach(cleanup)
 
 describe('parts invariants', () => {
   // 2.x: data-table.tsx:355-366,418-430
-  test.failing('I2 ticking a box or pressing an action does not activate the row', () => {
+  test('I2 ticking a box or pressing an action does not activate the row', async () => {
     const onRowActivate = mock((_row: Row) => undefined)
-    const { container } = renderTable({ onRowActivate })
+    const c = api.col<Row>()
+    const { container } = renderTable({
+      onRowActivate,
+      selection: { bulk: [] },
+      columns: [c.text('name'), c.actions([{ key: 'go', label: 'Go', onClick: () => undefined }])],
+    })
     fireEvent.click(container.querySelector('tbody input[type="checkbox"]') as HTMLElement)
+    fireEvent.click(
+      container.querySelector('tbody [data-slot="table-actions"] button') as HTMLElement,
+    )
+    await settled()
+    // The menu is portaled: clicking its item must not reach the row either.
+    fireEvent.click(await screen.findByRole('menuitem', { name: 'Go' }))
+    await settled()
     expect(onRowActivate).not.toHaveBeenCalled()
+    // A click on the row itself still activates (the control above is the exception).
+    fireEvent.click(container.querySelector('tbody tr') as HTMLElement)
+    expect(onRowActivate).toHaveBeenCalledTimes(1)
   })
 
   // 2.x: data-table.tsx:1633,1816, data-table-containment.test.tsx:105-221
-  test.failing(
-    'I9 aria-colcount counts every column, headers carry aria-sort, cells their slot',
-    () => {
-      const { container } = renderTable()
-      const table = container.querySelector('table') as HTMLElement
-      expect(Number(table.getAttribute('aria-colcount'))).toBeGreaterThanOrEqual(3)
-      expect(screen.getAllByRole('columnheader')[0]?.getAttribute('aria-sort')).toBeTruthy()
-      expect(container.querySelector('tbody td')?.getAttribute('aria-colindex')).toBeTruthy()
-      const scroller = container.querySelector('[data-slot="table-scroller"]') as HTMLElement
-      expect(scroller.getAttribute('tabindex')).toBeNull()
-    },
-  )
+  test('I9 aria-colcount counts every column, headers carry aria-sort, cells their slot', () => {
+    const { container } = renderTable()
+    const table = container.querySelector('table') as HTMLElement
+    expect(Number(table.getAttribute('aria-colcount'))).toBeGreaterThanOrEqual(3)
+    expect(screen.getAllByRole('columnheader')[0]?.getAttribute('aria-sort')).toBeTruthy()
+    expect(container.querySelector('tbody td')?.getAttribute('aria-colindex')).toBeTruthy()
+    const scroller = container.querySelector('[data-slot="table-scroller"]') as HTMLElement
+    expect(scroller.getAttribute('tabindex')).toBeNull()
+  })
 
   // 2.x: data-table-state.ts:198-209, tests :618-737
-  test.failing('I11 first paint is the table; cards never appear from viewport width alone', () => {
+  test('I11 first paint is the table; cards never appear from viewport width alone', () => {
     const { container } = renderTable({ phone: 'cards' })
     expect(container.querySelector('[data-slot="table-card"]')).toBeNull()
     expect(container.querySelector('table')).not.toBeNull()
@@ -60,7 +73,7 @@ describe('parts invariants', () => {
   })
 
   // 2.x: data-table.tsx:1215-1230,1655-1690, data-table.module.css:55-86
-  test.failing('I13 the scroller is a native scroll node, not a ScrollArea viewport', () => {
+  test('I13 the scroller is a native scroll node, not a ScrollArea viewport', () => {
     const { container } = renderTable({}, { height: 'fill' })
     const scroller = container.querySelector('[data-slot="table-scroller"]') as HTMLElement
     expect(
@@ -70,16 +83,22 @@ describe('parts invariants', () => {
   })
 
   // 2.x: data-table.tsx:1070-1110
-  test.failing('I14 the toolbar and search can shrink: the root contains itself', () => {
+  test('I14 the root contains itself', () => {
     const { container } = renderTable()
     const root = container.querySelector('[data-slot="table-root"]') as HTMLElement
     expect(root.getAttribute('data-contained')).not.toBeNull()
+    expect(container.querySelector('[data-slot="table-scroller"]')).not.toBeNull()
+  })
+
+  // The toolbar half of I14 (min-width 0 search) lands with the toolbar Issue (t3).
+  test.failing('I14 the toolbar search can shrink', () => {
+    const { container } = renderTable()
     const search = container.querySelector('[data-slot="table-search"]') as HTMLElement
     expect(search).not.toBeNull()
   })
 
   // 2.x: data-table.tsx:638-650,1338-1345, query-branch.ts
-  test.failing('I20 an error with no data is a row inside tbody; header stays', () => {
+  test('I20 an error with no data is a row inside tbody; header stays', () => {
     const { container } = renderTable({
       data: undefined,
       phase: { tag: 'error', message: 'boom' },
@@ -113,14 +132,34 @@ describe('parts invariants', () => {
   })
 
   // 2.x: data-table.tsx:828-838
-  test.failing('I23 row actions render per row and honour disabled(row)', () => {
+  test('I23 row actions render per row and honour disabled(row)', async () => {
     const c = api.col<Row>()
     const { container } = renderTable({
-      columns: [c.text('name'), c.actions([{ key: 'go', label: 'Go', onClick: () => undefined }])],
+      columns: [
+        c.text('name'),
+        // `api.ts` types the narrow action shape; `disabled(row)` is part of the contract's RowAction.
+        c.actions([
+          {
+            key: 'go',
+            label: 'Go',
+            onClick: () => undefined,
+            disabled: (row: Row) => row.id === 'a',
+          } as { key: string; label: string; onClick(row: Row): void },
+        ]),
+      ],
       data: ROWS,
     })
     expect(container.querySelectorAll('tbody [data-slot="table-actions"]')).toHaveLength(
       ROWS.length,
     )
+    const trigger = container.querySelector(
+      'tbody [data-slot="table-actions"] button',
+    ) as HTMLElement
+    await act(async () => {
+      fireEvent.click(trigger)
+    })
+    await settled()
+    const item = await screen.findByRole('menuitem', { name: 'Go' })
+    expect(item.getAttribute('aria-disabled') ?? item.getAttribute('data-disabled')).not.toBeNull()
   })
 })

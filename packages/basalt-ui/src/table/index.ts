@@ -22,3 +22,5 @@ export type { DataTableRowAction } from './data-table'
 
 // v3 (docs/v3/concepts/data-table.md section 5): the kind column factory.
 export { col } from './core/kinds'
+export { DataTable } from './parts/data-table'
+export { useDataTable } from './use-data-table'
