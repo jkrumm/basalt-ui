@@ -29,6 +29,21 @@ export {
 } from './MirroredBars'
 export { ChartCard, type ChartCardProps, type ChartCardSlot, type ChartFact } from './ChartCard'
 export { chartCursor } from './cursor'
+export {
+  useChartFocus,
+  type ChartFocus,
+  type ChartFocusItem,
+  type ChartFocusOptions,
+  type ChartFocusTarget,
+} from './focus'
+export {
+  chartLabels,
+  type ChartLabel,
+  type LabelBox,
+  type LabelSpot,
+  type LabelWeight,
+  type PlacedLabel,
+} from './chart-labels'
 export { chartCurve, type CurveName } from './curves'
 export type {
   AxisConfig,
@@ -42,7 +57,9 @@ export type {
   ChartX,
   CursorResolution,
   PlotContext,
+  PlotRow,
   RefLine,
+  XRefLine,
   ResponsiveChartHeight,
   Threshold,
   XZoneSpec,
