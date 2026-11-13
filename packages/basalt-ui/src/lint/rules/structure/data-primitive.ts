@@ -12,6 +12,7 @@ import type { FormContext, Node, Visitor } from '../../factory'
 import { mergeVisitors } from '../../factory'
 import type { AstForm } from '../../rule-table'
 import { defineRules } from '../../rule-table'
+import { dataPrimitiveLiveForms } from './data-primitive-live'
 
 const isNode = (value: unknown): value is Node =>
   typeof value === 'object' && value !== null && typeof (value as Node).type === 'string'
@@ -374,6 +375,7 @@ export const dataPrimitiveRules = defineRules({
       chartDataFallback,
       timerRefetch,
       rawStorageWrite,
+      ...dataPrimitiveLiveForms,
     ],
   },
 })
