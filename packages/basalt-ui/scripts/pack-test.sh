@@ -544,19 +544,22 @@ if (!html.includes('web')) throw new Error('FilterSet did not render its second 
 if (!html.includes('Filters')) throw new Error('FilterSet did not render its mobile sheet pill')
 console.log('controls without @mantine/dates: resolution + render OK')
 
-// The form layout, with `@mantine/form` genuinely absent: resolves AND renders.
-for (const name of ['FormRow', 'FormGroup']) {
+// The form parts, with `@mantine/form` genuinely absent: resolve AND render.
+for (const name of ['FormField', 'FormRow']) {
   if (typeof controls[name] !== 'function') throw new Error(`controls.${name} missing`)
 }
+const { Input } = await import('basalt-ui/ui/input')
+const fieldLike = { state: { value: '', meta: { errors: [] } }, handleChange() {}, handleBlur() {} }
 const rowHtml = renderToStaticMarkup(
   createElement(
-    MantineProvider,
-    null,
-    createElement(controls.FormRow, { label: 'Email' }, createElement('input', { name: 'email' })),
+    controls.FormRow,
+    { legend: 'Contact' },
+    createElement(controls.FormField, { label: 'Email', field: fieldLike }, createElement(Input)),
   ),
 )
-if (!rowHtml.includes('Email')) throw new Error('FormRow did not render its label')
-console.log('controls without @mantine/form: FormRow resolution + render OK')
+if (!rowHtml.includes('Email')) throw new Error('FormField did not render its label')
+if (!rowHtml.includes('Contact')) throw new Error('FormRow did not render its legend')
+console.log('controls without @mantine/form: FormField and FormRow resolution + render OK')
 
 // The other direction: the split is only worth having if the peer is genuinely required THERE.
 let datesResolved = false

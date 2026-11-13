@@ -18,7 +18,15 @@ export { SearchFilter } from './search-filter'
 export { ToggleFilter } from './toggle-filter'
 export { ViewTabs } from './view-tabs'
 export type { FilterOption } from './filter-base'
-export { FormRow, FormGroup } from './form-layout'
+
+// The 2.x group stays until `v3-ctl-9-rows` lands its migration row; its 2.x `FormRow` is the v3 one below.
+export { FormGroup } from './form-layout'
+
+// v3 forms: `FormField` carries label, description and error by construction; `FormRow` lays fields out by container tier.
+export { FormField } from './form-field'
+export type { FormFieldProps } from './form-field'
+export { FormRow } from './form-row'
+export type { FormRowProps } from './form-row'
 
 // v3 control-view: the cue and the reset live in `ControlView` alone; `spec` is the data a home renders.
 export { ControlView } from './control-view'

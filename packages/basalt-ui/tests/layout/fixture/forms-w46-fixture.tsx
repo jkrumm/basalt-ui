@@ -1,6 +1,6 @@
 import { NumberInput, PasswordInput, Textarea, TextInput } from '@mantine/core'
 import type { ReactElement } from 'react'
-import { FormGroup, FormRow } from '../../../src/controls'
+import { FormGroup, FormRow } from '../../../src/controls/form-layout'
 import { SettingsRow, SettingsSection } from '../../../src/dashboard/settings-section'
 
 /**
