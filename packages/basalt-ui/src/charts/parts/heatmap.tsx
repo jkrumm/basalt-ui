@@ -31,7 +31,9 @@ import { ChartLegend } from '../legend'
 import { useCoarsePointer } from '../../common/use-media-query'
 import { HEIGHT_MAX, HEIGHT_MIN } from '../box'
 import { ChartPlaceholder, resolveChartState } from '../state'
-import { AXIS_LINE, CHART_THEME } from '../core/theme'
+import { AXIS_LINE, CHART_THEME, DIMMED } from '../core/theme'
+import type { ChartFocus } from '../contract'
+import { engineFocusHandler, hostFocusProps } from '../focus'
 import type { ChartSeries, ChartState, ChartTooltipRow, ResponsiveChartHeight } from '../types'
 
 /**
@@ -123,6 +125,17 @@ export type HeatmapProps<T, K extends string = string> = BasaltProps & {
    * flex stretch, `h-full`, an explicit height — which no kind can read off an auto-height parent. */
   matchHeight?: boolean | undefined
   state?: ChartState | undefined
+  /**
+   * `useChartFocus(data, …)`: pointing at a cell or stepping with the arrow keys focuses its datum,
+   * every other cell dims, and `focus.readout` drives a card fact. The grid stays one tab stop.
+   */
+  focus?: ChartFocus<T> | undefined
+  /**
+   * A short mark in the cell (an onset glyph, a two-digit hour), `null` for none. Drawn centred in
+   * the cell's contrast ink, and skipped where the cell is too narrow to hold it. It is decoration:
+   * say what it means in the subtitle or a tooltip row.
+   */
+  annotate?: ((d: T) => string | null) | undefined
 }
 
 const ROW_PITCH = 26
@@ -193,6 +206,61 @@ const heightOfRows = (count: number): number =>
 
 const fillStyle: CSSProperties = { position: 'relative', height: '100%', minHeight: HEIGHT_MIN }
 
+/** The datum at each grid position, row-major; `undefined` where the grid has none. */
+export function datumGrid<T>(
+  data: readonly T[],
+  rows: readonly string[],
+  cols: readonly string[],
+  getRow: (d: T) => string,
+  getCol: (d: T) => string,
+): (T | undefined)[][] {
+  const at = new Map<string, T>()
+  for (const d of data) at.set(`${getRow(d)}\u0000${getCol(d)}`, d)
+  return rows.map((r) => cols.map((c) => at.get(`${r}\u0000${c}`)))
+}
+
+/**
+ * The arrow keys over a heat grid: Left and Right along the row, Up and Down along the column,
+ * skipping positions with no datum and stopping at the edge; Home and End are the first and last
+ * datum in reading order; Escape clears. From no focus, the first key lands on the first (or, for
+ * Left, Up and End, the last) datum. Returns the item index `indexOf` gives, or `undefined`.
+ */
+export function stepGrid<T>(
+  grid: readonly (readonly (T | undefined)[])[],
+  key: string,
+  current: T | undefined,
+  indexOf: (d: T) => number,
+): number | null | undefined {
+  if (key === 'Escape') return null
+  const cells = grid.flatMap((row, r) =>
+    row.flatMap((d, c) => (d === undefined ? [] : [{ r, c, d }])),
+  )
+  const first = cells[0]
+  const last = cells.at(-1)
+  if (first === undefined || last === undefined) return undefined
+  const back = key === 'ArrowLeft' || key === 'ArrowUp' || key === 'End'
+  const known = new Set(['ArrowRight', 'ArrowLeft', 'ArrowDown', 'ArrowUp', 'Home', 'End'])
+  if (!known.has(key)) return undefined
+  const here = current === undefined ? undefined : cells.find((p) => p.d === current)
+  if (here === undefined || key === 'Home' || key === 'End') return indexOf((back ? last : first).d)
+  const [dr, dc] =
+    key === 'ArrowRight'
+      ? [0, 1]
+      : key === 'ArrowLeft'
+        ? [0, -1]
+        : key === 'ArrowDown'
+          ? [1, 0]
+          : [-1, 0]
+  for (let r = here.r + dr, c = here.c + dc; inside(grid, r, c); r += dr, c += dc) {
+    const d = grid[r]?.[c]
+    if (d !== undefined) return indexOf(d)
+  }
+  return indexOf(here.d)
+}
+
+const inside = (grid: readonly (readonly unknown[])[], r: number, c: number): boolean =>
+  r >= 0 && r < grid.length && c >= 0 && c < (grid[r]?.length ?? 0)
+
 export function Heatmap<T, K extends string = string>(props: HeatmapProps<T, K>): ReactElement {
   const {
     ariaLabel,
@@ -215,8 +283,12 @@ export function Heatmap<T, K extends string = string>(props: HeatmapProps<T, K>)
     state,
     className,
     style,
+    focus,
+    annotate,
   } = props
   const chartId = useId()
+  const focused = focus?.datum ?? null
+  const ownsKeys = focus !== undefined
   // Primitives, so the definition does not rebuild for a fresh `{ label }` / `{ rows }` literal.
   const showLegend = legend !== false
   const legendLabel = legend === false ? undefined : legend?.label
@@ -283,8 +355,48 @@ export function Heatmap<T, K extends string = string>(props: HeatmapProps<T, K>)
       .range(ramp(color))
     const header = (c: Cell<T, K>): string => cellHeader(c.row, c.col, formatRow, formatCol)
     // One builder for every cell mark; `paint` is the fill (flat, or the ramp's `color` channel).
-    const cellMark = (id: string, group: Cell<T, K>[], paint: Record<string, unknown>) =>
-      cell(group, { id, x: 'col', y: 'row', inset: CELL_INSET, key: 'id', ...paint })
+    // With a focused datum every other cell keeps its fill at `DIMMED` of its own opacity.
+    // (The cell mark takes one opacity per mark, so the focused cell is its own mark.)
+    const cellMark = (
+      id: string,
+      group: Cell<T, K>[],
+      paint: { fill?: string; color?: 'value'; fillOpacity?: number },
+    ) => {
+      const at = (cells: Cell<T, K>[], markId: string, fillOpacity?: number) =>
+        cell(cells, {
+          id: markId,
+          x: 'col',
+          y: 'row',
+          inset: CELL_INSET,
+          key: 'id',
+          ...paint,
+          ...(fillOpacity !== undefined && { fillOpacity }),
+        })
+      if (focused === null) return [at(group, id)]
+      const base = paint.fillOpacity ?? 1
+      return [
+        at(
+          group.filter((c) => c.datum !== focused),
+          id,
+          base * DIMMED,
+        ),
+        at(
+          group.filter((c) => c.datum === focused),
+          `${id}:focused`,
+        ),
+      ]
+    }
+    // An annotation sits on a dark fill (a stated cell, the ramp's upper half) in panel ink, else in ink.
+    const span = hi > lo ? hi - lo : 1
+    const darkFill = (c: Cell<T, K>): boolean =>
+      c.state !== undefined || (c.value !== null && (c.value - lo) / span >= 0.5)
+    const annotated =
+      annotate === undefined
+        ? []
+        : [...present, ...absentWithDatum, ...[...stated.values()].flat()].flatMap((c) => {
+            const note = c.datum === undefined ? null : annotate(c.datum)
+            return note === null || note === '' ? [] : [{ ...c, note, dark: darkFill(c) }]
+          })
     const tooltipOptions = showTooltip
       ? {
           use: engineTooltip,
@@ -341,20 +453,42 @@ export function Heatmap<T, K extends string = string>(props: HeatmapProps<T, K>)
               ]
             : []
         }
+        const noteMarks = (plotWidth: number) =>
+          annotated.length > 0 && plotWidth / Math.max(cols.length, 1) >= GLYPH_MIN_PX
+            ? [
+                decorative(
+                  text(annotated, {
+                    id: 'annotations',
+                    x: 'col',
+                    y: 'row',
+                    key: 'id',
+                    text: 'note',
+                    fill: (c: { dark: boolean }) => (c.dark ? VX.surface.panel : VX.ink),
+                    fontSize: VX.text.nano,
+                    fontWeight: 600,
+                    anchor: 'middle',
+                  }),
+                ),
+              ]
+            : []
         const marks = [
           // Inert, not decorative: it must still win the hit test, so a pointer over an empty
           // position lands on THIS cell (whose tooltip is empty) instead of snapping to a neighbour.
-          cellMark('absent-empty', absentEmpty, { fill: VX.neutral, fillOpacity: ABSENT_OPACITY }),
-          cellMark('absent', absentWithDatum, { fill: VX.neutral, fillOpacity: ABSENT_OPACITY }),
-          ...[...stated].map(([key, group]) => {
+          ...cellMark('absent-empty', absentEmpty, {
+            fill: VX.neutral,
+            fillOpacity: ABSENT_OPACITY,
+          }),
+          ...cellMark('absent', absentWithDatum, { fill: VX.neutral, fillOpacity: ABSENT_OPACITY }),
+          ...[...stated].flatMap(([key, group]) => {
             const named = stateByKey.get(key)
             return cellMark(`state:${key}`, group, {
               fill: fillOf(named),
               ...(named?.fillOpacity !== undefined && { fillOpacity: named.fillOpacity }),
             })
           }),
-          cellMark('cells', present, { color: 'value' }),
+          ...cellMark('cells', present, { color: 'value' }),
           ...glyphMarks(width),
+          ...noteMarks(width),
         ]
         return {
           marks,
@@ -395,6 +529,8 @@ export function Heatmap<T, K extends string = string>(props: HeatmapProps<T, K>)
         }
       },
       tooltip: tooltipOptions,
+      // With `focus` the wrapper is the one tab stop and steps the grid itself.
+      ...(ownsKeys && { keyboard: false as const }),
     }
   }, [
     data,
@@ -417,6 +553,9 @@ export function Heatmap<T, K extends string = string>(props: HeatmapProps<T, K>)
     showLegend,
     showTooltip,
     tooltipRows,
+    focused,
+    annotate,
+    ownsKeys,
   ])
 
   // Legend-only series (`getValue` is always null). Without `getState` the states are never
@@ -438,22 +577,40 @@ export function Heatmap<T, K extends string = string>(props: HeatmapProps<T, K>)
     [states, getState],
   )
   const resolved = resolveChartState(state)
+  const engine =
+    resolved === null ? (
+      <ChartEngine
+        definition={definition}
+        ariaLabel={ariaLabel}
+        height={boxHeight}
+        idPrefix={idPrefixOf(chartId)}
+        coarse={coarse}
+        onFocusDatum={engineFocusHandler(focus)}
+      />
+    ) : (
+      <ChartPlaceholder state={state} height={boxHeight} ghost="grid" />
+    )
+  const grid = focus === undefined ? undefined : datumGrid(data, rows, cols, getRow, getCol)
   return (
     <div
       data-basalt-chart=""
       {...(className !== undefined && { className })}
       style={matchHeight ? { ...fillStyle, ...style } : style}
     >
-      {resolved === null ? (
-        <ChartEngine
-          definition={definition}
-          ariaLabel={ariaLabel}
-          height={boxHeight}
-          idPrefix={idPrefixOf(chartId)}
-          coarse={coarse}
-        />
+      {focus !== undefined && grid !== undefined && resolved === null ? (
+        <div
+          {...hostFocusProps(focus, ariaLabel, (key, index) =>
+            stepGrid(grid, key, index === null ? undefined : focus.items[index], (d) =>
+              focus.items.indexOf(d),
+            ),
+          )}
+          {...(matchHeight && { style: fillStyle })}
+        >
+          {engine}
+          {focus.live}
+        </div>
       ) : (
-        <ChartPlaceholder state={state} height={boxHeight} ghost="grid" />
+        engine
       )}
       {showLegend && legendSeries.length > 0 && (
         <ChartLegend

@@ -18,6 +18,10 @@ import { ChartLegend, legendEntries } from './legend'
 import { INITIAL_WIDTH, useChartSize } from './sizing'
 import { ChartPlaceholder, resolveChartState } from './state'
 import type { CartesianChartProps, ChartSeries, ChartX } from './types'
+import type { ChartFocus } from './contract'
+import { FocusWrap, useCursorFocus } from './focus'
+
+const noX = (): undefined => undefined
 
 /** Kind-only compile switches, never on the public props. */
 export type RungOptions = {
@@ -91,12 +95,15 @@ export type ChartShellProps<T> = Pick<
 > & {
   /** The legend and tooltip source. */
   series: readonly ChartSeries<T>[]
-  /** Compiles the definition; memoized on its own identity and the context. Keep it stable. */
-  compile: (ctx: ShellContext) => CartesianDefinition
+  /** Compiles the definition; memoized on its own identity and the context. Keep it stable.
+   * `focused` is the datum the `focus` holds (`null` without one). */
+  compile: (ctx: ShellContext, focused: T | null) => CartesianDefinition
   /** Recompile when the measured width changes (default: it is not an input). */
   byWidth?: boolean
   /** `auto` legend only: hidden from the wide class up (CSS). */
   hideLegendAtWide?: boolean
+  /** The focus handle and how it finds an item on the shared cursor (its x, its group). */
+  focus?: { handle: ChartFocus<T>; x: (d: T) => unknown; group: string | undefined }
 }
 
 /**
@@ -107,6 +114,13 @@ export type ChartShellProps<T> = Pick<
 export function ChartShell<T>(props: ChartShellProps<T>): ReactElement {
   const { ariaLabel, legend, height, state, className, style, series, compile, byWidth } = props
   const { hideLegendAtWide } = props
+  const focus = props.focus
+  const hostFocus = useCursorFocus(focus?.handle, {
+    group: focus?.group,
+    x: focus?.x ?? noX,
+    label: ariaLabel,
+  })
+  const focused = focus?.handle.datum ?? null
   const chartId = useId()
   const inCard = useInChartCard()
   const { ref, width: measured, coarse } = useChartSize()
@@ -123,8 +137,8 @@ export function ChartShell<T>(props: ChartShellProps<T>): ReactElement {
     setPlot((prev) => (samePlots(prev, next) ? prev : next))
   }, [])
   const definition = useMemo(
-    () => compile({ chartId, hidden, highlighted, coarse, width, plot }),
-    [compile, chartId, hidden, highlighted, coarse, width, plot],
+    () => compile({ chartId, hidden, highlighted, coarse, width, plot }, focused),
+    [compile, chartId, hidden, highlighted, coarse, width, plot, focused],
   )
 
   // ── legend: micro has none, compact shows dots, regular and wide show chips (CSS, § 9.6) ──────
@@ -172,14 +186,16 @@ export function ChartShell<T>(props: ChartShellProps<T>): ReactElement {
     >
       {atTop && (asHeaderRow ? <div style={headerLegendStyle}>{legendNode}</div> : legendNode)}
       {resolved === null ? (
-        <ChartEngine
-          definition={definition}
-          ariaLabel={ariaLabel}
-          height={height}
-          idPrefix={idPrefixOf(chartId)}
-          coarse={coarse}
-          onPlot={onPlot}
-        />
+        <FocusWrap props={hostFocus} live={focus?.handle.live}>
+          <ChartEngine
+            definition={definition}
+            ariaLabel={ariaLabel}
+            height={height}
+            idPrefix={idPrefixOf(chartId)}
+            coarse={coarse}
+            onPlot={onPlot}
+          />
+        </FocusWrap>
       ) : (
         <ChartPlaceholder state={state} height={height} />
       )}
@@ -191,12 +207,30 @@ export function ChartShell<T>(props: ChartShellProps<T>): ReactElement {
 export function CartesianRung<T, X extends ChartX>(
   props: CartesianChartProps<T, X> & RungOptions,
 ): ReactElement {
-  const { ariaLabel, legend, height, state, className, style, series, hideLegendAtWide, ...spec } =
-    props
+  const {
+    ariaLabel,
+    legend,
+    height,
+    state,
+    className,
+    style,
+    series,
+    hideLegendAtWide,
+    focus,
+    ...spec
+  } = props
   const stable = useShallowStable({ ...spec, series })
+  const owned = focus !== undefined
   const compile = useCallback(
-    (ctx: ShellContext) => compileCartesian({ ...stable, ...ctx }),
-    [stable],
+    (ctx: ShellContext, focused: T | null) =>
+      compileCartesian({
+        ...stable,
+        ...ctx,
+        focused,
+        // The shell's wrapper owns the tab stop and the keys while a `focus` is bound.
+        ...(owned && { keyboard: false }),
+      }),
+    [stable, owned],
   )
   // Reference lines that name themselves join the legend after the series (role `reference`).
   const legendSeries = useMemo(
@@ -218,6 +252,9 @@ export function CartesianRung<T, X extends ChartX>(
       {...(className !== undefined && { className })}
       {...(style !== undefined && { style })}
       {...(hideLegendAtWide && { hideLegendAtWide })}
+      {...(focus !== undefined && {
+        focus: { handle: focus, x: stable.x, group: stable.cursorGroup },
+      })}
     />
   )
 }
