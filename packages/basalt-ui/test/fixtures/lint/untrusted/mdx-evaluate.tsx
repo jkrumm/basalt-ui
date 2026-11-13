@@ -21,3 +21,6 @@ import { MDXRemote } from 'next-mdx-remote/rsc'
 
 // @valid
 import { evaluate } from './evaluate'
+
+// @invalid
+const { evaluate } = await import('@mdx-js/mdx')
