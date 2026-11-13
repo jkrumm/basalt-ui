@@ -8,12 +8,14 @@
  * `dim-bar`, a fill-only token that is not earned and so is absent from that list.
  */
 import { deniedCurrent, zoneANames } from '../../generated/zone-a'
-import type { Profile } from '../../rule-table'
+import type { Profile, Zone } from '../../rule-table'
 import { defineRules } from '../../rule-table'
 import { mediaQueryForm, PROFILE_GATE_SCHEMA, partsOnly } from './detect'
 
 const ALL: readonly Profile[] = ['bridge', 'parts', 'app', 'repo']
 const PARTS_UP: readonly Profile[] = ['parts', 'app', 'repo']
+/** Zone V (vendored shadcn files, bridge only): the class rules are off there (section 6). */
+const VENDORED: readonly Zone[] = ['vendored']
 
 const escape = (text: string): string => text.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
 /** Longest first, so an alternation never settles for a prefix of a longer name. */
@@ -60,6 +62,7 @@ export const CLASS_RULES = defineRules({
   'viewport-keyed': {
     family: 'class',
     profiles: ALL,
+    zonesOff: VENDORED,
     defect:
       'console 39 viewport-keyed classes, rollhook 14, shutterflow 16; epos `md:` kill; `max-md:` compiles because `md` and `xl` stay live',
     forms: [
@@ -90,6 +93,7 @@ export const CLASS_RULES = defineRules({
   'dark-fork': {
     family: 'class',
     profiles: ALL,
+    zonesOff: VENDORED,
     defect:
       'epos 21 `dark:` forks in app code and 40 in vendored ui; `@custom-variant dark` keys to `data-theme`, so a fork compiles and diverges from the token switch',
     forms: [
@@ -106,6 +110,7 @@ export const CLASS_RULES = defineRules({
   'fixed-colour': {
     family: 'class',
     profiles: ALL,
+    zonesOff: VENDORED,
     defect:
       'shadcn hard-codes the black/white exemption and stays silent under a closed theme; rollhook `LogDrawer.tsx:28`',
     forms: [
@@ -122,6 +127,7 @@ export const CLASS_RULES = defineRules({
   'status-fill-as-text': {
     family: 'class',
     profiles: ALL,
+    zonesOff: VENDORED,
     defect:
       'a fill clears 3.0 and text needs 4.5; console `--color-good` was both, so status text failed contrast',
     forms: [
@@ -138,6 +144,7 @@ export const CLASS_RULES = defineRules({
   'raw-scroll': {
     family: 'class',
     profiles: PARTS_UP,
+    zonesOff: VENDORED,
     defect:
       'main is the only scrollport; `.module.css` overflow was invisible in 2.x; axe `scrollable-region-focusable` on EventList',
     forms: [
@@ -155,6 +162,7 @@ export const CLASS_RULES = defineRules({
     family: 'class',
     // Bridge carries the bridge forms only; the parts-only forms read the `profile` option.
     profiles: ALL,
+    zonesOff: VENDORED,
     schema: [PROFILE_GATE_SCHEMA],
     defect:
       'shadcn suggests `p-3.25` and `w-105`; console 16 bordered vs 4 shadow cards; coloured left bars; `/NN` on `color-mix` tokens; epos `grid-cols-1!`; `bg-${tone}-600` unscanned by anything',
@@ -234,7 +242,7 @@ export const CLASS_RULES = defineRules({
   'app-spacing': {
     family: 'class',
     profiles: PARTS_UP,
-    zonesOff: ['ejected', 'seed'],
+    zonesOff: ['ejected', 'seed', 'vendored'],
     defect:
       'argo 17 spacing rows of 109 rewrites; 48 props on 43 lines in 29 files were spacing the parent should own',
     forms: [
