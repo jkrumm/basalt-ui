@@ -1,0 +1,564 @@
+{
+  "schema": 1,
+  "area": "legacy-1x",
+  "from": ">=1.40 <2",
+  "to": "3.0.0",
+  "profiles": ["tokens", "bridge", "parts", "app"],
+  "rows": [
+    {
+      "id": "legacy-1x-root-BasaltProvider",
+      "kind": "kept",
+      "from": "basalt-ui#BasaltProvider",
+      "to": "basalt-ui#BasaltProvider",
+      "manual": true,
+      "note": "the theme prop dies with createBasaltTheme; no Mantine provider underneath"
+    },
+    {
+      "id": "legacy-1x-root-BasaltShell",
+      "kind": "renamed",
+      "from": "basalt-ui#BasaltShell",
+      "to": "basalt-ui/shell#AppShell",
+      "verify": "ast",
+      "manual": false,
+      "note": "useNav(NAV) spread becomes nav={NAV}; sidebarBlocks to blocks, settingsMenuItems to settings"
+    },
+    {
+      "id": "legacy-1x-root-BasaltAccountProps",
+      "kind": "removed",
+      "from": "basalt-ui#BasaltAccountProps",
+      "to": "AppShell account prop: a { status } union",
+      "manual": true,
+      "note": "plan.label moves to detail, onManageAccount to rows (shell-nav-router)"
+    },
+    {
+      "id": "legacy-1x-root-createBasaltTheme",
+      "kind": "removed",
+      "from": "basalt-ui#createBasaltTheme",
+      "to": "basalt() from basalt-ui/vite; radius, density and fonts are its configuration",
+      "manual": true,
+      "note": "no Mantine theme object; the inputs:\"desktop\" axis is the density knob"
+    },
+    {
+      "id": "legacy-1x-root-createBasaltQueryClient",
+      "kind": "renamed",
+      "from": "basalt-ui#createBasaltQueryClient",
+      "to": "basalt-ui/data#makeQueryClient",
+      "verify": "ast",
+      "manual": false
+    },
+    {
+      "id": "legacy-1x-root-createPersistedState",
+      "kind": "replace",
+      "from": "basalt-ui#createPersistedState",
+      "to": "persisted(key, opts).use() from basalt-ui",
+      "manual": true,
+      "note": "storage keys unchanged; a store with a URL field goes to defineControls"
+    },
+    {
+      "id": "legacy-1x-root-EmptyState",
+      "kind": "moved",
+      "from": "basalt-ui#EmptyState",
+      "to": "basalt-ui/page#EmptyState",
+      "verify": "ast",
+      "manual": false
+    },
+    {
+      "id": "legacy-1x-root-ErrorState",
+      "kind": "removed",
+      "from": "basalt-ui#ErrorState",
+      "to": "basalt-ui/page#QueryState, which takes the phase from the query",
+      "manual": true
+    },
+    {
+      "id": "legacy-1x-root-LoadingState",
+      "kind": "removed",
+      "from": "basalt-ui#LoadingState",
+      "to": "basalt-ui/page#QueryState, which takes the phase from the query",
+      "manual": true
+    },
+    {
+      "id": "legacy-1x-root-PageBar",
+      "kind": "moved",
+      "from": "basalt-ui#PageBar",
+      "to": "basalt-ui/page#PageBar",
+      "verify": "ast",
+      "manual": false,
+      "note": "filtersEnd becomes actions with group and kind:\"text\""
+    },
+    {
+      "id": "legacy-1x-root-PageTitle",
+      "kind": "removed",
+      "from": "basalt-ui#PageTitle",
+      "to": "PageBar title in basalt-ui/page, or the nav label",
+      "manual": true
+    },
+    {
+      "id": "legacy-1x-root-QueryState",
+      "kind": "moved",
+      "from": "basalt-ui#QueryState",
+      "to": "basalt-ui/page#QueryState",
+      "verify": "ast",
+      "manual": false
+    },
+    {
+      "id": "legacy-1x-root-Section",
+      "kind": "moved",
+      "from": "basalt-ui#Section",
+      "to": "basalt-ui/page#Section",
+      "verify": "ast",
+      "manual": false
+    },
+    {
+      "id": "legacy-1x-root-SettingsRow",
+      "kind": "removed",
+      "from": "basalt-ui#SettingsRow",
+      "to": "FormField and FormRow from basalt-ui/controls",
+      "manual": true
+    },
+    {
+      "id": "legacy-1x-root-SettingsSection",
+      "kind": "removed",
+      "from": "basalt-ui#SettingsSection",
+      "to": "Section from basalt-ui/page with FormField and FormRow from basalt-ui/controls",
+      "manual": true
+    },
+    {
+      "id": "legacy-1x-root-StatCard",
+      "kind": "moved",
+      "from": "basalt-ui#StatCard",
+      "to": "basalt-ui/cards#StatCard",
+      "verify": "ast",
+      "manual": false,
+      "note": "sparkline= and breakdown= become chart= and footer="
+    },
+    {
+      "id": "legacy-1x-root-StatCardBreakdownRow",
+      "kind": "removed",
+      "from": "basalt-ui#StatCardBreakdownRow",
+      "to": "the StatCard footer in basalt-ui/cards (at most two facts)",
+      "manual": true,
+      "note": "a type: there is no breakdown prop"
+    },
+    {
+      "id": "legacy-1x-root-StatGroup",
+      "kind": "moved",
+      "from": "basalt-ui#StatGroup",
+      "to": "basalt-ui/cards#StatGroup",
+      "verify": "ast",
+      "manual": false
+    },
+    {
+      "id": "legacy-1x-root-toErrorMessage",
+      "kind": "removed",
+      "from": "basalt-ui#toErrorMessage",
+      "to": "app code: error instanceof Error ? error.message : fallback",
+      "manual": true,
+      "note": "no 3.0 export"
+    },
+    {
+      "id": "legacy-1x-root-useCoarsePointer",
+      "kind": "removed",
+      "from": "basalt-ui#useCoarsePointer",
+      "to": "useSizeClass() from basalt-ui/page for chrome, or the Tailwind pointer-coarse: variant for styling",
+      "manual": true
+    },
+    {
+      "id": "legacy-1x-root-useSizeClass",
+      "kind": "moved",
+      "from": "basalt-ui#useSizeClass",
+      "to": "basalt-ui/page#useSizeClass",
+      "verify": "ast",
+      "manual": false
+    },
+    {
+      "id": "legacy-1x-charts-Bars",
+      "kind": "kept",
+      "from": "basalt-ui/charts#Bars",
+      "to": "basalt-ui/charts#Bars",
+      "manual": true,
+      "note": "getX, getValue, positiveBars, chartId and xTicks become x, series: [{ mark: \"bar\" }] and cursor"
+    },
+    {
+      "id": "legacy-1x-charts-ChartCard",
+      "kind": "kept",
+      "from": "basalt-ui/charts#ChartCard",
+      "to": "basalt-ui/charts#ChartCard",
+      "manual": true,
+      "note": "takes phase and figure; no className"
+    },
+    {
+      "id": "legacy-1x-charts-BarSparkline",
+      "kind": "removed",
+      "from": "basalt-ui/charts#BarSparkline",
+      "to": "MiniBars from basalt-ui/charts",
+      "manual": true
+    },
+    {
+      "id": "legacy-1x-charts-Donut",
+      "kind": "removed",
+      "from": "basalt-ui/charts#Donut",
+      "to": "BarList from basalt-ui/cards, max = the total",
+      "manual": true,
+      "note": "a single value is Ring in ui/progress; the four storage slices are a BarList"
+    },
+    {
+      "id": "legacy-1x-charts-TooltipRow",
+      "kind": "removed",
+      "from": "basalt-ui/charts#TooltipRow",
+      "to": "the tooltip.rows data on the chart",
+      "manual": true,
+      "note": "extraRows becomes data, never markup"
+    },
+    {
+      "id": "legacy-1x-charts-VX",
+      "kind": "moved",
+      "from": "basalt-ui/charts#VX",
+      "to": "basalt-ui#VX",
+      "verify": "ast",
+      "manual": false
+    },
+    {
+      "id": "legacy-1x-commands-BasaltOverlays",
+      "kind": "removed",
+      "from": "basalt-ui/commands#BasaltOverlays",
+      "to": "OverlayHost from basalt-ui/page: <OverlayHost overlays={OVERLAYS} />",
+      "manual": true
+    },
+    {
+      "id": "legacy-1x-commands-Command",
+      "kind": "removed",
+      "from": "basalt-ui/commands#Command",
+      "to": "an entry of defineCommands from basalt-ui/shell",
+      "manual": true,
+      "note": "a type: area, enabled and listed are entry fields"
+    },
+    {
+      "id": "legacy-1x-commands-defineCommands",
+      "kind": "moved",
+      "from": "basalt-ui/commands#defineCommands",
+      "to": "basalt-ui/shell#defineCommands",
+      "verify": "ast",
+      "manual": false,
+      "note": "entries gain area, enabled and listed; every nav item lists itself"
+    },
+    {
+      "id": "legacy-1x-commands-defineOverlays",
+      "kind": "moved",
+      "from": "basalt-ui/commands#defineOverlays",
+      "to": "basalt-ui/page#defineOverlays",
+      "verify": "ast",
+      "manual": false
+    },
+    {
+      "id": "legacy-1x-commands-detectMac",
+      "kind": "removed",
+      "from": "basalt-ui/commands#detectMac",
+      "to": "Kbd from basalt-ui/ui/kbd, which renders the chord for the platform",
+      "manual": true,
+      "note": "no 3.0 export"
+    },
+    {
+      "id": "legacy-1x-commands-formatShortcutDisplay",
+      "kind": "removed",
+      "from": "basalt-ui/commands#formatShortcutDisplay",
+      "to": "Kbd from basalt-ui/ui/kbd",
+      "manual": true,
+      "note": "no 3.0 export"
+    },
+    {
+      "id": "legacy-1x-commands-overlays",
+      "kind": "manual",
+      "from": "basalt-ui/commands#overlays",
+      "to": "the overlay opener beside defineOverlays and OverlayHost in basalt-ui/page",
+      "manual": true,
+      "note": "ARCHITECTURE section 3 counts overlays as a census extra; confirm the export when the page surface freezes"
+    },
+    {
+      "id": "legacy-1x-commands-runCommand",
+      "kind": "removed",
+      "from": "basalt-ui/commands#runCommand",
+      "to": "call the handler the defineCommands entry holds, or dispatch its chord",
+      "manual": true,
+      "note": "basalt-ui/shell exports no runner"
+    },
+    {
+      "id": "legacy-1x-commands-ShortcutEntry",
+      "kind": "removed",
+      "from": "basalt-ui/commands#ShortcutEntry",
+      "to": "app code over defineCommands entries and Kbd",
+      "manual": true,
+      "note": "a type"
+    },
+    {
+      "id": "legacy-1x-commands-ShortcutsHelp",
+      "kind": "removed",
+      "from": "basalt-ui/commands#ShortcutsHelp",
+      "to": "an app composite on defineOverlays and Kbd",
+      "manual": true,
+      "note": "dropped (migration-release 3.2 census follow-ups)"
+    },
+    {
+      "id": "legacy-1x-commands-toggleSidebar",
+      "kind": "removed",
+      "from": "basalt-ui/commands#toggleSidebar",
+      "to": "the built-in command shell.toggle-rail",
+      "manual": true
+    },
+    {
+      "id": "legacy-1x-commands-toShortcutList",
+      "kind": "removed",
+      "from": "basalt-ui/commands#toShortcutList",
+      "to": "app code over defineCommands entries and Kbd",
+      "manual": true
+    },
+    {
+      "id": "legacy-1x-controls-FormActions",
+      "kind": "removed",
+      "from": "basalt-ui/controls#FormActions",
+      "to": "FormFooter with actions, from basalt-ui/controls",
+      "manual": true
+    },
+    {
+      "id": "legacy-1x-controls-FormGroup",
+      "kind": "removed",
+      "from": "basalt-ui/controls#FormGroup",
+      "to": "FormField (label, control, error) from basalt-ui/controls",
+      "manual": true
+    },
+    {
+      "id": "legacy-1x-controls-FormRow",
+      "kind": "kept",
+      "from": "basalt-ui/controls#FormRow",
+      "to": "basalt-ui/controls#FormRow",
+      "manual": true,
+      "note": "a row of FormField; rows lay out through the container"
+    },
+    {
+      "id": "legacy-1x-controls-FormSection",
+      "kind": "removed",
+      "from": "basalt-ui/controls#FormSection",
+      "to": "Section from basalt-ui/page",
+      "manual": true
+    },
+    {
+      "id": "legacy-1x-controls-ViewTabs",
+      "kind": "kept",
+      "from": "basalt-ui/controls#ViewTabs",
+      "to": "basalt-ui/controls#ViewTabs",
+      "manual": true,
+      "note": "binds a ControlHandle and takes no value or onChange"
+    },
+    {
+      "id": "legacy-1x-format-money",
+      "kind": "replace",
+      "from": "basalt-ui/format#money",
+      "to": "useFormat() or createFormat() from basalt-ui",
+      "manual": true,
+      "note": "tables use the money column kind"
+    },
+    {
+      "id": "legacy-1x-format-relativeTime",
+      "kind": "replace",
+      "from": "basalt-ui/format#relativeTime",
+      "to": "useFormat() or createFormat() from basalt-ui",
+      "manual": true,
+      "note": "tables use the relativeTime column kind; useNow drives the tick"
+    },
+    {
+      "id": "legacy-1x-forms-fieldKey",
+      "kind": "removed",
+      "from": "basalt-ui/forms#fieldKey",
+      "to": "TanStack Form useForm with FormField from basalt-ui/controls",
+      "manual": true,
+      "note": "forms-field-key dies with it"
+    },
+    {
+      "id": "legacy-1x-forms-FormErrorSummary",
+      "kind": "removed",
+      "from": "basalt-ui/forms#FormErrorSummary",
+      "to": "the form-level error of FormFooter in basalt-ui/controls",
+      "manual": true
+    },
+    {
+      "id": "legacy-1x-forms-FormStateProvider",
+      "kind": "removed",
+      "from": "basalt-ui/forms#FormStateProvider",
+      "to": "a fieldset disabled around FormField and FormRow",
+      "manual": true
+    },
+    {
+      "id": "legacy-1x-forms-inputProps",
+      "kind": "removed",
+      "from": "basalt-ui/forms#inputProps",
+      "to": "TanStack Form useForm with FormField from basalt-ui/controls",
+      "manual": true
+    },
+    {
+      "id": "legacy-1x-forms-useFieldArray",
+      "kind": "removed",
+      "from": "basalt-ui/forms#useFieldArray",
+      "to": "TanStack Form form.Field mode=\"array\", per docs/recipes/field-array.md",
+      "manual": true,
+      "note": "key each row by a stable id in the value"
+    },
+    {
+      "id": "legacy-1x-forms-useFormSubmit",
+      "kind": "removed",
+      "from": "basalt-ui/forms#useFormSubmit",
+      "to": "toSubmitErrors from basalt-ui/controls",
+      "manual": true,
+      "note": "the submitError Alert becomes the FormFooter error"
+    },
+    {
+      "id": "legacy-1x-notifications-notifyError",
+      "kind": "renamed",
+      "from": "basalt-ui/notifications#notifyError",
+      "to": "notify('error', { message, ...opts }) from basalt-ui",
+      "manual": true,
+      "note": "success 2 s and info 3 s become 5 s; an explicit autoClose under 5 s clamps to 5 s (state-persistence-forms)"
+    },
+    {
+      "id": "legacy-1x-notifications-notifyInfo",
+      "kind": "renamed",
+      "from": "basalt-ui/notifications#notifyInfo",
+      "to": "notify('info', { message, ...opts }) from basalt-ui",
+      "manual": true,
+      "note": "success 2 s and info 3 s become 5 s; an explicit autoClose under 5 s clamps to 5 s (state-persistence-forms)"
+    },
+    {
+      "id": "legacy-1x-notifications-notifySuccess",
+      "kind": "renamed",
+      "from": "basalt-ui/notifications#notifySuccess",
+      "to": "notify('success', { message, ...opts }) from basalt-ui",
+      "manual": true,
+      "note": "success 2 s and info 3 s become 5 s; an explicit autoClose under 5 s clamps to 5 s (state-persistence-forms)"
+    },
+    {
+      "id": "legacy-1x-notifications-notifyWarning",
+      "kind": "renamed",
+      "from": "basalt-ui/notifications#notifyWarning",
+      "to": "notify('warning', { message, ...opts }) from basalt-ui",
+      "manual": true,
+      "note": "success 2 s and info 3 s become 5 s; an explicit autoClose under 5 s clamps to 5 s (state-persistence-forms)"
+    },
+    {
+      "id": "legacy-1x-notifications-notifyUndo",
+      "kind": "renamed",
+      "from": "basalt-ui/notifications#notifyUndo",
+      "to": "notify(kind, { message, undo: { revert, windowMs } }) from basalt-ui",
+      "manual": true,
+      "note": "the action applies first and Undo inverts it; shared with the Cmd+Z stack"
+    },
+    {
+      "id": "legacy-1x-query-createBasaltQueryClient",
+      "kind": "renamed",
+      "from": "basalt-ui/query#createBasaltQueryClient",
+      "to": "basalt-ui/data#makeQueryClient",
+      "verify": "ast",
+      "manual": false
+    },
+    {
+      "id": "legacy-1x-router-tanstack-createSearchStore",
+      "kind": "removed",
+      "from": "basalt-ui/router-tanstack#createSearchStore",
+      "to": "defineControls from basalt-ui/router",
+      "manual": true,
+      "note": "by hand: key becomes id and URL persist is removed (controls-url-state)"
+    },
+    {
+      "id": "legacy-1x-router-tanstack-defineNav",
+      "kind": "moved",
+      "from": "basalt-ui/router-tanstack#defineNav",
+      "to": "basalt-ui/router#defineNav",
+      "verify": "ast",
+      "manual": false
+    },
+    {
+      "id": "legacy-1x-router-tanstack-field",
+      "kind": "moved",
+      "from": "basalt-ui/router-tanstack#field",
+      "to": "basalt-ui/router#field",
+      "verify": "ast",
+      "manual": false
+    },
+    {
+      "id": "legacy-1x-router-tanstack-NavAnchor",
+      "kind": "removed",
+      "from": "basalt-ui/router-tanstack#NavAnchor",
+      "to": "a pinned nav item in defineNav, or a plain Link",
+      "manual": true,
+      "note": "settingsMenuItems with Anchor and current:\"page\" becomes a pinned item"
+    },
+    {
+      "id": "legacy-1x-router-tanstack-navGroup",
+      "kind": "removed",
+      "from": "basalt-ui/router-tanstack#navGroup",
+      "to": "plain objects in defineNav",
+      "manual": true,
+      "note": "dropped (shell-nav-router)"
+    },
+    {
+      "id": "legacy-1x-router-tanstack-NavItemId",
+      "kind": "removed",
+      "from": "basalt-ui/router-tanstack#NavItemId",
+      "to": "the item ids inferred from the defineNav declaration",
+      "manual": true,
+      "note": "a type: typed from the declaration"
+    },
+    {
+      "id": "legacy-1x-router-tanstack-navTarget",
+      "kind": "moved",
+      "from": "basalt-ui/router-tanstack#navTarget",
+      "to": "basalt-ui/router#navTarget",
+      "verify": "ast",
+      "manual": false
+    },
+    {
+      "id": "legacy-1x-router-tanstack-useNav",
+      "kind": "removed",
+      "from": "basalt-ui/router-tanstack#useNav",
+      "to": "AppShell nav={NAV} from basalt-ui/shell",
+      "manual": true
+    },
+    {
+      "id": "legacy-1x-tokens-alpha",
+      "kind": "moved",
+      "from": "basalt-ui/tokens#alpha",
+      "to": "basalt-ui#alpha",
+      "verify": "ast",
+      "manual": false
+    },
+    {
+      "id": "legacy-1x-tokens-CONTAINER-KEYS",
+      "kind": "manual",
+      "from": "basalt-ui/tokens#CONTAINER_KEYS",
+      "to": "the container variants @narrow:, @regular: and @wide: (tokens-visual 3.5)",
+      "manual": true,
+      "note": "CONTAINER_KEYS.regular as a computed key becomes the named variant; ARCHITECTURE section 3 lists the symbol as a census extra, so confirm it is dropped"
+    },
+    {
+      "id": "legacy-1x-tokens-VX",
+      "kind": "moved",
+      "from": "basalt-ui/tokens#VX",
+      "to": "basalt-ui#VX",
+      "verify": "ast",
+      "manual": false,
+      "note": "the member names have their own tok-ts rows"
+    },
+    {
+      "id": "legacy-1x-vite-basaltViteConfig",
+      "kind": "replace",
+      "from": "basalt-ui/vite#basaltViteConfig",
+      "to": "basalt() from basalt-ui/vite, which absorbs basaltAppPlugin",
+      "manual": true
+    }
+  ],
+  "tokens": {
+    "renamed": [],
+    "valueShifts": []
+  },
+  "storage": [],
+  "urls": [],
+  "attrs": [],
+  "rules": []
+}
