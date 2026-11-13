@@ -19,8 +19,16 @@
  * Size classes are the Tailwind `md` (840) and `xl` (1200) breakpoints, which are the chrome axis
  * of `SIZE_CLASSES`. Rail and tab bar both render on the server and CSS picks one (decision 7).
  */
-import { createContext, useContext, useEffect, useMemo, useSyncExternalStore } from 'react'
-import type { CSSProperties, ReactElement, ReactNode } from 'react'
+import {
+  createContext,
+  useContext,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+  useSyncExternalStore,
+} from 'react'
+import type { CSSProperties, ReactElement, ReactNode, RefObject } from 'react'
 import { useMediaQuery } from '../../common/use-media-query'
 import { cn } from '../../core/cn'
 import { persisted } from '../../core/persisted'
@@ -160,19 +168,59 @@ export function ShellGrid({
 }
 
 /**
- * The one scrollport and the `<main>` landmark. It takes focus (`tabindex="-1"`) when the skip link
- * jumps to it, and `scroll-restoration` keys on its `data-scroll-restoration-id`. Horizontal
- * overflow scrolls (`auto`, never `hidden`) so a wide child is visible, not clipped.
+ * Whether the element's content overflows it, re-measured when it or one of its children resizes or
+ * a child is added or removed. `false` until measured, so server HTML carries no tab stop.
+ */
+function useScrolls(ref: RefObject<HTMLElement | null>): boolean {
+  const [scrolls, setScrolls] = useState(false)
+  useEffect(() => {
+    const el = ref.current
+    if (el === null) return undefined
+    const measure = (): void =>
+      setScrolls(el.scrollHeight > el.clientHeight + 1 || el.scrollWidth > el.clientWidth + 1)
+    measure()
+    if (typeof ResizeObserver === 'undefined') return undefined
+    const resize = new ResizeObserver(measure)
+    const watch = (): void => {
+      resize.disconnect()
+      resize.observe(el)
+      for (const child of el.children) resize.observe(child)
+    }
+    watch()
+    const mutation = new MutationObserver(() => {
+      watch()
+      measure()
+    })
+    mutation.observe(el, { childList: true })
+    return () => {
+      resize.disconnect()
+      mutation.disconnect()
+    }
+  }, [ref])
+  return scrolls
+}
+
+/**
+ * The one scrollport and the `<main>` landmark. It is always programmatically focusable
+ * (`tabindex="-1"`) so the skip link can jump to it, and joins the tab order (`tabindex="0"`) only
+ * while its content overflows, so a keyboard user can scroll it and a page that fits adds no tab
+ * stop; `scroll-restoration` keys on its `data-scroll-restoration-id`. Horizontal overflow scrolls
+ * (`auto`, never `hidden`) so a wide child is visible, not clipped.
  */
 export function ShellMain({ children }: { children?: ReactNode }): ReactElement {
+  const ref = useRef<HTMLElement>(null)
+  const scrolls = useScrolls(ref)
   return (
     <main
+      ref={ref}
       id={SHELL_MAIN_ID}
-      tabIndex={-1}
+      // oxlint-disable-next-line jsx-a11y/no-noninteractive-tabindex -- a scrolling region must be keyboard reachable (axe scrollable-region-focusable)
+      tabIndex={scrolls ? 0 : -1}
       data-slot="shell-main"
       data-scroll-restoration-id={SHELL_MAIN_ID}
       className={cn(
-        'min-h-0 min-w-0 overflow-auto overscroll-contain outline-none [grid-area:main]',
+        'min-h-0 min-w-0 overflow-auto overscroll-contain [grid-area:main]',
+        scrolls ? 'focus-ring' : 'outline-none',
         // Under a shell the gutter is the shell's: `Page` declares its own default for use without one.
         '[&_[data-slot=page]]:[--page-gutter:var(--shell-gutter)]',
         PRINT_MAIN,

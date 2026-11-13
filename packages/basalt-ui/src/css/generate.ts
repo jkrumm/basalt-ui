@@ -76,7 +76,7 @@ function tailwindCss(): string {
   ] as const
   const utilityCss = utilities.map(([name, lines]) => block(`@utility ${name}`, lines)).join('')
   const focusRing =
-    '@utility focus-ring {\n  &:focus-visible {\n    outline: 2px solid var(--vx-brand);\n    outline-offset: 2px;\n  }\n}\n'
+    '@utility focus-ring {\n  /* Focus scrolls the element flush to its scrollport; the margin keeps the 2px ring + 2px offset in view. */\n  scroll-margin: 4px;\n  &:focus-visible {\n    outline: 2px solid var(--vx-brand);\n    outline-offset: 2px;\n  }\n}\n'
   const link = '@utility link {\n  color: var(--vx-brand);\n  text-underline-offset: 2px;\n}\n'
 
   const surfaceRules = SURFACES.map(

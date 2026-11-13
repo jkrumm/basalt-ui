@@ -113,6 +113,8 @@
   height: var(--vx-icon);
 }
 @utility focus-ring {
+  /* Focus scrolls the element flush to its scrollport; the margin keeps the 2px ring + 2px offset in view. */
+  scroll-margin: 4px;
   &:focus-visible {
     outline: 2px solid var(--vx-brand);
     outline-offset: 2px;
