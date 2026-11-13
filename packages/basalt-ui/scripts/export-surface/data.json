@@ -1,1 +1,9 @@
-["createSyncedState", "liveQuery", "makeQueryClient", "optimistic", "unwrap", "windowKey"]
+[
+  "bindInvalidation",
+  "createSyncedState",
+  "liveQuery",
+  "makeQueryClient",
+  "optimistic",
+  "unwrap",
+  "windowKey"
+]

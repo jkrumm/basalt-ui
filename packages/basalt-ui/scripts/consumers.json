@@ -119,6 +119,7 @@
   "integer": "argo:apps/dashboard/src/features/walking-pad/live-card.tsx",
   "kcal": "argo:apps/dashboard/src/features/walking-pad/live-card.tsx",
   "km": "argo:apps/dashboard/src/features/walking-pad/live-card.tsx",
+  "bindInvalidation": "software-factory:apps/console/src/lib/live.ts",
   "liveQuery": "linewatch:web/src/lib/queries.ts",
   "makeQueryClient": "argo:apps/dashboard/src/lib/router.ts",
   "mdxComponents": "jkrumm.com:src/components/mdx-components.tsx",
