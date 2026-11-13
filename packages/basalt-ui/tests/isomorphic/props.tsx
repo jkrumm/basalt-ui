@@ -27,6 +27,7 @@ import type { ChartSeries } from '../../src/charts'
 import { DateRangePicker } from '../../src/controls-dates'
 import { defineCommands } from '../../src/commands'
 import { memoryHandle } from '../../src/controls/control-view.handles'
+import { Input } from '../../src/ui/input'
 import { spec } from '../../src/controls/spec'
 
 /* ----------------------------------------------------------------- fixtures */
@@ -258,8 +259,13 @@ export const MINIMAL_PROPS: Record<string, Record<string, unknown>> = {
   // The layout primitives each `assertRequiredProps` their label/title (F-ERR-1), so the empty-props
   // render is a throw rather than a smoke test.
   FormSection: { title: 'Billing', children: TEXT },
-  FormRow: { label: 'Email', children: TEXT },
+  FormRow: { children: TEXT },
   FormGroup: { label: 'Notify me about', children: TEXT },
+  FormField: {
+    label: 'Email',
+    control: memoryHandle('iso.field', '', { kind: 'string' }),
+    children: <Input />,
+  },
 
   /* --- content ------------------------------------------------------------- */
   Prose: { children: TEXT },

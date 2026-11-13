@@ -1,0 +1,9 @@
+/*
+ * The `form-field` fixture's Tailwind v4 entry: compiled WITH preflight, the way a Tailwind consumer
+ * renders the form parts. `form-field.layout.test.ts` compiles it into a temp directory; nothing
+ * generated lands in the repo.
+ */
+@import '../../../src/css/tailwind.css' source(none);
+@source './form-field-fixture.tsx';
+@source '../../../src/ui';
+@source '../../../src/controls';

@@ -66,7 +66,6 @@
   "basalt-ui/commands#toggleSidebar",
   "basalt-ui/content#Markdown",
   "basalt-ui/controls#FormGroup",
-  "basalt-ui/controls#FormRow",
   "basalt-ui/controls#MultiSelectFilter",
   "basalt-ui/controls#NumberFilter",
   "basalt-ui/controls#RangeFilter",
