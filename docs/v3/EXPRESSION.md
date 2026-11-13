@@ -33,13 +33,15 @@ Three changes close most of the gap. Cycle 1 measures before any of them is buil
 
 Fixed before anything is measured, as in `docs/v3/spikes/`. The demand side comes from the fleet (`v3-spike-viz-census`, verdict in `docs/v3/spikes/viz-census.md`), the supply side from cycle 1.
 
-| Hypothesis   | Confirmed when                                                                                                                                              | Killed when                                                                                                 |
-| ------------ | ----------------------------------------------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------- |
-| 1, method    | `skill` findings, with the `planned` ones a skill row owns, are half or more of the points lost in round 0, and repair rounds lift the median by 15 or more | Repair rounds lift the median by under 5: the builder knew what to do and could not                         |
-| 2, seam      | Census V1 is CONFIRMED, or three of six builds hand-write an `<svg>`, or the median glue is 80 lines or more                                                | Census V1 is REFUTED and no build that scored 80 hand-wrote geometry                                        |
-| 3, exemplars | Census V2 is `none`                                                                                                                                         | Census V2 names a form: that form is a kind candidate under the Rule of Three, and the rest stays exemplars |
+| Hypothesis   | Confirmed when                                                                                                                                              | Killed when                                                                                                                        |
+| ------------ | ----------------------------------------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------- |
+| 1, method    | `skill` findings, with the `planned` ones a skill row owns, are half or more of the points lost in round 0, and repair rounds lift the median by 15 or more | Repair rounds lift the median by under 5: the builder knew what to do and could not                                                |
+| 2, seam      | Census V1 is CONFIRMED, or three of six builds hand-write an `<svg>`, or the median glue is 80 lines or more                                                | Census V1 is REFUTED and no build that scored 80 hand-wrote geometry                                                               |
+| 3, exemplars | Census V2 names no form without a shipped symbol                                                                                                            | Census V2 names a form with no shipped symbol: that form is a kind candidate under the Rule of Three, and the rest stays exemplars |
 
 A result between the two columns leaves the hypothesis open for the next cycle. The cycle file says which side each number fell on.
+
+Row 3 was reworded on 2026-11-13, after cycle 1 and by owner decision: it used to read "Census V2 is `none`" against "Census V2 names a form", which counted forms that already ship (`BarList`, `Meter`, `Lines`). Cycle 1 keeps its verdict under the old wording; the new wording applies from cycle 2.
 
 ## Doctrine
 
