@@ -6,13 +6,13 @@ Procedure for making a page live. The law is `.claude/rules/basalt-state.md`; ea
 
 Pick the least live class that is true for the data; each rung costs more than the one above.
 
-- `liveQuery(options, 'static')` for data that changes only when the user changes it: staleTime is `Infinity`, so a push or a global refresh still reaches it. [lint:data-primitive]
-- `liveQuery(options, 'standard')` for cross-device data: refetch on focus when older than 30 s. `{ class: 'standard', onFocus: true }` is the same class spelled out. [type:Freshness]
+- `liveQuery(options, 'static')` for data that changes only when the user changes it: staleTime is `Infinity`, so a global refresh or an explicit invalidate still reaches it; a push reaches only `pushed` queries. [lint:data-primitive]
+- `liveQuery(options, 'standard')` for cross-device data: refetch on focus when older than 30 s. `{ class: 'standard', onFocus: true }` is the same class spelled out.
 - `{ class: 'ticker', every }` when the server cannot push: `every` counts from the previous result (a number or `(query) => number | false`), the tick pauses while hidden, offline, mutating (`pauseWhileMutating`) or after a 401/403. `external: true` for a third-party source; `background: true` only for a wall display.
 - `{ class: 'pushed', fallback, safety }` when a channel carries the change: `fallback` polls while the stream is not live, `safety` polls while it is, and it is the only bound on a silent server-side lag.
 - Never write `refetchInterval` or `refetchIntervalInBackground`, on a query or as a spread at the call site; the cadence belongs to the class in the query factory. [lint:data-primitive]
 - Never write a timer that invalidates or refetches; a plain `setInterval` for a clock is fine. [lint:data-primitive]
-- Never write `staleTime: 'static'` inside a `liveQuery` argument: a `'static'` observer makes the query immune to `invalidateQueries`, so a push, a global refresh and a deploy all skip it. [lint:data-primitive]
+- Never write `staleTime: 'static'` inside a `liveQuery` argument: a `'static'` observer makes the query immune to `invalidateQueries`, so a pushed invalidation, a global refresh and a deploy all skip it. [lint:data-primitive]
 
 ## Channel, frames, roots
 

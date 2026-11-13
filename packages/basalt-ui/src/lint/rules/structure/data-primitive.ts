@@ -1,6 +1,6 @@
 /**
- * `basalt/data-primitive` (guardrails section 4, row 12): the eight ways an app re-builds freshness,
- * transport or persistence by hand. Six freshness stacks in argo (25 sites), 38 deprecated Query
+ * `basalt/data-primitive` (guardrails section 4, row 12): the ways an app re-builds freshness,
+ * transport or persistence by hand (eight here, plus the live clause in `data-primitive-live.ts`). Six freshness stacks in argo (25 sites), 38 deprecated Query
  * fetches, an rb 401 loop at ~1000 req/s from a hand poll and linewatch's "0 of 30 expected cycles"
  * are the records. Every form is syntactic: no type information, no import-provenance engine.
  *

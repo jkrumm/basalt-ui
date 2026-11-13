@@ -58,6 +58,9 @@ describe('live-5 references/live.md', () => {
     expect(prohibitions.length).toBeGreaterThanOrEqual(5)
     for (const b of prohibitions) {
       expect(TRAILING.test(b.text), `line ${b.line} has no trailing tag`).toBe(true)
+    }
+    // every tag anywhere above `not guarded:` must resolve, prohibition or not
+    for (const b of all.filter((entry) => entry.guarded)) {
       for (const [, kind, name] of b.text.matchAll(TAGS)) {
         const known = kind === 'lint' ? sources.lintIds : sources.typeNames
         expect(known.has(name!), `line ${b.line}: [${kind}:${name}] does not resolve`).toBe(true)

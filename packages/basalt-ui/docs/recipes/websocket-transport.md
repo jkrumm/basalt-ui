@@ -18,8 +18,6 @@ import type { Transport, Wire } from 'basalt-ui'
 
 type Message = { id?: string; event: string; data: unknown } | { ping: true }
 
-// Receive-only. A browser cannot set headers on a socket: `url` is read on every (re)connect and
-// carries the token. Close code 4401 is the server's "token refused"; the channel never retries it.
 export const webSocketTransport = (url: (cursor?: string) => string): Transport =>
   async function* ({ cursor, signal }) {
     const ws = new WebSocket(url(cursor))
@@ -30,7 +28,13 @@ export const webSocketTransport = (url: (cursor?: string) => string): Transport 
       wake()
     }
     ws.onmessage = ({ data }) => {
-      const m = JSON.parse(String(data)) as Message
+      let m: Message | null = null
+      try {
+        m = JSON.parse(String(data)) as Message
+      } catch {} // not JSON: hand the text on, the channel's schema decides (ok: false)
+      if (typeof m !== 'object' || m === null) {
+        return push({ kind: 'frame', event: 'message', data: String(data) })
+      }
       if ('ping' in m) return push({ kind: 'beat' }) // a ping counts as a byte, never a frame
       push({
         kind: 'frame',
