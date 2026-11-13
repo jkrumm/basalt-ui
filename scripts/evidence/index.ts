@@ -31,6 +31,8 @@ const LANES = [
   'otel',
   'transitions',
   'ssr',
+  'print',
+  'webkit',
 ] as const
 const BUILD_TIMEOUT_MS = 300_000
 const LANE_TIMEOUT_MS = 20 * 60_000
