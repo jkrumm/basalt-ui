@@ -24,6 +24,6 @@ the page's scroll; a write to a `filter` control does not.
 InnerNav<K extends string = string>({ label, state, filter, groups, }: InnerNavProps<K>): ReactElement
   label: string
   state: PushField<K>
-  filter?: ControlsSlot
+  filter?: { readonly kind: "controls-slot"; readonly count: number; r…
   groups: readonly InnerNavGroup[]
 ```

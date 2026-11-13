@@ -35,6 +35,6 @@ StatCard(props: StatCardProps): ReactElement
   sub?: string
   chart?: BoxSlot
   footer?: FootFacts
-  controls?: ControlsSlot
+  controls?: ControlsSlot<"widget">
   menu?: readonly [CardAction, CardAction, ...CardAction[]]
 ```

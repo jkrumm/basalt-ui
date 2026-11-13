@@ -4,8 +4,11 @@
  * lines above each `@ts-expect-error` prove it fails for that reason and not everywhere.
  */
 import { expect, test } from 'bun:test'
+import type { StatCardProps } from '../cards/contract'
+import type { ChartCardProps } from '../charts/contract'
 import { defineControls, field } from '../router'
 import type { FilterSpec } from './contract'
+import { filterSlot } from './filter-slot'
 import { spec } from './spec'
 
 const globals = defineControls({
@@ -39,6 +42,22 @@ export const globalInCard: CardSlot = [globalSpec]
 export const pageInCard: CardSlot = [pageSpec]
 // @ts-expect-error a widget spec is not a page-level spec
 export const widgetInPage: PageSlot = [widgetSpec]
+
+// The scope survives `filterSlot`: the product of widget specs fits a card, the others do not.
+const inStat = (controls: StatCardProps['controls']) => controls
+const inChart = (controls: ChartCardProps['controls']) => controls
+
+export const widgetInStat = inStat(filterSlot([widgetSpec]))
+export const widgetInChart = inChart(filterSlot([widgetSpec]))
+export const customInStat = inStat(filterSlot.custom(globals.field.range, 'Range', () => null))
+// @ts-expect-error a global spec in a filterSlot does not fit a StatCard
+export const globalInStat = inStat(filterSlot([globalSpec]))
+// @ts-expect-error a page spec in a filterSlot does not fit a StatCard
+export const pageInStat = inStat(filterSlot([pageSpec]))
+// @ts-expect-error a mixed filterSlot does not fit a StatCard
+export const mixedInStat = inStat(filterSlot([widgetSpec, globalSpec]))
+// @ts-expect-error a global spec in a filterSlot does not fit a ChartCard
+export const globalInChart = inChart(filterSlot([globalSpec]))
 
 test('a card slot takes widget specs only', () => {
   expect(widgetSpec.scope).toBe('widget')

@@ -16,7 +16,7 @@ import { home as homeMessages } from '../core/messages/home'
 import type { ControlHandle, ControlsSlot } from '../core/ports'
 import { Lozenge } from '../ui/badge'
 import { buttonVariants } from '../ui/button'
-import type { ControlPresentation, FilterSpec } from './contract'
+import type { ControlPresentation, FilterScope, FilterSpec } from './contract'
 import { ControlPresentationContext, ControlView } from './control-view'
 import { describeValue } from './renderers'
 import type { ControlSize } from './renderers'
@@ -150,7 +150,8 @@ function CustomView<T>({
 /**
  * Typed data a composite takes its controls through. Specs render with `ControlView` in the
  * presentation of the home around them; a `row` home with several specs adds `Reset all`. No specs,
- * nothing drawn.
+ * nothing drawn. The slot keeps its specs' scope in its type: a card (`StatCard`, `ChartCard`,
+ * `DataPanel`) takes widget specs only, so a global or page spec in a card slot is a type error.
  *
  * @useWhen you give a composite (`PageBar`, `Section`, a card) its controls
  * @neverWhen the control needs an input the kinds do not draw: use `filterSlot.custom`, which is counted
@@ -158,7 +159,10 @@ function CustomView<T>({
  * @example
  * <PageBar controls={filterSlot([spec(overview.field.q, 'Search')])} />
  */
-export function filterSlot(specs: readonly AnySpec[]): ControlsSlot {
+export function filterSlot<Scope extends FilterScope>(
+  // oxlint-disable-next-line typescript/no-explicit-any -- the concept's `FilterSpec<any>[]`: handles of different `T` share one list
+  specs: readonly FilterSpec<any, Scope>[],
+): ControlsSlot<Scope> {
   return {
     kind: 'controls-slot',
     count: specs.length,
