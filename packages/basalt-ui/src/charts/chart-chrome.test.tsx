@@ -364,6 +364,7 @@ describe('Lines naming', () => {
       rows: (key) => of(key === 'a' ? A : B),
       visible: [A, B],
       highlighted: null,
+      focused: null,
       containerClass: 'regular',
       width: 640,
       height: 300,

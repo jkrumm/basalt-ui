@@ -9,6 +9,7 @@ import { scaleLinear } from '@tanstack/charts/scales/linear'
 import { scalePoint } from '@tanstack/charts/scales/point'
 import { scaleLinear as d3Linear, scaleLog, scaleUtc } from 'd3-scale'
 import type { ChartPositionScaleOptions } from '@tanstack/charts/types/core'
+import { logExtent, logFraction, logHalfStep } from './axis-gaps'
 import type { AxisConfig, ChartSeries, ChartX, XZoneSpec } from './types'
 
 const DEFAULT_AUTO_PAD = 1.1
@@ -156,6 +157,8 @@ export type XScaleModel<X extends ChartX> = {
   /** Continuous scales: the domain as numbers (ms for dates), and the median sample step. */
   extent?: readonly [number, number]
   step: number
+  /** A log x: `extent` is the positive domain and `fraction` is on the log scale. */
+  log?: true
 }
 
 const DAY_MS = 86_400_000
@@ -183,6 +186,8 @@ export function xScaleFor<X extends ChartX>(
   band: boolean | 'flush',
   /** Continuous scales only: the explicit `[min, max]` that replaces the data's own extent. */
   xDomain?: readonly [X, X],
+  /** A numeric continuous x on a log scale (`withLogX` has dropped the rows with x <= 0). */
+  log = false,
 ): XScaleModel<X> {
   const values = distinctX(raw)
   // The kind comes from the data; an empty series has none to read, so the domain stands in.
@@ -228,6 +233,21 @@ export function xScaleFor<X extends ChartX>(
   }
 
   const nums = values.map(toNumber)
+  if (log && kind === 'number') {
+    const [lo, hi] = logExtent(nums, explicitDomain(xDomain))
+    const at = logFraction(lo, hi)
+    return {
+      kind,
+      band: false,
+      scale: scaleLog().domain([lo, hi]),
+      values,
+      halfStep: logHalfStep(nums, lo, hi),
+      extent: [lo, hi],
+      step: 0,
+      log: true,
+      fraction: (x) => at(toNumber(x)),
+    }
+  }
   // A loop, not Math.min(...nums): a spread of a long series overflows the call stack.
   let lo = Infinity
   let hi = -Infinity
