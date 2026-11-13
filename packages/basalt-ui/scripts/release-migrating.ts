@@ -40,6 +40,7 @@ export const AREAS = [
   'cli',
   'lint',
   'agent',
+  'legacy-1x',
 ] as const
 
 export const PROFILES = ['tokens', 'bridge', 'parts', 'app'] as const
@@ -85,7 +86,17 @@ export type Content = {
   attrs: { from: string; to: string }[]
   rules: { old: string; new: string; severity: string }[]
 }
-export type AreaFile = Content & { schema: 1; area: string }
+/**
+ * An area file may pin its own `from` range, `to` version and `profiles` (only `legacy-1x` does: the
+ * 1.x floor). The merge ignores them: the merged file carries the release-wide range.
+ */
+export type AreaFile = Content & {
+  schema: 1
+  area: string
+  from?: string
+  to?: string
+  profiles?: string[]
+}
 export type Merged = Content & {
   schema: 1
   from: string
@@ -167,6 +178,9 @@ export function validateArea(file: string, area: string, value: unknown): AreaFi
   const top = obj(file, '', value, {
     schema: true,
     area: true,
+    from: false,
+    to: false,
+    profiles: false,
     rows: true,
     tokens: true,
     storage: true,
@@ -176,6 +190,14 @@ export function validateArea(file: string, area: string, value: unknown): AreaFi
   })
   if (top.schema !== 1) fail(file, 'schema', 'expected 1')
   if (top.area !== area) fail(file, 'area', `expected '${area}'`)
+  for (const key of ['from', 'to']) if (key in top) str(file, key, top[key], true)
+  if ('profiles' in top) {
+    arr(file, 'profiles', top.profiles).forEach((p, i) => {
+      if (!PROFILES.includes(p as (typeof PROFILES)[number])) {
+        fail(file, `profiles[${i}]`, `expected one of ${PROFILES.join(', ')}`)
+      }
+    })
+  }
 
   each(file, 'rows', top.rows, (row, at) => {
     for (const key of ['id', 'kind', 'from']) str(file, `${at}.${key}`, row[key], true)

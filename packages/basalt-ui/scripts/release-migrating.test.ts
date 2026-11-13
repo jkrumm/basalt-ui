@@ -14,6 +14,7 @@ import {
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { afterAll, describe, expect, test } from 'bun:test'
+import { foldChain, loadMigrationFiles } from '../src/cli/migrate/rows'
 import { serializeShard, shardFile } from './export-surface-shards.mjs'
 
 import {
@@ -118,10 +119,23 @@ const writeArea = (dir: string, area: string, value: unknown) =>
 const ROW: Row = { id: 'gone', kind: 'removed', from: 'basalt-ui#Gone' }
 
 describe('area files', () => {
-  test('15 area files, in order, each valid', () => {
-    expect(AREAS).toHaveLength(15)
+  test('16 area files, in order, each valid', () => {
+    expect(AREAS).toHaveLength(16)
     const areas = loadAreas(REAL_ROOT)
     expect(areas.map((a) => a.area)).toEqual([...AREAS])
+  })
+})
+
+const walked = (from: string) => foldChain(loadMigrationFiles(PKG), from).map((f) => f.source)
+
+describe('legacy-1x floor', () => {
+  test('a 1.x install walks the floor file and reaches 3.0.0', () => {
+    expect(walked('1.40.3')).toContain('areas/legacy-1x.json')
+    expect(walked('1.41.0')).toContain('areas/legacy-1x.json')
+  })
+
+  test('a 2.x install does not', () => {
+    expect(walked('2.29.0')).not.toContain('areas/legacy-1x.json')
   })
 })
 
@@ -154,6 +168,9 @@ describe('--check', () => {
       (v) => ({ ...v, rows: [{ id: 'a', kind: 'renamed', from: '', to: 't' }] }),
     ],
     ['renamed row without to', (v) => ({ ...v, rows: [{ id: 'a', kind: 'renamed', from: 'f' }] })],
+    ['empty file-level from', (v) => ({ ...v, from: '' })],
+    ['non-string file-level to', (v) => ({ ...v, to: 3 })],
+    ['bad file-level profile', (v) => ({ ...v, profiles: ['x'] })],
     ['flag row without to', (v) => ({ ...v, rows: [{ id: 'a', kind: 'flag', from: 'f' }] })],
   ]
   for (const [name, mutate] of mutations) {
@@ -165,6 +182,21 @@ describe('--check', () => {
       expect(r.out).toContain('tokens.json')
     })
   }
+
+  test('a file-level from, to and profiles are accepted and the merge ignores them', () => {
+    const dir = scratch()
+    writeArea(dir, 'legacy-1x', {
+      ...readArea(dir, 'legacy-1x'),
+      from: '>=1.40 <2',
+      to: '3.0.0',
+      profiles: ['app'],
+      rows: [{ id: 'floor', kind: 'removed', from: 'basalt-ui#Gone' }],
+    })
+    expect(run(dir, '--check').code).toBe(0)
+    const merged = mergeAreas(loadAreas(dir), '3.0.0')
+    expect(merged.from).toBe('>=1.40 <3')
+    expect(merged.rows.map((r) => r.id)).toEqual(['floor'])
+  })
 
   test('fails closed: duplicate row id across two files', () => {
     const dir = scratch()
