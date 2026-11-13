@@ -1,0 +1,29 @@
+// oxlint-disable-next-line basalt/viewport-keyed -- the gallery has no shell
+export const PHONE_QUERY = '(max-width: 36em)'
+const dot = {
+  // oxlint-disable-next-line shadcn/no-inline-styles -- decorative difficulty pip, not a card/panel surface
+  borderRadius: '50%',
+  // oxlint-disable-next-line basalt/colour-literal -- neutral dim over unknown pixels
+  scrim: 'rgba(8,9,10,0.62)',
+}
+function A() {
+  return (
+    <div>
+      {/* theme-allow in-body-page-title — detail route */}
+      <h1>x</h1>
+      {/* oxlint-disable-next-line basalt/control-home -- edits one field of this row (the state is panel-local) */}
+      <Select />
+      {/* oxlint-disable-next-line basalt/control-home -- same row */}
+      <Select />
+    </div>
+  )
+}
+// oxlint-disable-next-line basalt/control-home -- the aspect preset is a tool setting, not a filter or tab
+const x = <Select />
+// theme-allow raw-hex
+const bare = '#fff'
+// theme-allow raw-hexx — typo kind
+const typo = '#fff'
+// oxlint-disable-next-line basalt/colour-literal -- both colour literals, one line
+const both = ['#fff', 'rgb(1,2,3)']
+// a docblock mentioning `theme-allow` in prose stays untouched

@@ -1,0 +1,8 @@
+.a {
+  font-family: Inter; /* theme-allow raw-font-family — declares the face, uses nothing */
+  color: #fff; /* theme-allow raw-hex — anti-FOUC fallback */
+}
+@media (max-width: 36em) {
+  /* theme-allow raw-media-query — shell-less page */
+  .b { color: red; }
+}

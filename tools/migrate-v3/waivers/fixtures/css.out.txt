@@ -1,0 +1,10 @@
+.a {
+  /* stylelint-disable-next-line declaration-property-value-disallowed-list -- declares the face, uses nothing */
+  font-family: Inter;
+  /* stylelint-disable-next-line color-no-hex -- anti-FOUC fallback */
+  color: #fff;
+}
+@media (max-width: 36em) {
+  /* stylelint-disable-next-line media-feature-name-disallowed-list -- shell-less page */
+  .b { color: red; }
+}
