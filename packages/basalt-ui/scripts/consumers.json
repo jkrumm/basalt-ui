@@ -121,6 +121,7 @@
   "km": "argo:apps/dashboard/src/features/walking-pad/live-card.tsx",
   "liveQuery": "linewatch:web/src/lib/queries.ts",
   "makeQueryClient": "argo:apps/dashboard/src/lib/router.ts",
+  "mdxComponents": "jkrumm.com:src/components/mdx-components.tsx",
   "money": "image-gateway:app/src/App.tsx",
   "navGroup": "argo:apps/dashboard/src/lib/nav.tsx",
   "navTarget": "argo:apps/dashboard/src/routes/index.tsx",
