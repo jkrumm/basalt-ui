@@ -15,7 +15,7 @@ import {
   Textarea,
   TextInput,
 } from '@mantine/core'
-import { FormGroup, FormRow } from 'basalt-ui/controls'
+import { FormGroup, FormRow } from '../../legacy-form-layout'
 import { fieldKey, inputProps, useBasaltForm } from 'basalt-ui/forms'
 import * as v from 'valibot'
 import { SettingsSection } from 'basalt-ui'
