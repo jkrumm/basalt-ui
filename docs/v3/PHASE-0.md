@@ -1,6 +1,6 @@
 # Basalt UI v3: Phase 0
 
-Date 2026-11-09. What the orchestrator does inline before the first `rd issue`. A lead reads the default branch only and cannot be raised per Issue, so the plan and the landing lane must be on master first. This page authorises no release and files nothing; `docs/v3/issues/index.json` is the Issue list. Revised 2026-11-09 after the owner's decisions ([PLAN-REVISION](PLAN-REVISION.md)): no release items remain here.
+Date 2026-11-09. What the orchestrator does inline before the first `factory issue new`. A lead reads the default branch only and cannot be raised per Issue, so the plan and the landing lane must be on master first. This page authorises no release and files nothing; `docs/v3/issues/index.json` is the Issue list. Revised 2026-11-09 after the owner's decisions ([PLAN-REVISION](PLAN-REVISION.md)): no release items remain here.
 
 ## Steps, in order
 

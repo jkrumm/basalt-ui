@@ -75,7 +75,7 @@ result.
 3. One final artifact of direction: **each library and wiring we choose for each problem** a mature
    enterprise data-dense frontend has, with what we implement, guarantee, teach, and leave open.
 4. A rewrite strategy and implementation plan with model and effort choices, maximum parallelism,
-   structured the way the software factory files Issues (`rd issue`, `--after` dependency chains).
+   structured the way the software factory files Issues (`factory issue new`, `--after` dependency chains).
 
 ## Owner clarifications (2026-11-09, after the discovery digest)
 

@@ -11,7 +11,7 @@ Date 2026-11-09, revised same day ([PLAN-REVISION](PLAN-REVISION.md)). Authorise
 1. [DIRECTION.md](DIRECTION.md): the verdict, the master table of what we implement, guarantee, teach and leave open, section 6 refusals, the DPO table.
 2. [ARCHITECTURE.md](ARCHITECTURE.md): layers, the eight-verb CLI, contract files, peers, falsifiers.
 3. `concepts/*.md`: one per lane; each Issue's `concept` cites the section.
-4. This page, then [PHASE-0.md](PHASE-0.md): what lands before the first `rd issue`.
+4. This page, then [PHASE-0.md](PHASE-0.md): what lands before the first `factory issue new`.
 5. `issues/index.json` and `issues/<group>/<key>.json`: the Issue list and its facts.
 6. [BRIEF.md](BRIEF.md) Owner clarifications when a row looks arguable.
 
