@@ -88,16 +88,14 @@ describe('teaching loop', () => {
     expect(ids(withAppStep)).not.toContain('craft-1/off-scale-inset')
   })
 
-  // flips in: v3-sk-10-shot (the wrapper moves to agent/reviewer/)
-  it.failing('inv 33: the reviewer must read every sheet, and says so with a Read line', () => {
+  it('inv 33: the reviewer must read every sheet, and says so with a Read line', () => {
     const text = read(wrapperFile)
     expect(text).toContain("Read every anchor's `sheet` and every `_page` shot")
     expect(text).toContain('`scaleError` set')
     expect(text).toContain('Read: <sheet file>')
   })
 
-  // flips in: v3-sk-9-reviewer (rubric.md is the tool-neutral rubric the wrapper cites)
-  it.failing('inv 34: the reviewer cites only rubric items that exist', () => {
+  it('inv 34: the reviewer cites only rubric items that exist', () => {
     expect(existsSync(rubricFile)).toBe(true)
     const rubric = read(rubricFile)
     const known: Record<string, number[]> = {
@@ -137,16 +135,12 @@ describe('teaching loop', () => {
     },
   )
 
-  // flips in: v3-sk-9-reviewer (one bar, defined in the rubric)
-  it.failing(
-    'inv 39: one calibrated bar: P0 and P1 fail, a single bar sentence, no second threshold',
-    () => {
-      const text = read(rubricFile)
-      expect(text).toContain('P0 and P1 fail the component; P2 and P3 are noted')
-      expect(text.match(/P0 and P1 fail/g)).toHaveLength(1)
-      expect(text).not.toMatch(/pass(es)? (at|above|with) (a )?score (of )?\d+/i)
-    },
-  )
+  it('inv 39: one calibrated bar: P0 and P1 fail, a single bar sentence, no second threshold', () => {
+    const text = read(rubricFile)
+    expect(text).toContain('P0 and P1 fail the component; P2 and P3 are noted')
+    expect(text.match(/P0 and P1 fail/g)).toHaveLength(1)
+    expect(text).not.toMatch(/pass(es)? (at|above|with) (a )?score (of )?\d+/i)
+  })
 
   // flips in: v3-sk-9-reviewer (the five-defect list moves into the thin skill's references)
   it.failing('inv 40: the pre-round five-defect list names five defects before round 1', () => {

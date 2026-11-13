@@ -783,7 +783,7 @@ export const SKILL_NAMES = [
 
 // ── PROJECTION 1c — AGENT_NAMES ───────────────────────────────────────────────────────────────────
 
-/** The shipped subagents (`agent/agents/<name>.md`), installed at `.claude/agents/`. */
+/** The shipped subagents (`agent/reviewer/<name>.md`), installed at `.claude/agents/`. */
 export const AGENT_NAMES = ['basalt-design-reviewer'] as const
 
 // ── Token-layer-boundary-via-plugin membership ────────────────────────────────────────────────────

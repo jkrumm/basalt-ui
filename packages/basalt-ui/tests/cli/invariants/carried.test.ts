@@ -24,34 +24,30 @@ const RELEASED = new Set<string>([
 const BASALT_VERSION = /(^|[^-~^@\w.])([0-9]+\.\d+\.\d+)(?![\w.])/g
 
 describe('carried guards', () => {
-  // flips in: the reviewer pair (v3-sk-5-rules landed the rules tree; agent/reviewer is still absent)
-  it.failing(
-    'inv x-versions: shipped agent assets name only versions the changelog records',
-    () => {
-      expect(RELEASED.size).toBeGreaterThan(1)
-      for (const dir of ['agent/rules', 'agent/reviewer', 'agent/skills']) {
-        expect(existsSync(join(PKG_ROOT, dir))).toBe(true)
-      }
-      expect(readdirSync(join(PKG_ROOT, 'agent/rules')).toSorted()).toEqual([
-        'basalt-charts.md',
-        'basalt-page.md',
-        'basalt-state.md',
-        'basalt-tokens.md',
-        'basalt-ui.md',
-      ])
-      const phantoms: string[] = []
-      for (const file of filesUnder(join(PKG_ROOT, 'agent'))) {
-        for (const match of read(file).matchAll(BASALT_VERSION)) {
-          const version = match[2] as string
-          const major = Number(version.split('.')[0])
-          if (major >= 1 && major <= 3 && !RELEASED.has(version)) {
-            phantoms.push(`${relative(PKG_ROOT, file)}: ${version}`)
-          }
+  it('inv x-versions: shipped agent assets name only versions the changelog records', () => {
+    expect(RELEASED.size).toBeGreaterThan(1)
+    for (const dir of ['agent/rules', 'agent/reviewer', 'agent/skills']) {
+      expect(existsSync(join(PKG_ROOT, dir))).toBe(true)
+    }
+    expect(readdirSync(join(PKG_ROOT, 'agent/rules')).toSorted()).toEqual([
+      'basalt-charts.md',
+      'basalt-page.md',
+      'basalt-state.md',
+      'basalt-tokens.md',
+      'basalt-ui.md',
+    ])
+    const phantoms: string[] = []
+    for (const file of filesUnder(join(PKG_ROOT, 'agent'))) {
+      for (const match of read(file).matchAll(BASALT_VERSION)) {
+        const version = match[2] as string
+        const major = Number(version.split('.')[0])
+        if (major >= 1 && major <= 3 && !RELEASED.has(version)) {
+          phantoms.push(`${relative(PKG_ROOT, file)}: ${version}`)
         }
       }
-      expect(phantoms).toEqual([])
-    },
-  )
+    }
+    expect(phantoms).toEqual([])
+  })
 
   // flips in: v3-sk-5-rules (snippets move into the thin skill's references)
   it.failing(
