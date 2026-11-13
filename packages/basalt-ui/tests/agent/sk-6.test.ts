@@ -36,11 +36,15 @@ describe('sk-6 thin basalt-design skill', () => {
     for (const name of links) expect(existsSync(join(pkgRoot, 'docs', name))).toBe(true)
   })
 
-  test('only SKILL.md and anti-defaults.md remain; the 2.x references are folded away', () => {
+  test('the 2.x references stay folded away; sk-7 owns the kept set beside anti-defaults.md', () => {
     const rel = files(dir)
       .map((f) => f.slice(dir.length + 1))
-      .sort()
-    expect(rel).toEqual(['SKILL.md', 'references/anti-defaults.md'])
+      .toSorted()
+    expect(rel).toContain('SKILL.md')
+    expect(rel).toContain('references/anti-defaults.md')
+    for (const dropped of ['catalogue', 'encoding-rules', 'recipes', 'stat-tile']) {
+      expect(rel).not.toContain(`references/${dropped}.md`)
+    }
   })
 
   test('no file mentions Mantine, a hex literal, or "never a fill"', () => {
