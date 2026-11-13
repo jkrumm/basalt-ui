@@ -1,9 +1,281 @@
 {
   "schema": 1,
   "area": "controls",
-  "rows": [],
-  "tokens": { "renamed": [], "valueShifts": [] },
-  "storage": [],
+  "rows": [
+    {
+      "id": "ctl-createSearchStore",
+      "kind": "removed",
+      "from": "basalt-ui/state#createSearchStore",
+      "to": "defineControls({ id, scope, fields }) from basalt-ui/router; `key` becomes `id`",
+      "profiles": ["parts", "app"],
+      "codemod": "controls: flags every site in the worklist (reason create-search-store) and, where a field has a URL-field persist mirror, emits the remembered-values recipe stub (reason url-persist); it rewrites nothing",
+      "manual": true,
+      "note": "each field kind keeps its name under `field` from basalt-ui/router; the 2.x default for a URL field was persist, so read each site for the mirror",
+      "verify": "tsc, then migrate --check: no basalt-ui/state import is left"
+    },
+    {
+      "id": "ctl-createLocalStore",
+      "kind": "removed",
+      "from": "basalt-ui/state#createLocalStore",
+      "to": "defineControls({ id, scope, fields }) from basalt-ui/router, where a field has a URL lane",
+      "profiles": ["parts", "app"],
+      "codemod": "controls: flags the site (reason create-local-store); a store with no URL field is the state row st-createLocalStore and is flagged as such",
+      "manual": true,
+      "note": "persisted-only stores go to persisted(key, opts).use(); a store mixing both lanes splits in two",
+      "verify": "tsc, then migrate --check"
+    },
+    {
+      "id": "ctl-field",
+      "kind": "moved",
+      "from": "basalt-ui/state#field",
+      "to": "basalt-ui/router#field",
+      "profiles": ["parts", "app"],
+      "manual": true,
+      "note": "moves with its store: field.* is only written inside createSearchStore or createLocalStore, which are manual rows",
+      "verify": "tsc"
+    },
+    {
+      "id": "ctl-externalField",
+      "kind": "replace",
+      "from": "basalt-ui/state#externalField",
+      "to": "externalField(store, { key, kind, fallback, options }) from basalt-ui",
+      "profiles": ["parts", "app"],
+      "manual": true,
+      "note": "the store is the first argument now (get, set, subscribe, or select and update for a Zustand store); the handle has no lane and clear() writes fallback",
+      "verify": "tsc"
+    },
+    {
+      "id": "ctl-linkSearch",
+      "kind": "removed",
+      "from": "basalt-ui/state#createSearchStore.linkSearch",
+      "to": "the typed Link: a link by reference carries the route's own validator, so a page's default lives once",
+      "profiles": ["app"],
+      "manual": true,
+      "note": "`search: store.linkSearch` by reference is gone; a literal that pins a default stays a router-search finding",
+      "verify": "tsc"
+    },
+    {
+      "id": "ctl-validateSearch",
+      "kind": "replace",
+      "from": "basalt-ui/state#createSearchStore.validateSearch",
+      "to": "controls.extend(schema) on the route that adds its own keys; a wrapper that migrates owned values becomes `aliases` on the field",
+      "profiles": ["app"],
+      "manual": true,
+      "note": "`...store.validateSearch(raw)` spread into a route validator is the pattern to find; invalid values still fall back and never throw",
+      "verify": "tsc, then the route's own search tests"
+    },
+    {
+      "id": "ctl-url-persist",
+      "kind": "removed-prop",
+      "from": "basalt-ui/state#field.persist",
+      "to": "the remembered-values recipe (docs/recipes/remembered-values.md), or nothing",
+      "profiles": ["parts", "app"],
+      "codemod": "controls: flags each URL-field persist site and emits the recipe stub (reason url-persist); a site is never deleted silently",
+      "manual": true,
+      "note": "2.x mirrored every URL field into basalt:<key> and read it as a resolution layer; v3 has no such layer. Without the recipe a sidebar click opens the default window instead of the remembered one, and nothing else changes",
+      "verify": "the four recipe cases pass on the page's store: adopt, deep link wins, write-through, explicit default beats remembered"
+    },
+    {
+      "id": "ctl-FilterSet-children",
+      "kind": "renamed-prop",
+      "from": "basalt-ui/controls#FilterSet.children",
+      "to": "FilterSet specs={[spec(handle, label, { options, clearable, placeholder })]}",
+      "profiles": ["parts", "app"],
+      "codemod": "controls: <FilterSet><SelectFilter field label options clearable placeholder /></FilterSet> becomes specs; a FilterSet with any other child or prop stays and is listed (reasons filterset-child, filter-prop)",
+      "verify": "tsc, then migrate --check"
+    },
+    {
+      "id": "ctl-SelectFilter",
+      "kind": "removed",
+      "from": "basalt-ui/controls#SelectFilter",
+      "to": "spec(handle, label, { options, clearable, placeholder }) in FilterSet specs",
+      "profiles": ["parts", "app"],
+      "codemod": "controls: rewrites the element inside a FilterSet; a standalone filter is listed (reason standalone-filter)",
+      "verify": "tsc, then migrate --check"
+    },
+    {
+      "id": "ctl-MultiSelectFilter",
+      "kind": "removed",
+      "from": "basalt-ui/controls#MultiSelectFilter",
+      "to": "spec(handle, label, { options, clearable, placeholder }) in FilterSet specs",
+      "profiles": ["parts", "app"],
+      "codemod": "controls: rewrites the element inside a FilterSet; a standalone filter is listed (reason standalone-filter)",
+      "verify": "tsc, then migrate --check"
+    },
+    {
+      "id": "ctl-ToggleFilter",
+      "kind": "removed",
+      "from": "basalt-ui/controls#ToggleFilter",
+      "to": "spec(handle, label, { clearable }) in FilterSet specs",
+      "profiles": ["parts", "app"],
+      "codemod": "controls: rewrites the element inside a FilterSet; a standalone filter is listed (reason standalone-filter)",
+      "verify": "tsc, then migrate --check"
+    },
+    {
+      "id": "ctl-SearchFilter",
+      "kind": "removed",
+      "from": "basalt-ui/controls#SearchFilter",
+      "to": "spec(handle, label, { placeholder, clearable }) in FilterSet specs",
+      "profiles": ["parts", "app"],
+      "codemod": "controls: rewrites the element inside a FilterSet; a standalone filter is listed (reason standalone-filter)",
+      "verify": "tsc, then migrate --check"
+    },
+    {
+      "id": "ctl-NumberFilter",
+      "kind": "removed",
+      "from": "basalt-ui/controls#NumberFilter",
+      "to": "spec(handle, label, { placeholder, clearable }) in FilterSet specs",
+      "profiles": ["parts", "app"],
+      "codemod": "controls: rewrites the element inside a FilterSet; min, max and step belong to the field and are listed when set on the element (reason filter-prop)",
+      "verify": "tsc, then migrate --check"
+    },
+    {
+      "id": "ctl-RangeFilter",
+      "kind": "removed",
+      "from": "basalt-ui/controls#RangeFilter",
+      "to": "spec(handle, label, { clearable }) in FilterSet specs",
+      "profiles": ["parts", "app"],
+      "codemod": "controls: rewrites the element inside a FilterSet; a custom panel or any other prop is listed (reason filter-prop)",
+      "verify": "tsc, then migrate --check"
+    },
+    {
+      "id": "ctl-SyncButton",
+      "kind": "renamed",
+      "from": "basalt-ui/controls#SyncButton",
+      "to": "basalt-ui/page#RefreshButton",
+      "profiles": ["parts", "app"],
+      "manual": true,
+      "note": "both forms are named; `scope` global is icon-only; the age comes from the one relative-time formatter",
+      "verify": "tsc"
+    },
+    {
+      "id": "ctl-FormGroup",
+      "kind": "removed",
+      "from": "basalt-ui/controls#FormGroup",
+      "to": "FormField rows inside a fieldset or a Section",
+      "profiles": ["parts", "app"],
+      "manual": true,
+      "note": "FormGroup stays exported until this row ships; its frame is a fieldset with a legend now",
+      "verify": "tsc, then migrate --check"
+    },
+    {
+      "id": "ctl-FormRow",
+      "kind": "merged",
+      "from": "basalt-ui/controls#FormRow",
+      "to": "FormField (label, description, error by construction) and FormRow (the layout row) from basalt-ui/controls",
+      "profiles": ["parts", "app"],
+      "manual": true,
+      "note": "FormRow, PanelRow and SettingsRow merge; the name FormRow now means the layout row only, so a 2.x FormRow with a label becomes a FormField",
+      "verify": "tsc"
+    },
+    {
+      "id": "ctl-FormSection",
+      "kind": "renamed",
+      "from": "basalt-ui/controls#FormSection",
+      "to": "basalt-ui/page#Section",
+      "profiles": ["parts", "app"],
+      "codemod": "controls: renames the import and every tag; title, subtitle, icon and info carry over, anything else is listed (reason form-section-prop)",
+      "note": "Section is a card; a form already inside one takes a fieldset or a plain heading instead",
+      "verify": "tsc, then migrate --check"
+    },
+    {
+      "id": "ctl-FormActions",
+      "kind": "renamed",
+      "from": "basalt-ui/controls#FormActions",
+      "to": "basalt-ui/controls#FormFooter",
+      "profiles": ["parts", "app"],
+      "codemod": "controls: renames the import and every tag, and lists each site (reason form-footer-props): FormFooter takes `form` and `actions` as BarAction data, max five, one primary",
+      "note": "the submit button is the primary action; disabled and aria-busy follow the form's own state, so the FormStateProvider wiring goes",
+      "verify": "tsc, then migrate --check"
+    },
+    {
+      "id": "ctl-FormStateProvider",
+      "kind": "removed",
+      "from": "basalt-ui/forms#FormStateProvider",
+      "to": "<fieldset disabled={form.state.isSubmitting}> or a FormField disabled context",
+      "profiles": ["app"],
+      "manual": true,
+      "note": "the provider and its dead disable wiring are gone; useFormState goes with it",
+      "verify": "tsc, then migrate --check"
+    },
+    {
+      "id": "ctl-useFormSubmit",
+      "kind": "replace",
+      "from": "basalt-ui/forms#useFormSubmit",
+      "to": "toSubmitErrors(save) on the form's onSubmitAsync validator",
+      "profiles": ["app"],
+      "manual": true,
+      "note": "toSubmitErrors maps { fieldErrors } and thrown API errors (through unwrap) to the form's error shape; the submitError Alert becomes the FormFooter's own error region",
+      "verify": "tsc"
+    },
+    {
+      "id": "ctl-useFormDraft",
+      "kind": "renamed",
+      "from": "basalt-ui/forms#useFormDraft",
+      "to": "useFormDraft(form, { key, version, schema, owner }) from basalt-ui/controls",
+      "profiles": ["app"],
+      "manual": true,
+      "note": "the 1.x draft under basalt:form:<key> is read once and written back as basalt:form:<owner>:<key> (storage row); the draft never enters defaultValues",
+      "verify": "tsc"
+    },
+    {
+      "id": "ctl-customPicker",
+      "kind": "removed-prop",
+      "from": "basalt-ui/controls-dates#DateRangePicker.customPicker",
+      "to": "the field's range preset list; a bespoke picker is a ControlHandle plus an app component",
+      "profiles": ["app"],
+      "manual": true,
+      "verify": "tsc"
+    },
+    {
+      "id": "ctl-useBasaltForm",
+      "kind": "removed",
+      "from": "basalt-ui/forms#useBasaltForm",
+      "to": "useForm from TanStack Form, with FormField around each field",
+      "profiles": ["app"],
+      "manual": true,
+      "note": "TanStack Form stays the consumer's dependency; there is no codemod",
+      "verify": "tsc, then migrate --check"
+    },
+    {
+      "id": "ctl-inputProps",
+      "kind": "removed",
+      "from": "basalt-ui/forms#inputProps",
+      "to": "<form.Field name children={(f) => <FormField label field={f}><Input /></FormField>} />",
+      "profiles": ["app"],
+      "manual": true,
+      "verify": "tsc, then migrate --check"
+    },
+    {
+      "id": "ctl-fieldKey",
+      "kind": "removed",
+      "from": "basalt-ui/forms#fieldKey",
+      "to": "the field's own key from TanStack Form; a remount is a key on the form",
+      "profiles": ["app"],
+      "manual": true,
+      "verify": "tsc, then migrate --check"
+    }
+  ],
+  "tokens": {
+    "renamed": [],
+    "valueShifts": []
+  },
+  "storage": [
+    {
+      "key": "basalt:<key> (a URL field's persist mirror)",
+      "action": "read-legacy",
+      "to": "persisted(<key>), once, where the remembered-values recipe is adopted"
+    },
+    {
+      "key": "basalt:<key> (a URL field's persist mirror, no recipe adopted)",
+      "action": "delete"
+    },
+    {
+      "key": "basalt:form:<key> (1.x useFormDraft)",
+      "action": "read-legacy",
+      "to": "basalt:form:<owner>:<key>"
+    }
+  ],
   "urls": [],
   "attrs": [],
   "rules": []
