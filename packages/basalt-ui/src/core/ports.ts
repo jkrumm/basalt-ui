@@ -95,6 +95,12 @@ export type ControlHandle<T> = {
 export type ControlsSlot<Scope extends string = never> = {
   readonly kind: 'controls-slot'
   readonly count: number
+  /**
+   * The slot draws its own compact form (below `md`). The shell header keeps `globalControls` in
+   * the row at every width then; without it the header hides the slot below `md`, as it hides any
+   * row of controls that has no narrow form.
+   */
+  readonly compact?: boolean
   render(): ReactNode
 } & ([Scope] extends [never] ? unknown : { readonly scope?: Scope })
 
