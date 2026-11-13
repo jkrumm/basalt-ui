@@ -99,7 +99,8 @@ export type HeatmapProps<T, K extends string = string> = BasaltProps & {
    * `legend={false}`). Without `getState` they draw and legend nothing.
    */
   states?: readonly HeatmapState<K>[] | undefined
-  /** Band tick and tooltip header labels. Default: the band key. */
+  /** Band tick and tooltip header labels. Default: the band key. A label that is '' hides that tick
+   * (thin the axis by hand); the tooltip header then names the cell by its band key. */
   formatRow?: ((row: string) => string) | undefined
   formatCol?: ((col: string) => string) | undefined
   /** `false` hides the gradient legend; `label` titles it. */
@@ -162,6 +163,34 @@ function valueRows<K extends string>(
   return [{ label, value: formatValue(c.value), ...(pointColor && { color: pointColor }) }]
 }
 
+/**
+ * A hovered cell's tooltip header. A `formatCol` that returns '' for a column (thinning the ticks by
+ * hand) never blanks it: the cell is named whole, by its band key when the label is empty.
+ */
+export function cellHeader(
+  row: string,
+  col: string,
+  formatRow: (row: string) => string,
+  formatCol: (col: string) => string,
+): string {
+  return `${formatRow(row) || row} · ${formatCol(col) || col}`
+}
+
+/**
+ * The box height a Heatmap states or derives from its row count (160–420 px): what its pending
+ * placeholder, inside a `ChartCard`, reserves. `undefined` when the rows are not known up front.
+ */
+export function heatmapHeight(props: {
+  height?: number | ResponsiveChartHeight | undefined
+  rows?: readonly string[] | undefined
+}): number | ResponsiveChartHeight | undefined {
+  if (props.height !== undefined) return props.height
+  return props.rows === undefined ? undefined : heightOfRows(props.rows.length)
+}
+
+const heightOfRows = (count: number): number =>
+  Math.min(Math.max(count * ROW_PITCH + CHROME, HEIGHT_MIN), HEIGHT_MAX)
+
 const fillStyle: CSSProperties = { position: 'relative', height: '100%', minHeight: HEIGHT_MIN }
 
 export function Heatmap<T, K extends string = string>(props: HeatmapProps<T, K>): ReactElement {
@@ -197,8 +226,7 @@ export function Heatmap<T, K extends string = string>(props: HeatmapProps<T, K>)
   const valueLabel = tooltipConfig?.valueLabel ?? 'Value'
   const rows = useMemo(() => props.rows ?? firstSeen(data.map(getRow)), [props.rows, data, getRow])
   const cols = useMemo(() => props.cols ?? firstSeen(data.map(getCol)), [props.cols, data, getCol])
-  const statedHeight =
-    height ?? Math.min(Math.max(rows.length * ROW_PITCH + CHROME, HEIGHT_MIN), HEIGHT_MAX)
+  const statedHeight = height ?? heightOfRows(rows.length)
   const coarse = useCoarsePointer()
   const boxHeight = matchHeight ? 'fill' : statedHeight
 
@@ -253,7 +281,7 @@ export function Heatmap<T, K extends string = string>(props: HeatmapProps<T, K>)
     const scale = scaleQuantize<string>()
       .domain([lo, hi > lo ? hi : lo + 1])
       .range(ramp(color))
-    const header = (c: Cell<T, K>): string => `${formatRow(c.row)} · ${formatCol(c.col)}`
+    const header = (c: Cell<T, K>): string => cellHeader(c.row, c.col, formatRow, formatCol)
     // One builder for every cell mark; `paint` is the fill (flat, or the ramp's `color` channel).
     const cellMark = (id: string, group: Cell<T, K>[], paint: Record<string, unknown>) =>
       cell(group, { id, x: 'col', y: 'row', inset: CELL_INSET, key: 'id', ...paint })
@@ -425,7 +453,7 @@ export function Heatmap<T, K extends string = string>(props: HeatmapProps<T, K>)
           coarse={coarse}
         />
       ) : (
-        <ChartPlaceholder state={state} height={boxHeight} />
+        <ChartPlaceholder state={state} height={boxHeight} ghost="grid" />
       )}
       {showLegend && legendSeries.length > 0 && (
         <ChartLegend

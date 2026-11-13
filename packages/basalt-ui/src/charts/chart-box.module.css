@@ -135,6 +135,22 @@
   background: color-mix(in srgb, var(--vx-ink) 18%, var(--vx-surface-panel));
 }
 
+/* A pending `Heatmap`: a grid of quiet cells over the plot, the loaded chart's own shape. */
+.ghostGrid {
+  box-sizing: border-box;
+  display: grid;
+  grid-template-columns: repeat(12, minmax(0, 1fr));
+  grid-template-rows: repeat(4, minmax(0, 1fr));
+  gap: 2px;
+  width: 100%;
+  height: 100%;
+}
+
+.ghostCell {
+  border-radius: 2px;
+  background: color-mix(in srgb, var(--vx-ink) 12%, var(--vx-surface-panel));
+}
+
 .ghostBar {
   flex: 1 1 0;
   min-width: 0;

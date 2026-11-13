@@ -116,7 +116,8 @@ describe('ChartFact period list (item 3)', () => {
     const { getByText } = render(
       <ChartCard title="T" facts={{ value: '4', unit: 'h', period: ['a', 'b'] }} />,
     )
-    expect(getByText(/a/).textContent).toBe('· a · b')
+    // A no-break space before each dot: a wrapped line never opens with the separator.
+    expect(getByText(/a/).textContent).toBe('· a · b')
   })
   test('an empty list behind a unit renders no period', () => {
     const { container } = render(

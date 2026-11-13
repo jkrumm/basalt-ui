@@ -21,6 +21,7 @@ import { VX } from '../tokens'
 import { ChartCardContext } from './card-context'
 import { CardPendingContext, isFigureBody } from './card-pending-context'
 import { BandStrip } from './parts/band-strip'
+import { Heatmap, heatmapHeight } from './parts/heatmap'
 import { Bars } from './Bars'
 import { CartesianChart } from './CartesianChart'
 import { Lines } from './Lines'
@@ -99,16 +100,22 @@ const bodyClipStyle: CSSProperties = {
 }
 
 const PERIOD_SEPARATOR = '· '
+/** A no-break space: a separator is glued to the item BEFORE it, so a wrapped line never starts with `·`. */
+const NBSP = ' '
+
+/** Every ` · ` in a period reads `item· next` with a no-break space before the dot. */
+const glueSeparators = (text: string): string => text.replaceAll(' · ', `${NBSP}· `)
 
 /**
  * A period list joins with `·`; behind a unit it leads with one too, so a one-item list is
  * separated from the unit as the items are from each other (an item that already leads with it
- * is not doubled). A plain string is written as is.
+ * is not doubled). A plain string is written as is. A line break may fall after a separator, never
+ * before it (the unit carries the leading one, see `Facts`).
  */
 function periodText(period: string | readonly string[], afterUnit: boolean): string {
-  if (typeof period === 'string') return period
+  if (typeof period === 'string') return glueSeparators(period)
   if (period.length === 0) return ''
-  const text = period.join(' · ')
+  const text = glueSeparators(period.join(' · '))
   return afterUnit && !text.startsWith(PERIOD_SEPARATOR.trim()) ? PERIOD_SEPARATOR + text : text
 }
 
@@ -120,16 +127,23 @@ const hasComparison = (node: ReactNode): boolean =>
  * A plain-text comparison with a leading sign ("+0.3", "-4%") reads as a delta: the sign becomes
  * DeltaBadge's direction glyph (▲/▼). Any other node (a `DeltaBadge`, which carries its own) is as is.
  */
-function Comparison({ node }: { node: ReactNode }): ReactNode {
-  if (typeof node !== 'string') return node
+function Comparison({
+  node,
+  text = (n) => n,
+}: {
+  node: ReactNode
+  /** Draws the remainder of a plain-text comparison (the reservation draws it from an attribute). */
+  text?: (node: ReactNode) => ReactNode
+}): ReactNode {
+  if (typeof node !== 'string') return text(node)
   const sign = /^\s*([+\-−])\s*(.+)$/.exec(node)
-  if (sign === null) return node
+  if (sign === null) return text(node)
   return (
     <>
       <span aria-hidden="true" className={classes.factGlyph}>
         {sign[1] === '+' ? '▲' : '▼'}
       </span>
-      {sign[2]}
+      {text(sign[2])}
     </>
   )
 }
@@ -191,11 +205,12 @@ type ChartCardBaseProps = BasaltProps &
      * instead. */
     placeholderHeight?: number | ResponsiveChartHeight | 'content' | undefined
     /** The pending plot's ghost: `'bars'` (default), `'line'` for a line or area chart, or the bar
-     * count when the loaded chart's data length is known, `'band'` for a `BandStrip`. Omitted, a
-     * `Lines` or `StackedArea` body (bare, or inside plain elements) loads as a line, a `BandStrip`
+     * count when the loaded chart's data length is known, `'band'` for a `BandStrip`, `'grid'` for a
+     * `Heatmap`. Omitted, a `Lines` or `StackedArea` body (bare, or inside plain elements) loads as a
+     * line, a `Heatmap` as a grid at its stated `height` (or the one its `rows` give), a `BandStrip`
      * as one band row at its own `height`; a body wrapped in your own component hides
      * its kind from the card, so pass `ghost="line"` there. */
-    ghost?: 'bars' | 'line' | 'band' | number | undefined
+    ghost?: 'bars' | 'line' | 'band' | 'grid' | number | undefined
     /** Placeholder data is showing: the facts row dims with the plot (a strip cell's `stale`). */
     stale?: boolean | undefined
     /** What an errored `state` names: "Could not load {stateNoun}". Default: the card's `title`; with
@@ -261,76 +276,152 @@ const definedOnly = <T extends object>(o: T): { [K in keyof T]?: Exclude<T[K], u
 /** A header renders when one of these is set (a subtitle or delta alone does not). */
 const HEADER_TRIGGERS = ['title', 'info', 'value', 'icon', 'count'] as const
 
-function Facts({
+/** `reserve`: the same layout with none of the `data-basalt-fact*` hooks, for the hidden reservation. */
+const hook = (reserve: boolean, name: string): Record<string, string> =>
+  reserve ? {} : { [name]: '' }
+
+function FactsBody({
   facts,
   basis,
   stale,
+  reserve = false,
 }: {
   facts: ChartFact | readonly ChartFact[]
   basis?: string | undefined
   stale?: boolean | undefined
+  reserve?: boolean
 }): ReactElement {
   const list: readonly ChartFact[] = Array.isArray(facts) ? facts : [facts as ChartFact]
+  // The reservation draws a plain-text part through CSS (`content: attr(data-reserve)`): it takes the
+  // text's width and wraps like it, yet the DOM never holds the figure. A part that is not text
+  // (a node) is laid out as it is.
+  const text = (node: ReactNode): ReactNode =>
+    reserve && (typeof node === 'string' || typeof node === 'number') ? (
+      <span className={classes.reserveText} data-reserve={String(node)} />
+    ) : (
+      node
+    )
   return (
-    <div data-basalt-facts="" className={classes.facts}>
+    <>
       <div
-        data-basalt-facts-row=""
-        {...(stale && { 'data-stale': 'true' })}
+        {...hook(reserve, 'data-basalt-facts-row')}
+        {...(stale && !reserve && { 'data-stale': 'true' })}
         className={classes.factsRow}
       >
         {list.map((f, i) => {
           const period = f.period === undefined ? '' : periodText(f.period, f.unit !== undefined)
+          const comparison = hasComparison(f.comparison)
+          const flow: ReactElement[] = []
+          if (f.value !== null && f.value !== undefined && f.value !== '') {
+            flow.push(
+              <span
+                key="value"
+                {...hook(reserve, 'data-basalt-fact-value')}
+                {...(!comparison && hook(reserve, 'data-basalt-fact-tone'))}
+                className={cx(classes.factValue, !comparison && classes.factTone)}
+              >
+                {text(f.value)}
+              </span>,
+            )
+          }
+          if (f.unit !== undefined) {
+            flow.push(
+              <span key="unit" className={classes.factUnit}>
+                {text(f.unit)}
+              </span>,
+            )
+          }
+          if (comparison) {
+            flow.push(
+              <span
+                key="delta"
+                {...hook(reserve, 'data-basalt-fact-delta')}
+                {...hook(reserve, 'data-basalt-fact-tone')}
+                className={classes.factTone}
+              >
+                <Comparison node={f.comparison} text={text} />
+              </span>,
+            )
+          }
+          // A period that leads with `·` is glued to what precedes it in one run, so a wrapped line
+          // never starts with the separator (a flex item boundary would let it).
+          const glued = period.startsWith('·') ? flow.pop() : undefined
           return (
             <span
               key={i}
-              data-basalt-fact=""
+              {...hook(reserve, 'data-basalt-fact')}
               {...(f.tone !== undefined && { 'data-tone': f.tone })}
               className={classes.fact}
             >
-              {f.value !== null && f.value !== undefined && f.value !== '' && (
-                <span
-                  data-basalt-fact-value=""
-                  {...(!hasComparison(f.comparison) && { 'data-basalt-fact-tone': '' })}
-                  className={cx(
-                    classes.factValue,
-                    !hasComparison(f.comparison) && classes.factTone,
-                  )}
-                >
-                  {f.value}
-                </span>
-              )}
-              {f.unit !== undefined && <span className={classes.factUnit}>{f.unit}</span>}
-              {hasComparison(f.comparison) && (
-                <span
-                  data-basalt-fact-delta=""
-                  data-basalt-fact-tone=""
-                  className={classes.factTone}
-                >
-                  <Comparison node={f.comparison} />
-                </span>
-              )}
-              {period !== '' && <span className={classes.factPeriod}>{period}</span>}
+              {flow}
+              {period !== '' &&
+                (glued === undefined ? (
+                  <span className={classes.factPeriod}>{text(period)}</span>
+                ) : (
+                  <span className={classes.factTail}>
+                    {glued}
+                    <span aria-hidden="true" className={classes.factGlue}>
+                      {text(NBSP)}
+                    </span>
+                    <span className={classes.factPeriod}>{text(period)}</span>
+                  </span>
+                ))}
             </span>
           )
         })}
       </div>
       {basis !== undefined && (
-        <p data-basalt-facts-basis="" className={classes.factsBasis}>
-          {basis}
+        <p {...hook(reserve, 'data-basalt-facts-basis')} className={classes.factsBasis}>
+          {text(basis)}
         </p>
       )}
+    </>
+  )
+}
+
+function Facts(props: {
+  facts: ChartFact | readonly ChartFact[]
+  basis?: string | undefined
+  stale?: boolean | undefined
+}): ReactElement {
+  return (
+    <div data-basalt-facts="" className={classes.facts}>
+      <FactsBody {...props} />
     </div>
   )
 }
 
-/** The facts row of a pending card: bars at the loaded row's height, no figure. */
-function FactsSkeleton({ basis }: { basis: boolean }): ReactElement {
+/**
+ * The facts and basis rows of a card whose body is a placeholder, at the loaded row's height: the
+ * rows laid out hidden (wrapping included, at this width), so a pending, empty or errored card is as
+ * tall as the one at rest. A pending card paints bars over them, never the figure. Nothing here is
+ * announced, focusable or a `data-basalt-fact*` anchor.
+ */
+function FactsReserve({
+  facts,
+  basis,
+  pending,
+}: {
+  facts: ChartFact | readonly ChartFact[]
+  basis?: string | undefined
+  pending: boolean
+}): ReactElement {
   return (
-    <div data-basalt-facts-skeleton="" aria-hidden="true" className={classes.facts}>
-      <div className={classes.factsRow}>
-        <span className={classes.skeletonFigure} />
-      </div>
-      {basis && <p className={cx(classes.factsBasis, classes.skeletonBasis)} />}
+    <div
+      data-basalt-facts-reserve=""
+      aria-hidden="true"
+      inert
+      className={cx(classes.facts, classes.factsReserve)}
+    >
+      <FactsBody facts={facts} basis={basis} reserve />
+      {pending && (
+        <div data-basalt-facts-skeleton="" aria-hidden="true" className={classes.skeletonOverlay}>
+          <div className={classes.factsRow}>
+            <span className={classes.skeletonFigure} />
+          </div>
+          {basis !== undefined && <p className={cx(classes.factsBasis, classes.skeletonBasis)} />}
+        </div>
+      )}
     </div>
   )
 }
@@ -345,7 +436,11 @@ function isChartHeight(value: unknown): value is number | ResponsiveChartHeight 
   )
 }
 
-type BodyKind = { ghost: 'line' | 'band'; height?: number | ResponsiveChartHeight; legend?: true }
+type BodyKind = {
+  ghost: 'line' | 'band' | 'grid'
+  height?: number | ResponsiveChartHeight
+  legend?: true
+}
 
 /**
  * What a pending body draws when `ghost` is not passed: a line for a `Lines` or `StackedArea` body,
@@ -356,6 +451,11 @@ function bodyKindOf(node: ReactNode): BodyKind | undefined {
   for (const child of Children.toArray(node)) {
     if (!isValidElement<{ children?: ReactNode; height?: unknown }>(child)) continue
     if (child.type === Lines || child.type === StackedArea) return { ghost: 'line' }
+    if (child.type === Heatmap) {
+      // The loaded grid's box: its stated `height`, else the one its `rows` give (160-420 px).
+      const height = heatmapHeight(child.props as Parameters<typeof heatmapHeight>[0])
+      return { ghost: 'grid', ...(height !== undefined && { height }) }
+    }
     if (child.type === BandStrip) {
       const { height, states, legend } = child.props as {
         height?: unknown
@@ -381,6 +481,7 @@ const isChartElement = (type: unknown): boolean =>
   type === CartesianChart ||
   type === Lines ||
   type === StackedArea ||
+  type === Heatmap ||
   type === BandStrip
 
 /** What the walk found through plain elements: a figure, and whether any chart is among them. */
@@ -437,7 +538,9 @@ export function ChartCard({
   const resolved = resolveChartState(state)
   // The noun an error names: `stateNoun`, else the card's own title ("Revenue" → "revenue").
   const noun = stateNoun ?? header.title
-  const kind = resolved === 'pending' ? bodyKindOf(children) : undefined
+  // Every placeholder takes the loaded body's box (its stated height, its legend row); only a pending
+  // one draws the ghost.
+  const kind = resolved !== null ? bodyKindOf(children) : undefined
   const plotGhost = ghost ?? kind?.ghost
   // `ghost` changes the shape only: the wrapped strip's height still sizes the pending box.
   // A lone figure body needs no `placeholderHeight`: it ends at its content like `'content'`.
@@ -450,11 +553,12 @@ export function ChartCard({
   // and period in one baseline group), never pushed to the far edge of the title row.
   const headline = facts ?? legacyFact(header)
   const showFacts = headline !== undefined && resolved === null
-  const skeletonFacts = headline !== undefined && resolved === 'pending'
+  // Any placeholder keeps the facts and basis rows' room (hidden), a pending one paints bars on it.
+  const reserveFacts = headline !== undefined && resolved !== null
   const hasHeader =
     actions !== undefined ||
     showFacts ||
-    skeletonFacts ||
+    reserveFacts ||
     HEADER_TRIGGERS.some((k) => header[k] !== undefined)
   // With facts the subtitle is the basis line after them, not WidgetHeader's foldable row.
   // The hero props are drawn by the facts row below, so `WidgetHeader` never sees them.
@@ -489,7 +593,9 @@ export function ChartCard({
               })}
             />
             {showFacts && <Facts facts={headline} basis={subtitle} stale={stale} />}
-            {skeletonFacts && <FactsSkeleton basis={subtitle !== undefined} />}
+            {reserveFacts && (
+              <FactsReserve facts={headline} basis={subtitle} pending={resolved === 'pending'} />
+            )}
           </div>
         )}
         <div

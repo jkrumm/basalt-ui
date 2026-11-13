@@ -11,6 +11,11 @@ declare const classes: {
   readonly factValue: string
   readonly factUnit: string
   readonly factPeriod: string
+  readonly factTail: string
+  readonly factGlue: string
+  readonly factsReserve: string
+  readonly reserveText: string
+  readonly skeletonOverlay: string
   readonly factTone: string
   readonly factGlyph: string
   readonly skeletonFigure: string
