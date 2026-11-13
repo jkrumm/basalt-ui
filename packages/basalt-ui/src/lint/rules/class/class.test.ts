@@ -222,6 +222,16 @@ describe('forms', () => {
     }
   })
 
+  it('is off in vendored files (zone V); app-spacing is also off in ejected and seed files', () => {
+    for (const [id, entry] of Object.entries(CLASS_RULES)) {
+      expect({ id, vendored: entry.zonesOff?.includes('vendored') }).toEqual({
+        id,
+        vendored: true,
+      })
+    }
+    expect(CLASS_RULES['app-spacing'].zonesOff).toEqual(['ejected', 'seed', 'vendored'])
+  })
+
   for (const { id, form } of all) {
     it(`${id}/${form.id}: fixtures exist and the message names its fix token`, () => {
       expect(readFixture(form.fixture)).toContain('// expect: ')
