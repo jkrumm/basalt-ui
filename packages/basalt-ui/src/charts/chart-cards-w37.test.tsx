@@ -116,7 +116,7 @@ describe('ChartFact tone and trailing texts (item 1)', () => {
       />,
     )
     expect(container.querySelector('[data-basalt-fact]')?.textContent).toContain(
-      'last entry 3 d ago · 12 entries · 7 d mean',
+      'last entry 3 d ago · 12 entries · 7 d mean',
     )
   })
   test('a single string period still works', () => {

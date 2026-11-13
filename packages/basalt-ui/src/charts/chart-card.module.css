@@ -43,6 +43,34 @@
   min-width: 0;
 }
 
+/*
+ * A period that leads with `·` shares one run with what precedes it (unit or comparison), joined by a
+ * no-break space, so a wrapped line never opens with the separator: a break may fall after it. The
+ * glue is a period-sized space (the run's own font is the card's).
+ */
+.factGlue {
+  font-size: var(--vx-text-sm);
+}
+
+/* The facts and basis rows of a placeholder body: laid out hidden at the loaded row's height. A
+ * pending card's bars stand over them. */
+.factsReserve {
+  position: relative;
+  visibility: hidden;
+}
+
+/* The hidden rows' text: drawn from an attribute, so it has the text's width and wraps like it while
+ * the DOM holds no figure (a pending, empty or errored card prints no headline). */
+.reserveText::before {
+  content: attr(data-reserve);
+}
+
+.skeletonOverlay {
+  position: absolute;
+  inset: 0;
+  visibility: visible;
+}
+
 .factValue {
   min-width: 0;
   overflow-wrap: anywhere;

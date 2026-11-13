@@ -47,7 +47,10 @@ const GHOST_BARS = [38, 52, 44, 66, 58, 74, 62, 48] as const
  * The shape a pending plot draws: `'bars'` (default), `'line'` for a line or area chart, `'band'`
  * for a `BandStrip` (one row), or a bar count when the loaded chart's data length is known (a 6-month chart loads 6 bars).
  */
-export type PlotGhostShape = 'bars' | 'line' | 'band' | number
+export type PlotGhostShape = 'bars' | 'line' | 'band' | 'grid' | number
+
+/** The pending grid's cells (a `Heatmap`): quiet tiles, not data. */
+const GHOST_GRID = { rows: 4, cols: 12 } as const
 
 /** A mild rise across the width, in a 100 x 40 box stretched to the plot. */
 const GHOST_LINE = '0,30 12,26 25,28 38,18 50,22 62,12 75,16 88,8 100,12'
@@ -66,6 +69,14 @@ function PlotGhost({ shape = 'bars' }: { shape?: PlotGhostShape }): ReactElement
     return (
       <div aria-hidden="true" data-basalt-plot-ghost="band" className={boxClasses.ghost}>
         <span className={boxClasses.ghostBand} />
+      </div>
+    )
+  if (shape === 'grid')
+    return (
+      <div aria-hidden="true" data-basalt-plot-ghost="grid" className={boxClasses.ghostGrid}>
+        {Array.from({ length: GHOST_GRID.rows * GHOST_GRID.cols }, (_, i) => (
+          <span key={i} className={boxClasses.ghostCell} />
+        ))}
       </div>
     )
   const count =

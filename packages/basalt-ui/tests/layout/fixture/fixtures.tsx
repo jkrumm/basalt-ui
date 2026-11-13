@@ -115,6 +115,7 @@ import { W42KindsFixture } from './w42-kinds-fixture'
 import { W52ListsFixture } from './w52-lists-fixture'
 import { W42StatesFixture } from './w42-states-fixture'
 import { W43SubtitleFixture } from './w43-subtitle-fixture'
+import { K1KitFixture } from './k1-kit-fixture'
 import { W52ChartsFixture } from './w52-charts-fixture'
 import { W42ResponsiveFixture } from './w42-responsive-fixture'
 import { W43LinesFixture } from './w43-lines-fixture'
@@ -3135,6 +3136,7 @@ export function ShellFixture({ spec }: { spec: FixtureSpec }): ReactElement {
       {spec.w52Lists && <W52ListsFixture mode={spec.w52Lists} />}
       {spec.w42States && <W42StatesFixture {...spec.w42States} />}
       {spec.w43Subtitle && <W43SubtitleFixture />}
+      {spec.k1Kit && <K1KitFixture />}
       {spec.w52Charts && <W52ChartsFixture />}
       {spec.w42Responsive && <W42ResponsiveFixture spec={spec.w42Responsive} />}
       {spec.w38Readout2 && <W38Readout2Fixture />}

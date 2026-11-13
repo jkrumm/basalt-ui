@@ -12,6 +12,8 @@ declare const classes: {
   readonly ghost: string
   readonly ghostLine: string
   readonly ghostBand: string
+  readonly ghostGrid: string
+  readonly ghostCell: string
   readonly ghostBar: string
   readonly emptyTile: string
   readonly emptyCopy: string
