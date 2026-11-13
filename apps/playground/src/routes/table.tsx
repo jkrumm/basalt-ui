@@ -1,4 +1,5 @@
 import { createFileRoute } from '@tanstack/react-router'
+import { ScrollArea } from 'basalt-ui/ui/scroll-area'
 import {
   Table,
   TableBody,
@@ -237,7 +238,7 @@ function OrdersTable({ size }: { size: 'md' | 'compact' }) {
 }
 // #endregion dense-table
 
-/** The scroll container: a long table scrolls inside it, its head sticks, a phone scrolls sideways. */
+/** The scroll container (focusable only while it scrolls): a long table scrolls inside it, its head sticks, a phone scrolls sideways. */
 function Frame({
   title,
   note,
@@ -253,12 +254,14 @@ function Frame({
         <h2 className="text-md font-semibold text-foreground">{title}</h2>
         <p className="text-xs text-muted-foreground">{note}</p>
       </div>
-      <div
+      <ScrollArea
+        orientation="both"
+        aria-label={title}
         data-surface="card"
-        className="max-h-[70dvh] overflow-auto rounded-card bg-card shadow-card"
+        className="max-h-[70dvh] rounded-card bg-card shadow-card"
       >
         {children}
-      </div>
+      </ScrollArea>
     </section>
   )
 }
