@@ -44,6 +44,24 @@ export const AREAS = [
 
 export const PROFILES = ['tokens', 'bridge', 'parts', 'app'] as const
 export const FROM_RANGE = '>=1.40 <3'
+/** The row kinds. A kind outside this list is a typo, not a new class: add it here with its meaning. */
+export const KINDS = [
+  'codemod',
+  'flag',
+  'kept',
+  'manual',
+  'map',
+  'merged',
+  'moved',
+  'removed',
+  'removed-prop',
+  'renamed',
+  'renamed-prop',
+  'replace',
+  'required-prop',
+] as const
+/** Kinds that may omit `to`: a removal, or a manual row whose note carries the decision. */
+const TO_OPTIONAL = new Set<string>(['removed', 'removed-prop', 'manual'])
 
 export type Row = {
   id: string
@@ -161,6 +179,14 @@ export function validateArea(file: string, area: string, value: unknown): AreaFi
 
   each(file, 'rows', top.rows, (row, at) => {
     for (const key of ['id', 'kind', 'from']) str(file, `${at}.${key}`, row[key], true)
+    if (!KINDS.includes(row.kind as (typeof KINDS)[number])) {
+      fail(
+        file,
+        `${at}.kind`,
+        `unknown kind '${String(row.kind)}', expected one of ${KINDS.join(', ')}`,
+      )
+    }
+    if (!TO_OPTIONAL.has(row.kind as string)) str(file, `${at}.to`, row.to, true)
     for (const key of ['to', 'codemod', 'verify', 'note']) optStr(file, at, row, key)
     if ('manual' in row && typeof row.manual !== 'boolean') {
       fail(file, `${at}.manual`, 'expected a boolean')

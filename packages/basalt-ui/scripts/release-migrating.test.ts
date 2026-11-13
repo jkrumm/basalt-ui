@@ -138,9 +138,23 @@ describe('--check', () => {
     ['wrong schema', (v) => ({ ...v, schema: 2 })],
     ['extra key', (v) => ({ ...v, extra: 1 })],
     ['wrong area', (v) => ({ ...v, area: 'ui' })],
-    ['non-string from', (v) => ({ ...v, rows: [{ id: 'a', kind: 'k', from: 3 }] })],
-    ['unknown row key', (v) => ({ ...v, rows: [{ id: 'a', kind: 'k', from: 'f', bogus: 1 }] })],
-    ['bad profile', (v) => ({ ...v, rows: [{ id: 'a', kind: 'k', from: 'f', profiles: ['x'] }] })],
+    ['non-string from', (v) => ({ ...v, rows: [{ id: 'a', kind: 'removed', from: 3 }] })],
+    [
+      'unknown row key',
+      (v) => ({ ...v, rows: [{ id: 'a', kind: 'removed', from: 'f', bogus: 1 }] }),
+    ],
+    [
+      'bad profile',
+      (v) => ({ ...v, rows: [{ id: 'a', kind: 'removed', from: 'f', profiles: ['x'] }] }),
+    ],
+    ['unknown kind', (v) => ({ ...v, rows: [{ id: 'a', kind: 'k', from: 'f', to: 't' }] })],
+    ['row without from', (v) => ({ ...v, rows: [{ id: 'a', kind: 'renamed', to: 't' }] })],
+    [
+      'row with an empty from',
+      (v) => ({ ...v, rows: [{ id: 'a', kind: 'renamed', from: '', to: 't' }] }),
+    ],
+    ['renamed row without to', (v) => ({ ...v, rows: [{ id: 'a', kind: 'renamed', from: 'f' }] })],
+    ['flag row without to', (v) => ({ ...v, rows: [{ id: 'a', kind: 'flag', from: 'f' }] })],
   ]
   for (const [name, mutate] of mutations) {
     test(`fails closed: ${name}`, () => {
@@ -155,7 +169,10 @@ describe('--check', () => {
   test('fails closed: duplicate row id across two files', () => {
     const dir = scratch()
     for (const area of ['tokens', 'ui']) {
-      writeArea(dir, area, { ...readArea(dir, area), rows: [{ id: 'dup', kind: 'k', from: 'f' }] })
+      writeArea(dir, area, {
+        ...readArea(dir, area),
+        rows: [{ id: 'dup', kind: 'removed', from: 'f' }],
+      })
     }
     const r = run(dir, '--check')
     expect(r.code).not.toBe(0)
@@ -300,7 +317,7 @@ describe('MIGRATING.md', () => {
   test('merging concatenates in AREAS order', () => {
     const areas = AREAS.map((area, i) => ({
       ...seed(area),
-      rows: [{ id: `r${i}`, kind: 'k', from: `f${i}` }],
+      rows: [{ id: `r${i}`, kind: 'removed', from: `f${i}` }],
     }))
     expect(mergeAreas(areas, '3.0.0').rows.map((r) => r.id)).toEqual(AREAS.map((_, i) => `r${i}`))
   })
@@ -339,7 +356,7 @@ describe('no-conflict claim', () => {
   test('two branches editing different area files merge cleanly', () => {
     const dir = scratch()
     const edit = (area: string, id: string) =>
-      writeArea(dir, area, { ...readArea(dir, area), rows: [{ id, kind: 'k', from: id }] })
+      writeArea(dir, area, { ...readArea(dir, area), rows: [{ id, kind: 'removed', from: id }] })
     const commit = (msg: string) => {
       sh(dir, 'git', 'add', '-A')
       sh(dir, 'git', 'commit', '-q', '-m', msg)
