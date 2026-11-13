@@ -23,4 +23,4 @@ Shots live outside git in the main checkout on the dev host: `.claude/shots/tuff
 | c13  | diverging-bars       |
 | c14  | eval-race            |
 
-The `n` cases have no reference. Their reviewer scores the rubric alone, and their verdict is left empty.
+The `n` cases have no reference; cycle 1 added n12 (from argo's sleep breakdown) and n13 (from argo's recurring charges) without one. Their reviewer scores the rubric alone, and their verdict is left empty.

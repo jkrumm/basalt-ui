@@ -1,0 +1,26 @@
+{
+  "why": "Expression cycle 1 (docs/v3/cycles/expression-1.md) logged P3 findings of class `primitive` that need no new export: the kit's own state surfaces and text layout cost points in builds that used them as documented. ChartCard's pending, empty and error bodies do not keep the loaded height (c01 rest 471 px, loading 448, empty and error 386; c04, c06 and n05 the same at 390 px); ChartCard's pending ghost is bars even under a Heatmap (c02); ChartCard drops the facts and subtitle rows in empty and error so builders reserve header height by hand (c01 r1, n05 r1); a ChartFact period wraps with a leading '·' at 390 px (c01 r0, c02 r1, n05 r1); Heatmap tick thinning drops the hour a builder needs and formatCol also writes the tooltip header (c02); StatStripCell tone inks the value only, with no dot and word (c03); Meter draws a 4 px track with no on-segment labels and no over-limit reading (c03, c06). Each serves two or more cases.",
+  "what": "Fixes inside existing components: ChartCard state bodies and facts layout, Heatmap ticks, StatStripCell tone, Meter track and captions. No new export, no contract.ts change.",
+  "owns": [
+    "packages/basalt-ui/src/charts/ChartCard*, packages/basalt-ui/src/charts/parts/** (state bodies, facts, heatmap ticks)",
+    "packages/basalt-ui/src/dashboard/{stat-strip,meter}* (excluding focus, which v3-expr-1-seam owns)",
+    "their tests and layout tests"
+  ],
+  "must_not_touch": [
+    "packages/basalt-ui/src/charts/contract.ts",
+    "docs/v3/ARCHITECTURE.md",
+    "docs/v3/expression/**",
+    "apps/playground/src/scenarios/expr/** (the trial builds stay as their builders left them)"
+  ],
+  "change": "(1) ChartCard pending, empty and error keep the loaded body and header height at every container class, including the facts and subtitle rows, and the pending ghost follows the chart inside (grid for Heatmap). (2) A ChartFact period never starts a wrapped line with its separator. (3) Heatmap thinning keeps the tooltip header whole and lets a caller name ticks that must survive thinning, if that fits the existing props; otherwise file a signal for the seam row. (4) StatStripCell tone renders a dot and word like StatCard. (5) Meter takes a track height from the size scale, shows a label on a segment that fits, and draws a reading past max as over-limit instead of clipping. Each fix gets a layout test at 1800 and 390 px.",
+  "commits": "fix: commits per component.",
+  "proof": "make check; layout tests comparing state and loaded heights.",
+  "acceptance": [
+    "A layout test shows ChartCard pending, empty and error at the loaded height at 1800 and 390 px",
+    "A ChartFact with a period at 390 px has no line that starts with '·' (test)",
+    "StatStripCell with a tone renders a dot and word (test)",
+    "Meter renders an over-limit reading and an on-segment label (test)",
+    "make check passes"
+  ],
+  "out_of_scope": "Focus, readout, measuring or label placement (v3-expr-1-seam); tabular numerals in Meter captions (a rubric-versus-skill conflict logged in the cycle file, for the owner); any new export."
+}

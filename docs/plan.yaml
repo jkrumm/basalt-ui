@@ -1428,6 +1428,9 @@ rows:
         v3-rel-7-skeleton,
         v3-contract-amendment-late,
         v3-cycle-expression-1,
+        v3-expr-1-doctrine,
+        v3-expr-1-seam,
+        v3-expr-1-kit-fixes,
       ]
     facts: { 'brief': 'docs/v3/issues/g4/v3-freeze-g4.json' }
   - key: v3-teardown-views
@@ -1559,3 +1562,32 @@ rows:
     kind: chore
     seat: { tier: opus, effort: high }
     facts: { 'brief': 'docs/v3/issues/spikes/v3-spike-viz-census.json' }
+  - key: v3-expr-1-doctrine
+    title: 'Expression doctrine: what primitive-bypass denies, and form from the question (Spec)'
+    repo: basalt-ui
+    kind: docs
+    seat: { tier: opus, effort: high }
+    checkpoint: spec
+    after: [v3-cycle-expression-1]
+    facts: { 'brief': 'docs/v3/issues/cycles/v3-expr-1-doctrine.json' }
+  - key: v3-expr-1-seam
+    title: 'Geometry seam: focus and readout, label fit, axis gaps for hand-drawn marks (Spec)'
+    repo: basalt-ui
+    kind: feature
+    seat: { tier: opus, effort: high }
+    checkpoint: spec
+    after: [v3-expr-1-doctrine]
+    facts: { 'brief': 'docs/v3/issues/cycles/v3-expr-1-seam.json' }
+  - key: v3-expr-1-kit-fixes
+    title: 'Chart state heights, fact wrapping, Heatmap ticks, strip verdict and Meter track fixes from expression cycle 1'
+    repo: basalt-ui
+    kind: bug
+    after: [v3-cycle-expression-1]
+    facts: { 'brief': 'docs/v3/issues/cycles/v3-expr-1-kit-fixes.json' }
+  - key: v3-cycle-expression-2
+    title: 'Improvement cycle 2: expression, six one-shot visualization trials scored against references'
+    repo: basalt-ui
+    kind: chore
+    seat: { tier: opus, effort: high }
+    after: [v3-expr-1-seam, v3-expr-1-kit-fixes, v3-sk-7-references]
+    facts: { 'brief': 'docs/v3/issues/cycles/v3-cycle-expression-2.json' }

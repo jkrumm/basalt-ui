@@ -1,0 +1,28 @@
+{
+  "why": "Expression cycle 1 (docs/v3/cycles/expression-1.md) lost focus-and-readout points (F7, and K3 on Meter builds) in all six round-0 builds: ten of its sixteen P2 findings are of class `primitive`. The v3 ChartPlot (src/charts/contract.ts) hands marks no active datum, so no mark can dim the rest; Meter has no pointer, key or tab handling (dist/dashboard/meter-parts.js); PlotContext.highlighted follows the legend only. When repair rounds asked for the devices, every builder wrote the seam itself: c01 ~165 lines (pixel ticks, dim, cursor-bound readout), c03 ~100 (band, dim-after-cursor, readout), c04 ~100 (vertical rules, nearest-bar match from chartCursor), c06 212 (a hand HTML meter with roving focus), n05 ~300 (canvas text measure, 8-spot label placement, log-x by hand, a hand SVG key). Census V3 names the same helpers recurring in the fleet (scale, ticks, packing, measure-width, label-fit). Hypothesis 2 of docs/v3/EXPRESSION.md is confirmed; this is its build row, and it changes the frozen charts contract, so it gates v3-freeze-g4.",
+  "what": "A one-page Spec, then the geometry seam the Spec settles: rung 4 of the bending ladder (headless core plus an app composite). No new chart kind.",
+  "owns": [
+    "packages/basalt-ui/src/charts/** (the seam module and its tests)",
+    "packages/basalt-ui/src/charts/contract.ts (only the amendment the Spec names)",
+    "packages/basalt-ui/src/dashboard/meter* (focus and readout only)",
+    "packages/basalt-ui/llms.txt and the charts skill snippet for the new symbols",
+    "apps/playground/src/demo/** (a gallery fixture per new symbol)"
+  ],
+  "must_not_touch": [
+    "docs/v3/ARCHITECTURE.md (v3-expr-1-doctrine)",
+    "docs/v3/expression/**",
+    "packages/basalt-ui/agent/skills/basalt-design/** (v3-sk-6, v3-sk-7)",
+    "apps/playground/src/scenarios/expr/** (the cycle-1 trial builds stay as their builders left them, EXPRESSION.md § The loop)"
+  ],
+  "change": "Write and submit a Spec (checkpoint spec) before any code, built on the doctrine row's verdict. It names the public symbols and their home subpath for, at most: (1) one focus-and-readout primitive: one tab stop, arrow keys over the marks, a focused datum the marks can read to dim the rest, a readout a card's facts can bind to and that returns to the total on leave, announced politely; usable by CartesianChart marks, Heatmap cells and Meter segments; (2) label fit: measured text width that is identical on server and client, and a collision pass that places or drops direct labels; (3) axis and legend gaps that cycle 1 hit: an x-reference mark on band and numeric x (c04), an axis title (c01, c03, c04, n05), a log x scale (n05), a dot-shaped legend swatch (n05); (4) an annotation mark on a Heatmap cell (c02). For each, the Spec states the default, what changing it later costs, and whether it is a ./charts export or lives on a sub-path (the ./charts ceiling of v3-freeze-g4 is ten symbols; say how the seam fits it). Then build it, with tests and one gallery fixture per symbol. For every `// cycle-expression-1:` workaround in apps/playground/src/scenarios/expr that the seam covers, the PR names the symbol that replaces it; the trial files themselves are not edited.",
+  "commits": "feat: commits per symbol; the scenario migration in its own commit.",
+  "proof": "The Spec and its verdict; make check; the PR table mapping each covered `cycle-expression-1:` workaround to its replacing symbol.",
+  "acceptance": [
+    "A Spec naming every new export and every contract.ts change is submitted before code, with its verdict or 24-hour default recorded",
+    "A CartesianChart, a Heatmap and a Meter can each dim the rest on pointer and on arrow keys and drive one bound readout, shown by a test per host",
+    "Label width is the same in a server render and a client render (test)",
+    "The PR maps every `cycle-expression-1:` workaround the seam covers to the symbol that replaces it, and leaves the trial files unchanged",
+    "make check passes"
+  ],
+  "out_of_scope": "A scatter, histogram, SLO or bar-with-reference kind (each served one case: a recipe at most); the doctrine text; ChartCard state heights (v3-expr-1-kit-fixes)."
+}
