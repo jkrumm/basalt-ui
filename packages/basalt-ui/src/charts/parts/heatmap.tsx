@@ -20,6 +20,7 @@ import type { CSSProperties, ReactElement } from 'react'
 import type { BasaltProps } from '../../common/props'
 import { alpha, VX } from '../../tokens'
 import { resolveContainerClass } from '../../tokens/size-classes'
+import type { ContainerClass } from '../../tokens/size-classes'
 import { engineRow, strideTicks } from '../core/compile'
 import type { CartesianDefinition } from '../core/compile'
 import { GLYPH_MIN_PX, glyphOf, resolveNamedState } from './band-fold'
@@ -105,6 +106,9 @@ export type HeatmapProps<T, K extends string = string> = BasaltProps & {
    * (thin the axis by hand); the tooltip header then names the cell by its band key. */
   formatRow?: ((row: string) => string) | undefined
   formatCol?: ((col: string) => string) | undefined
+  /** Column keys whose x tick must survive the kit's thinning (an onset hour). A stride tick that
+   * would crowd one is dropped; a key not in `cols` is ignored. Memoize it. */
+  tickCols?: readonly string[] | undefined
   /** `false` hides the gradient legend; `label` titles it. */
   legend?: false | { label?: string | undefined } | undefined
   /** Rows after the value row, per cell (a sample count, a failure reason). Called with the datum. */
@@ -174,6 +178,30 @@ function valueRows<K extends string>(
   if (named) return [{ label, value: named.label, color: fillOf(named) }]
   if (c.value === null) return [{ label, value: 'No data' }]
   return [{ label, value: formatValue(c.value), ...(pointColor && { color: pointColor }) }]
+}
+
+/**
+ * The x tick columns: the class's stride ticks, plus every `named` column (one not in `cols` is
+ * ignored). A stride tick closer than half a stride to a named one is dropped, so a named tick
+ * never collides with its neighbour's label; the result keeps `cols` order.
+ */
+export function colTicks(
+  cols: readonly string[],
+  named: readonly string[] | undefined,
+  cls: ContainerClass,
+): string[] {
+  const stride = strideTicks(cols, cls)
+  const pinned = new Set(named?.filter((c) => cols.includes(c)))
+  if (pinned.size === 0) return stride
+  const gap = stride.length > 1 ? cols.indexOf(stride[1] as string) : cols.length
+  const pinnedAt = [...pinned].map((c) => cols.indexOf(c))
+  const kept = stride.filter((c) => {
+    if (pinned.has(c)) return true
+    const at = cols.indexOf(c)
+    return pinnedAt.every((p) => Math.abs(at - p) * 2 >= gap)
+  })
+  const wanted = new Set([...kept, ...pinned])
+  return cols.filter((c) => wanted.has(c))
 }
 
 /**
@@ -276,6 +304,7 @@ export function Heatmap<T, K extends string = string>(props: HeatmapProps<T, K>)
     states = noStates,
     formatRow = identityLabel,
     formatCol = identityLabel,
+    tickCols,
     legend,
     tooltip,
     height,
@@ -498,7 +527,7 @@ export function Heatmap<T, K extends string = string>(props: HeatmapProps<T, K>)
               axis: {
                 line: AXIS_LINE,
                 ticks: {
-                  values: strideTicks(cols, cls),
+                  values: colTicks(cols, tickCols, cls),
                   format: (v) => formatCol(String(v)),
                   ...ticks,
                 },
@@ -549,6 +578,7 @@ export function Heatmap<T, K extends string = string>(props: HeatmapProps<T, K>)
     valueLabel,
     formatRow,
     formatCol,
+    tickCols,
     legendLabel,
     showLegend,
     showTooltip,
