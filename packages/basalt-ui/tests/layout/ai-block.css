@@ -1,0 +1,10 @@
+/*
+ * The `ai-block` fixture's Tailwind v4 entry: compiled WITH preflight, like a Tailwind consumer. The
+ * layout test compiles it into a temp directory; nothing generated lands in the repo.
+ */
+@import '../../src/css/tailwind.css' source(none);
+@source './ai-block-fixture.tsx';
+@source '../../src/ai';
+@source '../../src/cards';
+@source '../../src/ui';
+@source '../../src/core';
