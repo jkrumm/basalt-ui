@@ -1,4 +1,4 @@
-// Fixture: primitive-bypass/intl-format. The form is off in the table; the test enables it.
+// Fixture: primitive-bypass/intl-format. On in the table.
 // @invalid
 const f = new Intl.DateTimeFormat('de-DE', { dateStyle: 'short' })
 // @invalid
@@ -19,3 +19,5 @@ const f = new Intl.PluralRules('en')
 const s = format.number(n)
 // @valid
 const s = list.toString()
+// @valid
+const s = useFormat().time(d, { hour: '2-digit' })

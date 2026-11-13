@@ -1,8 +1,8 @@
 /**
  * `primitive-bypass` (guardrails section 4, row 9): hand-rolled markup where a primitive exists.
  * Six of ten repos hand-roll tables, the console ships 10 raw controls and 20 headings, and five
- * of seven apps pin a locale. Nine forms; the `Intl` form is built but off until `Format` gains
- * time and an options bag (S9), and a test proves it fires when enabled.
+ * of seven apps pin a locale. Nine forms, all on; the `Intl` form points at `useFormat`, which
+ * now carries `time` and an options bag.
  *
  * Ejected and seed files define the primitives, so the preset switches the rule off there.
  */
@@ -308,7 +308,7 @@ const intlFormat: AstForm = {
   ...form(
     'intl-format',
     'Use useFormat in components and createFormat in .ts modules',
-    'A reasoned waiver where Format has no time or option yet',
+    'A reasoned waiver where Format has no matching option',
     ({ report }) => {
       const resolved = new WeakSet<Node>()
       return {
@@ -334,8 +334,6 @@ const intlFormat: AstForm = {
       }
     },
   ),
-  enabled: false,
-  reason: 'off until src/core/format.ts exports time and an options bag (S9); then enable the form',
 }
 
 export const PRIMITIVE_BYPASS: RuleEntry = {
