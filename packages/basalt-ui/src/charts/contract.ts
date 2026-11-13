@@ -13,6 +13,7 @@ import type {
   QueryStateLike,
   Status,
 } from '../core/ports'
+import type { KeyboardEvent, PointerEvent, ReactElement } from 'react'
 
 // ---- Frame types the sketch files under ports (absent from ports.ts) ----------------------
 
@@ -84,8 +85,55 @@ export type LegendEntry = {
   key: string
   label: string
   color: SeriesColor
-  swatch?: 'solid' | 'dashed'
+  /** `dot` is a filled dot, `ring` a hollow one; a `mark: 'dot'` series legends as `dot`. */
+  swatch?: 'solid' | 'dashed' | 'dot' | 'ring'
   failed?: boolean
+}
+
+// ---- Focus and readout (the geometry seam) -------------------------------------------------
+
+/** What a hand-drawn container spreads to be the visualization's one tab stop. */
+export type ChartFocusTarget = {
+  tabIndex: 0
+  role: 'group'
+  'aria-roledescription': string
+  onKeyDown: (event: KeyboardEvent<Element>) => void
+  onBlur: () => void
+  onPointerLeave: (event: PointerEvent<Element>) => void
+}
+
+/** What a hand-drawn mark spreads: pointing focuses its datum; the data attributes style it. */
+export type ChartFocusItem = {
+  'data-focused'?: ''
+  'data-dimmed'?: ''
+  onPointerEnter: () => void
+  onPointerDown: () => void
+}
+
+export type ChartFocusOptions<D> = {
+  /** The polite announcement for a focused datum: the readout as a sentence. */
+  announce: (d: D) => string
+  /** Items per row: arrows then move in a grid (Up and Down by a row). Default: one row. */
+  columns?: number
+}
+
+/**
+ * One focused datum shared by the marks that dim the rest, the readout a card fact binds to, and
+ * the polite live region. Made by `useChartFocus`; passed to a host as `focus`.
+ */
+export type ChartFocus<D> = {
+  readonly items: readonly D[]
+  readonly index: number | null
+  readonly datum: D | null
+  readonly set: (index: number | null) => void
+  /** `rest` while nothing is focused (the total), else `read(datum)`. */
+  readonly readout: <R>(rest: R, read: (d: D) => R) => R
+  /** True for every item but the focused one while one is focused. */
+  readonly dimmed: (d: D) => boolean
+  readonly target: ChartFocusTarget
+  readonly item: (index: number) => ChartFocusItem
+  /** The polite live region; a host renders it, a hand-drawn container renders it once. */
+  readonly live: ReactElement
 }
 
 // ---- CartesianChart -----------------------------------------------------------------------
@@ -95,6 +143,10 @@ export type XConfig<D> = {
   value: (d: D) => number | Date | string
   format?: (x: number | Date | string) => string
   domain?: readonly [number | Date, number | Date]
+  /** The axis name with its unit, drawn under the ticks. */
+  title?: string
+  /** `log` is a numeric x on decades; a non-positive row is not drawn. Default `linear`. */
+  scale?: 'linear' | 'log'
 }
 
 export type YConfig = {
@@ -103,6 +155,8 @@ export type YConfig = {
     | { floor?: number; ceil?: number; pad?: number }
     | ((v: Extent) => Extent)
   gutter?: number
+  /** The axis name with its unit, drawn above the ticks. */
+  title?: string
 }
 
 // minimal; concept elides it
@@ -116,12 +170,14 @@ export type ChartZone = { from: number; to: number; fill: string; axis?: 'left' 
 
 // minimal; concept elides it
 export type ChartRefLine = {
-  value: number
   color: SeriesColor
   dashed?: boolean
   label?: string
-  axis?: 'left' | 'right'
-}
+} & (
+  | { value: number; axis?: 'left' | 'right' }
+  /** A vertical rule at an x: a band key, a number or a Date. */
+  | { value: number | Date | string; axis: 'x' }
+)
 
 // minimal; concept elides it
 export type ChartSelection<D> = { selected: D | null; onSelect: (d: D | null) => void }
@@ -132,6 +188,8 @@ export type ChartPlot<D> = {
   rows: (key: string) => readonly D[]
   visible: readonly Series<D>[]
   plotHeight: number
+  /** The datum the chart's `focus` holds; `null` without one. Dim the rest against it. */
+  focused: D | null
 }
 
 // minimal; concept elides it. `CartesianChart.custom` is the only way to build it; `lint --stats` counts it.
@@ -156,6 +214,8 @@ export type CartesianChartProps<D> = {
   cursor?: string
   selection?: ChartSelection<D>
   marks?: CustomMarks<D>
+  /** Pointer and arrow keys focus a datum of `focus.items`; the rest dims, the readout follows. */
+  focus?: ChartFocus<D>
 }
 
 // ---- Sparkline and MiniBars ---------------------------------------------------------------
