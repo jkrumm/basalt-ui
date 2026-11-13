@@ -436,7 +436,7 @@ export const TOKENS: readonly TokenDef[] = [
     value: scalar('cubic-bezier(0.4, 0, 0.2, 1)'),
     tw: ['--ease-standard'],
   },
-  { name: 'measure', family: 'rhythm', role: '`.vx-prose` line length', value: scalar('68ch') },
+  { name: 'measure', family: 'rhythm', role: '`.vx-prose` line length', value: scalar('72ch') },
   { name: 'rhythm-1', family: 'rhythm', role: 'Tight block gap', value: scalar('0.75em') },
   { name: 'rhythm-2', family: 'rhythm', role: 'Block gap', value: scalar('1.25em') },
   { name: 'rhythm-3', family: 'rhythm', role: 'Section gap', value: scalar('2em') },
