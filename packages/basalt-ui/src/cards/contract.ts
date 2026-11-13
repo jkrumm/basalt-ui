@@ -57,7 +57,7 @@ export type StatCardProps = CardTarget &
     /** Called only in `ready` and `stale`, in a fixed 72 px clipping box (plot 56 + label row 16). */
     chart?: BoxSlot
     footer?: FootFacts
-    controls?: ControlsSlot
+    controls?: ControlsSlot<'widget'>
     menu?: readonly [MenuAction, MenuAction, ...MenuAction[]]
   }
 
@@ -87,8 +87,8 @@ export type StatCellProps = CardTarget &
 
 export type DataPanelProps = FrameHead &
   FrameState & {
-    controls?: ControlsSlot
-    toolbar?: ControlsSlot
+    controls?: ControlsSlot<'widget'>
+    toolbar?: ControlsSlot<'widget'>
     menu?: BoxSlot
     legend?: readonly LegendEntry[]
     /** Required: the loading card draws its final shape. */

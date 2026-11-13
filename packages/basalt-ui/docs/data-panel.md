@@ -25,8 +25,8 @@ DataPanel(props: DataPanelProps): ReactElement
   info?: string
   phase?: Phase | QueryStateLike
   empty?: Empty | null
-  controls?: ControlsSlot
-  toolbar?: ControlsSlot
+  controls?: ControlsSlot<"widget">
+  toolbar?: ControlsSlot<"widget">
   menu?: BoxSlot
   legend?: readonly LegendEntry[]
   skeleton: { rows: number; } | { height: number; }

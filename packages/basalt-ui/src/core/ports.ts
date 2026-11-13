@@ -87,13 +87,16 @@ export type ControlHandle<T> = {
 
 /**
  * Opaque product of `filterSlot(specs)` from `./controls`. Composites render it and never read
- * the specs; `count` lets a dev assertion cap inline controls without opening it.
+ * the specs; `count` lets a dev assertion cap inline controls without opening it. `Scope` is a
+ * type-only brand `filterSlot` sets from its specs, so a card slot (`ControlsSlot<'widget'>`)
+ * rejects a slot built from a global or page spec; an unbranded slot (`filterSlot.custom`,
+ * `globalControls`) fits anywhere.
  */
-export type ControlsSlot = {
+export type ControlsSlot<Scope extends string = never> = {
   readonly kind: 'controls-slot'
   readonly count: number
   render(): ReactNode
-}
+} & ([Scope] extends [never] ? unknown : { readonly scope?: Scope })
 
 export type FieldLike<T> = {
   state: { value: T; meta: { errors: unknown[] } }

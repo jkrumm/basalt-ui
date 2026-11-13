@@ -21,7 +21,7 @@ AppShell<Id extends string = string>({ nav, brand, badges, blocks, globalControl
   brand: ShellBrand
   badges?: Partial<Record<Id, NavBadge>>
   blocks?: readonly SidebarBlock[]
-  globalControls?: ControlsSlot
+  globalControls?: { readonly kind: "controls-slot"; readonly count: number; r…
   globalActions?: readonly GlobalAction[]
   settings?: SettingsConfig
   account?: Account

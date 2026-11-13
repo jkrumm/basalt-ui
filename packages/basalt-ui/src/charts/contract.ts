@@ -191,7 +191,7 @@ export type ChartFigure = {
 export type ChartCardProps = FrameState & {
   figure?: ChartFigure
   footer?: FootFacts
-  controls?: ControlsSlot
+  controls?: ControlsSlot<'widget'>
   menu?: BoxSlot
   height?: 'auto' | 'short' | 'fill'
 } & (
