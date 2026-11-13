@@ -1,0 +1,25 @@
+import { FormFooter, FormRow } from 'basalt-ui/controls'
+import { FormStateProvider, fieldKey, inputProps, useFormSubmit } from 'basalt-ui/forms'
+import { Section } from 'basalt-ui/page'
+import { Stack } from '@mantine/core'
+
+export function ServerSection({ form, submit }: { form: unknown; submit: () => void }) {
+  return (
+    <Section title="Server" subtitle="Where photos sync to.">
+      <FormStateProvider>
+        <Stack>
+          <FormRow label="URL" />
+          <FormFooter actions={[{ key: 'save', label: 'Save', onClick: submit }]} />
+        </Stack>
+      </FormStateProvider>
+    </Section>
+  )
+}
+
+export function Bare() {
+  return (
+    <Section>
+      <p>one</p>
+    </Section>
+  )
+}

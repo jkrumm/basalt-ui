@@ -1,0 +1,33 @@
+import { FilterSet, SelectFilter, ViewTabs } from 'basalt-ui/controls'
+import { Icon } from './icon'
+import { store } from './store'
+
+export function Left() {
+  return (
+    <FilterSet>
+      <SelectFilter field={store.field.a} label="A" icon={<Icon />} />
+      <SelectFilter field={store.field.b} label="B" />
+    </FilterSet>
+  )
+}
+
+export function Right({ show }: { show: boolean }) {
+  return (
+    <FilterSet>
+      <SelectFilter field={store.field.a} label="A" />
+      {show && <SelectFilter field={store.field.b} label="B" />}
+    </FilterSet>
+  )
+}
+
+export function Unlabelled() {
+  return (
+    <FilterSet>
+      <SelectFilter field={store.field.a} />
+    </FilterSet>
+  )
+}
+
+export function Alone() {
+  return <SelectFilter field={store.field.a} label="A" />
+}

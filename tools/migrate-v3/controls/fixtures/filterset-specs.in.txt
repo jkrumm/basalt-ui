@@ -1,0 +1,13 @@
+import { FilterSet, MultiSelectFilter, SearchFilter, SelectFilter, ToggleFilter } from 'basalt-ui/controls'
+import { garminStore, usageStore } from '../lib/window-stores'
+
+export function Toolbar({ regions }: { regions: { value: string; label: string }[] }) {
+  return (
+    <FilterSet>
+      <SelectFilter field={garminStore.field.window} label="Window" clearable />
+      <MultiSelectFilter field={usageStore.field.payer} label="Payer" options={regions} placeholder="All payers" />
+      <ToggleFilter field={usageStore.field.errors} label="Errors only" />
+      <SearchFilter field={usageStore.field.q} label={"Search"} placeholder="Name or id" />
+    </FilterSet>
+  )
+}
