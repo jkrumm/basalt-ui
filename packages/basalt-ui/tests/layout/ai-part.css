@@ -1,0 +1,13 @@
+/*
+ * The `ai-part` fixtures' Tailwind v4 entry: compiled WITH preflight, like a Tailwind consumer, plus
+ * the `.vx-prose` sheet. The layout tests compile it into a temp directory; nothing generated lands
+ * in the repo.
+ */
+@import '../../src/css/tailwind.css' source(none);
+@import '../../src/css/prose.css';
+@source './ai-part-kit.tsx';
+@source '../../src/ai';
+@source '../../src/content';
+@source '../../src/ui/collapsible.tsx';
+@source '../../src/ui/status.tsx';
+@source '../../src/ui/button.tsx';

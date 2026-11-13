@@ -138,6 +138,8 @@ export const SUBPATH_REQUIRED_PEERS: Readonly<Record<string, readonly string[]>>
   './controls-dates': ['@mantine/dates', 'dayjs'],
   // `CodeBlock` renders `ui/button`, which wraps Base UI; `./page` (above) takes the same peer for `ui/alert`, `ui/popover`, `ui/dialog` and `ui/sheet`.
   './content': ['react-markdown', 'remark-gfm', 'rehype-sanitize', 'remend', '@base-ui/react'],
+  // `partView` renders `Markdown`, so it needs the same four peers, and `ui/collapsible` and `ui/status` wrap Base UI.
+  './ai': ['react-markdown', 'remark-gfm', 'rehype-sanitize', 'remend', '@base-ui/react'],
   './vite': ['vite'],
   [CHART_SUBPATH]: ['@tanstack/charts', 'd3-scale'],
 }

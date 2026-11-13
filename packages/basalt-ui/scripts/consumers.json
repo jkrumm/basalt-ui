@@ -129,6 +129,7 @@
   "overlays": "argo:apps/dashboard/src/lib/commands.tsx",
   "p": "argo:apps/dashboard/src/lib/series.ts",
   "parseAgentPart": "argo:apps/dashboard/src/features/hermes-chat/threads-store.ts",
+  "partView": "software-factory:apps/console/src/components/artifact-content.tsx",
   "percent": "argo:apps/dashboard/src/features/astro-window/formulas.ts",
   "notify": "argo:apps/dashboard/src/routes/reading.tsx",
   "persisted": "argo:apps/dashboard/src/lib/window-stores.ts",
