@@ -6,7 +6,7 @@
     "packages/basalt-ui/test/fixtures/vite/**",
     "packages/basalt-ui/docs/vite.md"
   ],
-  "shared_append_only": ["packages/basalt-ui/scripts/export-surface.json"],
+  "shared_append_only": ["packages/basalt-ui/scripts/export-surface/vite.json"],
   "must_not_touch": [
     "packages/basalt-ui/src/{ui,tokens,css,lint,page,shell,cards,charts,controls,table,content,ai,router,data,core}/**",
     "packages/basalt-ui/agent/**",

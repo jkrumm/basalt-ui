@@ -7,18 +7,20 @@
   ],
   "shared_append_only": [
     "packages/basalt-ui/src/table/index.ts",
-    "packages/basalt-ui/scripts/export-surface.json"
+    "packages/basalt-ui/scripts/export-surface/table.json",
+    "packages/basalt-ui/scripts/check-budgets/areas/surface.ts",
+    "packages/basalt-ui/scripts/consumers.json"
   ],
   "must_not_touch": [
     "packages/basalt-ui/src/{ui,controls,charts,cards,page,shell,content,ai,router,data,tokens,css,lint}/** (ui read-only), packages/basalt-ui/agent/**",
     "packages/basalt-ui/src/table/contract*, src/table/invariants/** except core-model*, src/table/core/{state,codec,filters,selection,keyboard}*, src/table/parts/**",
-    "CHANGELOG.md, MIGRATING.md, llms.txt, scripts/check-budgets/**, other areas' migrations files",
+    "CHANGELOG.md, MIGRATING.md, llms.txt, scripts/check-budgets/** except areas/surface.ts, other areas' migrations files",
     "every contract.ts and src/core/ports.ts"
   ],
   "concept": "data-table#12 T1",
   "contract": "Frozen: ARCHITECTURE.md, this domain's contract.ts, src/core/ports.ts. Need a change: factory signal, take the reversible default. Read concepts/data-table.md sections 1, 3 to 6, 8, 9; edge table -> controls only; no composite .d.ts names ui/* (VirtualLike). Kinds table in section 5 and the card plan paragraph. Engine @tanstack/react-table tilde 9.3.1 through createTableHook.",
   "exemplar": "Flip I15, I16, I19 in src/table/invariants/core-model* (t0); donors (stay): 2.x src/table/table-features.ts, table-align.type-guard.test.ts.",
-  "change": "features: one closed 10-feature set at module scope (columnFiltering, globalFiltering, columnFaceting, rowSorting, rowPagination, rowSelection, columnVisibility, columnPinning, columnGrouping, rowExpanding) via createTableHook, per-function filterFn and sortFn imports, stable object identity, acyclic module graph. kinds: col<T>() with entity, text, number, money, date, relativeTime, status, delta, meter, boolean, spark, select, actions and counted custom (must declare sortValue, card, priority); alignment, numerals, width, sort, filter, card slot, priority derived per kind; absent renders a muted dash; branded KindColumn so a raw column fails types; c.codec takes ids and kinds only. plan (pure, total): every visible column lands in exactly one slot (title, subtitle, badge, value, meta, edit, detail, hidden), at most one each of title, subtitle, badge, value, 2 edit, 6 meta, priority demotion by declaration order, data-full-at from 800, 1000, 1200, 1440, 1800. Rule: none new. Tests: plan totality, kinds, features identity, byte measurement.",
+  "change": "features: one closed 10-feature set at module scope (columnFiltering, globalFiltering, columnFaceting, rowSorting, rowPagination, rowSelection, columnVisibility, columnPinning, columnGrouping, rowExpanding) via createTableHook, per-function filterFn and sortFn imports, stable object identity, acyclic module graph. kinds: col<T>() with entity, text, number, money, date, relativeTime, status, delta, meter, boolean, spark, select, actions and counted custom (must declare sortValue, card, priority); alignment, numerals, width, sort, filter, card slot, priority derived per kind; absent renders a muted dash; branded KindColumn so a raw column fails types; c.codec takes ids and kinds only. plan (pure, total): every visible column lands in exactly one slot (title, subtitle, badge, value, meta, edit, detail, hidden), at most one each of title, subtitle, badge, value, 2 edit, 6 meta, priority demotion by declaration order, data-full-at from 800, 1000, 1200, 1440, 1800. Rule: none new. Tests: plan totality, kinds, features identity, byte measurement. A new public value symbol also lands, in this Issue, its raise in scripts/check-budgets/areas/surface.ts (the ceiling +1 and a `raises` row with from, to, consumer and repo) and its name in scripts/consumers.json (`<symbol>: <repo>:<path>`); make check refuses the symbol without them. The shard is scripts/export-surface/table.json, written by `export-surface.mjs --update`.",
   "commits": "One PR, separate package and non-package commits (isolated-basalt-ui); conventional, empty scope, no attribution.",
   "proof": "bun test over src/table/core; gz of the engine fixture (10 features) recorded in the PR (S5 input).",
   "acceptance": [

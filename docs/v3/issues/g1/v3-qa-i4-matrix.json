@@ -8,19 +8,21 @@
   ],
   "shared_append_only": [
     "packages/basalt-ui/src/testing/index.ts",
-    "packages/basalt-ui/scripts/export-surface.json",
-    "Makefile"
+    "packages/basalt-ui/scripts/export-surface/testing.json",
+    "Makefile",
+    "packages/basalt-ui/scripts/check-budgets/areas/surface.ts",
+    "packages/basalt-ui/scripts/consumers.json"
   ],
   "must_not_touch": [
     "packages/basalt-ui/src/{ui,page,shell,cards,charts,controls,table,content,ai,router,data,tokens,css,lint}/**, src/core/messages/<area>.ts, src/testing/{settled,dom-shims,slots,render-app,fake-channel}*, tests/quality/{ssr,print,webkit,perf}/**",
-    "CHANGELOG.md, MIGRATING.md, llms.txt, scripts/check-budgets/**, other areas' migrations files",
+    "CHANGELOG.md, MIGRATING.md, llms.txt, scripts/check-budgets/** except areas/surface.ts, other areas' migrations files",
     "every contract.ts and src/core/ports.ts",
     "package.json and bun.lock (v3-deps-w2 / v3-deps-ai added your pins)"
   ],
   "concept": "quality-contract#12 I4",
   "contract": "Frozen: ARCHITECTURE.md, this domain's contract.ts, src/core/ports.ts. Need a change: factory signal, take the reversible default. Read concepts/quality-contract.md sections 4 to 7, 10, 12 (and 8 for carried invariants). Read Contract Exception 1: quality joins ./testing, @axe-core/playwright 4.14.x is an optional peer loaded by dynamic import; every function takes a structural PageLike.",
   "exemplar": "2.x tests/layout/harness.ts (Bun.build plus real Chrome) and the carried hit-floor and hit-overlap tests.",
-  "change": "Matrix over the playground route list (read the routes dir at run time) x {1800x1200, 390x844} x {light, dark}, one 390 dark pseudo-locale cell per route (pseudoMessages, internal, written here in matrix/pseudo-messages.ts over qa-i2's BasaltMessages: accented, +40 percent), assertions: axe (wcag2a to 22aa under reducedMotion, wait until getAnimations is empty, incomplete counted with a ceiling), overlay-open axe per overlay composite, document overflow at 320, 390, 768, 1440, 1800, focus ring (solid, 3:1), focus not obscured, forced colours, text spacing, fit on worst-case seeded props, reduced motion; the carried hit tests run on the same routes. quality exports setScheme, axe, overflow, ringWalk, focusNotObscured, textSpacing. Sampled run in make check (1800 light en and 390 dark pseudo), full in make evidence. Each assertion has a seeded offender that must fail it; one without is deleted. Rule: none. Skill: generated docs/quality.md with the consumer route-list example. Tests: the matrix and its offenders.",
+  "change": "Matrix over the playground route list (read the routes dir at run time) x {1800x1200, 390x844} x {light, dark}, one 390 dark pseudo-locale cell per route (pseudoMessages, internal, written here in matrix/pseudo-messages.ts over qa-i2's BasaltMessages: accented, +40 percent), assertions: axe (wcag2a to 22aa under reducedMotion, wait until getAnimations is empty, incomplete counted with a ceiling), overlay-open axe per overlay composite, document overflow at 320, 390, 768, 1440, 1800, focus ring (solid, 3:1), focus not obscured, forced colours, text spacing, fit on worst-case seeded props, reduced motion; the carried hit tests run on the same routes. quality exports setScheme, axe, overflow, ringWalk, focusNotObscured, textSpacing. Sampled run in make check (1800 light en and 390 dark pseudo), full in make evidence. Each assertion has a seeded offender that must fail it; one without is deleted. Rule: none. Skill: generated docs/quality.md with the consumer route-list example. Tests: the matrix and its offenders. A new public value symbol also lands, in this Issue, its raise in scripts/check-budgets/areas/surface.ts (the ceiling +1 and a `raises` row with from, to, consumer and repo) and its name in scripts/consumers.json (`<symbol>: <repo>:<path>`); make check refuses the symbol without them. The shard is scripts/export-surface/testing.json, written by `export-surface.mjs --update`.",
   "commits": "One PR; package and non-package commits separate (isolated-basalt-ui). Conventional, empty scope, no feat!:, no attribution. make check generates files; shared registry lines are additive (rebase, regenerate). Makefile line: non-package commit.",
   "proof": "make check runs the sampled matrix; make evidence the full one.",
   "acceptance": [

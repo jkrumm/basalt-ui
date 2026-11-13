@@ -4,23 +4,25 @@
   "owns": [
     "packages/basalt-ui/src/core/{format*,provider-props*,messages/**}",
     "packages/basalt-ui/scripts/check-literals*",
-    "packages/basalt-ui/docs/use-format.md"
+    "packages/basalt-ui/docs/{create-format,use-format}.md"
   ],
   "shared_append_only": [
     "packages/basalt-ui/src/index.ts",
-    "packages/basalt-ui/scripts/export-surface.json",
-    "package.json"
+    "packages/basalt-ui/scripts/export-surface/index.json",
+    "package.json",
+    "packages/basalt-ui/scripts/check-budgets/areas/surface.ts",
+    "packages/basalt-ui/scripts/consumers.json"
   ],
   "must_not_touch": [
     "packages/basalt-ui/src/{ui,page,shell,cards,charts,controls,table,content,ai,router,data,tokens,css,lint,testing}/**",
     "packages/basalt-ui/src/core/provider.* and src/core/provider/** (spike-provider's)",
-    "CHANGELOG.md, MIGRATING.md, llms.txt, scripts/check-budgets/**, other areas' migrations files",
+    "CHANGELOG.md, MIGRATING.md, llms.txt, scripts/check-budgets/** except areas/surface.ts, other areas' migrations files",
     "every contract.ts and src/core/ports.ts"
   ],
   "concept": "quality-contract#12 I2",
   "contract": "Frozen: ARCHITECTURE.md, this domain's contract.ts, src/core/ports.ts. Need a change: factory signal, take the reversible default. Read concepts/quality-contract.md sections 4 to 7, 10, 12. Provider-only chunk hard zeros: cn tables, message tables, Intl caches, the en catalog; useFormat builds createFormat lazily. Spike-provider (docs/v3/spikes/provider.md) sets the ceiling.",
   "exemplar": "2.x src/format/*.test.ts, src/provider/format-defaults.test.tsx.",
-  "change": "Format (number, percent, money with no default currency, date incl. CalendarDate in UTC, dateTime, time, relative(v, now), duration, plural), createFormat({locale,timeZone|'host'}), useFormat (provider context else en and UTC), CalendarDate, Msg, BasaltMessages (per-area interfaces intersected in messages/index.ts), provider props locale, timeZone, messages (Partial), lang set in an effect. useMessages(area) is internal (messages/use-messages.ts). Seeds one empty stub per area, owned by the Issue that writes its strings: select, dialogs, base, date, cards, lists, kanban, controls, home, filters, table, live, charts (`export const <area> = {} satisfies Partial<BasaltMessages>`); a later area owns its file plus one import line in index.ts. check-literals flags string literals in aria-label, title, placeholder, alt and default string params in src/{ui,cards,page,data,router,core}/** (not core/messages or tests) and any file elsewhere importing core/messages; 2.x directories are skipped until their lane replaces them. Rule: check-literals in pre (no lint id). Skill: generated docs/use-format.md. Tests: format.law, messages.coverage.",
+  "change": "Format (number, percent, money with no default currency, date incl. CalendarDate in UTC, dateTime, time, relative(v, now), duration, plural), createFormat({locale,timeZone|'host'}), useFormat (provider context else en and UTC), CalendarDate, Msg, BasaltMessages (per-area interfaces intersected in messages/index.ts), provider props locale, timeZone, messages (Partial), lang set in an effect. useMessages(area) is internal (messages/use-messages.ts). Seeds one empty stub per area, owned by the Issue that writes its strings: select, dialogs, base, date, cards, lists, kanban, controls, home, filters, table, live, charts (`export const <area> = {} satisfies Partial<BasaltMessages>`); a later area owns its file plus one import line in index.ts. check-literals flags string literals in aria-label, title, placeholder, alt and default string params in src/{ui,cards,page,data,router,core}/** (not core/messages or tests) and any file elsewhere importing core/messages; 2.x directories are skipped until their lane replaces them. Rule: check-literals in pre (no lint id). Skill: generated docs/{create-format,use-format}.md. Tests: format.law, messages.coverage. A new public value symbol also lands, in this Issue, its raise in scripts/check-budgets/areas/surface.ts (the ceiling +1 and a `raises` row with from, to, consumer and repo) and its name in scripts/consumers.json (`<symbol>: <repo>:<path>`); make check refuses the symbol without them. The shard is scripts/export-surface/index.json, written by `export-surface.mjs --update`.",
   "commits": "One PR, separate package and non-package commits (isolated-basalt-ui); conventional, empty scope, no attribution.",
   "proof": "bun test; the provider-only fixture bundle size from spike-provider's gate.",
   "acceptance": [

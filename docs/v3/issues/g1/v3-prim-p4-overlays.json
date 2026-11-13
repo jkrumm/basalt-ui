@@ -9,8 +9,7 @@
   ],
   "shared_append_only": [
     "packages/basalt-ui/src/ui/slots.ts",
-    "packages/basalt-ui/src/ui/no-restyle.generated.json",
-    "packages/basalt-ui/scripts/export-surface.json"
+    "packages/basalt-ui/src/ui/no-restyle.generated.json"
   ],
   "must_not_touch": [
     "packages/basalt-ui/src/{page,shell,cards,controls,table,charts,content,ai,router,data,core,tokens,css,lint,cli,vite,testing}/**",

@@ -9,18 +9,20 @@
   ],
   "shared_append_only": [
     "packages/basalt-ui/src/controls/index.ts",
-    "packages/basalt-ui/scripts/export-surface.json"
+    "packages/basalt-ui/scripts/export-surface/controls.json",
+    "packages/basalt-ui/scripts/check-budgets/areas/surface.ts",
+    "packages/basalt-ui/scripts/consumers.json"
   ],
   "must_not_touch": [
     "packages/basalt-ui/src/{ui,table,charts,cards,page,shell,content,ai,tokens,css,lint,router}/**, packages/basalt-ui/agent/**",
     "packages/basalt-ui/src/controls/{filter-set,view-tabs,globals,form-field,form-row,control-view,spec,renderers,use-committed-field}*",
-    "CHANGELOG.md, MIGRATING.md, llms.txt, scripts/check-budgets/**, other areas' migrations files",
+    "CHANGELOG.md, MIGRATING.md, llms.txt, scripts/check-budgets/** except areas/surface.ts, other areas' migrations files",
     "every contract.ts and src/core/ports.ts"
   ],
   "concept": "controls-url-state#10 issue 4",
   "contract": "Frozen: ARCHITECTURE.md, this domain's contract.ts, src/core/ports.ts. Need a change: factory signal, take the reversible default. Read concepts/controls-url-state.md sections 3, 5, 9, 10 and evidence/gap-global-local-control-scope.md section 3 (prototype API). src/core/ports.ts owns ControlHandle and ControlsSlot. Primitives come only as basalt-ui/ui/<name>; date-picker by dynamic import. Strings: useMessages, English defaults in your owned src/core/messages/home.ts (qa-i2 seeds it). ",
   "exemplar": "src/cards/stat-card*, src/ui/{card,badge}*, src/core/phase* (v3-exemplar-statcard; read in the tree).",
-  "change": "ControlHome home to presentation (pill, row, inline derived from home, never a prop); filterSlot(specs) and filterSlot.custom(handle,label,render) as the counted escape; ToolbarGroup (ui/toolbar) for view-mode and tool homes. data-slots filter-pill, filter-row. Keys controls.filters, resetAll. 2.x donors stay beside the new files. Rule: control-home (rung 5, body in ctl-8). Skill: generated docs/control-home.md. Tests: layout per home, axe, type guards.",
+  "change": "ControlHome home to presentation (pill, row, inline derived from home, never a prop); filterSlot(specs) and filterSlot.custom(handle,label,render) as the counted escape; ToolbarGroup (ui/toolbar) for view-mode and tool homes. data-slots filter-pill, filter-row. Keys controls.filters, resetAll. 2.x donors stay beside the new files. Rule: control-home (rung 5, body in ctl-8). Skill: generated docs/control-home.md. Tests: layout per home, axe, type guards. A new public value symbol also lands, in this Issue, its raise in scripts/check-budgets/areas/surface.ts (the ceiling +1 and a `raises` row with from, to, consumer and repo) and its name in scripts/consumers.json (`<symbol>: <repo>:<path>`); make check refuses the symbol without them. The shard is scripts/export-surface/controls.json, written by `export-surface.mjs --update`.",
   "commits": "One PR, separate package and non-package commits (isolated-basalt-ui); conventional, empty scope, no attribution.",
   "proof": "Layout and axe tests under tests/layout/ on a fixture host (tests/layout/fixture/) at 1440, 768, 390, 320; screenshots of the fixture host taken by the layout test (1800x1200 and 390x844, dark and light, at most 3 rounds) and named in the PR body. Homes pill, row and inline each with a bound and an overriding widget.",
   "acceptance": [

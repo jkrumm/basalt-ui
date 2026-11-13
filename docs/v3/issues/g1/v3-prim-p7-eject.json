@@ -7,10 +7,7 @@
     "packages/basalt-ui/test/fixtures/eject/**",
     "packages/basalt-ui/docs/eject.md"
   ],
-  "shared_append_only": [
-    "packages/basalt-ui/src/cli/index.ts",
-    "packages/basalt-ui/scripts/export-surface.json"
-  ],
+  "shared_append_only": ["packages/basalt-ui/src/cli/index.ts"],
   "must_not_touch": [
     "packages/basalt-ui/src/{ui,tokens,css,lint,page,shell,cards,charts,controls,table,content,ai,router,data,core}/**",
     "packages/basalt-ui/agent/**",

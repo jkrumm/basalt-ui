@@ -6,23 +6,25 @@
     "packages/basalt-ui/src/data/unwrap*",
     "packages/basalt-ui/src/data/optimistic*",
     "packages/basalt-ui/src/data/window-key*",
-    "packages/basalt-ui/docs/{optimistic,window-key}.md"
+    "packages/basalt-ui/docs/{make-query-client,unwrap,optimistic,window-key}.md"
   ],
   "shared_append_only": [
     "packages/basalt-ui/src/data/index.ts",
-    "packages/basalt-ui/scripts/export-surface.json"
+    "packages/basalt-ui/scripts/export-surface/data.json",
+    "packages/basalt-ui/scripts/check-budgets/areas/surface.ts",
+    "packages/basalt-ui/scripts/consumers.json"
   ],
   "must_not_touch": [
     "packages/basalt-ui/src/{ui,tokens,css,lint,shell,cards,charts,table,content,ai,page,core,controls,router}/**, packages/basalt-ui/agent/**",
     "packages/basalt-ui/src/data/synced*",
     "packages/basalt-ui/src/data/live/**",
-    "CHANGELOG.md, MIGRATING.md, llms.txt, scripts/check-budgets/**, other areas' migrations files",
+    "CHANGELOG.md, MIGRATING.md, llms.txt, scripts/check-budgets/** except areas/surface.ts, other areas' migrations files",
     "every contract.ts and src/core/ports.ts"
   ],
   "concept": "state-persistence-forms#6",
   "contract": "Frozen: ARCHITECTURE.md, src/core/ports.ts. Need a change: factory signal, take the reversible default. Read concepts/state-persistence-forms.md sections 5, 6, 9 and ARCHITECTURE sections 1 and 3 (symbol allotment of '.' and './data'). Spikes D, F in section 9 are the optimistic spec; live-realtime#4.3 defines NetworkError.",
   "exemplar": "2.x donors: src/query-client.ts, src/unwrap.ts and their tests. windowKey donor: ~/SourceRoot/linewatch/web/src/lib/queries.ts (quantiseWindow, sameWindowedQuery, keepAcrossTimeAdvance) and queries.test.ts.",
-  "change": "makeQueryClient(config?) keeping the 2.x defaults (staleTime 30 s, gcTime 5 min, no retry on 4xx except 408/425/429; later reused as the channel's retry predicate). unwrap keeps the null-data throw and throws the NetworkError marker for a fetch TypeError. optimistic({key,scope?,targets:[{queryKey,apply}]}) returns {mutationKey, scope:{id}, onMutate (cancel, snapshot, setQueryData), onError (restore), onSettled (invalidate only when client.isMutating({mutationKey}) === 1)}. windowKey(window,{stepMs}) returns a quantised key plus a gated placeholder. Rule: none new (deprecated-fetch and raw refetchInterval clauses live in data-primitive). Skill: generated docs/optimistic.md and docs/window-key.md with the handlers-on-useMutation example. Tests: copy the 2.x tests (originals stay; imports adapted, assertions untouched), then spikes D and F as tests.",
+  "change": "makeQueryClient(config?) keeping the 2.x defaults (staleTime 30 s, gcTime 5 min, no retry on 4xx except 408/425/429; later reused as the channel's retry predicate). unwrap keeps the null-data throw and throws the NetworkError marker for a fetch TypeError. optimistic({key,scope?,targets:[{queryKey,apply}]}) returns {mutationKey, scope:{id}, onMutate (cancel, snapshot, setQueryData), onError (restore), onSettled (invalidate only when client.isMutating({mutationKey}) === 1)}. windowKey(window,{stepMs}) returns a quantised key plus a gated placeholder. Rule: none new (deprecated-fetch and raw refetchInterval clauses live in data-primitive). Skill: generated docs/{make-query-client,unwrap,optimistic,window-key}.md with the handlers-on-useMutation example. Tests: copy the 2.x tests (originals stay; imports adapted, assertions untouched), then spikes D and F as tests. A new public value symbol also lands, in this Issue, its raise in scripts/check-budgets/areas/surface.ts (the ceiling +1 and a `raises` row with from, to, consumer and repo) and its name in scripts/consumers.json (`<symbol>: <repo>:<path>`); make check refuses the symbol without them. The shard is scripts/export-surface/data.json, written by `export-surface.mjs --update`.",
   "commits": "One PR, separate package and non-package commits (isolated-basalt-ui); conventional, empty scope, no attribution.",
   "proof": "bun test over the owned files; Query 5.106+ pinned by the fixture.",
   "acceptance": [

@@ -9,18 +9,20 @@
   ],
   "shared_append_only": [
     "packages/basalt-ui/src/router/index.ts",
-    "packages/basalt-ui/scripts/export-surface.json"
+    "packages/basalt-ui/scripts/export-surface/router.json",
+    "packages/basalt-ui/scripts/check-budgets/areas/surface.ts",
+    "packages/basalt-ui/scripts/consumers.json"
   ],
   "must_not_touch": [
     "packages/basalt-ui/src/{ui,table,charts,cards,page,shell,content,ai,tokens,css,lint,controls}/**, src/router/nav*, packages/basalt-ui/agent/**",
     "packages/basalt-ui/src/router/controls/{define,field,codec,brand}* except the two ctl-3 seam functions in define*",
-    "CHANGELOG.md, MIGRATING.md, llms.txt, scripts/check-budgets/**, other areas' migrations files",
+    "CHANGELOG.md, MIGRATING.md, llms.txt, scripts/check-budgets/** except areas/surface.ts, other areas' migrations files",
     "every contract.ts and src/core/ports.ts"
   ],
   "concept": "controls-url-state#10 issue 3",
   "contract": "Frozen: ARCHITECTURE.md, this domain's contract.ts, src/core/ports.ts. Need a change: factory signal, take the reversible default. Read concepts/controls-url-state.md sections 3, 5, 9, 10 and evidence/gap-global-local-control-scope.md section 3 (prototype API). Scope model table in section 3: widget state is URL key w.<id>.<field>, scalar kinds only (enum, string, number, boolean), at most 2 fields per widget by type, w. is a reserved prefix.",
   "exemplar": "evidence/gap-global-local-control-scope.md prototype tests (37, 7 precedence cases); flip ctl3-* in tests/controls/golden.",
-  "change": "defineControls gains retain, widget and middlewares through the two seam functions in define*. widgets on a page store; useSource() returns own, inherited or override; a widget bound to a global (widgets: { latency: { range: globals.field.range } }) inherits, shows the effective value and writes only its own w. key; precedence override > inherited > fallback; an override equal to the global still pins. middlewares [strip, retain] in that order, retain for page stores via retain: keys on a layout route. useOverrides() returns {keys, widgets, clearAll}. A widget handle's isDefault means 'no override'. Rule: none (ctl-8 flags a raw control on a widget handle). Skill: generated docs/widgets.md (where-does-state-live table). Tests: the 7 precedence cases, history replace on widgets, no re-render of a header pill or sibling card (memo), SSR.",
+  "change": "defineControls gains retain, widget and middlewares through the two seam functions in define*. widgets on a page store; useSource() returns own, inherited or override; a widget bound to a global (widgets: { latency: { range: globals.field.range } }) inherits, shows the effective value and writes only its own w. key; precedence override > inherited > fallback; an override equal to the global still pins. middlewares [strip, retain] in that order, retain for page stores via retain: keys on a layout route. useOverrides() returns {keys, widgets, clearAll}. A widget handle's isDefault means 'no override'. Rule: none (ctl-8 flags a raw control on a widget handle). Skill: generated docs/widgets.md (where-does-state-live table). Tests: the 7 precedence cases, history replace on widgets, no re-render of a header pill or sibling card (memo), SSR. A new public value symbol also lands, in this Issue, its raise in scripts/check-budgets/areas/surface.ts (the ceiling +1 and a `raises` row with from, to, consumer and repo) and its name in scripts/consumers.json (`<symbol>: <repo>:<path>`); make check refuses the symbol without them. The shard is scripts/export-surface/router.json, written by `export-surface.mjs --update`.",
   "commits": "One PR, separate package and non-package commits (isolated-basalt-ui); conventional, empty scope, no attribution.",
   "proof": "bun test over src/router/controls with memory history, tsc on the type fixtures.",
   "acceptance": [

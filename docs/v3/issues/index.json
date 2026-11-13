@@ -1867,7 +1867,9 @@
     ],
     "shared": [
       "packages/basalt-ui/src/index.ts",
-      "packages/basalt-ui/scripts/export-surface.json",
+      "packages/basalt-ui/scripts/export-surface/index.json",
+      "packages/basalt-ui/scripts/check-budgets/areas/surface.ts",
+      "packages/basalt-ui/scripts/consumers.json",
       "package.json"
     ],
     "lane": "K",
@@ -1902,8 +1904,7 @@
     ],
     "shared": [
       "packages/basalt-ui/src/ui/slots.ts",
-      "packages/basalt-ui/src/ui/no-restyle.generated.json",
-      "packages/basalt-ui/scripts/export-surface.json"
+      "packages/basalt-ui/src/ui/no-restyle.generated.json"
     ],
     "lane": "B",
     "seat": "lead",
@@ -1938,8 +1939,7 @@
     ],
     "shared": [
       "packages/basalt-ui/src/ui/slots.ts",
-      "packages/basalt-ui/src/ui/no-restyle.generated.json",
-      "packages/basalt-ui/scripts/export-surface.json"
+      "packages/basalt-ui/src/ui/no-restyle.generated.json"
     ],
     "lane": "B",
     "seat": "lead",
@@ -1974,8 +1974,7 @@
     ],
     "shared": [
       "packages/basalt-ui/src/ui/slots.ts",
-      "packages/basalt-ui/src/ui/no-restyle.generated.json",
-      "packages/basalt-ui/scripts/export-surface.json"
+      "packages/basalt-ui/src/ui/no-restyle.generated.json"
     ],
     "lane": "B",
     "seat": "lead",
@@ -2008,8 +2007,7 @@
     ],
     "shared": [
       "packages/basalt-ui/src/ui/slots.ts",
-      "packages/basalt-ui/src/ui/no-restyle.generated.json",
-      "packages/basalt-ui/scripts/export-surface.json"
+      "packages/basalt-ui/src/ui/no-restyle.generated.json"
     ],
     "lane": "B",
     "seat": "lead",
@@ -2041,8 +2039,7 @@
     ],
     "shared": [
       "packages/basalt-ui/src/ui/slots.ts",
-      "packages/basalt-ui/src/ui/no-restyle.generated.json",
-      "packages/basalt-ui/scripts/export-surface.json"
+      "packages/basalt-ui/src/ui/no-restyle.generated.json"
     ],
     "lane": "B",
     "seat": "lead",
@@ -2074,8 +2071,7 @@
     ],
     "shared": [
       "packages/basalt-ui/src/ui/slots.ts",
-      "packages/basalt-ui/src/ui/no-restyle.generated.json",
-      "packages/basalt-ui/scripts/export-surface.json"
+      "packages/basalt-ui/src/ui/no-restyle.generated.json"
     ],
     "lane": "B",
     "seat": "lead",
@@ -2110,8 +2106,7 @@
     ],
     "shared": [
       "packages/basalt-ui/src/ui/slots.ts",
-      "packages/basalt-ui/src/ui/no-restyle.generated.json",
-      "packages/basalt-ui/scripts/export-surface.json"
+      "packages/basalt-ui/src/ui/no-restyle.generated.json"
     ],
     "lane": "B",
     "seat": "lead",
@@ -2137,10 +2132,7 @@
       "packages/basalt-ui/test/fixtures/eject/**",
       "packages/basalt-ui/docs/eject.md"
     ],
-    "shared": [
-      "packages/basalt-ui/src/cli/index.ts",
-      "packages/basalt-ui/scripts/export-surface.json"
-    ],
+    "shared": ["packages/basalt-ui/src/cli/index.ts"],
     "lane": "B",
     "seat": "lead",
     "effort": "high",
@@ -2189,7 +2181,7 @@
       "packages/basalt-ui/test/fixtures/vite/**",
       "packages/basalt-ui/docs/vite.md"
     ],
-    "shared": ["packages/basalt-ui/scripts/export-surface.json"],
+    "shared": ["packages/basalt-ui/scripts/export-surface/vite.json"],
     "lane": "B",
     "seat": "lead",
     "effort": "high",
@@ -2215,8 +2207,7 @@
     ],
     "shared": [
       "packages/basalt-ui/src/ui/slots.ts",
-      "packages/basalt-ui/src/ui/no-restyle.generated.json",
-      "packages/basalt-ui/scripts/export-surface.json"
+      "packages/basalt-ui/src/ui/no-restyle.generated.json"
     ],
     "lane": "B",
     "seat": "lead",
@@ -2248,8 +2239,7 @@
     ],
     "shared": [
       "packages/basalt-ui/src/ui/slots.ts",
-      "packages/basalt-ui/src/ui/no-restyle.generated.json",
-      "packages/basalt-ui/scripts/export-surface.json"
+      "packages/basalt-ui/src/ui/no-restyle.generated.json"
     ],
     "lane": "B",
     "seat": "lead",
@@ -2284,8 +2274,7 @@
     ],
     "shared": [
       "packages/basalt-ui/src/ui/slots.ts",
-      "packages/basalt-ui/src/ui/no-restyle.generated.json",
-      "packages/basalt-ui/scripts/export-surface.json"
+      "packages/basalt-ui/src/ui/no-restyle.generated.json"
     ],
     "lane": "B",
     "seat": "lead",
@@ -2312,8 +2301,7 @@
     ],
     "shared": [
       "packages/basalt-ui/src/ui/slots.ts",
-      "packages/basalt-ui/src/ui/no-restyle.generated.json",
-      "packages/basalt-ui/scripts/export-surface.json"
+      "packages/basalt-ui/src/ui/no-restyle.generated.json"
     ],
     "lane": "B",
     "seat": "lead",
@@ -2372,7 +2360,12 @@
       "packages/basalt-ui/src/core/form-dirty*",
       "packages/basalt-ui/docs/persisted.md"
     ],
-    "shared": ["packages/basalt-ui/src/index.ts", "packages/basalt-ui/scripts/export-surface.json"],
+    "shared": [
+      "packages/basalt-ui/src/index.ts",
+      "packages/basalt-ui/scripts/export-surface/index.json",
+      "packages/basalt-ui/scripts/check-budgets/areas/surface.ts",
+      "packages/basalt-ui/scripts/consumers.json"
+    ],
     "lane": "C",
     "seat": "lead",
     "effort": "high",
@@ -2400,7 +2393,9 @@
     ],
     "shared": [
       "packages/basalt-ui/src/data/index.ts",
-      "packages/basalt-ui/scripts/export-surface.json"
+      "packages/basalt-ui/scripts/export-surface/data.json",
+      "packages/basalt-ui/scripts/check-budgets/areas/surface.ts",
+      "packages/basalt-ui/scripts/consumers.json"
     ],
     "lane": "C",
     "seat": "lead",
@@ -2428,7 +2423,9 @@
     ],
     "shared": [
       "packages/basalt-ui/src/data/index.ts",
-      "packages/basalt-ui/scripts/export-surface.json"
+      "packages/basalt-ui/scripts/export-surface/data.json",
+      "packages/basalt-ui/scripts/check-budgets/areas/surface.ts",
+      "packages/basalt-ui/scripts/consumers.json"
     ],
     "lane": "L",
     "seat": "lead",
@@ -2454,7 +2451,9 @@
     ],
     "shared": [
       "packages/basalt-ui/src/data/index.ts",
-      "packages/basalt-ui/scripts/export-surface.json"
+      "packages/basalt-ui/scripts/export-surface/data.json",
+      "packages/basalt-ui/scripts/check-budgets/areas/surface.ts",
+      "packages/basalt-ui/scripts/consumers.json"
     ],
     "lane": "C",
     "seat": "lead",
@@ -2483,7 +2482,10 @@
     "shared": [
       "packages/basalt-ui/src/index.ts",
       "packages/basalt-ui/src/page/index.ts",
-      "packages/basalt-ui/scripts/export-surface.json"
+      "packages/basalt-ui/scripts/export-surface/index.json",
+      "packages/basalt-ui/scripts/export-surface/page.json",
+      "packages/basalt-ui/scripts/check-budgets/areas/surface.ts",
+      "packages/basalt-ui/scripts/consumers.json"
     ],
     "lane": "C",
     "seat": "lead",
@@ -2533,7 +2535,9 @@
     ],
     "shared": [
       "packages/basalt-ui/src/router/index.ts",
-      "packages/basalt-ui/scripts/export-surface.json"
+      "packages/basalt-ui/scripts/export-surface/router.json",
+      "packages/basalt-ui/scripts/check-budgets/areas/surface.ts",
+      "packages/basalt-ui/scripts/consumers.json"
     ],
     "lane": "D",
     "seat": "lead",
@@ -2561,7 +2565,9 @@
     ],
     "shared": [
       "packages/basalt-ui/src/router/index.ts",
-      "packages/basalt-ui/scripts/export-surface.json"
+      "packages/basalt-ui/scripts/export-surface/router.json",
+      "packages/basalt-ui/scripts/check-budgets/areas/surface.ts",
+      "packages/basalt-ui/scripts/consumers.json"
     ],
     "lane": "D",
     "seat": "lead",
@@ -2587,7 +2593,12 @@
       "packages/basalt-ui/docs/recipes/{memory-state,storage-adapter}.md",
       "apps/playground/src/recipes/{memory-state,storage-adapter}*"
     ],
-    "shared": ["packages/basalt-ui/src/index.ts", "packages/basalt-ui/scripts/export-surface.json"],
+    "shared": [
+      "packages/basalt-ui/src/index.ts",
+      "packages/basalt-ui/scripts/export-surface/index.json",
+      "packages/basalt-ui/scripts/check-budgets/areas/surface.ts",
+      "packages/basalt-ui/scripts/consumers.json"
+    ],
     "lane": "C",
     "seat": "lead",
     "effort": "high",
@@ -2621,7 +2632,9 @@
     ],
     "shared": [
       "packages/basalt-ui/src/controls/index.ts",
-      "packages/basalt-ui/scripts/export-surface.json"
+      "packages/basalt-ui/scripts/export-surface/controls.json",
+      "packages/basalt-ui/scripts/check-budgets/areas/surface.ts",
+      "packages/basalt-ui/scripts/consumers.json"
     ],
     "lane": "D",
     "seat": "lead",
@@ -2649,7 +2662,9 @@
     ],
     "shared": [
       "packages/basalt-ui/src/controls/index.ts",
-      "packages/basalt-ui/scripts/export-surface.json"
+      "packages/basalt-ui/scripts/export-surface/controls.json",
+      "packages/basalt-ui/scripts/check-budgets/areas/surface.ts",
+      "packages/basalt-ui/scripts/consumers.json"
     ],
     "lane": "D",
     "seat": "lead",
@@ -2705,7 +2720,9 @@
     ],
     "shared": [
       "packages/basalt-ui/src/controls/index.ts",
-      "packages/basalt-ui/scripts/export-surface.json"
+      "packages/basalt-ui/scripts/export-surface/controls.json",
+      "packages/basalt-ui/scripts/check-budgets/areas/surface.ts",
+      "packages/basalt-ui/scripts/consumers.json"
     ],
     "lane": "D",
     "seat": "lead",
@@ -2739,7 +2756,9 @@
     ],
     "shared": [
       "packages/basalt-ui/src/cards/index.ts",
-      "packages/basalt-ui/scripts/export-surface.json"
+      "packages/basalt-ui/scripts/export-surface/cards.json",
+      "packages/basalt-ui/scripts/check-budgets/areas/surface.ts",
+      "packages/basalt-ui/scripts/consumers.json"
     ],
     "lane": "E",
     "seat": "lead",
@@ -2772,7 +2791,9 @@
     ],
     "shared": [
       "packages/basalt-ui/src/cards/index.ts",
-      "packages/basalt-ui/scripts/export-surface.json"
+      "packages/basalt-ui/scripts/export-surface/cards.json",
+      "packages/basalt-ui/scripts/check-budgets/areas/surface.ts",
+      "packages/basalt-ui/scripts/consumers.json"
     ],
     "lane": "E",
     "seat": "lead",
@@ -2808,7 +2829,9 @@
     ],
     "shared": [
       "packages/basalt-ui/src/cards/index.ts",
-      "packages/basalt-ui/scripts/export-surface.json"
+      "packages/basalt-ui/scripts/export-surface/cards.json",
+      "packages/basalt-ui/scripts/check-budgets/areas/surface.ts",
+      "packages/basalt-ui/scripts/consumers.json"
     ],
     "lane": "E",
     "seat": "lead",
@@ -2870,7 +2893,9 @@
     ],
     "shared": [
       "packages/basalt-ui/src/charts/index.ts",
-      "packages/basalt-ui/scripts/export-surface.json"
+      "packages/basalt-ui/scripts/export-surface/charts.json",
+      "packages/basalt-ui/scripts/check-budgets/areas/charts.ts",
+      "packages/basalt-ui/scripts/consumers.json"
     ],
     "lane": "E",
     "seat": "lead",
@@ -2898,7 +2923,9 @@
     ],
     "shared": [
       "packages/basalt-ui/src/charts/index.ts",
-      "packages/basalt-ui/scripts/export-surface.json"
+      "packages/basalt-ui/scripts/export-surface/charts.json",
+      "packages/basalt-ui/scripts/check-budgets/areas/charts.ts",
+      "packages/basalt-ui/scripts/consumers.json"
     ],
     "lane": "E",
     "seat": "lead",
@@ -2925,7 +2952,9 @@
     ],
     "shared": [
       "packages/basalt-ui/src/charts/index.ts",
-      "packages/basalt-ui/scripts/export-surface.json"
+      "packages/basalt-ui/scripts/export-surface/charts.json",
+      "packages/basalt-ui/scripts/check-budgets/areas/charts.ts",
+      "packages/basalt-ui/scripts/consumers.json"
     ],
     "lane": "E",
     "seat": "lead",
@@ -2953,7 +2982,9 @@
     ],
     "shared": [
       "packages/basalt-ui/src/charts/index.ts",
-      "packages/basalt-ui/scripts/export-surface.json"
+      "packages/basalt-ui/scripts/export-surface/charts.json",
+      "packages/basalt-ui/scripts/check-budgets/areas/charts.ts",
+      "packages/basalt-ui/scripts/consumers.json"
     ],
     "lane": "E",
     "seat": "lead",
@@ -3002,7 +3033,9 @@
     ],
     "shared": [
       "packages/basalt-ui/src/table/index.ts",
-      "packages/basalt-ui/scripts/export-surface.json"
+      "packages/basalt-ui/scripts/export-surface/table.json",
+      "packages/basalt-ui/scripts/check-budgets/areas/surface.ts",
+      "packages/basalt-ui/scripts/consumers.json"
     ],
     "lane": "F",
     "seat": "lead",
@@ -3028,7 +3061,9 @@
     ],
     "shared": [
       "packages/basalt-ui/src/table/index.ts",
-      "packages/basalt-ui/scripts/export-surface.json"
+      "packages/basalt-ui/scripts/export-surface/table.json",
+      "packages/basalt-ui/scripts/check-budgets/areas/surface.ts",
+      "packages/basalt-ui/scripts/consumers.json"
     ],
     "lane": "F",
     "seat": "lead",
@@ -3057,7 +3092,9 @@
     ],
     "shared": [
       "packages/basalt-ui/src/table/index.ts",
-      "packages/basalt-ui/scripts/export-surface.json"
+      "packages/basalt-ui/scripts/export-surface/table.json",
+      "packages/basalt-ui/scripts/check-budgets/areas/surface.ts",
+      "packages/basalt-ui/scripts/consumers.json"
     ],
     "lane": "F",
     "seat": "lead",
@@ -3084,7 +3121,9 @@
     ],
     "shared": [
       "packages/basalt-ui/src/table/index.ts",
-      "packages/basalt-ui/scripts/export-surface.json"
+      "packages/basalt-ui/scripts/export-surface/table.json",
+      "packages/basalt-ui/scripts/check-budgets/areas/surface.ts",
+      "packages/basalt-ui/scripts/consumers.json"
     ],
     "lane": "F",
     "seat": "lead",
@@ -3151,7 +3190,12 @@
       "packages/basalt-ui/tests/live/channel/**",
       "packages/basalt-ui/docs/create-channel.md"
     ],
-    "shared": ["packages/basalt-ui/src/index.ts", "packages/basalt-ui/scripts/export-surface.json"],
+    "shared": [
+      "packages/basalt-ui/src/index.ts",
+      "packages/basalt-ui/scripts/export-surface/index.json",
+      "packages/basalt-ui/scripts/check-budgets/areas/surface.ts",
+      "packages/basalt-ui/scripts/consumers.json"
+    ],
     "lane": "L",
     "seat": "lead",
     "effort": "high",
@@ -3176,7 +3220,9 @@
     ],
     "shared": [
       "packages/basalt-ui/src/data/index.ts",
-      "packages/basalt-ui/scripts/export-surface.json"
+      "packages/basalt-ui/scripts/export-surface/data.json",
+      "packages/basalt-ui/scripts/check-budgets/areas/surface.ts",
+      "packages/basalt-ui/scripts/consumers.json"
     ],
     "lane": "L",
     "seat": "lead",
@@ -3212,7 +3258,10 @@
     "shared": [
       "packages/basalt-ui/src/data/index.ts",
       "packages/basalt-ui/src/page/index.ts",
-      "packages/basalt-ui/scripts/export-surface.json"
+      "packages/basalt-ui/scripts/export-surface/data.json",
+      "packages/basalt-ui/scripts/export-surface/page.json",
+      "packages/basalt-ui/scripts/check-budgets/areas/surface.ts",
+      "packages/basalt-ui/scripts/consumers.json"
     ],
     "lane": "L",
     "seat": "lead",
@@ -3278,7 +3327,9 @@
     ],
     "shared": [
       "packages/basalt-ui/src/testing/index.ts",
-      "packages/basalt-ui/scripts/export-surface.json"
+      "packages/basalt-ui/scripts/export-surface/testing.json",
+      "packages/basalt-ui/scripts/check-budgets/areas/surface.ts",
+      "packages/basalt-ui/scripts/consumers.json"
     ],
     "lane": "K",
     "seat": "lead",
@@ -3311,7 +3362,9 @@
     ],
     "shared": [
       "packages/basalt-ui/src/testing/index.ts",
-      "packages/basalt-ui/scripts/export-surface.json",
+      "packages/basalt-ui/scripts/export-surface/testing.json",
+      "packages/basalt-ui/scripts/check-budgets/areas/surface.ts",
+      "packages/basalt-ui/scripts/consumers.json",
       "Makefile"
     ],
     "lane": "K",
@@ -3982,7 +4035,9 @@
     ],
     "shared": [
       "packages/basalt-ui/src/controls/index.ts",
-      "packages/basalt-ui/scripts/export-surface.json"
+      "packages/basalt-ui/scripts/export-surface/controls.json",
+      "packages/basalt-ui/scripts/check-budgets/areas/surface.ts",
+      "packages/basalt-ui/scripts/consumers.json"
     ],
     "lane": "D",
     "seat": "lead",
@@ -4816,7 +4871,9 @@
     ],
     "shared": [
       "packages/basalt-ui/src/table/index.ts",
-      "packages/basalt-ui/scripts/export-surface.json"
+      "packages/basalt-ui/scripts/export-surface/table.json",
+      "packages/basalt-ui/scripts/check-budgets/areas/surface.ts",
+      "packages/basalt-ui/scripts/consumers.json"
     ],
     "lane": "F",
     "seat": "lead",
@@ -4844,7 +4901,9 @@
     ],
     "shared": [
       "packages/basalt-ui/src/table/index.ts",
-      "packages/basalt-ui/scripts/export-surface.json"
+      "packages/basalt-ui/scripts/export-surface/table.json",
+      "packages/basalt-ui/scripts/check-budgets/areas/surface.ts",
+      "packages/basalt-ui/scripts/consumers.json"
     ],
     "lane": "F",
     "seat": "lead",
@@ -4876,7 +4935,9 @@
     ],
     "shared": [
       "packages/basalt-ui/src/controls/index.ts",
-      "packages/basalt-ui/scripts/export-surface.json"
+      "packages/basalt-ui/scripts/export-surface/controls.json",
+      "packages/basalt-ui/scripts/check-budgets/areas/surface.ts",
+      "packages/basalt-ui/scripts/consumers.json"
     ],
     "lane": "D",
     "seat": "lead",
@@ -4903,7 +4964,9 @@
     ],
     "shared": [
       "packages/basalt-ui/src/table/index.ts",
-      "packages/basalt-ui/scripts/export-surface.json"
+      "packages/basalt-ui/scripts/export-surface/table.json",
+      "packages/basalt-ui/scripts/check-budgets/areas/surface.ts",
+      "packages/basalt-ui/scripts/consumers.json"
     ],
     "lane": "F",
     "seat": "lead",
@@ -4988,7 +5051,9 @@
     "owns": ["packages/basalt-ui/src/controls/{draft,submit,form-footer}*"],
     "shared": [
       "packages/basalt-ui/src/controls/index.ts",
-      "packages/basalt-ui/scripts/export-surface.json"
+      "packages/basalt-ui/scripts/export-surface/controls.json",
+      "packages/basalt-ui/scripts/check-budgets/areas/surface.ts",
+      "packages/basalt-ui/scripts/consumers.json"
     ],
     "lane": "C",
     "seat": "lead",
@@ -5262,7 +5327,11 @@
     "shared": [
       "packages/basalt-ui/src/index.ts",
       "packages/basalt-ui/package.json",
-      "packages/basalt-ui/scripts/export-surface.json"
+      "packages/basalt-ui/scripts/export-surface/page.json",
+      "packages/basalt-ui/scripts/export-surface/cards.json",
+      "packages/basalt-ui/scripts/export-surface/controls.json",
+      "packages/basalt-ui/scripts/export-surface/table.json",
+      "packages/basalt-ui/scripts/export-surface/charts.json"
     ],
     "lane": "M",
     "seat": "lead",
@@ -5296,7 +5365,14 @@
     "shared": [
       "packages/basalt-ui/src/index.ts",
       "packages/basalt-ui/package.json",
-      "packages/basalt-ui/scripts/export-surface.json",
+      "packages/basalt-ui/scripts/export-surface/index.json",
+      "packages/basalt-ui/scripts/export-surface/router.json",
+      "packages/basalt-ui/scripts/export-surface/data.json",
+      "packages/basalt-ui/scripts/export-surface/page.json",
+      "packages/basalt-ui/scripts/export-surface/cards.json",
+      "packages/basalt-ui/scripts/export-surface/controls.json",
+      "packages/basalt-ui/scripts/export-surface/table.json",
+      "packages/basalt-ui/scripts/export-surface/charts.json",
       "packages/basalt-ui/migrations/areas/removed-2x.json"
     ],
     "lane": "M",

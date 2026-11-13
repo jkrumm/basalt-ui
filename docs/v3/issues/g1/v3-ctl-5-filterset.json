@@ -9,18 +9,20 @@
   ],
   "shared_append_only": [
     "packages/basalt-ui/src/controls/index.ts",
-    "packages/basalt-ui/scripts/export-surface.json"
+    "packages/basalt-ui/scripts/export-surface/controls.json",
+    "packages/basalt-ui/scripts/check-budgets/areas/surface.ts",
+    "packages/basalt-ui/scripts/consumers.json"
   ],
   "must_not_touch": [
     "packages/basalt-ui/src/{ui,table,charts,cards,page,shell,content,ai,tokens,css,lint,router}/**, packages/basalt-ui/agent/**",
     "packages/basalt-ui/src/controls/{view-tabs,globals,form-field,form-row,control-view,spec,filter-slot,control-home,renderers}*",
-    "CHANGELOG.md, MIGRATING.md, llms.txt, scripts/check-budgets/**, other areas' migrations files",
+    "CHANGELOG.md, MIGRATING.md, llms.txt, scripts/check-budgets/** except areas/surface.ts, other areas' migrations files",
     "every contract.ts and src/core/ports.ts"
   ],
   "concept": "controls-url-state#10 issue 5",
   "contract": "Frozen: ARCHITECTURE.md, this domain's contract.ts, src/core/ports.ts. Need a change: factory signal, take the reversible default. Read concepts/controls-url-state.md sections 3, 5, 9, 10 and evidence/gap-global-local-control-scope.md section 3 (prototype API). src/core/ports.ts owns ControlHandle and ControlsSlot. Primitives come only as basalt-ui/ui/<name>; date-picker by dynamic import. Strings: useMessages, English defaults in your owned src/core/messages/filters.ts (qa-i2 seeds it). Invariants: section 7 FilterSet row (pill prints the value even at default, off-catalogue value still renders, multi complete equals empty, no nested pills, Filters (n) stable with hidden surfaces).",
   "exemplar": "2.x donors stay: src/controls/filter-set.tsx, filter-pill.tsx, filter-sheet.tsx and tests. Anatomy: src/controls/{control-view,control-home}* (ctl-4, ctl-4b; read in the tree).",
-  "change": "FilterSet({specs}) default home pill: pills in one nowrap row, +N fold (measured, SSR-clipped row), below @narrow a 'Filters (n)' button opening a row-form sheet; never scroll, never wrap; pill prints the value; census via useActiveCount and a Reset all button; keys controls.moreFilters, showMore. useControlName gives pill name = control name with value as text. Rule: control-home (ctl-8) flags a raw Select as filter. Skill: generated docs/filter-set.md with the spec(...) example. Tests: ported invariants, layout matrix, SSR post-hydrate fold (S3).",
+  "change": "FilterSet({specs}) default home pill: pills in one nowrap row, +N fold (measured, SSR-clipped row), below @narrow a 'Filters (n)' button opening a row-form sheet; never scroll, never wrap; pill prints the value; census via useActiveCount and a Reset all button; keys controls.moreFilters, showMore. useControlName gives pill name = control name with value as text. Rule: control-home (ctl-8) flags a raw Select as filter. Skill: generated docs/filter-set.md with the spec(...) example. Tests: ported invariants, layout matrix, SSR post-hydrate fold (S3). A new public value symbol also lands, in this Issue, its raise in scripts/check-budgets/areas/surface.ts (the ceiling +1 and a `raises` row with from, to, consumer and repo) and its name in scripts/consumers.json (`<symbol>: <repo>:<path>`); make check refuses the symbol without them. The shard is scripts/export-surface/controls.json, written by `export-surface.mjs --update`.",
   "commits": "One PR, separate package and non-package commits (isolated-basalt-ui); conventional, empty scope, no attribution.",
   "proof": "Layout and axe tests under tests/layout/ on a fixture host (tests/layout/fixture/) at 1440, 768, 390, 320; screenshots of the fixture host taken by the layout test (1800x1200 and 390x844, dark and light, at most 3 rounds) and named in the PR body. Long labels and 8 filters.",
   "acceptance": [
