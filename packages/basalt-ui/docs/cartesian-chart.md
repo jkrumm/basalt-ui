@@ -17,10 +17,10 @@ to lines, or to bars plus line overlays. Source: `src/charts/parts/`.
 ```ts
 CartesianChart<D>(props: CartesianChartProps<D>): ReactElement
   data: readonly D[]
-  x: { value: (d: D) => number | Date | string; format?; domain? }
+  x: { value: (d: D) => number | Date | string; format?; domain?; title?; scale?: 'linear' | 'log' }
   series: readonly Series<D>[]
   ariaLabel: string
-  y?: YConfig
+  y?: YConfig // + title?: string
   summary?: string
   table?: boolean
   height?: number | 'fill'
@@ -31,6 +31,7 @@ CartesianChart<D>(props: CartesianChartProps<D>): ReactElement
   cursor?: string
   selection?: { selected: D | null; onSelect: (d: D | null) => void }
   marks?: CustomMarks<D>
+  focus?: ChartFocus<D> // from useChartFocus: one tab stop, arrows and pointer focus a datum
 CartesianChart.custom<D>(build: (plot: ChartPlot<D>) => readonly unknown[]): CustomMarks<D>
 ```
 
@@ -66,8 +67,15 @@ The server render draws the ring and attaches no handler.
 ## Custom marks
 
 `CartesianChart.custom((plot) => marks)` is the only way to build the `marks` prop. The builder gets
-`plot.data`, `plot.rows(key)` (datums of a visible series), `plot.visible` and `plot.plotHeight`, and
-returns engine marks from the allowed `@tanstack/charts/*` subpaths. They draw after the series' own.
+`plot.data`, `plot.rows(key)` (datums of a visible series), `plot.visible`, `plot.plotHeight` and
+`plot.focused` (the datum `focus` holds, else `null`: dim the rest against it), and returns engine
+marks from the allowed `@tanstack/charts/*` subpaths. They draw after the series' own.
+
+## Axis titles, log x, vertical rules
+
+`x.title` and `y.title` name an axis with its unit. `x.scale: 'log'` puts a numeric x on decades; a
+row with x <= 0 is not drawn. A `refLines` entry with `axis: 'x'` is a full-height rule at a band
+key, number or Date. A `mark: 'dot'` series legends as a dot. Focus and readout: `use-chart-focus.md`.
 
 ## Not yet applied
 

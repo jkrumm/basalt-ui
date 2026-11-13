@@ -14,6 +14,7 @@ Colours come from the app's series file as `var(--vx-*)` references, never liter
 
 ```tsx
 import { chartLabels, useChartFocus } from 'basalt-ui/charts'
+import { VX } from 'basalt-ui/tokens'
 
 export type Part = { label: string; value: number; color: string }
 
@@ -39,7 +40,11 @@ export function SeamBar({ parts, track }: { parts: readonly Part[]; track: numbe
             className="flex items-center justify-center truncate text-xs transition-opacity data-dimmed:opacity-25"
             style={{ width: `${(p.value / total) * 100}%`, background: p.color }}
           >
-            {chartLabels.fits(p.label, { width: (p.value / total) * track }, { pad: 4 })
+            {chartLabels.fits(
+              p.label,
+              { width: (p.value / total) * track },
+              { size: VX.text.xs, pad: 4 },
+            )
               ? p.label
               : null}
           </div>
