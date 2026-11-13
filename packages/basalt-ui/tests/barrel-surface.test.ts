@@ -54,7 +54,9 @@ const CHART_VALUES = [
   'StackedArea',
   'chartCursor',
   'chartCurve',
+  'chartLabels',
   'foldBands',
+  'useChartFocus',
 ] as const
 
 describe('barrel surface', () => {
