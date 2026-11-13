@@ -142,6 +142,10 @@ const mdxEvaluate: AstForm = {
           }
         }
       },
+      ImportExpression(node) {
+        const module = loadedModule(node)
+        if (module && MDX_NAMES[module]) report(node, `import('${module}')`)
+      },
       CallExpression(node) {
         const callee = child(node, 'callee')
         if (callee?.type === 'MemberExpression' && callee['computed'] !== true) {
@@ -213,6 +217,13 @@ const trustedContent: AstForm = {
             (attribute) =>
               attribute.type === 'JSXAttribute' && nameOf(child(attribute, 'name')) === 'children',
           )
+          const spread = children(opening, 'attributes').some(
+            (attribute) => attribute.type === 'JSXSpreadAttribute',
+          )
+          if (spread && kids.length === 0 && !childrenProp) {
+            report(opening, 'contentTrust="trusted"')
+            continue
+          }
           const propOk = !childrenProp || authored(child(childrenProp, 'value') ?? childrenProp)
           if (propOk && kids.every(authored)) continue
           report(opening, 'contentTrust="trusted"')

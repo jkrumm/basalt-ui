@@ -18,6 +18,10 @@ const A = () => <Markdown contentTrust="trusted">{reply()}</Markdown>
 // @filename src/chat/reply.tsx
 const A = ({ body }) => <Markdown contentTrust="trusted" children={body} />
 
+// @invalid
+// @filename src/chat/reply.tsx
+const A = (props) => <Markdown contentTrust="trusted" {...props} />
+
 // @valid
 const A = () => <Markdown contentTrust="trusted">{'Authored **text**'}</Markdown>
 

@@ -1,8 +1,8 @@
 /**
  * The structure-rest family (guardrails section 4, rows 10-15): `colour-literal`,
  * `waiver-needs-reason` and `data-primitive` with every fixture block as a RuleTester case under
- * ESLint and under oxlint's `plugins-dev`; `router-search`, `control-home` and
- * `untrusted-markdown` are id-only shells. One file covers the six ids because each id's owned
+ * ESLint and under oxlint's `plugins-dev`; `router-search` and `control-home` are id-only
+ * shells (`untrusted-markdown` has its own test file). One file covers the five ids because each id's owned
  * glob would otherwise need its own copy of the harness.
  */
 import { afterAll, describe, expect, it } from 'bun:test'
