@@ -119,8 +119,8 @@ const writeArea = (dir: string, area: string, value: unknown) =>
 const ROW: Row = { id: 'gone', kind: 'removed', from: 'basalt-ui#Gone' }
 
 describe('area files', () => {
-  test('16 area files, in order, each valid', () => {
-    expect(AREAS).toHaveLength(16)
+  test('17 area files, in order, each valid', () => {
+    expect(AREAS).toHaveLength(17)
     const areas = loadAreas(REAL_ROOT)
     expect(areas.map((a) => a.area)).toEqual([...AREAS])
   })
