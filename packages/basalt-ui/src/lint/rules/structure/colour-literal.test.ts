@@ -73,16 +73,16 @@ describe('forms', () => {
     entry.forms.filter(isEnabled).map((form) => ({ id, form })),
   )
 
-  it('has 15 live forms: colour-literal 1, waiver-needs-reason 2, data-primitive 8, untrusted-markdown 4', () => {
+  it('has 16 live forms: colour-literal 1, waiver-needs-reason 2, data-primitive 9, untrusted-markdown 4', () => {
     const counts: Record<string, number> = {}
     for (const { id } of live) counts[id] = (counts[id] ?? 0) + 1
     expect(counts).toEqual({
       'colour-literal': 1,
       'waiver-needs-reason': 2,
-      'data-primitive': 8,
+      'data-primitive': 9,
       'untrusted-markdown': 4,
     })
-    expect(formCount(FAMILY)).toBe(15)
+    expect(formCount(FAMILY)).toBe(16)
   })
 
   for (const { id, form } of live) {
