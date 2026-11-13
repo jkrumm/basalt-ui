@@ -1,0 +1,270 @@
+{
+  "q5": {
+    "clampLines": 6,
+    "byPart": { "dialog": true, "sheet": true, "popover": true, "toast": true },
+    "shippedByPart": { "dialog": true, "sheet": true, "popover": true, "toast": true },
+    "controlSeesExit": { "dialog": true, "sheet": true, "popover": true, "toast": true },
+    "verdict": "PASS"
+  },
+  "q8": {
+    "population": 2221,
+    "belowFiled3694": true,
+    "sampled": 2207,
+    "pass": 1948,
+    "fail": 259,
+    "unresolved": 14,
+    "incompleteCeiling": 2333,
+    "byMessageKey": {
+      "bgGradient": 51,
+      "bgOverlap": 35,
+      "elmPartiallyObscured": 1105,
+      "emptyValue": 14,
+      "equalRatio": 12,
+      "imgNode": 803,
+      "nonBmp": 63,
+      "shortTextContent": 138
+    },
+    "unresolvedWhy": { "zero-sized": 14 },
+    "failsByRoute": {
+      "/ 1800x1200 dark": 2,
+      "/ 1800x1200 light": 2,
+      "/charts 1800x1200 light": 57,
+      "/charts 390x844 light": 57,
+      "/gallery 1800x1200 dark": 3,
+      "/gallery 1800x1200 light": 59,
+      "/gallery 390x844 dark": 2,
+      "/gallery 390x844 dark pseudo": 2,
+      "/gallery 390x844 light": 61,
+      "/overview 1800x1200 dark": 1,
+      "/overview 1800x1200 light": 1,
+      "/scenarios/s1-ops 1800x1200 dark": 2,
+      "/scenarios/s1-ops 1800x1200 light": 2,
+      "/scenarios/s1-ops 390x844 light": 4,
+      "/shell 1800x1200 dark": 2,
+      "/shell 1800x1200 light": 2
+    },
+    "failsByColours": {
+      "#262629 on #262629 = 1": 6,
+      "#262629 on #2a2a2d = 1.05": 2,
+      "#262629 on #2b2b2e = 1.07": 22,
+      "#5190f7 on #2b2b2e = 4.49": 2,
+      "#5190f7 on #2f3a35 = 3.76": 2,
+      "#52c07c on #f2f2f5 = 2.05": 9,
+      "#a1a1a5 on #f2f2f5 = 2.3": 1,
+      "#a7a7aa on #2b2b2e = 3.8": 10,
+      "#a7a7aa on #f2f2f5 = 2.15": 46,
+      "#a7a7aa on #fafafd = 2.3": 114,
+      "#d4d4d8 on #a7a7aa = 1.48": 1,
+      "#d4d4d8 on #a7a7aa = 1.62": 1,
+      "#d4d4d8 on #f2f2f5 = 1.25": 1,
+      "#d4d4d8 on #f2f2f5 = 1.32": 30,
+      "#e5e5e9 on #e5e5e9 = 1": 6,
+      "#fe8178 on #f2f2f5 = 2.18": 4,
+      "#ffffff on #f2f2f5 = 1.12": 2
+    },
+    "failures": [
+      {
+        "route": "/charts",
+        "cell": "1800x1200 light",
+        "target": "text[x=\"70.96\"]",
+        "fg": "#a7a7aa",
+        "bg": "#fafafd",
+        "ratio": 2.3,
+        "large": false,
+        "verdict": "fail"
+      },
+      {
+        "route": "/charts",
+        "cell": "1800x1200 light",
+        "target": "text[x=\"188.32\"]",
+        "fg": "#a7a7aa",
+        "bg": "#fafafd",
+        "ratio": 2.3,
+        "large": false,
+        "verdict": "fail"
+      },
+      {
+        "route": "/charts",
+        "cell": "1800x1200 light",
+        "target": "text[x=\"305.68\"]",
+        "fg": "#a7a7aa",
+        "bg": "#fafafd",
+        "ratio": 2.3,
+        "large": false,
+        "verdict": "fail"
+      },
+      {
+        "route": "/charts",
+        "cell": "1800x1200 light",
+        "target": "text[x=\"423.03\"]",
+        "fg": "#a7a7aa",
+        "bg": "#fafafd",
+        "ratio": 2.3,
+        "large": false,
+        "verdict": "fail"
+      },
+      {
+        "route": "/charts",
+        "cell": "1800x1200 light",
+        "target": "text[data-ts-key=\"y-tick-label:number:78\"]",
+        "fg": "#a7a7aa",
+        "bg": "#fafafd",
+        "ratio": 2.3,
+        "large": false,
+        "verdict": "fail"
+      },
+      {
+        "route": "/charts",
+        "cell": "1800x1200 light",
+        "target": "text[y=\"133.72\"]",
+        "fg": "#a7a7aa",
+        "bg": "#fafafd",
+        "ratio": 2.3,
+        "large": false,
+        "verdict": "fail"
+      },
+      {
+        "route": "/charts",
+        "cell": "1800x1200 light",
+        "target": "text[data-ts-key=\"y-tick-label:number:82\"]",
+        "fg": "#a7a7aa",
+        "bg": "#fafafd",
+        "ratio": 2.3,
+        "large": false,
+        "verdict": "fail"
+      },
+      {
+        "route": "/charts",
+        "cell": "1800x1200 light",
+        "target": "text[data-ts-key=\"y-tick-label:number:84\"]",
+        "fg": "#a7a7aa",
+        "bg": "#fafafd",
+        "ratio": 2.3,
+        "large": false,
+        "verdict": "fail"
+      },
+      {
+        "route": "/charts",
+        "cell": "1800x1200 light",
+        "target": "text[x=\"73.52\"]",
+        "fg": "#a7a7aa",
+        "bg": "#fafafd",
+        "ratio": 2.3,
+        "large": false,
+        "verdict": "fail"
+      },
+      {
+        "route": "/charts",
+        "cell": "1800x1200 light",
+        "target": "text[x=\"183.36\"]",
+        "fg": "#a7a7aa",
+        "bg": "#fafafd",
+        "ratio": 2.3,
+        "large": false,
+        "verdict": "fail"
+      },
+      {
+        "route": "/charts",
+        "cell": "1800x1200 light",
+        "target": "text[x=\"293.2\"]",
+        "fg": "#a7a7aa",
+        "bg": "#fafafd",
+        "ratio": 2.3,
+        "large": false,
+        "verdict": "fail"
+      },
+      {
+        "route": "/charts",
+        "cell": "1800x1200 light",
+        "target": "text[x=\"403.04\"]",
+        "fg": "#a7a7aa",
+        "bg": "#fafafd",
+        "ratio": 2.3,
+        "large": false,
+        "verdict": "fail"
+      },
+      {
+        "route": "/charts",
+        "cell": "1800x1200 light",
+        "target": "text[y=\"203.1\"][data-ts-key=\"y-tick-label:number:0\"][x=\"22.45\"]",
+        "fg": "#a7a7aa",
+        "bg": "#fafafd",
+        "ratio": 2.3,
+        "large": false,
+        "verdict": "fail"
+      },
+      {
+        "route": "/charts",
+        "cell": "1800x1200 light",
+        "target": "text[y=\"122.31\"]",
+        "fg": "#a7a7aa",
+        "bg": "#fafafd",
+        "ratio": 2.3,
+        "large": false,
+        "verdict": "fail"
+      },
+      {
+        "route": "/charts",
+        "cell": "1800x1200 light",
+        "target": "text[y=\"41.51\"]",
+        "fg": "#a7a7aa",
+        "bg": "#fafafd",
+        "ratio": 2.3,
+        "large": false,
+        "verdict": "fail"
+      },
+      {
+        "route": "/charts",
+        "cell": "1800x1200 light",
+        "target": "text[data-ts-key=\"y2-tick-label:number:0\"]",
+        "fg": "#a7a7aa",
+        "bg": "#fafafd",
+        "ratio": 2.3,
+        "large": false,
+        "verdict": "fail"
+      },
+      {
+        "route": "/charts",
+        "cell": "1800x1200 light",
+        "target": "text[data-ts-key=\"y2-tick-label:number:50\"]",
+        "fg": "#a7a7aa",
+        "bg": "#fafafd",
+        "ratio": 2.3,
+        "large": false,
+        "verdict": "fail"
+      },
+      {
+        "route": "/charts",
+        "cell": "1800x1200 light",
+        "target": "text[data-ts-key=\"y2-tick-label:number:100\"]",
+        "fg": "#a7a7aa",
+        "bg": "#fafafd",
+        "ratio": 2.3,
+        "large": false,
+        "verdict": "fail"
+      },
+      {
+        "route": "/charts",
+        "cell": "1800x1200 light",
+        "target": "text[data-ts-key=\"y2-tick-label:number:150\"]",
+        "fg": "#a7a7aa",
+        "bg": "#fafafd",
+        "ratio": 2.3,
+        "large": false,
+        "verdict": "fail"
+      },
+      {
+        "route": "/charts",
+        "cell": "1800x1200 light",
+        "target": "svg[aria-label=\"Load, first 14 days\"] > .ts-chart__axes[data-ts-key=\"axes\"] > text[x=\"76.1\"][y=\"115.9\"][text-anchor=\"middle\"]",
+        "fg": "#a7a7aa",
+        "bg": "#fafafd",
+        "ratio": 2.3,
+        "large": false,
+        "verdict": "fail"
+      }
+    ],
+    "verdict": "REFUTED"
+  },
+  "verdict": "REFUTED"
+}
