@@ -1,0 +1,10 @@
+{
+  "route-switch": {
+    "measured": 2,
+    "ceiling": 3
+  },
+  "ticker": {
+    "measured": 12,
+    "ceiling": 13
+  }
+}
