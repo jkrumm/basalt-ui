@@ -1,0 +1,6 @@
+// expect: matchMedia('(min-width: 768px)')
+// expect: useMediaQuery('(max-width: 640px)')
+// expect: matchMedia('(min-width: ${}px)')
+export const a = window.matchMedia('(min-width: 768px)')
+export const b = useMediaQuery('(max-width: 640px)')
+export const c = matchMedia(`(min-width: ${bp}px)`)
