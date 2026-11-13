@@ -315,9 +315,11 @@ describe('sync-self', () => {
   })
 
   it('every shipped subagent has a byte-identical copy in /.claude/agents', () => {
-    const src = join(PKG_ROOT, 'agent/agents')
+    const src = join(PKG_ROOT, 'agent/reviewer')
     const dest = join(REPO_ROOT, '.claude/agents')
-    const names = readdirSync(src).filter((name) => name.endsWith('.md'))
+    const names = readdirSync(src).filter(
+      (name) => name.startsWith('basalt-') && name.endsWith('.md'),
+    )
     expect(names.length).toBeGreaterThan(0)
     for (const name of names) {
       const installed = readFileSync(join(dest, name), 'utf8')

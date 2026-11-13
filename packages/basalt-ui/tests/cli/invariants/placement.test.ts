@@ -106,7 +106,7 @@ describe('placement', () => {
     const sources = [
       'agent/rules',
       'agent/skills',
-      'agent/agents',
+      'agent/reviewer',
       'agent/templates/AGENTS-block.md.tpl',
       ...Object.values(pkg.bin).map((p) => p.replace(/^\.\//, '')),
     ]
@@ -117,7 +117,7 @@ describe('placement', () => {
   })
 
   // flips in: v3-sk-5-rules (the shipped tree is the v3 tree and every file of it ships)
-  it.failing('inv 16b: the v3 tree ships: five rules, two skills, the reviewer pair', () => {
+  it('inv 16b: the v3 tree ships: five rules, two skills, the reviewer pair', () => {
     const pkg = JSON.parse(readFileSync(join(PKG_ROOT, 'package.json'), 'utf8')) as {
       files: string[]
     }

@@ -79,7 +79,7 @@ export const AGENT_LINE_BUDGETS: Readonly<Record<string, number>> = {
   'agent/templates/AGENTS-block.md.tpl': 55, // concept 4.4: at most 55 lines, imports nothing
   'agent/templates/AGENTS-block.tokens.md.tpl': 15, // the tokens-profile variant
   // Outside the layer total: a subagent loads only when invoked, not into every session.
-  'agent/agents/basalt-design-reviewer.md': 100, // W36: +17 Assessment A (content → layout → style ordering, P0–P3, score line, DEGRADED honesty rule)
+  'agent/reviewer/basalt-design-reviewer.md': 40, // the thin wrapper; agent/reviewer/rubric.md carries the items
   'agent/templates/DESIGN.md.tpl': 45,
 }
 
@@ -294,8 +294,8 @@ export function checkCoverage(flags: readonly string[] = [], pkgRoot: string = P
     if (lines > budget) failures.push(`${rel}: ${lines} lines exceeds its ${budget}-line budget`)
   }
   for (const name of AGENT_NAMES) {
-    if (!existsSync(resolve(pkgRoot, `agent/agents/${name}.md`)))
-      failures.push(`agent/agents/${name}.md: missing`)
+    if (!existsSync(resolve(pkgRoot, `agent/reviewer/${name}.md`)))
+      failures.push(`agent/reviewer/${name}.md: missing`)
   }
   // A missing rule or skill is already reported by assertions 2/3; the AGENTS block has no other
   // assertion, so its absence is reported here. The block imports nothing (an `@` import line)

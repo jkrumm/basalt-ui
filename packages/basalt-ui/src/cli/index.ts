@@ -883,8 +883,8 @@ export function managedFiles(
   const agents: ManagedFile[] = AGENT_NAMES.map((name) => ({
     dest: `.claude/agents/${name}.md`,
     mode: 'managed' as const,
-    source: `agent/agents/${name}.md`,
-    render: (ctx: RenderContext) => readSource(ctx.pkgRoot, `agent/agents/${name}.md`),
+    source: `agent/reviewer/${name}.md`,
+    render: (ctx: RenderContext) => readSource(ctx.pkgRoot, `agent/reviewer/${name}.md`),
   }))
 
   // AGENTS.md, not CLAUDE.md: Claude Code loads a repo-root AGENTS.md directly, but ANY CLAUDE.md

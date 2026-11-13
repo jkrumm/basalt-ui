@@ -30,19 +30,25 @@ const REPO_ROOT = join(PKG_ROOT, '..', '..')
 const NAMESPACES = [
   { name: 'rule', dir: 'rules', unit: 'file' },
   { name: 'skill', dir: 'skills', unit: 'dir' },
-  { name: 'agent', dir: 'agents', unit: 'file' },
+  { name: 'agent', dir: 'agents', unit: 'file', from: 'reviewer' },
 ] as const
 
 function entries(root: string, unit: 'file' | 'dir'): string[] {
   if (!existsSync(root)) return []
   return readdirSync(root, { withFileTypes: true })
-    .filter((e) => (unit === 'dir' ? e.isDirectory() : e.name.endsWith('.md')))
+    .filter((e) =>
+      unit === 'dir' ? e.isDirectory() : e.name.startsWith('basalt-') && e.name.endsWith('.md'),
+    )
     .map((e) => e.name)
 }
 
 /** Copy every shipped entry into `/.claude/<dir>`, then delete `basalt-*` entries with no source. */
-function syncNamespace(dir: string, unit: 'file' | 'dir'): { copied: number; pruned: number } {
-  const src = join(PKG_ROOT, 'agent', dir)
+function syncNamespace(
+  dir: string,
+  unit: 'file' | 'dir',
+  from = dir,
+): { copied: number; pruned: number } {
+  const src = join(PKG_ROOT, 'agent', from)
   const dest = join(REPO_ROOT, '.claude', dir)
   if (!existsSync(src)) throw new Error(`sync-self: shipped source dir missing: ${src}`)
   const shipped = entries(src, unit)
@@ -70,7 +76,10 @@ function syncNamespace(dir: string, unit: 'file' | 'dir'): { copied: number; pru
 }
 
 function main(): void {
-  const results = NAMESPACES.map((ns) => ({ ns, ...syncNamespace(ns.dir, ns.unit) }))
+  const results = NAMESPACES.map((ns) => ({
+    ns,
+    ...syncNamespace(ns.dir, ns.unit, 'from' in ns ? ns.from : ns.dir),
+  }))
   const pruned = results.reduce((sum, r) => sum + r.pruned, 0)
   console.log(
     `✓ sync-self: ${results.map((r) => `${r.copied} ${r.ns.name}(s) → .claude/${r.ns.dir}`).join(', ')}` +
