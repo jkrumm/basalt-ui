@@ -606,10 +606,9 @@ const own = {
   'basalt-ui/state': [],
   'basalt-ui/format': [],
   'basalt-ui/tokens': [],
-  // v3 skeleton stubs import no peer, so they must load in both phases
+  // v3 skeleton stubs import no peer, so they must load in both phases (`./ai` is no stub: it has a subpath-required row)
   'basalt-ui/router': [],
   'basalt-ui/data': [],
-  'basalt-ui/ai': [],
   'basalt-ui/lint': [],
   'basalt-ui/stylelint': [],
   'basalt-ui/testing': [],
