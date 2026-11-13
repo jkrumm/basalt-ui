@@ -1,1 +1,1 @@
-["liveQuery", "makeQueryClient", "optimistic", "unwrap", "windowKey"]
+["createSyncedState", "liveQuery", "makeQueryClient", "optimistic", "unwrap", "windowKey"]
