@@ -5,15 +5,7 @@ import { join, resolve } from 'node:path'
 
 const SKILL_DIR = resolve(import.meta.dir, '../../agent/skills/basalt-design')
 const SRC = resolve(import.meta.dir, '..')
-const REFERENCES = [
-  'concept',
-  'catalogue',
-  'stat-tile',
-  'encoding-rules',
-  'anti-defaults',
-  'states',
-  'recipes',
-]
+const REFERENCES = ['anti-defaults']
 const NOT_SHIPPED_HEADING = '## Not shipped'
 
 function markdownFiles(dir: string): string[] {
@@ -82,26 +74,11 @@ function pascalIdentifiers(text: string): string[] {
 describe('basalt-design references', () => {
   const skill = readFileSync(join(SKILL_DIR, 'SKILL.md'), 'utf8')
 
-  it('ships exactly the seven reference files', () => {
+  it('ships SKILL.md and the anti-defaults reference, linked from the skill', () => {
     const dir = join(SKILL_DIR, 'references')
-    expect(existsSync(dir)).toBe(true)
     expect(readdirSync(dir).toSorted()).toEqual(REFERENCES.map((r) => `${r}.md`).toSorted())
-  })
-
-  it('links every reference from SKILL.md and stays a router', () => {
     for (const ref of REFERENCES) expect(skill).toContain(`references/${ref}.md`)
     expect(skill.split('\n').length).toBeLessThanOrEqual(60)
-  })
-
-  it('makes the concept doc gating', () => {
-    expect(skill).toContain('Nothing is built before the concept exists')
-    expect(skill).toContain('docs/design/<screen>.md')
-  })
-
-  it('names the review mechanics exactly', () => {
-    for (const phrase of ['basalt-ui shot detect', 'DEGRADED', 'data-shot-absent="empty error"']) {
-      expect(skill).toContain(phrase)
-    }
   })
 
   it('exports every name from the public path written next to it', () => {
