@@ -3,12 +3,14 @@
  * an invalidation of the `pushed` queries it can alter, debounced in two tiers (lists, then the
  * slower aggregates), with a ceiling so a steady stream cannot starve the refetch.
  *
- * Runtime imports: `./live-query-runtime` (the `pushed` mark and the stream flag). Nothing runs at
+ * Runtime imports: `./live-query-runtime` (the `pushed` mark and the stream flag) and `./connection`
+ * (`attachChannel`, which feeds the channel's state to `useConnection`). Nothing runs at
  * import or at `bindInvalidation`; the subscription exists between `start()` and the stop it returns.
  * Optional peer: @tanstack/react-query.
  */
 import type { Query, QueryClient, QueryKey } from '@tanstack/react-query'
 import type { Channel, Delivered, Scheduler } from '../../core/channel'
+import { attachChannel } from './connection'
 import { liveMetaOf, setStreamLive } from './live-query-runtime'
 
 /** What a frame (or a gap) can alter: every pushed query, none, one root, several roots, or any key a predicate accepts. */
@@ -96,7 +98,8 @@ function toTest<R extends string>(affects: Affects<R>): KeyTest {
  * time the stream goes live joins the boot requests (`cancelRefetch: false`); every later
  * live, and every `reset` (a 410 or a cursorless reconnect), is a gap and applies `onGap`.
  * It also tells the live runtime whether the stream is live, which moves `pushed` queries
- * between `fallback` and `safety`. Beat events are the channel's (`beats`) and never reach `map`;
+ * between `fallback` and `safety`, and feeds the channel's state to `useConnection` (stream word,
+ * last frame, connect failures) until the stop. Beat events are the channel's (`beats`) and never reach `map`;
  * pass the channel's `greeting` so the greeting does not reach `map` either.
  * Console wiring (software-factory apps/console; replaces its live.ts, policy.ts and debounce.ts):
  * `createChannel({ url: '/v1/stream', greeting: 'hello', schema })`, then
@@ -230,6 +233,7 @@ export function bindInvalidation<F, R extends string>(
       }
     })
     const offStore = channel.store.subscribe(onStore)
+    const offConnection = attachChannel(client, channel)
     const offFrames = channel.subscribe(onDelivered)
     onStore()
 
@@ -237,6 +241,7 @@ export function bindInvalidation<F, R extends string>(
       stopCurrent = undefined
       offFrames()
       offStore()
+      offConnection()
       offCache()
       lists.cancel()
       aggregates.cancel()

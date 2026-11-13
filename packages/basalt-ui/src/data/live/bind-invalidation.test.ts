@@ -13,6 +13,7 @@ import type { Transport, Wire } from '../../core/channel-transport'
 import { fakeChannel } from '../../testing/fake-channel'
 import { makeQueryClient } from '../query-client'
 import { bindInvalidation } from './bind-invalidation'
+import { connectionStoreOf } from './connection'
 import type { Affects } from './bind-invalidation'
 import { liveQuery } from './live-query'
 
@@ -634,6 +635,25 @@ describe('start, stop and roots', () => {
     expect(live.isStreamLive(query)).toBe(true)
     stop()
     expect(live.isStreamLive(query)).toBe(false)
+  })
+
+  test('start feeds the channel to useConnection; stop returns the stream to none', async () => {
+    const w = await world()
+    const channel = fakeChannel<Change | null>()
+    const store = connectionStoreOf(w.client)
+    expect(store.getSnapshot().stream).toBe('none')
+    const stop = bindInvalidation<Change | null, Root>(w.client, channel, {
+      roots: ROOTS,
+      map: () => 'all',
+      scheduler: fakeScheduler().scheduler,
+    }).start()
+    expect(store.getSnapshot().stream).toBe('live')
+    expect(store.getSnapshot().state).toBe('live')
+    channel.setStatus('unauthorized')
+    expect(store.getSnapshot().stream).toBe('unauthorized')
+    stop()
+    expect(store.getSnapshot().stream).toBe('none')
+    expect(store.getSnapshot().state).toBe('polling')
   })
 
   test('patch runs for a valid frame before map', async () => {
