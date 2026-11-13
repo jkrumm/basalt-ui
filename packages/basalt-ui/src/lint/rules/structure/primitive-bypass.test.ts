@@ -1,7 +1,7 @@
 /**
  * `primitive-bypass` under ESLint's RuleTester, one suite per form from its fixture file. The
- * oxlint host run covers these suites too (see `import-boundary.test.ts`). The `Intl` form is off
- * in the table; its suite runs with the form enabled and a separate test proves the off state.
+ * oxlint host run covers these suites too (see `import-boundary.test.ts`). The `Intl` form is on
+ * in the table.
  */
 import { describe, expect, it } from 'bun:test'
 import type { Rule } from 'eslint'
@@ -75,17 +75,18 @@ describe('the Intl form', () => {
       },
     ] as never)
 
-  it('is disabled in the table with a reason, so the table rule stays silent', () => {
+  it('is enabled in the table, so the table rule fires and names useFormat', () => {
     const form = PRIMITIVE_BYPASS.forms.find((f) => f.id === 'intl-format')
-    expect(form && isEnabled(form)).toBe(false)
-    expect(form?.reason).toContain('S9')
-    expect(run(buildRule('primitive-bypass', PRIMITIVE_BYPASS))).toEqual([])
-    expect(renderCoverage({ table: primitiveBypassRules })).toContain(
+    expect(form && isEnabled(form)).toBe(true)
+    const messages = run(buildRule('primitive-bypass', PRIMITIVE_BYPASS))
+    expect(messages.map((m) => m.messageId)).toEqual(['intl-format'])
+    expect(messages[0]?.message).toContain('useFormat')
+    expect(renderCoverage({ table: primitiveBypassRules })).not.toContain(
       'not guarded: basalt/primitive-bypass/intl-format',
     )
   })
 
-  it('fires once the form is enabled', () => {
+  it('fires through the enabled-rule helper too', () => {
     expect(run(enabledRule('primitive-bypass', PRIMITIVE_BYPASS)).map((m) => m.messageId)).toEqual([
       'intl-format',
     ])
