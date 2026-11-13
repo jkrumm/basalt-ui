@@ -5,13 +5,24 @@
  * top-level keys are stripped on read: oxlint hard-errors on any field outside its known
  * schema (e.g. a doc-comment `"//"` key), so the base must be whitelisted before re-emitting.
  *
+ *
+ * It also writes the v3 shipped presets from the rule table (`src/lint/preset.ts`): one
+ * `configs/oxlint-<profile>.json` per shipped profile (`tokens` ships none) and the oxfmt
+ * `sortTailwindcss` preset. Those files are byte-compared by `--check`, not parsed.
+ *
  * Usage: bun packages/basalt-ui/scripts/gen-oxlint.ts
  *        bun packages/basalt-ui/scripts/gen-oxlint.ts --check  (CI drift gate)
+ *        --configs-dir=<dir>  with --check, compare the v3 presets against that directory
  */
 import { readFileSync, writeFileSync } from 'node:fs'
-import { join } from 'node:path'
+import { basename, join } from 'node:path'
+import plugin from '../src/lint'
+import { tableOf } from '../src/lint/factory'
+import type { Contract } from '../src/lint/preset'
+import { oxfmtPreset, SHIPPED_PROFILES, shippedPreset } from '../src/lint/preset'
 import type { ForbiddenImport, RuleOverride } from '../src/surfaces'
 import { SURFACES } from '../src/surfaces'
+import { SLOTS } from '../src/ui/slots'
 
 // The exact set oxlint's own config parser accepts at the top level (per oxlint 1.68.0's
 // "unknown field" parse error) — anything else (e.g. a doc-comment `"//"` key) is stripped
@@ -284,8 +295,105 @@ export function projectBanList(target: Target): OverrideBlock[] {
 // ── File paths ────────────────────────────────────────────────────────────────────────────────────
 
 const root = join(import.meta.dirname, '..', '..', '..')
+const pkgRoot = join(root, 'packages/basalt-ui')
 const shippedPath = join(root, 'packages/basalt-ui/configs/oxlint.json')
 const repoPath = join(root, '.oxlintrc.json')
+
+// ── v3 presets — generated from the rule table ───────────────────────────────────────────────────
+
+/** Exact `x.y.z`: a patch can add findings, so a range is not a pin (guardrails section 9). */
+function exactPin(label: string, spec: string | undefined): string {
+  if (spec === undefined || !/^\d+\.\d+\.\d+$/.test(spec)) {
+    throw new Error(`${label} must be an exact pin in package.json, found ${spec ?? 'nothing'}`)
+  }
+  return spec
+}
+
+type Manifest = { devDependencies?: Record<string, string> }
+const readManifest = (path: string): Manifest => JSON.parse(readFileSync(path, 'utf8')) as Manifest
+
+/** The pins are read, never written here: the dependency issue owns them. */
+export function readPins(): { oxlint: string; shadcnLint: string } {
+  return {
+    oxlint: exactPin(
+      'oxlint',
+      readManifest(join(root, 'package.json')).devDependencies?.['oxlint'],
+    ),
+    shadcnLint: exactPin(
+      '@shadcn/lint',
+      readManifest(join(pkgRoot, 'package.json')).devDependencies?.['@shadcn/lint'],
+    ),
+  }
+}
+
+function readContracts(): Contract[] {
+  const path = join(pkgRoot, 'src/ui/no-restyle.generated.json')
+  const file = JSON.parse(readFileSync(path, 'utf8')) as { contracts: Contract[] }
+  return file.contracts.map(({ pattern, allow, deny, message }) => ({
+    pattern,
+    allow,
+    deny,
+    message,
+  }))
+}
+
+/** oxfmt writes the files the repo's `fmt:check` reads, so the bytes `--check` compares are stable. */
+function format(text: string, name: string): string {
+  const run = Bun.spawnSync(['oxfmt', `--stdin-filepath=${name}`], {
+    cwd: root,
+    stdin: new TextEncoder().encode(text),
+    env: {
+      ...process.env,
+      PATH: `${join(root, 'node_modules/.bin')}:${process.env['PATH'] ?? ''}`,
+    },
+  })
+  if (run.exitCode !== 0) throw new Error(`oxfmt failed on ${name}: ${run.stderr.toString()}`)
+  return run.stdout.toString()
+}
+
+/** Where each generated v3 file lives, relative to the repository root. */
+export const V3_PRESET_PATHS = {
+  profile: (profile: string): string => `packages/basalt-ui/configs/oxlint-${profile}.json`,
+  oxfmt: 'packages/basalt-ui/configs/oxfmt-tailwind.json',
+} as const
+
+/** The v3 files as repo-relative path → exact bytes. `tokens` is absent: it ships no preset. */
+export function projectV3Files(): Map<string, string> {
+  const files = new Map<string, string>()
+  const table = tableOf(plugin)
+  const inputs = { table, pins: readPins(), contracts: readContracts(), uiSlots: SLOTS }
+  for (const profile of SHIPPED_PROFILES) {
+    const path = V3_PRESET_PATHS.profile(profile)
+    files.set(path, format(JSON.stringify(shippedPreset(profile, inputs), null, 2), path))
+  }
+  const base = JSON.parse(readFileSync(join(pkgRoot, 'configs/oxfmt.json'), 'utf8')) as Record<
+    string,
+    unknown
+  >
+  files.set(
+    V3_PRESET_PATHS.oxfmt,
+    format(JSON.stringify(oxfmtPreset(base), null, 2), V3_PRESET_PATHS.oxfmt),
+  )
+  return files
+}
+
+/** `configsDir` points the comparison at another copy of `configs/` (the drift test edits one). */
+function v3Drift(files: ReadonlyMap<string, string>, configsDir: string | undefined): string[] {
+  const drift: string[] = []
+  for (const [path, text] of files) {
+    let committed: string | undefined
+    try {
+      committed = readFileSync(
+        configsDir === undefined ? join(root, path) : join(configsDir, basename(path)),
+        'utf8',
+      )
+    } catch {
+      committed = undefined
+    }
+    if (committed !== text) drift.push(path)
+  }
+  return drift
+}
 
 // ── Main — regenerate both config files ──────────────────────────────────────────────────────────
 
@@ -315,6 +423,7 @@ function main(): void {
   const checkMode = args.includes('--check')
 
   const { shippedResult, repoResult } = generate()
+  const v3Files = projectV3Files()
 
   if (checkMode) {
     // Parse the committed files and deep-compare (format-agnostic) against generated output
@@ -342,18 +451,37 @@ function main(): void {
       driftFound = true
     }
 
+    const dirFlag = args.find((arg) => arg.startsWith('--configs-dir='))
+    for (const path of v3Drift(v3Files, dirFlag?.slice('--configs-dir='.length))) {
+      console.error(`✖ gen-oxlint --check: ${path} is out of sync with the rule table.`)
+      console.error('  Run: bun packages/basalt-ui/scripts/gen-oxlint.ts')
+      driftFound = true
+    }
+
     if (driftFound) {
       process.exit(1)
     }
-    console.log('✓ gen-oxlint --check: both oxlint configs are in sync with SURFACES.')
+    console.log(
+      `✓ gen-oxlint --check: both oxlint configs match SURFACES, ${v3Files.size} v3 presets match the rule table.`,
+    )
     return
   }
 
-  writeFileSync(shippedPath, JSON.stringify(shippedResult, null, 2) + '\n', 'utf8')
-  writeFileSync(repoPath, JSON.stringify(repoResult, null, 2) + '\n', 'utf8')
-
-  console.log(`wrote ${shippedPath}`)
-  console.log(`wrote ${repoPath}`)
+  // The 2.x pair is compared as parsed JSON (oxfmt lays the committed files out): rewrite only on a
+  // semantic change, so a regeneration never reformats a file that is already right.
+  for (const [path, result] of [
+    [shippedPath, shippedResult],
+    [repoPath, repoResult],
+  ] as const) {
+    const committed = JSON.stringify(JSON.parse(readFileSync(path, 'utf8')))
+    if (committed === JSON.stringify(result)) continue
+    writeFileSync(path, JSON.stringify(result, null, 2) + '\n', 'utf8')
+    console.log(`wrote ${path}`)
+  }
+  for (const [path, text] of v3Files) {
+    writeFileSync(join(root, path), text, 'utf8')
+    console.log(`wrote ${join(root, path)}`)
+  }
 }
 
 // Only run when executed directly (not when imported by the test suite)
