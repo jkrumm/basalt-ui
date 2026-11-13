@@ -34,6 +34,30 @@ const railTop = (plotHeight: number) => Y_MAX - (RAIL_PX * (Y_MAX - Y_MIN)) / pl
 />
 ```
 
-4. Wrap it in `ChartCard`; pass `state={{ pending, error, empty }}` from the query. A `cursorValue` series colours its CURSOR dot per datum with `getMarker: (d) => ({ color })`; always-on markers are `Lines`-only, so a consumer-`marks` chart draws its persistent dots itself.
-5. Run the repo's own gate (e.g. `make check`), which runs lint, the theme guard and typecheck; fix every finding at its source.
-6. Check both color schemes and a pending query.
+4. Make the marks answer to focus (the geometry seam): `useChartFocus(items, { announce })` makes one handle; pass it as `focus` to `CartesianChart` (custom marks dim against `plot.focused`), `Heatmap` or a segmented `Meter`, and bind the card's figure to `focus.readout(total, read)`, which returns the total on leave. The host owns the one tab stop, the arrow keys and the polite announcement. A form the page draws itself spreads `focus.target` on its container and `focus.item(i)` on each mark, and places direct labels with `chartLabels.place` (same pixels on the server and the client). Axis names are `y.title` / `xTitle`, a vertical rule is `xRefLines`, a log x is `xScale: 'log'`.
+
+```tsx
+const focus = useChartFocus(stages, { announce: (d) => `${d.name}: ${fmt(d.behind)} behind best` })
+;<ChartCard title="Pace" facts={{ value: focus.readout(fmt(total), (d) => fmt(d.behind)), period: focus.readout('whole run', (d) => d.name) }}>
+  <CartesianChart ariaLabel="Pace" data={stages} x={(d) => d.at} series={series} focus={focus}
+    marks={(plot) => {
+      // fillOpacity is one number per mark: split the rows on plot.focused, dim the rest.
+      const rows = plot.rows('behind')
+      const rest = rows.filter((r) => plot.focused !== null && r.datum !== plot.focused)
+      return [
+        dot(rest, { x: 'x', y: 'y', fill: SERIES.pace, fillOpacity: 0.25 }),
+        dot(rows.filter((r) => !rest.includes(r)), { x: 'x', y: 'y', fill: SERIES.pace }),
+      ]
+    }} />
+</ChartCard>
+
+// Hand-drawn (a part-of-whole bar): one tab stop, a mark per item, one live region.
+<div {...focus.target} aria-label="Context window" className="flex">
+  {parts.map((p, i) => <div key={p.key} {...focus.item(i)} style={{ flexGrow: p.tokens }} className="data-dimmed:opacity-25" />)}
+  {focus.live}
+</div>
+```
+
+5. Wrap it in `ChartCard`; pass `state={{ pending, error, empty }}` from the query. A `cursorValue` series colours its CURSOR dot per datum with `getMarker: (d) => ({ color })`; always-on markers are `Lines`-only, so a consumer-`marks` chart draws its persistent dots itself.
+6. Run the repo's own gate (e.g. `make check`), which runs lint, the theme guard and typecheck; fix every finding at its source.
+7. Check both color schemes, a pending query, and a keyboard-focused frame.

@@ -314,7 +314,7 @@ export const SURFACES = {
     guardKinds: ['raw-hex', 'raw-color-fn'],
     pluginRules: ['chart-in-raw-surface', 'chart-engine-boundary', 'chart-host-single'],
     description:
-      'CartesianChart (the TanStack Charts rung), the Lines and Bars kinds, ChartCard and the shared chartCursor (Mantine-free; @tanstack/charts + d3-scale peers)',
+      'CartesianChart (the TanStack Charts rung), the Lines and Bars kinds, ChartCard, the shared chartCursor and the geometry seam: useChartFocus (focus, dim the rest, one bound readout) and chartLabels (server-equal label width and placement) (Mantine-free; @tanstack/charts + d3-scale peers)',
     optionalPeers: ['@tanstack/charts', 'd3-scale'],
     globs: {
       shipped: ['**/charts/**'],

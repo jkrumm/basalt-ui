@@ -12,5 +12,7 @@
   "StackedArea",
   "chartCursor",
   "chartCurve",
-  "foldBands"
+  "chartLabels",
+  "foldBands",
+  "useChartFocus"
 ]
