@@ -23,6 +23,7 @@ import { tmpdir } from 'node:os'
 import { dirname, join, resolve } from 'node:path'
 
 import plugin from '../packages/basalt-ui/src/lint'
+import { findBlanketDisables } from '../packages/basalt-ui/src/lint/blanket-disable'
 import { tableOf } from '../packages/basalt-ui/src/lint/factory'
 import { buildPreset } from '../packages/basalt-ui/src/lint/preset'
 import type { Form, Profile } from '../packages/basalt-ui/src/lint/rule-table'
@@ -184,9 +185,6 @@ const extend = (profile: string): string =>
 const ownDiagnostics = (found: Diagnostic[], ruleId: string): Diagnostic[] =>
   found.filter((d) => d.code === `basalt(${ruleId})`)
 
-/** A directive with no rule list: every rule is off in the file, whatever its own message says. */
-const BLANKET_DISABLE = /oxlint-disable(?!-)\s*(?:--|\*\/|$)/m
-
 const fixOf = (form: Form): string => form.fix.replace(/[.\s]+$/, '')
 
 /** A block runs in the shared project unless it needs its own options or file path. */
@@ -254,11 +252,12 @@ describe('every form fires through the shipped preset', () => {
       const missed: string[] = []
       for (const { block, found } of outcomes[profile]) {
         if (block.kind !== 'invalid' || !isEnabled(block.form) || !runsAt(block, profile)) continue
-        // The host hides a finding under a blanket `/* oxlint-disable */`, the rule's own included:
-        // oxlint behaviour, not a regex that matched nothing. `v3-gr-5` owns the weakened-config check.
-        if (BLANKET_DISABLE.test(block.code)) continue
-        const own = ownDiagnostics(found, block.ruleId)
         const label = `${block.ruleId}/${block.form.id}`
+        // The host hides a finding under a blanket `/* oxlint-disable */`, the rule's own included:
+        // oxlint behaviour, not a regex that matched nothing. The rule cannot report it, so the text
+        // scan (`findBlanketDisables`, which `v3-gr-5`'s weakened-config check runs) must.
+        if (found.length === 0 && findBlanketDisables(block.code).length > 0) continue
+        const own = ownDiagnostics(found, block.ruleId)
         // A block may report other forms of its rule (`@errors`); one must name this form's fix.
         const named = own.some((d) => d.message.includes(fixOf(block.form)))
         const subjects = block.expects.filter((s) => !own.some((d) => d.message.includes(s)))
