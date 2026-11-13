@@ -84,6 +84,31 @@ describe('brand zone', () => {
   })
 })
 
+describe('global controls center', () => {
+  const center = (): HTMLElement | null => document.querySelector('[data-slot="shell-center"]')
+
+  test('a slot without a compact form hides the center below md', () => {
+    renderHeader({
+      globalControls: { kind: 'controls-slot', count: 1, render: () => <span>pills</span> },
+    })
+    expect(center()?.className).toContain('hidden')
+    expect(center()?.className).toContain('md:flex')
+  })
+
+  test('a slot with its own compact form stays in the row at every width', () => {
+    renderHeader({
+      globalControls: {
+        kind: 'controls-slot',
+        count: 1,
+        compact: true,
+        render: () => <span>pills</span>,
+      },
+    })
+    expect(center()?.className).not.toContain('hidden')
+    expect(center()?.className).toContain('flex')
+  })
+})
+
 describe('global action tiers', () => {
   test('every action carries its tier and label as data, priority 1 by default', () => {
     renderHeader({ globalActions: CLUSTER })

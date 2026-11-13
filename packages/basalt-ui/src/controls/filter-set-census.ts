@@ -21,13 +21,38 @@ export function isUnrestricted(spec: AnySpec, value: unknown): boolean {
   return catalogue.length > 0 && catalogue.every((o) => value.includes(o.value))
 }
 
+/** What a router field handle adds to the port: the codec and the fallback it is judged against. */
+type CodecHandle = {
+  readonly scope?: string
+  readonly codec: { equals(a: unknown, b: unknown): boolean }
+  readonly fallback: unknown
+}
+
+function hasCodec(handle: object): handle is CodecHandle {
+  const h = handle as Partial<CodecHandle>
+  // A widget handle's default is "no override", which a value equal to the fallback does not say.
+  return h.scope !== 'widget' && typeof h.codec?.equals === 'function' && 'fallback' in h
+}
+
+/**
+ * Whether `value` is the handle's default. A router field handle reads its mounted routers in
+ * `isDefault`, and none is mounted on the server or on the first client render, so it reports
+ * default for `?range=30d`; the `value` that `handle.use()` returned is right there, so it is
+ * compared against the fallback with the field's codec instead. Other handles keep `isDefault`.
+ */
+function atDefault(spec: AnySpec, value: unknown): boolean {
+  const handle = spec.handle
+  if (hasCodec(handle)) return handle.codec.equals(value, handle.fallback)
+  return handle.isDefault
+}
+
 /**
  * Whether `value` narrows. A multi equal to the full set behaves as empty, so it never counts; any
- * other kind is active when its handle is off its default.
+ * other kind is active when it is off its default.
  */
 export function isActive(spec: AnySpec, value: unknown): boolean {
   if (isUnrestricted(spec, value)) return false
-  return !spec.handle.isDefault
+  return !atDefault(spec, value)
 }
 
 /**

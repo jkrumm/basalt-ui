@@ -59,6 +59,7 @@ export const SHELL_SLOTS = {
 
   // Provisional v3 names not pinned by concept 3.5: later Issues confirm them.
   'shell-kebab': entry('shell-kebab', null),
+  'shell-center': entry('shell-center', null),
   'shell-header-row': entry('shell-header-row', HEADER_ROW),
   'shell-brand-zone': entry('shell-brand-zone', HEADER_ZONE),
   'shell-rail-toggle': entry('shell-rail-toggle', `${HEADER_ZONE} button[aria-label$=" sidebar"]`),

@@ -93,7 +93,13 @@ describe('the header slot', () => {
     const html = renderToString(app)
     expect(html).toContain('data-slot="global-pills"')
     expect(html).toContain('Last 30 days')
-    expect(html).toMatch(/data-slot="filter-count">Filters</)
+    // The count reads the URL value (range=30d is off its default), not the mounted routers: none
+    // is mounted in the server render, so `handle.isDefault` would report default.
+    expect(html).toMatch(/data-slot="filter-count">Filters \(1\)</)
+  })
+
+  test('the slot keeps the center in the header below md', () => {
+    expect(globalControls([]).compact).toBe(true)
   })
 
   test('the compact sheet holds the globals as row forms', async () => {

@@ -50,6 +50,7 @@ export function globalControls(specs: readonly AnySpec[]): ControlsSlot {
   return {
     kind: 'controls-slot',
     count: specs.length,
+    compact: true,
     render: () => (specs.length === 0 ? null : <GlobalControls specs={specs} />),
   }
 }

@@ -14,11 +14,13 @@ import type { Scenario } from '../registry'
 export type ShellChromeSpec = FixtureSpec & {
   /** Shutterflow's worst-case cluster: status badges, job progress, two quick actions. */
   cluster?: true
+  /** `AppShell globalControls={globalControls(specs)}`: two global enum filters in the header. */
+  globalControls?: true
   /** The persisted rail state to start from. */
   rail?: 'collapsed' | 'expanded'
 }
 
-const OWN_FIELDS = ['sidebar', 'bar', 'globals', 'aside', 'cluster'] as const
+const OWN_FIELDS = ['sidebar', 'bar', 'globals', 'aside', 'cluster', 'globalControls'] as const
 
 export const shellChromeScenario: Scenario = {
   slots: [
@@ -33,6 +35,7 @@ export const shellChromeScenario: Scenario = {
     'shell-header-row',
     'shell-page-bar-host',
     'shell-kebab',
+    'shell-center',
   ],
   matches: (spec: FixtureSpec) =>
     OWN_FIELDS.some((field) => (spec as Record<string, unknown>)[field] !== undefined) ||

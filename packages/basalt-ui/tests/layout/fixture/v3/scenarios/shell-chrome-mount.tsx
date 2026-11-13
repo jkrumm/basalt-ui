@@ -16,6 +16,9 @@ import {
 import type { ReactElement } from 'react'
 import { createRoot } from 'react-dom/client'
 import type { Root } from 'react-dom/client'
+import { memoryHandle } from '../../../../../src/controls/control-view.handles'
+import { globalControls } from '../../../../../src/controls/globals'
+import { spec as filterSpec } from '../../../../../src/controls/spec'
 import type { ControlsSlot, IconComponent } from '../../../../../src/core/ports'
 import { Page } from '../../../../../src/page/page'
 import { PageAside } from '../../../../../src/page/page-aside'
@@ -183,6 +186,30 @@ function controls(count: number): ControlsSlot {
   }
 }
 
+/** Two global filters, one off its default: the header shows pills from md and `Filters (1)` below. */
+const HEADER_GLOBALS = globalControls([
+  filterSpec(
+    memoryHandle('hdr-range', '30d', {
+      kind: 'enum',
+      options: [
+        { value: '24h', label: 'Last 24 h' },
+        { value: '30d', label: 'Last 30 days' },
+      ],
+    }),
+    'Range',
+  ),
+  filterSpec(
+    memoryHandle('hdr-region', 'all', {
+      kind: 'enum',
+      options: [
+        { value: 'all', label: 'All regions' },
+        { value: 'eu', label: 'Europe' },
+      ],
+    }),
+    'Region',
+  ),
+])
+
 function Body({ spec }: { spec: FixtureSpec }): ReactElement {
   const { bar, aside } = spec
   const actions =
@@ -254,6 +281,7 @@ export async function mount(spec: FixtureSpec, container: HTMLElement): Promise<
     badges,
     ...(spec.globals !== undefined && { globalActions: globalActions(spec.globals) }),
     ...(options.cluster === true && { globalActions: clusterActions() }),
+    ...(options.globalControls === true && { globalControls: HEADER_GLOBALS }),
     ...(settings !== undefined && { settings }),
     ...(spec.sidebar?.account === true && { account: ACCOUNT }),
   }
