@@ -110,11 +110,7 @@ layout('MDX as plain elements under .vx-prose', () => {
     expect(plain.fontSize).toBe(prose.fontSize)
   })
 
-  // GAP, recorded as a factory signal: `.vx-prose` alone resolves line-height 24px (1.5) and
-  // `--vx-measure` 68ch, while `Prose` adds `leading-[1.7]` and `max-w-[72ch]` on top. The fix is in
-  // the token table and the prose template (`src/tokens`, a frozen lane), so this assertion is
-  // `failing` until that lands; when it starts to pass, bun flags it and the wrapper comes off.
-  test.failing('line-height is 1.7 and the measure 72ch, equal to the Prose article', async () => {
+  test('line-height is 1.7 and the measure 72ch, equal to the Prose article', async () => {
     const { plain, prose } = await both()
     expect(parseFloat(plain.lineHeight) / parseFloat(plain.fontSize)).toBeCloseTo(1.7, 2)
     expect(plain.lineHeight).toBe(prose.lineHeight)
