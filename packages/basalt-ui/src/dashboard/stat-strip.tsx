@@ -5,7 +5,8 @@
  * Cell anatomy: a mono caption (with `· qualifier` muted on the same line and the `info` glyph), the
  * hero `value` in the proportional sans, an optional `delta`, `visual` and `footer` line. `rows`
  * replaces the hero with aligned `label · visual · value · delta` rows (one cell, several signals).
- * `tone` inks the VALUE only, for a verdict; a null reading is `—`. A cell may carry BOTH: the hero
+ * `tone` inks the VALUE and states the verdict as a status dot plus a short word (`OK`, `Watch`, `Over`)
+ * after the caption, as `StatCard` does, so colour is never the only carrier; a null reading is `—`. A cell may carry BOTH: the hero
  * (e.g. VO2max) with `rows` under it; omit `value` to render the rows alone.
  *
  * `loading` keeps the loaded shape: the value bar, the visual slot and the footer line at their loaded
@@ -49,7 +50,9 @@ import { cx, pickDataAttributes } from '../common/props'
 import type { BasaltProps, DataAttributes, Tone } from '../common/props'
 import { RetryButton } from '../common/retry-button'
 import { StatusDot } from '../theme/status-dot'
+import { StatusVerdict } from '../theme/status-verdict'
 import { VX } from '../tokens'
+import { TONE_WORD } from './stat-card-parts'
 import { InfoGlyph } from './widget-header'
 import classes from './stat-strip.module.css'
 import { couldNotLoad } from '../common/could-not-load'
@@ -112,7 +115,7 @@ export type StatStripCell = {
   footer?: ReactNode
   /** Aligned signals under the hero (or alone when `value` is omitted). */
   rows?: readonly StatStripRow[]
-  /** Inks the value only — set it when the reading is a verdict. */
+  /** A verdict: inks the value and shows a status dot plus a word (`OK` / `Watch` / `Over`) after the caption. */
   tone?: Tone
   /**
    * Skeleton in place of the readings, in the loaded shape: the value bar, the `visual` slot and the
@@ -303,6 +306,13 @@ function StripCell({
                   {cell.caption}
                 </span>
                 {cell.info !== undefined && <InfoGlyph text={cell.info} />}
+                {cell.tone !== undefined && (
+                  <StatusVerdict
+                    color={VX.status[cell.tone]}
+                    word={TONE_WORD[cell.tone].word}
+                    phrase={TONE_WORD[cell.tone].phrase}
+                  />
+                )}
               </span>
               {cell.qualifier !== undefined && (
                 <span className={classes.qualifier}>{cell.qualifier}</span>

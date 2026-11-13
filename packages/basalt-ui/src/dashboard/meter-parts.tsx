@@ -41,6 +41,8 @@ export type Shell = {
   style: CSSProperties | undefined
   /** `size="row"`: one text line tall, no caption rows. */
   row: boolean
+  /** The track height step (`size="sm" | "md" | "lg"`); absent is the default `md`. */
+  trackSize?: 'sm' | 'md' | 'lg' | undefined
   /** The consumer's `data-*` (`data-shot`), on the root of every state. */
   data: DataAttributes
 }
@@ -55,6 +57,7 @@ function rootProps(shell: Shell) {
     className: cx(classes.root, shell.row && classes.row, shell.className),
     style: shell.style,
     'data-basalt-meter': '',
+    ...(shell.trackSize !== undefined && { 'data-meter-size': shell.trackSize }),
   } as const
 }
 
@@ -241,6 +244,29 @@ export function MeterRing(props: {
       )}
     </div>
   )
+}
+
+/**
+ * The tracks that hold a caption line (`size="lg"`) name each categorical part on its own fill. A name
+ * that is wider than its part is hidden (measured, so server markup shows it clipped by the fill):
+ * the part captions under the track keep every name.
+ */
+function useFillLabelFit(trackRef: RefObject<HTMLElement | null>, key: string): boolean[] {
+  const [hidden, setHidden] = useState<boolean[]>([])
+  useMeasured(
+    trackRef,
+    (track) => {
+      const next = [...track.children].map((fill) => {
+        const label = fill.querySelector<HTMLElement>('[data-meter-fill-label]')
+        return label !== null && label.scrollWidth > label.clientWidth
+      })
+      setHidden((prev) =>
+        prev.length === next.length && prev.every((v, i) => v === next[i]) ? prev : next,
+      )
+    },
+    key,
+  )
+  return hidden
 }
 
 function fillStyle(p: Part): CSSProperties {
@@ -764,6 +790,12 @@ export function MeterBar(props: {
     props.target === undefined &&
     model.ticks.length === 0
   const hasParts = model.partCaptions.length > 0
+  const fillLabels = hasParts && shell.trackSize === 'lg' && !loading
+  const trackRef = useRef<HTMLDivElement>(null)
+  const labelHidden = useFillLabelFit(
+    trackRef,
+    model.parts.map((p) => `${fillLabels}${p.label}@${p.size}`).join('\u0000'),
+  )
   // A scale's start figure: a Meter with marks or a target labels where its track begins, with its
   // `format`, unless the consumer opted out (`startCaption={null}`) or already labelled that end.
   const zoned = zones !== undefined && zones.length > 0
@@ -912,8 +944,10 @@ export function MeterBar(props: {
         })}
       >
         <div
+          {...(fillLabels && { ref: trackRef })}
           className={classes.track}
           data-meter-track
+          {...(model.over && !loading && { 'data-meter-over': '' })}
           {...(model.stopsCss !== undefined && {
             'data-meter-stops': '',
             // theme-allow hidden-inline-style — the gradient is the consumer's colour data
@@ -945,7 +979,18 @@ export function MeterBar(props: {
                 props.tone === 'muted' && p.color === undefined && !p.forecast ? 'muted' : undefined
               }
               style={fillStyle(p)}
-            />
+            >
+              {fillLabels && !p.forecast && p.size > 0 && (
+                <span
+                  className={classes.fillLabel}
+                  data-meter-fill-label=""
+                  {...(p.muted === true || p.color === undefined ? { 'data-quiet': '' } : {})}
+                  {...(labelHidden[i] === true && { 'data-hidden': '' })}
+                >
+                  {p.label}
+                </span>
+              )}
+            </div>
           ))}
         </div>
         {!loading && (
@@ -966,6 +1011,8 @@ export function MeterBar(props: {
               <Tick key={t.key} kind="tick" className={classes.tick} pct={t.pct} />
             ))}
             <Tick kind="target" className={classes.tick} pct={model.targetPct} />
+            {/* Past `max` the fill ends at the track end: a status cap there says the rest is off the track. */}
+            <Tick kind="over" className={classes.overTick} pct={model.over ? 100 : undefined} />
           </>
         )}
       </div>
@@ -997,7 +1044,7 @@ function tickPosition(kind: TickKind, pct: number): CSSProperties {
   return { insetInlineStart: `calc(100% - ${TICK_WIDTH})`, marginInlineStart: 0 }
 }
 
-type TickKind = 'marker' | 'boundary' | 'forecastEnd' | 'target' | 'tick'
+type TickKind = 'marker' | 'boundary' | 'forecastEnd' | 'target' | 'tick' | 'over'
 
 function Tick({
   kind,

@@ -8,8 +8,9 @@
  * the track; `tone="ink"` for full ink); `segments` and `zones` keep their own fills. `color` is
  * for a VERDICT only (over budget, below target) and is a status colour the consumer passes;
  * categorical `segments` take the consumer's series colours. Committed vs forecast is the same neutral at two strengths — never colour alone: a
- * tick marks the boundary and a caption names the forecast. A value past `max` clamps the fill at the
- * track end; the caption still states the real value.
+ * tick marks the boundary and a caption names the forecast. A value past `max` ends the fill at the
+ * track end with a status cap there (`data-meter-over` on the track) and the end caption states the
+ * overage ("20 over 100", or the target's own wording); the reading caption still states the real value.
  *
  * `zones` (bar only) draws the track as contiguous bands (neutral at stepped strengths unless a zone
  * passes a status colour) and the reading becomes a MARKER on the track, not a fill. Each zone is
@@ -116,8 +117,12 @@ type BarCommon = Common & {
    * zone and tick captions). Categorical `segments` keep their per-part captions (swatch, name, value)
    * so the parts stay named. The label stays as `aria-label`; the described-by text keeps the rest.
    * Put the value beside it in your own layout.
+   *
+   * `'sm' | 'md' | 'lg'`: the track height from the size scale (4, 6 (default) and 24 px). `'lg'`
+   * holds a caption line, so a categorical part is named on its own fill when the name fits; the
+   * part captions under the track keep every name.
    */
-  size?: 'row'
+  size?: 'row' | 'sm' | 'md' | 'lg'
   /**
    * Start caption (default: the formatted reading). `null` drops it, and the start figure that
    * `ticks`/`target` add above the track; zone labels stay.
@@ -235,7 +240,9 @@ function barTone(tone: 'muted' | 'ink' | undefined, plain: boolean): 'muted' | u
 export function Meter(props: MeterProps) {
   const { label, min = 0, max = 100, format = asText, className, style } = props
   const row = props.size === 'row'
-  const shell = { className, style, row, data: pickDataAttributes(props) }
+  const trackSize =
+    props.size === 'sm' || props.size === 'md' || props.size === 'lg' ? props.size : undefined
+  const shell = { className, style, row, trackSize, data: pickDataAttributes(props) }
   const ring = props.shape === 'ring'
   warnInvalidTrack(min, max)
   const host = useContext(VisualSlotContext)

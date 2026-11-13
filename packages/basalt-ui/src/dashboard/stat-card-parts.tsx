@@ -23,7 +23,7 @@ export type CaptionRowProps = {
 }
 
 /** Visible verdict word, and the full phrase a screen reader hears instead of a bare "Over". */
-const TONE_WORD: Record<Tone, { word: string; phrase: string }> = {
+export const TONE_WORD: Record<Tone, { word: string; phrase: string }> = {
   good: { word: 'OK', phrase: 'Within the good threshold' },
   warn: { word: 'Watch', phrase: 'Past the warning threshold' },
   bad: { word: 'Over', phrase: 'Past the severe threshold' },
