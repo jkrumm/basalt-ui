@@ -5,6 +5,10 @@
  *
  * Fails when a route breaks a print assertion, or when a control does not do its job (an offender
  * that passes, the clean page that fails), so a silently blind assertion cannot report green.
+ *
+ * It grades the matrix harness's own bundle of the exemplar, not `ctx.baseUrl` / `ctx.routes`: the Vite
+ * dist carries no theme script (`data-theme` stays unset), so a scheme-dependent print or WebKit result
+ * on it would not describe the exemplar. `--dist` and `--routes` therefore do not apply to this lane.
  */
 import { join } from 'node:path'
 import { sharedExemplar } from '../../packages/basalt-ui/tests/quality/print/boot'
