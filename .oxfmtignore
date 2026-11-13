@@ -24,6 +24,9 @@ packages/basalt-ui/docs/notify.md
 packages/basalt-ui/docs/create-channel.md
 packages/basalt-ui/docs/use-now.md
 packages/basalt-ui/docs/mdx-components.md
+# A namespace-object signature (`chartLabels: { width, fits, place }`): oxfmt reads the fence as a
+# block statement and rewrites it.
+packages/basalt-ui/docs/chart-labels.md
 
 # Package fixture trees are byte-exact (deliberate offenders, golden files); never formatted.
 packages/basalt-ui/test/fixtures/**
