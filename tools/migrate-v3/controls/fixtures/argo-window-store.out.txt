@@ -24,5 +24,15 @@ export const chartStore = createLocalStore({
   },
 })
 
+export const plainStore = createLocalStore({
+  key: 'plain-chart',
+  fields: { metric: field.enum(['load', 'volume'], 'load') },
+})
+
+export const mixedStore = createLocalStore({
+  key: 'mixed-chart',
+  fields: { metric: field.enum(['load', 'volume'], 'load', { url: true }) },
+})
+
 export const nav = { search: garminStore.linkSearch }
 export const route = { validateSearch: (raw: unknown) => ({ ...garminStore.validateSearch(raw), item: 1 }) }

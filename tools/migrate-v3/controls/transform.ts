@@ -71,22 +71,62 @@ const FILTERS: Record<string, { row: string; props: readonly string[] }> = {
 const SPEC_ORDER = ['options', 'clearable', 'placeholder'] as const
 
 /** A removed symbol with a manual row: listed once at its import, never rewritten. */
-const MANUAL: Record<string, { row: string; to: string }> = {
-  createPersistedState: { row: 'st-createPersistedState', to: 'persisted(key, opts).use()' },
-  usePersistedOrLocal: { row: 'st-usePersistedOrLocal', to: 'persisted(key, opts).use()' },
-  externalField: { row: 'ctl-externalField', to: 'externalField(store, { key, kind, fallback })' },
-  SyncButton: { row: 'ctl-SyncButton', to: 'RefreshButton from basalt-ui/page' },
-  FormGroup: { row: 'ctl-FormGroup', to: 'FormField rows in a fieldset or a Section' },
-  FormRow: { row: 'ctl-FormRow', to: 'FormField (labelled) or FormRow (layout)' },
-  FormStateProvider: { row: 'ctl-FormStateProvider', to: '<fieldset disabled>' },
-  useFormSubmit: { row: 'ctl-useFormSubmit', to: 'toSubmitErrors(save)' },
+const MANUAL: Record<string, { row: string; to: string; modules: readonly string[] }> = {
+  createPersistedState: {
+    row: 'st-createPersistedState',
+    to: 'persisted(key, opts).use()',
+    modules: ['basalt-ui/state'],
+  },
+  usePersistedOrLocal: {
+    row: 'st-usePersistedOrLocal',
+    to: 'persisted(key, opts).use()',
+    modules: ['basalt-ui/state'],
+  },
+  externalField: {
+    row: 'ctl-externalField',
+    to: 'externalField(store, { key, kind, fallback })',
+    modules: ['basalt-ui/state'],
+  },
+  SyncButton: {
+    row: 'ctl-SyncButton',
+    to: 'RefreshButton from basalt-ui/page',
+    modules: ['basalt-ui/controls'],
+  },
+  FormGroup: {
+    row: 'ctl-FormGroup',
+    to: 'FormField rows in a fieldset or a Section',
+    modules: ['basalt-ui/controls'],
+  },
+  FormStateProvider: {
+    row: 'ctl-FormStateProvider',
+    to: '<fieldset disabled>',
+    modules: ['basalt-ui/forms'],
+  },
+  useFormSubmit: {
+    row: 'ctl-useFormSubmit',
+    to: 'toSubmitErrors(save)',
+    modules: ['basalt-ui/forms'],
+  },
   useFormDraft: {
     row: 'ctl-useFormDraft',
     to: 'useFormDraft(form, { key, version, schema, owner })',
+    modules: ['basalt-ui/forms'],
   },
-  useBasaltForm: { row: 'ctl-useBasaltForm', to: 'useForm from TanStack Form' },
-  inputProps: { row: 'ctl-inputProps', to: 'FormField around form.Field' },
-  fieldKey: { row: 'ctl-fieldKey', to: 'the TanStack Form field key' },
+  useBasaltForm: {
+    row: 'ctl-useBasaltForm',
+    to: 'useForm from TanStack Form',
+    modules: ['basalt-ui/forms'],
+  },
+  inputProps: {
+    row: 'ctl-inputProps',
+    to: 'FormField around form.Field',
+    modules: ['basalt-ui/forms'],
+  },
+  fieldKey: {
+    row: 'ctl-fieldKey',
+    to: 'the TanStack Form field key',
+    modules: ['basalt-ui/forms'],
+  },
 }
 
 const FORM_SECTION_PROPS = new Set(['title', 'subtitle', 'icon', 'info', 'key'])
@@ -132,7 +172,11 @@ function attributesOf(el: JsxElement | JsxSelfClosingElement) {
 function valueText(attr: JsxAttribute): string | null {
   const init = attr.getInitializer()
   if (init === undefined) return 'true'
-  if (Node.isStringLiteral(init)) return quote(init.getLiteralText())
+  if (Node.isStringLiteral(init)) {
+    // A JSX attribute decodes entities and takes no escapes; a JS string does the opposite.
+    const text = init.getLiteralText()
+    return /[&\\\n\r]/.test(text) ? null : quote(text)
+  }
   if (Node.isJsxExpression(init)) {
     const e = init.getExpression()
     if (e !== undefined && Node.isStringLiteral(e)) return quote(e.getLiteralText())
@@ -182,7 +226,10 @@ function literalOf(node: Node | undefined): unknown {
 type StoreField = { name: string; url: boolean; persist: boolean; fallback: string }
 
 /** The fields of a store definition, with the lane flags 2.x resolved (`url` and `persist` default true). */
-function storeFields(call: CallExpression): { key: string | null; fields: StoreField[] } {
+function storeFields(
+  call: CallExpression,
+  defaultUrl: boolean,
+): { key: string | null; fields: StoreField[] } {
   const arg = call.getArguments()[0]
   const top = propertyNames(arg)
   const keyNode = initOf(top.get('key'))
@@ -196,13 +243,14 @@ function storeFields(call: CallExpression): { key: string | null; fields: StoreF
     if (!Node.isPropertyAssignment(p)) continue
     const init = p.getInitializer()
     if (init === undefined || !Node.isCallExpression(init)) continue
-    let url = true
+    let url = defaultUrl
     let persist = true
     let fallback = '<fallback>'
     const args = init.getArguments()
     for (const a of args) {
       const props = propertyNames(a)
-      if (literalOf(props.get('url')) === false) url = false
+      const lane = literalOf(props.get('url'))
+      if (lane === false || lane === true) url = lane
       if (literalOf(props.get('persist')) === false) persist = false
       fallback = initOf(props.get('fallback'))?.getText() ?? fallback
     }
@@ -220,18 +268,16 @@ function storeFields(call: CallExpression): { key: string | null; fields: StoreF
 }
 
 function recipeStub(key: string, fields: StoreField[]): string {
-  const lines = [
+  // The 2.x envelope holds ONE record per store, `{ fieldName: value }`: one persisted() per store.
+  const shape = fields.map((f) => `${f.name}?: unknown`).join('; ')
+  return [
     '// remembered-values recipe: packages/basalt-ui/docs/recipes/remembered-values.md',
-  ]
-  for (const f of fields) {
-    lines.push(
-      `const remembered${f.name[0]!.toUpperCase()}${f.name.slice(1)} = persisted('${key}', { version: 1, initial: ${f.fallback} })`,
-    )
-  }
-  lines.push(
-    `// storage: read-legacy basalt:${key} once into persisted('${key}'); delete it where no recipe is adopted`,
-  )
-  return lines.join('\n')
+    `const remembered = persisted<{ ${shape} }>('${key}', { version: 1, initial: {} })`,
+    ...fields.map(
+      (f) => `// ${f.name}: validate remembered.get().${f.name}; fallback ${f.fallback}`,
+    ),
+    `// storage: basalt:${key} is read as it stands (same key, same version); delete it where no recipe is adopted`,
+  ].join('\n')
 }
 
 /** The variable a store definition is assigned to, through a chained `.labels(...)`. */
@@ -311,7 +357,8 @@ function flagStores(sf: SourceFile, locals: Map<string, Local>, add: Add) {
     const local = locals.get(callee.getText())
     if (local === undefined) continue
     if (local.imported !== 'createSearchStore' && local.imported !== 'createLocalStore') continue
-    const { key, fields } = storeFields(call)
+    // createLocalStore has no URL lane: only an explicit `url: true` declares one.
+    const { key, fields } = storeFields(call, local.imported === 'createSearchStore')
     const v = storeVariable(call)
     if (v !== null) stores.add(v)
     const urlFields = fields.filter((f) => f.url)
@@ -375,7 +422,7 @@ function flagStores(sf: SourceFile, locals: Map<string, Local>, add: Add) {
 function flagManualImports(locals: Map<string, Local>, add: Add) {
   for (const [, local] of locals) {
     const entry = MANUAL[local.imported]
-    if (entry === undefined) continue
+    if (entry === undefined || !entry.modules.includes(local.module)) continue
     const spec = local.decl.getNamedImports().find((s) => s.getName() === local.imported)
     add(spec ?? local.decl, 'manual-row', entry.row, `${local.imported} to ${entry.to}`)
   }
