@@ -636,7 +636,7 @@ describe('router seeds — the nav module and the root route', () => {
 
 describe('managed reviewer subagent and rule paths', () => {
   const AGENT = '.claude/agents/basalt-design-reviewer.md'
-  const RULE = '.claude/rules/basalt-controls.md'
+  const RULE = '.claude/rules/basalt-tokens.md'
   const read = (rel: string): string => readFileSync(resolve(dir, rel), 'utf8')
 
   function install(basalt?: { roots: string[] }): void {
@@ -652,11 +652,14 @@ describe('managed reviewer subagent and rule paths', () => {
   const SHIPPED_RULES = readdirSync(resolve(import.meta.dir, '../../agent/rules')).filter((n) =>
     n.endsWith('.md'),
   )
+  // `basalt-ui.md` is unscoped (no `paths:`): it loads everywhere, so it has no roots to render.
+  const SCOPED_RULES = SHIPPED_RULES.filter((n) => n !== 'basalt-ui.md')
 
-  it('renders EVERY shipped rule from basalt.roots, normalised and YAML-safe', () => {
+  it('renders EVERY scoped shipped rule from basalt.roots, normalised and YAML-safe', () => {
     install({ roots: ['./apps/web/src/', "a$&b'c", 'packages/ui/src'] })
-    expect(SHIPPED_RULES.length).toBe(6)
-    for (const name of SHIPPED_RULES) {
+    expect(SHIPPED_RULES.length).toBe(5)
+    expect(read('.claude/rules/basalt-ui.md')).not.toContain('paths:')
+    for (const name of SCOPED_RULES) {
       const rule = read(`.claude/rules/${name}`)
       expect([name, rule]).toEqual([
         name,

@@ -1,75 +1,54 @@
 /**
- * `check-coverage` — the 11 assertions (SURFACES consistency + the agent-layer line budgets), and
- * the generated `<!-- basalt:coverage -->` header each rule file carries
- * (docs/CONTROLS-SPEC.md §7).
+ * `check-coverage` — the 11 assertions (SURFACES consistency + the agent-layer shape and line
+ * budgets).
  *
  * A repo-internal script, not a shipped CLI subcommand — nothing outside this repo's own tooling
  * ever invoked `basalt-ui check-coverage`, and every assertion below reads paths relative to THIS
  * package root, never a consumer's. Moved out of `src/cli/index.ts` (C2) to shrink the published
  * CLI's surface to what a consumer actually runs.
  *
- * The block exists because a rule file's own claim about what enforces it was prose, and prose
- * drifted: a doc could name a guard kind and stay silent about the oxlint rule doing the real work,
- * or claim coverage for a law nothing checks (D8). Generating it from SURFACES makes the claim a
- * projection of the registry, and `--check` makes a stale claim a build failure.
+ * What a rule file claims it is enforced by lives in the file itself since v3: every bullet ends in
+ * `[lint:<id>]` or `[type:<name>]` or sits under `not guarded:`, and `check-rule-tags.ts` holds
+ * that (called from `check-agent-doc-drift.ts`). The 2.x generated `<!-- basalt:coverage -->`
+ * header projected `SURFACES` doctrine onto six rule files; it cannot hold for five files named by
+ * the v3 tree, so it is retired and `--write` refuses.
  *
- * Usage: bun scripts/check-coverage.ts [--write|--check]
+ * Usage: bun scripts/check-coverage.ts [--check]
  */
-import { existsSync, readFileSync, writeFileSync } from 'node:fs'
+import { existsSync, readdirSync, readFileSync } from 'node:fs'
 import { join, resolve } from 'node:path'
 
 import { GUARD_RULES } from '../src/guard'
 import {
   PLUGIN_RULE_ID_LIST,
   AGENT_NAMES,
-  RULE_NAMES,
   SKILL_NAMES,
   SURFACES,
   TOKEN_LAYER_BOUNDARY_SURFACES,
 } from '../src/surfaces'
-import type { DoctrineSpec, RuleName, SurfaceSpec } from '../src/surfaces'
+import type { DoctrineSpec, SurfaceSpec } from '../src/surfaces'
 
 const PKG_ROOT = join(import.meta.dir, '..')
 
-// ──────────────────────────────────────────────────────────────────────────────
-// coverage headers — the generated `<!-- basalt:coverage -->` block per rule file
-// ──────────────────────────────────────────────────────────────────────────────
-
-/** The block's delimiters. Both are HTML comments, so the block renders as nothing in a viewer. */
-export const COVERAGE_BLOCK_OPEN = '<!-- basalt:coverage -->'
-export const COVERAGE_BLOCK_CLOSE = '<!-- /basalt:coverage -->'
-
-const COVERAGE_BLOCK_RE = /<!-- basalt:coverage -->[\s\S]*?<!-- \/basalt:coverage -->/
-
 /**
- * What actually enforces one rule file's doctrine, as the file itself should state it.
- *
- * Derived from SURFACES — the union over every doctrine surface carrying that `rule`, because
- * `rule` is many-to-one (`data` covers `./data`, `./data/table`, `./data/virtual`; `mantine` covers
- * `.` and `./connectivity`). Naming only one surface's coverage would understate the rule.
+ * The shipped rule files, the v3 tree (skills-agent-layer concept section 4.2). `agent/rules/`
+ * lists exactly these; the SURFACES `rule` field still names the 2.x six and no longer drives it.
  */
-export function coverageFor(rule: RuleName): {
-  guardKinds: string[]
-  pluginRules: string[]
-  advisoryLaws: string[]
-} {
-  const specs = (Object.values(SURFACES) as SurfaceSpec[]).filter(
-    (s): s is DoctrineSpec => s.kind === 'doctrine' && s.rule === rule,
-  )
-  const unique = (values: readonly string[]): string[] => [...new Set(values)].toSorted()
-  return {
-    guardKinds: unique(specs.flatMap((s) => [...s.guardKinds])),
-    pluginRules: unique(specs.flatMap((s) => [...s.pluginRules])),
-    // NOT sorted, and not deduped across surfaces by content: an advisory law is a sentence, and
-    // its order is the order the spec argues it in.
-    advisoryLaws: specs.flatMap((s) => [...(s.advisoryLaws ?? [])]),
-  }
-}
+export const SHIPPED_RULES: readonly string[] = [
+  'basalt-tokens',
+  'basalt-ui',
+  'basalt-page',
+  'basalt-state',
+  'basalt-charts',
+]
+
+/** The five rule files together, never more (every session loads them: concept section 6). */
+export const RULES_TOTAL_BUDGET = 230
 
 /**
- * Plugin rules that exist for this repo's own source and never reach a consumer's `configs/`. The
- * coverage block lands in a consumer's `.claude/rules`, so it must not name them; the surface
- * assertions still count them, so none ships homeless.
+ * Plugin rules that exist for this repo's own source and never reach a consumer's `configs/`.
+ * Check G of the drift gate bans naming them in a shipped agent file; the surface assertions still
+ * count them, so none ships homeless.
  */
 export const REPO_LOCAL_RULES: ReadonlySet<string> = new Set([
   'chart-host-single',
@@ -78,115 +57,27 @@ export const REPO_LOCAL_RULES: ReadonlySet<string> = new Set([
   'no-import-meta-env',
 ])
 
-/**
- * The generated block for one rule, verbatim — HTML comments only, one claim per line so a diff
- * points at the claim that changed rather than at a reflowed paragraph.
- *
- * `not guarded` is printed even when empty, and that is the point: a rule file whose block says
- * `not guarded: —` is claiming full coverage, which is a claim someone can check. A block that
- * simply omitted the section would read as "nothing to declare" whether or not anyone had looked
- * (D8 — see docs/CONTROLS-SPEC.md §6 "Honest coverage").
- */
-export function coverageBlock(rule: RuleName): string {
-  const { guardKinds, advisoryLaws, ...coverage } = coverageFor(rule)
-  const pluginRules = coverage.pluginRules.filter((id) => !REPO_LOCAL_RULES.has(id))
-  const backedBy = [
-    guardKinds.length > 0 ? `guard kinds — ${guardKinds.join(', ')}` : 'guard kinds — none',
-    pluginRules.length > 0
-      ? `oxlint rules — ${pluginRules.map((id) => `basalt/${id}`).join(', ')}`
-      : 'oxlint rules — none',
-  ].join(' · ')
-  const lines = [
-    COVERAGE_BLOCK_OPEN,
-    '<!-- GENERATED from src/surfaces.ts — `bun scripts/check-coverage.ts --write`. Do not hand-edit. -->',
-    `<!-- backed by: ${backedBy} -->`,
-  ]
-  if (advisoryLaws.length === 0) lines.push('<!-- not guarded: — -->')
-  else for (const law of advisoryLaws) lines.push(`<!-- not guarded: ${law} -->`)
-  lines.push(COVERAGE_BLOCK_CLOSE)
-  return lines.join('\n')
-}
-
-/** The block a rule file currently carries, or null when it has none yet. */
-export function readCoverageBlock(text: string): string | null {
-  return COVERAGE_BLOCK_RE.exec(text)?.[0] ?? null
-}
-
-/**
- * `text` with `block` in it — replacing the existing block, or inserted directly below the YAML
- * frontmatter (the rule files' `paths:` header is load-bearing and must stay first).
- */
-export function applyCoverageBlock(text: string, block: string): string {
-  if (COVERAGE_BLOCK_RE.test(text)) return text.replace(COVERAGE_BLOCK_RE, block)
-  const frontmatter = /^---\n[\s\S]*?\n---\n/.exec(text)
-  if (frontmatter === null) return `${block}\n\n${text}`
-  const end = frontmatter[0].length
-  return `${text.slice(0, end)}\n${block}\n${text.slice(end)}`
-}
-
-/**
- * Reconcile every rule file's coverage block against SURFACES.
- *
- * `'write'` refreshes them; `'check'` is the CI gate. A rule file with NO block yet is REPORTED,
- * never failed — the blocks are inserted by the agent-layer wave that rewrites those files, and a
- * gate that failed before they exist would have to be landed disabled, which is how a gate stays
- * disabled. A block that exists and DISAGREES is a hard failure: that is drift, and drift in a
- * coverage claim is the defect the block was added for.
- */
-export function reconcileCoverageBlocks(
-  pkgRoot: string,
-  mode: 'write' | 'check',
-): { failures: string[]; notes: string[] } {
-  const failures: string[] = []
-  const notes: string[] = []
-  for (const rule of RULE_NAMES) {
-    const rel = `agent/rules/basalt-${rule}.md`
-    const path = resolve(pkgRoot, rel)
-    if (!existsSync(path)) continue // assertion 2 already reports a missing rule file
-    const text = readFileSync(path, 'utf8')
-    const current = readCoverageBlock(text)
-    const expected = coverageBlock(rule)
-    if (mode === 'check') {
-      if (current === null) notes.push(`${rel}: no <!-- basalt:coverage --> block yet`)
-      else if (current !== expected) {
-        failures.push(
-          `${rel}: coverage block is out of sync with SURFACES (check-coverage --write)`,
-        )
-      }
-      continue
-    }
-    if (current === expected) {
-      notes.push(`${rel}: unchanged`)
-      continue
-    }
-    writeFileSync(path, applyCoverageBlock(text, expected), 'utf8')
-    notes.push(`${rel}: ${current === null ? 'block inserted' : 'block updated'}`)
-  }
-  return { failures, notes }
-}
-
 // ──────────────────────────────────────────────────────────────────────────────
 // check-coverage — 11-assertion coverage gate
 // ──────────────────────────────────────────────────────────────────────────────
 
 /**
- * Per-file line budgets for the shipped agent layer (`docs/CONTROLS-SPEC.md` §7's target table).
+ * Per-file line budgets for the shipped agent layer, set to the landed values.
  *
- * A budget, not a guideline: seven `src/**`-scoped rules loaded ~2,000 lines on any source edit
- * before the merge, and 55% of that text was doctrine nothing enforced. The numbers are the bar the
- * spec argued, so they live beside the gate that reads them rather than in prose.
+ * A budget, not a guideline: the rules load into every session, so the numbers are the bar the
+ * spec argued and live beside the gate that reads them rather than in prose.
  */
 export const AGENT_LINE_BUDGETS: Readonly<Record<string, number>> = {
-  'agent/rules/basalt-tokens.md': 56,
-  'agent/rules/basalt-mantine.md': 48,
-  'agent/rules/basalt-charts.md': 37,
-  'agent/rules/basalt-state.md': 38,
-  'agent/rules/basalt-controls.md': 46,
-  'agent/rules/basalt-batteries.md': 41,
+  'agent/rules/basalt-tokens.md': 45,
+  'agent/rules/basalt-ui.md': 45,
+  'agent/rules/basalt-page.md': 60,
+  'agent/rules/basalt-state.md': 45,
+  'agent/rules/basalt-charts.md': 40,
   'agent/skills/basalt-app/SKILL.md': 300, // W10: +40 streaming snippet; +43 form-dialog snippet
   'agent/skills/basalt-design/SKILL.md': 36, // W31: the design-round procedure
   'agent/skills/basalt-charts/SKILL.md': 40,
-  'agent/templates/AGENTS-block.md.tpl': 37,
+  'agent/templates/AGENTS-block.md.tpl': 55, // concept 4.4: at most 55 lines, imports nothing
+  'agent/templates/AGENTS-block.tokens.md.tpl': 15, // the tokens-profile variant
   // Outside the layer total: a subagent loads only when invoked, not into every session.
   'agent/agents/basalt-design-reviewer.md': 100, // W36: +17 Assessment A (content → layout → style ordering, P0–P3, score line, DEGRADED honesty rule)
   'agent/templates/DESIGN.md.tpl': 45,
@@ -194,19 +85,20 @@ export const AGENT_LINE_BUDGETS: Readonly<Record<string, number>> = {
 
 /**
  * The whole-layer bar — rules + skills + the AGENTS block together, since a per-file budget alone
- * can be satisfied by adding a seventh rule file or a fourth skill. The seeded `DESIGN.md.tpl` is
+ * can be satisfied by adding a sixth rule file or a fourth skill. The seeded `DESIGN.md.tpl` is
  * the consumer's own file after `init`, so it is outside the sum.
  */
-export const AGENT_LAYER_TOTAL_BUDGET = 679 // W10: +40 streaming snippet; +43 form-dialog snippet; W31: +18 design-round procedure, +2 net (AGENTS block +7 naming the skills and reviewer, rules −5)
+export const AGENT_LAYER_TOTAL_BUDGET = 625 // v3 rules: five files at 215 lines (was six at 266), block 38; skills unchanged until G1
 
 /**
- * Assert the 11 invariants against the live SURFACES + GUARD_RULES + the shipped agent layer, and
- * (with `--write` / `--check`) reconcile the generated `<!-- basalt:coverage -->` header of every
- * rule file against SURFACES. Returns 0 when all pass; 1 when any fail (console.error each failure).
+ * Assert the 11 invariants against the live SURFACES + GUARD_RULES + the shipped agent layer.
+ * Returns 0 when all pass; 1 when any fail (console.error each failure). `--check` is accepted for
+ * the Makefile's call; every assertion always runs. `--write` is retired and fails.
  *
  * Eleven assertions:
  *  1. Every doctrine spec's guardKinds ⊆ keyof GUARD_RULES.
- *  2. Every doctrine rule (deduped) maps to agent/rules/basalt-{rule}.md on disk.
+ *  2. `agent/rules/` lists exactly the five {@link SHIPPED_RULES} files, totalling at most
+ *     {@link RULES_TOTAL_BUDGET} lines.
  *  3. Every doctrine skill (deduped) maps to agent/skills/{skill}/SKILL.md on disk.
  *  4. Every non-#, non-'.' JS-subpath SURFACES key has a package.json exports entry.
  *  5. Every real package.json exports key has a SURFACES entry.
@@ -236,7 +128,6 @@ export const AGENT_LAYER_TOTAL_BUDGET = 679 // W10: +40 streaming snippet; +43 f
  */
 export function checkCoverage(flags: readonly string[] = [], pkgRoot: string = PKG_ROOT): number {
   const failures: string[] = []
-  const notes: string[] = []
 
   const allSpecs = Object.entries(SURFACES) as [string, SurfaceSpec][]
   const doctrineSpecs = (Object.values(SURFACES) as SurfaceSpec[]).filter(
@@ -256,14 +147,25 @@ export function checkCoverage(flags: readonly string[] = [], pkgRoot: string = P
     }
   }
 
-  // ── Assertion 2: every doctrine rule (deduped) → agent/rules/basalt-{rule}.md ──
-  for (const rule of RULE_NAMES) {
-    const rulePath = resolve(pkgRoot, `agent/rules/basalt-${rule}.md`)
-    if (!existsSync(rulePath)) {
-      failures.push(
-        `Missing rule file: agent/rules/basalt-${rule}.md (derived from SURFACES doctrine rules)`,
-      )
-    }
+  // ── Assertion 2: agent/rules/ lists exactly the five shipped rule files, inside the total ──
+  const rulesDir = resolve(pkgRoot, 'agent/rules')
+  const onDisk = existsSync(rulesDir) ? readdirSync(rulesDir).toSorted() : []
+  const wanted = SHIPPED_RULES.map((rule) => `${rule}.md`).toSorted()
+  for (const name of wanted.filter((n) => !onDisk.includes(n))) {
+    failures.push(`Missing rule file: agent/rules/${name}`)
+  }
+  for (const name of onDisk.filter((n) => !wanted.includes(n))) {
+    failures.push(
+      `Unexpected file in agent/rules/: ${name} (the shipped tree is exactly five rules)`,
+    )
+  }
+  const rulesTotal = onDisk
+    .filter((n) => n.endsWith('.md'))
+    .reduce((sum, n) => sum + readFileSync(resolve(rulesDir, n), 'utf8').split('\n').length - 1, 0)
+  if (rulesTotal > RULES_TOTAL_BUDGET) {
+    failures.push(
+      `agent/rules: ${rulesTotal} lines total exceeds the ${RULES_TOTAL_BUDGET}-line budget`,
+    )
   }
 
   // ── Assertion 3: every doctrine skill (deduped) → agent/skills/{skill}/SKILL.md ──
@@ -396,11 +298,22 @@ export function checkCoverage(flags: readonly string[] = [], pkgRoot: string = P
       failures.push(`agent/agents/${name}.md: missing`)
   }
   // A missing rule or skill is already reported by assertions 2/3; the AGENTS block has no other
-  // assertion, so its absence is reported here.
+  // assertion, so its absence is reported here. The block imports nothing (an `@` import line)
+  // and never names the file that would suppress it.
   const blockRel = 'agent/templates/AGENTS-block.md.tpl'
-  if (!existsSync(resolve(pkgRoot, blockRel))) failures.push(`${blockRel}: missing`)
+  for (const rel of [blockRel, 'agent/templates/AGENTS-block.tokens.md.tpl']) {
+    const abs = resolve(pkgRoot, rel)
+    if (!existsSync(abs)) {
+      failures.push(`${rel}: missing`)
+      continue
+    }
+    const text = readFileSync(abs, 'utf8')
+    if (/^@\S/m.test(text)) failures.push(`${rel}: an @import line (the block imports nothing)`)
+    if (/CLAUDE\.md/.test(text))
+      failures.push(`${rel}: names CLAUDE.md (the block lives in AGENTS.md)`)
+  }
   const layerFiles = [
-    ...RULE_NAMES.map((rule) => `agent/rules/basalt-${rule}.md`),
+    ...SHIPPED_RULES.map((rule) => `agent/rules/${rule}.md`),
     ...SKILL_NAMES.map((skill) => `agent/skills/${skill}/SKILL.md`),
     blockRel,
   ]
@@ -422,27 +335,18 @@ export function checkCoverage(flags: readonly string[] = [], pkgRoot: string = P
   }
   for (const kind of Object.keys(GUARD_RULES)) {
     if (surfacedGuardKinds.has(kind)) continue
+    failures.push(`Guard kind '${kind}' maps to no surface — add it to one surface's guardKinds`)
+  }
+
+  // ── The retired coverage-header writer ──────────────────────────────────────
+  if (flags.includes('--write')) {
     failures.push(
-      `Guard kind '${kind}' maps to no surface — add it to one surface's guardKinds so the ` +
-        `generated coverage headers name it`,
+      '--write is retired: the generated coverage header is gone; a rule bullet carries its own ' +
+        'tag and check-rule-tags.ts holds it',
     )
   }
 
-  // ── Coverage headers (--write / --check) ─────────────────────────────────────
-  const write = flags.includes('--write')
-  const check = flags.includes('--check')
-  if (write && check) {
-    failures.push('--write and --check are alternatives; pass one')
-  } else if (write || check) {
-    const result = reconcileCoverageBlocks(pkgRoot, write ? 'write' : 'check')
-    failures.push(...result.failures)
-    notes.push(...result.notes)
-  }
-
   // ── Report ──────────────────────────────────────────────────────────────────
-  for (const note of notes) {
-    console.log(`  ${note}`)
-  }
 
   if (failures.length === 0) {
     console.log('✓ check-coverage: all 11 assertions pass.')

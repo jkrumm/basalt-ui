@@ -34,12 +34,9 @@
  * `./x`, `./configs/*` is a glob). A folded or dropped subpath (`basalt-ui/notifications`) keeps
  * compiling in prose and fails only in the consumer's editor, which is how it shipped before.
  *
- * Check F — enforcement tags. Every bullet in `agent/rules/*.md` (outside fenced code) ends in at
- * least one tag naming what enforces it — `[basalt/<rule>]` (a shipped oxlint plugin rule),
- * `[check-theme <kind>]` (a guard kind) or `[type <Name>]` (an exported name whose signature makes
- * the mistake a tsc error) — and every tag must resolve. A rule file holds headings, bullets,
- * fenced examples and at most ONE intro line under the H1; a table or a paragraph is an
- * instruction nothing enforces, so it fails.
+ * Check F — enforcement tags, in `check-rule-tags.ts`. Every top-level bullet in
+ * `agent/rules/*.md` ends in `[lint:<id>]` (a key of the lint rule table) or `[type:<name>]`, or
+ * sits under a `not guarded:` line; every tag must resolve.
  *
  * Check G — rule citations. No `agent/**` file may name a repo-local plugin rule (it is not in a
  * consumer's `configs/`) or a rule that 2.0 removed (its concern is a type now).
@@ -60,9 +57,10 @@ import { join, relative } from 'node:path'
 import { readShards } from './export-surface-shards.mjs'
 import { generateLlmsTxt } from './gen-llms'
 import { REPO_LOCAL_RULES } from './check-coverage'
+import { checkAllRuleFiles } from './check-rule-tags'
 import * as pluginModule from '../configs/oxlint-plugin.js'
 import { SURFACES } from '../src/surfaces'
-import { GUARD_RULES, TOKENS_ONLY_DISABLED_KINDS } from '../src/guard/index'
+import { TOKENS_ONLY_DISABLED_KINDS } from '../src/guard/index'
 
 const pkgRoot = join(import.meta.dirname, '..')
 
@@ -189,7 +187,7 @@ const BOLD_BACKTICK_RE = /\*\*`([^`]+)`\*\*/g
 export const CHECK_A_ALLOWLIST: ReadonlyMap<string, string> = new Map([
   ['blue', "basalt-tokens.md — the earned accent hue VALUE ('blue'), not an export"],
   ['gray', "basalt-tokens.md — the neutral accent hue VALUE ('gray'), not an export"],
-  ['sm', "basalt-mantine.md — a Mantine size-token VALUE ('sm'), not an export"],
+  ['sm', "a size-token VALUE ('sm'), not an export"],
 ])
 
 export type CheckAFailure = { file: string; line: number; name: string }
@@ -651,7 +649,7 @@ export function checkE(
   )
 }
 
-// ── Check F: every bullet in a rule file ends in resolvable enforcement tags ──────────────────────
+// ── Check F lives in `check-rule-tags.ts` (the v3 tag law); `main` calls it ───────────────────────
 
 /** Rules 2.0 removed: the concern is a type (or unrepresentable) now, so citing one is drift. */
 export const REMOVED_RULES: Readonly<Record<string, string>> = {
@@ -659,122 +657,6 @@ export const REMOVED_RULES: Readonly<Record<string, string>> = {
   'page-bar-budget': 'the PageBar actions tuple type',
   'agent-resume-guard': 'basalt/agent-no-raw-usechat',
   'deprecated-export': 'nothing: 2.0 ships no deprecations',
-}
-
-export type TagSources = {
-  /** Shipped plugin rule ids: the registry minus {@link REPO_LOCAL_RULES} and {@link REMOVED_RULES}. */
-  readonly pluginRules: ReadonlySet<string>
-  /** `GUARD_RULES` keys. */
-  readonly guardKinds: ReadonlySet<string>
-  /** The published surface (see {@link collectPublishedNames}). */
-  readonly typeNames: ReadonlySet<string>
-}
-
-const TAG = String.raw`\[(?:basalt\/[a-z0-9-]+|check-theme [a-z0-9-]+|type [A-Za-z_$][\w$]*)\]`
-const TAG_RE = new RegExp(TAG, 'g')
-/** A bullet ENDS in its tags: one or more tags, then nothing. */
-const TRAILING_TAGS_RE = new RegExp(`(?:\\s*${TAG})+\\s*$`)
-const BULLET_RE = /^\s*(?:[-*]|\d+\.)\s+/
-
-export type CheckFFailure = { line: number; message: string }
-
-function tagFailure(tag: string, sources: TagSources): string | undefined {
-  if (tag.startsWith('basalt/')) {
-    const id = tag.slice('basalt/'.length)
-    if (REPO_LOCAL_RULES.has(id)) return `[${tag}] is repo-local and never ships`
-    if (id in REMOVED_RULES) return `[${tag}] was removed in 2.0`
-    return sources.pluginRules.has(id) ? undefined : `[${tag}] is not a shipped plugin rule`
-  }
-  if (tag.startsWith('check-theme ')) {
-    const kind = tag.slice('check-theme '.length)
-    return sources.guardKinds.has(kind) ? undefined : `[${tag}] is not a guard kind`
-  }
-  const name = tag.slice('type '.length)
-  return sources.typeNames.has(name) ? undefined : `[${tag}] is not an exported name`
-}
-
-/** Tag failures of one rule document: untagged bullets, unresolved tags, non-bullet prose. */
-export function checkF(markdown: string, sources: TagSources): CheckFFailure[] {
-  const failures: CheckFFailure[] = []
-  let inFrontmatter = false
-  let inFence = false
-  let inComment = false
-  // The intro paragraph is the prose directly under the H1, before any bullet or heading.
-  let introOpen = false
-  let bullet: { line: number; text: string } | undefined
-
-  const closeBullet = (): void => {
-    if (bullet === undefined) return
-    const text = bullet.text.replace(/\s+/g, ' ').trim()
-    const trailing = text.match(TRAILING_TAGS_RE)
-    if (trailing === null) {
-      failures.push({ line: bullet.line, message: 'bullet does not end in an enforcement tag' })
-    } else {
-      for (const tag of trailing[0].matchAll(TAG_RE)) {
-        const message = tagFailure(tag[0].slice(1, -1), sources)
-        if (message !== undefined) failures.push({ line: bullet.line, message })
-      }
-    }
-    bullet = undefined
-  }
-
-  markdown.split('\n').forEach((raw, idx) => {
-    const line = idx + 1
-    if (idx === 0 && raw.trim() === '---') {
-      inFrontmatter = true
-      return
-    }
-    if (inFrontmatter) {
-      if (raw.trim() === '---') inFrontmatter = false
-      return
-    }
-    if (FENCE_RE.test(raw)) {
-      closeBullet()
-      introOpen = false
-      inFence = !inFence
-      return
-    }
-    if (inFence) return
-    if (inComment || raw.trimStart().startsWith('<!--')) {
-      inComment = !raw.includes('-->')
-      return
-    }
-    if (raw.trim() === '') {
-      closeBullet()
-      return
-    }
-    if (raw.startsWith('#')) {
-      closeBullet()
-      introOpen = /^#\s/.test(raw)
-      return
-    }
-    if (BULLET_RE.test(raw)) {
-      closeBullet()
-      introOpen = false
-      bullet = { line, text: raw }
-      return
-    }
-    if (bullet !== undefined && /^\s/.test(raw)) {
-      bullet.text += `\n${raw}`
-      return
-    }
-    closeBullet()
-    if (introOpen) {
-      introOpen = false // the allowance is ONE line: a second paragraph or a table row fails
-      return
-    }
-    failures.push({
-      line,
-      message: 'prose outside a bullet (only the intro line under the H1 is allowed)',
-    })
-  })
-  closeBullet()
-  return failures
-}
-
-/** `agent/rules/*.md` — the only files the tag law covers; skills are procedure, not law. */
-export function findRuleFiles(): string[] {
-  return findAgentMdFiles().filter((f) => relative(join(pkgRoot, 'agent'), f).startsWith('rules/'))
 }
 
 export type PluginShape = {
@@ -791,18 +673,6 @@ export function pluginRuleIds(plugin: PluginShape): string[] {
     )
   }
   return Object.keys(rules)
-}
-
-export function loadTagSources(): TagSources {
-  return {
-    pluginRules: new Set(
-      pluginRuleIds(pluginModule).filter(
-        (id) => !REPO_LOCAL_RULES.has(id) && !(id in REMOVED_RULES),
-      ),
-    ),
-    guardKinds: new Set(Object.keys(GUARD_RULES)),
-    typeNames: collectPublishedNames(),
-  }
 }
 
 /**
@@ -1015,13 +885,7 @@ function main(): void {
   // consumer-visible), only `src/**` goes through the comment mask.
   const dFailures = checkD([...repoMdFiles, ...configsJsFiles], srcTsFiles)
   const eFailures = checkE(mdFiles, collectExportKeys())
-  const tagSources = loadTagSources()
-  const fFailures = findRuleFiles().flatMap((file) =>
-    checkF(readFileSync(file, 'utf8'), tagSources).map((f) => ({
-      ...f,
-      file: relative(pkgRoot, file),
-    })),
-  )
+  const fReport = checkAllRuleFiles()
   const gFailures = checkG(findAgentFiles())
   // llms.txt is generated, not committed: check what the build would write, never a stale file.
   const hFailures = checkLlmsNames(generateLlmsTxt(), collectPublishedBySubpath())
@@ -1054,7 +918,7 @@ function main(): void {
       (f) =>
         `${f.file}:${f.line}: imports '${f.specifier}', which package.json 'exports' does not resolve`,
     ),
-    ...fFailures.map((f) => `${f.file}:${f.line}: ${f.message}`),
+    ...fReport.messages,
     ...hFailures.map((f) => `llms.txt:${f.line}: ${f.message}`),
     ...iFailures.map((f) => `${f.where}: ${f.message}`),
     ...gFailures.map((f) => `${f.file}:${f.line}: rule '${f.id}' ${f.why}`),

@@ -5,7 +5,7 @@
  * `scripts/skill-snippets.test.ts`, re-pointed at the v3 shipped tree under `agent/`.
  */
 import { describe, expect, it } from 'bun:test'
-import { existsSync, readFileSync } from 'node:fs'
+import { existsSync, readdirSync, readFileSync } from 'node:fs'
 import { join, relative } from 'node:path'
 
 import { filesUnder, PKG_ROOT } from './support'
@@ -24,7 +24,7 @@ const RELEASED = new Set<string>([
 const BASALT_VERSION = /(^|[^-~^@\w.])([0-9]+\.\d+\.\d+)(?![\w.])/g
 
 describe('carried guards', () => {
-  // flips in: v3-sk-5-rules (the v3 rules tree replaces agent/rules and adds agent/reviewer)
+  // flips in: the reviewer pair (v3-sk-5-rules landed the rules tree; agent/reviewer is still absent)
   it.failing(
     'inv x-versions: shipped agent assets name only versions the changelog records',
     () => {
@@ -32,7 +32,13 @@ describe('carried guards', () => {
       for (const dir of ['agent/rules', 'agent/reviewer', 'agent/skills']) {
         expect(existsSync(join(PKG_ROOT, dir))).toBe(true)
       }
-      expect(existsSync(join(PKG_ROOT, 'agent/rules/basalt-mantine.md'))).toBe(false)
+      expect(readdirSync(join(PKG_ROOT, 'agent/rules')).toSorted()).toEqual([
+        'basalt-charts.md',
+        'basalt-page.md',
+        'basalt-state.md',
+        'basalt-tokens.md',
+        'basalt-ui.md',
+      ])
       const phantoms: string[] = []
       for (const file of filesUnder(join(PKG_ROOT, 'agent'))) {
         for (const match of read(file).matchAll(BASALT_VERSION)) {
