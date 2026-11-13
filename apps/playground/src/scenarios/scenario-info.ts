@@ -65,4 +65,36 @@ export const SCENARIO_INFO: readonly ScenarioInfo[] = [
     title: 'Agent stream',
     blurb: 'A replayed chat reply: reasoning, markdown, code, a diagram and a tool call.',
   },
+  {
+    id: 'expr-c01',
+    title: 'Trial c01: pipeline pace',
+    blurb: 'Is this run on pace against the best run, and which stage is costing or saving time?',
+  },
+  {
+    id: 'expr-c02',
+    title: 'Trial c02: webhook deliveries',
+    blurb:
+      'Which endpoint is failing, since when, and is it a volume problem or a failure problem?',
+  },
+  {
+    id: 'expr-c03',
+    title: 'Trial c03: tool SLO',
+    blurb: 'Are we inside the SLO for the last 24 hours, and by how much?',
+  },
+  {
+    id: 'expr-c04',
+    title: 'Trial c04: run durations',
+    blurb: 'What is typical, how bad is the tail, and how many runs hit the timeout?',
+  },
+  {
+    id: 'expr-c06',
+    title: 'Trial c06: context window',
+    blurb: 'How full is the context window, what fills it, and when should I compact?',
+  },
+  {
+    id: 'expr-n05',
+    title: 'Trial n05: model price and quality',
+    blurb:
+      'Which models give the most quality for their price, and which is beaten by a cheaper one?',
+  },
 ]
