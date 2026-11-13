@@ -1,0 +1,35 @@
+<!doctype html>
+<html lang="en" data-theme="light">
+  <head>
+    <meta charset="utf-8" />
+    <title>offender: split-card</title>
+    <style>
+      body {
+        margin: 0;
+        font:
+          16px/1.4 system-ui,
+          sans-serif;
+        color: #111;
+        background: #fff;
+      }
+      main {
+        padding: 0;
+      }
+      .fill {
+        height: 900px;
+      }
+      .card {
+        height: 400px;
+        border: 1px solid #111;
+      }
+    </style>
+  </head>
+  <body>
+    <main>
+      <div class="fill">filler</div>
+      <div data-slot="card" class="card">
+        A card that straddles the first page edge and may split.
+      </div>
+    </main>
+  </body>
+</html>
