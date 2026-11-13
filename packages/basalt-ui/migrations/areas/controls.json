@@ -72,7 +72,7 @@
       "profiles": ["parts", "app"],
       "codemod": "controls: flags each URL-field persist site and emits the recipe stub (reason url-persist); a site is never deleted silently",
       "manual": true,
-      "note": "2.x mirrored every URL field into basalt:<key> and read it as a resolution layer; v3 has no such layer. Without the recipe a sidebar click opens the default window instead of the remembered one, and nothing else changes",
+      "note": "2.x mirrored every URL field into one basalt:<key> record per store ({ fieldName: value }) and read it as a resolution layer; v3 has no such layer. The recipe reads that record as it stands. Without the recipe a sidebar click opens the default window instead of the remembered one, and nothing else changes",
       "verify": "the four recipe cases pass on the page's store: adopt, deep link wins, write-through, explicit default beats remembered"
     },
     {
@@ -264,7 +264,7 @@
     {
       "key": "basalt:<key> (a URL field's persist mirror)",
       "action": "read-legacy",
-      "to": "persisted(<key>), once, where the remembered-values recipe is adopted"
+      "to": "persisted(<key>) with the same key and version, once, where the remembered-values recipe is adopted; the record is read as it stands"
     },
     {
       "key": "basalt:<key> (a URL field's persist mirror, no recipe adopted)",

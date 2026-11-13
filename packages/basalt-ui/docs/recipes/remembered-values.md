@@ -6,7 +6,7 @@ file: apps/playground/src/recipes/remembered-values.ts
 
 A remembered value is a preference, and a link is not a preference: v3 has no URL-field `persist` and no redirect on entry.
 Keep a `persisted` mirror of the resolved value and hand it to the nav link as `search`, so it resolves at click time, the moment `linkSearch` resolved it in 2.x.
-`persisted(key)` keeps the 2.x envelope under `basalt:<key>`, so a value stored by the old store is read as it stands.
+The 2.x store kept one record per store, `{ fieldName: value }`, under `basalt:<key>`. `persisted(key)` with the same key and version reads that record as it stands, and a write keeps the sibling fields.
 The recipe holds four cases:
 
 1. Adopt: a sidebar click after leaving the page opens the remembered window.
@@ -25,15 +25,10 @@ export type Win = (typeof WINDOWS)[number]
 export const DEFAULT_WINDOW: Win = '30d'
 const isWin = (v: unknown): v is Win => WINDOWS.includes(v as Win)
 
-// The 2.x store mirrored this under `basalt:garmin-health:window`; the envelope is unchanged.
-const remembered = persisted<Win>('garmin-health:window', {
+// The 2.x store kept one record per store, `{ fieldName: value }`, under `basalt:<key>`: read as it stands.
+const remembered = persisted<{ window?: unknown }>('garmin-health:window', {
   version: 1,
-  initial: DEFAULT_WINDOW,
-  schema: {
-    '~standard': {
-      validate: (v) => (isWin(v) ? { value: v } : { issues: [{ message: 'window' }] }),
-    },
-  },
+  initial: {},
 })
 
 // The page reads the URL alone: a deep link wins and `validateSearch` never touches storage.
@@ -42,12 +37,12 @@ export const resolveWindow = (search: { window?: unknown }): Win =>
 
 // The nav link's `search`, called at click time. The default stays out of the URL.
 export const rememberedSearch = (): { window?: Win } => {
-  const win = remembered.get()
-  return win === DEFAULT_WINDOW ? {} : { window: win }
+  const win = remembered.get().window
+  return isWin(win) && win !== DEFAULT_WINDOW ? { window: win } : {}
 }
 
 // Write the resolved value on every change, so choosing the default overrides what was remembered.
 export function useRememberWindow(win: Win): void {
-  useEffect(() => remembered.set(win), [win])
+  useEffect(() => remembered.set((record) => ({ ...record, window: win })), [win])
 }
 ```
