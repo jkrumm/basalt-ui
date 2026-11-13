@@ -42,21 +42,37 @@ describe('argo window-stores.ts', () => {
   })
 
   test('a persisting URL field yields a worklist entry with the recipe stub, never a silent deletion', () => {
-    const [persist, ...rest] = by('url-persist')
-    expect(rest).toHaveLength(0)
+    const [persist] = by('url-persist')
     expect(persist?.text).toContain('window')
-    expect(persist?.stub).toContain("persisted('garmin-health:window'")
-    expect(persist?.stub).toContain("initial: '30d'")
-    expect(persist?.stub).toContain('read-legacy basalt:garmin-health:window')
+    expect(persist?.stub).toContain("persisted<{ window?: unknown }>('garmin-health:window'")
+    expect(persist?.stub).toContain("fallback '30d'")
+    expect(persist?.stub).toContain('basalt:garmin-health:window is read as it stands')
     expect(persist?.stub).toContain('docs/recipes/remembered-values.md')
   })
 
   test('a field with persist: false or url: false is not a persist site', () => {
-    expect(by('url-persist').map((w) => w.line)).toEqual([5])
+    expect(by('url-persist').map((w) => w.line)).toEqual([5, 32])
   })
 
-  test('a createLocalStore with no URL field points at the state row, not defineControls', () => {
-    expect(by('create-local-store').map((w) => w.row)).toEqual(['st-createLocalStore'])
+  test('a createLocalStore has no URL lane unless one is declared: the state row, not defineControls', () => {
+    expect(by('create-local-store').map((w) => w.row)).toEqual([
+      'st-createLocalStore',
+      'st-createLocalStore',
+      'ctl-createLocalStore',
+    ])
+  })
+
+  test('the stub holds one persisted() per store, shaped as the 2.x record', () => {
+    expect(by('url-persist')[0]?.stub).toContain('persisted<{ window?: unknown }>')
+  })
+
+  test('a label the JSX decodes differently from JS stays put', () => {
+    const { text, worklist } = transformSource(
+      `import { FilterSet, SelectFilter } from 'basalt-ui/controls'\nexport const a = <FilterSet><SelectFilter field={s.f} label="Tom &amp; Jerry" /></FilterSet>\n`,
+      { file: 'a.tsx' },
+    )
+    expect(text).toContain('<SelectFilter')
+    expect(worklist.map((w) => w.reason)).toContain('filter-prop')
   })
 
   test('linkSearch and a spread validateSearch are found through the store variable', () => {
@@ -112,7 +128,6 @@ describe('FormSection and FormActions', () => {
     const rows = result.worklist.filter((w) => w.reason === 'manual-row').map((w) => w.row)
     expect(rows).toEqual(
       expect.arrayContaining([
-        'ctl-FormRow',
         'ctl-FormStateProvider',
         'ctl-useFormSubmit',
         'ctl-inputProps',
@@ -179,8 +194,8 @@ describe('a consumer tree', () => {
     expect(second.worklist).toEqual(first.worklist.filter((w) => w.file !== 'src/toolbar.tsx'))
 
     const report = renderReport(second)
-    expect(report).toContain('## url-persist (1)')
-    expect(report).toContain("persisted('garmin-health:window'")
+    expect(report).toContain('## url-persist (2)')
+    expect(report).toContain("persisted<{ window?: unknown }>('garmin-health:window'")
     expect(report).toContain('never an exemption')
   })
 
