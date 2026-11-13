@@ -1,6 +1,6 @@
 import { Button, Group, NumberInput, Paper, Stack, Text, TextInput } from '@mantine/core'
 import { Section } from 'basalt-ui'
-import { FormRow } from 'basalt-ui/controls'
+import { FormRow } from '../../legacy-form-layout'
 import { fieldKey, inputProps, useBasaltForm } from 'basalt-ui/forms'
 import { VX } from 'basalt-ui/tokens'
 import { useState } from 'react'
