@@ -12,7 +12,7 @@ import { fakeChannel } from '../../../../packages/basalt-ui/src/testing/fake-cha
 import { webSocketTransport } from './websocket-transport'
 
 type Hold = { cursor: string | null; close(code?: number): void }
-type Script = (ws: Hold & { send(m: object): void }) => void
+type Script = (ws: Hold & { send(m: object): void; sendText(text: string): void }) => void
 
 const servers: { stop(force?: boolean): void }[] = []
 afterEach(() => {
@@ -37,6 +37,7 @@ function serve(script: Script) {
         script({
           cursor: ws.data.cursor,
           send: (m) => void ws.send(JSON.stringify(m)),
+          sendText: (text) => void ws.send(text),
           close: (code) => ws.close(code),
         })
       },
@@ -106,6 +107,22 @@ describe('P9: the websocket-transport recipe', () => {
     expect(channel.store.getSnapshot().lastByteAt).toBeDefined()
     expect(got).toEqual([])
     stop()
+  })
+
+  test('a message that is not a JSON object is delivered as text, never thrown', async () => {
+    const s = serve((ws) => {
+      ws.sendText('hello')
+      ws.sendText('null')
+    })
+    const channel = createChannel({ transport: webSocketTransport(s.url), scheduler: quick })
+    const got: Delivered<unknown>[] = []
+    const stop = channel.subscribe((d) => got.push(d))
+    await until(() => got.length === 2)
+    stop()
+    expect(got.map((d) => (d.kind === 'frame' && d.ok ? d.value : d))).toEqual([
+      { event: 'message', data: 'hello' },
+      { event: 'message', data: null },
+    ])
   })
 
   test('a 4401 close is terminal: the channel is unauthorized and never reconnects', async () => {
