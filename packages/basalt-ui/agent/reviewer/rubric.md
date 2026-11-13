@@ -116,7 +116,7 @@ A failure you cannot cite from a crop or from `metrics.json` is not a failure.
 Write the same result as `last.json` in the shot out dir, whether or not a subagent could be spawned: the session that builds may have no way to spawn this reviewer, so the file in the out dir is how the round is known to have been reviewed (the Stop re-check names a round whose out dir has no `last.json`). Shape:
 
 ```
-{ "version": 1, "round": <n from .basalt/last-shot.json>, "degraded": <bool>,
+{ "version": 1, "round": <n from .basalt/last-shot.json, null when that file is absent>, "degraded": <bool>,
   "failedClosed": <null | "metrics.json unreadable" | "no anchors">,
   "components": [{ "name", "route", "verdict": "pass|fail", "failed": ["Craft 3"], "na": ["Craft 3 [mobile]"] }],
   "findings": [{ "anchor", "severity", "axis", "item", "status": "new|carried|fixed", "cite", "defect" }],
