@@ -38,7 +38,7 @@ export type Infer<S extends StandardSchemaV1> = NonNullable<S['~standard']['type
 
 // ---- Parts and events -----------------------------------------------------------------------
 
-// minimal; concept elides it. Every `ai` `UIMessage['parts']` member must be assignable (spike P4).
+// minimal; concept elides it. Every `ai` 7.0.166 `UIMessage['parts']` member must be assignable (spike P4); P4 added `source-*`, `reasoning-file`, `custom` and `steering-message`.
 export type MessagePart =
   | { type: 'text'; text: string; state?: 'streaming' | 'done' }
   | { type: 'reasoning'; text: string; state?: 'streaming' | 'done' }
@@ -62,6 +62,17 @@ export type MessagePart =
   | { type: 'file'; mediaType: string; url: string; filename?: string }
   | { type: 'step-start' }
   | { type: `data-${string}`; id?: string; data: unknown }
+  | { type: 'source-url'; sourceId: string; url: string; title?: string }
+  | {
+      type: 'source-document'
+      sourceId: string
+      mediaType: string
+      title: string
+      filename?: string
+    }
+  | { type: 'reasoning-file'; mediaType: string; url: string }
+  | { type: 'custom'; kind: `${string}.${string}` }
+  | { type: 'steering-message'; id: string; parts: readonly unknown[] }
 
 // minimal; concept elides it
 export type BlockEvent = { block: string; type: string; payload?: unknown }
