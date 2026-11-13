@@ -99,6 +99,22 @@ layout('AppShell frame — real layout', () => {
         expect(await p.raw.getAttribute(MAIN, 'data-scroll-restoration-id')).toBe('shell-main')
       })
 
+      test('Main is a tab stop only while it scrolls, and always focusable by the skip link', async () => {
+        const tabIndexOf = (p: LayoutPage) =>
+          p.raw.evaluate(
+            () => document.querySelector<HTMLElement>('[data-slot="shell-main"]')?.tabIndex,
+          )
+        const short = await openFixture(specOf({ rows: 1 }), viewport)
+        const fits = await short.scroll(MAIN)
+        expect(fits.scrollHeight).toBeLessThanOrEqual(fits.clientHeight)
+        expect(await tabIndexOf(short)).toBe(-1)
+        const long = await openFixture(specOf({ rows: 100 }), viewport)
+        await long.raw.waitForFunction(
+          () => document.querySelector<HTMLElement>('[data-slot="shell-main"]')?.tabIndex === 0,
+        )
+        expect(await tabIndexOf(long)).toBe(0)
+      })
+
       test('one header token height, the gutter and the rail follow the size class', async () => {
         const p = await openFixture(specOf(), viewport)
         const header = await p.box('header', HEADER)
