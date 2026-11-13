@@ -34,6 +34,16 @@
   position: relative;
 }
 
+/* `focus`: the track is the one tab stop; a focused part keeps full ink, the rest dims (charts' DIMMED). */
+.trackBox[data-meter-focus]:focus-visible {
+  outline: 2px solid var(--vx-accent);
+  outline-offset: 2px;
+}
+
+.fill[data-dimmed] {
+  opacity: 0.25;
+}
+
 /* A `stops` track is one gradient through the consumer's colours; the reading is a marker on it. */
 .track[data-meter-stops] {
   background: linear-gradient(var(--basalt-stop-dir, to right), var(--basalt-stops));

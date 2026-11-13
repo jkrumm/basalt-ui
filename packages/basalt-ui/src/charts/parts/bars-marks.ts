@@ -8,6 +8,7 @@ import { dot } from '@tanstack/charts/dot'
 import { group } from '@tanstack/charts/group'
 import { stack } from '@tanstack/charts/stack'
 import { VX } from '../../tokens'
+import { DIMMED } from '../core/theme'
 import { emphasis } from '../marks'
 import { rowX } from '../types'
 import type { ChartMarks, ChartSeries, ChartX, PlotContext, PlotRow } from '../types'
@@ -39,7 +40,7 @@ export function shadeBars<D>(
   })
 }
 
-const paint = (color: string, opacity: number): string =>
+export const paint = (color: string, opacity: number): string =>
   opacity >= 1 ? color : `color-mix(in srgb, ${color} ${Math.round(opacity * 100)}%, transparent)`
 
 /**
@@ -98,7 +99,9 @@ export function barMarks<D>(plot: PlotContext<D, ChartX>, input: BarMarksInput<D
     const bar = byKey.get(row.series)
     if (!bar) return 'transparent'
     const base = opacityOf?.(row.datum, row.series) ?? bar.fillOpacity ?? DEFAULT_BAR_OPACITY
-    return paint(bar.color, base * emphasis(h, { key: row.series }))
+    // A `focus` holding a datum dims every other bar.
+    const dim = plot.focused !== null && row.datum !== plot.focused ? DIMMED : 1
+    return paint(bar.color, base * emphasis(h, { key: row.series }) * dim)
   }
   const order = visibleBars.map((s) => s.key)
   return [

@@ -2,6 +2,7 @@
 import { Skeleton, VisuallyHidden } from '@mantine/core'
 import { useContext, useId, useRef, useState } from 'react'
 import type { CSSProperties, ReactNode, RefObject } from 'react'
+import type { ChartFocus } from '../charts/contract'
 import { useIsomorphicLayoutEffect } from '../common/isomorphic-layout-effect'
 import { splitEmptyCopy } from '../common/empty-copy'
 import { cx } from '../common/props'
@@ -764,10 +765,21 @@ export function MeterBar(props: {
   readingAt: 'fill' | 'start' | undefined
   /** The loaded structure with its text painted as skeleton: the footprint IS the loaded one. */
   loading?: boolean
+  /** Segments only: the track is one tab stop, pointer and arrows focus a part, the rest dims. */
+  focus?: ChartFocus<MeterSegment> | undefined
   shell: Shell
 }) {
   const { label, min, max, format, zones, shell } = props
   const loading = props.loading === true
+  const focus = loading || props.segments === undefined ? undefined : props.focus
+  // The meter keeps its own role and value; the track only borrows the focus target's keys.
+  const focusTarget = focus && {
+    tabIndex: focus.target.tabIndex,
+    onKeyDown: focus.target.onKeyDown,
+    onBlur: focus.target.onBlur,
+    onPointerLeave: focus.target.onPointerLeave,
+    'data-meter-focus': '',
+  }
   const describedId = useId()
   const model = modelBar(props)
   const compact = shell.row
@@ -942,6 +954,7 @@ export function MeterBar(props: {
           ...ariaValues(props.reading, min, max, format),
           ...describedBy,
         })}
+        {...focusTarget}
       >
         <div
           {...(fillLabels && { ref: trackRef })}
@@ -975,6 +988,7 @@ export function MeterBar(props: {
               className={cx(classes.fill, p.forecast && classes.forecastFill)}
               data-meter-fill={p.forecast ? 'forecast' : 'committed'}
               {...(p.seam && { 'data-meter-seam': '' })}
+              {...focus?.item(i)}
               data-tone={
                 props.tone === 'muted' && p.color === undefined && !p.forecast ? 'muted' : undefined
               }
@@ -1025,6 +1039,7 @@ export function MeterBar(props: {
           {model.describedByText}
         </VisuallyHidden>
       )}
+      {focus?.live}
       {hasParts && quiet(<PartCaptions captions={model.partCaptions} />)}
       {items.length > 0 && quiet(<CaptionRow items={items} />)}
     </div>

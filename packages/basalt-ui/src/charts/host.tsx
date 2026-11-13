@@ -36,6 +36,8 @@ export type ChartEngineProps = {
   /** The laid-out plot area of every pane after each layout, in px; fires only for a definition
    * whose `marks` read it (and once more for a read that comes after the measurement). */
   onPlot?: (sizes: PlotSizes) => void
+  /** The engine's focused point (pointer or arrow keys) as its datum; `null` when it leaves. */
+  onFocusDatum?: ((datum: unknown) => void) | undefined
 }
 
 /** The engine props of a basalt definition (`CartesianDefinition`'s datum and value types). */
@@ -61,6 +63,7 @@ export function ChartEngine({
   idPrefix,
   coarse,
   onPlot,
+  onFocusDatum,
 }: ChartEngineProps): ReactElement {
   useEffect(() => {
     if (!onPlot) return
@@ -93,6 +96,9 @@ export function ChartEngine({
         idPrefix={idPrefix}
         className="basalt-chart"
         {...(onRender && { onRender })}
+        {...(onFocusDatum && {
+          onFocusChange: (point: { datum: unknown } | null) => onFocusDatum(point?.datum ?? null),
+        })}
         style={coarse ? COARSE_STYLE : HOST_STYLE}
       />
     </ChartBox>

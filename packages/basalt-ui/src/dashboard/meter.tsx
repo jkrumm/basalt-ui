@@ -64,6 +64,7 @@
 import { useContext } from 'react'
 import { markFigureBody, useCardPending } from '../charts/card-pending-context'
 import type { ReactNode } from 'react'
+import type { ChartFocus } from '../charts/contract'
 import { pickDataAttributes } from '../common/props'
 import type { BasaltProps, DataAttributes } from '../common/props'
 import { VX } from '../tokens'
@@ -182,6 +183,12 @@ export type MeterProps =
       segments: readonly MeterSegment[]
       /** Names the forecast, ending where its fill ends (default: `Forecast: <labels>`). */
       forecastCaption?: string
+      /**
+       * `useChartFocus(segments, …)` from `basalt-ui/charts`: the track becomes one tab stop,
+       * pointer and arrow keys focus a part, the other parts dim, and `focus.readout` drives a
+       * card fact.
+       */
+      focus?: ChartFocus<MeterSegment>
       value?: never
       color?: never
       zones?: never
@@ -315,6 +322,7 @@ export function Meter(props: MeterProps) {
       endCaption={props.endCaption}
       readingAt={props.readingAt}
       loading={loading}
+      focus={props.segments === undefined ? undefined : props.focus}
     />
   )
 }

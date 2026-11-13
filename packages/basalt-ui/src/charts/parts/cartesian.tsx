@@ -37,7 +37,9 @@ import type { CartesianChartProps, CustomMarks, Series } from '../contract'
 import { applySeams } from '../seams'
 import { asMarks, customPlot, toChartState, toEngineSpec } from './cartesian-adapt'
 import { chartSelection, indexMap } from './cartesian-selection'
-import { barMarks, floorIsZero, shadeBars } from './bars-marks'
+import { barMarks, floorIsZero, paint, shadeBars } from './bars-marks'
+import { DIMMED } from '../core/theme'
+import { FocusWrap, useCursorFocus } from '../focus'
 import type { BarLayout } from './bars-marks'
 import { AUTO_END_LABELS, lastIsPlaceable, lineMarks } from './lines-marks'
 import type { LinesNaming } from '../labels'
@@ -195,8 +197,11 @@ export function CartesianPlot<D>(props: CartesianChartProps<D> & PlotOptions): R
     setPlot((prev) => (samePlots(prev, next) ? prev : next))
   }, [])
 
-  const { data, x, y, series, zones, refLines, cursor, tooltip, selection } = props
+  const { data, x, y, series, zones, refLines, cursor, tooltip, selection, focus } = props
   const custom = props.marks
+  const hostFocus = useCursorFocus(focus, { group: cursor, x: x.value, label: ariaLabel })
+  const ownsKeys = hostFocus !== undefined
+  const focused = focus?.datum ?? null
   const stable = useShallowStable({
     data,
     x,
@@ -302,16 +307,32 @@ export function CartesianPlot<D>(props: CartesianChartProps<D> & PlotOptions): R
         const r = s.r
         const rows = ctx.rows(s.key).filter((row) => row.y !== null)
         if (rows.length === 0) continue
-        out.push(
-          dot(rows, {
-            id: s.key,
+        const color = spec.series.find((e) => e.key === s.key)?.color ?? 'currentColor'
+        const focused = ctx.focused
+        const dotsOf = (group: typeof rows, id: string, fill: string) =>
+          dot(group, {
+            id,
             x: rowX,
             y: 'y',
             r: r ? (row: { datum: D }) => r(row.datum) : VX.dotR,
-            fill: spec.series.find((e) => e.key === s.key)?.color ?? 'currentColor',
+            fill,
             ...(s.axis === 'right' && ctx.y2 !== undefined && { yScale: ctx.y2 }),
-          }),
-        )
+          })
+        // A `focus` holding a datum dims every other dot; the focused one is its own mark, on top.
+        if (focused === null) out.push(dotsOf(rows, s.key, color))
+        else
+          out.push(
+            dotsOf(
+              rows.filter((row) => row.datum !== focused),
+              s.key,
+              paint(color, DIMMED),
+            ),
+            dotsOf(
+              rows.filter((row) => row.datum === focused),
+              `${s.key}:focused`,
+              color,
+            ),
+          )
       }
       if (stable.custom !== undefined) {
         const byKey = new Map(stable.series.map((s) => [s.key, s]))
@@ -351,6 +372,9 @@ export function CartesianPlot<D>(props: CartesianChartProps<D> & PlotOptions): R
       coarse,
       width,
       plot,
+      focused,
+      // With `focus` the wrapper is the one tab stop and steps `focus.items` itself.
+      ...(ownsKeys && { keyboard: false }),
       ...(hasBars && {
         band: true,
         crosshair: false,
@@ -371,6 +395,8 @@ export function CartesianPlot<D>(props: CartesianChartProps<D> & PlotOptions): R
     coarse,
     width,
     plot,
+    focused,
+    ownsKeys,
     hasBars,
     stable.layout,
     stable.bare,
@@ -417,14 +443,16 @@ export function CartesianPlot<D>(props: CartesianChartProps<D> & PlotOptions): R
     <>
       <div ref={ref} data-basalt-chart="" data-in-card={inCard ? '' : undefined} style={rootStyle}>
         {resolved === null ? (
-          <ChartEngine
-            definition={definition}
-            ariaLabel={ariaLabel}
-            height={height}
-            idPrefix={idPrefixOf(chartId)}
-            coarse={coarse}
-            onPlot={onPlot}
-          />
+          <FocusWrap props={hostFocus} live={focus?.live}>
+            <ChartEngine
+              definition={definition}
+              ariaLabel={ariaLabel}
+              height={height}
+              idPrefix={idPrefixOf(chartId)}
+              coarse={coarse}
+              onPlot={onPlot}
+            />
+          </FocusWrap>
         ) : (
           <ChartPlaceholder state={state} height={height} />
         )}
