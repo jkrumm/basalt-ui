@@ -95,7 +95,7 @@ export type BandFold<T> = {
 
 export type BandStripProps<T, X extends ChartX = ChartX, K extends string = string> = Omit<
   CartesianChartProps<T, X>,
-  'marks' | 'series' | 'y' | 'y2' | 'zones' | 'xZones' | 'refLines'
+  'marks' | 'series' | 'y' | 'y2' | 'zones' | 'xZones' | 'refLines' | 'focus' | 'xScale'
 > & {
   states: readonly (BandStripSeries<T> & { key: K })[]
   /** Which state, fill and marker each datum has. Memoize it: a new function recompiles the chart. */

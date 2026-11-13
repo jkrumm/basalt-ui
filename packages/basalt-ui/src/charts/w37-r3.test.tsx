@@ -298,6 +298,7 @@ describe('an end label stays inside the plot (item 6)', () => {
       rows,
       visible: [A],
       highlighted: null,
+      focused: null,
       containerClass: 'wide',
       width: 1000,
       height: plotHeight,

@@ -87,7 +87,11 @@ export function plotAccess(
   }
 }
 
-export type PlotBase<T, X extends ChartX> = Omit<PlotContext<T, X>, 'plotWidth' | 'plotHeight'>
+/** `focused` is optional here: a composed kind with no `focus` leaves it out and reads `null`. */
+export type PlotBase<T, X extends ChartX> = Omit<
+  PlotContext<T, X>,
+  'plotWidth' | 'plotHeight' | 'focused'
+> & { focused?: T | null }
 
 /** A `PlotContext`: `base` plus `plotWidth`/`plotHeight` as read-registering getters, the frame
  * (`base.width`/`height`) until the pane has been measured. */
@@ -100,7 +104,7 @@ export function plotContext<T, X extends ChartX>(
     return access.size()?.[side] ?? (side === 'width' ? base.width : base.height)
   }
   return Object.defineProperties(
-    { ...base },
+    { ...base, focused: base.focused ?? null },
     {
       plotWidth: { enumerable: true, get: () => measured('width') },
       plotHeight: { enumerable: true, get: () => measured('height') },

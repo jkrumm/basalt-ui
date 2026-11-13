@@ -35,7 +35,7 @@ function asSeries(entry: LegendEntry, unavailable: string): ChartSeries<never> {
     label: entry.label,
     color: cssColor(entry.color),
     getValue: () => null,
-    mark: 'line',
+    mark: entry.swatch === 'dot' || entry.swatch === 'ring' ? entry.swatch : 'line',
     ...(entry.swatch === 'dashed' && { dash: 'dashed' as const }),
     ...(entry.failed === true && { note: unavailable }),
   }

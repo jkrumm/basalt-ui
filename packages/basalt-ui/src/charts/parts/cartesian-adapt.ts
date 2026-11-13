@@ -21,6 +21,7 @@ import type {
   ChartTooltipConfig as EngineTooltip,
   PlotContext,
   RefLine,
+  XRefLine,
   ZoneSpec,
 } from '../types'
 
@@ -38,7 +39,7 @@ export function toEngineSeries<D>(s: Series<D>): ChartSeries<D> {
     color: cssColor(s.color),
     // A failed series is drawn as nothing: its legend entry stays and reads as unavailable.
     getValue: s.failed === true ? () => null : s.y,
-    mark: s.mark === 'bar' ? 'bar' : 'line',
+    mark: s.mark === 'bar' ? 'bar' : s.mark === 'dot' ? 'dot' : 'line',
     ...(s.axis !== undefined && { axis: s.axis }),
     ...(s.role !== undefined && { role: s.role }),
     ...(s.legend === false && { legend: false }),
@@ -74,13 +75,29 @@ export function toEngineZone(z: ChartZone): ZoneSpec {
   }
 }
 
-export function toEngineRefLine(r: ChartRefLine): RefLine {
+/** A horizontal reference line (a y value on the left or right axis). */
+export type YRefLine = Extract<ChartRefLine, { axis?: 'left' | 'right' }>
+/** A vertical reference rule (`axis: 'x'`). */
+export type XAxisRefLine = Extract<ChartRefLine, { axis: 'x' }>
+
+export const isXRefLine = (r: ChartRefLine): r is XAxisRefLine => r.axis === 'x'
+
+export function toEngineRefLine(r: YRefLine): RefLine {
   return {
     value: r.value,
     color: cssColor(r.color),
     ...(r.dashed !== undefined && { dashed: r.dashed }),
     ...(r.label !== undefined && { label: r.label }),
     ...(r.axis !== undefined && { axis: r.axis }),
+  }
+}
+
+export function toEngineXRefLine(r: XAxisRefLine): XRefLine {
+  return {
+    x: r.value,
+    color: cssColor(r.color),
+    ...(r.dashed !== undefined && { dashed: r.dashed }),
+    ...(r.label !== undefined && { label: r.label }),
   }
 }
 
@@ -112,12 +129,15 @@ export type EngineSpec<D> = {
   data: readonly D[]
   x: (d: D) => ChartX
   series: readonly ChartSeries<D>[]
-  y?: { domain?: readonly [number, number] }
+  y?: { domain?: readonly [number, number]; title?: string }
   y2?: Record<string, never>
   xDomain?: readonly [ChartX, ChartX]
+  xTitle?: string
+  xScale?: 'linear' | 'log'
   formatX?: (x: ChartX) => string
   zones?: readonly ZoneSpec[]
   refLines?: readonly RefLine[]
+  xRefLines?: readonly XRefLine[]
   cursorGroup?: string
   tooltip?: EngineTooltip<D> | false
 }
@@ -135,13 +155,25 @@ export function toEngineSpec<D>(
     data: props.data,
     x: x.value,
     series: series.map(toEngineSeries),
-    ...(domain !== undefined && { y: { domain } }),
+    ...((domain !== undefined || y?.title !== undefined) && {
+      y: {
+        ...(domain !== undefined && { domain }),
+        ...(y?.title !== undefined && { title: y.title }),
+      },
+    }),
     // A right-axis series needs the chart's second axis; the v3 props have no `y2` to spell it.
     ...(series.some((s) => s.axis === 'right') && { y2: {} }),
     ...(x.domain !== undefined && { xDomain: asXDomain(x.domain) }),
     ...(x.format !== undefined && { formatX: x.format }),
+    ...(x.title !== undefined && { xTitle: x.title }),
+    ...(x.scale !== undefined && { xScale: x.scale }),
     ...(zones !== undefined && { zones: zones.map(toEngineZone) }),
-    ...(refLines !== undefined && { refLines: refLines.map(toEngineRefLine) }),
+    ...(refLines !== undefined && {
+      refLines: refLines.flatMap((r) => (isXRefLine(r) ? [] : [toEngineRefLine(r)])),
+    }),
+    ...(refLines?.some(isXRefLine) === true && {
+      xRefLines: refLines.filter(isXRefLine).map(toEngineXRefLine),
+    }),
     ...(cursor !== undefined && { cursorGroup: cursor }),
     ...(tooltip !== undefined && { tooltip: tooltip === false ? false : toEngineTooltip(tooltip) }),
   }
@@ -160,6 +192,7 @@ export function customPlot<D>(
       return v3 === undefined ? [] : [v3]
     }),
     plotHeight: plot.plotHeight,
+    focused: plot.focused,
   }
 }
 

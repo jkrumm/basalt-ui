@@ -170,6 +170,23 @@ function Swatch({ s, mode }: { s: SwatchStyle; mode: LegendMode }): ReactElement
   if ((s.mark ?? 'line') === 'line') return <LineSwatch s={s} compact={mode === 'dots'} />
   // One shape per mark kind at every width: a bar is a rounded square, compact (8) or wide (10).
   const size = mode === 'dots' ? 8 : 10
+  // A scatter's key: a filled dot, or a hollow ring of the same size and colour.
+  if (s.mark === 'dot' || s.mark === 'ring')
+    return (
+      <span
+        aria-hidden
+        className={mode === 'dots' ? classes.dot : classes.chip}
+        style={{
+          width: size,
+          height: size,
+          boxSizing: 'border-box',
+          // theme-allow raw-surface — swatch geometry, not a surface corner
+          borderRadius: '50%',
+          ...(s.mark === 'dot' ? { background: s.color } : { border: `1.5px solid ${s.color}` }),
+          flex: 'none',
+        }}
+      />
+    )
   return (
     <span
       aria-hidden

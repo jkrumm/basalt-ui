@@ -47,6 +47,7 @@ function plotOf(
     rows: (key) => rows(series.find((s) => s.key === key) as ChartSeries<Row>),
     visible: series,
     highlighted: null,
+    focused: null,
     containerClass: 'wide',
     width: 1000,
     height: 300,

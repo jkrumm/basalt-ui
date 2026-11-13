@@ -45,6 +45,15 @@ import type { PlotSizes } from './plot-context'
 import { resolveContainerClass } from '../tokens/size-classes'
 import { resolveYDomain, xScaleFor, xZoneFractions, yScaleFor } from './scales'
 import type { XScaleModel } from './scales'
+import {
+  dotSwatch,
+  logTicks,
+  ringSwatch,
+  withLogX,
+  xRefLineMarks,
+  xTitleLabel,
+  yTitleScale,
+} from './axis-gaps'
 import { AXIS_LINE, CHART_THEME, CROSSHAIR, DASH, GRID_LINE } from './theme'
 import type {
   AxisConfig,
@@ -80,6 +89,9 @@ export type CartesianInput<T, X extends ChartX> = Pick<
   | 'zones'
   | 'xZones'
   | 'refLines'
+  | 'xRefLines'
+  | 'xTitle'
+  | 'xScale'
   | 'cursorGroup'
   | 'cursorResolution'
   | 'tooltip'
@@ -90,6 +102,10 @@ export type CartesianInput<T, X extends ChartX> = Pick<
   hidden?: ReadonlySet<string>
   /** The legend entry under the pointer. */
   highlighted?: string | null
+  /** The datum the chart's `focus` holds (`plot.focused`). */
+  focused?: T | null
+  /** `false`: the engine takes no tab stop or keys (a `focus` wrapper owns them). */
+  keyboard?: boolean
   /** A band x scale (bar kinds), whatever `x` returns. */
   band?: boolean
   /** A coarse primary pointer: tap pins the cursor. */
@@ -203,14 +219,15 @@ export function engineRow(
 
 /** A series row of a tooltip: the label with its note, the swatch following the series' dash. */
 export function seriesRow(
-  s: Pick<ChartSeries<never>, 'label' | 'note' | 'color' | 'dash'>,
+  s: Pick<ChartSeries<never>, 'label' | 'note' | 'color' | 'dash' | 'mark'>,
   value: string,
   active: boolean,
 ): EngineTooltipRow {
   return engineRow({
     label: s.note === undefined ? s.label : `${s.label} · ${s.note}`,
     value,
-    color: s.color,
+    color:
+      s.mark === 'dot' ? dotSwatch(s.color) : s.mark === 'ring' ? ringSwatch(s.color) : s.color,
     swatch: s.dash === 'dashed' ? 'dashed' : 'solid',
     active,
   })
@@ -398,6 +415,7 @@ function xTickPolicy<X extends ChartX>(
   const buckets = typeof xTicks === 'number' && Number.isFinite(xTicks) ? bucketDates(model) : null
   if (buckets !== null && typeof xTicks === 'number')
     return { values: bucketTicks(buckets, xTicks) }
+  if (model.log && model.extent) return { values: logTicks(model.extent[0], model.extent[1]) }
   if (model.band || model.kind === 'string') return { values: model.values }
   if (model.kind === 'date' && model.extent)
     return {
@@ -436,6 +454,8 @@ export function xGuide<X extends ChartX>(opts: {
   xTicks: number | readonly X[] | undefined
   /** A consumer's formatter; absent, Date ticks get the span-aware {@link xTickFormat}. */
   format?: ((v: ChartValue) => string) | undefined
+  /** The axis name, drawn centred under the ticks by the engine's own axis label. */
+  title?: string | undefined
   cls: ContainerClass
 }): Omit<ChartPositionScaleOptions<ChartValue>, 'scale'> {
   const { model, xTicks, cls } = opts
@@ -453,6 +473,7 @@ export function xGuide<X extends ChartX>(opts: {
     axis: {
       line: AXIS_LINE,
       ticks: { ...ticks, format, line: false, size: 0 },
+      ...(opts.title && { label: xTitleLabel(opts.title) }),
       tickLabels: {
         fontSize: TICK_FONT,
         opacity: 1,
@@ -460,7 +481,9 @@ export function xGuide<X extends ChartX>(opts: {
         // A label centred on a tick near the plot's left edge hangs left of it, under the gutter's
         // lowest y label: start-anchor it. `+value` is a Date's timestamp, or the number itself.
         anchor: ({ value }: { value: ChartValue }) => {
-          const share = (+value - leftEdgeX) / spanX
+          const share = model.log
+            ? (model.fraction(value as X) ?? Number.NaN)
+            : (+value - leftEdgeX) / spanX
           return share >= 0 && share <= LEFT_EDGE_SHARE ? ('start' as const) : undefined
         },
       },
@@ -902,6 +925,7 @@ function buildScales<T, X extends ChartX>(opts: {
         model,
         xTicks: input.xTicks,
         format: input.formatX ? formatX : undefined,
+        title: cls === 'micro' ? undefined : input.xTitle,
         cls,
       }),
     },
@@ -931,6 +955,11 @@ function buildScales<T, X extends ChartX>(opts: {
     ...(zoneScale && {
       zx: { channel: 'x' as const, scale: scaleLinear().domain([0, 1]), axis: false as const },
     }),
+    // A y title is a caption above the tick column; the micro class draws no axes, so no titles.
+    ...(cls !== 'micro' && input.y?.title && { ytitle: yTitleScale(input.y.title, 'left') }),
+    ...(cls !== 'micro' &&
+      right &&
+      input.y2?.title && { y2title: yTitleScale(input.y2.title, 'right') }),
   }
 }
 
@@ -1311,13 +1340,19 @@ function guardReservedKeys<T>(series: readonly ChartSeries<T>[]): void {
 }
 
 export function compileCartesian<T, X extends ChartX>(
-  input: CartesianInput<T, X>,
+  given: CartesianInput<T, X>,
 ): CartesianDefinition {
+  const input = withLogX<T, CartesianInput<T, X>>(given, given.band === true)
   guardReservedKeys(input.series)
   const visible = visibleSeries(input.series, input.hidden ?? new Set<string>())
   const visibleKeys = new Set(visible.map((s) => s.key))
   const keys = new Set(input.series.map((s) => s.key))
-  const model = xScaleFor(input.data.map(input.x), input.band === true, input.xDomain)
+  const model = xScaleFor(
+    input.data.map(input.x),
+    input.band === true,
+    input.xDomain,
+    input.xScale === 'log',
+  )
   // The y domain depends on the tick count, so on the class; everything else about the axes
   // (formats, sides) does not, and `shared` stands for it.
   const byClass = new Map<ContainerClass, Axes<T>>()
@@ -1368,6 +1403,7 @@ export function compileCartesian<T, X extends ChartX>(
           rows,
           visible,
           highlighted: input.highlighted ?? null,
+          focused: input.focused ?? null,
           containerClass: cls,
           width,
           height,
@@ -1400,6 +1436,11 @@ export function compileCartesian<T, X extends ChartX>(
           ...kindMarks,
           ...dots,
           ...over,
+          ...xRefLineMarks({
+            lines: input.xRefLines,
+            fraction: model.fraction,
+            top: Math.max(...axes.left.domain),
+          }),
           ...(input.crosshair === false ? [] : [crosshair({ x: CROSSHAIR, y: false })]),
         ],
         scales: buildScales({
@@ -1408,7 +1449,7 @@ export function compileCartesian<T, X extends ChartX>(
           axes,
           formatX,
           cls,
-          zoneScale: under.length > 0 || names,
+          zoneScale: under.length > 0 || names || (input.xRefLines?.length ?? 0) > 0,
         }),
         theme: CHART_THEME,
         ...(input.bare === true && { guides: false as const, margin: 0 }),
@@ -1420,6 +1461,7 @@ export function compileCartesian<T, X extends ChartX>(
     // tooltip unless the chart opts into following tooltips.
     focus: 'group-x',
     ...(input.focusRing === false && { focusRing: false as const }),
+    ...(input.keyboard === false && { keyboard: false as const }),
     maxFocusDistance: Number.POSITIVE_INFINITY,
     cursor: cursorBinding({
       group: input.cursorGroup,

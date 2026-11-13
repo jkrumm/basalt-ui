@@ -5,6 +5,7 @@
 import type { StoredChartSpec } from '@tanstack/charts/types/core'
 import type { BasaltProps } from '../common/props'
 import type { ContainerClass } from '../tokens/size-classes'
+import type { ChartFocus } from './contract'
 import type { CurveName } from './curves'
 import type { RefLabelPosition } from './ref-label'
 
@@ -25,7 +26,8 @@ export type ChartSeries<T> = {
    * series whose `getValue` is always `null` is a legend-only entry (a zone or reference key). */
   getValue: (d: T) => number | null
   /** The legend swatch shape. Default: the kind's own mark (`line` in `Lines`, `bar` in `Bars`). */
-  mark?: 'line' | 'bar' | 'area' | undefined
+  /** `dot` is a filled dot swatch, `ring` a hollow one (a scatter's keys). */
+  mark?: 'line' | 'bar' | 'area' | 'dot' | 'ring' | undefined
   /** Default `'solid'`; `'dashed'` is `VX.dashArray` on the line, the legend and the tooltip. */
   dash?: 'solid' | 'dashed' | undefined
   /** Interpolation between points. Default `'linear'`: discrete values (a daily total, a monthly
@@ -115,6 +117,8 @@ export type AxisConfig<T> = {
   nice?: boolean | undefined
   /** Default `'linear'`. A log axis floors at the smallest positive visible value. */
   scale?: 'linear' | 'log' | undefined
+  /** The axis name with its unit, drawn above the ticks; the gutter reserves its row. */
+  title?: string | undefined
 }
 
 /** A rule along a band's boundary, painted with the band. A bound at the plot edge draws none. */
@@ -158,6 +162,15 @@ export type XZoneSpec<X extends ChartX = ChartX> = {
   align?: 'center' | 'edge' | undefined
   /** A rule on the band's `start` (`from`) and/or `end` (`to`) boundary; an omitted bound has none. */
   edge?: ZoneEdge<'start' | 'end'> | undefined
+}
+
+/** A vertical reference rule at an x value (a band key on a band x): annotation only. */
+export type XRefLine<X extends ChartX = ChartX> = {
+  x: X
+  color: string
+  dashed?: boolean | undefined
+  /** A small muted caption at the rule's top, on the side with room. */
+  label?: string | undefined
 }
 
 /** A horizontal reference line — annotation only, no domain role beyond staying inside the plot. */
@@ -270,6 +283,8 @@ export type PlotContext<T, X extends ChartX = ChartX> = {
   visible: readonly ChartSeries<T>[]
   /** The legend entry under the pointer, for emphasis; `null` when none. */
   highlighted: string | null
+  /** The datum the chart's `focus` holds; `null` without one. Dim the rest against it. */
+  focused: T | null
   /** The measured container class (`regular` on the server). */
   containerClass: ContainerClass
   /** The chart's FRAME in px (plot plus axis gutters), for a kind that lays out labels against it. */
@@ -338,6 +353,15 @@ export type CartesianChartProps<T, X extends ChartX = ChartX> = BasaltProps & {
   zones?: readonly ZoneSpec[] | undefined
   xZones?: readonly XZoneSpec<X>[] | undefined
   refLines?: readonly RefLine[] | undefined
+  /** Vertical reference rules at x values, on a band, numeric or time x. */
+  xRefLines?: readonly XRefLine<X>[] | undefined
+  /** The x axis name with its unit, drawn under the ticks. */
+  xTitle?: string | undefined
+  /** `'log'` puts a numeric x on decades; a non-positive x is not drawn. Default `'linear'`. */
+  xScale?: 'linear' | 'log' | undefined
+  /** Pointer and arrow keys focus a datum of `focus.items` (from `useChartFocus`); marks read
+   * `plot.focused` to dim the rest, and the readout follows. */
+  focus?: ChartFocus<T> | undefined
   /** `false` hides the legend. */
   legend?: ChartLegendConfig | false | undefined
   /**
