@@ -13,6 +13,7 @@ import { LearningScenario } from './S5Learning'
 import { SettingsScenario } from './S6Settings'
 import { BodyScenario } from './S7Body'
 import { MapScenario } from './S8Map'
+import { MdxScenario } from './mdx-scenario'
 import type { ScenarioProps } from './shot-state'
 
 const RENDERERS = {
@@ -24,6 +25,7 @@ const RENDERERS = {
   's6-settings': (p) => <SettingsScenario {...p} />,
   's7-body': (p) => <BodyScenario {...p} />,
   's8-map': (p) => <MapScenario {...p} />,
+  mdx: () => <MdxScenario />,
   'agent-stream': () => <AgentStreamDemo />,
 } satisfies Record<string, (props: ScenarioProps) => ReactElement>
 

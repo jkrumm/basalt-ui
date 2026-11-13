@@ -1,0 +1,40 @@
+## Writing the docs
+
+An authored page uses [a guide](/docs/guide), [an outside link](https://example.com) and a [blocked link](//attacker.example/p). Press <Kbd>Mod</Kbd> <Kbd>K</Kbd> to search.
+
+### Install
+
+<Steps>
+  <Step title="Add the package">Run the install and import the sheets.</Step>
+  <Step title="Wrap the app">Put the provider around the routes.</Step>
+</Steps>
+
+<Callout kind="warn" title="Heads up">
+  Authored MDX is code. Never compile text a model wrote.
+</Callout>
+
+#### Package managers
+
+<Tabs defaultValue="bun">
+  <Tab value="bun" label="bun">
+    Use `bun add basalt-ui`.
+  </Tab>
+  <Tab value="npm" label="npm">
+    Use `npm install basalt-ui`.
+  </Tab>
+</Tabs>
+
+| Stage  | Latency |
+| ------ | ------- |
+| Ingest | 40 ms   |
+| Serve  | 8 ms    |
+
+> Quoted text sits in an alert, not in a bare rule.
+
+<Figure caption="One component map, one look.">
+  <p>A figure holds any block.</p>
+</Figure>
+
+```ts
+export const load = (name: string) => db.query(name)
+```

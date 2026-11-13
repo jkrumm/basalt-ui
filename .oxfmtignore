@@ -23,6 +23,7 @@ packages/basalt-ui/docs/code-block.md
 packages/basalt-ui/docs/notify.md
 packages/basalt-ui/docs/create-channel.md
 packages/basalt-ui/docs/use-now.md
+packages/basalt-ui/docs/mdx-components.md
 
 # Package fixture trees are byte-exact (deliberate offenders, golden files); never formatted.
 packages/basalt-ui/test/fixtures/**
