@@ -46,6 +46,9 @@ type HandleProps<T extends string> = ContractProps<T> & {
   /** Layout only (`w-full`, `ml-auto`). */
   className?: string
   field?: never
+  value?: never
+  onChange?: never
+  size?: never
 }
 
 /** The 2.x `field` form stays while 2.x pages compose it; it moves to `handle` with them. */

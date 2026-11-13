@@ -217,3 +217,12 @@ describe('over a router', () => {
     await waitFor(() => expect(selected()).toBe('Overview'))
   })
 })
+
+// Compile-time (`tsc`): the handle form refuses a value/onChange pair and a size.
+const bound = memoryHandle<string>('tab', 'overview', { kind: 'enum', options: TABS })
+// @ts-expect-error `value` belongs to the handle, not the call site
+export const withValue = <ViewTabs handle={bound} value="overview" />
+// @ts-expect-error `onChange` belongs to the handle, not the call site
+export const withOnChange = <ViewTabs handle={bound} onChange={() => {}} />
+// @ts-expect-error `size` is the home's tier, never the control's
+export const withSize = <ViewTabs handle={bound} size="sm" />
