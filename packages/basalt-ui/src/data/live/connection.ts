@@ -61,6 +61,8 @@ export type ConnectionStore = {
   getServerSnapshot(): ConnectionView
   /** The push channel's state: its stream status, last frame, and connect failures. */
   feedChannel(state: ChannelState): void
+  /** The push channel is gone (its binding stopped): the stream word returns to `'none'`. */
+  releaseChannel(): void
 }
 
 /** Internal: the injected clock is for tests. `connectionStoreOf` is the one the hook uses. */
@@ -198,6 +200,12 @@ export function createConnectionStore(
       attempt = state.attempt
       publish()
     },
+    releaseChannel() {
+      stream = 'none'
+      lastFrameAt = undefined
+      attempt = 0
+      publish()
+    },
   }
 }
 
@@ -215,8 +223,8 @@ export function connectionStoreOf(client: QueryClient): ConnectionStore {
 
 /**
  * Feeds a channel's state to its client's connection store: the stream word, the last frame, and
- * the channel's own network connect failures. `bindInvalidation` is to call it from `start()` (not wired yet); returns
- * the unsubscribe. Internal: an app never calls this.
+ * the channel's own network connect failures. `bindInvalidation` calls it from `start()` and the stop it returns unsubscribes;
+ * returns the unsubscribe. Internal: an app never calls this.
  */
 export function attachChannel(
   client: QueryClient,
@@ -225,7 +233,11 @@ export function attachChannel(
   const store = connectionStoreOf(client)
   const feed = (): void => store.feedChannel(channel.store.getSnapshot())
   feed()
-  return channel.store.subscribe(feed)
+  const off = channel.store.subscribe(feed)
+  return () => {
+    off()
+    store.releaseChannel()
+  }
 }
 
 /**

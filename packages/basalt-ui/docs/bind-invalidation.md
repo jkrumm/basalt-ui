@@ -16,7 +16,8 @@ throws on, and a frame no one maps all invalidate every pushed query, never noth
 time the stream goes live joins the boot requests (`cancelRefetch: false`); every later
 live, and every `reset` (a 410 or a cursorless reconnect), is a gap and applies `onGap`.
 It also tells the live runtime whether the stream is live, which moves `pushed` queries
-between `fallback` and `safety`. Beat events are the channel's (`beats`) and never reach `map`;
+between `fallback` and `safety`, and feeds the channel's state to `useConnection` (stream word,
+last frame, connect failures) until the stop. Beat events are the channel's (`beats`) and never reach `map`;
 pass the channel's `greeting` so the greeting does not reach `map` either.
 Console wiring (software-factory apps/console; replaces its live.ts, policy.ts and debounce.ts):
 `createChannel({ url: '/v1/stream', greeting: 'hello', schema })`, then
