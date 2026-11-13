@@ -108,7 +108,7 @@ export function DataTable<T>({
             head={
               <>
                 <Columns model={model} />
-                <DataTableHead table={table} />
+                <DataTableHead table={table} rowIndex={1} />
               </>
             }
             footer={<DataTableFooter table={table} rowIndex={model.items.length + 2} />}

@@ -93,8 +93,11 @@ function SortMark({ direction }: { direction: SortDirection }): ReactElement {
  */
 export function DataTableHead<T>({
   table: instance,
+  rowIndex,
 }: {
   table: DataTableInstance<T>
+  /** `aria-rowindex` in a virtual window, where the head is a row of a longer table. */
+  rowIndex?: number
 }): ReactElement {
   const model = modelOf(instance)
   const actionsLabel = useActionsLabel()
@@ -102,7 +105,7 @@ export function DataTableHead<T>({
 
   return (
     <TableHeader role="rowgroup">
-      <TableRow role="row">
+      <TableRow role="row" {...(rowIndex !== undefined && { 'aria-rowindex': rowIndex })}>
         <TriStateHeader model={model} />
         {visibleColumns(model.specs, model.plan.columns).map(({ spec, planned }, index) => {
           const direction = model.sortOf(spec.id)

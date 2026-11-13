@@ -23,6 +23,16 @@ export const virtualListParts = ['virtual-list'] as const
 
 const DEFAULT_OVERSCAN = 6
 
+/** Any `data-*` attribute, which an object literal of table props needs spelled out. */
+type DataAttributes = { [name: `data-${string}`]: string | number | undefined }
+
+/** Props for the `<table>` or `<tbody>` a `spacer="tr"` list renders. `className` is layout only. */
+export type VirtualListTableProps<E extends 'table' | 'tbody'> = Omit<
+  ComponentProps<E>,
+  'className' | 'children' | 'ref'
+> &
+  DataAttributes & { className?: string }
+
 export type VirtualListProps = Omit<ComponentProps<'div'>, 'className' | 'children' | 'ref'> & {
   /** Layout and the bound that makes it scroll (`max-h-96`, `flex-1`). */
   className?: string
@@ -41,11 +51,20 @@ export type VirtualListProps = Omit<ComponentProps<'div'>, 'className' | 'childr
   overscan?: number | undefined
   /**
    * What fills the space of the rows that are not rendered: `div` (the default) for a list of
-   * blocks, `tr` for table rows, which wraps the rows in a `<table><tbody>`.
+   * blocks, `tr` for table rows, which wraps the rows in a `<table><tbody>` (`tableProps` and
+   * `bodyProps` set their attributes).
    */
   spacer?: 'div' | 'tr' | undefined
   /** The column count a `tr` spacer spans. Only read with `spacer="tr"`. */
   columns?: number | undefined
+  /**
+   * Props for the `<table>` a `spacer="tr"` list renders (`role`, `aria-*`, `data-slot`, classes),
+   * so a table owns its attributes as markup, server render included. Only read with
+   * `spacer="tr"`; `className` joins the list's own `w-full`.
+   */
+  tableProps?: VirtualListTableProps<'table'> | undefined
+  /** Props for the `<tbody>` a `spacer="tr"` list renders. Only read with `spacer="tr"`. */
+  bodyProps?: VirtualListTableProps<'tbody'> | undefined
   /** A `<thead>` for `spacer="tr"`, kept inside the scroller so its columns line up with the rows. */
   head?: ReactNode
   /** Called once per rendered row with that row alone; the list keys each call by `getItemKey`. */
@@ -86,6 +105,8 @@ export function VirtualList({
   spacer = 'div',
   columns = 1,
   head,
+  tableProps,
+  bodyProps,
   children,
   ...props
 }: VirtualListProps): ReactElement {
@@ -125,9 +146,9 @@ export function VirtualList({
       className={cn(virtualListVariants(), className)}
     >
       {spacer === 'tr' ? (
-        <table className="w-full">
+        <table {...tableProps} className={cn('w-full', tableProps?.className)}>
           {head}
-          <tbody>{rows}</tbody>
+          <tbody {...bodyProps}>{rows}</tbody>
         </table>
       ) : (
         rows
