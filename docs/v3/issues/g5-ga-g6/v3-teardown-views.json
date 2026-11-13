@@ -9,7 +9,11 @@
   "shared_append_only": [
     "packages/basalt-ui/src/index.ts",
     "packages/basalt-ui/package.json",
-    "packages/basalt-ui/scripts/export-surface.json"
+    "packages/basalt-ui/scripts/export-surface/page.json",
+    "packages/basalt-ui/scripts/export-surface/cards.json",
+    "packages/basalt-ui/scripts/export-surface/controls.json",
+    "packages/basalt-ui/scripts/export-surface/table.json",
+    "packages/basalt-ui/scripts/export-surface/charts.json"
   ],
   "must_not_touch": [
     "packages/basalt-ui/src/{provider,commands,agent,theme,theme-lab,guard,forms,common,format,state,tokens}/**",

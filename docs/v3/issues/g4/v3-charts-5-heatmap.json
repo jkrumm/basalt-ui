@@ -10,7 +10,7 @@
     "packages/basalt-ui/src/charts/{core,host*,contract.ts}",
     "packages/basalt-ui/src/charts/parts/{cartesian,lines,bars,sparkline,mini-bars,chart-card,tooltip,legend}*",
     "src/charts/{Donut.tsx,donut.module.css*}: untouched",
-    "packages/basalt-ui/src/cards/**, scripts/** (export-surface.json must not change)",
+    "packages/basalt-ui/src/cards/**, scripts/** (scripts/export-surface/charts.json must not change)",
     "packages/basalt-ui/{MIGRATING.md,migrations/**,agent/**}, CHANGELOG.md"
   ],
   "concept": "docs/v3/concepts/charts-cards-kanban.md sections 5, 9 (S5), 10, 11 (foldBands internal to BandStrip; Donut killed).",
@@ -20,7 +20,7 @@
   "commits": "One package commit in one PR: feat: add Heatmap and BandStrip parts. Conventional, empty scope, no attribution, no breaking footer.",
   "proof": "bun test over the moved files and make check; no screenshot round.",
   "acceptance": [
-    "make check exits 0, with scripts/export-surface.json unchanged.",
+    "make check exits 0, with scripts/export-surface/charts.json unchanged.",
     "bun test over parts/{heatmap,band-strip,band-fold,band-legend}*.test.tsx and parts/heatmap-fill.test.ts passes.",
     "git ls-files packages/basalt-ui/src/charts | grep -E '(^|/)(Heatmap|BandStrip|band-fold|heatmap-fill)[.]' prints only parts/ paths, and donut-heatmap.test.tsx is gone.",
     "grep -rln \"@tanstack/charts/react\" packages/basalt-ui/src prints only packages/basalt-ui/src/charts/host.tsx.",

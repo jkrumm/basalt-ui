@@ -9,17 +9,19 @@
   ],
   "shared_append_only": [
     "packages/basalt-ui/src/cards/index.ts",
-    "packages/basalt-ui/scripts/export-surface.json"
+    "packages/basalt-ui/scripts/export-surface/cards.json",
+    "packages/basalt-ui/scripts/check-budgets/areas/surface.ts",
+    "packages/basalt-ui/scripts/consumers.json"
   ],
   "must_not_touch": [
     "packages/basalt-ui/src/{controls,table,page,shell,content,ai,router,data,tokens,css,lint}/**, packages/basalt-ui/agent/**, src/ui/** (read-only: card, badge, meter, menu), other src/charts and src/cards files",
-    "CHANGELOG.md, MIGRATING.md, llms.txt, scripts/check-budgets/**, other areas' migrations files",
+    "CHANGELOG.md, MIGRATING.md, llms.txt, scripts/check-budgets/** except areas/surface.ts, other areas' migrations files",
     "every contract.ts and src/core/ports.ts"
   ],
   "concept": "charts-cards-kanban#10",
   "contract": "Frozen: ARCHITECTURE.md, this domain's contract.ts, src/core/ports.ts. Need a change: factory signal, take the reversible default. Read concepts/charts-cards-kanban.md sections 3, 4, 6, 8, 9 and ARCHITECTURE sections 1 and 7. ./cards never imports ./charts. Composites take no className, style, color or padding. A type missing from src/cards/contract.ts: declare locally and signal. Typed SLOTS per concept section 4 as the exemplar. Message keys card.* via useMessages, English defaults in your owned src/core/messages/cards.ts (qa-i2 seeds it).",
   "exemplar": "src/cards/stat-card*, src/ui/{card,badge}*, src/core/phase* (v3-exemplar-statcard; read in the tree).",
-  "change": "StatGroup variant 'strip' (shared subgrid tracks: caption 16, figure 32, meter 20+14, chart 28, rows 20, foot 16; unused tracks collapse; skeleton draws the declared shape) and 'cards' (grid-rows-subgrid aligns bands; below @regular a snap row w-72, focusable while it scrolls). StatCell (qualifier, info, value, unit, delta, status, sub, srText, meter MeterSpec, chart BoxSlot 28, rows up to 4, FrameState, href xor onSelect). DataPanel (FrameHead, controls and toolbar ControlsSlot, menu BoxSlot, legend, required skeleton {rows}|{height}, body BoxSlot, overflow clip), all through resolvePhase and CardPhase. Rule: none new. Skill: generated docs/stat-{group,cell}.md, data-panel.md. Tests: phase matrix, one-left-edge, cards.type-guard.tsx, dev-assertions.test.tsx, layout.",
+  "change": "StatGroup variant 'strip' (shared subgrid tracks: caption 16, figure 32, meter 20+14, chart 28, rows 20, foot 16; unused tracks collapse; skeleton draws the declared shape) and 'cards' (grid-rows-subgrid aligns bands; below @regular a snap row w-72, focusable while it scrolls). StatCell (qualifier, info, value, unit, delta, status, sub, srText, meter MeterSpec, chart BoxSlot 28, rows up to 4, FrameState, href xor onSelect). DataPanel (FrameHead, controls and toolbar ControlsSlot, menu BoxSlot, legend, required skeleton {rows}|{height}, body BoxSlot, overflow clip), all through resolvePhase and CardPhase. Rule: none new. Skill: generated docs/stat-{group,cell}.md, data-panel.md. Tests: phase matrix, one-left-edge, cards.type-guard.tsx, dev-assertions.test.tsx, layout. A new public value symbol also lands, in this Issue, its raise in scripts/check-budgets/areas/surface.ts (the ceiling +1 and a `raises` row with from, to, consumer and repo) and its name in scripts/consumers.json (`<symbol>: <repo>:<path>`); make check refuses the symbol without them. The shard is scripts/export-surface/cards.json, written by `export-surface.mjs --update`.",
   "commits": "One PR, separate package and non-package commits (isolated-basalt-ui); conventional, empty scope, no attribution.",
   "proof": "Layout and axe tests (tests/layout/cards-group*) on tests/layout/fixture/cards-group-fixture.tsx at 1440, 768, 390, 320: six 230 px cells incl. argo's recovery cell. No shot (the visual round is v3-playground-overview).",
   "acceptance": [

@@ -8,18 +8,20 @@
   ],
   "shared_append_only": [
     "packages/basalt-ui/src/router/index.ts",
-    "packages/basalt-ui/scripts/export-surface.json"
+    "packages/basalt-ui/scripts/export-surface/router.json",
+    "packages/basalt-ui/scripts/check-budgets/areas/surface.ts",
+    "packages/basalt-ui/scripts/consumers.json"
   ],
   "must_not_touch": [
     "packages/basalt-ui/src/{ui,table,charts,cards,page,shell,content,ai,tokens,css,lint,controls}/**, src/router/nav*, packages/basalt-ui/agent/**",
     "packages/basalt-ui/src/router/controls/{widgets,precedence,middleware,overrides}*",
-    "CHANGELOG.md, MIGRATING.md, llms.txt, scripts/check-budgets/**, other areas' migrations files",
+    "CHANGELOG.md, MIGRATING.md, llms.txt, scripts/check-budgets/** except areas/surface.ts, other areas' migrations files",
     "every contract.ts and src/core/ports.ts"
   ],
   "concept": "controls-url-state#10 issue 2",
   "contract": "Frozen: ARCHITECTURE.md, this domain's contract.ts, src/core/ports.ts. Need a change: factory signal, take the reversible default. Read concepts/controls-url-state.md sections 3, 5, 9, 10 and evidence/gap-global-local-control-scope.md section 3 (prototype API). ControlHandle (use, useSource, clear, isDefault) lives in src/core/ports.ts: reconcile the prototype's ControlState with the frozen use() shape in favour of the frozen one. The spike result is docs/v3/spikes/controls-codegen.md: follow it where it differs.",
   "exemplar": "Flip the ctl2-* test.failing cases from v3-ctl-1-golden as each capability lands; do not rename them. 2.x donors stay.",
-  "change": "defineControls({id,scope:'global'|'page',resets?,fields}) returning field, validateSearch (branded Standard Schema), extend(zod), keys, useValues, useActiveCount, useReset. retain, widgets, widget and middlewares are ctl-3's: define* leaves two marked `// ctl-3 seam` functions (identity) that ctl-3 fills. field.enum(values,fallback,{aliases}), multi, string, number, boolean, range with toWindow, composite(codec), link(v); lane options {url,persist (url:false only),history}. Two stores owning one param throw at definition; thunk fallback on a URL field throws; defaults absent from the URL while the validated search stays complete; explicit undefined, never delete. Rule: none here (router-search and control-home bodies are ctl-8). Skill: generated docs/define-controls.md. Tests: flip ctl-1's ctl2-* tests; add the number, boolean, range codec matrix under both parse configs (S8 retain is ctl-3's).",
+  "change": "defineControls({id,scope:'global'|'page',resets?,fields}) returning field, validateSearch (branded Standard Schema), extend(zod), keys, useValues, useActiveCount, useReset. retain, widgets, widget and middlewares are ctl-3's: define* leaves two marked `// ctl-3 seam` functions (identity) that ctl-3 fills. field.enum(values,fallback,{aliases}), multi, string, number, boolean, range with toWindow, composite(codec), link(v); lane options {url,persist (url:false only),history}. Two stores owning one param throw at definition; thunk fallback on a URL field throws; defaults absent from the URL while the validated search stays complete; explicit undefined, never delete. Rule: none here (router-search and control-home bodies are ctl-8). Skill: generated docs/define-controls.md. Tests: flip ctl-1's ctl2-* tests; add the number, boolean, range codec matrix under both parse configs (S8 retain is ctl-3's). A new public value symbol also lands, in this Issue, its raise in scripts/check-budgets/areas/surface.ts (the ceiling +1 and a `raises` row with from, to, consumer and repo) and its name in scripts/consumers.json (`<symbol>: <repo>:<path>`); make check refuses the symbol without them. The shard is scripts/export-surface/router.json, written by `export-surface.mjs --update`.",
   "commits": "One PR, separate package and non-package commits (isolated-basalt-ui); conventional, empty scope, no attribution.",
   "proof": "bun test over src/router/controls with router memory history, plus the types check (test/types.check.tsx equivalent).",
   "acceptance": [

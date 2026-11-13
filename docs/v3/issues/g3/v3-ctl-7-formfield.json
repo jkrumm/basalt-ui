@@ -3,22 +3,25 @@
   "what": "New in packages/basalt-ui/src/controls/: form-field*, form-row* with tests and a layout test. Also deletes the 2.x form-layout.tsx (FormSection, FormRow, FormGroup, FormActions) and panel-row.tsx (PanelRow) with css and tests; a file outside owns that still imports one stays, with a signal.",
   "owns": [
     "packages/basalt-ui/src/controls/{form-field,form-row,form-layout,panel-row}*",
+    "packages/basalt-ui/docs/{form-field,form-row}.md",
     "packages/basalt-ui/tests/layout/form-field*"
   ],
   "shared_append_only": [
     "packages/basalt-ui/src/controls/index.ts",
-    "packages/basalt-ui/scripts/export-surface.json"
+    "packages/basalt-ui/scripts/export-surface/controls.json",
+    "packages/basalt-ui/scripts/check-budgets/areas/surface.ts",
+    "packages/basalt-ui/scripts/consumers.json"
   ],
   "must_not_touch": [
     "packages/basalt-ui/src/controls/{field,draft,submit,form-footer,filter-set,control-view}*",
     "packages/basalt-ui/src/ui/**",
     "packages/basalt-ui/src/core/ports.ts",
-    "contract-pins.json, MIGRATING, llms.txt, check-budgets"
+    "contract-pins.json, MIGRATING, llms.txt, check-budgets except areas/surface.ts"
   ],
   "concept": "controls-url-state#10 issue 7",
   "contract": "Read docs/v3/concepts/controls-url-state.md 4.10, 4.12, 7, 9 (S7) and state-persistence-forms.md 6 (FieldLike). Built on ui/field (Base UI Field) and the v3-ctl-4 renderers (an ancestor).",
   "exemplar": "Follow src/ui/field.tsx and src/controls/control-view* for anatomy, data-slot names and the home size rule.",
-  "change": "One concern: FormField and FormRow. FormField: required `label` (type), description, always-mounted error live region, accessible name per row; XOR props `field` (FieldLike, submit forms) and `control` (ControlHandle, instant-apply prefs); first error by record order; fieldErrors envelope structural. Required mark = a visible `*` glyph plus `required` on the Base UI Field (aria-required), never colour alone; no new message key. Dirty dot: derived from `control.isDefault` being false; the `field` form shows none, since FieldLike has no default or dirty state and ports.ts is frozen. FormRow lays rows out by container tier, repeatable for arrays. Resolve S7: prove Base UI triggers honour `<fieldset disabled>`, else the part carries `disabled` via Field context. Ships: rule = control-home treats FormField as a home (fixture in v3-ctl-8-lint) and a missing `label` is a type error; skill snippet = JSDoc @example for both symbols; tests = form-field.test.tsx, form-row.test.tsx, layout test.",
+  "change": "One concern: FormField and FormRow. FormField: required `label` (type), description, always-mounted error live region, accessible name per row; XOR props `field` (FieldLike, submit forms) and `control` (ControlHandle, instant-apply prefs); first error by record order; fieldErrors envelope structural. Required mark = a visible `*` glyph plus `required` on the Base UI Field (aria-required), never colour alone; no new message key. Dirty dot: derived from `control.isDefault` being false; the `field` form shows none, since FieldLike has no default or dirty state and ports.ts is frozen. FormRow lays rows out by container tier, repeatable for arrays. Resolve S7: prove Base UI triggers honour `<fieldset disabled>`, else the part carries `disabled` via Field context. Ships: rule = control-home treats FormField as a home (fixture in v3-ctl-8-lint) and a missing `label` is a type error; skill snippet = JSDoc @example for both symbols; tests = form-field.test.tsx, form-row.test.tsx, layout test. A new public value symbol also lands, in this Issue, its raise in scripts/check-budgets/areas/surface.ts (the ceiling +1 and a `raises` row with from, to, consumer and repo) and its name in scripts/consumers.json (`<symbol>: <repo>:<path>`); make check refuses the symbol without them. The shard is scripts/export-surface/controls.json, written by `export-surface.mjs --update`.",
   "commits": "One PR, separate package and non-package commits (isolated-basalt-ui); conventional, empty scope, no attribution; make sync-self its own commit.",
   "proof": "tests/layout/form-field.layout.test.ts at 1440, 768, 390, 320 with long labels and errors; axe serious and critical clean.",
   "acceptance": [
@@ -28,7 +31,7 @@
     "The error region exists before any error and announces a changed message; the required mark is not colour-only; the dirty dot shows for a non-default `control` and never for `field` (tests).",
     "The layout test passes at 1440, 768, 390 and 320 with no overflow and 44 px coarse hit floors.",
     "form-layout.tsx and panel-row.tsx are gone; `rg \"@mantine/|@tanstack/react-form\" src/controls/form-*` finds nothing.",
-    "`git diff --name-only` lists only owned paths, the generated packages/basalt-ui/docs/form-field.md, and the sync-self commit."
+    "`git diff --name-only` lists only owned paths, the generated packages/basalt-ui/docs/{form-field,form-row}.md, and the sync-self commit."
   ],
   "out_of_scope": "FormFooter, toSubmitErrors, useFormDraft (v3-state-4a-controls), Section, migration rows (v3-ctl-9-rows)."
 }

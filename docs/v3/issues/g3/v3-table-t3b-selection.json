@@ -4,11 +4,14 @@
   "owns": [
     "packages/basalt-ui/src/table/parts/{bulk-bar,tick-column,tri-state-header,column-actions}*",
     "packages/basalt-ui/src/table/invariants/toolbar*",
+    "packages/basalt-ui/docs/bulk-bar.md",
     "packages/basalt-ui/tests/layout/table-selection*"
   ],
   "shared_append_only": [
     "packages/basalt-ui/src/table/index.ts",
-    "packages/basalt-ui/scripts/export-surface.json"
+    "packages/basalt-ui/scripts/export-surface/table.json",
+    "packages/basalt-ui/scripts/check-budgets/areas/surface.ts",
+    "packages/basalt-ui/scripts/consumers.json"
   ],
   "must_not_touch": [
     "packages/basalt-ui/src/table/{contract.ts,core/**}",
@@ -19,7 +22,7 @@
   "concept": "data-table#3; data-table#6",
   "contract": "docs/v3/concepts/data-table.md 3 (Selection, bulk; identity and actions columns cannot hide, pinned columns opaque) and the frozen src/table/contract.ts. v3-table-t1b holds selection state; v3-table-t2 renders row selection. Sort, hide and reset actions extend the header Menu in parts/header-menu* from v3-table-t3 (read only here; add column-actions* it calls).",
   "exemplar": "packages/basalt-ui/src/table/parts/toolbar* from v3-table-t3.",
-  "change": "BulkBar over selected rows; c.select tick column in cell and tier-appropriate forms; tri-state header checkbox; column-actions* wiring header Menu sort, hide and reset through t1b state; identity column never hideable; identity and actions columns pinned with an opaque cell background. Flip I22 to a normal test. Ships with: no new rule; JSDoc @example per part. Tests: parts/{bulk-bar,tick-column,column-actions}.test.tsx, layout at 1440, 768, 390.",
+  "change": "BulkBar over selected rows; c.select tick column in cell and tier-appropriate forms; tri-state header checkbox; column-actions* wiring header Menu sort, hide and reset through t1b state; identity column never hideable; identity and actions columns pinned with an opaque cell background. Flip I22 to a normal test. Ships with: no new rule; JSDoc @example per part. Tests: parts/{bulk-bar,tick-column,column-actions}.test.tsx, layout at 1440, 768, 390. A new public value symbol also lands, in this Issue, its raise in scripts/check-budgets/areas/surface.ts (the ceiling +1 and a `raises` row with from, to, consumer and repo) and its name in scripts/consumers.json (`<symbol>: <repo>:<path>`); make check refuses the symbol without them. The shard is scripts/export-surface/table.json, written by `export-surface.mjs --update`.",
   "commits": "One PR, separate package and non-package commits (isolated-basalt-ui); conventional, empty scope, no attribution.",
   "proof": "bun test packages/basalt-ui/src/table/parts packages/basalt-ui/src/table/invariants/toolbar*; layout; make check.",
   "acceptance": [

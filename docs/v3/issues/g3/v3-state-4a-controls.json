@@ -4,18 +4,20 @@
   "owns": ["packages/basalt-ui/src/controls/{draft,submit,form-footer}*"],
   "shared_append_only": [
     "packages/basalt-ui/src/controls/index.ts",
-    "packages/basalt-ui/scripts/export-surface.json"
+    "packages/basalt-ui/scripts/export-surface/controls.json",
+    "packages/basalt-ui/scripts/check-budgets/areas/surface.ts",
+    "packages/basalt-ui/scripts/consumers.json"
   ],
   "must_not_touch": [
     "packages/basalt-ui/src/controls/{form-field,form-row,filter-set,control-view,view-tabs}*",
     "packages/basalt-ui/src/{core,data,ui}/**",
     "other routes",
-    "contract-pins.json, MIGRATING, llms.txt, check-budgets"
+    "contract-pins.json, MIGRATING, llms.txt, check-budgets except areas/surface.ts"
   ],
   "concept": "state-persistence-forms#6",
   "contract": "Read docs/v3/concepts/state-persistence-forms.md 6, 9 (spikes A to G, S2), 12. FieldLike and FormLike are in src/core/ports.ts. Ancestors, import never copy: FormField (v3-ctl-7), optimistic (v3-state-2), createSyncedState (v3-state-3), isPristine in src/core/form-dirty (v3-state-1).",
   "exemplar": "src/controls/form-field* (v3-ctl-7) for module anatomy and tests; src/core/persisted* for the storage-key shape.",
-  "change": "One concern: the form modules, as concept 6 sketches them. useFormDraft(form, { key, version, schema, owner }): restore once with reset(draft, { keepDefaultValues: true }), trailing 500 ms autosave, flush on hide, key deleted when isPristine(form) (never isDefaultValue), the restore's own notification ignored, clear() after submit, key basalt:form:<owner>:<key> (owner null: basalt:form:<key>), version bump discards, a 1.x basalt:form:<key> read once. toSubmitErrors(save) via unwrap; FormFooter({ form, actions }): max 5 actions, one primary, disabled on !canSubmit, aria-busy on isSubmitting. Ships: no rule; JSDoc @example; tests src/controls/{draft,submit,form-footer}.test.tsx.",
+  "change": "One concern: the form modules, as concept 6 sketches them. useFormDraft(form, { key, version, schema, owner }): restore once with reset(draft, { keepDefaultValues: true }), trailing 500 ms autosave, flush on hide, key deleted when isPristine(form) (never isDefaultValue), the restore's own notification ignored, clear() after submit, key basalt:form:<owner>:<key> (owner null: basalt:form:<key>), version bump discards, a 1.x basalt:form:<key> read once. toSubmitErrors(save) via unwrap; FormFooter({ form, actions }): max 5 actions, one primary, disabled on !canSubmit, aria-busy on isSubmitting. Ships: no rule; JSDoc @example; tests src/controls/{draft,submit,form-footer}.test.tsx. A new public value symbol also lands, in this Issue, its raise in scripts/check-budgets/areas/surface.ts (the ceiling +1 and a `raises` row with from, to, consumer and repo) and its name in scripts/consumers.json (`<symbol>: <repo>:<path>`); make check refuses the symbol without them. The shard is scripts/export-surface/controls.json, written by `export-surface.mjs --update`.",
   "commits": "One PR, separate package and non-package commits (isolated-basalt-ui); conventional, empty scope, no attribution; make sync-self its own commit.",
   "proof": "Unit and SSR tests; no UI.",
   "acceptance": [

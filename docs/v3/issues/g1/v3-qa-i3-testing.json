@@ -4,24 +4,26 @@
   "owns": [
     "packages/basalt-ui/src/testing/{settled,dom-shims,slots}*",
     "packages/basalt-ui/tests/quality/ssr/**",
-    "packages/basalt-ui/docs/testing.md"
+    "packages/basalt-ui/docs/{testing,settled,install-dom-shims,slots}.md"
   ],
   "shared_append_only": [
     "packages/basalt-ui/src/testing/index.ts",
-    "packages/basalt-ui/scripts/export-surface.json"
+    "packages/basalt-ui/scripts/export-surface/testing.json",
+    "packages/basalt-ui/scripts/check-budgets/areas/surface.ts",
+    "packages/basalt-ui/scripts/consumers.json"
   ],
   "must_not_touch": [
     "packages/basalt-ui/src/{ui,page,shell,cards,charts,controls,table,content,ai,router,data,tokens,css,lint}/**",
     "other areas' src/core/messages/<area>.ts",
     "packages/basalt-ui/src/testing/{render-app,fake-channel,quality}*",
     "packages/basalt-ui/src/core/**",
-    "CHANGELOG.md, MIGRATING.md, llms.txt, scripts/check-budgets/**, other areas' migrations files",
+    "CHANGELOG.md, MIGRATING.md, llms.txt, scripts/check-budgets/** except areas/surface.ts, other areas' migrations files",
     "every contract.ts and src/core/ports.ts"
   ],
   "concept": "quality-contract#12 I3",
   "contract": "Frozen: ARCHITECTURE.md, this domain's contract.ts, src/core/ports.ts. Need a change: factory signal, take the reversible default. Read concepts/quality-contract.md sections 4 to 7, 10, 12 (and 8 for carried invariants). ./testing is tooling, never in an app bundle. SLOTS is typed in src/ui/slots* (p1): re-export it, do not redefine. expectHydrates and pseudoMessages are internal repo code, not exports.",
   "exemplar": "2.x src/provider/test-router.tsx (renderApp's donor) and tests/isomorphic/harness.ts.",
-  "change": "settled() (router, queries and the Base UI mount tick), installDomShims() (ResizeObserver, matchMedia, scrollTo, PointerEvent; idempotent; jsdom and happy-dom only), SLOTS re-export; internal expectHydrates(<Page/>,{locale,timeZone}) via vite build --ssr, renderToString, hydrateRoot in jsdom, failing on any recoverable error or console.error, with a positive control (Math.random in a value must raise Hydration failed). Teach the kit rules in docs/testing.md (popups need findBy*, Tooltip delay 0, Select.Value needs items, hidden:true under a modal, geometry is a browser-lane assertion). Rule: none. Skill: generated docs/testing.md. Tests: testing.kit, hydrate.subpath.",
+  "change": "settled() (router, queries and the Base UI mount tick), installDomShims() (ResizeObserver, matchMedia, scrollTo, PointerEvent; idempotent; jsdom and happy-dom only), SLOTS re-export; internal expectHydrates(<Page/>,{locale,timeZone}) via vite build --ssr, renderToString, hydrateRoot in jsdom, failing on any recoverable error or console.error, with a positive control (Math.random in a value must raise Hydration failed). Teach the kit rules in docs/testing.md (popups need findBy*, Tooltip delay 0, Select.Value needs items, hidden:true under a modal, geometry is a browser-lane assertion). Rule: none. Skill: generated docs/{settled,install-dom-shims,slots}.md (testing.md is the hand-written guide gen-docs never touches). Tests: testing.kit, hydrate.subpath. A new public value symbol also lands, in this Issue, its raise in scripts/check-budgets/areas/surface.ts (the ceiling +1 and a `raises` row with from, to, consumer and repo) and its name in scripts/consumers.json (`<symbol>: <repo>:<path>`); make check refuses the symbol without them. The shard is scripts/export-surface/testing.json, written by `export-surface.mjs --update`.",
   "commits": "One PR, separate package and non-package commits (isolated-basalt-ui); conventional, empty scope, no attribution.",
   "proof": "bun test under jsdom and happy-dom.",
   "acceptance": [

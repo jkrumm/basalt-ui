@@ -8,20 +8,22 @@
   ],
   "shared_append_only": [
     "packages/basalt-ui/src/charts/index.ts",
-    "packages/basalt-ui/scripts/export-surface.json"
+    "packages/basalt-ui/scripts/export-surface/charts.json",
+    "packages/basalt-ui/scripts/check-budgets/areas/charts.ts",
+    "packages/basalt-ui/scripts/consumers.json"
   ],
   "must_not_touch": [
     "packages/basalt-ui/src/{ui,cards,controls,table,page,shell,content,ai,router,data,tokens,css,lint}/**, packages/basalt-ui/agent/**",
     "packages/basalt-ui/src/charts/{core,host*}/**",
     "packages/basalt-ui/src/charts/parts/{cartesian,lines,bars,chart-card,tooltip,legend}*",
     "apps/playground/**",
-    "CHANGELOG.md, MIGRATING.md, llms.txt, scripts/check-budgets/**, other areas' migrations files",
+    "CHANGELOG.md, MIGRATING.md, llms.txt, scripts/check-budgets/** except areas/charts.ts, other areas' migrations files",
     "every contract.ts and src/core/ports.ts"
   ],
   "concept": "charts-cards-kanban#10",
   "contract": "Frozen: ARCHITECTURE.md, this domain's contract.ts, src/core/ports.ts. Need a change: factory signal, take the reversible default. Read concepts/charts-cards-kanban.md sections 3, 4, 8, 9. ./charts reaches no Base UI and src/charts/host.tsx is the only importer of @tanstack/charts/react (import-boundary). Engine pin: tilde 1.5.x. Byte ceilings follow the one formula in v3-freeze-g1: measured gz plus 5 percent, rounded up to 0.5 KB; 32.5, 46.5 and plus 4 in ARCHITECTURE section 3 are informative targets. Result of charts-1a (S2) decides engine or hand-SVG core. 2.x src/charts files outside the owned globs stay with their tests; nothing is deleted here.",
   "exemplar": "2.x donors: src/charts/Sparkline.tsx and sparkline.test.tsx, sparkline-window.test.tsx, sparkline-reference.test.tsx (originals stay; copy tests with assertions untouched).",
-  "change": "Sparkline (series SparkPoint[], ariaLabel, height number or 'fill', width, form line or area, reference number or 'mean', axisLabels [a,b,c], format, summary) and MiniBars (highlight number or 'last'). Interactive only when axisLabels is present; otherwise tabIndex -1, keyboard false, an image with a name. Line neutral, area fades to 0, now dot reads the private --spark-now var set by the frame. MiniBars: dim ink 34/38 percent, one lit, data-end radius 3 to 4, max 24, gap 2 to 4. No tone or color by type. Rule: none new. Skill: generated docs/sparkline.md and docs/mini-bars.md. Tests: ported sparkline suites, byte test, axe.",
+  "change": "Sparkline (series SparkPoint[], ariaLabel, height number or 'fill', width, form line or area, reference number or 'mean', axisLabels [a,b,c], format, summary) and MiniBars (highlight number or 'last'). Interactive only when axisLabels is present; otherwise tabIndex -1, keyboard false, an image with a name. Line neutral, area fades to 0, now dot reads the private --spark-now var set by the frame. MiniBars: dim ink 34/38 percent, one lit, data-end radius 3 to 4, max 24, gap 2 to 4. No tone or color by type. Rule: none new. Skill: generated docs/sparkline.md and docs/mini-bars.md. Tests: ported sparkline suites, byte test, axe. A new public value symbol also lands, in this Issue, its raise in scripts/check-budgets/areas/charts.ts (the ceiling +1 and a `raises` row with from, to, consumer and repo) and its name in scripts/consumers.json (`<symbol>: <repo>:<path>`); make check refuses the symbol without them. The shard is scripts/export-surface/charts.json, written by `export-surface.mjs --update`.",
   "commits": "One PR, separate package and non-package commits (isolated-basalt-ui); conventional, empty scope, no attribution.",
   "proof": "Layout and axe tests on tests/layout/fixture/charts-sparkline-fixture.tsx at 1440, 768, 390, 320. No shot here: the visual round is v3-playground-overview.",
   "acceptance": [

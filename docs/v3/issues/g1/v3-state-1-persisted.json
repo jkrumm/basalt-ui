@@ -9,17 +9,19 @@
   ],
   "shared_append_only": [
     "packages/basalt-ui/src/index.ts",
-    "packages/basalt-ui/scripts/export-surface.json"
+    "packages/basalt-ui/scripts/export-surface/index.json",
+    "packages/basalt-ui/scripts/check-budgets/areas/surface.ts",
+    "packages/basalt-ui/scripts/consumers.json"
   ],
   "must_not_touch": [
     "packages/basalt-ui/src/{ui,tokens,css,lint,shell,cards,charts,table,content,ai,page,data,controls,router}/**, packages/basalt-ui/agent/**",
-    "CHANGELOG.md, MIGRATING.md, llms.txt, scripts/check-budgets/**, other areas' migrations files",
+    "CHANGELOG.md, MIGRATING.md, llms.txt, scripts/check-budgets/** except areas/surface.ts, other areas' migrations files",
     "every contract.ts and src/core/ports.ts"
   ],
   "concept": "state-persistence-forms#6",
   "contract": "Frozen: ARCHITECTURE.md, src/core/ports.ts. Need a change: factory signal, take the reversible default. Read concepts/state-persistence-forms.md sections 5, 6, 9 and ARCHITECTURE sections 1 and 3. Frozen identity: envelope basalt:<id> {v,value}; the raw basalt:scheme key is not touched here.",
   "exemplar": "2.x donors, read in the tree: src/state/persisted.ts, persisted.test.ts, src/query-client.ts, src/unwrap.ts.",
-  "change": "Keyed persisted<T>(key,{version,initial,schema?,migrate?,storage?}) returning {use,get,set,subscribe,isSet,reset} (ExternalStore shape, cached per namespaced key; a second definition with another version throws in dev), persisted.setStorage(s) once before the first read, persisted.clearOwner(owner) removing basalt:<owner>:* and basalt:form:<owner>:*. StorageLike is sync only. debounce: trailing with flushOnUnmount (and an optional maxWait for live-3). form-dirty: internal isPristine, structural compare to options.defaultValues. Copy 2.x src/state/persisted.test.ts to src/core/persisted.test.ts (original stays), imports and createPersistedState call sites adapted to persisted<T>(key,{...}), assertions untouched; commit it red (inv 1-6, 18-22), then add keyed identity, setStorage, clearOwner cases. Rule: none. Skill: generated docs/persisted.md. Tests: ported suite, SSR (renderToString, hydrateRoot, counted onRecoverableError, negative control, throwing localStorage getter), golden fixtures.",
+  "change": "Keyed persisted<T>(key,{version,initial,schema?,migrate?,storage?}) returning {use,get,set,subscribe,isSet,reset} (ExternalStore shape, cached per namespaced key; a second definition with another version throws in dev), persisted.setStorage(s) once before the first read, persisted.clearOwner(owner) removing basalt:<owner>:* and basalt:form:<owner>:*. StorageLike is sync only. debounce: trailing with flushOnUnmount (and an optional maxWait for live-3). form-dirty: internal isPristine, structural compare to options.defaultValues. Copy 2.x src/state/persisted.test.ts to src/core/persisted.test.ts (original stays), imports and createPersistedState call sites adapted to persisted<T>(key,{...}), assertions untouched; commit it red (inv 1-6, 18-22), then add keyed identity, setStorage, clearOwner cases. Rule: none. Skill: generated docs/persisted.md. Tests: ported suite, SSR (renderToString, hydrateRoot, counted onRecoverableError, negative control, throwing localStorage getter), golden fixtures. A new public value symbol also lands, in this Issue, its raise in scripts/check-budgets/areas/surface.ts (the ceiling +1 and a `raises` row with from, to, consumer and repo) and its name in scripts/consumers.json (`<symbol>: <repo>:<path>`); make check refuses the symbol without them. The shard is scripts/export-surface/index.json, written by `export-surface.mjs --update`.",
   "commits": "One PR, separate package and non-package commits (isolated-basalt-ui); conventional, empty scope, no attribution.",
   "proof": "bun test over the owned files. Golden fixtures are synthesized from stored shapes (keys, envelopes) in ~/SourceRoot/argo/apps/dashboard/src/lib/window-stores.ts, queries/gym.ts, ~/SourceRoot/linewatch/web/src/lib/dashboard-store.ts and shutterflow; no file content copied.",
   "acceptance": [
