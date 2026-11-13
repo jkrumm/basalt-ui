@@ -6,7 +6,7 @@
 import { cleanup, render } from '@testing-library/react'
 import { afterEach, describe, expect, test } from 'bun:test'
 import { ChartCard } from './ChartCard'
-import { cellHeader, Heatmap } from './parts/heatmap'
+import { cellHeader, colTicks, Heatmap } from './parts/heatmap'
 
 afterEach(cleanup)
 
@@ -155,5 +155,28 @@ describe('Heatmap tooltip header', () => {
 
   test('a formatted label wins over the key', () => {
     expect(cellHeader('orders', '09', id, (c) => `${c}:00`)).toBe('orders · 09:00')
+  })
+})
+
+describe('Heatmap named tick columns', () => {
+  const hours = Array.from({ length: 24 }, (_, h) => String(h))
+
+  test('without a named column the ticks are the kit stride', () => {
+    expect(colTicks(hours, undefined, 'regular')).toEqual(['0', '5', '10', '15', '20'])
+    expect(colTicks(hours, ['x'], 'regular')).toEqual(['0', '5', '10', '15', '20'])
+  })
+
+  test('a named column keeps its tick and displaces the stride tick that would crowd it', () => {
+    expect(colTicks(hours, ['9'], 'regular')).toEqual(['0', '5', '9', '15', '20'])
+    expect(colTicks(hours, ['9'], 'compact')).toEqual(['0', '9', '16'])
+    expect(colTicks(hours, ['9'], 'wide')).toEqual(['0', '4', '9', '12', '16', '20'])
+  })
+
+  test('a named column that is already a stride tick adds nothing', () => {
+    expect(colTicks(hours, ['10'], 'regular')).toEqual(['0', '5', '10', '15', '20'])
+  })
+
+  test('the ticks stay in column order whatever order the names come in', () => {
+    expect(colTicks(hours, ['22', '9'], 'regular')).toEqual(['0', '5', '9', '15', '22'])
   })
 })
