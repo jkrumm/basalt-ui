@@ -1,6 +1,6 @@
 #!/usr/bin/env bun
 /**
- * Emit `zone-a.ts` beside this file: the earned colour names and the outright-denied utilities zone
+ * Emit `zone-a.ts` beside this file: the earned colour names, the pre-mixed and fill-only names and the outright-denied utilities zone
  * A (app code) may not use, read from `zoneADenial()` so `emit.ts` stays the one source.
  * `bun gen-zone-a.ts --write` regenerates; `zone-a.test.ts` fails on drift.
  */
@@ -11,14 +11,26 @@ import { zoneADenial } from '../../tokens/emit'
 
 export const ZONE_A_PATH = resolve(import.meta.dirname, 'zone-a.ts')
 
-const list = (items: readonly string[]): string => items.map((i) => `  '${i}',\n`).join('')
+const PRINT_WIDTH = 100
+
+/** One `export const` array, laid out as oxfmt prints it: on one line when it fits, else one item per line. */
+function declare(name: string, items: readonly string[]): string {
+  const inline = `export const ${name} = [${items.map((i) => `'${i}'`).join(', ')}] as const`
+  if (inline.length <= PRINT_WIDTH) return inline
+  return `export const ${name} = [\n${items.map((i) => `  '${i}',\n`).join('')}] as const`
+}
 
 export function renderZoneA(): string {
-  const { names, deniedOutright } = zoneADenial()
+  const { names, premixed, fillOnly, deniedOutright } = zoneADenial()
   return (
     '// Generated from src/tokens/emit.ts by gen-zone-a.ts. Do not edit.\n' +
-    `export const zoneANames = [\n${list(names)}] as const\n\n` +
-    `export const deniedCurrent = [\n${list(deniedOutright)}] as const\n`
+    [
+      declare('zoneANames', names),
+      declare('zoneAPremixed', premixed),
+      declare('zoneAFillOnly', fillOnly),
+      declare('deniedCurrent', deniedOutright),
+    ].join('\n\n') +
+    '\n'
   )
 }
 

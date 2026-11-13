@@ -208,6 +208,10 @@ export const ZONE_A_ALLOWED_CURRENT = ['fill-current', 'stroke-current', 'text-c
 export type ZoneADenial = {
   /** Colour names (the `--color-` suffix) resolving to brand, status, tint, chart or seq. */
   names: string[]
+  /** Pre-mixed alpha roles (`hairline`, `hover`, ...): `/NN` on them compounds the alpha. */
+  premixed: string[]
+  /** Fill-only roles, earned or not (`brand-fill`, `chart-N`, `seq-N`, `dim-bar`): never text. */
+  fillOnly: string[]
   prefixes: readonly string[]
   deniedOutright: readonly string[]
   allowedCurrent: readonly string[]
@@ -224,6 +228,8 @@ export function zoneADenial(): ZoneADenial {
     .map((e) => e.tw.slice('--color-'.length))
   return {
     names: [...new Set(names)],
+    premixed: TOKENS.filter((t) => t.premixed).map((t) => t.name),
+    fillOnly: TOKENS.filter((t) => t.fillOnly).map((t) => t.name),
     prefixes: ZONE_A_PREFIXES,
     deniedOutright: ZONE_A_DENIED_OUTRIGHT,
     allowedCurrent: ZONE_A_ALLOWED_CURRENT,

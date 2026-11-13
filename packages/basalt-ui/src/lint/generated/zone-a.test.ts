@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'bun:test'
 import { readFileSync } from 'node:fs'
 
-import { deniedCurrent, zoneANames } from './zone-a'
+import { deniedCurrent, zoneAFillOnly, zoneANames, zoneAPremixed } from './zone-a'
 import { renderZoneA, ZONE_A_PATH } from './gen-zone-a'
 
 describe('zone-a', () => {
@@ -22,6 +22,15 @@ describe('zone-a', () => {
       expect(zoneANames as readonly string[]).toContain(name)
     }
     expect(deniedCurrent as readonly string[]).toContain('bg-current')
+  })
+
+  it('carries the pre-mixed and fill-only names the class rules read', () => {
+    expect(zoneAPremixed as readonly string[]).toEqual(
+      expect.arrayContaining(['hairline', 'hover', 'selected', 'scrim']),
+    )
+    expect(zoneAFillOnly as readonly string[]).toEqual(
+      expect.arrayContaining(['brand-fill', 'dim-bar', 'chart-1', 'seq-5']),
+    )
   })
 
   it('leaves fill, stroke and text current allowed', () => {
