@@ -2,9 +2,9 @@ import { createFileRoute } from '@tanstack/react-router'
 import { PageBar } from 'basalt-ui/page'
 import { BarList, DataPanel, EventList, StatCard, StatCell, StatGroup } from 'basalt-ui/cards'
 import { ChartCard, Lines } from 'basalt-ui/charts'
-import { FilterSet, filterSlot, spec } from 'basalt-ui/controls'
+import { FilterSet, ViewTabs, filterSlot, spec } from 'basalt-ui/controls'
 import { defineControls, field } from 'basalt-ui/router'
-import type { ReactElement } from 'react'
+import type { ComponentProps, ReactElement } from 'react'
 import { demoColors } from '../demo/series'
 import { useV3Tokens } from '../demo/v3-tokens'
 
@@ -27,6 +27,9 @@ const overview = defineControls({
       .enum(['all', 'eu', 'us'], 'all')
       .labels({ all: 'All regions', eu: 'EU', us: 'US' }),
     env: field.enum(['prod', 'staging'], 'prod').labels({ prod: 'Production', staging: 'Staging' }),
+    tab: field
+      .enum(['overview', 'activity'], 'overview', { history: 'push' })
+      .labels({ overview: 'Overview', activity: 'Activity' }),
   },
   widgets: {
     requests: { range: globals.field.range },
@@ -143,18 +146,31 @@ const filters = (
 
 const GRID = 'grid grid-cols-[repeat(auto-fill,minmax(min(100%,22rem),1fr))] items-start gap-4'
 
+// #region view-tabs
+const tabs: NonNullable<ComponentProps<typeof PageBar>['tabs']> = {
+  kind: 'controls-slot',
+  count: 1,
+  render: () => <ViewTabs handle={overview.field.tab} label="Overview view" />,
+}
+// #endregion
+
 function OverviewRoute(): ReactElement {
   useV3Tokens()
+  const [tab] = overview.field.tab.use()
   return (
     <div className="flex min-w-0 flex-col gap-4" data-testid="ov-root">
-      <PageBar controls={filterSlot([spec(globals.field.range, 'Range')])} />
+      <PageBar tabs={tabs} controls={filterSlot([spec(globals.field.range, 'Range')])} />
       <div data-testid="ov-filters">{filters}</div>
-      {health}
-      <div className={GRID}>
-        <div data-testid="ov-bound">{requests}</div>
-        <div data-testid="ov-override">{errors}</div>
-      </div>
-      {trend}
+      {tab === 'overview' ? (
+        <>
+          {health}
+          <div className={GRID}>
+            <div data-testid="ov-bound">{requests}</div>
+            <div data-testid="ov-override">{errors}</div>
+          </div>
+          {trend}
+        </>
+      ) : null}
       <div className={GRID}>{breakdown}</div>
     </div>
   )
