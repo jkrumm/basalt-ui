@@ -1,45 +1,34 @@
 # {{APP_NAME}} — Design
 
-> Seeded by basalt-ui `init`, then owned by you — `sync` never touches it again, and no version is
-> stamped here (run `basalt-ui doctor` for the version; a number written into a file is frozen at
-> scaffold time). It records this app's **deltas only**: the law lives in `.claude/rules/basalt-*.md`,
-> and the precedence between this file, those rules and the skills is stated once in the managed `AGENTS.md` block.
+> Seeded by `basalt-ui init`, then yours: `sync` never rewrites it and no version is stamped here
+> (run `basalt-ui doctor` for the version). It records this app's intent and its narrow deltas; the law is in
+> `.claude/rules/basalt-*.md`. The managed `AGENTS.md` block states the precedence once and does not
+> import this file, so an agent reads it by name before it designs a screen.
 
 ## Identity
 
-{{APP_NAME}} inherits the basalt-ui identity verbatim, and every value behind it is DERIVED from the
-theme's config knobs (see the `basalt-tokens` rule) — so nothing here restates one. **Silence means
-"inherits the basalt-ui defaults unchanged."**
+{{APP_NAME}} inherits the basalt-ui identity, and every value behind it is derived from the
+`basalt()` configuration, so this region names no value. Silence means "the defaults, unchanged".
 
-- **Accent hue:** {{ACCENT_HUE}} (default: the shipped seed; a single-series mark stays neutral)
-- **Theme knobs:** _(none — `createBasaltTheme()` bare)_ · record any non-zero `derive`/`fonts`/
-  `radius`/`density` level or `--basalt-font-numeral` override here, with its reason.
+- **Accent hue:** {{ACCENT_HUE}} (one accent, spent where a decision turns on it)
+- **Knobs:** none set. Record any non-default `derive`, `fonts`, `radius` or `density` here, with its reason.
 
-## Series dictionary
+## Direction
 
-The framework owns the roles and the available hues; this table is the app's **data dictionary** —
-which metric maps to which hue, as `{ light, dark }` pairs wired through `defineSeries()`. It is the
-one design artifact that legitimately lives in the consumer; never inline a color elsewhere.
+_The owner writes this: what the app is for, who reads it, the tone it keeps. Agents leave it empty._
 
-| Series name      | `defineSeries` key | Role / earned reason               |
-| ---------------- | ------------------ | ---------------------------------- |
-| _e.g. requests_  | `requests`         | Primary metric (earned trend hue)  |
+## Series
 
-```ts
-// {{SERIES_MODULE_PATH}} — the app's guard-exempt series file
-import { defineSeries, groupTokens } from 'basalt-ui/tokens'
-const SERIES_MAP = defineSeries({
-  // requests: { light: '…', dark: '…' },   // deeper on light, lighter on dark — never one value
-})
-export const series = groupTokens('app', SERIES_MAP) // { requests: 'var(--vx-app-requests)', … }
-export const paletteGroups = [series] // the groupTokens result, never a retyped key
-// <BasaltProvider paletteOptions={{ groups: paletteGroups }} …/> — then charts read `series.requests`
-```
+The colour of a metric is authored once, as a `{ light, dark }` pair in {{SERIES_MODULE_PATH}}. A
+series earns a hue for a trend, a status or a split a reader must tell apart; the rest stay neutral.
 
-A series earns a color only for trend, signal/status or categorical separation. `/basalt-design` is the tuning loop; `/basalt-charts` is the wiring.
+| Series | Key | Why it earned a hue |
+| ------ | --- | ------------------- |
+| _none yet_ |  |  |
 
-## App deviations
+## Deviations
 
-Intentional departures from the defaults, each with a one-line justification. Empty is correct.
+A deviation only narrows a default (a smaller set, a stricter limit) and carries its reason on the
+same line. A deviation that widens the law is an eject or a waiver, recorded where it lives.
 
-- _(none yet)_
+- _none yet_
