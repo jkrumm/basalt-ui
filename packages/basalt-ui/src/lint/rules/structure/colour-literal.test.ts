@@ -73,11 +73,16 @@ describe('forms', () => {
     entry.forms.filter(isEnabled).map((form) => ({ id, form })),
   )
 
-  it('has 11 live forms: colour-literal 1, waiver-needs-reason 2, data-primitive 8', () => {
+  it('has 15 live forms: colour-literal 1, waiver-needs-reason 2, data-primitive 8, untrusted-markdown 4', () => {
     const counts: Record<string, number> = {}
     for (const { id } of live) counts[id] = (counts[id] ?? 0) + 1
-    expect(counts).toEqual({ 'colour-literal': 1, 'waiver-needs-reason': 2, 'data-primitive': 8 })
-    expect(formCount(FAMILY)).toBe(11)
+    expect(counts).toEqual({
+      'colour-literal': 1,
+      'waiver-needs-reason': 2,
+      'data-primitive': 8,
+      'untrusted-markdown': 4,
+    })
+    expect(formCount(FAMILY)).toBe(15)
   })
 
   for (const { id, form } of live) {
@@ -110,7 +115,7 @@ describe('forms', () => {
 })
 
 describe('id-only shells', () => {
-  const shells = ['router-search', 'control-home', 'untrusted-markdown']
+  const shells = ['router-search', 'control-home']
   const plugin = createPlugin(FAMILY)
 
   it('register in the rule table with no form', () => {
@@ -124,13 +129,11 @@ describe('id-only shells', () => {
     languageOptions: { parserOptions: { ecmaFeatures: { jsx: true } } },
   })
   for (const id of shells) {
-    // Code the bodies will one day guard: the shells must stay silent until v3-ctl-8 and v3-ai-i5.
+    // Code the bodies will one day guard: the shells must stay silent until v3-ctl-8.
     tester.run(id, plugin.rules[id] as unknown as Rule.RuleModule, {
       valid: [
         `const a = <Link to="/x" search={{ range: '30d' }} />`,
         `const a = <Select data={[]} />`,
-        `const a = <Markdown contentTrust="trusted">{html}</Markdown>`,
-        `const a = <div dangerouslySetInnerHTML={{ __html: html }} />`,
       ],
       invalid: [],
     })
@@ -144,7 +147,7 @@ describe('id-only shells', () => {
   it('carries the profiles the contract names', () => {
     expect(FAMILY['colour-literal']?.profiles).toEqual(['bridge', 'parts', 'app'])
     expect(FAMILY['waiver-needs-reason']?.profiles).toEqual(['bridge', 'parts', 'app'])
-    for (const id of ['data-primitive', ...shells]) {
+    for (const id of ['data-primitive', 'untrusted-markdown', ...shells]) {
       expect(FAMILY[id]?.profiles).toEqual(['parts', 'app'])
     }
   })
