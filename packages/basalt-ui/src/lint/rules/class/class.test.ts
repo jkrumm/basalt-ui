@@ -13,7 +13,7 @@ import { Linter, RuleTester } from 'eslint'
 
 import { createPlugin, formMessage } from '../../factory'
 import { zoneANames } from '../../generated/zone-a'
-import { isEnabled } from '../../rule-table'
+import { isEnabled, presetInput } from '../../rule-table'
 import { FIXTURES_ROOT, readFixture, SUITES, validPath } from './class.cases'
 import { CLASS_RULES } from './table'
 
@@ -220,6 +220,12 @@ describe('forms', () => {
       expect(CLASS_RULES[id].profiles).not.toContain('bridge')
       expect(CLASS_RULES[id].profiles).toContain('parts')
     }
+  })
+
+  it('hands tw-off-law its bridge option through the preset input, and no other rule any', () => {
+    const { options } = presetInput(CLASS_RULES)
+    expect(options.bridge).toEqual({ 'basalt/tw-off-law': [{ profile: 'bridge' }] })
+    expect(options.parts).toEqual({})
   })
 
   it('is off in vendored files (zone V); app-spacing is also off in ejected and seed files', () => {

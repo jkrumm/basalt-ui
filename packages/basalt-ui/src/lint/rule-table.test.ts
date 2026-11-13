@@ -4,7 +4,7 @@
  */
 import { describe, expect, it } from 'bun:test'
 
-import type { ClassForm, RuleEntry } from './rule-table'
+import type { ClassForm, RuleEntry, RuleTable } from './rule-table'
 import {
   COVERAGE_END,
   COVERAGE_START,
@@ -191,6 +191,7 @@ describe('derived lists', () => {
   it('generates the preset input per profile and zone', () => {
     expect(presetInput(TABLE)).toEqual({
       plugin: 'basalt',
+      options: { bridge: {}, parts: {}, app: {}, repo: {} },
       profiles: {
         bridge: ['basalt/dark-fork'],
         parts: ['basalt/dark-fork', 'basalt/app-spacing', 'basalt/router-search'],
@@ -203,6 +204,30 @@ describe('derived lists', () => {
         vendored: ['basalt/dark-fork', 'basalt/app-spacing'],
       },
     })
+  })
+})
+
+const gated = (extra: Partial<RuleEntry>): RuleTable =>
+  defineRules({ gated: entry({ schema: [{ type: 'object' }], ...extra }) })
+
+describe('profile options', () => {
+  it('carries a rule option for its profile only', () => {
+    const table = gated({ profileOptions: { bridge: [{ profile: 'bridge' }] } })
+    expect(presetInput(table).options).toEqual({
+      bridge: { 'basalt/gated': [{ profile: 'bridge' }] },
+      parts: {},
+      app: {},
+      repo: {},
+    })
+  })
+
+  it('rejects options for a profile that does not run the rule, or without a schema', () => {
+    expect(
+      problemsOf(() => gated({ profiles: ['parts'], profileOptions: { bridge: [{}] } })),
+    ).toEqual(['gated: options for profile "bridge", which does not run the rule'])
+    expect(
+      problemsOf(() => defineRules({ gated: entry({ profileOptions: { bridge: [{}] } }) })),
+    ).toEqual(['gated: profile options need a schema'])
   })
 })
 

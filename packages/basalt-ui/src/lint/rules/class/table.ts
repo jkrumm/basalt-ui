@@ -4,10 +4,10 @@
  * module holds the patterns, the fix each message names and the next rung of the bending ladder.
  *
  * Colour names are never typed here: `generated/zone-a.ts` (from `tokens/emit.ts`) is the one
- * source of the earned names and of the utilities denied outright. The only name added by hand is
- * `dim-bar`, a fill-only token that is not earned and so is absent from that list.
+ * source of the earned names, the pre-mixed alpha roles, the fill-only roles and the utilities
+ * denied outright.
  */
-import { deniedCurrent, zoneANames } from '../../generated/zone-a'
+import { deniedCurrent, zoneAFillOnly, zoneANames, zoneAPremixed } from '../../generated/zone-a'
 import type { Profile, Zone } from '../../rule-table'
 import { defineRules } from '../../rule-table'
 import { mediaQueryForm, PROFILE_GATE_SCHEMA, partsOnly } from './detect'
@@ -37,11 +37,6 @@ const COLOUR_PREFIX =
 const SPACING_PREFIX =
   '(?:p[xytrblse]?|m[xytrblse]?|gap(?:-[xy])?|space-[xy]|inset(?:-[xy])?|top|right|bottom|left|start|end|size|w|h|min-w|min-h|max-w|max-h|basis|translate-[xy]|scroll-[mp][xytrblse]?)'
 
-/** Colour tokens that only a fill may use: contrast clears 3.0 for a fill, text needs 4.5. */
-const FILL_ONLY = [
-  ...zoneANames.filter((name) => name.endsWith('-fill') || /^(?:chart|seq)-/.test(name)),
-  'dim-bar',
-]
 const TINTS = zoneANames.filter((name) => name.endsWith('-tint'))
 
 /** `bg-current` is denied outright; an entry ending in `-` (`from-`) denies the whole family. */
@@ -133,7 +128,7 @@ export const CLASS_RULES = defineRules({
     forms: [
       {
         id: 'text-on-fill',
-        pattern: new RegExp(`${HEAD}text-(?:${alt(FILL_ONLY)})${TAIL}`),
+        pattern: new RegExp(`${HEAD}text-(?:${alt(zoneAFillOnly)})${TAIL}`),
         fix: 'Status or Num tone from parts; text-good or text-brand at bridge',
         next: 'A reasoned per-line waiver',
         fixture: 'class/status-fill-as-text/text-on-fill.tsx',
@@ -164,6 +159,7 @@ export const CLASS_RULES = defineRules({
     profiles: ALL,
     zonesOff: VENDORED,
     schema: [PROFILE_GATE_SCHEMA],
+    profileOptions: { bridge: [{ profile: 'bridge' }] },
     defect:
       'shadcn suggests `p-3.25` and `w-105`; console 16 bordered vs 4 shadow cards; coloured left bars; `/NN` on `color-mix` tokens; epos `grid-cols-1!`; `bg-${tone}-600` unscanned by anything',
     forms: [
@@ -201,7 +197,7 @@ export const CLASS_RULES = defineRules({
       {
         id: 'alpha-on-premixed',
         pattern: new RegExp(
-          `${HEAD}-?${COLOUR_PREFIX}-(?:hairline|hover|selected|scrim|${alt(TINTS)})\\/[^\\s!]+!?$`,
+          `${HEAD}-?${COLOUR_PREFIX}-(?:${alt(zoneAPremixed)}|${alt(TINTS)})\\/[^\\s!]+!?$`,
         ),
         fix: 'Use the pre-mixed token as it is: it already carries its alpha',
         next: 'A new token in the table',

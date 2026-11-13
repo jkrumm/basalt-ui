@@ -27,6 +27,23 @@ export const zoneANames = [
   'seq-5',
 ] as const
 
+export const zoneAPremixed = ['hover', 'selected', 'scrim', 'hairline'] as const
+
+export const zoneAFillOnly = [
+  'brand-fill',
+  'dim-bar',
+  'chart-1',
+  'chart-2',
+  'chart-3',
+  'chart-4',
+  'chart-5',
+  'seq-1',
+  'seq-2',
+  'seq-3',
+  'seq-4',
+  'seq-5',
+] as const
+
 export const deniedCurrent = [
   'bg-current',
   'border-current',

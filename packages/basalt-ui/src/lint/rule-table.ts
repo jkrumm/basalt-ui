@@ -62,6 +62,11 @@ export type RuleEntry = {
   readonly forms: readonly Form[]
   /** JSON schema of the rule's options (ESLint rejects options a rule declares no schema for). */
   readonly schema?: readonly unknown[]
+  /**
+   * Rule options the preset writes for a profile, in the rule's option-array shape. A profile
+   * absent here gets none. `tw-off-law` stands its parts-only forms down on `{ profile: 'bridge' }`.
+   */
+  readonly profileOptions?: Readonly<Partial<Record<Profile, readonly unknown[]>>>
 }
 
 export type RuleTable = Readonly<Record<string, RuleEntry>>
@@ -115,6 +120,14 @@ function tableProblems(entries: readonly (readonly [string, RuleEntry])[]): stri
     seenIds.add(id)
     if (!KEBAB.test(id)) problems.push(`${id}: rule id is not kebab-case`)
     if (entry.profiles.length === 0) problems.push(`${id}: no profile`)
+    for (const profile of Object.keys(entry.profileOptions ?? {}) as Profile[]) {
+      if (!PROFILES.includes(profile))
+        problems.push(`${id}: options for unknown profile "${profile}"`)
+      else if (!entry.profiles.includes(profile)) {
+        problems.push(`${id}: options for profile "${profile}", which does not run the rule`)
+      }
+      if (entry.schema === undefined) problems.push(`${id}: profile options need a schema`)
+    }
     for (const profile of entry.profiles) {
       if (!PROFILES.includes(profile)) problems.push(`${id}: unknown profile "${profile}"`)
     }
@@ -177,6 +190,8 @@ export type PresetInput = {
   readonly plugin: typeof PLUGIN_NAME
   /** Qualified rule names (`basalt/<id>`) enabled per profile, in table order. */
   readonly profiles: Readonly<Record<Profile, readonly string[]>>
+  /** Rule options per profile, keyed by qualified name; only rules that declare some appear. */
+  readonly options: Readonly<Record<Profile, Readonly<Record<string, readonly unknown[]>>>>
   /** Qualified rule names switched off per zone, for the preset's `overrides`. */
   readonly zonesOff: Readonly<Record<Zone, readonly string[]>>
 }
@@ -189,8 +204,21 @@ export function presetInput(table: RuleTable): PresetInput {
     entries.filter(([, e]) => e.profiles.includes(profile)).map(([id]) => qualified(id))
   const byZone = (zone: Zone): string[] =>
     entries.filter(([, e]) => e.zonesOff?.includes(zone)).map(([id]) => qualified(id))
+  const optionsFor = (profile: Profile): Record<string, readonly unknown[]> =>
+    Object.fromEntries(
+      entries.flatMap(([id, e]) => {
+        const options = e.profileOptions?.[profile]
+        return options && e.profiles.includes(profile) ? [[qualified(id), options]] : []
+      }),
+    )
   return {
     plugin: PLUGIN_NAME,
+    options: {
+      bridge: optionsFor('bridge'),
+      parts: optionsFor('parts'),
+      app: optionsFor('app'),
+      repo: optionsFor('repo'),
+    },
     profiles: {
       bridge: byProfile('bridge'),
       parts: byProfile('parts'),

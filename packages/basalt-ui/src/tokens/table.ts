@@ -7,7 +7,7 @@
  * Colour values come from `deriveV3` (HCT, hex out): the table never carries a hex. A value is a
  * `{ light, dark }` pair, or a scalar string for a scheme-free role. Pre-mixed alpha roles
  * (`hairline`, `hover`, `selected`, `scrim`, `input`, `grid`, `crosshair`) are `color-mix` strings
- * over `var(--vx-ink)`, so `/NN` on them would compound and is denied by `tw-off-law`.
+ * over `var(--vx-ink)`, so `/NN` on them would compound; `tw-off-law` denies it on those flagged `premixed`.
  *
  * Pure: no React, no Tailwind, no `palette.ts`/`core.ts` (the 2.x modules this replaces).
  */
@@ -49,6 +49,14 @@ export type TokenDef = {
   readonly from?: readonly string[]
   /** Hue-bearing: the zone A `tw-off-law` denial is generated from every earned bridge target. */
   readonly earned?: true
+  /**
+   * A `color-mix` alpha role whose `/NN` modifier `tw-off-law` denies (it would compound). Only the
+   * four roles the rule always denied carry it; `input`, `grid` and `crosshair` are alpha roles too
+   * but stay unflagged until the rule widens on purpose (stock shadcn writes `bg-input/50`).
+   */
+  readonly premixed?: true
+  /** Clears 3.0 for a fill but not 4.5 for text: `status-fill-as-text` denies `text-<name>`. */
+  readonly fillOnly?: true
 }
 
 const ink = (pct: number): string => `color-mix(in srgb, var(--vx-ink) ${pct}%, transparent)`
@@ -124,6 +132,7 @@ export const TOKENS: readonly TokenDef[] = [
     value: inkMix('hover'),
     tw: ['--color-accent'],
     from: ['surface-row-hover', 'surface-panel-hover'],
+    premixed: true,
   },
   {
     name: 'selected',
@@ -132,6 +141,7 @@ export const TOKENS: readonly TokenDef[] = [
     value: inkMix('selected'),
     tw: ['--color-selected'],
     from: ['surface-row-selected'],
+    premixed: true,
   },
   {
     name: 'scrim',
@@ -142,6 +152,7 @@ export const TOKENS: readonly TokenDef[] = [
       dark: 'color-mix(in srgb, #000000 60%, transparent)',
     }),
     tw: ['--color-scrim'],
+    premixed: true,
   },
   // ── Line ──────────────────────────────────────────────────────────────────────────────────────
   {
@@ -151,6 +162,7 @@ export const TOKENS: readonly TokenDef[] = [
     value: inkMix('hairline'),
     tw: ['--color-border'],
     from: ['surface-border', 'surface-hairline', 'divider', 'tooltip-border'],
+    premixed: true,
   },
   {
     name: 'input',
@@ -202,6 +214,7 @@ export const TOKENS: readonly TokenDef[] = [
     tw: ['--color-brand-fill'],
     from: ['accent-fill'],
     earned: true,
+    fillOnly: true,
   },
   {
     name: 'on-brand',
@@ -243,6 +256,7 @@ export const TOKENS: readonly TokenDef[] = [
     role: 'A bar that is not the highlighted one; >= 2.0 on inset',
     value: color('dim-bar'),
     tw: ['--color-dim-bar'],
+    fillOnly: true,
   },
   {
     name: 'grid',
@@ -265,6 +279,7 @@ export const TOKENS: readonly TokenDef[] = [
     value: color(`chart-${n}`),
     tw: [`--color-chart-${n}`],
     earned: true,
+    fillOnly: true,
   })),
   ...([1, 2, 3, 4, 5] as const).map((n): TokenDef => ({
     name: `seq-${n}`,
@@ -273,6 +288,7 @@ export const TOKENS: readonly TokenDef[] = [
     value: color(`seq-${n}`),
     tw: [`--color-seq-${n}`],
     earned: true,
+    fillOnly: true,
   })),
   // ── Shadow ────────────────────────────────────────────────────────────────────────────────────
   // The card ring is `Card::after`, not part of this value (an inset shadow paints under a flush
