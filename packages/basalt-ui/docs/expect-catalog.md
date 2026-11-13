@@ -9,7 +9,8 @@ slots: []
 
 # expectCatalog
 
-The one contract test every app catalog runs. It throws one error listing every failure:
+The one contract test every app catalog runs: samples, limits and hostile URLs. It throws one
+error that lists every failure.
 
 ## Signature
 

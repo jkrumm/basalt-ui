@@ -122,7 +122,10 @@ function checkSample(
 }
 
 /**
- * The one contract test every app catalog runs. It throws one error listing every failure:
+ * The one contract test every app catalog runs: samples, limits and hostile URLs. It throws one
+ * error that lists every failure.
+ *
+ * What it checks:
  *
  * - every `sample` validates as `{ block: name, ...sample }`, and renders through `catalog.Block`
  *   in `ready`, `stale`, `loading` and `error` without throwing;
