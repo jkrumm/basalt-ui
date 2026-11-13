@@ -165,7 +165,8 @@ function ContextMeter() {
         label="Context window"
         max={CONTEXT_MAX}
         segments={CONTEXT_PARTS}
-        size="lg"
+        // `md`: the parts are named in the caption row; a 6% part cannot hold an on-fill label.
+        size="md"
         focus={focus}
       />
     </ChartCard>
