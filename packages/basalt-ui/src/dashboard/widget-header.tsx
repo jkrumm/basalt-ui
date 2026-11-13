@@ -186,7 +186,7 @@ function cardOf(trigger: Element): Element | null {
  * it covers the plot and never the headline figures it annotates. Only siblings of the root count —
  * a facts row deeper in the card's body belongs to the body, never to the header.
  */
-const FACTS = '[data-basalt-facts], [data-basalt-facts-skeleton]'
+const FACTS = '[data-basalt-facts], [data-basalt-facts-reserve]'
 function headerBlockOf(trigger: Element, card: Element): Element[] {
   // `StatCard` and strip cells mark the element bounding their headline (caption row + value rows).
   const marked = trigger.closest('[data-basalt-header-block]')

@@ -93,6 +93,8 @@ export type Part = {
   readonly label: string
   /** The segment's own (normalised) amount, in the reading's units — what its caption states. */
   readonly amount: number
+  /** A `tone="muted"` part: its fill is translucent, so a label on it takes ink, not the inverse. */
+  readonly muted?: true
 }
 
 /** One categorical part's caption: its position key, name, formatted amount and fill colour (`undefined` = neutral). */
@@ -230,6 +232,7 @@ export function layoutSegments(segments: readonly MeterSegment[], span: number):
       seam: !forecast && prevCategorical,
       label: s.label,
       amount: s.value,
+      ...(isMuted(s) && { muted: true as const }),
     }
     cursor += size
     // A zero-size part has no visible edge: the next part has no neighbour to be separated from.
@@ -606,11 +609,15 @@ export type BarModel = {
   /** The default start caption (the zone is named on the band, so it is the bare reading); `startCaption` decides whether it shows. */
   startText: string
   endText: string | null
+  /** The reading is past `max`: the fill ends at the track end and the track says so (`data-meter-over`). */
+  over: boolean
   describedByText: string | null
 }
 
-function endCaptionText(reading: number, target: number | undefined, format: Format) {
-  if (target === undefined) return null
+/** The amount past the track end, stated as the end caption when no `target` already words the overage. */
+function endCaptionText(reading: number, target: number | undefined, max: number, format: Format) {
+  if (target === undefined)
+    return reading > max ? `${format(reading - max)} over ${format(max)}` : null
   if (reading > target) return `Target ${format(target)} · ${format(reading - target)} over`
   return `Target ${format(target)}`
 }
@@ -661,6 +668,7 @@ export function modelBar(input: BarInput): BarModel {
   const { reading, min, max, format, segments, zones, target, stops } = input
   const ticks = tickMarks(input.ticks, min, max, format)
   const { span } = spanOf(min, max)
+  const over = max > min && reading > max
   const zoned = zones !== undefined && zones.length > 0
   const holding = zoned ? findHoldingZone(zones, reading) : undefined
 
@@ -685,6 +693,7 @@ export function modelBar(input: BarInput): BarModel {
     ...(segments?.map((s) => segmentText(s, format)) ?? []),
     ...zoneText,
     ...(target === undefined ? [] : [`Target ${format(target)}`]),
+    ...(over ? [`${format(reading - max)} over the limit of ${format(max)}`] : []),
     ...ticks.map((t) => t.text),
   ]
 
@@ -728,7 +737,8 @@ export function modelBar(input: BarInput): BarModel {
           ),
     targetPct: target === undefined ? undefined : toPct((target - min) / span),
     startText: format(reading),
-    endText: endCaptionText(reading, target, format),
+    endText: endCaptionText(reading, target, max, format),
+    over,
     describedByText: describedBy.length > 0 ? describedBy.join('; ') : null,
   }
 }

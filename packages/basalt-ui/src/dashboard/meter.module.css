@@ -208,6 +208,47 @@
   background: var(--vx-muted);
 }
 
+/* A reading past `max`: the fill stops at the track end and this cap stands there in the status
+ * colour (a verdict, so it is allowed one). Wider than a tick, so it is not read as one. */
+.overTick {
+  composes: tick;
+  width: 4px;
+  background: var(--vx-status-bad);
+}
+
+/* Track heights from the size scale: `md` is the default 0.375rem. `lg` holds a caption line, so a
+ * categorical part is named on its own fill when the name fits. */
+.root[data-meter-size='sm'] .track {
+  height: 0.25rem;
+}
+
+.root[data-meter-size='lg'] .track {
+  height: 1.5rem;
+}
+
+.fillLabel {
+  display: block;
+  min-width: 0;
+  overflow: hidden;
+  padding-inline: var(--vx-space-control-gap, 0.375rem);
+  font-family: var(--basalt-font-sans);
+  font-size: var(--basalt-meter-caption);
+  font-weight: 500;
+  line-height: 1.5rem;
+  white-space: nowrap;
+  /* The inverse pole of the fill: series colours are mid-tone, as the heatmap's cell glyphs are. */
+  color: var(--vx-surface-panel);
+}
+
+/* A neutral or translucent fill is lighter than a series colour: ink reads on it. */
+.fillLabel[data-quiet] {
+  color: var(--vx-ink);
+}
+
+.fillLabel[data-hidden] {
+  visibility: hidden;
+}
+
 .captions {
   display: flex;
   flex-wrap: wrap;

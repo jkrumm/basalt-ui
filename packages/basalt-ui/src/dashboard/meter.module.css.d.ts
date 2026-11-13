@@ -20,6 +20,8 @@ declare const classes: {
   readonly marker: string
   readonly tick: string
   readonly boundaryTick: string
+  readonly overTick: string
+  readonly fillLabel: string
   readonly captions: string
   readonly caption: string
   readonly captionEnd: string
