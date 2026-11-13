@@ -74,7 +74,6 @@
   "basalt-ui/controls#SelectFilter",
   "basalt-ui/controls#SyncButton",
   "basalt-ui/controls#ToggleFilter",
-  "basalt-ui/controls#ViewTabs",
   "basalt-ui/controls-dates#DateRangePicker",
   "basalt-ui/format#bytes",
   "basalt-ui/format#compact",

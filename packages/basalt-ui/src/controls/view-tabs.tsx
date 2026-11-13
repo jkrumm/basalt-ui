@@ -1,182 +1,211 @@
 /**
- * `ViewTabs` — the page's or section's view switch (`docs/CONTROLS-SPEC.md` §3). A tab is store
- * state like any filter (C3): it takes `field`, never `value`/`onChange`, so a deep link and a back
- * navigation land on the same tab the user left.
+ * `ViewTabs`: the page's or section's view switch, bound to a `ControlHandle`. A tab is store state
+ * like any filter, so it takes `handle` and never `value` or `onChange`: a deep link renders the tab
+ * the link names in the server HTML, and Back returns to the tab the visitor left.
  *
- * The responsive swap lives HERE, not at the call site (C9), and it is CSS — `visibleFrom` /
- * `hiddenFrom`, one mount each, never a JS media query (which renders differently on the server than
- * on the first client paint). Below `sm` a set of three or fewer stays a full-width
- * `SegmentedControl` — PROVIDED every label actually fits it (`panel-row.tsx`'s `useTrackFits`,
- * shared with `PanelChoice` so the two width gates cannot drift); past either gate it becomes a
- * `Select`.
+ * The swap between the two forms is CSS, one mount each, never a JS media query (which would paint
+ * differently on the server and on the first client frame). From `md` up (840 px) the switch is a tab strip
+ * (`ui/tabs`); below it a full-width track (`ui/segmented`) for three options or fewer, a `Select`
+ * past that. Inside a `row` home (`<ControlHome home="aside">`) it is a panel row: the label above
+ * one full-width track or `Select`, and every declared option is offered.
  *
- * `only` is how a tab that exists on ONE viewport is declared instead of hand-rolling a second
- * control: `'sm-up'` keeps it off the phone form, `'sm-down'` keeps it off the desktop form.
+ * `ViewTabsOption.only` declares a tab that exists on ONE form (the names are the brief's; the swap is `md`): `'sm-up'` keeps it off the phone
+ * form, `'sm-down'` keeps it off the strip. A row is one width, so `only` does not apply there.
+ */
+import { use, useId } from 'react'
+import type { ReactElement, ReactNode } from 'react'
+import { cn } from '../core/cn'
+import type { ControlHandle } from '../core/ports'
+import { Segmented } from '../ui/segmented'
+import { Select } from '../ui/select'
+import { Tabs, TabsList, TabsTrigger } from '../ui/tabs'
+import type { ViewTabsProps as ContractProps } from './contract'
+import { ControlPresentationContext } from './control-view'
+import { LegacyViewTabs } from './view-tabs-legacy'
+import type { LegacyViewTabsProps } from './view-tabs-legacy'
+
+export type ViewTabsOption<T extends string = string> = {
+  readonly value: T
+  readonly label: string
+  readonly disabled?: boolean
+  /** Render this option on ONE viewport only. Omitted: both. */
+  readonly only?: 'sm-up' | 'sm-down'
+}
+
+type HandleProps<T extends string> = ContractProps<T> & {
+  /** Defaults to `handle.options` (every declared value, labelled by `.labels()`). */
+  options?: readonly ViewTabsOption<T>[]
+  /**
+   * The switch's accessible name; both forms carry it. Pass a translated string when the app is not
+   * English.
+   *
+   * @default 'View'
+   */
+  label?: string
+  disabled?: boolean
+  /** Layout only (`w-full`, `ml-auto`). */
+  className?: string
+  field?: never
+}
+
+/** The 2.x `field` form stays while 2.x pages compose it; it moves to `handle` with them. */
+export type ViewTabsProps<T extends string = string> =
+  | HandleProps<T>
+  | (LegacyViewTabsProps<T> & { handle?: never })
+
+/** Past three options the narrow form is a `Select`, not a track. */
+const TRACK_MAX = 3
+
+function optionsOf<T extends string>(
+  handle: ControlHandle<T>,
+  options: readonly ViewTabsOption<T>[] | undefined,
+): readonly ViewTabsOption<T>[] {
+  return options ?? (handle.options ?? []).map((o) => ({ value: o.value, label: o.label }))
+}
+
+type Name = { 'aria-label': string } | { 'aria-labelledby': string }
+
+/** The full-width form: a track for few options, a `Select` for many. */
+function NarrowForm<T extends string>({
+  options,
+  value,
+  onChange,
+  name,
+  disabled,
+  size,
+}: {
+  options: readonly ViewTabsOption<T>[]
+  value: T
+  onChange(next: T): void
+  name: Name
+  disabled: boolean
+  size: 'sm' | 'md'
+}): ReactElement {
+  if (options.length <= TRACK_MAX) {
+    return (
+      <Segmented
+        {...name}
+        size={size}
+        disabled={disabled}
+        className="w-full"
+        options={options}
+        value={value}
+        onValueChange={(next) => {
+          onChange(next as T)
+        }}
+      />
+    )
+  }
+  return (
+    <Select<string>
+      {...name}
+      size={size}
+      disabled={disabled}
+      options={options}
+      value={value}
+      onValueChange={(next) => {
+        if (next !== null) onChange(next as T)
+      }}
+    />
+  )
+}
+
+function HandleViewTabs<T extends string>({
+  handle,
+  options,
+  label = 'View',
+  disabled = false,
+  className,
+}: HandleProps<T>): ReactElement {
+  const presentation = use(ControlPresentationContext)
+  const labelId = useId()
+  const [value, set] = handle.use()
+  const all = optionsOf(handle, options)
+  const size = presentation === 'inline' ? 'sm' : 'md'
+  const commit = (next: T): void => {
+    set(next)
+  }
+
+  if (presentation === 'row') {
+    return (
+      <div
+        data-slot="view-tabs"
+        data-presentation="row"
+        className={cn('flex w-full min-w-0 flex-col gap-1.5', className)}
+      >
+        <span id={labelId} className="text-sm font-medium text-foreground">
+          {label}
+        </span>
+        <NarrowForm
+          options={all}
+          value={value}
+          onChange={commit}
+          name={{ 'aria-labelledby': labelId }}
+          disabled={disabled}
+          size={size}
+        />
+      </div>
+    )
+  }
+
+  const strip = all.filter((o) => o.only !== 'sm-down')
+  const narrow = all.filter((o) => o.only !== 'sm-up')
+  return (
+    <div
+      data-slot="view-tabs"
+      data-presentation={presentation}
+      className={cn('flex min-w-0 max-w-full flex-col', className)}
+    >
+      <Tabs
+        size={size}
+        value={value}
+        className="max-md:hidden"
+        onValueChange={(next) => {
+          commit(next as T)
+        }}
+      >
+        <TabsList aria-label={label}>
+          {strip.map((o) => (
+            <TabsTrigger key={o.value} value={o.value} disabled={disabled || o.disabled === true}>
+              {o.label}
+            </TabsTrigger>
+          ))}
+        </TabsList>
+      </Tabs>
+      <div className="w-full min-w-0 md:hidden">
+        <NarrowForm
+          options={narrow}
+          value={value}
+          onChange={commit}
+          name={{ 'aria-label': label }}
+          disabled={disabled}
+          size={size}
+        />
+      </div>
+    </div>
+  )
+}
+
+/**
+ * The view switch of a page or a section, bound to a `handle`. The URL (or any lane) owns the
+ * value: a link with `?tab=history` renders History on the first server pass, and Back walks the
+ * tabs when the field is `history: 'push'`. One mount per form, swapped in CSS at `md`.
  *
- * Inside a `PageAside` it renders as a panel ROW — label above, a full-width track or a `Select`
- * (`docs/ASIDE-SPEC.md` §3). A view switch in a panel is legal; the page bar's tab slot stays its
- * default home, and `only` has no meaning there (the panel is one width).
+ * @useWhen a page or section has a few views of the same data and the visitor must be able to link to one
+ * @neverWhen the choice filters rows (use a `spec` in a `FilterSet`) or is a list of sections beside the page (use `InnerNav`)
  *
  * @example
  * <ViewTabs
- *   field={strength.field.tab}
+ *   handle={overview.field.tab}
+ *   label="Overview view"
  *   options={[
- *     { value: 'overview', label: 'Overview' },
- *     { value: 'history', label: 'History' },
+ *     { value: 'all', label: 'All' },
+ *     { value: 'errors', label: 'Errors' },
  *     { value: 'train', label: 'Train', only: 'sm-down' },
  *   ]}
  * />
  */
-import { SegmentedControl, Select } from '@mantine/core'
-import type { ReactNode } from 'react'
-import { cx } from '../common/props'
-import { assertRequiredProps } from '../common/validate'
-import type { EnumField, FieldHandle } from '../state'
-import classes from './controls.module.css'
-import { useFilterSurface } from './filter-context'
-import { useControlName } from './control-name'
-import type { FilterBase, FilterOption } from './filter-base'
-import { PanelChoice, PanelRow, useTrackFits } from './panel-row'
-import type { UncontrolledProps } from './uncontrolled'
-
-/** The `data` both Mantine controls take — `disabled` always a boolean, never absent. */
-function toSegmentData(
-  options: readonly FilterOption[],
-): { value: string; label: string; disabled: boolean }[] {
-  return options.map((option) => ({
-    value: option.value,
-    label: option.label,
-    disabled: option.disabled === true,
-  }))
-}
-
-/** Past three options the phone form is a `Select`, not a track. */
-const PHONE_TRACK_MAX = 3
-
-export type ViewTabsOption<T extends string> = FilterOption<T> & {
-  /** Render this option on ONE viewport only. Omitted → both. */
-  readonly only?: 'sm-up' | 'sm-down'
-}
-
-export type ViewTabsProps<T extends string> = UncontrolledProps &
-  Pick<FilterBase, 'disabled'> & {
-    readonly field: FieldHandle<EnumField<T>>
-    /** Defaults to `field.options` (every declared value, labelled by `store.labels()`). */
-    readonly options?: readonly ViewTabsOption<T>[]
-    /**
-     * The switch's accessible name. Both forms render without a visible Mantine `label` (a home has
-     * no room for one), so without this the desktop track is an unnamed `radiogroup` and the phone
-     * form an unnamed `combobox`.
-     *
-     * @default 'View'
-     */
-    readonly label?: string
-  }
-
 export function ViewTabs<T extends string>(props: ViewTabsProps<T>): ReactNode {
-  // F-ERR-1 — without this a missing `field` surfaces as `undefined is not an object
-  // (evaluating 'field.use')`, caught by `RootBoundary`.
-  assertRequiredProps('ViewTabs', props, ['field'], {
-    field: 'bind it to a store field (`store.field.<name>`), never a value/onChange pair.',
-  })
-  const { field, options, label = 'View', disabled, className, style } = props
-  const [value, setValue] = field.use()
-  const surface = useFilterSurface()
-  const inPanel = surface === 'panel'
-  const { labelId, nameProps } = useControlName(label, inPanel)
-  const all: readonly ViewTabsOption<T>[] =
-    options ?? field.options.map((option) => ({ value: option.value as T, label: option.label }))
-
-  const desktop = all.filter((option) => option.only !== 'sm-down')
-  const phone = all.filter((option) => option.only !== 'sm-up')
-  // The segments/items are rendered from the option list, so `next` is always a declared value —
-  // the cast restores what the codec already guarantees.
-  const commit = (next: string): void => {
-    setValue(next as T)
-  }
-
-  const phoneData = toSegmentData(phone)
-  const phoneCountFits = phone.length <= PHONE_TRACK_MAX
-  // Called UNCONDITIONALLY, even on the panel branch that never renders the phone form — a hook
-  // may not sit behind the `if (inPanel) return …` below (`react-hooks/rules-of-hooks`), and
-  // `useTrackFits` no-ops cheaply when `countFits` is false or its root never mounts. The same
-  // width gate `PanelChoice` runs (`panel-row.tsx`'s `useTrackFits` doc) — the count cap is the
-  // cheap first gate, a fit check underneath it is what actually decides.
-  const { rootRef: phoneRootRef, fits: phoneFits } = useTrackFits(
-    phoneCountFits,
-    phoneData.map((d) => d.value).join('|'),
-  )
-
-  // The panel form. `only` is dropped on purpose: it exists to declare a tab that belongs to ONE
-  // viewport, and a panel is not a viewport — every declared option is offered.
-  if (inPanel) {
-    return (
-      <PanelRow
-        label={label}
-        labelId={labelId}
-        {...(className !== undefined && { className })}
-        {...(style !== undefined && { style })}
-      >
-        <PanelChoice
-          nameProps={nameProps}
-          value={value}
-          options={all}
-          onChange={commit}
-          {...(disabled === true && { disabled: true })}
-        />
-      </PanelRow>
-    )
-  }
-
-  // No single root: exactly one of the two forms below is visible at once (CSS `visibleFrom`/
-  // `hiddenFrom`, law C9), so `className`/`style` land on both — whichever one paints is the one a
-  // reader ever sees carrying them.
-  return (
-    <>
-      <SegmentedControl
-        aria-label={label}
-        visibleFrom="sm"
-        size="ctl"
-        {...(disabled === true && { disabled: true })}
-        value={value}
-        data={toSegmentData(desktop)}
-        onChange={commit}
-        {...(className !== undefined && { className })}
-        {...(style !== undefined && { style })}
-      />
-      {phoneFits ? (
-        <SegmentedControl
-          ref={phoneRootRef}
-          aria-label={label}
-          hiddenFrom="sm"
-          size="ctl"
-          fullWidth
-          {...(disabled === true && { disabled: true })}
-          value={value}
-          data={phoneData}
-          onChange={commit}
-          {...(className !== undefined && { className })}
-          {...(style !== undefined && { style })}
-        />
-      ) : (
-        <Select
-          aria-label={label}
-          hiddenFrom="sm"
-          size="ctl"
-          // BOUNDED, not greedy — see `.phoneSelect`'s comment in `controls.module.css`. This is the
-          // control owning its own responsive form (law C9), which is also why it is not a `w` prop
-          // at the call site (C5, `basalt/control-size-literal`).
-          className={cx(classes.phoneSelect, className)}
-          {...(style !== undefined && { style })}
-          value={value}
-          allowDeselect={false}
-          {...(disabled === true && { disabled: true })}
-          data={phoneData}
-          onChange={(next) => {
-            if (next !== null) commit(next)
-          }}
-        />
-      )}
-    </>
-  )
+  if (props.handle !== undefined) return <HandleViewTabs {...props} />
+  return <LegacyViewTabs {...(props as LegacyViewTabsProps<T>)} />
 }
