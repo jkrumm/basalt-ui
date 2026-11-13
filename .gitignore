@@ -104,3 +104,4 @@ __pycache__/
 
 # Generated at build and release (scripts/gen-llms.ts); the tarball carries it, git does not
 packages/basalt-ui/llms.txt
+apps/playground/src/scenarios/.mdx-scratch/
