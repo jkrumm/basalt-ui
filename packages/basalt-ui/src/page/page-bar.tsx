@@ -10,6 +10,7 @@ import { devAssertOnce, createBarClaims } from './core/claims'
 import { observeBarHeight, publishBarHeight } from './core/bar-measure'
 import type { PageAction, PageBarProps, PageButtonAction, PageTextAction } from './contract'
 import { PageContext, PageHostContext } from './page'
+import { RefreshButton } from './refresh-button'
 
 type Parent = NonNullable<PageBarProps['parent']>
 
@@ -182,40 +183,6 @@ function PageActions({ actions }: { actions: readonly PageAction[] }): ReactElem
       })}
       <MoreMenu items={overflow} />
     </div>
-  )
-}
-
-function RefreshButton({
-  refresh,
-}: {
-  refresh: NonNullable<PageBarProps['refresh']>
-}): ReactElement {
-  const t = useMessages(page)
-  return (
-    <Button
-      variant="ghost"
-      size="icon"
-      data-scope={refresh.scope}
-      aria-label={t('page.refresh')}
-      loading={refresh.syncing}
-      title={refresh.error}
-      onClick={refresh.onSync}
-    >
-      <svg
-        viewBox="0 0 16 16"
-        className={cn('size-icon', refresh.syncing && 'animate-spin motion-reduce:animate-none')}
-        fill="none"
-        aria-hidden="true"
-      >
-        <path
-          d="M13 8a5 5 0 1 1-1.6-3.7M13 2.5v3h-3"
-          stroke="currentColor"
-          strokeWidth="1.5"
-          strokeLinecap="round"
-          strokeLinejoin="round"
-        />
-      </svg>
-    </Button>
   )
 }
 
@@ -408,7 +375,7 @@ export function PageBar({
               {controls?.render()}
             </div>
           )}
-          {refresh !== undefined && <RefreshButton refresh={refresh} />}
+          {refresh !== undefined && <RefreshButton {...refresh} />}
           {visibleActions && <PageActions actions={list} />}
         </div>
       </div>

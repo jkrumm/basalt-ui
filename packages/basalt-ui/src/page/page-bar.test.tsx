@@ -175,10 +175,24 @@ describe('PageBar refresh', () => {
         <PageBar refresh={{ scope: 'global', syncing: true, onSync: () => {}, error: 'Offline' }} />
       </Page>,
     )
-    const button = screen.getByRole('button', { name: 'Refresh' })
+    const button = screen.getByRole('button', { name: 'Refresh — Offline' })
     expect(button.getAttribute('aria-busy')).toBe('true')
     expect(button.getAttribute('title')).toBe('Offline')
     expect(button.getAttribute('data-scope')).toBe('global')
+  })
+})
+
+describe('PageBar refresh age', () => {
+  test('is the RefreshButton: the print line states when the data was taken', () => {
+    render(
+      <Page>
+        <PageBar
+          refresh={{ scope: 'page', syncing: false, onSync: () => {}, lastCompletedAt: Date.now() }}
+        />
+      </Page>,
+    )
+    expect(document.querySelector('[data-slot="refresh-button-age"]')).not.toBeNull()
+    expect(document.querySelector('[data-slot="refresh-button-print"]')).not.toBeNull()
   })
 })
 
