@@ -11,7 +11,7 @@ slots: []
 
 The view switch of a page or a section, bound to a `handle`. The URL (or any lane) owns the
 value: a link with `?tab=history` renders History on the first server pass, and Back walks the
-tabs when the field is `history: 'push'`. One mount per form, swapped in CSS at `sm`.
+tabs when the field is `history: 'push'`. One mount per form, swapped in CSS at `md`.
 
 ## Signature
 
@@ -24,8 +24,8 @@ ViewTabs<T extends string>(props: ViewTabsProps<T>): ReactNode
   disabled?: boolean
   className?: string
   field: FieldHandle<EnumField<T>>
-  style?: CSSProperties  [with field]
   value?: never
   onChange?: never
   size?: never
+  style?: CSSProperties  [with field]
 ```
