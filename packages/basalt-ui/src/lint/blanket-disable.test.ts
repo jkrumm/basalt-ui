@@ -1,6 +1,6 @@
 /**
  * The text scan for a file-level `disable` the host would use to hide `waiver-needs-reason`:
- * bare, or naming the rule. The shipped preset cannot report these (smoke test, `BLANKET_DISABLE`).
+ * bare, or naming the rule. The shipped preset cannot report these (`tests/oxlint-preset-smoke.test.ts` skips its blanket fixtures only when this scan finds them).
  */
 import { describe, expect, it } from 'bun:test'
 
@@ -67,5 +67,21 @@ describe('findBlanketDisables', () => {
   it('finds a directive after a string that contains a quote-like comment opener', () => {
     const source = "const a = '//'\n/* oxlint-disable */\n"
     expect(findBlanketDisables(source).map((f) => f.line)).toEqual([2])
+  })
+
+  it('is not thrown off by a regex literal holding a backtick or a comment opener', () => {
+    const source = [
+      "const a = s.replace(/`/g, '')",
+      'const b = /[/*]/.test(x)',
+      'const c = a / 2 / 3',
+      'const d = x ? /"/ : 1',
+      '/* oxlint-disable -- x */',
+    ].join('\n')
+    expect(findBlanketDisables(source).map((f) => f.line)).toEqual([5])
+  })
+
+  it('counts a backslash line continuation inside a string', () => {
+    const source = "const a = 'x\\\ny'\n/* oxlint-disable */\n"
+    expect(findBlanketDisables(source).map((f) => f.line)).toEqual([3])
   })
 })
