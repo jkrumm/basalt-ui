@@ -3,7 +3,7 @@
  *
  * Asserts:
  *  1. Every doctrine spec's guardKinds ⊆ keyof GUARD_RULES.
- *  2. Every doctrine rule (deduped via RULE_NAMES) maps to an on-disk agent/rules/basalt-{rule}.md.
+ *  2. Every shipped rule (SHIPPED_RULES, the v3 five) is on disk, and agent/rules/ holds no other file.
  *  3. Every doctrine skill (deduped via SKILL_NAMES) maps to an on-disk
  *     agent/skills/{skill}/SKILL.md (skills ship in the npm package, placed by init/sync).
  *  4. Every non-#, non-'.' JS-subpath SURFACES key has a package.json exports entry.
@@ -18,19 +18,18 @@
  * assertions for direct test feedback on failure.
  */
 import { describe, expect, it } from 'bun:test'
-import { existsSync, readFileSync } from 'node:fs'
+import { existsSync, readdirSync, readFileSync } from 'node:fs'
 import { join } from 'node:path'
 
 import { GUARD_RULES } from '../packages/basalt-ui/src/guard'
 import {
   hasTokenLayerBoundaryRegistered,
-  RULE_NAMES,
   SKILL_NAMES,
   SURFACES,
   TOKEN_LAYER_BOUNDARY_SURFACES,
 } from '../packages/basalt-ui/src/surfaces'
 import type { DoctrineSpec } from '../packages/basalt-ui/src/surfaces'
-import { checkCoverage } from '../packages/basalt-ui/scripts/check-coverage'
+import { checkCoverage, SHIPPED_RULES } from '../packages/basalt-ui/scripts/check-coverage'
 
 const root = join(import.meta.dir, '..')
 const pkgRoot = join(root, 'packages/basalt-ui')
@@ -84,14 +83,20 @@ describe('guardKinds coverage', () => {
   })
 })
 
-// ── Assertion 2: doctrine rules → on-disk agent/rules/basalt-{rule}.md ──────
+// ── Assertion 2: the five shipped rules are on disk, and only they ───────────
 
 describe('rule file coverage', () => {
-  for (const rule of RULE_NAMES) {
-    it(`agent/rules/basalt-${rule}.md exists on disk`, () => {
-      expect(existsSync(join(pkgRoot, `agent/rules/basalt-${rule}.md`))).toBe(true)
+  for (const rule of SHIPPED_RULES) {
+    it(`agent/rules/${rule}.md exists on disk`, () => {
+      expect(existsSync(join(pkgRoot, `agent/rules/${rule}.md`))).toBe(true)
     })
   }
+
+  it('agent/rules/ lists exactly the five shipped files', () => {
+    expect(readdirSync(join(pkgRoot, 'agent/rules')).toSorted()).toEqual(
+      SHIPPED_RULES.map((rule) => `${rule}.md`).toSorted(),
+    )
+  })
 })
 
 // ── Assertion 3: doctrine skills → on-disk agent/skills/{skill}/SKILL.md ────
