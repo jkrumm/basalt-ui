@@ -33,6 +33,7 @@ export const AREAS = [
   'shell',
   'cards',
   'controls',
+  'state',
   'table',
   'charts',
   'content',

@@ -1,0 +1,146 @@
+{
+  "schema": 1,
+  "area": "state",
+  "rows": [
+    {
+      "id": "st-createPersistedState",
+      "kind": "renamed",
+      "from": "basalt-ui/state#createPersistedState",
+      "to": "persisted(key, { version, initial, schema }).use() from basalt-ui",
+      "profiles": ["parts", "app"],
+      "manual": true,
+      "note": "the storage key is unchanged, so a stored envelope reads as it stands; the factory returned the hook, persisted() returns the store and `.use()` is the hook",
+      "verify": "tsc, then migrate --check"
+    },
+    {
+      "id": "st-createLocalStore",
+      "kind": "renamed",
+      "from": "basalt-ui/state#createLocalStore",
+      "to": "persisted(key, { version, initial }).use(), for a store with no URL field",
+      "profiles": ["parts", "app"],
+      "codemod": "controls: flags each createLocalStore site (reason create-local-store) and says which row applies: this one when no field has a URL lane, ctl-createLocalStore when one has",
+      "manual": true,
+      "note": "decided: a persisted-only store is persisted(), not defineControls; no codemod rewrites it. Storage keys are unchanged",
+      "verify": "tsc, then migrate --check"
+    },
+    {
+      "id": "st-usePersistedOrLocal",
+      "kind": "renamed",
+      "from": "basalt-ui/state#usePersistedOrLocal",
+      "to": "persisted(key, opts).use()",
+      "profiles": ["app"],
+      "manual": true,
+      "note": "an internal hook some apps imported by path; persisted() already falls back to memory where storage is unavailable",
+      "verify": "tsc, then migrate --check"
+    },
+    {
+      "id": "st-argo-raw-keys",
+      "kind": "manual",
+      "from": "argo:* and walkingpad-* (raw localStorage keys)",
+      "to": "persisted(...) with the storage action adopt-unenveloped",
+      "profiles": ["app"],
+      "manual": true,
+      "note": "six argo:* timer keys and two walkingpad-* keys hold a bare value, not an envelope: read raw, validated by the schema, written back as an envelope, else the settings are lost",
+      "verify": "the key survives a reload with its old value"
+    },
+    {
+      "id": "st-zustand-persist",
+      "kind": "manual",
+      "from": "zustand/middleware#persist",
+      "to": "stays; an import-boundary waiver with a reason",
+      "profiles": ["app"],
+      "manual": true,
+      "note": "argo-auth keeps its token out of the basalt envelope on purpose",
+      "verify": "make lint: the waiver names its reason"
+    },
+    {
+      "id": "st-notify",
+      "kind": "renamed",
+      "from": "basalt-ui/notifications#notifyError",
+      "to": "notify('error', { message, ...opts }) from basalt-ui",
+      "profiles": ["app"],
+      "manual": true,
+      "note": "notifySuccess, notifyInfo and notifyWarning follow the same shape with their own kind. Value shift: a success of 2 s and an info of 3 s become 5 s, and an explicit autoClose under 5 s clamps to 5 s; errors stay until dismissed",
+      "verify": "tsc, then migrate --check"
+    },
+    {
+      "id": "st-notifyUndo",
+      "kind": "renamed",
+      "from": "basalt-ui/notifications#notifyUndo",
+      "to": "notify(kind, { message, undo: { revert, windowMs } })",
+      "profiles": ["app"],
+      "manual": true,
+      "note": "the change is already applied and Undo inverts it; the app's own Cmd+Z stack calls the same revert",
+      "verify": "tsc"
+    },
+    {
+      "id": "st-emit",
+      "kind": "replace",
+      "from": "argo emit(kind, payload, { title, autoClose })",
+      "to": "notify(kind, { ...payload, title, autoClose }); NotificationBell becomes a recipe over onShow",
+      "profiles": ["app"],
+      "manual": true,
+      "note": "argo rebuilds its inbox in app code; <ToastHost /> from basalt-ui/page is an explicit child now",
+      "verify": "the toast and the inbox entry both appear"
+    },
+    {
+      "id": "st-storage-patch",
+      "kind": "replace",
+      "from": "Storage.prototype (a patched localStorage) and mantine-* preference keys",
+      "to": "persisted.setStorage(adapter), once, before the first read",
+      "profiles": ["app"],
+      "manual": true,
+      "note": "the server whitelist keeps the basalt: prefix; mantine-* keys are read once (storage row mantine-color-scheme-value belongs to tokens)",
+      "verify": "a preference written on one device reads on another"
+    },
+    {
+      "id": "st-gym-state",
+      "kind": "replace",
+      "from": "argo gym.ts and gym-profile.ts (hand-rolled synced state)",
+      "to": "createSyncedState with a last-write-wins transport",
+      "profiles": ["app"],
+      "manual": true,
+      "note": "storage action read-legacy for basalt:gym-profiles; no server work, rev is updated_at",
+      "verify": "a profile saved before the move is still there after it"
+    },
+    {
+      "id": "st-epos-state",
+      "kind": "replace",
+      "from": "epos settings.ts and frame.ts (hand-rolled synced state)",
+      "to": "createSyncedState with a per-field transport",
+      "profiles": ["app"],
+      "manual": true,
+      "note": "the transport returns any monotonic rev string, so an unversioned server needs no stamp; epos behaviours outside the tested cases stay app-side",
+      "verify": "a failed save restores the values and toasts"
+    },
+    {
+      "id": "st-workout-draft",
+      "kind": "kept",
+      "from": "argo workout draft",
+      "to": "stays app code",
+      "profiles": ["app"],
+      "manual": true,
+      "note": "not migrated: a keyed-map draft is outside useFormDraft",
+      "verify": "none"
+    }
+  ],
+  "tokens": {
+    "renamed": [],
+    "valueShifts": []
+  },
+  "storage": [
+    {
+      "key": "argo:* and walkingpad-* (bare values)",
+      "action": "adopt-unenveloped",
+      "to": "persisted(key): read raw, schema-validated, written as a basalt envelope"
+    },
+    {
+      "key": "basalt:gym-profiles",
+      "action": "read-legacy",
+      "to": "createSyncedState, once, when the server holds no value"
+    }
+  ],
+  "urls": [],
+  "attrs": [],
+  "rules": []
+}
