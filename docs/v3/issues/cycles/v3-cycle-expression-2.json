@@ -1,0 +1,33 @@
+{
+  "why": "Cycle 1 of the expression area (docs/v3/cycles/expression-1.md) measured the baseline on master before any fix: round-0 median 68, no case at 80, 16 P2 findings. Its fix rows (v3-expr-1-doctrine, v3-expr-1-seam, v3-expr-1-kit-fixes) and the notes it left on v3-sk-6 and v3-sk-7 change the doctrine, the kit and the skill. This cycle measures whether one try is now enough, on six cases that have never run. docs/v3/EXPRESSION.md is the protocol; it specialises docs/v3/CYCLES.md.",
+  "what": "Cycle 2 of the expression area: six one-shot trials, scored against the rubric and the references, diagnosed, filed.",
+  "owns": [
+    "docs/v3/cycles/expression-2.md",
+    "docs/v3/expression/cases.md (the `ran` column, and two new cases)",
+    "docs/v3/expression/references.md (rows for the new cases)",
+    "docs/v3/issues/cycles/**",
+    "docs/plan.yaml (append rows; add contract-amending fix rows to the `after` of v3-freeze-g4; nothing else)",
+    "apps/playground/src/** (the six trial scenarios only: new files plus registry entries; budget.test.ts already leaves scenarios/expr out of the demo line ceiling)"
+  ],
+  "must_not_touch": [
+    "packages/basalt-ui/**",
+    "docs/v3/ARCHITECTURE.md",
+    "docs/v3/DIRECTION.md",
+    "docs/v3/expression/rubric.md"
+  ],
+  "change": "Follow docs/v3/EXPRESSION.md § The loop for cases c05, c07, c08, c09, n01 and n06 (four referenced, two native; none has run). You are the lead: you spawn, shoot, collect and diagnose; you build nothing and score nothing. (1) Builders: one fresh subagent per case on the default worker tier. Its prompt is the case row verbatim, the scenario registry path (apps/playground/src/scenarios/registry.tsx), the scenario id `expr-<case id>`, and this fence: read only packages/basalt-ui/agent/**, packages/basalt-ui/llms.txt, the published subpaths' types and the playground's own code; never docs/v3/expression/**, docs/v3/evidence/ext-tuffui-devices.md, .claude/shots/**, docs/v3/cycles/** or any TuffUI source; import basalt-ui through published subpaths only; mark every workaround `// cycle-expression-2: <what the kit lacked>`; return the files written and a list of what it wanted from the kit or the skill and did not find. Run builders one after another or on disjoint files; each adds one registry entry. (2) Shoot each scenario with apps/playground/scripts/shots.ts. (3) Reviewers: one fresh subagent per case, never the builder. Its prompt is the case row, the shot paths, the scenario file paths, docs/v3/expression/rubric.md, and for a c case the reference shot from docs/v3/expression/references.md (re-take it from the URL there if the file is missing). Tell it to open every shot. (4) Repair: hand the builder its reviewer's findings, at most two more rounds, shooting and scoring after each. (5) Diagnose every point lost in round 0 into one class from EXPRESSION.md § Finding classes, using the builder's wish list and its workaround comments as evidence. Where an open plan row already owns a gap, class the finding `planned` and append it as a `note` to that row.s brief instead of filing a row. (6) Judge the three hypotheses against EXPRESSION.md § Thresholds, using this cycle's numbers and the verdict lines of docs/v3/spikes/viz-census.md: confirmed, open or killed, one paragraph each, naming the number and the side it fell on. (7) File per CYCLES.md step 6. A fix that adds a public export, changes charts/contract.ts, or changes what primitive-bypass denies is one row with `checkpoint: spec` and seat opus high. Every `primitive` and `doctrine` fix row joins the `after` of v3-freeze-g4, and so does v3-cycle-expression-3 if such a P1 is open (EXPRESSION.md § Gate). Add two new cases to the bank from sources not used yet. Report factory friction with `factory signal file`, not as a row. Lead notes from cycle 1: (a) the reviewer cannot judge F7 and K3 from still shots; give it a keyboard-focused frame (focus the chart, press ArrowRight twice, shoot) for each case, or say in the cycle file why not; (b) a builder fenced to its own directory could not register a series group, so allow it one appended group in apps/playground/src/demo/series.ts and its provider wiring, and count it; (c) a case that needs a second fixture state has only `?shot-state=`; tell builders up front that `?fixture=<name>` read through the router is allowed.",
+  "commits": "Scenarios in one feat: commit, findings, bank and plan rows in a docs: commit. No package commit.",
+  "proof": "docs/v3/cycles/expression-2.md with the sha, the numbers table from EXPRESSION.md, per case the round scores, verdict and shot paths, the findings table, and the three hypothesis verdicts.",
+  "acceptance": [
+    "docs/v3/cycles/expression-2.md exists, names the master sha and the six cases, and has every number from EXPRESSION.md § Numbers every cycle reports",
+    "Each of the six cases has round-0 item scores with citations from a reviewer subagent that did not build it, and each c case has a verdict",
+    "Every point lost in round 0 is a finding with a class, a severity and evidence",
+    "Each of the three hypotheses is ruled confirmed, open or killed against the thresholds, with the numbers that say so",
+    "Every P1 has its own plan row with a brief; the P2s are grouped one row per class; `planned` findings are notes on their owning rows",
+    "Every row that adds an export, amends charts/contract.ts or changes primitive-bypass has `checkpoint: spec`; every `primitive` and `doctrine` fix row is in the `after` of v3-freeze-g4, and so is the next cycle while such a P1 is open",
+    "A v3-cycle-expression-3 row exists after every fix row, with six cases that have not run, or the file states convergence",
+    "cases.md marks the six cases `ran: 2` and holds two new cases",
+    "git diff --name-only origin/master...HEAD lists nothing under packages/basalt-ui/ and `factory plan check` passes"
+  ],
+  "out_of_scope": "Fixing any finding in this PR; hand-editing a builder's scenario; changing the rubric; shipping a new chart kind; copying TuffUI source anywhere."
+}

@@ -1,0 +1,24 @@
+{
+  "why": "Expression cycle 1 (docs/v3/cycles/expression-1.md, findings expression-1.1, .14, .26, .36) lost F1 points in four of six round-0 builds for the same reason: the builder took the first shipped kind the catalogue routed it to and never composed marks for the case's question. The steer is written down twice: agent/skills/basalt-design/references/catalogue.md says 'A gap is reported, never hand-rolled', and ARCHITECTURE.md section 8 specifies primitive-bypass to deny hand SVG charts. In repair rounds the same builders composed CartesianChart marks and hand HTML and reached the devices, so the kit could; the doctrine said not to. Hypothesis 2 of docs/v3/EXPRESSION.md is confirmed (census V1 CONFIRMED). 3.0 is the last chance to change this, so it gates v3-freeze-g4.",
+  "what": "A one-page Spec, then the doctrine text only: docs/v3/ARCHITECTURE.md sections 7.3 and 8, and the agent text that repeats the steer. No package source.",
+  "owns": [
+    "docs/v3/ARCHITECTURE.md (sections 7.3 and 8 only, after the Spec verdict)",
+    "packages/basalt-ui/agent/skills/basalt-charts/SKILL.md (step 1 only)"
+  ],
+  "must_not_touch": [
+    "packages/basalt-ui/src/**",
+    "packages/basalt-ui/src/charts/contract.ts",
+    "packages/basalt-ui/agent/skills/basalt-design/** (v3-sk-6 and v3-sk-7 own it; they carry this cycle's notes)",
+    "docs/v3/expression/**"
+  ],
+  "change": "Write and submit a Spec (checkpoint spec) that answers three questions with a default each: (1) What does primitive-bypass deny after 3.0: all hand SVG (today), or data-mapped SVG and HTML drawn outside the geometry seam of v3-expr-1-seam? Default: the latter; a page may draw marks through the seam. (2) What replaces 'pick a shipped kind, else compose' as step 1 of basalt-charts: default 'state the question, pick the form that answers it, then the cheapest substrate: a kind, CartesianChart marks, or the seam'. (3) Where does a bespoke form live: default app code or a recipe, never a new ./charts export (the Rule of Three and the symbol ceilings stand, EXPRESSION.md hypothesis 3). After the verdict, amend ARCHITECTURE.md sections 7.3 and 8 and basalt-charts SKILL.md step 1 to match. Cite the cycle-1 findings by id in the Spec.",
+  "commits": "docs: commit for ARCHITECTURE.md, feat: commit for the skill step if its text changes what ships.",
+  "proof": "The Spec artifact with its verdict; the diff of ARCHITECTURE.md sections 7.3 and 8.",
+  "acceptance": [
+    "A Spec is submitted before any edit and its verdict or the 24-hour default is recorded",
+    "ARCHITECTURE.md section 8 states what primitive-bypass denies in the Spec's words",
+    "basalt-charts SKILL.md step 1 routes from the question, not from the list of kinds",
+    "make check passes"
+  ],
+  "out_of_scope": "Building the seam (v3-expr-1-seam); editing the lint rule's code (a follow-up once the seam exports exist); any new ./charts export."
+}

@@ -31,5 +31,8 @@
     "make check exits 0",
     "git diff --name-only lists only owned paths plus .claude/** from make sync-self (own commit)"
   ],
-  "out_of_scope": "References (sk-7), basalt-app (sk-8), reviewer (sk-9), shot (sk-10), running the A/B trial itself (the spike), argo DESIGN.md."
+  "out_of_scope": "References (sk-7), basalt-app (sk-8), reviewer (sk-9), shot (sk-10), running the A/B trial itself (the spike), argo DESIGN.md.",
+  "notes": [
+    "From v3-cycle-expression-1 (docs/v3/cycles/expression-1.md), class planned, hypothesis 1 of docs/v3/EXPRESSION.md: the method step in basalt-design SKILL.md should be question first, then form, then marks, with the answer stated at rest as a hero figure that is the answer, not a count (findings expression-1.2, .53). Round-0 builders reached a median of 6 of the 12 devices unasked; none reached dim-the-rest or a live cue, one reached direct labels, one a metaphor. Name the devices as the step-4 vocabulary once the seam (v3-expr-1-seam) and the doctrine (v3-expr-1-doctrine) say what a page may draw."
+  ]
 }
