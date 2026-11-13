@@ -76,7 +76,7 @@ export const liveStaticStale: AstForm = {
       for (const property of staticStaleTimes(options)) report(property, "staleTime: 'static'")
     },
   }),
-  fix: "Declare a one-shot query with liveQuery(queryOptions, 'static') (the class is staleTime Infinity); a literal staleTime 'static' makes the query immune to invalidateQueries, so a push, a global refresh and a deploy never reach it",
+  fix: "Declare a one-shot query with liveQuery(queryOptions, 'static') (the class is staleTime Infinity); a literal staleTime 'static' makes the query immune to invalidateQueries, so a pushed invalidation, a global refresh and a deploy never reach it",
   next: "Use the 'standard' class when the data should refresh on focus",
   fixture: 'structure-rest/data-primitive-live-static-stale-time.tsx',
 }
