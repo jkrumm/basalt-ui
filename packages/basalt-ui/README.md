@@ -55,7 +55,7 @@ bunx basalt-ui init
 That's the whole install — there is no plugin, no marketplace, and no second version to track.
 `init` writes into the consumer repo:
 
-- `.claude/rules/basalt-*.md` — six Claude Code rules (`basalt-tokens`, `basalt-mantine`, `basalt-charts`, `basalt-state`, `basalt-controls`, `basalt-batteries`), each with a generated coverage header naming what enforces it
+- `.claude/rules/basalt-*.md` — five Claude Code rules (`basalt-tokens`, `basalt-ui`, `basalt-page`, `basalt-state`, `basalt-charts`), each bullet ending in the lint id or type that holds it, or listed under `not guarded:`
 - `.claude/skills/basalt-{app,design,charts}/SKILL.md` — the three skills (`/basalt-app`, `/basalt-design`, `/basalt-charts`), same managed path as the rules
 - A managed `<!-- basalt:begin/end -->` block in `AGENTS.md` — stack facts, the DESIGN.md pointer, and the frontend-design restraint override
 - A thin `DESIGN.md` seed — your app's deltas (series dictionary, identity, deviations)
