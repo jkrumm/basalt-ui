@@ -1,0 +1,71 @@
+@import '../../../../packages/basalt-ui/src/css/tokens.css';
+@import '../../../../packages/basalt-ui/src/css/tailwind.css';
+@source '../../../../packages/basalt-ui/src/ui';
+
+/* The bare variant: the Base UI parts with only their own enter/exit transitions, no motion-reduce
+   class, so the global clamp is the only thing that can change an exit. */
+.bare-fade,
+.bare-pop {
+  transition:
+    opacity 150ms,
+    translate 150ms;
+}
+.bare-fade[data-starting-style],
+.bare-fade[data-ending-style],
+.bare-pop[data-starting-style],
+.bare-pop[data-ending-style] {
+  opacity: 0;
+}
+.bare-pop[data-starting-style],
+.bare-pop[data-ending-style] {
+  translate: 0 8px;
+}
+.bare-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 50;
+  background: rgb(0 0 0 / 0.3);
+}
+.bare-center {
+  position: fixed;
+  inset: 0;
+  z-index: 50;
+  display: grid;
+  place-items: center;
+  pointer-events: none;
+}
+.bare-panel {
+  pointer-events: auto;
+  background: white;
+  color: black;
+  padding: 16px;
+  border: 1px solid #888;
+}
+.bare-sheet {
+  position: fixed;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 51;
+  width: 320px;
+  background: white;
+  color: black;
+  padding: 16px;
+  transition: translate 300ms;
+}
+.bare-sheet[data-starting-style],
+.bare-sheet[data-ending-style] {
+  translate: 100% 0;
+}
+.bare-toast-stack {
+  position: fixed;
+  right: 16px;
+  bottom: 16px;
+  z-index: 60;
+}
+.bare-toast {
+  background: white;
+  color: black;
+  padding: 12px;
+  border: 1px solid #888;
+}

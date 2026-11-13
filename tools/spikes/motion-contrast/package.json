@@ -1,0 +1,14 @@
+{
+  "name": "@basalt-ui/spike-motion-contrast",
+  "private": true,
+  "description": "Spike Q5 + Q8: the reduced-motion clamp against Base UI exits, and the colour-contrast incomplete nodes sampled from rendered pixels. Throwaway harness, no tests.",
+  "type": "module",
+  "scripts": {
+    "run": "bun run.ts"
+  },
+  "dependencies": {
+    "@axe-core/playwright": "4.14.0",
+    "axe-core": "4.14.0",
+    "playwright-core": "1.63.0"
+  }
+}
