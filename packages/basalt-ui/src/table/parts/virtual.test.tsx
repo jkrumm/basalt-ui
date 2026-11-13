@@ -8,6 +8,7 @@
 import { act, cleanup, fireEvent, render } from '@testing-library/react'
 import { afterEach, beforeEach, describe, expect, test } from 'bun:test'
 import type { ReactElement } from 'react'
+import { renderToString } from 'react-dom/server'
 import type { VirtualLike } from '../../core/ports'
 import { VirtualList } from '../../ui/virtual-list'
 import type { UseDataTable } from '../contract'
@@ -82,6 +83,16 @@ afterEach(() => {
 })
 
 describe('virtual body', () => {
+  test('server render already carries the table attributes, no effect needed', () => {
+    const html = renderToString(<Subject virtual={VirtualList} />)
+    expect(html).toContain('role="table"')
+    expect(html).toContain('aria-rowcount="10001"')
+    expect(html).toContain('aria-colcount="3"')
+    expect(html).toContain('data-slot="table-body"')
+    expect(html).toContain('role="rowgroup"')
+    expect(html).toMatch(/<tr[^>]*aria-rowindex="1"/)
+  })
+
   test('10k rows mount a window under 100 rows; aria-rowcount is every row', () => {
     const { container } = render(<Subject virtual={VirtualList} />)
     const mounted = bodyRows(container)

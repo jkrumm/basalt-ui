@@ -14,12 +14,12 @@
  *   scrolls sideways when narrow) and its cells do not wrap, and a group row has the row height.
  * - A request change (sort, filter, search, page) scrolls back to the first row.
  *
- * The port's own `<table>` and `<tbody>` take no props, so the table attributes the tiers and
- * readers need are written onto them once mounted, found through the caption.
+ * The port renders the `<table>` and `<tbody>`; the table hands it their attributes (`tableProps`,
+ * `bodyProps`) as markup, so a server render already carries the roles and counts.
  */
 /* oxlint-disable jsx-a11y/prefer-tag-over-role -- explicit roles keep the table a table under CSS projection (concept section 6, Roselli) */
 import { useEffect, useLayoutEffect, useRef, useState } from 'react'
-import type { ComponentType, KeyboardEvent, ReactElement, ReactNode } from 'react'
+import type { ComponentProps, ComponentType, KeyboardEvent, ReactElement, ReactNode } from 'react'
 import { cn } from '../../core/cn'
 import type { DetailHost, VirtualItem, VirtualLike } from '../../core/ports'
 import { TableCaption, tableVariants } from '../../ui/table'
@@ -29,11 +29,22 @@ import { BodyItemRow, cellEnvOf } from './body'
 /** The row height until the first row is measured: `--vx-row-h` at the default density. */
 export const FALLBACK_ROW_PX = 40
 
+/** The attributes the table puts on the port's `<table>` and `<tbody>`. */
+type HostElementProps<E extends 'table' | 'tbody'> = Omit<
+  ComponentProps<E>,
+  'className' | 'ref'
+> & {
+  [name: `data-${string}`]: string | undefined
+  className?: string
+}
+
 /** What the table passes the port beyond `VirtualLike`; `VirtualList` reads it, a stub ignores it. */
 type HostProps = Parameters<VirtualLike>[0] & {
   spacer: 'tr'
   columns: number
   head: ReactNode
+  tableProps: HostElementProps<'table'>
+  bodyProps: HostElementProps<'tbody'>
   className: string
   role: 'region'
   'aria-label': string
@@ -52,27 +63,6 @@ export function keptIndex<T>(model: TableModel<T>): number | undefined {
 /** `aria-rowcount`: the head row, every body item and the foot row when there is one. */
 export function rowCountOf<T>(model: TableModel<T>, footer: boolean): number {
   return 1 + model.items.length + (footer ? 1 : 0)
-}
-
-function writeTableAttributes(
-  caption: HTMLElement,
-  attributes: { rowcount: number; colcount: number; busy: boolean },
-): void {
-  const tableEl = caption.parentElement
-  if (!(tableEl instanceof HTMLTableElement)) return
-  tableEl.setAttribute('data-slot', 'table')
-  tableEl.setAttribute('role', 'table')
-  tableEl.setAttribute('aria-rowcount', String(attributes.rowcount))
-  tableEl.setAttribute('aria-colcount', String(attributes.colcount))
-  if (attributes.busy) tableEl.setAttribute('aria-busy', 'true')
-  else tableEl.removeAttribute('aria-busy')
-  tableEl.className = cn(tableVariants(), 'table-fixed')
-  const headRow = tableEl.querySelector(':scope > thead > tr')
-  headRow?.setAttribute('aria-rowindex', '1')
-  const body = tableEl.querySelector(':scope > tbody')
-  if (body === null) return
-  body.setAttribute('data-slot', 'table-body')
-  body.setAttribute('role', 'rowgroup')
 }
 
 /**
@@ -119,10 +109,6 @@ export function VirtualTable<T>({
 
   const rowcount = rowCountOf(model, footerShown)
   const busy = model.phase.tag === 'loading'
-  useLayoutEffect(() => {
-    if (caption.current !== null)
-      writeTableAttributes(caption.current, { rowcount, colcount, busy })
-  })
 
   // One row size, from the first mounted row, re-read when the table's box changes size.
   useLayoutEffect(() => {
@@ -161,6 +147,15 @@ export function VirtualTable<T>({
       {...(kept !== undefined && { keepIndex: kept })}
       spacer="tr"
       columns={colcount}
+      tableProps={{
+        'data-slot': 'table',
+        role: 'table',
+        'aria-rowcount': rowcount,
+        'aria-colcount': colcount,
+        'aria-busy': busy || undefined,
+        className: cn(tableVariants(), 'table-fixed'),
+      }}
+      bodyProps={{ 'data-slot': 'table-body', role: 'rowgroup' }}
       head={
         <>
           <TableCaption ref={caption} className="sr-only">

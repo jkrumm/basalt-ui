@@ -110,6 +110,51 @@ describe('virtual-list module', () => {
     expect(container.querySelector('[data-slot="virtual-list"] > div[aria-hidden]')).toBeNull()
   })
 
+  test('tableProps and bodyProps render as markup on the table and tbody, server render included', () => {
+    const node = (
+      <VirtualList
+        count={50}
+        estimateSize={() => ROW}
+        getItemKey={(i) => i}
+        spacer="tr"
+        tableProps={{
+          'data-slot': 'table',
+          role: 'table',
+          'aria-rowcount': 51,
+          'aria-busy': true,
+          className: 'table-fixed',
+        }}
+        bodyProps={{ 'data-slot': 'table-body', role: 'rowgroup' }}
+      >
+        {([item]) => (
+          <tr>
+            <td>{item!.index}</td>
+          </tr>
+        )}
+      </VirtualList>
+    )
+    const { container } = render(node)
+    const table = container.querySelector('table')
+    expect(table?.getAttribute('role')).toBe('table')
+    expect(table?.getAttribute('aria-rowcount')).toBe('51')
+    expect(table?.getAttribute('aria-busy')).toBe('true')
+    expect(table?.getAttribute('data-slot')).toBe('table')
+    expect(table?.className).toBe('w-full table-fixed')
+    expect(container.querySelector('tbody')?.getAttribute('role')).toBe('rowgroup')
+    expect(container.querySelector('tbody')?.getAttribute('data-slot')).toBe('table-body')
+
+    const html = renderToString(node)
+    expect(html).toContain('<table data-slot="table" role="table" aria-rowcount="51"')
+    expect(html).toContain('<tbody data-slot="table-body" role="rowgroup">')
+  })
+
+  test('without tableProps the table keeps only its w-full class', () => {
+    const { container } = render(<List rows={make(5)} spacer="tr" />)
+    const table = container.querySelector('table')
+    expect(table?.className).toBe('w-full')
+    expect(table?.getAttributeNames()).toEqual(['class'])
+  })
+
   test('server render keeps the slot and mounts no rows', () => {
     const html = renderToString(<List rows={make(100)} />)
     expect(html).toContain('data-slot="virtual-list"')
