@@ -1,0 +1,2 @@
+/* oxlint-disable basalt/colour-literal -- overlay draws on a photograph */
+export const a = 'rgba(0,0,0,0.4)'

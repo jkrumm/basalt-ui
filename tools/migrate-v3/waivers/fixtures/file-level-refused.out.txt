@@ -1,0 +1,2 @@
+// theme-allow-file raw-selection-control — the view is a mode of this screen
+export const a = 1

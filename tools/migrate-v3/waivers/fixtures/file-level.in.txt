@@ -1,0 +1,2 @@
+// theme-allow-file raw-color-fn, raw-hex — overlay draws on a photograph
+export const a = 'rgba(0,0,0,0.4)'
