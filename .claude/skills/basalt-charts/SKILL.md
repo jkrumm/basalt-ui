@@ -8,7 +8,7 @@ Procedure only; the contract is `.claude/rules/basalt-charts.md`.
 
 ## Steps
 
-1. Pick the path: a shipped kind fits (`Lines`, `Bars`, `Sparkline`, `StackedArea`, `DualPanel`, `MirroredBars`, `BandStrip`, `Donut`, `Heatmap`) → use it. A second chart of a shape with no kind → extract a kind and migrate both call sites. Otherwise compose `CartesianChart` in the page's own chart file.
+1. Write the one-sentence question the chart answers, then pick the form that answers it (the reader's next action decides: a running stage, a median against p95, a pair of rows), then the cheapest substrate that draws that form: a shipped kind whose form is that form, else `CartesianChart` marks in the page's own chart file. A kind is never chosen because it is the nearest catalogue row, and a missing kind is never a reason to draw a different form. A bespoke form stays in that chart file; one repeated in this app is extracted there, never into a new `basalt-ui/charts` kind.
 2. Register each new series color in the app's one series file (exempt from `check-theme`): `groupTokens('health', defineSeries({ hrv: { light, dark } }))` from `basalt-ui/tokens` (lighter on dark, deeper on light), then pass the group as `<BasaltProvider paletteOptions={{ groups: [SERIES] }} />` (or `buildPaletteCss` for SSR). A neutral grey comparison series (prior period, "everything else") must be keyed `other`: the one key exempt from the series guard's chroma floor; it still needs the ΔE separation from its neighbours.
 3. Compose the chart; import marks from the allowed `@tanstack/charts/*` subpaths:
 
