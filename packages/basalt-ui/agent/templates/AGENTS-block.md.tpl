@@ -25,7 +25,7 @@ Placed by `basalt-ui init`, refreshed by `basalt-ui sync` (`--check` gates drift
 
 **Skills and subagent** (installed in `.claude/`; invoke by name):
 
-- `/basalt-design`: build or restyle a screen. It writes `docs/design/<screen>.md` first, reads `DESIGN.md` (its Direction is never yours to write), then runs `basalt-ui shot` rounds.
+- `/basalt-design`: build or restyle a screen: question first, then the form, then the marks, then a look at 1800 and 390 wide. Reads `DESIGN.md`; its Direction is never yours to write.
 - `/basalt-app`: set up, upgrade or migrate the app (`init`, `doctor`, `sync`).
 - `basalt-design-reviewer` (subagent): scores a `basalt-ui shot` out dir per component; run it after every round, never on your own work. Without it, say "reviewer not run".
 
