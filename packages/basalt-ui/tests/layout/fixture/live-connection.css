@@ -1,0 +1,11 @@
+/*
+ * The `live-connection` fixture's Tailwind v4 entry: compiled WITH preflight and the font faces, like
+ * `ui-status.css`, because the views are measured the way a Tailwind consumer renders them.
+ * `live-connection.layout.test.ts` compiles it into a temp directory; nothing generated lands in the repo.
+ */
+@import '../../../src/css/tailwind.css' source(none);
+@source './live-connection-fixture.tsx';
+@source '../../../src/page/connection-indicator.tsx';
+@source '../../../src/page/refresh-button.tsx';
+@source '../../../src/ui/button.tsx';
+@source '../../../src/ui/popover.tsx';

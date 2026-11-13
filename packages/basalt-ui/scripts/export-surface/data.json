@@ -5,5 +5,7 @@
   "makeQueryClient",
   "optimistic",
   "unwrap",
+  "useConnection",
+  "useFreshness",
   "windowKey"
 ]
