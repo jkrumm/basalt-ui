@@ -205,12 +205,13 @@ export function buildPreset(inputs: PresetInputs): PresetConfig | undefined {
   if (profiles.every((profile) => profile === 'tokens')) return undefined
 
   const overrides: Override[] = []
+  // Zone V first: a root at another profile then re-enables its own `components/ui` files.
+  if (inputs.profile === 'bridge') overrides.push(vendoredZone(VENDORED_GLOB, inputs))
   for (const [root, profile] of roots) {
     if (profile !== inputs.profile) {
       overrides.push({ files: [rootGlob(root)], rules: rulesFor(profile, inputs) })
     }
   }
-  if (inputs.profile === 'bridge') overrides.push(vendoredZone(VENDORED_GLOB, inputs))
   for (const [root, profile] of roots) {
     if (profile === 'bridge')
       overrides.push(vendoredZone(`${rootGlob(root)}/components/ui/**`, inputs))

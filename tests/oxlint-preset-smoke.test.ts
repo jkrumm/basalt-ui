@@ -380,12 +380,15 @@ describe('zones and roots', () => {
     const config = generated({ ...base, profile: 'bridge', roots: roots as never })
     const probe = `export const a = <div className="md:flex overflow-auto" />`
     const files = Object.fromEntries(Object.keys(roots).map((r) => [`${r}/probe.tsx`, probe]))
+    // A parts root keeps its rules in a components/ui folder: zone V is bridge-only.
+    files['apps/gallery/src/components/ui/x.tsx'] = probe
     const dir = project('mixed', config, files)
     const found = lint(dir, ['apps'])
     const at = (root: string, rule: string): number => hits(found, `${root}/probe.tsx`, rule)
     expect(at('apps/desktop/src', 'basalt(viewport-keyed)')).toBe(1)
     expect(at('apps/desktop/src', 'basalt(raw-scroll)')).toBe(1)
     expect(at('apps/gallery/src', 'basalt(raw-scroll)')).toBe(1)
+    expect(hits(found, 'apps/gallery/src/components/ui/x.tsx', 'basalt(viewport-keyed)')).toBe(1)
     expect(at('apps/console/src', 'basalt(viewport-keyed)')).toBe(1)
     // raw-scroll is not a bridge id: the same file is silent in the bridge root.
     expect(at('apps/console/src', 'basalt(raw-scroll)')).toBe(0)
