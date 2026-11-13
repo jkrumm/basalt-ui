@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'bun:test'
 import { readdirSync, readFileSync } from 'node:fs'
-import { join } from 'node:path'
+import { join, sep } from 'node:path'
 
 const MAX_ROUTE_FILES = 10
 const MAX_DEMO_LINES = 10_000
@@ -25,7 +25,11 @@ describe('playground budget', () => {
     const files = [
       ...filesUnder(join(import.meta.dir, 'demo')),
       ...filesUnder(join(import.meta.dir, 'scenarios')),
-    ].filter((f) => /\.(ts|tsx|css)$/.test(f) && !f.includes('.test.'))
+    ]
+      // scenarios/expr holds the expression cycles' trial builds, kept as their builders left them
+      // (docs/v3/EXPRESSION.md § The loop): cycle evidence that grows per cycle, not demo code.
+      .filter((f) => !f.startsWith(join(import.meta.dir, 'scenarios', 'expr') + sep))
+      .filter((f) => /\.(ts|tsx|css)$/.test(f) && !f.includes('.test.'))
     const total = files.reduce((sum, f) => sum + lineCount(f), 0)
     expect(total, `demo + scenarios have ${total} non-test lines`).toBeLessThanOrEqual(
       MAX_DEMO_LINES,

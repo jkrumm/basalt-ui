@@ -14,6 +14,12 @@ import { SettingsScenario } from './S6Settings'
 import { BodyScenario } from './S7Body'
 import { MapScenario } from './S8Map'
 import { MdxScenario } from './mdx-scenario'
+import { ExprC01Scenario } from './expr/c01/ExprC01'
+import { ExprC02Scenario } from './expr/c02/ExprC02'
+import { ExprC03Scenario } from './expr/c03/ExprC03'
+import { ExprC04Scenario } from './expr/c04/ExprC04'
+import { ExprC06Scenario } from './expr/c06/ExprC06'
+import { ExprN05Scenario } from './expr/n05/ExprN05'
 import type { ScenarioProps } from './shot-state'
 
 const RENDERERS = {
@@ -27,6 +33,13 @@ const RENDERERS = {
   's8-map': (p) => <MapScenario {...p} />,
   mdx: () => <MdxScenario />,
   'agent-stream': () => <AgentStreamDemo />,
+  // Expression cycle 1 trials (docs/v3/cycles/expression-1.md): one agent-built scenario per case.
+  'expr-c01': (p) => <ExprC01Scenario {...p} />,
+  'expr-c02': (p) => <ExprC02Scenario {...p} />,
+  'expr-c03': (p) => <ExprC03Scenario {...p} />,
+  'expr-c04': (p) => <ExprC04Scenario {...p} />,
+  'expr-c06': (p) => <ExprC06Scenario {...p} />,
+  'expr-n05': (p) => <ExprN05Scenario {...p} />,
 } satisfies Record<string, (props: ScenarioProps) => ReactElement>
 
 /** Every registered id; `scenario-info.ts` types its entries against this. */
