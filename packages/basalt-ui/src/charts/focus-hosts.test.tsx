@@ -149,6 +149,7 @@ const COLOR = { light: 'var(--vx-line)', dark: 'var(--vx-line)' }
 
 /** What the custom marks saw last: the 2.x chart hands marks `plot.focused`. */
 let seen: Stage | null | undefined
+const lastSeen = (): Stage | null | undefined => seen
 
 function Pace2x() {
   const focus = useChartFocus(STAGES, { announce: (d) => `${d.stage}: ${d.behind} s behind` })
@@ -205,11 +206,11 @@ describe('CartesianChart focus (2.x)', () => {
     expect(readout(el)).toBe('Build 12 s')
     await press(wrap, 'ArrowRight')
     expect(readout(el)).toBe('Test 94 s')
-    expect(seen).toBe(STAGES[1])
+    expect(lastSeen()).toBe(STAGES[1])
     expect(live(el)).toBe('Test: 94 s behind')
     await press(wrap, 'Escape')
     expect(readout(el)).toBe('+98 s')
-    expect(seen).toBeNull()
+    expect(lastSeen()).toBeNull()
   })
 
   test('pointing at the plot focuses the datum under the cursor', async () => {
@@ -217,7 +218,7 @@ describe('CartesianChart focus (2.x)', () => {
     const svg = el.querySelector('svg') as Element
     await point(svg, 700, 100)
     expect(readout(el)).toBe('Deploy -8 s')
-    expect(seen).toBe(STAGES[2])
+    expect(lastSeen()).toBe(STAGES[2])
   })
 })
 
