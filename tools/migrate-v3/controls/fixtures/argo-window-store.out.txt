@@ -1,0 +1,28 @@
+import { createLocalStore, createSearchStore, field } from 'basalt-ui/state'
+
+export const GARMIN_WINDOW_VALUES = ['7d', '30d', '3m', '1y', 'all'] as const
+
+export const garminStore = createSearchStore({
+  key: 'garmin-health:window',
+  fields: {
+    window: field.range({ presets: GARMIN_WINDOW_VALUES, fallback: '30d', custom: true }),
+  },
+}).labels({ window: { '7d': '7D', '30d': '30D' } })
+
+export const walkingStore = createSearchStore({
+  key: 'walking-pad',
+  fields: {
+    window: field.enum(['7d', '30d'], '30d', { persist: false }),
+    metrics: field.multi(['distance', 'steps'], ['distance'], { url: false }),
+  },
+})
+
+export const chartStore = createLocalStore({
+  key: 'momentum-chart',
+  fields: {
+    metric: field.enum(['load', 'volume'], 'load', { url: false }),
+  },
+})
+
+export const nav = { search: garminStore.linkSearch }
+export const route = { validateSearch: (raw: unknown) => ({ ...garminStore.validateSearch(raw), item: 1 }) }

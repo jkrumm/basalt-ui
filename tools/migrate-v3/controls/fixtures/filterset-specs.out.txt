@@ -1,0 +1,15 @@
+import { FilterSet, spec } from 'basalt-ui/controls'
+import { garminStore, usageStore } from '../lib/window-stores'
+
+export function Toolbar({ regions }: { regions: { value: string; label: string }[] }) {
+  return (
+    <FilterSet
+      specs={[
+        spec(garminStore.field.window, 'Window', { clearable: true }),
+        spec(usageStore.field.payer, 'Payer', { options: regions, placeholder: 'All payers' }),
+        spec(usageStore.field.errors, 'Errors only'),
+        spec(usageStore.field.q, 'Search', { placeholder: 'Name or id' }),
+      ]}
+    />
+  )
+}
