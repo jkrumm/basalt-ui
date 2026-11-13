@@ -55,8 +55,10 @@ for f in \
   dist/controls-dates/index.js dist/controls-dates/index.d.ts \
   src/index.ts \
   configs/oxlint.json configs/oxlint-basalt.json configs/tsconfig.base.json configs/tsconfig.react-app.json \
-  agent/rules/basalt-tokens.md agent/rules/basalt-charts.md agent/rules/basalt-batteries.md \
-  agent/templates/DESIGN.md.tpl agent/templates/AGENTS-block.md.tpl agent/templates/main.tpl \
+  agent/rules/basalt-tokens.md agent/rules/basalt-ui.md agent/rules/basalt-page.md \
+  agent/rules/basalt-state.md agent/rules/basalt-charts.md \
+  agent/templates/DESIGN.md.tpl agent/templates/AGENTS-block.md.tpl \
+  agent/templates/AGENTS-block.tokens.md.tpl agent/templates/main.tpl \
   agent/skills/basalt-app/SKILL.md agent/skills/basalt-charts/SKILL.md \
   agent/skills/basalt-design/SKILL.md \
   llms.txt \
@@ -68,6 +70,13 @@ for f in src/index.css src/starlight.css tailwind.config.js MAINTAINING.md \
   agent/rules/basalt-router.md agent/rules/basalt-app.md agent/rules/basalt-query.md \
   dist/shell/app-sidebar.module.css.d.js dist/shell/app-mobile-nav.module.css.d.js \
   dist/shell/app-header.module.css.d.js; do forbid "$f"; done
+# The shipped rules are exactly five (v3): any other file under agent/rules/ is a retired rule
+# left in a stale worktree, which `sync` would place into consumers.
+if grep -E '^package/agent/rules/' "$LISTFILE" |
+  grep -vE '^package/agent/rules/basalt-(tokens|ui|page|state|charts)\.md$'; then
+  echo "FORBIDDEN in tarball: agent/rules/ holds a file outside the five shipped rules"
+  exit 1
+fi
 # forbid() above is an exact-string match, so the test-artifact patterns need their own regex
 # check: src/**/*.test.ts(x) (files:["src/"] ships every source, including tests) and
 # dist/**/*.test.d.ts(.map) (tsc --emitDeclarationOnly has no test exclude of its own).
@@ -365,7 +374,7 @@ if ! grep -qF "raw-spacing" "$GUARD_LOG"; then
   exit 1
 fi
 if grep -qF "ok.module.css" "$GUARD_LOG"; then
-  echo "FAILED: check-theme flagged sub-scale CSS micro-spacing, which basalt-tokens.md allows raw"
+  echo "FAILED: check-theme flagged sub-scale CSS micro-spacing, which the tokens rule allows raw"
   exit 1
 fi
 rm -rf guard-fixture "$GUARD_LOG" "$OXLINT_LOG"

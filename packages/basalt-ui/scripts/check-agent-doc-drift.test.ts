@@ -1,13 +1,12 @@
 import { describe, expect, test } from 'bun:test'
 
-import { mkdtempSync, readFileSync, writeFileSync } from 'node:fs'
+import { mkdtempSync, writeFileSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 
 import {
   CHECK_I_NON_EXPORTS,
   checkDocNames,
-  checkF,
   checkG,
   checkI,
   checkLlmsNames,
@@ -17,15 +16,12 @@ import {
   collectPublishedNames,
   findAgentFiles,
   findDeadSpecifiers,
-  findRuleFiles,
   leadingDocComment,
-  loadTagSources,
   pluginRuleIds,
 } from './check-agent-doc-drift'
 import * as pluginModule from '../configs/oxlint-plugin.js'
-import { coverageBlock } from './check-coverage'
+import { checkAllRuleFiles } from './check-rule-tags'
 import { generateLlmsTxt } from './gen-llms'
-import type { TagSources } from './check-agent-doc-drift'
 
 const fence = '```'
 const keys = collectExportKeys()
@@ -58,116 +54,6 @@ describe('findDeadSpecifiers', () => {
   test('does not resolve a prefix of a real subpath', () => {
     const md = [fence + 'ts', "import x from 'basalt-ui/stat'", fence].join('\n')
     expect(findDeadSpecifiers(md, keys)).toEqual([{ line: 2, specifier: 'basalt-ui/stat' }])
-  })
-})
-
-const sources: TagSources = {
-  pluginRules: new Set(['hand-rolled-shell']),
-  guardKinds: new Set(['raw-hex']),
-  typeNames: new Set(['PageBar']),
-}
-const doc = (...body: string[]): string =>
-  ['---', 'source: basalt-ui', '---', '<!-- generated -->', '# T', '', ...body].join('\n')
-
-describe('checkF', () => {
-  test('accepts a tagged bullet, an intro line, headings and fenced code', () => {
-    const md = doc(
-      'One intro line.',
-      '',
-      '## A',
-      '',
-      '- Use it. [basalt/hand-rolled-shell] [check-theme raw-hex]',
-      '- Typed. [type PageBar]',
-      '',
-      fence + 'ts',
-      'not a bullet',
-      fence,
-    )
-    expect(checkF(md, sources)).toEqual([])
-  })
-
-  test('flags a bullet with no tag', () => {
-    expect(checkF(doc('- No tag here.'), sources)).toEqual([
-      { line: 7, message: 'bullet does not end in an enforcement tag' },
-    ])
-  })
-
-  test('takes a tag from a continuation line of the same bullet', () => {
-    expect(checkF(doc('- Long bullet', '  continues. [type PageBar]'), sources)).toEqual([])
-  })
-
-  test('flags a plugin rule, guard kind or name that does not resolve', () => {
-    const messages = checkF(
-      doc('- A [basalt/nope]', '- B [check-theme nope]', '- C [type Nope]'),
-      sources,
-    ).map((f) => f.message)
-    expect(messages).toEqual([
-      '[basalt/nope] is not a shipped plugin rule',
-      '[check-theme nope] is not a guard kind',
-      '[type Nope] is not an exported name',
-    ])
-  })
-
-  test('flags a repo-local rule id used as a tag', () => {
-    const withLocal = { ...sources, pluginRules: new Set(['chart-host-single']) }
-    expect(checkF(doc('- A [basalt/chart-host-single]'), withLocal)[0]?.message).toBe(
-      '[basalt/chart-host-single] is repo-local and never ships',
-    )
-  })
-
-  test('flags a tag that is not at the end of the bullet', () => {
-    expect(checkF(doc('- Tagged [type PageBar] but trailing prose.'), sources)).toHaveLength(1)
-    expect(checkF(doc('- Long [type PageBar]', '  trailing words'), sources)).toHaveLength(1)
-  })
-
-  test('judges nested bullets', () => {
-    expect(checkF(doc('- Parent [type PageBar]', '  - nested, untagged'), sources)).toEqual([
-      { line: 8, message: 'bullet does not end in an enforcement tag' },
-    ])
-  })
-
-  test('allows prose only directly under the H1', () => {
-    expect(checkF(doc('Intro.'), sources)).toEqual([])
-    const later = doc('Intro.', '', '## A', '', 'Prose after a heading.', '', '| a | b |')
-    expect(checkF(later, sources).map((f) => f.line)).toEqual([11, 13])
-    expect(
-      checkF(doc('- Tagged [type PageBar]', '', 'Prose after a bullet.'), sources),
-    ).toHaveLength(1)
-  })
-
-  test('allows ONE intro line: a second paragraph or a table under the H1 fails', () => {
-    expect(checkF(doc('Intro.', 'Second line.'), sources).map((f) => f.line)).toEqual([8])
-    expect(checkF(doc('Intro.', '', 'Second paragraph.'), sources).map((f) => f.line)).toEqual([9])
-    expect(checkF(doc('| a | b |'), sources)).toEqual([])
-    expect(checkF(doc('Intro.', '| a | b |'), sources).map((f) => f.line)).toEqual([8])
-  })
-
-  test('judges `*` and numbered bullets like `-` bullets', () => {
-    const md = doc(
-      '* star [type PageBar]',
-      '* star untagged',
-      '1. numbered untagged',
-      '2. ok [type PageBar]',
-    )
-    expect(checkF(md, sources).map((f) => f.line)).toEqual([8, 9])
-  })
-
-  test('ignores a bullet-shaped line inside a multi-line HTML comment', () => {
-    const md = doc('<!--', '- not a bullet', '-->', '- real [type PageBar]')
-    expect(checkF(md, sources)).toEqual([])
-  })
-
-  test('handles a file with no frontmatter', () => {
-    const md = ['# T', '', 'Intro.', '', '- ok [type PageBar]', '- bad'].join('\n')
-    expect(checkF(md, sources)).toEqual([
-      { line: 6, message: 'bullet does not end in an enforcement tag' },
-    ])
-  })
-
-  test('flags a removed rule id used as a tag', () => {
-    expect(checkF(doc('- A [basalt/page-bar-budget]'), sources)[0]?.message).toBe(
-      '[basalt/page-bar-budget] was removed in 2.0',
-    )
   })
 })
 
@@ -325,22 +211,9 @@ describe('collectPublishedNames', () => {
   })
 })
 
-describe('coverageBlock', () => {
-  test('never names a repo-local rule id', () => {
-    for (const rule of ['tokens', 'mantine', 'charts', 'state', 'controls', 'batteries'] as const) {
-      expect(coverageBlock(rule)).not.toMatch(
-        /chart-host-single|token-layer-boundary|no-dev-helper|no-import-meta-env/,
-      )
-    }
-  })
-})
-
 describe('the shipped agent layer', () => {
   test('every rule bullet is tagged and resolves, and no agent file cites a bad rule', () => {
-    const sources = loadTagSources()
-    for (const file of findRuleFiles()) {
-      expect(checkF(readFileSync(file, 'utf8'), sources)).toEqual([])
-    }
+    expect(checkAllRuleFiles().messages).toEqual([])
     expect(checkG(findAgentFiles())).toEqual([])
   })
 })

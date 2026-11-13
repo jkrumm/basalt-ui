@@ -4,34 +4,35 @@
 
 Placed by `basalt-ui init`, refreshed by `basalt-ui sync` (`--check` gates drift in CI); edit `DESIGN.md`, not this block.
 
-**Stack:** React 19 + Mantine v9 via `basalt-ui` (`BasaltProvider`, `BasaltShell`), TanStack Router and
-Query, TanStack Charts via `basalt-ui/charts`, Bun, oxlint + oxfmt, no Tailwind. Color is `VX.*` or a
-series token, never a literal.
+**Stack** (profile `{{PROFILE}}`): `tokens` is CSS only; `bridge` adds Tailwind 4, `cn`, the lint preset and these rules; `parts` adds `basalt-ui/ui/*` and the page, card, control, table, chart and content composites; `app` adds `basalt-ui/shell` and the router. Colour is a `VX.*` token or a series colour, never a literal.
 
-**Precedence** (highest wins): consumer `DESIGN.md` > the six shipped `basalt-*` rules in
-`.claude/rules/` > the `basalt-*` skills. Each rule bullet ends in the lint rule, guard kind or type
-that enforces it; skills are procedure, not law.
+**Precedence** (highest wins): consumer `DESIGN.md` > the five `basalt-*` rules in `.claude/rules/` > the `basalt-*` skills > the shadcn skill > global skills (`frontend-design`, `dataviz`). Each rule bullet ends in the lint id or type that holds it, or sits under `not guarded:`; skills are procedure, not law.
 
-**Run the local bin** (`./node_modules/.bin/basalt-ui` or a package script), never `bunx`; `init` is
-the one exception. In a workspace: the app package's `node_modules/.bin/basalt-ui`.
+**Before guessing an import**, read `node_modules/basalt-ui/docs/<name>.md` (`basalt-ui doctor` prints where it is installed). Primitives are `node_modules/basalt-ui/src/ui/<name>.tsx`, or `src/components/ui` once ejected. A missing export is a recipe in `docs/recipes/`.
 
-**Before guessing an import, read the installed `llms.txt`** at the install directory (in a workspace,
-under the depending package; `basalt-ui doctor` prints where; a fresh worktree needs `bun install` first).
+**Which form answers the question** (the shipped surface; compose it, never rebuild it):
+
+| Question                    | Form                                  |
+| --------------------------- | ------------------------------------- |
+| One number and how it moves | `StatCard`, `StatGroup`               |
+| A value over time           | `Lines`, `Sparkline` in a `ChartCard` |
+| Compare or rank categories  | `Bars`, `BarList`                     |
+| Many records with columns   | `DataTable`                           |
+| One record's detail         | `PageAside`, `SplitPage`              |
+| Narrow the data             | `FilterSet`, `ViewTabs`               |
+| Stages of work              | `KanbanCard`                          |
+| Prose, markdown, code       | `Markdown`, `CodeBlock`               |
 
 **Skills and subagent** (installed in `.claude/`; invoke by name):
 
-- `/basalt-app`: scaffold, wire, upgrade or verify the app (`init`, `doctor`, `sync`).
-- `/basalt-design`: build or restyle a screen — scenario, `basalt-ui shot` rounds, review, revise; routes to its `references/` on demand.
-- `/basalt-charts`: add or extend a chart, register its series colors.
-- `basalt-design-reviewer` (subagent): scores a `basalt-ui shot` out dir per component; run it after every shot round, never on your own work.
+- `/basalt-design`: build or restyle a screen. It writes `docs/design/<screen>.md` first, reads `DESIGN.md` (its Direction is never yours to write), then runs `basalt-ui shot` rounds.
+- `/basalt-app`: set up, upgrade or migrate the app (`init`, `doctor`, `sync`).
+- `basalt-design-reviewer` (subagent): scores a `basalt-ui shot` out dir per component; run it after every round, never on your own work. Without it, say "reviewer not run".
 
-@./DESIGN.md
+**Run the local bin** (`./node_modules/.bin/basalt-ui` or a package script), never `bunx`; `init` is the one exception. In a workspace: the app package's `node_modules/.bin/basalt-ui`. Run the repo gate before reporting done.
 
-**Restraint override (supersedes `/frontend-design`).** This is a calm, data-dense professional
-surface: no "bold aesthetic direction", gradient meshes, grain or dramatic motion. Neutral by default,
-the single accent spent only when earned.
+**Never `shadcn add` a primitive basalt ships.** Eject it (`basalt-ui eject <name> --reason`) to change it.
 
-**Chart override.** `/basalt-design`, `/basalt-charts` and the `basalt-charts` rule supersede any global chart rule and
-the bundled `/dataviz` skill (its palette, marks, forms yield to basalt's tokens, catalogue, guards): compose `CartesianChart`.
+**Overrides.** Restraint over "bold aesthetic direction" (`frontend-design`): neutral by default, the single accent spent only when earned. Basalt charts over `dataviz`: compose `CartesianChart` or a shipped kind.
 
 <!-- basalt:end -->

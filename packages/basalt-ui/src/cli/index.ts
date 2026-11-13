@@ -839,13 +839,23 @@ function skillFiles(pkgRoot: string, name: string): string[] {
   return [...rels.filter((r) => r === 'SKILL.md'), ...rels.filter((r) => r !== 'SKILL.md')]
 }
 
+/** The shipped rule names: every `agent/rules/basalt-<name>.md`, the directory v3 `sync` also walks. */
+function shippedRuleNames(pkgRoot: string): string[] {
+  const dir = resolve(pkgRoot, 'agent/rules')
+  if (!existsSync(dir)) return []
+  return readdirSync(dir)
+    .map((file) => /^basalt-(.+)\.md$/.exec(file)?.[1])
+    .filter((name): name is string => name !== undefined)
+    .toSorted()
+}
+
 /** The full managed-file manifest. Stable, declarative — the single source of truth for init/sync. */
 export function managedFiles(
   placement: PlacementFlags = ROOT_PLACEMENT,
   pkgRoot: string = packageRoot(),
 ): ManagedFile[] {
   // ── managed: exactly what Claude reads ──────────────────────────────────────
-  const rules: ManagedFile[] = RULE_NAMES.map((name) => ({
+  const rules: ManagedFile[] = shippedRuleNames(pkgRoot).map((name) => ({
     dest: `.claude/rules/basalt-${name}.md`,
     mode: 'managed' as const,
     source: `agent/rules/basalt-${name}.md`,

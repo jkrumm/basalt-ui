@@ -16,11 +16,11 @@
  * must not recur.
  */
 import { spawnSync } from 'node:child_process'
-import { readFileSync } from 'node:fs'
+import { readdirSync, readFileSync } from 'node:fs'
 import { resolve } from 'node:path'
 import { describe, expect, it } from 'bun:test'
 
-import { RULE_NAMES, SKILL_NAMES } from './index'
+import { SKILL_NAMES } from './index'
 
 const PKG_ROOT = resolve(import.meta.dir, '../..')
 const REPO_ROOT = resolve(PKG_ROOT, '../..')
@@ -46,10 +46,12 @@ describe('shipped managed templates are oxfmt-clean', () => {
     expectOxfmtNoop('AGENTS.md', filled)
   })
 
-  it.each([...RULE_NAMES])('agent/rules/basalt-%s.md (managed) round-trips unchanged', (name) => {
-    const content = readFileSync(resolve(PKG_ROOT, `agent/rules/basalt-${name}.md`), 'utf8')
-    expectOxfmtNoop(`basalt-${name}.md`, content)
-  })
+  it.each(readdirSync(resolve(PKG_ROOT, 'agent/rules')))(
+    'agent/rules/%s (managed) round-trips unchanged',
+    (file) => {
+      expectOxfmtNoop(file, readFileSync(resolve(PKG_ROOT, 'agent/rules', file), 'utf8'))
+    },
+  )
 
   it.each([...SKILL_NAMES])('agent/skills/%s/SKILL.md (managed) round-trips unchanged', (name) => {
     const content = readFileSync(resolve(PKG_ROOT, `agent/skills/${name}/SKILL.md`), 'utf8')

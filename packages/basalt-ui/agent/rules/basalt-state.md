@@ -1,38 +1,43 @@
 ---
 source: basalt-ui
-description: Where state lives — search stores over typed fields, nav links by reference, defineNav, persisted state.
+description: Where state lives — search and local fields, queries, streams, storage and routes.
 paths:
   - '**/src/**'
 ---
 
-<!-- basalt:coverage -->
-<!-- GENERATED from src/surfaces.ts — `bun scripts/check-coverage.ts --write`. Do not hand-edit. -->
-<!-- backed by: guard kinds — localstorage-theme · oxlint rules — basalt/search-literal-link, basalt/use-search-from-literal -->
-<!-- not guarded: — -->
-<!-- /basalt:coverage -->
-
 # Basalt State
 
-State a control reads or writes is a field on a store; the URL wins over localStorage over the fallback.
+State a control reads or writes is a field handle; the URL wins over device storage over the fallback.
 
-## Stores
+## Fields
 
-- Define filters, tabs, ranges and pagination as fields of `createSearchStore` (URL) or `createLocalStore` (no router), with `field.range|multi|enum|boolean`. [type createSearchStore]
-- Never `useState` for a filter, tab, range or view; a basalt control takes a `field` and has no `value` or `onChange`. A value another store owns (a zustand slice) binds as `externalField({ values, fallback, labels, store: { get, set, subscribe } })`, no lane, `clear()` writes the fallback. [check-theme raw-selection-control]
-- Declare lanes once at definition: `{ url, persist, history }`; `url: false` is local-only, `persist: false` is URL-only. [type field]
-- Option labels come from `.labels()` at definition, never a control prop. [type createSearchStore]
-- Route `validateSearch` is `store.validateSearch`; a wider search shape spreads `...store.validateSearch(raw)`. Under SSR it is URL ⊳ fallback until hydration commits (`window.$_TSR`), then readers adopt the mirror; never read a stored value in a server loader. [type createSearchStore]
-- Read with `store.useValues()` or take the value as a prop; never `useSearch({ from: '<literal>' })`. [basalt/use-search-from-literal]
-- A handle's `use()` returns `[value, setValue]`; the setter owns the navigate and the persist; on a `createLocalStore` field a prop-derived default is `store.field.x.withFallback(value)`, passed to `use()` and to any control as `field=` (unset only, never persisted, a reset returns to it, `isDefault` follows it; search stores lack it, a derived handle does not derive again), never a store rebuilt per prop. [type field]
-- Count active filters and reset them with the store's `useActiveCount()` and `useReset()`; a reset unsets, it does not write the fallback. [type createSearchStore]
-- A color scheme is `useMantineColorScheme()`, never a store or `localStorage['theme']`. [check-theme localstorage-theme]
-- A preference a `SettingsRow` control edits is a `createLocalStore` field read with `.use()`, never `useState`; `createPersistedState`, once at module scope, holds only a value no control binds. [type createPersistedState]
+- A filter, tab, range or view is a `field` handle from `basalt-ui/router`, never `useState`. [type:ControlHandle]
+- A handle's `clear()` unsets; it never writes the fallback. [type:ControlHandle]
+- A value another store owns binds through `externalField`, with no lane of its own. [type:FieldLike]
+- Table view state persists through a `ViewStore`. [type:ViewStore]
 
-## Nav
+## Queries and freshness
 
-- Declare the whole navigation once with `defineNav` and `navGroup`. [type defineNav]
-- Pass it as `<BasaltShell nav={NAV} />`; use `navTarget(NAV, id)` for a `<Link>`, `navigate()` or `redirect()`. [type navTarget]
-- Route options sit under `link: linkOptions({ ... })`, never flat on the item. [type defineNav]
-- Link a store-backed route with `search: store.linkSearch`, by reference; never call it or inline `{ range: '30d' }`. [basalt/search-literal-link]
-- Declare `interface Register { router: typeof router }` in `main.tsx`, or `to` is not checked; never silence a nav type error with `as never`. [type defineNav]
-- Turn nav into other surfaces (Spotlight) with `flattenNav`. [type flattenNav]
+- Declare freshness with `liveQuery(queryOptions, class)`; never `refetchInterval` or a timer that invalidates. [lint:data-primitive]
+- Build the one client with `makeQueryClient()`; use `queryClient.query()`, never `ensureQueryData`, `prefetchQuery` or `fetchQuery`. [lint:data-primitive]
+- Open a stream with `createChannel` through the Transport seam; never an `EventSource`, a `WebSocket` or a reader loop of your own. [lint:data-primitive]
+- Pass a chart the query state and the real data; a fallback array paints an empty chart as loaded. [lint:data-primitive]
+- Connection and freshness reach the UI as `ConnectionView` and `FreshnessView`, fed by `useConnection` and `useFreshness`. [type:ConnectionView] [type:FreshnessView]
+- A channel reports its state as `ChannelStatus`. [type:ChannelStatus]
+
+## Storage
+
+- Persist through `persisted` or a store field; never write `localStorage` directly. [lint:data-primitive] [type:StorageLike]
+- A storage backend is synchronous; an async backend preloads before the first render. [type:StorageLike]
+
+## Routes
+
+- Read search state through the store's hook; never `useSearch({ from: '<literal>' })`, and link a store-backed route by reference. [lint:router-search]
+- Never wrap the route outlet in a view transition; a route validator is pure. [lint:router-search]
+- Open a route with `navTarget(...)`, never a bare path string. [type:NavTarget]
+
+not guarded:
+
+- Under SSR a field reads URL then fallback until hydration commits; never read a stored value in a server loader.
+- Wrap every API-client call in `unwrap()` so an error branch throws.
+- Keep `ai` and `@ai-sdk/*` on one major across packages; `doctor` checks it at install, the editor does not.
