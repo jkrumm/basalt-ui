@@ -94,6 +94,7 @@
   "createLocalStore": "email-gateway:client/src/routes/inbox.tsx",
   "createPersistedState": "image-gateway:app/src/lib/settings.ts",
   "createSearchStore": "argo:apps/dashboard/src/lib/window-stores.ts",
+  "createSyncedState": "argo:apps/dashboard/src/lib/queries/gym.ts",
   "date": "rb:apps/web/src/lib/format.ts",
   "dateTime": "linewatch:web/src/lib/format.ts",
   "defineCommands": "argo:apps/dashboard/src/lib/commands.tsx",
