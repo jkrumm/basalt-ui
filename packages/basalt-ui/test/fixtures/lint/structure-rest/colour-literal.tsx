@@ -39,6 +39,9 @@ const relative = 'oklch(from var(--vx-accent) l c h)'
 const gradient = 'url(#fade)'
 
 // @valid
+const quoted = "url('#fade')"
+
+// @valid
 const issue = 'Fixes #123 in the changelog'
 
 // @valid
