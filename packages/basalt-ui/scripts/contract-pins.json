@@ -1,5 +1,5 @@
 {
-  "packages/basalt-ui/src/ai/contract.ts": "8ee0e6254cfcc8931fed55f1af3e42c36dcbde690b9a7ef8024a4f64ba17266e",
+  "packages/basalt-ui/src/ai/contract.ts": "e15094a2915d44e4f1d3eaaca7e95ff2f86cf890e48766776c738fdd0b0424df",
   "packages/basalt-ui/src/cards/contract.ts": "b77f972434266ceec8e1b961fe99136a40b2be46a97df706425304fb5deecebe",
   "packages/basalt-ui/src/charts/contract.ts": "4f9321f1cdc8188560f74e75600cb2281e97e9d7a68567a456442a08d7d2508a",
   "packages/basalt-ui/src/content/contract.ts": "aac81048f2298c66dae01500513764ca0307d959bb3f0e94039fb11c663a32c8",
