@@ -4,7 +4,8 @@
  * - `start` (`shell-lead`): the brand zone, as wide as the rail so the breadcrumb after it starts on
  *   `Main`'s own edge, then the breadcrumb. The server renders the nav-derived breadcrumb; a page's
  *   `PageBar title` replaces it.
- * - `center`: the global controls (`AppShell globalControls`). Hidden compact.
+ * - `center`: the global controls (`AppShell globalControls`). Hidden compact, unless the slot says
+ *   `compact: true`: it then draws its own narrow form (`globalControls(specs)`'s `Filters (n)`).
  * - `end`: the page's claimed actions, the aside trigger on a compact screen, then the global
  *   actions (`shell-trail`).
  *
@@ -237,7 +238,14 @@ export function Header({
           </div>
         </div>
         {globalControls !== undefined && (
-          <div data-slot="shell-center" className="hidden shrink-0 items-center gap-2 px-3 md:flex">
+          <div
+            data-slot="shell-center"
+            className={cn(
+              'shrink-0 items-center gap-2 px-2 md:px-3',
+              // A slot with its own compact form stays in the row; any other hides below md.
+              globalControls.compact === true ? 'flex' : 'hidden md:flex',
+            )}
+          >
             {globalControls.render()}
           </div>
         )}
