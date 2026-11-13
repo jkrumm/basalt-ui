@@ -1,0 +1,32 @@
+<!doctype html>
+<html lang="en" data-theme="light">
+  <head>
+    <meta charset="utf-8" />
+    <title>offender: clipped-scrollport</title>
+    <style>
+      body {
+        margin: 0;
+        font:
+          16px/1.4 system-ui,
+          sans-serif;
+        color: #111;
+        background: #fff;
+      }
+      main {
+        padding: 0;
+      }
+      .port {
+        height: 200px;
+        overflow: auto;
+      }
+      .tall {
+        height: 2400px;
+      }
+    </style>
+  </head>
+  <body>
+    <main>
+      <div class="port"><div class="tall">80 rows, 24 of them print</div></div>
+    </main>
+  </body>
+</html>

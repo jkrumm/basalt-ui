@@ -1,0 +1,58 @@
+<!doctype html>
+<html lang="en" data-theme="light">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>offender: input-floor</title>
+    <style>
+      body {
+        margin: 0;
+        font:
+          16px/1.4 system-ui,
+          sans-serif;
+        color: #111;
+        background: #fff;
+      }
+      main {
+        padding: 16px;
+      }
+      button,
+      a {
+        font: inherit;
+      }
+      button:focus-visible,
+      a:focus-visible {
+        outline: 2px solid #1d4ed8;
+        outline-offset: 2px;
+      }
+      [data-slot='card'] {
+        border: 1px solid #555;
+        padding: 12px;
+        width: 240px;
+      }
+      button {
+        min-width: 48px;
+        min-height: 48px;
+        margin: 8px;
+      }
+      .fit {
+        width: 240px;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+      }
+    </style>
+  </head>
+  <body>
+    <main>
+      <h1>input floor</h1>
+      <div data-slot="card">
+        <p class="fit">A label that fits or ends in an ellipsis for sure</p>
+      </div>
+      <button type="button">One</button>
+      <button type="button">Two</button>
+      <a href="#top">A link</a>
+      <label>Name <input type="text" style="font-size: 12px" /></label>
+    </main>
+  </body>
+</html>
