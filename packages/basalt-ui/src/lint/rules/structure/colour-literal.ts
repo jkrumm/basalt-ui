@@ -6,12 +6,16 @@
  *
  * A function that wraps a token (`rgb(var(--vx-x) / 50%)`, `oklch(from var(--vx-x) l c h)`) is not
  * a literal and passes; `color-mix` and `light-dark` are the stylesheet's, not this rule's.
+ *
+ * Known limit: a short hex-alphabet fragment (`'#feed'`, `'#cafe'`) is indistinguishable from a
+ * colour by syntax alone. `url(#id)` and `url('#id')` pass; an anchor or selector string of that
+ * shape takes a per-line waiver with a reason.
  */
 import type { AstForm } from '../../rule-table'
 import { defineRules } from '../../rule-table'
 import type { Node } from '../../factory'
 
-const HEX = /(?<!url\()(?<![\w&#-])#(?:[0-9a-f]{8}|[0-9a-f]{6}|[0-9a-f]{3,4})(?![\w-])/gi
+const HEX = /(?<!url\(['"]?)(?<![\w&#-])#(?:[0-9a-f]{8}|[0-9a-f]{6}|[0-9a-f]{3,4})(?![\w-])/gi
 const COLOUR_FUNCTION =
   /(?<![\w-])(?:rgba?|hsla?|hwb|lab|lch|oklab|oklch)\(\s*(?:[-+.\d]|none\b|\$\{\})/i
 
