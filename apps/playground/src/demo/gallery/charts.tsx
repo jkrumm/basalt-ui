@@ -35,6 +35,7 @@ import { date, time } from 'basalt-ui/format'
 import { alpha, CONTAINER_KEYS, VX } from 'basalt-ui/tokens'
 import { integer, money } from '../fixtures/format'
 import { demoColors } from '../series'
+import { SeamSection } from './seam'
 
 const fmtClock = (d: Date): string => time(d, { format: 'short', timeZone: 'UTC' })
 const fmtStamp = (d: Date): string => `${date(d, { timeZone: 'UTC' })}, ${fmtClock(d)}`
@@ -529,6 +530,7 @@ export function ChartsSection() {
       <StripsSection />
       <CompositionSection />
       <SparklinesSection />
+      <SeamSection />
     </Stack>
   )
 }
