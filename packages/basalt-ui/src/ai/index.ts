@@ -8,3 +8,4 @@
 
 export { partView } from './part-view'
 export type { MessagePart, PartViewOptions, ToolView } from './contract'
+export { defineBlock, defineCatalog } from './catalog/define'
