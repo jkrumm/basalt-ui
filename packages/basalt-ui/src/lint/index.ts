@@ -9,9 +9,10 @@
 import { createPlugin } from './factory'
 import type { RuleTable } from './rule-table'
 import { mergeTables } from './rule-table'
+import { CLASS_RULES } from './rules/class/table'
 
 /** The rule families, one per line; a family adds its import and its entry and nothing else. */
-const FAMILIES: readonly RuleTable[] = []
+const FAMILIES: readonly RuleTable[] = [CLASS_RULES]
 
 /** The plugin oxlint loads through `jsPlugins: ["basalt-ui/lint"]`; rules report as `basalt/<id>`. */
 const plugin = createPlugin(mergeTables(FAMILIES))
