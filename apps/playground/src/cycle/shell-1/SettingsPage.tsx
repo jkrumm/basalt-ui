@@ -10,6 +10,7 @@ import { Input } from 'basalt-ui/ui/input'
 import { Switch } from 'basalt-ui/ui/switch'
 import type { ReactElement } from 'react'
 import { useV3Tokens } from '../../demo/v3-tokens'
+import { FleetPalette } from './FleetPalette'
 import { labelOf, settings } from './fleet-store'
 import type { SettingsSection } from './fleet-store'
 import { useInnerNavState } from './handle-adapters'
@@ -99,6 +100,7 @@ export function SettingsPage(): ReactElement {
           </Section>
         )}
       />
+      <FleetPalette />
     </Page>
   )
 }
