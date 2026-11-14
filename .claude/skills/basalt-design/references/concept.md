@@ -8,6 +8,16 @@ What to settle before the first component. Write it as `docs/design/<screen>.md`
 - The figures that answer the question. The hero figure is the answer itself ("3 past SLA"), where a count of the things on the page answers nothing.
 - What this screen reads from `DESIGN.md`: its Identity and its narrowing deviations. The Direction is the owner's to write.
 
+## Plan the surface
+
+Before any form is picked, write the surface as a few lines: the parts it needs, where each sits, what they share. Good marks on a surface nobody planned still read as a stack of cards.
+
+- Name the parts the question needs: the mark, the figure, and the detail (a list, a table or a timeline of the same items). A part that does nothing for the question is cut.
+- Say where each sits. A chart with a detail list sits side by side at a wide container, the list in its own [ScrollArea](docs/scroll-area.md) at the chart's height; at a narrow container the two stack, the chart first. Key it on the container. [lint:viewport-keyed]
+- Say what they share. Parts that show the same items share one focus: pointing at or stepping to an item in one focuses it in the other, both ways ([charts](charts.md)). A shared filter or scale is stated once, on the part that owns it.
+- Size the footprint to the question: a comparison of two numbers is one small card that hugs its content, and the page leaves the rest empty.
+- The parts read as one working surface: a shared edge and a shared gap.
+
 ## Datasets
 
 - One row per dataset: source, shape, the form that answers it, the export, and the reason. The form comes from the question-to-form table in the AGENTS block.
@@ -33,6 +43,7 @@ What to settle before the first component. Write it as `docs/design/<screen>.md`
 
 not guarded:
 
+- Spend no full-page card on two numbers, and nest no card in a card that holds nothing else.
 - "Monitor" and "stay informed" are not decisions, and "default" is not a reason for a form.
 - Write no component code before the three lines exist.
 - A page that cannot name its question is a list of boxes; stop and ask the user.
