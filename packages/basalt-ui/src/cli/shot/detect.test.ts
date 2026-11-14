@@ -1,13 +1,5 @@
 import { afterEach, describe, expect, spyOn, test } from 'bun:test'
-import {
-  chmodSync,
-  existsSync,
-  mkdirSync,
-  mkdtempSync,
-  readFileSync,
-  rmSync,
-  writeFileSync,
-} from 'node:fs'
+import { existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 
@@ -15,6 +7,9 @@ import { detect, detectFindings, scoreOf } from './detect'
 import type { Finding } from './detect'
 import { planOut, shot } from './index'
 import type { AnchorMetrics, ShotMetrics, ShotRecord } from './types'
+
+const DESKTOP = '1800x1200'
+const PHONE = '390x844'
 
 const dirs: string[] = []
 const tmp = (): string => {
@@ -29,7 +24,7 @@ const anchor = (over: Partial<AnchorMetrics> = {}): AnchorMetrics => ({
   route: '/',
   name: 'card',
   scheme: 'light',
-  viewport: 'desktop',
+  viewport: DESKTOP,
   box: { width: 300, height: 120 },
   padding: SIDES,
   gap: { row: 8, column: 8 },
@@ -38,14 +33,15 @@ const anchor = (over: Partial<AnchorMetrics> = {}): AnchorMetrics => ({
   fontSizes: [12, 14],
   nested: [],
   emptyRatio: 0.1,
-  contrast: { min: 7, failures: [] },
+  small: [],
+  overlaps: [],
   ...over,
 })
 const okShot = (over: Partial<ShotRecord> = {}): ShotRecord => ({
   route: '/',
   name: 'card',
   scheme: 'light',
-  viewport: 'desktop',
+  viewport: DESKTOP,
   state: 'rest',
   file: 'png/a.png',
   status: 'ok',
@@ -56,13 +52,13 @@ const metrics = (over: Partial<ShotMetrics> = {}): ShotMetrics => ({
   generatedAt: '2026-10-18T00:00:00.000Z',
   base: 'http://x',
   routes: ['/'],
-  viewports: ['desktop', 'mobile'],
+  viewports: [DESKTOP, PHONE],
   schemes: ['light', 'dark'],
   states: ['rest'],
   scale: [
     {
       scheme: 'light',
-      viewport: 'desktop',
+      viewport: DESKTOP,
       spacing: { xs: 4, sm: 8, md: 12, lg: 16 },
       radius: { sm: 4, md: 8, lg: 12 },
       fontSizes: { xs: 12, sm: 14 },
@@ -80,53 +76,6 @@ describe('detectFindings', () => {
     expect(detectFindings(metrics())).toEqual([])
   })
 
-  describe('craft-7/no-declared-states (per anchor)', () => {
-    const shot = (name: string, over: Partial<ShotRecord> = {}) =>
-      okShot({ name, state: 'empty', ...over })
-    const flagged = (shots: ShotRecord[]) =>
-      detectFindings(metrics({ states: ['rest', 'empty', 'loading', 'error'], shots })).filter(
-        (f) => f.rule === 'craft-7/no-declared-states',
-      )
-
-    test('two state-surface anchors, one declaring: only the other is flagged (P2)', () => {
-      const found = flagged([
-        shot('revenue'),
-        shot('kpis', { stateful: true }),
-        shot('kpis', { state: 'loading', stateful: true }),
-      ])
-      expect(found).toHaveLength(1)
-      expect(found[0]).toMatchObject({ severity: 'P2', anchor: 'kpis', route: '/' })
-      expect(found[0]?.defect).toContain('kpis renders a state surface')
-      expect(found[0]?.defect).toContain('data-shot-states="empty loading error"')
-    })
-
-    test('every anchor declaring its own states is clean', () => {
-      expect(flagged([shot('revenue'), shot('kpis')])).toEqual([])
-    })
-
-    test('an anchor whose data-shot-absent covers the state is clean', () => {
-      expect(flagged([shot('kpis', { status: 'absent', stateful: true })])).toEqual([])
-    })
-
-    test('a route with no declaration at all flags each state-surface anchor once', () => {
-      const skipped = (name: string, over: Partial<ShotRecord> = {}) =>
-        shot(name, {
-          file: null,
-          status: 'not-declared',
-          note: 'page declares no data-shot-states',
-          ...over,
-        })
-      const found = flagged([
-        skipped('revenue', { stateful: true }),
-        skipped('revenue', { state: 'loading', stateful: true }),
-        skipped('kpis', { state: 'error', stateful: true }),
-        skipped('plain'),
-        skipped('other', { route: '/b' }),
-      ])
-      expect(found.map((f) => f.anchor)).toEqual(['revenue', 'kpis'])
-    })
-  })
-
   test('a route that declares some state, or skipped one by choice, is not flagged', () => {
     const m = metrics({
       shots: [
@@ -135,11 +84,20 @@ describe('detectFindings', () => {
           state: 'loading',
           file: null,
           status: 'not-declared',
-          note: 'page does not declare this state',
+          note: 'anchor does not declare this state',
         }),
       ],
     })
     expect(rules(m)).toEqual([])
+  })
+
+  test('craft-7/states-ignored: a state shot equal to rest is P1 and says which state', () => {
+    const m = metrics({ shots: [okShot(), okShot({ state: 'empty', ignored: true })] })
+    const f = detectFindings(m)
+    expect(f).toHaveLength(1)
+    expect(f[0]).toMatchObject({ rule: 'craft-7/states-ignored', severity: 'P1', anchor: 'card' })
+    expect(f[0]?.defect).toContain('?shot-state=empty')
+    expect(f[0]?.cite).toContain('.ignored')
   })
 
   test('craft-1/off-scale-inset names the off-scale side (P1)', () => {
@@ -169,15 +127,38 @@ describe('detectFindings', () => {
     expect(detectFindings(m)[0]).toMatchObject({ rule: 'craft-1/off-scale-radius', severity: 'P3' })
     expect(detectFindings(m)[0]?.defect).toStartWith('Radius 8.5px is not a radius step (')
   })
-  test('a scheme × viewport with no scale entry is unverified, not judged off-scale (P1)', () => {
+  test('a scheme × viewport with no scale entry skips the off-scale check', () => {
     const m = metrics({ anchors: [anchor({ scheme: 'dark', radius: 99 })] })
-    expect(detectFindings(m).map((f) => [f.rule, f.severity])).toEqual([
-      ['craft-1/scale-missing', 'P1'],
-    ])
+    expect(detectFindings(m)).toEqual([])
+  })
+  test('a scale is matched by route: a route-bound entry judges only its own route', () => {
+    const entry = (route: string | undefined, radius: Record<string, number>) => ({
+      ...(route ? { route } : {}),
+      scheme: 'light' as const,
+      viewport: DESKTOP,
+      spacing: { sm: 8 },
+      radius,
+      fontSizes: { xs: 12 },
+    })
+    const m = metrics({
+      scale: [entry('/', { md: 8 }), entry('/other', { md: 10 })],
+      anchors: [anchor({ radius: 10 }), anchor({ route: '/other', radius: 10 })],
+    })
+    const f = detectFindings(m)
+    expect(f).toHaveLength(1)
+    expect(f[0]).toMatchObject({ rule: 'craft-1/off-scale-radius', route: '/' })
+    // An entry with no route stands for every route.
+    expect(
+      rules(metrics({ scale: [entry(undefined, { md: 10 })], anchors: [anchor({ radius: 10 })] })),
+    ).toEqual([])
+  })
+  test('an anchor from an older metrics.json without small or overlaps is clean', () => {
+    const { small: _s, overlaps: _o, ...old } = anchor()
+    expect(rules(metrics({ anchors: [old as AnchorMetrics] }))).toEqual([])
   })
   test('an empty step list judges nothing off-scale', () => {
     const m = metrics({
-      scale: [{ scheme: 'light', viewport: 'desktop', spacing: {}, radius: {}, fontSizes: {} }],
+      scale: [{ scheme: 'light', viewport: DESKTOP, spacing: {}, radius: {}, fontSizes: {} }],
       anchors: [anchor({ radius: 99, gap: { row: 99, column: 99 } })],
     })
     expect(rules(m)).toEqual([])
@@ -200,7 +181,7 @@ describe('detectFindings', () => {
       scale: [
         {
           scheme: 'light',
-          viewport: 'desktop',
+          viewport: DESKTOP,
           spacing: { sm: 8 },
           radius: { sm: 3, md: 9 },
           fontSizes: { xs: 12 },
@@ -240,18 +221,39 @@ describe('detectFindings', () => {
     expect(rules(metrics({ anchors: [anchor({ emptyRatio: 0.39 })] }))).toEqual([])
   })
 
-  test('craft-5/contrast: a non-empty failures list is P0', () => {
-    const failures = [{ text: 'Rev', ratio: 2.1, fg: '#aaa', bg: '#fff', fontSize: 12 }]
-    const f = detectFindings(metrics({ anchors: [anchor({ contrast: { min: 2.1, failures } })] }))
+  test('craft-6/overlap: text boxes covering each other are P1 and listed', () => {
+    const f = detectFindings(
+      metrics({ anchors: [anchor({ overlaps: ['div.a × span.b', 'p × em'] })] }),
+    )
     expect(f).toHaveLength(1)
-    expect(f[0]).toMatchObject({ rule: 'craft-5/contrast', severity: 'P0' })
-    expect(f[0]?.defect).toContain('2.1')
+    expect(f[0]).toMatchObject({ rule: 'craft-6/overlap', severity: 'P1', layer: 'layout' })
+    expect(f[0]?.defect).toContain('div.a × span.b; p × em')
   })
-  test('craft-5/assumed-backdrop is degraded (P2)', () => {
-    const m = metrics({
-      anchors: [anchor({ contrast: { min: 7, failures: [], backdrop: 'assumed-white' } })],
+
+  test('craft-6/hit-floor: a control under 24 px is P1 and listed', () => {
+    const f = detectFindings(metrics({ anchors: [anchor({ small: ['button.x 20x20'] })] }))
+    expect(f).toHaveLength(1)
+    expect(f[0]).toMatchObject({ rule: 'craft-6/hit-floor', severity: 'P1', layer: 'layout' })
+    expect(f[0]?.defect).toContain('button.x 20x20')
+  })
+
+  test('craft-6/document-overflow: a page wider than its viewport is P1, a fitting one is clean', () => {
+    const page = (overflowX: number, viewport = PHONE) => ({
+      route: '/',
+      scheme: 'light' as const,
+      viewport,
+      overflowX,
     })
-    expect(detectFindings(m)[0]).toMatchObject({ rule: 'craft-5/assumed-backdrop', severity: 'P2' })
+    const f = detectFindings(metrics({ pages: [page(0, DESKTOP), page(37)] }))
+    expect(f).toHaveLength(1)
+    expect(f[0]).toMatchObject({
+      rule: 'craft-6/document-overflow',
+      severity: 'P1',
+      route: '/',
+      where: [`light/${PHONE}`],
+    })
+    expect(f[0]?.defect).toContain('37px')
+    expect(rules(metrics({ pages: [page(0)] }))).toEqual([])
   })
 
   test('scan/shot-error: an error shot is P0 and cites its file note', () => {
@@ -279,7 +281,7 @@ describe('detectFindings', () => {
   test('the same defect across schemes and viewports is one finding listing where', () => {
     const m = metrics({
       scale: (['light', 'dark'] as const).flatMap((scheme) =>
-        (['desktop', 'mobile'] as const).map((viewport) => ({
+        [DESKTOP, PHONE].map((viewport) => ({
           ...metrics().scale[0]!,
           scheme,
           viewport,
@@ -287,25 +289,19 @@ describe('detectFindings', () => {
       ),
       anchors: [
         anchor({ emptyRatio: 0.5 }),
-        anchor({ emptyRatio: 0.5, viewport: 'mobile' }),
+        anchor({ emptyRatio: 0.5, viewport: PHONE }),
         anchor({ emptyRatio: 0.5, scheme: 'dark' }),
       ],
     })
     const f = detectFindings(m)
     expect(f).toHaveLength(1)
-    expect(f[0]?.where).toEqual(['light/desktop', 'light/mobile', 'dark/desktop'])
+    expect(f[0]?.where).toEqual([`light/${DESKTOP}`, `light/${PHONE}`, `dark/${DESKTOP}`])
   })
 
   test('findings run content → layout → style', () => {
-    const failures = [{ text: 'x', ratio: 2, fg: '#aaa', bg: '#fff', fontSize: 12 }]
     const m = metrics({
-      anchors: [
-        anchor({
-          radius: 10,
-          emptyRatio: 0.5,
-          contrast: { min: 2, failures },
-        }),
-      ],
+      anchors: [anchor({ radius: 10, emptyRatio: 0.5 })],
+      shots: [okShot({ status: 'error', file: null, note: 'boom' })],
     })
     expect(detectFindings(m).map((f) => f.layer)).toEqual(['content', 'layout', 'style'])
   })
@@ -375,11 +371,10 @@ describe('detect command', () => {
     return detect(flags, cwd, {
       now: () => new Date(Date.UTC(2026, 9, 18, 12, n)),
       log: (l) => void lines.push(l),
-      commit: () => 'abc1234',
     }).then((code) => ({ code, text: lines.join('\n') }))
   }
 
-  test('exits 0 on a clean round, writes detect.json and one history entry', async () => {
+  test('exits 0 on a clean round and writes detect.json only', async () => {
     const { cwd, out } = setup()
     const { code, text } = await run(['--out', out], cwd)
     expect(code).toBe(0)
@@ -387,19 +382,10 @@ describe('detect command', () => {
     const written = JSON.parse(readFileSync(join(out, 'detect.json'), 'utf8')) as {
       findings: unknown[]
       score: number
+      at: string
     }
-    expect(written).toMatchObject({ findings: [], score: 100 })
-    const history = JSON.parse(readFileSync(join(cwd, '.basalt/shots/history.json'), 'utf8'))
-    expect(history).toEqual([
-      {
-        at: '2026-10-18T12:00:00.000Z',
-        out: 'out',
-        commit: 'abc1234',
-        counts: { P0: 0, P1: 0, P2: 0, P3: 0 },
-        score: 100,
-        findings: 0,
-      },
-    ])
+    expect(written).toMatchObject({ findings: [], score: 100, at: '2026-10-18T12:00:00.000Z' })
+    expect(existsSync(join(cwd, '.basalt'))).toBe(false)
   })
 
   test('P2 and P3 findings are listed but exit 0; a P1 exits 2', async () => {
@@ -408,12 +394,6 @@ describe('detect command', () => {
     expect(p3.code).toBe(0)
     expect(p3.text).toContain('P3')
     expect(p3.text).toContain('craft-1/off-scale-radius')
-    const backdrop = setup(
-      metrics({
-        anchors: [anchor({ contrast: { min: 7, failures: [], backdrop: 'assumed-white' } })],
-      }),
-    )
-    expect((await run(['--out', backdrop.out], backdrop.cwd)).code).toBe(0)
     const lint = join(polish.cwd, 'lint.json')
     writeFileSync(
       lint,
@@ -422,6 +402,8 @@ describe('detect command', () => {
       }),
     )
     expect((await run(['--out', polish.out, '--lint', lint], polish.cwd)).code).toBe(0)
+    const p1 = setup(metrics({ anchors: [anchor({ overlaps: ['a × b'] })] }))
+    expect((await run(['--out', p1.out], p1.cwd)).code).toBe(2)
   })
 
   test('exits 2 with findings in a compact table, content first', async () => {
@@ -437,22 +419,6 @@ describe('detect command', () => {
     expect(text).toContain('P1')
   })
 
-  test('names the threshold it applied in the contrast defect', () => {
-    const failures = [
-      { text: '22', ratio: 3.29, fg: '#aaa', bg: '#fff', fontSize: 22, needs: 4.5, bold: false },
-    ]
-    const f = detectFindings(metrics({ anchors: [anchor({ contrast: { min: 3.29, failures } })] }))
-    expect(f.find((x) => x.rule === 'craft-5/contrast')?.defect).toContain(
-      '3.29:1 on "22" (needs 4.5:1 at 22px regular)',
-    )
-  })
-
-  test('a legacy failure without needs/bold derives the threshold and omits the weight', () => {
-    const failures = [{ text: '22', ratio: 3.29, fg: '#aaa', bg: '#fff', fontSize: 22 }]
-    const f = detectFindings(metrics({ anchors: [anchor({ contrast: { min: 3.29, failures } })] }))
-    expect(f.find((x) => x.rule === 'craft-5/contrast')?.defect).toContain('(needs 4.5:1 at 22px).')
-  })
-
   test('no anchor resolved: "nothing measured", a null score, no numeric result', async () => {
     const { cwd, out } = setup(metrics({ anchors: [] }))
     const { code, text } = await run(['--out', out], cwd)
@@ -461,19 +427,6 @@ describe('detect command', () => {
     expect(text).not.toContain('score 75')
     const written = JSON.parse(readFileSync(join(out, 'detect.json'), 'utf8')) as { score: unknown }
     expect(written.score).toBeNull()
-    expect(text).toContain('trend nothing measured')
-  })
-
-  test('the trend shows the finding count and chains only the same --out dir', async () => {
-    const a = setup(metrics({ anchors: [anchor({ emptyRatio: 0.5 })] }))
-    const outB = join(a.cwd, 'other')
-    mkdirSync(outB)
-    writeFileSync(join(outB, 'metrics.json'), JSON.stringify(metrics({ anchors: [anchor()] })))
-    await run(['--out', a.out], a.cwd, 0)
-    await run(['--out', outB], a.cwd, 1)
-    const again = await run(['--out', a.out], a.cwd, 2)
-    expect(again.text).toContain('trend 90 (1 findings) → 90 (1 findings) ·')
-    expect(again.text).not.toContain('100')
   })
 
   test('a positional is refused with the --out form', async () => {
@@ -487,76 +440,21 @@ describe('detect command', () => {
     }
   })
 
-  test('history grows per run and prints the last five scores as a trend', async () => {
-    const { cwd, out } = setup(metrics({ anchors: [anchor({ emptyRatio: 0.5 })] }))
-    let text = ''
-    for (let i = 0; i < 6; i++) text = (await run(['--out', out], cwd, i)).text
-    const history = JSON.parse(readFileSync(join(cwd, '.basalt/shots/history.json'), 'utf8'))
-    expect(history).toHaveLength(6)
-    expect(text).toContain(
-      'trend 90 (1 findings) → 90 (1 findings) → 90 (1 findings) → 90 (1 findings) → 90 (1 findings)',
-    )
-    expect(text.match(/→/g)).toHaveLength(4)
-  })
-
-  describe('history file', () => {
-    const history = (cwd: string): string => join(cwd, '.basalt/shots/history.json')
-    const seed = (cwd: string, body: string): void => {
-      mkdirSync(join(cwd, '.basalt/shots'), { recursive: true })
-      writeFileSync(history(cwd), body)
-    }
-    test('a corrupt history is kept as .bak and a new one starts; detect still runs', async () => {
-      const { cwd, out } = setup(metrics({ anchors: [anchor({ emptyRatio: 0.5 })] }))
-      seed(cwd, '[')
-      const { code, text } = await run(['--out', out], cwd)
-      expect(code).toBe(2)
-      expect(text).toContain('history.json.bak')
-      expect(readFileSync(`${history(cwd)}.bak`, 'utf8')).toBe('[')
-      expect(JSON.parse(readFileSync(history(cwd), 'utf8'))).toHaveLength(1)
-    })
-    test('a non-array history is treated the same way', async () => {
-      const { cwd, out } = setup()
-      seed(cwd, '{"runs":[]}')
-      expect((await run(['--out', out], cwd)).code).toBe(0)
-      expect(readFileSync(`${history(cwd)}.bak`, 'utf8')).toBe('{"runs":[]}')
-      expect(JSON.parse(readFileSync(history(cwd), 'utf8'))).toHaveLength(1)
-    })
-    test('no temp file is left behind', async () => {
-      const { cwd, out } = setup()
-      await run(['--out', out], cwd)
-      expect(existsSync(`${history(cwd)}.tmp`)).toBe(false)
-      expect(existsSync(join(out, 'detect.json.tmp'))).toBe(false)
-    })
-    test('an unwritable out dir is exit 1 with a clean message and no history entry', async () => {
-      const { cwd, out } = setup()
-      chmodSync(out, 0o555)
-      try {
-        const err: string[] = []
-        const spy = spyOn(console, 'error').mockImplementation((l: string) => void err.push(l))
-        const { code } = await run(['--out', out], cwd)
-        spy.mockRestore()
-        // Root ignores the mode bits; only assert the contract where the mode is honoured.
-        if (process.getuid?.() !== 0) {
-          expect(code).toBe(1)
-          expect(err.join('\n')).toContain('cannot write detect.json or history.json')
-          expect(existsSync(history(cwd))).toBe(false)
-        }
-      } finally {
-        chmodSync(out, 0o755)
-      }
-    })
-  })
-
   test('exit 1: missing or unreadable metrics.json writes nothing', async () => {
     const cwd = tmp()
     const out = join(cwd, 'nope')
-    const missing = await run(['--out', out], cwd)
-    expect(missing.code).toBe(1)
-    expect(existsSync(join(cwd, '.basalt/shots/history.json'))).toBe(false)
-    const bad = setup('{ not json')
-    expect((await run(['--out', bad.out], bad.cwd)).code).toBe(1)
-    const wrong = setup('{"version":2}')
-    expect((await run(['--out', wrong.out], wrong.cwd)).code).toBe(1)
+    const err = spyOn(console, 'error').mockImplementation(() => undefined)
+    try {
+      const missing = await run(['--out', out], cwd)
+      expect(missing.code).toBe(1)
+      expect(existsSync(join(out, 'detect.json'))).toBe(false)
+      const bad = setup('{ not json')
+      expect((await run(['--out', bad.out], bad.cwd)).code).toBe(1)
+      const wrong = setup('{"version":2}')
+      expect((await run(['--out', wrong.out], wrong.cwd)).code).toBe(1)
+    } finally {
+      err.mockRestore()
+    }
   })
 
   test('--lint reads an oxlint JSON report; a bad file is exit 1', async () => {
@@ -579,33 +477,57 @@ describe('detect command', () => {
     const found = await run(['--out', out, '--lint', lint], cwd)
     expect(found.code).toBe(2)
     expect(found.text).toContain('lint/basalt/card-inset')
-    writeFileSync(lint, 'nope')
-    expect((await run(['--out', out, '--lint', lint], cwd)).code).toBe(1)
-    expect((await run(['--out', out, '--lint', join(cwd, 'gone.json')], cwd)).code).toBe(1)
+    const err = spyOn(console, 'error').mockImplementation(() => undefined)
+    try {
+      writeFileSync(lint, 'nope')
+      expect((await run(['--out', out, '--lint', lint], cwd)).code).toBe(1)
+      expect((await run(['--out', out, '--lint', join(cwd, 'gone.json')], cwd)).code).toBe(1)
+    } finally {
+      err.mockRestore()
+    }
   })
 
-  test('without --out it follows last.json, then the default out dir', async () => {
+  test('without --out it follows .basalt/last-shot.json', async () => {
     const cwd = tmp()
-    const named = join(cwd, '.basalt/shots/r2')
+    const named = join(cwd, 'shots-2')
     mkdirSync(named, { recursive: true })
     writeFileSync(join(named, 'metrics.json'), JSON.stringify(metrics()))
-    writeFileSync(join(cwd, '.basalt/shots/last.json'), JSON.stringify({ out: '.basalt/shots/r2' }))
+    mkdirSync(join(cwd, '.basalt'))
+    writeFileSync(join(cwd, '.basalt/last-shot.json'), JSON.stringify({ out: 'shots-2', round: 2 }))
     expect((await run([], cwd)).code).toBe(0)
     expect(existsSync(join(named, 'detect.json'))).toBe(true)
   })
 
-  test('an unknown flag is exit 1', async () => {
-    const { cwd } = setup()
-    expect((await run(['--nope'], cwd)).code).toBe(1)
+  test('without --out and without last-shot.json it exits 1 naming the file', async () => {
+    const cwd = tmp()
+    const err: string[] = []
+    const spy = spyOn(console, 'error').mockImplementation((l: string) => void err.push(l))
+    try {
+      expect((await run([], cwd)).code).toBe(1)
+      expect(err.join('\n')).toContain('last-shot.json')
+    } finally {
+      spy.mockRestore()
+    }
   })
 
-  test('is reached as `shot detect`, and a later shot may empty an out dir holding detect.json', async () => {
+  test('an unknown flag is exit 1', async () => {
+    const { cwd } = setup()
+    const err = spyOn(console, 'error').mockImplementation(() => undefined)
+    try {
+      expect((await run(['--nope'], cwd)).code).toBe(1)
+    } finally {
+      err.mockRestore()
+    }
+  })
+
+  test('is reached as `shot detect`; its out dir is no fresh --out for the next shot', async () => {
     const { cwd, out } = setup()
     const rel = 'out'
     const lines: string[] = []
     const code = await shot(['detect', '--out', rel], cwd, { log: (l) => void lines.push(l) })
     expect(code).toBe(0)
     expect(existsSync(join(out, 'detect.json'))).toBe(true)
-    expect(() => planOut(cwd, rel)).not.toThrow()
+    // The dir exists, so planOut refuses it: every round writes to a fresh one.
+    expect(() => planOut(cwd, rel)).toThrow('exists already')
   })
 })

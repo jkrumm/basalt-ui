@@ -1,53 +1,21 @@
-// theme-allow-file raw-hex — canvas colour parsing and sRGB readings, not styling
-// theme-allow-file raw-color-fn — reads the page's computed colours, never styles with them
 /**
  * `measureAnchor` runs in the page (Playwright sends its source: it must close over nothing) and
- * returns raw readings; the contrast maths runs here in Node, where it is unit-testable.
+ * returns raw readings; `finishMeasurement` turns the radii into numbers here in Node. Contrast is
+ * not read: axe owns it.
  */
-import type { ContrastFailure, Measurement } from './types'
+import type { Measurement } from './types'
 
-const linear = (v: number | undefined): number => {
-  const s = (v ?? 0) / 255
-  return s <= 0.03928 ? s / 12.92 : ((s + 0.055) / 1.055) ** 2.4
-}
-const luminance = (c: readonly number[]): number =>
-  0.2126 * linear(c[0]) + 0.7152 * linear(c[1]) + 0.0722 * linear(c[2])
-
-/** WCAG contrast ratio of two sRGB colours (channels 0–255). */
-export function contrastRatio(a: readonly number[], b: readonly number[]): number {
-  const [hi, lo] = [luminance(a), luminance(b)].toSorted((x, y) => y - x)
-  return ((hi ?? 0) + 0.05) / ((lo ?? 0) + 0.05)
-}
-
-/** 3 for large text (≥ 24px, or ≥ 18.66px bold), else 4.5. */
-export function contrastThreshold(fontSize: number, bold: boolean): number {
-  return fontSize >= 24 || (bold && fontSize >= 18.66) ? 3 : 4.5
-}
-
-export type TextReading = {
-  text: string
-  fg: number[]
-  bg: number[]
-  fontSize: number
-  bold: boolean
-  /** No opaque ancestor background was found: `bg` is white by assumption. */
-  assumedWhite: boolean
-  /** Inside a disabled control: WCAG 1.4.3 exempts inactive components, so it is not measured. */
-  disabled?: boolean
-}
 /** A computed `border-top-left-radius` as the page read it, with the box it rounds. */
 export type RawRadius = { value: string; width: number; height: number }
-export type Reading = Omit<Measurement, 'contrast' | 'radius' | 'nested'> & {
+export type Reading = Omit<Measurement, 'radius' | 'nested'> & {
   radius: RawRadius
   nested: { path: string; radius: RawRadius; padding: Measurement['padding'] }[]
-  texts: TextReading[]
 }
 
 /**
- * A radius in px, or `'full'` when it rounds the box completely: a percentage of 50 or more
- * (`50%` is a circle/pill however the box is shaped), or a px radius of at least half the shorter
- * side (`9999px`). A zero-size box has nothing to round: 0. A smaller percentage stays a number,
- * resolved against the shorter side — the radius a reader sees on a wide, short box.
+ * A radius in px, or `'full'` when it rounds the box completely: a percentage of 50 or more, or a
+ * px radius of at least half the shorter side (`9999px`). A zero-size box has nothing to round: 0.
+ * A smaller percentage resolves against the shorter side.
  */
 export function radiusReading({ value, width, height }: RawRadius): number | 'full' {
   const first = value.trim()
@@ -59,44 +27,11 @@ export function radiusReading({ value, width, height }: RawRadius): number | 'fu
   return Math.round(n * 100) / 100
 }
 
-const hex = (c: readonly number[]): string =>
-  '#' +
-  c
-    .slice(0, 3)
-    .map((n) => Math.round(n).toString(16).padStart(2, '0'))
-    .join('')
-
-/**
- * Contrast per text reading: `min` over all, `failures` below the WCAG AA threshold. The threshold
- * is tested on the UNROUNDED ratio; only the stored value is rounded.
- */
-export function finishMeasurement({ texts, radius, nested, ...rest }: Reading): Measurement {
-  const failures: ContrastFailure[] = []
-  let min: number | null = null
-  for (const t of texts) {
-    if (t.disabled) continue
-    const exact = contrastRatio(t.fg, t.bg)
-    const ratio = Math.round(exact * 100) / 100
-    min = min === null ? ratio : Math.min(min, ratio)
-    const needs = contrastThreshold(t.fontSize, t.bold)
-    if (exact < needs) {
-      failures.push({
-        text: t.text,
-        ratio,
-        fg: hex(t.fg),
-        bg: hex(t.bg),
-        fontSize: t.fontSize,
-        needs,
-        bold: t.bold,
-      })
-    }
-  }
-  const backdrop = texts.some((t) => t.assumedWhite) ? ({ backdrop: 'assumed-white' } as const) : {}
+export function finishMeasurement({ radius, nested, ...rest }: Reading): Measurement {
   return {
     ...rest,
     radius: radiusReading(radius),
     nested: nested.map((n) => ({ ...n, radius: radiusReading(n.radius) })),
-    contrast: { min, failures, ...backdrop },
   }
 }
 
@@ -109,56 +44,22 @@ export function measureAnchor(root: Element): Reading {
     const [top = 0, right = 0, bottom = 0, left = 0] = edges(s, 'padding')
     return { top, right, bottom, left }
   }
-  const ctx = document.createElement('canvas').getContext('2d', { willReadFrequently: true })
-  if (!ctx) throw new Error('no 2d canvas context: cannot read colours')
-  const parsed = new Map<string, number[]>()
-  const paint = (start: string, css: string): number[] => {
-    ctx.clearRect(0, 0, 1, 1)
-    ctx.fillStyle = start
-    ctx.fillStyle = css
-    ctx.fillRect(0, 0, 1, 1)
-    return Array.from(ctx.getImageData(0, 0, 1, 1).data)
-  }
-  // Any CSS colour syntax (oklch, color-mix, …) → sRGBA, by letting the canvas parse it. An
-  // unparseable value leaves the start colour in place, so two different starts disagree.
-  const rgba = (css: string): number[] => {
-    const known = parsed.get(css)
-    if (known) return known
-    const onBlack = paint('#000000', css)
-    const onWhite = paint('#ffffff', css)
-    if (onBlack.some((v, i) => v !== onWhite[i])) throw new Error(`unparseable colour: ${css}`)
-    const out = [onBlack[0] ?? 0, onBlack[1] ?? 0, onBlack[2] ?? 0, (onBlack[3] ?? 0) / 255]
-    parsed.set(css, out)
-    return out
-  }
-  const over = (top: number[], under: number[]): number[] => {
-    const a = top[3] ?? 1
-    return [0, 1, 2, 3].map((i) => (i === 3 ? 1 : (top[i] ?? 0) * a + (under[i] ?? 0) * (1 - a)))
-  }
   const shown = (s: CSSStyleDeclaration): boolean =>
     s.visibility !== 'hidden' && s.display !== 'none' && s.opacity !== '0'
+  const filled = (c: string): boolean => c !== 'transparent' && !/(,|\/)\s*0\)$/.test(c)
   const fills = (s: CSSStyleDeclaration): boolean =>
-    shown(s) && s.content !== 'none' && (rgba(s.backgroundColor)[3] ?? 0) > 0
-  const visible = (el: Element): CSSStyleDeclaration | null => {
-    const s = getComputedStyle(el)
-    return shown(s) && el.getBoundingClientRect().width !== 0 ? s : null
-  }
-  /** The effective background: layers up to the first opaque ancestor (html/body included), composited. */
-  const backdrop = (el: Element): { color: number[]; assumedWhite: boolean } => {
-    const layers: number[][] = []
-    let opaque = false
-    for (let n: Element | null = el; n && !opaque; n = n.parentElement) {
-      const c = rgba(getComputedStyle(n).backgroundColor)
-      if ((c[3] ?? 0) > 0) layers.push(c)
-      opaque = (c[3] ?? 0) >= 0.99
+    shown(s) && s.content !== 'none' && filled(s.backgroundColor)
+  const pathOf = (el: Element): string => {
+    const parts: string[] = []
+    for (let n: Element | null = el; n && n !== root; n = n.parentElement) {
+      const cls = n.classList.item(0)
+      parts.unshift(n.tagName.toLowerCase() + (cls ? `.${cls}` : ''))
     }
-    const color = layers.toReversed().reduce((under, c) => over(c, under), [255, 255, 255, 1])
-    return { color, assumedWhite: !opaque }
+    return parts.join(' > ') || root.tagName.toLowerCase()
   }
 
   const cs = getComputedStyle(root)
   const rect = root.getBoundingClientRect()
-  const widest = Math.max(...edges(cs, 'border', '-width'))
 
   // gap: the first flex/grid box (breadth-first) that actually spaces its children.
   let gap = { row: 0, column: 0 }
@@ -166,8 +67,7 @@ export function measureAnchor(root: Element): Reading {
   for (let i = 0; i < queue.length && i < 80; i++) {
     const item = queue[i] as Element
     const s = getComputedStyle(item)
-    const row = px(s.rowGap) || 0
-    const column = px(s.columnGap) || 0
+    const [row, column] = [px(s.rowGap) || 0, px(s.columnGap) || 0]
     if ((s.display.includes('flex') || s.display.includes('grid')) && (row > 0 || column > 0)) {
       gap = { row, column }
       break
@@ -176,22 +76,17 @@ export function measureAnchor(root: Element): Reading {
   }
 
   const fontSizes = new Set<number>()
-  const texts: Reading['texts'] = []
   const painted: [number, number][] = []
   const nested: Reading['nested'] = []
-  const pathOf = (el: Element): string => {
-    const parts: string[] = []
-    for (let n: Element | null = el; n && n !== root; n = n.parentElement) {
-      const cls = n.classList.item(0)
-      parts.unshift(n.tagName.toLowerCase() + (cls ? `.${cls}` : ''))
-    }
-    return parts.join(' > ')
-  }
+  const small: string[] = []
+  const words: { el: Element; r: DOMRect }[] = []
+  const control =
+    'a[href], button, input:not([type="hidden"]), select, textarea, summary, [role="button"], [role="tab"], [role="switch"], [role="checkbox"], [role="radio"], [role="menuitem"]'
   const range = document.createRange()
   for (const el of [root, ...Array.from(root.querySelectorAll('*'))]) {
-    const s = visible(el)
-    if (!s) continue
+    const s = getComputedStyle(el)
     const r = el.getBoundingClientRect()
+    if (!shown(s) || r.width === 0) continue
     const hasBg = fills(s)
     const hasBorder = edges(s, 'border', '-width').some((w) => w > 0)
     if (el !== root && (hasBg || hasBorder) && nested.length < 60) {
@@ -216,27 +111,33 @@ export function measureAnchor(root: Element): Reading {
     ) {
       painted.push([r.top, r.bottom])
     }
+    const clipped = r.width <= 1 || r.height <= 1
+    if (el.matches(control) && s.display !== 'inline' && !clipped && !el.closest('label')) {
+      // WCAG 2.5.8: a control is at least 24 px each way.
+      if (r.width < 24 || r.height < 24) small.push(`${pathOf(el)} ${px(r.width)}x${px(r.height)}`)
+    }
     const text = Array.from(el.childNodes).filter(
       (n) => n.nodeType === Node.TEXT_NODE && n.textContent?.trim(),
     )
     if (text.length === 0) continue
-    const size = px(s.fontSize)
-    fontSizes.add(size)
+    fontSizes.add(px(s.fontSize))
     for (const node of text) {
       range.selectNodeContents(node)
       const tr = range.getBoundingClientRect()
       painted.push([tr.top, tr.bottom])
+      if (words.length < 150 && !clipped) words.push({ el, r: tr })
     }
-    const back = backdrop(el)
-    texts.push({
-      text: (text[0]?.textContent ?? '').trim().slice(0, 40),
-      fg: over(rgba(s.color), back.color),
-      bg: back.color,
-      assumedWhite: back.assumedWhite,
-      disabled: el.closest(':disabled, [aria-disabled="true"], [data-disabled]') !== null,
-      fontSize: size,
-      bold: parseInt(s.fontWeight, 10) >= 700,
-    })
+  }
+
+  // overlap: two text boxes that cover each other by more than a hairline.
+  const overlaps: string[] = []
+  for (const [i, a] of words.entries()) {
+    for (const b of words.slice(i + 1)) {
+      if (a.el.contains(b.el) || b.el.contains(a.el)) continue
+      const w = Math.min(a.r.right, b.r.right) - Math.max(a.r.left, b.r.left)
+      const h = Math.min(a.r.bottom, b.r.bottom) - Math.max(a.r.top, b.r.top)
+      if (w > 2 && h > 2 && overlaps.length < 10) overlaps.push(`${pathOf(a.el)} × ${pathOf(b.el)}`)
+    }
   }
 
   // emptyRatio: the largest vertical run (edges included) with nothing painted in it.
@@ -256,10 +157,11 @@ export function measureAnchor(root: Element): Reading {
     padding: sides(cs),
     gap,
     radius: { value: cs.borderTopLeftRadius, width: px(rect.width), height: px(rect.height) },
-    borderWidth: widest,
+    borderWidth: Math.max(...edges(cs, 'border', '-width')),
     fontSizes: [...fontSizes].toSorted((a, b) => a - b),
     nested,
     emptyRatio,
-    texts,
+    small,
+    overlaps,
   }
 }

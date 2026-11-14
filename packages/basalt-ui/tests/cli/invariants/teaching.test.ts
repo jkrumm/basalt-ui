@@ -59,7 +59,8 @@ function metrics(over: Partial<ShotMetrics> = {}): ShotMetrics {
         fontSizes: [12, 14],
         nested: [],
         emptyRatio: 0.1,
-        contrast: { min: 7, failures: [] },
+        small: [],
+        overlaps: [],
       },
     ],
     shots: [],
@@ -68,16 +69,12 @@ function metrics(over: Partial<ShotMetrics> = {}): ShotMetrics {
 }
 
 describe('teaching loop', () => {
-  // flips in: v3-sk-10-shot (--out is required and must not exist yet)
-  it.failing(
-    'inv 31: a round writes to a fresh --out: omitted or already present is refused',
-    () => {
-      const dir = makeRepo()
-      expect(() => parseShotArgs(['/', '--dist', 'dist'], { env: {}, cwd: dir })).toThrow(/--out/)
-      mkdirSync(join(dir, 'shots'))
-      expect(() => planOut(dir, 'shots')).toThrow(/fresh|exists/)
-    },
-  )
+  it('inv 31: a round writes to a fresh --out: omitted or already present is refused', () => {
+    const dir = makeRepo()
+    expect(() => parseShotArgs(['/', '--dist', 'dist'], { env: {}, cwd: dir })).toThrow(/--out/)
+    mkdirSync(join(dir, 'shots'))
+    expect(() => planOut(dir, 'shots')).toThrow(/fresh|exists/)
+  })
 
   // Already held by `detect`; v3-sk-10-shot must keep it when the scale reads the app's steps.
   it("inv 32: the scale includes the app's own steps, so an app step is not off-scale", () => {
@@ -109,31 +106,27 @@ describe('teaching loop', () => {
     for (const [, axis, n] of cited) expect(known[axis!]).toContain(Number(n))
   })
 
-  // flips in: v3-sk-10-shot (anchors declare through data-phase or data-shot-states)
-  it.failing(
-    'inv 35: every state anchor declares (data-phase or data-shot-states) or is excluded by data-shot-absent',
-    () => {
-      const capture = read(join(PKG_ROOT, 'src/cli/shot/capture.ts'))
-      for (const attr of ['data-phase', 'data-shot-states', 'data-shot-absent']) {
-        expect(capture).toContain(attr)
-      }
-      const stateful = metrics({
-        shots: [
-          {
-            route: '/',
-            name: 'card',
-            scheme: 'light',
-            viewport: 'desktop',
-            state: 'rest',
-            file: 'png/a.png',
-            status: 'ok',
-            stateful: true,
-          },
-        ],
-      })
-      expect(detectFindings(stateful).map((f) => f.rule)).toContain('craft-7/no-declared-states')
-    },
-  )
+  it('inv 35: every state anchor declares (data-phase or data-shot-states) or is excluded by data-shot-absent', () => {
+    const capture = read(join(PKG_ROOT, 'src/cli/shot/capture.ts'))
+    for (const attr of ['data-phase', 'data-shot-states', 'data-shot-absent']) {
+      expect(capture).toContain(attr)
+    }
+    const ignored = metrics({
+      shots: [
+        {
+          route: '/',
+          name: 'card',
+          scheme: 'light',
+          viewport: '1800x1200',
+          state: 'loading',
+          file: 'png/a.png',
+          status: 'ok',
+          ignored: true,
+        },
+      ],
+    })
+    expect(detectFindings(ignored).map((f) => f.rule)).toContain('craft-7/states-ignored')
+  })
 
   it('inv 39: one calibrated bar: P0 and P1 fail, a single bar sentence, no second threshold', () => {
     const text = read(rubricFile)

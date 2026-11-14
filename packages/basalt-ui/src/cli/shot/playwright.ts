@@ -1,7 +1,6 @@
 /**
  * Playwright, resolved from the CONSUMER (it is not a basalt dependency) and typed through the
- * minimal structural surface `shot` uses — the package never imports Playwright at build time.
- * The real `playwright-core` types satisfy this surface, so callers keep their own types.
+ * minimal structural surface `shot` uses: the package never imports it at build time.
  */
 import { createRequire } from 'node:module'
 import { join } from 'node:path'
@@ -11,14 +10,7 @@ import type { Scheme } from './types'
 export const INSTALL_LINE =
   'basalt-ui shot needs Playwright: bun add -d playwright && bunx playwright install chromium'
 
-const KILL_TIMEOUT_MS = 10_000
-
-/**
- * A headless Chromium with no pointing device reports `(hover: none) (pointer: coarse)`, so no
- * `@media (hover: hover)` rule applies in a desktop hover shot. These blink settings make the
- * browser's primary input a mouse (hover 2, fine 4); a `hasTouch` mobile context still emulates
- * touch over them.
- */
+/** A headless Chromium reports `(hover: none)`; these make its primary input a mouse so `@media (hover: hover)` applies. */
 export const POINTER_ARGS = [
   '--blink-settings=primaryHoverType=2,availableHoverTypes=2,primaryPointerType=4,availablePointerTypes=4',
 ]
@@ -36,8 +28,9 @@ export type ShotOptions = {
 
 export type PwLocator = {
   first(): PwLocator
+  last(): PwLocator
   count(): Promise<number>
-  hover(options?: { timeout?: number; position?: { x: number; y: number } }): Promise<void>
+  hover(options?: { timeout?: number }): Promise<void>
   boundingBox(): Promise<Box | null>
   waitFor(options: { state: 'visible'; timeout: number }): Promise<void>
   screenshot(options: ShotOptions): Promise<unknown>
@@ -77,14 +70,11 @@ export type PwBrowser<C extends PwContext = PwContext> = {
 }
 
 type PwServer = { wsEndpoint(): string; kill(): Promise<void> }
+type LaunchOptions = { channel?: string; chromiumSandbox: boolean; args: string[] }
 export type Playwright<B extends PwBrowser = PwBrowser> = {
   chromium: {
-    launchServer(options: {
-      channel?: string
-      chromiumSandbox: boolean
-      args: string[]
-    }): Promise<PwServer>
-    connect(wsEndpoint: string): Promise<B>
+    launchServer(options: LaunchOptions): Promise<PwServer>
+    connect(ws: string): Promise<B>
   }
 }
 
@@ -118,41 +108,36 @@ const firstLine = (error: unknown): string =>
 
 /** `kill()` bounded by a hang guard: a graceful stop can wedge under Bun. */
 function killBounded(server: PwServer): Promise<unknown> {
-  const guard = new Promise((resolve) => setTimeout(resolve, KILL_TIMEOUT_MS).unref())
+  const guard = new Promise((resolve) => setTimeout(resolve, 10_000).unref())
   return Promise.race([server.kill().catch(() => undefined), guard])
 }
 
-export type LaunchOptions = {
-  /** Tried in order; `undefined` is the bundled chromium. Default: bundled, then `chrome`. */
-  channels?: readonly (string | undefined)[]
-  /** Receives this run's kill, so the caller's signal handler can stop it. */
-  stops?: (() => unknown)[]
-}
-
 /**
- * One Chrome for `fn`, killed afterwards. `launchServer` + `connect` + `kill()` — a graceful
- * `close()` hangs under Bun. Every failed launch keeps its first error line for the final message.
+ * One Chrome for `fn` (bundled, then `chrome`), killed afterwards: `launchServer` + `connect` +
+ * `kill()`, because a graceful `close()` hangs under Bun. `stops` receives this run's kill.
  */
 export async function withBrowser<B extends PwBrowser, T>(
   pw: Playwright<B>,
   fn: (browser: B, channel: string) => Promise<T>,
-  { channels = [undefined, 'chrome'], stops }: LaunchOptions = {},
+  {
+    channels = [undefined, 'chrome'],
+    stops,
+  }: { channels?: readonly (string | undefined)[]; stops?: (() => unknown)[] } = {},
 ): Promise<T> {
   const chromiumSandbox = !process.env['CI']
   const failures: string[] = []
   for (const channel of channels) {
-    const label = channel ?? 'bundled chromium'
     let server: PwServer | undefined
     let browser: B
     try {
-      server = await pw.chromium.launchServer(
-        channel
-          ? { channel, chromiumSandbox, args: POINTER_ARGS }
-          : { chromiumSandbox, args: POINTER_ARGS },
-      )
+      server = await pw.chromium.launchServer({
+        ...(channel && { channel }),
+        chromiumSandbox,
+        args: POINTER_ARGS,
+      })
       browser = await pw.chromium.connect(server.wsEndpoint())
     } catch (error) {
-      failures.push(`  ${label}: ${firstLine(error)}`)
+      failures.push(`  ${channel ?? 'bundled chromium'}: ${firstLine(error)}`)
       if (server) await killBounded(server)
       continue
     }

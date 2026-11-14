@@ -1,59 +1,41 @@
 import { afterEach, describe, expect, test } from 'bun:test'
-import {
-  existsSync,
-  mkdirSync,
-  mkdtempSync,
-  readFileSync,
-  rmSync,
-  symlinkSync,
-  writeFileSync,
-} from 'node:fs'
+import { existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 
-import { buildBoard } from './board'
+import { unknownFlag } from '../help'
+import { buildBoard, buildSheet } from './board'
 import {
   capture,
-  describedByOf,
   fileName,
-  groupScale,
-  hasFocusTarget,
-  hoverAtOf,
-  hoverTrigger,
-  markVisibleTooltips,
-  muteOtherTooltips,
-  unmuteTooltips,
-  clearStrayTooltips,
-  visibleTooltipCount,
-  claimOwnTooltip,
   openContext,
-  parseHoverAt,
-  readScaleInPage,
+  readFactsInPage,
   sheetName,
   snapClip,
   tagAutoAnchors,
-  tooltipSelector,
   unionClip,
-  visibleTooltip,
   withParam,
 } from './capture'
-import { unknownFlag } from '../help'
-import {
-  commitOut,
-  parseShotArgs,
-  planOut,
-  recoverOut,
-  sanitizeBase,
-  shot,
-  sweepStaleTmp,
-} from './index'
-import { contrastRatio, contrastThreshold, finishMeasurement, radiusReading } from './measure'
-import type { TextReading } from './measure'
+import type { CaptureInput } from './capture'
+import { manifestViewports, parseShotArgs, planOut, sanitizeBase, shot } from './index'
+import { finishMeasurement, radiusReading } from './measure'
 import { INSTALL_LINE, ShotError, isPlaywright, withBrowser } from './playwright'
 import type { Playwright } from './playwright'
 import { seedScript } from './real-data'
 import { serveDist } from './serve'
-import type { Measurement, ShotMetrics, ShotRecord } from './types'
+import { NO_STATES_NOTE, parseViewport } from './types'
+import type { Measurement, ShotMetrics, ShotRecord, ViewportSpec } from './types'
+
+const DESKTOP = '1800x1200'
+const PHONE = '390x844'
+
+const specs = (...labels: string[]): ViewportSpec[] =>
+  labels.map((l) => {
+    const spec = parseViewport(l)
+    if (!spec) throw new Error(`bad viewport ${l}`)
+    return spec
+  })
+const SPECS = specs(DESKTOP, PHONE)
 
 const dirs: string[] = []
 const tmp = (): string => {
@@ -64,7 +46,10 @@ const tmp = (): string => {
 afterEach(() => dirs.splice(0).forEach((d) => rmSync(d, { recursive: true, force: true })))
 // the happy-dom document is shared with every later file in the run: leave it empty
 afterEach(() => {
-  if (typeof document !== 'undefined') document.body.innerHTML = ''
+  if (typeof document !== 'undefined') {
+    document.body.innerHTML = ''
+    document.head.innerHTML = ''
+  }
 })
 
 /** Captures `console.error` for the duration of `fn`. */
@@ -88,18 +73,15 @@ const measurement: Measurement = {
   fontSizes: [12, 24],
   nested: [{ path: 'div.inner', radius: 6, padding: { top: 4, right: 4, bottom: 4, left: 4 } }],
   emptyRatio: 0.25,
-  contrast: {
-    min: 2.1,
-    failures: [{ text: 'Muted <b>', ratio: 2.1, fg: '#aaaaaa', bg: '#ffffff', fontSize: 12 }],
-    backdrop: 'assumed-white',
-  },
+  small: [],
+  overlaps: [],
 }
 
 const record = (over: Partial<ShotRecord>): ShotRecord => ({
   route: '/dashboard',
   name: 'stat-card',
   scheme: 'light',
-  viewport: 'desktop',
+  viewport: DESKTOP,
   state: 'rest',
   file: null,
   status: 'ok',
@@ -111,20 +93,20 @@ const fakeMetrics = (): ShotMetrics => ({
   generatedAt: '2026-10-16T00:00:00.000Z',
   base: 'http://127.0.0.1:1',
   routes: ['/dashboard'],
-  viewports: ['desktop', 'mobile'],
+  viewports: [DESKTOP, PHONE],
   schemes: ['light', 'dark'],
   states: ['rest', 'tooltip'],
   scale: [
     {
       scheme: 'light',
-      viewport: 'desktop',
+      viewport: DESKTOP,
       spacing: { xs: 10, sm: 12 },
       radius: { md: 8, card: 7 },
       fontSizes: { sm: 14 },
     },
     {
       scheme: 'dark',
-      viewport: 'desktop',
+      viewport: DESKTOP,
       spacing: { xs: 10, sm: 12 },
       radius: { md: 8, card: 7 },
       fontSizes: { sm: 14 },
@@ -135,10 +117,11 @@ const fakeMetrics = (): ShotMetrics => ({
       route: '/dashboard',
       name: 'stat-card',
       scheme: 'light',
-      viewport: 'desktop',
+      viewport: DESKTOP,
       ...measurement,
     },
   ],
+  pages: [{ route: '/dashboard', scheme: 'light', viewport: PHONE, overflowX: 12 }],
   shots: [
     record({ name: '_page', file: 'png/p.png' }),
     record({ file: 'png/a.png', note: 'anchor only present in this state' }),
@@ -151,9 +134,9 @@ const fakeMetrics = (): ShotMetrics => ({
     record({
       scheme: 'dark',
       state: 'tooltip',
-      viewport: 'mobile',
+      viewport: PHONE,
       status: 'skipped',
-      note: 'desktop only',
+      note: 'touch viewport',
     }),
   ],
 })
@@ -174,6 +157,108 @@ const fakePw = (failing: readonly (string | undefined)[], log: string[] = []): P
   },
 })
 
+// ── fake browser plumbing ──────────────────────────────────────────────────────────────────────
+
+type FactsLike = {
+  anchors: string[]
+  states: Record<string, string[]>
+  absent: Record<string, string[]>
+  content: string
+  overflowX: number
+}
+const facts = (over: Partial<FactsLike> = {}): FactsLike => ({
+  anchors: [],
+  states: {},
+  absent: {},
+  content: '',
+  overflowX: 0,
+  ...over,
+})
+const NO_SCALE = { spacing: {}, radius: {}, fontSizes: {} }
+
+/** `page.evaluate` as the real page answers it: facts for the facts reader, a scale for the scale reader. */
+const evaluating =
+  (
+    read: () => unknown = () => facts(),
+    scale: () => unknown = () => NO_SCALE,
+    other: (expression: unknown) => unknown = () => undefined,
+  ) =>
+  (e: unknown, _arg?: unknown): Promise<unknown> => {
+    if (e === readFactsInPage) return Promise.resolve().then(read)
+    if (typeof e === 'function')
+      return Promise.resolve().then(() => (e.name === 'readScaleInPage' ? scale() : undefined))
+    return Promise.resolve().then(() => other(e))
+  }
+
+const NO_TIP: Record<string, unknown> = {
+  first: () => NO_TIP,
+  last: () => NO_TIP,
+  count: () => Promise.resolve(0),
+  waitFor: () => Promise.reject(new Error('no tooltip')),
+  boundingBox: () => Promise.resolve(null),
+}
+/** The anchor locator, or `tip` for any tooltip selector. */
+const byTooltip =
+  (anchor: unknown, tip: unknown = NO_TIP) =>
+  (selector: string) =>
+    selector.includes('tooltip') ? tip : anchor
+
+const BOX = { x: 0, y: 0, width: 10, height: 10 }
+/** A visible anchor whose every Playwright call succeeds. */
+const visibleAnchor = (over: Record<string, unknown> = {}): Record<string, unknown> => {
+  const anchor: Record<string, unknown> = {
+    first: () => anchor,
+    count: () => Promise.resolve(1),
+    hover: () => Promise.resolve(),
+    boundingBox: () => Promise.resolve(BOX),
+    screenshot: () => Promise.resolve(),
+    evaluate: () => Promise.resolve(''),
+    ...over,
+  }
+  return anchor
+}
+
+const pageOf = (over: Record<string, unknown> = {}): Record<string, unknown> => ({
+  setDefaultTimeout: () => undefined,
+  setViewportSize: () => Promise.resolve(),
+  goto: () => Promise.resolve(),
+  locator: byTooltip(visibleAnchor()),
+  screenshot: () => Promise.resolve(),
+  setContent: () => Promise.resolve(),
+  mouse: { move: () => Promise.resolve() },
+  keyboard: { press: () => Promise.resolve() },
+  evaluate: evaluating(),
+  ...over,
+})
+
+/** A browser whose one page behaves as `page` says; enough of the surface for the real `capture`. */
+const scriptedBrowser = (page: Record<string, unknown>) =>
+  ({
+    newContext: () =>
+      Promise.resolve({
+        newPage: () => Promise.resolve(page),
+        addInitScript: () => Promise.resolve(),
+        close: () => Promise.resolve(),
+      }),
+  }) as never
+
+const input = (browser: never, over: Partial<CaptureInput> = {}): CaptureInput => ({
+  browser,
+  base: 'http://x',
+  routes: ['/'],
+  viewports: SPECS,
+  states: ['rest'],
+  pngDir: '/unused',
+  log: () => undefined,
+  ...over,
+})
+
+/** A page with one `card` anchor, for tests that only need the shots to exist. */
+const cardPage = (over: Record<string, unknown> = {}) =>
+  pageOf({ evaluate: evaluating(() => facts({ anchors: ['card'] })), ...over })
+
+// ── tests ──────────────────────────────────────────────────────────────────────────────────────
+
 describe('withBrowser launch flags', () => {
   test('launches Chrome with the blink pointer settings so desktop contexts hover', async () => {
     const args: string[][] = []
@@ -193,62 +278,108 @@ describe('withBrowser launch flags', () => {
 })
 
 describe('parseShotArgs', () => {
-  test('routes, --dist, defaults', () => {
-    const a = parseShotArgs(['/', '/dashboard', '--dist', 'dist'])
+  const src = () => ({ env: {}, cwd: tmp() })
+  test('routes, --dist, --out, defaults', () => {
+    const a = parseShotArgs(['/', '/dashboard', '--dist', 'dist', '--out', 'shots-1'], src())
     expect(a.routes).toEqual(['/', '/dashboard'])
-    expect(a.out).toBe('.basalt/shots/latest')
+    expect(a.out).toBe('shots-1')
     expect(a.states).toEqual(['rest', 'hover', 'focus', 'tooltip', 'empty', 'loading', 'error'])
+    expect(a.viewports.map((v) => [v.label, v.mobile])).toEqual([
+      [DESKTOP, false],
+      [PHONE, true],
+    ])
+  })
+  test('--out is required', () => {
+    expect(() => parseShotArgs(['/', '--dist', 'dist'], src())).toThrow(ShotError)
+    expect(() => parseShotArgs(['/', '--dist', 'dist'], src())).toThrow(/--out <dir> is required/)
   })
   test('--states keeps canonical order', () => {
-    expect(parseShotArgs(['/', '--base', 'http://x/', '--states', 'focus,rest']).states).toEqual([
+    const flags = ['/', '--base', 'http://x/', '--out', 'o']
+    expect(parseShotArgs([...flags, '--states', 'focus,rest'], src()).states).toEqual([
       'rest',
       'focus',
     ])
-    expect(parseShotArgs(['/', '--base', 'http://x/']).base).toBe('http://x')
+    expect(parseShotArgs(flags, src()).base).toBe('http://x')
   })
   test.each([
     [[], /no route/],
     [['/a'], /exactly one of --base/],
     [['/a', '--base', 'http://x', '--dist', 'd'], /exactly one of --base/],
     [['a', '--dist', 'd'], /must start with '\//],
-    [['/a', '--dist', 'd', '--states', 'rest,nope'], /unknown state 'nope'/],
+    [['/a', '--dist', 'd', '--out', 'o', '--states', 'rest,nope'], /unknown state 'nope'/],
     [['/a', '--dist', 'd', '--bogus'], /bogus/],
     [['/a /b', '--dist', 'd'], /separate argument|its own argument/],
   ])('rejects %j', (flags, message) => {
-    expect(() => parseShotArgs(flags)).toThrow(ShotError)
-    expect(() => parseShotArgs(flags)).toThrow(message)
+    expect(() => parseShotArgs(flags, src())).toThrow(ShotError)
+    expect(() => parseShotArgs(flags, src())).toThrow(message)
   })
   test('the help.ts gate lets shot take routes but still names an unknown flag', () => {
     expect(unknownFlag('shot', ['/', '/dashboard', '--dist', 'd', '--states', 'rest'])).toBeNull()
+    expect(unknownFlag('shot', ['/', '--out', 'o'])).toBeNull()
     expect(unknownFlag('shot', ['/', '--bogus'])).toBe('--bogus')
+  })
+
+  describe('manifest viewports', () => {
+    const withManifest = (viewports: unknown): string => {
+      const cwd = tmp()
+      mkdirSync(join(cwd, '.basalt'))
+      writeFileSync(
+        join(cwd, '.basalt/manifest.json'),
+        JSON.stringify({ profile: 'app', version: '3.0.0', viewports }),
+      )
+      return cwd
+    }
+    test('a desktop-only manifest yields no phone viewport and no failure', () => {
+      const cwd = withManifest(['1440x900', '1024x700'])
+      const a = parseShotArgs(['/', '--dist', 'd', '--out', 'o'], { env: {}, cwd })
+      expect(a.viewports.map((v) => [v.label, v.width, v.height, v.mobile])).toEqual([
+        ['1440x900', 1440, 900, false],
+        ['1024x700', 1024, 700, false],
+      ])
+    })
+    test('is found from a subdirectory, walking up', () => {
+      const cwd = withManifest(['1440x900'])
+      mkdirSync(join(cwd, 'apps/web'), { recursive: true })
+      expect(manifestViewports(join(cwd, 'apps/web')).map((v) => v.label)).toEqual(['1440x900'])
+    })
+    test('a manifest declaring none falls back to the defaults', () => {
+      expect(manifestViewports(withManifest([])).map((v) => v.label)).toEqual([DESKTOP, PHONE])
+    })
+    test('a viewport that is not <width>x<height> is a ShotError', () => {
+      expect(() => manifestViewports(withManifest(['desktop']))).toThrow(ShotError)
+      expect(() => manifestViewports(withManifest(['desktop']))).toThrow(
+        /'desktop' is not <width>x<height>/,
+      )
+    })
+    test('parseViewport: under 600 px wide is a phone', () => {
+      expect(parseViewport('599x800')?.mobile).toBe(true)
+      expect(parseViewport('600x800')?.mobile).toBe(false)
+      expect(parseViewport('wide')).toBeNull()
+    })
   })
 })
 
 describe('planOut', () => {
-  const seed = (cwd: string, rel: string, file = 'x.txt'): void => {
-    mkdirSync(join(cwd, rel), { recursive: true })
-    writeFileSync(join(cwd, rel, file), 'data')
-  }
-  test('refuses a populated dir that is not a previous shot (--out src)', () => {
+  test('accepts a directory that does not exist yet, however deep', () => {
     const cwd = tmp()
-    seed(cwd, 'src')
-    expect(() => planOut(cwd, 'src')).toThrow(/not purely a previous shot output/)
-    expect(existsSync(join(cwd, 'src/x.txt'))).toBe(true)
+    for (const out of ['absent', 'a/b/absent', '..shots', '.basalt/shots-2', 'shots-1']) {
+      expect(planOut(cwd, out), out).toBe(join(cwd, out))
+      expect(existsSync(join(cwd, out)), out).toBe(false)
+    }
   })
-  test('refuses the project root, escapes, files and protected dirs', () => {
+  test('refuses a directory or file that exists: every round is fresh', () => {
     const cwd = tmp()
+    mkdirSync(join(cwd, 'src'))
     writeFileSync(join(cwd, 'file'), '')
-    for (const out of [
-      '.',
-      '..',
-      '../elsewhere',
-      '/',
-      'file',
-      '.git',
-      'a/.git/b',
-      'node_modules/x',
-      '.basalt',
-    ]) {
+    for (const out of ['src', 'file']) {
+      expect(() => planOut(cwd, out), out).toThrow(ShotError)
+      expect(() => planOut(cwd, out), out).toThrow(/exists already/)
+    }
+    expect(existsSync(join(cwd, 'src'))).toBe(true)
+  })
+  test('refuses the project root, escapes and protected dirs', () => {
+    const cwd = tmp()
+    for (const out of ['.', '..', '../elsewhere', '/', '.git', 'a/.git/b', 'node_modules/x']) {
       expect(() => planOut(cwd, out), out).toThrow(ShotError)
     }
   })
@@ -257,103 +388,6 @@ describe('planOut', () => {
     expect(() => planOut(cwd, '..')).toThrow(
       `inside the project (${cwd}; in a monorepo, the app dir)`,
     )
-  })
-  test('refuses a symlinked target and a symlinked ancestor', () => {
-    const cwd = tmp()
-    const elsewhere = tmp()
-    symlinkSync(elsewhere, join(cwd, 'link'))
-    expect(() => planOut(cwd, 'link')).toThrow(/symlink/)
-    expect(() => planOut(cwd, 'link/new')).toThrow(/outside the project/)
-  })
-  test('accepts absent, empty, own-files-only, previous-run and `..shots` dirs', () => {
-    const cwd = tmp()
-    mkdirSync(join(cwd, 'empty'))
-    seed(cwd, 'prev', 'metrics.json')
-    writeFileSync(join(cwd, 'prev/metrics.json'), '{"version":1}')
-    for (const out of [
-      'absent',
-      'a/b/absent',
-      'empty',
-      'prev',
-      '..shots',
-      '.basalt/shots/latest',
-    ]) {
-      expect(planOut(cwd, out), out).toBe(join(cwd, out))
-    }
-  })
-  test('a previous-shot dir with a foreign file is refused; shot-owned entries are fine', () => {
-    const cwd = tmp()
-    seed(cwd, 'prev', 'metrics.json')
-    writeFileSync(join(cwd, 'prev/metrics.json'), '{"version":1}')
-    mkdirSync(join(cwd, 'prev/png'))
-    writeFileSync(join(cwd, 'prev/board.html'), '')
-    writeFileSync(join(cwd, 'prev/.gitignore'), '*\n')
-    expect(planOut(cwd, 'prev')).toBe(join(cwd, 'prev'))
-    writeFileSync(join(cwd, 'prev/notes.md'), 'mine')
-    expect(() => planOut(cwd, 'prev')).toThrow(/not purely a previous shot output/)
-  })
-  test('the shot home itself is refused', () => {
-    expect(() => planOut(tmp(), '.basalt/shots')).toThrow(/shot home/)
-  })
-  test('a dangling symlink target or ancestor is a ShotError, not a stack trace', () => {
-    const cwd = tmp()
-    symlinkSync(join(cwd, 'nowhere'), join(cwd, 'dangling'))
-    expect(() => planOut(cwd, 'dangling')).toThrow(ShotError)
-    expect(() => planOut(cwd, 'dangling/inner')).toThrow(/dangling symlink/)
-  })
-  test('a metrics.json that is not version 1 is not a marker', () => {
-    const cwd = tmp()
-    seed(cwd, 'prev', 'metrics.json')
-    writeFileSync(join(cwd, 'prev/metrics.json'), '{"version":2}')
-    expect(() => planOut(cwd, 'prev')).toThrow(ShotError)
-  })
-})
-
-describe('commitOut', () => {
-  test('swaps the render in and writes last.json last', () => {
-    const cwd = tmp()
-    mkdirSync(join(cwd, 'design/x'), { recursive: true })
-    writeFileSync(join(cwd, 'design/x/metrics.json'), '{"version":1}')
-    writeFileSync(join(cwd, 'design/x/board.html'), 'old')
-    mkdirSync(join(cwd, 'design/x.tmp'))
-    writeFileSync(join(cwd, 'design/x.tmp/board.html'), 'new')
-    commitOut(cwd, 'design/x', join(cwd, 'design/x.tmp'), ['/'], new Date(0))
-    expect(existsSync(join(cwd, 'design/x.prev'))).toBe(false)
-    expect(readFileSync(join(cwd, 'design/x/board.html'), 'utf8')).toBe('new')
-    expect(readFileSync(join(cwd, '.basalt/shots/.gitignore'), 'utf8')).toBe('*\n')
-    expect(JSON.parse(readFileSync(join(cwd, '.basalt/shots/last.json'), 'utf8')).out).toBe(
-      'design/x',
-    )
-  })
-  test('creates the out dir parent when it does not exist yet', () => {
-    const cwd = tmp()
-    mkdirSync(join(cwd, 'x.tmp'))
-    writeFileSync(join(cwd, 'x.tmp/board.html'), 'new')
-    commitOut(cwd, 'missing/parent/x', join(cwd, 'x.tmp'), ['/'], new Date(0))
-    expect(readFileSync(join(cwd, 'missing/parent/x/board.html'), 'utf8')).toBe('new')
-  })
-})
-
-describe('recoverOut', () => {
-  test('rolls a leftover .prev back when there is no out; leaves it when out exists', () => {
-    const cwd = tmp()
-    mkdirSync(join(cwd, 'x.prev'))
-    writeFileSync(join(cwd, 'x.prev/board.html'), 'old')
-    recoverOut(join(cwd, 'x'))
-    expect(readFileSync(join(cwd, 'x/board.html'), 'utf8')).toBe('old')
-    expect(existsSync(join(cwd, 'x.prev'))).toBe(false)
-  })
-  test('shot() rolls back before doing anything else, even when the launch then fails', async () => {
-    const cwd = tmp()
-    mkdirSync(join(cwd, 'x.prev'))
-    writeFileSync(join(cwd, 'x.prev/metrics.json'), '{"version":1}')
-    const { result } = await errors(() =>
-      shot(['/', '--base', 'http://x', '--out', 'x'], cwd, {
-        resolve: () => fakePw([undefined, 'chrome']),
-      }),
-    )
-    expect(result).toBe(1)
-    expect(existsSync(join(cwd, 'x/metrics.json'))).toBe(true)
   })
 })
 
@@ -369,70 +403,27 @@ describe('sanitizeBase', () => {
 
 describe('fileName', () => {
   test('routes and names that slug alike still get distinct files', () => {
-    expect(fileName('/a/b', 'n', 'light', 'desktop', 'rest')).not.toBe(
-      fileName('/a-b', 'n', 'light', 'desktop', 'rest'),
+    expect(fileName('/a/b', 'n', 'light', DESKTOP, 'rest')).not.toBe(
+      fileName('/a-b', 'n', 'light', DESKTOP, 'rest'),
     )
-    expect(fileName('/', 'x y', 'light', 'desktop', 'rest')).not.toBe(
-      fileName('/', 'x-y', 'light', 'desktop', 'rest'),
+    expect(fileName('/', 'x y', 'light', DESKTOP, 'rest')).not.toBe(
+      fileName('/', 'x-y', 'light', DESKTOP, 'rest'),
     )
-    expect(fileName('/a', 'n', 'dark', 'mobile', 'hover')).toMatch(
-      /^a-[0-9a-f]{6}__n-[0-9a-f]{6}__dark__mobile__hover\.png$/,
+    expect(fileName('/a', 'n', 'dark', PHONE, 'hover')).toMatch(
+      /^a-[0-9a-f]{6}__n-[0-9a-f]{6}__dark__390x844__hover\.png$/,
     )
   })
 })
 
 describe('capture() with a fake browser', () => {
-  const fakeBrowser = (scale: () => unknown) => {
-    const locator: Record<string, unknown> = {
-      first: () => locator,
-      count: () => Promise.resolve(1),
-      evaluate: () => Promise.resolve(''),
-      screenshot: () => Promise.resolve(),
-    }
-    const page = {
-      setDefaultTimeout: () => undefined,
-      goto: () => Promise.resolve(),
-      locator: () => locator,
-      screenshot: () => Promise.resolve(),
-      mouse: { move: () => Promise.resolve() },
-      keyboard: { press: () => Promise.resolve() },
-      setContent: () => Promise.resolve(),
-      evaluate: (expression: unknown) => {
-        if (typeof expression === 'function')
-          return Promise.resolve().then(() =>
-            expression.name === 'readScaleInPage' ? scale() : undefined,
-          )
-        if (String(expression).includes('data-shot-states'))
-          return Promise.resolve({ anchors: ['card'], declared: [] })
-        return Promise.resolve(undefined)
-      },
-    }
-    return {
-      newContext: () =>
-        Promise.resolve({
-          newPage: () => Promise.resolve(page),
-          addInitScript: () => Promise.resolve(),
-          close: () => Promise.resolve(),
-        }),
-    } as never
-  }
-  const input = (browser: never, over: object = {}) => ({
-    browser,
-    base: 'http://x',
-    routes: ['/'],
-    states: ['rest' as const],
-    pngDir: '/unused',
-    log: () => undefined,
-    ...over,
-  })
+  const browserWith = (scale: () => unknown) =>
+    scriptedBrowser(pageOf({ evaluate: evaluating(() => facts({ anchors: ['card'] }), scale) }))
 
   test('a throwing measurer keeps the PNG ok and notes the failure separately', async () => {
     const out = await capture(
       input(
-        fakeBrowser(() => ({ spacing: {}, radius: {}, fontSizes: {} })),
-        {
-          measure: () => Promise.reject(new Error('canvas gone\nstack')),
-        },
+        browserWith(() => NO_SCALE),
+        { measure: () => Promise.reject(new Error('canvas gone\nstack')) },
       ),
     )
     const card = out.shots.filter((s) => s.name === 'card')
@@ -446,7 +437,7 @@ describe('capture() with a fake browser', () => {
   test('a readScale failure is non-fatal and visible: shots record, scale is empty, scaleError says why', async () => {
     const out = await capture(
       input(
-        fakeBrowser(() => {
+        browserWith(() => {
           throw new Error('no probe')
         }),
         { measure: () => Promise.resolve(measurement) },
@@ -457,59 +448,131 @@ describe('capture() with a fake browser', () => {
     expect(out.shots.filter((s) => s.status === 'ok')).toHaveLength(8)
     expect(out.anchors).toHaveLength(4)
   })
+
+  test('records ok, skipped and not-declared per anchor, state and viewport', async () => {
+    const page = pageOf({
+      evaluate: evaluating(() =>
+        facts({ anchors: ['card', 'plain'], states: { card: ['empty'], plain: [] } }),
+      ),
+    })
+    const out = await capture(
+      input(scriptedBrowser(page), {
+        states: ['rest', 'hover', 'empty'],
+        measure: () => Promise.resolve(measurement),
+      }),
+    )
+    const at = (name: string, state: string, viewport: string) => [
+      ...new Set(
+        out.shots
+          .filter((s) => s.name === name && s.state === state && s.viewport === viewport)
+          .map((s) => s.status),
+      ),
+    ]
+    expect(at('_page', 'rest', DESKTOP)).toEqual(['ok'])
+    expect(at('card', 'rest', PHONE)).toEqual(['ok'])
+    expect(at('card', 'hover', DESKTOP)).toEqual(['ok'])
+    expect(at('card', 'hover', PHONE)).toEqual(['skipped'])
+    expect(at('card', 'empty', DESKTOP)).toEqual(['ok'])
+    expect(at('plain', 'empty', DESKTOP)).toEqual(['not-declared'])
+    const plain = out.shots.find((s) => s.name === 'plain' && s.state === 'empty')
+    expect(plain).toMatchObject({ file: null, note: 'anchor does not declare this state' })
+    expect(out.shots.every((s) => s.ignored === undefined)).toBe(true)
+  })
+
+  test('a state shot byte-equal to the same anchor’s rest shot is `ignored`; a different one is not', async () => {
+    const dir = tmp()
+    const writing = (empty: string) =>
+      visibleAnchor({
+        screenshot: (o: { path: string }) => {
+          writeFileSync(o.path, o.path.includes('__empty') ? empty : 'rest-bytes')
+          return Promise.resolve()
+        },
+      })
+    const run = async (empty: string) =>
+      capture(
+        input(
+          scriptedBrowser(
+            pageOf({
+              locator: byTooltip(writing(empty)),
+              evaluate: evaluating(() => facts({ anchors: ['card'], states: { card: ['empty'] } })),
+            }),
+          ),
+          {
+            states: ['rest', 'empty'],
+            pngDir: dir,
+            viewports: specs(DESKTOP),
+            measure: () => Promise.resolve(measurement),
+          },
+        ),
+      )
+    const same = await run('rest-bytes')
+    const shots = same.shots.filter((s) => s.name === 'card' && s.state === 'empty')
+    expect(shots.length).toBeGreaterThan(0)
+    expect(shots.every((s) => s.status === 'ok' && s.ignored === true)).toBe(true)
+    expect(same.shots.some((s) => s.state === 'rest' && s.ignored)).toBe(false)
+    const different = await run('empty-bytes')
+    expect(different.shots.some((s) => s.ignored)).toBe(false)
+  })
+
+  test('a page wider than its viewport is recorded per scheme × viewport', async () => {
+    const out = await capture(
+      input(scriptedBrowser(pageOf({ evaluate: evaluating(() => facts({ overflowX: 12 })) }))),
+    )
+    expect(out.pages).toHaveLength(4)
+    expect(out.pages?.every((p) => p.overflowX === 12 && p.route === '/')).toBe(true)
+    expect(out.pages?.map((p) => `${p.scheme}/${p.viewport}`).toSorted()).toEqual([
+      `dark/${DESKTOP}`,
+      `dark/${PHONE}`,
+      `light/${DESKTOP}`,
+      `light/${PHONE}`,
+    ])
+  })
+
+  test('a desktop-only viewport list records no phone shot, no skip and no failure', async () => {
+    const out = await capture(
+      input(scriptedBrowser(cardPage()), {
+        viewports: specs('1440x900'),
+        states: ['rest', 'hover', 'tooltip'],
+        measure: () => Promise.resolve(measurement),
+      }),
+    )
+    expect(out.shots.length).toBeGreaterThan(0)
+    expect(out.shots.every((s) => s.viewport === '1440x900')).toBe(true)
+    expect(out.shots.some((s) => s.status === 'skipped' || s.status === 'error')).toBe(false)
+    expect(out.pages?.every((p) => p.viewport === '1440x900')).toBe(true)
+  })
 })
 
 describe('focus state', () => {
   const pageWith = (focusable: boolean, countFails = false) => {
-    const locator: Record<string, unknown> = {
-      first: () => locator,
+    const anchor = visibleAnchor({
       count: () => (countFails ? Promise.reject(new Error('locator died')) : Promise.resolve(1)),
-      screenshot: () => Promise.resolve(),
-      boundingBox: () => Promise.resolve({ x: 0, y: 0, width: 10, height: 10 }),
       evaluate: () =>
         countFails ? Promise.reject(new Error('locator died')) : Promise.resolve(focusable),
-    }
-    const page = {
-      setDefaultTimeout: () => undefined,
-      goto: () => Promise.resolve(),
-      locator: () => locator,
-      screenshot: () => Promise.resolve(),
-      setContent: () => Promise.resolve(),
-      mouse: { move: () => Promise.resolve() },
-      keyboard: { press: () => Promise.resolve() },
-      evaluate: (expression: unknown) => {
-        if (typeof expression === 'function')
-          return Promise.resolve({ mantine: { spacing: {}, radius: {}, fontSizes: {} }, vx: {} })
-        if (String(expression).includes('data-shot-states'))
-          return Promise.resolve({ anchors: ['card'], declared: [] })
-        // The Tab loop lands immediately.
-        if (String(expression).includes('activeElement')) return Promise.resolve(true)
-        return Promise.resolve(undefined)
-      },
-    }
-    return {
-      newContext: () =>
-        Promise.resolve({
-          newPage: () => Promise.resolve(page),
-          addInitScript: () => Promise.resolve(),
-          close: () => Promise.resolve(),
-        }),
-    } as never
+    })
+    return scriptedBrowser(
+      pageOf({
+        locator: byTooltip(anchor),
+        evaluate: evaluating(
+          () => facts({ anchors: ['card'] }),
+          () => NO_SCALE,
+          // The Tab loop lands immediately.
+          (e) => (String(e).includes('activeElement') ? true : undefined),
+        ),
+      }),
+    )
   }
   const run = (focusable: boolean, countFails = false) =>
-    capture({
-      browser: pageWith(focusable, countFails),
-      base: 'http://x',
-      routes: ['/'],
-      states: ['focus' as const],
-      pngDir: '/unused',
-      log: () => undefined,
-      measure: () => Promise.resolve(measurement),
-    })
+    capture(
+      input(pageWith(focusable, countFails), {
+        states: ['focus'],
+        measure: () => Promise.resolve(measurement),
+      }),
+    )
   const focus = (out: Awaited<ReturnType<typeof run>>) =>
     out.shots.filter((s) => s.name === 'card' && s.state === 'focus')
 
-  test('an anchor with no focusable descendant records not-declared, never error', async () => {
+  test('an anchor nothing in it Tab reaches records not-declared, never error', async () => {
     const shots = focus(await run(false))
     expect(shots).toHaveLength(4)
     expect(
@@ -526,104 +589,17 @@ describe('focus state', () => {
   })
 })
 
-describe('hasFocusTarget', () => {
-  const host = (html: string): Element => {
-    document.body.innerHTML = `<div id="root">${html}</div>`
-    return document.getElementById('root') as Element
-  }
-  test('reaches links, enabled controls and tabindex >= 0', () => {
-    expect(hasFocusTarget(host('<a href="/x">x</a>'))).toBe(true)
-    expect(hasFocusTarget(host('<p><button>go</button></p>'))).toBe(true)
-    expect(hasFocusTarget(host('<div tabindex="0">x</div>'))).toBe(true)
-  })
-  test('skips hidden inputs, tabindex -1, disabled controls and hidden/inert subtrees', () => {
-    expect(hasFocusTarget(host('<input type="hidden">'))).toBe(false)
-    expect(hasFocusTarget(host('<button tabindex="-1">x</button>'))).toBe(false)
-    expect(hasFocusTarget(host('<button disabled>x</button>'))).toBe(false)
-    expect(hasFocusTarget(host('<div hidden><button>x</button></div>'))).toBe(false)
-    expect(hasFocusTarget(host('<div inert><a href="/x">x</a></div>'))).toBe(false)
-    expect(hasFocusTarget(host('<p>plain text</p>'))).toBe(false)
-  })
-  test('skips a candidate CSS never renders (display:none, visibility:hidden)', () => {
-    expect(hasFocusTarget(host('<button style="display:none">x</button>'))).toBe(false)
-    expect(hasFocusTarget(host('<div style="display:none"><a href="/x">x</a></div>'))).toBe(false)
-    expect(hasFocusTarget(host('<button style="visibility:hidden">x</button>'))).toBe(false)
-  })
-})
-
-describe('scale', () => {
-  test('groupScale keeps basalt tokens by kind, drops zero and foreign names', () => {
-    const out = groupScale({
-      mantine: { spacing: { xs: 11 }, radius: { md: 6 }, fontSizes: { sm: 13.5 } },
-      vx: {
-        '--vx-space-3': 12,
-        '--vx-space-agent-gap': 6,
-        '--vx-space-zero': 0,
-        '--vx-text-micro': 11,
-        '--vx-radius-card': 7,
-        '--vx-color-accent': 99,
-      },
-    })
-    expect(out.spacing).toEqual({ xs: 11, 'vx-space-3': 12, 'vx-space-agent-gap': 6 })
-    expect(out.fontSizes).toEqual({ sm: 13.5, 'vx-text-micro': 11 })
-    expect(out.radius).toEqual({ md: 6, 'vx-radius-card': 7 })
-  })
-  test('readScaleInPage reads root tokens and component-scoped ones', () => {
-    document.head.innerHTML =
-      '<style>:root{--vx-space-3:12px;--mantine-spacing-xs:11px}.card{--vx-space-agent-gap:6px;--vx-text-micro:var(--vx-space-3)}.x{color:red}</style>'
-    const read = readScaleInPage(['xs'])
-    expect(read.mantine.spacing).toEqual({ xs: 11 })
-    expect(read.vx).toEqual({
-      '--vx-space-3': 12,
-      '--vx-space-agent-gap': 6,
-      '--vx-text-micro': 12,
-    })
-    document.head.innerHTML = ''
-  })
-})
-
 describe('scaleError', () => {
-  const browserWith = (scale: () => unknown) => {
-    const locator: Record<string, unknown> = {
-      first: () => locator,
-      count: () => Promise.resolve(1),
-      screenshot: () => Promise.resolve(),
-    }
-    const page = {
-      setDefaultTimeout: () => undefined,
-      goto: () => Promise.resolve(),
-      locator: () => locator,
-      screenshot: () => Promise.resolve(),
-      setContent: () => Promise.resolve(),
-      mouse: { move: () => Promise.resolve() },
-      keyboard: { press: () => Promise.resolve() },
-      evaluate: (e: unknown) =>
-        typeof e === 'function'
-          ? Promise.resolve().then(scale)
-          : String(e).includes('data-shot-states')
-            ? Promise.resolve({ anchors: ['card'], declared: [] })
-            : Promise.resolve(undefined),
-    }
-    return {
-      newContext: () =>
-        Promise.resolve({
-          newPage: () => Promise.resolve(page),
-          addInitScript: () => Promise.resolve(),
-          close: () => Promise.resolve(),
-        }),
-    } as never
-  }
-  const read = { mantine: { spacing: {}, radius: {}, fontSizes: {} }, vx: {} }
+  const read = NO_SCALE
   const run = (scale: () => unknown, log: string[] = []) =>
-    capture({
-      browser: browserWith(scale),
-      base: 'http://x',
-      routes: ['/'],
-      states: ['rest'],
-      pngDir: '/unused',
-      log: (l) => log.push(l),
-      measure: () => Promise.resolve(measurement),
-    })
+    capture(
+      input(
+        scriptedBrowser(
+          pageOf({ evaluate: evaluating(() => facts({ anchors: ['card'] }), scale) }),
+        ),
+        { log: (l) => log.push(l), measure: () => Promise.resolve(measurement) },
+      ),
+    )
 
   test('a read that fails once and then succeeds leaves no scaleError', async () => {
     let calls = 0
@@ -636,6 +612,17 @@ describe('scaleError', () => {
     expect(out.scaleError).toBeUndefined()
     expect(log.some((l) => /scale unavailable/.test(l))).toBe(false)
   })
+  test('the scale is read on every page and carries its route', async () => {
+    const out = await capture(
+      input(scriptedBrowser(pageOf({ evaluate: evaluating(() => facts({ anchors: ['card'] })) })), {
+        routes: ['/a', '/b'],
+        measure: () => Promise.resolve(measurement),
+      }),
+    )
+    expect(out.scale).toHaveLength(8)
+    expect(out.scale.filter((s) => s.route === '/a' && s.viewport === PHONE)).toHaveLength(2)
+    expect(out.scale.filter((s) => s.route === '/b' && s.scheme === 'dark')).toHaveLength(2)
+  })
   test('a scale that never reads reports the first reason once', async () => {
     const log: string[] = []
     const out = await run(() => {
@@ -647,433 +634,74 @@ describe('scaleError', () => {
   })
 })
 
-describe('tooltip lookup', () => {
-  test('tooltipSelector prefers the trigger’s own id, else excludes what was already open', () => {
-    expect(tooltipSelector('tip-1')).toBe('[role="tooltip"][id="tip-1"]')
-    expect(tooltipSelector('')).toBe('[role="tooltip"]:not([data-shot-seen])')
-  })
-  test('the probe narrows to a rendered readout', () => {
-    expect(visibleTooltip('')).toBe('[role="tooltip"]:not([data-shot-seen]):visible')
-  })
-  test('data-shot-at is two fractions of the box; anything else is null, so the centre', () => {
-    expect(parseHoverAt('0.25,0.5')).toEqual({ x: 0.25, y: 0.5 })
-    expect(parseHoverAt(' 0 , 0.99 ')).toEqual({ x: 0, y: 0.99 })
-    expect(parseHoverAt('.5,.5')).toEqual({ x: 0.5, y: 0.5 })
-    for (const bad of [
-      '',
-      'a,b',
-      '0.5,',
-      ',0.5',
-      ',',
-      '1.5,-0.2',
-      '-1,0.5',
-      '0.5,0.5,0.5',
-      '1.01,0',
-    ])
-      expect(parseHoverAt(bad)).toBeNull()
-    document.body.innerHTML = '<i id="t" data-shot-at="0.1,0.2"></i>'
-    expect(hoverAtOf(document.getElementById('t'))).toBe('0.1,0.2')
-    expect(hoverAtOf(null)).toBe('')
-  })
-  describe('hoverTrigger', () => {
-    const run = async (attr: string, box: { width: number; height: number } | null) => {
-      const hovered: unknown[] = []
-      const target = {
-        evaluate: () => Promise.resolve(attr),
-        boundingBox: () => Promise.resolve(box),
-        hover: (o: unknown) => {
-          hovered.push(o)
-          return Promise.resolve()
-        },
-      }
-      await hoverTrigger(target as unknown as Parameters<typeof hoverTrigger>[0])
-      return hovered[0] as { timeout: number; position?: { x: number; y: number } }
-    }
-    test('a declared point hovers at the fractions of the box', async () => {
-      const o = await run('0.25,0.5', { width: 400, height: 200 })
-      expect(o.position).toEqual({ x: 100, y: 100 })
-      expect(typeof o.timeout).toBe('number')
-    })
-    test('no attribute, a malformed one, or no box hovers the centre', async () => {
-      for (const [attr, box] of [
-        ['', { width: 400, height: 200 }],
-        ['0.5,', { width: 400, height: 200 }],
-        ['0.25,0.5', null],
-      ] as const) {
-        const o = await run(attr, box)
-        expect(o.position).toBeUndefined()
-        expect(typeof o.timeout).toBe('number')
-      }
-    })
-  })
-  test('markVisibleTooltips marks only visible tooltips and forgets stale marks', () => {
-    document.body.innerHTML =
-      '<span id="a" role="tooltip">a</span><span id="b" role="tooltip">b</span><span id="c" data-shot-seen></span>'
-    const [a, b] = ['a', 'b'].map((id) => document.getElementById(id) as Element)
-    a!.getBoundingClientRect = () => ({ width: 10, height: 10 }) as DOMRect
-    b!.getBoundingClientRect = () => ({ width: 0, height: 0 }) as DOMRect
-    markVisibleTooltips()
-    expect(a!.hasAttribute('data-shot-seen')).toBe(true)
-    expect(b!.hasAttribute('data-shot-seen')).toBe(false)
-    expect(document.getElementById('c')!.hasAttribute('data-shot-seen')).toBe(false)
-  })
-  test('claimOwnTooltip marks the tooltips outside the trigger, and nothing when the trigger holds none', () => {
-    document.body.innerHTML =
-      '<i id="stray" role="tooltip"></i><div id="t"><i id="own" role="tooltip"></i></div><div id="bare"></div>'
-    claimOwnTooltip(document.getElementById('bare') as Element)
-    expect(document.querySelectorAll('[data-shot-seen]')).toHaveLength(0)
-    claimOwnTooltip(document.getElementById('t') as Element)
-    expect(document.getElementById('stray')!.hasAttribute('data-shot-seen')).toBe(true)
-    expect(document.getElementById('own')!.hasAttribute('data-shot-seen')).toBe(false)
-  })
-  test('visibleTooltipCount counts only rendered tooltips', () => {
-    document.body.innerHTML = '<i id="a" role="tooltip"></i><i id="b" role="tooltip"></i>'
-    document.getElementById('a')!.getBoundingClientRect = () => ({ width: 5, height: 5 }) as DOMRect
-    document.getElementById('b')!.getBoundingClientRect = () => ({ width: 0, height: 0 }) as DOMRect
-    expect(visibleTooltipCount()).toBe(1)
-  })
-  test('clearStrayTooltips moves the pointer away, then waits for the old tooltip to unmount', async () => {
-    const events: string[] = []
-    const counts = [2, 1, 0]
-    const page = {
-      mouse: { move: (x: number, y: number) => void events.push(`move ${x},${y}`) },
-      evaluate: () => {
-        events.push('count')
-        return Promise.resolve(counts.shift() ?? 0)
-      },
-    }
-    await clearStrayTooltips(page as unknown as Parameters<typeof clearStrayTooltips>[0])
-    expect(events).toEqual(['move 0,0', 'count', 'count', 'count'])
-  })
-  test('clearStrayTooltips gives up on a tooltip that never unmounts', async () => {
-    let polls = 0
-    const page = {
-      mouse: { move: () => Promise.resolve() },
-      evaluate: () => {
-        polls++
-        return Promise.resolve(1)
-      },
-    }
-    await clearStrayTooltips(page as unknown as Parameters<typeof clearStrayTooltips>[0])
-    expect(polls).toBeGreaterThan(1)
-    expect(polls).toBeLessThan(40)
-  })
-  test('muteOtherTooltips hides the visible others, and unmuteTooltips restores only those', () => {
-    document.body.innerHTML =
-      '<i id="open" role="tooltip"></i><i id="old" role="tooltip" style="visibility: visible"></i><i id="gone" role="tooltip"></i><i id="app" style="visibility: hidden"></i>'
-    const [open, old, gone, app] = ['open', 'old', 'gone', 'app'].map(
-      (id) => document.getElementById(id) as HTMLElement,
-    )
-    const size = (el: HTMLElement, w: number) =>
-      (el.getBoundingClientRect = () => ({ width: w, height: w }) as DOMRect)
-    size(open!, 10)
-    size(old!, 10)
-    size(gone!, 0)
-    muteOtherTooltips(open!)
-    expect(old!.style.getPropertyValue('visibility')).toBe('hidden')
-    expect(old!.style.getPropertyPriority('visibility')).toBe('important')
-    expect(open!.style.visibility).toBe('')
-    expect(gone!.hasAttribute('data-shot-muted')).toBe(false)
-    unmuteTooltips()
-    expect(old!.style.visibility).toBe('visible')
-    expect(old!.hasAttribute('data-shot-muted')).toBe(false)
-    expect(app!.style.visibility).toBe('hidden')
-  })
-  test('describedByOf reads the first id on the trigger or a descendant', () => {
-    document.body.innerHTML =
-      '<div id="t"><button aria-describedby="x y">i</button></div><p id="p"></p>'
-    expect(describedByOf(document.getElementById('t'))).toBe('x')
-    expect(describedByOf(document.getElementById('p'))).toBe('')
-    expect(describedByOf(null)).toBe('')
-  })
-  test('a foreign tooltip that was already open is not the one cropped', async () => {
-    const FOREIGN = { x: 900, y: 700, width: 100, height: 30 }
-    const ANCHOR = { x: 100, y: 100, width: 200, height: 60 }
-    const TIP = { x: 120, y: 170, width: 180, height: 40 }
-    const clips: unknown[] = []
-    const asked: string[] = []
-    const element: Record<string, unknown> = {
-      first: () => element,
-      count: () => Promise.resolve(1),
-      hover: () => Promise.resolve(),
-      screenshot: () => Promise.resolve(),
-      boundingBox: () => Promise.resolve(ANCHOR),
-      evaluate: () => Promise.resolve(''),
-    }
-    const tipFor = (selector: string): Record<string, unknown> => {
-      const tip: Record<string, unknown> = {
-        first: () => tip,
-        waitFor: () => Promise.resolve(),
-        evaluate: () => Promise.resolve(undefined),
-        // A bare `[role="tooltip"]` finds the foreign one first; the snapshot-aware one finds ours.
-        boundingBox: () => Promise.resolve(selector.includes('data-shot-seen') ? TIP : FOREIGN),
-      }
-      return tip
-    }
-    const page = {
-      setDefaultTimeout: () => undefined,
-      goto: () => Promise.resolve(),
-      locator: (selector: string) => {
-        if (!selector.includes('tooltip')) return element
-        asked.push(selector)
-        return tipFor(selector)
-      },
-      screenshot: (o: { clip?: unknown }) => {
-        clips.push(o.clip)
-        return Promise.resolve()
-      },
-      setContent: () => Promise.resolve(),
-      mouse: { move: () => Promise.resolve() },
-      keyboard: { press: () => Promise.resolve() },
-      evaluate: (e: unknown) =>
-        typeof e === 'function'
-          ? Promise.resolve(undefined)
-          : String(e).includes('data-shot-states')
-            ? Promise.resolve({ anchors: ['card'], declared: [] })
-            : Promise.resolve(undefined),
-    }
-    await capture({
-      browser: {
-        newContext: () =>
-          Promise.resolve({
-            newPage: () => Promise.resolve(page),
-            addInitScript: () => Promise.resolve(),
-            close: () => Promise.resolve(),
-          }),
-      } as never,
-      base: 'http://x',
-      routes: ['/'],
-      states: ['hover'],
-      pngDir: '/unused',
-      log: () => undefined,
-      measure: () => Promise.resolve(measurement),
-    })
-    expect(asked.every((q) => q === '[role="tooltip"]:not([data-shot-seen]):visible')).toBe(true)
-    expect(clips.length).toBeGreaterThan(0)
-    for (const clip of clips) {
-      const c = clip as { x: number; y: number; width: number; height: number }
-      expect(c.x + c.width).toBeLessThan(FOREIGN.x)
-      expect(c.y + c.height).toBeGreaterThan(TIP.y + TIP.height - 1)
-    }
-  })
-})
-
-describe('contact sheets', () => {
-  test('one sheet per anchor is written and listed on the anchor', async () => {
-    const dir = tmp()
-    const png = Buffer.from(
-      'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNkYPhfDwAChwGA60e6kgAAAABJRU5ErkJggg==',
-      'base64',
-    )
-    const shots: string[] = []
-    const locator: Record<string, unknown> = {
-      first: () => locator,
-      count: () => Promise.resolve(1),
-      evaluate: () => Promise.resolve(''),
-      screenshot: (o: { path: string }) => {
-        writeFileSync(o.path, png)
-        shots.push(o.path)
-        return Promise.resolve()
-      },
-    }
-    let html = ''
-    const page = {
-      setDefaultTimeout: () => undefined,
-      goto: () => Promise.resolve(),
-      locator: () => locator,
-      screenshot: (o: { path: string }) => {
-        writeFileSync(o.path, png)
-        shots.push(o.path)
-        return Promise.resolve()
-      },
-      setContent: (h: string) => {
-        html = h
-        return Promise.resolve()
-      },
-      mouse: { move: () => Promise.resolve() },
-      keyboard: { press: () => Promise.resolve() },
-      evaluate: (e: unknown) =>
-        typeof e === 'function'
-          ? Promise.resolve({ mantine: { spacing: {}, radius: {}, fontSizes: {} }, vx: {} })
-          : String(e).includes('data-shot-states')
-            ? Promise.resolve({ anchors: ['card'], declared: [] })
-            : Promise.resolve(undefined),
-    }
-    const browser = {
-      newContext: () =>
-        Promise.resolve({
-          newPage: () => Promise.resolve(page),
-          addInitScript: () => Promise.resolve(),
-          close: () => Promise.resolve(),
-        }),
-    } as never
-    const out = await capture({
-      browser,
-      base: 'http://x',
-      routes: ['/'],
-      states: ['rest'],
-      pngDir: dir,
-      log: () => undefined,
-      measure: () => Promise.resolve(measurement),
-    })
-    const file = `png/${sheetName('/', 'card')}`
-    expect(out.anchors.every((a) => a.sheet === file)).toBe(true)
-    expect(existsSync(join(dir, sheetName('/', 'card')))).toBe(true)
-    expect(html).toContain('data:image/png;base64,')
-    expect(html).not.toContain('loading="lazy"')
-  })
-  test('a sheet that cannot be written is logged and left unlisted', async () => {
-    const log: string[] = []
-    const out = await capture({
-      browser: {
-        newContext: () =>
-          Promise.resolve({
-            newPage: () =>
-              Promise.resolve({
-                setDefaultTimeout: () => undefined,
-                goto: () => Promise.resolve(),
-                locator: () => ({
-                  first() {
-                    return this
-                  },
-                  count: () => Promise.resolve(1),
-                  evaluate: () => Promise.resolve(''),
-                  screenshot: () => Promise.resolve(),
-                }),
-                screenshot: () => Promise.resolve(),
-                setContent: () => Promise.reject(new Error('no content')),
-                mouse: { move: () => Promise.resolve() },
-                keyboard: { press: () => Promise.resolve() },
-                evaluate: (e: unknown) =>
-                  typeof e === 'function'
-                    ? Promise.resolve({
-                        mantine: { spacing: {}, radius: {}, fontSizes: {} },
-                        vx: {},
-                      })
-                    : String(e).includes('data-shot-states')
-                      ? Promise.resolve({ anchors: ['card'], declared: [] })
-                      : Promise.resolve(undefined),
-              }),
-            addInitScript: () => Promise.resolve(),
-            close: () => Promise.resolve(),
-          }),
-      } as never,
-      base: 'http://x',
-      routes: ['/'],
-      states: ['rest'],
-      pngDir: tmp(),
-      log: (l) => log.push(l),
-      measure: () => Promise.resolve(measurement),
-    })
-    expect(out.anchors.some((a) => a.sheet !== undefined)).toBe(false)
-    expect(log.some((l) => /sheet not written/.test(l))).toBe(true)
-  })
-})
-
-describe('sweepStaleTmp', () => {
-  const HOUR_AHEAD = () => new Date(Date.now() + 2 * 60 * 60 * 1000)
-  const dead = () => false
-  test('removes old tmp dirs whose pid is gone, by age alone when the name has no pid', () => {
-    const home = tmp()
-    for (const d of ['tmp-4242-aaaaaa', 'tmp-oldstyle', 'keep']) mkdirSync(join(home, d))
-    sweepStaleTmp(home, HOUR_AHEAD(), dead)
-    expect(existsSync(join(home, 'tmp-4242-aaaaaa'))).toBe(false)
-    expect(existsSync(join(home, 'tmp-oldstyle'))).toBe(false)
-    expect(existsSync(join(home, 'keep'))).toBe(true)
-  })
-  test('keeps a dir whose pid is alive, however old, and one younger than an hour', () => {
-    const home = tmp()
-    mkdirSync(join(home, `tmp-${process.pid}-live`))
-    sweepStaleTmp(home, HOUR_AHEAD(), (pid) => pid === process.pid)
-    expect(existsSync(join(home, `tmp-${process.pid}-live`))).toBe(true)
-    mkdirSync(join(home, 'tmp-4242-fresh'))
-    sweepStaleTmp(home, new Date(), dead)
-    expect(existsSync(join(home, 'tmp-4242-fresh'))).toBe(true)
-  })
-  test('a plain file, a dangling symlink and a missing home never abort', () => {
-    const home = tmp()
-    writeFileSync(join(home, 'tmp-1-file'), 'x')
-    symlinkSync(join(home, 'nowhere'), join(home, 'tmp-2-dangling'))
-    mkdirSync(join(home, 'tmp-3-old'))
-    expect(() => sweepStaleTmp(home, HOUR_AHEAD(), dead)).not.toThrow()
-    expect(existsSync(join(home, 'tmp-1-file'))).toBe(true)
-    expect(existsSync(join(home, 'tmp-3-old'))).toBe(false)
-    expect(() => sweepStaleTmp(join(tmp(), 'nope'), new Date())).not.toThrow()
-  })
-})
-
-describe('hover and focus crops include an opened tooltip', () => {
+describe('hover, focus and tooltip crops', () => {
   const ANCHOR = { x: 100, y: 100, width: 200, height: 60 }
   const TIP = { x: 120, y: 170, width: 180, height: 40 }
-  let unmuted = 0
-  const run = async (tooltip: boolean, state: 'hover' | 'focus', rejectClip = false) => {
-    unmuted = 0
+  /** An anchor whose hover (or focus) opens a tooltip when `tooltip`; `trigger` adds a `[data-shot-tooltip]` inside it. */
+  const rig = (opts: { tooltip: boolean; trigger?: boolean }) => {
     const clips: unknown[] = []
-    let reads = 0
-    const element: Record<string, unknown> = {
-      first: () => element,
-      count: () => Promise.resolve(1),
-      hover: () => Promise.resolve(),
+    let open = false
+    const anchor = visibleAnchor({
+      hover: () => {
+        open = opts.tooltip
+        return Promise.resolve()
+      },
       screenshot: () => {
         clips.push('element')
         return Promise.resolve()
       },
       boundingBox: () => Promise.resolve(ANCHOR),
       evaluate: () => Promise.resolve(true),
+    })
+    const marked: Record<string, unknown> = {
+      ...anchor,
+      first: () => marked,
+      count: () => Promise.resolve(opts.trigger ? 1 : 0),
     }
     const tip: Record<string, unknown> = {
       first: () => tip,
-      waitFor: () => (tooltip ? Promise.resolve() : Promise.reject(new Error('timeout'))),
-      evaluate: () => Promise.resolve(undefined),
-      // Grows read by read (an animation) before it settles at TIP: the crop must hold the final size.
-      boundingBox: () =>
-        Promise.resolve({
-          ...TIP,
-          width: Math.min(TIP.width, 20 + 40 * reads++),
-          height: TIP.height,
-        }),
+      last: () => tip,
+      count: () => Promise.resolve(open ? 1 : 0),
+      waitFor: () => (open ? Promise.resolve() : Promise.reject(new Error('timeout'))),
+      boundingBox: () => Promise.resolve(TIP),
     }
-    const page = {
-      setDefaultTimeout: () => undefined,
-      goto: () => Promise.resolve(),
-      locator: (selector: string) => (selector.includes('tooltip') ? tip : element),
+    const page = pageOf({
+      locator: (selector: string) =>
+        selector.includes('data-shot-tooltip')
+          ? marked
+          : selector.includes('role="tooltip"')
+            ? tip
+            : anchor,
       screenshot: (o: { clip?: unknown }) => {
         clips.push(o.clip)
-        return rejectClip && o.clip !== undefined
-          ? Promise.reject(new Error('crop failed'))
-          : Promise.resolve()
+        return Promise.resolve()
       },
-      setContent: () => Promise.resolve(),
-      mouse: { move: () => Promise.resolve() },
-      keyboard: { press: () => Promise.resolve() },
-      evaluate: (e: unknown) =>
-        e === unmuteTooltips
-          ? Promise.reject(new Error('page is gone')).finally(() => void unmuted++)
-          : typeof e === 'function'
-            ? Promise.resolve({ mantine: { spacing: {}, radius: {}, fontSizes: {} }, vx: {} })
-            : String(e).includes('data-shot-states')
-              ? Promise.resolve({ anchors: ['card'], declared: [] })
-              : String(e).includes('activeElement')
-                ? Promise.resolve(true)
-                : Promise.resolve(undefined),
-    }
-    await capture({
-      browser: {
-        newContext: () =>
-          Promise.resolve({
-            newPage: () => Promise.resolve(page),
-            addInitScript: () => Promise.resolve(),
-            close: () => Promise.resolve(),
-          }),
-      } as never,
-      base: 'http://x',
-      routes: ['/'],
-      states: [state],
-      pngDir: '/unused',
-      log: () => undefined,
-      measure: () => Promise.resolve(measurement),
+      mouse: {
+        move: () => {
+          open = false
+          return Promise.resolve()
+        },
+      },
+      evaluate: evaluating(
+        () => facts({ anchors: ['card'] }),
+        () => NO_SCALE,
+        (e) => {
+          // The Tab loop lands at once, with the tooltip its focus opens.
+          if (String(e).includes(':focus-visible')) open = opts.tooltip
+          return String(e).includes('activeElement') ? true : undefined
+        },
+      ),
     })
-    return clips
+    const run = async (state: 'hover' | 'focus' | 'tooltip') => {
+      const out = await capture(
+        input(scriptedBrowser(page), {
+          states: [state],
+          measure: () => Promise.resolve(measurement),
+        }),
+      )
+      return { clips, out }
+    }
+    return run
   }
   const covers = (clip: unknown): boolean => {
     const c = clip as { x: number; y: number; width: number; height: number }
@@ -1086,23 +714,103 @@ describe('hover and focus crops include an opened tooltip', () => {
   }
 
   test('a focus crop grows to hold the tooltip', async () => {
-    const clips = await run(true, 'focus')
+    const { clips } = await rig({ tooltip: true })('focus')
     expect(clips.length).toBeGreaterThan(0)
     expect(clips.every(covers)).toBe(true)
   })
   test('a hover crop grows to hold the tooltip instead of cropping the anchor alone', async () => {
-    const clips = await run(true, 'hover')
+    const { clips } = await rig({ tooltip: true })('hover')
     expect(clips.length).toBeGreaterThan(0)
     expect(clips.every(covers)).toBe(true)
   })
-  test('a failing crop still unmutes, and a dead page cannot mask the crop error', async () => {
-    const clips = await run(true, 'hover', true)
-    expect(clips.length).toBeGreaterThan(0)
-    expect(unmuted).toBeGreaterThan(0)
-  })
   test('with no tooltip a focus crop is the anchor alone and a hover crop the element', async () => {
-    expect((await run(false, 'focus')).every((c) => !covers(c))).toBe(true)
-    expect((await run(false, 'hover')).every((c) => c === 'element')).toBe(true)
+    expect((await rig({ tooltip: false })('focus')).clips.every((c) => !covers(c))).toBe(true)
+    expect((await rig({ tooltip: false })('hover')).clips.every((c) => c === 'element')).toBe(true)
+  })
+  test('a tooltip state with no [data-shot-tooltip] trigger is not-declared', async () => {
+    const { out } = await rig({ tooltip: true, trigger: false })('tooltip')
+    const shots = out.shots.filter((s) => s.name === 'card' && s.state === 'tooltip')
+    expect(
+      shots.filter((s) => s.viewport === DESKTOP).every((s) => s.status === 'not-declared'),
+    ).toBe(true)
+    expect(shots.filter((s) => s.viewport === PHONE).every((s) => s.status === 'skipped')).toBe(
+      true,
+    )
+  })
+  test('a tooltip state whose trigger shows no tooltip is an error', async () => {
+    const { out } = await rig({ tooltip: false, trigger: true })('tooltip')
+    const desktop = out.shots.filter(
+      (s) => s.name === 'card' && s.state === 'tooltip' && s.viewport === DESKTOP,
+    )
+    expect(desktop.length).toBeGreaterThan(0)
+    expect(
+      desktop.every(
+        (s) => s.status === 'error' && /no visible \[role="tooltip"\]/.test(s.note ?? ''),
+      ),
+    ).toBe(true)
+  })
+  test('a tooltip state with a trigger and a tooltip is captured', async () => {
+    const { out } = await rig({ tooltip: true, trigger: true })('tooltip')
+    const desktop = out.shots.filter((s) => s.name === 'card' && s.viewport === DESKTOP)
+    expect(desktop.every((s) => s.status === 'ok')).toBe(true)
+  })
+})
+
+describe('contact sheets', () => {
+  test('buildSheet lays every state × scheme × viewport of one anchor on one page', () => {
+    const html = buildSheet('/dashboard', 'stat-card', {
+      viewports: [DESKTOP, PHONE],
+      states: ['rest', 'hover'],
+      shots: [record({ file: 'data:image/png;base64,AAAA' }), record({ state: 'hover' })],
+    })
+    expect(html).toContain('stat-card')
+    expect(html).toContain('/dashboard')
+    expect(html).toContain(`light · ${DESKTOP}`)
+    expect(html).toContain(`dark · ${PHONE}`)
+    expect(html).toContain('src="data:image/png;base64,AAAA"')
+    expect(html).not.toContain('loading="lazy"')
+  })
+  test('one sheet per anchor is written and listed on the anchor', async () => {
+    const dir = tmp()
+    const png = Buffer.from(
+      'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNkYPhfDwAChwGA60e6kgAAAABJRU5ErkJggg==',
+      'base64',
+    )
+    const write = (o: { path: string }) => {
+      writeFileSync(o.path, png)
+      return Promise.resolve()
+    }
+    let html = ''
+    const page = cardPage({
+      locator: byTooltip(visibleAnchor({ screenshot: write })),
+      screenshot: write,
+      setContent: (h: string) => {
+        html = h
+        return Promise.resolve()
+      },
+    })
+    const out = await capture(
+      input(scriptedBrowser(page), {
+        pngDir: dir,
+        measure: () => Promise.resolve(measurement),
+      }),
+    )
+    const file = `png/${sheetName('/', 'card')}`
+    expect(out.anchors.every((a) => a.sheet === file)).toBe(true)
+    expect(existsSync(join(dir, sheetName('/', 'card')))).toBe(true)
+    expect(html).toContain('data:image/png;base64,')
+    expect(html).not.toContain('loading="lazy"')
+  })
+  test('a sheet that cannot be written is logged and left unlisted', async () => {
+    const log: string[] = []
+    const out = await capture(
+      input(
+        scriptedBrowser(cardPage({ setContent: () => Promise.reject(new Error('no content')) })),
+        { pngDir: tmp(), log: (l) => log.push(l), measure: () => Promise.resolve(measurement) },
+      ),
+    )
+    expect(out.anchors.some((a) => a.sheet !== undefined)).toBe(false)
+    expect(log.some((l) => /sheet not written/.test(l))).toBe(true)
   })
 })
 
@@ -1114,13 +822,6 @@ describe('withBrowser', () => {
     )
     expect(used).toBe('chrome')
     expect(log).toEqual(['launch chrome', 'kill'])
-  })
-  test('a channel preference reorders the attempts', async () => {
-    const log: string[] = []
-    const used = await withBrowser(fakePw([], log), (_b, c) => Promise.resolve(c), {
-      channels: ['chrome', undefined],
-    })
-    expect(used).toBe('chrome')
   })
   test('every launch failing throws the install line with each first error line', async () => {
     const error = await withBrowser(fakePw([undefined, 'chrome']), () => Promise.resolve(1)).catch(
@@ -1139,6 +840,11 @@ describe('withBrowser', () => {
       withBrowser(fakePw([], log), () => Promise.reject(new Error('boom'))),
     ).rejects.toThrow('boom')
     expect(log).toEqual(['launch bundled', 'kill'])
+  })
+  test('hands this run’s kill to `stops`', async () => {
+    const stops: (() => unknown)[] = []
+    await withBrowser(fakePw([]), () => Promise.resolve(1), { stops })
+    expect(stops).toHaveLength(1)
   })
 })
 
@@ -1161,10 +867,10 @@ describe('serveDist', () => {
 })
 
 describe('shot()', () => {
+  const FLAGS = ['/', '--base', 'http://x', '--out', 'shots-1']
+
   test('missing Playwright prints the install line and exits 1', async () => {
-    const { result, lines } = await errors(() =>
-      shot(['/', '--base', 'http://x'], tmp(), { resolve: () => null }),
-    )
+    const { result, lines } = await errors(() => shot(FLAGS, tmp(), { resolve: () => null }))
     expect(result).toBe(1)
     expect(lines).toEqual([INSTALL_LINE])
     expect(INSTALL_LINE).toBe(
@@ -1172,21 +878,40 @@ describe('shot()', () => {
     )
   })
 
-  test('a failed launch exits 1 with the install line and leaves the previous board intact', async () => {
-    const cwd = tmp()
-    mkdirSync(join(cwd, '.basalt/shots/latest'), { recursive: true })
-    writeFileSync(join(cwd, '.basalt/shots/latest/metrics.json'), '{"version":1}')
-    writeFileSync(join(cwd, '.basalt/shots/latest/board.html'), 'previous')
+  test('without --out it exits 1 saying so', async () => {
     const { result, lines } = await errors(() =>
-      shot(['/', '--base', 'http://x'], cwd, { resolve: () => fakePw([undefined, 'chrome']) }),
+      shot(['/', '--base', 'http://x'], tmp(), { resolve: () => fakePw([]) }),
+    )
+    expect(result).toBe(1)
+    expect(lines.join()).toMatch(/--out <dir> is required/)
+  })
+
+  test('a failed launch exits 1 with the install line and leaves no out dir behind', async () => {
+    const cwd = tmp()
+    const { result, lines } = await errors(() =>
+      shot(FLAGS, cwd, { resolve: () => fakePw([undefined, 'chrome']) }),
     )
     expect(result).toBe(1)
     expect(lines[0]?.split('\n')[0]).toBe(INSTALL_LINE)
-    expect(readFileSync(join(cwd, '.basalt/shots/latest/board.html'), 'utf8')).toBe('previous')
-    expect(readdirNames(join(cwd, '.basalt/shots'))).toEqual(['latest'])
+    expect(existsSync(join(cwd, 'shots-1'))).toBe(false)
+    expect(existsSync(join(cwd, '.basalt/last-shot.json'))).toBe(false)
   })
 
-  test('--out src is refused before anything is launched or deleted', async () => {
+  test('a capture that fails removes the out dir it made', async () => {
+    const cwd = tmp()
+    const { result, lines } = await errors(() =>
+      shot(FLAGS, cwd, {
+        resolve: () => fakePw([]),
+        log: () => undefined,
+        capture: () => Promise.reject(new ShotError('boom')),
+      }),
+    )
+    expect(result).toBe(1)
+    expect(lines).toEqual(['boom'])
+    expect(existsSync(join(cwd, 'shots-1'))).toBe(false)
+  })
+
+  test('--out of an existing dir is refused before anything is launched or deleted', async () => {
     const cwd = tmp()
     mkdirSync(join(cwd, 'src'))
     writeFileSync(join(cwd, 'src/keep.ts'), 'x')
@@ -1195,13 +920,13 @@ describe('shot()', () => {
       shot(['/', '--base', 'http://x', '--out', 'src'], cwd, { resolve: () => fakePw([], log) }),
     )
     expect(result).toBe(1)
-    expect(lines.join()).toMatch(/--out src exists and is not purely a previous shot output/)
+    expect(lines.join()).toMatch(/--out src exists already/)
     expect(log).toEqual([])
     expect(existsSync(join(cwd, 'src/keep.ts'))).toBe(true)
   })
 
-  const run = (cwd: string, shots: ShotRecord[], logs: string[] = []): Promise<number> =>
-    shot(['/dashboard', '--base', 'http://127.0.0.1:1', '--out', '.basalt/shots/r1'], cwd, {
+  const run = (cwd: string, shots: ShotRecord[], logs: string[] = [], out = 'shots-1') =>
+    shot(['/dashboard', '--base', 'http://127.0.0.1:1', '--out', out], cwd, {
       resolve: () => fakePw([]),
       now: () => new Date('2026-10-16T00:00:00.000Z'),
       log: (l) => void logs.push(l),
@@ -1211,66 +936,55 @@ describe('shot()', () => {
           anchors: fakeMetrics().anchors,
           shots,
           scale: fakeMetrics().scale,
+          pages: fakeMetrics().pages ?? [],
         })
       },
     })
 
-  test('writes metrics.json, board.html, last.json and .gitignore; exits 1 when a shot errored', async () => {
+  test('writes metrics.json, board.html, last-shot.json and .gitignore; exits 1 when a shot errored', async () => {
     const cwd = tmp()
     const logs: string[] = []
     const { result, lines } = await errors(() => run(cwd, fakeMetrics().shots, logs))
     expect(result).toBe(1)
     expect(lines).toEqual(['basalt-ui shot: 1 shot(s) failed; see board.html'])
-    const out = join(cwd, '.basalt/shots/r1')
+    const out = join(cwd, 'shots-1')
     const written = JSON.parse(readFileSync(join(out, 'metrics.json'), 'utf8')) as ShotMetrics
-    expect(Object.keys(written)).toEqual([
-      'version',
-      'generatedAt',
-      'base',
-      'routes',
-      'viewports',
-      'schemes',
-      'states',
-      'scale',
-      'anchors',
-      'shots',
-    ])
+    expect(written).toMatchObject({
+      version: 1,
+      generatedAt: '2026-10-16T00:00:00.000Z',
+      base: 'http://127.0.0.1:1',
+      routes: ['/dashboard'],
+      viewports: [DESKTOP, PHONE],
+      schemes: ['light', 'dark'],
+      pages: [{ route: '/dashboard', scheme: 'light', viewport: PHONE, overflowX: 12 }],
+    })
+    expect(written.shots).toHaveLength(5)
     expect(existsSync(join(out, 'png/a.png'))).toBe(true)
     expect(readFileSync(join(out, 'board.html'), 'utf8')).toContain('stat-card')
     expect(readFileSync(join(out, '.gitignore'), 'utf8')).toBe('*\n')
-    expect(JSON.parse(readFileSync(join(cwd, '.basalt/shots/last.json'), 'utf8'))).toEqual({
-      version: 1,
-      at: '2026-10-16T00:00:00.000Z',
-      out: '.basalt/shots/r1',
-      routes: ['/dashboard'],
+    expect(JSON.parse(readFileSync(join(cwd, '.basalt/last-shot.json'), 'utf8'))).toEqual({
+      out: 'shots-1',
+      round: 1,
     })
     expect(logs.join('\n')).toContain('2 shots')
     expect(logs.join('\n')).toContain('1 not declared, 1 skipped, 1 failed')
-    expect(readdirNames(join(cwd, '.basalt/shots'))).toEqual(['.gitignore', 'last.json', 'r1'])
   })
 
-  test('a named run, then the default run, then the default again all succeed', async () => {
+  test('each successful round bumps the round and points last-shot.json at its dir', async () => {
     const cwd = tmp()
     const ok = fakeMetrics().shots.filter((s) => s.status === 'ok')
-    const go = (extra: string[]): Promise<number> =>
-      shot(['/dashboard', '--base', 'http://127.0.0.1:1', ...extra], cwd, {
-        resolve: () => fakePw([]),
-        log: () => undefined,
-        capture: () => Promise.resolve({ anchors: [], shots: ok, scale: [] }),
-      })
-    expect(await go(['--out', '.basalt/shots/r1'])).toBe(0)
-    expect(await go([])).toBe(0)
-    expect(await go([])).toBe(0)
-    expect(readdirNames(join(cwd, '.basalt/shots'))).toEqual([
-      '.gitignore',
-      'last.json',
-      'latest',
-      'r1',
-    ])
-    expect(JSON.parse(readFileSync(join(cwd, '.basalt/shots/last.json'), 'utf8')).out).toBe(
-      '.basalt/shots/latest',
-    )
-    expect(readFileSync(join(cwd, '.basalt/shots/latest/.gitignore'), 'utf8')).toBe('*\n')
+    expect(await run(cwd, ok, [], 'shots-1')).toBe(0)
+    expect(await run(cwd, ok, [], 'shots-2')).toBe(0)
+    expect(await run(cwd, ok, [], '.basalt/shots-3')).toBe(0)
+    expect(JSON.parse(readFileSync(join(cwd, '.basalt/last-shot.json'), 'utf8'))).toEqual({
+      out: '.basalt/shots-3',
+      round: 3,
+    })
+    // The previous rounds stay: nothing is swapped or emptied.
+    expect(existsSync(join(cwd, 'shots-1/metrics.json'))).toBe(true)
+    expect(readFileSync(join(cwd, 'shots-2/.gitignore'), 'utf8')).toBe('*\n')
+    // A dir already used is refused, not overwritten.
+    expect((await errors(() => run(cwd, ok, [], 'shots-1'))).result).toBe(1)
   })
 
   test('exits 0 when every shot is ok, not-declared or skipped', async () => {
@@ -1283,10 +997,39 @@ describe('shot()', () => {
     )
     expect(result).toBe(0)
   })
-})
 
-const readdirNames = (dir: string): string[] =>
-  [...new Bun.Glob('*').scanSync({ cwd: dir, dot: true, onlyFiles: false })].toSorted()
+  test('a desktop-only manifest reaches capture as desktop viewports only and exits 0', async () => {
+    const cwd = tmp()
+    mkdirSync(join(cwd, '.basalt'))
+    writeFileSync(
+      join(cwd, '.basalt/manifest.json'),
+      JSON.stringify({ profile: 'app', version: '3.0.0', viewports: ['1440x900', '1024x700'] }),
+    )
+    const seen: ViewportSpec[][] = []
+    const code = await shot(['/', '--base', 'http://x', '--out', 'shots-1'], cwd, {
+      resolve: () => fakePw([]),
+      log: () => undefined,
+      capture: ({ viewports }) => {
+        seen.push([...viewports])
+        return Promise.resolve({
+          anchors: [],
+          scale: [],
+          shots: viewports.map((v) => record({ viewport: v.label, file: 'png/a.png' })),
+        })
+      },
+    })
+    expect(code).toBe(0)
+    expect(seen[0]?.map((v) => [v.label, v.mobile])).toEqual([
+      ['1440x900', false],
+      ['1024x700', false],
+    ])
+    const written = JSON.parse(
+      readFileSync(join(cwd, 'shots-1/metrics.json'), 'utf8'),
+    ) as ShotMetrics
+    expect(written.viewports).toEqual(['1440x900', '1024x700'])
+    expect(written.shots.some((s) => parseViewport(s.viewport)?.mobile)).toBe(false)
+  })
+})
 
 describe('buildBoard', () => {
   const html = buildBoard(fakeMetrics())
@@ -1298,63 +1041,56 @@ describe('buildBoard', () => {
   test('labels not-declared, skipped and error cells, with their notes', () => {
     expect(html).toContain('empty not-declared">not-declared: no [data-shot-tooltip] in the anchor')
     expect(html).toContain('empty error">error: anchor not found')
-    expect(html).toContain('empty skipped">skipped: desktop only')
+    expect(html).toContain('empty skipped">skipped: touch viewport')
     expect(html).toContain('anchor only present in this state')
   })
-  test('shows metrics, nested surfaces per row, the assumed backdrop, and escapes text', () => {
-    expect(html).toContain('<th>contrast min</th>')
-    expect(html).toContain('300×120')
-    expect(html).toContain('light/desktop<ul><li>div.inner r6')
-    expect(html).toContain('backdrop assumed white')
-    expect(html).toContain('Muted &#60;b&#62;')
-    expect(html).not.toContain('Muted <b>')
+  test('a state shot that ignored the state says so', () => {
+    const m = fakeMetrics()
+    m.shots = [record({ state: 'rest', file: 'png/a.png', ignored: true })]
+    expect(buildBoard(m)).toContain('ignored the state')
+    expect(html).not.toContain('ignored the state')
   })
-  test('shows the theme scale once for identical scale entries', () => {
-    expect(html.match(/<summary>Theme scale/g)).toHaveLength(1)
-    expect(html).toContain(
-      '<td>light/desktop, dark/desktop</td><td>xs 10 · sm 12</td><td>md 8 · card 7</td><td>sm 14</td>',
-    )
+  test('one text line per anchor, scale on one line, nothing of the old tables', () => {
+    expect(html).toContain(`light/${DESKTOP} 300×120 · radius 8 · font 12, 24 · empty 0.25`)
+    expect(html).toContain('scale: spacing 10 12 · radius 8 7 · font 14')
+    expect(html.match(/scale: spacing/g)).toHaveLength(1)
+    expect(html).not.toContain('<table')
+    expect(html).not.toContain('backdrop')
+    expect(html).not.toContain('contrast')
   })
-  test('a full-round radius renders as "full" on the anchor and as "r full" on a nested box', () => {
+  test('a page wider than the viewport is a line on its route', () => {
+    expect(html).toContain(`light/${PHONE}: document 12px wider than the viewport`)
+    const m = fakeMetrics()
+    m.pages = []
+    expect(buildBoard(m)).not.toContain('wider than the viewport')
+  })
+  test('a scale that could not be read is a line, not a silent gap', () => {
+    const m = fakeMetrics()
+    m.scale = []
+    m.scaleError = 'no probe'
+    const out = buildBoard(m)
+    expect(out).toContain('scale unavailable: no probe')
+    expect(out).not.toContain('scale: spacing')
+  })
+  test('escapes notes and names', () => {
+    const m = fakeMetrics()
+    m.shots = [record({ status: 'error', note: 'Muted <b> & "q"' })]
+    const out = buildBoard(m)
+    expect(out).toContain('Muted &#60;b&#62; &#38; &#34;q&#34;')
+    expect(out).not.toContain('Muted <b>')
+  })
+  test('a full-round radius renders as "full" on the anchor line', () => {
     const m = fakeMetrics()
     const [anchor] = m.anchors
     if (!anchor) throw new Error('fixture has no anchor')
-    m.anchors = [
-      {
-        ...anchor,
-        radius: 'full',
-        nested: [
-          { path: 'span.dot', radius: 'full', padding: { top: 0, right: 0, bottom: 0, left: 0 } },
-        ],
-      },
-    ]
-    const out = buildBoard(m)
-    expect(out).toContain('<td>full</td>')
-    expect(out).toContain('span.dot r full p')
+    m.anchors = [{ ...anchor, radius: 'full' }]
+    expect(buildBoard(m)).toContain('radius full')
   })
   test('a route without anchors says so', () => {
     const m = fakeMetrics()
     m.anchors = []
     m.shots = m.shots.filter((s) => s.name === '_page')
-    expect(buildBoard(m)).toContain('no data-shot anchors on this route')
-  })
-})
-
-describe('contrast maths', () => {
-  test('WCAG anchors: black on white is 21, identical is 1', () => {
-    expect(contrastRatio([0, 0, 0], [255, 255, 255])).toBeCloseTo(21, 5)
-    expect(contrastRatio([255, 255, 255], [0, 0, 0])).toBeCloseTo(21, 5)
-    expect(contrastRatio([119, 119, 119], [119, 119, 119])).toBeCloseTo(1, 5)
-  })
-  test('#767676 on white is the AA boundary (4.54)', () => {
-    expect(contrastRatio([118, 118, 118], [255, 255, 255])).toBeCloseTo(4.54, 2)
-  })
-  test('large-text threshold: ≥ 24px, or ≥ 18.66px bold', () => {
-    expect(contrastThreshold(16, false)).toBe(4.5)
-    expect(contrastThreshold(24, false)).toBe(3)
-    expect(contrastThreshold(18.66, true)).toBe(3)
-    expect(contrastThreshold(18.66, false)).toBe(4.5)
-    expect(contrastThreshold(18, true)).toBe(4.5)
+    expect(buildBoard(m)).toContain('no anchors on this route')
   })
 })
 
@@ -1381,10 +1117,12 @@ describe('radiusReading', () => {
     expect(radiusReading({ value: '50%', width: 0, height: 0 })).toBe(0)
     expect(radiusReading({ value: '9999px', width: 0, height: 24 })).toBe(0)
   })
-  test('finishMeasurement reports it on the anchor and on nested boxes', () => {
-    const { contrast: _, radius: __, nested: ___, ...tail } = measurement
+  test('finishMeasurement reports it on the anchor and on nested boxes, and keeps small and overlaps', () => {
+    const { radius: _, nested: __, ...tail } = measurement
     const out = finishMeasurement({
       ...tail,
+      small: ['button 20x20'],
+      overlaps: ['a × b'],
       radius: { value: '50%', ...box },
       nested: [
         {
@@ -1393,91 +1131,11 @@ describe('radiusReading', () => {
           padding: { top: 0, right: 0, bottom: 0, left: 0 },
         },
       ],
-      texts: [],
     })
     expect(out.radius).toBe('full')
     expect(out.nested[0]?.radius).toBe(6)
-  })
-})
-
-describe('finishMeasurement', () => {
-  const { contrast: _, radius: __, nested: ___, ...tail } = measurement
-  const rest = { ...tail, radius: { value: '8px', width: 100, height: 100 }, nested: [] }
-  const text = (over: Partial<TextReading>): TextReading => ({
-    text: 't',
-    fg: [0, 0, 0],
-    bg: [255, 255, 255],
-    fontSize: 16,
-    bold: false,
-    assumedWhite: false,
-    ...over,
-  })
-  /** A grey-ish fg on white whose exact ratio lies in [threshold − 0.005, threshold). */
-  const justUnder = (threshold: number): number[] => {
-    for (let r = 100; r < 200; r++) {
-      for (let b = 100; b < 200; b++) {
-        const fg = [r, r, b]
-        const ratio = contrastRatio(fg, [255, 255, 255])
-        if (ratio < threshold && ratio >= threshold - 0.005) return fg
-      }
-    }
-    throw new Error('no colour found')
-  }
-
-  test('min is the lowest ratio; failures use the size-aware threshold', () => {
-    const m = finishMeasurement({
-      ...rest,
-      texts: [
-        text({}),
-        text({ text: 'grey', fg: [170, 170, 170] }),
-        text({ text: 'big grey', fg: [150, 150, 150], fontSize: 28 }),
-      ],
-    })
-    expect(m.contrast.min).toBe(2.32)
-    expect(m.contrast.failures.map((f) => f.text)).toEqual(['grey', 'big grey'])
-    expect(m.contrast.failures[0]).toEqual({
-      text: 'grey',
-      ratio: 2.32,
-      fg: '#aaaaaa',
-      bg: '#ffffff',
-      fontSize: 16,
-      needs: 4.5,
-      bold: false,
-    })
-    expect(m.contrast.backdrop).toBeUndefined()
-  })
-  test('text inside a disabled control is exempt (WCAG 1.4.3 inactive components)', () => {
-    const m = finishMeasurement({
-      ...rest,
-      texts: [text({ text: 'Disabled', fg: [170, 170, 170], disabled: true }), text({})],
-    })
-    expect(m.contrast.failures).toEqual([])
-    expect(m.contrast.min).toBe(21)
-  })
-  test('a ratio that ROUNDS to the threshold but sits under it still fails (body 4.5, large 3)', () => {
-    for (const [threshold, fontSize] of [
-      [4.5, 16],
-      [3, 28],
-    ] as const) {
-      const fg = justUnder(threshold)
-      const m = finishMeasurement({ ...rest, texts: [text({ fg, fontSize })] })
-      expect(m.contrast.failures).toHaveLength(1)
-      expect(m.contrast.failures[0]?.ratio).toBe(threshold)
-    }
-  })
-  test('exactly the threshold passes', () => {
-    expect(
-      finishMeasurement({ ...rest, texts: [text({ fg: [0, 0, 0], bg: [255, 255, 255] })] }).contrast
-        .failures,
-    ).toEqual([])
-  })
-  test('an assumed backdrop is recorded', () => {
-    expect(
-      finishMeasurement({ ...rest, texts: [text({ assumedWhite: true })] }).contrast.backdrop,
-    ).toBe('assumed-white')
-  })
-  test('no text: min is null, no failures', () => {
-    expect(finishMeasurement({ ...rest, texts: [] }).contrast).toEqual({ min: null, failures: [] })
+    expect(out.small).toEqual(['button 20x20'])
+    expect(out.overlaps).toEqual(['a × b'])
   })
 })
 
@@ -1496,7 +1154,7 @@ describe('capture helpers', () => {
           { x: 90, y: 40, width: 60, height: 100 },
         ],
         8,
-        'mobile',
+        specs(PHONE)[0] as ViewportSpec,
       ),
     ).toEqual({
       x: 0,
@@ -1506,7 +1164,14 @@ describe('capture helpers', () => {
     })
   })
   test('unionClip reports a box below the live page height as empty, never a sliver', () => {
-    expect(unionClip([{ x: 10, y: 900, width: 50, height: 40 }], 8, 'mobile', 600)).toBeNull()
+    expect(
+      unionClip(
+        [{ x: 10, y: 900, width: 50, height: 40 }],
+        8,
+        specs(PHONE)[0] as ViewportSpec,
+        600,
+      ),
+    ).toBeNull()
   })
 })
 
@@ -1519,7 +1184,7 @@ describe('snapClip', () => {
       evaluate: async () => 600,
       screenshot: async (o: unknown) => void shots.push(o),
     }
-    const c = { page, viewport: 'mobile' } as unknown as Parameters<typeof snapClip>[0]
+    const c = { page, spec: specs(PHONE)[0] } as unknown as Parameters<typeof snapClip>[0]
     return { shots, run: () => snapClip(c, 'x.png', [locator as never]) }
   }
   const inside = { x: 10, y: 100, width: 50, height: 40 }
@@ -1539,7 +1204,8 @@ describe('snapClip', () => {
 
 describe('real-app flags', () => {
   const src = { env: { TOKEN: 's3cret-token', EMPTY: '' }, cwd: '/nowhere' }
-  const parse = (...extra: string[]) => parseShotArgs(['/', '--dist', 'd', ...extra], src)
+  const parse = (...extra: string[]) =>
+    parseShotArgs(['/', '--dist', 'd', '--out', 'o', ...extra], src)
 
   test('defaults: no seeds, no proxy, no extra wait, no auto anchors, read-only', () => {
     const a = parse()
@@ -1556,7 +1222,17 @@ describe('real-app flags', () => {
     const cwd = tmp()
     writeFileSync(join(cwd, 'tok'), 'from-file\n')
     const a = parseShotArgs(
-      ['/', '--dist', 'd', '--local-storage', 'b=@env:TOKEN', '--local-storage', 'c=@file:tok'],
+      [
+        '/',
+        '--dist',
+        'd',
+        '--out',
+        'o',
+        '--local-storage',
+        'b=@env:TOKEN',
+        '--local-storage',
+        'c=@file:tok',
+      ],
       { env: src.env, cwd },
     )
     expect(a.localStorage).toEqual([
@@ -1631,14 +1307,24 @@ describe('real-app flags', () => {
   })
   test('a header value with a line break is refused by name, without the value', () => {
     const bad = { env: { T: 'ok\r\nx-evil: 1' }, cwd: '/' }
-    const flags = ['/', '--dist', 'd', '--api', '/a=https://x', '--header', 'x-key=@env:T']
+    const flags = [
+      '/',
+      '--dist',
+      'd',
+      '--out',
+      'o',
+      '--api',
+      '/a=https://x',
+      '--header',
+      'x-key=@env:T',
+    ]
     expect(() => parseShotArgs(flags, bad)).toThrow(/--header x-key: value has characters/)
     expect(() => parseShotArgs(flags, bad)).not.toThrow(/evil/)
   })
   test('--api needs --dist', () => {
-    expect(() => parseShotArgs(['/', '--base', 'http://x', '--api', '/a=https://x'], src)).toThrow(
-      /--api needs --dist/,
-    )
+    expect(() =>
+      parseShotArgs(['/', '--base', 'http://x', '--out', 'o', '--api', '/a=https://x'], src),
+    ).toThrow(/--api needs --dist/)
   })
   test('an error never carries the secret value', () => {
     for (const flags of [
@@ -1677,102 +1363,57 @@ describe('real-app flags', () => {
 })
 
 describe('auto anchors', () => {
-  test('tagAutoAnchors numbers every match and tags only those over 120×60', () => {
-    const tagged: Record<string, string> = {}
-    const el = (name: string, width: number, height: number) => ({
+  const fakeEl =
+    (tagged: Record<string, string>) => (name: string, width: number, height: number) => ({
       getBoundingClientRect: () => ({ width, height }),
       setAttribute: (_: string, value: string) => void (tagged[name] = value),
     })
+  const withDocument = (querySelectorAll: (selector: string) => unknown[]): void => {
+    const g = globalThis as { document?: unknown }
+    const saved = g.document
+    g.document = { querySelectorAll }
+    try {
+      tagAutoAnchors()
+    } finally {
+      g.document = saved
+    }
+  }
+
+  test('tagAutoAnchors numbers every match and tags only those over 120×60', () => {
+    const tagged: Record<string, string> = {}
+    const el = fakeEl(tagged)
     const els = [
       el('small', 100, 200),
       el('card', 300, 100),
       el('flat', 300, 60),
       el('table', 500, 400),
     ]
-    const g = globalThis as { document?: unknown }
-    const saved = g.document
-    g.document = { querySelectorAll: () => els }
-    try {
-      tagAutoAnchors()
-    } finally {
-      g.document = saved
-    }
+    const asked: string[] = []
+    withDocument((selector) => {
+      asked.push(selector)
+      return els
+    })
     expect(tagged).toEqual({ card: 'auto-02', table: 'auto-04' })
+    expect(asked).toEqual(['[data-slot="card"], table'])
   })
 
-  test('tagAutoAnchors falls back to main/section/header/form when no Card, Paper or table qualifies', () => {
+  test('tagAutoAnchors falls back to main/section/header/form when no card or table qualifies', () => {
     const tagged: Record<string, string> = {}
-    const el = (name: string, width: number, height: number) => ({
-      getBoundingClientRect: () => ({ width, height }),
-      setAttribute: (_: string, value: string) => void (tagged[name] = value),
-    })
-    const g = globalThis as { document?: unknown }
-    const saved = g.document
-    g.document = {
-      querySelectorAll: (selector: string) =>
-        selector.includes('mantine-Card')
-          ? [el('tiny-card', 50, 50)]
-          : [el('main', 800, 600), el('header', 800, 40), el('form', 400, 300)],
-    }
-    try {
-      tagAutoAnchors()
-    } finally {
-      g.document = saved
-    }
+    const el = fakeEl(tagged)
+    withDocument((selector) =>
+      selector.includes('data-slot="card"')
+        ? [el('tiny-card', 50, 50)]
+        : [el('main', 800, 600), el('header', 800, 40), el('form', 400, 300)],
+    )
     expect(tagged).toEqual({ main: 'auto-01', form: 'auto-03' })
   })
 })
 
-/** A browser whose one page behaves as `page` says; enough of the surface for the real `capture`. */
-const scriptedBrowser = (page: Record<string, unknown>) =>
-  ({
-    newContext: () =>
-      Promise.resolve({
-        newPage: () => Promise.resolve(page),
-        addInitScript: () => Promise.resolve(),
-        close: () => Promise.resolve(),
-      }),
-  }) as never
-
-const quietPage = (over: Record<string, unknown> = {}) => {
-  const locator: Record<string, unknown> = {
-    first: () => locator,
-    count: () => Promise.resolve(0),
-    screenshot: () => Promise.resolve(),
-  }
-  return {
-    setDefaultTimeout: () => undefined,
-    goto: () => Promise.resolve(),
-    locator: () => locator,
-    screenshot: () => Promise.resolve(),
-    setContent: () => Promise.resolve(),
-    mouse: { move: () => Promise.resolve() },
-    keyboard: { press: () => Promise.resolve() },
-    evaluate: (expression: unknown) =>
-      Promise.resolve(
-        typeof expression === 'string' && expression.includes('data-shot-states')
-          ? { anchors: [], declared: [] }
-          : undefined,
-      ),
-    ...over,
-  }
-}
-
 describe('data trust in capture', () => {
-  const input = (browser: never, over: object = {}) => ({
-    browser,
-    base: 'http://x',
-    routes: ['/'],
-    states: ['rest' as const],
-    pngDir: '/unused',
-    log: () => undefined,
-    ...over,
-  })
-
   test('a 401/403 or unanswered proxied call turns the page shot into an error', async () => {
     const logs: string[] = []
     const out = await capture(
-      input(scriptedBrowser(quietPage()), {
+      input(scriptedBrowser(pageOf()), {
         apiProblems: () => ['GET /api/kpi 401'],
         log: (l: string) => void logs.push(l),
       }),
@@ -1785,17 +1426,12 @@ describe('data trust in capture', () => {
 
   const textPage = (textOf: (url: string) => string) => {
     let url = ''
-    return quietPage({
+    return pageOf({
       goto: (u: string) => {
         url = u
         return Promise.resolve()
       },
-      evaluate: (expression: unknown) =>
-        Promise.resolve(
-          typeof expression === 'string' && expression.includes('data-shot-states')
-            ? { anchors: [], declared: [], content: textOf(url) }
-            : undefined,
-        ),
+      evaluate: evaluating(() => facts({ content: textOf(url) })),
     })
   }
 
@@ -1821,15 +1457,12 @@ describe('data trust in capture', () => {
 
   test('a failed localStorage seed is logged by key and fails the page', async () => {
     const logs: string[] = []
-    const page = quietPage({
-      evaluate: (expression: unknown) =>
-        Promise.resolve(
-          String(expression).includes('__shotSeedFailed')
-            ? 'auth'
-            : String(expression).includes('data-shot-states')
-              ? { anchors: [], declared: [] }
-              : undefined,
-        ),
+    const page = pageOf({
+      evaluate: evaluating(
+        () => facts(),
+        () => NO_SCALE,
+        (e) => (String(e).includes('__shotSeedFailed') ? 'auth' : undefined),
+      ),
     })
     const out = await capture(
       input(scriptedBrowser(page), {
@@ -1843,34 +1476,24 @@ describe('data trust in capture', () => {
   })
 
   /** A page with one `card` anchor whose hover, goto and screenshots can queue proxy problems. */
-  const cardPage = (hooks: {
+  const problemPage = (hooks: {
     goto?: (url: string) => void
     hover?: () => void
     shot?: (url: string) => void
   }) => {
     let url = ''
-    const locator: Record<string, unknown> = {
-      first: () => locator,
-      count: () => Promise.resolve(1),
-      screenshot: () => Promise.resolve(),
+    const anchor = visibleAnchor({
       hover: () => Promise.resolve(hooks.hover?.()),
-      evaluate: () => Promise.resolve(''),
       boundingBox: () => Promise.resolve(null),
-      waitFor: () => Promise.reject(new Error('no tooltip')),
-    }
-    return quietPage({
+    })
+    return pageOf({
       goto: (to: string) => {
         url = to
         return Promise.resolve(hooks.goto?.(to))
       },
-      locator: () => locator,
+      locator: byTooltip(anchor),
       screenshot: () => Promise.resolve(hooks.shot?.(url)),
-      evaluate: (expression: unknown) =>
-        Promise.resolve(
-          typeof expression === 'string' && expression.includes('data-shot-states')
-            ? { anchors: ['card'], declared: [] }
-            : undefined,
-        ),
+      evaluate: evaluating(() => facts({ anchors: ['card'] })),
     })
   }
   /** The proxy's drain, as a queue the page hooks append to. */
@@ -1885,21 +1508,21 @@ describe('data trust in capture', () => {
   test('a 401 during hover fails the page: the rest crop, the hover crop and _page', async () => {
     const q = queue()
     const out = await capture(
-      input(scriptedBrowser(cardPage({ hover: () => q.push('GET /api +1 401') })), {
+      input(scriptedBrowser(problemPage({ hover: () => q.push('GET /api +1 401') })), {
         states: ['rest', 'hover'],
         apiProblems: q.drain,
       }),
     )
-    const desktop = out.shots.filter((s) => s.viewport === 'desktop' && s.scheme === 'light')
+    const desktop = out.shots.filter((s) => s.viewport === DESKTOP && s.scheme === 'light')
     expect(desktop.map((s) => [s.name, s.state, s.status]).toSorted()).toEqual([
       ['_page', 'rest', 'error'],
       ['card', 'hover', 'error'],
       ['card', 'rest', 'error'],
     ])
     expect(desktop.every((s) => s.note === 'GET /api +1 401')).toBe(true)
-    // Mobile skips hover, so its page visit never sees the 401: scoped per visit, it stays ok.
+    // The phone skips hover, so its page visit never sees the 401: scoped per visit, it stays ok.
     expect(
-      out.shots.filter((s) => s.viewport === 'mobile' && s.state === 'rest').map((s) => s.status),
+      out.shots.filter((s) => s.viewport === PHONE && s.state === 'rest').map((s) => s.status),
     ).toEqual(Array(4).fill('ok'))
   })
 
@@ -1908,7 +1531,7 @@ describe('data trust in capture', () => {
     const out = await capture(
       input(
         scriptedBrowser(
-          cardPage({ shot: (url) => url.endsWith('/a') && q.push('GET /api +1 401') }),
+          problemPage({ shot: (url) => url.endsWith('/a') && q.push('GET /api +1 401') }),
         ),
         { routes: ['/a', '/b'], apiProblems: q.drain },
       ),
@@ -1920,21 +1543,18 @@ describe('data trust in capture', () => {
   test("a problem left in the queue before a route starts is not that route's", async () => {
     const q = queue()
     q.push('GET /api +1 401')
-    const out = await capture(input(scriptedBrowser(cardPage({})), { apiProblems: q.drain }))
+    const out = await capture(input(scriptedBrowser(problemPage({})), { apiProblems: q.drain }))
     expect(out.shots.every((s) => s.status === 'ok')).toBe(true)
   })
 
   test('leaving the app origin is reported as not seeded, not as a failed seed', async () => {
     const logs: string[] = []
-    const page = quietPage({
-      evaluate: (expression: unknown) =>
-        Promise.resolve(
-          String(expression).includes('__shotSeedFailed')
-            ? 'origin'
-            : String(expression).includes('data-shot-states')
-              ? { anchors: [], declared: [] }
-              : undefined,
-        ),
+    const page = pageOf({
+      evaluate: evaluating(
+        () => facts(),
+        () => NO_SCALE,
+        (e) => (String(e).includes('__shotSeedFailed') ? 'origin' : undefined),
+      ),
     })
     const out = await capture(
       input(scriptedBrowser(page), {
@@ -1948,18 +1568,22 @@ describe('data trust in capture', () => {
   })
 
   test('auto anchors are tagged again on a state reload', async () => {
+    let tagged = false
     let tags = 0
-    const page = quietPage({
-      evaluate: (expression: unknown) => {
-        if (typeof expression === 'function') {
-          if (expression.name === 'tagAutoAnchors') tags++
+    const page = pageOf({
+      goto: () => {
+        tagged = false
+        return Promise.resolve()
+      },
+      evaluate: (e: unknown, arg?: unknown) => {
+        if (typeof e === 'function' && e.name === 'tagAutoAnchors') {
+          tags++
+          tagged = true
           return Promise.resolve(undefined)
         }
-        return Promise.resolve(
-          String(expression).includes('data-shot-states')
-            ? { anchors: [], declared: ['empty'] }
-            : undefined,
-        )
+        return evaluating(() =>
+          tagged ? facts({ anchors: ['auto-01'], states: { 'auto-01': ['empty'] } }) : facts(),
+        )(e, arg)
       },
     })
     await capture(input(scriptedBrowser(page), { autoAnchors: true, states: ['rest', 'empty'] }))
@@ -2160,7 +1784,7 @@ describe('real-data run', () => {
             '--dist',
             dist(),
             '--out',
-            '.basalt/shots/r1',
+            'shots-1',
             '--api',
             '/api=https://api.example.com',
             '--local-storage',
@@ -2173,9 +1797,9 @@ describe('real-data run', () => {
           {
             resolve: () => fakePw([]),
             log: (l) => void logs.push(l),
-            capture: (input) => {
-              seen.push(input)
-              writeFileSync(join(input.pngDir, 'a.png'), '')
+            capture: (args) => {
+              seen.push(args)
+              writeFileSync(join(args.pngDir, 'a.png'), '')
               return Promise.resolve({
                 anchors: [],
                 shots: fakeMetrics().shots.filter((s) => s.status === 'ok'),
@@ -2203,7 +1827,7 @@ describe('real-data run', () => {
     const logs: string[] = []
     process.env['SHOT_TEST_TOKEN'] = 'tok-7f3a9c'
     process.env['SHOT_TEST_BEARER'] = 'Bearer bearer-91bd'
-    const page = quietPage({
+    const page = pageOf({
       goto: () => Promise.reject(new Error('net::ERR_CONNECTION_REFUSED at tok-7f3a9c?')),
     })
     const pw: Playwright = {
@@ -2221,7 +1845,7 @@ describe('real-data run', () => {
             '--dist',
             dist(),
             '--out',
-            '.basalt/shots/r1',
+            'shots-1',
             '--api',
             '/api=https://api.example.com',
             '--local-storage',
@@ -2236,8 +1860,8 @@ describe('real-data run', () => {
       expect(result).toBe(1)
       const written = everythingWritten(cwd, logs, lines)
       expect(written).toContain('load failed')
-      expect(existsSync(join(cwd, '.basalt/shots/r1/board.html'))).toBe(true)
-      expect(existsSync(join(cwd, '.basalt/shots/r1/metrics.json'))).toBe(true)
+      expect(existsSync(join(cwd, 'shots-1/board.html'))).toBe(true)
+      expect(existsSync(join(cwd, 'shots-1/metrics.json'))).toBe(true)
       expect(written).not.toMatch(/bearer-91bd/)
     } finally {
       delete process.env['SHOT_TEST_TOKEN']
@@ -2245,15 +1869,28 @@ describe('real-data run', () => {
     }
   })
 
-  test('openContext seeds localStorage through an origin-guarded init script', async () => {
+  test('openContext seeds the scheme and localStorage through init scripts', async () => {
     const scripts: string[] = []
+    const options: { isMobile: boolean; hasTouch: boolean; colorScheme: string }[] = []
     const browser = {
-      newContext: () => Promise.resolve({ addInitScript: (s: string) => void scripts.push(s) }),
+      newContext: (o: (typeof options)[number]) => {
+        options.push(o)
+        return Promise.resolve({ addInitScript: (s: string) => void scripts.push(s) })
+      },
     }
-    await openContext(browser as never, 'light', 'desktop', [['auth', 'a"b']], 'http://app')
+    const [desktop, phone] = SPECS as [ViewportSpec, ViewportSpec]
+    await openContext(browser as never, 'dark', desktop, [['auth', 'a"b']], 'http://app')
     expect(scripts).toHaveLength(2)
+    expect(scripts[0]).toContain("setItem('basalt:scheme','dark')")
+    expect(scripts[0]).toContain("setAttribute('data-theme','dark')")
+    expect(scripts[0]).not.toContain('mantine')
     expect(scripts[1]).toBe(seedScript([['auth', 'a"b']], 'http://app'))
     expect(scripts[1]).toContain('location.origin!=="http://app"')
+    await openContext(browser as never, 'light', phone)
+    expect(options.map((o) => [o.isMobile, o.hasTouch, o.colorScheme])).toEqual([
+      [false, false, 'dark'],
+      [true, true, 'light'],
+    ])
   })
 })
 
@@ -2270,32 +1907,22 @@ const everythingWritten = (cwd: string, logs: string[], lines: string[]): string
 describe('absent anchors', () => {
   const run = async () => {
     let url = ''
-    const page = quietPage({
+    const page = pageOf({
       goto: (u: string) => {
         url = u
         return Promise.resolve()
       },
-      evaluate: (expression: unknown) =>
-        Promise.resolve(
-          typeof expression === 'string' && expression.includes('data-shot-states')
-            ? url.includes('shot-state=')
-              ? { anchors: [], declared: ['empty'] }
-              : {
-                  anchors: ['chart', 'table'],
-                  declared: ['empty'],
-                  absent: { chart: ['empty', 'error'] },
-                }
-            : undefined,
-        ),
+      evaluate: evaluating(() =>
+        url.includes('shot-state=')
+          ? facts()
+          : facts({
+              anchors: ['chart', 'table'],
+              states: { chart: ['empty'], table: ['empty'] },
+              absent: { chart: ['empty', 'error'] },
+            }),
+      ),
     })
-    const out = await capture({
-      browser: scriptedBrowser(page),
-      base: 'http://x',
-      routes: ['/'],
-      states: ['empty'],
-      pngDir: '/unused',
-      log: () => undefined,
-    })
+    const out = await capture(input(scriptedBrowser(page), { states: ['empty'] }))
     return out.shots.filter((s) => s.state === 'empty')
   }
 
@@ -2310,20 +1937,24 @@ describe('absent anchors', () => {
       table.every((s) => s.status === 'error' && /absent in this state/.test(s.note ?? '')),
     ).toBe(true)
   })
+  test('a route where no anchor declares a state says so on every anchor', async () => {
+    const page = pageOf({ evaluate: evaluating(() => facts({ anchors: ['chart'] })) })
+    const out = await capture(input(scriptedBrowser(page), { states: ['empty', 'loading'] }))
+    expect(out.shots).toHaveLength(8)
+    expect(out.shots.every((s) => s.status === 'not-declared' && s.note === NO_STATES_NOTE)).toBe(
+      true,
+    )
+  })
   test('the board labels an absent cell and the summary counts it', () => {
     const html = buildBoard({
       ...fakeMetrics(),
       shots: [
-        {
-          route: '/dashboard',
+        record({
           name: 'chart',
-          scheme: 'light',
-          viewport: 'desktop',
           state: 'tooltip',
-          file: null,
           status: 'absent',
           note: 'declared absent in this state',
-        },
+        }),
       ],
     })
     expect(html).toContain('empty absent">absent: declared absent in this state')
@@ -2331,8 +1962,7 @@ describe('absent anchors', () => {
   test('a run with only absent and ok shots exits 0 and reports the count', async () => {
     const logs: string[] = []
     const cwd = tmp()
-    writeFileSync(join(cwd, 'package.json'), '{}')
-    const code = await shot(['/', '--base', 'http://x'], cwd, {
+    const code = await shot(['/', '--base', 'http://x', '--out', 'shots-1'], cwd, {
       resolve: () => fakePw([]),
       now: () => new Date('2026-10-16T00:00:00.000Z'),
       log: (l) => void logs.push(l),
@@ -2341,24 +1971,8 @@ describe('absent anchors', () => {
           anchors: [],
           scale: [],
           shots: [
-            {
-              route: '/',
-              name: 'a',
-              scheme: 'light',
-              viewport: 'desktop',
-              state: 'rest',
-              file: 'png/a.png',
-              status: 'ok',
-            },
-            {
-              route: '/',
-              name: 'a',
-              scheme: 'light',
-              viewport: 'desktop',
-              state: 'empty',
-              file: null,
-              status: 'absent',
-            },
+            record({ route: '/', name: 'a', file: 'png/a.png' }),
+            record({ route: '/', name: 'a', state: 'empty', status: 'absent' }),
           ],
         }),
     })

@@ -1,62 +1,56 @@
-/** Per route × scheme × viewport: full-page shot, then every `data-shot` anchor through every state. */
+/** Per route × scheme × viewport: full-page shot, then every anchor through every state. */
 import { createHash } from 'node:crypto'
 import { readFileSync } from 'node:fs'
 import { basename, join } from 'node:path'
 
 import { buildSheet } from './board'
-import { SEED_FLAG, seedScript } from './real-data'
-import type { Pair } from './real-data'
-
 import { finishMeasurement, measureAnchor } from './measure'
 import type { Box, PwBrowser, PwContext, PwLocator, PwPage, ShotOptions } from './playwright'
+import { SEED_FLAG, seedScript } from './real-data'
+import type { Pair } from './real-data'
 import {
+  ANCHOR_SLOTS,
   NO_STATES_NOTE,
   PAGE_ANCHOR,
   SCHEMES,
   URL_STATES,
-  VIEWPORTS,
   VIEWPORT_SPECS,
 } from './types'
 import type {
   AnchorMetrics,
   Measurement,
+  PageMetrics,
   Scale,
   Scheme,
+  ShotMetrics,
   ShotRecord,
   ShotState,
-  Viewport,
+  ViewportSpec,
 } from './types'
 
 const NAV_TIMEOUT_MS = 30_000
-const HOVER_TIMEOUT_MS = 5_000
-/** Every Playwright wait a capture makes on one anchor: a hidden or tall target costs this, not 30 s. */
-const STEP_TIMEOUT_MS = 5_000
+/** Every Playwright wait on one anchor: a hidden or tall target costs this, not 30 s. */
+const STEP_MS = 5_000
 const SHOT_TIMEOUT_MS = 15_000
-const REVEAL_SETTLE_MS = 60
-/** Chromium refuses screenshots past ~16k px; a taller anchor is captured as far as this. */
-const MAX_VIEWPORT_PX = 16_000
-const TOOLTIP_TIMEOUT_MS = 3_000
-const TAB_PRESSES = 80
-const FOCUS_MARGIN_PX = 8
-const TIP_PROBE_MS = 250
-const TIP_SETTLE_MS = 60
-/** How long a previous anchor's tooltip gets to unmount before the next hover. */
-const TIP_CLEAR_MS = 1_000
-const TIP_SETTLE_READS = 10
+const SETTLE_MS = 60
+/** Chromium refuses screenshots past ~16k px. */
+const MAX_PX = 16_000
+const FRAMES = 'new Promise((done) => requestAnimationFrame(() => requestAnimationFrame(done)))'
 
 export type CaptureInput = {
   browser: PwBrowser
   base: string
   routes: readonly string[]
+  viewports: readonly ViewportSpec[]
   states: readonly ShotState[]
   pngDir: string
   /** Seeded before any page script runs (values may be secrets: never logged or written). */
   localStorage?: readonly Pair[]
-  /** Extra settle in ms after `networkidle`; omitted: none. */
+  /** Extra settle in ms after `networkidle`. */
   wait?: number
   /** Drains the proxied calls that failed since the last read (401/403, no answer). */
   apiProblems?: () => string[]
-  /** On a page with no `data-shot`, tag each large Card, Paper and table as an anchor. */
+  /** On a page with no anchor, tag each large card and table as one. */
   autoAnchors?: boolean
   /** Replaces the in-page measurer (tests). */
   measure?: (anchor: PwLocator) => Promise<Measurement>
@@ -65,57 +59,44 @@ export type CaptureInput = {
 
 type PageFacts = {
   anchors: string[]
-  declared: string[]
-  /** Anchors that carry `data-shot-states` themselves (on, inside or above the anchor element). Absent in a hand-built fact: the page's `declared` stands for every anchor. */
-  declaring?: string[]
-  /** Anchors that hold a basalt state surface (ChartCard, StatCard, a chart state). */
-  stateful?: string[]
-  /** Anchor → the URL states it declares itself absent in (`data-shot-absent="empty error"`). */
-  absent?: Record<string, string[]>
-  /** The page's visible text, to tell whether every route rendered the same thing. */
-  content?: string
+  /** Anchor → its URL states: `data-shot-states`, else all three when a `data-phase` is on, in or above it. */
+  states: Record<string, string[]>
+  /** Anchor → the states it declares itself absent in (`data-shot-absent`). */
+  absent: Record<string, string[]>
+  content: string
+  /** px the document is wider than the viewport. */
+  overflowX: number
 }
 
-/** Everything one page visit shares: where the records go and what was already measured. */
+/** Everything one page visit shares. */
 type Ctx = {
   page: PwPage
   input: CaptureInput
   route: string
   scheme: Scheme
-  viewport: Viewport
+  spec: ViewportSpec
   /** The viewport's current height: a tall anchor grows it for one shot. */
   height: number
   facts: PageFacts
   anchors: AnchorMetrics[]
   shots: ShotRecord[]
   measured: Set<string>
-  /** What the last visit showed to be wrong about the data itself: a failed seed, a 401/403, no API answer. */
+  /** What the data itself got wrong: a failed seed, a 401/403, no API answer. */
   problems: string[]
-  content?: string
-  /** Read on the first page of a context that loads. */
-  scale?: Steps | undefined
-  scaleError?: string | undefined
 }
 
-type Outcome = {
-  name: string
-  state: ShotState
-  status: ShotRecord['status']
-  file?: string
-  note?: string
-  stateful?: true
-}
+type Outcome = Pick<ShotRecord, 'name' | 'state' | 'status'> &
+  Partial<Pick<ShotRecord, 'note' | 'ignored'>> & { file?: string }
 
-/** Thrown inside a capture when the anchor simply has no such target: recorded `not-declared`, not `error`. */
+/** The anchor has no such target: recorded `not-declared`, not `error`. */
 class NotDeclared extends Error {}
-
-/** Thrown when the anchor is genuinely not rendered at this viewport: recorded `absent` with the reason. */
+/** The anchor is not rendered at this viewport: recorded `absent` with the reason. */
 class Absent extends Error {}
 
 const sleep = (ms: number): Promise<void> => new Promise((done) => setTimeout(done, ms))
 
 /** `work`, rejected after `ms`: one hung Playwright call never spends the 30 s default. */
-function within<T>(what: string, work: Promise<T>, ms = STEP_TIMEOUT_MS): Promise<T> {
+function within<T>(what: string, work: Promise<T>, ms = STEP_MS): Promise<T> {
   let timer: ReturnType<typeof setTimeout> | undefined
   const late = new Promise<never>((_, reject) => {
     timer = setTimeout(() => reject(new Error(`${what} timed out after ${ms / 1000} s`)), ms)
@@ -130,45 +111,49 @@ const hash = (text: string): string => createHash('sha1').update(text).digest('h
 const slug = (text: string): string => text.replace(/[^\w-]+/g, '-').replace(/^-+|-+$/g, '')
 const firstLine = (error: unknown): string =>
   (error instanceof Error ? error.message : String(error)).split('\n')[0] ?? ''
-const sel = (name: string): string => `[data-shot=${JSON.stringify(name)}]`
+const sel = (name: string): string => `[data-shot-anchor=${JSON.stringify(name)}]`
 const anchorOf = (c: Ctx, name: string): PwLocator => c.page.locator(sel(name)).first()
+const stem = (route: string, name: string): string =>
+  `${slug(route) || 'root'}-${hash(route)}__${slug(name)}-${hash(name)}`
 
 /** `<route>-<hash>__<name>-<hash>__…`: the hash of the RAW text keeps `/a/b` and `/a-b` apart. */
 export const fileName = (
   route: string,
   name: string,
   scheme: Scheme,
-  viewport: Viewport,
+  viewport: string,
   state: ShotState,
-): string =>
-  `${slug(route) || 'root'}-${hash(route)}__${slug(name)}-${hash(name)}__${scheme}__${viewport}__${state}.png`
+): string => `${stem(route, name)}__${scheme}__${viewport}__${state}.png`
+
+/** `<stem>__sheet.png`: one contact sheet per anchor, beside its crops. */
+export const sheetName = (route: string, name: string): string => `${stem(route, name)}__sheet.png`
 
 /** The state URL: the query goes before any `#fragment`. */
 export function withParam(route: string, state: ShotState): string {
-  const hash = route.indexOf('#')
-  const [path, fragment] = hash < 0 ? [route, ''] : [route.slice(0, hash), route.slice(hash)]
+  const at = route.indexOf('#')
+  const [path, fragment] = at < 0 ? [route, ''] : [route.slice(0, at), route.slice(at)]
   return `${path}${path.includes('?') ? '&' : '?'}shot-state=${state}${fragment}`
 }
 
-/** The rect union of `boxes`, grown by `margin` and clamped to the viewport (`tall`: its current height); null when nothing of it is inside. */
+/** The union of `boxes` grown by `margin` and clamped to the viewport (`tall`: its live height); null when none of it is inside. */
 export function unionClip(
   boxes: readonly Box[],
   margin: number,
-  viewport: Viewport,
+  spec: Pick<ViewportSpec, 'width' | 'height'>,
   tall?: number,
 ): Box | null {
-  const { width, height: base } = VIEWPORT_SPECS[viewport]
-  const height = tall ?? base
   const left = Math.max(0, Math.min(...boxes.map((b) => b.x)) - margin)
   const top = Math.max(0, Math.min(...boxes.map((b) => b.y)) - margin)
-  const right = Math.min(width, Math.max(...boxes.map((b) => b.x + b.width)) + margin)
-  const bottom = Math.min(height, Math.max(...boxes.map((b) => b.y + b.height)) + margin)
+  const right = Math.min(spec.width, Math.max(...boxes.map((b) => b.x + b.width)) + margin)
+  const bottom = Math.min(
+    tall ?? spec.height,
+    Math.max(...boxes.map((b) => b.y + b.height)) + margin,
+  )
   return right <= left || bottom <= top
     ? null
     : { x: left, y: top, width: right - left, height: bottom - top }
 }
 
-/** One screenshot with the options every shot shares. */
 const snap = (
   target: { screenshot(options: ShotOptions): Promise<unknown> },
   path: string,
@@ -182,47 +167,33 @@ const snap = (
     ...extra,
   })
 
-/** A clip of `targets` re-measured against the live page height (`c.height` goes stale after a reflow); an empty clip is retried once after a frame, then fails. */
+/** A clip of `targets` against the live page height (it goes stale after a reflow); an empty one is retried once after a frame. */
 export async function snapClip(c: Ctx, path: string, targets: readonly PwLocator[]): Promise<void> {
   for (let retry = true; ; retry = false) {
     const live = await c.page.evaluate<number>('window.innerHeight')
     const boxes = (await Promise.all(targets.map((t) => t.boundingBox()))).filter((b) => b !== null)
-    const clip =
-      boxes.length === targets.length && unionClip(boxes, FOCUS_MARGIN_PX, c.viewport, live)
+    const clip = boxes.length === targets.length && unionClip(boxes, 8, c.spec, live)
     if (clip) return void (await snap(c.page, path, { clip }))
     if (!retry) throw new Error('Clipped area is either empty or outside the resulting image')
     await c.page.evaluate(FRAMES)
   }
 }
 
-function record(c: Ctx, { name, state, status, file, note, stateful }: Outcome): void {
-  const { route, scheme, viewport } = c
-  c.shots.push({
-    route,
-    name,
-    scheme,
-    viewport,
-    state,
-    file: file ?? null,
-    status,
-    ...(note ? { note } : {}),
-    ...(stateful ? { stateful } : {}),
-  })
+function record(c: Ctx, { name, state, status, file, note, ignored }: Outcome): void {
+  const { route, scheme } = c
+  const shot = { route, name, scheme, viewport: c.spec.label, state, file: file ?? null, status }
+  c.shots.push({ ...shot, ...(note ? { note } : {}), ...(ignored ? { ignored } : {}) })
   if (status === 'error')
-    c.input.log(`[shot] ${route} ${name} ${scheme}/${viewport}/${state}: ${note}`)
+    c.input.log(`[shot] ${route} ${name} ${scheme}/${c.spec.label}/${state}: ${note}`)
 }
 
 async function load(page: PwPage, url: string, settle = 0): Promise<void> {
   await page.goto(url, { waitUntil: 'networkidle' })
   await page.evaluate('document.fonts.ready.then(() => undefined)')
-  if (settle > 0) await new Promise((done) => setTimeout(done, settle))
+  if (settle > 0) await sleep(settle)
 }
 
-/**
- * Runs in the page: numbers every Card, Paper and table in DOM order, tagging those over 120×60 px as
- * anchors. A page with none of them (Tailwind, a reader) falls back to `main`, `section`, `header`
- * and `form` under the same floor.
- */
+/** Runs in the page, on a page with no anchor: tags each card and table over 120×60 px `auto-NN`, else `main`, `section`, `header`, `form`. */
 export function tagAutoAnchors(): void {
   const tag = (selector: string): number => {
     let tagged = 0
@@ -234,44 +205,61 @@ export function tagAutoAnchors(): void {
     })
     return tagged
   }
-  if (tag('.mantine-Card-root, .mantine-Paper-root, table') === 0)
-    tag('main, section, header, form')
+  if (tag('[data-slot="card"], table') === 0) tag('main, section, header, form')
 }
 
-/** The DOM marks of a basalt state surface: `ChartCard` and the chart state write theirs; `StatCard` has none but its `basalt-card` container. */
-const STATE_SURFACE =
-  '[data-basalt-chart-card], [data-basalt-chart-state], [style*="container-name: basalt-card"]'
-
-const readFacts = (page: PwPage): Promise<PageFacts> =>
-  page.evaluate(`(() => { const STATE_SURFACE = ${JSON.stringify(STATE_SURFACE)}; return {
-    anchors: [...new Set([...document.querySelectorAll('[data-shot]')].map((e) => e.getAttribute('data-shot')).filter(Boolean))],
-    declared: [...document.querySelectorAll('[data-shot-states]')].flatMap((e) => (e.getAttribute('data-shot-states') ?? '').split(/\\s+/)).filter(Boolean),
-    declaring: [...new Set([...document.querySelectorAll('[data-shot]')].filter((e) => e.closest('[data-shot-states]') || e.querySelector('[data-shot-states]')).map((e) => e.getAttribute('data-shot')).filter(Boolean))],
-    stateful: [...new Set([...document.querySelectorAll('[data-shot]')].filter((e) => e.matches(STATE_SURFACE) || e.querySelector(STATE_SURFACE)).map((e) => e.getAttribute('data-shot')).filter(Boolean))],
-    content: document.body ? document.body.innerText : '',
-    absent: Object.fromEntries([...document.querySelectorAll('[data-shot][data-shot-absent]')].map((e) => [e.getAttribute('data-shot'), (e.getAttribute('data-shot-absent') ?? '').split(/\\s+/).filter(Boolean)])),
-  }; })()`)
+/**
+ * Runs in the page: names every anchor (`data-shot="<name>"`, else the outermost public slot as
+ * `<slot>-<n>` in DOM order) with `data-shot-anchor`, and reads what each declares.
+ */
+export function readFactsInPage(slots: string[]): PageFacts {
+  const words = (el: Element | null, attr: string): string[] =>
+    (el?.getAttribute(attr) ?? '').split(/\s+/).filter(Boolean)
+  const nest = `[data-shot], ${slots.map((s) => `[data-slot="${s}"]`).join(', ')}`
+  const counts: Record<string, number> = {}
+  const facts: PageFacts = { anchors: [], states: {}, absent: {}, content: '', overflowX: 0 }
+  for (const el of Array.from(document.querySelectorAll(nest))) {
+    let name = el.getAttribute('data-shot')
+    if (!name) {
+      const slot = el.getAttribute('data-slot') ?? ''
+      if (!slots.includes(slot) || el.parentElement?.closest(nest)) continue
+      counts[slot] = (counts[slot] ?? 0) + 1
+      name = `${slot}-${counts[slot]}`
+    }
+    if (facts.anchors.includes(name)) continue
+    el.setAttribute('data-shot-anchor', name)
+    facts.anchors.push(name)
+    const own = el.closest('[data-shot-states]') ?? el.querySelector('[data-shot-states]')
+    const phased = el.closest('[data-phase]') ?? el.querySelector('[data-phase]')
+    facts.states[name] = own
+      ? words(own, 'data-shot-states')
+      : phased
+        ? ['empty', 'loading', 'error']
+        : []
+    facts.absent[name] = words(el, 'data-shot-absent')
+  }
+  const root = document.documentElement
+  facts.content = document.body ? document.body.innerText : ''
+  facts.overflowX = Math.max(0, root.scrollWidth - root.clientWidth)
+  return facts
+}
 
 const addProblem = (c: Ctx, problem: string): void => {
   if (!c.problems.includes(problem)) c.problems.push(problem)
 }
 
-/** Moves the proxied calls that failed since the last read into this page visit's problems. */
-const collect = (c: Ctx): void => {
-  for (const problem of c.input.apiProblems?.() ?? []) addProblem(c, problem)
-}
+/** Moves the proxied calls that failed since the last read into this visit's problems. */
+const collect = (c: Ctx): void => c.input.apiProblems?.().forEach((p) => addProblem(c, p))
 
-/**
- * One load of `url`: settle, auto-anchor a page that declares none, read its facts, and collect
- * what is wrong with the data (`c.problems`) so a board never looks fine over a failed login.
- */
+/** One load of `url`: settle, auto-anchor a page that has none, read its facts, collect what is wrong with the data. */
 async function visit(c: Ctx, url: string): Promise<PageFacts> {
   const { input, page } = c
   await load(page, url, input.wait)
-  let facts = await readFacts(page)
+  const read = (): Promise<PageFacts> => page.evaluate(readFactsInPage, ANCHOR_SLOTS as string[])
+  let facts = await read()
   if (input.autoAnchors && facts.anchors.length === 0) {
     await page.evaluate(tagAutoAnchors, undefined)
-    facts = await readFacts(page)
+    facts = await read()
   }
   collect(c)
   if (input.localStorage?.length) {
@@ -286,10 +274,7 @@ async function visit(c: Ctx, url: string): Promise<PageFacts> {
   return facts
 }
 
-/**
- * When this page visit's data is untrustworthy, every shot of it (page and anchors, every state)
- * becomes an error carrying the problem; a page shot is added when `rest` was not requested.
- */
+/** When this visit's data is untrustworthy, every shot of it becomes an error carrying the problem. */
 function flagProblems(c: Ctx): void {
   if (c.problems.length === 0) return
   const note = c.problems.join('; ')
@@ -297,15 +282,12 @@ function flagProblems(c: Ctx): void {
     if (shot.status === 'ok') Object.assign(shot, { status: 'error', note })
   if (!c.shots.some((s) => s.name === PAGE_ANCHOR && s.state === 'rest'))
     record(c, { name: PAGE_ANCHOR, state: 'rest', status: 'error', note })
-  c.input.log(`[shot] ${c.route} ${c.scheme}/${c.viewport}: ${note}`)
+  c.input.log(`[shot] ${c.route} ${c.scheme}/${c.spec.label}: ${note}`)
 }
 
 /**
  * Runs in the page: why the anchor paints nothing (`display: none` on it or an ancestor, hidden,
- * zero size), or '' after scrolling it into view itself. An anchor taller than the viewport is
- * aligned to its top, a shorter one is centred so a tooltip has room around it. Playwright's own
- * `scrollIntoViewIfNeeded` waits out its actionability checks, which is what cost 30 s on a Sparkline
- * target, a hidden mobile pane and an anchor taller than the viewport.
+ * zero size), or '' after scrolling it into view itself (Playwright's own wait cost 30 s on a hidden pane).
  */
 export function revealInPage(el: Element): string {
   for (let node: Element | null = el; node; node = node.parentElement) {
@@ -325,196 +307,146 @@ export function revealInPage(el: Element): string {
   return ''
 }
 
-/**
- * Brings the anchor into view. A hidden anchor is `absent` (with the reason) only where hiding is
- * expected: a pointer/focus state, or a state it declared itself absent in. A hidden `rest` anchor
- * (or URL state) is a defect, so it stays an `Error`, as does a missing one. No Playwright wait is
- * involved, so none of them costs more than a step.
- */
-async function reveal(c: Ctx, name: string, state: ShotState): Promise<void> {
-  const anchor = anchorOf(c, name)
-  if ((await within('locating the anchor', anchor.count())) === 0)
-    throw new Error('anchor not found')
-  const verdict = await within('revealing the anchor', anchor.evaluate(revealInPage))
-  if (typeof verdict === 'string' && verdict !== '') {
-    const note = `not visible at this viewport: ${verdict}`
-    const expected = state === 'hover' || state === 'focus' || state === 'tooltip'
-    const declared = c.facts.absent?.[name]?.includes(state) === true
-    throw expected || declared ? new Absent(note) : new Error(note)
-  }
-  await sleep(REVEAL_SETTLE_MS)
-}
-
-/** The anchor's box once two reads agree: a smooth scroll or an animating card never shifts the clip. */
-async function settledBox(target: PwLocator): Promise<Box | null> {
-  let box = await within('measuring the anchor', target.boundingBox())
-  for (let i = 0; i < TIP_SETTLE_READS; i++) {
-    await sleep(TIP_SETTLE_MS)
-    const next = await within('measuring the anchor', target.boundingBox())
-    const settled = JSON.stringify(next) === JSON.stringify(box)
-    box = next
-    if (settled) break
-  }
-  return box
-}
-
-const FRAMES = 'new Promise((done) => requestAnimationFrame(() => requestAnimationFrame(done)))'
-
-async function resize(c: Ctx, height: number): Promise<void> {
-  await c.page.setViewportSize({ width: VIEWPORT_SPECS[c.viewport].width, height })
-  c.height = height
-  await c.page.evaluate(FRAMES)
-}
-
-/**
- * Runs in the page: hides (`visibility`, kept in layout) every fixed or sticky element that is not
- * the anchor, inside it, or around it, and not an open popup (a nav that merely owns a closed
- * `role=menu` is chrome), so the shell's PageBar and bottom nav are
- * never drawn over a crop. A popup that opens later is not hidden: it did not exist yet.
- */
+/** Runs in the page: hides every fixed or sticky element that is not (in, around) the anchor or an open popup. */
 export function hideChrome(name: string): void {
-  const anchor = Array.from(document.querySelectorAll('[data-shot]')).find(
-    (el) => el.getAttribute('data-shot') === name,
-  )
+  const anchor = document.querySelector(`[data-shot-anchor=${JSON.stringify(name)}]`)
   const popup = '[role="tooltip"], [role="dialog"], [role="listbox"], [role="menu"]'
-  const shown = (e: Element): boolean => {
-    const { width, height } = e.getBoundingClientRect()
-    return width > 0 && height > 0
-  }
-  const isOpenPopup = (e: Element, sel: string): boolean =>
-    (e.matches(sel) && shown(e)) || Array.from(e.querySelectorAll(sel)).some(shown)
-  for (const el of Array.from(document.body.querySelectorAll('*'))) {
+  const shown = (e: Element): boolean => e.getBoundingClientRect().width > 0
+  for (const el of Array.from(document.body.querySelectorAll<HTMLElement>('*'))) {
     const { position } = getComputedStyle(el)
     if (position !== 'fixed' && position !== 'sticky') continue
     if (anchor && (el.contains(anchor) || anchor.contains(el))) continue
-    if (isOpenPopup(el, popup)) continue
-    const style = (el as HTMLElement).style
-    el.setAttribute('data-shot-chrome', style.getPropertyValue('visibility'))
-    style.setProperty('visibility', 'hidden', 'important')
+    if ((el.matches(popup) && shown(el)) || Array.from(el.querySelectorAll(popup)).some(shown))
+      continue
+    el.setAttribute('data-shot-chrome', el.style.visibility)
+    el.style.setProperty('visibility', 'hidden', 'important')
   }
 }
 
 /** Runs in the page: undoes `hideChrome`. */
 export function showChrome(): void {
-  for (const el of Array.from(document.querySelectorAll('[data-shot-chrome]'))) {
-    const style = (el as HTMLElement).style
+  for (const el of Array.from(document.querySelectorAll<HTMLElement>('[data-shot-chrome]'))) {
     const before = el.getAttribute('data-shot-chrome') ?? ''
-    if (before) style.setProperty('visibility', before)
-    else style.removeProperty('visibility')
+    if (before) el.style.setProperty('visibility', before)
+    else el.style.removeProperty('visibility')
     el.removeAttribute('data-shot-chrome')
   }
 }
 
-/**
- * Prepares the page for one anchor's crops: shell chrome hidden, and the viewport grown to hold an
- * anchor taller than it (the anchor's own scrollport would otherwise paint it blank below the first
- * screen). Returns the undo.
- */
+async function resize(c: Ctx, height: number): Promise<void> {
+  await c.page.setViewportSize({ width: c.spec.width, height })
+  c.height = height
+  await c.page.evaluate(FRAMES)
+}
+
+/** Hides the shell's chrome and grows the viewport to hold an anchor taller than it; returns the undo. */
 async function frame(c: Ctx, name: string): Promise<() => Promise<void>> {
-  const spec = VIEWPORT_SPECS[c.viewport]
   const undo = async (): Promise<void> => {
     await c.page.evaluate(showChrome, undefined)
-    if (c.height !== spec.height) await resize(c, spec.height)
+    if (c.height !== c.spec.height) await resize(c, c.spec.height)
   }
   await c.page.evaluate(hideChrome, name)
   try {
     const anchor = anchorOf(c, name)
-    // A missing anchor is left for `reveal` to name; measuring it would only wait out the step.
-    if ((await within('locating the anchor', anchor.count())) > 0) {
-      const height = Number(
-        await within(
-          'measuring the anchor',
-          anchor.evaluate((el) => el.getBoundingClientRect().height),
-        ),
-      )
-      if (height > spec.height)
-        await resize(c, Math.min(MAX_VIEWPORT_PX, Math.ceil(height) + spec.height))
-    }
+    if ((await within('locating the anchor', anchor.count())) === 0)
+      throw new Error('anchor not found')
+    const box = anchor.evaluate((el) => el.getBoundingClientRect().height)
+    const height = Number(await within('measuring the anchor', box))
+    if (height > c.spec.height) await resize(c, Math.min(MAX_PX, Math.ceil(height) + c.spec.height))
   } catch (error) {
-    // The caller never gets an undo for a frame that threw: put the page back before it surfaces.
     await undo()
     throw error
   }
   return undo
 }
 
-/**
- * Runs in the page: px the PAGE scrollport hides, which `fullPage` cannot see. That is the element
- * carrying `data-basalt-scrollport` (BasaltShell's `AppShell.Main`); a shell-less app has none, so
- * the outermost auto/scroll box counts instead. A bounded scroll box nested inside it (an event
- * list, a table) never does: its hidden rows are not page height.
- */
+/** Scrolls the anchor into view. Hidden is `absent` where hiding is expected (pointer, focus, a declared state), else a defect. */
+async function reveal(c: Ctx, name: string, state: ShotState): Promise<void> {
+  const verdict = await within('revealing the anchor', anchorOf(c, name).evaluate(revealInPage))
+  if (typeof verdict === 'string' && verdict !== '') {
+    const note = `not visible at this viewport: ${verdict}`
+    const expected =
+      ['hover', 'focus', 'tooltip'].includes(state) || c.facts.absent[name]?.includes(state)
+    throw expected ? new Absent(note) : new Error(note)
+  }
+  await sleep(SETTLE_MS)
+}
+
+/** `read()` once two reads in a row agree: an animating card never shifts the clip. */
+async function settled<T>(what: string, read: () => Promise<T>): Promise<T> {
+  let last = await within(what, read())
+  for (let i = 0; i < 10; i++) {
+    await sleep(SETTLE_MS)
+    const next = await within(what, read())
+    const same = JSON.stringify(next) === JSON.stringify(last)
+    last = next
+    if (same) break
+  }
+  return last
+}
+
+/** Runs in the page: px the PAGE scrollport hides, which `fullPage` cannot see (the shell's `data-basalt-scrollport`, else the outermost auto/scroll box; a nested one never counts). */
 export function hiddenScrollPx(): number {
   const hidden = (el: Element): number => Math.max(0, el.scrollHeight - el.clientHeight)
   const declared = document.querySelector('[data-basalt-scrollport]')
   if (declared !== null) return hidden(declared)
-  const scrolls = (el: Element): boolean => {
-    const { overflowY } = getComputedStyle(el)
-    return overflowY === 'auto' || overflowY === 'scroll'
-  }
+  const scrolls = (el: Element): boolean =>
+    ['auto', 'scroll'].includes(getComputedStyle(el).overflowY)
   let extra = 0
   for (const el of Array.from(document.body.querySelectorAll('*'))) {
     if (el.clientHeight < window.innerHeight / 2 || !scrolls(el)) continue
     let nested = false
-    for (
-      let p = el.parentElement;
-      p !== null && p !== document.documentElement;
-      p = p.parentElement
-    )
+    for (let p = el.parentElement; p && p !== document.documentElement; p = p.parentElement)
       if (scrolls(p)) nested = true
     if (!nested) extra = Math.max(extra, hidden(el))
   }
   return extra
 }
 
-/** The whole page: the viewport grows by what an inner scrollport hides, with the chrome kept. */
 async function fullPage(c: Ctx, path: string): Promise<void> {
-  const spec = VIEWPORT_SPECS[c.viewport]
   const extra = Number(await c.page.evaluate(hiddenScrollPx, undefined))
-  const grown = extra > 0
-  if (grown) await resize(c, Math.min(MAX_VIEWPORT_PX, spec.height + Math.ceil(extra)))
+  if (extra > 0) await resize(c, Math.min(MAX_PX, c.spec.height + Math.ceil(extra)))
   try {
     await snap(c.page, path, { fullPage: true })
   } finally {
-    if (grown) await resize(c, spec.height)
+    if (extra > 0) await resize(c, c.spec.height)
   }
 }
 
-/**
- * Runs one capture and records it. Metrics are taken after the FIRST successful capture of an
- * anchor, whichever state that is, so `--states hover` still yields them.
- */
+/** One capture, recorded. Metrics are taken after the FIRST successful capture of an anchor, whichever state. */
 async function attempt(
   c: Ctx,
   name: string,
   state: ShotState,
-  run: (path: string) => Promise<void>,
+  run: (path: string) => Promise<unknown>,
   note?: string,
-): Promise<void> {
-  const file = fileName(c.route, name, c.scheme, c.viewport, state)
+): Promise<ShotRecord | undefined> {
+  const file = fileName(c.route, name, c.scheme, c.spec.label, state)
   let unframe: (() => Promise<void>) | undefined
   try {
-    if (name !== PAGE_ANCHOR) unframe = await frame(c, name)
+    if (name !== PAGE_ANCHOR) {
+      unframe = await frame(c, name)
+      await reveal(c, name, state)
+    }
     await run(join(c.input.pngDir, file))
   } catch (error) {
     const status =
       error instanceof NotDeclared ? 'not-declared' : error instanceof Absent ? 'absent' : 'error'
     record(c, { name, state, status, note: firstLine(error) })
-    return
+    return undefined
   } finally {
     await unframe?.()
   }
   // The PNG is good: a measurement failure is recorded beside it, never instead of it.
-  let notes = note ? [note] : []
+  const notes = note ? [note] : []
   if (name !== PAGE_ANCHOR && !c.measured.has(name)) {
     try {
-      const measure =
-        c.input.measure ?? ((a: PwLocator) => a.evaluate(measureAnchor).then(finishMeasurement))
+      const measure = c.input.measure ?? ((a) => a.evaluate(measureAnchor).then(finishMeasurement))
       const m = await measure(anchorOf(c, name))
-      c.anchors.push({ route: c.route, name, scheme: c.scheme, viewport: c.viewport, ...m })
+      c.anchors.push({ route: c.route, name, scheme: c.scheme, viewport: c.spec.label, ...m })
       c.measured.add(name)
     } catch (error) {
-      notes = [...notes, `metrics unavailable: ${firstLine(error)}`]
+      notes.push(`metrics unavailable: ${firstLine(error)}`)
     }
   }
   record(c, {
@@ -524,337 +456,135 @@ async function attempt(
     file: `png/${file}`,
     ...(notes.length ? { note: notes.join('; ') } : {}),
   })
+  return c.shots.at(-1)
 }
 
-const skipOnMobile = (c: Ctx, name: string, state: ShotState): boolean => {
-  if (c.viewport === 'desktop') return false
-  record(c, { name, state, status: 'skipped', note: 'desktop only' })
-  return true
-}
+const TOOLTIPS = '[role="tooltip"]:visible'
 
-const restCrop = async (c: Ctx, name: string, state: ShotState, path: string): Promise<void> => {
-  await reveal(c, name, state)
-  await snap(anchorOf(c, name), path)
-}
-
-async function captureRest(c: Ctx, name: string): Promise<void> {
-  await attempt(c, name, 'rest', (path) => restCrop(c, name, 'rest', path))
-}
-
-/**
- * Runs in the page: forgets the previous marks, then marks every tooltip that is visible now, so
- * a tooltip another component already holds open is never taken for the one a trigger opens.
- */
-export function markVisibleTooltips(): void {
-  for (const el of Array.from(document.querySelectorAll('[data-shot-seen]')))
-    el.removeAttribute('data-shot-seen')
-  for (const el of Array.from(document.querySelectorAll('[role="tooltip"]'))) {
-    const rect = el.getBoundingClientRect()
-    if (rect.width > 0 && rect.height > 0 && getComputedStyle(el).visibility !== 'hidden')
-      el.setAttribute('data-shot-seen', '')
-  }
-}
-
-/** Runs in the page: how many tooltips are rendered now (the readouts a hover leaves behind while they animate out). */
-export function visibleTooltipCount(): number {
-  return Array.from(document.querySelectorAll('[role="tooltip"]')).filter((el) => {
-    const rect = el.getBoundingClientRect()
-    return rect.width > 0 && rect.height > 0 && getComputedStyle(el).visibility !== 'hidden'
-  }).length
-}
-
-/**
- * Moves the pointer off the previous anchor and waits for its tooltip to unmount, so a hover crop
- * (a union box over the anchor and its tooltip) never holds a fragment of the component above.
- * Bounded: a tooltip that stays (pinned by the app) is left to `markVisibleTooltips`.
- */
-export async function clearStrayTooltips(page: PwPage): Promise<void> {
-  await page.mouse.move(0, 0)
-  for (let waited = 0; waited < TIP_CLEAR_MS; waited += TIP_SETTLE_MS) {
-    if ((await page.evaluate(visibleTooltipCount, undefined)) === 0) return
-    await sleep(TIP_SETTLE_MS)
-  }
-}
-
-/**
- * Runs in the page, on the tooltip a hover opened: hides every other visible one (another anchor's
- * readout still fading or pinned) so the crop holds none, and marks what it hid.
- */
-export function muteOtherTooltips(open: Element): void {
-  for (const el of Array.from(document.querySelectorAll<HTMLElement>('[role="tooltip"]'))) {
-    const rect = el.getBoundingClientRect()
-    if (el === open || rect.width === 0 || rect.height === 0) continue
-    el.setAttribute('data-shot-muted', el.style.visibility)
-    el.style.setProperty('visibility', 'hidden', 'important')
-  }
-}
-
-/** Runs in the page, for a trigger with no `aria-describedby`: marks the tooltips outside it as seen, so an earlier chart's stale readout never wins `.first()`. */
-export function claimOwnTooltip(trigger: Element): void {
-  const tips = Array.from(document.querySelectorAll('[role="tooltip"]'))
-  if (tips.some((el) => trigger.contains(el)))
-    for (const el of tips) if (!trigger.contains(el)) el.setAttribute('data-shot-seen', '')
-}
-
-/** Runs in the page: puts back exactly what `muteOtherTooltips` marked. */
-export function unmuteTooltips(): void {
-  for (const el of Array.from(document.querySelectorAll<HTMLElement>('[data-shot-muted]'))) {
-    el.style.visibility = el.getAttribute('data-shot-muted') ?? ''
-    el.removeAttribute('data-shot-muted')
-  }
-}
-
-/** Runs in the page: the first id a trigger names in `aria-describedby`, looking at it and its descendants. */
-export function describedByOf(el: Element | null): string {
-  const named = el?.matches('[aria-describedby]') ? el : el?.querySelector('[aria-describedby]')
-  return named?.getAttribute('aria-describedby')?.split(/\s+/)[0] ?? ''
-}
-
-/** The tooltip the trigger names, else any that was not already visible at the snapshot. */
-export const tooltipSelector = (describedBy: string): string =>
-  describedBy
-    ? `[role="tooltip"][id=${JSON.stringify(describedBy)}]`
-    : '[role="tooltip"]:not([data-shot-seen])'
-
-/** `tooltipSelector`, narrowed to a rendered readout: a hidden 0×0 one of another chart never wins `.first()`. */
-export const visibleTooltip = (describedBy: string): string =>
-  `${tooltipSelector(describedBy)}:visible`
-
-/**
- * Where a trigger is hovered: its centre, or the `data-shot-at="x,y"` fractions of its box when the
- * centre paints no readout (a donut's hole).
- */
-export function hoverAtOf(el: Element | null): string {
-  return el?.getAttribute('data-shot-at') ?? ''
-}
-
-const HOVER_AT = /^\s*(\d*\.?\d+)\s*,\s*(\d*\.?\d+)\s*$/
-
-/**
- * Exactly two non-negative numbers, each in [0, 1): 1 is the box's far edge, outside it. Anything else (a missing half, a third
- * field, a value outside the box, a sign) is null, so the trigger is hovered at its centre.
- */
-export function parseHoverAt(raw: string): { x: number; y: number } | null {
-  const m = HOVER_AT.exec(raw)
-  if (!m) return null
-  const [x, y] = [Number(m[1]), Number(m[2])]
-  return x < 1 && y < 1 ? { x, y } : null
-}
-
-export async function hoverTrigger(target: PwLocator): Promise<void> {
-  const at = parseHoverAt(String(await target.evaluate(hoverAtOf)))
-  const box = at ? await within('measuring the trigger', target.boundingBox()) : null
-  const position = at && box ? { x: at.x * box.width, y: at.y * box.height } : undefined
-  await target.hover({ timeout: HOVER_TIMEOUT_MS, ...(position && { position }) })
-}
-
-const tipOf = (c: Ctx, describedBy: string): PwLocator =>
-  c.page.locator(visibleTooltip(describedBy)).first()
-
-/**
- * The box of the tooltip an action opened, or null when none shows up. Call `markVisibleTooltips`
- * before the action; `describedBy` is the trigger's own tooltip id, when it has one.
- */
-async function openTooltipBox(
-  c: Ctx,
-  describedBy: string,
-  timeout = TIP_PROBE_MS,
-): Promise<Box | null> {
-  const tip = tipOf(c, describedBy)
-  try {
-    await tip.waitFor({ state: 'visible', timeout })
-  } catch {
-    return null
-  }
-  // The tooltip animates in: read its box once two reads agree, or the crop clips the final size.
-  let box = await tip.boundingBox()
-  for (let i = 0; i < TIP_SETTLE_READS; i++) {
-    await new Promise((done) => setTimeout(done, TIP_SETTLE_MS))
-    const next = await tip.boundingBox()
-    const settled = JSON.stringify(next) === JSON.stringify(box)
-    box = next
-    if (settled) break
-  }
-  return box
-}
-
-const idOf = (value: unknown): string => (typeof value === 'string' ? value : '')
-
-async function captureHover(c: Ctx, name: string): Promise<void> {
-  if (skipOnMobile(c, name, 'hover')) return
-  await attempt(c, name, 'hover', async (path) => {
-    const anchor = anchorOf(c, name)
-    await reveal(c, name, 'hover')
-    const inner = c.page.locator(`${sel(name)} [data-shot-hover]`).first()
-    const target = (await inner.count()) > 0 ? inner : anchor
-    await clearStrayTooltips(c.page)
-    await c.page.evaluate(markVisibleTooltips, undefined)
-    await hoverTrigger(target)
-    const describedBy = idOf(await target.evaluate(describedByOf))
-    if (describedBy === '') await target.evaluate(claimOwnTooltip)
-    const [box, tip] = [await settledBox(anchor), await openTooltipBox(c, describedBy)]
-    if (!box || !tip) return void (await snap(anchor, path))
-    try {
-      await tipOf(c, describedBy).evaluate(muteOtherTooltips)
-      await snapClip(c, path, [anchor, tipOf(c, describedBy)])
-    } finally {
-      // Best effort: a page that died under the crop must not hide the crop's own error.
-      await c.page.evaluate(unmuteTooltips, undefined).catch(() => undefined)
-    }
-  })
+/** Hover or tooltip crop: the anchor and the readout the pointer opened, in one clip. */
+async function pointerCrop(c: Ctx, name: string, state: ShotState, path: string): Promise<void> {
+  const anchor = anchorOf(c, name)
+  const marked = c.page.locator(`${sel(name)} [data-shot-tooltip]`).first()
+  if (state === 'tooltip' && (await marked.count()) === 0)
+    throw new NotDeclared('no [data-shot-tooltip] in the anchor')
+  // Off the previous anchor first, so a crop never holds a tooltip left over from it.
   await c.page.mouse.move(0, 0)
-}
-
-/** Sequential focus from the document top until `:focus-visible` lands inside the anchor. */
-async function tabInto(page: PwPage, name: string): Promise<void> {
-  await page.evaluate(
-    '(() => { document.activeElement?.blur(); window.scrollTo(0, 0); getSelection()?.collapse(document.body, 0) })()',
+  for (let i = 0; i < 16 && (await c.page.locator(TOOLTIPS).count()) > 0; i++)
+    await sleep(SETTLE_MS)
+  await (state === 'tooltip' ? marked : anchor).hover({ timeout: STEP_MS })
+  const tip = c.page.locator(TOOLTIPS).last()
+  const wait = { state: 'visible', timeout: state === 'tooltip' ? 3_000 : 250 } as const
+  const shown = await tip.waitFor(wait).then(
+    () => true,
+    () => false,
   )
-  const landed = `(() => { const a = document.activeElement; return a != null && a.matches(':focus-visible') && a.closest(${JSON.stringify(sel(name))}) != null })()`
-  for (let i = 0; i < TAB_PRESSES; i++) {
-    await page.keyboard.press('Tab')
-    if (await page.evaluate<boolean>(landed)) return
-  }
-  throw new Error(`:focus-visible never reached the anchor in ${TAB_PRESSES} Tab presses`)
+  if (state === 'tooltip' && !shown) throw new Error('no visible [role="tooltip"] after hover')
+  await settled('measuring the anchor', () => anchor.boundingBox())
+  if (shown) await snapClip(c, path, [anchor, tip])
+  else await snap(anchor, path)
 }
 
-/**
- * True when Tab can reach the anchor or something in it: a link, an enabled control, a `tabindex`
- * ≥ 0 or editable host, outside any `hidden`/`inert` subtree, and actually rendered. Runs in the page, so it is
- * self-contained.
- */
-export function hasFocusTarget(root: Element): boolean {
-  const candidates =
-    'a[href], button, input:not([type="hidden"]), select, textarea, summary, [tabindex], [contenteditable=""], [contenteditable="true"]'
-  return [root, ...Array.from(root.querySelectorAll(candidates))].some(
-    (el) =>
-      el.matches(candidates) &&
-      !el.matches(':disabled') &&
-      !el.getAttribute('tabindex')?.startsWith('-') &&
-      el.closest('[hidden], [inert]') === null &&
-      (typeof el.checkVisibility === 'function'
-        ? el.checkVisibility()
-        : el.getClientRects().length > 0) &&
-      getComputedStyle(el).visibility !== 'hidden',
-  )
-}
-
-async function captureFocus(c: Ctx, name: string): Promise<void> {
-  await attempt(c, name, 'focus', async (path) => {
-    const anchor = anchorOf(c, name)
-    if (!(await anchor.evaluate(hasFocusTarget)))
-      throw new NotDeclared('no focus target in the anchor')
-    await reveal(c, name, 'focus')
-    await c.page.evaluate(markVisibleTooltips, undefined)
-    await tabInto(c.page, name)
-    // Focus scrolls the nearest scrollport on its own terms (under a sticky bar, mid-animation): put
-    // the anchor back where the clip is taken, then read its box once it stops moving.
-    await within('re-centring the anchor', anchor.evaluate(revealInPage))
-    const box = await settledBox(anchor)
-    if (!box) throw new Error('anchor has no box')
-    const focused = idOf(
-      await c.page.evaluate(
-        () => document.activeElement?.getAttribute('aria-describedby')?.split(/\s+/)[0] ?? '',
-        undefined,
-      ),
+/** Tab from the document top until `:focus-visible` lands inside the anchor, then crop it with any tooltip it opened. */
+async function focusCrop(c: Ctx, name: string, path: string): Promise<void> {
+  const anchor = anchorOf(c, name)
+  const reachable =
+    'a[href], button, input:not([type="hidden"]), select, textarea, summary, [tabindex]:not([tabindex^="-"])'
+  const target = (el: Element): boolean =>
+    [el, ...Array.from(el.querySelectorAll(reachable))].some(
+      (e) => e.matches(reachable) && !e.matches(':disabled') && e.checkVisibility(),
     )
-    const tip = await openTooltipBox(c, focused)
-    await snapClip(c, path, tip ? [anchor, tipOf(c, focused)] : [anchor])
-  })
+  if (!(await anchor.evaluate(target))) throw new NotDeclared('no focus target in the anchor')
+  await c.page.evaluate('document.activeElement?.blur(); window.scrollTo(0, 0)')
+  const landed = `(() => { const a = document.activeElement; return a != null && a.matches(':focus-visible') && a.closest(${JSON.stringify(sel(name))}) != null })()`
+  for (let i = 0; !(await c.page.evaluate<boolean>(landed)); i++) {
+    if (i === 80) throw new Error(':focus-visible never reached the anchor in 80 Tab presses')
+    await c.page.keyboard.press('Tab')
+  }
+  // Focus scrolls the nearest scrollport on its own terms: put the anchor back where the clip is taken.
+  await within('re-centring the anchor', anchor.evaluate(revealInPage))
+  await settled('measuring the anchor', () => anchor.boundingBox())
+  const tip = c.page.locator(TOOLTIPS).last()
+  await snapClip(c, path, (await tip.count()) > 0 ? [anchor, tip] : [anchor])
   await c.page.evaluate('document.activeElement?.blur()')
 }
 
-async function captureTooltip(c: Ctx, name: string): Promise<void> {
-  if (skipOnMobile(c, name, 'tooltip')) return
-  const trigger = c.page.locator(`${sel(name)} [data-shot-tooltip]`).first()
-  await attempt(c, name, 'tooltip', async (path) => {
-    if ((await trigger.count()) === 0) throw new NotDeclared('no [data-shot-tooltip] in the anchor')
-    const anchor = anchorOf(c, name)
-    await reveal(c, name, 'tooltip')
-    await clearStrayTooltips(c.page)
-    await c.page.evaluate(markVisibleTooltips, undefined)
-    await hoverTrigger(trigger)
-    const describedBy = idOf(await trigger.evaluate(describedByOf))
-    if (describedBy === '') await trigger.evaluate(claimOwnTooltip)
-    const t = await openTooltipBox(c, describedBy, TOOLTIP_TIMEOUT_MS)
-    if (!t) throw new Error('no visible [role="tooltip"] after hover')
-    const a = await settledBox(anchor)
-    if (!a) throw new Error('tooltip or anchor has no box')
-    await snapClip(c, path, [anchor, tipOf(c, describedBy)])
-  })
+async function captureAnchor(c: Ctx, name: string, state: ShotState): Promise<void> {
+  if (c.spec.mobile && (state === 'hover' || state === 'tooltip')) {
+    record(c, { name, state, status: 'skipped', note: 'touch viewport' })
+    return
+  }
+  await attempt(c, name, state, (path) =>
+    state === 'focus'
+      ? focusCrop(c, name, path)
+      : state === 'rest'
+        ? snap(anchorOf(c, name), path)
+        : pointerCrop(c, name, state, path),
+  )
   await c.page.mouse.move(0, 0)
 }
 
-const POINTER_STATES = {
-  rest: captureRest,
-  hover: captureHover,
-  focus: captureFocus,
-  tooltip: captureTooltip,
+const digest = (dir: string, file: string): string | null => {
+  try {
+    return createHash('sha1')
+      .update(readFileSync(join(dir, basename(file))))
+      .digest('hex')
+  } catch {
+    return null
+  }
 }
 
-/** A state surface no `data-shot-states` covers and no `data-shot-absent` excuses: its `state` was never scored. */
-function lacksStates(c: Ctx, name: string, state: ShotState): boolean {
-  const { stateful, declaring, declared, absent } = c.facts
-  const own = declaring ?? (declared.length > 0 ? c.facts.anchors : [])
-  return (
-    stateful?.includes(name) === true && !own.includes(name) && !absent?.[name]?.includes(state)
-  )
-}
-
-/** `empty`/`loading`/`error`: reload with `shot-state=<state>`, re-read the anchors, crop each. */
+/** `empty`/`loading`/`error`: reload with `shot-state=<state>` once an anchor declares it and crop each that does; a crop identical to its ready crop is `ignored`. */
 async function captureUrlState(c: Ctx, state: ShotState): Promise<void> {
-  const restNames = c.facts.anchors
-  if (!c.facts.declared.includes(state)) {
-    for (const name of restNames) {
-      record(c, {
-        name,
-        state,
-        status: 'not-declared',
-        note: c.facts.declared.length === 0 ? NO_STATES_NOTE : 'page does not declare this state',
-        ...(lacksStates(c, name, state) ? { stateful: true as const } : {}),
-      })
-    }
+  const rest = c.facts
+  const declaring = rest.anchors.filter((n) => rest.states[n]?.includes(state))
+  const skip = (name: string, note: string): void =>
+    record(c, { name, state, status: 'not-declared', note })
+  if (declaring.length === 0) {
+    const any = rest.anchors.some((n) => (rest.states[n]?.length ?? 0) > 0)
+    for (const name of rest.anchors)
+      skip(name, any ? 'anchor does not declare this state' : NO_STATES_NOTE)
     return
   }
   let here: PageFacts
   try {
     here = await visit(c, c.input.base + withParam(c.route, state))
   } catch (error) {
-    for (const name of restNames)
+    for (const name of rest.anchors)
       record(c, { name, state, status: 'error', note: `load failed: ${firstLine(error)}` })
     return
   }
-  for (const name of new Set([...restNames, ...here.anchors])) {
-    if (!here.anchors.includes(name)) {
+  c.facts = here
+  for (const name of new Set([...rest.anchors, ...here.anchors])) {
+    const inRest = rest.anchors.includes(name)
+    if (inRest && !declaring.includes(name)) {
+      skip(name, 'anchor does not declare this state')
+    } else if (!here.anchors.includes(name)) {
       // The declaration lives on the element, which is gone in this state: it is read from the rest render.
-      const declared = c.facts.absent?.[name]?.includes(state) ?? false
-      record(
-        c,
-        declared
-          ? { name, state, status: 'absent', note: 'declared absent in this state' }
-          : { name, state, status: 'error', note: 'anchor absent in this state' },
-      )
-      continue
+      const gone = rest.absent[name]?.includes(state)
+        ? { status: 'absent', note: 'declared absent in this state' }
+        : { status: 'error', note: 'anchor absent in this state' }
+      record(c, { name, state, ...gone } as Outcome)
+    } else {
+      const note = inRest ? undefined : 'anchor only present in this state'
+      const shot = await attempt(c, name, state, (path) => snap(anchorOf(c, name), path), note)
+      const ready = c.shots.find((s) => s.name === name && s.state === 'rest' && s.status === 'ok')
+      if (shot?.file && ready?.file) {
+        const [a, b] = [digest(c.input.pngDir, ready.file), digest(c.input.pngDir, shot.file)]
+        if (a !== null && a === b) shot.ignored = true
+      }
     }
-    const note = restNames.includes(name) ? undefined : 'anchor only present in this state'
-    await attempt(c, name, state, (path) => restCrop(c, name, state, path), note)
-    const shot = c.shots.findLast((r) => r.name === name && r.state === state)
-    if (shot && shot.status !== 'not-declared' && lacksStates(c, name, state)) shot.stateful = true
   }
+  c.facts = rest
 }
 
-const STEPS = ['xs', 'sm', 'md', 'lg', 'xl', 'default']
-
 type Steps = Pick<Scale, 'spacing' | 'radius' | 'fontSizes'>
-type ScaleRead = { mantine: Steps; vx: Record<string, number> }
 
 /**
- * Runs in the page: Mantine's steps plus every `--vx-space-*`, `--vx-text-*` and `--vx-radius-*`
- * custom property declared by ANY style rule (the root's and each component's own), resolved to px
- * through a probe's `width` so `calc()`/`rem` read as the page sees them. Self-contained: it is
- * serialised into the page.
+ * Runs in the page: the theme's steps in px. Spacing is Tailwind's `--spacing` unit times the
+ * ladder; radius and font size are every `--vx-*`, `--radius-*` and `--text-*` custom property a
+ * style rule declares, resolved through a probe's `width` so `calc()` and `rem` read as the page does.
  */
-export function readScaleInPage(steps: string[]): ScaleRead {
+export function readScaleInPage(): Steps {
   const probe = document.createElement('div')
   probe.style.cssText = 'position:absolute;visibility:hidden'
   document.body.append(probe)
@@ -865,28 +595,26 @@ export function readScaleInPage(steps: string[]): ScaleRead {
     const value = parseFloat(getComputedStyle(probe).width)
     return Number.isFinite(value) ? Math.round(value * 100) / 100 : undefined
   }
-  const read = (prefix: string): Record<string, number> => {
-    const out: Record<string, number> = {}
-    for (const key of steps) {
-      const name = prefix + key
-      const value = root.getPropertyValue(name).trim() ? px(`var(${name})`) : undefined
-      if (value !== undefined) out[key] = value
-    }
-    return out
-  }
+  const out: Steps = { spacing: {}, radius: {}, fontSizes: {} }
+  const kinds: [RegExp, keyof Steps][] = [
+    [/^--vx-space-/, 'spacing'],
+    [/^--(vx-)?radius-/, 'radius'],
+    [/^--(vx-)?text-/, 'fontSizes'],
+  ]
   const declared = new Map<string, string>()
   const walk = (rules: CSSRuleList): void => {
     for (const rule of Array.from(rules)) {
       if ('cssRules' in rule) walk((rule as CSSGroupingRule).cssRules)
       const style = (rule as CSSStyleRule).style
-      if (!style) continue
-      for (const name of Array.from(style)) {
-        if (/^--vx-(space|text|radius)-/.test(name))
+      for (const name of style ? Array.from(style) : [])
+        if (kinds.some(([re]) => re.test(name)) && !/-lh$|line-height/.test(name))
           declared.set(name, style.getPropertyValue(name).trim())
-      }
     }
   }
   try {
+    const unit = root.getPropertyValue('--spacing').trim() ? px('var(--spacing)') : undefined
+    const ladder = [0.5, 1, 1.5, 2, 2.5, 3, 3.5, ...Array.from({ length: 21 }, (_, i) => i + 4)]
+    for (const k of ladder) if (unit) out.spacing[String(k)] = Math.round(unit * k * 100) / 100
     for (const sheet of Array.from(document.styleSheets)) {
       try {
         walk(sheet.cssRules)
@@ -894,60 +622,38 @@ export function readScaleInPage(steps: string[]): ScaleRead {
         // A cross-origin stylesheet's rules throw SecurityError: its tokens are not ours to read.
       }
     }
-    const vx: Record<string, number> = {}
     for (const [name, value] of declared) {
       // A token set on the root resolves through the cascade; a component-scoped one only by its text.
       const resolved = root.getPropertyValue(name).trim() ? px(`var(${name})`) : px(value)
-      if (resolved !== undefined) vx[name] = resolved
+      const kind = kinds.find(([re]) => re.test(name))?.[1]
+      if (resolved && kind) out[kind][name.replace(/^--/, '')] = resolved
     }
-    return {
-      mantine: {
-        spacing: read('--mantine-spacing-'),
-        radius: read('--mantine-radius-'),
-        fontSizes: read('--mantine-font-size-'),
-      },
-      vx,
-    }
+    return out
   } finally {
     probe.remove()
   }
 }
 
-/** Sorts the page's `--vx-*` readings into the three kinds; a step of 0 px (or an unresolvable one) is not a step. */
-export function groupScale({ mantine, vx }: ScaleRead): Steps {
-  const pick = (kind: string): Record<string, number> =>
-    Object.fromEntries(
-      Object.entries(vx)
-        .filter(([name, value]) => name.startsWith(`--vx-${kind}-`) && value > 0)
-        .map(([name, value]) => [name.slice(2), value]),
-    )
-  return {
-    spacing: { ...mantine.spacing, ...pick('space') },
-    radius: { ...mantine.radius, ...pick('radius') },
-    fontSizes: { ...mantine.fontSizes, ...pick('text') },
-  }
-}
+type PageRun = { c: Ctx; content?: string; page?: PageMetrics; scale?: Steps; scaleError?: string }
 
 async function capturePage(
-  args: Omit<Ctx, 'facts' | 'anchors' | 'shots' | 'measured' | 'problems' | 'height'> & {
-    wantScale: boolean
-  },
-) {
-  const { wantScale, ...rest } = args
+  args: Pick<Ctx, 'page' | 'input' | 'route' | 'scheme' | 'spec'>,
+): Promise<PageRun> {
+  const empty: PageFacts = { anchors: [], states: {}, absent: {}, content: '', overflowX: 0 }
   const c: Ctx = {
-    ...rest,
-    height: VIEWPORT_SPECS[rest.viewport].height,
-    facts: { anchors: [], declared: [] },
+    ...args,
+    height: args.spec.height,
+    facts: empty,
     anchors: [],
     shots: [],
     measured: new Set(),
     problems: [],
   }
-  const { input, route } = c
+  const { input, route, scheme, spec } = c
+  const out: PageRun = { c }
   input.apiProblems?.() // calls still in flight from an earlier route are not this page's
   try {
     c.facts = await visit(c, input.base + route)
-    if (c.facts.content) c.content = hash(c.facts.content)
   } catch (error) {
     record(c, {
       name: PAGE_ANCHOR,
@@ -955,39 +661,26 @@ async function capturePage(
       status: 'error',
       note: `load failed: ${firstLine(error)}`,
     })
-    return c
+    return out
   }
-  if (wantScale) {
-    try {
-      c.scale = groupScale(await c.page.evaluate(readScaleInPage, STEPS))
-    } catch (error) {
-      c.scaleError = firstLine(error)
-    }
+  if (c.facts.content) out.content = hash(c.facts.content)
+  out.page = { route, scheme, viewport: spec.label, overflowX: c.facts.overflowX }
+  try {
+    out.scale = await c.page.evaluate(readScaleInPage, undefined)
+  } catch (error) {
+    out.scaleError = firstLine(error)
   }
   const usable = c.facts.anchors.filter((n) => slug(n) !== '' && n !== PAGE_ANCHOR)
-  for (const name of c.facts.anchors.filter((n) => !usable.includes(n))) {
-    record(c, { name, state: 'rest', status: 'error', note: 'unusable data-shot name' })
-  }
   c.facts.anchors = usable
-  if (usable.length === 0 && c.scheme === 'light' && c.viewport === 'desktop') {
-    input.log(`[shot] no data-shot anchors on ${route}`)
-  }
-  const asked = URL_STATES.filter((state) => input.states.includes(state))
-  if (c.facts.declared.length === 0 && usable.length > 0 && asked.length > 0) {
-    if (c.scheme === 'light' && c.viewport === 'desktop') {
-      input.log(
-        `[shot] ${route}: no data-shot-states declared, so ${asked.join('/')} will not render; add data-shot-states to an anchor`,
-      )
-    }
-  }
-  if (input.states.includes('rest')) {
+  if (usable.length === 0 && scheme === 'light' && spec === input.viewports[0])
+    input.log(`[shot] no anchors on ${route}`)
+  if (input.states.includes('rest'))
     await attempt(c, PAGE_ANCHOR, 'rest', (path) => fullPage(c, path))
-  }
   flagProblems(c)
   for (const name of usable) {
-    for (const [state, capture] of Object.entries(POINTER_STATES)) {
-      if (!input.states.includes(state as ShotState)) continue
-      await capture(c, name)
+    for (const state of ['rest', 'hover', 'focus', 'tooltip'] as const) {
+      if (!input.states.includes(state)) continue
+      await captureAnchor(c, name, state)
       collect(c)
     }
   }
@@ -998,23 +691,22 @@ async function capturePage(
   }
   // After every state, so the order never matters: a name no rest read held is absent at rest.
   const atRest = new Set(c.shots.filter((s) => s.state === 'rest').map((s) => s.name))
-  for (const name of new Set(c.shots.map((s) => s.name))) {
-    if (input.states.includes('rest') && !atRest.has(name) && !c.facts.anchors.includes(name))
+  for (const name of new Set(c.shots.map((s) => s.name)))
+    if (input.states.includes('rest') && !atRest.has(name) && !usable.includes(name))
       record(c, { name, state: 'rest', status: 'absent', note: 'not rendered at rest' })
-  }
   flagProblems(c)
-  return c
+  return out
 }
 
-/** A fresh context for one scheme × viewport: the colour scheme is set on the context AND in storage before load. */
+/** A fresh context for one scheme × viewport: the scheme is set on the context AND seeded (`data-theme`, the stored choice) before load. */
 export async function openContext<C extends PwContext>(
   browser: PwBrowser<C>,
   scheme: Scheme,
-  viewport: Viewport,
+  viewport: ViewportSpec | keyof typeof VIEWPORT_SPECS,
   seeded: readonly Pair[] = [],
   origin = '',
 ): Promise<C> {
-  const spec = VIEWPORT_SPECS[viewport]
+  const spec = typeof viewport === 'string' ? VIEWPORT_SPECS[viewport] : viewport
   const context = await browser.newContext({
     viewport: { width: spec.width, height: spec.height },
     deviceScaleFactor: 1,
@@ -1023,60 +715,49 @@ export async function openContext<C extends PwContext>(
     colorScheme: scheme,
     reducedMotion: 'reduce',
   })
-  await context.addInitScript(`localStorage.setItem('mantine-color-scheme-value', '${scheme}')`)
+  await context.addInitScript(
+    `try{localStorage.setItem('basalt:scheme','${scheme}');document.documentElement.setAttribute('data-theme','${scheme}')}catch{}`,
+  )
   if (seeded.length > 0) await context.addInitScript(seedScript(seeded, origin))
   return context
 }
 
-const SHEET_WIDTH_PX = 2000
-
-/** `<route>-<hash>__<name>-<hash>__sheet.png`: one contact sheet per anchor, beside its crops. */
-export const sheetName = (route: string, name: string): string =>
-  `${slug(route) || 'root'}-${hash(route)}__${slug(name)}-${hash(name)}__sheet.png`
-
-const dataUri = (path: string): string =>
-  `data:image/png;base64,${readFileSync(path).toString('base64')}`
-
-/**
- * One contact sheet per anchor: the board's section for it (every state × scheme × viewport,
- * labelled), rendered in the open browser from the crops already on disk and screenshot whole. A
- * failed sheet is logged and left unlisted — the reviewer treats an anchor without one as unverified.
- */
+/** One contact sheet per anchor (every state × scheme × viewport) rendered from the crops on disk; a failed one is logged and left unlisted, so the reviewer treats the anchor as unverified. */
 async function writeSheets(
   input: CaptureInput,
-  out: { anchors: AnchorMetrics[]; shots: ShotRecord[] },
+  out: Pick<ShotMetrics, 'anchors' | 'shots'>,
 ): Promise<void> {
   const targets = new Map<string, { route: string; name: string }>()
-  for (const s of out.shots) {
-    if (s.name !== PAGE_ANCHOR)
-      targets.set(`${s.route}\0${s.name}`, { route: s.route, name: s.name })
-  }
+  for (const { route, name } of out.shots)
+    if (name !== PAGE_ANCHOR) targets.set(`${route}\0${name}`, { route, name })
   if (targets.size === 0) return
   const context = await input.browser.newContext({
-    viewport: { width: SHEET_WIDTH_PX, height: 1000 },
+    viewport: { width: 2000, height: 1000 },
     deviceScaleFactor: 1,
     isMobile: false,
     hasTouch: false,
     colorScheme: 'light',
     reducedMotion: 'reduce',
   })
+  const dataUri = (file: string): string =>
+    `data:image/png;base64,${readFileSync(join(input.pngDir, basename(file))).toString('base64')}`
   try {
     const page = await context.newPage()
     for (const { route, name } of targets.values()) {
       try {
         const shots = out.shots
           .filter((s) => s.route === route && s.name === name)
-          .map((s) =>
-            s.status === 'ok' && s.file
-              ? { ...s, file: dataUri(join(input.pngDir, basename(s.file))) }
-              : s,
-          )
-        await page.setContent(buildSheet(route, name, input.states, shots), { waitUntil: 'load' })
+          .map((s) => (s.status === 'ok' && s.file ? { ...s, file: dataUri(s.file) } : s))
+        const sheet = {
+          viewports: input.viewports.map((v) => v.label),
+          states: [...input.states],
+          shots,
+        }
+        await page.setContent(buildSheet(route, name, sheet), { waitUntil: 'load' })
         const file = sheetName(route, name)
         await snap(page, join(input.pngDir, file), { fullPage: true })
-        for (const a of out.anchors) {
+        for (const a of out.anchors)
           if (a.route === route && a.name === name) a.sheet = `png/${file}`
-        }
       } catch (error) {
         input.log(`[shot] ${route} ${name}: sheet not written: ${firstLine(error)}`)
       }
@@ -1086,68 +767,48 @@ async function writeSheets(
   }
 }
 
-export async function capture(input: CaptureInput): Promise<{
-  anchors: AnchorMetrics[]
-  shots: ShotRecord[]
-  scale: Scale[]
-  scaleError?: string
-}> {
+export async function capture(
+  input: CaptureInput,
+): Promise<Pick<ShotMetrics, 'anchors' | 'shots' | 'scale' | 'pages' | 'scaleError'>> {
   const out = {
     anchors: [] as AnchorMetrics[],
     shots: [] as ShotRecord[],
     scale: [] as Scale[],
+    pages: [] as PageMetrics[],
     scaleError: undefined as string | undefined,
   }
   const contents = new Map<string, string>()
   for (const scheme of SCHEMES) {
-    for (const viewport of VIEWPORTS) {
+    for (const spec of input.viewports) {
       input.apiProblems?.() // a new context starts with a clean queue
-      const context = await openContext(
-        input.browser,
-        scheme,
-        viewport,
-        input.localStorage,
-        new URL(input.base).origin,
-      )
+      const origin = new URL(input.base).origin
+      const context = await openContext(input.browser, scheme, spec, input.localStorage, origin)
       try {
         const page = await context.newPage()
         page.setDefaultTimeout(NAV_TIMEOUT_MS)
-        let scaled = false
         for (const route of input.routes) {
-          const done = await capturePage({
-            page,
-            input,
-            route,
-            scheme,
-            viewport,
-            wantScale: !scaled,
-          })
-          if (done.scale) {
-            out.scale.push({ scheme, viewport, ...done.scale })
-            scaled = true
-          }
+          const done = await capturePage({ page, input, route, scheme, spec })
+          if (done.scale) out.scale.push({ route, scheme, viewport: spec.label, ...done.scale })
           if (done.content && !contents.has(route)) contents.set(route, done.content)
-          if (done.scaleError) out.scaleError = out.scaleError ?? done.scaleError
-          out.anchors.push(...done.anchors)
-          out.shots.push(...done.shots)
+          out.scaleError ??= done.scaleError
+          if (done.page) out.pages.push(done.page)
+          out.anchors.push(...done.c.anchors)
+          out.shots.push(...done.c.shots)
         }
       } finally {
         await context.close().catch(() => undefined)
       }
     }
   }
-  if (
-    input.routes.length > 1 &&
-    contents.size === new Set(input.routes).size &&
-    new Set(contents.values()).size === 1
-  )
+  const same = new Set(contents.values()).size === 1
+  if (input.routes.length > 1 && contents.size === new Set(input.routes).size && same)
     input.log(SAME_CONTENT_WARNING)
   await writeSheets(input, out).catch((error: unknown) =>
     input.log(`[shot] contact sheets not written: ${firstLine(error)}`),
   )
   // A scale that was read at all is a scale: the error is only for one that never was.
-  const { anchors, shots, scale } = out
-  if (scale.length > 0 || out.scaleError === undefined) return { anchors, shots, scale }
-  input.log(`[shot] scale unavailable: ${out.scaleError}`)
-  return { anchors, shots, scale, scaleError: out.scaleError }
+  const { scaleError, ...rest } = out
+  if (rest.scale.length > 0 || scaleError === undefined) return rest
+  input.log(`[shot] scale unavailable: ${scaleError}`)
+  return { ...rest, scaleError }
 }
