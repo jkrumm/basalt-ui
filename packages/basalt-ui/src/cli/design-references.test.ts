@@ -6,6 +6,7 @@ import { join, resolve } from 'node:path'
 const SKILL_DIR = resolve(import.meta.dir, '../../agent/skills/basalt-design')
 const SRC = resolve(import.meta.dir, '..')
 const REFERENCES = [
+  'ai',
   'anti-defaults',
   'cards',
   'charts',
@@ -19,7 +20,7 @@ const REFERENCES = [
   'table',
 ]
 /** Not routed from SKILL.md yet: the routing row is v3-sk-6. */
-const UNROUTED = new Set(['controls', 'forms', 'state'])
+const UNROUTED = new Set(['ai', 'controls', 'forms', 'state'])
 const NOT_SHIPPED_HEADING = '## Not shipped'
 
 function markdownFiles(dir: string): string[] {
