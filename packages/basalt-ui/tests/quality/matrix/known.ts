@@ -15,7 +15,75 @@ export interface KnownFinding {
   owner: string
 }
 
+// /cycle/state is the state cycle's build (v3-state-1, nested route `cycle/state`). The route lists the
+// findings of the table parts and the controls it composes, one item each: a cycle PR may not touch
+// `packages/basalt-ui/`, so the rows that own the parts remove each line with its fix. The full run
+// fails an entry that matched nothing.
+const STATE_OWNER = 'v3-state-1-visual: the state cycle build (kit parts it composes)'
+const HEAD = 'thead[table-header]>tr[table-row]>th[table-head]>button'
+const PILL = 'div>div[filter-pills]>div[filter-set-pill]>button[button]'
+
+function stateItems(assertion: string, items: readonly string[]): KnownFinding[] {
+  return items.map((item) => ({
+    route: '/cycle/state',
+    assertion,
+    item: new RegExp(`^${item.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}$`),
+    owner: STATE_OWNER,
+  }))
+}
+
+const STATE_COLUMNS = ['Order', 'Customer', 'Status', 'Amount (EUR)', 'Date'] as const
+const columnActions = (name: string): string =>
+  `${HEAD}[button] "${name === 'Amount (EUR)' ? 'Amount (EUR) column acti' : `${name} column actions`}"`
+
+const STATE_KNOWN: readonly KnownFinding[] = [
+  // desktop, light
+  ...stateItems('ringWalk', [
+    'div[view-tabs]>div[tabs]>div[tabs-list]>button[tabs-trigger] "Table": outline is clipped by div',
+    `${PILL} "Date: Last 30 days": outline is clipped by div`,
+    `${PILL} "Status": outline is clipped by div`,
+    `${PILL} "Search: Customer or orde": outline is clipped by div`,
+    `${PILL} "Flagged only: Off": outline is clipped by div`,
+    `${HEAD}[button] "Date column actions": outline is clipped by div`,
+  ]),
+  ...stateItems(
+    'forcedColors',
+    ['121x28', '99x28', '62x28', '145x28', '126x28', '61x28', '62x44', '61x44'].map(
+      (size) => `[button] button ${size}`,
+    ),
+  ),
+  // phone, dark, pseudo
+  ...stateItems(
+    'ringWalk',
+    STATE_COLUMNS.flatMap((name) => [
+      `${HEAD}[pressable] "${name}": outline is clipped by thead`,
+      `${columnActions(name)}: outline is clipped by thead`,
+    ]),
+  ),
+  ...stateItems('focusNotObscured', [
+    `${HEAD}[pressable] "Order": covered at (20,253) by tr[table-row]`,
+    `${HEAD}[pressable] "Customer": covered at (38,253) by tr[table-row]`,
+    `${columnActions('Customer')}: covered at (9,253) by tr[table-row]`,
+    `${HEAD}[pressable] "Status": covered at (8,253) by tr[table-row]`,
+    `${columnActions('Status')}: covered at (8,253) by tr[table-row]`,
+    `${HEAD}[pressable] "Amount (EUR)": covered at (8,253) by tr[table-row]`,
+    `${columnActions('Amount (EUR)')}: covered at (8,253) by tr[table-row]`,
+    `${HEAD}[pressable] "Date": covered at (13,253) by tr[table-row]`,
+  ]),
+  ...stateItems('hitFloor', [
+    'button[pressable] "Live" 32x44 < 44x44',
+    `button[pressable] "Order" 43x44 < 44x44`,
+    `button[button] "Order column actions" 24x44 < 44x44`,
+    `button[button] "Customer column actions" 24x44 < 44x44`,
+    `button[button] "Status column actions" 24x44 < 44x44`,
+    `button[button] "Amount (EUR) column acti" 24x44 < 44x44`,
+    `button[pressable] "Date" 38x44 < 44x44`,
+    `button[button] "Date column actions" 24x44 < 44x44`,
+  ]),
+]
+
 export const KNOWN: readonly KnownFinding[] = [
+  ...STATE_KNOWN,
   // /gallery is the 2.x Mantine specimen page (Pagination, SegmentedControl, raw inputs). It carries
   // dozens of findings of the legacy components and goes with the legacy barrel, so it is listed by
   // assertion, not by item.

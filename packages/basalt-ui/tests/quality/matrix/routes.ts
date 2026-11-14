@@ -17,17 +17,27 @@ function firstScenario(): string {
   return id
 }
 
-/** `index` -> `/`, `table` -> `/table`, `scenarios.$name` -> `/scenarios/<first scenario>`. */
+/** Route files under `dir`, relative to it, skipping the `__`/`-` prefixed entries TanStack's generator ignores. */
+function routeFiles(dir: string, prefix = ''): string[] {
+  return readdirSync(join(dir, prefix), { withFileTypes: true }).flatMap((entry) => {
+    if (entry.name.startsWith('__') || entry.name.startsWith('-')) return []
+    const rel = prefix === '' ? entry.name : `${prefix}/${entry.name}`
+    if (entry.isDirectory()) return routeFiles(dir, rel)
+    return entry.name.endsWith('.tsx') ? [rel.slice(0, -'.tsx'.length)] : []
+  })
+}
+
+/**
+ * `index` -> `/`, `table` -> `/table`, `cycle/state` -> `/cycle/state`,
+ * `scenarios.$name` -> `/scenarios/<first scenario>`. A `<dir>/index` is the directory's own path.
+ */
 export function routePaths(): string[] {
-  const files = readdirSync(ROUTES_DIR)
-    .filter((file) => file.endsWith('.tsx') && !file.startsWith('__'))
-    .map((file) => file.slice(0, -'.tsx'.length))
-    .toSorted()
-  return files.map((name) => {
-    if (name === 'index') return '/'
-    return `/${name
-      .split('.')
+  const names = routeFiles(ROUTES_DIR).toSorted()
+  return names.map((name) => {
+    const segments = name
+      .split(/[./]/)
       .map((part) => (part === '$name' ? firstScenario() : part))
-      .join('/')}`
+      .filter((part, i, all) => !(part === 'index' && i === all.length - 1))
+    return `/${segments.join('/')}`
   })
 }
