@@ -1,0 +1,15 @@
+/*
+ * The chat-thread fixture's Tailwind v4 entry: compiled WITH preflight, like a Tailwind consumer, plus
+ * the `.vx-prose` sheet. The layout test compiles it into a temp directory; nothing generated lands
+ * in the repo.
+ */
+@import '../../src/css/tailwind.css' source(none);
+@import '../../src/css/prose.css';
+@source '../../../../apps/playground/src/recipes';
+@source '../../src/ai';
+@source '../../src/content';
+@source '../../src/ui/button.tsx';
+@source '../../src/ui/scroll-area.tsx';
+@source '../../src/ui/textarea.tsx';
+@source '../../src/ui/status.tsx';
+@source '../../src/ui/collapsible.tsx';
