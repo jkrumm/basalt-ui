@@ -8,6 +8,7 @@ import { cleanup, fireEvent, render, screen } from '@testing-library/react'
 import { afterEach, beforeEach, describe, expect, spyOn, test } from 'bun:test'
 import { useLayoutEffect } from 'react'
 import { renderToString } from 'react-dom/server'
+import { memoryHandle } from '../controls/control-view.handles'
 import type { PageAction } from './contract'
 import { Page, PageHostContext } from './page'
 import { PageBar, PageCrumb } from './page-bar'
@@ -119,6 +120,40 @@ describe('PageBar without a shell', () => {
     expect(screen.getByRole('button', { name: 'Range' })).toBeDefined()
     expect(band()?.querySelector('[data-slot="page-bar-tabs"]')?.textContent).toBe('Overview')
     expect(band()?.querySelector('[data-slot="page-bar-controls"]')?.textContent).toBe('Range')
+  })
+
+  test('tabs take { handle, label } and draw a ViewTabs bound to the handle', () => {
+    const view = memoryHandle<string>('view', 'a', {
+      kind: 'enum',
+      options: [
+        { value: 'a', label: 'Alpha' },
+        { value: 'b', label: 'Beta' },
+      ],
+    })
+    render(
+      <Page>
+        <PageBar tabs={{ handle: view, label: 'Orders view' }} />
+      </Page>,
+    )
+    const home = band()?.querySelector('[data-slot="page-bar-tabs"]')
+    expect(home?.querySelector('[data-slot="view-tabs"]')).not.toBeNull()
+    expect(screen.getByRole('tablist', { name: 'Orders view' })).toBeDefined()
+    expect(screen.getByRole('tab', { name: 'Alpha' }).getAttribute('aria-selected')).toBe('true')
+    fireEvent.click(screen.getByRole('tab', { name: 'Beta' }))
+    expect(view.writes).toEqual(['b'])
+  })
+
+  test('a handle in tabs makes the band non-empty on its own', () => {
+    const view = memoryHandle<string>('view', 'a', {
+      kind: 'enum',
+      options: [{ value: 'a', label: 'Alpha' }],
+    })
+    render(
+      <Page>
+        <PageBar tabs={{ handle: view, label: 'View' }} />
+      </Page>,
+    )
+    expect(band()).not.toBeNull()
   })
 
   test('a string parent is a link before the leaf; a NavTarget parent is plain text', () => {

@@ -2,12 +2,16 @@ import { useId } from 'react'
 import type { ReactElement } from 'react'
 import { headingSlug } from '../core/slug'
 import type { SectionProps } from './contract'
+import { isEmptyTabs, renderTabs } from './page-tabs'
 
 /**
  * A titled part of a page: an `h2`, an optional controls slot on the same row and the body. The
  * section is a named region and a scroll anchor: its `id` is the slug of `title`, and its scroll
  * margin is `--page-sticky-top`, so a `#hash` jump, a skip link or `scrollIntoView` lands the
  * heading just below the page band instead of under it. Outside a `Page` the offset is zero.
+ *
+ * `tabs` is the section's view switch: `{ handle, label }` of an enum field draws a `ViewTabs`
+ * bound to it, a `ControlsSlot` renders as is.
  *
  * `controls` is the section's own control home (a range for one widget, a view switch): it never
  * holds page-wide filters, which belong to the `PageBar`.
@@ -20,7 +24,12 @@ import type { SectionProps } from './contract'
  *   <ChartCard title="p95" chart={…} />
  * </Section>
  */
-export function Section({ title, controls, children }: SectionProps): ReactElement {
+export function Section<K extends string = string>({
+  title,
+  controls,
+  tabs,
+  children,
+}: SectionProps<K>): ReactElement {
   const headingId = useId()
   const anchor = headingSlug(title)
   return (
@@ -37,6 +46,11 @@ export function Section({ title, controls, children }: SectionProps): ReactEleme
         >
           {title}
         </h2>
+        {!isEmptyTabs(tabs) && (
+          <div data-slot="section-tabs" className="flex min-w-0 items-center">
+            {renderTabs(tabs)}
+          </div>
+        )}
         {controls !== undefined && controls.count > 0 && (
           <div data-slot="section-controls" className="flex min-w-0 flex-wrap items-center gap-2">
             {controls.render()}

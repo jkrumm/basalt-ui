@@ -10,6 +10,7 @@ import { devAssertOnce, createBarClaims } from './core/claims'
 import { observeBarHeight, publishBarHeight } from './core/bar-measure'
 import type { PageAction, PageBarProps, PageButtonAction, PageTextAction } from './contract'
 import { PageContext, PageHostContext } from './page'
+import { isEmptyTabs, renderTabs } from './page-tabs'
 import { RefreshButton } from './refresh-button'
 
 type Parent = NonNullable<PageBarProps['parent']>
@@ -199,7 +200,8 @@ const isEmptySlot = (slot: { count: number } | undefined): boolean =>
  * `document.title`, and `actions` claim the header's end; the band holds only `tabs`, `controls`
  * and `refresh`. Without a shell `title` is the visible `h1` and `actions` sit in the band. The
  * band is sticky at the nearest scrollport and publishes its measured height as `--page-bar-h`; an
- * empty band renders nothing. `actions` holds at most five entries and at most one `primary`.
+ * empty band renders nothing. `tabs` is `{ handle, label }` of an enum field (a `ViewTabs` bound to
+ * it) or a `ControlsSlot` for custom content. `actions` holds at most five entries and at most one `primary`.
  *
  * @useWhen a screen needs a title, tabs, filters, a refresh button or page-level actions in one sticky band
  * @neverWhen the screen has none of those (leave the bar out) or the title belongs to a card (use the card title)
@@ -214,6 +216,9 @@ const isEmptySlot = (slot: { count: number } | undefined): boolean =>
  * />
  *
  * @example
+ * <PageBar title="Orders" tabs={{ handle: store.field.view, label: 'Orders view' }} />
+ *
+ * @example
  * // Date navigation: grouped actions and a text action, no primary.
  * <PageBar
  *   actions={[
@@ -223,14 +228,14 @@ const isEmptySlot = (slot: { count: number } | undefined): boolean =>
  *   ]}
  * />
  */
-export function PageBar({
+export function PageBar<K extends string = string>({
   title,
   parent,
   controls,
   tabs,
   refresh,
   actions,
-}: PageBarProps): ReactElement | null {
+}: PageBarProps<K>): ReactElement | null {
   const context = useContext(PageContext)
   const host = useContext(PageHostContext)
   const id = useId()
@@ -305,7 +310,7 @@ export function PageBar({
   const visibleActions = !inShell && list.length > 0
   const bandHasContent =
     !isEmptySlot(controls) ||
-    !isEmptySlot(tabs) ||
+    !isEmptyTabs(tabs) ||
     refresh !== undefined ||
     visibleActions ||
     (!inShell && title !== undefined)
@@ -361,9 +366,9 @@ export function PageBar({
             {heading}
           </div>
         )}
-        {!isEmptySlot(tabs) && (
+        {!isEmptyTabs(tabs) && (
           <div data-slot="page-bar-tabs" className="min-w-0">
-            {tabs?.render()}
+            {renderTabs(tabs)}
           </div>
         )}
         <div className="ms-auto flex min-w-0 flex-wrap items-center justify-end gap-2">
