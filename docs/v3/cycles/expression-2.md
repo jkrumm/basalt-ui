@@ -213,8 +213,12 @@ Harness lessons go to the cycle 3 brief as lead notes:
 - `scenario-info.ts` needs an entry per scenario, or `scenarios.test.ts` fails. c07's builder added its own, and the lead added the other five.
 - Builders copy `@mantine/core` layout from the playground's 2.x code.
 - Focus frames need a wait for transitions.
-- Builders ran typecheck, oxlint and oxfmt but not `check-theme`, because the lead's brief left it out. c05's round-2 CSS failed it with 12 findings. Nine were `--vx-*` names basalt does not emit, which resolved to nothing in the scored shots. After scoring, the c05 builder made a gate-only fix:
-  - local line-height and radius variables built from emitted tokens;
+- Builders ran typecheck, oxlint and oxfmt but not `check-theme`, because the lead's brief left it out. c05's round-2 CSS failed it with 12 findings. Nine were `unknown-vx-token`:
+  - Two named `--vx-radius-chip`, which basalt does not emit.
+  - Seven named `--vx-text-xs-lh` and `--vx-text-sm-lh`, which v3 does emit (`src/tokens/table.ts`, `golden/default.css`). The guard's static list `BASALT_VX_NAMES` lacks them, so those seven are false positives. Signal `issue_1083` asks for the fix.
+
+  After scoring, the c05 builder made a gate-only fix:
+  - local line-height and radius variables computed from other tokens. The builder's comment on them says the kit has no line-height token, which is wrong;
   - a named `basalt-card` container at 479.9 px in place of 40 rem;
   - `theme-allow` on two data-driven spans.
 
