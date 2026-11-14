@@ -23,9 +23,9 @@ const focus = useChartFocus(stages, { announce: (d) => `${d.name}: ${fmt(d.behin
         dot(rows.filter((r) => !rest.includes(r)), { x: 'x', y: 'y', fill: SERIES.pace })]
     }} />
 </ChartCard>
-// A form the page draws itself (recipe `seam-bar`): the container is the tab stop, each mark an item.
+// A form the page draws itself (recipe `seam-bar`, or `seam-track` for marks on a time axis): the container is the tab stop, each mark an item; the kit dims the rest.
 <div {...focus.target} aria-label="Context window" className="flex">
-  {parts.map((p, i) => <div key={p.key} {...focus.item(i)} style={{ flexGrow: p.tokens }} className="data-dimmed:opacity-25" />)}
+  {parts.map((p, i) => <div key={p.key} {...focus.item(i)} style={{ flexGrow: p.tokens }} />)}
   {focus.live}
 </div>
 ```

@@ -3,6 +3,11 @@
   "compilerOptions": {
     "types": ["bun"]
   },
-  "include": ["src/**/*.test.ts", "src/scenarios/mdx-module.d.ts", "scripts/**/*.ts"],
+  "include": [
+    "src/**/*.test.ts",
+    "src/**/*.test.tsx",
+    "src/scenarios/mdx-module.d.ts",
+    "scripts/**/*.ts"
+  ],
   "exclude": []
 }

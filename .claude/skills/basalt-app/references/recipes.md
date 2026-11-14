@@ -6,6 +6,10 @@ A recipe is the shipped answer to a pattern basalt composes but does not export:
 - [app-shell](docs/recipes/app-shell.md): mounting the application frame once, in the root route
 - [ai-approvals-sources](docs/recipes/ai-approvals-sources.md): a chat asks before a tool runs, shows reasoning and cites sources, which `partView` leaves to the app
 - [ai-artifacts](docs/recipes/ai-artifacts.md): a model produces a document, a block, code or an html preview that opens beside the chat and keeps its versions
+- [ai-blocks](docs/recipes/ai-blocks.md): a model may show a stat, chart, table, callout, list or layout in the chat, as typed blocks that stay on-brand
+- [ai-card](docs/recipes/ai-card.md): a card shows a model summary that streams in (a personalised or generated note), held at one height
+- [ai-external-runtime](docs/recipes/ai-external-runtime.md): a chat runs on TanStack AI, AG-UI or assistant-ui and still renders through partView
+- [ai-sdk-tools](docs/recipes/ai-sdk-tools.md): a model shows typed blocks through one AI SDK tool, with a route handler and a client that renders the part through the catalog
 - [dependent-validation](docs/recipes/dependent-validation.md): a form validates with one Standard Schema, with a rule across fields and one field the server decides
 - [board](docs/recipes/board.md): columns of KanbanCards that move between states, with a menu path and an app-owned drag engine
 - [chat-thread](docs/recipes/chat-thread.md): an AI chat thread: streamed replies without a bubble, a composer, one live region, a scroller that stays at the bottom
@@ -21,6 +25,8 @@ A recipe is the shipped answer to a pattern basalt composes but does not export:
 - [optimistic](docs/recipes/optimistic.md): a save should show its result in the cached record before the server answers, and undo itself when the server refuses
 - [remembered-values](docs/recipes/remembered-values.md): a page's filter (a time window) should reopen at the value the user last chose, which 2.x did with a `persist` mirror on a `createSearchStore` field
 - [seam-bar](docs/recipes/seam-bar.md): a part-of-whole bar you draw yourself (HTML parts in a row), with focus, dimming and a readout
+- [seam-linked](docs/recipes/seam-linked.md): a chart and a scrolling list of groups (versions, releases) beside it that share one focus
+- [seam-track](docs/recipes/seam-track.md): marks on a time or value track you draw yourself (a waterfall of spans, a lane), with an axis, row labels and focus
 - [storage-adapter](docs/recipes/storage-adapter.md): device preferences (rail, folds) must follow the person, so `persisted` reads and writes a server
 - [timeline](docs/recipes/timeline.md): dated bars on a shared time axis, read-only, in a card frame
 - [websocket-transport](docs/recipes/websocket-transport.md): the server pushes over a WebSocket, not SSE, and a channel must still reconnect, resume and stop on a refused token
