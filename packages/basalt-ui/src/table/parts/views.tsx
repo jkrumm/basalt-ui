@@ -95,7 +95,12 @@ function useStoreViews(store: ViewStore | undefined, tableId: string): ViewList 
         setLoaded(list)
         setReady(true)
       },
-      () => live && setFailed(true),
+      () => {
+        if (!live) return
+        // an unreadable store has no view to apply: settle on the empty list so a stale `?view=` goes
+        setFailed(true)
+        setReady(true)
+      },
     )
     return () => {
       live = false
