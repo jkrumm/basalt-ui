@@ -1,17 +1,21 @@
 {
-  "why": "State cycle 1 (docs/v3/cycles/state-1.md, P2 state-1.14): at 1800 px the FilterSet draws the full pill row and, under it, the narrow form's `Filters` button, on `/cycle-state` and on `/overview` alike. The row shows from `@regular` and the button's wrapper hides from `@regular`, but the two resolve against different containers, so both forms show. Shots: `.evidence/v3-shots/state-1/cycle-state*--1800x1200.png` in the cycle's worktree; reproduce with `bun apps/playground/scripts/shots.ts /overview`.",
-  "what": "One FilterSet form at any width.",
+  "why": "State cycle 1 (docs/v3/cycles/state-1.md) logged two P2 `visual` findings. state-1.14: at 1800 px the FilterSet draws the full pill row and, under it, the narrow form's `Filters` button, on `/cycle/state` and `/overview` alike: the row shows from `@regular` and the button's wrapper hides from `@regular`, but the two resolve against different containers. state-1.21: the quality matrix on the cycle route (`.evidence/cycle-state-1/quality-matrix.txt` in the cycle's worktree) fails `DataTable`'s head and `ConnectionIndicator`: column-actions buttons 24 px and the `Live` indicator 32 px under the 44 px coarse floor (the indicator's doc promises 44), header rings clipped by `main` and covered by neighbouring header cells at 390 px, buttons that lose their frame under forced colours, an axe `target-size` violation, and Customer cells that overflow with no ellipsis at 390 px. No matrix route used `DataTable` before.",
+  "what": "One FilterSet form at any width; DataTable head and ConnectionIndicator pass the quality matrix.",
   "owns": [
     "packages/basalt-ui/src/controls/filter-set-spec.tsx and its CSS",
-    "a layout test and fixture under packages/basalt-ui/tests/layout/"
+    "packages/basalt-ui/src/table/parts/** (the head and its column-actions button)",
+    "packages/basalt-ui/src/page/connection-indicator.tsx",
+    "packages/basalt-ui/tests/quality/matrix/known.ts (removing the entries the fixes clear)",
+    "layout tests and fixtures under packages/basalt-ui/tests/layout/"
   ],
   "must_not_touch": ["docs/v3/ARCHITECTURE.md", "apps/playground/src/cycle/**"],
-  "change": "Put the row and the narrow `Filters` button under the same `@container`, so `@regular:flex` and `@regular:hidden` read one width. A layout test mounts a FilterSet of four specs in a `Page` at 1800 and 390 px and asserts exactly one of the two forms is visible at each width.",
+  "change": "(1) Put the FilterSet row and the narrow `Filters` button under the same `@container`, so `@regular:flex` and `@regular:hidden` read one width; a layout test mounts four specs in a `Page` at 1800 and 390 px and asserts exactly one form is visible (state-1.14). (2) Fix what the matrix reports on `/cycle/state` for `DataTable`'s head and `ConnectionIndicator`: a 44 px hit area on a coarse pointer for the indicator and the column-actions button, header focus rings that neither clip nor sit under a neighbour, a frame under forced colours, and an ellipsis on a truncated cell. Remove each `known.ts` entry the fix clears (state-1.21). Leave the cell overprint at 390 to `v3-expr-2-kit-fixes` if it has not landed, and say so.",
   "commits": "fix: one commit in packages/basalt-ui.",
   "proof": "make check; the layout test.",
   "acceptance": [
-    "At 1800 px only the pill row is visible; at 390 px only the Filters button (layout test)",
+    "At 1800 px only the FilterSet pill row is visible; at 390 px only the Filters button (layout test)",
+    "The sampled matrix passes `/cycle/state` with no `known.ts` entry left for DataTable head or ConnectionIndicator findings",
     "make check passes"
   ],
-  "out_of_scope": "Reset all on the desktop row (v3-state-1-state); DataTable cells at 390 px (v3-expr-2-kit-fixes)."
+  "out_of_scope": "Reset all on the desktop row (v3-state-1-state); the matrix route list (v3-state-1-lint)."
 }
