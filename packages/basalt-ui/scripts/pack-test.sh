@@ -220,6 +220,11 @@ const agentMod = await import('basalt-ui/agent')
 if (typeof agentMod.aiSdkTransport !== 'function') throw new Error('agent.aiSdkTransport missing')
 console.log('smoke: basalt-ui/agent OK')
 
+// the push channel ships with the data layer (`createChannel` also stays on the root until the teardown)
+const dataMod = await import('basalt-ui/data')
+if (typeof dataMod.createChannel !== 'function') throw new Error('data.createChannel missing')
+console.log('smoke: basalt-ui/data createChannel OK')
+
 const stateMod = await import('basalt-ui/state')
 if (typeof stateMod.createSearchStore !== 'function') throw new Error('state.createSearchStore missing')
 console.log('smoke: basalt-ui/state OK')
