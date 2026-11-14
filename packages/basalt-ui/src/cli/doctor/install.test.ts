@@ -83,9 +83,10 @@ describe('check 3: peers and ai-major-parity', () => {
     expect(r.status).toBe('pass')
   })
 
-  const withAi = (ai: string, sdk: string): Record<string, string> => ({
+  const withAi = (ai: string, sdk: string, extra: object = {}): Record<string, string> => ({
     'package.json': JSON.stringify({
       name: 'app',
+      ...extra,
       dependencies: {
         'basalt-ui': '2.29.0',
         react: '^19.3.0',
@@ -100,13 +101,35 @@ describe('check 3: peers and ai-major-parity', () => {
     }),
   })
 
-  it('fails when ai and @ai-sdk/react differ by major', async () => {
+  it('fails when @ai-sdk/react does not pair with the ai major', async () => {
     const r = await runCheck(makeTree('app', withAi('^6.0.0', '^7.0.0')), 3)
     expect(r.status).toBe('fail')
     expect(r.detail).toContain('ai-major-parity')
   })
 
-  it('passes when ai and @ai-sdk/react share a major', async () => {
-    expect((await runCheck(makeTree('app', withAi('^7.0.1', '^7.2.0')), 3)).status).toBe('pass')
+  it('passes the real pairing: ai 7 with @ai-sdk/react 4', async () => {
+    expect((await runCheck(makeTree('app', withAi('^7.0.1', '^4.0.2')), 3)).status).toBe('pass')
+  })
+
+  it('fails when ai is on two majors across packages, and a written reason exempts it', async () => {
+    const files = {
+      ...withAi('^7.0.1', '^4.0.2'),
+      'apps/api/package.json': JSON.stringify({ name: 'api', dependencies: { ai: '^5.0.0' } }),
+      'apps/api/src/index.ts': 'export {}\n',
+    }
+    const dir = makeTree('app', files)
+    editManifest(dir, (m) => void (m.roots['apps/api/src'] = 'bridge'))
+    const split = await runCheck(dir, 3)
+    expect(split.status).toBe('fail')
+    expect(split.detail).toContain('majors 5 and 7')
+
+    const reasoned = makeTree('app', {
+      ...files,
+      ...withAi('^7.0.1', '^4.0.2', {
+        basalt: { aiMajorSkewReason: 'api streams on ai 5, neutralized upstream' },
+      }),
+    })
+    editManifest(reasoned, (m) => void (m.roots['apps/api/src'] = 'bridge'))
+    expect((await runCheck(reasoned, 3)).status).toBe('pass')
   })
 })
