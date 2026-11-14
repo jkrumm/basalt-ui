@@ -129,6 +129,22 @@ const probe = (page: LayoutPage) =>
   }, PORT)
 
 layout('DataTable virtual (S2, Chrome)', () => {
+  test('at 390 the visible head cells fill the table: the hidden priority 3 column takes no share of the flexible one', async () => {
+    const page = await open(PHONE)
+    const widths = await page.raw.evaluate((sel) => {
+      const table = document.querySelector<HTMLElement>(sel)!.querySelector('table')!
+      const heads = [...table.querySelectorAll<HTMLElement>('thead th')].filter(
+        (th) => getComputedStyle(th).display !== 'none',
+      )
+      return {
+        table: table.getBoundingClientRect().width,
+        heads: heads.map((th) => th.getBoundingClientRect().width),
+      }
+    }, PORT)
+    expect(widths.heads.length).toBe(3)
+    expect(widths.heads.reduce((sum, w) => sum + w, 0)).toBeCloseTo(widths.table, 0)
+  })
+
   test('a 10k table mounts a window, counts every row and keeps the page from scrolling sideways', async () => {
     const page = await open()
     const p = await probe(page)

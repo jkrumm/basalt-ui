@@ -139,6 +139,7 @@ layout('ConnectionIndicator and RefreshButton', () => {
             const after = getComputedStyle(trigger, '::after')
             return {
               minHeight: after.minHeight,
+              hitWidth: Number.parseFloat(after.width),
               height: trigger.getBoundingClientRect().height,
               target:
                 document
@@ -151,6 +152,7 @@ layout('ConnectionIndicator and RefreshButton', () => {
           })
           expect(hit.minHeight).toBe(pointer === 'coarse' ? '44px' : '24px')
           expect(hit.height).toBe(24)
+          if (pointer === 'coarse') expect(hit.hitWidth).toBeGreaterThanOrEqual(44)
           expect(hit.target, `${pointer}: 8 px above the control still hits it`).toBe(
             pointer === 'coarse',
           )

@@ -16,9 +16,9 @@ export interface KnownFinding {
 }
 
 // /cycle/state is the state cycle's build (v3-state-1, nested route `cycle/state`). The route lists the
-// findings of the table parts and the controls it composes, one item each: a cycle PR may not touch
-// `packages/basalt-ui/`, so the rows that own the parts remove each line with its fix. The full run
-// fails an entry that matched nothing.
+// findings of the controls it composes, one item each: a cycle PR may not touch `packages/basalt-ui/`,
+// so the row that owns the part removes each line with its fix. The full run fails an entry that
+// matched nothing.
 const STATE_OWNER = 'v3-state-1-visual: the state cycle build (kit parts it composes)'
 const PILL = 'div>div[filter-pills]>div[filter-set-pill]>button[button]'
 
@@ -32,6 +32,7 @@ function stateItems(assertion: string, items: readonly string[]): KnownFinding[]
 }
 
 const STATE_KNOWN: readonly KnownFinding[] = [
+  // desktop, light: the view tab and the pills sit in the page bar's clip
   ...stateItems('ringWalk', [
     'div[view-tabs]>div[tabs]>div[tabs-list]>button[tabs-trigger] "Table": outline is clipped by div',
     `${PILL} "Date: Last 30 days": outline is clipped by div`,
@@ -39,7 +40,6 @@ const STATE_KNOWN: readonly KnownFinding[] = [
     `${PILL} "Search: Customer or orde": outline is clipped by div`,
     `${PILL} "Flagged only: Off": outline is clipped by div`,
   ]),
-  ...stateItems('hitFloor', ['button[pressable] "Live" 32x44 < 44x44']),
 ]
 
 // /cycle/shell/* is the shell cycle's fleet app (docs/v3/cycles/shell-1.md). Each entry is a finding of
@@ -205,10 +205,10 @@ export const KNOWN: readonly KnownFinding[] = [
   // /table is the v3 DataTable exemplar (v3-table-t5-exemplar); its other findings are fixed in src/table.
   {
     route: '/table',
-    assertion: 'focusNotObscured',
-    item: /th\[table-head\]>button\[pressable\] "Booking": covered at .* by button\[button\]/,
+    assertion: 'ringWalk',
+    item: /th\[table-head\]>button\[pressable\] "Amount \(EUR\)": outline is clipped by div/,
     owner:
-      "table: the virtual table's flex identity head is 84 px at 390, too narrow for its sort button and a 44 px column menu hit area",
+      "table: Chrome centres the focused column menu inside the pin-reduced scrollport, so the next stop, the last column's sort button, stays half out of view at 390",
   },
 ]
 
