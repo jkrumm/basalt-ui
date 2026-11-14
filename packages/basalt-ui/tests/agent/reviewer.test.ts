@@ -67,8 +67,10 @@ describe('reviewer rubric', () => {
 
   it('tags the measured, mobile and page items', () => {
     const craft = rubric.split('### Craft\n')[1]?.split('### Expression')[0] ?? ''
-    for (const n of [1, 2, 3, 5])
+    for (const n of [1, 2, 3, 6, 7])
       expect(craft).toMatch(new RegExp(`^${n}\\. [^\\n]*\\*\\*\\[measured\\]\\*\\*`, 'm'))
+    expect(craft).not.toMatch(/^5\. [^\n]*\*\*\[measured\]\*\*/m)
+    expect(craft).toContain('axe owns them')
     expect(craft).toMatch(/\*\*\[mobile\]\*\*/)
     expect(rubric).toContain('**[page]**')
   })
@@ -187,7 +189,6 @@ function metrics(over: Partial<ShotMetrics> = {}): ShotMetrics {
         fontSizes: [12, 14],
         nested: [],
         emptyRatio: 0.1,
-        contrast: { min: 7, failures: [] },
         sheet: 'png/card__sheet.png',
       },
     ],

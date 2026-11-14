@@ -141,7 +141,7 @@ export const USAGE =
   '  output saved to a file. Writes <out>/detect.json and a findings table, content, then layout, then style:\n' +
   '  off-scale inset/gap/radius, nested radius step under 3 px, more than 3 font sizes, an empty region of\n' +
   '  40 % or more, overlap, a touch target under the hit floor, document overflow, a state crop identical\n' +
-  '  to rest, error shots, a missing scale or no anchors.\n' +
+  '  to rest, error shots, a missing scale or no anchors. Contrast is not read: axe owns it.\n' +
   '  Exit codes: 0 clean (P2/P3 findings are listed, not failing), 2 a P0 or P1 finding, 1 scan failure (missing\n' +
   '  or unreadable metrics.json or lint file, or detect.json cannot be written).\n' +
   '    P0  fails: broken or unreadable: an error shot; no anchors\n' +
