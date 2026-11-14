@@ -15,7 +15,6 @@ import { measureSource, reExportAll, reExportNamed } from '../ui-bundle'
 
 const SRC = join(PKG_ROOT, 'src')
 
-const SHELL_CORE = ['AppShell', 'toMenuTemplate', 'useWindowChrome']
 const PALETTE = [
   reExportNamed('shell/commands/command-palette', ['CommandPalette']),
   reExportNamed('shell/commands/define-commands', ['defineCommands']),
@@ -96,4 +95,3 @@ export const rows: readonly RowDef[] = [
     measure: largestAuthoredFile,
   },
 ]
-void SHELL_CORE
