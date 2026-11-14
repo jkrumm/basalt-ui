@@ -1432,6 +1432,8 @@ rows:
         v3-expr-1-seam,
         v3-expr-1-kit-fixes,
         v3-expr-1-bypass-seam,
+        v3-expr-2-kit-fixes,
+        v3-expr-2-seam-tracks,
       ]
     facts: { 'brief': 'docs/v3/issues/g4/v3-freeze-g4.json' }
   - key: v3-teardown-views
@@ -1598,3 +1600,30 @@ rows:
     seat: { tier: opus, effort: high }
     after: [v3-expr-1-seam, v3-expr-1-kit-fixes, v3-sk-7-references]
     facts: { 'brief': 'docs/v3/issues/cycles/v3-cycle-expression-2.json' }
+  - key: v3-expr-2-skill
+    title: 'Expression skill: a device checklist before stopping, and per-item marks and dimmable series in the form guidance'
+    repo: basalt-ui
+    kind: feature
+    after: [v3-cycle-expression-2]
+    facts: { 'brief': 'docs/v3/issues/cycles/v3-expr-2-skill.json' }
+  - key: v3-expr-2-kit-fixes
+    title: 'Reference-line label collisions, y gutter, DataTable cells and skeleton rows, StatGroup at 390, tick density from expression cycle 2'
+    repo: basalt-ui
+    kind: bug
+    after: [v3-cycle-expression-2]
+    facts: { 'brief': 'docs/v3/issues/cycles/v3-expr-2-kit-fixes.json' }
+  - key: v3-expr-2-seam-tracks
+    title: 'Geometry seam, second cut: axis, labels, legend and readout for marks on an HTML track, group stepping (Spec)'
+    repo: basalt-ui
+    kind: feature
+    seat: { tier: opus, effort: high }
+    checkpoint: spec
+    after: [v3-cycle-expression-2]
+    facts: { 'brief': 'docs/v3/issues/cycles/v3-expr-2-seam-tracks.json' }
+  - key: v3-cycle-expression-3
+    title: 'Improvement cycle 3: expression, six one-shot visualization trials scored against references'
+    repo: basalt-ui
+    kind: chore
+    seat: { tier: opus, effort: high }
+    after: [v3-expr-2-skill, v3-expr-2-kit-fixes, v3-expr-2-seam-tracks, v3-teardown-runtime]
+    facts: { 'brief': 'docs/v3/issues/cycles/v3-cycle-expression-3.json' }

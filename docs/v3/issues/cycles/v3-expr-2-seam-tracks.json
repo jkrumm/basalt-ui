@@ -1,0 +1,30 @@
+{
+  "why": "Expression cycle 2 (docs/v3/cycles/expression-2.md) ran after the geometry seam shipped (useChartFocus, chartLabels). Every build that drew its own form wired focus through the seam, and none hand-wrote an <svg>. The points still lost to the kit are on the forms the seam leaves half-done: marks on an HTML track (c05 contract lanes, c08 span waterfall, c07 a square per case). There the page owns the axis, the ticks, the gridlines, the label placement, the legend and the readout's visibility. c08 spent about 100 of 252 lines on tick maths, label placement and skeleton rows, and c05 about 65, including month ticks its axis then failed to paint (r1). chartLabels places only inside a CartesianChart plot, so c08's bar labels and c05's annotation were placed by hand and collided (expression-2 findings on c08 F6, K1, K5 and c05 F8). No legend part takes a seam-drawn mark's dot, ring or hollow swatch, so c05, c07 and c08 each hand-built one. A readout bound with focus.readout sits in the card header and scrolls away when the focused row is low in a long list (c05 F7 r0 and r1, c08 r1 at 390). useChartFocus steps one datum at a time, so the dip in c09 was about 30 presses away and n01 had 720 stops; c09 wrote a PageUp/PageDown handler by hand. Census V3 names scale and ticks among the fleet's recurring helpers. Each item serves two or more cases.",
+  "what": "A one-page Spec, then the seam's second cut for marks drawn on an HTML track: an axis with ticks and gridlines from a domain, label placement on a track, a legend part for seam-drawn marks, a readout that stays in view, and group stepping in useChartFocus. No new chart kind.",
+  "owns": [
+    "packages/basalt-ui/src/charts/** (the seam module, focus.tsx and their tests)",
+    "packages/basalt-ui/src/charts/contract.ts (only the amendment the Spec names)",
+    "scripts/check-budgets/areas/charts.ts and scripts/consumers.json (a raise row per new symbol, if the Spec puts one on ./charts)",
+    "packages/basalt-ui/docs/recipes/seam-bar* and a new seam-track recipe",
+    "the generated docs and the basalt-charts skill snippet for the new symbols",
+    "apps/playground/src/demo/** (a gallery fixture per new symbol)"
+  ],
+  "must_not_touch": [
+    "docs/v3/ARCHITECTURE.md",
+    "docs/v3/expression/**",
+    "packages/basalt-ui/agent/skills/basalt-design/** (v3-expr-2-skill)",
+    "apps/playground/src/scenarios/expr/** (the trial builds stay as their builders left them, EXPRESSION.md § The loop)"
+  ],
+  "change": "Write and submit a Spec (checkpoint spec) before any code. For each item it names the public symbol or the option on an existing one, its home subpath, its default and what changing it later costs: (1) a track axis for marks a page draws in HTML: ticks from a numeric or time domain at a container width, gridlines that stop under a label, an end tick that never wraps (c05, c08); (2) label placement on a track, the chartLabels collision pass for an HTML row, with a drop rule (c05, c08); (3) a legend part for seam-drawn marks, taking the swatch shapes a page uses (dot, ring, hollow square, bar) and matching the ChartCard legend anatomy (c05, c07, c08); (4) a readout that stays in view while focus is on a mark lower in a long body, or a documented placement that does (c05, c08); (5) group stepping in useChartFocus: PageUp and PageDown, or a group key, move between groups of datums (c09 versions, n01 days). The ./charts ceiling of v3-freeze-g4 is twelve value exports: the Spec says how the seam fits it (options on useChartFocus and chartLabels, a sub-path, or an amendment the owner rules on). Then build what the verdict keeps, with tests and one gallery fixture per symbol. The PR maps each `// cycle-expression-2:` workaround in apps/playground/src/scenarios/expr that the seam covers to the symbol that replaces it; the trial files are not edited.",
+  "commits": "feat: commits per symbol; docs and recipe in their own commit.",
+  "proof": "The Spec and its verdict; make check; the PR table mapping each covered `cycle-expression-2:` workaround to its replacing symbol.",
+  "acceptance": [
+    "A Spec naming every new export, option and contract.ts change is submitted before code, with its verdict or 24-hour default recorded",
+    "A seam-drawn track at 390 px and 1800 px renders ticks with no wrapped end tick and no gridline through a label (layout test)",
+    "A seam-drawn legend renders the dot, ring and hollow swatch shapes (test)",
+    "useChartFocus moves by group on PageUp and PageDown, or by the Spec's chosen key, and announces the group (test)",
+    "The ./charts value export count is within the v3-freeze-g4 ceiling, or the Spec's amendment is ruled",
+    "make check passes"
+  ],
+  "out_of_scope": "A new chart kind (waterfall, Gantt, waffle and lane forms stay recipes under the Rule of Three); reference-line label collisions inside CartesianChart (v3-expr-2-kit-fixes); the barrel swap from the 2.x ChartCard (v3-teardown-views); editing the trial builds."
+}

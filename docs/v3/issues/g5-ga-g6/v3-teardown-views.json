@@ -32,5 +32,8 @@
     "bun packages/basalt-ui/scripts/release-migrating.ts --check exits 0 with every deleted symbol named by a row",
     "make check exits 0"
   ],
-  "out_of_scope": "Provider and runtime deletion (v3-teardown-runtime), peer set (v3-teardown-peers), renames."
+  "out_of_scope": "Provider and runtime deletion (v3-teardown-runtime), peer set (v3-teardown-peers), renames.",
+  "notes": [
+    "From v3-cycle-expression-2 (docs/v3/cycles/expression-2.md), class planned. basalt-ui/charts still exports the 2.x ChartCard (src/charts/ChartCard.tsx: facts, state, children, lining-nums fact value), while the generated docs, agent/rules/basalt-charts.md and the basalt-design references describe the v3 part (src/charts/parts/chart-card.tsx: figure with status, a fixed box, tabular-nums). Four of six cycle-2 builders reported the mismatch and built on dist. Points it cost: expression-2.9 and .34 (loading not at the loaded height, which the v3 fixed box holds), .43 (facts take no status dot), .47 and .66 (lining figures in a value that changes on focus), .59, .61 and .65 (the 2.x skeleton has no legend row). When this row removes the 2.x files, check that ./charts then exports the v3 ChartCard, Lines, Bars and CartesianChart. Also note that packages/basalt-ui/llms.txt still opens 'basalt-ui v2.29.0 … Mantine-based'. The expression trial scenarios (apps/playground/src/scenarios/expr/**) compile against the 2.x ChartCard props. EXPRESSION.md keeps them as their builders left them, so deleting or rewriting them is an owner call: raise it, or keep them compiling through the migration codemods (v3-charts-7a-card-codemods) and say which in the PR."
+  ]
 }

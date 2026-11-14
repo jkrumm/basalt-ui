@@ -1,0 +1,29 @@
+{
+  "why": "Expression cycle 2 (docs/v3/cycles/expression-2.md) logged `primitive` findings that need no new export: shipped components cost points in builds that used them as documented. Reference-line and end labels inside CartesianChart skip the collision pass. In c09 the version labels overprint at 390 px and 'Target 98 %' overprints a version label in the outage fixture (P2 expression-2.41, .44). In n01 'Contracted rate' sits on both lines and the '0' tick touches '15 Oct', because the documented y gutter is not applied (P2 .55). In n06 'Out' and 'Cap' collide at 390 (.63). The v3 DataTable glues an entity cell's id to its `sub` ('eval-005Sort ascending…') and lets text overprint the next column at 390. Its skeleton is a fixed 6 rows where 14 or 17 load, with no option. StatGroup `cards` turns into a snap row at 390 that hides two cells (c07 P2s .19, .23, .26; .22, .27). The default time axis keeps one tick at 390 (c09 .48). The label fixes serve c09, n01 and n06; the table fixes serve c07 and the bank's table-shaped cases n09 and n11.",
+  "what": "Fixes inside existing v3 components: label collisions for reference lines and end labels, the y gutter, DataTable entity cells, column priority and skeleton rows, StatGroup at narrow width, time-axis tick density. No new export, no contract.ts change.",
+  "owns": [
+    "packages/basalt-ui/src/charts/parts/** and the cartesian engine's label and axis code (not focus.tsx or the seam module, which v3-expr-2-seam-tracks owns)",
+    "packages/basalt-ui/src/table/parts/**, src/table/use-data-table* and the cell kinds",
+    "packages/basalt-ui/src/cards/stat-group*",
+    "their tests and layout tests"
+  ],
+  "must_not_touch": [
+    "packages/basalt-ui/src/charts/contract.ts",
+    "packages/basalt-ui/src/charts/focus.tsx",
+    "docs/v3/ARCHITECTURE.md",
+    "docs/v3/expression/**",
+    "apps/playground/src/scenarios/expr/** (the trial builds stay as their builders left them)"
+  ],
+  "change": "(1) Labels of refLines, xRefLines and zones, and series end labels, go through the same collision pass as chartLabels: a label that would overlap the series, another label or the plot edge flips side, moves to clear space or drops, and the y gutter that cartesian-chart.md documents is applied (c09, n01, n06). (2) DataTable: an entity cell separates its id and its `sub` at every width; at a narrow container a column's text never overprints the next column (truncate or hide by priority); the loading skeleton takes a row count (or the last loaded count, as the 2.x skeletonRows did) so loading keeps the loaded height; StatGroup `cards` at a narrow container shows every cell without a horizontal snap row (c07; serves n09, n11). (3) The default time axis keeps at least three ticks at a 390 px container when the domain spans several days (c09). Each fix gets a layout test at 1800 and 390 px. For each `// cycle-expression-2:` workaround in apps/playground/src/scenarios/expr that a fix covers, the PR names it; the trial files are not edited.",
+  "commits": "fix: commits per component.",
+  "proof": "make check; layout tests for label placement, table columns and skeleton height, and tick count.",
+  "acceptance": [
+    "A CartesianChart with a refLine label over the series at 390 px renders the label clear of the line (layout test)",
+    "A DataTable entity cell with a sub shows a gap between id and sub, and no cell text overlaps the next column at 390 px (layout test)",
+    "A DataTable loading state is as tall as the loaded table for a given row count (test)",
+    "StatGroup cards at 390 px shows every cell (layout test)",
+    "A multi-day time axis at 390 px renders at least three ticks (test)",
+    "make check passes"
+  ],
+  "out_of_scope": "Axes, labels and legends for marks a page draws on an HTML track (v3-expr-2-seam-tracks); the 2.x ChartCard and the 2.x palette tints (v3-teardown-views, v3-teardown-runtime); any new export."
+}

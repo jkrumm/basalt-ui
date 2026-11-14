@@ -41,5 +41,8 @@
     "PROVIDER_ONLY_CEILING 20468 no longer appears in scripts/check-budgets",
     "make check and release-migrating --check exit 0"
   ],
-  "out_of_scope": "Theme, common, format and the peer set (v3-teardown-peers)."
+  "out_of_scope": "Theme, common, format and the peer set (v3-teardown-peers).",
+  "notes": [
+    "From v3-cycle-expression-2 (docs/v3/cycles/expression-2.md), class planned. In the playground the 2.x provider's palette overrides the v3 status tokens at runtime: v3 css/tokens.css sets --vx-bad: #af3b39 in light, and a page under the 2.x provider computes --vx-bad as color-mix(in srgb, #b5403d 18%, transparent), --vx-good at 18% and --vx-warn at 8% (measured on /scenarios/expr-c07 at sha ac6acc90). Every v3 status fill (Status dot `before:bg-bad`, `bg-bad` and `bg-good` fills, the StatCard delta) and VX.bad as text render as pale tints in light. Points it cost: expression-2.5, .16 and .18 in round 0, and c07's light-mode flips in every repair round. When this row deletes src/provider, check on a playground page that --vx-bad resolves to the solid v3 value in light and dark; v3-cycle-expression-3 waits for this row and checks it before round 0."
+  ]
 }
