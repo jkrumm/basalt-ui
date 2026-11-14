@@ -80,7 +80,8 @@ describe('check 11: budgets, ejects, weakened config, DESIGN.md', () => {
     expect(r.detail).toContain('budget.json')
   })
 
-  it('fails when an ejected file is missing, and passes once file and base copy exist', async () => {
+  // A real eject passing every row, and one failure per row: tests/cli/sync-matrix/doctor/.
+  it('fails when an ejected file is missing', async () => {
     const dir = healthy()
     const row = {
       path: 'src/ui/button.tsx',
@@ -93,13 +94,6 @@ describe('check 11: budgets, ejects, weakened config, DESIGN.md', () => {
     const broken = await runCheck(dir, 11)
     expect(broken.status).toBe('fail')
     expect(broken.detail).toContain('ejected src/ui/button.tsx is missing')
-
-    const fixed = healthy('app', {
-      'src/ui/button.tsx': 'export {}\n',
-      '.basalt/base/src/button.tsx': 'export {}\n',
-    })
-    editManifest(fixed, (m) => void (m.ejected['src#button'] = row))
-    expect((await runCheck(fixed, 11)).status).toBe('pass')
   })
 
   it('fails when a root holds more ejects than the ceiling', async () => {

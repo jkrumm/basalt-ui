@@ -188,7 +188,9 @@ export const USAGE =
   '  Renders every managed file (.claude/{rules,skills,agents}/basalt-*, the AGENTS.md block, the\n' +
   '  preset files) and compares bytes; it refreshes an EXISTING install and never creates one (that\n' +
   '  is init). --check writes nothing and exits 1 on any difference. A managed file you edited is\n' +
-  '  left and reported; --force overwrites it. A retired file is deleted if untouched, else left.\n\n' +
+  '  left and reported; --force overwrites it. A retired file is deleted if untouched, else left.\n' +
+  '  An ejected primitive is three-way merged with the new seed (adopted: base advanced, file kept);\n' +
+  '  a conflict leaves diff3 markers, advances the base and exits 1.\n\n' +
   'check-theme / doctor / sync all resolve their project the same way: BASALT_CWD, else the\n' +
   'invocation cwd — nothing inferred, nothing descended into (sync alone looks UP for the manifest\n' +
   'that declares the directory).\n' +
