@@ -41,8 +41,11 @@ describe('FormRow', () => {
         </FormField>
       </FormRow>,
     )
+    // The container is the row's own fieldset, never its root (form-row.tsx: a container directly
+    // in a caller's fieldset loses its layout in Chrome).
     const row = container.querySelector('[data-slot="form-row"]')!
-    expect(row.className).toContain('@container')
+    expect(row.className).not.toContain('@container')
+    expect(row.querySelector(':scope > fieldset')!.className).toContain('@container')
     const fields = container.querySelector('[data-slot="form-row-fields"]')!.className
     expect(fields).toContain('@regular:')
     expect(fields).not.toMatch(/(^|\s)(sm|md|lg|xl):/)
