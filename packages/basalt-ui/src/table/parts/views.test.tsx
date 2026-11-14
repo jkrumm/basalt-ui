@@ -340,6 +340,16 @@ describe("a caller's ViewStore", () => {
     expect(search().get('view')).toBeNull()
   })
 
+  test('an unreadable store settles on no views and drops a stale view id', async () => {
+    const url = new URL(window.location.href)
+    url.searchParams.set('view', 'open')
+    window.history.replaceState(null, '', url)
+    const store = { ...memory(), list: () => Promise.reject(new Error('down')) }
+    render(<Subject store={store} />)
+    await settled()
+    expect(search().get('view')).toBeNull()
+  })
+
   test('a refused save keeps the list as it was, says so and keeps the panel open', async () => {
     const store = memory([stored])
     store.fail = true
