@@ -87,14 +87,45 @@ export const SCENARIO_INFO: readonly ScenarioInfo[] = [
     blurb: 'What is typical, how bad is the tail, and how many runs hit the timeout?',
   },
   {
+    id: 'expr-c05',
+    title: 'Trial c05: contract renewals',
+    blurb: 'Which contracts need a notice soon, and which renew on their own?',
+  },
+  {
     id: 'expr-c06',
     title: 'Trial c06: context window',
     blurb: 'How full is the context window, what fills it, and when should I compact?',
+  },
+  {
+    id: 'expr-c07',
+    title: 'Trial c07: eval run vs baseline',
+    blurb: 'Did this run beat the baseline, and which cases changed sides?',
+  },
+  {
+    id: 'expr-c08',
+    title: 'Trial c08: slow agent run',
+    blurb: 'Where did the 8 seconds go, and which step failed?',
+  },
+  {
+    id: 'expr-c09',
+    title: 'Trial c09: deployed versions',
+    blurb: 'Which version hurt quality, and what is live now?',
+  },
+  {
+    id: 'expr-n01',
+    title: 'Trial n01: internet line',
+    blurb:
+      'How often did the line drop in the last 30 days, for how long, and does speed hold the contracted rate?',
   },
   {
     id: 'expr-n05',
     title: 'Trial n05: model price and quality',
     blurb:
       'Which models give the most quality for their price, and which is beaten by a cheaper one?',
+  },
+  {
+    id: 'expr-n06',
+    title: 'Trial n06: usage window',
+    blurb: 'Will the quota run out before the window resets, and when?',
   },
 ]

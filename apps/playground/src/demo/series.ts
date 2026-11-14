@@ -36,5 +36,15 @@ const DEMO_SERIES = defineSeries({
  */
 export const demoColors = groupTokens(DEMO_GROUP, DEMO_SERIES)
 
+/** Span kinds of an agent trace (expr-c08): model, tool and retrieval, three separated hues. */
+export const traceColors = groupTokens(
+  'trace',
+  defineSeries({
+    model: { light: '#2871c7', dark: '#5190f7' },
+    tool: { light: '#7a4fc2', dark: '#b08cf2' },
+    retrieval: { light: '#12807a', dark: '#4cc9bf' },
+  }),
+)
+
 /** The `paletteOptions.groups` shape `BasaltProvider` forwards to `buildPaletteCss`. */
-export const demoPaletteGroups = [demoColors]
+export const demoPaletteGroups = [demoColors, traceColors]
