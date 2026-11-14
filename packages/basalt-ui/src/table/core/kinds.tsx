@@ -71,6 +71,11 @@ export type EntityOptions<T> = CommonOptions & {
   icon?: (row: T) => IconComponent | undefined
   sub?: (row: T) => string | null | undefined
   filter?: 'text'
+  /**
+   * `'content'` sizes the column to its widest loaded value, name or sub line (floor 18ch, cap
+   * 40ch), instead of a flexible share of what the other columns leave.
+   */
+  width?: 'content'
 }
 export type TextOptions = CommonOptions & { filter?: 'text' }
 /** A numeric kind's footer: client mode reduces the filtered rows, server mode reads `totals`. */
@@ -136,7 +141,7 @@ const COMMON = ['header', 'id', 'priority', 'card', 'sortable'] as const
 const OPTION_KEYS: Readonly<
   Record<KindName, { allowed: readonly string[]; required: readonly string[] }>
 > = {
-  entity: { allowed: [...COMMON, 'href', 'icon', 'sub', 'filter'], required: [] },
+  entity: { allowed: [...COMMON, 'href', 'icon', 'sub', 'filter', 'width'], required: [] },
   text: { allowed: [...COMMON, 'filter'], required: [] },
   number: { allowed: [...COMMON, 'unit', 'digits', 'footer'], required: [] },
   money: { allowed: [...COMMON, 'currency', 'footer'], required: ['currency'] },
@@ -286,6 +291,7 @@ function build<T>(b: Base<T>): KindColumn<T> {
     sort,
     filter: null,
     card: common.card === undefined ? defaults.card : [common.card, ...defaults.card],
+    ...(common.card !== undefined && { cardFirst: true }),
     priority: common.priority ?? defaults.priority,
     pin: b.kind === 'actions' ? 'end' : null,
     render,
@@ -355,7 +361,20 @@ export function col<T>(): Col<T> {
             Link={env.Link}
           />
         ),
-        { spec: { filter: o?.filter === 'text' ? 'contains' : null } },
+        {
+          spec: {
+            filter: o?.filter === 'text' ? 'contains' : null,
+            ...(o?.width === 'content' && {
+              content: {
+                measure: (row: T) =>
+                  Math.max(
+                    String(read<T>(key)(row) ?? '').length + (o.icon === undefined ? 0 : 3),
+                    o.sub?.(row)?.length ?? 0,
+                  ),
+              },
+            }),
+          },
+        },
       ),
     text: (key, o) =>
       keyed<T>('text', key, o, (v) => String(v), {
@@ -464,6 +483,7 @@ export function col<T>(): Col<T> {
         extra: {
           sort: { fn: 'basic' },
           card: [o.card],
+          cardFirst: true,
           priority: o.priority,
           align: o.align ?? 'start',
           width: typeof width === 'number' ? { ch: width, flex: false } : width,

@@ -88,6 +88,10 @@ export type KindSpec<T> = {
   filter: 'contains' | 'anyOf' | null
   /** Card slots in order of preference; `plan.ts` takes the first with room, then `detail`. */
   card: readonly CardPlace[]
+  /** The caller named a card slot: the plan places this column before the ones left to a default. */
+  cardFirst?: boolean
+  /** `entity` with `width: 'content'`: sized to its widest loaded value (`measure`, in `ch`). */
+  content?: { measure: (row: T) => number }
   /** `null` for `actions`: never hidden by a tier. */
   priority: Priority | null
   pin: 'start' | 'end' | null
@@ -182,7 +186,7 @@ export const KIND_DEFAULTS: Readonly<Record<KindName, KindDefaults>> = {
     align: 'end',
     numerals: 'tabular',
     wrap: false,
-    width: { ch: 10, flex: false },
+    width: { ch: 14, flex: false },
     sort: 'basic',
     card: ['meta'],
     priority: 3,
@@ -209,7 +213,7 @@ export const KIND_DEFAULTS: Readonly<Record<KindName, KindDefaults>> = {
     align: 'start',
     numerals: 'proportional',
     wrap: false,
-    width: { ch: 20, flex: false },
+    width: { ch: 22, flex: false },
     sort: null,
     card: ['detail'],
     priority: 2,
