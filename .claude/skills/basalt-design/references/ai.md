@@ -14,7 +14,7 @@ What a model produced is data, never markup the app trusts. The parts own the sa
 - `trusted` means authored: text in the repo, a vault note on the allowlist, MDX the toolchain compiles. Never model text, never a field a model filled, never a string "that looks safe".
 - `untrusted` has no `sanitize` and no `rehypePlugins` and draws no `<img>` (the alt text instead). `//host`, `/\host` and `data:` are blocked links, not relative ones.
 - MDX is build-time only and models never write it. No `evaluate`, no `rehype-raw`, no `next-mdx-remote`.
-- A block's data is untrusted too. `validate` runs in `catalog.Block` before any render: size and depth limits, then every `href`, `src`, `url` and `link` at any depth through the url policy. A URL under any other key is not checked: render it as text, never as a link.
+- A block's data is untrusted too. `validate` runs in `catalog.Block` before any render: size and depth limits, then every `href`, `src`, `url` and `link` at any depth through the url policy. A URL under any other key is not checked: render it as text, never as a link. A data column named like a url key lists it in `textKeys` and draws it as text; `expectCatalog` then fuzzes it for an attribute.
 
 ## Four ways an agent gets the surface
 
@@ -28,7 +28,7 @@ What a model produced is data, never markup the app trusts. The parts own the sa
 ## Blocks
 
 - `name` and `description` are what the model reads, so the description says when to use it and when not ("One headline number. Never for lists."). Props carry limits (`max` on every string and array); `sample` is at least one valid value.
-- `limits` only tighten the default (32 KiB, depth 6). A block that needs more is a finding, not a workaround.
+- `limits` default to 32 KiB and depth 6; a block may tighten them or raise them to 512 KiB and depth 12. A block that needs more is a finding, not a workaround.
 - Every block renders a composite at its root so `catalog.Block` can hand it the phase. A layout block that composes several composites sets `reserve`.
 - The error text a refused spec returns is read by the model and ends in advice. Write it so the next call can fix itself.
 - One `expectCatalog(catalog)` test per catalog: samples, limits and hostile URLs. Blocks are app-owned seeds over the composites, never a shipped set.
