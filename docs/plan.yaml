@@ -1620,10 +1620,23 @@ rows:
     checkpoint: spec
     after: [v3-cycle-expression-2]
     facts: { 'brief': 'docs/v3/issues/cycles/v3-expr-2-seam-tracks.json' }
+  - key: v3-expr-2-surface
+    title: 'Expression skill: plan the surface, linked parts, word economy and the console anatomy, from the owner calibration of cycle 2'
+    repo: basalt-ui
+    kind: feature
+    after: [v3-expr-2-skill, v3-expr-2-seam-tracks]
+    facts: { 'brief': 'docs/v3/issues/cycles/v3-expr-2-surface.json' }
   - key: v3-cycle-expression-3
     title: 'Improvement cycle 3: expression, six one-shot visualization trials scored against references'
     repo: basalt-ui
     kind: chore
     seat: { tier: opus, effort: high }
-    after: [v3-expr-2-skill, v3-expr-2-kit-fixes, v3-expr-2-seam-tracks, v3-teardown-runtime]
+    after:
+      [
+        v3-expr-2-skill,
+        v3-expr-2-kit-fixes,
+        v3-expr-2-seam-tracks,
+        v3-expr-2-surface,
+        v3-teardown-runtime,
+      ]
     facts: { 'brief': 'docs/v3/issues/cycles/v3-cycle-expression-3.json' }
