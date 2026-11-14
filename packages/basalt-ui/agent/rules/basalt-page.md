@@ -11,16 +11,15 @@ A page is composed from the shipped frame; each bullet names what holds it.
 
 ## Shell and nav
 
-- Declare the whole navigation once as `NavConfig` data and pass it to `AppShell`; never build the regions. [type:NavConfig]
-- Nav badge keys are typed from the declared nav; a typo is a compile error. [type:NavBadges]
+- Declare the whole navigation once with `defineNav` and pass it to `AppShell`; a link to an unregistered route, an unknown badge key or a second badge on a row does not compile. [type:NavConfig] [type:NavBadges]
 - Shell extensions are typed data (`GlobalAction`, `SidebarBlock`), never a node. [type:GlobalAction] [type:SidebarBlock]
-- A page is named once: by its nav label, or by `PageBar` `title` where there is no shell; never a raw heading. [lint:primitive-bypass] [type:PageBarProps]
+- A page is named once: by its nav label, or by `PageBar` `title` where there is no shell; never a raw heading, an in-body `h1` included. [lint:primitive-bypass] [type:PageBarProps]
+- A nav or link `search` keeps the keys its route owns; never a literal search object or a store's link search. [lint:router-search]
 
 ## Controls
 
 - A control lives in one home: a `controls` slot of `PageBar`, `Section`, a card or a table, filled by `filterSlot`. [lint:control-home] [type:ControlsSlot]
-- A filter or tab binds a `ControlHandle` and takes no `value` or `onChange`. [type:ControlHandle]
-- Filters sit in one `FilterSet`; page and section switches are `ViewTabs`. [type:FilterSetProps] [type:ViewTabsProps]
+- A filter or tab binds a `ControlHandle`, never `value` or `onChange`; filters sit in one `FilterSet`, page and section switches are `ViewTabs`. [type:ControlHandle] [type:FilterSetProps] [type:ViewTabsProps]
 - `PageBar` `actions` holds at most five entries and at most one `primary`. [type:PageBarProps]
 - `PageAside` takes a required `title`; a detail host shows its entry in a sheet or in the aside. [type:PageAsideProps] [type:DetailHost]
 - A split page passes `list` and `detail` as render functions. [type:SplitPageProps]
@@ -28,8 +27,9 @@ A page is composed from the shipped frame; each bullet names what holds it.
 ## Frames and cards
 
 - A frame takes its phase from the query: pass `QueryStateLike` or `Phase`, never `data ?? []`. [type:QueryStateLike] [type:Phase]
-- A card is a link, a button or inert, never both. [type:CardTarget]
-- A card footer holds at most two facts; a fact value is data, never a node. [type:FootFacts]
+- Page code keys on its container, never a viewport class, and scrolls through the scroll primitive, never a raw overflow box. [lint:viewport-keyed] [lint:raw-scroll]
+- `InnerNav` state is a push field: a `ControlHandle` with `history: 'push'`; a replace handle does not compile, and a `menu` needs two entries. [type:PushField] [type:InnerNavProps]
+- A card is a link, a button or inert, never both; its footer holds at most two facts, each data, never a node. [type:CardTarget] [type:FootFacts]
 
 ## Tables
 
@@ -47,12 +47,14 @@ A page is composed from the shipped frame; each bullet names what holds it.
 
 ## Content and AI
 
-- Render model or agent output as untrusted markdown: no sanitize override, no rehype plugins. [lint:untrusted-markdown] [type:UntrustedMarkdownProps]
-- Switch over `MessagePart` exhaustively and end with `satisfies never`. [type:MessagePart]
-- A model block is declared with `defineBlock`; the catalog wraps it in a boundary. [type:Block]
+- Render model or agent output with `contentTrust="untrusted"`: no sanitize override, no rehype plugins. [lint:untrusted-markdown] [type:UntrustedMarkdownProps]
+- Switch over `MessagePart` exhaustively with `satisfies never`; declare a model block with `defineBlock`. [type:MessagePart] [type:Block]
 
 not guarded:
 
 - A section, card or table title is its frame's `title`; never an in-body heading.
-- Date range navigation sits in the `controls` slot, not in `actions`.
-- Count active filters and reset them with the store, never a hand count.
+- Date range navigation sits in the `controls` slot, not in `actions`; count and reset active filters with the store.
+- `CardGrid` takes a `min` tier (`narrow`, `regular`, `wide`), never a column count or a width.
+- One `PageBar` per `Page`, one lit attention badge, one chord per command in an area: the dev build asserts the first two, `defineCommands` throws on the third.
+- App CSS never targets `data-slot` or a shell class; stylelint `selector-disallowed-list` holds it where configured.
+- Build the router from `routerDefaults` and the template's `_app` layout; never `createBasaltRouter`.
