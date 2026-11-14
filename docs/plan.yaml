@@ -1640,3 +1640,83 @@ rows:
         v3-teardown-runtime,
       ]
     facts: { 'brief': 'docs/v3/issues/cycles/v3-cycle-expression-3.json' }
+  - key: v3-state-1-router-client
+    title: 'The router QueryClient installs the live runtime, from state cycle 1'
+    repo: basalt-ui
+    kind: bug
+    after: [v3-cycle-state-1]
+    facts: { 'brief': 'docs/v3/issues/cycles/v3-state-1-router-client.json' }
+  - key: v3-state-1-spec-handles
+    title: 'spec takes multi and range handles without a cast, from state cycle 1'
+    repo: basalt-ui
+    kind: bug
+    after: [v3-cycle-state-1]
+    facts: { 'brief': 'docs/v3/issues/cycles/v3-state-1-spec-handles.json' }
+  - key: v3-state-1-multi-escape
+    title: 'Escape never clears a multi filter, from state cycle 1'
+    repo: basalt-ui
+    kind: bug
+    after: [v3-cycle-state-1]
+    facts: { 'brief': 'docs/v3/issues/cycles/v3-state-1-multi-escape.json' }
+  - key: v3-state-1-draft-formrow
+    title: 'A restored draft never hides a FormRow, from state cycle 1'
+    repo: basalt-ui
+    kind: bug
+    seat: { tier: opus, effort: high }
+    after: [v3-cycle-state-1]
+    facts: { 'brief': 'docs/v3/issues/cycles/v3-state-1-draft-formrow.json' }
+  - key: v3-state-1-state
+    title: 'Offline table body, draft cleared on submit, Reset all on the desktop filter row, from state cycle 1'
+    repo: basalt-ui
+    kind: bug
+    after: [v3-cycle-state-1]
+    facts: { 'brief': 'docs/v3/issues/cycles/v3-state-1-state.json' }
+  - key: v3-state-1-api
+    title: 'Tabs and Sheet bind a handle; four casts removed, from state cycle 1'
+    repo: basalt-ui
+    kind: feature
+    after: [v3-cycle-state-1, v3-state-1-spec-handles]
+    facts: { 'brief': 'docs/v3/issues/cycles/v3-state-1-api.json' }
+  - key: v3-state-1-shell
+    title: 'PageBar takes the connection indicator, from state cycle 1'
+    repo: basalt-ui
+    kind: feature
+    after: [v3-state-1-api]
+    facts: { 'brief': 'docs/v3/issues/cycles/v3-state-1-shell.json' }
+  - key: v3-state-1-wiring
+    title: 'v3 ChartCard exported, createChannel on ./data, the router starts the binding, from state cycle 1'
+    repo: basalt-ui
+    kind: feature
+    after: [v3-state-1-router-client]
+    facts: { 'brief': 'docs/v3/issues/cycles/v3-state-1-wiring.json' }
+  - key: v3-state-1-docs
+    title: 'define-controls names the store hooks and range resolvers, from state cycle 1'
+    repo: basalt-ui
+    kind: chore
+    after: [v3-cycle-state-1]
+    facts: { 'brief': 'docs/v3/issues/cycles/v3-state-1-docs.json' }
+  - key: v3-state-1-visual
+    title: 'One FilterSet form at any width, from state cycle 1'
+    repo: basalt-ui
+    kind: bug
+    after: [v3-state-1-state]
+    facts: { 'brief': 'docs/v3/issues/cycles/v3-state-1-visual.json' }
+  - key: v3-cycle-state-2
+    title: 'Improvement cycle 2: state, stores and controls, built as one data page'
+    repo: basalt-ui
+    kind: chore
+    seat: { tier: opus, effort: high }
+    after:
+      [
+        v3-state-1-router-client,
+        v3-state-1-spec-handles,
+        v3-state-1-multi-escape,
+        v3-state-1-draft-formrow,
+        v3-state-1-state,
+        v3-state-1-api,
+        v3-state-1-shell,
+        v3-state-1-wiring,
+        v3-state-1-docs,
+        v3-state-1-visual,
+      ]
+    facts: { 'brief': 'docs/v3/issues/cycles/v3-cycle-state-2.json' }

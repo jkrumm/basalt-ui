@@ -1,0 +1,25 @@
+{
+  "why": "State cycle 1 (docs/v3/cycles/state-1.md) logged three P2 `state` findings. state-1.5: offline, a filter with no cached result paints skeleton rows for as long as the network is down, while `ConnectionIndicator` says Offline. `table/query-branch.ts` maps every `fetchStatus` but `idle` with no data to `pending`, so the table never reaches the Offline reading `QueryState` gives the same query. state-1.6: after a successful submit the app clears the draft and re-bases the form itself (`OrdersPage.tsx:206-214`, the same lines as `routes/run-edit.tsx`), which every draft form repeats. state-1.7: the desktop FilterSet row has no `Reset all`; it shows only in the fold popover and the narrow sheet.",
+  "what": "The table reads Offline, a draft clears itself on a successful submit, and the desktop filter row can reset.",
+  "owns": [
+    "packages/basalt-ui/src/table/query-branch.ts, src/table/data-table*.tsx (the body branch only)",
+    "packages/basalt-ui/src/controls/draft.ts",
+    "packages/basalt-ui/src/controls/filter-set-spec.tsx",
+    "their tests and layout tests"
+  ],
+  "must_not_touch": [
+    "docs/v3/ARCHITECTURE.md",
+    "packages/basalt-ui/src/controls/renderers.tsx (v3-state-1-multi-escape)",
+    "apps/playground/src/cycle/**"
+  ],
+  "change": "(1) `dataQueryBranch` returns `offline` for a query that is paused (`fetchStatus: 'paused'`) and has no data, and `DataTable` paints `QueryState`'s Offline body in its `tbody`, header kept (state-1.5). (2) `useFormDraft` subscribes to the form's submit state: when a submit succeeds it cancels the pending autosave, deletes its key and re-bases the form on the submitted values (`keepDefaultValues: false`), so an app's submit is `form.handleSubmit()` plus its own success step (state-1.6). Update `routes/run-edit.tsx` only if its own glue becomes wrong, and say so. (3) The FilterSet row ends with `Reset all` while any of its specs differs from its default, from the same census as the sheet (state-1.7).",
+  "commits": "fix: one commit per component in packages/basalt-ui.",
+  "proof": "make check; unit tests for the branch and the draft, a layout test for the row's reset.",
+  "acceptance": [
+    "A DataTable over a paused query with no data shows Offline, not skeleton rows (test)",
+    "After a successful submit the draft key is gone and the form is pristine without app code (test)",
+    "A FilterSet row with an active filter at 1800 px shows Reset all, and it unsets every spec in one navigate (layout test)",
+    "make check passes"
+  ],
+  "out_of_scope": "Escape in a multi pill (v3-state-1-multi-escape); the narrow button showing at desktop width (v3-state-1-visual)."
+}

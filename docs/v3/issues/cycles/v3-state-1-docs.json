@@ -1,0 +1,18 @@
+{
+  "why": "State cycle 1 (docs/v3/cycles/state-1.md, P2 state-1.13): `docs/define-controls.md` lists `range({ presets, fallback, custom, params, window })` without saying that a `window` resolver makes `toWindow` return `{ from, to }`, and it names none of the store hooks `useValues()`, `useActiveCount()` and `useReset()`. The build converted presets to dates in 10 lines and read four fields with four `.use()` calls (`OrdersPage.tsx:60-79`); a resolver per preset and one `useValues()` would have done it.",
+  "what": "The store's doc names its hooks and shows a range resolver.",
+  "owns": [
+    "packages/basalt-ui/src/router/controls/define.ts and field.ts (the JSDoc the doc is generated from)",
+    "packages/basalt-ui/docs/define-controls.md, as its generator writes it"
+  ],
+  "must_not_touch": ["docs/v3/ARCHITECTURE.md", "apps/playground/src/cycle/**", "any runtime code"],
+  "change": "The JSDoc of `defineControls` (and of `field.range`) names `useValues()`, `useActiveCount()` and `useReset()` in one sentence each, and gives one example: a range with `window: { '7d': (now) => ({ from, to }) }` whose `toWindow(value)` yields dates for a query key. Regenerate the doc with its generator; keep it within the shipped-rule and spec-prose budgets (`scripts/check-budgets.ts`).",
+  "commits": "docs: one commit in packages/basalt-ui (the JSDoc and the regenerated doc).",
+  "proof": "make check (the agent-doc drift and budget gates).",
+  "acceptance": [
+    "docs/define-controls.md names useValues, useActiveCount and useReset",
+    "docs/define-controls.md shows a `window` resolver and what `toWindow` returns with one",
+    "make check passes"
+  ],
+  "out_of_scope": "Changing the range codec (v3-state-1-api)."
+}

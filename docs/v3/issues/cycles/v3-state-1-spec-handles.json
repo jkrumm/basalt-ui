@@ -1,0 +1,19 @@
+{
+  "why": "State cycle 1 (docs/v3/cycles/state-1.md, P1 state-1.2): `spec` refuses the handles `field.multi` and `field.range` return. tsc reports TS2769 because their `options` are typed per element (`FieldOption<V>`), while `ControlHandle<T>` wants options whose value is the whole `T` (`readonly V[]`, `RangeValue<P>`). `enum`, `string` and `boolean` handles pass. A FilterSet with a multi-select or a date range, the two most common filters, cannot be typed without a cast. `spec.type-guard.test.ts` only specs an `enum` field named `range`.",
+  "what": "`spec` takes a handle of every field kind `defineControls` makes.",
+  "owns": [
+    "packages/basalt-ui/src/controls/spec.ts and spec.type-guard.test.ts",
+    "packages/basalt-ui/src/controls/contract.ts (the ControlHandle and FilterSpec option types)",
+    "packages/basalt-ui/src/router/controls/define.ts (HandleOf, only where the handle types meet spec)"
+  ],
+  "must_not_touch": ["docs/v3/ARCHITECTURE.md", "apps/playground/src/cycle/**"],
+  "change": "Make the option type of a multi and a range handle assignable to what `spec` takes: either `ControlHandle<T>`'s `options` follow the kind (element options for `multi`, preset options for `range`), or `spec` gains overloads for `MultiHandle` and `RangeHandle`. The type-guard test declares one store with a field of every kind (`enum`, `multi`, `string`, `number`, `boolean`, `range` with `custom`) and specs each one with no cast; a wrong-kind option (`spec(multi, 'x', { options: [{ value: 'nope', label }] })`) stays a type error. The PR names the `cycle-state-1: state-1.2` workaround it makes removable.",
+  "commits": "fix: one commit in packages/basalt-ui.",
+  "proof": "make check; the type-guard test.",
+  "acceptance": [
+    "`spec(store.field.<kind>, label)` compiles with no cast for every field kind (type-guard test)",
+    "A FilterSet of those specs renders each kind's control (existing filter-set tests still pass)",
+    "make check passes"
+  ],
+  "out_of_scope": "Changing what any renderer draws; widget specs beyond keeping their existing tests green."
+}
