@@ -23,7 +23,7 @@ function put(rel: string, content: string, mtimeSec?: number): void {
   if (mtimeSec !== undefined) utimesSync(abs, mtimeSec, mtimeSec)
 }
 const lastShot = (atSec: number): void =>
-  put('.basalt/shots/last.json', JSON.stringify({ at: new Date(atSec * 1000).toISOString() }))
+  put('.basalt/last-shot.json', JSON.stringify({ at: new Date(atSec * 1000).toISOString() }))
 
 describe('staleBoardNotice', () => {
   it('is silent without UI files', () => {
@@ -51,14 +51,14 @@ describe('staleBoardNotice', () => {
   })
   it('treats corrupt JSON as no board', () => {
     put('src/app.tsx', '', 1000)
-    put('.basalt/shots/last.json', '{nope')
+    put('.basalt/last-shot.json', '{nope')
     expect(staleBoardNotice(dir, ['src'])).toBe(BOARD_NOTICE)
   })
   it.each([['{}'], ['{"at":5}'], ['{"at":"not a date"}'], ['null'], ['[]']])(
     'treats %s as no board',
     (body) => {
       put('src/app.tsx', '', 1000)
-      put('.basalt/shots/last.json', body)
+      put('.basalt/last-shot.json', body)
       expect(staleBoardNotice(dir, ['src'])).toBe(BOARD_NOTICE)
     },
   )
