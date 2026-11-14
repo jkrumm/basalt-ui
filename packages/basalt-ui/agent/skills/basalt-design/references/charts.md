@@ -25,7 +25,7 @@ How a chart earns its place and its marks. Props are in the generated docs: [Car
 
 - Label marks directly with `text` marks placed by [chartLabels](docs/chart-labels.md): it measures, avoids overlaps and drops what is too wide. The worked example is region `example:chartLabels` in `apps/playground/src/demo/gallery/seam.tsx`.
 - Annotate the one mark the page is about (the best run, the onset, the live stage) and let the rest recede. [useChartFocus](docs/use-chart-focus.md) holds one focused datum for the marks, the card fact and the live region; region `example:useChartFocus` in the same file.
-- The hero states the answer with its verb ("Runs out 13:52", where "13:52" alone answers nothing), and the one mark the page is about carries that annotation at rest. A list keeps the answer above its cut.
+- The hero states the answer with its verb ("Runs out 13:52", where "13:52" alone answers nothing) and at most one phrase of baseline; the one mark the page is about carries the annotation at rest, so the sentences around it say something else ([copy](copy.md)). A list keeps the answer above its cut.
 - Custom marks read `plot.rows(key)` and `plot.visible`, so a legend toggle hides the mark. [type:ChartPlot]
 
 ## Anatomy of a chart card
@@ -34,6 +34,13 @@ How a chart earns its place and its marks. Props are in the generated docs: [Car
 - The status is a dot and its word ([Status](docs/status.md)), in the figure. [lint:status-fill-as-text]
 - The footer holds at most two facts. [type:FootFacts]
 - Region `chart-card` in `apps/playground/src/routes/overview.tsx` is the composed card; regions `weight-chart`, `domain-chart`, `shared-x` and `plot-marks` in `apps/playground/src/routes/charts.tsx` are the chart bodies.
+
+## Linked parts
+
+- Where a chart and a list, a table or a timeline show the same items, they share one focus: pointing at or stepping to an item in either focuses it in the other, both ways, and the rest dims in both.
+- One [useChartFocus](docs/use-chart-focus.md) is passed to the chart host as `focus` and spread on each row of the list through `focus.item(i)`; the list sits in its own [ScrollArea](docs/scroll-area.md) at the chart's height, and the keyboard step scrolls the focused row into view. The wiring is the snippet in the basalt-charts skill.
+- A list of groups (versions, releases) beside samples of those groups spreads `focus.groupItem(name)` on each row instead; the recipe is `seam-linked` in `docs/recipes/`.
+- The kit owns the dim and the clear: the page takes the kit's dim for a seam-drawn mark, and rows that take focus sit under a container whose pointer leave clears (`focus.target`), so the gap between two rows keeps the last focus.
 
 ## Honest marks
 
