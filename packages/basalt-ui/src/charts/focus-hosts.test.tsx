@@ -231,10 +231,10 @@ describe('CartesianChart focus (v3)', () => {
     await press(wrap, 'ArrowRight')
     await press(wrap, 'ArrowRight')
     expect(readout(el)).toBe('Test 94 s')
-    // The default bar shade is 85%; the two others draw at DIMMED of it (21%).
+    // The default bar shade is 85%; the two others draw at DIMMED of it (43%).
     const fills = barFills(el)
-    expect(fills.filter((f) => f.includes(' 21%')).length).toBe(2)
-    expect(fills[1]).not.toContain(' 21%')
+    expect(fills.filter((f) => f.includes(' 43%')).length).toBe(2)
+    expect(fills[1]).not.toContain(' 43%')
     await press(wrap, 'Escape')
     expect(readout(el)).toBe('+98 s')
     expect(barFills(el)).toEqual(rest)
