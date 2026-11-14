@@ -38,7 +38,8 @@ function draftStore<V>(o: UseFormDraftOptions<V>, key: string) {
  * @example
  * const form = useForm({ defaultValues, validators: { onSubmitAsync: toSubmitErrors(save) } })
  * const draft = useFormDraft(form, { key: `run-edit:${id}`, version: 1, schema: Schema, owner: userId })
- * // a successful submit clears the draft and re-bases the form itself; `draft.clear()` is for a discard
+ * // a successful submit clears the draft and re-bases the form itself (its isSubmitted and
+ * // isSubmitSuccessful reset with it); `draft.clear()` is for a discard
  */
 export function useFormDraft<V>(form: FormLike<V>, o: UseFormDraftOptions<V>): UseFormDraftResult {
   const [status, setStatus] = useState<UseFormDraftResult['status']>('none')
