@@ -5,14 +5,27 @@
  *
  * A host (`CartesianChart`, `Heatmap`, `Meter`) takes the handle as `focus` and owns the tab stop
  * and the live region. A page that draws its own marks spreads `focus.target` on the container,
- * `focus.item(i)` on each mark, and renders `focus.live` once.
+ * `focus.item(i)` on each mark, and renders `focus.live` once. A list of a coarser grain beside it
+ * (versions beside samples) spreads `focus.groupItem(name)` on each row and shares the one focus.
  */
-import { useEffect, useEffectEvent, useState } from 'react'
+import { useEffect, useEffectEvent, useRef, useState } from 'react'
 import type { CSSProperties, KeyboardEvent, PointerEvent, ReactElement } from 'react'
-import type { ChartFocus, ChartFocusItem, ChartFocusOptions, ChartFocusTarget } from './contract'
+import type {
+  ChartFocus,
+  ChartFocusGroupItem,
+  ChartFocusItem,
+  ChartFocusOptions,
+  ChartFocusTarget,
+} from './contract'
 import { chartCursor } from './core/cursor'
 
-export type { ChartFocus, ChartFocusItem, ChartFocusOptions, ChartFocusTarget } from './contract'
+export type {
+  ChartFocus,
+  ChartFocusGroupItem,
+  ChartFocusItem,
+  ChartFocusOptions,
+  ChartFocusTarget,
+} from './contract'
 
 /** What an engine host spreads on the wrapper around the engine: the one tab stop and its keys. */
 export type HostFocusProps = {
@@ -34,8 +47,7 @@ export type HostFocusProps = {
 export function hostFocusProps<D>(
   focus: ChartFocus<D>,
   label: string,
-  step: (key: string, index: number | null) => number | null | undefined = (key, index) =>
-    stepFocus(key, index, focus.items.length),
+  step: (key: string, index: number | null) => number | null | undefined = (key) => focus.step(key),
   onStep?: (index: number | null) => void,
 ): HostFocusProps {
   const go = (next: number | null): void => {
@@ -189,6 +201,11 @@ export function stepFocus(
  *   chart={<CartesianChart … focus={focus} />} />
  * ```
  *
+ * A mark spreading `focus.item(i)` is dimmed by the kit while another is focused, at the opacity
+ * the kit's own marks use; a page sets no opacity of its own. With `group`, PageUp and PageDown step
+ * by group, and a list of groups beside the marks spreads `focus.groupItem(name)` on each row to
+ * share the focus both ways. A list of the same grain spreads `focus.item(i)` instead.
+ *
  * @useWhen a chart, a heat grid, a meter or hand-drawn marks should dim the rest around one datum and drive a readout
  * @neverWhen only a tooltip is wanted (the hosts draw one already)
  */
@@ -196,38 +213,89 @@ export function useChartFocus<D>(
   items: readonly D[],
   options: ChartFocusOptions<D>,
 ): ChartFocus<D> {
-  const { announce, columns } = options
-  const [held, setHeld] = useState<number | null>(null)
+  const { announce, columns, group } = options
+  // `entered`: the focus came into its group from outside it, so the announcement names the group.
+  const [held, setHeld] = useState<{ index: number; entered: boolean } | null>(null)
   // An index past the end (the items shrank) is no focus, without an effect to clear it.
-  const index = held !== null && held < items.length ? held : null
+  const index = held !== null && held.index < items.length ? held.index : null
   const datum = index === null ? null : (items[index] as D)
-  const set = (next: number | null): void =>
-    setHeld(next === null || next < 0 || next >= items.length ? null : next)
+  const groupAt = (i: number | null): string | undefined => {
+    const d = i === null ? undefined : items[i]
+    return group === undefined || d === undefined ? undefined : group(d)
+  }
+  const set = (next: number | null): void => {
+    if (next === null || next < 0 || next >= items.length) return setHeld(null)
+    setHeld((was) => {
+      const from = was === null || was.index >= items.length ? null : was.index
+      // The same index keeps the same state: an engine host reports its focus on every render.
+      if (from === next) return was
+      return { index: next, entered: from === null || groupAt(from) !== groupAt(next) }
+    })
+  }
+
+  // Marks and group rows by key, so a keyboard step can scroll the focused one into view.
+  const marks = useRef(new Map<number, Element>())
+  const rows = useRef(new Map<string, Element>())
+  // Every mark is drawn already, and focus changes no layout, so the step scrolls before it sets.
+  const reveal = (next: number): void => {
+    const name = groupAt(next)
+    const nodes = [marks.current.get(next), name === undefined ? undefined : rows.current.get(name)]
+    for (const node of nodes) node?.scrollIntoView?.({ block: 'nearest', inline: 'nearest' })
+  }
+
+  const step = (key: string): number | null | undefined => {
+    const next =
+      key === 'PageUp' || key === 'PageDown'
+        ? stepGroup(key, index, items, group)
+        : stepFocus(key, index, items.length, columns)
+    if (next !== undefined && next !== null && next !== index) reveal(next)
+    return next
+  }
   const target: ChartFocusTarget = {
     tabIndex: 0,
     role: 'group',
     'aria-roledescription': 'chart',
     onKeyDown: (event: KeyboardEvent<Element>) => {
-      const next = stepFocus(event.key, index, items.length, columns)
+      const next = step(event.key)
       if (next === undefined) return
       event.preventDefault()
       set(next)
     },
     onBlur: () => set(null),
+    // The container clears, never a mark: crossing the gap between two marks keeps the last one.
     onPointerLeave: (event: PointerEvent<Element>) => {
       // A tap ends in a leave: the tapped mark stays focused until the next tap or blur.
       if (event.pointerType !== 'touch') set(null)
     },
   }
   const item = (i: number): ChartFocusItem => ({
+    'data-chart-mark': '',
     ...(index === i && { 'data-focused': '' as const }),
     ...(index !== null && index !== i && { 'data-dimmed': '' as const }),
+    ref: (element) => {
+      if (element === null) marks.current.delete(i)
+      else marks.current.set(i, element)
+    },
     onPointerEnter: () => set(i),
     onPointerDown: () => set(i),
   })
+  const groupItem = (name: string): ChartFocusGroupItem => {
+    const first = group === undefined ? -1 : items.findIndex((d) => group(d) === name)
+    return {
+      ...(index !== null && groupAt(index) === name && { 'data-focused': '' as const }),
+      ref: (element) => {
+        if (element === null) rows.current.delete(name)
+        else rows.current.set(name, element)
+      },
+      onPointerEnter: () => set(first),
+      onPointerDown: () => set(first),
+    }
+  }
+  const said = datum === null ? '' : announce(datum)
+  const name = held?.entered === true ? groupAt(index) : undefined
   const live: ReactElement = (
     <output aria-live="polite" aria-atomic="true" style={HIDDEN} data-chart-focus-live="">
-      {datum === null ? '' : announce(datum)}
+      {name === undefined ? said : `${name}: ${said}`}
     </output>
   )
   return {
@@ -239,6 +307,32 @@ export function useChartFocus<D>(
     dimmed: (d) => datum !== null && d !== datum,
     target,
     item,
+    groupItem,
+    step,
     live,
   }
+}
+
+/**
+ * The index PageUp or PageDown moves to over contiguous groups, or `undefined` without a `group`.
+ * PageDown goes to the next group's first item and stays put in the last group. PageUp goes to the
+ * current group's first item, or to the previous group's first item from there. With no focus,
+ * PageDown starts at the first item and PageUp at the last group's first item.
+ */
+export function stepGroup<D>(
+  key: 'PageUp' | 'PageDown',
+  index: number | null,
+  items: readonly D[],
+  group: ((d: D) => string) | undefined,
+): number | undefined {
+  if (group === undefined || items.length === 0) return undefined
+  const starts = items.flatMap((d, i) =>
+    i === 0 || group(d) !== group(items[i - 1] as D) ? [i] : [],
+  )
+  const last = starts.at(-1) as number
+  if (index === null) return key === 'PageDown' ? 0 : last
+  if (key === 'PageDown') return starts.find((s) => s > index) ?? index
+  const own = starts.findLast((s) => s <= index) ?? 0
+  if (index > own) return own
+  return starts.findLast((s) => s < own) ?? own
 }
