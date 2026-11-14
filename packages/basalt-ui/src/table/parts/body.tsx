@@ -100,6 +100,7 @@ function ExpandButton({
         size="icon-sm"
         variant="ghost"
         aria-label={label}
+        className="pointer-coarse:after:-inset-x-2.5"
         tabIndex={tabbable ? undefined : -1}
         onClick={(event) => {
           event.stopPropagation()
