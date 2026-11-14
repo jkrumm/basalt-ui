@@ -50,6 +50,8 @@ export type TableMessages = Record<
   | 'table.viewName'
   | 'table.viewReset'
   | 'table.viewEmpty'
+  | 'table.viewFailed'
+  | 'table.details'
   | 'table.footer'
   | 'table.aggSum'
   | 'table.aggMean'
@@ -116,6 +118,8 @@ export const table = {
   'table.viewName': 'View name',
   'table.viewReset': 'Reset',
   'table.viewEmpty': 'No saved views',
+  'table.viewFailed': 'The views could not be updated',
+  'table.details': 'Details',
   'table.footer': 'Summary',
   'table.aggSum': 'Sum',
   'table.aggMean': 'Average',

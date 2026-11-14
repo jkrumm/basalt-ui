@@ -1,7 +1,9 @@
 /**
  * The Views panel (docs/v3/concepts/data-table.md sections 3 and 6): apply a saved view, save the
  * current state under a name (the same name overwrites), reset search, filters and column
- * visibility. Views are personal and live on the device (`views-model.ts`).
+ * visibility. Views are personal and live on the device (`views-model.ts`) unless the caller hands
+ * `useDataTable` a `ViewStore` (`views: { store }`): then the list, the save and the remove go
+ * through it, and a failed call leaves the list as it was and says so in the panel.
  *
  * `?view=<id>` names the applied view only while the table state equals it: applying writes the
  * id, any edit drops it and leaves the explicit slices, so no tombstone is ever needed. The id is
@@ -15,7 +17,7 @@ import { table } from '../../core/messages/table'
 import { Button } from '../../ui/button'
 import { Input } from '../../ui/input'
 import { Popover, PopoverContent, PopoverTrigger } from '../../ui/popover'
-import type { DataTableInstance, TableState, View } from '../contract'
+import type { DataTableInstance, TableState, View, ViewStore } from '../contract'
 import { modelOf } from '../use-data-table'
 import type { TableModel } from '../use-data-table'
 import { isViewDirty, pruneView, saveView, viewsStore } from './views-model'
@@ -67,6 +69,93 @@ function applyView<T>(model: TableModel<T>, view: View): void {
   model.state.setDisplay({ visibility: display.visibility })
 }
 
+/** The views of a table and the two writes on them; the same shape on the device and on a store. */
+type ViewList = {
+  views: readonly View[]
+  /** Whether `views` is the stored list yet; an unknown `?view=` id is only dropped once it is. */
+  ready: boolean
+  /** The last write the store refused; cleared by the next write. Never set on the device. */
+  failed: boolean
+  /** Saves the current state under `name`; resolves to the view's id, `undefined` when refused. */
+  save(name: string, state: TableState): Promise<string | undefined>
+  remove(id: string): Promise<boolean>
+}
+
+/** The list of a caller's `ViewStore`: read once on mount, then kept in step with each write. */
+function useStoreViews(store: ViewStore | undefined, tableId: string): ViewList | undefined {
+  const [loaded, setLoaded] = useState<readonly View[]>([])
+  const [ready, setReady] = useState(false)
+  const [failed, setFailed] = useState(false)
+  useEffect(() => {
+    if (store === undefined) return
+    let live = true
+    store.list(tableId).then(
+      (list) => {
+        if (!live) return
+        setLoaded(list)
+        setReady(true)
+      },
+      () => live && setFailed(true),
+    )
+    return () => {
+      live = false
+    }
+  }, [store, tableId])
+  if (store === undefined) return undefined
+  return {
+    views: loaded,
+    ready,
+    failed,
+    async save(name, state) {
+      const saved = saveView(loaded, name, state)
+      const view = saved.views.find((v) => v.id === saved.id)
+      if (view === undefined) return undefined
+      try {
+        await store.save(tableId, view)
+      } catch {
+        setFailed(true)
+        return undefined
+      }
+      setFailed(false)
+      setLoaded(saved.views)
+      return saved.id
+    },
+    async remove(id) {
+      try {
+        await store.remove(tableId, id)
+      } catch {
+        setFailed(true)
+        return false
+      }
+      setFailed(false)
+      setLoaded((list) => list.filter((v) => v.id !== id))
+      return true
+    },
+  }
+}
+
+/** The views of one model: its `ViewStore` when the caller gave one, else the device store. */
+function useViews<T>(model: TableModel<T>): ViewList {
+  const device = viewsStore(model.id)
+  const [onDevice] = device.use()
+  const remote = useStoreViews(model.viewStore, model.id)
+  if (remote !== undefined) return remote
+  return {
+    views: onDevice,
+    ready: true,
+    failed: false,
+    save(name, state) {
+      const saved = saveView(onDevice, name, state)
+      device.set(saved.views)
+      return Promise.resolve(saved.id)
+    },
+    remove(id) {
+      device.set(onDevice.filter((v) => v.id !== id))
+      return Promise.resolve(true)
+    },
+  }
+}
+
 function ViewsPanel<T>({
   model,
   views,
@@ -74,31 +163,31 @@ function ViewsPanel<T>({
   param,
 }: {
   model: TableModel<T>
-  views: readonly View[]
+  views: ViewList
   close: () => void
   param: ViewParam
 }): ReactElement {
   const t = useMessages(table)
   const [name, setName] = useState('')
-  const store = viewsStore(model.id)
 
   const save = (event: FormEvent): void => {
     event.preventDefault()
     if (name.trim() === '') return
-    const saved = saveView(views, name, model.state.state)
-    store.set(saved.views)
-    param.set(saved.id)
-    setName('')
-    close()
+    void views.save(name, model.state.state).then((id) => {
+      if (id === undefined) return
+      param.set(id)
+      setName('')
+      close()
+    })
   }
 
   return (
     <div className="flex flex-col gap-3">
-      {views.length === 0 ? (
+      {views.views.length === 0 ? (
         <p className="m-0 text-muted-foreground">{t('table.viewEmpty')}</p>
       ) : (
         <ul className="m-0 flex list-none flex-col gap-1 p-0">
-          {views.map((view) => (
+          {views.views.map((view) => (
             <li key={view.id} className="flex items-center gap-1">
               <Button
                 variant="ghost"
@@ -117,8 +206,9 @@ function ViewsPanel<T>({
                 variant="ghost"
                 aria-label={t('table.viewRemove', view.name)}
                 onClick={() => {
-                  store.set(views.filter((v) => v.id !== view.id))
-                  if (param.id === view.id) param.set(undefined)
+                  void views.remove(view.id).then((removed) => {
+                    if (removed && param.id === view.id) param.set(undefined)
+                  })
                 }}
               >
                 <svg
@@ -134,6 +224,11 @@ function ViewsPanel<T>({
             </li>
           ))}
         </ul>
+      )}
+      {views.failed && (
+        <p role="alert" className="m-0 text-xs text-bad">
+          {t('table.viewFailed')}
+        </p>
       )}
       <form className="flex items-center gap-2" onSubmit={save}>
         <Input
@@ -173,14 +268,14 @@ export function ViewsMenu<T>({
   const own = useAddressParam()
   const param = view ?? own
   const [open, setOpen] = useState(false)
-  const [views] = viewsStore(model.id).use()
+  const views = useViews(model)
   const state: TableState = model.state.state
 
   // The id only stays while the state equals the view: an unknown id or any edit drops it.
   useEffect(() => {
-    if (param.id === undefined) return
+    if (param.id === undefined || !views.ready) return
     const known = new Set(model.specs.map((spec) => spec.id))
-    const applied = views.find((v) => v.id === param.id)
+    const applied = views.views.find((v) => v.id === param.id)
     if (applied === undefined || isViewDirty(pruneView(applied, known).view, state)) {
       param.set(undefined)
     }
