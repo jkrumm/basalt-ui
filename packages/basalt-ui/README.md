@@ -70,7 +70,8 @@ what `init` placed and never creates an install.
 
 `init` on an **existing** app is a lint-debt event, not a no-op: the generated preset switches on
 whole oxlint plugins the repo was never linted against, so previously-clean code lands with real
-findings on the first run. Run `basalt-ui lint` and triage before your next commit. An
+findings on the first run. Run `oxlint .` and triage before your next commit (the `basalt-ui lint`
+verb is not in this build yet). An
 `.oxlintrc.json` with comments is never rewritten: `init` prints the `extends` line to add.
 
 Every file is either **managed** (basalt owns it, `sync` refreshes it, local edits are skipped and
@@ -674,7 +675,7 @@ installed yet.
 - **TypeScript**: strict mode throughout
 - **Tarball ships `src/`** alongside `dist/` — go-to-definition lands in real source, not compiled output
 
-The `./configs/*` export gives consumer apps raw presets to `extends` or copy via `basalt-ui init`:
+The `./configs/*` export gives consumer apps raw presets to `extends` or copy by hand:
 
 ```json
 // .oxlintrc.json
@@ -694,19 +695,18 @@ strict flags), `react-app` (`base` + DOM/JSX libs) and `node` (`base` + Node typ
 
 `tsc` checks every file in the program with the program's options, so a workspace package imported from source is checked under the preset's flags and no compiler option excludes it. Give each package its own tsconfig and link them with TS project references (`references` + `composite: true`), or consume the package's built `.d.ts`.
 
-`.oxfmtrc.json` has no `extends` of its own — copy `configs/oxfmt.json` verbatim (`basalt-ui init`
-does this for you).
+`.oxfmtrc.json` has no `extends` of its own — copy `configs/oxfmt.json` verbatim. `basalt-ui init`
+only adds the `ignorePatterns` for the managed paths.
 
 ---
 
 ## `basalt-ui sync` in CI
 
 Wire the drift gate to catch doctrine falling behind after a basalt-ui upgrade. **The local bin,
-never `bunx`** — this is what `init` seeds (`configs/check.yml`, rendered from where basalt actually
-installed):
+never `bunx`** — `init` does not write the workflow; add this step to your own:
 
 ```yaml
-# .github/workflows/check.yml (seeded by basalt-ui init)
+# .github/workflows/check.yml
 - run: ./node_modules/.bin/basalt-ui sync --check
 ```
 
