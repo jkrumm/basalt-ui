@@ -78,9 +78,10 @@ export type FooterOption = { footer?: Aggregate }
 export type NumberOptions = CommonOptions & FooterOption & { unit?: string; digits?: number }
 export type MoneyOptions = CommonOptions & FooterOption & { currency: string }
 export type DateOptions = CommonOptions & { style?: DateStyle }
-export type StatusOptions = CommonOptions & {
-  options: readonly string[]
-  tone?: (value: string) => Tone
+export type StatusOptions<O extends string = string> = CommonOptions & {
+  options: readonly O[]
+  /** Receives the closed option union `options` declares, so a `Record<Option, Tone>` indexes without a cast. */
+  tone?: (value: O) => Tone
   filter?: 'multi'
 }
 export type DeltaOptions = CommonOptions & { polarity: Delta['polarity']; unit?: string }
@@ -112,7 +113,7 @@ export type Col<T> = {
   money(key: KeysOf<T, number>, o: MoneyOptions): KindColumn<T>
   date(key: KeysOf<T, string | number | Date>, o?: DateOptions): KindColumn<T>
   relativeTime(key: KeysOf<T, string | number | Date>, o?: CommonOptions): KindColumn<T>
-  status(key: KeysOf<T, string>, o: StatusOptions): KindColumn<T>
+  status<const O extends string>(key: KeysOf<T, string>, o: StatusOptions<O>): KindColumn<T>
   delta(key: KeysOf<T, number>, o: DeltaOptions): KindColumn<T>
   meter(key: KeysOf<T, number>, o?: MeterOptions): KindColumn<T>
   boolean(key: KeysOf<T, boolean>, o?: BooleanOptions): KindColumn<T>
@@ -392,12 +393,13 @@ export function col<T>(): Col<T> {
       keyed<T>('relativeTime', key, o, (v, _row, env) => (
         <RelativeTimeCell value={v} format={env.format} now={env.now} />
       )),
-    status: (key, o) =>
+    status: <const O extends string>(key: KeysOf<T, string>, o: StatusOptions<O>) =>
       keyed<T>(
         'status',
         key,
         o,
-        (v) => <StatusCell value={String(v)} tone={o.tone?.(String(v)) ?? 'neutral'} />,
+        // A cell holds the stored value, which the column's `options` name as a closed list.
+        (v) => <StatusCell value={String(v)} tone={o.tone?.(String(v) as O) ?? 'neutral'} />,
         { spec: { options: o?.options ?? [], filter: o?.filter === 'multi' ? 'anyOf' : null } },
       ),
     delta: (key, o) =>
