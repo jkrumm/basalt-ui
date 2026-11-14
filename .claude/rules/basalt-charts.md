@@ -23,7 +23,7 @@ Every chart is a shipped kind or `CartesianChart`; props live in the shipped typ
 
 ## Boundaries
 
-- Draw chart marks through a chart kind; never hand-built SVG marks or a chart body outside a card. [lint:primitive-bypass]
+- Draw chart marks through a chart kind or the `useChartFocus` seam from `basalt-ui/charts`; never hand-built marks outside it or a chart body outside a card. [lint:primitive-bypass]
 - Import chart code from `basalt-ui/charts`; the engine package, visx and the engine's react entry are banned. [lint:import-boundary]
 - A series colour is a `{ light, dark }` pair from the app's series file; write no colour literal in a chart file. [type:SeriesColor] [lint:colour-literal]
 - A chart card never receives `data ?? []` as a fallback. [lint:data-primitive]
