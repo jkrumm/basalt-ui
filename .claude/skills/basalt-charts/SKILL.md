@@ -32,4 +32,4 @@ const focus = useChartFocus(stages, { announce: (d) => `${d.name}: ${fmt(d.behin
 
 4. Wrap it in `ChartCard`; pass `state={{ pending, error, empty }}` from the query. A `cursorValue` series colours its CURSOR dot per datum with `getMarker: (d) => ({ color })`; always-on markers are `Lines`-only, so a consumer-`marks` chart draws its persistent dots itself.
 5. Run the repo's own gate (e.g. `make check`), which runs lint, the theme guard and typecheck; fix every finding at its source.
-6. Check both color schemes, a pending query, and a keyboard-focused frame.
+6. Render the page and run the device checklist in the basalt-design `references/anti-defaults.md` on it at 1800 and 390, in both color schemes, with a pending query and a keyboard-focused frame: answer annotated on the mark, baseline or limit drawn, status hue spent only on a state that needs action, label collisions and light-mode contrast, a focus mark beside the ring, tabular numerals and motion-safe transitions, the extreme true and a zero cue, binned bars with a unit caption, the answer above the fold at 390.
