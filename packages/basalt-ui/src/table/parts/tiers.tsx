@@ -30,7 +30,8 @@ export function tierAttributesOf<T>(model: TableModel<T>): TierAttributes {
 /** The width of the visible priority 1 and 2 columns pinned to one edge. */
 function pinnedPx<T>(model: TableModel<T>, edge: 'start' | 'end'): number {
   return model.plan.columns.reduce(
-    (sum, column) => (column.visible && column.pin === edge ? sum + column.widthPx : sum),
+    (sum, column) =>
+      column.visible && column.priority !== 3 && column.pin === edge ? sum + column.widthPx : sum,
     0,
   )
 }
