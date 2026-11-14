@@ -70,8 +70,15 @@ async function makeRouter(url: string): Promise<Loose> {
 const App = (router: Loose) =>
   createElement(RouterProvider as unknown as (p: { router: Loose }) => null, { router })
 
+// `hydrate` appends its own container to `document.body`, which RTL's `cleanup` does not own: it stays
+// in the shared happy-dom document and a later file in the same `bun test` process finds its `<main>`.
+const containers: HTMLElement[] = []
+
 beforeEach(() => resetControlsOwnersForTests())
-afterEach(() => cleanup())
+afterEach(() => {
+  cleanup()
+  for (const container of containers.splice(0)) container.remove()
+})
 
 describe('widget scope under SSR', () => {
   const URL = '/overview?range=7d&w.latency.range=30d'
@@ -86,6 +93,7 @@ describe('widget scope under SSR', () => {
     const container = document.createElement('div')
     container.innerHTML = html
     document.body.append(container)
+    containers.push(container)
     const errors: unknown[] = []
     const router = await makeRouter(URL)
     await act(async () => {
