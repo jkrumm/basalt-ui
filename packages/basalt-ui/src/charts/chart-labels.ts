@@ -63,6 +63,12 @@ export type PlacedLabel<K extends string = string> = ChartLabel<K> & {
   textX: number
 }
 
+/** A numeric domain makes a numeric axis and a `Date` domain a time axis, never a literal type. */
+type TrackAxisOf = {
+  (options: TrackAxisOptions<number>): TrackAxis<number>
+  (options: TrackAxisOptions<Date>): TrackAxis<Date>
+}
+
 const SPOTS: readonly LabelSpot[] = [
   'right',
   'left',
@@ -251,9 +257,8 @@ export const chartLabels = {
    * const axis = chartLabels.axis({ domain: [0, runMs], format: seconds, share: 0.8 })
    * <div className="relative h-4">{axis.ticks.map((t) => <span key={t.at} {...t.label}>{t.text}</span>)}</div>
    */
-  axis<V extends TrackValue>(options: TrackAxisOptions<V>): TrackAxis<V> {
-    return trackAxis(options, (text, size) => measure(text, size, 400))
-  },
+  axis: ((options: TrackAxisOptions<TrackValue>) =>
+    trackAxis(options, (text, size) => measure(text, size, 400))) as TrackAxisOf,
 
   /**
    * The label pass for one HTML row: each label goes after its mark's end, inside its end, or before
