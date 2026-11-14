@@ -156,7 +156,7 @@ export function useFormDraft<V>(form: FormLike<V>, o: { key: string; version: nu
   schema: StandardSchemaV1<unknown, V>; owner: string | null }): { status: 'none' | 'restored'; clear(): void }
 // Mount: read once; if present and valid, form.reset(draft, { keepDefaultValues: true }). Autosave: trailing 500 ms, flush on hide
 // and unmount, delete the key when isPristine(form) (internal structural compare), ignore the notification the restore itself fires.
-// clear() after a successful submit; logout = persisted.clearOwner(owner). ttlDays, baseRev/stale, apply(), savedAt return additively when a consumer asks.
+// A successful submit clears the draft and re-bases the form by itself (isSubmitted and isSubmitSuccessful reset with it); clear() is for a discard; logout = persisted.clearOwner(owner). ttlDays, baseRev/stale, apply(), savedAt return additively when a consumer asks.
 export function toSubmitErrors<V>(save: (v: V) => Promise<unknown>):
   (a: { value: V }) => Promise<{ form?: string; fields?: Record<string, string> } | undefined>  // maps {fieldErrors}/thrown API errors (via unwrap) to the form's error shape
 export function FormFooter(p: { form: FormLike<unknown>; actions: readonly FormAction[] }): ReactElement  // ARCHITECTURE 7.2 `actions` slot: max 5, one primary = submit, disabled on !canSubmit, aria-busy on isSubmitting; renders form.state.errors

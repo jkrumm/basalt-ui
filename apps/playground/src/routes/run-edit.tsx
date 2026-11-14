@@ -58,10 +58,8 @@ function RunEditForm({ run }: { run: Run }): ReactElement {
   })
 
   async function submit(): Promise<void> {
+    // `useFormDraft` clears the draft and re-bases the form when the submit succeeds.
     await form.handleSubmit()
-    if (!form.state.isSubmitSuccessful) return
-    draft.clear()
-    form.reset(form.state.values)
   }
 
   return (
