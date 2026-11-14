@@ -19,6 +19,8 @@ heading just below the page band instead of under it. Outside a `Page` the offse
 ```ts
 Section({ title, controls, children }: SectionProps): ReactElement
   title: string
+  summary?: string
   controls?: { readonly kind: "controls-slot"; readonly count: number; r…
+  collapsible?: { defaultOpen?: boolean; state?: ControlHandle<boolean>; }
   children?: ReactNode
 ```
