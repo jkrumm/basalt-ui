@@ -1,5 +1,5 @@
 {
-  "why": "Shell cycle 1 (docs/v3/cycles/shell-1.md, P1 shell-1.9): an app on `BasaltProvider` and the v3 `AppShell` has no palette that lists its pages. The provider's Spotlight mounts by default (`src/provider/index.tsx:102`) and takes Mod+K; it lists `basalt-ui/commands` entries and no v3 `defineNav` item, so typing a page name finds nothing. The v3 `CommandPalette`, which lists the nav, mounted under the shell (`apps/playground/src/routes/cycle/shell/route.tsx`) binds Mod+B but never sees Mod+K (`.evidence/cycle-shell-1/palette.log`).",
+  "why": "Shell cycle 1 (docs/v3/cycles/shell-1.md, P1 shell-1.9): an app on `BasaltProvider` and the v3 `AppShell` has no palette that lists its pages. The provider's Spotlight mounts by default (`src/provider/index.tsx:102`) and takes Mod+K; it lists `basalt-ui/commands` entries and no v3 `defineNav` item, so typing a page name finds nothing. The v3 `CommandPalette`, which lists the nav, mounted under the shell (`apps/playground/src/cycle/shell-1/FleetPalette.tsx`, rendered by each fleet page) binds Mod+B but never sees Mod+K (`.evidence/cycle-shell-1/palette.log`).",
   "what": "One palette per app, and under a v3 `AppShell` it lists every `defineNav` item.",
   "owns": [
     "packages/basalt-ui/src/provider/index.tsx and src/provider/spotlight-actions.tsx",
@@ -9,7 +9,7 @@
     "their tests"
   ],
   "must_not_touch": ["docs/v3/ARCHITECTURE.md", "apps/playground/src/cycle/**"],
-  "change": "Decide the owner with the architecture: either the provider does not mount Spotlight when a v3 `AppShell` is present, or `AppShell` mounts `CommandPalette` itself and wires its search button to it. Either way exactly one listener takes Mod+K, and the palette lists every `defineNav` item plus the app's commands. The playground root follows, and the fleet layout's palette mount in `routes/cycle/shell/route.tsx` is named in the PR as removable. A test mounts `BasaltProvider` with a v3 `AppShell`, presses Mod+K and finds one dialog listing the nav items.",
+  "change": "Decide the owner with the architecture: either the provider does not mount Spotlight when a v3 `AppShell` is present, or `AppShell` mounts `CommandPalette` itself and wires its search button to it. Either way exactly one listener takes Mod+K, and the palette lists every `defineNav` item plus the app's commands. The playground root follows, and the PR names the cycle build's `FleetPalette.tsx` mount as removable; the cycle build is not edited (cycle 2 removes it). A test mounts `BasaltProvider` with a v3 `AppShell`, presses Mod+K and finds one dialog listing the nav items.",
   "commits": "fix: one commit in packages/basalt-ui; the playground wiring in its own commit.",
   "proof": "make check; the test.",
   "acceptance": [
