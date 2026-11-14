@@ -13,7 +13,7 @@ import {
   firstPaintGzip,
 } from '../bundle'
 import { Unmeasured, gate } from '../lib'
-import type { Ctx, RowDef } from '../lib'
+import type { Ctx, Raise, RowDef } from '../lib'
 import { measureProviderV3 } from '../provider-v3'
 
 const PROVIDER_V3_LABEL =
@@ -60,7 +60,8 @@ const PROVIDER_ONLY_LABEL = 'provider-only first paint (gzip B, dist)'
 // 20452 → 20445 (W42 table law, CI Linux measurement): -7 B.
 // 20445 → 20446 (Wave 46: NumberInput/PasswordInput/Textarea join the ctl tier): +1 B.
 // 20446 → 20468 (CI's own zlib measures the shipped bytes above the mini's; the Wave 46 ceilings were set from the mini and CI has been red since): ceiling follows CI.
-const PROVIDER_ONLY_CEILING = 20468
+// 20468 → 20492 (v3-state-1-wiring, CI Linux measurement): +24 B, the `live` effect in `BasaltProvider` and `startRouterLive`.
+const PROVIDER_ONLY_CEILING = 20492
 // Embedded `<BasaltProvider spotlight={false}>`, no defines, peers bundled, every chunk counted: 54735 B landed, ~1% margin.
 // 55300 → 55391 (W32): +91 B for the Wave 32 scales — the dense control tier rule in the palette CSS, the row line-height and `lineHeights` ratios, the expanded gutter, and the card/radius/type retunes.
 // 55391 → 55404 (W32 CI): the gate is CI's Linux build, which gzips 13 B larger than the macOS build the lead measured.
@@ -150,6 +151,17 @@ function embeddedGroup(ctx: Ctx) {
     }),
   }))
 }
+
+export const raises: readonly Raise[] = [
+  {
+    ceiling: 'provider-only',
+    from: 20468,
+    to: 20492,
+    consumer:
+      'the router `live` option: the software-factory console binds its push channel with `bindInvalidation` (apps/console/src/lib/live.ts) and today starts it from a root `useEffect` it writes; `createBasaltRouter({ live })` has the provider start and stop it (state-1.20)',
+    repo: 'software-factory',
+  },
+]
 
 export const rows: readonly RowDef[] = [
   {
