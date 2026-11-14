@@ -65,8 +65,6 @@ function resolveWindow(value: RangeValue<'7d' | '30d' | '90d' | 'custom'>): {
 } {
   const window = orders.field.window.toWindow(value)
   if ('from' in window) return { from: window.from, to: window.to }
-  // cycle-state-1: state-1.18 — a custom value without both dates comes back as `{ window: 'custom' }`.
-  if (window.window === 'custom') return { from: daysAgo(presetDays['30d']), to: todayIso() }
   return { from: daysAgo(presetDays[window.window]), to: todayIso() }
 }
 
