@@ -20,7 +20,7 @@ describe('rows', () => {
     const shipped = loadRenameRows(
       join(import.meta.dir, '../../../packages/basalt-ui/migrations/areas'),
     )
-    expect(shipped.rows).toEqual([])
+    expect(shipped.rows.map((r) => r.id)).toEqual(['shell-r01'])
     const reported = shipped.skipped.join('\n')
     for (const id of [
       'content-Callout',
