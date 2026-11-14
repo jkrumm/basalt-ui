@@ -1,20 +1,22 @@
 {
-  "why": "Shell cycle 1 (docs/v3/cycles/shell-1.md, P1 shell-1.3): `InnerNav` bound to a `defineControls` push field draws dead links. It spreads `state.link(value)` onto `<a>` and expects `{ href, onClick }` (`src/page/parts/inner-nav.tsx:21,129`); a field's `link()` returns TanStack link options `{ search, replace, resetScroll }` (`src/router/controls/define.ts:87,108`), so every item is an anchor with no `href`: no focus, no click, no copy-link. The field's `history` is typed `'push' | 'replace'` (`define.ts:102`), so tsc also refuses it as a `PushField`. Every app with a settings page or a record list repeats the 50-line adapter in `apps/playground/src/cycle/shell-1/handle-adapters.ts`; `routes/settings.tsx` hand-builds a whole handle for the same reason.",
+  "why": "Shell cycle 1 (docs/v3/cycles/shell-1.md, P1 shell-1.3): `InnerNav` bound to a `defineControls` push field draws dead links. It spreads `state.link(value)` onto `<a>` and expects `{ href, onClick }` (`src/page/parts/inner-nav.tsx:21,129`); a field's `link()` returns TanStack link options `{ search, replace, resetScroll }` (`src/router/controls/define.ts:87,108`), so every item is an anchor with no `href`: no focus, no click, no copy-link. The field's `history` is typed `'push' | 'replace'` (`define.ts:102`), so tsc also refuses it as a `PushField`. Every app with a settings page or a record list repeats the 50-line adapter in `apps/playground/src/cycle/shell-1/handle-adapters.ts`; `routes/settings.tsx` hand-builds a whole handle for the same reason. The sampled quality matrix also finds the list pane clipping the link rings on `/cycle/shell/services` and `/cycle/shell/settings` (shell-1.21), waived in `known.ts` as on `/settings`.",
   "what": "`InnerNav` takes a `defineControls` push field as it is, and draws real links.",
   "owns": [
     "packages/basalt-ui/src/page/parts/inner-nav.tsx and its tests",
     "packages/basalt-ui/src/page/contract.ts (PushField, InnerNavProps)",
     "packages/basalt-ui/src/router/controls/define.ts (the handle's `history` type) and its type-guard tests",
-    "apps/playground/src/routes/settings.tsx (drop the hand-built handle for a `defineControls` field)"
+    "apps/playground/src/routes/settings.tsx (drop the hand-built handle for a `defineControls` field)",
+    "packages/basalt-ui/tests/quality/matrix/known.ts (remove the `/cycle/shell*` and `/settings` InnerNav ring lines)"
   ],
   "must_not_touch": ["docs/v3/ARCHITECTURE.md", "apps/playground/src/cycle/**"],
-  "change": "A field declared with `{ history: 'push' }` types its handle's `history` as `'push'`, so it is a `PushField` without a cast. `InnerNav` turns the field's `link(value)` into an anchor: the `href` from the router's `buildLocation` with the field's search patch, a plain left click that writes the field (modified clicks left to the browser), `aria-current` on the active item. The structural `{ href, onClick }` handle keeps working. `routes/settings.tsx` binds a `defineControls` field. The PR names the `cycle-shell-1: shell-1.3` workarounds it makes removable; the cycle build is not edited.",
+  "change": "A field declared with `{ history: 'push' }` types its handle's `history` as `'push'`, so it is a `PushField` without a cast. `InnerNav` turns the field's `link(value)` into an anchor: the `href` from the router's `buildLocation` with the field's search patch, a plain left click that writes the field (modified clicks left to the browser), `aria-current` on the active item. The structural `{ href, onClick }` handle keeps working. `routes/settings.tsx` binds a `defineControls` field. The PR names the `cycle-shell-1: shell-1.3` workarounds it makes removable; the cycle build is not edited. The list pane stops clipping the link rings, and the `/cycle/shell*` and `/settings` InnerNav ring lines leave `known.ts`.",
   "commits": "fix: one commit in packages/basalt-ui; the playground route in its own commit.",
   "proof": "make check; a router test and a type-guard test.",
   "acceptance": [
     "`<InnerNav state={store.field.section} …>` with `field.enum(…, { history: 'push' })` type-checks with no cast (type-guard test)",
     "Under a router each item is an `<a href>` carrying the field's param, and a click pushes it; Back returns (router test)",
     "`apps/playground/src/routes/settings.tsx` has no hand-built handle",
+    "`known.ts` has no InnerNav ring line and the sampled quality matrix passes",
     "make check passes"
   ],
   "out_of_scope": "`SplitPage`'s `selected` (v3-shell-1-split-selected); the phone back link (v3-shell-1-shell)."

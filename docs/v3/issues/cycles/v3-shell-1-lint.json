@@ -1,0 +1,20 @@
+{
+  "why": "Shell cycle 1 (docs/v3/cycles/shell-1.md, P2 shell-1.22, P3 shell-1.20): two repo gates read `apps/playground/src/routes/cycle/**` as if a cycle route were a demo route, and a cycle brief forbids `packages/basalt-ui/**`. The quality matrix reads every route file (`packages/basalt-ui/tests/quality/matrix/routes.ts`), so a cycle that composes kit parts with known findings fails CI unless its PR adds `known.ts` lines in the package; this cycle did, against its brief. The route-file budget (`packages/basalt-ui/scripts/check-budgets/areas/playground.ts:15`) counts `routes/cycle/**`, which `apps/playground/src/budget.test.ts` leaves out, so the cycle could not add a layout route.",
+  "what": "A cycle's routes and their waivers stay inside the cycle's own files.",
+  "owns": [
+    "packages/basalt-ui/tests/quality/matrix/routes.ts, known.ts and their tests",
+    "packages/basalt-ui/scripts/check-budgets/areas/playground.ts",
+    "docs/v3/CYCLES.md (step 2: where a cycle's matrix waivers live)",
+    "docs/v3/issues/cycles/v3-cycle-*.json of cycles not yet filed (their owns line, only if CYCLES.md changes it)"
+  ],
+  "must_not_touch": ["docs/v3/ARCHITECTURE.md", "apps/playground/src/cycle/**"],
+  "change": "The matrix keeps reading cycle routes (they are real composition evidence) and also reads waivers from `apps/playground/src/cycle/*/known.ts`, with the same `KnownFinding` shape and the same 'an entry that matched nothing fails the full run' rule; the `/cycle/state` and `/cycle/shell*` lines move there, each still naming its owner row. Or, if the architecture prefers, `CYCLES.md` step 2 allows a cycle PR its `known.ts` lines and nothing else under `packages/`; the PR says which and why. The route-file budget excludes `routes/cycle/` as `budget.test.ts` does.",
+  "commits": "test: one commit in packages/basalt-ui; the waiver move and CYCLES.md in their own commits.",
+  "proof": "make check; a matrix unit test that a waiver in a cycle folder covers its route's item.",
+  "acceptance": [
+    "A cycle can add a route and its waivers without a file under `packages/basalt-ui/` (or CYCLES.md says it may touch exactly `known.ts`)",
+    "`check-budgets` does not count `routes/cycle/**`",
+    "make check passes"
+  ],
+  "out_of_scope": "Fixing the waived findings (their rows: v3-shell-1-visual, v3-shell-1-inner-nav, v3-state-1-visual)."
+}

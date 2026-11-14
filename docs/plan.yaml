@@ -772,6 +772,12 @@ rows:
     kind: bug
     after: [v3-cycle-shell-1]
     facts: { 'brief': 'docs/v3/issues/cycles/v3-shell-1-visual.json' }
+  - key: v3-shell-1-lint
+    title: 'A cycle route and its matrix waivers stay inside the cycle, from shell cycle 1'
+    repo: basalt-ui
+    kind: chore
+    after: [v3-shell-1-inner-nav, v3-shell-1-visual]
+    facts: { 'brief': 'docs/v3/issues/cycles/v3-shell-1-lint.json' }
   - key: v3-cycle-shell-2
     title: 'Improvement cycle 2: AppShell and page kit, built as a three-page app'
     repo: basalt-ui
@@ -788,5 +794,6 @@ rows:
         v3-shell-1-api,
         v3-shell-1-shell,
         v3-shell-1-visual,
+        v3-shell-1-lint,
       ]
     facts: { 'brief': 'docs/v3/issues/cycles/v3-cycle-shell-2.json' }
