@@ -16,7 +16,7 @@ import type { TableModel } from '../use-data-table'
 import { TickSkeleton } from './tick-column'
 import { alignProps, tierAttributes, visibleColumns } from './head'
 
-/** Skeleton rows of a loading table; the real page size would make a 100-row table a wall. */
+/** Skeleton rows of a table that has shown none yet; once it has, the loading arm keeps the last height. */
 export const SKELETON_ROWS = 6
 
 /** The bar width of a kind: text runs long, figures and badges short, `actions` nothing. */
@@ -44,7 +44,7 @@ export function LoadingRows<T>({ model }: { model: TableModel<T> }): ReactElemen
   const offset = model.selection === undefined ? 1 : 2
   return (
     <>
-      {Array.from({ length: SKELETON_ROWS }, (_, row) => (
+      {Array.from({ length: model.skeletonRows ?? SKELETON_ROWS }, (_, row) => (
         <TableRow key={row} role="row" data-slot="table-row" data-skeleton="">
           {model.selection !== undefined && <TickSkeleton />}
           {columns.map(({ spec, planned }, index) => {

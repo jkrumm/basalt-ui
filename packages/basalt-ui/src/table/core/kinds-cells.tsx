@@ -139,11 +139,13 @@ export function EntityCell({
       <Link href={href}>{value}</Link>
     )
   return (
-    <span data-slot="table-entity">
+    <span data-slot="table-entity" className="flex min-w-0 items-center gap-2">
       {Icon !== undefined && <Icon aria-hidden="true" size={16} />}
-      <span data-slot="table-entity-name">{name}</span>
+      <span data-slot="table-entity-name" className="min-w-0 truncate">
+        {name}
+      </span>
       {sub !== undefined && (
-        <span data-slot="table-entity-sub" className="text-muted-foreground">
+        <span data-slot="table-entity-sub" className="min-w-0 truncate text-muted-foreground">
           {sub}
         </span>
       )}

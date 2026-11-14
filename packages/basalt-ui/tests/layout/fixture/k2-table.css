@@ -1,0 +1,9 @@
+/*
+ * The `k2-table` document fixture's Tailwind v4 entry, compiled with preflight like a Tailwind
+ * consumer. `k2-table.layout.test.ts` compiles it into a temp directory and inlines the tier sheet
+ * `src/table/table.css` beside it.
+ */
+@import '../../../src/css/tailwind.css' source(none);
+@source './k2-table-doc-fixture.tsx';
+@source '../../../src/ui';
+@source '../../../src/table';

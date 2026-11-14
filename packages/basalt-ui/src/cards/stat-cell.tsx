@@ -187,7 +187,7 @@ export function StatCell(props: StatCellProps): ReactElement {
       <div
         {...common}
         data-surface="card"
-        className={cn(cardVariants({ flush: true }), root, 'snap-start px-(--card-edge) py-3')}
+        className={cn(cardVariants({ flush: true }), root, 'px-(--card-edge) py-3')}
       >
         {inner}
       </div>
