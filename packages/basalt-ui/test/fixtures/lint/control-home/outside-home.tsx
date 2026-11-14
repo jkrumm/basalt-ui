@@ -1,0 +1,123 @@
+// Blocks: a `// @valid` or `// @invalid` header starts one (see structure-rest/colour-literal.tsx).
+// Every invalid block reports `outside-home` once unless `// @errors` says otherwise.
+
+// @invalid
+import { Select } from 'basalt-ui/ui/select'
+export const Body = () => (
+  <Section title="Units">
+    <Select value={unit} onValueChange={setUnit} />
+  </Section>
+)
+
+// @invalid
+import { Switch } from 'basalt-ui/ui/switch'
+export const Row = () => <Switch checked={on} onCheckedChange={setOn} />
+
+// @invalid
+import { Checkbox } from '@/components/ui/checkbox'
+export const Page = () => (
+  <Page>
+    <Checkbox checked={all} />
+  </Page>
+)
+
+// @invalid
+import { Slider } from 'basalt-ui/ui/slider'
+export const Bar = () => <PageBar controls={<Slider value={v} />} />
+
+// @invalid
+import { Slider } from 'basalt-ui/ui/slider'
+export const slot = (handle) =>
+  filterSlot.custom(handle, 'Opacity', () => {
+    const [opacity, setOpacity] = useState(0.5)
+    return <Slider value={opacity} onValueChange={setOpacity} />
+  })
+
+// @invalid
+import { Select } from 'basalt-ui/ui/select'
+export const Mismatch = () => (
+  <Card field={store.search}>
+    <Select value={v} />
+  </Card>
+)
+
+// @invalid
+import { RadioGroup } from 'basalt-ui/ui/radio-group'
+export const Two = () => (
+  <>
+    <RadioGroup value={a} />
+    <RadioGroup value={b} />
+  </>
+)
+// @errors outside-home,outside-home
+
+// @valid
+import { Select } from 'basalt-ui/ui/select'
+export const Wrapped = () => (
+  <FormField label="Unit">
+    <Select value={unit} onValueChange={setUnit} />
+  </FormField>
+)
+
+// @valid
+import { Segmented } from 'basalt-ui/ui/segmented'
+export const Filters = () => (
+  <FilterSet>
+    <Segmented value={v} />
+  </FilterSet>
+)
+
+// @valid
+import { Combobox } from 'basalt-ui/ui/combobox'
+export const Panel = () => (
+  <ControlHome home="side-panel">
+    <Combobox value={v} />
+  </ControlHome>
+)
+
+// @valid
+import { NumberField } from 'basalt-ui/ui/number-field'
+export const Views = () => (
+  <ViewTabs>
+    <NumberField value={n} />
+  </ViewTabs>
+)
+
+// @valid
+import { Slider } from 'basalt-ui/ui/slider'
+export const slot = (handle) =>
+  filterSlot.custom(handle, 'Opacity', ({ value, set }) => <Slider value={value} onValueChange={set} />)
+
+// @valid
+import { Switch } from 'basalt-ui/ui/switch'
+export const Composite = () => (
+  <PublicRow handle={overview.field.public}>
+    <Switch />
+  </PublicRow>
+)
+
+// @valid
+import { Switch } from 'basalt-ui/ui/switch'
+const range = store.field.range
+export const Hoisted = () => (
+  <Row control={range}>
+    <Switch />
+  </Row>
+)
+
+// @valid
+import { Switch } from 'basalt-ui/ui/switch'
+export const Hoisted = () => (
+  <Row field={range}>
+    <Switch />
+  </Row>
+)
+const range = store.field.range
+
+// @valid
+import { Select } from './select'
+export const Local = () => <Select value={v} />
+
+// @valid
+import { Input } from 'basalt-ui/ui/input'
+export const Text = () => <Input value={v} />
