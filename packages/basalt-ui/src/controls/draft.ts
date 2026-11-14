@@ -38,7 +38,7 @@ function draftStore<V>(o: UseFormDraftOptions<V>, key: string) {
  * @example
  * const form = useForm({ defaultValues, validators: { onSubmitAsync: toSubmitErrors(save) } })
  * const draft = useFormDraft(form, { key: `run-edit:${id}`, version: 1, schema: Schema, owner: userId })
- * // after a successful save: draft.clear()
+ * // a successful submit clears the draft and re-bases the form itself; `draft.clear()` is for a discard
  */
 export function useFormDraft<V>(form: FormLike<V>, o: UseFormDraftOptions<V>): UseFormDraftResult {
   const [status, setStatus] = useState<UseFormDraftResult['status']>('none')
@@ -65,6 +65,7 @@ export function useFormDraft<V>(form: FormLike<V>, o: UseFormDraftOptions<V>): U
 
     // Subscribed after the restore, so the restore's own notification never reads as an edit.
     let seen: unknown = form.state.values
+    let submitting = form.state.isSubmitting
     const save = debounce(() => {
       // This mount's own form and store: a pending edit must never land under a newer key.
       if (isPristine(form)) store.reset()
@@ -72,6 +73,19 @@ export function useFormDraft<V>(form: FormLike<V>, o: UseFormDraftOptions<V>): U
     }, AUTOSAVE_MS)
     writer.current = save
     const subscription = form.store.subscribe(() => {
+      const submitEnded = submitting && !form.state.isSubmitting
+      submitting = form.state.isSubmitting
+      // TanStack's own flag; the `FormLike` seam does not name it, a form without it never clears.
+      const succeeded = (form.state as { isSubmitSuccessful?: boolean }).isSubmitSuccessful === true
+      if (submitEnded && succeeded) {
+        // A saved form has no draft: drop the pending write and the key, then re-base the form on
+        // what was submitted so it reads pristine without the app's own success step.
+        save.cancel()
+        store.reset()
+        form.reset(form.state.values, { keepDefaultValues: false })
+        seen = form.state.values
+        return
+      }
       // The store also fires for `isSubmitting` and `canSubmit`; only a values change is an edit.
       if (form.state.values === seen) return
       seen = form.state.values
