@@ -11,6 +11,12 @@ How a stat card and its neighbours read. The slots and props are in [StatCard](d
 - Micro-visual: a sparkline or a meter that encodes the history, a target or the parts. A visual that restates the headline is decoration.
 - Footer: at most two facts. [type:FootFacts]
 
+## Console anatomy
+
+- The card is the console card: a header with the title and its context line, the figure with its delta pill inside the inset one surface step down, label and value pairs in the footer. The parts that give it are the [ChartCard](docs/chart-card.md) `figure`, the [StatCard](docs/stat-card.md) and the inset of the [Card](docs/card.md).
+- Ids, repo names, hashes and timestamps are monospace, in the header, the figure's sub line and the footer pairs.
+- The title is a noun phrase in the header and the figure is the largest thing in the inset; a small title over free text on a flush surface is the defect, and the part is reported when it cannot draw the content ([anti-defaults](anti-defaults.md)).
+
 ## Every figure has a baseline
 
 - Give the figure a baseline in the card itself: the delta, a target tick, the limit with the distance to it, or a history line.
