@@ -27,9 +27,9 @@ const setup = () => {
   client.setQueryData<Todo>(KEY, { title: 'server' })
   const invalidate = mock((_filters?: unknown) => Promise.resolve())
   client.invalidateQueries = invalidate as unknown as QueryClient['invalidateQueries']
-  const handlers = optimistic<string>({
+  const handlers = optimistic<string, Todo>({
     key: KEY,
-    targets: [{ queryKey: KEY, apply: (prev, title) => ({ ...(prev as Todo), title }) }],
+    targets: [{ queryKey: KEY, apply: (prev, title) => ({ ...prev, title }) }],
   })
   const run = (mutationFn: (title: string) => Promise<unknown>, title: string) => {
     const options = { mutationFn, ...handlers } as MutationOptions<unknown, Error, string>

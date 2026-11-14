@@ -7,20 +7,20 @@
 import { hashKey } from '@tanstack/react-query'
 import type { MutationFunctionContext, MutationKey, QueryKey } from '@tanstack/react-query'
 
-type OptimisticTarget<V> = {
+type OptimisticTarget<V, T> = {
   /** The cache entry to update, matched exactly. */
   queryKey: QueryKey
   /** The next cached value from the current one and the mutation variables. */
-  apply(prev: unknown, variables: V): unknown
+  apply(prev: T, variables: V): T
 }
 
-type OptimisticOptions<V> = {
+type OptimisticOptions<V, T> = {
   /** Identifies this resource's mutations: `isMutating` counts only mutations carrying it. */
   key: MutationKey
   /** Serial-execution group. Defaults to the hashed `key`. */
   scope?: string
   /** The cache entries written ahead of the server. An entry with no cached data is skipped. */
-  targets: readonly OptimisticTarget<V>[]
+  targets: readonly OptimisticTarget<V, T>[]
 }
 
 type Snapshot = { queryKey: QueryKey; previous: unknown; written: unknown }
@@ -48,6 +48,10 @@ type OptimisticHandlers<V> = {
  * Optimistic cache writes for one mutation: cancel, snapshot, write; restore on error; invalidate
  * the targets when the last mutation with this key settles.
  *
+ * `T` types the cached value of the targets, so `apply` reads `prev` without a cast. It defaults to
+ * `unknown`, which is what a mix of cache shapes needs; name it when the targets share one
+ * (`optimistic<string, Run>`), because naming `V` alone leaves `T` at its default.
+ *
  * Spread it into `useMutation` so the returned `mutationKey` and `scope` come with the handlers:
  * without the key, `isMutating()` counts every pending mutation in the app and the invalidate never
  * runs. A restore is skipped when a later optimistic write has since replaced the value, and the
@@ -60,14 +64,16 @@ type OptimisticHandlers<V> = {
  * ```ts
  * const rename = useMutation({
  *   mutationFn: (title: string) => unwrap(api.runs({ id }).patch({ title })),
- *   ...optimistic<string>({
+ *   ...optimistic<string, Run>({
  *     key: ['run', id],
- *     targets: [{ queryKey: ['run', id], apply: (prev, title) => ({ ...(prev as Run), title }) }],
+ *     targets: [{ queryKey: ['run', id], apply: (prev, title) => ({ ...prev, title }) }],
  *   }),
  * })
  * ```
  */
-export function optimistic<V>(options: OptimisticOptions<V>): OptimisticHandlers<V> {
+export function optimistic<V, T = unknown>(
+  options: OptimisticOptions<V, T>,
+): OptimisticHandlers<V> {
   const { key, targets } = options
   const scope = { id: options.scope ?? hashKey(key) }
 
@@ -78,7 +84,7 @@ export function optimistic<V>(options: OptimisticOptions<V>): OptimisticHandlers
       const snapshots: Snapshot[] = []
       for (const { queryKey, apply } of targets) {
         await client.cancelQueries({ queryKey, exact: true })
-        const previous = client.getQueryData(queryKey)
+        const previous = client.getQueryData<T>(queryKey)
         if (previous === undefined) continue
         client.setQueryData(queryKey, apply(previous, variables))
         // Read back: structural sharing may store a different reference than the one passed in.
