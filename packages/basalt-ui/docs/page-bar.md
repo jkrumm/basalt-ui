@@ -16,11 +16,11 @@ that each render a bar fail loudly instead of stacking two bands.
 ## Signature
 
 ```ts
-PageBar({ title, parent, controls, tabs, refresh, actions, }: PageBarProps): ReactElement | null
+PageBar<K extends string = string>({ title, parent, controls, tabs, refresh, actions, }: PageBarProps<K>): ReactElement | null
   title?: string
   parent?: { label: string; href: string | NavTarget; }
   controls?: { readonly kind: "controls-slot"; readonly count: number; r…
-  tabs?: { readonly kind: "controls-slot"; readonly count: number; r…
+  tabs?: PageTabs<K>
   refresh?: { scope: "page" | "global"; } & { syncing: boolean; lastCom…
   actions?: readonly [PageAction?, PageAction?, PageAction?, PageAction…
 ```

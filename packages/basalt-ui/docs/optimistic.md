@@ -15,8 +15,8 @@ the targets when the last mutation with this key settles.
 ## Signature
 
 ```ts
-optimistic<V>(options: OptimisticOptions<V>): OptimisticHandlers<V>
+optimistic<V, T = unknown>(options: OptimisticOptions<V, T>): OptimisticHandlers<V>
   key: readonly unknown[]
   scope?: string
-  targets: readonly OptimisticTarget<V>[]
+  targets: readonly OptimisticTarget<V, T>[]
 ```
