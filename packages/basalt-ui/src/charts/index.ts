@@ -1,6 +1,6 @@
 /**
  * `basalt-ui/charts` — the chart layer on TanStack Charts (`docs/V2-SPEC.md` § 9). Mantine-free:
- * the rung (`CartesianChart`), the kinds (`Lines`, `Bars`, `StackedArea`, `Sparkline`, `BandStrip`, `Donut`, `Heatmap`, `DualPanel`, `MirroredBars`), the card (`ChartCard`) and the shared
+ * the rung (`CartesianChart`), the kinds (`Lines`, `Bars`, `StackedArea`, `Sparkline`, `BandStrip`, `Donut`, `Heatmap`, `DualPanel`, `MirroredBars`), the card (`ChartCard`; the 2.x one is `LegacyChartCard`) and the shared
  * cursor (`chartCursor`). Engine marks for `CartesianChart`'s `marks` are imported from the allowed
  * `@tanstack/charts/*` subpaths directly; tokens come from `basalt-ui/tokens`, formatters from
  * `basalt-ui/format`. Nothing here re-exports either, or the engine.
@@ -27,7 +27,15 @@ export {
   type MirroredBarsSeries,
   type MirroredBarPane,
 } from './MirroredBars'
-export { ChartCard, type ChartCardProps, type ChartCardSlot, type ChartFact } from './ChartCard'
+export { ChartCard } from './parts/chart-card'
+export type { ChartCardProps, ChartFigure } from './contract'
+/** The 2.x card (`state`, `facts`, children), kept until `v3-teardown-views`; `ChartCard` is the v3 card. */
+export {
+  ChartCard as LegacyChartCard,
+  type ChartCardProps as LegacyChartCardProps,
+  type ChartCardSlot,
+  type ChartFact,
+} from './ChartCard'
 export { chartCursor } from './cursor'
 export {
   useChartFocus,

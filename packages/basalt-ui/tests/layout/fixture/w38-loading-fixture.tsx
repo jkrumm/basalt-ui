@@ -1,5 +1,5 @@
 import type { ReactElement } from 'react'
-import { Bars, ChartCard } from '../../../src/charts'
+import { Bars, LegacyChartCard as ChartCard } from '../../../src/charts'
 import { BarList } from '../../../src/dashboard/bar-list'
 import { VX } from '../../../src/tokens'
 

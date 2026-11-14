@@ -47,7 +47,6 @@ const CHART_VALUES = [
   'ChartCard',
   'Donut',
   'DualPanel',
-  'Heatmap',
   'Lines',
   'MirroredBars',
   'Sparkline',

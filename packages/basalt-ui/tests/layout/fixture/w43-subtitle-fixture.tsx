@@ -1,5 +1,5 @@
 import type { ReactElement } from 'react'
-import { ChartCard } from '../../../src/charts'
+import { LegacyChartCard as ChartCard } from '../../../src/charts'
 import { Section } from '../../../src/dashboard/section'
 
 const KEY = 'Dashed line: 30 d average · dot: new PR'

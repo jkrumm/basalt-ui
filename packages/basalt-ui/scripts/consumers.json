@@ -16,6 +16,7 @@
   "CardGrid": "argo:apps/dashboard/src/routes/garmin-health.tsx",
   "CartesianChart": "argo:apps/dashboard/src/features/garmin-health/charts/fitness-trends-chart.tsx",
   "ChartCard": "argo:apps/dashboard/src/features/usage-tracking/charts/cache-hit-ratio.tsx",
+  "LegacyChartCard": "linewatch:web/src/charts/speed-chart.tsx",
   "CodeBlock": "rb:apps/web/src/features/knot-detail/page.tsx",
   "Composer": "argo:apps/dashboard/src/features/hermes-chat/chat-page.tsx",
   "ConnectionIndicator": "software-factory:apps/console/src/lib/connection.ts",

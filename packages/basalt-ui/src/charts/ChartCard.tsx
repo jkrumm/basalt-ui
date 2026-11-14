@@ -516,6 +516,13 @@ function reserveLegend(reserve: boolean, placeholder: ReactElement): ReactElemen
   )
 }
 
+/**
+ * The 2.x chart card (`state`, `facts`, children), exported as `LegacyChartCard` until the 2.x view
+ * layer is deleted. `ChartCard` is the v3 card with `phase`, `figure` and a `chart` slot.
+ *
+ * @useWhen an app on the 2.x card API has not moved its call sites to the v3 `ChartCard` yet
+ * @neverWhen new code draws a chart card (use `ChartCard`)
+ */
 export function ChartCard({
   actions,
   state,

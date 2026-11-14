@@ -12,7 +12,7 @@ import {
   MirroredBars,
   Bars,
   CartesianChart,
-  ChartCard,
+  LegacyChartCard as ChartCard,
   DualPanel,
   Heatmap,
   Lines,

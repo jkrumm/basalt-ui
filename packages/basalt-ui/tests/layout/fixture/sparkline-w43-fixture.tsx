@@ -1,6 +1,6 @@
 import type { ReactElement } from 'react'
 import { Group, Stack, Text } from '@mantine/core'
-import { ChartCard, Sparkline } from '../../../src/charts'
+import { LegacyChartCard as ChartCard, Sparkline } from '../../../src/charts'
 import { StatGroup } from '../../../src/index'
 
 /** A lift's e1RM history that opens at its best: the line starts on the `PR` reference. */

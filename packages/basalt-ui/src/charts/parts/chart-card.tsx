@@ -91,6 +91,21 @@ function FigureRow({ figure, loading }: { figure: ChartFigure; loading: boolean 
  * a page draws through the seam take theirs from `legend`, a row between the figure and the box that
  * is drawn in every phase, so loading does not move the box.
  *
+ * `height` sets the chart box by the card's own width, a container-class rule, so the server HTML, the
+ * first paint and the hydrated page agree: `auto` (default) is half the width between 160 and 420 px,
+ * `short` is 160 px, `fill` is the card's remainder and the card takes its parent's height. The slot
+ * always receives `height: 'fill'`, so the chart takes the box and never states its own.
+ *
+ * The phase: `ready` shows the chart; `loading` a plot skeleton with bars in the figure row; `stale`
+ * the chart and an `Updating` line (`Could not refresh` after a failed refetch); `error` the error arm
+ * with Retry (none for a 403), where a throwing slot lands too; `empty` the cause and its action, with
+ * Clear filters when `filtered`. `empty` wins over `ready` and `stale` once the query settled, and
+ * `loading` wins over everything. The phase prints on the card and the box as `data-phase`.
+ *
+ * A series with `failed: true` keeps its legend entry, which reads `unavailable`, draws nothing in the
+ * plot and leaves the phase on `ready`; the word is the message `charts.unavailable`, which an app
+ * overrides through the provider's `messages`. The tooltip is the engine's, placed inside the card.
+ *
  * @useWhen a metric needs a chart with a title, a headline figure, controls or a footer around it
  * @neverWhen the content is a table, a list or a board (use a data panel) or a lone figure (use a stat card)
  *

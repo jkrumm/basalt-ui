@@ -1,5 +1,5 @@
 import type { ReactElement } from 'react'
-import { ChartCard, Lines } from '../../../src/charts'
+import { LegacyChartCard as ChartCard, Lines } from '../../../src/charts'
 import type { ChartSeries } from '../../../src/charts'
 import { VX } from '../../../src/tokens'
 
