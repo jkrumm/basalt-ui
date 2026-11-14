@@ -12,8 +12,10 @@ import { MANIFEST_PATH, readManifest, writeManifest } from '../manifest'
 import type { Manifest } from '../manifest'
 import { applySync, differences, planSync } from './engine'
 import { presetFilesFor } from '../presets'
+import { coveredByRoots, undeclaredInstall } from '../resolver'
 import { renderBlock, renderManaged } from './render'
 import type { PresetFiles } from './render'
+import { siblingOf } from './sibling'
 import { applyEjected, planEjected } from './three-way'
 
 export type SyncOptions = {
@@ -27,13 +29,6 @@ export type SyncOptions = {
 
 const MAKE_ONE = 'run `basalt-ui init --profile <tokens|bridge|parts|app>`'
 
-/** True when `rel` (below the install root) is, holds or sits inside a declared root. */
-const covered = (manifest: Manifest, rel: string): boolean =>
-  Object.keys(manifest.roots).some((raw) => {
-    const root = raw.replace(/^(?:\.\/)+/, '').replace(/\/+$/, '')
-    return root === '.' || rel === root || rel.startsWith(`${root}/`) || root.startsWith(`${rel}/`)
-  })
-
 /** The install this run belongs to: a manifest here, or one above that declares this directory. */
 function locate(dir: string): { root: string; manifest: Manifest } | { error: string } {
   const above = readManifest(dir) === null ? findManifestAbove(dir) : dir
@@ -45,7 +40,7 @@ function locate(dir: string): { root: string; manifest: Manifest } | { error: st
   const read = readManifest(above)
   if (read === null || 'error' in read) return { error: read?.error ?? `${MANIFEST_PATH} vanished` }
   const rel = relative(above, dir).replaceAll('\\', '/')
-  if (rel !== '' && !covered(read.manifest, rel)) {
+  if (rel !== '' && !coveredByRoots(read.manifest, rel)) {
     return {
       error:
         `${dir} is not under a declared root of the install at ${above} — an undeclared second ` +
@@ -67,19 +62,23 @@ export function sync(opts: SyncOptions = {}, invocationCwd: string = process.cwd
   const { root, manifest } = found
   const pkgRoot = opts.pkgRoot ?? packageRoot()
   const version = readFrameworkVersion(pkgRoot)
-  const block = renderBlock(pkgRoot, manifest, version)
+  const refused = undeclaredInstall(root, manifest)
+  if (refused !== null) return fail(refused)
+  const sibling = siblingOf(root, manifest)
+  const repo = sibling?.repoRoot ?? root
+  const block = renderBlock(pkgRoot, manifest, version, sibling)
   if (block === null) return fail(`${pkgRoot} ships no agent/templates/AGENTS-block.md.tpl.`)
 
   let plan
   try {
     const units = [
-      ...renderManaged(pkgRoot, manifest),
+      ...renderManaged(pkgRoot, manifest, sibling),
       ...(opts.presetFiles ?? presetFilesFor(pkgRoot))(manifest).map((u) => ({
         ...u,
         generated: true,
       })),
     ]
-    plan = planSync(root, manifest, units, block)
+    plan = planSync(root, manifest, units, block, repo)
   } catch (error) {
     return fail((error as Error).message)
   }
@@ -96,7 +95,7 @@ export function sync(opts: SyncOptions = {}, invocationCwd: string = process.cwd
     return 1
   }
 
-  const applied = applySync(root, manifest, plan, opts.force === true)
+  const applied = applySync(root, manifest, plan, opts.force === true, repo)
   applyEjected(root, ejects)
   writeManifest(root, { ...applied.manifest, ejected: ejects.ejected, version })
   for (const line of ejects.lines) console.log(line)

@@ -28,6 +28,8 @@ export type Manifest = {
   tokens: TokenOutput[]
   /** The `--extra` file `tokens:css` reads. */
   extra?: string
+  /** A sibling install's name prefix for its repo-root rules and skills (`basalt-v3-`, `basalt-v3-<dir>-`). */
+  sibling?: string
   /** Fields this version does not know, kept so a newer manifest survives an older `sync`. */
   rest: Record<string, unknown>
 }
@@ -35,7 +37,17 @@ export type Manifest = {
 export type ManifestRead = { manifest: Manifest } | { error: string }
 
 const LISTS = ['deepRender', 'authoredContent', 'viewports'] as const
-const KNOWN = ['profile', 'version', 'roots', 'ejected', 'managed', 'tokens', 'extra', ...LISTS]
+const KNOWN = [
+  'profile',
+  'version',
+  'roots',
+  'ejected',
+  'managed',
+  'tokens',
+  'extra',
+  'sibling',
+  ...LISTS,
+]
 
 const isRecord = (v: unknown): v is Record<string, unknown> =>
   typeof v === 'object' && v !== null && !Array.isArray(v)
@@ -63,7 +75,16 @@ export function parseManifest(text: string): ManifestRead {
     return bad('not valid JSON')
   }
   if (!isRecord(raw)) return bad('must be a JSON object')
-  const { profile, version = '', roots = {}, ejected = {}, managed = {}, tokens = [], extra } = raw
+  const {
+    profile,
+    version = '',
+    roots = {},
+    ejected = {},
+    managed = {},
+    tokens = [],
+    extra,
+    sibling,
+  } = raw
   if (!isProfile(profile)) {
     return bad(
       `declares no profile (${PROFILES.join(' | ')}); a 2.x manifest has none — ` +
@@ -87,6 +108,12 @@ export function parseManifest(text: string): ManifestRead {
     return bad('`tokens` must be an array of { out, format: "css" | "json", flags: string[] }')
   }
   if (extra !== undefined && typeof extra !== 'string') return bad('`extra` must be a file path')
+  if (
+    sibling !== undefined &&
+    (typeof sibling !== 'string' || !/^basalt-v3-[\w-]*$/.test(sibling))
+  ) {
+    return bad('`sibling` must be a name prefix starting `basalt-v3-`')
+  }
   const lists = LISTS.map((key) => raw[key] ?? [])
   if (!lists.every(isStrings)) return bad(`${LISTS.join(', ')} must be arrays of strings`)
 
@@ -102,6 +129,7 @@ export function parseManifest(text: string): ManifestRead {
       viewports: lists[2] as string[],
       tokens,
       ...(extra === undefined ? {} : { extra }),
+      ...(typeof sibling === 'string' ? { sibling } : {}),
       rest: Object.fromEntries(Object.entries(raw).filter(([key]) => !KNOWN.includes(key))),
     },
   }
@@ -112,7 +140,8 @@ const sorted = <T>(record: Record<string, T>): Record<string, T> =>
 
 /** The canonical bytes: fixed key order, sorted maps, two-space indent, one trailing newline. */
 export function serializeManifest(m: Manifest): string {
-  const { profile, version, deepRender, authoredContent, viewports, tokens, extra, rest } = m
+  const { profile, version, deepRender, authoredContent, viewports, tokens, extra, sibling, rest } =
+    m
   const body = {
     profile,
     version,
@@ -124,6 +153,7 @@ export function serializeManifest(m: Manifest): string {
     viewports,
     tokens,
     ...(extra === undefined ? {} : { extra }),
+    ...(sibling === undefined ? {} : { sibling }),
     ...rest,
   }
   return `${JSON.stringify(body, null, 2)}\n`

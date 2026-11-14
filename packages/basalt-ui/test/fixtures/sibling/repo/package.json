@@ -1,0 +1,13 @@
+{
+  "name": "sibling-fixture",
+  "private": true,
+  "workspaces": [
+    "apps/*"
+  ],
+  "devDependencies": {
+    "basalt-ui": "*"
+  },
+  "basalt": {
+    "app": "apps/x"
+  }
+}

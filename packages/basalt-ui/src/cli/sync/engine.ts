@@ -19,6 +19,7 @@ import { dirname, relative, resolve } from 'node:path'
 import { sha256 } from '../index'
 import type { Manifest } from '../manifest'
 import { scanBlock, spliceBlock } from './block'
+import { unitPath } from './sibling'
 import type { Unit } from './render'
 
 export const AGENTS_FILE = 'AGENTS.md'
@@ -32,9 +33,9 @@ export type Plan = {
   block: { state: Exclude<State, 'edited'>; text: string } | { error: string }
 }
 
-const readText = (root: string, path: string): string | null => {
+const readText = (root: string, path: string, repo: string): string | null => {
   try {
-    return readFileSync(resolve(root, path), 'utf8')
+    return readFileSync(unitPath(root, repo, path), 'utf8')
   } catch {
     return null
   }
@@ -47,22 +48,28 @@ function stateOf(unit: Unit, current: string | null, digest: string | undefined)
 }
 
 /** Reads the tree under `root`; writes nothing. */
-export function planSync(root: string, manifest: Manifest, units: Unit[], block: string): Plan {
+export function planSync(
+  root: string,
+  manifest: Manifest,
+  units: Unit[],
+  block: string,
+  repo: string = root,
+): Plan {
   const items = units.map((unit) => ({
     ...unit,
-    state: stateOf(unit, readText(root, unit.path), manifest.managed[unit.path]),
+    state: stateOf(unit, readText(root, unit.path, repo), manifest.managed[unit.path]),
   }))
   const wanted = new Set(units.map((unit) => unit.path))
   const retired = Object.entries(manifest.managed)
     .filter(([path]) => !wanted.has(path))
     .toSorted(([a], [b]) => a.localeCompare(b))
     .map(([path, digest]): Retired => {
-      const current = readText(root, path)
+      const current = readText(root, path, repo)
       const state = current === null ? 'gone' : sha256(current) === digest ? 'untouched' : 'edited'
       return { path, state }
     })
 
-  const host = readText(root, AGENTS_FILE) ?? ''
+  const host = readText(root, AGENTS_FILE, repo) ?? ''
   const scan = scanBlock(host, AGENTS_FILE)
   if (typeof scan === 'object' && 'error' in scan) return { items, retired, block: scan }
   const text = spliceBlock(host, scan, block)
@@ -88,36 +95,44 @@ export function differences(plan: Plan): string[] {
 
 export type Applied = { written: number; removed: number; left: string[]; manifest: Manifest }
 
-/** The absolute path of `path` under `root`; a path that resolves outside it is refused. */
-function within(root: string, path: string): string {
-  const abs = resolve(root, path)
-  if (relative(root, abs).startsWith('..')) throw new Error(`${path} resolves outside ${root}`)
+/** The absolute path of a ledger `path`; one that resolves outside its base (`root`, or `repo` for `repo:`) is refused. */
+function within(root: string, path: string, repo: string): string {
+  const abs = unitPath(root, repo, path)
+  const base = path.startsWith('repo:') ? repo : root
+  if (relative(base, abs).startsWith('..')) throw new Error(`${path} resolves outside ${base}`)
   return abs
 }
 
-function put(root: string, path: string, content: string): void {
-  mkdirSync(dirname(within(root, path)), { recursive: true })
-  writeFileSync(within(root, path), content)
+function put(root: string, path: string, content: string, repo: string): void {
+  mkdirSync(dirname(within(root, path, repo)), { recursive: true })
+  writeFileSync(within(root, path, repo), content)
 }
 
-/** Removes a file, then each parent directory it leaves empty, up to (not including) `root`. */
-function remove(root: string, path: string): void {
-  rmSync(within(root, path), { force: true })
-  for (let dir = dirname(within(root, path)); dir !== resolve(root); dir = dirname(dir)) {
+/** Removes a file, then each parent directory it leaves empty, up to (not including) its base. */
+function remove(root: string, path: string, repo: string): void {
+  const base = resolve(path.startsWith('repo:') ? repo : root)
+  rmSync(within(root, path, repo), { force: true })
+  for (let dir = dirname(within(root, path, repo)); dir !== base; dir = dirname(dir)) {
     if (!existsSync(dir) || readdirSync(dir).length > 0) return
     rmdirSync(dir)
   }
 }
 
 /** Writes a plan with no block error. `force` finishes edited managed files and edited retired ones. */
-export function applySync(root: string, manifest: Manifest, plan: Plan, force: boolean): Applied {
+export function applySync(
+  root: string,
+  manifest: Manifest,
+  plan: Plan,
+  force: boolean,
+  repo: string = root,
+): Applied {
   const next: Manifest = { ...manifest, managed: { ...manifest.managed } }
   const applied: Applied = { written: 0, removed: 0, left: [], manifest: next }
   for (const item of plan.items) {
     if (item.state === 'edited' && !force) applied.left.push(item.path)
     else {
       if (item.state !== 'current') {
-        put(root, item.path, item.content)
+        put(root, item.path, item.content, repo)
         applied.written++
       }
       if (item.generated !== true) next.managed[item.path] = sha256(item.content)
@@ -127,14 +142,14 @@ export function applySync(root: string, manifest: Manifest, plan: Plan, force: b
     if (state === 'edited' && !force) applied.left.push(path)
     else {
       if (state !== 'gone') {
-        remove(root, path)
+        remove(root, path, repo)
         applied.removed++
       }
       delete next.managed[path]
     }
   }
   if ('state' in plan.block && plan.block.state !== 'current') {
-    put(root, AGENTS_FILE, plan.block.text)
+    put(root, AGENTS_FILE, plan.block.text, repo)
     applied.written++
   }
   return applied

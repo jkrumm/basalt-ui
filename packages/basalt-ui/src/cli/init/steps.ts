@@ -17,7 +17,10 @@ import {
   STYLELINT_PRESET_FILE,
 } from '../presets'
 import { parseJsonc, readIfExists } from '../source-text'
+import { findRepoRoot } from '../index'
+import { isSiblingApp } from '../resolver'
 import { sync } from '../sync'
+import { claimPrefix } from '../sync/sibling'
 import { tokensCss } from '../tokens-css'
 
 export type Runner = (argv: string[], dir: string) => boolean
@@ -58,8 +61,12 @@ function writeText(root: string, rel: string, content: string): boolean {
   return true
 }
 
-/** The nearest ancestor holding `.git` (the repo root), else `dir`. */
+/**
+ * The nearest ancestor holding `.git` (the repo root), else `dir`. A package declaring
+ * `basalt.sibling` below the repo root is its own install root: its manifest stays in it.
+ */
 export function installRoot(dir: string): string {
+  if (isSiblingApp(dir)) return dir
   for (let at = dir; ; at = dirname(at)) {
     if (existsSync(join(at, '.git'))) return at
     if (dirname(at) === at) return dir
@@ -132,6 +139,7 @@ export function declareManifest(ctx: Ctx): { error: string } | null {
     roots: { ...base.roots, ...Object.fromEntries(roots.map((r) => [r, profile])) },
     tokens: [...base.tokens.filter((t) => !declared.has(t.out)), ...rows],
     ...(extra === undefined ? {} : { extra }),
+    ...(isSiblingApp(ctx.root) ? { sibling: base.sibling ?? claimPrefix(ctx.root) } : {}),
   }
   writeManifest(ctx.root, manifest)
   return null
@@ -201,7 +209,7 @@ export function installPeers(ctx: Ctx): void {
     .filter(([name, version]) => have[name] !== version)
     .map(([name, version]) => `${name}@${version}`)
   if (specs.length === 0) return say('peers: already at their pins.')
-  const command = installCommand(ctx.root, specs)
+  const command = installCommand(isSiblingApp(ctx.root) ? findRepoRoot(ctx.root) : ctx.root, specs)
   if (own === null || ctx.run === undefined) {
     const why = own === null ? `no package.json at ${ctx.root}` : '--no-install'
     return void ctx.todo.push(`install the peers (${why}): ${command.join(' ')}`)
@@ -228,6 +236,21 @@ export function seedBudgetFile(ctx: Ctx): void {
 }
 
 export { installHook } from '../lint/hook-step'
+
+/**
+ * What a sibling install does not place below the repo root, said once each: the repo's own
+ * lefthook and CI file stay the root install's, and `check-v3` in its Makefile holds the line.
+ */
+export const SIBLING_SKIPS = [
+  ['lefthook.yml', 'the root install owns the hook runner'],
+  ['.github/workflows/check.yml', 'the repo workflow only calls `make check`'],
+] as const
+
+export function skipPlacements(): void {
+  for (const [file, why] of SIBLING_SKIPS) {
+    say(`skipped ${file}: below the repo root (${why}).`)
+  }
+}
 
 // ── formatter ignore ────────────────────────────────────────────────────────────────────────────
 

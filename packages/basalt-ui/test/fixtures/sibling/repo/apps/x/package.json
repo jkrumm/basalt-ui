@@ -1,0 +1,7 @@
+{
+  "name": "x",
+  "private": true,
+  "dependencies": {
+    "basalt-ui": "*"
+  }
+}

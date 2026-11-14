@@ -12,6 +12,7 @@ import { SLOTS } from '../../ui/slots'
 import { readFrameworkVersion } from '../index'
 import { scanBlock } from '../sync/block'
 import { AGENTS_FILE, differences, planSync } from '../sync/engine'
+import { siblingOf, siblingName, unitPath } from '../sync/sibling'
 import { renderBlock, renderManaged } from '../sync/render'
 import type { Unit } from '../sync/render'
 import {
@@ -35,7 +36,8 @@ const check4 = (name: string): Check => ({
   name,
   run: (ctx) => {
     const manifest = need(ctx)
-    const block = renderBlock(ctx.pkgRoot, manifest, readFrameworkVersion(ctx.pkgRoot))
+    const sibling = siblingOf(ctx.root, manifest)
+    const block = renderBlock(ctx.pkgRoot, manifest, readFrameworkVersion(ctx.pkgRoot), sibling)
     if (block === null) throw new Skip(`${ctx.pkgRoot} ships no AGENTS block template`)
     const preset: Unit = {
       path: STYLELINT_PRESET,
@@ -45,8 +47,9 @@ const check4 = (name: string): Check => ({
     const plan = planSync(
       ctx.root,
       manifest,
-      [...renderManaged(ctx.pkgRoot, manifest), preset],
+      [...renderManaged(ctx.pkgRoot, manifest, sibling), preset],
       block,
+      sibling?.repoRoot,
     )
     if ('error' in plan.block) return fail(plan.block.error)
     const findings = differences(plan).map(
@@ -169,19 +172,21 @@ const check7 = (name: string): Check => ({
   name,
   run: (ctx) => {
     const manifest = need(ctx)
-    const units = renderManaged(ctx.pkgRoot, manifest)
+    const sibling = siblingOf(ctx.root, manifest)
+    const units = renderManaged(ctx.pkgRoot, manifest, sibling)
     if (units.length === 0) return pass('no agent layer for profile tokens')
     const findings = units
-      .filter((u) => !existsSync(resolve(ctx.root, u.path)))
+      .filter((u) => !existsSync(unitPath(ctx.root, sibling?.repoRoot ?? ctx.root, u.path)))
       .map((u) => `${u.path} is missing at the install root: run \`basalt-ui sync\``)
     const agents = readText(ctx.root, AGENTS_FILE) ?? ''
     const scan = scanBlock(agents, AGENTS_FILE)
     const block =
       typeof scan === 'object' && 'start' in scan ? agents.slice(scan.start, scan.end) : ''
     const placed = new Set(
-      units.flatMap((u) => /^\.claude\/skills\/([^/]+)\//.exec(u.path)?.[1] ?? []),
+      units.flatMap((u) => /^(?:repo:)?\.claude\/skills\/([^/]+)\//.exec(u.path)?.[1] ?? []),
     )
-    for (const skill of ENTRY_SKILLS.filter((s) => placed.has(s))) {
+    const entry = ENTRY_SKILLS.map((s) => (sibling === null ? s : siblingName(s, sibling.prefix)))
+    for (const skill of entry.filter((s) => placed.has(s))) {
       if (!block.includes(skill)) findings.push(`the AGENTS block does not name the ${skill} skill`)
     }
     return verdictOf(findings, `${units.length} skills, rules and agents placed and named`)

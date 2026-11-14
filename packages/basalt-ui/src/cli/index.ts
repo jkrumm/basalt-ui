@@ -572,14 +572,15 @@ export type AppResolution = { dir: string; rel: string } | { error: string }
 const appRelative = (root: string, dir: string): string =>
   relativePosix(root, dir).replace(/^\.\/?/, '')
 
-const hasViteEntry = (dir: string): boolean =>
+export const hasViteEntry = (dir: string): boolean =>
   existsSync(resolve(dir, 'src/main.tsx')) || existsSync(resolve(dir, 'index.html'))
 
 /**
  * Where the Vite app lives relative to the install root `root` (manifest, `.claude/`, AGENTS block).
  * ONE resolution for `doctor`, `sync` and `init`, in order: `basalt.app` in the root package.json;
  * else the single workspace package that depends on basalt-ui AND has a Vite entry; else `root`
- * itself (a single-package app). Two such packages is an error — the choice is not inferable.
+ * itself (a single-package app). Two such packages is an error — the choice is not inferable. A
+ * package declaring `basalt.sibling` is a declared second install and never a candidate.
  */
 export function resolveAppDir(root: string): AppResolution {
   const self = { dir: root, rel: '' }
@@ -595,7 +596,11 @@ export function resolveAppDir(root: string): AppResolution {
     return dir === root ? self : { dir, rel }
   }
   const candidates = collectWorkspacePackages(root).packages.filter(
-    (pkg) => pkg.dir !== root && hasDependency(pkg.dir, 'basalt-ui') && hasViteEntry(pkg.dir),
+    (pkg) =>
+      pkg.dir !== root &&
+      hasDependency(pkg.dir, 'basalt-ui') &&
+      hasViteEntry(pkg.dir) &&
+      readBasaltConfig(pkg.dir).sibling !== true,
   )
   if (candidates.length === 0) return self
   const [only] = candidates
@@ -977,10 +982,10 @@ export function basaltPresetEntry(entries: unknown): string | null {
  */
 export type DoctorProfile = 'framework' | 'tokens-only'
 
-type WorkspacePackage = { readonly name: string; readonly dir: string }
+export type WorkspacePackage = { readonly name: string; readonly dir: string }
 
 /** {@link collectWorkspacePackages}'s return: the packages plus whether a `workspaces` field existed. */
-type WorkspaceWalk = {
+export type WorkspaceWalk = {
   readonly packages: readonly WorkspacePackage[]
   readonly hasWorkspacesField: boolean
 }
@@ -1073,7 +1078,7 @@ function expandWorkspaceGlobs(cwd: string, patterns: readonly string[]): string[
  * dev dependency that can skew against a package's major). `hasWorkspacesField` is `false` when
  * there is no `package.json`, no `workspaces` field, or a shape this doesn't recognize; never throws.
  */
-function collectWorkspacePackages(cwd: string): WorkspaceWalk {
+export function collectWorkspacePackages(cwd: string): WorkspaceWalk {
   const parsed = readPackageJson<{ workspaces?: unknown; name?: string }>(cwd)
   if (parsed === null) return { packages: [], hasWorkspacesField: false }
 
