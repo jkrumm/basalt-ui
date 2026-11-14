@@ -289,6 +289,49 @@ layout('FilterSet', () => {
         expect(count).toBe('Filters')
       })
 
+      test('the row ends with Reset all while a filter is active, and one press unsets them all', async () => {
+        const page = await open(viewport)
+        const frame = '[data-testid="fs-3"]'
+        const reset = `${frame} [data-slot="filter-pills"] ~ [data-slot="filter-reset"]`
+        if (await showsSheet(page, 'fs-3')) {
+          // The phone shows the count button; its sheet owns Reset all.
+          expect(
+            await page.count(`${frame} [data-slot="filter-pills"] ~ [data-slot="filter-reset"]`),
+          ).toBe(1)
+          expect(
+            await page.raw.evaluate(
+              (sel) => getComputedStyle(document.querySelector(sel)!.parentElement!).display,
+              reset,
+            ),
+          ).toBe('none')
+          return
+        }
+        const box = await page.raw.evaluate((sel) => {
+          const button = document.querySelector<HTMLElement>(sel)!
+          const row = button.parentElement!.querySelector<HTMLElement>(
+            '[data-slot="filter-pills"]',
+          )!
+          return {
+            sameLine:
+              Math.abs(button.getBoundingClientRect().top - row.getBoundingClientRect().top) < 24,
+            past:
+              button.getBoundingClientRect().right >
+              row.parentElement!.getBoundingClientRect().right + 0.5,
+          }
+        }, reset)
+        expect(box).toEqual({ sameLine: true, past: false })
+        await page.raw.click(reset)
+        await page.settle()
+        // Nothing is active any more: the button is gone and the first pill reads its default.
+        expect(await page.count(`${frame} [data-slot="filter-reset"]`)).toBe(0)
+        const first = await page.raw.evaluate(
+          (sel) =>
+            document.querySelector(`${sel} [data-slot="filter-set-pill"] button`)?.textContent,
+          frame,
+        )
+        expect(first).toBe('Production deployment')
+      })
+
       test('a folded pill opens as a row, and a select inside keeps the panel open', async () => {
         const page = await open(viewport)
         const frame = '[data-testid="fs-w560"]'

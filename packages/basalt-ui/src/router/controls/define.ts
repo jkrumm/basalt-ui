@@ -11,6 +11,7 @@ import { useEffect, useSyncExternalStore } from 'react'
 import { stripSearchParams, useRouter, useSearch } from '@tanstack/react-router'
 import { persisted } from '../../core/persisted'
 import type { ControlHandle } from '../../core/ports'
+import { batching, onBatchEnd } from '../../core/write-batch'
 import { brandOf, brandedValidator, extendValidator } from './brand'
 import type { ControlsValidator, Scope, StandardSchemaV1 } from './brand'
 import { writableRange } from './codec'
@@ -225,6 +226,32 @@ function report(error: unknown): void {
     queueMicrotask(() => {
       throw error
     })
+}
+
+/**
+ * The unsets `clear()` queues inside a `batchWrites` (a `Reset all` presses `clear()` once per field),
+ * per router; they leave together as ONE replace when the batch ends. Outside a batch `clear()`
+ * navigates at once. Every value is `undefined`, so merging is order-free. Any other write flushes
+ * the queue first, so a `set` after a `clear` in the same batch still lands last.
+ */
+const pendingClears = new Map<LooseRouter, Raw>()
+
+function flushClears(): void {
+  for (const [router, patch] of pendingClears) {
+    pendingClears.delete(router)
+    // One router's failure must not strand the clears queued for the next.
+    try {
+      const result = router.navigate({
+        to: '.',
+        search: (prev) => ({ ...prev, ...patch }),
+        replace: true,
+        resetScroll: false,
+      })
+      if (result !== undefined) result.catch(report)
+    } catch (error) {
+      report(error)
+    }
+  }
 }
 
 /** Dev: a global store's validator on any route but the root is a mounting mistake. */
@@ -511,6 +538,7 @@ export function defineControls<
     patch: Raw,
     history: History,
     resets: Raw = resetPatch,
+    batch = false,
   ): void => {
     assertGlobalsOnRoot(router)
     if (scope === 'page' && !runsStore(router, id)) {
@@ -519,6 +547,12 @@ export function defineControls<
           `${id}.validateSearch (or ${id}.extend(...)) on this route or a parent layout route.`,
       )
     }
+    if (batch && batching()) {
+      onBatchEnd(flushClears)
+      pendingClears.set(router, { ...pendingClears.get(router), ...resets, ...patch })
+      return
+    }
+    flushClears()
     const result = router.navigate({
       to: '.',
       search: (prev) => ({ ...prev, ...resets, ...patch }),
@@ -589,7 +623,7 @@ export function defineControls<
         for (const router of mounts.keys()) {
           // Judged where the reader is now: a router whose matches do not run a page store is left alone.
           if (scope === 'page' && !runsStore(router, id)) continue
-          commit(router, unsetPatch(entry), 'replace')
+          commit(router, unsetPatch(entry), 'replace', resetPatch, true)
         }
       },
       get isDefault() {

@@ -47,7 +47,15 @@ function pillText(spec: AnySpec, value: unknown, t: T): string {
   }
 }
 
-function ResetAll({ count, reset }: { count: number; reset(): void }): ReactElement {
+function ResetAll({
+  count,
+  reset,
+  className = 'self-start',
+}: {
+  count: number
+  reset(): void
+  className?: string
+}): ReactElement {
   const t = useMessages(filters)
   return (
     <button
@@ -55,7 +63,7 @@ function ResetAll({ count, reset }: { count: number; reset(): void }): ReactElem
       data-slot="filter-reset"
       disabled={count === 0}
       data-disabled={count === 0 ? '' : undefined}
-      className={`${buttonVariants({ variant: 'ghost', size: 'sm' })} self-start`}
+      className={`${buttonVariants({ variant: 'ghost', size: 'sm' })} ${className}`}
       onClick={reset}
     >
       {t('filters.resetAll')}
@@ -189,23 +197,27 @@ function PillSet({
       className="m-0 w-full min-w-0 max-w-full border-0 p-0"
     >
       <div className="@container w-full min-w-0 max-w-full">
-        <div
-          ref={rowRef}
-          data-slot="filter-pills"
-          className="hidden w-full min-w-0 flex-nowrap items-center gap-2 overflow-clip [overflow-clip-margin:4px] @regular:flex"
-        >
-          {specs.map((spec, index) => (
-            <div
-              key={spec.handle.key}
-              data-slot="filter-set-pill"
-              data-fold-key={spec.handle.key}
-              hidden={index >= visible}
-              className="max-w-full min-w-0 shrink-0"
-            >
-              <Pill spec={spec} size={size} />
-            </div>
-          ))}
-          {folded.length > 0 && <Fold folded={folded} census={census} size={size} />}
+        <div className="hidden w-full min-w-0 items-center gap-2 @regular:flex">
+          <div
+            ref={rowRef}
+            data-slot="filter-pills"
+            className="hidden min-w-0 flex-1 flex-nowrap items-center gap-2 overflow-clip [overflow-clip-margin:4px] @regular:flex"
+          >
+            {specs.map((spec, index) => (
+              <div
+                key={spec.handle.key}
+                data-slot="filter-set-pill"
+                data-fold-key={spec.handle.key}
+                hidden={index >= visible}
+                className="max-w-full min-w-0 shrink-0"
+              >
+                <Pill spec={spec} size={size} />
+              </div>
+            ))}
+            {folded.length > 0 && <Fold folded={folded} census={census} size={size} />}
+          </div>
+          {/* Outside the clipped row, so the fold measures what is left beside it. */}
+          {census.count > 0 && <ResetAll {...census} className="shrink-0" />}
         </div>
         <PhoneSheet specs={specs} census={census} size={size} />
       </div>
