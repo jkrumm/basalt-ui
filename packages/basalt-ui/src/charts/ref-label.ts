@@ -14,6 +14,8 @@ const GLYPH_EM = 0.62
 /** The inset from the plot edge (the text's `dx`) and the gap between caption and line, in px. */
 const EDGE_INSET = 6
 const LINE_GAP = 3
+/** What a placed caption's claim adds above and below its glyph band: the line box is taller (15 px at 11), px. */
+const CLAIM_PAD = 2
 
 /**
  * A box another label has claimed in the same plot: a share of the plot width and a span of values
@@ -72,8 +74,8 @@ export function refLabelDy(position: RefLabelPosition, fontSize: number): number
   return position.endsWith('above') ? -fontSize : fontSize
 }
 
-export function refLabelPosition(opts: {
-  /** `RefLine.labelPosition`: wins over everything. */
+type RefLabelOpts = {
+  /** `RefLine.labelPosition`: tried first, kept unless a data line or another caption is in the way. */
   pinned: RefLabelPosition | undefined
   /** The default end when nothing constrains it: `true` for a right-axis line. */
   startFirst: boolean
@@ -85,42 +87,77 @@ export function refLabelPosition(opts: {
   fontSize: number
   /** One polyline per visible series on the line's axis. */
   series: readonly (readonly RefLabelPoint[])[]
-  /** Labels already placed on this axis (end labels): a caption keeps clear of them too. */
+  /** Labels already placed on this axis (end labels, other captions): a caption keeps clear of them too. */
   claimed?: readonly LabelBox[] | undefined
-}): RefLabelPosition {
+}
+
+/**
+ * The spot a caption takes and the box it claims, or `null` when every spot inside the plot meets
+ * another caption: a caption never overprints a caption, so it drops (a line that must stay named
+ * takes `RefLine.legend`). The order is the pinned spot, then the four in the end's order; a spot
+ * clear of every data line and caption wins, else the first clear of the captions, else the first
+ * inside the plot. Never `null` when nothing is claimed.
+ */
+export function placeRefLabel(
+  opts: RefLabelOpts,
+): { position: RefLabelPosition; box: LabelBox } | null {
   const { pinned, startFirst, value, plotWidth, plotHeight, label, fontSize, series } = opts
   const { claimed = [] } = opts
-  const order = startFirst ? ORDER_START : ORDER_END
-  if (pinned !== undefined) return pinned
+  const natural = startFirst ? ORDER_START : ORDER_END
+  const order = pinned === undefined ? natural : [pinned, ...natural.filter((p) => p !== pinned)]
   const [lo, hi] = [Math.min(...opts.domain), Math.max(...opts.domain)]
-  if (hi === lo || plotWidth <= 0 || plotHeight <= 0) return order[0] as RefLabelPosition
-  const perPx = (hi - lo) / plotHeight
-  const widthFx = (label.length * fontSize * GLYPH_EM + EDGE_INSET) / plotWidth
+  const degenerate = hi === lo || plotWidth <= 0 || plotHeight <= 0
+  const perPx = degenerate ? 0 : (hi - lo) / plotHeight
+  const widthFx = plotWidth > 0 ? (label.length * fontSize * GLYPH_EM + EDGE_INSET) / plotWidth : 0
   const heightPx = fontSize + 2
   const bandOf = (position: RefLabelPosition): [number, number] =>
     position.endsWith('above')
       ? [value + LINE_GAP * perPx, value + (LINE_GAP + heightPx) * perPx]
       : [value - (LINE_GAP + heightPx) * perPx, value - LINE_GAP * perPx]
+  const spanOf = (position: RefLabelPosition): [number, number] =>
+    position.startsWith('end')
+      ? [1 - widthFx, 1 - EDGE_INSET / plotWidth]
+      : [EDGE_INSET / plotWidth, widthFx]
+  const boxOf = (position: RefLabelPosition): LabelBox => {
+    const [y0, y1] = bandOf(position)
+    const [fx0, fx1] = spanOf(position)
+    // The claim is the drawn line box, taller than the glyph band the room checks use.
+    return { fx0, fx1, y0: y0 - CLAIM_PAD * perPx, y1: y1 + CLAIM_PAD * perPx }
+  }
+  const first = order[0] as RefLabelPosition
+  if (degenerate) return { position: first, box: boxOf(first) }
   const inPlot = (position: RefLabelPosition): boolean => {
     const [from, to] = bandOf(position)
     return from >= lo && to <= hi
   }
-  const clear = (position: RefLabelPosition): boolean => {
-    const [from, to] = bandOf(position)
-    const [fx0, fx1] = position.startsWith('end')
-      ? [1 - widthFx, 1 - EDGE_INSET / plotWidth]
-      : [EDGE_INSET / plotWidth, widthFx]
-    return (
-      series.every((points) => {
-        const range = yRangeWithin(points, fx0, fx1)
-        return range === null || range[1] < from || range[0] > to
-      }) && claimed.every((b) => b.fx1 < fx0 || b.fx0 > fx1 || b.y1 < from || b.y0 > to)
-    )
+  const meets = (a: LabelBox, b: LabelBox): boolean =>
+    !(b.fx1 < a.fx0 || b.fx0 > a.fx1 || b.y1 < a.y0 || b.y0 > a.y1)
+  const capsClear = (position: RefLabelPosition): boolean => {
+    const box = boxOf(position)
+    return claimed.every((b) => !meets(box, b))
   }
-  // A caption that cannot avoid the data still stays inside the plot.
-  return (
-    order.find((p) => inPlot(p) && clear(p)) ?? order.find(inPlot) ?? (order[0] as RefLabelPosition)
-  )
+  const linesClear = (position: RefLabelPosition): boolean => {
+    const [from, to] = bandOf(position)
+    const [fx0, fx1] = spanOf(position)
+    return series.every((points) => {
+      const range = yRangeWithin(points, fx0, fx1)
+      return range === null || range[1] < from || range[0] > to
+    })
+  }
+  const spot =
+    order.find((p) => inPlot(p) && capsClear(p) && linesClear(p)) ??
+    order.find((p) => inPlot(p) && capsClear(p))
+  if (spot !== undefined) return { position: spot, box: boxOf(spot) }
+  // Nothing clear of the captions: drop. A plot too small for any spot keeps the first one.
+  return order.some(inPlot) ? null : { position: first, box: boxOf(first) }
+}
+
+export function refLabelPosition(opts: RefLabelOpts): RefLabelPosition {
+  const placed = placeRefLabel(opts)
+  if (placed !== null) return placed.position
+  // Every spot meets a caption: the first inside the plot (callers that can drop use `placeRefLabel`).
+  const order = opts.startFirst ? ORDER_START : ORDER_END
+  return opts.pinned ?? (order[0] as RefLabelPosition)
 }
 
 /** The gap between a sparkline reference label's box and its line, px. */

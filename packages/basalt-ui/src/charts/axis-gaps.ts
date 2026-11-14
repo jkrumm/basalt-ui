@@ -142,18 +142,115 @@ export function logTicks(lo: number, hi: number): number[] {
 // ---- vertical reference rules -------------------------------------------------------------------
 
 const X_REF_LABEL_DX = 6
+/** A rule caption's glyph advance as a share of the font size (proportional Latin, capitals included). */
+const X_LABEL_GLYPH_EM = 0.68
+/** Air kept between two captions on one row, px. */
+const X_LABEL_AIR = 4
+/** A second row of captions hangs under the first before one drops. */
+const X_LABEL_ROWS = 2
+
+/** The centre of a caption row below the plot top, px (the engine centres text on its y). */
+const xLabelDy = (row: number, fontSize: number): number => fontSize + row * (fontSize + 6)
+
+/** Where one rule caption sits: which side of its rule, on which row, and the px span it covers. */
+export type XRefLabelSpot = {
+  /** The line's index in `xRefLines`. */
+  index: number
+  toRight: boolean
+  row: number
+  /** The caption's span across the plot, px. */
+  x0: number
+  x1: number
+}
+
+/**
+ * Where the captions of the vertical rules sit. Pure. Each caption takes the side of its rule with
+ * more room, on the top row; one that would overprint another or leave the plot tries the other
+ * side, then the second row, and drops when no spot is clear (the rule stays). Left to right, so the
+ * earlier rule keeps the preferred spot.
+ */
+export function xRefLabelSpots<X extends ChartX>(opts: {
+  lines: readonly XRefLine<X>[] | undefined
+  fraction: (x: X) => number | null
+  plotWidth: number
+  fontSize: number
+}): XRefLabelSpot[] {
+  const { fraction, plotWidth, fontSize } = opts
+  const named = (opts.lines ?? []).flatMap((r, index) => {
+    const f = r.label ? fraction(r.x) : null
+    return r.label && f !== null && f >= 0 && f <= 1 ? [{ index, f, text: r.label }] : []
+  })
+  const taken: XRefLabelSpot[] = []
+  for (const { index, f, text: label } of named.toSorted((a, b) => a.f - b.f)) {
+    const width = label.length * fontSize * X_LABEL_GLYPH_EM + X_REF_LABEL_DX
+    const at = f * plotWidth
+    const preferRight = f <= 0.5
+    const spots: XRefLabelSpot[] = []
+    for (let row = 0; row < X_LABEL_ROWS; row++)
+      for (const toRight of [preferRight, !preferRight])
+        spots.push({
+          index,
+          toRight,
+          row,
+          x0: toRight ? at + X_REF_LABEL_DX : at - width,
+          x1: toRight ? at + width : at - X_REF_LABEL_DX,
+        })
+    const clear = (c: XRefLabelSpot): boolean =>
+      (plotWidth <= 0 || (c.x0 >= 0 && c.x1 <= plotWidth)) &&
+      taken.every(
+        (t) => t.row !== c.row || t.x1 + X_LABEL_AIR <= c.x0 || t.x0 >= c.x1 + X_LABEL_AIR,
+      )
+    // Before the plot is measured every caption keeps its natural spot.
+    const spot = plotWidth <= 0 ? spots[0] : spots.find(clear)
+    if (spot !== undefined) taken.push(spot)
+  }
+  return taken
+}
+
+/** A rule caption's box for a reference caption to keep clear of: a share of the plot width, px below the plot top. */
+export type XRefLabelBox = { fx0: number; fx1: number; top: number; bottom: number }
+
+export function xRefLabelBoxes(
+  spots: readonly XRefLabelSpot[],
+  opts: {
+    plotWidth: number
+    fontSize: number
+  },
+): XRefLabelBox[] {
+  const { plotWidth, fontSize } = opts
+  if (plotWidth <= 0) return []
+  // The drawn line box (about 1.35 of the font size) and a pixel of air.
+  const half = (fontSize + 4) / 2 + 1
+  return spots.map((s) => ({
+    fx0: s.x0 / plotWidth,
+    fx1: s.x1 / plotWidth,
+    top: xLabelDy(s.row, fontSize) - half,
+    bottom: xLabelDy(s.row, fontSize) + half,
+  }))
+}
 
 /**
  * Full-height rules at x values, over the marks, on the hidden `[0, 1]` scale `zx` (the chart's x
  * zones draw there too): a value off the scale or outside the plot draws nothing, a band key sits
- * at its band's centre. The caption hangs at the top, on the side of the rule with more room.
+ * at its band's centre. The caption hangs at the top, on the side of the rule with more room, and
+ * keeps clear of the other captions ({@link xRefLabelSpots}; `plotWidth` 0 or absent skips that).
  */
 export function xRefLineMarks<X extends ChartX>(opts: {
   lines: readonly XRefLine<X>[] | undefined
   fraction: (x: X) => number | null
   /** The top of the left y domain: where a caption sits. */
   top: number
+  /** The plot's width in px, for the collision pass. */
+  plotWidth?: number | undefined
 }): ChartMarks {
+  const fontSize = VX.text.micro
+  const spots = xRefLabelSpots({
+    lines: opts.lines,
+    fraction: opts.fraction,
+    plotWidth: opts.plotWidth ?? 0,
+    fontSize,
+  })
+  const spotOf = new Map(spots.map((s) => [s.index, s]))
   return (opts.lines ?? []).flatMap((r, i) => {
     const f = opts.fraction(r.x)
     if (f === null || !(f >= 0 && f <= 1)) return []
@@ -166,8 +263,8 @@ export function xRefLineMarks<X extends ChartX>(opts: {
       strokeWidth: 1,
       ...(r.dashed && { strokeDasharray: DASH }),
     })
-    if (!r.label) return [rule]
-    const toRight = f <= 0.5
+    const spot = spotOf.get(i)
+    if (!r.label || spot === undefined) return [rule]
     return [
       rule,
       decorative(
@@ -179,10 +276,10 @@ export function xRefLineMarks<X extends ChartX>(opts: {
           yScale: 'y',
           text: () => r.label ?? '',
           fill: VX.ink2,
-          fontSize: VX.text.micro,
-          anchor: toRight ? 'start' : 'end',
-          dx: toRight ? X_REF_LABEL_DX : -X_REF_LABEL_DX,
-          dy: VX.text.micro,
+          fontSize,
+          anchor: spot.toRight ? 'start' : 'end',
+          dx: spot.toRight ? X_REF_LABEL_DX : -X_REF_LABEL_DX,
+          dy: xLabelDy(spot.row, fontSize),
         }),
       ),
     ]

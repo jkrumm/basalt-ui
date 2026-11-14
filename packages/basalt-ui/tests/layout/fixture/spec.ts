@@ -449,6 +449,10 @@ export type FixtureSpec = {
   w43Subtitle?: true
   /** Expression cycle 1 kit fixes: chart state heights, a wrapping fact period, a strip verdict, Meter over-limit and track sizes (`k1-*`). */
   k1Kit?: true
+  /** Expression cycle 2 kit fixes, charts: reference-line and x-rule label collisions, the x tick density (`k2-chart-*`). */
+  k2Kit?: true
+  /** Expression cycle 2 kit fixes, table and StatGroup: entity cell gap, narrow columns, skeleton rows, cards at 390 (`k2-table-*`). */
+  k2Table?: true
   /** Wave 42: a 4-column kinded table with an active facet pill and a pager; `loading` shows its skeleton; `pinned: true` is a sticky-header card, `'striped-page'` a striped table on the page (`w42-states`). */
   w42States?: { loading?: true; empty?: true; pinned?: true | 'striped-page'; longError?: true }
   /** Wave 42: argo's workouts table and S2's sessions table in a fixed-width card (`w42-responsive`). */
