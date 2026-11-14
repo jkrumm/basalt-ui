@@ -1431,6 +1431,7 @@ rows:
         v3-expr-1-doctrine,
         v3-expr-1-seam,
         v3-expr-1-kit-fixes,
+        v3-expr-1-bypass-seam,
       ]
     facts: { 'brief': 'docs/v3/issues/g4/v3-freeze-g4.json' }
   - key: v3-teardown-views
@@ -1578,6 +1579,12 @@ rows:
     checkpoint: spec
     after: [v3-expr-1-doctrine]
     facts: { 'brief': 'docs/v3/issues/cycles/v3-expr-1-seam.json' }
+  - key: v3-expr-1-bypass-seam
+    title: 'primitive-bypass: exempt marks drawn through the geometry seam, add the HTML form'
+    repo: basalt-ui
+    kind: feature
+    after: [v3-expr-1-seam]
+    facts: { 'brief': 'docs/v3/issues/cycles/v3-expr-1-bypass-seam.json' }
   - key: v3-expr-1-kit-fixes
     title: 'Chart state heights, fact wrapping, Heatmap ticks, strip verdict and Meter track fixes from expression cycle 1'
     repo: basalt-ui
