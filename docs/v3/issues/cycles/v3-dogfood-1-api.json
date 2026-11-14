@@ -1,0 +1,23 @@
+{
+  "why": "Dogfood cycle 1 (docs/v3/cycles/dogfood-1.md) logged four P2 `api` findings and two P3s riding with them. dogfood-1.4: the shipped rules tell a page to pass `Phase` or `QueryStateLike`, and no subpath exports either, so the page reads the type off `ComponentProps<typeof StatCard>['phase']`. dogfood-1.5: the console's StatCard takes `xLabels` (start, now, end); the v3 StatCard reserves the 16 px label row in its 72 px box and its loading skeleton draws three label bars, but the prop is missing, so every chart slot writes the row itself. dogfood-1.6: `relativeTime` cells read `Date.now()` once at mount (`use-data-table.ts:157`) with no option, so a fixed-clock fixture reads `5 days ago` for an Issue 42 minutes old and the ages never tick; the console's row takes `now`. dogfood-1.10: `c.status` prints the raw option (`working`), with no labels; the console's Lozenge says `Working`. P3s: dogfood-1.17, a filter pill shows no per-option counts where the console's sidebar shows each project's open count; dogfood-1.18, `PageAside` has no header link, where the console's peek carries `Open full page`.",
+  "what": "Phase types exported, StatCard x labels, a table clock, status labels; two P3 polish items.",
+  "owns": [
+    "packages/basalt-ui/src/index.ts (type exports)",
+    "packages/basalt-ui/src/cards/contract.ts and src/cards/stat-card*.tsx (a `chore: contract amendment` commit first)",
+    "packages/basalt-ui/src/table/contract.ts, src/table/use-data-table.ts, src/table/core/kinds*.ts* (a `chore: contract amendment` commit first)",
+    "packages/basalt-ui/src/controls/** and src/page/page-aside.tsx for the P3s, if taken",
+    "the export-surface snapshot (`export-surface --update`), docs under packages/basalt-ui/docs/ (generated), unit tests"
+  ],
+  "must_not_touch": ["docs/v3/ARCHITECTURE.md", "apps/playground/src/cycle/**"],
+  "change": "(1) Export the types `Phase`, `QueryStateLike`, `FrameState` and `Empty` from `basalt-ui` (dogfood-1.4). (2) `StatCard` takes `xLabels?: readonly [string, string, string]` and draws them in the reserved 16 px row under the slot, so the slot draws the plot alone (dogfood-1.5). (3) `useDataTable` takes `now?: number` for a fixed clock, and without it the relative times tick once a minute (dogfood-1.6). (4) `c.status` takes `labels?: Record<O, string>` and prints the label beside the tone dot (dogfood-1.10). The P3s ride along only if they fit: option counts on a filter spec (dogfood-1.17) and a header link on `PageAside` (dogfood-1.18); a P3 left out is named in the PR.",
+  "commits": "chore: contract amendment commits for the cards and table contracts, then feat: commits in packages/basalt-ui.",
+  "proof": "make check-fast; unit tests for each of (1) to (4).",
+  "acceptance": [
+    "`import type { Phase, QueryStateLike, FrameState, Empty } from 'basalt-ui'` type-checks in the playground",
+    "A StatCard with `xLabels` draws three labels under its chart and the slot no longer needs its own label row",
+    "A table given `now` prints ages against it; without it, ages tick (unit test with fake timers)",
+    "`c.status` with `labels` prints the label, and the tone dot is unchanged",
+    "make check passes"
+  ],
+  "out_of_scope": "ChartCard (v3-state-1-wiring); PageAside binding a record field (v3-shell-1-api)."
+}

@@ -1,0 +1,20 @@
+{
+  "why": "Dogfood cycle 1 (docs/v3/cycles/dogfood-1.md) filters the console's Issues by project, origin and state through a Section's `filterSlot`, and filters the rows it hands `useDataTable`. With `?project=pearl&state=waiting` nothing matches and the table prints `No rows yet` with no action (dogfood-1.2, shot `cycle-dogfood-project-pearl-state-waiting--dark--1800x1200.png`). That is a wrong result: there are rows, the filters hid them. The console says `Nothing matches these filters.` with a link back to everything, and `EmptyState`'s own doc says a filtered empty offers Clear filters. `useDataTable` takes no `empty`, so a page filter has no way to tell the table it is filtered. Every page whose filters live in a store field outside the table repeats this.",
+  "what": "A table filtered by page controls says so and offers Clear filters.",
+  "owns": [
+    "packages/basalt-ui/src/table/contract.ts (a `chore: contract amendment` commit)",
+    "packages/basalt-ui/src/table/use-data-table.ts",
+    "packages/basalt-ui/src/table/parts/phases.tsx",
+    "unit tests beside them; packages/basalt-ui/docs/data-table.md (generated)"
+  ],
+  "must_not_touch": ["docs/v3/ARCHITECTURE.md", "apps/playground/src/cycle/**"],
+  "change": "`v3-wiring-1-api` (wiring-1.12) gives `UseDataTable` the frame's `empty?: Empty | null` and shows its `cause`; this row runs after it and adds what it leaves: the empty arm draws `action` as the one action and `filtered.reset` as Clear filters. If wiring-1-api landed without the `empty` option, add it here with a `chore: contract amendment` commit. With no `empty`, keep a default line that does not claim the data does not exist yet when the table cannot know. A unit test renders an empty client table with `empty: { cause: 'Nothing matches these filters.', filtered: { reset } }` and clicks Clear filters.",
+  "commits": "fix: in packages/basalt-ui (and the contract amendment first, only if `empty` is still missing).",
+  "proof": "make check-fast; the unit test.",
+  "acceptance": [
+    "`useDataTable({ empty })` type-checks with the `Empty` shape and the empty arm draws its cause",
+    "A filtered empty shows Clear filters, and clicking it calls `reset` (unit test)",
+    "make check passes"
+  ],
+  "out_of_scope": "Reading the page store's filters automatically; a table's own column filters."
+}

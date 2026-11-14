@@ -8,7 +8,7 @@
     "docs/v3/issues/cycles/v3-cycle-*.json of cycles not yet filed (their owns line, only if CYCLES.md changes it)"
   ],
   "must_not_touch": ["docs/v3/ARCHITECTURE.md", "apps/playground/src/cycle/**"],
-  "change": "The matrix keeps reading cycle routes (they are real composition evidence) and also reads waivers from `apps/playground/src/cycle/*/known.ts`, with the same `KnownFinding` shape and the same 'an entry that matched nothing fails the full run' rule; the `/cycle/state` and `/cycle/shell*` lines move there, each still naming its owner row. Or, if the architecture prefers, `CYCLES.md` step 2 allows a cycle PR its `known.ts` lines and nothing else under `packages/`; the PR says which and why. The route-file budget excludes `routes/cycle/` as `budget.test.ts` does.",
+  "change": "The matrix keeps reading cycle routes (they are real composition evidence) and also reads waivers from `apps/playground/src/cycle/*/known.ts`, with the same `KnownFinding` shape and the same 'an entry that matched nothing fails the full run' rule; the `/cycle/state` and `/cycle/shell*` lines move there, each still naming its owner row. Or, if the architecture prefers, `CYCLES.md` step 2 allows a cycle PR its `known.ts` lines and nothing else under `packages/`; the PR says which and why. The route-file budget excludes `routes/cycle/` as `budget.test.ts` does: this part landed with dogfood cycle 1 (dogfood-1.20, `packages/basalt-ui/scripts/check-budgets/areas/playground.ts`), so confirm it and leave it.",
   "commits": "test: one commit in packages/basalt-ui; the waiver move and CYCLES.md in their own commits.",
   "proof": "make check; a matrix unit test that a waiver in a cycle folder covers its route's item.",
   "acceptance": [

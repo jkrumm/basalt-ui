@@ -1,0 +1,19 @@
+{
+  "why": "Dogfood cycle 1 (docs/v3/cycles/dogfood-1.md) logged two P2 `state` findings and one P3. dogfood-1.7: a StatCard in `loading` draws skeleton bars in its inset and the real footer facts beside them (`Peak 5 leads`), and in `error` the footer facts sit under `Could not load this.` (shots `cycle-dogfood-screen-loading--dark--1800x1200.png`, `cycle-dogfood-screen-error--light--1800x1200.png`); the console's skeleton draws the footer as bars too. dogfood-1.9: a row opened into the aside is not marked in the table, so with the aside open nothing says which row it shows (`cycle-dogfood-issue-login-crash--light--1800x1200.png`). P3 dogfood-1.14: in `stale` and `error` each of the four stat cards says `Updating` or carries its own Retry, four times in one row, where the console says it once in the page header.",
+  "what": "A loading or failed StatCard hides its footer values; the open row is marked.",
+  "owns": [
+    "packages/basalt-ui/src/cards/stat-card.tsx and src/cards/stat-card-parts.tsx",
+    "packages/basalt-ui/src/table/use-data-table.ts, src/table/parts/body.tsx (and src/table/contract.ts with a `chore: contract amendment` commit, if an option is added)",
+    "unit and layout tests beside them"
+  ],
+  "must_not_touch": ["docs/v3/ARCHITECTURE.md", "apps/playground/src/cycle/**"],
+  "change": "(1) In `loading` the StatCard footer draws a bar per fact value (labels may stay), and in `error` it draws the values as the muted dash, so no figure shows beside a state that contradicts it; the card's height does not change (dogfood-1.7). (2) The table marks the row whose detail is open: with `detail`, the row the detail shows; with `onRowActivate`, a row id the page passes (for example `activeRowId`), drawn as the selected row state with `aria-current` (dogfood-1.9). The P3 rides along only if it fits: one phase line for a CardGrid or StatGroup of cards that share a phase (dogfood-1.14); left out, the PR says so.",
+  "commits": "fix: commits in packages/basalt-ui; a contract amendment commit first if the table contract changes.",
+  "proof": "make check-fast; unit tests; shots of /cycle/dogfood?screen=loading and ?issue=login-crash.",
+  "acceptance": [
+    "A loading StatCard shows no footer value and an errored one shows dashes, at the ready card's height (unit or layout test)",
+    "With the aside open on /cycle/dogfood?issue=login-crash, row #642 is drawn selected and carries aria-current",
+    "make check passes"
+  ],
+  "out_of_scope": "The detail host into PageAside (v3-shell-1-detail-host)."
+}

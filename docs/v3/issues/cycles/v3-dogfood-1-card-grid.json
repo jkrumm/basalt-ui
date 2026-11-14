@@ -1,0 +1,19 @@
+{
+  "why": "Dogfood cycle 1 (docs/v3/cycles/dogfood-1.md) rebuilt the factory console's stat row: four StatCards in `CardGrid min=\"narrow\"`. At 1800x1200 the four cards take four of six tracks and a third of the row stays empty (dogfood-1.1, shot `cycle-dogfood--dark--1800x1200.png`); the console fills the row four across. With the aside docked the same grid fills exactly, so the cause is the track rule, not the cards: `cardGridVariants` writes `repeat(auto-fill, minmax(...))`, and `auto-fill` keeps the empty tracks at their width. Every dashboard with fewer cards than the row has tracks hits it, and no published prop changes it.",
+  "what": "A CardGrid row of N cards leaves no empty track: the cards share the row.",
+  "owns": [
+    "packages/basalt-ui/src/page/card-grid.tsx",
+    "packages/basalt-ui/docs/card-grid.md (generated, if its text changes)",
+    "layout tests and fixtures under packages/basalt-ui/tests/layout/"
+  ],
+  "must_not_touch": ["docs/v3/ARCHITECTURE.md", "apps/playground/src/cycle/**"],
+  "change": "Switch the three `min` tiers from `auto-fill` to `auto-fit`, so empty tracks collapse and the cards take the row. Decide, and state in the PR, what a lone card does on a wide page (it now fills the row); if that is wrong for a known page, cap the track with a max instead of keeping empty tracks. Add a layout test: four cards in a `CardGrid min=\"narrow\"` 1510 px wide each take a quarter of the row less the gaps; six cards at 390 px stack one per row.",
+  "commits": "fix: one commit in packages/basalt-ui.",
+  "proof": "make check-fast; the layout test; a playground shot of /cycle/dogfood at 1800x1200.",
+  "acceptance": [
+    "At 1800x1200, /cycle/dogfood's four stat cards fill the content width with no empty track (layout test and shot)",
+    "The existing CardGrid layout tests pass unchanged or the PR names each changed expectation and why",
+    "make check passes"
+  ],
+  "out_of_scope": "The phone form of a stat row (v3-dogfood-1-visual)."
+}

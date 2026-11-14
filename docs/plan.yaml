@@ -955,3 +955,58 @@ rows:
         v3-lint-1-dogfood,
       ]
     facts: { 'brief': 'docs/v3/issues/cycles/v3-cycle-lint-2.json' }
+  - key: v3-dogfood-1-card-grid
+    title: 'A CardGrid row of cards leaves no empty track, from dogfood cycle 1'
+    repo: basalt-ui
+    kind: bug
+    after: [v3-cycle-dogfood-1]
+    facts: { 'brief': 'docs/v3/issues/cycles/v3-dogfood-1-card-grid.json' }
+  - key: v3-dogfood-1-filtered-empty
+    title: 'A table filtered by page controls says so and offers Clear filters, from dogfood cycle 1'
+    repo: basalt-ui
+    kind: bug
+    after: [v3-cycle-dogfood-1, v3-wiring-1-api]
+    facts: { 'brief': 'docs/v3/issues/cycles/v3-dogfood-1-filtered-empty.json' }
+  - key: v3-dogfood-1-entity-sub
+    title: 'An entity cell never truncates its title for its sub, from dogfood cycle 1'
+    repo: basalt-ui
+    kind: bug
+    after: [v3-cycle-dogfood-1]
+    facts: { 'brief': 'docs/v3/issues/cycles/v3-dogfood-1-entity-sub.json' }
+  - key: v3-dogfood-1-api
+    title: 'Phase types exported, StatCard x labels, a table clock and status labels, from dogfood cycle 1'
+    repo: basalt-ui
+    kind: feature
+    after: [v3-dogfood-1-filtered-empty, v3-dogfood-1-entity-sub]
+    facts: { 'brief': 'docs/v3/issues/cycles/v3-dogfood-1-api.json' }
+  - key: v3-dogfood-1-state
+    title: 'A loading StatCard hides its footer values and the open row is marked, from dogfood cycle 1'
+    repo: basalt-ui
+    kind: bug
+    after: [v3-dogfood-1-api]
+    facts: { 'brief': 'docs/v3/issues/cycles/v3-dogfood-1-state.json' }
+  - key: v3-dogfood-1-visual
+    title: 'A stat row scrolls sideways on a phone and the StatCard passes the quality matrix, from dogfood cycle 1'
+    repo: basalt-ui
+    kind: feature
+    after: [v3-dogfood-1-card-grid, v3-wiring-1-statcard-target]
+    facts: { 'brief': 'docs/v3/issues/cycles/v3-dogfood-1-visual.json' }
+  - key: v3-cycle-dogfood-2
+    title: 'Improvement cycle 2: rebuild the factory console overview slice on v3'
+    repo: basalt-ui
+    kind: chore
+    seat: { tier: opus, effort: high }
+    after:
+      [
+        v3-dogfood-1-card-grid,
+        v3-dogfood-1-filtered-empty,
+        v3-dogfood-1-entity-sub,
+        v3-dogfood-1-api,
+        v3-dogfood-1-state,
+        v3-dogfood-1-visual,
+        v3-state-1-wiring,
+        v3-shell-1-detail-host,
+        v3-shell-1-api,
+        v3-shell-1-phone-aside,
+      ]
+    facts: { 'brief': 'docs/v3/issues/cycles/v3-cycle-dogfood-2.json' }
