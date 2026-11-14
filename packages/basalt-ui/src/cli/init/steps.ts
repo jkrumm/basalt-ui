@@ -2,7 +2,7 @@
  * The steps `init` runs, in order (docs/v3/concepts/skills-agent-layer.md section 4.1). Each takes
  * the one `Ctx`, does its part and returns; a step that cannot finish says so through `ctx.problems`
  * and the run goes on, so one failed install does not leave the files unplaced. A step is safe to
- * run twice: it writes only what differs. v3-sk-4 adds the hook step beside these.
+ * run twice: it writes only what differs. The hook step lives in `../lint/hook-step`.
  */
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs'
 import { basename, dirname, join, relative, resolve } from 'node:path'
@@ -226,6 +226,8 @@ export function seedBudgetFile(ctx: Ctx): void {
   writeBudget(ctx.root, seedBudget(ctx.args.profile))
   say(`wrote ${BUDGET_PATH}`)
 }
+
+export { installHook } from '../lint/hook-step'
 
 // ── formatter ignore ────────────────────────────────────────────────────────────────────────────
 

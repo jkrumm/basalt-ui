@@ -19,10 +19,10 @@ import { eject } from './eject'
 import { guardHook } from './guard-hook'
 import { COMMAND_OPTIONS, USAGE, unknownFlag } from './help'
 import { init } from './init/index'
+import { isHookCall, lint } from './lint'
 import { migrate } from './migrate'
 import { shot } from './shot'
 import { sync } from './sync'
-import { runV3Stub } from './verbs-v3'
 import type { BasaltInstall } from './basalt-install'
 import { routerSeedDest } from './router-wiring'
 
@@ -1114,7 +1114,8 @@ export function run(argv: string[], cwd: string = process.cwd()): number | Promi
     console.log(readFrameworkVersion(packageRoot()))
     return 0
   }
-  if (cmd !== undefined) {
+  // `lint --hook` is exempt: a hook that exits 1 reads as a pass, so it answers its own bad flags with 2.
+  if (cmd !== undefined && !(cmd === 'lint' && isHookCall(flags))) {
     const bad = unknownFlag(cmd, flags)
     if (bad !== null) {
       const accepted = Object.keys(COMMAND_OPTIONS[cmd] ?? {}).map((k) => `--${k}`)
@@ -1147,7 +1148,7 @@ export function run(argv: string[], cwd: string = process.cwd()): number | Promi
     case 'eject':
       return eject(flags, cwd)
     case 'lint':
-      return runV3Stub(cmd, flags)
+      return lint(flags, cwd)
     default:
       // Named, not just implied by a usage dump: a full-screen help block with no error line reads
       // like the command ran and chose to print help. Reported by a consumer who passed

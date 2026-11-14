@@ -1,0 +1,12 @@
+{
+  "permissions": { "allow": ["Bash(bun run:*)"] },
+  "hooks": {
+    "PreToolUse": [
+      {
+        "matcher": "Write|Edit|MultiEdit",
+        "hooks": [{ "type": "command", "command": "bunx basalt-ui guard-hook" }]
+      }
+    ]
+  },
+  "env": { "FORCE_COLOR": "1" }
+}
