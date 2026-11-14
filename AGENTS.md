@@ -121,7 +121,7 @@ bun run lint               # oxlint
 bun run fmt                # oxfmt (write)
 bun run fmt:check          # oxfmt (check only)
 bun run typecheck          # tsc across package + playground (see the dist footgun below)
-bun run pre                # fmt:check && lint && typecheck && check-theme && bun test
+bun run pre                # fmt:check && lint && typecheck && check-theme && budgets && literals, then `make test`: the unit suite in a host test slot
 make check                 # build + pre + the layout suite + pack-test — the full local gate
 make check-fast            # `check` with only the layout files the branch's changes reach — the lead's check; CI runs the rest
 make layout-fast           # just that layout step (BASE=<ref>, default origin/master)
@@ -162,7 +162,9 @@ tests), the layout suite, the coverage and agent-doc-drift gates, and the pack-t
 everything passed. `make check` runs them in sequence and is unchanged; `make check-fast` is the same but for the layout
 step, which runs only the files the branch's changes reach (a lead's check, `project.yaml` `checks`; CI runs the full suite on the head). It exits
 non-zero on the first failure and writes only gitignored output (`dist/`, `*.tgz`). `pre` alone is
-the fast inner loop.
+the fast inner loop. Its last step, the unit suite, is one `bun test` process at ~6.5 GB resident, so it runs through
+`make test` in a host test slot (`factory slot run`), like the layout suite; never run a bare whole-repo `bun test`
+from a lead session, scope it to the files you touched (`bun test <path>`) and leave the full suite to `pre`.
 
 1. Make changes.
 2. Run `bun run pre` to validate quickly; `make check` adds the build, the layout suite and the
@@ -281,7 +283,7 @@ a consumer is blocked, a fix is wanted downstream — and say which version went
   first, 45 min by default, `--wait-minutes <n>`). Local `make check` does not replace PR CI.
 - `packages/basalt-ui/**` and non-package changes are separate commits in one PR; `make sync-self` is its own
   non-package commit. Never edit `CHANGELOG.md`.
-- `make check` builds first; `bun run pre` is the inner loop. A fresh worktree needs `bun install` and a package build.
+- `make check` builds first; `bun run pre` is the inner loop (its unit step runs in a slot). A fresh worktree needs `bun install` and a package build.
 - The wave process is retired: work comes from Issues and `docs/plan.yaml` only. Leads rest on
   `docs/v3/ARCHITECTURE.md` and `docs/v3/DIRECTION.md`; superseded specs live in git history and on `v2`.
 - Paths in a facts file's `shared_append_only` are shared aggregators: edit only your own lines; on a rebase
