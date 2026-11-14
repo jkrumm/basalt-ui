@@ -780,6 +780,15 @@ describe('query — the four container states', () => {
     expect(screen.queryByText('No data to display.')).toBeNull()
   })
 
+  test('a paused query with no data reads Offline, not skeleton rows, header intact', () => {
+    const { container } = renderTable({ data: [], query: query({ fetchStatus: 'paused' }) })
+    expect(container.querySelectorAll('.mantine-Skeleton-root').length).toBe(0)
+    const offline = screen.getByText(/You are offline/)
+    expect(offline.closest('td')?.getAttribute('colspan')).toBe(String(COLUMNS.length))
+    expect(screen.getByRole('columnheader', { name: /Project/ })).toBeDefined()
+    expect(screen.queryByText('No data to display.')).toBeNull()
+  })
+
   test('error renders an ErrorState row spanning every column, with a working Retry', () => {
     const refetch = mock(() => undefined)
     renderTable({

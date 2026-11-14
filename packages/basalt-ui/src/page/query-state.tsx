@@ -2,6 +2,7 @@ import type { ReactElement, ReactNode } from 'react'
 import { cn } from '../core/cn'
 import { home } from '../core/messages/home'
 import { useMessages } from '../core/messages/use-messages'
+import { OfflineLine } from '../core/offline-line'
 import { resolvePhase } from '../core/phase'
 import type { Empty, ErrorKind } from '../core/phase'
 import type { Phase, QueryStateLike } from '../core/ports'
@@ -112,7 +113,7 @@ export function QueryState({
   if (resolved === null) {
     body = (
       <Notice tier={tier} alert={false}>
-        <p className="m-0 text-sm text-muted-foreground">{t('home.offline')}</p>
+        <OfflineLine />
       </Notice>
     )
   } else if (resolved.tag === 'loading') {

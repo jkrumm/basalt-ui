@@ -95,6 +95,7 @@ import {
   useRowDisclosure,
 } from './data-table-state'
 export { planColumnFold } from './data-table-fold'
+import { OfflineBody } from './offline-body'
 import { dataQueryBranch } from './query-branch'
 import { basaltTableFeatures } from './table-features'
 import type {
@@ -1487,6 +1488,8 @@ export function BasaltDataTable<T extends RowData>(props: BasaltDataTableProps<T
   const branch = query === undefined ? undefined : dataQueryBranch('BasaltDataTable', query)
   const showSkeleton = branch === undefined ? isLoading : branch === 'pending'
   const queryError = branch === 'error' && query !== undefined ? query : undefined
+  // A paused fetch with no data: the body reads Offline, as `QueryState` reads it, not skeleton rows.
+  const showOffline = branch === 'offline'
   // The card projection unmounts the table, so the fold and the containment wrapper go inactive with
   // it — their measuring effects re-attach to the remounted table when the width returns.
   const { cards: showCards, rootRef: projectionRootRef } = useCardProjection(
@@ -1518,7 +1521,7 @@ export function BasaltDataTable<T extends RowData>(props: BasaltDataTableProps<T
     // implicit one beside it would stack two sticky columns nobody asked for.
     // A one-column table has nothing to scroll beside an identifier.
     allowPin: columnPinning.start.length === 0 && columns.length > 1,
-    headerOnly: showSkeleton || queryError !== undefined,
+    headerOnly: showSkeleton || showOffline || queryError !== undefined,
     renderedRows,
   })
   const columnVisibility: ColumnVisibilityState = useMemo(
@@ -1658,7 +1661,7 @@ export function BasaltDataTable<T extends RowData>(props: BasaltDataTableProps<T
   // The rows actually rendered, not `data` — a filter or a page index that matches nothing leaves
   // `data` non-empty while the body has nothing in it, and a blank body reads as a broken table.
   const rows = table.getRowModel().rows
-  const stateless = showSkeleton || queryError !== undefined
+  const stateless = showSkeleton || showOffline || queryError !== undefined
   useLayoutEffect(() => {
     renderedRows.current = rows.length
   })
@@ -1715,6 +1718,7 @@ export function BasaltDataTable<T extends RowData>(props: BasaltDataTableProps<T
       onRetry={() => void queryError.refetch()}
     />
   )
+  const offlineNode = <OfflineBody />
   const emptyNode = (
     <HostTitleContext value={title}>
       {emptyState ?? <EmptyState tier="section" title="No data to display." />}
@@ -1833,6 +1837,10 @@ export function BasaltDataTable<T extends RowData>(props: BasaltDataTableProps<T
         {queryError !== undefined ? (
           <Table.Tr>
             <Table.Td colSpan={spanCount}>{errorNode}</Table.Td>
+          </Table.Tr>
+        ) : showOffline ? (
+          <Table.Tr>
+            <Table.Td colSpan={spanCount}>{offlineNode}</Table.Td>
           </Table.Tr>
         ) : showSkeleton ? (
           // The same visible columns as the header — a folded table loads folded, and the pinned
@@ -1975,17 +1983,19 @@ export function BasaltDataTable<T extends RowData>(props: BasaltDataTableProps<T
     <Stack gap="xs" className={cx(classNames?.table)}>
       {queryError !== undefined
         ? errorNode
-        : showSkeleton
-          ? Array.from({ length: skeletonCount }, (_, index) => (
-              <Skeleton key={`skeleton-${index}`} height={48} radius="md" />
-            ))
-          : rows.length === 0
-            ? emptyNode
-            : rows.map((row) => (
-                <Box key={row.id} {...activationProps(onRowActivate, row.original)}>
-                  {renderCard?.(row.original)}
-                </Box>
-              ))}
+        : showOffline
+          ? offlineNode
+          : showSkeleton
+            ? Array.from({ length: skeletonCount }, (_, index) => (
+                <Skeleton key={`skeleton-${index}`} height={48} radius="md" />
+              ))
+            : rows.length === 0
+              ? emptyNode
+              : rows.map((row) => (
+                  <Box key={row.id} {...activationProps(onRowActivate, row.original)}>
+                    {renderCard?.(row.original)}
+                  </Box>
+                ))}
     </Stack>
   )
 
