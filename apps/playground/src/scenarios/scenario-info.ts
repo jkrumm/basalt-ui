@@ -66,6 +66,36 @@ export const SCENARIO_INFO: readonly ScenarioInfo[] = [
     blurb: 'A replayed chat reply: reasoning, markdown, code, a diagram and a tool call.',
   },
   {
+    id: 'calibrate-good',
+    title: 'Calibration seed 1',
+    blurb: 'A reviewer calibration seed, shot blind: score it without knowing what it holds.',
+  },
+  {
+    id: 'calibrate-delta-fill',
+    title: 'Calibration seed 2',
+    blurb: 'A reviewer calibration seed, shot blind: score it without knowing what it holds.',
+  },
+  {
+    id: 'calibrate-empty-half',
+    title: 'Calibration seed 3',
+    blurb: 'A reviewer calibration seed, shot blind: score it without knowing what it holds.',
+  },
+  {
+    id: 'calibrate-repeated-axis',
+    title: 'Calibration seed 4',
+    blurb: 'A reviewer calibration seed, shot blind: score it without knowing what it holds.',
+  },
+  {
+    id: 'calibrate-accent-tab',
+    title: 'Calibration seed 5',
+    blurb: 'A reviewer calibration seed, shot blind: score it without knowing what it holds.',
+  },
+  {
+    id: 'calibrate-banned-subtitle',
+    title: 'Calibration seed 6',
+    blurb: 'A reviewer calibration seed, shot blind: score it without knowing what it holds.',
+  },
+  {
     id: 'expr-c01',
     title: 'Trial c01: pipeline pace',
     blurb: 'Is this run on pace against the best run, and which stage is costing or saving time?',

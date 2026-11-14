@@ -42,6 +42,17 @@ describe('findScenario', () => {
     expect(SCENARIO_NAMES).toContain('agent-stream')
   })
 
+  it.each([
+    'calibrate-good',
+    'calibrate-delta-fill',
+    'calibrate-empty-half',
+    'calibrate-repeated-axis',
+    'calibrate-accent-tab',
+    'calibrate-banned-subtitle',
+  ])('registers the calibration seed %s for the blind recording', (name) => {
+    expect(SCENARIO_NAMES).toContain(name)
+  })
+
   it.each(['constructor', 'toString', '__proto__', 'hasOwnProperty', 'nope'])(
     'treats %s as unknown',
     (name) => {

@@ -14,6 +14,12 @@ import { SettingsScenario } from './S6Settings'
 import { BodyScenario } from './S7Body'
 import { MapScenario } from './S8Map'
 import { MdxScenario } from './mdx-scenario'
+import { CalibrateAccentTab } from './CalibrateAccentTab'
+import { CalibrateBannedSubtitle } from './CalibrateBannedSubtitle'
+import { CalibrateDeltaFill } from './CalibrateDeltaFill'
+import { CalibrateEmptyHalf } from './CalibrateEmptyHalf'
+import { CalibrateGood } from './CalibrateGood'
+import { CalibrateRepeatedAxis } from './CalibrateRepeatedAxis'
 import { ExprC01Scenario } from './expr/c01/ExprC01'
 import { ExprC02Scenario } from './expr/c02/ExprC02'
 import { ExprC03Scenario } from './expr/c03/ExprC03'
@@ -39,6 +45,14 @@ const RENDERERS = {
   's8-map': (p) => <MapScenario {...p} />,
   mdx: () => <MdxScenario />,
   'agent-stream': () => <AgentStreamDemo />,
+  // Reviewer calibration seeds (Calibrate*.tsx): the owner-run blind
+  // recording shoots /scenarios/calibrate-<seed>; each root carries a data-shot probe id.
+  'calibrate-good': () => <CalibrateGood />,
+  'calibrate-delta-fill': () => <CalibrateDeltaFill />,
+  'calibrate-empty-half': () => <CalibrateEmptyHalf />,
+  'calibrate-repeated-axis': () => <CalibrateRepeatedAxis />,
+  'calibrate-accent-tab': () => <CalibrateAccentTab />,
+  'calibrate-banned-subtitle': () => <CalibrateBannedSubtitle />,
   // Expression cycle 1 trials (docs/v3/cycles/expression-1.md): one agent-built scenario per case.
   'expr-c01': (p) => <ExprC01Scenario {...p} />,
   'expr-c02': (p) => <ExprC02Scenario {...p} />,
