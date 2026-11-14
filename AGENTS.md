@@ -123,11 +123,17 @@ bun run fmt:check          # oxfmt (check only)
 bun run typecheck          # tsc across package + playground (see the dist footgun below)
 bun run pre                # fmt:check && lint && typecheck && check-theme && bun test
 make check                 # build + pre + the layout suite + pack-test — the full local gate
+make check-fast            # `check` with only the layout files the branch's changes reach — the lead's check; CI runs the rest
+make layout-fast           # just that layout step (BASE=<ref>, default origin/master)
 make verify                # probe production (curl basalt-ui.com) — not the local gate
 ```
 
-`pre` runs the unit suite; the **layout** suite (real CSS geometry in headless Chrome, ~10s) stays
-out of it and is reached by `make layout` or by `make check`. `make check` builds FIRST on
+`pre` runs the unit suite; the **layout** suite (real CSS geometry in headless Chrome, 127 files and
+~2300 tests, about half a second each, nearly all of it opening a page: 18 min measured on a loaded host) stays out of it and is reached by `make layout`, by `make check`, or
+in part by `make layout-fast` (`scripts/layout-select.ts` picks the files by name: a changed layout test and fixture,
+the tests named for a changed `src/` file, its folder or the fixture that imports it; a change no name places runs a
+6-file smoke set; a change no page can see, such as docs, scripts or unit tests, runs none). The pick is a heuristic, so CI
+holds the full suite. `make check` builds FIRST on
 purpose — `pre`'s `check-theme` and the playground's typecheck both resolve through `dist`, so a
 check that built last would grade the previous build.
 
@@ -153,7 +159,8 @@ artifact resolves.
 checks, builds first, then `pre` (fmt:check + lint + typecheck + check-theme + check-budgets + unit
 tests), the layout suite, the coverage and agent-doc-drift gates, and the pack-test. CI runs the same gates as parallel jobs (checks, unit, the layout suite sharded four ways with
 `bun test --shard`) behind one final `ci` job, so the run-level result `make merge-guard` reads still means
-everything passed. `make check` runs them in sequence and is unchanged. It exits
+everything passed. `make check` runs them in sequence and is unchanged; `make check-fast` is the same but for the layout
+step, which runs only the files the branch's changes reach (a lead's check, `project.yaml` `checks`; CI runs the full suite on the head). It exits
 non-zero on the first failure and writes only gitignored output (`dist/`, `*.tgz`). `pre` alone is
 the fast inner loop.
 
@@ -189,7 +196,7 @@ publishing is NOT a deploy — it is the release process (`make release`, below)
   staging set that mixes `packages/basalt-ui/` and non-package files.
 - **`make verify` probes production; `make check` is the local gate.** They are not interchangeable:
   `verify` makes a network call and does not run the tests.
-- **The layout suite needs Chrome.** It runs in CI and `make check`, never in `pre`.
+- **The layout suite needs Chrome.** It runs in CI, `make check` and (in part) `make check-fast`, never in `pre`.
 - **The layout suite is a memory budget.** The harness closes each test's browser context in `afterEach`
   (a page from `beforeAll` lives until the file's browser closes); before that, one run held 13 GB of
   Chrome. `make check` and `make layout` run it through `factory slot run` when `factory` is installed, so two

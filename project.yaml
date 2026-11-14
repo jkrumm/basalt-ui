@@ -6,6 +6,10 @@ ship:
   - paths: ['**']
     via: pr
 leads: 4
+# A lead runs `make check-fast` (the whole of `make check` but the layout suite, which runs only the files the
+# branch's changes reach: scripts/layout-select.ts). CI runs the full gate on the pull request head, the layout suite
+# sharded four ways, and `make merge-guard` demands that run green.
+checks: { fast: make check-fast, full: make check, ci: true }
 # The layout suite is a Chrome tree. Its context-per-test close keeps one run near 2.5 GB resident; a row that
 # adds browser work files itself `lane: browser`, so at most two such leads run at once.
 lanes:

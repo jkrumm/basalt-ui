@@ -1,5 +1,5 @@
 .DEFAULT_GOAL := help
-.PHONY: help check gen-check verify deploy logs pre test layout build evidence compare release release-dry sync-self merge-guard quality-matrix
+.PHONY: help check check-fast check-pre check-post gen-check verify deploy logs pre test layout layout-fast build evidence compare release release-dry sync-self merge-guard quality-matrix
 
 help: ## List targets
 	@grep -hE '^[a-z-]+:.*?## ' $(MAKEFILE_LIST) | awk 'BEGIN {FS = ":.*?## "}; {printf "  \033[36m%-14s\033[0m %s\n", $$1, $$2}'
@@ -14,13 +14,28 @@ SLOT = $(if $(shell command -v factory 2>/dev/null),factory slot run --name "$(n
 # `basalt-ui/*` through the package's `exports` — both read `dist`, not the working tree, so a gate
 # that built last would grade the previous build (packages/basalt-ui/MAINTAINING.md, "a gate reading
 # dist"). `pack-test` rebuilds anyway; the point of the first build is what `pre` reads.
+# `check` and `check-fast` differ in ONE step, the layout suite: `check` runs all of it, `check-fast` the files the
+# branch's changes reach (scripts/layout-select.ts). CI runs the full suite on every pull request head.
 check: ## Local CI gate: gen sync checks + build + pre + playground build + layout + coverage/doc-drift + pack-test
+	@$(MAKE) --no-print-directory check-pre
+	@$(SLOT) sh -c 'bun run test:layout && bun run test:layout:harness'
+	@$(MAKE) --no-print-directory check-post
+
+# The lead's local check (project.yaml `checks.fast`): everything of `check` but the layout suite is the same; the
+# layout step runs only the files the branch's changes reach, and CI (checks.ci) runs the rest.
+check-fast: ## Local check for a lead: `check` with only the layout files the branch touched (CI runs the full suite)
+	@$(MAKE) --no-print-directory check-pre
+	@$(MAKE) --no-print-directory layout-fast
+	@$(MAKE) --no-print-directory check-post
+
+check-pre:
 	@bun packages/basalt-ui/scripts/gen-oxlint.ts --check
 	@$(MAKE) --no-print-directory gen-check
 	@cd packages/basalt-ui && bun run build
 	@bun run pre
 	@bun --filter @basalt-ui/playground build
-	@$(SLOT) sh -c 'bun run test:layout && bun run test:layout:harness'
+
+check-post:
 	@$(MAKE) --no-print-directory quality-matrix
 	@bun packages/basalt-ui/scripts/check-coverage.ts --check
 	@bun packages/basalt-ui/scripts/check-agent-doc-drift.ts
@@ -57,6 +72,14 @@ test: ## Run the test suite
 layout: ## Run the layout regression suite (real CSS geometry, headless Chrome)
 	@$(SLOT) sh -c 'bun run test:layout && bun run test:layout:harness'
 
+# The layout files the branch's changes reach (scripts/layout-select.ts prints them and why, on stderr), plus the
+# harness self-test when any of them runs. No layout input changed: no slot is taken, nothing runs.
+LAYOUT_BUN = bun --config=./packages/basalt-ui/tests/layout/bunfig.toml test --timeout 60000
+layout-fast: ## Run only the layout files the branch's changes reach (BASE=<ref>, default origin/master)
+	@files="$$(bun scripts/layout-select.ts --base $(or $(BASE),origin/master))" || exit $$?; \
+	if [ -z "$$files" ]; then exit 0; fi; \
+	$(subst layout",layout-fast",$(SLOT)) sh -c '$(LAYOUT_BUN) '"$$(echo $$files)"' && bun run test:layout:harness'
+
 build: ## Build the published package (dist-first tsup + declarations)
 	@cd packages/basalt-ui && bun run build
 
@@ -81,7 +104,7 @@ evidence: ## Measure bundle/screens/lighthouse/...: make evidence LABEL=<label> 
 # schemes) unless LANES excludes `quality`. Needs the built package and playground deps, like `check`.
 QUALITY_MATRIX ?= sampled
 quality-matrix: ## Quality matrix in real Chrome: make quality-matrix [QUALITY_MATRIX=sampled|full]
-	@$(SLOT) sh -c 'BASALT_MATRIX=$(QUALITY_MATRIX) bun --config=./packages/basalt-ui/tests/quality/matrix/bunfig.toml test --timeout 180000 packages/basalt-ui/tests/quality/matrix'
+	@$(subst layout",quality-matrix",$(SLOT)) sh -c 'BASALT_MATRIX=$(QUALITY_MATRIX) bun --config=./packages/basalt-ui/tests/quality/matrix/bunfig.toml test --timeout 180000 packages/basalt-ui/tests/quality/matrix'
 
 # Design-parity board (scripts/evidence/compare.ts): crops each mapped playground pattern beside the local
 # Keel reference (.design-parity/keel/) into .design-parity/<LABEL>/ unless OUT is given. Images and board.html
