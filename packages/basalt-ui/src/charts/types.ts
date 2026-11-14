@@ -26,8 +26,9 @@ export type ChartSeries<T> = {
    * series whose `getValue` is always `null` is a legend-only entry (a zone or reference key). */
   getValue: (d: T) => number | null
   /** The legend swatch shape. Default: the kind's own mark (`line` in `Lines`, `bar` in `Bars`). */
-  /** `dot` is a filled dot swatch, `ring` a hollow one (a scatter's keys). */
-  mark?: 'line' | 'bar' | 'area' | 'dot' | 'ring' | undefined
+  /** `dot` is a filled dot swatch, `ring` a hollow one (a scatter's keys); `hollow` is an outlined
+   * square (a seam-drawn open mark). */
+  mark?: 'line' | 'bar' | 'area' | 'dot' | 'ring' | 'hollow' | undefined
   /** Default `'solid'`; `'dashed'` is `VX.dashArray` on the line, the legend and the tooltip. */
   dash?: 'solid' | 'dashed' | undefined
   /** Interpolation between points. Default `'linear'`: discrete values (a daily total, a monthly

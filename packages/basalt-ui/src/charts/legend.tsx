@@ -187,6 +187,23 @@ function Swatch({ s, mode }: { s: SwatchStyle; mode: LegendMode }): ReactElement
         }}
       />
     )
+  // An open mark's key: the bar's square, outlined in the colour.
+  if (s.mark === 'hollow')
+    return (
+      <span
+        aria-hidden
+        className={mode === 'dots' ? classes.dot : classes.chip}
+        style={{
+          width: size,
+          height: size,
+          boxSizing: 'border-box',
+          // theme-allow raw-surface — swatch geometry, not a surface corner
+          borderRadius: 2,
+          border: `1.5px solid ${s.color}`,
+          flex: 'none',
+        }}
+      />
+    )
   return (
     <span
       aria-hidden

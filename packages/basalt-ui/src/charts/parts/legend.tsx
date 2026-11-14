@@ -28,6 +28,16 @@ export type LegendProps = {
   concealed?: boolean
 }
 
+/** The row's swatch shape per entry swatch: a line key, a dot, a ring, a square or an open square. */
+const SWATCH_MARK = {
+  solid: 'line',
+  dashed: 'line',
+  dot: 'dot',
+  ring: 'ring',
+  bar: 'bar',
+  hollow: 'hollow',
+} as const satisfies Record<NonNullable<LegendEntry['swatch']>, ChartSeries<never>['mark']>
+
 /** A legend entry as the flat series the row reads: legend-only, so its value is always absent. */
 function asSeries(entry: LegendEntry, unavailable: string): ChartSeries<never> {
   return {
@@ -35,7 +45,7 @@ function asSeries(entry: LegendEntry, unavailable: string): ChartSeries<never> {
     label: entry.label,
     color: cssColor(entry.color),
     getValue: () => null,
-    mark: entry.swatch === 'dot' || entry.swatch === 'ring' ? entry.swatch : 'line',
+    mark: SWATCH_MARK[entry.swatch ?? 'solid'],
     ...(entry.swatch === 'dashed' && { dash: 'dashed' as const }),
     ...(entry.failed === true && { note: unavailable }),
   }
