@@ -166,7 +166,7 @@ const sortText = (s: { id: string; desc: boolean }): string => `${s.id}.${s.desc
  * route field. The schema comes from `c.codec`, which names columns by id and kind only, so it can
  * sit at module scope.
  *
- * @useWhen the table's search, filters, sort and page belong in the URL (a shared or saved view)
+ * @useWhen search, filters, sort and page of the table belong in the URL (a shared or saved view)
  * @neverWhen the table keeps its own memory (omit `state` on `useDataTable`)
  *
  * @example
