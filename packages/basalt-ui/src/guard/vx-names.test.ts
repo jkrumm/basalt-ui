@@ -11,6 +11,7 @@ import {
   VX_FAMILIES_PATH,
   VX_NAMES_PATH,
 } from '../../scripts/gen-vx-names'
+import { TOKENS } from '../tokens/table'
 import { BP, groupTokens, p, seriesTokens } from '../tokens/index'
 import { checkSource, DEFAULT_GUARD_CONFIG, REMOVED_VX_NAMES } from './index'
 import { BASALT_VX_FAMILIES } from '../common/vx-families'
@@ -24,6 +25,14 @@ describe('BASALT_VX_NAMES', () => {
   it('is the generator output byte for byte (no hand edits)', () => {
     expect(readFileSync(VX_NAMES_PATH, 'utf8')).toBe(renderVxNames(collectVxNames()))
     expect(readFileSync(VX_FAMILIES_PATH, 'utf8')).toBe(renderVxFamilies(collectVxNames()))
+  })
+
+  it('carries every name the v3 token table emits, and check-theme judges none of them', () => {
+    for (const { name } of TOKENS) {
+      expect(BASALT_VX_NAMES).toContain(`--vx-${name}`)
+      expect(kinds(`--vx-${name}`)).toEqual([])
+    }
+    expect(kinds('--vx-text-xs-lh')).toEqual([])
   })
 
   it('carries --vx-hit and the component-scoped names', () => {

@@ -8,7 +8,9 @@
  *
  * 1. `buildPaletteCss()` with no options — the exact function `basalt-ui tokens:css`
  *    writes the stylesheet from, so the palette half IS its name set.
- * 2. The component-scoped names basalt's own source declares (`--vx-hit-gap`,
+ * 2. The v3 token table (`TOKENS`) — every `--vx-<name>` the v3 sheets emit (`--vx-text-xs-lh`,
+ *    `--vx-canvas`, …), so a consumer's `var(--vx-text-xs-lh)` is never judged unknown.
+ * 3. The component-scoped names basalt's own source declares (`--vx-hit-gap`,
  *    `--vx-space-icon-size`, `--vx-keyboard-inset`), from every non-test file outside `src/guard/`:
  *    a declaration (`--vx-x:` — in a `.css` file or in CSS text inside a `.ts`/`.tsx` template
  *    literal) and, in `.ts`/`.tsx`, ANY quoted `'--vx-x'` string literal. The quoted form is
@@ -27,6 +29,7 @@ import { resolve } from 'node:path'
 import { Glob } from 'bun'
 import { basaltVxFamilies } from '../src/common/vx-family.ts'
 import { buildPaletteCss } from '../src/tokens/index.ts'
+import { TOKENS } from '../src/tokens/table.ts'
 
 const ROOT = resolve(import.meta.dirname, '..')
 export const VX_NAMES_PATH = resolve(ROOT, 'src/guard/vx-names.ts')
@@ -41,6 +44,7 @@ export function collectVxNames(): string[] {
     for (const [, name] of text.matchAll(re)) names.add(name as string) // group 1 is not optional
   }
   add(buildPaletteCss(), DECLARATION)
+  for (const { name } of TOKENS) names.add(`--vx-${name}`)
   for (const rel of new Glob('src/**/*.{ts,tsx,css}').scanSync(ROOT)) {
     // `src/css/` is the v3 sheet set: its names are judged by the v3 `check-tokens`, never fed to
     // this 2.x allowlist; `src/tokens/golden/` is the same v3 output pinned byte for byte.
