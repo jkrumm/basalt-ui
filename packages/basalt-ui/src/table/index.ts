@@ -24,3 +24,37 @@ export type { DataTableRowAction } from './data-table'
 export { col } from './core/kinds'
 export { DataTable } from './parts/data-table'
 export { useDataTable } from './use-data-table'
+
+// The parts `DataTable` composes: a bespoke layout takes the ones it wants (rung 3).
+export { TableToolbar } from './parts/toolbar'
+export { DataTableBody } from './parts/body'
+export { TablePager } from './parts/pager'
+export { BulkBar } from './parts/bulk-bar'
+
+// The URL bridge: `field.composite(tableCodec(c.codec({ ... })))` carries a table as one field.
+export { tableCodec } from './core/codec'
+export type { TableCodec, TableCodecOptions } from './core/codec'
+export type { CodecKind, CodecOptions, TableSchema } from './core/kinds'
+
+// The contract types (docs/v3/concepts/data-table.md section 4).
+export type {
+  BulkAction,
+  DataTableInstance,
+  DataTableProps,
+  Facets,
+  FilterModel,
+  KindColumn,
+  Mode,
+  RowAction,
+  Scrollport,
+  Selection,
+  StateHandle,
+  TableDisplay,
+  TableEscape,
+  TableRequest,
+  TableState,
+  Totals,
+  UseDataTable,
+  View,
+  ViewStore,
+} from './contract'
