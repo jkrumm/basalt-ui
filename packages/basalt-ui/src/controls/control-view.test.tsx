@@ -149,6 +149,37 @@ describe('one renderer per kind', () => {
     expect(handle.writes).toEqual([['eu']])
   })
 
+  test('multi: Escape closes the list and the popover and never writes', async () => {
+    const handle = memoryHandle<readonly string[]>('regions', [], {
+      kind: 'multi',
+      options: [
+        { value: 'eu', label: 'EU' },
+        { value: 'us', label: 'US' },
+      ] as never,
+    })
+    const { container, getByRole, queryByRole } = show(
+      <ControlView spec={spec(handle, 'Regions')} />,
+    )
+    const input = getByRole('combobox')
+    await act(async () => {
+      input.focus()
+      fireEvent.keyDown(input, { key: 'ArrowDown' })
+    })
+    await act(async () => {
+      fireEvent.click(getByRole('option', { name: 'EU' }))
+    })
+    expect(handle.writes).toEqual([['eu']])
+    // First Escape closes the list; the second is the one that reached the store.
+    for (let press = 0; press < 2; press += 1) {
+      await act(async () => {
+        fireEvent.keyDown(input, { key: 'Escape' })
+      })
+    }
+    expect(queryByRole('listbox')).toBeNull()
+    expect(handle.writes).toEqual([['eu']])
+    expect(container.querySelector('[data-slot="combobox-chip"]')?.textContent).toBe('EU')
+  })
+
   test('boolean: a switch by default, a checkbox with as', () => {
     const handle = memoryHandle('live', false, { kind: 'boolean' })
     const a = show(<ControlView spec={spec(handle, 'Live')} />)

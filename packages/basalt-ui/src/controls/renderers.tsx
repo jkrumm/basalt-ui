@@ -157,7 +157,10 @@ function MultiRenderer({
       className={className}
       items={options.map((o) => o.value)}
       value={[...value]}
-      onValueChange={(next) => {
+      onValueChange={(next, details) => {
+        // Base UI empties a multi combobox on Escape once the list is closed. A close key never
+        // unsets an applied filter; the explicit Clear and `Reset all` are the ways to do that.
+        if (details.reason === 'escape-key') return
         onChange(next)
       }}
       itemToStringLabel={labelOf}
