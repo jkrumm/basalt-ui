@@ -10,7 +10,8 @@ import { findManifestAbove } from '../install-root'
 import { MANIFEST_PATH, readManifest, writeManifest } from '../manifest'
 import type { Manifest } from '../manifest'
 import { applySync, differences, planSync } from './engine'
-import { noPresetFiles, renderBlock, renderManaged } from './render'
+import { presetFilesFor } from '../presets'
+import { renderBlock, renderManaged } from './render'
 import type { PresetFiles } from './render'
 
 export type SyncOptions = {
@@ -18,7 +19,7 @@ export type SyncOptions = {
   check?: boolean
   /** Shipped-source root; defaults to this package. Tests point it at a fixture package. */
   pkgRoot?: string
-  /** The generated preset files; v3-sk-3 wires the real one. Defaults to none. */
+  /** The generated preset files. Defaults to the shipped presets of `pkgRoot`. */
   presetFiles?: PresetFiles
 }
 
@@ -71,7 +72,10 @@ export function sync(opts: SyncOptions = {}, invocationCwd: string = process.cwd
   try {
     const units = [
       ...renderManaged(pkgRoot, manifest),
-      ...(opts.presetFiles ?? noPresetFiles)(manifest).map((u) => ({ ...u, generated: true })),
+      ...(opts.presetFiles ?? presetFilesFor(pkgRoot))(manifest).map((u) => ({
+        ...u,
+        generated: true,
+      })),
     ]
     plan = planSync(root, manifest, units, block)
   } catch (error) {

@@ -62,7 +62,7 @@ function run(dir: string, opts: SyncOptions = {}): Run {
   console.log = sink
   console.error = sink
   try {
-    return { code: sync({ pkgRoot: PKG, ...opts }, dir), log }
+    return { code: sync({ pkgRoot: PKG, presetFiles: () => [], ...opts }, dir), log }
   } finally {
     console.log = saved.log
     console.error = saved.error

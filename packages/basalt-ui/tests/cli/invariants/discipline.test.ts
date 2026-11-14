@@ -84,8 +84,7 @@ describe('CLI discipline', () => {
     },
   )
 
-  // flips in: v3-sk-3-init-doctor (`init --profile`, no inference)
-  it.failing('inv 5: the profile is declared, never inferred', async () => {
+  it('inv 5: the profile is declared, never inferred', async () => {
     const dir = makeRepo({ 'src/a.tsx': "import { Button } from 'basalt-ui/ui'\n" })
     const before = snapshot(dir)
     const bare = await cli(['init', '--no-install'], dir)
@@ -98,7 +97,7 @@ describe('CLI discipline', () => {
     expect(JSON.parse(read(dir, '.basalt/manifest.json')).profile).toBe('tokens')
   })
 
-  // flips in: v3-sk-3-init-doctor (init renders the managed shim; only init may name bunx)
+  // flips in: v3-sk-4-hook-shim (init renders the managed shim; only init may name bunx)
   it.failing('inv 6: every rendered command runs the local bin, never bunx or npx', async () => {
     const dir = makeRepo()
     await cli(['init', '--no-install', '--profile', 'app'], dir)
@@ -110,7 +109,7 @@ describe('CLI discipline', () => {
     expect(read(dir, '.basalt/hook.mjs')).toContain('node_modules/.bin/basalt-ui')
   })
 
-  // flips in: v3-sk-3-init-doctor (the shim names the bin the package ships)
+  // flips in: v3-sk-4-hook-shim (the shim names the bin the package ships)
   it.failing(
     'inv 7: the bin is named like the package, and the rendered shim resolves that name',
     async () => {

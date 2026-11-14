@@ -5,18 +5,8 @@
  * dependency-free — Node/Bun built-ins only, no `bun`-module import. Config is the consuming
  * package.json's `"basalt"` key; argo's values are the defaults.
  */
-import { spawnSync } from 'node:child_process'
 import { createHash } from 'node:crypto'
-import {
-  existsSync,
-  mkdirSync,
-  readdirSync,
-  rmdirSync,
-  statSync,
-  realpathSync,
-  unlinkSync,
-  writeFileSync,
-} from 'node:fs'
+import { existsSync, readdirSync, statSync } from 'node:fs'
 import { dirname, isAbsolute, join, relative, resolve, sep } from 'node:path'
 import { fileURLToPath } from 'node:url'
 
@@ -28,25 +18,16 @@ import { doctor } from './doctor'
 import { eject } from './eject'
 import { guardHook } from './guard-hook'
 import { COMMAND_OPTIONS, USAGE, unknownFlag } from './help'
-import { init } from './init'
+import { init } from './init/index'
 import { migrate } from './migrate'
 import { shot } from './shot'
 import { sync } from './sync'
 import { runV3Stub } from './verbs-v3'
 import type { BasaltInstall } from './basalt-install'
-import {
-  CODE_ROUTED_NOTE,
-  ROUTER_SEED_DESTS,
-  SHELL_LESS_NOTE,
-  START_PROVIDER_HINT,
-  routerSeedDest,
-  routerSeedDests,
-  routerSeedSkip,
-} from './router-wiring'
-import type { RouterSeedSkip } from './router-wiring'
+import { routerSeedDest } from './router-wiring'
 
 export type { BasaltInstall }
-import { hasDependency, parseJsonc, readIfExists, readPackageJson, stripJsonc } from './source-text'
+import { hasDependency, readIfExists, readPackageJson } from './source-text'
 import { fontsCss, normalizeColorFunctions, tokensCss } from './tokens-css'
 import { DEFAULT_ROOT, exemptRulePaths, resolveRoots } from './config'
 import type { BasaltConfig } from './config'
@@ -262,7 +243,7 @@ export function findBasaltInstall(cwd: string): BasaltInstall {
  * root-relative form when nothing resolves (a pre-install `init`), so the seed is still the shape a
  * later `bun install` makes true.
  */
-export function shippedAssetPath(install: BasaltInstall, fromDir: string, asset: string): string {
+function shippedAssetPath(install: BasaltInstall, fromDir: string, asset: string): string {
   if (install.dir === null) return `./node_modules/basalt-ui/${asset}`
   return `${relativePosix(fromDir, install.dir)}/${asset}`
 }
@@ -467,15 +448,9 @@ type TemplateVars = {
   GATE_STEPS: string
 }
 
-// The block markers the AGENTS.md template emits. The begin marker carries the framework version
-// (`<!-- basalt:begin 1.0.0 -->`), so the region is matched by the begin PREFIX, not an exact string.
-const BLOCK_BEGIN_PREFIX = '<!-- basalt:begin'
-const BLOCK_END = '<!-- basalt:end -->'
 export const MANIFEST_PATH = '.basalt/manifest.json'
 /** The host file the managed block is spliced into (and its manifest key). */
-export const AGENTS_MD = 'AGENTS.md'
-/** A `CLAUDE.md` shadows {@link AGENTS_MD} unless it imports it — `doctor` warns on one. */
-export const LEGACY_BLOCK_HOST = 'CLAUDE.md'
+const AGENTS_MD = 'AGENTS.md'
 
 export function sha256(text: string): string {
   return createHash('sha256').update(text, 'utf8').digest('hex')
@@ -502,7 +477,7 @@ export function readFrameworkVersion(pkgRoot: string): string {
  * basalt resolved, `bunx basalt-ui` only as the pre-install fallback (`bunx` does not re-resolve a
  * cached package, so it lets a consumer pin one version and be gated by another).
  */
-export function basaltBinCommand(install: BasaltInstall, cwd: string): string {
+function basaltBinCommand(install: BasaltInstall, cwd: string): string {
   if (install.dir === null) return 'bunx basalt-ui'
   const binDir = resolve(install.dir, '..', '.bin')
   return `${relativePosix(cwd, binDir).replace(/^\.\//, '')}/basalt-ui`
@@ -516,7 +491,7 @@ export const OXLINT_IGNORE_FLAG = "--ignore-pattern '.claude/worktrees/**'"
  * stay as steps of their own (drift is never skippable), then `make check` replaces the built-in
  * lint/theme/format steps. Without one, the built-in steps run. Rendered at `{{GATE_STEPS}}`.
  */
-export function ciGateSteps(cwd: string): string {
+function ciGateSteps(cwd: string): string {
   const owned = /^check\s*:/m.test(readIfExists(resolve(cwd, 'Makefile')) ?? '')
   const drift = ["- run: '{{BASALT_BIN}} doctor'", "- run: '{{BASALT_BIN}} sync --check'"]
   const steps = owned
@@ -588,130 +563,6 @@ function fillTemplate(tpl: string, vars: TemplateVars): string {
   // The marker is a YAML comment so the template stays valid YAML; GATE_STEPS itself carries
   // placeholders, so it expands before the generic pass.
   return fill(tpl.replace('# {{GATE_STEPS}}', vars.GATE_STEPS))
-}
-
-/**
- * The character span of the managed `basalt:begin … basalt:end` region, or null if absent.
- * Duplicate begin markers are an error, loudly — silently picking one region would splice into the
- * wrong place and leave the other stale forever.
- */
-function findBlockRegion(host: string): { start: number; end: number } | null {
-  const start = host.indexOf(BLOCK_BEGIN_PREFIX)
-  if (start === -1) return null
-  const duplicate = host.indexOf(BLOCK_BEGIN_PREFIX, start + BLOCK_BEGIN_PREFIX.length)
-  if (duplicate !== -1) {
-    throw new Error(
-      `duplicate \`${BLOCK_BEGIN_PREFIX}\` markers found in the host file — remove the stale ` +
-        'basalt block by hand, then re-run.',
-    )
-  }
-  const endMarker = host.indexOf(BLOCK_END, start)
-  if (endMarker === -1) return null
-  return { start, end: endMarker + BLOCK_END.length }
-}
-
-/**
- * Replace (or append) the managed block inside a host file. `block` is the fully-rendered template
- * INCLUDING its `basalt:begin … basalt:end` markers. Everything outside the region is preserved;
- * with no existing region the block is appended after a separating blank line.
- */
-function applyBlock(host: string, block: string): string {
-  const region = findBlockRegion(host)
-  if (region) {
-    return `${host.slice(0, region.start)}${block.trim()}${host.slice(region.end)}`
-  }
-  const base = host.trimEnd()
-  return base.length === 0 ? `${block.trim()}\n` : `${base}\n\n${block.trim()}\n`
-}
-
-/** True when both paths resolve to one file (a symlinked pair). A missing path is simply "no". */
-export function sameFile(a: string, b: string): boolean {
-  try {
-    return realpathSync(a) === realpathSync(b)
-  } catch (error) {
-    if ((error as NodeJS.ErrnoException).code === 'ENOENT') return false
-    throw error
-  }
-}
-
-/** True when the host text carries a managed block (begin marker present). */
-export function hasManagedBlock(host: string | null): boolean {
-  return host !== null && host.includes(BLOCK_BEGIN_PREFIX)
-}
-
-/**
- * The block region of a host, or why it cannot be read: duplicate begin markers, or a begin marker
- * with no end. Read by `doctor` to say whether a leftover `CLAUDE.md` is well-formed.
- */
-export function scanBlock(host: string): {
-  region: { start: number; end: number } | null
-  problem: string | null
-} {
-  const begin = hasManagedBlock(host)
-  if (!begin && !host.includes(BLOCK_END)) return { region: null, problem: null }
-  const bad = (problem: string): { region: null; problem: string } => ({ region: null, problem })
-  if (!begin) return bad(`\`${BLOCK_END}\` with no \`${BLOCK_BEGIN_PREFIX}\``)
-  let region: { start: number; end: number } | null
-  try {
-    region = findBlockRegion(host)
-  } catch (error) {
-    return bad((error as Error).message)
-  }
-  if (region === null) return bad(`\`${BLOCK_BEGIN_PREFIX}\` has no matching \`${BLOCK_END}\``)
-  // Exactly one end marker, after the begin: an orphan or extra one means the region is a guess.
-  if (host.indexOf(BLOCK_END) < region.start || host.indexOf(BLOCK_END, region.end) !== -1) {
-    return bad(`an extra or misplaced \`${BLOCK_END}\` outside the basalt block`)
-  }
-  return { region, problem: null }
-}
-
-/** One line that is exactly the `@AGENTS.md` import — not a prose or code-span mention, not `.bak`. */
-export function isAgentsImportLine(line: string): boolean {
-  return line.trim() === `@${AGENTS_MD}`
-}
-
-/** Whether a `CLAUDE.md` imports `AGENTS.md`, so Claude Code still loads it. */
-export function importsAgentsMd(text: string): boolean {
-  return text.split(/\r?\n/).some(isAgentsImportLine)
-}
-
-/** Longest an install or first build `init` waits for. */
-const RUN_TIMEOUT_MS = 5 * 60_000
-
-/** Scaffold options. `noMergeLint`: `--no-merge-lint` leaves an existing `.oxlintrc.json` untouched. */
-export type ScaffoldFlags = {
-  noMergeLint?: boolean
-  /** Shipped-source root; defaults to this package. Tests point it at a scratch package. */
-  pkgRoot?: string
-  /** Runs a command in the app dir for `init` (install, first vite build); true on exit 0. Absent: `init` runs nothing and prints the command. */
-  run?: (argv: string[], cwd: string) => boolean
-}
-
-export { ROUTER_SEED_DESTS, START_PROVIDER_HINT, routerSeedDest, routerSeedDests }
-
-export const START_APP_NOTE = `TanStack Start app — no main.tsx/nav.tsx/__root.tsx seeded (Start owns the router); ${START_PROVIDER_HINT}.`
-
-/**
- * The router seeds an app does not get, for `init` and `sync`: why (`start` | `code-routed` |
- * `shell-less` | null) and which dests. A tokens-only consumer gets none of them either; so does an
- * app that declares `basalt.shell: false` — the nav and root seeds are a pair, so the whole set goes.
- */
-export function routerSeedPlan(
-  cwd: string,
-  appRel: string,
-  tokensOnly = false,
-): { skip: RouterSeedSkip; skipped: Set<string> } {
-  const detected = tokensOnly ? null : routerSeedSkip(cwd, appRel)
-  const skip =
-    detected ?? (!tokensOnly && readBasaltConfig(cwd).shell === false ? 'shell-less' : null)
-  return { skip, skipped: new Set(tokensOnly || skip !== null ? routerSeedDests(appRel) : []) }
-}
-
-/** The note `init` prints for a router-seed skip, or null when nothing was skipped. */
-export function seedSkipNote(skip: RouterSeedSkip): string | null {
-  if (skip === 'start') return START_APP_NOTE
-  if (skip === 'shell-less') return SHELL_LESS_NOTE
-  return skip === 'code-routed' ? CODE_ROUTED_NOTE : null
 }
 
 /** The app directory a command's app-scoped half targets: `rel` is '' when it is the install root. */
@@ -812,18 +663,6 @@ export function oxlintBinResolves(dir: string): boolean {
   for (let d = dir; ; d = dirname(d)) {
     if (existsSync(resolve(d, 'node_modules/.bin/oxlint'))) return true
     if (d === root || dirname(d) === d) return false
-  }
-}
-
-/** Resolve a run's placement flags once, from the consumer cwd. */
-export function resolvePlacement(cwd: string): PlacementFlags {
-  const repoRoot = findRepoRoot(cwd)
-  const app = resolveAppDir(cwd)
-  return {
-    isPackageRepoRoot: repoRoot === cwd,
-    repoRoot,
-    appRel: 'error' in app ? '' : app.rel,
-    appError: 'error' in app ? app.error : null,
   }
 }
 
@@ -1033,34 +872,6 @@ export function managedFiles(
   ]
 }
 
-/**
- * The placement skips as sentences — one text for `init` and `sync`. `extends` alone is NOT the
- * recipe for the hook: lefthook runs every merged command at the REPO ROOT, where there is no oxlint
- * config, binary or basalt config. `root:` moves the cwd per command (the preset's MONOREPO RECIPE).
- */
-export function placementNotices(cwd: string, placement: PlacementFlags): string[] {
-  const out: string[] = []
-  const install = findBasaltInstall(cwd)
-  const asset = (n: string): string => shippedAssetPath(install, placement.repoRoot, n)
-  // Bare, no `./` — a lefthook `root:` and an Actions `working-directory:` are already repo-relative.
-  const pkg = relativePosix(placement.repoRoot, cwd).replace(/^\.\//, '')
-  const notRoot = `(not the repo root — repo root detected at ${placement.repoRoot})`
-  if (!placement.isPackageRepoRoot) {
-    out.push(
-      `skipped lefthook.yml ${notRoot} — lefthook only reads config at the repo root. Extend ` +
-        `${asset('configs/lefthook.yml')} from your root lefthook.yml AND give every merged ` +
-        `command \`root: '${pkg}/'\` — \`pre-commit.commands.{oxlint,oxfmt,check-theme}.root: ` +
-        `'${pkg}/'\` — or they run at the root where your oxlint config, your binaries and your ` +
-        'basalt config are not.',
-      `skipped .github/workflows/check.yml ${notRoot} — GitHub Actions only reads .github/ at the ` +
-        `repo root; copy the steps from ${asset('configs/check.yml')} into your root CI workflow ` +
-        `instead, and give each one \`working-directory: ${pkg}\` — the same relocation \`root:\` ` +
-        'performs for lefthook, and needed for the same reason.',
-    )
-  }
-  return out
-}
-
 export type Manifest = {
   version: 1
   /** The basalt-ui version that last wrote this manifest — `doctor`'s one reconciliation axis. */
@@ -1102,177 +913,9 @@ export function readManifest(cwd: string): Manifest {
   }
 }
 
-/**
- * The managed NAMESPACES whose membership is derived (`RULE_NAMES`, `SKILL_NAMES`, `AGENT_NAMES`): a
- * file RETIRED upstream stays behind in every consumer that synced it, and Claude keeps loading it.
- * Scoped to these patterns, never the whole manifest: `lefthook.yml` and `check.yml` are legitimately
- * absent from `managedFiles()` below the repo root, and deleting them would remove a consumer's CI.
- */
-const RETIREABLE_DEST_PATTERNS: readonly RegExp[] = [
-  /^\.claude\/rules\/basalt-[a-z0-9-]+\.md$/,
-  /^\.claude\/skills\/basalt-[a-z0-9-]+\/(SKILL\.md|references\/.+\.md)$/,
-  /^\.claude\/agents\/basalt-[a-z0-9-]+\.md$/,
-]
-
-/** A tracked dest inside a derived namespace that this basalt version no longer ships. */
-export function retiredManagedDests(
-  manifest: Manifest,
-  files: readonly ManagedFile[],
-): readonly string[] {
-  const shipped = new Set(files.map((f) => f.dest))
-  return Object.keys(manifest.files)
-    .filter((dest) => !shipped.has(dest))
-    .filter((dest) => RETIREABLE_DEST_PATTERNS.some((re) => re.test(dest)))
-    .toSorted()
-}
-
-/** Outcome of one prune pass — `removed` was deleted, `drifted` was locally edited and left alone. */
-export type PruneResult = { removed: string[]; drifted: string[] }
-
-/**
- * Report a prune pass. Always names the files: a doctrine file DISAPPEARING from a consumer's
- * `.claude/` is exactly the class of change the sync diff exists to be reviewed, and `9 removed`
- * with no names is what made the kept-files line a false green before 1.23.0.
- */
-export function reportPrune(pruned: PruneResult): void {
-  if (pruned.removed.length > 0) {
-    console.log(
-      `\nRetired by this basalt-ui version (deleted — they no longer ship):\n` +
-        pruned.removed.map((dest) => `  · ${dest}`).join('\n'),
-    )
-  }
-  if (pruned.drifted.length === 0) return
-  console.log(
-    `\nRetired but locally edited, so left in place — your agent still loads them. Delete them, ` +
-      'or run `basalt-ui sync --force`:\n' +
-      pruned.drifted.map((dest) => `  · ${dest}`).join('\n'),
-  )
-}
-
-/**
- * Delete the managed rule/skill files this basalt version retired, and drop their manifest entries.
- * Same three-way discipline as every managed unit: an untouched file is deleted; a locally-edited
- * one is LEFT in place, reported, and keeps its entry so `sync --check` stays red and `--force` can
- * finish. `dryRun` is `--check`.
- */
-export function pruneRetiredManagedFiles(
-  cwd: string,
-  manifest: Manifest,
-  files: readonly ManagedFile[],
-  opts: { dryRun?: boolean; force?: boolean } = {},
-): PruneResult {
-  const result: PruneResult = { removed: [], drifted: [] }
-  for (const dest of retiredManagedDests(manifest, files)) {
-    const abs = resolve(cwd, dest)
-    const current = readIfExists(abs)
-    const recorded = manifest.files[dest]
-    const untouched =
-      current === null ||
-      sha256(current) === recorded ||
-      sha256(normalizeForLedger(current)) === recorded
-    if (!untouched && opts.force !== true) {
-      result.drifted.push(dest)
-      continue
-    }
-    result.removed.push(dest)
-    if (opts.dryRun === true) continue
-    delete manifest.files[dest]
-    if (current !== null) unlinkSync(abs)
-    removeEmptyParentDir(abs)
-  }
-  return result
-}
-
-/**
- * Remove a now-empty `.claude/skills/basalt-x/` directory after its `SKILL.md` was pruned. Silent by
- * design — a leftover empty directory is cosmetic, and a consumer file sitting beside the skill is a
- * reason to keep it, not an error to report.
- */
-function removeEmptyParentDir(fileAbs: string): void {
-  const inSkill = /[\\/]\.claude[\\/]skills[\\/]basalt-[^\\/]+(?:[\\/]|$)/
-  // The file's own dir always; then upward only inside `.claude/skills/<name>` (never `.claude/skills`).
-  for (let dir = dirname(fileAbs), first = true; first || inSkill.test(dir); dir = dirname(dir)) {
-    first = false
-    try {
-      if (readdirSync(dir).length > 0) return
-      rmdirSync(dir)
-    } catch {
-      return
-    }
-  }
-}
-
-/** The frozen `> Managed by basalt-ui (1.9.0).` opener every pre-fix DESIGN.md seed carries. */
-export function writeFileEnsuringDir(abs: string, content: string): void {
-  mkdirSync(dirname(abs), { recursive: true })
-  writeFileSync(abs, content)
-}
-
 /** Resolve the package root at runtime (two levels up from dist/cli/index.js). */
 export function packageRoot(): string {
   return fileURLToPath(new URL('../../', import.meta.url))
-}
-
-/**
- * The current on-disk state of a managed unit, plus the version the framework wants. For a
- * marker-spliced file the "current" unit is the existing region (markers included); otherwise it
- * is the whole file.
- */
-export type UnitState = {
-  /** The managed unit's current bytes on disk (block region / whole file). */
-  current: string | null
-  /** The managed unit's desired bytes from the shipped source. null = source not shipped yet. */
-  desired: string | null
-}
-
-/** The existing managed region (markers included, trimmed) inside a host file, or null. */
-function extractBlockRegion(host: string | null): string | null {
-  if (host === null) return null
-  const region = findBlockRegion(host)
-  if (region === null) return null
-  return host.slice(region.start, region.end).trim()
-}
-
-/** Read the current vs desired managed-unit bytes for a file. */
-export function unitState(file: ManagedFile, cwd: string, ctx: RenderContext): UnitState {
-  const desired = file.render(ctx)
-  const destAbs = resolve(cwd, file.dest)
-  const onDisk = readIfExists(destAbs)
-  if (file.markers) {
-    return { current: extractBlockRegion(onDisk), desired }
-  }
-  return { current: onDisk, desired }
-}
-
-/**
- * Normalize a managed unit's rendered bytes for the ledger comparison: blank the per-release version
- * in a marker's begin line, trim trailing whitespace per line and collapse blank-line runs. A
- * formatter run or a version bump is invisible to drift detection; a real content edit is not.
- */
-export function normalizeForLedger(text: string): string {
-  return text
-    .replace(/(<!-- basalt:begin)\s+\S+(\s*-->)/, '$1$2')
-    .split('\n')
-    .map((line) => line.replace(/[ \t]+$/, ''))
-    .join('\n')
-    .replace(/\n{2,}/g, '\n')
-    .trim()
-}
-
-/**
- * Write a managed unit to disk (whole file, or marker-spliced region). Returns the unit's hash —
- * `sha256(normalizeForLedger(desired))`, NOT the raw bytes: the normalized hash is what lets one
- * manifest entry survive a downstream formatter and a cross-version template change.
- */
-export function writeUnit(file: ManagedFile, cwd: string, desired: string): string {
-  const destAbs = resolve(cwd, file.dest)
-  if (file.markers) {
-    const host = readIfExists(destAbs) ?? ''
-    writeFileEnsuringDir(destAbs, applyBlock(host, desired))
-  } else {
-    writeFileEnsuringDir(destAbs, desired)
-  }
-  return sha256(normalizeForLedger(desired))
 }
 
 /** Build the render context for a run from the package root + consumer cwd/config. */
@@ -1284,142 +927,6 @@ export function renderContext(
   const vars = buildTemplateVars(pkgRoot, cwd, readBasaltConfig(cwd))
   return { pkgRoot, vars: ruleRoots === undefined ? vars : { ...vars, RULE_ROOTS: [...ruleRoots] } }
 }
-
-/**
- * The rule roots a run renders with: what `reconcileRoots` wrote, or — on `--check`, which writes
- * nothing — what a real sync would have written, so check and write never disagree.
- */
-export function ruleRootsFor(state: RootsState): readonly string[] | undefined {
-  if (state.kind === 'wrote') return state.roots
-  return state.kind === 'declared' && state.declared.length === 0 && state.unscanned.length > 0
-    ? state.unscanned
-    : undefined
-}
-
-// ──────────────────────────────────────────────────────────────────────────────
-// init — describing the repo it is actually in
-// ──────────────────────────────────────────────────────────────────────────────
-
-/**
- * Read → mutate → write the consumer's package.json, preserving its own indentation and trailing
- * newline. `mutate` returns false to abort the write (nothing to change). Returns whether a write
- * happened. Deliberately a JSON round-trip rather than a textual splice: key ORDER is preserved by
- * `JSON.parse`/`stringify`, and anything fancier would be a formatter this CLI has no business being.
- */
-export function patchPackageJson(
-  cwd: string,
-  mutate: (pkg: Record<string, unknown>) => boolean,
-): boolean {
-  const abs = resolve(cwd, 'package.json')
-  const raw = readIfExists(abs)
-  const pkg = readPackageJson<Record<string, unknown>>(cwd)
-  if (raw === null || pkg === null || !mutate(pkg)) return false
-  const indent = /\n([ \t]+)"/.exec(raw)?.[1] ?? '  '
-  writeFileSync(abs, JSON.stringify(pkg, null, indent) + (raw.endsWith('\n') ? '\n' : ''))
-  return true
-}
-
-/**
- * The source roots for THIS repo, inferred from its layout (without `basalt.roots` a workspace repo
- * scaffolds a `check-theme` that scans zero files while `doctor` reports green). A workspace repo
- * resolves to the `src/` of every package depending on basalt or Mantine, else every workspace
- * `src/`; a single-package repo to `src`. Empty when nothing plausible exists.
- */
-function detectRoots(cwd: string): string[] {
-  const workspacePackages = collectWorkspacePackages(cwd).packages.filter((pkg) => pkg.dir !== cwd)
-  const withSrc = workspacePackages.filter((pkg) => existsSync(resolve(pkg.dir, 'src')))
-  const uiPackages = withSrc.filter(
-    (pkg) => hasDependency(pkg.dir, 'basalt-ui') || hasDependency(pkg.dir, '@mantine/core'),
-  )
-  const chosen = uiPackages.length > 0 ? uiPackages : withSrc
-  if (chosen.length > 0) {
-    return chosen.map((pkg) => relativePosix(cwd, resolve(pkg.dir, 'src')).replace(/^\.\//, ''))
-  }
-  return existsSync(resolve(cwd, DEFAULT_ROOT)) ? [DEFAULT_ROOT] : []
-}
-
-/** What `reconcileRoots` found — the one roots decision `init` and `sync` both report from. */
-export type RootsState =
-  /** The key was absent and has just been written. */
-  | { readonly kind: 'wrote'; readonly roots: string[] }
-  /** The key is absent and nothing plausible could be inferred. */
-  | { readonly kind: 'undetectable' }
-  /** The key is already declared. `unscanned` names inferable roots it does not cover. */
-  | { readonly kind: 'declared'; readonly declared: string[]; readonly unscanned: string[] }
-
-/** True when `root` is `detected` itself or an ancestor of it. */
-function rootCovers(root: string, detected: string): boolean {
-  const r = root.replace(/\/+$/, '')
-  return detected === r || detected.startsWith(`${r}/`)
-}
-
-/**
- * Read — and when absent and `write` is set, seed — `basalt.roots`. Shared by `init` and `sync`: a
- * missing key silently guards a subset of the repo. A DECLARED value is never overwritten (a subset
- * is normal in a monorepo); a disagreement is reported as one line and the consumer decides.
- */
-export function reconcileRoots(cwd: string, opts: { write: boolean }): RootsState {
-  const declared = readBasaltConfig(cwd).roots
-  const detected = detectRoots(cwd)
-  if (declared !== undefined) {
-    const unscanned = detected.filter((d) => !declared.some((r) => rootCovers(r, d)))
-    return { kind: 'declared', declared, unscanned }
-  }
-  if (detected.length === 0) return { kind: 'undetectable' }
-  if (!opts.write) return { kind: 'declared', declared: [], unscanned: detected }
-  const wrote = patchPackageJson(cwd, (pkg) => {
-    const basalt = (pkg['basalt'] ?? {}) as Record<string, unknown>
-    if (basalt['roots'] !== undefined) return false
-    pkg['basalt'] = { ...basalt, roots: detected }
-    return true
-  })
-  return wrote ? { kind: 'wrote', roots: detected } : { kind: 'undetectable' }
-}
-
-/** The lines `init`/`sync` print for a roots reconciliation. Empty when there is nothing to say. */
-export function rootsNotices(state: RootsState): { log: string[]; error: string[] } {
-  if (state.kind === 'wrote') {
-    return {
-      log: [
-        `wrote "basalt": { "roots": ${JSON.stringify(state.roots)} } to package.json — ` +
-          'check-theme, the CI oxfmt globs and the default scan exemption all derive from it. ' +
-          'Correct it if your sources live elsewhere.',
-      ],
-      error: [],
-    }
-  }
-  if (state.kind === 'undetectable') {
-    return {
-      log: [],
-      error: [
-        'could not infer "basalt.roots" — no src/ here and no workspace package with one. Set ' +
-          '"basalt": { "roots": [...] } in package.json by hand, or check-theme will fail with ' +
-          '"0 files scanned".',
-      ],
-    }
-  }
-  if (state.unscanned.length === 0) return { log: [], error: [] }
-  if (state.declared.length === 0) {
-    return {
-      log: [],
-      error: [
-        `"basalt.roots" is not set — the guard is running on the built-in default ("${DEFAULT_ROOT}"). ` +
-          `This layout suggests ${JSON.stringify(state.unscanned)}; declare it in package.json.`,
-      ],
-    }
-  }
-  return {
-    log: [
-      `keeping your "basalt.roots" (${JSON.stringify(state.declared)}) — never overwritten. The ` +
-        `layout also has ${JSON.stringify(state.unscanned)}, which nothing scans; add it if it ` +
-        'should be guarded, or leave it if the exclusion is deliberate.',
-    ],
-    error: [],
-  }
-}
-
-/** Outcome of splicing the shipped preset into an `.oxlintrc.json` the consumer already had. */
-export type MergeLintResult = 'added' | 'already' | 'absent' | 'unreadable' | 'has-comments'
 
 /** The shipped oxlint files, package-relative — the one spelling every reader of them uses. */
 export const OXLINT_FILES = {
@@ -1443,116 +950,7 @@ export function basaltPresetEntry(entries: unknown): string | null {
   return [entries].flat().find((e): e is string => presets.some((f) => namesShipped(e, f))) ?? null
 }
 
-// ── The lefthook gate — checked via `lefthook dump`, not hand-rolled YAML parsing ────────────────
-//
-// `lefthook dump` resolves `extends`/`include`/remote configs/`root:` the same way lefthook itself
-// does, so this reads the MERGED config lefthook actually runs rather than pattern-matching the
-// YAML text for an `extends:` entry (which cannot tell a resolvable seam from a broken one, and
-// cannot see a gate spelled out directly instead of via `extends` at all). Best-effort: lefthook is
-// a consumer tool basalt neither installs nor requires, so an absent binary or a dump that fails
-// downgrades the verdict to a warning that says so, rather than inventing a pass or a fail.
-
-const LEFTHOOK_CONFIG_NAMES = ['lefthook.yml', 'lefthook.yaml', '.lefthook.yml', '.lefthook.yaml']
-
-/** The lefthook config present at `dir` (repo-root-relative name), or null when there is none. */
-function findLefthookConfig(dir: string): string | null {
-  return LEFTHOOK_CONFIG_NAMES.find((name) => existsSync(resolve(dir, name))) ?? null
-}
-
-/** Every command's `run:` string across every hook in a `lefthook dump --format json` payload. */
-function lefthookDumpRunLines(dump: Record<string, unknown>): string[] {
-  const out: string[] = []
-  for (const hook of Object.values(dump)) {
-    if (typeof hook !== 'object' || hook === null || !('commands' in hook)) continue
-    const commands = (hook as { commands?: unknown }).commands
-    if (typeof commands !== 'object' || commands === null) continue
-    for (const command of Object.values(commands as Record<string, unknown>)) {
-      const run = (command as { run?: unknown } | undefined)?.run
-      if (typeof run === 'string') out.push(run)
-    }
-  }
-  return out
-}
-
-export type LefthookGate =
-  /** No such config file — nothing is wired, and that is a legitimate consumer choice. */
-  | { readonly kind: 'no-file' }
-  /** A command runs the guard — the gate exists. */
-  | { readonly kind: 'wired'; readonly file: string }
-  /** `lefthook dump` merged everything and no command runs the guard — provably no gate. */
-  | { readonly kind: 'absent'; readonly file: string }
-  /** A config exists but `lefthook dump --format json` could not be run or parsed. */
-  | { readonly kind: 'unreadable'; readonly file: string }
-
-export function inspectLefthookGate(repoRoot: string): LefthookGate {
-  const file = findLefthookConfig(repoRoot)
-  if (file === null) return { kind: 'no-file' }
-  const localBin = resolve(repoRoot, 'node_modules/.bin/lefthook')
-  const bin = existsSync(localBin) ? localBin : 'lefthook'
-  let dump: Record<string, unknown> | null = null
-  try {
-    const result = spawnSync(bin, ['dump', '--format', 'json'], {
-      cwd: repoRoot,
-      encoding: 'utf8',
-      timeout: 10_000,
-      stdio: ['ignore', 'pipe', 'ignore'],
-    })
-    dump =
-      result.error === undefined && result.status === 0
-        ? (JSON.parse(result.stdout) as Record<string, unknown>)
-        : null
-  } catch {
-    dump = null
-  }
-  if (dump === null) return { kind: 'unreadable', file }
-  const wired = lefthookDumpRunLines(dump).some((run) => /\bcheck-theme\b/.test(run))
-  return wired ? { kind: 'wired', file } : { kind: 'absent', file }
-}
-
-const ONLY_EXPORT_COMPONENTS = 'react/only-export-components'
-
-/**
- * Splice the shipped preset into an EXISTING `.oxlintrc.json` (`init` does this unless
- * `--no-merge-lint`; the lint-debt notice says what it switches on). Prepends the preset so the
- * consumer's own `extends` entries still win. Only `extends` is rewritten; the config's own `plugins`
- * are untouched, and oxlint (1.87, checked with `--print-config`) unions them with the preset's.
- */
-export function mergeOxlintExtends(cwd: string, presetPath: string): MergeLintResult {
-  const abs = resolve(cwd, '.oxlintrc.json')
-  const raw = readIfExists(abs)
-  if (raw === null) return 'absent'
-  const cfg = parseJsonc(raw)
-  if (cfg === null) return 'unreadable'
-  if ([cfg['extends']].flat().some((e) => namesShipped(e, OXLINT_FILES.preset))) return 'already'
-  // Rewriting a JSONC config through JSON.stringify would silently delete the consumer's comments,
-  // which in a lint config are usually the WHY of every disabled rule. Refuse and say so.
-  if (stripJsonc(raw) !== raw) return 'has-comments'
-  // The guards-only preset is a subset of the full one — upgrading replaces it, never stacks it.
-  const existing = [cfg['extends']]
-    .flat()
-    .filter((e): e is string => typeof e === 'string' && !namesShipped(e, OXLINT_FILES.guards))
-  // Rebuild rather than spread, so `extends` keeps its original position when it was already there
-  // and lands first when it wasn't — a diff a human reviews should not reshuffle the whole file.
-  const merged: Record<string, unknown> = 'extends' in cfg ? {} : { extends: [presetPath] }
-  for (const [key, value] of Object.entries(cfg)) {
-    merged[key] = key === 'extends' ? [presetPath, ...existing] : value
-  }
-  // A consumer-set only-export-components (create-vite) replaces the preset's options: re-add `Route`.
-  const rules = merged['rules'] as Record<string, unknown> | undefined
-  if (rules !== undefined && ONLY_EXPORT_COMPONENTS in rules) {
-    const [level, options] = [rules[ONLY_EXPORT_COMPONENTS]].flat()
-    const opts = (typeof options === 'object' && options !== null ? options : {}) as {
-      allowExportNames?: string[]
-    }
-    const allowExportNames = [...new Set([...(opts.allowExportNames ?? []), 'Route'])]
-    rules[ONLY_EXPORT_COMPONENTS] = [level, { ...opts, allowExportNames }]
-  }
-  const indent = /\n([ \t]+)"/.exec(raw)?.[1] ?? '  '
-  writeFileSync(abs, JSON.stringify(merged, null, indent) + (raw.endsWith('\n') ? '\n' : ''))
-  return 'added'
-}
-
-// workspace-glob primitives — shared by findBasaltInstall and reconcileRoots
+// workspace-glob primitives — shared by findBasaltInstall
 
 /**
  * Which shape of consumer a command is looking at: `framework` (the Mantine app the scaffold is
@@ -1729,22 +1127,7 @@ export function run(argv: string[], cwd: string = process.cwd()): number | Promi
   }
   switch (cmd) {
     case 'init':
-      return init(cwd, {
-        noMergeLint: flags.includes('--no-merge-lint'),
-        // `--no-install` leaves `run` out: init writes the files and prints the commands (CI, offline).
-        ...(flags.includes('--no-install')
-          ? {}
-          : {
-              run: (argv: string[], dir: string) =>
-                // A timeout kills the child and leaves `status` null, which reads as failure; `shell` resolves `bun.cmd`/`npx.cmd` on Windows.
-                spawnSync(argv[0] ?? '', argv.slice(1), {
-                  cwd: dir,
-                  stdio: 'inherit',
-                  timeout: RUN_TIMEOUT_MS,
-                  shell: process.platform === 'win32',
-                }).status === 0,
-            }),
-      })
+      return init(flags, cwd)
     case 'sync':
       return sync({ force: flags.includes('--force'), check: flags.includes('--check') }, cwd)
     case 'check-theme':
