@@ -57,6 +57,15 @@ function createHeading(level: Level, own: SlugTracker | undefined) {
     const known = node === undefined ? undefined : minted.get(node)
     const slug = known ?? (own ?? shared ?? new SlugTracker()).slug(textOf(children))
     if (node !== undefined && known === undefined) minted.set(node, slug)
+    // A heading with no slug text (a stream cut mid-`## `, a punctuation-only title) has nothing to
+    // address: an anchor would be `<a href="#" aria-labelledby="">`, a link with no name.
+    if (slug === '') {
+      return (
+        <Tag {...(className !== undefined && { className })} {...rest}>
+          {children}
+        </Tag>
+      )
+    }
     return (
       <Tag id={slug} className={['group/heading', className].filter(Boolean).join(' ')} {...rest}>
         {children}

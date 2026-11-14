@@ -33,6 +33,14 @@ describe('headings', () => {
     expect(link?.getAttribute('aria-labelledby')).toBe('introduction')
   })
 
+  test('a heading with no slug text gets no id and no anchor (an unnamed link fails axe)', () => {
+    const H2 = h2Of(createHeadingComponents(new SlugTracker()))
+    render(<H2>{'!?'}</H2>)
+    const heading = screen.getByRole('heading', { level: 2 })
+    expect(heading.hasAttribute('id')).toBe(false)
+    expect(heading.querySelector('a')).toBeNull()
+  })
+
   test('every level builds, h1 to h6', () => {
     const components = createHeadingComponents(new SlugTracker())
     expect(
