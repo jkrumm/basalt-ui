@@ -8,6 +8,7 @@
 import { afterEach, describe, expect, test } from 'bun:test'
 import { existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs'
 import { dirname, join } from 'node:path'
+import { managedFiles } from '../../src/cli'
 import { cleanupTrees, makeTree, runCheck } from '../../src/cli/doctor/fixture.test'
 
 afterEach(cleanupTrees)
@@ -108,6 +109,15 @@ const write = (dir: string, rel: string, text: string): void => {
 }
 
 describe('router templates', () => {
+  test('init seeds every template to the destination the others import from', () => {
+    const seeds = new Map(managedFiles().map((f) => [f.source, f]))
+    for (const [tpl, dest] of Object.entries(SEEDS)) {
+      const file = seeds.get(`agent/templates/${tpl}`)
+      expect(file?.dest, tpl).toBe(dest)
+      expect(file?.mode, tpl).toBe('seed')
+    }
+  })
+
   test('no template names a 2.x router symbol', () => {
     for (const tpl of Object.keys(SEEDS)) {
       const text = readFileSync(join(pkgRoot, 'agent/templates', tpl), 'utf8')

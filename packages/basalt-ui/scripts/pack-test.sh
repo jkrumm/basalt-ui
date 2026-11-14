@@ -59,6 +59,8 @@ for f in \
   agent/rules/basalt-state.md agent/rules/basalt-charts.md \
   agent/templates/DESIGN.md.tpl agent/templates/AGENTS-block.md.tpl \
   agent/templates/AGENTS-block.tokens.md.tpl agent/templates/main.tpl \
+  agent/templates/_app.tpl agent/templates/_app-error.tpl agent/templates/_app-missing.tpl \
+  agent/templates/_app-pending.tpl \
   agent/skills/basalt-app/SKILL.md agent/skills/basalt-charts/SKILL.md \
   agent/skills/basalt-design/SKILL.md \
   llms.txt \

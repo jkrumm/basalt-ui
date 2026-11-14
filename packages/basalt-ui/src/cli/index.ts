@@ -853,7 +853,24 @@ export function managedFiles(
     source: 'agent/templates/main.tpl',
     render: (ctx) => readSource(ctx.pkgRoot, 'agent/templates/main.tpl'),
   }
-  const scaffolds: ManagedFile[] = [navModule, rootRoute, mainEntry]
+  /** The pathless `_app` layout and the pending, error and not-found components `main.tsx` imports. */
+  const appSeeds: ManagedFile[] = (
+    [
+      ['app', '_app.tpl'],
+      ['appError', '_app-error.tpl'],
+      ['appMissing', '_app-missing.tpl'],
+      ['appPending', '_app-pending.tpl'],
+    ] as const
+  ).map(([seed, tpl]) => ({
+    dest: routerSeedDest(placement.appRel, seed),
+    mode: 'seed',
+    source: `agent/templates/${tpl}`,
+    render: (ctx) => {
+      const text = readSource(ctx.pkgRoot, `agent/templates/${tpl}`)
+      return text === null ? null : fillTemplate(text, ctx.vars)
+    },
+  }))
+  const scaffolds: ManagedFile[] = [navModule, rootRoute, mainEntry, ...appSeeds]
 
   // lefthook and GitHub Actions only read config at the repo root: a package in a subdirectory skips
   // both (the root often has its own), and `sync` reports on the root's files instead.
