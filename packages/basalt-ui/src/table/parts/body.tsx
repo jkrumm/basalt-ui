@@ -97,10 +97,9 @@ function ExpandButton({
   return (
     <span data-slot="table-expand">
       <Button
-        size="icon-sm"
+        size="icon"
         variant="ghost"
         aria-label={label}
-        className="pointer-coarse:min-w-11"
         tabIndex={tabbable ? undefined : -1}
         onClick={(event) => {
           event.stopPropagation()
