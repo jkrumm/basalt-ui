@@ -45,6 +45,7 @@ import {
   errorName,
   groupingId,
   now,
+  startRouterLive,
 } from '../telemetry'
 import type { Telemetry } from '../telemetry'
 import type { BasaltDevDockTool } from '../dev-dock'
@@ -528,6 +529,7 @@ export function BasaltProvider({
   const router = useEffectiveRouter(mountedRouter)
   const client = readQueryClient(router)
   useDataTelemetry(router, client, emit)
+  useEffect(() => startRouterLive(router), [router])
 
   const [devTool, setDevTool] = useState<BasaltDevDockTool | null>(null)
   // `createBasaltTheme(theme)` — plus, when the theme lab's "Apply" switch is on, the delta of its

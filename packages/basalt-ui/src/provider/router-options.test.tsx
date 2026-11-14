@@ -229,4 +229,69 @@ describe('basaltRouterOptions', () => {
     expect(mismatches).toEqual([])
     expect(logged.filter((m) => /hydrat|mismatch/i.test(m))).toEqual([])
   })
+
+  describe('live', () => {
+    const counting = () => {
+      const calls = { start: 0, stop: 0 }
+      const live = {
+        start: () => {
+          calls.start += 1
+          return () => void (calls.stop += 1)
+        },
+      }
+      return { calls, live }
+    }
+
+    test('createBasaltRouter starts the binding once with the provider and stops it on unmount', async () => {
+      const { calls, live } = counting()
+      const root = createRootRoute({ component: () => <div>live page</div> })
+      const router = createBasaltRouter({
+        routeTree: root,
+        history: createMemoryHistory({ initialEntries: ['/'] }),
+        live,
+      })
+      expect(calls.start).toBe(0)
+      const view = render(<BasaltProvider router={router} telemetry={() => {}} />)
+      await screen.findByText('live page')
+      expect(calls).toEqual({ start: 1, stop: 0 })
+      view.rerender(<BasaltProvider router={router} telemetry={() => {}} />)
+      expect(calls).toEqual({ start: 1, stop: 0 })
+      view.unmount()
+      expect(calls).toEqual({ start: 1, stop: 1 })
+    })
+
+    test('basaltRouterOptions carries `live` for an app-built router; the server starts nothing', async () => {
+      const { calls, live } = counting()
+      const root = createRootRouteWithContext<BasaltRouterContext>()({
+        component: () => (
+          <BasaltProvider telemetry={() => {}}>
+            <div>embedded live</div>
+          </BasaltProvider>
+        ),
+      })
+      const router = createRouter({
+        routeTree: root,
+        history: createMemoryHistory({ initialEntries: ['/'] }),
+        ...basaltRouterOptions({ live }),
+      })
+      await router.load()
+      renderToString(<RouterProvider router={router} />)
+      expect(calls.start).toBe(0)
+      const view = render(<RouterProvider router={router} />)
+      await screen.findByText('embedded live')
+      expect(calls).toEqual({ start: 1, stop: 0 })
+      view.unmount()
+      expect(calls).toEqual({ start: 1, stop: 1 })
+    })
+
+    test('a router without `live` starts nothing', async () => {
+      const root = createRootRoute({ component: () => <div>quiet page</div> })
+      const router = createBasaltRouter({
+        routeTree: root,
+        history: createMemoryHistory({ initialEntries: ['/'] }),
+      })
+      render(<BasaltProvider router={router} telemetry={() => {}} />)
+      await screen.findByText('quiet page')
+    })
+  })
 })
