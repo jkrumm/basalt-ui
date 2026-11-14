@@ -1,6 +1,6 @@
 ---
 name: tableCodec
-use when: "the table's search, filters, sort and page belong in the URL (a shared or saved view)"
+use when: 'search, filters, sort and page of the table belong in the URL (a shared or saved view)'
 never when: 'the table keeps its own memory (omit `state` on `useDataTable`)'
 subpath: basalt-ui/table
 peers: ['@base-ui/react', '@tanstack/react-table']
