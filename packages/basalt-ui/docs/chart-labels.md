@@ -15,7 +15,7 @@ Label measuring and direct-label placement for marks a page draws itself (custom
 ## Signature
 
 ```ts
-chartLabels: { width, fits, place }
+chartLabels: { width, fits, place, axis, row }
 ```
 
 ## Example
