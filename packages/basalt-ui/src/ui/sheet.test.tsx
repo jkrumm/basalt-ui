@@ -1,7 +1,8 @@
-import { cleanup, render } from '@testing-library/react'
+import { cleanup, fireEvent, render, screen } from '@testing-library/react'
 import { afterEach, describe, expect, test } from 'bun:test'
 import { readFileSync } from 'node:fs'
 import { join } from 'node:path'
+import { memoryHandle } from '../controls/control-view.handles'
 import { IntlScope } from '../core/provider-props'
 import { SIZE_CLASSES } from '../tokens/size-classes'
 import { Sheet, SheetClose, SheetContent, SheetTrigger, sheetParts } from './sheet'
@@ -109,5 +110,49 @@ describe('sheet module', () => {
     } finally {
       window.matchMedia = original
     }
+  })
+})
+
+describe('Sheet state', () => {
+  const panel = () => document.querySelector('[data-slot="sheet-content"]')
+  const sheetOf = (state: Parameters<typeof Sheet>[0]['state']) => (
+    <Sheet state={state} placement="right">
+      <SheetContent title="Edit order">Form</SheetContent>
+    </Sheet>
+  )
+
+  test('a string handle is open while it is non-empty and Close clears it', () => {
+    const edit = memoryHandle<string>('edit', '', { kind: 'string' })
+    const { rerender } = render(sheetOf(edit))
+    expect(panel()).toBeNull()
+    edit.put('order-7')
+    rerender(sheetOf(edit))
+    expect(panel()).not.toBeNull()
+    fireEvent.click(screen.getByRole('button', { name: /close/i }))
+    expect(edit.clears.count).toBe(1)
+    expect(panel()?.hasAttribute('data-open')).toBe(false)
+  })
+
+  test('a boolean handle is open while true, and Close clears it', () => {
+    const open = memoryHandle<boolean>('open', false, { kind: 'boolean' })
+    open.put(true)
+    render(sheetOf(open))
+    expect(panel()).not.toBeNull()
+    fireEvent.click(screen.getByRole('button', { name: /close/i }))
+    expect(open.clears.count).toBe(1)
+    expect(panel()?.hasAttribute('data-open')).toBe(false)
+  })
+
+  test('a trigger opens a boolean handle by writing true', () => {
+    const open = memoryHandle<boolean>('open', false, { kind: 'boolean' })
+    render(
+      <Sheet state={open}>
+        <SheetTrigger>Edit</SheetTrigger>
+        <SheetContent title="Edit order">Form</SheetContent>
+      </Sheet>,
+    )
+    fireEvent.click(screen.getByText('Edit'))
+    expect(open.writes).toEqual([true])
+    expect(panel()).not.toBeNull()
   })
 })

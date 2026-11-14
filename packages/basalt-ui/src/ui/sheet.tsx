@@ -5,6 +5,7 @@ import type { ReactElement, ReactNode } from 'react'
 import { cn } from '../core/cn'
 import { dialogs } from '../core/messages/dialogs'
 import { useMessages } from '../core/messages/use-messages'
+import type { ControlHandle } from '../core/ports'
 import { buttonVariants } from './button'
 
 type Placement = 'bottom' | 'right' | 'auto'
@@ -48,10 +49,23 @@ type Layout<P> = Omit<P, 'className'> & {
   className?: string
 }
 
-export type SheetProps = Omit<BaseDrawer.Root.Props, 'swipeDirection'> & {
+type SheetBase = Omit<BaseDrawer.Root.Props, 'swipeDirection'> & {
   /** The edge it opens from. `auto` is the bottom on a phone and the right edge from 840 px. */
   placement?: Placement
 }
+
+/** A boolean handle is open while `true`; a string handle (a URL field naming a record) while non-empty. */
+export type SheetState = ControlHandle<boolean> | ControlHandle<string>
+
+export type SheetProps =
+  | (SheetBase & { state?: undefined })
+  | (Omit<SheetBase, 'open' | 'defaultOpen' | 'onOpenChange'> & {
+      /** Open while the handle is `true` (boolean) or non-empty (string); closing calls `clear()`. */
+      state: SheetState
+      open?: never
+      defaultOpen?: never
+      onOpenChange?: never
+    })
 export type SheetTriggerProps = Layout<BaseDrawer.Trigger.Props>
 export type SheetContentProps = Layout<Omit<BaseDrawer.Popup.Props, 'title'>> & {
   /** The accessible name and the visible heading. Required. */
@@ -75,7 +89,9 @@ const serverWide = (): boolean => false
  * A panel beside the page on Base UI Drawer: edit a record without leaving it. `placement="auto"`
  * moves it with CSS; the swipe-to-dismiss axis follows the same width from a media query that
  * reads as narrow on the server and during hydration, so server and client markup never differ.
- * Open state stays with the caller or the trigger. Works with no provider.
+ * Open state stays with the caller or the trigger, or binds to a handle: `state` is a boolean field
+ * (open while true) or a string field (open while non-empty, the record a URL names), and closing
+ * calls its `clear()`, as `PageAside`'s `state` does. Works with no provider.
  *
  * @useWhen a record is edited or inspected beside the page and the page behind stays in view (modal decision: `Dialog`)
  * @neverWhen the question is a yes or no (use `Dialog`, or `AlertDialog` for a destructive confirm)
@@ -85,8 +101,41 @@ const serverWide = (): boolean => false
  *   <SheetTrigger render={<Button />}>Edit</SheetTrigger>
  *   <SheetContent title="Edit record">Form</SheetContent>
  * </Sheet>
+ *
+ * @example
+ * // The open record is the URL field `edit`: open while it is set, Close clears it.
+ * <Sheet state={store.field.edit}>
+ *   <SheetContent title="Edit order">Form</SheetContent>
+ * </Sheet>
  */
-export function Sheet({ placement = 'auto', ...props }: SheetProps): ReactElement {
+export function Sheet(props: SheetProps): ReactElement {
+  const { state, ...rest } = props
+  return state === undefined ? <PlainSheet {...rest} /> : <BoundSheet {...rest} state={state} />
+}
+
+/** Reads the handle by its value's type: a hook cannot be conditional, so the bound form is its own component. */
+function BoundSheet({
+  state,
+  ...props
+}: Omit<SheetBase, 'open' | 'defaultOpen' | 'onOpenChange'> & { state: SheetState }): ReactElement {
+  const [value, set] = (state as ControlHandle<boolean | string>).use()
+  const open = typeof value === 'string' ? value !== '' : value
+  return (
+    <PlainSheet
+      {...props}
+      open={open}
+      onOpenChange={(next) => {
+        if (next) {
+          if (typeof value === 'boolean') set(true)
+        } else {
+          state.clear()
+        }
+      }}
+    />
+  )
+}
+
+function PlainSheet({ placement = 'auto', ...props }: SheetBase): ReactElement {
   const wide = useSyncExternalStore(subscribeWide, readWide, serverWide)
   const swipe: Swipe = placement === 'right' || (placement === 'auto' && wide) ? 'right' : 'down'
   return (
