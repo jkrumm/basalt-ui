@@ -76,7 +76,14 @@ function walkGraph(entry, { staticOnly = false } = {}) {
 // Mantine-free Layer-0 subpath dist entries (2.0: `./agent` left the set — Mantine is a required peer
 // and the chat UI ships in it; its runtime half stays Mantine-free as a repo-local lint boundary).
 // visx is gone (2.0): banned on every graph. `onlyBare` pins a graph's external imports to a set.
-const CHART_BARE = [/^@tanstack\/charts\//, /^d3-scale$/, /^react(\/jsx-runtime)?$/]
+// The v3 `ChartCard` (v3 state-1 wiring) composes `ui/badge` (cva + `cn`, no Base UI, no Mantine) and `cn`'s `clsx`.
+const CHART_BARE = [
+  /^@tanstack\/charts\//,
+  /^d3-scale$/,
+  /^react(\/jsx-runtime)?$/,
+  /^basalt-ui\/ui\/badge$/,
+  /^clsx$/,
+]
 const subpaths = [
   { rel: 'tokens/index.js' },
   { rel: 'charts/index.js', onlyBare: CHART_BARE },
