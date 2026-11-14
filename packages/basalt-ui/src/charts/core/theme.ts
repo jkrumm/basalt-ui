@@ -63,8 +63,9 @@ export const DASH = VX.dashArray
 export const LINE_STROKE_WIDTH = 1.9
 /**
  * The opacity of the rest while another datum or legend entry holds the focus: one value for every
- * kind and for a mark a page draws through the seam (`[data-chart-mark][data-dimmed]` in
+ * v3 kind and for a mark a page draws through the seam (`[data-chart-mark][data-dimmed]` in
  * `css/tailwind.css` carries the same number). At 0.5 the ink of a dimmed row still clears 3:1 on
- * the inset in both schemes; 0.25 left it at 1.7:1 (owner calibration, expression cycle 2).
+ * the inset in both schemes; 0.25 left it at 1.7:1 (owner calibration, expression cycle 2). The 2.x
+ * kinds keep their own legend-hover 0.25 in `charts/theme.ts` until `v3-teardown-views` deletes them.
  */
 export const DIMMED = 0.5
