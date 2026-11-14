@@ -186,9 +186,11 @@ export type RefLine = {
    */
   label?: string | undefined
   /**
-   * Pins the caption's spot. Default: the first spot (the plot's right end above the line; the left
-   * end for a right-axis line) that stays inside the plot and that no data line runs through, so a
-   * line in the top or bottom quarter, or one a series ends on, moves its caption.
+   * Asks for a spot, tried first. Default: the first spot (the plot's right end above the line; the
+   * left end for a right-axis line) that stays inside the plot and that no data line runs through,
+   * so a line in the top or bottom quarter, or one a series ends on, moves its caption. A spot that
+   * meets a data line or another caption gives way to a clear one, and the caption drops when every
+   * spot meets another caption (`legend` keeps the line named).
    */
   labelPosition?: RefLabelPosition | undefined
   /**
