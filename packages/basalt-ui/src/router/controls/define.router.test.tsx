@@ -346,6 +346,15 @@ describe('defineControls: range', () => {
     })
   })
 
+  test('toWindow reads a custom value without both dates as the fallback', () => {
+    const { toWindow } = store.field.window
+    expect(toWindow({ preset: 'custom' })).toEqual({ window: '30d' })
+    expect(toWindow({ preset: 'custom', from: '2025-02-01' })).toEqual({ window: '30d' })
+    expect(toWindow({ preset: 'custom', from: '2025-02-10', to: '2025-02-01' })).toEqual({
+      window: '30d',
+    })
+  })
+
   test('renamed params decode and own their names', () => {
     expect(store.keys).toEqual(['span', 'start', 'end'])
     const value = store.validateSearch['~standard'].validate({

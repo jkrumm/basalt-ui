@@ -115,9 +115,13 @@ export type RangeHandle<P extends string, W extends string, S> = FieldHandle<
 > & {
   /**
    * The API-facing window: `{ window: preset }` for a preset, `{ from, to }` for a custom range or a
-   * preset declared with a `window` resolver (resolved now, never stale).
+   * preset declared with a `window` resolver (resolved now, never stale). A `custom` value without
+   * both dates reads as the field's fallback, as the URL codec reads it, so `window` is never
+   * `'custom'`.
    */
-  toWindow(value: RangeValue<P>): { window: Exclude<P, W> } | { from: string; to: string }
+  toWindow(
+    value: RangeValue<P>,
+  ): { window: Exclude<P, W | 'custom'> } | { from: string; to: string }
 }
 
 export type HandleOf<Key extends string, X> =
@@ -635,7 +639,12 @@ export function defineControls<
         resetScroll: false,
       }),
     }
-    if (spec.kind === 'range') handle.toWindow = toWindowFor(spec as unknown as RangeSpecLike)
+    if (spec.kind === 'range') {
+      handle.toWindow = toWindowFor(
+        spec as unknown as RangeSpecLike,
+        () => fallbackOf(entry) as RangeValue,
+      )
+    }
     return handle
   }
 
@@ -737,8 +746,10 @@ export function defineControls<
 type RangeSpecLike = { readonly windows: Partial<Record<string, RangeWindow>> }
 
 const toWindowFor =
-  (spec: RangeSpecLike) =>
-  (value: RangeValue): { window: string } | { from: string; to: string } => {
+  (spec: RangeSpecLike, fallback: () => RangeValue) =>
+  (input: RangeValue): { window: string } | { from: string; to: string } => {
+    // The codec decodes an incomplete custom range as the fallback; so does the window.
+    const value = input.preset === 'custom' && !writableRange(input) ? fallback() : input
     if (value.preset === 'custom' && value.from !== undefined && value.to !== undefined) {
       return { from: value.from, to: value.to }
     }
