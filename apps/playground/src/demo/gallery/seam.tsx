@@ -9,7 +9,13 @@ import { dot } from '@tanstack/charts/dot'
 import { text } from '@tanstack/charts/text'
 import { Meter, Section } from 'basalt-ui'
 import type { MeterSegment } from 'basalt-ui'
-import { CartesianChart, ChartCard, Heatmap, chartLabels, useChartFocus } from 'basalt-ui/charts'
+import {
+  CartesianChart,
+  LegacyChartCard as ChartCard,
+  Heatmap,
+  chartLabels,
+  useChartFocus,
+} from 'basalt-ui/charts'
 import type { PlotContext, PlotRow } from 'basalt-ui/charts'
 import { CONTAINER_KEYS, VX } from 'basalt-ui/tokens'
 import { SeamBar } from '../../recipes/seam-bar'

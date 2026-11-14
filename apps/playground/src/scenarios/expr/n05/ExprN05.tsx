@@ -9,7 +9,7 @@
  */
 import { Box, Button, SimpleGrid, Stack, Text } from '@mantine/core'
 import { BarList, EmptyState, PageBar, Section } from 'basalt-ui'
-import { ChartCard } from 'basalt-ui/charts'
+import { LegacyChartCard as ChartCard } from 'basalt-ui/charts'
 import type { ChartFact, ResponsiveChartHeight } from 'basalt-ui/charts'
 import { BasaltDataTable, createColumnHelper } from 'basalt-ui/table'
 import { CONTAINER_KEYS } from 'basalt-ui/tokens'

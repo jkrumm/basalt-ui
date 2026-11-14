@@ -10,7 +10,7 @@
  */
 import { Badge, Box, Stack, Text } from '@mantine/core'
 import { EmptyState, Section } from 'basalt-ui'
-import { ChartCard, Heatmap } from 'basalt-ui/charts'
+import { LegacyChartCard as ChartCard, Heatmap } from 'basalt-ui/charts'
 import type { ChartFact, HeatmapState } from 'basalt-ui/charts'
 import { BasaltDataTable, createColumnHelper } from 'basalt-ui/table'
 import { VX } from 'basalt-ui/tokens'

@@ -1,6 +1,6 @@
 /** The body-weight Lines with a goal RefLine and end labels (argo UPSTREAM Wave 51–52). */
 import { Box } from '@mantine/core'
-import { ChartCard, Lines } from 'basalt-ui/charts'
+import { LegacyChartCard as ChartCard, Lines } from 'basalt-ui/charts'
 import type { ChartSeries } from 'basalt-ui/charts'
 import { VX } from 'basalt-ui/tokens'
 import { chartStateFor, noop } from '../shot-state'

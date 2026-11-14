@@ -16,7 +16,7 @@ import { ruleX } from '@tanstack/charts/rule'
 import { text } from '@tanstack/charts/text'
 import { useSyncExternalStore } from 'react'
 import { PageBar } from 'basalt-ui'
-import { CartesianChart, ChartCard, chartCursor } from 'basalt-ui/charts'
+import { CartesianChart, LegacyChartCard as ChartCard, chartCursor } from 'basalt-ui/charts'
 import type {
   ChartFact,
   ChartSeries,

@@ -1,6 +1,6 @@
 /** The Estimated 1RM ChartCard whose subtitle carries the line/dot key (argo UPSTREAM Wave 50). */
 import { Box } from '@mantine/core'
-import { ChartCard, Lines } from 'basalt-ui/charts'
+import { LegacyChartCard as ChartCard, Lines } from 'basalt-ui/charts'
 import type { ChartSeries } from 'basalt-ui/charts'
 import { demoColors } from '../../demo/series'
 import { chartStateFor, noop } from '../shot-state'

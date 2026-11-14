@@ -7,7 +7,7 @@
  * true date. The card's figure and a sticky readout line above the card follow focus.
  */
 import { useRouterState } from '@tanstack/react-router'
-import { ChartCard, useChartFocus } from 'basalt-ui/charts'
+import { LegacyChartCard as ChartCard, useChartFocus } from 'basalt-ui/charts'
 import { date, money } from 'basalt-ui/format'
 import { Skeleton } from 'basalt-ui/ui/skeleton'
 import { cardStateProps, retryCopy } from '../../shot-state'

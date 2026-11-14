@@ -20,7 +20,7 @@ import { Badge, Box, Button, SimpleGrid, Stack, VisuallyHidden } from '@mantine/
 import { useState, useSyncExternalStore } from 'react'
 import type { CSSProperties, KeyboardEvent } from 'react'
 import { DeltaBadge, EmptyState, Meter, Section } from 'basalt-ui'
-import { CartesianChart, ChartCard, chartCursor } from 'basalt-ui/charts'
+import { CartesianChart, LegacyChartCard as ChartCard, chartCursor } from 'basalt-ui/charts'
 import type {
   ChartFact,
   ChartMarks,
