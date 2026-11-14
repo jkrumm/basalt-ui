@@ -24,7 +24,7 @@ export function SeamBar({ parts, track }: { parts: readonly Part[]; track: numbe
           <div
             key={p.label}
             {...focus.item(i)}
-            className="flex items-center justify-center truncate text-xs transition-opacity data-dimmed:opacity-25"
+            className="flex items-center justify-center truncate text-xs"
             style={{ width: `${(p.value / total) * 100}%`, background: p.color }}
           >
             {chartLabels.fits(
