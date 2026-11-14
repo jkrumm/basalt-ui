@@ -1,5 +1,5 @@
 {
-  "why": "shot reads Mantine selectors and hard-coded viewports; it must read public data-slots and declared viewports, stay a floor and shrink under 1,800 lines.",
+  "why": "shot reads Mantine selectors and hard-coded viewports; it must read public data-slots and declared viewports, stay a floor and shrink under 2,300 lines (Issue 1122; first 1,800).",
   "what": "packages/basalt-ui/src/cli/shot/**. Exists in 2.x (3,047 non-test lines in board.ts, capture.ts, detect.ts, measure.ts, playwright.ts, real-data.ts, serve.ts, index.ts, types.ts) and is re-pointed in place here.",
   "owns": ["packages/basalt-ui/src/cli/shot/**"],
   "must_not_touch": [
