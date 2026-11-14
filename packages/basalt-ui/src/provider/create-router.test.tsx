@@ -1,5 +1,6 @@
 import { afterEach, describe, expect, test } from 'bun:test'
 import { createRootRoute } from '@tanstack/react-router'
+import { liveQuery } from '../data/live/live-query'
 import { createBasaltRouter } from './create-router'
 import { routeViewTransition, supportsViewTransitionTypes } from './route-transition'
 import { queryClientOf } from './test-router'
@@ -28,6 +29,17 @@ describe('createBasaltRouter defaults (V2-SPEC § 2)', () => {
       retry: expect.any(Function),
       refetchOnWindowFocus: false,
     })
+  })
+
+  test('a liveQuery fetched on the context QueryClient resolves (the live runtime is installed)', async () => {
+    const client = queryClientOf(router)
+    const value = await client.fetchQuery(
+      liveQuery(
+        { queryKey: ['router-live'], queryFn: async () => 42 },
+        { class: 'pushed', fallback: 30_000, safety: 120_000 },
+      ),
+    )
+    expect(value).toBe(42)
   })
 
   test('`query` merges over the defaults and `context` rides beside queryClient', () => {

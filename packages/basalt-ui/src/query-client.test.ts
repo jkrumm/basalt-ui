@@ -5,7 +5,7 @@
  * `null`). `makeQueryClient` is covered in `provider/create-router.test.ts`.
  */
 import { describe, expect, test } from 'bun:test'
-import { makeQueryClient } from './query-client'
+import { makeQueryClient } from './data/query-client'
 import { unwrap } from './unwrap'
 
 describe('unwrap — Promise-of-envelope overload', () => {
