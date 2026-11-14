@@ -1695,11 +1695,17 @@ rows:
     kind: chore
     after: [v3-cycle-state-1]
     facts: { 'brief': 'docs/v3/issues/cycles/v3-state-1-docs.json' }
-  - key: v3-state-1-visual
-    title: 'One FilterSet form at any width, from state cycle 1'
+  - key: v3-state-1-lint
+    title: 'The quality matrix reads nested playground routes, from state cycle 1'
     repo: basalt-ui
     kind: bug
-    after: [v3-state-1-state]
+    after: [v3-cycle-state-1]
+    facts: { 'brief': 'docs/v3/issues/cycles/v3-state-1-lint.json' }
+  - key: v3-state-1-visual
+    title: 'One FilterSet form at any width; DataTable head and ConnectionIndicator pass the matrix, from state cycle 1'
+    repo: basalt-ui
+    kind: bug
+    after: [v3-state-1-state, v3-state-1-lint]
     facts: { 'brief': 'docs/v3/issues/cycles/v3-state-1-visual.json' }
   - key: v3-cycle-state-2
     title: 'Improvement cycle 2: state, stores and controls, built as one data page'
@@ -1717,6 +1723,7 @@ rows:
         v3-state-1-shell,
         v3-state-1-wiring,
         v3-state-1-docs,
+        v3-state-1-lint,
         v3-state-1-visual,
       ]
     facts: { 'brief': 'docs/v3/issues/cycles/v3-cycle-state-2.json' }

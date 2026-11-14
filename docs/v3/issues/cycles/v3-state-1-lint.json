@@ -1,0 +1,22 @@
+{
+  "why": "State cycle 1 (docs/v3/cycles/state-1.md, P2 state-1.22): `tests/quality/matrix/routes.ts` reads only the top-level files of `apps/playground/src/routes`, while its doc says a route added there joins the matrix. A nested route (`routes/cycle/state.tsx`, the cycle build) is never checked. Moving it there was the only way to merge: at top level the matrix failed it on kit findings (state-1.21) that a cycle PR, which may not touch `packages/basalt-ui/`, cannot waive in `known.ts`.",
+  "what": "The quality matrix reads every playground route, nested ones too, and a cycle route's findings can be listed.",
+  "owns": [
+    "packages/basalt-ui/tests/quality/matrix/routes.ts and known.ts",
+    "packages/basalt-ui/tests/quality/matrix/*.test.ts only where the route list is asserted"
+  ],
+  "must_not_touch": [
+    "docs/v3/ARCHITECTURE.md",
+    "apps/playground/src/cycle/**",
+    "apps/playground/src/routes/**"
+  ],
+  "change": "`routePaths()` walks `src/routes` recursively and maps a nested file to its path (`cycle/state.tsx` to `/cycle/state`), skipping `__`-prefixed and `-`-prefixed files as TanStack's generator does. Every finding `/cycle/state` then reports goes into `known.ts` one item at a time, with `owner: 'v3-state-1-visual'` (or the row that owns the component), so the gate stays green and the full run fails the entry once the fix removes the finding. Test: `routePaths()` includes `/cycle/state`.",
+  "commits": "test: or fix: one commit in packages/basalt-ui.",
+  "proof": "make check; the sampled matrix passes with `/cycle/state` in it.",
+  "acceptance": [
+    "`routePaths()` returns `/cycle/state` (test)",
+    "The sampled matrix runs `/cycle/state` at both cells and passes, with each of its findings listed by item in known.ts",
+    "make check passes"
+  ],
+  "out_of_scope": "Fixing the findings (v3-state-1-visual and the rows that own the components)."
+}
