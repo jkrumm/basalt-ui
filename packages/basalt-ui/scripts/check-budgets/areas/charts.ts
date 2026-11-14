@@ -21,7 +21,7 @@ export const rows: readonly RowDef[] = [
     order: 20,
     label: 'public value symbols, ./charts (export-surface shards)',
     // 2.0 target 48.
-    ceiling: 16, // landed (W5): the rung, nine kinds, `ChartCard`, `chartCursor`, `chartCurve` (argo friction row 27); +`foldBands` (linewatch band/throughput strip tests, ledger row 80); +`useChartFocus`, `chartLabels` (the geometry seam, Issue 1019; v3 allocation 10 -> 12 by owner verdict)
+    ceiling: 17, // v3 state-1 wiring: `LegacyChartCard` (the 2.x card under its new name until v3-teardown-views; 'ChartCard' is the v3 card); landed (W5): the rung, nine kinds, `ChartCard`, `chartCursor`, `chartCurve` (argo friction row 27); +`foldBands` (linewatch band/throughput strip tests, ledger row 80); +`useChartFocus`, `chartLabels` (the geometry seam, Issue 1019; v3 allocation 10 -> 12 by owner verdict)
     measure: () => readSurface()[CHART_SUBPATH]?.length ?? 0,
   },
   {
@@ -45,6 +45,13 @@ export const rows: readonly RowDef[] = [
 
 export const raises: Raises = {
   'chart-symbols': [
+    {
+      from: 16,
+      to: 17,
+      consumer:
+        '`LegacyChartCard`: linewatch web/src/charts/speed-chart.tsx and shutterflow AnalyticsPage.tsx render the 2.x card (state, facts, children) until their migration rows land; drops when v3-teardown-views deletes the 2.x card',
+      repo: 'linewatch',
+    },
     {
       from: 14,
       to: 16,

@@ -45,7 +45,6 @@
   "basalt-ui/charts#BandStrip",
   "basalt-ui/charts#Bars",
   "basalt-ui/charts#CartesianChart",
-  "basalt-ui/charts#ChartCard",
   "basalt-ui/charts#Donut",
   "basalt-ui/charts#DualPanel",
   "basalt-ui/charts#Heatmap",

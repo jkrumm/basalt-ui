@@ -1,5 +1,5 @@
 import type { ReactElement } from 'react'
-import { Bars, ChartCard, Lines, Sparkline } from '../../../src/charts'
+import { Bars, LegacyChartCard as ChartCard, Lines, Sparkline } from '../../../src/charts'
 import { StatCard, StatGroup } from '../../../src/index'
 import { VX } from '../../../src/tokens'
 

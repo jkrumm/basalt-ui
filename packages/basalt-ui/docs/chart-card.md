@@ -1,91 +1,38 @@
 ---
 name: ChartCard
 use when: 'a metric needs a chart with a title, a headline figure, controls or a footer around it'
-never when: 'the content is a table, a list or a board (use a data panel) or a lone figure (use a StatCard)'
-peers: ['@tanstack/charts']
-slots:
-  [
-    chart-card,
-    card,
-    card-band,
-    icon-tile,
-    card-info,
-    chart-figure,
-    chart-status,
-    chart-box,
-    chart-skeleton,
-    chart-controls,
-    chart-menu,
-    chart-footer,
-    inset,
-  ]
+never when: 'the content is a table, a list or a board (use a data panel) or a lone figure (use a stat card)'
+subpath: basalt-ui/charts
+peers: ['@tanstack/charts', d3-scale]
+slots: [card, chart-card, chart-legend, inset]
 ---
 
 # ChartCard
 
-The frame every chart sits in: a header, an inset holding the headline figure over the chart box,
-and an optional footer of at most two facts, on the surface, edge and radii of `StatCard`. It owns
-the box and the phase. `chart` is a box slot called only in `ready` and `stale`, in a fixed clipping
-box, so a taller chart cannot move the card and a loading, empty or error card is as tall as a ready
-one. Source: `src/charts/parts/chart-card*`. It reaches no Base UI and no Mantine.
+The frame every chart sits in: a header (icon, title, definition glyph, subtitle, controls, menu),
+an inset holding the headline figure with its delta, period and verdict over the chart box, and an
+optional footer of at most two facts. It owns the box and the phase: `chart` is a box slot called
+only in `ready` and `stale`, in a fixed clipping box, so a taller chart cannot move the card and a
+loading, empty or error card is as tall as a ready one. With `phase="loading"` and no `chart` it is
+a Suspense fallback that draws the same rows. A kind draws its own legend, in the server HTML; marks
+a page draws through the seam take theirs from `legend`, a row between the figure and the box that
+is drawn in every phase, so loading does not move the box.
 
 ## Signature
 
 ```ts
 ChartCard(props: ChartCardProps): ReactElement
-  title: string
-  chart: (box: { height: 'fill'; phase: 'ready' | 'stale' }) => ReactNode
+  phase?: Phase | QueryStateLike | (Phase | QueryStateLike | undefine…
+  empty?: Empty | null
+  figure?: ChartFigure
+  legend?: readonly LegendEntry[]
+  footer?: FootFacts
+  controls?: ControlsSlot<"widget">
+  menu?: BoxSlot
+  height?: "auto" | "fill" | "short"
+  title?: string
   subtitle?: string
   icon?: IconComponent
   info?: string
-  figure?: { value: number | string | null; unit?; delta?: { value; polarity; label? }; period?; status?: { tone; label } }
-  footer?: readonly [Fact | null, (Fact | null)?]
-  controls?: ControlsSlot
-  menu?: (box) => ReactNode
-  height?: 'auto' | 'short' | 'fill'
-  phase?: Phase | QueryStateLike
-  empty?: { cause: string; action?; filtered?: { reset } } | null
+  chart: BoxSlot
 ```
-
-A second arm, `<ChartCard phase="loading" … />` with no `chart`, is the `Suspense` fallback. Pass it the
-same `title`, `figure` and `footer` the ready card has and it draws the same rows, so nothing moves
-when the chart arrives. Without a `title` the header draws a bar of the title's height.
-
-## Height
-
-| `height`         | Chart box                                                     |
-| ---------------- | ------------------------------------------------------------- |
-| `auto` (default) | half the card's width, between 160 and 420 px, decided in CSS |
-| `short`          | 160 px                                                        |
-| `fill`           | the card's remainder; the card takes its parent's height      |
-
-The slot always receives `height: 'fill'`, so the chart takes the box and never states its own. The
-height is a container-class rule, not a measurement: the server HTML, the first paint and the hydrated
-page agree.
-
-## Phase
-
-| Phase     | Box                                                                          |
-| --------- | ---------------------------------------------------------------------------- |
-| `ready`   | the chart                                                                    |
-| `loading` | a plot skeleton; the figure row shows bars                                   |
-| `stale`   | the chart and an `Updating` line; `Could not refresh` after a failed refetch |
-| `error`   | the error arm with Retry (none for a 403); a throwing slot lands here too    |
-| `empty`   | the cause and its action; `filtered` offers Clear filters                    |
-
-`empty` wins over `ready` and `stale` once the query settled; `loading` wins over everything. The phase
-prints on the card and on the box as `data-phase`.
-
-## Legend and tooltip
-
-The legend is drawn by the chart, in its own markup, so it is in the server HTML. A series with
-`failed: true` keeps its legend entry, which reads `unavailable`, draws nothing in the plot, and
-leaves the phase on `ready`. The standalone `Legend` (`src/charts/parts/legend.tsx`) reads that word
-from the message `charts.unavailable`, so an app can override it through the provider's `messages`;
-`CartesianChart` still prints the English default until it reads the key too.
-
-The tooltip is the engine's, placed by the card portal inside the card on both axes and off the first
-point's tick labels. `src/charts/parts/tooltip.ts` holds the v3 definition of its rows (a `solid`,
-`dashed`, `dot` or `line` swatch), the one short date form, the 150 ms show and 100 ms hide delays and
-the rule that a click pins unless the chart has a `selection`. The chart compiler does not call it
-yet; until it does, those delays and the swatch shapes are not live.

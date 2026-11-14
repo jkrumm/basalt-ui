@@ -1,5 +1,5 @@
 import type { ReactElement } from 'react'
-import { BandStrip, ChartCard, Lines } from '../../../src/charts'
+import { BandStrip, LegacyChartCard as ChartCard, Lines } from '../../../src/charts'
 import { VX } from '../../../src/tokens'
 
 type Point = { at: Date; v: number }

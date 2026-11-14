@@ -1,5 +1,5 @@
 import type { ReactElement } from 'react'
-import { BandStrip, ChartCard, Lines } from '../../../src/charts'
+import { BandStrip, LegacyChartCard as ChartCard, Lines } from '../../../src/charts'
 import { StatCard } from '../../../src/dashboard/stat-card'
 import { VX } from '../../../src/tokens'
 

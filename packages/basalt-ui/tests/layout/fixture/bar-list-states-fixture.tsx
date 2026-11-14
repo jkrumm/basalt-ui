@@ -1,8 +1,8 @@
 import type { ReactElement } from 'react'
-import { ChartCard } from '../../../src/charts'
+import { LegacyChartCard as ChartCard } from '../../../src/charts'
 import { BarList } from '../../../src/dashboard/bar-list'
 import type { BarListProps } from '../../../src/dashboard/bar-list'
-import type { ChartCardProps } from '../../../src/charts'
+import type { LegacyChartCardProps as ChartCardProps } from '../../../src/charts'
 
 const ITEMS = [
   { key: 'a', label: 'argo', value: 80, secondary: '40%' },

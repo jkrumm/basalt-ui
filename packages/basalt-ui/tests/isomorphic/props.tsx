@@ -116,7 +116,8 @@ export const MINIMAL_PROPS: Record<string, Record<string, unknown>> = {
     bars: [{ key: 'a', label: 'A', color: '#4c7cf3', getValue: (d: Row) => d.a }],
     height: 200,
   },
-  ChartCard: { title: 'Card', children: TEXT },
+  ChartCard: { title: 'Card', phase: 'loading' },
+  LegacyChartCard: { title: 'Card', children: TEXT },
   StackedArea: {
     ariaLabel: 'Stacked',
     data: ROWS,
@@ -383,6 +384,7 @@ export const NO_CLASSNAME: Record<string, 'provider' | 'svg' | 'portal' | 'gap'>
   // gap — renders a real box and drops the class.
   DateRangePicker: 'gap',
   DeltaBadge: 'gap',
+  ChartCard: 'gap', // v3: the frame owns its surface and box; a wrapper takes the class
   CodeBlock: 'gap', // by design: the props are frozen (lang, code, settled); styling goes on a wrapper
   Markdown: 'gap', // by design: the root is data-slot="markdown"; styling goes on a wrapper
   ControlHome: 'gap', // by design: the home decides the look of its controls; there is no className or variant

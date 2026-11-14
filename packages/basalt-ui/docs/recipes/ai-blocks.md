@@ -10,7 +10,7 @@ Test it with `expectCatalog(catalog)` from `basalt-ui/testing`. A block is a com
 ```tsx
 import { defineBlock, defineCatalog } from 'basalt-ui/ai'
 import { BarList, DataPanel, StatCard } from 'basalt-ui/cards'
-import { Bars, ChartCard } from 'basalt-ui/charts'
+import { Bars, LegacyChartCard as ChartCard } from 'basalt-ui/charts'
 import { Callout } from 'basalt-ui/page'
 import { col, DataTable, useDataTable } from 'basalt-ui/table'
 import { VX } from 'basalt-ui/tokens'

@@ -1,5 +1,5 @@
 import type { ReactElement } from 'react'
-import { ChartCard } from '../../../src/charts'
+import { LegacyChartCard as ChartCard } from '../../../src/charts'
 import { DeltaBadge, Section, StatCard, StatGroup } from '../../../src/index'
 
 const LONG_INFO =

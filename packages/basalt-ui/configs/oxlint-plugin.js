@@ -1818,6 +1818,7 @@ const SLOT_OWNER_TAGS = new Set([
   'Section',
   'WidgetHeader',
   'ChartCard',
+  'LegacyChartCard',
   'StatCard',
   'BasaltDataTable',
   'SettingsSection',
@@ -2748,7 +2749,7 @@ export const CTL_THEME_TAGS = new Set([
  * `hand-rolled-filter` is deliberately NOT exempted here: a raw `Select` in `ChartCard.actions` is
  * still a filter that should take a `field`, and the tier is not what makes that true.
  */
-const TIERLESS_SLOT_OWNERS = new Set(['ChartCard'])
+const TIERLESS_SLOT_OWNERS = new Set(['ChartCard', 'LegacyChartCard'])
 
 // Ships: error
 const controlSizeLiteral = {
