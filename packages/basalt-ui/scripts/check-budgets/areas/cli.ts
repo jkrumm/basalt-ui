@@ -47,11 +47,12 @@ export const rows: readonly RowDef[] = [
   // 9836 -> 11138 (v3-prim-p7-eject): `basalt-ui eject` with `--all`, `--adopt`, `--undo`, `--raise` (cli/eject/: flag parse, root and app resolution, the JSONC paths writer, the ledger row and budget raise, +987) and the merge helpers `sync` imports (cli/merge/: header, seed digest and import rewrite, `git merge-file` wrapper, formatter resolve, the root-export check, +305) replace the stub case (+1 net in index.ts and verbs-v3.ts; totalLines counts each new file one line longer than wc). Consumer: console (`--adopt` of its base-nova files) and rb (`--adopt --raise` for the PIN entry).
   // 11138 -> 11309 (v3-sk-3b-budget): the consumer budget module (cli/budget/: the `.basalt/budget.json` type, seed, reader, writer, breach count and the base-ref ratchet `landBudget`, +171). Consumer: rollhook (`init` seeds it and `lint` counts it on the first G0 `bridge` install).
   // 11309 -> 11637 (v3-tok-t4-cli): `tokens:css` is rewritten onto the v3 emitters with `--format json` and `--extra` (cli/tokens-css.ts +103 net, the app-token loader and emitter cli/tokens-css-extra.ts +214, the flag schema in cli/help.ts +10). Consumer: rb (`--vx-confidence-*` through `--extra`) and weatherorb (`--vx-weatherorb-*`).
+  // 11637 -> 11886 (v3-cli-sibling): the temporary `basalt.sibling` key: the resolver (cli/resolver.ts), the sibling placement and prefix (cli/sync/sibling.ts, render and engine `repo:` paths), `init` and doctor's sibling branches, the manifest `sibling` field (+249). Consumer: argo and shutterflow, whose second install runs after the 3.0.0 publish; removed with the last cutover.
   {
     id: 'cli-lines',
     order: 110,
     label: 'CLI non-test lines (src/cli/**)',
-    ceiling: 11637,
+    ceiling: 11886,
     measure: () =>
       totalLines(
         walkFiles(join(PKG_ROOT, 'src/cli'), /\.tsx?$/).filter((p) => !/\.test\.tsx?$/.test(p)),
@@ -101,5 +102,12 @@ export const raises: readonly Raise[] = [
     to: 11637,
     consumer: '`tokens:css --extra` for app-owned vars and `--format json` for manifest hex',
     repo: 'rb',
+  },
+  {
+    ceiling: 'cli-lines',
+    from: 11637,
+    to: 11886,
+    consumer: '`init` and `sync` in a declared `basalt.sibling` app beside the root install',
+    repo: 'shutterflow',
   },
 ]
