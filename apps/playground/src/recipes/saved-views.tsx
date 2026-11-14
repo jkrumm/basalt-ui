@@ -1,5 +1,4 @@
 // A recipe file the playground typecheck compiles; gen-recipes copies the region into the doc.
-// `TableToolbar` and `tableCodec` are typed from the built package by `saved-views-shim.d.ts`.
 // #region recipe:saved-views
 import { defineControls, field } from 'basalt-ui/router'
 import { col, DataTable, TableToolbar, tableCodec, useDataTable } from 'basalt-ui/table'
