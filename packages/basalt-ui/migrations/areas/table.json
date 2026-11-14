@@ -1,8 +1,113 @@
 {
   "schema": 1,
   "area": "table",
-  "rows": [],
-  "tokens": { "renamed": [], "valueShifts": [] },
+  "rows": [
+    {
+      "id": "tb-BasaltDataTable",
+      "kind": "replace",
+      "from": "basalt-ui/table#BasaltDataTable",
+      "to": "useDataTable({ id, label, columns, data, getRowId, mode }) and <DataTable table={t} /> from basalt-ui/table",
+      "profiles": ["parts", "app"],
+      "manual": true,
+      "note": "no table codemod ships yet; the shell is rewritten by hand and the state wiring is its own row (tb-initial-state). Read docs/data-table.md and the basalt-design table reference",
+      "verify": "tsc, then a screenshot of each table at desktop and phone width"
+    },
+    {
+      "id": "tb-createColumnHelper",
+      "kind": "replace",
+      "from": "basalt-ui/table#createColumnHelper (and meta.kind)",
+      "to": "col<T>() from basalt-ui/table: c.entity, c.text, c.number, c.money, c.date, c.relativeTime, c.status, c.delta, c.meter, c.boolean, c.spark, c.select, c.actions, c.custom",
+      "profiles": ["parts", "app"],
+      "manual": true,
+      "note": "a kind decides alignment, numerals, width, sort, filter and card slot, so meta.align, numeral and statusColor go; a free cell becomes c.custom, which must declare sortValue, card and priority",
+      "verify": "tsc: a raw column is not assignable to KindColumn"
+    },
+    {
+      "id": "tb-manual-server",
+      "kind": "replace",
+      "from": "basalt-ui/table#BasaltDataTable manualPagination + manualSorting + manualFiltering + rowCount",
+      "to": "mode: { kind: 'server', rowCount } (or { kind: 'server', cursor })",
+      "profiles": ["parts", "app"],
+      "manual": true,
+      "note": "one value sets the three manual flags together; a rowCount that is still unknown is undefined, never 0, and a client table has none",
+      "verify": "tsc: rowCount on a client table is a type error"
+    },
+    {
+      "id": "tb-initial-state",
+      "kind": "removed-prop",
+      "from": "basalt-ui/table#BasaltDataTable initial* and on*Change props",
+      "to": "state: a field.composite handle from defineControls (omit it for a table that keeps its own memory state)",
+      "profiles": ["parts", "app"],
+      "manual": true,
+      "note": "flagged with a TODO, not rewritten: the filters the page shares stay page controls and reach the table through resetOn; a hand-written URL param becomes an unknown key and is normalised away",
+      "verify": "tsc, then load the page with the old query string and check the table state"
+    },
+    {
+      "id": "tb-renderCard",
+      "kind": "removed-prop",
+      "from": "basalt-ui/table#BasaltDataTable renderCard",
+      "to": "the derived card: card slot and priority per column, detail for the rest",
+      "profiles": ["parts", "app"],
+      "manual": true,
+      "note": "there is no free card renderer; port each body to slots (title, subtitle, badge, value, meta, edit) and move what does not fit to detail",
+      "verify": "tsc, then the table at 390 px: every column's data is reachable"
+    },
+    {
+      "id": "tb-cell-select",
+      "kind": "replace",
+      "from": "a Select rendered in a table cell under a file-level control-home waiver",
+      "to": "c.select(key, { label, options, commit }) from basalt-ui/table",
+      "profiles": ["parts", "app"],
+      "manual": true,
+      "note": "commit(row, next) returns a promise and the cell is disabled while it is pending; the app's mutation owns optimistic update and rollback, so the waiver is deleted",
+      "verify": "lint: no control-home waiver is left in the file"
+    },
+    {
+      "id": "tb-selection",
+      "kind": "replace",
+      "from": "basalt-ui/table#BasaltDataTable enableRowSelection + bulkActions(rows)",
+      "to": "selection: { bulk: [{ key, label, onClick(rows, selection) }], selectAll } on useDataTable, getRowId required",
+      "profiles": ["parts", "app"],
+      "manual": true,
+      "note": "the bulk bar shows only while a row is ticked; a selection survives page and sort and clears when the request changes",
+      "verify": "tsc"
+    },
+    {
+      "id": "tb-priority",
+      "kind": "replace",
+      "from": "basalt-ui/table meta.priority (numeric, 0 to 11)",
+      "to": "priority: 1 | 2 | 3 on the kind options",
+      "profiles": ["parts", "app"],
+      "manual": true,
+      "note": "map by order: the first two columns you want on a phone are 1, the rest that survive a reduced width are 2, the rest are 3; more than two priority 1 columns demote in declaration order",
+      "verify": "tsc, then the table at 800 and 390 px"
+    },
+    {
+      "id": "tb-stickyHeader",
+      "kind": "removed-prop",
+      "from": "basalt-ui/table#BasaltDataTable stickyHeader and stickyHeaderOffset",
+      "to": "nothing: the head sticks under the page band by itself; height: 'fill' or { maxRows } gives it a scrollport of its own",
+      "profiles": ["parts", "app"],
+      "manual": true,
+      "note": "delete the prop; the Mantine AppShell main selector it needed is gone with it",
+      "verify": "tsc"
+    }
+  ],
+  "tokens": {
+    "renamed": [],
+    "valueShifts": [
+      {
+        "token": "table narrow layout",
+        "from": "a measured fold that hid columns by their numeric priority",
+        "to": "container tiers from priority 1 | 2 | 3: full, reduced (priority 3 hidden, a Details door appears), then cards or scroll"
+      },
+      {
+        "token": "table on a phone",
+        "from": "the table scrolled sideways, or the app's own renderCard",
+        "to": "cards by default (phone: 'cards'); phone: 'scroll' keeps a numeric matrix a table"
+      }
+    ]
+  },
   "storage": [],
   "urls": [],
   "attrs": [],
