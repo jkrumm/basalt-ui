@@ -39,6 +39,8 @@ export class SlugTracker {
   /** Slugify `text` and dedupe against every slug seen so far on this instance. */
   slug(text: string): string {
     const base = headingSlug(text)
+    // No slug text means no address: never `-1`, `-2` for a second empty heading.
+    if (base === '') return ''
     const seen = this.counts.get(base) ?? 0
     this.counts.set(base, seen + 1)
     return seen === 0 ? base : `${base}-${seen}`

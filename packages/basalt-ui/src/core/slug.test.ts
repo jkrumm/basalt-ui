@@ -32,6 +32,13 @@ describe('SlugTracker', () => {
     expect(tracker.slug('Overview')).toBe('overview-2')
   })
 
+  test('a heading with no slug text stays empty, never -1 or -2', () => {
+    const tracker = new SlugTracker()
+    expect(tracker.slug('!?')).toBe('')
+    expect(tracker.slug('')).toBe('')
+    expect(tracker.slug('!?')).toBe('')
+  })
+
   test('tracks slugs independently per instance', () => {
     const a = new SlugTracker()
     const b = new SlugTracker()
