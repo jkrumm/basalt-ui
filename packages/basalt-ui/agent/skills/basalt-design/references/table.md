@@ -50,6 +50,7 @@ export function Bookings({ rows }: { rows: readonly Booking[] }) {
 ## Phone and the 390 px check
 
 - Below 480 px the same rows become cards: sort moves to the toolbar, selection to an explicit Select mode, the row's actions to a kebab. `phone: 'scroll'` keeps a numeric matrix a table.
+- `t.table` is the read view of what the table shows (`rows`, `matched`, `columns`) for an export or a board over the same rows. Saved views live on the device unless `views: { store }` hands them a `ViewStore`.
 - Every column's data must be reachable on a phone. With `detail`, tapping a row opens it; with `onRowActivate`, the row navigates and a Details door opens the sheet; with neither, tapping opens the auto sheet of every column.
 - Render the page at 390 wide before you stop and count the cards: a column that appears nowhere is a defect.
 

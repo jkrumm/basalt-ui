@@ -161,6 +161,21 @@ const sortText = (s: { id: string; desc: boolean }): string => `${s.id}.${s.desc
 
 // ---- The codec ----------------------------------------------------------------------------
 
+/**
+ * The URL codec of a table: `field.composite(tableCodec(schema))` makes the whole table state one
+ * route field. The schema comes from `c.codec`, which names columns by id and kind only, so it can
+ * sit at module scope.
+ *
+ * @useWhen the table's search, filters, sort and page belong in the URL (a shared or saved view)
+ * @neverWhen the table keeps its own memory (omit `state` on `useDataTable`)
+ *
+ * @example
+ * const c = col<Run>()
+ * const search = defineControls({
+ *   key: 'runs',
+ *   fields: { table: field.composite(tableCodec(c.codec({ name: 'entity', km: 'number' }))) },
+ * })
+ */
 export function tableCodec(schema: TableSchema, options?: TableCodecOptions): TableCodec {
   if (process.env.NODE_ENV !== 'production') {
     for (const key of ['q', 'filters', 'page'] as const) {
