@@ -755,3 +755,27 @@ describe('x tick labels near the left edge (ledger row 110)', () => {
     expect(anchor(at(1))).toBeUndefined()
   })
 })
+
+describe('y gutter', () => {
+  const spec = (extra: { yGutter?: number; bare?: boolean }): StoredChartSpec =>
+    compileCartesian({
+      chartId: 'gutter',
+      data: rows,
+      x: (d) => d.t,
+      series: [v],
+      marks: () => [],
+      ...extra,
+    }).chart({ width: 480, height: 240, defaultTheme: {} as never })
+
+  test('locks the left margin only; the other sides stay measured', () => {
+    expect(spec({ yGutter: 56 }).margin).toEqual({ left: 56 })
+  })
+
+  test('no gutter leaves every margin to the engine', () => {
+    expect(spec({}).margin).toBeUndefined()
+  })
+
+  test('a bare chart keeps its zero margin', () => {
+    expect(spec({ yGutter: 56, bare: true }).margin).toBe(0)
+  })
+})

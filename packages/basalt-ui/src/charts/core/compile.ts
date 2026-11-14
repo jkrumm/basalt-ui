@@ -123,6 +123,8 @@ export type CartesianInput<T, X extends ChartX> = Pick<
   focusRing?: boolean
   /** No axes, grid or margin: the plot is the whole box (a visual slot's bars, as `Sparkline`). */
   bare?: boolean
+  /** `y.gutter` (the seam): a fixed left margin in px, so stacked panes share one plot x. */
+  yGutter?: number
 }
 
 /** The one tick-label size, at every container width: the caption size, so a card never mixes sizes. */
@@ -1296,7 +1298,9 @@ export function compileCartesian<T, X extends ChartX>(
           zoneScale: under.length > 0 || names || (input.xRefLines?.length ?? 0) > 0,
         }),
         theme: CHART_THEME,
-        ...(input.bare === true && { guides: false as const, margin: 0 }),
+        ...(input.bare === true
+          ? { guides: false as const, margin: 0 }
+          : input.yGutter !== undefined && { margin: { left: input.yGutter } }),
         ...(gradients.length > 0 && { gradients }),
         clip: true,
       }

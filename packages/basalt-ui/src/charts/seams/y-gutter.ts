@@ -2,7 +2,7 @@ import type { EngineSpec } from '../parts/cartesian-adapt'
 import { rewriting } from './define'
 import type { Seam } from './define'
 
-/** The engine spec with the y gutter a pane asks for. `compileCartesian` does not read it yet. */
+/** The engine spec with the y gutter a pane asks for; `compileCartesian` locks it as the left margin. */
 export type GutteredSpec<D> = EngineSpec<D> & { yGutter?: number }
 
 function withGutter<D>(spec: EngineSpec<D>, yGutter: number): EngineSpec<D> {
@@ -18,8 +18,8 @@ const seam: Seam = (spec, props) => {
 
 /**
  * `y.gutter`: a fixed y-axis width in px, so stacked panes put one x on one pixel column. The seam
- * puts it on the spec as `yGutter`; honouring it is the compiler's (`core/compile.ts` margin), which
- * this domain does not own.
+ * puts it on the spec as `yGutter`; `core/compile.ts` locks it as the left margin (the other sides
+ * stay measured). It must hold the widest tick label: a wider label is clipped, never widened.
  */
 export const yGutter = rewriting({
   id: 'y.gutter',
