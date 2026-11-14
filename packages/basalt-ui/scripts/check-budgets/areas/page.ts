@@ -1,0 +1,28 @@
+/**
+ * Area: page — the `./page` subpath, G2 freeze (docs/v3/ARCHITECTURE.md section 3). Value symbols are
+ * exact (a new one is a row here and a named consumer); the byte row is the first complete build plus
+ * 5 percent, rounded up to 0.5 KB (quality-contract section 6), ratcheted down only. `../ui-bundle`
+ * measures it (gzip B minus `base0`, peers bundled, whole barrel). The authored-file line budget for
+ * the v3 paths of every G2 layer lives in `./shell`.
+ */
+import type { RowDef } from '../lib'
+import { readSurface } from '../lib'
+import { measureSource, reExportAll } from '../ui-bundle'
+
+export const rows: readonly RowDef[] = [
+  {
+    id: 'page-symbols',
+    order: 440,
+    label: 'public value symbols, ./page (exact, export-surface shard)',
+    ceiling: 21,
+    measure: () => readSurface()['./page']?.length ?? 0,
+  },
+  {
+    id: 'page-subpath',
+    order: 441,
+    label: 'page, whole barrel (gzip B minus base0, src/page, peers bundled)',
+    // 107199 B measured.
+    ceiling: 113000,
+    measure: () => measureSource(reExportAll({ page: 'page/index' })),
+  },
+]
