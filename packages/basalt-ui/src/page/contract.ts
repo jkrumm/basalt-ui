@@ -51,8 +51,8 @@ export type PageTextAction = {
 export type PageAction = PageButtonAction | PageTextAction
 
 /**
- * A page's or section's view switch: a `ViewTabs` drawn from an enum field (`label` is its
- * accessible name), or a `ControlsSlot` for custom content.
+ * A page's or section's view switch: a tab strip drawn from an enum field (`label` is its
+ * accessible name), or a `ControlsSlot` for custom content (a `ViewTabs`, for its phone forms).
  */
 export type PageTabs<K extends string = string> =
   | ControlsSlot
