@@ -63,6 +63,17 @@ const RESETS = ['color', 'shadow', 'radius', 'text', 'breakpoint'] as const
 
 const SURFACES = ['canvas', 'card', 'inset', 'raised'] as const
 
+/**
+ * A mark a page draws through `useChartFocus` (`focus.item(i)` sets `data-chart-mark`) dims as the
+ * kit's own marks do: the number is `DIMMED` in `charts/core/theme.ts`, and a charts test holds the
+ * two equal. The fade is skipped under reduced motion.
+ */
+const CHART_MARK_DIM = 0.5
+const chartMarkRules =
+  '  /* A mark drawn through useChartFocus dims as the kit marks do (charts/core/theme DIMMED). */\n' +
+  `  [data-chart-mark][data-dimmed] {\n    opacity: ${CHART_MARK_DIM};\n  }\n` +
+  '  @media (prefers-reduced-motion: no-preference) {\n    [data-chart-mark] {\n      transition: opacity 120ms ease-out;\n    }\n  }\n'
+
 function tailwindCss(): string {
   const entries = bridgeEntries()
   const colours = entries.filter((e) => e.tw.startsWith('--color-'))
@@ -93,6 +104,7 @@ function tailwindCss(): string {
     '    caret-color: var(--vx-ink);\n' +
     '  }\n' +
     '  @media (pointer: coarse) {\n    input,\n    select,\n    textarea {\n      font-size: max(16px, 1em) !important;\n    }\n  }\n' +
+    chartMarkRules +
     '}\n'
 
   return (

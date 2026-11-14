@@ -156,4 +156,13 @@
       font-size: max(16px, 1em) !important;
     }
   }
+  /* A mark drawn through useChartFocus dims as the kit marks do (charts/core/theme DIMMED). */
+  [data-chart-mark][data-dimmed] {
+    opacity: 0.5;
+  }
+  @media (prefers-reduced-motion: no-preference) {
+    [data-chart-mark] {
+      transition: opacity 120ms ease-out;
+    }
+  }
 }
