@@ -36,6 +36,33 @@ const CONTROL_PRIMITIVES: ReadonlySet<string> = new Set([
   'radio-group',
 ])
 
+/** The root component of each primitive: its parts (`SelectItem`, `Radio`) are never controls of their own. */
+const CONTROL_ROOTS: ReadonlySet<string> = new Set([
+  'Select',
+  'NativeSelect',
+  'Combobox',
+  'Autocomplete',
+  'Segmented',
+  'NumberField',
+  'Slider',
+  'Switch',
+  'Checkbox',
+  'CheckboxGroup',
+  'RadioGroup',
+])
+
+/** The props through which a control holds its value: reading state through one means no handle owns it. */
+const VALUE_ATTRIBUTES: ReadonlySet<string> = new Set([
+  'value',
+  'defaultValue',
+  'checked',
+  'defaultChecked',
+  'onValueChange',
+  'onValueCommit',
+  'onCheckedChange',
+  'onChange',
+])
+
 const HOMES: ReadonlySet<string> = new Set(['FormField', 'FilterSet', 'ViewTabs', 'ControlHome'])
 const HANDLE_ATTRIBUTES: ReadonlySet<string> = new Set(['handle', 'control', 'field'])
 const STATE_HOOKS: ReadonlySet<string> = new Set(['useState', 'useReducer'])
@@ -107,12 +134,27 @@ const isCustomSlot = (callee: Node | undefined): boolean =>
 const isFunction = (node: Node | undefined): node is Node =>
   node?.type === 'ArrowFunctionExpression' || node?.type === 'FunctionExpression'
 
+/** Depth-first walk of a subtree, skipping the `parent` back-reference. */
+function someDescendant(root: Node, test: (node: Node) => boolean): boolean {
+  const stack: Node[] = [root]
+  while (stack.length > 0) {
+    const node = stack.pop() as Node
+    if (test(node)) return true
+    for (const [key, value] of Object.entries(node)) {
+      if (key === 'parent' || key === 'loc' || key === 'range') continue
+      if (Array.isArray(value)) stack.push(...value.filter(isNode))
+      else if (isNode(value)) stack.push(value)
+    }
+  }
+  return false
+}
+
 type Frame =
   | { kind: 'home' }
-  | { kind: 'element'; handles: string[]; bound: boolean }
+  | { kind: 'element'; handles: string[]; bound: boolean; control: boolean }
   | { kind: 'custom'; fn: Node }
 
-type Use = { node: Node; subject: string; frames: Frame[] }
+type Use = { node: Node; subject: string; frames: Frame[]; attributes: Node[] }
 
 const outsideHome: AstForm = {
   id: 'outside-home',
@@ -127,14 +169,25 @@ const outsideHome: AstForm = {
     /** Render functions handed to `filterSlot.custom`, and the functions that keep state. */
     const customRenders = new Set<Node>()
     const stateful = new Set<Node>()
+    /** Names bound by `const [x, set] = useState(...)` or `useReducer` anywhere in the file. */
+    const stateNames = new Set<string>()
     const functions: Node[] = []
     const frames: Frame[] = []
     const uses: Use[] = []
 
+    /** A control whose attributes read file-level state keeps its value outside any handle. */
+    const readsState = (use: Use): boolean =>
+      use.attributes.some((attr) =>
+        someDescendant(
+          attr,
+          (node) => node.type === 'Identifier' && stateNames.has(nameOf(node) ?? ''),
+        ),
+      )
+
     const homed = (use: Use): boolean =>
       use.frames.some((frame) => {
         if (frame.kind === 'home') return true
-        if (frame.kind === 'custom') return !stateful.has(frame.fn)
+        if (frame.kind === 'custom') return !stateful.has(frame.fn) && !readsState(use)
         return frame.bound || frame.handles.some((name) => hoisted.has(name))
       })
 
@@ -151,13 +204,30 @@ const outsideHome: AstForm = {
       ImportDeclaration(node) {
         if (!controlPrimitive(child(node, 'source')?.['value'])) return
         for (const specifier of children(node, 'specifiers')) {
+          if (specifier.type === 'ImportNamespaceSpecifier') continue
+          const imported = child(specifier, 'imported')
+          const importedName = nameOf(imported) ?? (imported?.['value'] as string | undefined)
+          if (specifier.type === 'ImportSpecifier' && !CONTROL_ROOTS.has(importedName ?? ''))
+            continue
           const local = nameOf(child(specifier, 'local'))
           if (local !== undefined) controls.add(local)
         }
       },
       VariableDeclarator(node) {
-        const name = nameOf(child(node, 'id'))
-        if (name !== undefined && isFieldChain(child(node, 'init'))) hoisted.add(name)
+        const id = child(node, 'id')
+        const init = child(node, 'init')
+        const name = nameOf(id)
+        if (name !== undefined && isFieldChain(init)) hoisted.add(name)
+        if (
+          id?.type === 'ArrayPattern' &&
+          init?.type === 'CallExpression' &&
+          STATE_HOOKS.has(nameOf(child(init, 'callee')) ?? '')
+        ) {
+          for (const element of children(id, 'elements')) {
+            const bound = nameOf(element)
+            if (bound !== undefined) stateNames.add(bound)
+          }
+        }
       },
       CallExpression(node) {
         const callee = child(node, 'callee')
@@ -187,14 +257,24 @@ const outsideHome: AstForm = {
           if (isFieldChain(expression)) bound = true
           else if (expression?.type === 'Identifier') handles.push(expression['name'] as string)
         }
+        const root = tagRoot(opening)
+        const isControl = root !== undefined && controls.has(root)
+        const inside = frames.some((frame) => frame.kind === 'element' && frame.control)
         frames.push(
           tag !== undefined && HOMES.has(tag)
             ? { kind: 'home' }
-            : { kind: 'element', handles, bound },
+            : { kind: 'element', handles, bound, control: isControl },
         )
-        const root = tagRoot(opening)
-        if (root !== undefined && controls.has(root)) {
-          uses.push({ node: opening, subject: `<${root}>`, frames: [...frames] })
+        // One control, one report: a part inside a reported control (`Radio` in `RadioGroup`) is not another.
+        if (isControl && !inside) {
+          uses.push({
+            node: opening,
+            subject: `<${root}>`,
+            frames: [...frames],
+            attributes: children(opening, 'attributes').filter((attr) =>
+              VALUE_ATTRIBUTES.has(nameOf(child(attr, 'name')) ?? ''),
+            ),
+          })
         }
       },
       'JSXElement:exit'() {
