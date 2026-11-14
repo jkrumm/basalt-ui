@@ -3,12 +3,29 @@
  * fixture entry in memory and returns a self-contained document, so no shared fixture file carries
  * a line for these suites. Call `dispose` in `afterAll`.
  */
-import { mkdtempSync, readFileSync, rmSync } from 'node:fs'
+import { existsSync, mkdtempSync, readFileSync, rmSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 
 const HERE = import.meta.dirname
 const REPO_ROOT = join(HERE, '..', '..', '..', '..')
+
+/** `basalt-ui/<path>` resolves to the source, as the playground's Vite alias does (a recipe file imports it so). */
+const basaltSource: Bun.BunPlugin = {
+  name: 'basalt-ui-src',
+  setup(build) {
+    build.onResolve({ filter: /^basalt-ui\// }, ({ path }) => {
+      const base = join(HERE, '..', '..', 'src', path.slice('basalt-ui/'.length))
+      const hit = [
+        `${base}.tsx`,
+        `${base}.ts`,
+        join(base, 'index.ts'),
+        join(base, 'index.tsx'),
+      ].find(existsSync)
+      return hit ? { path: hit } : undefined
+    })
+  },
+}
 
 const inlineScript = (code: string): string => code.replaceAll('</script', '<\\/script')
 
@@ -29,6 +46,7 @@ export async function buildAiBlockDocument(
   const build = await Bun.build({
     entrypoints: [join(HERE, entry)],
     target: 'browser',
+    plugins: [basaltSource],
     define: { 'process.env.NODE_ENV': JSON.stringify('production') },
   })
   if (!build.success)

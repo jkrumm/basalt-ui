@@ -24,7 +24,7 @@ import { extname, join, relative } from 'node:path'
 
 export const MAX_RECIPE_LINES = 60
 export const MAX_PROSE_LINES = 15
-export const MAX_RECIPES = 24
+export const MAX_RECIPES = 32
 const REGION_START = /^\s*\/\/ #region recipe:([\w-]+)\s*$/
 const ANY_REGION_START = /^\s*\/\/ #region\b/
 const REGION_END = /^\s*\/\/ #endregion\b/

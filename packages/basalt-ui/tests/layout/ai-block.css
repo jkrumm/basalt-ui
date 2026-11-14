@@ -4,6 +4,9 @@
  */
 @import '../../src/css/tailwind.css' source(none);
 @source './ai-block-fixture.tsx';
+@source '../../../../apps/playground/src/recipes/ai-card-fixture.tsx';
+@source '../../../../apps/playground/src/recipes/ai-card.tsx';
+@source '../../src/content';
 @source '../../src/ai';
 @source '../../src/cards';
 @source '../../src/ui';

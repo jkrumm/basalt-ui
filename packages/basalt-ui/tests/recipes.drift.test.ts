@@ -155,7 +155,7 @@ describe('recipes drift — rules', () => {
     expect(reasons(root)).toContain('file apps/nope.ts does not exist')
   })
 
-  test('more than 24 recipes fails', () => {
+  test('more than 32 recipes fails', () => {
     const root = scratch({})
     const doc = readFileSync(join(root, 'docs', 'recipes', 'sample.md'), 'utf8')
     for (let i = 0; i < MAX_RECIPES; i++) {
