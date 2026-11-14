@@ -125,7 +125,7 @@ export const NAV = defineNav({
           label: 'Orders (state cycle)',
           icon: Table,
           mobile: 'more',
-          link: linkOptions({ to: '/cycle-state' }),
+          link: linkOptions({ to: '/cycle/state' }),
         },
       ],
     },
