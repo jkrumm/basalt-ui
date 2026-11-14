@@ -8,6 +8,7 @@ import { EmptyState, InnerNav, Page, PageAside, PageBar, Section, SplitPage } fr
 import { DataTable, col, useDataTable } from 'basalt-ui/table'
 import type { ReactElement } from 'react'
 import { useV3Tokens } from '../../demo/v3-tokens'
+import { FleetPalette } from './FleetPalette'
 import { TEAMS, TEAM_LABELS } from './fleet-api'
 import type { Deploy, Outcome, Service } from './fleet-api'
 import { services } from './fleet-store'
@@ -140,6 +141,7 @@ export function ServicesPage({ list }: { list: readonly Service[] }): ReactEleme
       >
         {deploy === undefined ? null : <DeployFacts deploy={deploy} />}
       </PageAside>
+      <FleetPalette />
     </Page>
   )
 }

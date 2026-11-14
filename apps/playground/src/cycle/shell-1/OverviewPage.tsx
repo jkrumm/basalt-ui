@@ -11,6 +11,7 @@ import { Page, PageBar, Section } from 'basalt-ui/page'
 import type { ReactElement } from 'react'
 import { demoColors } from '../../demo/series'
 import { useV3Tokens } from '../../demo/v3-tokens'
+import { FleetPalette } from './FleetPalette'
 import { SERVICES, fleetApi, isoDay } from './fleet-api'
 import type { Deploy } from './fleet-api'
 import { RANGE_DAYS, labelOf, overview } from './fleet-store'
@@ -122,6 +123,7 @@ export function OverviewPage(): ReactElement {
           />
         </ChartCard>
       </Section>
+      <FleetPalette />
     </Page>
   )
 }
