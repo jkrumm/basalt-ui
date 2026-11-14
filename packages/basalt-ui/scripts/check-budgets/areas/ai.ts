@@ -13,7 +13,7 @@ export const rows: readonly RowDef[] = [
     id: 'ai-catalog-lines',
     order: 170,
     label: 'catalog engine lines (src/ai/catalog, tests excluded)',
-    ceiling: 351, // landed (v3-ai-i4): validate 149, block 118, define 81; P6 target 250 of code
+    ceiling: 341, // landed (Issue 1161): validate 144, block 113, define 84; 240 lines of code against the P6 target of 250
     measure: () =>
       totalLines(
         walkFiles(join(PKG_ROOT, 'src/ai/catalog'), /\.tsx?$/).filter(

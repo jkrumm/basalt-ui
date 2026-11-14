@@ -148,12 +148,18 @@ describe('validate: resolving and schema errors', () => {
 })
 
 describe('defineBlock and defineCatalog', () => {
-  test('limits may only tighten the default', () => {
+  test('limits may tighten the default or raise it to the ceiling', () => {
     expect(() =>
-      defineBlock({ ...note, name: 'big', limits: { maxBytes: 64 * 1024, maxDepth: 6 } }),
-    ).toThrow('only tighten')
+      defineBlock({ ...note, name: 'big', limits: { maxBytes: 300_000, maxDepth: 8 } }),
+    ).not.toThrow()
     expect(() =>
-      defineBlock({ ...note, name: 'deep', limits: { maxBytes: 1024, maxDepth: 9 } }),
+      defineBlock({ ...note, name: 'huge', limits: { maxBytes: 4 * 1024 * 1024, maxDepth: 6 } }),
+    ).toThrow('limits must stay within')
+    expect(() =>
+      defineBlock({ ...note, name: 'deep', limits: { maxBytes: 1024, maxDepth: 40 } }),
+    ).toThrow()
+    expect(() =>
+      defineBlock({ ...note, name: 'zero', limits: { maxBytes: 0, maxDepth: 6 } }),
     ).toThrow()
   })
 
@@ -169,5 +175,64 @@ describe('defineBlock and defineCatalog', () => {
     expect(first?.description).toBe('A free-form note.')
     expect(first?.props).toBe(note.props)
     expect(first?.sample).toEqual([{ title: 'Hello' }])
+  })
+})
+
+describe('validate: raised limits, text keys and the discriminator (P6)', () => {
+  const big = defineBlock({
+    name: 'big',
+    description: 'A block that holds a long table.',
+    props: z.object({ rows: z.array(z.object({ url: z.string(), n: z.number() })) }).loose(),
+    limits: { maxBytes: 300_000, maxDepth: 8 },
+    textKeys: ['url'],
+    sample: [{ rows: [{ url: 'http://insecure.example/EP-2', n: 1 }] }],
+    render: () => null,
+  })
+  const wide = defineCatalog([note, big])
+
+  test('a block raised to 300 KB takes a payload the default refuses', () => {
+    const rows = Array.from({ length: 5000 }, (_, n) => ({ url: 'u', n }))
+    expect(JSON.stringify({ block: 'big', rows }).length).toBeGreaterThan(32 * 1024)
+    expect(wide.validate({ block: 'big', rows }).ok).toBe(true)
+    expect(wide.validate({ block: 'note', title: 'x'.repeat(40 * 1024) }).ok).toBe(false)
+  })
+
+  test('a block raised to depth 8 takes a payload nested 7 levels', () => {
+    const nest = (levels: number): unknown => (levels === 0 ? 1 : [nest(levels - 1)])
+    expect(catalog.validate({ block: 'note', title: 'x', a: nest(6) }).ok).toBe(false)
+    expect(wide.validate({ block: 'big', rows: [], a: nest(6) }).ok).toBe(true)
+    expect(wide.validate({ block: 'big', rows: [], a: nest(8) }).ok).toBe(false)
+  })
+
+  test('a text key may hold http: where the block draws it as text; other url keys still refuse', () => {
+    expect(
+      wide.validate({ block: 'big', rows: [{ url: 'http://insecure.example/EP-2', n: 1 }] }).ok,
+    ).toBe(true)
+    expect(wide.validate({ block: 'big', rows: [{ url: '//evil.example', n: 1 }] }).ok).toBe(true)
+    expect(wide.validate({ block: 'big', rows: [], href: '//evil.example' }).ok).toBe(false)
+    expect(wide.validate({ block: 'note', title: 'x', url: 'http://insecure.example' }).ok).toBe(
+      false,
+    )
+  })
+
+  test('the discriminator is an option and stays in the props the schema sees', () => {
+    const typed = defineBlock({
+      name: 'stat',
+      description: 'One number.',
+      props: z.object({ type: z.literal('stat'), value: z.number() }),
+      sample: [{ type: 'stat', value: 1 }],
+      render: () => null,
+    })
+    const show = defineCatalog([typed], { discriminator: 'type' })
+    expect(show.discriminator).toBe('type')
+    expect(show.validate({ type: 'stat', value: 1 })).toEqual({
+      ok: true,
+      block: { name: 'stat', props: { type: 'stat', value: 1 } },
+    })
+    const unknown = show.validate({ type: 'chart' })
+    expect(unknown.ok).toBe(false)
+    if (!unknown.ok) expect(unknown.error).toContain('Set "type" to one of: stat')
+    expect(show.validate({ block: 'stat', value: 1 }).ok).toBe(false)
+    expect(catalog.discriminator).toBe('block')
   })
 })
