@@ -323,7 +323,10 @@ describe("a caller's ViewStore", () => {
   })
 
   test('a view id on the address bar waits for the store before it is judged', async () => {
-    window.history.replaceState(null, '', 'about:blank?view=open')
+    // built from the live location, as the component writes it: the document URL differs by file
+    const url = new URL(window.location.href)
+    url.searchParams.set('view', 'open')
+    window.history.replaceState(null, '', url)
     let answer: (list: View[]) => void = () => undefined
     const store = {
       ...memory(),
