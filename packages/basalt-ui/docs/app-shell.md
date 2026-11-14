@@ -28,6 +28,6 @@ AppShell<Id extends string = string>({ nav, brand, badges, blocks, globalControl
   search?: { onOpen: () => void; }
   storageKey?: string
   chrome?: ShellChrome
-  compactHeader?: "show" | "hidden"
+  compactHeader?: "hidden" | "show"
   children?: ReactNode
 ```

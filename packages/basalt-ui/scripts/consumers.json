@@ -142,6 +142,7 @@
   "notify": "argo:apps/dashboard/src/routes/reading.tsx",
   "persisted": "argo:apps/dashboard/src/lib/window-stores.ts",
   "relativeTime": "argo:apps/dashboard/src/features/warden/stale-banner.tsx",
+  "routerDefaults": "linewatch:web/src/lib/router.ts",
   "scrollParentOf": "rb:apps/web/src/features/knot-detail/page.tsx",
   "seriesTokens": "argo:apps/dashboard/src/lib/series.ts",
   "setColorScheme": "argo:apps/dashboard/src/lib/commands.tsx",
