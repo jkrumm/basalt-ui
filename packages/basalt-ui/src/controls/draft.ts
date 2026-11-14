@@ -45,8 +45,6 @@ export function useFormDraft<V>(form: FormLike<V>, o: UseFormDraftOptions<V>): U
   const key = storeKey(o.owner, o.key)
   const store = draftStore(o, key)
   const writer = useRef<ReturnType<typeof debounce<[]>> | null>(null)
-  const latest = useRef({ form, store })
-  latest.current = { form, store }
 
   useEffect(() => {
     let draft = store.get()
@@ -68,9 +66,9 @@ export function useFormDraft<V>(form: FormLike<V>, o: UseFormDraftOptions<V>): U
     // Subscribed after the restore, so the restore's own notification never reads as an edit.
     let seen: unknown = form.state.values
     const save = debounce(() => {
-      const { form: f, store: s } = latest.current
-      if (isPristine(f)) s.reset()
-      else s.set(f.state.values)
+      // This mount's own form and store: a pending edit must never land under a newer key.
+      if (isPristine(form)) store.reset()
+      else store.set(form.state.values)
     }, AUTOSAVE_MS)
     writer.current = save
     const subscription = form.store.subscribe(() => {

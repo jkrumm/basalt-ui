@@ -171,6 +171,15 @@ describe('useFormDraft', () => {
     expect(draftOf()).toEqual({ v: 1, value: changed })
   })
 
+  test('a key change flushes the old edit under the old key only', () => {
+    const form = fakeForm()
+    const { rerender } = render(<Host form={form} o={opts({ key: 'one' })} />)
+    act(() => form.edit(changed))
+    rerender(<Host form={form} o={opts({ key: 'two' })} />)
+    expect(draftOf('basalt:form:u1:one')).toEqual({ v: 1, value: changed })
+    expect(draftOf('basalt:form:u1:two')).toBeNull()
+  })
+
   test('a hidden tab flushes', () => {
     const form = fakeForm()
     render(<Host form={form} o={opts()} />)
