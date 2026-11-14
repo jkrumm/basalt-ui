@@ -1,10 +1,211 @@
 /**
- * `basalt/control-home` (guardrails section 4, row 10): registered ahead of its body. The single
- * form (a control primitive outside a home) waits on v3-spike-control-home and is built by
- * v3-ctl-8; until then the id is in the table with no form and reports nothing. It is never
- * file-waivable: each control is a product signal.
+ * `basalt/control-home` (guardrails section 4, row 10): one form, `outside-home`. A JSX use of a
+ * control primitive (`ui/select`, `combobox`, `segmented`, `number-field`, `slider`, `switch`,
+ * `checkbox`, `radio-group`) in app code whose lexical ancestors in the same file are none of a
+ * home. The predicate is file-local and wrapper-only (controls-url-state section 9, I7): it never
+ * infers a home from where a component is rendered, so a control a file renders for another
+ * file's home needs its own `ControlHome`. Body children of `Section` and `Page` and the nodes of
+ * a page slot are the same predicate: neither is a home.
+ *
+ * A control is in a home when an ancestor (or the control itself) is
+ *
+ * - `FormField`, `FilterSet`, `ViewTabs` or `ControlHome`;
+ * - a render passed to `filterSlot.custom(...)` that keeps no state of its own (`useState` or
+ *   `useReducer` in that function is a value with no handle, so the custom render is not a home);
+ * - a handle-taking composite: a JSX element with an attribute named `handle`, `control` or
+ *   `field` whose value is a `.field.<name>` member chain, or an identifier hoisted from one
+ *   (`const range = store.field.range`), resolved at `Program:exit` so the order of the
+ *   declaration and the element does not matter.
+ *
+ * Never file-waivable: `waiver-needs-reason` rejects a file-level directive for this id, because
+ * each control outside a home is a product signal. A line waiver with a reason is the counted
+ * escape; above 5 per app the homes are redesigned, never the rule widened (spikes/control-home).
  */
+import type { Node, Visitor } from '../../factory'
+import type { AstForm } from '../../rule-table'
 import { defineRules } from '../../rule-table'
+
+const CONTROL_PRIMITIVES: ReadonlySet<string> = new Set([
+  'select',
+  'combobox',
+  'segmented',
+  'number-field',
+  'slider',
+  'switch',
+  'checkbox',
+  'radio-group',
+])
+
+const HOMES: ReadonlySet<string> = new Set(['FormField', 'FilterSet', 'ViewTabs', 'ControlHome'])
+const HANDLE_ATTRIBUTES: ReadonlySet<string> = new Set(['handle', 'control', 'field'])
+const STATE_HOOKS: ReadonlySet<string> = new Set(['useState', 'useReducer'])
+
+const isNode = (value: unknown): value is Node =>
+  typeof value === 'object' && value !== null && typeof (value as Node).type === 'string'
+
+const child = (node: Node, key: string): Node | undefined => {
+  const value = node[key]
+  return isNode(value) ? value : undefined
+}
+
+const children = (node: Node, key: string): Node[] => {
+  const value = node[key]
+  return Array.isArray(value) ? value.filter(isNode) : []
+}
+
+const nameOf = (node: Node | undefined): string | undefined =>
+  node?.type === 'Identifier' || node?.type === 'JSXIdentifier'
+    ? (node['name'] as string)
+    : undefined
+
+/** The component a source imports a control from: `basalt-ui/ui/select` and `@/components/ui/select`. */
+const controlPrimitive = (source: unknown): boolean => {
+  if (typeof source !== 'string') return false
+  const match = /(?:^|\/)ui\/([a-z-]+)$/.exec(source)
+  return match !== null && CONTROL_PRIMITIVES.has(match[1] as string)
+}
+
+/** The element's tag when it is a plain identifier: `Select`; `a.b` has none. */
+const tagOf = (opening: Node): string | undefined => nameOf(child(opening, 'name'))
+
+/** The root identifier of a JSX member tag (`Select.Root` is `Select`), or the plain tag. */
+const tagRoot = (opening: Node): string | undefined => {
+  let name = child(opening, 'name')
+  while (name?.type === 'JSXMemberExpression') name = child(name, 'object')
+  return nameOf(name)
+}
+
+const isFieldChain = (node: Node | undefined): boolean => {
+  let current = node
+  while (current?.type === 'MemberExpression') {
+    const object = child(current, 'object')
+    if (
+      object?.type === 'MemberExpression' &&
+      object['computed'] !== true &&
+      nameOf(child(object, 'property')) === 'field' &&
+      current['computed'] !== true
+    ) {
+      return true
+    }
+    current = object
+  }
+  return false
+}
+
+const expressionOf = (attr: Node): Node | undefined => {
+  const value = child(attr, 'value')
+  return value?.type === 'JSXExpressionContainer' ? child(value, 'expression') : undefined
+}
+
+/** `filterSlot.custom` as a callee. */
+const isCustomSlot = (callee: Node | undefined): boolean =>
+  callee?.type === 'MemberExpression' &&
+  callee['computed'] !== true &&
+  nameOf(child(callee, 'object')) === 'filterSlot' &&
+  nameOf(child(callee, 'property')) === 'custom'
+
+const isFunction = (node: Node | undefined): node is Node =>
+  node?.type === 'ArrowFunctionExpression' || node?.type === 'FunctionExpression'
+
+type Frame =
+  | { kind: 'home' }
+  | { kind: 'element'; handles: string[]; bound: boolean }
+  | { kind: 'custom'; fn: Node }
+
+type Use = { node: Node; subject: string; frames: Frame[] }
+
+const outsideHome: AstForm = {
+  id: 'outside-home',
+  fix: 'Put the control in a home: FormField, FilterSet, ViewTabs or ControlHome around it, or filterSlot.custom(handle, label, render) over a field handle',
+  next: 'A panel-local value takes <ControlHome home="..."> with externalField; a counted line waiver names why no home fits',
+  fixture: 'control-home/outside-home.tsx',
+  detect: ({ report }): Visitor => {
+    /** Local names bound to a control primitive. */
+    const controls = new Set<string>()
+    /** Names assigned a `.field.<name>` chain anywhere in the file. */
+    const hoisted = new Set<string>()
+    /** Render functions handed to `filterSlot.custom`, and the functions that keep state. */
+    const customRenders = new Set<Node>()
+    const stateful = new Set<Node>()
+    const functions: Node[] = []
+    const frames: Frame[] = []
+    const uses: Use[] = []
+
+    const homed = (use: Use): boolean =>
+      use.frames.some((frame) => {
+        if (frame.kind === 'home') return true
+        if (frame.kind === 'custom') return !stateful.has(frame.fn)
+        return frame.bound || frame.handles.some((name) => hoisted.has(name))
+      })
+
+    const enterFunction = (node: Node): void => {
+      functions.push(node)
+      if (customRenders.has(node)) frames.push({ kind: 'custom', fn: node })
+    }
+    const exitFunction = (node: Node): void => {
+      functions.pop()
+      if (customRenders.has(node)) frames.pop()
+    }
+
+    return {
+      ImportDeclaration(node) {
+        if (!controlPrimitive(child(node, 'source')?.['value'])) return
+        for (const specifier of children(node, 'specifiers')) {
+          const local = nameOf(child(specifier, 'local'))
+          if (local !== undefined) controls.add(local)
+        }
+      },
+      VariableDeclarator(node) {
+        const name = nameOf(child(node, 'id'))
+        if (name !== undefined && isFieldChain(child(node, 'init'))) hoisted.add(name)
+      },
+      CallExpression(node) {
+        const callee = child(node, 'callee')
+        if (isCustomSlot(callee)) {
+          for (const arg of children(node, 'arguments')) if (isFunction(arg)) customRenders.add(arg)
+        } else if (STATE_HOOKS.has(nameOf(callee) ?? '')) {
+          const owner = functions.at(-1)
+          if (owner) stateful.add(owner)
+        }
+      },
+      ArrowFunctionExpression: enterFunction,
+      'ArrowFunctionExpression:exit': exitFunction,
+      FunctionExpression: enterFunction,
+      'FunctionExpression:exit': exitFunction,
+      FunctionDeclaration: (node) => functions.push(node),
+      'FunctionDeclaration:exit': () => functions.pop(),
+      JSXElement(node) {
+        const opening = child(node, 'openingElement')
+        if (!opening) return
+        const tag = tagOf(opening)
+        let bound = false
+        const handles: string[] = []
+        for (const attr of children(opening, 'attributes')) {
+          if (attr.type !== 'JSXAttribute') continue
+          if (!HANDLE_ATTRIBUTES.has(nameOf(child(attr, 'name')) ?? '')) continue
+          const expression = expressionOf(attr)
+          if (isFieldChain(expression)) bound = true
+          else if (expression?.type === 'Identifier') handles.push(expression['name'] as string)
+        }
+        frames.push(
+          tag !== undefined && HOMES.has(tag)
+            ? { kind: 'home' }
+            : { kind: 'element', handles, bound },
+        )
+        const root = tagRoot(opening)
+        if (root !== undefined && controls.has(root)) {
+          uses.push({ node: opening, subject: `<${root}>`, frames: [...frames] })
+        }
+      },
+      'JSXElement:exit'() {
+        frames.pop()
+      },
+      'Program:exit'() {
+        for (const use of uses) if (!homed(use)) report(use.node, use.subject)
+      },
+    }
+  },
+}
 
 export const controlHomeRules = defineRules({
   'control-home': {
@@ -12,6 +213,6 @@ export const controlHomeRules = defineRules({
     profiles: ['parts', 'app'],
     defect:
       'the highest-friction family, 21 waivers; one console filter existed in 3 UIs (self-guardrails, console)',
-    forms: [],
+    forms: [outsideHome],
   },
 })

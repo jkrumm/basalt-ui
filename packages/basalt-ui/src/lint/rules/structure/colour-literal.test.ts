@@ -1,8 +1,8 @@
 /**
  * The structure-rest family (guardrails section 4, rows 10-15): `colour-literal`,
  * `waiver-needs-reason` and `data-primitive` with every fixture block as a RuleTester case under
- * ESLint and under oxlint's `plugins-dev`; `router-search` and `control-home` are id-only
- * shells (`untrusted-markdown` has its own test file). One file covers the five ids because each id's owned
+ * ESLint and under oxlint's `plugins-dev`; `router-search`, `control-home` and `untrusted-markdown`
+ * have their own test files. One file covers the five ids because each id's owned
  * glob would otherwise need its own copy of the harness.
  */
 import { afterAll, describe, expect, it } from 'bun:test'
@@ -12,8 +12,8 @@ import { join, resolve } from 'node:path'
 import type { Rule } from 'eslint'
 import { RuleTester } from 'eslint'
 
-import { buildRule, createPlugin, formMessage, tableOf } from '../../factory'
-import { formCount, isEnabled, mergeTables, renderCoverage } from '../../rule-table'
+import { buildRule, formMessage } from '../../factory'
+import { formCount, isEnabled, mergeTables } from '../../rule-table'
 import { SUITES, FIXTURES_ROOT, parseFixture } from './colour-literal.cases'
 import { colourLiteralRules } from './colour-literal'
 import { controlHomeRules } from './control-home'
@@ -73,7 +73,7 @@ describe('forms', () => {
     entry.forms.filter(isEnabled).map((form) => ({ id, form })),
   )
 
-  it('has 16 live forms: colour-literal 1, waiver-needs-reason 2, data-primitive 9, untrusted-markdown 4', () => {
+  it('has 20 live forms: colour-literal 1, waiver-needs-reason 2, data-primitive 9, untrusted-markdown 4, router-search 3, control-home 1', () => {
     const counts: Record<string, number> = {}
     for (const { id } of live) counts[id] = (counts[id] ?? 0) + 1
     expect(counts).toEqual({
@@ -81,8 +81,10 @@ describe('forms', () => {
       'waiver-needs-reason': 2,
       'data-primitive': 9,
       'untrusted-markdown': 4,
+      'router-search': 3,
+      'control-home': 1,
     })
-    expect(formCount(FAMILY)).toBe(16)
+    expect(formCount(FAMILY)).toBe(20)
   })
 
   for (const { id, form } of live) {
@@ -114,40 +116,11 @@ describe('forms', () => {
   })
 })
 
-describe('id-only shells', () => {
-  const shells = ['router-search', 'control-home']
-  const plugin = createPlugin(FAMILY)
-
-  it('register in the rule table with no form', () => {
-    for (const id of shells) {
-      expect(tableOf(plugin)[id]?.forms).toEqual([])
-      expect(plugin.rules[id]).toBeDefined()
-    }
-  })
-
-  const tester = new RuleTester({
-    languageOptions: { parserOptions: { ecmaFeatures: { jsx: true } } },
-  })
-  for (const id of shells) {
-    // Code the bodies will one day guard: the shells must stay silent until v3-ctl-8.
-    tester.run(id, plugin.rules[id] as unknown as Rule.RuleModule, {
-      valid: [
-        `const a = <Link to="/x" search={{ range: '30d' }} />`,
-        `const a = <Select data={[]} />`,
-      ],
-      invalid: [],
-    })
-  }
-
-  it('print `not guarded:` in the coverage block', () => {
-    const block = renderCoverage({ table: FAMILY, ids: shells })
-    for (const id of shells) expect(block).toContain(`not guarded: basalt/${id}: no live form yet`)
-  })
-
+describe('profiles', () => {
   it('carries the profiles the contract names', () => {
     expect(FAMILY['colour-literal']?.profiles).toEqual(['bridge', 'parts', 'app'])
     expect(FAMILY['waiver-needs-reason']?.profiles).toEqual(['bridge', 'parts', 'app'])
-    for (const id of ['data-primitive', 'untrusted-markdown', ...shells]) {
+    for (const id of ['data-primitive', 'untrusted-markdown', 'router-search', 'control-home']) {
       expect(FAMILY[id]?.profiles).toEqual(['parts', 'app'])
     }
   })
