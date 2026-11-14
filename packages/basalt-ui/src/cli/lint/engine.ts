@@ -247,9 +247,17 @@ export function scan(project: Project, files: readonly string[]): Finding[] {
   ].toSorted((a, b) => a.file.localeCompare(b.file) || a.line - b.line)
 }
 
-/** A lintable file under a declared root that is not a generated token sheet. */
+/** Directories no scan enters, whichever way the file is named (the walk of `doctor` skips the same). */
+const SKIPPED = new Set(['node_modules', 'dist', '.git', '.basalt', '.claude', 'coverage'])
+
+/** A lintable file under a declared root that is not vendored, managed or a generated token sheet. */
 export function isScanned(project: Project, rel: string): boolean {
-  return LINTABLE.test(rel) && inRoots(project, rel) && !generated(project).has(rel)
+  return (
+    LINTABLE.test(rel) &&
+    inRoots(project, rel) &&
+    !rel.split('/').some((segment) => SKIPPED.has(segment)) &&
+    !generated(project).has(rel)
+  )
 }
 
 const git = (project: Project, args: string[]): Run | null => {
@@ -266,11 +274,20 @@ export function changedFiles(project: Project): string[] {
     const run = git(project, args)
     return run === null || run.status !== 0 ? null : run.stdout.split('\n').filter((l) => l !== '')
   }
-  const tracked = names(['diff', '--name-only', '--relative', 'HEAD']) ?? [
-    ...(names(['diff', '--name-only', '--relative']) ?? []),
-    ...(names(['diff', '--name-only', '--relative', '--cached']) ?? []),
-  ]
-  const untracked = names(['ls-files', '--others', '--exclude-standard']) ?? []
+  // No commit yet: the tree and the index stand in for HEAD. Git failing outright is an error,
+  // never an empty list: a check that cannot see what changed must not read as clean.
+  const untracked = names(['ls-files', '--others', '--exclude-standard'])
+  const unstaged = names(['diff', '--name-only', '--relative'])
+  const tracked =
+    names(['diff', '--name-only', '--relative', 'HEAD']) ??
+    (unstaged === null
+      ? null
+      : [...unstaged, ...(names(['diff', '--name-only', '--relative', '--cached']) ?? [])])
+  if (untracked === null || tracked === null) {
+    throw new Error(
+      'git could not list the changed files (not a repository, or git failed): run lint without --changed',
+    )
+  }
   return [...new Set([...tracked, ...untracked])]
     .filter((f) => isScanned(project, f) && existsSync(resolve(project.root, f)))
     .toSorted()
