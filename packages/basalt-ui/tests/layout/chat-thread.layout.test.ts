@@ -61,6 +61,26 @@ const gap = (page: LayoutPage): Promise<number> =>
 const scrollTop = (page: LayoutPage): Promise<number> =>
   page.raw.evaluate((sel) => document.querySelector(sel)!.scrollTop, SCROLLER)
 
+/**
+ * The wheel's scroll animation runs on the compositor and a loaded host stretches it past any fixed
+ * sleep, start included: wait (at most 3 s) for `scrollTop` to drop below `from`, the value before
+ * the upward wheel (a pinned stream only ever grows it), then read it until two reads 150 ms apart agree (at most 3 s more) and return it.
+ */
+async function settledScrollTop(page: LayoutPage, from: number): Promise<number> {
+  let last = await scrollTop(page)
+  for (let i = 0; i < 20 && last >= from; i++) {
+    await sleep(150)
+    last = await scrollTop(page)
+  }
+  for (let i = 0; i < 20; i++) {
+    await sleep(150)
+    const now = await scrollTop(page)
+    if (now === last) return now
+    last = now
+  }
+  return last
+}
+
 async function send(page: LayoutPage, text: string): Promise<void> {
   await page.raw.fill(BOX, text)
   await page.raw.keyboard.press('Enter')
@@ -123,9 +143,9 @@ layout('chat-thread: the scroller over a 90 s stream (P12)', () => {
 
     // t=10: a user scroll-up releases the pin and nothing scrolls the thread back.
     await at(10)
+    const beforeWheel = await scrollTop(page)
     await page.raw.mouse.wheel(0, -700)
-    await sleep(300)
-    const released = await scrollTop(page)
+    const released = await settledScrollTop(page, beforeWheel)
     await at(13)
     expect(
       Math.abs((await scrollTop(page)) - released),
