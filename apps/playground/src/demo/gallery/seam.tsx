@@ -11,7 +11,7 @@ import { Meter, Section } from 'basalt-ui'
 import type { MeterSegment } from 'basalt-ui'
 import {
   CartesianChart,
-  LegacyChartCard as ChartCard,
+  LegacyChartCard,
   Heatmap,
   chartLabels,
   useChartFocus,
@@ -46,7 +46,7 @@ const REST_OPACITY = 0.25
 function PipelinePace() {
   const focus = useChartFocus(STAGES, { announce: (s) => `${s.name}: ${s.behind} s behind best` })
   return (
-    <ChartCard
+    <LegacyChartCard
       title="Pipeline pace"
       subtitle="Seconds behind the best run, per stage"
       facts={{
@@ -85,7 +85,7 @@ function PipelinePace() {
           ]
         }}
       />
-    </ChartCard>
+    </LegacyChartCard>
   )
 }
 // #endregion
@@ -118,7 +118,7 @@ function FailureHeatmap() {
   })
   const worst = FAILURES.reduce((a, b) => (b.rate > a.rate ? b : a))
   return (
-    <ChartCard
+    <LegacyChartCard
       title="Failure rate by service and hour"
       subtitle="Percent of requests, 08:00 to 19:00 UTC"
       facts={{
@@ -144,7 +144,7 @@ function FailureHeatmap() {
         legend={{ label: 'Failures / request' }}
         height={{ base: 200, regular: 220 }}
       />
-    </ChartCard>
+    </LegacyChartCard>
   )
 }
 
@@ -163,7 +163,7 @@ function ContextMeter() {
     announce: (p) => `${p.label}: ${p.value}k tokens`,
   })
   return (
-    <ChartCard
+    <LegacyChartCard
       title="Context window"
       subtitle="Tokens by part, of 200k"
       facts={{
@@ -179,7 +179,7 @@ function ContextMeter() {
         size="md"
         focus={focus}
       />
-    </ChartCard>
+    </LegacyChartCard>
   )
 }
 
@@ -270,7 +270,10 @@ function scatterMarks(plot: PlotContext<Model, number>) {
 
 function PriceQuality() {
   return (
-    <ChartCard title="Price and quality" subtitle="Frontier models filled, beaten models hollow">
+    <LegacyChartCard
+      title="Price and quality"
+      subtitle="Frontier models filled, beaten models hollow"
+    >
       <CartesianChart<Model, number>
         data={MODELS}
         ariaLabel="Quality against price per million tokens on a log scale, seven models"
@@ -298,7 +301,7 @@ function PriceQuality() {
         ]}
         marks={scatterMarks}
       />
-    </ChartCard>
+    </LegacyChartCard>
   )
 }
 
@@ -313,12 +316,12 @@ const BAR_PARTS: readonly Part[] = CONTEXT_PARTS.map((p) => ({
 
 function SeamBarCard() {
   return (
-    <ChartCard
+    <LegacyChartCard
       title="Context window, hand-drawn"
       subtitle="The seam-bar recipe: HTML parts, one focus"
     >
       <SeamBar parts={BAR_PARTS} track={BAR_TRACK} />
-    </ChartCard>
+    </LegacyChartCard>
   )
 }
 
@@ -334,12 +337,12 @@ const SPANS: readonly Span[] = [
 
 function SeamTrackCard() {
   return (
-    <ChartCard
+    <LegacyChartCard
       title="Agent run, hand-drawn"
       subtitle="The seam-track recipe: chartLabels.axis and chartLabels.row on an HTML track"
     >
       <SeamTrack spans={SPANS} />
-    </ChartCard>
+    </LegacyChartCard>
   )
 }
 
@@ -354,12 +357,12 @@ const SAMPLES: readonly Sample[] = Array.from({ length: 20 }, (_, day) => ({
 
 function SeamLinkedCard() {
   return (
-    <ChartCard
+    <LegacyChartCard
       title="Daily samples by version"
       subtitle="The seam-linked recipe: PageUp and PageDown step by version"
     >
       <SeamLinked samples={SAMPLES} />
-    </ChartCard>
+    </LegacyChartCard>
   )
 }
 
