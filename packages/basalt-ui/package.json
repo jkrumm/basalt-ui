@@ -180,6 +180,7 @@
     "./typography.css": "./dist/css/typography.css",
     "./prose.css": "./dist/css/prose.css",
     "./fonts.css": "./dist/css/fonts.css",
+    "./table.css": "./dist/table/table.css",
     "./tailwind.css": "./dist/css/tailwind.css",
     "./styles.css": "./dist/styles.css",
     "./configs/*": "./configs/*"
