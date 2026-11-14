@@ -90,7 +90,8 @@ export type ControlHandle<T> = {
  * the specs; `count` lets a dev assertion cap inline controls without opening it. `Scope` is a
  * type-only brand `filterSlot` sets from its specs, so a card slot (`ControlsSlot<'widget'>`)
  * rejects a slot built from a global or page spec; an unbranded slot (`filterSlot.custom`,
- * `globalControls`) fits anywhere.
+ * `globalControls`) fits anywhere. In a pill home (`page-bar`, `section-header`) the slot renders
+ * as `FilterSet`, so the measured fold and the phone's `Filters (n)` sheet apply (F2 amendment n12).
  */
 export type ControlsSlot<Scope extends string = never> = {
   readonly kind: 'controls-slot'

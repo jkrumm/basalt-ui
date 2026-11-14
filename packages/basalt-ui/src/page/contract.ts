@@ -78,7 +78,11 @@ export type PageAsideProps = {
 
 export type SectionProps = {
   title: string
+  /** One line beside the title, shown while collapsed too. */
+  summary?: string
   controls?: ControlsSlot
+  /** The heading is the trigger; open state is uncontrolled or a handle (F2 amendment n5). */
+  collapsible?: { defaultOpen?: boolean; state?: ControlHandle<boolean> }
   children?: ReactNode
 }
 
