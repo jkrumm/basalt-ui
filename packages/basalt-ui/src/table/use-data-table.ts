@@ -6,7 +6,7 @@
  * The instance is opaque to callers (`DataTableInstance`); the parts read the model behind it with
  * `modelOf`. Columns are plain per-render values: nothing here depends on their identity.
  */
-import { useEffect, useMemo, useRef, useState } from 'react'
+import { createElement, useEffect, useMemo, useRef, useState } from 'react'
 import type { ReactNode } from 'react'
 import { useFormat } from '../core/format'
 import type { Format } from '../core/format'
@@ -24,6 +24,7 @@ import type {
   UseDataTable,
   ViewStore,
 } from './contract'
+import { AutoDetail, detailTitle } from './parts/auto-detail'
 import { bodyItems, toggled } from './parts/group-row-model'
 import type { BodyItem } from './parts/group-row-model'
 import { tableEngine } from './core/features'
@@ -48,9 +49,10 @@ const NO_ROWS: readonly never[] = []
 export type ModelRow<T> = { id: string; original: T }
 
 export type Activation<T> =
-  | { kind: 'none' }
   | { kind: 'row'; run: (row: T) => void }
   | { kind: 'detail'; render: (row: T, box: Box) => ReactNode }
+  /** Neither `detail` nor `onRowActivate`: the row opens the sheet derived from its columns. */
+  | { kind: 'auto' }
 
 export type SortDirection = 'asc' | 'desc' | 'none'
 
@@ -92,6 +94,13 @@ export type TableModel<T> = {
   viewStore: ViewStore | undefined
   /** The parts hand the detail host here; an activation shows into the latest one. */
   setHost(host: DetailHost | undefined): void
+  /** Opens the sheet derived from the row's columns (the `table-expand` door). */
+  openDetails(id: string): void
+  /**
+   * Whether each row carries the `table-expand` door: `onRowActivate` takes the tap, and a tier can
+   * hide a column (priority 3, or a card `detail`), so the derived sheet needs its own way in.
+   */
+  expandable: boolean
   format: Format
   /** One clock value per render so server and client agree on a relative time. */
   now: number
@@ -242,12 +251,21 @@ export function useDataTable<T>(options: UseDataTable<T>): DataTableInstance<T> 
       ? { kind: 'detail', render: options.detail }
       : options.onRowActivate !== undefined
         ? { kind: 'row', run: options.onRowActivate }
-        : { kind: 'none' }
+        : { kind: 'auto' }
 
+  const showAuto = (id: string): void => {
+    const row = byId.get(id)
+    if (row === undefined) return
+    host.current?.show({
+      title: detailTitle(model, row),
+      body: (box) => createElement(AutoDetail<T>, { model, row, box }),
+    })
+  }
   const activate = (id: string): void => {
     const row = byId.get(id)
     if (row === undefined) return
     if (activation.kind === 'row') activation.run(row)
+    else if (activation.kind === 'auto') showAuto(id)
     else if (activation.kind === 'detail') {
       const { render } = activation
       host.current?.show({
@@ -258,7 +276,7 @@ export function useDataTable<T>(options: UseDataTable<T>): DataTableInstance<T> 
   }
   const keyboard = useRowKeyboard({
     rowIds: items.flatMap((item) => (item.type === 'row' ? [item.row.id] : [])),
-    onActivate: activation.kind === 'none' ? undefined : activate,
+    onActivate: activate,
     onToggle: options.selection === undefined ? undefined : selection.toggle,
     onClear: options.selection === undefined ? undefined : selection.clear,
   })
@@ -300,6 +318,12 @@ export function useDataTable<T>(options: UseDataTable<T>): DataTableInstance<T> 
     setHost(next) {
       host.current = next
     },
+    openDetails: showAuto,
+    expandable:
+      activation.kind === 'row' &&
+      plan.columns.some(
+        (column) => column.visible && (column.priority === 3 || column.place === 'detail'),
+      ),
     format,
     now,
     sortOf(id) {

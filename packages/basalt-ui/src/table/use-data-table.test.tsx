@@ -200,9 +200,9 @@ describe('activation and keyboard', () => {
     expect(show).toHaveBeenCalledTimes(1)
   })
 
-  test('a table with neither activation nor selection has no row tab stops', () => {
+  test('a table with neither activation nor selection still has a row to activate: the auto sheet', () => {
     render(<Subject />)
-    expect(document.querySelector('tbody tr[tabindex]')).toBeNull()
+    expect(document.querySelector('tbody tr[tabindex]')).not.toBeNull()
   })
 })
 
