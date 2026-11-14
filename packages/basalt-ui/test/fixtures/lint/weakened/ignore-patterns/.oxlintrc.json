@@ -1,0 +1,1 @@
+{ "extends": ["./.oxlintrc.basalt.json"], "ignorePatterns": ["src/**"] }
