@@ -8,7 +8,7 @@ import { useEffect } from 'react'
 import type { ReactElement } from 'react'
 import { persisted } from '../../core/persisted'
 import { settled } from '../../testing/settled'
-import type { TableState, View } from '../contract'
+import type { TableState, View, ViewStore } from '../contract'
 import { tableCodec } from '../core/codec'
 import { col } from '../core/kinds'
 import { createState } from '../core/state'
@@ -154,7 +154,7 @@ const model = (): TableModel<Row> => {
   return latest
 }
 
-function Subject(): ReactElement {
+function Subject({ store }: { store?: ViewStore }): ReactElement {
   const t = useDataTable<Row>({
     id: 'v',
     label: 'Rows',
@@ -165,6 +165,7 @@ function Subject(): ReactElement {
     data: [{ id: 'a', payee: 'Acme', state: 'Open' }],
     getRowId: (r) => r.id,
     mode: { kind: 'client' },
+    ...(store !== undefined && { views: { store } }),
   })
   const built = modelOf(t)
   useEffect(() => {
@@ -264,5 +265,92 @@ describe('Views menu', () => {
     expect(model().state.request.q).toBe('')
     expect(model().state.request.filters).toEqual([])
     expect(model().state.display.visibility).toEqual({})
+  })
+})
+
+describe("a caller's ViewStore", () => {
+  const stored: View = {
+    id: 'open',
+    name: 'Open',
+    state: state({ filters: [{ id: 'state', op: 'anyOf', values: ['Open'] }] }),
+  }
+  const memory = (initial: View[] = []): ViewStore & { rows: View[]; fail: boolean } => {
+    const store = {
+      rows: initial,
+      fail: false,
+      list: () => Promise.resolve([...store.rows]),
+      save: (_table: string, view: View) =>
+        store.fail
+          ? Promise.reject(new Error('down'))
+          : Promise.resolve().then(() => {
+              store.rows = [...store.rows.filter((v) => v.id !== view.id), view]
+            }),
+      remove: (_table: string, id: string) =>
+        store.fail
+          ? Promise.reject(new Error('down'))
+          : Promise.resolve().then(() => {
+              store.rows = store.rows.filter((v) => v.id !== id)
+            }),
+    }
+    return store
+  }
+
+  test('lists, applies, saves and removes through the store, never the device', async () => {
+    const store = memory([stored])
+    render(<Subject store={store} />)
+    fireEvent.click(screen.getByRole('button', { name: 'Views' }))
+    await settled()
+    fireEvent.click(screen.getByRole('button', { name: 'Open' }))
+    await settled()
+    expect(model().state.request.filters).toEqual(stored.state.request.filters)
+    expect(search().get('view')).toBe('open')
+
+    fireEvent.click(screen.getByRole('button', { name: 'Views' }))
+    await settled()
+    fireEvent.change(screen.getByRole('textbox', { name: 'View name' }), {
+      target: { value: 'Second' },
+    })
+    fireEvent.click(screen.getByRole('button', { name: 'Save view' }))
+    await settled()
+    expect(store.rows.map((v) => v.name)).toEqual(['Open', 'Second'])
+    expect(viewsStore('v').get()).toEqual([])
+
+    fireEvent.click(screen.getByRole('button', { name: 'Views' }))
+    await settled()
+    fireEvent.click(screen.getByRole('button', { name: 'Delete view Second' }))
+    await settled()
+    expect(store.rows.map((v) => v.name)).toEqual(['Open'])
+  })
+
+  test('a view id on the address bar waits for the store before it is judged', async () => {
+    window.history.replaceState(null, '', 'about:blank?view=open')
+    let answer: (list: View[]) => void = () => undefined
+    const store = {
+      ...memory(),
+      list: () => new Promise<View[]>((resolve) => (answer = resolve)),
+    }
+    render(<Subject store={store} />)
+    await settled()
+    expect(search().get('view')).toBe('open')
+    await act(async () => answer([stored]))
+    // the table state does not equal the stored view, so the answered list drops the id
+    expect(search().get('view')).toBeNull()
+  })
+
+  test('a refused save keeps the list as it was, says so and keeps the panel open', async () => {
+    const store = memory([stored])
+    store.fail = true
+    render(<Subject store={store} />)
+    fireEvent.click(screen.getByRole('button', { name: 'Views' }))
+    await settled()
+    fireEvent.change(screen.getByRole('textbox', { name: 'View name' }), {
+      target: { value: 'New' },
+    })
+    fireEvent.click(screen.getByRole('button', { name: 'Save view' }))
+    await settled()
+    expect(screen.getByRole('alert').textContent).toBe('The views could not be updated')
+    expect(screen.queryByRole('button', { name: 'New' })).toBeNull()
+    expect(screen.getByRole('button', { name: 'Open' })).toBeDefined()
+    expect(search().get('view')).toBeNull()
   })
 })

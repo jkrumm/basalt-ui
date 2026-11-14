@@ -22,6 +22,7 @@ import type {
   TableEscape,
   Totals,
   UseDataTable,
+  ViewStore,
 } from './contract'
 import { bodyItems, toggled } from './parts/group-row-model'
 import type { BodyItem } from './parts/group-row-model'
@@ -87,6 +88,8 @@ export type TableModel<T> = {
   bulk: { actions: readonly BulkAction<T>[]; selectAll: boolean; data: readonly T[] } | undefined
   activation: Activation<T>
   keyboard: RowKeyboard
+  /** A `ViewStore` the caller supplied; absent, the Views panel keeps the views on the device. */
+  viewStore: ViewStore | undefined
   /** The parts hand the detail host here; an activation shows into the latest one. */
   setHost(host: DetailHost | undefined): void
   format: Format
@@ -293,6 +296,7 @@ export function useDataTable<T>(options: UseDataTable<T>): DataTableInstance<T> 
           },
     activation,
     keyboard,
+    viewStore: options.views?.store,
     setHost(next) {
       host.current = next
     },
