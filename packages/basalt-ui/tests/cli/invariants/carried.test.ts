@@ -49,25 +49,21 @@ describe('carried guards', () => {
     expect(phantoms).toEqual([])
   })
 
-  // flips in: v3-sk-5-rules (snippets move into the thin skill's references)
-  it.failing(
-    'inv x-snippets: every `// @check` snippet in the shipped skills is present and compiles',
-    async () => {
-      const snippets = filesUnder(join(PKG_ROOT, 'agent/skills'))
-        .filter((f) => f.endsWith('.md'))
-        .flatMap((file) =>
-          [...read(file).matchAll(/^```tsx\n([\s\S]*?)^```/gm)]
-            .map((m) => m[1] ?? '')
-            .filter((code) => code.startsWith('// @check\n'))
-            .map((code) => ({ file, code })),
-        )
-      expect(snippets.length).toBeGreaterThan(0)
-      // v3: SKILL.md stays thin; what remains of the snippets lives in `references/` and the
-      // v3 `src/ui` surface, so a snippet in a SKILL.md or one importing `@mantine` is stale.
-      for (const { file, code } of snippets) {
-        expect(file, file).toContain('/references/')
-        expect(code, file).not.toContain('@mantine')
-      }
-    },
-  )
+  it('inv x-snippets: every `// @check` snippet in the shipped skills is present and compiles', async () => {
+    const snippets = filesUnder(join(PKG_ROOT, 'agent/skills'))
+      .filter((f) => f.endsWith('.md'))
+      .flatMap((file) =>
+        [...read(file).matchAll(/^```tsx\n([\s\S]*?)^```/gm)]
+          .map((m) => m[1] ?? '')
+          .filter((code) => code.startsWith('// @check\n'))
+          .map((code) => ({ file, code })),
+      )
+    expect(snippets.length).toBeGreaterThan(0)
+    // v3: SKILL.md stays thin; what remains of the snippets lives in `references/` and the
+    // v3 `src/ui` surface, so a snippet in a SKILL.md or one importing `@mantine` is stale.
+    for (const { file, code } of snippets) {
+      expect(file, file).toContain('/references/')
+      expect(code, file).not.toContain('@mantine')
+    }
+  })
 })
