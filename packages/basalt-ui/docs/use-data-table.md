@@ -19,7 +19,7 @@ useDataTable<T>(options: UseDataTable<T>): DataTableInstance<T>
   id: string
   label: string
   columns: readonly KindColumn<T>[]
-  data: readonly T[]
+  data?: readonly T[]
   getRowId: (row: T) => string
   mode: Mode
   state?: StateHandle<TableState>

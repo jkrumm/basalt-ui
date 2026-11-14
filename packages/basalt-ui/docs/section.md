@@ -4,7 +4,7 @@ use when: 'a page has several parts that each need a heading, their own controls
 never when: 'the part is a single card (the card has its own title) or the heading restates the page title'
 subpath: basalt-ui/page
 peers: ['@base-ui/react']
-slots: [section, section-controls]
+slots: [section, section-controls, section-tabs]
 ---
 
 # Section
@@ -17,10 +17,11 @@ heading just below the page band instead of under it. Outside a `Page` the offse
 ## Signature
 
 ```ts
-Section({ title, controls, children }: SectionProps): ReactElement
+Section<K extends string = string>({ title, controls, tabs, children, }: SectionProps<K>): ReactElement
   title: string
   summary?: string
   controls?: { readonly kind: "controls-slot"; readonly count: number; r…
+  tabs?: PageTabs<K>
   collapsible?: { defaultOpen?: boolean; state?: ControlHandle<boolean>; }
   children?: ReactNode
 ```
