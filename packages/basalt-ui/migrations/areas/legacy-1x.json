@@ -551,6 +551,33 @@
       "from": "basalt-ui/vite#basaltViteConfig",
       "to": "basalt() from basalt-ui/vite, which absorbs basaltAppPlugin",
       "manual": true
+    },
+    {
+      "id": "bars-1x",
+      "kind": "removed-prop",
+      "from": "basalt-ui/charts#Bars.getX",
+      "to": "x, series: [{ mark: \"bar\" }] and cursor where shared",
+      "codemod": "charts",
+      "note": "getX, getValue, positiveBars, chartId and xTicks all go the same way; the codemod rewrites them in one pass",
+      "verify": "migrate --check: no Bars is left with a getX prop"
+    },
+    {
+      "id": "tooltip-rows-1x",
+      "kind": "removed",
+      "from": "basalt-ui/charts#TooltipRow",
+      "to": "the tooltip.rows data on the chart",
+      "manual": true,
+      "note": "extraRows and TooltipRow markup become tooltip.rows data, one { label, value } entry per row",
+      "verify": "tsc, then migrate --check"
+    },
+    {
+      "id": "donut-1x",
+      "kind": "removed",
+      "from": "basalt-ui/charts#Donut",
+      "to": "BarList from basalt-ui/cards, with max = the total",
+      "manual": true,
+      "note": "a Donut of storage slices is a BarList; a single value is Ring in ui/progress, not a chart kind",
+      "verify": "tsc, then migrate --check"
     }
   ],
   "tokens": {
