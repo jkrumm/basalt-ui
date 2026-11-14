@@ -138,10 +138,9 @@ layout('Table exemplar at the phone widths', () => {
           }
         })
 
-        // Every cell is in the tree and painted, yet a card whose row keeps its table height lets
-        // the stacked cells print over the next card (the row's `h-(--table-row-h)` utility sits
-        // above the tier sheet's `height: auto`). `failing` flips to a failure when that is fixed.
-        test.failing(`${probe}: every cell of a card sits inside its card`, async () => {
+        // A card row is as tall as its stacked cells: the row's `h-(--table-row-h)` utility sits above
+        // the tier sheet, so the sheet's `height: auto` is `!important`.
+        test(`${probe}: every cell of a card sits inside its card`, async () => {
           const page = await open(viewport)
           const cells = await cellsOf(page, probe)
           expect(cells.filter((cell) => !cell.inside)).toEqual([])

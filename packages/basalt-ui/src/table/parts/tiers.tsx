@@ -27,6 +27,14 @@ export function tierAttributesOf<T>(model: TableModel<T>): TierAttributes {
   }
 }
 
+/** The width of the visible priority 1 and 2 columns pinned to one edge. */
+function pinnedPx<T>(model: TableModel<T>, edge: 'start' | 'end'): number {
+  return model.plan.columns.reduce(
+    (sum, column) => (column.visible && column.pin === edge ? sum + column.widthPx : sum),
+    0,
+  )
+}
+
 /** The scroll tier's table width: priority 1 and 2 columns at their planned size. */
 export function scrollMinWidth<T>(model: TableModel<T>): CSSProperties {
   const selectPx = model.selection === undefined ? 0 : 40
@@ -38,5 +46,8 @@ export function scrollMinWidth<T>(model: TableModel<T>): CSSProperties {
     ['--table-min-scroll' as string]: `${px}px`,
     // A start-pinned column rides beside the tick column when there is one.
     ['--table-pin-start' as string]: `${selectPx}px`,
+    // Focus scrolls clear of the pinned columns, which are opaque and sit over the scrolled cells.
+    ['--table-scroll-pad-start' as string]: `${selectPx + pinnedPx(model, 'start')}px`,
+    ['--table-scroll-pad-end' as string]: `${pinnedPx(model, 'end')}px`,
   }
 }

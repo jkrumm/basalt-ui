@@ -131,6 +131,7 @@ interface AxeResults {
 interface AxeBuilderLike {
   withTags(tags: string[]): AxeBuilderLike
   include(selector: string): AxeBuilderLike
+  exclude(selector: string): AxeBuilderLike
   analyze(): Promise<AxeResults>
 }
 type AxeBuilderCtor = new (options: { page: unknown }) => AxeBuilderLike
@@ -165,12 +166,16 @@ function loadAxe(): Promise<AxeBuilderCtor> {
   return axeBuilder
 }
 
+const FOCUS_GUARD = '[data-base-ui-focus-guard]'
+
 async function scan(page: PageLike, label: string, options: AxeOptions): Promise<number> {
   await expectScheme(page)
   await animationsSettled(page)
   const Builder = await loadAxe()
   let builder = new Builder({ page }).withTags(AXE_TAGS)
   if (options.include !== undefined) builder = builder.include(options.include)
+  // Base UI parks focusable `aria-hidden` sentinels beside an open popup; focus cannot rest on them.
+  builder = builder.exclude(FOCUS_GUARD)
   const results = await builder.analyze()
   const failing = results.violations.filter(
     (v) => v.impact === 'serious' || v.impact === 'critical' || SHELL_RULES.has(v.id),
