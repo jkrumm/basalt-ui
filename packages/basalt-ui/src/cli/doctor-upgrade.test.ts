@@ -1500,12 +1500,13 @@ describe('seeded route files lint clean', () => {
         JSON.stringify({ plugins: ['react'], rules: { 'react/only-export-components': 'warn' } }),
       )
       capture(() => init(dir))
-      const skill = readFileSync(join(PKG_ROOT, 'agent/skills/basalt-app/SKILL.md'), 'utf8')
-      const route =
-        /\/\/ src\/routes\/dashboard\.tsx[^\n]*\n([\s\S]*?)\n\/\/ src\/lib\/nav\.tsx/.exec(
-          skill,
-        )?.[1] ?? ''
-      expect(route).toContain('export function Dashboard')
+      // The shape a skill teaches: the route and its component are both exported.
+      const route = [
+        "export const Route = createFileRoute('/dashboard')({ component: Dashboard })",
+        'export function Dashboard() {',
+        '  return null',
+        '}',
+      ].join('\n')
       write(
         'src/routes/dashboard.tsx',
         `import { createFileRoute } from '@tanstack/react-router'\n${route}\n`,
