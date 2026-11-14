@@ -5,12 +5,12 @@ import { FormField, FormFooter } from 'basalt-ui/controls'
 import type { FormFieldProps } from 'basalt-ui/controls'
 import { createSyncedState } from 'basalt-ui/data'
 import { InnerNav, Page, PageBar, Section, SplitPage } from 'basalt-ui/page'
+import { defineControls, field } from 'basalt-ui/router'
 import { Fieldset } from 'basalt-ui/ui/field'
 import { Input } from 'basalt-ui/ui/input'
 import { Select } from 'basalt-ui/ui/select'
 import { Switch } from 'basalt-ui/ui/switch'
 import { Textarea } from 'basalt-ui/ui/textarea'
-import { useSyncExternalStore } from 'react'
 import type { ReactElement } from 'react'
 import { z } from 'zod'
 import { useV3Tokens } from '../demo/v3-tokens'
@@ -186,65 +186,18 @@ const PANES: Partial<Record<SectionId, ReactElement>> = {
   appearance: <AppearanceForm />,
 }
 
-// The controls layer's push field binds here (v3-ctl-6). Until then the route owns this structural
-// stand-in: `?section=<id>` written with `history.pushState`, so Back walks the sections.
-const listeners = new Set<() => void>()
-const notify = (): void => listeners.forEach((listener) => listener())
-function subscribe(listener: () => void): () => void {
-  if (listeners.size === 0) window.addEventListener('popstate', notify)
-  listeners.add(listener)
-  return () => {
-    listeners.delete(listener)
-    if (listeners.size === 0) window.removeEventListener('popstate', notify)
-  }
-}
-const raw = (): string | null => new URLSearchParams(window.location.search).get('section')
-const hrefOf = (value: SectionId): string => {
-  const params = new URLSearchParams(window.location.search)
-  params.set('section', value)
-  return `?${params.toString()}`
-}
-const go = (value: SectionId): void => {
-  window.history.pushState(null, '', hrefOf(value))
-  notify()
-}
-
-const section = {
-  key: 'section',
-  kind: 'enum',
-  history: 'push',
-  options: SECTIONS.map((value) => ({ value, label: COPY[value].title })),
-  use: () => {
-    const stored = useSyncExternalStore(subscribe, raw, () => null)
-    return [SECTIONS.find((value) => value === stored) ?? SECTIONS[0], go] as [
-      SectionId,
-      (v: SectionId) => void,
-    ]
+// The section is a push field: each section is a history entry, Back walks them, and `InnerNav` draws
+// its links from the field as it is.
+const settings = defineControls({
+  id: 'settings',
+  scope: 'page',
+  fields: {
+    section: field
+      .enum(SECTIONS, 'profile', { history: 'push' })
+      .labels(Object.fromEntries(SECTIONS.map((id) => [id, COPY[id].title]))),
   },
-  useSource: () => ({ source: 'own' as const, inherited: undefined }),
-  clear: () => undefined,
-  get isDefault() {
-    return raw() === null
-  },
-  get isSet() {
-    return raw() !== null
-  },
-  link: (value: SectionId) => ({
-    href: hrefOf(value),
-    onClick: (event: { preventDefault(): void }) => {
-      event.preventDefault()
-      go(value)
-    },
-  }),
-} as const
-
-function useIsSet(): boolean {
-  return useSyncExternalStore(
-    subscribe,
-    () => raw() !== null,
-    () => false,
-  )
-}
+})
+const section = settings.field.section
 
 // #region recipe:inner-nav
 function SettingsPane({ id }: { id: SectionId }): ReactElement {
@@ -258,7 +211,7 @@ function SettingsPane({ id }: { id: SectionId }): ReactElement {
 
 export function SettingsPage(): ReactElement {
   const [current] = section.use()
-  const selected = useIsSet()
+  const selected = !section.isDefault
   return (
     <Page area="settings">
       <PageBar title="Settings" />
@@ -278,6 +231,8 @@ function SettingsRoute(): ReactElement {
 }
 
 export const Route = createFileRoute('/settings')({
+  validateSearch: settings.validateSearch,
+  search: { middlewares: settings.middlewares },
   staticData: { title: 'Settings' },
   component: SettingsRoute,
 })
