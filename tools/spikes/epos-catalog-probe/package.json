@@ -1,0 +1,12 @@
+{
+  "name": "@basalt-ui/spike-epos-catalog-probe",
+  "private": true,
+  "description": "Spike P6 (docs/v3/concepts/ai-mdx.md section 7): port the epos `show` catalog (10 types) to defineCatalog in a scratch copy; epos is read-only and no epos file is committed here.",
+  "type": "module",
+  "scripts": {
+    "run": "bun run.ts"
+  },
+  "dependencies": {
+    "zod": "4.6.7"
+  }
+}

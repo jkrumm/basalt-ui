@@ -1,0 +1,4 @@
+node_modules/
+bun.lock
+# the staged copy of employer source: never committed
+.scratch/
