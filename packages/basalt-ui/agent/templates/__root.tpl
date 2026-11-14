@@ -1,24 +1,15 @@
 /**
- * TanStack Router root route. `BasaltRouterContext` types the context `createBasaltRouter` fills
- * (the QueryClient); extend it for your own context and pass the value to
- * `createBasaltRouter({ routeTree, context })`.
+ * TanStack Router root route. `RouterContext` types what `createRouter({ context })` carries (the
+ * app's `QueryClient`); extend it for your own context. The frame is the pathless `_app` layout
+ * (`_app.tsx`), so routes outside it (a sign-in page) render with no shell.
  *
- * Scaffold written by `basalt-ui init`. This file is yours — `basalt-ui sync` will not overwrite it.
+ * Scaffold written by `basalt-ui init` to `src/routes/__root.tsx`. This file is yours — `basalt-ui sync` will not overwrite it.
  */
+import type { QueryClient } from '@tanstack/react-query'
 import { Outlet, createRootRouteWithContext } from '@tanstack/react-router'
-import { BasaltShell } from 'basalt-ui'
-import type { BasaltRouterContext } from 'basalt-ui'
-import { NAV } from '../lib/nav'
 
-export const Route = createRootRouteWithContext<BasaltRouterContext>()({
-  component: RootComponent,
+export type RouterContext = { queryClient: QueryClient }
+
+export const Route = createRootRouteWithContext<RouterContext>()({
+  component: Outlet,
 })
-
-// Exported: react/only-export-components flags a non-exported component in a file that exports `Route`.
-export function RootComponent() {
-  return (
-    <BasaltShell brand={{ name: '{{APP_NAME}}' }} nav={NAV}>
-      <Outlet />
-    </BasaltShell>
-  )
-}
