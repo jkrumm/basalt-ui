@@ -13,3 +13,21 @@ const a = <ul>{data.map((d) => <li key={d.id}><rect /></li>)}</ul>
 const a = data.map((d) => <svg key={d.id}><path d="M0 0" /></svg>)
 // @valid
 const a = <ChartCard><Lines data={data} /></ChartCard>
+// @valid
+const focus = useChartFocus(data)
+const a = <svg {...focus.target}>{data.map((d, i) => <rect key={d.id} x={d.x} height={d.h} {...focus.item(i)} />)}</svg>
+// @valid
+const focus = useChartFocus(rows)
+const a = <div {...focus.target}><svg>{rows.map((r, i) => <g key={r.id} {...focus.item(i)}><rect x={r.x} /><text>{r.label}</text></g>)}</svg></div>
+// @invalid
+const focus = useChartFocus(data)
+const a = <svg>{data.map((d, i) => <rect key={d.id} x={d.x} {...focus.item(i)} />)}</svg>
+// @invalid
+const focus = useChartFocus(data)
+const a = <div><svg>{data.map((d, i) => <rect key={d.id} x={d.x} {...focus.item(i)} />)}</svg></div>
+// @invalid
+const focus = useChartFocus(data)
+const a = <svg {...focus.target}>{data.map((d) => <rect key={d.id} x={d.x} />)}</svg>
+// @invalid
+const focus = useOther(data)
+const a = <svg {...focus.target}>{data.map((d, i) => <rect key={d.id} x={d.x} {...focus.item(i)} />)}</svg>
