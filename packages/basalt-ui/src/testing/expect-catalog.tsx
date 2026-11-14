@@ -3,12 +3,11 @@
  * so `./testing` imports nothing from `./ai`.
  */
 import { createElement } from 'react'
-import type { FC } from 'react'
 import { renderToStaticMarkup } from 'react-dom/server'
 import type { CatalogLike, Phase } from '../core/ports'
 
 type Path = readonly (string | number)[]
-type BlockView = FC<{ spec: unknown; phase: Phase }>
+type BlockView = NonNullable<CatalogLike['Block']>
 
 /** Mirrors the catalog default; a block's own `limits` is read when it has one. */
 const DEFAULT_LIMITS = { maxBytes: 32 * 1024, maxDepth: 6 }
@@ -42,16 +41,6 @@ function nested(levels: number): unknown {
   let value: unknown = 'x'
   for (let i = 0; i < levels; i++) value = [value]
   return value
-}
-
-function limitsOf(block: CatalogLike['blocks'][number]): typeof DEFAULT_LIMITS {
-  const own = (block as { limits?: typeof DEFAULT_LIMITS }).limits
-  return own ?? DEFAULT_LIMITS
-}
-
-function blockViewOf(catalog: CatalogLike): BlockView | null {
-  const view = (catalog as { Block?: unknown }).Block
-  return typeof view === 'function' ? (view as BlockView) : null
 }
 
 function render(view: BlockView, spec: unknown, phase: Phase): string {
@@ -89,7 +78,7 @@ function checkSample(
     }
   }
 
-  const { maxBytes, maxDepth } = limitsOf(block)
+  const { maxBytes, maxDepth } = block.limits ?? DEFAULT_LIMITS
   if (catalog.validate({ ...spec, pad: 'x'.repeat(maxBytes) }).ok)
     failures.push(`${at} padded past ${maxBytes} bytes is accepted`)
   if (catalog.validate({ ...spec, deep: nested(maxDepth) }).ok)
@@ -147,7 +136,7 @@ function checkSample(
  * test('the show catalog', () => expectCatalog(catalog))
  */
 export function expectCatalog(catalog: CatalogLike): void {
-  const view = blockViewOf(catalog)
+  const view = catalog.Block ?? null
   const failures: string[] = []
   if (catalog.blocks.length === 0) failures.push('the catalog has no blocks')
   for (const block of catalog.blocks) {
