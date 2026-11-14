@@ -216,6 +216,8 @@ export type CatalogLike = {
     props: unknown
     sample: readonly unknown[]
     limits?: { maxBytes: number; maxDepth: number }
+    textKeys?: readonly string[]
   }[]
+  discriminator?: string
   Block?: FC<{ spec: unknown; phase: Phase }>
 }
