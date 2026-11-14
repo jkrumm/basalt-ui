@@ -11,7 +11,8 @@ slots: []
 
 The data a control is drawn from: a handle, its label and how to offer it (`options`, `facets`,
 `clearable`, `placeholder`, `as`). A widget handle makes a spec a card slot accepts; a global or page
-field makes one it refuses.
+field makes one it refuses. A multi or range handle takes `options` and `facets` by member (a
+multi's `'a'`, a range's `'7d'`), the way its handle lists them.
 
 ## Signature
 

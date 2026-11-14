@@ -63,3 +63,50 @@ test('a card slot takes widget specs only', () => {
   expect(widgetSpec.scope).toBe('widget')
   expect(globalSpec.scope).not.toBe('widget')
 })
+
+// Every field kind `defineControls` makes: `spec` takes its handle with no cast.
+const kinds = defineControls({
+  id: 'kinds',
+  scope: 'page',
+  fields: {
+    mode: field.enum(['flat', 'grouped'], 'flat'),
+    tags: field.multi(['a', 'b'], []),
+    text: field.string(''),
+    limit: field.number({ fallback: 10, min: 0, int: true }),
+    live: field.boolean(false),
+    window: field.range({ presets: ['7d', '30d'], fallback: '7d', custom: true }),
+  },
+})
+
+export const everyKind = [
+  spec(kinds.field.mode, 'Tab'),
+  spec(kinds.field.tags, 'Tags'),
+  spec(kinds.field.text, 'Search'),
+  spec(kinds.field.limit, 'Limit'),
+  spec(kinds.field.live, 'Live'),
+  spec(kinds.field.window, 'Window'),
+]
+
+export const withOptions = [
+  spec(kinds.field.tags, 'Tags', { options: [{ value: 'a', label: 'A' }], clearable: true }),
+  spec(kinds.field.window, 'Window', { options: [{ value: '7d', label: '7 days' }] }),
+]
+
+// @ts-expect-error a multi's options are its members, and 'nope' is not one
+spec(kinds.field.tags, 'Tags', { options: [{ value: 'nope', label: 'Nope' }] })
+// @ts-expect-error a range's options are its presets, and 'nope' is not one
+spec(kinds.field.window, 'Window', { options: [{ value: 'nope', label: 'Nope' }] })
+// @ts-expect-error an array is not a member of a multi
+spec(kinds.field.tags, 'Tags', { options: [{ value: ['a'], label: 'A' }] })
+
+test('every field kind makes a spec', () => {
+  expect(everyKind.map((s) => s.handle.kind)).toEqual([
+    'enum',
+    'multi',
+    'string',
+    'number',
+    'boolean',
+    'range',
+  ])
+  expect(everyKind.every((s) => s.scope === 'page')).toBe(true)
+})
