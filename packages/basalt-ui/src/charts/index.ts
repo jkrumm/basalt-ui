@@ -32,6 +32,7 @@ export { chartCursor } from './cursor'
 export {
   useChartFocus,
   type ChartFocus,
+  type ChartFocusGroupItem,
   type ChartFocusItem,
   type ChartFocusOptions,
   type ChartFocusTarget,
@@ -44,6 +45,18 @@ export {
   type LabelWeight,
   type PlacedLabel,
 } from './chart-labels'
+export type {
+  PlacedRowLabel,
+  RowLabel,
+  RowSpot,
+  TrackAxis,
+  TrackAxisOptions,
+  TrackProps,
+  TrackRow,
+  TrackRowOptions,
+  TrackTick,
+  TrackValue,
+} from './track'
 export { chartCurve, type CurveName } from './curves'
 export type {
   AxisConfig,

@@ -6,6 +6,15 @@
  */
 import { VX } from '../tokens'
 import { GLYPHS, WIDTHS } from './chart-labels-widths.gen'
+import { trackAxis, trackRow } from './track'
+import type {
+  RowLabel,
+  TrackAxis,
+  TrackAxisOptions,
+  TrackRow,
+  TrackRowOptions,
+  TrackValue,
+} from './track'
 
 /** Weights the width table covers. */
 export type LabelWeight = 400 | 500 | 600 | 700
@@ -229,5 +238,37 @@ export const chartLabels = {
       placed.push(landed)
     }
     return { placed, dropped }
+  },
+
+  /**
+   * An axis for marks a page draws on an HTML track: ticks from a numeric or `Date` domain, with
+   * label and gridline props to spread. `at(v)` is a value's share of the track (write it as
+   * `left: %`). The end tick is the domain's end (`nice`, default on) and never wraps; the density
+   * follows the container size classes, so nothing is measured and the server HTML equals the
+   * client's. Put the track under an `@container`, and pass `share` when it is narrower than it.
+   *
+   * @example
+   * const axis = chartLabels.axis({ domain: [0, runMs], format: seconds, share: 0.8 })
+   * <div className="relative h-4">{axis.ticks.map((t) => <span key={t.at} {...t.label}>{t.text}</span>)}</div>
+   */
+  axis<V extends TrackValue>(options: TrackAxisOptions<V>): TrackAxis<V> {
+    return trackAxis(options, (text, size) => measure(text, size, 400))
+  },
+
+  /**
+   * The label pass for one HTML row: each label goes after its mark's end, inside its end, or before
+   * its start, the first that stays on the track and clears the other marks, the placed labels and
+   * `obstacles`, highest `priority` first; one with no room is `dropped` (the readout still says
+   * it). It places once at `width`, the narrowest the track is drawn at, so it holds at any wider
+   * width. `lines` is `grid` without the gridlines under a placed label.
+   *
+   * @example
+   * const row = chartLabels.row([{ key: s.id, text: ms(s.duration), from: axis.at(s.start), to: axis.at(s.end) }], { grid: axis.ticks, share: 0.8 })
+   */
+  row<K extends string, V extends TrackValue = number>(
+    labels: readonly RowLabel<K>[],
+    options: TrackRowOptions<V> = {},
+  ): TrackRow<K, V> {
+    return trackRow(labels, options, (text, size) => measure(text, size, 400))
   },
 }
