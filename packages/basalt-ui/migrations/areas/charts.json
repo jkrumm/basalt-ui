@@ -1,7 +1,142 @@
 {
   "schema": 1,
   "area": "charts",
-  "rows": [],
+  "rows": [
+    {
+      "id": "sf-format",
+      "kind": "codemod",
+      "from": "basalt-ui/charts#Series.formatValue",
+      "to": "format",
+      "profiles": ["parts", "app"],
+      "codemod": "charts",
+      "verify": "tsc"
+    },
+    {
+      "id": "sf-weight",
+      "kind": "codemod",
+      "from": "basalt-ui/charts#Series.strokeWidth",
+      "to": "weight=\"quiet\" | \"strong\" (strokeWidth and strokeOpacity: under 1.5 is quiet, over 2 is strong)",
+      "profiles": ["parts", "app"],
+      "codemod": "charts",
+      "note": "a value between 1.5 and 2 is flagged, not rewritten",
+      "verify": "tsc, then the charts codemod report"
+    },
+    {
+      "id": "sf-dash",
+      "kind": "codemod",
+      "from": "basalt-ui/charts#Series.dashed",
+      "to": "dash",
+      "profiles": ["parts", "app"],
+      "codemod": "charts",
+      "verify": "tsc"
+    },
+    {
+      "id": "sf-axis",
+      "kind": "codemod",
+      "from": "basalt-ui/charts#Series.axisSide",
+      "to": "axis",
+      "profiles": ["parts", "app"],
+      "codemod": "charts",
+      "verify": "tsc"
+    },
+    {
+      "id": "sf-opacity",
+      "kind": "codemod",
+      "from": "basalt-ui/charts#Series.fillOpacity",
+      "to": "opacity",
+      "profiles": ["parts", "app"],
+      "codemod": "charts",
+      "verify": "tsc"
+    },
+    {
+      "id": "sf-auto-domain",
+      "kind": "manual",
+      "from": "basalt-ui/charts#Series.autoMaxFloor",
+      "to": "the axis domain of the chart kind",
+      "profiles": ["parts", "app"],
+      "manual": true,
+      "note": "autoMaxFloor, autoMinCeil and autoPad are gone: set a domain on the axis, or let the kind choose it",
+      "verify": "tsc"
+    },
+    {
+      "id": "stacked-area",
+      "kind": "codemod",
+      "from": "basalt-ui/charts#StackedArea",
+      "to": "Lines with stack and area: 'fade'",
+      "profiles": ["parts", "app"],
+      "codemod": "charts",
+      "verify": "tsc, then a screenshot of the chart"
+    },
+    {
+      "id": "chart-marks",
+      "kind": "codemod",
+      "from": "basalt-ui/charts#ChartMarks",
+      "to": "CartesianChart.custom, wrapping the marks",
+      "profiles": ["parts", "app"],
+      "codemod": "charts",
+      "verify": "tsc, then a screenshot of the chart"
+    },
+    {
+      "id": "meter-zones",
+      "kind": "codemod",
+      "from": "basalt-ui/ui#Meter.zones",
+      "to": "MeterSpec.zones as { to } entries, with tone for colour",
+      "profiles": ["parts", "app"],
+      "codemod": "charts",
+      "note": "a zone whose bounds do not chain is flagged",
+      "verify": "tsc"
+    },
+    {
+      "id": "donut",
+      "kind": "manual",
+      "from": "basalt-ui/charts#Donut",
+      "to": "BarList from basalt-ui/cards, with max = the total",
+      "profiles": ["parts", "app"],
+      "manual": true,
+      "note": "a single value is Ring in ui/progress, not a chart kind",
+      "verify": "tsc"
+    },
+    {
+      "id": "mirrored-bars",
+      "kind": "manual",
+      "from": "basalt-ui/charts#MirroredBars",
+      "to": "the two-pane recipe in docs/recipes",
+      "profiles": ["parts", "app"],
+      "manual": true,
+      "note": "two bar panes sharing one x axis; BarSparkline becomes MiniBars",
+      "verify": "tsc"
+    },
+    {
+      "id": "dual-panel",
+      "kind": "manual",
+      "from": "basalt-ui/charts#DualPanel",
+      "to": "the two-pane recipe in docs/recipes",
+      "profiles": ["parts", "app"],
+      "manual": true,
+      "note": "a stacked pair of panes on one cursor, built from two charts",
+      "verify": "tsc"
+    },
+    {
+      "id": "chart-curve",
+      "kind": "manual",
+      "from": "basalt-ui/charts#chartCurve",
+      "to": "series.curve; plot.curve inside custom marks",
+      "profiles": ["parts", "app"],
+      "manual": true,
+      "note": "the curve is a series field now, set on each series that wants it",
+      "verify": "tsc"
+    },
+    {
+      "id": "fold-bands",
+      "kind": "manual",
+      "from": "basalt-ui/charts#foldBands",
+      "to": "BandStrip, which folds its own bands",
+      "profiles": ["parts", "app"],
+      "manual": true,
+      "note": "drop the call and pass the raw bands to BandStrip",
+      "verify": "tsc"
+    }
+  ],
   "tokens": { "renamed": [], "valueShifts": [] },
   "storage": [],
   "urls": [],

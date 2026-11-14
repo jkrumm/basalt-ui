@@ -1,8 +1,168 @@
 {
   "schema": 1,
   "area": "cards",
-  "rows": [],
-  "tokens": { "renamed": [], "valueShifts": [] },
+  "rows": [
+    {
+      "id": "cc-body-chart",
+      "kind": "codemod",
+      "from": "basalt-ui/charts#ChartCard.children",
+      "to": "chart={(box) => chart} with height={box.height}",
+      "profiles": ["parts", "app"],
+      "codemod": "charts",
+      "verify": "tsc, then the charts codemod report: no flagged cc-body-chart site is left"
+    },
+    {
+      "id": "cc-pending-loading",
+      "kind": "codemod",
+      "from": "basalt-ui/charts#ChartCard.state",
+      "to": "<ChartCard phase=\"loading\" /> with no chart, for a titleless state={{ pending: true }}",
+      "profiles": ["parts", "app"],
+      "codemod": "charts",
+      "verify": "tsc, then the charts codemod report"
+    },
+    {
+      "id": "cc-height",
+      "kind": "codemod",
+      "from": "basalt-ui/charts#ChartCard.height",
+      "to": "height=\"short\" (regular <= 240) or \"auto\"",
+      "profiles": ["parts", "app"],
+      "codemod": "charts",
+      "verify": "tsc, then a screenshot of each page: a partial {base, regular} height is flagged, not guessed"
+    },
+    {
+      "id": "cc-state-phase",
+      "kind": "codemod",
+      "from": "basalt-ui/charts#ChartCard.state",
+      "to": "phase={q} with empty={label ? { cause: label } : null}; chartStateOf(q, label) goes the same way",
+      "profiles": ["parts", "app"],
+      "codemod": "charts",
+      "verify": "tsc, then the charts codemod report; an empty action is added by hand"
+    },
+    {
+      "id": "cc-facts-figure",
+      "kind": "codemod",
+      "from": "basalt-ui/charts#ChartCard.facts",
+      "to": "figure (comparison to delta and period); one fact only",
+      "profiles": ["parts", "app"],
+      "codemod": "charts",
+      "verify": "tsc, then the charts codemod report; the rest of a facts array goes to footer by hand"
+    },
+    {
+      "id": "cc-body-datapanel",
+      "kind": "manual",
+      "from": "basalt-ui/charts#ChartCard.children (a non-chart body)",
+      "to": "DataPanel from basalt-ui/cards, with skeleton: { rows }",
+      "profiles": ["parts", "app"],
+      "manual": true,
+      "note": "a table, list or text body is not a chart: swap ChartCard for DataPanel and set the skeleton row count",
+      "verify": "tsc"
+    },
+    {
+      "id": "cc-removed-props",
+      "kind": "removed-prop",
+      "from": "basalt-ui/charts#ChartCard.placeholderHeight",
+      "to": "none: the card title and one box skeleton replace it",
+      "profiles": ["parts", "app"],
+      "manual": true,
+      "note": "placeholderHeight, matchHeight, deltaPeriod, stateAction, ghost, stateNoun and retrying are deleted; retry goes through QueryStateLike.refetch on phase",
+      "verify": "tsc"
+    },
+    {
+      "id": "cc-actions",
+      "kind": "manual",
+      "from": "basalt-ui/charts#ChartCard.actions",
+      "to": "controls (a control), figure + controls (a headline figure and a control), status (a verdict word)",
+      "profiles": ["parts", "app"],
+      "manual": true,
+      "note": "pick the slot by what the action is; a scatter's clear chip is filterSlot.custom, a composite's sigmas are series notes",
+      "verify": "tsc"
+    },
+    {
+      "id": "cc-tone-status",
+      "kind": "manual",
+      "from": "basalt-ui/cards#StatCard.tone",
+      "to": "status={{ tone, label }}; subtitle names the basis",
+      "profiles": ["parts", "app"],
+      "manual": true,
+      "note": "a tone plus a verdict word in the subtitle becomes one status prop; drop the word from the subtitle",
+      "verify": "tsc"
+    },
+    {
+      "id": "cc-expression",
+      "kind": "manual",
+      "from": "basalt-ui/charts#ChartCard (a body or state that is an expression)",
+      "to": "chart={(box) => ...} or phase={q}, written by hand",
+      "profiles": ["parts", "app"],
+      "manual": true,
+      "note": "read the expression: a conditional body becomes a phase, a computed chart goes inside the chart callback",
+      "verify": "tsc"
+    },
+    {
+      "id": "cc-other-self-closed",
+      "kind": "manual",
+      "from": "basalt-ui/charts#ChartCard (self-closed, not the pending form)",
+      "to": "phase=\"loading\", or a chart={(box) => ...} prop",
+      "profiles": ["parts", "app"],
+      "manual": true,
+      "note": "a self-closed card with no pending state has no body to wrap: decide whether it is loading, empty or a chart prop",
+      "verify": "tsc"
+    },
+    {
+      "id": "statstrip-statcell",
+      "kind": "manual",
+      "from": "basalt-ui/charts#StatStrip",
+      "to": "StatCell from basalt-ui/cards; WidgetHeader goes into the card header props",
+      "profiles": ["parts", "app"],
+      "manual": true,
+      "note": "visual becomes meter + chart + rows, footer becomes sub, tone becomes status, state.empty.reason becomes empty.cause; StatStripCell becomes StatCell",
+      "verify": "tsc, then migrate --check"
+    },
+    {
+      "id": "deltabadge-polarity",
+      "kind": "required-prop",
+      "from": "basalt-ui/cards#DeltaBadge",
+      "to": "<DeltaBadge polarity=\"up-good\" | \"down-good\" | \"neutral\">",
+      "profiles": ["parts", "app"],
+      "manual": true,
+      "note": "polarity is required and a compile error on purpose: read each metric, never default to up-good",
+      "verify": "tsc: a DeltaBadge without polarity is a type error"
+    }
+  ],
+  "tokens": {
+    "renamed": [],
+    "valueShifts": [
+      {
+        "token": "hero value size",
+        "from": "22px",
+        "to": "30px"
+      },
+      {
+        "token": "delta",
+        "from": "plain tinted text",
+        "to": "a tinted badge"
+      },
+      {
+        "token": "card radii",
+        "from": "2.x card and inset radii",
+        "to": "the card and inset radii of the v3 scale"
+      },
+      {
+        "token": "dim bar (RefetchDim)",
+        "from": "34% opacity",
+        "to": "38% opacity"
+      },
+      {
+        "token": "card ring",
+        "from": "9% opacity",
+        "to": "12% opacity"
+      },
+      {
+        "token": "chart heights",
+        "from": "numeric and { base, regular } heights",
+        "to": "the short and auto height classes"
+      }
+    ]
+  },
   "storage": [],
   "urls": [],
   "attrs": [],
