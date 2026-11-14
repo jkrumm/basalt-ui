@@ -123,9 +123,10 @@ export const Route = createRootRouteWithContext<BasaltRouterContext>()({
 })
 ```
 
-`createBasaltRouter({ routeTree, context?, query? })` creates one `QueryClient` per call (1.x
+`createBasaltRouter({ routeTree, context?, query?, live? })` creates one `QueryClient` per call (1.x
 defaults, `query` merges over them) and carries it on `context.queryClient`; extra context extends
-`BasaltRouterContext`. `BasaltProvider` takes `router` (required), `theme` (defaults to
+`BasaltRouterContext`. `live` takes a `bindInvalidation` result: the provider starts it once on the
+client and stops it on unmount. `BasaltProvider` takes `router` (required), `theme` (defaults to
 `createBasaltTheme()`), `telemetry` (typed `BasaltEvent`s, no sink → no events) and `fallback` (the
 root error boundary's UI).
 

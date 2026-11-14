@@ -25,7 +25,7 @@ useChartFocus<D>(items: readonly D[], options: ChartFocusOptions<D>): ChartFocus
 function PipelinePace() {
   const focus = useChartFocus(STAGES, { announce: (s) => `${s.name}: ${s.behind} s behind best` })
   return (
-    <ChartCard
+    <LegacyChartCard
       title="Pipeline pace"
       subtitle="Seconds behind the best run, per stage"
       facts={{
@@ -64,7 +64,7 @@ function PipelinePace() {
           ]
         }}
       />
-    </ChartCard>
+    </LegacyChartCard>
   )
 }
 ```
