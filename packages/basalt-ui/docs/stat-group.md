@@ -10,8 +10,8 @@ slots: []
 # StatGroup
 
 A row of `StatCell`s on shared tracks. `strip` draws them on one surface for the dense status bar
-of a dashboard; `cards` draws one card each with the headline bands aligned across them, and below
-`@regular` a snap row that is a keyboard stop only while it scrolls. A cell fills the tracks it
+of a dashboard; `cards` draws one card each with the headline bands aligned across them, two to a line
+in a narrow container. A cell fills the tracks it
 declares and the rest collapse, so a loading cell is already its final height.
 
 ## Signature

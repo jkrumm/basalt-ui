@@ -166,6 +166,21 @@ describe('geometry across phases', () => {
     }
   })
 
+  test('a table that showed 14 rows loads as 14 skeleton rows; a first load draws 6', () => {
+    const skeletons = (el: HTMLElement): number =>
+      el.querySelectorAll('tbody [data-skeleton]').length
+    const first = render(<Subject phase="loading" />)
+    expect(skeletons(first.container)).toBe(6)
+    cleanup()
+    const { container, rerender } = render(<Subject count={14} />)
+    expect(container.querySelectorAll('tbody [data-slot="table-row"]')).toHaveLength(14)
+    rerender(<Subject phase="loading" />)
+    expect(skeletons(container)).toBe(14)
+    rerender(<Subject count={17} />)
+    rerender(<Subject phase="loading" />)
+    expect(skeletons(container)).toBe(17)
+  })
+
   test('error shows Retry and calls it; forbidden has none', () => {
     let retried = 0
     const { container, getByRole, rerender } = render(

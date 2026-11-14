@@ -64,6 +64,8 @@ export type TableModel<T> = {
   /** Server: the footer values the server computed for this request. */
   totals: Totals | undefined
   phase: ResolvedPhase
+  /** Skeleton rows of a loading table: the rows it last showed, else the default of `phases.tsx`. */
+  skeletonRows: number | undefined
   /** Rows matching the request, `undefined` while unknown. */
   count: number | undefined
   pager: 'pages' | 'more' | 'none'
@@ -199,6 +201,11 @@ export function useDataTable<T>(options: UseDataTable<T>): DataTableInstance<T> 
   const matching = server ? undefined : matched.length
   if (!server && matching !== clientCount) setClientCount(matching)
 
+  const [lastRows, setLastRows] = useState<number | undefined>(undefined)
+  if (options.data !== undefined && rows.length > 0 && rows.length !== lastRows) {
+    setLastRows(rows.length)
+  }
+
   const group = groupOf(options.group, specs, server)
   const items = bodyItems(rows, group?.spec, display.collapsed, matched)
 
@@ -261,6 +268,7 @@ export function useDataTable<T>(options: UseDataTable<T>): DataTableInstance<T> 
     matched,
     totals: mode.kind === 'server' && 'totals' in mode ? mode.totals : undefined,
     phase,
+    skeletonRows: lastRows,
     count: server ? countOf(mode) : matching,
     pager,
     phone: options.phone ?? 'cards',

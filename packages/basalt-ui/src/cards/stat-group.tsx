@@ -1,6 +1,5 @@
-import { Children, useContext, useEffect, useRef, useState } from 'react'
+import { useContext } from 'react'
 import type { ReactElement } from 'react'
-import { cn } from '../core/cn'
 import { Card } from '../ui/card'
 import type { StatCellProps } from './stat-cell'
 import { FrameDepthContext, MAX_DEPTH, StatGroupContext, warnOnce } from './stat-group-shared'
@@ -14,38 +13,12 @@ export type StatCellElement = ReactElement<StatCellProps>
 export type StatGroupProps = {
   /**
    * `strip` is one dense surface whose cells share their tracks; `cards` is one card per cell with
-   * the bands aligned across them, and a snap row below `@regular`.
+   * the bands aligned across them, two to a line when the container is narrow.
    */
   variant: 'strip' | 'cards'
   /** Names the group for assistive tech (`Recovery`). */
   label?: string
   children: StatCellElement | readonly StatCellElement[]
-}
-
-/**
- * Whether the element's content is wider than its box. Measured after paint and on every resize,
- * so the server render and the first client render agree (`false`).
- */
-function useOverflowsX(count: number): [(el: HTMLDivElement | null) => void, boolean] {
-  const [el, setEl] = useState<HTMLDivElement | null>(null)
-  const [overflows, setOverflows] = useState(false)
-  const frame = useRef(0)
-  useEffect(() => {
-    if (el === null) return undefined
-    const measure = (): void => setOverflows(el.scrollWidth > el.clientWidth)
-    measure()
-    const observer = new ResizeObserver(() => {
-      cancelAnimationFrame(frame.current)
-      frame.current = requestAnimationFrame(measure)
-    })
-    observer.observe(el)
-    for (const child of el.children) observer.observe(child)
-    return () => {
-      cancelAnimationFrame(frame.current)
-      observer.disconnect()
-    }
-  }, [el, count])
-  return [setEl, overflows]
 }
 
 /**
@@ -57,17 +30,17 @@ function useOverflowsX(count: number): [(el: HTMLDivElement | null) => void, boo
 const STRIP = 'grid -mb-3 grid-cols-[repeat(auto-fit,minmax(min(100%,12rem),1fr))] gap-x-6'
 
 /**
- * The snap row below `@regular`: one column per cell, `w-72` each, snapping at the start edge. At
- * `@regular` it becomes the auto-fit grid. The padding and negative margin keep the cards' ring and
- * shadow inside the scroller's clip.
+ * One card per cell on auto-fit tracks: two to a line (9 rem and up) in a narrow container, 14 rem
+ * tracks from `@regular`. Nothing scrolls sideways. The padding and negative margin keep the cards'
+ * ring and shadow inside the group's box.
  */
 const CARDS =
-  'grid -mx-1 -mt-1 -mb-4 auto-cols-[18rem] grid-flow-col snap-x snap-mandatory overflow-x-auto overscroll-x-contain p-1 focus-ring focus-visible:-outline-offset-2 @regular:grid-flow-row @regular:auto-cols-auto @regular:snap-none @regular:grid-cols-[repeat(auto-fit,minmax(min(100%,14rem),1fr))] @regular:overflow-visible gap-x-3'
+  'grid -mx-1 -mt-1 -mb-4 grid-cols-[repeat(auto-fit,minmax(min(100%,9rem),1fr))] p-1 gap-x-3 @regular:grid-cols-[repeat(auto-fit,minmax(min(100%,14rem),1fr))]'
 
 /**
  * A row of `StatCell`s on shared tracks. `strip` draws them on one surface for the dense status bar
- * of a dashboard; `cards` draws one card each with the headline bands aligned across them, and below
- * `@regular` a snap row that is a keyboard stop only while it scrolls. A cell fills the tracks it
+ * of a dashboard; `cards` draws one card each with the headline bands aligned across them, two to a line
+ * in a narrow container. A cell fills the tracks it
  * declares and the rest collapse, so a loading cell is already its final height.
  *
  * @useWhen a page shows several headline figures side by side, a status bar or a row of KPIs
@@ -117,18 +90,11 @@ function StripGroup({ label, children }: BodyProps): ReactElement {
 }
 
 function CardsGroup({ label, children }: BodyProps): ReactElement {
-  const [ref, scrolls] = useOverflowsX(Children.count(children))
   return (
     <div data-slot="stat-group" data-variant="cards" className="@container min-w-0">
-      <div
-        ref={ref}
-        data-slot="stat-scroll"
-        // The explicit role is deliberate: it names the scroller, and only while it scrolls.
-        {...(scrolls ? { role: 'region' } : { role: 'group' })}
-        aria-label={label}
-        {...(scrolls && { tabIndex: 0 })}
-        className={cn(CARDS)}
-      >
+      {/* The explicit role is deliberate: it names the group. */}
+      {/* oxlint-disable-next-line jsx-a11y/prefer-tag-over-role */}
+      <div data-slot="stat-scroll" role="group" aria-label={label} className={CARDS}>
         {children}
       </div>
     </div>

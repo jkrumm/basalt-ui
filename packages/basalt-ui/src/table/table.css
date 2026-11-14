@@ -26,6 +26,14 @@
     table-layout: fixed;
   }
 
+  /* a cell holds one line in its own column: a long value ends in an ellipsis instead of printing over
+     the next column. The editor, tick and actions cells keep their focus rings; the card tier below
+     lets a cell wrap and be whole again. */
+  [data-slot='table-cell']:not([data-kind='tick'], [data-kind='actions'], [data-kind='select']) {
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
   /* pinned and tick cells are opaque in every row state: the canvas, with the row's own tint (hover,
      selected) layered over it, so a cell that scrolls under a pin never shows through. The head
      cells keep their surface (a utility on `th`). */
@@ -105,6 +113,7 @@
       grid-column: 1 / -1;
       min-width: 0;
       padding: 0;
+      overflow: visible;
       border-bottom-width: 0 !important;
       white-space: normal !important;
       overflow-wrap: anywhere;
@@ -192,6 +201,7 @@
       grid-column: 1 / -1;
       min-width: 0;
       padding: 0;
+      overflow: visible;
       border-bottom-width: 0 !important;
       white-space: normal !important;
       overflow-wrap: anywhere;
@@ -279,6 +289,7 @@
       grid-column: 1 / -1;
       min-width: 0;
       padding: 0;
+      overflow: visible;
       border-bottom-width: 0 !important;
       white-space: normal !important;
       overflow-wrap: anywhere;

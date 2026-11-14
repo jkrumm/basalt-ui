@@ -2,8 +2,8 @@
  * `StatGroup`, `StatCell` and `DataPanel` in real Chrome at 1440, 768, 390 and 320 (docs/v3/issues/
  * g1/v3-cards-1-statgroup.json). Geometry happy-dom cannot hold: every track of a strip aligned
  * across its cells, one height for a cell and a panel across every phase (a throwing slot and both
- * error kinds included), one left edge in a cell, a snap row that is a keyboard stop only while it
- * scrolls, no sideways scroll, and axe.
+ * error kinds included), one left edge in a cell, a cards group that never scrolls sideways,
+ * no sideways scroll, and axe.
  *
  * The page is self-contained like `cards-lists`: `fixture/cards-group.css` is compiled with the
  * Tailwind CLI into a temp directory and `fixture/cards-group-fixture.tsx` is bundled in memory,
@@ -265,21 +265,15 @@ layout('StatGroup, StatCell and DataPanel', () => {
         for (const cell of onFirstLine) near(cell.height, onFirstLine[0]!.height, 'cell height')
       })
 
-      test('the snap row is a keyboard stop only while it scrolls', async () => {
+      test('the cards group never scrolls sideways and adds no tab stop', async () => {
         const page = await open(viewport)
         for (const id of ['cg-cards', 'cg-cards-one']) {
           const selector = `[data-testid="${id}"] [data-slot="stat-scroll"]`
           const info = await horizontal(page, selector)
-          const scrolls = info.scrollWidth > info.clientWidth + 1
-          const tabindex = await page.raw.getAttribute(selector, 'tabindex')
-          const role = await page.raw.getAttribute(selector, 'role')
-          expect(tabindex, `${id} tabindex`).toBe(scrolls ? '0' : null)
-          expect(role, `${id} role`).toBe(scrolls ? 'region' : 'group')
+          expect(info.scrollWidth > info.clientWidth + 1, `${id} scrolls`).toBe(false)
+          expect(await page.raw.getAttribute(selector, 'tabindex'), `${id} tabindex`).toBeNull()
+          expect(await page.raw.getAttribute(selector, 'role'), `${id} role`).toBe('group')
         }
-        // Five cards of 18 rem scroll below `@regular` and never above it.
-        const five = await horizontal(page, '[data-testid="cg-cards"] [data-slot="stat-scroll"]')
-        const wide = viewport.width >= 768
-        expect(five.scrollWidth > five.clientWidth + 1, 'five cards scroll').toBe(!wide)
       })
 
       for (const scheme of [undefined, 'dark'] as const) {
