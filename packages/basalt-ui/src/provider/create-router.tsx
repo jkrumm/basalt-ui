@@ -8,7 +8,7 @@
 import type { QueryClient, QueryClientConfig } from '@tanstack/react-query'
 import { Router, createRouter } from '@tanstack/react-router'
 import type { AnyRoute, RouterHistory } from '@tanstack/react-router'
-import { makeQueryClient } from '../query-client'
+import { makeQueryClient } from '../data/query-client'
 import type { RouterHook } from '../telemetry'
 import { ErrorComponent, NotFoundComponent, PendingComponent } from './route-defaults'
 import {
