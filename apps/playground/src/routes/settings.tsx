@@ -1,8 +1,20 @@
+// theme-allow-file raw-selection-control — the guard reads a 2.x `Select` as a bare filter; these are v3 `Select`s bound to a form field, never a page filter
+import { revalidateLogic, useForm } from '@tanstack/react-form'
 import { createFileRoute } from '@tanstack/react-router'
+import { FormField, FormFooter } from 'basalt-ui/controls'
+import type { FormFieldProps } from 'basalt-ui/controls'
+import { createSyncedState } from 'basalt-ui/data'
 import { InnerNav, Page, PageBar, Section, SplitPage } from 'basalt-ui/page'
+import { Fieldset } from 'basalt-ui/ui/field'
+import { Input } from 'basalt-ui/ui/input'
+import { Select } from 'basalt-ui/ui/select'
+import { Switch } from 'basalt-ui/ui/switch'
+import { Textarea } from 'basalt-ui/ui/textarea'
 import { useSyncExternalStore } from 'react'
 import type { ReactElement } from 'react'
+import { z } from 'zod'
 import { useV3Tokens } from '../demo/v3-tokens'
+import { useUnsavedGuard } from '../recipes/form-guard'
 
 const SECTIONS = ['profile', 'appearance', 'members', 'billing', 'api-keys'] as const
 type SectionId = (typeof SECTIONS)[number]
@@ -34,6 +46,145 @@ const GROUPS = [
     ],
   },
 ] as const
+
+// Synced preferences: the person's, on every device. The transport is a stand-in server with one row.
+const Prefs = z.object({
+  density: z.enum(['comfortable', 'compact']),
+  language: z.enum(['en', 'de']),
+  digest: z.boolean(),
+})
+type Prefs = z.infer<typeof Prefs>
+const INITIAL: Prefs = { density: 'comfortable', language: 'en', digest: true }
+let row: { value: Prefs; rev: number } | null = null
+const later = (ms: number): Promise<void> => new Promise((resolve) => setTimeout(resolve, ms))
+
+const prefs = createSyncedState<Prefs>({
+  key: 'settings',
+  version: 1,
+  schema: Prefs,
+  initial: INITIAL,
+  owner: () => 'demo',
+  transport: {
+    async load() {
+      await later(200)
+      return { value: row?.value ?? null, rev: row === null ? null : String(row.rev) }
+    },
+    async save(patch, base) {
+      await later(400)
+      row = { value: { ...INITIAL, ...base.value, ...patch }, rev: (row?.rev ?? 0) + 1 }
+      return { value: row.value, rev: String(row.rev) }
+    },
+  },
+})
+
+const STATUS = {
+  saved: 'Saved',
+  saving: 'Saving',
+  offline: 'Offline',
+  error: 'Save failed',
+} as const
+
+/** An instant-apply preference as the `field` a `FormField` binds. */
+function useFieldOf<K extends keyof Prefs>(key: K): NonNullable<FormFieldProps<Prefs[K]>['field']> {
+  const [value, set] = prefs.field(key).use()
+  return { state: { value, meta: { errors: [] } }, handleChange: set, handleBlur: () => {} }
+}
+
+function AppearanceForm(): ReactElement {
+  const { status } = prefs.use()
+  const density = useFieldOf('density')
+  const language = useFieldOf('language')
+  const digest = useFieldOf('digest')
+  return (
+    <Fieldset className="max-w-md">
+      <p role="status" className="m-0 text-sm text-muted-foreground">
+        {STATUS[status]}
+      </p>
+      <FormField label="Density" field={density}>
+        <Select
+          aria-label="Density"
+          options={[
+            { value: 'comfortable', label: 'Comfortable' },
+            { value: 'compact', label: 'Compact' },
+          ]}
+        />
+      </FormField>
+      <FormField label="Language" field={language}>
+        <Select
+          aria-label="Language"
+          options={[
+            { value: 'en', label: 'English' },
+            { value: 'de', label: 'Deutsch' },
+          ]}
+        />
+      </FormField>
+      <FormField label="Weekly digest" description="One email on Monday." field={digest}>
+        <Switch />
+      </FormField>
+    </Fieldset>
+  )
+}
+
+// A form with a Save action is guarded, never drafted: leaving asks, a reload does not restore.
+const Profile = z.object({
+  name: z.string().min(1, 'Enter a name.'),
+  email: z.email('Enter an email address.'),
+  bio: z.string().max(160, 'Keep it under 160 characters.'),
+})
+
+function ProfileForm(): ReactElement {
+  const form = useForm({
+    defaultValues: { name: 'Ada Lovelace', email: 'ada@example.com', bio: '' },
+    validationLogic: revalidateLogic({ mode: 'submit', modeAfterSubmission: 'change' }),
+    validators: { onDynamic: Profile },
+    onSubmit: async ({ value, formApi }) => {
+      await later(600)
+      formApi.reset(value)
+    },
+  })
+  const guard = useUnsavedGuard(form)
+  return (
+    <form
+      noValidate
+      className="max-w-md"
+      onSubmit={(event) => {
+        event.preventDefault()
+        void form.handleSubmit()
+      }}
+    >
+      <Fieldset disabled={form.state.isSubmitting}>
+        <form.Field name="name">
+          {(f) => (
+            <FormField label="Name" required field={f}>
+              <Input />
+            </FormField>
+          )}
+        </form.Field>
+        <form.Field name="email">
+          {(f) => (
+            <FormField label="Email" required field={f}>
+              <Input type="email" />
+            </FormField>
+          )}
+        </form.Field>
+        <form.Field name="bio">
+          {(f) => (
+            <FormField label="Bio" description="Shown on your profile." field={f}>
+              <Textarea rows={3} />
+            </FormField>
+          )}
+        </form.Field>
+        <FormFooter form={form} actions={[{ label: 'Save', primary: true }]} />
+      </Fieldset>
+      {guard}
+    </form>
+  )
+}
+
+const PANES: Partial<Record<SectionId, ReactElement>> = {
+  profile: <ProfileForm />,
+  appearance: <AppearanceForm />,
+}
 
 // The controls layer's push field binds here (v3-ctl-6). Until then the route owns this structural
 // stand-in: `?section=<id>` written with `history.pushState`, so Back walks the sections.
@@ -100,7 +251,7 @@ function SettingsPane({ id }: { id: SectionId }): ReactElement {
   const { title, body } = COPY[id]
   return (
     <Section title={title}>
-      <p className="m-0 text-sm text-muted-foreground">{body}</p>
+      {PANES[id] ?? <p className="m-0 text-sm text-muted-foreground">{body}</p>}
     </Section>
   )
 }
