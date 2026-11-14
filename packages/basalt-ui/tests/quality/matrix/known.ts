@@ -82,8 +82,45 @@ const STATE_KNOWN: readonly KnownFinding[] = [
   ]),
 ]
 
+// /cycle/shell/* is the shell cycle's fleet app (docs/v3/cycles/shell-1.md). Each entry is a finding of
+// a kit part the build composes, owned by the fix row that removes it (shell-1.21); the gate conflict
+// that puts these lines in a cycle PR is shell-1.22.
+const SHELL_KNOWN: readonly KnownFinding[] = [
+  {
+    route: '/cycle/shell',
+    assertion: 'axe',
+    item: /^color-contrast \(serious\)/,
+    owner: 'v3-shell-1-visual: the chart card fact value text contrast (as /overview)',
+  },
+  {
+    route: '/cycle/shell',
+    assertion: 'ringWalk',
+    item: /fieldset>button ".*no focus outline/,
+    owner: 'v3-shell-1-visual: chart legend toggles have no focus ring (as /charts)',
+  },
+  {
+    route: '/cycle/shell',
+    assertion: 'overflow',
+    item: /^320px: document scrollWidth \d+ > 320/,
+    owner: 'v3-shell-1-visual: two page actions overflow the phone header (shell-1.14)',
+  },
+  {
+    route: '/cycle/shell/services',
+    assertion: 'forcedColors',
+    item: /^\[empty-state\] div \d+x\d+$/,
+    owner: 'v3-shell-1-visual: the empty state frame vanishes under forced colors',
+  },
+  ...['/cycle/shell/services', '/cycle/shell/settings'].map((route): KnownFinding => ({
+    route,
+    assertion: 'ringWalk',
+    item: /inner-nav-item\]>a ".*outline is clipped by div/,
+    owner: 'v3-shell-1-inner-nav: the InnerNav list pane clips the link rings (as /settings)',
+  })),
+]
+
 export const KNOWN: readonly KnownFinding[] = [
   ...STATE_KNOWN,
+  ...SHELL_KNOWN,
   // /gallery is the 2.x Mantine specimen page (Pagination, SegmentedControl, raw inputs). It carries
   // dozens of findings of the legacy components and goes with the legacy barrel, so it is listed by
   // assertion, not by item.
