@@ -5,10 +5,10 @@ file: apps/playground/src/recipes/view-switch.tsx
 ---
 
 A presentation is state, never a second query: `ViewTabs` writes the `as` param and one `useDataTable` serves both.
-`DataTable` with `cardsBelow: 'always'` forces the card tier at every width; `'regular'` keeps the table above the phone tier.
+`useDataTable` with `cardsBelow: 'always'` forces the card tier at every width; `'regular'` keeps the table above the phone tier.
 The cards are the table's own card plan, so a column that has a slot in one has it in the other and nothing is lost.
 Name the field `as`, not `view`: `view` is the saved-view param of the table, and two fields on one param throw.
-The tabs go in the `controls` slot of the `Section` that frames the table, never beside it.
+The tabs go in the page bar's `tabs` slot, never beside the table.
 Add the option to the enum and read `as` where the page branches; the query key never sees it.
 
 ```tsx

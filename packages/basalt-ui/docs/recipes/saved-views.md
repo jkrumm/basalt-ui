@@ -10,6 +10,7 @@ Applying a view writes `?view=<id>`; the id stays only while the table state equ
 A view that names a column the table lost is pruned on apply, with a development warning, never rejected.
 `field.composite(tableCodec(...))` carries the table in the URL; `view` binds the applied id to the route's own search instead of the address bar.
 The saved-view param is `view`; a presentation switch uses another name.
+`TableToolbar` and `tableCodec` are imported from `basalt-ui/table` once the table barrel exports them (filed as a signal); until then they come from the built package by path.
 A server `ViewStore` (list, save, remove per table) is the typed path to views that follow the person.
 
 ```tsx
