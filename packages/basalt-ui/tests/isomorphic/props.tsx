@@ -332,6 +332,14 @@ export const SKIP: Record<string, string> = {
   DataTable:
     'v3-table-t2a — its only prop is an instance made by the `useDataTable` hook, which a plain props ' +
     'map cannot build. Covered by table/parts/data-table.test.tsx (SSR hydration and axe at the full tier).',
+  ...Object.fromEntries(
+    ['BulkBar', 'DataTableBody', 'TablePager', 'TableToolbar'].map((part) => [
+      part,
+      'Issue 1146 — a part of `DataTable` whose only prop is an instance made by `useDataTable`, ' +
+        'which a plain props map cannot build. Rendered through `DataTable` by table/parts/*.test.tsx ' +
+        'and through the barrel by table/barrel.test.tsx.',
+    ]),
+  ),
 }
 
 /* --------------------------------------------------------- expected defects */
