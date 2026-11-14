@@ -5,7 +5,18 @@ import { join, resolve } from 'node:path'
 
 const SKILL_DIR = resolve(import.meta.dir, '../../agent/skills/basalt-design')
 const SRC = resolve(import.meta.dir, '..')
-const REFERENCES = ['anti-defaults', 'cards', 'charts', 'concept', 'copy', 'encoding', 'states']
+const REFERENCES = [
+  'anti-defaults',
+  'cards',
+  'charts',
+  'concept',
+  'controls',
+  'copy',
+  'encoding',
+  'forms',
+  'state',
+  'states',
+]
 const NOT_SHIPPED_HEADING = '## Not shipped'
 
 function markdownFiles(dir: string): string[] {
