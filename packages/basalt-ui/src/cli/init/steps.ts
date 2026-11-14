@@ -352,18 +352,22 @@ function patchVite(text: string): string | null {
   if (text.includes('basalt(')) return text
   if ((text.match(/plugins:\s*\[/g) ?? []).length !== 1) return null
   const lines = text.split('\n')
-  const lastImport = lines.findLastIndex((l) => /^import\s/.test(l))
+  // The end of the last import statement: the line closing `from '...'`, or a bare side-effect import.
+  const lastImport = lines.findLastIndex((l) =>
+    /^import\s+['"]|\bfrom\s+['"][^'"]+['"];?\s*$/.test(l),
+  )
   if (lastImport === -1) return null
   lines.splice(lastImport + 1, 0, BASALT_IMPORT)
   return lines.join('\n').replace(/plugins:\s*\[/, 'plugins: [basalt(), ')
 }
 
 /** Replaces the one `@import 'tailwindcss'` line of a stock entry with the basalt pair. */
-function patchCss(text: string, cssDir: string, root: string): string | null {
+/** `viteRoot` is where `basalt()` writes `.basalt/sources.css`: the directory of the Vite config. */
+function patchCss(text: string, cssDir: string, viteRoot: string): string | null {
   if (text.includes('basalt-ui/tailwind.css')) return text
   const stock = /^@import\s+(['"])tailwindcss\1;?[ \t]*$/m
   if (!stock.test(text)) return null
-  const sources = relative(cssDir, resolve(root, '.basalt/sources.css')).replaceAll('\\', '/')
+  const sources = relative(cssDir, resolve(viteRoot, '.basalt/sources.css')).replaceAll('\\', '/')
   return text.replace(stock, `@import 'basalt-ui/tailwind.css';\n@import '${sources}';`)
 }
 
@@ -387,9 +391,13 @@ export function wireApp(ctx: Ctx): void {
     .map((f) => join(f))
     .find((f) => existsSync(resolve(ctx.root, f)))
   const cssPatched =
-    css === undefined
+    css === undefined || vite === undefined
       ? null
-      : patchCss(readText(ctx.root, css) ?? '', dirname(resolve(ctx.root, css)), ctx.root)
+      : patchCss(
+          readText(ctx.root, css) ?? '',
+          dirname(resolve(ctx.root, css)),
+          dirname(resolve(ctx.root, vite)),
+        )
   if (css !== undefined && cssPatched !== null) {
     if (writeText(ctx.root, css, cssPatched)) say(`${css}: imports basalt-ui/tailwind.css`)
   } else {
