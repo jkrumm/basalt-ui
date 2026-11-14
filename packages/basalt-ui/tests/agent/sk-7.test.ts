@@ -26,6 +26,8 @@ const KEPT = ['concept', 'encoding', 'states', 'copy', 'charts', 'cards'] as con
 const SK6 = ['anti-defaults'] as const
 /** Owned by sk-7b (`sk-7b.test.ts`). */
 const SK7B = ['state', 'forms', 'controls'] as const
+/** Owned by the AI reference row (v3-ai-i6). */
+const AI = ['ai'] as const
 /** 2.x reference names the kill dropped; `cards` replaces `stat-tile`. */
 const TABLE = ['table'] as const
 
@@ -57,7 +59,7 @@ describe('sk-7 references', () => {
 
   test('no file exists for a dropped reference, and nothing else is in the folder', () => {
     for (const name of DROPPED) expect(existsSync(join(refsDir, `${name}.md`))).toBe(false)
-    const expected = [...KEPT, ...SK6, ...SK7B, ...TABLE].map((n) => `${n}.md`).toSorted()
+    const expected = [...KEPT, ...SK6, ...SK7B, ...TABLE, ...AI].map((n) => `${n}.md`).toSorted()
     expect(readdirSync(refsDir).toSorted()).toEqual(expected)
   })
 
