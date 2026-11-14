@@ -15,7 +15,14 @@ import { table } from '../core/messages/table'
 import { resolvePhase } from '../core/phase'
 import type { Empty, ResolvedPhase } from '../core/phase'
 import type { Box, DetailHost } from '../core/ports'
-import type { BulkAction, DataTableInstance, KindColumn, Totals, UseDataTable } from './contract'
+import type {
+  BulkAction,
+  DataTableInstance,
+  KindColumn,
+  TableEscape,
+  Totals,
+  UseDataTable,
+} from './contract'
 import { bodyItems, toggled } from './parts/group-row-model'
 import type { BodyItem } from './parts/group-row-model'
 import { tableEngine } from './core/features'
@@ -303,7 +310,17 @@ export function useDataTable<T>(options: UseDataTable<T>): DataTableInstance<T> 
       })
     },
   }
-  return { __brand: 'DataTableInstance', [MODEL]: model } as Built<T>
+  const escape: TableEscape<T> = {
+    rows,
+    matched,
+    columns: plan.columns.flatMap((planned, index) => {
+      const spec = specs[index]
+      return planned.visible && spec !== undefined && spec.kind !== 'actions'
+        ? [{ id: spec.id, header: spec.header, value: spec.value }]
+        : []
+    }),
+  }
+  return { __brand: 'DataTableInstance', table: escape, [MODEL]: model } as Built<T>
 }
 
 /**

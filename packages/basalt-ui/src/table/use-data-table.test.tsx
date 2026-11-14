@@ -208,7 +208,7 @@ describe('activation and keyboard', () => {
 
 describe('the instance', () => {
   test('a value not made by useDataTable is refused with a clear error', () => {
-    expect(() => modelOf({ __brand: 'DataTableInstance' })).toThrow(/useDataTable/)
+    expect(() => modelOf({ __brand: 'DataTableInstance' } as never)).toThrow(/useDataTable/)
   })
 
   test('a column the display state hides leaves the head and the cells', () => {
