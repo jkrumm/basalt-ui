@@ -49,27 +49,29 @@ for the selector-specificity trap, the `color-mix` opacity law, and the surface-
 ### 2. Scaffold the repo doctrine (`basalt-ui init`)
 
 ```bash
-bunx basalt-ui init
+bunx basalt-ui init --profile app --root src
 ```
 
-That's the whole install — there is no plugin, no marketplace, and no second version to track.
-`init` writes into the consumer repo:
+`--profile` is required and never inferred: `tokens`, `bridge`, `parts` or `app`. Each `--root`
+(default `.`, paths relative to the repo root) is declared with it. `bunx` is the one sanctioned
+entry here, because nothing is installed yet; every later command runs the local bin. There is no
+plugin, no marketplace and no second version to track. `init` writes at the git root:
 
-- `.claude/rules/basalt-*.md` — five Claude Code rules (`basalt-tokens`, `basalt-ui`, `basalt-page`, `basalt-state`, `basalt-charts`), each bullet ending in the lint id or type that holds it, or listed under `not guarded:`
-- `.claude/skills/basalt-{app,design,charts}/SKILL.md` — the three skills (`/basalt-app`, `/basalt-design`, `/basalt-charts`), same managed path as the rules
-- A managed `<!-- basalt:begin/end -->` block in `AGENTS.md` — stack facts, the DESIGN.md pointer, and the frontend-design restraint override
-- A thin `DESIGN.md` seed — your app's deltas (series dictionary, identity, deviations)
-- Toolchain seeds: `.oxlintrc.json` and `lefthook.yml` as `extends` stubs into `node_modules/basalt-ui/configs/` (the presets auto-update with the package), plus `.oxfmtrc.json` and `.github/workflows/check.yml` as starting copies
-- `.basalt/manifest.json` — sha256 per managed file + the basalt-ui version, for `sync` three-way diff and `doctor`
-- Two `package.json` patches: `basalt.roots` inferred from the real layout, and a `lint:basalt` script
+- `.basalt/manifest.json` — the profile, the declared roots, the `tokens:css` outputs and the sha256 of every managed file `sync` placed
+- the `tokens:css` outputs (`--tokens-out`, `--tokens-json-out`, `--extra`, with the `--accent --neutral --vibrancy --selector` flags recorded in the manifest)
+- `.stylelintrc.basalt.json` for every profile; `.oxlintrc.basalt.json` and an `.oxlintrc.json` that extends it from `bridge` up
+- the profile's peers at exact pins (stylelint and postcss-html; `bridge` and above add oxlint and `@shadcn/lint`), installed with the lockfile's package manager (`--no-install` prints the command instead)
+- above `tokens`: `.claude/rules/basalt-*.md`, `.claude/skills/basalt-*`, the managed `<!-- basalt:begin/end -->` block in `AGENTS.md`, and a thin `DESIGN.md` seed when no declared root has one
+- `.basalt/budget.json` (the seeded ceilings) and the formatter ignore for the managed paths
+- a stock `vite.config` and Tailwind entry patched; any other shape gets the exact lines printed
 
-`init` on an **existing** app is a lint-debt event, not a no-op: the shipped preset switches on
+It ends in `basalt-ui doctor`, which reports. Running `init` twice changes nothing; `sync` refreshes
+what `init` placed and never creates an install.
+
+`init` on an **existing** app is a lint-debt event, not a no-op: the generated preset switches on
 whole oxlint plugins the repo was never linted against, so previously-clean code lands with real
-findings on the first run. `init` names those plugins, and names every file it kept along with what
-keeping it costs — an `.oxlintrc.json` that does not extend the preset means the entire basalt lint
-half is inert and nothing else says so (`init` now splices the `extends` in by default, `--no-merge-lint` opts out; it refuses on a
-commented config rather than deleting the comments). Run `oxlint .` and triage before your next
-commit.
+findings on the first run. Run `basalt-ui lint` and triage before your next commit. An
+`.oxlintrc.json` with comments is never rewritten: `init` prints the `extends` line to add.
 
 Every file is either **managed** (basalt owns it, `sync` refreshes it, local edits are skipped and
 reported — exactly the files Claude reads, which cannot load from `node_modules`) or a **seed**

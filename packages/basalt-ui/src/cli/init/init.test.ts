@@ -20,7 +20,8 @@ import { readBudget, seedBudget } from '../budget'
 import { run } from '../index'
 import { parseManifest } from '../manifest'
 import type { Manifest, Profile } from '../manifest'
-import { init } from './index'
+import { COMMAND_OPTIONS } from '../help'
+import { FLAGS, init } from './index'
 import type { InitDeps } from './index'
 
 const repos: string[] = []
@@ -394,6 +395,42 @@ describe('init: the budget, the install and the seeds', () => {
     expect(read(odd, 'vite.config.ts')).toBe('export default defineConfig(() => ({}))\n')
     expect(log).toContain('to do: import { basalt }')
     expect(log).toContain("@import 'basalt-ui/tailwind.css'")
+  })
+
+  it('splices the import after a multi-line last import, not inside it', async () => {
+    const dir = repo({
+      'vite.config.ts':
+        "import {\n  defineConfig,\n  loadEnv,\n} from 'vite'\n\nexport default defineConfig({ plugins: [] })\n",
+    })
+    await runInit(['--profile', 'app', '--root', 'src'], dir)
+    expect(read(dir, 'vite.config.ts')).toBe(
+      "import {\n  defineConfig,\n  loadEnv,\n} from 'vite'\nimport { basalt } from 'basalt-ui/vite'\n\nexport default defineConfig({ plugins: [basalt(), ] })\n",
+    )
+  })
+
+  it('points the css at the .basalt/sources.css next to the Vite config, below the repo root', async () => {
+    const dir = repo({
+      'apps/web/vite.config.ts':
+        "import react from '@vitejs/plugin-react'\nexport default { plugins: [react()] }\n",
+      'apps/web/src/index.css': "@import 'tailwindcss';\n",
+    })
+    await runInit(['--profile', 'app', '--root', 'apps/web/src'], dir)
+    expect(read(dir, 'apps/web/src/index.css')).toBe(
+      "@import 'basalt-ui/tailwind.css';\n@import '../.basalt/sources.css';\n",
+    )
+  })
+
+  it('leaves the css alone when no Vite config says where sources.css lands', async () => {
+    const dir = repo({ 'src/index.css': "@import 'tailwindcss';\n" })
+    const { log } = await runInit(['--profile', 'app', '--root', 'src'], dir)
+    expect(read(dir, 'src/index.css')).toBe("@import 'tailwindcss';\n")
+    expect(log).toContain("to do: in your stylesheet entry: @import 'basalt-ui/tailwind.css'")
+  })
+
+  it('declares the same flags to the dispatcher and to its own parser', () => {
+    expect(Object.keys(FLAGS).toSorted()).toEqual(
+      Object.keys(COMMAND_OPTIONS['init'] ?? {}).toSorted(),
+    )
   })
 
   it('places everything at the git root when run from a package below it', async () => {

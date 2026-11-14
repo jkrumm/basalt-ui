@@ -49,7 +49,7 @@ const spawnRun: Runner = (argv, dir) =>
     shell: process.platform === 'win32',
   }).status === 0
 
-const FLAGS = {
+export const FLAGS = {
   profile: { type: 'string' },
   root: { type: 'string', multiple: true },
   'tokens-out': { type: 'string' },
