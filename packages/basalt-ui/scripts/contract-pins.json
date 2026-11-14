@@ -3,7 +3,7 @@
   "packages/basalt-ui/scripts/export-surface/charts.json": "62faf6979eed1b7de299b756cd48dea4c7c6eafa84b924f7c3deb5128f1704ad",
   "packages/basalt-ui/scripts/export-surface/controls.json": "27386f9229435585ba142ec1919891d8dc4872b584aabaf7a8329e64d538ce07",
   "packages/basalt-ui/scripts/export-surface/data.json": "988421ed80928c1949bc67e97da7a15e5e1354006d9e5b1f6ff26527d32b3d02",
-  "packages/basalt-ui/scripts/export-surface/router.json": "2d71827104e3894132684eff188b75d69ce046ed7d36344c3f6efd14b3f2f028",
+  "packages/basalt-ui/scripts/export-surface/router.json": "ce96ff193b46452257037ccc48578c8530e91db39c6ead6e8787f688146072c7",
   "packages/basalt-ui/scripts/export-surface/table.json": "f7c7ebd2e6c8a7c7559e1d51216acb938569391991058489c776cb2f15aad3a7",
   "packages/basalt-ui/src/ai/contract.ts": "e15094a2915d44e4f1d3eaaca7e95ff2f86cf890e48766776c738fdd0b0424df",
   "packages/basalt-ui/src/cards/contract.ts": "9d3cfd5f5f5c45a20f30b98c4c330394e3b32b50ebf29e2f406ca5c45e6e39d1",
