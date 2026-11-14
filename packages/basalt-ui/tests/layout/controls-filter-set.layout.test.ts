@@ -136,6 +136,34 @@ const showsSheet = (page: LayoutPage, frame: string): Promise<boolean> =>
 layout('FilterSet', () => {
   for (const viewport of VIEWPORTS) {
     describe(`${viewport.name} ${viewport.width}`, () => {
+      test('exactly one form shows: the pill row or the Filters button, never both', async () => {
+        const page = await open(viewport)
+        const shown = await page.raw.evaluate(() =>
+          [...document.querySelectorAll<HTMLElement>('[data-testid^="fs-"]')]
+            .filter(
+              (frame) =>
+                frame.querySelector('[data-slot="filter-set"]:not([data-presentation="row"])') !==
+                null,
+            )
+            .map((frame) => {
+              const box = (el: Element | null): boolean => {
+                if (el === null) return false
+                const r = el.getBoundingClientRect()
+                return r.width > 0 && r.height > 0
+              }
+              return {
+                id: frame.dataset['testid'],
+                row: box(frame.querySelector('[data-slot="filter-pills"]')),
+                button: box(frame.querySelector('[data-slot="filter-count"]')),
+              }
+            }),
+        )
+        expect(shown.length).toBeGreaterThan(0)
+        for (const frame of shown) {
+          expect(Number(frame.row) + Number(frame.button), `${frame.id}: one form`).toBe(1)
+        }
+      })
+
       test('no horizontal overflow, no wrap, nothing past its frame', async () => {
         const page = await open(viewport)
         expectNoHorizontalOverflow(await page.horizontalOverflow(), 'FilterSet', viewport)

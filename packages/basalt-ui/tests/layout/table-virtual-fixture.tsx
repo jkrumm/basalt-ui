@@ -13,7 +13,7 @@ import { useDataTable } from '../../src/table/use-data-table'
 import type { StateHandle, TableState } from '../../src/table/contract'
 import { VirtualList } from '../../src/ui/virtual-list'
 
-type Row = { id: string; name: string; state: string; amount: number }
+type Row = { id: string; name: string; state: string; amount: number; at: string }
 
 const STATES = ['Awaiting', 'Settled', 'Disputed'] as const
 const ROWS: Row[] = Array.from({ length: 10_000 }, (_, i) => ({
@@ -21,6 +21,7 @@ const ROWS: Row[] = Array.from({ length: 10_000 }, (_, i) => ({
   name: `Booking ${String(i).padStart(5, '0')}`,
   state: STATES[i % STATES.length] ?? STATES[0],
   amount: i,
+  at: new Date(Date.UTC(2026, 10, 14 - (i % 60))).toISOString(),
 }))
 
 const INITIAL: TableState = {
@@ -53,6 +54,7 @@ function Fixture(): ReactElement {
       c.entity('name', { header: 'Booking' }),
       c.status('state', { header: 'State', options: [...STATES] }),
       c.money('amount', { currency: 'EUR', header: 'Amount' }),
+      c.date('at', { header: 'Booked', priority: 3 }),
     ],
     data: ROWS,
     getRowId: (r) => r.id,

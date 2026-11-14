@@ -133,7 +133,10 @@ export function ConnectionIndicator({
             <Pressable
               data-trigger=""
               size="chip"
-              className={cn('gap-1.5 text-xs font-medium hover:bg-accent', shown.tone)}
+              className={cn(
+                'gap-1.5 text-xs font-medium hover:bg-accent pointer-coarse:after:-inset-x-1.5',
+                shown.tone,
+              )}
             />
           }
         >
