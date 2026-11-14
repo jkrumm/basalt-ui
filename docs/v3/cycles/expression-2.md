@@ -268,3 +268,23 @@ Not converged:
 `v3-cycle-expression-3` is filed after the fix rows and the two teardown rows.
 
 owner:
+
+## Owner calibration
+
+The owner looked at four builds in the running playground on 2026-11-14, each as its builder left it after the last round. The reviewers' scores are beside his verdict. Every point he raised is one the rubric could not take off, so the scores stand and the rubric gains the X items (`docs/v3/expression/rubric.md` § Experience).
+
+| Case | Score | Owner's verdict                             | What he named                                                                                                              | Class                    | Goes to                                                      |
+| ---- | ----- | ------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------- | ------------------------ | ------------------------------------------------------------ |
+| n06  | 88    | Quite ok, a beautiful chart                 | The card title is small and the values are large; values are not monospace; too much prose describes the change            | planned, rubric          | The barrel swap (the build drew the 2.x `ChartCard`); X1, X5 |
+| c08  | 85    | Quite good                                  | The dim on hover is too strong; the focused row flickers when the pointer crosses the gap between two rows; prose as n06   | primitive, rubric        | `v3-expr-2-seam-tracks`; X1, X4                              |
+| c09  | 81    | A beautiful chart, not the next level of UX | The timeline is plain; it should scroll in its own region beside the chart, and hovering either one should focus the other | skill, primitive, rubric | `v3-expr-2-skill`, `v3-expr-2-seam-tracks`; X2, X3           |
+| c07  | 71    | All over the place                          | Too large, too much space, the parts are not one joined view                                                               | skill, rubric            | `v3-expr-2-skill`; X2                                        |
+
+All four: the cards and charts do not follow the console look the owner chose for v3 (`docs/v3/verdicts/statcard.md`). Three of the four import `ChartCard` from `basalt-ui/charts`, which still resolves to the 2.x card (§ Findings, "Two ChartCards"): flush, no inset, a small title over free text. The v3 part has the inset and the figure. This cycle scored that as P3 `planned` points on F8, K2 and K4. X5 makes it a P2 from cycle 3.
+
+What the code shows for the two `primitive` points:
+
+- **Flicker.** `focus.item(i)` clears the focus on `pointerleave` of each item (`src/charts/focus.tsx:217`). Rows with a gap between them drop to the unfocused state and dim again on the next row. The clear belongs on the container, `focus.target`.
+- **Dim strength.** The kit ships no dim for a seam-drawn mark, so c08 chose `data-dimmed:opacity-25` itself (`ExprC08.tsx:197`). The kit's own marks dim through `--vx`. One shipped value for both removes the choice.
+
+What the owner's verdicts say about the method: the builds answer the chart's question and stop. None was planned as a surface with a list beside the chart, one focus across both and a footprint sized to the question. The twelve devices are all devices of one chart. Linked parts and one view are missing from the vocabulary, and the skill row takes them.
