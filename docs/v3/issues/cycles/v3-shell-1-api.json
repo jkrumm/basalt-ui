@@ -1,0 +1,22 @@
+{
+  "why": "Shell cycle 1 (docs/v3/cycles/shell-1.md, P2 shell-1.2 and shell-1.4, P3 shell-1.6): three places where the page kit made the app write its own part. `PageAside` `state` takes only `ControlHandle<boolean>`, so an inspector keyed by a record id derives a boolean handle (`apps/playground/src/cycle/shell-1/handle-adapters.ts:55-74`, 20 lines, two casts). An inspector's body is a key-value list and the kit has none, so the page hand-builds a `dl` grid (`ServicesPage.tsx:96-105`). A field handle has labelled `options` but no lookup for the current value's label (`fleet-store.ts:29-35`).",
+  "what": "`PageAside` binds a record-id field, the kit ships a key-value list, a handle names its value.",
+  "owns": [
+    "packages/basalt-ui/src/page/page-aside.tsx, src/page/contract.ts (PageAsideProps)",
+    "packages/basalt-ui/src/page/facts.tsx (new), src/page/index.ts, docs/facts.md (generated), docs/page-aside.md",
+    "packages/basalt-ui/src/router/controls/define.ts (`label(value)`)",
+    "the export-surface and budget files the new symbol needs (shared_append_only)",
+    "their tests"
+  ],
+  "must_not_touch": ["docs/v3/ARCHITECTURE.md", "apps/playground/src/cycle/**"],
+  "change": "`PageAside` `state` also takes a string field: open while it holds a value, a close clears it. `Facts` in `basalt-ui/page` draws a labelled `dl` of `{ label, value }` rows, two columns from the `regular` container tier and one below, and `page-aside.md` names it for an inspector body. A field handle gets `label(value)`, the label its `.labels()` declared, else the value. The new export names its consumer: the cycle build's inspector (shell-1.4). The PR names the `cycle-shell-1:` workarounds each change makes removable.",
+  "commits": "feat: one commit in packages/basalt-ui.",
+  "proof": "make check; unit tests for each change.",
+  "acceptance": [
+    "`<PageAside state={store.field.record}>` with a string field opens while the field is set and clears it on close (test)",
+    "`Facts` renders a `dl` with one row per entry, one column in a narrow container (layout test)",
+    "`store.field.x.label(value)` returns the declared label (test)",
+    "make check passes"
+  ],
+  "out_of_scope": "The compact sheet (v3-shell-1-phone-aside); the table's detail host (v3-shell-1-detail-host)."
+}

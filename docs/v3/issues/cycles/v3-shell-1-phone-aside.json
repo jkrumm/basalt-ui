@@ -1,0 +1,19 @@
+{
+  "why": "Shell cycle 1 (docs/v3/cycles/shell-1.md, P1 shell-1.8): on a phone a bound `PageAside` never opens. At the compact size the shell draws the aside as `AsideSheet` behind a header button with an open state of its own (`src/shell/app-shell.tsx:152`), so a `state` that is `true` (a row tap, a deep link) opens nothing, and closing the sheet never writes `false`: the URL keeps the record while the screen shows none (`.evidence/cycle-shell-1/phone-aside.log` Q1 to Q4).",
+  "what": "On a phone the aside's sheet follows the page's `state`.",
+  "owns": [
+    "packages/basalt-ui/src/shell/app-shell.tsx, src/shell/page-aside.tsx (`AsideSheet`, the region claim)",
+    "packages/basalt-ui/src/page/page-aside.tsx (what the claim carries)",
+    "their tests and one layout test"
+  ],
+  "must_not_touch": ["docs/v3/ARCHITECTURE.md", "apps/playground/src/cycle/**"],
+  "change": "The claim a `PageAside` makes carries its open state and its setter when it has `state`. At the compact size `AsideSheet` is open while that state is `true` and writes `false` on close (Escape, the close button, the scrim); the header button stays and opens it too. An aside without `state` keeps today's behaviour. A layout test at 390 px sets the bound state to `true` and finds the sheet open, then presses Escape and finds the state `false`.",
+  "commits": "fix: one commit in packages/basalt-ui.",
+  "proof": "make check; the layout test.",
+  "acceptance": [
+    "At 390 px a bound `PageAside` whose state turns `true` shows its sheet; closing it writes `false` (layout test)",
+    "A deep link with the state set opens the sheet on load",
+    "make check passes"
+  ],
+  "out_of_scope": "A string `state` (v3-shell-1-api); focus after close (v3-shell-1-shell)."
+}

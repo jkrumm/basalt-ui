@@ -1,0 +1,17 @@
+{
+  "why": "Shell cycle 1 (docs/v3/cycles/shell-1.md, P1 shell-1.7): the route error screen `createBasaltRouter` installs offers one action, Try again, and it does not retry. `ErrorComponent` calls the error boundary's `reset` only (`src/provider/route-defaults.tsx:25`), so the failed loader is not re-run and the same screen comes back; the services in the cycle build stayed unreachable until a reload, though the next call would have succeeded (`.evidence/cycle-shell-1/actions.log` A12).",
+  "what": "Try again re-runs the failed route's loader.",
+  "owns": [
+    "packages/basalt-ui/src/provider/route-defaults.tsx and its tests",
+    "packages/basalt-ui/src/provider/create-router.tsx (only if the screen needs the router)"
+  ],
+  "must_not_touch": ["docs/v3/ARCHITECTURE.md", "apps/playground/src/cycle/**"],
+  "change": "Try again invalidates the router (`useRouter().invalidate()`) and then resets the boundary, the TanStack pattern for a loader error, while staying provider-free. A router test mounts a route whose loader throws once and then resolves, clicks Try again once and finds the route's content.",
+  "commits": "fix: one commit in packages/basalt-ui.",
+  "proof": "make check; the router test.",
+  "acceptance": [
+    "A loader that fails once and then succeeds renders its route after one click on Try again (router test)",
+    "make check passes"
+  ],
+  "out_of_scope": "The not-found screen and the pending state (v3-shell-1-shell)."
+}
