@@ -35,7 +35,7 @@ import {
   writeFileEnsuringDir,
   writeUnit,
 } from './index'
-import { ROUTER_PLUGIN_FIX, seedTsconfigExtends } from './doctor-upgrade'
+import { ROUTER_PLUGIN_FIX, seedTsconfigExtends } from './tsconfig-seed'
 import {
   appEntry,
   registersRouterPlugin,
