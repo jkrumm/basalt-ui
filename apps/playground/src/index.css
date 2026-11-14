@@ -9,6 +9,7 @@
 @source '../../../packages/basalt-ui/src/shell';
 @source '../../../packages/basalt-ui/src/table';
 
+/* theme-allow-file raw-media-query — the card tier's own container thresholds, mirrored from src/table/table.css until its row height is fixed there */
 /* The row's `h-(--table-row-h)` utility sits above `@layer basalt.table`, so the card tier's
    `height: auto` loses and a stacked card is clipped to one row height (signal: table card-tier
    row height). Unlayered, these win until the tier sheet says it with `!important`. */
