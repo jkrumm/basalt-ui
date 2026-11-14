@@ -8,6 +8,7 @@ import { act, cleanup, render } from '@testing-library/react'
 import { useEffect } from 'react'
 import { afterEach, beforeEach, describe, expect, test } from 'bun:test'
 import type { FormLike } from '../core/ports'
+import { isPristine } from '../core/form-dirty'
 import { persisted } from '../core/persisted'
 import { useFormDraft } from './draft'
 import type {
@@ -21,26 +22,35 @@ const defaults: Values = { title: 'server', other: 'x', lines: [{ qty: 1 }] }
 type Fake = FormLike<Values> & {
   edit(values: Values): void
   submitState(isSubmitting: boolean): void
+  endSubmit(successful: boolean): void
 }
 
 /** A TanStack-shaped form: `reset` and every edit notify once, `defaultValues` stay put. */
 function fakeForm(initial: Values = defaults): Fake {
-  let state = { values: initial, isSubmitting: false, canSubmit: true, errors: [] as unknown[] }
+  let state: FormLike<Values>['state'] & { isSubmitSuccessful: boolean } = {
+    values: initial,
+    isSubmitting: false,
+    canSubmit: true,
+    errors: [] as unknown[],
+    isSubmitSuccessful: false,
+  }
+  const options: FormLike<Values>['options'] = { defaultValues: defaults }
   const subs = new Set<() => void>()
   const emit = (): void => subs.forEach((cb) => cb())
   return {
     get state() {
       return state
     },
-    options: { defaultValues: defaults },
+    options,
     store: {
       subscribe(cb) {
         subs.add(cb)
         return { unsubscribe: () => void subs.delete(cb) }
       },
     },
-    reset(values) {
+    reset(values, o) {
       state = { ...state, values }
+      if (o?.keepDefaultValues !== true) options.defaultValues = values
       emit()
     },
     edit(values) {
@@ -49,6 +59,10 @@ function fakeForm(initial: Values = defaults): Fake {
     },
     submitState(isSubmitting) {
       state = { ...state, isSubmitting }
+      emit()
+    },
+    endSubmit(successful) {
+      state = { ...state, isSubmitting: false, isSubmitSuccessful: successful }
       emit()
     },
   }
@@ -155,6 +169,34 @@ describe('useFormDraft', () => {
     unmount()
     await tick()
     expect(draftOf()).toBeNull()
+  })
+
+  test('a successful submit deletes the key and re-bases the form with no app code', async () => {
+    const form = fakeForm()
+    render(<Host form={form} o={opts()} />)
+    act(() => form.edit(changed))
+    await tick()
+    expect(draftOf()).not.toBeNull()
+    act(() => form.edit({ ...changed, title: 'saved' }))
+    act(() => form.submitState(true))
+    act(() => form.endSubmit(true))
+    expect(draftOf()).toBeNull()
+    expect(isPristine(form)).toBe(true)
+    expect(form.options.defaultValues?.title).toBe('saved')
+    // The pending autosave was cancelled: nothing is written back after the debounce.
+    await tick()
+    expect(draftOf()).toBeNull()
+  })
+
+  test('a failed submit keeps the draft and the form dirty', async () => {
+    const form = fakeForm()
+    render(<Host form={form} o={opts()} />)
+    act(() => form.edit(changed))
+    act(() => form.submitState(true))
+    act(() => form.endSubmit(false))
+    await tick()
+    expect(draftOf()).toEqual({ v: 1, value: changed })
+    expect(isPristine(form)).toBe(false)
   })
 
   test('reverting to the server values deletes the key', async () => {
