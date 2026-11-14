@@ -193,6 +193,10 @@ export const ROUTER_SEED_DESTS = {
   nav: 'src/lib/nav.tsx',
   root: 'src/routes/__root.tsx',
   main: 'src/main.tsx',
+  app: 'src/routes/_app.tsx',
+  appError: 'src/components/route-error.tsx',
+  appMissing: 'src/components/route-missing.tsx',
+  appPending: 'src/components/route-pending.tsx',
 } as const
 
 /** A router seed's dest, relative to the install root: under the app dir when it is not the root. */
@@ -200,7 +204,7 @@ export function routerSeedDest(appRel: string, seed: keyof typeof ROUTER_SEED_DE
   return appRel === '' ? ROUTER_SEED_DESTS[seed] : `${appRel}/${ROUTER_SEED_DESTS[seed]}`
 }
 
-/** The router seeds' dests for an app dir (`main.tsx`, `nav.tsx`, `__root.tsx`). */
+/** The router seeds' dests for an app dir (`main.tsx`, `nav.tsx`, `__root.tsx`, `_app.tsx` and the three route components). */
 export function routerSeedDests(appRel: string): string[] {
   return (Object.keys(ROUTER_SEED_DESTS) as (keyof typeof ROUTER_SEED_DESTS)[]).map((seed) =>
     routerSeedDest(appRel, seed),
