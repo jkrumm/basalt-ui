@@ -90,16 +90,18 @@ export type LinkWrite<S> = { search: S; replace: boolean; resetScroll: false }
  * A field's handle: the frozen `ControlHandle` (`use`, `useSource`, `clear`, `isDefault`) plus the
  * definition a renderer or a link needs. `options` lists members (a multi's `value` is one member).
  */
-export type FieldHandle<V, K extends CodecKind = CodecKind, S = Raw> = Omit<
-  ControlHandle<V>,
-  'kind' | 'options'
-> & {
+export type FieldHandle<
+  V,
+  K extends CodecKind = CodecKind,
+  S = Raw,
+  H extends History = History,
+> = Omit<ControlHandle<V>, 'kind' | 'options'> & {
   readonly kind: K
   readonly options: readonly FieldOption<Member<V>>[]
   /** The field spec's codec, the same object. */
   readonly codec: Codec<V>
   readonly fallback: V
-  readonly history: History
+  readonly history: H
   /** False for a device or memory field. */
   readonly url: boolean
   /** The URL params the field owns (none off the URL). */
@@ -108,11 +110,12 @@ export type FieldHandle<V, K extends CodecKind = CodecKind, S = Raw> = Omit<
   link(value: V): LinkWrite<S>
 }
 
-export type RangeHandle<P extends string, W extends string, S> = FieldHandle<
-  RangeValue<P>,
-  'range',
-  S
-> & {
+export type RangeHandle<
+  P extends string,
+  W extends string,
+  S,
+  H extends History = History,
+> = FieldHandle<RangeValue<P>, 'range', S, H> & {
   /**
    * The API-facing window: `{ window: preset }` for a preset, `{ from, to }` for a custom range or a
    * preset declared with a `window` resolver (resolved now, never stale). A `custom` value without
@@ -125,10 +128,10 @@ export type RangeHandle<P extends string, W extends string, S> = FieldHandle<
 }
 
 export type HandleOf<Key extends string, X> =
-  X extends RangeSpec<infer P, infer C, RangeParams, infer W, boolean>
-    ? RangeHandle<RangePresets<P, C>, W, ParamsOf<Key, X>>
-    : X extends FieldSpec<infer V, infer K>
-      ? FieldHandle<V, K, ParamsOf<Key, X>>
+  X extends RangeSpec<infer P, infer C, RangeParams, infer W, boolean, infer H>
+    ? RangeHandle<RangePresets<P, C>, W, ParamsOf<Key, X>, H>
+    : X extends FieldSpec<infer V, infer K, boolean, infer H>
+      ? FieldHandle<V, K, ParamsOf<Key, X>, H>
       : never
 
 export type DefineControlsConfig<Id extends string, Scp extends Scope, F, W = {}> = {

@@ -23,6 +23,7 @@ function subscribe(listener: () => void): () => void {
 const search = (): string => (typeof window === 'undefined' ? '' : window.location.search)
 
 export type PushDouble<K extends string> = InnerNavHandle<K> & {
+  readonly isSet: boolean
   /** Every value written through `set` or a link click, in order. */
   readonly writes: K[]
 }

@@ -1,5 +1,6 @@
+import { useRouter } from '@tanstack/react-router'
 import { useContext, useEffect, useId, useRef } from 'react'
-import type { MouseEventHandler, ReactElement } from 'react'
+import type { MouseEvent, MouseEventHandler, ReactElement } from 'react'
 import { scrollParentOf } from '../../common/scroll-parent'
 import { cn } from '../../core/cn'
 import { page } from '../../core/messages/page'
@@ -10,15 +11,20 @@ import { Menu, MenuContent, MenuItem, MenuTrigger } from '../../ui/menu'
 import type { InnerNavGroup, InnerNavItem, InnerNavProps, PushField } from '../contract'
 import { SplitListContext } from './split-page'
 
+/** An anchor's own props: what a structural handle's `link(value)` returns. */
+type AnchorLink = { href: string; onClick?: MouseEventHandler<HTMLAnchorElement> }
+
+/** What a `defineControls` field's `link(value)` returns: the search patch the field writes. */
+type SearchLink = { readonly search: unknown }
+
 /**
- * What `InnerNav` reads off its `state` beyond the frozen `PushField`: whether the field was
- * written (`isSet`, the signal `SplitPage selected` takes) and the props of one item's link. The
- * real binding is the controls layer's; until a handle carries both, `InnerNav` raises a plain error
- * instead of rendering links that go nowhere.
+ * What `InnerNav` reads off its `state` beyond the frozen `PushField`: the props of one item's
+ * link. A `defineControls` push field's `link(value)` (the search patch) is drawn into an anchor
+ * under the router; a structural handle that returns `{ href, onClick }` itself is used as it is.
+ * A handle with no `link` raises a plain error instead of rendering links that go nowhere.
  */
 export type InnerNavHandle<K extends string> = PushField<K> & {
-  readonly isSet: boolean
-  link(value: K): { href: string; onClick?: MouseEventHandler<HTMLAnchorElement> }
+  link(value: K): AnchorLink | SearchLink
 }
 
 function handleOf<K extends string>(state: PushField<K>): InnerNavHandle<K> {
@@ -30,6 +36,48 @@ function handleOf<K extends string>(state: PushField<K>): InnerNavHandle<K> {
     )
   }
   return state as InnerNavHandle<K>
+}
+
+/** The slice of the router that turns a search patch into an href. */
+type HrefRouter = {
+  buildLocation(options: {
+    to: '.'
+    search: (prev: Record<string, unknown>) => Record<string, unknown>
+  }): { href: string }
+}
+
+/** A plain left click writes the field; a modified one (new tab, download) is the browser's. */
+const isPlainClick = (event: MouseEvent<HTMLAnchorElement>): boolean =>
+  event.button === 0 && !(event.metaKey || event.ctrlKey || event.shiftKey || event.altKey)
+
+/**
+ * One item's anchor props. The href comes from the router's `buildLocation` with the field's search
+ * patch (so the app's search middlewares apply and a default stays out of the URL); the click writes
+ * through the field's own setter, which carries its `history`.
+ */
+function anchorOf<K extends string>(
+  handle: InnerNavHandle<K>,
+  router: HrefRouter | undefined,
+  set: (value: K) => void,
+  value: K,
+): AnchorLink {
+  const link = handle.link(value)
+  if ('href' in link) return link
+  if (router === undefined) {
+    throw new Error(
+      "basalt-ui: `InnerNav` draws a `defineControls` field's links through the router; " +
+        'render it inside a `RouterProvider`',
+    )
+  }
+  const patch = link.search as Record<string, unknown>
+  return {
+    href: router.buildLocation({ to: '.', search: (prev) => ({ ...prev, ...patch }) }).href,
+    onClick: (event) => {
+      if (!isPlainClick(event)) return
+      event.preventDefault()
+      set(value)
+    },
+  }
 }
 
 const LINK =
@@ -88,12 +136,12 @@ function ItemMenu({ item }: { item: InnerNavItem }): ReactElement | null {
 function Group<K extends string>({
   group,
   active,
-  handle,
+  anchor,
   strip,
 }: {
   group: InnerNavGroup
   active: K
-  handle: InnerNavHandle<K>
+  anchor: (value: K) => AnchorLink
   strip: boolean
 }): ReactElement {
   const labelId = useId()
@@ -126,7 +174,7 @@ function Group<K extends string>({
           return (
             <li key={item.id} data-slot="inner-nav-item" className="flex shrink-0 items-center">
               <a
-                {...handle.link(item.id as K)}
+                {...anchor(item.id as K)}
                 aria-current={item.id === active ? 'page' : undefined}
                 className={LINK}
               >
@@ -145,8 +193,9 @@ function Group<K extends string>({
 
 /**
  * A page's inner sidebar: groups of section links on a `push` field, so each section is a history
- * entry and Back walks them. Every item is a real `<a href>` through the handle's `link()`, with
- * `aria-current` on the active one, so middle-click, copy-link and the status bar all work. One DOM
+ * entry and Back walks them. Every item is a real `<a href>` built from the handle's `link()` (a `defineControls` push field
+ * under the router, or a structural `{ href, onClick }`), with `aria-current` on the active one, so
+ * middle-click, copy-link and the status bar all work; a plain click writes the field. One DOM
  * at every width: a standalone nav is a vertical list from the `wide` container tier and a
  * horizontally scrolling link strip below it (never a `Select`, which would lose the hrefs); inside
  * a `SplitPage` list pane it stays a list. An item may carry a count or dot `badge` and a `menu`
@@ -174,7 +223,9 @@ export function InnerNav<K extends string = string>({
   groups,
 }: InnerNavProps<K>): ReactElement {
   const handle = handleOf(state)
-  const [active] = state.use()
+  const [active, set] = state.use()
+  const router = useRouter({ warn: false }) as unknown as HrefRouter | undefined
+  const anchor = (value: K): AnchorLink => anchorOf(handle, router, set, value)
   const inSplit = useContext(SplitListContext)
   const strip = !inSplit
   const nav = useRef<HTMLElement>(null)
@@ -209,7 +260,7 @@ export function InnerNav<K extends string = string>({
         </div>
       )}
       {groups.map((group) => (
-        <Group key={group.id} group={group} active={active} handle={handle} strip={strip} />
+        <Group key={group.id} group={group} active={active} anchor={anchor} strip={strip} />
       ))}
     </nav>
   )

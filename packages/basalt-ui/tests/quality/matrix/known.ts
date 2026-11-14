@@ -45,22 +45,16 @@ const STATE_KNOWN: readonly KnownFinding[] = [
 // /cycle/shell/* is the shell cycle's fleet app (docs/v3/cycles/shell-1.md). Each entry is a finding of
 // a kit part the build composes, owned by the fix row that removes it (shell-1.21); the gate conflict
 // that puts these lines in a cycle PR is shell-1.22.
-const SHELL_KNOWN: readonly KnownFinding[] = [
-  // `filterSlot` in a page bar draws the folding `FilterSet` (F2 n12), whose pill row clips at its
-  // border box; the same finding /overview lists. The row's own clip margin paints the ring, the walk measures the box.
-  ...['/cycle/shell', '/cycle/shell/services'].map((route): KnownFinding => ({
+// `filterSlot` in a page bar draws the folding `FilterSet` (F2 n12), whose pill row clips at its
+// border box; the same finding /overview lists. The row's own clip margin paints the ring, the walk measures the box.
+const SHELL_KNOWN: readonly KnownFinding[] = ['/cycle/shell', '/cycle/shell/services'].map(
+  (route): KnownFinding => ({
     route,
     assertion: 'ringWalk',
     item: /filter-set-pill\]>button\[button\] ".*outline is clipped by div/,
     owner: "controls: the FilterSet pill row clips its edge pills' rings (as /overview)",
-  })),
-  ...['/cycle/shell/services', '/cycle/shell/settings'].map((route): KnownFinding => ({
-    route,
-    assertion: 'ringWalk',
-    item: /inner-nav-item\]>a ".*outline is clipped by div/,
-    owner: 'v3-shell-1-inner-nav: the InnerNav list pane clips the link rings (as /settings)',
-  })),
-]
+  }),
+)
 
 export const KNOWN: readonly KnownFinding[] = [
   ...STATE_KNOWN,
@@ -94,12 +88,6 @@ export const KNOWN: readonly KnownFinding[] = [
     assertion: 'ringWalk',
     item: /view-tabs\]>div>div\[segmented\]>button\[segmented-item\].*outline is clipped by main/,
     owner: 'controls: the track sits on the page edge, so the page bar clips its ring like Range',
-  },
-  {
-    route: '/settings',
-    assertion: 'ringWalk',
-    item: /inner-nav-item\]>a ".*outline is clipped by div/,
-    owner: 'page: the InnerNav list pane clips the link rings (settings exemplar)',
   },
   {
     route: '/overview',

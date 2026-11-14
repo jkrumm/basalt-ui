@@ -7,6 +7,8 @@ import { describe, expect, test } from 'bun:test'
 import type { ReactElement } from 'react'
 import type { ControlHandle } from '../../core/ports'
 import type { InnerNavMenuItem, PushField } from '../contract'
+import { defineControls } from '../../router/controls/define'
+import { field } from '../../router/controls/field'
 import { InnerNav } from './inner-nav'
 import { pushField } from './inner-nav.test-support'
 
@@ -72,6 +74,39 @@ export const oneItemMenu: ReactElement = (
 export const withoutLabel: ReactElement = (
   // @ts-expect-error a nav is named by its label
   <InnerNav state={state} groups={[]} />
+)
+
+const store = defineControls({
+  id: 'inner-nav-type-guard',
+  scope: 'page',
+  fields: {
+    section: field.enum(['general', 'billing'], 'general', { history: 'push' }),
+    filter: field.enum(['all', 'open'], 'all'),
+    device: field.enum(['a', 'b'], 'a', { url: false }),
+  },
+})
+
+/** A `defineControls` field declared `{ history: 'push' }` is a push field with no cast. */
+export const controlsPush: ReactElement = (
+  <InnerNav label="Settings" state={store.field.section} groups={[]} />
+)
+
+export const controlsReplace: ReactElement = (
+  <InnerNav
+    label="Settings"
+    // @ts-expect-error a field left on the default `replace` history cannot back an inner nav
+    state={store.field.filter}
+    groups={[]}
+  />
+)
+
+export const controlsDevice: ReactElement = (
+  <InnerNav
+    label="Settings"
+    // @ts-expect-error a device field is not on the URL and is never a push field
+    state={store.field.device}
+    groups={[]}
+  />
 )
 
 describe('inner nav type guard', () => {
