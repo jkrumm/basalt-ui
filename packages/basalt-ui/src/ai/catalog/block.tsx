@@ -51,11 +51,8 @@ function Unavailable({
 }
 
 function Placeholder({ height }: { height?: number }): ReactElement {
-  return height === undefined ? (
-    <Skeleton className="h-24 w-full" />
-  ) : (
-    <Skeleton className="w-full" style={{ height }} />
-  )
+  const style = height === undefined ? undefined : { height }
+  return <Skeleton className={height === undefined ? 'h-24 w-full' : 'w-full'} style={style} />
 }
 
 function Rendered({ def, props, phase }: { def: Block; props: unknown; phase: Phase }): ReactNode {
@@ -68,22 +65,20 @@ function Rendered({ def, props, phase }: { def: Block; props: unknown; phase: Ph
   return ready ? node : <Placeholder />
 }
 
-/** What to draw: the validated props, or while pending the block's first sample as the shape. */
-function target(
-  checked: ReturnType<typeof check>,
-  pending: boolean,
-): { block: Block; props: unknown } | null {
-  if (checked.ok) return { block: checked.def, props: checked.block.props }
-  if (pending && checked.def !== undefined)
-    return { block: checked.def, props: checked.def.sample[0] }
-  return null
-}
-
-export function createBlockView(byName: ReadonlyMap<string, Block>): FC<BlockComponentProps> {
+export function createBlockView(
+  byName: ReadonlyMap<string, Block>,
+  discriminator: string,
+): FC<BlockComponentProps> {
   function CatalogBlock({ spec, phase, onEvent }: BlockComponentProps): ReactElement {
-    const checked = check(spec, byName)
+    const checked = check(spec, byName, discriminator)
     const pending = phase !== 'ready' && phase !== 'stale'
-    const drawn = target(checked, pending)
+    // the validated props, or while pending the block's first sample as the shape
+    const { def } = checked
+    const drawn = checked.ok
+      ? { block: checked.def, props: checked.block.props }
+      : pending && def !== undefined
+        ? { block: def, props: def.sample[0] }
+        : null
     if (drawn === null) {
       if (pending || checked.ok) return <Placeholder />
       const event = {

@@ -65,7 +65,7 @@ function checkSample(
 ): string[] {
   const failures: string[] = []
   if (!isRecord(sample)) return [`${at} is not an object; a block's props are one object`]
-  const spec = { block: block.name, ...sample }
+  const spec = { [catalog.discriminator ?? 'block']: block.name, ...sample }
   const own = catalog.validate(spec)
   if (!own.ok) return [`${at} does not validate: ${own.error}`]
 
@@ -84,10 +84,12 @@ function checkSample(
   if (catalog.validate({ ...spec, deep: nested(maxDepth) }).ok)
     failures.push(`${at} nested past depth ${maxDepth} is accepted`)
 
-  const urlPaths: Path[] = [['href']]
+  const text = new Set(block.textKeys?.map((k) => k.toLowerCase()))
+  const urlPaths: Path[] = text.has('href') ? [] : [['href']]
   for (const path of stringLeaves(sample)) {
     const key = path.at(-1)
-    if (typeof key === 'string' && URL_KEYS.has(key.toLowerCase())) urlPaths.push(path)
+    if (typeof key === 'string' && URL_KEYS.has(key.toLowerCase()) && !text.has(key.toLowerCase()))
+      urlPaths.push(path)
   }
   for (const path of urlPaths) {
     for (const url of HOSTILE) {
@@ -116,12 +118,13 @@ function checkSample(
  *
  * What it checks:
  *
- * - every `sample` validates as `{ block: name, ...sample }`, and renders through `catalog.Block`
+ * - every `sample` validates as `{ block: name, ...sample }` (the catalog's `discriminator` names the field), and renders through `catalog.Block`
  *   in `ready`, `stale`, `loading` and `error` without throwing;
  * - each sample padded past the block's `limits.maxBytes`, or nested past `limits.maxDepth`, is
  *   refused;
  * - a hostile URL (`//host`, `javascript:`, `data:`) in any `href`, `src`, `url` or `link` field of
  *   the sample, or added as `href` at its root, is refused;
+ *   a block's `textKeys` are exempt, and its text-drawn cells fall under the next check;
  * - a hostile URL in any other string field either is refused or never reaches an attribute of the
  *   rendered markup: a block that turns a model string into a link must take it from a url field.
  *

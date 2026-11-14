@@ -54,3 +54,38 @@ describe('expectCatalog over defineCatalog', () => {
     )
   })
 })
+
+const ticketRow = (textKeys: readonly string[], asLink: boolean) =>
+  defineBlock({
+    name: 'tickets',
+    description: 'Tickets with a url cell.',
+    props: z.object({ type: z.literal('tickets'), rows: z.array(z.object({ url: z.string() })) }),
+    textKeys,
+    sample: [{ type: 'tickets', rows: [{ url: 'http://tracker.example/EP-2' }] }],
+    render: (p) => (
+      <ul>
+        {p.rows.map((r) => (
+          <li key={r.url}>{asLink ? <a href={r.url}>ticket</a> : r.url}</li>
+        ))}
+      </ul>
+    ),
+  })
+
+describe('expectCatalog over a catalog with text keys and its own discriminator', () => {
+  test('a url cell drawn as text passes, and the discriminator names the block', () => {
+    const catalog = defineCatalog([ticketRow(['url'], false)], { discriminator: 'type' })
+    expect(() => expectCatalog(catalog)).not.toThrow()
+  })
+
+  test('a text key the block draws as a link fails, naming the field', () => {
+    const catalog = defineCatalog([ticketRow(['url'], true)], { discriminator: 'type' })
+    expect(() => expectCatalog(catalog)).toThrow(
+      'the model string in rows.0.url reaches an attribute',
+    )
+  })
+
+  test('without the text key, the http: sample is refused', () => {
+    const catalog = defineCatalog([ticketRow([], false)], { discriminator: 'type' })
+    expect(() => expectCatalog(catalog)).toThrow('does not validate')
+  })
+})

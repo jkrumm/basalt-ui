@@ -18,5 +18,6 @@ error that lists every failure.
 expectCatalog(catalog: CatalogLike): void
   validate: (x: unknown) => { ok: true; block: unknown; } | { ok: false…
   blocks: readonly { name: string; props: unknown; sample: readonly u…
+  discriminator?: string
   Block?: FC<{ spec: unknown; phase: Phase; }>
 ```

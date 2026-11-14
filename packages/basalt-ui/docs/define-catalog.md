@@ -13,9 +13,11 @@ The one validator between model output and render. `validate(spec)` resolves a s
 or returns a model-readable error that ends in advice; `Block` validates, renders inside a
 per-block error boundary, draws the composite's own phase skeleton and prints a quiet "could not
 be displayed" for a spec it refused or a render that threw, so its siblings keep rendering.
+A spec names its block in `block`; `{ discriminator: 'type' }` names another field, and that
+field then stays in the props the schema sees (the block's own literal).
 
 ## Signature
 
 ```ts
-defineCatalog(blocks: readonly Block[]): Catalog
+defineCatalog(blocks: readonly Block[], options?: { discriminator?: string; }): Catalog
 ```
