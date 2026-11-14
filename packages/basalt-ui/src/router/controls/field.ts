@@ -235,7 +235,9 @@ export const field = {
 
   /**
    * A date window over three params. The handle's `toWindow(value)` gives `{ window }` for a preset
-   * and `{ from, to }` for a custom range or a preset with a `window` resolver.
+   * and `{ from, to }` for a custom range or a preset with a `window` resolver:
+   * `field.range({ presets: ['7d', '30d'], fallback: '7d', window: { '7d': (now) => ({ from, to }) } })`
+   * makes `toWindow({ preset: '7d' })` return `{ from, to }`, ready for a query key.
    */
   range<
     const P extends string,
