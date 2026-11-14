@@ -50,12 +50,20 @@ export type PageTextAction = {
 
 export type PageAction = PageButtonAction | PageTextAction
 
-export type PageBarProps = {
+/**
+ * A page's or section's view switch: a `ViewTabs` drawn from an enum field (`label` is its
+ * accessible name), or a `ControlsSlot` for custom content.
+ */
+export type PageTabs<K extends string = string> =
+  | ControlsSlot
+  | { handle: ControlHandle<K>; label: string }
+
+export type PageBarProps<K extends string = string> = {
   /** Breadcrumb leaf and `h1` in a shell; the visible `h1` without one. */
   title?: string
   parent?: { label: string; href: string | NavTarget }
   controls?: ControlsSlot
-  tabs?: ControlsSlot
+  tabs?: PageTabs<K>
   refresh?: { scope: 'page' | 'global' } & FreshnessView['button']
   /** At most 5, at most one `primary`, none required. */
   actions?: readonly [PageAction?, PageAction?, PageAction?, PageAction?, PageAction?]
@@ -76,11 +84,13 @@ export type PageAsideProps = {
 
 // ---- Section (3.2, 8) ---------------------------------------------------------------------
 
-export type SectionProps = {
+export type SectionProps<K extends string = string> = {
   title: string
   /** One line beside the title, shown while collapsed too. */
   summary?: string
   controls?: ControlsSlot
+  /** The section's view switch, beside the title. */
+  tabs?: PageTabs<K>
   /** The heading is the trigger; open state is uncontrolled or a handle (F2 amendment n5). */
   collapsible?: { defaultOpen?: boolean; state?: ControlHandle<boolean> }
   children?: ReactNode
