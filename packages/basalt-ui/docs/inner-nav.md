@@ -10,8 +10,9 @@ slots: [inner-nav, inner-nav-filter]
 # InnerNav
 
 A page's inner sidebar: groups of section links on a `push` field, so each section is a history
-entry and Back walks them. Every item is a real `<a href>` through the handle's `link()`, with
-`aria-current` on the active one, so middle-click, copy-link and the status bar all work. One DOM
+entry and Back walks them. Every item is a real `<a href>` built from the handle's `link()` (a `defineControls` push field
+under the router, or a structural `{ href, onClick }`), with `aria-current` on the active one, so
+middle-click, copy-link and the status bar all work; a plain click writes the field. One DOM
 at every width: a standalone nav is a vertical list from the `wide` container tier and a
 horizontally scrolling link strip below it (never a `Select`, which would lose the hrefs); inside
 a `SplitPage` list pane it stays a list. An item may carry a count or dot `badge` and a `menu`

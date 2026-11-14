@@ -26,6 +26,13 @@ export type Fallback<V> = V | (() => V)
 /** Whether a lane option set keeps the field on the URL. */
 export type UrlOf<L> = L extends { readonly url: false } ? false : true
 
+/** The history a lane option set writes with: `'push'` only when declared, else `'replace'`. */
+export type HistoryOf<L> = L extends { readonly url: false }
+  ? 'replace'
+  : L extends { readonly history: infer H extends History }
+    ? H
+    : 'replace'
+
 /** One option of an enum, multi or range field; labels come from `.labels()`. */
 export type FieldOption<V = string> = { readonly value: V; readonly label: string }
 
@@ -33,12 +40,17 @@ export type FieldOption<V = string> = { readonly value: V; readonly label: strin
  * A field definition. `U` is whether it lives in the URL, `S` the params it adds to the route's
  * search, keyed later by the field's name (see `ParamsOf` in `define`).
  */
-export interface FieldSpec<V, K extends CodecKind = CodecKind, U extends boolean = boolean> {
+export interface FieldSpec<
+  V,
+  K extends CodecKind = CodecKind,
+  U extends boolean = boolean,
+  H extends History = History,
+> {
   readonly kind: K
   /** Shared with the handle by reference; never spread. */
   readonly codec: Codec<V>
   readonly fallback: Fallback<V>
-  readonly lane: ResolvedLane & { readonly url: U }
+  readonly lane: ResolvedLane & { readonly url: U; readonly history: H }
   /** The closed values behind `options` (enum, multi, range); empty for the open kinds. */
   readonly values: readonly string[]
   readonly labelMap: Readonly<Record<string, string>> | undefined
@@ -57,7 +69,8 @@ export interface RangeSpec<
   Pm extends RangeParams,
   W extends string,
   U extends boolean,
-> extends FieldSpec<RangeValue<RangePresets<P, C>>, 'range', U> {
+  H extends History = History,
+> extends FieldSpec<RangeValue<RangePresets<P, C>>, 'range', U, H> {
   readonly presets: readonly P[]
   readonly custom: C
   readonly params: Pm
@@ -110,7 +123,7 @@ const assertLane = (lane: object | undefined): void => {
   }
 }
 
-function spec<V, K extends CodecKind, U extends boolean>(
+function spec<V, K extends CodecKind, U extends boolean, H extends History>(
   kind: K,
   codec: Codec<V>,
   fallback: Fallback<V>,
@@ -120,13 +133,13 @@ function spec<V, K extends CodecKind, U extends boolean>(
     bounds?: NumberBounds
     labelMap?: Record<string, string>
   } = {},
-): FieldSpec<V, K, U> {
+): FieldSpec<V, K, U, H> {
   assertLane(lane)
   return {
     kind,
     codec,
     fallback,
-    lane: resolveLane(lane) as ResolvedLane & { url: U },
+    lane: resolveLane(lane) as ResolvedLane & { url: U; history: H },
     values: extra.values ?? [],
     labelMap: extra.labelMap,
     bounds: extra.bounds,
@@ -178,7 +191,7 @@ export const field = {
     values: readonly V[],
     fallback: Fallback<NoInfer<V>>,
     options?: EnumOptions<V> & L,
-  ): Labelled<FieldSpec<V, 'enum', UrlOf<L>>> {
+  ): Labelled<FieldSpec<V, 'enum', UrlOf<L>, HistoryOf<L>>> {
     return labelled(
       spec('enum', enumCodec(values, options?.aliases), fallback, options, { values }),
     )
@@ -189,7 +202,7 @@ export const field = {
     values: readonly V[],
     fallback: Fallback<readonly NoInfer<V>[]> = [],
     lane?: L,
-  ): Labelled<FieldSpec<readonly V[], 'multi', UrlOf<L>>> {
+  ): Labelled<FieldSpec<readonly V[], 'multi', UrlOf<L>, HistoryOf<L>>> {
     const canonical =
       typeof fallback === 'function'
         ? fallback
@@ -201,7 +214,7 @@ export const field = {
   string<const L extends LaneOptions = {}>(
     fallback: Fallback<string>,
     options?: { readonly max?: number } & L,
-  ): FieldSpec<string, 'string', UrlOf<L>> {
+  ): FieldSpec<string, 'string', UrlOf<L>, HistoryOf<L>> {
     return spec('string', stringCodec(options?.max), fallback, options)
   },
 
@@ -215,7 +228,7 @@ export const field = {
       readonly step?: number
     },
     lane?: L,
-  ): Labelled<FieldSpec<number, 'number', UrlOf<L>>> {
+  ): Labelled<FieldSpec<number, 'number', UrlOf<L>, HistoryOf<L>>> {
     const bounds: NumberBounds = {
       min: o.min,
       max: o.max,
@@ -229,7 +242,7 @@ export const field = {
   boolean<const L extends LaneOptions = {}>(
     fallback: Fallback<boolean>,
     lane?: L,
-  ): FieldSpec<boolean, 'boolean', UrlOf<L>> {
+  ): FieldSpec<boolean, 'boolean', UrlOf<L>, HistoryOf<L>> {
     return spec('boolean', booleanCodec(), fallback, lane)
   },
 
@@ -245,11 +258,14 @@ export const field = {
     const Pm extends RangeParams = {},
     const W extends P = never,
     const L extends LaneOptions = {},
-  >(o: RangeOptions<P, C, Pm, W>, lane?: L): Labelled<RangeSpec<P, C, Pm, W, UrlOf<L>>> {
+  >(
+    o: RangeOptions<P, C, Pm, W>,
+    lane?: L,
+  ): Labelled<RangeSpec<P, C, Pm, W, UrlOf<L>, HistoryOf<L>>> {
     const custom = (o.custom ?? false) as C
     const params = (o.params ?? {}) as Pm
     const values = custom ? [...o.presets, 'custom'] : [...o.presets]
-    const base = spec<RangeValue<RangePresets<P, C>>, 'range', UrlOf<L>>(
+    const base = spec<RangeValue<RangePresets<P, C>>, 'range', UrlOf<L>, HistoryOf<L>>(
       'range',
       rangeCodec({ presets: o.presets, custom, params }) as Codec<RangeValue<RangePresets<P, C>>>,
       { preset: o.fallback },
@@ -264,7 +280,7 @@ export const field = {
   composite<V, const L extends LaneOptions = {}>(
     codec: CompositeCodec<V>,
     lane?: L,
-  ): FieldSpec<V, 'composite', UrlOf<L>> {
+  ): FieldSpec<V, 'composite', UrlOf<L>, HistoryOf<L>> {
     return spec('composite', codec, codec.fallback, lane)
   },
 }
