@@ -6,9 +6,10 @@ Which form carries which shape of data, and what the marks may say. The question
 
 - One current value is a [StatCard](docs/stat-card.md); a handful of headline values is a [StatGroup](docs/stat-group.md) strip.
 - One ratio against a limit is a [Meter](docs/meter.md) with its zones; the verdict is a word under the marker.
-- A top-N or a share of a total is a [BarList](docs/bar-list.md). Many rows with several attributes is a [DataTable](docs/data-table.md).
+- A top-N or a share of a total is a [BarList](docs/bar-list.md). Many rows with several attributes is a [DataTable](docs/data-table.md), unless the question is which items changed state or passed: that is one mark per item (a square per case) with the table holding the detail.
 - A value over time is a chart in a [ChartCard](docs/chart-card.md); compare categories with bars, follow a shape with a line.
-- Events in order are an [EventList](docs/event-list.md).
+- Events in order are an [EventList](docs/event-list.md). Intervals on a time axis (a stay, a run, a notice window) get one row each, drawn as a bar on the axis.
+- A series that must dim on focus is [CartesianChart](docs/cartesian-chart.md) marks: `Lines` ignores marks and so cannot dim, while `Bars` dims through its own `opacity`.
 
 ## Colour follows the entity
 

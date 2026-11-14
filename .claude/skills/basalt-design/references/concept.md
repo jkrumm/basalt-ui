@@ -23,7 +23,7 @@ What to settle before the first component. Write it as `docs/design/<screen>.md`
 ## Fixtures
 
 - Fixture data shows each extreme at rest: a zero delta, an empty bucket, a value over its limit, a long name, a waiting item. A fixture that sits mid-range hides the states the page must survive.
-- A fixture gives every state in [states](states.md) a place on the page.
+- A fixture gives every state in [states](states.md) a place on the page. Every section's skeleton holds the loaded height, and an empty state names the next step once.
 
 ## Copy and pass criteria
 

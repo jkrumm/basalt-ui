@@ -10,6 +10,19 @@ Taste checks for a page that reads as a default. Read before the first build and
 - **A generic title.** "Overview" or "Dashboard" alone: name the subject and its scope. [type:PageBarProps]
 - **Colour on its own.** A status carried by hue only: a word plus its tone, and polarity is data on the delta. [lint:status-fill-as-text]
 
+## Device checklist
+
+Run it against the rendered page at 1800 and 390, light and dark, and one keyboard-focused frame; layout, contrast and motion show only there. Each device names the reference that teaches it.
+
+- **Answer on the mark.** The hero states the answer with its verb and the marked item is annotated at rest; a list keeps the answer above its cut ([charts](charts.md)).
+- **Baseline.** Every headline figure shows its target, prior period or limit as a signed delta or as geometry, a colour rule alone included ([charts](charts.md)).
+- **Colour budget.** A status hue marks only a state that needs action; the failed mark takes the status fill ([charts](charts.md)).
+- **Seam-drawn finish.** A focus mark beside the ring, the ring inset clear of text, tabular numerals, motion-safe transitions, on-ladder values, status tokens as fills only ([charts](charts.md)).
+- **Fixture honesty.** The extreme reads true, a zero shows a cue, binned bars carry a unit caption, every skeleton holds the loaded height, an empty state names the next step once ([concept](concept.md), [states](states.md)).
+- **Label collisions and light-mode contrast.** Direct labels clear each other and the marks; every text and mark reads in both schemes.
+- **At 390.** The answer and the first rows sit above the fold; a header that pushes rows below it is the defect ([concept](concept.md)).
+- **Anatomy.** Cards in one row align their heights; a subtitle carries a fact ([cards](cards.md)).
+
 ## Dashboard tells
 
 | Tell                                          | Do instead                                                                            |
