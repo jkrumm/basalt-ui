@@ -1,0 +1,9 @@
+/*
+ * The `charts-seam-track` fixture's Tailwind v4 entry, compiled WITH preflight like `charts-card.css`.
+ * `charts-seam-track.layout.test.ts` compiles it into a temp directory.
+ */
+@import '../../../src/css/tailwind.css' source(none);
+@source './charts-seam-track-fixture.tsx';
+@source '../../../src/charts/parts';
+@source '../../../src/charts/track.ts';
+@source '../../../src/ui/badge.tsx';
