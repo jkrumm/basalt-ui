@@ -14,16 +14,18 @@ How a chart earns its place and its marks. Props are in the generated docs: [Car
 - A part of a whole or a category split is read from position, order and a direct label. A hue per part is a rainbow.
 - A ramp starts neutral below its threshold and turns hue only past it; zero stays neutral.
 - A status hue means a status: carry it with a word or a dot, not hue alone. [lint:status-fill-as-text]
+- A status hue marks a state that needs action; a target rule, a "live" band and a passing delta stay in ink steps, and the failed mark takes the status fill instead of its category hue.
 
 ## A headline value has a baseline
 
 - Give every headline figure a baseline: a zero line, a reference line, a zone, or a signed delta that names its period. `refLines` and `zones` are data on [CartesianChart](docs/cartesian-chart.md). [type:ChartRefLine] [type:ChartZone]
-- Against a limit, draw the limit and print the distance to it; "steady at 1.6x" without the 3x line is a claim without a scale.
+- Against a limit, draw the limit and print the distance to it; "steady at 1.6x" without the 3x line is a claim without a scale. A limit that exists only as a colour rule becomes geometry or a signed distance.
 
 ## Label and annotate the mark that matters
 
 - Label marks directly with `text` marks placed by [chartLabels](docs/chart-labels.md): it measures, avoids overlaps and drops what is too wide. The worked example is region `example:chartLabels` in `apps/playground/src/demo/gallery/seam.tsx`.
 - Annotate the one mark the page is about (the best run, the onset, the live stage) and let the rest recede. [useChartFocus](docs/use-chart-focus.md) holds one focused datum for the marks, the card fact and the live region; region `example:useChartFocus` in the same file.
+- The hero states the answer with its verb ("Runs out 13:52", where "13:52" alone answers nothing), and the one mark the page is about carries that annotation at rest. A list keeps the answer above its cut.
 - Custom marks read `plot.rows(key)` and `plot.visible`, so a legend toggle hides the mark. [type:ChartPlot]
 
 ## Anatomy of a chart card
@@ -37,7 +39,14 @@ How a chart earns its place and its marks. Props are in the generated docs: [Car
 
 - Every fill a mark uses has a legend entry: a series, or a legend-only entry for a fill with no series of its own. [type:LegendEntry]
 - A stepped or binned scale says its step in a caption; a size channel gets a key.
-- The fixture shows its zero and its extreme at rest, so the card is judged with an empty hour and an over-limit value on screen.
+- The fixture shows its zero and its extreme at rest, so the card is judged with an empty hour and an over-limit value on screen. The extreme reads true: rounding or clamping it away hides it. A zero fixture shows a cue (a dash, a baseline) where the marks would be.
+- Binned bars carry a unit caption ("per 15 min").
+
+## Finish of a form the page draws
+
+- A focused item gets its own mark beside the container's ring, and the ring is inset so it clears the text inside.
+- Figures in the page's own markup take tabular numerals; every transition is motion-safe; every value is on the ladder.
+- A status token is a fill or a border in a CSS module, and text takes a text token, because the lint stops short of a CSS module.
 
 ## One tab stop, one answer at 390
 
