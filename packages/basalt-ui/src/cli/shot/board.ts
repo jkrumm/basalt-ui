@@ -1,8 +1,10 @@
 // theme-allow-file raw-hex — board.html is a standalone artefact: no basalt tokens exist in it
-// theme-allow-file inline-spacing — board.html is a standalone artefact: no Mantine spacing props
+// theme-allow-file inline-spacing — board.html is a standalone artefact: no spacing props
 /** `board.html`: one self-contained page (inline CSS, relative image paths) over a metrics.json. */
-import { PAGE_ANCHOR, SCHEMES, VIEWPORTS } from './types'
-import type { AnchorMetrics, Scale, ShotMetrics, ShotRecord, ShotState, Sides } from './types'
+import { PAGE_ANCHOR } from './types'
+import type { AnchorMetrics, ShotMetrics, ShotRecord } from './types'
+
+type Sheet = Pick<ShotMetrics, 'viewports' | 'states' | 'shots'>
 
 const esc = (s: string): string => s.replace(/[&<>"']/g, (c) => `&#${c.charCodeAt(0)};`)
 
@@ -10,80 +12,38 @@ const CSS = `
 :root{color-scheme:light dark;--bg:#fff;--fg:#18181b;--mut:#71717a;--line:#d4d4d8;--bad:#b91c1c}
 @media(prefers-color-scheme:dark){:root{--bg:#09090b;--fg:#fafafa;--mut:#a1a1aa;--line:#3f3f46;--bad:#f87171}}
 body{margin:0;padding:24px;background:var(--bg);color:var(--fg);font:13px/1.45 system-ui,sans-serif}
-h1,h2,h3,h4{margin:0 0 8px}h2{margin-top:40px;border-bottom:1px solid var(--line);padding-bottom:4px}
-section{margin:24px 0}.row{display:grid;grid-template-columns:minmax(0,1fr) 380px;gap:24px;align-items:start}
+h1,h2,h3,h4{margin:0 0 8px}h2{margin-top:40px;border-bottom:1px solid var(--line)}section{margin:24px 0}
 .grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px;margin-bottom:16px}
 figure{margin:0;border:1px solid var(--line);padding:6px;min-width:0}
 figcaption,.mut{color:var(--mut);font-size:11px}img{max-width:100%;height:auto;display:block}
 .empty{display:flex;align-items:center;justify-content:center;min-height:60px;color:var(--mut);border:1px dashed var(--line);text-align:center;padding:6px}
-.empty.error{color:var(--bad);border-color:var(--bad)}
-table{border-collapse:collapse;width:100%;font-size:12px}th,td{border:1px solid var(--line);padding:3px 6px;text-align:left;vertical-align:top}
-.bad{color:var(--bad)}aside{position:sticky;top:12px}
+.empty.error,.bad{color:var(--bad);border-color:var(--bad)}
 `
 
-const sides = (s: Sides): string => `${s.top} ${s.right} ${s.bottom} ${s.left}`
-
 const cell = (shot: ShotRecord | undefined, label: string): string => {
-  const caption = `<figcaption>${esc(label)}</figcaption>`
-  if (!shot) return `<figure><div class="empty">not captured</div>${caption}</figure>`
+  const caption = (extra = ''): string => `<figcaption>${esc(label)}${extra}</figcaption>`
+  if (!shot) return `<figure><div class="empty">not captured</div>${caption()}</figure>`
+  const note = [shot.note, shot.ignored && 'ignored the state'].filter(Boolean).join(' · ')
   if (shot.status === 'ok' && shot.file) {
-    const note = shot.note ? ` · ${esc(shot.note)}` : ''
-    return `<figure><img src="${esc(shot.file)}" loading="lazy" alt="${esc(`${shot.name} ${label}`)}"><figcaption>${esc(label)}${note}</figcaption></figure>`
+    const alt = esc(`${shot.name} ${label}`)
+    return `<figure><img src="${esc(shot.file)}" loading="lazy" alt="${alt}">${caption(note && ` · ${esc(note)}`)}</figure>`
   }
-  const note = shot.note ? `: ${esc(shot.note)}` : ''
-  return `<figure><div class="empty ${shot.status}">${shot.status}${note}</div>${caption}</figure>`
+  const why = note ? `: ${esc(note)}` : ''
+  return `<figure><div class="empty ${shot.status}">${shot.status}${why}</div>${caption()}</figure>`
 }
 
-const metricsRow = (a: AnchorMetrics): string => {
-  const fails = a.contrast.failures.length
-  return (
-    `<tr><td>${a.scheme}/${a.viewport}</td><td>${a.box.width}×${a.box.height}</td>` +
-    `<td>${sides(a.padding)}</td><td>${a.gap.row}/${a.gap.column}</td><td>${a.radius}</td>` +
-    `<td>${a.borderWidth}</td><td>${a.fontSizes.join(', ')}</td><td>${a.emptyRatio}</td>` +
-    `<td class="${fails ? 'bad' : ''}">${a.contrast.min ?? '–'} (${fails} fail)</td></tr>`
-  )
-}
-
-const metricsTable = (rows: AnchorMetrics[]): string => {
-  if (rows.length === 0) return '<p class="mut">no metrics (the anchor never rendered)</p>'
-  const failures = rows.flatMap((a) =>
-    a.contrast.failures.map(
-      (f) =>
-        `<li>${a.scheme}/${a.viewport} “${esc(f.text)}” ${f.ratio} (${esc(f.fg)} on ${esc(f.bg)}, ${f.fontSize}px)</li>`,
-    ),
-  )
-  const assumed = rows
-    .filter((a) => a.contrast.backdrop === 'assumed-white')
-    .map((a) => `${a.scheme}/${a.viewport}`)
-  const nested = rows
-    .filter((a) => a.nested.length > 0)
-    .map(
-      (a) =>
-        `<li>${a.scheme}/${a.viewport}<ul>${a.nested.map((n) => `<li>${esc(n.path)} r${n.radius === 'full' ? ' full' : n.radius} p ${sides(n.padding)}</li>`).join('')}</ul></li>`,
-    )
-  return (
-    `<table><tr><th></th><th>box</th><th>padding</th><th>gap r/c</th><th>radius</th><th>border</th>` +
-    `<th>font px</th><th>empty</th><th>contrast min</th></tr>${rows.map(metricsRow).join('')}</table>` +
-    (assumed.length
-      ? `<p class="bad">backdrop assumed white (no opaque ancestor background): ${assumed.join(', ')}</p>`
-      : '') +
-    (failures.length ? `<h4>Contrast failures</h4><ul class="bad">${failures.join('')}</ul>` : '') +
-    (nested.length ? `<h4>Nested surfaces</h4><ul>${nested.join('')}</ul>` : '')
-  )
-}
-
-const grid = (shots: ShotRecord[], route: string, name: string, state: ShotState): string => {
-  const cells = VIEWPORTS.flatMap((viewport) =>
-    SCHEMES.map((scheme) =>
+/** Every state of one anchor: a grid of scheme × viewport per state. */
+const grid = (m: Sheet, route: string, name: string, state: string): string => {
+  const at = (s: ShotRecord, scheme: string, viewport: string): boolean =>
+    s.route === route &&
+    s.name === name &&
+    s.state === state &&
+    s.scheme === scheme &&
+    s.viewport === viewport
+  const cells = m.viewports.flatMap((viewport) =>
+    ['light', 'dark'].map((scheme) =>
       cell(
-        shots.find(
-          (s) =>
-            s.route === route &&
-            s.name === name &&
-            s.state === state &&
-            s.scheme === scheme &&
-            s.viewport === viewport,
-        ),
+        m.shots.find((s) => at(s, scheme, viewport)),
         `${scheme} · ${viewport}`,
       ),
     ),
@@ -91,49 +51,18 @@ const grid = (shots: ShotRecord[], route: string, name: string, state: ShotState
   return `<h4>${state}</h4><div class="grid">${cells.join('')}</div>`
 }
 
-const anchorSection = (m: ShotMetrics, route: string, name: string): string =>
-  `<section><h3>${esc(name)}</h3><div class="row"><div>${m.states
-    .map((state) => grid(m.shots, route, name, state))
-    .join('')}</div><aside>${metricsTable(
-    m.anchors.filter((a) => a.route === route && a.name === name),
-  )}</aside></div></section>`
-
-const stepList = (steps: Record<string, number>): string =>
-  Object.entries(steps)
-    .map(([k, v]) => `${esc(k)} ${v}`)
-    .join(' · ') || '–'
-
-/** The resolved theme steps, shown once per distinct scale (usually one for every scheme × viewport). */
-const scaleBlock = (scale: Scale[]): string => {
-  if (scale.length === 0) return ''
-  const groups = new Map<string, { scale: Scale; where: string[] }>()
-  for (const s of scale) {
-    const key = JSON.stringify([s.spacing, s.radius, s.fontSizes])
-    const group = groups.get(key) ?? { scale: s, where: [] }
-    group.where.push(`${s.scheme}/${s.viewport}`)
-    groups.set(key, group)
-  }
-  const rows = [...groups.values()].map(
-    ({ scale: s, where }) =>
-      `<tr><td>${where.join(', ')}</td><td>${stepList(s.spacing)}</td><td>${stepList(s.radius)}</td><td>${stepList(s.fontSizes)}</td></tr>`,
-  )
-  return `<details open><summary>Theme scale (px)</summary><table><tr><th></th><th>spacing</th><th>radius</th><th>font size</th></tr>${rows.join('')}</table></details>`
-}
-
 /** An anchor's contact sheet: every state × scheme × viewport, labelled, on one standalone page. */
-export function buildSheet(
-  route: string,
-  name: string,
-  states: readonly ShotState[],
-  shots: ShotRecord[],
-): string {
-  const body = states.map((state) => grid(shots, route, name, state)).join('')
+export function buildSheet(route: string, name: string, m: Sheet): string {
+  const body = m.states.map((state) => grid(m, route, name, state)).join('')
   // Lazy images never load in a screenshot taken straight after `load`.
   return (
     `<!doctype html><html lang="en"><head><meta charset="utf-8"><style>${CSS}</style></head><body>` +
     `<h3>${esc(name)} <span class="mut">${esc(route)}</span></h3>${body}</body></html>`
   ).replaceAll(' loading="lazy"', '')
 }
+
+const metricsLine = (a: AnchorMetrics): string =>
+  `${a.scheme}/${a.viewport} ${a.box.width}×${a.box.height} · radius ${a.radius} · font ${a.fontSizes.join(', ')} · empty ${a.emptyRatio}`
 
 export function buildBoard(m: ShotMetrics): string {
   const sections = m.routes.map((route) => {
@@ -142,13 +71,28 @@ export function buildBoard(m: ShotMetrics): string {
         m.shots.filter((s) => s.route === route && s.name !== PAGE_ANCHOR).map((s) => s.name),
       ),
     ]
-    const anchors = names.length
-      ? names.map((name) => anchorSection(m, route, name)).join('')
-      : '<p class="mut">no data-shot anchors on this route</p>'
-    return `<h2>${esc(route)}</h2><h3>full page</h3>${grid(m.shots, route, PAGE_ANCHOR, 'rest')}${anchors}`
+    const anchors = names.map((name) => {
+      const metrics = m.anchors.filter((a) => a.route === route && a.name === name).map(metricsLine)
+      const states = m.states.map((state) => grid(m, route, name, state)).join('')
+      return `<section><h3>${esc(name)}</h3>${states}<p class="mut">${metrics.map(esc).join('<br>') || 'no metrics (the anchor never rendered)'}</p></section>`
+    })
+    const wide = (m.pages ?? []).filter((p) => p.route === route && p.overflowX > 0)
+    const overflow = wide.map(
+      (p) =>
+        `<p class="bad">${p.scheme}/${p.viewport}: document ${p.overflowX}px wider than the viewport</p>`,
+    )
+    const body = anchors.join('') || '<p class="mut">no anchors on this route</p>'
+    return `<h2>${esc(route)}</h2><h3>full page</h3>${grid(m, route, PAGE_ANCHOR, 'rest')}${overflow.join('')}${body}`
   })
+  const scale = m.scale[0]
+  const steps = scale
+    ? `<p class="mut">scale: spacing ${Object.values(scale.spacing).join(' ')} · radius ${Object.values(scale.radius).join(' ')} · font ${Object.values(scale.fontSizes).join(' ')}</p>`
+    : ''
+  const scaleError = m.scaleError
+    ? `<p class="bad">scale unavailable: ${esc(m.scaleError)}</p>`
+    : ''
   return (
     `<!doctype html><html lang="en"><head><meta charset="utf-8"><title>basalt-ui shot</title><style>${CSS}</style></head><body>` +
-    `<h1>basalt-ui shot</h1><p class="mut">${esc(m.base)} · ${esc(m.generatedAt)} · states: ${m.states.join(', ')}</p>${m.scaleError ? `<p class="bad">scale unavailable: ${esc(m.scaleError)}</p>` : ''}${scaleBlock(m.scale)}${sections.join('')}</body></html>\n`
+    `<h1>basalt-ui shot</h1><p class="mut">${esc(m.base)} · ${esc(m.generatedAt)} · states: ${m.states.join(', ')}</p>${scaleError}${steps}${sections.join('')}</body></html>\n`
   )
 }

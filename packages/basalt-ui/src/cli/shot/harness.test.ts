@@ -10,10 +10,16 @@ import type { AddressInfo } from 'node:net'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 
-import { capture } from './capture'
+import { capture, readFactsInPage, readScaleInPage } from './capture'
 import type { PwBrowser, PwPage } from './playwright'
 import { ShotError, resolvePlaywright, withBrowser } from './playwright'
-import type { ShotState } from './types'
+import { NO_STATES_NOTE, parseViewport } from './types'
+import type { ShotState, ViewportSpec } from './types'
+
+const DESKTOP = '1440x900'
+const PHONE = '390x844'
+const specs = (...labels: string[]): ViewportSpec[] =>
+  labels.map((l) => parseViewport(l) as ViewportSpec)
 
 /** Never settles: what a 30 s Playwright wait looks like from the outside. */
 const hangs = (): Promise<never> => new Promise(() => undefined)
@@ -41,10 +47,16 @@ const fakePage = (
   setContent: () => Promise.resolve(),
   mouse: { move: () => Promise.resolve() },
   keyboard: { press: () => Promise.resolve() },
-  evaluate: (expression: unknown) =>
+  evaluate: (expression: unknown, _arg?: unknown): Promise<unknown> =>
     Promise.resolve(
-      typeof expression === 'string' && expression.includes('data-shot-states')
-        ? { anchors: ['strip'], declared, absent }
+      expression === readFactsInPage
+        ? {
+            anchors: ['strip'],
+            states: { strip: declared },
+            absent: { strip: absent['strip'] ?? [] },
+            content: '',
+            overflowX: 0,
+          }
         : undefined,
     ),
 })
@@ -53,6 +65,7 @@ const input = (page: Record<string, unknown>, states: ShotState[], log: string[]
   browser: fakeBrowser(page),
   base: 'http://x',
   routes: ['/'],
+  viewports: specs(DESKTOP, PHONE),
   states,
   pngDir: '/unused',
   log: (line: string) => void log.push(line),
@@ -105,9 +118,9 @@ describe('framing an anchor', () => {
     const calls: string[] = []
     const page = fakePage([], locator)
     const evaluate = page.evaluate
-    page.evaluate = (expression: unknown) => {
+    page.evaluate = (expression: unknown, arg?: unknown) => {
       if (typeof expression === 'function') calls.push(expression.name)
-      return evaluate(expression)
+      return evaluate(expression, arg)
     }
     return { page, calls }
   }
@@ -152,23 +165,22 @@ describe('a route with no declared states', () => {
     evaluate: () => Promise.resolve(''),
   }
 
-  test('warns once per route and tells the board why nothing rendered', async () => {
-    const log: string[] = []
-    const out = await capture(
-      input(fakePage([], visible), ['rest', 'empty', 'loading', 'error'], log),
-    )
-    const warned = log.filter((l) => /no data-shot-states/.test(l))
-    expect(warned).toHaveLength(1)
-    expect(warned[0]).toContain('/')
+  test('every URL state is not-declared on every anchor, with the note that says why', async () => {
+    const out = await capture(input(fakePage([], visible), ['rest', 'empty', 'loading', 'error']))
     const skipped = out.shots.filter((s) => s.status === 'not-declared')
     expect(skipped.length).toBe(12)
-    expect(skipped.every((s) => /declares no data-shot-states/.test(s.note ?? ''))).toBe(true)
+    expect(skipped.every((s) => s.note === NO_STATES_NOTE && s.file === null)).toBe(true)
   })
 
-  test('a route that declares one state does not warn', async () => {
-    const log: string[] = []
-    await capture(input(fakePage(['empty'], visible), ['rest', 'empty'], log))
-    expect(log.filter((l) => /no data-shot-states/.test(l))).toEqual([])
+  test('a route that declares one state reloads for it and skips the others by anchor', async () => {
+    const out = await capture(input(fakePage(['empty'], visible), ['rest', 'empty', 'loading']))
+    const of = (state: string) => out.shots.filter((s) => s.name === 'strip' && s.state === state)
+    expect(of('empty').every((s) => s.status === 'ok')).toBe(true)
+    expect(
+      of('loading').every(
+        (s) => s.status === 'not-declared' && s.note === 'anchor does not declare this state',
+      ),
+    ).toBe(true)
   })
 })
 
@@ -207,12 +219,19 @@ const HOVER_FIXTURE = `<!doctype html><style>
   @media (hover:hover){[data-shot=btn]:hover{background:#00f}}
 </style><div data-shot=btn></div>`
 
-const STATEFUL_FIXTURE = `<!doctype html><div data-shot=chart><section data-basalt-chart-card style="height:80px"></section></div>
-<div data-shot=plain style="height:80px"></div>`
+/** Slot anchors with no data-shot attribute: the outermost public slots are found by name. */
+const SLOTS_FIXTURE = `<!doctype html><body style="margin:0">
+<div data-slot="stat-card" data-phase="ready" style="height:80px;background:#eee">Revenue</div>
+<div data-slot="chart-card" style="height:80px;background:#ddd"><div data-slot="card" style="height:40px">inner</div></div>
+<div data-slot="other" style="height:80px">not an anchor</div>`
 
-/** Two state surfaces, only `own` declaring states: the page declares `empty`, `bare` does not. */
-const PARTIAL_FIXTURE = `<!doctype html><div data-shot=own data-shot-states="empty"><section data-basalt-chart-card style="height:80px"></section></div>
-<div data-shot=bare><section data-basalt-chart-card style="height:80px"></section></div>`
+/** Two anchors declaring states; only `obeys` changes under `?shot-state=empty`. */
+const IGNORED_FIXTURE = `<!doctype html><body style="margin:0">
+<div data-shot=ignores data-phase=ready style="height:80px;background:#00f"></div>
+<div data-shot=obeys data-phase=ready style="height:80px;background:#00f"></div>
+<script>
+  if (/shot-state=empty/.test(location.search)) document.querySelector('[data-shot=obeys]').style.background = '#f00'
+</script>`
 
 /** A strip cell holding a nested anchor (at rest and empty), and an `empty-row` that renders only under `empty`. */
 const STRIP_FIXTURE = `<!doctype html><body style="margin:0"><script>
@@ -279,10 +298,10 @@ async function shoot(
           ? REVEAL_FIXTURE
           : req.url === '/hover'
             ? HOVER_FIXTURE
-            : req.url === '/stateful'
-              ? STATEFUL_FIXTURE
-              : req.url?.startsWith('/partial')
-                ? PARTIAL_FIXTURE
+            : req.url === '/slots'
+              ? SLOTS_FIXTURE
+              : req.url?.startsWith('/ignored')
+                ? IGNORED_FIXTURE
                 : req.url === '/skeleton'
                   ? SKELETON_FIXTURE
                   : FIXTURE,
@@ -298,6 +317,7 @@ async function shoot(
         browser,
         base: `http://127.0.0.1:${port}`,
         routes: [route],
+        viewports: specs(DESKTOP, PHONE),
         states,
         pngDir: dir,
         log: () => undefined,
@@ -339,29 +359,109 @@ describe('real Chrome', () => {
     )
   }, 120_000)
 
-  test('an undeclared state is marked stateful only on an anchor holding a state surface', async () => {
+  test('slot anchors are found with no data-shot attribute, named <slot>-<n>', async () => {
     await shoot(
-      ['empty'],
-      async ({ shots }) => {
-        const flag = (name: string) =>
-          shots.find((s) => s.name === name && s.state === 'empty')?.stateful
-        expect(flag('chart')).toBe(true)
-        expect(flag('plain')).toBeUndefined()
+      ['rest'],
+      async ({ shots, anchors }) => {
+        for (const name of ['stat-card-1', 'chart-card-1']) {
+          const of = shots.filter((s) => s.name === name && s.state === 'rest')
+          expect(of, name).toHaveLength(4)
+          expect(of.every((s) => s.status === 'ok')).toBe(true)
+          expect(anchors.filter((a) => a.name === name)).toHaveLength(4)
+        }
+        // A nested slot and a slot outside the public list are not anchors.
+        expect(shots.some((s) => s.name === 'card-1' || s.name === 'other-1')).toBe(false)
       },
-      '/stateful',
+      '/slots',
     )
   }, 120_000)
 
-  test('on a page that declares states, only the state surface without its own declaration is marked', async () => {
+  test('a state crop equal to the ready crop is `ignored`, a state the page obeys is not', async () => {
     await shoot(
-      ['empty'],
+      ['rest', 'empty'],
       async ({ shots }) => {
-        const flag = (name: string) =>
-          shots.find((s) => s.name === name && s.state === 'empty')?.stateful
-        expect(flag('bare')).toBe(true)
-        expect(flag('own')).toBeUndefined()
+        const empty = (name: string) => shots.filter((s) => s.name === name && s.state === 'empty')
+        expect(empty('ignores')).toHaveLength(4)
+        expect(empty('ignores').every((s) => s.status === 'ok' && s.ignored === true)).toBe(true)
+        expect(empty('obeys')).toHaveLength(4)
+        expect(empty('obeys').every((s) => s.status === 'ok' && s.ignored === undefined)).toBe(true)
+        expect(shots.some((s) => s.state === 'rest' && s.ignored)).toBe(false)
       },
-      '/partial',
+      '/ignored',
+    )
+  }, 120_000)
+
+  test('readFactsInPage names anchors, reads the declared states and the document overflow', async () => {
+    await shoot(
+      [],
+      async () => undefined,
+      '/',
+      async (browser) => {
+        const context = await browser.newContext({
+          viewport: { width: 400, height: 300 },
+          deviceScaleFactor: 1,
+          isMobile: false,
+          hasTouch: false,
+          colorScheme: 'light',
+          reducedMotion: 'reduce',
+        })
+        const page = await context.newPage()
+        await page.setContent(
+          `<body style="margin:0"><div data-shot="listed" data-shot-states="empty error"></div>
+          <section data-phase="ready"><div data-shot="sitting"></div></section>
+          <div data-slot="stat-card"><div data-slot="card"></div></div>
+          <div data-shot="gone" data-shot-absent="empty"></div>
+          <div data-shot="none"></div>
+          <div style="width:520px;height:10px"></div>`,
+          { waitUntil: 'load' },
+        )
+        const facts = await page.evaluate(readFactsInPage, ['stat-card', 'card'])
+        expect(facts.anchors).toEqual(['listed', 'sitting', 'stat-card-1', 'gone', 'none'])
+        expect(facts.states['listed']).toEqual(['empty', 'error'])
+        expect(facts.states['sitting']).toEqual(['empty', 'loading', 'error'])
+        expect(facts.states['none']).toEqual([])
+        expect(facts.absent['gone']).toEqual(['empty'])
+        expect(facts.overflowX).toBe(120)
+        const named = await page.evaluate<number>(
+          'document.querySelectorAll("[data-shot-anchor]").length',
+        )
+        expect(named).toBe(5)
+        await context.close()
+      },
+    )
+  }, 120_000)
+
+  test('readScaleInPage reads custom-property tokens and the Tailwind --spacing ladder', async () => {
+    await shoot(
+      [],
+      async () => undefined,
+      '/',
+      async (browser) => {
+        const context = await browser.newContext({
+          viewport: { width: 400, height: 300 },
+          deviceScaleFactor: 1,
+          isMobile: false,
+          hasTouch: false,
+          colorScheme: 'light',
+          reducedMotion: 'reduce',
+        })
+        const page = await context.newPage()
+        const read = async (css: string) => {
+          await page.setContent(`<style>${css}</style><body></body>`, { waitUntil: 'load' })
+          return page.evaluate(readScaleInPage, undefined)
+        }
+        const tokens = await read(
+          ':root{--vx-space-3:12px;--radius-md:8px;--text-sm:14px}.card{--vx-space-agent-gap:6px;--vx-text-micro:var(--vx-space-3)}.x{color:red}',
+        )
+        expect(tokens.spacing).toEqual({ 'vx-space-3': 12, 'vx-space-agent-gap': 6 })
+        expect(tokens.radius).toEqual({ 'radius-md': 8 })
+        expect(tokens.fontSizes).toEqual({ 'text-sm': 14, 'vx-text-micro': 12 })
+        // 0.25rem is 4 px at the 16 px root: step N is N × 4.
+        const { spacing } = await read(':root{--spacing:0.25rem}')
+        expect([spacing['0.5'], spacing['1'], spacing['2'], spacing['24']]).toEqual([2, 4, 8, 96])
+        expect(Object.keys(spacing)).toHaveLength(28)
+        await context.close()
+      },
     )
   }, 120_000)
 
@@ -399,7 +499,7 @@ describe('real Chrome', () => {
       async ({ shots, rows }) => {
         const crop = async (state: string) => {
           const s = shots.find(
-            (x) => x.name === 'btn' && x.state === state && x.viewport === 'desktop',
+            (x) => x.name === 'btn' && x.state === state && x.viewport === DESKTOP,
           )
           expect(s?.status).toBe('ok')
           return rows(s?.file ?? null)
@@ -440,7 +540,7 @@ describe('real Chrome', () => {
   test('the mobile page shot reaches the end of the page, with the chrome kept', async () => {
     await shoot(['rest'], async ({ shots, rows }) => {
       const page = shots.find(
-        (s) => s.name === '_page' && s.viewport === 'mobile' && s.scheme === 'light',
+        (s) => s.name === '_page' && s.viewport === PHONE && s.scheme === 'light',
       )
       expect(page?.status).toBe('ok')
       const px = await rows(page?.file ?? null)
@@ -454,7 +554,7 @@ describe('real Chrome', () => {
     await shoot(['focus'], async ({ shots, rows }) => {
       const crops = shots.filter((s) => s.name === 'card' && s.state === 'focus')
       expect(crops.map((s) => s.status)).toEqual(['ok', 'ok', 'ok', 'ok'])
-      expect(crops.some((s) => s.viewport === 'mobile')).toBe(true)
+      expect(crops.some((s) => s.viewport === PHONE)).toBe(true)
       for (const crop of crops) {
         const px = await rows(crop.file)
         expect(px.filter((r) => r === 'blue').length).toBeGreaterThanOrEqual(200 - 4)
@@ -468,7 +568,7 @@ describe('real Chrome', () => {
       ['rest', 'hover'],
       async ({ shots }) => {
         const note = (name: string, state: string) =>
-          shots.find((s) => s.name === name && s.state === state && s.viewport === 'desktop')
+          shots.find((s) => s.name === name && s.state === state && s.viewport === DESKTOP)
         const rest = (name: string) => note(name, 'rest')
         expect(rest('attr')).toMatchObject({ status: 'error' })
         expect(rest('attr')?.note).toBe('not visible at this viewport: hidden attribute')
