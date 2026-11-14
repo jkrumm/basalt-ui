@@ -1,289 +1,367 @@
 import { createFileRoute } from '@tanstack/react-router'
-import { ScrollArea } from 'basalt-ui/ui/scroll-area'
-import {
-  Table,
-  TableBody,
-  TableCaption,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from 'basalt-ui/ui/table'
+import { filterSlot, spec } from 'basalt-ui/controls'
+import { Section } from 'basalt-ui/page'
+import { defineControls, field } from 'basalt-ui/router'
+import { col, DataTable, useDataTable } from 'basalt-ui/table'
+import type { DetailEntry, DetailHost } from 'basalt-ui/core/ports'
+import { Progress } from 'basalt-ui/ui/progress'
+import { Sheet, SheetContent } from 'basalt-ui/ui/sheet'
+import { VirtualList } from 'basalt-ui/ui/virtual-list'
+import { useState } from 'react'
+import type { ReactElement } from 'react'
+import { tableCodec } from '../../../../packages/basalt-ui/dist/table/core/codec'
+import { TableToolbar } from '../../../../packages/basalt-ui/dist/table/parts/toolbar'
 import { useV3Tokens } from '../demo/v3-tokens'
 
-type Status = 'paid' | 'pending' | 'failed' | 'refunded'
+// The v3 table parts the route needs beyond `DataTable` (`TableToolbar`, `tableCodec`) are not on
+// the public `basalt-ui/table` barrel yet, so this route reaches the built modules by path until
+// the barrel carries them. Dist, not src: the playground typechecks without the package's node types.
 
-type Order = {
+// ---- Section 1: finances shape, server mode ------------------------------------------------
+
+type Booking = {
   id: string
-  customer: string
-  status: Status
+  payee: string
+  category: string
+  state: string
   amount: number
-  date: string
+  at: string
 }
 
-const ORDERS: readonly Order[] = [
-  {
-    id: 'ord_8f3a21',
-    customer: 'Northwind Traders',
-    status: 'paid',
-    amount: 12480.5,
-    date: '2026-11-09',
-  },
-  {
-    id: 'ord_8f3a22',
-    customer: 'Acme Logistics',
-    status: 'pending',
-    amount: 3290,
-    date: '2026-11-09',
-  },
-  { id: 'ord_8f3a23', customer: 'Globex GmbH', status: 'paid', amount: 845.9, date: '2026-11-08' },
-  { id: 'ord_8f3a24', customer: 'Initech', status: 'failed', amount: 1999.99, date: '2026-11-08' },
-  {
-    id: 'ord_8f3a25',
-    customer: 'Umbrella Retail',
-    status: 'paid',
-    amount: 27315.2,
-    date: '2026-11-08',
-  },
-  {
-    id: 'ord_8f3a26',
-    customer: 'Hooli Systems',
-    status: 'refunded',
-    amount: 640,
-    date: '2026-11-07',
-  },
-  {
-    id: 'ord_8f3a27',
-    customer: 'Stark Components',
-    status: 'paid',
-    amount: 9120.75,
-    date: '2026-11-07',
-  },
-  {
-    id: 'ord_8f3a28',
-    customer: 'Wayne Freight',
-    status: 'pending',
-    amount: 15750,
-    date: '2026-11-07',
-  },
-  {
-    id: 'ord_8f3a29',
-    customer: 'Wonka Confections',
-    status: 'paid',
-    amount: 412.3,
-    date: '2026-11-06',
-  },
-  {
-    id: 'ord_8f3a2a',
-    customer: 'Soylent Foods',
-    status: 'paid',
-    amount: 5870.1,
-    date: '2026-11-06',
-  },
-  {
-    id: 'ord_8f3a2b',
-    customer: 'Cyberdyne Labs',
-    status: 'failed',
-    amount: 22000,
-    date: '2026-11-06',
-  },
-  {
-    id: 'ord_8f3a2c',
-    customer: 'Tyrell Optics',
-    status: 'paid',
-    amount: 1340.45,
-    date: '2026-11-05',
-  },
-  {
-    id: 'ord_8f3a2d',
-    customer: 'Oscorp Materials',
-    status: 'pending',
-    amount: 7210.8,
-    date: '2026-11-05',
-  },
-  { id: 'ord_8f3a2e', customer: 'Pied Piper', status: 'paid', amount: 98.5, date: '2026-11-05' },
-  {
-    id: 'ord_8f3a2f',
-    customer: 'Vandelay Imports',
-    status: 'refunded',
-    amount: 2760.25,
-    date: '2026-11-04',
-  },
-  {
-    id: 'ord_8f3a30',
-    customer: 'Massive Dynamic',
-    status: 'paid',
-    amount: 18430,
-    date: '2026-11-04',
-  },
-  {
-    id: 'ord_8f3a31',
-    customer: 'Aperture Supply',
-    status: 'paid',
-    amount: 3105.6,
-    date: '2026-11-04',
-  },
-  {
-    id: 'ord_8f3a32',
-    customer: 'Gringotts Finance',
-    status: 'pending',
-    amount: 64200,
-    date: '2026-11-03',
-  },
-  {
-    id: 'ord_8f3a33',
-    customer: 'Monarch Solutions',
-    status: 'paid',
-    amount: 775.05,
-    date: '2026-11-03',
-  },
-  {
-    id: 'ord_8f3a34',
-    customer: 'Dunder Paper',
-    status: 'failed',
-    amount: 530.4,
-    date: '2026-11-03',
-  },
-  {
-    id: 'ord_8f3a35',
-    customer: 'Sterling Archer Ltd',
-    status: 'paid',
-    amount: 4920,
-    date: '2026-11-02',
-  },
-  {
-    id: 'ord_8f3a36',
-    customer: 'Prestige Worldwide',
-    status: 'paid',
-    amount: 11875.9,
-    date: '2026-11-02',
-  },
-  {
-    id: 'ord_8f3a37',
-    customer: 'Bluth Company',
-    status: 'refunded',
-    amount: 1260,
-    date: '2026-11-01',
-  },
-  { id: 'ord_8f3a38', customer: 'Los Pollos', status: 'paid', amount: 289.75, date: '2026-11-01' },
-  {
-    id: 'ord_8f3a39',
-    customer: 'Nakatomi Trading',
-    status: 'pending',
-    amount: 8340.2,
-    date: '2026-11-01',
-  },
-]
+const PAYEES = [
+  'Northwind Traders',
+  'Acme Logistics',
+  'Globex GmbH',
+  'Initech',
+  'Umbrella Retail',
+  'Hooli Systems',
+  'Stark Components',
+  'Wayne Freight',
+  'Counterparty Holdings International Limited',
+] as const
+const CATEGORIES = ['Housing', 'Food', 'Travel', 'Software', 'Tax'] as const
+const STATES = ['Awaiting', 'Settled', 'Disputed'] as const
+const MONTHS = ['all', '2026-09', '2026-10', '2026-11'] as const
 
-const DOT: Record<Status, string> = {
-  paid: 'bg-good',
-  pending: 'bg-warn',
-  failed: 'bg-bad',
-  refunded: 'bg-faint',
+const day = (n: number): string => new Date(Date.UTC(2026, 10, 14 - (n % 75))).toISOString()
+
+/** 240 bookings, newest first by index; deterministic so a shot is the same shot. */
+const BOOKINGS: readonly Booking[] = Array.from({ length: 240 }, (_, i) => ({
+  id: `bk-${String(i).padStart(4, '0')}`,
+  payee: PAYEES[(i * 7) % PAYEES.length] ?? PAYEES[0],
+  category: CATEGORIES[(i * 3) % CATEGORIES.length] ?? CATEGORIES[0],
+  state: STATES[(i * 5) % STATES.length] ?? STATES[0],
+  amount: -Math.round((20 + ((i * 137) % 1900)) * 100) / 100,
+  at: day(i),
+}))
+
+const book = col<Booking>()
+
+/** Ids and kinds only: it sits at module scope while the columns close over render values. */
+const bookingsSchema = book.codec(
+  { payee: 'entity', amount: 'money', state: 'status', category: 'text', at: 'date' },
+  { defaults: { sort: [{ id: 'at', desc: true }], pageSize: 10 } },
+)
+
+const ROOMS = [
+  { id: 'r1', room: 'Master bedroom', floor: 'Floor 2', state: 'Done', tasks: 4 },
+  { id: 'r2', room: 'Guest bedroom', floor: 'Floor 2', state: 'Open', tasks: 6 },
+  { id: 'r3', room: 'Nursery', floor: 'Floor 2', state: 'Done', tasks: 3 },
+  { id: 'r4', room: 'Kitchen', floor: 'Floor 1', state: 'Open', tasks: 9 },
+  { id: 'r5', room: 'Living room', floor: 'Floor 1', state: 'Done', tasks: 2 },
+  { id: 'r6', room: 'Hall', floor: 'Floor 1', state: 'Done', tasks: 1 },
+  { id: 'r7', room: 'Boiler room', floor: 'Basement', state: 'Open', tasks: 5 },
+  { id: 'r8', room: 'Cellar', floor: 'Basement', state: 'Done', tasks: 2 },
+] as const
+
+type Room = (typeof ROOMS)[number]
+
+const rooms = col<Room>()
+
+const roomsSchema = rooms.codec(
+  { room: 'entity', state: 'status', tasks: 'number', floor: 'text' },
+  { prefix: 'g' },
+)
+
+type Entry = {
+  id: string
+  name: string
+  state: string
+  category: string
+  amount: number
+  at: string
 }
 
-const money = new Intl.NumberFormat('en-US', { style: 'currency', currency: 'EUR' })
-const day = new Intl.DateTimeFormat('en-GB', {
-  day: '2-digit',
-  month: 'short',
-  year: 'numeric',
-  timeZone: 'UTC',
+const ENTRIES: readonly Entry[] = Array.from({ length: 10_000 }, (_, i) => ({
+  id: `en-${i}`,
+  name: `Booking ${String(i).padStart(5, '0')}`,
+  state: STATES[i % STATES.length] ?? STATES[0],
+  category: CATEGORIES[(i * 3) % CATEGORIES.length] ?? CATEGORIES[0],
+  amount: Math.round((10 + ((i * 91) % 4800)) * 100) / 100,
+  at: day(i),
+}))
+
+const entry = col<Entry>()
+
+const entriesSchema = entry.codec(
+  { name: 'entity', state: 'status', category: 'text', amount: 'money', at: 'date' },
+  { prefix: 'l' },
+)
+
+// One store, three composite fields: the second and third table set a `prefix`, so no two own a param.
+const exemplar = defineControls({
+  id: 'table-exemplar',
+  scope: 'page',
+  resets: ['page'],
+  fields: {
+    month: field.enum(MONTHS, 'all').labels({
+      all: 'All months',
+      '2026-09': 'September',
+      '2026-10': 'October',
+      '2026-11': 'November',
+    }),
+    table: field.composite(tableCodec(bookingsSchema)),
+    large: field.composite(tableCodec(entriesSchema)),
+    grouped: field.composite(tableCodec(roomsSchema)),
+  },
 })
 
-/** One status: a dot and the word, so the verdict never rests on colour alone. */
-function StatusCell({ status }: { status: Status }) {
+type Value = ReturnType<typeof exemplar.field.table.use>[0]
+
+/** The stand-in for the endpoint: sort, filter and page by the request, the total and the facets of the match. */
+function serve(request: Value['request'], month: string) {
+  const q = request.q.trim().toLowerCase()
+  const states = request.filters.find((f) => f.id === 'state')?.values ?? []
+  const payees = request.filters.find((f) => f.id === 'payee')?.values ?? []
+  const inMonth = BOOKINGS.filter((b) => month === 'all' || b.at.startsWith(month))
+  const searched = inMonth.filter(
+    (b) => q === '' || `${b.payee} ${b.category}`.toLowerCase().includes(q),
+  )
+  const matched = searched
+    .filter((b) => payees.every((p) => b.payee.toLowerCase().includes(p.toLowerCase())))
+    .filter((b) => states.length === 0 || states.includes(b.state))
+  const sort = request.sort[0] ?? { id: 'at', desc: true }
+  const sign = sort.desc ? -1 : 1
+  const key = (b: Booking): string | number =>
+    sort.id === 'amount' ? b.amount : ((b as Record<string, string | number>)[sort.id] ?? '')
+  const sorted = matched.toSorted((a, b) => {
+    const [x, y] = [key(a), key(b)]
+    return (
+      sign *
+      (typeof x === 'number' && typeof y === 'number' ? x - y : String(x).localeCompare(String(y)))
+    )
+  })
+  const start = (request.page - 1) * request.pageSize
+  return {
+    rows: sorted.slice(start, start + request.pageSize),
+    total: matched.length,
+    facets: {
+      state: STATES.map((value) => ({
+        value,
+        count: searched.filter((b) => b.state === value).length,
+      })),
+    },
+    sum: Math.round(matched.reduce((total, b) => total + b.amount, 0) * 100) / 100,
+  }
+}
+
+function BookingDetail({ row }: { row: Booking }): ReactElement {
   return (
-    <span className="inline-flex items-center gap-2">
-      <span aria-hidden="true" className={`size-2 shrink-0 rounded-full ${DOT[status]}`} />
-      <span className="capitalize">{status}</span>
-    </span>
+    <dl className="grid grid-cols-[auto_1fr] gap-x-4 gap-y-2 text-sm">
+      <dt className="text-muted-foreground">Payee</dt>
+      <dd>{row.payee}</dd>
+      <dt className="text-muted-foreground">Category</dt>
+      <dd>{row.category}</dd>
+      <dt className="text-muted-foreground">State</dt>
+      <dd>{row.state}</dd>
+      <dt className="text-muted-foreground">Amount</dt>
+      <dd data-numeric>{row.amount.toFixed(2)} EUR</dd>
+      <dt className="text-muted-foreground">Booked</dt>
+      <dd>{row.at.slice(0, 10)}</dd>
+    </dl>
   )
 }
 
-// #region dense-table
-function OrdersTable({ size }: { size: 'md' | 'compact' }) {
+/** A `DetailHost` over a sheet: `show` opens it on the row's detail, `hide` closes it. */
+function useSheetHost(): { host: DetailHost; sheet: ReactElement } {
+  const [entry, setEntry] = useState<DetailEntry | null>(null)
+  const host: DetailHost = {
+    isOpen: entry !== null,
+    show: setEntry,
+    hide: () => setEntry(null),
+  }
+  const sheet = (
+    <Sheet open={entry !== null} onOpenChange={(open) => !open && setEntry(null)}>
+      <SheetContent title={entry?.title ?? ''}>
+        {entry?.body({ height: 'fill', phase: 'ready' })}
+      </SheetContent>
+    </Sheet>
+  )
+  return { host, sheet }
+}
+
+const TONES = { Settled: 'good', Awaiting: 'warn', Disputed: 'bad' } as const
+
+// #region finances-table
+function Finances(): ReactElement {
+  const [state] = exemplar.field.table.use()
+  const [month] = exemplar.field.month.use()
+  const [done, setDone] = useState('')
+  const { host, sheet } = useSheetHost()
+  const page = serve(state.request, month)
+  const t = useDataTable({
+    id: 'bookings',
+    label: 'Bookings',
+    columns: [
+      book.entity('payee', { header: 'Payee', filter: 'text' }),
+      book.text('category', { header: 'Category' }),
+      book.status('state', {
+        header: 'State',
+        options: [...STATES],
+        tone: (value) => TONES[value as keyof typeof TONES] ?? 'neutral',
+        filter: 'multi',
+      }),
+      book.money('amount', { currency: 'EUR', header: 'Amount', footer: 'sum' }),
+      book.date('at', { header: 'Booked', priority: 3 }),
+      book.actions([{ key: 'rule', label: 'Make rule', onClick: () => setDone('Rule created') }]),
+    ],
+    data: page.rows,
+    getRowId: (row) => row.id,
+    mode: {
+      kind: 'server',
+      rowCount: page.total,
+      facets: page.facets,
+      totals: { amount: page.sum },
+    },
+    state: exemplar.field.table,
+    resetOn: [month],
+    selection: {
+      bulk: [
+        {
+          key: 'archive',
+          label: 'Archive',
+          onClick: (rows) => setDone(`Archived ${rows.length} bookings`),
+        },
+      ],
+      selectAll: true,
+    },
+    detail: (row) => <BookingDetail row={row} />,
+  })
   return (
-    <Table size={size}>
-      <TableCaption>Orders, newest first. Amounts in EUR.</TableCaption>
-      <TableHeader>
-        <TableRow>
-          <TableHead>Order</TableHead>
-          <TableHead>Customer</TableHead>
-          <TableHead>Status</TableHead>
-          <TableHead numeric>Amount</TableHead>
-          <TableHead numeric>Date</TableHead>
-        </TableRow>
-      </TableHeader>
-      <TableBody>
-        {ORDERS.map((order) => (
-          <TableRow key={order.id}>
-            <TableCell>
-              <span data-numeric className="text-micro text-muted-foreground">
-                {order.id}
-              </span>
-            </TableCell>
-            <TableCell>{order.customer}</TableCell>
-            <TableCell>
-              <StatusCell status={order.status} />
-            </TableCell>
-            <TableCell numeric>{money.format(order.amount)}</TableCell>
-            <TableCell numeric className="text-muted-foreground">
-              {day.format(new Date(order.date))}
-            </TableCell>
-          </TableRow>
-        ))}
-      </TableBody>
-    </Table>
+    <>
+      <TableToolbar table={t} />
+      <DataTable table={t} detail={host} />
+      {sheet}
+      <p role="status" className="text-sm text-muted-foreground">
+        {done}
+      </p>
+    </>
   )
 }
-// #endregion dense-table
+// #endregion
 
-/** The scroll container (focusable only while it scrolls): a long table scrolls inside it, its head sticks, a phone scrolls sideways. */
-function Frame({
-  title,
-  note,
-  children,
-}: {
-  title: string
-  note: string
-  children: React.ReactNode
-}) {
+// ---- Section 2: large, client mode, virtual ------------------------------------------------
+
+function Large(): ReactElement {
+  const [picked, setPicked] = useState<Record<string, string>>({})
+  const [opened, setOpened] = useState('')
+  const rows =
+    Object.keys(picked).length === 0
+      ? ENTRIES
+      : ENTRIES.map((e) => ({ ...e, category: picked[e.id] ?? e.category }))
+  const t = useDataTable({
+    id: 'entries',
+    label: 'Entries',
+    columns: [
+      entry.entity('name', { header: 'Booking', filter: 'text' }),
+      entry.status('state', {
+        header: 'State',
+        options: [...STATES],
+        tone: (value) => TONES[value as keyof typeof TONES] ?? 'neutral',
+        filter: 'multi',
+      }),
+      entry.select('category', {
+        label: (row) => `Category of ${row.name}`,
+        options: [...CATEGORIES],
+        commit: async (row, next) => {
+          setPicked((prev) => ({ ...prev, [row.id]: next }))
+        },
+      }),
+      entry.money('amount', { currency: 'EUR', header: 'Amount' }),
+      entry.date('at', { header: 'Booked', priority: 3 }),
+    ],
+    data: rows,
+    getRowId: (row) => row.id,
+    mode: { kind: 'client' },
+    state: exemplar.field.large,
+    onRowActivate: (row) => setOpened(row.name),
+  })
   return (
-    <section className="flex flex-col gap-2">
-      <div className="flex flex-col gap-0.5">
-        <h2 className="text-md font-semibold text-foreground">{title}</h2>
-        <p className="text-xs text-muted-foreground">{note}</p>
+    <>
+      <TableToolbar table={t} />
+      <div className="h-128">
+        <DataTable table={t} height="fill" virtual={VirtualList} />
       </div>
-      <ScrollArea
-        orientation="both"
-        aria-label={title}
-        data-surface="card"
-        className="max-h-[70dvh] rounded-card bg-card shadow-card"
-      >
-        {children}
-      </ScrollArea>
-    </section>
+      <p role="status" className="text-sm text-muted-foreground">
+        {opened === '' ? '' : `Opened ${opened}`}
+      </p>
+    </>
   )
 }
 
-function TableRoute() {
+// ---- Section 3: grouped ---------------------------------------------------------------------
+
+function Grouped(): ReactElement {
+  const t = useDataTable({
+    id: 'rooms',
+    label: 'Rooms',
+    columns: [
+      rooms.entity('room', { header: 'Room' }),
+      rooms.status('state', { header: 'State', options: ['Done', 'Open'] }),
+      rooms.number('tasks', { header: 'Open tasks', footer: 'sum' }),
+      rooms.text('floor', { header: 'Floor', priority: 3 }),
+    ],
+    data: ROOMS,
+    getRowId: (row) => row.id,
+    mode: { kind: 'client' },
+    state: exemplar.field.grouped,
+    group: {
+      by: 'floor',
+      summary: (grouped) => {
+        const done = grouped.filter((r) => r.state === 'Done').length
+        return (
+          <Progress
+            value={(done / grouped.length) * 100}
+            aria-label={`${done} of ${grouped.length} rooms done`}
+            className="w-24"
+          />
+        )
+      },
+    },
+  })
+  return <DataTable table={t} />
+}
+
+function TableRoute(): ReactElement {
   useV3Tokens()
   return (
-    <div className="flex flex-col gap-8 p-4">
-      <Frame
-        title="Table, md"
-        note="Row height follows the density row height (32 px dense, 44 px on touch)."
-      >
-        <OrdersTable size="md" />
-      </Frame>
-      <Frame title="Table, compact" note="Fixed 28 px rows; 44 px on a coarse pointer.">
-        <OrdersTable size="compact" />
-      </Frame>
+    <div className="flex min-w-0 flex-col gap-8 p-4">
+      <Section title="Bookings" controls={filterSlot([spec(exemplar.field.month, 'Month')])}>
+        <Finances />
+      </Section>
+      <Section title="Entries">
+        <Large />
+      </Section>
+      <Section title="Rooms">
+        <Grouped />
+      </Section>
     </div>
   )
 }
 
 export const Route = createFileRoute('/table')({
   staticData: { title: 'Table' },
+  validateSearch: exemplar.validateSearch,
+  search: { middlewares: exemplar.middlewares },
   component: TableRoute,
 })
