@@ -114,19 +114,22 @@ export const USAGE =
   'fonts:css [--out <path>] [--check]\n' +
   '  Emit the shipped --basalt-font-* stacks as plain CSS — the typeface half of the token layer,\n' +
   '  otherwise reachable only by importing styles.css.\n\n' +
-  'shot <route…> (--base <url> | --dist <dir>) [--out <dir>] [--states <list>]\n' +
+  'shot <route…> (--base <url> | --dist <dir>) --out <dir> [--states <list>]\n' +
   '  Render routes in Chromium (Playwright from YOUR project: bun add -d playwright) and write\n' +
-  '  board.html, metrics.json and png/* — every data-shot anchor × light/dark × desktop/mobile ×\n' +
-  '  rest, hover, focus, tooltip, empty, loading, error. --dist serves a built SPA dir itself.\n' +
+  '  board.html, metrics.json and png/* — every anchor × light/dark × the manifest viewports ×\n' +
+  '  rest, hover, focus, tooltip, empty, loading, error. An anchor is a data-shot element, else the\n' +
+  '  outermost stat-card, chart-card, data-table, section, card or board data-slot. Viewports come from\n' +
+  '  .basalt/manifest.json (default 1800x1200 and 390x844). --dist serves a built SPA dir itself.\n' +
   '  --out must resolve inside the project (the app dir in a monorepo, not the repo root); routes are\n' +
   '  separate arguments (zsh does not word-split $ROUTES).\n' +
-  '  Default --out .basalt/shots (emptied each run); .basalt/shots/last.json names the last out dir.\n' +
+  '  --out is required and must not exist yet: every round writes a fresh dir (shots-1, shots-2, …).\n' +
+  '  .basalt/last-shot.json records the latest round (at, out, round).\n' +
   '  A real, signed-in app: [--local-storage <key>=<@env:NAME|@file:path>]… seeds localStorage (app origin\n' +
   '  only) before any page script; [--api <prefix>=<origin>]… (with --dist) proxies GET/HEAD under that\n' +
   '  prefix to the origin (other methods get 405 unless --api-allow-writes); [--header <name>=@env:NAME]… is\n' +
   '  added to every proxied request, to EVERY --api origin (never on a navigation; https required);\n' +
   '  [--wait <ms|networkidle>] adds ms of settle AFTER networkidle (default none); [--auto-anchors] crops\n' +
-  '  each Card, Paper and table over 120×60 px (else main, section, header, form) on a page with no data-shot. Values are never printed or\n' +
+  '  each card and table over 120×60 px (else main, section, header, form) on a page with no anchor. Values are never printed or\n' +
   '  written; a redirect, 401/403/404, 5xx or dead API fails every shot of that page. Shots of real data go to the\n' +
   '  reviewer subagent and so to its model provider: point --api at staging or synthetic data when the\n' +
   "  app holds other people's data. Example:\n" +
@@ -134,19 +137,19 @@ export const USAGE =
   '      --local-storage auth-token=@env:APP_TOKEN --header authorization=@env:APP_BEARER --auto-anchors\n\n' +
   'shot detect [--out <dir>] [--lint <oxlint-json-file>]\n' +
   '  The deterministic second review pass, no browser and no model: reads <out>/metrics.json (default: the\n' +
-  '  out dir in .basalt/shots/last.json) and, with --lint, the basalt/* diagnostics of `oxlint --format json`\n' +
+  '  out dir in .basalt/last-shot.json) and, with --lint, the basalt/* diagnostics of `oxlint --format json`\n' +
   '  output saved to a file. Writes <out>/detect.json and a findings table, content, then layout, then style:\n' +
   '  off-scale inset/gap/radius, nested radius step under 3 px, more than 3 font sizes, an empty region of\n' +
-  '  40 % or more, contrast failures, error shots, a missing scale or no anchors.\n' +
+  '  40 % or more, overlap, a touch target under the hit floor, document overflow, a state crop identical\n' +
+  '  to rest, error shots, a missing scale or no anchors.\n' +
   '  Exit codes: 0 clean (P2/P3 findings are listed, not failing), 2 a P0 or P1 finding, 1 scan failure (missing\n' +
-  '  or unreadable metrics.json or lint file, or detect.json/history.json cannot be written).\n' +
-  '    P0  fails: broken, unreadable or a contrast failure; an error shot; no anchors\n' +
-  '    P1  fails: a rubric item fails (off-scale value, font sizes, empty region, nested radius, lint error)\n' +
-  '    P2  noted, not failing: degraded: a lint warning, a contrast measured on an assumed white backdrop\n' +
+  '  or unreadable metrics.json or lint file, or detect.json cannot be written).\n' +
+  '    P0  fails: broken or unreadable: an error shot; no anchors\n' +
+  '    P1  fails: a rubric item fails (off-scale value, font sizes, empty region, nested radius, overlap, hit floor, document overflow, an ignored state, lint error)\n' +
+  '    P2  noted, not failing: degraded: a lint warning\n' +
   '    P3  noted, not failing: polish: an off-scale value within 1 px of a step\n' +
-  '  score = 100 - (25 per P0 + 10 per P1 + 3 per P2 + 1 per P3), floored at 0. Each run appends\n' +
-  '  {at, out, commit, counts, score} to .basalt/shots/history.json and prints the last 5 scores of THAT --out dir as a trend\n' +
-  '  with the finding count beside each (the score floors at 0). No anchor measured: "nothing measured", no score.\n' +
+  '  score = 100 - (25 per P0 + 10 per P1 + 3 per P2 + 1 per P3), floored at 0. No anchor\n' +
+  '  measured: "nothing measured", no score.\n' +
   '  detect takes --out <dir>, never a positional.\n' +
   '  A component can declare a rest anchor absent in a URL state with data-shot-absent="empty error": that\n' +
   '  cell is recorded `absent`, not `error`.\n\n' +
