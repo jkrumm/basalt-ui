@@ -116,7 +116,7 @@ export function DataTableHead<T>({
               key={spec.id}
               role="columnheader"
               aria-colindex={index + offset}
-              {...(sortable && { 'aria-sort': ARIA_SORT[direction] })}
+              {...(sortable && { 'aria-sort': ARIA_SORT[direction], 'aria-label': spec.header })}
               {...cellAttributes(spec)}
               {...tierAttributes(planned)}
               numeric={numeric}
@@ -130,7 +130,7 @@ export function DataTableHead<T>({
                     <Pressable
                       data-slot="table-sort"
                       className={cn(
-                        'group/sort inline-flex items-center gap-1',
+                        'group/sort inline-flex min-h-6 items-center gap-1',
                         numeric && 'flex-row-reverse',
                       )}
                       onClick={() => model.toggleSort(spec.id)}
@@ -141,13 +141,15 @@ export function DataTableHead<T>({
                   ) : (
                     spec.header
                   )}
-                  {/* out of flow: the menu never widens a header past its planned column */}
+                  {/* out of flow: the menu never widens a header past its planned column; on touch its hit area grows away from the sort button */}
                   <ColumnActionsMenu
                     table={instance}
                     column={spec.id}
                     className={cn(
                       'absolute top-1/2 -translate-y-1/2 opacity-0 group-hover/head:opacity-100 focus-visible:opacity-100 data-popup-open:opacity-100 pointer-coarse:opacity-100',
-                      numeric ? 'start-0.5' : 'end-0.5',
+                      numeric
+                        ? 'start-5 pointer-coarse:after:right-0 pointer-coarse:after:left-auto pointer-coarse:after:translate-x-0'
+                        : 'end-5 pointer-coarse:after:left-0 pointer-coarse:after:translate-x-0',
                     )}
                   />
                 </>
