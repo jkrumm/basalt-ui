@@ -50,9 +50,18 @@ describe('dataQueryBranch', () => {
     expect(dataQueryBranch('BasaltDataTable', query())).toBe('ready')
   })
 
-  test('no data while fetching or paused is pending', () => {
+  test('no data while fetching is pending', () => {
     expect(dataQueryBranch('BasaltDataTable', query({ fetchStatus: 'fetching' }))).toBe('pending')
-    expect(dataQueryBranch('BasaltDataTable', query({ fetchStatus: 'paused' }))).toBe('pending')
+  })
+
+  test('no data while PAUSED is offline, never pending', () => {
+    expect(dataQueryBranch('BasaltDataTable', query({ fetchStatus: 'paused' }))).toBe('offline')
+  })
+
+  test('cached data while paused is ready', () => {
+    expect(dataQueryBranch('BasaltDataTable', query({ data: [], fetchStatus: 'paused' }))).toBe(
+      'ready',
+    )
   })
 
   test('an error OVER cached data is ready — the stale rows stay, with no banner', () => {

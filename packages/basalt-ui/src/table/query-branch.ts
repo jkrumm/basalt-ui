@@ -26,7 +26,7 @@ import type { QueryStateLike } from '../common/query-state-like'
  * that is `QueryState`'s "a background refetch failing must not blank a page that already works",
  * minus the banner it draws. Compose `QueryState` AROUND the container when the banner is wanted.
  */
-export type DataQueryBranch = 'pending' | 'error' | 'ready'
+export type DataQueryBranch = 'pending' | 'offline' | 'error' | 'ready'
 
 /**
  * Resolves a `QueryStateLike` to the branch its container should paint, asserting first — through
@@ -48,6 +48,9 @@ export function dataQueryBranch(
   if (query.isError && query.data === undefined) return 'error'
   // `idle` with no data is an `enabled: false` query, not a pending one — it resolves to the
   // container's own empty state, exactly as `QueryState` resolves it to `empty`.
+  // A paused fetch with no data is waiting for the connection, not for the server: the same
+  // reading `QueryState` gives it, so a table never paints skeleton rows beside an Offline badge.
+  if (query.data === undefined && query.fetchStatus === 'paused') return 'offline'
   if (query.data === undefined && query.fetchStatus !== 'idle') return 'pending'
   return 'ready'
 }
