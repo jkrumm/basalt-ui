@@ -5,7 +5,7 @@
  * The exit-code tests point the fixture at a TEMP dist (absent, or a syntax error) rather than
  * moving the real `dist/`, which other suites read concurrently.
  */
-import { afterAll, describe, expect, test } from 'bun:test'
+import { afterAll, describe, expect, setDefaultTimeout, test } from 'bun:test'
 import { copyFileSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
@@ -16,6 +16,9 @@ import { areaFiles } from './check-budgets/index'
 import { ratchetViolations } from './check-budgets/ratchet'
 
 const REAL_AREAS = join(import.meta.dir, 'check-budgets/areas')
+
+// A full run builds every G1 fixture (the ui, cards, charts, data, router and table rows) as well.
+setDefaultTimeout(180_000)
 
 describe('isOwnGraphId', () => {
   test.each([

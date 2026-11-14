@@ -1,4 +1,9 @@
 {
+  "packages/basalt-ui/scripts/export-surface/cards.json": "9086a5d3ee7b362f8453fa29f1985f0117c82c189befe158a841090b689dbd6e",
+  "packages/basalt-ui/scripts/export-surface/charts.json": "62faf6979eed1b7de299b756cd48dea4c7c6eafa84b924f7c3deb5128f1704ad",
+  "packages/basalt-ui/scripts/export-surface/data.json": "988421ed80928c1949bc67e97da7a15e5e1354006d9e5b1f6ff26527d32b3d02",
+  "packages/basalt-ui/scripts/export-surface/router.json": "2d71827104e3894132684eff188b75d69ce046ed7d36344c3f6efd14b3f2f028",
+  "packages/basalt-ui/scripts/export-surface/table.json": "f7c7ebd2e6c8a7c7559e1d51216acb938569391991058489c776cb2f15aad3a7",
   "packages/basalt-ui/src/ai/contract.ts": "e15094a2915d44e4f1d3eaaca7e95ff2f86cf890e48766776c738fdd0b0424df",
   "packages/basalt-ui/src/cards/contract.ts": "9d3cfd5f5f5c45a20f30b98c4c330394e3b32b50ebf29e2f406ca5c45e6e39d1",
   "packages/basalt-ui/src/charts/contract.ts": "e9ead75ea811f74b66171386b1d65163084724179cd9a44de7ce7b430caf6152",
@@ -7,5 +12,6 @@
   "packages/basalt-ui/src/core/ports.ts": "f439bf8c3133daa57efb7de51fe2c7fdddb5824c5e5e69829f4575d50b5258b0",
   "packages/basalt-ui/src/page/contract.ts": "487af428ccef5d5e2844b1c474e583d0b512f24a760fa661b3f313b879962fe8",
   "packages/basalt-ui/src/shell/contract.ts": "907e45e1c597a5f104a5cd01b04100ec448236aded0ae468422555c41e427bb0",
-  "packages/basalt-ui/src/table/contract.ts": "f5c9831f8292e3e9620b756408f574911cdc3e65915f912515b7705b86964d17"
+  "packages/basalt-ui/src/table/contract.ts": "f5c9831f8292e3e9620b756408f574911cdc3e65915f912515b7705b86964d17",
+  "packages/basalt-ui/src/ui/slots.ts": "e1e43905cf565f5ad8f3d679901e90f328bf102295317cfb70f1c6332860fac0"
 }
