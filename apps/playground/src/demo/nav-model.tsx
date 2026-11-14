@@ -120,6 +120,13 @@ export const NAV = defineNav({
           mobile: 'tab',
           link: linkOptions({ to: '/shell' }),
         },
+        {
+          id: 'cycle-state',
+          label: 'Orders (state cycle)',
+          icon: Table,
+          mobile: 'more',
+          link: linkOptions({ to: '/cycle-state' }),
+        },
       ],
     },
     // One entry per scenario in the registry.
