@@ -3,7 +3,7 @@
  * (docs/v3/ARCHITECTURE.md section 1). Types only, no value symbols. Pinned by
  * `check-contract-frozen`; a change needs a `chore: contract amendment` commit.
  */
-import type { ReactElement, ReactNode } from 'react'
+import type { FC, ReactElement, ReactNode } from 'react'
 
 /** Closed tone vocabulary shared by `Status`, `MeterZone` and the composites. */
 export type Tone = 'good' | 'warn' | 'bad' | 'info' | 'accent' | 'neutral'
@@ -205,8 +205,17 @@ export type FreshnessView = {
 
 // ---- Catalog (ai-mdx 4) -------------------------------------------------------------------
 
-/** Structural so `./testing` (L5) imports nothing from `src/ai` (L4). */
+/**
+ * Structural so `./testing` (L5) imports nothing from `src/ai` (L4). `Block` renders a spec in a
+ * phase (every `defineCatalog` product has one); a block's `limits` default to the catalog's.
+ */
 export type CatalogLike = {
   validate(x: unknown): { ok: true; block: unknown } | { ok: false; error: string }
-  blocks: readonly { name: string; props: unknown; sample: readonly unknown[] }[]
+  blocks: readonly {
+    name: string
+    props: unknown
+    sample: readonly unknown[]
+    limits?: { maxBytes: number; maxDepth: number }
+  }[]
+  Block?: FC<{ spec: unknown; phase: Phase }>
 }
