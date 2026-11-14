@@ -1,5 +1,5 @@
 import { Bars } from 'basalt-ui/charts'
-import { VX } from 'basalt-ui/tokens'
+import { VX } from 'basalt-ui'
 import { formatDay, readCount } from './read'
 import type { DayRow } from './read'
 
