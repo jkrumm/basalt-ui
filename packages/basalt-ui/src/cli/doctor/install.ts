@@ -171,14 +171,13 @@ function aiParity(packages: readonly Declared[]): string[] {
       }
     }
   }
-  const reason = packages
-    .map(
-      (p) =>
-        (readJson(p.dir, 'package.json')?.['basalt'] as { aiMajorSkewReason?: unknown } | undefined)
-          ?.aiMajorSkewReason,
-    )
-    .find((r): r is string => typeof r === 'string' && r.trim() !== '')
-  if (majors.size > 1 && reason === undefined) {
+  // The root package.json is first: the reason is recorded there and nowhere else.
+  const root = packages[0]
+  const written = (
+    root === undefined ? undefined : readJson(root.dir, 'package.json')?.['basalt']
+  ) as { aiMajorSkewReason?: unknown } | undefined
+  const reason = written?.aiMajorSkewReason
+  if (majors.size > 1 && !(typeof reason === 'string' && reason.trim() !== '')) {
     findings.push(
       `ai-major-parity: \`ai\` is on majors ${[...majors.keys()].toSorted().join(' and ')} across packages; ` +
         'align them or record `basalt.aiMajorSkewReason` in the root package.json',
