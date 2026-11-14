@@ -18,7 +18,7 @@ import {
 import { tmpdir } from 'node:os'
 import { join, resolve } from 'node:path'
 
-import { doctor, init, MANIFEST_PATH, renderRulePaths, run } from './index.ts'
+import { init, MANIFEST_PATH, renderRulePaths, run } from './index.ts'
 
 let dir: string
 
@@ -593,7 +593,7 @@ describe('router seeds — the nav module and the root route', () => {
     expect(out.log).toContain('basalt.shell must be a boolean')
   })
 
-  it('init and doctor classify the same lazy-router fixture identically', () => {
+  it('init classifies a lazy-router fixture as code-routed', () => {
     writeFixture('package.json', JSON.stringify({ name: 'fixture' }))
     writeFixture('index.html', '<script type="module" src="/src/main.tsx"></script>')
     writeFixture(
@@ -603,7 +603,6 @@ describe('router seeds — the nav module and the root route', () => {
     writeFixture('src/router.ts', 'export const router = createBasaltRouter({ routeTree })\n')
     expect(capture(() => init(dir)).log).toContain('code-routed app')
     expect(existsSync(resolve(dir, 'src/routes/__root.tsx'))).toBe(false)
-    expect(capture(() => doctor(dir)).log).toContain('✓ app-wiring')
   })
 
   it('detects a Start app from devDependencies, and a tokens-only one seeds nothing either way', () => {

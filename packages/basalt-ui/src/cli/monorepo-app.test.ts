@@ -1,6 +1,6 @@
 /**
  * Monorepo awareness: `resolveAppDir` picks the app package once, `sync`/`init` seed the router
- * files there (never at the install root), and `doctor` checks the app from either directory.
+ * files there (never at the install root).
  */
 import { afterEach, beforeEach, describe, expect, it, onTestFinished, spyOn } from 'bun:test'
 import {
@@ -16,7 +16,6 @@ import {
 import { tmpdir } from 'node:os'
 import { basename, join, resolve } from 'node:path'
 
-import { doctor } from './doctor'
 import { init, packageRoot, resolveAppDir } from './index'
 
 let dir: string
@@ -145,48 +144,6 @@ describe('sync / init in a monorepo', () => {
     monorepo(['web', 'admin'])
     expect(quiet(() => init(dir))).toBe(1)
     expect(existsSync(join(dir, '.basalt/manifest.json'))).toBe(false)
-  })
-})
-
-describe('doctor in a monorepo', () => {
-  it('checks the app from the root and from inside the app package', () => {
-    monorepo(['web'])
-    write('apps/web/tsconfig.json', '{ "extends": "basalt-ui/configs/tsconfig.react-app.json" }')
-    quiet(() => init(dir))
-    const errors: string[] = []
-    const spy = spyOn(console, 'error').mockImplementation((m: string) => void errors.push(m))
-    const log = spyOn(console, 'log').mockImplementation(() => {})
-    try {
-      doctor(dir)
-      doctor(join(dir, 'apps/web'))
-    } finally {
-      spy.mockRestore()
-      log.mockRestore()
-    }
-    const out = errors.join('\n')
-    expect(out).not.toContain('tsconfig-base: tsconfig.json missing')
-    expect(out).not.toContain('.basalt/manifest.json missing')
-  })
-
-  it('warns about a router seed an earlier sync wrote at the root', () => {
-    monorepo(['web'])
-    quiet(() => init(dir))
-    write('src/main.tsx', '// stray\n')
-    const manifestPath = join(dir, '.basalt/manifest.json')
-    const manifest = JSON.parse(require('node:fs').readFileSync(manifestPath, 'utf8'))
-    manifest.files['src/main.tsx'] = 'x'
-    writeFileSync(manifestPath, JSON.stringify(manifest))
-    const logs: string[] = []
-    const errs: string[] = []
-    const log = spyOn(console, 'log').mockImplementation((m: string) => void logs.push(m))
-    const err = spyOn(console, 'error').mockImplementation((m: string) => void errs.push(m))
-    try {
-      doctor(dir)
-    } finally {
-      log.mockRestore()
-      err.mockRestore()
-    }
-    expect([...logs, ...errs].join('\n')).toContain('src/main.tsx was seeded at the install root')
   })
 })
 

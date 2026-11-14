@@ -1789,4 +1789,4 @@ export type { ManagedFile }
 // dispatch + shared helpers only (C2); the command implementations live in their own files.
 export { checkTheme, doctor, guardHook, init, sync, fontsCss, normalizeColorFunctions, tokensCss }
 export type { SyncOptions } from './sync'
-export type { DoctorResult } from './doctor'
+export type { DoctorOptions, Result as DoctorResult } from './doctor'

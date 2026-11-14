@@ -29,11 +29,7 @@ export const COMMAND_OPTIONS: Record<
     'tokens-only': { type: 'boolean' },
     framework: { type: 'boolean' },
   },
-  doctor: {
-    'tokens-only': { type: 'boolean' },
-    framework: { type: 'boolean' },
-    from: { type: 'string' },
-  },
+  doctor: { from: { type: 'string' } },
   'guard-hook': {},
   'tokens:css': {
     out: { type: 'string' },
@@ -91,7 +87,7 @@ export const USAGE =
   'Usage: basalt-ui <--version | init [--no-merge-lint] [--no-install] |\n' +
   '                  sync [--check] [--force] |\n' +
   '                  check-theme [--audit-allows] |\n' +
-  '                  doctor [--tokens-only|--framework|--from <x.y.z>] | guard-hook | tokens:css | fonts:css |\n' +
+  '                  doctor [--from <x.y.z>] | guard-hook | tokens:css | fonts:css |\n' +
   '                  shot <route…> | shot detect | help>\n\n' +
   'check-theme [--tokens-only|--framework] [--audit-allows]\n' +
   '  --audit-allows reports instead of scanning: every `theme-allow` annotation and every\n' +
@@ -146,11 +142,11 @@ export const USAGE =
   '  detect takes --out <dir>, never a positional.\n' +
   '  A component can declare a rest anchor absent in a URL state with data-shot-absent="empty error": that\n' +
   '  cell is recorded `absent`, not `error`.\n\n' +
-  'doctor [--tokens-only|--framework] [--from <x.y.z>]\n' +
-  '  doctor --from <x.y.z>  print the consumer-visible MIGRATING changes since that version\n' +
-  '  Checks THIS project only: the manifest exists, the oxlint preset is wired, the pre-commit\n' +
-  '  hook runs check-theme (via `lefthook dump`), and the ai package major is consistent within\n' +
-  '  this package.json. Profile is DECLARED, same as check-theme — never inferred.\n\n' +
+  'doctor [--from <x.y.z>]\n' +
+  '  Twelve checks on THIS install: manifest, version drift, peers, presets, lint scan, AGENTS block,\n' +
+  '  skills and rules, the hook (run from a subdirectory on a seeded offender), the formatter fence,\n' +
+  '  token sheets, budgets and app wiring. Each is pass, fail or SKIPPED; SKIPPED exits non-zero.\n' +
+  '  --from <x.y.z> is accepted for the 2.x upgrade flow and only points at MIGRATING.md.\n\n' +
   'sync [--check] [--force]\n' +
   '  Renders every managed file (.claude/{rules,skills,agents}/basalt-*, the AGENTS.md block, the\n' +
   '  preset files) and compares bytes; it refreshes an EXISTING install and never creates one (that\n' +

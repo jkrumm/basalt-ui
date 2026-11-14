@@ -123,7 +123,7 @@ describe('run() --version and the unknown-flag gate', () => {
     const { code, log } = capture(() => run(['doctor', '--json'], dir))
     expect(code).toBe(1)
     expect(log).toContain("unrecognized flag '--json'")
-    expect(log).toContain('--tokens-only')
+    expect(log).toContain('Accepted: --from')
   })
 
   it('a near-miss flag does not slip through as a silent no-op', () => {
@@ -168,7 +168,7 @@ describe('shot detect help', () => {
     expect(log).toContain('zsh does not word-split')
   })
 
-  it('parses doctor --from', () => {
+  it('doctor takes only --from', () => {
     expect(unknownFlag('doctor', ['--from', '2.20.0'])).toBeNull()
     expect(unknownFlag('doctor', ['--nope'])).toBe('--nope')
   })
