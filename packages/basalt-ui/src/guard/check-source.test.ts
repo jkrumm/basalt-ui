@@ -3656,8 +3656,8 @@ describe('unknown-vx-token', () => {
   })
 
   it('flags a bare family root nothing emits, fallback or not', () => {
-    const f = vx(`<Box style={{ background: 'var(--vx-surface, transparent)' }} />`, PATH)
-    expect(f.map((x) => x.token)).toEqual(['--vx-surface'])
+    const f = vx(`<Box style={{ background: 'var(--vx-status, transparent)' }} />`, PATH)
+    expect(f.map((x) => x.token)).toEqual(['--vx-status'])
     expect(vx('.a { color: var(--vx-status); gap: var(--vx-space); }').map((x) => x.token)).toEqual(
       ['--vx-status', '--vx-space'],
     )
@@ -3674,10 +3674,10 @@ describe('unknown-vx-token', () => {
   })
 
   it('judges a removed name and a bare root whatever another file declares', () => {
-    const declaring = ':root { --vx-space-touch-target: 44px; --vx-surface: #000; }\n'
+    const declaring = ':root { --vx-space-touch-target: 44px; --vx-status: #000; }\n'
     expect(vx(declaring, 'src/a.css')).toEqual([])
-    const f = vx('.a { min-height: var(--vx-space-touch-target); background: var(--vx-surface); }')
-    expect(f.map((x) => x.token)).toEqual(['--vx-space-touch-target', '--vx-surface'])
+    const f = vx('.a { min-height: var(--vx-space-touch-target); background: var(--vx-status); }')
+    expect(f.map((x) => x.token)).toEqual(['--vx-space-touch-target', '--vx-status'])
   })
 
   it('passes every live name, and a component-scoped one', () => {
