@@ -963,6 +963,7 @@ describe('shot()', () => {
     expect(readFileSync(join(out, 'board.html'), 'utf8')).toContain('stat-card')
     expect(readFileSync(join(out, '.gitignore'), 'utf8')).toBe('*\n')
     expect(JSON.parse(readFileSync(join(cwd, '.basalt/last-shot.json'), 'utf8'))).toEqual({
+      at: expect.any(String),
       out: 'shots-1',
       round: 1,
     })
@@ -977,6 +978,7 @@ describe('shot()', () => {
     expect(await run(cwd, ok, [], 'shots-2')).toBe(0)
     expect(await run(cwd, ok, [], '.basalt/shots-3')).toBe(0)
     expect(JSON.parse(readFileSync(join(cwd, '.basalt/last-shot.json'), 'utf8'))).toEqual({
+      at: expect.any(String),
       out: '.basalt/shots-3',
       round: 3,
     })

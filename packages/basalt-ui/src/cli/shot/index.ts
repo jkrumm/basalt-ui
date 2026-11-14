@@ -171,8 +171,8 @@ export function sanitizeBase(base: string): string {
   }
 }
 
-/** `.basalt/last-shot.json`: the out dir of the latest round and its number, which the reviewer and `detect` read. */
-function writeLast(cwd: string, out: string): void {
+/** `.basalt/last-shot.json`: the latest round's time, out dir and number: the reviewer, `detect` and doctor's stale-board notice read it. */
+function writeLast(cwd: string, out: string, at: Date): void {
   const file = join(cwd, LAST_SHOT)
   let round = 1
   try {
@@ -181,7 +181,7 @@ function writeLast(cwd: string, out: string): void {
     // No round recorded yet: this is the first.
   }
   mkdirSync(dirname(file), { recursive: true })
-  writeFileSync(file, JSON.stringify({ out, round }, null, 2) + '\n')
+  writeFileSync(file, JSON.stringify({ at: at.toISOString(), out, round }, null, 2) + '\n')
 }
 
 /** One handler for SIGINT/SIGTERM: runs every stop (browser kill, server stop), then exits. */
@@ -260,7 +260,7 @@ export async function shot(
     }
     writeFileSync(join(outDir, 'metrics.json'), JSON.stringify(metrics, null, 2) + '\n')
     writeFileSync(join(outDir, 'board.html'), buildBoard(metrics))
-    writeLast(cwd, relative(cwd, outDir).split(sep).join('/'))
+    writeLast(cwd, relative(cwd, outDir).split(sep).join('/'), now)
     const count = (status: string): number => result.shots.filter((s) => s.status === status).length
     const absent = count('absent') ? `${count('absent')} absent, ` : ''
     log(

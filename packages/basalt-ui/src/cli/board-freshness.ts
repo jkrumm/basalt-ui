@@ -5,7 +5,7 @@ import type { Dirent } from 'node:fs'
 import { createRequire } from 'node:module'
 import { join, resolve } from 'node:path'
 
-const LAST_SHOT = join('.basalt', 'shots', 'last.json')
+const LAST_SHOT = join('.basalt', 'last-shot.json')
 const SKIPPED_DIRS = new Set(['node_modules', 'dist', '.git', '.basalt'])
 const UI_FILE = /\.(tsx|css)$/
 /** Directories plus UI files visited before the walk gives up; other files are free, so a big non-UI tree cannot pin the notice on. */
