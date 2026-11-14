@@ -1,8 +1,27 @@
 @import 'basalt-ui/tokens.css';
 @import 'basalt-ui/tailwind.css';
 @import 'basalt-ui/prose.css';
+@import '../../../packages/basalt-ui/src/table/table.css';
 @source '../../../packages/basalt-ui/src/ui';
 @source '../../../packages/basalt-ui/src/cards';
 @source '../../../packages/basalt-ui/src/content';
 @source '../../../packages/basalt-ui/src/page';
 @source '../../../packages/basalt-ui/src/shell';
+@source '../../../packages/basalt-ui/src/table';
+
+/* The row's `h-(--table-row-h)` utility sits above `@layer basalt.table`, so the card tier's
+   `height: auto` loses and a stacked card is clipped to one row height (signal: table card-tier
+   row height). Unlayered, these win until the tier sheet says it with `!important`. */
+@container table (max-width: 479.9px) {
+  [data-slot='table-root'][data-below='480'][data-phone='cards'] [data-slot='table-row'] {
+    height: auto;
+  }
+}
+@container table (max-width: 799.9px) {
+  [data-slot='table-root'][data-below='800'][data-phone='cards'] [data-slot='table-row'] {
+    height: auto;
+  }
+}
+[data-slot='table-root'][data-below='always'][data-phone='cards'] [data-slot='table-row'] {
+  height: auto;
+}
