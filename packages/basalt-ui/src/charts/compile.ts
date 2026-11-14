@@ -39,7 +39,7 @@ import { cursorDots } from './marks'
 import { bucketTicks, strideEvery } from './ticks'
 import { MAIN_PANE, plotAccess, plotContext } from './plot-context'
 import { claimedLabelBoxes } from './labels'
-import { refLabelDy, refLabelPosition } from './ref-label'
+import { placeRefLabel, refLabelDy } from './ref-label'
 import type { LabelBox, RefLabelPoint } from './ref-label'
 import type { PlotSizes } from './plot-context'
 import { resolveContainerClass } from '../tokens/size-classes'
@@ -50,10 +50,13 @@ import {
   logTicks,
   ringSwatch,
   withLogX,
+  xRefLabelBoxes,
+  xRefLabelSpots,
   xRefLineMarks,
   xTitleLabel,
   yTitleScale,
 } from './axis-gaps'
+import type { XRefLabelBox } from './axis-gaps'
 import { AXIS_LINE, CHART_THEME, CROSSHAIR, DASH, GRID_LINE } from './theme'
 import type {
   AxisConfig,
@@ -177,15 +180,29 @@ export function utcHeaderDate(d: Date, dayOnly = false): string {
 
 const DAY_MS = 86_400_000
 
+/** The fewest Date ticks an axis spanning at least this many whole days keeps. */
+const MIN_DATE_TICKS = 3
+
 /**
  * Default Date tick values: the time scale's own ticks, kept to whole UTC days once the data is
- * daily or coarser — d3 picks 12-hour steps for a short daily series, which label one day twice.
+ * daily or coarser — d3 picks 12-hour steps for a short daily series, which label one day twice. A
+ * span of several days never keeps fewer than {@link MIN_DATE_TICKS}: d3 steps by weeks when asked
+ * for 3 over twelve days and leaves one tick, so the count is raised until three land.
  */
 export function dateTicks(domain: readonly [Date, Date], count: number, stepMs: number): Date[] {
-  const ticks = scaleUtc().domain([domain[0], domain[1]]).ticks(count)
-  if (stepMs < DAY_MS) return ticks
-  const days = ticks.filter((t) => t.getTime() % DAY_MS === 0)
-  return days.length >= 2 ? days : ticks.filter((_, i, all) => i === 0 || i === all.length - 1)
+  const scale = scaleUtc().domain([domain[0], domain[1]])
+  const ticksFor = (n: number): Date[] => {
+    const ticks = scale.ticks(n)
+    if (stepMs < DAY_MS) return ticks
+    const days = ticks.filter((t) => t.getTime() % DAY_MS === 0)
+    return days.length >= 2 ? days : ticks.filter((_, i, all) => i === 0 || i === all.length - 1)
+  }
+  const span = Math.abs(domain[1].getTime() - domain[0].getTime())
+  const floor = Math.min(MIN_DATE_TICKS, Math.floor(span / DAY_MS))
+  let ticks = ticksFor(count)
+  // One more tick asked for at a time, so the fewest that reach the floor; 12 bounds the loop.
+  for (let n = count + 1; ticks.length < floor && n <= count + 12; n++) ticks = ticksFor(n)
+  return ticks
 }
 
 export function defaultFormatX(v: ChartValue): string {
@@ -826,46 +843,72 @@ type RefLabelContext<T, X extends ChartX> = {
   lines: (side: 'left' | 'right' | undefined) => readonly (readonly RefLabelPoint[])[]
   /** The end labels placed on the left axis: a caption there keeps clear of them. */
   claimed: readonly LabelBox[]
+  /** The vertical rules' captions, px below the plot top: a reference caption keeps clear of them. */
+  xCaptions: readonly XRefLabelBox[]
+  /** The captions already placed, by axis: the next one keeps clear of them. */
+  placed: Record<'left' | 'right', LabelBox[]>
   axes: Axes<T>
   model: XScaleModel<X>
 }
 
-/** The caption naming a reference line, at the spot {@link refLabelPosition} picks. */
+/** A caption box taken from the plot top in px, as a span of values on an axis with `domain`. */
+function xCaptionOn(
+  box: XRefLabelBox,
+  domain: readonly [number, number],
+  plotHeight: number,
+): LabelBox {
+  const [lo, hi] = [Math.min(...domain), Math.max(...domain)]
+  const perPx = plotHeight > 0 ? (hi - lo) / plotHeight : 0
+  return { fx0: box.fx0, fx1: box.fx1, y0: hi - box.bottom * perPx, y1: hi - box.top * perPx }
+}
+
+/** The caption naming a reference line, at the spot {@link placeRefLabel} picks; none when no spot is clear of the other captions. */
 const refLabelMark = <T, X extends ChartX>(
   r: RefLine,
   i: number,
   ctx: RefLabelContext<T, X>,
-): ChartMarks[number] => {
+): ChartMarks => {
   const { axes } = ctx
   const startFirst = r.axis === 'right' && axes.scaleId(r.axis) === 'y2'
-  const position = refLabelPosition({
+  const side = startFirst ? 'right' : 'left'
+  const domain = axes.axisOf(r.axis).domain
+  const placed = placeRefLabel({
     pinned: r.labelPosition,
     startFirst,
     value: r.value,
-    domain: axes.axisOf(r.axis).domain,
+    domain,
     plotWidth: ctx.plotWidth,
     plotHeight: ctx.plotHeight,
     label: r.label ?? '',
     fontSize: VX.text.micro,
     series: ctx.lines(r.axis),
-    claimed: startFirst ? [] : ctx.claimed,
+    claimed: [
+      ...(startFirst ? [] : ctx.claimed),
+      ...ctx.xCaptions.map((b) => xCaptionOn(b, domain, ctx.plotHeight)),
+      ...ctx.placed[side],
+    ],
   })
+  if (placed === null) return []
+  ctx.placed[side].push(placed.box)
+  const { position } = placed
   const atStart = position.startsWith('start')
-  return decorative(
-    text([{ f: atStart ? 0 : 1 }], {
-      id: `ref-${i}-label`,
-      x: (d: { f: number }) => d.f,
-      y: () => r.value,
-      xScale: 'zx',
-      yScale: axes.scaleId(r.axis),
-      text: () => r.label ?? '',
-      fill: VX.ink2,
-      fontSize: VX.text.micro,
-      anchor: atStart ? 'start' : 'end',
-      dx: atStart ? REF_LABEL_DX : -REF_LABEL_DX,
-      dy: refLabelDy(position, VX.text.micro),
-    }),
-  )
+  return [
+    decorative(
+      text([{ f: atStart ? 0 : 1 }], {
+        id: `ref-${i}-label`,
+        x: (d: { f: number }) => d.f,
+        y: () => r.value,
+        xScale: 'zx',
+        yScale: axes.scaleId(r.axis),
+        text: () => r.label ?? '',
+        fill: VX.ink2,
+        fontSize: VX.text.micro,
+        anchor: atStart ? 'start' : 'end',
+        dx: atStart ? REF_LABEL_DX : -REF_LABEL_DX,
+        dy: refLabelDy(position, VX.text.micro),
+      }),
+    ),
+  ]
 }
 
 /** Reference lines, over the marks. `label` reads the plot size, so only a chart with an unpinned caption pays for it. */
@@ -887,7 +930,7 @@ const refLineMarks = <T, X extends ChartX>(
             yScale: axes.scaleId(r.axis),
             ...(r.dashed && { strokeDasharray: DASH }),
           }),
-          ...(r.label ? [refLabelMark(r, i, label())] : []),
+          ...(r.label ? refLabelMark(r, i, label()) : []),
         ],
   )
 
@@ -1417,19 +1460,37 @@ export function compileCartesian<T, X extends ChartX>(
       )
       const kindMarks = input.marks(plot)
       const under = underlayMarks(input, model, axes)
-      const over = refLineMarks(input, axes, () => {
-        // Reading the plot size recompiles once on the measured area; the frame stands in before it.
+      // Reading the plot size recompiles once on the measured area; the frame stands in before it.
+      // Only a chart with a caption pays for it, and the one context serves every caption: the
+      // vertical rules' captions are placed first, and a reference caption keeps clear of them and of
+      // the captions placed before it.
+      let captions: RefLabelContext<T, X> | undefined
+      const captionContext = (): RefLabelContext<T, X> => {
+        if (captions !== undefined) return captions
         access.read()
         const size = access.size()
-        return {
-          plotWidth: size?.width ?? width,
+        const plotWidth = size?.width ?? width
+        const xSpots = xRefLabelSpots({
+          lines: input.xRefLines,
+          fraction: model.fraction,
+          plotWidth,
+          fontSize: VX.text.micro,
+        })
+        captions = {
+          plotWidth,
           plotHeight: size?.height ?? height,
           lines: linesOn,
           claimed: claimedLabelBoxes(plot),
+          xCaptions: xRefLabelBoxes(xSpots, { plotWidth, fontSize: VX.text.micro }),
+          placed: { left: [], right: [] },
           axes,
           model,
         }
-      })
+        return captions
+      }
+      const hasXCaption = (input.xRefLines ?? []).some((l) => l.label)
+      const xPlotWidth = hasXCaption ? captionContext().plotWidth : 0
+      const over = refLineMarks(input, axes, captionContext)
       return {
         marks: [
           ...under,
@@ -1440,6 +1501,7 @@ export function compileCartesian<T, X extends ChartX>(
             lines: input.xRefLines,
             fraction: model.fraction,
             top: Math.max(...axes.left.domain),
+            plotWidth: xPlotWidth,
           }),
           ...(input.crosshair === false ? [] : [crosshair({ x: CROSSHAIR, y: false })]),
         ],
