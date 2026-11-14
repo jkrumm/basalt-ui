@@ -5,26 +5,14 @@
  * guardrail concept and reads DESIGN.md.
  */
 import { spawnSync } from 'node:child_process'
-import { existsSync } from 'node:fs'
-import { resolve } from 'node:path'
 
 import { checkWeakenedConfig } from '../../lint/weakened'
 import type { WeakenedResult } from '../../lint/weakened'
 import { BUDGET_PATH, countBreaches, readBudget } from '../budget'
-import { basePath, countRows, rowsOfRoot } from '../eject/ledger'
 import { tokensCss } from '../tokens-css'
+import { ejectFindings } from './eject'
 import { OXLINT_PRESET } from './wiring'
-import {
-  fail,
-  lintRoots,
-  need,
-  pass,
-  readJson,
-  readText,
-  rootFiles,
-  rootsOf,
-  verdictOf,
-} from './types'
+import { fail, lintRoots, need, pass, readJson, readText, rootFiles, verdictOf } from './types'
 import type { Check, Ctx, Outcome } from './types'
 
 /** `tokensCss` with both streams captured: doctor prints its own line per check. */
@@ -67,33 +55,6 @@ const ESCAPE = /\b(?:col|chart|field|filterSlot)\.custom\b/g
 const HEX_LITERAL = /#[0-9a-fA-F]{3,8}\b/
 const REASONED = /\s(?:—|--|because)\s|reason:/i
 const DESIGN_MAX_LINES = 150
-
-/** The ejected files' integrity, and the largest per-root eject count (the ceiling is per root). */
-function ejectState(ctx: Ctx): { findings: string[]; ejects: number } {
-  const manifest = need(ctx)
-  const findings: string[] = []
-  let ejects = 0
-  const keyed = new Set<string>()
-  for (const [root] of rootsOf(manifest)) {
-    const { rows, bad } = rowsOfRoot(manifest, root)
-    for (const key of bad) findings.push(`ejected ${key} is malformed`)
-    ejects = Math.max(ejects, countRows(rows).ejects)
-    for (const [primitive, row] of rows) {
-      keyed.add(`${root}#${primitive}`)
-      if (!existsSync(resolve(ctx.root, row.path))) findings.push(`ejected ${row.path} is missing`)
-      if (row.reason.trim() === '') findings.push(`ejected ${row.path} carries no reason`)
-      if (row.origin !== 'local' && !existsSync(resolve(ctx.root, basePath(root, primitive)))) {
-        findings.push(`${basePath(root, primitive)} (the merge base of ${row.path}) is missing`)
-      }
-    }
-  }
-  for (const key of Object.keys(manifest.ejected)) {
-    if (!keyed.has(key) && !findings.some((f) => f.includes(key))) {
-      findings.push(`ejected ${key} belongs to no declared root`)
-    }
-  }
-  return { findings, ejects }
-}
 
 function designFindings(ctx: Ctx): string[] {
   const manifest = need(ctx)
@@ -183,14 +144,12 @@ const check11 = (name: string): Check => ({
     if ('error' in budget) return fail(budget.error)
     const sources = rootFiles(ctx, manifest, /\.[cm]?[jt]sx?$/)
     const text = sources.map((f) => readText(ctx.root, f) ?? '').join('\n')
-    const eject = ejectState(ctx)
     const findings = [
       ...countBreaches(budget.budget, {
-        ejects: eject.ejects,
         waivers: (text.match(WAIVER) ?? []).length,
         escapes: (text.match(ESCAPE) ?? []).length,
       }).map((b) => `${b.count} ${b.name} is above the ceiling ${b.ceiling} in ${BUDGET_PATH}`),
-      ...eject.findings,
+      ...ejectFindings(ctx, budget.budget),
       ...designFindings(ctx),
     ]
     const weak = await weakened(ctx)

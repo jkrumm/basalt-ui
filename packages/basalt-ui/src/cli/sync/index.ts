@@ -1,6 +1,7 @@
 /**
  * `sync [--check] [--force]` (v3): render every managed file in memory and compare bytes with the
  * tree. It refreshes an install `init` made, never creates one, never touches `CLAUDE.md`.
+ * Ejected primitives are three-way merged (`three-way.ts`); a conflict exits 1.
  * Resolution is the shared one: `BASALT_CWD`, else the cwd, then the manifest there or above.
  */
 import { relative } from 'node:path'
@@ -13,6 +14,7 @@ import { applySync, differences, planSync } from './engine'
 import { presetFilesFor } from '../presets'
 import { renderBlock, renderManaged } from './render'
 import type { PresetFiles } from './render'
+import { applyEjected, planEjected } from './three-way'
 
 export type SyncOptions = {
   force?: boolean
@@ -82,19 +84,22 @@ export function sync(opts: SyncOptions = {}, invocationCwd: string = process.cwd
     return fail((error as Error).message)
   }
   if ('error' in plan.block) return fail(plan.block.error)
+  const ejects = planEjected({ root, manifest, pkgRoot, version })
 
   if (opts.check === true) {
     const diff = differences(plan)
-    if (diff.length === 0)
+    if (diff.length === 0 && ejects.work + ejects.errors.length === 0)
       return (console.log('✓ basalt-ui sync --check: all managed files current.'), 0)
-    console.error(`✖ basalt-ui sync --check: ${diff.length} difference(s):`)
-    for (const line of diff) console.error(`  ${line}`)
+    console.error(`✖ basalt-ui sync --check: ${diff.length + ejects.work} difference(s):`)
+    for (const line of [...diff, ...ejects.lines]) console.error(`  ${line}`)
     console.error('Run `basalt-ui sync` to apply (`--force` overwrites locally edited files).')
     return 1
   }
 
   const applied = applySync(root, manifest, plan, opts.force === true)
-  writeManifest(root, { ...applied.manifest, version })
+  applyEjected(root, ejects)
+  writeManifest(root, { ...applied.manifest, ejected: ejects.ejected, version })
+  for (const line of ejects.lines) console.log(line)
   console.log(
     `basalt-ui sync: ${applied.written} written, ${applied.removed} retired, ${applied.left.length} left (edited).`,
   )
@@ -102,5 +107,5 @@ export function sync(opts: SyncOptions = {}, invocationCwd: string = process.cwd
     console.log('Locally edited files were left as they are (run with --force to overwrite):')
     for (const path of applied.left) console.log(`  ${path}`)
   }
-  return 0
+  return ejects.conflicts.length + ejects.errors.length === 0 ? 0 : 1
 }
