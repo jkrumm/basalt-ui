@@ -1,0 +1,27 @@
+{
+  "why": "The owner reviewed four cycle 2 builds in the running playground on 2026-11-14 (docs/v3/cycles/expression-2.md § Owner calibration). His verdict on builds the reviewers scored 71 to 88: beautiful charts, not thought through as a surface. n06 and c08 describe the change in prose where a mark would do. c07 is too large, takes too much space and its parts are not one joined view. c09's release timeline is a plain list under the chart, where it should scroll in its own region beside the chart with hover on either focusing the other. None follows the console look he chose for v3 (docs/v3/verdicts/statcard.md). The twelve devices in the skill are all devices of one chart, and v3-expr-2-skill (closed) added a checklist of those. Nothing in the skill asks a builder to plan the surface: which parts, where each sits, what they share. The rubric gains X1 to X5 for this from cycle 3 (docs/v3/expression/rubric.md § Experience), so cycle 3 measures it.",
+  "what": "Agent text only: a surface step before the form step in basalt-design and basalt-charts, a thirteenth device (linked parts), and four lines in the look-before-you-stop checklist. No package source.",
+  "owns": [
+    "packages/basalt-ui/agent/skills/basalt-design/** (SKILL.md and references)",
+    "packages/basalt-ui/agent/skills/basalt-charts/SKILL.md",
+    "the dogfooded copies under .claude/skills and .claude/rules (make sync-self)",
+    "the skill snippet tests and budgets that read these files"
+  ],
+  "must_not_touch": [
+    "packages/basalt-ui/src/**",
+    "docs/v3/ARCHITECTURE.md",
+    "docs/v3/expression/**",
+    "apps/playground/src/scenarios/expr/** (the trial builds stay as their builders left them)"
+  ],
+  "change": "Within the skill line budgets: (1) Surface before form. After the question and before the form, the builder writes down the parts the surface needs (the mark, the figure, the detail list or table), where each sits, and what they share. The default for a chart with a detail list is side by side at a wide container, the list scrolling in its own region at the chart's height, stacked at a narrow one. The footprint fits the question: a comparison of two numbers is not a full-page card. (2) Linked parts, the thirteenth device: where a chart and a list, table or timeline show the same items, they share one focus, so pointing at or stepping to an item in one focuses it in the other, both ways. Show the wiring with one useChartFocus passed to the chart host and spread on the list rows through focus.item; if v3-expr-2-seam-tracks has shipped a recipe for a list of a different grain, link it, otherwise name the gap as a workaround comment. (3) Word economy: marks and numbers carry the change. The hero is the answer with its verb and at most one phrase of baseline; a sentence appears only where no mark can say it; no fact is stated twice across headline, sub line, annotation and caption. Reconcile this with item (1) of the existing checklist ('Runs out 13:52') so the two read as one rule. (4) Console anatomy: a card has a header with the title and its context line, the figure with its delta pill inside the inset, label and value pairs in the footer, and monospace for ids, repo names and timestamps; a builder never rebuilds a flush card with a small title over free text. Name the v3 parts that give it (the v3 ChartCard figure, StatCard, Inset). (5) Calm interaction: a page never picks its own dim opacity for seam-drawn marks, it uses the kit's; rows that take focus leave no dead gap that clears it. (6) Add X-items (1) to (5) to the checklist that step 5 of basalt-design and step 6 of basalt-charts run against the rendered page.",
+  "commits": "feat: one commit for the surface step and the device, one for the checklist lines.",
+  "proof": "make check (skill budgets and snippet tests); the diff names the owner calibration point each line answers.",
+  "acceptance": [
+    "basalt-design and basalt-charts have a surface step before the form step that names the parts, their placement and what they share",
+    "Linked parts is in the device vocabulary with a wiring example that compiles as a skill snippet",
+    "The checklist names word economy, one view, linked parts, console anatomy and calm interaction, each checked on the rendered page",
+    "The existing checklist item on the hero and the new word economy line do not contradict each other",
+    "make check passes, including the skill line budgets"
+  ],
+  "out_of_scope": "Package source; the rubric; a new chart kind; the trial builds; the seam's pointer and dim fixes (v3-expr-2-seam-tracks)."
+}
