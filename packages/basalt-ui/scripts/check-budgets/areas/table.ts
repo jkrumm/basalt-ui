@@ -6,7 +6,7 @@
  */
 import { join } from 'node:path'
 
-import type { RowDef } from '../lib'
+import type { Raise, RowDef } from '../lib'
 import { PKG_ROOT } from '../lib'
 import { BASE0, bundleApp, gzipBytes } from '../provider-v3'
 import { measureSource, reExportNamed } from '../ui-bundle'
@@ -40,7 +40,21 @@ export const rows: readonly RowDef[] = [
     label: 'table own code: DataTable + useDataTable + col, minus the engine fixture (gzip B)',
     // 105583 B measured (128760 for the three symbols, minus the 23177 engine). Seeded as it stands;
     // retiring the 2.x table internals the closure still reaches is what ratchets it down.
-    ceiling: 111000,
+    // 111000 -> 123000 (Issue 1146): 121455 B measured, +15.9 KB gz for the default detail sheet. A row tap
+    // with no `detail` host opens a Base UI Drawer (`ui/sheet`), so the drawer and its swipe code join
+    // the table's closure; the auto sheet, the Details door and the view-store hook are the rest.
+    ceiling: 123000,
     measure: async () => (await measureSource(DATA_TABLE)) - (await engineBytes()),
+  },
+]
+
+export const raises: readonly Raise[] = [
+  {
+    ceiling: 'table-own',
+    from: 111000,
+    to: 123000,
+    consumer:
+      "the default detail sheet of `DataTable`: linewatch's outage table (web/src/components/outage-table.tsx) has a `detail` and no aside host, so a row tap opens the table's own sheet instead of nothing (Issue 1146)",
+    repo: 'linewatch',
   },
 ]
