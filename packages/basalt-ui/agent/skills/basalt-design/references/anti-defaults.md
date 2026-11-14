@@ -14,7 +14,7 @@ Taste checks for a page that reads as a default. Read before the first build and
 
 Run it against the rendered page at 1800 and 390, light and dark, and one keyboard-focused frame; layout, contrast and motion show only there. Each device names the reference that teaches it.
 
-- **Answer on the mark.** The hero states the answer with its verb and the marked item is annotated at rest; a list keeps the answer above its cut ([charts](charts.md)).
+- **Answer on the mark.** The hero states the answer with its verb and at most one phrase of baseline, and the marked item is annotated at rest; a list keeps the answer above its cut ([charts](charts.md)).
 - **Baseline.** Every headline figure shows its target, prior period or limit as a signed delta or as geometry, a colour rule alone included ([charts](charts.md)).
 - **Colour budget.** A status hue marks only a state that needs action; the failed mark takes the status fill ([charts](charts.md)).
 - **Seam-drawn finish.** A focus mark beside the ring, the ring inset clear of text, tabular numerals, motion-safe transitions, on-ladder values, status tokens as fills only ([charts](charts.md)).
@@ -22,6 +22,11 @@ Run it against the rendered page at 1800 and 390, light and dark, and one keyboa
 - **Label collisions and light-mode contrast.** Direct labels clear each other and the marks; every text and mark reads in both schemes.
 - **At 390.** The answer and the first rows sit above the fold; a header that pushes rows below it is the defect ([concept](concept.md)).
 - **Anatomy.** Cards in one row align their heights; a subtitle carries a fact ([cards](cards.md)).
+- **Word economy.** Marks and numbers carry the change; a sentence appears only where no mark can say it, and no fact is stated twice across headline, sub line, annotation and caption. Read each line aloud against the mark beside it ([copy](copy.md)).
+- **One view.** The parts read as one working surface at 1800 and at 390: the footprint fits the question, a long list scrolls in its own region beside its chart, nothing is large for its own sake ([concept](concept.md)).
+- **Linked parts.** Point at an item in the chart, then in the list, then step with the arrow keys: the other part focuses it every time, both ways ([charts](charts.md)).
+- **Console anatomy.** Header with title and context line, figure and delta pill inside the inset, label and value pairs in the footer, monospace for ids, repo names and timestamps; a flush card with a small title over free text is the defect ([cards](cards.md)).
+- **Calm interaction.** The dimmed rest stays readable, and moving the pointer across the gap between two marks or rows never flashes the unfocused state ([charts](charts.md)).
 
 ## Dashboard tells
 
