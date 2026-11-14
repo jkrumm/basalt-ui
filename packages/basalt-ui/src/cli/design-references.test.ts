@@ -16,6 +16,7 @@ const REFERENCES = [
   'forms',
   'state',
   'states',
+  'table',
 ]
 /** Not routed from SKILL.md yet: the routing row is v3-sk-6. */
 const UNROUTED = new Set(['controls', 'forms', 'state'])

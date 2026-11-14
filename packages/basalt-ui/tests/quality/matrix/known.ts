@@ -197,7 +197,7 @@ export const KNOWN: readonly KnownFinding[] = [
   {
     route: '/table',
     assertion: 'hitFloor',
-    item: /^(button\[(button|pressable)\] ".*" \d+x\d+ < 44x44|\.\.\. \d+ more)$/,
+    item: /^(button\[(button|pressable)\] "(.* column actions?|Row actions|Payee|Category|State|Amount.*|Room|Open tasks|Booked|Floor|Booking)" \d+x\d+ < 44x44|\.\.\. \d+ more)$/,
     owner: 'table: column and row action buttons and sort heads are under the coarse 44 px floor',
   },
   {
