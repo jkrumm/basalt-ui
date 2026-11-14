@@ -3,8 +3,9 @@
  * readers the checks have in common. A check is pass, fail or SKIPPED; a check that cannot run
  * throws `Skip`, which the runner prints as SKIPPED and counts as a failure (invariant 2).
  */
-import { existsSync, readdirSync, readFileSync } from 'node:fs'
-import { join, relative, resolve } from 'node:path'
+import { readdirSync, readFileSync } from 'node:fs'
+import type { Dirent } from 'node:fs'
+import { resolve } from 'node:path'
 
 import type { Manifest, Profile } from '../manifest'
 import type { RunLint } from '../../lint/weakened'
@@ -82,15 +83,25 @@ export const lintRoots = (manifest: Manifest): string[] =>
 
 const SKIPPED_DIRS = new Set(['node_modules', 'dist', '.git', '.basalt', '.claude', 'coverage'])
 
-/** Files under `dir` matching `pattern`, as paths relative to `base`, sorted; no vendored trees. */
+/** Files under `dir` matching `pattern`, as paths relative to `base`, sorted; vendored trees are never entered. */
 export function filesUnder(base: string, dir: string, pattern: RegExp): string[] {
-  const start = resolve(base, dir)
-  if (!existsSync(start)) return []
-  return readdirSync(start, { recursive: true, withFileTypes: true })
-    .filter((e) => e.isFile() && pattern.test(e.name))
-    .map((e) => relative(base, join(e.parentPath, e.name)).split('\\').join('/'))
-    .filter((rel) => !rel.split('/').some((part) => SKIPPED_DIRS.has(part)))
-    .toSorted()
+  const found: string[] = []
+  const walk = (at: string): void => {
+    let entries: Dirent[]
+    try {
+      entries = readdirSync(resolve(base, at), { withFileTypes: true })
+    } catch {
+      return
+    }
+    for (const e of entries) {
+      const rel = at === '.' ? e.name : `${at}/${e.name}`
+      if (e.isDirectory()) {
+        if (!SKIPPED_DIRS.has(e.name)) walk(rel)
+      } else if (e.isFile() && pattern.test(e.name)) found.push(rel)
+    }
+  }
+  walk(dir)
+  return found.toSorted()
 }
 
 /** Every file under the declared roots matching `pattern`, relative to the install root. */

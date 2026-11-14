@@ -217,12 +217,7 @@ exemption:
 ```
 
 `check-theme` fails loudly (instead of a false `✓`) when the configured roots resolve to zero
-scanned files, and `doctor`'s `guard-scan` check agrees with it — it shares `scannableFiles` with
-`check-theme`, so the two cannot disagree about what would be scanned. (`guard-scan` and
-`install-parity` were absent from `doctor` for four minors up to 1.29.2, with no MIGRATING row, and
-are back in 1.30.0. While they were gone a consumer CI step that ran `doctor` to catch an
-install/manifest version mismatch caught nothing, zero-file roots could ship as a permanently green
-guard, and this sentence described a check that did not exist.) Each root's **parent** also
+scanned files; `doctor` check 5 says the same of the v3 lint and stylelint scans. Each root's **parent** also
 contributes its `index.html` and its `public/` tree — the Vite layout `basaltViteConfig` assumes,
 and where a raw `theme-color` or webmanifest `background_color` actually lives. `.json` is never
 blanket-scanned; `include` names one explicitly and is the only route to it. `profile:
@@ -240,7 +235,7 @@ reason, which is what a `theme-allow` always carried and this key could not. A p
 suppresses nothing is now reported by a normal run and fails `--audit-allows`.
 
 `sync` **backfills `roots`** when the key is absent — only `init` used to write it, so every
-existing consumer stayed on the undeclared `src` default while `guard-scan` passed anyway. A
+existing consumer stayed on the undeclared `src` default while the guard passed anyway. A
 declared value is never overwritten; a layout it does not cover is reported as one line, because
 `roots` being a subset is the normal case in a monorepo, not drift.
 
@@ -278,10 +273,10 @@ verdict is "cannot judge", never "dead". The report prints the scope it audited,
 over `basalt.roots` is not `0 dead anywhere`. Two known gaps: `basalt.exempt` is not audited at all,
 and the `scoped to …` line does not distinguish `theme-allow` from `theme-allow-file`.
 
-`doctor`'s `ai-major-parity` hard check fails a monorepo where workspace packages declare different
-`ai` package majors — unless the split is intentional and written down. A producer pinned to an
-older major with a client on a newer one, neutralized by a transform, is a locked decision, not a
-defect:
+`doctor` check 3 carries `ai-major-parity`: `ai` must be on one major across the workspace packages
+(declared and installed), and `@ai-sdk/react` must sit on the major that pairs with it (`ai` 7 with
+`@ai-sdk/react` 4: the react major is the `ai` major minus 3). A split between packages that is
+intentional is written down, and the written reason is the exemption:
 
 ```json
 // package.json (repo root)
@@ -292,11 +287,8 @@ defect:
 }
 ```
 
-The value **is** the reason — omitting the key, or setting it to `true`/`""`, does not weaken the
-check; `doctor` still hard-fails a detected skew exactly as if `aiMajorSkewReason` were absent. Once
-the reason is written, `doctor` passes and echoes both the detected skew and the reason back. If the
-majors later come back into agreement, `doctor` warns that the declaration is stale so it gets
-deleted rather than silently surviving into the next real skew.
+The value **is** the reason: omitting the key, or setting it to `true` or `""`, exempts nothing. The
+exemption covers the split between packages only; a wrong `@ai-sdk/react` pairing still fails.
 
 ---
 

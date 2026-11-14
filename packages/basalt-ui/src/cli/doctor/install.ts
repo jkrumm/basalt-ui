@@ -141,6 +141,52 @@ function meets(installed: string, range: string): boolean {
   return majorOf(installed) === majorOf(range) && compareVersions(installed, base) >= 0
 }
 
+/** `@ai-sdk/react` 4 pairs with `ai` 7 (docs/v3/DIRECTION.md); the react major is the `ai` major minus 3. */
+const AI_REACT_OFFSET = 3
+
+/** ai-major-parity: one `ai` major across packages (unless a reason is written), react paired to it. */
+function aiParity(packages: readonly Declared[]): string[] {
+  const findings: string[] = []
+  const majors = new Map<number, string>()
+  for (const { dir, deps } of packages) {
+    const ai = [majorOf(deps['ai']), majorOf(installedVersion(dir, 'ai') ?? undefined)]
+    const react = [
+      majorOf(deps['@ai-sdk/react']),
+      majorOf(installedVersion(dir, '@ai-sdk/react') ?? undefined),
+    ]
+    for (const major of ai) if (major !== null) majors.set(major, dir)
+    for (const [i, major] of react.entries()) {
+      const paired = ai[i] ?? ai[0] ?? ai[1]
+      if (
+        major !== null &&
+        paired !== null &&
+        paired !== undefined &&
+        major !== paired - AI_REACT_OFFSET
+      ) {
+        findings.push(
+          `ai-major-parity: @ai-sdk/react ${major} does not pair with ai ${paired} in ${dir} ` +
+            `(expected @ai-sdk/react ${paired - AI_REACT_OFFSET})`,
+        )
+        break
+      }
+    }
+  }
+  const reason = packages
+    .map(
+      (p) =>
+        (readJson(p.dir, 'package.json')?.['basalt'] as { aiMajorSkewReason?: unknown } | undefined)
+          ?.aiMajorSkewReason,
+    )
+    .find((r): r is string => typeof r === 'string' && r.trim() !== '')
+  if (majors.size > 1 && reason === undefined) {
+    findings.push(
+      `ai-major-parity: \`ai\` is on majors ${[...majors.keys()].toSorted().join(' and ')} across packages; ` +
+        'align them or record `basalt.aiMajorSkewReason` in the root package.json',
+    )
+  }
+  return findings
+}
+
 const check3 = (name: string): Check => ({
   id: 3,
   name,
@@ -173,27 +219,7 @@ const check3 = (name: string): Check => ({
       }
     }
 
-    // ai-major-parity: `ai` and `@ai-sdk/react` move together, in each package and across the repo.
-    const majors = new Set<number>()
-    for (const { dir, deps } of packages) {
-      const found = (['ai', '@ai-sdk/react'] as const).flatMap((pkg) => {
-        const declared = majorOf(deps[pkg])
-        const installed = installedVersion(dir, pkg)
-        return [declared, installed === null ? null : majorOf(installed)]
-          .filter((m): m is number => m !== null)
-          .map((m) => ({ pkg, major: m }))
-      })
-      for (const { major } of found) majors.add(major)
-      if (new Set(found.map((f) => f.major)).size > 1) {
-        findings.push(
-          `ai-major-parity: ${found.map((f) => `${f.pkg} ${f.major}`).join(' vs ')} in ${dir}; ` +
-            'keep `ai` and `@ai-sdk/react` on one major',
-        )
-      }
-    }
-    if (majors.size > 1 && findings.every((f) => !f.startsWith('ai-major-parity'))) {
-      findings.push('ai-major-parity: `ai` is on more than one major across packages')
-    }
+    findings.push(...aiParity(packages))
     return verdictOf(findings, `peers for profile ${manifest.profile} resolve; ai majors agree`)
   },
 })

@@ -92,8 +92,14 @@ const check12 = (name: string): Check => ({
     const hosts = htmlHosts(ctx, roots, sources)
     if (hosts.length === 0 && manifest.profile === 'app')
       findings.push('app: no <html> element found (index.html or the root route)')
+    // The vite plugin injects the scheme script unless it is switched off: `basalt()` from
+    // `basalt-ui/vite` (`themeScript: false` omits it) or the 2.x `basaltAppPlugin`.
     const bootInjected = viteConfigs(ctx, roots).some(
-      (c) => /\bbasaltAppPlugin\b/.test(c.text) && !/bootScript\s*:\s*false/.test(c.text),
+      (c) =>
+        (/\bbasalt\s*\(/.test(c.text) &&
+          /basalt-ui\/vite/.test(c.text) &&
+          !/themeScript\s*:\s*false/.test(c.text)) ||
+        (/\bbasaltAppPlugin\b/.test(c.text) && !/bootScript\s*:\s*false/.test(c.text)),
     )
     for (const host of hosts) {
       const tag = htmlTag(host.text)

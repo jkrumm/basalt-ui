@@ -96,13 +96,20 @@ describe('check 12: app wiring', () => {
       expect(r.status).toBe('pass')
     })
 
-    it('passes when the vite plugin injects the boot script', async () => {
-      const files = {
-        'index.html': page('<html lang="en">'),
-        'vite.config.ts':
-          'export default { plugins: [basaltAppPlugin({}), tanstackRouter({ autoCodeSplitting: true })] }\n',
-      }
-      expect((await runCheck(makeTree('app', files), 12)).status).toBe('pass')
+    it('passes when basalt() from basalt-ui/vite injects the boot script', async () => {
+      const config = (options: string): string =>
+        `import { basalt } from 'basalt-ui/vite'\nexport default { plugins: [basalt(${options}), tanstackRouter({ autoCodeSplitting: true })] }\n`
+      const html = page('<html lang="en">')
+      const on = await runCheck(
+        makeTree('app', { 'index.html': html, 'vite.config.ts': config('{}') }),
+        12,
+      )
+      expect(on.status).toBe('pass')
+      const off = await runCheck(
+        makeTree('app', { 'index.html': html, 'vite.config.ts': config('{ themeScript: false }') }),
+        12,
+      )
+      expect(off.status).toBe('fail')
     })
   })
 

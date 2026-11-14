@@ -6,6 +6,7 @@ import { existsSync } from 'node:fs'
 import { dirname, resolve } from 'node:path'
 
 import { a11yComponents } from '../../lint/preset'
+import { PRESET_FILE } from '../../lint/weakened'
 import { renderStylelintConfig } from '../../lint/stylelint/render'
 import { SLOTS } from '../../ui/slots'
 import { readFrameworkVersion } from '../index'
@@ -26,7 +27,7 @@ import {
 } from './types'
 import type { Check } from './types'
 
-export const OXLINT_PRESET = '.oxlintrc.basalt.json'
+export const OXLINT_PRESET = PRESET_FILE
 export const STYLELINT_PRESET = '.stylelintrc.basalt.json'
 
 const check4 = (name: string): Check => ({
@@ -48,12 +49,16 @@ const check4 = (name: string): Check => ({
       block,
     )
     if ('error' in plan.block) return fail(plan.block.error)
-    const findings = differences(plan).map((line) => `${line} (run \`basalt-ui sync\`)`)
+    const findings = differences(plan).map(
+      (line) => `${line} (\`basalt-ui init\` places it, \`sync\` refreshes it)`,
+    )
 
     if (lintRoots(manifest).length > 0) {
       const oxlint = readJson(ctx.root, OXLINT_PRESET)
       if (oxlint === null) {
-        findings.push(`${OXLINT_PRESET}: missing or not JSON (run \`basalt-ui sync\`)`)
+        findings.push(
+          `${OXLINT_PRESET}: missing or not JSON (\`basalt-ui init\` places it, \`sync\` refreshes it)`,
+        )
       } else {
         const plugins = oxlint['jsPlugins']
         if (!Array.isArray(plugins) || !plugins.includes('basalt-ui/lint')) {
