@@ -52,7 +52,7 @@ describe('Section', () => {
     expect(row.querySelector('[data-slot="section-controls"]')?.textContent).toBe('Range')
   })
 
-  test('tabs take { handle, label } and draw a ViewTabs on the heading row', () => {
+  test('tabs take { handle, label } and draw a tab strip on the heading row', () => {
     const view = memoryHandle<string>('view', 'a', {
       kind: 'enum',
       options: [
@@ -62,7 +62,7 @@ describe('Section', () => {
     })
     render(<Section title="Latency" tabs={{ handle: view, label: 'Latency view' }} />)
     const home = section().querySelector('header [data-slot="section-tabs"]')
-    expect(home?.querySelector('[data-slot="view-tabs"]')).not.toBeNull()
+    expect(home?.querySelector('[data-slot="tabs"]')).not.toBeNull()
     expect(screen.getByRole('tablist', { name: 'Latency view' })).toBeDefined()
   })
 

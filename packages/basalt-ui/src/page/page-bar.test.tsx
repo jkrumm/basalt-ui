@@ -122,7 +122,7 @@ describe('PageBar without a shell', () => {
     expect(band()?.querySelector('[data-slot="page-bar-controls"]')?.textContent).toBe('Range')
   })
 
-  test('tabs take { handle, label } and draw a ViewTabs bound to the handle', () => {
+  test('tabs take { handle, label } and draw a tab strip bound to the handle', () => {
     const view = memoryHandle<string>('view', 'a', {
       kind: 'enum',
       options: [
@@ -136,7 +136,7 @@ describe('PageBar without a shell', () => {
       </Page>,
     )
     const home = band()?.querySelector('[data-slot="page-bar-tabs"]')
-    expect(home?.querySelector('[data-slot="view-tabs"]')).not.toBeNull()
+    expect(home?.querySelector('[data-slot="tabs"]')).not.toBeNull()
     expect(screen.getByRole('tablist', { name: 'Orders view' })).toBeDefined()
     expect(screen.getByRole('tab', { name: 'Alpha' }).getAttribute('aria-selected')).toBe('true')
     fireEvent.click(screen.getByRole('tab', { name: 'Beta' }))
