@@ -1,7 +1,7 @@
 /**
  * Area: playground — route files in `apps/playground/src/routes/**`.
  */
-import { join } from 'node:path'
+import { join, sep } from 'node:path'
 
 import { REPO_ROOT, walkFiles } from '../lib'
 import type { RowDef } from '../lib'
@@ -10,8 +10,13 @@ export const rows: readonly RowDef[] = [
   {
     id: 'playground-routes',
     order: 100,
-    label: 'playground route files (apps/playground/src/routes/**)',
+    label: 'playground route files (apps/playground/src/routes/**, less routes/cycle/)',
     ceiling: 15,
-    measure: () => walkFiles(join(REPO_ROOT, 'apps/playground/src/routes'), /\.tsx?$/).length,
+    // routes/cycle/ holds the improvement cycles' builds (docs/v3/CYCLES.md), cycle evidence that
+    // apps/playground/src/budget.test.ts also leaves out (shell-1.20, dogfood-1.20).
+    measure: () =>
+      walkFiles(join(REPO_ROOT, 'apps/playground/src/routes'), /\.tsx?$/).filter(
+        (path) => !path.startsWith(join(REPO_ROOT, 'apps/playground/src/routes/cycle') + sep),
+      ).length,
   },
 ]
