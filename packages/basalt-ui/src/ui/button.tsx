@@ -29,7 +29,7 @@ export const buttonVariants = cva(
         sm: 'h-6 px-2 text-xs after:absolute after:inset-x-0 after:top-1/2 after:h-full after:-translate-y-1/2 pointer-coarse:after:min-h-11',
         icon: 'size-ctl pointer-coarse:size-11',
         'icon-sm':
-          'size-6 after:absolute after:top-1/2 after:left-1/2 after:size-full after:-translate-1/2 pointer-coarse:after:min-h-11 pointer-coarse:after:min-w-11',
+          'size-6 after:absolute after:inset-x-0 after:top-1/2 after:h-full after:-translate-y-1/2 pointer-coarse:after:min-h-11',
       },
     },
     defaultVariants: { variant: 'secondary', size: 'md' },
@@ -44,7 +44,7 @@ export const buttonVariants = cva(
  * pressableVariants({ size: 'chip' })
  */
 export const pressableVariants = cva(
-  'relative cursor-pointer focus-ring after:absolute after:top-1/2 after:left-1/2 after:size-full after:min-h-6 after:-translate-1/2 pointer-coarse:after:min-h-11 pointer-coarse:after:min-w-11',
+  'relative cursor-pointer focus-ring after:absolute after:inset-x-0 after:top-1/2 after:h-full after:min-h-6 after:-translate-y-1/2 pointer-coarse:after:min-h-11',
   {
     variants: {
       size: {

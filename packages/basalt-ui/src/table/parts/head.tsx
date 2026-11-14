@@ -130,7 +130,7 @@ export function DataTableHead<T>({
                     <Pressable
                       data-slot="table-sort"
                       className={cn(
-                        'group/sort inline-flex min-h-6 items-center gap-1',
+                        'group/sort inline-flex min-h-6 items-center gap-1 pointer-coarse:after:-inset-x-1',
                         numeric && 'flex-row-reverse',
                       )}
                       onClick={() => model.toggleSort(spec.id)}
@@ -148,8 +148,8 @@ export function DataTableHead<T>({
                     className={cn(
                       'absolute top-1/2 -translate-y-1/2 opacity-0 group-hover/head:opacity-100 focus-visible:opacity-100 data-popup-open:opacity-100 pointer-coarse:opacity-100',
                       numeric
-                        ? 'start-5 pointer-coarse:after:right-0 pointer-coarse:after:left-auto pointer-coarse:after:translate-x-0'
-                        : 'end-5 pointer-coarse:after:left-0 pointer-coarse:after:translate-x-0',
+                        ? 'start-5 pointer-coarse:after:inset-x-auto pointer-coarse:after:right-0 pointer-coarse:after:w-11'
+                        : 'end-5 pointer-coarse:after:inset-x-auto pointer-coarse:after:left-0 pointer-coarse:after:w-11',
                     )}
                   />
                 </>

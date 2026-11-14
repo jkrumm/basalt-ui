@@ -42,7 +42,16 @@ function RowActions<T>({
     // oxlint-disable-next-line jsx-a11y/click-events-have-key-events, jsx-a11y/no-static-element-interactions -- stops propagation only; the controls inside carry the interaction
     <span data-slot="table-actions" onClick={(event) => event.stopPropagation()}>
       <Menu>
-        <MenuTrigger render={<Button size="icon-sm" variant="ghost" aria-label={label} />}>
+        <MenuTrigger
+          render={
+            <Button
+              size="icon-sm"
+              variant="ghost"
+              aria-label={label}
+              className="pointer-coarse:after:-inset-x-2.5"
+            />
+          }
+        >
           <svg viewBox="0 0 16 16" className="size-4" fill="currentColor" aria-hidden="true">
             <circle cx="3" cy="8" r="1.4" />
             <circle cx="8" cy="8" r="1.4" />
