@@ -11,6 +11,7 @@ import { dirname, resolve } from 'node:path'
 import { DEFAULT_OFFENDER, SEEDED_FILE } from '../../lint/weakened'
 import { findBasaltInstall } from '../index'
 import { renderManaged } from '../sync/render'
+import { siblingOf } from '../sync/sibling'
 import { OXLINT_PRESET, STYLELINT_PRESET } from './wiring'
 import { fail, lintRoots, need, pass, readJson, rootsOf, Skip, verdictOf } from './types'
 import type { Check } from './types'
@@ -61,6 +62,8 @@ const check8 = (name: string): Check => ({
   name,
   run: (ctx) => {
     const manifest = need(ctx)
+    if (siblingOf(ctx.root, manifest) !== null)
+      return pass('a sibling install registers no hook: the root install and `check-v3` hold it')
     if (lintRoots(manifest).length === 0)
       return pass('no declared root runs lint, so no hook is required')
     const settings = readJson(ctx.root, SETTINGS_PATH)
@@ -155,8 +158,11 @@ const check9 = (name: string): Check => ({
       return run.status === 2 && /Expected at least one target/.test(`${run.stdout}${run.stderr}`)
     }
     const findings: string[] = []
-    const layer = renderManaged(ctx.pkgRoot, manifest).length > 0
-    for (const dir of PROBE_DIRS.filter((d) => layer || d === '.basalt')) {
+    const sibling = siblingOf(ctx.root, manifest)
+    const layer = renderManaged(ctx.pkgRoot, manifest, sibling).length > 0
+    // A sibling's rules and skills sit at the repo root, which the root install's formatter owns.
+    const local = sibling === null ? PROBE_DIRS : PROBE_DIRS.filter((d) => !/rules|skills/.test(d))
+    for (const dir of local.filter((d) => layer || d === '.basalt')) {
       const probe = `${dir}/basalt-doctor-probe.json`
       const made: string[] = []
       for (let at = resolve(ctx.root, dir); !existsSync(at); at = dirname(at)) made.push(at)

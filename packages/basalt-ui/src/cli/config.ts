@@ -15,6 +15,17 @@ export type BasaltConfig = {
    */
   app?: string
   /**
+   * Declares this app package a second basalt install beside the repo's root-owned one, for the
+   * sibling-app cutover (argo, shutterflow): its manifest, presets and AGENTS block stay in the
+   * app directory, its rules and skills go to the repo root as `basalt-v3-*`, and it registers no
+   * hook, lefthook or CI file. Temporary: the last cutover removes it
+   * (docs/v3/concepts/migration-release.md 6.1).
+   *
+   * @example
+   * { sibling: true }
+   */
+  sibling?: boolean
+  /**
    * Declares the app renders no `BasaltShell` (a one-page app on `BasaltProvider` + `PageBar`).
    * `false` stops `init`/`sync` placing the nav and root-route seeds — they are a pair, the root
    * route imports the nav module — and retires their manifest entries. Default: `true`. Declared,
@@ -207,7 +218,7 @@ export function shellConfigError(cfg: BasaltConfig): string | null {
 
 /** Every `BasaltConfig` key, as data for `doctor`'s `config-keys` (a test pins it to the type). */
 export const BASALT_CONFIG_KEYS = (
-  'app shell roots exempt profile include spacingSteps severity forbiddenAccents accentHue rawRadius rawSurface ' +
+  'app sibling shell roots exempt profile include spacingSteps severity forbiddenAccents accentHue rawRadius rawSurface ' +
   'cardWithBorder offSystemSurfaceVar mantineShadeIndex rawHtmlLayout inlineSpacing inlineDisplay ' +
   'rawMotionValue rawFormControl sub16InputFont seriesModulePath exemptRules aiMajorSkewReason'
 ).split(' ') as (keyof BasaltConfig)[]

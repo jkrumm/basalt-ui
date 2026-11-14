@@ -15,6 +15,7 @@ import { parseArgs } from 'node:util'
 import { doctor } from '../doctor'
 import { packageRoot } from '../index'
 import { PROFILES } from '../manifest'
+import { isSiblingApp } from '../resolver'
 import type { Profile } from '../manifest'
 import {
   declareManifest,
@@ -22,6 +23,7 @@ import {
   installHook,
   installPeers,
   installRoot,
+  skipPlacements,
   placeManaged,
   seedBudgetFile,
   seedDesign,
@@ -152,10 +154,12 @@ export async function init(
   const declared = declareManifest(ctx)
   if (declared !== null) return fail(declared.error)
 
+  // A sibling install registers no hook at the repo root: its `check-v3` holds the line.
+  const sibling = isSiblingApp(root)
   for (const step of [
     installPeers,
     placeManaged,
-    installHook,
+    ...(sibling ? [] : [installHook]),
     seedBudgetFile,
     wireFormatterAndLint,
     seedDesign,
@@ -168,6 +172,7 @@ export async function init(
     }
   }
 
+  if (sibling) skipPlacements()
   for (const line of ctx.todo) console.log(`to do: ${line}`)
   console.log('')
   if (args.noInstall) {
