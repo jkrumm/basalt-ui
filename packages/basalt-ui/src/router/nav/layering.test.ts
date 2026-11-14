@@ -45,8 +45,8 @@ describe('src/router/nav layering', () => {
 
 describe('src/router index', () => {
   // The barrel is shared (controls append to it); scripts/export-surface/router.json pins the whole.
-  test("the nav half exports exactly ['defineNav']", async () => {
+  test("the nav half exports exactly ['defineNav', 'navTarget']", async () => {
     const mod = await import('../index')
-    expect(Object.keys(mod).filter((k) => /nav/i.test(k))).toEqual(['defineNav'])
+    expect(Object.keys(mod).filter((k) => /nav/i.test(k))).toEqual(['defineNav', 'navTarget'])
   })
 })
