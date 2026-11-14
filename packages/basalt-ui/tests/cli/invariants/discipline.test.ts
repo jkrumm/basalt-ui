@@ -13,28 +13,24 @@ import { cleanupRepos, cli, filesUnder, makeRepo, PKG_ROOT, read, snapshot, writ
 afterEach(cleanupRepos)
 
 describe('CLI discipline', () => {
-  // flips in: v3-sk-4-hook-shim (unknown flag exits 1 except under --hook, which exits 2 loudly)
-  it.failing(
-    'inv 1: an unknown flag exits 1 and names it, `--help` mutates nothing, `lint --hook` fails with 2',
-    async () => {
-      const dir = makeRepo()
-      const before = snapshot(dir)
-      for (const verb of ['sync', 'init', 'doctor', 'lint']) {
-        const help = await cli([verb, '--help'], dir)
-        expect(help.code).toBe(0)
-      }
-      expect(snapshot(dir)).toEqual(before)
+  it('inv 1: an unknown flag exits 1 and names it, `--help` mutates nothing, `lint --hook` fails with 2', async () => {
+    const dir = makeRepo()
+    const before = snapshot(dir)
+    for (const verb of ['sync', 'init', 'doctor', 'lint']) {
+      const help = await cli([verb, '--help'], dir)
+      expect(help.code).toBe(0)
+    }
+    expect(snapshot(dir)).toEqual(before)
 
-      const bad = await cli(['doctor', '--bogus'], dir)
-      expect(bad.code).toBe(1)
-      expect(bad.log).toContain('--bogus')
+    const bad = await cli(['doctor', '--bogus'], dir)
+    expect(bad.code).toBe(1)
+    expect(bad.log).toContain('--bogus')
 
-      // The hook shim maps every failure to exit 2 so a broken hook never reads as a pass.
-      const hook = await cli(['lint', '--hook', 'post-edit', '--bogus'], dir)
-      expect(hook.code).toBe(2)
-      expect(hook.log).toContain('--bogus')
-    },
-  )
+    // The hook shim maps every failure to exit 2 so a broken hook never reads as a pass.
+    const hook = await cli(['lint', '--hook', 'post-edit', '--bogus'], dir)
+    expect(hook.code).toBe(2)
+    expect(hook.log).toContain('--bogus')
+  })
 
   // Already held by the 2.x doctor; v3-sk-3a-doctor must keep it.
   it('inv 2: a check that cannot run is SKIPPED, exits non-zero and never prints a pass', async () => {
@@ -54,8 +50,7 @@ describe('CLI discipline', () => {
     expect(log).toContain(`BASALT_CWD relocated from ${elsewhere} to ${dir}`)
   })
 
-  // flips in: v3-sk-3a-doctor (doctor) and v3-sk-4-hook-shim (lint): the same resolver, every verb
-  it.failing('inv 3b: BASALT_CWD resolves the project for doctor and lint alike', async () => {
+  it('inv 3b: BASALT_CWD resolves the project for doctor and lint alike', async () => {
     const dir = makeRepo({ src: '' })
     const elsewhere = makeRepo()
     for (const argv of [['doctor'], ['lint', '--stats']]) {
@@ -64,25 +59,21 @@ describe('CLI discipline', () => {
     }
   })
 
-  // flips in: v3-sk-4-hook-shim (a real `lint` that reports what it scanned)
-  it.failing(
-    'inv 4: a scan over zero files fails instead of passing, and says how many it scanned',
-    async () => {
-      const empty = makeRepo({
-        'package.json': JSON.stringify({ name: 'x', basalt: { roots: ['src'] } }),
-      })
-      const none = await cli(['lint', '--stats'], empty)
-      expect(none.code).toBe(1)
-      expect(none.log).toMatch(/scanned 0 files|0 files/)
+  it('inv 4: a scan over zero files fails instead of passing, and says how many it scanned', async () => {
+    const empty = makeRepo({
+      'package.json': JSON.stringify({ name: 'x', basalt: { roots: ['src'] } }),
+    })
+    const none = await cli(['lint', '--stats'], empty)
+    expect(none.code).toBe(1)
+    expect(none.log).toMatch(/scanned 0 files|0 files/)
 
-      const some = makeRepo({
-        'package.json': JSON.stringify({ name: 'x', basalt: { roots: ['src'] } }),
-        'src/a.tsx': 'export const a = 1\n',
-      })
-      const ok = await cli(['lint', '--stats'], some)
-      expect(ok.log).toMatch(/scanned 1 file/)
-    },
-  )
+    const some = makeRepo({
+      'package.json': JSON.stringify({ name: 'x', basalt: { roots: ['src'] } }),
+      'src/a.tsx': 'export const a = 1\n',
+    })
+    const ok = await cli(['lint', '--stats'], some)
+    expect(ok.log).toMatch(/scanned 1 file/)
+  })
 
   it('inv 5: the profile is declared, never inferred', async () => {
     const dir = makeRepo({ 'src/a.tsx': "import { Button } from 'basalt-ui/ui'\n" })
@@ -97,8 +88,7 @@ describe('CLI discipline', () => {
     expect(JSON.parse(read(dir, '.basalt/manifest.json')).profile).toBe('tokens')
   })
 
-  // flips in: v3-sk-4-hook-shim (init renders the managed shim; only init may name bunx)
-  it.failing('inv 6: every rendered command runs the local bin, never bunx or npx', async () => {
+  it('inv 6: every rendered command runs the local bin, never bunx or npx', async () => {
     const dir = makeRepo()
     await cli(['init', '--no-install', '--profile', 'app'], dir)
     expect(existsSync(join(dir, '.basalt/hook.mjs'))).toBe(true)
@@ -109,22 +99,18 @@ describe('CLI discipline', () => {
     expect(read(dir, '.basalt/hook.mjs')).toContain('node_modules/.bin/basalt-ui')
   })
 
-  // flips in: v3-sk-4-hook-shim (the shim names the bin the package ships)
-  it.failing(
-    'inv 7: the bin is named like the package, and the rendered shim resolves that name',
-    async () => {
-      const pkg = JSON.parse(readFileSync(join(PKG_ROOT, 'package.json'), 'utf8')) as {
-        name: string
-        bin: Record<string, string>
-      }
-      expect(Object.keys(pkg.bin)).toEqual([pkg.name])
-      const dir = makeRepo()
-      await cli(['init', '--no-install', '--profile', 'app'], dir)
-      const shim = read(dir, '.basalt/hook.mjs')
-      expect(shim).toContain(`.bin/${pkg.name}`)
-      expect(shim).not.toMatch(/\.bin\/basalt['"\s`]/)
-    },
-  )
+  it('inv 7: the bin is named like the package, and the rendered shim resolves that name', async () => {
+    const pkg = JSON.parse(readFileSync(join(PKG_ROOT, 'package.json'), 'utf8')) as {
+      name: string
+      bin: Record<string, string>
+    }
+    expect(Object.keys(pkg.bin)).toEqual([pkg.name])
+    const dir = makeRepo()
+    await cli(['init', '--no-install', '--profile', 'app'], dir)
+    const shim = read(dir, '.basalt/hook.mjs')
+    expect(shim).toContain(`.bin/${pkg.name}`)
+    expect(shim).not.toMatch(/\.bin\/basalt['"\s`]/)
+  })
 
   it('inv 8: sync never creates an install: it refuses, names init, and writes nothing', async () => {
     const dir = makeRepo()

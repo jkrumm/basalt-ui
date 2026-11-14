@@ -1,0 +1,11 @@
+{
+  "profile": "app",
+  "version": "3.0.0",
+  "roots": { "apps/dash/src": "app" },
+  "ejected": {},
+  "managed": { ".claude/rules/basalt-tokens.md": "0" },
+  "deepRender": [],
+  "authoredContent": [],
+  "viewports": [],
+  "tokens": []
+}
