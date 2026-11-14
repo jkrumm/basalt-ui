@@ -131,7 +131,8 @@ export type UseDataTable<T> = {
   id: string
   label: string
   columns: readonly KindColumn<T>[]
-  data: readonly T[] | undefined
+  /** Optional while `phase` is a pending query: the table shows its loading phase until rows arrive. */
+  data?: readonly T[] | undefined
   getRowId: (row: T) => string
   mode: Mode
   state?: StateHandle<TableState>
