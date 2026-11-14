@@ -35,11 +35,25 @@ For the reviewer only. Score each item 0 to 3 from the shots and the scenario so
 | K5  | **Responsive.** At 390x844 the question is still answered at rest, with no horizontal scroll inside the card                           |
 | K6  | **First paint and motion.** No layout jump after measuring; nothing animates under reduced motion; server and client render the same   |
 
+## Experience (the owner sets the bar)
+
+Added on 2026-11-14 from the owner's review of cycle 2 (`docs/v3/cycles/expression-2.md` § Owner calibration). The F and K items score the chart. These score the surface a person works in. `n/a` is allowed for X3 where the build has one part.
+
+| Id  | Item                                                                                                                                                                                                                                                                                                                           |
+| --- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| X1  | **Word economy.** Marks and numbers carry the change. A sentence appears only where no mark can say it, and no fact is stated twice across headline, sub line, annotation and caption                                                                                                                                          |
+| X2  | **One view.** The parts read as one working surface, not a stack of cards. The footprint fits the question, the detail sits beside the mark it explains (a long list scrolls in its own region next to the chart), and nothing is large for its own sake                                                                       |
+| X3  | **Linked parts.** Where a chart and a list, table or timeline show the same items, focusing an item in one focuses it in the other, both ways                                                                                                                                                                                  |
+| X4  | **Calm interaction.** The dimmed rest stays readable, and moving the pointer across the gap between two marks never flashes the unfocused state                                                                                                                                                                                |
+| X5  | **Console anatomy.** Cards follow the console look: a header with the title and its context line, the figure with its delta pill inside an inset one surface step down, label and value pairs in the footer, and monospace for ids, repo names and timestamps. A flush card with a small title over free text scores 1 at most |
+
 ## Score and verdict
 
 `score = 100 × sum / (3 × items scored)`, rounded.
 
-Severity of a lost point, for the findings table: a 0 on F1, F2 or any K item is P1. Any other 0 or 1 is P2. A 2 is P3.
+Severity of a lost point, for the findings table: a 0 on F1, F2 or any K item is P1. Any other 0 or 1 is P2. A 2 is P3. An X item counts like an F item.
+
+The X items apply from cycle 3. For the trend against cycles 1 and 2, the cycle file also reports each score on the F and K items alone.
 
 For a referenced case, also state which of the two answers the case's question faster for a first-time viewer, in one sentence with the reason: `build`, `tie` or `reference`. Judge the question, not the styling.
 
