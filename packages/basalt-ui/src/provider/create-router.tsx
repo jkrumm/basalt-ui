@@ -60,6 +60,11 @@ type RouterOptionsInput<TContext extends object> = {
   context?: (TContext & ExtraContext) | undefined
   /** Merged over basalt's QueryClient defaults (`staleTime` 30 s, `gcTime` 5 min, `retry` twice, never a 4xx but 408/425/429, no refetch on focus). */
   query?: QueryClientConfig | undefined
+  /**
+   * A push binding (`bindInvalidation(...)`) the provider starts once on the client when it mounts
+   * and stops on unmount; it never runs on the server. Replaces `useEffect(() => live.start(), [])` in the root.
+   */
+  live?: { start(): () => void } | undefined
 }
 
 /** What `basaltRouterOptions` returns: the router options basalt owns, plus the context. */
@@ -101,7 +106,7 @@ function buildRouterOptions<TContext extends object>(
   options: RouterOptionsInput<TContext>,
 ): BasaltRouterOptions<TContext> {
   guardViewTransitionRejections()
-  const hook: RouterHook = {}
+  const hook: RouterHook = { live: options.live }
   // The overloads of `basaltRouterOptions` and `createBasaltRouter` make `context` present whenever
   // `TContext` has required keys, so the spread is the whole `TContext`: the one cast, here.
   const context = {
@@ -156,12 +161,13 @@ export function createBasaltRouter<TRouteTree extends AnyRoute, TContext extends
   routeTree,
   context,
   query,
+  live,
   ...passthrough
 }: CreateRouterInput<TRouteTree> & RouterOptionsInput<TContext>): BasaltRouter<TRouteTree> {
   const router: BasaltRouterBase<TRouteTree> = createRouter({
     ...passthrough,
     routeTree,
-    ...buildRouterOptions<TContext>({ context, query }),
+    ...buildRouterOptions<TContext>({ context, query, live }),
   })
   // The brand is type-level only (see `BasaltRouter`), so the one cast adds nothing at runtime.
   return router as BasaltRouter<TRouteTree>

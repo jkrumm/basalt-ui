@@ -198,12 +198,25 @@ export const TelemetryContext = createContext<Telemetry | undefined>(undefined)
  * On `context.__basalt` of a `basaltRouterOptions` router: where its `defaultOnCatch` reports to.
  * The factory and `bindRouteError` are the only two places that know this key.
  */
-export type RouterHook = { onRouteError?: ((error: unknown) => void) | undefined }
+export type RouterHook = {
+  onRouteError?: ((error: unknown) => void) | undefined
+  /** `createBasaltRouter`'s `live` option: what the provider starts once on the client and stops on unmount. */
+  live?: { start(): () => void } | undefined
+}
 
 function hookOf(context: unknown): RouterHook | undefined {
   if (typeof context !== 'object' || context === null || !('__basalt' in context)) return undefined
   const hook = context.__basalt
   return typeof hook === 'object' && hook !== null ? hook : undefined
+}
+
+/**
+ * Starts the router's `live` binding (`bindInvalidation`'s result) and returns the stop. A router
+ * built without `live`, or without `basaltRouterOptions`, starts nothing. The provider calls it
+ * from an effect, so it never runs on the server.
+ */
+export function startRouterLive(router: { options: { context?: unknown } }): () => void {
+  return hookOf(router.options.context)?.live?.start() ?? (() => {})
 }
 
 const MISSING_HOOK =
