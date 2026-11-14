@@ -1,0 +1,5 @@
+/* The `two-pane` fixture's Tailwind v4 entry, compiled with preflight like `charts-card.css`. */
+@import '../../../src/css/tailwind.css' source(none);
+@source './two-pane-fixture.tsx';
+@source '../../../../../apps/playground/src/recipes/two-pane.tsx';
+@source '../../../src/charts/parts';
