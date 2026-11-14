@@ -11,7 +11,8 @@
  *
  * - `FormField`, `FilterSet`, `ViewTabs` or `ControlHome`;
  * - a render passed to `filterSlot.custom(...)` that keeps no state of its own (`useState` or
- *   `useReducer` in that function is a value with no handle, so the custom render is not a home);
+ *   `useReducer` in that function, or a control value prop reading such state from an enclosing
+ *   function, is a value with no handle, so the custom render is not a home);
  * - a handle-taking composite: a JSX element with an attribute named `handle`, `control` or
  *   `field` whose value is a `.field.<name>` member chain, or an identifier hoisted from one
  *   (`const range = store.field.range`), resolved at `Program:exit` so the order of the
@@ -154,7 +155,13 @@ type Frame =
   | { kind: 'element'; handles: string[]; bound: boolean; control: boolean }
   | { kind: 'custom'; fn: Node }
 
-type Use = { node: Node; subject: string; frames: Frame[]; attributes: Node[] }
+type Use = {
+  node: Node
+  subject: string
+  frames: Frame[]
+  attributes: Node[]
+  scope: Node[]
+}
 
 const outsideHome: AstForm = {
   id: 'outside-home',
@@ -170,7 +177,7 @@ const outsideHome: AstForm = {
     const customRenders = new Set<Node>()
     const stateful = new Set<Node>()
     /** Names bound by `const [x, set] = useState(...)` or `useReducer` anywhere in the file. */
-    const stateNames = new Set<string>()
+    const stateNames = new Map<Node, Set<string>>()
     const functions: Node[] = []
     const frames: Frame[] = []
     const uses: Use[] = []
@@ -180,7 +187,9 @@ const outsideHome: AstForm = {
       use.attributes.some((attr) =>
         someDescendant(
           attr,
-          (node) => node.type === 'Identifier' && stateNames.has(nameOf(node) ?? ''),
+          (node) =>
+            node.type === 'Identifier' &&
+            use.scope.some((fn) => stateNames.get(fn)?.has(nameOf(node) ?? '') === true),
         ),
       )
 
@@ -223,9 +232,13 @@ const outsideHome: AstForm = {
           init?.type === 'CallExpression' &&
           STATE_HOOKS.has(nameOf(child(init, 'callee')) ?? '')
         ) {
+          const owner = functions.at(-1)
+          if (owner === undefined) return
+          const names = stateNames.get(owner) ?? new Set<string>()
+          stateNames.set(owner, names)
           for (const element of children(id, 'elements')) {
             const bound = nameOf(element)
-            if (bound !== undefined) stateNames.add(bound)
+            if (bound !== undefined) names.add(bound)
           }
         }
       },
@@ -271,6 +284,7 @@ const outsideHome: AstForm = {
             node: opening,
             subject: `<${root}>`,
             frames: [...frames],
+            scope: [...functions],
             attributes: children(opening, 'attributes').filter((attr) =>
               VALUE_ATTRIBUTES.has(nameOf(child(attr, 'name')) ?? ''),
             ),

@@ -155,6 +155,19 @@ export function Panel(handle) {
 }
 
 // @valid
+import { useState } from 'react'
+import { Slider } from 'basalt-ui/ui/slider'
+export function Other() {
+  const [value, setValue] = useState(0)
+  return value + setValue
+}
+export function Panel(handle) {
+  return filterSlot.custom(handle, 'Opacity', ({ value, set }) => (
+    <Slider value={value} onValueChange={set} />
+  ))
+}
+
+// @valid
 import { SelectItem } from 'basalt-ui/ui/select'
 export const Part = () => <SelectItem value="x" />
 
