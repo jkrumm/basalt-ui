@@ -4,7 +4,7 @@
  * Series, unit, title and period are clean.
  */
 import { Box } from '@mantine/core'
-import { ChartCard, Lines } from 'basalt-ui/charts'
+import { LegacyChartCard as ChartCard, Lines } from 'basalt-ui/charts'
 import { VX } from 'basalt-ui/tokens'
 
 type HourRow = { at: Date; requests: number }

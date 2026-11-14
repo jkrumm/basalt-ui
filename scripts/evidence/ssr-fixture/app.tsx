@@ -11,7 +11,7 @@ import { Await, Outlet, createRootRouteWithContext, createRoute } from '@tanstac
 import { BasaltDataTable, createColumnHelper } from 'basalt-ui/table'
 import { BasaltProvider, StatCard, createBasaltRouter } from 'basalt-ui'
 import type { BasaltRouterContext } from 'basalt-ui'
-import { Bars, ChartCard, Lines } from 'basalt-ui/charts'
+import { Bars, LegacyChartCard as ChartCard, Lines } from 'basalt-ui/charts'
 import { VX } from 'basalt-ui/tokens'
 import { Suspense, useEffect } from 'react'
 import type { ReactNode } from 'react'

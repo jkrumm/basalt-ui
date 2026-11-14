@@ -1,7 +1,7 @@
 import { createFileRoute } from '@tanstack/react-router'
 import { PageBar } from 'basalt-ui/page'
 import { BarList, DataPanel, EventList, StatCard, StatCell, StatGroup } from 'basalt-ui/cards'
-import { ChartCard, Lines } from 'basalt-ui/charts'
+import { LegacyChartCard as ChartCard, Lines } from 'basalt-ui/charts'
 import { FilterSet, ViewTabs, filterSlot, spec } from 'basalt-ui/controls'
 import { defineControls, field } from 'basalt-ui/router'
 import type { ComponentProps, ReactElement } from 'react'

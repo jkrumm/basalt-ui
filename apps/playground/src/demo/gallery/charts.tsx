@@ -13,7 +13,7 @@ import {
   Bars,
   BandStrip,
   CartesianChart,
-  ChartCard,
+  LegacyChartCard as ChartCard,
   Donut,
   DualPanel,
   Heatmap,

@@ -2,7 +2,7 @@
 import { Box, Group, SimpleGrid, Skeleton, Stack, Text } from '@mantine/core'
 import { StatGroup } from 'basalt-ui'
 import type { StatStripCell } from 'basalt-ui'
-import { ChartCard, Sparkline } from 'basalt-ui/charts'
+import { LegacyChartCard as ChartCard, Sparkline } from 'basalt-ui/charts'
 import { CONTAINER_KEYS, VX } from 'basalt-ui/tokens'
 import { cardStateProps, noop } from '../shot-state'
 import type { ScenarioProps } from '../shot-state'

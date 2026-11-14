@@ -8,7 +8,7 @@
 import { useRouterState } from '@tanstack/react-router'
 import { Stack } from '@mantine/core'
 import { createFormat } from 'basalt-ui'
-import { ChartCard, Lines, useChartFocus } from 'basalt-ui/charts'
+import { LegacyChartCard as ChartCard, Lines, useChartFocus } from 'basalt-ui/charts'
 import type { ChartFact, ChartSeries, XRefLine } from 'basalt-ui/charts'
 import { VX } from 'basalt-ui/tokens'
 import { demoColors } from '../../../demo/series'

@@ -15,7 +15,7 @@
  */
 import { Box, SimpleGrid, Stack } from '@mantine/core'
 import { EmptyState, PageBar, Section, StatCard, StatGroup } from 'basalt-ui'
-import { BandStrip, Bars, ChartCard, Lines, Sparkline } from 'basalt-ui/charts'
+import { BandStrip, Bars, LegacyChartCard as ChartCard, Lines, Sparkline } from 'basalt-ui/charts'
 import type { BandSpan, BandStripSeries, BarsBar, ChartSeries } from 'basalt-ui/charts'
 import { BasaltDataTable, createColumnHelper } from 'basalt-ui/table'
 import { CONTAINER_KEYS, VX } from 'basalt-ui/tokens'

@@ -12,7 +12,7 @@
  */
 import { Box, SimpleGrid, Skeleton, Stack, Text } from '@mantine/core'
 import { BarList, Meter, PageBar, Section, StatCard, StatGroup } from 'basalt-ui'
-import { Bars, ChartCard, Sparkline } from 'basalt-ui/charts'
+import { Bars, LegacyChartCard as ChartCard, Sparkline } from 'basalt-ui/charts'
 import type { BarsBar } from 'basalt-ui/charts'
 import { BasaltDataTable, createColumnHelper } from 'basalt-ui/table'
 import { CONTAINER_KEYS, VX } from 'basalt-ui/tokens'

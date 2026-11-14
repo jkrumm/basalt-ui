@@ -4,7 +4,7 @@
  * end. Kind is the bar's hue; the failed step is a solid status-hue bar with its cause on it. The
  * rows are one tab stop; arrows step through the spans.
  */
-import { ChartCard, useChartFocus } from 'basalt-ui/charts'
+import { LegacyChartCard as ChartCard, useChartFocus } from 'basalt-ui/charts'
 import type { ChartFact, ChartFocusItem } from 'basalt-ui/charts'
 import { VX } from 'basalt-ui/tokens'
 import { Skeleton } from 'basalt-ui/ui/skeleton'

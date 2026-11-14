@@ -7,7 +7,7 @@
  */
 import { revalidateLogic, useForm } from '@tanstack/react-form'
 import { QueryClientProvider, useMutation, useQuery } from '@tanstack/react-query'
-import { Bars, ChartCard } from 'basalt-ui/charts'
+import { Bars, LegacyChartCard as ChartCard } from 'basalt-ui/charts'
 import {
   FilterSet,
   FormField,
