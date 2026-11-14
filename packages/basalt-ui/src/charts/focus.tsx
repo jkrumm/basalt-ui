@@ -204,7 +204,9 @@ export function stepFocus(
  * A mark spreading `focus.item(i)` is dimmed by the kit while another is focused, at the opacity
  * the kit's own marks use; a page sets no opacity of its own. With `group`, PageUp and PageDown step
  * by group, and a list of groups beside the marks spreads `focus.groupItem(name)` on each row to
- * share the focus both ways. A list of the same grain spreads `focus.item(i)` instead.
+ * share the focus both ways. A list of the same grain spreads `focus.item(i)` instead. Leaving a row
+ * keeps its group focused, so crossing the gap to the next row or to the chart never flickers; leaving
+ * the chart's container or a blur clears it.
  *
  * @useWhen a chart, a heat grid, a meter or hand-drawn marks should dim the rest around one datum and drive a readout
  * @neverWhen only a tooltip is wanted (the hosts draw one already)
