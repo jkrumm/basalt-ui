@@ -100,8 +100,13 @@ export type DefineBlockOptions<S extends StandardSchemaV1> = {
   name: string
   description: string
   props: S
-  /** Always enforced; a default applies when omitted. */
+  /** Always enforced; a default applies when omitted. May tighten or raise it, up to the engine's ceiling. */
   limits?: { maxBytes: number; maxDepth: number }
+  /**
+   * Url-named keys (`href`, `src`, `url`, `link`) whose values this block draws as text, never as
+   * a link: `validate` skips them, so a data cell holding `http://…` no longer refuses the block.
+   */
+  textKeys?: readonly string[]
   sample: readonly Infer<S>[]
   render: (p: Infer<S>, box: Box) => ReactNode
   /** Escape rung: a layout block composing several composites; single composites own their phase heights. */
@@ -129,6 +134,8 @@ export type BlockComponentProps = {
 /** `Block` wraps the boundary, the composite's phase skeleton and a quiet "could not be displayed". */
 export type Catalog = {
   blocks: readonly Block[]
+  /** The field naming the block in a spec; `block` unless `defineCatalog` was given another. */
+  discriminator: string
   /** The error text is model-readable and ends in advice. */
   validate(x: unknown): { ok: true; block: Resolved } | { ok: false; error: string }
   Block: FC<BlockComponentProps>
