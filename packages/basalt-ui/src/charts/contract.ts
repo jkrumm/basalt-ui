@@ -85,8 +85,11 @@ export type LegendEntry = {
   key: string
   label: string
   color: SeriesColor
-  /** `dot` is a filled dot, `ring` a hollow one; a `mark: 'dot'` series legends as `dot`. */
-  swatch?: 'solid' | 'dashed' | 'dot' | 'ring'
+  /**
+   * `dot` is a filled dot, `ring` a hollow one; a `mark: 'dot'` series legends as `dot`. `bar` is a
+   * filled square and `hollow` an outlined one: the keys of marks a page draws through the seam.
+   */
+  swatch?: 'solid' | 'dashed' | 'dot' | 'ring' | 'bar' | 'hollow'
   failed?: boolean
 }
 
@@ -102,10 +105,26 @@ export type ChartFocusTarget = {
   onPointerLeave: (event: PointerEvent<Element>) => void
 }
 
-/** What a hand-drawn mark spreads: pointing focuses its datum; the data attributes style it. */
+/**
+ * What a hand-drawn mark spreads: pointing focuses its datum; the data attributes style it, and the
+ * kit dims a `data-dimmed` mark itself. `ref` lets a keyboard step scroll the focused mark into view.
+ */
 export type ChartFocusItem = {
+  'data-chart-mark': ''
   'data-focused'?: ''
   'data-dimmed'?: ''
+  ref: (element: Element | null) => void
+  onPointerEnter: () => void
+  onPointerDown: () => void
+}
+
+/**
+ * What a row of a linked list of groups spreads (one row per `group` name): pointing at it focuses
+ * the group's first item; it is marked while any item of its group is focused. Not a tab stop.
+ */
+export type ChartFocusGroupItem = {
+  'data-focused'?: ''
+  ref: (element: Element | null) => void
   onPointerEnter: () => void
   onPointerDown: () => void
 }
@@ -115,6 +134,11 @@ export type ChartFocusOptions<D> = {
   announce: (d: D) => string
   /** Items per row: arrows then move in a grid (Up and Down by a row). Default: one row. */
   columns?: number
+  /**
+   * The name of a datum's group (a version, a day). PageUp and PageDown then step between groups,
+   * and focus entering a group announces its name first. Items of a group are contiguous.
+   */
+  group?: (d: D) => string
 }
 
 /**
@@ -132,6 +156,10 @@ export type ChartFocus<D> = {
   readonly dimmed: (d: D) => boolean
   readonly target: ChartFocusTarget
   readonly item: (index: number) => ChartFocusItem
+  /** The props of a list row that stands for one group (`options.group`). */
+  readonly groupItem: (name: string) => ChartFocusGroupItem
+  /** The index a key moves the focus to (`null` clears, `undefined` is not ours); hosts step with it. */
+  readonly step: (key: string) => number | null | undefined
   /** The polite live region; a host renders it, a hand-drawn container renders it once. */
   readonly live: ReactElement
 }
@@ -250,6 +278,8 @@ export type ChartFigure = {
 
 export type ChartCardProps = FrameState & {
   figure?: ChartFigure
+  /** The legend row for marks the page draws through the seam, drawn in every phase. */
+  legend?: readonly LegendEntry[]
   footer?: FootFacts
   controls?: ControlsSlot<'widget'>
   menu?: BoxSlot
