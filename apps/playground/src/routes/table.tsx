@@ -2,20 +2,14 @@ import { createFileRoute } from '@tanstack/react-router'
 import { filterSlot, spec } from 'basalt-ui/controls'
 import { Section } from 'basalt-ui/page'
 import { defineControls, field } from 'basalt-ui/router'
-import { col, DataTable, useDataTable } from 'basalt-ui/table'
+import { col, DataTable, TableToolbar, tableCodec, useDataTable } from 'basalt-ui/table'
 import type { DetailEntry, DetailHost } from 'basalt-ui/core/ports'
 import { Progress } from 'basalt-ui/ui/progress'
 import { Sheet, SheetContent } from 'basalt-ui/ui/sheet'
 import { VirtualList } from 'basalt-ui/ui/virtual-list'
 import { useState } from 'react'
 import type { ReactElement } from 'react'
-import { tableCodec } from '../../../../packages/basalt-ui/dist/table/core/codec'
-import { TableToolbar } from '../../../../packages/basalt-ui/dist/table/parts/toolbar'
 import { useV3Tokens } from '../demo/v3-tokens'
-
-// The v3 table parts the route needs beyond `DataTable` (`TableToolbar`, `tableCodec`) are not on
-// the public `basalt-ui/table` barrel yet, so this route reaches the built modules by path until
-// the barrel carries them. Dist, not src: the playground typechecks without the package's node types.
 
 // ---- Section 1: finances shape, server mode ------------------------------------------------
 
