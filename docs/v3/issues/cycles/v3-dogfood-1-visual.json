@@ -1,0 +1,22 @@
+{
+  "why": "Dogfood cycle 1 (docs/v3/cycles/dogfood-1.md) logged one P2 `visual` finding, three StatCard items of the quality matrix, and two P3s. dogfood-1.8: at 390x844 the stat row stacks four full-width cards, so the first screen holds two and a half cards and the chart and the table sit four screens down (`cycle-dogfood--dark--390x844.png`); the console scrolls the row sideways with snap points, one card and the next card's edge per screen, and the page goes on below it. dogfood-1.21 (the StatCard part): the sampled matrix on `/cycle/dogfood` reports each stat Sparkline's focus ring clipped by the card's 72 px chart box at 1.81:1 contrast, the phase layer (`div[card-phase]`) covering the card's `button[stat-target]`, and the ⋯ button's frame vanishing under forced colours; the same items are waived on `/cards`. P3 dogfood-1.15: the console's Working line runs dashed into the future from `futureFrom`; the Sparkline has no future segment, so planned samples read as past ones. P3 dogfood-1.16: the page-tier `EmptyState` draws one muted line where the console draws a title and a sentence (`cycle-dogfood-screen-empty--light--1800x1200.png`).",
+  "what": "A stat row on a phone scrolls sideways; the StatCard passes the quality matrix; P3 polish on the Sparkline and the page empty state.",
+  "owns": [
+    "packages/basalt-ui/src/page/card-grid.tsx (or src/cards/stat-group.tsx, whichever owns a stat row)",
+    "packages/basalt-ui/src/cards/stat-card.tsx and src/cards/stat-card-parts.tsx (the chart box, the phase layer, the menu button)",
+    "packages/basalt-ui/tests/quality/matrix/known.ts (removing the `/cycle/dogfood` and `/cards` entries the fixes clear)",
+    "packages/basalt-ui/src/charts/Sparkline.tsx and src/page/empty-state.tsx for the P3s, if taken",
+    "layout tests and fixtures under packages/basalt-ui/tests/layout/"
+  ],
+  "must_not_touch": ["docs/v3/ARCHITECTURE.md", "apps/playground/src/cycle/**"],
+  "change": "(1) Give a row of stat cards a narrow-container form that scrolls sideways with snap points through the scroll primitive (a `CardGrid` option such as `narrow: 'scroll'`, or the stat-row component that owns it), keyed on the container, never the viewport; the wide form is unchanged (dogfood-1.8). (2) Make the StatCard pass the matrix: a chart in the 72 px box shows its focus ring whole and at 3:1, the phase layer never covers the card target, and the ⋯ button keeps a frame under forced colours; remove each `known.ts` entry the fix clears on `/cycle/dogfood` and `/cards` (dogfood-1.21). The P3s ride along only if they fit: a `future` start index on the Sparkline drawn dashed (dogfood-1.15), and a title line on the page-tier EmptyState (dogfood-1.16); a P3 left out is named in the PR. Settle with the owner's console look in mind: docs/v3/inspo and the console's StatRow.",
+  "commits": "feat: or fix: commits in packages/basalt-ui.",
+  "proof": "make check-fast; a layout test of the narrow form; the sampled matrix on /cycle/dogfood and /cards; shots of /cycle/dogfood at 390x844 in light and dark.",
+  "acceptance": [
+    "At 390x844 the first screen of /cycle/dogfood shows one stat card and the edge of the next, and the row scrolls sideways with snap (layout test and shot)",
+    "At 1800x1200 the stat row is unchanged from v3-dogfood-1-card-grid's result",
+    "The sampled matrix passes /cycle/dogfood and /cards with no `known.ts` entry left for the StatCard's chart ring, target or menu",
+    "make check passes"
+  ],
+  "out_of_scope": "The CardGrid track rule (v3-dogfood-1-card-grid); the chart card's fact contrast and legend toggles (v3-shell-1-visual); the StatCard target's hit area, which v3-wiring-1-statcard-target reworks before this row starts."
+}
