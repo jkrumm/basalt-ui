@@ -162,8 +162,9 @@ tests), the layout suite, the coverage and agent-doc-drift gates, and the pack-t
 everything passed. `make check` runs them in sequence and is unchanged; `make check-fast` is the same but for the layout
 step, which runs only the files the branch's changes reach (a lead's check, `project.yaml` `checks`; CI runs the full suite on the head). It exits
 non-zero on the first failure and writes only gitignored output (`dist/`, `*.tgz`). `pre` alone is
-the fast inner loop. Its last step, the unit suite, is one `bun test` process at ~6.5 GB resident, so it runs through
-`make test` in a host test slot (`factory slot run`), like the layout suite; never run a bare whole-repo `bun test`
+the fast inner loop. Its last step, the unit suite, is `scripts/unit-test.ts`: consecutive `bun test` processes (the five
+ts-program files alone, the rest in chunks of 40), peak ~2.2 GiB resident where one process held 6.1 GiB. It runs through
+`make test` in a host test slot named `basalt-ui unit` (`factory slot run`, one name per project, never per worktree), like the layout suite; never run a bare whole-repo `bun test`
 from a lead session, scope it to the files you touched (`bun test <path>`) and leave the full suite to `pre`.
 
 1. Make changes.

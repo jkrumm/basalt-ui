@@ -6,10 +6,12 @@ help: ## List targets
 
 # The heavy steps run in one of the host's test slots when `factory` is installed, so two leads' runs never
 # overlap: the browser steps (each a Chrome tree on a shared 32 GB host) and the unit suite (`make test`, the
-# last step of `bun run pre`: one `bun test` process, 6.5 GB resident measured 2026-11-14, which the factory
-# bills to the lead when it runs outside a slot). Without `factory` (CI) the bare command. It fails open: a
-# server that is down or a full house runs the suite anyway.
-SLOT = $(if $(shell command -v factory 2>/dev/null),factory slot run --name "$(notdir $(CURDIR)) layout" --,)
+# last step of `bun run pre`, which the factory bills to the lead when it runs outside a slot). Without `factory`
+# (CI) the bare command. It fails open: a server that is down or a full house runs the suite anyway. The step is
+# named after the project, never the worktree directory: the factory learns a step's peak by name, so a per-worktree
+# name is a step with no learned peak on its first run. `$(call slot,<step>)` is the prefix.
+SLOT_PROJECT = basalt-ui
+slot = $(if $(shell command -v factory 2>/dev/null),factory slot run --name "$(SLOT_PROJECT) $(1)" --,)
 
 # The local gate: the validation CI runs (.github/workflows/ci.yml), all in one target. Builds FIRST
 # on purpose — `bun run pre` runs `check-theme`, and the playground's typecheck resolves
@@ -20,7 +22,7 @@ SLOT = $(if $(shell command -v factory 2>/dev/null),factory slot run --name "$(n
 # branch's changes reach (scripts/layout-select.ts). CI runs the full suite on every pull request head.
 check: ## Local CI gate: gen sync checks + build + pre + playground build + layout + coverage/doc-drift + pack-test
 	@$(MAKE) --no-print-directory check-pre
-	@$(SLOT) sh -c 'bun run test:layout && bun run test:layout:harness'
+	@$(call slot,layout) sh -c 'bun run test:layout && bun run test:layout:harness'
 	@$(MAKE) --no-print-directory check-post
 
 # The lead's local check (project.yaml `checks.fast`): everything of `check` but the layout suite is the same; the
@@ -68,11 +70,12 @@ logs: ## Print the last 200 lines of the production container's logs, then exit
 pre: ## fmt:check + lint + typecheck + check-theme + budgets + literals + the unit suite in a slot (run before committing)
 	@bun run pre
 
-test: ## Run the unit suite in a host test slot (one `bun test` process peaks near 6.5 GB resident)
-	@$(subst layout",unit",$(SLOT)) bun test
+# One `bun test` over the whole suite peaked at 6.1 GiB; scripts/unit-test.ts runs it as consecutive processes.
+test: ## Run the unit suite in a host test slot (scripts/unit-test.ts: consecutive `bun test` processes, peak under 2.5 GiB)
+	@$(call slot,unit) bun scripts/unit-test.ts
 
 layout: ## Run the layout regression suite (real CSS geometry, headless Chrome)
-	@$(SLOT) sh -c 'bun run test:layout && bun run test:layout:harness'
+	@$(call slot,layout) sh -c 'bun run test:layout && bun run test:layout:harness'
 
 # The layout files the branch's changes reach (scripts/layout-select.ts prints them and why, on stderr), plus the
 # harness self-test when any of them runs. No layout input changed: no slot is taken, nothing runs.
@@ -80,7 +83,7 @@ LAYOUT_BUN = bun --config=./packages/basalt-ui/tests/layout/bunfig.toml test --t
 layout-fast: ## Run only the layout files the branch's changes reach (BASE=<ref>, default origin/master)
 	@files="$$(bun scripts/layout-select.ts --base $(or $(BASE),origin/master))" || exit $$?; \
 	if [ -z "$$files" ]; then exit 0; fi; \
-	$(subst layout",layout-fast",$(SLOT)) sh -c '$(LAYOUT_BUN) '"$$(echo $$files)"' && bun run test:layout:harness'
+	$(call slot,layout-fast) sh -c '$(LAYOUT_BUN) '"$$(echo $$files)"' && bun run test:layout:harness'
 
 build: ## Build the published package (dist-first tsup + declarations)
 	@cd packages/basalt-ui && bun run build
@@ -106,7 +109,7 @@ evidence: ## Measure bundle/screens/lighthouse/...: make evidence LABEL=<label> 
 # schemes) unless LANES excludes `quality`. Needs the built package and playground deps, like `check`.
 QUALITY_MATRIX ?= sampled
 quality-matrix: ## Quality matrix in real Chrome: make quality-matrix [QUALITY_MATRIX=sampled|full]
-	@$(subst layout",quality-matrix",$(SLOT)) sh -c 'BASALT_MATRIX=$(QUALITY_MATRIX) bun --config=./packages/basalt-ui/tests/quality/matrix/bunfig.toml test --timeout 180000 packages/basalt-ui/tests/quality/matrix'
+	@$(call slot,quality-matrix) sh -c 'BASALT_MATRIX=$(QUALITY_MATRIX) bun --config=./packages/basalt-ui/tests/quality/matrix/bunfig.toml test --timeout 180000 packages/basalt-ui/tests/quality/matrix'
 
 # Design-parity board (scripts/evidence/compare.ts): crops each mapped playground pattern beside the local
 # Keel reference (.design-parity/keel/) into .design-parity/<LABEL>/ unless OUT is given. Images and board.html
