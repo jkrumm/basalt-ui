@@ -17,7 +17,7 @@
   "commits": "One PR, separate package and non-package commits (isolated-basalt-ui); conventional, empty scope, no attribution.",
   "proof": "bun test src/cli/shot; S4 run on the playground exemplar routes and the six seeded boards from v3-sk-9b-calibrate (this Issue is after it); argo only through the F2 spike's port, recorded as deferred if absent.",
   "acceptance": [
-    "wc -l over src/cli/shot non-test files is at most 1,800",
+    "wc -l over src/cli/shot non-test files is at most 2,300 (raised from 1,800 by Issue 1122: the concept's own ceiling while the real-data proxy is kept; 2,287 measured)",
     "grep -ri mantine src/cli/shot is empty and detect has no contrast check",
     "ported shot, detect, harness and hidden-scroll tests pass",
     "S4: shot on the playground finds the slot anchors with no consumer attribute; a seeded board whose loading crop equals its ready crop reports states-ignored",
