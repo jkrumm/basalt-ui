@@ -50,6 +50,12 @@ export default mergeConfig(
           replacement: css('tailwind.css'),
         },
         { find: /^basalt-ui\/prose\.css$/, replacement: css('prose.css') },
+        {
+          find: /^basalt-ui\/table\.css$/,
+          replacement: fileURLToPath(
+            new URL('../../packages/basalt-ui/src/table/table.css', import.meta.url),
+          ),
+        },
         // The query survives the rewrite: `?inline` is how `demo/v3-tokens.ts` reads the sheet.
         {
           find: /^basalt-ui\/tokens\.css(\?inline)?$/,
