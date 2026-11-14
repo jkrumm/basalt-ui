@@ -21,14 +21,7 @@ import { join, resolve } from 'node:path'
 import { fileURLToPath } from 'node:url'
 
 import { emitTokensCss } from '../tokens/emit'
-import {
-  checkTheme,
-  fontsCss,
-  init,
-  mergeOxlintExtends,
-  normalizeColorFunctions,
-  tokensCss,
-} from './index.ts'
+import { checkTheme, fontsCss, normalizeColorFunctions, tokensCss } from './index.ts'
 
 const PKG_ROOT = fileURLToPath(new URL('../../', import.meta.url))
 const CLI_VERSION = (
@@ -45,10 +38,6 @@ function write(relPath: string, content: string): void {
 
 function read(relPath: string): string {
   return readFileSync(join(dir, relPath), 'utf8')
-}
-
-function readPkg(relPath = 'package.json'): Record<string, unknown> {
-  return JSON.parse(read(relPath)) as Record<string, unknown>
 }
 
 /** Captures both streams — doctor/init/check-theme pick one or the other by outcome. */
@@ -69,179 +58,12 @@ function capture(fn: () => number): { code: number; log: string } {
   }
 }
 
-/** The install `doctor` should find — same version as the running CLI, so version checks pass. */
-function installBasalt(at = ''): void {
-  write(
-    join(at, 'node_modules/basalt-ui/package.json'),
-    JSON.stringify({ name: 'basalt-ui', version: CLI_VERSION }),
-  )
-  // The shipped preset itself — `doctor`'s oxlint-preset check resolves the `extends` target now,
-  // so an install without it is (correctly) a failure.
-  write(join(at, 'node_modules/basalt-ui/configs/oxlint.json'), '{}')
-}
-
 beforeEach(() => {
   dir = mkdtempSync(resolve(tmpdir(), 'basalt-wiring-'))
 })
 
 afterEach(() => {
   rmSync(dir, { recursive: true, force: true })
-})
-
-describe('init — describing the repo it is actually in', () => {
-  it('writes basalt.roots from the bun workspaces layout', () => {
-    write('package.json', JSON.stringify({ name: 'root', workspaces: ['apps/*', 'packages/*'] }))
-    write(
-      'apps/web/package.json',
-      JSON.stringify({ name: 'web', dependencies: { 'basalt-ui': '^1' } }),
-    )
-    write('apps/web/src/app.tsx', 'export const App = () => null\n')
-    write('packages/api/package.json', JSON.stringify({ name: 'api' }))
-    write('packages/api/src/server.ts', 'export const serve = () => null\n')
-
-    const { log } = capture(() => init(dir))
-    // Only the basalt-consuming package is a design-guard root — a backend `src/` is not.
-    expect((readPkg()['basalt'] as { roots: string[] }).roots).toEqual(['apps/web/src'])
-    expect(log).toContain('"roots"')
-    expect(read('.github/workflows/check.yml')).toContain("'apps/web/src/**'")
-  })
-
-  it("writes basalt.roots ['src'] for a single-package repo", () => {
-    write('package.json', JSON.stringify({ name: 'app' }))
-    write('src/app.tsx', 'export const App = () => null\n')
-    init(dir)
-    expect((readPkg()['basalt'] as { roots: string[] }).roots).toEqual(['src'])
-  })
-
-  it('says so loudly when it cannot infer roots, instead of seeding one that matches nothing', () => {
-    write('package.json', JSON.stringify({ name: 'app' }))
-    const { log } = capture(() => init(dir))
-    expect(log).toContain('could not infer "basalt.roots"')
-    expect(readPkg()['basalt']).toBeUndefined()
-  })
-
-  it('never overwrites a roots the consumer already set', () => {
-    write('package.json', JSON.stringify({ name: 'app', basalt: { roots: ['custom'] } }))
-    write('src/app.tsx', 'export const App = () => null\n')
-    init(dir)
-    expect((readPkg()['basalt'] as { roots: string[] }).roots).toEqual(['custom'])
-  })
-
-  it('adds a lint:basalt script wiring oxlint and the guard together', () => {
-    write('package.json', JSON.stringify({ name: 'app' }))
-    write('src/app.tsx', 'export const App = () => null\n')
-    init(dir)
-    const scripts = readPkg()['scripts'] as Record<string, string>
-    expect(scripts['lint:basalt']).toContain("oxlint --ignore-pattern '.claude/worktrees/**' .")
-    expect(scripts['lint:basalt']).toContain('check-theme')
-  })
-
-  it('leaves an existing lint:basalt script alone', () => {
-    write('package.json', JSON.stringify({ name: 'app', scripts: { 'lint:basalt': 'mine' } }))
-    init(dir)
-    expect((readPkg()['scripts'] as Record<string, string>)['lint:basalt']).toBe('mine')
-  })
-
-  it('names every kept file AND what keeping it costs', () => {
-    write('package.json', JSON.stringify({ name: 'app' }))
-    write('src/app.tsx', 'export const App = () => null\n')
-    write('.oxlintrc.json', '{ "rules": {} }')
-    const { log } = capture(() => init(dir, { noMergeLint: true }))
-    expect(log).toContain('Kept (already present')
-    expect(log).toContain('.oxlintrc.json')
-    expect(log).toContain('is NOT active')
-    // The aggregate count stays, but it is no longer the only thing said.
-    expect(log).toMatch(/\d+ written, \d+ kept/)
-  })
-
-  it('warns that adoption on an existing app is a lint-debt event, with the plugin count', () => {
-    write('package.json', JSON.stringify({ name: 'app' }))
-    const { log } = capture(() => init(dir))
-    expect(log).toContain('Lint debt')
-    expect(log).toContain('jsx-a11y')
-    expect(log).toContain('lefthook install')
-  })
-
-  it('splices the shipped preset into an existing .oxlintrc.json by default', () => {
-    write('package.json', JSON.stringify({ name: 'app' }))
-    write('.oxlintrc.json', JSON.stringify({ rules: { 'no-debugger': 'error' } }, null, 2))
-    const { log } = capture(() => init(dir))
-    const cfg = JSON.parse(read('.oxlintrc.json')) as { extends: string[]; rules: unknown }
-    expect(cfg.extends[0]).toContain('basalt-ui/configs/oxlint.json')
-    expect(cfg.rules).toEqual({ 'no-debugger': 'error' })
-    expect(log).toContain('oxlint — spliced')
-  })
-
-  it('--no-merge-lint leaves an existing .oxlintrc.json alone and says what that costs', () => {
-    write('package.json', JSON.stringify({ name: 'app' }))
-    const own = JSON.stringify({ rules: { 'no-debugger': 'error' } })
-    write('.oxlintrc.json', own)
-    const { log } = capture(() => init(dir, { noMergeLint: true }))
-    expect(read('.oxlintrc.json')).toBe(own)
-    expect(log).toContain('.oxlintrc.json — the shipped oxlint preset')
-  })
-
-  it('a second init is idempotent on the merged config', () => {
-    write('package.json', JSON.stringify({ name: 'app' }))
-    write('.oxlintrc.json', '{ "extends": ["./node_modules/basalt-ui/configs/oxlint.json"] }')
-    const before = read('.oxlintrc.json')
-    capture(() => init(dir))
-    expect(read('.oxlintrc.json')).toBe(before)
-  })
-
-  // oxlint's `extends` is an array, but a hand-written config may carry a bare string — the merge
-  // must read it as the one entry it is, in both directions.
-  it.each([
-    ['a guards-only one, which it replaces', 'oxlint-basalt.json', 'added'],
-    ['the full preset, which it leaves alone', 'oxlint.json', 'already'],
-  ] as const)('mergeOxlintExtends reads a bare-string extends: %s', (_, file, outcome) => {
-    write('.oxlintrc.json', `{ "extends": "./node_modules/basalt-ui/configs/${file}" }\n`)
-    expect(mergeOxlintExtends(dir, './node_modules/basalt-ui/configs/oxlint.json')).toBe(outcome)
-    const cfg = JSON.parse(read('.oxlintrc.json')) as { extends: unknown }
-    expect([cfg.extends].flat()).toEqual(['./node_modules/basalt-ui/configs/oxlint.json'])
-  })
-
-  it('init upgrades a guards-only extends to the full preset', () => {
-    write('package.json', JSON.stringify({ name: 'app' }))
-    write(
-      '.oxlintrc.json',
-      '{ "extends": ["./node_modules/basalt-ui/configs/oxlint-basalt.json", "./team.json"] }',
-    )
-    capture(() => init(dir))
-    const cfg = JSON.parse(read('.oxlintrc.json')) as { extends: string[] }
-    // The stale guards-only entry goes; the consumer's own entry stays.
-    expect(cfg.extends).toEqual(['./node_modules/basalt-ui/configs/oxlint.json', './team.json'])
-  })
-})
-
-describe('init — seeds resolve basalt where it actually installed', () => {
-  it('renders the extends paths and the CI bin from a workspace-level install, not the root', () => {
-    write('package.json', JSON.stringify({ name: 'root', workspaces: ['packages/*'] }))
-    write('packages/lib/package.json', JSON.stringify({ name: 'lib' }))
-    write('packages/lib/src/index.ts', 'export const x = 1\n')
-    installBasalt('packages/lib')
-
-    capture(() => init(dir))
-
-    expect(read('.oxlintrc.json')).toContain(
-      './packages/lib/node_modules/basalt-ui/configs/oxlint.json',
-    )
-    expect(read('lefthook.yml')).toContain(
-      'packages/lib/node_modules/basalt-ui/configs/lefthook.yml',
-    )
-    // The CI step runs the LOCAL bin — bunx would silently fetch a different copy from npm.
-    expect(read('.github/workflows/check.yml')).toContain(
-      'packages/lib/node_modules/.bin/basalt-ui check-theme',
-    )
-    expect(read('.github/workflows/check.yml')).not.toContain('{{BASALT_BIN}}')
-  })
-
-  it('warns loudly when basalt-ui resolves nowhere, rather than seeding a silent dead path', () => {
-    write('package.json', JSON.stringify({ name: 'app' }))
-    write('src/app.tsx', 'export const App = () => null\n')
-    const { log } = capture(() => init(dir))
-    expect(log).toContain('does not resolve from')
-  })
 })
 
 describe('--tokens-only and --framework are alternatives, not a precedence question', () => {
@@ -503,18 +325,6 @@ describe('fonts:css — the typeface half of the token layer', () => {
   })
 })
 
-describe('init — the seeded lefthook.yml pins the guard to the local bin', () => {
-  it('renders a BASALT_BIN env override, the one key an extends target cannot eat', () => {
-    write('package.json', JSON.stringify({ name: 'fixture' }))
-    write('src/app.tsx', 'export const App = () => null\n')
-    installBasalt()
-    capture(() => init(dir))
-    const seeded = read('lefthook.yml')
-    expect(seeded).toContain('BASALT_BIN: node_modules/.bin/basalt-ui')
-    expect(seeded).toContain('extends:')
-  })
-})
-
 /**
  * The shipped preset broke ITSELF for every non-root consumer at 1.29.0. Lefthook runs commands at
  * the repo ROOT and `extends` merges commands WITHOUT a working directory, so after the resolver
@@ -543,43 +353,6 @@ describe('the shipped lefthook preset — a monorepo consumer must not have to p
   // three minors after.
   it('no longer claims the CLI relocates itself', () => {
     expect(preset).not.toContain('relocates to the single workspace package')
-  })
-
-  // `extends` alone is what init used to advise, and following it literally produces a hook that
-  // runs oxlint at the repo root where there is neither a config nor a binary.
-  it('init’s skip message gives the per-command root:, not just extends', () => {
-    write('package.json', JSON.stringify({ name: 'app', basalt: { roots: ['src'] } }))
-    write('src/app.tsx', 'export const App = () => null\n')
-    installBasalt()
-    execSync('git init -q', { cwd: dir })
-    mkdirSync(join(dir, 'app'), { recursive: true })
-    write('app/package.json', JSON.stringify({ name: 'inner', basalt: { roots: ['src'] } }))
-    write('app/src/app.tsx', 'export const App = () => null\n')
-    installBasalt('app')
-    const { log } = capture(() => init(join(dir, 'app')))
-    expect(log).toContain('skipped lefthook.yml')
-    expect(log).toContain("pre-commit.commands.{oxlint,oxfmt,check-theme}.root: 'app/'")
-    expect(log).toContain('working-directory: app')
-  })
-})
-
-// ── no shipped artifact carries a version number that goes stale ───────────────────────────────
-//
-// `DESIGN.md` is a seed: written once at init, then consumer-owned and never reconciled. Its
-// opener stamped `{{BASALT_VERSION}}`, so across the seven consumers the same line read 1.0.0,
-// 1.9.0, 1.21.0 and 1.22.0 under an identical 1.22.0 install — reported three rounds running as
-// four separate doc bugs. The fix was in the TEMPLATE (dropping the stamped version from what
-// `init` seeds); a since-retired `migrateDesignVersionLine` used to also heal an already-seeded
-// file's stale opener in place on `sync` — dropped by C2 as one-time migration machinery a
-// greenfield, single-owner fleet no longer needs.
-
-describe('DESIGN.md carries no version', () => {
-  it('a fresh scaffold stamps no version at all', () => {
-    write('package.json', JSON.stringify({ name: 'fixture', basalt: { roots: ['src'] } }))
-    write('src/app.tsx', 'export const App = () => null\n')
-    capture(() => init(dir))
-    expect(read('DESIGN.md')).not.toMatch(/Managed by basalt-ui \(\d+\.\d+\.\d+\)/)
-    expect(read('DESIGN.md')).toContain('run `basalt-ui doctor` for the version')
   })
 })
 

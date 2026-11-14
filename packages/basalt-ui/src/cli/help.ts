@@ -17,7 +17,15 @@ export const COMMAND_OPTIONS: Record<
   Record<string, { type: 'string' | 'boolean'; multiple?: boolean }>
 > = {
   init: {
-    'no-merge-lint': { type: 'boolean' },
+    profile: { type: 'string' },
+    root: { type: 'string', multiple: true },
+    'tokens-out': { type: 'string' },
+    'tokens-json-out': { type: 'string' },
+    extra: { type: 'string' },
+    accent: { type: 'string' },
+    neutral: { type: 'string' },
+    vibrancy: { type: 'string' },
+    selector: { type: 'string' },
     'no-install': { type: 'boolean' },
   },
   sync: {
@@ -84,7 +92,7 @@ export function unknownFlag(cmd: string, flags: readonly string[]): string | nul
 
 /** The one usage string — printed by `basalt help` / `--help` / `-h` AND the unknown-command fallback. */
 export const USAGE =
-  'Usage: basalt-ui <--version | init [--no-merge-lint] [--no-install] |\n' +
+  'Usage: basalt-ui <--version | init --profile <tokens|bridge|parts|app> [--root <path>]… [--no-install] |\n' +
   '                  sync [--check] [--force] |\n' +
   '                  check-theme [--audit-allows] |\n' +
   '                  doctor [--from <x.y.z>] | guard-hook | tokens:css | fonts:css |\n' +
@@ -147,6 +155,14 @@ export const USAGE =
   '  skills and rules, the hook (run from a subdirectory on a seeded offender), the formatter fence,\n' +
   '  token sheets, budgets and app wiring. Each is pass, fail or SKIPPED; SKIPPED exits non-zero.\n' +
   '  --from <x.y.z> is accepted for the 2.x upgrade flow and only points at MIGRATING.md.\n\n' +
+  'init --profile <tokens|bridge|parts|app> [--root <path>]… [--tokens-out <css>] [--tokens-json-out <json>]\n' +
+  '     [--extra <file>] [--accent <#hex>] [--neutral <name>] [--vibrancy <n>] [--selector <sel>] [--no-install]\n' +
+  '  The one door into an install. The profile is declared, never inferred (exit 1 without it); each --root\n' +
+  '  (default .) is declared with it. Paths are relative to the repo root. Writes .basalt/manifest.json and the\n' +
+  "  token outputs, installs the profile's peers at exact pins with the lockfile's package manager, places the\n" +
+  '  managed files and presets through sync, seeds .basalt/budget.json and DESIGN.md, writes the formatter\n' +
+  '  ignore, and ends in doctor. --no-install prints the install command instead of running it. Running it\n' +
+  '  twice changes nothing. Vite and CSS are patched only for a stock shape; otherwise the lines are printed.\n\n' +
   'sync [--check] [--force]\n' +
   '  Renders every managed file (.claude/{rules,skills,agents}/basalt-*, the AGENTS.md block, the\n' +
   '  preset files) and compares bytes; it refreshes an EXISTING install and never creates one (that\n' +

@@ -18,9 +18,6 @@ import type { Manifest } from '../manifest'
 export type Unit = { path: string; content: string; generated?: boolean }
 export type PresetFiles = (manifest: Manifest) => Unit[]
 
-/** The seam v3-sk-3 fills: no preset content ships with the sync engine. */
-export const noPresetFiles: PresetFiles = () => []
-
 /** Rule roots: every declared non-`tokens` root, sorted so a reorder is no drift; `src` if none. */
 export function ruleRoots(manifest: Manifest): string[] {
   const roots = Object.entries(manifest.roots)

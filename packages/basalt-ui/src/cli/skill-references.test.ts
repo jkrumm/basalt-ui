@@ -1,16 +1,15 @@
 /**
  * Skill reference files: every file under `agent/skills/<name>/` (SKILL.md plus `references/**`) is its
- * own managed unit, placed, drift-checked and pruned like a rule. The walk is exercised against a
+ * own managed unit, placed and drift-checked like a rule. The walk is exercised against a
  * scratch package dir (`managedFiles`' injectable source root) so it does not depend on which
  * references the shipped skills carry today.
  */
 import { afterEach, beforeEach, describe, expect, it } from 'bun:test'
-import { existsSync, mkdirSync, mkdtempSync, rmSync, writeFileSync } from 'node:fs'
+import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { join, resolve } from 'node:path'
 
-import { managedFiles, pruneRetiredManagedFiles, ROOT_PLACEMENT, sha256 } from './index'
-import type { Manifest } from './index'
+import { managedFiles, ROOT_PLACEMENT } from './index'
 
 let scratch: string
 
@@ -64,39 +63,5 @@ describe('skill tree walk', () => {
   it('a skill without references still places just SKILL.md', () => {
     put(scratch, 'agent/skills/basalt-design/SKILL.md', '# router\n')
     expect(skillDests(scratch)).toEqual(['.claude/skills/basalt-design/SKILL.md'])
-  })
-})
-
-describe('retired references', () => {
-  it('prunes a reference a later version no longer ships, then its empty dirs', () => {
-    put(scratch, 'agent/skills/basalt-design/SKILL.md', '# router\n')
-    const consumer = join(scratch, 'consumer')
-    const dest = '.claude/skills/basalt-design/references/old.md'
-    put(consumer, dest, 'old\n')
-    const manifest: Manifest = { version: 1, files: { [dest]: sha256('old\n') } }
-    const result = pruneRetiredManagedFiles(
-      consumer,
-      manifest,
-      managedFiles(ROOT_PLACEMENT, scratch),
-    )
-    expect(result.removed).toEqual([dest])
-    expect(existsSync(join(consumer, dest))).toBe(false)
-    expect(existsSync(join(consumer, '.claude/skills/basalt-design/references'))).toBe(false)
-    expect(manifest.files[dest]).toBeUndefined()
-  })
-
-  it('leaves a locally edited retired reference in place and reports it', () => {
-    put(scratch, 'agent/skills/basalt-design/SKILL.md', '# router\n')
-    const consumer = join(scratch, 'consumer')
-    const dest = '.claude/skills/basalt-design/references/old.md'
-    put(consumer, dest, 'mine\n')
-    const manifest: Manifest = { version: 1, files: { [dest]: sha256('old\n') } }
-    const result = pruneRetiredManagedFiles(
-      consumer,
-      manifest,
-      managedFiles(ROOT_PLACEMENT, scratch),
-    )
-    expect(result.drifted).toEqual([dest])
-    expect(existsSync(join(consumer, dest))).toBe(true)
   })
 })

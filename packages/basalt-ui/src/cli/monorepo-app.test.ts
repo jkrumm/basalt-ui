@@ -1,22 +1,12 @@
 /**
- * Monorepo awareness: `resolveAppDir` picks the app package once, `sync`/`init` seed the router
- * files there (never at the install root).
+ * Monorepo awareness: `resolveAppDir` picks the app package once.
  */
-import { afterEach, beforeEach, describe, expect, it, onTestFinished, spyOn } from 'bun:test'
-import {
-  cpSync,
-  existsSync,
-  mkdirSync,
-  readFileSync,
-  mkdtempSync,
-  readdirSync,
-  rmSync,
-  writeFileSync,
-} from 'node:fs'
+import { afterEach, beforeEach, describe, expect, it } from 'bun:test'
+import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from 'node:fs'
 import { tmpdir } from 'node:os'
-import { basename, join, resolve } from 'node:path'
+import { join, resolve } from 'node:path'
 
-import { init, packageRoot, resolveAppDir } from './index'
+import { resolveAppDir } from './index'
 
 let dir: string
 
@@ -56,17 +46,6 @@ function monorepo(apps: string[], rootExtra: Record<string, unknown> = {}): void
   )
 }
 
-function quiet<T>(fn: () => T): T {
-  const log = spyOn(console, 'log').mockImplementation(() => {})
-  const err = spyOn(console, 'error').mockImplementation(() => {})
-  try {
-    return fn()
-  } finally {
-    log.mockRestore()
-    err.mockRestore()
-  }
-}
-
 describe('resolveAppDir', () => {
   it('auto-detects the one workspace package that depends on basalt-ui and has a Vite entry', () => {
     monorepo(['web'])
@@ -95,68 +74,5 @@ describe('resolveAppDir', () => {
     pkg('', { name: 'solo', dependencies: { 'basalt-ui': '*' } })
     write('src/main.tsx', '// entry\n')
     expect(resolveAppDir(dir)).toEqual({ dir, rel: '' })
-  })
-})
-
-describe('sync / init in a monorepo', () => {
-  it('places the design skill, its references and the reviewer at the root a monorepo-root session discovers', () => {
-    // Claude Code reads `.claude/skills` and `.claude/agents` from the session's project root
-    // (docs/waves/design-parity/SPEC.md § 9.4), so a session at the repo root — not in `apps/web` —
-    // must find all of them there, and none of them inside the app package.
-    monorepo(['web'])
-    // A scratch package that ships a reference: the real tree may carry none yet.
-    const pkgRoot = join(dir, '..', `${basename(dir)}-pkg`)
-    for (const d of ['agent', 'configs'])
-      cpSync(join(packageRoot(), d), join(pkgRoot, d), { recursive: true })
-    cpSync(join(packageRoot(), 'package.json'), join(pkgRoot, 'package.json'))
-    mkdirSync(join(pkgRoot, 'agent/skills/basalt-design/references'), { recursive: true })
-    writeFileSync(join(pkgRoot, 'agent/skills/basalt-design/references/x.md'), 'x\n')
-    onTestFinished(() => rmSync(pkgRoot, { recursive: true, force: true }))
-    quiet(() => init(dir, { pkgRoot }))
-    const shipped = join(pkgRoot, 'agent/skills/basalt-design')
-    const files = readdirSync(shipped, { recursive: true, withFileTypes: true })
-      .filter((e) => e.isFile())
-      .map((e) => join(e.parentPath, e.name).slice(shipped.length + 1))
-    expect(files).toContain('SKILL.md')
-    expect(files).toContain('references/x.md')
-    for (const rel of files) {
-      expect(existsSync(join(dir, '.claude/skills/basalt-design', rel))).toBe(true)
-      expect(existsSync(join(dir, 'apps/web/.claude/skills/basalt-design', rel))).toBe(false)
-    }
-    expect(existsSync(join(dir, '.claude/agents/basalt-design-reviewer.md'))).toBe(true)
-    expect(existsSync(join(dir, 'apps/web/.claude'))).toBe(false)
-  })
-
-  it('detects a Start app by the app package, not the root, and seeds nothing router-shaped', () => {
-    monorepo(['web'])
-    pkg('apps/web/', {
-      name: 'web',
-      dependencies: { 'basalt-ui': '*', '@tanstack/react-start': '*' },
-    })
-    quiet(() => init(dir))
-    // main.tsx pre-exists in the fixture; init must leave it byte-identical and write no other seed.
-    expect(readFileSync(join(dir, 'apps/web/src/main.tsx'), 'utf8')).toBe('// entry\n')
-    expect(existsSync(join(dir, 'apps/web/src/routes'))).toBe(false)
-    expect(existsSync(join(dir, 'apps/web/src/lib/nav.tsx'))).toBe(false)
-  })
-
-  it('refuses on an ambiguous app instead of guessing', () => {
-    monorepo(['web', 'admin'])
-    expect(quiet(() => init(dir))).toBe(1)
-    expect(existsSync(join(dir, '.basalt/manifest.json'))).toBe(false)
-  })
-})
-
-// Row 178: below the repo root, `sync` compares the shipped lefthook.yml / check.yml with the repo
-// root's own files instead of printing two unconditional skips — read-only, it never writes there.
-describe('sync — repo-root templates for a package below the repo root', () => {
-  let web: string
-
-  beforeEach(() => {
-    mkdirSync(join(dir, '.git'))
-    web = join(dir, 'web')
-    mkdirSync(web, { recursive: true })
-    writeFileSync(join(web, 'package.json'), JSON.stringify({ name: 'web' }))
-    quiet(() => init(web))
   })
 })
