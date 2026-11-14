@@ -14,6 +14,10 @@ import type { PlotContext, PlotRow } from 'basalt-ui/charts'
 import { CONTAINER_KEYS, VX } from 'basalt-ui/tokens'
 import { SeamBar } from '../../recipes/seam-bar'
 import type { Part } from '../../recipes/seam-bar'
+import { SeamLinked } from '../../recipes/seam-linked'
+import type { Sample } from '../../recipes/seam-linked'
+import { SeamTrack } from '../../recipes/seam-track'
+import type { Span } from '../../recipes/seam-track'
 import { demoColors } from '../series'
 
 const GRID_COLS = { base: 1, [CONTAINER_KEYS.regular]: 2 }
@@ -312,6 +316,47 @@ function SeamBarCard() {
   )
 }
 
+// ── 6. The seam-track recipe: axis, row labels, per-row gridlines ───────────────────────────────
+
+const SPANS: readonly Span[] = [
+  { name: 'Run', startMs: 0, durationMs: 8000 },
+  { name: 'Plan', startMs: 0, durationMs: 900 },
+  { name: 'Search', startMs: 900, durationMs: 3200 },
+  { name: 'Write', startMs: 4100, durationMs: 3400 },
+  { name: 'Check', startMs: 7500, durationMs: 500 },
+]
+
+function SeamTrackCard() {
+  return (
+    <ChartCard
+      title="Agent run, hand-drawn"
+      subtitle="The seam-track recipe: chartLabels.axis and chartLabels.row on an HTML track"
+    >
+      <SeamTrack spans={SPANS} />
+    </ChartCard>
+  )
+}
+
+// ── 7. The seam-linked recipe: group stepping and a list of groups ──────────────────────────────
+
+const VERSIONS = ['1.0', '1.1', '1.2', '1.3']
+const SAMPLES: readonly Sample[] = Array.from({ length: 20 }, (_, day) => ({
+  day: day + 1,
+  version: VERSIONS[Math.floor(day / 5)] ?? '1.3',
+  value: 40 + ((day * 7) % 11) * 3 + Math.floor(day / 5) * 6,
+}))
+
+function SeamLinkedCard() {
+  return (
+    <ChartCard
+      title="Daily samples by version"
+      subtitle="The seam-linked recipe: PageUp and PageDown step by version"
+    >
+      <SeamLinked samples={SAMPLES} />
+    </ChartCard>
+  )
+}
+
 export function SeamSection() {
   return (
     <Section
@@ -324,6 +369,8 @@ export function SeamSection() {
           <FailureHeatmap />
           <ContextMeter />
           <SeamBarCard />
+          <SeamTrackCard />
+          <SeamLinkedCard />
         </SimpleGrid>
         <PriceQuality />
       </Stack>
