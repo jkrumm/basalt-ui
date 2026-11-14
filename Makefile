@@ -4,9 +4,11 @@
 help: ## List targets
 	@grep -hE '^[a-z-]+:.*?## ' $(MAKEFILE_LIST) | awk 'BEGIN {FS = ":.*?## "}; {printf "  \033[36m%-14s\033[0m %s\n", $$1, $$2}'
 
-# The browser steps run in one of the host's test slots when `factory` is installed, so two leads' layout
-# runs never overlap (each is a Chrome tree on a shared 32 GB host); without it (CI) the bare command. It
-# fails open: a server that is down or a full house runs the suite anyway.
+# The heavy steps run in one of the host's test slots when `factory` is installed, so two leads' runs never
+# overlap: the browser steps (each a Chrome tree on a shared 32 GB host) and the unit suite (`make test`, the
+# last step of `bun run pre`: one `bun test` process, 6.5 GB resident measured 2026-11-14, which the factory
+# bills to the lead when it runs outside a slot). Without `factory` (CI) the bare command. It fails open: a
+# server that is down or a full house runs the suite anyway.
 SLOT = $(if $(shell command -v factory 2>/dev/null),factory slot run --name "$(notdir $(CURDIR)) layout" --,)
 
 # The local gate: the validation CI runs (.github/workflows/ci.yml), all in one target. Builds FIRST
@@ -63,11 +65,11 @@ deploy: ## No-op — the site is deployed by CI on push (npm publishing is `make
 logs: ## Print the last 200 lines of the production container's logs, then exit
 	@ssh vps 'docker logs --tail 200 $$(docker ps -q --filter "label=com.docker.compose.service=basalt-ui-marketing" | head -n1)'
 
-pre: ## fmt:check + lint + typecheck + check-theme + bun test (run before committing)
+pre: ## fmt:check + lint + typecheck + check-theme + budgets + literals + the unit suite in a slot (run before committing)
 	@bun run pre
 
-test: ## Run the test suite
-	@bun test
+test: ## Run the unit suite in a host test slot (one `bun test` process peaks near 6.5 GB resident)
+	@$(subst layout",unit",$(SLOT)) bun test
 
 layout: ## Run the layout regression suite (real CSS geometry, headless Chrome)
 	@$(SLOT) sh -c 'bun run test:layout && bun run test:layout:harness'
