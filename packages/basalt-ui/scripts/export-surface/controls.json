@@ -3,6 +3,7 @@
   "ControlView",
   "FilterSet",
   "FormField",
+  "FormFooter",
   "FormGroup",
   "FormRow",
   "MultiSelectFilter",
@@ -14,5 +15,7 @@
   "ToggleFilter",
   "ViewTabs",
   "filterSlot",
-  "spec"
+  "spec",
+  "toSubmitErrors",
+  "useFormDraft"
 ]

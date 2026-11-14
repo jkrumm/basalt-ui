@@ -261,6 +261,15 @@ export const MINIMAL_PROPS: Record<string, Record<string, unknown>> = {
   FormSection: { title: 'Billing', children: TEXT },
   FormRow: { children: TEXT },
   FormGroup: { label: 'Notify me about', children: TEXT },
+  FormFooter: {
+    form: {
+      state: { values: {}, isSubmitting: false, canSubmit: true, errors: [] },
+      options: {},
+      store: { subscribe: () => ({ unsubscribe() {} }) },
+      reset() {},
+    },
+    actions: [{ label: 'Save', primary: true }],
+  },
   FormField: {
     label: 'Email',
     control: memoryHandle('iso.field', '', { kind: 'string' }),
