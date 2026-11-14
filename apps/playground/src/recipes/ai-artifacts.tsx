@@ -6,7 +6,10 @@ import { PageAside } from 'basalt-ui/page'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from 'basalt-ui/ui/tabs'
 
 type Catalog = ReturnType<typeof defineCatalog>
-export type Artifact = { kind: 'markdown' | 'block' | 'code' | 'html'; lang?: string; body: string }
+// A block's `spec` is the tool input the model sent, already parsed; the catalog validates it.
+export type Artifact =
+  | { kind: 'block'; spec: unknown }
+  | { kind: 'markdown' | 'code' | 'html'; lang?: string; body: string }
 
 // The CSP is a meta tag in `srcDoc`: no network, no nested frames. The sandbox has
 // `allow-scripts` only; never add allow-same-origin: model code would read the app.
@@ -17,7 +20,7 @@ function Body({ a, catalog }: { a: Artifact; catalog: Catalog }) {
     case 'markdown':
       return <Markdown contentTrust="untrusted">{a.body}</Markdown>
     case 'block':
-      return <catalog.Block spec={JSON.parse(a.body)} phase="ready" />
+      return <catalog.Block spec={a.spec} phase="ready" />
     case 'code':
       return <CodeBlock lang={a.lang ?? 'text'} code={a.body} />
     case 'html':
@@ -25,7 +28,7 @@ function Body({ a, catalog }: { a: Artifact; catalog: Catalog }) {
   }
 }
 
-/** `versions` is oldest first; each version is a tab, the newest opens. */
+/** `versions` is oldest first; the newest tab opens. */
 export function ArtifactAside({ title, versions, catalog }: Props) {
   return (
     <PageAside title={title}>
