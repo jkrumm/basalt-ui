@@ -684,6 +684,13 @@ export const SURFACES = {
     description: 'v3 font faces (stub), frozen per major',
     forbiddenImports: [],
   },
+  './table.css': {
+    kind: 'tooling',
+    layer: 'non-js-asset',
+    description:
+      'v3 table tier sheet — plain CSS in @layer basalt.table (container-query tiers, card projection); an app that imports ./table imports it',
+    forbiddenImports: [],
+  },
   './tailwind.css': {
     kind: 'tooling',
     layer: 'non-js-asset',
