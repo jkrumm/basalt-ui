@@ -21,6 +21,8 @@ A recipe is the shipped answer to a pattern basalt composes but does not export:
 - [optimistic](docs/recipes/optimistic.md): a save should show its result in the cached record before the server answers, and undo itself when the server refuses
 - [remembered-values](docs/recipes/remembered-values.md): a page's filter (a time window) should reopen at the value the user last chose, which 2.x did with a `persist` mirror on a `createSearchStore` field
 - [seam-bar](docs/recipes/seam-bar.md): a part-of-whole bar you draw yourself (HTML parts in a row), with focus, dimming and a readout
+- [seam-linked](docs/recipes/seam-linked.md): a chart and a scrolling list of groups (versions, releases) beside it that share one focus
+- [seam-track](docs/recipes/seam-track.md): marks on a time or value track you draw yourself (a waterfall of spans, a lane), with an axis, row labels and focus
 - [storage-adapter](docs/recipes/storage-adapter.md): device preferences (rail, folds) must follow the person, so `persisted` reads and writes a server
 - [timeline](docs/recipes/timeline.md): dated bars on a shared time axis, read-only, in a card frame
 - [websocket-transport](docs/recipes/websocket-transport.md): the server pushes over a WebSocket, not SSE, and a channel must still reconnect, resume and stop on a refused token

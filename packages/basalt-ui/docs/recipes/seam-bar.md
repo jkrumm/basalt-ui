@@ -4,11 +4,13 @@ use-when: a part-of-whole bar you draw yourself (HTML parts in a row), with focu
 file: apps/playground/src/recipes/seam-bar.tsx
 ---
 
-A seam bar is a flex row of `div`s, each as wide as its share. Draw it through the geometry seam instead of wiring pointer and keyboard by hand. `useChartFocus` gives the container `focus.target` (the one tab stop and the arrow keys) and each part `focus.item(i)`. A focused part carries `data-focused`; the others carry `data-dimmed`, which the class `data-dimmed:opacity-25` styles.
+A seam bar is a flex row of `div`s, each as wide as its share. Draw it through the geometry seam instead of wiring pointer and keyboard by hand. `useChartFocus` gives the container `focus.target` (the one tab stop and the arrow keys) and each part `focus.item(i)`. A focused part carries `data-focused`; the others carry `data-dimmed`, which the kit dims itself at the opacity its own marks use. A page sets no opacity.
 
 The readout above the bar is `focus.readout(total, read)`: the total at rest, the focused part otherwise. Render `{focus.live}` once for the polite live region.
 
 A part names itself only where `chartLabels.fits(label, { width })` says the label fits its pixel width. Pass the track width in px, so a server render and a client render agree. No DOM measuring.
+
+For marks on a time or value track, see the `seam-track` recipe.
 
 Colours come from the app's series file as `var(--vx-*)` references, never literals.
 
@@ -37,7 +39,7 @@ export function SeamBar({ parts, track }: { parts: readonly Part[]; track: numbe
           <div
             key={p.label}
             {...focus.item(i)}
-            className="flex items-center justify-center truncate text-xs transition-opacity data-dimmed:opacity-25"
+            className="flex items-center justify-center truncate text-xs"
             style={{ width: `${(p.value / total) * 100}%`, background: p.color }}
           >
             {chartLabels.fits(
