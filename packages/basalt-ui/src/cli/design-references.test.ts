@@ -17,6 +17,8 @@ const REFERENCES = [
   'state',
   'states',
 ]
+/** Not routed from SKILL.md yet: the routing row is v3-sk-6. */
+const UNROUTED = new Set(['controls', 'forms', 'state'])
 const NOT_SHIPPED_HEADING = '## Not shipped'
 
 function markdownFiles(dir: string): string[] {
@@ -88,7 +90,8 @@ describe('basalt-design references', () => {
   it('ships SKILL.md and the anti-defaults reference, linked from the skill', () => {
     const dir = join(SKILL_DIR, 'references')
     expect(readdirSync(dir).toSorted()).toEqual(REFERENCES.map((r) => `${r}.md`).toSorted())
-    for (const ref of REFERENCES) expect(skill).toContain(`references/${ref}.md`)
+    for (const ref of REFERENCES.filter((r) => !UNROUTED.has(r)))
+      expect(skill).toContain(`references/${ref}.md`)
     expect(skill.split('\n').length).toBeLessThanOrEqual(60)
   })
 
