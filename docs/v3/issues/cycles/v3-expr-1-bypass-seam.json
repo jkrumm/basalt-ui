@@ -1,0 +1,25 @@
+{
+  "why": "ARCHITECTURE.md section 8 (Charts doctrine, v3-expr-1-doctrine, Issue 964) says primitive-bypass denies data-mapped marks, SVG or HTML, drawn outside the geometry seam, and notes that until the seam exports ship the rule keeps its `svg-data-marks` form. The seam ships in v3-expr-1-seam as `useChartFocus` (`focus.target`, `focus.item(i)`) and `chartLabels` on ./charts. Left alone, the rule would deny the marks the doctrine now permits and miss the HTML form it names. The owner's note on the seam Spec verdict made this a row that gates v3-freeze-g4, so the rule and the doctrine agree when the API freezes.",
+  "what": "primitive-bypass: exempt data-mapped marks wired through the seam, and add the HTML form. Rule code, one fixture and one fix message per form, tests. No new ./charts export.",
+  "owns": [
+    "packages/basalt-ui/src/lint/rules/structure/primitive-bypass*.ts",
+    "packages/basalt-ui/test/fixtures/lint/import-bypass/{svg-data-marks,html-data-marks}*.tsx and the seam-wired counterparts beside them",
+    "the lint form count and the generated rule docs that list the primitive-bypass forms"
+  ],
+  "must_not_touch": [
+    "docs/v3/ARCHITECTURE.md (the doctrine is v3-expr-1-doctrine's; this row makes the rule match it)",
+    "packages/basalt-ui/src/charts/**",
+    "packages/basalt-ui/scripts/check-budgets/areas/{charts-api,charts-g4}* (v3-freeze-g4)"
+  ],
+  "change": "(1) Exempt: an element in the data-mapped svg-data-marks form that spreads `focus.item(i)` inside a container that spreads `focus.target`, where `focus` is the result of `useChartFocus(...)`, is legal; the same element outside such a container still reports. Marks inside `CartesianChart` marks stay as the rule treats them today. (2) HTML form: a `div` or other intrinsic element whose `style` sets `width`, `height`, `left`, `top`, `right` or `bottom` from a datum inside a `.map` callback (a datum's share, e.g. `${d.share * 100}%`) reports, unless it is wired through the seam as in (1). (3) One fix message per form, each naming the seam (`useChartFocus` and `chartLabels` from basalt-ui/charts) and, for the HTML form, `BarList` in basalt-ui/cards for a share bar. The lint form count is 58 at most (ARCHITECTURE.md section 3): the HTML form is one form; if the count would pass 58, report it, never raise it. Each form gets a red fixture and a green fixture (the seam-wired mark). Read the final export shape of `useChartFocus` in packages/basalt-ui/src/charts after v3-expr-1-seam merged; match what shipped, not this text.",
+  "commits": "One feat: commit for the rule, scope empty, no attribution.",
+  "proof": "make check; the red and green fixtures per form.",
+  "acceptance": [
+    "A data-mapped svg mark spreading focus.item(i) inside a container spreading focus.target from useChartFocus is green; the same mark without the container is red (fixtures)",
+    "An intrinsic element sized or positioned by a datum's share inside a map callback is red with a message naming the seam; the seam-wired form is green (fixtures)",
+    "Each form has one fix message and one fixture, and the lint form count stays at or under 58",
+    "ARCHITECTURE.md section 8's text on what primitive-bypass denies is true of the rule as shipped",
+    "make check passes"
+  ],
+  "out_of_scope": "Editing ARCHITECTURE.md or the doctrine; any new ./charts export; static artwork (an icon, a fixed grid) stays legal; other primitive-bypass forms."
+}

@@ -5308,7 +5308,7 @@
     "kind": "chore",
     "size": "s",
     "consumerGate": null,
-    "concept": "migration-release.md 3.3, 4.4, 5 (G4); quality-contract.md 6 (base0; route bars are consumer recipes); ARCHITECTURE.md section 3 (./charts: 10 symbols, +4 KB each for Heatmap and BandStrip).",
+    "concept": "migration-release.md 3.3, 4.4, 5 (G4); quality-contract.md 6 (base0; route bars are consumer recipes); ARCHITECTURE.md section 3 (./charts: 12 symbols, +4 KB each for Heatmap and BandStrip).",
     "filing": "factory",
     "prio": 0
   },

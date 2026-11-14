@@ -10,15 +10,15 @@
     "packages/basalt-ui/{MIGRATING.md,llms.txt,migrations/**}",
     "CHANGELOG.md"
   ],
-  "concept": "migration-release.md 3.3, 4.4, 5 (G4); quality-contract.md 6 (base0; route bars are consumer recipes); ARCHITECTURE.md section 3 (./charts: 10 symbols, +4 KB each for Heatmap and BandStrip).",
+  "concept": "migration-release.md 3.3, 4.4, 5 (G4); quality-contract.md 6 (base0; route bars are consumer recipes); ARCHITECTURE.md section 3 (./charts: 12 symbols, +4 KB each for Heatmap and BandStrip).",
   "contract": "Follow the shape v3-freeze-g1 and v3-freeze-g3 left in check-budgets/areas and contract-pins.json. v3-unhot-budgets owns the ratchet and raise rows: read, change none.",
   "exemplar": "v3-freeze-g3 (its PR): same files, commit split, acceptance style.",
-  "change": "(1) charts-api: ./charts exports exactly CartesianChart, Lines, Bars, Sparkline, MiniBars, Heatmap, BandStrip, ChartCard, defineSeries, chartCursor; an eleventh value export is red. (2) charts-g4: fixtures heatmap-marginal and band-strip-marginal, each = the three-kind fixture freeze-g1 seeded in areas/charts (read its name there) plus the kind, minus the same fixture without it, by the base0 method. Ceiling = measured +5% rounded up to 0.5 KB, at most 4.0 KB (above is an amendment, not a raise). No Sparkline, three-kind or provider-only change: those are freeze-g1's and v3-spike-provider's. (3) contract-pins.json: src/charts/contract.ts is already pinned by v3-rel-7-contracts or freeze-g1; add the key only if absent, never change one. Never run make release. Rule: charts-api. Skill snippet: none. Tests: one red case per area file.",
+  "change": "(1) charts-api: ./charts exports exactly CartesianChart, Lines, Bars, Sparkline, MiniBars, Heatmap, BandStrip, ChartCard, defineSeries, chartCursor, useChartFocus, chartLabels (the geometry seam of v3-expr-1-seam); a thirteenth value export is red. (2) charts-g4: fixtures heatmap-marginal and band-strip-marginal, each = the three-kind fixture freeze-g1 seeded in areas/charts (read its name there) plus the kind, minus the same fixture without it, by the base0 method. Ceiling = measured +5% rounded up to 0.5 KB, at most 4.0 KB (above is an amendment, not a raise). No Sparkline, three-kind or provider-only change: those are freeze-g1's and v3-spike-provider's. (3) contract-pins.json: src/charts/contract.ts is already pinned by v3-rel-7-contracts or freeze-g1; add the key only if absent, never change one. Never run make release. Rule: charts-api. Skill snippet: none. Tests: one red case per area file.",
   "commits": "One conventional package commit, empty scope, no attribution.",
   "proof": "make check; the seeded red cases.",
   "acceptance": [
     "make check exits 0 and check-budgets prints a charts-api row and both marginal rows within ceiling.",
-    "The charts-api test adds an eleventh ./charts value export in a fixture and expects red.",
+    "The charts-api test adds a thirteenth ./charts value export in a fixture and expects red. It also pins that useChartFocus and chartLabels are green.",
     "The charts-g4 test raises a marginal ceiling against a fake base file with no raise row and expects the ratchet to fail.",
     "Both marginal ceilings are 4.0 KB or less.",
     "check-contract-frozen exits 0 and contract-pins.json has no changed or removed key against origin/master.",
