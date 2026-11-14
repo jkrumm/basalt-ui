@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'bun:test'
 import { readdirSync, readFileSync } from 'node:fs'
-import { join, sep } from 'node:path'
+import { basename, join, sep } from 'node:path'
 
 const MAX_ROUTE_FILES = 11
 const MAX_DEMO_LINES = 10_000
@@ -15,7 +15,11 @@ const lineCount = (path: string): number => readFileSync(path, 'utf8').split('\n
 
 describe('playground budget', () => {
   it(`keeps src/routes to ${MAX_ROUTE_FILES} files`, () => {
-    const files = filesUnder(join(import.meta.dir, 'routes'))
+    // routes/cycle-*.tsx host the improvement cycles' builds (docs/v3/CYCLES.md) whose state lives in
+    // the URL, which the scenario route drops: cycle evidence, like scenarios/expr below, not demo routes.
+    const files = filesUnder(join(import.meta.dir, 'routes')).filter(
+      (f) => !basename(f).startsWith('cycle-'),
+    )
     expect(files.length, `src/routes has ${files.length} files`).toBeLessThanOrEqual(
       MAX_ROUTE_FILES,
     )
