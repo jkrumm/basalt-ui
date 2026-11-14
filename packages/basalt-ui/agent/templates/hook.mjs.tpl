@@ -1,4 +1,4 @@
-// Managed by basalt-ui: `basalt-ui sync` rewrites this file. Settings call it as `node hook.mjs <event>`.
+// Managed by basalt-ui: `basalt-ui init` rewrites this file. Settings call it as `node hook.mjs <event>`.
 import { spawnSync } from 'node:child_process'
 import { existsSync, readFileSync } from 'node:fs'
 import { dirname, join } from 'node:path'

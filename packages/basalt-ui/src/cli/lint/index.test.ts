@@ -139,6 +139,32 @@ describe('lint', () => {
     expect(some.log).not.toContain('src/a.tsx')
   })
 
+  it('--changed fails when git cannot list the changes, instead of reading as clean', async () => {
+    const dir = repo({ 'src/a.tsx': FOO })
+    rmSync(join(dir, '.git'), { recursive: true })
+    const out = await lint(dir, '--changed')
+    expect(out.code).toBe(1)
+    expect(out.log).toContain('git could not list the changed files')
+  })
+
+  it('--changed skips what a full scan skips (.claude, .basalt, node_modules)', async () => {
+    const dir = repo()
+    const manifest = JSON.parse(readFileSync(join(dir, '.basalt/manifest.json'), 'utf8')) as {
+      roots: Record<string, string>
+    }
+    writeFileSync(
+      join(dir, '.basalt/manifest.json'),
+      JSON.stringify({ ...manifest, roots: { '.': 'app' } }),
+    )
+    for (const path of ['.claude/hooks/x.mjs', '.basalt/y.mjs', 'node_modules/z/index.js']) {
+      mkdirSync(dirname(join(dir, path)), { recursive: true })
+      writeFileSync(join(dir, path), FOO)
+    }
+    const out = await lint(dir, '--changed')
+    expect(out.code).toBe(0)
+    expect(out.log).toContain('scanned 0 files')
+  })
+
   it('a scan of zero files fails and says so', async () => {
     const dir = repo()
     rmSync(join(dir, 'src'), { recursive: true })

@@ -2,7 +2,8 @@ import { describe, expect, it } from 'bun:test'
 import { readFileSync } from 'node:fs'
 import { fileURLToPath } from 'node:url'
 
-import { basaltEntries, mergeSettings, SHIM } from './settings'
+import { wrappedHook } from '../doctor/fixture.test'
+import { basaltEntries, hookCommand, mergeSettings, SHIM } from './settings'
 
 const fixture = (name: string): string =>
   readFileSync(
@@ -22,6 +23,11 @@ const basaltOf = (text: string, event: string) =>
   (entries(text)[event] ?? []).filter((e) => e.hooks.some((h) => h.command.includes(SHIM)))
 
 describe('mergeSettings', () => {
+  it('registers the command text doctor check 8 reads', () => {
+    for (const arg of ['post-edit', 'stop', 'pre-edit'])
+      expect(hookCommand(arg)).toBe(wrappedHook(arg))
+  })
+
   it('writes the three wrapped entries into a missing file', () => {
     const text = merged(null)
     expect(Object.keys(entries(text))).toEqual(['PostToolUse', 'Stop', 'PreToolUse'])

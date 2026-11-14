@@ -155,7 +155,7 @@ function denial(
   current: string | null,
 ): string | null {
   if (rel === '.basalt' || rel.startsWith('.basalt/')) {
-    return ".basalt/** is basalt-ui's ledger and shim; change it with `basalt-ui sync` or `basalt-ui eject <name> --reason`, never by hand."
+    return ".basalt/** is basalt-ui's ledger and shim; `basalt-ui init`, `sync` and `eject <name> --reason` write it, never edit it by hand."
   }
   if (MANAGED_CLAUDE.test(rel) || Object.hasOwn(project.manifest?.managed ?? {}, rel)) {
     return `${rel} is managed by basalt-ui; \`basalt-ui sync\` rewrites it. Eject the part (\`basalt-ui eject <name> --reason\`) to change it.`
@@ -169,7 +169,7 @@ function denial(
     next !== null &&
     count(next, SHIM) < count(current, SHIM)
   ) {
-    return `this edit removes a basalt hook entry from ${SETTINGS_PATH}; \`basalt-ui sync\` keeps it in place.`
+    return `this edit removes a basalt hook entry from ${SETTINGS_PATH}; keep it, or re-run \`basalt-ui init\` to restore it.`
   }
   if (/^\.oxlintrc\.jsonc?$/.test(rel) && next !== null) {
     const before = current === null ? new Set<string>() : managedIds(current)
