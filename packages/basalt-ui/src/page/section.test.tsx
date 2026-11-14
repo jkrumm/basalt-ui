@@ -5,6 +5,7 @@
 import { cleanup, render, screen } from '@testing-library/react'
 import { afterEach, describe, expect, test } from 'bun:test'
 import { renderToString } from 'react-dom/server'
+import { memoryHandle } from '../controls/control-view.handles'
 import { Page } from './page'
 import { slotOf } from './page.test-support'
 import { Section } from './section'
@@ -49,6 +50,27 @@ describe('Section', () => {
     const row = section().querySelector('header')!
     expect(row.querySelector('h2')).not.toBeNull()
     expect(row.querySelector('[data-slot="section-controls"]')?.textContent).toBe('Range')
+  })
+
+  test('tabs take { handle, label } and draw a ViewTabs on the heading row', () => {
+    const view = memoryHandle<string>('view', 'a', {
+      kind: 'enum',
+      options: [
+        { value: 'a', label: 'Alpha' },
+        { value: 'b', label: 'Beta' },
+      ],
+    })
+    render(<Section title="Latency" tabs={{ handle: view, label: 'Latency view' }} />)
+    const home = section().querySelector('header [data-slot="section-tabs"]')
+    expect(home?.querySelector('[data-slot="view-tabs"]')).not.toBeNull()
+    expect(screen.getByRole('tablist', { name: 'Latency view' })).toBeDefined()
+  })
+
+  test('a tabs slot renders as is; an empty one draws no tabs home', () => {
+    const { rerender } = render(<Section title="Latency" tabs={slotOf('Views')} />)
+    expect(section().querySelector('[data-slot="section-tabs"]')?.textContent).toBe('Views')
+    rerender(<Section title="Latency" tabs={slotOf('Views', 0)} />)
+    expect(section().querySelector('[data-slot="section-tabs"]')).toBeNull()
   })
 
   test('an empty controls slot draws no controls home', () => {
