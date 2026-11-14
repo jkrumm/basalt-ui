@@ -1,0 +1,290 @@
+/* Lengths are steps of the Tailwind spacing ladder (`--spacing`), text is the `--vx-text-*` scale. */
+.root {
+  /* cycle-expression-2: no emitted line-height token for the text scale, so a line is derived from the size */
+  --c05-lh-xs: calc(var(--vx-text-xs) * 4 / 3);
+  --c05-lh-sm: calc(var(--vx-text-sm) * 20 / 13);
+  font-variant-numeric: tabular-nums;
+}
+
+/* The readout line sits OUTSIDE the card (the card clips, which kills `sticky`) and holds under the
+   page bar while focus is in the list. */
+.caption {
+  position: sticky;
+  top: var(--vx-space-page-bar-row-height);
+  z-index: 1;
+  padding-block: var(--vx-space-control-gap);
+  background: var(--vx-surface-bg);
+  color: var(--vx-ink2);
+  font-size: var(--vx-text-xs);
+  line-height: var(--c05-lh-xs);
+}
+
+.board {
+  container: basalt-card / inline-size;
+  display: flex;
+  flex-direction: column;
+  max-width: calc(var(--spacing) * 288);
+}
+
+.rows {
+  border-radius: var(--vx-radius-ctrl);
+}
+
+.rows:focus-visible {
+  outline: 2px solid var(--vx-accent);
+  outline-offset: -2px;
+}
+
+.legend {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: var(--vx-space-control-gap) calc(2 * var(--vx-space-control-gap));
+  color: var(--vx-ink2);
+  font-size: var(--vx-text-xs);
+  line-height: var(--c05-lh-xs);
+}
+
+.legendItem {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--vx-space-control-gap);
+  white-space: nowrap;
+}
+
+.row {
+  display: grid;
+  grid-template-columns: minmax(0, calc(var(--spacing) * 52)) minmax(0, 1fr) minmax(
+      0,
+      calc(var(--spacing) * 52)
+    );
+  grid-template-areas: 'name track status';
+  align-items: center;
+  column-gap: calc(3 * var(--vx-space-control-gap));
+  padding: var(--vx-space-control-gap);
+  border-top: 1px solid var(--vx-divider);
+}
+
+.row[data-focused] {
+  background: var(--vx-surface-row-hover);
+  box-shadow: inset calc(var(--spacing) * 1) 0 0 var(--vx-accent);
+}
+
+.axis {
+  border-top: 0;
+  padding-block: 0;
+}
+
+.name {
+  grid-area: name;
+  min-width: 0;
+}
+
+.status {
+  grid-area: status;
+  min-width: 0;
+}
+
+.line {
+  display: block;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.title {
+  font-size: var(--vx-text-sm);
+  line-height: var(--c05-lh-sm);
+  font-weight: var(--vx-weight-medium);
+  color: var(--vx-ink);
+}
+
+.meta {
+  font-size: var(--vx-text-xs);
+  line-height: var(--c05-lh-xs);
+  color: var(--vx-ink2);
+}
+
+.dot {
+  display: inline-block;
+  width: var(--vx-space-control-gap);
+  height: var(--vx-space-control-gap);
+  margin-inline-end: var(--vx-space-control-gap);
+  border-radius: 50%;
+  background: var(--vx-line2);
+}
+
+.dot.soon {
+  background: var(--vx-warn-solid);
+}
+
+.dot.passed {
+  background: var(--vx-bad-solid);
+}
+
+.track {
+  grid-area: track;
+  position: relative;
+  height: var(--vx-space-control-height-tag);
+  margin-inline: var(--vx-space-control-gap);
+}
+
+.axisTrack {
+  grid-area: track;
+  position: relative;
+  height: var(--c05-lh-xs);
+  margin-inline: var(--vx-space-control-gap);
+}
+
+/* Everything before today: the window where a notice has already closed. */
+.pastZone {
+  position: absolute;
+  inset-block: 0;
+  inset-inline-start: 0;
+  background: var(--vx-surface-row-hover);
+}
+
+.todayLine {
+  position: absolute;
+  inset-block: 0;
+  border-inline-start: 1px solid var(--vx-ink);
+}
+
+.tick {
+  position: absolute;
+  inset-block: 0;
+  width: 1px;
+  background: var(--vx-grid);
+}
+
+.limit {
+  position: absolute;
+  inset-block: 0;
+  border-inline-start: 1px dashed var(--vx-ink2);
+}
+
+.tickLabel {
+  position: absolute;
+  bottom: 0;
+  transform: translateX(-50%);
+  color: var(--vx-ink2);
+  font-size: var(--vx-text-xs);
+  line-height: var(--c05-lh-xs);
+  white-space: nowrap;
+}
+
+.tickLabel.limitLabel {
+  transform: none;
+  padding-inline-start: var(--vx-space-control-gap);
+  color: var(--vx-ink);
+  font-weight: var(--vx-weight-medium);
+}
+
+.link {
+  position: absolute;
+  top: 50%;
+  height: 2px;
+  background: var(--vx-line);
+  transform: translateY(-50%);
+}
+
+.mark {
+  position: absolute;
+  top: 50%;
+  width: calc(var(--spacing) * 3);
+  height: calc(var(--spacing) * 3);
+  transform: translate(-50%, -50%);
+  box-sizing: border-box;
+}
+
+.notice {
+  border-radius: 50%;
+  background: var(--vx-ink2);
+}
+
+.notice.soon {
+  background: var(--vx-warn-solid);
+}
+
+.notice.passed {
+  background: var(--vx-bad-solid);
+}
+
+.notice.past {
+  border: 2px solid var(--vx-bad-solid);
+  background: var(--vx-surface-panel);
+}
+
+.renewal {
+  border: 2px solid var(--vx-ink);
+  border-radius: calc(
+    var(--vx-radius-ctrl) / 4
+  ); /* theme-allow css-raw-surface — cycle-expression-2: no square-mark radius token; a quarter of the control radius */
+  background: var(--vx-surface-panel);
+}
+
+.renewal.auto {
+  background: var(--vx-ink);
+}
+
+.note {
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+  padding-inline: var(--vx-space-control-gap);
+  background: var(--vx-surface-panel);
+  color: var(--vx-ink);
+  font-size: var(--vx-text-xs);
+  font-weight: var(--vx-weight-medium);
+  line-height: var(--c05-lh-xs);
+  white-space: nowrap;
+}
+
+.legendDot {
+  box-sizing: border-box;
+  width: calc(var(--spacing) * 3);
+  height: calc(var(--spacing) * 3);
+  border-radius: 50%;
+  background: var(--vx-ink2);
+}
+
+.legendDot.soon {
+  background: var(--vx-warn-solid);
+}
+
+.legendDot.passed {
+  border: 2px solid var(--vx-bad-solid);
+  background: transparent;
+}
+
+.legendSquare {
+  box-sizing: border-box;
+  width: calc(var(--spacing) * 3);
+  height: calc(var(--spacing) * 3);
+  border: 2px solid var(--vx-ink);
+  border-radius: calc(
+    var(--vx-radius-ctrl) / 4
+  ); /* theme-allow css-raw-surface — cycle-expression-2: no square-mark radius token; a quarter of the control radius */
+}
+
+.legendSquare.auto {
+  background: var(--vx-ink);
+}
+
+@container basalt-card (max-width: 479.9px) {
+  .row {
+    grid-template-columns: minmax(0, 1fr) auto;
+    grid-template-areas:
+      'name status'
+      'track track';
+    row-gap: var(--vx-space-control-gap);
+  }
+
+  .status {
+    text-align: end;
+  }
+
+  .axis {
+    grid-template-areas: 'track track';
+  }
+}

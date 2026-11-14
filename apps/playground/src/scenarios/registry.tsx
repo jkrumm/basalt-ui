@@ -18,8 +18,14 @@ import { ExprC01Scenario } from './expr/c01/ExprC01'
 import { ExprC02Scenario } from './expr/c02/ExprC02'
 import { ExprC03Scenario } from './expr/c03/ExprC03'
 import { ExprC04Scenario } from './expr/c04/ExprC04'
+import { ExprC05Scenario } from './expr/c05/ExprC05'
 import { ExprC06Scenario } from './expr/c06/ExprC06'
+import { ExprC07Scenario } from './expr/c07/ExprC07'
+import { ExprC09Scenario } from './expr/c09/ExprC09'
+import { ExprC08Scenario } from './expr/c08/ExprC08'
+import { ExprN01Scenario } from './expr/n01/ExprN01'
 import { ExprN05Scenario } from './expr/n05/ExprN05'
+import { ExprN06Scenario } from './expr/n06/ExprN06'
 import type { ScenarioProps } from './shot-state'
 
 const RENDERERS = {
@@ -38,8 +44,14 @@ const RENDERERS = {
   'expr-c02': (p) => <ExprC02Scenario {...p} />,
   'expr-c03': (p) => <ExprC03Scenario {...p} />,
   'expr-c04': (p) => <ExprC04Scenario {...p} />,
+  'expr-c05': (p) => <ExprC05Scenario {...p} />,
   'expr-c06': (p) => <ExprC06Scenario {...p} />,
+  'expr-c07': (p) => <ExprC07Scenario {...p} />,
+  'expr-c09': (p) => <ExprC09Scenario {...p} />,
+  'expr-c08': (p) => <ExprC08Scenario {...p} />,
+  'expr-n01': (p) => <ExprN01Scenario {...p} />,
   'expr-n05': (p) => <ExprN05Scenario {...p} />,
+  'expr-n06': (p) => <ExprN06Scenario {...p} />,
 } satisfies Record<string, (props: ScenarioProps) => ReactElement>
 
 /** Every registered id; `scenario-info.ts` types its entries against this. */
