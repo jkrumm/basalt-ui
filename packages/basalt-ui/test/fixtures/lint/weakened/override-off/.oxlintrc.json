@@ -1,0 +1,1 @@
+{ "extends": ["./.oxlintrc.basalt.json"], "overrides": [{ "files": ["src/**"], "rules": { "no-console": "off" } }] }
