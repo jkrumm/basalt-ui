@@ -1,6 +1,6 @@
 # Spike: the epos `show` catalog on `defineCatalog` (P6)
 
-Verdict: **fits**. The ten `show` types port onto `defineCatalog` with epos's own zod schemas, its `schema.contract.test.ts` passes byte for byte, a refusal carries the schema's own advice to the model, and no block needs `$state` or an action seam. The json-render escape hatch (`catalog.toJsonRender()`) is not needed. The port is not clean as shipped, though: three engine limits refuse payloads the epos server accepts, and the engine sits four code lines over its target. Each is listed under Findings and none is fixed here (no `src` change in this Issue).
+Verdict: **fits**. The ten `show` types port onto `defineCatalog` with epos's own zod schemas, its `schema.contract.test.ts` passes byte for byte, a refusal carries the schema's own advice to the model, and no block needs `$state` or an action seam. The json-render escape hatch (`catalog.toJsonRender()`) is not needed. The port was not clean as shipped: three engine limits refused payloads the epos server accepts, and the engine sat four code lines over its target. Findings 1 to 3 and the line count were fixed after this spike (Issue 1161, below); the numbers in this page are the measurements before that change.
 
 Harness: `EPOS=<epos checkout> bun tools/spikes/epos-catalog-probe/run.ts` (one JSON object on stdout, about a second). Concept: `docs/v3/concepts/ai-mdx.md` section 7, P6. The epos checkout was read, never written: `git status --porcelain` there (empty) hashes the same before and after the run (the harness checks it and exits 1 otherwise), and no epos file is committed here. The harness stages the files it needs into `.scratch/` (gitignored), so the repo holds only the port.
 
@@ -36,6 +36,14 @@ Measurements are `port/probe.tsx` (not a gate, it records into `metrics.json`).
 4. **Dashboard variants are not in the catalog.** Epos picks a wider schema for the same `type` by what the spec holds (`controlledSchema`: coloured chart, thresholds on a stat, `controls` on a chart or table). The ten `show` types are the contract's; the variants are one block name with several schemas, or sibling blocks (`chart`, `chart-controlled`). Not measured here.
 5. **A block cannot raise an event.** `render(p, box)` gets `{ height, phase }` and nothing to emit with; only the engine emits (`invalid`, `error`). Epos does not need it (finding above), so this is a note, not a blocker.
 6. A message ending in a full stop gets a second one before "Fix these fields" (`...send two charts.. Fix these fields`). Cosmetic.
+
+## Resolved (Issue 1161)
+
+- Finding 1: `limits` may tighten or raise the default (32 KiB, depth 6) up to a ceiling of 512 KiB and depth 12; the default stays.
+- Finding 2: `defineBlock({ textKeys })` lists url-named keys the block draws as text; `validate` skips them. `expectCatalog` still fuzzes every text-drawn string for an attribute, so a block that turns a text key into a link fails its test.
+- Finding 3: `defineCatalog(blocks, { discriminator })` names the field; with a custom field it stays in the props the schema sees (epos's `type` literal), so the one-line adapter goes away.
+- Engine: 240 code lines (define 36, validate 107, block 97), under the target of 250.
+- Not fixed: findings 4 to 6.
 
 ## Verdict
 
