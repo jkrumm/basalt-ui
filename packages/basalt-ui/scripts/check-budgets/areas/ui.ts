@@ -121,7 +121,7 @@ export const rows: readonly RowDef[] = [
   {
     id: 'ui-value-exports',
     order: 350,
-    label: 'ui value exports, every src/ui module (exact)',
+    label: 'ui value exports, every src/ui .tsx module (exact; SLOTS is pinned)',
     // 215 measured. Exact: a new value export is a row here and a consumer named for it; a lower
     // number ratchets the ceiling down in the same commit.
     ceiling: 215,
