@@ -68,10 +68,11 @@ export function DataTable<T>({
 }: DataTableProps<T>): ReactElement {
   const model = modelOf(table)
   const scrolls = typeof height === 'object' || height === 'fill' || model.phone === 'scroll'
-  const focusable = model.activation.kind !== 'none' || model.selection !== undefined
   const columns = visibleColumns(model.specs, model.plan.columns).length
   const colcount = columns + (model.selection === undefined ? 0 : 1)
   const { phase } = model
+  // A row is a tab stop (roving) once there are rows to activate; before that the scroller is.
+  const focusable = model.rows.length > 0 && (phase.tag === 'ready' || phase.tag === 'stale')
   const footerShown = hasFooter(model) && phase.tag === 'ready'
   const windowed = virtual !== undefined && (phase.tag === 'ready' || phase.tag === 'stale')
 

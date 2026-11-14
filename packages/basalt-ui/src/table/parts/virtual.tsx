@@ -21,6 +21,7 @@
 import { useEffect, useLayoutEffect, useRef, useState } from 'react'
 import type { ComponentProps, ComponentType, KeyboardEvent, ReactElement, ReactNode } from 'react'
 import { cn } from '../../core/cn'
+import { useDetailHost } from './detail-sheet'
 import type { DetailHost, VirtualItem, VirtualLike } from '../../core/ports'
 import { TableCaption, tableVariants } from '../../ui/table'
 import type { TableModel } from '../use-data-table'
@@ -103,9 +104,7 @@ export function VirtualTable<T>({
   const scroller = (): HTMLElement | null =>
     caption.current?.closest<HTMLElement>('[data-slot="virtual-list"]') ?? null
 
-  useEffect(() => {
-    model.setHost(detail)
-  })
+  const sheet = useDetailHost(model, detail)
 
   const rowcount = rowCountOf(model, footerShown)
   const busy = model.phase.tag === 'loading'
@@ -140,52 +139,55 @@ export function VirtualTable<T>({
   const { items } = model
   const kept = keptIndex(model)
   return (
-    <Host
-      count={items.length}
-      estimateSize={() => rowPx}
-      getItemKey={(index) => items[index]?.key ?? index}
-      {...(kept !== undefined && { keepIndex: kept })}
-      spacer="tr"
-      columns={colcount}
-      tableProps={{
-        'data-slot': 'table',
-        role: 'table',
-        'aria-rowcount': rowcount,
-        'aria-colcount': colcount,
-        'aria-busy': busy || undefined,
-        className: cn(tableVariants(), 'table-fixed'),
-      }}
-      bodyProps={{ 'data-slot': 'table-body', role: 'rowgroup' }}
-      head={
-        <>
-          <TableCaption ref={caption} className="sr-only">
-            {model.label}
-          </TableCaption>
-          {head}
-          {footer}
-        </>
-      }
-      className="min-h-0 flex-1"
-      role="region"
-      aria-label={model.label}
-      {...(tabStop && { tabIndex: 0 as const })}
-      onKeyDown={model.keyboard.rootProps.onKeyDown}
-    >
-      {(window: readonly VirtualItem[]) =>
-        window.map((entry) => {
-          const item = items[entry.index]
-          if (item === undefined) return null
-          return (
-            <BodyItemRow
-              key={item.key}
-              model={model}
-              item={item}
-              env={env}
-              rowIndex={entry.index + 2}
-            />
-          )
-        })
-      }
-    </Host>
+    <>
+      <Host
+        count={items.length}
+        estimateSize={() => rowPx}
+        getItemKey={(index) => items[index]?.key ?? index}
+        {...(kept !== undefined && { keepIndex: kept })}
+        spacer="tr"
+        columns={colcount}
+        tableProps={{
+          'data-slot': 'table',
+          role: 'table',
+          'aria-rowcount': rowcount,
+          'aria-colcount': colcount,
+          'aria-busy': busy || undefined,
+          className: cn(tableVariants(), 'table-fixed'),
+        }}
+        bodyProps={{ 'data-slot': 'table-body', role: 'rowgroup' }}
+        head={
+          <>
+            <TableCaption ref={caption} className="sr-only">
+              {model.label}
+            </TableCaption>
+            {head}
+            {footer}
+          </>
+        }
+        className="min-h-0 flex-1"
+        role="region"
+        aria-label={model.label}
+        {...(tabStop && { tabIndex: 0 as const })}
+        onKeyDown={model.keyboard.rootProps.onKeyDown}
+      >
+        {(window: readonly VirtualItem[]) =>
+          window.map((entry) => {
+            const item = items[entry.index]
+            if (item === undefined) return null
+            return (
+              <BodyItemRow
+                key={item.key}
+                model={model}
+                item={item}
+                env={env}
+                rowIndex={entry.index + 2}
+              />
+            )
+          })
+        }
+      </Host>
+      {sheet}
+    </>
   )
 }

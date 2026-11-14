@@ -55,29 +55,51 @@
   [data-slot='table-root']:not([data-full-at]) :is([data-priority='3']) {
     display: none;
   }
+  /* the Details door shows exactly while a tier hides a column (the card tier is below every step) */
+  [data-slot='table-expand'] {
+    display: none;
+  }
+  [data-slot='table-root']:not([data-full-at]) [data-slot='table-expand'] {
+    display: inline-flex;
+  }
   @container table (max-width: 799.9px) {
     [data-full-at='800'] [data-priority='3'] {
       display: none;
+    }
+    [data-full-at='800'] [data-slot='table-expand'] {
+      display: inline-flex;
     }
   }
   @container table (max-width: 999.9px) {
     [data-full-at='1000'] [data-priority='3'] {
       display: none;
     }
+    [data-full-at='1000'] [data-slot='table-expand'] {
+      display: inline-flex;
+    }
   }
   @container table (max-width: 1199.9px) {
     [data-full-at='1200'] [data-priority='3'] {
       display: none;
+    }
+    [data-full-at='1200'] [data-slot='table-expand'] {
+      display: inline-flex;
     }
   }
   @container table (max-width: 1439.9px) {
     [data-full-at='1440'] [data-priority='3'] {
       display: none;
     }
+    [data-full-at='1440'] [data-slot='table-expand'] {
+      display: inline-flex;
+    }
   }
   @container table (max-width: 1799.9px) {
     [data-full-at='1800'] [data-priority='3'] {
       display: none;
+    }
+    [data-full-at='1800'] [data-slot='table-expand'] {
+      display: inline-flex;
     }
   }
 

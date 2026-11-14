@@ -6,8 +6,9 @@
  * (I2), and a throw in a cell lands in the error arm instead of the page.
  */
 /* oxlint-disable jsx-a11y/prefer-tag-over-role -- explicit roles keep the table a table under CSS projection (concept section 6, Roselli) */
-import { useEffect } from 'react'
 import type { ReactElement, ReactNode } from 'react'
+import { useMessages } from '../../core/messages/use-messages'
+import { table } from '../../core/messages/table'
 import { PhaseBoundary } from '../../core/phase-boundary'
 import type { DetailHost } from '../../core/ports'
 import { Button } from '../../ui/button'
@@ -21,6 +22,7 @@ import type { ModelRow, TableModel } from '../use-data-table'
 import { alignProps, tierAttributes, useActionsLabel, visibleColumns } from './head'
 import { GroupRow } from './group-row'
 import type { BodyItem } from './group-row-model'
+import { useDetailHost } from './detail-sheet'
 import { EmptyRow, ErrorRow, LoadingRows } from './phases'
 import { SelectCell } from './select-cell'
 import { TickCell } from './tick-column'
@@ -76,6 +78,44 @@ function RowActions<T>({
           })}
         </MenuContent>
       </Menu>
+    </span>
+  )
+}
+
+/**
+ * The `table-expand` door: where a tier hides a column and `onRowActivate` takes the tap, this opens
+ * the sheet derived from the row. The tier CSS shows it only while a column is hidden.
+ */
+function ExpandButton({
+  onOpen,
+  tabbable,
+}: {
+  onOpen: () => void
+  tabbable: boolean
+}): ReactElement {
+  const label = useMessages(table)('table.details')
+  return (
+    <span data-slot="table-expand">
+      <Button
+        size="icon-sm"
+        variant="ghost"
+        aria-label={label}
+        tabIndex={tabbable ? undefined : -1}
+        onClick={(event) => {
+          event.stopPropagation()
+          onOpen()
+        }}
+      >
+        <svg
+          viewBox="0 0 16 16"
+          className="size-4"
+          fill="none"
+          stroke="currentColor"
+          aria-hidden="true"
+        >
+          <path d="m5 6 3 3 3-3" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" />
+        </svg>
+      </Button>
     </span>
   )
 }
@@ -148,7 +188,14 @@ export function DataRow<T>({
             numeric={numeric}
             className={spec.wrap ? `${className ?? ''} whitespace-normal` : className}
           >
-            {content(spec, row.original, env, tabbable)}
+            {planned.identity && model.expandable ? (
+              <div className="flex min-w-0 items-center gap-1">
+                <div className="min-w-0 flex-1">{content(spec, row.original, env, tabbable)}</div>
+                <ExpandButton onOpen={() => model.openDetails(row.id)} tabbable={tabbable} />
+              </div>
+            ) : (
+              content(spec, row.original, env, tabbable)
+            )}
           </TableCell>
         )
       })}
@@ -225,14 +272,13 @@ export function DataTableBody<T>({
   detail?: DetailHost
 }): ReactElement {
   const model = modelOf(instance)
-  useEffect(() => {
-    model.setHost(detail)
-  })
+  const sheet = useDetailHost(model, detail)
   return (
     <TableBody role="rowgroup" {...model.keyboard.rootProps}>
       <PhaseBoundary fallback={({ reset }) => <ErrorRow model={model} retry={reset} />}>
         <Arm model={model} />
       </PhaseBoundary>
+      {sheet}
     </TableBody>
   )
 }
