@@ -190,7 +190,9 @@ export function DataRow<T>({
           >
             {planned.identity && model.expandable ? (
               <div className="flex min-w-0 items-center gap-1">
-                <div className="min-w-0 flex-1">{content(spec, row.original, env, tabbable)}</div>
+                <div className="min-w-0 flex-1 overflow-hidden text-ellipsis">
+                  {content(spec, row.original, env, tabbable)}
+                </div>
                 <ExpandButton onOpen={() => model.openDetails(row.id)} tabbable={tabbable} />
               </div>
             ) : (
