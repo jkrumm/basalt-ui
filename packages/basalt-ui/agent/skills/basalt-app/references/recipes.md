@@ -4,6 +4,8 @@ A recipe is the shipped answer to a pattern basalt composes but does not export:
 
 - [add-page](docs/recipes/add-page.md): adding a destination to an AppShell app: one file route, one nav entry
 - [app-shell](docs/recipes/app-shell.md): mounting the application frame once, in the root route
+- [ai-approvals-sources](docs/recipes/ai-approvals-sources.md): a chat asks before a tool runs, shows reasoning and cites sources, which `partView` leaves to the app
+- [ai-artifacts](docs/recipes/ai-artifacts.md): a model produces a document, a block, code or an html preview that opens beside the chat and keeps its versions
 - [board](docs/recipes/board.md): columns of KanbanCards that move between states, with a menu path and an app-owned drag engine
 - [inner-nav](docs/recipes/inner-nav.md): a page of sibling sections or records with a list beside the one open pane (settings)
 - [markdown](docs/recipes/markdown.md): render model or author text with code, diagrams and headings, on an article page
