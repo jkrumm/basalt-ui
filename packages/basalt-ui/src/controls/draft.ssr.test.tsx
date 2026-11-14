@@ -78,6 +78,11 @@ beforeEach(() => {
     getItem: (k) => window.localStorage.getItem(k),
     setItem: (k, v) => window.localStorage.setItem(k, v),
     removeItem: (k) => window.localStorage.removeItem(k),
+    subscribe: (cb) => {
+      const handler = (e: StorageEvent): void => cb(e.key)
+      window.addEventListener('storage', handler)
+      return () => window.removeEventListener('storage', handler)
+    },
   })
   localStorage.setItem('basalt:form:ssr', JSON.stringify({ v: 1, value: { title: 'draft' } }))
 })
