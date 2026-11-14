@@ -54,8 +54,12 @@ const SUBPATH_TYPES: Record<string, string> = Object.fromEntries(
       : [],
   ),
 )
+// Each reader builds a TypeScript program of its own. Collect between them: left to the collector, the
+// programs stack up and a process importing this module peaked at 2.3 to 2.9 GiB instead of 1.8 to 1.9.
 const SIGNATURES = readSignatures(SUBPATH_TYPES)
+Bun.gc(true)
 const OPTION_TYPES = readOptionTypes(SUBPATH_TYPES)
+Bun.gc(true)
 
 // Literal-union aliases a signature names but cannot show (`kind?: CalloutKind`). Read AFTER the
 // signatures, from a program of its own, so it cannot change how they print.
