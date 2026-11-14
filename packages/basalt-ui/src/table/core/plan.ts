@@ -3,7 +3,9 @@
  * column lands in exactly one card place; priorities are resolved deterministically; the tier
  * thresholds come from kind widths, never a measurement, so the server HTML already carries them.
  *
- * Card rules: the first `entity` is `title`, else the first column is promoted. At most one each
+ * Card rules: the first `entity` is `title`, else the first column is promoted. A column that names
+ * its card slot (`card` option) is placed before the ones left to a default, so `card: 'value'` wins
+ * over an earlier column of the same kind. At most one each
  * of `title`, `subtitle`, `badge`, `value`; at most 2 `edit`; at most 6 `meta`; overflow goes to
  * `detail`. A column hidden by the display state is `hidden`. `actions` sits in the kebab.
  *
@@ -43,7 +45,12 @@ export const SLOT_CAPS: Readonly<Partial<Record<CardPlace, number>>> = {
 export type PlanInput = Pick<
   KindSpec<unknown>,
   'id' | 'kind' | 'card' | 'priority' | 'width' | 'pin'
->
+> & {
+  /** The caller named a card slot (`card` option): placed before the columns left to a default. */
+  cardFirst?: boolean
+  /** Sized to its widest loaded value; the ch comes from `PlanOptions.contentCh`. */
+  content?: unknown
+}
 
 export type PlannedColumn = {
   id: string
@@ -69,9 +76,15 @@ export type TablePlan = {
 export type PlanOptions = {
   /** `display.visibility`: `false` hides a column. The identity column cannot be hidden. */
   visibility?: Readonly<Record<string, boolean>>
+  /** The widest loaded value in `ch` of each `width: 'content'` column, by id. */
+  contentCh?: Readonly<Record<string, number>>
   /** Dev warnings; default `console.warn` outside production. */
   warn?: (message: string) => void
 }
+
+/** The bounds of a `width: 'content'` column in `ch`. */
+export const CONTENT_MIN_CH = 18
+export const CONTENT_MAX_CH = 40
 
 export function widthPx(width: Width): number {
   return width === 'icon' ? ICON_COL_PX : width.ch * CH_PX + CELL_PAD_PX
@@ -108,7 +121,7 @@ function placeCards(
     take('title')
     places[identity] = 'title'
   }
-  inputs.forEach((input, index) => {
+  const place = (input: PlanInput, index: number): void => {
     if (index === identity) return
     if (!visible[index]) {
       places[index] = 'hidden'
@@ -120,7 +133,11 @@ function placeCards(
     }
     const wanted = input.card.filter((p): p is CardSlot => p !== 'title' && p !== 'kebab')
     places[index] = wanted.find(take) ?? 'detail'
-  })
+  }
+  // A slot the caller named is theirs before any default is read: declaration order only breaks
+  // ties among columns of the same standing.
+  inputs.forEach((input, index) => input.cardFirst === true && place(input, index))
+  inputs.forEach((input, index) => input.cardFirst !== true && place(input, index))
   return places
 }
 
@@ -167,7 +184,17 @@ export function planInputs(inputs: readonly PlanInput[], options: PlanOptions = 
       `basalt-ui/table: more than two priority-1 columns; ${demoted.join(', ')} demoted to 2 by declaration order`,
     )
   }
-  const widths = inputs.map((c) => widthPx(c.width))
+  const widths = inputs.map((c) =>
+    c.content === undefined
+      ? widthPx(c.width)
+      : widthPx({
+          ch: Math.min(
+            CONTENT_MAX_CH,
+            Math.max(CONTENT_MIN_CH, Math.ceil(options.contentCh?.[c.id] ?? 0)),
+          ),
+          flex: false,
+        }),
+  )
 
   const sum = (pick: (index: number) => boolean) =>
     widths.reduce(

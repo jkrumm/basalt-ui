@@ -29,7 +29,7 @@ function Columns<T>({ model }: { model: TableModel<T> }): ReactElement {
     <colgroup>
       {model.selection !== undefined && <col style={{ width: '2.5rem' }} />}
       {visibleColumns(model.specs, model.plan.columns).map(({ spec, planned }) => {
-        const flexible = spec.width !== 'icon' && spec.width.flex
+        const flexible = spec.width !== 'icon' && spec.width.flex && spec.content === undefined
         return (
           <col
             key={spec.id}

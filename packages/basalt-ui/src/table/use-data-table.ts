@@ -182,7 +182,13 @@ export function useDataTable<T>(options: UseDataTable<T>): DataTableInstance<T> 
         `${s.id}:${s.kind}:${s.priority}:${JSON.stringify(s.width)}:${s.pin}:${s.card.join('/')}`,
     )
     .join('|')
-  const plan = usePlan(columns, shapeKey + visibilityKey, display.visibility)
+  const contentCh = contentWidths(specs, options.data)
+  const plan = usePlan(
+    columns,
+    shapeKey + visibilityKey + JSON.stringify(contentCh),
+    display.visibility,
+    contentCh,
+  )
 
   const data = (options.data ?? NO_ROWS) as T[]
   const engine = tableEngine.useAppTable({
@@ -370,12 +376,33 @@ function groupOf<T>(
   return { spec, ...(group.summary !== undefined && { summary: group.summary }) }
 }
 
-/** The plan, recomputed only when a column's shape or the visibility changes (one dev warning each). */
+/** Rows read when sizing a `width: 'content'` column; a longer list is sampled from its head. */
+const CONTENT_SAMPLE = 1000
+
+/** The widest loaded value in `ch` of each `width: 'content'` column, by id; `{}` when none. */
+function contentWidths<T>(
+  specs: readonly KindSpec<T>[],
+  data: readonly T[] | undefined,
+): Record<string, number> {
+  const widths: Record<string, number> = {}
+  if (data === undefined) return widths
+  for (const spec of specs) {
+    if (spec.content === undefined) continue
+    let widest = 0
+    for (const row of data.slice(0, CONTENT_SAMPLE))
+      widest = Math.max(widest, spec.content.measure(row))
+    widths[spec.id] = widest
+  }
+  return widths
+}
+
+/** The plan, recomputed only when a column's shape, the visibility or a content width changes (one dev warning each). */
 function usePlan<T>(
   columns: readonly KindColumn<T>[],
   key: string,
   visibility: Record<string, boolean>,
+  contentCh: Record<string, number>,
 ): TablePlan {
-  // oxlint-disable-next-line react/exhaustive-deps -- `key` IS the shape of `columns` and `visibility`
-  return useMemo(() => planTable(columns, { visibility }), [key])
+  // oxlint-disable-next-line react/exhaustive-deps -- `key` IS the shape of `columns`, `visibility` and `contentCh`
+  return useMemo(() => planTable(columns, { visibility, contentCh }), [key])
 }
