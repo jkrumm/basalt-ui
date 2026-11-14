@@ -1,7 +1,142 @@
 {
   "schema": 1,
   "area": "shell",
-  "rows": [],
+  "rows": [
+    {
+      "id": "shell-r01",
+      "kind": "renamed",
+      "from": "basalt-ui#BasaltShell",
+      "to": "basalt-ui/shell#AppShell",
+      "profiles": ["parts", "app"],
+      "codemod": "imports",
+      "manual": false,
+      "note": "the `BasaltShell` + `useNav(NAV)` spread becomes `<AppShell nav={NAV}>`; the codemod moves and renames the import, the spread is edited by hand"
+    },
+    {
+      "id": "shell-r02",
+      "kind": "renamed-prop",
+      "from": "BasaltShell sidebarBlocks, settingsMenuItems with onClick + settingsMenu",
+      "to": "AppShell blocks, settings",
+      "profiles": ["parts", "app"],
+      "manual": true,
+      "note": "a prop rename, which the imports codemod cannot express (concept 8 lists it as C); deviation recorded in the PR"
+    },
+    {
+      "id": "shell-r03",
+      "kind": "replace",
+      "from": "settingsMenuItems with Anchor, current: 'page'",
+      "to": "a `pinned` nav item",
+      "profiles": ["parts", "app"],
+      "manual": true,
+      "note": "shutterflow"
+    },
+    {
+      "id": "shell-r04",
+      "kind": "replace",
+      "from": "account { state, actions }",
+      "to": "account { status } union; plan.label becomes detail, onManageAccount becomes rows",
+      "profiles": ["parts", "app"],
+      "manual": true,
+      "note": "shutterflow"
+    },
+    {
+      "id": "shell-r05",
+      "kind": "replace",
+      "from": "PageBar filtersEnd",
+      "to": "PageBar actions with group and kind: 'text'",
+      "profiles": ["parts", "app"],
+      "manual": true,
+      "note": "argo calendar"
+    },
+    {
+      "id": "shell-r06",
+      "kind": "replace",
+      "from": "nav search: () => ({ ...store.linkSearch(), key })",
+      "to": "search keeping the route-owned keys only",
+      "profiles": ["parts", "app"],
+      "manual": true,
+      "note": "argo calendar, astro; the router-search rule names the literal form",
+      "verify": "tsc, then lint"
+    },
+    {
+      "id": "shell-r07",
+      "kind": "replace",
+      "from": "isActive (argo, finances)",
+      "to": "nav item exact or activeWhen",
+      "profiles": ["parts", "app"],
+      "manual": true
+    },
+    {
+      "id": "shell-r08",
+      "kind": "kept",
+      "from": "globalActions[].mobile",
+      "to": "globalActions[].mobile with priority added, default 1",
+      "profiles": ["parts", "app"],
+      "manual": false,
+      "note": "behavior row: the field survives, priority is additive; no edit"
+    },
+    {
+      "id": "shell-r09",
+      "kind": "replace",
+      "from": "headerHeight={52}, --basalt-shell-lead-inset",
+      "to": "chrome=\"native-overlay\"",
+      "profiles": ["parts", "app"],
+      "manual": true
+    },
+    {
+      "id": "shell-r10",
+      "kind": "replace",
+      "from": "--basalt-main-content-h (rule and skill text only, no code)",
+      "to": "Page fill",
+      "profiles": ["parts", "app"],
+      "manual": true,
+      "note": "argo"
+    },
+    {
+      "id": "shell-r11",
+      "kind": "replace",
+      "from": "--app-shell-*, --basalt-page-bar-h, --basalt-main-pad-block in hand offsets",
+      "to": "Page fill, conditional, { min }; or --page-sticky-top",
+      "profiles": ["parts", "app"],
+      "manual": true,
+      "note": "argo astro-window/constants.ts, calendar-page.tsx, agenda.module.css"
+    },
+    {
+      "id": "shell-r12",
+      "kind": "replace",
+      "from": "PageTitle, toggleSidebar()",
+      "to": "PageBar title, command shell.toggle-rail",
+      "profiles": ["parts", "app"],
+      "manual": true,
+      "note": "concept 8 lists it as C; a replace has no import-rename form, so it is manual (deviation recorded in the PR)"
+    },
+    {
+      "id": "shell-r13",
+      "kind": "replace",
+      "from": "createBasaltRouter, basaltRouterOptions",
+      "to": "routerDefaults and the template",
+      "profiles": ["parts", "app"],
+      "manual": true
+    },
+    {
+      "id": "shell-r14",
+      "kind": "removed",
+      "from": "basalt.shell: false",
+      "to": "absence of ./shell, profile parts",
+      "profiles": ["parts", "app"],
+      "manual": true,
+      "note": "concept 8 lists it as C; a removal is manual (deviation recorded in the PR)"
+    },
+    {
+      "id": "shell-r15",
+      "kind": "replace",
+      "from": ".mantine-AppShell-*, data-basalt-scrollport in tests and CSS",
+      "to": "data-slot from SLOTS",
+      "profiles": ["parts", "app"],
+      "manual": true,
+      "note": "shutterflow ~12, obsidian"
+    }
+  ],
   "tokens": { "renamed": [], "valueShifts": [] },
   "storage": [],
   "urls": [],
