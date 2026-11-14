@@ -5,7 +5,7 @@
  */
 import { useNavigate } from '@tanstack/react-router'
 import { StatCell, StatGroup } from 'basalt-ui/cards'
-import { Bars, ChartCard } from 'basalt-ui/charts'
+import { Bars, LegacyChartCard as ChartCard } from 'basalt-ui/charts'
 import { filterSlot, spec } from 'basalt-ui/controls'
 import { Page, PageBar, Section } from 'basalt-ui/page'
 import type { ReactElement } from 'react'
