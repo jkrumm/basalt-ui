@@ -28,6 +28,11 @@ export type { FormFieldProps } from './form-field'
 export { FormRow } from './form-row'
 export type { FormRowProps } from './form-row'
 
+// v3 forms, state side: the local draft, the save-error mapper and the action row (`FormLike` is structural; the form engine stays the app's).
+export { useFormDraft } from './draft'
+export { toSubmitErrors } from './submit'
+export { FormFooter } from './form-footer'
+
 // v3 control-view: the cue and the reset live in `ControlView` alone; `spec` is the data a home renders.
 export { ControlView } from './control-view'
 export { spec } from './spec'
