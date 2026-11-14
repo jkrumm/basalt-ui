@@ -7,6 +7,7 @@ import { DeltaBadge } from '../../ui/badge'
 import { ChartCardContext } from '../card-context'
 import type { ChartCardProps, ChartFigure } from '../contract'
 import { Footer, formatValue, Head, PhaseBox, SURFACE } from './chart-card-frame'
+import { Legend } from './legend'
 
 const BAR = 'animate-pulse rounded-chip bg-foreground/10 motion-reduce:animate-none'
 
@@ -86,7 +87,9 @@ function FigureRow({ figure, loading }: { figure: ChartFigure; loading: boolean 
  * optional footer of at most two facts. It owns the box and the phase: `chart` is a box slot called
  * only in `ready` and `stale`, in a fixed clipping box, so a taller chart cannot move the card and a
  * loading, empty or error card is as tall as a ready one. With `phase="loading"` and no `chart` it is
- * a Suspense fallback that draws the same rows. The legend is drawn by the chart, in the server HTML.
+ * a Suspense fallback that draws the same rows. A kind draws its own legend, in the server HTML; marks
+ * a page draws through the seam take theirs from `legend`, a row between the figure and the box that
+ * is drawn in every phase, so loading does not move the box.
  *
  * @useWhen a metric needs a chart with a title, a headline figure, controls or a footer around it
  * @neverWhen the content is a table, a list or a board (use a data panel) or a lone figure (use a stat card)
@@ -101,7 +104,7 @@ function FigureRow({ figure, loading }: { figure: ChartFigure; loading: boolean 
  * />
  */
 export function ChartCard(props: ChartCardProps): ReactElement {
-  const { figure, footer, controls, menu, height = 'auto', chart } = props
+  const { figure, legend, footer, controls, menu, height = 'auto', chart } = props
   const resolved = resolvePhase({ phase: props.phase, empty: props.empty })
   // A Suspense fallback has no chart to call, so it can only be loading.
   const effective: ResolvedPhase = chart === undefined ? { tag: 'loading', body: false } : resolved
@@ -138,10 +141,21 @@ export function ChartCard(props: ChartCardProps): ReactElement {
             {figure !== undefined && (
               <FigureRow figure={figure} loading={effective.tag === 'loading'} />
             )}
+            {legend !== undefined && legend.length > 0 && (
+              <div
+                data-slot="chart-legend"
+                className={cn('shrink-0', figure !== undefined && 'mt-2')}
+              >
+                <Legend entries={legend} />
+              </div>
+            )}
             <PhaseBox
               resolved={effective}
               chart={chart}
-              className={cn(figure !== undefined && 'mt-2', BOX[height])}
+              className={cn(
+                (figure !== undefined || (legend !== undefined && legend.length > 0)) && 'mt-2',
+                BOX[height],
+              )}
             />
           </div>
           <Footer facts={footer} />
