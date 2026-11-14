@@ -1,0 +1,9 @@
+{
+  "name": "@basalt-ui/spike-epos-bridge-probe",
+  "private": true,
+  "description": "Spike (docs/v3/concepts/migration-release.md section 5, G0; DPO 16): run the bridge profile against a scratch copy of the epos UI, read-only, no employer commit. Throwaway harness, no tests.",
+  "type": "module",
+  "scripts": {
+    "run": "bun run.ts"
+  }
+}
