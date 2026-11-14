@@ -1,0 +1,19 @@
+{
+  "why": "Shell cycle 1 (docs/v3/cycles/shell-1.md, P2 shell-1.14, P3 shell-1.19): at 390 px two page actions take the phone header and cut the page title to 79 px ('Fleet overvi…'), because `PageAction.mobile` defaults to `bar` (`.evidence/cycle-shell-1/shots/b1-overview-390.png`). At 1800 px a page whose `PageBar` has only a title draws no band, so its content starts 7 px under the header while a page with a band starts 45 px lower (`.evidence/v3-shots/shell-1/cycle-shell-settings-section-notifications--dark--1800x1200.png`).",
+  "what": "The phone header keeps the title readable, and every page's content starts at the same height.",
+  "owns": [
+    "packages/basalt-ui/src/shell/page-bar.tsx, src/page/page-bar.tsx and the header's action row",
+    "packages/basalt-ui/src/page/page.tsx or the shell main's padding",
+    "their tests and layout tests"
+  ],
+  "must_not_touch": ["docs/v3/ARCHITECTURE.md", "apps/playground/src/cycle/**"],
+  "change": "Below the `regular` tier the header keeps at most the primary page action and folds the others into one overflow menu unless an action says `mobile: 'bar'` explicitly; the title keeps its minimum width. A page with no band keeps the band's top inset, so the first content row sits at the same y on every page. Layout tests: a 390 px header with a title and two actions keeps the title unclipped; at 1800 px the first content row of a band-less page and of a page with a band start within 4 px of each other.",
+  "commits": "fix: one commit in packages/basalt-ui.",
+  "proof": "make check; the layout tests.",
+  "acceptance": [
+    "At 390 px a title and two actions leave the title unclipped (layout test)",
+    "At 1800 px content starts at the same height with and without a band, within 4 px (layout test)",
+    "make check passes"
+  ],
+  "out_of_scope": "The breadcrumb trail and route states (v3-shell-1-shell)."
+}

@@ -1,0 +1,19 @@
+{
+  "why": "Shell cycle 1 (docs/v3/cycles/shell-1.md, P1 shell-1.5): `SplitPage`'s doc and JSDoc pass `selected={store.field.section.isSet}` (`src/page/parts/split-page.tsx:22,31`), and a field handle has no `isSet` (tsc TS2339). `!isDefault` is the nearest, and a section field writes no param for its fallback, so on a 390 px phone the fallback section (General) cannot be opened: the tap changes nothing and the list stays (`.evidence/cycle-shell-1/actions.log` B5). The build's `SettingsPage.tsx:91` carries the workaround.",
+  "what": "A `SplitPage` on a phone opens every pane, the fallback's included.",
+  "owns": [
+    "packages/basalt-ui/src/router/controls/define.ts and the field codecs it uses (an `isSet` on the handle; how a written fallback is kept)",
+    "packages/basalt-ui/src/page/parts/split-page.tsx, docs/split-page.md",
+    "their tests and one layout test"
+  ],
+  "must_not_touch": ["docs/v3/ARCHITECTURE.md", "apps/playground/src/cycle/**"],
+  "change": "Pick one and say which in the PR: (a) a field handle exposes `isSet` (its param is present), and a push field written with its fallback keeps the param, so choosing General writes `?section=general`; or (b) `SplitPage` takes the pane field itself (`pane={store.field.section}`) and reads whether it was chosen. The doc's example matches the API that ships. A layout test at 390 px taps the fallback item and sees its pane; Back shows the list.",
+  "commits": "fix: one commit in packages/basalt-ui.",
+  "proof": "make check; the layout test.",
+  "acceptance": [
+    "At 390 px, choosing the fallback section opens its pane, and Back returns to the list (layout test)",
+    "The `SplitPage` example in its doc and JSDoc type-checks against the shipped handle",
+    "make check passes"
+  ],
+  "out_of_scope": "The in-page back link (v3-shell-1-shell); `InnerNav`'s links (v3-shell-1-inner-nav)."
+}

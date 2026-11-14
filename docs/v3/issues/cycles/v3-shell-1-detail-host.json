@@ -1,0 +1,20 @@
+{
+  "why": "Shell cycle 1 (docs/v3/cycles/shell-1.md, P1 shell-1.1): `useDataTable({ detail })` is documented as the pairing of a table with `PageAside`, and it cannot be wired from a published subpath. The activation shows into the `DetailHost` that `<DataTable detail={…}>` receives (`src/table/parts/data-table.tsx:61`); the host `PageAside` serves is `DetailHostContext` (`src/page/page.tsx:46`), which no subpath exports and `DataTable` does not read. The entry's title is the table label (`src/table/use-data-table.ts:244`), so even a wired aside would read 'Checkout deploys' for every row. The build wrote a URL field, an `onRowActivate` and a boolean adapter instead (`apps/playground/src/cycle/shell-1/ServicesPage.tsx:68`).",
+  "what": "A table row's `detail` opens in the page's `PageAside` with no wiring.",
+  "owns": [
+    "packages/basalt-ui/src/table/parts/data-table.tsx, src/table/parts/body.tsx, src/table/parts/virtual.tsx",
+    "packages/basalt-ui/src/table/use-data-table.ts and src/table/contract.ts (the detail entry's title)",
+    "packages/basalt-ui/src/page/page.tsx (only if the context needs an accessor)",
+    "their tests and one layout test"
+  ],
+  "must_not_touch": ["docs/v3/ARCHITECTURE.md", "apps/playground/src/cycle/**"],
+  "change": "When `detail` is not passed, `DataTable` and its body read the enclosing `Page`'s detail host; outside a `Page` it keeps the sheet default. `useDataTable` takes `detailTitle?: (row) => string`, and the entry's title is that, else the table label. A layout test renders `AppShell > Page > DataTable` with `detail` and a `PageAside`, activates a row at 1800 px and asserts the aside shows the row's body under the row's title. The PR names the `cycle-shell-1: shell-1.1` workaround it makes removable.",
+  "commits": "fix: one commit in packages/basalt-ui.",
+  "proof": "make check; the layout test.",
+  "acceptance": [
+    "A row with `detail` opens its body in the page's `PageAside` under `AppShell` with no `detail` prop on `DataTable` (layout test)",
+    "The aside's title is `detailTitle(row)` when given",
+    "make check passes"
+  ],
+  "out_of_scope": "The compact sheet (v3-shell-1-phone-aside); a string `state` on `PageAside` (v3-shell-1-api)."
+}
