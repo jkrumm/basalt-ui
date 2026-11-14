@@ -55,6 +55,36 @@ export const codecClosure = () => c.codec({ amount: { kind: 'money' } })
 // @ts-expect-error actions has no value in state, so a codec cannot name it
 export const codecActions = () => c.codec({ actions: 'actions' })
 
+// state-1.16: `tone` takes the closed union `options` declares, so a Record over it indexes with no cast.
+type Stage = 'open' | 'done'
+const STAGES = ['open', 'done'] as const
+const STAGE_TONE: Record<Stage, 'good' | 'neutral'> = { open: 'neutral', done: 'good' }
+export const toneNoCast: KindColumn<Row> = c.status('name', {
+  options: STAGES,
+  tone: (value) => STAGE_TONE[value],
+})
+export const toneFromMutableUnion: KindColumn<Row> = c.status('name', {
+  options: ['open', 'done'] as Stage[],
+  tone: (value) => STAGE_TONE[value],
+})
+
+export const toneIsTheUnion = () =>
+  c.status('name', {
+    options: STAGES,
+    // @ts-expect-error `value` is the union, not a number
+    tone: (value) => ({ open: 'neutral', done: 'good' })[value as unknown as number] ?? 'neutral',
+  })
+
+// state-1.17: `data` may be left out while `phase` is a pending query.
+export const noDataWhilePending: UseDataTable<Row> = {
+  id: 'rows',
+  label: 'Rows',
+  columns: [c.entity('name')],
+  getRowId: (row) => row.id,
+  mode: { kind: 'client' },
+  phase: 'loading',
+}
+
 describe('col<T>() (type-guard)', () => {
   test('is a compile-time fixture: see the @ts-expect-error directives above', () => {
     expect(ok).toHaveLength(5)
