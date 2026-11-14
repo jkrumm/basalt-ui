@@ -51,6 +51,36 @@ export const Two = () => (
 )
 // @errors outside-home,outside-home
 
+// @invalid
+import { RadioGroup, Radio } from 'basalt-ui/ui/radio-group'
+export const Parts = () => (
+  <RadioGroup value={a}>
+    <Radio value="x" />
+    <Radio value="y" />
+  </RadioGroup>
+)
+
+// @invalid
+import { Select, SelectTrigger, SelectContent, SelectItem } from 'basalt-ui/ui/select'
+export const Composed = () => (
+  <Select value={a}>
+    <SelectTrigger />
+    <SelectContent>
+      <SelectItem value="x" />
+    </SelectContent>
+  </Select>
+)
+
+// @invalid
+import { useState } from 'react'
+import { Slider } from 'basalt-ui/ui/slider'
+export function Panel(handle) {
+  const [opacity, setOpacity] = useState(0.5)
+  return filterSlot.custom(handle, 'Opacity', () => (
+    <Slider value={opacity} onValueChange={setOpacity} />
+  ))
+}
+
 // @valid
 import { Select } from 'basalt-ui/ui/select'
 export const Wrapped = () => (
@@ -113,6 +143,20 @@ export const Hoisted = () => (
   </Row>
 )
 const range = store.field.range
+
+// @valid
+import { useState } from 'react'
+import { Slider } from 'basalt-ui/ui/slider'
+export function Panel(handle) {
+  const [open, setOpen] = useState(false)
+  return filterSlot.custom(handle, 'Opacity', ({ value, set }) => (
+    <Slider value={value} onValueChange={set} onPointerDown={() => setOpen(true)} />
+  ))
+}
+
+// @valid
+import { SelectItem } from 'basalt-ui/ui/select'
+export const Part = () => <SelectItem value="x" />
 
 // @valid
 import { Select } from './select'
