@@ -198,7 +198,7 @@ Consumers migrate after 3.0.0 is published, in the held rows' order: argo per ro
 
 No import from the old app into the new one (`import-boundary` in the new app's preset). Scheme during the sibling period: the app owns one key; the 2.x side reads what it always read, and the cutover PR is where the boot script changes.
 
-### 6.1 Managed layer during the sibling period (F: argo at `f5c49ca6`, Bun 1.4.3, sibling on a second version as stand-in; U: the v3 CLI, unbuilt, must keep these behaviours)
+### 6.1 Managed layer during the sibling period (F: argo at `f5c49ca6`, Bun 1.4.3, sibling on a second version as stand-in; the v3 CLI keeps these behaviours: `sync/sibling.test.ts` holds them on the `test/fixtures/sibling` repo)
 
 Rule: the existing install stays root-owned until cutover; the new one is app-scoped, declared by `"basalt": { "sibling": true }` in the app's `package.json`. The 9.2 invariant holds: an undeclared second install is still refused.
 
