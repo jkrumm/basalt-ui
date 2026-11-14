@@ -1,0 +1,8 @@
+/*
+ * The `form-row-draft` fixture's Tailwind v4 entry, compiled WITH preflight like `form-field.css`.
+ * `form-row-draft.layout.test.ts` compiles it into a temp directory; nothing generated lands in the repo.
+ */
+@import '../../../src/css/tailwind.css' source(none);
+@source './form-row-draft-fixture.tsx';
+@source '../../../src/ui';
+@source '../../../src/controls';

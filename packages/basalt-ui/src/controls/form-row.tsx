@@ -36,9 +36,14 @@ export const formRowParts = ['form-row', 'form-row-fields'] as const
  * </FormRow>
  */
 export function FormRow({ legend, disabled, className, children }: FormRowProps): ReactElement {
+  // The container is the row's own fieldset, never the root: Chrome drops the layout of a size
+  // container's subtree when the container is a direct child of a `<fieldset>` (a form's
+  // `<Fieldset disabled>`) and one commit both changes a sibling before it and an input inside it
+  // after a forced layout, which is a restored draft. The root is a plain box, so the row's
+  // container always sits in it, whatever encloses the row.
   return (
-    <div data-slot="form-row" className={cn('@container min-w-0', className)}>
-      <Fieldset {...(disabled === true && { disabled: true })} className="gap-2">
+    <div data-slot="form-row" className={cn('min-w-0', className)}>
+      <Fieldset {...(disabled === true && { disabled: true })} className="@container min-w-0 gap-2">
         {legend ? <FieldsetLegend>{legend}</FieldsetLegend> : null}
         <div
           data-slot="form-row-fields"
