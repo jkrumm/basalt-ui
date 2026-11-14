@@ -69,10 +69,29 @@ export type BulkAction<T> = {
   icon?: IconComponent
 }
 
-/** What `useDataTable` returns and `DataTable` and the parts consume; opaque to callers. */
+/**
+ * The `t.table` escape (concept section 4, rung 4): a read view of what the table shows, for an
+ * own composite, a board over the same rows or an export. Structural on purpose: no engine type
+ * crosses the public `.d.ts`, so the library under the table can change without a break here.
+ */
+export type TableEscape<T> = {
+  /** The page in body order (client: after sort, filter and paging; server: the rows it sent). */
+  readonly rows: readonly { readonly id: string; readonly original: T }[]
+  /** Every row matching the request: all pages on a client table, the loaded page on a server one. */
+  readonly matched: readonly T[]
+  /** The visible columns in order, without the actions column; `value` is the kind's raw value. */
+  readonly columns: readonly {
+    readonly id: string
+    readonly header: string
+    value(row: T): unknown
+  }[]
+}
+
+/** What `useDataTable` returns and `DataTable` and the parts consume; read it through `table`. */
 export type DataTableInstance<T> = {
   readonly __brand: 'DataTableInstance'
   readonly __row?: (row: T) => void
+  readonly table: TableEscape<T>
 }
 
 // ---- Mode, selection, views, actions ------------------------------------------------------
