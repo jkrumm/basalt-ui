@@ -1,0 +1,27 @@
+{
+  "why": "State cycle 1 (docs/v3/cycles/state-1.md) logged two P2 and four P3 `api` findings, all glue or casts between a store and a component. state-1.9: a `tabs` slot is a hand-written `{ kind: 'controls-slot', count: 1, render }` literal (`OrdersPage.tsx:52-58`, `routes/overview.tsx:150-154`). state-1.10: a sheet that edits the record named by a URL field maps `open` and `onOpenChange` onto the handle by hand (`OrdersPage.tsx:306-312`), though `PageAside` already takes `state`. P3: state-1.16, `c.status` `tone` takes a `string` (a cast per closed union, also expression-2 c07); state-1.17, `useDataTable` requires `data` while `phase` is pending (`list.data ?? []`); state-1.18, `toWindow` can return `{ window: 'custom' }`; state-1.19, an `optimistic` target's `apply` gets `prev: unknown`.",
+  "what": "Bind tabs and a sheet to a handle, and remove four casts.",
+  "owns": [
+    "packages/basalt-ui/src/page/page-bar.tsx, src/page/section.tsx, src/page/contract.ts (the `tabs` prop)",
+    "packages/basalt-ui/src/ui/sheet.tsx (the `state` prop)",
+    "packages/basalt-ui/src/table/core/kinds*.ts*, src/table/use-data-table.ts (types only)",
+    "packages/basalt-ui/src/router/controls/codec.ts and define.ts (the range codec and `toWindow` type)",
+    "packages/basalt-ui/src/data/optimistic.ts",
+    "their tests and type guards"
+  ],
+  "must_not_touch": [
+    "docs/v3/ARCHITECTURE.md",
+    "packages/basalt-ui/src/controls/spec.ts (v3-state-1-spec-handles)",
+    "apps/playground/src/cycle/**"
+  ],
+  "change": "(1) `PageBar` and `Section` `tabs` also take `{ handle, label }` of an enum field and draw `ViewTabs` from it; the slot form stays for custom content (state-1.9). (2) `Sheet` takes `state`: a `ControlHandle<boolean>` (open while true) or a string handle (open while non-empty), and closing calls `clear()`, matching `PageAside` (state-1.10). (3) `c.status` infers the option union from `options` and types `tone`'s argument with it (state-1.16). (4) `useDataTable`'s `data` is optional while `phase` is a pending query (state-1.17). (5) The range codec reads `custom` without both dates as the fallback, and `toWindow`'s return type leaves `'custom'` out of `window` (state-1.18). (6) `OptimisticTarget<V, T>` types the cached value, so `apply(prev: T, values: V)` needs no cast (state-1.19). The PR names each `cycle-state-1:` workaround it makes removable.",
+  "commits": "feat: or fix: per component, in packages/basalt-ui.",
+  "proof": "make check; a type guard per type change; a test for the sheet's `state` and the tabs handle form.",
+  "acceptance": [
+    "`<PageBar tabs={{ handle, label }} />` draws ViewTabs bound to the handle (test)",
+    "`<Sheet state={stringHandle}>` is open while the handle is non-empty and Close clears it (test)",
+    "`tone`, `data`, `toWindow` and `apply` need no cast in a type guard that copies the build's usage",
+    "make check passes"
+  ],
+  "out_of_scope": "The connection slot (v3-state-1-shell); exporting the v3 ChartCard (v3-state-1-wiring)."
+}

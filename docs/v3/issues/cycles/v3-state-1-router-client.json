@@ -1,0 +1,19 @@
+{
+  "why": "State cycle 1 (docs/v3/cycles/state-1.md, P1 state-1.1): `createBasaltRouter` builds `context.queryClient` with the 2.x `src/query-client.ts`, which never installs the live runtime. Every `liveQuery` fetched on the router's client throws in development (`[basalt] liveQuery [...] needs a QueryClient from makeQueryClient`), and in production a `pushed` query never learns that the stream is live. Every v3 app on `createBasaltRouter` would build a second client and nest a `QueryClientProvider`, as `apps/playground/src/cycle/state-1/orders-live.ts:12` does.",
+  "what": "One QueryClient factory: the router's client is `basalt-ui/data`'s `makeQueryClient`.",
+  "owns": [
+    "packages/basalt-ui/src/provider/create-router.tsx",
+    "packages/basalt-ui/src/query-client.ts and its tests",
+    "packages/basalt-ui/src/provider/*.test.tsx that pin the router's client"
+  ],
+  "must_not_touch": ["docs/v3/ARCHITECTURE.md", "apps/playground/src/cycle/**"],
+  "change": "`buildRouterOptions` in `src/provider/create-router.tsx` builds `context.queryClient` with `makeQueryClient` from `src/data/query-client.ts`. `src/query-client.ts` re-exports that factory (or is deleted where nothing else imports it), so the package has one QueryClient factory and one retry predicate. A test fetches a `liveQuery` on `createBasaltRouter(...).options.context.queryClient` and expects it to resolve. The PR names the `cycle-state-1: state-1.1` workaround it makes removable; the cycle build is not edited.",
+  "commits": "fix: one commit in packages/basalt-ui.",
+  "proof": "make check; the new test.",
+  "acceptance": [
+    "A `liveQuery` fetched on the client `createBasaltRouter` puts in context resolves in development (test)",
+    "`rg -n \"new QueryClient\" packages/basalt-ui/src --glob '!*.test.*'` finds one factory",
+    "make check passes"
+  ],
+  "out_of_scope": "Deleting the 2.x provider (v3-teardown-runtime); starting `bindInvalidation` from the router (v3-state-1-wiring)."
+}

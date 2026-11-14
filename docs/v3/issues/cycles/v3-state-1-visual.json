@@ -1,0 +1,17 @@
+{
+  "why": "State cycle 1 (docs/v3/cycles/state-1.md, P2 state-1.14): at 1800 px the FilterSet draws the full pill row and, under it, the narrow form's `Filters` button, on `/cycle-state` and on `/overview` alike. The row shows from `@regular` and the button's wrapper hides from `@regular`, but the two resolve against different containers, so both forms show. Shots: `.evidence/v3-shots/state-1/cycle-state*--1800x1200.png` in the cycle's worktree; reproduce with `bun apps/playground/scripts/shots.ts /overview`.",
+  "what": "One FilterSet form at any width.",
+  "owns": [
+    "packages/basalt-ui/src/controls/filter-set-spec.tsx and its CSS",
+    "a layout test and fixture under packages/basalt-ui/tests/layout/"
+  ],
+  "must_not_touch": ["docs/v3/ARCHITECTURE.md", "apps/playground/src/cycle/**"],
+  "change": "Put the row and the narrow `Filters` button under the same `@container`, so `@regular:flex` and `@regular:hidden` read one width. A layout test mounts a FilterSet of four specs in a `Page` at 1800 and 390 px and asserts exactly one of the two forms is visible at each width.",
+  "commits": "fix: one commit in packages/basalt-ui.",
+  "proof": "make check; the layout test.",
+  "acceptance": [
+    "At 1800 px only the pill row is visible; at 390 px only the Filters button (layout test)",
+    "make check passes"
+  ],
+  "out_of_scope": "Reset all on the desktop row (v3-state-1-state); DataTable cells at 390 px (v3-expr-2-kit-fixes)."
+}

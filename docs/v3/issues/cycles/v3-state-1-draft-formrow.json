@@ -1,0 +1,20 @@
+{
+  "why": "State cycle 1 (docs/v3/cycles/state-1.md, P1 state-1.4): an edit form in a `Sheet` (`FormField`s, one `FormRow` with a `Select` and a `NumberField`, `useFormDraft`). The user changes the amount, waits for the autosave and reloads. The sheet reopens from the URL with 'Draft restored from this device.', but `[data-slot=\"form-row\"]` and every descendant measure 0 px tall, with normal computed `display` and `visibility`. The restored amount is invisible and Save submits it. A draft that changed only the note draws the row, and so does reopening the record by click. Repro: `apps/playground/src/cycle/state-1/OrdersPage.tsx`, route `/cycle-state`; the probe is described in the findings file.",
+  "what": "A restored draft never hides a field.",
+  "owns": [
+    "packages/basalt-ui/src/controls/form-row*",
+    "packages/basalt-ui/src/controls/draft.ts",
+    "packages/basalt-ui/src/ui/sheet.tsx and packages/basalt-ui/src/ui/number-field.tsx, only for this defect",
+    "a new layout test and fixture under packages/basalt-ui/tests/layout/"
+  ],
+  "must_not_touch": ["docs/v3/ARCHITECTURE.md", "apps/playground/src/cycle/**"],
+  "change": "Reproduce in a layout fixture: a `Sheet` open on first mount, a form with a `FormRow` holding a `NumberField`, and `useFormDraft` restoring a stored draft whose number differs from the default. Find why the `FormRow` subtree (an `@container`) gets no layout after the restore, and fix the cause in the component that owns it. The fixture then asserts every field of the row has a non-zero height after the restore, at 1800 and 390 px.",
+  "commits": "fix: one commit in packages/basalt-ui per component touched.",
+  "proof": "make check; the layout test; the cause named in the PR.",
+  "acceptance": [
+    "A restored number draft in a Sheet leaves every FormRow field visible with a non-zero height at 1800 and 390 px (layout test)",
+    "The PR names the cause it fixed",
+    "make check passes"
+  ],
+  "out_of_scope": "Clearing the draft on submit (v3-state-1-state); any new export."
+}

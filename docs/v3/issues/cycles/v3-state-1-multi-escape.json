@@ -1,0 +1,23 @@
+{
+  "why": "State cycle 1 (docs/v3/cycles/state-1.md, P1 state-1.3): in a FilterSet multi pill, picking Failed writes `?status=[\"failed\"]` and the table filters. Escape closes the list. A second Escape, the one a user presses to close the popover, unsets `status` from the URL and the table. Base UI's combobox clears its value on Escape when the list is closed, and the multi renderer passes that through as a write. A filter the user applied and saw applied is dropped by a close key.",
+  "what": "Escape never clears a multi filter.",
+  "owns": [
+    "packages/basalt-ui/src/controls/renderers.tsx (the multi renderer)",
+    "packages/basalt-ui/src/controls/multi-select-filter*",
+    "their tests"
+  ],
+  "must_not_touch": [
+    "docs/v3/ARCHITECTURE.md",
+    "packages/basalt-ui/src/ui/combobox.tsx unless the primitive's own contract says Escape clears",
+    "apps/playground/src/cycle/**"
+  ],
+  "change": "In the multi renderer, Escape closes the list and then the popover and writes nothing; the explicit Clear and `Reset all` stay the ways to unset. Check whether the single-select and the range renderers share the behaviour and fix them in the same commit if they do. A test opens a multi pill, picks an option, presses Escape twice and expects the handle to keep the pick and the popover to be closed.",
+  "commits": "fix: one commit in packages/basalt-ui.",
+  "proof": "make check; the new test.",
+  "acceptance": [
+    "Pick, Escape, Escape in a multi pill keeps the pick in the store and closes the popover (test)",
+    "Clear still unsets the field (existing or new test)",
+    "make check passes"
+  ],
+  "out_of_scope": "The pill's look; the combobox primitive's behaviour outside a filter."
+}

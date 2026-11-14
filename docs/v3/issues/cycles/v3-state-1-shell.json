@@ -1,0 +1,18 @@
+{
+  "why": "State cycle 1 (docs/v3/cycles/state-1.md, P2 state-1.8): `docs/connection-indicator.md` places `ConnectionIndicator` 'in the end slot of the page bar', and `PageBarProps` (title, parent, controls, tabs, refresh, actions) has no slot for it. The build put it on the filter row (`OrdersPage.tsx:299`), and the shipped page doctrine gives no other home.",
+  "what": "The page bar takes the connection.",
+  "owns": [
+    "packages/basalt-ui/src/page/page-bar.tsx, src/page/contract.ts (PageBarProps)",
+    "packages/basalt-ui/src/page/connection-indicator.tsx (only if its placement needs a variant)",
+    "their tests and a layout test"
+  ],
+  "must_not_touch": ["docs/v3/ARCHITECTURE.md", "apps/playground/src/cycle/**"],
+  "change": "`PageBar` takes `connection?: ConnectionView` and draws `ConnectionIndicator` in its end slot, before `refresh`, at every width (the indicator already folds its word below 840 px). Without the prop nothing changes. A layout test draws a bar with `connection`, `refresh` and two actions at 1800 and 390 px and asserts the indicator sits before the refresh button on one line.",
+  "commits": "feat: one commit in packages/basalt-ui.",
+  "proof": "make check; the layout test.",
+  "acceptance": [
+    "`<PageBar connection={view} refresh={…} />` draws the indicator before the refresh button at 1800 and 390 px (layout test)",
+    "make check passes"
+  ],
+  "out_of_scope": "What the indicator shows; the `tabs` prop (v3-state-1-api)."
+}

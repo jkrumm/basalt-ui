@@ -1,0 +1,27 @@
+{
+  "why": "State cycle 1 (docs/v3/cycles/state-1.md) logged two P2 and one P3 `wiring` findings. state-1.11: `basalt-ui/charts` exports the 2.x `ChartCard` (`state`, `facts`, children), while `docs/chart-card.md` documents the v3 card in `charts/contract.ts` (`phase`, `figure`, `chart`), which no subpath exports; the build followed the doc, hit `Property 'phase' does not exist`, and mapped the query onto `state` by hand (`OrdersPage.tsx:135-148`). state-1.12: `createChannel` and its `Transport` and `Wire` types ship only on the root barrel, next to the 2.x surface, while `bindInvalidation` and `useConnection` are on `basalt-ui/data` (`orders-live.ts:56`). state-1.20 (P3): `bindInvalidation`'s `start()` is a root `useEffect` the app writes.",
+  "what": "The documented card is the exported one, the channel ships with the data layer, and the router starts the binding.",
+  "owns": [
+    "packages/basalt-ui/src/charts/index.ts, src/charts/ChartCard.tsx (the export name only), src/charts/parts/chart-card*",
+    "packages/basalt-ui/src/data/index.ts",
+    "packages/basalt-ui/src/provider/create-router.tsx (the `live` option)",
+    "packages/basalt-ui/scripts/export-surface* and the surface snapshot, as their generator writes them",
+    "packages/basalt-ui/MIGRATING.md (the rename row)",
+    "the playground files that import the 2.x ChartCard by name, for the rename only"
+  ],
+  "must_not_touch": [
+    "docs/v3/ARCHITECTURE.md",
+    "apps/playground/src/cycle/**",
+    "apps/playground/src/scenarios/expr/**"
+  ],
+  "change": "(1) `basalt-ui/charts` exports the v3 `ChartCard` that `docs/chart-card.md` describes; the 2.x card stays reachable as `LegacyChartCard` until `v3-teardown-views`, with a MIGRATING row (state-1.11). If the budget or the expression scenarios make the swap larger than this row, export the v3 card under its doc name and say what is left in the PR. (2) `basalt-ui/data` exports `createChannel`, `Transport` and `Wire`; the root keeps its export until the teardown (state-1.12). (3) `createBasaltRouter` and `basaltRouterOptions` take `live?: { start(): () => void }` and start it once on the client with the provider, stopping it on unmount (state-1.20). Update the export-surface snapshot with its generator.",
+  "commits": "feat: per change in packages/basalt-ui; the playground rename in its own commit.",
+  "proof": "make check; pack-test resolves `createChannel` from `basalt-ui/data`; a test for the router's `live` option.",
+  "acceptance": [
+    "`import { ChartCard } from 'basalt-ui/charts'` takes `phase`, `figure` and `chart` as `docs/chart-card.md` says (type guard)",
+    "`import { createChannel } from 'basalt-ui/data'` resolves in the pack-test",
+    "A router built with `live` starts the binding once and stops it on unmount (test)",
+    "make check passes"
+  ],
+  "out_of_scope": "Deleting the 2.x card (v3-teardown-views); the router's QueryClient (v3-state-1-router-client)."
+}
