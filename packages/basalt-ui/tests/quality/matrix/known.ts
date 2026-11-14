@@ -167,11 +167,44 @@ export const KNOWN: readonly KnownFinding[] = [
     item: /^color-contrast \(serious\)/,
     owner: 'playground settings (2.x components): text contrast',
   },
+  // /table is the v3 DataTable exemplar (v3-table-t5-exemplar). Each entry below is a finding of the
+  // table parts (src/table) the exemplar surfaced; the fixes live in those parts, not in the route.
+  {
+    route: '/table',
+    assertion: 'ringWalk',
+    item: /thead\[table-header\].*outline is clipped by (div|thead)/,
+    owner:
+      'table: the head controls clip their ring (scroller overflow, and the card tier clips the head)',
+  },
+  {
+    route: '/table',
+    assertion: 'focusNotObscured',
+    item: /thead\[table-header\].*covered at .* by tr\[table-row\]/,
+    owner: 'table: the card tier hides the head visually but leaves its controls focusable',
+  },
+  {
+    route: '/table',
+    assertion: 'focusNotObscured',
+    item: /select-trigger\] "Category of .*covered at .* by td\[table-cell\]/,
+    owner: 'table: the c.select trigger sits under the next cell in the scroll tier',
+  },
+  {
+    route: '/table',
+    assertion: 'forcedColors',
+    item: /^\[button\] button/,
+    owner: 'ui: toolbar buttons whose frame is a shadow only (Filter, Display, Views)',
+  },
+  {
+    route: '/table',
+    assertion: 'hitFloor',
+    item: /^(button\[(button|pressable)\] ".*" \d+x\d+ < 44x44|\.\.\. \d+ more)$/,
+    owner: 'table: column and row action buttons and sort heads are under the coarse 44 px floor',
+  },
   {
     route: '/table',
     assertion: 'axe',
-    item: /^scrollable-region-focusable \(serious\)/,
-    owner: 'table: scrollport is not keyboard reachable',
+    item: /^aria-hidden-focus \(serious\)/,
+    owner: 'ui/select: Base UI focus guards inside an open select popup',
   },
 ]
 
