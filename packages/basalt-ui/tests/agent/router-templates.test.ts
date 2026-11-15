@@ -109,6 +109,16 @@ const write = (dir: string, rel: string, text: string): void => {
 }
 
 describe('router templates', () => {
+  test('a route file keeps its component unexported, so the router splits it', () => {
+    for (const tpl of ['__root.tpl', '_app.tpl']) {
+      const exported = [...filled(tpl).matchAll(/^export (?:function|const) (\w+)/gm)].map(
+        (m) => m[1],
+      )
+      expect(exported, tpl).toEqual(['Route'])
+    }
+    expect(filled('_app.tpl')).not.toContain('only-export-components')
+  })
+
   test('init seeds every template to the destination the others import from', () => {
     const seeds = new Map(managedFiles().map((f) => [f.source, f]))
     for (const [tpl, dest] of Object.entries(SEEDS)) {

@@ -150,7 +150,7 @@ import { NAV } from '../lib/nav'
 
 export const Route = createFileRoute('/_app')({ component: AppLayout })
 
-export function AppLayout() {
+function AppLayout() {
   return (
     <AppShell nav={NAV} brand={{ name: 'MyApp' }}>
       <Outlet />

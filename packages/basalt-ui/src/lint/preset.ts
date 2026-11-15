@@ -282,6 +282,15 @@ function ejectedZones(ejected: readonly string[], inputs: PresetInputs): Overrid
 // ── the preset ───────────────────────────────────────────────────────────────────────────────────
 
 /**
+ * TanStack file routes keep their component unexported (an exported one is not code-split) beside
+ * `export const Route`; `react/only-export-components` warns on that, so it is off under `routes/`.
+ */
+const ROUTE_FILE_OVERRIDE: Override = {
+  files: ['**/routes/**'],
+  rules: { 'react/only-export-components': 'off' },
+}
+
+/**
  * The preset for a manifest: the default profile's rules at the top, one `overrides` block per
  * root whose profile differs (E6), then the zone blocks. `undefined` when every file lints at
  * `tokens`: that profile ships no oxlint preset.
@@ -291,7 +300,8 @@ export function buildPreset(inputs: PresetInputs): PresetConfig | undefined {
   const profiles = [inputs.profile, ...roots.map(([, profile]) => profile)]
   if (profiles.every((profile) => profile === 'tokens')) return undefined
 
-  const overrides: Override[] = []
+  // Route files keep their component unexported so the router splits it; the rule would warn on `Route`.
+  const overrides: Override[] = [ROUTE_FILE_OVERRIDE]
   // Zone V first: a root at another profile then re-enables its own `components/ui` files.
   if (inputs.profile === 'bridge') overrides.push(vendoredZone(VENDORED_GLOB, inputs))
   for (const [root, profile] of roots) {

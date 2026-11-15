@@ -88,8 +88,10 @@ describe('renderOxlintPreset', () => {
     })
   })
 
-  it('without roots or ejected rows the preset is the shipped profile', () => {
-    expect(overridesOf(manifest({}))).toEqual([])
+  it('without roots or ejected rows the preset is the shipped profile plus the route-file exemption', () => {
+    expect(overridesOf(manifest({}))).toEqual([
+      { files: ['**/routes/**'], rules: { 'react/only-export-components': 'off' } },
+    ])
   })
 
   it('passes a grid track list and writes the message options at the app profile', () => {

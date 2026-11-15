@@ -550,5 +550,12 @@
       }
     ]
   },
-  "overrides": []
+  "overrides": [
+    {
+      "files": ["**/routes/**"],
+      "rules": {
+        "react/only-export-components": "off"
+      }
+    }
+  ]
 }

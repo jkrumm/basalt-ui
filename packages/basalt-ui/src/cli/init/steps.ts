@@ -337,7 +337,10 @@ function ignoreFile(ctx: Ctx): void {
   say(`.oxfmtrc.json: ignorePatterns gains ${add.join(', ')}`)
 }
 
-/** The consumer's own `.oxlintrc.json` extends the generated preset, or the preset is dead weight. */
+const isStockRouteRule = (v: unknown): boolean =>
+  Array.isArray(v) && v.length <= 2 && Object.keys(v[1] ?? {}).join() === 'allowConstantExport'
+
+/** The consumer's `.oxlintrc.json` extends the preset, and drops create-vite's stock route rule that overrides it. */
 function oxlintExtends(ctx: Ctx): void {
   const line = `./${OXLINT_PRESET_FILE}`
   const text = readText(ctx.root, '.oxlintrc.json')
@@ -347,16 +350,21 @@ function oxlintExtends(ctx: Ctx): void {
   }
   const config = parseJsonc(text)
   const extended = Array.isArray(config?.['extends']) ? (config['extends'] as string[]) : []
-  if (extended.some((p) => basename(p) === OXLINT_PRESET_FILE)) return
-  if (config === null || !isStrictJson(text)) {
-    return void ctx.todo.push(`add "${line}" to "extends" in .oxlintrc.json`)
-  }
-  writeText(
-    ctx.root,
-    '.oxlintrc.json',
-    `${JSON.stringify({ ...config, extends: [line, ...extended] }, null, 2)}\n`,
-  )
-  say(`.oxlintrc.json: extends ${line}`)
+  const hasExtends = extended.some((p) => basename(p) === OXLINT_PRESET_FILE)
+  const { 'react/only-export-components': rule, ...kept } = (config?.['rules'] ?? {}) as Record<
+    string,
+    unknown
+  >
+  const strict = config !== null && isStrictJson(text)
+  const stock = strict && isStockRouteRule(rule)
+  if (rule !== undefined && !stock)
+    ctx.todo.push('delete react/only-export-components from .oxlintrc.json')
+  if (hasExtends && !stock) return
+  if (!strict) return void ctx.todo.push(`add "${line}" to "extends" in .oxlintrc.json`)
+  const next = { ...config, extends: hasExtends ? extended : [line, ...extended] }
+  const out = JSON.stringify(stock ? { ...next, rules: kept } : next, null, 2)
+  writeText(ctx.root, '.oxlintrc.json', `${out}\n`)
+  say(`.oxlintrc.json: extends ${line}${stock ? ' and drops the stock route rule' : ''}`)
 }
 
 export function wireFormatterAndLint(ctx: Ctx): void {

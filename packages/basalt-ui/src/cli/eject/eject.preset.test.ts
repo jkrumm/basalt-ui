@@ -40,6 +40,6 @@ describe('eject and the oxlint preset', () => {
 
     commitAll(fx.dir, 'eject button')
     expect(run(fx, ['button', '--undo']).code).toBe(0)
-    expect(overridesOf(fx.dir)).toEqual([])
+    expect(overridesOf(fx.dir).map((o) => o.files)).toEqual([['**/routes/**']])
   })
 })

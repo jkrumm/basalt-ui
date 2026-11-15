@@ -14,8 +14,7 @@ export const Route = createFileRoute('/_app')({
   component: AppLayout,
 })
 
-// Exported: react/only-export-components flags a non-exported component in a file that exports `Route`.
-export function AppLayout() {
+function AppLayout() {
   return (
     <AppShell nav={NAV} brand={{ name: '{{APP_NAME}}' }}>
       <Outlet />
