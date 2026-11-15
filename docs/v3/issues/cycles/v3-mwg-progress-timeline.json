@@ -1,0 +1,19 @@
+{
+  "why": "docs/research/modern-web-guidance.md (Issue 1291), row scroll-progress-indicator. `page/article-progress.tsx` measures the scroll position in script (a scroll listener, a rAF and four layout reads per frame) to draw a 2px bar. `animation-timeline: scroll()` does it on the compositor and is Baseline Newly since 2026-10 (Chrome 115, Safari 26, Firefox 159).",
+  "what": "The reading-progress bar is driven by a scroll timeline, with no scroll listener, where the timeline is supported.",
+  "owns": [
+    "packages/basalt-ui/src/page/article-progress.tsx, its tests and the CSS it uses",
+    "packages/basalt-ui/src/content/reading-progress.tsx only if it is still a published export with a consumer"
+  ],
+  "must_not_touch": ["docs/v3/ARCHITECTURE.md", "packages/basalt-ui/src/common/scroll-parent.ts"],
+  "change": "Keep the resolved scroller (`scrollParentOf`): inside the shell the scroller is the main region, so the bar names it with `scroll(<scroller>)` or a named `scroll-timeline` on that region, and `target` maps to an `animation-range` over the target's box. Where `animation-timeline` is unsupported (`@supports not`), the bar is hidden, not polled: the bar is an affordance, not content. Delete the scroll and resize listeners, the rAF and `computeProgress`. A `prefers-reduced-motion` user keeps the bar, which is position, not motion.",
+  "commits": "feat: one commit in packages/basalt-ui; a net-negative diff.",
+  "proof": "make check-fast; a layout test that the bar is 0 at the top, 1 at the end and tracks the shell's main region and a `target`; a unit test that no scroll listener is registered.",
+  "acceptance": [
+    "The bar tracks the shell main region and the window, with and without `target`",
+    "No `scroll` or `resize` listener and no rAF remain in the component",
+    "The diff deletes more lines than it adds",
+    "An engine without scroll timelines shows no bar and no error"
+  ],
+  "out_of_scope": "Other scroll-driven effects (reveals, parallax): the research doc rejects them on the restraint law."
+}

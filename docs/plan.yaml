@@ -797,3 +797,14 @@ rows:
         v3-shell-1-lint,
       ]
     facts: { 'brief': 'docs/v3/issues/cycles/v3-cycle-shell-2.json' }
+  - key: v3-mwg-textarea-field-sizing
+    title: 'A Textarea that grows with its content on field-sizing, from the modern-web-guidance research'
+    repo: basalt-ui
+    kind: feature
+    checkpoint: spec
+    facts: { 'brief': 'docs/v3/issues/cycles/v3-mwg-textarea-field-sizing.json' }
+  - key: v3-mwg-progress-timeline
+    title: 'The reading-progress bar on a scroll timeline instead of a scroll listener, from the modern-web-guidance research'
+    repo: basalt-ui
+    kind: chore
+    facts: { 'brief': 'docs/v3/issues/cycles/v3-mwg-progress-timeline.json' }

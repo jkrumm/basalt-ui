@@ -1,0 +1,19 @@
+{
+  "why": "docs/research/modern-web-guidance.md (Issue 1291), row form-fields-automatically-fit-contents. The Textarea height is a fixed `rows` and the cva comment says autosize is not offered, so a note field either wastes space or scrolls. `field-sizing: content` is Baseline Newly since 2026-06 (Chrome 123, Safari 26.2, Firefox 152) and degrades to the fixed `rows` box where it is unsupported. The agent chat composer autosizes with script today.",
+  "what": "The Textarea grows with its content between a floor (`rows`) and a ceiling, with no script, and keeps its fixed height where `field-sizing` is unsupported.",
+  "owns": [
+    "packages/basalt-ui/src/ui/textarea.tsx and its tests, guard and generated docs",
+    "packages/basalt-ui/src/agent/chat/composer.tsx only if its autosize script can be deleted with it"
+  ],
+  "must_not_touch": ["docs/v3/ARCHITECTURE.md", "any other primitive"],
+  "change": "Add `field-sizing-content` and a `max-h` ceiling to `textareaVariants` (a new `rows` floor stays the minimum through `min-h`), keep `resize-y` for the unsupported engines, and name the ceiling as one token or one class, not a prop, unless the Spec finds a consumer that needs one. If the composer's script autosize becomes redundant, delete it in the same PR (net-negative). The owner has not seen the grown look: submit a Spec first (`checkpoint: spec`) naming the floor, the ceiling and the unsupported-engine behaviour.",
+  "commits": "feat: one commit in packages/basalt-ui for the primitive; the composer simplification in its own commit.",
+  "proof": "make check-fast; a layout test that a long value grows the box to the ceiling and a short one stays at `rows`; a unit test that no new prop appears on `TextareaProps`.",
+  "acceptance": [
+    "A Textarea with more lines than `rows` grows until the ceiling, then scrolls",
+    "A Textarea with one line keeps the `rows` height",
+    "No new export and no new prop; the generated docs and export surface are unchanged or smaller",
+    "The composer has no script autosize left, or the PR says why it must stay"
+  ],
+  "out_of_scope": "Other fields (Input, NumberField), a user-facing autosize prop, `resize-none` defaults."
+}
