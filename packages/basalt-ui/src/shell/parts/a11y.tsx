@@ -6,6 +6,7 @@
  * announcer says the new page's title. It reacts to a pathname change only: a search-only change
  * (a filter, a tab) keeps the same page and says nothing.
  */
+import { useRouterState } from '@tanstack/react-router'
 import { useEffect, useRef, useState } from 'react'
 import type { MouseEvent, ReactElement } from 'react'
 import { useIsomorphicLayoutEffect } from '../../common/isomorphic-layout-effect'
@@ -20,6 +21,7 @@ export const SHELL_MAIN_ID = 'shell-main'
 export const SHELL_TEXT = {
   skip: 'Skip to content',
   primary: 'Primary',
+  notFound: 'Not found',
 } as const
 
 /** The document title: the page's title, a separator and the brand. */
@@ -93,4 +95,52 @@ export function useDocumentTitle(title: string): void {
   useIsomorphicLayoutEffect(() => {
     if (document.title !== title) document.title = title
   })
+}
+
+/**
+ * Hands focus to `Main` after a pathname change that left it on `<body>`: the control that was
+ * focused (a page action, a row) went away with the old page, and without this the next Tab starts
+ * at the skip link. Focus that is somewhere real (the rail link just activated) stays where it is.
+ */
+export function useRouteFocus(pathname: string): void {
+  const seen = useRef(pathname)
+  useEffect(() => {
+    if (seen.current === pathname) return undefined
+    seen.current = pathname
+    const frame = requestAnimationFrame(() => {
+      if (!focusLost()) return
+      document.getElementById(SHELL_MAIN_ID)?.focus({ preventScroll: true })
+    })
+    return () => cancelAnimationFrame(frame)
+  }, [pathname])
+}
+
+/** Whether focus fell to the document: nothing is focused, or it is `<body>`. */
+export function focusLost(): boolean {
+  const active = document.activeElement
+  return active === null || active === document.body
+}
+
+/**
+ * How long a navigation may wait before main shows it: the router's `defaultPendingMs` (TanStack's
+ * own default, 1000, where the app set none). True while a navigation has waited that long.
+ */
+export function useNavigationPending(pendingMs: number): boolean {
+  // A navigation, not a background reload: the wanted location is not the resolved one yet.
+  const loading = useRouterState({
+    select: (s) =>
+      s.status === 'pending' &&
+      s.resolvedLocation !== undefined &&
+      s.resolvedLocation.href !== s.location.href,
+  })
+  const [late, setLate] = useState(false)
+  useEffect(() => {
+    if (!loading) return undefined
+    const timer = setTimeout(() => setLate(true), pendingMs)
+    return () => {
+      clearTimeout(timer)
+      setLate(false)
+    }
+  }, [loading, pendingMs])
+  return loading && late
 }

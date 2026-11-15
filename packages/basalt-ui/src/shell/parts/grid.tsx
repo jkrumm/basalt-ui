@@ -206,7 +206,14 @@ function useScrolls(ref: RefObject<HTMLElement | null>): boolean {
  * stop; `scroll-restoration` keys on its `data-scroll-restoration-id`. Horizontal overflow scrolls
  * (`auto`, never `hidden`) so a wide child is visible, not clipped.
  */
-export function ShellMain({ children }: { children?: ReactNode }): ReactElement {
+export function ShellMain({
+  pending = false,
+  children,
+}: {
+  /** A navigation has waited past the router's pending delay: main is busy and draws a bar. */
+  pending?: boolean
+  children?: ReactNode
+}): ReactElement {
   const ref = useRef<HTMLElement>(null)
   const scrolls = useScrolls(ref)
   return (
@@ -217,7 +224,11 @@ export function ShellMain({ children }: { children?: ReactNode }): ReactElement 
       tabIndex={scrolls ? 0 : -1}
       data-slot="shell-main"
       data-scroll-restoration-id={SHELL_MAIN_ID}
+      aria-busy={pending ? true : undefined}
+      data-pending={pending ? '' : undefined}
       className={cn(
+        // The busy bar: a sticky hairline that takes no room, so the page under it does not move.
+        'data-pending:before:sticky data-pending:before:top-0 data-pending:before:z-10 data-pending:before:-mb-0.5 data-pending:before:block data-pending:before:h-0.5 data-pending:before:animate-pulse data-pending:before:bg-primary data-pending:before:content-[""] motion-reduce:data-pending:before:animate-none',
         'min-h-0 min-w-0 overflow-auto overscroll-contain [grid-area:main]',
         scrolls ? 'focus-ring' : 'outline-none',
         // Under a shell the gutter is the shell's: `Page` declares its own default for use without one.

@@ -17,8 +17,11 @@ import {
   RouteAnnouncer,
   SkipLink,
   composeTitle,
+  SHELL_TEXT,
   useDocumentTitle,
+  useNavigationPending,
   useRouteAnnouncement,
+  useRouteFocus,
 } from './parts/a11y'
 import {
   AsideRegion,
@@ -35,6 +38,14 @@ import type { AsideClaim } from './parts/grid'
 import { Header } from './parts/header'
 import { RailMount, TabBarMount } from './parts/mounts'
 import { usePrintScheme } from './parts/print'
+
+/** The label of the nav section holding the item, or `undefined` for a pinned item or none. */
+function sectionLabelOf(nav: AnyNavConfig, id: string | undefined): string | undefined {
+  if (id === undefined) return undefined
+  return nav.sections.find((section) =>
+    flattenNavEntries({ ...nav, sections: [section], pinned: [] }).some((e) => e.item.id === id),
+  )?.label
+}
 
 const NO_BLOCKS: NonNullable<AppShellProps['blocks']> = []
 const NO_ACTIONS: NonNullable<AppShellProps['globalActions']> = []
@@ -67,6 +78,17 @@ function AsideSheet({ claim }: { claim: AsideClaim }): ReactElement {
  * polite announcer that says the new page's title after a pathname change, `document.title` as
  * `page · brand`, and the print rules. A `Page` inside claims the breadcrumb, the header actions,
  * the aside and the title through the shell; `Page` itself renders the one `h1`.
+ *
+ * The header's crumb trail is decided here: the nav section's label (muted, from the `regular`
+ * class up; a phone shows no ancestors), then the page's trail, then the page. A `PageBar` writes
+ * its own part through `title` and `parent`: on a record or a selection (`?service=checkout` on a
+ * `SplitPage`) the bar's `title` is the selection and `parent` is the page it belongs to, so
+ * `Fleet / Services / checkout`. A page with no bar shows the active nav label as its leaf; a path
+ * no route matches shows `Not found`, in the crumb and in the document title.
+ *
+ * While a navigation waits past the router's `defaultPendingMs`, main is `aria-busy` and draws a
+ * hairline bar; the rail, the crumb and the title keep naming the page on screen until the next
+ * one arrives, then change together. A navigation that leaves focus on `<body>` hands it to main.
  *
  * Needs TanStack Router; another router or none uses `./page` with its own frame.
  *
@@ -102,7 +124,17 @@ export function AppShell<Id extends string = string>({
   // Registration is idempotent and runs in render so the server render has it too.
   registerNav(router, declared)
 
-  const pathname = useRouterState({ select: (s) => s.location.pathname })
+  // The page on screen: the resolved location, so a slow loader keeps the rail, the breadcrumb and
+  // the title on the page the reader still sees until the next one arrives. `location` leads
+  // `resolvedLocation` only while a navigation is pending.
+  const pathname = useRouterState({
+    select: (s) => (s.resolvedLocation ?? s.location).pathname,
+  })
+  // `status` is a loader's `notFound()`; `_notFound` marks the route that answers a path nothing matched.
+  const missing = useRouterState({
+    select: (s) => s.matches.some((m) => m.status === 'notFound' || m._notFound === true),
+  })
+  const pending = useNavigationPending(router.options.defaultPendingMs ?? 1000)
   const runtime = useMemo(
     () =>
       createNavRuntime({
@@ -128,9 +160,13 @@ export function AppShell<Id extends string = string>({
     () => flattenNavEntries(declared).find((e) => e.item.id === active.activeId)?.item.label,
     [declared, active.activeId],
   )
-  const pageTitle = typeof titleClaim === 'string' ? titleClaim : activeLabel
+  // A path no route matched (or a loader's `notFound()`) renders no page, so no page names it: it
+  // is "Not found", not the nearest nav item.
+  const fallbackLabel = missing ? SHELL_TEXT.notFound : activeLabel
+  const pageTitle = typeof titleClaim === 'string' ? titleClaim : fallbackLabel
   useDocumentTitle(composeTitle(pageTitle, brand.name))
   const announcement = useRouteAnnouncement(pathname)
+  useRouteFocus(pathname)
 
   const sizeClass = useSizeClass()
   const rail = useRailState(storageKey, sizeClass)
@@ -142,9 +178,23 @@ export function AppShell<Id extends string = string>({
   useDocumentFrame()
   usePrintScheme()
 
-  const trail: ReactNode =
+  const section = missing ? undefined : sectionLabelOf(declared, active.activeId)
+  const leaf: ReactNode =
     breadcrumb ??
-    (activeLabel === undefined ? null : <span data-slot="page-breadcrumb-leaf">{activeLabel}</span>)
+    (fallbackLabel === undefined ? null : (
+      <span data-slot="page-breadcrumb-leaf">{fallbackLabel}</span>
+    ))
+  // Section, then the page's own trail (its `parent`, then its title). The section is context a
+  // phone has no room for: the rail is a tab away there.
+  const trail: ReactNode =
+    section === undefined || sizeClass === 'compact' ? (
+      leaf
+    ) : (
+      <>
+        <span data-slot="page-breadcrumb-parent">{section}</span>
+        {leaf}
+      </>
+    )
 
   return (
     <ChromeHost chrome={chrome} host={shellHost.host}>
@@ -178,7 +228,7 @@ export function AppShell<Id extends string = string>({
             account={account}
             search={search}
           />
-          <ShellMain>{children}</ShellMain>
+          <ShellMain pending={pending}>{children}</ShellMain>
           <AsideRegion claim={regionClaim} model={model} />
           <TabBarMount
             runtime={runtime}
