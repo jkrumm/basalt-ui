@@ -30,7 +30,7 @@ Named exports only — **no default exports**. Files `kebab-case`, components `P
 | `./styles.css` | —        | `@layer basalt` base styles, the iOS input floor, the font stack — mandatory import                                                                                |
 | `./configs/*`  | —        | raw toolchain presets (real paths — `extends` needs them)                                                                                                          |
 
-**2.0:** 15 published subpaths (V2-SPEC § 1), plus the v3 skeleton stubs added since (32 export keys; `./tokens.css` is a v3 stub); `./guard`, `./data/virtual`,
+**2.0:** 15 published subpaths (V2-SPEC § 1), plus the v3 subpaths added since; `./forms`, `./commands`, `./agent` and `./state` were deleted in 3.0 with the 2.x runtime (`removed-2x.json` names each export); `./guard`, `./data/virtual`,
 `./llms.txt` and `./package.json` are no longer exports. **C1 (1.29.0):** `./query`, `./connectivity` and bare `./data` were dropped — 26 published subpaths
 → 20. `utils/`+`motion/`+`query/error-message` merged into `src/common/`. The 2.x view layer (`src/dashboard/`, `./controls-dates`, the 2.x files of `./charts`, `./table`, `./controls`, `./shell` and `./content`) was deleted in 3.0; `migrations/areas/removed-2x.json` names each export. Full symbol mapping:
 `MIGRATING.md` § 2.x to 3.0.
@@ -91,7 +91,7 @@ props extend and `src/surfaces.ts` stays the SSOT for real subpaths.
 - It protects two things. **Layering**: `tokens` is pure data that `cssVariablesResolver`
   (Mantine-coupled) reads to bind Mantine's surfaces to the same vars charts read, so an import the
   other way cycles through the theme layer or lets a chart fork chrome and charts apart.
-  **Packaging**: `./charts`/`./tokens` (and `./state`/`./format`) resolve with **no `@mantine/*` installed** — CI-tested by
+  **Packaging**: `./charts`/`./tokens` (and `./format`) resolve with **no `@mantine/*` installed** — CI-tested by
   `scripts/check-dist-layering.mjs` (dist-graph walk) and `scripts/pack-test.sh` (scratch install +
   SSR render). **The LAYER is Mantine-free; the FRAMEWORK is not** — `.` requires Mantine.
 - **The root barrel does not re-export `./tokens` / `./charts`.** It keeps the arrow pointing one
@@ -147,14 +147,13 @@ bun run build   # tsup && tsc --emitDeclarationOnly && copy-assets && fix-esm-ex
 - **Every peer is `optional` in `peerDependenciesMeta`**, including the five the root `.` entry
   hard-requires (`react`, `react-dom`, `@mantine/core`, `@mantine/hooks`, `@tanstack/react-query`),
   because npm expresses optionality per PACKAGE and never per SUBPATH — and `./tokens`/`./charts`/
-  `./state`/`./format` really do resolve without them. The trade: a missing peer is a bundler
+  `./format` really do resolve without them. The trade: a missing peer is a bundler
   resolution error instead of an install warning. Version-mismatch warnings are unaffected and must
   stay that way, so every peer stays listed in `peerDependencies` (`tests/required-peers.test.ts`
   pins both halves).
 - Exact-pinned peers: `@tanstack/charts`, `d3-scale`, `remend`, the three `@fontsource-variable/*`.
-  `motion` is caret-ranged (`^14.1.0`): the chat UI imports it eagerly and no reason for an exact pin is recorded.
-  It is subpath-required for `./agent` (the chat UI imports it
-  eagerly) even though it is marked optional; `remend` is `./content`'s one eagerly-imported peer.
+  `motion` is caret-ranged (`^14.1.0`); no reason for an exact pin is recorded.
+  `remend` is `./content`'s one eagerly-imported peer.
 - **NO** zustand, **NO** `@tanstack/*` as a dependency, **NO** icon package — icons are `ReactNode`.
 - `sideEffects: ['*.css']`.
 

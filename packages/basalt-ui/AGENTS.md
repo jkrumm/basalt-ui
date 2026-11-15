@@ -8,7 +8,7 @@ Toolchain: Bun runtime, oxlint + oxfmt, conventional commits (empty scope), `mas
 
 ## Subpath ownership
 
-The package ships 15 subpaths from 2.x plus the v3 skeleton stubs (the table below is the contract).
+The package ships the subpaths in the table below (the table is the contract).
 Everything else is internal: `./guard`, `./data/virtual`, `./llms.txt`
 and `./package.json` are **not exports** (`llms.txt` still ships in the tarball as a file;
 `basalt-ui tokens:css` emits the token stylesheet).
@@ -44,9 +44,6 @@ Also published, but not JS subpaths: `basalt-ui/styles.css` (the one stylesheet:
 each must import zero `@mantine/*`. `@visx/*` is banned everywhere and `@tanstack/charts` is an allowlist of mark subpaths
 (`basalt/chart-engine-boundary`, enforced in both the repo and the shipped consumer preset);
 `@tanstack/charts/react` is imported by `src/charts/host.tsx` alone (`basalt/chart-host-single`, repo-local).
-`./agent` is **no longer** Mantine-free as a subpath: the chat UI in `src/agent/chat/**` is Mantine
-UI, while the non-chat runtime in `src/agent/*.ts(x)` stays Mantine-free as a **repo-local** oxlint
-boundary only.
 
 The boundary protects two things: **layering** (keeps the token layer upstream of Mantine —
 `cssVariablesResolver` reads `--vx-*` tokens to bind Mantine's surfaces to them, so an `@mantine/*`
@@ -59,8 +56,8 @@ scratch-installs the tarball with only `react`/`react-dom` and SSR-renders `basa
 (`@mantine/core`/`@mantine/hooks` are required, non-optional peers); these four subpaths don't.
 
 Enforcement is repo-local ONLY for the Mantine-free side, not in the shipped preset:
-`./charts`/`./tokens` via the `basalt/token-layer-boundary` plugin rule, `./format`/`./state`/the
-`src/agent` runtime via a plain `no-restricted-imports` ban.
+`./charts`/`./tokens` via the `basalt/token-layer-boundary` plugin rule, `./format` via a plain
+`no-restricted-imports` ban.
 
 **No raw hex or raw color functions**: route every color through `VX.*` tokens or the Mantine
 theme. Never write `#rrggbb`, `rgb(…)`, or `hsl(…)` in component or style code. Use
