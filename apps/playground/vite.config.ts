@@ -1,4 +1,3 @@
-// oxlint-disable import/no-default-export -- vite config requires a default export
 import tailwindcss from '@tailwindcss/vite'
 import { tanstackRouter } from '@tanstack/router-plugin/vite'
 import react from '@vitejs/plugin-react'

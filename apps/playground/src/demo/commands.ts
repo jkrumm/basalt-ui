@@ -29,7 +29,6 @@ export const COMMANDS = defineCommands({
     group: 'Demo',
     chord: 'Mod+G',
     run: () => {
-      // eslint-disable-next-line no-alert
       alert('Hello from the command bus!')
     },
   },
@@ -38,7 +37,6 @@ export const COMMANDS = defineCommands({
     group: 'Demo',
     chord: 'Mod+L',
     run: () => {
-      // oxlint-disable-next-line no-console
       console.log('[basalt commands] command triggered')
     },
   },
@@ -47,7 +45,6 @@ export const COMMANDS = defineCommands({
     group: 'Demo',
     run: async () => {
       await new Promise((resolve) => setTimeout(resolve, 1000))
-      // oxlint-disable-next-line no-console
       console.log('[basalt commands] async command finished')
     },
   },

@@ -1,4 +1,5 @@
 import { createFileRoute } from '@tanstack/react-router'
+import { useFormat } from 'basalt-ui'
 import { filterSlot, spec } from 'basalt-ui/controls'
 import { Section } from 'basalt-ui/page'
 import { defineControls, field } from 'basalt-ui/router'
@@ -159,6 +160,7 @@ function serve(request: Value['request'], month: string) {
 }
 
 function BookingDetail({ row }: { row: Booking }): ReactElement {
+  const f = useFormat()
   return (
     <dl className="grid grid-cols-[auto_1fr] gap-x-4 gap-y-2 text-sm">
       <dt className="text-muted-foreground">Payee</dt>
@@ -168,7 +170,7 @@ function BookingDetail({ row }: { row: Booking }): ReactElement {
       <dt className="text-muted-foreground">State</dt>
       <dd>{row.state}</dd>
       <dt className="text-muted-foreground">Amount</dt>
-      <dd data-numeric>{row.amount.toFixed(2)} EUR</dd>
+      <dd data-numeric>{f.money(row.amount, 'EUR')}</dd>
       <dt className="text-muted-foreground">Booked</dt>
       <dd>{row.at.slice(0, 10)}</dd>
     </dl>
@@ -245,9 +247,7 @@ function Finances(): ReactElement {
       <TableToolbar table={t} />
       <DataTable table={t} detail={host} />
       {sheet}
-      <p role="status" className="text-sm text-muted-foreground">
-        {done}
-      </p>
+      <output className="block text-sm text-muted-foreground">{done}</output>
     </>
   )
 }
@@ -295,9 +295,9 @@ function Large(): ReactElement {
       <div className="h-128">
         <DataTable table={t} height="fill" virtual={VirtualList} />
       </div>
-      <p role="status" className="text-sm text-muted-foreground">
+      <output className="block text-sm text-muted-foreground">
         {opened === '' ? '' : `Opened ${opened}`}
-      </p>
+      </output>
     </>
   )
 }

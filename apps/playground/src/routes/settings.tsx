@@ -1,4 +1,3 @@
-// theme-allow-file raw-selection-control — the guard reads a 2.x `Select` as a bare filter; these are v3 `Select`s bound to a form field, never a page filter
 import { revalidateLogic, useForm } from '@tanstack/react-form'
 import { createFileRoute } from '@tanstack/react-router'
 import { FormField, FormFooter } from 'basalt-ui/controls'
@@ -96,9 +95,7 @@ function AppearanceForm(): ReactElement {
   const digest = useFieldOf('digest')
   return (
     <Fieldset className="max-w-md">
-      <p role="status" className="m-0 text-sm text-muted-foreground">
-        {STATUS[status]}
-      </p>
+      <output className="block text-sm text-muted-foreground">{STATUS[status]}</output>
       <FormField label="Density" field={density}>
         <Select
           aria-label="Density"
