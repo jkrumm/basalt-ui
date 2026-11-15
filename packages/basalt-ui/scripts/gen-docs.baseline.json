@@ -16,7 +16,7 @@
   "basalt-ui/format#compact",
   "basalt-ui/format#date",
   "basalt-ui/format#dateTime",
-  "basalt-ui/format#defineFormat",
+  "basalt-ui/format#setFormatDefaults",
   "basalt-ui/format#delta",
   "basalt-ui/format#duration",
   "basalt-ui/format#durationClock",

@@ -3,7 +3,7 @@
  * money, bytes and signed deltas, dates and durations, and the two measurement units argo needed
  * (`km`/`kcal`).
  *
- * Every formatter takes `(value, opts?)`. `locale` defaults to what `defineFormat` (or
+ * Every formatter takes `(value, opts?)`. `locale` defaults to what `setFormatDefaults` (or
  * the provider's locale and time zone props) set, else the runtime's locale. That default is
  * ONE value per process; pass `locale` per call to override it. Number formatters accept
  * `null | undefined`, and every non-finite/unparseable input prints the same {@link NON_FINITE}
@@ -21,4 +21,4 @@
 export { bytes, compact, delta, integer, money, percent } from './number'
 export { date, dateTime, duration, durationClock, relativeTime, time, weekday } from './date'
 export { kcal, km } from './measure'
-export { defineFormat } from './shared'
+export { setFormatDefaults } from './shared'

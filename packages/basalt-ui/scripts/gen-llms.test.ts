@@ -79,7 +79,7 @@ describe('gen-llms signatures', () => {
 
   test('a literal-only constant map prints its values (row 78 c)', () => {
     expect(text).toContain(
-      'Signature: CONTAINER_KEYS: { compact: "240px", regular: "480px", wide: "800px" }',
+      'Signature: CONTAINER_KEYS: { narrow: "240px", regular: "480px", wide: "800px" }',
     )
   })
 

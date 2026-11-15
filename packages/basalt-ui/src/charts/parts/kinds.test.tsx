@@ -8,7 +8,7 @@ import type { ChartPoint, StoredChartSpec } from '@tanstack/charts/types/core'
 import { act } from 'react'
 import { createRoot } from 'react-dom/client'
 import { renderToString } from 'react-dom/server'
-import { defineFormat } from '../../format'
+import { setFormatDefaults } from '../../format'
 import { resetFormatDefaults } from '../../format/shared'
 import { compileCartesian } from '../core/compile'
 import type { Series, SeriesColor } from '../contract'
@@ -19,7 +19,7 @@ import { Lines } from './lines'
 import type { LineSeries } from './lines'
 
 // The tooltip header reads the page locale: pin one, or the runtime's decides the expected strings.
-beforeEach(() => defineFormat({ locale: 'en-GB' }))
+beforeEach(() => setFormatDefaults({ locale: 'en-GB' }))
 afterEach(resetFormatDefaults)
 
 const pair = (v: string): SeriesColor => ({ light: `var(--vx-${v})`, dark: `var(--vx-${v})` })

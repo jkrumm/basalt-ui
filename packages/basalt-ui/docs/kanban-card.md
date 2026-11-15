@@ -25,7 +25,7 @@ KanbanCard<C extends string>(props: KanbanCardProps<C>): ReactElement
   chips?: readonly [CardChip?, CardChip?, CardChip?, CardChip?]
   reason?: { icon?: IconComponent; text: string; }
   status?: Status
-  menu?: readonly MenuEntry[]
+  menu?: readonly MenuEntry[]  // Entries after the move rows the card always offers, so one entry is enough
   move: "static" | { column: ColumnRef<C>; index: number; columns: …  // Required: no card exists without the non-drag path
 ```
 
