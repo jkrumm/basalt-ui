@@ -5,7 +5,6 @@ import { isValidElement, useId } from 'react'
 import type { ComponentProps, ReactElement, ReactNode } from 'react'
 import { cn } from '../core/cn'
 import { AppLink } from '../core/link'
-import { OfflineLine } from '../core/offline-line'
 import { resolvePhase } from '../core/phase'
 import type { Empty, ErrorKind, FrameState } from '../core/phase'
 import { PhaseBoundary } from '../core/phase-boundary'
@@ -282,10 +281,13 @@ function ErrorArm({
   )
 }
 
+/** `home.offline`, written here for the same reason `ERROR_TEXT` is: this module stays out of `core/messages`. */
+const OFFLINE_TEXT = 'You are offline. This loads when the connection is back.'
+
 function OfflineArm({ arms }: { arms: Arms }): ReactElement {
   return (
     <output data-slot="card-offline" className={ARM[arms]}>
-      <OfflineLine />
+      <p className="m-0 text-sm text-muted-foreground">{OFFLINE_TEXT}</p>
     </output>
   )
 }
