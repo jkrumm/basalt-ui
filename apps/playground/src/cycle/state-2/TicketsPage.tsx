@@ -60,7 +60,7 @@ function useTicketQuery(): TicketQuery {
   const window = tickets.field.opened.toWindow(opened)
   // cycle-state-2: state-2.3 — every preset has a resolver, yet `toWindow` still returns a
   // `{ window: never }` member, so the dates are narrowed out by hand.
-  if (!('from' in window)) throw new Error(`unresolved window ${String(window.window)}`)
+  if (!('from' in window)) throw new Error(`unresolved window ${JSON.stringify(window)}`)
   return { from: window.from, to: window.to, priority, q, unassigned }
 }
 
