@@ -152,6 +152,20 @@ export function collectPublishedBySubpath(): Map<string, Set<string>> {
     const names = new Set(values[subpath] ?? [])
     const entry = resolveSubpathEntry(target)
     if (entry !== undefined) addTypeNames(readFileSync(entry, 'utf8'), names)
+    // `./shell` has no export-surface shard (the budgets count its symbols through the root until
+    // the 2.x barrels retire), so its value names come from its barrel's `export { … } from` lines.
+    if (subpath === './shell' && entry !== undefined) {
+      for (const match of readFileSync(entry, 'utf8').matchAll(/^export\s*\{([^}]*)\}\s*from/gm)) {
+        for (const item of (match[1] ?? '').split(',')) {
+          const name =
+            item
+              .trim()
+              .split(/\s+as\s+/)
+              .pop() ?? ''
+          if (name !== '' && !name.startsWith('type ')) names.add(name)
+        }
+      }
+    }
     bySubpath.set(subpathSpec(subpath), names)
   }
   return bySubpath

@@ -12,7 +12,6 @@
 import { readFileSync, writeFileSync } from 'node:fs'
 import { join } from 'node:path'
 import { SURFACES } from '../src/surfaces'
-import { UNLISTED_SUBPATHS } from './gen-llms-assert.mjs'
 import { readOptionTypes, readSignatures, readTypeGlossary } from './llms-signatures'
 import { SUBPATH_REQUIRED_PEERS } from './surface-gates'
 
@@ -92,10 +91,6 @@ const rows: Row[] = []
 for (const [key, spec] of Object.entries(SURFACES)) {
   if (key.startsWith('#')) continue
   if (!publishedExportKeys.has(key)) continue
-  // `./shell` aliases the 2.x shell barrel the root already documents; its row would repeat those
-  // signatures (and the primitive constants print as method bags). It gets a row when v3 swaps it.
-  // The tarball assertion exempts the same keys (UNLISTED_SUBPATHS).
-  if (UNLISTED_SUBPATHS.includes(key)) continue
 
   const isAsset = spec.layer === 'non-js-asset'
   // For ./configs/* the importSpec uses the glob form; others strip the leading './'
@@ -151,15 +146,14 @@ for (const [key, spec] of Object.entries(SURFACES)) {
 // subpath's published exports, so a rename fails the gate.
 
 const ENTRY_POINTS: readonly (readonly [string, readonly string[]])[] = [
-  [
-    'basalt-ui',
-    ['BasaltProvider', 'createBasaltRouter', 'BasaltShell', 'defineNav', 'PageBar', 'Section'],
-  ],
-  ['basalt-ui/tokens', ['VX', 'defineSeries', 'groupTokens', 'buildPaletteCss']],
+  ['basalt-ui/router', ['routerDefaults', 'defineNav', 'navTarget']],
+  ['basalt-ui/data', ['makeQueryClient', 'unwrap', 'liveQuery']],
+  ['basalt-ui/shell', ['AppShell']],
+  ['basalt-ui/page', ['Page', 'PageBar', 'Section', 'QueryState']],
+  ['basalt-ui/cards', ['StatCard', 'StatGroup', 'BarList']],
+  ['basalt-ui/table', ['DataTable', 'col', 'useDataTable']],
   ['basalt-ui/charts', ['CartesianChart', 'Lines', 'Bars', 'ChartCard']],
-  ['basalt-ui/controls', ['FilterSet', 'ViewTabs', 'RangeFilter', 'SelectFilter']],
-  ['basalt-ui/state', ['createSearchStore', 'createPersistedState']],
-  ['basalt-ui/vite', ['basalt', 'basaltViteConfig']],
+  ['basalt-ui/vite', ['basalt']],
 ]
 
 // ── Emit llms.txt ─────────────────────────────────────────────────────────────
@@ -167,12 +161,11 @@ const ENTRY_POINTS: readonly (readonly [string, readonly string[]])[] = [
 export function generateLlmsTxt(): string {
   const lines: string[] = [
     `# ${pkg.name} v${pkg.version}`,
-    `# ${pkg.description ?? 'Opinionated framework for Mantine-based React apps'}`,
-    '#',
-    '# Entry points: use the exact import specifier below; do not guess.',
+    `# ${pkg.description ?? 'Opinionated framework for React apps on Base UI, Tailwind 4 and TanStack'}`,
+    '# Entry points (the v3 app; `basalt-ui` itself is the 2.x root, never import from it):',
     ...ENTRY_POINTS.map(([spec, names]) => `# ${spec.padEnd(20)} ${names.join(', ')}`),
-    '# Required peers (install for `.`): react, react-dom, @mantine/{core,hooks,modals,notifications,spotlight},',
-    '# @tanstack/react-router, @tanstack/react-query and the three @fontsource-variable faces.',
+    '# Peers of an `app` profile install: react, react-dom, @tanstack/react-router, @tanstack/react-query,',
+    '# @base-ui/react, tailwindcss, @tailwindcss/vite; dev: vite, @tanstack/router-plugin. `basalt-ui init --profile app` writes main.tsx, _app.tsx, nav.tsx.',
     "# A subpath's `Install:` line is its required peers; `OptionalPeers:` are import()-only, install on use.",
     '',
     `Package: ${pkg.name}`,

@@ -98,6 +98,24 @@ describe('gen-llms signatures', () => {
   })
 })
 
+describe('gen-llms entry points teach the v3 app', () => {
+  test('lines 1-13 head the file with the v3 entry points and the app peers, not the 2.x root', () => {
+    const head = text.split('\n').slice(0, 13).join('\n')
+    for (const spec of ['router', 'data', 'shell', 'page', 'cards', 'table', 'charts', 'vite']) {
+      expect(head).toContain(`# basalt-ui/${spec} `)
+    }
+    expect(head).toContain('@base-ui/react')
+    expect(head).not.toContain('@mantine')
+    expect(head).not.toContain('BasaltProvider')
+  })
+
+  test('./shell has a section naming AppShell, and no description says (stub)', () => {
+    expect(text).toContain('## basalt-ui/shell\n')
+    expect(text).toContain('Signature: AppShell(')
+    expect(text).not.toContain('(stub)')
+  })
+})
+
 /** Type-checks one in-memory module. */
 function compile(source: string) {
   const file = '/virtual/fixture.ts'

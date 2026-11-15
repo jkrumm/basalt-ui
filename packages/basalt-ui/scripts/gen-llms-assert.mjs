@@ -9,17 +9,10 @@
  */
 import { readFileSync } from 'node:fs'
 
-/**
- * Export keys gen-llms deliberately gives no section: `./shell` aliases the 2.x shell barrel the
- * root already documents, so a row would repeat those signatures. gen-llms.ts skips the same set.
- */
-export const UNLISTED_SUBPATHS = ['./shell']
-
 /** Subpaths of `exports` whose `## basalt-ui…` heading is absent from `llmsText`. */
 export function missingSubpaths(llmsText, exportsMap) {
   const headings = new Set(llmsText.split('\n'))
   return Object.keys(exportsMap)
-    .filter((key) => !UNLISTED_SUBPATHS.includes(key))
     .map((key) => (key === '.' ? '## basalt-ui' : `## basalt-ui${key.slice(1)}`))
     .filter((heading) => !headings.has(heading))
 }
@@ -37,5 +30,5 @@ if (import.meta.url === `file://${process.argv[1]}`) {
     for (const heading of missing) console.error(`  missing: ${heading}`)
     process.exit(1)
   }
-  console.log('llms.txt names every listed package.json export')
+  console.log('llms.txt names every package.json export')
 }
