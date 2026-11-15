@@ -473,7 +473,7 @@ export function Heatmap<T, K extends string = string>(props: HeatmapProps<T, K>)
                     y: 'row',
                     key: 'id',
                     text: 'text',
-                    fill: 'fill',
+                    fill: (m: Mark) => m.fill,
                     fontSize,
                     fontWeight: 600,
                     anchor: 'middle',

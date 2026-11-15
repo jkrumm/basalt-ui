@@ -3,7 +3,7 @@
  * 240px, dots below 480px, chips from 480px, by the enclosing chart's inline size — so the legend in
  * the server HTML is the legend of the hydrated page. `ChartLegend` renders both swatches; this
  * file shows one. Literals are CONTAINER_CLASSES (`breakpoint-literals.test.ts`); the container is
- * the chart root (`CartesianChart.tsx`), whose `container-type` this relies on.
+ * the chart root (`parts/cartesian.tsx`, `parts/band-strip.tsx`), whose `container-type` this relies on.
  */
 
 .auto {

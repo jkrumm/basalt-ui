@@ -4,11 +4,9 @@
  * three-kind fixture (`charts-three-kind` in `charts.ts`: Sparkline, Lines, Bars) plus the kind,
  * minus the same fixture without it, each gzip over a build with peers bundled. Ceiling = measured
  * +5% rounded up to 0.5 KB, at most 4000 B (above that is an amendment, not a raise). Ratcheted down only.
- * Amendment (Decision, Issue 1227): Heatmap measures 4002 B, so its ceiling is 4500 B (+5% rounded up to
- * 0.5 KB) instead of the 4000 B cap; BandStrip holds the cap.
- * Issue 1417: BandStrip and Heatmap compose `core/compile`, the host and the card portal like the v3 kinds, and
- * the 2.x ChartShell and compile modules are deleted, so the Issue 1407 amendment (18500 B and 5500 B) is gone:
- * Heatmap measures 3966 B (ceiling at the 4000 B cap), BandStrip 2434 B (3000 B).
+ * BandStrip and Heatmap compose `core/compile`, the host and the card portal like the v3 kinds (Issue 1417), so
+ * the Issue 1227 and 1407 amendments are gone: Heatmap measures 3969 B (ceiling at the 4000 B cap), BandStrip
+ * 2438 B (3000 B).
  */
 import { reExportNamed, measureSource } from '../ui-bundle'
 import type { Raises, RowDef } from '../lib'
@@ -36,7 +34,7 @@ export const rows: readonly RowDef[] = [
     id: 'charts-heatmap-marginal',
     order: 24,
     label: 'charts Heatmap marginal (gzip B over Sparkline + Lines + Bars)',
-    // 3966 B measured on the v3 three-kind fixture; at the cap.
+    // 3969 B measured on the v3 three-kind fixture; at the cap.
     ceiling: 4000,
     measure: () => marginal(HEATMAP),
   },
@@ -44,7 +42,7 @@ export const rows: readonly RowDef[] = [
     id: 'charts-band-strip-marginal',
     order: 25,
     label: 'charts BandStrip marginal (gzip B over Sparkline + Lines + Bars)',
-    // 2434 B measured on the v3 three-kind fixture (+5%, rounded up to 0.5 KB).
+    // 2438 B measured on the v3 three-kind fixture (+5%, rounded up to 0.5 KB).
     ceiling: 3000,
     measure: () => marginal(BAND_STRIP),
   },
