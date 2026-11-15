@@ -155,7 +155,7 @@
       "to": "FormField rows inside a fieldset or a Section",
       "profiles": ["parts", "app"],
       "manual": true,
-      "note": "FormGroup stays exported until this row ships; its frame is a fieldset with a legend now",
+      "note": "FormGroup is deleted with the 2.x controls layer in 3.0; its frame was a fieldset with a legend",
       "verify": "tsc, then migrate --check"
     },
     {

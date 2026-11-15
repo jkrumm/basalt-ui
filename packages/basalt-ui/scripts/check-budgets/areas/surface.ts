@@ -91,7 +91,7 @@ export const raises: Raises = {
       from: 180,
       to: 181,
       consumer:
-        "`Facts` from `./page`: the shell cycle's deploy inspector (apps/playground/src/cycle/shell-1/ServicesPage.tsx, shell-1.4) hand-builds the same `dl` grid in its `PageAside`; every inspector body is a label and value list",
+        "`Facts` from `./page`: the dogfood cycle's issue inspector (apps/playground/src/cycle/dogfood-1/FlowOverview.tsx) hand-builds the same `dl` grid in its `PageAside`; every inspector body is a label and value list",
       repo: 'basalt-ui',
     },
     {
