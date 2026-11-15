@@ -11,6 +11,11 @@ const item = (id: string, to: string, extra: Partial<AnyNavItem> = {}): AnyNavIt
 const navOf = (...items: AnyNavItem[]): AnyNavConfig => ({
   sections: [{ id: 's', label: 'S', items }],
 })
+const scenario = (name: string): AnyNavItem => ({
+  id: name,
+  label: name,
+  link: { to: '/scenarios/$name', params: { name } },
+})
 const activeOf = (nav: AnyNavConfig, pathname: string) => resolveActive(nav, pathname).activeId
 
 describe('resolveActive examples', () => {
@@ -48,6 +53,15 @@ describe('resolveActive examples', () => {
   test('an equality hit beats a prefix hit of equal specificity', () => {
     const nav = navOf(item('prefix', '/a/b'), item('splat', '/a/$'))
     expect(activeOf(nav, '/a/b/c')).toBe('splat')
+  })
+
+  test('items sharing one param template are told apart by link.params', () => {
+    const nav = navOf(scenario('c10'), scenario('c13'), item('any', '/scenarios/$name'))
+    expect(activeOf(nav, '/scenarios/c13')).toBe('c13')
+    expect(activeOf(nav, '/scenarios/c10')).toBe('c10')
+    expect(activeOf(nav, '/scenarios/c99')).toBe('any')
+    expect(activeOf(nav, '/scenarios/c13/detail')).toBe('c13')
+    expect(activeOf(navOf(scenario('a b')), '/scenarios/a%20b')).toBe('a b')
   })
 
   test('$param matches one non-empty segment, a trailing $ the rest', () => {
