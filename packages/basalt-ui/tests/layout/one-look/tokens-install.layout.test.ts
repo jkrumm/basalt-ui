@@ -329,12 +329,12 @@ layout('tokens install (packed tarball, frozen)', () => {
 
   const initTest = initHasProfiles ? test : test.todo
   initTest(
-    `init --profile tokens adds only the optional peers it writes: stylelint and postcss-html${
+    `init --profile tokens adds only the tools it writes config for: stylelint, postcss-html and oxfmt${
       initHasProfiles ? '' : ' (blocked until v3-sk-3-init-doctor ships the --profile flag)'
     }`,
     () => {
       expect(initRun.result.code).toBe(0)
-      expect(initRun.added).toEqual(['postcss-html', 'stylelint'])
+      expect(initRun.added).toEqual(['oxfmt', 'postcss-html', 'stylelint'])
     },
   )
 })
