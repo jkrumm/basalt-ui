@@ -136,6 +136,21 @@ describe('client filter and paging', () => {
     expect(run).toHaveBeenCalledTimes(1)
   })
 
+  test('an `empty` action with an href renders a link', () => {
+    render(
+      <Subject
+        options={{
+          data: [],
+          empty: {
+            cause: 'No orders this week.',
+            action: { label: 'All orders', href: '/orders' },
+          },
+        }}
+      />,
+    )
+    expect(screen.getByRole('link', { name: 'All orders' }).getAttribute('href')).toBe('/orders')
+  })
+
   test('a filtered-empty table keeps the no-matches sentence and Clear filters over `empty`', () => {
     render(
       <Subject
