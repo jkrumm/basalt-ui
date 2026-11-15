@@ -136,6 +136,29 @@ for (const viewport of [DESKTOP_1440, PHONE]) {
   })
 }
 
+layout('the connection in the band', () => {
+  for (const viewport of [{ ...DESKTOP_1440, width: 1800 }, PHONE]) {
+    test(`${viewport.width}: the indicator sits before the refresh button on one line`, async () => {
+      const page = await openFixture(specOf({ connection: true }), viewport)
+      const m = await page.raw.evaluate(() => {
+        const i = document.querySelector('[data-slot="connection-indicator"]')
+        const r = document.querySelector('[data-scope]')
+        if (!i || !r) throw new Error('FAILED: indicator or refresh button missing')
+        const ir = i.getBoundingClientRect()
+        const rr = r.getBoundingClientRect()
+        return {
+          indicatorRight: ir.right,
+          refreshLeft: rr.left,
+          indicatorMid: ir.top + ir.height / 2,
+          refreshMid: rr.top + rr.height / 2,
+        }
+      })
+      expect(m.indicatorRight).toBeLessThanOrEqual(m.refreshLeft + TOLERANCE)
+      expect(Math.abs(m.indicatorMid - m.refreshMid)).toBeLessThanOrEqual(TOLERANCE * 4)
+    })
+  }
+})
+
 layout('the aside, shell-less', () => {
   test('1440: a second column beside the content, the band stays in the first', async () => {
     const page = await openFixture(specOf({ aside: true }), DESKTOP_1440)

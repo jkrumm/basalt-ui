@@ -7,6 +7,7 @@ import { SlotHomeContext } from '../core/slot-home'
 import { useMessages } from '../core/messages/use-messages'
 import { Button } from '../ui/button'
 import { Menu, MenuContent, MenuItem, MenuTrigger } from '../ui/menu'
+import { ConnectionIndicator } from './connection-indicator'
 import { devAssertOnce, createBarClaims } from './core/claims'
 import { observeBarHeight, publishBarHeight } from './core/bar-measure'
 import type { PageAction, PageBarProps, PageButtonAction, PageTextAction } from './contract'
@@ -192,14 +193,14 @@ const isEmptySlot = (slot: { count: number } | undefined): boolean =>
   slot === undefined || slot.count === 0
 
 /**
- * The page's band: the title and breadcrumb, the page tabs, the controls, the refresh button and
- * the actions. One per `Page`; a second renders nothing and raises a dev warning, so nested layouts
+ * The page's band: the title and breadcrumb, the page tabs, the controls, the connection indicator,
+ * the refresh button and the actions. One per `Page`; a second renders nothing and raises a dev warning, so nested layouts
  * that each render a bar fail loudly instead of stacking two bands.
  *
  * Where it renders follows the context, never a prop. Under an `AppShell` `title` claims the
  * header's breadcrumb leaf (`parent` the trail before it), names the in-flow screen-reader `h1` and
- * `document.title`, and `actions` claim the header's end; the band holds only `tabs`, `controls`
- * and `refresh`. Without a shell `title` is the visible `h1` and `actions` sit in the band. The
+ * `document.title`, and `actions` claim the header's end; the band holds only `tabs`, `controls`,
+ * `connection` and `refresh`. Without a shell `title` is the visible `h1` and `actions` sit in the band. The
  * band is sticky at the nearest scrollport and publishes its measured height as `--page-bar-h`; an
  * empty band renders nothing. `tabs` is `{ handle, label }` of an enum field (a tab strip bound to it;
  * the phone track and `Select` forms are `ViewTabs` in a slot) or a `ControlsSlot` for custom content. `actions` holds at most five entries and at most one `primary`.
@@ -234,6 +235,7 @@ export function PageBar<K extends string = string>({
   parent,
   controls,
   tabs,
+  connection,
   refresh,
   actions,
 }: PageBarProps<K>): ReactElement | null {
@@ -312,6 +314,7 @@ export function PageBar<K extends string = string>({
   const bandHasContent =
     !isEmptySlot(controls) ||
     !isEmptyTabs(tabs) ||
+    connection !== undefined ||
     refresh !== undefined ||
     visibleActions ||
     (!inShell && title !== undefined)
@@ -387,6 +390,9 @@ export function PageBar<K extends string = string>({
             >
               <SlotHomeContext value="page-bar">{controls?.render()}</SlotHomeContext>
             </div>
+          )}
+          {connection !== undefined && (
+            <ConnectionIndicator connection={connection} className="shrink-0" />
           )}
           {refresh !== undefined && <RefreshButton {...refresh} />}
           {visibleActions && <PageActions actions={list} />}
