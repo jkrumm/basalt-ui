@@ -48,8 +48,8 @@ const SHIPPED = {
   sub: 'Most since March',
   chart: (box: { height: number | 'fill' }) => <ShippedTrend height={box.height} />,
   menu: [
-    { label: 'Open report', href: '#shipped' },
-    { label: 'Export CSV', onClick: () => undefined },
+    { id: 'report', label: 'Open report', href: '#shipped' },
+    { id: 'export', label: 'Export CSV', onClick: () => undefined },
   ],
 } as const
 
