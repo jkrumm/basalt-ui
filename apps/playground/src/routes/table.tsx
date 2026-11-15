@@ -233,7 +233,7 @@ function Finances(): ReactElement {
     selection: {
       bulk: [
         {
-          key: 'archive',
+          id: 'archive',
           label: 'Archive',
           onClick: (rows) => setDone(`Archived ${rows.length} bookings`),
         },
