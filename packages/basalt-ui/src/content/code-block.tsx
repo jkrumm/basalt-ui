@@ -64,7 +64,8 @@ function CopyButton({ code }: { code: string }): ReactElement {
     <div className="absolute top-1.5 right-1.5 transition-opacity pointer-fine:opacity-0 pointer-fine:group-focus-within/code:opacity-100 pointer-fine:group-hover/code:opacity-100">
       <Button
         variant="ghost"
-        size="icon-sm"
+        size="sm"
+        shape="icon"
         aria-label={t('ai.copy')}
         data-copied={copied ? '' : undefined}
         onClick={copy}

@@ -48,7 +48,7 @@ export type TooltipProps = Pick<
  * @neverWhen the content is interactive, longer than a line, or the only place a fact lives (use `Popover`)
  *
  * @example
- * <Tooltip label="Copy link"><Button size="icon" aria-label="Copy link"><LinkIcon /></Button></Tooltip>
+ * <Tooltip label="Copy link"><Button shape="icon" aria-label="Copy link"><LinkIcon /></Button></Tooltip>
  */
 export function Tooltip({
   label,

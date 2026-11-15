@@ -74,7 +74,7 @@ function Fixture(): ReactElement {
           </PopoverContent>
         </Popover>
         <Tooltip label="Copy link">
-          <Button size="icon" aria-label="Copy link" data-testid="up-tip">
+          <Button shape="icon" aria-label="Copy link" data-testid="up-tip">
             #
           </Button>
         </Tooltip>

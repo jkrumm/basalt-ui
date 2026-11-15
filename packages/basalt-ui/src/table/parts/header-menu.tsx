@@ -47,7 +47,8 @@ export function HeaderFilterMenu<T>({
           render={
             <Button
               ref={anchor}
-              size="icon-sm"
+              size="sm"
+              shape="icon"
               variant="ghost"
               aria-label={t('table.headerMenu', spec.header)}
             />

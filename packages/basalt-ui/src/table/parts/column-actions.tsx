@@ -81,7 +81,8 @@ export function ColumnActionsMenu<T>({
       <MenuTrigger
         render={
           <Button
-            size="icon-sm"
+            size="sm"
+            shape="icon"
             variant="ghost"
             {...(className !== undefined && { className })}
             aria-label={t('table.columnActions', spec.header)}

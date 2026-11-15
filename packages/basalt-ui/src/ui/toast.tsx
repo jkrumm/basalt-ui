@@ -156,7 +156,7 @@ export function ToastClose({ className, children, ...props }: ToastCloseProps): 
       aria-label={t('toast.dismiss')}
       {...props}
       data-slot="toast-close"
-      className={cn(buttonVariants({ variant: 'ghost', size: 'icon-sm' }), className)}
+      className={cn(buttonVariants({ variant: 'ghost', size: 'sm', shape: 'icon' }), className)}
     >
       <svg viewBox="0 0 16 16" className="size-icon" fill="none" aria-hidden="true">
         <path

@@ -111,7 +111,8 @@ function ItemMenu({ item }: { item: InnerNavItem }): ReactElement | null {
         render={
           <Button
             variant="ghost"
-            size="icon-sm"
+            size="sm"
+            shape="icon"
             aria-label={t('page.itemActions', item.label)}
             className="ms-1"
           />

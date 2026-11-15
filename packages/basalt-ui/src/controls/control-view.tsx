@@ -94,7 +94,11 @@ export function ControlView({ spec, className }: ControlViewProps): ReactElement
     <button
       type="button"
       data-slot="override-reset"
-      className={buttonVariants({ variant: 'ghost', size: visible ? 'sm' : 'icon' })}
+      className={buttonVariants({
+        variant: 'ghost',
+        size: visible ? 'sm' : 'md',
+        shape: visible ? 'default' : 'icon',
+      })}
       {...(!visible && { 'aria-label': label })}
       onClick={() => {
         spec.handle.clear()

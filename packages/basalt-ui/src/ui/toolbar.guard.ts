@@ -8,7 +8,8 @@ import type { ToolbarButtonProps, ToolbarProps } from './toolbar'
 // basalt:guard requires
 type Called = {
   variant?: 'primary' | 'secondary' | 'ghost'
-  size?: 'md' | 'icon'
+  size?: 'md' | 'sm'
+  shape?: 'default' | 'icon'
 }
 
 export const requires = (c: Called): Pick<ToolbarButtonProps, 'variant' | 'size'> => c
@@ -18,7 +19,7 @@ export const requires = (c: Called): Pick<ToolbarButtonProps, 'variant' | 'size'
 export const closedVariant: Pick<ToolbarButtonProps, 'variant'> = { variant: 'unknown' }
 
 // @ts-expect-error an icon-only toolbar button needs a name
-export const unnamedIcon: ToolbarButtonProps = { size: 'icon' }
+export const unnamedIcon: ToolbarButtonProps = { shape: 'icon' }
 
 // @ts-expect-error a toolbar needs a name
 export const unnamedToolbar: ToolbarProps = {}

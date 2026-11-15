@@ -131,7 +131,7 @@ function MoreMenu({ items }: { items: readonly PageButtonAction[] }): ReactEleme
         render={
           <Button
             variant="ghost"
-            size="icon"
+            shape="icon"
             aria-label={t('page.moreActions')}
             className="@wide:hidden"
           />

@@ -113,7 +113,7 @@ export function TablePager<T>({
           }))}
         />
         <Button
-          size="icon"
+          shape="icon"
           variant="ghost"
           aria-label={t('table.pagePrev')}
           disabled={request.page <= 1}
@@ -122,7 +122,7 @@ export function TablePager<T>({
           <Chevron flip />
         </Button>
         <Button
-          size="icon"
+          shape="icon"
           variant="ghost"
           aria-label={t('table.pageNext')}
           disabled={last === undefined ? onPage < request.pageSize : request.page >= last}

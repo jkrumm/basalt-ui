@@ -11,7 +11,7 @@ import { cn } from '../core/cn'
  * `::after` hit area.
  *
  * @example
- * buttonVariants({ variant: 'ghost', size: 'sm' }) // class string for a non-`Button` element
+ * buttonVariants({ variant: 'ghost', size: 'sm', shape: 'icon' }) // class string for a non-`Button` element
  */
 export const buttonVariants = cva(
   'relative inline-flex shrink-0 cursor-pointer items-center justify-center gap-1.5 rounded-ctrl text-sm font-medium whitespace-nowrap select-none focus-ring transition-colors data-disabled:pointer-events-none data-disabled:opacity-50 data-loading:cursor-progress',
@@ -25,14 +25,18 @@ export const buttonVariants = cva(
         danger: 'bg-bad-tint text-bad hover:bg-bad-tint/80',
       },
       size: {
-        md: 'h-ctl px-3 pointer-coarse:min-h-11',
-        sm: 'h-6 px-2 text-xs after:absolute after:inset-x-0 after:top-1/2 after:h-full after:-translate-y-1/2 pointer-coarse:after:min-h-11',
-        icon: 'size-ctl pointer-coarse:size-11',
-        'icon-sm':
-          'size-6 after:absolute after:inset-x-0 after:top-1/2 after:h-full after:-translate-y-1/2 pointer-coarse:after:min-h-11',
+        md: '',
+        sm: 'text-xs after:absolute after:inset-x-0 after:top-1/2 after:h-full after:-translate-y-1/2 pointer-coarse:after:min-h-11',
       },
+      shape: { default: '', icon: '' },
     },
-    defaultVariants: { variant: 'secondary', size: 'md' },
+    compoundVariants: [
+      { size: 'md', shape: 'default', class: 'h-ctl px-3 pointer-coarse:min-h-11' },
+      { size: 'sm', shape: 'default', class: 'h-6 px-2' },
+      { size: 'md', shape: 'icon', class: 'size-ctl pointer-coarse:size-11' },
+      { size: 'sm', shape: 'icon', class: 'size-6' },
+    ],
+    defaultVariants: { variant: 'secondary', size: 'md', shape: 'default' },
   },
 )
 
@@ -61,20 +65,19 @@ export const pressableVariants = cva(
 export const buttonParts = ['button', 'pressable'] as const
 
 type BaseProps = Omit<BaseButton.Props, 'className'> & {
-  /** Layout only (`w-full`, `flex-1`, `mt-2`). Height and display belong to `size`. */
+  /** Layout only (`w-full`, `flex-1`, `mt-2`). Height and display belong to `size` and `shape`. */
   className?: string
 }
 type ButtonAxes = VariantProps<typeof buttonVariants>
-type IconSize = 'icon' | 'icon-sm'
 
 export type ButtonProps = BaseProps &
-  Omit<ButtonAxes, 'size'> & {
+  Omit<ButtonAxes, 'shape'> & {
     /** Disables interaction and sets `aria-busy`, keeping focus on the button. */
     loading?: boolean
   } & (
-    | { size?: Exclude<ButtonAxes['size'], IconSize> }
+    | { shape?: 'default' }
     // An icon-only button has no text to name it, so the name is required by type.
-    | { size: IconSize; 'aria-label': string }
+    | { shape: 'icon'; 'aria-label': string }
   )
 
 /**
@@ -82,11 +85,12 @@ export type ButtonProps = BaseProps &
  *
  * @example
  * <Button variant="primary" onClick={save}>Save</Button>
- * <Button size="icon" aria-label="Close" render={<a href="/home" />} nativeButton={false} />
+ * <Button shape="icon" aria-label="Close" render={<a href="/home" />} nativeButton={false} />
  */
 export function Button({
   variant,
   size,
+  shape,
   loading,
   disabled,
   focusableWhenDisabled,
@@ -101,7 +105,7 @@ export function Button({
       aria-busy={loading || undefined}
       data-loading={loading ? '' : undefined}
       data-slot="button"
-      className={cn(buttonVariants({ variant, size }), className)}
+      className={cn(buttonVariants({ variant, size, shape }), className)}
     />
   )
 }

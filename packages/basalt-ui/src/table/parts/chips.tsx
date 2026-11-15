@@ -57,7 +57,8 @@ export function ChipList<T>({ model }: { model: TableModel<T> }): ReactElement |
               </span>
             </span>
             <Button
-              size="icon-sm"
+              size="sm"
+              shape="icon"
               variant="ghost"
               aria-label={t('table.chipRemove', subject)}
               onClick={() =>

@@ -207,7 +207,8 @@ function ViewsPanel<T>({
                 <span className="truncate">{view.name}</span>
               </Button>
               <Button
-                size="icon-sm"
+                size="sm"
+                shape="icon"
                 variant="ghost"
                 aria-label={t('table.viewRemove', view.name)}
                 onClick={() => {

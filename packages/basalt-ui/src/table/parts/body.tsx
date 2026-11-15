@@ -47,7 +47,8 @@ function RowActions<T>({
         <MenuTrigger
           render={
             <Button
-              size="icon-sm"
+              size="sm"
+              shape="icon"
               variant="ghost"
               aria-label={label}
               className="pointer-coarse:after:-inset-x-2.5"
@@ -97,7 +98,7 @@ function ExpandButton({
   return (
     <span data-slot="table-expand">
       <Button
-        size="icon"
+        shape="icon"
         variant="ghost"
         aria-label={label}
         tabIndex={tabbable ? undefined : -1}
