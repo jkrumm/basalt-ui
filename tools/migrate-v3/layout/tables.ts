@@ -28,12 +28,15 @@ export const FONT_SIZE: Record<string, string> = {
   xl: 'text-lg',
 }
 
+/**
+ * The v3 sheet resets `--radius-*` and defines only card/inset/ctrl/chip, so `rounded-sm`..`-xl`
+ * compile to nothing. Only the Mantine steps that land on a v3 radius map: sm 4px is `chip` (5px)
+ * and md 6px is `ctrl` (8px), both named by `tokens.valueShifts`. xs, lg and xl have no v3 step
+ * and go to review.
+ */
 export const RADIUS: Record<string, string> = {
-  xs: 'rounded-xs',
-  sm: 'rounded-sm',
-  md: 'rounded-md',
-  lg: 'rounded-lg',
-  xl: 'rounded-xl',
+  sm: 'rounded-chip',
+  md: 'rounded-ctrl',
 }
 
 export const ALIGN: Record<string, string> = {
