@@ -208,6 +208,15 @@ describe('defineControls: a param a global store owns', () => {
   })
 })
 
+describe('defineControls: two globals on one param', () => {
+  test('still throw at definition: neither is a page to blame', () => {
+    defineControls({ id: 'g-a', scope: 'global', fields: { range: field.string('') } })
+    expect(() =>
+      defineControls({ id: 'g-b', scope: 'global', fields: { range: field.string('') } }),
+    ).toThrow(/already owned by "g-a" \(global\)/)
+  })
+})
+
 describe('defineControls: values and writes', () => {
   test('aliases from the golden cases resolve before the codec', () => {
     for (const c of cases.aliases) {
