@@ -49,15 +49,3 @@ export function activeFilters(
 ): FilterModel[] {
   return filters.filter((f) => known.has(f.id) && f.values.length > 0)
 }
-
-/**
- * Whether a keydown is an Enter that commits a draft: never one that confirms an IME composition
- * (`isComposing`, and the legacy `keyCode` 229 that Safari reports once `compositionend` fired).
- */
-export function commitsDraft(event: {
-  key: string
-  keyCode: number
-  nativeEvent: { isComposing: boolean }
-}): boolean {
-  return event.key === 'Enter' && !event.nativeEvent.isComposing && event.keyCode !== 229
-}

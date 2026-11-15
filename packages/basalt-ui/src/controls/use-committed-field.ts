@@ -10,6 +10,7 @@
  */
 import { useRef, useState } from 'react'
 import type { CompositionEvent, FocusEvent, KeyboardEvent, MouseEvent } from 'react'
+import { confirmsComposition } from '../core/commit-key'
 import { useDebouncedCallback } from '../core/debounce'
 
 /** The pause after the last keystroke that commits the draft. */
@@ -48,7 +49,7 @@ export type CommittedField<T> = {
 
 /** True while an IME composition owns the key: the flag, the event's own, or the legacy 229. */
 const composing = (event: KeyboardEvent, flag: boolean): boolean =>
-  flag || event.nativeEvent.isComposing || event.keyCode === 229
+  flag || confirmsComposition(event)
 
 export function useCommittedField<T>({
   value,

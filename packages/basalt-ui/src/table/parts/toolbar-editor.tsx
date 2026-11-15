@@ -8,13 +8,14 @@
 import { useState } from 'react'
 import type { ReactElement } from 'react'
 import { useMessages } from '../../core/messages/use-messages'
+import { commitsDraft } from '../../core/commit-key'
 import { table } from '../../core/messages/table'
 import { Combobox, ComboboxChips, ComboboxContent, ComboboxItem } from '../../ui/combobox'
 import { Input } from '../../ui/input'
 import type { KindSpec } from '../core/kinds-spec'
 import { useSearchDraft } from '../core/state'
 import type { TableModel } from '../use-data-table'
-import { commitsDraft, filterValues, withFilter } from './toolbar-filters'
+import { filterValues, withFilter } from './toolbar-filters'
 import type { FilterableSpec } from './toolbar-filters'
 
 export type FilterEditorProps<T> = {

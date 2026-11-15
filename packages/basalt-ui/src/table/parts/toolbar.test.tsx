@@ -14,7 +14,7 @@ import { useDataTable, modelOf } from '../use-data-table'
 import type { TableModel } from '../use-data-table'
 import { DataTable } from './data-table'
 import { TableToolbar } from './toolbar'
-import { commitsDraft, filterValues, filterableSpecs, withFilter } from './toolbar-filters'
+import { filterValues, filterableSpecs, withFilter } from './toolbar-filters'
 
 afterEach(cleanup)
 
@@ -59,21 +59,6 @@ function Subject({ phone }: { phone?: 'cards' | 'scroll' }): ReactElement {
 }
 
 const wait = (ms: number) => act(async () => void (await new Promise((r) => setTimeout(r, ms))))
-
-const keydown = (key: string, keyCode: number, isComposing: boolean) => ({
-  key,
-  keyCode,
-  nativeEvent: { isComposing },
-})
-
-describe('commitsDraft', () => {
-  test('only a plain Enter commits: not a composition, not keyCode 229, not another key', () => {
-    expect(commitsDraft(keydown('Enter', 13, false))).toBe(true)
-    expect(commitsDraft(keydown('Enter', 13, true))).toBe(false)
-    expect(commitsDraft(keydown('Enter', 229, false))).toBe(false)
-    expect(commitsDraft(keydown('a', 65, false))).toBe(false)
-  })
-})
 
 describe('filter helpers', () => {
   const specs = [

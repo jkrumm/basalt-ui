@@ -21,6 +21,7 @@ import { useEffect, useRef, useState } from 'react'
 import type { ReactNode } from 'react'
 import { useIsomorphicLayoutEffect } from '../common/isomorphic-layout-effect'
 import { assertRequiredProps } from '../common/validate'
+import { commitsDraft } from '../core/commit-key'
 import type { FieldHandle } from '../state'
 import type { StringField } from '../state/fields'
 import { useControlName } from './control-name'
@@ -107,7 +108,7 @@ export function SearchFilter(props: SearchFilterProps): ReactNode {
       onBlur={draft.flush}
       onKeyDown={(event) => {
         // Enter that confirms an IME candidate is not a submit.
-        if (event.key === 'Enter' && !event.nativeEvent.isComposing) draft.flush()
+        if (commitsDraft(event)) draft.flush()
       }}
       {...(!inRow && className !== undefined && { className })}
       {...(!inRow && style !== undefined && { style })}
