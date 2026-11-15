@@ -80,7 +80,8 @@ const PLAN = [
 // Word by word, spaces kept, so each tick is one small delta of valid markdown.
 const WORDS = PLAN.join('\n\n').split(/(?<= )/)
 
-export type MockOptions = { tickMs?: number; ticks?: number; fail?: boolean }
+/** `pauseAfter`: hold the stream still once that many words went out, until the test clears it (read each tick). */
+export type MockOptions = { tickMs?: number; ticks?: number; fail?: boolean; pauseAfter?: number }
 
 /** A transport that streams synthetic markdown, one word per tick; read lazily, so a test can tune it. */
 export function mockTransport(opts: MockOptions = {}): ChatTransport<UIMessage> {
@@ -94,6 +95,7 @@ export function mockTransport(opts: MockOptions = {}): ChatTransport<UIMessage> 
           controller.enqueue({ type: 'start', messageId: `a-${Date.now()}` })
           controller.enqueue({ type: 'text-start', id: 't' })
           const timer = setInterval(() => {
+            if (opts.pauseAfter !== undefined && i >= opts.pauseAfter) return
             if (abortSignal?.aborted || i >= ticks) {
               clearInterval(timer)
               controller.enqueue({ type: 'text-end', id: 't' })
