@@ -354,7 +354,7 @@ export function PageBar<K extends string = string>({
       <div
         ref={attach}
         data-slot="page-bar"
-        className="sticky top-0 z-10 flex flex-wrap items-center gap-x-3 gap-y-2 -mx-(--page-gutter) border-b border-border bg-background px-(--page-gutter) py-2"
+        className="sticky top-0 z-10 flex flex-wrap items-center gap-x-3 gap-y-2 -mx-(--page-gutter) border-b border-border bg-background px-[max(var(--page-gutter,0px),--spacing(1))] py-2"
       >
         {!inShell && (trail !== null || heading !== null) && (
           <div className="flex min-w-0 items-baseline gap-2">
