@@ -157,8 +157,23 @@ export type UseDataTable<T> = {
   state?: StateHandle<TableState>
   phase?: Phase | QueryStateLike
   resetOn?: readonly unknown[]
+  /**
+   * What a narrow table becomes: cards, or the table scrolling sideways with its first column pinned.
+   *
+   * @default 'cards'
+   */
   phone?: 'cards' | 'scroll'
+  /**
+   * The width below which the table becomes cards (`regular` is 480 px, `wide` 800 px, `always` never a table).
+   *
+   * @default 'regular'
+   */
   cardsBelow?: 'regular' | 'wide' | 'always'
+  /**
+   * The pager: `pages` steps through numbered pages, `more` is a Load more button, `none` shows every row.
+   *
+   * @default 'none' on a client table, 'more' on a cursor table, 'pages' on any other server table
+   */
   pager?: 'pages' | 'more' | 'none'
   /** A type error unless `mode.kind` is `'client'` (enforced in `useDataTable` at the call site). */
   group?: {

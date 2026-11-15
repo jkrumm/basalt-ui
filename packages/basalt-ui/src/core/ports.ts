@@ -34,6 +34,7 @@ export type Box = { height: number | 'fill'; phase: 'ready' | 'stale' }
 export type BoxSlot = (box: Box) => ReactNode
 
 export type Delta = {
+  /** Printed as given, never scaled: `0.12` shows 0.12, not 12 %, so pass `'+12%'`; the sign sets the arrow. */
   value: number | string
   polarity: 'up-good' | 'up-bad' | 'neutral'
   label?: string
