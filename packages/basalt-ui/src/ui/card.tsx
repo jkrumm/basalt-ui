@@ -4,6 +4,7 @@ import type { VariantProps } from 'class-variance-authority'
 import { isValidElement, useId } from 'react'
 import type { ComponentProps, ReactElement, ReactNode } from 'react'
 import { cn } from '../core/cn'
+import { AppLink } from '../core/link'
 import { resolvePhase } from '../core/phase'
 import type { Empty, ErrorKind, FrameState } from '../core/phase'
 import { PhaseBoundary } from '../core/phase-boundary'
@@ -297,9 +298,9 @@ function EmptyArm({ empty, arms }: { empty: Empty; arms: Arms }): ReactElement {
       ) : (
         action !== undefined &&
         ('href' in action ? (
-          <a href={action.href} className={ACTION}>
+          <AppLink href={action.href} className={ACTION}>
             {action.label}
-          </a>
+          </AppLink>
         ) : (
           <button type="button" className={ACTION} onClick={action.onSelect}>
             {action.label}

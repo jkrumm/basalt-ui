@@ -8,11 +8,10 @@
  * No JSX in this folder: the element is built with `createElement`.
  */
 import { createElement } from 'react'
-import type { ElementType, ReactNode } from 'react'
-import { Link } from '@tanstack/react-router'
-import type { RegisteredRouter, ValidateLinkOptions } from '@tanstack/react-router'
-import type { LinkComponent } from '../core/ports'
-import type { NavTarget } from '../page/contract'
+import type { ElementType, MouseEvent, ReactNode } from 'react'
+import { Link, useRouter } from '@tanstack/react-router'
+import type { AnyRouter, RegisteredRouter, ValidateLinkOptions } from '@tanstack/react-router'
+import type { LinkComponent, NavTarget } from '../core/ports'
 
 export type { NavTarget }
 
@@ -47,29 +46,53 @@ function isNavTarget(value: unknown): value is NavTarget {
   return typeof value === 'object' && value !== null && opened.has(value)
 }
 
+/** `LinkComponent` already takes a `NavTarget`; the name stays for what `routerDefaults` returns. */
+export type RouterLinkComponent = LinkComponent
+
 type LinkProps = Parameters<LinkComponent>[0]
 
-/**
- * A `LinkComponent` that also opens a `NavTarget`. Assignable wherever a `LinkComponent` is taken
- * (a function accepting a wider `href` satisfies the narrower port), and what `routerDefaults` returns.
- */
-export type RouterLinkComponent = (
-  props: Omit<LinkProps, 'href'> & { href: string | NavTarget },
-) => ReactNode
+/** A path inside the app: one leading slash, so not `//host`, a scheme, a hash or a relative path. */
+function isInApp(href: string): boolean {
+  return href.startsWith('/') && !href.startsWith('//')
+}
+
+/** The click the browser would follow itself: another button, a modifier or a new-tab link is left alone. */
+function isPlainClick(event: MouseEvent<HTMLAnchorElement>): boolean {
+  const anchor = event.currentTarget
+  return (
+    !event.defaultPrevented &&
+    event.button === 0 &&
+    !(event.metaKey || event.ctrlKey || event.shiftKey || event.altKey) &&
+    (anchor.target === '' || anchor.target === '_self') &&
+    !anchor.hasAttribute('download')
+  )
+}
 
 /**
- * The router `Link` as a `LinkComponent`: a `NavTarget` becomes a typed router link, a string stays a
- * plain anchor (an external URL, a mailto, a hash). `LinkComponent` types `href: string`; this one
- * also takes a `NavTarget`, which a function accepting a wider parameter satisfies without a cast.
- * The one cast lives here: `Link` is generic over the registered route tree, and a runtime
- * `to` cannot be checked against it, because `navTarget` already did.
+ * A path string through the router: a real `<a href>` (middle click, copy link, no script) whose
+ * plain click navigates in place, so the Query cache, the shell state and in-flight work survive.
  */
-export function RouterLinkAdapter({
-  href,
-  ...rest
-}: Parameters<RouterLinkComponent>[0]): ReactNode {
+function InAppLink({ href, onClick, ...rest }: LinkProps & { href: string }): ReactNode {
+  const router = useRouter({ warn: false }) as AnyRouter | undefined
+  const handle = (event: MouseEvent<HTMLAnchorElement>): void => {
+    ;(onClick as ((event: MouseEvent<HTMLAnchorElement>) => void) | undefined)?.(event)
+    if (router === undefined || !isPlainClick(event)) return
+    event.preventDefault()
+    void router.navigate({ href })
+  }
+  return createElement('a', { href, onClick: handle, ...rest })
+}
+
+/**
+ * The router `Link` as a `LinkComponent`: a `NavTarget` becomes a typed router link, a root-relative
+ * string navigates through the router, any other string (an external URL, a mailto, a hash) stays a
+ * plain anchor. The one cast to `ElementType` lives here: `Link` is generic over the registered route
+ * tree, and a runtime `to` cannot be checked against it, because `navTarget` already did.
+ */
+export function RouterLinkAdapter({ href, ...rest }: LinkProps): ReactNode {
   if (isNavTarget(href)) {
     return createElement(Link as ElementType, { ...opened.get(href), ...rest })
   }
+  if (isInApp(href)) return createElement(InAppLink, { href, ...rest })
   return createElement('a', { href, ...rest })
 }

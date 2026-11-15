@@ -9,6 +9,7 @@
 import { useId } from 'react'
 import type { ReactElement, ReactNode } from 'react'
 import { cn } from '../../core/cn'
+import { AppLink } from '../../core/link'
 import type { Empty, ResolvedPhase } from '../../core/phase'
 import { PhaseBoundary } from '../../core/phase-boundary'
 import type { BoxSlot, ControlsSlot, IconComponent } from '../../core/ports'
@@ -204,9 +205,9 @@ function EmptyArm({ empty }: { empty: Empty }): ReactElement {
       ) : (
         action !== undefined &&
         ('href' in action ? (
-          <a href={action.href} className={ACTION}>
+          <AppLink href={action.href} className={ACTION}>
             {action.label}
-          </a>
+          </AppLink>
         ) : (
           <button type="button" className={ACTION} onClick={action.onSelect}>
             {action.label}

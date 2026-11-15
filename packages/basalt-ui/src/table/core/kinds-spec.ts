@@ -6,7 +6,7 @@
  */
 import type { ReactNode } from 'react'
 import type { Format } from '../../core/format'
-import type { Box, LinkComponent } from '../../core/ports'
+import type { Box } from '../../core/ports'
 import type { CardSlot, KindColumn, Priority, RowAction } from '../contract'
 import type { SortFnName } from './features'
 
@@ -48,8 +48,6 @@ export type CellEnv = {
   now: number
   /** The box a `spark` draws in; the table owns its geometry. */
   box: Box
-  /** Router link for `entity` `href`; a plain `<a>` without one. */
-  Link?: LinkComponent
 }
 
 /** How a column sorts: a registered engine function, a comparator of two values, or not at all. */

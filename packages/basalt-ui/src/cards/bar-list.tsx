@@ -1,4 +1,5 @@
 import type { ReactElement } from 'react'
+import { AppLink } from '../core/link'
 import { cn } from '../core/cn'
 import type { FrameState } from '../core/phase'
 import { useFormat } from '../core/format'
@@ -192,9 +193,9 @@ function Row({ item, percent, value, secondary }: RowProps): ReactElement {
   )
   if (item.href !== undefined) {
     return (
-      <a data-slot="bar-list-target" href={item.href} className={cn(ROW, TARGET)}>
+      <AppLink data-slot="bar-list-target" href={item.href} className={cn(ROW, TARGET)}>
         {content}
-      </a>
+      </AppLink>
     )
   }
   if (item.onSelect !== undefined) {

@@ -3,6 +3,7 @@ import { useContext, useEffect, useId, useRef } from 'react'
 import type { MouseEvent, MouseEventHandler, ReactElement } from 'react'
 import { scrollParentOf } from '../../common/scroll-parent'
 import { cn } from '../../core/cn'
+import { AppLink } from '../../core/link'
 import { page } from '../../core/messages/page'
 import { useMessages } from '../../core/messages/use-messages'
 import { Button } from '../../ui/button'
@@ -173,15 +174,15 @@ function Group<K extends string>({
           const Icon = item.icon
           return (
             <li key={item.id} data-slot="inner-nav-item" className="flex shrink-0 items-center">
-              <a
-                {...anchor(item.id as K)}
-                aria-current={item.id === active ? 'page' : undefined}
+              <AppLink
+                {...(item.href === undefined ? anchor(item.id as K) : { href: item.href })}
+                {...(item.id === active && { 'aria-current': 'page' as const })}
                 className={LINK}
               >
                 {Icon !== undefined && <Icon className="size-icon shrink-0" aria-hidden="true" />}
                 <span className="min-w-0 flex-1 truncate">{item.label}</span>
                 {item.badge !== undefined && <Badge badge={item.badge} />}
-              </a>
+              </AppLink>
               <ItemMenu item={item} />
             </li>
           )

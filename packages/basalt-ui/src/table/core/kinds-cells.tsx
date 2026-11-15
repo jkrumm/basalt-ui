@@ -6,7 +6,8 @@
  */
 import type { ReactNode } from 'react'
 import type { CalendarDate, DateStyle, Format } from '../../core/format'
-import type { Delta, IconComponent, LinkComponent, Tone } from '../../core/ports'
+import { AppLink } from '../../core/link'
+import type { Delta, IconComponent, NavTarget, Tone } from '../../core/ports'
 import { DeltaBadge } from '../../ui/badge'
 import { Meter } from '../../ui/meter'
 import { Status } from '../../ui/status'
@@ -122,22 +123,13 @@ export function EntityCell({
   href,
   icon: Icon,
   sub,
-  Link,
 }: {
   value: string
-  href: string | undefined
+  href: string | NavTarget | undefined
   icon: IconComponent | undefined
   sub: string | undefined
-  Link: LinkComponent | undefined
 }): ReactNode {
-  const name =
-    href === undefined ? (
-      value
-    ) : Link === undefined ? (
-      <a href={href}>{value}</a>
-    ) : (
-      <Link href={href}>{value}</Link>
-    )
+  const name = href === undefined ? value : <AppLink href={href}>{value}</AppLink>
   return (
     <span data-slot="table-entity" className="flex min-w-0 items-center gap-2">
       {Icon !== undefined && <Icon aria-hidden="true" size={16} />}
