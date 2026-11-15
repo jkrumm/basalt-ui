@@ -16,8 +16,17 @@ per field from `@regular`. Repeat it for an array, keyed by a stable id in the v
 
 ```ts
 FormRow({ legend, disabled, className, children }: FormRowProps): ReactElement
-  legend?: ReactNode
-  disabled?: boolean
-  className?: string
-  children: ReactNode
+  legend?: ReactNode  // Names the row for assistive technology and shows above it: `Line 2` for a repeated row
+  disabled?: boolean  // Disables every field of the row
+  className?: string  // Layout only (`w-full`, `max-w-2xl`)
+  children: ReactNode  // The row's `FormField`s
+```
+
+## Example
+
+```tsx
+<FormRow legend="Line 1">
+  <FormField label="Item" field={item}><Input /></FormField>
+  <FormField label="Quantity" field={qty}><NumberField /></FormField>
+</FormRow>
 ```

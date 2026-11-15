@@ -26,5 +26,19 @@ KanbanCard<C extends string>(props: KanbanCardProps<C>): ReactElement
   reason?: { icon?: IconComponent; text: string; }
   status?: Status
   menu?: readonly CardAction[]
-  move: "static" | { column: ColumnRef<C>; index: number; columns: …
+  move: "static" | { column: ColumnRef<C>; index: number; columns: …  // Required: no card exists without the non-drag path
+```
+
+## Example
+
+```tsx
+<KanbanCard
+  id={issue.id}
+  title={issue.title}
+  href={`/issues/${issue.id}`}
+  age="2 h"
+  meta={['EP-412']}
+  chips={[{ label: 'api' }]}
+  move={{ column, index, columns, onMove: moveIssue }}
+/>
 ```

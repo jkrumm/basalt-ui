@@ -18,10 +18,18 @@ the record it inspects is a string field passed as `state`.
 
 ```ts
 PageAside(props: PageAsideProps): ReactElement | null
-  title: string
+  title: string  // Header and `aria-label`; required
   width?: number
-  state?: ControlHandle<boolean> | ControlHandle<string>
+  state?: ControlHandle<boolean> | ControlHandle<string>  // Open state, device or URL lane
   dock?: "auto" | "always"
   mobile?: "sheet"
   children?: ReactNode
+```
+
+## Example
+
+```tsx
+<PageAside title="Run details" width={360} state={store.field.run} mobile="sheet">
+  <Facts rows={[{ label: 'Version', value: run.version }]} />
+</PageAside>
 ```

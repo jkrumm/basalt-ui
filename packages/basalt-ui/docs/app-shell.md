@@ -31,3 +31,11 @@ AppShell<Id extends string = string>({ nav, brand, badges, blocks, globalControl
   compactHeader?: "hidden" | "show"
   children?: ReactNode
 ```
+
+## Example
+
+```tsx
+<AppShell nav={NAV} brand={{ name: 'Argo', logo: Mark }} storageKey="argo-sidebar" badges={{ jobs: { dot: true } }}>
+  <Outlet />
+</AppShell>
+```

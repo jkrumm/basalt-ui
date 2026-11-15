@@ -1,7 +1,6 @@
 ---
 name: websocket-transport
 use-when: the server pushes over a WebSocket, not SSE, and a channel must still reconnect, resume and stop on a refused token
-file: apps/playground/src/recipes/websocket-transport.ts
 ---
 
 A `Transport` is a function from `{ cursor, signal }` to an async iterable of `Wire`; this one is over a `WebSocket`. It is the one file `basalt/data-primitive` lets write `new WebSocket`.

@@ -1,7 +1,6 @@
 ---
 name: ai-external-runtime
 use-when: a chat runs on TanStack AI, AG-UI or assistant-ui and still renders through partView
-file: apps/playground/src/recipes/ai-external-runtime.ts
 ---
 
 Three mappers into `MessagePart`, for a message from TanStack AI 1.3, an AG-UI 1.0 thread or an assistant-ui 0.15 `ThreadMessageLike`. Copy this file and `ai-external-runtime-types.ts`; in an app import the types from the runtime's package.

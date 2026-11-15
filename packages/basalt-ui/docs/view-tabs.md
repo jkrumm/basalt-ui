@@ -17,15 +17,29 @@ tabs when the field is `history: 'push'`. One mount per form, swapped in CSS at 
 
 ```ts
 ViewTabs<T extends string>(props: ViewTabsProps<T>): ReactNode
-  one of: handle | field
-  handle: ControlHandle<T>
-  options?: readonly ViewTabsOption<T>[] | readonly LegacyViewTabsOptio…
-  label?: string
+  // either handle or field
+  handle?: ControlHandle<T>
+  options?: readonly ViewTabsOption<T>[] | readonly LegacyViewTabsOptio…  // Defaults to `handle.options` (every declared value, labelled by `.labels()`)
+  label?: string  // The switch's accessible name; both forms carry it; default 'View'
   disabled?: boolean
-  className?: string
-  field: FieldHandle<EnumField<T>>
+  className?: string  // Layout only (`w-full`, `ml-auto`)
+  field?: FieldHandle<EnumField<T>>
   value?: never
   onChange?: never
   size?: never
-  style?: CSSProperties  [with field]
+  style?: CSSProperties  [with field]  // Merged onto the root element's own inline style, if it has one
+```
+
+## Example
+
+```tsx
+<ViewTabs
+  handle={overview.field.tab}
+  label="Overview view"
+  options={[
+    { value: 'all', label: 'All' },
+    { value: 'errors', label: 'Errors' },
+    { value: 'train', label: 'Train', only: 'sm-down' },
+  ]}
+/>
 ```

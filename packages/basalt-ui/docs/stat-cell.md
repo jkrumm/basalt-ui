@@ -20,8 +20,9 @@ in a 28 px box.
 
 ```ts
 StatCell(props: StatCellProps): ReactElement
-  href: string | NavTarget
-  onSelect: () => void
+  // either href, onSelect or neither
+  href?: string | NavTarget
+  onSelect?: () => void
   phase?: Phase | QueryStateLike
   empty?: Empty | null
   label: string
@@ -34,6 +35,21 @@ StatCell(props: StatCellProps): ReactElement
   sub?: string
   srText?: string
   meter?: MeterSpec
-  chart?: BoxSlot
+  chart?: BoxSlot  // Called in a 28 px box
   rows?: readonly StatRow[] & readonly [StatRow?, StatRow?, StatRow?…
+```
+
+## Example
+
+```tsx
+<StatCell
+  label="Recovery"
+  qualifier="7 day"
+  value={82}
+  unit="%"
+  status={{ tone: 'good', label: 'Optimal' }}
+  meter={{ label: 'Recovery', value: 82, max: 100 }}
+  rows={[{ label: 'HRV', value: '64 ms' }, { label: 'Resting', value: '48 bpm' }]}
+  phase={query}
+/>
 ```

@@ -1,7 +1,6 @@
 ---
 name: memory-state
 use-when: live client state across routes (a timer, a selection) that a basalt control must read and write
-file: apps/playground/src/recipes/memory-state.ts
 ---
 
 Memory state is one `useSyncExternalStore`-compatible store: `get`, `set`, `subscribe`.

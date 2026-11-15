@@ -20,21 +20,38 @@ figure row.
 
 ```ts
 StatCard(props: StatCardProps): ReactElement
-  href: string | NavTarget
-  onSelect: () => void
+  // either href, onSelect or neither
+  href?: string | NavTarget
+  onSelect?: () => void
   title: string
   subtitle?: string
   icon?: IconComponent
   info?: string
   phase?: Phase | QueryStateLike
   empty?: Empty | null
-  value: string | number | null
+  value: string | number | null  // `null` renders a muted dash: absent, never zero
   unit?: string
-  delta?: Delta
-  status?: Status
+  delta?: Delta  // A change against a period; `value` prints as given, so pass `'+12%'`, never the fraction 0.12
+  status?: Status  // The verdict home: dot plus word
   sub?: string
-  chart?: BoxSlot
+  chart?: BoxSlot  // Called only in `ready` and `stale`, in a fixed 72 px clipping box (plot 56 + label row 16)
   footer?: FootFacts
   controls?: ControlsSlot<"widget">
   menu?: readonly [CardAction, CardAction, ...CardAction[]]
+```
+
+## Example
+
+```tsx
+<StatCard
+  icon={GitMerge}
+  title="Shipped"
+  subtitle="vs last week"
+  info="Merged pull requests."
+  value={388}
+  delta={{ value: '+12%', polarity: 'up-good' }}
+  phase={query}
+  chart={(box) => <Sparkline series={perDay} height={box.height} ariaLabel="Shipped per day" />}
+  footer={[{ label: 'Open', value: 12 }, { label: 'Merged', value: 4 }]}
+/>
 ```

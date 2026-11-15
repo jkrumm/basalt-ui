@@ -18,3 +18,10 @@ header content out of that strip. Outside an `AppShell` it reads `web`.
 ```ts
 useWindowChrome(): WindowChrome
 ```
+
+## Example
+
+```tsx
+const { leadInset } = useWindowChrome()
+<div style={{ paddingInlineStart: leadInset }}>…</div>
+```

@@ -24,9 +24,9 @@ const owned = {
   'references/recipes.md': recipesRef,
 }
 
-/** The recipe files `index` fails to link, as `docs/recipes/<name>.md`. */
+/** The recipe files `index` fails to link, as `node_modules/basalt-ui/docs/recipes/<name>.md`. */
 export function unlistedRecipes(index: string, files: readonly string[]): string[] {
-  return files.filter((f) => !index.includes(`](docs/recipes/${f})`))
+  return files.filter((f) => !index.includes(`](node_modules/basalt-ui/docs/recipes/${f})`))
 }
 
 const recipeFiles = (): string[] =>
@@ -44,7 +44,9 @@ describe('sk-8 SKILL.md shape', () => {
       for (const link of links) {
         if (/^(https?:|#|mailto:)/.test(link)) continue
         const target = link.split('#')[0] as string
-        const found = [join(skillDir, target), join(pkgRoot, target)].some((p) => existsSync(p))
+        // An installed app reads the package docs from `node_modules/basalt-ui/`, which is `pkgRoot` here.
+        const inPackage = join(pkgRoot, target.replace(/^node_modules\/basalt-ui\//, ''))
+        const found = [join(skillDir, target), inPackage].some((p) => existsSync(p))
         expect({ name, link, found }).toEqual({ name, link, found: true })
       }
     }

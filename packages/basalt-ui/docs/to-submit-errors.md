@@ -17,3 +17,9 @@ api.runs.put(v).then(unwrap)`.
 ```ts
 toSubmitErrors<V>(save: (value: V) => Promise<unknown>): ToSubmitErrors<V>
 ```
+
+## Example
+
+```tsx
+const form = useForm({ defaultValues, validators: { onSubmitAsync: toSubmitErrors(save) } })
+```

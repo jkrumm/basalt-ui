@@ -1,7 +1,6 @@
 ---
 name: chat-thread-scroll
 use-when: a scroller that follows a streaming reply to the bottom, releases on a scroll up and survives a late image or the keyboard closing
-file: apps/playground/src/recipes/chat-thread-scroll.ts
 ---
 
 Part of the `chat-thread` recipe. It replaces `use-stick-to-bottom` and `message-scroller`: over a 90 s stream the first lost its pin when the soft keyboard closed, the second ran one line behind; neither is a dependency.

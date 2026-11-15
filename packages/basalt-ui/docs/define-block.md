@@ -24,9 +24,27 @@ defineBlock<S extends StandardSchemaV1>(b: DefineBlockOptions<S>): Block<S>
   name: string
   description: string
   props: S
-  limits?: { maxBytes: number; maxDepth: number; }
-  textKeys?: readonly string[]
+  limits?: { maxBytes: number; maxDepth: number; }  // Always enforced; a default applies when omitted
+  textKeys?: readonly string[]  // Url-named keys (`href`, `src`, `url`, `link`) whose values this block draws as text, never as a link: `valida…
   sample: readonly Infer<S>[]
   render: (p: Infer<S>, box: Box) => ReactNode
-  reserve?: number
+  reserve?: number  // Escape rung: a layout block composing several composites; single composites own their phase heights
+```
+
+## Example
+
+```tsx
+export const stat = defineBlock({
+  name: 'stat',
+  description: 'One headline number with a delta. Never for lists.',
+  props: z.object({ label: z.string().max(40), value: z.number(), delta: z.number().optional() }),
+  sample: [{ label: 'Shipped', value: 388, delta: 12 }],
+  render: (p) => (
+    <StatCard
+      title={p.label}
+      value={p.value}
+      {...(p.delta !== undefined && { delta: { value: p.delta, polarity: 'up-good' } })}
+    />
+  ),
+})
 ```

@@ -18,3 +18,14 @@ time, naming both. The returned set goes to `CommandPalette` and `toMenuTemplate
 ```ts
 defineCommands<const T extends CommandMap>(spec: T): CommandSet<T>
 ```
+
+## Example
+
+```tsx
+export const COMMANDS = defineCommands({
+  'run.start': { label: 'Start run', chord: 'Mod+Enter', area: 'runs', run: start },
+  'jobs.cancel': { label: 'Cancel job', chord: 'Mod+.', enabled: () => hasJob(), run: cancel },
+  'help.docs': { label: 'Open docs', group: 'Help', run: () => window.open('/docs') },
+})
+// __root.tsx, inside <AppShell>:  <CommandPalette commands={COMMANDS} />
+```

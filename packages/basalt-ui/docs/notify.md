@@ -18,3 +18,10 @@ the first toast's id and shows nothing new.
 ```ts
 notify(kind: NotifyKind, payload: NotificationPayload): string
 ```
+
+## Example
+
+```tsx
+notify('success', { message: 'Saved' })
+notify('error', { message: 'Upload failed', title: 'photo.jpg' })
+```

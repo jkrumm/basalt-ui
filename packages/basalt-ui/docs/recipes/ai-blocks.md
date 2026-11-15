@@ -1,7 +1,6 @@
 ---
 name: ai-blocks
 use-when: a model may show a stat, chart, table, callout, list or layout in the chat, as typed blocks that stay on-brand
-file: apps/playground/src/recipes/ai-blocks.tsx
 ---
 
 Copy this file and `ai-blocks-schemas.ts` (each block's `name`, `description`, zod `props`, `sample` and loading height; no UI import, so a server takes it alone). `validate` runs inside `Block`: URL, size and depth checks come before any render.

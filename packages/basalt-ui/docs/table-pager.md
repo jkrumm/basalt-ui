@@ -18,3 +18,9 @@ The pager of a table. Pass the instance `useDataTable` returned; `DataTable` com
 TablePager<T>({ table: instance, }: { table: DataTableInstance<T>; }): ReactElement | null
   table: DataTableInstance<T>
 ```
+
+## Example
+
+```tsx
+<TablePager table={t} />
+```

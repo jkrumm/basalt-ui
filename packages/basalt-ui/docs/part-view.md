@@ -17,3 +17,12 @@ still streaming; markdown there repairs its open tail and the tool rail stays op
 ```ts
 partView(parts: readonly MessagePart[], o?: PartViewOptions): ReactNode
 ```
+
+## Example
+
+```tsx
+const { messages } = useChat({ chat })
+return messages.map((m, i) => (
+  <div key={m.id}>{partView(m.parts, { settled: i < messages.length - 1 })}</div>
+))
+```

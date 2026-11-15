@@ -1,8 +1,10 @@
 /**
  * The recipe channel's drift half (skills-agent-layer 3.16, 15.9). `docs/recipes/<name>.md` is a
  * frontmatter block, at most 15 lines of prose and ONE code fence that is the verbatim
- * `// #region recipe:<name>` of a playground file the playground typecheck already compiles. This
- * script keeps the fence equal to the region and holds the recipe budget.
+ * `// #region recipe:<name>` of a playground file the playground typecheck already compiles, led
+ * by the package imports the region uses when the region carries none of its own. This script
+ * keeps the fence equal to that text and holds the recipe budget. A recipe names no playground
+ * file: the published doc must not point at a path an installed app does not have.
  *
  * Usage: bun packages/basalt-ui/scripts/gen-recipes.ts           rewrite each recipe's code fence
  *        bun packages/basalt-ui/scripts/gen-recipes.ts --check   exit 1, naming file and reason
@@ -12,15 +14,17 @@
  *   ---
  *   name: <name>            must equal the file name and the region name
  *   use-when: <one line>    ("use when" is accepted too)
- *   file: <repo-relative path of the playground file holding the region>
  *   ---
  *   <= 15 non-blank prose lines
  *   ```tsx
+ *   <the imports of `basalt-ui/*` and other packages the region uses, unless it has its own>
+ *
  *   <the region, verbatim>
  *   ```
  */
 import { existsSync, readdirSync, readFileSync, statSync, writeFileSync } from 'node:fs'
 import { extname, join, relative } from 'node:path'
+import ts from 'typescript'
 
 export const MAX_RECIPE_LINES = 60
 export const MAX_PROSE_LINES = 15
@@ -33,7 +37,7 @@ const FENCE = /^```/
 export type Problem = { file: string; reason: string }
 
 export type RecipeRoots = {
-  /** Repo root: `file:` paths resolve from it and `apps/playground/src` is scanned for regions. */
+  /** Repo root: `apps/playground/src` is scanned for regions. */
   repoRoot: string
   /** Where `<name>.md` recipes live. */
   docsDir: string
@@ -91,8 +95,8 @@ function parseDoc(text: string): ParsedDoc {
   return { front, bodyStart, fenceOpen, fenceClose, proseLines, lines }
 }
 
-/** Every `// #region recipe:<name>` in the tree, with the lines it encloses. */
-type Region = { name: string; file: string; body: string[] }
+/** Every `// #region recipe:<name>` in the tree, with the lines it encloses and the imports it needs. */
+type Region = { name: string; file: string; body: string[]; imports: string[] }
 
 function walk(dir: string, out: string[] = []): string[] {
   if (!existsSync(dir)) return out
@@ -103,6 +107,37 @@ function walk(dir: string, out: string[] = []): string[] {
     else if (['.ts', '.tsx', '.mts'].includes(extname(entry))) out.push(full)
   }
   return out
+}
+
+/**
+ * The package imports of a file (never a relative one: it would not resolve in an installed app)
+ * trimmed to the names `body` mentions, one line each; empty when the body carries imports itself.
+ */
+function importsFor(text: string, file: string, body: string[]): string[] {
+  if (body.some((l) => /^import\s/.test(l))) return []
+  const used = (name: string): boolean =>
+    new RegExp(`(?<![\\w$.])${name}(?![\\w$])`).test(body.join('\n'))
+  const source = ts.createSourceFile(file, text, ts.ScriptTarget.Latest, true)
+  return source.statements.filter(ts.isImportDeclaration).flatMap((decl) => {
+    const spec = (decl.moduleSpecifier as ts.StringLiteral).text
+    const clause = decl.importClause
+    if (spec.startsWith('.') || clause === undefined) return []
+    const def = clause.name !== undefined && used(clause.name.text) ? clause.name.text : undefined
+    const bindings = clause.namedBindings
+    const named =
+      bindings !== undefined && ts.isNamedImports(bindings)
+        ? bindings.elements.filter((e) => used(e.name.text)).map((e) => e.getText())
+        : []
+    const star =
+      bindings !== undefined && ts.isNamespaceImport(bindings) && used(bindings.name.text)
+        ? `* as ${bindings.name.text}`
+        : undefined
+    const parts = [def, star ?? (named.length > 0 ? `{ ${named.join(', ')} }` : undefined)].filter(
+      (p): p is string => p !== undefined,
+    )
+    if (parts.length === 0) return []
+    return [`import ${clause.isTypeOnly ? 'type ' : ''}${parts.join(', ')} from '${spec}'`]
+  })
 }
 
 function regionsIn(text: string, file: string): Region[] {
@@ -119,7 +154,7 @@ function regionsIn(text: string, file: string): Region[] {
       else if (REGION_END.test(line)) depth--
       if (depth > 0) body.push(line)
     }
-    regions.push({ name: m[1]!, file, body })
+    regions.push({ name: m[1]!, file, body, imports: importsFor(text, file, body) })
   }
   return regions
 }
@@ -140,8 +175,10 @@ function recipeFiles(docsDir: string): string[] {
     .toSorted()
 }
 
-function fenceFor(body: string[], ext: string): string[] {
-  return ['```' + ext, ...body, '```']
+/** The fence a recipe prints: the imports the region needs, a blank line, then the region. */
+function fenceFor(region: Region): string[] {
+  const head = region.imports.length > 0 ? [...region.imports, ''] : []
+  return ['```' + extname(region.file).slice(1), ...head, ...region.body, '```']
 }
 
 /** Violations of the recipe contract; empty when the tree is clean. */
@@ -181,8 +218,7 @@ export function checkRecipes(roots: RecipeRoots = REAL_ROOTS): Problem[] {
     if (!fm.has('name')) fail('frontmatter key missing: name')
     else if (fm.get('name') !== name) fail(`frontmatter name "${fm.get('name')}" differs from ${f}`)
     if (!(fm.get('use-when') ?? fm.get('use when'))) fail('frontmatter key missing: use-when')
-    const target = fm.get('file')
-    if (!target) fail('frontmatter key missing: file')
+    if (fm.has('file')) fail('frontmatter key file: a recipe names no playground file')
 
     if (doc.lines.length > MAX_RECIPE_LINES) {
       fail(`${doc.lines.length} lines, the limit is ${MAX_RECIPE_LINES}`)
@@ -191,23 +227,23 @@ export function checkRecipes(roots: RecipeRoots = REAL_ROOTS): Problem[] {
       fail(`${doc.proseLines} prose lines, the limit is ${MAX_PROSE_LINES}`)
     }
 
-    if (!target) continue
-    if (!existsSync(join(roots.repoRoot, target))) {
-      fail(`file ${target} does not exist`)
+    const named = regions.filter((r) => r.name === name)
+    if (named.length > 1) {
+      fail(`region recipe:${name} is in ${named.map((r) => r.file).join(' and ')}`)
       continue
     }
-    const region = regions.find((r) => r.file === target && r.name === name)
+    const region = named[0]
     if (!region) {
-      fail(`region recipe:${name} missing or renamed in ${target}`)
+      fail(`no region recipe:${name} under apps/playground/src`)
       continue
     }
     if (doc.fenceOpen === -1 || doc.fenceClose === -1) {
-      fail(`no code fence; run gen-recipes to write the region of ${target}`)
+      fail(`no code fence; run gen-recipes to write the region of ${region.file}`)
       continue
     }
-    const fence = doc.lines.slice(doc.fenceOpen + 1, doc.fenceClose)
-    if (fence.join('\n') !== region.body.join('\n')) {
-      fail(`code fence differs from region recipe:${name} in ${target}; run gen-recipes`)
+    const fence = doc.lines.slice(doc.fenceOpen, doc.fenceClose + 1)
+    if (fence.join('\n') !== fenceFor(region).join('\n')) {
+      fail(`code fence differs from region recipe:${name} in ${region.file}; run gen-recipes`)
     }
   }
   return problems
@@ -222,11 +258,11 @@ export function writeRecipes(roots: RecipeRoots = REAL_ROOTS): string[] {
     const name = f.slice(0, -'.md'.length)
     const text = readFileSync(abs, 'utf8')
     const doc = parseDoc(text)
-    const target = doc.front.get('file')
-    const region = target ? regions.find((r) => r.file === target && r.name === name) : undefined
-    if (!region || !target) continue // checkRecipes names why
+    const matches = regions.filter((r) => r.name === name)
+    const region = matches.length === 1 ? matches[0] : undefined
+    if (!region) continue // checkRecipes names why
 
-    const fence = fenceFor(region.body, extname(target).slice(1))
+    const fence = fenceFor(region)
     const hasFence = doc.fenceOpen !== -1 && doc.fenceClose !== -1
     const next = hasFence
       ? [...doc.lines.slice(0, doc.fenceOpen), ...fence, ...doc.lines.slice(doc.fenceClose + 1)]

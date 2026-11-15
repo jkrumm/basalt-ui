@@ -1,7 +1,6 @@
 ---
 name: timeline
 use-when: dated bars on a shared time axis, read-only, in a card frame
-file: apps/playground/src/recipes/timeline.tsx
 ---
 
 A timeline is a `DataPanel` whose body is a CSS grid: a label column, then one column per hour sized by `--col-w`. Each row is a subgrid, so the hour header and every bar share the columns. Bars are tinted with an ink label, and the now line is one absolutely placed element in a column-spanning cell. Put a range control in the panel's `toolbar`. The panel owns the phase, so the body runs only when there is data.

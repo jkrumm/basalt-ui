@@ -21,3 +21,9 @@ headings need distinct ids from the compiler. `pre` is not in the map: the recip
 ```ts
 mdxComponents: Readonly<Record<string, ComponentType<never>>>
 ```
+
+## Example
+
+```tsx
+<Prose><Content components={mdxComponents} /></Prose>
+```

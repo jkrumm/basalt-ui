@@ -133,7 +133,7 @@ describe('live-5 websocket-transport recipe', () => {
   test('is in the recipes channel with its frontmatter and the 4401 and abort rules', () => {
     const doc = readFileSync(join(pkgRoot, 'docs/recipes/websocket-transport.md'), 'utf8')
     expect(doc).toMatch(/^name: websocket-transport$/m)
-    expect(doc).toMatch(/^file: apps\/playground\/src\/recipes\/websocket-transport\.ts$/m)
+    expect(doc).not.toMatch(/^file:/m)
     expect(doc).toContain('4401')
     expect(doc).toMatch(/abort closes the socket/)
   })

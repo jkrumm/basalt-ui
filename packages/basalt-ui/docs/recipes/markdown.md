@@ -1,7 +1,6 @@
 ---
 name: markdown
 use-when: render model or author text with code, diagrams and headings, on an article page
-file: apps/playground/src/routes/gallery.tsx
 ---
 
 `Markdown` takes `contentTrust` (required): `untrusted` for anything a model wrote, `trusted` only for text the app authors.

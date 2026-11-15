@@ -29,6 +29,19 @@ DataPanel(props: DataPanelProps): ReactElement
   toolbar?: ControlsSlot<"widget">
   menu?: BoxSlot
   legend?: readonly LegendEntry[]
-  skeleton: { rows: number; } | { height: number; }
-  body: BoxSlot
+  skeleton: { rows: number; } | { height: number; }  // Required: the loading card draws its final shape
+  body: BoxSlot  // Tables, lists and boards
+```
+
+## Example
+
+```tsx
+<DataPanel
+  title="Open pull requests"
+  subtitle="by age"
+  phase={query}
+  empty={rows.length ? null : { cause: 'Nothing open' }}
+  skeleton={{ rows: 6 }}
+  body={(box) => <PullTable rows={rows} height={box.height} />}
+/>
 ```

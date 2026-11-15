@@ -19,22 +19,38 @@ table). The tiers live in `basalt-ui/table.css`: import it beside `basalt-ui/tab
 
 ```ts
 useDataTable<T>(options: UseDataTable<T>): DataTableInstance<T>
+  // either detail or onRowActivate
   id: string
   label: string
   columns: readonly KindColumn<T>[]
-  data?: readonly T[]
+  data?: readonly T[]  // Optional while `phase` is a pending query: the table shows its loading phase until rows arrive
   getRowId: (row: T) => string
   mode: Mode
   state?: StateHandle<TableState>
   phase?: Phase | QueryStateLike
   resetOn?: readonly unknown[]
-  phone?: "cards" | "scroll"
-  cardsBelow?: "regular" | "wide" | "always"
-  pager?: "none" | "pages" | "more"
-  group?: { by: string; summary?: (rows: readonly T[], box: Box) => R…
+  phone?: "cards" | "scroll"  // What a narrow table becomes: cards, or the table scrolling sideways with its first column pinned; default 'cards'
+  cardsBelow?: "regular" | "wide" | "always"  // The width below which the table becomes cards (`regular` is 480 px, `wide` 800 px, `always` never a table); default 'regular'
+  pager?: "none" | "pages" | "more"  // The pager: `pages` steps through numbered pages, `more` is a Load more button, `none` shows every row; default 'none' on a client table, 'more' on a cursor table, 'pages' on any other server table
+  group?: { by: string; summary?: (rows: readonly T[], box: Box) => R…  // A type error unless `mode.kind` is `'client'` (enforced in `useDataTable` at the call site)
   selection?: { bulk: BulkAction<T>[]; selectAll?: boolean; }
   views?: { store?: ViewStore; }
-  detail: (row: T, box: Box) => ReactNode
-  detailTitle?: (row: T) => string  [with detail]
+  detail?: (row: T, box: Box) => ReactNode
+  detailTitle?: (row: T) => string  [with detail]  // The title of a row's detail entry (the aside or sheet header); the table label when absent
   onRowActivate?: (row: T) => void
+```
+
+## Example
+
+```tsx
+const c = col<Order>()
+const t = useDataTable({
+  id: 'orders',
+  label: 'Orders',
+  columns: [c.entity('customer'), c.money('total', { currency: 'EUR' })],
+  data: query.data,
+  phase: query,
+  getRowId: (o) => o.id,
+  mode: { kind: 'client' },
+})
 ```

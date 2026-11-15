@@ -13,7 +13,11 @@ type EmptyStateBase = {
   /** What is empty, in a few words (`No runs yet`), on the line above `why`. Drawn on the `page` tier only. */
   title?: string
   icon?: IconComponent
-  /** `page` for a whole route body (generous space), `section` for a region inside a card or panel. Default `page`. */
+  /**
+   * `page` for a whole route body (generous space), `section` for a region inside a card or panel.
+   *
+   * @default 'page'
+   */
   tier?: 'page' | 'section'
 }
 

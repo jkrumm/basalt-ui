@@ -1,7 +1,6 @@
 ---
 name: optimistic
 use-when: a save should show its result in the cached record before the server answers, and undo itself when the server refuses
-file: apps/playground/src/recipes/optimistic.tsx
 ---
 
 Spread `optimistic` into `useMutation`: it returns the `mutationKey` and `scope` with the handlers, so overlapping saves run one after the other and only the last settle invalidates.

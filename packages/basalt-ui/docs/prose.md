@@ -17,8 +17,17 @@ below it; the density and the measure are set here. `article` (default) is 16px 
 
 ```ts
 Prose({ density, measure, children, className, }: ProseProps): ReactElement
-  density?: ProseDensity
-  measure?: boolean
+  density?: ProseDensity  // Typography density: `'article'` (16px/1.7, default) or `'chat'` (15px/1.55)
+  measure?: boolean  // Cap the line length at 72ch
   children: ReactNode
-  className?: string
+  className?: string  // Layout only (`mt-6`)
+```
+
+## Example
+
+```tsx
+<Prose>
+  <h2 id="reading-dashboards">Reading dashboards</h2>
+  <p>Article body…</p>
+</Prose>
 ```

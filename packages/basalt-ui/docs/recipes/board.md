@@ -1,7 +1,6 @@
 ---
 name: board
 use-when: columns of KanbanCards that move between states, with a menu path and an app-owned drag engine
-file: apps/playground/src/recipes/board.tsx
 ---
 
 One `onMove` serves the menu and the drop; the card's `move` is required, so the non-drag path always exists. The board announces each move politely and gives the moved card's menu button focus back after it remounts, and `keepIndex` holds that row in a virtualised column. Below `@regular` one column shows: set `active` from a URL field.

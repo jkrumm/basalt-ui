@@ -20,3 +20,10 @@ client-rendered app reads it on its first render. Chrome only: a page lays out b
 ```ts
 useSizeClass(): SizeClass
 ```
+
+## Example
+
+```tsx
+const docked = useSizeClass() === 'expanded'
+return docked ? <Inspector /> : <InspectorSheet />
+```

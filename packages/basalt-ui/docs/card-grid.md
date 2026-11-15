@@ -17,7 +17,16 @@ grid reads right in a phone column, a docked aside and a 1440 page.
 
 ```ts
 CardGrid({ min, narrow, children }: CardGridProps): ReactElement
-  min?: "regular" | "wide" | "narrow"
-  narrow?: "scroll" | "stack"
+  min?: "regular" | "wide" | "narrow"  // The narrowest a card may get
+  narrow?: "scroll" | "stack"  // What a row of stat cards does in a container narrower than `regular`: `scroll` lays the cards on one line tha…
   children?: ReactNode
+```
+
+## Example
+
+```tsx
+<CardGrid min="regular">
+  <ChartCard title="Latency" chart={...} />
+  <ChartCard title="Errors" chart={...} />
+</CardGrid>
 ```

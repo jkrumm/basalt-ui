@@ -16,7 +16,19 @@ the targets when the last mutation with this key settles.
 
 ```ts
 optimistic<V, T = unknown>(options: OptimisticOptions<V, T>): OptimisticHandlers<V>
-  key: readonly unknown[]
-  scope?: string
-  targets: readonly OptimisticTarget<V, T>[]
+  key: readonly unknown[]  // Identifies this resource's mutations: `isMutating` counts only mutations carrying it
+  scope?: string  // Serial-execution group
+  targets: readonly OptimisticTarget<V, T>[]  // The cache entries written ahead of the server
+```
+
+## Example
+
+```tsx
+const rename = useMutation({
+  mutationFn: (title: string) => unwrap(api.runs({ id }).patch({ title })),
+  ...optimistic<string, Run>({
+    key: ['run', id],
+    targets: [{ queryKey: ['run', id], apply: (prev, title) => ({ ...prev, title }) }],
+  }),
+})
 ```

@@ -17,13 +17,29 @@ an instant-apply preference; passing both, or no `label`, is a type error.
 
 ```ts
 FormField<T>(props: FormFieldProps<T>): ReactElement
-  one of: field | control
-  field: FieldLike<T>
-  control: ControlHandle<T>
-  label: NonNullable<ReactNode>
-  description?: ReactNode
-  required?: boolean
-  disabled?: boolean
-  className?: string
-  children: ReactElement<unknown, string | JSXElementConstructor<any>>
+  // either field or control
+  field?: FieldLike<T>  // A TanStack Form field, or any `FieldLike`: submit forms
+  control?: ControlHandle<T>  // A store `ControlHandle`: instant-apply preferences
+  label: NonNullable<ReactNode>  // The visible name of the control
+  description?: ReactNode  // Help text under the control, wired to it through `aria-describedby`
+  required?: boolean  // Marks the control required: a `*` glyph for the eye and `required` on the control
+  disabled?: boolean  // Disables the control
+  className?: string  // Layout only (`w-full`, `max-w-sm`)
+  children: ReactElement<unknown, string | JSXElementConstructor<any>>  // The bare control: an `Input`, a `Select`, a `Switch`, a `Checkbox`, a `NumberField`, a `Slider`
+```
+
+## Example
+
+```tsx
+<form.Field name="title" children={(f) => (
+  <FormField label="Title" description="Shown in the list." required field={f}>
+    <Input />
+  </FormField>
+)} />
+```
+
+## Example
+
+```tsx
+<FormField label="Compact rows" control={prefs.compact}><Switch /></FormField>
 ```

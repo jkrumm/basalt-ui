@@ -18,3 +18,10 @@ windowKey(window: TimeWindow, options: WindowKeyOptions): WindowKeyResult
   from: number
   to: number
 ```
+
+## Example
+
+```tsx
+const w = windowKey(range, { stepMs: 60_000, scope: ['uptime', target] })
+useQuery({ queryKey: w.queryKey, queryFn: () => getUptime(w), placeholderData: w.placeholderData })
+```

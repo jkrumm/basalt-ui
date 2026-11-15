@@ -50,6 +50,9 @@ export type TableProps = PartProps<'table'> & VariantProps<typeof tableVariants>
  * native `<table>` and works with no provider; wrap it in a scroll container to scroll it, and the
  * head sticks inside that container (or to the page when there is none).
  *
+ * @useWhen the rows are static and need no sort, filter, paging or selection: a short list, a spec sheet, a receipt
+ * @neverWhen the table sorts, filters, pages or selects (use `DataTable` over `useDataTable`)
+ *
  * @example
  * <Table size="compact">
  *   <TableHeader><TableRow><TableHead>Order</TableHead></TableRow></TableHeader>

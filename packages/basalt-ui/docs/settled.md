@@ -17,7 +17,14 @@ scheduled has rendered by the time it resolves.
 
 ```ts
 settled(options?: SettledOptions): Promise<void>
-  router?: SettledRouter
-  queryClient?: SettledQueryClient
-  timeoutMs?: number
+  router?: SettledRouter  // Also wait for this router to finish loading and transitioning
+  queryClient?: SettledQueryClient  // Also wait for this client to have no fetch or mutation in flight
+  timeoutMs?: number  // Give up after this many milliseconds with an error naming what is still pending
+```
+
+## Example
+
+```tsx
+fireEvent.click(trigger)
+await settled({ queryClient })
 ```

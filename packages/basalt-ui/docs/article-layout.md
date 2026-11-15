@@ -18,14 +18,27 @@ popover. The meta row renders only when `meta.date` or `meta.readingTime` is giv
 
 ```ts
 ArticleLayout({ children, meta, toc, readingProgress, prev, next, renderLink, density, locale, className, }: ArticleLayoutProps): ReactElement
-  children: ReactNode
+  children: ReactNode  // The article body, typically `Markdown` output or plain HTML
   meta?: ArticleLayoutMeta
-  toc?: boolean
-  readingProgress?: boolean
+  toc?: boolean  // Scroll-spy TOC collected from the body: a sticky rail from 1200px, a popover below
+  readingProgress?: boolean  // A thin fixed bar at the top that tracks the scroll through the body
   prev?: ArticleNavTarget
   next?: ArticleNavTarget
-  renderLink?: (target: ArticleNavTarget, node: ReactNode) => ReactNode
-  density?: ProseDensity
-  locale?: string
-  className?: string
+  renderLink?: (target: ArticleNavTarget, node: ReactNode) => ReactNode  // Router bridge for the prev/next cells
+  density?: ProseDensity  // `Prose` density
+  locale?: string  // Locale for `meta.date`
+  className?: string  // Layout only (`mt-8`)
+```
+
+## Example
+
+```tsx
+<ArticleLayout
+  meta={{ title: 'Reading dashboards', description: '…', date: '2026-07-16', readingTime: 6 }}
+  readingProgress
+  next={{ label: 'Chart guide', href: '/guides/charts' }}
+>
+  <h2 id="setup">Setup</h2>
+  <p>…</p>
+</ArticleLayout>
 ```

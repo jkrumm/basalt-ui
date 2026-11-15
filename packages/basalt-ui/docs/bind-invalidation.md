@@ -29,3 +29,27 @@ then hand it to the provider (`<BasaltProvider live={live}>`, or `createBasaltRo
 ```ts
 bindInvalidation<F, R extends string>(client: QueryClient, channel: Channel<F>, o: BindInvalidationOptions<F, R>): { start(): () => void; }
 ```
+
+## Example
+
+```tsx
+// main.tsx, on the `routerDefaults` path: the module-level client of the scaffold
+const queryClient = makeQueryClient()
+const live = bindInvalidation(queryClient, channel, {
+  roots: ['needs', 'flow', 'issue', 'kpis', 'friction'],
+  aggregates: ['kpis', 'friction'],
+  map: (change) => BY_KIND[change.kind] ?? 'all',
+})
+// ...createRouter({ context: { queryClient }, ...defaults.options, Wrap: QueryClientProvider })
+createRoot(root).render(
+  <BasaltProvider link={defaults.link} live={live}>
+    <RouterProvider router={router} />
+  </BasaltProvider>,
+)
+
+// `createBasaltRouter` builds the client itself: take it as a function
+const router = createBasaltRouter({
+  routeTree,
+  live: (client) => bindInvalidation(client, channel, { roots: ROOTS, map }),
+})
+```

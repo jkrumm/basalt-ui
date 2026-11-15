@@ -1,7 +1,6 @@
 ---
 name: seam-track
 use-when: marks on a time or value track you draw yourself (a waterfall of spans, a lane), with an axis, row labels and focus
-file: apps/playground/src/recipes/seam-track.tsx
 ---
 
 `chartLabels.axis({ domain, format, share })` gives `at(v)`, a value's share of the track, and ticks that each carry a `label` and a `line` to spread; tick density follows the container classes, so the track sits under an `@container` and `share` is its fraction of that width. `chartLabels.row(labels, { share, grid: axis.ticks })` tries each label after the mark, inside its end, before its start, else drops it; an `inside` label takes `data-[spot=inside]:text-on-brand`, and `lines` is the gridlines minus those under a label, drawn per row under the bar. `focus.item(i)` goes on each row and the kit dims the rest. Bind the readout to the card figure or facts above the body; a long body scrolls in its own region and the keyboard step keeps the focused row in view.

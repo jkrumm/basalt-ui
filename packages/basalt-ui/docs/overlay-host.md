@@ -18,6 +18,12 @@ hydration, so a stack never mismatches.
 
 ```ts
 OverlayHost<T extends OverlayMap>({ overlays, defaultOpen, }: OverlayHostProps<T>): ReactElement
-  overlays: OverlayRegistry<T>
-  defaultOpen?: OverlayCall<T>
+  overlays: OverlayRegistry<T>  // The registry `defineOverlays` returned
+  defaultOpen?: OverlayCall<T>  // An overlay opened right after the first commit (never during server render or hydration), e.g
+```
+
+## Example
+
+```tsx
+<OverlayHost overlays={OVERLAYS} />
 ```

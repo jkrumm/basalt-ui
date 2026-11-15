@@ -1,7 +1,7 @@
 ---
 name: Table
-use when: ''
-never when: ''
+use when: 'the rows are static and need no sort, filter, paging or selection: a short list, a spec sheet, a receipt'
+never when: 'the table sorts, filters, pages or selects (use `DataTable` over `useDataTable`)'
 subpath: basalt-ui/ui/table
 peers: ['@base-ui/react']
 slots: [table, table-header, table-body, table-row, table-head, table-cell, table-caption]

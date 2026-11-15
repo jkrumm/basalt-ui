@@ -19,5 +19,11 @@ global` elsewhere. The presentation comes from the home; there is no `variant` p
 ```ts
 ControlView({ spec, className }: ControlViewProps): ReactElement
   spec: FilterSpec<any>
-  className?: string
+  className?: string  // Layout only (`w-full`, `ml-auto`)
+```
+
+## Example
+
+```tsx
+<ControlView spec={spec(overview.widget.latency.range, 'Range')} />
 ```

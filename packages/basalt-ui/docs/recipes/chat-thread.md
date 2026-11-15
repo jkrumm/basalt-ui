@@ -1,7 +1,6 @@
 ---
 name: chat-thread
 use-when: an AI chat thread: streamed replies without a bubble, a composer, one live region, a scroller that stays at the bottom
-file: apps/playground/src/recipes/chat-thread.tsx
 ---
 
 Copy this file, `chat-thread-composer` and `chat-thread-scroll` into `src/components/chat` under those names; nothing here is exported by basalt. `Thread` owns the `Chat` in `useState` (never module scope) and hands it to `useChat`; `partView` renders the reply with no bubble.

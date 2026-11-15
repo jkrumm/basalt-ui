@@ -18,10 +18,18 @@ positioning is the caller's job.
 
 ```ts
 Toc({ items, containerRef, levels, title, onNavigate, className, }: TocProps): ReactElement | null
-  items?: TocItem[]
-  containerRef?: RefObject<HTMLElement | null>
-  levels?: readonly [number, number]
+  items?: TocItem[]  // Explicit item list
+  containerRef?: RefObject<HTMLElement | null>  // The article container to auto-collect headings from (ignored when `items` is provided)
+  levels?: readonly [number, number]  // Heading levels to collect when auto-collecting
   title?: string
-  onNavigate?: (id: string) => void
+  onNavigate?: (id: string) => void  // Called after a rail item is clicked and the target has been scrolled to
   className?: string
+```
+
+## Example
+
+```tsx
+const articleRef = useRef<HTMLDivElement>(null)
+<div ref={articleRef}><h2 id="setup">Setup</h2></div>
+<Toc containerRef={articleRef} />
 ```

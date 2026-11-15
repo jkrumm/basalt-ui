@@ -1,7 +1,6 @@
 ---
 name: storage-adapter
 use-when: device preferences (rail, folds) must follow the person, so `persisted` reads and writes a server
-file: apps/playground/src/recipes/storage-adapter.ts
 ---
 
 `persisted.setStorage(adapter)` swaps the backend of every store. The adapter is a synchronous `StorageLike`.

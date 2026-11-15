@@ -21,3 +21,10 @@ externalField<T>(store: PlainStore<T>, o: FieldBase<T>): ControlHandle<T>
   set: (next: T) => void
   subscribe: (onChange: () => void) => () => void
 ```
+
+## Example
+
+```tsx
+const mode = externalField(timer, { key: 'timer-mode', kind: 'enum', fallback: 'rest' })
+const [value, setValue] = mode.use()
+```

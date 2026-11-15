@@ -17,8 +17,14 @@ The v3 Vite plugin: fails the build on a missing peer (`bun add …`) or a stale
 
 ```ts
 basalt(options?: BasaltOptions): PluginOption[]
-  themeScript?: false | ThemeScriptOptions
-  themeColor?: false | "auto" | ColorPair
+  themeScript?: false | ThemeScriptOptions  // Options for the pre-paint scheme script, or `false` to leave it out
+  themeColor?: false | "auto" | ColorPair  // `'auto'` (default): the `--vx-canvas` pair of the default palette; or a flat pair; `false`: none
   app?: BasaltAppOptions
-  sources?: boolean
+  sources?: boolean  // Write `.basalt/sources.css`
+```
+
+## Example
+
+```tsx
+export default { plugins: [react(), tailwindcss(), basalt({ app: { name: 'Argo' } })] }
 ```

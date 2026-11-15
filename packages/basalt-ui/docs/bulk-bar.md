@@ -18,3 +18,9 @@ The bulk bar of a table. Renders nothing while no row is ticked or the table has
 BulkBar<T>({ table: instance, }: { table: DataTableInstance<T>; }): ReactElement | null
   table: DataTableInstance<T>
 ```
+
+## Example
+
+```tsx
+<BulkBar table={t} />
+```

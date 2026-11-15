@@ -1,7 +1,6 @@
 ---
 name: mdx
 use-when: render authored MDX with the same look as `Prose`, and block unsafe links
-file: apps/playground/src/recipes/mdx.tsx
 ---
 
 Your toolchain compiles the MDX (Astro, `@mdx-js/rollup`, Next); basalt ships only the component map. `mdxComponents` covers `h2`-`h4` with anchors, `a`, `table`, `blockquote`, `Callout`, `Steps`/`Step`, `Tabs`/`Tab`, `Figure` and `Kbd`.

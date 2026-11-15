@@ -20,3 +20,9 @@ several specs adds `Reset all`. No specs, nothing drawn. The slot keeps its spec
 ```ts
 filterSlot<Scope extends FilterScope>(specs: readonly FilterSpec<any, Scope>[]): ControlsSlot<Scope>
 ```
+
+## Example
+
+```tsx
+<PageBar controls={filterSlot([spec(overview.field.q, 'Search')])} />
+```

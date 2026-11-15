@@ -27,3 +27,11 @@ spec<T>(handle: WidgetHandle<T>, label: string, options?: SpecOptions<T>): Filte
   isDefault: boolean
   scope: "widget"
 ```
+
+## Example
+
+```tsx
+spec(overview.widget.latency.range, 'Range', { as: 'segmented' }) // for a card slot
+spec(globals.field.range, 'Range') // for a page bar or the shell
+spec(globals.field.tags, 'Tags', { options: [{ value: 'api', label: 'API' }] }) // a multi
+```

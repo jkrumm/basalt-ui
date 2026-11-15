@@ -25,3 +25,11 @@ expectShellInvariants(page: ShellInvariantsPage, options?: ShellInvariantsOption
   locator: (selector: string) => { click(): Promise<unknown>; }
   setViewportSize: (size: { width: number; height: number; }) => Promise<void>
 ```
+
+## Example
+
+```tsx
+await page.setViewportSize({ width: 1800, height: 1200 })
+await expectShellInvariants(page, { states: ['expanded', 'collapsed'] })
+await expectShellInvariants(page, { states: ['native'] }) // under chrome="native-overlay"
+```

@@ -20,3 +20,14 @@ defines none, or never mounts the host, ships none of it.
 ```ts
 defineOverlays<const T extends OverlayMap>(specs: T): OverlayRegistry<T>
 ```
+
+## Example
+
+```tsx
+export const OVERLAYS = defineOverlays({
+  'user:edit': { title: 'Edit user', render: (p: { id: string }) => <UserForm id={p.id} /> },
+  'logs:filter': { title: 'Filter logs', as: 'sheet', render: () => <LogFilters /> },
+})
+OVERLAYS.open('user:edit', { id: '42' })
+OVERLAYS.open('user:delete', { id: '42' }) // compile error: unknown key
+```

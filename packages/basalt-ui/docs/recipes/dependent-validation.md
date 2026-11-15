@@ -1,7 +1,6 @@
 ---
 name: dependent-validation
 use-when: a form validates with one Standard Schema, with a rule across fields and one field the server decides
-file: apps/playground/src/recipes/dependent-validation.tsx
 ---
 
 Put the schema on `onDynamic` and pair it with `revalidateLogic`: nothing shows before the first submit, then every change revalidates. Never add the same schema on `onSubmit` as well: each error then appears twice.

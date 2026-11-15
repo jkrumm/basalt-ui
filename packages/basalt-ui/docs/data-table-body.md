@@ -16,5 +16,11 @@ The `<tbody>` of a table: rows, or the arm of the current phase.
 ```ts
 DataTableBody<T>({ table: instance, detail, }: { table: DataTableInstance<T>; detail?: DetailHost; }): ReactElement
   table: DataTableInstance<T>
-  detail?: DetailHost
+  detail?: DetailHost  // Where a `detail` activation shows its entry
+```
+
+## Example
+
+```tsx
+<DataTableBody table={t} detail={asideHost} />
 ```

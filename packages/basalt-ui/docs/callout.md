@@ -17,8 +17,16 @@ word instead. The 2.x `icon` prop is gone; the glyph follows the kind.
 
 ```ts
 Callout({ kind, title, className, children }: CalloutProps): ReactElement
-  kind?: CalloutKind
+  kind?: CalloutKind  // Semantic kind: drives the tint, the glyph and the announcement
   title?: string
-  className?: string
+  className?: string  // Layout only (`my-6`)
   children: ReactNode
+```
+
+## Example
+
+```tsx
+<Callout kind="warn" title="Heads up">
+  <p>This endpoint is rate-limited to 60 requests/minute.</p>
+</Callout>
 ```

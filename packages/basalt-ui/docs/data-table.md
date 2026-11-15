@@ -15,8 +15,15 @@ The data table: head, body and the phase arms of one `useDataTable` instance.
 
 ```ts
 DataTable<T>({ table, detail, height, virtual, }: DataTableProps<T>): ReactElement
+  // either height + virtual or neither
   table: DataTableInstance<T>
   detail?: DetailHost
   height?: "auto" | Scrollport | Scrollport
-  virtual: VirtualLike
+  virtual?: VirtualLike
+```
+
+## Example
+
+```tsx
+<DataTable table={t} height="fill" />
 ```
