@@ -3,6 +3,16 @@
   "area": "cards",
   "rows": [
     {
+      "id": "cards-datapanel-bodysize",
+      "kind": "renamed-prop",
+      "from": "basalt-ui/cards#DataPanel.skeleton ({ rows } | { height })",
+      "to": "bodySize",
+      "profiles": ["parts", "app"],
+      "manual": true,
+      "note": "`skeleton` is the pending node on QueryState only; the panel's body height has its own name and is still required",
+      "verify": "tsc: a DataPanel with skeleton and no bodySize does not compile"
+    },
+    {
       "id": "cards-menu-id",
       "kind": "required-prop",
       "from": "basalt-ui/cards#StatCard.menu and KanbanCard.menu entries",

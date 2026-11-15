@@ -45,7 +45,7 @@ describe('PageSummary', () => {
   })
 
   test('loading renders a busy skeleton of the same shape and no content', () => {
-    render(<PageSummary loading />)
+    render(<PageSummary phase="loading" />)
     const root = document.querySelector('[data-slot="page-summary"]')
     expect(root?.getAttribute('aria-busy')).toBe('true')
     expect(screen.queryByRole('heading')).toBeNull()
@@ -53,7 +53,7 @@ describe('PageSummary', () => {
   })
 
   test('loading keeps a facts-line skeleton when facts are expected', () => {
-    render(<PageSummary loading facts={['x']} />)
+    render(<PageSummary phase="loading" facts={['x']} />)
     expect(document.querySelectorAll('[data-slot="skeleton"]')).toHaveLength(2)
   })
 

@@ -11,7 +11,7 @@ slots: [data-panel, data-panel-toolbar]
 
 The frame for a body that is not a chart: the same header and phase handling as the other cards,
 around a table, a list or a board. The body is one box slot at a fixed height, declared by the
-required `skeleton`, so a loading, empty or error panel is exactly as tall as a ready one and
+required `bodySize`, so a loading, empty or error panel is exactly as tall as a ready one and
 the body is called only in `ready` and `stale`. The box clips with `overflow: clip`, never
 `hidden`, so a table head that sticks to the page keeps sticking.
 
@@ -29,7 +29,7 @@ DataPanel(props: DataPanelProps): ReactElement
   toolbar?: ControlsSlot<"widget">
   menu?: Menu
   legend?: readonly LegendEntry[]
-  skeleton: { rows: number; } | { height: number; }  // Required: the loading card draws its final shape
+  bodySize: { rows: number; } | { height: number; }  // Required: the loading card draws its final shape
   body: BoxSlot  // Tables, lists and boards
 ```
 
@@ -41,7 +41,7 @@ DataPanel(props: DataPanelProps): ReactElement
   subtitle="by age"
   phase={query}
   empty={rows.length ? null : { cause: 'Nothing open' }}
-  skeleton={{ rows: 6 }}
+  bodySize={{ rows: 6 }}
   body={(box) => <PullTable rows={rows} height={box.height} />}
 />
 ```

@@ -38,7 +38,7 @@ const list = defineBlock({
   render: (p) => (
     <DataPanel
       title={p.title}
-      skeleton={{ rows: p.items.length }}
+      bodySize={{ rows: p.items.length }}
       body={() => (
         <div className="flex flex-col">
           {p.items.map((item) => (

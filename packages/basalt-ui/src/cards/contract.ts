@@ -94,7 +94,7 @@ export type DataPanelProps = FrameHead &
     menu?: Menu
     legend?: readonly LegendEntry[]
     /** Required: the loading card draws its final shape. */
-    skeleton: { rows: number } | { height: number }
+    bodySize: { rows: number } | { height: number }
     /** Tables, lists and boards. A chart goes in `ChartCard`. */
     body: BoxSlot
   }

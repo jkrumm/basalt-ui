@@ -4,23 +4,27 @@
  */
 import type { BulkAction, RowAction } from './contract'
 
-export const row: RowAction<{ n: number }> = { id: 'open', label: 'Open', onClick: () => undefined }
-export const bulk: BulkAction<{ n: number }> = {
-  id: 'archive',
-  label: 'Archive',
-  onClick: () => undefined,
-}
+type Item = { n: number }
+const noop = (): void => undefined
 
-// @ts-expect-error the old identity `key` is gone
-export const staleRow: RowAction<{ n: number }> = {
+export const row: RowAction<Item> = { id: 'open', label: 'Open', onClick: noop }
+export const bulk: BulkAction<Item> = { id: 'archive', label: 'Archive', onClick: noop }
+
+export const staleRow: RowAction<Item> = {
+  id: 'open',
+  // @ts-expect-error the old identity `key` is gone
   key: 'open',
   label: 'Open',
-  onClick: () => undefined,
+  onClick: noop,
 }
 
-// @ts-expect-error the old identity `key` is gone
-export const staleBulk: BulkAction<{ n: number }> = {
-  key: 'a',
-  label: 'A',
-  onClick: () => undefined,
+export const staleBulk: BulkAction<Item> = {
+  id: 'archive',
+  // @ts-expect-error the old identity `key` is gone
+  key: 'archive',
+  label: 'Archive',
+  onClick: noop,
 }
+
+// @ts-expect-error an action has an `id`
+export const noId: RowAction<Item> = { label: 'Open', onClick: noop }

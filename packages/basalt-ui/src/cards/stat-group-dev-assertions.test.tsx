@@ -19,7 +19,7 @@ const row = (label: string): { label: string; value: number } => ({ label, value
 const panel = (children: ReactElement | null = null, controls?: ControlsSlot): ReactElement => (
   <DataPanel
     title="Open"
-    skeleton={{ rows: 3 }}
+    bodySize={{ rows: 3 }}
     {...(controls !== undefined && { controls })}
     body={() => children}
   />
