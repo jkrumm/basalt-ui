@@ -50,9 +50,7 @@ for f in \
   dist/router/index.js dist/data/index.js dist/page/index.js dist/cards/index.js dist/ai/index.js \
   dist/lint/index.js dist/lint/stylelint/index.js dist/testing/index.js dist/ui/index.js dist/css/theme-script.js \
   dist/css/tokens.css dist/css/typography.css dist/css/prose.css dist/css/fonts.css dist/css/tailwind.css dist/table/table.css \
-  dist/shell/app-sidebar.module.css dist/shell/app-mobile-nav.module.css dist/shell/app-header.module.css \
-  dist/controls/index.js dist/controls/index.d.ts dist/controls/controls.module.css \
-  dist/controls-dates/index.js dist/controls-dates/index.d.ts \
+  dist/controls/index.js dist/controls/index.d.ts \
   src/index.ts \
   configs/oxlint.json configs/oxlint-basalt.json configs/tsconfig.base.json configs/tsconfig.react-app.json \
   agent/rules/basalt-tokens.md agent/rules/basalt-ui.md agent/rules/basalt-page.md \
@@ -165,7 +163,6 @@ const subpaths = [
   'basalt-ui/charts',
   'basalt-ui/tokens',
   'basalt-ui/controls',
-  'basalt-ui/controls-dates',
   'basalt-ui/forms',
   'basalt-ui/state',
   'basalt-ui/table',
@@ -472,28 +469,36 @@ const html = renderToStaticMarkup(
   createElement(charts.Bars, {
     ariaLabel: 'Value',
     data,
-    x: (d) => new Date(`${d.at}T00:00:00Z`),
-    bars: [{ key: 'v', label: 'Value', color: 'var(--vx-accent)', getValue: (d) => d.v }],
+    x: { value: (d) => new Date(`${d.at}T00:00:00Z`) },
+    series: [
+      {
+        mark: 'bar',
+        key: 'v',
+        label: 'Value',
+        color: { light: 'var(--vx-accent)', dark: 'var(--vx-accent)' },
+        y: (d) => d.v,
+      },
+    ],
     y: { domain: [0, 30] },
   }),
 )
 if (!html.includes('<svg') || !html.includes('role="img"')) throw new Error('chart kind did not render an accessible <svg>')
 console.log('charts/tokens-only resolution + render OK')
 JS
-# `--import css-noop-register` (same as the agent-chat step below): `ChartCard` composes the
-# Mantine-free `WidgetHeader`, which imports its own CSS module. Under `bundle: false` that import
+# `--import css-noop-register` (same as the agent-chat step below): a chart part may import its own
+# CSS module. Under `bundle: false` that import
 # survives verbatim into dist for the consumer's bundler to resolve — bare Node cannot load a `.css`
 # specifier, so without the register this step fails on an ERR_UNKNOWN_FILE_EXTENSION that says
 # nothing about the layering it exists to prove.
 node --import "$PKGDIR/scripts/css-noop-register.mjs" free.mjs
 
-echo "==> controls without @mantine/dates (the optional peer only ./controls-dates needs)"
+echo "==> controls without @mantine/dates (the 2.x date peer)"
 # `@mantine/dates` is an optional peer, and only ONE subpath needs it. The claim `docs/CONTROLS-SPEC.md`
 # §3 makes — and that linewatch, which has no date picker, depends on — is that `basalt-ui/controls`
 # resolves and RENDERS with the peer genuinely absent, which no source-level test can prove: a lazy
 # `import('@mantine/dates')` anywhere under `src/controls/**` passes a static scan and fails here.
 # The mirror of the charts/tokens-only step above, and asserted in BOTH directions: `./controls`
-# resolves, `./controls-dates` does not, so the split is load-bearing rather than decorative.
+# resolves and `./controls-dates` is gone from the export map.
 SCRATCH5=$(mktemp -d)
 cd "$SCRATCH5"
 echo '{ "name": "scratch-no-dates", "private": true, "type": "module" }' >package.json
@@ -512,10 +517,9 @@ fi
 cat >controls.mjs <<'JS'
 import { createElement } from 'react'
 import { renderToStaticMarkup } from 'react-dom/server'
-import { MantineProvider } from '@mantine/core'
 
 const controls = await import('basalt-ui/controls')
-for (const name of ['FilterSet', 'RangeFilter', 'SelectFilter', 'MultiSelectFilter', 'SearchFilter', 'ToggleFilter', 'ViewTabs']) {
+for (const name of ['FilterSet', 'ViewTabs', 'spec', 'FormField', 'FormRow']) {
   if (typeof controls[name] !== 'function') throw new Error(`controls.${name} missing`)
 }
 
@@ -530,22 +534,18 @@ const store = createLocalStore({
     channel: field.enum(['web', 'app'], 'web'),
   },
 })
-// TWO filters against the default `inline: 1` budget, deliberately: the mobile sheet pill exists
-// only when the budget folded a child away, so a one-filter set proves the sheet nothing.
-const tree = createElement(
-  MantineProvider,
-  null,
-  createElement(
-    controls.FilterSet,
-    null,
-    createElement(controls.SelectFilter, { field: store.field.currency, label: 'Currency' }),
-    createElement(controls.SelectFilter, { field: store.field.channel, label: 'Channel' }),
-  ),
-)
+// TWO specs against the default `inline: 1` budget, deliberately: the mobile sheet pill exists
+// only when the budget folded a child away, so a one-spec set proves the sheet nothing.
+const tree = createElement(controls.FilterSet, {
+  specs: [
+    controls.spec(store.field.currency, 'Currency'),
+    controls.spec(store.field.channel, 'Channel'),
+  ],
+})
 const html = renderToStaticMarkup(tree)
 // The pill prints the SELECTED OPTION's label, at the field's fallback too — `Currency`/`Channel`
 // name the popover and the accessible name and are never printed on the pill
-// (`src/controls/enum-filter.tsx`). So the render proof is the two VALUES, which also proves BOTH
+// (`src/controls/filter-set-spec.tsx`). So the render proof is the two VALUES, which also proves BOTH
 // children rendered rather than just the first.
 if (!html.includes('USD')) throw new Error('FilterSet did not render its first child filter')
 if (!html.includes('web')) throw new Error('FilterSet did not render its second child filter')
@@ -569,25 +569,19 @@ if (!rowHtml.includes('Email')) throw new Error('FormField did not render its la
 if (!rowHtml.includes('Contact')) throw new Error('FormRow did not render its legend')
 console.log('controls without @mantine/form: FormField and FormRow resolution + render OK')
 
-// The other direction: the split is only worth having if the peer is genuinely required THERE.
+// The retired 2.x date subpath is gone from the export map: it must not resolve at all.
 let datesResolved = false
 try {
   await import('basalt-ui/controls-dates')
   datesResolved = true
 } catch (err) {
-  if (!String(err).includes('@mantine/dates')) {
+  if (err?.code !== 'ERR_PACKAGE_PATH_NOT_EXPORTED') {
     console.error(err)
-    throw new Error('basalt-ui/controls-dates failed for a reason OTHER than the absent @mantine/dates peer')
+    throw new Error('basalt-ui/controls-dates failed for a reason OTHER than the removed export')
   }
 }
-if (datesResolved) {
-  throw new Error(
-    'basalt-ui/controls-dates resolved with @mantine/dates NOT installed — either the peer moved out ' +
-      'of that subpath (then it belongs on ./controls and this step is wrong) or the import went lazy ' +
-      '(then the subpath silently no-ops for a consumer missing the peer).',
-  )
-}
-console.log('controls-dates correctly requires @mantine/dates')
+if (datesResolved) throw new Error('basalt-ui/controls-dates still resolves; the 2.x subpath must stay removed')
+console.log('controls-dates is no longer exported')
 JS
 node --import "$PKGDIR/scripts/css-noop-register.mjs" controls.mjs
 

@@ -6,7 +6,7 @@
  *
  * The table probes are a self-contained document (`fixture/k2-table.css` compiled with the Tailwind
  * CLI, the tier sheet `src/table/table.css` inlined, `fixture/k2-table-doc-fixture.tsx` bundled in
- * memory); the StatGroup probe is the shell fixture's `k2Table` flag.
+ * memory), and it mounts the StatGroup probe beside the tables.
  */
 import { afterAll, beforeAll, describe, expect, test } from 'bun:test'
 import { mkdtempSync, readFileSync, rmSync } from 'node:fs'
@@ -28,12 +28,6 @@ const layout = ready ? describe : describe.skip
 
 const WIDE: Viewport = { name: 'wide', width: 1800, height: 1200 }
 const EMPTY_SPEC = { sections: [] } as FixtureSpec
-const STAT_SPEC: FixtureSpec = {
-  sections: [
-    { label: 'Main', items: [{ key: 'a', label: 'Overview', mobile: 'tab', active: true }] },
-  ],
-  k2Table: true,
-}
 
 /** Rounding slack for subpixel text metrics and row borders. */
 const SLACK = 2
@@ -189,7 +183,13 @@ layout('expression cycle 2 table and StatGroup fixes', () => {
     }
 
     test(`${at}: six cards cells show whole, without sideways scroll`, async () => {
-      const p = await openFixture(STAT_SPEC, viewport)
+      const p = await open(viewport)
+      // The table probes sit in fixed-width wrappers: leave the StatGroup alone on the page.
+      await p.raw.evaluate(() =>
+        document
+          .querySelectorAll('main > div:not([data-testid="k2-table-stat"])')
+          .forEach((el) => el.remove()),
+      )
       await p.settle()
       const probe = await p.raw.evaluate(() => {
         const group = document.querySelector<HTMLElement>(

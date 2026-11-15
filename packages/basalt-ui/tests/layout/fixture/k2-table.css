@@ -7,3 +7,5 @@
 @source './k2-table-doc-fixture.tsx';
 @source '../../../src/ui';
 @source '../../../src/table';
+@source '../../../src/cards';
+@source './k2-table-fixture.tsx';
