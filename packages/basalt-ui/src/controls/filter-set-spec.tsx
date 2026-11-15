@@ -206,7 +206,7 @@ function PillSet({
           <div
             ref={rowRef}
             data-slot="filter-pills"
-            className="hidden min-w-0 flex-1 flex-nowrap items-center gap-2 overflow-clip [overflow-clip-margin:4px] @regular:flex"
+            className="-mx-1 -my-1 hidden min-w-0 flex-1 flex-nowrap items-center gap-2 overflow-clip p-1 @regular:flex"
           >
             {specs.map((spec, index) => (
               <div
