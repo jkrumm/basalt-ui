@@ -71,7 +71,7 @@ plugin, no marketplace and no second version to track. `init` writes at the git 
 - above `tokens`: `.claude/rules/basalt-*.md`, `.claude/skills/basalt-*`, the managed `<!-- basalt:begin/end -->` block in `AGENTS.md`, and a thin `DESIGN.md` seed when no declared root has one
 - `.basalt/budget.json` (the seeded ceilings) and the formatter ignore for the managed paths
 - with `app`, the router scaffold, each file written once and never touched by `sync`: `src/main.tsx` (the entry), `src/routes/__root.tsx`, `src/routes/_app.tsx` (the `AppShell` layout), `src/lib/nav.tsx` (the one `defineNav`) and `src/components/route-{pending,error,missing}.tsx`; a `main.tsx` that is create-vite's stock entry is replaced, any other entry gets the template's lines printed
-- in a stock Vite config, `tanstackRouter(...)` and `basalt()` in `plugins`; in a stock stylesheet entry (`src/index.css`), the `tailwindcss` import becomes `basalt-ui/tailwind.css` plus `.basalt/sources.css`; any other shape gets the exact lines printed
+- in a stock Vite config, `tanstackRouter(...)` and `basalt()` in `plugins`; in a stock stylesheet entry (`src/index.css`), the `tailwindcss` import becomes `basalt-ui/tailwind.css`, the app's `tokens.css` when the `tokens:css` output exists, and `.basalt/sources.css`; any other shape gets the exact lines printed
 
 It ends in `basalt-ui doctor`, which reports. Running `init` twice changes nothing; `sync` refreshes
 what `init` placed and never creates an install.
@@ -100,9 +100,8 @@ import { QueryClientProvider } from '@tanstack/react-query'
 import { RouterProvider, createRouter } from '@tanstack/react-router'
 import type { ReactNode } from 'react'
 import { createRoot } from 'react-dom/client'
-import { BasaltProvider } from 'basalt-ui/core/provider'
 import { makeQueryClient } from 'basalt-ui/data'
-import { routerDefaults } from 'basalt-ui/router'
+import { BasaltProvider, routerDefaults } from 'basalt-ui/router'
 import { RouteError } from './components/route-error'
 import { RouteMissing } from './components/route-missing'
 import { RoutePending } from './components/route-pending'
@@ -203,8 +202,12 @@ export default defineConfig({
 ```css
 /* src/index.css */
 @import 'basalt-ui/tailwind.css';
+@import './tokens.css';
 @import '../.basalt/sources.css';
 ```
+
+`./tokens.css` is the app's own `tokens:css --out` output; it follows `tailwind.css` so a retune
+wins. Without a retune, leave the line out.
 
 `basalt()` is the plugin half of the setup: the missing-peer and stale-seed build gates, eject
 aliases, `.basalt/sources.css` (the `@source` lines Tailwind scans), and the document head. Options
