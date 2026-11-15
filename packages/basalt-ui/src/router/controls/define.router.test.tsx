@@ -154,6 +154,60 @@ describe('defineControls: brand and ownership', () => {
   })
 })
 
+describe('defineControls: a param a global store owns', () => {
+  test('defining the page store does not throw; its mount names the fix, and other routes render', async () => {
+    const globals = defineControls({
+      id: 'overview-globals',
+      scope: 'global',
+      fields: { range: field.enum(['24h', '7d'], '24h') },
+    })
+    const defined = () =>
+      defineControls({ id: 'overview', scope: 'page', fields: { range: field.string('') } })
+    expect(defined).not.toThrow()
+    const page = defined()
+
+    const root = createRootRoute({
+      validateSearch: globals.validateSearch as never,
+      search: { middlewares: globals.middlewares as never },
+      component: () => createElement(Outlet),
+    })
+    const Bad = () => {
+      page.field.range.use()
+      return createElement('p', null, 'bad page')
+    }
+    const routes = [
+      createRoute({
+        getParentRoute: () => root as never,
+        path: '/ok',
+        component: () => createElement('p', null, 'fine page'),
+      }),
+      createRoute({
+        getParentRoute: () => root as never,
+        path: '/bad',
+        validateSearch: page.validateSearch as never,
+        component: Bad,
+        errorComponent: ({ error }: { error: unknown }) =>
+          createElement('p', null, error instanceof Error ? error.message : String(error)),
+      }),
+    ]
+    const create = createRouter as unknown as (o: object) => Loose
+    const router = create({
+      routeTree: root.addChildren(routes as never),
+      history: createMemoryHistory({ initialEntries: ['/ok'] }),
+    })
+    await router.load()
+    const view = render(createElement(RouterProvider as never, { router }))
+    expect(view.container.textContent).toContain('fine page')
+    await act(() => router.navigate({ to: '/bad' }))
+    const text = view.container.textContent ?? ''
+    expect(text).toContain(
+      'the param "range" is already owned by the global store "overview-globals"',
+    )
+    expect(text).toContain('Rename the field in "overview"')
+    expect(text).toContain('externalField(overview-globals.field.range)')
+  })
+})
+
 describe('defineControls: values and writes', () => {
   test('aliases from the golden cases resolve before the codec', () => {
     for (const c of cases.aliases) {

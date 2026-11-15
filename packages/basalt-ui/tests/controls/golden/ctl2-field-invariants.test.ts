@@ -19,11 +19,13 @@ describe('field invariants (ctl-2)', () => {
 
   // Spike S8 amendment (docs/v3/spikes/controls-codegen.md): page stores may share a param on
   // different routes (argo's `window`, `from`, `to`); the throw holds when one of them is global.
-  test('two stores owning one param throw at definition', () => {
+  // shell-1.17: the collision is raised when the page store mounts (`define.router.test.tsx`), not at
+  // import, where it blanked every route.
+  test("a page store taking a global store's param defines without throwing", () => {
     defineControls({ id: 'one', scope: 'global', fields: { owned: field.enum(['a', 'b'], 'a') } })
     expect(() =>
       defineControls({ id: 'two', scope: 'page', fields: { owned: field.enum(['a', 'b'], 'a') } }),
-    ).toThrow(/already owned by "one"/)
+    ).not.toThrow()
     defineControls({ id: 'p1', scope: 'page', fields: { shared: field.enum(['a', 'b'], 'a') } })
     expect(() =>
       defineControls({ id: 'p2', scope: 'page', fields: { shared: field.enum(['a', 'b'], 'a') } }),
