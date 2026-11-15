@@ -169,6 +169,34 @@ describe('client filter and paging', () => {
     expect(screen.queryByRole('button', { name: 'New order' })).toBeNull()
   })
 
+  test('a page-filtered empty says so and Clear filters calls its reset', () => {
+    const reset = mock(() => undefined)
+    render(
+      <Subject
+        options={{
+          data: [],
+          empty: {
+            cause: 'Nothing matches these filters.',
+            action: { label: 'New order', onClick: () => {} },
+            filtered: { reset },
+          },
+        }}
+      />,
+    )
+    const row = document.querySelector('[data-slot="table-empty"]')
+    expect(row?.textContent).toContain('Nothing matches these filters.')
+    expect(screen.queryByRole('button', { name: 'New order' })).toBeNull()
+    fireEvent.click(screen.getByRole('button', { name: 'Clear filters' }))
+    expect(reset).toHaveBeenCalledTimes(1)
+  })
+
+  test('with no `empty` the default line does not claim the data is new', () => {
+    render(<Subject options={{ data: [] }} />)
+    const text = document.querySelector('[data-slot="table-empty"]')?.textContent
+    expect(text).toContain('No rows to show')
+    expect(text).not.toContain('yet')
+  })
+
   test('pager pages slices the client rows', () => {
     render(<Subject options={{ pager: 'pages', state: state({ pageSize: 2 }) }} />)
     expect(names()).toHaveLength(2)

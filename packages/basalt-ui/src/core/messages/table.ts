@@ -76,7 +76,7 @@ export const table = {
   'table.selectRow': 'Select row',
   'table.selectAll': 'Select all rows on this page',
   'table.actions': 'Row actions',
-  'table.empty': 'No rows yet',
+  'table.empty': 'No rows to show',
   'table.noMatches': 'No rows match the current search and filters',
   'table.clearFilters': 'Clear filters',
   'table.error': 'The rows could not be loaded',

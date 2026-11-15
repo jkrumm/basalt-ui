@@ -246,16 +246,25 @@ export function useDataTable<T>(options: UseDataTable<T>): DataTableInstance<T> 
 
   const filtering = request.q !== '' || request.filters.length > 0
   const settled = options.data !== undefined
+  const pageFiltered = options.empty?.filtered
   const empty: Empty | null =
     settled && rows.length === 0
       ? filtering
         ? {
-            cause: t('table.noMatches'),
-            filtered: { reset: () => state.setRequest({ q: '', filters: [] }) },
+            cause: pageFiltered
+              ? (options.empty?.cause ?? t('table.noMatches'))
+              : t('table.noMatches'),
+            filtered: {
+              reset: () => {
+                state.setRequest({ q: '', filters: [] })
+                pageFiltered?.reset()
+              },
+            },
           }
         : {
             cause: options.empty?.cause ?? t('table.empty'),
             ...(options.empty?.action && { action: options.empty.action }),
+            ...(pageFiltered && { filtered: pageFiltered }),
           }
       : null
   const phase = resolvePhase({
