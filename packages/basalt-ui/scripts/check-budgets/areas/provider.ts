@@ -13,7 +13,7 @@ import {
   firstPaintGzip,
 } from '../bundle'
 import { Unmeasured, gate } from '../lib'
-import type { Ctx, Raise, RowDef } from '../lib'
+import type { Ctx, Raises, RowDef } from '../lib'
 import { measureProviderV3 } from '../provider-v3'
 
 const PROVIDER_V3_LABEL =
@@ -152,16 +152,17 @@ function embeddedGroup(ctx: Ctx) {
   }))
 }
 
-export const raises: readonly Raise[] = [
-  {
-    ceiling: 'provider-only',
-    from: 20468,
-    to: 20492,
-    consumer:
-      'the router `live` option: the software-factory console binds its push channel with `bindInvalidation` (apps/console/src/lib/live.ts) and today starts it from a root `useEffect` it writes; `createBasaltRouter({ live })` has the provider start and stop it (state-1.20)',
-    repo: 'software-factory',
-  },
-]
+export const raises: Raises = {
+  'provider-only': [
+    {
+      from: 20468,
+      to: 20492,
+      consumer:
+        'the router `live` option: the software-factory console binds its push channel with `bindInvalidation` (apps/console/src/lib/live.ts) and today starts it from a root `useEffect` it writes; `createBasaltRouter({ live })` has the provider start and stop it (state-1.20)',
+      repo: 'software-factory',
+    },
+  ],
+}
 
 export const rows: readonly RowDef[] = [
   {
