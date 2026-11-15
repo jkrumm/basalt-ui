@@ -34,7 +34,7 @@ bindInvalidation<F, R extends string>(client: QueryClient, channel: Channel<F>, 
 
 ```tsx
 // main.tsx, on the `routerDefaults` path: the module-level client of the scaffold
-const queryClient = makeQueryClient()
+const queryClient = createQueryClient()
 const live = bindInvalidation(queryClient, channel, {
   roots: ['needs', 'flow', 'issue', 'kpis', 'friction'],
   aggregates: ['kpis', 'friction'],
