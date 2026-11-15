@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react'
 import type { ComponentType, ReactElement } from 'react'
 import { cn } from '../core/cn'
+import { AppLink } from '../core/link'
 import { kanban } from '../core/messages/kanban'
 import { useMessages } from '../core/messages/use-messages'
 import { Card } from '../ui/card'
@@ -82,14 +83,14 @@ function CardMenu({
     const name = t('kanban.actionFor', only.label, title)
     if ('href' in only) {
       return (
-        <a
+        <AppLink
           data-slot="kanban-menu"
           href={only.href}
           aria-label={name}
           className={cn(BUTTON, 'z-10')}
         >
           <Glyph kind="arrow" />
-        </a>
+        </AppLink>
       )
     }
     return (
@@ -198,7 +199,7 @@ export function KanbanCard<C extends string>(props: KanbanCardProps<C>): ReactEl
     >
       <Card flush className="relative">
         {href !== undefined && (
-          <a
+          <AppLink
             data-slot="kanban-target"
             href={href}
             aria-label={title}

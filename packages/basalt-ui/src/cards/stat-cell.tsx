@@ -1,6 +1,7 @@
 import { useContext } from 'react'
 import type { ReactElement, ReactNode } from 'react'
 import { cn } from '../core/cn'
+import { AppLink } from '../core/link'
 import { resolvePhase } from '../core/phase'
 import type { Empty, ErrorKind, ResolvedPhase } from '../core/phase'
 import { PhaseBoundary } from '../core/phase-boundary'
@@ -378,9 +379,9 @@ function EmptyLine({ empty }: { empty: Empty }): ReactNode {
       ) : (
         action !== undefined &&
         ('href' in action ? (
-          <a href={action.href} className={ACTION}>
+          <AppLink href={action.href} className={ACTION}>
             {action.label}
-          </a>
+          </AppLink>
         ) : (
           <button type="button" className={ACTION} onClick={action.onSelect}>
             {action.label}
@@ -402,7 +403,12 @@ function Target(props: TargetProps): ReactElement {
     'absolute inset-0 z-0 cursor-pointer rounded-ctrl border-0 bg-transparent p-0 focus-ring focus-visible:-outline-offset-2'
   if ('href' in props) {
     return (
-      <a data-slot="stat-target" href={props.href} aria-label={props.label} className={className} />
+      <AppLink
+        data-slot="stat-target"
+        href={props.href}
+        aria-label={props.label}
+        className={className}
+      />
     )
   }
   return (

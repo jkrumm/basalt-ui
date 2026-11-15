@@ -1,6 +1,7 @@
 import { useId } from 'react'
 import type { ReactElement } from 'react'
 import { cn } from '../core/cn'
+import { AppLink } from '../core/link'
 import { cards } from '../core/messages/cards'
 import { useMessages } from '../core/messages/use-messages'
 import type { ControlsSlot, IconComponent, Status } from '../core/ports'
@@ -114,9 +115,9 @@ export function StatMenu({
       >
         {actions.map((action) =>
           'href' in action ? (
-            <a key={action.label} href={action.href} className={ITEM}>
+            <AppLink key={action.label} href={action.href} className={ITEM}>
               {action.label}
-            </a>
+            </AppLink>
           ) : (
             <button
               key={action.label}

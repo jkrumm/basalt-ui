@@ -11,6 +11,8 @@
  */
 import { createContext, useContext, useEffect, useMemo } from 'react'
 import type { ReactNode } from 'react'
+import { LinkContext } from './link'
+import type { LinkComponent } from './ports'
 
 export type Scheme = 'light' | 'dark' | 'auto'
 
@@ -39,6 +41,11 @@ export type BasaltProviderProps = {
   locale?: string
   /** `<html lang>`, written in an effect. Defaults to `locale`. */
   lang?: string
+  /**
+   * The link every link prop renders through: `routerDefaults().link` for an app on TanStack Router,
+   * so a `string | NavTarget` target navigates without a document load. Omitted: a plain `<a>`.
+   */
+  link?: LinkComponent
   children?: ReactNode
 }
 
@@ -58,6 +65,7 @@ export function BasaltProvider({
   scheme,
   locale = DEFAULTS.locale,
   lang = locale,
+  link,
   children,
 }: BasaltProviderProps): ReactNode {
   const value = useMemo(
@@ -73,5 +81,6 @@ export function BasaltProvider({
     document.documentElement.lang = lang
   }, [lang])
 
-  return <ProviderContext value={value}>{children}</ProviderContext>
+  const tree = <ProviderContext value={value}>{children}</ProviderContext>
+  return link === undefined ? tree : <LinkContext value={link}>{tree}</LinkContext>
 }

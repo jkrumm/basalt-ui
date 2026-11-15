@@ -1,5 +1,6 @@
 import type { ReactElement } from 'react'
 import { cn } from '../core/cn'
+import { AppLink } from '../core/link'
 import { home } from '../core/messages/home'
 import { useMessages } from '../core/messages/use-messages'
 import type { CardAction } from '../core/phase'
@@ -82,9 +83,9 @@ export function EmptyState(props: EmptyStateProps): ReactElement {
       ) : (
         action !== undefined &&
         ('href' in action ? (
-          <a href={action.href} data-slot="empty-state-action" className={ACTION}>
+          <AppLink href={action.href} data-slot="empty-state-action" className={ACTION}>
             {action.label}
-          </a>
+          </AppLink>
         ) : (
           <button
             type="button"

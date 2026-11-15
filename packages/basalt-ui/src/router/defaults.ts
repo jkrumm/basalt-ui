@@ -80,7 +80,7 @@ export function routeTransitionTypes(
  * The router options basalt holds and the `LinkComponent` that opens a `navTarget`.
  *
  * @useWhen an app on TanStack Router builds its router, so preloading, pending timing, scroll restoration and route transitions are set once
- * @neverWhen the app has no router (pages take the plain-anchor `LinkComponent` default)
+ * @neverWhen the app has no router (a link prop renders a plain anchor with no `link` installed)
  *
  * @example
  * const { options, link } = routerDefaults({ router: () => router })
@@ -91,6 +91,10 @@ export function routeTransitionTypes(
  *   defaultErrorComponent: RouteError,
  *   defaultNotFoundComponent: RouteMissing,
  * })
+ *
+ * <BasaltProvider link={link}>
+ *   <RouterProvider router={router} />
+ * </BasaltProvider>
  */
 export function routerDefaults(input: RouterDefaultsInput = {}): {
   options: RouterDefaultOptions

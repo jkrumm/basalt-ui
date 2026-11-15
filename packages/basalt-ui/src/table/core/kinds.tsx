@@ -10,7 +10,7 @@
  */
 import type { ReactNode } from 'react'
 import type { DateStyle } from '../../core/format'
-import type { Box, Delta, IconComponent, Tone } from '../../core/ports'
+import type { Box, Delta, IconComponent, NavTarget, Tone } from '../../core/ports'
 import type { CardSlot, KindColumn, Priority, RowAction } from '../contract'
 import { codec } from './kinds-codec'
 import type { CodecKind, CodecOptions, TableSchema } from './kinds-codec'
@@ -67,7 +67,7 @@ export type CommonOptions = {
 }
 
 export type EntityOptions<T> = CommonOptions & {
-  href?: (row: T) => string | undefined
+  href?: (row: T) => string | NavTarget | undefined
   icon?: (row: T) => IconComponent | undefined
   sub?: (row: T) => string | null | undefined
   filter?: 'text'
@@ -352,13 +352,12 @@ export function col<T>(): Col<T> {
         'entity',
         key,
         o,
-        (v, row, env) => (
+        (v, row) => (
           <EntityCell
             value={String(v)}
             href={o?.href?.(row)}
             icon={o?.icon?.(row)}
             sub={o?.sub?.(row) ?? undefined}
-            Link={env.Link}
           />
         ),
         {

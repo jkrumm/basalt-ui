@@ -1,9 +1,13 @@
+import type { NavTarget } from '../core/ports'
 import type { Translate } from '../core/messages/use-messages'
 import type { kanban } from '../core/messages/kanban'
 import type { KanbanCardProps, MenuAction, Move } from './contract'
 
 /** One row of the card's menu: a link or a handler, never both. `key` is stable per row. */
-export type KanbanAction = { key: string; label: string } & ({ href: string } | { run: () => void })
+export type KanbanAction = { key: string; label: string } & (
+  | { href: string | NavTarget }
+  | { run: () => void }
+)
 
 type MoveSpec<C extends string> = Exclude<KanbanCardProps<C>['move'], 'static'>
 

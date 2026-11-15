@@ -1,7 +1,8 @@
 import type { ReactElement } from 'react'
 import { cn } from '../core/cn'
+import { AppLink } from '../core/link'
 import { resolvePhase } from '../core/phase'
-import type { Box } from '../core/ports'
+import type { Box, NavTarget } from '../core/ports'
 import { DeltaBadge } from '../ui/badge'
 import { Card, CardPhase, Inset } from '../ui/card'
 import type { StatCardProps } from './contract'
@@ -140,7 +141,7 @@ export function StatCard(props: StatCardProps): ReactElement {
 const labelOf = (delta: NonNullable<StatCardProps['delta']>): { label?: string } =>
   delta.label === undefined ? {} : { label: delta.label }
 
-type TargetProps = { label: string } & ({ href: string } | { onSelect: () => void })
+type TargetProps = { label: string } & ({ href: string | NavTarget } | { onSelect: () => void })
 
 /**
  * The stretched target: one transparent link or button over the whole card, under the controls.
@@ -151,7 +152,12 @@ function Target(props: TargetProps): ReactElement {
     'absolute inset-0 z-0 cursor-pointer rounded-card border-0 bg-transparent p-0 focus-ring focus-visible:-outline-offset-2'
   if ('href' in props) {
     return (
-      <a data-slot="stat-target" href={props.href} aria-label={props.label} className={className} />
+      <AppLink
+        data-slot="stat-target"
+        href={props.href}
+        aria-label={props.label}
+        className={className}
+      />
     )
   }
   return (

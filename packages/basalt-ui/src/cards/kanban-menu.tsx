@@ -4,6 +4,8 @@
  * first intent, so the card's initial graph stays inside its size ceiling (concept E6, S6).
  */
 import type { ReactElement, RefObject } from 'react'
+import { AppLink } from '../core/link'
+import type { NavTarget } from '../core/ports'
 import { Menu, MenuContent, MenuItem, MenuSeparator } from '../ui/menu'
 import type { KanbanAction } from './kanban-actions'
 
@@ -16,12 +18,17 @@ export type KanbanMenuPopupProps = {
   extras: readonly KanbanAction[]
 }
 
+/** A menu row that is a link: the installed `LinkComponent` is the row's element. */
+function LinkRow({ label, href }: { label: string; href: string | NavTarget }): ReactElement {
+  return (
+    // oxlint-disable-next-line jsx-a11y/control-has-associated-label -- MenuItem passes its children into the link
+    <MenuItem render={<AppLink href={href} />}>{label}</MenuItem>
+  )
+}
+
 const rowOf = (action: KanbanAction, close: () => void): ReactElement =>
   'href' in action ? (
-    // oxlint-disable-next-line jsx-a11y/control-has-associated-label -- MenuItem passes its children into the link
-    <MenuItem key={action.key} render={<a href={action.href} />}>
-      {action.label}
-    </MenuItem>
+    <LinkRow key={action.key} label={action.label} href={action.href} />
   ) : (
     <MenuItem
       key={action.key}
