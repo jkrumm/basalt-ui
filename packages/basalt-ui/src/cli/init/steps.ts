@@ -181,17 +181,16 @@ function formatsWithPrettier(root: string): boolean {
 export type PeerPlan = { runtime: Record<string, string>; dev: Record<string, string> }
 
 /**
- * The installs for a profile, read from the package that ships them: an exact pin where the package
- * pins one, else its peer range (`@base-ui/react`, `@tanstack/react-router`). `oxfmt` joins only when
- * it is the repo's formatter (`init` writes `.oxfmtrc.json` for it).
+ * The installs for a profile, read from the package that ships them: its peer entry (an exact pin
+ * or a range), else its dev pin. `oxfmt` joins only when it is the repo's formatter (`init` writes
+ * `.oxfmtrc.json` for it).
  */
 export function peerPlan(pkgRoot: string, profile: Profile, oxfmt: boolean): PeerPlan {
   const own = readPackage(pkgRoot)
   const spec = (name: string, presetPin?: string): string => {
-    const candidates = [presetPin, own?.devDependencies?.[name], own?.peerDependencies?.[name]]
-    const found =
-      candidates.find((c) => c !== undefined && /^\d+\.\d+\.\d+$/.test(c)) ??
-      own?.peerDependencies?.[name]
+    // The peer range wins over the package's own dev pin, so an app already on a newer version in
+    // range is never reinstalled down to it; a tool the package only pins in dev uses that pin.
+    const found = presetPin ?? own?.peerDependencies?.[name] ?? own?.devDependencies?.[name]
     if (found === undefined) throw new Error(`${pkgRoot}/package.json pins ${name} nowhere`)
     return found
   }
