@@ -29,7 +29,7 @@ import type {
 import { labelOf, optionsOf } from './field'
 import type { ValuesOf, WindowOf } from './values'
 import { KEEP_KEY, chosenStrip, orderMiddlewares } from './middleware'
-import { assertNoUrlThunk, claimParams } from './ownership'
+import { assertNoUrlThunk, claimParams, conflictOf } from './ownership'
 import { attachWidgets } from './widgets'
 import type {
   Overrides,
@@ -507,6 +507,8 @@ export function defineControls<
   // Routers lent by mounted hooks, so `clear()` (an event handler, no hook in reach) navigates.
   const mounts = new Map<LooseRouter, number>()
   const useLend = (router: LooseRouter): void => {
+    const conflict = conflictOf(id)
+    if (conflict !== undefined) throw new Error(conflict)
     useEffect(() => {
       assertGlobalsOnRoot(router)
       mounts.set(router, (mounts.get(router) ?? 0) + 1)
