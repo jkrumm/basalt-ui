@@ -35,6 +35,7 @@ StatCard(props: StatCardProps): ReactElement
   status?: Status  // The verdict home: dot plus word
   sub?: string
   chart?: BoxSlot  // Called only in `ready` and `stale`, in a fixed 72 px clipping box (plot 56 + label row 16)
+  xLabels?: readonly [string, string, string]  // The three labels under the chart (start, middle, end), drawn in the 16 px row so the slot draws the plot alon…
   footer?: FootFacts
   controls?: ControlsSlot<"widget">
   menu?: readonly [CardAction, CardAction, ...CardAction[]]
@@ -52,6 +53,7 @@ StatCard(props: StatCardProps): ReactElement
   delta={{ value: '+12%', polarity: 'up-good' }}
   phase={query}
   chart={(box) => <Sparkline series={perDay} height={box.height} ariaLabel="Shipped per day" />}
+  xLabels={["Mon", "Thu", "Sun"]}
   footer={[{ label: 'Open', value: 12 }, { label: 'Merged', value: 4 }]}
 />
 ```

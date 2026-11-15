@@ -28,6 +28,7 @@ useDataTable<T>(options: UseDataTable<T>): DataTableInstance<T>
   mode: Mode
   state?: StateHandle<TableState>
   phase?: Phase | QueryStateLike
+  now?: number  // A fixed clock in epoch ms for the relative-time cells (a fixture, a test)
   empty?: Empty | null  // Why the table has no rows, and what to do about it: its `cause` replaces the default sentence and its `action…
   resetOn?: readonly unknown[]
   phone?: "cards" | "scroll"  // What a narrow table becomes: cards, or the table scrolling sideways with its first column pinned; default 'cards'

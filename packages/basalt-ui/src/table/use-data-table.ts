@@ -164,7 +164,14 @@ export function useDataTable<T>(options: UseDataTable<T>): DataTableInstance<T> 
   const pager = options.pager ?? (!server ? 'none' : 'cursor' in mode ? 'more' : 'pages')
   const paged = pager !== 'none' && !(server && 'cursor' in mode)
 
-  const [now] = useState(() => Math.floor(Date.now() / MINUTE) * MINUTE)
+  // A fixed clock wins; otherwise the minute, floored so server and client agree, ticking once a minute.
+  const [minute, setMinute] = useState(() => Math.floor(Date.now() / MINUTE))
+  useEffect(() => {
+    if (options.now !== undefined) return
+    const id = setInterval(() => setMinute(Math.floor(Date.now() / MINUTE)), MINUTE)
+    return () => clearInterval(id)
+  }, [options.now])
+  const now = options.now ?? minute * MINUTE
   const specs = columns.map((column: KindColumn<T>) => specOf(column))
   const known = new Set(specs.map((spec) => spec.id))
 

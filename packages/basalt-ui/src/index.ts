@@ -23,7 +23,8 @@ export {
   type StateFieldOptions,
   type StateStore,
 } from './core/external-field'
-export type { ControlHandle, StorageLike } from './core/ports'
+export type { ControlHandle, Phase, QueryStateLike, StorageLike } from './core/ports'
+export type { Empty, FrameState } from './core/phase'
 export { createChannel } from './core/channel'
 export type {
   Channel,
