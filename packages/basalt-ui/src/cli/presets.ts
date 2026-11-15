@@ -14,6 +14,7 @@ import { tableOf } from '../lint/factory'
 import type { Contract } from '../lint/preset'
 import { buildPreset } from '../lint/preset'
 import { renderStylelintConfig } from '../lint/stylelint/render'
+import { rootsOf } from './doctor/types'
 import { PRESET_FILE } from '../lint/weakened'
 import { SLOTS } from '../ui/slots'
 import { readRow } from './eject/ledger'
@@ -93,13 +94,31 @@ export function renderOxlintPreset(manifest: Manifest, pkgRoot: string): string 
   return preset === undefined ? null : `${JSON.stringify(preset, null, 2)}\n`
 }
 
+/**
+ * The stylelint preset text for a manifest. The scroll-container ban needs `ui/scroll-area`, which
+ * ships from `parts` up, so a `tokens` or `bridge` root renders without it; files outside every
+ * root follow the manifest's own profile.
+ */
+export function renderStylelintPreset(manifest: Manifest): string {
+  const scrolls = (profile: Profile): boolean => profile !== 'tokens' && profile !== 'bridge'
+  return renderStylelintConfig({
+    ignoreFiles: manifest.tokens.map((t) => t.out),
+    scroll: {
+      base: scrolls(manifest.profile),
+      roots: Object.fromEntries(
+        rootsOf(manifest).map(([root, profile]) => [root, scrolls(profile)]),
+      ),
+    },
+  })
+}
+
 /** The `presetFiles` seam of `sync`: both presets as generated units. */
 export function presetFilesFor(pkgRoot: string = packageRoot()): PresetFiles {
   return (manifest: Manifest): Unit[] => {
     const units: Unit[] = [
       {
         path: STYLELINT_PRESET_FILE,
-        content: renderStylelintConfig({ ignoreFiles: manifest.tokens.map((t) => t.out) }),
+        content: renderStylelintPreset(manifest),
       },
     ]
     const oxlint = renderOxlintPreset(manifest, pkgRoot)

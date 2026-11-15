@@ -40,6 +40,34 @@ export const DECORATION_PROPERTIES =
 export const SCROLL_PROPERTIES = '/^overflow(?:-x|-y|-block|-inline)?$/'
 export const SCROLL_VALUES = '/\\b(?:auto|scroll|overlay)\\b/i'
 
+/** `%s` takes the property, then the value; one message per variant so it names only the fixes that apply. */
+const MESSAGE_BASE =
+  'Disallowed `%s: %s`. Spacing and type take --vx tokens, colour roles follow their surface'
+const MESSAGE_SCROLL = `${MESSAGE_BASE}, and a scroll box (overflow auto|scroll) is ui/scroll-area, or let Page own the scroll.`
+const MESSAGE_NO_SCROLL = `${MESSAGE_BASE}.`
+
+/**
+ * The value-disallowed list. `scroll` adds the scroll-container ban, the stylesheet twin of the
+ * raw-scroll class rule: it holds from `parts` up, where `ui/scroll-area` ships; a `tokens` or
+ * `bridge` file has no such primitive, so its config omits the entry.
+ */
+export function disallowedValueList(
+  scroll: boolean,
+): readonly [Record<string, string[]>, { message: string }] {
+  return [
+    {
+      // colour mixing is only legal over tokens or transparent
+      '/.*/': [`/color-mix\\((?!${CLEAN_MIX_BODY})/i`],
+      // raw lengths and calc() on spacing and the type size (D0: tokens, 0, auto, %)
+      [SPACING_PROPERTIES]: [`/${RAW_LENGTH}/i`, '/\\bcalc\\(/i'],
+      // colour as decoration
+      [DECORATION_PROPERTIES]: [`/${DECORATIVE_ROLE}/i`],
+      ...(scroll ? { [SCROLL_PROPERTIES]: [SCROLL_VALUES] } : {}),
+    },
+    { message: scroll ? MESSAGE_SCROLL : MESSAGE_NO_SCROLL },
+  ]
+}
+
 /** The ten rules, keyed by stylelint rule name. Order is the order of the section 4.2 table. */
 export const STYLELINT_RULES = {
   'color-no-hex': true,
@@ -57,25 +85,7 @@ export const STYLELINT_RULES = {
     'color',
     'light-dark',
   ],
-  'declaration-property-value-disallowed-list': [
-    {
-      // colour mixing is only legal over tokens or transparent
-      '/.*/': [`/color-mix\\((?!${CLEAN_MIX_BODY})/i`],
-      // raw lengths and calc() on spacing and the type size (D0: tokens, 0, auto, %)
-      [SPACING_PROPERTIES]: [`/${RAW_LENGTH}/i`, '/\\bcalc\\(/i'],
-      // colour as decoration
-      [DECORATION_PROPERTIES]: [`/${DECORATIVE_ROLE}/i`],
-      // a scroll container: the stylesheet twin of the raw-scroll class rule
-      [SCROLL_PROPERTIES]: [SCROLL_VALUES],
-    },
-    // One message per rule, so it names each family's fix; `%s` takes the property, then the value.
-    {
-      message:
-        'Disallowed `%s: %s`. Spacing and type take --vx tokens, colour roles follow their surface, ' +
-        'and a scroll box (overflow auto|scroll) is ui/scroll-area, or let Page own the scroll; ' +
-        'a profile without the ui primitives (tokens, bridge) waives it with stylelint-disable -- <reason>.',
-    },
-  ],
+  'declaration-property-value-disallowed-list': disallowedValueList(true),
   'declaration-property-value-allowed-list': {
     [SHAPE_PROPERTIES]: [`/${ALLOWED_SHAPE}/i`],
   },

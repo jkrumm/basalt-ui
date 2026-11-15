@@ -183,3 +183,54 @@ describe('renderStylelintConfig', () => {
     }
   })
 })
+
+describe('scroll ban per root', () => {
+  const OVERRIDE = 'declaration-property-value-disallowed-list'
+  const scrollOf = (value: unknown): boolean => JSON.stringify(value).includes('overflow')
+
+  it('with no options the ban holds everywhere', () => {
+    const config = stylelintConfig()
+    expect(scrollOf(config.rules[OVERRIDE])).toBe(true)
+    expect(config.overrides).toHaveLength(1)
+  })
+
+  it('a scroll-free base drops the entry and its message, and a parts root turns it back on', async () => {
+    const config = stylelintConfig({
+      scroll: { base: false, roots: { 'apps/web': true, '.': false } },
+    })
+    expect(scrollOf(config.rules[OVERRIDE])).toBe(false)
+    expect(JSON.stringify(config.rules[OVERRIDE])).not.toContain('scroll-area')
+    const root = mkdtempSync(join(tmpdir(), 'basalt-stylelint-roots-'))
+    try {
+      mkdirSync(join(root, 'apps/web'), { recursive: true })
+      mkdirSync(join(root, 'site'), { recursive: true })
+      for (const dir of ['apps/web', 'site']) {
+        writeFileSync(join(root, dir, 'a.css'), 'pre { overflow-x: auto; }\n')
+      }
+      const configFile = join(root, '.stylelintrc.basalt.json')
+      writeFileSync(configFile, JSON.stringify(config))
+      const { results } = await stylelint.lint({
+        files: join(root, '**/*.css'),
+        configFile,
+        cwd: root,
+      })
+      const bySource = new Map(results.map((r) => [r.source?.slice(root.length + 1), r.warnings]))
+      expect(bySource.get('site/a.css')).toEqual([])
+      expect(
+        bySource
+          .get('apps/web/a.css')
+          ?.map((w) => w.text)
+          .join(),
+      ).toContain('ui/scroll-area')
+    } finally {
+      rmSync(root, { recursive: true, force: true })
+    }
+  })
+
+  it('a scroll-full base gets an override only for a root that opts out; the deeper root comes last', () => {
+    const config = stylelintConfig({
+      scroll: { base: true, roots: { 'a/b': false, a: false, c: true } },
+    })
+    expect(config.overrides.slice(1).map((o) => o.files)).toEqual([['a/**'], ['a/b/**']])
+  })
+})

@@ -7,8 +7,8 @@ import { dirname, resolve } from 'node:path'
 
 import { a11yComponents } from '../../lint/preset'
 import { PRESET_FILE } from '../../lint/weakened'
-import { renderStylelintConfig } from '../../lint/stylelint/render'
 import { SLOTS } from '../../ui/slots'
+import { renderStylelintPreset } from '../presets'
 import { readFrameworkVersion } from '../index'
 import { scanBlock } from '../sync/block'
 import { AGENTS_FILE, differences, planSync } from '../sync/engine'
@@ -41,7 +41,7 @@ const check4 = (name: string): Check => ({
     if (block === null) throw new Skip(`${ctx.pkgRoot} ships no AGENTS block template`)
     const preset: Unit = {
       path: STYLELINT_PRESET,
-      content: renderStylelintConfig({ ignoreFiles: manifest.tokens.map((t) => t.out) }),
+      content: renderStylelintPreset(manifest),
       generated: true,
     }
     const plan = planSync(
