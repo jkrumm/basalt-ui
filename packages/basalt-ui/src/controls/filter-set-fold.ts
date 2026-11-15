@@ -51,7 +51,12 @@ export function useFold(rowRef: RefObject<HTMLElement | null>, keys: readonly st
     const list = signature === '' ? [] : signature.split('\u0000')
 
     const measure = (): void => {
-      const available = row.clientWidth
+      // The row's padding is ring room, not pill room: only the content box counts.
+      const style = getComputedStyle(row)
+      const available =
+        row.clientWidth -
+        Number.parseFloat(style.paddingLeft) -
+        Number.parseFloat(style.paddingRight)
       if (available <= 0) return
       for (const el of row.querySelectorAll<HTMLElement>('[data-fold-key]')) {
         const width = el.offsetWidth
@@ -59,7 +64,7 @@ export function useFold(rowRef: RefObject<HTMLElement | null>, keys: readonly st
       }
       const fold = row.querySelector<HTMLElement>('[data-fold-trigger]')
       if (fold !== null && fold.offsetWidth > 0) foldWidth.current = fold.offsetWidth
-      const gap = Number.parseFloat(getComputedStyle(row).columnGap)
+      const gap = Number.parseFloat(style.columnGap)
       const next = fitCount(
         list.map((key) => widths.current.get(key) ?? 0),
         Number.isFinite(gap) ? gap : GAP_FALLBACK,
