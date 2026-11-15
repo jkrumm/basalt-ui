@@ -94,13 +94,14 @@ export function renderOxlintPreset(manifest: Manifest, pkgRoot: string): string 
   return preset === undefined ? null : `${JSON.stringify(preset, null, 2)}\n`
 }
 
+const scrolls = (profile: Profile): boolean => profile !== 'tokens' && profile !== 'bridge'
+
 /**
  * The stylelint preset text for a manifest. The scroll-container ban needs `ui/scroll-area`, which
  * ships from `parts` up, so a `tokens` or `bridge` root renders without it; files outside every
  * root follow the manifest's own profile.
  */
 export function renderStylelintPreset(manifest: Manifest): string {
-  const scrolls = (profile: Profile): boolean => profile !== 'tokens' && profile !== 'bridge'
   return renderStylelintConfig({
     ignoreFiles: manifest.tokens.map((t) => t.out),
     scroll: {

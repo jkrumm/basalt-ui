@@ -38,15 +38,27 @@ export type RenderOptions = {
 /** The glob of a root relative to the config: `.` is every file. */
 const rootGlob = (root: string): string => (root === '.' ? '**' : `${root.replace(/\/+$/, '')}/**`)
 
-/** One override per root whose scroll flag differs from the base, the more specific root last so it wins. */
+const encloses = (outer: string, inner: string): boolean =>
+  outer === '.' || inner.startsWith(`${outer}/`)
+
+/**
+ * One override per root whose scroll flag differs from what it would inherit: the flag of its
+ * nearest enclosing root, else the base. The more specific root comes last so it wins.
+ */
 function scrollOverrides({ base, roots }: NonNullable<RenderOptions['scroll']>): Override[] {
-  return Object.entries(roots)
-    .filter(([, scroll]) => scroll !== base)
-    .toSorted(([a], [b]) => a.length - b.length || a.localeCompare(b))
-    .map(([root, scroll]) => ({
-      files: [rootGlob(root)],
-      rules: { 'declaration-property-value-disallowed-list': disallowedValueList(scroll) },
-    }))
+  const sorted = Object.entries(roots).toSorted(
+    ([a], [b]) => a.length - b.length || a.localeCompare(b),
+  )
+  return sorted.flatMap(([root, scroll]) => {
+    const parent = sorted.findLast(([other]) => other !== root && encloses(other, root))
+    if (scroll === (parent?.[1] ?? base)) return []
+    return [
+      {
+        files: [rootGlob(root)],
+        rules: { 'declaration-property-value-disallowed-list': disallowedValueList(scroll) },
+      },
+    ]
+  })
 }
 
 /** The config as an object, with `ignoreFiles` listing the generated sheets. */

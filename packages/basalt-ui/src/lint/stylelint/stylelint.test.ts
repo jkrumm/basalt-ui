@@ -184,9 +184,10 @@ describe('renderStylelintConfig', () => {
   })
 })
 
+const scrollOf = (value: unknown): boolean => JSON.stringify(value).includes('overflow')
+
 describe('scroll ban per root', () => {
   const OVERRIDE = 'declaration-property-value-disallowed-list'
-  const scrollOf = (value: unknown): boolean => JSON.stringify(value).includes('overflow')
 
   it('with no options the ban holds everywhere', () => {
     const config = stylelintConfig()
@@ -227,10 +228,21 @@ describe('scroll ban per root', () => {
     }
   })
 
-  it('a scroll-full base gets an override only for a root that opts out; the deeper root comes last', () => {
+  it('a scroll-full base gets an override only for a root that opts out; a nested root that agrees with it gets none', () => {
     const config = stylelintConfig({
       scroll: { base: true, roots: { 'a/b': false, a: false, c: true } },
     })
-    expect(config.overrides.slice(1).map((o) => o.files)).toEqual([['a/**'], ['a/b/**']])
+    expect(config.overrides.slice(1).map((o) => o.files)).toEqual([['a/**']])
+  })
+
+  it('a root nested in a differing root gets its own override even when it equals the base', () => {
+    const inherited = stylelintConfig({ scroll: { base: true, roots: { '.': false, src: true } } })
+    expect(inherited.overrides.slice(1).map((o) => o.files)).toEqual([['**'], ['src/**']])
+    const mirrored = stylelintConfig({
+      scroll: { base: false, roots: { a: true, 'a/b': false } },
+    })
+    expect(mirrored.overrides.slice(1).map((o) => o.files)).toEqual([['a/**'], ['a/b/**']])
+    const same = stylelintConfig({ scroll: { base: true, roots: { a: true, 'a/b': true } } })
+    expect(same.overrides).toHaveLength(1)
   })
 })
