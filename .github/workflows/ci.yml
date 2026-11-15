@@ -45,14 +45,15 @@ jobs:
       - name: oxlint config sync check
         run: bun packages/basalt-ui/scripts/gen-oxlint.ts --check
 
-      - name: Lint (oxlint)
-        run: bun run lint
-
       - name: Format check (oxfmt)
         run: bun run fmt:check
 
       - name: Build package
         run: bun --filter basalt-ui build
+
+      # After the build: the playground's preset loads `basalt-ui/lint`, which resolves through dist.
+      - name: Lint (oxlint)
+        run: bun run lint
 
       - name: Typecheck
         run: bun run typecheck
