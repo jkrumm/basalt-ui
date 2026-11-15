@@ -155,15 +155,24 @@ describe('checkWeakenedConfig', () => {
       const dir = fixture('healthy')
       mkdirSync(join(dir, 'node_modules/.bin'), { recursive: true })
       symlinkSync(join(BIN, 'oxlint'), join(dir, 'node_modules/.bin/oxlint'))
-      const results = await checkWeakenedConfig({
-        dir,
-        roots: ['src'],
-        offender: OFFENDER,
-        oxlintPin: PIN,
-        installedOxlint: PIN,
-        baseRef: null,
-      })
-      expect(status(results, 1)).toBe('passed')
+      const path = process.env['PATH']
+      process.env['PATH'] = (path ?? '')
+        .split(':')
+        .filter((p) => !p.includes('node_modules/.bin'))
+        .join(':')
+      try {
+        const results = await checkWeakenedConfig({
+          dir,
+          roots: ['src'],
+          offender: OFFENDER,
+          oxlintPin: PIN,
+          installedOxlint: PIN,
+          baseRef: null,
+        })
+        expect(status(results, 1)).toBe('passed')
+      } finally {
+        process.env['PATH'] = path
+      }
     })
 
     it('uses no Bun global', async () => {
