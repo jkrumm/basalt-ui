@@ -3,6 +3,16 @@
   "area": "page",
   "rows": [
     {
+      "id": "page-summary-phase",
+      "kind": "renamed-prop",
+      "from": "basalt-ui/page#PageSummary.loading (true)",
+      "to": "phase=\"loading\"",
+      "profiles": ["parts", "app"],
+      "manual": true,
+      "note": "every data part takes `phase`; `loading` stays a boolean on Button only",
+      "verify": "tsc: loading on a PageSummary does not compile"
+    },
+    {
       "id": "page-innernav-menu-entry",
       "kind": "renamed",
       "from": "basalt-ui/page#InnerNavMenuItem",

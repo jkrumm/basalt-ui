@@ -225,7 +225,7 @@ describe('DataPanel phase matrix', () => {
   const panel = (probe: Probe, body: () => ReactElement | null): ReactElement => (
     <DataPanel
       title="Open pull requests"
-      skeleton={{ rows: 6 }}
+      bodySize={{ rows: 6 }}
       body={body}
       {...phaseProps(probe)}
     />
@@ -252,13 +252,13 @@ describe('DataPanel phase matrix', () => {
 
   test('the body gets the declared height and the stale phase', () => {
     const body = mock((_box: { height: number | 'fill'; phase: string }) => <p>rows</p>)
-    render(<DataPanel title="Board" skeleton={{ height: 240 }} phase="stale" body={body} />)
+    render(<DataPanel title="Board" bodySize={{ height: 240 }} phase="stale" body={body} />)
     expect(body.mock.calls[0]?.[0]).toEqual({ height: 240, phase: 'stale' })
   })
 
   test('a height under the phase arms floor is raised to it', () => {
     const { container } = render(
-      <DataPanel title="Board" skeleton={{ rows: 1 }} body={() => null} />,
+      <DataPanel title="Board" bodySize={{ rows: 1 }} body={() => null} />,
     )
     expect(container.querySelector<HTMLElement>('[data-slot="card-phase"]')?.style.height).toBe(
       '96px',
@@ -282,7 +282,7 @@ describe('DataPanel phase matrix', () => {
     const forbidden = render(
       <DataPanel
         title="Open"
-        skeleton={{ rows: 3 }}
+        bodySize={{ rows: 3 }}
         body={() => null}
         phase={{ tag: 'error', kind: 'forbidden' }}
       />,
@@ -292,7 +292,7 @@ describe('DataPanel phase matrix', () => {
     const missing = render(
       <DataPanel
         title="Open"
-        skeleton={{ rows: 3 }}
+        bodySize={{ rows: 3 }}
         body={() => null}
         phase={{ tag: 'error', kind: 'not-found' }}
       />,
@@ -302,7 +302,7 @@ describe('DataPanel phase matrix', () => {
 
   test('the loading skeleton draws the declared rows', () => {
     const { container } = render(
-      <DataPanel title="Open" skeleton={{ rows: 6 }} phase="loading" body={() => null} />,
+      <DataPanel title="Open" bodySize={{ rows: 6 }} phase="loading" body={() => null} />,
     )
     expect(container.querySelectorAll('[data-slot="card-phase"] > div > div')).toHaveLength(6)
   })
@@ -318,7 +318,7 @@ describe('DataPanel phase matrix', () => {
     const { container, getAllByText } = render(
       <DataPanel
         title="Open"
-        skeleton={{ rows: 3 }}
+        bodySize={{ rows: 3 }}
         controls={slot('Range')}
         toolbar={slot('Filter')}
         menu={[
@@ -348,7 +348,7 @@ describe('DataPanel phase matrix', () => {
     const { container } = render(
       <DataPanel
         title="Open pull requests"
-        skeleton={{ rows: 3 }}
+        bodySize={{ rows: 3 }}
         menu={[
           { id: 'open', label: 'Open board', href: '/board' },
           { id: 'export', label: 'Export', onClick: () => undefined },

@@ -10,12 +10,12 @@ type PageSummaryContent = {
   facts?: readonly Fact[]
   /** After the headline: a date or a freshness word. */
   aside?: ReactNode
-  loading?: false
+  phase?: 'ready'
 }
 
 /** While the sentence's data loads: a skeleton of the same shape, no content props needed. */
-type PageSummaryLoading = Partial<Omit<PageSummaryContent, 'loading'>> & {
-  loading: true
+type PageSummaryLoading = Partial<Omit<PageSummaryContent, 'phase'>> & {
+  phase: 'loading'
 }
 
 export type PageSummaryProps = PageSummaryContent | PageSummaryLoading
@@ -40,7 +40,7 @@ const FACT =
  * the `PageBar` title, and a second one would split the outline. The sentence states a fact, "12
  * open, 3 need you", never "Overview of your tickets"; the title already says what the page is.
  *
- * `null`, `false`, `undefined` and `''` facts drop, so conditional facts pass inline. `loading`
+ * `null`, `false`, `undefined` and `''` facts drop, so conditional facts pass inline. `phase="loading"`
  * renders a skeleton of the same shape, with a facts bar when `facts` is passed, so the page does
  * not jump when the numbers arrive.
  *
@@ -55,10 +55,10 @@ const FACT =
  * />
  *
  * @example
- * <PageSummary loading facts={[]} />
+ * <PageSummary phase="loading" facts={[]} />
  */
 export function PageSummary(props: PageSummaryProps): ReactElement {
-  if (props.loading === true) {
+  if (props.phase === 'loading') {
     return (
       <div data-slot="page-summary" aria-busy="true" className="flex min-w-0 flex-col gap-1">
         <Skeleton className="w-3/5 text-lg" />

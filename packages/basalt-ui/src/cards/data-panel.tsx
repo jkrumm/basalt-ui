@@ -20,26 +20,26 @@ const GAP = 8
 
 /**
  * The phase arms (error, empty) are laid out for 96 px, so a panel never draws a body shorter than
- * that, whatever `skeleton` asks for.
+ * that, whatever `bodySize` asks for.
  */
 const MIN_BODY = 96
 
-/** The body box height `skeleton` declares. The loading, error, empty and ready body all hold it. */
-const bodyHeightOf = (skeleton: DataPanelProps['skeleton']): number => {
+/** The body box height `bodySize` declares. The loading, error, empty and ready body all hold it. */
+const bodyHeightOf = (size: DataPanelProps['bodySize']): number => {
   const px =
-    'rows' in skeleton
-      ? Math.max(0, Math.round(skeleton.rows)) * (ROW + GAP) - GAP
-      : Math.round(skeleton.height)
+    'rows' in size
+      ? Math.max(0, Math.round(size.rows)) * (ROW + GAP) - GAP
+      : Math.round(size.height)
   return Math.max(MIN_BODY, px)
 }
 
 const BAR = 'animate-pulse rounded-chip bg-foreground/10 motion-reduce:animate-none'
 
-function PanelSkeleton({ skeleton }: { skeleton: DataPanelProps['skeleton'] }): ReactElement {
-  if ('rows' in skeleton) {
+function PanelSkeleton({ size }: { size: DataPanelProps['bodySize'] }): ReactElement {
+  if ('rows' in size) {
     return (
       <div aria-hidden="true" className="flex h-full flex-col gap-2 overflow-clip">
-        {Array.from({ length: Math.max(0, Math.round(skeleton.rows)) }, (_, i) => (
+        {Array.from({ length: Math.max(0, Math.round(size.rows)) }, (_, i) => (
           <div key={i} className={cn(BAR, 'h-8 shrink-0')} />
         ))}
       </div>
@@ -143,7 +143,7 @@ function PanelHead(
 /**
  * The frame for a body that is not a chart: the same header and phase handling as the other cards,
  * around a table, a list or a board. The body is one box slot at a fixed height, declared by the
- * required `skeleton`, so a loading, empty or error panel is exactly as tall as a ready one and
+ * required `bodySize`, so a loading, empty or error panel is exactly as tall as a ready one and
  * the body is called only in `ready` and `stale`. The box clips with `overflow: clip`, never
  * `hidden`, so a table head that sticks to the page keeps sticking.
  *
@@ -156,13 +156,13 @@ function PanelHead(
  *   subtitle="by age"
  *   phase={query}
  *   empty={rows.length ? null : { cause: 'Nothing open' }}
- *   skeleton={{ rows: 6 }}
+ *   bodySize={{ rows: 6 }}
  *   body={(box) => <PullTable rows={rows} height={box.height} />}
  * />
  */
 export function DataPanel(props: DataPanelProps): ReactElement {
   const { title, controls, toolbar, legend } = props
-  const { phase, empty, skeleton, body } = props
+  const { phase, empty, bodySize, body } = props
   const depth = useContext(FrameDepthContext)
   if (controls !== undefined && controls.count > MAX_INLINE_CONTROLS) {
     warnOnce(
@@ -176,7 +176,7 @@ export function DataPanel(props: DataPanelProps): ReactElement {
       `DataPanel "${title}" sits ${depth} frames deep (over ${MAX_DEPTH}). Lay the frames out side by side instead of nesting them.`,
     )
   }
-  const height = bodyHeightOf(skeleton)
+  const height = bodyHeightOf(bodySize)
   return (
     <div data-slot="data-panel" className="@container min-w-0">
       <Card flush>
@@ -196,7 +196,7 @@ export function DataPanel(props: DataPanelProps): ReactElement {
               phase={phase}
               empty={empty}
               height={height}
-              skeleton={<PanelSkeleton skeleton={skeleton} />}
+              skeleton={<PanelSkeleton size={bodySize} />}
             >
               {body}
             </CardPhase>

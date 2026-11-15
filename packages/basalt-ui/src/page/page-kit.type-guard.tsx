@@ -53,7 +53,7 @@ export const emptyTwoActions: ReactElement = (
 
 export const validSummary: ReactElement = <PageSummary sentence="3 open" facts={['a', null]} />
 
-export const summaryLoadingBare: ReactElement = <PageSummary loading />
+export const summaryLoadingBare: ReactElement = <PageSummary phase="loading" />
 
 export const summaryWithoutSentence: ReactElement = (
   // @ts-expect-error a loaded summary needs its sentence
@@ -74,7 +74,7 @@ export const queryWithSkeleton: ReactElement = (
 )
 
 export const queryWithLoadingNode: ReactElement = (
-  // @ts-expect-error the pending node is `skeleton`; `loading` is a boolean elsewhere
+  // @ts-expect-error the pending node is `skeleton`; `loading` is a boolean on `Button`
   <QueryState phase="loading" loading={<p>…</p>}>
     x
   </QueryState>
@@ -123,3 +123,8 @@ defineOverlays({
   // @ts-expect-error an overlay needs its title: the dialog is named by it
   bad: { render: () => null },
 })
+
+export const summaryStaleLoading: ReactElement = (
+  // @ts-expect-error a summary takes `phase` like every data part; `loading` is a boolean on `Button`
+  <PageSummary loading sentence="3 open" />
+)

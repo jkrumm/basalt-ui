@@ -3,7 +3,7 @@ name: ai-card
 use-when: a card shows a model summary that streams in (a personalised or generated note), held at one height
 ---
 
-`useCompletion` streams into `Markdown` as untrusted text. The panel's `skeleton` height is the body box at every phase: `loading` until the first token, `ready` after, so the card never moves; a longer one scrolls inside it. Serve it with `streamText(...).toUIMessageStreamResponse()`.
+`useCompletion` streams into `Markdown` as untrusted text. The panel's `bodySize` height is the body box at every phase: `loading` until the first token, `ready` after, so the card never moves; a longer one scrolls inside it. Serve it with `streamText(...).toUIMessageStreamResponse()`.
 `data-state` and `aria-busy` mark the live text. Trust stays `untrusted`: a generated summary is model text.
 
 ```tsx
@@ -27,7 +27,7 @@ export function AiCard({ api, prompt }: { api: string; prompt: string }) {
     <DataPanel
       title="Summary"
       phase={phase}
-      skeleton={{ height: 160 }}
+      bodySize={{ height: 160 }}
       body={() => (
         <ScrollArea aria-label="Summary" className="max-h-64">
           <div

@@ -45,13 +45,13 @@ export const validCards: ReactElement = (
 export const validPanel: ReactElement = (
   <DataPanel
     title="Open pull requests"
-    skeleton={{ rows: 6 }}
+    bodySize={{ rows: 6 }}
     body={(box) => <svg height={box.height} />}
   />
 )
 
 export const validPanelHeight: ReactElement = (
-  <DataPanel title="Board" skeleton={{ height: 240 }} body={() => null} />
+  <DataPanel title="Board" bodySize={{ height: 240 }} body={() => null} />
 )
 
 export const cellClassName: ReactElement = (
@@ -91,27 +91,27 @@ export const cellStatusWithoutWord: ReactElement = (
 
 export const panelClassName: ReactElement = (
   // @ts-expect-error a composite takes no styling channel
-  <DataPanel title="Open" skeleton={{ rows: 3 }} body={() => null} className="p-8" />
+  <DataPanel title="Open" bodySize={{ rows: 3 }} body={() => null} className="p-8" />
 )
 
 export const panelColor: ReactElement = (
   // @ts-expect-error a panel takes no colour
-  <DataPanel title="Open" skeleton={{ rows: 3 }} body={() => null} color="red" />
+  <DataPanel title="Open" bodySize={{ rows: 3 }} body={() => null} color="red" />
 )
 
 export const panelTone: ReactElement = (
   // @ts-expect-error a panel takes no hue
-  <DataPanel title="Open" skeleton={{ rows: 3 }} body={() => null} tone="good" />
+  <DataPanel title="Open" bodySize={{ rows: 3 }} body={() => null} tone="good" />
 )
 
-export const panelWithoutSkeleton: ReactElement = (
-  // @ts-expect-error the loading panel draws its final shape, so `skeleton` is required
+export const panelWithoutBodySize: ReactElement = (
+  // @ts-expect-error the loading panel draws its final shape, so `bodySize` is required
   <DataPanel title="Open" body={() => null} />
 )
 
 export const panelNodeBody: ReactElement = (
   // @ts-expect-error the body is a box slot, never a ready-made node
-  <DataPanel title="Open" skeleton={{ rows: 3 }} body={<div />} />
+  <DataPanel title="Open" bodySize={{ rows: 3 }} body={<div />} />
 )
 
 export const groupClassName: ReactElement = (
@@ -138,4 +138,9 @@ declare const notACell: ReactElement<{ title: string }>
 export const groupForeignElement: ReactElement = (
   // @ts-expect-error a group takes cells: an element carrying other props is not one
   <StatGroup variant="strip">{notACell}</StatGroup>
+)
+
+export const panelStaleSkeleton: ReactElement = (
+  // @ts-expect-error the body size is `bodySize`; `skeleton` is the pending node on `QueryState`
+  <DataPanel title="Open" skeleton={{ rows: 3 }} body={() => null} />
 )

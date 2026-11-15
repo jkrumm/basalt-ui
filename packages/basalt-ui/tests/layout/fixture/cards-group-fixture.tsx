@@ -135,7 +135,7 @@ const panelProps = (probe: Probe): DataPanelProps => ({
   title: 'Open pull requests',
   subtitle: 'by age',
   info: 'Pull requests with no merge yet.',
-  skeleton: { rows: 5 },
+  bodySize: { rows: 5 },
   body:
     probe === 'throw'
       ? boom
