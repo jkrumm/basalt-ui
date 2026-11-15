@@ -58,6 +58,7 @@ export type StatCardProps = CardTarget &
     /** `null` renders a muted dash: absent, never zero. */
     value: number | string | null
     unit?: string
+    /** A change against a period; `value` prints as given, so pass `'+12%'`, never the fraction 0.12. */
     delta?: Delta
     /** The verdict home: dot plus word. A card never takes a hue. */
     status?: Status
