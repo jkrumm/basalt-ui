@@ -1,6 +1,6 @@
 # Spike: one argo dashboard route ported against the frozen contract (F2)
 
-F2 is refuted. Porting argo's `strength-tracker` route needed five things the contract does not give an app: four amendments (`ControlHandle.options`, the port types' specifier, a table sheet, a collapsible `Section`) and one wiring gap between `PageBar` and `FilterSet`. Everything else the route uses (`./table`, `./cards`, the router controls, `./data`, `./page`) fit as filed, and no port (new seam) is needed. The shots also show three defects in `src` that are not contract questions (n4, n13, n14); n4 was already recorded in `table-fit.md`.
+F2 was refuted on 2026-11-12 and passes on the 2026-11-15 re-run (see Re-run below). Porting argo's `strength-tracker` route needed five things the contract does not give an app: four amendments (`ControlHandle.options`, the port types' specifier, a table sheet, a collapsible `Section`) and one wiring gap between `PageBar` and `FilterSet`. Everything else the route uses (`./table`, `./cards`, the router controls, `./data`, `./page`) fit as filed, and no port (new seam) is needed. The shots also show three defects in `src` that are not contract questions (n4, n13, n14); n4 was already recorded in `table-fit.md`.
 
 Harness: `bun tools/spikes/f2-route/run.ts` (one JSON object on stdout, exit 0 means the harness ran, not that the hypothesis held). Concept: `docs/v3/ARCHITECTURE.md` section 11 F2, sections 1 and 3, both frozen; amendments are the orchestrator's. This spike records and fixes nothing in the contract.
 
@@ -87,6 +87,25 @@ By the rule: `tsc` exits 0 and `ejects` is 0, but `edgesForbidden` has 5 entries
 - n3: `amend`. Section 3 CSS entries: `./table.css`.
 - n5: `amend`. `SectionProps`: `collapsible`, `summary`.
 - n12: `amend`. `filterSlot` renders the fold in a pill home.
+
+## Re-run (2026-11-15)
+
+Every row has landed, and `bun tools/spikes/f2-route/run.ts` reports `F2: PASS`: `tsc` exits 0, `edgesForbidden` is empty, `deepImports` is 0 and `ejects` is 0.
+
+| Row | Landed as                                                                                                    | Workaround deleted                                                           |
+| --- | ------------------------------------------------------------------------------------------------------------ | ---------------------------------------------------------------------------- |
+| n1  | member-handle overloads of `spec` (`fbd08c27`)                                                               | `src/contract-gaps.ts` (`asControl`)                                         |
+| n2  | the root barrel exports `ControlHandle` as a type                                                            | the `Parameters<typeof spec>` derivation                                     |
+| n3  | `./table.css` is a published CSS entry                                                                       | the relative `table.css` import in `src/app.css` (now `basalt-ui/table.css`) |
+| n4  | fixed in `table.css` (`3a3f7f0b`)                                                                            | the `--table-row-h: auto` patch in `src/app.css`                             |
+| n5  | `Section` takes `summary` and `collapsible` (`src/page/section.tsx`)                                         | the `Collapsible` wrapper around `Section`                                   |
+| n12 | `filterSlot` in `PageBar` or `Section` renders `FilterSet` (`src/controls/filter-slot.tsx`)                  | the hand-built `controls-slot` object                                        |
+| n13 | the controls cell takes its own line below `@regular` (`src/page/page-bar.tsx`)                              | none, the defect entry is removed                                            |
+| n14 | the swap and the fold key on the page container, not on the slot's cell (`src/controls/filter-set-spec.tsx`) | none, the defect entry is removed                                            |
+
+The shots are `shots/r7/`. At 390 `scrollWidth` equals `clientWidth` on both tabs, light and dark (435 against 390 before); at 1800 the pills sit beside the tabs and the `PageAside` heading is whole. The console reports one 404 on the desktop charts tab (no favicon), nothing else. `FilterSet` counts as rendered through `filterSlot` now, so the harness accepts either import for that layer.
+
+The scratch app's two source changes beyond the rows: the harness `vite.config.ts` aliases `basalt-ui/table.css`, and `run.ts` lists it among the published subpaths.
 
 ## Then
 

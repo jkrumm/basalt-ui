@@ -40,6 +40,7 @@ const SUBPATHS = new Set([
   'basalt-ui/prose.css',
   'basalt-ui/fonts.css',
   'basalt-ui/tailwind.css',
+  'basalt-ui/table.css',
   'basalt-ui/theme-script',
 ])
 /** The 36 modules of the primitives paragraph. */
@@ -142,8 +143,11 @@ function report(): void {
     table: own.some((i) => i.specifier === 'basalt-ui/table'),
     sparkline: own.some((i) => i.specifier === 'basalt-ui/charts' && i.names.includes('Sparkline')),
     statGroup: own.some((i) => i.specifier === 'basalt-ui/cards' && i.names.includes('StatGroup')),
+    // `filterSlot` in a pill home renders `FilterSet` (F2 amendment n12), so either import counts.
     filterSet: own.some(
-      (i) => i.specifier === 'basalt-ui/controls' && i.names.includes('FilterSet'),
+      (i) =>
+        i.specifier === 'basalt-ui/controls' &&
+        (i.names.includes('FilterSet') || i.names.includes('filterSlot')),
     ),
     queryClient: own.some(
       (i) => i.specifier === 'basalt-ui/data' && i.names.includes('makeQueryClient'),

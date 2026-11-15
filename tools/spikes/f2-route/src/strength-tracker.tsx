@@ -1,12 +1,10 @@
 import { useQuery } from '@tanstack/react-query'
 import { createRoute } from '@tanstack/react-router'
-import { FilterSet, filterSlot, spec } from 'basalt-ui/controls'
+import { filterSlot, spec } from 'basalt-ui/controls'
 import { EmptyState, Page, PageAside, PageBar, Section, useSizeClass } from 'basalt-ui/page'
 import { Card } from 'basalt-ui/ui/card'
-import { Collapsible, CollapsibleContent, CollapsibleTrigger } from 'basalt-ui/ui/collapsible'
 import type { ReactElement } from 'react'
 import { strength } from './controls'
-import { asControl } from './contract-gaps'
 import { Overview } from './overview'
 import { strengthQueries, workoutsQueries } from './queries'
 import { rootRoute } from './router'
@@ -73,22 +71,10 @@ function StrengthTrackerPage(): ReactElement {
         tabs={filterSlot([
           spec(strength.field.tab, 'View', { options: tabOptions, as: 'segmented' }),
         ])}
-        controls={{
-          // NEED n12: PageBar.controls takes a ControlsSlot and filterSlot() draws one pill per spec
-          // with no fold; FilterSet (the +N fold and the phone's `Filters (n)` sheet, which argo's
-          // route gets inside PageBar) returns an element, not a slot. The type is a plain object, so
-          // the port builds the slot by hand, which the contract calls opaque.
-          kind: 'controls-slot',
-          count: 2,
-          render: () => (
-            <FilterSet
-              specs={[
-                spec(asControl(strength.field.window), 'Range'),
-                spec(asControl(strength.field.exercises), 'Exercises'),
-              ]}
-            />
-          ),
-        }}
+        controls={filterSlot([
+          spec(strength.field.window, 'Range'),
+          spec(strength.field.exercises, 'Exercises'),
+        ])}
       />
       {search.tab === 'train' ? (
         <TrainingTools />
@@ -115,14 +101,14 @@ function ChartsPanel({ params }: { params: StrengthParams }): ReactElement {
     <div className="flex flex-col gap-4">
       <Overview params={params} />
       <SparklineGrid params={params} />
-      <Collapsible defaultOpen={false}>
-        <Section title="Where training and recovery disagree, last 90 d">
-          <CollapsibleTrigger>Show detail</CollapsibleTrigger>
-          <CollapsibleContent>
-            <FilterSet specs={[spec(asControl(strength.field.exercises), 'Lifts')]} />
-          </CollapsibleContent>
-        </Section>
-      </Collapsible>
+      <Section
+        title="Where training and recovery disagree, last 90 d"
+        summary="Lifts that trained up while recovery fell"
+        collapsible={{ defaultOpen: false }}
+        controls={filterSlot([spec(strength.field.exercises, 'Lifts')])}
+      >
+        <p className="text-sm text-muted-foreground">Detail not ported.</p>
+      </Section>
     </div>
   )
 }

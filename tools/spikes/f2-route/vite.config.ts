@@ -44,6 +44,7 @@ export default {
       { find: /^basalt-ui\/charts$/, replacement: here('stubs/charts.tsx') },
       { find: /^basalt-ui\/tailwind\.css$/, replacement: pkg('css/tailwind.css') },
       { find: /^basalt-ui\/tokens\.css$/, replacement: pkg('css/tokens.css') },
+      { find: /^basalt-ui\/table\.css$/, replacement: pkg('table/table.css') },
       { find: /^basalt-ui\/controls$/, replacement: here('stubs/controls.ts') },
       { find: /^basalt-ui\/table$/, replacement: here('stubs/table.ts') },
       { find: /^basalt-ui\/(ui\/[a-z-]+|router|data|page|cards)$/, replacement: pkg('$1') },
