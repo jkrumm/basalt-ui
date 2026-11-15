@@ -3,7 +3,7 @@ import 'basalt-ui/styles.css'
 import './index.css'
 import { QueryClientProvider } from '@tanstack/react-query'
 import { RouterProvider, createRouter } from '@tanstack/react-router'
-import { makeQueryClient } from 'basalt-ui/data'
+import { createQueryClient } from 'basalt-ui/data'
 import { BasaltProvider, routerDefaults } from 'basalt-ui/router'
 import { StrictMode } from 'react'
 import type { ReactNode } from 'react'
@@ -12,7 +12,7 @@ import { legacyPaletteCss } from './demo/legacy-palette'
 import { PAGE_FORMAT } from './demo/page-format'
 import { routeTree } from './routeTree.gen'
 
-const queryClient = makeQueryClient()
+const queryClient = createQueryClient()
 const defaults = routerDefaults({ router: (): object => router })
 
 const router = createRouter({
