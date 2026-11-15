@@ -23,7 +23,7 @@ Pick the least live class that is true for the data; each rung costs more than t
 ```tsx
 // @check
 import { createChannel } from 'basalt-ui'
-import { bindInvalidation, makeQueryClient } from 'basalt-ui/data'
+import { bindInvalidation, createQueryClient } from 'basalt-ui/data'
 import { useEffect } from 'react'
 
 const ROOTS = ['jobs', 'kpis', 'friction'] as const
@@ -37,7 +37,7 @@ const BY_EVENT: Record<string, 'none' | Root | readonly Root[]> = {
   heartbeat: 'none',
 }
 
-export const client = makeQueryClient()
+export const client = createQueryClient()
 const channel = createChannel({ url: '/v1/stream', greeting: 'hello', beats: ['heartbeat'] })
 const live = bindInvalidation(client, channel, {
   roots: ROOTS,
@@ -55,7 +55,7 @@ export function useLive(): void {
 - `aggregates` names the slower tier (2 s) among `roots`; every other root is the list tier (250 ms). Burst frames collapse; a frame never refetches per event.
 - `patch(frame, client)` is the explicit `setQueryData` seam, for a frame that carries the whole new value and nothing private; `map` returns `'none'` to skip the invalidation.
 - Never open a stream yourself: no `new EventSource`, no `new WebSocket`, no `getReader()` loop. A file that implements a `Transport` is the one place a socket may be constructed; the WebSocket recipe is `docs/recipes/websocket-transport.md`. [lint:data-primitive]
-- Never build the client with `new QueryClient()`: `makeQueryClient()` installs the connection runtime the classes read. [lint:data-primitive]
+- Never build the client with `new QueryClient()`: `createQueryClient()` installs the connection runtime the classes read. [lint:data-primitive]
 - A channel reports its state as `ChannelStatus`; branch on that union, never on a string you invented. [type:ChannelStatus]
 
 ## Indicator and age on every live surface

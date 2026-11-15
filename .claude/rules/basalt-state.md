@@ -19,7 +19,7 @@ State a control reads or writes is a field handle; the URL wins over device stor
 ## Queries and freshness
 
 - Declare freshness with `liveQuery(queryOptions, class)`; never `refetchInterval` or a timer that invalidates. [lint:data-primitive]
-- Build the one client with `makeQueryClient()`; use `queryClient.query()`, never `ensureQueryData`, `prefetchQuery` or `fetchQuery`. [lint:data-primitive]
+- Build the one client with `createQueryClient()`; use `queryClient.query()`, never `ensureQueryData`, `prefetchQuery` or `fetchQuery`. [lint:data-primitive]
 - Open a stream with `createChannel` through the Transport seam; never an `EventSource`, a `WebSocket` or a reader loop of your own. [lint:data-primitive]
 - Pass a chart the query state and the real data; a fallback array paints an empty chart as loaded. [lint:data-primitive]
 - Connection and freshness reach the UI as `ConnectionView` and `FreshnessView`, fed by `useConnection` and `useFreshness`. [type:ConnectionView] [type:FreshnessView]
