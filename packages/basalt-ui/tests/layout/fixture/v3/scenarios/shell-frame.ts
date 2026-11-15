@@ -13,6 +13,8 @@ export type ShellFrameSpec = FixtureSpec & {
   shellFrame?: {
     /** Table rows in the page body (default 12). */
     rows?: number
+    /** Replaces the plain table with a `DataTable` whose rows carry a `detail`, no host passed. */
+    detailTable?: boolean
     /** Mounts a `PageAside` (default false). */
     aside?: boolean | { dock?: 'always' | 'auto'; width?: number }
     /** Mounts a `PageBar` with a title, a control and an action (default true). */
