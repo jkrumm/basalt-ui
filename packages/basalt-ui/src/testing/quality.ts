@@ -83,13 +83,17 @@ async function setScheme(page: PageLike, scheme: Scheme): Promise<void> {
 async function animationsSettled(page: PageLike): Promise<void> {
   await page.emulateMedia({ reducedMotion: 'reduce' })
   try {
-    await page.waitForFunction((() => document.getAnimations().length === 0) as never, undefined, {
-      timeout: 5000,
-    })
+    // A scroll-driven animation (the reading-progress bar) is position, not motion: it never settles.
+    await page.waitForFunction(
+      (() => document.getAnimations().every((a) => a.timeline !== document.timeline)) as never,
+      undefined,
+      { timeout: 5000 },
+    )
   } catch {
     const running = await run(page, () =>
       document
         .getAnimations()
+        .filter((a) => a.timeline === document.timeline)
         .map((a) => a.constructor.name + ':' + String((a as CSSAnimation).animationName ?? '')),
     )
     throw new Error(

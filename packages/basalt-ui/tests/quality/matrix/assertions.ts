@@ -148,16 +148,23 @@ export async function reducedMotion(page: Page): Promise<void> {
   await page.evaluate(() => (document.activeElement as HTMLElement | null)?.blur())
   const running = async (): Promise<string[]> =>
     page.evaluate(async () => {
+      // A scroll-driven animation (the reading-progress bar) is position, not motion: skip it.
       await new Promise<void>((done) =>
         requestAnimationFrame(() => requestAnimationFrame(() => done())),
       )
       // Finite animations get their time; only one that never ends is a failure.
       await Promise.race([
-        Promise.all(document.getAnimations().map((a) => a.finished.catch(() => undefined))),
+        Promise.all(
+          document
+            .getAnimations()
+            .filter((a) => a.timeline === document.timeline)
+            .map((a) => a.finished.catch(() => undefined)),
+        ),
         new Promise((done) => setTimeout(done, 400)),
       ])
       return document
         .getAnimations()
+        .filter((a) => a.timeline === document.timeline)
         .map(
           (a) =>
             `${a.constructor.name} ${(a as CSSAnimation).animationName ?? (a as CSSTransition).transitionProperty ?? ''}`,
