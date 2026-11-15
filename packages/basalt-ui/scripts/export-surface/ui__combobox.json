@@ -1,0 +1,23 @@
+[
+  "Autocomplete",
+  "AutocompleteContent",
+  "AutocompleteInput",
+  "AutocompleteItem",
+  "Combobox",
+  "ComboboxChip",
+  "ComboboxChips",
+  "ComboboxContent",
+  "ComboboxInput",
+  "ComboboxItem",
+  "autocompleteContentVariants",
+  "autocompleteInputVariants",
+  "autocompleteItemVariants",
+  "autocompleteVariants",
+  "comboboxChipVariants",
+  "comboboxChipsVariants",
+  "comboboxContentVariants",
+  "comboboxInputVariants",
+  "comboboxItemVariants",
+  "comboboxParts",
+  "comboboxVariants"
+]

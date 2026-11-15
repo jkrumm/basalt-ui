@@ -2,6 +2,7 @@ import { afterAll, describe, expect, test } from 'bun:test'
 import { existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
+import { moduleFiles } from './gen-ui'
 import {
   diffShards,
   readShards,
@@ -38,7 +39,9 @@ function fixture(): { pkg: string; shards: string } {
       exports: {
         '.': { import: './dist/index.js' },
         './charts': { import: './dist/charts.js' },
-        './ui/button': { import: './dist/ui-button.js' },
+        './ui/*': { import: './dist/ui/*.js' },
+        './shell': { import: './dist/shell.js' },
+        './core/*': { import: './dist/core/*.js' },
         './tokens.css': './dist/tokens.css',
       },
     }),
@@ -48,7 +51,11 @@ function fixture(): { pkg: string; shards: string } {
     'export const b = 1\nexport const a = 2\nexport default 0\n',
   )
   writeFileSync(join(pkg, 'dist/charts.js'), 'export const Chart = 1\n')
-  writeFileSync(join(pkg, 'dist/ui-button.js'), 'export const Button = 1\n')
+  mkdirSync(join(pkg, 'dist/ui'), { recursive: true })
+  writeFileSync(join(pkg, 'dist/ui/slots.js'), 'export const SLOTS = { switch: [], button: [] }\n')
+  writeFileSync(join(pkg, 'dist/ui/button.js'), 'export const Button = 1\n')
+  writeFileSync(join(pkg, 'dist/ui/switch.js'), 'export const Switch = 1\nexport const a = 2\n')
+  writeFileSync(join(pkg, 'dist/shell.js'), 'export const AppShell = 1\n')
   const shards = join(pkg, 'shards')
   expect(run(pkg, shards, '--update').code).toBe(0)
   return { pkg, shards }
@@ -99,11 +106,29 @@ describe('export-surface.mjs on a temp package', () => {
     expect(readShards(shards)).toEqual({
       '.': ['a', 'b'],
       './charts': ['Chart'],
+      './shell': ['AppShell'],
       './ui/button': ['Button'],
+      './ui/switch': ['Switch', 'a'],
     })
     expect(readFileSync(join(shards, 'index.json'), 'utf8')).toBe(serializeShard(['a', 'b']))
     expect(run(pkg, shards).code).toBe(0)
     console.log(`export-surface shard count: ${Object.keys(readShards(shards)).length}`)
+  })
+
+  test('`./ui/*` is one shard per SLOTS module and `./shell` has its own', () => {
+    const { pkg, shards } = fixture()
+    writeFileSync(join(pkg, 'dist/shell.js'), 'export const AppShell = 1\nexport const Added = 2\n')
+    const failed = run(pkg, shards)
+    expect(failed.code).toBe(1)
+    expect(failed.out).toContain('export-surface/shell.json: unsnapshotted exports: Added')
+
+    writeFileSync(
+      join(pkg, 'dist/ui/button.js'),
+      'export const Button = 1\nexport const Extra = 2\n',
+    )
+    expect(run(pkg, shards).out).toContain(
+      'export-surface/ui__button.json: unsnapshotted exports: Extra',
+    )
   })
 
   test('an edited name fails naming the shard; --update restores only that shard', () => {
@@ -149,6 +174,25 @@ describe('export-surface.mjs on a temp package', () => {
 })
 
 describe('the committed shards', () => {
+  test('`./shell` lists the v3 shell barrel', () => {
+    expect(readShards(SHARDS)['./shell']).toEqual([
+      'AppShell',
+      'CommandPalette',
+      'defineCommands',
+      'toMenuTemplate',
+      'useWindowChrome',
+    ])
+  })
+
+  test('every `src/ui` module has its shard and no shard is left over', () => {
+    const modules = moduleFiles(join(SCRIPTS, '..')).map((f) => f.replace(/\.tsx$/, ''))
+    const shards = Object.keys(readShards(SHARDS))
+      .filter((subpath) => subpath.startsWith('./ui/'))
+      .map((subpath) => subpath.slice('./ui/'.length))
+      .toSorted()
+    expect(shards).toEqual(modules)
+  })
+
   test('are sorted arrays, one per subpath', () => {
     const surface = readShards(SHARDS)
     expect(Object.keys(surface).length).toBeGreaterThan(0)

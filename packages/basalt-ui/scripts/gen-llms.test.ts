@@ -32,6 +32,8 @@ function signatureNames(subpath: string): string[] {
 describe('gen-llms signatures', () => {
   test('every published value export of every JS subpath has exactly one signature line', () => {
     for (const [subpath, names] of Object.entries(surface)) {
+      // llms.txt documents `ui/*` as one wildcard section; gen-ui's docs carry each module.
+      if (subpath.startsWith('./ui/')) continue
       expect(signatureNames(subpath).toSorted(), subpath).toEqual(names.toSorted())
     }
   })

@@ -98,6 +98,20 @@ export function readSurface(): Surface {
   return shards.readShards(join(PKG_ROOT, 'scripts/export-surface'))
 }
 
+/**
+ * The surface the cross-subpath gates count: every shard except `./shell` and `./ui/<name>`. Those
+ * shards exist so a symbol added or dropped is a snapshot diff; their size and consumers are held
+ * by their own rows (`shell` exact over `src/shell/index.ts`, `ui value exports` over SLOTS), so
+ * counting them here too would double the non-chart total and ask a consumer of every primitive part.
+ */
+export function readGatedSurface(): Surface {
+  return Object.fromEntries(
+    Object.entries(readSurface()).filter(
+      ([subpath]) => subpath !== './shell' && !subpath.startsWith('./ui/'),
+    ),
+  )
+}
+
 export function readManifest(): Manifest {
   return JSON.parse(readFileSync(join(PKG_ROOT, 'package.json'), 'utf8')) as Manifest
 }
