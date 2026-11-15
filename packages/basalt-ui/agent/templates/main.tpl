@@ -21,9 +21,7 @@ import { RoutePending } from './components/route-pending'
 import { routeTree } from './routeTree.gen'
 
 const queryClient = makeQueryClient()
-// `link` opens a `navTarget` for any prop typed `string | NavTarget` (a `LinkComponent`): pass it where one is taken.
 const defaults = routerDefaults({ router: (): object => router })
-export const link = defaults.link
 
 export const router = createRouter({
   routeTree,
@@ -43,8 +41,9 @@ declare module '@tanstack/react-router' {
   }
 }
 
+// `link` makes every link prop (`StatCard href`, `CardAction`, `col.entity`) navigate through the router: no document load.
 createRoot(document.getElementById('root')!).render(
-  <BasaltProvider>
+  <BasaltProvider link={defaults.link}>
     <RouterProvider router={router} />
   </BasaltProvider>,
 )
