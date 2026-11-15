@@ -5,9 +5,9 @@ deploy:
 ship:
   - paths: ['**']
     via: pr
-# Not a throttle: the host's memory and load, the `browser` lane and the `after` edges decide how many leads run.
-# 8 is the most the factory's project schema takes today.
-leads: 8
+# Not a throttle: the factory's memory fit, load rule and test slots, the `browser` lane and the `after` edges
+# decide how many leads really run.
+leads: 16
 # A lead runs `make check-fast` (the whole of `make check` but the layout suite, which runs only the files the
 # branch's changes reach: scripts/layout-select.ts). CI runs the full gate on the pull request head, the layout suite
 # sharded four ways, and `make merge-guard` demands that run green.
