@@ -6,7 +6,7 @@ import { existsSync, readFileSync } from 'node:fs'
 import { join } from 'node:path'
 
 import { consumerViolations, duplicateSymbols, peerClassViolations } from '../../surface-gates'
-import { PKG_ROOT, Unmeasured, gate, readManifest, readSurface } from '../lib'
+import { PKG_ROOT, Unmeasured, gate, readGatedSurface, readManifest } from '../lib'
 import type { Raises, RowDef } from '../lib'
 
 export const rows: readonly RowDef[] = [
@@ -15,7 +15,7 @@ export const rows: readonly RowDef[] = [
     order: 60,
     label: 'symbols under more than one subpath (one import path per symbol)',
     ceiling: 3, // v3 state-1 wiring: `createChannel` (root, ./data) until the teardown drops the root one; v3 page-kit: `defineOverlays` (./commands, ./page) until the 2.x commands subpath retires; v3 ctl-2: `field` (./router, ./state) until the 2.x state subpath retires
-    measure: () => gate(duplicateSymbols(readSurface())),
+    measure: () => gate(duplicateSymbols(readGatedSurface())),
   },
   {
     id: 'consumer-less-symbols',
@@ -26,7 +26,7 @@ export const rows: readonly RowDef[] = [
       const consumers = JSON.parse(
         readFileSync(join(PKG_ROOT, 'scripts/consumers.json'), 'utf8'),
       ) as Record<string, string>
-      return gate(consumerViolations(readSurface(), consumers))
+      return gate(consumerViolations(readGatedSurface(), consumers))
     },
   },
   {

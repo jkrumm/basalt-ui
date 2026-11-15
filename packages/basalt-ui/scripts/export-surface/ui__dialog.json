@@ -1,0 +1,14 @@
+[
+  "AlertDialog",
+  "AlertDialogContent",
+  "AlertDialogTrigger",
+  "Dialog",
+  "DialogClose",
+  "DialogContent",
+  "DialogDescription",
+  "DialogTitle",
+  "DialogTrigger",
+  "alertDialogContentVariants",
+  "dialogContentVariants",
+  "dialogParts"
+]

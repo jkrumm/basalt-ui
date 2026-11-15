@@ -34,20 +34,42 @@ const shardsDir =
     : resolve(OWN_PKG_ROOT, 'scripts/export-surface')
 
 const exportsMap = JSON.parse(readFileSync(resolve(baseDir, 'package.json'), 'utf8')).exports
+const UI_WILDCARD = './ui/*'
+
 /**
- * Every published JS subpath — non-JS assets (`.css`, `./configs/*`) and wildcard entries have no
- * named exports to snapshot. `./shell` is the v3 shell barrel: it gets a shard when its symbols are
- * counted by the surface budgets (one import path per symbol, a named consumer each), which its own
- * row settles.
+ * The `ui/<name>` primitive modules: the keys of `SLOTS` in the built `ui/slots.js`, which gen-ui
+ * writes from `src/ui/*.tsx` (tests and guards left out). Read from dist, so it holds for the
+ * scratch consumer pack-test points `--base` at.
  */
-const subpaths = Object.keys(exportsMap).filter(
-  (k) => !k.startsWith('./configs') && !k.endsWith('.css') && !k.includes('*') && k !== './shell',
-)
+async function uiModules() {
+  const slots = resolve(baseDir, exportsMap[UI_WILDCARD].import.replace('*', 'slots'))
+  const { SLOTS } = await import(pathToFileURL(slots).href)
+  return Object.keys(SLOTS).toSorted()
+}
+
+/**
+ * Every published JS subpath — non-JS assets (`.css`, `./configs/*`) and the `./core/*` eject paths
+ * have no snapshot of their own. `./ui/*` expands to one subpath per primitive module, so a symbol
+ * added to or dropped from one is a shard diff.
+ */
+const subpaths = (
+  await Promise.all(
+    Object.keys(exportsMap)
+      .filter((k) => !k.startsWith('./configs') && !k.endsWith('.css'))
+      .flatMap(async (k) => {
+        if (k === UI_WILDCARD) return (await uiModules()).map((name) => `./ui/${name}`)
+        return k.includes('*') ? [] : [k]
+      }),
+  )
+).flat()
 
 const actual = {}
 for (const subpath of subpaths) {
-  const entry = exportsMap[subpath]
-  const rel = typeof entry === 'string' ? entry : entry.import
+  const entry = exportsMap[subpath] ?? exportsMap[UI_WILDCARD]
+  const rel = (typeof entry === 'string' ? entry : entry.import).replace(
+    '*',
+    subpath.slice('./ui/'.length),
+  )
   const mod = await import(pathToFileURL(resolve(baseDir, rel)).href)
   actual[subpath] = Object.keys(mod)
     .filter((k) => k !== 'default')
