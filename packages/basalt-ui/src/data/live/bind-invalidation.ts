@@ -112,7 +112,7 @@ function toTest<R extends string>(affects: Affects<R>): KeyTest {
  * @example
  * ```tsx
  * // main.tsx, on the `routerDefaults` path: the module-level client of the scaffold
- * const queryClient = makeQueryClient()
+ * const queryClient = createQueryClient()
  * const live = bindInvalidation(queryClient, channel, {
  *   roots: ['needs', 'flow', 'issue', 'kpis', 'friction'],
  *   aggregates: ['kpis', 'friction'],
