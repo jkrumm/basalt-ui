@@ -116,7 +116,7 @@ function walk(dir: string, out: string[] = []): string[] {
 function importsFor(text: string, file: string, body: string[]): string[] {
   if (body.some((l) => /^import\s/.test(l))) return []
   const used = (name: string): boolean =>
-    new RegExp(`(?<![\\w$.])${name}(?![\\w$])`).test(body.join('\n'))
+    new RegExp(`(?<![\\w$.])${name.replaceAll('$', '\\$')}(?![\\w$])`).test(body.join('\n'))
   const source = ts.createSourceFile(file, text, ts.ScriptTarget.Latest, true)
   return source.statements.filter(ts.isImportDeclaration).flatMap((decl) => {
     const spec = (decl.moduleSpecifier as ts.StringLiteral).text
