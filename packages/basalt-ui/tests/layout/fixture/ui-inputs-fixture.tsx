@@ -5,7 +5,7 @@
  * `window.basaltMountFixture`, since the page renders itself on load.
  *
  * Probes, each carrying a `data-testid`:
- * - `ui-note`: a textarea, three rows;
+ * - `ui-note`: a textarea, three rows; `ui-note-one`: one row;
  * - `ui-qty`: a number field, 1234.5 in `de-DE`; `ui-qty-sm`: the same at size `sm`;
  * - `ui-tag-*`: a three-option checkbox group, `team` checked; `ui-agree`: a lone checkbox, off;
  *   `ui-mixed`: an indeterminate one; `ui-lock`: a disabled one.
@@ -25,6 +25,7 @@ function Fixture() {
       <h1 className="text-lg font-medium">Inputs</h1>
       <section aria-label="Text" className="flex flex-col gap-6">
         <Textarea aria-label="Note" data-testid="ui-note" placeholder="Note" />
+        <Textarea aria-label="Title" data-testid="ui-note-one" rows={1} />
         <NumberField
           aria-label="Quantity"
           locale="de-DE"

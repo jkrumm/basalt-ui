@@ -20,5 +20,5 @@ export const requires = (
 ): Pick<TextareaProps, 'value' | 'defaultValue' | 'rows' | 'disabled' | 'name'> => c
 
 // basalt:guard closed
-// @ts-expect-error height is the fixed `rows`; there is no autosize prop
+// @ts-expect-error `rows` is the floor and the ceiling is a class; there is no autosize prop
 export const autosizing: TextareaProps = { autosize: true }
