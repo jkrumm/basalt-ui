@@ -29,6 +29,7 @@ A recipe is the shipped answer to a pattern basalt composes but does not export:
 - [seam-track](docs/recipes/seam-track.md): marks on a time or value track you draw yourself (a waterfall of spans, a lane), with an axis, row labels and focus
 - [storage-adapter](docs/recipes/storage-adapter.md): device preferences (rail, folds) must follow the person, so `persisted` reads and writes a server
 - [timeline](docs/recipes/timeline.md): dated bars on a shared time axis, read-only, in a card frame
+- [two-pane](docs/recipes/two-pane.md): two aligned chart panes (a price over a momentum line) that share one crosshair
 - [websocket-transport](docs/recipes/websocket-transport.md): the server pushes over a WebSocket, not SSE, and a channel must still reconnect, resume and stop on a refused token
 - [view-switch](docs/recipes/view-switch.md): one dataset shows as a table or as cards and the visitor can link to either
 - [saved-views](docs/recipes/saved-views.md): a table's search, filters, sort and visible columns are worth naming and coming back to
