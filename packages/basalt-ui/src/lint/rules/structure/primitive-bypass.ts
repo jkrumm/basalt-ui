@@ -591,7 +591,10 @@ const isFixedRows = (receiver: Node | undefined, bound: ReadonlySet<string>): bo
     if (callee?.type !== 'MemberExpression') return false
     node = child(callee, 'object')
   }
-  if (node?.type === 'ArrayExpression') return true
+  // An array literal is fixed content; a spread copy (`[...rows]`) is the data it copies.
+  if (node?.type === 'ArrayExpression') {
+    return !children(node, 'elements').some((element) => element.type === 'SpreadElement')
+  }
   const name = nameOf(node)
   return name !== undefined && (FIXED_ROWS.test(name) || bound.has(name))
 }
