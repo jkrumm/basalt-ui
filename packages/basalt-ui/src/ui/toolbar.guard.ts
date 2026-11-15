@@ -12,7 +12,7 @@ type Called = {
   shape?: 'default' | 'icon'
 }
 
-export const requires = (c: Called): Pick<ToolbarButtonProps, 'variant' | 'size'> => c
+export const requires = (c: Called): Pick<ToolbarButtonProps, 'variant' | 'size' | 'shape'> => c
 
 // basalt:guard closed
 // @ts-expect-error a variant outside the union is a type error
