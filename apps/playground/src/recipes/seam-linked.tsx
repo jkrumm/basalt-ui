@@ -1,11 +1,12 @@
 // A recipe file the playground typecheck compiles; gen-recipes copies the region into the doc.
 // #region recipe:seam-linked
-import { dot } from '@tanstack/charts/dot'
 import { CartesianChart, useChartFocus } from 'basalt-ui/charts'
 import { VX } from 'basalt-ui/tokens'
 import { ScrollArea } from 'basalt-ui/ui/scroll-area'
 
 export type Sample = { day: number; version: string; value: number }
+
+const color = { light: VX.accent, dark: VX.accent }
 
 export function SeamLinked({ samples }: { samples: readonly Sample[] }) {
   const focus = useChartFocus(samples, {
@@ -18,12 +19,11 @@ export function SeamLinked({ samples }: { samples: readonly Sample[] }) {
       <div className="text-sm">
         {focus.readout('Daily samples', (s) => `${s.version}, day ${s.day}: ${s.value}`)}
       </div>
-      <CartesianChart<Sample, number>
+      <CartesianChart<Sample>
         data={samples}
         ariaLabel="Daily samples, one value per day"
-        x={(s) => s.day}
-        series={[{ key: 'value', label: 'Value', color: VX.accent, getValue: (s) => s.value }]}
-        marks={(plot) => [dot(plot.rows('value'), { x: 'x', y: 'y', r: VX.dotR, fill: VX.accent })]}
+        x={{ value: (s) => s.day }}
+        series={[{ mark: 'dot', key: 'value', label: 'Value', color, y: (s) => s.value }]}
         focus={focus}
       />
       <ScrollArea aria-label="Versions" className="max-h-32">

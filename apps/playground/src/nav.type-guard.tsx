@@ -28,7 +28,7 @@ export const NAV = defineNav({
         label: 'Gallery',
         short: 'Gal',
         mobile: 'tab',
-        link: linkOptions({ to: '/gallery' }),
+        link: linkOptions({ to: '/table' }),
         children: [
           {
             id: 'cards',
@@ -55,7 +55,7 @@ export const NAV = defineNav({
 // A widened `string` here would mean the whole contract is inferring through the CONSTRAINT rather
 // than the argument, which is the failure mode every row below is downstream of.
 
-export const galTo: '/gallery' = NAV.groups[0].items[1].link.to
+export const galTo: '/table' = NAV.groups[0].items[1].link.to
 export const cardsTo: '/cards' = NAV.groups[0].items[1].children[0].link.to
 export const groupId: 'lab' = NAV.groups[1].id
 
@@ -109,7 +109,7 @@ export const unknownChildKey = defineNav({
       {
         id: 'x',
         label: 'X',
-        link: linkOptions({ to: '/gallery' }),
+        link: linkOptions({ to: '/table' }),
         children: [
           {
             id: 'y',
@@ -133,7 +133,7 @@ export const badChildPath = defineNav({
       {
         id: 'x',
         label: 'X',
-        link: linkOptions({ to: '/gallery' }),
+        link: linkOptions({ to: '/table' }),
         children: [
           // @ts-expect-error '/nope' is not a registered route path, at any depth
           { id: 'y', label: 'Y', link: linkOptions({ to: '/nope' }) },
@@ -167,7 +167,7 @@ export const unknownGroupKey = defineNav({
 
 // ── 8. the search thunk ──────────────────────────────────────────────────────────────────────────
 // A function form is accepted where a search object is (`ParamsReducerFn`), and re-evaluates at
-// click time rather than at module scope. `/gallery` validates the `shot-state` search param.
+// click time rather than at module scope. `/table` validates the `month` search param.
 
 export const searchThunk = defineNav({
   groups: [
@@ -175,18 +175,18 @@ export const searchThunk = defineNav({
       {
         id: 'gallery',
         label: 'Gallery',
-        link: linkOptions({ to: '/gallery', search: () => ({ 'shot-state': 'empty' }) }),
+        link: linkOptions({ to: '/table', search: () => ({ month: 'all' }) }),
       },
     ]),
   ],
 })
 
 // The trap that survives: the same thunk hoisted into a STANDALONE `linkOptions` call has no
-// contextual type, its return widens to `{ 'shot-state': string }`, and it is rejected. Inline it
+// contextual type, its return widens to `{ month: string }`, and it is rejected. Inline it
 // in the nav item, or write `as const`.
-const widenedSearch = () => ({ 'shot-state': 'empty' })
-// @ts-expect-error a standalone thunk's `shot-state` widens to `string` and misses the union
-export const hoistedThunk = linkOptions({ to: '/gallery', search: widenedSearch })
+const widenedSearch = () => ({ month: 'all' })
+// @ts-expect-error a standalone thunk's `month` widens to `string` and misses the union
+export const hoistedThunk = linkOptions({ to: '/table', search: widenedSearch })
 
 // ── 9. a bar tab naming an id that does not exist ────────────────────────────────────────────────
 // `tabs` validates against the item-id union UNIONED with the group-id union, which is why
@@ -215,7 +215,7 @@ export const noTabs = defineNav({
 // The annotation is the assertion: it would fail if `NavIndex` collapsed to the whole union, which
 // is exactly what the `Extract<…, { id: K }>['link']` form (deliberately not used) does.
 
-export const galTarget: { readonly to: '/gallery' } = navTarget(NAV, 'gal')
+export const galTarget: { readonly to: '/table' } = navTarget(NAV, 'gal')
 
 // A nested child is addressable by id too — `AllItemsOf` walks `children` to ARBITRARY depth, so
 // the id union matches what `findById` / `flattenNav` already resolve at runtime. A one-level walk

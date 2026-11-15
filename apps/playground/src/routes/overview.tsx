@@ -5,7 +5,7 @@ import { LegacyChartCard as ChartCard, Lines } from 'basalt-ui/charts'
 import { FilterSet, ViewTabs, filterSlot, spec } from 'basalt-ui/controls'
 import { defineControls, field } from 'basalt-ui/router'
 import type { ComponentProps, ReactElement } from 'react'
-import { demoColors } from '../demo/series'
+import { VX } from 'basalt-ui/tokens'
 import { useV3Tokens } from '../demo/v3-tokens'
 
 const globals = defineControls({
@@ -36,6 +36,8 @@ const overview = defineControls({
     errors: { range: globals.field.range },
   },
 })
+
+const ACCENT = { light: VX.accent, dark: VX.accent }
 
 const NOW = Date.UTC(2026, 10, 12, 12, 0)
 
@@ -94,26 +96,21 @@ const errors = (
 // #region chart-card
 const trend = (
   <ChartCard
-    data-testid="ov-chart"
     title="Requests"
     subtitle="per day"
-    value="12,840"
     info="Requests served per day."
-  >
-    <Lines<Day, Date>
-      ariaLabel="Requests per day, 30 days"
-      data={DAYS}
-      x={(d) => d.day}
-      series={[
-        {
-          key: 'requests',
-          label: 'Requests',
-          color: demoColors.sessions,
-          getValue: (d) => d.requests,
-        },
-      ]}
-    />
-  </ChartCard>
+    figure={{ value: '12,840' }}
+    chart={() => (
+      <Lines
+        ariaLabel="Requests per day, 30 days"
+        data={DAYS}
+        x={{ value: (d) => d.day }}
+        series={[
+          { mark: 'line', key: 'requests', label: 'Requests', color: ACCENT, y: (d) => d.requests },
+        ]}
+      />
+    )}
+  />
 )
 // #endregion
 

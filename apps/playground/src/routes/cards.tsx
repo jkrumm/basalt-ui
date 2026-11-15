@@ -1,5 +1,5 @@
 import { createFileRoute } from '@tanstack/react-router'
-import { Section } from 'basalt-ui'
+import { Section } from 'basalt-ui/page'
 import { StatCard } from 'basalt-ui/cards'
 import type { ReactElement } from 'react'
 import { useV3Tokens } from '../demo/v3-tokens'

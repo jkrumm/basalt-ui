@@ -34,23 +34,9 @@ describe('findScenario', () => {
     for (const name of SCENARIO_NAMES) expect(findScenario(name)).toBeDefined()
   })
 
-  it('registers S1–S4 and the agent stream', () => {
-    expect(SCENARIO_NAMES).toContain('s1-ops')
-    expect(SCENARIO_NAMES).toContain('s2-training')
-    expect(SCENARIO_NAMES).toContain('s3-agents')
-    expect(SCENARIO_NAMES).toContain('s4-spend')
+  it('registers mdx and the agent stream', () => {
+    expect(SCENARIO_NAMES).toContain('mdx')
     expect(SCENARIO_NAMES).toContain('agent-stream')
-  })
-
-  it.each([
-    'calibrate-good',
-    'calibrate-delta-fill',
-    'calibrate-empty-half',
-    'calibrate-repeated-axis',
-    'calibrate-accent-tab',
-    'calibrate-banned-subtitle',
-  ])('registers the calibration seed %s for the blind recording', (name) => {
-    expect(SCENARIO_NAMES).toContain(name)
   })
 
   it.each(['constructor', 'toString', '__proto__', 'hasOwnProperty', 'nope'])(

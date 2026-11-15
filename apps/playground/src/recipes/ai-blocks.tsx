@@ -10,7 +10,9 @@ import * as s from './ai-blocks-schemas'
 
 const c = col<s.Row>()
 const columns = [c.entity('name'), c.text('status'), c.number('value')]
-const bars = [{ key: 'v', label: 'Value', color: VX.accent, getValue: (d: s.Point) => d.value }]
+const color = { light: VX.accent, dark: VX.accent }
+const bar = { mark: 'bar', key: 'v', label: 'Value', color, y: (d: s.Point) => d.value } as const
+const x = { value: (d: s.Point) => d.label }
 
 function Rows({ data }: { data: s.Row[] }) {
   const mode = { kind: 'client' } as const
@@ -23,9 +25,10 @@ export const catalog = defineCatalog([
   defineBlock({
     ...s.chart,
     render: (p) => (
-      <ChartCard title={p.title}>
-        <Bars data={p.points} ariaLabel={p.title} x={(d) => d.label} bars={bars} />
-      </ChartCard>
+      <ChartCard
+        title={p.title}
+        chart={() => <Bars data={p.points} ariaLabel={p.title} x={x} series={[bar]} />}
+      />
     ),
   }),
   defineBlock({
