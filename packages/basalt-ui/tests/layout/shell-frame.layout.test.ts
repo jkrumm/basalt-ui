@@ -7,6 +7,7 @@
  * - the docked aside's header meets the page-bar band's bottom edge, and an unclaimed aside is 0 wide;
  * - axe finds no serious or critical landmark, region or heading-one violation;
  * - the skip link is the first tab stop and moves focus into `Main`;
+ * - a table row's `detail` opens in the page's `PageAside` with no host wired, under `detailTitle(row)`;
  * - a 100-row page prints every page, not the 24 rows a clipped scrollport showed.
  *
  * v3 only: the 2.x oracle has no `AppShell`.
@@ -214,6 +215,23 @@ layout('AppShell frame — real layout', () => {
     expect(seam).not.toBeNull()
     expect(seam!.worst).toBeLessThanOrEqual(SEAM_TOLERANCE)
     expect(seam!.settled).toBeLessThanOrEqual(SEAM_TOLERANCE)
+  })
+
+  test("a table row's detail opens in the page aside under its detailTitle, with no host wired", async () => {
+    const wide: Viewport = { name: 'desktop', width: 1800, height: 900 }
+    const p = await openFixture(specOf({ detailTable: true, aside: true }), wide)
+    await p.tap('tbody tr:nth-of-type(2)')
+    await p.waitFor('[data-testid="detail-body"]')
+    expect(await p.raw.getAttribute(ASIDE, 'data-state')).toBe('docked')
+    const aside = await p.raw.evaluate((sel) => {
+      const node = document.querySelector(`${sel} [data-slot="page-aside"]`)
+      return {
+        title: node?.querySelector('h2')?.textContent ?? null,
+        body: node?.querySelector('[data-testid="detail-body"]')?.textContent ?? null,
+      }
+    }, ASIDE)
+    expect(aside).toEqual({ title: 'Run 1 details', body: 'Run 1 facts' })
+    expect(await p.count('[role="dialog"]')).toBe(0)
   })
 
   test('an auto aside below the dock room overlays Main and reserves no column', async () => {

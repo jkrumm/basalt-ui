@@ -275,7 +275,7 @@ export function useDataTable<T>(options: UseDataTable<T>): DataTableInstance<T> 
     else if (activation.kind === 'detail') {
       const { render } = activation
       host.current?.show({
-        title: options.label,
+        title: options.detailTitle?.(row) ?? options.label,
         body: (box) => render(row, box),
       })
     }

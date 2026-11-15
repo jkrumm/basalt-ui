@@ -3,15 +3,22 @@
  * selection (one writer, cleared by `resetOn`), the empty arms and the activation contract.
  */
 import { act, cleanup, fireEvent, render, screen } from '@testing-library/react'
-import { afterEach, describe, expect, mock, test } from 'bun:test'
+import { afterEach, beforeEach, describe, expect, mock, test } from 'bun:test'
 import type { ReactElement } from 'react'
+import { Page } from '../page/page'
+import { PageAside } from '../page/page-aside'
+import { installLayoutDoubles, restoreLayoutDoubles, setWidth } from '../page/page.test-support'
 import { col } from './core/kinds'
 import { useMemoryHandle } from './core/state'
 import { DataTable } from './parts/data-table'
 import { modelOf, useDataTable } from './use-data-table'
 import type { UseDataTable } from './contract'
 
-afterEach(cleanup)
+beforeEach(installLayoutDoubles)
+afterEach(() => {
+  cleanup()
+  restoreLayoutDoubles()
+})
 
 type Row = { id: string; name: string; amount: number | null; state: string }
 
@@ -198,6 +205,54 @@ describe('activation and keyboard', () => {
     render(<WithHost />)
     fireEvent.click(document.querySelector('tbody tr') as HTMLElement)
     expect(show).toHaveBeenCalledTimes(1)
+  })
+
+  test('detail opens in the enclosing Page aside with no host passed, titled by detailTitle', () => {
+    setWidth(1440)
+    function InPage(): ReactElement {
+      const c = col<Row>()
+      const t = useDataTable<Row>({
+        id: 'detail-page-test',
+        label: 'Rows',
+        columns: [c.text('name')],
+        data: ROWS,
+        getRowId: (r) => r.id,
+        mode: { kind: 'client' },
+        detail: (row) => <span data-testid="body">{row.name} body</span>,
+        detailTitle: (row) => `Row ${row.id}`,
+      })
+      return (
+        <Page>
+          <DataTable table={t} />
+          <PageAside title="Inspector">own</PageAside>
+        </Page>
+      )
+    }
+    render(<InPage />)
+    fireEvent.click(document.querySelectorAll('tbody tr')[1] as HTMLElement)
+    const aside = screen.getByLabelText('Row b')
+    expect(aside.getAttribute('data-slot')).toBe('page-aside')
+    expect(aside.textContent).toContain('Project 2 body')
+    expect(screen.queryByRole('dialog')).toBeNull()
+  })
+
+  test('without detailTitle the entry is titled by the table label; outside a Page it is a sheet', () => {
+    function Bare(): ReactElement {
+      const c = col<Row>()
+      const t = useDataTable<Row>({
+        id: 'detail-sheet-test',
+        label: 'Rows',
+        columns: [c.text('name')],
+        data: ROWS,
+        getRowId: (r) => r.id,
+        mode: { kind: 'client' },
+        detail: (row) => <span>{row.name} body</span>,
+      })
+      return <DataTable table={t} />
+    }
+    render(<Bare />)
+    fireEvent.click(document.querySelector('tbody tr') as HTMLElement)
+    expect(screen.getByRole('dialog', { name: 'Rows' }).textContent).toContain('Project 10 body')
   })
 
   test('a table with neither activation nor selection still has a row to activate: the auto sheet', () => {

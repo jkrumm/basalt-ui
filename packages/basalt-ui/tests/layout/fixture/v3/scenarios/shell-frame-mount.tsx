@@ -20,6 +20,9 @@ import { PageAside } from '../../../../../src/page/page-aside'
 import { PageBar } from '../../../../../src/page/page-bar'
 import { Section } from '../../../../../src/page/section'
 import type { ControlsSlot } from '../../../../../src/core/ports'
+import { col } from '../../../../../src/table/core/kinds'
+import { DataTable } from '../../../../../src/table/parts/data-table'
+import { useDataTable } from '../../../../../src/table/use-data-table'
 import { AppShell } from '../../../../../src/shell/app-shell'
 import type { AppShellProps } from '../../../../../src/shell/contract'
 import type { FixtureSpec } from '../../spec'
@@ -76,8 +79,32 @@ const GLOBAL_ACTIONS: NonNullable<AppShellProps['globalActions']> = [
   },
 ]
 
+type Run = { id: string; name: string; seconds: number }
+
+const RUNS: readonly Run[] = Array.from({ length: 6 }, (_, i) => ({
+  id: `run-${i}`,
+  name: `Run ${i}`,
+  seconds: i,
+}))
+
+/** A table whose `detail` and `detailTitle` are all the wiring: no host, no URL field. */
+function DetailTable(): ReactElement {
+  const c = col<Run>()
+  const table = useDataTable<Run>({
+    id: 'shell-frame-runs',
+    label: 'Runs',
+    columns: [c.text('name', { header: 'Name' }), c.number('seconds', { header: 'Seconds' })],
+    data: RUNS,
+    getRowId: (row) => row.id,
+    mode: { kind: 'client' },
+    detail: (row) => <p data-testid="detail-body">{row.name} facts</p>,
+    detailTitle: (row) => `${row.name} details`,
+  })
+  return <DataTable table={table} />
+}
+
 function Body({ options }: { options: NonNullable<ShellFrameSpec['shellFrame']> }): ReactElement {
-  const { rows = 12, aside = false, bar = true } = options
+  const { rows = 12, aside = false, bar = true, detailTable = false } = options
   const asideProps = typeof aside === 'object' ? aside : {}
   return (
     <Page area="runs">
@@ -90,16 +117,20 @@ function Body({ options }: { options: NonNullable<ShellFrameSpec['shellFrame']> 
       )}
       {!bar && <h1 className="sr-only">Runs</h1>}
       <Section title="Latency">
-        <table data-testid="table" className="w-full text-sm">
-          <tbody>
-            {Array.from({ length: rows }, (_, i) => (
-              <tr key={i} data-testid="row" className="border-b border-border">
-                <td className="h-8 px-2">run-{i}</td>
-                <td className="h-8 px-2">{i} s</td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
+        {detailTable ? (
+          <DetailTable />
+        ) : (
+          <table data-testid="table" className="w-full text-sm">
+            <tbody>
+              {Array.from({ length: rows }, (_, i) => (
+                <tr key={i} data-testid="row" className="border-b border-border">
+                  <td className="h-8 px-2">run-{i}</td>
+                  <td className="h-8 px-2">{i} s</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        )}
       </Section>
       {aside !== false && (
         <PageAside title="Run details" {...asideProps}>

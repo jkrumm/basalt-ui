@@ -54,11 +54,14 @@ function scrollportStyle(height: DataTableProps<unknown>['height']): CSSProperti
 /**
  * The data table: head, body and the phase arms of one `useDataTable` instance.
  *
+ * Under a `Page` that mounts a `PageAside`, a row's `detail` opens in the aside with no wiring; pass
+ * `detail` (a `DetailHost`) only to send it somewhere else. Outside a `Page` it opens a sheet.
+ *
  * @useWhen a page lists records that sort, filter, page, select or open in a detail
  * @neverWhen the rows are static with no behaviour (use `ui/table`) or a chart says it better
  *
  * @example
- * <DataTable table={t} detail={asideHost} height="fill" />
+ * <DataTable table={t} height="fill" />
  */
 export function DataTable<T>({
   table,
