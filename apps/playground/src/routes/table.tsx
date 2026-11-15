@@ -218,7 +218,7 @@ function Finances(): ReactElement {
       }),
       book.money('amount', { currency: 'EUR', header: 'Amount', footer: 'sum' }),
       book.date('at', { header: 'Booked', priority: 3 }),
-      book.actions([{ key: 'rule', label: 'Make rule', onClick: () => setDone('Rule created') }]),
+      book.actions([{ id: 'rule', label: 'Make rule', onClick: () => setDone('Rule created') }]),
     ],
     data: page.rows,
     getRowId: (row) => row.id,
