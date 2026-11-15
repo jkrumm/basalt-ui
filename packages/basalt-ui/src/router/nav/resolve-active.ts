@@ -6,7 +6,8 @@
  *   2. otherwise path equality when `exact` is set or `to === '/'` (`'/'` matches ONLY `'/'`);
  *   3. otherwise a segment-boundary prefix match (`/a` matches `/a` and `/a/b`, never `/ab`).
  * `to` is a route TEMPLATE: a `$param` segment matches any one non-empty segment and a trailing `$`
- * splat matches the rest.
+ * splat matches the rest. A `$param` the link pins through `link.params` (a string or number)
+ * matches only that value, so sibling items on one param route do not tie.
  *
  * Winner. Highest specificity (segment count of `to`), then an equality hit over a prefix hit, then
  * the first in definition order (sections, then pinned, depth-first, parent before children). At
@@ -41,7 +42,24 @@ export function flattenNavEntries(nav: AnyNavConfig): FlatNavEntry[] {
 
 const segmentsOf = (path: string): string[] => path.split('/').filter(Boolean)
 
+function decodeSegment(seg: string | undefined): string | undefined {
+  if (seg === undefined) return undefined
+  try {
+    return decodeURIComponent(seg)
+  } catch {
+    return seg
+  }
+}
+
 type Hit = 'equal' | 'prefix' | undefined
+
+/** A `$name` segment the link pins through `link.params` is that value; every other `$` segment stays a wildcard. */
+function pinnedSegment(seg: string, params: unknown): string | undefined {
+  if (seg === '$' || !seg.startsWith('$')) return undefined
+  if (typeof params !== 'object' || params === null) return undefined
+  const value = (params as Record<string, unknown>)[seg.slice(1)]
+  return typeof value === 'string' || typeof value === 'number' ? String(value) : undefined
+}
 
 function matchPath(item: AnyNavItem, pathname: string): Hit {
   const template = segmentsOf(item.link.to)
@@ -49,7 +67,11 @@ function matchPath(item: AnyNavItem, pathname: string): Hit {
   const splat = template.at(-1) === '$'
   const fixed = splat ? template.slice(0, -1) : template
   if (path.length < fixed.length) return undefined
-  const head = fixed.every((seg, i) => seg.startsWith('$') || seg === path[i])
+  const head = fixed.every((seg, i) => {
+    const pinned = pinnedSegment(seg, item.link.params)
+    if (pinned !== undefined) return pinned === decodeSegment(path[i])
+    return seg.startsWith('$') || seg === path[i]
+  })
   if (!head) return undefined
   if (splat || path.length === fixed.length) return 'equal'
   if (item.exact === true || item.link.to === '/') return undefined
