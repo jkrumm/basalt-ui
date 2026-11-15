@@ -206,3 +206,28 @@ layout('expression cycle 2 table and StatGroup fixes', () => {
     })
   }
 })
+
+layout('wiring cycle 1: a phone table keeps the row name', () => {
+  test('390px: the entity cell of a four-column client table is as wide as its text', async () => {
+    const p = await open(PHONE)
+    const probe = await p.raw.evaluate(() => {
+      const cell = [
+        ...document.querySelectorAll<HTMLElement>(
+          '[data-testid="w1-orders"] tbody [data-kind="entity"]',
+        ),
+      ].find((el) => el.textContent?.includes('Wayne Ltd'))
+      if (!cell) throw new Error('LAYOUT: no Wayne Ltd entity cell')
+      const range = document.createRange()
+      range.selectNodeContents(cell)
+      return {
+        cell: cell.getBoundingClientRect().width,
+        text: range.getBoundingClientRect().width,
+        display: getComputedStyle(cell).display,
+      }
+    })
+    // The default `phone` is `cards`: the cell is a card title, not a table column.
+    expect(probe.display).toBe('block')
+    expect(probe.text).toBeGreaterThan(0)
+    expect(probe.cell).toBeGreaterThanOrEqual(probe.text)
+  })
+})

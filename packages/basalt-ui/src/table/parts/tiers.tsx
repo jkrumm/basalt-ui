@@ -27,6 +27,27 @@ export function tierAttributesOf<T>(model: TableModel<T>): TierAttributes {
   }
 }
 
+let sheetWarned = false
+
+/**
+ * A ref for the scroller: in development, names the missing tier sheet. Without
+ * `basalt-ui/table.css` no tier exists, so a phone table stays a table and its flexible name column
+ * takes what the fixed columns leave (14 px in wiring cycle 1). Only a real browser answers `normal`
+ * for a scroller with no container type; a test DOM or a browser without container queries answers
+ * nothing and is skipped. The check runs once per page, after styles have applied.
+ */
+export function warnWithoutTierSheet(scroller: HTMLElement | null): void {
+  if (process.env.NODE_ENV === 'production' || sheetWarned || scroller === null) return
+  requestAnimationFrame(() => {
+    if (sheetWarned || getComputedStyle(scroller).containerType !== 'normal') return
+    sheetWarned = true
+    // oxlint-disable-next-line no-console -- the dev-only warning is the whole point of this function
+    console.warn(
+      "basalt-ui/table: the tier sheet is not loaded, so the table never becomes cards and its name column can shrink to nothing. Add `@import 'basalt-ui/table.css'` beside the app's `basalt-ui/tailwind.css` import.",
+    )
+  })
+}
+
 /** The width of the visible priority 1 and 2 columns pinned to one edge. */
 function pinnedPx<T>(model: TableModel<T>, edge: 'start' | 'end'): number {
   return model.plan.columns.reduce(

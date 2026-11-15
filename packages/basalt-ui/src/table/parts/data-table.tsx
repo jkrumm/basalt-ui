@@ -19,7 +19,7 @@ import { DataTableFooter, hasFooter } from './footer'
 import { VirtualTable } from './virtual'
 import { DataTableHead, visibleColumns } from './head'
 import { TablePager } from './pager'
-import { revealFocus, scrollMinWidth, tierAttributesOf } from './tiers'
+import { revealFocus, scrollMinWidth, tierAttributesOf, warnWithoutTierSheet } from './tiers'
 import { modelOf } from '../use-data-table'
 import type { TableModel } from '../use-data-table'
 
@@ -103,6 +103,7 @@ export function DataTable<T>({
         {/* theme-allow hidden-inline-style — the scrollport height and the scroll tier's min width are per-table values */}
         <div
           data-slot="table-scroller"
+          ref={warnWithoutTierSheet}
           style={{ ...scrollportStyle(height), ...scrollMinWidth(model) }}
           className="flex min-h-0 flex-1 flex-col"
         >
@@ -142,6 +143,7 @@ export function DataTable<T>({
       {/* theme-allow hidden-inline-style — the scrollport height and the scroll tier's min width are per-table values */}
       <div
         data-slot="table-scroller"
+        ref={warnWithoutTierSheet}
         role="region"
         aria-label={model.label}
         // oxlint-disable-next-line jsx-a11y/no-noninteractive-tabindex -- a scrolling region must be keyboard reachable (axe scrollable-region-focusable)
