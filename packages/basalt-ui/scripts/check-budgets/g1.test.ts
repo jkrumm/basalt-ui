@@ -38,7 +38,6 @@ describe('G1 area files', () => {
     const row = rows[0]
     if (row === undefined) throw new Error('router area has no row')
     const measured = await row.measure({
-      providerOnlyDist: '',
       once: (_key, build) => build(),
     })
     const value = typeof measured === 'number' ? measured : measured.value

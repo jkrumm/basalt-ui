@@ -15,8 +15,6 @@ export const REPO_ROOT = join(PKG_ROOT, '..', '..')
 export type Measured = number | { readonly value: number; readonly detail: readonly string[] }
 
 export type Ctx = {
-  /** The built root entry the bundle fixtures resolve `basalt-ui` to. */
-  readonly providerOnlyDist: string
   /** Run `build` once per key; rows that share one expensive result share its promise (and failure). */
   once<T>(key: string, build: () => Promise<T>): Promise<T>
 }

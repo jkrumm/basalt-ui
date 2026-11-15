@@ -76,16 +76,6 @@
       "import": "./dist/controls/index.js",
       "default": "./dist/controls/index.js"
     },
-    "./forms": {
-      "types": "./dist/forms/index.d.ts",
-      "import": "./dist/forms/index.js",
-      "default": "./dist/forms/index.js"
-    },
-    "./state": {
-      "types": "./dist/state.d.ts",
-      "import": "./dist/state.js",
-      "default": "./dist/state.js"
-    },
     "./table": {
       "types": "./dist/table/index.d.ts",
       "import": "./dist/table/index.js",
@@ -95,16 +85,6 @@
       "types": "./dist/format/index.d.ts",
       "import": "./dist/format/index.js",
       "default": "./dist/format/index.js"
-    },
-    "./commands": {
-      "types": "./dist/commands/index.d.ts",
-      "import": "./dist/commands/index.js",
-      "default": "./dist/commands/index.js"
-    },
-    "./agent": {
-      "types": "./dist/agent/index.d.ts",
-      "import": "./dist/agent/index.js",
-      "default": "./dist/agent/index.js"
     },
     "./content": {
       "types": "./dist/content/index.d.ts",

@@ -773,13 +773,10 @@ export function checkLlmsNames(
  * appear in that subpath's prose and still be absent from its exports (a test holds both).
  */
 export const CHECK_I_NON_EXPORTS: ReadonlySet<string> = new Set([
-  'basalt-ui/commands:BasaltProvider', // the root provider that mounts the bus
   'basalt-ui/format:Intl', // the platform API the formatters wrap
   'basalt-ui/charts:marks', // prose: the marks a chart kind fixes
   'basalt-ui/controls:ctl', // the size tier
-  'basalt-ui/forms:key', // the React `key` prop
   'basalt-ui/format:locale', // an option of the formatters
-  'basalt-ui/agent:ai', // the Vercel `ai` package
   'basalt-ui/content:streaming', // a prop of Markdown
   'basalt-ui/content:contentTrust', // a prop of Markdown
   'basalt-ui/content:sanitize', // a prop of Markdown

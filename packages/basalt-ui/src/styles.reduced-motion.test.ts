@@ -71,7 +71,7 @@ describe('styles.css route transitions', () => {
   })
 
   test('the type names match the ones the router callback emits', async () => {
-    const { ROUTE_TRANSITION_TYPES } = await import('./provider/route-transition')
+    const { ROUTE_TRANSITION_TYPES } = await import('./router/defaults')
     for (const type of Object.values(ROUTE_TRANSITION_TYPES)) expect(css).toContain(type)
   })
 

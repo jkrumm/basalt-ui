@@ -35,7 +35,6 @@ import type { AsideClaim } from './parts/grid'
 import { Header } from './parts/header'
 import { RailMount, TabBarMount } from './parts/mounts'
 import { usePrintScheme } from './parts/print'
-import { trackShell } from './shell-presence'
 
 const NO_BLOCKS: NonNullable<AppShellProps['blocks']> = []
 const NO_ACTIONS: NonNullable<AppShellProps['globalActions']> = []
@@ -117,9 +116,6 @@ export function AppShell<Id extends string = string>({
   )
   useIsomorphicLayoutEffect(() => runtime.setPathname(pathname), [runtime, pathname])
   const active = useSyncExternalStore(runtime.subscribe, runtime.getState, runtime.getState)
-
-  // Stands the 2.x provider's Spotlight down: under the shell `CommandPalette` owns `Mod+K`.
-  useIsomorphicLayoutEffect(trackShell, [])
 
   const [shellHost] = useState(createShellHost)
   const attachRoot = useChromeRoot(shellHost.attachRoot, chrome)

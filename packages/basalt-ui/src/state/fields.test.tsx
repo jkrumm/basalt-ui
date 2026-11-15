@@ -8,7 +8,6 @@
  */
 import { beforeEach, describe, expect, test } from 'bun:test'
 import { act, renderHook } from '@testing-library/react'
-import { createSearchStore } from '../router-tanstack/search-store'
 import { createLocalStore, field } from './fields'
 
 function storedRecord(key: string): Record<string, unknown> | null {
@@ -744,13 +743,10 @@ describe('field.withFallback — the derived handle', () => {
     expect(since.field.d.withFallback('2026-0')).not.toBe(handles.at(0)!)
   })
 
-  test('a derived handle does not derive again, and a search store has no withFallback', () => {
+  test('a derived handle does not derive again', () => {
     const derived = store.field.exercise.withFallback('bench')
     // @ts-expect-error — `withFallback` is declared on the store's handle only
     expect(derived.withFallback).toBeUndefined()
-    const search = createSearchStore({ key: 's-no-wf', fields: { x: field.enum(['a', 'b'], 'a') } })
-    // @ts-expect-error — search stores have no call-site fallback
-    expect(search.field.x.withFallback).toBeUndefined()
   })
 
   test('readStored never contains the call-site value', () => {

@@ -165,29 +165,3 @@ describe('remend root-entry requirement (F2) — resolved, now a regression guar
     expect(violations).toEqual([])
   })
 })
-
-describe('motion static importers', () => {
-  // `motion` is subpath-required for `./agent` (the chat UI imports it eagerly) and nothing else:
-  // `ThemeToggle` dropped it for a CSS transition (V2-SPEC section 5), so the root never reaches it.
-  it.each(['src/agent/chat/thread-feed.tsx'])('%s imports motion/react statically', (file) => {
-    expect(readFileSync(join(pkgRoot, file), 'utf8')).toMatch(/^import .+ from 'motion\/react'$/m)
-  })
-
-  it('no other src/** file imports motion', () => {
-    const hits = findSourceFiles()
-      .filter((file) => !/\.test\.tsx?$/.test(file))
-      .filter((file) =>
-        /^import .+ from 'motion\/react'$/m.test(stripComments(readFileSync(file, 'utf8'))),
-      )
-      .map((file) => file.slice(pkgRoot.length + 1))
-      .toSorted()
-    expect(hits).toEqual(['src/agent/chat/thread-feed.tsx'])
-  })
-
-  it("surfaces.ts states motion as ./agent's requirement in its description", () => {
-    const source = readFileSync(join(pkgRoot, 'src/surfaces.ts'), 'utf8')
-    const block = source.match(/'\.\/agent': \{[\s\S]*?\n  \},/)?.[0] ?? ''
-    const description = block.match(/description:\s*\n?\s*'([^']*)'/)?.[1] ?? ''
-    expect(description).toContain('motion')
-  })
-})

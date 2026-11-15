@@ -18,7 +18,6 @@
  */
 import type { ReactNode } from 'react'
 import type { Series } from '../../src/charts'
-import { defineCommands } from '../../src/commands'
 import { memoryHandle } from '../../src/controls/control-view.handles'
 import { Input } from '../../src/ui/input'
 import { spec } from '../../src/controls/spec'
@@ -55,18 +54,6 @@ const THREAD = {
   createdAt: 0,
   updatedAt: 0,
 }
-
-/**
- * `ShortcutsHelp` has NO prop that makes it render — it reads the command registry, and an empty
- * one returns `null`. So the fixture is a registration, not a `MINIMAL_PROPS` row: without it the
- * className probe records "drops the class" for a component that painted no box at all.
- *
- * A module-level write to `defineCommands`' stash, which is safe precisely because nothing else in
- * this package's tests reads or writes it (the palette/hotkey suites drive their own inputs).
- */
-defineCommands({
-  'iso:save': { label: 'Save', group: 'File', shortcut: 'Mod+S', run: () => {} },
-})
 
 /* ------------------------------------------------------------- the prop map */
 

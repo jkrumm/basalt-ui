@@ -36,7 +36,7 @@ describe('BASALT_VX_NAMES', () => {
   })
 
   it('carries --vx-hit and the component-scoped names', () => {
-    for (const n of ['--vx-hit', '--vx-hit-gap', '--vx-space-icon-size', '--vx-keyboard-inset'])
+    for (const n of ['--vx-hit', '--vx-hit-gap', '--vx-space-icon-size'])
       expect(BASALT_VX_NAMES).toContain(n)
   })
 
@@ -97,12 +97,11 @@ describe('basalt-owned families', () => {
   })
 
   // basalt-lead pre-release: deriving the families from buildPaletteCss() alone missed every
-  // component-scoped one, so `var(--vx-keyboard)` passed silently.
+  // component-scoped one, so `var(--vx-hit-nope)` passed silently.
   it('covers the component-scoped families, not just the stylesheet', () => {
-    expect(BASALT_VX_FAMILIES).toContain('keyboard')
-    expect(kinds('--vx-keyboard')).toEqual(['unknown-vx-token'])
-    expect(kinds('--vx-keyboard-x')).toEqual(['unknown-vx-token'])
-    expect(kinds('--vx-keyboard-inset')).toEqual([])
+    expect(BASALT_VX_FAMILIES).toContain('hit')
+    expect(kinds('--vx-hit-nope')).toEqual(['unknown-vx-token'])
+    expect(kinds('--vx-hit-gap')).toEqual([])
   })
 
   it('leaves `on` to the consumer — the theme emits --vx-on-<color> for every color', () => {

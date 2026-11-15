@@ -72,4 +72,13 @@ describe('charts-g4', () => {
     expect(violations).toHaveLength(1)
     expect(violations[0]).toContain('charts-band-strip-marginal')
   })
+
+  test('a base that imports a module this branch deleted is skipped, not an error', async () => {
+    const base = "import { gone } from '../does-not-exist'\nexport const rows = [gone]\n"
+    const violations = await ratchetViolations({
+      files: [G4_AREA],
+      readBase: (file) => (file === G4_AREA ? base : null),
+    })
+    expect(violations).toEqual([])
+  })
 })

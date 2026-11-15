@@ -85,6 +85,27 @@ export const KNOWN: readonly KnownFinding[] = [
     item: /^color-contrast \(serious\)|^\.text_/,
     owner: 'provider: the fallback text contrast the mdx scenario renders (not owned here)',
   },
+  // The three entries below were hidden while the playground mounted the 2.x provider: under it the
+  // route threw in the matrix's Bun bundle (an uncompiled .mdx) and the cells graded the error shell.
+  {
+    route: '/scenarios/mdx',
+    assertion: 'ringWalk',
+    item: /div\[prose\]>div\[tabs\]>div\[tabs-list\]>button\[tabs-trigger\] "bun".*outline is clipped by div/,
+    owner:
+      'ui/tabs: the tab list scrolls sideways, so its overflow clips the trigger ring (as /overview)',
+  },
+  {
+    route: '/scenarios/mdx',
+    assertion: 'forcedColors',
+    item: /\[code-block\] div \d+x\d+/,
+    owner: 'content: the CodeBlock frame has no border or outline under forced-colors',
+  },
+  {
+    route: '/scenarios/mdx',
+    assertion: 'hitFloor',
+    item: /button\[button\] "Copy" 24x44 < 44x44/,
+    owner: 'content: the CodeBlock copy button is 24px wide under a coarse pointer',
+  },
   {
     route: '/overview',
     assertion: 'ringWalk',

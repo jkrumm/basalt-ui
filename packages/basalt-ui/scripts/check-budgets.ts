@@ -1,6 +1,6 @@
 /**
  * The numeric ceilings, enforced as one gate: public symbols, published subpaths, shipped rule
- * lines, spec prose, playground routes, the CLI's line count, the provider's first-paint bytes.
+ * lines, spec prose, playground routes, the CLI's line count, the v3 provider's first-paint bytes.
  *
  * This file is the entry only. Rows live one file per area in `check-budgets/areas/` (a new lane
  * adds its own file; `check-budgets/index.ts` finds it by scanning the directory). Ceilings only go
@@ -13,12 +13,11 @@
  *
  * Usage: bun packages/basalt-ui/scripts/check-budgets.ts [--report]
  *
- * Importable without running: `runBudgets` and `isOwnGraphId` are the tested seam
- * (`check-budgets.test.ts`); the CLI half runs only under `import.meta.main`.
+ * Importable without running: `runBudgets` is the tested seam
+ * (`check-budgets/*.test.ts`); the CLI half runs only under `import.meta.main`.
  */
 import { runBudgets } from './check-budgets/index'
 
-export { devOnlyChunks, featureRuntimeChunks, isOwnGraphId } from './check-budgets/bundle'
 export { runBudgets }
 export type { RunBudgetsOptions } from './check-budgets/index'
 

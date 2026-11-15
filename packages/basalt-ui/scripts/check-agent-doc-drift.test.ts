@@ -37,8 +37,8 @@ describe('findDeadSpecifiers', () => {
   test('accepts the root, a real subpath and the configs glob', () => {
     const md = [
       fence + 'tsx',
-      "import { BasaltProvider } from 'basalt-ui'",
-      "import { field } from 'basalt-ui/state'",
+      "import { createBasaltTheme } from 'basalt-ui'",
+      "import { field } from 'basalt-ui/router'",
       "import 'basalt-ui/styles.css'",
       'extends: ["basalt-ui/configs/oxlint.json"]',
       fence,
@@ -206,7 +206,6 @@ describe('collectPublishedNames', () => {
   test('covers the entry files only', () => {
     const names = collectPublishedNames()
     expect(names.has('FilterSpec')).toBe(true)
-    expect(names.has('BasaltProviderProps')).toBe(true)
     expect(names.has('SlotProps')).toBe(false)
   })
 })

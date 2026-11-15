@@ -1,33 +1,15 @@
 /**
- * basalt-ui root barrel — the provider, the theme and the state seams. The Mantine-free token/chart layer is published under `basalt-ui/tokens` and
+ * basalt-ui root barrel — the theme and the state seams. The Mantine-free token/chart layer is published under `basalt-ui/tokens` and
  * `basalt-ui/charts`, NOT re-exported here, so a tokens/charts-only consumer never pulls in
  * `@mantine/*`. One import path per symbol: `docs/V2-SPEC.md` § 1; the per-symbol verdicts are
  * `docs/waves/v2-surface.md`.
  */
 
-export { BasaltProvider, type BasaltProviderProps } from './provider'
-export {
-  basaltRouterOptions,
-  createBasaltRouter,
-  type BasaltRouter,
-  type BasaltRouterOptions,
-  type BasaltRouterContext,
-} from './provider/create-router'
-export type { BasaltEvent, ChatTurnEnd, ChatTurnTrace, Telemetry, TraceHeaders } from './telemetry'
-export {
-  defineNav,
-  navGroup,
-  navTarget,
-  flattenNav,
-  useBasaltNav,
-  type NavItemId,
-} from './router-tanstack'
 export { scrollParentOf, useCoarsePointer, type Tone } from './common'
 export { createBasaltTheme } from './theme'
 export { ThemeToggle } from './theme/theme-toggle'
 export { StatusDot, type StatusDotProps } from './theme/status-dot'
 export { StatusVerdict, type StatusVerdictProps } from './theme/status-verdict'
-export { unwrap } from './unwrap'
 export {
   persisted,
   type Persisted,

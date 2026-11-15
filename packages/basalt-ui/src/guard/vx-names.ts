@@ -77,7 +77,6 @@ export const BASALT_VX_NAMES: readonly string[] = [
   '--vx-ink2',
   '--vx-input',
   '--vx-inset',
-  '--vx-keyboard-inset',
   '--vx-legend-text',
   '--vx-line',
   '--vx-line2',

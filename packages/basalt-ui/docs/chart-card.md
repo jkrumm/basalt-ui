@@ -30,7 +30,7 @@ ChartCard(props: ChartCardProps): ReactElement
   footer?: FootFacts
   controls?: ControlsSlot<"widget">
   menu?: BoxSlot
-  height?: "auto" | "fill" | "short"
+  height?: "fill" | "auto" | "short"
   title?: string
   subtitle?: string
   icon?: IconComponent
