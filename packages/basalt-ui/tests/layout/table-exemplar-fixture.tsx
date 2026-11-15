@@ -1,6 +1,6 @@
 /**
  * The `table-exemplar` fixture (docs/v3/issues/g3/v3-table-t5-exemplar.json): the three ways a row
- * can be acted on, over seven columns of different kinds, two of them priority 3. No shell. Each
+ * can be acted on, over eight columns of different kinds, two of them priority 3. No shell. Each
  * probe is a `data-testid` box:
  * - `te-detail`: `detail` and a host, so activating a row shows its detail;
  * - `te-activate`: `onRowActivate`, so activating a row calls the app;
@@ -18,6 +18,7 @@ type Row = {
   id: string
   payee: string
   category: string
+  owner: string
   state: string
   amount: number
   count: number
@@ -31,6 +32,7 @@ const ROWS: Row[] = Array.from({ length: 4 }, (_, i) => ({
   id: `r${i}`,
   payee: i % 2 === 0 ? 'Counterparty Holdings International Limited' : `Acme ${i}`,
   category: `Category ${i}`,
+  owner: `Owner ${i}`,
   state: STATES[i % STATES.length] ?? STATES[0],
   amount: 100 + i * 17,
   count: 3 + i,
@@ -49,6 +51,7 @@ host.basaltLog = []
 const columns = [
   c.entity('payee', { header: 'Payee' }),
   c.text('category', { header: 'Category' }),
+  c.text('owner', { header: 'Owner' }),
   c.status('state', { header: 'State', options: [...STATES] }),
   c.money('amount', { currency: 'EUR', header: 'Amount' }),
   c.number('count', { header: 'Items', priority: 3 }),

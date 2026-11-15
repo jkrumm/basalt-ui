@@ -2,7 +2,7 @@
  * The table exemplar's phone contract in real Chrome at 390 and 360
  * (docs/v3/issues/g3/v3-table-t5-exemplar.json): the rows are cards, every column's data is drawn
  * and reachable, and the three ways a row can be acted on (`detail`, `onRowActivate`, neither) each
- * do what they say. One fixture per case, seven columns of different kinds, two of them priority 3.
+ * do what they say. One fixture per case, eight columns of different kinds, two of them priority 3.
  *
  * Self-contained like `table-selection`: the fixture CSS is compiled with the Tailwind CLI into a
  * temp directory, the tier sheet `src/table/table.css` is inlined beside it, and the fixture
@@ -35,7 +35,7 @@ const PHONE_360: Viewport = { name: 'Android 360', width: 360, height: 780 }
 const VIEWPORTS: Viewport[] = [PHONE, PHONE_360]
 const EMPTY_SPEC = { sections: [] } as FixtureSpec
 const PROBES = ['te-detail', 'te-activate', 'te-none'] as const
-const COLUMNS = 7
+const COLUMNS = 8
 const FIRST_CELL = (probe: string): string =>
   `[data-testid="${probe}"] tbody tr:first-child td:first-child`
 
@@ -125,6 +125,27 @@ layout('Table exemplar at the phone widths', () => {
         })
         expect(info.cell).toBe('block')
         expect(info.head).not.toBe('none')
+      })
+
+      test('a text meta value of a card names its column: the header reads before it, one line', async () => {
+        const page = await open(viewport)
+        const info = await page.raw.evaluate(() => {
+          const cell = document.querySelector<HTMLElement>(
+            '[data-testid="te-none"] tbody tr:first-child td[data-label]',
+          )!
+          const before = getComputedStyle(cell, '::before')
+          return {
+            label: cell.getAttribute('data-label'),
+            content: before.content,
+            display: before.display,
+            color: before.color,
+            own: getComputedStyle(cell).color,
+          }
+        })
+        expect(info.label).toBe('Owner')
+        expect(info.content).toBe('"Owner: "')
+        expect(info.display).toBe('inline')
+        expect(info.color).not.toBe(info.own)
       })
 
       for (const probe of PROBES) {
