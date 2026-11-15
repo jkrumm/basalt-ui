@@ -135,7 +135,10 @@ export function CardsExemplarFixture(): ReactElement {
         <StatCard
           {...FULL}
           href="#shipped"
-          menu={[{ label: 'Export', onSelect: () => undefined }]}
+          menu={[
+            { label: 'Export', onSelect: () => undefined },
+            { label: 'Share', onSelect: () => undefined },
+          ]}
         />
       </div>
       <div data-testid="cx-bare" className="w-90 max-w-full">
