@@ -230,7 +230,7 @@ export function CardBand({
 // ── Phase ────────────────────────────────────────────────────────────────────────────────────────
 
 const ACTION =
-  'relative inline-flex h-6 shrink-0 cursor-pointer items-center rounded-ctrl bg-secondary px-2 text-xs font-medium text-foreground shadow-raised hover:bg-accent focus-ring after:absolute after:inset-x-0 after:top-1/2 after:h-full after:-translate-y-1/2 pointer-coarse:after:min-h-11'
+  'relative z-20 inline-flex h-6 shrink-0 cursor-pointer items-center rounded-ctrl bg-secondary px-2 text-xs font-medium text-foreground shadow-raised hover:bg-accent focus-ring after:absolute after:inset-x-0 after:top-1/2 after:h-full after:-translate-y-1/2 pointer-coarse:after:min-h-11'
 
 const ERROR_TEXT: Record<ErrorKind | 'default', string> = {
   forbidden: 'You do not have access to this.',

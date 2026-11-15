@@ -80,6 +80,7 @@ const PHASED: Record<string, Partial<StatCardProps>> = {
  * - `cx-narrow`, `cx-wide`: controls at 360 px (wraps) and 560 px (inline), around `@regular`;
  * - `cx-greedy`: a chart slot that ignores `box.height` and asks for twice the box;
  * - `cx-link`: a stretched-link card, the focus-ring probe;
+ * - `cx-link-error`: a linked card in the error phase, the retry-button probe;
  * - `cx-link-menu`: the same card with a menu, the own-hit-area probe;
  * - `cx-bare`: no icon, no chart, no sub, one fact (the `hero-stats` shape).
  */
@@ -130,6 +131,9 @@ export function CardsExemplarFixture(): ReactElement {
       </div>
       <div data-testid="cx-link" className="w-90 max-w-full">
         <StatCard {...FULL} href="#shipped" />
+      </div>
+      <div data-testid="cx-link-error" className="w-90 max-w-full">
+        <StatCard {...FULL} href="#shipped" phase={{ tag: 'error', retry: () => undefined }} />
       </div>
       <div data-testid="cx-link-menu" className="w-90 max-w-full">
         <StatCard
