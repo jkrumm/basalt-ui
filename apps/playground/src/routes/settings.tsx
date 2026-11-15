@@ -211,7 +211,7 @@ function SettingsPane({ id }: { id: SectionId }): ReactElement {
 
 export function SettingsPage(): ReactElement {
   const [current] = section.use()
-  const selected = !section.isDefault
+  const selected = section.useIsSet()
   return (
     <Page area="settings">
       <PageBar title="Settings" />
