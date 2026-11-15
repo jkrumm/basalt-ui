@@ -57,7 +57,8 @@ export const KNOWN: readonly KnownFinding[] = [
   {
     route: '/overview',
     assertion: 'ringWalk',
-    item: /(select-trigger\] "Range"|button\[button\] "Filters").*outline is clipped/,
+    // The pseudo catalog prints `Filters` as `[Ƒîļţéŕš~~~]`.
+    item: /(select-trigger\] "Range"|button\[button\] "(Filters|\[Ƒîļţéŕš~+\])").*outline is clipped/,
     owner: 'controls: the range select and Filters button rings are clipped by the page bar',
   },
   {
@@ -103,7 +104,8 @@ export const KNOWN: readonly KnownFinding[] = [
   {
     route: '/scenarios/mdx',
     assertion: 'hitFloor',
-    item: /button\[button\] "Copy" 24x44 < 44x44/,
+    // The pseudo catalog prints `Copy` as `[Çôþý~~]`.
+    item: /button\[button\] "(Copy|\[Çôþý~+\])" 24x44 < 44x44/,
     owner: 'content: the CodeBlock copy button is 24px wide under a coarse pointer',
   },
   {
