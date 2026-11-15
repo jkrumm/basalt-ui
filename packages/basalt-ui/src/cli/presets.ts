@@ -1,15 +1,22 @@
 /**
  * The generated preset files `sync` places (and `init` first writes) for a manifest:
  * `.stylelintrc.basalt.json` for every profile and `.oxlintrc.basalt.json` for `bridge` and above.
- * The oxlint bytes come from the shipped `configs/oxlint-<profile>.json` (generated from the rule
- * table by `scripts/gen-oxlint.ts`); a root declared at another profile adds one `overrides` block
- * carrying that profile's `rules`, the way `buildPreset` (src/lint/preset.ts) lays them out.
+ * The oxlint preset is `buildPreset` (src/lint/preset.ts) over the manifest's roots and ejected
+ * paths: the same builder `scripts/gen-oxlint.ts` writes `configs/oxlint-<profile>.json` with, so a
+ * root at another profile, a bridge root's vendored zone and an ejected file's zone all come out
+ * as they do there.
  */
 import { readFileSync } from 'node:fs'
 import { resolve } from 'node:path'
 
+import plugin from '../lint'
+import { tableOf } from '../lint/factory'
+import type { Contract } from '../lint/preset'
+import { buildPreset } from '../lint/preset'
 import { renderStylelintConfig } from '../lint/stylelint/render'
 import { PRESET_FILE } from '../lint/weakened'
+import { SLOTS } from '../ui/slots'
+import { readRow } from './eject/ledger'
 import { packageRoot } from './index'
 import type { Manifest, Profile } from './manifest'
 import type { PresetFiles, Unit } from './sync/render'
@@ -33,11 +40,36 @@ export function readShippedPreset(pkgRoot: string, profile: Exclude<Profile, 'to
   }
 }
 
-const rootGlob = (root: string): string => `${root.replace(/\/+$/, '')}/**`
+type Contracts = readonly Contract[]
+
+/** The no-restyle contracts the shipped `parts`/`app` presets carry; `bridge` ships none. */
+function shippedContracts(pkgRoot: string): Contracts {
+  for (const profile of ['app', 'parts'] as const) {
+    try {
+      const restyle = readShippedPreset(pkgRoot, profile).rules?.['shadcn/no-restyle']
+      const options = Array.isArray(restyle) ? (restyle[1] as { contracts?: Contracts }) : undefined
+      if (options?.contracts) return options.contracts
+    } catch {
+      // A package that ships only some profiles has no contracts to carry from the others.
+    }
+  }
+  return []
+}
+
+/** `manifest.ejected[*].path`; a malformed row is left to `eject`/`doctor` to name. */
+function ejectedPaths(manifest: Manifest): string[] {
+  return Object.values(manifest.ejected).flatMap((row) => {
+    const parsed = readRow(row)
+    return parsed === null ? [] : [parsed.path]
+  })
+}
 
 /**
  * The oxlint preset text for a manifest, or null when every declared file lints at `tokens`. The
  * base is the default profile's preset (the highest declared one when the default is `tokens`).
+ * It is built by `buildPreset`, the one builder the shipped files come from, so a root's rules
+ * block, zone V (a bridge root's `components/ui`) and zone E (`manifest.ejected`) are the same
+ * blocks the shipped presets lay out.
  */
 export function renderOxlintPreset(manifest: Manifest, pkgRoot: string): string | null {
   const above = [manifest.profile, ...Object.values(manifest.roots)].filter(
@@ -45,15 +77,20 @@ export function renderOxlintPreset(manifest: Manifest, pkgRoot: string): string 
   )
   const [base] = above
   if (base === undefined) return null
-  const preset = readShippedPreset(pkgRoot, base)
-  const overrides = Object.entries(manifest.roots)
-    .filter(([, profile]) => profile !== 'tokens' && profile !== base)
-    .map(([root, profile]) => ({
-      files: [rootGlob(root)],
-      rules: readShippedPreset(pkgRoot, profile as Exclude<Profile, 'tokens'>).rules ?? {},
-    }))
-  const next = { ...preset, overrides: [...(preset.overrides ?? []), ...overrides] }
-  return `${JSON.stringify(next, null, 2)}\n`
+  const pins = readShippedPreset(pkgRoot, base).settings?.basalt?.pins
+  const roots = Object.fromEntries(
+    Object.entries(manifest.roots).filter(([, profile]) => profile !== 'tokens'),
+  )
+  const preset = buildPreset({
+    table: tableOf(plugin),
+    pins: { oxlint: pins?.['oxlint'] ?? '', shadcnLint: pins?.['@shadcn/lint'] ?? '' },
+    contracts: shippedContracts(pkgRoot),
+    uiSlots: SLOTS,
+    profile: base,
+    roots,
+    ejected: ejectedPaths(manifest),
+  })
+  return preset === undefined ? null : `${JSON.stringify(preset, null, 2)}\n`
 }
 
 /** The `presetFiles` seam of `sync`: both presets as generated units. */

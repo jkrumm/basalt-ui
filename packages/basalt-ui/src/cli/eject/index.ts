@@ -20,6 +20,7 @@ import { noteRelocation, packageRoot, readFrameworkVersion, resolveProjectDir } 
 import { DEFAULT_ROOT } from '../config'
 import { findManifestAbove } from '../install-root'
 import { MANIFEST_PATH, readManifest, writeManifest } from '../manifest'
+import { OXLINT_PRESET_FILE, renderOxlintPreset } from '../presets'
 import type { Manifest } from '../manifest'
 import { ejectHeader, stripHeader, withHeader } from '../merge/header'
 import { ejectedGuard, ejectedSource, readSeed, seedNames } from '../merge/seed'
@@ -227,7 +228,16 @@ function apply(ctx: Context, plan: Plan): void {
   }
   if (plan.budget !== undefined) writeBudget(ctx.installRoot, plan.budget)
   writeManifest(ctx.installRoot, plan.manifest)
+  refreshOxlintPreset(ctx, plan.manifest)
   for (const line of plan.report) console.log(line)
+}
+
+/** The ejected paths are in the consumer's oxlint preset (zone E), so a row change rewrites it now. */
+function refreshOxlintPreset(ctx: Context, manifest: Manifest): void {
+  const file = resolve(ctx.installRoot, OXLINT_PRESET_FILE)
+  if (!existsSync(file)) return
+  const text = renderOxlintPreset(manifest, ctx.pkgRoot)
+  if (text !== null) writeFileSync(file, text)
 }
 
 /** Removes `dir` and its parents up to (not including) the install root while they are empty. */

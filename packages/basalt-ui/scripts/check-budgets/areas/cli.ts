@@ -48,11 +48,12 @@ export const rows: readonly RowDef[] = [
   // 11138 -> 11309 (v3-sk-3b-budget): the consumer budget module (cli/budget/: the `.basalt/budget.json` type, seed, reader, writer, breach count and the base-ref ratchet `landBudget`, +171). Consumer: rollhook (`init` seeds it and `lint` counts it on the first G0 `bridge` install).
   // 11309 -> 11637 (v3-tok-t4-cli): `tokens:css` is rewritten onto the v3 emitters with `--format json` and `--extra` (cli/tokens-css.ts +103 net, the app-token loader and emitter cli/tokens-css-extra.ts +214, the flag schema in cli/help.ts +10). Consumer: rb (`--vx-confidence-*` through `--extra`) and weatherorb (`--vx-weatherorb-*`).
   // 11637 -> 11886 (v3-cli-sibling): the temporary `basalt.sibling` key: the resolver (cli/resolver.ts), the sibling placement and prefix (cli/sync/sibling.ts, render and engine `repo:` paths), `init` and doctor's sibling branches, the manifest `sibling` field (+249). Consumer: argo and shutterflow, whose second install runs after the 3.0.0 publish; removed with the last cutover.
+  // 11886 -> 11933 (v3-lint-1-eject-zones): `sync` and `eject` write the consumer oxlint preset through `buildPreset`, so a bridge root's vendored zone and an ejected primitive's structure zone are in it (cli/presets.ts +37, cli/eject/index.ts +10: eject rewrites the preset when a row changes). Consumer: console, whose ejected primitives lint clean right after `eject`.
   {
     id: 'cli-lines',
     order: 110,
     label: 'CLI non-test lines (src/cli/**)',
-    ceiling: 11886,
+    ceiling: 11933,
     measure: () =>
       totalLines(
         walkFiles(join(PKG_ROOT, 'src/cli'), /\.tsx?$/).filter((p) => !/\.test\.tsx?$/.test(p)),
@@ -103,6 +104,12 @@ export const raises: Raises = {
       to: 11886,
       consumer: '`init` and `sync` in a declared `basalt.sibling` app beside the root install',
       repo: 'shutterflow',
+    },
+    {
+      from: 11886,
+      to: 11933,
+      consumer: '`sync` and `eject` writing the ejected-primitive and bridge-root lint zones',
+      repo: 'console',
     },
   ],
 }
