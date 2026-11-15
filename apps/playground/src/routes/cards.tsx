@@ -2,7 +2,6 @@ import { createFileRoute } from '@tanstack/react-router'
 import { Section } from 'basalt-ui/page'
 import { StatCard } from 'basalt-ui/cards'
 import type { ReactElement } from 'react'
-import { useV3Tokens } from '../demo/v3-tokens'
 
 /** A merge: two branches joining, for merged pull requests. */
 function MergeGlyph({ className }: { className?: string }): ReactElement {
@@ -98,7 +97,6 @@ const shipped = (
 // #endregion
 
 function CardsRoute(): ReactElement {
-  useV3Tokens()
   return (
     <Section title="Cards">
       <div className="grid grid-cols-[repeat(auto-fill,minmax(min(100%,22rem),1fr))] items-start gap-4">

@@ -121,32 +121,6 @@
       }
     },
     {
-      "files": ["packages/basalt-ui/src/agent/*.ts", "packages/basalt-ui/src/agent/*.tsx"],
-      "rules": {
-        "no-restricted-imports": [
-          "error",
-          {
-            "paths": [
-              {
-                "name": "@mantine/core",
-                "message": "agent must be Mantine-free — no Mantine imports allowed."
-              },
-              {
-                "name": "@mantine/hooks",
-                "message": "agent must be Mantine-free — no Mantine imports allowed."
-              }
-            ],
-            "patterns": [
-              {
-                "group": ["@mantine/*"],
-                "message": "agent must be Mantine-free — no Mantine imports allowed."
-              }
-            ]
-          }
-        ]
-      }
-    },
-    {
       "files": ["packages/basalt-ui/src/controls/**"],
       "rules": {
         "no-restricted-imports": [
@@ -170,36 +144,6 @@
               {
                 "group": ["@mantine/form/*"],
                 "message": "@mantine/form is an OPTIONAL peer — ./controls (which owns the form layout since 1.36.0) must resolve with no @mantine/form installed. Only ./forms needs it."
-              }
-            ]
-          }
-        ]
-      }
-    },
-    {
-      "files": [
-        "packages/basalt-ui/src/state.ts",
-        "packages/basalt-ui/src/state/**",
-        "packages/basalt-ui/src/router-tanstack/search-store.ts"
-      ],
-      "rules": {
-        "no-restricted-imports": [
-          "error",
-          {
-            "paths": [
-              {
-                "name": "@mantine/core",
-                "message": "state must be Mantine-free — no Mantine imports allowed."
-              },
-              {
-                "name": "@mantine/hooks",
-                "message": "state must be Mantine-free — no Mantine imports allowed."
-              }
-            ],
-            "patterns": [
-              {
-                "group": ["@mantine/*"],
-                "message": "state must be Mantine-free — no Mantine imports allowed."
               }
             ]
           }
@@ -396,24 +340,6 @@
       ],
       "rules": {
         "no-console": "off"
-      }
-    },
-    {
-      "files": ["packages/basalt-ui/src/agent/chat/thread-message.tsx"],
-      "rules": {
-        "react/immutability": "off"
-      }
-    },
-    {
-      "files": ["packages/basalt-ui/src/provider/index.tsx"],
-      "rules": {
-        "react/refs": "off"
-      }
-    },
-    {
-      "files": ["packages/basalt-ui/src/provider/index.tsx"],
-      "rules": {
-        "react/set-state-in-effect": "off"
       }
     }
   ]

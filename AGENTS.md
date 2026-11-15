@@ -1,9 +1,9 @@
 # Basalt UI — Project Context
 
 An opinionated framework for **Mantine-based React apps**, extracted from argo (the POC). A
-consumer app instantly gets: a Mantine theme + `cssVariablesResolver`, a `BasaltProvider`, an app
+consumer app instantly gets: a Mantine theme + `cssVariablesResolver`, a `BasaltProvider` (`basalt-ui/router`), an app
 shell (`AppShell`: header, rail, one scrollport, aside and a phone tab bar, driven by one `defineNav`), a chart system, a
-three-tier `--vx-*` token system, a theme-lab, a Vite preset, raw toolchain config presets, and a
+three-tier `--vx-*` token system, a Vite preset, raw toolchain config presets, and a
 `basalt-ui` CLI (bin named like the package — never `bunx basalt`).
 
 **Breaking 1.0** (`feat!:`, same npm name `basalt-ui`): the package pivoted from the old Tailwind

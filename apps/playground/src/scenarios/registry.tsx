@@ -1,16 +1,14 @@
 /**
  * The scenario registry: `$name` → fixture. The route stays thin; a new scenario is one entry here.
- * `mdx` is the compiled MDX page and `agent-stream` the replayed chat reply. A Map, so `/scenarios/constructor` is
+ * `mdx` is the compiled MDX page. A Map, so `/scenarios/constructor` is
  * unknown rather than an inherited `Object` member.
  */
 import type { ReactElement } from 'react'
-import { AgentStreamDemo } from '../demo/AgentStreamDemo'
 import { MdxScenario } from './mdx-scenario'
 import type { ScenarioProps } from './shot-state'
 
 const RENDERERS = {
   mdx: () => <MdxScenario />,
-  'agent-stream': () => <AgentStreamDemo />,
 } satisfies Record<string, (props: ScenarioProps) => ReactElement>
 
 /** Every registered id; `scenario-info.ts` types its entries against this. */

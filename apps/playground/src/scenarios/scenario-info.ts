@@ -17,9 +17,4 @@ export const SCENARIO_INFO: readonly ScenarioInfo[] = [
     title: 'Authored MDX',
     blurb: 'An authored page compiled at build time and rendered through one component map.',
   },
-  {
-    id: 'agent-stream',
-    title: 'Agent stream',
-    blurb: 'A replayed chat reply: reasoning, markdown, code, a diagram and a tool call.',
-  },
 ]

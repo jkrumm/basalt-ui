@@ -1,14 +1,28 @@
 import './layers.css'
 import 'basalt-ui/styles.css'
 import './index.css'
-import { BasaltProvider, createBasaltRouter } from 'basalt-ui'
+import { QueryClientProvider } from '@tanstack/react-query'
+import { RouterProvider, createRouter } from '@tanstack/react-router'
+import { makeQueryClient } from 'basalt-ui/data'
+import { BasaltProvider, routerDefaults } from 'basalt-ui/router'
 import { StrictMode } from 'react'
+import type { ReactNode } from 'react'
 import { createRoot } from 'react-dom/client'
+import { legacyPaletteCss } from './demo/legacy-palette'
 import { PAGE_FORMAT } from './demo/page-format'
-import { demoPaletteGroups } from './demo/series'
 import { routeTree } from './routeTree.gen'
 
-const router = createBasaltRouter({ routeTree })
+const queryClient = makeQueryClient()
+const defaults = routerDefaults({ router: (): object => router })
+
+const router = createRouter({
+  routeTree,
+  context: { queryClient },
+  ...defaults.options,
+  Wrap: ({ children }: { children: ReactNode }) => (
+    <QueryClientProvider client={queryClient}>{children}</QueryClientProvider>
+  ),
+})
 
 declare module '@tanstack/react-router' {
   interface Register {
@@ -16,32 +30,17 @@ declare module '@tanstack/react-router' {
   }
 }
 
-// Literal env checks, so a build without either flag drops the dynamic import and its chunk.
-// `VITE_TELEMETRY=1` builds the telemetry in (exporter URL then comes from `window.__BASALT_OTLP__`
-// at runtime); `VITE_OTLP_ENDPOINT` bakes the URL in. See docs/waves/evidence/w2/observability.md.
-// A telemetry failure must never block mounting the app.
-let telemetry: typeof import('./telemetry').telemetry | undefined
-if (import.meta.env['VITE_TELEMETRY'] === '1' || import.meta.env['VITE_OTLP_ENDPOINT']) {
-  try {
-    telemetry = (await import('./telemetry')).telemetry
-  } catch (error) {
-    // oxlint-disable-next-line no-console
-    console.error('[basalt] telemetry failed to start', error)
-  }
-}
+const palette = document.createElement('style')
+palette.textContent = legacyPaletteCss()
+document.head.append(palette)
 
 const root = document.getElementById('root')
 if (!root) throw new Error('root element not found')
 
 createRoot(root).render(
   <StrictMode>
-    {/* paletteOptions.groups emits the consumer's `--vx-demo-*` custom properties alongside the
-        framework primitives, so the app-side series colors resolve per scheme just like the chrome. */}
-    <BasaltProvider
-      router={router}
-      {...PAGE_FORMAT}
-      paletteOptions={{ groups: demoPaletteGroups }}
-      {...(telemetry && { telemetry })}
-    />
+    <BasaltProvider link={defaults.link} locale={PAGE_FORMAT.locale}>
+      <RouterProvider router={router} />
+    </BasaltProvider>
   </StrictMode>,
 )

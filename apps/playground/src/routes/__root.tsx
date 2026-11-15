@@ -10,7 +10,7 @@
  * commands of `demo/commands.ts`, takes `Mod+K`, and the rail's search row opens it.
  */
 import { Outlet, createRootRouteWithContext, useNavigate } from '@tanstack/react-router'
-import type { BasaltRouterContext } from 'basalt-ui'
+import type { QueryClient } from '@tanstack/react-query'
 import { AppShell, CommandPalette } from 'basalt-ui/shell'
 import { useState } from 'react'
 import type { ComponentProps } from 'react'
@@ -78,7 +78,7 @@ function RootLayout() {
   )
 }
 
-export const Route = createRootRouteWithContext<BasaltRouterContext>()({
+export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()({
   staticData: { title: 'Home' },
   component: RootLayout,
 })

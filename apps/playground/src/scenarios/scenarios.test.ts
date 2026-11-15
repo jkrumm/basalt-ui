@@ -34,9 +34,8 @@ describe('findScenario', () => {
     for (const name of SCENARIO_NAMES) expect(findScenario(name)).toBeDefined()
   })
 
-  it('registers mdx and the agent stream', () => {
+  it('registers mdx', () => {
     expect(SCENARIO_NAMES).toContain('mdx')
-    expect(SCENARIO_NAMES).toContain('agent-stream')
   })
 
   it.each(['constructor', 'toString', '__proto__', 'hasOwnProperty', 'nope'])(

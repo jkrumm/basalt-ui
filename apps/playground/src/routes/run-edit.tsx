@@ -9,7 +9,6 @@ import { Select } from 'basalt-ui/ui/select'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from 'basalt-ui/ui/tabs'
 import { Textarea } from 'basalt-ui/ui/textarea'
 import type { ReactElement } from 'react'
-import { useV3Tokens } from '../demo/v3-tokens'
 import { RunSchema, titleFree, useRunForm } from '../recipes/dependent-validation'
 import { runKey, runsApi, useSaveRun } from '../recipes/optimistic'
 import type { Run, RunValues } from '../recipes/optimistic'
@@ -147,7 +146,6 @@ function RunEditForm({ run }: { run: Run }): ReactElement {
 }
 
 function RunEditPage(): ReactElement {
-  useV3Tokens()
   const run = useQuery({ queryKey: runKey('r-1'), queryFn: () => runsApi.get() })
   return (
     <Page area="run-edit">

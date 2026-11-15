@@ -13,7 +13,6 @@ import { Switch } from 'basalt-ui/ui/switch'
 import { Textarea } from 'basalt-ui/ui/textarea'
 import type { ReactElement } from 'react'
 import { z } from 'zod'
-import { useV3Tokens } from '../demo/v3-tokens'
 import { useUnsavedGuard } from '../recipes/form-guard'
 
 const SECTIONS = ['profile', 'appearance', 'members', 'billing', 'api-keys'] as const
@@ -226,7 +225,6 @@ export function SettingsPage(): ReactElement {
 // #endregion
 
 function SettingsRoute(): ReactElement {
-  useV3Tokens()
   return <SettingsPage />
 }
 
