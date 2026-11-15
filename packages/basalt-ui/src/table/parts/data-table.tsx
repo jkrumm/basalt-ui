@@ -19,7 +19,7 @@ import { DataTableFooter, hasFooter } from './footer'
 import { VirtualTable } from './virtual'
 import { DataTableHead, visibleColumns } from './head'
 import { TablePager } from './pager'
-import { scrollMinWidth, tierAttributesOf } from './tiers'
+import { revealFocus, scrollMinWidth, tierAttributesOf } from './tiers'
 import { modelOf } from '../use-data-table'
 import type { TableModel } from '../use-data-table'
 
@@ -88,6 +88,7 @@ export function DataTable<T>({
         data-virtual=""
         data-full-at={model.plan.fullAt ?? undefined}
         {...tierAttributesOf(model)}
+        onFocus={revealFocus}
         // One row size holds the window exact: a windowed table never projects to cards (a card
         // is as tall as its content) and its cells hold one line; narrow, it scrolls sideways.
         data-phone="scroll"
@@ -133,6 +134,7 @@ export function DataTable<T>({
       data-contained=""
       data-full-at={model.plan.fullAt ?? undefined}
       {...tierAttributesOf(model)}
+      onFocus={revealFocus}
       data-refresh-failed={phase.tag === 'stale' && phase.refreshFailed ? '' : undefined}
       className="flex max-w-full min-w-0 flex-col"
     >
