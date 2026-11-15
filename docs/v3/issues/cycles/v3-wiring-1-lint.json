@@ -1,0 +1,20 @@
+{
+  "why": "Wiring cycle 1 (docs/v3/cycles/wiring-1.md, P2 wiring-1.13): the export-surface gate does not see the v3 shell or the primitives. `scripts/export-surface.mjs:38-43` excludes `./shell` because it \"is an alias of the 2.x shell barrel the root re-exports\", but `dist/shell/index.d.ts` now exports the v3 `AppShell`, `defineCommands`, `CommandPalette`, `toMenuTemplate` and `useWindowChrome`, which the root does not; `./ui/*` is a wildcard and has no shard. A symbol added to or dropped from either reaches npm without a snapshot diff.",
+  "what": "The export-surface snapshot covers `./shell` and each `ui/<name>` module.",
+  "owns": [
+    "packages/basalt-ui/scripts/export-surface.mjs, export-surface-shards.mjs and their tests",
+    "packages/basalt-ui/scripts/export-surface/*.json as the generator writes them",
+    "packages/basalt-ui/scripts/check-budgets/** where it counts shards or public symbols"
+  ],
+  "must_not_touch": ["docs/v3/ARCHITECTURE.md", "packages/basalt-ui/src/**"],
+  "change": "Drop the `./shell` exclusion and its stale reason; expand `./ui/*` to one shard per shipped primitive module (the list the package's `ui/` directory or the primitive manifest gives), so a new or removed primitive export is a snapshot diff. If the public-symbol budget counts these shards, raise its landed value in the same commit with the reason.",
+  "commits": "fix: or chore: in packages/basalt-ui; the snapshot written by `export-surface --update`.",
+  "proof": "make check; the export-surface test fails on an unrecorded `./shell` or `ui/*` export.",
+  "acceptance": [
+    "`scripts/export-surface/shell.json` lists `AppShell`, `CommandPalette`, `defineCommands`, `toMenuTemplate`, `useWindowChrome`",
+    "Each `ui/<name>` module has its shard",
+    "An export added to `src/shell/index.ts` without `--update` fails the test",
+    "make check passes"
+  ],
+  "out_of_scope": "Renaming or removing any export."
+}

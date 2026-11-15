@@ -1,0 +1,23 @@
+{
+  "why": "Wiring cycle 1 (docs/v3/cycles/wiring-1.md, P1 wiring-1.4): on a linked `StatCard` at 1800x1200, `elementFromPoint` on the figure, the sub line and the blank inset returns `SPAN`, `P[stat-sub]` and `DIV[stat-figure]` with `cursor: auto`, and a click there does nothing; only the header band reaches `A[stat-target]`, which sits at `z-0` under the inset (`.evidence/cycle-wiring-1/p3.log`). A reader clicks the number. P3 wiring-1.21 rides along: a `PageBar` with only a `title` draws an empty band of about 56 px under the header at 1800 and 390 px, the title already showing as the breadcrumb leaf (`shots/{overview,orders}--*`).",
+  "what": "The whole linked StatCard takes the click; a title-only PageBar draws no empty band.",
+  "owns": [
+    "packages/basalt-ui/src/cards/stat-card.tsx, src/cards/stat-card-parts.tsx and their tests",
+    "packages/basalt-ui/src/page/page-bar.tsx and its tests",
+    "the layout tests for both"
+  ],
+  "must_not_touch": [
+    "docs/v3/ARCHITECTURE.md",
+    "packages/basalt-ui/src/cards/contract.ts (v3-wiring-1-router-link)"
+  ],
+  "change": "The card's target covers the whole card above the inset, with a pointer cursor, while the delta pill's tooltip, the info glyph and a menu keep their own hit areas (the stretched-link pattern with those parts raised above it). A `PageBar` whose only content is a `title` inside a shell renders no visible band (the `h1` stays for assistive technology), and `--page-bar-h` reads 0.",
+  "commits": "fix: in packages/basalt-ui, one per component.",
+  "proof": "make check; layout tests.",
+  "acceptance": [
+    "A click at the figure, the sub line and the blank inset of a linked StatCard activates its target, and the cursor there is pointer (layout test)",
+    "The delta tooltip and the card menu still open on their own click (layout test)",
+    "A title-only PageBar in a shell has 0 px visible height and keeps one h1 (layout test)",
+    "make check passes"
+  ],
+  "out_of_scope": "Router navigation of the target (v3-wiring-1-router-link)."
+}

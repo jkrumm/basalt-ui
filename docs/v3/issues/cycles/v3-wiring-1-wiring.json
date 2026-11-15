@@ -1,0 +1,27 @@
+{
+  "why": "Wiring cycle 1 (docs/v3/cycles/wiring-1.md) logged four P2 `wiring` findings. wiring-1.6: three shipped files name three CSS entries (`init`'s to-do: `basalt-ui/tailwind.css` plus `.basalt/sources.css`; `docs/vite.md`: `sources.css` after `@import 'tailwindcss'`; `/basalt-app` steps 3-4: import the `tokens:css` and `fonts:css` output once); `tailwind.css` already imports `tailwindcss`, its own `tokens.css` and `fonts.css`, so the `src/tokens.css` `init` writes has no stated place; `docs/vite.md` uses `tailwindcss()` (`@tailwindcss/vite`, no declared peer) and `init` adds `basalt()` first and no `tailwindcss()`. wiring-1.7: `init` installs only the lint peers; doctor then names `tailwindcss`, `@base-ui/react`, `@tanstack/react-query`, and `@tailwindcss/vite` and `@tanstack/router-plugin` are named by no shipped file. wiring-1.8: run as `./node_modules/.bin/basalt-ui doctor`, the AGENTS block's own instruction, check 11 fails \"Executable not found in $PATH: oxlint\" with `oxlint` in `node_modules/.bin`; `init` writes `.oxfmtrc.json` without `oxfmt` (check 9 SKIPPED); in a fresh repo the ratchet says \"no base ref\" and names no way to give one. wiring-1.9: `agent/templates/main.tpl` imports the v3 `BasaltProvider` from `basalt-ui/core/provider`, the eject path, and no doc names it.",
+  "what": "`init` installs and patches everything the `app` profile needs, doctor runs from the local bin, and the v3 provider has a documented home.",
+  "owns": [
+    "packages/basalt-ui/src/cli/init/**",
+    "packages/basalt-ui/src/cli/doctor/**",
+    "packages/basalt-ui/src/cli/budget/** (the ratchet's base-ref handling)",
+    "packages/basalt-ui/src/vite/doc.ts (generates docs/vite.md)",
+    "packages/basalt-ui/agent/skills/basalt-app/SKILL.md (set-up steps 3-4)",
+    "packages/basalt-ui/agent/templates/main.tpl (the provider import)",
+    "the subpath barrel that exports the v3 provider, its doc JSDoc, the export-surface snapshot as its generator writes it"
+  ],
+  "must_not_touch": [
+    "docs/v3/ARCHITECTURE.md",
+    "packages/basalt-ui/README.md (v3-wiring-1-entry-docs)"
+  ],
+  "change": "(1) One stylesheet entry, stated the same in `init`'s output, `docs/vite.md` and the skill, including where an app's own `tokens:css` output goes; `init` patches a stock create-vite `src/index.css` to it and adds `tailwindcss()` to a stock `vite.config.ts` in the order `docs/vite.md` gives (wiring-1.6). (2) `init` installs the `app` profile's runtime and build peers (`tailwindcss`, `@tailwindcss/vite`, `@base-ui/react`, `@tanstack/react-query`, `@tanstack/router-plugin`) with the lint peers and `oxfmt`, and doctor check 3 names the same set (wiring-1.7). (3) Doctor resolves `oxlint` and `oxfmt` from the project's `node_modules/.bin`, and the budget ratchet passes on a repo with no base, its message naming the ref it tried (wiring-1.8). (4) The v3 `BasaltProvider` is exported from one existing documented subpath with a `docs/` page, and `main.tpl` imports it from there (wiring-1.9).",
+  "commits": "fix: or feat: per change in packages/basalt-ui.",
+  "proof": "make check; init and doctor tests on a create-vite fixture.",
+  "acceptance": [
+    "On a create-vite fixture, `init --profile app` then `./node_modules/.bin/basalt-ui doctor` reports no failed and no skipped check without a hand edit (test, or a scripted run recorded in the PR)",
+    "`init`'s output, `docs/vite.md` and `/basalt-app` name the same stylesheet entry",
+    "`main.tpl` imports `BasaltProvider` from a subpath that has a `docs/*.md` page",
+    "make check passes"
+  ],
+  "out_of_scope": "The router seeds (v3-wiring-1-init-scaffold); deleting the 2.x root provider (v3-teardown-runtime)."
+}

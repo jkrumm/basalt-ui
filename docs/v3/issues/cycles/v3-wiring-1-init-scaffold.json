@@ -1,0 +1,27 @@
+{
+  "why": "Wiring cycle 1 (docs/v3/cycles/wiring-1.md, P1 wiring-1.1): `basalt-ui init --profile app --root src` on a stock create-vite app, and on an empty `src/`, writes `src/tokens.css` and none of the router scaffold its own templates say it writes (`agent/templates/{main,__root,_app,nav,_app-pending,_app-error,_app-missing}.tpl`, each headed \"Scaffold written by `basalt-ui init`\"). `managedFiles()` in `src/cli/index.ts:697-893` declares them as `seed` entries, but its only caller is `tests/agent/router-templates.test.ts`; `init` places files through `src/cli/sync/render.ts`, which reads no router template. The cycle's author wrote or copied 113 of 170 lines that these templates already hold, and pieced `main.tsx` together from a `.d.ts` example.",
+  "what": "`init` at profile `app` writes the router scaffold, so a fresh Vite app renders its first page with no hand-written wiring.",
+  "owns": [
+    "packages/basalt-ui/src/cli/init/**",
+    "packages/basalt-ui/src/cli/sync/** (the seed write path only)",
+    "packages/basalt-ui/src/cli/index.ts (the seed entries)",
+    "packages/basalt-ui/src/cli/router-wiring.ts",
+    "packages/basalt-ui/agent/templates/{main,__root,_app,nav,_app-pending,_app-error,_app-missing}.tpl",
+    "packages/basalt-ui/tests/agent/router-templates.test.ts and new init tests"
+  ],
+  "must_not_touch": [
+    "docs/v3/ARCHITECTURE.md",
+    "packages/basalt-ui/README.md",
+    "packages/basalt-ui/src/cli/doctor/**"
+  ],
+  "change": "`init` writes each router seed whose destination does not exist, once (a seed is never rewritten by `sync`), honouring `routerSeedSkip` (Start apps, code-routed apps) and `basalt.shell: false`, and prints one line per seed it wrote or skipped and why. A `src/main.tsx` that is create-vite's stock entry (renders `App` with no router) is replaced by the template, the policy `init` already applies to a stock `vite.config.ts`; any other existing entry gets the template's exact lines printed. `init` adds `tanstackRouter({ target: 'react', autoCodeSplitting: true })` to a stock `vite.config.ts` beside `basalt()` and deletes nothing else. Peers and the stylesheet entry are not this row (v3-wiring-1-wiring).",
+  "commits": "fix: in packages/basalt-ui, one commit per concern (seeds, stock main.tsx, vite plugin).",
+  "proof": "make check; an init test on a create-vite fixture and one on an empty src/.",
+  "acceptance": [
+    "On a `bun create vite --template react-ts` fixture, `init --profile app --root src` leaves `src/main.tsx`, `src/routes/__root.tsx`, `src/routes/_app.tsx`, `src/lib/nav.tsx` and `src/components/route-{pending,error,missing}.tsx` from the templates (test)",
+    "A second `init` and a `sync` change none of them after a local edit (test)",
+    "A non-stock `src/main.tsx` is left as it was and the template lines are printed (test)",
+    "make check passes"
+  ],
+  "out_of_scope": "Installing runtime peers and the stylesheet entry (v3-wiring-1-wiring); the README (v3-wiring-1-entry-docs); Next.js and Astro hosts."
+}
