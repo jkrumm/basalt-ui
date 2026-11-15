@@ -259,7 +259,6 @@ function EditTicketForm({ ticket }: { ticket: Ticket }): ReactElement {
         <form.Field name="assignee">
           {(f) => (
             <FormField label="Assignee" description="An urgent ticket needs one." field={f}>
-              {/* cycle-state-2: state-2.13 — check-theme's 2.x host list homes a Select only in a FormRow, SettingsRow or Modal, never a v3 FormField bound to a form field */}
               <Select aria-label="Assignee" options={ASSIGNEE_OPTIONS} />
             </FormField>
           )}
