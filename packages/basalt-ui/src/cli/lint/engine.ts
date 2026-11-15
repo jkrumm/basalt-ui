@@ -14,6 +14,7 @@ import { findManifestAbove } from '../install-root'
 import { readPackageJson } from '../source-text'
 import { filesUnder, rootsOf } from '../doctor/types'
 import { findBin } from '../../lint/bin'
+import { dropMisreadDirectives } from '../../lint/rules/structure/waiver-needs-reason'
 
 export { findBin }
 
@@ -151,17 +152,6 @@ export function runOxlint(project: Project, targets: readonly string[]): Finding
     ]
   })
   return dropMisreadDirectives(findings)
-}
-
-/**
- * A directive whose reason is not set off with `--` (an em dash, say) makes oxlint read every word
- * of the reason as a rule id and report each as an unused directive. waiver-needs-reason already
- * reports that line once and names the fix, so the per-word noise on the same line is dropped.
- */
-export function dropMisreadDirectives(findings: readonly Finding[]): Finding[] {
-  const at = (f: Finding): string => `${f.file}:${f.line}`
-  const waived = new Set(findings.filter((f) => f.id === 'basalt/waiver-needs-reason').map(at))
-  return findings.filter((f) => f.id !== 'oxlint/unused-directive' || !waived.has(at(f)))
 }
 
 type StylelintResult = {

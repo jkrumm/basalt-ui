@@ -25,7 +25,6 @@ export type Manifest = {
   deepRender: string[]
   authoredContent: string[]
   viewports: string[]
-  /** Third-party class prefixes (`maplibregl-`) `shadcn/no-unknown-classes` lets through. */
   classPrefixes?: string[]
   tokens: TokenOutput[]
   /** The `--extra` file `tokens:css` reads. */
@@ -145,7 +144,6 @@ const sorted = <T>(record: Record<string, T>): Record<string, T> =>
 export function serializeManifest(m: Manifest): string {
   const { profile, version, deepRender, authoredContent, viewports, tokens, extra, sibling, rest } =
     m
-  const prefixes = m.classPrefixes ?? []
   const body = {
     profile,
     version,
@@ -155,7 +153,7 @@ export function serializeManifest(m: Manifest): string {
     deepRender,
     authoredContent,
     viewports,
-    ...(prefixes.length === 0 ? {} : { classPrefixes: prefixes }),
+    ...(m.classPrefixes?.length ? { classPrefixes: m.classPrefixes } : {}),
     tokens,
     ...(extra === undefined ? {} : { extra }),
     ...(sibling === undefined ? {} : { sibling }),

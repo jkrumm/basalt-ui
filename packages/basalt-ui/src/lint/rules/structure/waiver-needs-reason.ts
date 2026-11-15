@@ -136,3 +136,16 @@ export const waiverRules = defineRules({
     ],
   },
 })
+
+type Located = { readonly file: string; readonly line: number; readonly id: string }
+
+/**
+ * A directive whose reason is not set off with `--` (an em dash, say) makes oxlint read every word
+ * of the reason as a rule id and report each as an unused directive. This rule already reports that
+ * line once and names the fix, so `basalt-ui lint` drops the per-word noise on the same line.
+ */
+export function dropMisreadDirectives<T extends Located>(findings: readonly T[]): T[] {
+  const at = (f: Located): string => `${f.file}:${f.line}`
+  const waived = new Set(findings.filter((f) => f.id === 'basalt/waiver-needs-reason').map(at))
+  return findings.filter((f) => f.id !== 'oxlint/unused-directive' || !waived.has(at(f)))
+}
