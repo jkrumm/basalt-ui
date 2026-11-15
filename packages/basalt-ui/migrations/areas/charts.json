@@ -140,11 +140,11 @@
       "id": "chart-card-legacy",
       "kind": "renamed",
       "from": "basalt-ui/charts#ChartCard (the 2.x card: state, facts, children)",
-      "to": "LegacyChartCard until the 2.x view layer is deleted; ChartCard is now the v3 card (phase, figure, chart)",
+      "to": "basalt-ui/charts#ChartCard (the v3 card: phase, figure, chart)",
       "profiles": ["parts", "app"],
       "codemod": "charts: the card transforms rewrite a 2.x site to the v3 props",
       "manual": true,
-      "note": "ChartCardProps is the v3 type too; the 2.x one is LegacyChartCardProps. A site that cannot move yet imports `LegacyChartCard as ChartCard`",
+      "note": "the 2.x card is deleted with the 2.x view layer: a site moves its `state` to `phase`, its `facts` to `figure` and its children to a `chart` function",
       "verify": "tsc"
     }
   ],
