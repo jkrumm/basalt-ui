@@ -21,3 +21,7 @@ export function Track({ spans }) {
     </div>
   )
 }
+
+export const focusRings = (
+  <div className="focus-visible:outline-brand data-focused:outline-brand group-data-focused:outline-brand data-focused:ring-brand focus:ring-brand focus-within:ring-brand focus-visible:ring-offset-brand group-focus-visible:ring-brand peer-focus-visible:outline-brand has-focus-visible:ring-brand" />
+)

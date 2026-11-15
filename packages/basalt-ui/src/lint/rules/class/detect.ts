@@ -43,7 +43,8 @@ function literalText(arg: Node | undefined): string | undefined {
 }
 
 /**
- * `viewport-keyed`, JS form: a media query whose literal text names a `width`. Reduced-motion,
+ * `viewport-keyed`, JS form: a media query whose literal text names a `width`, or the viewport
+ * width read against a number (`window.innerWidth < 768`; an element's `clientWidth` is container-keyed). Reduced-motion,
  * colour-scheme and pointer queries are not viewport-keyed; a non-literal argument stays open
  * (S2: 8 of 28 hits remain once narrowed, all true).
  */
@@ -56,7 +57,51 @@ export function mediaQueryForm({ report }: FormContext): Visitor {
       const text = literalText(args[0])
       if (text !== undefined && /width/i.test(text)) report(node, `${name}('${text}')`)
     },
+    BinaryExpression(node) {
+      const subject = widthComparison(node)
+      if (subject !== undefined) report(node, subject)
+    },
   }
+}
+
+/** The text of a viewport-size read: `window.innerWidth`, `innerWidth`, `document.documentElement.clientWidth`. */
+function viewportRead(node: Node | undefined): string | undefined {
+  if (node?.type === 'Identifier') return node['name'] === 'innerWidth' ? 'innerWidth' : undefined
+  if (node?.type !== 'MemberExpression' || node['computed'] === true) return undefined
+  const property = field(node, 'property')
+  const prop = property?.type === 'Identifier' ? (property['name'] as string) : undefined
+  const object = field(node, 'object')
+  if (prop === 'innerWidth' || prop === 'outerWidth') {
+    return object?.type === 'Identifier' && object['name'] === 'window'
+      ? `window.${prop}`
+      : undefined
+  }
+  if (prop !== 'clientWidth' || object?.type !== 'MemberExpression') return undefined
+  const root = field(object, 'object')
+  const mid = field(object, 'property')
+  const isDocument = root?.type === 'Identifier' && root['name'] === 'document'
+  return isDocument && mid?.type === 'Identifier' && mid['name'] === 'documentElement'
+    ? 'document.documentElement.clientWidth'
+    : undefined
+}
+
+const WIDTH_COMPARISONS: ReadonlySet<string> = new Set(['<', '<=', '>', '>='])
+
+/** `window.innerWidth < 768`: the viewport width against a number, on either side. */
+function widthComparison(node: Node): string | undefined {
+  const operator = node['operator'] as string
+  if (!WIDTH_COMPARISONS.has(operator)) return undefined
+  const left = field(node, 'left')
+  const right = field(node, 'right')
+  const leftRead = viewportRead(left)
+  if (leftRead !== undefined && right?.type === 'Literal' && typeof right['value'] === 'number') {
+    return `${leftRead} ${operator} ${String(right['value'])}`
+  }
+  const rightRead = viewportRead(right)
+  if (rightRead !== undefined && left?.type === 'Literal' && typeof left['value'] === 'number') {
+    return `${String(left['value'])} ${operator} ${rightRead}`
+  }
+  return undefined
 }
 
 /** The options a gated rule accepts: `{ profile: 'bridge' }` switches its parts-only forms off. */
@@ -74,15 +119,37 @@ const isBridge = (options: readonly unknown[]): boolean =>
  * form, so the form reads the rule's `profile` option and stands down for `bridge`, where its fix
  * (`Card`, `Status`, a ladder step) cannot be satisfied. The preset sets the option per profile.
  */
-export function partsOnly({ pattern, ...base }: ClassForm): AstForm {
+export function partsOnly(
+  { pattern, ...base }: ClassForm,
+  whole?: (tokens: readonly string[]) => string | undefined,
+): AstForm {
   return {
     ...base,
     detect: ({ context, report }) =>
       classStringVisitor((node, text) => {
         if (isBridge(context.options)) return
-        for (const token of classTokens(text)) if (pattern.test(token)) report(node, token)
+        const tokens = classTokens(text)
+        for (const token of tokens) if (pattern.test(token)) report(node, token)
+        const subject = whole?.(tokens)
+        if (subject !== undefined) report(node, subject)
       }),
   }
+}
+
+const RADIUS = /^rounded(?:-(?!card$|none$|full$)[a-z0-9]+)?$/
+const CARD_PADDING = /^p-(?:[3-9]|\d{2,})$/
+
+/**
+ * `surface-recipe`, whole-string form: a bordered card rebuilt without a card token, a radius, a
+ * bare `border` and a padding step of 3 or more in one class string. A dashed or dotted border,
+ * a pill (`rounded-full`) and a lone `p-1`/`p-2` are not a card.
+ */
+export function borderedCard(tokens: readonly string[]): string | undefined {
+  const radius = tokens.find((token) => RADIUS.test(token))
+  const padding = tokens.find((token) => CARD_PADDING.test(token))
+  if (radius === undefined || padding === undefined || !tokens.includes('border')) return undefined
+  if (tokens.some((token) => /^border-(?:dashed|dotted)$/.test(token))) return undefined
+  return `${radius} border ${padding}`
 }
 
 const nameOf = (node: Node | undefined): string | undefined =>
