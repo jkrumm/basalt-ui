@@ -33,6 +33,13 @@ function fixture(name: string): string {
   return dir
 }
 
+/** A healthy install with one source file added under its `src` root. */
+function withFile(source: string, name = 'screen.tsx'): string {
+  const dir = fixture('healthy')
+  writeFileSync(join(dir, 'src', name), source)
+  return dir
+}
+
 const run = (dir: string, extra: Partial<Parameters<typeof checkWeakenedConfig>[0]> = {}) =>
   checkWeakenedConfig({
     dir,
@@ -91,6 +98,43 @@ describe('checkWeakenedConfig', () => {
     const results = await run(fixture('managed-rule'))
     expect(status(results, 3)).toBe('failed')
     expect(results[2]?.detail).toContain('basalt/primitive-bypass')
+  })
+
+  describe('a file-level blanket disable under a declared root (check 3)', () => {
+    it('fails on a bare oxlint-disable, naming file and line', async () => {
+      const results = await run(withFile('export const a = 1\n/* oxlint-disable */\n'))
+      expect(status(results, 3)).toBe('failed')
+      expect(results[2]?.detail).toContain('src/screen.tsx:2 (every rule)')
+      expect(results[2]?.detail).toContain('manifest.deepRender')
+    })
+
+    it('fails on a bare directive that carries a reason', async () => {
+      const results = await run(withFile('/* oxlint-disable -- legacy screen */\n'))
+      expect(status(results, 3)).toBe('failed')
+      expect(results[2]?.detail).toContain('src/screen.tsx:1')
+    })
+
+    it('finds an eslint-disable the same way', async () => {
+      const results = await run(withFile('/* eslint-disable */\n', 'chart.ts'))
+      expect(status(results, 3)).toBe('failed')
+      expect(results[2]?.detail).toContain('src/chart.ts:1 (every rule)')
+    })
+
+    it('fails on a directive naming waiver-needs-reason', async () => {
+      const results = await run(withFile('/* oxlint-disable basalt/waiver-needs-reason -- x */\n'))
+      expect(results[2]?.detail).toContain('(waiver-needs-reason)')
+    })
+
+    it('passes a directive naming only other rules', async () => {
+      const results = await run(withFile('/* oxlint-disable basalt/colour-literal -- canvas */\n'))
+      expect(status(results, 3)).toBe('passed')
+    })
+
+    it('does not read a file outside the declared roots', async () => {
+      const dir = withFile('export {}\n')
+      writeFileSync(join(dir, 'outside.ts'), '/* oxlint-disable */\n')
+      expect(status(await run(dir), 3)).toBe('passed')
+    })
   })
 
   it('a wrong oxlint pin fails check 4', async () => {
