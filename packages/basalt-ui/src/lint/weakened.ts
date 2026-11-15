@@ -145,7 +145,10 @@ function blame(dir: string, root: string, seedDir: string): string {
   return 'extends, jsPlugins or a per-glob override'
 }
 
-/** Git's default remote branch, `origin/main` when nothing says. */
+/** The refs the ratchet looks for, in order; `origin/HEAD` is git's default remote branch. */
+export const BASE_REF_CANDIDATES = ['origin/HEAD', 'origin/main', 'origin/master'] as const
+
+/** Git's default remote branch, `origin/main` or `origin/master` when nothing says. */
 export function defaultBaseRef(root: string): string | null {
   const run = spawnSync(
     'git',
@@ -155,7 +158,7 @@ export function defaultBaseRef(root: string): string | null {
     },
   )
   if (run.status === 0 && run.stdout.trim() !== '') return run.stdout.trim()
-  for (const ref of ['origin/main', 'origin/master']) {
+  for (const ref of BASE_REF_CANDIDATES.slice(1)) {
     const probe = spawnSync('git', ['-C', root, 'rev-parse', '--verify', '--quiet', ref], {
       encoding: 'utf8',
     })
@@ -357,18 +360,23 @@ function budgetRatchet(
   tried: readonly string[],
 ): WeakenedResult {
   const result = verdict(5, 'budget-ratchet')
-  // No base to ratchet against (a fresh repo, no remote): nothing can have been raised yet.
-  if (!baseRef) {
-    const named = tried.length === 0 ? 'none given' : tried.join(', ')
-    return result(
-      'passed',
-      `no base ref resolves (tried ${named}), so no ceiling can have been raised; the ratchet runs once the repo has one`,
-    )
-  }
   // A git that cannot start is a check that cannot run: skipped, never a rejected call.
   const git = (...args: string[]) => {
     const run = spawnSync('git', ['-C', dir, ...args], { stdio: ['ignore', 'pipe', 'ignore'] })
     return { exitCode: run.error === undefined ? run.status : 127, stdout: run.stdout ?? '' }
+  }
+  if (!baseRef) {
+    const named = tried.length === 0 ? 'none given' : tried.join(', ')
+    // A repo with no remote has no base to ratchet against: nothing can have been raised yet. A
+    // remote with no resolvable base (a shallow or single-branch checkout) must fail, not pass.
+    const remotes = git('remote')
+    if (remotes.exitCode === 0 && String(remotes.stdout).trim() === '') {
+      return result(
+        'passed',
+        `no base ref resolves (tried ${named}) and the repo has no remote, so no ceiling can have been raised; the ratchet runs once it has one`,
+      )
+    }
+    return result('skipped', `no base ref resolves (tried ${named}); fetch the base branch first`)
   }
   if (git('rev-parse', '--verify', '--quiet', `${baseRef}^{commit}`).exitCode !== 0) {
     return result('skipped', `base ref ${baseRef} does not resolve; fetch it first`)
@@ -430,6 +438,6 @@ export async function checkWeakenedConfig(input: WeakenedInput): Promise<Weakene
       pin,
       input.installedOxlint === undefined ? installedOxlintVersion(dir) : input.installedOxlint,
     ),
-    budgetRatchet(dir, baseRef, input.triedRefs ?? []),
+    budgetRatchet(dir, baseRef, input.triedRefs ?? BASE_REF_CANDIDATES),
   ]
 }

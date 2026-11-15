@@ -4,23 +4,13 @@
  * `.basalt/budget.json`, verifies the ejected files, runs the weakened-config check from the
  * guardrail concept and reads DESIGN.md.
  */
-import { checkWeakenedConfig, defaultBaseRef, oxlintRunner } from '../../lint/weakened'
+import { checkWeakenedConfig, defaultBaseRef } from '../../lint/weakened'
 import type { WeakenedResult } from '../../lint/weakened'
 import { BUDGET_PATH, countBreaches, readBudget } from '../budget'
 import { tokensCss } from '../tokens-css'
 import { ejectFindings } from './eject'
 import { OXLINT_PRESET } from './wiring'
-import {
-  fail,
-  findBin,
-  lintRoots,
-  need,
-  pass,
-  readJson,
-  readText,
-  rootFiles,
-  verdictOf,
-} from './types'
+import { fail, lintRoots, need, pass, readJson, readText, rootFiles, verdictOf } from './types'
 import type { Check, Ctx, Outcome } from './types'
 
 /** `tokensCss` with both streams captured: doctor prints its own line per check. */
@@ -93,9 +83,6 @@ function designFindings(ctx: Ctx): string[] {
   return findings
 }
 
-/** The refs the ratchet looks for, in order: git's default remote branch, then the usual names. */
-const BASE_REF_CANDIDATES = ['origin/HEAD', 'origin/main', 'origin/master'] as const
-
 async function weakened(ctx: Ctx): Promise<{ findings: string[]; skipped: string[] }> {
   const manifest = need(ctx)
   const roots = lintRoots(manifest)
@@ -115,9 +102,7 @@ async function weakened(ctx: Ctx): Promise<{ findings: string[]; skipped: string
     roots,
     oxlintPin: pin,
     baseRef: ctx.options.baseRef === undefined ? defaultBaseRef(ctx.root) : ctx.options.baseRef,
-    triedRefs: BASE_REF_CANDIDATES,
-    // The project's own bin, not PATH: `./node_modules/.bin/basalt-ui doctor` runs with neither on it.
-    runLint: ctx.options.runLint ?? oxlintRunner(findBin(ctx.root, 'oxlint') ?? 'oxlint'),
+    ...(ctx.options.runLint === undefined ? {} : { runLint: ctx.options.runLint }),
     ...(ctx.options.installedOxlint === undefined
       ? {}
       : { installedOxlint: ctx.options.installedOxlint }),

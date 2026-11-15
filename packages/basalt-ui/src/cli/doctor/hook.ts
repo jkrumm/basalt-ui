@@ -13,7 +13,7 @@ import { findBasaltInstall } from '../index'
 import { renderManaged } from '../sync/render'
 import { siblingOf } from '../sync/sibling'
 import { OXLINT_PRESET, STYLELINT_PRESET } from './wiring'
-import { fail, findBin, lintRoots, need, pass, readJson, rootsOf, Skip, verdictOf } from './types'
+import { fail, lintRoots, need, pass, readJson, rootsOf, Skip, verdictOf } from './types'
 import type { Check } from './types'
 
 export const SETTINGS_PATH = '.claude/settings.json'
@@ -128,6 +128,15 @@ const check8 = (name: string): Check => ({
 
 /** A finding line: `src/pages/a.tsx:41 basalt/class-policy: ...` (guardrails section 8). */
 const FINDING = /:\d+\s+basalt\/[a-z][\w-]*:/
+
+/** Resolves `node_modules/.bin/<name>` from `dir` upward. */
+function findBin(dir: string, name: string): string | null {
+  for (let at = dir; ; at = dirname(at)) {
+    const path = resolve(at, 'node_modules/.bin', name)
+    if (existsSync(path)) return path
+    if (dirname(at) === at) return null
+  }
+}
 
 /** Paths the formatter must not touch, each as a probe file that is unformatted on purpose. */
 const PROBE_DIRS = ['.basalt', '.claude/rules', '.claude/skills', '.claude/agents'] as const

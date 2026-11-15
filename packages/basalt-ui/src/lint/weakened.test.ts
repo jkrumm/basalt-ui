@@ -63,10 +63,32 @@ const run = (dir: string, extra: Partial<Parameters<typeof checkWeakenedConfig>[
 const status = (results: WeakenedResult[], check: number) => results[check - 1]?.status
 
 describe('checkWeakenedConfig', () => {
-  it('a healthy config passes checks 1-5; with no base ref 5 names the refs it tried', async () => {
-    const results = await run(fixture('healthy'), { triedRefs: ['origin/HEAD', 'origin/main'] })
-    expect(results.map((r) => r.status)).toEqual(['passed', 'passed', 'passed', 'passed', 'passed'])
+  it('a healthy config passes checks 1-4; outside a git repo check 5 cannot run and is skipped', async () => {
+    const results = await run(fixture('healthy'))
+    expect(results.map((r) => r.status)).toEqual([
+      'passed',
+      'passed',
+      'passed',
+      'passed',
+      'skipped',
+    ])
+  })
+
+  it('passes the ratchet on a repo with no remote and names the refs it tried', async () => {
+    const dir = fixture('healthy')
+    Bun.spawnSync(['git', '-C', dir, 'init', '-q'])
+    const results = await run(dir, { triedRefs: ['origin/HEAD', 'origin/main'] })
+    expect(status(results, 5)).toBe('passed')
     expect(results[4]?.detail).toContain('tried origin/HEAD, origin/main')
+  })
+
+  it('skips the ratchet when a remote exists but no base ref resolves (a shallow checkout)', async () => {
+    const dir = fixture('healthy')
+    Bun.spawnSync(['git', '-C', dir, 'init', '-q'])
+    Bun.spawnSync(['git', '-C', dir, 'remote', 'add', 'origin', 'https://example.invalid/x.git'])
+    const results = await run(dir)
+    expect(status(results, 5)).toBe('skipped')
+    expect(results[4]?.detail).toContain('tried origin/HEAD, origin/main, origin/master')
   })
 
   it('a dropped extends fails checks 1 and 2', async () => {

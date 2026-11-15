@@ -476,7 +476,7 @@ describe('init: the budget, the install and the seeds', () => {
 
   it("rewrites create-vite's own index.css to the one entry, and keeps a sheet it does not know", async () => {
     const stockCss =
-      ':root {\n  font-synthesis: none;\n  color-scheme: light dark;\n}\n\n#root {\n  width: 1126px;\n}\n'
+      ':root {\n  --code-bg: transparent;\n  font-synthesis: none;\n  color-scheme: light dark;\n}\n\n#root {\n  width: 1126px;\n}\n'
     const vite = {
       'vite.config.ts':
         "import { defineConfig } from 'vite'\nimport react from '@vitejs/plugin-react'\n\nexport default defineConfig({\n  plugins: [react()],\n})\n",
@@ -489,6 +489,12 @@ describe('init: the budget, the install and the seeds', () => {
     expect(read(stock, 'vite.config.ts')).toContain(
       "plugins: [tanstackRouter({ target: 'react', autoCodeSplitting: true }), react(), tailwindcss(), basalt()]",
     )
+
+    const handWritten =
+      ':root { --gap: 4px; color-scheme: light dark }\n#root { display: grid }\n.sidebar { width: 12rem }\n'
+    const kept = repo({ ...vite, 'src/index.css': handWritten })
+    await runInit(['--profile', 'app', '--root', 'src'], kept)
+    expect(read(kept, 'src/index.css')).toBe(handWritten)
 
     const own = repo({ ...vite, 'src/index.css': '@import "./reset.css";\n.card { margin: 0 }\n' })
     const { log } = await runInit(['--profile', 'app', '--root', 'src'], own)
