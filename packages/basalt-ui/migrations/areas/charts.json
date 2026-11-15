@@ -3,6 +3,16 @@
   "area": "charts",
   "rows": [
     {
+      "id": "charts-chartcard-menu-data",
+      "kind": "replace",
+      "from": "basalt-ui/charts#ChartCard.menu as a BoxSlot (box) => node",
+      "to": "menu: [{ id, label, href | onClick }, ...] (at least two entries)",
+      "profiles": ["parts", "app"],
+      "manual": true,
+      "note": "the same Menu every card frame takes; the card draws the button and its popover, so the slot and its box are gone",
+      "verify": "tsc: a function is not assignable to Menu"
+    },
+    {
       "id": "sf-format",
       "kind": "codemod",
       "from": "basalt-ui/charts#Series.formatValue",

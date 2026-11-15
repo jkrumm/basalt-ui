@@ -321,7 +321,10 @@ describe('DataPanel phase matrix', () => {
         skeleton={{ rows: 3 }}
         controls={slot('Range')}
         toolbar={slot('Filter')}
-        menu={() => <button type="button">More</button>}
+        menu={[
+          { id: 'more', label: 'More', onClick: () => undefined },
+          { id: 'less', label: 'Less', onClick: () => undefined },
+        ]}
         legend={[
           { key: 'a', label: 'Merged', color: { light: '#111111', dark: '#eeeeee' } },
           { key: 'b', label: 'Closed', color: { light: '#111111', dark: '#eeeeee' }, failed: true },
@@ -331,29 +334,31 @@ describe('DataPanel phase matrix', () => {
     )
     expect(getAllByText('Range')).toHaveLength(1)
     expect(container.querySelector('[data-slot="data-panel-toolbar"]')?.textContent).toBe('Filter')
-    expect(container.querySelector('[data-slot="data-panel-menu"]')?.textContent).toBe('More')
+    expect(
+      container
+        .querySelector('[data-slot="data-panel-menu"] [data-slot="stat-menu"]')
+        ?.getAttribute('aria-label'),
+    ).toBe('Actions for Open')
     expect(container.querySelector('[data-slot="data-panel-legend"]')?.textContent).toContain(
       'Closed (unavailable)',
     )
   })
 
-  test('a throwing menu slot renders nothing and keeps the header and body', () => {
-    const original = console.error
-    console.error = () => undefined
-    const { container, getByText } = render(
+  test('the menu is action data: a link entry draws an anchor, a handler a button', () => {
+    const { container } = render(
       <DataPanel
         title="Open pull requests"
         skeleton={{ rows: 3 }}
-        menu={() => {
-          throw new Error('boom')
-        }}
+        menu={[
+          { id: 'open', label: 'Open board', href: '/board' },
+          { id: 'export', label: 'Export', onClick: () => undefined },
+        ]}
         body={() => <p>rows</p>}
       />,
     )
-    console.error = original
-    expect(container.querySelector('[data-slot="data-panel-menu"]')?.textContent).toBe('')
-    expect(getByText('Open pull requests')).toBeTruthy()
-    expect(getByText('rows')).toBeTruthy()
+    const menu = container.querySelector('[data-slot="data-panel-menu"]')
+    expect(menu?.querySelector('a')?.getAttribute('href')).toBe('/board')
+    expect(menu?.querySelectorAll('button')).toHaveLength(2)
   })
 
   test('the body clips with overflow clip, never hidden', () => {

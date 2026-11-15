@@ -29,7 +29,7 @@ ChartCard(props: ChartCardProps): ReactElement
   legend?: readonly LegendEntry[]  // The legend row for marks the page draws through the seam, drawn in every phase
   footer?: FootFacts
   controls?: ControlsSlot<"widget">
-  menu?: BoxSlot
+  menu?: Menu
   height?: "fill" | "auto" | "short"
   title?: string
   subtitle?: string

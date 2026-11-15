@@ -67,6 +67,8 @@ export type {
   FrameState,
   LegendEntry,
   Marker,
+  Menu,
+  MenuEntry,
   Series,
   SeriesBase,
   SeriesColor,

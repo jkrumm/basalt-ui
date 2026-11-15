@@ -1,12 +1,11 @@
-import { useId } from 'react'
 import type { ReactElement } from 'react'
 import { cn } from '../core/cn'
-import { AppLink } from '../core/link'
+import { CardMenu } from '../core/card-menu'
 import { cards } from '../core/messages/cards'
 import { useMessages } from '../core/messages/use-messages'
 import type { ControlsSlot, IconComponent, Status } from '../core/ports'
 import { CardInfo, IconTile } from '../ui/card'
-import type { Fact, FootFacts, MenuAction } from './contract'
+import type { Fact, FootFacts, MenuEntry } from './contract'
 
 const NUMBER = new Intl.NumberFormat('en')
 
@@ -71,79 +70,13 @@ export function StatFooter({ facts }: { facts: FootFacts | undefined }): ReactEl
   )
 }
 
-const identOf = (id: string): string => id.replace(/[^\w-]/g, '')
-
-const ITEM =
-  'flex h-8 w-full cursor-pointer items-center rounded-ctrl border-0 bg-transparent px-2 text-left text-sm text-foreground no-underline hover:bg-accent focus-ring pointer-coarse:min-h-11'
-
-/**
- * The card menu: a button that opens a native popover of actions. No overlay library, so the
- * chartless card keeps its size; the browser owns Escape, light dismiss and focus return.
- */
-export function StatMenu({
-  actions,
-  label,
-}: {
-  actions: readonly MenuAction[]
-  label: string
-}): ReactElement {
-  const id = useId()
-  const anchor = `--stat-menu-${identOf(id)}`
-  const close = (): void => document.getElementById(id)?.hidePopover()
-  return (
-    <>
-      <button
-        type="button"
-        aria-label={label}
-        data-slot="stat-menu"
-        popoverTarget={id}
-        style={{ anchorName: anchor }}
-        className="relative z-20 inline-flex size-7 shrink-0 cursor-pointer items-center justify-center rounded-ctrl border-0 bg-secondary p-0 text-muted-foreground shadow-raised hover:text-foreground focus-ring forced-colors:border forced-colors:border-current after:absolute after:inset-0 pointer-coarse:after:-inset-2"
-      >
-        <svg viewBox="0 0 16 16" className="size-icon" fill="currentColor" aria-hidden="true">
-          <circle cx="3.5" cy="8" r="1.25" />
-          <circle cx="8" cy="8" r="1.25" />
-          <circle cx="12.5" cy="8" r="1.25" />
-        </svg>
-      </button>
-      {/* theme-allow hidden-inline-style — the anchor name is unique per instance, so it cannot be a class */}
-      <div
-        id={id}
-        popover="auto"
-        style={{ positionAnchor: anchor }}
-        className="m-0 min-w-40 rounded-inset border-0 bg-popover p-1 text-foreground shadow-overlay supports-[position-area:bottom]:m-2 supports-[position-area:bottom]:[position-area:bottom_span-left] supports-[position-area:bottom]:[position-try-fallbacks:flip-block]"
-      >
-        {actions.map((action) =>
-          'href' in action ? (
-            <AppLink key={action.label} href={action.href} className={ITEM}>
-              {action.label}
-            </AppLink>
-          ) : (
-            <button
-              key={action.label}
-              type="button"
-              className={ITEM}
-              onClick={() => {
-                close()
-                action.onClick()
-              }}
-            >
-              {action.label}
-            </button>
-          ),
-        )}
-      </div>
-    </>
-  )
-}
-
 export type StatHeadProps = {
   title: string
   subtitle: string | undefined
   icon: IconComponent | undefined
   info: string | undefined
   controls: ControlsSlot | undefined
-  menu: readonly MenuAction[] | undefined
+  menu: readonly MenuEntry[] | undefined
 }
 
 /**
@@ -190,7 +123,7 @@ export function StatHead({
           {controls.render()}
         </div>
       )}
-      {menu !== undefined && <StatMenu actions={menu} label={`Actions for ${title}`} />}
+      {menu !== undefined && <CardMenu menu={menu} label={`Actions for ${title}`} />}
     </div>
   )
 }

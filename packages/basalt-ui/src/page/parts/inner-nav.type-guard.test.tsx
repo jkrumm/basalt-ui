@@ -6,7 +6,8 @@
 import { describe, expect, test } from 'bun:test'
 import type { ReactElement } from 'react'
 import type { ControlHandle } from '../../core/ports'
-import type { InnerNavMenuItem, PushField } from '../contract'
+import type { MenuEntry } from '../../core/phase'
+import type { PushField } from '../contract'
 import { defineControls } from '../../router/controls/define'
 import { field } from '../../router/controls/field'
 import { InnerNav } from './inner-nav'
@@ -20,7 +21,7 @@ const replaceField: ControlHandle<'general' | 'billing'> & { readonly history: '
   history: 'replace',
 }
 
-const item = (id: string): InnerNavMenuItem => ({ id, label: id, onClick: () => {} })
+const item = (id: string): MenuEntry => ({ id, label: id, onClick: () => {} })
 
 export const validPush: ReactElement = (
   <InnerNav

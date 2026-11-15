@@ -133,7 +133,7 @@ describe('KanbanCard menu', () => {
 
   test('the consumer menu follows the moves', async () => {
     const base = movable(0)
-    draw({ ...base, menu: [{ label: 'Open in new tab', href: '/issues/c1' }] })
+    draw({ ...base, menu: [{ id: 'open', label: 'Open in new tab', href: '/issues/c1' }] })
     expect(await open()).toEqual(['Move down', 'Move to Doing', 'Move to Done', 'Open in new tab'])
   })
 
@@ -159,7 +159,7 @@ describe('KanbanCard menu', () => {
       id: 'c1',
       title: 'Read only',
       move: 'static',
-      menu: [{ label: 'Open', href: '/x' }],
+      menu: [{ id: 'open', label: 'Open', href: '/x' }],
     })
     const link = linked.container.querySelector('a[data-slot="kanban-menu"]')
     expect(link?.getAttribute('href')).toBe('/x')

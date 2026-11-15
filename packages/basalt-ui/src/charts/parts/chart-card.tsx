@@ -131,7 +131,6 @@ export function ChartCard(props: ChartCardProps): ReactElement {
   const resolved = resolvePhase({ phase, empty })
   // A Suspense fallback has no chart to call, so it can only be loading.
   const effective: ResolvedPhase = chart === undefined ? { tag: 'loading', body: false } : resolved
-  const box = effective.tag === 'stale' ? 'stale' : 'ready'
   return (
     <ChartCardContext value={true}>
       <div
@@ -151,7 +150,7 @@ export function ChartCard(props: ChartCardProps): ReactElement {
             icon={props.icon}
             info={props.info}
             controls={controls}
-            menu={menu === undefined ? undefined : menu({ height: 'fill', phase: box })}
+            menu={menu}
           />
           <div
             data-slot="inset"

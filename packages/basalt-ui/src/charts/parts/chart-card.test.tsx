@@ -245,7 +245,10 @@ describe('anatomy', () => {
         subtitle="last 30 days"
         info="Requests served."
         controls={controls}
-        menu={() => <button>More</button>}
+        menu={[
+          { id: 'more', label: 'More', onClick: () => undefined },
+          { id: 'less', label: 'Less', onClick: () => undefined },
+        ]}
         chart={() => null}
       />,
     )
@@ -255,7 +258,11 @@ describe('anatomy', () => {
       'About Requests',
     )
     expect(el.querySelectorAll('[data-slot="chart-controls"] button')).toHaveLength(1)
-    expect(el.querySelector('[data-slot="chart-menu"]')?.textContent).toBe('More')
+    expect(
+      el
+        .querySelector('[data-slot="chart-menu"] [data-slot="stat-menu"]')
+        ?.getAttribute('aria-label'),
+    ).toBe('Actions for Requests')
   })
 
   test('the card has no Base UI polymorphism: a plain div with the card surface', () => {

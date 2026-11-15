@@ -7,6 +7,15 @@ export type CardAction = { label: string } & (
 )
 
 /**
+ * One menu entry: a link or a handler, never both, with a stable `id`. The one entry type of every
+ * `menu` prop (`StatCard`, `KanbanCard`, `DataPanel`, `ChartCard`, `InnerNavItem`).
+ */
+export type MenuEntry = CardAction & { id: string }
+
+/** The `menu` prop: action data the frame draws as its menu. Min 2 entries; one action is a plain button. */
+export type Menu = readonly [MenuEntry, MenuEntry, ...MenuEntry[]]
+
+/**
  * The measured-empty state. It cannot lack a cause. `filtered` is the no-results case under active
  * filters: it renders Clear filters instead of `action`.
  */

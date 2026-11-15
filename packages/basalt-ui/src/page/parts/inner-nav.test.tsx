@@ -166,6 +166,32 @@ describe('InnerNav parts', () => {
     expect(ran).toEqual(['reset'])
   })
 
+  test('a menu entry may be a link: the row is an anchor to its target', async () => {
+    const state = pushField<Section>(SECTIONS, 'general', 'section')
+    const groups: InnerNavGroup[] = [
+      {
+        id: 'g',
+        label: 'G',
+        items: [
+          {
+            id: 'billing',
+            label: 'Billing',
+            menu: [
+              { id: 'invoices', label: 'Invoices', href: '/invoices' },
+              { id: 'reset', label: 'Reset', onClick: () => undefined },
+            ],
+          },
+        ],
+      },
+    ]
+    render(<InnerNav label="Settings" state={state} groups={groups} />)
+    await act(async () => {
+      fireEvent.click(screen.getByRole('button', { name: 'Actions for Billing' }))
+    })
+    const row = await screen.findByRole('menuitem', { name: 'Invoices' })
+    expect(row.getAttribute('href')).toBe('/invoices')
+  })
+
   test('an item without a menu has no trigger', () => {
     const state = pushField<Section>(SECTIONS, 'general', 'section')
     render(<InnerNav label="Settings" state={state} groups={GROUPS} />)
