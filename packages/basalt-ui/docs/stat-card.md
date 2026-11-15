@@ -20,7 +20,7 @@ figure row.
 
 ```ts
 StatCard(props: StatCardProps): ReactElement
-  href: string
+  href: string | NavTarget
   onSelect: () => void
   title: string
   subtitle?: string

@@ -20,7 +20,7 @@ in a 28 px box.
 
 ```ts
 StatCell(props: StatCellProps): ReactElement
-  href: string
+  href: string | NavTarget
   onSelect: () => void
   phase?: Phase | QueryStateLike
   empty?: Empty | null

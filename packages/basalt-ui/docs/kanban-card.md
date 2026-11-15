@@ -19,7 +19,7 @@ meta lines, up to four chips, a reason line and a verdict. Two tab stops: the li
 KanbanCard<C extends string>(props: KanbanCardProps<C>): ReactElement
   id: string
   title: string
-  href?: string
+  href?: string | NavTarget
   age?: string
   meta?: readonly [string] | readonly [string, string]
   chips?: readonly [CardChip?, CardChip?, CardChip?, CardChip?]
