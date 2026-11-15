@@ -60,14 +60,17 @@ function AnyOfEditor<T>({ model, spec }: FilterEditorProps<T>): ReactElement {
           model.state.setRequest({ filters: withFilter(filters, spec, next) })
         }
       >
-        <ComboboxChips aria-label={t('table.filterOptions')} />
+        <ComboboxChips
+          aria-label={t('table.filterOptions')}
+          itemToLabel={(item: string) => spec.labels?.[item] ?? item}
+        />
         <ComboboxContent
           empty={t('table.filterNoOptions')}
           {...(container !== null && { container })}
         >
           {(item: string) => (
             <ComboboxItem key={item} value={item}>
-              {item}
+              {spec.labels?.[item] ?? item}
             </ComboboxItem>
           )}
         </ComboboxContent>

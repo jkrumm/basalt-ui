@@ -220,6 +220,16 @@ describe('kind cells', () => {
     expect(cell(c.boolean('active')).textContent).toContain('Yes')
   })
 
+  test('status labels replace the stored value in the cell and ride the spec for the filter', () => {
+    const labelled = c.status('state', {
+      options: ['Open', 'Done'],
+      labels: { Open: 'Offen', Done: 'Erledigt' },
+    })
+    expect(cell(labelled).textContent).toBe('Offen')
+    expect(specOf(labelled).labels).toEqual({ Open: 'Offen', Done: 'Erledigt' })
+    expect(specOf(c.status('state', { options: ['Open'] })).labels).toBeUndefined()
+  })
+
   test('entity links through href; spark and custom draw their own content', () => {
     const link = cell(c.entity('name', { href: (r) => `/p/${r.id}` })).querySelector('a')
     expect(link?.getAttribute('href')).toBe('/p/r1')

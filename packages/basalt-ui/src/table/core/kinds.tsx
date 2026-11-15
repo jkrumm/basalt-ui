@@ -85,6 +85,8 @@ export type MoneyOptions = CommonOptions & FooterOption & { currency: string }
 export type DateOptions = CommonOptions & { style?: DateStyle }
 export type StatusOptions<O extends string = string> = CommonOptions & {
   options: readonly O[]
+  /** The text of each option in the cell, the phone card and the column filter; the stored value without it. */
+  labels?: Readonly<Record<O, string>>
   /** Receives the closed option union `options` declares, so a `Record<Option, Tone>` indexes without a cast. */
   tone?: (value: O) => Tone
   filter?: 'multi'
@@ -147,7 +149,7 @@ const OPTION_KEYS: Readonly<
   money: { allowed: [...COMMON, 'currency', 'footer'], required: ['currency'] },
   date: { allowed: [...COMMON, 'style'], required: [] },
   relativeTime: { allowed: COMMON, required: [] },
-  status: { allowed: [...COMMON, 'options', 'tone', 'filter'], required: ['options'] },
+  status: { allowed: [...COMMON, 'options', 'labels', 'tone', 'filter'], required: ['options'] },
   delta: { allowed: [...COMMON, 'polarity', 'unit'], required: ['polarity'] },
   meter: { allowed: [...COMMON, 'max'], required: [] },
   boolean: { allowed: [...COMMON, 'labels'], required: [] },
@@ -417,8 +419,19 @@ export function col<T>(): Col<T> {
         key,
         o,
         // A cell holds the stored value, which the column's `options` name as a closed list.
-        (v) => <StatusCell value={String(v)} tone={o.tone?.(String(v) as O) ?? 'neutral'} />,
-        { spec: { options: o?.options ?? [], filter: o?.filter === 'multi' ? 'anyOf' : null } },
+        (v) => (
+          <StatusCell
+            value={o.labels?.[String(v) as O] ?? String(v)}
+            tone={o.tone?.(String(v) as O) ?? 'neutral'}
+          />
+        ),
+        {
+          spec: {
+            options: o?.options ?? [],
+            ...(o?.labels !== undefined && { labels: o.labels }),
+            filter: o?.filter === 'multi' ? 'anyOf' : null,
+          },
+        },
       ),
     delta: (key, o) =>
       keyed<T>('delta', key, o, (v, _row, env) =>
