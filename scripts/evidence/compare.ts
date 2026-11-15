@@ -70,10 +70,8 @@ async function sh(cmd: string[], cwd: string, env: Record<string, string> = {}):
 
 async function buildPlayground(): Promise<string> {
   await sh(['bun', 'run', 'build'], join(ROOT, 'packages/basalt-ui'))
-  // Same build as index.ts (`VITE_TELEMETRY` bundles the telemetry chunk), so both commands grade one dist.
-  await sh(['bunx', 'vite', 'build', '--manifest'], join(ROOT, 'apps/playground'), {
-    VITE_TELEMETRY: '1',
-  })
+  // Same build as index.ts, so both commands grade one dist.
+  await sh(['bunx', 'vite', 'build', '--manifest'], join(ROOT, 'apps/playground'))
   return join(ROOT, 'apps/playground/dist')
 }
 
