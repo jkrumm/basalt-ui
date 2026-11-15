@@ -16,6 +16,7 @@ import {
   readShippedPreset,
   STYLELINT_PRESET_FILE,
 } from '../presets'
+import { registersRouterPlugin } from '../router-wiring'
 import { parseJsonc, readIfExists } from '../source-text'
 import { findRepoRoot } from '../index'
 import { isSiblingApp } from '../resolver'
@@ -47,13 +48,15 @@ export type Ctx = {
   problems: string[]
   /** Lines the user has to apply by hand, printed together at the end. */
   todo: string[]
+  /** Set by `placeRouterSeeds`: the app is file-routed, so the Vite config gets the router plugin. */
+  routerPlugin?: boolean
 }
 
-const say = (line: string): void => console.log(line)
+export const say = (line: string): void => console.log(line)
 
 const readText = (root: string, rel: string): string | null => readIfExists(resolve(root, rel))
 
-function writeText(root: string, rel: string, content: string): boolean {
+export function writeText(root: string, rel: string, content: string): boolean {
   const abs = resolve(root, rel)
   if (readIfExists(abs) === content) return false
   mkdirSync(dirname(abs), { recursive: true })
@@ -353,7 +356,7 @@ export function seedDesign(ctx: Ctx): void {
   say('wrote DESIGN.md')
 }
 
-function appName(root: string): string {
+export function appName(root: string): string {
   const name = (
     JSON.parse(readFileSync(resolve(root, 'package.json'), 'utf8')) as { name?: string }
   ).name
@@ -365,6 +368,8 @@ function appName(root: string): string {
 const VITE_CONFIGS = ['vite.config.ts', 'vite.config.mts', 'vite.config.js', 'vite.config.mjs']
 const CSS_ENTRIES = ['index.css', 'styles.css', 'main.css', 'app.css', 'globals.css']
 const BASALT_IMPORT = "import { basalt } from 'basalt-ui/vite'"
+const ROUTER_IMPORT = "import { tanstackRouter } from '@tanstack/router-plugin/vite'"
+const ROUTER_PLUGIN = "tanstackRouter({ target: 'react', autoCodeSplitting: true })"
 
 /** The directories an app's build config or stylesheet entry sits in, nearest the declared roots. */
 function appDirs(ctx: Ctx): string[] {
@@ -373,8 +378,10 @@ function appDirs(ctx: Ctx): string[] {
 }
 
 /** Patches `plugins: [` of a stock Vite config; any other shape returns false. */
-function patchVite(text: string): string | null {
-  if (text.includes('basalt(')) return text
+function patchVite(text: string, router: boolean): string | null {
+  const needBasalt = !text.includes('basalt(')
+  const needRouter = router && !registersRouterPlugin(text)
+  if (!needBasalt && !needRouter) return text
   if ((text.match(/plugins:\s*\[/g) ?? []).length !== 1) return null
   const lines = text.split('\n')
   // The end of the last import statement: the line closing `from '...'`, or a bare side-effect import.
@@ -382,8 +389,15 @@ function patchVite(text: string): string | null {
     /^import\s+['"]|\bfrom\s+['"][^'"]+['"];?\s*$/.test(l),
   )
   if (lastImport === -1) return null
-  lines.splice(lastImport + 1, 0, BASALT_IMPORT)
-  return lines.join('\n').replace(/plugins:\s*\[/, 'plugins: [basalt(), ')
+  lines.splice(
+    lastImport + 1,
+    0,
+    ...(needRouter ? [ROUTER_IMPORT] : []),
+    ...(needBasalt ? [BASALT_IMPORT] : []),
+  )
+  // The router plugin goes first: it must see the routes before the React transform does.
+  const added = `${needRouter ? `${ROUTER_PLUGIN}, ` : ''}${needBasalt ? 'basalt(), ' : ''}`
+  return lines.join('\n').replace(/plugins:\s*\[/, () => `plugins: [${added}`)
 }
 
 /** Replaces the one `@import 'tailwindcss'` line of a stock entry with the basalt pair. */
@@ -405,9 +419,10 @@ export function wireApp(ctx: Ctx): void {
   const vite = dirs
     .flatMap((d) => VITE_CONFIGS.map((f) => join(d, f)))
     .find((f) => existsSync(resolve(ctx.root, f)))
-  const patched = vite === undefined ? null : patchVite(readText(ctx.root, vite) ?? '')
+  const patched =
+    vite === undefined ? null : patchVite(readText(ctx.root, vite) ?? '', ctx.routerPlugin === true)
   if (vite !== undefined && patched !== null) {
-    if (writeText(ctx.root, vite, patched)) say(`${vite}: added basalt()`)
+    if (writeText(ctx.root, vite, patched)) say(`${vite}: added the Vite plugins`)
   } else {
     ctx.todo.push(`${BASALT_IMPORT}, then add basalt() to the plugins of your Vite config`)
   }
