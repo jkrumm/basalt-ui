@@ -114,8 +114,9 @@ const HOMES: readonly HomeName[] = [
   'sheet',
 ]
 const SHARED = { page: 'pill', row: 'row', inline: 'inline' } as const
+// `page-bar` draws `filterSlot` as the folding `FilterSet`; `view-mode` is the pill home that keeps one `ControlView` per spec.
 const SHARED_HOME: Record<keyof typeof SHARED, HomeName> = {
-  page: 'page-bar',
+  page: 'view-mode',
   row: 'aside',
   inline: 'card-header',
 }
@@ -141,7 +142,7 @@ function Fold(): ReactElement {
   return (
     <Frame testid="ch-fold">
       <ControlHome home="page-bar">
-        {filterSlot([eight('foldbar')[0]!]).render()}
+        <ControlHome home="view-mode">{filterSlot([eight('foldbar')[0]!]).render()}</ControlHome>
         <Popover>
           <PopoverTrigger render={<Button variant="secondary" />}>More filters</PopoverTrigger>
           <PopoverContent aria-label="More filters" className="w-80 max-w-[90vw]">

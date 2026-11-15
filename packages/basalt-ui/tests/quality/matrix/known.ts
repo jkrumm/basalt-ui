@@ -70,6 +70,14 @@ const SHELL_KNOWN: readonly KnownFinding[] = [
     item: /^\[empty-state\] div \d+x\d+$/,
     owner: 'v3-shell-1-visual: the empty state frame vanishes under forced colors',
   },
+  // `filterSlot` in a page bar draws the folding `FilterSet` (F2 n12), whose pill row clips at its
+  // border box; the same finding /overview lists. The row's own clip margin paints the ring, the walk measures the box.
+  ...['/cycle/shell', '/cycle/shell/services'].map((route): KnownFinding => ({
+    route,
+    assertion: 'ringWalk',
+    item: /filter-set-pill\]>button\[button\] ".*outline is clipped by div/,
+    owner: "controls: the FilterSet pill row clips its edge pills' rings (as /overview)",
+  })),
   ...['/cycle/shell/services', '/cycle/shell/settings'].map((route): KnownFinding => ({
     route,
     assertion: 'ringWalk',
@@ -209,6 +217,13 @@ export const KNOWN: readonly KnownFinding[] = [
     item: /th\[table-head\]>button\[pressable\] "Amount \(EUR\)": outline is clipped by div/,
     owner:
       "table: Chrome centres the focused column menu inside the pin-reduced scrollport, so the next stop, the last column's sort button, stays half out of view at 390",
+  },
+  {
+    route: '/table',
+    assertion: 'ringWalk',
+    item: /td\[table-cell\]>span\[table-select-cell\]>div\[select\]>button\[select-trigger\] ".*outline is clipped by div/,
+    owner:
+      'table: the inline select in a cell sits flush in the scrollport, which clips its ring; the 390 walk reaches it now that the page bar folds its filters into one Filters button (fewer stops before the table)',
   },
 ]
 

@@ -155,8 +155,10 @@ describe('the header slot', () => {
     const center = document.querySelector('[data-slot="shell-center"]') as HTMLElement
     expect(center.querySelector('[data-slot="global-pills"]')).not.toBeNull()
     expect(center.querySelector('[aria-label="Range"]')).not.toBeNull()
-    expect(document.querySelector('input[aria-label="Search"]')).not.toBeNull()
-    expect(center.querySelector('input[aria-label="Search"]')).toBeNull()
+    // The page bar is a pill home: its slot is a FilterSet, so Search is a pill, not an inline input.
+    const bar = document.querySelector('[data-slot="page-bar-controls"]') as HTMLElement
+    expect(bar.querySelector('[data-slot="filter-set"] button[aria-label="Search"]')).not.toBeNull()
+    expect(center.querySelector('[aria-label="Search"]')).toBeNull()
   })
 })
 

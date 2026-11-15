@@ -9,6 +9,8 @@ import { afterEach, beforeEach, describe, expect, spyOn, test } from 'bun:test'
 import { useLayoutEffect } from 'react'
 import { renderToString } from 'react-dom/server'
 import { memoryHandle } from '../controls/control-view.handles'
+import { filterSlot } from '../controls/filter-slot'
+import { spec } from '../controls/spec'
 import type { PageAction } from './contract'
 import { Page, PageHostContext } from './page'
 import { PageBar, PageCrumb } from './page-bar'
@@ -120,6 +122,37 @@ describe('PageBar without a shell', () => {
     expect(screen.getByRole('button', { name: 'Range' })).toBeDefined()
     expect(band()?.querySelector('[data-slot="page-bar-tabs"]')?.textContent).toBe('Overview')
     expect(band()?.querySelector('[data-slot="page-bar-controls"]')?.textContent).toBe('Range')
+  })
+
+  test('a filterSlot in the controls slot renders as a FilterSet, and the controls cell owns the line from regular up', () => {
+    const range = memoryHandle<string>('range', 'a', {
+      kind: 'enum',
+      options: [
+        { value: 'a', label: 'A' },
+        { value: 'b', label: 'B' },
+      ],
+    })
+    render(
+      <Page>
+        <PageBar controls={filterSlot([spec(range, 'Range')])} />
+      </Page>,
+    )
+    const controls = band()!.querySelector('[data-slot="page-bar-controls"]')!
+    expect(controls.querySelector('[data-slot="filter-set"]')).not.toBeNull()
+    const cell = controls.parentElement!
+    expect(cell.className).toContain('basis-full')
+    expect(cell.className).toContain('@regular:flex-1')
+  })
+
+  test('a band with no controls keeps its cell at content width', () => {
+    render(
+      <Page>
+        <PageBar title="Runs" actions={[action('new')]} />
+      </Page>,
+    )
+    expect(
+      band()!.querySelector('[data-slot="page-actions"]')!.parentElement!.className,
+    ).not.toContain('basis-full')
   })
 
   test('tabs take { handle, label } and draw a tab strip bound to the handle', () => {

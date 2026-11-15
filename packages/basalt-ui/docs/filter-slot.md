@@ -10,8 +10,9 @@ slots: []
 # filterSlot
 
 Typed data a composite takes its controls through. Specs render with `ControlView` in the
-presentation of the home around them; a `row` home with several specs adds `Reset all`. No specs,
-nothing drawn. The slot keeps its specs' scope in its type: a card (`StatCard`, `ChartCard`,
+presentation of the home around them; in a pill home (`page-bar`, `section-header`) they draw as
+`FilterSet`, so the measured fold and the phone's `Filters (n)` sheet apply; a `row` home with
+several specs adds `Reset all`. No specs, nothing drawn. The slot keeps its specs' scope in its type: a card (`StatCard`, `ChartCard`,
 `DataPanel`) takes widget specs only, so a global or page spec in a card slot is a type error.
 
 ## Signature

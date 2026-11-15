@@ -141,9 +141,10 @@ layout('ControlHome', () => {
       for (const home of HOMES) {
         test(`${home}: eight filters all draw, none draws nothing`, async () => {
           const page = await open(viewport)
-          expect(await page.count(`[data-testid="ch-${home}-8"] [data-slot="control-view"]`)).toBe(
-            8,
-          )
+          // A page-bar slot is a FilterSet: one pill per spec (the fold hides the tail, the DOM keeps it).
+          const drawn =
+            home === 'page-bar' ? '[data-slot="filter-set-pill"]' : '[data-slot="control-view"]'
+          expect(await page.count(`[data-testid="ch-${home}-8"] ${drawn}`)).toBe(8)
           expect(await page.count(`[data-testid="ch-${home}-0"] [data-home]`)).toBe(0)
           expect(await page.count(`[data-testid="ch-${home}-0"] [data-slot="control-view"]`)).toBe(
             0,

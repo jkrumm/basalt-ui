@@ -11,7 +11,9 @@
  */
 import { use, useRef } from 'react'
 import type { ReactElement } from 'react'
+import { cn } from '../core/cn'
 import { useMessages } from '../core/messages/use-messages'
+import { SlotHomeContext } from '../core/slot-home'
 import { filters } from '../core/messages/filters'
 import type { Translate } from '../core/messages/use-messages'
 import { Button, buttonVariants } from '../ui/button'
@@ -188,6 +190,9 @@ function PillSet({
     specs.map((s) => s.handle.key),
   )
   const size = presentation === 'inline' ? 'sm' : 'md'
+  // In a page bar or a section header the row-or-button swap keys on the page's container, the
+  // bar's own room, not on the narrower cell the slot sits in (F2 n14).
+  const inBar = use(SlotHomeContext) !== undefined
   const folded = specs.slice(visible)
   return (
     <fieldset
@@ -196,7 +201,7 @@ function PillSet({
       aria-label={t('filters.title')}
       className="m-0 w-full min-w-0 max-w-full border-0 p-0"
     >
-      <div className="@container w-full min-w-0 max-w-full">
+      <div className={cn('w-full min-w-0 max-w-full', !inBar && '@container')}>
         <div className="hidden w-full min-w-0 items-center gap-2 @regular:flex">
           <div
             ref={rowRef}

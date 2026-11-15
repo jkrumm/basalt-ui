@@ -3,6 +3,7 @@ import type { ReactElement, ReactNode } from 'react'
 import { useIsomorphicLayoutEffect } from '../common/isomorphic-layout-effect'
 import { cn } from '../core/cn'
 import { page } from '../core/messages/page'
+import { SlotHomeContext } from '../core/slot-home'
 import { useMessages } from '../core/messages/use-messages'
 import { Button } from '../ui/button'
 import { Menu, MenuContent, MenuItem, MenuTrigger } from '../ui/menu'
@@ -371,13 +372,20 @@ export function PageBar<K extends string = string>({
             {renderTabs(tabs)}
           </div>
         )}
-        <div className="ms-auto flex min-w-0 flex-wrap items-center justify-end gap-2">
+        <div
+          className={cn(
+            'ms-auto flex min-w-0 flex-wrap items-center justify-end gap-2',
+            // The controls own the rest of the line from `regular` up, so the fold measures the
+            // bar's room; below it they wrap to a line of their own (F2 n13, n14).
+            !isEmptySlot(controls) && 'basis-full @regular:flex-1 @regular:basis-0',
+          )}
+        >
           {!isEmptySlot(controls) && (
             <div
               data-slot="page-bar-controls"
-              className="flex min-w-0 flex-wrap items-center gap-2"
+              className="flex min-w-0 flex-1 flex-wrap items-center justify-end gap-2"
             >
-              {controls?.render()}
+              <SlotHomeContext value="page-bar">{controls?.render()}</SlotHomeContext>
             </div>
           )}
           {refresh !== undefined && <RefreshButton {...refresh} />}

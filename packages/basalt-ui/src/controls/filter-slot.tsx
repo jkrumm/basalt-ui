@@ -14,10 +14,12 @@ import { cn } from '../core/cn'
 import { useMessages } from '../core/messages/use-messages'
 import { home as homeMessages } from '../core/messages/home'
 import type { ControlHandle, ControlsSlot } from '../core/ports'
+import { SlotHomeContext } from '../core/slot-home'
 import { Lozenge } from '../ui/badge'
 import { buttonVariants } from '../ui/button'
 import type { ControlPresentation, FilterScope, FilterSpec } from './contract'
 import { ControlPresentationContext, ControlView } from './control-view'
+import { SpecFilterSet } from './filter-set-spec'
 import { describeValue } from './renderers'
 import type { ControlSize } from './renderers'
 
@@ -69,6 +71,9 @@ function ResetAll({ specs }: { specs: readonly AnySpec[] }): ReactElement | null
 
 function SlotView({ specs }: { specs: readonly AnySpec[] }): ReactElement | null {
   const presentation = use(ControlPresentationContext)
+  const home = use(SlotHomeContext)
+  // A pill home (`page-bar`, `section-header`) draws the folding `FilterSet`.
+  if (home !== undefined && presentation === 'pill') return <SpecFilterSet specs={specs} />
   return (
     <>
       {specs.map((s) => (
@@ -149,8 +154,9 @@ function CustomView<T>({
 
 /**
  * Typed data a composite takes its controls through. Specs render with `ControlView` in the
- * presentation of the home around them; a `row` home with several specs adds `Reset all`. No specs,
- * nothing drawn. The slot keeps its specs' scope in its type: a card (`StatCard`, `ChartCard`,
+ * presentation of the home around them; in a pill home (`page-bar`, `section-header`) they draw as
+ * `FilterSet`, so the measured fold and the phone's `Filters (n)` sheet apply; a `row` home with
+ * several specs adds `Reset all`. No specs, nothing drawn. The slot keeps its specs' scope in its type: a card (`StatCard`, `ChartCard`,
  * `DataPanel`) takes widget specs only, so a global or page spec in a card slot is a type error.
  *
  * @useWhen you give a composite (`PageBar`, `Section`, a card) its controls
