@@ -95,7 +95,7 @@ export function TabsTrigger({ className, ...props }: TabsTriggerProps): ReactEle
       {...props}
       data-slot="tabs-trigger"
       className={cn(
-        'relative -mb-px inline-flex h-(--tabs-h) shrink-0 cursor-pointer items-center gap-1.5 border-b-2 border-transparent px-3 font-medium whitespace-nowrap text-muted-foreground select-none focus-ring transition-colors hover:text-foreground data-active:border-brand data-active:text-foreground data-disabled:pointer-events-none data-disabled:opacity-50 data-[orientation=vertical]:mr-[-1px] data-[orientation=vertical]:mb-0 data-[orientation=vertical]:justify-start data-[orientation=vertical]:border-r-2 data-[orientation=vertical]:border-b-0 pointer-coarse:min-h-11 motion-reduce:transition-none',
+        'relative -mb-px inline-flex h-(--tabs-h) shrink-0 cursor-pointer items-center gap-1.5 border-b-2 border-transparent px-3 font-medium whitespace-nowrap text-muted-foreground select-none focus-ring focus-visible:-outline-offset-2 transition-colors hover:text-foreground data-active:border-brand data-active:text-foreground data-disabled:pointer-events-none data-disabled:opacity-50 data-[orientation=vertical]:mr-[-1px] data-[orientation=vertical]:mb-0 data-[orientation=vertical]:justify-start data-[orientation=vertical]:border-r-2 data-[orientation=vertical]:border-b-0 pointer-coarse:min-h-11 motion-reduce:transition-none',
         className,
       )}
     />
