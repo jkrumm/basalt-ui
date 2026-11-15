@@ -40,6 +40,7 @@ import { ActionIcon, Box, Group, Kbd, Stack, Text, Textarea } from '@mantine/cor
 import type { ClipboardEvent, ComponentProps, JSX, KeyboardEvent, ReactNode, Ref } from 'react'
 import { useImperativeHandle, useLayoutEffect, useMemo, useRef, useSyncExternalStore } from 'react'
 import { cx } from '../../common/props'
+import { confirmsComposition } from '../../core/commit-key'
 import type { BasaltProps, SlotStylesProps } from '../../common/props'
 import { readPersistedValue } from '../../state/persisted'
 import { VX } from '../../tokens'
@@ -551,8 +552,8 @@ export function Composer({
   const handleKeyDown = (event: KeyboardEvent<HTMLTextAreaElement>): void => {
     if (event.key !== 'Enter' || event.shiftKey) return
     // IME guard: mid-composition (CJK, and some mobile keyboards) Enter COMMITS the candidate — it
-    // is not a send. `nativeEvent.isComposing` is the reliable signal; keyCode 229 is the legacy one.
-    if (event.nativeEvent.isComposing) return
+    // is not a send.
+    if (confirmsComposition(event)) return
     event.preventDefault()
     submit()
   }
