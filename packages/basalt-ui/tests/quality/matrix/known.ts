@@ -57,21 +57,15 @@ export const KNOWN: readonly KnownFinding[] = [
   {
     route: '/overview',
     assertion: 'ringWalk',
-    item: /(select-trigger\] "Range"|filter-set-pill|button\[button\] "Filters").*outline is clipped/,
+    item: /(select-trigger\] "Range"|button\[button\] "Filters").*outline is clipped/,
+    owner: 'controls: the range select and Filters button rings are clipped by the page bar',
+  },
+  {
+    route: '/overview',
+    assertion: 'ringWalk',
+    item: /filter-set-pill\]>button\[button\] "Region: All regions".*outline is clipped by main/,
     owner:
-      'controls: the range select, filter pills and Filters button rings are clipped by the page bar',
-  },
-  {
-    route: '/overview',
-    assertion: 'ringWalk',
-    item: /view-tabs\]>div\[tabs\]>div\[tabs-list\]>button\[tabs-trigger\].*outline is clipped by div/,
-    owner: 'ui/tabs: the tab list scrolls sideways, so its overflow clips the trigger ring',
-  },
-  {
-    route: '/overview',
-    assertion: 'ringWalk',
-    item: /view-tabs\]>div>div\[segmented\]>button\[segmented-item\].*outline is clipped by main/,
-    owner: 'controls: the track sits on the page edge, so the page bar clips its ring like Range',
+      'playground /overview: the page body holds a FilterSet with no `Page` gutter, so its first pill sits on the edge of main',
   },
   {
     route: '/overview',
