@@ -87,7 +87,7 @@ export async function mount(spec: FixtureSpec, container: HTMLElement): Promise<
               title={`Stat ${i + 1}`}
               value={100 + i}
               footer={[{ label: 'Open', value: i }]}
-              onSelect={() => undefined}
+              onClick={() => undefined}
             />
           ))}
         </CardGrid>
