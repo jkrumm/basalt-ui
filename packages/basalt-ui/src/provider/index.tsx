@@ -97,7 +97,8 @@ type BasaltProviderCommonProps = {
    * Mount Basalt's `<Spotlight>` (Cmd+K) with the generated nav + command actions. Default `true`, and
    * it mounts only when the app calls `defineNav` or `defineCommands` (nav entries and commands are
    * what it lists). Set `false` when the app owns its own palette: neither the component nor its
-   * action wiring mounts.
+   * action wiring mounts. Under a v3 `AppShell` (`basalt-ui/shell`) it never mounts: the shell's
+   * `CommandPalette` is the one palette and owns Mod+K.
    */
   spotlight?: boolean
   /**

@@ -35,6 +35,7 @@ import type { AsideClaim } from './parts/grid'
 import { Header } from './parts/header'
 import { RailMount, TabBarMount } from './parts/mounts'
 import { usePrintScheme } from './parts/print'
+import { trackShell } from './shell-presence'
 
 const NO_BLOCKS: NonNullable<AppShellProps['blocks']> = []
 const NO_ACTIONS: NonNullable<AppShellProps['globalActions']> = []
@@ -62,6 +63,10 @@ function AsideSheet({ claim }: { claim: AsideClaim }): ReactElement {
  * the aside and the title through the shell; `Page` itself renders the one `h1`.
  *
  * Needs TanStack Router; another router or none uses `./page` with its own frame.
+ *
+ * The palette is the app's `CommandPalette`, mounted once inside the shell; it lists every `nav`
+ * item. While the shell is mounted `BasaltProvider` mounts no Spotlight, so `Mod+K` has one
+ * listener. `search={{ onOpen }}` draws the rail's search row; point it at the palette's open state.
  *
  * @useWhen an app has more than one destination and wants one rail, header and tab bar from a single `defineNav`
  * @neverWhen the app is one screen or keeps its own frame (use Page, PageBar and Section inside your own main)
@@ -105,6 +110,9 @@ export function AppShell<Id extends string = string>({
   )
   useIsomorphicLayoutEffect(() => runtime.setPathname(pathname), [runtime, pathname])
   const active = useSyncExternalStore(runtime.subscribe, runtime.getState, runtime.getState)
+
+  // Stands the 2.x provider's Spotlight down: under the shell `CommandPalette` owns `Mod+K`.
+  useIsomorphicLayoutEffect(trackShell, [])
 
   const [shellHost] = useState(createShellHost)
   const attachRoot = useChromeRoot(shellHost.attachRoot, chrome)
