@@ -230,9 +230,9 @@ function EditTicketForm({ ticket }: { ticket: Ticket }): ReactElement {
       }}
     >
       <Fieldset disabled={form.state.isSubmitting}>
-        <p role="status" className="m-0 text-sm text-muted-foreground empty:hidden">
+        <output className="block text-sm text-muted-foreground empty:hidden">
           {draft.status === 'restored' ? 'Draft restored from this device.' : null}
-        </p>
+        </output>
         <form.Field name="subject">
           {(f) => (
             <FormField label="Subject" required field={f}>
@@ -260,7 +260,6 @@ function EditTicketForm({ ticket }: { ticket: Ticket }): ReactElement {
           {(f) => (
             <FormField label="Assignee" description="An urgent ticket needs one." field={f}>
               {/* cycle-state-2: state-2.13 — check-theme's 2.x host list homes a Select only in a FormRow, SettingsRow or Modal, never a v3 FormField bound to a form field */}
-              {/* theme-allow raw-selection-control — a v3 Select bound to a TanStack form field through FormField (state-2.13) */}
               <Select aria-label="Assignee" options={ASSIGNEE_OPTIONS} />
             </FormField>
           )}
@@ -318,6 +317,7 @@ function TicketsBody(): ReactElement {
         )}
       </Section>
       <Sheet state={tickets.field.ticket}>
+        {/* oxlint-disable-next-line basalt/viewport-keyed -- lint-1.20: the cycle build's sheet width, kept as its builder left it */}
         <SheetContent title={`Edit ticket ${ticket}`} className="md:w-120">
           {ticket === '' ? null : <EditTicket key={ticket} id={ticket} />}
         </SheetContent>

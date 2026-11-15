@@ -142,6 +142,7 @@ async function capture(args: ShotArgs): Promise<string[]> {
       // Before any document script runs, so the boot script reads it on the first paint.
       await context.addInitScript(
         ({ keys, value }) => {
+          // oxlint-disable-next-line basalt/data-primitive -- a Playwright init script seeds the stored scheme before the app boots; no app store exists in that context
           for (const key of keys) window.localStorage.setItem(key, value)
         },
         { keys: [SCHEME_KEY, LEGACY_SCHEME_KEY], value: shot.scheme },
@@ -177,10 +178,8 @@ async function capture(args: ShotArgs): Promise<string[]> {
 if (import.meta.main) {
   try {
     const files = await capture(parseArgs(Bun.argv.slice(2)))
-    // oxlint-disable-next-line no-console -- the script's output is its list of files
     console.log(files.join('\n'))
   } catch (error) {
-    // oxlint-disable-next-line no-console -- a CLI reports its failure on stderr
     console.error(error instanceof UsageError ? `shots: ${error.message}` : error)
     process.exit(1)
   }

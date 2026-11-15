@@ -1,6 +1,7 @@
 import { rect } from '@tanstack/charts/rect'
 import { createFileRoute } from '@tanstack/react-router'
-import { Section } from 'basalt-ui/page'
+import { CardGrid, Section } from 'basalt-ui/page'
+import { Card } from 'basalt-ui/ui/card'
 import type { ReactElement, ReactNode } from 'react'
 import { CartesianChart } from '../../../../packages/basalt-ui/dist/charts/parts/cartesian'
 import type { Series } from '../../../../packages/basalt-ui/dist/charts/contract'
@@ -53,13 +54,13 @@ function Panel({
   children: ReactNode
 }): ReactElement {
   return (
-    <figure className="m-0 flex min-w-0 flex-col gap-2 rounded-card bg-card p-4 shadow-card">
-      <figcaption className="flex flex-col gap-0.5">
+    <Card render={<figure />} className="min-w-0">
+      <figcaption className="flex flex-col gap-0.5 pb-2">
         <span className="text-sm font-semibold">{seam}</span>
         <span className="text-xs text-muted-foreground">{consumer}</span>
       </figcaption>
       {children}
-    </figure>
+    </Card>
   )
 }
 
@@ -224,7 +225,7 @@ const lone = (
 function ChartsRoute(): ReactElement {
   return (
     <Section title="Chart seams">
-      <div className="grid grid-cols-[repeat(auto-fill,minmax(min(100%,26rem),1fr))] items-start gap-4">
+      <CardGrid min="regular">
         <Panel
           seam="format, weight, dash, parent, legend and tooltip false, gaps, note, role, y.domain"
           consumer="argo body-composition/charts/weight-chart.tsx:60-72"
@@ -264,7 +265,7 @@ function ChartsRoute(): ReactElement {
         >
           {lone}
         </Panel>
-      </div>
+      </CardGrid>
     </Section>
   )
 }
