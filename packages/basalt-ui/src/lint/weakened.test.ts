@@ -5,7 +5,15 @@
  * be reproduced without the plugin build, so it runs through an injected runner.
  */
 import { afterEach, describe, expect, it } from 'bun:test'
-import { cpSync, existsSync, mkdirSync, mkdtempSync, rmSync, writeFileSync } from 'node:fs'
+import {
+  cpSync,
+  existsSync,
+  mkdirSync,
+  mkdtempSync,
+  rmSync,
+  symlinkSync,
+  writeFileSync,
+} from 'node:fs'
 import { tmpdir } from 'node:os'
 import { join, resolve } from 'node:path'
 import { fileURLToPath } from 'node:url'
@@ -85,6 +93,83 @@ describe('checkWeakenedConfig', () => {
 
   it('a per-glob override turning the rule off fails the seeded offender', async () => {
     expect(status(await run(fixture('override-off')), 1)).toBe('failed')
+  })
+
+  describe('a guard switched off for a subtree (check 1 seeds every directory)', () => {
+    /** A healthy install with `src/features/screen.tsx`, so the subtree is a directory with a source file. */
+    function withFeatures(): string {
+      const dir = fixture('healthy')
+      mkdirSync(join(dir, 'src/features'), { recursive: true })
+      writeFileSync(join(dir, 'src/features/screen.tsx'), 'export const a = 1\n')
+      return dir
+    }
+
+    it('passes a healthy tree with a subdirectory', async () => {
+      expect(status(await run(withFeatures()), 1)).toBe('passed')
+    })
+
+    it('ignorePatterns on a subdirectory fails, naming the directory and the config', async () => {
+      const dir = withFeatures()
+      writeFileSync(
+        join(dir, '.oxlintrc.json'),
+        JSON.stringify({
+          extends: ['./.oxlintrc.basalt.json'],
+          ignorePatterns: ['src/features/**'],
+        }),
+      )
+      const results = await run(dir)
+      expect(status(results, 1)).toBe('failed')
+      expect(results[0]?.detail).toContain('src/features: the guard is off here')
+      expect(results[0]?.detail).toContain('ignorePatterns')
+    })
+
+    it('a nested .oxlintrc.json without the preset fails checks 1 and 3', async () => {
+      const dir = withFeatures()
+      writeFileSync(join(dir, 'src/features/.oxlintrc.json'), '{}')
+      const results = await run(dir)
+      expect(status(results, 1)).toBe('failed')
+      expect(results[0]?.detail).toContain('src/features/.oxlintrc.json')
+      expect(status(results, 3)).toBe('failed')
+      expect(results[2]?.detail).toContain('src/features/.oxlintrc.json')
+    })
+
+    it('a nested .oxlintrc.json that extends the preset passes check 3', async () => {
+      const dir = withFeatures()
+      writeFileSync(
+        join(dir, 'src/features/.oxlintrc.json'),
+        JSON.stringify({ extends: ['../../.oxlintrc.basalt.json'] }),
+      )
+      expect(status(await run(dir), 3)).toBe('passed')
+    })
+
+    it('a declared root that is a file fails with a named reason instead of crashing', async () => {
+      const dir = withFeatures()
+      const results = await run(dir, { roots: ['src/features/screen.tsx'] })
+      expect(status(results, 1)).toBe('failed')
+      expect(results[0]?.detail).toContain('must be a directory')
+    })
+  })
+
+  describe('the default runner', () => {
+    it('resolves the project binary, not a bare oxlint on PATH', async () => {
+      const dir = fixture('healthy')
+      mkdirSync(join(dir, 'node_modules/.bin'), { recursive: true })
+      symlinkSync(join(BIN, 'oxlint'), join(dir, 'node_modules/.bin/oxlint'))
+      const results = await checkWeakenedConfig({
+        dir,
+        roots: ['src'],
+        offender: OFFENDER,
+        oxlintPin: PIN,
+        installedOxlint: PIN,
+        baseRef: null,
+      })
+      expect(status(results, 1)).toBe('passed')
+    })
+
+    it('uses no Bun global', async () => {
+      const source = await Bun.file(new URL('./weakened.ts', import.meta.url)).text()
+      expect(source).not.toMatch(/\bBun\./)
+    })
   })
 
   it('an emptied jsPlugins fails when the plugin rule stops firing', async () => {

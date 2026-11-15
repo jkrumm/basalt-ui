@@ -5,7 +5,7 @@
  */
 import { spawnSync } from 'node:child_process'
 import { existsSync, readFileSync } from 'node:fs'
-import { dirname, relative, resolve } from 'node:path'
+import { relative, resolve } from 'node:path'
 
 import { checkTokens } from '../../lint/check-tokens'
 import { readManifest } from '../manifest'
@@ -13,6 +13,9 @@ import type { Manifest, Profile } from '../manifest'
 import { findManifestAbove } from '../install-root'
 import { readPackageJson } from '../source-text'
 import { filesUnder, rootsOf } from '../doctor/types'
+import { findBin } from '../../lint/bin'
+
+export { findBin }
 
 export type Finding = { file: string; line: number; id: string; message: string }
 
@@ -48,19 +51,6 @@ export function loadProject(dir: string): Project | { error: string } {
       'app',
     ]),
   }
-}
-
-/** The first `node_modules/.bin/<name>` found from each declared root (and the install root) upward. */
-export function findBin(project: Project, name: string): string | null {
-  const starts = [...project.roots.map(([r]) => resolve(project.root, r)), project.root]
-  for (const start of starts) {
-    for (let at = start; ; at = dirname(at)) {
-      const path = resolve(at, 'node_modules/.bin', name)
-      if (existsSync(path)) return path
-      if (at === project.root || dirname(at) === at) break
-    }
-  }
-  return null
 }
 
 /** Generated token sheets: they carry the names, so no scanner reads them as source. */

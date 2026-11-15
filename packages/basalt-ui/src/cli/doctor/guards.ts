@@ -4,9 +4,7 @@
  * `.basalt/budget.json`, verifies the ejected files, runs the weakened-config check from the
  * guardrail concept and reads DESIGN.md.
  */
-import { spawnSync } from 'node:child_process'
-
-import { checkWeakenedConfig } from '../../lint/weakened'
+import { checkWeakenedConfig, defaultBaseRef } from '../../lint/weakened'
 import type { WeakenedResult } from '../../lint/weakened'
 import { BUDGET_PATH, countBreaches, readBudget } from '../budget'
 import { tokensCss } from '../tokens-css'
@@ -83,25 +81,6 @@ function designFindings(ctx: Ctx): string[] {
     }
   }
   return findings
-}
-
-/** Git's default remote branch, `origin/main` when nothing says. */
-function defaultBaseRef(root: string): string | null {
-  const run = spawnSync(
-    'git',
-    ['-C', root, 'symbolic-ref', '--short', 'refs/remotes/origin/HEAD'],
-    {
-      encoding: 'utf8',
-    },
-  )
-  if (run.status === 0 && run.stdout.trim() !== '') return run.stdout.trim()
-  for (const ref of ['origin/main', 'origin/master']) {
-    const probe = spawnSync('git', ['-C', root, 'rev-parse', '--verify', '--quiet', ref], {
-      encoding: 'utf8',
-    })
-    if (probe.status === 0) return ref
-  }
-  return null
 }
 
 async function weakened(ctx: Ctx): Promise<{ findings: string[]; skipped: string[] }> {
