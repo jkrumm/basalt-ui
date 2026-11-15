@@ -169,6 +169,8 @@ export function loadSources(): TagSources {
   const src = join(PKG_ROOT, 'src')
   const files = [
     join(src, 'core/ports.ts'),
+    // The frame types both contracts name (`FrameState`, `FootFacts`, `MenuEntry`) are declared once here.
+    join(src, 'core/phase.ts'),
     ...readdirSync(src, { withFileTypes: true })
       .filter((e) => e.isDirectory())
       .map((e) => join(src, e.name, 'contract.ts'))
