@@ -9,6 +9,7 @@ import { readBudget } from '../budget'
 import { findBasaltInstall } from '../index'
 import { defaultBaseRef, rootFindings } from '../../lint/weakened'
 import type { Profile } from '../manifest'
+import { BUILD_PEERS, RUNTIME_PEERS } from '../peers'
 import {
   compareVersions,
   fail,
@@ -101,9 +102,8 @@ const check2 = (name: string): Check => ({
   },
 })
 
-/** Peers every profile above `tokens` needs; `app` adds the router and the query client. */
-const BASE_PEERS = ['react', 'react-dom', 'tailwindcss', '@base-ui/react'] as const
-const APP_PEERS = ['@tanstack/react-router', '@tanstack/react-query'] as const
+/** The app's own React; the rest is `../peers` (what `init` installs), so the two name one set. */
+const REACT_PEERS = ['react', 'react-dom'] as const
 const DEP_FIELDS = ['dependencies', 'devDependencies', 'peerDependencies'] as const
 
 type Declared = { dir: string; deps: Record<string, string> }
@@ -209,7 +209,11 @@ const check3 = (name: string): Check => ({
       const ranges = readJson(ctx.pkgRoot, 'package.json')?.['peerDependencies'] as
         | Record<string, string>
         | undefined
-      const required = [...BASE_PEERS, ...(manifest.profile === 'app' ? APP_PEERS : [])]
+      const required = [
+        ...REACT_PEERS,
+        ...RUNTIME_PEERS[manifest.profile],
+        ...BUILD_PEERS[manifest.profile],
+      ]
       for (const peer of required) {
         const declared = packages.find((p) => peer in p.deps)
         if (declared === undefined) {

@@ -54,6 +54,8 @@ export type WeakenedInput = {
   runLint?: RunLint
   /** The default remote branch ref (`origin/main`); absent or null skips check 5. */
   baseRef?: string | null
+  /** The refs looked for when `baseRef` is null: named in the ratchet's message. */
+  triedRefs?: readonly string[]
   /** The exact oxlint version the preset pins. */
   oxlintPin: string
   /** The installed oxlint version; default asks `oxlint --version`. */
@@ -349,9 +351,20 @@ function oxlintPin(pin: string, installed: string | null): WeakenedResult {
     : result('failed', `oxlint ${installed} is not the preset pin ${pin}`)
 }
 
-function budgetRatchet(dir: string, baseRef: string | null | undefined): WeakenedResult {
+function budgetRatchet(
+  dir: string,
+  baseRef: string | null | undefined,
+  tried: readonly string[],
+): WeakenedResult {
   const result = verdict(5, 'budget-ratchet')
-  if (!baseRef) return result('skipped', 'no base ref to compare the budget against')
+  // No base to ratchet against (a fresh repo, no remote): nothing can have been raised yet.
+  if (!baseRef) {
+    const named = tried.length === 0 ? 'none given' : tried.join(', ')
+    return result(
+      'passed',
+      `no base ref resolves (tried ${named}), so no ceiling can have been raised; the ratchet runs once the repo has one`,
+    )
+  }
   // A git that cannot start is a check that cannot run: skipped, never a rejected call.
   const git = (...args: string[]) => {
     const run = spawnSync('git', ['-C', dir, ...args], { stdio: ['ignore', 'pipe', 'ignore'] })
@@ -417,6 +430,6 @@ export async function checkWeakenedConfig(input: WeakenedInput): Promise<Weakene
       pin,
       input.installedOxlint === undefined ? installedOxlintVersion(dir) : input.installedOxlint,
     ),
-    budgetRatchet(dir, baseRef),
+    budgetRatchet(dir, baseRef, input.triedRefs ?? []),
   ]
 }

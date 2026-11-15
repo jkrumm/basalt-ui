@@ -54,6 +54,8 @@ const PEERS: Record<string, string> = {
   '@base-ui/react': '1.9.0',
   '@tanstack/react-router': '1.170.0',
   '@tanstack/react-query': '5.104.0',
+  '@tailwindcss/vite': '4.3.5',
+  '@tanstack/router-plugin': '1.168.40',
 }
 
 /** The doctor options a healthy tree needs: a lint runner that fires, oxlint at the pin, no base ref. */

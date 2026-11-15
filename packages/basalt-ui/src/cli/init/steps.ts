@@ -16,6 +16,8 @@ import {
   readShippedPreset,
   STYLELINT_PRESET_FILE,
 } from '../presets'
+import { BUILD_PEERS, RUNTIME_PEERS } from '../peers'
+import { INVOKERS, LINT_INVOCATION } from '../doctor/wiring'
 import { registersRouterPlugin } from '../router-wiring'
 import { parseJsonc, readIfExists } from '../source-text'
 import { findRepoRoot } from '../index'
@@ -166,61 +168,90 @@ const readPackage = (dir: string): PackageJson | null => {
   }
 }
 
-/** The exact pins `init` installs for a profile, read from the package that ships them. */
-export function peerPins(pkgRoot: string, profile: Profile): Record<string, string> {
-  const own = readPackage(pkgRoot)
-  const pin = (name: string, spec: string | undefined): string => {
-    if (spec === undefined || !/^\d+\.\d+\.\d+$/.test(spec)) {
-      throw new Error(`${pkgRoot}/package.json pins ${name} as ${spec ?? 'nothing'}, not exactly`)
-    }
-    return spec
-  }
-  const dev = own?.devDependencies ?? {}
-  const pins: Record<string, string> = {
-    stylelint: pin('stylelint', dev['stylelint']),
-    'postcss-html': pin('postcss-html', dev['postcss-html']),
-  }
-  if (profile !== 'tokens') {
-    pins['oxlint'] = pin(
-      'oxlint',
-      readShippedPreset(pkgRoot, profile).settings?.basalt?.pins?.['oxlint'],
-    )
-    pins['@shadcn/lint'] = pin(
-      '@shadcn/lint',
-      own?.peerDependencies?.['@shadcn/lint'] ?? dev['@shadcn/lint'],
-    )
-  }
-  return pins
+/** True when the repo formats with Prettier and has no `.oxfmtrc.json`: then `oxfmt` is not its formatter. */
+function formatsWithPrettier(root: string): boolean {
+  return (
+    readText(root, '.oxfmtrc.json') === null &&
+    (readText(root, '.prettierignore') !== null ||
+      readPackage(root)?.devDependencies?.['prettier'] !== undefined)
+  )
 }
 
-/** `add -D --exact` for the package manager the lockfile names (npm without one). */
-export function installCommand(root: string, specs: string[]): string[] {
+/** What `init` installs: runtime peers into `dependencies`, the lint and build tools into `devDependencies`. */
+export type PeerPlan = { runtime: Record<string, string>; dev: Record<string, string> }
+
+/**
+ * The installs for a profile, read from the package that ships them: an exact pin where the package
+ * pins one, else its peer range (`@base-ui/react`, `@tanstack/react-router`). `oxfmt` joins only when
+ * it is the repo's formatter (`init` writes `.oxfmtrc.json` for it).
+ */
+export function peerPlan(pkgRoot: string, profile: Profile, oxfmt: boolean): PeerPlan {
+  const own = readPackage(pkgRoot)
+  const spec = (name: string, presetPin?: string): string => {
+    const candidates = [presetPin, own?.devDependencies?.[name], own?.peerDependencies?.[name]]
+    const found =
+      candidates.find((c) => c !== undefined && /^\d+\.\d+\.\d+$/.test(c)) ??
+      own?.peerDependencies?.[name]
+    if (found === undefined) throw new Error(`${pkgRoot}/package.json pins ${name} nowhere`)
+    return found
+  }
+  const dev: Record<string, string> = {
+    stylelint: spec('stylelint'),
+    'postcss-html': spec('postcss-html'),
+  }
+  if (profile !== 'tokens') {
+    const pins = readShippedPreset(pkgRoot, profile).settings?.basalt?.pins
+    dev['oxlint'] = spec('oxlint', pins?.['oxlint'])
+    dev['@shadcn/lint'] = spec('@shadcn/lint')
+  }
+  if (oxfmt) dev['oxfmt'] = spec('oxfmt')
+  for (const name of BUILD_PEERS[profile]) dev[name] = spec(name)
+  return { runtime: Object.fromEntries(RUNTIME_PEERS[profile].map((n) => [n, spec(n)])), dev }
+}
+
+/** `add` (`--dev` for tools) with exact resolution, for the package manager the lockfile names (npm without one). */
+export function installCommand(root: string, specs: string[], dev = true): string[] {
   const has = (file: string): boolean => existsSync(resolve(root, file))
-  if (has('bun.lock') || has('bun.lockb')) return ['bun', 'add', '--dev', '--exact', ...specs]
+  if (has('bun.lock') || has('bun.lockb')) {
+    return ['bun', 'add', ...(dev ? ['--dev'] : []), '--exact', ...specs]
+  }
   if (has('pnpm-lock.yaml')) {
     const workspace = has('pnpm-workspace.yaml') ? ['-w'] : []
-    return ['pnpm', 'add', '--save-dev', '--save-exact', ...workspace, ...specs]
+    return ['pnpm', 'add', ...(dev ? ['--save-dev'] : []), '--save-exact', ...workspace, ...specs]
   }
-  if (has('yarn.lock')) return ['yarn', 'add', '--dev', '--exact', ...specs]
-  return ['npm', 'install', '--save-dev', '--save-exact', ...specs]
+  if (has('yarn.lock')) return ['yarn', 'add', ...(dev ? ['--dev'] : []), '--exact', ...specs]
+  return ['npm', 'install', ...(dev ? ['--save-dev'] : ['--save']), '--save-exact', ...specs]
 }
 
 export function installPeers(ctx: Ctx): void {
-  const pins = peerPins(ctx.pkgRoot, ctx.args.profile)
+  const plan = peerPlan(ctx.pkgRoot, ctx.args.profile, !formatsWithPrettier(ctx.root))
   const own = readPackage(ctx.root)
   const have = { ...own?.dependencies, ...own?.devDependencies }
-  const specs = Object.entries(pins)
-    .filter(([name, version]) => have[name] !== version)
-    .map(([name, version]) => `${name}@${version}`)
-  if (specs.length === 0) return say('peers: already at their pins.')
-  const command = installCommand(isSiblingApp(ctx.root) ? findRepoRoot(ctx.root) : ctx.root, specs)
-  if (own === null || ctx.run === undefined) {
-    const why = own === null ? `no package.json at ${ctx.root}` : '--no-install'
-    return void ctx.todo.push(`install the peers (${why}): ${command.join(' ')}`)
-  }
-  say(`peers: ${command.join(' ')}`)
-  if (!ctx.run(command, ctx.root)) {
-    ctx.problems.push(`the peer install failed: ${command.join(' ')}`)
+  // A pin is met only by itself; a range, by any declaration (doctor check 3 holds the major).
+  const missing = (group: Record<string, string>): string[] =>
+    Object.entries(group)
+      .filter(([name, spec]) =>
+        /^\d+\.\d+\.\d+$/.test(spec) ? have[name] !== spec : !(name in have),
+      )
+      .map(([name, spec]) => `${name}@${spec}`)
+  const base = isSiblingApp(ctx.root) ? findRepoRoot(ctx.root) : ctx.root
+  const runtime = missing(plan.runtime)
+  const dev = missing(plan.dev)
+  const commands = [
+    ...(runtime.length > 0 ? [installCommand(base, runtime, false)] : []),
+    ...(dev.length > 0 ? [installCommand(base, dev)] : []),
+  ]
+  if (commands.length === 0) return say('peers: already at their pins.')
+  for (const command of commands) {
+    if (own === null || ctx.run === undefined) {
+      const why = own === null ? `no package.json at ${ctx.root}` : '--no-install'
+      ctx.todo.push(`install the peers (${why}): ${command.join(' ')}`)
+      continue
+    }
+    say(`peers: ${command.join(' ')}`)
+    if (!ctx.run(command, ctx.root)) {
+      ctx.problems.push(`the peer install failed: ${command.join(' ')}`)
+    }
   }
 }
 
@@ -271,9 +302,8 @@ function ignoreFile(ctx: Ctx): void {
     FORMATTER_IGNORE.filter((p) => !text.split('\n').some((line) => line.trim() === p))
   const prettier = readText(ctx.root, '.prettierignore')
   const oxfmt = readText(ctx.root, '.oxfmtrc.json')
-  const prettierDep = readPackage(ctx.root)?.devDependencies?.['prettier'] !== undefined
 
-  if (oxfmt === null && (prettier !== null || prettierDep)) {
+  if (formatsWithPrettier(ctx.root)) {
     const text = prettier ?? ''
     const add = missing(text)
     if (add.length === 0) return
@@ -335,6 +365,28 @@ export function wireFormatterAndLint(ctx: Ctx): void {
   if (ctx.args.profile !== 'tokens') oxlintExtends(ctx)
 }
 
+/**
+ * Something must run `basalt-ui lint` (doctor check 5). When nothing does, the `lint` script of the
+ * root `package.json` gains it after whatever it already runs; no `package.json` is a to-do line.
+ */
+export function wireLintScript(ctx: Ctx): void {
+  if (ctx.args.profile === 'tokens') return
+  if (INVOKERS.some((f) => LINT_INVOCATION.test(readText(ctx.root, f) ?? ''))) return
+  const text = readText(ctx.root, 'package.json')
+  const pkg = readPackage(ctx.root) as (PackageJson & { scripts?: Record<string, string> }) | null
+  if (text === null || pkg === null) {
+    return void ctx.todo.push('run `basalt-ui lint` from a package script, lefthook or make check')
+  }
+  const lint = pkg.scripts?.['lint']
+  const scripts = {
+    ...pkg.scripts,
+    lint: lint === undefined ? 'basalt-ui lint' : `${lint} && basalt-ui lint`,
+  }
+  const indent = /^(\s+)"/m.exec(text)?.[1] ?? '  '
+  writeText(ctx.root, 'package.json', `${JSON.stringify({ ...pkg, scripts }, null, indent)}\n`)
+  say(`package.json: the lint script runs basalt-ui lint`)
+}
+
 // ── DESIGN.md ───────────────────────────────────────────────────────────────────────────────────
 
 /** The seed, only when no declared root (nor the install root) has a DESIGN.md; never at `tokens`. */
@@ -376,37 +428,134 @@ function appDirs(ctx: Ctx): string[] {
   return [...new Set([...dirs, '.'])]
 }
 
-/** Patches `plugins: [` of a stock Vite config; any other shape returns false. */
+const TAILWIND_IMPORT = "import tailwindcss from '@tailwindcss/vite'"
+
+/** The `[` of `plugins: [` and its matching `]`, or null when there is not exactly one list. */
+function pluginList(text: string): { open: number; close: number } | null {
+  const found = [...text.matchAll(/plugins:\s*\[/g)]
+  if (found.length !== 1) return null
+  const open = (found[0]?.index ?? 0) + (found[0]?.[0].length ?? 0) - 1
+  let depth = 0
+  for (let at = open; at < text.length; at++) {
+    if (text[at] === '[') depth++
+    else if (text[at] === ']' && --depth === 0) return { open, close: at }
+  }
+  return null
+}
+
+/** The index just past the last `name(...)` call inside `[from, to)`, or -1. */
+function callEnd(text: string, name: string, from: number, to: number): number {
+  let end = -1
+  for (const match of text.slice(from, to).matchAll(new RegExp(`\\b${name}\\(`, 'g'))) {
+    let depth = 0
+    for (let at = from + match.index + match[0].length - 1; at < to; at++) {
+      if (text[at] === '(') depth++
+      else if (text[at] === ')' && --depth === 0) {
+        end = at + 1
+        break
+      }
+    }
+  }
+  return end
+}
+
+/**
+ * Patches `plugins: [` of a stock Vite config to the order `docs/vite.md` gives: the router plugin
+ * first (it must see the routes before the React transform does), then `react()`, `tailwindcss()`,
+ * `basalt()`. Any other shape returns null.
+ */
 function patchVite(text: string, router: boolean): string | null {
   const needBasalt = !text.includes('basalt(')
+  const needTailwind = !/\btailwindcss\(/.test(text)
   const needRouter = router && !registersRouterPlugin(text)
-  if (!needBasalt && !needRouter) return text
-  if ((text.match(/plugins:\s*\[/g) ?? []).length !== 1) return null
+  if (!needBasalt && !needTailwind && !needRouter) return text
+  const list = pluginList(text)
+  if (list === null) return null
   const lines = text.split('\n')
   // The end of the last import statement: the line closing `from '...'`, or a bare side-effect import.
   const lastImport = lines.findLastIndex((l) =>
     /^import\s+['"]|\bfrom\s+['"][^'"]+['"];?\s*$/.test(l),
   )
   if (lastImport === -1) return null
-  lines.splice(
+
+  let out = text
+  const tail = [...(needTailwind ? ['tailwindcss()'] : []), ...(needBasalt ? ['basalt()'] : [])]
+  if (tail.length > 0) {
+    const at = out.indexOf('basalt(', list.open)
+    if (!needBasalt && at !== -1) {
+      // basalt() already sits in the list: tailwindcss() goes right before it.
+      out = `${out.slice(0, at)}tailwindcss(), ${out.slice(at)}`
+    } else {
+      const anchor = Math.max(
+        callEnd(out, 'react', list.open, list.close),
+        callEnd(out, 'tailwindcss', list.open, list.close),
+      )
+      if (anchor !== -1) {
+        out = `${out.slice(0, anchor)}, ${tail.join(', ')}${out.slice(anchor)}`
+      } else {
+        const body = out.slice(list.open + 1, list.close).trimEnd()
+        const sep = body.trim() === '' ? '' : body.endsWith(',') ? ' ' : ', '
+        out = `${out.slice(0, list.open + 1)}${body}${sep}${tail.join(', ')}${out.slice(list.close)}`
+      }
+    }
+  }
+  if (needRouter) {
+    const empty = out
+      .slice(list.open + 1)
+      .trimStart()
+      .startsWith(']')
+    out = `${out.slice(0, list.open + 1)}${ROUTER_PLUGIN}${empty ? '' : ', '}${out.slice(list.open + 1)}`
+  }
+  const spliced = out.split('\n')
+  spliced.splice(
     lastImport + 1,
     0,
     ...(needRouter ? [ROUTER_IMPORT] : []),
+    ...(needTailwind ? [TAILWIND_IMPORT] : []),
     ...(needBasalt ? [BASALT_IMPORT] : []),
   )
-  // The router plugin goes first: it must see the routes before the React transform does.
-  const added = `${needRouter ? `${ROUTER_PLUGIN}, ` : ''}${needBasalt ? 'basalt(), ' : ''}`
-  return lines.join('\n').replace(/plugins:\s*\[/, () => `plugins: [${added}`)
+  return spliced.join('\n')
 }
 
-/** Replaces the one `@import 'tailwindcss'` line of a stock entry with the basalt pair. */
+/**
+ * The one stylesheet entry (`docs/vite.md`, `/basalt-app`): `tailwind.css` brings in `tailwindcss`,
+ * the shipped tokens and fonts; the app's own `tokens:css` output follows it so a retune wins; the
+ * generated sources come last.
+ */
+export function stylesheetEntry(tokens: string | null, sources: string): string {
+  return [
+    "@import 'basalt-ui/tailwind.css';",
+    ...(tokens === null ? [] : [`@import '${tokens}';`]),
+    `@import '${sources}';`,
+  ].join('\n')
+}
+
+/** What create-vite's `src/index.css` is: plain CSS on `:root`, no `@import`, no Tailwind. */
+export function isStockViteCss(text: string): boolean {
+  return (
+    !/@import|@tailwind/.test(text) &&
+    /:root\s*\{/.test(text) &&
+    /color-scheme:|font-synthesis:|#root\b/.test(text)
+  )
+}
+
 /** `viteRoot` is where `basalt()` writes `.basalt/sources.css`: the directory of the Vite config. */
-function patchCss(text: string, cssDir: string, viteRoot: string): string | null {
+function patchCss(
+  text: string,
+  cssDir: string,
+  viteRoot: string,
+  tokensAbs: string,
+): string | null {
   if (text.includes('basalt-ui/tailwind.css')) return text
   const stock = /^@import\s+(['"])tailwindcss\1;?[ \t]*$/m
-  if (!stock.test(text)) return null
-  const sources = relative(cssDir, resolve(viteRoot, '.basalt/sources.css')).replaceAll('\\', '/')
-  return text.replace(stock, `@import 'basalt-ui/tailwind.css';\n@import '${sources}';`)
+  if (!stock.test(text) && !isStockViteCss(text)) return null
+  const rel = (abs: string): string => {
+    const path = relative(cssDir, abs).replaceAll('\\', '/')
+    return path.startsWith('.') ? path : `./${path}`
+  }
+  const tokens = existsSync(tokensAbs) ? rel(tokensAbs) : null
+  const entry = stylesheetEntry(tokens, rel(resolve(viteRoot, '.basalt/sources.css')))
+  return stock.test(text) ? text.replace(stock, () => entry) : `${entry}\n`
 }
 
 /** Above `tokens`: the Vite plugin and the Tailwind entry, patched only when the shape is stock. */
@@ -423,7 +572,9 @@ export function wireApp(ctx: Ctx): void {
   if (vite !== undefined && patched !== null) {
     if (writeText(ctx.root, vite, patched)) say(`${vite}: added the Vite plugins`)
   } else {
-    ctx.todo.push(`${BASALT_IMPORT}, then add basalt() to the plugins of your Vite config`)
+    ctx.todo.push(
+      `${BASALT_IMPORT} and ${TAILWIND_IMPORT}, then make the plugins of your Vite config [react(), tailwindcss(), basalt()] (docs/vite.md)`,
+    )
     if (ctx.routerPlugin === true) {
       ctx.todo.push(
         `${ROUTER_IMPORT}, then add ${ROUTER_PLUGIN} first in those plugins (a file-routed entry imports the routeTree.gen file it writes)`,
@@ -441,12 +592,14 @@ export function wireApp(ctx: Ctx): void {
           readText(ctx.root, css) ?? '',
           dirname(resolve(ctx.root, css)),
           dirname(resolve(ctx.root, vite)),
+          resolve(ctx.root, ctx.args.tokensOut),
         )
   if (css !== undefined && cssPatched !== null) {
-    if (writeText(ctx.root, css, cssPatched)) say(`${css}: imports basalt-ui/tailwind.css`)
+    if (writeText(ctx.root, css, cssPatched))
+      say(`${css}: is the one stylesheet entry (tailwind.css, tokens, sources)`)
   } else {
     ctx.todo.push(
-      "in your stylesheet entry: @import 'basalt-ui/tailwind.css'; and @import '<path to>/.basalt/sources.css';",
+      `make your stylesheet entry exactly:\n${stylesheetEntry(`<path to>/${basename(ctx.args.tokensOut)}`, '<path to>/.basalt/sources.css')}`,
     )
   }
 }

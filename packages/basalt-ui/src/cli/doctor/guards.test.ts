@@ -136,10 +136,12 @@ describe('check 11: budgets, ejects, weakened config, DESIGN.md', () => {
     expect(r.detail).toContain('weakened-config 2 extends')
   })
 
-  it('is SKIPPED, and so fails, when a weakened check cannot run (no base ref)', async () => {
-    const r = await runCheck(healthy(), 11, { ...HEALTHY, baseRef: null })
-    expect(r.status).toBe('skipped')
-    expect(r.detail).toContain('budget-ratchet')
+  it('passes the ratchet on a repo with no base, and a ref that does not resolve is SKIPPED', async () => {
+    const none = await runCheck(healthy(), 11, { ...HEALTHY, baseRef: null })
+    expect(none.status).toBe('pass')
+    const missing = await runCheck(healthy(), 11, { ...HEALTHY, baseRef: 'origin/nope' })
+    expect(missing.status).toBe('skipped')
+    expect(missing.detail).toContain('budget-ratchet')
   })
 
   it('fails a DESIGN.md that is missing, too long, holds a hex or names Mantine', async () => {

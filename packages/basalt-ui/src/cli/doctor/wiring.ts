@@ -85,7 +85,7 @@ const check4 = (name: string): Check => ({
 })
 
 /** Where something may invoke `basalt-ui lint`: hooks, scripts, make and CI. */
-const INVOKERS = [
+export const INVOKERS = [
   'lefthook.yml',
   'lefthook.yaml',
   '.lefthook.yml',
@@ -96,7 +96,7 @@ const INVOKERS = [
   '.github/workflows/ci.yaml',
   '.github/workflows/check.yml',
 ]
-const LINT_INVOCATION = /basalt-ui\s+lint\b/
+export const LINT_INVOCATION = /basalt-ui\s+lint\b/
 
 const check5 = (name: string): Check => ({
   id: 5,

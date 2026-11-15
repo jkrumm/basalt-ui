@@ -3,9 +3,9 @@
  * readers the checks have in common. A check is pass, fail or SKIPPED; a check that cannot run
  * throws `Skip`, which the runner prints as SKIPPED and counts as a failure (invariant 2).
  */
-import { readdirSync, readFileSync } from 'node:fs'
+import { existsSync, readdirSync, readFileSync } from 'node:fs'
 import type { Dirent } from 'node:fs'
-import { resolve } from 'node:path'
+import { dirname, resolve } from 'node:path'
 
 import type { Manifest, Profile } from '../manifest'
 import type { RunLint } from '../../lint/weakened'
@@ -154,4 +154,13 @@ export function compareVersions(a: string, b: string): number {
 export function majorOf(range: string | undefined): number | null {
   const match = typeof range === 'string' ? /\d+/.exec(range) : null
   return match === null ? null : Number(match[0])
+}
+
+/** Resolves `node_modules/.bin/<name>` from `dir` upward: the project's own tool, never whatever is on PATH. */
+export function findBin(dir: string, name: string): string | null {
+  for (let at = dir; ; at = dirname(at)) {
+    const path = resolve(at, 'node_modules/.bin', name)
+    if (existsSync(path)) return path
+    if (dirname(at) === at) return null
+  }
 }

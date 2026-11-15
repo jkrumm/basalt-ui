@@ -29,6 +29,7 @@ import {
   seedDesign,
   wireApp,
   wireFormatterAndLint,
+  wireLintScript,
 } from './steps'
 import { placeRouterSeeds } from './router-seeds'
 import type { Args, Ctx, Runner } from './steps'
@@ -166,6 +167,7 @@ export async function init(
     seedDesign,
     placeRouterSeeds,
     wireApp,
+    wireLintScript,
   ]) {
     try {
       step(ctx)
