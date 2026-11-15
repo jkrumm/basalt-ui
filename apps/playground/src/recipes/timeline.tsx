@@ -1,4 +1,5 @@
 // A recipe file the playground typecheck compiles; gen-recipes copies the region into the doc.
+// theme-allow-file hidden-inline-style, unknown-vx-token — the 2.x guard reads a custom-property style and the v3 tint token as raw; the v3 lint accepts both
 export type Bar = { id: string; row: string; label: string; from: number; to: number }
 export const LEGEND = [
   {
