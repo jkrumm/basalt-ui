@@ -1,4 +1,4 @@
-import type { NavTarget, Phase, QueryStateLike } from './ports'
+import type { IconComponent, NavTarget, Phase, QueryStateLike } from './ports'
 
 /** A card action: a link or a handler, never both (`CardTarget` in the cards contract). */
 export type CardAction = { label: string } & (
@@ -17,6 +17,15 @@ export type FrameState = {
   phase?: Phase | QueryStateLike | undefined
   empty?: Empty | null | undefined
 }
+
+/** One labelled fact in a footer. `value` is data, never a node, so every card formats alike. */
+export type Fact = { label: string; value: string | number }
+
+/** Capped at 2; `null` drops one, so a conditional fact type-checks without a hole. */
+export type FootFacts = readonly [Fact | null, (Fact | null)?]
+
+/** The header every frame shares. */
+export type FrameHead = { title: string; subtitle?: string; icon?: IconComponent; info?: string }
 
 /** The six states `data-phase` prints. */
 export type PhaseTag = 'ready' | 'loading' | 'offline' | 'stale' | 'error' | 'empty'
