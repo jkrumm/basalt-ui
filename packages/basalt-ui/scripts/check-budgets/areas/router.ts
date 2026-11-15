@@ -15,13 +15,21 @@ export const rows: readonly RowDef[] = [
     // opens a target through the router's own `Link` (peers bundled), which is the cost of one cast
     // instead of a hand-rolled click, preload and href path.
     // 12045 B measured at the G2 freeze, re-seeded plus 5 percent.
-    ceiling: 13000,
+    // 13000 -> 13500 (v3-wiring-1-wiring): `BasaltProvider` joins the barrel (13113 B measured with it).
+    ceiling: 13500,
     measure: () => measureSource(reExportAll({ router: 'router/index' })),
   },
 ]
 
 export const raises: Raises = {
   'router-subpath': [
+    {
+      from: 13000,
+      to: 13500,
+      consumer:
+        '`BasaltProvider` from `./router`: the entry `init --profile app` writes imports it beside `routerDefaults`',
+      repo: 'shutterflow',
+    },
     {
       from: 12500,
       to: 13000,
