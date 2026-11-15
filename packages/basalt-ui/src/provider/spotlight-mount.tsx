@@ -6,10 +6,16 @@
 import { Spotlight } from '@mantine/spotlight'
 import type { SpotlightActionData } from '@mantine/spotlight'
 import { useCallback, useEffect, useState } from 'react'
+import { useShellMounted } from '../shell/shell-presence'
 import { buildSpotlightActions } from './spotlight-actions'
 import type { SlotProps } from './slots'
 
-export function SpotlightMount({ router, navCommandLabel, openDevTool }: SlotProps) {
+/** Stands down under a v3 `AppShell`: its `CommandPalette` is the one palette and owns Mod+K. */
+export function SpotlightMount(props: SlotProps) {
+  return useShellMounted() ? null : <SpotlightList {...props} />
+}
+
+function SpotlightList({ router, navCommandLabel, openDevTool }: SlotProps) {
   // Rebuilt on mount and again at every open, so a command's `when()` is read when the palette
   // appears, not frozen at mount — and `detectMac` (inside the builder) never runs during render.
   const [actions, setActions] = useState<SpotlightActionData[]>([])

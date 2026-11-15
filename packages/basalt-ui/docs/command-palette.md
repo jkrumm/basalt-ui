@@ -12,7 +12,9 @@ slots: [command-palette, command-palette-list]
 The command palette and the app's one key listener. It lists every command of the set, every
 `defineNav` item and the built-ins, opens on `Mod+K`, and ranks with `rank`. Escape closes only the
 top layer: the palette, never the dialog it was opened over. Mount it once, inside `AppShell`,
-so `shell.toggle-rail` has a rail to toggle and the nav is registered.
+so `shell.toggle-rail` has a rail to toggle and the nav is registered. It is the app's one
+palette: while an `AppShell` is mounted, `BasaltProvider` mounts no Spotlight of its own. Hand
+the shell's search row the same open state (`search={{ onOpen }}`, as in the example).
 
 ## Signature
 
