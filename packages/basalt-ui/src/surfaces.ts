@@ -230,7 +230,7 @@ const MANTINE_BANS = [
 
 /**
  * The one hard source for the enforcement seam. Keys split into two kinds:
- * - JS-subpath keys (., ./charts, ./tokens, ./controls, ./controls-dates, ./forms, ./state, ./table, ./format, ./commands, ./agent, ./content, ./vite, plus the v3 skeleton stubs ./router, ./data, ./page, ./cards, ./ai, ./ui/*, ./core/*, ./shell, ./lint, ./stylelint, ./testing, ./theme-script) — real package.json exports (the 15-subpath map of docs/V2-SPEC.md §1, with ./styles.css, ./configs/* and the v3 CSS entries as the non-JS assets).
+ * - JS-subpath keys (., ./charts, ./tokens, ./controls, ./controls-dates, ./forms, ./state, ./table, ./format, ./commands, ./agent, ./content, ./vite, plus the v3 subpaths ./router, ./data, ./page, ./cards, ./ai, ./ui/*, ./core/*, ./shell, ./lint, ./stylelint, ./testing, ./theme-script) — real package.json exports (the 15-subpath map of docs/V2-SPEC.md §1, with ./styles.css, ./configs/* and the v3 CSS entries as the non-JS assets).
  * - #-prefixed synthetic keys (#app) — the synthetic global app-wide ban layer. The #-prefix
  *   guarantees it is never mistaken for an export path.
  *
@@ -576,8 +576,7 @@ export const SURFACES = {
   './router': {
     kind: 'tooling',
     layer: 'headless',
-    description:
-      'v3 router bridge (stub) — nav, controls and search-state defaults on TanStack Router',
+    description: 'v3 router bridge — nav, controls and search-state defaults on TanStack Router',
     globs: { shipped: [], repo: ['packages/basalt-ui/src/router/**'] },
     forbiddenImports: [...MANTINE_BANS],
   },
@@ -585,28 +584,28 @@ export const SURFACES = {
     kind: 'tooling',
     layer: 'headless',
     description:
-      'v3 data layer (stub) — query client, unwrap, optimistic and live queries on TanStack Query',
+      'v3 data layer — query client, unwrap, optimistic and live queries on TanStack Query',
     globs: { shipped: [], repo: ['packages/basalt-ui/src/data/**'] },
     forbiddenImports: [...MANTINE_BANS],
   },
   './page': {
     kind: 'tooling',
     layer: 'headless',
-    description: 'v3 page composites (stub) — Page, PageBar, Section, QueryState, overlays',
+    description: 'v3 page composites — Page, PageBar, Section, QueryState, overlays',
     globs: { shipped: [], repo: ['packages/basalt-ui/src/page/**'] },
     forbiddenImports: [...MANTINE_BANS],
   },
   './cards': {
     kind: 'tooling',
     layer: 'headless',
-    description: 'v3 card composites (stub) — StatCard, StatGroup, BarList, EventList',
+    description: 'v3 card composites — StatCard, StatGroup, BarList, EventList',
     globs: { shipped: [], repo: ['packages/basalt-ui/src/cards/**'] },
     forbiddenImports: [...MANTINE_BANS],
   },
   './ai': {
     kind: 'tooling',
     layer: 'headless',
-    description: 'v3 AI-chat part views (stub) — partView, defineBlock, defineCatalog',
+    description: 'v3 AI-chat part views — partView, defineBlock, defineCatalog',
     optionalPeers: ['react-markdown', 'remark-gfm', 'rehype-sanitize', 'remend'],
     globs: { shipped: [], repo: ['packages/basalt-ui/src/ai/**'] },
     forbiddenImports: [...MANTINE_BANS],
@@ -614,7 +613,7 @@ export const SURFACES = {
   './ui/*': {
     kind: 'tooling',
     layer: 'headless',
-    description: 'v3 primitives (stub) — one module per primitive on Base UI, wildcard entry',
+    description: 'v3 primitives — one module per primitive on Base UI, wildcard entry',
     optionalPeers: ['@base-ui/react'],
     globs: { shipped: [], repo: ['packages/basalt-ui/src/ui/**'] },
     forbiddenImports: [...MANTINE_BANS],
@@ -637,19 +636,19 @@ export const SURFACES = {
   './lint': {
     kind: 'tooling',
     layer: 'build-tooling',
-    description: 'v3 oxlint plugin (stub) — tooling, no app bundle',
+    description: 'v3 oxlint plugin — tooling, no app bundle',
     forbiddenImports: [],
   },
   './stylelint': {
     kind: 'tooling',
     layer: 'build-tooling',
-    description: 'v3 stylelint preset (stub) — tooling, no app bundle',
+    description: 'v3 stylelint preset — tooling, no app bundle',
     forbiddenImports: [],
   },
   './testing': {
     kind: 'tooling',
     layer: 'build-tooling',
-    description: 'v3 test harness (stub) — renderApp, settled, quality; tooling, no app bundle',
+    description: 'v3 test harness — renderApp, settled, quality; tooling, no app bundle',
     forbiddenImports: [],
   },
   './theme-script': {
@@ -663,25 +662,25 @@ export const SURFACES = {
   './tokens.css': {
     kind: 'tooling',
     layer: 'non-js-asset',
-    description: 'v3 token layer (stub) — CSS custom properties, frozen per major',
+    description: 'v3 token layer — CSS custom properties, frozen per major',
     forbiddenImports: [],
   },
   './typography.css': {
     kind: 'tooling',
     layer: 'non-js-asset',
-    description: 'v3 type scale (stub), frozen per major',
+    description: 'v3 type scale, frozen per major',
     forbiddenImports: [],
   },
   './prose.css': {
     kind: 'tooling',
     layer: 'non-js-asset',
-    description: 'v3 prose styles (stub), frozen per major',
+    description: 'v3 prose styles, frozen per major',
     forbiddenImports: [],
   },
   './fonts.css': {
     kind: 'tooling',
     layer: 'non-js-asset',
-    description: 'v3 font faces (stub), frozen per major',
+    description: 'v3 font faces, frozen per major',
     forbiddenImports: [],
   },
   './table.css': {
@@ -694,7 +693,7 @@ export const SURFACES = {
   './tailwind.css': {
     kind: 'tooling',
     layer: 'non-js-asset',
-    description: 'v3 Tailwind 4 theme bridge (stub), frozen per major',
+    description: 'v3 Tailwind 4 theme bridge, frozen per major',
     optionalPeers: ['tailwindcss'],
     forbiddenImports: [],
   },

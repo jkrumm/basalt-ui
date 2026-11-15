@@ -3,11 +3,11 @@
 [![npm version](https://img.shields.io/npm/v/basalt-ui.svg)](https://www.npmjs.com/package/basalt-ui)
 [![License](https://img.shields.io/badge/license-Apache--2.0-blue.svg)](https://github.com/jkrumm/basalt-ui/blob/master/LICENSE)
 
-> Opinionated framework for Mantine v9 + TanStack Charts React apps — theme, app shell, chart system, and the agentic layer to drive them.
+> Opinionated framework for React apps on Base UI, Tailwind 4 and TanStack — primitives, app shell, chart system, token layer, and the agentic layer to drive them.
 
 **[Documentation](#quick-start)** · **[GitHub](https://github.com/jkrumm/basalt-ui)** · **[npm](https://www.npmjs.com/package/basalt-ui)**
 
-Building a dashboard app means wiring a Mantine theme, a TanStack Charts chart system, a typed token layer, and an app shell — each with its own opinions, and none of them talking to each other.
+Building a dashboard app means wiring a primitive set, a TanStack Charts chart system, a typed token layer, a router and an app shell — each with its own opinions, and none of them talking to each other.
 
 Basalt UI is the extraction of that setup from a production app. Install once, get a coherent system.
 
@@ -15,26 +15,33 @@ Basalt UI is the extraction of that setup from a production app. Install once, g
 
 ## Quick start
 
+A Vite + React app with TanStack Router. basalt-ui 3 is shadcn-style primitives on Base UI, styled
+with Tailwind 4 over the `--vx-*` token layer; `basalt-ui init` writes the entry, the layout and the
+nav you start from.
+
 ### 1. Install
 
 ```bash
 bun add basalt-ui
-bun add react react-dom @mantine/core @mantine/hooks @mantine/modals @mantine/notifications @mantine/spotlight \
-  @tanstack/react-router @tanstack/react-query \
-  @fontsource-variable/hubot-sans @fontsource-variable/jetbrains-mono @fontsource-variable/nunito-sans
+bun add react react-dom @tanstack/react-router @tanstack/react-query @base-ui/react tailwindcss @tailwindcss/vite
+bun add -d vite @tanstack/router-plugin
 ```
 
-That is the **required** set: `BasaltProvider` mounts the router, Query, Modals, Notifications and
-Spotlight, and `basalt-ui/styles.css` imports the three fonts. Install the peers yourself — a
-missing one surfaces as an unresolved import at build time, not as an install warning. A real app
-also needs `@types/react @types/react-dom` (dev) and a standard Vite `vite-env.d.ts`. Exact
-versions: `peerDependencies` in `package.json`.
+That is the set the `app` profile needs: the shell and the primitives draw Base UI, the router and
+query peers carry routing and data, and Tailwind compiles the styles. Install the peers yourself — a
+missing one surfaces as an unresolved import at build time, not as an install warning, and `basalt()`
+(the Vite plugin) names the exact `bun add` line when a subpath you import needs another. Exact
+versions: `peerDependencies` in `package.json`; `basalt-ui doctor` lists what is missing.
 
-| Class            | Peers                                                                                                                                                                                                                                                                                                                                                                  | Rule                                                                                                     |
-| ---------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------- |
-| Required         | `react`, `react-dom`, `@mantine/{core,hooks,modals,notifications,spotlight}`, `@tanstack/react-router`, `@tanstack/react-query`, the three `@fontsource-variable/*`                                                                                                                                                                                                    | every consumer; `.` or `./styles.css` imports or names it                                                |
-| Subpath-required | `./charts`: `@tanstack/charts`, `d3-scale` · `./commands`: `@tanstack/react-hotkeys` · `./agent`: `ai`, `@ai-sdk/provider`, `motion` · `./table`: `@tanstack/react-table`, `@base-ui/react` · `./forms`: `@mantine/form` · `./controls-dates`: `@mantine/dates`, `dayjs` · `./content`: `react-markdown`, `remark-gfm`, `rehype-sanitize`, `remend` · `./vite`: `vite` | needed only by consumers of that subpath; declared `optional` in `peerDependenciesMeta`                  |
-| Optional         | `remend`, `shiki`, `@shikijs/*`, `beautiful-mermaid`, `remark-gfm`, `rehype-sanitize`, `@tanstack/react-query-devtools`, `@tanstack/react-router-devtools`, `vite-plugin-pwa`                                                                                                                                                                                          | reached through `import()` only; absent, the feature degrades (dev devtools panels, plain-text markdown) |
+| Class            | Peers                                                                                                                                                                                                                                                                                     | Rule                                                                                                     |
+| ---------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------- |
+| App              | `react`, `react-dom`, `@tanstack/react-router`, `@tanstack/react-query`, `@base-ui/react`, `tailwindcss`, `@tailwindcss/vite`; dev: `vite`, `@tanstack/router-plugin`                                                                                                                     | every `app` profile install                                                                              |
+| Subpath-required | `./charts`: `@tanstack/charts`, `d3-scale` · `./commands`: `@tanstack/react-hotkeys` · `./agent`: `ai`, `@ai-sdk/provider`, `motion` · `./table`: `@tanstack/react-table` · `./forms`: `@mantine/form` · `./content`, `./ai`: `react-markdown`, `remark-gfm`, `rehype-sanitize`, `remend` | needed only by consumers of that subpath; declared `optional` in `peerDependenciesMeta`                  |
+| Optional         | `shiki`, `@shikijs/*`, `beautiful-mermaid`, `@tanstack/react-query-devtools`, `@tanstack/react-router-devtools`, `vite-plugin-pwa`                                                                                                                                                        | reached through `import()` only; absent, the feature degrades (dev devtools panels, plain-text markdown) |
+
+The `@mantine/*` and `@fontsource-variable/*` peers are declared required for the 2.x root and for
+`./controls`, `./forms` and `./controls-dates` (see [The 2.x root](#the-2x-root)); your package
+manager places them, and a v3 app imports none of them.
 
 **No React?** `./tokens` imports no `@mantine/*`, and the token system is consumable with no package
 at all:
@@ -46,7 +53,7 @@ bunx basalt-ui tokens:css --out src/tokens.css
 See [`docs/FRAMEWORK-FREE.md`](https://github.com/jkrumm/basalt-ui/blob/master/docs/FRAMEWORK-FREE.md)
 for the selector-specificity trap, the `color-mix` opacity law, and the surface-token roles.
 
-### 2. Scaffold the repo doctrine (`basalt-ui init`)
+### 2. Scaffold the app and the repo doctrine (`basalt-ui init`)
 
 ```bash
 bunx basalt-ui init --profile app --root src
@@ -63,16 +70,17 @@ plugin, no marketplace and no second version to track. `init` writes at the git 
 - the profile's peers at exact pins (stylelint and postcss-html; `bridge` and above add oxlint and `@shadcn/lint`), installed with the lockfile's package manager (`--no-install` prints the command instead)
 - above `tokens`: `.claude/rules/basalt-*.md`, `.claude/skills/basalt-*`, the managed `<!-- basalt:begin/end -->` block in `AGENTS.md`, and a thin `DESIGN.md` seed when no declared root has one
 - `.basalt/budget.json` (the seeded ceilings) and the formatter ignore for the managed paths
-- a stock `vite.config` and Tailwind entry patched; any other shape gets the exact lines printed
+- with `app`, the router scaffold, each file written once and never touched by `sync`: `src/main.tsx` (the entry), `src/routes/__root.tsx`, `src/routes/_app.tsx` (the `AppShell` layout), `src/lib/nav.tsx` (the one `defineNav`) and `src/components/route-{pending,error,missing}.tsx`; a `main.tsx` that is create-vite's stock entry is replaced, any other entry gets the template's lines printed
+- in a stock Vite config, `tanstackRouter(...)` and `basalt()` in `plugins`; in a stock stylesheet entry (`src/index.css`), the `tailwindcss` import becomes `basalt-ui/tailwind.css` plus `.basalt/sources.css`; any other shape gets the exact lines printed
 
 It ends in `basalt-ui doctor`, which reports. Running `init` twice changes nothing; `sync` refreshes
 what `init` placed and never creates an install.
 
 `init` on an **existing** app is a lint-debt event, not a no-op: the generated preset switches on
 whole oxlint plugins the repo was never linted against, so previously-clean code lands with real
-findings on the first run. Run `oxlint .` and triage before your next commit (the `basalt-ui lint`
-verb is not in this build yet). An
-`.oxlintrc.json` with comments is never rewritten: `init` prints the `extends` line to add.
+findings on the first run. Run `oxlint .` and `./node_modules/.bin/basalt-ui lint` and triage
+before your next commit. An `.oxlintrc.json` with comments is never rewritten: `init` prints the
+`extends` line to add.
 
 Every file is either **managed** (basalt owns it, `sync` refreshes it, local edits are skipped and
 reported — exactly the files Claude reads, which cannot load from `node_modules`) or a **seed**
@@ -82,21 +90,39 @@ reported — exactly the files Claude reads, which cannot load from `node_module
 
 ## Wire the runtime
 
-After `bunx basalt-ui init`, two files wire the app. `BasaltProvider` owns the whole provider tree —
-Mantine + theme, Query, Modals (wrapping the router), the router, Notifications, Spotlight, the root
-error boundary, command hotkeys, and in dev the dev dock. Canonical reference:
-`apps/playground/src/main.tsx`.
+`init` has already written the wiring; this is what it is, so you can change it. Three files carry
+the app, and the root barrel (`basalt-ui`) is in none of them.
 
 ```tsx
-// src/main.tsx
-import 'basalt-ui/styles.css'
+// src/main.tsx — builds the router from `routerDefaults` and mounts it
+import './index.css'
+import { QueryClientProvider } from '@tanstack/react-query'
+import { RouterProvider, createRouter } from '@tanstack/react-router'
+import type { ReactNode } from 'react'
 import { createRoot } from 'react-dom/client'
-import { BasaltProvider, createBasaltRouter } from 'basalt-ui'
+import { BasaltProvider } from 'basalt-ui/core/provider'
+import { makeQueryClient } from 'basalt-ui/data'
+import { routerDefaults } from 'basalt-ui/router'
+import { RouteError } from './components/route-error'
+import { RouteMissing } from './components/route-missing'
+import { RoutePending } from './components/route-pending'
 import { routeTree } from './routeTree.gen'
-import { telemetry } from './lib/telemetry'
-import './lib/commands'
 
-const router = createBasaltRouter({ routeTree })
+const queryClient = makeQueryClient()
+const defaults = routerDefaults({ router: (): object => router })
+
+export const router = createRouter({
+  routeTree,
+  context: { queryClient },
+  ...defaults.options,
+  Wrap: ({ children }: { children: ReactNode }) => (
+    <QueryClientProvider client={queryClient}>{children}</QueryClientProvider>
+  ),
+  defaultPendingComponent: RoutePending,
+  defaultErrorComponent: RouteError,
+  defaultNotFoundComponent: RouteMissing,
+})
+
 declare module '@tanstack/react-router' {
   interface Register {
     router: typeof router
@@ -104,99 +130,105 @@ declare module '@tanstack/react-router' {
 }
 
 createRoot(document.getElementById('root')!).render(
-  <BasaltProvider router={router} telemetry={telemetry} />,
+  <BasaltProvider link={defaults.link}>
+    <RouterProvider router={router} />
+  </BasaltProvider>,
 )
 ```
 
+`routerDefaults` sets preloading, the 300/300 pending timing, structural sharing, scroll
+restoration and the route transition; its `link` goes on `BasaltProvider` once, so every link prop
+(`StatCard href`, `CardAction`, `col.entity`) navigates through the router with no document load.
+`makeQueryClient` is the one `QueryClient` the router context carries. The pending, error and
+not-found components are yours; a router with no pending component never shows pending, and
+`doctor` check 12 fails on it. `Register` is what types `defineNav`, `navTarget` and every
+`<Link to>`.
+
 ```tsx
-// src/routes/__root.tsx
-import { Outlet, createRootRouteWithContext } from '@tanstack/react-router'
-import { BasaltShell, type BasaltRouterContext } from 'basalt-ui'
+// src/routes/_app.tsx — the frame every signed-in page renders in
+import { Outlet, createFileRoute } from '@tanstack/react-router'
+import { AppShell } from 'basalt-ui/shell'
 import { NAV } from '../lib/nav'
 
-export const Route = createRootRouteWithContext<BasaltRouterContext>()({
-  component: () => (
-    <BasaltShell brand={{ name: 'Argo' }} nav={NAV}>
+export const Route = createFileRoute('/_app')({ component: AppLayout })
+
+export function AppLayout() {
+  return (
+    <AppShell nav={NAV} brand={{ name: 'MyApp' }}>
       <Outlet />
-    </BasaltShell>
-  ),
+    </AppShell>
+  )
+}
+```
+
+```tsx
+// src/lib/nav.tsx — the app's ONE navigation declaration; keep it a leaf module
+import { linkOptions } from '@tanstack/react-router'
+import { defineNav } from 'basalt-ui/router'
+
+export const NAV = defineNav({
+  sections: [
+    {
+      id: 'main',
+      label: 'Main',
+      items: [{ id: 'home', label: 'Home', link: linkOptions({ to: '/' }), mobile: 'tab' }],
+    },
+  ],
 })
 ```
 
-`createBasaltRouter({ routeTree, context?, query?, live? })` creates one `QueryClient` per call (1.x
-defaults, `query` merges over them) and carries it on `context.queryClient`; extra context extends
-`BasaltRouterContext`. `live` takes a `bindInvalidation` result: the provider starts it once on the
-client and stops it on unmount. `BasaltProvider` takes `router` (required), `theme` (defaults to
-`createBasaltTheme()`), `telemetry` (typed `BasaltEvent`s, no sink → no events) and `fallback` (the
-root error boundary's UI).
+`AppShell` derives the rail, the phone tab bar and the breadcrumb from `NAV`. A route outside `_app`
+(a sign-in page) renders with no shell. Pages compose `basalt-ui/page`, `basalt-ui/cards`,
+`basalt-ui/table` and `basalt-ui/controls`; read `node_modules/basalt-ui/docs/<name>.md` before
+guessing an import or a prop.
 
-> Use the **layered** `*.layer.css` bundles, never the plain ones — Mantine's unlayered bundle
-> outranks basalt's `@layer basalt` styles (including the iOS 16px input floor) regardless of
-> specificity. `basalt-ui/styles.css` already imports the core layer bundle.
+```ts
+// vite.config.ts — the router plugin goes first: it writes routeTree.gen before React sees it
+import tailwindcss from '@tailwindcss/vite'
+import { tanstackRouter } from '@tanstack/router-plugin/vite'
+import react from '@vitejs/plugin-react'
+import { basalt } from 'basalt-ui/vite'
+import { defineConfig } from 'vite'
+
+export default defineConfig({
+  plugins: [
+    tanstackRouter({ target: 'react', autoCodeSplitting: true }),
+    react(),
+    tailwindcss(),
+    basalt(),
+  ],
+})
+```
+
+```css
+/* src/index.css */
+@import 'basalt-ui/tailwind.css';
+@import '../.basalt/sources.css';
+```
+
+`basalt()` is the plugin half of the setup: the missing-peer and stale-seed build gates, eject
+aliases, `.basalt/sources.css` (the `@source` lines Tailwind scans), and the document head. Options
+and failure messages: `docs/vite.md`.
+
+```json
+// package.json scripts — doctor check 5 fails until something runs the lint verb
+"lint": "oxlint . && basalt-ui lint"
+```
+
+> **Local consumption (sibling checkouts).** Developing against an unpublished / `file:`-linked
+> basalt-ui from a sibling repo? Build `dist/` first — `bunx basalt-ui` always resolves
+> `bin/basalt-ui.mjs` → `dist/cli/index.js`. And in a monorepo, add `basalt-ui` as a **root**
+> devDependency (not only a leaf-workspace dep) so its bin hoists into the root
+> `node_modules/.bin` — otherwise `bunx basalt-ui` silently resolves the stale published package
+> from npm instead of your local checkout.
 
 **No `'use client'` directive ships anywhere in the package.** A Next.js App Router consumer wraps
 the provider in its own client file and renders that from a server layout — basalt stays
 framework-agnostic and does not guess at the boundary.
 
-### Theming
+---
 
-The shipped palette isn't a fixed set of hexes — it's **generated** from one accent seed + five
-bounded knobs, with contrast guaranteed by derivation rather than hand-tuning:
-
-```ts
-const theme = createBasaltTheme(
-  {/* app deltas only */},
-  { derive: { accent: '#7c3aed', neutral: 'zinc', vibrancy: 1 } },
-)
-```
-
-`derive` accepts `accent` (hex seed), `neutral` (`'zinc' | 'neutral' | 'stone' | 'slate'`), and
-`lightLevel` / `darkLevel` / `vibrancy` / `accentBrightness` (`-5..5`, all optional — omitted knobs
-keep the shipped default). Never hand-edit a palette hex to retune the identity.
-
-`paletteOptions={{ groups: paletteGroups }}` on `BasaltProvider` emits your app-specific series
-colors (see [Consumer-series extensibility](#consumer-series-extensibility) below) alongside the
-framework palette. Skip it if you have no app-specific series yet.
-
-> **SSR only:** Next.js / React Router (SSR) consumers must additionally render
-> `<ColorSchemeScript defaultColorScheme="dark" />` (matching `BasaltProvider`'s default) in the
-> document `<head>` to avoid a flash of the wrong theme during hydration. Plain Vite CSR apps don't
-> need it — there is no hydration to mismatch. See [`MANTINE-THEMING.md`](https://github.com/jkrumm/basalt-ui/blob/master/docs/MANTINE-THEMING.md) (repo, not in the package).
-
-```tsx
-// Shell — sidebar / mobile nav / breadcrumbs / PageBar; resolved against the router from `nav`
-import { BasaltShell, PageBar } from 'basalt-ui'
-```
-
-```ts
-// vite.config.ts
-import react from '@vitejs/plugin-react'
-import { basalt, basaltViteConfig } from 'basalt-ui/vite'
-import { defineConfig } from 'vite'
-
-export default defineConfig({
-  ...basaltViteConfig({ port: 5173, apiTarget: 'http://localhost:3000' }),
-  plugins: [react(), basalt({ app: { name: 'MyApp', description: '…' } })],
-})
-```
-
-`basaltViteConfig` stays config-only (no `plugins`, by contract); `basalt()` is the plugin half
-(build gates, eject aliases, `.basalt/sources.css`, the head) and replaces 2.x `basaltAppPlugin` —
-see `docs/vite.md` and the `./vite` adapter battery under [Adapter batteries](#adapter-batteries).
-
-> **Local consumption (sibling checkouts).** Developing against an unpublished / `file:`-linked
-> basalt-ui from a sibling repo? Build `dist/` first — `bunx basalt-ui` always resolves
-> `bin/basalt-ui.mjs` → `dist/cli/index.js`, even though the _runtime_ import can ride
-> `basaltViteConfig`'s `BASALT_LOCAL`/`basaltSrc` source aliasing above. And in a monorepo, add
-> `basalt-ui` as a **root** devDependency (not only a leaf-workspace dep) so its bin hoists into the
-> root `node_modules/.bin` — otherwise `bunx basalt-ui` silently resolves the stale published
-> package from npm instead of your local checkout.
-
-```ts
-// Lint — theme guard is the teeth behind the token doctrine
-// package.json scripts (init seeds this as "lint:basalt"):
-"lint": "oxlint . && basalt-ui check-theme"
-```
+## Configuration (the `basalt` key)
 
 `check-theme` scans `src/` by default; `init` writes a real `"basalt"` key from your actual layout,
 and everything derives from it — the guard's scan, the seeded CI `oxfmt` globs, the default scan
@@ -292,13 +324,56 @@ intentional is written down, and the written reason is the exemption:
 ```
 
 The value **is** the reason: omitting the key, or setting it to `true` or `""`, exempts nothing. The
-exemption covers the split between packages only; a wrong `@ai-sdk/react` pairing still fails.
+
+---
+
+## The 2.x root
+
+The root barrel, `basalt-ui`, is the **2.x Mantine surface** and is held until the teardown; a v3
+app never imports from it. Its wiring is `BasaltProvider`, `createBasaltRouter` and `BasaltShell`
+over the `@mantine/*` peers and the three `@fontsource-variable/*` faces, and its theme is
+`createBasaltTheme`. An app still on 2.x keeps this wiring; migrate it with
+[`MIGRATING.md`](./MIGRATING.md).
+
+### Theming (2.x)
+
+The shipped palette isn't a fixed set of hexes — it's **generated** from one accent seed + five
+bounded knobs, with contrast guaranteed by derivation rather than hand-tuning:
+
+```ts
+const theme = createBasaltTheme(
+  {/* app deltas only */},
+  { derive: { accent: '#7c3aed', neutral: 'zinc', vibrancy: 1 } },
+)
+```
+
+`derive` accepts `accent` (hex seed), `neutral` (`'zinc' | 'neutral' | 'stone' | 'slate'`), and
+`lightLevel` / `darkLevel` / `vibrancy` / `accentBrightness` (`-5..5`, all optional — omitted knobs
+keep the shipped default). Never hand-edit a palette hex to retune the identity.
+
+`paletteOptions={{ groups: paletteGroups }}` on `BasaltProvider` emits your app-specific series
+colors (see [Consumer-series extensibility](#consumer-series-extensibility) below) alongside the
+framework palette. Skip it if you have no app-specific series yet.
+
+> **SSR only:** Next.js / React Router (SSR) consumers must additionally render
+> `<ColorSchemeScript defaultColorScheme="dark" />` (matching `BasaltProvider`'s default) in the
+> document `<head>` to avoid a flash of the wrong theme during hydration. Plain Vite CSR apps don't
+> need it — there is no hydration to mismatch. See [`MANTINE-THEMING.md`](https://github.com/jkrumm/basalt-ui/blob/master/docs/MANTINE-THEMING.md) (repo, not in the package).
+
+```tsx
+// 2.x wiring: shell — sidebar / mobile nav / breadcrumbs / PageBar; resolved against the router from `nav`
+import { BasaltShell, PageBar } from 'basalt-ui'
+```
+
+> Use the **layered** `*.layer.css` bundles, never the plain ones — Mantine's unlayered bundle
+> outranks basalt's `@layer basalt` styles (including the iOS 16px input floor) regardless of
+> specificity. `basalt-ui/styles.css` already imports the core layer bundle.
 
 ---
 
 ## Subpath exports
 
-15 subpaths from 2.x plus the v3 skeleton stubs. One import path per symbol (`./shell` aliases the 2.x shell barrel until v3 swaps it); named exports only — no default exports.
+The 2.x subpaths below, plus the v3 ones a new app imports: `./shell` (`AppShell`), `./router`, `./data`, `./page`, `./cards`, `./ai`, `./ui/*` and `./core/*`; each is a `## basalt-ui/<subpath>` section of `llms.txt`. One import path per symbol; named exports only — no default exports.
 
 | Subpath            | Purpose                                                                                                                                                                                                                                                                 |
 | ------------------ | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
