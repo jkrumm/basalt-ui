@@ -128,6 +128,13 @@ export const NAV = defineNav({
           link: linkOptions({ to: '/cycle/state' }),
         },
         {
+          id: 'cycle-state-2',
+          label: 'Tickets (state cycle 2)',
+          icon: Table,
+          mobile: 'more',
+          link: linkOptions({ to: '/cycle/state-2' }),
+        },
+        {
           id: 'cycle-dogfood',
           label: 'Flow (dogfood cycle)',
           icon: Dashboard,
