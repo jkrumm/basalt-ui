@@ -26,7 +26,6 @@ const LANES = [
   'lighthouse',
   'charts-perf',
   'keyboard',
-  'otel',
   'transitions',
   'print',
   'webkit',
@@ -122,10 +121,7 @@ async function sh(cmd: string[], cwd: string, env: Record<string, string> = {}):
 async function buildPlayground(): Promise<string> {
   await sh(['bun', 'run', 'build'], join(ROOT, 'packages/basalt-ui'))
   // `--manifest` is what lets the bundle lane map chunks to routes.
-  // `VITE_TELEMETRY=1` bundles the telemetry chunk the `otel` lane needs (observability.md).
-  await sh(['bunx', 'vite', 'build', '--manifest'], join(ROOT, 'apps/playground'), {
-    VITE_TELEMETRY: '1',
-  })
+  await sh(['bunx', 'vite', 'build', '--manifest'], join(ROOT, 'apps/playground'))
   return join(ROOT, 'apps/playground/dist')
 }
 

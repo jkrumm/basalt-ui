@@ -170,8 +170,11 @@ describe('output', () => {
   it('renders non-finite values as n/a', () => {
     const outcomes = new Map<string, LaneOutcome>([
       [
-        'otel',
-        { status: 'ok', result: { lane: 'otel', summary: [{ metric: 'p50', value: Number.NaN }] } },
+        'print',
+        {
+          status: 'ok',
+          result: { lane: 'print', summary: [{ metric: 'p50', value: Number.NaN }] },
+        },
       ],
     ])
     expect(renderSummary('t', outcomes)).toContain('|p50|n/a||')
@@ -192,12 +195,12 @@ describe('output', () => {
           result: { lane: 'bundle', summary: [{ metric: 'a|b', value: 1, unit: 'B' }] },
         },
       ],
-      ['otel', { status: 'absent' }],
+      ['print', { status: 'absent' }],
       ['screens', { status: 'failed', error: 'boom\nstack' }],
     ])
     const md = renderSummary('t', outcomes)
     expect(md).toContain('|Metric|Value|Unit|\n|-|-|-|\n|a\\|b|1|B|')
-    expect(md).toContain('## otel\n\nlane absent')
+    expect(md).toContain('## print\n\nlane absent')
     expect(md).toContain('lane failed: boom')
     expect(md).not.toContain('stack')
     expect(renderSummary('t', outcomes)).toBe(md)
