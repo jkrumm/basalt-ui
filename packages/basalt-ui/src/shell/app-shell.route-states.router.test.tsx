@@ -1,0 +1,182 @@
+/**
+ * The shell's route states under a real router: a slow navigation keeps the page on screen and
+ * shows main busy while the rail and the crumb hold, a path no route matches is titled `Not found`,
+ * and focus the old page took with it goes to main. Geometry is the layout suite's.
+ */
+import { act, cleanup, fireEvent, render, waitFor } from '@testing-library/react'
+import {
+  Outlet,
+  RouterProvider,
+  createMemoryHistory,
+  createRootRoute,
+  createRoute,
+  createRouter,
+  notFound,
+} from '@tanstack/react-router'
+import { afterEach, describe, expect, test } from 'bun:test'
+import { Page } from '../page/page'
+import { PageBar } from '../page/page-bar'
+import { AppShell } from './app-shell'
+import type { AppShellProps } from './contract'
+
+const NAV = {
+  sections: [
+    {
+      id: 'fleet',
+      label: 'Fleet',
+      items: [
+        { id: 'home', label: 'Overview', link: { to: '/f' }, mobile: 'tab' },
+        { id: 'services', label: 'Services', link: { to: '/f/services' }, mobile: 'tab' },
+      ],
+    },
+  ],
+} satisfies AppShellProps['nav']
+
+function mount(entry: string) {
+  let release: () => void = () => {}
+  const gate = new Promise<void>((resolve) => {
+    release = resolve
+  })
+  // The shell sits in a layout that owns a path prefix: an unknown path under it is its not-found, drawn in its outlet.
+  const rootRoute = createRootRoute()
+  const root = createRoute({
+    getParentRoute: () => rootRoute,
+    path: '/f',
+    component: () => (
+      <AppShell nav={NAV} brand={{ name: 'Basalt' }}>
+        <Outlet />
+      </AppShell>
+    ),
+  })
+  const home = createRoute({
+    getParentRoute: () => root,
+    path: '/',
+    component: () => (
+      <Page>
+        <PageBar title="Fleet overview" />
+        <button type="button" data-testid="leave">
+          Leave
+        </button>
+      </Page>
+    ),
+  })
+  const services = createRoute({
+    getParentRoute: () => root,
+    path: '/services',
+    loader: async () => {
+      await gate
+      return 'loaded'
+    },
+    component: () => (
+      <Page>
+        <PageBar title="Services" parent={{ label: 'All services', href: '/f' }} />
+      </Page>
+    ),
+  })
+  const record = createRoute({
+    getParentRoute: () => root,
+    path: '/services/gone',
+    loader: () => {
+      throw notFound()
+    },
+  })
+  const router = createRouter({
+    routeTree: rootRoute.addChildren([root.addChildren([home, services, record])]),
+    history: createMemoryHistory({ initialEntries: [entry] }),
+    defaultPendingMs: 20,
+  })
+  render(<RouterProvider router={router} />)
+  return { router, release }
+}
+
+const main = (): HTMLElement => {
+  const el = document.querySelector<HTMLElement>('[data-slot="shell-main"]')
+  if (el === null) throw new Error('no main')
+  return el
+}
+const railActive = (): string | undefined =>
+  document.querySelector('[data-slot="shell-rail"] [aria-current="page"]')?.textContent?.trim() ??
+  undefined
+const crumb = (): string =>
+  document.querySelector('[data-slot="page-breadcrumb-leaf"]')?.textContent ?? 'none'
+
+afterEach(() => {
+  cleanup()
+  document.title = ''
+})
+
+describe('a slow navigation', () => {
+  test('shows main busy past defaultPendingMs; the rail and the crumb change with the page, not before', async () => {
+    const { router, release } = mount('/f')
+    await waitFor(() => expect(crumb()).toBe('Fleet overview'))
+    expect(main().hasAttribute('aria-busy')).toBe(false)
+    expect(railActive()).toBe('Overview')
+
+    act(() => {
+      void router.navigate({ to: '/f/services' })
+    })
+    await waitFor(() => expect(main().getAttribute('aria-busy')).toBe('true'))
+    expect(main().hasAttribute('data-pending')).toBe(true)
+    // Still the old page: the rail and the crumb have not moved ahead of it.
+    expect(railActive()).toBe('Overview')
+    expect(crumb()).toBe('Fleet overview')
+
+    await act(async () => release())
+    await waitFor(() => expect(crumb()).toBe('Services'))
+    expect(railActive()).toBe('Services')
+    expect(main().hasAttribute('aria-busy')).toBe(false)
+  })
+})
+
+describe('a path no page answers', () => {
+  test('an unknown path reads Not found in the crumb and the title', async () => {
+    mount('/f/nope/deeper')
+    await waitFor(() => expect(document.title).toBe('Not found · Basalt'))
+    expect(crumb()).toBe('Not found')
+  })
+
+  test('a loader notFound() reads Not found too', async () => {
+    mount('/f/services/gone')
+    await waitFor(() => expect(document.title).toBe('Not found · Basalt'))
+  })
+})
+
+describe('focus after navigating', () => {
+  test('goes to main when the focused control left with the old page', async () => {
+    const { router, release } = mount('/f')
+    release()
+    await waitFor(() => expect(crumb()).toBe('Fleet overview'))
+    const leave = document.querySelector<HTMLElement>('[data-testid="leave"]')
+    leave?.focus()
+    expect(document.activeElement).toBe(leave)
+    await act(() => router.navigate({ to: '/f/services' }))
+    await waitFor(() => expect(document.activeElement).toBe(main()))
+  })
+
+  test('stays where it is when something real holds it', async () => {
+    const { router, release } = mount('/f')
+    release()
+    await waitFor(() => expect(crumb()).toBe('Fleet overview'))
+    const skip = document.querySelector<HTMLElement>('[data-slot="shell-skip"]')
+    skip?.focus()
+    await act(() => router.navigate({ to: '/f/services' }))
+    await waitFor(() => expect(crumb()).toBe('Services'))
+    await new Promise((resolve) => requestAnimationFrame(() => requestAnimationFrame(resolve)))
+    expect(document.activeElement).toBe(skip)
+    fireEvent.blur(skip as Element)
+  })
+})
+
+describe('the crumb trail', () => {
+  test('is the section, the page parent, then the page', async () => {
+    const { router, release } = mount('/f')
+    release()
+    await waitFor(() => expect(crumb()).toBe('Fleet overview'))
+    await act(() => router.navigate({ to: '/f/services' }))
+    await waitFor(() => expect(crumb()).toBe('Services'))
+    const trail = [
+      ...(document.querySelector('[data-slot="shell-breadcrumb"]')?.children ?? []),
+    ].map((el) => el.textContent)
+    expect(trail).toEqual(['Fleet', 'All services', 'Services'])
+  })
+})
