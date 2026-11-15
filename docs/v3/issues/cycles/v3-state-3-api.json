@@ -1,20 +1,21 @@
 {
-  "why": "State cycle 3 (docs/v3/cycles/state-3.md). A page store's `useReset()` unsets every field (`router/controls/define.ts:699-710`), the view tab and the open record with the filters: a Clear filters on the chart's empty state wired to it turned `?q=zzz&flagged=true&view=chart` into `?` and landed on the table (P2 state-3.4, `.evidence/cycle-state-3/explore-reset.log`). `FilterSet`'s own `Reset all` unsets only its specs, through a census that is not exported, so an app that wants the same reset anywhere else (an empty state, a command) clears its filter fields one by one (`apps/playground/src/cycle/state-3/OrdersPage.tsx:46-52`).",
-  "what": "An app resets its filters, and only its filters, with the store call FilterSet uses.",
+  "why": "State cycle 3 (docs/v3/cycles/state-3.md). A page store's `useReset()` unsets every field (`router/controls/define.ts:699-710`), the view tab and the open record with the filters: a Clear filters on the chart's empty state wired to it turned `?q=zzz&flagged=true&view=chart` into `?` and landed on the table (P2 state-3.4, `.evidence/cycle-state-3/explore-reset.log`). `FilterSet`'s own `Reset all` unsets only its specs, through a census that is not exported, so an app that wants the same reset anywhere else (an empty state, a command) clears its filter fields one by one (`apps/playground/src/cycle/state-3/OrdersPage.tsx:45-51`). In the same file, a `ViewTabs` switched back to its default writes `?view=table` into the URL, while a range picked back to its default drops its key, so a shared link carries a default (P3 state-3.7, `.evidence/cycle-state-3/actions.log` step 2).",
+  "what": "An app resets its filters, and only its filters, with the store call FilterSet uses; a field set back to its fallback leaves the URL.",
   "owns": [
-    "packages/basalt-ui/src/router/controls/define.ts (the store's reset)",
+    "packages/basalt-ui/src/router/controls/define.ts and its codecs (the store's reset, the fallback write)",
     "packages/basalt-ui/src/controls/filter-set-spec.tsx (FilterSet's Reset all reads the same call)",
     "their tests, the export surface snapshot and regenerated docs (docs/define-controls.md)"
   ],
   "must_not_touch": ["docs/v3/ARCHITECTURE.md", "apps/playground/src/cycle/**"],
-  "change": "(1) The store's `useReset` takes an optional subset: `useReset({ only: [handle, …] })` returns a callback that unsets those fields in one navigate (replace) and leaves the rest; with no argument it unsets every field as today. (2) `FilterSet`'s `Reset all` and its sheet use that call with their specs' handles, so the two resets are one implementation. (3) `docs/define-controls.md` says that `useReset()` with no argument also unsets view and record fields, and shows `useReset({ only })` for a Clear filters outside the FilterSet. If a new export or signature needs the contract amendment process, follow it.",
-  "commits": "feat: in packages/basalt-ui with its tests; a separate chore: commit for the contract amendment or a regenerated non-package file if any.",
-  "proof": "make check; a test that `useReset({ only })` keeps the view and record params and unsets the named ones in one navigate; FilterSet's existing reset tests stay green.",
+  "change": "(1) The store's `useReset` takes an optional subset: `useReset({ only: [handle, …] })` returns a callback that unsets those fields in one navigate (replace) and leaves the rest; with no argument it unsets every field as today. (2) `FilterSet`'s `Reset all` and its sheet use that call with their specs' handles, so the two resets are one implementation. (3) `docs/define-controls.md` says that `useReset()` with no argument also unsets view and record fields, and shows `useReset({ only })` for a Clear filters outside the FilterSet, beside a table's or chart card's `empty.filtered`. (4) A URL field's `set(fallback)` unsets its key, as a range or multi set back to its default already does, so `ViewTabs` on its default leaves the URL; a `history: 'push'` field still pushes the entry (state-3.7). If a new export or signature needs the contract amendment process, follow it.",
+  "commits": "feat: for the subset reset and fix: for the fallback write, in packages/basalt-ui with their tests; a separate chore: commit for the contract amendment or a regenerated non-package file if any.",
+  "proof": "make check; a test that `useReset({ only })` keeps the view and record params and unsets the named ones in one navigate; a test that an enum field set to its fallback leaves no key and still pushes; FilterSet's existing reset tests stay green.",
   "acceptance": [
     "useReset({ only }) unsets the named fields in one navigate and keeps every other param (test)",
     "FilterSet's Reset all goes through the same call and still keeps view and record params (test)",
     "docs/define-controls.md states what useReset() with no argument unsets and shows the subset form",
+    "An enum URL field set back to its fallback through set() leaves no key in the URL and keeps its history lane (test)",
     "make check passes"
   ],
-  "out_of_scope": "The table's filtered-empty (v3-state-3-state); changing the cycle 3 build."
+  "out_of_scope": "The table's filtered-empty (done by b4ef20c7); changing the cycle 3 build."
 }
