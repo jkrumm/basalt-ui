@@ -5,11 +5,18 @@ Generated from `src/vite/doc.ts`; edit it there.
 ```text
 Usage (vite.config.ts):
 
+  import tailwindcss from '@tailwindcss/vite'
   import { basalt } from 'basalt-ui/vite'
   export default { plugins: [react(), tailwindcss(), basalt()] }
 
-  /* src/styles.css, after @import 'tailwindcss' */
+  /* src/index.css: the one stylesheet entry, in this order. `init` writes it. */
+  @import 'basalt-ui/tailwind.css';
+  @import './tokens.css';
   @import '../.basalt/sources.css';
+
+  tailwind.css imports tailwindcss, the shipped tokens and fonts, so none of them is imported again.
+  ./tokens.css is the app's own `tokens:css --out` output; it follows tailwind.css so a retune wins.
+  Without a retune, leave it out. The sources path is relative to this file and ends at the Vite root.
 
 At buildStart, in dev and in every build (deploy builds run where CI does not), basalt() fails
 naming the one command that fixes it:

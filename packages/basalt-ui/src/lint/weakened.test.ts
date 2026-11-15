@@ -63,15 +63,10 @@ const run = (dir: string, extra: Partial<Parameters<typeof checkWeakenedConfig>[
 const status = (results: WeakenedResult[], check: number) => results[check - 1]?.status
 
 describe('checkWeakenedConfig', () => {
-  it('a healthy config passes checks 1-4 and skips 5 without a base ref', async () => {
-    const results = await run(fixture('healthy'))
-    expect(results.map((r) => r.status)).toEqual([
-      'passed',
-      'passed',
-      'passed',
-      'passed',
-      'skipped',
-    ])
+  it('a healthy config passes checks 1-5; with no base ref 5 names the refs it tried', async () => {
+    const results = await run(fixture('healthy'), { triedRefs: ['origin/HEAD', 'origin/main'] })
+    expect(results.map((r) => r.status)).toEqual(['passed', 'passed', 'passed', 'passed', 'passed'])
+    expect(results[4]?.detail).toContain('tried origin/HEAD, origin/main')
   })
 
   it('a dropped extends fails checks 1 and 2', async () => {

@@ -288,15 +288,29 @@ describe('init: the budget, the install and the seeds', () => {
     expect(command?.slice(4).map((spec) => spec.replace(/@\d.*$/, ''))).toEqual([
       'stylelint',
       'postcss-html',
+      'oxfmt',
     ])
     expect(command?.slice(4).every((spec) => /@\d+\.\d+\.\d+$/.test(spec))).toBe(true)
   })
 
-  it('bridge adds oxlint and @shadcn/lint; pnpm and npm lockfiles pick their own command', async () => {
+  it('bridge adds the frame peers, oxlint and @shadcn/lint; pnpm and npm lockfiles pick their own command', async () => {
     const dir = repo()
     const { commands } = await runInit(['--profile', 'bridge', '--root', 'src'], dir)
-    const names = (commands[0] ?? []).slice(4).map((s) => s.replace(/@\d.*$/, ''))
-    expect(names).toEqual(['stylelint', 'postcss-html', 'oxlint', '@shadcn/lint'])
+    const names = (command: string[] | undefined): string[] =>
+      (command ?? [])
+        .filter((arg, i) => i > 1 && !arg.startsWith('-'))
+        .map((s) => s.replace(/@[\d~^].*$/, ''))
+    expect(commands[0]?.slice(0, 3)).toEqual(['bun', 'add', '--exact'])
+    expect(names(commands[0])).toEqual(['tailwindcss', '@base-ui/react'])
+    expect(commands[1]?.slice(0, 4)).toEqual(['bun', 'add', '--dev', '--exact'])
+    expect(names(commands[1])).toEqual([
+      'stylelint',
+      'postcss-html',
+      'oxlint',
+      '@shadcn/lint',
+      'oxfmt',
+      '@tailwindcss/vite',
+    ])
 
     const pnpm = repo({ 'pnpm-lock.yaml': '' })
     rmSync(join(pnpm, 'bun.lock'))
@@ -311,15 +325,39 @@ describe('init: the budget, the install and the seeds', () => {
 
   it('skips the install when the peers already sit at their pins', async () => {
     const dir = repo()
-    const first = await runInit(['--profile', 'tokens'], dir)
+    const first = await runInit(['--profile', 'app', '--root', 'src'], dir)
     const pins = Object.fromEntries(
-      (first.commands[0] ?? []).slice(4).map((spec) => {
-        const at = spec.lastIndexOf('@')
-        return [spec.slice(0, at), spec.slice(at + 1)]
-      }),
+      first.commands.flatMap((command) =>
+        command
+          .filter((arg) => !arg.startsWith('-') && arg.lastIndexOf('@') > 0)
+          .map((spec) => {
+            const at = spec.lastIndexOf('@')
+            return [spec.slice(0, at), spec.slice(at + 1)]
+          }),
+      ),
     )
     put(dir, 'package.json', JSON.stringify({ name: 'fixture', devDependencies: pins }))
-    expect((await runInit(['--profile', 'tokens'], dir)).commands).toEqual([])
+    expect((await runInit(['--profile', 'app', '--root', 'src'], dir)).commands).toEqual([])
+  })
+
+  it('installs every peer the app profile needs, and no oxfmt for a Prettier repo', async () => {
+    const { commands } = await runInit(['--profile', 'app', '--root', 'src'], repo())
+    const all = commands.flat().map((s) => s.replace(/@[\d~^].*$/, ''))
+    for (const name of [
+      'tailwindcss',
+      '@tailwindcss/vite',
+      '@base-ui/react',
+      '@tanstack/react-query',
+      '@tanstack/react-router',
+      '@tanstack/router-plugin',
+      'oxlint',
+      'oxfmt',
+    ]) {
+      expect(all).toContain(name)
+    }
+    const prettier = repo({ '.prettierignore': 'dist\n' })
+    const kept = await runInit(['--profile', 'app', '--root', 'src'], prettier)
+    expect(kept.commands.flat().join(' ')).not.toContain('oxfmt')
   })
 
   it('--no-install runs no command and prints it', async () => {
@@ -387,13 +425,14 @@ describe('init: the budget, the install and the seeds', () => {
     await runInit(['--profile', 'app', '--root', 'src'], stock)
     expect(read(stock, 'vite.config.ts')).toContain("import { basalt } from 'basalt-ui/vite'")
     expect(read(stock, 'vite.config.ts')).toContain(
-      "plugins: [tanstackRouter({ target: 'react', autoCodeSplitting: true }), basalt(), react()]",
+      "plugins: [tanstackRouter({ target: 'react', autoCodeSplitting: true }), react(), tailwindcss(), basalt()]",
     )
+    expect(read(stock, 'vite.config.ts')).toContain("import tailwindcss from '@tailwindcss/vite'")
     expect(read(stock, 'vite.config.ts')).toContain(
       "import { tanstackRouter } from '@tanstack/router-plugin/vite'",
     )
     expect(read(stock, 'src/index.css')).toBe(
-      "@import 'basalt-ui/tailwind.css';\n@import '../.basalt/sources.css';\n",
+      "@import 'basalt-ui/tailwind.css';\n@import './tokens.css';\n@import '../.basalt/sources.css';\n",
     )
 
     const odd = repo({ 'vite.config.ts': 'export default defineConfig(() => ({}))\n' })
@@ -410,7 +449,7 @@ describe('init: the budget, the install and the seeds', () => {
     })
     await runInit(['--profile', 'app', '--root', 'src'], dir)
     expect(read(dir, 'vite.config.ts')).toBe(
-      "import {\n  defineConfig,\n  loadEnv,\n} from 'vite'\nimport { tanstackRouter } from '@tanstack/router-plugin/vite'\nimport { basalt } from 'basalt-ui/vite'\n\nexport default defineConfig({ plugins: [tanstackRouter({ target: 'react', autoCodeSplitting: true }), basalt(), ] })\n",
+      "import {\n  defineConfig,\n  loadEnv,\n} from 'vite'\nimport { tanstackRouter } from '@tanstack/router-plugin/vite'\nimport tailwindcss from '@tailwindcss/vite'\nimport { basalt } from 'basalt-ui/vite'\n\nexport default defineConfig({ plugins: [tanstackRouter({ target: 'react', autoCodeSplitting: true }), tailwindcss(), basalt()] })\n",
     )
   })
 
@@ -422,7 +461,7 @@ describe('init: the budget, the install and the seeds', () => {
     })
     await runInit(['--profile', 'app', '--root', 'apps/web/src'], dir)
     expect(read(dir, 'apps/web/src/index.css')).toBe(
-      "@import 'basalt-ui/tailwind.css';\n@import '../.basalt/sources.css';\n",
+      "@import 'basalt-ui/tailwind.css';\n@import './tokens.css';\n@import '../.basalt/sources.css';\n",
     )
   })
 
@@ -430,7 +469,84 @@ describe('init: the budget, the install and the seeds', () => {
     const dir = repo({ 'src/index.css': "@import 'tailwindcss';\n" })
     const { log } = await runInit(['--profile', 'app', '--root', 'src'], dir)
     expect(read(dir, 'src/index.css')).toBe("@import 'tailwindcss';\n")
-    expect(log).toContain("to do: in your stylesheet entry: @import 'basalt-ui/tailwind.css'")
+    expect(log).toContain(
+      "to do: make your stylesheet entry exactly:\n@import 'basalt-ui/tailwind.css'",
+    )
+  })
+
+  it("rewrites create-vite's own index.css to the one entry, and keeps a sheet it does not know", async () => {
+    const stockCss =
+      ':root {\n  font-synthesis: none;\n  color-scheme: light dark;\n}\n\n#root {\n  width: 1126px;\n}\n'
+    const vite = {
+      'vite.config.ts':
+        "import { defineConfig } from 'vite'\nimport react from '@vitejs/plugin-react'\n\nexport default defineConfig({\n  plugins: [react()],\n})\n",
+    }
+    const stock = repo({ ...vite, 'src/index.css': stockCss })
+    await runInit(['--profile', 'app', '--root', 'src'], stock)
+    expect(read(stock, 'src/index.css')).toBe(
+      "@import 'basalt-ui/tailwind.css';\n@import './tokens.css';\n@import '../.basalt/sources.css';\n",
+    )
+    expect(read(stock, 'vite.config.ts')).toContain(
+      "plugins: [tanstackRouter({ target: 'react', autoCodeSplitting: true }), react(), tailwindcss(), basalt()]",
+    )
+
+    const own = repo({ ...vite, 'src/index.css': '@import "./reset.css";\n.card { margin: 0 }\n' })
+    const { log } = await runInit(['--profile', 'app', '--root', 'src'], own)
+    expect(read(own, 'src/index.css')).toBe('@import "./reset.css";\n.card { margin: 0 }\n')
+    expect(log).toContain(
+      "to do: make your stylesheet entry exactly:\n@import 'basalt-ui/tailwind.css';",
+    )
+  })
+
+  it('puts tailwindcss() between react() and basalt(), and adds only what is missing', async () => {
+    const dir = repo({
+      'vite.config.ts':
+        "import react from '@vitejs/plugin-react'\nimport { basalt } from 'basalt-ui/vite'\n\nexport default { plugins: [react({ jsxRuntime: 'automatic' }), basalt()] }\n",
+    })
+    await runInit(['--profile', 'parts', '--root', 'src'], dir)
+    expect(read(dir, 'vite.config.ts')).toContain(
+      "plugins: [react({ jsxRuntime: 'automatic' }), tailwindcss(), basalt()]",
+    )
+    const first = read(dir, 'vite.config.ts')
+    await runInit(['--profile', 'parts', '--root', 'src'], dir)
+    expect(read(dir, 'vite.config.ts')).toBe(first)
+  })
+
+  it('names one stylesheet entry in init, docs/vite.md and the basalt-app skill', async () => {
+    const dir = repo({
+      'vite.config.ts':
+        "import react from '@vitejs/plugin-react'\nexport default { plugins: [react()] }\n",
+      'src/index.css': "@import 'tailwindcss';\n",
+    })
+    await runInit(['--profile', 'app', '--root', 'src'], dir)
+    const entry = read(dir, 'src/index.css').trimEnd()
+    const pkg = join(import.meta.dirname, '../../..')
+    for (const file of ['docs/vite.md', 'agent/skills/basalt-app/SKILL.md']) {
+      const text = readFileSync(join(pkg, file), 'utf8')
+      const lines = entry.split('\n')
+      expect(lines.every((line) => text.includes(line))).toBe(true)
+      // The order is the entry's: tailwind.css, then the app's tokens, then the sources.
+      const at = lines.map((line) => text.indexOf(line))
+      expect(at).toEqual(at.toSorted((a, b) => a - b))
+    }
+  })
+
+  it('has the lint script run basalt-ui lint once, and leaves a repo that already runs it', async () => {
+    const dir = repo()
+    put(
+      dir,
+      'package.json',
+      JSON.stringify({ name: 'fixture', scripts: { lint: 'oxlint' } }, null, 2),
+    )
+    await runInit(['--profile', 'app', '--root', 'src'], dir)
+    const scripts = JSON.parse(read(dir, 'package.json')).scripts
+    expect(scripts.lint).toBe('oxlint && basalt-ui lint')
+    await runInit(['--profile', 'app', '--root', 'src'], dir)
+    expect(JSON.parse(read(dir, 'package.json')).scripts.lint).toBe('oxlint && basalt-ui lint')
+
+    const made = repo({ Makefile: 'check:\n\tbasalt-ui lint\n' })
+    await runInit(['--profile', 'app', '--root', 'src'], made)
+    expect(JSON.parse(read(made, 'package.json')).scripts).toBeUndefined()
   })
 
   it('declares the same flags to the dispatcher and to its own parser', () => {
@@ -617,7 +733,7 @@ describe('init: the router scaffold', () => {
     await runInit(['--profile', 'app', '--root', 'src'], dir)
     expect(read(dir, 'vite.config.ts')).toBe(first)
     expect(first.match(/tanstackRouter\(/g)).toHaveLength(1)
-    expect(first).toContain('basalt(), react()')
+    expect(first).toContain('react(), tailwindcss(), basalt()')
   })
 
   it('names the router plugin in the to-do when the vite config is not stock', async () => {
