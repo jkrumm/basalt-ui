@@ -1,13 +1,11 @@
 /**
- * A count axis (a bar series of whole numbers) ticks on integers, on both cartesian compilers: a
+ * A count axis (a bar series of whole numbers) ticks on integers: a
  * day's two events read `0 1 2`, never `0 0.5 1 1.5 2`. A fractional bar, a normalized stack and a
  * caller's own ticks keep what they had.
  */
 import { describe, expect, test } from 'bun:test'
-import { compileCartesian as compileV2 } from './compile'
-import type { CartesianInput as InputV2 } from './compile'
-import { compileCartesian as compileV3 } from './core/compile'
-import type { CartesianInput as InputV3 } from './core/compile'
+import { compileCartesian } from './core/compile'
+import type { CartesianInput } from './core/compile'
 import type { ChartSeries } from './types'
 
 type Row = { x: number; y: number }
@@ -23,8 +21,8 @@ const bar = (getValue: (d: Row) => number): ChartSeries<Row> => ({
 const WIDE = { width: 600, height: 240, defaultTheme: {} as never }
 const input = (
   data: readonly number[],
-  extra: Partial<InputV2<Row, number>> = {},
-): InputV2<Row, number> & InputV3<Row, number> =>
+  extra: Partial<CartesianInput<Row, number>> = {},
+): CartesianInput<Row, number> =>
   ({
     chartId: 'c',
     data: data.map((y, x) => ({ x, y })),
@@ -32,16 +30,13 @@ const input = (
     series: [bar((d) => d.y)],
     marks: () => [],
     ...extra,
-  }) as InputV2<Row, number> & InputV3<Row, number>
+  }) as CartesianInput<Row, number>
 
 type Scales = { y: { axis: { ticks: { values?: number[]; count?: number } } } }
 
-describe.each([
-  ['2.x', compileV2],
-  ['v3', compileV3],
-] as const)('%s count axis', (_name, compile) => {
-  const ticksOf = (given: InputV2<Row, number> & InputV3<Row, number>) =>
-    (compile(given).chart(WIDE).scales as unknown as Scales).y.axis.ticks
+describe('count axis', () => {
+  const ticksOf = (given: CartesianInput<Row, number>) =>
+    (compileCartesian(given).chart(WIDE).scales as unknown as Scales).y.axis.ticks
 
   test('integer counts tick on integers only', () => {
     const { values } = ticksOf(input([0, 1, 2, 1, 0]))
