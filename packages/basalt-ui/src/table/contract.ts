@@ -159,6 +159,11 @@ export type UseDataTable<T> = {
   state?: StateHandle<TableState>
   phase?: Phase | QueryStateLike
   /**
+   * A fixed clock in epoch ms for the relative-time cells (a fixture, a test). Without it they read
+   * the clock and tick once a minute.
+   */
+  now?: number
+  /**
    * Why the table has no rows, and what to do about it: its `cause` replaces the default sentence
    * and its `action` renders beside it. A table filtered by its own search or filters keeps the
    * no-matches sentence and Clear filters; `null` and `undefined` both keep the default.
