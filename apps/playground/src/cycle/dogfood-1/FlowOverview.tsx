@@ -9,7 +9,7 @@ import type { ControlHandle } from 'basalt-ui'
 import { StatCard } from 'basalt-ui/cards'
 import { ChartCard, Lines, Sparkline } from 'basalt-ui/charts'
 import { filterSlot, spec } from 'basalt-ui/controls'
-import { CardGrid, EmptyState, Page, PageAside, PageBar, Section } from 'basalt-ui/page'
+import { CardGrid, EmptyState, Facts, Page, PageAside, PageBar, Section } from 'basalt-ui/page'
 import { DataTable, col, useDataTable } from 'basalt-ui/table'
 import type { ComponentProps, ReactElement, ReactNode } from 'react'
 import { DEMO_SERIES } from '../../demo/series'
@@ -272,26 +272,21 @@ function asideOf(handle: typeof flow.field.issue): ControlHandle<boolean> {
 }
 
 function IssueFacts({ issue }: { issue: FlowIssue }): ReactElement {
-  const facts: readonly (readonly [string, string])[] = [
-    ['State', STATE_LABELS[issue.state]],
-    ['Project', issue.project],
-    ['Kind', issue.kind],
-    ['Origin', ORIGIN_LABELS[issue.origin]],
-    ['Since', issue.since === null ? 'Not filed yet' : new Date(issue.since).toUTCString()],
+  const rows = [
+    { label: 'State', value: STATE_LABELS[issue.state] },
+    { label: 'Project', value: issue.project },
+    { label: 'Kind', value: issue.kind },
+    { label: 'Origin', value: ORIGIN_LABELS[issue.origin] },
+    {
+      label: 'Since',
+      value: issue.since === null ? 'Not filed yet' : new Date(issue.since).toUTCString(),
+    },
   ]
   return (
     <div className="flex flex-col gap-4 text-sm">
       <p className="m-0 font-medium">{issue.title}</p>
       {issue.reason === null ? null : <p className="m-0 text-muted-foreground">{issue.reason}</p>}
-      {/* cycle-dogfood-1: dogfood-1.12 — no key-value list for an inspector body (shell-1.4). */}
-      <dl className="m-0 grid grid-cols-[auto_1fr] gap-x-4 gap-y-2">
-        {facts.map(([term, value]) => (
-          <div key={term} className="contents">
-            <dt className="text-muted-foreground">{term}</dt>
-            <dd className="m-0">{value}</dd>
-          </div>
-        ))}
-      </dl>
+      <Facts rows={rows} />
     </div>
   )
 }
