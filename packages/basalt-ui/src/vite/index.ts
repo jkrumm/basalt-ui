@@ -8,6 +8,8 @@
  * - With ejects in this app it aliases `basalt-ui/ui/<name>` to the local file, bundles basalt-ui
  *   for SSR (`ssr.noExternal`) and keeps the composite subpaths out of the dep optimizer; with none
  *   it sets none of these.
+ * - A module of the app that imports `basalt-ui/table` gets `import 'basalt-ui/table.css'` appended,
+ *   so the table tiers (cards below the phone width) need no second import from the app.
  * - It regenerates `<root>/.basalt/sources.css` each run.
  * - It owns the head: the theme script, the theme-color pair and, with an app config, the manifest.
  *
@@ -66,6 +68,19 @@ function ejectedSpecifiers(ejected: AppEjects['ejected']): string[] {
   return [...found].toSorted()
 }
 
+/** An app module's import of the table subpath (static, dynamic or re-export), not `table.css`. */
+const TABLE_IMPORT = /(?:\bfrom\s*|\bimport\s*\(?\s*)['"]basalt-ui\/table['"]/
+const TABLE_SHEET_IMPORT = /['"]basalt-ui\/table\.css(?:\?[^'"]*)?['"]/
+const TABLE_SHEET = "\nimport 'basalt-ui/table.css';\n"
+const SCRIPT_ID = /\.[cm]?[jt]sx?$/
+
+/** The module's code with the tier sheet imported, or null when it needs no change. */
+function withTableSheet(code: string, id: string): string | null {
+  if (id.includes('/node_modules/') || !SCRIPT_ID.test(id.split('?')[0] ?? id)) return null
+  if (!TABLE_IMPORT.test(code) || TABLE_SHEET_IMPORT.test(code)) return null
+  return code + TABLE_SHEET
+}
+
 const escape = (s: string): string => s.replace(/[.*+?^${}()|[\]\\/]/g, '\\$&')
 
 /** What `basalt()` adds to the config for the app's ejects; nothing at all when there are none. */
@@ -108,7 +123,8 @@ function staleSeedsMessage(stale: AppEjects['ejected'], where: string): string {
 /**
  * The v3 Vite plugin: fails the build on a missing peer (`bun add …`) or a stale ejected seed
  * (`basalt-ui sync`), aliases ejected primitives, writes `.basalt/sources.css` and owns the head
- * (theme script, theme-color, manifest). Full contract: `docs/vite.md`.
+ * (theme script, theme-color, manifest). A module that imports `basalt-ui/table` also gets
+ * `basalt-ui/table.css`, the table tiers, so the app never imports it. Full contract: `docs/vite.md`.
  *
  * @useWhen a Vite app imports basalt-ui v3 subpaths, at profile `parts` or `app`
  * @neverWhen the app is not built with Vite; it then lists its own Tailwind sources
@@ -132,6 +148,10 @@ export function basalt(options: BasaltOptions = {}): PluginOption[] {
     },
     configResolved(config) {
       root = config.root
+    },
+    transform(code, id) {
+      const next = withTableSheet(code, id)
+      return next === null ? null : { code: next, map: null }
     },
     buildStart() {
       const pkgRoot = installedPackage(root)

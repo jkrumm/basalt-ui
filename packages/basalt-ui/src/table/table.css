@@ -192,6 +192,12 @@
       content: attr(data-label) ': ';
       color: var(--vx-ink-muted);
     }
+    /* a money value keeps the currency its column header carried */
+    [data-slot='table-root'][data-below='480'][data-phone='cards']
+      [data-slot='table-cell'][data-unit]::after {
+      content: ' ' attr(data-unit);
+      color: var(--vx-ink-muted);
+    }
     [data-slot='table-root'][data-below='480'][data-phone='cards']
       [data-slot='table-cell'][data-kind='actions'] {
       grid-column: 2;
@@ -296,6 +302,12 @@
       content: attr(data-label) ': ';
       color: var(--vx-ink-muted);
     }
+    /* a money value keeps the currency its column header carried */
+    [data-slot='table-root'][data-below='800'][data-phone='cards']
+      [data-slot='table-cell'][data-unit]::after {
+      content: ' ' attr(data-unit);
+      color: var(--vx-ink-muted);
+    }
     [data-slot='table-root'][data-below='800'][data-phone='cards']
       [data-slot='table-cell'][data-kind='actions'] {
       grid-column: 2;
@@ -398,6 +410,12 @@
     [data-slot='table-root'][data-below='always'][data-phone='cards']
       [data-slot='table-cell'][data-label]::before {
       content: attr(data-label) ': ';
+      color: var(--vx-ink-muted);
+    }
+    /* a money value keeps the currency its column header carried */
+    [data-slot='table-root'][data-below='always'][data-phone='cards']
+      [data-slot='table-cell'][data-unit]::after {
+      content: ' ' attr(data-unit);
       color: var(--vx-ink-muted);
     }
     [data-slot='table-root'][data-below='always'][data-phone='cards']
