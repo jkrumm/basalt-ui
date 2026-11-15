@@ -72,6 +72,20 @@ Verdict: PENDING
 - **G2 is open.** The real-app count (rb, obsidian) is the part that can still fail the decision; it is recorded as `pending G2`.
 - **Not PASS yet.** One run per cell cannot show "clearly worse" or "clearly not worse"; read it as "no sign that npm-default costs quality on two briefs that fit the primitives".
 
+## Re-run (2026-11-15)
+
+Both checkout findings are fixed in the package (`8d190679`: `./core/*` and `./tokens` published and mapped by `eject`; `scripts/rewrite-ui-specifiers.mjs` rewrites `../ui/<name>` and `./<name>` in the emitted dist). The harness no longer stands in for either: it stages the seeds verbatim and runs the shipped rewrite script on its scratch dist (`bun scripts/rewrite-ui-specifiers.mjs <dist>`).
+
+`bun tools/spikes/f3-eject/run.ts stage` now reports, against the current 36 seeds (date-picker is new since the trial):
+
+| Reading                                                    | Before                      | Now                                                                   |
+| ---------------------------------------------------------- | --------------------------- | --------------------------------------------------------------------- |
+| seeds `eject` refuses                                      | 14 of 35                    | 0 of 36 (`ejectRefused: []`)                                          |
+| compiled files that reach a primitive by a relative path   | 12 rewritten by the harness | 0 (`relativeUiImports: []`); 15 files rewritten by the shipped script |
+| `eject --all` in a scratch app (`prepare statcards.eject`) | writes nothing, refuses     | writes 36 files; `tsc --noEmit` and `vite build` pass                 |
+
+The trial itself (the four cells, the reviewers) is not re-run: its counts stand, and the verdict stays partial until G2. The staging also gained `react-day-picker` (a new dependency of `date-picker`) and leaves the PWA tooling of `basalt()` external.
+
 ## Then
 
 - **Keep section 4.1 as written** until G2 is recorded; no change to `init`.

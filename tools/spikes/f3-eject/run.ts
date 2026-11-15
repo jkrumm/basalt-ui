@@ -34,6 +34,12 @@ import { tmpdir } from 'node:os'
 import { dirname, join, relative, resolve } from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { chromium } from 'playwright-core'
+import {
+  ejectedGuard,
+  ejectedSource,
+  readSeed,
+  seedNames,
+} from '../../../packages/basalt-ui/src/cli/merge/seed'
 
 const HERE = dirname(fileURLToPath(import.meta.url))
 const REPO = resolve(HERE, '..', '..', '..')
@@ -175,6 +181,7 @@ const LINKED_DEPS = [
   '@tanstack',
   '@fontsource-variable',
   'oxlint',
+  'react-day-picker',
 ]
 
 const BIN = `#!/usr/bin/env bun
@@ -264,22 +271,11 @@ function stage(): void {
   )
   if (!tsc.ok) fail(`declaration emit failed:\n${tsc.out}`)
 
-  // Composites and siblings reach a primitive by its published specifier, so an ejected file is
-  // followed (ARCHITECTURE 4.1: "npm composites follow"). The source imports them relatively.
-  let rewritten = 0
-  for (const file of walk(dist).filter((f) => /\.(js|d\.ts)$/.test(f))) {
-    const rel = relative(dist, file)
-    const text = readFileSync(file, 'utf8')
-    const next = rel.startsWith('ui/')
-      ? text.replace(/(from\s+['"])\.\/([a-z0-9-]+)(['"])/g, (m, a, name, c) =>
-          existsSync(join(build, 'src', 'ui', `${name}.tsx`)) ? `${a}basalt-ui/ui/${name}${c}` : m,
-        )
-      : text.replace(/(from\s+['"])\.\.\/ui\/([a-z0-9-]+)(['"])/g, '$1basalt-ui/ui/$2$3')
-    if (next !== text) {
-      writeFileSync(file, next)
-      rewritten++
-    }
-  }
+  // The shipped post-build step: composites and siblings reach a primitive by its published
+  // specifier, so an ejected file is followed (ARCHITECTURE 4.1: "npm composites follow").
+  const rewrite = run('bun', [join(PKG_SRC, 'scripts', 'rewrite-ui-specifiers.mjs'), dist], HERE)
+  if (!rewrite.ok) fail(`rewrite-ui-specifiers failed:\n${rewrite.out}`)
+  const rewritten = Number(/(\d+) files/.exec(rewrite.out)?.[1] ?? 0)
 
   // The seeds and guards (what `eject` copies), the cn module they import, and the css.
   mkdirSync(join(pkg, 'src', 'ui'), { recursive: true })
@@ -287,13 +283,8 @@ function stage(): void {
   for (const f of readdirSync(join(PKG_SRC, 'src', 'ui'))) {
     if (/\.(test|type-guard|contract)\.tsx?$/.test(f) || f === 'guard-completeness.ts') continue
     if (!/\.(tsx|guard\.ts)$/.test(f)) continue
-    // Master's eject refuses 14 seeds because their `../core/*` and `../tokens` imports have no published
-    // specifier (finding, docs/v3/spikes/f3-eject.md). The stand-in for the missing publish-time
-    // rewrite: the staged seed names them as `basalt-ui/core/*` and `basalt-ui/tokens`, which the
-    // staged package exports. The rewrite is the same for both arms.
+    // Verbatim: the shipped `eject` maps `../core/*` and `../tokens` to their published specifiers.
     const seed = readFileSync(join(PKG_SRC, 'src', 'ui', f), 'utf8')
-      .replace(/(from\s+['"])\.\.\/core\/(?!cn['"])([\w/-]+)(['"])/g, '$1basalt-ui/core/$2$3')
-      .replace(/(from\s+['"])\.\.\/tokens(['"])/g, '$1basalt-ui/tokens$2')
     writeFileSync(join(pkg, 'src', 'ui', f), seed)
   }
   for (const f of ['cn.ts', 'cn-theme.ts']) {
@@ -336,6 +327,11 @@ function stage(): void {
       'node',
       '--external',
       'vite',
+      // The app-plugin's PWA tooling: the scratch install never runs it, and bundling it needs its own tree.
+      '--external',
+      'vite-plugin-pwa',
+      '--external',
+      '@vite-pwa/*',
       '--outfile',
       join(dist, 'vite.js'),
     ],
@@ -396,9 +392,33 @@ function stage(): void {
       2,
     )}\n`,
   )
+  // What the acceptance reads: every seed ejects, and no compiled file still reaches a primitive by a
+  // relative path.
+  const names = seedNames(PKG_SRC)
+  const ejectRefused = names.filter((name) => {
+    const seed = readSeed(PKG_SRC, name)!
+    return (
+      'error' in ejectedSource(seed.seed) ||
+      (seed.guard !== null && 'error' in ejectedGuard(seed.guard, name))
+    )
+  })
+  const relativeUiImports = walk(dist)
+    .filter((f) => /\.(js|d\.ts)$/.test(f))
+    .flatMap((f) => {
+      const inUi = relative(dist, f).startsWith('ui/')
+      const hits = [...readFileSync(f, 'utf8').matchAll(/from\s+['"](\.\.?\/[^'"]+)['"]/g)]
+      return hits
+        .map((m) => m[1]!)
+        .filter((spec) => (inUi ? /^\.\/[a-z0-9-]+$/ : /^\.\.\/ui\/[a-z0-9-]+$/).test(spec))
+        .filter((spec) => names.includes(spec.slice(spec.lastIndexOf('/') + 1)))
+        .map((spec) => `${relative(dist, f)}: ${spec}`)
+    })
   console.log(
     JSON.stringify({
       staged: SHARED,
+      seedCount: names.length,
+      ejectRefused,
+      relativeUiImports,
       jsFiles: walk(dist).filter((f) => f.endsWith('.js')).length,
       dts: walk(dist).filter((f) => f.endsWith('.d.ts')).length,
       rewrittenFiles: rewritten,
