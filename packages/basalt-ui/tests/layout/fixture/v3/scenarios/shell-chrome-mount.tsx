@@ -226,6 +226,7 @@ function Body({ spec }: { spec: FixtureSpec }): ReactElement {
     <Page area="chrome">
       {bar !== undefined && (
         <PageBar
+          {...(bar.title !== undefined && { title: bar.title })}
           {...(bar.pills !== undefined && bar.pills > 0 && { controls: controls(bar.pills) })}
           {...(actions !== undefined && {
             actions: actions as unknown as NonNullable<
