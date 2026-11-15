@@ -228,7 +228,7 @@
       "id": "removed-2x-root-basaltRouterOptions",
       "kind": "removed",
       "from": "basalt-ui#basaltRouterOptions",
-      "note": "the 2.x runtime is deleted in 3.0; instead: routerDefaults().options spread into createRouter, with makeQueryClient from basalt-ui/data"
+      "note": "the 2.x runtime is deleted in 3.0; instead: routerDefaults().options spread into createRouter, with createQueryClient from basalt-ui/data"
     },
     {
       "id": "removed-2x-root-createBasaltRouter",
