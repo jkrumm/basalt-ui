@@ -70,9 +70,9 @@ describe('a documented export', () => {
     expect(doc).toContain('One metric with its label.')
   })
 
-  test('carries the public signature, the first paragraph only, and no second subpath copy', () => {
+  test('carries the public signature, the first paragraph only, and the narrower subpath of a re-exported symbol', () => {
     const doc = docs.get('create-counter.md')!
-    expect(doc).toContain('subpath: fixture-ui\n')
+    expect(doc).toContain('subpath: fixture-ui/extras\n')
     expect(doc).toContain('createCounter(options: { start?: number; step: number; }): () => number')
     expect(doc).not.toContain('second paragraph')
     expect([...docs.keys()].toSorted()).toEqual([
