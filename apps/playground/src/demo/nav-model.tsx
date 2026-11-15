@@ -7,7 +7,7 @@
  * generated route tree. It is PURE (no registration, no global), so this file imports nothing from
  * `routes/` and either side can read it without a cycle.
  *
- * Destinations: home, the gallery, cards, table, shell, the scenarios section built from
+ * Destinations: home, cards, table, shell, the scenarios section built from
  * `SCENARIO_INFO`. Settings is the shell's `settings` menu, not a nav item.
  */
 import { linkOptions } from '@tanstack/react-router'
@@ -41,15 +41,6 @@ const Dashboard = glyph(
     <path d="M4 16h6v4H4z" />
     <path d="M14 4h6v4h-6z" />
     <path d="M14 12h6v8h-6z" />
-  </>,
-)
-const Components = glyph(
-  <>
-    <path d="M4 4h6v6H4z" />
-    <path d="M14 4h6v6h-6z" />
-    <path d="M4 14h6v6H4z" />
-    <path d="M14 17h6" />
-    <path d="M17 14v6" />
   </>,
 )
 const Chart = glyph(
@@ -93,13 +84,6 @@ export const NAV = defineNav({
           link: linkOptions({ to: '/' }),
         },
         {
-          id: 'gallery',
-          label: 'Gallery',
-          icon: Components,
-          mobile: 'tab',
-          link: linkOptions({ to: '/gallery' }),
-        },
-        {
           id: 'cards',
           label: 'Cards',
           icon: Chart,
@@ -121,13 +105,6 @@ export const NAV = defineNav({
           link: linkOptions({ to: '/shell' }),
         },
         {
-          id: 'cycle-state',
-          label: 'Orders (state cycle)',
-          icon: Table,
-          mobile: 'more',
-          link: linkOptions({ to: '/cycle/state' }),
-        },
-        {
           id: 'cycle-state-2',
           label: 'Tickets (state cycle 2)',
           icon: Table,
@@ -140,34 +117,6 @@ export const NAV = defineNav({
           icon: Dashboard,
           mobile: 'more',
           link: linkOptions({ to: '/cycle/dogfood' }),
-        },
-      ],
-    },
-    // Shell cycle 1 (docs/v3/cycles/shell-1.md): the fleet app's three pages.
-    {
-      id: 'fleet',
-      label: 'Fleet (shell cycle)',
-      items: [
-        {
-          id: 'fleet-overview',
-          label: 'Fleet overview',
-          icon: Dashboard,
-          mobile: 'more',
-          link: linkOptions({ to: '/cycle/shell' }),
-        },
-        {
-          id: 'fleet-services',
-          label: 'Services',
-          icon: Table,
-          mobile: 'more',
-          link: linkOptions({ to: '/cycle/shell/services' }),
-        },
-        {
-          id: 'fleet-settings',
-          label: 'Fleet settings',
-          icon: Layout,
-          mobile: 'more',
-          link: linkOptions({ to: '/cycle/shell/settings' }),
         },
       ],
     },

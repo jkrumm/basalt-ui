@@ -1,6 +1,6 @@
 import { rect } from '@tanstack/charts/rect'
 import { createFileRoute } from '@tanstack/react-router'
-import { Section } from 'basalt-ui'
+import { Section } from 'basalt-ui/page'
 import type { ReactElement, ReactNode } from 'react'
 import { CartesianChart } from '../../../../packages/basalt-ui/dist/charts/parts/cartesian'
 import type { Series } from '../../../../packages/basalt-ui/dist/charts/contract'

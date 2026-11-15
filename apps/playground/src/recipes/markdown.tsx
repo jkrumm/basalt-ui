@@ -1,11 +1,4 @@
-import { Stack } from '@mantine/core'
-import { createFileRoute } from '@tanstack/react-router'
-import { ChartsSection } from '../demo/gallery/charts'
-import { ComponentsSection } from '../demo/gallery/components'
-import { DataSection } from '../demo/gallery/data'
-import { FormsSection } from '../demo/gallery/forms'
-import { useV3Tokens } from '../demo/v3-tokens'
-import { validateShotSearch } from '../scenarios/shot-state'
+// A recipe file the playground typecheck compiles; gen-recipes copies the region into the doc.
 // #region recipe:markdown
 import { CodeBlock, Markdown } from 'basalt-ui/content'
 import { ArticleLayout, Callout } from 'basalt-ui/page'
@@ -36,23 +29,3 @@ export function MarkdownRegion() {
   )
 }
 // #endregion
-
-function GalleryRoute() {
-  useV3Tokens()
-  const shotState = Route.useSearch()['shot-state']
-  return (
-    <Stack gap="xl">
-      <ComponentsSection shotState={shotState} />
-      <FormsSection />
-      <MarkdownRegion />
-      <ChartsSection />
-      <DataSection shotState={shotState} />
-    </Stack>
-  )
-}
-
-export const Route = createFileRoute('/gallery')({
-  staticData: { title: 'Gallery' },
-  validateSearch: validateShotSearch,
-  component: GalleryRoute,
-})

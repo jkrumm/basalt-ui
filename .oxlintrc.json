@@ -155,7 +155,7 @@
             "paths": [
               {
                 "name": "@mantine/dates",
-                "message": "@mantine/dates is an OPTIONAL peer (docs/CONTROLS-SPEC.md §3) — ./controls must resolve with no @mantine/dates installed. The one reach lives in src/controls-dates/, injected into range-filter.tsx’s customPicker seam."
+                "message": "@mantine/dates is an OPTIONAL peer (docs/CONTROLS-SPEC.md §3) — ./controls must resolve with no @mantine/dates installed. Nothing under src/controls reaches it."
               },
               {
                 "name": "@mantine/form",
@@ -165,7 +165,7 @@
             "patterns": [
               {
                 "group": ["@mantine/dates/*"],
-                "message": "@mantine/dates is an OPTIONAL peer (docs/CONTROLS-SPEC.md §3) — ./controls must resolve with no @mantine/dates installed. The one reach lives in src/controls-dates/, injected into range-filter.tsx’s customPicker seam."
+                "message": "@mantine/dates is an OPTIONAL peer (docs/CONTROLS-SPEC.md §3) — ./controls must resolve with no @mantine/dates installed. Nothing under src/controls reaches it."
               },
               {
                 "group": ["@mantine/form/*"],
@@ -405,19 +405,13 @@
       }
     },
     {
-      "files": [
-        "packages/basalt-ui/src/shell/page-bar.tsx",
-        "packages/basalt-ui/src/provider/index.tsx"
-      ],
+      "files": ["packages/basalt-ui/src/provider/index.tsx"],
       "rules": {
         "react/refs": "off"
       }
     },
     {
-      "files": [
-        "packages/basalt-ui/src/provider/index.tsx",
-        "packages/basalt-ui/tests/layout/fixture/fixtures.tsx"
-      ],
+      "files": ["packages/basalt-ui/src/provider/index.tsx"],
       "rules": {
         "react/set-state-in-effect": "off"
       }

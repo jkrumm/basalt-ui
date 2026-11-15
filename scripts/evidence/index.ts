@@ -30,7 +30,6 @@ const LANES = [
   'keyboard',
   'otel',
   'transitions',
-  'ssr',
   'print',
   'webkit',
   'perf',

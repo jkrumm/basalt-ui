@@ -66,7 +66,7 @@ autonomously execute large roadmap phases.
 - **Published subpaths, 1.29.0 (C1):** `./query`, `./connectivity` and `./data` are dropped —
   `./query`'s exports move to `.`/`./state`, `./connectivity` folds into `./provider`, `./data`
   folds into `./data` (table + virtual-list) staying but the barrel narrows. `./controls-dates`
-  STAYS separate (inlining it would pull `@mantine/dates` into `./controls`). Full symbol-level
+  was deleted with the 2.x view layer (`removed-2x` rows). Full symbol-level
   mapping: `packages/basalt-ui/MIGRATING.md` § 2.x to 3.0.
 
 ## Charts

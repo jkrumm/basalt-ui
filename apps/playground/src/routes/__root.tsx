@@ -16,11 +16,8 @@ import { useState } from 'react'
 import type { ComponentProps } from 'react'
 import { COMMANDS } from '../demo/commands'
 import { NAV } from '../demo/nav-model'
-import { useUserScenario } from '../demo/user-scenario-store'
-import type { UserScenario } from '../demo/user-scenario-store'
 
 type ShellProps = ComponentProps<typeof AppShell>
-type Account = NonNullable<ShellProps['account']>
 type Blocks = NonNullable<ShellProps['blocks']>
 
 /**
@@ -43,24 +40,11 @@ const CHROME: NonNullable<ShellProps['chrome']> =
     ? 'native-overlay'
     : 'web'
 
-function accountOf(scenario: UserScenario, setScenario: (next: UserScenario) => void): Account {
-  if (scenario.auth === 'loading') return { status: 'loading' }
-  if (scenario.auth === 'signed-out') {
-    return { status: 'signed-out', onSignIn: () => setScenario({ ...scenario, auth: 'signed-in' }) }
-  }
-  return {
-    status: 'signed-in',
-    name: scenario.name,
-    detail: scenario.email,
-    ...(scenario.image !== '' && { avatar: scenario.image }),
-    rows: [{ label: 'Manage account', onClick: noop }],
-    onSignOut: () => setScenario({ ...scenario, auth: 'signed-out' }),
-  }
-}
+/** The shell's account row, signed out: the playground has no auth. */
+const ACCOUNT: NonNullable<ShellProps['account']> = { status: 'signed-out', onSignIn: noop }
 
 function RootLayout() {
   const navigate = useNavigate()
-  const [scenario, setScenario] = useUserScenario()
   const [paletteOpen, setPaletteOpen] = useState(false)
 
   return (
@@ -85,7 +69,7 @@ function RootLayout() {
           },
         ],
       }}
-      account={accountOf(scenario, setScenario)}
+      account={ACCOUNT}
       chrome={CHROME}
     >
       <Outlet />
