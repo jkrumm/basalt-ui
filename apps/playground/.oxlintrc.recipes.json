@@ -1,4 +1,3 @@
 {
-  "extends": ["../../packages/basalt-ui/configs/oxlint-app.json"],
-  "ignorePatterns": ["src/recipes/seam-examples.tsx"]
+  "extends": ["../../packages/basalt-ui/configs/oxlint-app.json"]
 }
