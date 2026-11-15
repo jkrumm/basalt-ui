@@ -4,7 +4,6 @@
   "CartesianChart",
   "ChartCard",
   "Heatmap",
-  "LegacyChartCard",
   "Lines",
   "Sparkline",
   "chartCursor",

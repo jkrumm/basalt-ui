@@ -24,20 +24,8 @@ export const ALLOWED: readonly string[] = [
   'chartLabels',
 ]
 
-/**
- * 2.x value exports the teardown removes. Shrinks only: do not add a name here. `LegacyChartCard` is
- * the one rename, not an addition: the 2.x card left the frozen `ChartCard` name for the v3 card
- * (v3-state-1-wiring) and stays reachable under this name until v3-teardown-views deletes it.
- */
-export const LEGACY: readonly string[] = [
-  'LegacyChartCard',
-  'Donut',
-  'DualPanel',
-  'MirroredBars',
-  'StackedArea',
-  'chartCurve',
-  'foldBands',
-]
+/** 2.x value exports the teardown removed: none remain, and none may return. */
+export const LEGACY: readonly string[] = []
 
 /** One line per value export in neither the frozen set nor the legacy list. */
 export function chartsApiViolations(names: readonly string[]): string[] {
